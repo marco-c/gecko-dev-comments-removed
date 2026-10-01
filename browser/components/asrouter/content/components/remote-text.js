@@ -15,6 +15,7 @@
       super();
 
       this._content = null;
+      this._translated = Promise.resolve();
     }
 
     get fluentAttributeValues() {
@@ -43,7 +44,10 @@
           this.fluentAttributeValues
         );
         
-        RemoteL10n.l10n.translateFragment(this._content);
+        
+        this._translated = this._translated
+          .then(() => RemoteL10n.l10n.translateFragment(this._content))
+          .catch(console.error);
       }
     }
 
