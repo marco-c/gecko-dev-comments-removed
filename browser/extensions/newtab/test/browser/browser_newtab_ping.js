@@ -9,9 +9,10 @@ const { ASRouter } = ChromeUtils.importESModule(
 );
 
 let sendTriggerMessageSpy;
+let sandbox;
 
 add_setup(function () {
-  let sandbox = sinon.createSandbox();
+  sandbox = sinon.createSandbox();
   sendTriggerMessageSpy = sandbox.spy(ASRouter, "sendTriggerMessage");
 
   registerCleanupFunction(() => {
@@ -278,6 +279,11 @@ add_task(async function test_newtab_dwell_time_in_ping() {
 
   
   
+  let fakeNow = 0;
+  sandbox.stub(TelemetryFeed, "now").callsFake(() => fakeNow);
+
+  
+  
   registerCleanupFunction(() => {
     Services.obs.notifyObservers(
       null,
@@ -322,15 +328,17 @@ add_task(async function test_newtab_dwell_time_in_ping() {
 
       
       
+      
       Services.obs.notifyObservers(
         null,
         "user-interaction-active-non-synthesized"
       );
-
-      
-      
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
+      fakeNow += 100;
+      Services.obs.notifyObservers(
+        null,
+        "user-interaction-active-non-synthesized"
+      );
+      fakeNow += 100;
 
       BrowserTestUtils.removeTab(tab);
     },
