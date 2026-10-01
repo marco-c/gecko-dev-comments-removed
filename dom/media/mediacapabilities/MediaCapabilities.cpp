@@ -761,31 +761,27 @@ void MediaCapabilities::CreateWebRTCDecodingInfo(
         SupportDecoderParams videoParameters(
             *trackInfo,
             media::VideoFrameRate(static_cast<float>(v.mFramerate)));
-        auto videoSupport =
-            StaticPrefs::media_mediacapabilities_codec_support_cache_enabled()
-                ? SupportsVideoDecodeForWebrtc(mime, videoParameters)
-                : StrictSupportsVideoDecodeForWebrtc(mime, videoParameters);
-        return videoSupport->Then(
-            GetCurrentSerialEventTarget(), __func__,
-            [aConfiguration, info,
-             lowResolution](PDMSupportsDecoderPromise::ResolveOrRejectValue&&
-                                aValue) mutable -> RefPtr<PromiseType> {
-              
-              if (aValue.IsReject() || aValue.ResolveValue().isEmpty()) {
-                auto unsupported =
-                    UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
-                LOG("{} -> {}", aConfiguration, unsupported);
-                return PromiseType::CreateAndResolve(
-                    std::move(unsupported),
-                    "MediaCapabilities::CreateWebRTCDecodingInfo");
-              }
-              const bool hwSupported = aValue.ResolveValue().contains(
-                  media::DecodeSupport::HardwareDecode);
-              info.mPowerEfficient = hwSupported || lowResolution;
-              return PromiseType::CreateAndResolve(
-                  std::move(info),
-                  "MediaCapabilities::CreateWebRTCDecodingInfo");
-            });
+        return SupportsVideoDecodeForWebrtc(mime, videoParameters)
+            ->Then(GetCurrentSerialEventTarget(), __func__,
+                   [aConfiguration, info, lowResolution](
+                       PDMSupportsDecoderPromise::ResolveOrRejectValue&&
+                           aValue) mutable -> RefPtr<PromiseType> {
+                     
+                     if (aValue.IsReject() || aValue.ResolveValue().isEmpty()) {
+                       auto unsupported =
+                           UnsupportedInfo<MediaCapabilitiesDecodingInfo>();
+                       LOG("{} -> {}", aConfiguration, unsupported);
+                       return PromiseType::CreateAndResolve(
+                           std::move(unsupported),
+                           "MediaCapabilities::CreateWebRTCDecodingInfo");
+                     }
+                     const bool hwSupported = aValue.ResolveValue().contains(
+                         media::DecodeSupport::HardwareDecode);
+                     info.mPowerEfficient = hwSupported || lowResolution;
+                     return PromiseType::CreateAndResolve(
+                         std::move(info),
+                         "MediaCapabilities::CreateWebRTCDecodingInfo");
+                   });
       })
       ->Then(
           targetThread, __func__,
@@ -1474,7 +1470,7 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
   InvokeAsync(
       taskQueue, __func__,
       [aConfiguration, videoMime, videoSupported, audioMime, audioSupported,
-       taskQueue, info = std::move(info)]() mutable -> RefPtr<PromiseType> {
+       info = std::move(info)]() mutable -> RefPtr<PromiseType> {
         
         
         
@@ -1500,89 +1496,71 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
               std::move(unsupported), "MediaCapabilities::EncodingInfo");
         }
         auto encoderConfig = BuildEncoderConfig(*videoMime, v);
-        RefPtr<PlatformEncoderModule::SupportsEncoderPromise> videoSupport;
-        if (StaticPrefs::
-                media_mediacapabilities_codec_support_cache_enabled()) {
-          videoSupport = SupportsVideoEncodeForWebrtc(encoderConfig);
-        } else {
-          
-          
-          
-          static RefPtr<AllocPolicy> sVideoEncodeAllocPolicy = [&taskQueue]() {
-            SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-                "MediaCapabilities::AllocPolicy:VideoEncode", []() {
-                  ClearOnShutdown(&sVideoEncodeAllocPolicy,
-                                  ShutdownPhase::XPCOMShutdownThreads);
-                }));
-            return new SingleAllocPolicy(GlobalAllocPolicy::Kind::Encoder,
-                                         TrackInfo::TrackType::kVideoTrack,
-                                         taskQueue);
-          }();
-          videoSupport = StrictSupportsVideoEncodeForWebrtc(
-              encoderConfig, taskQueue, sVideoEncodeAllocPolicy);
-        }
-        return videoSupport->Then(
-            GetCurrentSerialEventTarget(), __func__,
-            [aConfiguration,
-             info](media::EncodeSupportSet aVideoSupport) mutable
-                -> RefPtr<PromiseType> {
-              if (aVideoSupport.isEmpty()) {
-                auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
-                LOG("{} -> {}", aConfiguration, unsupported);
-                return PromiseType::CreateAndResolve(
-                    std::move(unsupported), "MediaCapabilities::EncodingInfo");
-              }
-              const auto& v = aConfiguration.mVideo.Value();
-              const bool hwSupported =
-                  aVideoSupport.contains(media::EncodeSupport::HardwareEncode);
-              const CheckedInt<uint32_t> pixels =
-                  CheckedInt<uint32_t>(v.mWidth) *
-                  CheckedInt<uint32_t>(v.mHeight);
-              const bool lowResolution =
-                  pixels.isValid() &&
-                  pixels.value() <= kLowResolutionPixelCount;
+        return SupportsVideoEncodeForWebrtc(encoderConfig)
+            ->Then(
+                GetCurrentSerialEventTarget(), __func__,
+                [aConfiguration,
+                 info](media::EncodeSupportSet aVideoSupport) mutable
+                    -> RefPtr<PromiseType> {
+                  if (aVideoSupport.isEmpty()) {
+                    auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
+                    LOG("{} -> {}", aConfiguration, unsupported);
+                    return PromiseType::CreateAndResolve(
+                        std::move(unsupported),
+                        "MediaCapabilities::EncodingInfo");
+                  }
+                  const auto& v = aConfiguration.mVideo.Value();
+                  const bool hwSupported = aVideoSupport.contains(
+                      media::EncodeSupport::HardwareEncode);
+                  const CheckedInt<uint32_t> pixels =
+                      CheckedInt<uint32_t>(v.mWidth) *
+                      CheckedInt<uint32_t>(v.mHeight);
+                  const bool lowResolution =
+                      pixels.isValid() &&
+                      pixels.value() <= kLowResolutionPixelCount;
 
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  info.mSmooth &= hwSupported || IsWebRTCSWEncodeSmooth(v);
 
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              
-              info.mPowerEfficient &= (hwSupported || lowResolution);
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  info.mPowerEfficient &= (hwSupported || lowResolution);
 
-              LOG("{} -> {}", aConfiguration, info);
-              return PromiseType::CreateAndResolve(
-                  std::move(info), "MediaCapabilities::EncodingInfo");
-            },
-            [](nsresult) -> RefPtr<PromiseType> {
-              
-              auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
-              return PromiseType::CreateAndResolve(
-                  std::move(unsupported), "MediaCapabilities::EncodingInfo");
-            });
+                  LOG("{} -> {}", aConfiguration, info);
+                  return PromiseType::CreateAndResolve(
+                      std::move(info), "MediaCapabilities::EncodingInfo");
+                },
+                [](nsresult) -> RefPtr<PromiseType> {
+                  
+                  auto unsupported = UnsupportedInfo<MediaCapabilitiesInfo>();
+                  return PromiseType::CreateAndResolve(
+                      std::move(unsupported),
+                      "MediaCapabilities::EncodingInfo");
+                });
       })
       ->Then(
           targetThread, __func__,

@@ -32,22 +32,6 @@ SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
 }
 
 
-RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
-                                   const SupportDecoderParams& aParams) {
-  return WebrtcVideoDecoderFactory::StrictSupportsCodec(aMime, aParams);
-}
-
-
-RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
-                                   const RefPtr<TaskQueue>& aTaskQueue,
-                                   AllocPolicy* aPolicy) {
-  return WebrtcVideoEncoderFactory::StrictSupportsCodec(aConfig, aTaskQueue,
-                                                        aPolicy);
-}
-
-
 class CodecInfoImpl final : public WebrtcCodecInfo {
  public:
   CodecInfoImpl()
@@ -155,20 +139,6 @@ SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
                              const SupportDecoderParams&) {
   return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
       media::DecodeSupportSet{}, __func__);
-}
-
-RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
-                                   const SupportDecoderParams&) {
-  return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
-      media::DecodeSupportSet{}, __func__);
-}
-
-RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-StrictSupportsVideoEncodeForWebrtc(const EncoderConfig&,
-                                   const RefPtr<TaskQueue>&) {
-  return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
-      media::EncodeSupportSet{}, __func__);
 }
 
 class CodecInfoStub final : public WebrtcCodecInfo {
