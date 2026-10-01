@@ -113,29 +113,32 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
         &self,
         context: Option<&computed::Context>,
         origin_color: Option<&AbsoluteColor>,
-    ) -> Self {
-        match self {
+    ) -> Result<Self, ()> {
+        Ok(match self {
             Self::None => Self::None,
             Self::Value(v) => Self::Value(v.clone()),
-            Self::ChannelKeyword(channel_keyword) => match origin_color {
-                Some(origin_color) => {
-                    match origin_color.get_component_by_channel_keyword(*channel_keyword) {
-                        Ok(value) => Self::Value(ValueType::from_value(value.unwrap_or(0.0))),
-                        Err(()) => Self::ChannelKeyword(*channel_keyword),
-                    }
-                },
-                None => Self::ChannelKeyword(*channel_keyword),
+            Self::ChannelKeyword(channel_keyword) => {
+                let channel_value = origin_color
+                    .and_then(|c| c.get_component_by_channel_keyword(*channel_keyword).ok());
+                match channel_value {
+                    Some(value) => Self::Value(ValueType::from_value(value.unwrap_or(0.0))),
+                    
+                    
+                    None => Self::ChannelKeyword(*channel_keyword),
+                }
             },
             Self::Calc(node) => {
                 
                 
                 
-                match node
-                    .resolve_map(|leaf| Ok(leaf.to_computed_value(context, origin_color)))
-                    .and_then(|leaf| ValueType::try_from_leaf(&leaf))
+                let mut computed = node.to_computed_value(context, origin_color)?;
+                computed.simplify_and_sort();
+                if let Some(leaf) = computed.as_leaf()
+                    && let Ok(value) = ValueType::try_from_leaf(&leaf)
                 {
-                    Ok(value) => Self::Value(value),
-                    Err(..) => Self::Calc(Box::new(node.to_computed_value(context, origin_color))),
+                    Self::Value(value)
+                } else {
+                    Self::Calc(Box::new(computed))
                 }
             },
             Self::AlphaOmitted => match origin_color {
@@ -149,7 +152,7 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 },
                 None => Self::AlphaOmitted,
             },
-        }
+        })
     }
 
     
