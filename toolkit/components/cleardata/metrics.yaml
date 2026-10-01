@@ -16,15 +16,17 @@ private_browsing.cleanup:
     description: >
       Wall-clock time from clearPrivateBrowsingData() call start to callback
       invocation.
+      This currently does not keep track of regular PBM teardown (last PBM window exited).
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1846494
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072835
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1846494
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
     notification_emails:
       - emz@mozilla.com
     data_sensitivity:
       - technical
-    expires: 160
+    expires: 170
 
   error_rate:
     type: rate
@@ -32,12 +34,14 @@ private_browsing.cleanup:
       Rate of clearPrivateBrowsingData() calls that reported at least one
       observer failure. Denominator is incremented on every call; numerator
       is incremented when hadFailures is true or the promise rejects.
+      This currently does not keep track of regular PBM teardown (last PBM window exited).
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1846494
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2072835
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1846494
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2018747
     notification_emails:
       - emz@mozilla.com
     data_sensitivity:
       - technical
-    expires: 160
+    expires: 170
