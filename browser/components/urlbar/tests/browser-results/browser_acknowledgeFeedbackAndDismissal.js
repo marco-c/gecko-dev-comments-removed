@@ -18,6 +18,9 @@ const DISMISS_ONE_COMMAND = "dismiss-one";
 const DISMISS_ALL_COMMAND = "dismiss-all";
 
 
+const REMOVE_COMMAND = "remove";
+
+
 
 const FEEDBACK_COMMAND = "show_less_frequently";
 
@@ -214,6 +217,74 @@ add_task(async function acknowledgeDismissal_hideRowLabel() {
     expectedLabelOnReplacementRow: "Firefox Suggest",
   });
 });
+
+
+
+add_task(async function acknowledgeDismissal_lastResult() {
+  await promiseLoneResultPopup();
+
+  let promiseRemoved = UrlbarTestUtils.promiseControllerNotification(
+    window,
+    "onQueryResultRemoved"
+  );
+  await UrlbarTestUtils.openResultMenuAndClickItem(
+    window,
+    DISMISS_ONE_COMMAND,
+    {
+      resultIndex: 0,
+      openByMouse: true,
+    }
+  );
+  await promiseRemoved;
+
+  Assert.ok(gURLBar.view.isOpen, "The view stays open for the tip");
+  Assert.equal(UrlbarTestUtils.getResultCount(window), 1, "One row remains");
+  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(
+    details.result.payload.type,
+    "dismissalAcknowledgment",
+    "The remaining row is the acknowledgment tip"
+  );
+
+  let gotItButton = UrlbarTestUtils.getButtonForResultIndex(window, "0", 0);
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    EventUtils.synthesizeMouseAtCenter(gotItButton, {}, window)
+  );
+  Assert.ok(!gURLBar.hasAttribute("popover-open"), "The popover is gone");
+  Assert.ok(gURLBar.focused, "The input keeps focus");
+});
+
+
+add_task(async function remove_lastResult() {
+  await promiseLoneResultPopup();
+
+  await UrlbarTestUtils.promisePopupClose(window, () =>
+    UrlbarTestUtils.openResultMenuAndClickItem(window, REMOVE_COMMAND, {
+      resultIndex: 0,
+      openByMouse: true,
+    })
+  );
+  Assert.ok(!gURLBar.hasAttribute("popover-open"), "The popover is gone");
+  Assert.ok(gURLBar.focused, "The input keeps focus");
+});
+
+
+
+async function promiseLoneResultPopup() {
+  gTestProvider.results[0] = makeResult({
+    isSuggestedIndexRelativeToGroup: false,
+  });
+  gTestProvider.priority = 1;
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  Assert.equal(
+    UrlbarTestUtils.getResultCount(window),
+    1,
+    "The test result is the only row"
+  );
+}
 
 
 
@@ -430,6 +501,12 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
           id: "firefox-suggest-command-not-interested2",
         },
       },
+      {
+        name: REMOVE_COMMAND,
+        l10n: {
+          id: "urlbar-result-menu-remove-from-history2",
+        },
+      },
     ];
   }
 
@@ -446,7 +523,7 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
 
       switch (selType) {
         case FEEDBACK_COMMAND:
-          controller.view.acknowledgeFeedback(details.result);
+          controller.view.acknowledgeFeedback(details.result.id);
           break;
         case DISMISS_ONE_COMMAND:
           controller.removeResult(details.result, {
@@ -461,6 +538,9 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
               id: "urlbar-result-dismissal-acknowledgment-all",
             },
           });
+          break;
+        case REMOVE_COMMAND:
+          controller.removeResult(details.result);
           break;
       }
     }
