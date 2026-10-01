@@ -150,6 +150,7 @@ const tests = {
   
   
   
+  
   async pairedTextColors() {
     logStart("paired text colors");
 
@@ -160,12 +161,16 @@ const tests = {
         .map(token => token.name)
     );
 
+    let familiesWithText = new Set(
+      [...tokenNames].map(name => name.match(/^--(.+?)text-color/)?.[1])
+    );
+
     let errors = [];
     for (let tokenName of tokenNames) {
       let match = tokenName.match(
         /^--(?<family>.+?)background-color(?<variant>.*)$/
       );
-      if (!match || !tokenNames.has(`--${match.groups.family}text-color`)) {
+      if (!match || !familiesWithText.has(match.groups.family)) {
         continue;
       }
       let counterpart = `--${match.groups.family}text-color${match.groups.variant}`;

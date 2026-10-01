@@ -10,7 +10,7 @@
   fill: currentColor;
 }
 
-.search-one-offs:not([hidden]) {
+.search-one-offs {
   display: block;
   width: 100%;
 }
@@ -54,7 +54,7 @@
   padding-inline: 8px;
 }
 
-.search-panel-one-offs:not([hidden]),
+.search-panel-one-offs,
 .search-panel-one-offs-container {
   display: flex;
   flex-direction: row;
@@ -92,7 +92,7 @@
    buttons due to event.preventDefault() in SearchOneOffs._on_mousedown(). */
 .searchbar-engine-one-off-item:not([selected]):hover {
   background-color: var(--urlbarview-background-color-hover);
-  color: inherit;
+  color: var(--urlbarview-text-color-hover);
 }
 
 .searchbar-engine-one-off-item[selected] {
@@ -121,6 +121,7 @@
 
 .search-panel-tree > .autocomplete-richlistitem:hover {
   background-color: var(--urlbarview-background-color-hover);
+  color: var(--urlbarview-text-color-hover);
 }
 
 .search-panel-tree > .autocomplete-richlistitem > .ac-type-icon {
