@@ -6,6 +6,7 @@
 #define mozilla_dom_serviceworkeroppromise_h_
 
 #include "mozilla/MozPromise.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 
@@ -36,6 +37,10 @@ using FetchEventPreloadResponseEndPromise =
 
 using ServiceWorkerOpPromise =
     MozPromise<ServiceWorkerOpResult, nsresult, true>;
+
+
+
+using PushHandledPromise = MozPromise<Ok, nsresult,  true>;
 
 using ServiceWorkerFetchEventOpPromise =
     MozPromise<ServiceWorkerFetchEventOpResult, nsresult, true>;
