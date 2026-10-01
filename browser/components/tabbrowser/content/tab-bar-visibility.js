@@ -31,14 +31,20 @@ var TabBarVisibility = {
     
 
     let tabsToolbar = document.getElementById("TabsToolbar");
-    let navbar = document.getElementById("nav-bar");
 
     gNavToolbox.toggleAttribute("tabs-hidden", hideTabsToolbar);
     
-    navbar.classList.toggle(
-      "browser-titlebar",
-      CustomTitlebar.enabled && hideTabsToolbar
-    );
+    
+    
+    let isTitlebar = CustomTitlebar.enabled && hideTabsToolbar;
+    let titlebarIds = Services.prefs.getBoolPref("browser.nova.enabled")
+      ? ["nav-bar", "PersonalToolbar"]
+      : ["nav-bar"];
+    for (let id of titlebarIds) {
+      document
+        .getElementById(id)
+        .classList.toggle("browser-titlebar", isTitlebar);
+    }
 
     if (
       hideTabsToolbar == tabsToolbar.collapsed &&
