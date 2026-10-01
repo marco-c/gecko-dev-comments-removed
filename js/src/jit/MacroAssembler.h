@@ -4055,11 +4055,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void wasmCallRef(const wasm::CallSiteDesc& desc,
                    const wasm::CalleeDesc& callee, CodeOffset* fastCallOffset,
-                   CodeOffset* slowCallOffset);
+                   CodeOffset* slowCallOffset, wasm::StackMap* stackMapForTraps,
+                   wasm::StackMapRegistry* stackMapRegistry);
 
   void wasmReturnCallRef(const wasm::CallSiteDesc& desc,
                          const wasm::CalleeDesc& callee,
-                         const ReturnCallAdjustmentInfo& retCallInfo);
+                         const ReturnCallAdjustmentInfo& retCallInfo,
+                         wasm::StackMap* stackMapForTraps,
+                         wasm::StackMapRegistry* stackMapRegistry);
 
   
   

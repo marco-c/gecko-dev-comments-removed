@@ -10609,7 +10609,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
-        masm.wasmReturnCallRef(desc, callee, retCallInfo);
+        masm.wasmReturnCallRef(desc, callee, retCallInfo, nullptr, nullptr);
         
         return;
       }
@@ -10617,7 +10617,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       
       
       
-      masm.wasmCallRef(desc, callee, &retOffset, &secondRetOffset);
+      masm.wasmCallRef(desc, callee, &retOffset, &secondRetOffset, nullptr,
+                       nullptr);
       reloadInstance = false;
       reloadPinnedRegs = false;
       switchRealm = false;

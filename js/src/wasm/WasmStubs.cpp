@@ -2989,7 +2989,8 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
   wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
   CodeOffset fastCallOffset;
   CodeOffset slowCallOffset;
-  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset);
+  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset, nullptr,
+                   nullptr);
 
   
   
