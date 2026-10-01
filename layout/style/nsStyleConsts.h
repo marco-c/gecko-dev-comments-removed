@@ -70,9 +70,6 @@ enum class StyleImageLayerRepeat : uint8_t {
 };
 
 
-enum class StyleDirection : uint8_t { Ltr, Rtl };
-
-
 
 
 
