@@ -140,64 +140,55 @@ bool OverscrollHandoffChain::HasAnimatingApzc() const {
   return AnyApzc(&AsyncPanZoomController::IsAnimationRunning);
 }
 
-RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindScrollTarget(
+RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
     const InputData& aInput, ScrollDirections* aOutAllowedScrollDirections,
     IncludeOverscroll aIncludeOverscroll) const {
   
   
-  
-  
-  
-  *aOutAllowedScrollDirections = EitherScrollDirection;
+  *aOutAllowedScrollDirections += ScrollDirection::eVertical;
+  *aOutAllowedScrollDirections += ScrollDirection::eHorizontal;
 
-  
-  
-  AutoTArray<ScrollDirections, 8> allowedDirectionsOnEntry;
-  ScrollDirections allowed = EitherScrollDirection;
   for (size_t i = 0; i < Length(); i++) {
     if (mChain[i]->CanScroll(aInput)) {
-      *aOutAllowedScrollDirections = allowed;
-      MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
       return mChain[i];
     }
-    allowedDirectionsOnEntry.AppendElement(allowed);
-    allowed &= mChain[i]->GetAllowedHandoffDirections();
-    if (allowed.isEmpty()) {
-      break;
-    }
-  }
 
-  if (!StaticPrefs::apz_overscroll_enabled() || !bool(aIncludeOverscroll) ||
+    
+    
+    
+    
+    
+    if (StaticPrefs::apz_overscroll_enabled() && bool(aIncludeOverscroll) &&
+        
+        aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
       
-      aInput.mInputType != PANGESTURE_INPUT) {
-    MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
-    return nullptr;
-  }
-
-  
-  
-  for (size_t i = allowedDirectionsOnEntry.Length(); i-- > 0;) {
-    
-    
-    
-    
-    ScrollDirections overscrollable = mChain[i]->GetOverscrollableDirections();
-    ParentLayerPoint delta = mChain[i]->GetDeltaForEvent(aInput);
-    if (mChain[i]->IsZero(delta.x)) {
-      overscrollable -= ScrollDirection::eHorizontal;
-    }
-    if (mChain[i]->IsZero(delta.y)) {
-      overscrollable -= ScrollDirection::eVertical;
-    }
-    if (!(overscrollable & allowedDirectionsOnEntry[i]).isEmpty()) {
       
-      *aOutAllowedScrollDirections = allowedDirectionsOnEntry[i];
-      MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
-      return mChain[i];
+      
+      
+      
+      
+      ScrollDirections allowedOverscrollDirections =
+          mChain[i]->GetOverscrollableDirections();
+      ParentLayerPoint delta = mChain[i]->GetDeltaForEvent(aInput);
+      if (mChain[i]->IsZero(delta.x)) {
+        allowedOverscrollDirections -= ScrollDirection::eHorizontal;
+      }
+      if (mChain[i]->IsZero(delta.y)) {
+        allowedOverscrollDirections -= ScrollDirection::eVertical;
+      }
+
+      allowedOverscrollDirections &= *aOutAllowedScrollDirections;
+      if (!allowedOverscrollDirections.isEmpty()) {
+        *aOutAllowedScrollDirections = allowedOverscrollDirections;
+        return mChain[i];
+      }
+    }
+
+    *aOutAllowedScrollDirections &= mChain[i]->GetAllowedHandoffDirections();
+    if (aOutAllowedScrollDirections->isEmpty()) {
+      return nullptr;
     }
   }
-
-  MOZ_ASSERT(!aOutAllowedScrollDirections->isEmpty());
   return nullptr;
 }
 

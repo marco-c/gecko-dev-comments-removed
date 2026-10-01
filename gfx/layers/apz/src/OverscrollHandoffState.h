@@ -113,14 +113,8 @@ class OverscrollHandoffChain {
   
   
   
-  
-  
-  
-  
-  
-  
   enum class IncludeOverscroll : bool { No, Yes };
-  RefPtr<AsyncPanZoomController> FindScrollTarget(
+  RefPtr<AsyncPanZoomController> FindFirstScrollable(
       const InputData& aInput, ScrollDirections* aOutAllowedScrollDirections,
       IncludeOverscroll aIncludeOverscroll = IncludeOverscroll::Yes) const;
 
