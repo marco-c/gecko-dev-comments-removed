@@ -2381,11 +2381,19 @@
 
 
 
+
+
+
+
         get_global_privacy_control: function() {
             return window.test_driver_internal.get_global_privacy_control();
         },
 
         
+
+
+
+
 
 
 
