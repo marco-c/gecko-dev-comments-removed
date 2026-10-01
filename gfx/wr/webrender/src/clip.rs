@@ -99,6 +99,7 @@ use crate::image_tiling::{self, Repetition};
 use crate::border::BorderRadiusAu;
 use crate::renderer::GpuBufferBuilderF;
 use crate::spatial_tree::{SceneSpatialTree, SpatialTree, SpatialNodeIndex};
+use crate::surface::SurfaceInfo;
 use crate::ellipse::Ellipse;
 use crate::intern;
 use crate::internal_types::{FastHashMap, FastHashSet};
@@ -1381,19 +1382,19 @@ impl ClipStore {
     
     
     
-    
     pub fn fill_quad_clips(
         &self,
         dest: &mut QuadClipStack,
         clip_chain: &ClipChainInstance,
-        device_coverage_rect: DeviceRect,
+        surface: &SurfaceInfo,
         interned_clips: &ClipDataStore,
     ) {
         self.fill_quad_clips_from_range(dest, clip_chain.clips_range, interned_clips);
 
         dest.set_bounds(
             clip_chain.local_clip_rect,
-            device_coverage_rect,
+            surface.map_to_device_rect(&clip_chain.pic_coverage_rect),
+            surface.clipping_rect,
             clip_chain.needs_mask,
         );
     }
