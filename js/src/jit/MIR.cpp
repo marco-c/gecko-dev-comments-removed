@@ -167,7 +167,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
   }
 
   using IntT = decltype(ToIntConstant<Type>(nullptr));
-  using UnsignedInt = std::make_unsigned_t<IntT>;
+  using UnsigedInt = std::make_unsigned_t<IntT>;
 
   
   
@@ -196,7 +196,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       
       
       
-      ret = UnsignedInt(lhs) << (rhs & shiftMask);
+      ret = UnsigedInt(lhs) << (rhs & shiftMask);
       break;
     case MDefinition::Opcode::Rsh:
       
@@ -213,7 +213,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
           !ins->toUrsh()->bailoutsDisabled()) {
         return nullptr;
       }
-      ret = UnsignedInt(lhs) >> (UnsignedInt(rhs) & shiftMask);
+      ret = UnsigedInt(lhs) >> (UnsigedInt(rhs) & shiftMask);
       break;
     case MDefinition::Opcode::BigIntPtrLsh:
     case MDefinition::Opcode::BigIntPtrRsh: {
@@ -222,7 +222,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       
 
       
-      UnsignedInt shift = mozilla::Abs(rhs);
+      UnsigedInt shift = mozilla::Abs(rhs);
       if ((shift & shiftMask) != shift) {
         return nullptr;
       }
@@ -230,11 +230,7 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
       bool isLsh = (ins->isBigIntPtrLsh() && rhs >= 0) ||
                    (ins->isBigIntPtrRsh() && rhs < 0);
       if (isLsh) {
-        ret = UnsignedInt(lhs) << shift;
-        
-        if ((ret >> shift) != lhs) {
-          return nullptr;
-        }
+        ret = UnsigedInt(lhs) << shift;
       } else {
         ret = lhs >> shift;
       }
@@ -269,8 +265,8 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
     }
     case MDefinition::Opcode::Div: {
       if (ins->toDiv()->isUnsigned()) {
-        auto checked = mozilla::CheckedInt<UnsignedInt>(UnsignedInt(lhs)) /
-                       UnsignedInt(rhs);
+        auto checked =
+            mozilla::CheckedInt<UnsigedInt>(UnsigedInt(lhs)) / UnsigedInt(rhs);
         if (!checked.isValid()) {
           return nullptr;
         }
@@ -297,8 +293,8 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
     }
     case MDefinition::Opcode::Mod: {
       if (ins->toMod()->isUnsigned()) {
-        auto checked = mozilla::CheckedInt<UnsignedInt>(UnsignedInt(lhs)) %
-                       UnsignedInt(rhs);
+        auto checked =
+            mozilla::CheckedInt<UnsigedInt>(UnsigedInt(lhs)) % UnsigedInt(rhs);
         if (!checked.isValid()) {
           return nullptr;
         }
