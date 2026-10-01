@@ -79,7 +79,6 @@ class DocAccessible : public HyperTextAccessible,
   virtual nsRect RelativeBounds(nsIFrame** aRelativeFrame) const override;
 
   
-  virtual bool HasPrimaryAction() const override;
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
 
   
@@ -249,6 +248,11 @@ class DocAccessible : public HyperTextAccessible,
 
 
   bool IsRootContent(nsINode* aNode) const;
+
+  
+
+
+  bool IsBodyElement(const nsINode* aNode) const;
 
   
 

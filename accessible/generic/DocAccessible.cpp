@@ -27,6 +27,7 @@
 #include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
@@ -246,7 +247,8 @@ uint64_t DocAccessible::NativeState() const {
   
   
   
-  nsIFrame* bodyFrame = mContent ? mContent->GetPrimaryFrame() : nullptr;
+  dom::Element* bodyEl = mDocumentNode->GetBodyElement();
+  nsIFrame* bodyFrame = bodyEl ? bodyEl->GetPrimaryFrame() : nullptr;
   if ((state & states::EDITABLE) || (bodyFrame && bodyFrame->IsSelectable())) {
     
     
@@ -1317,13 +1319,8 @@ LocalAccessible* DocAccessible::GetContainerAccessible(nsINode* aNode) const {
 
 LocalAccessible* DocAccessible::GetAccessibleOrDescendant(
     nsINode* aNode) const {
-  LocalAccessible* acc = GetAccessible(aNode);
+  LocalAccessible* acc = GetAccessibleOrDocument(aNode);
   if (acc) return acc;
-
-  if (aNode == mContent || aNode == mDocumentNode->GetRootElement()) {
-    
-    return const_cast<DocAccessible*>(this);
-  }
 
   acc = GetContainerAccessible(aNode);
   if (acc) {
@@ -2163,11 +2160,7 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     
     
     if (mContent == aElement) {
-      SetRoleMapEntryForDoc(aElement);
-      if (mIPCDoc) {
-        mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
-      }
-
+      UpdateRootElIfNeeded();
       return true;
     }
 
@@ -2259,16 +2252,12 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
 }
 
 void DocAccessible::UpdateRootElIfNeeded() {
-  dom::Element* rootEl = mDocumentNode->GetBodyElement();
-  if (!rootEl) {
-    rootEl = mDocumentNode->GetRootElement();
-  }
-  if (rootEl != mContent) {
-    mContent = rootEl;
-    SetRoleMapEntryForDoc(rootEl);
-    if (mIPCDoc) {
-      mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
-    }
+  dom::Element* rootEl = mDocumentNode->GetRootElement();
+  mContent = rootEl;
+  const uint8_t oldRoleMapEntryIndex = mRoleMapEntryIndex;
+  SetRoleMapEntryForDoc(rootEl);
+  if (mIPCDoc && mRoleMapEntryIndex != oldRoleMapEntryIndex) {
+    mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
   }
 }
 
@@ -3242,6 +3231,12 @@ bool DocAccessible::IsRootContent(nsINode* aNode) const {
   return mContent == aNode;
 }
 
+bool DocAccessible::IsBodyElement(const nsINode* aNode) const {
+  const bool isBody = aNode && mDocumentNode->GetBodyElement() == aNode;
+  MOZ_ASSERT(!isBody || aNode->IsHTMLElement(nsGkAtoms::body));
+  return isBody;
+}
+
 LocalAccessible* DocAccessible::GetAccessibleOrDocument(nsINode* aNode) const {
   if (IsRootContent(aNode)) {
     return const_cast<DocAccessible*>(this);
@@ -3252,19 +3247,6 @@ LocalAccessible* DocAccessible::GetAccessibleOrDocument(nsINode* aNode) const {
 LocalAccessible* DocAccessible::GetAccessible(nsINode* aNode) const {
   return aNode == mDocumentNode ? const_cast<DocAccessible*>(this)
                                 : mNodeToAccessibleMap.Get(aNode);
-}
-
-bool DocAccessible::HasPrimaryAction() const {
-  if (HyperTextAccessible::HasPrimaryAction()) {
-    return true;
-  }
-  
-  
-  dom::Element* root = mDocumentNode->GetRootElement();
-  if (mContent != root) {
-    return nsCoreUtils::HasClickListener(root);
-  }
-  return false;
 }
 
 void DocAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {

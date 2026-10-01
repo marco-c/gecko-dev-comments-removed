@@ -164,11 +164,8 @@ static bool SendCacheDomainRequestToAllContentProcesses(
 
 
 
-static bool MustBeGenericAccessible(nsIContent* aContent,
-                                    DocAccessible* aDocument) {
-  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement() ||
-      aContent == aDocument->DocumentNode()->GetRootElement()) {
-    
+static bool MustBeGenericAccessible(nsIContent* aContent) {
+  if (aContent->IsInNativeAnonymousSubtree() || aContent->IsSVGElement()) {
     
     
     
@@ -494,11 +491,7 @@ nsAccessibilityService::ListenersChanged(nsIArray* aEventChanges) {
       DocAccessible* document = GetExistingDocAccessible(ownerDoc);
 
       if (document) {
-        LocalAccessible* acc = document->GetAccessible(content);
-        if (!acc && (content == document->GetContent() ||
-                     content == document->DocumentNode()->GetRootElement())) {
-          acc = document;
-        }
+        LocalAccessible* acc = document->GetAccessibleOrDocument(content);
         if (!acc && content->IsElement() &&
             content->AsElement()->IsHTMLElement(nsGkAtoms::area)) {
           
@@ -593,37 +586,12 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
   if (!document) {
     return;
   }
-  LocalAccessible* accessible = document->GetAccessible(aContent);
-  bool shouldQueueUpdateForDocument = false;
-  if (aContent == document->GetContent()) {
-    
-    
-    
-    
-    
-
-    if (!accessible) {
-      
-      
-      
-      accessible = document;
-    } else if (accessible != document) {
-      
-      
-      
-      
-      
-      shouldQueueUpdateForDocument = true;
-    }
-  }
+  LocalAccessible* accessible = document->GetAccessibleOrDocument(aContent);
   if (!accessible) {
     return;
   }
   if (IPCAccessibilityActive()) {
     document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
-    if (shouldQueueUpdateForDocument) {
-      document->QueueCacheUpdate(document, CacheDomain::Bounds);
-    }
   }
   MOZ_ASSERT(!aContent->IsText() || accessible->IsTextLeaf(),
              "A DOM Text node should only ever have a TextLeafAccessible");
@@ -644,13 +612,7 @@ void nsAccessibilityService::NotifyOfComputedStyleChange(
     return;
   }
 
-  LocalAccessible* accessible = document->GetAccessible(aContent);
-  if (!accessible && aContent == document->GetContent()) {
-    
-    
-    
-    accessible = document;
-  }
+  LocalAccessible* accessible = document->GetAccessibleOrDocument(aContent);
 
   if (!accessible && aContent && aContent->HasChildren() &&
       !aContent->IsInNativeAnonymousSubtree()) {
@@ -1320,6 +1282,12 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   if (!aNode->IsContent()) return nullptr;
 
+  if (document->IsRootContent(aNode)) {
+    
+    
+    return nullptr;
+  }
+
   nsIContent* content = aNode->AsContent();
   if (aria::IsValidARIAHidden(content)) {
     if (aIsSubtreeHidden) {
@@ -1341,14 +1309,22 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   } else if (nsCoreUtils::CanCreateAccessibleWithoutFrame(content)) {
     
     
-    const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
-    RefPtr<LocalAccessible> newAcc = MaybeCreateSpecificARIAAccessible(
-        roleMapEntry, aContext, content, document);
+    const nsRoleMapEntry* roleMapEntry = nullptr;
+    RefPtr<LocalAccessible> newAcc;
     const MarkupMapInfo* markupMap = nullptr;
-    if (!newAcc) {
-      markupMap = GetMarkupMapInfoFor(content);
-      if (markupMap && markupMap->new_func) {
-        newAcc = markupMap->new_func(content->AsElement(), aContext);
+    
+    
+    
+    
+    if (!document->IsBodyElement(content)) {
+      roleMapEntry = aria::GetRoleMap(content->AsElement());
+      newAcc = MaybeCreateSpecificARIAAccessible(roleMapEntry, aContext,
+                                                 content, document);
+      if (!newAcc) {
+        markupMap = GetMarkupMapInfoFor(content);
+        if (markupMap && markupMap->new_func) {
+          newAcc = markupMap->new_func(content->AsElement(), aContext);
+        }
       }
     }
 
@@ -1499,6 +1475,21 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     return newAcc;
   }
 
+  if (document->IsBodyElement(content)) {
+    
+    
+    if (MustBeGenericAccessible(content) ||
+        MustBeAccessible(content, document) ||
+        nsCoreUtils::HasClickListener(content)) {
+      newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
+      
+      
+      document->BindToDocument(newAcc, nullptr);
+      return newAcc;
+    }
+    return nullptr;
+  }
+
   const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(content->AsElement());
 
   if (roleMapEntry && (roleMapEntry->Is(nsGkAtoms::presentation) ||
@@ -1508,7 +1499,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       
       
       roleMapEntry = nullptr;
-    } else if (MustBeGenericAccessible(content, document)) {
+    } else if (MustBeGenericAccessible(content)) {
       
       
       
@@ -1648,10 +1639,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
   
   
-  
-  
-  if (!newAcc && !content->IsHTMLElement(nsGkAtoms::body) &&
-      content->GetParent() &&
+  if (!newAcc && content->GetParent() &&
       (roleMapEntry || MustBeAccessible(content, document) ||
        (content->IsHTMLElement() && nsCoreUtils::HasClickListener(content)))) {
     
@@ -1662,7 +1650,7 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
-  } else if (!newAcc && MustBeGenericAccessible(content, document)) {
+  } else if (!newAcc && MustBeGenericAccessible(content)) {
     newAcc = MakeRefPtr<EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>>(
         content, document);
   }
