@@ -31,9 +31,7 @@ uint64_t GetLimit(const ffi::WGPULimits& limits, const Limit limit) {
     case Limit::MaxBindGroups:
       return limits.max_bind_groups;
     case Limit::MaxBindGroupsPlusVertexBuffers:
-      
-      return GetLimit(limits, Limit::MaxBindGroups) +
-             GetLimit(limits, Limit::MaxVertexBuffers);
+      return limits.max_bind_groups_plus_vertex_buffers;
     case Limit::MaxBindingsPerBindGroup:
       return limits.max_bindings_per_bind_group;
     case Limit::MaxDynamicUniformBuffersPerPipelineLayout:
@@ -44,18 +42,18 @@ uint64_t GetLimit(const ffi::WGPULimits& limits, const Limit limit) {
       return limits.max_sampled_textures_per_shader_stage;
     case Limit::MaxSamplersPerShaderStage:
       return limits.max_samplers_per_shader_stage;
-    
-    
-    case Limit::MaxStorageBuffersInVertexStage:
-    case Limit::MaxStorageBuffersInFragmentStage:
     case Limit::MaxStorageBuffersPerShaderStage:
       return limits.max_storage_buffers_per_shader_stage;
-    
-    
-    case Limit::MaxStorageTexturesInVertexStage:
-    case Limit::MaxStorageTexturesInFragmentStage:
+    case Limit::MaxStorageBuffersInVertexStage:
+      return limits.max_storage_buffers_in_vertex_stage;
+    case Limit::MaxStorageBuffersInFragmentStage:
+      return limits.max_storage_buffers_in_fragment_stage;
     case Limit::MaxStorageTexturesPerShaderStage:
       return limits.max_storage_textures_per_shader_stage;
+    case Limit::MaxStorageTexturesInVertexStage:
+      return limits.max_storage_textures_in_vertex_stage;
+    case Limit::MaxStorageTexturesInFragmentStage:
+      return limits.max_storage_textures_in_fragment_stage;
     case Limit::MaxUniformBuffersPerShaderStage:
       return limits.max_uniform_buffers_per_shader_stage;
     case Limit::MaxUniformBufferBindingSize:
@@ -115,7 +113,7 @@ void SetLimit(ffi::WGPULimits* const limits, const Limit limit,
       limits->max_bind_groups = val;
       return;
     case Limit::MaxBindGroupsPlusVertexBuffers:
-      
+      limits->max_bind_groups_plus_vertex_buffers = val;
       return;
     case Limit::MaxBindingsPerBindGroup:
       limits->max_bindings_per_bind_group = val;
@@ -132,19 +130,23 @@ void SetLimit(ffi::WGPULimits* const limits, const Limit limit,
     case Limit::MaxSamplersPerShaderStage:
       limits->max_samplers_per_shader_stage = val;
       return;
-    case Limit::MaxStorageBuffersInVertexStage:
-    case Limit::MaxStorageBuffersInFragmentStage:
-      
-      return;
     case Limit::MaxStorageBuffersPerShaderStage:
       limits->max_storage_buffers_per_shader_stage = val;
       return;
-    case Limit::MaxStorageTexturesInVertexStage:
-    case Limit::MaxStorageTexturesInFragmentStage:
-      
+    case Limit::MaxStorageBuffersInVertexStage:
+      limits->max_storage_buffers_in_vertex_stage = val;
+      return;
+    case Limit::MaxStorageBuffersInFragmentStage:
+      limits->max_storage_buffers_in_fragment_stage = val;
       return;
     case Limit::MaxStorageTexturesPerShaderStage:
       limits->max_storage_textures_per_shader_stage = val;
+      return;
+    case Limit::MaxStorageTexturesInVertexStage:
+      limits->max_storage_textures_in_vertex_stage = val;
+      return;
+    case Limit::MaxStorageTexturesInFragmentStage:
+      limits->max_storage_textures_in_fragment_stage = val;
       return;
     case Limit::MaxUniformBuffersPerShaderStage:
       limits->max_uniform_buffers_per_shader_stage = val;
