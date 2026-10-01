@@ -1,11 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-
-
+// This is loaded into chrome windows with the subscript loader. Wrap in
+// a block to prevent accidentally leaking globals onto `window`.
 {
   const lazy = {};
   ChromeUtils.defineESModuleGetters(lazy, {
@@ -62,14 +60,14 @@
       this._selectedOnFirstMouseDown = false;
       this._noteIconHover = false;
 
-      
-
-
-
-
-
-
-
+      /**
+       * Describes how the tab ended up in this mute state. May be any of:
+       *
+       * - undefined: The tabs mute state has never changed.
+       * - null: The mute state was last changed through the UI.
+       * - Any string: The ID was changed through an extension API. The string
+       * must be the ID of the extension which changed it.
+       */
       this.muteReason = undefined;
 
       this.closing = false;
@@ -137,18 +135,18 @@
       labelContainer.addEventListener("overflow", this);
       labelContainer.addEventListener("underflow", this);
 
-      
-      
-      
+      // Tabs in the tab strip default to being at the top level (level 1)
+      // Tabs in tab groups are one level down (level 2); this tab will
+      // update its value when it moves in and out of tab groups.
       this.setAttribute("aria-level", 1);
     }
 
-    
-
-
-
-
-
+    /**
+     * This tab's index in `gBrowser.tabs`, which counts every tab. See
+     * `elementIndex` for its position among the visible tab strip elements.
+     *
+     * @type {number}
+     */
     get index() {
       return this._index;
     }
@@ -158,7 +156,7 @@
       if (!this.visible) {
         throw new Error("Tab is not visible, so does not have an elementIndex");
       }
-      
+      // Make sure the index is up to date.
       this.container.dragAndDropElements;
       return this.#elementIndex;
     }
@@ -203,13 +201,13 @@
     }
 
     set _selected(val) {
-      
-      
-      
+      // in e10s we want to only pseudo-select a tab before its rendering is done, so that
+      // the rest of the system knows that the tab is selected, but we don't want to update its
+      // visual status to selected until after we receive confirmation that its content has painted.
       this.toggleAttribute("selected", val);
 
-      
-      
+      // If we're non-e10s we need to update the visual selection at the same
+      // time, otherwise AsyncTabSwitcher will take care of this.
       if (!gMultiProcessBrowser) {
         this._visuallySelected = val;
       }
@@ -234,7 +232,7 @@
     }
 
     get hidden() {
-      
+      // This getter makes `hidden` read-only
       return super.hidden;
     }
 
@@ -286,8 +284,8 @@
     }
 
     get isEmpty() {
-      
-      
+      // Determines if a tab is "empty", usually used in the context of determining
+      // if it's ok to close the tab.
       if (this.hasAttribute("busy")) {
         return false;
       }
@@ -295,8 +293,8 @@
       return this.isEmptyIgnoringLoad;
     }
 
-    
-    
+    // Like isEmpty, but ignoring the load in progress. Only for callers which
+    // know that load is being taken away from the tab.
     get isEmptyIgnoringLoad() {
       if (this.hasAttribute("customizemode")) {
         return false;
@@ -322,19 +320,19 @@
       return this._lastAccessed == Infinity ? Date.now() : this._lastAccessed;
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Returns a timestamp which attempts to represent the last time the user saw this tab.
+     * If the tab has not been active in this session, any lastAccessed is used. We
+     * differentiate between selected and explicitly visible; a selected tab in a hidden
+     * window is last seen when that window and tab were last visible.
+     * We use the application start time as a fallback value when no other suitable value
+     * is available.
+     */
     get lastSeenActive() {
       const isForegroundWindow =
         this.documentGlobal ==
         BrowserWindowTracker.getTopWindow({ allowPopups: true });
-      
+      // the timestamp for the selected tab in the active window is always now
       if (isForegroundWindow && this.selected) {
         return Date.now();
       }
@@ -346,12 +344,12 @@
         !this._lastAccessed ||
         this._lastAccessed >= this.container.startupTime
       ) {
-        
-        
+        // When the tab was created this session but hasn't been seen by the user,
+        // default to the application start time.
         return this.container.startupTime;
       }
-      
-      
+      // The tab was restored from a previous session but never seen.
+      // Use the lastAccessed as the best proxy for when the user might have seen it.
       return this._lastAccessed;
     }
 
@@ -410,16 +408,16 @@
       return null;
     }
 
-    
-
-
+    /**
+     * @returns {boolean}
+     */
     get hasTabNote() {
       return this.hasAttribute("tab-note");
     }
 
-    
-
-
+    /**
+     * @param {boolean} val
+     */
     set hasTabNote(val) {
       this.toggleAttribute("tab-note", val);
     }
@@ -482,7 +480,7 @@
         }
       }
 
-      
+      // If the previous target wasn't part of this tab then this is a mouseenter event.
       if (!this.contains(event.relatedTarget)) {
         this._mouseenter();
       }
@@ -507,17 +505,17 @@
         }
       }
 
-      
+      // If the new target is not part of this tab then this is a mouseleave event.
       if (!this.contains(event.relatedTarget)) {
         this._mouseleave();
       }
     }
 
     on_dragstart(event) {
-      
-      
-      
-      
+      // We use "failed" drag end events that weren't cancelled by the user
+      // to detach tabs. Ensure that we do not show the drag image returning
+      // to its point of origin when this happens, as it makes the drag
+      // finishing feel very slow.
       event.dataTransfer.mozShowFailAnimation = false;
       if (event.eventPhase == Event.CAPTURING_PHASE) {
         this.style.MozUserFocus = "";
@@ -564,12 +562,12 @@
           if (!accelKey) {
             gBrowser.selectedTab = lastSelectedTab;
 
-            
+            // Make sure selection is cleared when tab-switch doesn't happen.
             gBrowser.clearMultiSelectedTabs();
           }
           gBrowser.addRangeToMultiSelectedTabs(lastSelectedTab, this);
         } else if (accelKey) {
-          
+          // Ctrl (Cmd for mac) key is pressed
           eventMaySelectTab = false;
           if (this.multiselected) {
             gBrowser.removeFromMultiSelectedTabs(this);
@@ -593,9 +591,9 @@
 
       if (eventMaySelectTab) {
         let prevTab = gBrowser.selectedTab;
-        
-        
-        
+        // super.on_mousedown sets gBrowser.selectedTab via the property setter,
+        // which calls setSelectedTab(val) without a metricsContext. We detect
+        // the change after the fact so we can supply the TAB_STRIP source.
         super.on_mousedown(event);
         if (gBrowser.selectedTab !== prevTab) {
           gBrowser.recordTabMetrics(
@@ -609,8 +607,8 @@
     }
 
     on_mouseup() {
-      
-      
+      // Make sure that clear-selection is released.
+      // Otherwise selection using Shift key may be broken.
       gBrowser.unlockClearMultiSelection();
 
       this.style.MozUserFocus = "";
@@ -652,8 +650,8 @@
         !event.target.classList.contains("tab-icon-overlay") &&
         !event.target.classList.contains("tab-audio-button")
       ) {
-        
-        
+        // Tabs were previously multi-selected and user clicks on a tab
+        // without holding Ctrl/Cmd Key
         gBrowser.clearMultiSelectedTabs();
       }
 
@@ -693,8 +691,8 @@
             ),
           });
         }
-        
-        
+        // This enables double-click protection for the tab container
+        // (see tabbrowser-tabs 'click' handler).
         gBrowser.tabContainer._blockDblClick = true;
       }
     }
@@ -704,7 +702,7 @@
         return;
       }
 
-      
+      // for the one-close-button case
       if (event.target.classList.contains("tab-close-button")) {
         event.stopPropagation();
       }
@@ -730,12 +728,12 @@
       if (!event.animationName.startsWith("tab-throbber-animation")) {
         return;
       }
-      
-      
+      // The animation is on a pseudo-element so we need to use `subtree: true`
+      // to get our hands on it.
       for (let animation of event.target.getAnimations({ subtree: true })) {
         if (animation.animationName === event.animationName) {
-          
-          
+          // Ensure all tab throbber animations are synchronized by sharing an
+          // start time.
           animation.startTime = 0;
         }
       }
@@ -747,23 +745,23 @@
       }
     }
 
-    
-
-
-
-
-
+    /**
+     * Removes the listeners set up by #endHoverUnlessPointerArrives, or null
+     * when no hover is waiting to be confirmed by the event state manager.
+     *
+     * @type {function|null}
+     */
     #stopWaitingForPointer = null;
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * @param {object} [options]
+     * @param {boolean} [options.withoutPointerEvent=false]
+     *   Set when the tab strip moved this tab under the pointer rather than the
+     *   pointer having moved onto the tab. The event state manager doesn't know
+     *   the pointer is here and so won't send the mouseout that normally ends
+     *   the hover, so end it from the next mouse event instead unless the event
+     *   state manager has agreed the pointer is here by then.
+     */
     _mouseenter({ withoutPointerEvent = false } = {}) {
       this._hover = true;
 
@@ -773,7 +771,7 @@
         this.linkedBrowser.unselectedTabHover(true);
       }
 
-      
+      // Prepare connection to host beforehand.
       SessionStore.speculativeConnectOnTabHover(this);
 
       this.dispatchEvent(new CustomEvent("TabHoverStart", { bubbles: true }));
@@ -827,13 +825,13 @@
       let browser = this.linkedBrowser;
       if (browser.audioMuted) {
         if (this.linkedPanel) {
-          
+          // "Lazy Browser" should not invoke its unmute method
           browser.browsingContext?.mediaController?.unmute();
         }
         this.removeAttribute("muted");
       } else {
         if (this.linkedPanel) {
-          
+          // "Lazy Browser" should not invoke its mute method
           browser.browsingContext?.mediaController?.mute();
         }
         this.toggleAttribute("muted", true);
@@ -843,17 +841,17 @@
       gBrowser._tabAttrModified(this, ["muted"]);
     }
 
-    
-    
-    
-    
-    
+    // The handler listening to this tab's MediaController audiblechange event,
+    // and the controller it is attached to. Both null when not registered. The
+    // controller is remembered so the listener is removed from the exact
+    // controller it was added to, even if the browsing context (and thus the
+    // current controller) changed in between.
     #audibleChangeHandler = null;
     #audibleChangeController = null;
 
-    
-    
-    
+    // Drive the soundplaying attribute from the parent-process MediaController's
+    // aggregated audibility (covers controllable and uncontrolled sources across
+    // cross-origin iframes). Re-registers against the current controller.
     registerAudibleChangeHandler() {
       this.unregisterAudibleChangeHandler();
       let mediaController =
@@ -878,8 +876,8 @@
           }
 
           if (modifiedAttrs.length) {
-            
-            
+            // Flush style so that the opacity takes effect immediately, in
+            // case the media is stopped before the style flushes naturally.
             getComputedStyle(this).opacity;
           }
 
@@ -889,11 +887,11 @@
             "browser.tabs.delayHidingAudioPlayingIconMS"
           );
 
-          
-          
-          
-          
-          
+          // When the tab is muted, the sound icon must be removed immediately
+          // without any anti-flicker grace period, because muting cannot be
+          // cancelled by a rapid re-audible event (loops stay inaudible while
+          // muted). Otherwise, apply a 300 ms floor to prevent icon flicker at
+          // loop boundaries.
           let effectiveDelay = this.linkedBrowser?.audioMuted
             ? removalDelay
             : Math.max(removalDelay, 300);
@@ -952,7 +950,7 @@
         "tab[aria-describedby]"
       );
       if (prevDescTab) {
-        
+        // We can only have a description for the focused tab.
         prevDescTab.removeAttribute("aria-describedby");
       }
       let desc = document.getElementById("tabbrowser-tab-a11y-desc");
@@ -978,10 +976,10 @@
 
     #updateOnTabGrouped() {
       if (this.group && this.#lastGroup != this.group) {
-        
-        
-        
-        
+        // Trigger TabGrouped on the tab group, not the tab itself. This is a
+        // bit unorthodox, but fixes bug1964152 where tab group events are not
+        // fired correctly when tabs change windows (because the tab is
+        // detached from the DOM at time of the event).
         this.group.dispatchEvent(
           new CustomEvent("TabGrouped", {
             bubbles: true,
@@ -994,22 +992,22 @@
 
     #updateOnTabUngrouped() {
       if (this.#lastGroup && this.#lastGroup != this.group) {
-        
-        
-        
-        
+        // Trigger TabUngrouped on the tab group, not the tab itself. This is a
+        // bit unorthodox, but fixes bug1964152 where tab group events are not
+        // fired correctly when tabs change windows (because the tab is
+        // detached from the DOM at time of the event).
         this.#lastGroup.dispatchEvent(
           new CustomEvent("TabUngrouped", {
             bubbles: true,
             detail: this,
           })
         );
-        
-        
+        // Tab could have moved to be ungrouped (level 1)
+        // or to a different group (level 2).
         this.setAttribute("aria-level", this.group ? 2 : 1);
-        
-        
-        
+        // `posinset` and `setsize` only need to be set explicitly
+        // on grouped tabs so that a11y tools can tell users that a
+        // given tab is "2 of 7" in the group, for example.
         this.removeAttribute("aria-posinset");
         this.removeAttribute("aria-setsize");
       }
@@ -1024,22 +1022,22 @@
     #updateOnTabUnsplit() {
       if (!this.splitview) {
         this.setAttribute("aria-level", 1);
-        
-        
-        
+        // `posinset` and `setsize` only need to be set explicitly
+        // on split view tabs so that a11y tools can tell users that a
+        // given tab is "1 of 2" in the split view, for example.
         this.removeAttribute("aria-posinset");
         this.removeAttribute("aria-setsize");
         this.removeAttribute("aria-label");
       }
     }
 
-    
-
-
-
-
-
-
+    /**
+     * Set `aria-label` for this tab to indicate that it's in a Split View,
+     * along with its position within the Split View.
+     *
+     * @param {number} index
+     *   The index of this tab in the Split View.
+     */
     updateSplitViewAriaLabel(index) {
       let l10nId = "";
       switch (index) {
