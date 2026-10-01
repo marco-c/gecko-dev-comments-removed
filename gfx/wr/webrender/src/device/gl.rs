@@ -1187,6 +1187,52 @@ pub enum StoreOp {
 
 
 
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct RenderState {
+    pub blend_mode: BlendMode,
+    pub depth_test: Option<DepthFunction>,
+    pub depth_write: bool,
+    pub color_write: bool,
+}
+
+impl Default for RenderState {
+    fn default() -> Self {
+        RenderState {
+            blend_mode: BlendMode::None,
+            depth_test: None,
+            depth_write: false,
+            color_write: true,
+        }
+    }
+}
+
+
+
+
+struct GlRenderStateCache {
+    blend_mode: Option<BlendMode>,
+    depth_test: Option<Option<DepthFunction>>,
+    depth_write: Option<bool>,
+    color_write: Option<bool>,
+}
+
+impl Default for GlRenderStateCache {
+    fn default() -> Self {
+        GlRenderStateCache {
+            blend_mode: None,
+            depth_test: None,
+            depth_write: None,
+            
+            
+            
+            color_write: Some(true),
+        }
+    }
+}
+
+
+
 #[derive(Debug, Copy, Clone)]
 pub struct RenderPassDescriptor {
     pub target: DrawTarget,
@@ -1494,12 +1540,9 @@ pub struct Device {
 
     
     
-    
-    
-    
-    
-    
-    
+    pending_state: RenderState,
+    gl_state: GlRenderStateCache,
+
     
     
     
@@ -2330,6 +2373,9 @@ impl Device {
             shader_include_closures: RefCell::new(FastHashMap::default()),
             surface_origin_is_top_left,
 
+            pending_state: RenderState::default(),
+            gl_state: GlRenderStateCache::default(),
+
             #[cfg(debug_assertions)]
             shader_is_ready: false,
 
@@ -2516,6 +2562,8 @@ impl Device {
 
         self.bound_draw_fbo = self.default_draw_fbo;
         self.gl.bind_framebuffer(gl::DRAW_FRAMEBUFFER, self.bound_draw_fbo.0);
+
+        self.gl_state = GlRenderStateCache::default();
     }
 
     fn compile_shader(
@@ -2623,6 +2671,7 @@ impl Device {
 
         
         self.reset_state();
+        self.gl.disable(gl::STENCIL_TEST);
 
         
         self.gl.pixel_store_i(gl::UNPACK_ALIGNMENT, 1);
@@ -3025,12 +3074,23 @@ impl Device {
         Ok(())
     }
 
+    
+    
     pub fn bind_program(&mut self, program: &Program) -> bool {
+        let state = self.pending_state;
+        self.bind_pipeline(program, &state)
+    }
+
+    
+    pub fn bind_pipeline(&mut self, program: &Program, state: &RenderState) -> bool {
         debug_assert!(self.inside_frame);
         debug_assert!(program.is_initialized());
         if !program.is_initialized() {
             return false;
         }
+
+        self.apply_render_state(state);
+
         #[cfg(debug_assertions)]
         {
             self.shader_is_ready = true;
@@ -4608,8 +4668,10 @@ impl Device {
         }
     }
 
+    
+    
     pub fn clear_target(
-        &self,
+        &mut self,
         color: Option<[f32; 4]>,
         depth: Option<f32>,
         rect: Option<FramebufferIntRect>,
@@ -4619,7 +4681,7 @@ impl Device {
     }
 
     fn clear_target_impl(
-        &self,
+        &mut self,
         color: Option<[f32; 4]>,
         depth: Option<f32>,
         rect: Option<FramebufferIntRect>,
@@ -4627,17 +4689,18 @@ impl Device {
         let mut clear_bits = 0;
 
         if let Some(color) = color {
+            if self.gl_state.color_write != Some(true) {
+                self.gl.color_mask(true, true, true, true);
+                self.gl_state.color_write = Some(true);
+            }
             self.gl.clear_color(color[0], color[1], color[2], color[3]);
             clear_bits |= gl::COLOR_BUFFER_BIT;
         }
 
         if let Some(depth) = depth {
-            if cfg!(debug_assertions) {
-                let mut mask = [0];
-                unsafe {
-                    self.gl.get_boolean_v(gl::DEPTH_WRITEMASK, &mut mask);
-                }
-                assert_ne!(mask[0], 0);
+            if self.gl_state.depth_write != Some(true) {
+                self.gl.depth_mask(true);
+                self.gl_state.depth_write = Some(true);
             }
             self.gl.clear_depth(depth as f64);
             clear_bits |= gl::DEPTH_BUFFER_BIT;
@@ -4663,28 +4726,20 @@ impl Device {
         }
     }
 
-    pub fn set_depth_test(&self, depth_func: Option<DepthFunction>) {
-        match depth_func {
-            Some(depth_func) => {
-                assert!(self.depth_available, "Enabling depth test without depth target");
-                self.gl.enable(gl::DEPTH_TEST);
-                self.gl.depth_func(depth_func.to_gl());
-            }
-            None => {
-                self.gl.disable(gl::DEPTH_TEST);
-            }
+    pub fn set_depth_test(&mut self, depth_func: Option<DepthFunction>) {
+        self.pending_state.depth_test = depth_func;
+        #[cfg(debug_assertions)]
+        {
+            self.shader_is_ready = false;
         }
     }
 
-    pub fn set_depth_write(&self, enable: bool) {
-        if enable {
-            assert!(self.depth_available, "Enabling depth write without depth target");
+    pub fn set_depth_write(&mut self, enable: bool) {
+        self.pending_state.depth_write = enable;
+        #[cfg(debug_assertions)]
+        {
+            self.shader_is_ready = false;
         }
-        self.gl.depth_mask(enable);
-    }
-
-    pub fn disable_stencil(&self) {
-        self.gl.disable(gl::STENCIL_TEST);
     }
 
     pub fn set_scissor_rect(&self, rect: FramebufferIntRect) {
@@ -4704,8 +4759,57 @@ impl Device {
         self.gl.disable(gl::SCISSOR_TEST);
     }
 
-    pub fn set_color_write(&self, enable: bool) {
-        self.gl.color_mask(enable, enable, enable, enable);
+    pub fn set_color_write(&mut self, enable: bool) {
+        self.pending_state.color_write = enable;
+        #[cfg(debug_assertions)]
+        {
+            self.shader_is_ready = false;
+        }
+    }
+
+    pub fn set_blend_mode(&mut self, mode: BlendMode) {
+        self.pending_state.blend_mode = mode;
+        #[cfg(debug_assertions)]
+        {
+            self.shader_is_ready = false;
+        }
+    }
+
+    
+    
+    fn apply_render_state(&mut self, state: &RenderState) {
+        if self.gl_state.blend_mode != Some(state.blend_mode) {
+            self.apply_blend_mode(state.blend_mode);
+            self.gl_state.blend_mode = Some(state.blend_mode);
+        }
+
+        if self.gl_state.depth_test != Some(state.depth_test) {
+            match state.depth_test {
+                Some(depth_func) => {
+                    assert!(self.depth_available, "Enabling depth test without depth target");
+                    self.gl.enable(gl::DEPTH_TEST);
+                    self.gl.depth_func(depth_func.to_gl());
+                }
+                None => {
+                    self.gl.disable(gl::DEPTH_TEST);
+                }
+            }
+            self.gl_state.depth_test = Some(state.depth_test);
+        }
+
+        if self.gl_state.depth_write != Some(state.depth_write) {
+            if state.depth_write {
+                assert!(self.depth_available, "Enabling depth write without depth target");
+            }
+            self.gl.depth_mask(state.depth_write);
+            self.gl_state.depth_write = Some(state.depth_write);
+        }
+
+        if self.gl_state.color_write != Some(state.color_write) {
+            let enable = state.color_write;
+            self.gl.color_mask(enable, enable, enable, enable);
+            self.gl_state.color_write = Some(enable);
+        }
     }
 
     fn set_blend(&mut self, enable: bool) {
@@ -4714,13 +4818,9 @@ impl Device {
         } else {
             self.gl.disable(gl::BLEND);
         }
-        #[cfg(debug_assertions)]
-        {
-            self.shader_is_ready = false;
-        }
     }
 
-    pub fn set_blend_mode(&mut self, mode: BlendMode) {
+    fn apply_blend_mode(&mut self, mode: BlendMode) {
         if mode == BlendMode::None {
             self.set_blend(false);
             return;
@@ -4751,10 +4851,6 @@ impl Device {
             self.gl.blend_func(color.0, color.1);
         } else {
             self.gl.blend_func_separate(color.0, color.1, alpha.0, alpha.1);
-        }
-        #[cfg(debug_assertions)]
-        {
-            self.shader_is_ready = false;
         }
     }
 
@@ -4842,10 +4938,6 @@ impl Device {
             MixBlendMode::Color => gl::HSL_COLOR_KHR,
             MixBlendMode::Luminosity => gl::HSL_LUMINOSITY_KHR,
         });
-        #[cfg(debug_assertions)]
-        {
-            self.shader_is_ready = false;
-        }
     }
 
     fn supports_extension(&self, extension: &str) -> bool {
