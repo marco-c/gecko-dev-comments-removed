@@ -488,7 +488,6 @@ macosx1500-aarch64-tests:
     - jsreftest
     - marionette-integration
     - marionette-unittest
-    - crashtest
     - mochitest-a11y
     - mochitest-browser-a11y
     - mochitest-browser-chrome
@@ -657,6 +656,9 @@ android-hw-speedometer-tests:
 android-em-arm64-benchmark-tests:
     - browsertime-benchmark-speedometer3-mobile
     - browsertime-benchmark-jetstream3
+
+android-hw-speedometer3-nightlyasrelease:
+    - browsertime-benchmark-speedometer3-mobile
 
 android-hw-power-tests:
     - browsertime-youtube-playback-power-mobile
