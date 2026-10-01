@@ -1,23 +1,22 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Oct 2024 13:42:00 +0000
-Subject: Bug 1921707 - add filtering for new build directory location in
- third_party/abseil-cpp/absl.gni r=ng
+From: Ryan VanderMeulen <rvandermeulen@mozilla.com>
+Date: Thu, 24 Sep 2026 00:02:08 -0400
+Subject: Bug 2038068 - use the C++11 thread identity mode on mingw.
 
-Differential Revision: https://phabricator.services.mozilla.com/D224546
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c4cbc65577ab4012dc243185d5d87c83e29b7446
+Upstream picks POSIX_SETSPECIFIC for mingw. The rest of the mingw Win32-path fix is upstream now (abseil#2155), but a -DABSL_FORCE_THREAD_IDENTITY_MODE in absl.gni would not reach consumers built outside gn: protobuf inlines absl::call_once, which calls CurrentThreadIdentityIfPresent, and that has no out-of-line definition in the C++11 mode. Changing the header keeps every includer on the same mode.
 ---
- abseil-cpp/absl.gni | 1 +
- 1 file changed, 1 insertion(+)
+ abseil-cpp/absl/base/internal/thread_identity.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/abseil-cpp/absl.gni b/abseil-cpp/absl.gni
-index 99de650cfb3..3632789e941 100644
---- a/abseil-cpp/absl.gni
-+++ b/abseil-cpp/absl.gni
-@@ -91,6 +91,7 @@ template("absl_source_set") {
-         modified_deps = []
-         foreach (dep, deps) {
-           newdep = string_replace(dep, "//third_party/abseil-cpp/", "//")
-+          newdep = string_replace(newdep, "//build", "//chromium/build")
-           modified_deps += [ newdep ]
-         }
-         deps = []
+diff --git a/abseil-cpp/absl/base/internal/thread_identity.h b/abseil-cpp/absl/base/internal/thread_identity.h
+index a9f26d06557..86fad8ceaa7 100644
+--- a/abseil-cpp/absl/base/internal/thread_identity.h
++++ b/abseil-cpp/absl/base/internal/thread_identity.h
+@@ -271,7 +271,7 @@ void ClearCurrentThreadIdentity();
+ #error ABSL_THREAD_IDENTITY_MODE cannot be directly set
+ #elif defined(ABSL_FORCE_THREAD_IDENTITY_MODE)
+ #define ABSL_THREAD_IDENTITY_MODE ABSL_FORCE_THREAD_IDENTITY_MODE
+-#elif defined(_WIN32) && !defined(__MINGW32__)
++#elif defined(_WIN32)
+ #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
+ #elif defined(__APPLE__) && defined(ABSL_HAVE_THREAD_LOCAL)
+ #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
