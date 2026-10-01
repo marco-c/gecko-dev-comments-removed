@@ -158,6 +158,11 @@ class nsDragSession : public nsBaseDragSession {
   
   mozilla::UniquePtr<DragTask> mRecentTask;
 
+  
+  
+  
+  bool mDragIsOverSourceWindow = true;
+
   gboolean Schedule(mozilla::UniquePtr<DragTask> aTask);
 
   void GetDragFlavors(nsTArray<nsCString>& aFlavors);

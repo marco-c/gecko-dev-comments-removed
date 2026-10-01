@@ -969,6 +969,11 @@ gboolean nsDragSession::Schedule(UniquePtr<DragTask> aTask) {
     return FALSE;
   }
 
+  
+  
+  
+  mDragIsOverSourceWindow = aTask->mWindow && aTask->mWindow == mSourceWindow;
+
   mNextScheduledTask = std::move(aTask);
 
   if (!mTaskSource) {
