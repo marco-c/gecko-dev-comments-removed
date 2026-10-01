@@ -244,6 +244,10 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   bool mDoomed = false;
 
   
+  
+  bool mInEvictionQueue = false;
+
+  
   bool mTRRSuccess = false;
 
   

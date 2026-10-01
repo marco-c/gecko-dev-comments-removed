@@ -65,6 +65,14 @@ class HostRecordQueue final {
       MOZ_REQUIRES(mLock);
 
  private:
+  
+  
+  
+  
+  
+  void PutInEvictionQ(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
+  void RemoveFromEvictionQ(nsHostRecord* aRec) MOZ_REQUIRES(mLock);
+
   Atomic<uint32_t> mPendingCount{0};
   Atomic<uint32_t> mEvictionQSize{0};
   LinkedList<RefPtr<nsHostRecord>> mHighQ;
