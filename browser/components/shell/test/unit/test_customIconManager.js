@@ -17,6 +17,12 @@ const { sinon } = ChromeUtils.importESModule(
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
+
+
+
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const {
   CustomIconManager,
   ICON_CATALOG,
@@ -24,6 +30,8 @@ const {
   resolveResourceId,
   OS_LIGHT,
   OS_DARK,
+  testOnlyShouldDisableCustomIcon,
+  testOnlyGoverningStartMenuShortcut,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/shell/CustomIconManager.sys.mjs"
 );
@@ -41,7 +49,16 @@ const PREF_ENABLED = "browser.shell.customIcon.enabled";
 const PREF_PER_USER_START_MENU_SHORTCUT_CREATED =
   "browser.shell.customIcon.perUserStartMenuShortcutCreated";
 const TEST_AUMID = "Test.Firefox.AUMID";
-const TEST_SHORTCUTS = ["C:\\fake\\Desktop\\Nightly.lnk"];
+const DESKTOP_SHORTCUT = "C:\\fake\\Desktop\\Nightly.lnk";
+const DESKTOP_ENTRY = { path: DESKTOP_SHORTCUT, location: "Desktop" };
+const COMMON_PROGRAMS_ENTRY = {
+  path: "C:\\fake\\CommonPrograms\\Nightly.lnk",
+  location: "CommonPrograms",
+};
+
+const TEST_SHORTCUTS = [DESKTOP_ENTRY, COMMON_PROGRAMS_ENTRY];
+
+const BRAND_LNK = AppConstants.MOZ_APP_DISPLAYNAME_DO_NOT_USE + ".lnk";
 const RETRO_RESOURCE_ID = ICON_CATALOG.retro2004.iconResourceId;
 
 
@@ -60,16 +77,24 @@ function exePath() {
 }
 
 
-function pinnedShortcut() {
-  return PathUtils.join(
-    Services.dirsvc.get("AppData", Ci.nsIFile).path,
-    "Microsoft",
-    "Internet Explorer",
-    "Quick Launch",
-    "User Pinned",
-    "TaskBar",
-    "Nightly.lnk"
-  );
+
+
+async function withFakeProgramsDir(callback) {
+  let dir = do_get_tempdir().clone();
+  dir.append("fake-programs");
+  await IOUtils.makeDirectory(dir.path, { ignoreExisting: true });
+  try {
+    Services.dirsvc.undefine("Progs");
+  } catch (ex) {
+    
+  }
+  Services.dirsvc.set("Progs", dir);
+  try {
+    await callback(dir.path);
+  } finally {
+    Services.dirsvc.undefine("Progs");
+    await IOUtils.remove(dir.path, { recursive: true });
+  }
 }
 
 let shellServiceMock = {
@@ -97,7 +122,13 @@ let spsInitStub;
 
 
 
-let hasSystemWideStartMenuShortcutStub;
+
+let shortcutStateStub;
+
+
+function fakeState(locations, slotTakenByOtherInstall = false) {
+  return { locations: new Set(locations), slotTakenByOtherInstall };
+}
 
 
 
@@ -112,8 +143,9 @@ function resetMocks() {
   winTaskbarMock.refreshTaskbarButtons.reset();
   spsInitStub.reset();
   spsInitStub.resolves();
-  hasSystemWideStartMenuShortcutStub.reset();
-  hasSystemWideStartMenuShortcutStub.resolves(true);
+  shortcutStateStub.reset();
+  
+  shortcutStateStub.resolves(fakeState(["Desktop", "CommonPrograms"]));
   Services.prefs.clearUserPref(PREF_ICON_ID);
   Services.prefs.setBoolPref(PREF_ENABLED, true);
   Services.prefs.clearUserPref(PREF_PER_USER_START_MENU_SHORTCUT_CREATED);
@@ -163,14 +195,11 @@ add_setup(function () {
   );
 
   spsInitStub = sinon.stub(lazy.SelectableProfileService, "init").resolves();
-  hasSystemWideStartMenuShortcutStub = sinon.stub(
-    CustomIconManager,
-    "hasSystemWideStartMenuShortcut"
-  );
+  shortcutStateStub = sinon.stub(CustomIconManager, "getInstallShortcutState");
 
   registerCleanupFunction(() => {
     spsInitStub.restore();
-    hasSystemWideStartMenuShortcutStub.restore();
+    shortcutStateStub.restore();
     MockRegistrar.unregister(taskbarCid);
     MockRegistrar.unregister(shellCid);
     Services.prefs.clearUserPref(PREF_ICON_ID);
@@ -207,8 +236,8 @@ add_task(
       shellServiceMock.setShortcutsIcon.getCall(0).args;
     Assert.deepEqual(
       shortcuts,
-      TEST_SHORTCUTS,
-      "passed the enumerated shortcuts through"
+      [DESKTOP_SHORTCUT],
+      "passed the enumerated shortcuts through, minus the common one"
     );
     Assert.equal(iconPath, exePath(), "icon source is the running executable");
     Assert.equal(
@@ -779,10 +808,7 @@ add_task(
   async function test_maybeCreatePerUserStartMenuShortcut_already_exists() {
     resetMocks();
 
-    let programsPath = Services.dirsvc.get("Progs", Ci.nsIFile).path;
-    shellServiceMock.enumerateInstallShortcuts.resolves([
-      programsPath + "\\Nightly.lnk",
-    ]);
+    shortcutStateStub.resolves(fakeState(["Programs"]));
 
     await CustomIconManager.maybeCreatePerUserStartMenuShortcut();
 
@@ -893,15 +919,35 @@ add_task(
 
 add_task(
   skipOnMsix(),
-  async function test_maybeCreatePerUserStartMenuShortcut_no_system_wide_shortcut() {
+  async function test_maybeCreatePerUserStartMenuShortcut_no_common_shortcut() {
     resetMocks();
-    hasSystemWideStartMenuShortcutStub.resolves(false);
+    shortcutStateStub.resolves(fakeState(["Desktop"]));
 
     await CustomIconManager.maybeCreatePerUserStartMenuShortcut();
 
     Assert.ok(
       shellServiceMock.createShortcut.notCalled,
-      "createShortcut not called when there is no system-wide shortcut to mirror"
+      "createShortcut not called when there is no common shortcut to mirror"
+    );
+  }
+);
+
+
+
+
+
+
+add_task(
+  skipOnMsix(),
+  async function test_maybeCreatePerUserStartMenuShortcut_slot_taken() {
+    resetMocks();
+    shortcutStateStub.resolves(fakeState(["Desktop", "CommonPrograms"], true));
+
+    await CustomIconManager.maybeCreatePerUserStartMenuShortcut();
+
+    Assert.ok(
+      shellServiceMock.createShortcut.notCalled,
+      "createShortcut not called when another install owns the shortcut name"
     );
   }
 );
@@ -932,17 +978,15 @@ add_task(
 
 add_task(
   skipOnMsix(),
-  async function test_maybeCreatePerUserStartMenuShortcut_enumeration_failure() {
+  async function test_maybeCreatePerUserStartMenuShortcut_state_unavailable() {
     resetMocks();
-    shellServiceMock.enumerateInstallShortcuts.rejects(
-      Components.Exception("mock enum failure", Cr.NS_ERROR_FAILURE)
-    );
+    shortcutStateStub.resolves(null);
 
     await CustomIconManager.maybeCreatePerUserStartMenuShortcut();
 
     Assert.ok(
       shellServiceMock.createShortcut.notCalled,
-      "createShortcut not attempted when enumeration fails"
+      "createShortcut not attempted when the state cannot be assessed"
     );
   }
 );
@@ -986,10 +1030,7 @@ add_task(
 
     await CustomIconManager.maybeCreatePerUserStartMenuShortcut();
 
-    Assert.ok(
-      shellServiceMock.enumerateInstallShortcuts.notCalled,
-      "no enumeration on MSIX"
-    );
+    Assert.ok(shortcutStateStub.notCalled, "no state assessment on MSIX");
     Assert.ok(
       shellServiceMock.createShortcut.notCalled,
       "no shortcut creation on MSIX"
@@ -1002,17 +1043,84 @@ add_task(
 
 
 
-add_task(skipOnMsix(), async function test_shouldDisable_shortcut_present() {
-  resetMocks();
-  Services.prefs.setBoolPref(PREF_PER_USER_START_MENU_SHORTCUT_CREATED, true);
-  hasSystemWideStartMenuShortcutStub.resolves(true);
-  shellServiceMock.enumerateInstallShortcuts.resolves([
-    Services.dirsvc.get("Progs", Ci.nsIFile).path + "\\Nightly.lnk",
-  ]);
 
+add_task(async function test_governingStartMenuShortcut() {
+  Assert.equal(
+    testOnlyGoverningStartMenuShortcut(
+      new Set(["Programs", "CommonPrograms", "Taskbar"])
+    ),
+    "user",
+    "a per-user Start Menu shortcut shadows the common one"
+  );
+  Assert.equal(
+    testOnlyGoverningStartMenuShortcut(
+      new Set(["Desktop", "CommonPrograms", "Taskbar"])
+    ),
+    "common",
+    "without a per-user shortcut the common one governs"
+  );
+  Assert.equal(
+    testOnlyGoverningStartMenuShortcut(new Set(["Desktop", "Taskbar"])),
+    null,
+    "no Start Menu shortcut exists to govern the icon"
+  );
+});
+
+
+
+
+
+add_task(async function test_shouldDisableCustomIcon() {
   Assert.ok(
-    !(await CustomIconManager.shouldDisableForMissingShortcut()),
-    "does not disable while the per-user Start Menu shortcut is present"
+    !testOnlyShouldDisableCustomIcon(
+      fakeState(["Programs", "CommonPrograms"]),
+      true
+    ),
+    "keeps the feature while our per-user shortcut shadows the common one"
+  );
+  Assert.ok(
+    testOnlyShouldDisableCustomIcon(
+      fakeState(["Desktop", "CommonPrograms"]),
+      true
+    ),
+    "disables when the unwritable common shortcut governs with no pin"
+  );
+  Assert.ok(
+    !testOnlyShouldDisableCustomIcon(
+      fakeState(["Taskbar", "CommonPrograms"]),
+      true
+    ),
+    "keeps the feature while a writable taskbar pin remains"
+  );
+  Assert.ok(
+    !testOnlyShouldDisableCustomIcon(fakeState(["Desktop"]), true),
+    "keeps the feature when the taskbar falls back to the window icon"
+  );
+  Assert.ok(
+    !testOnlyShouldDisableCustomIcon(fakeState(["CommonPrograms"]), false),
+    "before first creation the common shortcut can still be shadowed"
+  );
+  Assert.ok(
+    testOnlyShouldDisableCustomIcon(fakeState(["CommonPrograms"], true), false),
+    "disables when another install's shortcut blocks shadowing the governing common one"
+  );
+  Assert.ok(
+    !testOnlyShouldDisableCustomIcon(fakeState(["Desktop"], true), false),
+    "another install's shortcut is irrelevant when no common shortcut governs"
+  );
+  Assert.ok(
+    !testOnlyShouldDisableCustomIcon(
+      fakeState(["Programs", "CommonPrograms"], true),
+      true
+    ),
+    "another install's shortcut is irrelevant while our own per-user shortcut governs"
+  );
+  Assert.ok(
+    !testOnlyShouldDisableCustomIcon(
+      fakeState(["Taskbar", "CommonPrograms"], true),
+      false
+    ),
+    "a writable taskbar pin keeps the feature even when the shortcut name is blocked"
   );
 });
 
@@ -1021,31 +1129,21 @@ add_task(skipOnMsix(), async function test_shouldDisable_shortcut_present() {
 
 
 
-add_task(skipOnMsix(), async function test_shouldDisable_system_wide_governs() {
+add_task(skipOnMsix(), async function test_getInstallShortcutState_no_file() {
   resetMocks();
-  Services.prefs.setBoolPref(PREF_PER_USER_START_MENU_SHORTCUT_CREATED, true);
-  hasSystemWideStartMenuShortcutStub.resolves(true);
+  await withFakeProgramsDir(async () => {
+    let state = await shortcutStateStub.wrappedMethod.call(CustomIconManager);
 
-  Assert.ok(
-    await CustomIconManager.shouldDisableForMissingShortcut(),
-    "disables when the unwritable system-wide shortcut governs the taskbar"
-  );
-});
-
-
-
-
-
-add_task(skipOnMsix(), async function test_shouldDisable_pin_still_writable() {
-  resetMocks();
-  Services.prefs.setBoolPref(PREF_PER_USER_START_MENU_SHORTCUT_CREATED, true);
-  hasSystemWideStartMenuShortcutStub.resolves(true);
-  shellServiceMock.enumerateInstallShortcuts.resolves([pinnedShortcut()]);
-
-  Assert.ok(
-    !(await CustomIconManager.shouldDisableForMissingShortcut()),
-    "does not disable while a writable taskbar pin remains"
-  );
+    Assert.deepEqual(
+      [...state.locations].sort(),
+      ["CommonPrograms", "Desktop"],
+      "locations mirror the enumerated entries"
+    );
+    Assert.ok(
+      !state.slotTakenByOtherInstall,
+      "no foreign shortcut when no file with our brand name exists"
+    );
+  });
 });
 
 
@@ -1055,14 +1153,65 @@ add_task(skipOnMsix(), async function test_shouldDisable_pin_still_writable() {
 
 add_task(
   skipOnMsix(),
-  async function test_shouldDisable_window_icon_fallback() {
+  async function test_getInstallShortcutState_own_shortcut() {
     resetMocks();
-    Services.prefs.setBoolPref(PREF_PER_USER_START_MENU_SHORTCUT_CREATED, true);
-    hasSystemWideStartMenuShortcutStub.resolves(false);
+    await withFakeProgramsDir(async progsPath => {
+      let path = PathUtils.join(progsPath, BRAND_LNK);
+      await IOUtils.writeUTF8(path, "");
+      shellServiceMock.enumerateInstallShortcuts.resolves([
+        { path: path.toUpperCase(), location: "Programs" },
+      ]);
 
-    Assert.ok(
-      !(await CustomIconManager.shouldDisableForMissingShortcut()),
-      "does not disable when the taskbar falls back to the window icon"
+      let state = await shortcutStateStub.wrappedMethod.call(CustomIconManager);
+
+      Assert.ok(
+        !state.slotTakenByOtherInstall,
+        "the brand-named shortcut is recognized as our own"
+      );
+    });
+  }
+);
+
+
+
+
+
+
+add_task(
+  skipOnMsix(),
+  async function test_getInstallShortcutState_foreign_shortcut() {
+    resetMocks();
+    await withFakeProgramsDir(async progsPath => {
+      await IOUtils.writeUTF8(PathUtils.join(progsPath, BRAND_LNK), "");
+      
+      
+
+      let state = await shortcutStateStub.wrappedMethod.call(CustomIconManager);
+
+      Assert.ok(
+        state.slotTakenByOtherInstall,
+        "the brand-named shortcut belongs to another install"
+      );
+    });
+  }
+);
+
+
+
+
+
+add_task(
+  skipOnMsix(),
+  async function test_getInstallShortcutState_enumeration_failure() {
+    resetMocks();
+    shellServiceMock.enumerateInstallShortcuts.rejects(
+      Components.Exception("mock enum failure", Cr.NS_ERROR_FAILURE)
+    );
+
+    Assert.equal(
+      await shortcutStateStub.wrappedMethod.call(CustomIconManager),
+      null,
+      "state is null when enumeration fails"
     );
   }
 );
@@ -1078,7 +1227,31 @@ add_task(
     resetMocks();
     Services.prefs.setStringPref(PREF_ICON_ID, "retro2004");
     Services.prefs.setBoolPref(PREF_PER_USER_START_MENU_SHORTCUT_CREATED, true);
-    hasSystemWideStartMenuShortcutStub.resolves(true);
+
+    await CustomIconManager.ensureAppliedOrRevert();
+
+    Assert.ok(
+      !Services.prefs.getBoolPref(PREF_ENABLED, false),
+      "the feature is disabled"
+    );
+    Assert.ok(
+      winTaskbarMock.setAllWindowIcons.calledOnceWithExactly(0),
+      "the runtime icon is reverted to the default rather than applied"
+    );
+    Assert.ok(!Services.prefs.prefHasUserValue(PREF_ICON_ID), "pref cleared");
+  }
+);
+
+
+
+
+
+add_task(
+  skipOnMsix(),
+  async function test_ensureAppliedOrRevert_disables_for_foreign_shortcut() {
+    resetMocks();
+    Services.prefs.setStringPref(PREF_ICON_ID, "retro2004");
+    shortcutStateStub.resolves(fakeState(["Desktop", "CommonPrograms"], true));
 
     await CustomIconManager.ensureAppliedOrRevert();
 
