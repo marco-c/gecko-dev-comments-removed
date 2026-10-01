@@ -1963,6 +1963,20 @@ FullParseHandler::ModuleNodeResult Parser<FullParseHandler, Unit>::moduleBody(
       ->value()
       ->setClosedOver();
 
+  
+  
+  
+  if (!noteDeclaredName(
+          TaggedParserAtomIndex::WellKnown::star_deferred_namespace_star_(),
+          DeclarationKind::Const, pos())) {
+    return errorResult();
+  }
+  modulepc.varScope()
+      .lookupDeclaredName(
+          TaggedParserAtomIndex::WellKnown::star_deferred_namespace_star_())
+      ->value()
+      ->setClosedOver();
+
   if (!CheckParseTree(this->fc_, alloc_, stmtList)) {
     return errorResult();
   }
@@ -5087,16 +5101,70 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
     return errorResult();
   }
 
+  TokenKind next = TokenKind::Eof;
+  if (options().deferImportEval() && tt == TokenKind::Defer &&
+      !tokenStream.peekToken(&next)) {
+    return errorResult();
+  }
+
   ListNodeType importSpecSet =
       MOZ_TRY(handler_.newList(ParseNodeKind::ImportSpecList, pos()));
 
   ImportPhase phase = ImportPhase::Evaluation;
-  NameNodeType importSourceBinding;
+  NameNodeType importSourceBinding = null();
   if (tt == TokenKind::String) {
     
     
+    
     handler_.setEndPosition(importSpecSet, pos().begin);
+  } else if (options().deferImportEval() && tt == TokenKind::Defer &&
+             next == TokenKind::Mul) {
+    
+    phase = ImportPhase::Deferred;
+    tokenStream.consumeKnownToken(TokenKind::Mul);
+
+    
+    if (!mustMatchToken(TokenKind::As, JSMSG_AS_AFTER_IMPORT_STAR)) {
+      return errorResult();
+    }
+    if (!mustMatchToken(TokenKindIsPossibleIdentifierName,
+                        JSMSG_NO_BINDING_NAME)) {
+      return errorResult();
+    }
+
+    uint32_t begin = pos().begin;
+    TaggedParserAtomIndex bindingAtom = importedBinding();
+    if (!bindingAtom) {
+      return errorResult();
+    }
+
+    NameNodeType bindingNameNode;
+    MOZ_TRY_VAR_OR_RETURN(bindingNameNode, newName(bindingAtom), errorResult());
+
+    
+    
+    
+    if (!noteDeclaredName(bindingAtom, DeclarationKind::Const, pos())) {
+      return errorResult();
+    }
+
+    pc_->varScope().lookupDeclaredName(bindingAtom)->value()->setClosedOver();
+
+    
+    UnaryNodeType importSpec;
+    MOZ_TRY_VAR_OR_RETURN(
+        importSpec, handler_.newImportNamespaceSpec(begin, bindingNameNode),
+        errorResult());
+    handler_.addList(importSpecSet, importSpec);
+
+    if (!mustMatchToken(TokenKind::From, JSMSG_FROM_AFTER_IMPORT_CLAUSE)) {
+      return errorResult();
+    }
+    if (!mustMatchToken(TokenKind::String, JSMSG_MODULE_SPEC_AFTER_FROM)) {
+      return errorResult();
+    }
   } else {
+    
     if (tt == TokenKind::LeftCurly) {
       if (!namedImports(importSpecSet)) {
         return errorResult();
@@ -5190,6 +5258,8 @@ GeneralParser<ParseHandler, Unit>::importDeclaration() {
           return errorResult();
         }
 
+        
+        
         if (tt == TokenKind::Comma) {
           tokenStream.consumeKnownToken(tt);
           if (!tokenStream.getToken(&tt)) {
@@ -12371,10 +12441,10 @@ GeneralParser<ParseHandler, Unit>::importExpr(YieldHandling yieldHandling,
 
     if (options().sourcePhaseImports() && next == TokenKind::Source) {
       phase = ImportPhase::Source;
+    } else if (options().deferImportEval() && next == TokenKind::Defer) {
+      phase = ImportPhase::Deferred;
     } else {
-      error(JSMSG_UNEXPECTED_TOKEN,
-            options().sourcePhaseImports() ? "meta or source" : "meta",
-            TokenKindToDesc(next));
+      error(JSMSG_UNEXPECTED_TOKEN_NO_EXPECT, TokenKindToDesc(next));
       return errorResult();
     }
 

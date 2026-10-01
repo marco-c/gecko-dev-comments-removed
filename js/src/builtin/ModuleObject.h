@@ -65,7 +65,8 @@ class ImportAttribute {
 using ImportAttributeVector = GCVector<ImportAttribute, 0, SystemAllocPolicy>;
 
 
-enum class ImportPhase : uint8_t { Source, Evaluation, Limit };
+
+enum class ImportPhase : uint8_t { Source, Evaluation, Deferred, Limit };
 
 
 

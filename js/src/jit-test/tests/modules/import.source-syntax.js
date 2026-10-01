@@ -58,6 +58,5 @@ assertThrowsInstanceOf(() => Reflect.parse("import.source('module.js', {with: {t
 
 
 
-
-assertErrorMessage(() => Reflect.parse("import.foo('module.js')"), SyntaxError, /^expected meta or source, got /);
+assertErrorMessage(() => Reflect.parse("import.foo('module.js')"), SyntaxError, /^unexpected token: /);
 
