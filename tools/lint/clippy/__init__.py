@@ -202,45 +202,13 @@ def lint_gkrust(path_group, config, log, fix, root, lint_results):
     paths = list(expand_exclusions(path_group.paths, config, root))
     paths.sort()
     
-    
-    mach_path = root + "/mach"
-    
-    clippy_args = [
-        sys.executable,
-        mach_path,
-        "--log-no-times",
-        "cargo",
-        "clippy",
-    ]
+    cargo_args = ["clippy"]
     if fix:
-        clippy_args.extend(CLIPPY_FIX_ARGS)
+        cargo_args.extend(CLIPPY_FIX_ARGS)
     
     
-    clippy_args.extend(["--", "--keep-going", "--message-format=json"])
-    driver_flags = get_clippy_driver_flags(config)
-    
-    
-    
-    
-    
-    
-    flags = ["-W", "warnings"] + driver_flags
-    env = os.environ.copy()
-    env["extra_rustflags"] = " ".join(flags)
-    log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
-    completed_proc = subprocess.run(
-        clippy_args,
-        check=False,  
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    check_clippy_ran(completed_proc, "gkrust", log)
-    for l in completed_proc.stdout.splitlines():
-        handle_clippy_msg(config, l, log, root, paths, lint_results)
-
-    if fix and build_succeeded(completed_proc):
-        lint_results["fixed"] += 1
+    cargo_args.extend(["--", "--keep-going", "--message-format=json"])
+    run_clippy(cargo_args, "gkrust", paths, config, log, fix, root, lint_results)
 
 
 def lint_crate(path_group, config, log, fix, root, lint_results):
@@ -254,13 +222,7 @@ def lint_crate(path_group, config, log, fix, root, lint_results):
     
     
     
-    
-    
-    clippy_args = [
-        sys.executable,
-        root + "/mach",
-        "--log-no-times",
-        "cargo",
+    cargo_args = [
         "--message-format-json",
         "-p",
         path_group.crate_name,
@@ -268,12 +230,31 @@ def lint_crate(path_group, config, log, fix, root, lint_results):
         "--no-deps",
     ]
     if fix:
-        clippy_args.extend([*CLIPPY_FIX_ARGS, "--allow-dirty"])
-    
-    env = os.environ.copy()
-    env["extra_rustflags"] = " ".join(
-        ["-W", "warnings"] + get_clippy_driver_flags(config)
+        cargo_args.extend([*CLIPPY_FIX_ARGS, "--allow-dirty"])
+    run_clippy(
+        cargo_args, path_group.crate_name, None, config, log, fix, root, lint_results
     )
+
+
+def run_clippy(cargo_args, crate_name, paths, config, log, fix, root, lint_results):
+    """
+    Run `./mach cargo` with the given arguments and collect clippy's messages.
+
+    `paths` restricts the reported messages to those files; None keeps all of them.
+    """
+    
+    
+    clippy_args = [sys.executable, root + "/mach", "--log-no-times", "cargo"]
+    clippy_args.extend(cargo_args)
+    
+    
+    
+    
+    
+    
+    flags = ["-W", "warnings"] + get_clippy_driver_flags(config)
+    env = os.environ.copy()
+    env["extra_rustflags"] = " ".join(flags)
     log.debug("Run clippy with = {}".format(" ".join(clippy_args)))
     completed_proc = subprocess.run(
         clippy_args,
@@ -282,10 +263,9 @@ def lint_crate(path_group, config, log, fix, root, lint_results):
         text=True,
         env=env,
     )
-    check_clippy_ran(completed_proc, path_group.crate_name, log)
-
+    check_clippy_ran(completed_proc, crate_name, log)
     for l in completed_proc.stdout.splitlines():
-        handle_clippy_msg(config, l, log, root, None, lint_results)
+        handle_clippy_msg(config, l, log, root, paths, lint_results)
 
     if fix and build_succeeded(completed_proc):
         lint_results["fixed"] += 1
