@@ -7,10 +7,6 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 
 
 
@@ -111,10 +107,7 @@ const testcases = [
 ];
 
 function verifyEvents(expectedNumberOfEvents) {
-  const events = TelemetryTestUtils.getEvents({
-    category: "dom.quota.try",
-    method: "error",
-  });
+  const events = Glean.domQuotaTry.errorStep.testGetValue() ?? [];
 
   is(
     events.length,
@@ -146,10 +139,12 @@ function verifyEvents(expectedNumberOfEvents) {
 }
 
 async function testSteps() {
+  Services.fog.initializeFOG();
+
   for (const testcase of testcases) {
     for (const expectedInitResult of [false, true]) {
       
-      Services.telemetry.clearEvents();
+      Services.fog.testResetFOG();
 
       info(
         `Verifying the events when the initialization ` +

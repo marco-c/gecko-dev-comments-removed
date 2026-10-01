@@ -597,6 +597,7 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
     
     
     
+    
 
     mozilla::glean::dom_quota_try::ErrorStepExtra extra;
     extra.context = Some(MOZ_NO_VALIDATE(
