@@ -253,7 +253,6 @@ void gfxFT2FontBase::InitMetrics() {
   mFUnitsConvFactor = 0.0;
 
   if (MOZ_UNLIKELY(mStyle.AdjustedSizeMustBeZero())) {
-    memset(&mMetrics, 0, sizeof(mMetrics));  
     mSpaceGlyph = GetGlyph(' ');
     return;
   }
@@ -315,6 +314,13 @@ void gfxFT2FontBase::InitMetrics() {
   
   mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
 
+#ifdef MOZ_FONTATIONS
+  if (InitMetricsFromSkrifa()) {
+    InitExtraMetrics(GetAdjustedSize(), 0);
+    return;
+  }
+#endif
+
   
   
   FT_Face face = LockFTFace();
@@ -344,7 +350,7 @@ void gfxFT2FontBase::InitMetrics() {
     mMetrics.strikeoutOffset = 0.25 * emHeight;
     mMetrics.strikeoutSize = underlineSize;
 
-    SanitizeMetrics(&mMetrics, false);
+    SanitizeMetrics(false);
     UnlockFTFace();
     return;
   }
@@ -495,6 +501,11 @@ void gfxFT2FontBase::InitMetrics() {
   
   UnlockFTFace();
 
+  InitExtraMetrics(emHeight, lineHeight);
+}
+
+void gfxFT2FontBase::InitExtraMetrics(gfxFloat aEmHeight,
+                                      gfxFloat aLineHeight) {
   gfxFloat width;
   mSpaceGlyph = GetCharExtents(' ', &width);
   if (mSpaceGlyph) {
@@ -533,7 +544,7 @@ void gfxFT2FontBase::InitMetrics() {
       
       
       
-      mMetrics.xHeight = 0.5 * emHeight;
+      mMetrics.xHeight = 0.5 * aEmHeight;
     }
   }
 
@@ -560,7 +571,7 @@ void gfxFT2FontBase::InitMetrics() {
   
   
   
-  mMetrics.emHeight = floor(emHeight + 0.5);
+  mMetrics.emHeight = floor(aEmHeight + 0.5);
 
   
   
@@ -569,7 +580,8 @@ void gfxFT2FontBase::InitMetrics() {
 
   
   
-  lineHeight = floor(std::max(lineHeight, mMetrics.maxHeight) + 0.5);
+  const gfxFloat lineHeight =
+      floor(std::max(aLineHeight, mMetrics.maxHeight) + 0.5);
   mMetrics.externalLeading =
       lineHeight - mMetrics.internalLeading - mMetrics.emHeight;
 
@@ -579,7 +591,7 @@ void gfxFT2FontBase::InitMetrics() {
       sum > 0.0 ? mMetrics.emAscent * mMetrics.emHeight / sum : 0.0;
   mMetrics.emDescent = mMetrics.emHeight - mMetrics.emAscent;
 
-  SanitizeMetrics(&mMetrics, false);
+  SanitizeMetrics(false);
 
 #if 0
     

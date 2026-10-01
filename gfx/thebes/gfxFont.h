@@ -2403,21 +2403,21 @@ class gfxFont {
   
   
   
-  bool InitMetricsFromSfntTables(Metrics& aMetrics);
+  bool InitMetricsFromSfntTables();
 
 #if MOZ_FONTATIONS
   
   
-  bool InitMetricsFromSkrifa(Metrics& aMetrics);
+  bool InitMetricsFromSkrifa();
 #endif
 
   
   
-  void CalculateDerivedMetrics(Metrics& aMetrics);
+  void CalculateDerivedMetrics();
 
   
   
-  void SanitizeMetrics(Metrics* aMetrics, bool aIsBadUnderlineFont);
+  void SanitizeMetrics(bool aIsBadUnderlineFont);
 
   bool RenderSVGGlyph(gfxContext* aContext,
                       mozilla::layout::TextDrawTarget* aTextDrawer,
