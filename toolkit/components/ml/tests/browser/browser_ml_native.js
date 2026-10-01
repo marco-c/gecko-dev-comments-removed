@@ -447,10 +447,6 @@ add_task(async function test_ml_smoke_test_llama_overlap_guard() {
 
 
 
-
-
-
-
 add_task(
   async function test_ml_smoke_test_llama_abandoned_generator_allows_next() {
     const { cleanup } = await setup();
@@ -482,19 +478,10 @@ add_task(
       Assert.equal(chunks, 1, "Abandoned the generator after one chunk");
 
       
-      
-      
-      let blocked = false;
-      try {
-        await engine.run(request);
-      } catch (error) {
-        blocked = String(error?.message ?? error).includes(
-          "A generation is already in progress"
-        );
-      }
-      todo(
-        !blocked,
-        "sequential request after an abandoned generator should not be blocked by the LlamaRunner guard"
+      const result = await engine.run(request);
+      Assert.ok(
+        result.finalOutput.length,
+        "The request after an abandoned generator generated text"
       );
     } finally {
       await EngineProcess.destroyMLEngine();
