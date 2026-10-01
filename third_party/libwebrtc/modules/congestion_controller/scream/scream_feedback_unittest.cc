@@ -15,6 +15,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "modules/congestion_controller/scream/scream_v2_parameters.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -33,7 +34,7 @@ TEST(ScreamFeedbackTest, ParsesEmptyFeedback) {
   EXPECT_EQ(parsed.num_ce_marked_packets, 0);
   EXPECT_EQ(parsed.acked_not_marked_size, DataSize::Zero());
   EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::PlusInfinity());
-  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Zero());
+  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::MinusInfinity());
   EXPECT_EQ(parsed.feedback_hold_time, TimeDelta::Zero());
   EXPECT_EQ(parsed.rtt_sample, TimeDelta::Zero());
   EXPECT_EQ(parsed.num_lost_packets, 0);
@@ -64,7 +65,8 @@ TEST(ScreamFeedbackTest, ParsesReceivedPacketsMetrics) {
   msg.packet_feedbacks.push_back(packet1);
   msg.packet_feedbacks.push_back(packet2);
 
-  ScreamFeedback parsed = ParseScreamFeedback(msg);
+  ScreamV2Parameters params;
+  ScreamFeedback parsed = ParseScreamFeedback(msg, params);
 
   EXPECT_EQ(parsed.num_received_packets, 2);
   EXPECT_EQ(parsed.num_ce_marked_packets, 1);
@@ -73,8 +75,11 @@ TEST(ScreamFeedbackTest, ParsesReceivedPacketsMetrics) {
 
   
   
+  
   EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::Millis(50));
   EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Millis(60));
+  EXPECT_EQ(parsed.max_one_way_delay - parsed.min_one_way_delay,
+            TimeDelta::Millis(10));
 
   
   
@@ -83,6 +88,125 @@ TEST(ScreamFeedbackTest, ParsesReceivedPacketsMetrics) {
   
   
   EXPECT_EQ(parsed.rtt_sample, TimeDelta::Millis(130));
+}
+
+TEST(ScreamFeedbackTest, IgnoresDelayOfPacketsSentBeforeTailWindow) {
+  TransportPacketsFeedback msg;
+  msg.feedback_time = Timestamp::Millis(1200);
+
+  
+  PacketResult packet1;
+  packet1.sent_packet.send_time = Timestamp::Millis(900);
+  packet1.receive_time = Timestamp::Millis(950);
+
+  
+  
+  PacketResult packet2;
+  packet2.sent_packet.send_time = Timestamp::Millis(950);
+  packet2.receive_time = Timestamp::Millis(1020);
+
+  msg.packet_feedbacks.push_back(packet1);
+  msg.packet_feedbacks.push_back(packet2);
+
+  
+  
+  ScreamV2Parameters params;
+  ScreamFeedback parsed = ParseScreamFeedback(msg, params);
+  EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::Millis(70));
+  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Millis(70));
+  EXPECT_EQ(parsed.max_one_way_delay - parsed.min_one_way_delay,
+            TimeDelta::Zero());
+}
+
+TEST(ScreamFeedbackTest, ExtendsBurstWindowIfConsecutivePacketsWithinGap) {
+  TransportPacketsFeedback msg;
+  msg.feedback_time = Timestamp::Millis(1200);
+
+  
+  PacketResult p1;
+  p1.sent_packet.send_time = Timestamp::Millis(0);
+  p1.receive_time = Timestamp::Millis(50);
+
+  
+  PacketResult p2;
+  p2.sent_packet.send_time = Timestamp::Millis(1);
+  p2.receive_time = Timestamp::Millis(53);
+
+  
+  PacketResult p3;
+  p3.sent_packet.send_time = Timestamp::Millis(26);
+  p3.receive_time = Timestamp::Millis(81);
+
+  msg.packet_feedbacks = {p1, p2, p3};
+
+  
+  
+  
+  
+  ScreamV2Parameters params;
+  ScreamFeedback parsed = ParseScreamFeedback(msg, params);
+  EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::Millis(50));
+  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Millis(55));
+  EXPECT_EQ(parsed.max_one_way_delay - parsed.min_one_way_delay,
+            TimeDelta::Millis(5));
+}
+
+TEST(ScreamFeedbackTest, CapsBurstWindowAtMaxWindow) {
+  TransportPacketsFeedback msg;
+  msg.feedback_time = Timestamp::Millis(1200);
+
+  
+  for (int t = 0; t <= 100; t += 2) {
+    PacketResult p;
+    p.sent_packet.send_time = Timestamp::Millis(t);
+    
+    p.receive_time = Timestamp::Millis(t + (t < 50 ? 10 : 60));
+    msg.packet_feedbacks.push_back(p);
+  }
+
+  
+  
+  
+  
+  ScreamV2Parameters params;
+  ScreamFeedback parsed = ParseScreamFeedback(msg, params);
+  EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::Millis(60));
+  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Millis(60));
+}
+
+TEST(ScreamFeedbackTest,
+     RttAndOwdIncreaseIfDelayIncreasesWithinFeedbackMessage) {
+  ScreamV2Parameters params;
+
+  
+  
+  
+  
+  TransportPacketsFeedback msg;
+  msg.feedback_time = Timestamp::Millis(1350);
+
+  PacketResult early_packet;
+  early_packet.sent_packet.send_time = Timestamp::Millis(1000);
+  early_packet.receive_time = Timestamp::Millis(1050);  
+
+  PacketResult mid_packet;
+  mid_packet.sent_packet.send_time = Timestamp::Millis(1190);
+  mid_packet.receive_time = Timestamp::Millis(1320);  
+
+  PacketResult late_packet;
+  late_packet.sent_packet.send_time = Timestamp::Millis(1200);
+  late_packet.receive_time = Timestamp::Millis(1350);  
+
+  msg.packet_feedbacks = {early_packet, mid_packet, late_packet};
+
+  ScreamFeedback parsed = ParseScreamFeedback(msg, params);
+
+  
+  
+  
+  EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::Millis(130));
+  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Millis(150));
+  EXPECT_EQ(parsed.rtt_sample, TimeDelta::Millis(150));
 }
 
 TEST(ScreamFeedbackTest, ParsesLostAndRecoveredPackets) {
@@ -96,6 +220,7 @@ TEST(ScreamFeedbackTest, ParsesLostAndRecoveredPackets) {
 
   
   PacketResult packet2;
+  packet2.sent_packet.send_time = Timestamp::Millis(850);
   packet2.receive_time = Timestamp::Millis(900);
   packet2.reported_recovered_for_the_first_time = true;
 
@@ -106,6 +231,31 @@ TEST(ScreamFeedbackTest, ParsesLostAndRecoveredPackets) {
 
   EXPECT_EQ(parsed.num_lost_packets, 1);
   EXPECT_EQ(parsed.num_recovered_packets, 1);
+}
+
+TEST(ScreamFeedbackTest, ParsesNegativeOneWayDelay) {
+  TransportPacketsFeedback msg;
+  msg.feedback_time = Timestamp::Millis(1050);
+
+  PacketResult packet1;
+  packet1.sent_packet.send_time = Timestamp::Millis(1000);
+  packet1.receive_time = Timestamp::Millis(900);  
+  packet1.sent_packet.size = DataSize::Bytes(1000);
+
+  PacketResult packet2;
+  packet2.sent_packet.send_time = Timestamp::Millis(1000);
+  packet2.receive_time = Timestamp::Millis(920);  
+  packet2.sent_packet.size = DataSize::Bytes(1000);
+
+  msg.packet_feedbacks.push_back(packet1);
+  msg.packet_feedbacks.push_back(packet2);
+
+  ScreamFeedback parsed = ParseScreamFeedback(msg);
+
+  EXPECT_EQ(parsed.min_one_way_delay, TimeDelta::Millis(-100));
+  EXPECT_EQ(parsed.max_one_way_delay, TimeDelta::Millis(-80));
+  EXPECT_EQ(parsed.max_one_way_delay - parsed.min_one_way_delay,
+            TimeDelta::Millis(20));
 }
 
 }  

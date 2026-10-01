@@ -18,7 +18,9 @@
 namespace webrtc {
 
 struct ScreamV2Parameters {
+  ScreamV2Parameters();
   explicit ScreamV2Parameters(const FieldTrialsView& trials);
+  explicit ScreamV2Parameters(const FieldTrialsView* trials);
   ScreamV2Parameters(const ScreamV2Parameters& params) = default;
 
   
@@ -95,6 +97,15 @@ struct ScreamV2Parameters {
   
   
   FieldTrialParameter<TimeDelta> latency_diff_threshold;
+  
+  
+  FieldTrialParameter<TimeDelta> burst_window_min;
+  
+  
+  FieldTrialParameter<TimeDelta> burst_window_max;
+  
+  
+  FieldTrialParameter<TimeDelta> burst_window_max_gap;
 
   
   

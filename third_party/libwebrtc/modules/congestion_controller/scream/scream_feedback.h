@@ -17,6 +17,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "modules/congestion_controller/scream/scream_v2_parameters.h"
 
 namespace webrtc {
 
@@ -37,8 +38,9 @@ struct ScreamFeedback {
   DataSize acked_not_marked_size = DataSize::Zero();
 
   
+  
   TimeDelta min_one_way_delay = TimeDelta::PlusInfinity();
-  TimeDelta max_one_way_delay = TimeDelta::Zero();
+  TimeDelta max_one_way_delay = TimeDelta::MinusInfinity();
 
   
   
@@ -53,6 +55,8 @@ struct ScreamFeedback {
 };
 
 
+ScreamFeedback ParseScreamFeedback(const TransportPacketsFeedback& msg,
+                                   const ScreamV2Parameters& params);
 ScreamFeedback ParseScreamFeedback(const TransportPacketsFeedback& msg);
 
 }  
