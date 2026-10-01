@@ -4776,6 +4776,27 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: "noodle yellow-circle"
     }));
   }
+  renderLastCardImage(content) {
+    const {
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      ...image
+    } = content.center_image ?? {};
+    return external_React_default().createElement("div", {
+      className: "last-card-image",
+      style: {
+        "--last-card-image-width": width,
+        "--last-card-image-height": height,
+        "--last-card-picture-margin-block": marginBlock,
+        "--last-card-picture-margin-inline": marginInline
+      }
+    }, content.center_image ? this.renderPicture({
+      ...image,
+      className: "center-image"
+    }) : null);
+  }
   renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
     const position = resolveCornerImagePosition(cornerImage.position);
@@ -5131,7 +5152,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     }, content.logo && content.fullscreen ? this.renderPicture(content.logo) : null, isRtamo && content.fullscreen ? this.renderRTAMOIcon(addonType, this.props.themeScreenshots, this.props.addonIconURL) : null, content.title || content.subtitle ? external_React_default().createElement("div", {
       id: "multi-stage-message-welcome-text",
       className: `welcome-text ${content.title_style || ""}`
-    }, content.title ? this.renderTitle(content) : null, content.subtitle ? external_React_default().createElement(Localized, {
+    }, content.title ? this.renderTitle(content) : null, content.layout === "last-card" ? this.renderLastCardImage(content) : null, content.subtitle ? external_React_default().createElement(Localized, {
       text: content.subtitle
     }, external_React_default().createElement("h2", {
       "data-l10n-args": JSON.stringify({
@@ -5327,6 +5348,7 @@ const screenContentShape = {
   padding: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).number]),
   
   
+  
   layout: (prop_types_default()).string,
   
   
@@ -5424,6 +5446,40 @@ const screenContentShape = {
       
       delay: (prop_types_default()).string
     })
+  }),
+  
+  
+  center_image: prop_types_default().shape({
+    
+    imageURL: (prop_types_default()).string,
+    
+    darkModeImageURL: (prop_types_default()).string,
+    
+    reducedMotionImageURL: (prop_types_default()).string,
+    
+    darkModeReducedMotionImageURL: (prop_types_default()).string,
+    
+    
+    rtl: prop_types_default().shape({
+      imageURL: (prop_types_default()).string,
+      darkModeImageURL: (prop_types_default()).string,
+      reducedMotionImageURL: (prop_types_default()).string,
+      darkModeReducedMotionImageURL: (prop_types_default()).string
+    }),
+    
+    alt: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).object]),
+    
+    
+    width: (prop_types_default()).string,
+    
+    height: (prop_types_default()).string,
+    
+    
+    
+    marginBlock: (prop_types_default()).string,
+    
+    
+    marginInline: (prop_types_default()).string
   }),
   
   title: localizableThingPropTypes,
