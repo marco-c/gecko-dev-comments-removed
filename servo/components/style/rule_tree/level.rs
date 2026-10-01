@@ -126,12 +126,6 @@ impl CascadeOrigin {
 
     
     #[inline]
-    pub fn is_author_origin(self) -> bool {
-        self > Self::User
-    }
-
-    
-    #[inline]
     pub fn guard<'a>(&self, guards: &'a StylesheetGuards<'a>) -> &'a SharedRwLockReadGuard<'a> {
         match *self {
             Self::UA | Self::User => guards.ua_or_user,

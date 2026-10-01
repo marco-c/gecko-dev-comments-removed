@@ -124,18 +124,18 @@ class ComputedStyle {
   
   
   
-  bool HasAuthorSpecifiedBorderOrBackground() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_BORDER_BACKGROUND);
+  bool HasAuthorOrUserSpecifiedBorderOrBackground() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_BORDER_BACKGROUND);
   }
 
   
-  bool HasAuthorSpecifiedTextColor() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_COLOR);
+  bool HasAuthorOrUserSpecifiedTextColor() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_TEXT_COLOR);
   }
 
   
-  bool HasAuthorSpecifiedTextShadow() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_TEXT_SHADOW);
+  bool HasAuthorOrUserSpecifiedTextShadow() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_TEXT_SHADOW);
   }
 
   
@@ -215,8 +215,8 @@ class ComputedStyle {
     return bool(Flags() & Flag::IS_IN_OPACITY_ZERO_SUBTREE);
   }
 
-  bool HasAuthorSpecifiedGridAutoFlow() const {
-    return bool(Flags() & Flag::HAS_AUTHOR_SPECIFIED_GRID_AUTO_FLOW);
+  bool HasAuthorOrUserSpecifiedGridAutoFlow() const {
+    return bool(Flags() & Flag::HAS_AUTHOR_OR_USER_SPECIFIED_GRID_AUTO_FLOW);
   }
 
   bool HasAnchorPosReference() const;

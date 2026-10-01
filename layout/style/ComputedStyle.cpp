@@ -236,11 +236,11 @@ nsChangeHint ComputedStyle::CalcStyleDifference(const ComputedStyle& aNewStyle,
     }
   }
 
-  if (HasAuthorSpecifiedBorderOrBackground() !=
-      aNewStyle.HasAuthorSpecifiedBorderOrBackground()) {
+  if (HasAuthorOrUserSpecifiedBorderOrBackground() !=
+      aNewStyle.HasAuthorOrUserSpecifiedBorderOrBackground()) {
     const StyleAppearance appearance = StyleDisplay()->EffectiveAppearance();
     if (appearance != StyleAppearance::None &&
-        nsLayoutUtils::AuthorSpecifiedBorderBackgroundDisablesTheming(
+        nsLayoutUtils::AuthorOrUserSpecifiedBorderBackgroundDisablesTheming(
             appearance)) {
       
       
@@ -428,7 +428,7 @@ bool ComputedStyle::HasAnchorPosReference() const {
     return true;
   }
 
-  if (pos->mPositionAnchor.value.IsAuto()) {
+  if (pos->CanHaveDefaultAnchor()) {
     if (!pos->mPositionArea.IsNone()) {
       
       return true;
