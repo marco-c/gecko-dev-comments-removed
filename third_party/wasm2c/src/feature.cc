@@ -38,18 +38,20 @@ void Features::AddOptions(OptionParser* parser) {
 
 void Features::UpdateDependencies() {
   
-  if (exceptions_enabled_) {
-    reference_types_enabled_ = true;
-  }
-
-  
-  if (function_references_enabled_) {
-    reference_types_enabled_ = true;
+  if (gc_enabled_) {
+    function_references_enabled_ = true;
   }
 
   
   if (!bulk_memory_enabled_) {
     reference_types_enabled_ = false;
+  }
+  if (!reference_types_enabled_) {
+    exceptions_enabled_ = false;
+    function_references_enabled_ = false;
+  }
+  if (!function_references_enabled_) {
+    gc_enabled_ = false;
   }
 }
 

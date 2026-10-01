@@ -45,7 +45,9 @@ size_t LexerSource::Fill(void* dest, Offset size) {
 }
 
 Result LexerSource::Seek(Offset offset) {
-  if (offset < size_) {
+  
+  
+  if (offset <= size_) {
     read_offset_ = offset;
     return Result::Ok;
   }

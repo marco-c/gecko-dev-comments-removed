@@ -67,14 +67,10 @@ extern "C" {
 #include <windows.h>
 #define WASM_RT_MUTEX CRITICAL_SECTION
 #define WASM_RT_USE_CRITICALSECTION 1
-#elif defined(__APPLE__) || defined(__STDC_NO_THREADS__)
+#else
 #include <pthread.h>
 #define WASM_RT_MUTEX pthread_mutex_t
 #define WASM_RT_USE_PTHREADS 1
-#else
-#include <threads.h>
-#define WASM_RT_MUTEX mtx_t
-#define WASM_RT_USE_C11THREADS 1
 #endif
 
 #endif
@@ -129,7 +125,7 @@ extern "C" {
 
 
 #ifndef WASM_RT_USE_MMAP
-#if UINTPTR_MAX > 0xffffffff && !SUPPORT_MEMORY64
+#if UINTPTR_MAX > 0xffffffff
 #define WASM_RT_USE_MMAP 1
 #else
 #define WASM_RT_USE_MMAP 0
@@ -143,6 +139,9 @@ extern "C" {
 
 
 
+#ifndef WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION
+#define WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION 0
+#endif
 
 
 
@@ -151,8 +150,18 @@ extern "C" {
 
 
 
-#if UINTPTR_MAX > 0xffffffff && WASM_RT_USE_MMAP && !SUPPORT_MEMORY64 && \
-    !WABT_BIG_ENDIAN
+
+
+
+
+
+
+
+
+
+
+#if UINTPTR_MAX > 0xffffffff && WASM_RT_USE_MMAP && \
+    (WASM_RT_NONCONFORMING_ALLOW_OOB_READ_ELIMINATION || defined(__GNUC__))
 #define WASM_RT_GUARD_PAGES_SUPPORTED 1
 #else
 #define WASM_RT_GUARD_PAGES_SUPPORTED 0
@@ -248,10 +257,11 @@ extern "C" {
 
 
 
-#if WASM_RT_ALLOW_SEGUE && !WABT_BIG_ENDIAN &&                         \
-    (defined(__x86_64__) || defined(_M_X64)) && __clang__ &&           \
+#if WASM_RT_ALLOW_SEGUE && !WABT_BIG_ENDIAN &&                            \
+    (defined(__x86_64__) || defined(_M_X64)) && __clang__ &&              \
     (__clang_major__ >= 9) && __has_builtin(__builtin_ia32_wrgsbase64) && \
-    !defined(_WIN32) && defined(__linux__)
+    !defined(_WIN32) && !defined(__ANDROID__) &&                          \
+    (defined(__linux__) || defined(__FreeBSD__))
 #define WASM_RT_USE_SEGUE 1
 #else
 #define WASM_RT_USE_SEGUE 0
@@ -272,11 +282,13 @@ extern "C" {
 
 
 
+
+
 #if !defined(WASM_RT_STACK_DEPTH_COUNT) &&        \
     !defined(WASM_RT_STACK_EXHAUSTION_HANDLER) && \
     !WASM_RT_NONCONFORMING_UNCHECKED_STACK_EXHAUSTION
 
-#if WASM_RT_INSTALL_SIGNAL_HANDLER && !defined(_WIN32)
+#if WASM_RT_INSTALL_SIGNAL_HANDLER && !defined(_WIN32) && !WABT_BIG_ENDIAN
 #define WASM_RT_STACK_EXHAUSTION_HANDLER 1
 #else
 #define WASM_RT_STACK_DEPTH_COUNT 1
@@ -386,6 +398,7 @@ typedef enum {
   WASM_RT_TRAP_INVALID_CONVERSION, 
   WASM_RT_TRAP_UNREACHABLE,        
   WASM_RT_TRAP_CALL_INDIRECT,      
+  WASM_RT_TRAP_NULL_REF,           
   WASM_RT_TRAP_UNCAUGHT_EXCEPTION, 
   WASM_RT_TRAP_UNALIGNED,          
 #if WASM_RT_MERGED_OOB_AND_EXHAUSTION_TRAPS
@@ -404,6 +417,7 @@ typedef enum {
   WASM_RT_V128,
   WASM_RT_FUNCREF,
   WASM_RT_EXTERNREF,
+  WASM_RT_EXNREF,
 } wasm_rt_type_t;
 
 
@@ -468,11 +482,13 @@ typedef struct {
   
   uint8_t* data;
   
-  uint64_t pages;
+  uint8_t* data_end;
   
 
-
-
+  uint32_t page_size;
+  
+  uint64_t pages;
+  
   uint64_t max_pages;
   
   uint64_t size;
@@ -496,11 +512,14 @@ typedef struct {
 
   _Atomic volatile uint8_t* data;
   
-  uint64_t pages;
+
+  _Atomic volatile uint8_t* data_end;
   
 
-
-
+  uint32_t page_size;
+  
+  uint64_t pages;
+  
   uint64_t max_pages;
   
   uint64_t size;
@@ -568,13 +587,27 @@ typedef struct {
 } wasm_rt_jmp_buf;
 
 #ifndef _WIN32
-#define WASM_RT_SETJMP_SETBUF(buf) sigsetjmp(buf, 1)
+#define WASM_RT_SETJMP_TRAP_SETBUF(buf) sigsetjmp(buf, 1)
+
+
+
+
+
+
+
+
+
+
+#define WASM_RT_SETJMP_EXN_SETBUF(buf) sigsetjmp(buf, 0)
 #else
-#define WASM_RT_SETJMP_SETBUF(buf) setjmp(buf)
+#define WASM_RT_SETJMP_TRAP_SETBUF(buf) setjmp(buf)
+#define WASM_RT_SETJMP_EXN_SETBUF(buf) setjmp(buf)
 #endif
 
 #define WASM_RT_SETJMP(buf) \
-  ((buf).initialized = true, WASM_RT_SETJMP_SETBUF((buf).buffer))
+  ((buf).initialized = true, WASM_RT_SETJMP_TRAP_SETBUF((buf).buffer))
+#define WASM_RT_SETJMP_EXN(buf) \
+  ((buf).initialized = true, WASM_RT_SETJMP_EXN_SETBUF((buf).buffer))
 
 #ifndef _WIN32
 #define WASM_RT_LONGJMP_UNCHECKED(buf, val) siglongjmp(buf, val)
@@ -600,7 +633,10 @@ WASM_RT_NO_RETURN void wasm_rt_trap(wasm_rt_trap_t);
 
 const char* wasm_rt_strerror(wasm_rt_trap_t trap);
 
-#define wasm_rt_try(target) WASM_RT_SETJMP(target)
+#define wasm_rt_try(target) WASM_RT_SETJMP_EXN(target)
+
+
+#define WASM_DEFAULT_PAGE_SIZE 65536
 
 
 
@@ -616,7 +652,8 @@ const char* wasm_rt_strerror(wasm_rt_trap_t trap);
 void wasm_rt_allocate_memory(wasm_rt_memory_t*,
                              uint64_t initial_pages,
                              uint64_t max_pages,
-                             bool is64);
+                             bool is64,
+                             uint32_t page_size);
 
 
 
@@ -643,7 +680,8 @@ void wasm_rt_free_memory(wasm_rt_memory_t*);
 void wasm_rt_allocate_memory_shared(wasm_rt_shared_memory_t*,
                                     uint64_t initial_pages,
                                     uint64_t max_pages,
-                                    bool is64);
+                                    bool is64,
+                                    uint32_t page_size);
 
 
 uint64_t wasm_rt_grow_memory_shared(wasm_rt_shared_memory_t*, uint64_t pages);

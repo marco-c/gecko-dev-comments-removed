@@ -19,12 +19,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <span>
 
 namespace wabt {
 
 using Index = uint32_t;    
 using Address = uint64_t;  
 using Offset = size_t;     
+using ByteSpan = std::span<const uint8_t>;
 
 constexpr Address kInvalidAddress = ~0;
 constexpr Index kInvalidIndex = ~0;
