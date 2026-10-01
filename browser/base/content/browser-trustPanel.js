@@ -104,42 +104,6 @@ const ETP_DISABLED_ASSETS = {
   innerDescription: "trustpanel-description-disabled",
 };
 
-
-
-const BLOCKER_CLICK_METRICS = {
-  "tracking-content": "clickTrackers",
-  "social-tracking": "clickSocial",
-  "tracking-cookies": "clickCookies",
-  fingerprinter: "clickFingerprinters",
-  cryptominer: "clickCryptominers",
-};
-
-
-
-const OPENING_REASONS = {
-  SHIELD_BUTTON_CLICKED: "shieldButtonClicked",
-  EMBED_PLACEHOLDER_BUTTON: "embedPlaceholderButton",
-  UNKNOWN: "unknown",
-};
-
-
-const CLOSING_REASONS = {
-  DISMISSED: "dismissed",
-  NAVIGATED: "navigated",
-  ETP_TOGGLED: "etpToggled",
-  SITE_DATA_CLEARED: "siteDataCleared",
-  CLEAR_SITE_DATA_CANCELLED: "clearSiteDataCancelled",
-  PAGE_INFO_OPENED: "pageInfoOpened",
-  CERT_EXCEPTION_REMOVED: "certExceptionRemoved",
-  HTTPS_ONLY_CHANGED: "httpsOnlyChanged",
-  PRIVACY_SETTINGS_OPENED: "privacySettingsOpened",
-  SMARTBLOCK_TOGGLED: "smartblockToggled",
-  MONITOR_OPENED: "monitorOpened",
-};
-
-
-const HTTPS_ONLY_SETTINGS = ["on", "off", "off-temporarily"];
-
 const SMARTBLOCK_EMBED_INFO = [
   {
     matchPatterns: ["https://itisatracker.org/*"],
@@ -219,9 +183,7 @@ class TrustPanel {
   #lastBrowser = null;
 
   #popupToggleDelayTimer = null;
-  #openingReason = OPENING_REASONS.UNKNOWN;
-  #closingReason = null;
-  #shownAt = null;
+  #openingReason = null;
 
   #blockers = {
     SocialTracking,
@@ -255,9 +217,6 @@ class TrustPanel {
           "dismissBreachAlert",
           this.dismissBreachAlert.bind(this)
         );
-        breachAlertElement.addEventListener("breachAlertMonitorOpened", () => {
-          this.#closingReason = CLOSING_REASONS.MONITOR_OPENED;
-        });
       }
     });
   }
@@ -299,10 +258,7 @@ class TrustPanel {
       return; 
     }
 
-    this.showPopup({
-      event,
-      reason: OPENING_REASONS.SHIELD_BUTTON_CLICKED,
-    });
+    this.showPopup({ event, reason: "shieldButtonClicked" });
   }
 
   async onContentBlockingEvent(
@@ -360,7 +316,7 @@ class TrustPanel {
       document
         .getElementById("trustpanel-privacy-link")
         .addEventListener("click", () => {
-          this.#hidePopup(CLOSING_REASONS.PRIVACY_SETTINGS_OPENED);
+          this.#hidePopup();
           window.openTrustedLinkIn("about:preferences#privacy", "tab");
         });
       document
@@ -373,7 +329,7 @@ class TrustPanel {
         .addEventListener("click", () => this.#showSecurityPopup());
       document
         .getElementById("trustpanel-clear-cookie-cancel")
-        .addEventListener("click", () => this.#cancelClearSiteData());
+        .addEventListener("click", () => this.#hidePopup());
       document
         .getElementById("trustpanel-clear-cookie-clear")
         .addEventListener("click", () => this.#clearSiteData());
@@ -419,7 +375,7 @@ class TrustPanel {
 
     await this.#updatePopup();
 
-    this.#openingReason = opts.reason ?? OPENING_REASONS.UNKNOWN;
+    this.#openingReason = opts.reason;
 
     PanelMultiView.openPopup(this.#popup, anchor, {
       position: "bottomleft topleft",
@@ -439,13 +395,11 @@ class TrustPanel {
         breaches: applicableBreaches,
         hasMonitorAccountOrStoredPasswords,
       }),
-      opening_reason: this.#openingReason,
       trackers_blocked: blockedTrackersCount > 0,
     });
   }
 
-  async #hidePopup(reason) {
-    this.#closingReason = reason;
+  async #hidePopup() {
     let hidden = new Promise(c => {
       this.#popup.addEventListener("popuphidden", c, { once: true });
     });
@@ -550,7 +504,6 @@ class TrustPanel {
 
     
     if (this.#uri?.spec != uri.spec && this.#popup?.state == "open") {
-      this.#closingReason ??= CLOSING_REASONS.NAVIGATED;
       PanelMultiView.hidePopup(this.#popup);
     }
 
@@ -934,8 +887,7 @@ class TrustPanel {
   }
 
   async #showSecurityPopup() {
-    Glean.trustpanel.securityInfoPageInfoOpened.record();
-    await this.#hidePopup(CLOSING_REASONS.PAGE_INFO_OPENED);
+    await this.#hidePopup();
     window.BrowserCommands.pageInfo(null, "securityTab");
   }
 
@@ -948,9 +900,7 @@ class TrustPanel {
       this.#uri.port > 0 ? this.#uri.port : 443,
       gBrowser.contentPrincipal.originAttributes
     );
-    Glean.trustpanel.securityInfoCertExceptionRemoved.record();
     BrowserCommands.reloadSkipCache();
-    this.#closingReason = CLOSING_REASONS.CERT_EXCEPTION_REMOVED;
     PanelMultiView.hidePopup(this.#popup);
   }
 
@@ -1003,9 +953,6 @@ class TrustPanel {
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-securityInformationView", event.target);
-    Glean.trustpanel.securityInfoOpened.record({
-      connection: this.#connectionState(),
-    });
   }
 
   #openBlockerSubview(event) {
@@ -1018,7 +965,6 @@ class TrustPanel {
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-blockerView", event.target);
-    Glean.trustpanel.trackerListOpened.record();
   }
 
   async #openBlockerDetailsSubview(event, blocker, blocking) {
@@ -1062,11 +1008,6 @@ class TrustPanel {
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-blockerDetailsView", event.target);
-    
-    const metric = BLOCKER_CLICK_METRICS[blocker.l10nKeys.general];
-    if (metric) {
-      Glean.securityUiProtectionspopup[metric].record();
-    }
   }
 
   async #showClearCookiesSubview(event) {
@@ -1078,7 +1019,6 @@ class TrustPanel {
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-clearcookiesView", event.target);
-    Glean.trustpanel.clearCookiesOpened.record();
   }
 
   async #addButtons(section, blockers, blocking) {
@@ -1208,25 +1148,16 @@ class TrustPanel {
   #clearSiteData() {
     let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
     SiteDataManager.remove(baseDomain);
-    Glean.trustpanel.clearCookiesConfirmed.record();
-    this.#hidePopup(CLOSING_REASONS.SITE_DATA_CLEARED);
-  }
-
-  #cancelClearSiteData() {
-    Glean.trustpanel.clearCookiesCancelled.record();
-    this.#hidePopup(CLOSING_REASONS.CLEAR_SITE_DATA_CANCELLED);
+    this.#hidePopup();
   }
 
   #toggleTrackingProtection() {
     if (this.#trackingProtectionEnabled) {
       ContentBlockingAllowList.add(window.gBrowser.selectedBrowser);
-      Glean.securityUiProtectionspopup.clickEtpToggleOff.record();
     } else {
       ContentBlockingAllowList.remove(window.gBrowser.selectedBrowser);
-      Glean.securityUiProtectionspopup.clickEtpToggleOn.record();
     }
 
-    this.#closingReason = CLOSING_REASONS.ETP_TOGGLED;
     PanelMultiView.hidePopup(this.#popup);
     window.BrowserCommands.reload();
   }
@@ -1802,15 +1733,6 @@ class TrustPanel {
       );
     }
 
-    Glean.trustpanel.securityInfoHttpsOnlyChanged.record({
-      setting: HTTPS_ONLY_SETTINGS[newValue],
-    });
-
-    
-    
-    
-    this.#closingReason = CLOSING_REASONS.HTTPS_ONLY_CHANGED;
-
     
     
     if (this.#isAboutHttpsOnlyErrorPage) {
@@ -1916,7 +1838,6 @@ class TrustPanel {
         } else {
           this.#sendReblockMessageToSmartblock(shimId);
         }
-        this.#closingReason = CLOSING_REASONS.SMARTBLOCK_TOGGLED;
         PanelMultiView.hidePopup(this.#popup);
       });
 
@@ -1991,7 +1912,7 @@ class TrustPanel {
           { once: true }
         );
         multiview.setAttribute("mainViewId", "trustpanel-blockerView");
-        this.showPopup({ reason: OPENING_REASONS.EMBED_PLACEHOLDER_BUTTON });
+        this.showPopup({ reason: "embedPlaceholderButton" });
         break;
       }
     }
@@ -2019,27 +1940,20 @@ class TrustPanel {
         break;
       }
       case "popupshown":
-        
-        if (event.target == this.#popup) {
-          this.onPopupShown(event);
-        }
+        this.onPopupShown(event);
         break;
       case "popuphidden":
-        
-        if (event.target == this.#popup) {
-          this.onPopupHidden(event);
-        }
+        this.onPopupHidden(event);
         break;
     }
   }
 
   onPopupShown() {
-    this.#shownAt = performance.now();
     window.addEventListener("focus", this, true);
     PopupNotifications.suppressWhileOpen(this.#popup);
     
     
-    if (this.#openingReason == OPENING_REASONS.EMBED_PLACEHOLDER_BUTTON) {
+    if (this.#openingReason == "embedPlaceholderButton") {
       this.#disablePopupToggles();
       this.#popupToggleDelayTimer = setTimeout(() => {
         this.#enablePopupToggles();
@@ -2052,18 +1966,6 @@ class TrustPanel {
     for (let id of ["trust-icon-container", "identity-icon-box"]) {
       document.getElementById(id)?.removeAttribute("open");
     }
-
-    
-    if (this.#shownAt !== null) {
-      Glean.trustpanel.closed.record({
-        opening_reason: this.#openingReason,
-        closing_reason: this.#closingReason ?? CLOSING_REASONS.DISMISSED,
-        duration_ms: Math.round(performance.now() - this.#shownAt),
-      });
-    }
-
-    this.#shownAt = null;
-    this.#closingReason = null;
   }
 
   
