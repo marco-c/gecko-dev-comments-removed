@@ -2115,9 +2115,9 @@ nsresult WebSocket::CreateAndDispatchCloseEvent(bool aWasClean, uint16_t aCode,
   
   
   if (mImpl && mImpl->mChannel) {
-    mImpl->mService->WebSocketClosed(mImpl->mChannel->Serial(),
-                                     mImpl->mInnerWindowID, aWasClean, aCode,
-                                     aReason);
+    mImpl->mService->WebSocketClosed(
+        mImpl->mChannel->Serial(), mImpl->mInnerWindowID,
+        mImpl->mChannel->HttpChannelId(), aWasClean, aCode, aReason);
   }
 
   nsresult rv = CheckCurrentGlobalCorrectness();
