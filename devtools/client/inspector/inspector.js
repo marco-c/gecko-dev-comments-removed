@@ -879,13 +879,12 @@ class Inspector extends EventEmitter {
   };
 
   #createInspectorShortcuts = () => {
-    this.inspectorShortcuts = new KeyShortcuts({
-      window: this.panelDoc.defaultView,
+    this.inspectorShortcuts = new KeyShortcuts(
       
       
       
-      target: this.toolbox.getChromeEventHandler(),
-    });
+      this.toolbox.getChromeEventHandler()
+    );
 
     const searchboxKey = INSPECTOR_L10N.getStr("inspector.searchHTML.key");
     this.inspectorShortcuts.on(searchboxKey, event => {

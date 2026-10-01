@@ -65,20 +65,13 @@ const ElectronKeysMapping = {
 
 
 
-
-
 class KeyShortcuts {
   
 
 
 
-
-
-
-
-  constructor({ window, target }) {
-    this.window = window;
-    this.target = target || window;
+  constructor(target) {
+    this.target = target;
     this.keys = new Map();
     this.eventEmitter = new EventEmitter();
     this.target.addEventListener("keydown", this);

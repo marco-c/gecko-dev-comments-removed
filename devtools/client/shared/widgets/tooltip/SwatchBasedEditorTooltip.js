@@ -41,9 +41,7 @@ class SwatchBasedEditorTooltip extends EventEmitter {
 
     
     
-    this.shortcuts = new KeyShortcuts({
-      window: this.tooltip.doc.defaultView,
-    });
+    this.shortcuts = new KeyShortcuts(this.tooltip.doc.defaultView);
     this.shortcuts.on("Escape", event => {
       if (!this.tooltip.isVisible()) {
         return;

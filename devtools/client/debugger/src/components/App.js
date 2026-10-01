@@ -53,7 +53,7 @@ class App extends Component {
 
     
     
-    this.#shortcuts = new KeyShortcuts({ window });
+    this.#shortcuts = new KeyShortcuts(window);
 
     this.state = {
       shortcutsModalEnabled: false,

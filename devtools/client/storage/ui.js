@@ -303,9 +303,7 @@ class StorageUI extends EventEmitter {
     await this._initL10NStringsMap();
 
     
-    const shortcuts = new KeyShortcuts({
-      window: this._panelDoc.defaultView,
-    });
+    const shortcuts = new KeyShortcuts(this._panelDoc.defaultView);
     const key = this._l10nStrings.get("storage-filter-key");
     shortcuts.on(key, event => {
       event.preventDefault();

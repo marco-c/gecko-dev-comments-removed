@@ -1419,9 +1419,7 @@ class MarkupView extends EventEmitter {
 
 
   _initShortcuts() {
-    const shortcuts = new KeyShortcuts({
-      window: this.win,
-    });
+    const shortcuts = new KeyShortcuts(this.win);
 
     
     
