@@ -5,6 +5,7 @@
 #ifndef LlamaRuntimeLinker_h_
 #define LlamaRuntimeLinker_h_
 
+#include "mozilla/Atomics.h"
 #include "llama/llama.h"
 #include "ggml.h"
 #include "ggml-backend.h"
@@ -147,6 +148,7 @@ class LlamaRuntimeLinker {
   };
 
   
+  
   static bool Init();
 
   
@@ -162,7 +164,7 @@ class LlamaRuntimeLinker {
 
  private:
   static LlamaLibWrapper sLlamaLib;
-  static LinkStatus sLinkStatus;
+  static Atomic<LinkStatus> sLinkStatus;
 };
 
 }  
