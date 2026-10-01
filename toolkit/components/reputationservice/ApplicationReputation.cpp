@@ -433,6 +433,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
+    
     ".seplugin",  
     ".service",   
     

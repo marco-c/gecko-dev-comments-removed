@@ -213,6 +213,7 @@ static const char* const kTestFileExtensions[] = {
     ".scr",                
     ".sct",                
     ".search-ms",          
+    ".searchConnector-ms", 
     ".seplugin",           
     ".service",            
     ".settingcontent-ms",  
