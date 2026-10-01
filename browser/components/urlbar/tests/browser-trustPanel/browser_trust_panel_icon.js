@@ -100,6 +100,21 @@ async function waitForTrustIconWithoutClass(className, message) {
   );
 }
 
+
+
+
+
+
+
+
+
+async function waitForContentBlockingLog(browser) {
+  await TestUtils.waitForCondition(
+    () => Object.keys(JSON.parse(browser.getContentBlockingLog())).length,
+    "Waiting for the content-blocking log to record the blocked tracker"
+  );
+}
+
 add_task(async function test_breached_urlbar_icon_animation_logic() {
   let tab1;
   let tab2;
@@ -533,11 +548,7 @@ add_task(async function test_tracker_count_hidden_when_feature_gate_disabled() {
       content.postMessage("cryptomining", "*");
     });
 
-    
-    
-    
-    
-    await new Promise(r => setTimeout(r, 500));
+    await waitForContentBlockingLog(tab.linkedBrowser);
 
     Assert.ok(
       !trustIconContainer().classList.contains("has-blocked-trackers"),
@@ -567,11 +578,7 @@ add_task(async function test_tracker_count_hidden_when_pref_disabled() {
       content.postMessage("cryptomining", "*");
     });
 
-    
-    
-    
-    
-    await new Promise(r => setTimeout(r, 500));
+    await waitForContentBlockingLog(tab.linkedBrowser);
 
     Assert.ok(
       !trustIconContainer().classList.contains("has-blocked-trackers"),
@@ -579,6 +586,52 @@ add_task(async function test_tracker_count_hidden_when_pref_disabled() {
     );
   } finally {
     await BrowserTestUtils.removeTab(tab);
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+
+
+
+
+
+add_task(async function test_no_tracker_count_on_tab_switch_when_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.trackerCount.enabled", false]],
+  });
+
+  await PlacesUtils.history.clear();
+
+  const trackingTab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: TRACKING_PAGE,
+    waitForLoad: true,
+  });
+
+  try {
+    await SpecialPowers.spawn(trackingTab.linkedBrowser, [], () => {
+      content.postMessage("cryptomining", "*");
+    });
+
+    
+    await waitForContentBlockingLog(trackingTab.linkedBrowser);
+
+    const otherTab = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser,
+      opening: "about:blank",
+      waitForLoad: true,
+    });
+
+    await BrowserTestUtils.switchTab(gBrowser, trackingTab);
+
+    Assert.ok(
+      !trustIconContainer().classList.contains("has-blocked-trackers"),
+      "has-blocked-trackers class should not appear after switching back when the tracker count is disabled"
+    );
+
+    await BrowserTestUtils.removeTab(otherTab);
+  } finally {
+    await BrowserTestUtils.removeTab(trackingTab);
     await SpecialPowers.popPrefEnv();
   }
 });
