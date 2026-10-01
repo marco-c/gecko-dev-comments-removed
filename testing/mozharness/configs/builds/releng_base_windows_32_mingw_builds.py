@@ -45,6 +45,5 @@ config = {
         
         "PATH": "/usr/local/bin:/bin:/usr/bin",
     },
-    "mozconfig_platform": "win32",
     
 }
