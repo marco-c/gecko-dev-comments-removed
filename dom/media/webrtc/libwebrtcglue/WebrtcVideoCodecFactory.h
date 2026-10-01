@@ -80,6 +80,13 @@ class WebrtcVideoDecoderFactory : public GmpPluginNotifier,
   static RefPtr<PlatformDecoderModule::SupportsDecoderPromise> SupportsCodec(
       const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
 
+  
+  
+  
+  static RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
+  StrictSupportsCodec(const MediaExtendedMIMEType& aMime,
+                      const SupportDecoderParams& aParams);
+
  private:
   const std::string mPCHandle;
   const TrackingId mTrackingId;
