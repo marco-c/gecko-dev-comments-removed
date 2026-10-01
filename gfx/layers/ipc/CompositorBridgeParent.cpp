@@ -60,6 +60,9 @@
 #include "mozilla/mozalloc.h"                          
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/webrender/WebRenderAPI.h"
+#ifndef MOZ_WIDGET_UIKIT
+#  include "mozilla/widget/HeadlessCompositorWidgetParent.h"
+#endif
 #include "nsCOMPtr.h"         
 #include "nsDebug.h"          
 #include "nsISupportsImpl.h"  
@@ -1521,6 +1524,16 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
     return nullptr;
   }
 
+#  ifndef MOZ_WIDGET_UIKIT
+  if (aInitData.type() ==
+      CompositorWidgetInitData::THeadlessCompositorWidgetInitData) {
+    RefPtr widget = MakeRefPtr<widget::HeadlessCompositorWidgetParent>(
+        aInitData.get_HeadlessCompositorWidgetInitData(), mOptions);
+    mWidget = widget;
+    return widget.forget();
+  }
+#  endif
+
   RefPtr widget =
       MakeRefPtr<widget::CompositorWidgetParent>(aInitData, mOptions);
 
@@ -1536,6 +1549,10 @@ CompositorBridgeParent::AllocPCompositorWidgetParent(
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvPCompositorWidgetConstructor(
     PCompositorWidgetParent* actor, CompositorWidgetInitData&& aInitData) {
+  if (aInitData.type() ==
+      CompositorWidgetInitData::THeadlessCompositorWidgetInitData) {
+    return IPC_OK();
+  }
   
   
   

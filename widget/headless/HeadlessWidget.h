@@ -133,7 +133,7 @@ class HeadlessWidget final : public nsIWidget {
   bool mVisible;
   bool mDestroyed;
   bool mAlwaysOnTop;
-  HeadlessCompositorWidget* mCompositorWidget;
+  CompositorWidgetDelegate* mCompositorWidgetDelegate;
   nsSizeMode mSizeMode;
   
   nsSizeMode mLastSizeMode;
