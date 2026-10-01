@@ -187,7 +187,7 @@ TEST_F(Pkcs11Pbkdf2Test, KeyLenSizes) {
 
 
 static SECAlgorithmID MakePbkdf2AlgId(uint8_t* params,
-                                       unsigned int params_len) {
+                                      unsigned int params_len) {
   SECAlgorithmID algid = {};
   SECOidData* oid = SECOID_FindOIDByTag(SEC_OID_PKCS5_PBKDF2);
   if (oid) {

@@ -902,6 +902,43 @@ savecipher(int c)
         cipherlist[nciphers++] = (PRUint16)c;
 }
 
+
+#define CLOSE_DRAIN_SECONDS 1
+
+
+
+
+
+
+
+
+
+
+
+static void
+closeConnection(PRFileDesc *fd)
+{
+    
+
+    char drain[512];
+    PRIntervalTime timeout = PR_SecondsToInterval(CLOSE_DRAIN_SECONDS);
+    PRIntervalTime start = PR_IntervalNow();
+    PRIntervalTime elapsed;
+
+    
+
+    if (PR_Shutdown(fd, PR_SHUTDOWN_SEND) == PR_SUCCESS) {
+        while ((elapsed = PR_IntervalNow() - start) < timeout) {
+            
+
+            if (PR_Recv(fd, drain, sizeof drain, 0, timeout - elapsed) <= 0) {
+                break;
+            }
+        }
+    }
+    PR_Close(fd);
+}
+
 #ifdef FULL_DUPLEX_CAPABLE
 
 struct lockedVarsStr {
@@ -1049,9 +1086,9 @@ handle_fdx_connection(
 
 cleanup:
     if (ssl_sock) {
-        PR_Close(ssl_sock);
+        closeConnection(ssl_sock);
     } else if (tcp_sock) {
-        PR_Close(tcp_sock);
+        closeConnection(tcp_sock);
     }
 
     VLOG(("selfserv: handle_fdx_connection: exiting"));
@@ -1628,9 +1665,9 @@ handle_connection(PRFileDesc *tcp_sock, PRFileDesc *model_sock)
 
 cleanup:
     if (ssl_sock) {
-        PR_Close(ssl_sock);
+        closeConnection(ssl_sock);
     } else if (tcp_sock) {
-        PR_Close(tcp_sock);
+        closeConnection(tcp_sock);
     }
     if (local_file_fd)
         PR_Close(local_file_fd);
