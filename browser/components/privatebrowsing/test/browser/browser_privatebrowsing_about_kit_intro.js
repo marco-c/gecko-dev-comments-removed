@@ -7,6 +7,9 @@
 const REDESIGN_PREF = "browser.privateWindowRedesign.enabled";
 const SHOWN_PREF = "browser.privatebrowsing.introAnimationShown";
 
+
+const NOVA_PREF = "browser.nova.enabled";
+
 add_setup(async function () {
   registerCleanupFunction(async () => {
     await ASRouter.resetMessageState();
@@ -15,7 +18,12 @@ add_setup(async function () {
 
 
 add_task(async function test_intro_absent_without_experiment() {
-  await SpecialPowers.pushPrefEnv({ set: [[REDESIGN_PREF, false]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [NOVA_PREF, true],
+      [REDESIGN_PREF, false],
+    ],
+  });
 
   let { win, tab } = await openTabAndWaitForRender();
   await SpecialPowers.spawn(tab, [], async function () {
@@ -37,6 +45,7 @@ add_task(async function test_intro_absent_without_experiment() {
 add_task(async function test_intro_plays_on_first_run() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      [NOVA_PREF, true],
       [REDESIGN_PREF, true],
       [SHOWN_PREF, false],
       ["ui.prefersReducedMotion", 0],
@@ -57,6 +66,10 @@ add_task(async function test_intro_plays_on_first_run() {
       circle.classList.contains("playing"),
       "The circle is in the playing state"
     );
+    ok(
+      content.document.documentElement.classList.contains("intro-playing"),
+      "The sequential fade-in of the rest of the page is driven"
+    );
   });
 
   await BrowserTestUtils.closeWindow(win);
@@ -67,6 +80,7 @@ add_task(async function test_intro_plays_on_first_run() {
 add_task(async function test_intro_does_not_replay_when_seen() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      [NOVA_PREF, true],
       [REDESIGN_PREF, true],
       [SHOWN_PREF, true],
     ],
@@ -87,6 +101,10 @@ add_task(async function test_intro_does_not_replay_when_seen() {
       !circle.classList.contains("playing"),
       "The circle is not in the playing state"
     );
+    ok(
+      !content.document.documentElement.classList.contains("intro-playing"),
+      "The rest of the page is not faded in again"
+    );
   });
 
   await BrowserTestUtils.closeWindow(win);
@@ -98,6 +116,7 @@ add_task(async function test_intro_persists_seen_flag() {
   Services.prefs.clearUserPref(SHOWN_PREF);
   await SpecialPowers.pushPrefEnv({
     set: [
+      [NOVA_PREF, true],
       [REDESIGN_PREF, true],
       ["ui.prefersReducedMotion", 0],
     ],
@@ -127,6 +146,7 @@ add_task(async function test_intro_persists_seen_flag() {
 add_task(async function test_intro_respects_reduced_motion() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      [NOVA_PREF, true],
       [REDESIGN_PREF, true],
       [SHOWN_PREF, false],
       ["ui.prefersReducedMotion", 1],
@@ -141,6 +161,261 @@ add_task(async function test_intro_respects_reduced_motion() {
       !intro.wrappedJSObject.play,
       "The intro does not play under reduced motion"
     );
+    ok(
+      !content.document.documentElement.classList.contains("intro-playing"),
+      "The page is not staggered in under reduced motion"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function test_intro_sequence_is_ordered() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [NOVA_PREF, true],
+      [REDESIGN_PREF, true],
+      [SHOWN_PREF, false],
+      ["ui.prefersReducedMotion", 0],
+    ],
+  });
+
+  let { win, tab } = await openTabAndWaitForRender();
+  await SpecialPowers.spawn(tab, [], async function () {
+    const intro = content.document.querySelector("private-browsing-mask-intro");
+    await intro.wrappedJSObject.updateComplete;
+
+    const timing = el => {
+      const style = content.getComputedStyle(el);
+      return {
+        delay: parseFloat(style.animationDelay),
+        duration: parseFloat(style.animationDuration),
+        fill: style.animationFillMode,
+      };
+    };
+
+    
+    const mask = timing(intro.shadowRoot.querySelector(".mask"));
+    const header = timing(content.document.querySelector(".nova-tagline"));
+    is(
+      mask.delay,
+      header.delay,
+      "The mask and the header start fading in together"
+    );
+    is(
+      mask.duration,
+      header.duration,
+      "The mask and the header fade over the same duration"
+    );
+
+    const steps = [
+      ["header", content.document.querySelector(".nova-tagline")],
+      ["sub-header", content.document.querySelector(".nova-subheader")],
+      ["search bar", content.document.querySelector(".search-inner-wrapper")],
+    ];
+
+    let previous = null;
+    for (const [name, el] of steps) {
+      const step = timing(el);
+      Assert.greater(step.duration, 0, `The ${name} has an intro animation`);
+      is(
+        step.fill,
+        "backwards",
+        `The ${name} is held at its start state through its delay`
+      );
+
+      if (previous) {
+        Assert.greater(
+          step.delay,
+          previous.timing.delay,
+          `The ${name} starts after the ${previous.name} (${step.delay}s > ${previous.timing.delay}s)`
+        );
+        
+        
+        
+        const gap =
+          step.delay - (previous.timing.delay + previous.timing.duration);
+        Assert.lessOrEqual(
+          gap,
+          0,
+          `The ${name} starts before the ${previous.name} finishes (gap ${gap}s)`
+        );
+      }
+      previous = { name, timing: step };
+    }
+
+    Assert.greaterOrEqual(
+      steps.length,
+      3,
+      `Checked ${steps.length} steps of the sequence`
+    );
+
+    
+    
+    const subheader = content.document.querySelector(".nova-subheader");
+    const [revealAnim] = subheader.getAnimations();
+    const lastFrame = revealAnim.effect.getKeyframes().at(-1);
+    ok(
+      !lastFrame.clipPath.includes("-"),
+      `The sub-header wipe ends at its bottom edge (${lastFrame.clipPath})`
+    );
+
+    const searchBar = timing(
+      content.document.querySelector(".search-inner-wrapper")
+    );
+    const basicsLink = timing(
+      content.document.getElementById("private-window-basics")
+    );
+    is(
+      basicsLink.delay,
+      searchBar.delay,
+      "The basics link starts with the search bar"
+    );
+    is(
+      basicsLink.duration,
+      searchBar.duration,
+      "The basics link fades over the same duration as the search bar"
+    );
+
+    const promo = content.document.querySelector(".nova-promo-wrapper");
+    ok(
+      !promo ||
+        !content.getComputedStyle(promo).animationName.startsWith("intro-"),
+      "The promo takes no part in the sequence"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function test_no_promo_alongside_the_intro() {
+  await ASRouter.resetMessageState();
+
+  const promoId = `PB_NEWTAB_INTRO_PROMO_${Math.random()}`;
+  let cleanupExperiment = await setupMSExperimentWithMessage({
+    id: promoId,
+    template: "pb_newtab",
+    content: {
+      hideDefault: true,
+      promoEnabled: true,
+      promoLinkText: "fluent:about-private-browsing-prominent-cta",
+      promoLinkType: "link",
+      promoButton: {
+        action: {
+          type: "OPEN_URL",
+          data: { args: "https://example.com/", where: "tabshifted" },
+        },
+      },
+    },
+  });
+
+  
+  const enrolledInState = () =>
+    ASRouter.state.messages.filter(m => m.id.includes(promoId)).length;
+
+  Assert.greater(enrolledInState(), 0, "The enrolled message is in state");
+
+  let suppressed = await ASRouter.sendPBNewTabMessage({
+    hideDefault: true,
+    introPlaying: true,
+  });
+  ok(!suppressed.message, "No message is served while the intro is playing");
+  Assert.greater(
+    enrolledInState(),
+    0,
+    "Suppressing leaves the message in state, so it is not stranded"
+  );
+  is(
+    Object.keys(ASRouter.state.messageImpressions).length,
+    0,
+    "Suppressing the promo records no impression, so its allocation is intact"
+  );
+
+  let served = await ASRouter.sendPBNewTabMessage({
+    hideDefault: true,
+    introPlaying: false,
+  });
+  Assert.greater(
+    enrolledInState(),
+    0,
+    "The pb_newtab message is back in state on the next request"
+  );
+  ok(served.message, "A message is served once the intro is not playing");
+  is(
+    served.message.template,
+    "pb_newtab",
+    "The message served on the second run is the pb_newtab one"
+  );
+
+  let again = await ASRouter.sendPBNewTabMessage({
+    hideDefault: true,
+    introPlaying: false,
+  });
+  ok(again.message, "The message is still served on subsequent runs");
+
+  await cleanupExperiment();
+  await ASRouter.resetMessageState();
+});
+
+
+
+add_task(async function test_nothing_animates_after_the_first_run() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [NOVA_PREF, true],
+      [REDESIGN_PREF, true],
+      [SHOWN_PREF, true],
+      ["ui.prefersReducedMotion", 0],
+    ],
+  });
+
+  let { win, tab } = await openTabAndWaitForRender();
+  await SpecialPowers.spawn(tab, [], async function () {
+    const intro = content.document.querySelector("private-browsing-mask-intro");
+    await intro.wrappedJSObject.updateComplete;
+
+    ok(
+      !content.document.documentElement.classList.contains("intro-playing"),
+      "The page is not in the intro state"
+    );
+    ok(!intro.wrappedJSObject.play, "The kit does not play");
+
+    const targets = [
+      [".nova-tagline", content.document.querySelector(".nova-tagline")],
+      [".nova-subheader", content.document.querySelector(".nova-subheader")],
+      [
+        ".search-inner-wrapper",
+        content.document.querySelector(".search-inner-wrapper"),
+      ],
+      [
+        "#private-window-basics",
+        content.document.getElementById("private-window-basics"),
+      ],
+      [".circle", intro.shadowRoot.querySelector(".circle")],
+      [".kit", intro.shadowRoot.querySelector(".kit")],
+      [".mask", intro.shadowRoot.querySelector(".mask")],
+    ].filter(([, el]) => el);
+
+    for (const [name, el] of targets) {
+      const running = el.getAnimations().map(a => a.animationName ?? "?");
+      is(
+        running.length,
+        0,
+        `${name} has no animation (${running.join(", ") || "none"})`
+      );
+    }
+
+    
+    
+    for (const [name, el] of targets) {
+      const style = content.getComputedStyle(el);
+      isnot(style.visibility, "hidden", `${name} is not hidden`);
+      isnot(style.opacity, "0", `${name} is not transparent`);
+    }
   });
 
   await BrowserTestUtils.closeWindow(win);
