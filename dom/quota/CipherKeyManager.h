@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_CIPHERKEYMANAGER_H_
 #define DOM_QUOTA_CIPHERKEYMANAGER_H_
 
@@ -65,6 +63,14 @@ class CipherKeyManager {
         return CipherKey{};
       });
     });
+  }
+
+  void Remove(const nsACString& aKeyId) {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+
+    MOZ_ASSERT(!mInvalidated);
+
+    lockedCipherKeys->Remove(aKeyId);
   }
 
   bool Invalidated() {

@@ -2,16 +2,17 @@
 
 
 
-
-
 #include "FileSystemAccessHandle.h"
 
 #include "FileSystemDatabaseManager.h"
 #include "FileSystemParentTypes.h"
+#include "mozilla/dom/FileSystemCipherKeyManager.h"
 #include "mozilla/dom/FileSystemDataManager.h"
 #include "mozilla/dom/FileSystemHelpers.h"
 #include "mozilla/dom/FileSystemLog.h"
+#include "mozilla/dom/quota/EncryptedRandomAccessStream_impl.h"
 #include "mozilla/dom/quota/FileStreams.h"
+#include "mozilla/dom/quota/PersistenceType.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/RemoteQuotaObjectParent.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
@@ -123,6 +124,9 @@ void FileSystemAccessHandle::UnregisterControlActor(
 bool FileSystemAccessHandle::IsOpen() const { return !mClosed; }
 
 RefPtr<BoolPromise> FileSystemAccessHandle::BeginClose() {
+  if (mClosed) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
   MOZ_ASSERT(IsOpen());
 
   LOG(("Closing AccessHandle"));
@@ -166,6 +170,44 @@ bool FileSystemAccessHandle::IsInactive() const {
   return !mRegCount && !mActor && !mControlActor;
 }
 
+namespace {
+
+using EncryptedRandomAccessStream =
+    quota::EncryptedRandomAccessStream<fs::FileSystemCipherStrategy>;
+
+Result<nsCOMPtr<nsIRandomAccessStream>, nsresult>
+CreateEncryptedFileRandomAccessStream(
+    const quota::OriginMetadata& aOriginMetadata,
+    fs::FileSystemCipherKeyManager& aCipherKeyManager,
+    const fs::FileId& aFileId, nsIFile* aFile) {
+  MOZ_ASSERT(aOriginMetadata.mPersistenceType ==
+             quota::PERSISTENCE_TYPE_PRIVATE);
+
+  QM_TRY_UNWRAP(MovingNotNull<nsCOMPtr<nsIRandomAccessStream>> baseStream,
+                CreateFileRandomAccessStream(
+                    quota::PERSISTENCE_TYPE_PRIVATE, aOriginMetadata,
+                    quota::Client::FILESYSTEM, aFile, -1, -1,
+                    nsIFileRandomAccessStream::DEFER_OPEN));
+
+  QM_TRY(MOZ_TO_RESULT(fs::FileSystemCipherStrategy::Init()));
+
+  
+  
+  
+  
+  
+  
+  
+  QM_TRY_UNWRAP(RefPtr<EncryptedRandomAccessStream> stream,
+                EncryptedRandomAccessStream::Create(
+                    fs::FileSystemCipherStrategy{}, std::move(baseStream),
+                    aCipherKeyManager.Ensure(aFileId.Value())));
+
+  return nsCOMPtr<nsIRandomAccessStream>(std::move(stream));
+}
+
+}  
+
 RefPtr<FileSystemAccessHandle::InitPromise>
 FileSystemAccessHandle::BeginInit() {
   QM_TRY_UNWRAP(fs::FileId fileId, mDataManager->LockExclusive(mEntryId),
@@ -207,20 +249,30 @@ FileSystemAccessHandle::BeginInit() {
              })
       ->Then(mIOTaskQueue.get(), __func__,
              [self = RefPtr(this), CreateAndRejectInitPromise,
-              file = std::move(file)](
+              fileId = std::move(fileId), file = std::move(file)](
                  const BoolPromise::ResolveOrRejectValue& value) {
                if (value.IsReject()) {
                  return InitPromise::CreateAndReject(value.RejectValue(),
                                                      __func__);
                }
 
-               QM_TRY_UNWRAP(nsCOMPtr<nsIRandomAccessStream> stream,
-                             CreateFileRandomAccessStream(
-                                 quota::PERSISTENCE_TYPE_DEFAULT,
-                                 self->mDataManager->OriginMetadataRef(),
-                                 quota::Client::FILESYSTEM, file, -1, -1,
-                                 nsIFileRandomAccessStream::DEFER_OPEN),
-                             CreateAndRejectInitPromise);
+               const auto& originMetadata =
+                   self->mDataManager->OriginMetadataRef();
+
+               const RefPtr<fs::FileSystemCipherKeyManager> cipherKeyManager =
+                   self->mDataManager->MaybeCipherKeyManager();
+               MOZ_ASSERT(!originMetadata.mIsPrivate || cipherKeyManager);
+
+               QM_TRY_UNWRAP(
+                   nsCOMPtr<nsIRandomAccessStream> stream,
+                   originMetadata.mIsPrivate
+                       ? CreateEncryptedFileRandomAccessStream(
+                             originMetadata, *cipherKeyManager, fileId, file)
+                       : CreateFileRandomAccessStream(
+                             originMetadata.mPersistenceType, originMetadata,
+                             quota::Client::FILESYSTEM, file, -1, -1,
+                             nsIFileRandomAccessStream::DEFER_OPEN),
+                   CreateAndRejectInitPromise);
 
                mozilla::ipc::RandomAccessStreamParams streamParams =
                    mozilla::ipc::SerializeRandomAccessStream(
