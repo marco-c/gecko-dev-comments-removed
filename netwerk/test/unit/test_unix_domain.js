@@ -28,6 +28,22 @@ const threadManager = Cc["@mozilla.org/thread-manager;1"].getService();
 
 const allPermissions = parseInt("777", 8);
 
+
+
+
+var gSocketDir = null;
+function socketDir() {
+  if (!gSocketDir) {
+    let dir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    dir.initWithPath("/tmp");
+    dir.append("xpc-uds");
+    dir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, parseInt("700", 8));
+    registerCleanupFunction(() => dir.remove(true));
+    gSocketDir = dir;
+  }
+  return gSocketDir.clone();
+}
+
 function run_test() {
   
   if (mozinfo.os == "win") {
@@ -78,7 +94,7 @@ function test_not_supported() {
 function test_echo() {
   let log = "";
 
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("socket");
 
   
@@ -187,7 +203,7 @@ function test_echo() {
 
 
 function test_name_too_long() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   
   socketName.append(new Array(1000).join("x"));
 
@@ -213,7 +229,7 @@ function test_name_too_long() {
 
 
 function test_no_directory() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("missing");
   socketName.append("socket");
 
@@ -227,7 +243,7 @@ function test_no_directory() {
 
 
 function test_no_such_socket() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("nonexistent-socket");
 
   let client = socketTransportService.createUnixDomainTransport(socketName);
@@ -262,7 +278,7 @@ function test_no_such_socket() {
 
 
 function test_address_in_use() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("socket-in-use");
 
   
@@ -279,7 +295,7 @@ function test_address_in_use() {
 
 
 function test_file_in_way() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("file_in_way");
 
   
@@ -304,7 +320,7 @@ function test_file_in_way() {
 
 
 function test_create_permission() {
-  let dirName = do_get_tempdir();
+  let dirName = socketDir();
   dirName.append("unfriendly");
 
   let socketName = dirName.clone();
@@ -356,7 +372,7 @@ function test_connect_permission() {
   let log = "";
 
   
-  let dirName = do_get_tempdir();
+  let dirName = socketDir();
   dirName.append("inhospitable");
   dirName.create(Ci.nsIFile.DIRECTORY_TYPE, allPermissions);
 
@@ -497,7 +513,7 @@ function test_connect_permission() {
 
 
 function test_long_socket_name() {
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append(new Array(10000).join("long"));
 
   
@@ -519,7 +535,7 @@ function test_long_socket_name() {
 function test_keep_when_offline() {
   let log = "";
 
-  let socketName = do_get_tempdir();
+  let socketName = socketDir();
   socketName.append("keep-when-offline");
 
   
