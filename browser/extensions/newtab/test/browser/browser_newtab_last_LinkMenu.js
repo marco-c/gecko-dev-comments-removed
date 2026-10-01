@@ -31,9 +31,6 @@ async function setupPrefs() {
 async function resetPrefs() {
   
   
-  
-  await SpecialPowers.popPrefEnv();
-  await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();

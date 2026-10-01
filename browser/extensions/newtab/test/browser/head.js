@@ -1,6 +1,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
+  AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   DiscoveryStreamFeed: "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
@@ -20,15 +21,25 @@ function pushPrefs(...prefs) {
 }
 
 
-async function toggleTopsitesPref() {
-  await pushPrefs([
-    "browser.newtabpage.activity-stream.feeds.system.topsites",
-    false,
-  ]);
-  await pushPrefs([
-    "browser.newtabpage.activity-stream.feeds.system.topsites",
-    true,
-  ]);
+
+
+
+
+
+
+
+async function refreshTopSites(url) {
+  
+  await AboutNewTab.activityStreamPromise;
+  await TestUtils.waitForCondition(async () => {
+    const feed = AboutNewTab.activityStream.store.feeds.get(
+      "feeds.system.topsites"
+    );
+    feed.frecentCache.expire();
+    feed.pinnedCache.expire();
+    await feed.refresh({ broadcast: true });
+    return AboutNewTab.getTopSites().some(row => row?.url === url);
+  }, `Wait for ${url} in the top sites row`);
 }
 
 
@@ -51,11 +62,11 @@ async function setDefaultTopSites() {
     "browser.newtabpage.activity-stream.default.sites",
     DEFAULT_TOP_SITES.join(","),
   ]);
-  await toggleTopsitesPref();
   await pushPrefs([
     "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
     true,
   ]);
+  await refreshTopSites(DEFAULT_TOP_SITES[0]);
   return DEFAULT_TOP_SITES;
 }
 
@@ -90,7 +101,7 @@ async function setTestTopSites() {
     "browser.newtabpage.activity-stream.default.sites",
     TEST_TOP_SITE,
   ]);
-  await toggleTopsitesPref();
+  await refreshTopSites(TEST_TOP_SITE);
   return TEST_TOP_SITE;
 }
 
