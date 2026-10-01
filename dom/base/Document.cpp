@@ -6877,25 +6877,32 @@ EditContext* Document::DetermineActiveEditContext() const {
 void Document::UpdateTextEditContext() {
   
   
-  RefPtr<EditContext> oldActiveEditContext = mActiveEditContext;
-  
   
   RefPtr<EditContext> newActiveEditContext = DetermineActiveEditContext();
   
-  if (oldActiveEditContext == newActiveEditContext) {
+  
+  
+  if (mActiveEditContext == newActiveEditContext) {
     return;
   }
   
   
-  if (oldActiveEditContext) {
-    oldActiveEditContext->Deactivate();
-  }
+  DeactivateEditContextAndEndComposition();
   
   mActiveEditContext = newActiveEditContext;
   
   
   
   EditContext::NotifyActiveEditContextChanged(*this);
+}
+
+void Document::DeactivateEditContextAndEndComposition() {
+  if (RefPtr<HTMLEditor> editor = GetHTMLEditor()) {
+    editor->CommitComposition();
+  }
+  if (mActiveEditContext) {
+    mActiveEditContext->Deactivate();
+  }
 }
 
 void Document::MaybeDispatchCheckKeyPressEventModelEvent() {

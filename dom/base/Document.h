@@ -1615,6 +1615,9 @@ class Document : public nsINode,
   EditContext* GetActiveEditContext() const { return mActiveEditContext; }
   
   MOZ_CAN_RUN_SCRIPT void UpdateTextEditContext();
+  
+  
+  MOZ_CAN_RUN_SCRIPT void DeactivateEditContextAndEndComposition();
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 

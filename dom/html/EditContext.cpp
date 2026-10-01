@@ -122,21 +122,11 @@ void EditContext::SetForElement(const Element& aElement,
 }
 
 void EditContext::Deactivate() {
-  
   MOZ_LOG_FMT(gEditContextLog, LogLevel::Info, "[{}] Deactivate EditContext",
               static_cast<void*>(this));
-
+  MOZ_ASSERT(!mIsComposing,
+             "Should have committed the composition before calling this.");
   UnsuppressNotifyingIME();
-
-  
-  if (!mIsComposing) {
-    return;
-  }
-
-  
-  
-  
-  
 }
 
 bool EditContext::IsActive() const {

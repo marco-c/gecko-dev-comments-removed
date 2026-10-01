@@ -415,14 +415,15 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
       return;
     }
   }
+  RefPtr doc = OwnerDoc();
   
   RefPtr<EditContext> oldEditContext = GetEditContext();
   if (oldEditContext) {
     
     
-    if (oldEditContext == OwnerDoc()->GetActiveEditContext()) {
+    if (oldEditContext == doc->GetActiveEditContext()) {
       
-      oldEditContext->Deactivate();
+      doc->DeactivateEditContextAndEndComposition();
       
       
       if (oldEditContext->GetAssociatedElement() != this) {
@@ -455,8 +456,12 @@ void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
   }
   EditContext::SetForElement(*this, aContext);
 
+  if (!IsInComposedDoc()) {
+    
+    return;
+  }
+
   int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
-  RefPtr doc = OwnerDoc();
   
   
   

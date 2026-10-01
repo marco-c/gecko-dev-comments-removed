@@ -261,20 +261,22 @@ void TextComposition::DispatchEvent(
   }
   RefPtr<nsINode> node = mNode;
   RefPtr<nsPresContext> presContext = mPresContext;
-  if (auto* element = nsGenericHTMLElement::FromNode(node)) {
-    if (RefPtr<dom::EditContext> editContext = element->GetEditContext()) {
-      
-      if (aDispatchEvent->mMessage == eCompositionStart) {
-        editContext->StartComposition(*aDispatchEvent);
-      } else if (aDispatchEvent->mMessage == eCompositionEnd) {
-        editContext->EndComposition(*aDispatchEvent);
-      }
-      
-      
-      
-      
-      aDispatchEvent->mFlags.mOnlySystemGroupDispatch = true;
+  
+  
+  
+  if (RefPtr<dom::EditContext> editContext =
+          node->OwnerDoc()->GetActiveEditContext()) {
+    
+    if (aDispatchEvent->mMessage == eCompositionStart) {
+      editContext->StartComposition(*aDispatchEvent);
+    } else if (aDispatchEvent->mMessage == eCompositionEnd) {
+      editContext->EndComposition(*aDispatchEvent);
     }
+    
+    
+    
+    
+    aDispatchEvent->mFlags.mOnlySystemGroupDispatch = true;
   }
   EventDispatcher::Dispatch(node, presContext, aDispatchEvent, nullptr, aStatus,
                             aCallBack);

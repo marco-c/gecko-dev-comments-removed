@@ -90,7 +90,10 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   mozilla::WritingMode WritingMode() const;
 
   
-  MOZ_CAN_RUN_SCRIPT void Deactivate();
+  
+  
+  
+  void Deactivate();
 
   IMPL_EVENT_HANDLER(characterboundsupdate);
   IMPL_EVENT_HANDLER(compositionstart);
