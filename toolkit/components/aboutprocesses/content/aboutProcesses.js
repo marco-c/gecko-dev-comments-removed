@@ -336,17 +336,34 @@ var State = {
   },
 };
 
-class ProcessesView {
-  
-  
-  _killedRecently = [];
+
+
+
+
+
+
+class RowSet {
   _rowsById = new Map();
   _orderedRows = [];
 
-  commit() {
-    this._killedRecently.length = 0;
-    let tbody = document.getElementById("process-tbody");
+  _getOrCreateRow(rowId, createRow) {
+    let row = this._rowsById.get(rowId);
+    if (!row) {
+      row = createRow();
+      row.rowId = rowId;
+      this._rowsById.set(rowId, row);
+    }
+    this._orderedRows.push(row);
+    return row;
+  }
 
+  _removeRow(row) {
+    this._rowsById.delete(row.rowId);
+    row.remove();
+  }
+
+  _commitOrder() {
+    let tbody = document.getElementById("process-tbody");
     let insertPoint = tbody.firstChild;
     let nextRow;
     while ((nextRow = this._orderedRows.shift())) {
@@ -356,7 +373,6 @@ class ProcessesView {
         tbody.insertBefore(nextRow, insertPoint);
       }
     }
-
     if (insertPoint) {
       while ((nextRow = insertPoint.nextSibling)) {
         this._removeRow(nextRow);
@@ -364,6 +380,18 @@ class ProcessesView {
       this._removeRow(insertPoint);
     }
   }
+}
+
+class ProcessesView extends RowSet {
+  
+  
+  _killedRecently = [];
+
+  commit() {
+    this._killedRecently.length = 0;
+    this._commitOrder();
+  }
+  
   
   
   discardUpdate() {
@@ -381,23 +409,14 @@ class ProcessesView {
       tbody.insertBefore(nextRow, row.nextSibling);
     }
   }
-  _removeRow(row) {
-    this._rowsById.delete(row.rowId);
-
-    row.remove();
-  }
   _getOrCreateRow(rowId, cellCount) {
-    let row = this._rowsById.get(rowId);
-    if (!row) {
-      row = document.createElement("tr");
+    return super._getOrCreateRow(rowId, () => {
+      let row = document.createElement("tr");
       while (cellCount--) {
         row.appendChild(document.createElement("td"));
       }
-      row.rowId = rowId;
-      this._rowsById.set(rowId, row);
-    }
-    this._orderedRows.push(row);
-    return row;
+      return row;
+    });
   }
 
   displayCpu(data, cpuCell, maxSlopeCpu) {
@@ -406,7 +425,7 @@ class ProcessesView {
     
     let barWidth = -0.5;
     if (data.slopeCpu == null) {
-      this._fillCell(cpuCell, {
+      fillCell(cpuCell, {
         fluentName: "about-processes-cpu-user-and-kernel-not-ready",
         classes: ["cpu"],
       });
@@ -426,7 +445,7 @@ class ProcessesView {
         let fluentName = data.active
           ? "about-processes-cpu-almost-idle"
           : "about-processes-cpu-fully-idle";
-        this._fillCell(cpuCell, {
+        fillCell(cpuCell, {
           fluentName,
           fluentArgs: {
             total: duration,
@@ -435,7 +454,7 @@ class ProcessesView {
           classes: ["cpu"],
         });
       } else {
-        this._fillCell(cpuCell, {
+        fillCell(cpuCell, {
           fluentName: "about-processes-cpu",
           fluentArgs: {
             percent: data.slopeCpu,
@@ -674,10 +693,10 @@ class ProcessesView {
     
     let memoryCell = nameCell.nextSibling;
     {
-      let formattedTotal = this._formatMemory(data.totalRamSize);
+      let formattedTotal = formatMemory(data.totalRamSize);
       if (data.deltaRamSize) {
-        let formattedDelta = this._formatMemory(data.deltaRamSize);
-        this._fillCell(memoryCell, {
+        let formattedDelta = formatMemory(data.deltaRamSize);
+        fillCell(memoryCell, {
           fluentName: "about-processes-total-memory-size-changed",
           fluentArgs: {
             total: formattedTotal.amount,
@@ -689,7 +708,7 @@ class ProcessesView {
           classes: ["memory"],
         });
       } else {
-        this._fillCell(memoryCell, {
+        fillCell(memoryCell, {
           fluentName: "about-processes-total-memory-size-no-change",
           fluentArgs: {
             total: formattedTotal.amount,
@@ -879,7 +898,7 @@ class ProcessesView {
           : data.documentURI.prePath;
       className = "frame-many";
     }
-    this._fillCell(nameCell, {
+    fillCell(nameCell, {
       fluentName,
       fluentArgs,
       classes: ["name", "indent", "favicon", className],
@@ -986,7 +1005,7 @@ class ProcessesView {
     let nameCell = row.firstChild;
     let fluentName = this.utilityActorNameToFluentName(data.actorName);
     let fluentArgs = {};
-    this._fillCell(nameCell, {
+    fillCell(nameCell, {
       fluentName,
       fluentArgs,
       classes: ["name", "indent", "favicon"],
@@ -1008,7 +1027,7 @@ class ProcessesView {
 
     
     let nameCell = row.firstChild;
-    this._fillCell(nameCell, {
+    fillCell(nameCell, {
       fluentName: "about-processes-thread-name-and-id",
       fluentArgs: {
         name: data.name,
@@ -1021,11 +1040,6 @@ class ProcessesView {
     this.displayCpu(data, nameCell.nextSibling, maxSlopeCpu);
 
     
-  }
-
-  _fillCell(elt, { classes, fluentName, fluentArgs }) {
-    document.l10n.setAttributes(elt, fluentName, fluentArgs);
-    elt.className = classes.join(" ");
   }
 
   _getDuration(rawDurationNS) {
@@ -1049,48 +1063,108 @@ class ProcessesView {
     }
     return { duration: rawDurationNS / NS_PER_DAY, unit: "d" };
   }
-
-  
-
+}
 
 
 
+function fillCell(elt, { classes, fluentName, fluentArgs }) {
+  document.l10n.setAttributes(elt, fluentName, fluentArgs);
+  elt.className = classes.join(" ");
+}
 
 
 
 
 
-  _formatMemory(value) {
-    if (value == null) {
-      return { unit: "?", amount: 0 };
-    }
-    if (typeof value != "number") {
-      throw new Error(`Invalid memory value ${value}`);
-    }
-    let abs = Math.abs(value);
-    if (abs >= ONE_GIGA) {
-      return {
-        unit: "GB",
-        amount: value / ONE_GIGA,
-      };
-    }
-    if (abs >= ONE_MEGA) {
-      return {
-        unit: "MB",
-        amount: value / ONE_MEGA,
-      };
-    }
-    if (abs >= ONE_KILO) {
-      return {
-        unit: "KB",
-        amount: value / ONE_KILO,
-      };
-    }
+
+
+
+
+
+
+function formatMemory(value) {
+  if (value == null) {
+    return { unit: "?", amount: 0 };
+  }
+  if (typeof value != "number") {
+    throw new Error(`Invalid memory value ${value}`);
+  }
+  let abs = Math.abs(value);
+  if (abs >= ONE_GIGA) {
     return {
-      unit: "B",
-      amount: value,
+      unit: "GB",
+      amount: value / ONE_GIGA,
     };
   }
+  if (abs >= ONE_MEGA) {
+    return {
+      unit: "MB",
+      amount: value / ONE_MEGA,
+    };
+  }
+  if (abs >= ONE_KILO) {
+    return {
+      unit: "KB",
+      amount: value / ONE_KILO,
+    };
+  }
+  return {
+    unit: "B",
+    amount: value,
+  };
+}
+
+
+
+
+async function promiseLocalizations() {
+  let [
+    ns,
+    us,
+    ms,
+    s,
+    m,
+    h,
+    d,
+    B,
+    KB,
+    MB,
+    GB,
+    TB,
+    PB,
+    EB,
+    privateWindow,
+    serviceWorker,
+    jitDisabled,
+    withCoopCoep,
+  ] = await document.l10n.formatValues([
+    "duration-unit-ns",
+    "duration-unit-us",
+    "duration-unit-ms",
+    "duration-unit-s",
+    "duration-unit-m",
+    "duration-unit-h",
+    "duration-unit-d",
+    "memory-unit-B",
+    "memory-unit-KB",
+    "memory-unit-MB",
+    "memory-unit-GB",
+    "memory-unit-TB",
+    "memory-unit-PB",
+    "memory-unit-EB",
+    "about-processes-web-isolated-property-private",
+    "about-processes-web-isolated-property-serviceworker",
+    "about-processes-web-isolated-property-jit-disabled",
+    "about-processes-web-isolated-property-with-coop-coep",
+  ]);
+
+  return {
+    units: {
+      duration: { ns, us, ms, s, m, h, d },
+      memory: { B, KB, MB, GB, TB, PB, EB },
+    },
+    properties: { privateWindow, serviceWorker, jitDisabled, withCoopCoep },
+  };
 }
 
 class ProcessesController {
@@ -1120,55 +1194,7 @@ class ProcessesController {
     this._initHangReports();
 
     
-    this._promiseLocalizations = (async function () {
-      let [
-        ns,
-        us,
-        ms,
-        s,
-        m,
-        h,
-        d,
-        B,
-        KB,
-        MB,
-        GB,
-        TB,
-        PB,
-        EB,
-        privateWindow,
-        serviceWorker,
-        jitDisabled,
-        withCoopCoep,
-      ] = await document.l10n.formatValues([
-        "duration-unit-ns",
-        "duration-unit-us",
-        "duration-unit-ms",
-        "duration-unit-s",
-        "duration-unit-m",
-        "duration-unit-h",
-        "duration-unit-d",
-        "memory-unit-B",
-        "memory-unit-KB",
-        "memory-unit-MB",
-        "memory-unit-GB",
-        "memory-unit-TB",
-        "memory-unit-PB",
-        "memory-unit-EB",
-        "about-processes-web-isolated-property-private",
-        "about-processes-web-isolated-property-serviceworker",
-        "about-processes-web-isolated-property-jit-disabled",
-        "about-processes-web-isolated-property-with-coop-coep",
-      ]);
-
-      return {
-        units: {
-          duration: { ns, us, ms, s, m, h, d },
-          memory: { B, KB, MB, GB, TB, PB, EB },
-        },
-        properties: { privateWindow, serviceWorker, jitDisabled, withCoopCoep },
-      };
-    })();
+    this._promiseLocalizations = promiseLocalizations();
 
     let tbody = document.getElementById("process-tbody");
 
