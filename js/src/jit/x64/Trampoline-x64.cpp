@@ -152,7 +152,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
                                        reg_argc);
   }
 
-  CodeLabel returnLabel;
+  Label returnLabel;
   Label oomReturnLabel;
   if (mode != EnterJitMode::GeneratorResume) {
     
@@ -166,13 +166,20 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
     Label notOsr;
     masm.branchTestPtr(Assembler::Zero, OsrFrameReg, OsrFrameReg, &notOsr);
 
+    
+    
+    
+    Label osrEntry;
+    masm.call(&osrEntry);
+    masm.jump(&returnLabel);
+
+    masm.bind(&osrEntry);
+
     Register numStackValues = regs.takeAny();
     masm.movq(numStackValuesAddr, numStackValues);
 
     
-    masm.mov(&returnLabel, scratch);
-    
-    masm.pushRegs(scratch, rbp);
+    masm.push(rbp);
     masm.mov(rsp, rbp);
 
     
@@ -243,7 +250,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
   if (mode != EnterJitMode::GeneratorResume) {
     
     masm.bind(&returnLabel);
-    masm.addCodeLabel(returnLabel);
     masm.bind(&oomReturnLabel);
   }
 
