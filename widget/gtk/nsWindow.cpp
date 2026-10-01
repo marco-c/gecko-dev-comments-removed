@@ -4021,7 +4021,10 @@ gboolean nsWindow::OnTouchEvent(GdkEventTouch* aEvent) {
       SetLastPointerDownEvent((GdkEvent*)aEvent);
       
       if (CheckForRollup(aEvent->x_root, aEvent->y_root, false, false)) {
-        return FALSE;
+        
+        
+        
+        return TRUE;
       }
       msg = eTouchStart;
       break;
