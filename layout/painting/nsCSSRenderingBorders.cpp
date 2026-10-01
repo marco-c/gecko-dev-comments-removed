@@ -3772,7 +3772,10 @@ nsCSSBorderImageRenderer::nsCSSBorderImageRenderer(
     if (value > imgDimension && imgDimension > 0) {
       value = imgDimension;
     }
-    mSlice.Side(s) = value;
+    
+    
+    
+    mSlice.Side(s) = NSToCoordRound(value);
 
     const auto& width = aStyleBorder.mBorderImageWidth.Get(s);
     switch (width.tag) {
