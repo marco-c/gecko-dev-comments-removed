@@ -269,13 +269,6 @@ enum class StyleTextSecurity : uint8_t {
 };
 
 
-enum class StyleVisibility : uint8_t {
-  Hidden,
-  Visible,
-  Collapse,
-};
-
-
 enum class StyleWhiteSpaceCollapse : uint8_t {
   Collapse = 0,
   
