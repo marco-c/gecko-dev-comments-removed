@@ -10260,6 +10260,20 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
                                     NS_UNCONSTRAINEDSIZE, constraint);
 
+  if (IsRowSubgrid()) {
+    
+    
+    
+    const auto* subgrid = GetProperty(Subgrid::Prop());
+    const auto parentAxis =
+        subgrid->mIsOrthogonal ? LogicalAxis::Inline : LogicalAxis::Block;
+    const auto* parentSizes =
+        ParentGridContainerForSubgrid()->GetUsedTrackSizes();
+    if (!parentSizes || !parentSizes->mCanResolveLineRangeSize[parentAxis]) {
+      return gridRI.mCols.TotalTrackSizeWithoutAlignment(this);
+    }
+  }
+
   const nscoord contentBoxBSize =
       aInput.mPercentageBasisForChildren
           ? aInput.mPercentageBasisForChildren->BSize(gridRI.mWM)
