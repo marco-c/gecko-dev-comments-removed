@@ -946,8 +946,9 @@ AsyncGetFaviconForPageRunnable::Run() {
   UniquePtr<ConnectionAdapter> adapter;
   if (!mOnConcurrentConn) {
     RefPtr<Database> DB = Database::GetDatabase();
-    MOZ_ASSERT(DB);
-    adapter = MakeUnique<ConnectionAdapter>(DB);
+    if (DB) {
+      adapter = MakeUnique<ConnectionAdapter>(DB);
+    }
   } else {
     auto conn = ConcurrentConnection::GetInstance();
     MOZ_ASSERT(conn);
