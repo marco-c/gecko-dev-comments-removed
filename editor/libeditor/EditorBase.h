@@ -210,6 +210,15 @@ class EditorBase : public nsIEditor,
   
 
 
+
+
+
+  already_AddRefed<DataTransfer> CreateDataTransferForPaste(
+      EventMessage aEventMessage, nsITransferable* aTransferable) const;
+
+  
+
+
   Element* GetRoot() const { return mRootElement; }
 
   
@@ -789,9 +798,15 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT nsresult PasteTransferableAsAction(
       nsITransferable* aTransferable, DispatchPasteEvent aDispatchPasteEvent,
-      nsIPrincipal* aPrincipal = nullptr);
+      nsIPrincipal* aPrincipal = nullptr,
+      DataTransfer* aDataTransfer = nullptr);
 
   
 
@@ -2912,8 +2927,8 @@ class EditorBase : public nsIEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult HandlePasteTransferable(
-      AutoEditActionDataSetter& aEditActionData,
-      nsITransferable& aTransferable) = 0;
+      AutoEditActionDataSetter& aEditActionData, nsITransferable& aTransferable,
+      DataTransfer* aDataTransfer) = 0;
 
  private:
   nsCOMPtr<nsISelectionController> mSelectionController;
