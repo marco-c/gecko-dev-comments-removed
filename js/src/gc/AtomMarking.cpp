@@ -365,21 +365,8 @@ void AtomRefRuntime::recordRef(JSContext* cx, T* thing) {
   
   
   
+  
   ReadBarrier(thing);
-
-  if constexpr (std::is_same_v<T, JS::Symbol>) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ReadBarrier(thing->description());
-  }
 
   inlinedRecordRefInfallible(cx->zone(), thing);
 }
