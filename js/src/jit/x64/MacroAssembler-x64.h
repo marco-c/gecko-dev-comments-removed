@@ -102,6 +102,8 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     rdsspq(dest);
   }
 
+  void addToShadowStackPtr(Imm32 imm, Register scratch);
+
   
   
   void unwindToShadowStackPtr(Register newShstkPtr, Register scratch);

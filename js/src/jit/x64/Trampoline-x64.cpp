@@ -366,6 +366,13 @@ void JitRuntime::generateInvalidator(MacroAssembler& masm, Label* bailoutTail) {
   
   masm.moveToStackPtr(FramePointer);
 
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  masm.addToShadowStackPtr(Imm32(sizeof(uintptr_t)), rdx);
+#endif
+
   
   masm.jmp(bailoutTail);
 }
