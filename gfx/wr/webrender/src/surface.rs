@@ -255,7 +255,14 @@ pub struct SurfaceInfo {
     pub clipped_local_rect: PictureRect,
     
     
-    pub clipping_rect: PictureRect,
+    
+    
+    
+    
+    
+    
+    
+    pub clipping_rect: DeviceRect,
     
     
     
@@ -416,7 +423,7 @@ impl SurfaceInfo {
             unclipped_local_rect: PictureRect::zero(),
             clipped_local_rect: PictureRect::zero(),
             is_opaque: false,
-            clipping_rect: PictureRect::zero(),
+            clipping_rect: DeviceRect::zero(),
             map_local_to_picture,
             picture_to_device: picture_to_device_mapping(
                 surface_spatial_node_index,
@@ -570,20 +577,45 @@ impl SurfaceInfo {
     }
 
     
+    pub fn device_to_picture_rect(
+        &self,
+        device_rect: &DeviceRect,
+    ) -> PictureRect {
+        
+        
+        assert!(self.device_pixel_scale.0 > 0.0);
+
+        self.picture_to_device.unmap_rect(device_rect)
+    }
+
+    
+    
+    
+    pub fn clipping_rect_in_picture_space(&self) -> PictureRect {
+        
+        
+        if self.clipping_rect == DeviceRect::max_rect() {
+            return PictureRect::max_rect();
+        }
+
+        self.device_to_picture_rect(&self.clipping_rect)
+    }
+
+    
+    
     
     pub fn get_surface_rect(
         &self,
         local_rect: &PictureRect,
     ) -> Option<DeviceIntRect> {
-        let local_rect = match local_rect.intersection(&self.clipping_rect) {
-            Some(rect) => rect,
-            None => return None,
-        };
-
         
         assert!(self.device_pixel_scale.0 > 0.0);
 
-        let surface_rect = self.map_to_device_rect(&local_rect).round_out().to_i32();
+        let device_rect = self
+            .map_to_device_rect(local_rect)
+            .intersection(&self.clipping_rect)?;
+
+        let surface_rect = device_rect.round_out().to_i32();
         if surface_rect.is_empty() {
             
             
@@ -791,7 +823,7 @@ impl SurfaceBuilder {
         &mut self,
         surface_index: SurfaceIndex,
         is_sub_graph: bool,
-        clipping_rect: PictureRect,
+        clipping_rect: DeviceRect,
         descriptor: Option<SurfaceDescriptor>,
         surfaces: &mut [SurfaceInfo],
         rg_builder: &RenderTaskGraphBuilder,

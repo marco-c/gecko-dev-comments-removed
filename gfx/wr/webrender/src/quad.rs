@@ -3,7 +3,7 @@
 
 
 use api::{BorderRadius, ClipMode, ColorF, units::*};
-use euclid::{Scale, SideOffsets2D, Size2D, point2};
+use euclid::{SideOffsets2D, Size2D, point2};
 
 use crate::ItemUid;
 use crate::border::NinePatchDescriptorExt;
@@ -767,24 +767,14 @@ fn prepare_quad_impl(
         return;
     }
 
-    let surface = &mut frame_state.surfaces[pic_context.surface_index.0];
-    let clipped_pic_rect = clip_chain.pic_coverage_rect.intersection_unchecked(&surface.clipping_rect);
-
-    let pic_to_raster = SpaceMapper::new_with_target(
-        surface.raster_spatial_node_index,
-        surface.surface_spatial_node_index,
-        RasterRect::max_rect(),
-        spatial_tree,
-    );
-    let Some(clipped_raster_rect) = pic_to_raster.map(&clipped_pic_rect) else { return; };
+    let surface = &frame_state.surfaces[pic_context.surface_index.0];
 
     
     
-    let device_scale: Scale<f32, RasterPixel, DevicePixel> = Scale::new(transform.device_pixel_scale.0);
-
-    
-    
-    let mut clipped_surface_rect = (clipped_raster_rect * device_scale).round();
+    let mut clipped_surface_rect = surface
+        .map_to_device_rect(&clip_chain.pic_coverage_rect)
+        .intersection_unchecked(&surface.clipping_rect)
+        .round();
 
     if let Some(t) = transform.as_2d_scale_offset() {
         let prim_surface_rect = t.map_rect(&local_bounds);
