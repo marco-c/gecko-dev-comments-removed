@@ -3972,7 +3972,9 @@ function WindowIsClosing(event) {
     
     
     
+    
     !TaskbarTabsUtils.isTaskbarTabWindow(window) &&
+    !document.documentElement.hasAttribute("mini-window") &&
     !shouldWarnForTabs &&
     ASRouter.initialized &&
     
