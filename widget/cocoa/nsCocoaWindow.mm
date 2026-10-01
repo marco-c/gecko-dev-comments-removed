@@ -4295,8 +4295,9 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
 
       
       if (mGeckoChild && returnType) {
-        WidgetContentCommandEvent command(
-            true, eContentCommandPasteTransferable, mGeckoChild, true);
+        WidgetContentCommandEvent command(true,
+                                          eContentCommandPasteTransferable,
+                                          mGeckoChild, OnlyEnabledCheck::Yes);
         command.mTimeStamp =
             nsCocoaUtils::GetEventTimeStamp([[NSApp currentEvent] timestamp]);
         

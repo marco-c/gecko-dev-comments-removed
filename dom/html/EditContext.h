@@ -6,6 +6,7 @@
 #define mozilla_dom_EditContext_h
 
 #include "mozilla/DOMEventTargetHelper.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/EditContextBinding.h"
 
@@ -114,7 +115,6 @@ class EditContext final : public DOMEventTargetHelper, public SupportsWeakPtr {
   
   
   
-  enum class PreventSetSelection { No, Yes };
   MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(
       uint32_t aStart, uint32_t aEnd, const nsAString& aString,
       PreventSetSelection aPreventSetSelection = PreventSetSelection::No);

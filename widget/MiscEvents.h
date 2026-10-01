@@ -30,8 +30,9 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
  public:
   NS_DEFINE_AS_EVENT_OVERRIDE(Widget, ContentCommandEvent);
 
-  WidgetContentCommandEvent(bool aIsTrusted, EventMessage aMessage,
-                            nsIWidget* aWidget, bool aOnlyEnabledCheck = false)
+  WidgetContentCommandEvent(
+      bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No)
       : WidgetGUIEvent(aIsTrusted, aMessage, aWidget,
                        eContentCommandEventClass),
         mOnlyEnabledCheck(aOnlyEnabledCheck),
@@ -48,6 +49,10 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
                  "WidgetQueryContentEvent needs to support Duplicate()");
     MOZ_CRASH("WidgetQueryContentEvent doesn't support Duplicate()");
     return nullptr;
+  }
+
+  [[nodiscard]] bool ShouldCheckEnabledOnly() const {
+    return mOnlyEnabledCheck == OnlyEnabledCheck::Yes;
   }
 
   
@@ -71,19 +76,23 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
 
   
   struct Selection {
+    [[nodiscard]] bool ShouldPreventSetSelection() const {
+      return mPreventSetSelection == PreventSetSelection::Yes;
+    }
+
     
     nsString mReplaceSrcString;  
     
     uint32_t mOffset = 0;  
     
-    bool mPreventSetSelection = false;  
+    PreventSetSelection mPreventSetSelection = PreventSetSelection::No;  
   } mSelection;
 
   
   
   
   
-  bool mOnlyEnabledCheck;  
+  OnlyEnabledCheck mOnlyEnabledCheck;  
 
   bool mSucceeded;  
 

@@ -732,11 +732,6 @@ class EditorBase : public nsIEditor,
     Yes,
   };
 
-  enum class PreventSetSelection {
-    No,
-    Yes,
-  };
-
   
 
 
