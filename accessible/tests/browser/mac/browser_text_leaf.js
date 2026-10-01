@@ -46,10 +46,9 @@ addAccessibleTask(
 
     is(
       children[1].getAttributeValue("AXValue"),
-      gIsIframe && !gIsRemoteIframe ? "world" : "world ",
+      "world ",
       "Second child is world text"
     );
-    
     
   },
   { chrome: true, iframe: true, remoteIframe: true }
