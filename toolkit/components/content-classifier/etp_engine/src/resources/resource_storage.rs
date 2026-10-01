@@ -67,6 +67,18 @@ impl Default for ResourceStorage {
     }
 }
 
+#[cfg(feature = "malloc-size-of")]
+impl ResourceStorage {
+    
+    
+    
+    
+    
+    pub(crate) fn backend_size_of(&self, ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
+        malloc_size_of::MallocShallowSizeOf::shallow_size_of(&self.backend, ops)
+    }
+}
+
 impl ResourceStorage {
     #[cfg(not(feature = "single-thread"))]
     pub fn from_backend<S: ResourceStorageBackend + 'static + Sync + Send>(backend: S) -> Self {

@@ -95,6 +95,7 @@ impl Engine {
     
     
     
+    
     pub fn memory_breakdown(
         &self,
         ops: &mut malloc_size_of::MallocSizeOfOps,
@@ -103,6 +104,7 @@ impl Engine {
         breakdown.add_filter_data(&self.filter_data_context, ops);
         breakdown.add_blocker(&self.blocker, ops);
         breakdown.add_cosmetic_cache(&self.cosmetic_cache, ops);
+        breakdown.add_resources(&self.resources, ops);
         breakdown
     }
 }
