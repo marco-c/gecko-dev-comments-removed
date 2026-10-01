@@ -349,7 +349,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         
         
         if (
-          updatedTab.initializingTab ||
+          updatedTab.initializing ||
           updatedTab.documentGlobal.gBrowserInit?.isAdoptingTab()
         ) {
           return;
