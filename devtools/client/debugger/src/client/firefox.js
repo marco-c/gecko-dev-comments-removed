@@ -245,6 +245,15 @@ async function onStyleSheetAvailable(sources) {
 async function onStyleSheetUpdated(updates) {
   for (const { resource, update } of updates) {
     switch (update.updateType) {
+      case "style-applied":
+      case "property-change": {
+        
+        
+        if (update.event?.cause != "debugger") {
+          actions.styleSheetHasChanged(resource.resourceId);
+        }
+        break;
+      }
       case "matches-change":
       case "at-rules-changed":
         await actions.setStyleSheetAtRules(

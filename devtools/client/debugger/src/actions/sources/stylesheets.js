@@ -3,7 +3,15 @@
 
 
 import { prefs } from "../../utils/prefs";
-import { getSourceActorsForSource } from "../../selectors/index";
+import {
+  getSourceActorsForSource,
+  getSelectedSource,
+  getSourceActor,
+} from "../../selectors/index";
+import {
+  removeGeneratedSourceText,
+  forceRefreshGeneratedSourceText,
+} from "./loadSourceText";
 
 const telemetryPingsPerSource = new Map();
 
@@ -49,5 +57,21 @@ export function setStyleSheetAtRules(actorId, atRules) {
       id: actorId,
       atRules,
     });
+  };
+}
+
+
+export function styleSheetHasChanged(actorId) {
+  return async ({ dispatch, getState }) => {
+    const sourceActor = getSourceActor(getState(), actorId);
+    const selectedSource = getSelectedSource(getState());
+    
+    
+    if (selectedSource && selectedSource.id === sourceActor.sourceObject.id) {
+      await dispatch(forceRefreshGeneratedSourceText(sourceActor));
+    } else {
+      
+      await dispatch(removeGeneratedSourceText(actorId));
+    }
   };
 }

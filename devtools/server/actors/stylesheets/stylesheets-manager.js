@@ -485,7 +485,7 @@ class StyleSheetsManager extends EventEmitter {
     if (kind !== UPDATE_PRESERVING_RULES) {
       ({ atRules, ruleCount } =
         this.getStyleSheetRuleCountAndAtRules(styleSheet));
-      this.#notifyPropertyChanged(resourceId, "ruleCount", ruleCount);
+      this.#notifyPropertyChanged(resourceId, "ruleCount", ruleCount, cause);
     }
 
     if (transition) {
@@ -927,11 +927,13 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-  #notifyPropertyChanged(resourceId, property, value) {
+
+
+  #notifyPropertyChanged(resourceId, property, value, cause = "") {
     this.#onStyleSheetUpdated({
       resourceId,
       updateKind: "property-change",
-      updates: { resourceUpdates: { [property]: value } },
+      updates: { resourceUpdates: { [property]: value, event: { cause } } },
     });
   }
 

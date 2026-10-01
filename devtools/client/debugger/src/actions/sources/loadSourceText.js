@@ -254,3 +254,43 @@ export function loadSourceText(source, sourceActor) {
     return dispatch(loadGeneratedSourceText(sourceActor));
   };
 }
+
+export function removeGeneratedSourceText(actorId) {
+  return {
+    type: "REMOVE_GENERATED_SOURCE_TEXT",
+    actorId,
+  };
+}
+
+
+
+
+
+
+
+
+
+
+export function forceRefreshGeneratedSourceText(sourceActor) {
+  return async thunkArgs => {
+    const { dispatch, getState } = thunkArgs;
+    const epoch = getSourcesEpoch(getState());
+
+    const sourceTextContent = await loadGeneratedSource(sourceActor);
+    await dispatch({
+      type: "LOAD_GENERATED_SOURCE_TEXT",
+      sourceActor,
+      epoch,
+
+      
+      status: "done",
+      value: sourceTextContent,
+    });
+
+    await onSourceTextContentAvailable(
+      sourceActor.sourceObject,
+      sourceActor,
+      thunkArgs
+    );
+  };
+}
