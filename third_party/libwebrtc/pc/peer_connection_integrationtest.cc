@@ -2145,7 +2145,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 
 
-TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
+TEST_P(PeerConnectionIntegrationTest, NoDisconnectionDuringIceRestart) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
   
@@ -2162,6 +2162,85 @@ TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
                         {.timeout = kMaxWaitForFrames}),
               IsRtcOk());
 
+  
+  const IceCandidateCollection* audio_candidates_caller =
+      caller()->pc()->local_description()->candidates(0);
+  const SocketAddress caller_address_pre_restart =
+      audio_candidates_caller->at(0)->candidate().address();
+
+  
+  caller()->SetOfferAnswerOptions(IceRestartOfferAnswerOptions());
+
+  
+  
+  
+  
+  
+  
+  
+  Candidate same_address_candidate;
+  same_address_candidate.set_component(ICE_CANDIDATE_COMPONENT_DEFAULT);
+  same_address_candidate.set_protocol(UDP_PROTOCOL_NAME);
+  same_address_candidate.set_address(caller_address_pre_restart);
+  
+  
+  same_address_candidate.set_generation(1);
+  std::optional<RTCError> add_candidate_result;
+  callee()->SetRemoteOfferHandler([&] {
+    callee()->pc()->AddIceCandidate(
+        CreateIceCandidate("", 0, same_address_candidate),
+        [&add_candidate_result](RTCError r) { add_candidate_result = r; });
+  });
+
+  caller()->CreateAndSetAndSignalOffer();
+
+  
+  
+  ASSERT_TRUE(WaitUntil([&] { return add_candidate_result.has_value(); },
+                        {.timeout = kMaxWaitForFrames}));
+  ASSERT_TRUE(add_candidate_result.value().ok());
+
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); },
+                        {.timeout = kMaxWaitForFrames}));
+  EXPECT_THAT(WaitUntil([&] { return caller()->ice_connection_state(); },
+                        Eq(PeerConnectionInterface::kIceConnectionCompleted),
+                        {.timeout = kMaxWaitForFrames}),
+              IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return callee()->ice_connection_state(); },
+                        Eq(PeerConnectionInterface::kIceConnectionConnected),
+                        {.timeout = kMaxWaitForFrames}),
+              IsRtcOk());
+
+  
+  
+  EXPECT_THAT(
+      caller()->ice_connection_state_history(),
+      Not(Contains(PeerConnectionInterface::kIceConnectionDisconnected)));
+  EXPECT_THAT(
+      callee()->ice_connection_state_history(),
+      Not(Contains(PeerConnectionInterface::kIceConnectionDisconnected)));
+}
+
+
+
+
+
+TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+  EXPECT_THAT(WaitUntil([&] { return caller()->ice_connection_state(); },
+                        Eq(PeerConnectionInterface::kIceConnectionCompleted),
+                        {.timeout = kMaxWaitForFrames}),
+              IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return callee()->ice_connection_state(); },
+                        Eq(PeerConnectionInterface::kIceConnectionConnected),
+                        {.timeout = kMaxWaitForFrames}),
+              IsRtcOk());
   
   
   
@@ -2182,7 +2261,6 @@ TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
   desc = callee()->pc()->local_description()->description();
   std::string callee_ufrag_pre_restart =
       desc->transport_infos()[0].description.ice_ufrag;
-
   EXPECT_EQ(caller()->ice_candidate_pair_change_history().size(), 1u);
   
   caller()->SetOfferAnswerOptions(IceRestartOfferAnswerOptions());
@@ -2196,7 +2274,6 @@ TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
                         Eq(PeerConnectionInterface::kIceConnectionConnected),
                         {.timeout = kMaxWaitForFrames}),
               IsRtcOk());
-
   
   audio_candidates_caller = caller()->pc()->local_description()->candidates(0);
   audio_candidates_callee = callee()->pc()->local_description()->candidates(0);
@@ -2222,7 +2299,6 @@ TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
           [&] { return caller()->ice_candidate_pair_change_history().size(); },
           Gt(1U), {.timeout = kMaxWaitForFrames}),
       IsRtcOk());
-
   
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();

@@ -1477,9 +1477,13 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   
   
   
+  
+  
+  
   Connection* connection = port->GetConnection(remote_candidate.address());
-  if (connection == nullptr || connection->remote_candidate().generation() <
-                                   remote_candidate.generation()) {
+  if (connection == nullptr ||
+      (!connection->selected() && connection->remote_candidate().generation() <
+                                      remote_candidate.generation())) {
     
     
     PortInterface::CandidateOrigin origin = GetOrigin(port, origin_port);
@@ -1499,6 +1503,14 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   }
 
   
+  if (connection->selected()) {
+    RTC_LOG(LS_INFO) << port->ToString()
+                     << ": A selected connection exists. Skip creating "
+                     << "connection for remote candidate: "
+                     << remote_candidate.ToSensitiveString();
+    return false;
+  }
+
   
   
   if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {
