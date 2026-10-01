@@ -39,6 +39,13 @@ StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
 }
 
 
+RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
+                                   const RefPtr<TaskQueue>& aTaskQueue) {
+  return WebrtcVideoEncoderFactory::StrictSupportsCodec(aConfig, aTaskQueue);
+}
+
+
 class CodecInfoImpl final : public WebrtcCodecInfo {
  public:
   CodecInfoImpl()
@@ -153,6 +160,13 @@ StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType&,
                                    const SupportDecoderParams&) {
   return PlatformDecoderModule::SupportsDecoderPromise::CreateAndResolve(
       media::DecodeSupportSet{}, __func__);
+}
+
+RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+StrictSupportsVideoEncodeForWebrtc(const EncoderConfig&,
+                                   const RefPtr<TaskQueue>&) {
+  return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
+      media::EncodeSupportSet{}, __func__);
 }
 
 class CodecInfoStub final : public WebrtcCodecInfo {

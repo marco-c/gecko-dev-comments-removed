@@ -42,6 +42,16 @@ class PEMFactory final {
   RefPtr<PEMSupportsEncoderPromise> SupportsAsync(
       const EncoderConfig& aConfig) const;
 
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<PEMSupportsEncoderPromise> StrictSupportsAsync(
+      const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue);
+
   static media::MediaCodecsSupported Supported(bool aForceRefresh = false);
   static media::EncodeSupportSet SupportsCodec(
       CodecType aCodec, const media::MediaCodecsSupported& aSupported,

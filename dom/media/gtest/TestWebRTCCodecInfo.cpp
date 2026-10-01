@@ -9,8 +9,8 @@
 #include "PlatformDecoderModule.h"
 #include "VideoUtils.h"
 #include "gtest/gtest.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gtest/ScopedPrefSetter.h"
 #include "mozilla/media/webrtc/CodecInfo.h"
@@ -79,25 +79,62 @@ class WebRTCCodecInfoTest : public testing::Test {
     if (!gfx::gfxVars::IsInitialized()) {
       gfx::gfxVars::Initialize();
     }
+    
+    mTaskQueue =
+        TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_ENCODER),
+                          "TestWebRTCCodecInfo");
   }
 
-  static media::EncodeSupportSet QueryEncode(
-      const MediaExtendedMIMEType& aMime) {
-    media::EncodeSupportSet result;
+  void TearDown() override {
+    MOZ_ASSERT(NS_IsMainThread());
+    if (mTaskQueue) {
+      mTaskQueue->BeginShutdown();
+      mTaskQueue->AwaitShutdownAndIdle();
+      mTaskQueue = nullptr;
+    }
+  }
+
+  
+  
+  template <typename Promise>
+  static typename Promise::ResolveValueType Await(RefPtr<Promise> aPromise) {
+    typename Promise::ResolveValueType result{};
     bool done = false;
-    SupportsVideoEncodeForWebrtc(MakeWebrtcEncoderConfig(aMime))
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [&](media::EncodeSupportSet aSupport) {
-              result = aSupport;
-              done = true;
-            },
-            [&](nsresult) { done = true; });
-    SpinEventLoopUntil("TestWebRTCCodecInfo::QueryEncode"_ns,
-                       [&] { return done; });
+    aPromise->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [&](typename Promise::ResolveValueType aValue) {
+          result = aValue;
+          done = true;
+        },
+        [&](typename Promise::RejectValueType) { done = true; });
+    SpinEventLoopUntil("TestWebRTCCodecInfo::Await"_ns, [&] { return done; });
     return result;
   }
-  static media::DecodeSupportSet QueryDecode(
+
+  media::EncodeSupportSet QueryEncode(const MediaExtendedMIMEType& aMime) {
+    return Await(SupportsVideoEncodeForWebrtc(MakeWebrtcEncoderConfig(aMime)));
+  }
+  
+  
+  
+  media::EncodeSupportSet StrictQueryEncode(
+      const MediaExtendedMIMEType& aMime) {
+    return Await(StrictSupportsVideoEncodeForWebrtc(
+        MakeWebrtcEncoderConfig(aMime), mTaskQueue));
+  }
+
+  media::DecodeSupportSet QueryDecode(const MediaExtendedMIMEType& aMime) {
+    UniquePtr<TrackInfo> info =
+        CreateTrackInfoWithMIMEType(aMime.Type().AsString());
+    if (!info) {
+      return {};
+    }
+    SupportDecoderParams params(*info);
+    return Await(SupportsVideoDecodeForWebrtc(aMime, params));
+  }
+  
+  
+  media::DecodeSupportSet StrictQueryDecode(
       const MediaExtendedMIMEType& aMime) {
     UniquePtr<TrackInfo> info =
         CreateTrackInfoWithMIMEType(aMime.Type().AsString());
@@ -105,45 +142,29 @@ class WebRTCCodecInfoTest : public testing::Test {
       return {};
     }
     SupportDecoderParams params(*info);
-    media::DecodeSupportSet result;
-    bool done = false;
-    SupportsVideoDecodeForWebrtc(aMime, params)
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [&](media::DecodeSupportSet aSupport) {
-              result = aSupport;
-              done = true;
-            },
-            [&](nsresult) { done = true; });
-    SpinEventLoopUntil("TestWebRTCCodecInfo::QueryDecode"_ns,
-                       [&] { return done; });
-    return result;
+    return Await(StrictSupportsVideoDecodeForWebrtc(aMime, params));
   }
 
   
-  static bool SupportsSWEncode(const WebrtcCodecInfo& aInfo,
-                               const char* aMime) {
+  bool SupportsSWEncode(const WebrtcCodecInfo& aInfo, const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckEncodeType(*mime) &&
            (!mime->Type().HasVideoMajorType() ||
             QueryEncode(*mime).contains(media::EncodeSupport::SoftwareEncode));
   }
-  static bool SupportsSWDecode(const WebrtcCodecInfo& aInfo,
-                               const char* aMime) {
+  bool SupportsSWDecode(const WebrtcCodecInfo& aInfo, const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckDecodeType(*mime) &&
            (!mime->Type().HasVideoMajorType() ||
             QueryDecode(*mime).contains(media::DecodeSupport::SoftwareDecode));
   }
-  static bool SupportsHWEncode(const WebrtcCodecInfo& aInfo,
-                               const char* aMime) {
+  bool SupportsHWEncode(const WebrtcCodecInfo& aInfo, const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckEncodeType(*mime) &&
            mime->Type().HasVideoMajorType() &&
            QueryEncode(*mime).contains(media::EncodeSupport::HardwareEncode);
   }
-  static bool SupportsHWDecode(const WebrtcCodecInfo& aInfo,
-                               const char* aMime) {
+  bool SupportsHWDecode(const WebrtcCodecInfo& aInfo, const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckDecodeType(*mime) &&
            mime->Type().HasVideoMajorType() &&
@@ -152,7 +173,7 @@ class WebRTCCodecInfoTest : public testing::Test {
 
   
   
-  static void TestAudioDecodeEncodeSWHW(const WebrtcCodecInfo* aCodecInfo) {
+  void TestAudioDecodeEncodeSWHW(const WebrtcCodecInfo* aCodecInfo) {
     for (const auto& type : kAudioTypes) {
       EXPECT_TRUE(SupportsSWDecode(*aCodecInfo, type))
           << "Type failed: " << type;
@@ -164,6 +185,8 @@ class WebRTCCodecInfoTest : public testing::Test {
           << "Type failed: " << type;
     }
   }
+
+  RefPtr<TaskQueue> mTaskQueue;
 };
 
 
@@ -393,4 +416,87 @@ TEST_F(WebRTCCodecInfoTest, H264BaselineBlockedByWebRTCPref) {
   EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/h264"));
   
   TestAudioDecodeEncodeSWHW(codecInfo.get());
+}
+
+
+
+
+
+
+
+
+
+
+TEST_F(WebRTCCodecInfoTest, StrictModeDecodeReportsSoftware) {
+  for (const char* type : {"video/vp8", "video/vp9", "video/av1"}) {
+    Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(type);
+    ASSERT_TRUE(mime)
+    << "Type: " << type;
+    EXPECT_TRUE(
+        StrictQueryDecode(*mime).contains(media::DecodeSupport::SoftwareDecode))
+        << "Type: " << type;
+  }
+}
+
+
+
+TEST_F(WebRTCCodecInfoTest, StrictModeDecodeMatchesReported) {
+  for (const auto& type : kVideoTypes) {
+    Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(type);
+    ASSERT_TRUE(mime)
+    << "Type: " << type;
+    const bool reportedSW =
+        QueryDecode(*mime).contains(media::DecodeSupport::SoftwareDecode);
+    const bool strictSW =
+        StrictQueryDecode(*mime).contains(media::DecodeSupport::SoftwareDecode);
+    EXPECT_EQ(reportedSW, strictSW) << "Type: " << type;
+  }
+}
+
+
+
+
+
+
+
+TEST_F(WebRTCCodecInfoTest, StrictModeEncodeReportsSoftware) {
+  for (const char* type : {"video/vp8", "video/vp9", "video/av1"}) {
+    Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(type);
+    ASSERT_TRUE(mime)
+    << "Type: " << type;
+    EXPECT_TRUE(
+        StrictQueryEncode(*mime).contains(media::EncodeSupport::SoftwareEncode))
+        << "Type: " << type;
+  }
+}
+
+
+
+
+
+
+
+TEST_F(WebRTCCodecInfoTest, StrictModeEncodeExercisesPlatformPath) {
+  const ScopedPrefSetter strategyPref("media.webrtc.encoder_creation_strategy",
+                                      1U );
+  for (const char* type : {"video/vp8", "video/vp9"}) {
+    Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(type);
+    ASSERT_TRUE(mime)
+    << "Type: " << type;
+    EXPECT_TRUE(
+        StrictQueryEncode(*mime).contains(media::EncodeSupport::SoftwareEncode))
+        << "Type: " << type;
+  }
+}
+
+
+
+TEST_F(WebRTCCodecInfoTest, StrictModeH264HWBlockedByWebRTCPref) {
+  const ScopedPrefSetter h264Pref("media.webrtc.hw.h264.enabled", false);
+  Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType("video/h264");
+  ASSERT_TRUE(mime);
+  EXPECT_FALSE(
+      StrictQueryDecode(*mime).contains(media::DecodeSupport::HardwareDecode));
+  EXPECT_FALSE(
+      StrictQueryEncode(*mime).contains(media::EncodeSupport::HardwareEncode));
 }
