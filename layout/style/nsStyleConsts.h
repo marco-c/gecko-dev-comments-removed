@@ -82,13 +82,6 @@ enum class StyleGeometryBox : uint8_t {
 };
 
 
-enum class StyleHyphens : uint8_t {
-  None,
-  Manual,
-  Auto,
-};
-
-
 enum class StyleScrollbarWidth : uint8_t {
   Auto,
   Thin,
