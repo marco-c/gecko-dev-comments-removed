@@ -243,6 +243,12 @@ function assert_trap(thunk, message) {
   }
 }
 
+function assert_suspension(thunk, message) {
+  
+  
+  assert_trap(thunk, message);
+}
+
 let StackOverflow;
 try {
   (function f() {
@@ -282,9 +288,17 @@ function assert_unlinkable(thunk, message) {
     thunk();
     throw new Error(`got no error`);
   } catch (err) {
+    
+    if (err instanceof TypeError && err.message.match(/import object field.*is not a/)) {
+      return;
+    }
+
+    
+    
     if (err instanceof WebAssembly.LinkError || err instanceof WebAssembly.CompileError) {
       return;
     }
+
     err.message = `expected an unlinkable module (${message}): ${err.message}`;
     throw err;
   }
@@ -304,6 +318,48 @@ function assert_malformed(thunk, message) {
     err.message = `expected a malformed module (${message}): ${err.message}`;
     throw err;
   }
+}
+
+
+
+const customSectionParsed = {
+  name: wasmParsedNameSection,
+};
+
+function assert_custom_section_rejected(thunk, message) {
+  let module;
+  try {
+    module = thunk();
+  } catch (err) {
+    err.message = `expected a module with a bad custom section to still be accepted: ${err.message}`;
+    throw err;
+  }
+
+  let checked = false;
+  for (let [section, parsed] of Object.entries(customSectionParsed)) {
+    if (WebAssembly.Module.customSections(module, section).length === 0) {
+      continue;
+    }
+    checked = true;
+    assertEq(
+      parsed(module),
+      false,
+      `expected the ${section} section to be rejected, but it was not: ${message}`,
+    );
+  }
+  assertEq(
+    checked,
+    true,
+    `don't know how to check validity of this custom section`,
+  );
+}
+
+function assert_malformed_custom(thunk, message) {
+  assert_custom_section_rejected(thunk, message);
+}
+
+function assert_invalid_custom(thunk, message) {
+  assert_custom_section_rejected(thunk, message);
 }
 
 function assert_exception(thunk) {
@@ -476,7 +532,7 @@ class Thread {
       // Get shared module's exports from main thread. (We do this one at a
       // time for reasons explained below.)
       const ${sharedModuleName} = {};
-      ${Object.keys(sharedModule).map(name =>
+      ${Object.keys(sharedModule ?? {}).map(name =>
         `${sharedModuleName}["${name}"] = receive();`
       )}
       waitForState(${this.STATE_RUN_CODE});
@@ -497,7 +553,7 @@ class Thread {
     
     
     
-    for (const exportedValue of Object.values(sharedModule)) {
+    for (const exportedValue of Object.values(sharedModule ?? {})) {
       this.send(exportedValue);
     }
 
