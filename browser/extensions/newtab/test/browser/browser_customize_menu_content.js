@@ -246,14 +246,14 @@ test_newtab({
     
     
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector("#weather-section moz-toggle"),
+      () => content.document.querySelector("#weather-toggle"),
       "Weather section toggle should be present"
     );
 
     
     
     let weatherSwitch = Cu.waiveXrays(
-      content.document.querySelector("#weather-section moz-toggle")
+      content.document.querySelector("#weather-toggle")
     );
     Assert.ok(
       !Services.prefs.getBoolPref(WEATHER_PREF),
