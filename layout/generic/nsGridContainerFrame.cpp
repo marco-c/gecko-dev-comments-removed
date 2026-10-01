@@ -10113,7 +10113,10 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
     
     
     
-    if (!pos->mGridTemplateRows.IsNone()) {
+    
+    
+    if (!pos->mGridTemplateRows.IsNone() &&
+        pos->mGridTemplateColumns.IsNone()) {
       bits |= NS_STATE_GRID_IS_COL_MASONRY;
     } else {
       bits |= NS_STATE_GRID_IS_ROW_MASONRY;
