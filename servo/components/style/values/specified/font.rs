@@ -114,12 +114,15 @@ pub enum SystemFont {
 #[allow(missing_docs)]
 #[cfg(feature = "servo")]
 
-pub enum SystemFont {}
+pub struct SystemFont {
+    #[css(skip)]
+    _forbid_construction: (),
+}
 
 #[allow(missing_docs)]
 #[cfg(feature = "servo")]
 impl SystemFont {
-    pub fn parse(_: &mut Parser) -> Result<Self, ()> {
+    pub fn parse(_context: &ParserContext, _input: &mut Parser) -> Result<Self, ()> {
         Err(())
     }
 }
