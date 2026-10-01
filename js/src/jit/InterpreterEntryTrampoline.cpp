@@ -31,9 +31,10 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
                     "JitRuntime::generateBaselineInterpreterEntryTrampoline");
 
 #ifdef JS_USE_LINK_REGISTER
-  masm.pushReturnAddress();
-#endif
+  masm.pushRegs(LinkRegister, FramePointer);
+#else
   masm.push(FramePointer);
+#endif
   masm.moveStackPtrTo(FramePointer);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
@@ -145,7 +146,7 @@ void JitRuntime::generateBaselineInterpreterEntryTrampoline(
     static_assert(sizeof(BaselineInterpreterEntryFrameLayout) ==
                   sizeof(JitFrameLayout));
     constexpr size_t base =
-        BaselineInterpreterEntryFrameLayout::offsetOfModuleResumeSlots();
+        BaselineInterpreterEntryFrameLayout::offsetOfModuleResumeArgs();
     for (uint32_t slot = ResumeFrameArgs::NumSlots; slot > 0; slot--) {
       size_t offset = base + ResumeFrameArgs::offsetOfSlot(slot - 1);
       masm.pushValue(Address(FramePointer, int32_t(offset)));
@@ -227,9 +228,10 @@ void JitRuntime::generateInterpreterEntryTrampoline(MacroAssembler& masm) {
   masm.loadPtr(stateAddr, arg1);
 #else
 #  ifdef JS_USE_LINK_REGISTER
-  masm.pushReturnAddress();
-#  endif
+  masm.pushRegs(LinkRegister, FramePointer);
+#  else
   masm.push(FramePointer);
+#  endif
   masm.moveStackPtrTo(FramePointer);
 
   AllocatableRegisterSet regs(RegisterSet::Volatile());

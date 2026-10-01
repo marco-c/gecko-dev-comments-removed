@@ -119,10 +119,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm,
 
     
     masm.mov(&returnLabel, scratch);
-    masm.push(scratch);
-
     
-    masm.push(ebp);
+    masm.pushRegs(scratch, ebp);
     masm.mov(esp, ebp);
 
     

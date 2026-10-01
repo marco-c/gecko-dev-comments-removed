@@ -389,10 +389,11 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   
-  masm.pushReturnAddress();
-
   
-  masm.Push(FramePointer);
+  
+  masm.pushRegs(LinkRegister, FramePointer);
+  
+  masm.adjustFrame(sizeof(intptr_t));
   masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), id);

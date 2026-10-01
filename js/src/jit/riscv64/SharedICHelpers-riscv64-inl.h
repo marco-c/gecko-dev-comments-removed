@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef jit_riscv64_SharedICHelpers_riscv64_inl_h
 #define jit_riscv64_SharedICHelpers_riscv64_inl_h
 
-#include "jit/BaselineFrame.h"
 #include "jit/SharedICHelpers.h"
+
+#include "jit/BaselineFrame.h"
 
 namespace js {
 namespace jit {
@@ -64,11 +63,9 @@ inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
   
 
   
-  masm.Push(FrameDescriptor(FrameType::BaselineJS));
-  masm.Push(ICTailCallReg);
-
   
-  masm.Push(FramePointer);
+  masm.Push(FrameDescriptor(FrameType::BaselineJS));
+  masm.PushRegs(ICTailCallReg, FramePointer);
   masm.movePtr(StackPointer, FramePointer);
   masm.Push(ICStubReg);
 
