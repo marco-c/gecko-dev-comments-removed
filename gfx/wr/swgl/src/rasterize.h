@@ -518,55 +518,9 @@ static ALWAYS_INLINE FloatRange aa_dist(const E& e, float dir) {
   }
 }
 
-
-
-
-
-
-static ALWAYS_INLINE float aa_row_coverage(float y, float topY,
-                                           float bottomY) {
-  return 256.0f *
-         clamp(min(bottomY, y + 0.5f) - max(topY, y - 0.5f), 0.0f, 1.0f);
-}
-
-
-
-
-
-
-struct RowExtremity {
-  
-  bool aaEdge;
-  
-  
-  
-  float edgeY;
-  
-  float round;
-};
-
-
-
-
-template <typename T>
-static ALWAYS_INLINE RowExtremity row_extremity(const T& a, int ai, const T& b,
-                                                int bi, int edgeIndex,
-                                                float noEdge) {
-  if (!(swgl_ClipFlags & SWGL_CLIP_FLAG_AA)) {
-    return {false, noEdge, 0.5f};
-  }
-  if (ai == bi || a.y != b.y) {
-    return {false, noEdge, 0.0f};
-  }
-  return (swgl_AAEdgeMask >> edgeIndex) & 1
-             ? RowExtremity{true, a.y, 0.0f}
-             : RowExtremity{false, noEdge, 0.5f};
-}
-
 template <typename P, typename E>
 static ALWAYS_INLINE IntRange aa_span(P* buf, const E& left, const E& right,
-                                      const FloatRange& bounds,
-                                      float rowCoverage) {
+                                      const FloatRange& bounds) {
   
   
   
@@ -591,13 +545,6 @@ static ALWAYS_INLINE IntRange aa_span(P* buf, const E& left, const E& right,
   
   swgl_OpaqueStart = (const uint8_t*)(buf + leftAA.end);
   swgl_OpaqueSize = max(rightAA.start - leftAA.end - 3, 0) * sizeof(P);
-
-  
-  
-  swgl_AAMaxCoverage = rowCoverage;
-  if (rowCoverage < 256.0f) {
-    swgl_OpaqueSize = 0;
-  }
 
   
   
@@ -942,9 +889,8 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
   assert(l0.y == r0.y);
   
   
-  RowExtremity top = row_extremity(l0, l0i, r0, r0i, l0i, -1.0e6f);
-  float y =
-      floor(max(min(l0.y, clipRect.y1), clipRect.y0) + top.round) + 0.5f;
+  float aaRound = swgl_ClipFlags & SWGL_CLIP_FLAG_AA ? 0.0f : 0.5f;
+  float y = floor(max(min(l0.y, clipRect.y1), clipRect.y0) + aaRound) + 0.5f;
   
   Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i], l1i);
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i], r0i);
@@ -957,12 +903,7 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
                          ? (DepthRun*)depthtex.sample_ptr(0, int(y))
                          : nullptr;
   
-  
-  
-  
-  RowExtremity bottom = row_extremity(l1, l1i, r1, r1i, r1i, 1.0e6f);
-  float endY = min(l1.y, r1.y);
-  float checkY = min(bottom.aaEdge ? ceil(endY) : endY, clipRect.y1);
+  float checkY = min(min(l1.y, r1.y), clipRect.y1);
   
   FloatRange clipSpan =
       clipRect.x_range().clip(x_range(l0, l1).merge(x_range(r0, r1)));
@@ -1002,13 +943,11 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
       clipSpan =
           clipRect.x_range().clip(x_range(l0, l1).merge(x_range(r0, r1)));
       
-      bottom = row_extremity(l1, l1i, r1, r1i, r1i, 1.0e6f);
-      checkY = min(ceil(min(l1.y, r1.y) - bottom.round), clipRect.y1);
+      checkY = min(ceil(min(l1.y, r1.y) - aaRound), clipRect.y1);
     }
 
     
-    IntRange span = aa_span(fbuf, left, right, clipSpan,
-                            aa_row_coverage(y, top.edgeY, bottom.edgeY));
+    IntRange span = aa_span(fbuf, left, right, clipSpan);
     if (span.len() > 0) {
       
       if (vertex_shader->use_clip_distance()) {
@@ -1219,9 +1158,8 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
   assert(l0.y == r0.y);
   
   
-  RowExtremity top = row_extremity(l0, l0i, r0, r0i, l0i, -1.0e6f);
-  float y =
-      floor(max(min(l0.y, clipRect.y1), clipRect.y0) + top.round) + 0.5f;
+  float aaRound = swgl_ClipFlags & SWGL_CLIP_FLAG_AA ? 0.0f : 0.5f;
+  float y = floor(max(min(l0.y, clipRect.y1), clipRect.y0) + aaRound) + 0.5f;
   
   Edge left(y, l0, l1, interp_outs[l0i], interp_outs[l1i], l1i);
   Edge right(y, r0, r1, interp_outs[r0i], interp_outs[r1i], r0i);
@@ -1234,12 +1172,7 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
                          ? (DepthRun*)depthtex.sample_ptr(0, int(y))
                          : nullptr;
   
-  
-  
-  
-  RowExtremity bottom = row_extremity(l1, l1i, r1, r1i, r1i, 1.0e6f);
-  float endY = min(l1.y, r1.y);
-  float checkY = min(bottom.aaEdge ? ceil(endY) : endY, clipRect.y1);
+  float checkY = min(min(l1.y, r1.y), clipRect.y1);
   
   FloatRange clipSpan =
       clipRect.x_range().clip(x_range(l0, l1).merge(x_range(r0, r1)));
@@ -1266,13 +1199,11 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
       clipSpan =
           clipRect.x_range().clip(x_range(l0, l1).merge(x_range(r0, r1)));
       
-      bottom = row_extremity(l1, l1i, r1, r1i, r1i, 1.0e6f);
-      checkY = min(ceil(min(l1.y, r1.y) - bottom.round), clipRect.y1);
+      checkY = min(ceil(min(l1.y, r1.y) - aaRound), clipRect.y1);
     }
 
     
-    IntRange span = aa_span(fbuf, left, right, clipSpan,
-                            aa_row_coverage(y, top.edgeY, bottom.edgeY));
+    IntRange span = aa_span(fbuf, left, right, clipSpan);
     if (span.len() > 0) {
       
       if (vertex_shader->use_clip_distance()) {
