@@ -3547,6 +3547,9 @@ pref("devtools.popup.disable_autohide", false);
 #endif
 
 
+pref("devtools.settings.redesign-enabled", false);
+
+
 pref("first-startup.timeout", 30000);
 pref("first-startup.category-tasks-enabled", true);
 

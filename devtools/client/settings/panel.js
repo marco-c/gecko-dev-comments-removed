@@ -1,0 +1,11 @@
+
+
+
+
+"use strict";
+
+class SettingsPanel {
+  destroy() {}
+}
+
+exports.SettingsPanel = SettingsPanel;
