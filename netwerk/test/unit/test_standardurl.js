@@ -1296,3 +1296,27 @@ add_task(async function test_bug2049622() {
 
   Assert.equal(uri.spec, spec, "the original URL is untouched");
 });
+
+
+
+
+add_task(async function test_coalesce_prescan() {
+  for (let [path, expected] of [
+    ["/a/./b", "/a/b"],
+    ["/a/../b", "/b"],
+    ["/a/%2e/b", "/a/b"],
+    ["/a/%2e%2e/b", "/b"],
+    ["/a/.%2e/b", "/b"],
+    ["/a/%2e./b", "/b"],
+    ["/a/b/..", "/a/"],
+    ["/a/b/.", "/a/b/"],
+    ["/a/./b?q=.&r=%2e#f.g", "/a/b?q=.&r=%2e#f.g"],
+    
+    ["/a.b/c.html", "/a.b/c.html"],
+    ["/a%2e./b", "/a%2e./b"],
+    ["/dir/file.html", "/dir/file.html"],
+  ]) {
+    let url = stringToURL("http://example.com" + path);
+    Assert.equal(url.pathQueryRef, expected, path);
+  }
+});
