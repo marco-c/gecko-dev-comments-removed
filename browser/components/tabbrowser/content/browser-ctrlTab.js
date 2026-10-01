@@ -106,6 +106,7 @@ var tabPreviews = {
 
 
 
+
   capture: async function tabPreviews_capture(aTab, aShouldCache) {
     let browser = aTab.linkedBrowser;
     let uri = browser.currentURI.spec;
@@ -114,6 +115,8 @@ var tabPreviews = {
 
     if (doStore && aShouldCache) {
       await PageThumbs.captureAndStore(browser);
+      
+      
       let img = await this.loadImage(uri);
       if (img) {
         
@@ -121,21 +124,20 @@ var tabPreviews = {
         aTab.__thumbnail_lastURI = uri;
         
         canvas.getContext("2d").drawImage(img, 0, 0);
-      } else {
-        canvas = null;
+        return canvas;
       }
-    } else {
-      try {
-        await PageThumbs.captureToCanvas(browser, canvas);
-        if (aShouldCache) {
-          
-          aTab.__thumbnail = canvas;
-          aTab.__thumbnail_lastURI = uri;
-        }
-      } catch (error) {
-        console.error(error);
-        canvas = null;
+    }
+
+    try {
+      await PageThumbs.captureToCanvas(browser, canvas);
+      if (aShouldCache) {
+        
+        aTab.__thumbnail = canvas;
+        aTab.__thumbnail_lastURI = uri;
       }
+    } catch (error) {
+      console.error(error);
+      canvas = null;
     }
 
     return canvas;
