@@ -1087,7 +1087,17 @@ class nsPresContext : public nsISupports,
 
   void UpdateContainerQueryStylesAndAnchorPosLayout();
 
-  mozilla::intl::Bidi& BidiEngine();
+  
+  
+  
+  mozilla::UniquePtr<mozilla::intl::Bidi> GetBidiEngine();
+
+  
+  
+  void ReleaseBidiEngine(
+      mozilla::UniquePtr<mozilla::intl::Bidi>&& aBidiEngine) {
+    mBidiEngine = std::move(aBidiEngine);
+  }
 
   gfxFontFeatureValueSet* GetFontFeatureValuesLookup() const {
     return mFontFeatureValuesLookup;
