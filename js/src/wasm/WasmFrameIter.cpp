@@ -836,16 +836,15 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
   {
     
     
-    AutoForbidPoolsAndNops afp(&masm, 20);
+    AutoForbidPoolsAndNops afp(&masm, 8);
 
+    masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
     masm.loadPtr(Address(StackPointer, Frame::callerFPOffset()), FramePointer);
     poppedFP = masm.currentOffset();
-    masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
 
-    *ret = masm.currentOffset();
     masm.addToStackPtr(Imm32(sizeof(Frame)));
+    *ret = masm.currentOffset();
     masm.jalr(zero, ra, 0);
-    masm.nop();
   }
 #elif defined(JS_CODEGEN_ARM64)
 
@@ -1991,17 +1990,8 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
         fixedPC = Frame::fromUntaggedWasmExitFP(sp)->returnAddress();
         fixedFP = fp;
         AssertMatchesCallSite(fixedPC, fixedFP);
-#elif defined(JS_CODEGEN_RISCV64)
-      } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
-                 offsetInCode <= codeRange->ret()) {
-        
-        
-        
-        MOZ_ASSERT(*sp == fp);
-        fixedPC = Frame::fromUntaggedWasmExitFP(sp)->returnAddress();
-        fixedFP = fp;
-        AssertMatchesCallSite(fixedPC, fixedFP);
-#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64)
+#elif defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64) || \
+    defined(JS_CODEGEN_RISCV64)
         
         
       } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
