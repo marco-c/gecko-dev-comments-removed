@@ -962,12 +962,9 @@ nsresult WorkerScriptLoader::LoadScript(
   
   
   if (topWorkerPrivate->IsDedicatedWorker()) {
-    nsCOMPtr<nsPIDOMWindowInner> window = topWorkerPrivate->GetWindow();
-    if (window) {
-      nsCOMPtr<nsIDocShell> docShell = window->GetDocShell();
-      if (docShell) {
-        nsresult rv = docShell->GetDefaultLoadFlags(&loadFlags);
-        NS_ENSURE_SUCCESS(rv, rv);
+    if (nsCOMPtr<nsPIDOMWindowInner> window = topWorkerPrivate->GetWindow()) {
+      if (nsCOMPtr<nsIDocShell> docShell = window->GetDocShell()) {
+        loadFlags = docShell->GetDefaultLoadFlags();
       }
     }
   }

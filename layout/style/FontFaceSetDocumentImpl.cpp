@@ -53,12 +53,9 @@ void FontFaceSetDocumentImpl::Initialize() {
   
   
   if (nsCOMPtr<nsIDocShell> docShell = mDocument->GetDocShell()) {
-    uint32_t loadType;
-    uint32_t flags;
-    if ((NS_SUCCEEDED(docShell->GetLoadType(&loadType)) &&
-         ((loadType >> 16) & nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE)) ||
-        (NS_SUCCEEDED(docShell->GetDefaultLoadFlags(&flags)) &&
-         (flags & nsIRequest::LOAD_BYPASS_CACHE))) {
+    if (((docShell->GetLoadType() >> 16) &
+         nsIWebNavigation::LOAD_FLAGS_BYPASS_CACHE) ||
+        (docShell->GetDefaultLoadFlags() & nsIRequest::LOAD_BYPASS_CACHE)) {
       mBypassCache = true;
     }
   }
