@@ -149,13 +149,11 @@ PeerConnectionTestWrapper::PeerConnectionTestWrapper(
     const std::string& name,
     const Environment& env,
     SocketServer* socket_server,
-    Thread* network_thread,
-    Thread* worker_thread)
+    Thread* network_thread)
     : name_(name),
       env_(env),
       socket_server_(socket_server),
       network_thread_(network_thread),
-      worker_thread_(worker_thread),
       pending_negotiation_(false) {
   pc_thread_checker_.Detach();
 }
@@ -196,7 +194,6 @@ bool PeerConnectionTestWrapper::CreatePc(
 
   PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = network_thread_;
-  dependencies.worker_thread = worker_thread_;
   dependencies.signaling_thread = Thread::Current();
   dependencies.socket_factory = socket_server_;
   dependencies.adm =

@@ -547,7 +547,6 @@ class PeerConnectionIntegrationWrapper : public PeerConnectionObserver,
             PeerConnectionDependencies dependencies,
             SocketServer* socket_server,
             Thread* network_thread,
-            Thread* worker_thread,
             std::unique_ptr<FakeRtcEventLogFactory> event_log_factory,
             bool reset_encoder_factory,
             bool reset_decoder_factory,
@@ -1067,9 +1066,7 @@ class PeerConnectionIntegrationTestBase : public ::testing::Test {
 
   
   
-  
   std::unique_ptr<Thread> network_thread_;
-  std::unique_ptr<Thread> worker_thread_;
   
   
   

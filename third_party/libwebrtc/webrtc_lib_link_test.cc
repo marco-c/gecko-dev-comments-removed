@@ -19,6 +19,7 @@
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/create_modular_peer_connection_factory.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/enable_media.h"
 #include "api/environment/environment_factory.h"
@@ -62,7 +63,6 @@ webrtc::PeerConnectionFactoryDependencies CreateSomePcfDeps() {
   pcf_deps.env = CreateEnvironment();
   pcf_deps.signaling_thread = Thread::Current();
   pcf_deps.network_thread = Thread::Current();
-  pcf_deps.worker_thread = Thread::Current();
   pcf_deps.event_log_factory = std::make_unique<RtcEventLogFactory>();
   CreateSomeMediaDeps(pcf_deps);
   EnableMedia(pcf_deps);
