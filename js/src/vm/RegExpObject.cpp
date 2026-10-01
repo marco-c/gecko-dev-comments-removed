@@ -752,6 +752,13 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
   const uint32_t maxInterruptRetries = 4;
   do {
     RegExpRunStatus result = irregexp::Execute(cx, re, input, start, matches);
+
+    
+    if (result == RegExpRunStatus::Error && !cx->isExceptionPending()) {
+      MOZ_ASSERT(cx->hadUncatchableException());
+      return RegExpRunStatus::Error;
+    }
+
 #ifdef DEBUG
     
     if (js::irregexp::IsolateShouldSimulateInterrupt(cx->isolate)) {
@@ -790,9 +797,7 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
       
       
       
-      
-      
-      MOZ_ASSERT(cx->isExceptionPending() || cx->hadUncatchableException());
+      MOZ_ASSERT(cx->isExceptionPending());
       return RegExpRunStatus::Error;
     }
 
