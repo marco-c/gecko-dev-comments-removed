@@ -374,13 +374,12 @@ bool ContentCacheInChild::CacheText(nsIWidget* aWidget,
   return CacheSelection(aWidget, aNotification);
 }
 
-bool ContentCacheInChild::QueryFirstCharFallbackRect(
-    nsIWidget* aWidget, LayoutDeviceIntRect& aCharRect) const {
+bool ContentCacheInChild::QueryCharRect(nsIWidget* aWidget, uint32_t aOffset,
+                                        LayoutDeviceIntRect& aCharRect) const {
   aCharRect.SetEmpty();
 
   WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect, aWidget);
-  queryTextRectEvent.InitForQueryTextRect(0, 1);
-  queryTextRectEvent.mInput.mIsFirstCharFallbackRect = true;
+  queryTextRectEvent.InitForQueryTextRect(aOffset, 1);
   aWidget->DispatchEvent(&queryTextRectEvent);
   if (NS_WARN_IF(queryTextRectEvent.Failed())) {
     return false;
@@ -437,14 +436,17 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
     
     
     uint32_t length = textComposition->LastData().Length() + 1;
-    mTextRectArray = Some(TextRectArray(mCompositionStart.value()));
-    if (NS_WARN_IF(!QueryCharRectArray(aWidget, mTextRectArray->mStart, length,
-                                       mTextRectArray->mRects))) {
+    mTextRectArray.reset();
+    RectArray rects;
+    if (NS_WARN_IF(!QueryCharRectArray(aWidget, mCompositionStart.value(),
+                                       length, rects))) {
       MOZ_LOG(sContentCacheLog, LogLevel::Error,
               ("0x%p   CacheTextRects(), FAILED, "
                "couldn't retrieve text rect array of the composition string",
                this));
-      mTextRectArray.reset();
+    } else {
+      mTextRectArray = Some(TextRectArray(mCompositionStart.value()));
+      mTextRectArray->mRects = std::move(rects);
     }
   } else {
     mCompositionStart.reset();
@@ -589,8 +591,7 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
     mFirstCharRect = mTextRectArray->GetRect(0u);
   } else {
     LayoutDeviceIntRect charRect;
-    if (MOZ_UNLIKELY(
-            NS_WARN_IF(!QueryFirstCharFallbackRect(aWidget, charRect)))) {
+    if (MOZ_UNLIKELY(NS_WARN_IF(!QueryCharRect(aWidget, 0, charRect)))) {
       MOZ_LOG(sContentCacheLog, LogLevel::Error,
               ("0x%p   CacheTextRects(), FAILED, "
                "couldn't retrieve first char rect",
@@ -606,6 +607,7 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
   
   
   if (mLastCommit.isSome()) {
+    RectArray rects;
     mLastCommitStringTextRectArray =
         Some(TextRectArray(mLastCommit->StartOffset()));
     if (mLastCommit->Length() == 1 && mSelection.isSome() &&
@@ -614,15 +616,17 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
         !mSelection->mAnchorCharRects[ePrevCharRect].IsEmpty()) {
       mLastCommitStringTextRectArray->mRects.AppendElement(
           mSelection->mAnchorCharRects[ePrevCharRect]);
-    } else if (NS_WARN_IF(!QueryCharRectArray(
-                   aWidget, mLastCommit->StartOffset(), mLastCommit->Length(),
-                   mLastCommitStringTextRectArray->mRects))) {
+    } else if (NS_WARN_IF(!QueryCharRectArray(aWidget,
+                                              mLastCommit->StartOffset(),
+                                              mLastCommit->Length(), rects))) {
       MOZ_LOG(sContentCacheLog, LogLevel::Error,
               ("0x%p   CacheTextRects(), FAILED, "
                "couldn't retrieve text rect array of the last commit string",
                this));
       mLastCommitStringTextRectArray.reset();
       mLastCommit.reset();
+    } else {
+      mLastCommitStringTextRectArray->mRects = std::move(rects);
     }
     MOZ_ASSERT((mLastCommitStringTextRectArray.isSome()
                     ? mLastCommitStringTextRectArray->mRects.Length()
@@ -1377,19 +1381,20 @@ bool ContentCacheInParent::OnCompositionEvent(
 
 void ContentCacheInParent::OnSelectionEvent(
     const WidgetSelectionEvent& aSelectionEvent) {
-  MOZ_LOG(sContentCacheLog, LogLevel::Info,
-          ("0x%p OnSelectionEvent(aEvent={ "
-           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-           "mExpandToClusterBoundary=%s }), "
-           "PendingEventsNeedingAck()=%u, WidgetHasComposition()=%s, "
-           "mHandlingCompositions.Length()=%zu, HasPendingCommit()=%s, "
-           "mIsChildIgnoringCompositionEvents=%s",
-           this, ToChar(aSelectionEvent.mMessage), aSelectionEvent.mOffset,
-           aSelectionEvent.mLength, TrueOrFalse(aSelectionEvent.mReversed),
-           TrueOrFalse(aSelectionEvent.mExpandToClusterBoundary),
-           PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
-           mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
-           TrueOrFalse(mIsChildIgnoringCompositionEvents)));
+  MOZ_LOG_FMT(sContentCacheLog, LogLevel::Info,
+              "{} OnSelectionEvent(aEvent={{ "
+              "mMessage={}, mOffset={}, mLength={}, mDirection={}, "
+              "mExpandToClusterBoundary={} }}), "
+              "PendingEventsNeedingAck()={}, WidgetHasComposition()={}, "
+              "mHandlingCompositions.Length()={}, HasPendingCommit()={}, "
+              "mIsChildIgnoringCompositionEvents={}",
+              static_cast<void*>(this), ToChar(aSelectionEvent.mMessage),
+              aSelectionEvent.mOffset, aSelectionEvent.mLength,
+              aSelectionEvent.mDirection,
+              aSelectionEvent.mExpandToClusterBoundary,
+              PendingEventsNeedingAck(), WidgetHasComposition(),
+              mHandlingCompositions.Length(), HasPendingCommit(),
+              mIsChildIgnoringCompositionEvents);
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
   mDispatchedEventMessages.AppendElement(aSelectionEvent.mMessage);

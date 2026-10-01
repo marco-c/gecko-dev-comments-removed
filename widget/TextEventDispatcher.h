@@ -187,6 +187,33 @@ class TextEventDispatcher final {
   
 
 
+  void DispatchSetSelectionEvent(WidgetSelectionEvent& aEvent);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool DispatchSetSelectionEvent(
+      uint32_t aOffset, uint32_t aLength,
+      ExpandToClusterBoundary aExpandToClusterBoundary,
+      RangeDirection aRangeDirection = RangeDirection::Normal,
+      int16_t aReason = 0 );
+
+  
+
+
 
 
 

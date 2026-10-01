@@ -1267,6 +1267,7 @@ class WidgetQueryContentEvent final : public WidgetGUIEvent {
     
     CopyableTArray<mozilla::LayoutDeviceIntRect> mRectArray;
     
+    
     bool mReversed = false;
     
     bool mWidgetIsHit = false;
@@ -1438,14 +1439,23 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
     return nullptr;
   }
 
+  [[nodiscard]] bool IsReversed() const {
+    return mDirection == RangeDirection::Reversed;
+  }
+
+  [[nodiscard]] bool ShouldExpandToClusterBoundary() const {
+    return mExpandToClusterBoundary == ExpandToClusterBoundary::Yes;
+  }
+
   
   uint32_t mOffset = 0;
   
   uint32_t mLength = 0;
   
-  bool mReversed = false;
+  RangeDirection mDirection = RangeDirection::Normal;
   
-  bool mExpandToClusterBoundary = true;
+  ExpandToClusterBoundary mExpandToClusterBoundary =
+      ExpandToClusterBoundary::Yes;
   
   bool mSucceeded = false;
   

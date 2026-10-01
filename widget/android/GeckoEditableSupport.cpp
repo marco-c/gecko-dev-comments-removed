@@ -940,12 +940,11 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     if (aStart >= 0 && aEnd >= 0) {
       
       
-      WidgetSelectionEvent event(true, eSetSelection, widget);
-      event.mOffset = uint32_t(aStart);
-      event.mLength = uint32_t(aEnd - aStart);
-      event.mExpandToClusterBoundary = false;
-      event.mReason = nsISelectionListener::IME_REASON;
-      status = widget->DispatchEvent(&event);
+      MOZ_ASSERT(mDispatcher->GetWidget() == widget);
+      mDispatcher->DispatchSetSelectionEvent(
+          uint32_t(aStart), uint32_t(aEnd - aStart),
+          ExpandToClusterBoundary::No, RangeDirection::Normal,
+          nsISelectionListener::IME_REASON);
     }
 
     if (!mIMEKeyEvents.IsEmpty()) {
@@ -1126,12 +1125,11 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
     MOZ_ASSERT(aStart >= 0 && aEnd >= 0);
     const bool compositionChanged = RemoveComposition();
 
-    WidgetSelectionEvent selEvent(true, eSetSelection, widget);
-    selEvent.mOffset = std::min(aStart, aEnd);
-    selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
-    selEvent.mReversed = aStart > aEnd;
-    selEvent.mExpandToClusterBoundary = false;
-    widget->DispatchEvent(&selEvent);
+    MOZ_ASSERT(mDispatcher->GetWidget() == widget);
+    const uint32_t offset = std::min(aStart, aEnd);
+    mDispatcher->DispatchSetSelectionEvent(
+        offset, std::max(aStart, aEnd) - offset, ExpandToClusterBoundary::No,
+        aStart > aEnd ? RangeDirection::Reversed : RangeDirection::Normal);
     return compositionChanged;
   }
 
@@ -1161,16 +1159,16 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
     
     RemoveComposition();
 
-    {
-      WidgetSelectionEvent event(true, eSetSelection, widget);
-      event.mOffset = uint32_t(aStart);
-      event.mLength = uint32_t(aEnd - aStart);
-      event.mExpandToClusterBoundary = false;
-      event.mReason = nsISelectionListener::IME_REASON;
-      status = widget->DispatchEvent(&event);
-    }
+    MOZ_ASSERT(mDispatcher->GetWidget() == widget);
+    mDispatcher->DispatchSetSelectionEvent(
+        uint32_t(aStart), uint32_t(aEnd - aStart), ExpandToClusterBoundary::No,
+        RangeDirection::Normal, nsISelectionListener::IME_REASON);
 
     {
+      
+      
+      
+      
       WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                      widget);
       status = widget->DispatchEvent(&querySelectedTextEvent);
@@ -1240,12 +1238,15 @@ class MOZ_STACK_CLASS AutoSelectionRestore final {
       return;
     }
 
-    WidgetSelectionEvent selection(true, eSetSelection, mWidget);
-    selection.mOffset = mOffset;
-    selection.mLength = mLength;
-    selection.mExpandToClusterBoundary = false;
-    selection.mReason = nsISelectionListener::IME_REASON;
-    mWidget->DispatchEvent(&selection);
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mDispatcher->GetWidget() == mWidget);
+    mDispatcher->DispatchSetSelectionEvent(
+        mOffset, mLength, ExpandToClusterBoundary::No, RangeDirection::Normal,
+        nsISelectionListener::IME_REASON);
   }
 
  private:

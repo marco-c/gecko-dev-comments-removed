@@ -447,17 +447,20 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
+  
   template <typename RangeType, typename TextNodeType>
   Result<DOMRangeAndAdjustedOffsetInFlattenedTextBase<RangeType, TextNodeType>,
          nsresult>
   ConvertFlatTextOffsetToDOMRangeBase(uint32_t aOffset, uint32_t aLength,
                                       bool aExpandToClusterBoundaries);
+  
   MOZ_ALWAYS_INLINE Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToDOMRange(uint32_t aOffset, uint32_t aLength,
                                   bool aExpandToClusterBoundaries) {
     return ConvertFlatTextOffsetToDOMRangeBase<SimpleRange, RefPtr<dom::Text>>(
         aOffset, aLength, aExpandToClusterBoundaries);
   }
+  
   MOZ_ALWAYS_INLINE
   Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToUnsafeDOMRange(uint32_t aOffset, uint32_t aLength,
