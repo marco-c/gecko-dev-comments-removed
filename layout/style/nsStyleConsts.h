@@ -375,13 +375,6 @@ enum class StyleStrokeLinejoin : uint8_t {
 };
 
 
-enum class StyleTextAnchor : uint8_t {
-  Start,
-  Middle,
-  End,
-};
-
-
 enum class StyleTextRendering : uint8_t {
   Auto,
   Optimizespeed,
