@@ -528,7 +528,7 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
       return NS_OK;
     case STATUS_ACCEPTED:  
     case STATUS_ACCEPT_SESSION:
-      NotifyAccepted(aChannel);
+      NotifyAccepted(aChannel, rejectedReason);
 
       
       if (rejectedReason ==
@@ -657,9 +657,11 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   return NS_OK;
 }
 
-void CookieService::NotifyAccepted(nsIChannel* aChannel) {
+void CookieService::NotifyAccepted(nsIChannel* aChannel,
+                                   uint32_t aRejectedReason) {
   ContentBlockingNotifier::OnDecision(
-      aChannel, ContentBlockingNotifier::BlockingDecision::eAllow, 0);
+      aChannel, ContentBlockingNotifier::BlockingDecision::eAllow,
+      aRejectedReason);
 }
 
 
@@ -882,6 +884,8 @@ void CookieService::GetCookiesForURI(
     nsTArray<RefPtr<Cookie>>& aCookieList) {
   NS_ASSERTION(aHostURI, "null host!");
 
+  uint32_t acceptedReason = 0;
+
   if (!CookieCommons::IsSchemeSupported(aHostURI)) {
     return;
   }
@@ -979,6 +983,7 @@ void CookieService::GetCookiesForURI(
       default:
         break;
     }
+    acceptedReason = rejectedReason;
 
     
     
@@ -1105,7 +1110,7 @@ void CookieService::GetCookiesForURI(
 
   
   
-  NotifyAccepted(aChannel);
+  NotifyAccepted(aChannel, acceptedReason);
 
   
   
