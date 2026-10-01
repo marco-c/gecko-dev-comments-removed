@@ -6,9 +6,21 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 use std::{cmp::min, collections::VecDeque};
 
-use neqo_common::{Buffer, Encoder, qdebug, to_u64};
+use neqo_common::{Buffer, Encoder, qdebug, qtrace, to_u64};
 
 use crate::{
     ConnectionEvents, Error, Res, Stats,
@@ -67,6 +79,9 @@ pub struct QuicDatagrams {
     remote_datagram_size: u64,
     max_queued_outgoing_datagrams: usize,
     
+    
+    blocked: bool,
+    
     datagrams: VecDeque<QuicDatagram>,
     conn_events: ConnectionEvents,
 }
@@ -81,6 +96,7 @@ impl QuicDatagrams {
             local_datagram_size,
             remote_datagram_size: 0,
             max_queued_outgoing_datagrams,
+            blocked: false,
             datagrams: VecDeque::with_capacity(max_queued_outgoing_datagrams),
             conn_events,
         }
@@ -127,19 +143,34 @@ impl QuicDatagrams {
                 debug_assert!(builder.len() <= builder.limit());
                 stats.frame_tx.datagram += 1;
                 tokens.push(recovery::Token::Datagram(*dgram.tracking()));
+                qtrace!(
+                    "Sent QUIC datagram, {} remaining in queue.",
+                    self.datagrams.len()
+                );
             } else if tokens.is_empty() {
                 
                 
                 
-                qdebug!("QUIC datagram ({}) does not fit MTU.", dgram.data.len());
+                qdebug!(
+                    "QUIC datagram ({}) does not fit MTU, dropping it, {} remaining in queue.",
+                    dgram.data.len(),
+                    self.datagrams.len()
+                );
                 self.conn_events
                     .datagram_outcome(dgram.tracking(), OutgoingDatagramOutcome::DroppedTooBig);
                 stats.datagram_tx.dropped_too_big += 1;
             } else {
                 self.datagrams.push_front(dgram);
                 
-                return;
+                
+                break;
             }
+        }
+        
+        
+        if self.blocked && self.datagrams.len() < self.max_queued_outgoing_datagrams {
+            self.blocked = false;
+            self.conn_events.datagram_space_available();
         }
     }
 
@@ -152,12 +183,9 @@ impl QuicDatagrams {
     
     
     
-    pub fn add_datagram(
-        &mut self,
-        data: Vec<u8>,
-        tracking: DatagramTracking,
-        stats: &mut Stats,
-    ) -> Res<()> {
+    
+    
+    pub fn add_datagram(&mut self, data: Vec<u8>, tracking: DatagramTracking) -> Res<bool> {
         if to_u64(data.len()) > self.remote_datagram_size {
             qdebug!(
                 "QUIC datagram exceeds remote limit, dropping it, datagram size {}, remote datagram size limit {}.",
@@ -166,19 +194,17 @@ impl QuicDatagrams {
             );
             return Err(Error::TooMuchData);
         }
-        if self.datagrams.len() == self.max_queued_outgoing_datagrams {
-            qdebug!("QUIC datagram queue full, dropping first datagram in queue (head-drop).");
-            self.conn_events.datagram_outcome(
-                self.datagrams
-                    .pop_front()
-                    .ok_or(Error::Internal)?
-                    .tracking(),
-                OutgoingDatagramOutcome::DroppedQueueFull,
-            );
-            stats.datagram_tx.dropped_queue_full += 1;
-        }
         self.datagrams.push_back(QuicDatagram { data, tracking });
-        Ok(())
+        if self.datagrams.len() < self.max_queued_outgoing_datagrams {
+            return Ok(true);
+        }
+        qdebug!(
+            "QUIC datagram queue full (len {} / max {}), applying backpressure.",
+            self.datagrams.len(),
+            self.max_queued_outgoing_datagrams
+        );
+        self.blocked = true;
+        Ok(false)
     }
 
     pub fn handle_datagram(&self, data: &[u8]) -> Res<()> {

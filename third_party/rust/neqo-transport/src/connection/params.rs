@@ -4,8 +4,9 @@
 
 
 
-use std::{cmp::max, time::Duration};
+use std::{cmp::max, num::NonZeroUsize, time::Duration};
 
+use enum_map::{Enum, EnumMap};
 use neqo_common::to_u64;
 
 pub use crate::recovery::FAST_PTO_SCALE;
@@ -15,7 +16,7 @@ use crate::{
     rtt::GRANULARITY,
     stream_id::StreamType,
     tparams::{
-        PreferredAddress, TransportParameter,
+        PreferredAddress, TransportParameter, TransportParameterId,
         TransportParameterId::{
             ActiveConnectionIdLimit, DisableMigration, GreaseQuicBit, IdleTimeout, InitialMaxData,
             InitialMaxStreamDataBidiLocal, InitialMaxStreamDataBidiRemote, InitialMaxStreamDataUni,
@@ -102,6 +103,28 @@ pub enum PreferredAddressConfig {
 }
 
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Enum)]
+pub enum StreamDataLimit {
+    
+    BiDiLocal,
+    
+    BiDiRemote,
+    
+    UniDi,
+}
+
+impl StreamDataLimit {
+    
+    const fn tp(self) -> TransportParameterId {
+        match self {
+            Self::BiDiLocal => InitialMaxStreamDataBidiLocal,
+            Self::BiDiRemote => InitialMaxStreamDataBidiRemote,
+            Self::UniDi => InitialMaxStreamDataUni,
+        }
+    }
+}
+
+
 
 
 #[expect(clippy::struct_excessive_bools, reason = "We need that many, sorry.")]
@@ -114,18 +137,9 @@ pub struct ConnectionParameters {
     
     max_data: u64,
     
+    max_stream_data: EnumMap<StreamDataLimit, u64>,
     
-    max_stream_data_bidi_remote: u64,
-    
-    
-    max_stream_data_bidi_local: u64,
-    
-    
-    max_stream_data_uni: u64,
-    
-    max_streams_bidi: u64,
-    
-    max_streams_uni: u64,
+    max_streams: EnumMap<StreamType, u64>,
     
     
     
@@ -135,6 +149,11 @@ pub struct ConnectionParameters {
     ack_ratio: u8,
     
     idle_timeout: Duration,
+    
+    
+    
+    
+    max_pto: Option<NonZeroUsize>,
     preferred_address: PreferredAddressConfig,
     datagram_size: u64,
     outgoing_datagram_queue: usize,
@@ -171,13 +190,12 @@ impl Default for ConnectionParameters {
             slow_start: SlowStart::Classic,
             hystart_css_baseline: HyStartCssBaseline::CurrentRoundMinRtt,
             max_data: INITIAL_LOCAL_MAX_DATA,
-            max_stream_data_bidi_remote: to_u64(INITIAL_LOCAL_MAX_STREAM_DATA),
-            max_stream_data_bidi_local: to_u64(INITIAL_LOCAL_MAX_STREAM_DATA),
-            max_stream_data_uni: to_u64(INITIAL_LOCAL_MAX_STREAM_DATA),
-            max_streams_bidi: LOCAL_STREAM_LIMIT_BIDI,
-            max_streams_uni: LOCAL_STREAM_LIMIT_UNI,
+            max_stream_data: EnumMap::from_array([to_u64(INITIAL_LOCAL_MAX_STREAM_DATA); 3]),
+            
+            max_streams: EnumMap::from_array([LOCAL_STREAM_LIMIT_BIDI, LOCAL_STREAM_LIMIT_UNI]),
             ack_ratio: Self::DEFAULT_ACK_RATIO,
             idle_timeout: Self::DEFAULT_IDLE_TIMEOUT,
+            max_pto: None,
             preferred_address: PreferredAddressConfig::Default,
             datagram_size: MAX_DATAGRAM_FRAME_SIZE,
             outgoing_datagram_queue: MAX_QUEUED_DATAGRAMS_DEFAULT,
@@ -271,11 +289,8 @@ impl ConnectionParameters {
     }
 
     #[must_use]
-    pub const fn get_max_streams(&self, stream_type: StreamType) -> u64 {
-        match stream_type {
-            StreamType::BiDi => self.max_streams_bidi,
-            StreamType::UniDi => self.max_streams_uni,
-        }
+    pub fn get_max_streams(&self, stream_type: StreamType) -> u64 {
+        self.max_streams[stream_type]
     }
 
     
@@ -284,14 +299,7 @@ impl ConnectionParameters {
     #[must_use]
     pub fn max_streams(mut self, stream_type: StreamType, v: u64) -> Self {
         assert!(v <= (1 << 60), "max_streams is too large");
-        match stream_type {
-            StreamType::BiDi => {
-                self.max_streams_bidi = v;
-            }
-            StreamType::UniDi => {
-                self.max_streams_uni = v;
-            }
-        }
+        self.max_streams[stream_type] = v;
         self
     }
 
@@ -300,24 +308,10 @@ impl ConnectionParameters {
     
     
     
-    
     #[must_use]
-    pub fn max_stream_data(mut self, stream_type: StreamType, remote: bool, v: u64) -> Self {
+    pub fn max_stream_data(mut self, limit: StreamDataLimit, v: u64) -> Self {
         assert!(v < (1 << 62), "max stream data is too large");
-        match (stream_type, remote) {
-            (StreamType::BiDi, false) => {
-                self.max_stream_data_bidi_local = v;
-            }
-            (StreamType::BiDi, true) => {
-                self.max_stream_data_bidi_remote = v;
-            }
-            (StreamType::UniDi, false) => {
-                panic!("Can't set receive limit on a stream that can only be sent")
-            }
-            (StreamType::UniDi, true) => {
-                self.max_stream_data_uni = v;
-            }
-        }
+        self.max_stream_data[limit] = v;
         self
     }
 
@@ -364,6 +358,25 @@ impl ConnectionParameters {
     #[must_use]
     pub const fn get_idle_timeout(&self) -> Duration {
         self.idle_timeout
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub const fn max_pto(mut self, count: Option<NonZeroUsize>) -> Self {
+        self.max_pto = count;
+        self
+    }
+
+    #[must_use]
+    pub const fn get_max_pto(&self) -> Option<NonZeroUsize> {
+        self.max_pto
     }
 
     #[must_use]
@@ -579,20 +592,13 @@ impl ConnectionParameters {
 
         
         tps.local_mut().set_integer(InitialMaxData, self.max_data);
-        tps.local_mut().set_integer(
-            InitialMaxStreamDataBidiLocal,
-            self.max_stream_data_bidi_local,
-        );
-        tps.local_mut().set_integer(
-            InitialMaxStreamDataBidiRemote,
-            self.max_stream_data_bidi_remote,
-        );
+        for (limit, &v) in &self.max_stream_data {
+            tps.local_mut().set_integer(limit.tp(), v);
+        }
         tps.local_mut()
-            .set_integer(InitialMaxStreamDataUni, self.max_stream_data_uni);
+            .set_integer(InitialMaxStreamsBidi, self.max_streams[StreamType::BiDi]);
         tps.local_mut()
-            .set_integer(InitialMaxStreamsBidi, self.max_streams_bidi);
-        tps.local_mut()
-            .set_integer(InitialMaxStreamsUni, self.max_streams_uni);
+            .set_integer(InitialMaxStreamsUni, self.max_streams[StreamType::UniDi]);
         tps.local_mut().set_integer(
             IdleTimeout,
             u64::try_from(self.idle_timeout.as_millis()).unwrap_or(0),
@@ -676,5 +682,36 @@ mod tests {
                 .spurious_recovery(false)
                 .spurious_recovery_enabled()
         );
+    }
+
+    #[test]
+    fn max_stream_data_transport_parameters() {
+        use std::{cell::RefCell, rc::Rc};
+
+        use test_fixture::fixture_init;
+
+        use crate::{ConnectionIdGenerator as _, EmptyConnectionIdGenerator};
+
+        fixture_init();
+        let generator = Rc::new(RefCell::new(EmptyConnectionIdGenerator::default()));
+        let initial_cid = generator.borrow_mut().generate_cid().unwrap();
+        let mut cid_manager = ConnectionIdManager::new(generator, initial_cid);
+
+        let params = ConnectionParameters::default()
+            .max_stream_data(StreamDataLimit::BiDiLocal, 111)
+            .max_stream_data(StreamDataLimit::BiDiRemote, 222)
+            .max_stream_data(StreamDataLimit::UniDi, 333);
+        let tps = params
+            .create_transport_parameter(Role::Client, &mut cid_manager)
+            .unwrap();
+
+        for (limit, &v) in &params.max_stream_data {
+            let expected_tp = match limit {
+                StreamDataLimit::BiDiLocal => InitialMaxStreamDataBidiLocal,
+                StreamDataLimit::BiDiRemote => InitialMaxStreamDataBidiRemote,
+                StreamDataLimit::UniDi => InitialMaxStreamDataUni,
+            };
+            assert_eq!(tps.local().get_integer(expected_tp), v);
+        }
     }
 }

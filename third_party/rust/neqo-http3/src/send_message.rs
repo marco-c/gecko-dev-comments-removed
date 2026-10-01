@@ -20,7 +20,7 @@ use neqo_transport::{Connection, StreamId};
 use crate::{
     BufferedStream, CloseType, Error, Http3StreamInfo, Http3StreamType, HttpSendStream, Res,
     SendStream, SendStreamEvents, Stream,
-    frames::HFrame,
+    frames::{HFrame, HFrameType},
     headers_checks::{headers_valid, is_interim, trailers_valid},
 };
 
@@ -142,6 +142,16 @@ impl SendMessage {
     
     
     
+    #[must_use]
+    pub(crate) fn data_frame_len(payload_len: usize) -> usize {
+        Encoder::varint_len(u64::from(HFrameType::DATA))
+            + Encoder::varint_len(to_u64(payload_len))
+            + payload_len
+    }
+
+    
+    
+    
     
     fn encode<B: Buffer>(
         encoder: &mut Encoder<B>,
@@ -158,8 +168,8 @@ impl SendMessage {
         hframe.encode(encoder);
     }
 
-    fn stream_id(&self) -> StreamId {
-        Option::<StreamId>::from(&self.stream).expect("stream has ID")
+    const fn stream_id(&self) -> StreamId {
+        self.stream_info.stream_id()
     }
 }
 
@@ -178,9 +188,7 @@ impl SendStream for SendMessage {
         if self.has_data_to_send() {
             return Ok(0);
         }
-        let available = conn
-            .stream_avail_send_space(self.stream_id())
-            .map_err(|e| Error::map_stream_send_errors(&e.into()))?;
+        let available = conn.stream_avail_send_space(self.stream_id())?;
         if available < MIN_DATA_FRAME_SIZE {
             
             
@@ -211,14 +219,10 @@ impl SendStream for SendMessage {
         };
         let sent_fh = self
             .stream
-            .send_atomic_with(conn, |e| data_frame.encode(e), now)
-            .map_err(|e| Error::map_stream_send_errors(&e))?;
+            .send_atomic_with(conn, |e| data_frame.encode(e), now)?;
         debug_assert!(sent_fh);
 
-        let sent = self
-            .stream
-            .send_atomic(conn, &buf[..to_send], now)
-            .map_err(|e| Error::map_stream_send_errors(&e))?;
+        let sent = self.stream.send_atomic(conn, &buf[..to_send], now)?;
         debug_assert!(sent);
         Ok(to_send)
     }
@@ -242,18 +246,13 @@ impl SendStream for SendMessage {
     
     
     
-    
-    
     fn send(&mut self, conn: &mut Connection, now: Instant) -> Res<()> {
-        let sent = Error::map_error(self.stream.send_buffer(conn, now), Error::HttpInternal(5))?;
+        let sent = self.stream.send_buffer(conn, now)?;
 
         qtrace!("[{self}] {sent} bytes sent");
         if !self.has_data_to_send() {
             if self.state.done() {
-                Error::map_error(
-                    conn.stream_close_send(self.stream_id()),
-                    Error::HttpInternal(6),
-                )?;
+                conn.stream_close_send(self.stream_id())?;
                 qtrace!("[{self}] done sending request");
             } else {
                 
@@ -335,5 +334,55 @@ impl HttpSendStream for SendMessage {
 impl Display for SendMessage {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "SendMessage {}", self.stream_id())
+    }
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use neqo_transport::StreamType;
+    use test_fixture::{connect, now};
+
+    use super::*;
+
+    #[derive(Debug)]
+    struct NoopEvents;
+    impl SendStreamEvents for NoopEvents {}
+
+    
+    #[test]
+    fn send_after_transport_reset_is_an_error_not_a_panic() {
+        let (mut client, _server) = connect();
+        let stream_id = client.stream_create(StreamType::BiDi).unwrap();
+
+        let encoder = Rc::new(RefCell::new(qpack::Encoder::new(
+            &qpack::Settings::default(),
+            true,
+        )));
+        let mut msg = SendMessage::new(
+            MessageType::Request,
+            Http3StreamType::Http,
+            stream_id,
+            encoder,
+            Box::new(NoopEvents),
+        );
+        msg.send_headers(
+            &[
+                Header::new(":method", "GET"),
+                Header::new(":scheme", "https"),
+                Header::new(":authority", "something.com"),
+                Header::new(":path", "/"),
+            ],
+            &mut client,
+        )
+        .unwrap();
+
+        client.stream_reset_send(stream_id, 0).unwrap();
+
+        assert!(matches!(
+            msg.send(&mut client, now()),
+            Err(Error::TransportStreamDoesNotExist)
+        ));
+        assert!(client.state().connected());
     }
 }

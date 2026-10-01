@@ -7,12 +7,13 @@
 use std::fmt::{self, Debug, Formatter};
 
 use enum_map::Enum;
+use serde::Serialize;
 use strum::{EnumIter, FromRepr};
 
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Enum, Default, Debug, FromRepr, EnumIter)]
+#[derive(Copy, Clone, PartialEq, Eq, Enum, Default, Debug, FromRepr, EnumIter, Serialize)]
 #[repr(u8)]
 pub enum Ecn {
     #[default]

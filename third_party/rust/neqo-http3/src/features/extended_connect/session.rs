@@ -20,7 +20,7 @@ use crate::{
     CloseType, Error, Http3StreamType, HttpRecvStream, Priority, ReceiveOutput, RecvStream, Res,
     SendStream, Stream,
     features::extended_connect::{
-        ExtendedConnectEvents, ExtendedConnectType, HeaderListener, Headers,
+        ExtendedConnectEvents, ExtendedConnectType, HeaderListener, Headers, stats::SessionStats,
     },
     frames::HFrame,
     priority::PriorityHandler,
@@ -61,6 +61,9 @@ pub(crate) struct Session {
     
     protocol: Box<dyn Protocol>,
     draining: bool,
+    
+    
+    datagram_capsule_blocked: bool,
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -105,8 +108,7 @@ impl Session {
                 },
                 qpack_decoder,
                 Box::new(Rc::clone(&stream_event_listener)),
-                None,
-                PriorityHandler::new(false, Priority::default()),
+                PriorityHandler::new(Priority::default()),
             )),
             control_stream_send: Box::new(SendMessage::new(
                 MessageType::Request,
@@ -121,6 +123,7 @@ impl Session {
             events,
             protocol,
             draining: false,
+            datagram_capsule_blocked: false,
         }
     }
 
@@ -151,12 +154,18 @@ impl Session {
             events,
             protocol,
             draining: false,
+            datagram_capsule_blocked: false,
         })
     }
 
     
     pub(crate) fn connect_type(&self) -> ExtendedConnectType {
         self.protocol.connect_type()
+    }
+
+    
+    pub(crate) const fn id(&self) -> StreamId {
+        self.id
     }
 
     
@@ -227,6 +236,15 @@ impl Session {
             self.state = State::Done;
         }
         Ok(())
+    }
+
+    fn stream_writable(&mut self) {
+        
+        
+        if self.datagram_capsule_blocked {
+            self.datagram_capsule_blocked = false;
+            self.events.capsule_space_available();
+        }
     }
 
     fn close(&mut self, close_type: CloseType) {
@@ -396,13 +414,16 @@ impl Session {
     
     
     
+    
+    
+    
     pub(crate) fn send_datagram<I: Into<DatagramTracking>>(
         &mut self,
         conn: &mut Connection,
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<bool> {
         qtrace!("[{self}] send_datagram state={:?}", self.state);
         if self.state != State::Active {
             qdebug!("[{self}]: cannot send datagram in {:?} state.", self.state);
@@ -412,12 +433,17 @@ impl Session {
 
         if conn.remote_datagram_size() == 0 && self.protocol.datagram_capsule_support() {
             qtrace!("[{self}] remote_datagram_size is 0, trying HTTP DATAGRAM Capsule");
-            return self.protocol.write_datagram_capsule(
-                &mut self.control_stream_send,
-                conn,
-                buf,
-                now,
-            );
+            
+            
+            
+            let res =
+                self.protocol
+                    .write_datagram_capsule(&mut self.control_stream_send, conn, buf, now);
+            if matches!(res, Err(Error::FlowControlLimit)) {
+                self.datagram_capsule_blocked = true;
+            }
+            
+            return res.map(|()| true);
         }
 
         let mut dgram_data = Encoder::default();
@@ -425,9 +451,9 @@ impl Session {
         self.protocol.write_datagram_prefix(&mut dgram_data);
         dgram_data.encode(buf);
 
-        conn.send_datagram(dgram_data.into(), id)?;
-        qtrace!("[{self}] sent datagram via QUIC datagram");
-        Ok(())
+        let has_space = conn.send_datagram(dgram_data.into(), id)?;
+        qtrace!("[{self}] sent datagram via QUIC datagram, has_space={has_space}");
+        Ok(has_space)
     }
 
     pub(crate) fn datagram(&self, datagram: Bytes) {
@@ -450,6 +476,12 @@ impl Session {
 
     pub(crate) fn validate_send_group(&self, group_id: SendGroupId) -> bool {
         self.protocol.validate_send_group(group_id)
+    }
+
+    
+    #[must_use]
+    pub(crate) fn stats(&self) -> Option<SessionStats> {
+        self.protocol.stats().copied()
     }
 
     fn has_data_to_send(&self) -> bool {
@@ -533,7 +565,9 @@ impl SendStream for Rc<RefCell<Session>> {
         self.borrow_mut().has_data_to_send()
     }
 
-    fn stream_writable(&self) {}
+    fn stream_writable(&self) {
+        self.borrow_mut().stream_writable();
+    }
 
     fn done(&self) -> bool {
         self.borrow_mut().done()
@@ -611,6 +645,21 @@ pub(crate) trait Protocol: Debug + Display {
 
     fn process_response_headers(&mut self, _headers: &[Header]) {}
 
+    
+    
+    
+    
+    
+    
+    
+    fn stats(&self) -> Option<&SessionStats> {
+        debug_assert!(
+            false,
+            "stats called for extended connect protocol not tracking stats"
+        );
+        None
+    }
+
     fn protocol(&self) -> Option<&str> {
         None
     }
@@ -631,6 +680,15 @@ pub(crate) trait Protocol: Debug + Display {
     
     fn datagram_capsule_support(&self) -> bool;
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     fn write_datagram_capsule(
         &self,

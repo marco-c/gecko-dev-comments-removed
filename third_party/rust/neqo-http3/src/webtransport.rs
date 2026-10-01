@@ -14,8 +14,8 @@ use std::{
 
 use neqo_common::{Bytes, Encoder, Header, qdebug, qinfo, qtrace, to_u64};
 use neqo_transport::{
-    Connection, DatagramTracking, Error as TransportError, StreamId, StreamType, recv_stream,
-    send_stream, server::ConnectionRef, streams::SendOrder,
+    Connection, DatagramTracking, StreamId, StreamType, recv_stream, send_stream,
+    server::ConnectionRef, streams::SendOrder,
 };
 
 use crate::{
@@ -160,13 +160,15 @@ pub trait ClientSession {
     
     
     
+    
+    
     fn webtransport_close_session(
         &mut self,
         session_id: StreamId,
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<extended_connect::stats::SessionStats>;
 
     
     
@@ -187,13 +189,20 @@ pub trait ClientSession {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
         &mut self,
         session_id: StreamId,
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<bool>;
 }
 
 impl ClientSession for Http3Client {
@@ -307,7 +316,7 @@ impl ClientSession for Http3Client {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<extended_connect::stats::SessionStats> {
         let (conn, handler) = self.connection_and_handler();
         handler.webtransport_close_session(conn, session_id, error, message, now)
     }
@@ -335,7 +344,7 @@ impl ClientSession for Http3Client {
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<bool> {
         qtrace!("webtransport_send_datagram session:{session_id:?}");
         let (conn, handler) = self.connection_and_handler();
         handler.webtransport_send_datagram(session_id, conn, buf, id, now)
@@ -376,11 +385,7 @@ impl ExportKeyingMaterial for Connection {
         wt_context.encode_vec(1, label);
         wt_context.encode_vec(1, context);
 
-        self.export_keying_material("EXPORTER-WebTransport", wt_context.as_ref(), out)
-            .map_err(|e| match e {
-                TransportError::InvalidInput => Error::InvalidInput,
-                other => Error::Transport(other),
-            })
+        Ok(self.export_keying_material("EXPORTER-WebTransport", wt_context.as_ref(), out)?)
     }
 }
 
@@ -410,8 +415,9 @@ trait Handler {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<extended_connect::stats::SessionStats>;
 
+    
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
         &self,
         session_id: StreamId,
@@ -419,7 +425,7 @@ trait Handler {
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<bool>;
 }
 
 impl Handler for Http3Connection {
@@ -472,9 +478,25 @@ impl Handler for Http3Connection {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<extended_connect::stats::SessionStats> {
         qtrace!("Close WebTransport session {session_id:?}");
-        self.extended_connect_close_session(conn, session_id, error, message, now)
+        
+        
+        
+        
+        
+        
+        
+        let stats = self.webtransport_session_stats(session_id)?;
+        self.extended_connect_close_session(
+            conn,
+            session_id,
+            extended_connect::ExtendedConnectType::WebTransport,
+            error,
+            message,
+            now,
+        )?;
+        Ok(stats)
     }
 
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
@@ -484,7 +506,7 @@ impl Handler for Http3Connection {
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<bool> {
         self.extended_connect_send_datagram(session_id, conn, buf, id, now)
     }
 }
@@ -506,7 +528,7 @@ pub(crate) trait ServerHandler {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<extended_connect::stats::SessionStats>;
 
     fn webtransport_create_stream(
         &mut self,
@@ -515,6 +537,7 @@ pub(crate) trait ServerHandler {
         stream_type: StreamType,
     ) -> Res<StreamId>;
 
+    
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
         &mut self,
         conn: &mut Connection,
@@ -522,7 +545,7 @@ pub(crate) trait ServerHandler {
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()>;
+    ) -> Res<bool>;
 }
 
 impl ServerHandler for Http3ServerHandler {
@@ -546,7 +569,7 @@ impl ServerHandler for Http3ServerHandler {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<extended_connect::stats::SessionStats> {
         self.mark_needs_processing();
         self.base_handler_mut()
             .webtransport_close_session(conn, session_id, error, message, now)
@@ -577,7 +600,7 @@ impl ServerHandler for Http3ServerHandler {
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<bool> {
         self.mark_needs_processing();
         self.base_handler_mut()
             .webtransport_send_datagram(session_id, conn, buf, id, now)
@@ -638,7 +661,14 @@ impl ServerSession {
     
     
     
-    pub fn close_session(&self, error: u32, message: &str, now: Instant) -> Res<()> {
+    
+    
+    pub fn close_session(
+        &self,
+        error: u32,
+        message: &str,
+        now: Instant,
+    ) -> Res<extended_connect::stats::SessionStats> {
         self.stream_handler
             .handler
             .borrow_mut()
@@ -687,12 +717,19 @@ impl ServerSession {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn send_datagram<I: Into<DatagramTracking>>(
         &self,
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<()> {
+    ) -> Res<bool> {
         let session_id = self.stream_handler.stream_id();
         self.stream_handler
             .handler
@@ -794,7 +831,7 @@ pub(crate) trait ServerEvents {
 
 impl ServerEvents for Http3ServerEvents {
     fn webtransport_new_session(&self, session: ServerSession, headers: Vec<Header>) {
-        self.insert(Http3ServerEvent::WebTransport(ServerEvent::NewSession {
+        self.push(Http3ServerEvent::WebTransport(ServerEvent::NewSession {
             session,
             headers,
         }));
@@ -806,7 +843,7 @@ impl ServerEvents for Http3ServerEvents {
         reason: extended_connect::session::CloseReason,
         headers: Option<Vec<Header>>,
     ) {
-        self.insert(Http3ServerEvent::WebTransport(ServerEvent::SessionClosed {
+        self.push(Http3ServerEvent::WebTransport(ServerEvent::SessionClosed {
             session,
             reason,
             headers,
@@ -814,13 +851,13 @@ impl ServerEvents for Http3ServerEvents {
     }
 
     fn webtransport_new_stream(&self, stream: Http3OrWebTransportStream) {
-        self.insert(Http3ServerEvent::WebTransport(ServerEvent::NewStream(
+        self.push(Http3ServerEvent::WebTransport(ServerEvent::NewStream(
             stream,
         )));
     }
 
     fn webtransport_datagram(&self, session: ServerSession, datagram: Bytes) {
-        self.insert(Http3ServerEvent::WebTransport(ServerEvent::Datagram {
+        self.push(Http3ServerEvent::WebTransport(ServerEvent::Datagram {
             session,
             datagram,
         }));

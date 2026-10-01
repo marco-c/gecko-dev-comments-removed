@@ -6,6 +6,7 @@
 
 use std::{
     fmt::{self, Display, Formatter},
+    num::NonZeroUsize,
     time::Instant,
 };
 
@@ -19,6 +20,7 @@ use crate::{
         session::{DgramContextIdError, State},
     },
     frames::{FrameReader, StreamReaderRecvStreamWrapper, capsule::Capsule},
+    send_message::SendMessage,
 };
 
 #[derive(Debug)]
@@ -132,19 +134,31 @@ impl Protocol for Session {
         let mut dgram_data = Encoder::default();
         self.write_datagram_prefix(&mut dgram_data);
         dgram_data.encode(buf);
-
-        if conn.stream_avail_send_space(self.session_id)? < dgram_data.len() {
-            qdebug!("Not enough space to send datagram capsule, dropping it.");
-            return Ok(());
-        }
         
         
         let capsule = Capsule::Datagram {
             payload: Bytes::from(Vec::from(dgram_data)),
         };
+
+        
+        
+        let needed = SendMessage::data_frame_len(capsule.encoded_len());
+        if conn.stream_avail_send_space(self.session_id)? < needed {
+            qdebug!("[{self}] datagram capsule exceeds control-stream flow-control space");
+            
+            
+            
+            if let Some(watermark) = NonZeroUsize::new(needed) {
+                conn.stream_set_writable_event_low_watermark(self.session_id, watermark)?;
+            }
+            return Err(Error::FlowControlLimit);
+        }
         let mut enc = Encoder::default();
         capsule.encode(&mut enc);
         control_stream_send.send_data_atomic(conn, enc.as_ref(), now)?;
+        
+        
+        conn.stream_set_writable_event_low_watermark(self.session_id, NonZeroUsize::MIN)?;
         qtrace!("[{self}] sent datagram via HTTP DATAGRAM Capsule");
         Ok(())
     }

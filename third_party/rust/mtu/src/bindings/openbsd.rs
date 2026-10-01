@@ -1,5 +1,3 @@
-
-
 pub const RTM_VERSION: u32 = 5;
 pub const RTM_GET: u32 = 4;
 pub const RTA_DST: u32 = 1;

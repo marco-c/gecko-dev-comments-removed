@@ -12,7 +12,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{packet, recovery};
+use crate::{packet, recovery, tracking::PacketNumberSpace};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,6 +71,12 @@ impl Packet {
     #[must_use]
     pub const fn packet_type(&self) -> packet::Type {
         self.pt
+    }
+
+    
+    #[must_use]
+    pub fn space(&self) -> PacketNumberSpace {
+        PacketNumberSpace::from(self.pt)
     }
 
     

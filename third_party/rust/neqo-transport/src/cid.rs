@@ -589,7 +589,7 @@ impl ConnectionIdManager {
 
         while let Some(entry) = self.lost_new_connection_id.pop() {
             if entry.write(builder, stats) {
-                tokens.push(recovery::Token::NewConnectionId(entry));
+                tokens.push(recovery::Token::NewConnectionId(Box::new(entry)));
             } else {
                 
                 self.lost_new_connection_id.push(entry);
@@ -612,7 +612,7 @@ impl ConnectionIdManager {
                 
                 let entry = ConnectionIdEntry::new(seqno, cid, Srt::random());
                 entry.write(builder, stats);
-                tokens.push(recovery::Token::NewConnectionId(entry));
+                tokens.push(recovery::Token::NewConnectionId(Box::new(entry)));
             }
         }
     }

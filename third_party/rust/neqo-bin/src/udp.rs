@@ -21,6 +21,8 @@ use neqo_udp::{DatagramIter, RecvBuf};
 pub struct Socket {
     state: quinn_udp::UdpSocketState,
     inner: tokio::net::UdpSocket,
+    
+    local_addr: SocketAddr,
 }
 
 impl Socket {
@@ -67,15 +69,19 @@ impl Socket {
             qdebug!("Default socket receive buffer size is {recv_buf_before}, not changing");
         }
 
+        let inner = tokio::net::UdpSocket::from_std(socket)?;
+        let local_addr = inner.local_addr()?;
         Ok(Self {
             state,
-            inner: tokio::net::UdpSocket::from_std(socket)?,
+            inner,
+            local_addr,
         })
     }
 
     
-    pub fn local_addr(&self) -> io::Result<SocketAddr> {
-        self.inner.local_addr()
+    #[must_use]
+    pub const fn local_addr(&self) -> SocketAddr {
+        self.local_addr
     }
 
     
@@ -99,12 +105,11 @@ impl Socket {
     
     pub fn recv<'a>(
         &self,
-        local_address: SocketAddr,
         recv_buf: &'a mut RecvBuf,
     ) -> Result<Option<DatagramIter<'a>>, io::Error> {
         self.inner
             .try_io(tokio::io::Interest::READABLE, || {
-                neqo_udp::recv_inner(local_address, &self.state, &self.inner, recv_buf)
+                neqo_udp::recv_inner(self.local_addr, &self.state, &self.inner, recv_buf)
             })
             .map(Some)
             .or_else(|e| {

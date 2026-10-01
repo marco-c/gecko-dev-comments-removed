@@ -13,18 +13,19 @@ use std::{
     time::Instant,
 };
 
-use neqo_common::{Datagram, Header, header::HeadersExt as _, hex, qdebug, qerror, qinfo};
-use neqo_crypto::{AntiReplay, generate_ech_keys, random};
+use neqo_common::{Datagram, Header, header::HeadersExt as _, qdebug, qerror};
 use neqo_http3::{
-    Http3OrWebTransportStream, Http3Parameters, Http3Server, Http3ServerEvent, StreamId,
+    Http3OrWebTransportStream, Http3Parameters, Http3Server, Http3ServerEvent, Http3State, StreamId,
 };
-use neqo_transport::{ConnectionIdGenerator, OutputBatch, server::ValidateAddress};
+use neqo_transport::{ConnectionIdGenerator, OutputBatch};
+use nss::AntiReplay;
 use rustc_hash::FxHashMap as HashMap;
 
-use super::{Args, qns_read_response};
+use super::Args;
 use crate::{
     now,
     send_data::{SendData, SendResult},
+    server::StatsReporter,
 };
 
 pub struct HttpServer {
@@ -34,6 +35,7 @@ pub struct HttpServer {
     
     posts: HashMap<Http3OrWebTransportStream, (usize, Option<usize>)>,
     is_qns_test: bool,
+    stats: StatsReporter,
 }
 
 impl HttpServer {
@@ -102,23 +104,13 @@ impl HttpServer {
         )
         .expect("We cannot make a server!");
 
-        server.set_ciphers(args.get_ciphers());
-        server.set_qlog_dir(args.shared.qlog_dir.clone());
-        if args.retry {
-            server.set_validation(ValidateAddress::Always);
-        }
-        if args.ech {
-            let (sk, pk) = generate_ech_keys().expect("should create ECH keys");
-            server
-                .enable_ech(random::<1>()[0], "public.example", &sk, &pk)
-                .unwrap();
-            qinfo!("ECHConfigList: {}", hex(server.ech_config()));
-        }
+        super::configure_server(&mut server, args);
         Self {
             server,
             remaining_data: HashMap::default(),
             posts: HashMap::default(),
             is_qns_test: args.shared.qns_test.is_some(),
+            stats: StatsReporter::new(args.shared.stats_enabled(), args.shared.stats_file.clone()),
         }
     }
 }
@@ -169,30 +161,31 @@ impl super::HttpServer for HttpServer {
 
                     let response = if self.is_qns_test {
                         let path_str = path.value_utf8().unwrap_or("/");
-                        match qns_read_response(path_str) {
-                            Ok(data) => SendData::from(data),
-                            Err(e) => {
-                                qerror!("Failed to read {path_str}: {e}");
-                                
-                                if stream
-                                    .send_headers(&[Header::new(":status", "404")])
-                                    .is_ok()
-                                {
-                                    _ = stream.stream_close_send(now);
-                                } else {
-                                    _ = stream
-                                        .stream_reset_send(neqo_http3::Error::HttpNone.code());
-                                }
-                                continue;
+                        let Ok(data) = super::response_for_path(path_str, true) else {
+                            
+                            if stream
+                                .send_headers(&[Header::new(":status", "404")])
+                                .is_ok()
+                            {
+                                _ = stream.stream_close_send(now);
+                            } else {
+                                _ = stream.stream_reset_send(neqo_http3::Error::HttpNone.code());
                             }
-                        }
-                    } else if let Ok(path_str) = path.value_utf8() {
-                        path_str
-                            .trim_matches(|p| p == '/')
-                            .parse::<usize>()
-                            .map_or_else(|_| SendData::from(path.value()), SendData::zeroes)
+                            continue;
+                        };
+                        data
                     } else {
-                        SendData::from(path.value())
+                        
+                        
+                        path.value_utf8()
+                            .ok()
+                            .and_then(|s| {
+                                s.trim_matches('/')
+                                    .parse::<usize>()
+                                    .ok()
+                                    .map(SendData::zeroes)
+                            })
+                            .unwrap_or_else(|| SendData::from(path.value()))
                     };
 
                     self.send_response(&stream, response, now);
@@ -218,6 +211,11 @@ impl super::HttpServer for HttpServer {
                         self.send_response(&stream, response, now);
                     }
                 }
+                
+                Http3ServerEvent::StateChange {
+                    conn,
+                    state: Http3State::Closing(_),
+                } => self.stats.report(&conn.connection()),
                 _ => {}
             }
         }
@@ -225,5 +223,36 @@ impl super::HttpServer for HttpServer {
 
     fn has_events(&self) -> bool {
         self.server.has_events()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::{cell::RefCell, rc::Rc};
+
+    use neqo_transport::RandomConnectionIdGenerator;
+    use test_fixture::{ProcessServer, anti_replay, fixture_init};
+
+    use super::{Args, HttpServer};
+    use crate::server::test_support::{StatsServer, reported_on_close};
+
+    fn make_server(args: &Args) -> HttpServer {
+        fixture_init();
+        HttpServer::new(
+            args,
+            anti_replay(),
+            Rc::new(RefCell::new(RandomConnectionIdGenerator::new(10))),
+        )
+    }
+
+    impl StatsServer for HttpServer {
+        fn transport(&mut self) -> &mut dyn ProcessServer {
+            &mut self.server
+        }
+    }
+
+    #[test]
+    fn reports_stats_once_on_close() {
+        assert_eq!(reported_on_close(make_server), 1);
     }
 }
