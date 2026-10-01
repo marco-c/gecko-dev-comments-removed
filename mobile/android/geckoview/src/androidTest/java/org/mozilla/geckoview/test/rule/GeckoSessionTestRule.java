@@ -2903,8 +2903,8 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
-  public void notifyUserGestureActivation(final GeckoSession session) {
-    webExtensionApiCall(session, "NotifyUserGestureActivation", null);
+  public void showPicker(final GeckoSession session, final String selector) {
+    webExtensionApiCall(session, "ShowPicker", args -> args.put("selector", selector));
   }
 
   

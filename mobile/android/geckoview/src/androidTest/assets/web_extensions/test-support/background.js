@@ -80,12 +80,6 @@ const APIS = {
   IsFissionRunning() {
     return browser.test.isFissionRunning();
   },
-  TriggerCookieBannerDetected({ tab }) {
-    return browser.test.triggerCookieBannerDetected(tab.id);
-  },
-  TriggerCookieBannerHandled({ tab }) {
-    return browser.test.triggerCookieBannerHandled(tab.id);
-  },
   TriggerTranslationsOffer({ tab }) {
     return browser.test.triggerTranslationsOffer(tab.id);
   },
@@ -101,8 +95,8 @@ const APIS = {
   TeardownAlertsService() {
     return browser.test.teardownAlertsService();
   },
-  NotifyUserGestureActivation({ tab }) {
-    return browser.test.notifyUserGestureActivation(tab.id);
+  ShowPicker({ tab, selector }) {
+    return browser.test.showPicker(tab.id, selector);
   },
   SaveTrackingDBEvents({ log }) {
     return browser.test.saveTrackingDBEvents(log);
