@@ -14,11 +14,10 @@
 #include "mozilla/PresShellForwards.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGContainerFrame.h"
-#include "mozilla/gfx/2D.h"
-#include "nsIContent.h"  
 #include "nsStubMutationObserver.h"
 #include "nsTextFrame.h"
 
+class nsIContent;
 class gfxContext;
 
 namespace mozilla {
@@ -36,6 +35,7 @@ namespace dom {
 class DOMSVGPoint;
 class SVGRect;
 class SVGGeometryElement;
+class SVGTextContentElement;
 }  
 }  
 
@@ -122,22 +122,6 @@ struct CharPosition {
   static gfxPoint UnspecifiedPoint() {
     return gfxPoint(UnspecifiedCoord(), UnspecifiedCoord());
   }
-};
-
-
-
-
-
-class GlyphMetricsUpdater : public Runnable {
- public:
-  NS_DECL_NSIRUNNABLE
-  explicit GlyphMetricsUpdater(SVGTextFrame* aFrame)
-      : Runnable("GlyphMetricsUpdater"), mFrame(aFrame) {}
-  static void Run(SVGTextFrame* aFrame);
-  void Revoke() { mFrame = nullptr; }
-
- private:
-  SVGTextFrame* mFrame;
 };
 
 
@@ -244,15 +228,15 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
                               SVGBBoxFlags aFlags) override;
 
   
-  uint32_t GetNumberOfChars(nsIContent* aContent);
-  float GetComputedTextLength(nsIContent* aContent);
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SelectSubString(nsIContent* aContent,
-                                                   uint32_t charnum,
-                                                   uint32_t nchars,
-                                                   ErrorResult& aRv);
+  uint32_t GetNumberOfChars(dom::SVGTextContentElement* aElement);
+  float GetComputedTextLength(dom::SVGTextContentElement* aElement);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void SelectSubString(
+      dom::SVGTextContentElement* aElement, uint32_t charnum, uint32_t nchars,
+      ErrorResult& aRv);
   bool RequiresSlowFallbackForSubStringLength();
-  float GetSubStringLengthFastPath(nsIContent* aContent, uint32_t charnum,
-                                   uint32_t nchars, ErrorResult& aRv);
+  float GetSubStringLengthFastPath(dom::SVGTextContentElement* aElement,
+                                   uint32_t charnum, uint32_t nchars,
+                                   ErrorResult& aRv);
   
 
 
@@ -261,23 +245,29 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  float GetSubStringLengthSlowFallback(nsIContent* aContent, uint32_t charnum,
-                                       uint32_t nchars, ErrorResult& aRv);
+  float GetSubStringLengthSlowFallback(dom::SVGTextContentElement* aElement,
+                                       uint32_t charnum, uint32_t nchars,
+                                       ErrorResult& aRv);
 
-  int32_t GetCharNumAtPosition(nsIContent* aContent, const gfx::Point& aPoint);
+  int32_t GetCharNumAtPosition(dom::SVGTextContentElement* aElement,
+                               const gfx::Point& aPoint);
 
   already_AddRefed<dom::DOMSVGPoint> GetStartPositionOfChar(
-      nsIContent* aContent, uint32_t aCharNum, ErrorResult& aRv);
-  already_AddRefed<dom::DOMSVGPoint> GetEndPositionOfChar(nsIContent* aContent,
-                                                          uint32_t aCharNum,
-                                                          ErrorResult& aRv);
-  already_AddRefed<dom::SVGRect> GetExtentOfChar(nsIContent* aContent,
-                                                 uint32_t aCharNum,
-                                                 ErrorResult& aRv);
-  float GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
-                          ErrorResult& aRv);
+      dom::SVGTextContentElement* aElement, uint32_t aCharNum,
+      ErrorResult& aRv);
+  already_AddRefed<dom::DOMSVGPoint> GetEndPositionOfChar(
+      dom::SVGTextContentElement* aElement, uint32_t aCharNum,
+      ErrorResult& aRv);
+  already_AddRefed<dom::SVGRect> GetExtentOfChar(
+      dom::SVGTextContentElement* aElement, uint32_t aCharNum,
+      ErrorResult& aRv);
+  float GetRotationOfChar(dom::SVGTextContentElement* aElement,
+                          uint32_t aCharNum, ErrorResult& aRv);
 
   
+
+  SVGBBox GetSubtreeBBox(const nsIFrame* aSubtree,
+                         const Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags);
 
   
 
@@ -439,8 +429,8 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
 
 
-  int32_t ConvertTextElementCharIndexToAddressableIndex(int32_t aIndex,
-                                                        nsIContent* aContent);
+  int32_t ConvertTextElementCharIndexToAddressableIndex(
+      int32_t aIndex, dom::SVGTextContentElement* aElement);
 
   
 
