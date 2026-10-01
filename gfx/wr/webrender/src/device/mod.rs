@@ -445,11 +445,9 @@ pub trait GpuBackend {
         rect: Option<FramebufferIntRect>,
     );
 
-    fn set_scissor_rect(&self, rect: FramebufferIntRect);
-
-    fn enable_scissor(&self);
-
-    fn disable_scissor(&self);
+    
+    
+    fn set_scissor(&mut self, rect: Option<FramebufferIntRect>);
 
     fn echo_driver_messages(&self);
 
