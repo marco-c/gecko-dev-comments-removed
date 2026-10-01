@@ -1062,13 +1062,20 @@ void AudioContext::SuspendInternal(void* aPromise,
   auto promise = Graph()->ApplyAudioContextOperation(
       DestinationTrack(), std::move(tracks), AudioContextOperation::Suspend);
   if ((aFlags & AudioContextOperationFlags::SendStateChange)) {
-    promise->Then(
-        GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
-        [self = RefPtr<AudioContext>(this),
-         aPromise](AudioContextState aNewState) {
-          self->OnStateChanged(aPromise, aNewState);
-        },
-        [] { MOZ_CRASH("Unexpected rejection"); });
+    promise
+        
+        
+        
+        
+        ->Map(AbstractThread::MainThread(),
+              "AudioContext::OnStateChanged tail-dispatch",
+              [](AudioContextState aValue) { return aValue; })
+        ->Then(
+            GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
+            [self = RefPtr(this), aPromise](AudioContextState aNewState) {
+              self->OnStateChanged(aPromise, aNewState);
+            },
+            [] { MOZ_CRASH("Unexpected rejection"); });
   }
 }
 
@@ -1149,9 +1156,16 @@ void AudioContext::ResumeInternal() {
   Graph()
       ->ApplyAudioContextOperation(DestinationTrack(), std::move(tracks),
                                    AudioContextOperation::Resume)
+      
+      
+      
+      
+      ->Map(AbstractThread::MainThread(),
+            "AudioContext::OnStateChanged tail-dispatch",
+            [](AudioContextState aValue) { return aValue; })
       ->Then(
           GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
-          [self = RefPtr<AudioContext>(this)](AudioContextState aNewState) {
+          [self = RefPtr(this)](AudioContextState aNewState) {
             self->OnStateChanged(nullptr, aNewState);
           },
           [] {});  
@@ -1245,13 +1259,20 @@ void AudioContext::CloseInternal(void* aPromise,
     auto promise = Graph()->ApplyAudioContextOperation(
         ds, std::move(tracks), AudioContextOperation::Close);
     if ((aFlags & AudioContextOperationFlags::SendStateChange)) {
-      promise->Then(
-          GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
-          [self = RefPtr<AudioContext>(this),
-           aPromise](AudioContextState aNewState) {
-            self->OnStateChanged(aPromise, aNewState);
-          },
-          [] {});  
+      promise
+          
+          
+          
+          
+          ->Map(AbstractThread::MainThread(),
+                "AudioContext::OnStateChanged tail-dispatch",
+                [](AudioContextState aValue) { return aValue; })
+          ->Then(
+              GetMainThreadSerialEventTarget(), "AudioContext::OnStateChanged",
+              [self = RefPtr(this), aPromise](AudioContextState aNewState) {
+                self->OnStateChanged(aPromise, aNewState);
+              },
+              [] {});  
     }
   }
   mCloseCalled = true;
