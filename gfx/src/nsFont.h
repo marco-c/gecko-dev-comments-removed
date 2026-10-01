@@ -70,7 +70,7 @@ struct nsFont final {
       mozilla::StyleFontVariantEmoji::Normal;
 
   
-  uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
+  mozilla::StyleFontSmoothing smoothing = mozilla::StyleFontSmoothing::Auto;
 
   
   mozilla::StyleFontKerning kerning = mozilla::StyleFontKerning::Auto;

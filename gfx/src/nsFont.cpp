@@ -258,7 +258,7 @@ void nsFont::AddFontFeaturesToStyle(gfxFontStyle* aStyle,
   aStyle->featureSettings.AppendElements(fontFeatureSettings);
 
   
-  if (smoothing == NS_FONT_SMOOTHING_GRAYSCALE) {
+  if (smoothing == StyleFontSmoothing::Grayscale) {
     aStyle->useGrayscaleAntialiasing = true;
   }
 }
