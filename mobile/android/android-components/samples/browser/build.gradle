@@ -81,6 +81,7 @@ dependencies {
 
     implementation project(':components:browser-domains')
     implementation project(':components:browser-engine-system')
+    implementation project(':components:browser-errorpages')
     implementation project(':components:browser-icons')
     implementation project(':components:browser-menu')
     implementation project(':components:browser-session-storage')
@@ -149,7 +150,7 @@ dependencies {
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.ui.tooling
     implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.swiperefreshlayout
     implementation libs.google.material
     implementation libs.mozilla.glean
