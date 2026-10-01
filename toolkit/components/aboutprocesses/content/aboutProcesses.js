@@ -336,10 +336,13 @@ var State = {
   },
 };
 
-var View = {
+class ProcessesView {
   
   
-  _killedRecently: [],
+  _killedRecently = [];
+  _rowsById = new Map();
+  _orderedRows = [];
+
   commit() {
     this._killedRecently.length = 0;
     let tbody = document.getElementById("process-tbody");
@@ -360,7 +363,7 @@ var View = {
       }
       this._removeRow(insertPoint);
     }
-  },
+  }
   
   
   discardUpdate() {
@@ -370,21 +373,19 @@ var View = {
       }
     }
     this._orderedRows = [];
-  },
+  }
   insertAfterRow(row) {
     let tbody = row.parentNode;
     let nextRow;
     while ((nextRow = this._orderedRows.pop())) {
       tbody.insertBefore(nextRow, row.nextSibling);
     }
-  },
-
-  _rowsById: new Map(),
+  }
   _removeRow(row) {
     this._rowsById.delete(row.rowId);
 
     row.remove();
-  },
+  }
   _getOrCreateRow(rowId, cellCount) {
     let row = this._rowsById.get(rowId);
     if (!row) {
@@ -397,7 +398,7 @@ var View = {
     }
     this._orderedRows.push(row);
     return row;
-  },
+  }
 
   displayCpu(data, cpuCell, maxSlopeCpu) {
     
@@ -453,7 +454,7 @@ var View = {
       }
     }
     cpuCell.style.setProperty("--bar-width", barWidth);
-  },
+  }
 
   
 
@@ -644,7 +645,7 @@ var View = {
         }
     }
     nameCell.style.backgroundImage = `url('${image}')`;
-  },
+  }
 
   
 
@@ -741,7 +742,7 @@ var View = {
     }
 
     return row;
-  },
+  }
 
   
 
@@ -843,7 +844,7 @@ var View = {
     
 
     return isOpen;
-  },
+  }
 
   displayDOMWindowRow(data) {
     const cellCount = 2;
@@ -925,7 +926,7 @@ var View = {
         document.l10n.setAttributes(killButton, "about-processes-shutdown-tab");
       }
     }
-  },
+  }
 
   utilityActorNameToFluentName(actorName) {
     let fluentName;
@@ -971,7 +972,7 @@ var View = {
         break;
     }
     return fluentName;
-  },
+  }
 
   displayUtilityActorRow(data, parent) {
     const cellCount = 2;
@@ -990,7 +991,7 @@ var View = {
       fluentArgs,
       classes: ["name", "indent", "favicon"],
     });
-  },
+  }
 
   
 
@@ -1020,13 +1021,12 @@ var View = {
     this.displayCpu(data, nameCell.nextSibling, maxSlopeCpu);
 
     
-  },
+  }
 
-  _orderedRows: [],
   _fillCell(elt, { classes, fluentName, fluentArgs }) {
     document.l10n.setAttributes(elt, fluentName, fluentArgs);
     elt.className = classes.join(" ");
-  },
+  }
 
   _getDuration(rawDurationNS) {
     if (rawDurationNS <= NS_PER_US) {
@@ -1048,7 +1048,7 @@ var View = {
       return { duration: rawDurationNS / NS_PER_HOUR, unit: "h" };
     }
     return { duration: rawDurationNS / NS_PER_DAY, unit: "d" };
-  },
+  }
 
   
 
@@ -1090,26 +1090,32 @@ var View = {
       unit: "B",
       amount: value,
     };
-  },
-};
+  }
+}
 
-var Control = {
+class ProcessesController {
   
   
   
-  _hungItems: new Set(),
-  _sortColumn: null,
-  _sortAscendent: true,
+  _hungItems = new Set();
+  _sortColumn = null;
+  _sortAscendent = true;
+  _lastMouseEvent = 0;
+
+  constructor(view) {
+    this._view = view;
+  }
+
   _removeSubtree(row) {
     let sibling = row.nextSibling;
     while (sibling && !sibling.classList.contains("process")) {
       let next = sibling.nextSibling;
       if (sibling.classList.contains("thread")) {
-        View._removeRow(sibling);
+        this._view._removeRow(sibling);
       }
       sibling = next;
     }
-  },
+  }
   init() {
     this._initHangReports();
 
@@ -1269,11 +1275,10 @@ var Control = {
 
         await this._updateDisplay(true);
       });
-  },
-  _lastMouseEvent: 0,
+  }
   _updateLastMouseEvent() {
     this._lastMouseEvent = Date.now();
-  },
+  }
   _initHangReports() {
     const PROCESS_HANG_REPORT_NOTIFICATION = "process-hang-report";
 
@@ -1296,7 +1301,7 @@ var Control = {
       },
       { once: true }
     );
-  },
+  }
   async update(force = false) {
     await State.update(force);
 
@@ -1305,7 +1310,7 @@ var Control = {
     }
 
     await this._updateDisplay(force);
-  },
+  }
 
   
   
@@ -1336,25 +1341,25 @@ var Control = {
 
       process.isHung = process.childID && hungItems.has(process.childID);
 
-      let processRow = View.displayProcessRow(process, this._maxSlopeCpu);
+      let processRow = this._view.displayProcessRow(process, this._maxSlopeCpu);
 
       if (process.type != "extension") {
         
         for (let win of process.windows) {
           if (SHOW_ALL_SUBFRAMES || win.tab || win.isProcessRoot) {
-            View.displayDOMWindowRow(win, process);
+            this._view.displayDOMWindowRow(win, process);
           }
         }
       }
 
       if (process.type === "utility") {
         for (let actor of process.utilityActors) {
-          View.displayUtilityActorRow(actor, process);
+          this._view.displayUtilityActorRow(actor, process);
         }
       }
 
       if (SHOW_THREADS) {
-        if (View.displayThreadSummaryRow(process)) {
+        if (this._view.displayThreadSummaryRow(process)) {
           this._showThreads(processRow, this._maxSlopeCpu);
         }
       }
@@ -1379,11 +1384,11 @@ var Control = {
       
       
       
-      View.discardUpdate();
+      this._view.discardUpdate();
       return;
     }
 
-    View.commit();
+    this._view.commit();
 
     
     
@@ -1393,19 +1398,19 @@ var Control = {
 
     
     document.dispatchEvent(new CustomEvent("AboutProcessesUpdated"));
-  },
+  }
   _compareCpu(a, b) {
     return (
       b.slopeCpu - a.slopeCpu || b.active - a.active || b.totalCpu - a.totalCpu
     );
-  },
+  }
   _showThreads(row, maxSlopeCpu) {
     let process = row.process;
     this._sortThreads(process.threads);
     for (let thread of process.threads) {
-      View.displayThreadRow(thread, maxSlopeCpu);
+      this._view.displayThreadRow(thread, maxSlopeCpu);
     }
-  },
+  }
   _sortThreads(threads) {
     return threads.sort((a, b) => {
       let order;
@@ -1428,7 +1433,7 @@ var Control = {
       }
       return order;
     });
-  },
+  }
   _sortProcesses(counters) {
     return counters.sort((a, b) => {
       let order;
@@ -1460,7 +1465,7 @@ var Control = {
       }
       return order;
     });
-  },
+  }
   _sortDOMWindows(windows) {
     return windows.sort((a, b) => {
       let order =
@@ -1472,7 +1477,7 @@ var Control = {
       }
       return order;
     });
-  },
+  }
 
   
   
@@ -1524,7 +1529,7 @@ var Control = {
       default:
         return RANK_UTILITY;
     }
-  },
+  }
 
   
   _handleActivate(target) {
@@ -1543,7 +1548,7 @@ var Control = {
     }
 
     this._handleSelection(target);
-  },
+  }
 
   
   _handleTwisty(target) {
@@ -1551,12 +1556,12 @@ var Control = {
     if (target.classList.toggle("open")) {
       target.setAttribute("aria-expanded", "true");
       this._showThreads(row, this._maxSlopeCpu);
-      View.insertAfterRow(row);
+      this._view.insertAfterRow(row);
     } else {
       target.setAttribute("aria-expanded", "false");
       this._removeSubtree(row);
     }
-  },
+  }
 
   
   _handleKill(target) {
@@ -1567,7 +1572,7 @@ var Control = {
 
       
       
-      View._killedRecently.push({ pid });
+      this._view._killedRecently.push({ pid });
 
       
       row.classList.add("killing");
@@ -1584,7 +1589,7 @@ var Control = {
         childRow.classList.add("killing");
         let win = childRow.win;
         if (win) {
-          View._killedRecently.push({ pid: win.outerWindowId });
+          this._view._killedRecently.push({ pid: win.outerWindowId });
           if (win.tab && win.tab.tabbrowser) {
             win.tab.tabbrowser.discardBrowser(
               win.tab.tab,
@@ -1605,7 +1610,7 @@ var Control = {
         skipPermitUnload: true,
         animate: true,
       });
-      View._killedRecently.push({ outerWindowId: row.win.outerWindowId });
+      this._view._killedRecently.push({ outerWindowId: row.win.outerWindowId });
       row.classList.add("killing");
       row.setAttribute("aria-busy", "true");
       target.removeAttribute("data-l10n-id");
@@ -1626,7 +1631,7 @@ var Control = {
           
           
           
-          View._killedRecently.push({ pid: parentRow.process.pid });
+          this._view._killedRecently.push({ pid: parentRow.process.pid });
           parentRow.classList.add("killing");
           let actionIcon = parentRow.querySelector(".action-item");
           actionIcon?.removeAttribute("data-l10n-id");
@@ -1634,7 +1639,7 @@ var Control = {
         }
       }
     }
-  },
+  }
 
   
   _handleProfiling(target) {
@@ -1654,7 +1659,7 @@ var Control = {
       target.classList.remove("profiler-active");
       target.setAttribute("aria-pressed", "false");
     }, PROFILE_DURATION * 1000);
-  },
+  }
 
   
   _handleSelection(target) {
@@ -1672,8 +1677,14 @@ var Control = {
     }
     row.setAttribute("selected", "true");
     this.selectedRow = row;
-  },
-};
+  }
+}
+
+
+
+
+var View = new ProcessesView();
+var Control = new ProcessesController(View);
 
 window.onload = async function () {
   Control.init();
