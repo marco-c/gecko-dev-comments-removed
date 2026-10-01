@@ -175,7 +175,7 @@ add_task(async function test_schema_15_migration() {
   await promise_load_profile();
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 6);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 6);
 
   
   {

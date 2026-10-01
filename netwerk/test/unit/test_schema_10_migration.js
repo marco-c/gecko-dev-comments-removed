@@ -165,14 +165,14 @@ function* do_run_test() {
   do_load_profile();
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
 
   
   
-  Assert.equal(Services.cookies.countCookiesFromHost("baz.com"), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("baz.com", {}), 1);
   let cookies = Services.cookies.getCookiesFromHost("baz.com", {});
   let cookie = cookies[0];
   Assert.equal(cookie.expiry, (futureExpiry + 40) * 1000);

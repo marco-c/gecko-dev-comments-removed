@@ -879,8 +879,8 @@ TEST(TestCookie, TestCookieMain)
   EXPECT_TRUE(CheckResult(cookie.get(), MUST_NOT_CONTAIN, "test2=yes"));
   
   uint32_t hostCookies = 0;
-  EXPECT_TRUE(NS_SUCCEEDED(
-      cookieMgr2->CountCookiesFromHost("cookiemgr.test"_ns, &hostCookies)));
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
+      "cookiemgr.test"_ns, &attrs, &hostCookies)));
   EXPECT_EQ(hostCookies, 2u);
   
   bool found;
@@ -892,8 +892,8 @@ TEST(TestCookie, TestCookieMain)
   PR_Sleep(4 * PR_TicksPerSecond());
   
   
-  EXPECT_TRUE(NS_SUCCEEDED(
-      cookieMgr2->CountCookiesFromHost("cookiemgr.test"_ns, &hostCookies)));
+  EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
+      "cookiemgr.test"_ns, &attrs, &hostCookies)));
   EXPECT_EQ(hostCookies, 2u);
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
       "cookiemgr.test"_ns, "/foo"_ns, "test2"_ns, &attrs, &found)));

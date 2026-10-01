@@ -64,8 +64,10 @@ add_task(async function test_IsPartitioned() {
   Assert.equal(do_count_cookies_in_db(schema13db.db), 10);
 
   
-  let cookieCountNonPart =
-    Services.cookies.countCookiesFromHost(hostNonPartitioned); 
+  let cookieCountNonPart = Services.cookies.countCookiesFromHost(
+    hostNonPartitioned,
+    {}
+  ); 
   Assert.equal(cookieCountNonPart, nUnpartitioned);
   let cookieCountPart = Services.cookies.getCookiesFromHost(hostPartitioned, {
     partitionKey: "(https,example.com)",

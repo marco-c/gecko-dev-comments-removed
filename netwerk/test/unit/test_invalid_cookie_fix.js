@@ -374,12 +374,15 @@ add_task(async function test_invalid_cookie_fix() {
   promise = CookieValidatedObserver.waitForCookieValidation();
 
   
+  Services.prefs.clearUserPref("network.cookie.validation.lastEpoch");
+
+  
   await promise_load_profile();
 
   await promise;
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("foo.com"), 7);
+  Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 7);
 
   
   await promise_close_profile();
