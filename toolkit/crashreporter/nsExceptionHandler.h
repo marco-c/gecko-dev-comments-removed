@@ -262,7 +262,8 @@ ThreadId CurrentThreadId();
 
 
 
-bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
+bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
+                            ThreadId aTargetBlamedThread,
                             const nsACString& aIncomingPairName,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aTargetDumpOut);

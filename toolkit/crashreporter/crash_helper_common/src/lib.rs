@@ -35,10 +35,7 @@ pub use crate::ipc_connector::{
 };
 pub use crate::ipc_listener::{IPCListener, IPCListenerError};
 pub use crate::ipc_queue::IPCQueue;
-pub use crate::platform::{
-    AsRawProcessHandle, AsRawThreadHandle, FromRawProcessHandle, FromRawThreadHandle,
-    PlatformError, ProcessHandle, RawProcessHandle, RawThreadHandle, ThreadHandle,
-};
+pub use crate::platform::{AsProcessReaderHandle, PlatformError, ProcessHandle};
 
 #[cfg(target_os = "windows")]
 pub use crate::platform::server_addr;
@@ -59,15 +56,6 @@ pub trait BreakpadString {
     
     
     fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError>;
-
-    
-    
-    fn len(&self) -> usize;
-
-    
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
 
     
     

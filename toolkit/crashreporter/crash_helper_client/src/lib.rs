@@ -5,8 +5,7 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self},
-    ApplicationInfo, BreakpadString, FromRawThreadHandle, GeckoChildId, IPCClientChannel,
-    IPCConnector, RawIPCConnector, RawThreadHandle, ThreadHandle,
+    ApplicationInfo, BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, RawIPCConnector,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
@@ -91,7 +90,9 @@ impl CrashHelperClient {
         let message = messages::TransferMinidump::new(id);
         self.connector.send_message(message)?;
 
-        let reply = self.connector.recv_reply::<messages::MinidumpReply>()?;
+        let reply = self
+            .connector
+            .recv_reply::<messages::TransferMinidumpReply>()?;
 
         if reply.path.is_empty() {
             
@@ -102,28 +103,6 @@ impl CrashHelperClient {
         Ok(CrashReport {
             path: reply.path.into_raw(),
             error: reply.error.map_or(null_mut(), |error| error.into_raw()),
-        })
-    }
-
-    fn generate_crash_report(
-        &mut self,
-        id: GeckoChildId,
-        target_thread: ThreadHandle,
-    ) -> Result<CrashReport> {
-        let message = messages::GenerateMinidump::new(id, target_thread);
-        self.connector.send_message(message)?;
-
-        let reply = self.connector.recv_reply::<messages::MinidumpReply>()?;
-
-        if reply.path.is_empty() {
-            
-            
-            bail!("Minidump for id {id:} could not be generated");
-        }
-
-        Ok(CrashReport {
-            path: reply.path.into_raw(),
-            error: reply.error.map_or(null_mut(), CString::into_raw),
         })
     }
 }
@@ -315,31 +294,6 @@ pub unsafe extern "C" fn release_crash_report(crash_report: *mut CrashReport) {
 
     if !crash_report.error.is_null() {
         let _error = CString::from_raw(crash_report.error);
-    }
-}
-
-
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn generate_crash_report(
-    client: *mut CrashHelperClient,
-    id: GeckoChildId,
-    target_thread: RawThreadHandle,
-) -> *mut CrashReport {
-    let client = client.as_mut().unwrap();
-    let target_thread = ThreadHandle::from_raw_handle(target_thread);
-    if let Ok(crash_report) = client.generate_crash_report(id, target_thread) {
-        
-        
-        Box::into_raw(Box::new(crash_report))
-    } else {
-        null_mut()
     }
 }
 

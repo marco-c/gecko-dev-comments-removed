@@ -1385,7 +1385,7 @@ static void WriteAnnotations(AnnotationWriter& aWriter,
                              const AnnotationTable& aAnnotations) {
   for (auto key : MakeEnumeratedRange(Annotation::Count)) {
     const nsCString& value = aAnnotations[key];
-    if (!value.IsEmpty() && ShouldIncludeAnnotation(key, value.get())) {
+    if (!value.IsEmpty()) {
       aWriter.Write(key, value.get(), value.Length());
     }
   }
@@ -3193,6 +3193,20 @@ bool WriteExtraFile(const nsAString& id, const AnnotationTable& annotations) {
 
 
 
+static void AddSharedAnnotations(AnnotationTable& aAnnotations) {
+  for (auto key : MakeEnumeratedRange(Annotation::Count)) {
+    if (!aAnnotations[key].IsEmpty() &&
+        !ShouldIncludeAnnotation(key, aAnnotations[key].get())) {
+      aAnnotations[key] = EmptyCString();
+    }
+  }
+
+  AddCommonAnnotations(aAnnotations);
+}
+
+
+
+
 
 static bool MoveToPending(nsIFile* dumpFile, nsIFile* extraFile,
                           nsIFile* memoryReport) {
@@ -3552,7 +3566,7 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
     return false;
   }
 
-  AddCommonAnnotations(aAnnotations);
+  AddSharedAnnotations(aAnnotations);
 
   if (error.Length() > 0) {
     aAnnotations[Annotation::DumperError] = std::move(error);
@@ -3617,6 +3631,33 @@ static void RenameAdditionalHangMinidump(nsIFile* minidump,
   }
 }
 
+
+static bool PairedDumpCallback(
+#ifdef XP_LINUX
+    const MinidumpDescriptor& descriptor,
+#else
+    const XP_CHAR* dump_path, const XP_CHAR* minidump_id,
+#endif
+    void* context,
+#ifdef XP_WIN
+    EXCEPTION_POINTERS* , MDRawAssertionInfo* ,
+#endif
+    const phc::AddrInfo* addrInfo, bool succeeded) {
+  XP_CHAR* path = static_cast<XP_CHAR*>(context);
+  size_t size = XP_PATH_MAX;
+
+#ifdef XP_LINUX
+  Concat(path, descriptor.path(), &size);
+#else
+  path = Concat(path, dump_path, &size);
+  path = Concat(path, XP_PATH_SEPARATOR, &size);
+  path = Concat(path, minidump_id, &size);
+  Concat(path, dumpFileExtension, &size);
+#endif
+
+  return true;
+}
+
 ThreadId CurrentThreadId() {
 #if defined(XP_WIN)
   return ::GetCurrentThreadId();
@@ -3631,7 +3672,8 @@ ThreadId CurrentThreadId() {
 #endif
 }
 
-bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
+bool CreateMinidumpsAndPair(ProcessHandle aTargetHandle,
+                            ThreadId aTargetBlamedThread,
                             const nsACString& aIncomingPairName,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aMainDumpOut) {
@@ -3640,66 +3682,56 @@ bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
   }
 
   AutoIOInterposerDisable disableIOInterposition;
-#if defined(XP_WIN) && defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-  DllBlocklist_Shutdown();
+
+  xpstring dump_path;
+#ifndef XP_LINUX
+  dump_path = gExceptionHandler->dump_path();
+#else
+  dump_path = gExceptionHandler->minidump_descriptor().directory();
 #endif
 
-  CrashReport* crash_report = nullptr;
+  
+  
+  XP_CHAR minidumpPath[XP_PATH_MAX] = {};
 
-  {
-    StaticMutexAutoLock lock(gCrashHelperClientMutex);
-    if (gCrashHelperClient) {
-#if defined(XP_DARWIN)
-      
-      
-      aTargetBlamedThread = RetainMachSendRight(aTargetBlamedThread).release();
+  
+  if (!google_breakpad::ExceptionHandler::WriteMinidumpForChild(
+          aTargetHandle, aTargetBlamedThread,
+#if defined(XP_LINUX) && defined(MOZ_OXIDIZED_BREAKPAD)
+           nullptr,
 #endif  
-      crash_report =
-          generate_crash_report(gCrashHelperClient, aId, aTargetBlamedThread);
-    }
-  }
-
-  if (!crash_report) {
+          dump_path, PairedDumpCallback, static_cast<void*>(minidumpPath)
+#ifdef XP_WIN
+                                             ,
+          GetMinidumpType()
+#endif
+              )) {
     return false;
   }
 
   nsCOMPtr<nsIFile> targetMinidump;
-  CreateFileFromPath(xpstring((XP_CHAR*)crash_report->path),
-                     getter_AddRefs(targetMinidump));
-  nsCString error =
-      crash_report->error ? nsCString(crash_report->error) : ""_ns;
-  release_crash_report(crash_report);
+  CreateFileFromPath(xpstring(minidumpPath), getter_AddRefs(targetMinidump));
   MOZ_ASSERT(targetMinidump);
 
-  nsCOMPtr<nsIFile> extra = nullptr;
-  NS_ENSURE_TRUE(GetExtraFileForMinidump(targetMinidump, getter_AddRefs(extra)),
-                 false);
-
   
-  {
-    StaticMutexAutoLock lock(gCrashHelperClientMutex);
-    crash_report =
-        generate_crash_report(gCrashHelperClient, 0, CurrentThreadId());
-  }
-
-  if (!crash_report) {
-    
+  if (!google_breakpad::ExceptionHandler::WriteMinidump(
+          dump_path,
+#ifdef XP_MACOSX
+          true,
+#endif
+          PairedDumpCallback, static_cast<void*>(minidumpPath)
+#ifdef XP_WIN
+                                  ,
+          GetMinidumpType()
+#endif
+              )) {
+    targetMinidump->Remove(false);
     return false;
   }
 
   nsCOMPtr<nsIFile> incomingDump;
-  CreateFileFromPath(xpstring((XP_CHAR*)crash_report->path),
-                     getter_AddRefs(incomingDump));
-  release_crash_report(crash_report);
+  CreateFileFromPath(xpstring(minidumpPath), getter_AddRefs(incomingDump));
   MOZ_ASSERT(incomingDump);
-
-  
-  
-  
-  nsCOMPtr<nsIFile> incomingExtra = nullptr;
-  if (GetExtraFileForMinidump(incomingDump, getter_AddRefs(incomingExtra))) {
-    incomingExtra->Remove(false);
-  }
 
   RenameAdditionalHangMinidump(incomingDump, targetMinidump, aIncomingPairName);
 
@@ -3707,24 +3739,12 @@ bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
     MoveToPending(targetMinidump, nullptr, nullptr);
     MoveToPending(incomingDump, nullptr, nullptr);
   }
+#if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
+  DllBlocklist_Shutdown();
+#endif
 
-  nsresult rv = ReadExtraFile(extra, aTargetAnnotations);
-
+  AddSharedAnnotations(aTargetAnnotations);
   
-  
-  extra->Remove(false);
-
-  if (rv != NS_OK) {
-    
-    
-    return false;
-  }
-
-  AddCommonAnnotations(aTargetAnnotations);
-
-  if (error.Length() > 0) {
-    aTargetAnnotations[Annotation::DumperError] = std::move(error);
-  }
 
   targetMinidump.forget(aMainDumpOut);
 
