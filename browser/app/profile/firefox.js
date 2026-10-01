@@ -3112,10 +3112,6 @@ pref("app.normandy.onsync_skew_sec", 600);
 #endif
 
 
-pref("toolkit.coverage.enabled", false);
-pref("toolkit.coverage.endpoint.base", "https://coverage.mozilla.org");
-
-
 pref("browser.discovery.enabled", true);
 
 pref("browser.engagement.recent_visited_origins.expiry", 86400); 
