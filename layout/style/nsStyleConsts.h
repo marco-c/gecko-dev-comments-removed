@@ -288,12 +288,6 @@ enum class StyleRubyAlign : uint8_t {
 };
 
 
-enum class StyleTextSizeAdjust : uint8_t {
-  None,
-  Auto,
-};
-
-
 enum class StyleTextCombineUpright : uint8_t {
   None,
   All,
