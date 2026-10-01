@@ -70,9 +70,14 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
 
  private:
   void SetTransferSizeFromHttpChannel(nsIHttpChannel* aHttpChannel);
+  void SetServedFromCacheFromHttpChannel(nsIHttpChannel* aHttpChannel);
 
  public:
   uint64_t TransferSize() const { return mTransferSize; }
+
+  
+  
+  bool ServedFromCache() const { return mServedFromCache; }
 
   
 
@@ -204,6 +209,8 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
   DOMHighResTimeStamp mFetchStart = 0;
 
   uint64_t mTransferSize = 0;
+
+  bool mServedFromCache = false;
 
   RenderBlockingStatusType mRenderBlockingStatus =
       RenderBlockingStatusType::Non_blocking;
@@ -420,7 +427,7 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(
     mFetchStart, mEncodedBodySize, mTransferSize, mDecodedBodySize,
     mResponseStatus, mRedirectCount, mContentType, mAllRedirectsSameOrigin,
     mAllRedirectsPassTAO, mSecureConnection, mBodyInfoAccessAllowed,
-    mTimingAllowed, mInitialized, mRenderBlockingStatus);
+    mTimingAllowed, mInitialized, mServedFromCache, mRenderBlockingStatus);
 
 template <>
 struct ParamTraits<nsIServerTiming*> {
