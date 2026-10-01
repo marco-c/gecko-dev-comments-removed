@@ -31,5 +31,44 @@ const consts = {
   unusedKey: isLinux ? "Q" : "Y",
   unusedModifiersDisplay: isMac ? "⇧⌘" : "Ctrl+Shift+",
   unusedModifiersArgs: ["KEY_Shift", { accelKey: true }],
+
+  
+  
+  
+  
+  
+  remappedArgs: [
+    "µ",
+    {
+      accelKey: true,
+      altKey: true,
+      altGraphKey: true,
+      shiftKey: true,
+      keyCode: KeyEvent.DOM_VK_M,
+    },
+  ],
+  remappedDisplay: isMac ? "⇧⌥⌘M" : "Ctrl+Shift+Alt+M",
+
+  
+  
+  
+  
+  
+  remappedDigitArgs: [
+    "€",
+    {
+      accelKey: true,
+      altKey: true,
+      altGraphKey: true,
+      shiftKey: true,
+      keyCode: KeyEvent.DOM_VK_2,
+    },
+  ],
+  remappedDigitDisplay: isMac ? "⇧⌥⌘€" : "Ctrl+Shift+Alt+€",
+
+  
+  
+  twoCodeUnitArgs: ["\u05E9\u05BC", { accelKey: true, shiftKey: true }],
+  twoCodeUnitDisplay: isMac ? "⇧⌘\u05E9\u05BC" : "Ctrl+Shift+\u05E9\u05BC",
 };
 consts.unusedDisplay = `${consts.unusedModifiersDisplay}${consts.unusedKey}`;
