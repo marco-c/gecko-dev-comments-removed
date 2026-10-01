@@ -19,6 +19,11 @@
 class nsIURI;
 class nsILoadInfo;
 
+namespace mozilla::ipc {
+class ConnectionAllowlistEntry;
+class ConnectionAllowlistsArgs;
+}  
+
 namespace mozilla::dom {
 
 
@@ -41,6 +46,10 @@ class ConnectionAllowlists final {
 
   bool ShouldLoad(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
 
+  void ToArgs(mozilla::ipc::ConnectionAllowlistsArgs& aArgs) const;
+  static already_AddRefed<ConnectionAllowlists> FromArgs(
+      const mozilla::ipc::ConnectionAllowlistsArgs& aArgs);
+
  private:
   ~ConnectionAllowlists() = default;
 
@@ -61,12 +70,25 @@ class ConnectionAllowlists final {
   
   
   struct Allowlist {
+    
+    
+    void AppendPattern(const nsACString& aSerializedPattern);
+
+    void ToEntryArgs(mozilla::ipc::ConnectionAllowlistEntry& aEntry) const;
+    static Allowlist FromEntryArgs(
+        const mozilla::ipc::ConnectionAllowlistEntry& aEntry,
+        Disposition aDisposition);
+
     nsTArray<UrlPattern> mPatterns;
+    
+    
+    nsTArray<nsCString> mSerializedPatterns;
     
     
     
     
     bool mMatchesResponseOrigin = false;
+
     
     nsCString mReportingEndpoint;
     Disposition mDisposition = Disposition::Enforce;
