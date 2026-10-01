@@ -227,6 +227,12 @@ let Player = {
 
 
 
+  didTabOverrideControlFocus: false,
+
+  
+
+
+
 
 
 
@@ -478,6 +484,22 @@ let Player = {
         if (event.keyCode == KeyEvent.DOM_VK_TAB) {
           this.controls.setAttribute(KEYING_ATTRIBUTE, true);
           this.showVideoControls();
+          
+          
+          
+          
+          if (
+            !this.didTabOverrideControlFocus &&
+            !this.controls.contains(document.activeElement)
+          ) {
+            this.didTabOverrideControlFocus = true;
+            event.preventDefault();
+            if (!event.shiftKey) {
+              this.playpauseButton.focus();
+            } else {
+              this.seekBackward.focus();
+            }
+          }
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
           let isSettingsPanelInFocus = this.settingsPanel.contains(
             document.activeElement
@@ -1478,6 +1500,11 @@ let Player = {
   get seekBackward() {
     delete this.seekBackward;
     return (this.seekBackward = document.getElementById("seekBackward"));
+  },
+
+  get playpauseButton() {
+    delete this.playpauseButton;
+    return (this.playpauseButton = document.getElementById("playpause"));
   },
 
   get seekForward() {
