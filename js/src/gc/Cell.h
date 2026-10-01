@@ -256,12 +256,12 @@ class Cell {
   void dump() const;
 #endif
 
+  
+  void operator delete(void*) = delete;
+
  protected:
   uintptr_t address() const;
 
- private:
-  
-  void operator delete(void*) = delete;
 } JS_HAZ_GC_THING;
 
 
@@ -1020,9 +1020,6 @@ class MOZ_RAII AutoMarkingLock {
   JSRuntime* runtime = nullptr;
 #endif
 
-  AutoMarkingLock(const AutoMarkingLock& other) = delete;
-  AutoMarkingLock& operator=(const AutoMarkingLock& other) = delete;
-
  public:
   
   AutoMarkingLock(JS::Zone* zone, LightLock& markingLock) {
@@ -1050,6 +1047,9 @@ class MOZ_RAII AutoMarkingLock {
     }
 #endif
   }
+
+  AutoMarkingLock(const AutoMarkingLock& other) = delete;
+  AutoMarkingLock& operator=(const AutoMarkingLock& other) = delete;
 };
 
 } 

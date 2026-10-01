@@ -539,21 +539,7 @@ typedef enum JSGCParamKey {
 
 typedef void (*JSTraceDataOp)(JSTracer* trc, void* data);
 
-
-
-
-
-
-
-
-
-
-typedef bool (*JSGrayRootsTracer)(JSTracer* trc, JS::SliceBudget& budget,
-                                  void* data);
-
 typedef enum JSGCStatus { JSGC_BEGIN, JSGC_END } JSGCStatus;
-
-typedef void (*JSObjectsTenuredCallback)(JS::GCContext* gcx, void* data);
 
 typedef enum JSFinalizeStatus {
   
@@ -900,15 +886,15 @@ class GarbageCollectionEvent {
   
   mozilla::Vector<Collection> collections;
 
-  GarbageCollectionEvent(const GarbageCollectionEvent& rhs) = delete;
-  GarbageCollectionEvent& operator=(const GarbageCollectionEvent& rhs) = delete;
-
  public:
   explicit GarbageCollectionEvent(uint64_t majorGCNum)
       : majorGCNumber_(majorGCNum),
         reason(nullptr),
         nonincrementalReason(nullptr),
         collections() {}
+
+  GarbageCollectionEvent(const GarbageCollectionEvent& rhs) = delete;
+  GarbageCollectionEvent& operator=(const GarbageCollectionEvent& rhs) = delete;
 
   using Ptr = js::UniquePtr<GarbageCollectionEvent>;
   static Ptr Create(JSRuntime* rt, ::js::gcstats::Statistics& stats,
@@ -1004,15 +990,6 @@ extern JS_PUBLIC_API bool AddGCNurseryCollectionCallback(
     JSContext* cx, GCNurseryCollectionCallback callback, void* data);
 extern JS_PUBLIC_API void RemoveGCNurseryCollectionCallback(
     JSContext* cx, GCNurseryCollectionCallback callback, void* data);
-
-typedef void (*DoCycleCollectionCallback)(JSContext* cx);
-
-
-
-
-
-extern JS_PUBLIC_API DoCycleCollectionCallback
-SetDoCycleCollectionCallback(JSContext* cx, DoCycleCollectionCallback callback);
 
 using CreateSliceBudgetCallback = JS::SliceBudget (*)(JS::GCReason reason,
                                                       int64_t millis);
@@ -1238,9 +1215,6 @@ extern JS_PUBLIC_API void JS_MaybeGC(JSContext* cx);
 extern JS_PUBLIC_API void JS_SetGCCallback(JSContext* cx, JSGCCallback cb,
                                            void* data);
 
-extern JS_PUBLIC_API void JS_SetObjectsTenuredCallback(
-    JSContext* cx, JSObjectsTenuredCallback cb, void* data);
-
 extern JS_PUBLIC_API bool JS_AddFinalizeCallback(JSContext* cx,
                                                  JSFinalizeCallback cb,
                                                  void* data);
@@ -1400,11 +1374,6 @@ extern JS_PUBLIC_API void SetHostCleanupFinalizationRegistryCallback(
 
 
 extern JS_PUBLIC_API void ClearKeptObjects(JSContext* cx);
-
-inline JS_PUBLIC_API bool NeedGrayRootsForZone(Zone* zoneArg) {
-  shadow::Zone* zone = shadow::Zone::from(zoneArg);
-  return zone->isGCMarkingBlackAndGray() || zone->isGCCompacting();
-}
 
 extern JS_PUBLIC_API bool AtomsZoneIsCollecting(JSRuntime* runtime);
 extern JS_PUBLIC_API bool IsAtomsZone(Zone* zone);

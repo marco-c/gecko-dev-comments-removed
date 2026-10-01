@@ -14,6 +14,11 @@
 #include "js/HeapAPI.h"  
 #include "js/TraceKind.h"
 
+namespace JS {
+class AutoRequireNoGC;
+class SliceBudget;
+}  
+
 
 
 

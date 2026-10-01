@@ -262,7 +262,7 @@ void ApplyGCThingTyped(void* thing, JS::TraceKind traceKind, F&& f) {
   
   
   
-  MapGCThingTyped(thing, traceKind, std::move(f));
+  MapGCThingTyped(thing, traceKind, std::forward<F>(f));
 }
 
 }  

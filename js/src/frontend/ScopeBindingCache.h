@@ -13,10 +13,8 @@
 
 #include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParserAtom.h"  
-
-#include "js/Utility.h"  
-
-#include "vm/StringType.h"  
+#include "js/Utility.h"           
+#include "vm/StringType.h"        
 
 namespace js {
 
@@ -30,6 +28,7 @@ struct CompilationStencil;
 struct ScopeStencilRef;
 struct FakeStencilGlobalScope;
 struct CompilationStencilMerger;
+struct InitialStencilAndDelazifications;
 
 
 

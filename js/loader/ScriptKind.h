@@ -5,6 +5,8 @@
 #ifndef js_loader_ScriptKind_h
 #define js_loader_ScriptKind_h
 
+#include <cstdint>
+
 namespace JS::loader {
 
 
@@ -30,6 +32,10 @@ enum class ScriptKind : uint8_t {
 
   
   eImportMap,
+
+  
+  
+  eSpeculationRules,
 };
 
 }  

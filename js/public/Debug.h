@@ -658,14 +658,12 @@ class Builder {
       value = rhs.value;
       return *this;
     }
+    BuiltThing() = delete;
 
     explicit operator bool() const {
       
       return value;
     }
-
-   private:
-    BuiltThing() = delete;
   };
 
  public:

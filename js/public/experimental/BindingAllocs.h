@@ -12,6 +12,12 @@
 
 #include "jstypes.h"
 
+#include "js/RootingAPI.h"
+
+struct JSClass;
+struct JSContext;
+class JSObject;
+
 
 
 

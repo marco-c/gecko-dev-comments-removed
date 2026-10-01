@@ -12,6 +12,7 @@
 #include "js/ColumnNumber.h"  
 #include "js/HashTable.h"
 #include "js/Stack.h"
+#include "vm/JSScript.h"
 #include "vm/SavedFrame.h"
 
 namespace JS {

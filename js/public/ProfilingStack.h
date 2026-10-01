@@ -426,6 +426,14 @@ class JS_PUBLIC_API ProfilingStack final {
 
   ~ProfilingStack();
 
+  
+  ProfilingStack(const ProfilingStack&) = delete;
+  void operator=(const ProfilingStack&) = delete;
+
+  
+  ProfilingStack(ProfilingStack&&) = delete;
+  void operator=(ProfilingStack&&) = delete;
+
   void pushLabelFrame(const char* label, const char* dynamicString, void* sp,
                       JS::ProfilingCategoryPair categoryPair,
                       uint32_t flags = 0) {
@@ -502,14 +510,6 @@ class JS_PUBLIC_API ProfilingStack final {
   
   
   MOZ_COLD void ensureCapacitySlow();
-
-  
-  ProfilingStack(const ProfilingStack&) = delete;
-  void operator=(const ProfilingStack&) = delete;
-
-  
-  ProfilingStack(ProfilingStack&&) = delete;
-  void operator=(ProfilingStack&&) = delete;
 
   uint32_t capacity = 0;
 

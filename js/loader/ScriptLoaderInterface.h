@@ -8,6 +8,7 @@
 #include "nsISupports.h"
 #include "nsStringFwd.h"
 #include "nsTArray.h"
+#include "nsTString.h"
 #include "ScriptKind.h"  
 
 #include "js/TypeDecls.h"  

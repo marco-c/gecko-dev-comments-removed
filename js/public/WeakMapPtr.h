@@ -23,6 +23,11 @@ template <typename K, typename V>
 class JS_PUBLIC_API WeakMapPtr {
  public:
   WeakMapPtr() : ptr(nullptr) {}
+
+  
+  WeakMapPtr(const WeakMapPtr& wmp) = delete;
+  WeakMapPtr& operator=(const WeakMapPtr& wmp) = delete;
+
   bool init(JSContext* cx);
   bool initialized() { return ptr != nullptr; }
   void destroy();
@@ -35,10 +40,6 @@ class JS_PUBLIC_API WeakMapPtr {
 
  private:
   void* ptr;
-
-  
-  WeakMapPtr(const WeakMapPtr& wmp) = delete;
-  WeakMapPtr& operator=(const WeakMapPtr& wmp) = delete;
 };
 
 } 

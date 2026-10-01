@@ -202,6 +202,7 @@ class JS_PUBLIC_API AtomOrTwoByteChars
 
  public:
   template <typename T>
+    requires(std::is_constructible_v<Base, T>)
   MOZ_IMPLICIT AtomOrTwoByteChars(T&& rhs) : Base(std::forward<T>(rhs)) {}
 
   template <typename T>
@@ -225,9 +226,6 @@ class JS_PUBLIC_API AtomOrTwoByteChars
 
 class BaseStackFrame {
   friend class StackFrame;
-
-  BaseStackFrame(const StackFrame&) = delete;
-  BaseStackFrame& operator=(const StackFrame&) = delete;
 
  protected:
   void* ptr;
@@ -298,6 +296,9 @@ class BaseStackFrame {
 
   
   virtual void trace(JSTracer* trc) = 0;
+
+  BaseStackFrame(const StackFrame&) = delete;
+  BaseStackFrame& operator=(const StackFrame&) = delete;
 };
 
 
@@ -561,7 +562,6 @@ class JS_PUBLIC_API Base {
   
   
   bool operator==(const Base& rhs) const = default;
-  bool operator!=(const Base& rhs) const = default;
 
   
   
@@ -663,7 +663,6 @@ class JS_PUBLIC_API Base {
   
   virtual const char* scriptFilename() const { return nullptr; }
 
- private:
   Base(const Base& rhs) = delete;
   Base& operator=(const Base& rhs) = delete;
 };
@@ -912,6 +911,9 @@ class EdgeRange {
  public:
   virtual ~EdgeRange() = default;
 
+  EdgeRange(const EdgeRange&) = delete;
+  EdgeRange& operator=(const EdgeRange&) = delete;
+
   
   bool empty() const { return !front_; }
 
@@ -924,10 +926,6 @@ class EdgeRange {
   
   
   virtual void popFront() = 0;
-
- private:
-  EdgeRange(const EdgeRange&) = delete;
-  EdgeRange& operator=(const EdgeRange&) = delete;
 };
 
 typedef mozilla::Vector<Edge, 8, js::SystemAllocPolicy> EdgeVector;

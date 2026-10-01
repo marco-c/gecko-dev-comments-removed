@@ -697,6 +697,13 @@ class JS_PUBLIC_API JSAutoStructuredCloneBuffer {
   ~JSAutoStructuredCloneBuffer() { clear(); }
 
   JSStructuredCloneData& data() { return data_; }
+
+  
+  JSAutoStructuredCloneBuffer(const JSAutoStructuredCloneBuffer& other) =
+      delete;
+  JSAutoStructuredCloneBuffer& operator=(
+      const JSAutoStructuredCloneBuffer& other) = delete;
+
   bool empty() const { return !data_.Size(); }
 
   void clear();
@@ -742,13 +749,6 @@ class JS_PUBLIC_API JSAutoStructuredCloneBuffer {
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
     return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
   }
-
- private:
-  
-  JSAutoStructuredCloneBuffer(const JSAutoStructuredCloneBuffer& other) =
-      delete;
-  JSAutoStructuredCloneBuffer& operator=(
-      const JSAutoStructuredCloneBuffer& other) = delete;
 };
 
 

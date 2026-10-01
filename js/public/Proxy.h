@@ -612,6 +612,16 @@ class JS_PUBLIC_API AutoEnterPolicy {
   }
 
   virtual ~AutoEnterPolicy() { recordLeave(); }
+
+  
+  
+  
+  
+  
+  
+  AutoEnterPolicy(const AutoEnterPolicy&) = delete;
+  AutoEnterPolicy& operator=(const AutoEnterPolicy&) = delete;
+
   inline bool allowed() { return allow; }
   inline bool returnValue() {
     MOZ_ASSERT(!allowed());
@@ -652,16 +662,6 @@ class JS_PUBLIC_API AutoEnterPolicy {
   }
   inline void recordLeave() {}
 #endif
-
- private:
-  
-  
-  
-  
-  
-  
-  AutoEnterPolicy(const AutoEnterPolicy&) = delete;
-  AutoEnterPolicy& operator=(const AutoEnterPolicy&) = delete;
 };
 
 #ifdef JS_DEBUG
