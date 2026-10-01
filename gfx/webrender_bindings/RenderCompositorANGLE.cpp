@@ -882,14 +882,6 @@ void RenderCompositorANGLE::AddSurface(
                            aRoundedClipRect, aClipRadius);
 }
 
-void RenderCompositorANGLE::GetCompositorCapabilities(
-    CompositorCapabilities* aCaps) {
-  RenderCompositor::GetCompositorCapabilities(aCaps);
-
-  
-  aCaps->supports_external_compositor_surface_negative_scaling = false;
-}
-
 void RenderCompositorANGLE::GetWindowProperties(WindowProperties* aProperties) {
   aProperties->is_opaque = !ShouldUseAlpha();
   const bool enable_screenshot =
