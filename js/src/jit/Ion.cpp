@@ -2425,9 +2425,82 @@ bool jit::IonCompileScriptForBaselineOSR(JSContext* cx, BaselineFrame* frame,
   return true;
 }
 
+static void InvalidateFrame(const JSJitFrameIter& frame, JSScript* script) {
+  IonScript* ionScript = script->ionScript();
+
+  
+  
+  
+  ionScript->purgeICs(script->zone());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  ionScript->incrementInvalidationCount();
+
+  JitCode* ionCode = ionScript->method();
+
+  
+  
+  PreWriteBarrier(script->zone(), ionCode, [](JSTracer* trc, JitCode* code) {
+    code->traceChildren(trc);
+  });
+
+  ionCode->setInvalidated();
+
+  
+  if (frame.isBailoutJS()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  AutoWritableJitCode awjc(ionCode);
+  const SafepointIndex* si =
+      ionScript->getSafepointIndex(frame.resumePCinCurrentFrame());
+  CodeLocationLabel dataLabelToMunge(frame.resumePCinCurrentFrame());
+  ptrdiff_t delta = ionScript->invalidateEpilogueDataOffset() -
+                    (frame.resumePCinCurrentFrame() - ionCode->raw());
+  Assembler::PatchWrite_Imm32(dataLabelToMunge, Imm32(delta));
+
+  CodeLocationLabel osiPatchPoint =
+      SafepointReader::InvalidationPatchPoint(ionScript, si);
+  CodeLocationLabel invalidateEpilogue(
+      ionCode, CodeOffset(ionScript->invalidateEpilogueOffset()));
+
+  JitSpew(
+      JitSpew_IonInvalidate,
+      "   ! Invalidate ionScript %p (inv count %zu) -> patching osipoint %p",
+      ionScript, ionScript->invalidationCount(), (void*)osiPatchPoint.raw());
+  Assembler::PatchWrite_NearCall(osiPatchPoint, invalidateEpilogue);
+}
+
+template <typename ShouldInvalidateFn>
 static void InvalidateActivation(JS::GCContext* gcx,
                                  const JitActivationIterator& activations,
-                                 bool invalidateAll) {
+                                 ShouldInvalidateFn shouldInvalidate) {
   JitSpew(JitSpew_IonInvalidate, "BEGIN invalidating activation");
 
 #ifdef CHECK_OSIPOINT_REGISTERS
@@ -2511,79 +2584,11 @@ static void InvalidateActivation(JS::GCContext* gcx,
       continue;
     }
 
-    if (!invalidateAll && !script->ionScript()->invalidated()) {
+    if (!shouldInvalidate(script)) {
       continue;
     }
 
-    IonScript* ionScript = script->ionScript();
-
-    
-    
-    
-    ionScript->purgeICs(script->zone());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    ionScript->incrementInvalidationCount();
-
-    JitCode* ionCode = ionScript->method();
-
-    
-    
-    PreWriteBarrier(script->zone(), ionCode, [](JSTracer* trc, JitCode* code) {
-      code->traceChildren(trc);
-    });
-
-    ionCode->setInvalidated();
-
-    
-    if (frame.isBailoutJS()) {
-      continue;
-    }
-
-    
-    
-    
-    
-    
-    
-    AutoWritableJitCode awjc(ionCode);
-    const SafepointIndex* si =
-        ionScript->getSafepointIndex(frame.resumePCinCurrentFrame());
-    CodeLocationLabel dataLabelToMunge(frame.resumePCinCurrentFrame());
-    ptrdiff_t delta = ionScript->invalidateEpilogueDataOffset() -
-                      (frame.resumePCinCurrentFrame() - ionCode->raw());
-    Assembler::PatchWrite_Imm32(dataLabelToMunge, Imm32(delta));
-
-    CodeLocationLabel osiPatchPoint =
-        SafepointReader::InvalidationPatchPoint(ionScript, si);
-    CodeLocationLabel invalidateEpilogue(
-        ionCode, CodeOffset(ionScript->invalidateEpilogueOffset()));
-
-    JitSpew(
-        JitSpew_IonInvalidate,
-        "   ! Invalidate ionScript %p (inv count %zu) -> patching osipoint %p",
-        ionScript, ionScript->invalidationCount(), (void*)osiPatchPoint.raw());
-    Assembler::PatchWrite_NearCall(osiPatchPoint, invalidateEpilogue);
+    InvalidateFrame(frame, script);
   }
 
   JitSpew(JitSpew_IonInvalidate, "END invalidating activation");
@@ -2599,7 +2604,7 @@ void jit::InvalidateAll(JS::GCContext* gcx, Zone* zone) {
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->compartment()->zone() == zone) {
       JitSpew(JitSpew_IonInvalidate, "Invalidating all frames for GC");
-      InvalidateActivation(gcx, iter, true);
+      InvalidateActivation(gcx, iter, [](JSScript*) { return true; });
     }
   }
 }
@@ -2657,7 +2662,9 @@ void jit::Invalidate(JSContext* cx, const IonScriptKeyVector& invalid,
 
   JS::GCContext* gcx = cx->gcContext();
   for (JitActivationIterator iter(cx); !iter.done(); ++iter) {
-    InvalidateActivation(gcx, iter, false);
+    InvalidateActivation(gcx, iter, [](JSScript* script) {
+      return script->ionScript()->invalidated();
+    });
   }
 
   
