@@ -456,10 +456,6 @@ class PanGestureInput : public InputData {
     return mMayTriggerSwipe && mOverscrollBehaviorAllowsSwipe;
   }
 
-  
-  
-  
-  bool MayTriggerSwipe() const { return mMayTriggerSwipe; }
   bool RequiresContentResponseIfCannotScrollHorizontallyInStartDirection();
 
   static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);

@@ -1254,9 +1254,6 @@ class nsIWidget : public nsSupportsWeakReference {
 
   virtual void ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe);
 
-  
-  
-  bool MayStartSwipeForNonAPZ(const mozilla::PanGestureInput& aPanInput);
   void TrackScrollEventAsSwipe(const mozilla::PanGestureInput& aSwipeStartEvent,
                                uint32_t aAllowedDirections,
                                uint64_t aInputBlockId);
@@ -1267,7 +1264,7 @@ class nsIWidget : public nsSupportsWeakReference {
   SwipeInfo SendMayStartSwipe(const mozilla::PanGestureInput& aSwipeStartEvent);
   
   
-  mozilla::WidgetWheelEvent MayStartSwipeForAPZ(
+  mozilla::WidgetWheelEvent MayStartSwipe(
       const mozilla::PanGestureInput& aPanInput,
       const mozilla::layers::APZEventResult& aApzResult);
 
@@ -2442,13 +2439,6 @@ class nsIWidget : public nsSupportsWeakReference {
   
   bool mIsFullyOccluded;
   bool mNeedFastSnaphot;
-  
-  
-  
-  
-  
-  
-  bool mCurrentPanGestureBelongsToSwipe;
 
   mozilla::widget::PiPType mPiPType;
 

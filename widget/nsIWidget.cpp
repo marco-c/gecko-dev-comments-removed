@@ -303,7 +303,6 @@ nsIWidget::nsIWidget(BorderStyle aBorderStyle)
       mIMEHasQuit(false),
       mIsFullyOccluded(false),
       mNeedFastSnaphot(false),
-      mCurrentPanGestureBelongsToSwipe(false),
       mPiPType(PiPType::NoPiP) {
 #ifdef NOISY_WIDGET_LEAKS
   gNumWidgets++;
@@ -2304,9 +2303,7 @@ void nsIWidget::TrackScrollEventAsSwipe(
       new SwipeTracker(*this, aSwipeStartEvent, aAllowedDirections, direction);
   mSwipeTracker->StartTracking(aSwipeStartEvent);
 
-  if (!mAPZC) {
-    mCurrentPanGestureBelongsToSwipe = true;
-  } else {
+  if (mAPZC) {
     
     
     mAPZC->InputBridge()->SetBrowserGestureResponse(
@@ -2340,8 +2337,8 @@ nsIWidget::SwipeInfo nsIWidget::SendMayStartSwipe(
   return result;
 }
 
-WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
-    const PanGestureInput& aPanInput, const APZEventResult& aApzResult) {
+WidgetWheelEvent nsIWidget::MayStartSwipe(const PanGestureInput& aPanInput,
+                                          const APZEventResult& aApzResult) {
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
 
   
@@ -2388,61 +2385,6 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
   }
 
   return event;
-}
-
-bool nsIWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
-  
-  if (mPiPType != PiPType::NoPiP) {
-    return false;
-  }
-
-  if (aPanInput.mType == PanGestureInput::PANGESTURE_MAYSTART ||
-      aPanInput.mType == PanGestureInput::PANGESTURE_START) {
-    mCurrentPanGestureBelongsToSwipe = false;
-  }
-  if (mCurrentPanGestureBelongsToSwipe) {
-    
-    
-    
-    MOZ_ASSERT(aPanInput.IsMomentum(),
-               "If the fingers are still on the touchpad, we should still have "
-               "a SwipeTracker, "
-               "and it should have consumed this event.");
-    return true;
-  }
-
-  if (!aPanInput.MayTriggerSwipe()) {
-    return false;
-  }
-
-  SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
-
-  
-  
-  
-  ScrollableLayerGuid guid;
-  uint64_t blockId = 0;
-  InputAPZContext context(guid, blockId, nsEventStatus_eIgnore);
-
-  WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
-  event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
-  DispatchEvent(&event);
-  if (swipeInfo.wantsSwipe) {
-    if (context.WasRoutedToChildProcess()) {
-      
-      
-      mSwipeEventQueue =
-          MakeUnique<SwipeEventQueue>(swipeInfo.allowedDirections, blockId);
-    } else if (event.TriggersSwipe()) {
-      TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections, blockId);
-    }
-  }
-
-  if (mSwipeEventQueue && mSwipeEventQueue->inputBlockId == 0) {
-    mSwipeEventQueue->queuedEvents.AppendElement(aPanInput);
-  }
-
-  return true;
 }
 
 LayersId nsIWidget::GetLayersId() const {
