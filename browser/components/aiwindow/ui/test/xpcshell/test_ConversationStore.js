@@ -86,6 +86,52 @@ add_task(async function test_save_and_restore() {
   );
 });
 
+add_task(async function test_save_routes_to_this_store() {
+  const conversation = new Conversation({
+    id: "conv-save-method",
+    createdDate: 1,
+    updatedDate: 1,
+    feature: "aitab",
+  });
+
+  
+  
+  await conversation.save();
+
+  Assert.equal(
+    await countRows("conv-save-method"),
+    1,
+    "save() persists through ConversationStore"
+  );
+
+  await ConversationStore.deleteConversationById("conv-save-method");
+});
+
+add_task(async function test_save_refuses_a_subclass() {
+  
+
+
+
+  class SubConversation extends Conversation {}
+  const sub = new SubConversation({
+    id: "conv-subclass",
+    createdDate: 1,
+    updatedDate: 1,
+  });
+
+  await Assert.rejects(
+    sub.save(),
+    /must not call Conversation.save/,
+    "a subclass is refused instead of being partially persisted"
+  );
+
+  Assert.equal(
+    await countRows("conv-subclass"),
+    0,
+    "and nothing is written for it"
+  );
+});
+
 add_task(async function test_update_is_upsert() {
   await ConversationStore.updateConversation(
     new Conversation({
