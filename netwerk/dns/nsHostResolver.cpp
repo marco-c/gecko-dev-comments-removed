@@ -114,7 +114,10 @@ nsHostResolver::~nsHostResolver() = default;
 void nsHostResolver::FireCallbacks(const CallbackArray& aCallbacks,
                                    nsHostRecord* aRec, nsresult aStatus) {
   for (const auto& cb : aCallbacks) {
-    cb->OnResolveHostComplete(this, aRec, aStatus);
+    
+    
+    cb->OnResolveHostComplete(this, aRec, aStatus,
+                               false);
   }
 }
 
@@ -485,6 +488,11 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   
   
   RefPtr<nsHostRecord> result;
+  
+  
+  
+  
+  bool fromStaleCache = false;
   nsresult status = NS_OK, rv = NS_OK;
   {
     MutexAutoLock dbLock(mDBLock);
@@ -575,7 +583,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
       if (!(flags & nsIDNSService::RESOLVE_BYPASS_CACHE) &&
           rec->HasUsableResult(now, flags)) {
-        result = FromCache(rec, host, type, status);
+        result = FromCache(rec, host, type, status, fromStaleCache);
       } else if (addrRec && addrRec->addr) {
         
         
@@ -608,9 +616,9 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
         
         
       } else if (!rec->mResolving) {
-        result =
-            FromUnspecEntry(rec, host, aTrrServer, originSuffix, type, flags,
-                            af, aOriginAttributes.IsPrivateBrowsing(), status);
+        result = FromUnspecEntry(
+            rec, host, aTrrServer, originSuffix, type, flags, af,
+            aOriginAttributes.IsPrivateBrowsing(), status, fromStaleCache);
         
         
         
@@ -692,7 +700,7 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   }  
 
   if (result) {
-    callback->OnResolveHostComplete(this, result, status);
+    callback->OnResolveHostComplete(this, result, status, fromStaleCache);
   }
 
   return rv;
@@ -700,14 +708,17 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
 already_AddRefed<nsHostRecord> nsHostResolver::FromCache(
     nsHostRecord* aRec, const nsACString& aHost, uint16_t aType,
-    nsresult& aStatus) {
+    nsresult& aStatus, bool& aFromStaleCache) {
   LOG(("  Using cached record for host [%s].\n",
        nsPromiseFlatCString(aHost).get()));
 
   
   RefPtr<nsHostRecord> result = aRec;
 
-  aRec->mFromStaleCache =
+  
+  
+  
+  aFromStaleCache =
       aRec->CheckExpiration(TimeStamp::NowLoRes()) == nsHostRecord::EXP_GRACE;
 
   
@@ -772,7 +783,8 @@ bool nsHostResolver::OtherFamilyHasUsablePositiveResult(
 already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
     nsHostRecord* aRec, const nsACString& aHost, const nsACString& aTrrServer,
     const nsACString& aOriginSuffix, uint16_t aType,
-    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus) {
+    nsIDNSService::DNSFlags aFlags, uint16_t af, bool aPb, nsresult& aStatus,
+    bool& aFromStaleCache) {
   RefPtr<nsHostRecord> result = nullptr;
   
   
@@ -842,6 +854,10 @@ already_AddRefed<nsHostRecord> nsHostResolver::FromUnspecEntry(
       
       if (aRec->HasUsableResult(now, aFlags)) {
         result = aRec;
+        
+        
+        
+        aFromStaleCache = aRec->CheckExpiration(now) == nsHostRecord::EXP_GRACE;
         if (aRec->negative) {
           aStatus = NS_ERROR_UNKNOWN_HOST;
         }
@@ -902,7 +918,8 @@ void nsHostResolver::DetachCallback(
   
   
   if (rec) {
-    callback->OnResolveHostComplete(this, rec, status);
+    callback->OnResolveHostComplete(this, rec, status,
+                                     false);
   }
 }
 
@@ -1488,8 +1505,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(rec->IsAddrRecord());
 
-  rec->mFromStaleCache = false;
-
   RefPtr<AddrHostRecord> addrRec = do_QueryObject(rec);
   MOZ_ASSERT(addrRec);
 
@@ -1683,8 +1698,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
   MOZ_ASSERT(rec);
   MOZ_ASSERT(rec->pb == pb);
   MOZ_ASSERT(!rec->IsAddrRecord());
-
-  rec->mFromStaleCache = false;
 
   if (rec->LoadNative()) {
     

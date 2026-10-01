@@ -51,8 +51,14 @@ class nsResolveHostCallback
 
 
 
+
+
+
+
+
   virtual void OnResolveHostComplete(nsHostResolver* resolver,
-                                     nsHostRecord* record, nsresult status) = 0;
+                                     nsHostRecord* record, nsresult status,
+                                     bool aFromStaleCache) = 0;
   
 
 
@@ -122,8 +128,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
     DNS_PRIORITY_MEDIUM = nsIDNSService::RESOLVE_PRIORITY_MEDIUM,
     DNS_PRIORITY_HIGH,
   };
-
-  nsresult GetFromStaleCache(bool* aResult);
 
  protected:
   friend class nsHostResolver;
@@ -233,12 +237,6 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   
   bool negative = false;
-
-  
-  
-  
-  
-  mozilla::Atomic<bool, mozilla::Relaxed> mFromStaleCache{false};
 
   
   bool mDoomed = false;
