@@ -12,6 +12,8 @@
 #include "mozilla/UniquePtr.h"
 
 #if defined(MOZ_MEMORY)
+
+#  include "mozilla/Maybe.h"
 #  include "mozmemory.h"
 #endif
 

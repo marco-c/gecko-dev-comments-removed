@@ -21,8 +21,7 @@ class MOZ_STATIC_CLASS Win32SRWLock final {
   
   static const DWORD kInvalidThreadId = 0;
 
-  constexpr Win32SRWLock()
-      : mExclusiveThreadId(kInvalidThreadId), mLock(SRWLOCK_INIT) {}
+  Win32SRWLock() = default;
 
   ~Win32SRWLock() { MOZ_ASSERT(mExclusiveThreadId == kInvalidThreadId); }
 
@@ -67,15 +66,15 @@ class MOZ_STATIC_CLASS Win32SRWLock final {
   
   
 
-  Atomic<DWORD, Relaxed> mExclusiveThreadId;
-  SRWLOCK mLock;
+  Atomic<DWORD, Relaxed> mExclusiveThreadId{kInvalidThreadId};
+  SRWLOCK mLock = SRWLOCK_INIT;
 };
 
 #else  
 
 class MOZ_STATIC_CLASS Win32SRWLock final {
  public:
-  constexpr Win32SRWLock() : mLock(SRWLOCK_INIT) {}
+  Win32SRWLock() = default;
 
   void LockShared() { ::AcquireSRWLockShared(&mLock); }
 
@@ -93,7 +92,7 @@ class MOZ_STATIC_CLASS Win32SRWLock final {
   Win32SRWLock& operator=(Win32SRWLock&&) = delete;
 
  private:
-  SRWLOCK mLock;
+  SRWLOCK mLock = SRWLOCK_INIT;
 };
 
 #endif

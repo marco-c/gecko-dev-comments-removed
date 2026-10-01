@@ -8,7 +8,6 @@
 
 
 
-
 #ifndef nsXULCommandDispatcher_h_
 #define nsXULCommandDispatcher_h_
 
@@ -59,11 +58,7 @@ class nsXULCommandDispatcher : public nsIDOMXULCommandDispatcher,
   class Updater {
    public:
     Updater(Element* aElement, const nsAString& aEvents,
-            const nsAString& aTargets)
-        : mElement(aElement),
-          mEvents(aEvents),
-          mTargets(aTargets),
-          mNext(nullptr) {}
+            const nsAString& aTargets);
 
     RefPtr<Element> mElement;
     nsString mEvents;

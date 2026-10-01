@@ -8,8 +8,6 @@
 
 
 
-
-
 #include "nsXULCommandDispatcher.h"
 
 #include "mozilla/BasicEvents.h"
@@ -44,6 +42,14 @@ nsXULCommandDispatcher::nsXULCommandDispatcher(Document* aDocument)
     : mDocument(aDocument), mUpdaters(nullptr), mLocked(false) {}
 
 nsXULCommandDispatcher::~nsXULCommandDispatcher() { Disconnect(); }
+
+nsXULCommandDispatcher::Updater::Updater(Element* aElement,
+                                         const nsAString& aEvents,
+                                         const nsAString& aTargets)
+    : mElement(aElement),
+      mEvents(aEvents),
+      mTargets(aTargets),
+      mNext(nullptr) {}
 
 
 
