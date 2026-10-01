@@ -76,7 +76,12 @@ class MOZ_CAPABILITY("mutex") TraceLogMutex
   }
 };
 
+#ifdef XP_WIN
+
+constinit static TraceLogMutex gTraceLog;
+#else
 MOZ_RUNINIT static TraceLogMutex gTraceLog;
+#endif
 
 class MOZ_RAII AutoTraceLogLock {
  public:

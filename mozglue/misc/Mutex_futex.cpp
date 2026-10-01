@@ -67,7 +67,10 @@ MOZ_COLD void LockContended(mozilla::SmallFutex& aFutex) {
 
 }  
 
+
+#if !defined(XP_WIN)
 mozilla::detail::MutexImpl::MutexImpl() = default;
+#endif
 mozilla::detail::MutexImpl::~MutexImpl() = default;
 
 void mozilla::detail::MutexImpl::lock() {
