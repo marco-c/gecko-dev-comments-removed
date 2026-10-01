@@ -12,8 +12,16 @@
       "moz-src:///browser/components/screenshots/ScreenshotsUtils.sys.mjs",
   });
 
+  const { SELECTION_MODES } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/screenshots/ScreenshotsSelectionModes.sys.mjs"
+  );
+
   class ScreenshotsButtons extends MozXULElement {
-    static #template = null;
+    static #templates = {};
+
+    static observedAttributes = ["mode"];
+
+    #renderedMode = null;
 
     static get markup() {
       return `
@@ -26,17 +34,47 @@
       `;
     }
 
-    static get fragment() {
-      if (!ScreenshotsButtons.#template) {
-        ScreenshotsButtons.#template = MozXULElement.parseXULToFragment(
-          ScreenshotsButtons.markup
-        );
-      }
-      return ScreenshotsButtons.#template;
+    static get miniWindowMarkup() {
+      return `
+        <html:link rel="stylesheet" href="chrome://global/skin/global.css" />
+        <html:link rel="stylesheet" href="chrome://browser/content/screenshots/screenshots-buttons.css" />
+        <html:div class="mini-window-chooser">
+          <html:h1 class="mini-window-title" data-l10n-id="mini-window-panel-header"></html:h1>
+          <html:p class="mini-window-description" data-l10n-id="mini-window-panel-description"></html:p>
+          <html:div class="mini-window-options">
+            <html:button id="move-selection" class="mini-window-option" data-default="">
+              <html:img class="mini-window-option-icon" src="chrome://browser/content/screenshots/menu-visible.svg" role="presentation"/>
+              <html:span data-l10n-id="mini-window-panel-move-selection"></html:span>
+            </html:button>
+            <html:button id="move-full-tab" class="mini-window-option">
+              <html:img class="mini-window-option-icon" src="chrome://browser/content/screenshots/menu-fullpage.svg" role="presentation"/>
+              <html:span data-l10n-id="mini-window-panel-move-full-tab"></html:span>
+            </html:button>
+          </html:div>
+        </html:div>
+      `;
     }
 
-    get buttonGroup() {
-      return this.shadowRoot?.querySelector("moz-button-group");
+    static fragmentFor(mode) {
+      if (!ScreenshotsButtons.#templates[mode]) {
+        ScreenshotsButtons.#templates[mode] = MozXULElement.parseXULToFragment(
+          mode === SELECTION_MODES.MINI_WINDOW
+            ? ScreenshotsButtons.miniWindowMarkup
+            : ScreenshotsButtons.markup
+        );
+      }
+      return ScreenshotsButtons.#templates[mode];
+    }
+
+    get isMiniWindow() {
+      return this.#renderedMode === SELECTION_MODES.MINI_WINDOW;
+    }
+
+    
+    get clickTarget() {
+      return this.isMiniWindow
+        ? this.shadowRoot?.querySelector(".mini-window-options")
+        : this.shadowRoot?.querySelector("moz-button-group");
     }
     get visibleButton() {
       return this.shadowRoot?.getElementById("visible-page");
@@ -44,30 +82,72 @@
     get fullpageButton() {
       return this.shadowRoot?.getElementById("full-page");
     }
+    get moveSelectionButton() {
+      return this.shadowRoot?.getElementById("move-selection");
+    }
+    get moveFullTabButton() {
+      return this.shadowRoot?.getElementById("move-full-tab");
+    }
+
+    #render() {
+      let mode = this.getAttribute("mode");
+      if (this.shadowRoot && this.#renderedMode === mode) {
+        return;
+      }
+      let shadowRoot = this.shadowRoot ?? this.attachShadow({ mode: "open" });
+      this.clickTarget?.removeEventListener("click", this);
+      shadowRoot.replaceChildren();
+      shadowRoot.append(ScreenshotsButtons.fragmentFor(mode).cloneNode(true));
+      this.#renderedMode = mode;
+      this.clickTarget.addEventListener("click", this);
+    }
+
+    attributeChangedCallback() {
+      if (this.isConnected) {
+        this.#render();
+      }
+    }
 
     connectedCallback() {
-      if (this.shadowRoot) {
-        this.ownerDocument.l10n.connectRoot(this.shadowRoot);
-      } else {
-        const shadowRoot = this.attachShadow({ mode: "open" });
-        this.ownerDocument.l10n.connectRoot(shadowRoot);
-        shadowRoot.append(ScreenshotsButtons.fragment.cloneNode(true));
+      let alreadyRendered = !!this.shadowRoot;
+      this.#render();
+      this.ownerDocument.l10n.connectRoot(this.shadowRoot);
+      if (alreadyRendered) {
+        
+        this.clickTarget.removeEventListener("click", this);
+        this.clickTarget.addEventListener("click", this);
       }
-      this.buttonGroup.addEventListener("click", this);
     }
 
     disconnectedCallback() {
       this.ownerDocument.l10n.disconnectRoot(this.shadowRoot);
-      this.buttonGroup.removeEventListener("click", this);
+      this.clickTarget?.removeEventListener("click", this);
     }
 
     handleEvent(event) {
-      switch (event.target) {
+      
+      
+      
+      let button = event.target.closest("button");
+      if (!button) {
+        return;
+      }
+      let browser = gBrowser.selectedBrowser;
+      switch (button) {
         case this.visibleButton:
-          ScreenshotsUtils.takeScreenshot(gBrowser.selectedBrowser, "Visible");
+          ScreenshotsUtils.takeScreenshot(browser, "Visible");
           break;
         case this.fullpageButton:
-          ScreenshotsUtils.takeScreenshot(gBrowser.selectedBrowser, "FullPage");
+          ScreenshotsUtils.takeScreenshot(browser, "FullPage");
+          break;
+        case this.moveSelectionButton:
+          
+          
+          ScreenshotsUtils.closePanel(browser);
+          ScreenshotsUtils.moveFocusToContent(browser);
+          break;
+        case this.moveFullTabButton:
+          ScreenshotsUtils.miniWindowFullTab(browser).catch(console.error);
           break;
       }
     }
@@ -78,14 +158,28 @@
 
 
 
+
+
     async focusButton(buttonToFocus) {
-      await this.buttonGroup.updateComplete;
+      if (this.isMiniWindow) {
+        
+        
+        
+        
+        if (buttonToFocus === "last") {
+          this.moveFullTabButton.focus({ focusVisible: true });
+        } else {
+          this.moveSelectionButton.focus({ focusVisible: true });
+        }
+        return;
+      }
+      await this.clickTarget.updateComplete;
       if (buttonToFocus === "fullpage") {
         this.fullpageButton.focus({ focusVisible: true });
       } else if (buttonToFocus === "first") {
-        this.buttonGroup.firstElementChild.focus({ focusVisible: true });
+        this.clickTarget.firstElementChild.focus({ focusVisible: true });
       } else if (buttonToFocus === "last") {
-        this.buttonGroup.lastElementChild.focus({ focusVisible: true });
+        this.clickTarget.lastElementChild.focus({ focusVisible: true });
       } else {
         this.visibleButton.focus({ focusVisible: true });
       }
