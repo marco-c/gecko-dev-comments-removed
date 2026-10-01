@@ -122,46 +122,39 @@ add_task(async function otherEngine() {
 
 
 
-add_task(async function noWordmarkForForcedColorsOrDarkMode() {
-  for (let prefs of [
-    [
+add_task(async function noWordmarkForPrefersContrast() {
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    { identifier: "wikipedia" },
+  ]);
+
+  let tab = await NewtabSearchbarTestUtils.openNewTabPage();
+  let state = await getButtonState(tab.linkedBrowser, "wikipedia", "wikipedia");
+  Assert.equal(state.wordmark, "wikipedia", "The wordmark is shown at first");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
       ["ui.useAccessibilityTheme", 1],
       ["browser.display.document_color_use", 2],
     ],
-    [["layout.css.prefers-color-scheme.content-override", 0]],
-  ]) {
-    await SearchTestUtils.updateRemoteSettingsConfig([
-      { identifier: "wikipedia" },
-    ]);
-
-    let tab = await NewtabSearchbarTestUtils.openNewTabPage();
-    let state = await getButtonState(
-      tab.linkedBrowser,
-      "wikipedia",
-      "wikipedia"
+  });
+  await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
+    let button = content.document.querySelector(".searchmode-switcher");
+    await ContentTaskUtils.waitForCondition(
+      () => !button.hasAttribute("wordmark"),
+      "waiting for the wordmark to go away"
     );
-    Assert.equal(state.wordmark, "wikipedia", "The wordmark is shown at first");
+  });
+  state = await getButtonState(tab.linkedBrowser, "wikipedia");
+  Assert.equal(state.wordmark, null, "No wordmark is shown");
+  Assert.ok(state.iconsrc, "The engine's icon is shown");
+  Assert.equal(state.title, "wikipedia", "The engine is named");
+  Assert.ok(state.titleVisible, "The engine's name is visible");
+  BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 
-    await SpecialPowers.pushPrefEnv({ set: prefs });
-    await NewtabSearchbarTestUtils.spawn(tab.linkedBrowser, [], async () => {
-      let button = content.document.querySelector(".searchmode-switcher");
-      await ContentTaskUtils.waitForCondition(
-        () => !button.hasAttribute("wordmark"),
-        "waiting for the wordmark to go away"
-      );
-    });
-    state = await getButtonState(tab.linkedBrowser, "wikipedia");
-    Assert.equal(state.wordmark, null, "No wordmark is shown");
-    Assert.ok(state.iconsrc, "The engine's icon is shown");
-    Assert.equal(state.title, "wikipedia", "The engine is named");
-    Assert.ok(state.titleVisible, "The engine's name is visible");
-    BrowserTestUtils.removeTab(tab);
-    await SpecialPowers.popPrefEnv();
-
-    NewTabPagePreloading.removePreloadedBrowser(window);
-    tab = await NewtabSearchbarTestUtils.openNewTabPage();
-    state = await getButtonState(tab.linkedBrowser, "wikipedia", "wikipedia");
-    Assert.equal(state.wordmark, "wikipedia", "The wordmark is back");
-    BrowserTestUtils.removeTab(tab);
-  }
+  NewTabPagePreloading.removePreloadedBrowser(window);
+  tab = await NewtabSearchbarTestUtils.openNewTabPage();
+  state = await getButtonState(tab.linkedBrowser, "wikipedia", "wikipedia");
+  Assert.equal(state.wordmark, "wikipedia", "The wordmark is back");
+  BrowserTestUtils.removeTab(tab);
 });
