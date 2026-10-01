@@ -2033,7 +2033,9 @@ bool NativeLayerCARepresentation::ApplyChanges(
       
       
       
-      if (layerNeedsInitialization) {
+      
+      
+      if (layerNeedsInitialization && !aIsDRM) {
         mContentCALayer.contents = (id)surface;
       }
 
