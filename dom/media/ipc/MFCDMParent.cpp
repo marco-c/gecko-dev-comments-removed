@@ -1737,7 +1737,7 @@ RefPtr<GenericNonExclusivePromise> MFCDMService::LaunchMFCDMProcessIfNeeded(
   }
 
   
-  if (utilityProc->Process(aSandbox)) {
+  if (utilityProc->GetSharedKeepAlive(aSandbox)) {
     return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
   }
 
@@ -1752,8 +1752,10 @@ RefPtr<GenericNonExclusivePromise> MFCDMService::LaunchMFCDMProcessIfNeeded(
       ->Then(
           GetMainThreadSerialEventTarget(), __func__,
           [umsc, utilityProc, aSandbox]() {
+            RefPtr<ipc::UtilityProcessKeepAlive> keepAlive =
+                utilityProc->GetSharedKeepAlive(aSandbox);
             RefPtr<ipc::UtilityProcessParent> parent =
-                utilityProc->GetProcessParent(aSandbox);
+                keepAlive ? keepAlive->GetProcessParent() : nullptr;
             if (!parent) {
               NS_WARNING("UtilityMediaServiceParent lost in the middle");
               return GenericNonExclusivePromise::CreateAndReject(
@@ -1786,7 +1788,7 @@ void MFCDMService::UpdateWidevineL1Path(nsIFile* aFile) {
   
   
   const auto sandboxKind = ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM;
-  if (!utilityProc->Process(sandboxKind)) {
+  if (!utilityProc->GetSharedKeepAlive(sandboxKind)) {
     return;
   }
 

@@ -6,11 +6,9 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/ipc/UtilityProcessHost.h"
-#ifndef ANDROID
-#  include "mozilla/hwinference/HWInferenceParent.h"
-#endif  
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/ProcInfo.h"
+#include "mozilla/WeakPtr.h"
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
@@ -24,6 +22,12 @@
 namespace mozilla {
 
 class MemoryReportingProcess;
+
+#ifndef ANDROID
+namespace hwinference {
+class HWInferenceParent;
+}  
+#endif  
 
 namespace dom {
 class JSOracleParent;
@@ -65,11 +69,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   using PKCS11ModulePromise = LaunchPromise<RefPtr<psm::PKCS11ModuleParent>>;
 #endif  
 
-#ifndef ANDROID
-  using HWInferencePromise =
-      LaunchPromise<RefPtr<hwinference::HWInferenceParent>>;
-#endif  
-
   static RefPtr<UtilityProcessManager> GetSingleton();
 
   static RefPtr<UtilityProcessManager> GetIfExists();
@@ -81,9 +80,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   
   
   
-  
-  
-  already_AddRefed<UtilityProcessKeepAlive> LaunchProcessWithKeepAlive(
+  already_AddRefed<UtilityProcessKeepAlive> LaunchIndependentProcess(
       SandboxingKind aSandbox);
 
   template <typename Actor>
@@ -115,13 +112,8 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
 #ifndef ANDROID
   
-  RefPtr<HWInferencePromise> StartHWInference();
-
-  
-  
-  
-  
-  already_AddRefed<UtilityProcessKeepAlive> AcquireContentHWInferenceProcess();
+  already_AddRefed<UtilityProcessKeepAlive> LaunchIndependentHWInferenceProcess(
+      RefPtr<hwinference::HWInferenceParent> aActor);
 #endif  
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
@@ -129,38 +121,21 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   
   Maybe<base::ProcessId> ProcessPid(SandboxingKind aSandbox);
 
+  RefPtr<UtilityProcessKeepAlive> GetSharedKeepAlive(SandboxingKind aSandbox);
+
   
   RefPtr<MemoryReportingProcess> GetProcessMemoryReporter(
       UtilityProcessParent* parent);
 
   
-  
-  RefPtr<UtilityProcessParent> GetProcessParent(SandboxingKind aSandbox) {
-    RefPtr<ProcessFields> p = GetProcess(aSandbox);
-    if (!p) {
-      return nullptr;
-    }
-    return p->mProcessParent;
-  }
-
-  
   nsTArray<RefPtr<UtilityProcessParent>> GetAllProcessesProcessParent() {
     nsTArray<RefPtr<UtilityProcessParent>> rv;
     for (auto& p : mProcesses) {
-      if (p && p->mProcessParent) {
+      if (p->mProcessParent) {
         rv.AppendElement(p->mProcessParent);
       }
     }
     return rv;
-  }
-
-  
-  UtilityProcessHost* Process(SandboxingKind aSandbox) {
-    RefPtr<ProcessFields> p = GetProcess(aSandbox);
-    if (!p) {
-      return nullptr;
-    }
-    return p->mProcess;
   }
 
   void RegisterActor(const RefPtr<UtilityProcessParent>& aParent,
@@ -169,7 +144,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   Span<const UtilityActorName> GetActors(
       const RefPtr<UtilityProcessParent>& aParent) {
     for (auto& p : mProcesses) {
-      if (p && p->mProcessParent && p->mProcessParent == aParent) {
+      if (p->mProcessParent && p->mProcessParent == aParent) {
         return p->mActors;
       }
     }
@@ -178,19 +153,11 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
   Span<const UtilityActorName> GetActors(GeckoChildProcessHost* aHost) {
     for (auto& p : mProcesses) {
-      if (p && p->mProcess == aHost) {
+      if (p->mProcess == aHost) {
         return p->mActors;
       }
     }
     return {};
-  }
-
-  Span<const UtilityActorName> GetActors(SandboxingKind aSbKind) {
-    auto proc = GetProcess(aSbKind);
-    if (!proc) {
-      return {};
-    }
-    return proc->mActors;
   }
 
   
@@ -199,13 +166,10 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   
   void CleanShutdownAllProcesses();
 
-  uint16_t AliveProcesses();
+  size_t AliveProcesses();
 
  private:
   ~UtilityProcessManager();
-
-  bool IsProcessLaunching(SandboxingKind aSandbox);
-  bool IsProcessDestroyed(SandboxingKind aSandbox);
 
   
   
@@ -225,8 +189,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
   UtilityProcessManager();
 
   void Init();
-
-  void DestroyProcess(SandboxingKind aSandbox);
 
   bool IsShutdown() const;
 
@@ -282,9 +244,6 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
     
     RefPtr<SharedLaunchPromise<Ok>> mLaunchPromise;
 
-    uint32_t mNumProcessAttempts = 0;
-    uint32_t mNumUnexpectedCrashes = 0;
-
     
     UtilityProcessHost* mProcess = nullptr;
     RefPtr<UtilityProcessParent> mProcessParent = nullptr;
@@ -298,20 +257,17 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
     SandboxingKind mSandbox = SandboxingKind::COUNT;
 
-    
-    
-    UtilityProcessKeepAlive* mKeepAlive = nullptr;
-
    protected:
     ~ProcessFields() = default;
   };
 
-  EnumeratedArray<SandboxingKind, RefPtr<ProcessFields>,
-                  size_t(SandboxingKind::COUNT)>
-      mProcesses;
+  void DestroyProcess(ProcessFields* aProcess);
 
-  RefPtr<ProcessFields> GetProcess(SandboxingKind);
-  bool NoMoreProcesses();
+  nsTArray<RefPtr<ProcessFields>> mProcesses;
+
+  EnumeratedArray<SandboxingKind, RefPtr<UtilityProcessKeepAlive>,
+                  size_t(SandboxingKind::COUNT)>
+      mSharedKeepAlives;
 
   
   
@@ -324,18 +280,12 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 #ifdef XP_WIN
   RefPtr<dom::WindowsUtilsParent> mWindowsUtils;
 #endif  
-
-#ifndef ANDROID
-  
-  
-  uint32_t mHWInferenceRestarts = 0;
-#endif  
 };
 
 
 
 
-class UtilityProcessKeepAlive final {
+class UtilityProcessKeepAlive final : public SupportsWeakPtr {
  public:
   NS_INLINE_DECL_REFCOUNTING(UtilityProcessKeepAlive);
 
@@ -345,10 +295,11 @@ class UtilityProcessKeepAlive final {
 
   
   
+  RefPtr<UtilityProcessParent> GetProcessParent() const;
+
   
-  template <typename Actor>
-  RefPtr<UtilityProcessManager::LaunchPromise<Ok>> StartUtility(
-      RefPtr<Actor> aActor);
+  
+  bool IsAlive() const { return !!mProcess->mProcess; }
 
  private:
   friend class UtilityProcessManager;

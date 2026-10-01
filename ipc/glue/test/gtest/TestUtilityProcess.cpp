@@ -8,13 +8,15 @@
 #include "gtest/gtest.h"
 #include "mozilla/gtest/ipc/TestUtilityProcess.h"
 #include "mozilla/gtest/WaitFor.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "nsThreadUtils.h"
 
 #include "mozilla/ipc/UtilityProcessManager.h"
+#include "nsIProcessToolsService.h"
+#include "nsServiceManagerUtils.h"
 
 #if defined(MOZ_WIDGET_ANDROID) || defined(XP_MACOSX)
 #  include "nsIAppShellService.h"
-#  include "nsServiceManagerUtils.h"
 #endif  
 
 #if defined(XP_WIN)
@@ -115,125 +117,100 @@ TEST_F(TestUtilityProcess, LaunchAllKinds) {
 
 
 
-
 #ifndef ANDROID
 
 
 
-TEST_F(TestUtilityProcess, HWInferenceRelaunchesAfterShutdown) {
+TEST_F(TestUtilityProcess, KeepAliveOutlivesCrashedProcess) {
   auto manager = UtilityProcessManager::GetSingleton();
   ASSERT_TRUE(manager);
 
-  
-  
-  
-  auto keepAlive =
-      WaitFor(manager->LaunchProcess(SandboxingKind::GENERIC_UTILITY));
-  ASSERT_TRUE(keepAlive.isOk());
-
-  
-  
-  auto res = WaitFor(manager->StartHWInference());
-  ASSERT_TRUE(res.isOk())
-  << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
-  << res.inspectErr().ErrorCode();
-
-  auto firstPid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(firstPid.isSome());
-
-  
-  manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
-  auto relaunch = WaitFor(manager->StartHWInference());
-  ASSERT_TRUE(relaunch.isOk())
-  << "Relaunch LaunchError: " << relaunch.inspectErr().FunctionName() << ", "
-  << relaunch.inspectErr().ErrorCode();
-
-  
-  auto secondPid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(secondPid.isSome());
-  ASSERT_NE(*firstPid, *secondPid);
-
-  manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
-  manager->CleanShutdown(SandboxingKind::GENERIC_UTILITY);
-
-  
-  NS_ProcessPendingEvents(nullptr);
-}
-
-
-
-
-TEST_F(TestUtilityProcess, HWInferenceKeepAlive) {
-  auto manager = UtilityProcessManager::GetSingleton();
-  ASSERT_TRUE(manager);
-
-  
-  
-  RefPtr<UtilityProcessKeepAlive> first =
-      manager->LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-  RefPtr<UtilityProcessKeepAlive> second =
-      manager->LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(first);
-  ASSERT_EQ(first.get(), second.get());
-
-  auto res = WaitFor(first->GetLaunchPromise());
-  ASSERT_TRUE(res.isOk())
-  << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
-  << res.inspectErr().ErrorCode();
-
-  auto pid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(pid.isSome());
-
-  first = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE) == pid);
-
-  second = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE).isNothing());
-
-  
-  NS_ProcessPendingEvents(nullptr);
-}
-
-
-
-TEST_F(TestUtilityProcess, HWInferenceKeepAliveOutlivingItsProcess) {
-  auto manager = UtilityProcessManager::GetSingleton();
-  ASSERT_TRUE(manager);
-
-  
   
   
   auto other = WaitFor(manager->LaunchProcess(SandboxingKind::GENERIC_UTILITY));
   ASSERT_TRUE(other.isOk());
 
-  auto launch = [&manager]() {
-    RefPtr<UtilityProcessKeepAlive> keepAlive =
-        manager->LaunchProcessWithKeepAlive(SandboxingKind::HW_INFERENCE);
-    if (keepAlive && WaitFor(keepAlive->GetLaunchPromise()).isErr()) {
-      keepAlive = nullptr;
-    }
-    return keepAlive;
-  };
+  RefPtr<UtilityProcessKeepAlive> keepAlive =
+      manager->LaunchIndependentProcess(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(keepAlive);
+  auto res = WaitFor(keepAlive->GetLaunchPromise());
+  ASSERT_TRUE(res.isOk())
+  << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
+  << res.inspectErr().ErrorCode();
+  ASSERT_EQ(manager->AliveProcesses(), 2u);
 
-  RefPtr<UtilityProcessKeepAlive> stale = launch();
-  ASSERT_TRUE(stale);
+  nsCOMPtr<nsIProcessToolsService> processTools =
+      do_GetService("@mozilla.org/processtools-service;1");
+  ASSERT_TRUE(processTools);
+  ASSERT_TRUE(NS_SUCCEEDED(
+      processTools->Kill(keepAlive->GetProcessParent()->OtherPid())));
 
-  manager->CleanShutdown(SandboxingKind::HW_INFERENCE);
+  ASSERT_TRUE(SpinEventLoopUntil("KeepAliveOutlivesCrashedProcess"_ns,
+                                 [&]() { return !keepAlive->IsAlive(); }));
+  ASSERT_FALSE(keepAlive->GetProcessParent());
+  ASSERT_EQ(manager->AliveProcesses(), 1u);
 
-  RefPtr<UtilityProcessKeepAlive> current = launch();
-  ASSERT_TRUE(current);
-  ASSERT_NE(stale.get(), current.get());
-
-  auto pid = manager->ProcessPid(SandboxingKind::HW_INFERENCE);
-  ASSERT_TRUE(pid.isSome());
-
-  stale = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE) == pid);
-
-  current = nullptr;
-  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::HW_INFERENCE).isNothing());
+  keepAlive = nullptr;
+  ASSERT_EQ(manager->AliveProcesses(), 1u);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY).isSome());
 
   manager->CleanShutdown(SandboxingKind::GENERIC_UTILITY);
+
+  
+  NS_ProcessPendingEvents(nullptr);
+}
+
+
+
+TEST_F(TestUtilityProcess, IndependentProcesses) {
+  auto manager = UtilityProcessManager::GetSingleton();
+  ASSERT_TRUE(manager);
+
+  auto shared =
+      WaitFor(manager->LaunchProcess(SandboxingKind::GENERIC_UTILITY));
+  ASSERT_TRUE(shared.isOk());
+  auto sharedPid = manager->ProcessPid(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(sharedPid.isSome());
+
+  RefPtr<UtilityProcessKeepAlive> first =
+      manager->LaunchIndependentProcess(SandboxingKind::GENERIC_UTILITY);
+  RefPtr<UtilityProcessKeepAlive> second =
+      manager->LaunchIndependentProcess(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(first);
+  ASSERT_TRUE(second);
+  ASSERT_NE(first.get(), second.get());
+  for (const auto& keepAlive : {first, second}) {
+    auto res = WaitFor(keepAlive->GetLaunchPromise());
+    ASSERT_TRUE(res.isOk())
+    << "Launch LaunchError: " << res.inspectErr().FunctionName() << ", "
+    << res.inspectErr().ErrorCode();
+  }
+
+  
+  ASSERT_EQ(manager->AliveProcesses(), 3u);
+  nsTArray<base::ProcessId> pids;
+  for (const auto& parent : manager->GetAllProcessesProcessParent()) {
+    pids.AppendElement(parent->OtherPid());
+  }
+  ASSERT_EQ(pids.Length(), 3u);
+  ASSERT_TRUE(pids.Contains(*sharedPid));
+  pids.Sort();
+  ASSERT_TRUE(std::adjacent_find(pids.begin(), pids.end()) == pids.end());
+
+  
+  
+  first = nullptr;
+  ASSERT_EQ(manager->AliveProcesses(), 2u);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY) ==
+              sharedPid);
+
+  second = nullptr;
+  ASSERT_EQ(manager->AliveProcesses(), 1u);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY) ==
+              sharedPid);
+
+  manager->CleanShutdown(SandboxingKind::GENERIC_UTILITY);
+  ASSERT_TRUE(manager->ProcessPid(SandboxingKind::GENERIC_UTILITY).isNothing());
 
   
   NS_ProcessPendingEvents(nullptr);
