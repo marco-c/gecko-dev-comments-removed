@@ -1911,7 +1911,15 @@ nsNSSComponent::GetNssTaskQueue(nsISerialEventTarget** result) {
   return NS_OK;
 }
 
-Atomic<bool> sSearchingForClientAuthCertificates{false};
+struct SearchState {
+  PRThread* mCurrentThread;
+  nsTArray<uint64_t> mSlotsThatHaveSearched;
+
+  bool IsForCurrentThread() { return mCurrentThread == PR_GetCurrentThread(); }
+};
+
+MOZ_RUNINIT StaticDataMutex<Maybe<SearchState>> sClientCertificateSearchState(
+    "sClientCertificateSearchState");
 
 extern "C" {
 
@@ -1925,19 +1933,43 @@ extern "C" {
 
 
 
-bool IsGeckoSearchingForClientAuthCertificates() {
-  return sSearchingForClientAuthCertificates.exchange(false);
+
+bool IsGeckoSearchingForClientAuthCertificates(uint64_t uniqueSlotID) {
+  auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
+  if (clientCertificateSearchState.ref().isNothing()) {
+    return false;
+  }
+  if (!clientCertificateSearchState.ref()->IsForCurrentThread()) {
+    return false;
+  }
+  if (clientCertificateSearchState.ref()->mSlotsThatHaveSearched.Contains(
+          uniqueSlotID)) {
+    return false;
+  }
+  clientCertificateSearchState.ref()->mSlotsThatHaveSearched.AppendElement(
+      uniqueSlotID);
+  return true;
 }
 }
 
 AutoSearchingForClientAuthCertificates::
     AutoSearchingForClientAuthCertificates() {
-  sSearchingForClientAuthCertificates = true;
+  auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
+  
+  
+  if (clientCertificateSearchState.ref().isSome()) {
+    return;
+  }
+  clientCertificateSearchState.ref() = Some(SearchState{PR_GetCurrentThread()});
 }
 
 AutoSearchingForClientAuthCertificates::
     ~AutoSearchingForClientAuthCertificates() {
-  sSearchingForClientAuthCertificates = false;
+  auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
+  if (clientCertificateSearchState.ref().isSome() &&
+      clientCertificateSearchState.ref()->IsForCurrentThread()) {
+    clientCertificateSearchState.ref().reset();
+  }
 }
 
 namespace mozilla {

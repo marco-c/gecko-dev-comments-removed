@@ -7,7 +7,6 @@ use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::error_here;
 use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryInto;
-use std::marker::PhantomData;
 
 use crate::cryptoki::{CryptokiCert, CryptokiTrust};
 
@@ -35,6 +34,7 @@ pub trait ClientCertsBackend {
     #[allow(clippy::type_complexity)]
     fn find_objects(
         &mut self,
+        slot_id: CK_SLOT_ID,
     ) -> Result<(Vec<CryptokiCert>, Vec<Self::Key>, Vec<CryptokiTrust>), Error>;
     fn get_slot_info(&self) -> CK_SLOT_INFO;
     fn get_token_info(&self) -> CK_TOKEN_INFO;
@@ -49,10 +49,6 @@ pub trait ClientCertsBackend {
     fn is_logged_in(&self) -> bool {
         false
     }
-}
-
-pub trait IsSearchingForClientCerts {
-    fn is_searching_for_client_certs() -> bool;
 }
 
 const SUPPORTED_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
@@ -171,8 +167,8 @@ impl<B: ClientCertsBackend> Slot<B> {
 
     
     
-    fn maybe_find_new_objects(&mut self) -> Result<(), Error> {
-        let (certs, keys, trusts) = self.backend.find_objects()?;
+    fn maybe_find_new_objects(&mut self, slot_id: CK_SLOT_ID) -> Result<(), Error> {
+        let (certs, keys, trusts) = self.backend.find_objects(slot_id)?;
         for cert in certs {
             let object = Object::Cert(cert);
             if self.cert_ids.contains(object.id()?) {
@@ -207,7 +203,7 @@ impl<B: ClientCertsBackend> Slot<B> {
 
 
 
-pub struct Manager<B: ClientCertsBackend, S: IsSearchingForClientCerts> {
+pub struct Manager<B: ClientCertsBackend> {
     
     
     sessions: BTreeMap<CK_SESSION_HANDLE, CK_SLOT_ID>,
@@ -220,18 +216,16 @@ pub struct Manager<B: ClientCertsBackend, S: IsSearchingForClientCerts> {
     next_session: CK_SESSION_HANDLE,
     
     slots: Vec<Slot<B>>,
-    phantom: PhantomData<S>,
 }
 
-impl<B: ClientCertsBackend, S: IsSearchingForClientCerts> Manager<B, S> {
-    pub fn new(slots: Vec<B>) -> Manager<B, S> {
+impl<B: ClientCertsBackend> Manager<B> {
+    pub fn new(slots: Vec<B>) -> Manager<B> {
         Manager {
             sessions: BTreeMap::new(),
             searches: BTreeMap::new(),
             signs: BTreeMap::new(),
             next_session: 1,
             slots: slots.into_iter().map(Slot::new).collect(),
-            phantom: PhantomData,
         }
     }
 
@@ -367,7 +361,8 @@ impl<B: ClientCertsBackend, S: IsSearchingForClientCerts> Manager<B, S> {
         let Some(slot_id) = self.sessions.get(&session) else {
             return Err(error_here!(ErrorType::InvalidArgument));
         };
-        let slot = self.slot_id_to_slot_mut(*slot_id)?;
+        let slot_id = *slot_id;
+        let slot = self.slot_id_to_slot_mut(slot_id)?;
         
         
         for (attr, _) in &attrs {
@@ -376,13 +371,7 @@ impl<B: ClientCertsBackend, S: IsSearchingForClientCerts> Manager<B, S> {
                 return Ok(());
             }
         }
-        
-        
-        
-        
-        if S::is_searching_for_client_certs() {
-            slot.maybe_find_new_objects()?;
-        }
+        slot.maybe_find_new_objects(slot_id)?;
         let mut handles = Vec::new();
         for (handle, object) in &slot.objects {
             if object.matches(&attrs) {
