@@ -6808,10 +6808,6 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   const auto boxSizingAdjust = stylePos->mBoxSizing == StyleBoxSizing::BorderBox
                                    ? aBorderPadding
                                    : LogicalSize(aWM);
-  nscoord boxSizingToMarginEdgeISize = aMargin.ISize(aWM) +
-                                       aBorderPadding.ISize(aWM) -
-                                       boxSizingAdjust.ISize(aWM);
-
   const auto& aspectRatio = aSizeOverrides.mAspectRatio
                                 ? *aSizeOverrides.mAspectRatio
                                 : GetAspectRatio();
@@ -6888,10 +6884,9 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   const bool shouldComputeISize = !isAutoISize && !isSubgriddedInInlineAxis;
   if (shouldComputeISize) {
-    auto iSizeResult =
-        ComputeISizeValue(aSizingInput.mRenderingContext, aWM, aCBSize,
-                          boxSizingAdjust, boxSizingToMarginEdgeISize,
-                          *styleISize, *styleBSize, aspectRatio, aFlags);
+    auto iSizeResult = ComputeISizeValue(
+        aSizingInput.mRenderingContext, aWM, aCBSize, aMargin, aBorderPadding,
+        *styleISize, *styleBSize, aspectRatio, aFlags);
     result.ISize(aWM) = iSizeResult.mISize;
     aspectRatioUsage = iSizeResult.mAspectRatioUsage;
   } else if (MOZ_UNLIKELY(isGridItem) && !IsTrueOverflowContainer()) {
@@ -7019,11 +7014,10 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   const auto maxISizeCoord = stylePos->MaxISize(aWM, anchorResolutionParams);
   nscoord maxISize = NS_UNCONSTRAINEDSIZE;
   if (!maxISizeCoord->IsNone() && !shouldIgnoreMinMaxISize) {
-    maxISize =
-        ComputeISizeValue(aSizingInput.mRenderingContext, aWM, aCBSize,
-                          boxSizingAdjust, boxSizingToMarginEdgeISize,
-                          *maxISizeCoord, *styleBSize, aspectRatio, aFlags)
-            .mISize;
+    maxISize = ComputeISizeValue(aSizingInput.mRenderingContext, aWM, aCBSize,
+                                 aMargin, aBorderPadding, *maxISizeCoord,
+                                 *styleBSize, aspectRatio, aFlags)
+                   .mISize;
     result.ISize(aWM) = std::min(maxISize, result.ISize(aWM));
   }
 
@@ -7039,11 +7033,10 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   const auto minISizeCoord = stylePos->MinISize(aWM, anchorResolutionParams);
   nscoord minISize;
   if (!minISizeCoord->IsAuto() && !shouldIgnoreMinMaxISize) {
-    minISize =
-        ComputeISizeValue(aSizingInput.mRenderingContext, aWM, aCBSize,
-                          boxSizingAdjust, boxSizingToMarginEdgeISize,
-                          *minISizeCoord, *styleBSize, aspectRatio, aFlags)
-            .mISize;
+    minISize = ComputeISizeValue(aSizingInput.mRenderingContext, aWM, aCBSize,
+                                 aMargin, aBorderPadding, *minISizeCoord,
+                                 *styleBSize, aspectRatio, aFlags)
+                   .mISize;
   } else if (MOZ_UNLIKELY(
                  aFlags.contains(ComputeSizeFlag::IApplyAutoMinSize))) {
     
@@ -7544,13 +7537,16 @@ nscoord nsIFrame::ComputeISizeValueFromAspectRatio(
 
 nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
     gfxContext* aRenderingContext, const WritingMode aWM,
-    const LogicalSize& aCBSize, const LogicalSize& aContentEdgeToBoxSizing,
-    nscoord aBoxSizingToMarginEdge, ExtremumLength aSize,
+    const LogicalSize& aCBSize, const LogicalSize& aMargin,
+    const LogicalSize& aBorderPadding, ExtremumLength aSize,
     Maybe<nscoord> aAvailableISizeOverride, const StyleSize& aStyleBSize,
     const AspectRatio& aAspectRatio, ComputeSizeFlags aFlags) {
+  const auto* stylePos = StylePosition();
+  const LogicalSize contentEdgeToBoxSizing =
+      stylePos->mBoxSizing == StyleBoxSizing::BorderBox ? aBorderPadding
+                                                        : LogicalSize(aWM);
   auto GetAvailableISize = [&]() {
-    return aCBSize.ISize(aWM) - aBoxSizingToMarginEdge -
-           aContentEdgeToBoxSizing.ISize(aWM);
+    return aCBSize.ISize(aWM) - aMargin.ISize(aWM) - aBorderPadding.ISize(aWM);
   };
 
   
@@ -7570,53 +7566,19 @@ nsIFrame::ISizeComputationResult nsIFrame::ComputeISizeValue(
     if (nsLayoutUtils::IsAutoBSize(aStyleBSize, aCBSize.BSize(aWM))) {
       return Nothing();
     }
-
-    
-    
-    
-    auto ResolveStretchBSize = [&]() {
-      MOZ_ASSERT(aStyleBSize.BehavesLikeStretchOnBlockAxis(),
-                 "Only call me for 'stretch'-like BSizes");
-      MOZ_ASSERT(aCBSize.BSize(aWM) != NS_UNCONSTRAINEDSIZE,
-                 "If aStyleBSize is stretch-like, then unconstrained "
-                 "aCBSize.BSize should make us return via the IsAutoBSize "
-                 "check above");
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      const auto borderPadding = GetLogicalUsedBorderAndPadding(aWM);
-      const auto margin = GetLogicalUsedMargin(aWM);
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
-          aCBSize.BSize(aWM), margin.BStartEnd(aWM),
-          borderPadding.BStartEnd(aWM), StylePosition()->mBoxSizing);
-      return LengthPercentage::FromAppUnits(stretchBSize);
-    };
-
-    return Some(ComputeISizeValueFromAspectRatio(
-        aWM, aCBSize, aContentEdgeToBoxSizing,
-        aStyleBSize.BehavesLikeStretchOnBlockAxis()
-            ? ResolveStretchBSize()
-            : aStyleBSize.AsLengthPercentage(),
-        aAspectRatio));
+    const nscoord bSize = nsLayoutUtils::ComputeBSizeValueHandlingStretch(
+        aCBSize.BSize(aWM), aMargin.BSize(aWM), aBorderPadding.BSize(aWM),
+        contentEdgeToBoxSizing.BSize(aWM), aStyleBSize);
+    return Some(aAspectRatio.ComputeRatioDependentSize(
+        LogicalAxis::Inline, aWM, bSize, contentEdgeToBoxSizing));
   }();
 
-  const auto* stylePos = StylePosition();
   const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-  
-  
-  
   const nscoord bSize = ComputeBSizeValueAsPercentageBasis(
       aStyleBSize, *stylePos->MinBSize(aWM, anchorResolutionParams),
       *stylePos->MaxBSize(aWM, anchorResolutionParams), aCBSize.BSize(aWM),
-      aContentEdgeToBoxSizing.BSize(aWM),  0,  0);
+      contentEdgeToBoxSizing.BSize(aWM), aMargin.BSize(aWM),
+      aBorderPadding.BSize(aWM));
   const IntrinsicSizeInput input(
       aRenderingContext, Some(aCBSize.ConvertTo(GetWritingMode(), aWM)),
       Some(LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, bSize)

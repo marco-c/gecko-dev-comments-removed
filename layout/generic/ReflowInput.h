@@ -180,7 +180,6 @@ struct SizeComputationInput {
 
   template <typename SizeOrMaxSize>
   inline nscoord ComputeISizeValue(const LogicalSize& aContainingBlockSize,
-                                   StyleBoxSizing aBoxSizing,
                                    const SizeOrMaxSize&) const;
 
   
@@ -921,13 +920,15 @@ struct ReflowInput : public SizeComputationInput {
   
   void ComputeMinMaxValues(const LogicalSize& aCBSize);
 
+  struct BorderPaddingMargin {
+    nscoord mBorderPadding = 0;
+    nscoord mMargin = 0;
+  };
   
   
   
-  void CalculateBorderPaddingMargin(LogicalAxis aAxis,
-                                    nscoord aContainingBlockSize,
-                                    nscoord* aInsideBoxSizing,
-                                    nscoord* aOutsideBoxSizing) const;
+  BorderPaddingMargin CalculateBorderPaddingMargin(
+      LogicalAxis aAxis, nscoord aContainingBlockSize) const;
 
   void CalculateBlockSideMargins();
 

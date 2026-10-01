@@ -364,39 +364,15 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
 
 template <typename SizeOrMaxSize>
 nscoord SizeComputationInput::ComputeISizeValue(
-    const LogicalSize& aContainingBlockSize, StyleBoxSizing aBoxSizing,
-    const SizeOrMaxSize& aSize) const {
+    const LogicalSize& aContainingBlockSize, const SizeOrMaxSize& aSize) const {
   WritingMode wm = GetWritingMode();
-  const auto borderPadding = ComputedLogicalBorderPadding(wm);
-  const auto margin = ComputedLogicalMargin(wm);
-  const LogicalSize contentEdgeToBoxSizing =
-      aBoxSizing == StyleBoxSizing::BorderBox ? borderPadding.Size(wm)
-                                              : LogicalSize(wm);
-  const nscoord boxSizingToMarginEdgeISize = borderPadding.IStartEnd(wm) +
-                                             margin.IStartEnd(wm) -
-                                             contentEdgeToBoxSizing.ISize(wm);
-
-  
-  
-  
-  auto bSize = mFrame->StylePosition()->BSize(
+  const auto bSize = mFrame->StylePosition()->BSize(
       wm, AnchorPosResolutionParams::From(mFrame, mAnchorPosResolutionCache));
-  if (bSize->BehavesLikeStretchOnBlockAxis()) {
-    if (NS_UNCONSTRAINEDSIZE == aContainingBlockSize.BSize(wm)) {
-      bSize = AnchorResolvedSizeHelper::Auto();
-    } else {
-      nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
-          aContainingBlockSize.BSize(wm), margin.BStartEnd(wm),
-          borderPadding.BStartEnd(wm), aBoxSizing);
-      bSize = AnchorResolvedSizeHelper::LengthPercentage(
-          StyleLengthPercentage::FromAppUnits(stretchBSize));
-    }
-  }
-
   return mFrame
       ->ComputeISizeValue(mRenderingContext, wm, aContainingBlockSize,
-                          contentEdgeToBoxSizing, boxSizingToMarginEdgeISize,
-                          aSize, *bSize, mFrame->GetAspectRatio())
+                          ComputedLogicalMargin(wm).Size(wm),
+                          ComputedLogicalBorderPadding(wm).Size(wm), aSize,
+                          *bSize, mFrame->GetAspectRatio())
       .mISize;
 }
 
@@ -1255,14 +1231,8 @@ struct nsHypotheticalPosition {
   WritingMode mWritingMode;
 };
 
-
-
-
-
-
-void ReflowInput::CalculateBorderPaddingMargin(
-    LogicalAxis aAxis, nscoord aContainingBlockSize, nscoord* aInsideBoxSizing,
-    nscoord* aOutsideBoxSizing) const {
+ReflowInput::BorderPaddingMargin ReflowInput::CalculateBorderPaddingMargin(
+    LogicalAxis aAxis, nscoord aContainingBlockSize) const {
   WritingMode wm = GetWritingMode();
   Side startSide = wm.PhysicalSide(MakeLogicalSide(aAxis, LogicalEdge::Start));
   Side endSide = wm.PhysicalSide(MakeLogicalSide(aAxis, LogicalEdge::End));
@@ -1303,14 +1273,7 @@ void ReflowInput::CalculateBorderPaddingMargin(
     marginStartEnd = start + end;
   }
 
-  nscoord outside = paddingStartEnd + borderStartEnd + marginStartEnd;
-  nscoord inside = 0;
-  if (mStylePosition->mBoxSizing == StyleBoxSizing::BorderBox) {
-    inside = borderStartEnd + paddingStartEnd;
-  }
-  outside -= inside;
-  *aInsideBoxSizing = inside;
-  *aOutsideBoxSizing = outside;
+  return {paddingStartEnd + borderStartEnd, marginStartEnd};
 }
 
 
@@ -1386,18 +1349,17 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     
-    nscoord contentEdgeToBoxSizingISize, boxSizingToMarginEdgeISize;
-    CalculateBorderPaddingMargin(
-        LogicalAxis::Inline, blockContainerContentBoxSize.ISize(wm),
-        &contentEdgeToBoxSizingISize, &boxSizingToMarginEdgeISize);
+    const auto inlineBPM = CalculateBorderPaddingMargin(
+        LogicalAxis::Inline, blockContainerContentBoxSize.ISize(wm));
+    const nscoord iSizeOutsideContentBox =
+        inlineBPM.mBorderPadding + inlineBPM.mMargin;
 
     if (mFlags.mIsReplaced && isAutoISize) {
       
       
       if (intrinsicSize) {
         boxISize.emplace(LogicalSize(wm, *intrinsicSize).ISize(wm) +
-                         contentEdgeToBoxSizingISize +
-                         boxSizingToMarginEdgeISize);
+                         iSizeOutsideContentBox);
       }
     } else if (isAutoISize) {
       
@@ -1406,23 +1368,20 @@ void ReflowInput::CalculateHypotheticalPosition(
       
       
       
-      nscoord contentEdgeToBoxSizingBSize, dummy;
-      CalculateBorderPaddingMargin(LogicalAxis::Block,
-                                   blockContainerContentBoxSize.ISize(wm),
-                                   &contentEdgeToBoxSizingBSize, &dummy);
-
+      const auto blockBPM = CalculateBorderPaddingMargin(
+          LogicalAxis::Block, blockContainerContentBoxSize.ISize(wm));
       const auto contentISize =
           mFrame
               ->ComputeISizeValue(
                   mRenderingContext, wm, blockContainerContentBoxSize,
-                  LogicalSize(wm, contentEdgeToBoxSizingISize,
-                              contentEdgeToBoxSizingBSize),
-                  boxSizingToMarginEdgeISize, *styleISize,
+                  LogicalSize(wm, inlineBPM.mMargin, blockBPM.mMargin),
+                  LogicalSize(wm, inlineBPM.mBorderPadding,
+                              blockBPM.mBorderPadding),
+                  *styleISize,
                   *mStylePosition->BSize(wm, anchorResolutionParams),
                   mFrame->GetAspectRatio())
               .mISize;
-      boxISize.emplace(contentISize + contentEdgeToBoxSizingISize +
-                       boxSizingToMarginEdgeISize);
+      boxISize.emplace(contentISize + iSizeOutsideContentBox);
     }
   }
 
@@ -1615,10 +1574,10 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     
-    nscoord insideBoxSizing, outsideBoxSizing;
-    CalculateBorderPaddingMargin(LogicalAxis::Block,
-                                 blockContainerContentBoxSize.BSize(wm),
-                                 &insideBoxSizing, &outsideBoxSizing);
+    const auto blockBPM = CalculateBorderPaddingMargin(
+        LogicalAxis::Block, blockContainerContentBoxSize.BSize(wm));
+    const nscoord bSizeOutsideContentBox =
+        blockBPM.mBorderPadding + blockBPM.mMargin;
 
     nscoord boxBSize;
     const auto styleBSize = mStylePosition->BSize(wm, anchorResolutionParams);
@@ -1628,33 +1587,27 @@ void ReflowInput::CalculateHypotheticalPosition(
       if (mFlags.mIsReplaced && intrinsicSize) {
         
         
-        boxBSize = LogicalSize(wm, *intrinsicSize).BSize(wm) +
-                   outsideBoxSizing + insideBoxSizing;
+        boxBSize =
+            LogicalSize(wm, *intrinsicSize).BSize(wm) + bSizeOutsideContentBox;
       } else {
         
         
         
         boxBSize = 0;
       }
-    } else if (styleBSize->BehavesLikeStretchOnBlockAxis()) {
-      MOZ_ASSERT(blockContainerContentBoxSize.BSize(wm) != NS_UNCONSTRAINEDSIZE,
-                 "If we're 'stretch' with unconstrained size, isAutoBSize "
-                 "should be true which should make us skip this code");
-      
-      
-      
-      
-      boxBSize = nsLayoutUtils::ComputeStretchContentBoxBSize(
-          blockContainerContentBoxSize.BSize(wm), outsideBoxSizing,
-          insideBoxSizing);
     } else {
       
       
       
-      boxBSize = nsLayoutUtils::ComputeBSizeValue(
-                     blockContainerContentBoxSize.BSize(wm), insideBoxSizing,
-                     styleBSize->AsLengthPercentage()) +
-                 insideBoxSizing + outsideBoxSizing;
+      const nscoord contentEdgeToBoxSizing =
+          mStylePosition->mBoxSizing == StyleBoxSizing::BorderBox
+              ? blockBPM.mBorderPadding
+              : 0;
+      boxBSize =
+          nsLayoutUtils::ComputeBSizeValueHandlingStretch(
+              blockContainerContentBoxSize.BSize(wm), blockBPM.mMargin,
+              blockBPM.mBorderPadding, contentEdgeToBoxSizing, *styleBSize) +
+          bSizeOutsideContentBox;
     }
 
     LogicalSize boxSize(wm, boxISize.valueOr(0), boxBSize);
@@ -2139,23 +2092,8 @@ void ReflowInput::InitConstraints(
                 mComputeSizeFlags, aBorder, aPadding, mStyleDisplay);
 
     
-    auto blockSize =
+    const auto blockSize =
         mStylePosition->BSize(wm, AnchorPosResolutionParams::From(this));
-    if (blockSize->BehavesLikeStretchOnBlockAxis()) {
-      
-      
-      
-      if (NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
-        blockSize = AnchorResolvedSizeHelper::Auto();
-      } else {
-        nscoord stretchBSize = nsLayoutUtils::ComputeStretchBSize(
-            cbSize.BSize(wm), ComputedLogicalMargin(wm).BStartEnd(wm),
-            ComputedLogicalBorderPadding(wm).BStartEnd(wm),
-            mStylePosition->mBoxSizing);
-        blockSize = AnchorResolvedSizeHelper::LengthPercentage(
-            StyleLengthPercentage::FromAppUnits(stretchBSize));
-      }
-    }
 
     
     
@@ -2222,9 +2160,8 @@ void ReflowInput::InitConstraints(
         NS_ASSERTION(ComputedISize() >= 0, "Bogus computed isize");
 
       } else {
-        SetComputedISize(
-            ComputeISizeValue(cbSize, mStylePosition->mBoxSizing, *inlineSize),
-            ResetResizeFlags::No);
+        SetComputedISize(ComputeISizeValue(cbSize, *inlineSize),
+                         ResetResizeFlags::No);
       }
 
       
@@ -2240,8 +2177,8 @@ void ReflowInput::InitConstraints(
         SetComputedBSize(NS_UNCONSTRAINEDSIZE, ResetResizeFlags::No);
       } else {
         SetComputedBSize(
-            ComputeBSizeValue(cbSize.BSize(wm), mStylePosition->mBoxSizing,
-                              blockSize->AsLengthPercentage()),
+            ComputeBSizeValueHandlingStretch(
+                cbSize.BSize(wm), mStylePosition->mBoxSizing, *blockSize),
             ResetResizeFlags::No);
       }
 
@@ -2926,8 +2863,7 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
   if (minISize->IsAuto()) {
     SetComputedMinISize(0);
   } else {
-    SetComputedMinISize(
-        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, *minISize));
+    SetComputedMinISize(ComputeISizeValue(aCBSize, *minISize));
   }
 
   if (mIsThemed) {
@@ -2938,8 +2874,7 @@ void ReflowInput::ComputeMinMaxValues(const LogicalSize& aCBSize) {
     
     SetComputedMaxISize(NS_UNCONSTRAINEDSIZE);
   } else {
-    SetComputedMaxISize(
-        ComputeISizeValue(aCBSize, mStylePosition->mBoxSizing, *maxISize));
+    SetComputedMaxISize(ComputeISizeValue(aCBSize, *maxISize));
   }
 
   
