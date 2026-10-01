@@ -6277,6 +6277,7 @@ static bool GetModuleEnvironmentNames(JSContext* cx, unsigned argc, Value* vp) {
   
   
   ids.eraseIfEqual(NameToId(cx->names().star_namespace_star_));
+  ids.eraseIfEqual(NameToId(cx->names().star_deferred_namespace_star_));
 
   uint32_t length = ids.length();
   Rooted<ArrayObject*> array(cx, NewDenseFullyAllocatedArray(cx, length));

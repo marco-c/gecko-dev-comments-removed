@@ -701,7 +701,8 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
                                          ModuleErrorInfo* errorInfoOut);
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<UniquePtr<ExportNameVector>> exports);
+    MutableHandle<UniquePtr<ExportNameVector>> exports,
+    ImportPhase phase = ImportPhase::Evaluation);
 static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
                                MutableHandle<ModuleVector> stack, size_t index,
                                size_t* indexOut);
@@ -1254,14 +1255,21 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
 
 
 ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
-    JSContext* cx, Handle<ModuleObject*> module) {
+    JSContext* cx, Handle<ModuleObject*> module,
+    ImportPhase phase ) {
+  MOZ_ASSERT(phase == ImportPhase::Evaluation ||
+             phase == ImportPhase::Deferred);
+
   
   
   MOZ_ASSERT(module->status() != ModuleStatus::New &&
              module->status() != ModuleStatus::Unlinked);
 
   
-  Rooted<ModuleNamespaceObject*> ns(cx, module->namespace_());
+  
+  Rooted<ModuleNamespaceObject*> ns(
+      cx, phase == ImportPhase::Deferred ? module->maybeDeferredNamespace()
+                                         : module->namespace_());
 
   
   if (!ns) {
@@ -1286,21 +1294,24 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
       name = atom;
 
       
-      if (!ModuleResolveExport(cx, module, name, &resolution)) {
-        return nullptr;
-      }
+      if (phase != ImportPhase::Deferred || name != cx->names().then) {
+        
+        if (!ModuleResolveExport(cx, module, name, &resolution)) {
+          return nullptr;
+        }
 
-      
-      
-      if (resolution.isObject() && !unambiguousNames->append(name)) {
-        ReportOutOfMemory(cx);
-        return nullptr;
+        
+        
+        if (resolution.isObject() && !unambiguousNames->append(name)) {
+          ReportOutOfMemory(cx);
+          return nullptr;
+        }
       }
     }
 
     
     
-    ns = ModuleNamespaceCreate(cx, module, &unambiguousNames);
+    ns = ModuleNamespaceCreate(cx, module, &unambiguousNames, phase);
   }
 
   
@@ -1362,10 +1373,8 @@ struct AtomComparator {
 
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<UniquePtr<ExportNameVector>> exports) {
-  
-  MOZ_ASSERT(!module->namespace_());
-
+    MutableHandle<UniquePtr<ExportNameVector>> exports,
+    ImportPhase phase) {
   
   
   
@@ -1379,14 +1388,14 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
 
   
   Rooted<ModuleNamespaceObject*> ns(
-      cx, ModuleObject::createNamespace(cx, module, exports));
+      cx, ModuleObject::createNamespace(cx, module, exports, phase));
   if (!ns) {
     return nullptr;
   }
 
   
   if (!ComputeNamespaceBindings(cx, module, ns)) {
-    module->clearNamespaceOnFailure();
+    module->clearNamespaceOnFailure(phase);
     return nullptr;
   }
 
