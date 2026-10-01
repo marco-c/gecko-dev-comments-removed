@@ -118,7 +118,6 @@ impl Renderer {
                 target: draw_target,
                 render_area: None,
                 color_load: LoadOp::DontCare,
-                depth_load: LoadOp::DontCare,
             });
 
             let projection = Transform3D::ortho(
@@ -453,6 +452,14 @@ impl Renderer {
         partial_present_mode: Option<PartialPresentMode>,
         layer: &SwapChainLayer,
     ) {
+        self.device.begin_render_pass(&RenderPassDescriptor {
+            target: draw_target,
+            render_area: None,
+            color_load: LoadOp::Load,
+        });
+        self.device.set_depth_write(false);
+        self.device.set_depth_test(None);
+
         
         
         
@@ -464,34 +471,27 @@ impl Renderer {
             }
         }
 
-        let clear_color = clear_color.to_array();
+        
+        let clear_color = Some(clear_color.to_array());
 
-        self.device.begin_render_pass(&RenderPassDescriptor {
-            target: draw_target,
-            render_area: None,
-            
-            
-            color_load: match partial_present_mode {
-                Some(PartialPresentMode::Single { .. }) => LoadOp::Load,
-                None => LoadOp::Clear(clear_color),
-            },
-            depth_load: LoadOp::DontCare,
-        });
-        self.device.set_depth_write(false);
-        self.device.set_depth_test(None);
-
-        if let Some(PartialPresentMode::Single { dirty_rect }) = partial_present_mode {
-            
-            
-            
-            
-            if !dirty_rect.is_empty() && layer.occlusion.test(&dirty_rect) {
+        match partial_present_mode {
+            Some(PartialPresentMode::Single { dirty_rect }) => {
                 
-                self.device.clear_rect(
-                    draw_target.to_framebuffer_rect(dirty_rect.to_i32()),
-                    Some(clear_color),
-                    None,
-                );
+                
+                
+                
+                if !dirty_rect.is_empty() && layer.occlusion.test(&dirty_rect) {
+                    
+                    self.device.clear_target(clear_color,
+                                             None,
+                                             Some(draw_target.to_framebuffer_rect(dirty_rect.to_i32())));
+                }
+            }
+            None => {
+                
+                self.device.clear_target(clear_color,
+                                         None,
+                                         None);
             }
         }
 

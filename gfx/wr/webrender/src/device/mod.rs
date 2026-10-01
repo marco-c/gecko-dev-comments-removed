@@ -118,7 +118,6 @@ pub trait GpuBackend {
     
     
     
-    
     fn begin_render_pass(&mut self, desc: &RenderPassDescriptor);
 
     
@@ -439,17 +438,18 @@ pub trait GpuBackend {
 
     
     
-    
-    fn clear_rect(
+    fn clear_target(
         &mut self,
-        rect: FramebufferIntRect,
         color: Option<[f32; 4]>,
         depth: Option<f32>,
+        rect: Option<FramebufferIntRect>,
     );
 
-    
-    
-    fn set_scissor(&mut self, rect: Option<FramebufferIntRect>);
+    fn set_scissor_rect(&self, rect: FramebufferIntRect);
+
+    fn enable_scissor(&self);
+
+    fn disable_scissor(&self);
 
     fn echo_driver_messages(&self);
 

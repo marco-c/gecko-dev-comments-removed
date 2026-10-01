@@ -9,7 +9,7 @@
 use api::{CrashAnnotator, ExternalTextureHandle, ImageBufferKind, ImageFormat, ImageRendering, MixBlendMode, VoidPtrToSizeFn};
 use api::units::*;
 use crate::composite::NativeSurfaceHandle;
-use crate::internal_types::{FastHashMap, RenderTargetInfo, Swizzle};
+use crate::internal_types::{FastHashMap, Swizzle};
 use std::{
     cell::{Cell, RefCell},
     mem,
@@ -279,7 +279,26 @@ pub struct Texture {
     pub(super) active_swizzle: Cell<Swizzle>,
     
     
-    pub(super) render_target: Option<RenderTargetInfo>,
+    
+    pub(super) fbo: Option<FBOId>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) fbo_with_depth: Option<FBOId>,
     pub(super) last_frame_used: GpuFrameId,
 }
 
@@ -301,7 +320,7 @@ impl Texture {
     }
 
     pub fn supports_depth(&self) -> bool {
-        self.render_target.map_or(false, |info| info.has_depth)
+        self.fbo_with_depth.is_some()
     }
 
     pub fn last_frame_used(&self) -> GpuFrameId {
@@ -487,8 +506,9 @@ impl<'a> Drop for MappedTransferBuffer<'a> {
 }
 
 
+
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
-pub struct TextureId(pub(super) u32);
+pub struct FBOId(pub(super) u32);
 
 
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
@@ -668,13 +688,11 @@ pub enum BlendMode {
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum LoadOp<T> {
+pub enum LoadOp {
     Load,
     
     
     DontCare,
-    
-    Clear(T),
 }
 
 
@@ -716,9 +734,7 @@ pub struct RenderPassDescriptor {
     
     
     pub render_area: Option<DeviceIntRect>,
-    pub color_load: LoadOp<[f32; 4]>,
-    
-    pub depth_load: LoadOp<f32>,
+    pub color_load: LoadOp,
 }
 
 
@@ -894,7 +910,8 @@ pub enum DrawTarget {
         dimensions: DeviceIntSize,
         
         with_depth: bool,
-        texture: TextureId,
+        
+        fbo_id: FBOId,
     },
     
     NativeSurface {
@@ -926,12 +943,15 @@ impl DrawTarget {
         texture: &Texture,
         with_depth: bool,
     ) -> Self {
-        assert!(texture.render_target.is_some(), "drawing to a non-render-target texture");
-        assert!(!with_depth || texture.supports_depth(), "drawing with depth to a texture without it");
+        let fbo_id = if with_depth {
+            texture.fbo_with_depth.unwrap()
+        } else {
+            texture.fbo.unwrap()
+        };
 
         DrawTarget::Texture {
             dimensions: texture.get_dimensions(),
-            texture: TextureId(texture.id),
+            fbo_id,
             with_depth,
         }
     }
@@ -1020,11 +1040,12 @@ pub enum ReadTarget {
     Default,
     
     Texture {
-        texture: TextureId,
+        
+        fbo_id: FBOId,
     },
     
     NativeSurface {
-        handle: NativeSurfaceHandle,
+        fbo_id: FBOId,
         offset: DeviceIntPoint,
     },
 }
@@ -1033,9 +1054,8 @@ impl ReadTarget {
     pub fn from_texture(
         texture: &Texture,
     ) -> Self {
-        assert!(texture.render_target.is_some(), "reading from a non-render-target texture");
         ReadTarget::Texture {
-            texture: TextureId(texture.id),
+            fbo_id: texture.fbo.unwrap(),
         }
     }
 
@@ -1060,10 +1080,13 @@ impl From<DrawTarget> for ReadTarget {
                 ReadTarget::Default
             }
             DrawTarget::NativeSurface { handle, offset, .. } => {
-                ReadTarget::NativeSurface { handle, offset }
+                ReadTarget::NativeSurface {
+                    fbo_id: FBOId(handle.0 as u32),
+                    offset,
+                }
             }
-            DrawTarget::Texture { texture, .. } => {
-                ReadTarget::Texture { texture }
+            DrawTarget::Texture { fbo_id, .. } => {
+                ReadTarget::Texture { fbo_id }
             }
         }
     }
