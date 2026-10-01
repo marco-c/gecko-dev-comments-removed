@@ -5,7 +5,6 @@
 #ifndef CACHED_TABLE_ACCESSIBLE_H
 #define CACHED_TABLE_ACCESSIBLE_H
 
-#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/a11y/TableAccessible.h"
 #include "mozilla/a11y/TableCellAccessible.h"
@@ -64,7 +63,7 @@ class CachedTableCellAccessible final : public TableCellAccessible {
   
   
   
-  RefPtr<Accessible> mAcc;
+  Accessible* mAcc;
   uint32_t mRowIdx;
   uint32_t mColIdx;
   
@@ -280,7 +279,7 @@ class CachedTableAccessible final : public TableAccessible {
   
   void EnsureRowCol(uint32_t aRowIdx, uint32_t aColIdx);
 
-  RefPtr<Accessible> mAcc;
+  Accessible* mAcc;  
   
   
   uint32_t mColCount = 0;
