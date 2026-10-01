@@ -9,6 +9,7 @@
 #include "AudioSinkWrapper.h"
 #include "CubebUtils.h"
 #include "MediaData.h"
+#include "MediaSinkTestUtils.h"
 #include "MockCubeb.h"
 #include "TimeUnits.h"
 #include "gmock/gmock.h"
@@ -22,21 +23,6 @@
 #include "nsThreadUtils.h"
 
 using namespace mozilla;
-
-
-
-
-static RefPtr<AudioSinkWrapper> MakeAudioSinkWrapper(
-    MediaQueue<AudioData>& aQueue, MediaInfo& aInfo, double aVolume) {
-  auto creator = [&aQueue, &aInfo]() {
-    return UniquePtr<AudioSink>{new AudioSink(AbstractThread::GetCurrent(),
-                                              aQueue, aInfo.mAudio,
-                                               false)};
-  };
-  return new AudioSinkWrapper(
-      AbstractThread::GetCurrent(), aQueue, std::move(creator), aVolume,
-       1.0,  true,  nullptr);
-}
 
 
 
