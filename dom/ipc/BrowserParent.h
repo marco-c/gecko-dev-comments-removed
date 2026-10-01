@@ -890,7 +890,7 @@ class BrowserParent final : public PBrowserParent,
   
   
   
-  BrowserBridgeParent* mBrowserBridgeParent;
+  WeakPtr<BrowserBridgeParent> mBrowserBridgeParent;
   
   
   
