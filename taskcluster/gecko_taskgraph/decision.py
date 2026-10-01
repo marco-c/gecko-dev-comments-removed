@@ -7,8 +7,10 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from collections import defaultdict
+from contextlib import contextmanager
 from pathlib import Path
 
 import taskgraph
@@ -211,93 +213,92 @@ def taskgraph_decision(options, parameters):
 
     decision_task_id = os.environ["TASK_ID"]
 
-    
-    tgg = TaskGraphGenerator(
-        root_dir=options.get("root"),
-        parameters=parameters,
-        decision_task_id=decision_task_id,
-        write_artifacts=True,
-        enable_verifications=options.get("verify", True),
-    )
-
-    if not create.testing:
+    with source_bundle(parameters["head_rev"], parameters["repository_type"]):
         
-        set_decision_indexes(decision_task_id, tgg.parameters, tgg.graph_config)
-
-    
-    write_artifact("parameters.yml", dict(**tgg.parameters))
-
-    
-    write_artifact(
-        "actions.json",
-        render_actions_json(tgg.parameters, tgg.graph_config, decision_task_id),
-    )
-
-    
-    full_task_json = tgg.full_task_graph.to_json()
-    write_artifact("full-task-graph.json", full_task_json)
-
-    
-    write_artifact("kind-graph.mm", format_kind_graph_mermaid(tgg.kind_graph))
-
-    
-    write_artifact(
-        "runnable-jobs.json", full_task_graph_to_runnable_jobs(full_task_json)
-    )
-
-    
-    write_artifact(
-        "manifests-by-task.json.gz",
-        full_task_graph_to_manifests_by_task(full_task_json),
-    )
-
-    
-    
-    
-    
-    
-
-    
-    _, _ = TaskGraph.from_json(full_task_json)
-
-    
-    write_artifact("target-tasks.json", list(tgg.target_task_set.tasks.keys()))
-
-    
-    
-    write_artifact("task-graph.json", tgg.morphed_task_graph.to_json())
-    write_artifact("label-to-taskid.json", tgg.label_to_taskid)
-
-    
-    if push_schedules.cache_info().currsize > 0:
-        write_artifact(
-            "bugbug-push-schedules.json",
-            push_schedules(tgg.parameters["project"], tgg.parameters["head_rev"]),
+        tgg = TaskGraphGenerator(
+            root_dir=options.get("root"),
+            parameters=parameters,
+            decision_task_id=decision_task_id,
+            write_artifacts=True,
+            enable_verifications=options.get("verify", True),
         )
 
-    
-    scripts_dir = Path(GECKO, "taskcluster", "scripts")
-    taskgraph_dir = Path(taskgraph.__file__).parent
-    to_copy = {
-        scripts_dir / "run-task": f"{ARTIFACTS_DIR}/run-task-hg",
-        scripts_dir / "tester" / "test-linux.sh": ARTIFACTS_DIR,
-        taskgraph_dir / "run-task" / "fetch-content": ARTIFACTS_DIR,
-        taskgraph_dir / "run-task" / "run-task": f"{ARTIFACTS_DIR}/run-task-git",
-        scripts_dir / "robustcheckout.py": ARTIFACTS_DIR,
-    }
-    for target, dest in to_copy.items():
-        shutil.copy2(target, dest)
+        if not create.testing:
+            
+            set_decision_indexes(decision_task_id, tgg.parameters, tgg.graph_config)
 
-    write_source_bundle(tgg.parameters["head_rev"], tgg.parameters["repository_type"])
+        
+        write_artifact("parameters.yml", dict(**tgg.parameters))
 
-    
-    create_tasks(
-        tgg.graph_config,
-        tgg.morphed_task_graph,
-        tgg.label_to_taskid,
-        tgg.parameters,
-        decision_task_id=decision_task_id,
-    )
+        
+        write_artifact(
+            "actions.json",
+            render_actions_json(tgg.parameters, tgg.graph_config, decision_task_id),
+        )
+
+        
+        full_task_json = tgg.full_task_graph.to_json()
+        write_artifact("full-task-graph.json", full_task_json)
+
+        
+        write_artifact("kind-graph.mm", format_kind_graph_mermaid(tgg.kind_graph))
+
+        
+        write_artifact(
+            "runnable-jobs.json", full_task_graph_to_runnable_jobs(full_task_json)
+        )
+
+        
+        write_artifact(
+            "manifests-by-task.json.gz",
+            full_task_graph_to_manifests_by_task(full_task_json),
+        )
+
+        
+        
+        
+        
+        
+
+        
+        _, _ = TaskGraph.from_json(full_task_json)
+
+        
+        write_artifact("target-tasks.json", list(tgg.target_task_set.tasks.keys()))
+
+        
+        
+        write_artifact("task-graph.json", tgg.morphed_task_graph.to_json())
+        write_artifact("label-to-taskid.json", tgg.label_to_taskid)
+
+        
+        if push_schedules.cache_info().currsize > 0:
+            write_artifact(
+                "bugbug-push-schedules.json",
+                push_schedules(tgg.parameters["project"], tgg.parameters["head_rev"]),
+            )
+
+        
+        scripts_dir = Path(GECKO, "taskcluster", "scripts")
+        taskgraph_dir = Path(taskgraph.__file__).parent
+        to_copy = {
+            scripts_dir / "run-task": f"{ARTIFACTS_DIR}/run-task-hg",
+            scripts_dir / "tester" / "test-linux.sh": ARTIFACTS_DIR,
+            taskgraph_dir / "run-task" / "fetch-content": ARTIFACTS_DIR,
+            taskgraph_dir / "run-task" / "run-task": f"{ARTIFACTS_DIR}/run-task-git",
+            scripts_dir / "robustcheckout.py": ARTIFACTS_DIR,
+        }
+        for target, dest in to_copy.items():
+            shutil.copy2(target, dest)
+
+        
+        create_tasks(
+            tgg.graph_config,
+            tgg.morphed_task_graph,
+            tgg.label_to_taskid,
+            tgg.parameters,
+            decision_task_id=decision_task_id,
+        )
 
 
 def get_decision_parameters(graph_config, options):
@@ -568,7 +569,8 @@ def set_decision_indexes(decision_task_id, params, graph_config):
         insert_index(index_path.format(**subs), decision_task_id)
 
 
-def write_source_bundle(head_rev, repository_type):
+@contextmanager
+def source_bundle(head_rev, repository_type):
     """Write a Mercurial bundle of recent changesets as a public artifact.
 
     Downstream build and source-test tasks can apply this bundle to obtain the
@@ -577,10 +579,15 @@ def write_source_bundle(head_rev, repository_type):
     which is the delta a task would otherwise pull on top of the CDN clone
     bundle.
 
+    The bundle is generated in the background while the body of the ``with``
+    block runs, and waited on when it exits. If the body raises, generation is
+    aborted and any partial bundle is removed.
+
     Only produced for Mercurial checkouts; git checkouts are served elsewhere.
     """
     if repository_type != "hg":
         logger.info("source checkout is not Mercurial; skipping source bundle")
+        yield
         return
 
     if not os.path.isdir(ARTIFACTS_DIR):
@@ -599,9 +606,13 @@ def write_source_bundle(head_rev, repository_type):
         f"(last(all(), {SOURCE_BUNDLE_RECENT_REVS}) "
         f"and date('-{SOURCE_BUNDLE_MAX_AGE_DAYS}'))"
     )
-    logger.info(f"writing source bundle artifact `{path}`")
+    logger.info(f"writing source bundle artifact `{path}` in the background")
+    output = tempfile.TemporaryFile()
+    proc = None
+    error = None
     try:
-        subprocess.run(
+        
+        proc = subprocess.Popen(
             [
                 "hg",
                 "--cwd",
@@ -615,14 +626,42 @@ def write_source_bundle(head_rev, repository_type):
                 base,
                 path,
             ],
-            check=True,
+            stdin=subprocess.DEVNULL,
+            stdout=output,
+            stderr=subprocess.STDOUT,
         )
-    except (OSError, subprocess.CalledProcessError) as e:
-        
-        
-        logger.warning(f"failed to write source bundle artifact: {e}")
-        if os.path.exists(path):
-            os.remove(path)
+    except OSError as e:
+        error = e
+
+    succeeded = False
+    try:
+        yield
+        succeeded = True
+    finally:
+        with output:
+            if proc:
+                if not succeeded:
+                    proc.kill()
+                start = time.monotonic()
+                returncode = proc.wait()
+                if succeeded:
+                    output.seek(0)
+                    hg_output = output.read().decode("utf-8", "replace").strip()
+                    if hg_output:
+                        logger.info(hg_output)
+                    logger.info(
+                        f"waited {time.monotonic() - start:.1f}s for source bundle"
+                    )
+                    if returncode:
+                        error = f"hg bundle exited with status {returncode}"
+
+        if not succeeded or error:
+            if succeeded:
+                
+                
+                logger.warning(f"failed to write source bundle artifact: {error}")
+            if os.path.exists(path):
+                os.remove(path)
 
 
 def write_artifact(filename, data):
