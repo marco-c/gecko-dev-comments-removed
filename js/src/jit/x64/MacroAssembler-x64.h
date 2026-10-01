@@ -91,6 +91,21 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   
   
   
+
+  
+  
+  
+  
+  
+  void moveShadowStackPtrTo(Register dest) {
+    xorq(dest, dest);
+    rdsspq(dest);
+  }
+
+  
+  
+  void unwindToShadowStackPtr(Register newShstkPtr, Register scratch);
+
   void writeDataRelocation(const Value& val) {
     MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
 

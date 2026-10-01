@@ -246,6 +246,7 @@ struct VMFunctionData;
 
 
 
+
 class FrameDescriptor {
  public:
   static const uint32_t TypeBits = 4;
@@ -348,6 +349,15 @@ struct ResumeFromException {
   uint8_t* framePointer;
   uint8_t* stackPointer;
   uint8_t* target;
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  
+  
+  
+  uintptr_t* shadowStackPointer = nullptr;
+#endif
   ExceptionResumeKind kind;
   wasm::Instance* instance;
 #ifdef ENABLE_WASM_JSPI
@@ -373,6 +383,12 @@ struct ResumeFromException {
   static size_t offsetOfTarget() {
     return offsetof(ResumeFromException, target);
   }
+#ifdef JS_HW_SHADOW_STACK
+  static size_t offsetOfShadowStackPointer() {
+    return offsetof(ResumeFromException, shadowStackPointer);
+  }
+#endif
+
   static size_t offsetOfKind() { return offsetof(ResumeFromException, kind); }
   static size_t offsetOfInstance() {
     return offsetof(ResumeFromException, instance);
@@ -448,6 +464,7 @@ class CommonFrameLayout {
   FrameType prevType() const { return descriptor_.type(); }
   void changePrevType(FrameType type) { descriptor_.changeType(type); }
   bool hasCachedSavedFrame() const { return descriptor_.hasCachedSavedFrame(); }
+  bool isResumingGenerator() const { return descriptor_.isResumingGenerator(); }
   void setHasCachedSavedFrame() { descriptor_.setHasCachedSavedFrame(); }
   void clearHasCachedSavedFrame() { descriptor_.clearHasCachedSavedFrame(); }
   uint8_t* returnAddress() const { return returnAddress_; }
@@ -494,14 +511,16 @@ class JitFrameLayout : public CommonFrameLayout {
   JS::Value* actualArgs() { return thisAndActualArgs() + 1; }
   uintptr_t numActualArgs() const { return descriptor().numActualArgs(); }
 
-  static constexpr size_t offsetOfModuleResumeSlots() {
+  static constexpr size_t offsetOfModuleResumeArgs() {
     return sizeof(JitFrameLayout);
   }
-  JS::Value* moduleResumeSlots() {
-    MOZ_ASSERT(descriptor().isResumingGenerator());
+  JS::Value* moduleResumeArgs() {
+    MOZ_ASSERT(isResumingGenerator());
     MOZ_ASSERT(!CalleeTokenIsFunction(calleeToken()));
     return reinterpret_cast<JS::Value*>(this + 1);
   }
+
+  JS::Value* resumeArgs();
 
   
   

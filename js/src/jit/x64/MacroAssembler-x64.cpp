@@ -637,11 +637,62 @@ void MacroAssemblerX64::boxValue(Register type, Register src, Register dest) {
   orq(src, dest);
 }
 
+void MacroAssemblerX64::unwindToShadowStackPtr(Register newShstkPtr,
+                                               Register scratch) {
+  MOZ_ASSERT(newShstkPtr != scratch);
+
+  Label done;
+  
+  
+  
+  
+  moveShadowStackPtrTo(scratch);
+  asMasm().branchTestPtr(Assembler::Zero, scratch, scratch, &done);
+
+  asMasm().branchPtr(Assembler::Equal, newShstkPtr, scratch, &done);
+  Label unwind;
+  asMasm().branchPtr(Assembler::Above, newShstkPtr, scratch, &unwind);
+  asMasm().assumeUnreachable("Cannot unwind to a lower shadow stack pointer");
+
+  bind(&unwind);
+  
+  subq(scratch, newShstkPtr);
+  shrq(Imm32(3), newShstkPtr);
+  Register numShstkEntries = newShstkPtr;
+
+  
+  
+  Label loop;
+  Label last;
+  bind(&loop);
+
+  asMasm().branchPtr(Assembler::BelowOrEqual, numShstkEntries, ImmWord(255),
+                     &last);
+  move32(Imm32(255), scratch);
+  incsspq(scratch);
+  subq(scratch, numShstkEntries);
+  jump(&loop);
+
+  bind(&last);
+  incsspq(numShstkEntries);
+  bind(&done);
+}
+
 void MacroAssemblerX64::handleFailureWithHandlerTail(
     Label* profilerExitTail, Label* bailoutTail,
     uint32_t* returnValueCheckOffset) {
   
   subq(Imm32(sizeof(ResumeFromException)), rsp);
+
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  moveShadowStackPtrTo(rax);
+  storePtr(rax,
+           Address(rsp, ResumeFromException::offsetOfShadowStackPointer()));
+#endif
+
   movq(rsp, rax);
 
   
@@ -652,6 +703,13 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
       ABIType::General, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   *returnValueCheckOffset = asMasm().currentOffset();
+
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  loadPtr(Address(rsp, ResumeFromException::offsetOfShadowStackPointer()), rax);
+  unwindToShadowStackPtr(rax, rcx);
+#endif
 
   Label entryFrame;
   Label catch_;

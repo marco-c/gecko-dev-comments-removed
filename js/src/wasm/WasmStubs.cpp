@@ -3165,6 +3165,16 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
 
   
   masm.reserveStack(sizeof(jit::ResumeFromException));
+#ifdef JS_HW_SHADOW_STACK
+  
+  
+  
+  masm.moveShadowStackPtrTo(scratch1);
+  masm.storePtr(
+      scratch1,
+      Address(masm.getStackPointer(),
+              jit::ResumeFromException::offsetOfShadowStackPointer()));
+#endif
   masm.moveStackPtrTo(scratch1);
 
   MIRTypeVector handleThrowTypes;
