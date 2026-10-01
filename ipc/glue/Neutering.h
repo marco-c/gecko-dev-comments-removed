@@ -5,6 +5,8 @@
 #ifndef mozilla_ipc_Neutering_h
 #define mozilla_ipc_Neutering_h
 
+#include "mozilla/Attributes.h"
+
 
 
 

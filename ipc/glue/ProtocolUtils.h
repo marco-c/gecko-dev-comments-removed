@@ -109,7 +109,6 @@ struct EndpointProcInfo {
   GeckoChildID mChildID = kInvalidGeckoChildID;
 
   bool operator==(const EndpointProcInfo& aOther) const = default;
-  bool operator!=(const EndpointProcInfo& aOther) const = default;
 
   static EndpointProcInfo Invalid() { return {}; }
   static EndpointProcInfo Current();
@@ -742,14 +741,14 @@ class WeakActorLifecycleProxy final {
   
   nsISerialEventTarget* ActorEventTarget() const { return mActorEventTarget; }
 
+  WeakActorLifecycleProxy(const WeakActorLifecycleProxy&) = delete;
+  WeakActorLifecycleProxy& operator=(const WeakActorLifecycleProxy&) = delete;
+
  private:
   friend class ActorLifecycleProxy;
 
   explicit WeakActorLifecycleProxy(ActorLifecycleProxy* aProxy);
   ~WeakActorLifecycleProxy();
-
-  WeakActorLifecycleProxy(const WeakActorLifecycleProxy&) = delete;
-  WeakActorLifecycleProxy& operator=(const WeakActorLifecycleProxy&) = delete;
 
   
   

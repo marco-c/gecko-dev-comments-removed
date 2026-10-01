@@ -95,9 +95,13 @@ class CrossProcessMutex {
  private:
   friend struct IPC::ParamTraits<CrossProcessMutex>;
 
+  
+  
+  
   CrossProcessMutex();
   CrossProcessMutex(const CrossProcessMutex&);
   CrossProcessMutex& operator=(const CrossProcessMutex&);
+  
 
 #if defined(XP_WIN)
   HANDLE mMutex;

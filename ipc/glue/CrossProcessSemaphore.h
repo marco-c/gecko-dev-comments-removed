@@ -87,9 +87,13 @@ class CrossProcessSemaphore {
  private:
   friend struct IPC::ParamTraits<CrossProcessSemaphore>;
 
+  
+  
+  
   CrossProcessSemaphore();
   CrossProcessSemaphore(const CrossProcessSemaphore&);
   CrossProcessSemaphore& operator=(const CrossProcessSemaphore&);
+  
 
 #if defined(XP_WIN)
   explicit CrossProcessSemaphore(HANDLE aSemaphore);
