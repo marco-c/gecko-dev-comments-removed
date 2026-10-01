@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_URLClassifierChild_h
 #define mozilla_dom_URLClassifierChild_h
 
@@ -100,7 +98,7 @@ class URLClassifierLocalByNameChild : public PURLClassifierLocalByNameChild {
 
     nsTArray<URLClassifierLocalResult> results = std::move(aResults);
     for (URLClassifierLocalResult& result : results) {
-      for (nsCString feature : mFeatures) {
+      for (const nsCString& feature : mFeatures) {
         if (result.featureName() != feature) {
           continue;
         }

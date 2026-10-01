@@ -67,7 +67,7 @@ class PrefetchMatchWaiter final {
  private:
   PrefetchMatchWaiter(WindowGlobalParent* aWGP, nsIURI* aURI,
                       TimeDuration aTimeout);
-  ~PrefetchMatchWaiter() = default;
+  ~PrefetchMatchWaiter();
 
   
   

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_TabContext_h
 #define mozilla_dom_TabContext_h
 
@@ -139,6 +137,9 @@ class MaybeInvalidTabContext {
 
   explicit MaybeInvalidTabContext(const IPCTabContext& aContext);
 
+  MaybeInvalidTabContext(const MaybeInvalidTabContext&) = delete;
+  MaybeInvalidTabContext& operator=(const MaybeInvalidTabContext&) = delete;
+
   
 
 
@@ -159,9 +160,6 @@ class MaybeInvalidTabContext {
   const TabContext& GetTabContext();
 
  private:
-  MaybeInvalidTabContext(const MaybeInvalidTabContext&) = delete;
-  MaybeInvalidTabContext& operator=(const MaybeInvalidTabContext&) = delete;
-
   const char* mInvalidReason;
   MutableTabContext mTabContext;
 };
