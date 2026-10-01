@@ -1457,6 +1457,10 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
 
   
   Thread* network_thread = nullptr;
+  
+  
+  
+  
   Thread* worker_thread = nullptr;
   Thread* signaling_thread = nullptr;
   SocketFactory* socket_factory = nullptr;
