@@ -1973,32 +1973,37 @@ static bool IsSVGStyleGeometryBox(StyleGeometryBox aBox) {
           aBox == StyleGeometryBox::ViewBox);
 }
 
-static bool IsHTMLStyleGeometryBox(StyleGeometryBox aBox) {
-  return (aBox == StyleGeometryBox::ContentBox ||
-          aBox == StyleGeometryBox::PaddingBox ||
-          aBox == StyleGeometryBox::BorderBox ||
-          aBox == StyleGeometryBox::MarginBox);
-}
-
-static StyleGeometryBox ComputeBoxValueForOrigin(nsIFrame* aForFrame,
-                                                 StyleGeometryBox aBox) {
+static StyleGeometryBox ComputeBoxValueForOrigin(
+    nsIFrame* aForFrame, StyleBackgroundOrigin aOrigin) {
   
   
-  if (!aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+  const bool svgLayout = aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT);
+  switch (aOrigin) {
     
     
-    if (IsSVGStyleGeometryBox(aBox)) {
-      return StyleGeometryBox::BorderBox;
-    }
-  } else {
+    case StyleBackgroundOrigin::ContentBox:
+      return svgLayout ? StyleGeometryBox::FillBox
+                       : StyleGeometryBox::ContentBox;
+    case StyleBackgroundOrigin::PaddingBox:
+      return svgLayout ? StyleGeometryBox::FillBox
+                       : StyleGeometryBox::PaddingBox;
+    case StyleBackgroundOrigin::BorderBox:
+      return svgLayout ? StyleGeometryBox::FillBox
+                       : StyleGeometryBox::BorderBox;
     
     
-    if (IsHTMLStyleGeometryBox(aBox)) {
-      return StyleGeometryBox::FillBox;
-    }
+    case StyleBackgroundOrigin::FillBox:
+      return svgLayout ? StyleGeometryBox::FillBox
+                       : StyleGeometryBox::BorderBox;
+    case StyleBackgroundOrigin::StrokeBox:
+      return svgLayout ? StyleGeometryBox::StrokeBox
+                       : StyleGeometryBox::BorderBox;
+    case StyleBackgroundOrigin::ViewBox:
+      return svgLayout ? StyleGeometryBox::ViewBox
+                       : StyleGeometryBox::BorderBox;
   }
-
-  return aBox;
+  MOZ_ASSERT_UNREACHABLE("Unknown background-origin value");
+  return StyleGeometryBox::BorderBox;
 }
 
 
@@ -2761,14 +2766,6 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
   } else {
     positionArea = nsRect(nsPoint(0, 0), aBorderArea.Size());
   }
-
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aLayer.mOrigin != StyleGeometryBox::MarginBox,
-             "StyleGeometryBox::MarginBox rendering is not supported yet.\n");
 
   
   

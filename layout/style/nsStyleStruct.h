@@ -225,7 +225,7 @@ struct nsStyleImageLayers {
     mozilla::Position mPosition;
     StyleBackgroundSize mSize;
     StyleBackgroundClip mClip;
-    MOZ_INIT_OUTSIDE_CTOR StyleGeometryBox mOrigin;
+    MOZ_INIT_OUTSIDE_CTOR mozilla::StyleBackgroundOrigin mOrigin;
 
     
     
