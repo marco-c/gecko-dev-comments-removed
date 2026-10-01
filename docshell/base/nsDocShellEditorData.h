@@ -47,18 +47,7 @@ class nsDocShellEditorData {
   RefPtr<mozilla::HTMLEditor> mHTMLEditor;
 
   
-  
-  mozilla::dom::Document::EditingState mDetachedEditingState;
-
-  
   bool mMakeEditable;
-
-  
-  
-  bool mIsDetached;
-
-  
-  bool mDetachedMakeEditable;
 };
 
 #endif  

@@ -59,12 +59,6 @@ class nsEditingSession final : public nsIEditingSession,
 
   nsresult DetachFromWindow(nsPIDOMWindowOuter* aWindow);
 
-  
-
-
-
-  nsresult ReattachToWindow(nsPIDOMWindowOuter* aWindow);
-
  protected:
   virtual ~nsEditingSession();
 
