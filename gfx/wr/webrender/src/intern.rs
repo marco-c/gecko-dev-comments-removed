@@ -107,6 +107,15 @@ impl ItemUid {
     pub fn get_uid(&self) -> u64 {
         self.uid
     }
+
+    
+    
+    
+    
+    
+    pub fn from_counter(id: u64) -> Self {
+        ItemUid { uid: id }
+    }
 }
 
 impl std::fmt::Debug for ItemUid {
