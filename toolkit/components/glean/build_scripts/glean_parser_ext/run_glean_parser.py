@@ -2,6 +2,7 @@
 
 
 
+import functools
 import os
 import pickle
 import sys
@@ -17,7 +18,7 @@ from glean_parser import lint, metrics, parser, translate, util
 from glean_parser.lint import METRIC_CHECKS, CheckType, GlinterNit
 from glean_parser.pings import Ping
 from metrics_header_names import convert_yaml_path_to_header_name
-from mozbuild.util import FileAvoidWrite, memoize
+from mozbuild.util import FileAvoidWrite
 from util import generate_metric_ids
 
 import js
@@ -47,7 +48,7 @@ METRIC_CHECKS["GIFFT_NON_PING_LIFETIME"] = (
 )
 
 
-@memoize
+@functools.cache
 def get_deps():
     
     
@@ -159,6 +160,20 @@ def _lint_pings(pings):
                     check_name="USES_OHTTP_CHECK",
                     name=ping_name,
                     msg=f"Ping {ping_name} uses `use_ohttp`. Switch to `uploader_capabilities`.",
+                    check_type=CheckType.error,
+                )
+            )
+
+        if "ohttp" in ping.uploader_capabilities and (
+            "include_info_sections" not in ping.metadata
+            or ping.metadata["include_info_sections"]
+        ):
+            
+            nits.append(
+                GlinterNit(
+                    check_name="OHTTP_IMPLIES_NO_INFO",
+                    name=ping_name,
+                    msg=f"Ping {ping_name} requests an OHTTP upload capability, but still has *_info sections. Add `metadata.include_info_sections: false` to its definition.",
                     check_type=CheckType.error,
                 )
             )
