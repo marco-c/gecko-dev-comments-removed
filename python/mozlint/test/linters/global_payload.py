@@ -20,6 +20,12 @@ def global_payload(_paths, config, **lintargs):
     return issues
 
 
+def global_expanded(paths, config, **lintargs):
+    
+    
+    return external(paths, config, **lintargs)
+
+
 def global_skipped(config, **lintargs):
     
     

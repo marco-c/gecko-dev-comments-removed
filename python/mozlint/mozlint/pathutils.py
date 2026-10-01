@@ -373,11 +373,6 @@ def expand_exclusions(paths, config, root):
 
         
         
-        if not extensions and not exclude_extensions:
-            continue
-
-        
-        
         parent_path = os.path.dirname(path.rstrip("/")) + "/"
         assert not any(parent_path.startswith(e.rstrip("/") + "/") for e in exclude)
 
@@ -388,10 +383,7 @@ def expand_exclusions(paths, config, root):
         ]
 
         finder = FileFinder(path, ignore=ignore, find_dotfiles=find_dotfiles)
-        if extensions:
-            for p, f in finder.find("**"):
-                if os.path.splitext(p)[1] in extensions:
-                    yield os.path.join(path, p)
-        else:
-            for p, f in finder.find("**/*.*"):
-                yield os.path.join(path, p)
+        for p, f in finder.find("**"):
+            if extensions and os.path.splitext(p)[1] not in extensions:
+                continue
+            yield os.path.join(path, p)
