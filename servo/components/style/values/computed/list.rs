@@ -4,9 +4,7 @@
 
 
 
-pub use crate::values::specified::list::ListStylePosition;
-pub use crate::values::specified::list::ListStyleType;
-pub use crate::values::specified::list::Quotes;
+pub use crate::values::specified::list::{ListStylePosition, ListStyleType, Quotes};
 
 impl Quotes {
     

@@ -6,8 +6,7 @@
 
 use crate::values::computed::PositiveInteger;
 use crate::values::generics::column::GenericColumnCount;
-pub use crate::values::specified::column::ColumnFill;
-pub use crate::values::specified::column::ColumnSpan;
+pub use crate::values::specified::column::{ColumnFill, ColumnSpan};
 
 
 pub type ColumnCount = GenericColumnCount<PositiveInteger>;

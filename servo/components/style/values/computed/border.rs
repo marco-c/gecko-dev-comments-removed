@@ -24,9 +24,7 @@ use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use app_units::Au;
 use thin_vec::ThinVec;
 
-pub use crate::values::specified::border::BorderImageRepeat;
-pub use crate::values::specified::border::BoxDecorationBreak;
-pub use crate::values::specified::border::FloatEdge;
+pub use crate::values::specified::border::{BorderImageRepeat, BoxDecorationBreak, FloatEdge};
 
 
 pub type LineWidth = Au;
