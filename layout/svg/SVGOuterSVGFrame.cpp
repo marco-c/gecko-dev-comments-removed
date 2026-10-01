@@ -130,26 +130,23 @@ NS_QUERYFRAME_TAIL_INHERITING(SVGDisplayContainerFrame)
 
 
 
-nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput&,
-                                         IntrinsicISizeType) {
-  const auto wm = GetWritingMode();
-  const auto intrinsic = GetIntrinsicSize();
-  if (auto isize = intrinsic.ISize(wm)) {
-    return *isize;
+nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
+                                         IntrinsicISizeType aType) {
+  if (aType == IntrinsicISizeType::MinISize) {
+    return GetIntrinsicSize().ISize(GetWritingMode()).valueOr(0);
   }
-  if (auto bsize = intrinsic.BSize(wm)) {
-    if (auto ratio = GetIntrinsicRatio()) {
-      return ratio.ComputeRatioDependentSize(LogicalAxis::Inline, wm, *bsize,
-                                             LogicalSize(wm));
-    }
-  }
-  auto* svg = static_cast<SVGSVGElement*>(GetContent());
+
+  nscoord result;
+  SVGSVGElement* svg = static_cast<SVGSVGElement*>(GetContent());
+  WritingMode wm = GetWritingMode();
   const SVGAnimatedLength& isize =
       wm.IsVertical() ? svg->mLengthAttributes[SVGSVGElement::ATTR_HEIGHT]
                       : svg->mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
-  if (isize.IsPercentage()) {
-    
-    
+
+  if (Maybe<nscoord> containISize =
+          ContainSizeAxesIfApplicable().ContainIntrinsicISize(*this)) {
+    result = *containISize;
+  } else if (isize.IsPercentage()) {
     
     
     
@@ -160,11 +157,20 @@ nscoord SVGOuterSVGFrame::IntrinsicISize(const IntrinsicSizeInput&,
             ->ISize(wm, AnchorPosResolutionParams::From(this))
             ->HasPercent() ||
         !GetAspectRatio()) {
-      return wm.IsVertical() ? kFallbackIntrinsicSize.height
-                             : kFallbackIntrinsicSize.width;
+      result = wm.IsVertical() ? kFallbackIntrinsicSize.height
+                               : kFallbackIntrinsicSize.width;
+    } else {
+      result = nscoord(0);
+    }
+  } else {
+    result =
+        nsPresContext::CSSPixelsToAppUnits(isize.GetAnimValueWithZoom(svg));
+    if (result < 0) {
+      result = nscoord(0);
     }
   }
-  return 0;
+
+  return result;
 }
 
 
