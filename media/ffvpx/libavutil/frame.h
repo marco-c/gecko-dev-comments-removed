@@ -259,7 +259,46 @@ enum AVFrameSideDataType {
 
 
 
-     AV_FRAME_DATA_EXIF,
+
+    AV_FRAME_DATA_EXIF,
+
+    
+
+
+
+
+    AV_FRAME_DATA_DYNAMIC_HDR_SMPTE_2094_APP5,
+
+    
+
+
+
+
+
+    AV_FRAME_DATA_IAMF_MIX_GAIN_PARAM,
+
+    
+
+
+
+
+
+    AV_FRAME_DATA_IAMF_DEMIXING_INFO_PARAM,
+
+    
+
+
+
+
+
+    AV_FRAME_DATA_IAMF_RECON_GAIN_INFO_PARAM,
+
+    
+
+
+
+
+    AV_FRAME_DATA_RAW_COLOR_PARAMS,
 };
 
 enum AVActiveFormatDescription {

@@ -95,7 +95,7 @@ static int update_frame_pool(AVCodecContext *avctx, AVFrame *frame)
         do {
             
             
-            ret = av_image_fill_linesizes(linesize, avctx->pix_fmt, w);
+            ret = av_image_fill_linesizes(linesize, frame->format, w);
             if (ret < 0)
                 goto fail;
             
@@ -108,7 +108,7 @@ static int update_frame_pool(AVCodecContext *avctx, AVFrame *frame)
 
         for (i = 0; i < 4; i++)
             linesize1[i] = linesize[i];
-        ret = av_image_fill_plane_sizes(size, avctx->pix_fmt, h, linesize1);
+        ret = av_image_fill_plane_sizes(size, frame->format, h, linesize1);
         if (ret < 0)
             goto fail;
 

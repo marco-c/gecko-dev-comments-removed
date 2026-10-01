@@ -499,12 +499,6 @@ enum AVPixelFormat {
 
     AV_PIX_FMT_OHCODEC, 
 
-    
-
-
-
-    AV_PIX_FMT_CUARRAY,
-
     AV_PIX_FMT_NB         
 };
 
