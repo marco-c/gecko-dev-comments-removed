@@ -149,7 +149,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
     },
     onRemoved({ fire }) {
       let onRemove = event => {
-        if (event.originalTarget.removedByAdoption) {
+        if (event.detail.adopting) {
           
           return;
         }
