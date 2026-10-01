@@ -12,10 +12,8 @@
 #include "PlatformEncoderModule.h"
 
 namespace mozilla {
-class AllocPolicy;
 class EncoderConfig;
 class MediaExtendedMIMEType;
-class TaskQueue;
 struct SupportDecoderParams;
 
 
@@ -26,20 +24,6 @@ SupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
                              const SupportDecoderParams& aParams);
 [[nodiscard]] RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
 SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig);
-
-
-
-
-
-
-
-[[nodiscard]] RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
-StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
-                                   const SupportDecoderParams& aParams);
-[[nodiscard]] RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
-                                   const RefPtr<TaskQueue>& aTaskQueue,
-                                   AllocPolicy* aPolicy);
 
 
 

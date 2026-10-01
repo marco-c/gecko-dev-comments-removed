@@ -16,7 +16,6 @@
 
 namespace mozilla {
 
-class AllocPolicy;
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
 
@@ -47,19 +46,6 @@ class MediaDataCodec {
 
   static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
   SupportsEncoderCodec(const EncoderConfig& aConfig);
-
-  
-
-
-
-
-
-
-
-  static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-  StrictSupportsEncoderCodec(const EncoderConfig& aConfig,
-                             const RefPtr<TaskQueue>& aTaskQueue,
-                             AllocPolicy* aPolicy);
 
   
 

@@ -127,25 +127,6 @@ MediaDataCodec::SupportsEncoderCodec(const EncoderConfig& aConfig) {
 }
 
 
-RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
-MediaDataCodec::StrictSupportsEncoderCodec(const EncoderConfig& aConfig,
-                                           const RefPtr<TaskQueue>& aTaskQueue,
-                                           AllocPolicy* aPolicy) {
-  
-  
-  if (aConfig.mCodec != CodecType::H264 && aConfig.mCodec != CodecType::VP8 &&
-      aConfig.mCodec != CodecType::VP9) {
-    return PlatformEncoderModule::SupportsEncoderPromise::CreateAndResolve(
-        media::EncodeSupportSet{}, __func__);
-  }
-  const CodecType codec = aConfig.mCodec;
-  return MakeRefPtr<PEMFactory>()
-      ->StrictSupportsAsync(aConfig, aTaskQueue, aPolicy)
-      ->Map(GetCurrentSerialEventTarget(), __func__,
-            AdjustWebrtcEncodeSupportFunctionForCodec(codec));
-}
-
-
 std::unique_ptr<WebrtcVideoEncoder> MediaDataCodec::CreateEncoder(
     const webrtc::SdpVideoFormat& aFormat, HardwarePreference aHardwarePref) {
   auto support = SupportsEncoderCodec(aFormat);
