@@ -2034,7 +2034,12 @@ JsepSession::Result JsepSessionImpl::ValidateLocalDescription(
       return Result(dom::PCError::InvalidModificationError);
     }
 
-    
+    if (mSdpHelper.FingerprintsDiffer(origMsection, finalMsection)) {
+      JSEP_SET_ERROR(
+          "Changing the DTLS fingerprint of m-sections is not allowed.");
+      return Result(dom::PCError::InvalidModificationError);
+    }
+
     
     
     
