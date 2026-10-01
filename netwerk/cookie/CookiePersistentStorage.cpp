@@ -2391,21 +2391,6 @@ nsresult CookiePersistentStorage::CreateTableForSchemaVersion5() {
       "inBrowserElement)"));
 }
 
-nsresult CookiePersistentStorage::RunInTransaction(
-    nsICookieTransactionCallback* aCallback) {
-  if (NS_WARN_IF(!mDBConn)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  nsresult rv = aCallback->Callback();
-
-  
-  
-  mWriteQueue->FlushNow();
-
-  return NS_FAILED(rv) ? NS_ERROR_FAILURE : NS_OK;
-}
-
 
 already_AddRefed<nsIArray> CookiePersistentStorage::PurgeCookies(
     int64_t aCurrentTimeInUsec, uint16_t aMaxNumberOfCookies,

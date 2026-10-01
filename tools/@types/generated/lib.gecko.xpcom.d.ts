@@ -14082,12 +14082,6 @@ interface nsICookiePermission extends nsISupports {
 
 
 
-type nsICookieTransactionCallback = Callable<{
-  
-  callback(): void;
-}>
-
-
 interface nsICookieService extends nsISupports {
   
   readonly BEHAVIOR_ACCEPT?: 0;
@@ -14108,8 +14102,6 @@ interface nsICookieService extends nsISupports {
   getCookieStringFromHttp(aURI: nsIURI, aChannel: nsIChannel): string;
   
   setCookieStringFromHttp(aURI: nsIURI, aCookie: string, aChannel: nsIChannel): void;
-  
-  runInTransaction(aCallback: nsICookieTransactionCallback): void;
 }
 
 
@@ -27130,7 +27122,6 @@ interface nsIXPCComponents_Interfaces {
   nsICookieManager: nsJSIID<nsICookieManager>;
   nsICookieNotification: nsJSIID<nsICookieNotification, typeof nsICookieNotification_Action>;
   nsICookiePermission: nsJSIID<nsICookiePermission>;
-  nsICookieTransactionCallback: nsJSIID<nsICookieTransactionCallback>;
   nsICookieService: nsJSIID<nsICookieService>;
   nsICookieValidation: nsJSIID<nsICookieValidation, typeof nsICookieValidation_ValidationError>;
   nsIThirdPartyCookieBlockingExceptionListService: nsJSIID<nsIThirdPartyCookieBlockingExceptionListService>;

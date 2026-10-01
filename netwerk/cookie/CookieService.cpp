@@ -668,23 +668,6 @@ void CookieService::NotifyAccepted(nsIChannel* aChannel) {
 
 
 NS_IMETHODIMP
-CookieService::RunInTransaction(nsICookieTransactionCallback* aCallback) {
-  NS_ENSURE_ARG(aCallback);
-
-  if (!IsInitialized()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  mPersistentStorage->EnsureInitialized();
-  return mPersistentStorage->RunInTransaction(aCallback);
-}
-
-
-
-
-
-
-NS_IMETHODIMP
 CookieService::RemoveAll() {
   if (!IsInitialized()) {
     return NS_ERROR_NOT_AVAILABLE;

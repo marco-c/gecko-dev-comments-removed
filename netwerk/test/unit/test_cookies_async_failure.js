@@ -12,12 +12,6 @@
 
 
 
-
-
-
-
-
-
 "use strict";
 
 let profile;
@@ -220,23 +214,21 @@ async function run_test_2() {
   
   do_load_profile();
 
-  Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://foo.com/");
-    const channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
-
-    for (let i = 0; i < 3000; ++i) {
-      uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh=hai; max-age=1000",
-        channel
-      );
-    }
+  let uri = NetUtil.newURI("http://foo.com/");
+  const channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
   });
+
+  for (let i = 0; i < 3000; ++i) {
+    uri = NetUtil.newURI("http://" + i + ".com/");
+    Services.cookies.setCookieStringFromHttp(
+      uri,
+      "oh=hai; max-age=1000",
+      channel
+    );
+  }
 
   
   await promise_close_profile();
@@ -285,34 +277,32 @@ async function run_test_3() {
 
   
   do_load_profile();
-  Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://hither.com/");
-    let channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
-    for (let i = 0; i < 10; ++i) {
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh" + i + "=hai; max-age=1000",
-        channel
-      );
-    }
-    uri = NetUtil.newURI("http://haithur.com/");
-    channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
-    for (let i = 10; i < 3000; ++i) {
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh" + i + "=hai; max-age=1000",
-        channel
-      );
-    }
+  let uri = NetUtil.newURI("http://hither.com/");
+  let channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
   });
+  for (let i = 0; i < 10; ++i) {
+    Services.cookies.setCookieStringFromHttp(
+      uri,
+      "oh" + i + "=hai; max-age=1000",
+      channel
+    );
+  }
+  uri = NetUtil.newURI("http://haithur.com/");
+  channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+  });
+  for (let i = 10; i < 3000; ++i) {
+    Services.cookies.setCookieStringFromHttp(
+      uri,
+      "oh" + i + "=hai; max-age=1000",
+      channel
+    );
+  }
 
   
   await promise_close_profile();
@@ -375,22 +365,20 @@ async function run_test_3() {
 async function run_test_4() {
   
   do_load_profile();
-  Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://foo.com/");
-    let channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
-    for (let i = 0; i < 3000; ++i) {
-      uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh=hai; max-age=1000",
-        channel
-      );
-    }
+  let uri = NetUtil.newURI("http://foo.com/");
+  let channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
   });
+  for (let i = 0; i < 3000; ++i) {
+    uri = NetUtil.newURI("http://" + i + ".com/");
+    Services.cookies.setCookieStringFromHttp(
+      uri,
+      "oh=hai; max-age=1000",
+      channel
+    );
+  }
 
   
   await promise_close_profile();
@@ -444,27 +432,25 @@ async function run_test_4() {
 async function run_test_5() {
   
   do_load_profile();
-  Services.cookies.runInTransaction(_ => {
-    let uri = NetUtil.newURI("http://bar.com/");
-    const channel = NetUtil.newChannel({
-      uri,
-      loadUsingSystemPrincipal: true,
-      contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
-    });
+  let uri = NetUtil.newURI("http://bar.com/");
+  const channel = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
+  });
+  Services.cookies.setCookieStringFromHttp(
+    uri,
+    "oh=hai; path=/; max-age=1000",
+    channel
+  );
+  for (let i = 0; i < 3000; ++i) {
+    uri = NetUtil.newURI("http://" + i + ".com/");
     Services.cookies.setCookieStringFromHttp(
       uri,
-      "oh=hai; path=/; max-age=1000",
+      "oh=hai; max-age=1000",
       channel
     );
-    for (let i = 0; i < 3000; ++i) {
-      uri = NetUtil.newURI("http://" + i + ".com/");
-      Services.cookies.setCookieStringFromHttp(
-        uri,
-        "oh=hai; max-age=1000",
-        channel
-      );
-    }
-  });
+  }
 
   
   await promise_close_profile();
