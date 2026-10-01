@@ -2722,33 +2722,8 @@ void GCRuntime::purgeRuntime() {
   marker().unmarkGrayStack.clearAndFree();
 }
 
-bool GCRuntime::shouldPreserveJITCode(Realm* realm,
-                                      const TimeStamp& currentTime,
-                                      bool canAllocateMoreCode,
-                                      bool isActiveCompartment) {
-  
-  
-  if (isShutdownGC()) {
-    return false;
-  }
-
-  
-  
-  if (isShrinkingGC()) {
-    return false;
-  }
-
-  
-  if (!canAllocateMoreCode) {
-    return false;
-  }
-
-  
-  
-  if (isActiveCompartment) {
-    return true;
-  }
-
+bool GCRuntime::shouldRealmPreserveJitCode(Realm* realm,
+                                           const TimeStamp& currentTime) {
   
   if (alwaysPreserveCode) {
     return true;
@@ -2960,13 +2935,51 @@ bool GCRuntime::prepareZonesForCollection(bool* isFullOut) {
 
 void GCRuntime::setRealmPreserveJitCodeFlags(Zone* zone,
                                              const TimeStamp& currentTime,
-                                             bool canAllocateMoreCode,
-                                             Compartment* activeCompartment) {
+                                             bool canAllocateMoreCode) {
+  MOZ_ASSERT(!zone->isAnyRealmPreservingCode());
+
+  
+  
+  if (isShutdownGC()) {
+    return;
+  }
+
+  
+  
+  if (isShrinkingGC()) {
+    return;
+  }
+
+  
+  if (!canAllocateMoreCode) {
+    return;
+  }
+
+  
+  bool preservingAllRealms = true;
   for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
-    bool isActiveCompartment = r->compartment() == activeCompartment;
-    bool preserve = shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
-                                          isActiveCompartment);
-    r->jitRealm().setPreservingCode(preserve);
+    if (shouldRealmPreserveJitCode(r, currentTime)) {
+      r->jitRealm().setPreservingCode(true);
+    } else {
+      preservingAllRealms = false;
+    }
+  }
+  if (preservingAllRealms) {
+    return;
+  }
+
+  
+  JSContext* cx = rt->mainContextFromOwnThread();
+  for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
+    if (iter->compartment()->zone() != zone) {
+      continue;
+    }
+    for (OnlyJSJitFrameIter frames(iter); !frames.done(); ++frames) {
+      const jit::JSJitFrameIter& frame = frames.frame();
+      if (frame.isScripted()) {
+        frame.script()->realm()->jitRealm().setPreservingCode(true);
+      }
+    }
   }
 }
 
@@ -2987,20 +3000,13 @@ void GCRuntime::maybeDiscardJitCodeForGC() {
   bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
   TimeStamp currentTime = TimeStamp::Now();
 
-  Compartment* activeCompartment = nullptr;
-  jit::JitActivationIterator activation(rt->mainContextFromOwnThread());
-  if (!activation.done()) {
-    activeCompartment = activation->compartment();
-  }
-
   js::CancelOffThreadCompile(rt, JS::Zone::Prepare);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_DISCARD_CODE);
 
     
     
-    setRealmPreserveJitCodeFlags(zone, currentTime, canAllocateMoreCode,
-                                 activeCompartment);
+    setRealmPreserveJitCodeFlags(zone, currentTime, canAllocateMoreCode);
     auto clearFlags =
         MakeScopeExit([&] { clearRealmPreserveJitCodeFlags(zone); });
 
