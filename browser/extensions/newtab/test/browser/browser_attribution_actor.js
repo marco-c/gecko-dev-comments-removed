@@ -103,12 +103,9 @@ add_setup(async function () {
 
 
 
-async function setAllowList(allowList = []) {
-  
-  await BrowserTestUtils.withNewTab(TEST_URL, async browser => {
-    const parent = await getParentActor(browser);
-    parent.setAllowListForTest(allowList);
-  });
+
+function setAllowList(allowList = []) {
+  AttributionParent.prototype.setAllowListForTest(allowList);
 }
 
 
@@ -116,7 +113,7 @@ async function setAllowList(allowList = []) {
 
 async function resetTestState() {
   await resetDatabase();
-  await setAllowList();
+  setAllowList();
   if (conversionStub) {
     conversionStub.resetHistory();
   }
