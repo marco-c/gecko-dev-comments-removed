@@ -24,6 +24,7 @@
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/dtls_transport_interface.h"
 #include "api/dtmf_sender_interface.h"
+#include "api/encoded_video_frame_injector_interface.h"
 #include "api/frame_transformer_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
@@ -163,6 +164,21 @@ class RTC_EXPORT RtpSenderInterface : public RefCountInterface,
   
   virtual RTCError GenerateKeyFrame(const std::vector<std::string>& rids) {
     return RTCError::OK();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual scoped_refptr<EncodedVideoFrameInjectorInterface>
+  CreateEncodedVideoFrameInjector(KeyFrameCallback keyframe_callback,
+                                  BitrateInfoCallback bitrate_callback) {
+    return nullptr;
   }
 
  protected:

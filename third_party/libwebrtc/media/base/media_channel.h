@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
@@ -257,6 +258,9 @@ class MediaSendChannelInterface {
   
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
+  
+  
+  virtual void ResetEncoderFactoryOverride(uint32_t ssrc) = 0;
 };
 
 class MediaReceiveChannelInterface {
@@ -943,6 +947,7 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   GetStatsTask() = 0;
   virtual bool SenderNackEnabled() const = 0;
   virtual bool SenderNonSenderRttEnabled() const = 0;
+  void ResetEncoderFactoryOverride(uint32_t ssrc) override {}
 };
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
@@ -1025,6 +1030,15 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   
   virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
+  
+  
+  
+  virtual bool SetEncoderFactoryOverride(
+      uint32_t ssrc,
+      absl_nonnull std::unique_ptr<VideoEncoderFactory> encoder_factory) {
+    return false;
+  }
+  void ResetEncoderFactoryOverride(uint32_t ssrc) override {}
 };
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
