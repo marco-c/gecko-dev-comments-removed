@@ -15,7 +15,6 @@
 #include "js/loader/ScriptLoadRequestList.h"
 #include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/Encoding.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ScriptLoadContext.h"
@@ -492,8 +491,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
       ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
-      ScriptLoadRequestType aRequestType,
-      const Encoding* aClassicScriptPreloadHintEncoding);
+      ScriptLoadRequestType aRequestType);
 
   
 
@@ -588,19 +586,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
                             const Maybe<nsAutoString>& aCharsetForPreload);
 
-  
-
-
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT void OnDelayedReady(
       ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload,
-      bool aDelayedEncodingCheck);
+      const Maybe<nsAutoString>& aCharsetForPreload);
 
   static void PrepareCacheInfoChannel(nsIChannel* aChannel,
                                       ScriptLoadRequest* aRequest);
@@ -776,12 +764,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   static nsCString& BytecodeMimeTypeFor(const ScriptLoadRequest* aRequest);
   static nsCString& BytecodeMimeTypeFor(
       const JS::loader::LoadedScript* aLoadedScript);
-
-  
-  
-  
-  const Encoding* GetClassicScriptFallbackEncoding(
-      const ScriptLoadRequest* aRequest);
 
   
   
@@ -986,6 +968,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   struct PreloadInfo {
     RefPtr<ScriptLoadRequest> mRequest;
+    nsString mCharset;
   };
 
   friend void ImplCycleCollectionUnlink(ScriptLoader::PreloadInfo& aField);
@@ -995,7 +978,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   struct PreloadRequestComparator {
     bool Equals(const PreloadInfo& aPi,
-                const ScriptLoadRequest* const& aRequest) const {
+                ScriptLoadRequest* const& aRequest) const {
       return aRequest == aPi.mRequest;
     }
   };

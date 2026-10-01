@@ -8,7 +8,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "mozilla/dom/SRIMetadata.h"
-#include "mozilla/Encoding.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/RefPtr.h"
@@ -93,8 +92,7 @@ class ScriptLoadRequest : public nsISupports,
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
   ScriptLoadRequest(ScriptKind aKind, const SRIMetadata& aIntegrity,
-                    nsIURI* aReferrer, LoadContextBase* aContext,
-                    const mozilla::Encoding* aClassicScriptHintEncoding);
+                    nsIURI* aReferrer, LoadContextBase* aContext);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ScriptLoadRequest)
@@ -105,7 +103,6 @@ class ScriptLoadRequest : public nsISupports,
   template <typename T, typename D = DeletePolicy<T>>
   using UniquePtr = mozilla::UniquePtr<T, D>;
 
-  bool IsClassicScript() const { return mKind == ScriptKind::eClassic; }
   bool IsModuleRequest() const { return mKind == ScriptKind::eModule; }
   bool IsImportMapRequest() const { return mKind == ScriptKind::eImportMap; }
   bool IsSpeculationRulesRequest() const {
@@ -239,9 +236,6 @@ class ScriptLoadRequest : public nsISupports,
   
   void NoCacheEntryFound(mozilla::dom::ReferrerPolicy aReferrerPolicy,
                          ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
-
-  
-  void ResetCacheEntry();
 
  private:
   void SetCacheEntry(LoadedScript* aLoadedScript,
@@ -468,15 +462,6 @@ class ScriptLoadRequest : public nsISupports,
   
   
   uint64_t mEarlyHintPreloaderId;
-
-  
-  
-  
-  
-  
-  
-  
-  const mozilla::Encoding* mClassicScriptHintEncoding = nullptr;
 };
 
 }  

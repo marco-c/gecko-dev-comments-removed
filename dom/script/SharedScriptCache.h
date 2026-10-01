@@ -12,7 +12,6 @@
 #include "js/loader/ScriptKind.h"            
 #include "js/loader/ScriptLoadRequest.h"     
 #include "mozilla/CORSMode.h"                
-#include "mozilla/Encoding.h"                
 #include "mozilla/HashTable.h"               
 #include "mozilla/MemoryReporting.h"         
 #include "mozilla/Mutex.h"                   
@@ -47,7 +46,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKey.mKind),
         mCORSMode(aKey.mCORSMode),
         mReferrerPolicy(aKey.mReferrerPolicy),
-        mClassicScriptHintEncoding(aKey.mClassicScriptHintEncoding) {
+        mHintCharset(aKey.mHintCharset) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -61,7 +60,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(std::move(aKey.mKind)),
         mCORSMode(std::move(aKey.mCORSMode)),
         mReferrerPolicy(std::move(aKey.mReferrerPolicy)),
-        mClassicScriptHintEncoding(std::move(aKey.mClassicScriptHintEncoding)) {
+        mHintCharset(std::move(aKey.mHintCharset)) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -74,14 +73,15 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   
   
-  static Maybe<ScriptHashKey> FromStringsForLookup(const nsACString& aKey,
-                                                   const nsACString& aURI);
+  static Maybe<ScriptHashKey> FromStringsForLookup(
+      const nsACString& aKey, const nsACString& aURI,
+      const nsACString& aHintCharset);
 
  private:
   ScriptHashKey(nsIURI* aURI, nsIPrincipal* aPartitionPrincipal,
                 JS::loader::ScriptKind aKind, CORSMode aCORSMode,
                 mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                const mozilla::Encoding* aClassicScriptHintEncoding)
+                const nsString& aHintCharset)
       : PLDHashEntryHdr(),
         mURI(aURI),
         mPartitionPrincipal(aPartitionPrincipal),
@@ -89,7 +89,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
         mKind(aKind),
         mCORSMode(aCORSMode),
         mReferrerPolicy(aReferrerPolicy),
-        mClassicScriptHintEncoding(aClassicScriptHintEncoding) {
+        mHintCharset(aHintCharset) {
     MOZ_COUNT_CTOR(ScriptHashKey);
   }
 
@@ -146,8 +146,7 @@ class ScriptHashKey : public PLDHashEntryHdr {
 
   
   
-  
-  const mozilla::Encoding* mClassicScriptHintEncoding = nullptr;
+  nsString mHintCharset;
 };
 
 class ScriptLoadData final
@@ -267,6 +266,7 @@ class SharedScriptCache final
 
   static bool GetCachedScriptSource(JSContext* aCx, const nsACString& aKey,
                                     const nsACString& aURI,
+                                    const nsACString& aHintCharset,
                                     JS::MutableHandle<JS::Value> aRetval);
 
   static void PrepareForLastCC();

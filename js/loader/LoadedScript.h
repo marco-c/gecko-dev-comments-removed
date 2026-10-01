@@ -6,7 +6,6 @@
 #define js_loader_LoadedScript_h
 
 #include "mozilla/dom/SRIMetadata.h"  
-#include "mozilla/Encoding.h"         
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
@@ -405,19 +404,13 @@ class LoadedScript final : public nsISupports {
 
   
 
-  size_t GetSerializedStencilOffset() const {
+  size_t GetSRILength() const {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
     return mSerializedStencilOffset;
   }
-
-  static constexpr size_t EncodingHeaderSize = 16;
-
-  void SetAlignedSRILength(size_t aAlignedSRILength) {
+  void SetSRILength(size_t sriLength) {
     MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
-    MOZ_ASSERT(JS::IsTranscodingBytecodeOffsetAligned(aAlignedSRILength));
-    static_assert(ENCODING_NAME_MAX_LENGTH < EncodingHeaderSize,
-                  "The encoding name should fit the fixed-length header");
-    mSerializedStencilOffset = aAlignedSRILength + EncodingHeaderSize;
+    mSerializedStencilOffset = AlignTranscodingBytecodeOffset(sriLength);
   }
 
   bool HasNoSRIOrSRIAndSerializedStencil() const {
@@ -495,14 +488,6 @@ class LoadedScript final : public nsISupports {
   
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
 
-  bool DependsOnClassicScriptHintEncoding() const {
-    return mDependsOnClassicScriptHintEncoding;
-  }
-
-  void SetDependsOnClassicScriptHintEncoding() {
-    mDependsOnClassicScriptHintEncoding = true;
-  }
-
  public:
   
 
@@ -571,9 +556,6 @@ class LoadedScript final : public nsISupports {
   
   uint64_t mIsEverHitFromMemoryCache : 1;
 
-  
-  uint64_t mDependsOnClassicScriptHintEncoding : 1;
-
   nsCOMPtr<nsIURI> mURI;
 
   
@@ -608,13 +590,6 @@ class LoadedScript final : public nsISupports {
   
   
   
-  
-  
-  
-  
-  
-  
-  
   TranscodeBuffer mSRIAndSerializedStencil;
 
   
@@ -627,11 +602,6 @@ class LoadedScript final : public nsISupports {
   
   
   nsCOMPtr<nsICacheEntryWriteHandle> mCacheEntry;
-
-  
-  
-  
-  const mozilla::Encoding* mClassicScriptEncoding = nullptr;
 };
 
 
@@ -728,12 +698,9 @@ class LoadedScriptDelegate {
     GetLoadedScript()->RestoreSRIAndSerializedStencil(std::move(aBuffer));
   }
 
-  size_t GetSerializedStencilOffset() const {
-    return GetLoadedScript()->GetSerializedStencilOffset();
-  }
-
-  void SetAlignedSRILength(size_t aAlignedSRILength) {
-    GetLoadedScript()->SetAlignedSRILength(aAlignedSRILength);
+  size_t GetSRILength() const { return GetLoadedScript()->GetSRILength(); }
+  void SetSRILength(size_t sriLength) {
+    GetLoadedScript()->SetSRILength(sriLength);
   }
 
   void SetTookLongInPreviousRuns() {

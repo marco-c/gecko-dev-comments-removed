@@ -236,8 +236,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
       return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
     }
     if (sriLength) {
-      uint32_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(sriLength);
-      mRequest->SetAlignedSRILength(alignedSRILength);
+      mRequest->SetSRILength(sriLength);
     }
   }
 
@@ -252,13 +251,10 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
 
   
   if (mRequest->IsModuleRequest()) {
-    MOZ_ASSERT(!mRequest->getLoadedScript()->mClassicScriptEncoding);
     mDecoder = MakeUnique<ScriptDecoder>(UTF_8_ENCODING,
                                          ScriptDecoder::BOMHandling::Remove);
     return true;
   }
-
-  MOZ_ASSERT(mRequest->IsClassicScript());
 
   
   
@@ -271,8 +267,6 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   const Encoding* encoding;
   std::tie(encoding, std::ignore) = Encoding::ForBOM(Span(aData, aDataLength));
   if (encoding) {
-    mRequest->getLoadedScript()->mClassicScriptEncoding =
-        (const Encoding*)encoding;
     mDecoder =
         MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Remove);
     return true;
@@ -282,18 +276,45 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
   nsAutoCString label;
   if (NS_SUCCEEDED(aChannel->GetContentCharset(label)) &&
       (encoding = Encoding::ForLabel(label))) {
-    mRequest->getLoadedScript()->mClassicScriptEncoding =
-        (const Encoding*)encoding;
     mDecoder =
         MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
     return true;
   }
 
-  encoding = mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
-  mRequest->getLoadedScript()->SetDependsOnClassicScriptHintEncoding();
-  mRequest->getLoadedScript()->mClassicScriptEncoding = encoding;
-  mDecoder =
-      MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+  
+  
+  nsAutoString hintCharset;
+  if (!mRequest->GetScriptLoadContext()->IsPreload()) {
+    mRequest->GetScriptLoadContext()->GetHintCharset(hintCharset);
+  } else {
+    nsTArray<ScriptLoader::PreloadInfo>::index_type i =
+        mScriptLoader->mPreloads.IndexOf(
+            mRequest, 0, ScriptLoader::PreloadRequestComparator());
+
+    NS_ASSERTION(i != mScriptLoader->mPreloads.NoIndex,
+                 "Incorrect preload bookkeeping");
+    hintCharset = mScriptLoader->mPreloads[i].mCharset;
+  }
+
+  if ((encoding = Encoding::ForLabel(hintCharset))) {
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
+  }
+
+  
+  if (mScriptLoader->mDocument) {
+    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
+  }
+
+  
+  
+  
+  mDecoder = MakeUnique<ScriptDecoder>(WINDOWS_1252_ENCODING,
+                                       ScriptDecoder::BOMHandling::Ignore);
   return true;
 }
 
@@ -553,41 +574,14 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
         return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
       }
 
-      uint32_t alignedSRILength = JS::AlignTranscodingBytecodeOffset(sriLength);
-      mRequest->SetAlignedSRILength(alignedSRILength);
-
-      const char* encodingString =
-          reinterpret_cast<const char*>(buf.begin() + alignedSRILength);
-      size_t encodingStringLen = strlen(encodingString);
-      if (mRequest->IsModuleRequest()) {
-        if (encodingStringLen != 0) {
-          return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
-        }
-      } else {
-        const Encoding* cacheEncoding = nullptr;
-        if (encodingStringLen != 0) {
-          cacheEncoding =
-              Encoding::ForLabel(Span(encodingString, encodingStringLen));
-          if (!cacheEncoding) {
-            return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
-          }
-        }
-
-        const Encoding* actualEncoding =
-            mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
-        if (cacheEncoding != actualEncoding) {
-          return aChannel->Cancel(mScriptLoader->RestartLoad(mRequest));
-        }
-
-        mRequest->getLoadedScript()->mClassicScriptEncoding = cacheEncoding;
-      }
+      mRequest->SetSRILength(sriLength);
 
       Vector<uint8_t> compressed;
       
       
       compressed.swap(buf);
       if (!JS::loader::ScriptBytecodeDecompress(
-              compressed, mRequest->GetSerializedStencilOffset(), buf)) {
+              compressed, mRequest->GetSRILength(), buf)) {
         return NS_ERROR_UNEXPECTED;
       }
     }
