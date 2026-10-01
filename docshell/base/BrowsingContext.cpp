@@ -3849,20 +3849,14 @@ bool BrowsingContext::WatchedByDevTools() {
   return Top()->GetWatchedByDevToolsInternal();
 }
 
-auto BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
+bool BrowsingContext::CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
                              const bool& aWatchedByDevTools,
-                             ContentParent* aSource) -> CanSetResult {
+                             ContentParent* aSource) {
   
   
-  if (!IsTop()) {
-    return CanSetResult::Deny;
-  }
   
-  
-  if (aWatchedByDevTools && aSource && !ChromeUtils::IsDevToolsOpened()) {
-    return CanSetResult::Revert;
-  }
-  return CanSetResult::Allow;
+  return XRE_IsParentProcess() && !aSource && IsTop() &&
+         (!aWatchedByDevTools || ChromeUtils::IsDevToolsOpened());
 }
 void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
                                            ErrorResult& aRv) {
@@ -3873,8 +3867,12 @@ void BrowsingContext::SetWatchedByDevTools(bool aWatchedByDevTools,
   }
   
   
-  if (aWatchedByDevTools && XRE_IsParentProcess() &&
-      !ChromeUtils::IsDevToolsOpened()) {
+  if (!XRE_IsParentProcess()) {
+    aRv.ThrowInvalidModificationError(
+        "watchedByDevTools can only be set from the parent process");
+    return;
+  }
+  if (aWatchedByDevTools && !ChromeUtils::IsDevToolsOpened()) {
     aRv.ThrowInvalidModificationError(
         "watchedByDevTools can only be set when DevTools are opened");
     return;
