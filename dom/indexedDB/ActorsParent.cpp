@@ -5490,7 +5490,7 @@ class EncryptedFileBlobImpl final : public FileBlobImpl {
   
   
   
-  uint64_t GetSize(ErrorResult& aRv) const override {
+  uint64_t GetSize(ErrorResult& aRv) override {
     MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess() || mLength.isSome());
     return mLength.valueOr(0);
   }

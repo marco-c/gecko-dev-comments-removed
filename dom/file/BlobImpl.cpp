@@ -67,16 +67,13 @@ nsresult BlobImpl::GetSendInfo(nsIInputStream** aBody, uint64_t* aContentLength,
 
   ErrorResult rv;
 
-  
-  
-  
-  *aContentLength = GetSize(rv);
+  nsCOMPtr<nsIInputStream> stream;
+  CreateInputStream(getter_AddRefs(stream), rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
 
-  nsCOMPtr<nsIInputStream> stream;
-  CreateInputStream(getter_AddRefs(stream), rv);
+  *aContentLength = GetSize(rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
