@@ -478,7 +478,7 @@ class alignas(uintptr_t) JitScript final
 
   void trace(JSTracer* trc);
   void traceWeak(JSTracer* trc);
-  void purgeStubs(JSScript* script, ICStubSpace& newStubSpace);
+  void purgeStubs(JSScript* script);
 
   void purgeInactiveICScripts();
 
@@ -668,7 +668,7 @@ class MOZ_RAII AutoKeepJitScripts {
 
 
 
-void MarkActiveICScriptsAndCopyStubs(Zone* zone, ICStubSpace& newStubSpace);
+void MarkActiveICScriptsAndCopyStubs(Zone* zone);
 
 #ifdef JS_STRUCTURED_SPEW
 void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);

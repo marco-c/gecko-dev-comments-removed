@@ -2070,7 +2070,7 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   
   
   
-  ICStubSpace* stubSpace = cx->zone()->jitZone()->stubSpace();
+  ICStubSpace* stubSpace = script()->realm()->jitRealm().stubSpace();
   void* newStubMem = stubSpace->alloc(bytesNeeded);
   if (!newStubMem) {
     return;

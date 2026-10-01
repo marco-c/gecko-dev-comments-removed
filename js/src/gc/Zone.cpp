@@ -315,8 +315,10 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
   
   
-  
-  jit::ICStubSpace newStubSpace;
+  jit::ICStubSpace discardedStubSpace;
+  for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    discardedStubSpace.transferFrom(*r->jitRealm().stubSpace());
+  }
 
 #ifdef DEBUG
   
@@ -326,7 +328,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 #endif
 
   
-  jit::MarkActiveICScriptsAndCopyStubs(this, newStubSpace);
+  jit::MarkActiveICScriptsAndCopyStubs(this);
 
   
   jit::InvalidateAll(gcx, this);
@@ -372,8 +374,9 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
         
         
         
+        
         jitScript->purgeInactiveICScripts();
-        jitScript->purgeStubs(script, newStubSpace);
+        jitScript->purgeStubs(script);
 
         if (options.resetNurseryAllocSites ||
             options.resetPretenuredAllocSites) {
@@ -403,8 +406,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
 
 
-  jitZone()->stubSpace()->freeAllAfterMinorGC(this);
-  jitZone()->stubSpace()->transferFrom(newStubSpace);
+  discardedStubSpace.freeAllAfterMinorGC(this);
   jitZone()->purgeIonCacheIRStubInfo();
 
   
@@ -553,15 +555,15 @@ void Zone::purgeAtomCache() {
 
 void Zone::addSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf, size_t* zoneObject, JS::CodeSizes* code,
-    size_t* regexpZone, size_t* jitZone, size_t* cacheIRStubs,
-    size_t* objectFusesArg, size_t* uniqueIdMap, size_t* initialPropMapTable,
-    size_t* shapeTables, size_t* atomReferenceBitmaps,
-    size_t* compartmentObjects, size_t* crossCompartmentWrappersTables,
-    size_t* compartmentsPrivateData, size_t* scriptCountsMapArg) {
+    size_t* regexpZone, size_t* jitZone, size_t* objectFusesArg,
+    size_t* uniqueIdMap, size_t* initialPropMapTable, size_t* shapeTables,
+    size_t* atomReferenceBitmaps, size_t* compartmentObjects,
+    size_t* crossCompartmentWrappersTables, size_t* compartmentsPrivateData,
+    size_t* scriptCountsMapArg) {
   *zoneObject += mallocSizeOf(this);
   *regexpZone += regExps().sizeOfIncludingThis(mallocSizeOf);
   if (jitZone_) {
-    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone, cacheIRStubs);
+    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone);
   }
   *objectFusesArg += objectFuses.sizeOfExcludingThis(mallocSizeOf);
   *uniqueIdMap += uniqueIds().shallowSizeOfExcludingThis(mallocSizeOf);

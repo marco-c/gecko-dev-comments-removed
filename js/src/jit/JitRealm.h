@@ -5,9 +5,12 @@
 #ifndef jit_JitRealm_h
 #define jit_JitRealm_h
 
+#include "mozilla/MemoryReporting.h"
+
 #include <stddef.h>
 
 #include "jit/BaselineCompileQueue.h"
+#include "jit/ICStubSpace.h"
 
 class JSScript;
 class JSTracer;
@@ -20,14 +23,24 @@ class JitRealm {
   
   BaselineCompileQueue baselineCompileQueue_;
 
+  
+  ICStubSpace stubSpace_;
+
  public:
   BaselineCompileQueue& baselineCompileQueue() { return baselineCompileQueue_; }
+
+  ICStubSpace* stubSpace() { return &stubSpace_; }
 
   void removeFromCompileQueue(JSScript* script) {
     baselineCompileQueue_.remove(script);
   }
 
   void trace(JSTracer* trc) { baselineCompileQueue_.trace(trc); }
+
+  void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* cacheIRStubs) const {
+    *cacheIRStubs += stubSpace_.sizeOfExcludingThis(mallocSizeOf);
+  }
 
   static constexpr size_t offsetOfBaselineCompileQueue() {
     return offsetof(JitRealm, baselineCompileQueue_);
