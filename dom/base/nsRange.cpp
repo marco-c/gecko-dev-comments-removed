@@ -660,9 +660,9 @@ nsRange::AutoCharacterDataChangedHandler::ComputeNewBoundaryOnModifyDataOrSplit(
           nullptr};
 }
 
-void nsRange::CharacterDataChanged(nsIContent* aContent,
+void nsRange::CharacterDataChanged(nsIContent* aCharacterData,
                                    const CharacterDataChangeInfo& aInfo) {
-  MOZ_ASSERT(aContent);
+  MOZ_ASSERT(aCharacterData);
   MOZ_ASSERT(mIsPositioned);
 
   const bool isSplit =
@@ -670,13 +670,13 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
       aInfo.mDetails->mType == CharacterDataChangeInfo::Details::eSplit;
   if (isSplit) {
     if (mCrossShadowBoundaryRange &&
-        (aContent == mCrossShadowBoundaryRange->GetStartContainer() ||
-         aContent == mCrossShadowBoundaryRange->GetEndContainer())) {
+        (aCharacterData == mCrossShadowBoundaryRange->GetStartContainer() ||
+         aCharacterData == mCrossShadowBoundaryRange->GetEndContainer())) {
       ResetCrossShadowBoundaryRange(ResetCommonAncestorIfInAnySelection::Yes);
     }
   }
 
-  AutoCharacterDataChangedHandler handler(*this, *aContent, aInfo);
+  AutoCharacterDataChangedHandler handler(*this, *aCharacterData, aInfo);
   RangeBoundariesAndRoot newBoundaries = handler.ComputeNewBoundaries();
   if (isSplit) {
     mNewCharacterDataOnSplitText = handler.GetComingNewNextSiblings();
@@ -690,37 +690,73 @@ void nsRange::CharacterDataChanged(nsIContent* aContent,
     return;
   }
   if (isSplit) {
+    MOZ_ASSERT(GetStartContainer() == aCharacterData ||
+               GetEndContainer() == aCharacterData);
+    nsIContent* const newText = aInfo.mDetails->mNextSibling;
+    MOZ_ASSERT(newText->IsText());
+    MOZ_ASSERT(!newText->IsInComposedDoc());
+    
+    
+    
+    MOZ_ASSERT_IF(newBoundaries.mStart.IsSet(),
+                  newBoundaries.mStart.GetContainer() == newText);
+    
+    
+    MOZ_ASSERT_IF(newBoundaries.mEnd.IsSet() && newBoundaries.mStart.IsSet(),
+                  newBoundaries.mEnd.GetContainer() == newText);
     
     
     
     
     
-    
-    
-    
-    
-    
-    
-    if (IsInAnySelection() && GetStartContainer() == GetEndContainer()) {
-      MOZ_DIAGNOSTIC_ASSERT(GetStartContainer() ==
-                            mRegisteredClosestCommonInclusiveAncestor);
-      UnregisterClosestCommonInclusiveAncestor();
-      RegisterClosestCommonInclusiveAncestor(
-          newBoundaries.mStart.IsSet() ? newBoundaries.mStart.GetContainer()
-                                       : newBoundaries.mEnd.GetContainer());
+    MOZ_ASSERT_IF(newBoundaries.mEnd.IsSet() && !newBoundaries.mStart.IsSet() &&
+                      aCharacterData->GetParentNode(),
+                  newBoundaries.mEnd.GetContainer() == newText);
+    MOZ_ASSERT_IF(newBoundaries.mEnd.IsSet() && !newBoundaries.mStart.IsSet() &&
+                      !aCharacterData->GetParentNode(),
+                  newBoundaries.mEnd.GetContainer() == aCharacterData);
+    if (IsInAnySelection()) {
+      
+      
+      
+      if (GetStartContainer() == GetEndContainer()) {
+        MOZ_DIAGNOSTIC_ASSERT(GetStartContainer() ==
+                              mRegisteredClosestCommonInclusiveAncestor);
+        UnregisterClosestCommonInclusiveAncestor();
+        
+        
+        if (newBoundaries.mStart.IsSet() && newBoundaries.mEnd.IsSet()) {
+          RegisterClosestCommonInclusiveAncestor(newText);
+          
+          
+        }
+        
+        
+        else {
+          MOZ_ASSERT(aCharacterData->GetParentNode());
+          RegisterClosestCommonInclusiveAncestor(
+              aCharacterData->GetParentNode());
+        }
+      }
+      
+      
+      
+      
+      
     }
     
     
-    if (newBoundaries.mStart.IsSet() &&
-        GetStartContainer()
+    
+    
+    
+    
+    
+    
+    
+    if (aCharacterData
             ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
-      newBoundaries.mStart.GetContainer()
-          ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
-    } else if (
-        newBoundaries.mEnd.IsSet() &&
-        GetEndContainer()
-            ->IsDescendantOfClosestCommonInclusiveAncestorForRangeInSelection()) {
-      newBoundaries.mEnd.GetContainer()
+      MOZ_ASSERT(aCharacterData->GetParentNode());
+      newText
           ->SetDescendantOfClosestCommonInclusiveAncestorForRangeInSelection();
     }
   }
