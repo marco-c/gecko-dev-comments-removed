@@ -9155,8 +9155,13 @@ bool BaseCompiler::emitArrayFill() {
     MOZ_ASSERT(RegI32(scratch) != arrayNumElements);
     MOZ_ASSERT(RegI32(scratch) != index);
     MOZ_ASSERT(RegI32(scratch) != numElements);
-    masm.wasmBoundsCheckRange32(index, numElements, arrayNumElements, scratch,
-                                trapSiteDesc());
+    FaultingCodeRange fcr = masm.wasmBoundsCheckRange32(
+        index, numElements, arrayNumElements, scratch, trapSiteDesc());
+    if (compilerEnv_.debugEnabled() && fcr.isValid() &&
+        !createStackMap(Some(Trap::OutOfBounds), fcr,
+                        HasDebugFrameWithLiveRefs::Maybe)) {
+      return false;
+    }
   }
   
 
@@ -13026,7 +13031,7 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
       
       return t == Trap::InvalidConversionToInteger ||
              t == Trap::IntegerOverflow || t == Trap::IntegerDivideByZero ||
-             t == Trap::NullPointerDereference;
+             t == Trap::NullPointerDereference || t == Trap::OutOfBounds;
     };
     auto checkThisTrapKind_normalMode = [](Trap t) -> bool {
       
