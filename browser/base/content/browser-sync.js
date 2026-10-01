@@ -3930,6 +3930,10 @@ var gSync = {
 
   onFxaDisabled() {
     document.documentElement.setAttribute("fxadisabled", true);
+    
+    
+    
+    document.documentElement.setAttribute("fxastatus", "not_configured");
 
     const toHide = [...document.querySelectorAll(".sync-ui-item")];
     for (const item of toHide) {

@@ -810,10 +810,26 @@ add_task(async function test_ui_state_loginFailed() {
 });
 
 add_task(async function test_app_menu_fxa_disabled() {
-  const newWin = await BrowserTestUtils.openNewBrowserWindow();
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["identity.fxaccounts.account.device.name", "test device"]],
+  });
 
   Services.prefs.setBoolPref("identity.fxaccounts.enabled", true);
+  const newWin = await BrowserTestUtils.openNewBrowserWindow();
   newWin.gSync.onFxaDisabled();
+
+  is(
+    newWin.document.documentElement.getAttribute("fxadisabled"),
+    "true",
+    "fxadisabled is set when Mozilla accounts are disabled"
+  );
+  is(
+    newWin.document.documentElement.getAttribute("fxastatus"),
+    "not_configured",
+    "fxastatus is not_configured despite a persisted device name"
+  );
 
   let menuButton = newWin.document.getElementById("PanelUI-menu-button");
   menuButton.click();
