@@ -516,6 +516,20 @@ static bool MatchPmaddubswSequence(MWasmBinarySimd128* lhs,
   return true;
 }
 
+
+
+
+static bool CanSpecializeConstantOperand(MDefinition* constant) {
+  if (constant->hasOneUse()) {
+    return true;
+  }
+#  ifdef JS_CODEGEN_ARM64
+  return constant->toWasmFloatConstant()->toSimd128().isZeroBits();
+#  else
+  return false;
+#  endif
+}
+
 MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
   if (simdOp() == wasm::SimdOp::I8x16Swizzle && rhs()->isWasmFloatConstant()) {
     
@@ -552,12 +566,13 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
 
   if (lhs()->isWasmFloatConstant() != rhs()->isWasmFloatConstant() &&
       specializeForConstantRhs()) {
-    if (isCommutative() && lhs()->isWasmFloatConstant() && lhs()->hasOneUse()) {
+    if (isCommutative() && lhs()->isWasmFloatConstant() &&
+        CanSpecializeConstantOperand(lhs())) {
       return MWasmBinarySimd128WithConstant::New(
           alloc, rhs(), lhs()->toWasmFloatConstant()->toSimd128(), simdOp());
     }
 
-    if (rhs()->isWasmFloatConstant() && rhs()->hasOneUse()) {
+    if (rhs()->isWasmFloatConstant() && CanSpecializeConstantOperand(rhs())) {
       return MWasmBinarySimd128WithConstant::New(
           alloc, lhs(), rhs()->toWasmFloatConstant()->toSimd128(), simdOp());
     }
