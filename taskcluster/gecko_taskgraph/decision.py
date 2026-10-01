@@ -356,10 +356,9 @@ def get_decision_parameters(graph_config, options):
         )
 
     elif parameters["repository_type"] == "git":
+        
+        
         parameters["hg_branch"] = None
-        parameters["files_changed"] = repo.get_changed_files(
-            rev=parameters["head_rev"], base=parameters["base_rev"]
-        )
 
     
     
@@ -487,6 +486,12 @@ def get_decision_parameters(graph_config, options):
             except ValueError as e:
                 raise Exception(f"Failed to parse {note_ref} as JSON: {e}") from e
 
+    
+    
+    
+    if parameters["repository_type"] == "git" and "files_changed" not in parameters:
+        parameters["files_changed"] = get_git_files_changed(repo, parameters)
+
     result = Parameters(**parameters)
     result.check()
     return result
@@ -514,6 +519,21 @@ def get_existing_tasks(rebuild_kinds, parameters, graph_config):
     parameters["existing_tasks"] = find_existing_tasks_from_previous_kinds(
         task_graph, [decision_task], rebuild_kinds
     )
+
+
+def get_git_files_changed(repo, parameters):
+    base_rev = parameters["base_rev"]
+    if base_rev != repo.NULL_REVISION and repo.is_shallow:
+        try:
+            repo.run("fetch", "--depth=1", parameters["base_repository"], base_rev)
+        except subprocess.CalledProcessError:
+            logger.warning(
+                f"Could not fetch base revision {base_rev}, "
+                "treating the whole tree as changed."
+            )
+            base_rev = repo.NULL_REVISION
+
+    return repo.get_changed_files(rev=parameters["head_rev"], base=base_rev)
 
 
 def set_try_config(parameters, task_config_file):
