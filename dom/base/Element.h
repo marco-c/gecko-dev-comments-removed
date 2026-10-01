@@ -537,7 +537,6 @@ class Element : public FragmentOrElement {
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
   void UnbindFromTree(UnbindContext&) override;
   using nsIContent::UnbindFromTree;
-  void NodeInfoChanged(Document* aOldDoc) override;
 
   
   

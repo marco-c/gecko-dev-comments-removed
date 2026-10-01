@@ -106,7 +106,7 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
 
 
 
-  void AdoptCachedAttributes(nsNodeInfoManager* aManager);
+  nsresult SetOwnerDocument(Document* aDocument);
 
   
 

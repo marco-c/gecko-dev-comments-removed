@@ -3190,17 +3190,6 @@ static bool WillDetachFromShadowOnUnbind(const Element& aElement,
          (aNullParent || !aElement.GetParent()->IsInShadowTree());
 }
 
-void Element::NodeInfoChanged(Document* aOldDoc) {
-  FragmentOrElement::NodeInfoChanged(aOldDoc);
-  
-  
-  
-  mAttrs.NodeInfoChanged(NodeInfoManager());
-  if (nsDOMAttributeMap* attributeMap = GetAttributeMap()) {
-    attributeMap->AdoptCachedAttributes(NodeInfoManager());
-  }
-}
-
 void Element::UnbindFromTree(UnbindContext& aContext) {
   const bool nullParent = aContext.IsUnbindRoot(this);
 
