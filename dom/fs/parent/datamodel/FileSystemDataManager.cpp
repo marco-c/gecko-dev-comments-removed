@@ -117,12 +117,14 @@ void RemoveFileSystemDataManager(const Origin& aOrigin) {
 
 Result<ResultConnection, QMResult> GetStorageConnection(
     const quota::OriginMetadata& aOriginMetadata,
-    const int64_t aDirectoryLockId) {
+    const int64_t aDirectoryLockId,
+    const Maybe<FileSystemCipherKey>& aMaybeCipherKey) {
   MOZ_ASSERT(aDirectoryLockId >= -1);
 
   
-  QM_TRY_INSPECT(const auto& dbFileUrl,
-                 GetDatabaseFileURL(aOriginMetadata, aDirectoryLockId));
+  QM_TRY_INSPECT(
+      const auto& dbFileUrl,
+      GetDatabaseFileURL(aOriginMetadata, aDirectoryLockId, aMaybeCipherKey));
 
   QM_TRY_INSPECT(
       const auto& storageService,
@@ -137,6 +139,15 @@ Result<ResultConnection, QMResult> GetStorageConnection(
                     mozIStorageService::CONNECTION_DEFAULT)));
 
   ResultConnection result(connection);
+
+  if (aMaybeCipherKey) {
+    
+    
+    
+    
+    QM_TRY(
+        QM_TO_RESULT(result->ExecuteSimpleSQL("PRAGMA page_size = 8192;"_ns)));
+  }
 
   return result;
 }
@@ -678,10 +689,17 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
                                                   __func__);
             }
 
-            QM_TRY_UNWRAP(auto connection,
-                          GetStorageConnection(self->mOriginMetadata,
-                                               self->mDirectoryLockId),
-                          CreateAndRejectBoolPromiseFromQMResult);
+            Maybe<FileSystemCipherKey> maybeCipherKey;
+            if (self->mCipherKeyManager) {
+              maybeCipherKey =
+                  Some(self->mCipherKeyManager->Ensure(kDatabaseCipherKeyId));
+            }
+
+            QM_TRY_UNWRAP(
+                auto connection,
+                GetStorageConnection(self->mOriginMetadata,
+                                     self->mDirectoryLockId, maybeCipherKey),
+                CreateAndRejectBoolPromiseFromQMResult);
 
             QM_TRY_UNWRAP(UniquePtr<FileSystemFileManager> fmPtr,
                           FileSystemFileManager::CreateFileSystemFileManager(

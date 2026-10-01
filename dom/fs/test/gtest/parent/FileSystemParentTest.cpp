@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemParentTest.h"
 
 #include "FileSystemParentTestHelpers.h"
@@ -75,7 +73,8 @@ void FileSystemParentTest::GetStaticDatabaseUsage(
             QM_TRY_INSPECT(
                 const ResultConnection& conn,
                 data::GetStorageConnection(GetTestOriginMetadata(),
-                                            -1));
+                                            -1,
+                                            Nothing()));
 
             return data::FileSystemDatabaseManager::GetUsage(
                 conn, GetTestOriginMetadata());

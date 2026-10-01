@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef DOM_FS_PARENT_DATAMODEL_FILESYSTEMFILEMANAGER_H_
 #define DOM_FS_PARENT_DATAMODEL_FILESYSTEMFILEMANAGER_H_
 
 #include "ErrorList.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/FileSystemCipherKeyManager.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/QMResult.h"
 #include "nsIFile.h"
@@ -73,9 +72,12 @@ Result<nsCOMPtr<nsIFile>, QMResult> GetDatabaseFile(
 
 
 
+
+
 Result<nsCOMPtr<nsIFileURL>, QMResult> GetDatabaseFileURL(
     const quota::OriginMetadata& aOriginMetadata,
-    const int64_t aDirectoryLockId);
+    const int64_t aDirectoryLockId,
+    const Maybe<FileSystemCipherKey>& aMaybeCipherKey);
 
 
 
