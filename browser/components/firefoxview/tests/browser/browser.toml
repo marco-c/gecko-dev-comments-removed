@@ -35,9 +35,6 @@ skip-if = [
 ["browser_firefoxview_virtual_list.js"]
 
 ["browser_history_firefoxview.js"]
-skip-if = [
-  "nova", # Bug 2058030
-]
 
 ["browser_opentabs_cards.js"]
 skip-if = [
@@ -73,9 +70,6 @@ skip-if = [
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && opt && nova", # Bug 2057846
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
   "os == 'win' && opt",
 ]
 
@@ -92,21 +86,12 @@ fail-if = [
 ["browser_opentabs_tab_indicators.js"]
 
 ["browser_recentlyclosed_firefoxview.js"]
-skip-if = [
-  "nova", # Bug 2058030
-]
 
 ["browser_reload_firefoxview.js"]
 
 ["browser_syncedtabs_errors_firefoxview.js"]
-skip-if = [
-  "nova", # Bug 2058030
-]
 
 ["browser_syncedtabs_firefoxview.js"]
-skip-if = [
-  "nova", # Bug 2058030
-]
 
 ["browser_tab_close_last_tab.js"]
 
