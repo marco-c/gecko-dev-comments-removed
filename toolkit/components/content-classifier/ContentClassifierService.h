@@ -289,7 +289,8 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest, bool aIndependentEngines);
+      const ContentClassifierRequest& aRequest, bool aIndependentEngines)
+      MOZ_REQUIRES(mLock);
 
   
   
