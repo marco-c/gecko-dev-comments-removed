@@ -453,6 +453,20 @@ nsresult nsStandardURL::NormalizeIDN(const nsACString& aHost,
 }
 
 void nsStandardURL::CoalescePath(char* path) {
+  
+  
+  
+  bool needsCoalesce = false;
+  for (const char* p = path; *p && *p != '?' && *p != '#'; ++p) {
+    if (*p == '/' && (p[1] == '.' || p[1] == '%')) {
+      needsCoalesce = true;
+      break;
+    }
+  }
+  if (!needsCoalesce) {
+    return;
+  }
+
   auto resultCoalesceDirs = net_CoalesceDirs(path);
   int32_t newLen = strlen(path);
   if (newLen < mPath.mLen && resultCoalesceDirs) {
