@@ -16,8 +16,10 @@
 #include "vm/EqualityOperations.h"  
 #include "vm/GetterSetter.h"        
 #include "vm/Interpreter.h"         
+#include "vm/Iteration.h"           
 #include "vm/JSONPrinter.h"         
 #include "vm/PlainObject.h"         
+#include "vm/Realm.h"               
 #include "vm/TypedArrayObject.h"
 #include "vm/Watchtower.h"
 
@@ -349,12 +351,8 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCapacity,
       new (allocation) ObjectSlots(newCapacity, dictionarySpan, uid);
 
   HeapSlot* newSlots = newHeaderSlots->slots();
-#ifdef JS_GC_CONCURRENT_MARKING
-  InitializeSlotRange(newSlots + oldCapacity, newSlots + newCapacity);
-#else
   Debug_SetSlotRangeToCrashOnTouch(newSlots + oldCapacity,
                                    newCapacity - oldCapacity);
-#endif
 
   gc::MemoryReleaseFence(zone());
   slots_ = newSlots;
@@ -393,13 +391,7 @@ bool NativeObject::allocateInitialSlots(JSContext* cx, uint32_t capacity) {
       ObjectSlots(capacity, 0, ObjectSlots::NoUniqueIdInDynamicSlots);
   HeapSlot* slots = headerSlots->slots();
 
-#ifdef JS_GC_CONCURRENT_MARKING
-  
-  
-  InitializeSlotRange(slots, slots + capacity);
-#else
   Debug_SetSlotRangeToCrashOnTouch(slots, capacity);
-#endif
 
   
   
@@ -430,11 +422,7 @@ bool NativeObject::allocateSlots(Nursery& nursery, uint32_t newCapacity) {
       newCapacity, dictionarySpan, ObjectSlots::NoUniqueIdInDynamicSlots);
 
   HeapSlot* newSlots = newHeaderSlots->slots();
-#ifdef JS_GC_CONCURRENT_MARKING
-  InitializeSlotRange(newSlots, newSlots + newCapacity);
-#else
   Debug_SetSlotRangeToCrashOnTouch(newSlots, newCapacity);
-#endif
 
   gc::MemoryReleaseFence(zone());
   slots_ = newSlots;
@@ -524,6 +512,15 @@ void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCapacity,
 
   auto* newHeaderSlots =
       new (allocation) ObjectSlots(newCapacity, dictionarySpan, uid);
+
+#ifdef JS_GC_CONCURRENT_MARKING
+  
+  
+  
+  InitializeSlotRange(newHeaderSlots->slots() + newCapacity,
+                      allocation + newAllocated);
+#endif
+
   gc::MemoryReleaseFence(zone());
   slots_ = newHeaderSlots->slots();
 }
@@ -2956,21 +2953,48 @@ bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
 
   
   
-  if (from->getDenseInitializedLength() > 0 || from->isIndexed() ||
-      from->is<TypedArrayObject>() || from->getClass()->getNewEnumerate() ||
-      from->getClass()->getEnumerate()) {
+  if (from->getDenseInitializedLength() > 0 || from->isIndexed()) {
     return true;
   }
+  const bool fromIsPlain = from->is<PlainObject>();
+  if (fromIsPlain) {
+    MOZ_ASSERT(!ClassCanHaveExtraEnumeratedProperties(from->getClass()));
+  } else {
+    if (ClassCanHaveExtraEnumeratedProperties(from->getClass())) {
+      return true;
+    }
+  }
+
+  
+  if (!excludedItems) {
+    const PlainObjectCopyPropsCache& cache =
+        cx->realm()->plainObjectSpreadCache;
+    if (SharedShape* newShape = cache.lookup(target->shape(), from->shape())) {
+      *optimized = true;
+      return CopyPropertiesWithNewShape(cx, target, &from->as<PlainObject>(),
+                                        newShape, newShape->slotSpan());
+    }
+  }
+
+  
+  
+  const bool targetHadNoOwnProperties = target->empty();
+
+  
+  
+  bool canReuseFromShape = !excludedItems && targetHadNoOwnProperties &&
+                           fromIsPlain &&
+                           !Watchtower::watchesPropertyAdd(target);
 
   
   Rooted<PropertyInfoWithKeyVector> props(cx, PropertyInfoWithKeyVector(cx));
 
-  Rooted<NativeShape*> fromShape(cx, from->shape());
-  for (ShapePropertyIter<NoGC> iter(fromShape); !iter.done(); iter++) {
+  for (ShapePropertyIter<NoGC> iter(from->shape()); !iter.done(); iter++) {
     jsid id = iter->key();
     MOZ_ASSERT(!id.isInt());
 
     if (!iter->enumerable()) {
+      canReuseFromShape = false;
       continue;
     }
     if (excludedItems && excludedItems->contains(cx, id)) {
@@ -2986,6 +3010,10 @@ bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
       return true;
     }
 
+    if (iter->flags() != PropertyFlags::defaultDataPropFlags) {
+      canReuseFromShape = false;
+    }
+
     if (!props.append(*iter)) {
       return false;
     }
@@ -2993,12 +3021,27 @@ bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
 
   *optimized = true;
 
-  
-  
-  const bool targetHadNoOwnProperties = target->empty();
+  if (canReuseFromShape && !props.empty()) {
+    Rooted<Shape*> origTargetShape(cx, target->shape());
+    Handle<PlainObject*> fromPlain = Handle<JSObject*>(from).as<PlainObject>();
+    bool copied;
+    if (!TryCopyPropertiesReusingShapeOrPropMap(cx, target, fromPlain,
+                                                props.length(), &copied)) {
+      return false;
+    }
+    if (copied) {
+      cx->realm()->plainObjectSpreadCache.fill(&origTargetShape->asShared(),
+                                               fromPlain->sharedShape(),
+                                               target->sharedShape());
+      return true;
+    }
+  }
 
   RootedId key(cx);
   RootedValue value(cx);
+#ifdef DEBUG
+  Rooted<NativeShape*> fromShape(cx, from->shape());
+#endif
   for (size_t i = props.length(); i > 0; i--) {
     PropertyInfoWithKey prop = props[i - 1];
     MOZ_ASSERT(prop.isDataProperty());

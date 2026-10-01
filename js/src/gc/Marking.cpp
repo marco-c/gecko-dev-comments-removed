@@ -1795,11 +1795,9 @@ inline bool MarkingTracerT<opts>::processMarkStackTop(SliceBudget& budget) {
         base = nobj->slots_.getForTracing();
         if constexpr (hasOption(MarkingOptions::ConcurrentMarking)) {
           
-          
-
-          
           MemoryAcquireFence<opts>(gcMarker()->runtime());
-          end = ObjectSlots::fromSlots(base)->capacity_.getForTracing();
+          Shape* shape = nobj->headerPtrForTracing();
+          end = NumNativeObjectUsedDynamicSlotsForTracing(shape, base);
         } else {
           end = NumUsedDynamicSlots(nobj);
         }
