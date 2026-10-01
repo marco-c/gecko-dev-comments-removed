@@ -1369,7 +1369,8 @@ tls13_HandleKeyUpdate(sslSocket *ss, PRUint8 *b, unsigned int length)
     }
     if (!(update == update_requested ||
           update == update_not_requested)) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_KEY_UPDATE, decode_error);
+        
+        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_KEY_UPDATE, illegal_parameter);
         return SECFailure;
     }
 

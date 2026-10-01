@@ -141,7 +141,42 @@ struct SEC_PKCS12DecoderContextStr {
     sec_PKCS12SafeBag **keyList; 
     unsigned int iteration;
     SEC_PKCS12DecoderItem decitem;
+
+    
+
+    unsigned long maxInputSize;
+    PRBool maxInputSizeSet;
+    unsigned long maxElementLen;
+    PRBool maxElementLenSet;
 };
+
+
+
+
+static void
+sec_pkcs12_decoder_set_limits(SEC_PKCS12DecoderContext *p12dcx,
+                              SEC_ASN1DecoderContext *a1dcx)
+{
+    if (p12dcx->maxInputSizeSet) {
+        SEC_ASN1DecoderSetMaximumInputSize(a1dcx, p12dcx->maxInputSize);
+    }
+    if (p12dcx->maxElementLenSet) {
+        SEC_ASN1DecoderSetMaximumElementSize(a1dcx, p12dcx->maxElementLen);
+    }
+}
+
+
+static void
+sec_pkcs12_decoder_set_p7_limits(SEC_PKCS12DecoderContext *p12dcx,
+                                 SEC_PKCS7DecoderContext *p7dcx)
+{
+    if (p12dcx->maxInputSizeSet) {
+        SEC_PKCS7DecoderSetMaxInputSize(p7dcx, p12dcx->maxInputSize);
+    }
+    if (p12dcx->maxElementLenSet) {
+        SEC_PKCS7DecoderSetMaxElementLen(p7dcx, p12dcx->maxElementLen);
+    }
+}
 
 
 
@@ -500,6 +535,8 @@ sec_pkcs12_decoder_safe_contents_notify(void *arg, PRBool before,
             p12dcx->errorValue = PORT_GetError();
             goto loser;
         }
+        sec_pkcs12_decoder_set_limits(p12dcx,
+                                      safeContentsCtx->currentSafeBagA1Dcx);
 
         
 
@@ -590,6 +627,8 @@ sec_pkcs12_decoder_safe_contents_init_decode(SEC_PKCS12DecoderContext *p12dcx,
         p12dcx->errorValue = PORT_GetError();
         goto loser;
     }
+    sec_pkcs12_decoder_set_limits(p12dcx,
+                                  safeContentsCtx->safeContentsA1Dcx);
 
     
 
@@ -809,6 +848,7 @@ sec_pkcs12_decoder_asafes_notify(void *arg, PRBool before, void *dest,
             p12dcx->errorValue = PORT_GetError();
             goto loser;
         }
+        sec_pkcs12_decoder_set_p7_limits(p12dcx, p12dcx->currentASafeP7Dcx);
         SEC_ASN1DecoderSetFilterProc(p12dcx->aSafeA1Dcx,
                                      sec_pkcs12_decoder_wrap_p7_update,
                                      p12dcx->currentASafeP7Dcx, PR_TRUE);
@@ -905,6 +945,7 @@ sec_pkcs12_decode_start_asafes_cinfo(SEC_PKCS12DecoderContext *p12dcx)
         p12dcx->errorValue = PORT_GetError();
         goto loser;
     }
+    sec_pkcs12_decoder_set_limits(p12dcx, p12dcx->aSafeA1Dcx);
 
     
     SEC_ASN1DecoderSetNotifyProc(p12dcx->aSafeA1Dcx,
@@ -918,6 +959,7 @@ sec_pkcs12_decode_start_asafes_cinfo(SEC_PKCS12DecoderContext *p12dcx)
         p12dcx->errorValue = PORT_GetError();
         goto loser;
     }
+    sec_pkcs12_decoder_set_p7_limits(p12dcx, p12dcx->aSafeP7Dcx);
 
     
     if (p12dcx->dOpen && (*p12dcx->dOpen)(p12dcx->dArg, PR_FALSE) != SECSuccess) {
@@ -1285,7 +1327,22 @@ SEC_PKCS12DecoderSetMaxElementLen(SEC_PKCS12DecoderContext *p12dcx,
     if (!p12dcx || p12dcx->error) {
         return SECFailure;
     }
+    p12dcx->maxElementLen = maxLen;
+    p12dcx->maxElementLenSet = PR_TRUE;
     SEC_ASN1DecoderSetMaximumElementSize(p12dcx->pfxA1Dcx, maxLen);
+    return SECSuccess;
+}
+
+SECStatus
+SEC_PKCS12DecoderSetMaxInputSize(SEC_PKCS12DecoderContext *p12dcx,
+                                 unsigned long maxInputSize)
+{
+    if (!p12dcx || p12dcx->error) {
+        return SECFailure;
+    }
+    p12dcx->maxInputSize = maxInputSize;
+    p12dcx->maxInputSizeSet = PR_TRUE;
+    SEC_ASN1DecoderSetMaximumInputSize(p12dcx->pfxA1Dcx, maxInputSize);
     return SECSuccess;
 }
 

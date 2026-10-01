@@ -36,12 +36,7 @@
 
 typedef struct {
     PRBool isMultiProcess;
-#ifdef WINNT
-    
-    struct {
-#else
     union {
-#endif
         PRLock *sslLock;
         HANDLE sslMutx;
     } u;
@@ -70,8 +65,8 @@ typedef pid_t sslPID;
 
 #elif defined(XP_UNIX) && !defined(DARWIN)
 
-#include <sys/types.h> /* for pid_t */
-#include <semaphore.h> /* for sem_t, and sem_* functions */
+#include <sys/types.h> 
+#include <semaphore.h> 
 
 typedef struct {
     PRBool isMultiProcess;
@@ -117,12 +112,6 @@ extern SECStatus sslMutex_Destroy(sslMutex *sem, PRBool processLocal);
 extern SECStatus sslMutex_Unlock(sslMutex *sem);
 
 extern SECStatus sslMutex_Lock(sslMutex *sem);
-
-#ifdef WINNT
-
-extern SECStatus sslMutex_2LevelInit(sslMutex *sem);
-
-#endif
 
 SEC_END_PROTOS
 

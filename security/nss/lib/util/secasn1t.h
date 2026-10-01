@@ -174,6 +174,18 @@ typedef struct sec_ASN1Template_struct {
 
 
 
+#define SEC_ASN1D_MAX_INPUT_SIZE (256UL * 1024 * 1024)
+
+
+
+
+
+#define SEC_ASN1D_MAX_ELEMENTS 1000000UL
+
+
+
+
+
 
 typedef const SEC_ASN1Template *SEC_ASN1TemplateChooser(void *arg, PRBool enc);
 typedef SEC_ASN1TemplateChooser *SEC_ASN1TemplateChooserPtr;

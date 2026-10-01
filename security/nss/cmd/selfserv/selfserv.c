@@ -3018,19 +3018,9 @@ main(int argc, char **argv)
         listen_sock = PR_GetInheritedFD(inheritableSockName);
         if (!listen_sock)
             errExit("PR_GetInheritedFD");
-#ifndef WINNT
-        
-
-
-
-
-
-
-
         prStatus = PR_SetFDInheritable(listen_sock, PR_FALSE);
         if (prStatus != PR_SUCCESS)
             errExit("PR_SetFDInheritable");
-#endif
         rv = SSL_InheritMPServerSIDCache(envString);
         if (rv != SECSuccess)
             errExit("SSL_InheritMPServerSIDCache");

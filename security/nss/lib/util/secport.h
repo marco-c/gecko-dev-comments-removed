@@ -127,6 +127,13 @@ SEC_END_PROTOS
 #define PORT_AssertNotReached(reasonStr) PR_NOT_REACHED(reasonStr)
 
 
+
+
+
+#define PORT_ReleaseAssert(_expr) \
+    ((_expr) ? ((void)0) : PR_Assert(#_expr, __FILE__, __LINE__))
+
+
 #define PORT_GET_BYTE_BE(value, offset, len) \
     ((unsigned char)(((len) - (offset) - 1) >= sizeof(value) ? 0 : (((value) >> (((len) - (offset) - 1) * PR_BITS_PER_BYTE)) & 0xff)))
 #define PORT_GET_BYTE_LE(value, offset, len) \

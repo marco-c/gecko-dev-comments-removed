@@ -315,40 +315,9 @@ sslMutex_Lock(sslMutex* pMutex)
 
 
 
-
-#ifdef WINNT
-
 SECStatus
-sslMutex_2LevelInit(sslMutex *sem)
+sslMutex_Init(sslMutex* pMutex, int shared)
 {
-    
-
-
-
-
-    PR_ASSERT(sem);
-    if (sem) {
-        
-
-        sem->u.sslLock = NULL;
-    }
-    return single_process_sslMutex_Init(sem);
-}
-
-static SECStatus
-sslMutex_2LevelDestroy(sslMutex *sem)
-{
-    return single_process_sslMutex_Destroy(sem);
-}
-
-#endif
-
-SECStatus
-sslMutex_Init(sslMutex *pMutex, int shared)
-{
-#ifdef WINNT
-    SECStatus retvalue;
-#endif
     HANDLE hMutex;
     SECURITY_ATTRIBUTES attributes = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
 
@@ -361,13 +330,6 @@ sslMutex_Init(sslMutex *pMutex, int shared)
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Init(pMutex);
     }
-
-#ifdef WINNT
-    
-    retvalue = sslMutex_2LevelInit(pMutex);
-    if (SECSuccess != retvalue)
-        return SECFailure;
-#endif
 
     if (!pMutex || ((hMutex = pMutex->u.sslMutx) != 0 &&
                     hMutex !=
@@ -387,7 +349,7 @@ sslMutex_Init(sslMutex *pMutex, int shared)
 }
 
 SECStatus
-sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
+sslMutex_Destroy(sslMutex* pMutex, PRBool processLocal)
 {
     HANDLE hMutex;
     int rv;
@@ -403,12 +365,7 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
         return single_process_sslMutex_Destroy(pMutex);
     }
 
-
-#ifdef WINNT
     
-    retvalue = sslMutex_2LevelDestroy(pMutex);
-#endif
-
     PR_ASSERT(pMutex->u.sslMutx != 0 &&
               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
     if ((hMutex = pMutex->u.sslMutx) == 0 || hMutex == INVALID_HANDLE_VALUE) {
@@ -428,7 +385,7 @@ sslMutex_Destroy(sslMutex *pMutex, PRBool processLocal)
 }
 
 int
-sslMutex_Unlock(sslMutex *pMutex)
+sslMutex_Unlock(sslMutex* pMutex)
 {
     BOOL success = FALSE;
     HANDLE hMutex;
@@ -454,22 +411,16 @@ sslMutex_Unlock(sslMutex *pMutex)
         nss_MD_win32_map_default_error(GetLastError());
         return SECFailure;
     }
-#ifdef WINNT
-    return single_process_sslMutex_Unlock(pMutex);
-
-#else
     return SECSuccess;
-#endif
 }
 
 int
-sslMutex_Lock(sslMutex *pMutex)
+sslMutex_Lock(sslMutex* pMutex)
 {
     HANDLE hMutex;
     DWORD event;
     DWORD lastError;
     SECStatus rv;
-    SECStatus retvalue = SECSuccess;
 
     PR_ASSERT(pMutex != 0);
     if (!pMutex) {
@@ -480,10 +431,6 @@ sslMutex_Lock(sslMutex *pMutex)
     if (PR_FALSE == pMutex->isMultiProcess) {
         return single_process_sslMutex_Lock(pMutex);
     }
-#ifdef WINNT
-    
-    retvalue = single_process_sslMutex_Lock(pMutex);
-#endif
     PR_ASSERT(pMutex->u.sslMutx != 0 &&
               pMutex->u.sslMutx != INVALID_HANDLE_VALUE);
     if ((hMutex = pMutex->u.sslMutx) == 0 || hMutex == INVALID_HANDLE_VALUE) {
@@ -515,7 +462,7 @@ sslMutex_Lock(sslMutex *pMutex)
             break;
     }
 
-    if (!(SECSuccess == retvalue && SECSuccess == rv)) {
+    if (SECSuccess != rv) {
         return SECFailure;
     }
 

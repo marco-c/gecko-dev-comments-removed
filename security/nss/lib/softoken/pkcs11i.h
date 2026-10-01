@@ -318,7 +318,6 @@ struct SFTKSessionStr {
     SFTKSession *prev;
     CK_SESSION_HANDLE handle;
     int refCount; 
-    PRLock *objectLock;
     int objectIDCount;
     CK_SESSION_INFO info;
     CK_NOTIFY notify;
@@ -328,8 +327,21 @@ struct SFTKSessionStr {
     SFTKSessionContext *enc_context;
     SFTKSessionContext *hash_context;
     PRBool lastOpWasFIPS;
+    
     SFTKObjectList *objects[1];
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -801,7 +813,6 @@ extern void sftk_ReferenceObject(SFTKObject *object);
 extern SFTKObject *sftk_ObjectFromHandle(CK_OBJECT_HANDLE handle,
                                          SFTKSession *session);
 extern CK_OBJECT_HANDLE sftk_getNextHandle(SFTKSlot *slot);
-extern void sftk_AddSlotObject(SFTKSlot *slot, SFTKObject *object);
 extern void sftk_AddObject(SFTKSession *session, SFTKObject *object);
 
 
