@@ -47,7 +47,7 @@ class SQLiteMutex : private BlockingResourceBase {
 
 
 
-  void destroy() { mMutex = NULL; }
+  void destroy() { mMutex = nullptr; }
 
   
 
