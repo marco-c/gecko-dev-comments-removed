@@ -122,9 +122,17 @@ async function clearHistoryAndBookmarks() {
 async function waitForPreloaded(browser) {
   if (
     browser.webProgress.isLoadingDocument ||
-    browser.currentURI?.spec === "about:blank"
+    !browser.currentURI?.spec ||
+    browser.currentURI.spec === "about:blank"
   ) {
-    await BrowserTestUtils.browserLoaded(browser);
+    
+    
+    
+    await BrowserTestUtils.browserStopped(
+      browser,
+      null,
+      true 
+    );
   }
 }
 
