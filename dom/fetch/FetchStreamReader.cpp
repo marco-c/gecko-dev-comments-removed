@@ -458,6 +458,12 @@ void FetchStreamReader::ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
 
   
   
+  if (mStreamClosed) {
+    return;
+  }
+
+  
+  
   RootedSpiderMonkeyInterface<Uint8Array> chunk(aCx);
   if (!aChunk.isObject() || !chunk.Init(&aChunk.toObject())) {
     CloseAndRelease(aCx, NS_ERROR_DOM_WRONG_TYPE_ERR);
