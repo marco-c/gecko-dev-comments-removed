@@ -68,12 +68,6 @@ class Attr final : public nsINode {
   Element* GetElement() const;
 
   
-
-
-
-  nsresult SetOwnerDocument(Document* aDocument);
-
-  
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
   nsIURI* GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
 

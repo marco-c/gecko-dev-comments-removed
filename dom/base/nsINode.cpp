@@ -4353,10 +4353,6 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
     aNode->mNodeInfo.swap(newNodeInfo);
 
-    
-    
-    
-    
     aNode->NodeInfoChanged(oldDoc);
 
     MOZ_ASSERT(newDoc != oldDoc);
