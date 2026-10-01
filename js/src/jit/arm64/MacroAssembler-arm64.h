@@ -5,7 +5,9 @@
 #ifndef jit_arm64_MacroAssembler_arm64_h
 #define jit_arm64_MacroAssembler_arm64_h
 
+#include <tuple>
 #include <type_traits>
+#include <utility>
 
 #include "jit/arm64/Assembler-arm64.h"
 #include "jit/arm64/vixl/MacroAssembler-vixl.h"
@@ -214,18 +216,89 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   template <typename... Regs>
   void pushRegs(const Regs&... regs) {
+    constexpr size_t N = sizeof...(Regs);
     static_assert((std::is_convertible_v<Regs, Register> && ...));
-    static_assert(sizeof...(Regs) > 0 && sizeof...(Regs) <= 4);
+    static_assert(0 < N && N <= 4);
 
+#if defined(XP_DARWIN)
+    
+    
+    
+    
+    
+
+    if (((static_cast<Register>(regs) == getStackPointer()) || ...)) {
+      (push(regs), ...);
+      return;
+    }
+
+    const vixl::Register& stackPointer = GetStackPointer64();
+
+    constexpr size_t RegSize = sizeof(intptr_t);
+    constexpr int32_t Bytes = N * RegSize;
+
+    
+    MOZ_ASSERT_IF(stackPointer.Is(vixl::sp), Bytes % 16 == 0);
+    if (!stackPointer.Is(vixl::sp)) {
+      BumpSystemStackPointer(Bytes);
+    }
+
+    const auto pack = std::forward_as_tuple(regs...);
+    
+    Str(ARMRegister(std::get<N - 1>(pack), 64),
+        MemOperand(stackPointer, -Bytes, vixl::PreIndex));
+    
+    
+    
+    
+    [&]<size_t... ISeq>(std::index_sequence<ISeq...>) {
+      (storePtr(std::get<N - 2 - ISeq>(pack),
+                Address(getStackPointer(), RegSize * (ISeq + 1))),
+       ...);
+    }(std::make_index_sequence<N - 1>{});
+#else
     push(regs...);
+#endif
   }
 
   template <typename... Regs>
   void popRegs(const Regs&... regs) {
+    constexpr size_t N = sizeof...(Regs);
     static_assert((std::is_convertible_v<Regs, Register> && ...));
-    static_assert(sizeof...(Regs) > 0 && sizeof...(Regs) <= 4);
+    static_assert(0 < N && N <= 4);
 
+#if defined(XP_DARWIN)
+    
+
+    if (((static_cast<Register>(regs) == getStackPointer()) || ...)) {
+      (pop(regs), ...);
+      return;
+    }
+
+    const vixl::Register& stackPointer = GetStackPointer64();
+
+    constexpr size_t RegSize = sizeof(intptr_t);
+    constexpr int32_t Bytes = N * RegSize;
+
+    
+    MOZ_ASSERT_IF(stackPointer.Is(vixl::sp), Bytes % 16 == 0);
+
+    const auto pack = std::forward_as_tuple(regs...);
+    
+    
+    
+    
+    [&]<size_t... ISeq>(std::index_sequence<ISeq...>) {
+      (loadPtr(Address(getStackPointer(), RegSize * (N - 1 - ISeq)),
+               std::get<N - 1 - ISeq>(pack)),
+       ...);
+    }(std::make_index_sequence<N - 1>{});
+    
+    Ldr(ARMRegister(std::get<0>(pack), 64),
+        MemOperand(stackPointer, Bytes, vixl::PostIndex));
+#else
     pop(regs...);
+#endif
   }
 
   
