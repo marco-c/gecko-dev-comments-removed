@@ -264,12 +264,6 @@ enum class StyleWindowShadow : uint8_t {
 };
 
 
-enum class StyleMaskType : uint8_t {
-  Luminance,
-  Alpha,
-};
-
-
 enum class StyleColorInterpolation : uint8_t {
   Auto = 0,
   Srgb = 1,
