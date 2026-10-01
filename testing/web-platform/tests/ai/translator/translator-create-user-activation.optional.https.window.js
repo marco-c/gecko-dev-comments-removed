@@ -10,22 +10,28 @@
 
 
 promise_test(async t => {
-  
   const languagePair = {sourceLanguage: 'en', targetLanguage: 'ja'};
-  assert_implements_optional(await Translator.availability(languagePair) ==
-                             'downloadable');
-  assert_false(navigator.userActivation.isActive);
-  await promise_rejects_dom(t, 'NotAllowedError',
-                            Translator.create(languagePair));
-  await test_driver.bless();
-  const createPromise = Translator.create(languagePair);
+  const availability = await Translator.availability(languagePair);
+  assert_implements_optional(
+      availability !== 'unavailable',
+      'Translator is not available for the given options');
+
   
-  assert_true(navigator.userActivation.isActive);
-  consumeTransientUserActivation();
-  await createPromise;
+  
+  
+  if (availability !== 'available') {
+    assert_false(navigator.userActivation.isActive);
+    await promise_rejects_dom(t, 'NotAllowedError',
+                              Translator.create(languagePair));
+    await test_driver.bless();
+    await Translator.create(languagePair);
+  }
 
   
   assert_equals(await Translator.availability(languagePair), 'available');
+  
+  
+  consumeTransientUserActivation();
   assert_false(navigator.userActivation.isActive);
   await Translator.create(languagePair);
-}, 'Create requires sticky user activation when availability is "downloadable"');
+}, 'Create requires user activation when availability is "downloadable"');
