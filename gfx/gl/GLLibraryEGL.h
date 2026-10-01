@@ -112,7 +112,6 @@ enum class EGLExtension {
   ANGLE_stream_producer_d3d_texture,
   KHR_surfaceless_context,
   KHR_create_context_no_error,
-  MOZ_create_context_provoking_vertex_dont_care,
   EXT_swap_buffers_with_damage,
   KHR_swap_buffers_with_damage,
   EXT_buffer_age,
@@ -155,6 +154,7 @@ class GLLibraryEGL final {
   PRLibrary* mGLLibrary = nullptr;
   bool mIsANGLE = false;
   bool mIsD3DANGLE = false;
+  bool mIsMetalANGLE = false;
   std::bitset<UnderlyingValue(EGLLibExtension::Max)> mAvailableExtensions;
   std::weak_ptr<EglDisplay> mDefaultDisplay;
   std::unordered_map<EGLDisplay, std::weak_ptr<EglDisplay>> mActiveDisplays;
@@ -196,6 +196,7 @@ class GLLibraryEGL final {
 
   bool IsANGLE() const { return mIsANGLE; }
   bool IsD3DANGLE() const { return mIsD3DANGLE; }
+  bool IsMetalANGLE() const { return mIsMetalANGLE; }
 
   
   

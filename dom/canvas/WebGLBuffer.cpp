@@ -196,8 +196,10 @@ void WebGLBuffer::BufferSubData(GLenum target, uint64_t rawDstByteOffset,
   void* mapping = nullptr;
   
   
+  
   if (unsynchronized && gl->IsSupported(gl::GLFeature::map_buffer_range) &&
-      !gl->IsD3DANGLE()) {
+      !gl->IsD3DANGLE() &&
+      !(gl->IsMetalANGLE() && gl->Renderer() == gl::GLRenderer::RadeonGFX10)) {
     GLbitfield access = LOCAL_GL_MAP_WRITE_BIT |
                         LOCAL_GL_MAP_UNSYNCHRONIZED_BIT |
                         LOCAL_GL_MAP_INVALIDATE_RANGE_BIT;
