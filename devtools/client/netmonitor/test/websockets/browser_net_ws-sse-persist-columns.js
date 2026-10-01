@@ -74,7 +74,7 @@ add_task(async function () {
   is(requests.length, 2, "There should be two requests");
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   store.dispatch(Actions.toggleMessageColumn("size"));
   store.dispatch(Actions.toggleMessageColumn("opCode"));
@@ -137,7 +137,7 @@ add_task(async function () {
   );
 
   
-  clickOnRequestRow(requests[1]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
 
   store.dispatch(Actions.toggleMessageColumn("lastEventId"));
   store.dispatch(Actions.toggleMessageColumn("eventName"));
@@ -193,7 +193,7 @@ add_task(async function () {
   );
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
   is(
     shallowEqual(store.getState().messages.columns, {
       data: true,
@@ -208,7 +208,7 @@ add_task(async function () {
   );
 
   
-  clickOnRequestRow(requests[1]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   is(
     shallowEqual(store.getState().messages.columns, {
       data: true,
@@ -226,7 +226,7 @@ add_task(async function () {
   store.dispatch(Actions.resetMessageColumns());
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
   is(
     shallowEqual(store.getState().messages.columns, {
       data: true,
@@ -244,7 +244,7 @@ add_task(async function () {
   store.dispatch(Actions.resetMessageColumns());
 
   
-  clickOnRequestRow(requests[1]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   is(
     shallowEqual(store.getState().messages.columns, {
       data: true,
@@ -259,7 +259,7 @@ add_task(async function () {
   );
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
   is(
     shallowEqual(store.getState().messages.columns, {
       data: true,

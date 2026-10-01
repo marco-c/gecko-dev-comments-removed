@@ -40,7 +40,7 @@ add_task(async function () {
   );
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
   clickOnSidebarTab(document, "response");
@@ -58,7 +58,7 @@ add_task(async function () {
   await waitForTick();
   const waitForData = waitForDOM(document, "#messages-view .properties-view");
   const [, responseFrame] = frames;
-  clickInView(responseFrame);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, responseFrame);
 
   await waitForData;
 

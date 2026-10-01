@@ -131,7 +131,7 @@ add_task(async function testBasicServerSentEvents() {
   is(type, "eventsource", "Type should be rendered correctly.");
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
   const waitForMessages = waitForDOM(
@@ -277,7 +277,7 @@ add_task(async function testServerSentEventsDetails() {
   );
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
   clickOnSidebarTab(document, "response");
@@ -369,7 +369,7 @@ add_task(async function testBadFormatServerSentEvents() {
   const waitForEditor = waitForDOM(document, "#response-panel .cm-editor", 1);
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
   clickOnSidebarTab(document, "response");

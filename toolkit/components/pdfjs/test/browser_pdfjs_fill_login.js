@@ -54,7 +54,7 @@ async function openContextMenuForSelector(browser, selector) {
   
   
   
-  let eventDetails = { button: 2 };
+  let eventDetails = { type: "mousedown", button: 2 };
   EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
 
   

@@ -29,7 +29,7 @@ add_task(async function () {
   is(requests.length, 1, "There should be one request");
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
   const wait = waitForDOM(

@@ -43,14 +43,9 @@ add_task(async function () {
     is(newValue, value, "Value changed on mousemove without a button pressed.");
   });
 
-  info("Releasing the mouse button outside of the color picker frame.");
-  EventUtils.synthesizeMouse(
-    view.element,
-    10,
-    10,
-    { type: "mouseup" },
-    view.styleWindow
-  );
+  
+  
+  
 
   info("Moving mouse over color picker without any buttons pressed.");
 

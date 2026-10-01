@@ -219,40 +219,6 @@ registerCleanupFunction(() => {
   Services.cookies.removeAll();
 });
 
-
-
-
-
-
-
-
-
-function clickInView(element, options = {}) {
-  
-  
-  element.scrollIntoView({ block: "center" });
-  EventUtils.synthesizeMouseAtCenter(
-    element,
-    options,
-    element.ownerDocument.defaultView
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function clickOnRequestRow(row, options) {
-  clickInView(row.querySelector(".requests-list-file"), options);
-}
-
 async function disableCacheAndReload(toolbox, waitForLoad) {
   
   Services.prefs.setBoolPref("devtools.cache.disabled", true);
@@ -1184,7 +1150,10 @@ async function selectIndexAndWaitForSourceEditor(monitor, index) {
   );
   
   
-  clickOnRequestRow(document.querySelectorAll(".request-list-item")[index]);
+  EventUtils.sendMouseEvent(
+    { type: "mousedown" },
+    document.querySelectorAll(".request-list-item")[index]
+  );
   
   const editor = document.querySelector("#response-panel .cm-content");
   if (!editor) {
@@ -1797,7 +1766,7 @@ function findRequestByInitiator(document, initiator) {
 
 
 async function triggerSaveResponseAs(monitor, request) {
-  clickOnRequestRow(request);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, request);
   EventUtils.sendMouseEvent({ type: "contextmenu" }, request);
 
   info("Open the save dialog");

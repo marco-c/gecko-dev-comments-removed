@@ -157,13 +157,12 @@ add_task(async function () {
       continue;
     }
 
-    const initiator = document.querySelectorAll(
-      ".request-list-item .requests-list-initiator-lastframe"
-    )[index];
-    initiator.scrollIntoView({ block: "center" });
-    
-    
-    EventUtils.synthesizeMouse(initiator, 2, 2, {}, monitor.panelWin);
+    EventUtils.sendMouseEvent(
+      { type: "mousedown" },
+      document.querySelectorAll(
+        ".request-list-item .requests-list-initiator-lastframe"
+      )[index]
+    );
 
     
     const onStackTraceRendered = waitUntil(() =>

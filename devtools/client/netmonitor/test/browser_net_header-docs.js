@@ -19,7 +19,10 @@ add_task(async function testHeadersLearnMoreLink() {
   await performRequests(monitor, tab, 2);
 
   
-  clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
+  EventUtils.sendMouseEvent(
+    { type: "mousedown" },
+    document.querySelectorAll(".request-list-item")[1]
+  );
 
   await waitForDOM(document, "#responseHeaders, #requestHeaders", 2);
 

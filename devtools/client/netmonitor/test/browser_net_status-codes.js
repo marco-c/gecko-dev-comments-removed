@@ -171,7 +171,10 @@ add_task(async function () {
 
 
   async function testHeaders(data, index) {
-    clickOnRequestRow(document.querySelectorAll(".request-list-item")[index]);
+    EventUtils.sendMouseEvent(
+      { type: "mousedown" },
+      document.querySelectorAll(".request-list-item")[index]
+    );
 
     
     await waitUntil(() =>

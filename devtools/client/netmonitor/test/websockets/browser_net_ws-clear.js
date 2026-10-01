@@ -37,7 +37,7 @@ add_task(async function () {
   );
 
   
-  clickOnRequestRow(requests[0]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
 
   
   clickOnSidebarTab(document, "response");
@@ -68,7 +68,7 @@ add_task(async function () {
     "#messages-view .message-list-table .message-list-item",
     2
   );
-  clickOnRequestRow(requests[1]);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[1]);
   await wait;
   const secondRequestFrames = document.querySelectorAll(
     "#messages-view .message-list-table .message-list-item"

@@ -40,7 +40,7 @@ add_task(async function testEarlyHintStatusCodeAndHeaders() {
     "The url in the displayed request is correct"
   );
 
-  clickOnRequestRow(earlyRequestItem);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, earlyRequestItem);
 
   
   await waitUntil(() =>
