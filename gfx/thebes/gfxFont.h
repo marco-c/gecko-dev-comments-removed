@@ -175,7 +175,7 @@ struct gfxFontStyle {
   
 
   
-  uint8_t variantCaps : 3;  
+  mozilla::StyleFontVariantCaps variantCaps : 3;  
 
   
   mozilla::StyleFontVariantPosition variantSubSuper : 2;  
@@ -1622,7 +1622,8 @@ class gfxFont {
 
   
   
-  bool SupportsVariantCaps(Script aScript, uint32_t aVariantCaps,
+  bool SupportsVariantCaps(Script aScript,
+                           mozilla::StyleFontVariantCaps aVariantCaps,
                            bool& aFallbackToSmallCaps,
                            bool& aSyntheticLowerToSmallCaps,
                            bool& aSyntheticUpperToSmallCaps);

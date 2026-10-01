@@ -242,7 +242,7 @@ void nsFont::AddFontFeaturesToStyle(gfxFontStyle* aStyle,
   
   
   aStyle->noFallbackVariantFeatures =
-      (aStyle->variantCaps == NS_FONT_VARIANT_CAPS_NORMAL) &&
+      (aStyle->variantCaps == StyleFontVariantCaps::Normal) &&
       (variantPosition == StyleFontVariantPosition::Normal);
 
   

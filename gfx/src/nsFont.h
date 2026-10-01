@@ -61,7 +61,8 @@ struct nsFont final {
   mozilla::StyleFontVariantEastAsian variantEastAsian =
       mozilla::StyleFontVariantEastAsian::NORMAL;
 
-  uint8_t variantCaps = NS_FONT_VARIANT_CAPS_NORMAL;
+  mozilla::StyleFontVariantCaps variantCaps =
+      mozilla::StyleFontVariantCaps::Normal;
   mozilla::StyleFontVariantNumeric variantNumeric =
       mozilla::StyleFontVariantNumeric::NORMAL;
   mozilla::StyleFontVariantPosition variantPosition =
