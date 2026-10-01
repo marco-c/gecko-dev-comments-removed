@@ -637,9 +637,9 @@ struct NavigationWaitForAllScope final : public nsISupports,
     
     
     
-    auto resumeApplyTheHistoryStep =
-        MakeScopeExit([browsingContext = RefPtr{GetBrowsingContext()},
-                       loadState = RefPtr{mLoadState}]() {
+    auto resumeApplyTheHistoryStep = MakeScopeExit(
+        [browsingContext = RefPtr{GetBrowsingContext()},
+         loadState = RefPtr{mLoadState}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
           if (browsingContext && loadState) {
             browsingContext->LoadURI(loadState,  false);
           }
@@ -1133,7 +1133,8 @@ void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
 
   RefPtr bc = document->GetBrowsingContext();
   MOZ_DIAGNOSTIC_ASSERT(bc);
-  bc->Navigate(urlRecord, document, *document->NodePrincipal(),
+  nsCOMPtr principal = document->NodePrincipal();
+  bc->Navigate(urlRecord, document, *principal,
                 IgnoreErrors(),
                aOptions.mHistory,  false,
                serializedState, apiMethodTracker);
