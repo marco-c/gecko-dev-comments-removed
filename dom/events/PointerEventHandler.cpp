@@ -1115,6 +1115,9 @@ void PointerEventHandler::InitCoalescedEventFromPointerEvent(
   aCoalescedEvent.AssignPointerHelperData(aSourceEvent);
 
   
+  aCoalescedEvent.mMovement = aSourceEvent.mMovement;
+
+  
   aCoalescedEvent.mWidth = aSourceEvent.mWidth;
   aCoalescedEvent.mHeight = aSourceEvent.mHeight;
   aCoalescedEvent.mIsPrimary = aSourceEvent.mIsPrimary;
