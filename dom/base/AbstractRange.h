@@ -21,7 +21,6 @@
 class JSObject;
 class nsIContent;
 class nsINode;
-class nsRange;
 struct JSContext;
 
 namespace mozilla {
@@ -29,6 +28,7 @@ class RectCallback;
 
 namespace dom {
 class Document;
+class Range;
 class Selection;
 class StaticRange;
 class HTMLSlotElement;
@@ -43,7 +43,7 @@ class AbstractRange : public nsISupports,
       mozilla::dom::AllowRangeCrossShadowBoundary;
 
  protected:
-  explicit AbstractRange(nsINode* aNode, bool aIsDynamicRange,
+  explicit AbstractRange(nsINode* aNode, bool aIsRange,
                          TreeKind aBoundaryTreeKind);
   virtual ~AbstractRange();
 
@@ -279,10 +279,10 @@ class AbstractRange : public nsISupports,
   bool HasEqualBoundaries(const AbstractRange& aOther) const {
     return (mStart == aOther.mStart) && (mEnd == aOther.mEnd);
   }
-  bool IsDynamicRange() const { return mIsDynamicRange; }
-  bool IsStaticRange() const { return !mIsDynamicRange; }
-  inline nsRange* AsDynamicRange();
-  inline const nsRange* AsDynamicRange() const;
+  bool IsRange() const { return mIsRange; }
+  bool IsStaticRange() const { return !mIsRange; }
+  inline Range* AsRange();
+  inline const Range* AsRange() const;
   inline StaticRange* AsStaticRange();
   inline const StaticRange* AsStaticRange() const;
 
@@ -337,21 +337,21 @@ class AbstractRange : public nsISupports,
     if (aRange.MayCrossShadowBoundary()) {
       return fmt::format(
           "{{ MayCrossShadowBoundaryStartRef()={}, mIsGenerated={}, "
-          "mCalledByJS={}, mIsDynamicRange={} }}",
+          "mCalledByJS={}, mIsRange={} }}",
           aRange.Collapsed()
               ? fmt::format("MayCrossShadowBoundaryEndRef()={}",
                             aRange.MayCrossShadowBoundaryStartRef())
               : fmt::format("{}, MayCrossShadowBoundaryEndRef()={}",
                             aRange.MayCrossShadowBoundaryStartRef(),
                             aRange.MayCrossShadowBoundaryEndRef()),
-          aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsDynamicRange);
+          aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsRange);
     }
     return fmt::format(
-        "{{ mStart={}, mIsGenerated={}, mCalledByJS={}, mIsDynamicRange={} }}",
+        "{{ mStart={}, mIsGenerated={}, mCalledByJS={}, mIsRange={} }}",
         aRange.Collapsed()
             ? fmt::format("mEnd={}", aRange.mStart)
             : fmt::format("{}, mEnd={}", aRange.mStart, aRange.mEnd),
-        aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsDynamicRange);
+        aRange.mIsGenerated, aRange.mIsPositioned, aRange.mIsRange);
   }
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const AbstractRange& aRange) {
@@ -405,7 +405,7 @@ class AbstractRange : public nsISupports,
   bool mCalledByJS;
 
   
-  const bool mIsDynamicRange;
+  const bool mIsRange;
 
   static bool sHasShutDown;
 };

@@ -18,10 +18,11 @@
 class nsIURI;
 class nsINode;
 class nsFind;
-class nsRange;
 struct TextDirective;
 
 namespace mozilla::dom {
+
+class Range;
 
 extern LazyLogModule gFragmentDirectiveLog;
 #define TEXT_FRAGMENT_LOG_FN(msg, func, ...)                              \
@@ -60,12 +61,12 @@ class TextDirectiveUtil final {
 
 
 
-  static RefPtr<nsRange> FindStringInRange(nsFind* aFinder,
-                                           const RangeBoundary& aSearchStart,
-                                           const RangeBoundary& aSearchEnd,
-                                           const nsAString& aQuery,
-                                           bool aWordStartBounded,
-                                           bool aWordEndBounded);
+  static RefPtr<Range> FindStringInRange(nsFind* aFinder,
+                                         const RangeBoundary& aSearchStart,
+                                         const RangeBoundary& aSearchEnd,
+                                         const nsAString& aQuery,
+                                         bool aWordStartBounded,
+                                         bool aWordEndBounded);
 
   
 
@@ -139,7 +140,7 @@ class TextDirectiveUtil final {
 
 
 
-  static bool AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
+  static bool AdvanceStartToNextNonWhitespacePosition(Range& aRange);
 
   
 

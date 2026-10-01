@@ -9,10 +9,9 @@
 
 #include "nsTArray.h"
 
-class nsRange;
-
 namespace mozilla {
 namespace dom {
+class Range;
 class Selection;
 }  
 namespace a11y {
@@ -125,7 +124,7 @@ class TextRange final {
 
 
 
-  bool AssignDOMRange(nsRange* aRange, bool* aReversed = nullptr) const;
+  bool AssignDOMRange(dom::Range* aRange, bool* aReversed = nullptr) const;
 
   
 

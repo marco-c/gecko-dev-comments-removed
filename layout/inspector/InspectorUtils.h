@@ -13,7 +13,9 @@
 
 class nsAtom;
 class nsINode;
-class nsRange;
+namespace mozilla::dom {
+class Range;
+}  
 
 namespace mozilla {
 class ErrorResult;
@@ -222,7 +224,7 @@ class InspectorUtils {
                                  ErrorResult& aRv);
   static uint64_t GetContentState(GlobalObject& aGlobal, Element& aElement);
 
-  static void GetUsedFontFaces(GlobalObject& aGlobal, nsRange& aRange,
+  static void GetUsedFontFaces(GlobalObject& aGlobal, dom::Range& aRange,
                                uint32_t aMaxRanges,  
                                                      
                                bool aSkipCollapsedWhitespace,

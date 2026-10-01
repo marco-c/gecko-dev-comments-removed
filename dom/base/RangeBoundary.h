@@ -16,12 +16,11 @@
 #include "nsFmtString.h"
 #include "nsIContent.h"
 
-class nsRange;
-
 namespace mozilla {
 namespace dom {
 class CrossShadowBoundaryRange;
-}
+class Range;
+}  
 
 template <typename T, typename U>
 class EditorDOMPointBase;
@@ -127,7 +126,7 @@ class RangeBoundaryBase {
   template <typename T, typename U>
   friend class EditorDOMPointBase;
 
-  friend nsRange;
+  friend dom::Range;
 
   friend class mozilla::dom::CrossShadowBoundaryRange;
 

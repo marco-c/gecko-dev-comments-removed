@@ -34,7 +34,7 @@ class CrossShadowBoundaryRange final : public StaticRange,
   template <typename SPT, typename SRT, typename EPT, typename ERT>
   static already_AddRefed<CrossShadowBoundaryRange> Create(
       const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-      const RangeBoundaryBase<EPT, ERT>& aEndBoundary, nsRange* aOwner);
+      const RangeBoundaryBase<EPT, ERT>& aEndBoundary, Range* aOwner);
 
   void NotifyNodeBecomesShadowHost(nsINode* aNode) {
     if (aNode == mStart.GetContainer()) {
@@ -79,7 +79,7 @@ class CrossShadowBoundaryRange final : public StaticRange,
   NS_DECL_NSIMUTATIONOBSERVER_PARENTCHAINCHANGED
 
  private:
-  explicit CrossShadowBoundaryRange(nsINode* aNode, nsRange* aOwner)
+  explicit CrossShadowBoundaryRange(nsINode* aNode, Range* aOwner)
       : StaticRange(aNode, StaticRange::MutationObserved::Yes,
                     TreeKind::FlatForSelection),
         mOwner(aOwner) {}
@@ -98,7 +98,7 @@ class CrossShadowBoundaryRange final : public StaticRange,
 
   
   
-  nsRange* mOwner;
+  Range* mOwner;
 };
 
 inline CrossShadowBoundaryRange* StaticRange::AsCrossShadowBoundaryRange() {

@@ -69,7 +69,6 @@ class nsITimer;
 class nsPageSequenceFrame;
 class nsPIDOMWindowOuter;
 class nsPresShellEventCB;
-class nsRange;
 class nsRefreshDriver;
 class nsRegion;
 class nsTextFrame;
@@ -117,6 +116,7 @@ class BrowserParent;
 class Element;
 class Event;
 class HTMLSlotElement;
+class Range;
 class Selection;
 class PerformanceMainThread;
 }  
@@ -1726,7 +1726,7 @@ class PresShell final : public nsStubDocumentObserver,
 
   MOZ_CAN_RUN_SCRIPT
   nsresult GoToAnchor(const nsAString& aAnchorName,
-                      const nsRange* aFirstTextDirective, bool aScroll,
+                      const dom::Range* aFirstTextDirective, bool aScroll,
                       ScrollFlags aAdditionalScrollFlags = ScrollFlags::None);
 
   
@@ -2158,11 +2158,11 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   nsRect ClipListToRange(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
-                         nsRange* aRange);
+                         dom::Range* aRange);
 
   
   
-  UniquePtr<RangePaintInfo> CreateRangePaintInfo(nsRange* aRange,
+  UniquePtr<RangePaintInfo> CreateRangePaintInfo(dom::Range* aRange,
                                                  nsRect& aSurfaceRect,
                                                  bool aForPrimarySelection);
 

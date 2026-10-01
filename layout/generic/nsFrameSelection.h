@@ -29,7 +29,9 @@
 #include "nsISelectionListener.h"
 #include "nsITableCellLayout.h"
 
-class nsRange;
+namespace mozilla::dom {
+class Range;
+}  
 
 #define BIDI_LEVEL_UNDEFINED mozilla::intl::BidiEmbeddingLevel(0x80)
 
@@ -1264,7 +1266,7 @@ class nsFrameSelection final {
                                  int32_t& aColIndex);
 
   [[nodiscard]] static nsIContent* GetFirstCellNodeInRange(
-      const nsRange* aRange);
+      const mozilla::dom::Range* aRange);
   
   [[nodiscard]] static nsIContent* IsInSameTable(const nsIContent* aContent1,
                                                  const nsIContent* aContent2);
@@ -1285,12 +1287,14 @@ class nsFrameSelection final {
     
     
     
-    nsRange* GetFirstCellRange(const mozilla::dom::Selection& aNormalSelection);
+    mozilla::dom::Range* GetFirstCellRange(
+        const mozilla::dom::Selection& aNormalSelection);
 
     
     
     
-    nsRange* GetNextCellRange(const mozilla::dom::Selection& aNormalSelection);
+    mozilla::dom::Range* GetNextCellRange(
+        const mozilla::dom::Selection& aNormalSelection);
 
     [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
     HandleSelection(nsINode* aParentContent, int32_t aContentOffset,
@@ -1376,7 +1380,7 @@ class nsFrameSelection final {
         const mozilla::dom::Selection& aNormalSelection,
         nsSelectionAmount aAmount);
 
-    RefPtr<nsRange> mRange;
+    RefPtr<mozilla::dom::Range> mRange;
     nsSelectionAmount mAmount = eSelectNoAmount;
   };
 

@@ -6,8 +6,8 @@
 
 
 
-#ifndef nsRange_h_
-#define nsRange_h_
+#ifndef mozilla_dom_Range_h
+#define mozilla_dom_Range_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
@@ -47,10 +47,8 @@ enum class RangeBehaviour : uint8_t {
   CollapseDefaultRangeAndCrossShadowBoundaryRanges
 
 };
-}  
 
-class nsRange final : public mozilla::dom::AbstractRange,
-                      public nsStubMutationObserver {
+class Range final : public AbstractRange, public nsStubMutationObserver {
   using ErrorResult = mozilla::ErrorResult;
   using AbstractRange = mozilla::dom::AbstractRange;
   using DocGroup = mozilla::dom::DocGroup;
@@ -61,18 +59,18 @@ class nsRange final : public mozilla::dom::AbstractRange,
   using AllowRangeCrossShadowBoundary =
       mozilla::dom::AllowRangeCrossShadowBoundary;
 
-  virtual ~nsRange();
-  explicit nsRange(nsINode* aNode);
+  virtual ~Range();
+  explicit Range(nsINode* aNode);
 
  public:
-  nsRange(const nsRange&) = delete;
-  nsRange& operator=(const nsRange&) = delete;
+  Range(const Range&) = delete;
+  Range& operator=(const Range&) = delete;
 
   
 
 
 
-  static already_AddRefed<nsRange> Create(nsINode* aNode);
+  static already_AddRefed<Range> Create(nsINode* aNode);
 
   
 
@@ -81,12 +79,12 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  static already_AddRefed<nsRange> Create(const AbstractRange* aAbstractRange,
-                                          ErrorResult& aRv) {
-    return nsRange::Create(aAbstractRange->StartRef(), aAbstractRange->EndRef(),
-                           aRv);
+  static already_AddRefed<Range> Create(const AbstractRange* aAbstractRange,
+                                        ErrorResult& aRv) {
+    return Range::Create(aAbstractRange->StartRef(), aAbstractRange->EndRef(),
+                         aRv);
   }
-  static already_AddRefed<nsRange> Create(
+  static already_AddRefed<Range> Create(
       nsINode* aStartContainer, uint32_t aStartOffset, nsINode* aEndContainer,
       uint32_t aEndOffset, ErrorResult& aRv,
       AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary =
@@ -103,10 +101,10 @@ class nsRange final : public mozilla::dom::AbstractRange,
       aRv.Throw(NS_ERROR_INVALID_ARG);
       return nullptr;
     }
-    return nsRange::Create(start, end, aRv, aAllowCrossShadowBoundary);
+    return Range::Create(start, end, aRv, aAllowCrossShadowBoundary);
   }
   template <typename SPT, typename SRT, typename EPT, typename ERT>
-  static already_AddRefed<nsRange> Create(
+  static already_AddRefed<Range> Create(
       const mozilla::RangeBoundaryBase<SPT, SRT>& aStartBoundary,
       const mozilla::RangeBoundaryBase<EPT, ERT>& aEndBoundary,
       ErrorResult& aRv,
@@ -114,7 +112,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_IMETHODIMP_(void) DeleteCycleCollectable(void) override;
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(nsRange, AbstractRange)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(Range, AbstractRange)
 
   nsrefcnt GetRefCount() const { return mRefCnt; }
 
@@ -164,7 +162,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
     return error.StealNSResult();
   }
 
-  already_AddRefed<nsRange> CloneRange() const;
+  already_AddRefed<Range> CloneRange() const;
 
   
 
@@ -172,7 +170,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  already_AddRefed<nsRange> GetRangeInFlatTree() const;
+  already_AddRefed<Range> GetRangeInFlatTree() const;
 
   
 
@@ -256,7 +254,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
 
   
-  static already_AddRefed<nsRange> Constructor(
+  static already_AddRefed<Range> Constructor(
       const mozilla::dom::GlobalObject& global, mozilla::ErrorResult& aRv);
 
   already_AddRefed<mozilla::dom::DocumentFragment> CreateContextualFragment(
@@ -267,7 +265,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
                            ErrorResult& aError) const;
   already_AddRefed<mozilla::dom::DocumentFragment> CloneContents(
       ErrorResult& aErr);
-  int16_t CompareBoundaryPoints(uint16_t aHow, const nsRange& aOtherRange,
+  int16_t CompareBoundaryPoints(uint16_t aHow, const Range& aOtherRange,
                                 ErrorResult& aRv);
   int16_t ComparePoint(const nsINode& aContainer, uint32_t aOffset,
                        ErrorResult& aRv,
@@ -441,7 +439,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
     [[nodiscard]] bool HasNewBoundaries() const {
       return mStart.IsSet() || mEnd.IsSet();
     }
-    void SetUnsetBoundaries(const nsRange& aRange) {
+    void SetUnsetBoundaries(const Range& aRange) {
       if (!mStart.IsSet()) {
         mStart.CopyFrom(aRange.StartRef(), RangeBoundarySetBy::Ref);
       }
@@ -519,7 +517,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  void ExcludeNonSelectableNodes(nsTArray<RefPtr<nsRange>>* aOutRanges);
+  void ExcludeNonSelectableNodes(nsTArray<RefPtr<Range>>* aOutRanges);
 
   
 
@@ -657,18 +655,18 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   class MOZ_RAII AutoCalledByJSRestore final {
    private:
-    nsRange& mRange;
+    Range& mRange;
     bool mOldValue;
 
    public:
-    explicit AutoCalledByJSRestore(nsRange& aRange)
+    explicit AutoCalledByJSRestore(Range& aRange)
         : mRange(aRange), mOldValue(aRange.mCalledByJS) {}
     ~AutoCalledByJSRestore() { mRange.mCalledByJS = mOldValue; }
     bool SavedValue() const { return mOldValue; }
   };
 
   struct MOZ_STACK_CLASS AutoInvalidateSelection {
-    explicit AutoInvalidateSelection(nsRange* aRange) : mRange(aRange) {
+    explicit AutoInvalidateSelection(Range* aRange) : mRange(aRange) {
       if (!mRange->IsInAnySelection() || sIsNested) {
         return;
       }
@@ -676,7 +674,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
       mCommonAncestor = mRange->GetRegisteredClosestCommonInclusiveAncestor();
     }
     ~AutoInvalidateSelection();
-    nsRange* mRange;
+    Range* mRange;
     RefPtr<nsINode> mCommonAncestor;
     static bool sIsNested;
   };
@@ -699,7 +697,7 @@ class nsRange final : public mozilla::dom::AbstractRange,
   
   NextSiblings mNewCharacterDataOnSplitText;
 
-  static nsTArray<RefPtr<nsRange>>* sCachedRanges;
+  static nsTArray<RefPtr<Range>>* sCachedRanges;
 
   
   
@@ -719,14 +717,14 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
   friend class mozilla::dom::AbstractRange;
 };
-namespace mozilla::dom {
-inline nsRange* AbstractRange::AsDynamicRange() {
-  MOZ_ASSERT(IsDynamicRange());
-  return static_cast<nsRange*>(this);
+
+inline Range* AbstractRange::AsRange() {
+  MOZ_ASSERT(IsRange());
+  return static_cast<Range*>(this);
 }
-inline const nsRange* AbstractRange::AsDynamicRange() const {
-  MOZ_ASSERT(IsDynamicRange());
-  return static_cast<const nsRange*>(this);
+inline const Range* AbstractRange::AsRange() const {
+  MOZ_ASSERT(IsRange());
+  return static_cast<const Range*>(this);
 }
 }  
 #endif 

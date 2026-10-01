@@ -899,11 +899,11 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         }
 
         if (range->MayCrossShadowBoundary()) {
-          MOZ_ASSERT(range->IsDynamicRange(),
+          MOZ_ASSERT(range->IsRange(),
                      "range->MayCrossShadowBoundary() can only return true for "
                      "dynamic range");
           StaticRange* crossBoundaryRange =
-              range->AsDynamicRange()->GetCrossShadowBoundaryRange();
+              range->AsRange()->GetCrossShadowBoundaryRange();
           MOZ_ASSERT(crossBoundaryRange);
           if (!crossBoundaryRange->Collapsed()) {
             return true;

@@ -19,8 +19,6 @@
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 
-class nsRange;
-
 struct CharacterDataChangeInfo;
 
 namespace mozilla {
@@ -157,7 +155,47 @@ class TextComposition final {
 
 
 
-  uint32_t XPOffsetInTextNode() const {
+
+
+  [[nodiscard]] uint32_t ClampedStartOffsetInTextNode() const {
+    return std::min(mCompositionStartOffsetInTextNode,
+                    mContainerTextNode->TextDataLength());
+  }
+
+  
+
+
+
+
+
+  [[nodiscard]] uint32_t ClampedLengthInTextNode() const {
+    return mCompositionLengthInTextNode == UINT32_MAX
+               ? 0
+               : ClampedEndOffsetInTextNode() - ClampedStartOffsetInTextNode();
+  }
+
+  
+
+
+
+
+
+  [[nodiscard]] uint32_t ClampedEndOffsetInTextNode() const {
+    if (mCompositionStartOffsetInTextNode == UINT32_MAX ||
+        mCompositionLengthInTextNode == UINT32_MAX) {
+      return UINT32_MAX;
+    }
+    return static_cast<uint32_t>(
+        std::min<uint64_t>(static_cast<uint64_t>(mCompositionLengthInTextNode) +
+                               ClampedStartOffsetInTextNode(),
+                           mContainerTextNode->TextDataLength()));
+  }
+
+  
+
+
+
+  [[nodiscard]] uint32_t StartOffsetMaybeInFollowingTextNode() const {
     return mCompositionStartOffsetInTextNode;
   }
 
@@ -165,7 +203,7 @@ class TextComposition final {
 
 
 
-  uint32_t XPLengthInTextNode() const {
+  [[nodiscard]] uint32_t LengthMaybeInFollowingTextNode() const {
     return mCompositionLengthInTextNode == UINT32_MAX
                ? 0
                : mCompositionLengthInTextNode;
@@ -175,7 +213,7 @@ class TextComposition final {
 
 
 
-  uint32_t XPEndOffsetInTextNode() const {
+  [[nodiscard]] uint32_t EndOffsetMaybeInFollowingTextNode() const {
     if (mCompositionStartOffsetInTextNode == UINT32_MAX ||
         mCompositionLengthInTextNode == UINT32_MAX) {
       return UINT32_MAX;

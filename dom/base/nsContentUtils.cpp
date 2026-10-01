@@ -8996,7 +8996,7 @@ bool nsContentUtils::IsPointInSelection(
   const uint32_t rangeCount = aSelection.RangeCount();
   for (const uint32_t i : IntegerRange(rangeCount)) {
     MOZ_ASSERT(aSelection.RangeCount() == rangeCount);
-    RefPtr<const nsRange> range = aSelection.GetRangeAt(i);
+    RefPtr<const dom::Range> range = aSelection.GetRangeAt(i);
     if (NS_WARN_IF(!range)) {
       
       continue;
@@ -9022,7 +9022,7 @@ void nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   
   
   
-  const nsRange* range = aSelection->GetAnchorFocusRange();
+  const dom::Range* range = aSelection->GetAnchorFocusRange();
   if (!range) {
     
     aOutStartOffset = aOutEndOffset = 0;

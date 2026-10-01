@@ -324,7 +324,7 @@ Element* IMEContentObserver::ComputeRootElement(PresShell* aPresShell) const {
 
   
   
-  if (const nsRange* selRange = selection->GetRangeAt(0)) {
+  if (const dom::Range* selRange = selection->GetRangeAt(0)) {
     MOZ_ASSERT(!mIsTextControl);
     if (NS_WARN_IF(!selRange->GetStartContainer())) {
       return nullptr;

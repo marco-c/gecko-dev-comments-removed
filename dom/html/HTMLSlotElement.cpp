@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "mozilla/dom/HTMLSlotElement.h"
 
@@ -72,7 +72,7 @@ void HTMLSlotElement::UnbindFromTree(UnbindContext& aContext) {
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
   if (!HasValidDir() && oldContainingShadow) {
-    // Slot might've provided host directionality to dir=auto ancestors
+    
     ResetDirectionSetBySlotHost(this, aContext, oldContainingShadow);
   }
 
@@ -108,10 +108,10 @@ void HTMLSlotElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       aNameSpaceID, aName, aValue, aOldValue, aSubjectPrincipal, aNotify);
 }
 
-/**
- * Flatten assigned nodes given a slot, as in:
- * https://dom.spec.whatwg.org/#find-flattened-slotables
- */
+
+
+
+
 static void FlattenAssignedNodes(HTMLSlotElement* aSlot,
                                  nsTArray<RefPtr<nsINode>>& aNodes) {
   if (!aSlot->GetContainingShadow()) {
@@ -120,7 +120,7 @@ static void FlattenAssignedNodes(HTMLSlotElement* aSlot,
 
   const Span<const RefPtr<nsINode>> assignedNodes = aSlot->AssignedNodes();
 
-  // If assignedNodes is empty, use children of slot as fallback content.
+  
   if (assignedNodes.IsEmpty()) {
     for (nsIContent* child = aSlot->GetFirstChild(); child;
          child = child->GetNextSibling()) {
@@ -174,10 +174,10 @@ const nsTArray<nsINode*>& HTMLSlotElement::ManuallyAssignedNodes() const {
 void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
   nsAutoScriptBlocker scriptBlocker;
 
-  // no-op if the input nodes and the assigned nodes are identical
-  // This also works if the two 'assign' calls are like
-  //   > slot.assign(node1, node2);
-  //   > slot.assign(node1, node2, node1, node2);
+  
+  
+  
+  
   if (!mAssignedNodes.IsEmpty() && aNodes.Length() >= mAssignedNodes.Length()) {
     nsTHashMap<nsPtrHashKey<nsIContent>, size_t> nodeIndexMap;
     for (size_t i = 0; i < aNodes.Length(); ++i) {
@@ -188,8 +188,8 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
         content = aNodes[i].GetAsText();
       }
       MOZ_ASSERT(content);
-      // We only care about the first index this content appears
-      // in the array
+      
+      
       nodeIndexMap.LookupOrInsert(content, i);
     }
 
@@ -210,31 +210,31 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
     }
   }
 
-  // 1. For each node of this's manually assigned nodes, set node's manual slot
-  // assignment to null.
+  
+  
   for (nsINode* node : mManuallyAssignedNodes) {
     MOZ_ASSERT(node->AsContent()->GetManualSlotAssignment() == this);
     node->AsContent()->SetManualSlotAssignment(nullptr);
   }
 
-  // 2. Let nodesSet be a new ordered set.
+  
   mManuallyAssignedNodes.Clear();
 
   nsIContent* host = nullptr;
   ShadowRoot* root = GetContainingShadow();
 
-  // An optimization to keep track which slots need to enqueue
-  // slotchange event, such that they can be enqueued later in
-  // tree order.
+  
+  
+  
   nsTHashSet<RefPtr<HTMLSlotElement>> changedSlots;
 
-  // Clear out existing assigned nodes
+  
   if (mInManualShadowRoot) {
     if (!mAssignedNodes.IsEmpty()) {
       changedSlots.EnsureInserted(this);
       if (root) {
-        // If not in a shadow tree, the flat tree is not really changing, so no
-        // need to invalidate layout. Same applies to other callers here.
+        
+        
         ShadowRoot::InvalidateStyleAndLayoutOnSubtree(this);
       }
       ClearAssignedNodes();
@@ -253,11 +253,11 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
     }
 
     MOZ_ASSERT(content);
-    // XXXsmaug Should we have a helper for
-    //         https://infra.spec.whatwg.org/#ordered-set?
+    
+    
     if (content->GetManualSlotAssignment() != this) {
-      // Step 3.1: If content's manual slot assignment refers to a slot,
-      // then remove node from that slot's manually assigned nodes.
+      
+      
       if (HTMLSlotElement* prevSlot = content->GetManualSlotAssignment()) {
         ShadowRoot* prevSlotRoot = prevSlot->GetContainingShadow();
         const bool wasAssigned = content->GetAssignedSlot() == prevSlot;
@@ -268,9 +268,9 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
         prevSlot->RemoveManuallyAssignedNode(*content);
       }
 
-      // Step 3.2: Set content's manual slot assignment to this.
+      
       content->SetManualSlotAssignment(this);
-      // Step 3.3: Append content to nodesSet.
+      
       mManuallyAssignedNodes.AppendElement(content);
 
       if (changedSlots.EnsureInserted(this) && root) {
@@ -278,16 +278,16 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
       }
 
       if (root && host && content->GetParent() == host) {
-        // Equivalent to 4.2.2.4.3 (DOM Spec) `Set slot's assigned nodes to
-        // slottables`
+        
+        
         root->MaybeReassignContent(*content);
       }
     }
   }
 
-  // The `assign slottables` step is completed already at this point,
-  // however we haven't fired the `slotchange` event yet because this
-  // needs to be done in tree order.
+  
+  
+  
   if (root) {
     for (nsIContent* child = root->GetFirstChild(); child;
          child = child->GetNextNode()) {
@@ -298,8 +298,8 @@ void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
       }
     }
   }
-  // Fire slotchange for any remaining slots that are in a different shadow
-  // tree (cross-root case). The spec doesn't define an ordering here.
+  
+  
   for (const auto& slot : changedSlots) {
     slot->EnqueueSlotChangeEvent();
   }
@@ -323,13 +323,13 @@ void HTMLSlotElement::AppendAssignedNode(nsIContent& aNode) {
 
 void HTMLSlotElement::AddedAssignedNode(nsIContent& aNode) {
   if (IsMaybeSelected()) {
-    // Normally it's nsRange::ContentAppended's responsibility to
-    // mark new descendants, however this doesn't work for slotted
-    // content because nsRange observes the common ancestor of
-    // start/end, whereas slotted element may not have the same
-    // ancestor as them.
+    
+    
+    
+    
+    
     dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-        aNode, true /* aMarkDesendants*/);
+        aNode, true );
   }
   SlotAssignedNodeAddedForDir(this, aNode);
   if (StaticPrefs::dom_headingoffset_enabled()) {
@@ -339,7 +339,7 @@ void HTMLSlotElement::AddedAssignedNode(nsIContent& aNode) {
 
 void HTMLSlotElement::RecalculateHasSlottedState() {
   bool hasSlotted = false;
-  // Find the first node that makes this a slotted element.
+  
   for (const RefPtr<nsINode>& assignedNode : mAssignedNodes.AsSpan()) {
     if (auto* slot = HTMLSlotElement::FromNode(assignedNode)) {
       if (slot->IsInShadowTree() &&
@@ -352,8 +352,8 @@ void HTMLSlotElement::RecalculateHasSlottedState() {
   }
   if (State().HasState(ElementState::HAS_SLOTTED) != hasSlotted) {
     SetStates(ElementState::HAS_SLOTTED, hasSlotted);
-    // If slot is a slotted node itself, the assigned slot needs to
-    // RecalculateHasSlottedState:
+    
+    
     if (auto* slot = GetAssignedSlot()) {
       slot->RecalculateHasSlottedState();
     }
@@ -361,8 +361,8 @@ void HTMLSlotElement::RecalculateHasSlottedState() {
 }
 
 void HTMLSlotElement::RemoveAssignedNode(nsIContent& aNode) {
-  // This one runs from unlinking, so we can't guarantee that the slot pointer
-  // hasn't been cleared.
+  
+  
   MOZ_ASSERT(!aNode.GetAssignedSlot() || aNode.GetAssignedSlot() == this,
              "How exactly?");
   mAssignedNodes.RemoveElement(&aNode);
@@ -392,15 +392,15 @@ void HTMLSlotElement::ClearAssignedNodes() {
 
 void HTMLSlotElement::RemovedAssignedNode(nsIContent& aNode) {
   if (aNode.IsMaybeSelected()) {
-    // Normally, this shouldn't happen because nsRange::ContentRemoved
-    // should be called for content removal, and then
-    // AbstractRange::UnmarkDescendants will be used to clear the flags.
-    // Though this doesn't work for slotted element because nsRange
-    // observers the common ancestor of start/end, whereas slotted element
-    // may not have the same ancestor as them, so we have to clear
-    // the flags manually here.
+    
+    
+    
+    
+    
+    
+    
     dom::AbstractRange::UpdateDescendantsInFlattenedTree(
-        aNode, false /* aMarkDesendants*/);
+        aNode, false );
   }
   SlotAssignedNodeRemovedForDir(this, aNode);
 }
@@ -410,8 +410,8 @@ void HTMLSlotElement::EnqueueSlotChangeEvent() {
     return;
   }
 
-  // FIXME(bug 1459704): Need to figure out how to deal with microtasks posted
-  // during shutdown.
+  
+  
   if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
     return;
   }
@@ -445,4 +445,4 @@ JSObject* HTMLSlotElement::WrapNode(JSContext* aCx,
   return HTMLSlotElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-}  // namespace mozilla::dom
+}  

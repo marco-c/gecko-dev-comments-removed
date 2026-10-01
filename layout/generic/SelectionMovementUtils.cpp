@@ -444,7 +444,7 @@ RawRangeBoundary SelectionMovementUtils::GetFirstVisiblePointAtLeaf(
   
   
   UnsafePreContentIterator iter;
-  if (aRange.IsDynamicRange()) {
+  if (aRange.IsRange()) {
     if (NS_WARN_IF(NS_FAILED(iter.InitWithoutValidatingPoints(
             aRange.StartRef().AsRaw(), aRange.EndRef().AsRaw())))) {
       return {nullptr, nullptr};
@@ -565,7 +565,7 @@ RawRangeBoundary SelectionMovementUtils::GetLastVisiblePointAtLeaf(
   
   
   UnsafePostContentIterator iter;
-  if (aRange.IsDynamicRange()) {
+  if (aRange.IsRange()) {
     if (NS_WARN_IF(NS_FAILED(iter.InitWithoutValidatingPoints(
             aRange.StartRef().AsRaw(), aRange.EndRef().AsRaw())))) {
       return {nullptr, nullptr};

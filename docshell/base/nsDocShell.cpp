@@ -10589,13 +10589,13 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
 
   const RefPtr fragmentDirective = GetDocument()->FragmentDirective();
-  const nsTArray<RefPtr<nsRange>> textDirectiveRanges =
+  const nsTArray<RefPtr<dom::Range>> textDirectiveRanges =
       fragmentDirective->FindTextFragmentsInDocument();
   fragmentDirective->HighlightTextDirectives(textDirectiveRanges);
   const bool scrollToTextDirective =
       !textDirectiveRanges.IsEmpty() &&
       fragmentDirective->IsTextDirectiveAllowedToBeScrolledTo();
-  const RefPtr<nsRange> textDirectiveToScroll =
+  const RefPtr<dom::Range> textDirectiveToScroll =
       scrollToTextDirective ? textDirectiveRanges[0] : nullptr;
 
   

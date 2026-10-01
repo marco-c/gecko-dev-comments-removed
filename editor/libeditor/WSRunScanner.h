@@ -916,7 +916,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
   static Result<bool, nsresult> ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
       Options aOptions,  
-      nsRange& aRange, const Element* aAncestorLimiter = nullptr);
+      dom::Range& aRange, const Element* aAncestorLimiter = nullptr);
 
   
 

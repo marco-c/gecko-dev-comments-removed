@@ -36,7 +36,6 @@ class nsDocumentFragment;
 class nsFrameSelection;
 class nsHTMLDocument;
 class nsITransferable;
-class nsRange;
 class nsStaticAtom;
 class nsStyledElement;
 class nsTableCellFrame;
@@ -62,6 +61,7 @@ class Blob;
 class DocumentFragment;
 class Event;
 class HTMLBRElement;
+class Range;
 class MouseEvent;
 class StaticRange;
 }  
@@ -746,8 +746,8 @@ class HTMLEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT  
-      nsresult InsertAsQuotation(const nsAString& aQuotedText,
-                                 nsINode** aNodeInserted);
+      nsresult
+      InsertAsQuotation(const nsAString& aQuotedText, nsINode** aNodeInserted);
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertHTMLAsAction(
       const nsAString& aInString, nsIPrincipal* aPrincipal = nullptr);
@@ -978,7 +978,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  CollapseAdjacentTextNodes(nsRange& aRange);
+  CollapseAdjacentTextNodes(dom::Range& aRange);
 
   static dom::Element* GetLinkElement(nsINode* aNode);
 
@@ -1307,10 +1307,10 @@ class HTMLEditor final : public EditorBase,
 
 
   template <typename EditorDOMRangeType>
-  already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
+  already_AddRefed<dom::Range> CreateRangeIncludingAdjuscentWhiteSpaces(
       const EditorDOMRangeType& aRange);
   template <typename EditorDOMPointType1, typename EditorDOMPointType2>
-  already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
+  already_AddRefed<dom::Range> CreateRangeIncludingAdjuscentWhiteSpaces(
       const EditorDOMPointType1& aStartPoint,
       const EditorDOMPointType2& aEndPoint);
 
@@ -1323,7 +1323,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] Result<EditorRawDOMRange, nsresult>
   GetRangeExtendedToHardLineEdgesForBlockEditAction(
-      const nsRange* aRange, const Element& aEditingHost) const;
+      const dom::Range* aRange, const Element& aEditingHost) const;
 
   
 
@@ -4494,7 +4494,7 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] inline already_AddRefed<nsRange>
+  [[nodiscard]] inline already_AddRefed<dom::Range>
   GetChangedRangeForTopLevelEditSubAction() const;
 
   MOZ_CAN_RUN_SCRIPT void DidDoTransaction(
@@ -4588,7 +4588,7 @@ class HTMLEditor final : public EditorBase,
   
   mutable RefPtr<RangeItem> mSelectedRangeForTopLevelEditSubAction;
   
-  mutable RefPtr<nsRange> mChangedRangeForTopLevelEditSubAction;
+  mutable RefPtr<dom::Range> mChangedRangeForTopLevelEditSubAction;
 
   RefPtr<Runnable> mPendingRootElementUpdatedRunner;
   RefPtr<DocumentModifiedEvent> mPendingDocumentModifiedRunner;

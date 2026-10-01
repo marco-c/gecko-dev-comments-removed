@@ -1583,9 +1583,9 @@ already_AddRefed<ShadowRoot> Element::AttachShadowWithoutNameChecks(
   if (ranges) {
     for (const AbstractRange* range : *ranges) {
       if (range->MayCrossShadowBoundary()) {
-        MOZ_ASSERT(range->IsDynamicRange());
+        MOZ_ASSERT(range->IsRange());
         CrossShadowBoundaryRange* crossBoundaryRange =
-            range->AsDynamicRange()->GetCrossShadowBoundaryRange();
+            range->AsRange()->GetCrossShadowBoundaryRange();
         MOZ_ASSERT(crossBoundaryRange);
         
         

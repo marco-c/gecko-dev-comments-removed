@@ -12,12 +12,12 @@
 #include "nsTArray.h"
 
 class nsINode;
-class nsRange;
 
 namespace mozilla {
 
 namespace dom {
 class Document;
+class Range;
 class Selection;
 }  
 
@@ -51,8 +51,8 @@ class SelectionChangeEventDispatcher final {
     uint32_t mStartOffset;
     uint32_t mEndOffset;
 
-    explicit RawRangeData(const nsRange* aRange);
-    bool Equals(const nsRange* aRange);
+    explicit RawRangeData(const dom::Range* aRange);
+    bool Equals(const dom::Range* aRange);
   };
 
   void SelectionRangeObservedMutation() {

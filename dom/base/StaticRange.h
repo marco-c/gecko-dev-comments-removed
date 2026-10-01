@@ -17,6 +17,8 @@ class ErrorResult;
 
 namespace dom {
 
+class CrossShadowBoundaryRange;
+
 class StaticRange : public AbstractRange {
  public:
   enum class MutationObserved : bool { No, Yes };
@@ -69,6 +71,13 @@ class StaticRange : public AbstractRange {
 
 
   bool IsValid() const;
+
+  
+  
+  bool IsCrossShadowBoundaryRange() const {
+    return mIsMutationObserved == MutationObserved::Yes;
+  }
+  inline CrossShadowBoundaryRange* AsCrossShadowBoundaryRange();
 
  private:
   

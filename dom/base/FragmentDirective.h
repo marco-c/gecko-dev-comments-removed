@@ -15,9 +15,10 @@
 
 class nsINode;
 class nsIURI;
-class nsRange;
+
 namespace mozilla::dom {
 class Document;
+class Range;
 class Promise;
 class Text;
 class TextDirectiveFinder;
@@ -71,7 +72,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
   
   MOZ_CAN_RUN_SCRIPT
   void HighlightTextDirectives(
-      const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges);
+      const nsTArray<RefPtr<Range>>& aTextDirectiveRanges);
 
   
 
@@ -83,7 +84,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
 
-  nsTArray<RefPtr<nsRange>> FindTextFragmentsInDocument();
+  nsTArray<RefPtr<Range>> FindTextFragmentsInDocument();
 
   
 
@@ -127,7 +128,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
 
-  void GetTextDirectiveRanges(nsTArray<RefPtr<nsRange>>& aRanges) const;
+  void GetTextDirectiveRanges(nsTArray<RefPtr<Range>>& aRanges) const;
 
   
 
@@ -142,7 +143,7 @@ class FragmentDirective final : public nsISupports, public nsWrapperCache {
 
 
   already_AddRefed<Promise> CreateTextDirectiveForRanges(
-      const Sequence<OwningNonNull<nsRange>>& aRanges);
+      const Sequence<OwningNonNull<Range>>& aRanges);
 
  private:
   RefPtr<Document> mDocument;

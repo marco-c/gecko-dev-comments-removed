@@ -25,7 +25,7 @@ namespace mozilla {
 using namespace dom;
 
 SelectionChangeEventDispatcher::RawRangeData::RawRangeData(
-    const nsRange* aRange) {
+    const dom::Range* aRange) {
   if (aRange->IsPositioned()) {
     mStartContainer = aRange->GetStartContainer();
     mEndContainer = aRange->GetEndContainer();
@@ -40,7 +40,7 @@ SelectionChangeEventDispatcher::RawRangeData::RawRangeData(
 }
 
 bool SelectionChangeEventDispatcher::RawRangeData::Equals(
-    const nsRange* aRange) {
+    const dom::Range* aRange) {
   if (!aRange->IsPositioned()) {
     return !mStartContainer;
   }

@@ -18,7 +18,6 @@
 
 class nsAttrValue;
 class nsGenericHTMLElement;
-class nsRange;
 class nsTreeColumn;
 class nsIFrame;
 class nsIDocShell;
@@ -29,6 +28,7 @@ class PresShell;
 namespace dom {
 class Document;
 class Element;
+class Range;
 class XULTreeElement;
 }  
 }  
@@ -150,7 +150,7 @@ class nsCoreUtils {
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult ScrollSubstringTo(
-      nsIFrame* aFrame, nsRange* aRange, uint32_t aScrollType);
+      nsIFrame* aFrame, mozilla::dom::Range* aRange, uint32_t aScrollType);
 
   
 
@@ -163,7 +163,8 @@ class nsCoreUtils {
 
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult ScrollSubstringTo(
-      nsIFrame* aFrame, nsRange* aRange, mozilla::AxisScrollParams aVertical,
+      nsIFrame* aFrame, mozilla::dom::Range* aRange,
+      mozilla::AxisScrollParams aVertical,
       mozilla::AxisScrollParams aHorizontal);
 
   

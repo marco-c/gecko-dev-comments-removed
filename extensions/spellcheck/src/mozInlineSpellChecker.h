@@ -52,7 +52,7 @@ class mozInlineSpellStatus {
 
   enum class SetAnchorToCaret : bool { No, Yes };
   static mozilla::UniquePtr<mozInlineSpellStatus> CreateForRange(
-      mozInlineSpellChecker& aSpellChecker, nsRange* aRange,
+      mozInlineSpellChecker& aSpellChecker, mozilla::dom::Range* aRange,
       SetAnchorToCaret aSetAnchorToCaret = SetAnchorToCaret::No);
 
   nsresult FinishInitOnEvent(mozInlineSpellWordUtil& aWordUtil);
@@ -77,13 +77,13 @@ class mozInlineSpellStatus {
 
   
   
-  RefPtr<nsRange> mRange;
+  RefPtr<mozilla::dom::Range> mRange;
 
   
-  const nsRange* GetCreatedRange() const { return mCreatedRange; }
+  const mozilla::dom::Range* GetCreatedRange() const { return mCreatedRange; }
 
   
-  const nsRange* GetNoCheckRange() const { return mNoCheckRange; }
+  const mozilla::dom::Range* GetNoCheckRange() const { return mNoCheckRange; }
 
  private:
   
@@ -95,8 +95,9 @@ class mozInlineSpellStatus {
   
   explicit mozInlineSpellStatus(
       mozInlineSpellChecker* aSpellChecker, Operation aOp,
-      RefPtr<nsRange>&& aRange, RefPtr<nsRange>&& aCreatedRange,
-      RefPtr<nsRange>&& aAnchorRange, bool aForceNavigationWordCheck,
+      RefPtr<mozilla::dom::Range>&& aRange,
+      RefPtr<mozilla::dom::Range>&& aCreatedRange,
+      RefPtr<mozilla::dom::Range>&& aAnchorRange, bool aForceNavigationWordCheck,
       int32_t aNewNavigationPositionOffset,
       SetAnchorToCaret aSetAnchorToCaret = SetAnchorToCaret::No);
 
@@ -107,25 +108,25 @@ class mozInlineSpellStatus {
   
   
   
-  const RefPtr<const nsRange> mCreatedRange;
+  const RefPtr<const mozilla::dom::Range> mCreatedRange;
 
   
-  RefPtr<nsRange> mNoCheckRange;
-
-  
-  
-  
-  
-  
-  RefPtr<const nsRange> mAnchorRange;
+  RefPtr<mozilla::dom::Range> mNoCheckRange;
 
   
   
   
   
+  
+  RefPtr<const mozilla::dom::Range> mAnchorRange;
 
   
-  RefPtr<nsRange> mOldNavigationAnchorRange;
+  
+  
+  
+
+  
+  RefPtr<mozilla::dom::Range> mOldNavigationAnchorRange;
 
   
   
@@ -144,8 +145,8 @@ class mozInlineSpellStatus {
   nsresult FillNoCheckRangeFromAnchor(mozInlineSpellWordUtil& aWordUtil);
 
   mozilla::dom::Document* GetDocument() const;
-  static already_AddRefed<nsRange> PositionToCollapsedRange(nsINode* aNode,
-                                                            uint32_t aOffset);
+  static already_AddRefed<mozilla::dom::Range> PositionToCollapsedRange(
+      nsINode* aNode, uint32_t aOffset);
 };
 
 class mozInlineSpellChecker final : public nsIInlineSpellChecker,
@@ -257,11 +258,11 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   static nsresult IsPointInSelection(mozilla::dom::Selection& aSelection,
                                      nsINode* aNode, uint32_t aOffset,
-                                     nsRange** aRange);
+                                     mozilla::dom::Range** aRange);
 
   nsresult CleanupRangesInSelection(mozilla::dom::Selection* aSelection);
 
-  nsresult SpellCheckRangeIgnoringWordAtCaret(nsRange* aRange);
+  nsresult SpellCheckRangeIgnoringWordAtCaret(mozilla::dom::Range* aRange);
 
   
 
@@ -269,17 +270,19 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  RemoveRange(mozilla::dom::Selection* aSpellCheckSelection, nsRange* aRange);
+  RemoveRange(mozilla::dom::Selection* aSpellCheckSelection,
+              mozilla::dom::Range* aRange);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
-  AddRange(mozilla::dom::Selection* aSpellCheckSelection, nsRange* aRange);
+  AddRange(mozilla::dom::Selection* aSpellCheckSelection,
+           mozilla::dom::Range* aRange);
   bool IsSpellCheckSelectionFull() const {
     return mNumWordsInSpellSelection >= mMaxNumWordsInSpellSelection;
   }
 
   nsresult MakeSpellCheckRange(nsINode* aStartNode, int32_t aStartOffset,
                                nsINode* aEndNode, int32_t aEndOffset,
-                               nsRange** aRange) const;
+                               mozilla::dom::Range** aRange) const;
 
   
   nsresult RegisterEventListeners();
@@ -320,7 +323,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void UpdateRangesForMisspelledWords(
       const nsTArray<NodeOffsetRange>& aNodeOffsetRangesForWords,
-      const nsTArray<RefPtr<nsRange>>& aOldRangesForSomeWords,
+      const nsTArray<RefPtr<mozilla::dom::Range>>& aOldRangesForSomeWords,
       const nsTArray<bool>& aIsMisspelled,
       mozilla::dom::Selection& aSpellCheckerSelection);
 

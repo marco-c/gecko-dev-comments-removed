@@ -42,7 +42,7 @@ bool TextDirectiveFinder::HasUninvokedDirectives() const {
   return !mUninvokedTextDirectives.IsEmpty();
 }
 
-nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
+nsTArray<RefPtr<Range>> TextDirectiveFinder::FindTextDirectivesInDocument() {
   if (mUninvokedTextDirectives.IsEmpty()) {
     return {};
   }
@@ -57,7 +57,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
   
   
   
-  nsTArray<RefPtr<nsRange>> textDirectiveRanges(
+  nsTArray<RefPtr<Range>> textDirectiveRanges(
       mUninvokedTextDirectives.Length());
 
   
@@ -71,7 +71,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
   for (TextDirective& textDirective : mUninvokedTextDirectives) {
     
     
-    if (RefPtr<nsRange> range = FindRangeForTextDirective(textDirective)) {
+    if (RefPtr<Range> range = FindRangeForTextDirective(textDirective)) {
       textDirectiveRanges.AppendElement(range);
       TEXT_FRAGMENT_LOG("Found text directive '{}'",
                         ToString(textDirective).c_str());
@@ -113,7 +113,7 @@ nsTArray<RefPtr<nsRange>> TextDirectiveFinder::FindTextDirectivesInDocument() {
   return textDirectiveRanges;
 }
 
-RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
+RefPtr<Range> TextDirectiveFinder::FindRangeForTextDirective(
     const TextDirective& aTextDirective) {
   
   
@@ -122,8 +122,8 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
   
   
   ErrorResult rv;
-  RefPtr<nsRange> searchRange =
-      nsRange::Create(mDocument, 0, mDocument, mDocument->Length(), rv);
+  RefPtr<Range> searchRange =
+      Range::Create(mDocument, 0, mDocument, mDocument->Length(), rv);
   if (rv.Failed()) {
     return nullptr;
   }
@@ -136,13 +136,13 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
   
   while (!searchRange->Collapsed()) {
     
-    RefPtr<nsRange> potentialMatch;
+    RefPtr<Range> potentialMatch;
     
     if (!aTextDirective.prefix.IsEmpty()) {
       
       
       
-      RefPtr<nsRange> prefixMatch = TextDirectiveUtil::FindStringInRange(
+      RefPtr<Range> prefixMatch = TextDirectiveUtil::FindStringInRange(
           finder, searchRange->StartRef(), searchRange->EndRef(),
           aTextDirective.prefix, true, false);
       
@@ -177,7 +177,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       
-      RefPtr<nsRange> matchRange = nsRange::Create(
+      RefPtr<Range> matchRange = Range::Create(
           prefixMatch->GetEndContainer(), prefixMatch->EndOffset(),
           searchRange->GetEndContainer(), searchRange->EndOffset(), rv);
       if (rv.Failed()) {
@@ -282,7 +282,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
     }
     
     
-    RefPtr<nsRange> rangeEndSearchRange = nsRange::Create(
+    RefPtr<Range> rangeEndSearchRange = Range::Create(
         potentialMatch->GetEndContainer(), potentialMatch->EndOffset(),
         searchRange->GetEndContainer(), searchRange->EndOffset(), rv);
     if (rv.Failed()) {
@@ -299,7 +299,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
         
         
         
-        RefPtr<nsRange> endMatch = TextDirectiveUtil::FindStringInRange(
+        RefPtr<Range> endMatch = TextDirectiveUtil::FindStringInRange(
             finder, rangeEndSearchRange->StartRef(),
             rangeEndSearchRange->EndRef(), aTextDirective.end, true,
             mustEndAtWordBoundary);
@@ -328,7 +328,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       
-      RefPtr<nsRange> suffixRange = nsRange::Create(
+      RefPtr<Range> suffixRange = Range::Create(
           potentialMatch->GetEndContainer(), potentialMatch->EndOffset(),
           searchRange->GetEndContainer(), searchRange->EndOffset(), rv);
       if (rv.Failed()) {
@@ -352,7 +352,7 @@ RefPtr<nsRange> TextDirectiveFinder::FindRangeForTextDirective(
       
       
       
-      RefPtr<nsRange> suffixMatch = TextDirectiveUtil::FindStringInRange(
+      RefPtr<Range> suffixMatch = TextDirectiveUtil::FindStringInRange(
           finder, suffixRange->StartRef(), suffixRange->EndRef(),
           aTextDirective.suffix, false, true);
       

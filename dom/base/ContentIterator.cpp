@@ -966,8 +966,8 @@ nsresult ContentSubtreeIterator::Init(nsINode* aStartContainer,
 
 nsresult ContentSubtreeIterator::Init(const RawRangeBoundary& aStartBoundary,
                                       const RawRangeBoundary& aEndBoundary) {
-  RefPtr<nsRange> range =
-      nsRange::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
+  RefPtr<dom::Range> range =
+      dom::Range::Create(aStartBoundary, aEndBoundary, IgnoreErrors());
   if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -992,10 +992,10 @@ nsresult ContentSubtreeIterator::InitWithAllowCrossShadowBoundary(
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (aRange->IsDynamicRange()) {
+  if (aRange->IsRange()) {
     
     
-    mRange = aRange->AsDynamicRange()->GetRangeInFlatTree();
+    mRange = aRange->AsRange()->GetRangeInFlatTree();
   } else {
     mRange = aRange;
   }

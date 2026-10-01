@@ -50,7 +50,6 @@ class nsIPrincipal;
 class nsIURI;
 class nsNodeSupportsWeakRefTearoff;
 class nsDOMMutationObserver;
-class nsRange;
 class nsWindowSizes;
 
 namespace mozilla {
@@ -65,6 +64,7 @@ class PresShell;
 class TextEditor;
 class WidgetEvent;
 namespace dom {
+class Range;
 class NodeList;
 class HTMLCollection;
 

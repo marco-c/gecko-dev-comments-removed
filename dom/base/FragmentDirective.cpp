@@ -144,7 +144,7 @@ void FragmentDirective::ParseAndRemoveFragmentDirectiveFromFragment(
                     aURI->GetSpecOrDefault());
 }
 
-nsTArray<RefPtr<nsRange>> FragmentDirective::FindTextFragmentsInDocument() {
+nsTArray<RefPtr<Range>> FragmentDirective::FindTextFragmentsInDocument() {
   MOZ_ASSERT(mDocument);
   if (!mFinder) {
     auto uri = TextDirectiveUtil::ShouldLog() && mDocument->GetDocumentURI()
@@ -356,7 +356,7 @@ bool FragmentDirective::IsTextDirectiveAllowedToBeScrolledTo() {
 }
 
 void FragmentDirective::HighlightTextDirectives(
-    const nsTArray<RefPtr<nsRange>>& aTextDirectiveRanges) {
+    const nsTArray<RefPtr<Range>>& aTextDirectiveRanges) {
   MOZ_ASSERT(mDocument);
   if (!StaticPrefs::dom_text_fragments_enabled()) {
     return;
@@ -385,7 +385,7 @@ void FragmentDirective::HighlightTextDirectives(
   if (!targetTextSelection) {
     return;
   }
-  for (const RefPtr<nsRange>& range : aTextDirectiveRanges) {
+  for (const RefPtr<Range>& range : aTextDirectiveRanges) {
     
     
     targetTextSelection->AddRangeAndSelectFramesAndNotifyListeners(
@@ -396,7 +396,7 @@ void FragmentDirective::HighlightTextDirectives(
   
   
   
-  const nsRange* firstDirectiveRange = aTextDirectiveRanges[0];
+  const Range* firstDirectiveRange = aTextDirectiveRanges[0];
   for (uint32_t rangeIndex : IntegerRange(targetTextSelection->RangeCount())) {
     if (targetTextSelection->GetRangeAt(rangeIndex) == firstDirectiveRange) {
       targetTextSelection->SetAnchorFocusRange(rangeIndex);
@@ -406,7 +406,7 @@ void FragmentDirective::HighlightTextDirectives(
 }
 
 void FragmentDirective::GetTextDirectiveRanges(
-    nsTArray<RefPtr<nsRange>>& aRanges) const {
+    nsTArray<RefPtr<Range>>& aRanges) const {
   if (!StaticPrefs::dom_text_fragments_enabled()) {
     return;
   }
@@ -423,7 +423,7 @@ void FragmentDirective::GetTextDirectiveRanges(
   aRanges.Clear();
   for (uint32_t rangeIndex = 0; rangeIndex < targetTextSelection->RangeCount();
        ++rangeIndex) {
-    nsRange* range = targetTextSelection->GetRangeAt(rangeIndex);
+    Range* range = targetTextSelection->GetRangeAt(rangeIndex);
     MOZ_ASSERT(range);
     aRanges.AppendElement(range);
   }
@@ -445,7 +445,7 @@ void FragmentDirective::RemoveAllTextDirectives(ErrorResult& aRv) {
 }
 
 already_AddRefed<Promise> FragmentDirective::CreateTextDirectiveForRanges(
-    const Sequence<OwningNonNull<nsRange>>& aRanges) {
+    const Sequence<OwningNonNull<Range>>& aRanges) {
   RefPtr<Promise> resultPromise =
       Promise::Create(mDocument->GetRelevantGlobal(), IgnoreErrors());
   if (!resultPromise) {

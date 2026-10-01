@@ -68,7 +68,7 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
   return frame && frame->StyleVisibility()->IsVisible();
 }
 
- RefPtr<nsRange> TextDirectiveUtil::FindStringInRange(
+ RefPtr<Range> TextDirectiveUtil::FindStringInRange(
     nsFind* aFinder, const RangeBoundary& aSearchStart,
     const RangeBoundary& aSearchEnd, const nsAString& aQuery,
     bool aWordStartBounded, bool aWordEndBounded) {
@@ -79,12 +79,12 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
   aFinder->SetWordStartBounded(aWordStartBounded);
   aFinder->SetWordEndBounded(aWordEndBounded);
   aFinder->SetCaseSensitive(false);
-  RefPtr<nsRange> result =
+  RefPtr<Range> result =
       aFinder->FindFromRangeBoundaries(aQuery, aSearchStart, aSearchEnd);
   if (!result || result->Collapsed()) {
     TEXT_FRAGMENT_LOG("Did not find query '{}'", NS_ConvertUTF16toUTF8(aQuery));
   } else {
-    auto rangeToString = [](nsRange* range) -> nsCString {
+    auto rangeToString = [](Range* range) -> nsCString {
       nsString rangeString;
       range->ToString(rangeString, IgnoreErrors());
       return NS_ConvertUTF16toUTF8(rangeString);
@@ -196,7 +196,7 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
 }
 
  bool TextDirectiveUtil::AdvanceStartToNextNonWhitespacePosition(
-    nsRange& aRange) {
+    Range& aRange) {
   
   while (!aRange.Collapsed()) {
     

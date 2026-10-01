@@ -32,7 +32,7 @@ namespace mozilla {
 class DeleteRangeTransaction final : public EditAggregateTransaction {
  protected:
   DeleteRangeTransaction(EditorBase& aEditorBase,
-                         const nsRange& aRangeToDelete);
+                         const dom::Range& aRangeToDelete);
 
  public:
   
@@ -42,7 +42,7 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
   static already_AddRefed<DeleteRangeTransaction> Create(
-      EditorBase& aEditorBase, const nsRange& aRangeToDelete) {
+      EditorBase& aEditorBase, const dom::Range& aRangeToDelete) {
     RefPtr<DeleteRangeTransaction> transaction =
         new DeleteRangeTransaction(aEditorBase, aRangeToDelete);
     return transaction.forget();
@@ -81,7 +81,7 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
   nsresult MaybeExtendDeletingRangeWithSurroundingWhitespace(
-      nsRange& aRange) const;
+      dom::Range& aRange) const;
 
   
 
@@ -143,7 +143,7 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
   
   
-  RefPtr<nsRange> mRangeToDelete;
+  RefPtr<dom::Range> mRangeToDelete;
 
   EditorDOMPoint mPointToPutCaret;
 };

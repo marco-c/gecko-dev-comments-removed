@@ -3196,7 +3196,8 @@ UniquePtr<gfxContext> PresShell::CreateReferenceRenderingContext() {
 
 
 nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
-                               const nsRange* aFirstTextDirective, bool aScroll,
+                               const dom::Range* aFirstTextDirective,
+                               bool aScroll,
                                ScrollFlags aAdditionalScrollFlags) {
   if (!mDocument) {
     return NS_ERROR_FAILURE;
@@ -3328,7 +3329,7 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
       
       
       
-      RefPtr<nsRange> jumpToRange = nsRange::Create(mDocument);
+      RefPtr<dom::Range> jumpToRange = dom::Range::Create(mDocument);
       nsCOMPtr<nsIContent> nodeToSelect = target.get();
       while (nodeToSelect->GetFirstChild()) {
         nodeToSelect = nodeToSelect->GetFirstChild();
@@ -5099,7 +5100,7 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
 
 
 nsRect PresShell::ClipListToRange(nsDisplayListBuilder* aBuilder,
-                                  nsDisplayList* aList, nsRange* aRange) {
+                                  nsDisplayList* aList, dom::Range* aRange) {
   
   
   
@@ -5220,7 +5221,7 @@ static bool gDumpRangePaintList = false;
 #endif
 
 UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
-    nsRange* aRange, nsRect& aSurfaceRect, bool aForPrimarySelection) {
+    dom::Range* aRange, nsRect& aSurfaceRect, bool aForPrimarySelection) {
   nsIFrame* ancestorFrame = nullptr;
   nsIFrame* rootFrame = GetRootFrame();
 
@@ -5580,7 +5581,7 @@ already_AddRefed<SourceSurface> PresShell::RenderNode(
     return nullptr;
   }
 
-  RefPtr<nsRange> range = nsRange::Create(aNode);
+  RefPtr<dom::Range> range = dom::Range::Create(aNode);
   IgnoredErrorResult rv;
   range->SelectNode(*aNode, rv);
   if (rv.Failed()) {
@@ -5632,7 +5633,7 @@ already_AddRefed<SourceSurface> PresShell::RenderSelection(
   NS_ASSERTION(rangeCount > 0, "RenderSelection called with no selection");
   for (const uint32_t r : IntegerRange(rangeCount)) {
     MOZ_ASSERT(aSelection->RangeCount() == rangeCount);
-    RefPtr<nsRange> range = aSelection->GetRangeAt(r);
+    RefPtr<dom::Range> range = aSelection->GetRangeAt(r);
 
     UniquePtr<RangePaintInfo> info = CreateRangePaintInfo(range, area, true);
     if (info) {

@@ -16,14 +16,13 @@
 #include "nsINode.h"
 
 class nsPresContext;
-class nsRange;
-
 struct nsRect;
 
 namespace mozilla {
 
 namespace dom {
 class Element;
+class Range;
 }  
 
 
@@ -99,7 +98,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
     }
 
     nsresult SetEndAfter(nsIContent* aEndContainer);
-    void SetStartAndEnd(const nsRange* aRange);
+    void SetStartAndEnd(const dom::Range* aRange);
     nsresult SetStartAndEnd(const RawRangeBoundary& aStart,
                             const RawRangeBoundary& aEnd);
 
@@ -206,7 +205,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
-  MOZ_CAN_RUN_SCRIPT Result<nsRange*, nsresult> InitRootContent(
+  MOZ_CAN_RUN_SCRIPT Result<dom::Range*, nsresult> InitRootContent(
       const Selection& aNormalSelection);
 
  public:
@@ -362,11 +361,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
   
   MOZ_CAN_RUN_SCRIPT
-  already_AddRefed<nsRange> GetRangeFromFlatTextOffset(
+  already_AddRefed<dom::Range> GetRangeFromFlatTextOffset(
       WidgetContentCommandEvent* aEvent, uint32_t aOffset, uint32_t aLength);
 
   
-  nsresult GenerateFlatTextContent(const nsRange* aRange, nsString& aString);
+  nsresult GenerateFlatTextContent(const dom::Range* aRange, nsString& aString);
 
  protected:
   

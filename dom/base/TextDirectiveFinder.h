@@ -8,11 +8,11 @@
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 
-class nsRange;
 struct TextDirective;
 namespace mozilla::dom {
 
 class Document;
+class Range;
 
 
 
@@ -34,7 +34,7 @@ class TextDirectiveFinder final {
 
 
 
-  nsTArray<RefPtr<nsRange>> FindTextDirectivesInDocument();
+  nsTArray<RefPtr<Range>> FindTextDirectivesInDocument();
 
   
 
@@ -45,8 +45,7 @@ class TextDirectiveFinder final {
   
 
 
-  RefPtr<nsRange> FindRangeForTextDirective(
-      const TextDirective& aTextDirective);
+  RefPtr<Range> FindRangeForTextDirective(const TextDirective& aTextDirective);
 
  private:
   friend class FragmentDirective;
