@@ -414,7 +414,10 @@ void Http3Session::Shutdown() {
     } else if (mError == NS_ERROR_NET_RESET) {
       stream->Close(NS_ERROR_NET_RESET);
     } else {
-      stream->Close(NS_ERROR_ABORT);
+      
+      
+      
+      stream->Close(NS_ERROR_NET_UNCLEAN_SHUTDOWN);
     }
     RemoveStreamFromQueues(stream);
     if (stream->HasStreamId()) {
