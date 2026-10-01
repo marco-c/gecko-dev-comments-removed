@@ -255,12 +255,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 };
 
 
-enum class StyleTextWrapMode : uint8_t {
-  Wrap = 0,
-  Nowrap,
-};
-
-
 
 
 
