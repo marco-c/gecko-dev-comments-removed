@@ -823,8 +823,9 @@ class PeerConnectionImpl final
 
   
   
-  nsresult UpdateTransports(const JsepSession& aSession,
-                            const bool forceIceTcp);
+  
+  nsresult UpdateTransports(const JsepSession& aSession, const bool forceIceTcp,
+                            const bool aProvisional);
 
   void ResetStunAddrsForIceRestart() { mStunAddrs.Clear(); }
 

@@ -583,7 +583,8 @@ JsepSession::Result JsepSessionImpl::CreateAnswer(
     const JsepAnswerOptions& options, std::string* answer) {
   mLastError.clear();
 
-  if (mState != kJsepStateHaveRemoteOffer) {
+  if (mState != kJsepStateHaveRemoteOffer &&
+      mState != kJsepStateHaveLocalPranswer) {
     JSEP_SET_ERROR("Cannot create answer in state " << GetStateStr(mState));
     return dom::PCError::InvalidStateError;
   }
@@ -861,6 +862,14 @@ JsepSession::Result JsepSessionImpl::SetLocalDescription(
     return result;
   }
 
+  if (mState == kJsepStateHaveLocalPranswer) {
+    
+    result = ValidateAnswerAgainstPranswer(*mPendingLocalDescription, *parsed);
+    if (result.mError.isSome()) {
+      return result;
+    }
+  }
+
   if (type == kJsepSdpOffer) {
     
     mOldTransceivers = mTransceivers;
@@ -1017,13 +1026,28 @@ nsresult JsepSessionImpl::SetLocalDescriptionOffer(UniquePtr<Sdp> offer) {
 
 nsresult JsepSessionImpl::SetLocalDescriptionAnswer(JsepSdpType type,
                                                     UniquePtr<Sdp> answer) {
-  MOZ_ASSERT(mState == kJsepStateHaveRemoteOffer);
+  MOZ_ASSERT(mState == kJsepStateHaveRemoteOffer ||
+             mState == kJsepStateHaveLocalPranswer);
+  const bool firstAnswer = (mState == kJsepStateHaveRemoteOffer);
   mPendingLocalDescription = std::move(answer);
 
   nsresult rv = HandleNegotiatedSession(mPendingLocalDescription,
                                         mPendingRemoteDescription);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  if (firstAnswer) {
+    mNegotiations++;
+  }
+
+  if (type == kJsepSdpPranswer) {
+    SetState(kJsepStateHaveLocalPranswer);
+    return NS_OK;
+  }
+
+  mGeneratedAnswer.reset();
+  mGeneratedOffer.reset();
   mCurrentRemoteDescription = std::move(mPendingRemoteDescription);
   mCurrentLocalDescription = std::move(mPendingLocalDescription);
   MOZ_ASSERT(mIsPendingOfferer.isSome() && !*mIsPendingOfferer);
@@ -1109,6 +1133,14 @@ JsepSession::Result JsepSessionImpl::SetRemoteDescription(
   }
   if (result.mError.isSome()) {
     return result;
+  }
+
+  if (mState == kJsepStateHaveRemotePranswer) {
+    
+    result = ValidateAnswerAgainstPranswer(*mPendingRemoteDescription, *parsed);
+    if (result.mError.isSome()) {
+      return result;
+    }
   }
 
   bool iceLite =
@@ -1266,11 +1298,6 @@ nsresult JsepSessionImpl::HandleNegotiatedSession(
     }
   }
   JsepTrack::SetReceivePayloadTypes(receiveTracks);
-
-  mNegotiations++;
-
-  mGeneratedAnswer.reset();
-  mGeneratedOffer.reset();
 
   return NS_OK;
 }
@@ -1656,13 +1683,24 @@ nsresult JsepSessionImpl::SetRemoteDescriptionAnswer(JsepSdpType type,
                                                      UniquePtr<Sdp> answer) {
   MOZ_ASSERT(mState == kJsepStateHaveLocalOffer ||
              mState == kJsepStateHaveRemotePranswer);
-
+  const bool firstAnswer = (mState == kJsepStateHaveLocalOffer);
   mPendingRemoteDescription = std::move(answer);
 
   nsresult rv = HandleNegotiatedSession(mPendingLocalDescription,
                                         mPendingRemoteDescription);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (firstAnswer) {
+    mNegotiations++;
+  }
+
+  if (type == kJsepSdpPranswer) {
+    SetState(kJsepStateHaveRemotePranswer);
+    return NS_OK;
+  }
+
+  mGeneratedAnswer.reset();
+  mGeneratedOffer.reset();
   mCurrentRemoteDescription = std::move(mPendingRemoteDescription);
   mCurrentLocalDescription = std::move(mPendingLocalDescription);
   MOZ_ASSERT(mIsPendingOfferer.isSome() && *mIsPendingOfferer);
@@ -2299,6 +2337,157 @@ JsepSession::Result JsepSessionImpl::ValidateAnswer(const Sdp& offer,
         }
       }
     }
+  }
+
+  return Result();
+}
+
+
+static std::string SerializeAttribute(const SdpAttributeList& aAttrs,
+                                      SdpAttribute::AttributeType aType) {
+  std::ostringstream os;
+  if (aAttrs.HasAttribute(aType)) {
+    aAttrs.GetAttribute(aType)->Serialize(os);
+  }
+  return os.str();
+}
+
+
+
+
+
+
+
+
+
+JsepSession::Result JsepSessionImpl::ValidateAnswerAgainstPranswer(
+    const Sdp& pranswer, const Sdp& answer) {
+  struct Frozen {
+    SdpAttribute::AttributeType mType;
+    const char* mWhat;
+  };
+
+  
+  
+  
+  
+  static const Frozen kSessionFrozen[] = {
+      {SdpAttribute::kGroupAttribute, "group"},
+      {SdpAttribute::kIdentityAttribute, "identity"},
+      {SdpAttribute::kIceLiteAttribute, "ice-lite"},
+  };
+  for (const auto& [type, what] : kSessionFrozen) {
+    if (SerializeAttribute(pranswer.GetAttributeList(), type) !=
+        SerializeAttribute(answer.GetAttributeList(), type)) {
+      JSEP_SET_ERROR("Answer changes " << what << " of the provisional answer");
+      return Result(dom::PCError::InvalidAccessError);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const Frozen kMsectionFrozen[] = {
+      {SdpAttribute::kIceUfragAttribute, "ice-ufrag"},
+      {SdpAttribute::kIcePwdAttribute, "ice-pwd"},
+      {SdpAttribute::kIceOptionsAttribute, "ice-options"},
+      {SdpAttribute::kFingerprintAttribute, "fingerprint"},
+      {SdpAttribute::kSetupAttribute, "setup"},
+      {SdpAttribute::kRtcpMuxAttribute, "rtcp-mux"},
+      {SdpAttribute::kRtcpRsizeAttribute, "rtcp-rsize"},
+      {SdpAttribute::kSimulcastAttribute, "simulcast"},
+      {SdpAttribute::kRidAttribute, "rid"},
+      {SdpAttribute::kSctpPortAttribute, "sctp-port"},
+      {SdpAttribute::kSctpmapAttribute, "sctpmap"},
+  };
+
+  
+  
+  for (size_t i = 0; i < answer.GetMediaSectionCount(); ++i) {
+    const SdpMediaSection& pranswerMsection = pranswer.GetMediaSection(i);
+    const SdpMediaSection& answerMsection = answer.GetMediaSection(i);
+
+    const bool answerDisabled = mSdpHelper.MsectionIsDisabled(answerMsection);
+    if (answerDisabled != mSdpHelper.MsectionIsDisabled(pranswerMsection)) {
+      JSEP_SET_ERROR("Answer " << (answerDisabled ? "rejects" : "accepts")
+                               << " m-section " << i
+                               << ", which the provisional answer "
+                               << (answerDisabled ? "accepted" : "rejected"));
+      return Result(dom::PCError::InvalidAccessError);
+    }
+    if (answerDisabled) {
+      continue;
+    }
+
+    const SdpAttributeList& pranswerAttrs = pranswerMsection.GetAttributeList();
+    const SdpAttributeList& answerAttrs = answerMsection.GetAttributeList();
+
+    for (const auto& [type, what] : kMsectionFrozen) {
+      if (SerializeAttribute(pranswerAttrs, type) !=
+          SerializeAttribute(answerAttrs, type)) {
+        JSEP_SET_ERROR("Answer changes " << what
+                                         << " of the provisional answer at "
+                                            "m-section "
+                                         << i);
+        return Result(dom::PCError::InvalidAccessError);
+      }
+    }
+
+    
+    
+    
+
+    
+    
+    
+    if (pranswerAttrs.HasAttribute(SdpAttribute::kRtpmapAttribute) &&
+        answerAttrs.HasAttribute(SdpAttribute::kRtpmapAttribute)) {
+      const SdpRtpmapAttributeList& answerRtpmap = answerAttrs.GetRtpmap();
+      for (const auto& entry : pranswerAttrs.GetRtpmap().mRtpmaps) {
+        if (!answerRtpmap.HasEntry(entry.pt)) {
+          continue;
+        }
+        const auto& answerEntry = answerRtpmap.GetEntry(entry.pt);
+        if (answerEntry.name != entry.name ||
+            answerEntry.clock != entry.clock ||
+            answerEntry.channels != entry.channels) {
+          JSEP_SET_ERROR("Answer changes payload type "
+                         << entry.pt
+                         << " of the provisional answer at m-section " << i);
+          return Result(dom::PCError::InvalidAccessError);
+        }
+      }
+    }
+
+    
+    
+    if (pranswerAttrs.HasAttribute(SdpAttribute::kMsidAttribute) &&
+        answerAttrs.HasAttribute(SdpAttribute::kMsidAttribute)) {
+      const auto& pranswerMsids = pranswerAttrs.GetMsid().mMsids;
+      const auto& answerMsids = answerAttrs.GetMsid().mMsids;
+      bool sameStreams = pranswerMsids.size() == answerMsids.size();
+      for (size_t j = 0; sameStreams && j < pranswerMsids.size(); ++j) {
+        sameStreams = pranswerMsids[j].identifier == answerMsids[j].identifier;
+      }
+      if (!sameStreams) {
+        JSEP_SET_ERROR(
+            "Answer changes the msid of the provisional answer at "
+            "m-section "
+            << i);
+        return Result(dom::PCError::InvalidAccessError);
+      }
+    }
+
+    
+    
   }
 
   return Result();

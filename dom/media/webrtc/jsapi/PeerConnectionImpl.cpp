@@ -1852,7 +1852,11 @@ PeerConnectionImpl::AddIceCandidate(
     
     
     
-    if (mSignalingState == RTCSignalingState::Stable && !transportId.empty()) {
+    const bool answered =
+        mSignalingState == RTCSignalingState::Stable ||
+        mSignalingState == RTCSignalingState::Have_local_pranswer ||
+        mSignalingState == RTCSignalingState::Have_remote_pranswer;
+    if (answered && !transportId.empty()) {
       AddIceCandidate(candidate, transportId, aUfrag);
       mRawTrickledCandidates.push_back(candidate);
     }
@@ -3057,11 +3061,14 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           EnsureTransports(*mJsepSession);
         }
 
-        if (mJsepSession->GetState() == kJsepStateStable) {
+        const JsepSignalingState jsepState = mJsepSession->GetState();
+        const bool provisional = jsepState == kJsepStateHaveLocalPranswer ||
+                                 jsepState == kJsepStateHaveRemotePranswer;
+        if (jsepState == kJsepStateStable || provisional) {
           
           
           
-          UpdateTransports(*mJsepSession, mForceIceTcp);
+          UpdateTransports(*mJsepSession, mForceIceTcp, provisional);
           if (NS_FAILED(UpdateMediaPipelines())) {
             CSFLogError(LOGTAG, "Error Updating MediaPipelines");
             NS_ASSERTION(
@@ -3163,7 +3170,9 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           }
         }
 
-        if (aSdpType == dom::RTCSdpType::Answer) {
+        
+        if (aSdpType == dom::RTCSdpType::Answer ||
+            aSdpType == dom::RTCSdpType::Pranswer) {
           dom::RTCIceRole role = mJsepSession->IsIceControlling()
                                      ? dom::RTCIceRole::Controlling
                                      : dom::RTCIceRole::Controlled;
@@ -4437,7 +4446,8 @@ PeerConnectionImpl::GetActiveTransports() const {
 }
 
 nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
-                                              const bool forceIceTcp) {
+                                              const bool forceIceTcp,
+                                              const bool aProvisional) {
   std::set<std::string> finalTransports;
   mJsepSession->ForEachTransceiver(
       [&, this, self = RefPtr<PeerConnectionImpl>(this)](
@@ -4448,7 +4458,12 @@ nsresult PeerConnectionImpl::UpdateTransports(const JsepSession& aSession,
         }
       });
 
-  mTransportHandler->RemoveTransportsExcept(finalTransports);
+  
+  
+  
+  if (!aProvisional) {
+    mTransportHandler->RemoveTransportsExcept(finalTransports);
+  }
 
   for (const auto& transceiverImpl : mTransceivers) {
     transceiverImpl->UpdateTransport();
@@ -4540,7 +4555,9 @@ nsresult PeerConnectionImpl::UpdateMediaPipelines() {
 
 void PeerConnectionImpl::StartIceChecks(const JsepSession& aSession) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mJsepSession->GetState() == kJsepStateStable);
+  MOZ_ASSERT(mJsepSession->GetState() == kJsepStateStable ||
+             mJsepSession->GetState() == kJsepStateHaveLocalPranswer ||
+             mJsepSession->GetState() == kJsepStateHaveRemotePranswer);
 
   auto transports = GetActiveTransports();
 
