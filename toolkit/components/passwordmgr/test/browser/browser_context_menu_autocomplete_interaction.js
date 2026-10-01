@@ -78,7 +78,7 @@ function autocompleteUnexpectedPopupShowing(event) {
 
 async function openContextMenu(browser, loginInput) {
   
-  let eventDetails1 = { type: "mousedown", button: 2 };
+  let eventDetails1 = { button: 2 };
   await BrowserTestUtils.synthesizeMouseAtCenter(
     loginInput,
     eventDetails1,

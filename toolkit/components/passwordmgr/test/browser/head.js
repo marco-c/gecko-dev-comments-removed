@@ -777,7 +777,7 @@ async function openPasswordContextMenu(
   
   
   
-  let eventDetails = { type: "mousedown", button: 2 };
+  let eventDetails = { button: 2 };
   await BrowserTestUtils.synthesizeMouseAtCenter(
     input,
     eventDetails,

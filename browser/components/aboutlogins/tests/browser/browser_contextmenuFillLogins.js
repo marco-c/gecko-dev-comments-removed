@@ -133,19 +133,24 @@ async function openContextMenuForPasswordInput(browser) {
   });
 
   
-  let browserOffsets = browser.getBoundingClientRect();
-  let offsetX = browserOffsets.x + passwordInputCoords.x;
-  let offsetY = browserOffsets.y + passwordInputCoords.y;
-
   
   
-  
-  let eventDetails = { type: "mousedown", button: 2 };
-  await EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  let eventDetails = { button: 2 };
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    passwordInputCoords.x,
+    passwordInputCoords.y,
+    eventDetails,
+    browser
+  );
 
   
   eventDetails = { type: "contextmenu", button: 2 };
-  await EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    passwordInputCoords.x,
+    passwordInputCoords.y,
+    eventDetails,
+    browser
+  );
 
   await SpecialPowers.spawn(browser, [], async () => {
     let event = await content.contextmenuPromise;
