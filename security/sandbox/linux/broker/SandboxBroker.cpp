@@ -627,28 +627,22 @@ nsCString SandboxBroker::ReverseSymlinks(const nsACString& aPath) {
   }
 }
 
-int SandboxBroker::SymlinkPermissions(const char* aPath,
-                                      const size_t aPathLen) {
-  
-  
-  
-  char pathBufSymlink[kMaxPathLen + 1];
-  base::strlcpy(pathBufSymlink, aPath, sizeof(pathBufSymlink));
-
-  nsCString orig =
-      ReverseSymlinks(nsDependentCString(pathBufSymlink, aPathLen));
-  if (!orig.IsEmpty()) {
+int SandboxBroker::SymlinkPermissions(const nsACString& aPath) {
+  nsCString path = ReverseSymlinks(aPath);
+  if (path.IsEmpty()) {
+    path = aPath;
+  } else {
     if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-      SANDBOX_LOG("Reversing %s -> %s", aPath, orig.get());
+      SANDBOX_LOG("Reversing %s -> %s", PromiseFlatCString(aPath).get(),
+                  path.get());
     }
-    base::strlcpy(pathBufSymlink, orig.get(), sizeof(pathBufSymlink));
   }
 
   int perms = 0;
   
   
-  char* result = SandboxBroker::SymlinkPath(mPolicy.get(), pathBufSymlink,
-                                            nullptr, &perms);
+  char* result =
+      SandboxBroker::SymlinkPath(mPolicy.get(), path.get(), nullptr, &perms);
   if (result != nullptr) {
     free(result);
     
@@ -799,7 +793,8 @@ void SandboxBroker::ThreadMain(void) {
         
         
         
-        int symlinkPerms = SymlinkPermissions(recvBuf, first_len);
+        int symlinkPerms =
+            SymlinkPermissions(nsDependentCString(recvBuf, first_len));
         if (symlinkPerms > 0) {
           perms = symlinkPerms;
         }
