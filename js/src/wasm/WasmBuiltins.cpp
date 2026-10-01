@@ -850,14 +850,6 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
           FindNonDelegateTryNote(code, pc, &codeBlock);
 
       if (tryNote) {
-        
-        
-        CallSite site;
-        if (code.lookupCallSite((void*)pc, &site) &&
-            site.kind() == CallSiteKind::ReturnStub) {
-          continue;
-        }
-
         cx->clearPendingException();
         wasmFrame.instance()->setPendingException(wasmExn);
 

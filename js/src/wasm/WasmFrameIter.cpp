@@ -152,17 +152,7 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
 
     
     
-    
-    
-    
-    CallSite site;
-    if (code_->lookupCallSite(unwoundPC, &site) &&
-        site.kind() == CallSiteKind::ReturnStub) {
-      MOZ_ASSERT(trapData.trap == Trap::IndirectCallBadSig);
-      resumePCinCurrentFrame_ = (uint8_t*)unwoundPC;
-    } else {
-      resumePCinCurrentFrame_ = (uint8_t*)trapData.resumePC;
-    }
+    resumePCinCurrentFrame_ = (uint8_t*)trapData.resumePC;
 
     MOZ_ASSERT(!done());
     return;
@@ -596,10 +586,7 @@ bool WasmFrameIter::debugEnabled() const {
     return false;
   }
 
-  
-  CallSite site;
-  return !(code_->lookupCallSite((void*)resumePCinCurrentFrame_, &site) &&
-           site.kind() == CallSiteKind::ReturnStub);
+  return true;
 }
 
 DebugFrame* WasmFrameIter::debugFrame() const {

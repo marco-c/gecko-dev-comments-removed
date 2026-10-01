@@ -1179,7 +1179,6 @@ enum class CallSiteKind : uint8_t {
   FuncRef,        
   FuncRefFast,    
   ReturnFunc,     
-  ReturnStub,     
   Symbolic,       
   EnterFrame,     
   LeaveFrame,     
@@ -1259,11 +1258,10 @@ class CallSiteDesc {
   bool isImportCall() const { return kind() == CallSiteKind::Import; }
   bool isIndirectCall() const { return kind() == CallSiteKind::Indirect; }
   bool isFuncRefCall() const { return kind() == CallSiteKind::FuncRef; }
-  bool isReturnStub() const { return kind() == CallSiteKind::ReturnStub; }
   bool isStackSwitch() const { return kind() == CallSiteKind::StackSwitch; }
   bool mightBeCrossInstance() const {
     return isImportCall() || isIndirectCall() || isFuncRefCall() ||
-           isReturnStub() || isStackSwitch();
+           isStackSwitch();
   }
 };
 
