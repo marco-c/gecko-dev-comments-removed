@@ -5,7 +5,6 @@
 #ifndef mozilla_VideoFrameUtil_h
 #define mozilla_VideoFrameUtil_h
 
-#include "api/video/video_rotation.h"
 #include "mozilla/camera/PCameras.h"
 
 namespace webrtc {
@@ -26,11 +25,8 @@ class VideoFrameUtils {
   static uint32_t TotalRequiredBufferSize(const webrtc::VideoFrame& frame);
 
   
-  
-  
   static void InitFrameBufferProperties(
       const webrtc::VideoFrame& aVideoFrame,
-      webrtc::VideoRotation aOriginalRotationRequired, bool aRotationApplied,
       camera::VideoFrameProperties& aDestProperties);
 
   

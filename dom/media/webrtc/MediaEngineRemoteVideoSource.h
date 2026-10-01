@@ -198,12 +198,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   
   gfx::IntSize mScaledImageSize = gfx::IntSize(0, 0);
 
-  
-  
-  
-  
-  Maybe<gfx::IntSize> mLastReportedSize;
-
   struct AtomicBool {
     Atomic<bool> mValue;
   };

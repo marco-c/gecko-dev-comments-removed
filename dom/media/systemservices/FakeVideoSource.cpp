@@ -223,15 +223,10 @@ void FakeVideoSource::GenerateImage() {
   }
 
 #ifdef MOZ_WEBRTC
-  
-  
-  
-  if (!StaticPrefs::media_getusermedia_camera_fake_rotation_test_pattern()) {
-    uint64_t timestamp = PR_Now();
-    YuvStamper::Encode(mWidth, mHeight, mWidth, mFrameData->mYChannel,
-                       reinterpret_cast<unsigned char*>(&timestamp),
-                       sizeof(timestamp), 0, 0);
-  }
+  uint64_t timestamp = PR_Now();
+  YuvStamper::Encode(mWidth, mHeight, mWidth, mFrameData->mYChannel,
+                     reinterpret_cast<unsigned char*>(&timestamp),
+                     sizeof(timestamp), 0, 0);
 #endif
 
   bool copied = NS_SUCCEEDED(ycbcr_image->CopyData(*mFrameData));

@@ -88,6 +88,7 @@ struct DesiredSizeInput {
   camera::CaptureEngine mCapEngine;
   int32_t mInputWidth;
   int32_t mInputHeight;
+  int32_t mRotation;
 };
 
 static gfx::IntSize CalculateDesiredSize(DesiredSizeInput aInput) {
@@ -98,6 +99,13 @@ static gfx::IntSize CalculateDesiredSize(DesiredSizeInput aInput) {
     
     aInput.mConstraints.mWidth.mIdeal = Nothing();
     aInput.mConstraints.mHeight.mIdeal = Nothing();
+  }
+
+  if (aInput.mRotation == 90 || aInput.mRotation == 270) {
+    
+    
+    std::swap(aInput.mConstraints.mWidth, aInput.mConstraints.mHeight);
+    std::swap(aInput.mCapabilityWidth, aInput.mCapabilityWidth);
   }
 
   
@@ -297,6 +305,7 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
         .mCapEngine = mCapEngine,
         .mInputWidth = cw ? cw : mIncomingImageSize.width,
         .mInputHeight = ch ? ch : mIncomingImageSize.height,
+        .mRotation = 0,
     };
     framerate = input.mCanCropAndScale.valueOr(false)
                     ? std::min(mConstraints->mFrameRate.Get(maxFPS), maxFPS)
@@ -549,6 +558,7 @@ nsresult MediaEngineRemoteVideoSource::Reconfigure(
         .mCapEngine = mCapEngine,
         .mInputWidth = cw ? cw : mIncomingImageSize.width,
         .mInputHeight = ch ? ch : mIncomingImageSize.height,
+        .mRotation = 0,
     };
     framerate = distanceMode == kFeasibility
                     ? std::min(mConstraints->mFrameRate.Get(mCapability.maxFPS),
@@ -637,14 +647,6 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
     uint8_t* aBuffer, const camera::VideoFrameProperties& aProps) {
   
 
-  
-  
-  
-  const bool dimensionsSwapped =
-      aProps.rotationApplied() &&
-      (aProps.originalRotationRequired() == VideoRotation::kDegree_90 ||
-       aProps.originalRotationRequired() == VideoRotation::kDegree_270);
-
   DesiredSizeInput input{};
   {
     MutexAutoLock lock(mMutex);
@@ -661,11 +663,9 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
         .mCapabilityWidth = cw ? Some(cw) : Nothing(),
         .mCapabilityHeight = ch ? Some(ch) : Nothing(),
         .mCapEngine = mCapEngine,
-        
-        
-        
-        .mInputWidth = dimensionsSwapped ? aProps.height() : aProps.width(),
-        .mInputHeight = dimensionsSwapped ? aProps.width() : aProps.height(),
+        .mInputWidth = aProps.width(),
+        .mInputHeight = aProps.height(),
+        .mRotation = aProps.rotation(),
     };
     if (!mFrameDeliveringTrackingId) {
       mFrameDeliveringTrackingId = Some(mTrackingId);
@@ -673,13 +673,6 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
   }
 
   gfx::IntSize dstSize = CalculateDesiredSize(input);
-
-  
-  
-  
-  if (dimensionsSwapped) {
-    std::swap(dstSize.width, dstSize.height);
-  }
 
   std::function<void()> callback_unused = []() {};
   webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer =
@@ -737,16 +730,14 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
 #ifdef DEBUG
   static uint32_t frame_num = 0;
   LOG_FRAME(
-      "frame {} ({}x{})->({}x{}); rotation {} (applied {}), rtpTimeStamp {}, "
-      "ntpTimeMs {}, renderTimeMs {}",
+      "frame {} ({}x{})->({}x{}); rotation {}, rtpTimeStamp {}, ntpTimeMs "
+      "{}, renderTimeMs {}",
       frame_num++, aProps.width(), aProps.height(), dstSize.width,
-      dstSize.height, static_cast<int>(aProps.originalRotationRequired()),
-      aProps.rotationApplied(), aProps.rtpTimeStamp(), aProps.ntpTimeMs(),
-      aProps.renderTimeMs());
+      dstSize.height, aProps.rotation(), aProps.rtpTimeStamp(),
+      aProps.ntpTimeMs(), aProps.renderTimeMs());
 #endif
 
-  if (mLastReportedSize != Some(dstSize)) {
-    mLastReportedSize = Some(dstSize);
+  if (mScaledImageSize != dstSize) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "MediaEngineRemoteVideoSource::FrameSizeChange",
         [settings = mSettings, updated = mSettingsUpdatedByFrame,
@@ -767,11 +758,9 @@ int MediaEngineRemoteVideoSource::DeliverFrame(
     MOZ_ASSERT(mState == kStarted);
     VideoSegment segment;
     mScaledImageSize = image->GetSize();
-    segment.AppendWebrtcLocalFrame(
-        image.forget(), mScaledImageSize, mPrincipal,
-         false, TimeStamp::Now(), aProps.captureTime(),
-        aProps.rotationApplied() ? VideoRotation::kDegree_0
-                                 : aProps.originalRotationRequired());
+    segment.AppendWebrtcLocalFrame(image.forget(), mScaledImageSize, mPrincipal,
+                                    false, TimeStamp::Now(),
+                                   aProps.captureTime());
     mTrack->AppendData(&segment);
   }
 
