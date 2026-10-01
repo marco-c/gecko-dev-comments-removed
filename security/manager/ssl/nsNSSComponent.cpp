@@ -498,16 +498,6 @@ LoadLoadableCertsTask::Run() {
              success ? "succeeded" : "failed"));
   }
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-  if (StaticPrefs::security_utility_pkcs11_module_process_enabled() &&
-      !GetInSafeMode()) {
-    bool success = LoadRemoteCertsModule();
-    MOZ_LOG(
-        gPIPNSSLog, LogLevel::Debug,
-        ("loading remote certs module %s", success ? "succeeded" : "failed"));
-  }
-#endif  
-
   {
     MonitorAutoLock rootsLoadedLock(mNSSComponent->mLoadableCertsLoadedMonitor);
     mNSSComponent->mLoadableCertsLoaded = true;
@@ -1921,34 +1911,7 @@ nsNSSComponent::GetNssTaskQueue(nsISerialEventTarget** result) {
   return NS_OK;
 }
 
-struct SearchState {
-  PRThread* mCurrentThread;
-  nsTArray<uint64_t> mSlotsThatHaveSearched;
-
-  bool IsForCurrentThread() { return mCurrentThread == PR_GetCurrentThread(); }
-};
-
-MOZ_RUNINIT StaticDataMutex<Maybe<SearchState>> sCertificateSearchState(
-    "sCertificateSearchState");
-MOZ_RUNINIT StaticDataMutex<Maybe<SearchState>> sClientCertificateSearchState(
-    "sClientCertificateSearchState");
-
-bool IsGeckoSearchingForCertificatesWithState(
-    StaticDataMutex<Maybe<SearchState>>& searchStateMutex,
-    uint64_t uniqueSlotID) {
-  auto searchState = searchStateMutex.Lock();
-  if (searchState.ref().isNothing()) {
-    return false;
-  }
-  if (!searchState.ref()->IsForCurrentThread()) {
-    return false;
-  }
-  if (searchState.ref()->mSlotsThatHaveSearched.Contains(uniqueSlotID)) {
-    return false;
-  }
-  searchState.ref()->mSlotsThatHaveSearched.AppendElement(uniqueSlotID);
-  return true;
-}
+Atomic<bool> sSearchingForClientAuthCertificates{false};
 
 extern "C" {
 
@@ -1962,55 +1925,19 @@ extern "C" {
 
 
 
-
-bool IsGeckoSearchingForCertificates(uint64_t uniqueSlotID) {
-  return IsGeckoSearchingForCertificatesWithState(sCertificateSearchState,
-                                                  uniqueSlotID);
+bool IsGeckoSearchingForClientAuthCertificates() {
+  return sSearchingForClientAuthCertificates.exchange(false);
 }
-
-
-bool IsGeckoSearchingForClientAuthCertificates(uint64_t uniqueSlotID) {
-  return IsGeckoSearchingForCertificatesWithState(sClientCertificateSearchState,
-                                                  uniqueSlotID);
-}
-}
-
-AutoSearchingForCertificates::AutoSearchingForCertificates() {
-  auto certificateSearchState = sCertificateSearchState.Lock();
-  
-  
-  if (certificateSearchState.ref().isSome()) {
-    return;
-  }
-  certificateSearchState.ref() = Some(SearchState{PR_GetCurrentThread()});
-}
-
-AutoSearchingForCertificates::~AutoSearchingForCertificates() {
-  auto certificateSearchState = sCertificateSearchState.Lock();
-  if (certificateSearchState.ref().isSome() &&
-      certificateSearchState.ref()->IsForCurrentThread()) {
-    certificateSearchState.ref().reset();
-  }
 }
 
 AutoSearchingForClientAuthCertificates::
     AutoSearchingForClientAuthCertificates() {
-  auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
-  
-  
-  if (clientCertificateSearchState.ref().isSome()) {
-    return;
-  }
-  clientCertificateSearchState.ref() = Some(SearchState{PR_GetCurrentThread()});
+  sSearchingForClientAuthCertificates = true;
 }
 
 AutoSearchingForClientAuthCertificates::
     ~AutoSearchingForClientAuthCertificates() {
-  auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
-  if (clientCertificateSearchState.ref().isSome() &&
-      clientCertificateSearchState.ref()->IsForCurrentThread()) {
-    clientCertificateSearchState.ref().reset();
-  }
+  sSearchingForClientAuthCertificates = false;
 }
 
 namespace mozilla {

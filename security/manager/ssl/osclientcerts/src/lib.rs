@@ -18,11 +18,12 @@ extern crate xpcom;
 use log::{debug, error, trace, warn};
 use nserror::{nsresult, NS_OK};
 use pkcs11_bindings::*;
-use rsclientcerts::manager::Manager;
+use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};
 use rsclientcerts::{
     declare_pkcs11_find_functions, declare_pkcs11_informational_functions,
-    declare_pkcs11_pin_functions, declare_pkcs11_session_functions, declare_pkcs11_sign_functions,
-    declare_unsupported_pkcs11_functions, log_with_thread_id,
+    declare_pkcs11_session_functions, declare_pkcs11_sign_functions,
+    declare_pkcs11_pin_functions, declare_unsupported_pkcs11_functions,
+    log_with_thread_id,
 };
 use std::convert::TryInto;
 use std::os::raw::c_char;
@@ -43,22 +44,11 @@ use crate::backend_macos::Backend;
 #[cfg(all(target_os = "windows", not(target_arch = "aarch64")))]
 use crate::backend_windows::Backend;
 
-extern "C" {
-    fn IsGeckoSearchingForClientAuthCertificates(unique_slot_id: u64) -> bool;
-}
-
-const UNIQUE_MODULE_ID: u64 = (u32::from_be_bytes(*b"OSCC") as u64) << 32;
-
-pub(crate) fn should_search_for_objects(slot_id: CK_SLOT_ID) -> bool {
-    let slot_id = u64::from(slot_id);
-    unsafe { IsGeckoSearchingForClientAuthCertificates(UNIQUE_MODULE_ID | (slot_id as u64)) }
-}
 
 
 
 
-
-static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
+static MANAGER: Mutex<Option<Manager<Backend, IsGeckoSearchingForClientCerts>>> = Mutex::new(None);
 
 
 
@@ -114,6 +104,18 @@ impl ShutdownObserver {
             let _ = unsafe { service.RemoveObserver(self.coerce(), topic) };
         }
         Ok(())
+    }
+}
+
+extern "C" {
+    fn IsGeckoSearchingForClientAuthCertificates() -> bool;
+}
+
+struct IsGeckoSearchingForClientCerts;
+
+impl IsSearchingForClientCerts for IsGeckoSearchingForClientCerts {
+    fn is_searching_for_client_certs() -> bool {
+        unsafe { IsGeckoSearchingForClientAuthCertificates() }
     }
 }
 

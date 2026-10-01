@@ -35,12 +35,6 @@ var gWindowWatcher = installWindowWatcherForProtectedAuth(gPrompt);
 do_get_profile();
 
 add_task(async function test_pkcs11_remote_process() {
-  let testClientCertificate = await findCertByCommonName("client cert rsa");
-  ok(
-    !testClientCertificate,
-    "shouldn't be able to find the test client certificate before loading the module"
-  );
-
   let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
   libraryFile.append("pkcs11testmodule");
   libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
@@ -209,48 +203,12 @@ add_task(async function test_pkcs11_remote_process() {
     "should have seen one protected auth prompt"
   );
 
-  
-  {
-    let testClientCertificate = await findCertByCommonName("client cert rsa");
-    ok(
-      testClientCertificate,
-      "test module (loaded remotely) should expose rsa client certificate"
-    );
-
-    let testServerCertificate = await findCertByCommonName(
-      "EE issued by intermediate"
-    );
-    ok(
-      testServerCertificate,
-      "test module (loaded remotely) should expose server certificate"
-    );
-    let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-      Ci.nsIX509CertDB
-    );
-    
-    
-    
-    await asyncTestCertificateUsages(certdb, testServerCertificate, [
-      Ci.nsIX509CertDB.verifyUsageTLSServer,
-    ]);
-  }
-
-  
-  Cu.forceCC();
-  Cu.forceGC();
-
   await moduleDB.deleteModule("PKCS11 Test Module");
   testModule = await findModuleByName(moduleDB, "PKCS11 Test Module");
   equal(
     testModule,
     null,
     "should not be able to find test module after unloading it"
-  );
-
-  testClientCertificate = await findCertByCommonName("client cert rsa");
-  ok(
-    !testClientCertificate,
-    "should not be able to find rsa client certificate after unloading remote module"
   );
 
   
