@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "api/scoped_refptr.h"
 #include "api/test/frame_generator_interface.h"
 #include "api/units/time_delta.h"
@@ -26,10 +25,6 @@
 
 namespace webrtc {
 namespace test {
-
-
-
-std::optional<Resolution> ParseResolutionFromFileName(absl::string_view path);
 
 
 
