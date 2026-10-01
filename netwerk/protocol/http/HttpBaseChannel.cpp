@@ -78,7 +78,6 @@
 #include "nsIDocShell.h"
 #include "nsIEncodedChannel.h"
 #include "nsIHttpHeaderVisitor.h"
-#include "nsILoadGroupChild.h"
 #include "nsIMIMEInputStream.h"
 #include "nsIMultiplexInputStream.h"
 #include "nsIMutableArray.h"
@@ -6284,13 +6283,12 @@ bool HttpBaseChannel::EnsureRequestContextID() {
   
   
   
-  nsCOMPtr<nsILoadGroupChild> childLoadGroup = do_QueryInterface(mLoadGroup);
-  if (!childLoadGroup) {
+  if (!mLoadGroup) {
     return false;
   }
 
   nsCOMPtr<nsILoadGroup> rootLoadGroup;
-  childLoadGroup->GetRootLoadGroup(getter_AddRefs(rootLoadGroup));
+  mLoadGroup->GetRootLoadGroup(getter_AddRefs(rootLoadGroup));
   if (!rootLoadGroup) {
     return false;
   }

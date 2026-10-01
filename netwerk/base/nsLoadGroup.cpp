@@ -87,8 +87,8 @@ nsLoadGroup::~nsLoadGroup() {
 
 
 
-NS_IMPL_ISUPPORTS(nsLoadGroup, nsILoadGroup, nsILoadGroupChild, nsIRequest,
-                  nsISupportsPriority, nsISupportsWeakReference, nsIObserver)
+NS_IMPL_ISUPPORTS(nsLoadGroup, nsILoadGroup, nsIRequest, nsISupportsPriority,
+                  nsISupportsWeakReference, nsIObserver)
 
 
 
@@ -621,6 +621,14 @@ nsLoadGroup::GetRequests(nsISimpleEnumerator** aRequests) {
   return NS_NewArrayEnumerator(aRequests, requests, NS_GET_IID(nsIRequest));
 }
 
+void nsLoadGroup::VisitRequests(nsLoadGroupRequestVisitor aVisitor) {
+  for (nsIRequest* request : mRequests) {
+    if (!aVisitor(request)) {
+      return;
+    }
+  }
+}
+
 NS_IMETHODIMP
 nsLoadGroup::GetTotalKeepAliveBytes(uint64_t* aTotalKeepAliveBytes) {
   MOZ_ASSERT(aTotalKeepAliveBytes);
@@ -682,9 +690,6 @@ nsLoadGroup::GetRequestContextID(uint64_t* aRCID) {
   return NS_OK;
 }
 
-
-
-
 NS_IMETHODIMP
 nsLoadGroup::GetParentLoadGroup(nsILoadGroup** aParentLoadGroup) {
   *aParentLoadGroup = nullptr;
@@ -701,20 +706,13 @@ nsLoadGroup::SetParentLoadGroup(nsILoadGroup* aParentLoadGroup) {
 }
 
 NS_IMETHODIMP
-nsLoadGroup::GetChildLoadGroup(nsILoadGroup** aChildLoadGroup) {
-  *aChildLoadGroup = do_AddRef(this).take();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsLoadGroup::GetRootLoadGroup(nsILoadGroup** aRootLoadGroup) {
   
-  nsCOMPtr<nsILoadGroupChild> ancestor = do_QueryReferent(mParentLoadGroup);
+  nsCOMPtr<nsILoadGroup> ancestor = do_QueryReferent(mParentLoadGroup);
   if (ancestor) return ancestor->GetRootLoadGroup(aRootLoadGroup);
 
   
-  ancestor = do_QueryInterface(mLoadGroup);
-  if (ancestor) return ancestor->GetRootLoadGroup(aRootLoadGroup);
+  if (mLoadGroup) return mLoadGroup->GetRootLoadGroup(aRootLoadGroup);
 
   
   *aRootLoadGroup = do_AddRef(this).take();
