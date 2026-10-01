@@ -5522,8 +5522,7 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
     
     
     
-    if (proto->is<ResizableTypedArrayObject>() &&
-        ToTypedArrayIndex(id).isSome()) {
+    if (proto->is<TypedArrayObject>() && ToTypedArrayIndex(id).isSome()) {
       return false;
     }
   }
