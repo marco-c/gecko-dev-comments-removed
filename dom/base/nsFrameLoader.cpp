@@ -2724,11 +2724,13 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   
   RefPtr<BrowserParent> browserParent = GetBrowserParent();
 
-  MOZ_ASSERT(browserParent->CanSend(), "BrowserParent cannot send?");
-
   
   
   ownerElement->UnsetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType, false);
+
+  if (NS_WARN_IF(!browserParent->CanSend())) {
+    return false;
+  }
 
   
   browserParent->InitRendering();
