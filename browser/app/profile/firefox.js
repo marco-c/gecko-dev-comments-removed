@@ -2015,12 +2015,6 @@ pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config",
 pref("browser.newtabpage.activity-stream.widgets.system.region-block", "");
 
 
-
-
-pref("browser.newtabpage.activity-stream.widgets.system.lists.region-block", "PL");
-pref("browser.newtabpage.activity-stream.widgets.lists.region-block", "DE,FR,PL,US");
-
-
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
 
 
