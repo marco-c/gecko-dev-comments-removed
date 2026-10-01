@@ -490,7 +490,7 @@ TEST(SourceTrackerTest, OnFrameDeliveredUpdatesSources) {
                                     kRtpTimestamp0, extensions0)));
 }
 
-TEST(SourceTrackerTest, OnSourceChangedCallbackFiresOnChange) {
+TEST(SourceTrackerTest, SourceChangedDetected) {
   constexpr uint32_t kSsrc1 = 10;
   constexpr uint32_t kSsrc2 = 11;
   constexpr uint32_t kCsrc1 = 21;
@@ -501,97 +501,53 @@ TEST(SourceTrackerTest, OnSourceChangedCallbackFiresOnChange) {
   constexpr uint32_t kRtpTimestamp = 123;
   constexpr Timestamp kReceiveTime = Timestamp::Millis(321);
 
-  int fired_count = 0;
-  int ssrc_changed_count = 0;
-  int csrcs_changed_count = 0;
-  GlobalSimulatedTimeController time_controller(Timestamp::Seconds(1000));
-  SourceTracker tracker(time_controller.GetClock());
+  SimulatedClock clock(Timestamp::Seconds(1000));
+  SourceTracker tracker(&clock);
+
+  EXPECT_FALSE(tracker.has_delivered_frame());
+  EXPECT_FALSE(tracker.last_frame_has_csrcs());
 
   
-  
-  tracker.SetOnSourceChangedCallback(
-      [&](bool ssrc_changed, bool csrcs_changed) {
-        ++fired_count;
-        if (ssrc_changed) {
-          ++ssrc_changed_count;
-        }
-        if (csrcs_changed) {
-          ++csrcs_changed_count;
-        }
-      });
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 0);
-  EXPECT_EQ(ssrc_changed_count, 0);
-  EXPECT_EQ(csrcs_changed_count, 0);
-
-  
-  tracker.OnFrameDelivered(
+  SourceTracker::SourceChanged changed = tracker.OnFrameDelivered(
       RtpPacketInfos({RtpPacketInfo(kSsrc1, {}, kRtpTimestamp, kReceiveTime)}));
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 1);
-  EXPECT_EQ(ssrc_changed_count, 1);
-  EXPECT_EQ(csrcs_changed_count, 0);
+  EXPECT_TRUE(changed.ssrc_changed);
+  EXPECT_FALSE(changed.csrc_changed);
+  EXPECT_TRUE(tracker.has_delivered_frame());
+  EXPECT_FALSE(tracker.last_frame_has_csrcs());
 
   
-  tracker.OnFrameDelivered(RtpPacketInfos(
+  changed = tracker.OnFrameDelivered(RtpPacketInfos(
       {RtpPacketInfo(kSsrc2, {kCsrc1}, kRtpTimestamp, kReceiveTime)}));
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 2);
-  EXPECT_EQ(ssrc_changed_count, 2);
-  EXPECT_EQ(csrcs_changed_count, 1);
+  EXPECT_TRUE(changed.ssrc_changed);
+  EXPECT_TRUE(changed.csrc_changed);
+  EXPECT_TRUE(tracker.has_delivered_frame());
+  EXPECT_TRUE(tracker.last_frame_has_csrcs());
 
   
-  tracker.OnFrameDelivered(RtpPacketInfos(
+  changed = tracker.OnFrameDelivered(RtpPacketInfos(
       {RtpPacketInfo(kSsrc2, {kCsrc1, kCsrc2}, kRtpTimestamp, kReceiveTime)}));
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 3);
-  EXPECT_EQ(ssrc_changed_count, 2);
-  EXPECT_EQ(csrcs_changed_count, 2);
+  EXPECT_FALSE(changed.ssrc_changed);
+  EXPECT_TRUE(changed.csrc_changed);
 
   
-  tracker.OnFrameDelivered(RtpPacketInfos(
+  changed = tracker.OnFrameDelivered(RtpPacketInfos(
       {RtpPacketInfo(kSsrc2, {kCsrc1, kCsrc2}, kRtpTimestamp, kReceiveTime)}));
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 3);
-}
-
-TEST(SourceTrackerTest, OnSourceChangedCallbackFiresIfSetAfterFrameDelivery) {
-  constexpr uint32_t kSsrc = 10;
-  constexpr uint32_t kCsrc = 21;
-  constexpr uint32_t kRtpTimestamp = 123;
-  constexpr Timestamp kReceiveTime = Timestamp::Millis(321);
-
-  int fired_count = 0;
-  int ssrc_changed_count = 0;
-  int csrcs_changed_count = 0;
-  GlobalSimulatedTimeController time_controller(Timestamp::Seconds(1000));
-  SourceTracker tracker(time_controller.GetClock());
+  EXPECT_FALSE(changed.ssrc_changed);
+  EXPECT_FALSE(changed.csrc_changed);
 
   
   
-  tracker.OnFrameDelivered(RtpPacketInfos(
-      {RtpPacketInfo(kSsrc, {kCsrc}, kRtpTimestamp, kReceiveTime)}));
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 0);
-  EXPECT_EQ(ssrc_changed_count, 0);
-  EXPECT_EQ(csrcs_changed_count, 0);
+  changed = tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc2, {kCsrc1, kCsrc2}, kRtpTimestamp, kReceiveTime),
+       RtpPacketInfo(kSsrc2, {kCsrc1, kCsrc2}, kRtpTimestamp, kReceiveTime)}));
+  EXPECT_FALSE(changed.ssrc_changed);
+  EXPECT_FALSE(changed.csrc_changed);
 
   
-  
-  tracker.SetOnSourceChangedCallback(
-      [&](bool ssrc_changed, bool csrcs_changed) {
-        ++fired_count;
-        if (ssrc_changed) {
-          ++ssrc_changed_count;
-        }
-        if (csrcs_changed) {
-          ++csrcs_changed_count;
-        }
-      });
-  time_controller.AdvanceTime(TimeDelta::Zero());
-  EXPECT_EQ(fired_count, 1);
-  EXPECT_EQ(ssrc_changed_count, 1);
-  EXPECT_EQ(csrcs_changed_count, 1);
+  changed = tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc2, {kCsrc2, kCsrc1}, kRtpTimestamp, kReceiveTime)}));
+  EXPECT_FALSE(changed.ssrc_changed);
+  EXPECT_FALSE(changed.csrc_changed);
 }
 
 TEST(SourceTrackerTest, TimedOutSourcesAreRemoved) {

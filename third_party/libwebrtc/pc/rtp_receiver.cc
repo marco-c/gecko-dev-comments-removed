@@ -25,6 +25,7 @@
 #include "api/media_stream_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtp_packet_infos.h"
+#include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/sframe/sframe_decryptor_interface.h"
@@ -32,6 +33,7 @@
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/timestamp.h"
 #include "media/base/media_channel.h"
+#include "modules/rtp_rtcp/source/source_tracker.h"
 #include "pc/media_stream.h"
 #include "pc/media_stream_proxy.h"
 #include "rtc_base/thread.h"
@@ -117,10 +119,59 @@ std::vector<RtpSource> RtpReceiverBase::GetSources() const {
   return source_tracker_.GetSources();
 }
 
+void RtpReceiverBase::SetObserver(RtpReceiverObserverInterface* observer) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  if (observer_ == observer) {
+    return;
+  }
+  observer_ = observer;
+  if (observer_ != nullptr) {
+    
+    
+    
+    
+    
+    
+    if (received_first_packet_) {
+      observer->OnFirstPacketReceived(media_type());
+    }
+    if (observer_ != observer) {
+      return;  
+    }
+    if (source_tracker_.has_delivered_frame()) {
+      observer->OnSourceChanged(true,
+                                source_tracker_.last_frame_has_csrcs());
+    }
+  }
+}
+
+void RtpReceiverBase::NotifyFirstPacketReceived(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  
+  
+  
+  received_first_packet_ = true;
+  if (observer_ != nullptr) {
+    observer_->OnFirstPacketReceived(media_type());
+  }
+}
+
+void RtpReceiverBase::NotifyFirstPacketReceivedAfterReceptiveChange(
+    uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
+  if (observer_ != nullptr) {
+    observer_->OnFirstPacketReceivedAfterReceptiveChange(media_type());
+  }
+}
+
 void RtpReceiverBase::OnFrameDelivered(const RtpPacketInfos& infos,
                                        Timestamp delivery_time) {
   RTC_DCHECK_RUN_ON(&signaling_thread_checker_);
-  source_tracker_.OnFrameDelivered(infos, delivery_time);
+  SourceTracker::SourceChanged changed =
+      source_tracker_.OnFrameDelivered(infos, delivery_time);
+  if ((changed.ssrc_changed || changed.csrc_changed) && observer_ != nullptr) {
+    observer_->OnSourceChanged(changed.ssrc_changed, changed.csrc_changed);
+  }
 }
 
 RTCErrorOr<scoped_refptr<SframeDecryptorInterface>>

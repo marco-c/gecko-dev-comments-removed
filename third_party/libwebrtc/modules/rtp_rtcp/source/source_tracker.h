@@ -19,10 +19,8 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_infos.h"
-#include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -45,11 +43,12 @@ class SourceTracker {
   
   static constexpr TimeDelta kTimeout = TimeDelta::Seconds(10);
 
-  
-  
+  struct SourceChanged {
+    bool ssrc_changed = false;
+    bool csrc_changed = false;
+  };
+
   explicit SourceTracker(Clock* clock);
-  SourceTracker(Clock* clock,
-                absl::AnyInvocable<void(bool, bool)> on_source_changed);
 
   SourceTracker(const SourceTracker& other) = delete;
   SourceTracker(SourceTracker&& other) = delete;
@@ -58,16 +57,16 @@ class SourceTracker {
 
   
   
-  void OnFrameDelivered(const RtpPacketInfos& packet_infos,
-                        Timestamp delivery_time = Timestamp::MinusInfinity());
+  
+  SourceChanged OnFrameDelivered(
+      const RtpPacketInfos& packet_infos,
+      Timestamp delivery_time = Timestamp::MinusInfinity());
 
   
+  bool has_delivered_frame() const { return last_received_ssrc_.has_value(); }
+
   
-  
-  
-  
-  void SetOnSourceChangedCallback(
-      absl::AnyInvocable<void(bool, bool)> on_source_changed);
+  bool last_frame_has_csrcs() const { return !last_received_csrcs_.empty(); }
 
   
   
@@ -75,8 +74,6 @@ class SourceTracker {
   std::vector<RtpSource> GetSources() const;
 
  private:
-  void ShouldFireOnSoourceChangedCallback(bool ssrc_changed, bool csrc_changed);
-
   struct SourceKey {
     SourceKey(RtpSourceType source_type, uint32_t source)
         : source_type(source_type), source(source) {}
@@ -153,9 +150,6 @@ class SourceTracker {
   mutable SourceMap map_;
   std::optional<uint32_t> last_received_ssrc_;
   std::vector<uint32_t> last_received_csrcs_;
-  
-  absl::AnyInvocable<void(bool, bool)> on_source_changed_;
-  ScopedTaskSafety safety_;
 };
 
 }  
