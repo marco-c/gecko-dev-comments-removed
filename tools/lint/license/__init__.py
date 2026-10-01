@@ -23,6 +23,15 @@ REFERENCES = "LICENSED_UNDER"
 
 
 
+REMOVED_DEFINES = (
+    "APP_LICENSE_BLOCK",
+    "APP_LICENSE_LIST_BLOCK",
+    "APP_LICENSE_BODY_BLOCK",
+)
+
+
+
+
 
 LICENSE_REF = re.compile(r"(?:DocumentRef-[A-Za-z0-9.-]+:)?LicenseRef-[A-Za-z0-9.-]+")
 
@@ -84,6 +93,7 @@ class Declarations:
         
         
         self.flags = collections.defaultdict(list)
+        self.removed_defines = {}
         
         self.non_literals = {}
 
@@ -92,6 +102,15 @@ class Declarations:
                 self._add(node, *_target(target))
 
     def _add(self, node, variable, key, flag):
+        if variable == "DEFINES":
+            try:
+                define = _string_literal(key) if key is not None else None
+            except NonLiteral:
+                return
+            if define in REMOVED_DEFINES:
+                self.removed_defines.setdefault(define, node.lineno)
+            return
+
         if variable not in (DECLARES, REFERENCES):
             return
 
@@ -200,6 +219,17 @@ def lint(paths, config, **lintargs):
                 f'LICENSES["{license_id}"] declaration anywhere in the tree.',
                 "Declare the notice once, with a title and a text file, "
                 "in the moz.build that owns the license text.",
+            ))
+
+        for define, lineno in declarations.removed_defines.items():
+            problems.append((
+                lineno,
+                f'DEFINES["{define}"] no longer reaches about:license.',
+                "The page is generated from the LICENSES declarations rather "
+                "than preprocessed, so this define is dead and the section it "
+                "names is not rendered. Generate the application's own "
+                "license.html the way browser/base/moz.build does, passing "
+                "the block as an extra input to gen_license_html.py.",
             ))
 
         for lineno, reason in declarations.non_literals.items():
