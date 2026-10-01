@@ -15,6 +15,7 @@
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/Try.h"
+#include "nsAboutProtocolUtils.h"
 #include "nsContentUtils.h"
 #include "nsEscape.h"
 #include "nsGlobalWindowInner.h"
@@ -302,6 +303,24 @@ bool WebExtensionPolicyCore::SourceMayAccessPath(
     RefPtr<WebExtensionPolicyCore> policyCore =
         ExtensionPolicyService::GetCoreByHost(aURI.Host());
     return policyCore != nullptr;
+  }
+
+  if (aURI.Scheme() == nsGkAtoms::about) {
+    nsAutoCString aboutModule;
+    if (NS_SUCCEEDED(NS_GetAboutModuleName(aURI.URI(), aboutModule)) &&
+        (aboutModule.EqualsLiteral("newtab") ||
+         aboutModule.EqualsLiteral("home"))) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return IsPrivileged();
+    }
   }
 
   if (ManifestVersion() < 3) {
