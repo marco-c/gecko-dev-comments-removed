@@ -1627,9 +1627,6 @@ pub trait Compositor {
     fn end_frame(&mut self);
 
     
-    fn enable_native_compositor(&mut self, enable: bool);
-
-    
     fn deinit(&mut self);
 
     
