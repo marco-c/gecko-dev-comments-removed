@@ -209,7 +209,8 @@ static MConstant* EvaluateIntConstantOperands(TempAllocator& alloc,
     case MDefinition::Opcode::Ursh:
       
       
-      if (lhs < 0 && rhs == 0 && !ins->toUrsh()->bailoutsDisabled()) {
+      if (lhs < 0 && (rhs & shiftMask) == 0 &&
+          !ins->toUrsh()->bailoutsDisabled()) {
         return nullptr;
       }
       ret = UnsigedInt(lhs) >> (UnsigedInt(rhs) & shiftMask);
