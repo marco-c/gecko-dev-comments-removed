@@ -148,7 +148,8 @@ static inline size_t GetChunkOffsetForPtr(const void* aPtr) {
 }
 
 
-#define DIRTY_MAX_DEFAULT (1U << 8)
+
+#define DIRTY_MAX_DEFAULT_BYTES 1_MiB
 
 enum PoisonType {
   NONE,

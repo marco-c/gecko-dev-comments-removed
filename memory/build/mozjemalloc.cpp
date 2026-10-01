@@ -3333,6 +3333,8 @@ static bool malloc_init_hard() {
   gPageSize = page_size;
 #endif
 
+  opt_dirty_max = DIRTY_MAX_DEFAULT_BYTES / gPageSize;
+
   
   if ((opts = getenv("MALLOC_OPTIONS"))) {
     for (i = 0; opts[i] != '\0'; i++) {

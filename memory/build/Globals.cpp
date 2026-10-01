@@ -55,7 +55,8 @@ static char* getenv(const char* name) {
 
 
 
-size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
+
+size_t opt_dirty_max;
 
 #ifdef MALLOC_RUNTIME_CONFIG
 bool opt_junk = OPT_JUNK_DEFAULT;
