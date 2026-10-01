@@ -11,13 +11,15 @@
 
 
 
+
+
+
+
+
 async function check_scroll_axis_lock(test, config) {
   await waitForCompositorReady();
 
   const scroller = config.scroller;
-  await waitForScrollReset(test, scroller);
-  assert_equals(scroller.scrollLeft, 0);
-  assert_equals(scroller.scrollTop, 0);
 
   let received_wheel_event = null;
 
@@ -25,12 +27,25 @@ async function check_scroll_axis_lock(test, config) {
   
   
   
-  
   const bounds = scroller.getBoundingClientRect();
   const start_x = bounds.left + bounds.width / 2;
   const start_y = bounds.top + bounds.height / 2;
-  const delta_x = 2;
-  const delta_y = 150;
+  const delta_minor_axis = config.delta_minor_axis_sign * 2;
+  const delta_dominant_axis = config.delta_dominant_axis_sign * 150;
+  const delta_x =
+      config.dominant_axis === 'X' ? delta_dominant_axis : delta_minor_axis;
+  const delta_y =
+      config.dominant_axis === 'Y' ? delta_dominant_axis : delta_minor_axis;
+
+  const initial_scroll_left =
+      delta_x > 0 ? 0 : scroller.scrollWidth - scroller.clientWidth;
+  const initial_scroll_top =
+      delta_y > 0 ? 0 : scroller.scrollHeight - scroller.clientHeight;
+  await waitForScrollReset(test, scroller, initial_scroll_left,
+                           initial_scroll_top);
+  assert_equals(scroller.scrollLeft, initial_scroll_left,
+                'initial scroll left');
+  assert_equals(scroller.scrollTop, initial_scroll_top, 'initial scroll top');
 
   
   
@@ -38,9 +53,12 @@ async function check_scroll_axis_lock(test, config) {
   
   
   
-  
-  const tolerance_x = 1;
-  const tolerance_y = (config.input_source === 'touch') ? 30 : 1;
+  const tolerance_minor_axis = 1;
+  const tolerance_dominant_axis = (config.input_source === 'touch') ? 30 : 1;
+  const tolerance_x = config.dominant_axis === 'X' ? tolerance_dominant_axis :
+                                                     tolerance_minor_axis;
+  const tolerance_y = config.dominant_axis === 'Y' ? tolerance_dominant_axis :
+                                                     tolerance_minor_axis;
 
   const end_x = start_x - delta_x;
   const end_y = start_y - delta_y;
@@ -75,10 +93,10 @@ async function check_scroll_axis_lock(test, config) {
   
   await scrollend_promise;
 
-  assert_approx_equals(scroller.scrollTop, delta_y, tolerance_y,
-                       'Should have scrolled vertically');
-  assert_approx_equals(scroller.scrollLeft, delta_x, tolerance_x,
-                       'Should have scrolled horizontally (not railed to Y)');
+  assert_approx_equals(scroller.scrollLeft - initial_scroll_left, delta_x,
+                       tolerance_x, 'horizontal scroll offset');
+  assert_approx_equals(scroller.scrollTop - initial_scroll_top, delta_y,
+                       tolerance_y, 'vertical scroll offset');
 
   if (config.input_source === 'wheel') {
     
