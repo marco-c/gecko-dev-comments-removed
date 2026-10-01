@@ -2,8 +2,8 @@
 
 
 
-#include <cstdlib>
 #include <cstdio>
+#include <cstdlib>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -153,7 +153,8 @@ namespace detail {
     explicit scope_exit(T_ExitFunc&& cleanup)
       : exit_func(cleanup)
       , released(true)
-    {}
+    {
+    }
 
     scope_exit(scope_exit&& rhs)
       : exit_func(std::move(rhs.exit_func))
