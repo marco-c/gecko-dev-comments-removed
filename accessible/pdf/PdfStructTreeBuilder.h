@@ -17,7 +17,7 @@ struct StructureElementNode;
 
 namespace mozilla {
 namespace dom {
-class BrowsingContext;
+class WindowContext;
 }
 
 namespace a11y {
@@ -38,22 +38,22 @@ class PdfStructTreeBuilder {
 
 
 
-  static void Init(dom::BrowsingContext* aBrowsingContext);
+  static void Init(dom::WindowContext*);
 
-  static PdfStructTreeBuilder* Get(uint64_t aBrowsingContextId);
-
-  
-
-
-
-
-  static void Done(uint64_t aBrowsingContextId);
+  static PdfStructTreeBuilder* Get(uint64_t aInnerWindowId);
 
   
 
 
 
-  static int GetPdfId(uint64_t aBrowsingContextId, uint64_t aAccId);
+
+  static void Done(uint64_t aInnerWindowId);
+
+  
+
+
+
+  static int GetPdfId(uint64_t aInnerWindowId, uint64_t aAccId);
 
   using GlobalAccessibleId = std::pair<uint64_t, uint64_t>;
   
@@ -61,6 +61,17 @@ class PdfStructTreeBuilder {
 
 
   static GlobalAccessibleId GetAccId(nsIFrame* aFrame);
+
+  
+
+
+
+
+  struct SpecialId {
+    static constexpr uint64_t Nothing = 0;
+    static constexpr uint64_t PageHeader = 1;
+    static constexpr uint64_t PageFooter = 2;
+  };
 
   using ReadyPromise = MozPromise<Ok, Ok, true>;
   
@@ -78,15 +89,15 @@ class PdfStructTreeBuilder {
   bool BuildStructTree(SkPDF::StructureElementNode& aRoot);
 
  private:
-  explicit PdfStructTreeBuilder(uint64_t aBrowsingContextId);
-  void InitInternal(dom::BrowsingContext* aBrowsingContext);
+  explicit PdfStructTreeBuilder(uint64_t aInnerWindowId);
+  void InitInternal(dom::WindowContext*);
   int GeneratePdfId(Accessible* aAcc);
   void BuildStructSubtree(Accessible* aAcc, SkPDF::StructureElementNode& aPdf);
-  int GetPdfIdInternal(uint64_t aBrowsingContextId, uint64_t aAccId) const;
+  int GetPdfIdInternal(uint64_t aInnerWindowId, uint64_t aAccId) const;
 
   
   
-  uint64_t mRootBrowsingContextId;
+  uint64_t mRootInnerWindowId;
   
   size_t mPendingOopIframes = 0;
   

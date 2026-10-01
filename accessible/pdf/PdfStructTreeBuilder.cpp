@@ -90,8 +90,23 @@ void PdfStructTreeBuilder::Done(uint64_t aInnerWindowId) {
 
 
 int PdfStructTreeBuilder::GetPdfId(uint64_t aInnerWindowId, uint64_t aAccId) {
-  if (!sBuilders) {
-    return 0;
+  if (!sBuilders || sBuilders->IsEmpty()) {
+    return SkPDF::NodeID::Nothing;
+  }
+  if (aInnerWindowId == 0) {
+    
+    
+    switch (aAccId) {
+      case SpecialId::Nothing:
+        return SkPDF::NodeID::Nothing;
+      case SpecialId::PageHeader:
+        return SkPDF::NodeID::PaginationHeaderArtifact;
+      case SpecialId::PageFooter:
+        return SkPDF::NodeID::PaginationFooterArtifact;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Invalid special acc id");
+    }
+    return SkPDF::NodeID::Nothing;
   }
   
   
@@ -347,12 +362,6 @@ void PdfStructTreeBuilder::BuildStructSubtree(
 
 int PdfStructTreeBuilder::GetPdfIdInternal(uint64_t aInnerWindowId,
                                            uint64_t aAccId) const {
-  if (aInnerWindowId == 0) {
-    
-    
-    MOZ_ASSERT(aAccId == 0);
-    return 0;
-  }
   if (auto entry = mAccToPdf.lookup({aInnerWindowId, aAccId})) {
     return entry->value();
   }

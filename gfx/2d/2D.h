@@ -1520,6 +1520,8 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
+
+
   virtual void AccessibleId(uint64_t aInnerWindowId, uint64_t aAccId) {}
 
   
