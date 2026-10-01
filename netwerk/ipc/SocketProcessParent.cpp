@@ -88,8 +88,9 @@ void SocketProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
 #endif  
 
   if (aWhy == AbnormalShutdown) {
-    GenerateCrashReport();
-    MaybeTerminateProcess();
+    nsAutoString dumpID;
+    GenerateCrashReport(&dumpID);
+    MaybeTerminateProcess(dumpID);
   }
 
   if (mHost) {
