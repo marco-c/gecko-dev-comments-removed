@@ -281,7 +281,7 @@ void AbsoluteContainingBlock::DrainPushedChildList(
 
 void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
     nsContainerFrame* aDelegatingFrame, nsIFrame* aContinuation,
-    OnlyFirstInFlows aOnlyFirstInFlows) {
+    PullKind aPullKind) {
   AbsoluteContainingBlock* absCB = aContinuation->GetAbsoluteContainingBlock();
   MOZ_ASSERT(absCB,
              "If this delegating frame has an absCB, aContinuation must "
@@ -294,7 +294,7 @@ void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
     
     nsIFrame* const child = *iter++;
     nsIFrame* const childPrevInFlow = child->GetPrevInFlow();
-    if (aOnlyFirstInFlows == OnlyFirstInFlows::Yes && childPrevInFlow) {
+    if (aPullKind == PullKind::FirstInFlows && childPrevInFlow) {
       continue;
     }
     absCB->StealFrame(child);
@@ -313,7 +313,7 @@ void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
     }
   }
 
-  if (aOnlyFirstInFlows == OnlyFirstInFlows::No) {
+  if (aPullKind == PullKind::All) {
     
     
     nsFrameList pushedFrames = absCB->StealPushedChildList();
@@ -370,7 +370,7 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
         
         break;
       }
-      PullAbsoluteFramesFrom(aDelegatingFrame, next, OnlyFirstInFlows::No);
+      PullAbsoluteFramesFrom(aDelegatingFrame, next, PullKind::All);
     }
   }
 
@@ -379,7 +379,7 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
   for (nsIFrame* next =
            GetFirstContinuationInNextFragmentainer(aDelegatingFrame);
        next; next = GetFirstContinuationInNextFragmentainer(next)) {
-    PullAbsoluteFramesFrom(aDelegatingFrame, next, OnlyFirstInFlows::Yes);
+    PullAbsoluteFramesFrom(aDelegatingFrame, next, PullKind::FirstInFlows);
   }
 
   

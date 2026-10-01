@@ -218,10 +218,11 @@ class AbsoluteContainingBlock {
 
 
 
-  enum class OnlyFirstInFlows : bool { No, Yes };
+
+
+  enum class PullKind : uint8_t { FirstInFlows, All };
   void PullAbsoluteFramesFrom(nsContainerFrame* aDelegatingFrame,
-                              nsIFrame* aContinuation,
-                              OnlyFirstInFlows aOnlyFirstInFlows);
+                              nsIFrame* aContinuation, PullKind aPullKind);
 
   
   nsFrameList mAbsoluteFrames;
