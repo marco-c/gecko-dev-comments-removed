@@ -432,33 +432,6 @@ static nsAutoCString OriginAttributesString(const OriginAttributes& aAttrs) {
   return originSuffix;
 }
 
-
-
-
-
-static already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI) {
-#ifdef DEBUG
-  MOZ_ASSERT(aURI->SchemeIs("about"));
-  nsAutoCString path;
-  MOZ_ALWAYS_SUCCEEDS(NS_GetAboutModuleName(aURI, path));
-  MOZ_ASSERT(path == "reader"_ns);
-#endif
-
-  nsAutoCString query;
-  MOZ_ALWAYS_SUCCEEDS(aURI->GetQuery(query));
-
-  
-  
-  nsAutoCString readerSpec;
-  if (URLParams::Extract(query, "url"_ns, readerSpec)) {
-    nsCOMPtr<nsIURI> readerUri;
-    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(readerUri), readerSpec))) {
-      return readerUri.forget();
-    }
-  }
-  return nullptr;
-}
-
 static already_AddRefed<BasePrincipal> GetAboutReaderURLPrincipal(
     nsIURI* aURI, const OriginAttributes& aAttrs) {
   if (nsCOMPtr<nsIURI> readerUri = GetAboutReaderURL(aURI)) {
@@ -599,6 +572,34 @@ static Result<RemoteType, nsresult> SpecialBehaviorRemoteType(
 }
 
 }  
+
+already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI) {
+  if (!aURI->SchemeIs("about")) {
+    return nullptr;
+  }
+  nsAutoCString path;
+  if (NS_FAILED(NS_GetAboutModuleName(aURI, path)) || path != "reader"_ns) {
+    return nullptr;
+  }
+
+  nsAutoCString query;
+  MOZ_ALWAYS_SUCCEEDS(aURI->GetQuery(query));
+
+  
+  
+  nsAutoCString readerSpec;
+  if (URLParams::Extract(query, "url"_ns, readerSpec)) {
+    nsCOMPtr<nsIURI> readerUri;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(readerUri), readerSpec)) &&
+        
+        
+        (readerUri->SchemeIs("http") || readerUri->SchemeIs("https") ||
+         readerUri->SchemeIs("file"))) {
+      return readerUri.forget();
+    }
+  }
+  return nullptr;
+}
 
 Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     CanonicalBrowsingContext* aTopBC, WindowGlobalParent* aParentWindow,
@@ -1628,6 +1629,11 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
       case IsolationBehavior::Anywhere:
         return true;
       case IsolationBehavior::AboutReader:
+        
+        
+        
+        
+        
         
         
         

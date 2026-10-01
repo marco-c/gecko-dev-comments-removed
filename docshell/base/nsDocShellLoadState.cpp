@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "nsDocShellLoadState.h"
 #include "nsIDocShell.h"
@@ -46,7 +46,7 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-// Global reference to the URI fixup service.
+
 static mozilla::StaticRefPtr<nsIURIFixup> sURIFixup;
 
 namespace mozilla::dom {
@@ -56,9 +56,9 @@ bool ContentTriggeredURILoadIsAllowed(nsIURI* aURI,
   MOZ_ASSERT(!aEffectiveRemoteType.IsNotRemote());
   MOZ_ASSERT(!aURI->SchemeIs("javascript"), "Should have been blocked already");
 
-  // view-source: URIs are not linkable from web content, but the "View Page
-  // Source" context menu has the content process itself load them,
-  // so decide based on the inner URI instead.
+  
+  
+  
   if (aURI->SchemeIs("view-source")) {
     nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(aURI);
     MOZ_ASSERT(nestedURI);
@@ -68,8 +68,13 @@ bool ContentTriggeredURILoadIsAllowed(nsIURI* aURI,
            ContentTriggeredURILoadIsAllowed(innerURI, aEffectiveRemoteType);
   }
 
-  // A null principal is the least privileged principal there is, so any URI it
-  // is allowed to link to may be loaded from any content process.
+  
+  if (nsCOMPtr<nsIURI> readerURI = GetAboutReaderURL(aURI)) {
+    return ContentTriggeredURILoadIsAllowed(readerURI, aEffectiveRemoteType);
+  }
+
+  
+  
   nsCOMPtr<nsIPrincipal> genericNullPrincipal = NullPrincipal::Create({});
 
   nsCOMPtr<nsIScriptSecurityManager> secMan =
@@ -86,9 +91,9 @@ bool ContentTriggeredURILoadIsAllowed(nsIURI* aURI,
   nsCOMPtr<nsIPrincipal> principal =
       BasePrincipal::CreateContentPrincipal(aURI, {});
   if (principal->GetIsNullPrincipal()) {
-    // Only allow null principals from URIs that have the
-    // URI_LOADABLE_BY_SUBSUMERS (i.e. blob:) flag. Other null principals likely
-    // correspond to internal, unsafe-to-load in content, resources.
+    
+    
+    
     bool loadableBySubsumers = false;
     if (NS_FAILED(NS_URIChainHasFlags(
             aURI, nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
@@ -98,7 +103,7 @@ bool ContentTriggeredURILoadIsAllowed(nsIURI* aURI,
     return loadableBySubsumers;
   }
 
-  // Automation-Only: Allow loading of chrome://reftest/* URLs.
+  
   if (aURI->SchemeIs("chrome") && xpc::IsInAutomation()) {
     nsAutoCString host;
     if (NS_SUCCEEDED(aURI->GetHost(host)) && host.EqualsLiteral("reftest")) {
@@ -111,7 +116,7 @@ bool ContentTriggeredURILoadIsAllowed(nsIURI* aURI,
       {ValidatePrincipalOptions::AllowNotLoadedOrigin});
 }
 
-}  // namespace mozilla::dom
+}  
 
 nsDocShellLoadState::nsDocShellLoadState(nsIURI* aURI)
     : nsDocShellLoadState(aURI, nsContentUtils::GenerateLoadIdentifier()) {}
@@ -121,7 +126,7 @@ nsDocShellLoadState::nsDocShellLoadState(
     bool* aReadSuccess)
     : mNotifiedBeforeUnloadListeners(false),
       mLoadIdentifier(aLoadState.LoadIdentifier()) {
-  // If we return early, we failed to read in the data.
+  
   *aReadSuccess = false;
   if (!aLoadState.URI()) {
     MOZ_ASSERT_UNREACHABLE("Cannot create a LoadState with a null URI!");
@@ -190,11 +195,11 @@ nsDocShellLoadState::nsDocShellLoadState(
 
   mNavigationAPIState = aLoadState.NavigationAPIState();
 
-  // We know this was created remotely, as we just received it over IPC.
+  
   mWasCreatedRemotely = true;
 
-  // If we're in the parent process, potentially validate against a LoadState
-  // which we sent to the source content process.
+  
+  
   if (XRE_IsParentProcess()) {
     ContentParent* cp = ActorDynCast<ContentParent>(aActor->ToplevelProtocol());
     if (!cp) {
@@ -202,8 +207,8 @@ nsDocShellLoadState::nsDocShellLoadState(
       return;
     }
 
-    // If this load was sent down to the content process as a navigation
-    // request, ensure it still matches the one we sent down.
+    
+    
     if (RefPtr<nsDocShellLoadState> originalState =
             cp->TakePendingLoadStateForId(mLoadIdentifier)) {
       if (const char* mismatch = ValidateWithOriginalState(originalState)) {
@@ -215,13 +220,13 @@ nsDocShellLoadState::nsDocShellLoadState(
         return;
       }
 
-      // The load state matches, steal parent-process-only fields which were on
-      // the original state.
+      
+      
       mSpeculativeListener = originalState->TakeSpeculativeListener();
       MOZ_ASSERT(mHasSpeculativeListener == !!mSpeculativeListener);
     } else if (mTriggeringRemoteType != cp->GetRemoteType()) {
-      // If we don't have a previous load to compare to, the content process
-      // must be the triggering process.
+      
+      
       aActor->FatalError(
           "nsDocShellLoadState with invalid triggering remote type");
       return;
@@ -258,8 +263,8 @@ nsDocShellLoadState::nsDocShellLoadState(
       return;
     }
 
-    // NOTE: Eventually this should probably be called on a LoadedOriginSet, but
-    // we don't track this on the load state yet.
+    
+    
     if (!ValidatePrincipalCouldPotentiallyBeLoadedBy(
             mTriggeringPrincipal, effectiveRemoteType,
             {ValidatePrincipalOptions::AllowExpanded,
@@ -278,10 +283,10 @@ nsDocShellLoadState::nsDocShellLoadState(
     }
 
     if (!effectiveRemoteType.IsNotRemote()) {
-      // Result and Original URI are mostly used by channels to track redirect
-      // information, which gets stored in session history.
-      // Content uses them rarely for meta-refresh or session history and
-      // should pass these checks.
+      
+      
+      
+      
       if (mResultPrincipalURI) {
         bool equal = false;
         if (!mResultPrincipalURIIsSome ||
@@ -308,7 +313,7 @@ nsDocShellLoadState::nsDocShellLoadState(
     return;
   }
 
-  // We successfully read in the data - return a success value.
+  
   *aReadSuccess = true;
 }
 
@@ -423,11 +428,11 @@ nsDocShellLoadState::nsDocShellLoadState(nsIURI* aURI, uint64_t aLoadIdentifier)
       mIsInitialAboutBlankHandlingProhibited(false) {
   MOZ_ASSERT(aURI, "Cannot create a LoadState with a null URI!");
 
-  // For https telemetry we set a flag indicating whether the load is https.
-  // There are some corner cases, e.g. view-source and also about: pages.
-  // about: pages, when hitting the network, always redirect to https.
-  // Since we record https telemetry only within nsHTTPSChannel, it's fine
-  // to set the flag here.
+  
+  
+  
+  
+  
   nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
   if (innerURI->SchemeIs("https") || innerURI->SchemeIs("about")) {
     mHttpsUpgradeTelemetry = nsILoadInfo::ALREADY_HTTPS;
@@ -449,8 +454,8 @@ nsDocShellLoadState::~nsDocShellLoadState() {
 nsresult nsDocShellLoadState::CreateFromPendingChannel(
     nsIChannel* aPendingChannel, uint64_t aLoadIdentifier,
     uint64_t aRegistrarId, nsDocShellLoadState** aResult) {
-  // Create the nsDocShellLoadState object with default state pulled from the
-  // passed-in channel.
+  
+  
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aPendingChannel->GetURI(getter_AddRefs(uri));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -461,8 +466,8 @@ nsresult nsDocShellLoadState::CreateFromPendingChannel(
   loadState->mPendingRedirectedChannel = aPendingChannel;
   loadState->mChannelRegistrarId = aRegistrarId;
 
-  // Pull relevant state from the channel, and store it on the
-  // nsDocShellLoadState.
+  
+  
   nsCOMPtr<nsIURI> originalUri;
   rv = aPendingChannel->GetOriginalURI(getter_AddRefs(originalUri));
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -473,7 +478,7 @@ nsresult nsDocShellLoadState::CreateFromPendingChannel(
   nsCOMPtr<nsILoadInfo> loadInfo = aPendingChannel->LoadInfo();
   loadState->SetTriggeringPrincipal(loadInfo->TriggeringPrincipal());
 
-  // Return the newly created loadState.
+  
   loadState.forget(aResult);
   return NS_OK;
 }
@@ -507,18 +512,18 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
   nsresult rv = NS_OK;
 
   NS_ConvertUTF16toUTF8 uriString(aURI);
-  // Cleanup the empty spaces that might be on each end.
+  
   uriString.Trim(" ");
-  // Eliminate embedded newlines, which single-line text fields now allow:
+  
   uriString.StripCRLF();
   NS_ENSURE_TRUE(!uriString.IsEmpty(), NS_ERROR_FAILURE);
 
-  // Just create a URI and see what happens...
+  
   rv = NS_NewURI(getter_AddRefs(uri), uriString);
   bool fixup = true;
   if (NS_SUCCEEDED(rv) && uri &&
       (uri->SchemeIs("about") || uri->SchemeIs("chrome"))) {
-    // Avoid third party fixup as a performance optimization.
+    
     loadFlags &= ~nsIWebNavigation::LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
     fixup = false;
   } else if (!sURIFixup && !XRE_IsContentProcess()) {
@@ -537,12 +542,12 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
     uint32_t fixupFlags =
         WebNavigationFlagsToFixupFlags(uri, uriString, loadFlags);
 
-    // If we don't allow keyword lookups for this URL string, make sure to
-    // update loadFlags to indicate this as well.
+    
+    
     if (!(fixupFlags & nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP)) {
       loadFlags &= ~nsIWebNavigation::LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
     }
-    // Ensure URIFixup will use the right search engine in Private Browsing.
+    
     if (aBrowsingContext->UsePrivateBrowsing()) {
       fixupFlags |= nsIURIFixup::FIXUP_FLAG_PRIVATE_CONTEXT;
     }
@@ -552,16 +557,16 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
       sURIFixup->GetFixupURIInfo(uriString, fixupFlags,
                                  getter_AddRefs(fixupInfo));
       if (fixupInfo) {
-        // We could fix the uri, clear NS_ERROR_MALFORMED_URI.
+        
         rv = NS_OK;
         fixupInfo->GetPreferredURI(getter_AddRefs(uri));
         fixupInfo->SetConsumer(aBrowsingContext);
         fixupInfo->GetKeywordProviderId(searchProviderId);
         fixupInfo->GetKeywordAsSent(keyword);
-        // GetFixupURIInfo only returns a post data stream if it succeeded
-        // and changed the URI, in which case we should override the
-        // passed-in post data by passing this as an override arg to
-        // our internal method.
+        
+        
+        
+        
         fixupInfo->GetPostData(getter_AddRefs(fixupStream));
 
         if (fixupInfo &&
@@ -632,9 +637,9 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
   bool forceAllowDataURI =
       loadFlags & nsIWebNavigation::LOAD_FLAGS_FORCE_ALLOW_DATA_URI;
 
-  // Don't pass certain flags that aren't needed and end up confusing
-  // ConvertLoadTypeToDocShellInfoLoadType.  We do need to ensure that they are
-  // passed to LoadURI though, since it uses them.
+  
+  
+  
   uint32_t extraFlags = (loadFlags & EXTRA_LOAD_FLAGS);
   loadFlags &= ~EXTRA_LOAD_FLAGS;
 
@@ -651,8 +656,8 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
       aLoadURIOptions.mTextDirectiveUserActivation);
   loadState->SetTriggeringSandboxFlags(aLoadURIOptions.mTriggeringSandboxFlags);
   loadState->SetTriggeringWindowId(aLoadURIOptions.mTriggeringWindowId);
-  // The load is assumed to be first-party, so the triggering classification
-  // should be both zero.
+  
+  
   loadState->SetTriggeringClassificationFlags({0, 0});
   loadState->SetPostDataStream(postData);
   loadState->SetHeadersStream(aLoadURIOptions.mHeaders);
@@ -996,30 +1001,30 @@ void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
     BrowsingContext* aContext) {
   MOZ_ASSERT(aContext);
 
-  // Return early if the triggering principal doesn't exist. This could happen
-  // when loading a URL by using a browsing context in the Browser Toolbox.
+  
+  
   if (!TriggeringPrincipal()) {
     return;
   }
 
-  // We don't need to strip for sub frames because the query string has been
-  // stripped in the top-level content. Also, we don't apply stripping if it
-  // is triggered by addons.
-  //
-  // Note that we don't need to do the stripping if the load state will have a
-  // speculative listener in the parent process. This means that this has been
-  // loaded speculatively in the parent process before and the stripping was
-  // happening by then.
+  
+  
+  
+  
+  
+  
+  
+  
   if (mHasSpeculativeListener || !aContext->IsTopContent() ||
       BasePrincipal::Cast(TriggeringPrincipal())->AddonPolicy()) {
     return;
   }
 
-  // We don't strip the URI if it's the same-site navigation. Note that we will
-  // consider the system principal triggered load as third-party in case the
-  // user copies and pastes a URL which has tracking query parameters or an
-  // loading from external applications, such as clicking a link in an email
-  // client.
+  
+  
+  
+  
+  
   bool isThirdPartyURI = false;
   if (!TriggeringPrincipal()->IsSystemPrincipal() &&
       (NS_FAILED(
@@ -1058,8 +1063,8 @@ void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
   }
 
 #ifdef DEBUG
-  // Make sure that unstripped URI is the same as URI() but only the query
-  // string could be different.
+  
+  
   if (mUnstrippedURI) {
     nsCOMPtr<nsIURI> uri;
     (void)queryStripper->Strip(mUnstrippedURI, aContext->UsePrivateBrowsing(),
@@ -1230,11 +1235,11 @@ void nsDocShellLoadState::SetRemoteTypeOverride(
 
 const RemoteType& nsDocShellLoadState::GetEffectiveTriggeringRemoteType()
     const {
-  // Consider non-errorpage loads from session history as being triggred by the
-  // parent process, as we'll validate them against the history entry.
-  //
-  // NOTE: Keep this check in-sync with the session-history validation check in
-  // `DocumentLoadListener::Open`!
+  
+  
+  
+  
+  
   if (LoadIsFromSessionHistory() && LoadType() != LOAD_ERROR_PAGE) {
     return RemoteType::NotRemote();
   }
@@ -1249,11 +1254,11 @@ void nsDocShellLoadState::SetTriggeringRemoteType(
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 void nsDocShellLoadState::AssertProcessCouldTriggerLoadIfSystem() {
-  // Early check to see if we're trying to start a file URI load with a system
-  // principal within a web content process.
-  // If this assertion fails, the load will fail later during
-  // nsContentSecurityManager checks, however this assertion should happen
-  // closer to whichever caller is triggering the system-principal load.
+  
+  
+  
+  
+  
   if (TriggeringPrincipal()->IsSystemPrincipal() &&
       GetEffectiveTriggeringRemoteType().IsWeb()) {
     bool localFile = false;
@@ -1273,33 +1278,33 @@ void nsDocShellLoadState::AssertProcessCouldTriggerLoadIfSystem() {
 nsresult nsDocShellLoadState::SetupInheritingPrincipal(
     BrowsingContext::Type aType,
     const mozilla::OriginAttributes& aOriginAttributes) {
-  // We need a principalToInherit.
-  //
-  // If principalIsExplicit is not set there are 4 possibilities:
-  // (1) If the system principal or an expanded principal was passed
-  //     in and we're a typeContent docshell, inherit the principal
-  //     from the current document instead.
-  // (2) In all other cases when the principal passed in is not null,
-  //     use that principal.
-  // (3) If the caller has allowed inheriting from the current document,
-  //     or if we're being called from system code (eg chrome JS or pure
-  //     C++) then inheritPrincipal should be true and InternalLoad will get
-  //     a principal from the current document. If none of these things are
-  //     true, then
-  // (4) we don't pass a principal into the channel, and a principal will be
-  //     created later from the channel's internal data.
-  //
-  // If principalIsExplicit *is* set, there are 4 possibilities
-  // (1) If the system principal or an expanded principal was passed in
-  //     and we're a typeContent docshell, return an error.
-  // (2) In all other cases when the principal passed in is not null,
-  //     use that principal.
-  // (3) If the caller has allowed inheriting from the current document,
-  //     then inheritPrincipal should be true and InternalLoad will get
-  //     a principal from the current document. If none of these things are
-  //     true, then
-  // (4) we dont' pass a principal into the channel, and a principal will be
-  //     created later from the channel's internal data.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mPrincipalToInherit = mTriggeringPrincipal;
   if (mPrincipalToInherit && aType != BrowsingContext::Type::Chrome) {
     if (mPrincipalToInherit->IsSystemPrincipal()) {
@@ -1312,28 +1317,28 @@ nsresult nsDocShellLoadState::SetupInheritingPrincipal(
       if (mPrincipalIsExplicit) {
         return NS_ERROR_DOM_SECURITY_ERR;
       }
-      // Don't inherit from the current page.  Just do the safe thing
-      // and pretend that we were loaded by a nullprincipal.
-      //
-      // We didn't inherit OriginAttributes here as ExpandedPrincipal doesn't
-      // have origin attributes.
+      
+      
+      
+      
+      
       mPrincipalToInherit = NullPrincipal::Create(aOriginAttributes);
       mInheritPrincipal = false;
     }
   }
 
   if (!mPrincipalToInherit && !mInheritPrincipal && !mPrincipalIsExplicit) {
-    // See if there's system or chrome JS code running
+    
     mInheritPrincipal = nsContentUtils::LegacyIsCallerChromeOrNativeCode();
   }
 
   if (mLoadFlags & nsIWebNavigation::LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL) {
     mInheritPrincipal = false;
-    // Create a new null principal URI based on our precursor principal.
+    
     nsCOMPtr<nsIURI> nullPrincipalURI =
         NullPrincipal::CreateURI(mPrincipalToInherit);
-    // If mFirstParty is true and the pref 'privacy.firstparty.isolate' is
-    // enabled, we will set firstPartyDomain on the origin attributes.
+    
+    
     OriginAttributes attrs(aOriginAttributes);
     if (mFirstParty) {
       attrs.SetFirstPartyDomain(true, nullPrincipalURI);
@@ -1346,15 +1351,15 @@ nsresult nsDocShellLoadState::SetupInheritingPrincipal(
 
 nsresult nsDocShellLoadState::SetupTriggeringPrincipal(
     const mozilla::OriginAttributes& aOriginAttributes) {
-  // If the triggeringPrincipal is not set, we first try to create a principal
-  // from the referrer, since the referrer URI reflects the web origin that
-  // triggered the load. If there is no referrer URI, we fall back to using the
-  // SystemPrincipal. It's safe to assume that no provided triggeringPrincipal
-  // and no referrer simulate a load that was triggered by the system. It's
-  // important to note that this block of code needs to appear *after* the block
-  // where we munge the principalToInherit, because otherwise we would never
-  // enter code blocks checking if the principalToInherit is null and we will
-  // end up with a wrong inheritPrincipal flag.
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (!mTriggeringPrincipal) {
     if (mReferrerInfo) {
       nsCOMPtr<nsIURI> referrer = mReferrerInfo->GetOriginalReferrer();
@@ -1421,25 +1426,25 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
   nsLoadFlags loadFlags = aBrowsingContext->GetDefaultLoadFlags();
 
   if (FirstParty()) {
-    // tag first party URL loads
+    
     loadFlags |= nsIChannel::LOAD_INITIAL_DOCUMENT_URI;
   }
 
   const uint32_t loadType = LoadType();
 
-  // These values aren't available for loads initiated in the Parent process.
+  
   MOZ_ASSERT_IF(loadType == LOAD_ERROR_PAGE, aIsEmbeddingBlockedError.isSome());
 
   if (loadType == LOAD_ERROR_PAGE) {
-    // Error pages are LOAD_BACKGROUND, unless it's an
-    // XFO / frame-ancestors error for which we want an error page to load
-    // but additionally want the onload() event to fire.
+    
+    
+    
     if (!*aIsEmbeddingBlockedError) {
       loadFlags |= nsIChannel::LOAD_BACKGROUND;
     }
   }
 
-  // Mark the channel as being a document URI and allow content sniffing...
+  
   loadFlags |=
       nsIChannel::LOAD_DOCUMENT_URI | nsIChannel::LOAD_CALL_CONTENT_SNIFFERS;
 
@@ -1448,11 +1453,11 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
     loadFlags |= nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE;
   }
 
-  // Load attributes depend on load type...
+  
   switch (loadType) {
     case LOAD_HISTORY: {
-      // Only send VALIDATE_NEVER if mLSHE's URI was never changed via
-      // push/replaceState (bug 669671).
+      
+      
       if (!aUriModified) {
         loadFlags |= nsIRequest::VALIDATE_NEVER;
       }
@@ -1489,7 +1494,7 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
       [[fallthrough]];
     case LOAD_NORMAL:
     case LOAD_LINK:
-      // Set cache checking flags
+      
       switch (StaticPrefs::browser_cache_check_doc_frequency()) {
         case 0:
           loadFlags |= nsIRequest::VALIDATE_ONCE_PER_SESSION;
@@ -1508,19 +1513,19 @@ nsLoadFlags nsDocShellLoadState::CalculateChannelLoadFlags(
     loadFlags |= nsIChannel::LOAD_BYPASS_URL_CLASSIFIER;
   }
 
-  // If the user pressed shift-reload, then do not allow ServiceWorker
-  // interception to occur. See step 12.1 of the SW HandleFetch algorithm.
+  
+  
   if (IsForceReloadType(loadType)) {
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
   } else if (aBrowsingContext->IsTopContent()) {
-    // For the top-level site the uri to load determines whether service workers
-    // are blocked by policy.
+    
+    
     if (dom::IsServiceWorkersDisabledByPolicy(mURI)) {
       loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
     }
   } else if (aBrowsingContext->Top()->ServiceWorkersDisabledByPolicy()) {
-    // Otherwise use the state of the top-level site to determine whether
-    // service workers are blocked.
+    
+    
     loadFlags |= nsIChannel::LOAD_BYPASS_SERVICE_WORKER;
   }
 
@@ -1531,8 +1536,8 @@ const char* nsDocShellLoadState::ValidateWithOriginalState(
     nsDocShellLoadState* aOriginalState) {
   MOZ_ASSERT(mLoadIdentifier == aOriginalState->mLoadIdentifier);
 
-  // Check that `aOriginalState` is sufficiently similar to this state that
-  // they're performing the same load.
+  
+  
   auto uriEq = [](nsIURI* a, nsIURI* b) -> bool {
     bool eq = false;
     return a == b || (a && b && NS_SUCCEEDED(a->Equals(b, &eq)) && eq);
@@ -1584,10 +1589,10 @@ const char* nsDocShellLoadState::ValidateWithOriginalState(
     return "HasSpeculativeListener";
   }
 
-  // FIXME: Consider calculating less information in the target process so
-  // that we can validate more properties more easily.
-  // FIXME: Identify what other flags will not change when sent through a
-  // content process.
+  
+  
+  
+  
 
   return nullptr;
 }

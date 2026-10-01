@@ -97,6 +97,15 @@ Result<RemoteType, nsresult> PredictRemoteTypeForURI(
 
 
 
+already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI);
+
+
+
+
+
+
+
+
 
 
 

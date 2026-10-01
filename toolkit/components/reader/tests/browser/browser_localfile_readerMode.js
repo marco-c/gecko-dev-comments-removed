@@ -24,10 +24,21 @@ add_task(async function test_readermode_available_for_local_files() {
         "Reader mode button is present on a reader-able page"
       );
 
+      let fileRemoteType = browser.remoteType;
+
       
       let promiseTabLoad = BrowserTestUtils.browserLoaded(browser);
       readerButton.click();
       await promiseTabLoad;
+
+      
+      
+      
+      is(
+        gBrowser.selectedBrowser.remoteType,
+        fileRemoteType,
+        "Reader mode on a local file stays in the file content process"
+      );
 
       let readerUrl = gBrowser.selectedBrowser.currentURI.spec;
       ok(
