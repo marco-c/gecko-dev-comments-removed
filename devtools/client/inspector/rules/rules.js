@@ -813,17 +813,9 @@ class CssRuleView extends EventEmitter {
       console.warn("Color scheme emulation is disabled in RFP mode.");
     }
 
-    
-    
-    const hasReducedMotionEmulationSupport =
-      await this.inspector.commands.targetConfigurationCommand.supports(
-        "reducedMotionEmulation"
-      );
-    if (hasReducedMotionEmulationSupport) {
-      this.styleDocument
-        .getElementById("emulation-reduced-motion-container")
-        .removeAttribute("hidden");
-    }
+    this.styleDocument
+      .getElementById("emulation-reduced-motion-container")
+      .removeAttribute("hidden");
   }
 
   
