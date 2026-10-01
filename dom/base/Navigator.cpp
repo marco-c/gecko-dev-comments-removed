@@ -1202,6 +1202,21 @@ bool Navigator::SendBeacon(const nsAString& aUrl,
     return SendBeaconInternal(aUrl, nullptr, eBeaconTypeOther, aRv);
   }
 
+  
+  
+  
+  if (StaticPrefs::dom_fetch_streaming_upload()) {
+    if (aData.Value().IsReadableStream()) {
+      aRv.ThrowTypeError("sendBeacon cannot send a ReadableStream body");
+      return false;
+    }
+  } else if (aData.Value().IsReadableStream()) {
+    
+    nsAutoString stringified(u"[object ReadableStream]"_ns);
+    BodyExtractor<const nsAString> body(&stringified);
+    return SendBeaconInternal(aUrl, &body, eBeaconTypeOther, aRv);
+  }
+
   if (aData.Value().IsArrayBuffer()) {
     BodyExtractor<const ArrayBuffer> body(&aData.Value().GetAsArrayBuffer());
     return SendBeaconInternal(aUrl, &body, eBeaconTypeArrayBuffer, aRv);

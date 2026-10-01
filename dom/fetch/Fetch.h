@@ -8,6 +8,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/AbortSignal.h"
 #include "mozilla/dom/BodyConsumer.h"
+#include "mozilla/dom/FetchBindingFwd.h"
 #include "mozilla/dom/FetchStreamReader.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -31,13 +32,8 @@ class PrincipalInfo;
 
 namespace dom {
 
-class BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
-class
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
 class BlobImpl;
 class InternalRequest;
-class
-    OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
 
 class ReadableStreamDefaultReader;
 class RequestOrUTF8String;
@@ -55,12 +51,11 @@ nsresult UpdateRequestReferrer(nsIGlobalObject* aGlobal,
                                InternalRequest* aRequest);
 
 namespace fetch {
-using BodyInit =
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
-using ResponseBodyInit =
-    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
-using OwningBodyInit =
-    OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
+using BodyInit = dom::BodyInit;
+
+
+using ResponseBodyInit = BodyInit;
+using OwningBodyInit = dom::OwningBodyInit;
 };  
 
 
@@ -77,15 +72,6 @@ nsresult ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
 
 
 nsresult ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
-                                   nsIInputStream** aStream,
-                                   nsCString& aContentType,
-                                   uint64_t& aContentLength);
-
-
-
-
-
-nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
                                    nsIInputStream** aStream,
                                    nsCString& aContentType,
                                    uint64_t& aContentLength);
@@ -187,6 +173,14 @@ class FetchBody : public FetchBodyBase, public AbortFollower {
                                   FetchStreamReader** aStreamReader,
                                   nsIInputStream** aInputStream,
                                   ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  
+  void MaybeRebindReadableStreamBody();
 
   
 

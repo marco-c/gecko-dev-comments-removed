@@ -8,6 +8,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/dom/BodyExtractor.h"
 #include "mozilla/dom/Fetch.h"
 #include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/Headers.h"
@@ -141,6 +142,7 @@ SafeRefPtr<Request> Request::Constructor(
 
   RefPtr<AbortSignal> signal;
   bool bodyFromInit = false;
+  RefPtr<FetchStreamReader> temporaryStreamReader;
 
   if (aInput.IsRequest()) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
@@ -463,11 +465,87 @@ SafeRefPtr<Request> Request::Constructor(
       const fetch::OwningBodyInit& bodyInit = bodyInitNullable.Value();
       nsCOMPtr<nsIInputStream> stream;
       nsAutoCString contentTypeWithCharset;
-      uint64_t contentLength = 0;
-      aRv = ExtractByteStreamFromBody(bodyInit, getter_AddRefs(stream),
-                                      contentTypeWithCharset, contentLength);
-      if (NS_WARN_IF(aRv.Failed())) {
-        return nullptr;
+      uint64_t extractedLength = 0;
+      int64_t contentLength = 0;
+
+      
+      
+      
+      const bool streamBodyDisabled =
+          bodyInit.IsReadableStream() &&
+          !StaticPrefs::dom_fetch_streaming_upload();
+
+      
+      if (streamBodyDisabled) {
+        nsAutoString stringified(u"[object ReadableStream]"_ns);
+        nsAutoCString charset;
+        BodyExtractor<const nsAString> body(&stringified);
+        aRv = body.GetAsStream(getter_AddRefs(stream), &extractedLength,
+                               contentTypeWithCharset, charset);
+        if (NS_WARN_IF(aRv.Failed())) {
+          return nullptr;
+        }
+        contentLength = static_cast<int64_t>(extractedLength);
+      } else if (bodyInit.IsReadableStream()) {
+        aRv.MightThrowJSException();
+
+        ReadableStream& readableStream = bodyInit.GetAsReadableStream();
+
+        
+        
+        
+        if (request->GetKeepalive()) {
+          aRv.ThrowTypeError(
+              "keepalive cannot be used with a ReadableStream body");
+          return nullptr;
+        }
+
+        if (readableStream.Locked() || readableStream.Disturbed()) {
+          aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
+          return nullptr;
+        }
+
+        
+        request->SetHasStreamBody(true);
+
+        
+        if (nsIInputStream* underlyingSource =
+                readableStream.MaybeGetInputStreamIfUnread()) {
+          stream = underlyingSource;
+        } else {
+          
+          RefPtr<FetchStreamReader> streamReader;
+          nsCOMPtr<nsIInputStream> pipeInputStream;
+          aRv = FetchStreamReader::Create(aCx, aGlobal,
+                                          getter_AddRefs(streamReader),
+                                          getter_AddRefs(pipeInputStream));
+          if (NS_WARN_IF(aRv.Failed())) {
+            return nullptr;
+          }
+
+          
+          streamReader->StartConsuming(aCx, &readableStream, aRv);
+          if (NS_WARN_IF(aRv.Failed())) {
+            return nullptr;
+          }
+
+          stream = pipeInputStream.forget();
+
+          
+          temporaryStreamReader = streamReader.forget();
+        }
+
+        
+        contentLength = -1;
+        contentTypeWithCharset.SetIsVoid(true);
+      } else {
+        aRv =
+            ExtractByteStreamFromBody(bodyInit, getter_AddRefs(stream),
+                                      contentTypeWithCharset, extractedLength);
+        if (NS_WARN_IF(aRv.Failed())) {
+          return nullptr;
+        }
+        contentLength = static_cast<int64_t>(extractedLength);
       }
 
       nsCOMPtr<nsIInputStream> temporaryBody = stream;
@@ -486,11 +564,16 @@ SafeRefPtr<Request> Request::Constructor(
       }
 
       request->SetBody(temporaryBody, contentLength);
+      request->SetHasStreamBody(hasStreamBody);
     }
   }
 
   auto domRequest =
       MakeSafeRefPtr<Request>(aGlobal, std::move(request), signal);
+
+  if (temporaryStreamReader) {
+    domRequest->mFetchStreamReader = temporaryStreamReader.forget();
+  }
 
   if (aInput.IsRequest() && !bodyFromInit) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
