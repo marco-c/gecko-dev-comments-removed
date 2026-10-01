@@ -47,7 +47,7 @@ def add_variants(config, jobs):
         attributes = job["attributes"]
 
         
-        if not any(attributes.get(attr) for attr in ("make", "asan", "fuzz", "tsan")):
+        if not any(attributes.get(attr) for attr in ("make", "asan", "fuzz")):
             nspr_job = deepcopy(job)
             nspr_job["name"] = f"{attributes['build_platform']}-nspr/{attributes['build_type']}"
             nspr_job["description"]+= " (NSPR only)"
@@ -73,7 +73,7 @@ def add_variants(config, jobs):
         
         if "linux" in attributes["build_platform"] and "aarch64" not in attributes["build_platform"]:
             
-            if not attributes.get("asan") and not attributes.get("fuzz") and not attributes.get("tsan"):
+            if not attributes.get("asan") and not attributes.get("fuzz"):
                 for cc in EXTRA_COMPILERS:
                     cc_job = deepcopy(job)
                     cc_job["name"] += f"-{cc}"
@@ -92,7 +92,7 @@ def add_variants(config, jobs):
                 yield modular_job
 
             
-            if not attributes.get("make") and not attributes.get("fuzz") and not attributes.get("tsan"):
+            if not attributes.get("make") and not attributes.get("fuzz"):
                 dbm_job = deepcopy(job)
                 dbm_job["attributes"]["dbm"] = True
                 dbm_job["attributes"].setdefault("certs", True)
@@ -112,7 +112,7 @@ def add_variants(config, jobs):
 def set_attributes_defaults(config, jobs):
     for job in jobs:
         attributes = job["attributes"]
-        for attr in ("make", "asan", "make-fips", "fuzz", "certs", "nspr", "cc", "dbm", "modular", "tlsfuzz", "tsan"):
+        for attr in ("make", "asan", "make-fips", "fuzz", "certs", "nspr", "cc", "dbm", "modular", "tlsfuzz"):
             attributes.setdefault(attr, False)
         yield job
 
@@ -155,8 +155,6 @@ def set_gyp_command(config, jobs):
             command += " --enable-fips"
         if attributes.get("asan"):
             command += " --ubsan --asan"
-        if attributes.get("tsan"):
-            command += " --tsan"
         if attributes.get("nspr"):
             command += " --nspr-only --nspr-test-build --nspr-test-run"
         if attributes.get("static"):
@@ -191,7 +189,7 @@ def set_docker_image(config, jobs):
             image = "builds"
         elif job["attributes"].get("fuzz"):
             image = "fuzz"
-        elif job["attributes"].get("asan") or job["attributes"].get("tsan"):
+        elif job["attributes"].get("asan"):
             
             image = "builds"
         else:

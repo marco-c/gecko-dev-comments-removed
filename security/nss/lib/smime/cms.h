@@ -42,13 +42,6 @@ NSS_CMSDecoder_Start(PLArenaPool *poolp,
 
 
 
-
-extern SECStatus
-NSS_CMSDecoder_SetMaxInputSize(NSSCMSDecoderContext *p7dcx, unsigned long max_input_size);
-
-
-
-
 extern SECStatus
 NSS_CMSDecoder_Update(NSSCMSDecoderContext *p7dcx, const char *buf, unsigned long len);
 
@@ -63,10 +56,6 @@ NSS_CMSDecoder_Cancel(NSSCMSDecoderContext *p7dcx);
 
 extern NSSCMSMessage *
 NSS_CMSDecoder_Finish(NSSCMSDecoderContext *p7dcx);
-
-
-
-
 
 
 

@@ -14462,7 +14462,7 @@ ssl3_RedoHandshake(sslSocket *ss, PRBool flushCache)
     }
 
     if (sid && flushCache) {
-        ssl_UncacheSessionID(ss);   
+        ssl_UncacheSessionID(ss); 
         ssl_SetSocketSID(ss, NULL); 
     }
 

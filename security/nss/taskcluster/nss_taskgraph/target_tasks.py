@@ -33,11 +33,10 @@ PLATFORM_ALIASES = {
     "linux-aarch64-fips": "linux-aarch64",
     "linux-x86-fuzz": "linux-x86",
     "linux-x64-fuzz": "linux-x64",
-    "linux-x64-tsan": "linux-x64",
 }
 
 
-_VARIANT_ATTR = {"make": "make", "fips": "make-fips", "fuzz": "fuzz", "tsan": "tsan"}
+_VARIANT_ATTR = {"make": "make", "fips": "make-fips", "fuzz": "fuzz"}
 
 
 def filter_platform(platform, task):

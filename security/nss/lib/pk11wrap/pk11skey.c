@@ -67,10 +67,6 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
     }
     PR_Unlock(slot->freeListLock);
     if (symKey) {
-        
-
-        PORT_ReleaseAssert(symKey->refCount == 0);
-        PORT_ReleaseAssert(symKey->slot == NULL);
         symKey->next = NULL;
         if (!needSession) {
             return symKey;
@@ -85,11 +81,10 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
         PORT_Assert(symKey->session != CK_INVALID_HANDLE);
         if (symKey->session != CK_INVALID_HANDLE)
             return symKey;
+        PK11_FreeSymKey(symKey);
         
 
 
-
-        PORT_Free(symKey);
         return NULL;
     }
 
@@ -103,7 +98,7 @@ pk11_getKeyFromList(PK11SlotInfo *slot, PRBool needSession)
         symKey->session = pk11_GetNewSession(slot, &symKey->sessionOwner);
         PORT_Assert(symKey->session != CK_INVALID_HANDLE);
         if (symKey->session == CK_INVALID_HANDLE) {
-            PORT_Free(symKey);
+            PK11_FreeSymKey(symKey);
             symKey = NULL;
         }
     } else {
@@ -188,19 +183,12 @@ PK11_FreeSymKey(PK11SymKey *symKey)
 {
     PK11SlotInfo *slot;
     PRBool freeit = PR_TRUE;
-    PRInt32 newRefCount;
 
     if (!symKey) {
         return;
     }
 
-    newRefCount = PR_ATOMIC_DECREMENT(&symKey->refCount);
-    
-
-
-
-    PORT_ReleaseAssert(newRefCount >= 0);
-    if (newRefCount == 0) {
+    if (PR_ATOMIC_DECREMENT(&symKey->refCount) == 0) {
         PK11SymKey *parent = symKey->parent;
 
         symKey->parent = NULL;
@@ -261,10 +249,7 @@ PK11_FreeSymKey(PK11SymKey *symKey)
 PK11SymKey *
 PK11_ReferenceSymKey(PK11SymKey *symKey)
 {
-    PRInt32 newRefCount = PR_ATOMIC_INCREMENT(&symKey->refCount);
-    
-
-    PORT_ReleaseAssert(newRefCount > 1);
+    PR_ATOMIC_INCREMENT(&symKey->refCount);
     return symKey;
 }
 
@@ -2455,7 +2440,6 @@ pk11_PubDeriveECKeyWithKDF(
                     key_size = pk11_ECPubKeySize(pubKey);
                     if (key_size == 0) {
                         PK11_FreeSymKey(symKey);
-                        PORT_SetError(SEC_ERROR_INVALID_KEY);
                         return NULL;
                     }
                     break;

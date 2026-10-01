@@ -819,7 +819,7 @@ sftk_forceAttribute(SFTKObject *object, CK_ATTRIBUTE_TYPE type,
                         attribute->attrib.ulValueLen);
         }
         if (attribute->freeData) {
-            PORT_ReleaseAssert(attribute->attrib.pValue != att_val);
+            PORT_Assert(attribute->attrib.pValue != att_val);
             PORT_Free(attribute->attrib.pValue);
         }
         attribute->freeData = PR_FALSE;
@@ -1181,12 +1181,13 @@ sftk_GetObjectFromList(PRBool *hasLocks, PRBool optimizeSpace,
         PR_Unlock(list->lock);
         if (object) {
             
-
-
-            PORT_ReleaseAssert(object->refCount == 0);
-            object->next = object->prev = NULL;
-            *hasLocks = PR_TRUE;
-            return object;
+            
+            PORT_Assert(object->refCount == 0);
+            if (object->refCount == 0) {
+                object->next = object->prev = NULL;
+                *hasLocks = PR_TRUE;
+                return object;
+            }
         }
     }
     size = isSessionObject ? sizeof(SFTKSessionObject) + hashSize * sizeof(SFTKAttribute *) : sizeof(SFTKTokenObject);
@@ -1368,19 +1369,11 @@ sftk_DestroySessionObjectData(SFTKSessionObject *so)
     for (i = 0; i < MAX_OBJS_ATTRS; i++) {
         unsigned char *value = so->attrList[i].attrib.pValue;
         if (value) {
-            
-
-
-
-            PORT_ReleaseAssert(so->attrList[i].freeData ||
-                               (value == so->attrList[i].space &&
-                                so->attrList[i].attrib.ulValueLen <= ATTR_SPACE));
             PORT_Memset(value, 0, so->attrList[i].attrib.ulValueLen);
             if (so->attrList[i].freeData) {
                 PORT_Free(value);
             }
             so->attrList[i].attrib.pValue = NULL;
-            so->attrList[i].attrib.ulValueLen = 0;
             so->attrList[i].freeData = PR_FALSE;
         }
     }
@@ -1428,9 +1421,7 @@ void
 sftk_ReferenceObject(SFTKObject *object)
 {
     PR_Lock(object->refLock);
-    
-
-    PORT_ReleaseAssert(object->refCount > 0);
+    PORT_Assert(object->refCount > 0);
     object->refCount++;
     PR_Unlock(object->refLock);
 }
@@ -1477,10 +1468,6 @@ sftk_FreeObject(SFTKObject *object)
     CK_RV crv;
 
     PR_Lock(object->refLock);
-    
-
-
-    PORT_ReleaseAssert(object->refCount > 0);
     if (object->refCount == 1)
         destroy = PR_TRUE;
     object->refCount--;
@@ -1530,58 +1517,30 @@ sftk_getNextHandle(SFTKSlot *slot)
 
 
 
-
-
-
-
-
-
-
-
-
-
-static PRBool
-sftk_ClaimObjectRemovalLocked(SFTKSlot *slot, SFTKObject *object)
+void
+sftk_AddSlotObject(SFTKSlot *slot, SFTKObject *object)
 {
     PRUint32 index = sftk_hash(object->handle, slot->sessObjHashSize);
-
-    if (!object->next && !object->prev &&
-        slot->sessObjHashTable[index] != object) {
-        return PR_FALSE;
-    }
-    sftkqueue_delete2(object, object->handle, index, slot->sessObjHashTable);
-    
-
-
-    sftkqueue_clear_deleted_element(object);
-    return PR_TRUE;
+    sftkqueue_init_element(object);
+    PR_Lock(slot->objectLock);
+    sftkqueue_add2(object, object->handle, index, slot->sessObjHashTable);
+    PR_Unlock(slot->objectLock);
 }
-
-
-
 
 void
 sftk_AddObject(SFTKSession *session, SFTKObject *object)
 {
     SFTKSlot *slot = sftk_SlotFromSession(session);
     SFTKSessionObject *so = sftk_narrowToSessionObject(object);
-    PRUint32 index = sftk_hash(object->handle, slot->sessObjHashSize);
 
-    
-    sftk_ReferenceObject(object);
-
-    
-
-
-
-    sftkqueue_init_element(object);
-    PR_Lock(slot->objectLock);
     if (so) {
-        so->session = session;
+        PR_Lock(session->objectLock);
         sftkqueue_add(&so->sessionList, 0, session->objects, 0);
+        so->session = session;
+        PR_Unlock(session->objectLock);
     }
-    sftkqueue_add2(object, object->handle, index, slot->sessObjHashTable);
-    PR_Unlock(slot->objectLock);
+    sftk_AddSlotObject(slot, object);
+    sftk_ReferenceObject(object);
 }
 
 
@@ -1593,27 +1552,38 @@ sftk_DeleteObject(SFTKSession *session, SFTKObject *object)
     SFTKSlot *slot = sftk_SlotFromSession(session);
     SFTKSessionObject *so = sftk_narrowToSessionObject(object);
     CK_RV crv = CKR_OK;
+    PRUint32 index = sftk_hash(object->handle, slot->sessObjHashSize);
 
     
     if (so && so->session) {
-        PRBool ownsRemove;
-
         
 
 
 
 
 
+        PRBool ownsRemove = PR_FALSE;
         PR_Lock(slot->objectLock);
-        ownsRemove = sftk_ClaimObjectRemovalLocked(slot, object);
-        if (ownsRemove) {
-            PORT_Assert(sftkqueue_is_queued(&so->sessionList, 0,
-                                            so->session->objects, 0));
-            sftkqueue_delete(&so->sessionList, 0, so->session->objects, 0);
+        if (object->next || object->prev ||
+            slot->sessObjHashTable[index] == object) {
+            sftkqueue_delete2(object, object->handle, index,
+                              slot->sessObjHashTable);
+            
+
+
+
+
+
+            sftkqueue_clear_deleted_element(object);
+            ownsRemove = PR_TRUE;
         }
         PR_Unlock(slot->objectLock);
 
         if (ownsRemove) {
+            session = so->session;
+            PR_Lock(session->objectLock);
+            sftkqueue_delete(&so->sessionList, 0, session->objects, 0);
+            PR_Unlock(session->objectLock);
             sftk_FreeObject(object); 
         }
     } else {
@@ -2253,8 +2223,10 @@ sftk_InitSession(SFTKSession *session, SFTKSlot *slot, CK_SLOT_ID slotID,
     session->hash_context = NULL;
     session->search = NULL;
     session->objectIDCount = 1;
-    
-
+    session->objectLock = PR_NewLock();
+    if (session->objectLock == NULL) {
+        return CKR_HOST_MEMORY;
+    }
     session->objects[0] = NULL;
 
     session->slot = slot;
@@ -2299,49 +2271,18 @@ sftk_NewSession(CK_SLOT_ID slotID, CK_NOTIFY notify, CK_VOID_PTR pApplication,
 void
 sftk_ClearSession(SFTKSession *session)
 {
-    SFTKSlot *slot = sftk_SlotFromSession(session);
     SFTKObjectList *op, *next;
-    SFTKObjectList *toFree = NULL;
 
     
+    
 
-
-
-
-
-
-
-    PR_Lock(slot->objectLock);
     for (op = session->objects[0]; op != NULL; op = next) {
         next = op->next;
         
-
         op->next = op->prev = NULL;
-        
-
-
-
-        if (sftk_ClaimObjectRemovalLocked(slot, op->parent)) {
-            
-
-            op->next = toFree;
-            toFree = op;
-        }
+        sftk_DeleteObject(session, op->parent);
     }
-    session->objects[0] = NULL;
-    PR_Unlock(slot->objectLock);
-
-    
-
-
-
-
-    for (op = toFree; op != NULL; op = next) {
-        next = op->next;
-        op->next = NULL;
-        sftk_FreeObject(op->parent); 
-    }
-
+    PR_DestroyLock(session->objectLock);
     if (session->enc_context) {
         sftk_FreeContext(session->enc_context);
         session->enc_context = NULL;
@@ -2361,7 +2302,7 @@ sftk_ClearSession(SFTKSession *session)
 static void
 sftk_DestroySession(SFTKSession *session)
 {
-    PORT_ReleaseAssert(session->refCount == 0);
+    PORT_Assert(session->refCount == 0);
     sftk_ClearSession(session);
     PORT_Free(session);
 }
@@ -2406,7 +2347,7 @@ sftk_FreeSession(SFTKSession *session)
     PRLock *lock = SFTK_SESSION_LOCK(slot, session->handle);
 
     PR_Lock(lock);
-    PORT_ReleaseAssert(session->refCount > 0);
+    PORT_Assert(session->refCount > 0);
     if (session->refCount == 1)
         destroy = PR_TRUE;
     session->refCount--;

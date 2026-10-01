@@ -438,7 +438,7 @@ SSLExp_EncodeEchConfigId(PRUint8 configId, const char *publicName, unsigned int 
     unsigned int savedOffset;
     unsigned int len;
     sslBuffer b = SSL_BUFFER_EMPTY;
-    PRUint8 tmpBuf[133]; 
+    PRUint8 tmpBuf[66]; 
     unsigned int tmpLen;
 
     if (!publicName || !hpkeSuites || hpkeSuiteCount == 0 ||
