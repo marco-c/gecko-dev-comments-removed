@@ -79,7 +79,6 @@ nsresult BrowserBridgeParent::InitWithProcess(
   
   auto browserParent = MakeRefPtr<BrowserParent>(
       aContentParent, aTabId, *aParentBrowser, browsingContext, aChromeFlags);
-  browserParent->SetBrowserBridgeParent(this);
 
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   if (!cpm) {
@@ -123,7 +122,9 @@ nsresult BrowserBridgeParent::InitWithProcess(
   }
 
   
+  
   mBrowserParent = std::move(browserParent);
+  mBrowserParent->SetBrowserBridgeParent(this);
   mBrowserParent->SetOwnerElement(aParentBrowser->GetOwnerElement());
   mBrowserParent->InitRendering();
 
@@ -145,6 +146,9 @@ BrowserParent* BrowserBridgeParent::Manager() {
 
 void BrowserBridgeParent::Destroy() {
   if (mBrowserParent) {
+    
+    
+    MOZ_ASSERT(mBrowserParent->GetBrowserBridgeParent() == this);
 #ifdef ACCESSIBILITY
     if (a11y::DocAccessibleParent* embedderDoc = GetEmbedderAccessibleDoc()) {
       embedderDoc->RemovePendingOOPChildDoc(this);
