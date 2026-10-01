@@ -266,6 +266,9 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
 
   
 
+  SVGBBox GetSubtreeBBox(const nsIFrame* aSubtree,
+                         const Matrix& aToBBoxUserspace, SVGBBoxFlags aFlags);
+
   
 
 
