@@ -4412,10 +4412,6 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
   
   
-  QM_TRY(OkIf(!IsShuttingDown()), NS_ERROR_ABORT);
-
-  
-  
   
   
   
@@ -4454,10 +4450,9 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
         CollectEachFile(
             *directory,
             [&](nsCOMPtr<nsIFile>&& aChildDirectory) -> Result<Ok, nsresult> {
-              QM_TRY(OkIf(!IsShuttingDown()),
-                     ([&statusKeeper](const auto&) -> Result<Ok, nsresult> {
-                       RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
-                     }));
+              if (NS_WARN_IF(IsShuttingDown())) {
+                RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
+              }
 
               nsCOMPtr<nsIFile> childDirectory = std::move(aChildDirectory);
 
@@ -4483,10 +4478,6 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
   for (auto& info : renameAndInitInfos) {
     QM_TRY(([&]() -> Result<Ok, nsresult> {
-      if (NS_WARN_IF(IsShuttingDown())) {
-        RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
-      }
-
       QM_TRY(
           ([&directory, &info, this, aPersistenceType, &aOriginFunc,
             &cacheMap]() -> Result<Ok, nsresult> {
