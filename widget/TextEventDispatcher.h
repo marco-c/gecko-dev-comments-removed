@@ -10,6 +10,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/TextRange.h"
 #include "mozilla/widget/IMEData.h"
@@ -210,6 +211,55 @@ class TextEventDispatcher final {
       ExpandToClusterBoundary aExpandToClusterBoundary,
       RangeDirection aRangeDirection = RangeDirection::Normal,
       int16_t aReason = 0 );
+
+  
+
+
+  void DispatchContentCommandEvent(WidgetContentCommandEvent& aEvent);
+
+  
+
+
+
+
+
+  Result<bool, nsresult> DispatchContentCommandEvent(
+      EventMessage aMessage,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
+
+  
+
+
+
+
+
+
+  Result<bool, nsresult> DispatchInsertTextCommandEvent(
+      const nsAString& aString,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
+
+  
+
+
+
+
+
+
+  Result<bool, nsresult> DispatchReplaceTextCommandEvent(
+      const nsAString& aString, const nsAString& aOriginalSelectedString,
+      uint32_t aOffset, PreventSetSelection aPreventSetSelection,
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
+
+  
+
+
+
+
+
+
+  Result<bool, nsresult> DispatchPasteTransferableCommandEvent(
+      nsITransferable* aTransferable, const TimeStamp& aTimeStamp = TimeStamp(),
+      OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
 
   
 

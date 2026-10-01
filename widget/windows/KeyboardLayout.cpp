@@ -2346,6 +2346,9 @@ bool NativeKey::HandleAppCommandMessage() const {
         
         
         
+        
+        
+        
         consumed = DispatchCommandEvent(appCommand);
         break;
 
@@ -2369,13 +2372,11 @@ bool NativeKey::HandleAppCommandMessage() const {
 
     if (contentCommandMessage) {
       MOZ_ASSERT(!mWidget->Destroyed());
-      WidgetContentCommandEvent contentCommandEvent(true, contentCommandMessage,
-                                                    mWidget);
       MOZ_LOG(
           gKeyLog, LogLevel::Info,
           ("%p   NativeKey::HandleAppCommandMessage(), dispatching %s event...",
            this, ToChar(contentCommandMessage)));
-      mWidget->DispatchWindowEvent(contentCommandEvent);
+      (void)mDispatcher->DispatchContentCommandEvent(contentCommandMessage);
       MOZ_LOG(gKeyLog, LogLevel::Info,
               ("%p   NativeKey::HandleAppCommandMessage(), dispatched %s event",
                this, ToChar(contentCommandMessage)));
