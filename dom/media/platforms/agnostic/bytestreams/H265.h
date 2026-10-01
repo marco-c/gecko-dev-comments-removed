@@ -404,6 +404,12 @@ class H265 final {
 
   
   
+  
+  static uint32_t ComputeMaxReorderPics(
+      const mozilla::MediaByteBuffer* aExtraData);
+
+  
+  
   static already_AddRefed<mozilla::MediaByteBuffer> CreateFakeExtraData();
 
   

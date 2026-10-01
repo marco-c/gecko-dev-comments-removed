@@ -783,16 +783,23 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
   int64_t next_tstamp = INT64_MIN;
   auto calculateNextTimestamp =
       [&](auto pushPacket, Maybe<int64_t>* lastFrameTime,
-          int64_t defaultDuration, int64_t trackEndTime) {
+          int64_t defaultDuration, int64_t trackEndTime, bool dtsMatchesPts) {
         MOZ_ASSERT(lastFrameTime);
-        if (next_holder) {
+        
+        
+        
+        
+        
+        
+        RefPtr<NesteggPacketHolder> packet = next_holder;
+        if (dtsMatchesPts && next_holder) {
           next_tstamp = next_holder->Timestamp();
-          (this->*pushPacket)(next_holder);
         } else if (duration >= 0) {
           next_tstamp = tstamp + duration;
         } else if (defaultDuration >= 0) {
           next_tstamp = tstamp + defaultDuration;
-        } else if (lastFrameTime->isSome()) {
+        } else if (dtsMatchesPts && lastFrameTime->isSome()) {
+          
           
           
           
@@ -802,7 +809,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
                      mVideoFrameEndTimeBeforeReset->ToMicroseconds());
           next_tstamp = mVideoFrameEndTimeBeforeReset->ToMicroseconds();
         } else if (mIsMediaSource) {
-          (this->*pushPacket)(holder);
+          packet = holder;
         } else {
           
           
@@ -818,19 +825,27 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
           }
           next_tstamp = std::max<int64_t>(tstamp, trackEndTime);
         }
+        
+        
+        
+        if (packet) {
+          (this->*pushPacket)(packet);
+        }
         *lastFrameTime = Some(tstamp);
       };
 
   if (aType == TrackInfo::kAudioTrack) {
     calculateNextTimestamp(&WebMDemuxer::PushAudioPacket, &mLastAudioFrameTime,
                            mAudioDefaultDuration,
-                           mInfo.mAudio.mDuration.ToMicroseconds());
+                           mInfo.mAudio.mDuration.ToMicroseconds(),
+                            true);
   } else {
     WEBM_DEBUG("next_holder {} mLastVideoFrameTime {}", next_holder ? 'Y' : 'N',
                mLastVideoFrameTime ? 'Y' : 'N');
     calculateNextTimestamp(&WebMDemuxer::PushVideoPacket, &mLastVideoFrameTime,
                            mVideoDefaultDuration,
-                           mInfo.mVideo.mDuration.ToMicroseconds());
+                           mInfo.mVideo.mDuration.ToMicroseconds(),
+                           mVideoDecodeOrderIsPresentationOrder);
   }
 
   if (mIsMediaSource && next_tstamp == INT64_MIN) {

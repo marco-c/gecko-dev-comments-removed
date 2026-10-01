@@ -1655,6 +1655,17 @@ uint32_t H265::ComputeMaxRefFrames(const mozilla::MediaByteBuffer* aExtraData) {
 }
 
 
+uint32_t H265::ComputeMaxReorderPics(
+    const mozilla::MediaByteBuffer* aExtraData) {
+  auto rv = DecodeSPSFromHVCCExtraData(aExtraData);
+  if (rv.isErr()) {
+    return 0;
+  }
+  const H265SPS& sps = rv.unwrap();
+  return sps.sps_max_num_reorder_pics[sps.sps_max_sub_layers_minus1];
+}
+
+
 already_AddRefed<mozilla::MediaByteBuffer> H265::CreateFakeExtraData() {
   
   static const uint8_t sFakeVPS[] = {

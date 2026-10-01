@@ -246,6 +246,13 @@ class WebMDemuxer : public MediaDataDemuxer,
   int64_t mVideoDefaultDuration = -1;
 
   
+  
+  
+  
+  
+  bool mVideoDecodeOrderIsPresentationOrder = true;
+
+  
   bool mHasVideo;
   bool mHasAudio;
   bool mNeedReIndex;
