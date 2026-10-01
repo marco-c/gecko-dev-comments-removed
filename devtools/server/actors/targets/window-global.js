@@ -446,15 +446,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     this._docShellsObserved = false;
     DevToolsUtils.executeSoon(() => this._watchDocshells());
 
-    
-    
-    
-    
-    
-    if (!this.browsingContext.parent) {
-      this.browsingContext.watchedByDevTools = true;
-    }
-
     if (this.sessionContext.type == "webextension") {
       if (
         this.window.location.href.startsWith(lazy.WEBEXTENSION_FALLBACK_DOC_URL)
@@ -835,19 +826,6 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     if (this._touchSimulator) {
       this._touchSimulator.stop();
       this._touchSimulator = null;
-    }
-
-    
-    
-    
-    
-    
-    if (
-      this.browsingContext?.watchedByDevTools &&
-      !this.browsingContext.parent &&
-      !this.browsingContext.isDiscarded
-    ) {
-      this.browsingContext.watchedByDevTools = false;
     }
 
     

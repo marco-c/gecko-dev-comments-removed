@@ -17,10 +17,11 @@ const { ParentProcessWatcherRegistry } = ChromeUtils.importESModule(
   
   { global: "shared" }
 );
-const { getAllBrowsingContextsForContext } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
-  { global: "contextual" }
-);
+const { getAllBrowsingContextsForContext, isBrowsingContextPartOfContext } =
+  ChromeUtils.importESModule(
+    "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+    { global: "contextual" }
+  );
 const {
   SESSION_TYPES,
 } = require("resource://devtools/server/actors/watcher/session-context.js");
@@ -218,6 +219,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
     ParentProcessWatcherRegistry.unregisterWatcher(this.actorID);
 
+    this.#unsetWatchedByDevTools();
+
     
     this._webProgress = null;
 
@@ -250,6 +253,95 @@ exports.WatcherActor = class WatcherActor extends Actor {
   }
 
   
+  #watchingForBrowsingContexts = false;
+
+  
+
+
+
+
+
+
+
+  #setWatchedByDevTools() {
+    if (this.#watchingForBrowsingContexts) {
+      return;
+    }
+    this.#watchingForBrowsingContexts = true;
+
+    for (const browsingContext of getAllBrowsingContextsForContext(
+      this.sessionContext,
+      { onlyTopLevelBrowsingContext: true }
+    )) {
+      browsingContext.watchedByDevTools = true;
+    }
+
+    if (this.sessionContext.type == SESSION_TYPES.ALL) {
+      
+      
+      
+      
+      
+      for (const window of Services.ww.getWindowEnumerator()) {
+        window.browsingContext.watchedByDevTools = true;
+      }
+    }
+
+    if (
+      this.sessionContext.type == SESSION_TYPES.ALL ||
+      this.sessionContext.type == SESSION_TYPES.WEBEXTENSION
+    ) {
+      Services.obs.addObserver(this, "browsing-context-attached");
+    }
+  }
+
+  #unsetWatchedByDevTools() {
+    if (!this.#watchingForBrowsingContexts) {
+      return;
+    }
+    this.#watchingForBrowsingContexts = false;
+    for (const browsingContext of getAllBrowsingContextsForContext(
+      this.sessionContext,
+      { onlyTopLevelBrowsingContext: true }
+    )) {
+      browsingContext.watchedByDevTools = false;
+    }
+
+    if (this.sessionContext.type == SESSION_TYPES.ALL) {
+      
+      
+      
+      
+      
+      for (const window of Services.ww.getWindowEnumerator()) {
+        window.browsingContext.watchedByDevTools = false;
+      }
+    }
+
+    if (
+      this.sessionContext.type == SESSION_TYPES.ALL ||
+      this.sessionContext.type == SESSION_TYPES.WEBEXTENSION
+    ) {
+      Services.obs.removeObserver(this, "browsing-context-attached");
+    }
+  }
+
+  observe(subject, topic) {
+    if (topic != "browsing-context-attached") {
+      return;
+    }
+    
+    
+    if (
+      this.sessionContext.type == SESSION_TYPES.ALL ||
+      (this.sessionContext.type == SESSION_TYPES.WEBEXTENSION &&
+        isBrowsingContextPartOfContext(subject, this.sessionContext))
+    ) {
+      subject.watchedByDevTools = true;
+    }
+  }
+
+  
 
 
 
@@ -264,6 +356,8 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
   async watchTargets(targetType) {
     ParentProcessWatcherRegistry.watchTargets(this, targetType);
+
+    this.#setWatchedByDevTools();
 
     
     
