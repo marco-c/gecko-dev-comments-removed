@@ -603,6 +603,13 @@ void CanonicalBrowsingContext::GetLoadingSessionHistoryInfoFromParent(
     return;
   }
 
+  if (!StaticPrefs::docshell_shistory_restoreSubframesOnReload() &&
+             parentSHE->Info().LoadType() == LOAD_RELOAD_NORMAL) {
+    
+    parentSHE->RemoveChild(entry);
+    return;
+  }
+
   aLoadingInfo.emplace(entry);
   mLoadingEntries.AppendElement(
       LoadingSessionHistoryEntry{aLoadingInfo.value().mLoadId, entry.get()});
