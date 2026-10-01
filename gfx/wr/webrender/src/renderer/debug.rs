@@ -536,18 +536,13 @@ pub fn bind_debug_overlay(
                     handle: surface_info.handle,
                     dimensions: surface_size,
                 };
+                
                 device.begin_render_pass(&RenderPassDescriptor {
                     target: draw_target,
                     render_area: None,
-                    color_load: LoadOp::DontCare,
+                    color_load: LoadOp::Clear([0.0, 0.0, 0.0, 0.0]),
+                    depth_load: LoadOp::DontCare,
                 });
-
-                
-                device.clear_target(
-                    Some([0.0, 0.0, 0.0, 0.0]),
-                    None, 
-                    None,
-                );
 
                 Some(draw_target)
             }
@@ -559,14 +554,9 @@ pub fn bind_debug_overlay(
                 device.begin_render_pass(&RenderPassDescriptor {
                     target: draw_target,
                     render_area: None,
-                    color_load: LoadOp::DontCare,
+                    color_load: LoadOp::Clear([0.0, 0.0, 0.0, 0.0]),
+                    depth_load: LoadOp::DontCare,
                 });
-
-                device.clear_target(
-                    Some([0.0, 0.0, 0.0, 0.0]),
-                    None, 
-                    None,
-                );
 
                 Some(draw_target)
             }
@@ -578,6 +568,7 @@ pub fn bind_debug_overlay(
                     target: draw_target,
                     render_area: None,
                     color_load: LoadOp::Load,
+                    depth_load: LoadOp::DontCare,
                 });
 
                 Some(draw_target)
@@ -892,10 +883,10 @@ fn do_debug_blit(
         
         let tag_rect = rect(x, tag_y, size, tag_height).to_box2d();
         let tag_color = select_color(texture);
-        device.clear_target(
+        device.clear_rect(
+            draw_target.to_framebuffer_rect(tag_rect),
             Some(tag_color),
             None,
-            Some(draw_target.to_framebuffer_rect(tag_rect)),
         );
 
         

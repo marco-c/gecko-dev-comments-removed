@@ -683,6 +683,19 @@ fn preferred_gpu_buffer_texture_height(required_height: i32) -> i32 {
 
 
 
+struct RenderTargetClear {
+    color_load: LoadOp<[f32; 4]>,
+    depth_load: LoadOp<f32>,
+    
+    rect: Option<(FramebufferIntRect, Option<[f32; 4]>, Option<f32>)>,
+    
+    precise: bool,
+    
+    with_quads: bool,
+}
+
+
+
 
 
 
@@ -2076,6 +2089,7 @@ impl Renderer {
                     target: draw_target,
                     render_area: None,
                     color_load: LoadOp::Load,
+                    depth_load: LoadOp::DontCare,
                 });
 
                 self.shaders
@@ -3009,15 +3023,6 @@ impl Renderer {
 
         {
             let _timer = self.gpu_profiler.start_timer(GPU_TAG_SETUP_TARGET);
-            
-            self.device.begin_render_pass(&RenderPassDescriptor {
-                target: draw_target,
-                render_area: Some(target.dirty_rect),
-                color_load: LoadOp::DontCare,
-            });
-
-            self.device.set_depth_write(true);
-            self.set_blend_mode(BlendMode::None, framebuffer_kind);
 
             let clear_color = target.clear_color.map(|c| c.to_array());
             let scissor_rect = if self.device.get_capabilities().supports_render_target_partial_update
@@ -3028,6 +3033,24 @@ impl Renderer {
             } else {
                 None
             };
+
+            
+            
+            
+            let full_clear = scissor_rect.is_none();
+            self.device.begin_render_pass(&RenderPassDescriptor {
+                target: draw_target,
+                render_area: Some(target.dirty_rect),
+                color_load: match clear_color {
+                    Some(color) if full_clear => LoadOp::Clear(color),
+                    _ => LoadOp::DontCare,
+                },
+                depth_load: if full_clear { LoadOp::Clear(1.0) } else { LoadOp::DontCare },
+            });
+
+            self.device.set_depth_write(true);
+            self.set_blend_mode(BlendMode::None, framebuffer_kind);
+
             match scissor_rect {
                 
                 
@@ -3065,12 +3088,14 @@ impl Renderer {
                     stats.total_draw_calls = old_draw_call_count;
                     self.device.set_depth_test(None);
                 }
-                other => {
-                    let scissor_rect = other.map(|rect| {
-                        draw_target.build_scissor_rect(Some(rect))
-                    });
-                    self.device.clear_target(clear_color, Some(1.0), scissor_rect);
+                Some(r) => {
+                    self.device.clear_rect(
+                        draw_target.build_scissor_rect(Some(r)),
+                        clear_color,
+                        Some(1.0),
+                    );
                 }
+                None => {}
             };
             self.device.set_depth_write(false);
         }
@@ -3249,27 +3274,14 @@ impl Renderer {
         self.device.set_scissor(None);
     }
 
-    fn clear_render_target(
-        &mut self,
+    
+    
+    
+    fn plan_render_target_clear(
+        &self,
         target: &RenderTarget,
         draw_target: DrawTarget,
-        framebuffer_kind: FramebufferKind,
-        projection: &default::Transform3D<f32>,
-        stats: &mut RendererStats,
-    ) {
-        let needs_depth = target.needs_depth();
-
-        let clear_depth = if needs_depth {
-            Some(1.0)
-        } else {
-            None
-        };
-
-        let _timer = self.gpu_profiler.start_timer(GPU_TAG_SETUP_TARGET);
-
-        self.device.set_depth_test(None);
-        self.set_blend_mode(BlendMode::None, framebuffer_kind);
-
+    ) -> RenderTargetClear {
         let is_alpha = target.target_kind == RenderTargetKind::Alpha;
         let require_precise_clear = target.cached;
 
@@ -3291,66 +3303,108 @@ impl Renderer {
         let clear_color = target
             .clear_color
             .map(|color| color.to_array());
-
-        let mut cleared_depth = false;
-        if clear_with_quads {
-            
-        } else if require_precise_clear {
-            
-            for (rect, color) in &target.clears {
-                self.device.clear_target(
-                    Some(color.to_array()),
-                    None,
-                    Some(draw_target.to_framebuffer_rect(*rect)),
-                );
-            }
+        let clear_depth = if target.needs_depth() {
+            Some(1.0)
         } else {
-            
-            
-            
-            let clear_rect = if require_full_clear {
-                None
-            } else {
-                match draw_target {
-                    DrawTarget::Default { rect, total_size, .. } => {
-                        if rect.min == FramebufferIntPoint::zero() && rect.size() == total_size {
-                            
-                            None
-                        } else {
-                            Some(rect)
-                        }
-                    }
-                    DrawTarget::Texture { .. } => {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        target.used_rect.map(|rect| draw_target.to_framebuffer_rect(rect))
-                    }
-                    
-                    _ => None,
-                }
-            };
+            None
+        };
 
-            self.device.clear_target(
-                clear_color,
-                clear_depth,
-                clear_rect,
-            );
-            cleared_depth = true;
+        
+        
+        let color_load = match clear_color {
+            Some(..) => LoadOp::DontCare,
+            None => LoadOp::Load,
+        };
+        let depth_load = clear_depth.map_or(LoadOp::DontCare, LoadOp::Clear);
+
+        if clear_with_quads || require_precise_clear {
+            
+            return RenderTargetClear {
+                color_load,
+                depth_load,
+                rect: None,
+                precise: require_precise_clear,
+                with_quads: clear_with_quads,
+            };
         }
 
         
-        if needs_depth && !cleared_depth {
+        
+        
+        let clear_rect = if require_full_clear {
+            None
+        } else {
+            match draw_target {
+                DrawTarget::Default { rect, total_size, .. } => {
+                    if rect.min == FramebufferIntPoint::zero() && rect.size() == total_size {
+                        
+                        None
+                    } else {
+                        Some(rect)
+                    }
+                }
+                DrawTarget::Texture { .. } => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    target.used_rect.map(|rect| draw_target.to_framebuffer_rect(rect))
+                }
+                
+                _ => None,
+            }
+        };
+
+        match clear_rect {
+            None => RenderTargetClear {
+                color_load: clear_color.map_or(LoadOp::Load, LoadOp::Clear),
+                depth_load,
+                rect: None,
+                precise: false,
+                with_quads: false,
+            },
+            Some(rect) => RenderTargetClear {
+                color_load,
+                depth_load: LoadOp::DontCare,
+                rect: Some((rect, clear_color, clear_depth)),
+                precise: false,
+                with_quads: false,
+            },
+        }
+    }
+
+    
+    fn clear_render_target(
+        &mut self,
+        target: &RenderTarget,
+        draw_target: DrawTarget,
+        framebuffer_kind: FramebufferKind,
+        clear: &RenderTargetClear,
+        projection: &default::Transform3D<f32>,
+        stats: &mut RendererStats,
+    ) {
+        self.device.set_depth_test(None);
+        self.set_blend_mode(BlendMode::None, framebuffer_kind);
+
+        if let Some((rect, color, depth)) = clear.rect {
+            self.device.clear_rect(rect, color, depth);
+        }
+
+        if clear.precise && !clear.with_quads {
             
-            
-            self.device.clear_target(None, clear_depth, None);
+            for (rect, color) in &target.clears {
+                self.device.clear_rect(
+                    draw_target.to_framebuffer_rect(*rect),
+                    Some(color.to_array()),
+                    None,
+                );
+            }
         }
 
         
@@ -3359,7 +3413,7 @@ impl Renderer {
 
         let mut clear_instances = Vec::with_capacity(target.clears.len());
         for (rect, color) in &target.clears {
-            if clear_with_quads || (!require_precise_clear && target.clear_color != Some(*color)) {
+            if clear.with_quads || (!clear.precise && target.clear_color != Some(*color)) {
                 let rect = rect.to_f32();
                 clear_instances.push(ClearInstance {
                     rect: [
@@ -3454,34 +3508,36 @@ impl Renderer {
             FramebufferKind::Other
         };
 
-        self.device.begin_render_pass(&RenderPassDescriptor {
-            target: draw_target,
-            render_area: target.used_rect,
-            
-            
-            color_load: if target.clear_color.is_some() {
-                LoadOp::DontCare
+        let clear = self.plan_render_target_clear(target, draw_target);
+
+        {
+            let _timer = self.gpu_profiler.start_timer(GPU_TAG_SETUP_TARGET);
+
+            self.device.begin_render_pass(&RenderPassDescriptor {
+                target: draw_target,
+                render_area: target.used_rect,
+                color_load: clear.color_load,
+                depth_load: clear.depth_load,
+            });
+
+            if needs_depth {
+                self.device.set_depth_write(true);
             } else {
-                LoadOp::Load
-            },
-        });
+                self.device.set_depth_write(false);
+            }
 
-        if needs_depth {
-            self.device.set_depth_write(true);
-        } else {
-            self.device.set_depth_write(false);
-        }
+            self.clear_render_target(
+                target,
+                draw_target,
+                framebuffer_kind,
+                &clear,
+                &projection,
+                stats,
+            );
 
-        self.clear_render_target(
-            target,
-            draw_target,
-            framebuffer_kind,
-            &projection,
-            stats,
-        );
-
-        if needs_depth {
-            self.device.set_depth_write(false);
+            if needs_depth {
+                self.device.set_depth_write(false);
+            }
         }
 
         
@@ -4276,9 +4332,9 @@ impl Renderer {
         self.device.begin_render_pass(&RenderPassDescriptor {
             target: DrawTarget::from_texture(&texture, false),
             render_area: None,
-            color_load: LoadOp::DontCare,
+            color_load: LoadOp::Clear(color),
+            depth_load: LoadOp::DontCare,
         });
-        self.device.clear_target(Some(color), None, None);
         self.device.end_render_pass(StoreOp::Store);
     }
 }

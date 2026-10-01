@@ -688,11 +688,13 @@ pub enum BlendMode {
 
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum LoadOp {
+pub enum LoadOp<T> {
     Load,
     
     
     DontCare,
+    
+    Clear(T),
 }
 
 
@@ -734,7 +736,9 @@ pub struct RenderPassDescriptor {
     
     
     pub render_area: Option<DeviceIntRect>,
-    pub color_load: LoadOp,
+    pub color_load: LoadOp<[f32; 4]>,
+    
+    pub depth_load: LoadOp<f32>,
 }
 
 
