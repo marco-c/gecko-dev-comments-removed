@@ -42,6 +42,7 @@ export type DOMExtractionResult = {
   text: string;
   links: string[];
   canvases: HTMLCanvasElement[];
+  siteStrategy: string | null;
 };
 
 export type ExtractionResult = {
@@ -51,6 +52,9 @@ export type ExtractionResult = {
 };
 
 export type ExtractionStrategy = Partial<{
+  
+  
+  name: string | null;
   
   filterSelector: string;
   
