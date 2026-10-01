@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef js_friend_MicroTask_h
 #define js_friend_MicroTask_h
 
@@ -154,8 +152,8 @@ class SavedMicroTaskQueue {
 
 
 
-JS_PUBLIC_API js::UniquePtr<SavedMicroTaskQueue> SaveMicroTaskQueue(
-    JSContext* cx);
+[[nodiscard]] JS_PUBLIC_API js::UniquePtr<SavedMicroTaskQueue>
+SaveMicroTaskQueue(JSContext* cx);
 JS_PUBLIC_API void RestoreMicroTaskQueue(
     JSContext* cx, js::UniquePtr<SavedMicroTaskQueue> savedQueue);
 
@@ -168,14 +166,10 @@ JS_PUBLIC_API void RestoreMicroTaskQueue(
 
 
 JS_PUBLIC_API bool MaybeGetHostDefinedDataFromJSMicroTask(
-    JSMicroTask* entry, MutableHandleObject out);
+    JSMicroTask* entry, MutableHandleObject incumbentGlobal,
+    MutableHandleObject optionalHostDefinedData);
 JS_PUBLIC_API bool MaybeGetAllocationSiteFromJSMicroTask(
     JSMicroTask* entry, MutableHandleObject out);
-
-
-
-JS_PUBLIC_API JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask(
-    JSMicroTask* entry);
 
 JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(JSMicroTask* entry);
 
