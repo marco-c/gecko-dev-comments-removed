@@ -13,7 +13,7 @@
 #include "nsTArray.h"
 
 class nsIFile;
-class nsIURLParser;
+class nsBaseURLParser;
 
 
 
@@ -23,9 +23,9 @@ class nsIURLParser;
 void net_ShutdownURLHelper();
 
 
-already_AddRefed<nsIURLParser> net_GetAuthURLParser();
-already_AddRefed<nsIURLParser> net_GetNoAuthURLParser();
-already_AddRefed<nsIURLParser> net_GetStdURLParser();
+already_AddRefed<nsBaseURLParser> net_GetAuthURLParser();
+already_AddRefed<nsBaseURLParser> net_GetNoAuthURLParser();
+already_AddRefed<nsBaseURLParser> net_GetStdURLParser();
 
 
 
