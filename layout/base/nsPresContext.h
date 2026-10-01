@@ -432,7 +432,7 @@ class nsPresContext : public nsISupports,
 
 
 
-  bool IsKeyboardHiddenOrResizesContentMode() const;
+  bool IsKeyboardVisibleOnOverlaysContent() const;
 
   
 
