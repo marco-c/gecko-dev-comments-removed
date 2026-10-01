@@ -90,7 +90,6 @@ class nsWindowWatcher : public nsIWindowWatcher,
 
   
   
-  MOZ_CAN_RUN_SCRIPT
   nsresult OpenWindowInternal(
       mozIDOMWindowProxy* aParent, const nsACString& aUrl,
       const nsAString& aName, const nsACString& aFeatures,
@@ -98,7 +97,6 @@ class nsWindowWatcher : public nsIWindowWatcher,
       bool aCalledFromJS, bool aDialog, bool aNavigate, nsIArray* aArgv,
       bool aIsPopupSpam, bool aForceNoOpener, bool aForceNoReferrer, PrintKind,
       nsDocShellLoadState* aLoadState, mozilla::dom::BrowsingContext** aResult);
-  MOZ_CAN_RUN_SCRIPT
   nsresult OpenWindowInternal(
       mozIDOMWindowProxy* aParent, nsIURI* aUri, const nsAString& aName,
       const nsACString& aFeatures,

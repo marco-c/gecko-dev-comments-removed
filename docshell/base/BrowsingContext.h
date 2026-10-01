@@ -476,13 +476,12 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   void PrepareForProcessChange();
 
   
-  MOZ_CAN_RUN_SCRIPT
   nsresult LoadURI(nsDocShellLoadState* aLoadState,
                    bool aSetNavigating = false);
 
   nsresult InternalLoad(nsDocShellLoadState* aLoadState);
 
-  MOZ_CAN_RUN_SCRIPT void Navigate(
+  void Navigate(
       nsIURI* aURI, Document* aSourceDocument, nsIPrincipal& aSubjectPrincipal,
       ErrorResult& aRv,
       NavigationHistoryBehavior aHistoryHandling =

@@ -31,7 +31,7 @@ mozilla::ipc::IPCResult WebIdentityChild::RecvOpenContinuationWindow(
 
   
   
-  RefPtr outer = nsGlobalWindowOuter::GetOuterWindowWithId(
+  nsGlobalWindowOuter* outer = nsGlobalWindowOuter::GetOuterWindowWithId(
       window->GetWindowContext()->OuterWindowId());
   RefPtr<BrowsingContext> newBC;
   nsresult rv = outer->OpenJS(aContinueURI->GetSpecOrDefault(), u"_blank"_ns,

@@ -202,7 +202,6 @@ struct BootstrapConfig;
 
 
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY
 int XRE_main(int argc, char* argv[], const mozilla::BootstrapConfig& aConfig);
 
 

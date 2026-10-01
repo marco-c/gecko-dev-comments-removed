@@ -33,9 +33,7 @@ class ImageAccessible : public LinkableAccessible,
   
   virtual uint8_t ActionCount() const override;
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
-  
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual bool DoAction(
-      uint8_t aIndex) const override;
+  virtual bool DoAction(uint8_t aIndex) const override;
 
   
   LayoutDeviceIntPoint Position(uint32_t aCoordType);
