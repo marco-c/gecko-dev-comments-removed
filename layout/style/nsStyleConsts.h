@@ -217,12 +217,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 
 
 
-enum class StyleWindowShadow : uint8_t {
-  Auto,
-  None,
-};
-
-
 enum class StyleColorInterpolation : uint8_t {
   Auto = 0,
   Srgb = 1,
