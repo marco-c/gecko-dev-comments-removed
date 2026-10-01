@@ -31,17 +31,49 @@ async function toggleTopsitesPref() {
   ]);
 }
 
+
+const DEFAULT_TOP_SITES = [
+  "https://www.youtube.com/",
+  "https://www.facebook.com/",
+  "https://www.amazon.com/",
+  "https://www.reddit.com/",
+  "https://www.wikipedia.org/",
+  "https://twitter.com/",
+];
+
+
+
+const TEST_TOP_SITE = "https://example.com/";
+
 async function setDefaultTopSites() {
   
   await pushPrefs([
     "browser.newtabpage.activity-stream.default.sites",
-    "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/",
+    DEFAULT_TOP_SITES.join(","),
   ]);
   await toggleTopsitesPref();
   await pushPrefs([
     "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
     true,
   ]);
+  return DEFAULT_TOP_SITES;
+}
+
+
+
+
+
+
+function clearPinnedTopSites() {
+  for (const link of [...NewTabUtils.pinnedLinks.links]) {
+    if (link) {
+      NewTabUtils.pinnedLinks.unpin(link);
+    }
+  }
+  
+  Services.prefs.clearUserPref(
+    "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts.havePinned"
+  );
 }
 
 async function setTestTopSites() {

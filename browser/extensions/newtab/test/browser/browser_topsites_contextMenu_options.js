@@ -13,15 +13,14 @@ test_newtab({
     
     
     await clearHistoryAndBookmarks();
-    await setDefaultTopSites();
+    clearPinnedTopSites();
+    return setDefaultTopSites();
   },
   
-  test: async function defaultTopSites_menuOptions() {
-    const siteSelector = ".top-site-outer:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsite tippytop icon not found"
-    );
+  test: async function defaultTopSites_menuOptions(defaultTopSites) {
+    
+    await content.waitForTopSite(defaultTopSites[0]);
+    const siteSelector = `.top-site-outer:has(a.top-site-button[href="${defaultTopSites[0]}"])`;
 
     const contextMenuItems =
       await content.openContextMenuAndGetOptions(siteSelector);
