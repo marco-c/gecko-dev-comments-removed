@@ -102,6 +102,10 @@ struct StyleAtom;
 struct AutoConnectedAncestorTracker;
 struct PointerInfo;
 
+
+using AnchorPosAnchorTopLayerIndexCache =
+    nsTHashMap<const nsAtom*, nsTArray<size_t>>;
+
 #ifdef ACCESSIBILITY
 namespace a11y {
 class DocAccessible;
@@ -817,9 +821,10 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   
-  nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
-                               const nsIFrame* aPositionedFrame,
-                               uint32_t aPositionedFrameTreeDepth) const;
+  nsIFrame* GetAnchorPosAnchor(
+      const ScopedNameRef& aName, const nsIFrame* aPositionedFrame,
+      uint32_t aPositionedFrameTreeDepth,
+      AnchorPosAnchorTopLayerIndexCache* aTopLayerIndexCache = nullptr) const;
   void CollectAnchorNames(const nsIFrame* aPositionedFrame,
                           nsTArray<nsString>& aResult);
   void AddAnchorPosAnchor(Span<const StyleAtom> aNames, nsIFrame* aFrame);
