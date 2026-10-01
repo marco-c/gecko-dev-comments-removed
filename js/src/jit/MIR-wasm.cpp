@@ -516,6 +516,44 @@ static bool MatchPmaddubswSequence(MWasmBinarySimd128* lhs,
   return true;
 }
 
+static bool IsZeroSimd128(MDefinition* def) {
+  return def->isWasmFloatConstant() &&
+         def->toWasmFloatConstant()->toSimd128().isZeroBits();
+}
+
+static wasm::SimdOp TestBitsOp(wasm::SimdOp op) {
+  switch (op) {
+    case wasm::SimdOp::I8x16Ne:
+      return wasm::SimdOp::MozI8x16TestBits;
+    case wasm::SimdOp::I16x8Ne:
+      return wasm::SimdOp::MozI16x8TestBits;
+    case wasm::SimdOp::I32x4Ne:
+      return wasm::SimdOp::MozI32x4TestBits;
+    case wasm::SimdOp::I64x2Ne:
+      return wasm::SimdOp::MozI64x2TestBits;
+    default:
+      return wasm::SimdOp::Limit;
+  }
+}
+
+
+static MWasmBinarySimd128* MatchTestBitsSequence(MWasmBinarySimd128* ins) {
+  MDefinition* bits;
+  if (IsZeroSimd128(ins->rhs())) {
+    bits = ins->lhs();
+  } else if (IsZeroSimd128(ins->lhs())) {
+    bits = ins->rhs();
+  } else {
+    return nullptr;
+  }
+  if (!bits->isWasmBinarySimd128() ||
+      bits->toWasmBinarySimd128()->simdOp() != wasm::SimdOp::V128And ||
+      !bits->hasOneUse()) {
+    return nullptr;
+  }
+  return bits->toWasmBinarySimd128();
+}
+
 
 
 
@@ -551,6 +589,16 @@ MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
     }
     block()->insertBefore(this, zero);
     return BuildWasmShuffleSimd128(alloc, shuffleMask, lhs(), zero);
+  }
+
+  
+  
+  if (canTestBits() && TestBitsOp(simdOp()) != wasm::SimdOp::Limit) {
+    if (MWasmBinarySimd128* bitAnd = MatchTestBitsSequence(this)) {
+      return MWasmBinarySimd128::New(alloc, bitAnd->lhs(), bitAnd->rhs(),
+                                      true,
+                                     TestBitsOp(simdOp()));
+    }
   }
 
   

@@ -2223,6 +2223,10 @@ class MWasmBinarySimd128 : public MBinaryInstruction,
 
   
   bool canPmaddubsw();
+
+  
+  
+  bool canTestBits();
 #endif
 
   wasm::SimdOp simdOp() const { return simdOp_; }
