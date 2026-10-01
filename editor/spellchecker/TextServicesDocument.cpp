@@ -18,6 +18,7 @@
 #include "mozilla/UniquePtr.h"          
 #include "mozilla/dom/AbstractRange.h"  
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/Range.h"  
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/StaticRange.h"  
 #include "mozilla/dom/Text.h"
@@ -38,7 +39,6 @@
 #include "nsISelectionController.h"  
 #include "nsISupports.h"             
 #include "nsISupportsUtils.h"        
-#include "nsRange.h"                 
 #include "nsString.h"                
 #include "nscore.h"                  
 

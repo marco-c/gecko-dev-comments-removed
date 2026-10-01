@@ -14,6 +14,7 @@
 #include "mozilla/dom/DataTransfer.h"   
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/HTMLBRElement.h"  
+#include "mozilla/dom/Range.h"          
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/dom/Text.h"           
 
@@ -22,7 +23,6 @@
 #include "nsContentUtils.h"  
 #include "nsDebug.h"         
 #include "nsError.h"         
-#include "nsRange.h"         
 #include "nsString.h"        
 
 class nsITransferable;

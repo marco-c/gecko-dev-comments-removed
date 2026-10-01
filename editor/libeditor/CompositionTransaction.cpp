@@ -10,12 +10,12 @@
 #include "mozilla/TextComposition.h"  
 #include "mozilla/TextEditor.h"       
 #include "mozilla/ToString.h"
+#include "mozilla/dom/Range.h"       
 #include "mozilla/dom/Selection.h"   
 #include "mozilla/dom/Text.h"        
 #include "nsAString.h"               
 #include "nsDebug.h"                 
 #include "nsError.h"                 
-#include "nsRange.h"                 
 #include "nsISelectionController.h"  
 #include "nsQueryObject.h"           
 

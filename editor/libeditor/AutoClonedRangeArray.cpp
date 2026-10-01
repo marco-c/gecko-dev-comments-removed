@@ -28,7 +28,6 @@
 #include "nsFrameSelection.h"  
 #include "nsIContent.h"        
 #include "nsINode.h"           
-#include "nsRange.h"           
 
 namespace mozilla {
 
