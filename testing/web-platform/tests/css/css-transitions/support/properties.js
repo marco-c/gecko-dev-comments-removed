@@ -4,8 +4,9 @@
 
 
 
-var values = {
-    'length' : function() {
+var values =
+    {
+      'length': function() {
         
         return {
             
@@ -26,78 +27,81 @@ var values = {
             cm: ['1cm', '10cm'],
             'in': ['1in', '10in']
         };
-    },
-    'length-em': function() {
+      },
+      'length-em': function() {
         return {
             em: ['1.1em', '1.5em']
         };
-    },
-    'percentage': function() {
+      },
+      'percentage': function() {
         
         return {
             '%': ['33%', '80%']
         };
-    },
-    'color': function() {
+      },
+      'color': function() {
         
         
         return {
             rgba: ['rgba(100,100,100,1)', 'rgba(10,10,10,0.4)']
         };
-    },
-    'rectangle': function() {
+      },
+      'rectangle': function() {
         
         return {
             rectangle: ['rect(10px,10px,10px,10px)', 'rect(15px,15px,5px,5px)']
         };
-    },
-    'font-weight': function() {
+      },
+      'font-weight': function() {
         
         return {
             keyword: ["normal", "bold"],
             numeric: ["100", "900"]
         };
-    },
-    'number': function() {
+      },
+      'number': function() {
         
         return {
             integer: ["1", "10"],
             decimal: ["1.1", "9.55"]
         };
-    },
-    'number[0,1]': function() {
+      },
+      'number[0,1]': function() {
         
         
         return {
             "zero-to-one": ["0.2", "0.9"]
         };
-    },
-    'integer': function() {
+      },
+      'integer': function() {
         
         return {
             integer: ["1", "10"]
         };
-    },
-    'shadow': function() {
+      },
+      'shadow': function() {
         
         return {
             shadow: ['rgba(0,0,0,0.1) 5px 6px 7px', 'rgba(10,10,10,0.9) 5px 6px 7px']
         };
-    },
-    'visibility': function() {
+      },
+      'visibility': function() {
         
         return {
             keyword: ['visible', 'hidden', {discrete: true}]
         };
-    },
-    
-    'border-radius': function() {
+      },
+      'auto-length': function() {
+        return {keyword: ['auto', '10px']};
+      },
+      
+      'border-radius': function() {
         return {
             px: ['1px', '10px'],
             "px-px": ['1px 3px', '10px 13px']
         };
-    },
-    'image' : function() {
+      },
+      'image': function() {
         var prefix = getValueVendorPrefix('background-image', 'linear-gradient(top, hsl(0, 80%, 70%), #bada55)');
         return {
             
@@ -108,122 +112,123 @@ var values = {
             
             gradient: [prefix + 'linear-gradient(top, hsl(0, 80%, 70%), #bada55)', prefix + 'linear-gradient(top, #bada55, hsl(0, 80%, 70%))']
         };
-    },
-    'background-size': function() {
+      },
+      'background-size': function() {
         return {
             keyword: ['cover', 'contain']
         };
-    },
-    'box-shadow': function() {
+      },
+      'box-shadow': function() {
         
         return {
             shadow: ['60px -16px teal', '60px -16px red']
         };
-    },
-    'vertical': function() {
+      },
+      'vertical': function() {
         return {
             keyword: ['top', 'bottom']
         };
-    },
-    'horizontal': function() {
+      },
+      'horizontal': function() {
         return {
             keyword: ['left', 'right']
         };
-    },
-    'font-stretch': function() {
+      },
+      'font-stretch': function() {
         return {
             keyword: ['condensed', 'expanded']
         };
-    },
-    'transform': function() {
+      },
+      'transform': function() {
         return {
             rotate: ['rotate(10deg)', 'rotate(20deg)']
         };
-    },
-    'position': function() {
+      },
+      'position': function() {
         return {
             'static to absolute': ['static', 'absolute', {discrete: true}],
             'relative to absolute': ['relative', 'absolute', {discrete: true}],
             'absolute to fixed': ['absolute', 'fixed', {discrete: true}]
         };
-    },
-    'display': function() {
+      },
+      'display': function() {
         return {
             'static to absolute': ['none', 'block', {discrete: true}],
             'block to inline-block': ['block', 'inline-block', {discrete: true}]
         };
-    },
-    'object-view-box': function() {
+      },
+      'object-view-box': function() {
         return {
             inset: ['inset(10% 10% 20% 20%)', 'inset(20% 20% 30% 30%)'],
             rect: ['rect(10px 20px 30px 40px)', 'rect(20px 30px 40px 50px)'],
             xywh: ['xywh(10px 20px 30px 40px)', 'xywh(20px 30px 40px 50px)'],
         };
-    }
-};
+      }
+    };
 
 
 
 
 
 var properties = {
-    'background-color': ['color'],
-    'background-position-x': ['length', 'percentage'],
+  'background-color': ['color'],
+  'background-position-x': ['length', 'percentage'],
 
-    'border-top-width': ['length'],
-    'border-right-width': ['length'],
-    'border-bottom-width': ['length'],
-    'border-left-width': ['length'],
+  'border-top-width': ['length'],
+  'border-right-width': ['length'],
+  'border-bottom-width': ['length'],
+  'border-left-width': ['length'],
 
-    'border-top-color': ['color'],
-    'border-right-color': ['color'],
-    'border-bottom-color': ['color'],
-    'border-left-color': ['color'],
+  'border-top-color': ['color'],
+  'border-right-color': ['color'],
+  'border-bottom-color': ['color'],
+  'border-left-color': ['color'],
 
-    'padding-bottom': ['length'],
-    'padding-left': ['length'],
-    'padding-right': ['length'],
-    'padding-top': ['length'],
+  'padding-bottom': ['length'],
+  'padding-left': ['length'],
+  'padding-right': ['length'],
+  'padding-top': ['length'],
 
-    'margin-bottom': ['length'],
-    'margin-left': ['length'],
-    'margin-right': ['length'],
-    'margin-top': ['length'],
+  'margin-bottom': ['length'],
+  'margin-left': ['length'],
+  'margin-right': ['length'],
+  'margin-top': ['length'],
 
-    'height': ['length', 'percentage'],
-    'width': ['length', 'percentage'],
-    'min-height': ['length', 'percentage'],
-    'min-width': ['length', 'percentage'],
-    'max-height': ['length', 'percentage'],
-    'max-width': ['length', 'percentage'],
+  'height': ['length', 'percentage'],
+  'width': ['length', 'percentage'],
+  'min-height': ['length', 'percentage'],
+  'min-width': ['length', 'percentage'],
+  'max-height': ['length', 'percentage'],
+  'max-width': ['length', 'percentage'],
 
-    'top': ['length', 'percentage'],
-    'right': ['length', 'percentage'],
-    'bottom': ['length', 'percentage'],
-    'left': ['length', 'percentage'],
+  'top': ['length', 'percentage'],
+  'right': ['length', 'percentage'],
+  'bottom': ['length', 'percentage'],
+  'left': ['length', 'percentage'],
 
-    'color': ['color'],
-    'font-size': ['length', 'percentage'],
-    'font-weight': ['font-weight'],
-    'line-height': ['number', 'length', 'percentage'],
-    'letter-spacing': ['length'],
-    
-    
-    'word-spacing': ['length', 'percentage'],
-    'text-indent': ['length', 'percentage'],
-    'text-shadow': ['shadow'],
+  'color': ['color'],
+  'font-size': ['length', 'percentage'],
+  'font-weight': ['font-weight'],
+  'line-height': ['number', 'length', 'percentage'],
+  'letter-spacing': ['length'],
+  
+  
+  'word-spacing': ['length', 'percentage'],
+  'text-decoration-inset': ['length', 'percentage', 'auto-length'],
+  'text-indent': ['length', 'percentage'],
+  'text-shadow': ['shadow'],
 
-    'outline-color': ['color'],
-    
-    'outline-offset': ['length'],
-    'outline-width': ['length'],
+  'outline-color': ['color'],
+  
+  'outline-offset': ['length'],
+  'outline-width': ['length'],
 
-    'clip': ['rectangle'],
+  'clip': ['rectangle'],
 
-    'vertical-align': ['length', 'percentage'],
-    'opacity': ['number[0,1]'],
-    'visibility': ['visibility'],
-    'z-index': ['integer']
+  'vertical-align': ['length', 'percentage'],
+  'opacity': ['number[0,1]'],
+  'visibility': ['visibility'],
+  'z-index': ['integer']
 };
 
 
