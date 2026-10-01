@@ -266,6 +266,10 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
 
   RefPtr<HttpBaseChannel> mChannel;
   nsCOMPtr<nsICacheEntry> mCacheEntry;
+  
+  
+  
+  nsCString mAltDataBindingOrigin;
 
   nsCOMPtr<nsIChannel> mRedirectChannel;
   nsCOMPtr<nsIAsyncVerifyRedirectCallback> mRedirectCallback;

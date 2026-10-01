@@ -504,6 +504,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   bool IsDeliveringAltData() const { return LoadDeliveringAltData(); }
 
+  
+  
+  nsresult GetAltDataBindingOrigin(nsACString& aOrigin);
+
   static void PropagateReferenceIfNeeded(nsIURI* aURI,
                                          nsCOMPtr<nsIURI>& aRedirectURI);
 
