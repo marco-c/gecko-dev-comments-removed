@@ -2433,7 +2433,7 @@ pref("browser.smartwindow.smartformfill.minFormFields", 4);
 pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 
-pref("browser.smartwindow.agent.toolbar.enabled", false);
+pref("browser.smartwindow.agent.toolbar.enabled", true);
 
 
 
