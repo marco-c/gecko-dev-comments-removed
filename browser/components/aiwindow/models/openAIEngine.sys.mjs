@@ -19,14 +19,14 @@ const lazy = XPCOMUtils.declareLazy({
 const APIKEY_PREF = "browser.smartwindow.apiKey";
 const ENDPOINT_PREF = "browser.smartwindow.endpoint";
 const CUSTOM_ENDPOINT_PREF = "browser.smartwindow.customEndpoint";
+const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 const CUSTOM_MODEL_CHOICE_ID = "0";
 const DEFAULT_ENGINE_ID = "smart-openai";
 
 /**
  * The default endpoint used for preset models
  */
-const DEFAULT_ENDPOINT =
-  "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1";
+const DEFAULT_ENDPOINT = "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1";
 
 /**
  * Transport for AI Window LLM calls against an OpenAI-style backend.
@@ -112,6 +112,24 @@ export class openAIEngine {
    */
   get isCustomEndpoint() {
     return this.#baseURL !== null && this.#baseURL !== openAIEngine.endpoint;
+  }
+
+  /**
+   * Whether this profile's requests are pointed somewhere other than Mozilla's
+   * default endpoint: either the custom model choice is selected, or the
+   * endpoint pref itself was overridden.
+   *
+   * Unlike `isCustomEndpoint` this is a profile-wide question, answerable
+   * without building an engine, so callers can withhold a feature that depends
+   * on a service only Mozilla's endpoint provides.
+   *
+   * @returns {boolean}
+   */
+  static usesCustomEndpoint() {
+    return (
+      Services.prefs.getStringPref(MODEL_CHOICE_PREF, "") ===
+        CUSTOM_MODEL_CHOICE_ID || openAIEngine.endpoint !== DEFAULT_ENDPOINT
+    );
   }
 
   /**

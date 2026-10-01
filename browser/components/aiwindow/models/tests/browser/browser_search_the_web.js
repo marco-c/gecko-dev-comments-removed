@@ -13,6 +13,7 @@ const {
   SEARCH_QUERY_ENDPOINT_PREF,
   SEARCH_QUERY_APIKEY_PREF,
   SEARCH_THE_WEB_FAST_PREF,
+  SEARCH_THE_WEB_ANSWERS_PREF,
   SEARCH_THE_WEB,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
@@ -60,12 +61,18 @@ const SEARCH_API_KEY = "mock-search-api-key";
 
 
 
-async function pushSearchPrefs(fast = false, endpoint = SEARCH_ENDPOINT) {
+
+async function pushSearchPrefs(
+  fast = false,
+  answers = false,
+  endpoint = SEARCH_ENDPOINT
+) {
   await SpecialPowers.pushPrefEnv({
     set: [
       [SEARCH_QUERY_ENDPOINT_PREF, endpoint],
       [SEARCH_QUERY_APIKEY_PREF, SEARCH_API_KEY],
       [SEARCH_THE_WEB_FAST_PREF, fast],
+      [SEARCH_THE_WEB_ANSWERS_PREF, answers],
     ],
   });
 }
@@ -997,11 +1004,11 @@ add_task(async function test_fast_search_through_chat() {
         
         Assert.ok(
           conversation.securityProperties.privateData,
-          "Chat commits the private-data flag the tool staged"
+          "The follow-up turn commits the private-data flag the tool staged"
         );
         Assert.ok(
           conversation.securityProperties.untrustedInput,
-          "Chat commits the untrusted-input flag the tool staged"
+          "The follow-up turn commits the untrusted-input flag the tool staged"
         );
 
         Assert.deepEqual(
@@ -1343,7 +1350,7 @@ add_task(async function test_fast_search_telemetry_prerequest_failures() {
   for (const testCase of PREREQUEST_FAILURE_CASES) {
     info(`pre-request failure: ${testCase.name}`);
     Services.fog.testResetFOG();
-    await pushSearchPrefs(true, testCase.endpoint);
+    await pushSearchPrefs(true, false, testCase.endpoint);
 
     try {
       const conversation = new ChatConversation({
@@ -1580,3 +1587,234 @@ add_task(
     }
   }
 );
+
+
+
+
+
+
+
+
+
+const ANSWERS_MODEL = "exa";
+const ANSWERS_ENGINE_KEY = "unknown";
+const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
+const CUSTOM_MODEL_CHOICE_ID = "0";
+
+add_task(async function test_answers_search_returns_answer_and_citations() {
+  const query = "kid friendly things to do in Dallas";
+  await pushSearchPrefs(false, true);
+
+  const mockEngineManager = new MockEngineManager();
+  const conversation = new ChatConversation({
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
+
+  try {
+    const runPromise = runSearchTheWeb({ query }, conversation);
+
+    const answers = await mockEngineManager.captureRequest({
+      purpose: ANSWERS_ENGINE_KEY,
+    });
+
+    Assert.deepEqual(
+      answers.request.args.at(-1),
+      { role: "user", content: query },
+      "The query is sent as an ordinary chat-completions user message"
+    );
+    Assert.equal(
+      answers.request.args[0].role,
+      "system",
+      "A system message asks the service to leave citations out of the prose"
+    );
+    Assert.ok(
+      !answers.request.streamOptions?.enabled,
+      "The request is non-streaming: only a complete response carries citations"
+    );
+
+    answers.respond({
+      finalOutput: "Perot Museum and the Dallas Zoo are both good.",
+      providerSpecificFields: {
+        citations: [
+          { url: "https://perot.example/", title: "Perot Museum" },
+          { url: "https://zoo.example/", title: "Dallas Zoo" },
+          
+          { url: "javascript:alert(1)", title: "Not a web URL" },
+        ],
+      },
+    });
+
+    const result = await runPromise;
+
+    const [engineOptions] = openAIEngine._createEngine.args.find(
+      ([options]) => options.modelId === ANSWERS_MODEL
+    );
+    Assert.equal(
+      engineOptions.serviceType,
+      SERVICE_TYPES.SW_ANSWER,
+      "The engine is built with the service type that routes to /answers"
+    );
+    Assert.equal(
+      engineOptions.purpose,
+      undefined,
+      "No purpose is sent: the answer service rejects the chat ones"
+    );
+
+    Assert.deepEqual(
+      result.read_urls,
+      ["https://perot.example/", "https://zoo.example/"],
+      "The cited URLs are reported back, with non-web URLs dropped"
+    );
+    Assert.equal(
+      result.requiresSearchHandoff,
+      false,
+      "A successful answer is not a handoff"
+    );
+
+    let delivered = "";
+    for await (const chunk of result.directAnswerStream) {
+      delivered += chunk.text;
+    }
+    Assert.equal(
+      delivered,
+      "Perot Museum and the Dallas Zoo are both good.",
+      "The service's prose is delivered whole, as written"
+    );
+
+    Assert.deepEqual(
+      conversation.getCitationsSnapshot(),
+      [
+        { url: "https://perot.example/", title: "Perot Museum" },
+        { url: "https://zoo.example/", title: "Dallas Zoo" },
+      ],
+      "Each cited source is registered for the reply's source chips"
+    );
+    Assert.deepEqual(
+      [...conversation.serpUrlsForAnonymousFetch],
+      ["https://perot.example/", "https://zoo.example/"],
+      "The cited pages are eligible for a follow-up anonymous page read"
+    );
+
+    mockEngineManager.assertAllRequestsHandled();
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_answers_pref_ignored_on_custom_endpoint() {
+  
+  
+  
+  await pushSearchPrefs(true, true);
+  await SpecialPowers.pushPrefEnv({
+    set: [[MODEL_CHOICE_PREF, CUSTOM_MODEL_CHOICE_ID]],
+  });
+
+  const mockEngineManager = new MockEngineManager();
+  const mockSearchManager = new MockSearchManager();
+  const conversation = new ChatConversation({
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
+
+  try {
+    const runPromise = runSearchTheWeb({ query: "widgets" }, conversation);
+
+    
+    
+    (await mockSearchManager.captureRequest()).respond({
+      results: [
+        {
+          title: "Widget Store",
+          url: "https://widgets.example/store",
+          text: GOOD_SNIPPET,
+        },
+      ],
+    });
+
+    const result = await runPromise;
+
+    Assert.deepEqual(
+      result.results.map(item => item.url),
+      ["https://widgets.example/store"],
+      "A custom endpoint gets the fast path's snippets, not a written answer"
+    );
+    Assert.ok(
+      !("directAnswerStream" in result),
+      "No reply is delivered on the user's behalf"
+    );
+    Assert.ok(
+      !openAIEngine._createEngine.called,
+      "No answer-service engine is built for a custom endpoint"
+    );
+
+    mockSearchManager.assertAllRequestsHandled();
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    mockSearchManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    mockSearchManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv(); 
+    await SpecialPowers.popPrefEnv(); 
+  }
+});
+
+add_task(async function test_answers_failure_returns_turn_then_escalates() {
+  await pushSearchPrefs(false, true);
+
+  const mockEngineManager = new MockEngineManager();
+  const conversation = new ChatConversation({
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
+
+  try {
+    const runPromise = runSearchTheWeb({ query: "weather" }, conversation);
+
+    
+    (
+      await mockEngineManager.captureRequest({ purpose: ANSWERS_ENGINE_KEY })
+    ).respond({ finalOutput: "   " });
+
+    const first = await runPromise;
+    Assert.ok(
+      !first.directAnswerStream,
+      "A failed request delivers no reply to the user"
+    );
+    Assert.ok(
+      first.error,
+      "The failure reaches the model as the tool result instead"
+    );
+    Assert.equal(
+      first.requiresSearchHandoff,
+      false,
+      "The model regains the turn rather than being handed off silently"
+    );
+    Assert.deepEqual(
+      conversation.getCitationsSnapshot(),
+      [],
+      "A failed request leaves no citations behind"
+    );
+
+    
+    
+    const second = await runSearchTheWeb(
+      { query: "weather again" },
+      conversation
+    );
+    Assert.equal(
+      second.requiresSearchHandoff,
+      true,
+      "The model's follow-up call escalates to the search handoff"
+    );
+
+    mockEngineManager.assertAllRequestsHandled();
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv();
+  }
+});
