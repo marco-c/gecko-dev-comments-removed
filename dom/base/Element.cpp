@@ -64,6 +64,7 @@
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/StaticString.h"
 #include "mozilla/TextControlElement.h"
 #include "mozilla/TextEditor.h"
@@ -6076,7 +6077,12 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
 }
 
 ReferrerPolicy Element::GetReferrerPolicyAsEnum() const {
-  if (IsHTMLElement() || IsSVGElement()) {
+  
+  
+  
+  if (IsHTMLElement() || IsSVGElement(nsGkAtoms::a) ||
+      (IsMathMLElement(nsGkAtoms::a) &&
+       StaticPrefs::mathml_a_element_enabled())) {
     return ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy));
   }
   return ReferrerPolicy::_empty;
