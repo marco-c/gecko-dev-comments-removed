@@ -14,6 +14,7 @@
 #include "nsIURI.h"
 #include "nsITimer.h"
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "nsTHashtable.h"
 #include "nsTArray.h"
 #include "nsString.h"
@@ -99,6 +100,8 @@ class PermissionManager final : public nsIPermissionManager,
     explicit PermissionKey(const nsACString& aOrigin)
         : mOrigin(aOrigin), mHashCode(HashString(aOrigin)) {}
 
+    PermissionKey() = delete;
+
     bool operator==(const PermissionKey& aKey) const {
       return mOrigin.Equals(aKey.mOrigin);
     }
@@ -111,9 +114,6 @@ class PermissionManager final : public nsIPermissionManager,
     const PLDHashNumber mHashCode;
 
    private:
-    
-    PermissionKey() = delete;
-
     
     ~PermissionKey() = default;
   };
@@ -347,25 +347,6 @@ class PermissionManager final : public nsIPermissionManager,
 
   void SetPermissionsWithKey(const nsACString& aPermissionKey,
                              nsTArray<IPC::Permission>& aPerms);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
-                                nsIRunnable* aRunnable);
 
   
 
@@ -608,8 +589,8 @@ class PermissionManager final : public nsIPermissionManager,
 
   void FinishAsyncShutdown();
 
-  nsRefPtrHashtable<nsCStringHashKey, GenericNonExclusivePromise::Private>
-      mPermissionKeyPromiseMap MOZ_GUARDED_BY(mMonitor);
+  
+  nsTHashSet<nsCString> mPermissionKeys MOZ_GUARDED_BY(mMonitor);
 
   nsCOMPtr<nsIFile> mPermissionsFile MOZ_GUARDED_BY(mMonitor);
 
