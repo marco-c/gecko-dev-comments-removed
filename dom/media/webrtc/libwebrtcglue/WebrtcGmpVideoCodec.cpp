@@ -23,6 +23,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/svc/create_scalability_structure.h"
 #include "mozilla/CheckedInt.h"
+#include "mozilla/media/webrtc/GMPH264Utils.h"
 #include "mozilla/media/webrtc/H264FmtpParser.h"
 #include "nsServiceManagerUtils.h"
 
@@ -228,6 +229,17 @@ int32_t WebrtcGmpVideoEncoder::InitEncode(
   codecParams.mWidth = aCodecSettings->width;
   codecParams.mHeight = aCodecSettings->height;
 
+  
+  
+  
+  
+  
+  
+  auto profileLevel = ParseH264ProfileLevelFromParameters(mFormatParams);
+  if (profileLevel.isOk()) {
+    codecParams.mProfile = ToGMPProfile(profileLevel.inspect().mProfile);
+  }
+
   uint32_t maxPayloadSize = aSettings.max_payload_size;
   if (mFormatParams.count(webrtc::kH264FmtpPacketizationMode) == 1 &&
       mFormatParams.at(webrtc::kH264FmtpPacketizationMode) == "1") {
@@ -344,6 +356,15 @@ int32_t WebrtcGmpVideoEncoder::InitEncoderForSize(unsigned short aWidth,
                                                   std::string* aErrorOut) {
   mCodecParams.mWidth = aWidth;
   mCodecParams.mHeight = aHeight;
+  
+  
+  
+  
+  
+  if (Maybe<H264_LEVEL> level = H264SmallestConformingLevel(
+          aWidth, aHeight, mCodecParams.mMaxFramerate)) {
+    mCodecParams.mLevel = ToGMPLevel(*level);
+  }
   
   nsTArray<uint8_t> codecSpecific;
 
