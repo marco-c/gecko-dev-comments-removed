@@ -5,13 +5,15 @@
 #ifndef GFX_FONT_FEATURES_H
 #define GFX_FONT_FEATURES_H
 
-#include "mozilla/gfx/FontFeature.h"
+#include "mozilla/ServoStyleConsts.h"
 #include "nsAtom.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
 
-using gfxFontFeature = mozilla::gfx::FontFeature;
+
+
+using gfxFontFeature = mozilla::StyleFeatureTagValue<int32_t>;
 
 class gfxFontFeatureValueSet final {
  public:
