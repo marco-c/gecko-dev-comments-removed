@@ -269,7 +269,8 @@ class FloatRegisters {
 
   static const uint32_t TotalPhys = 32;
   static const uint32_t Total = TotalPhys * NumTypes;
-  static const uint32_t Allocatable = 31;  
+  
+  static const uint32_t Allocatable = 30;
 
   static_assert(sizeof(SetType) * 8 >= Total,
                 "SetType should be large enough to enumerate all registers.");
@@ -303,7 +304,8 @@ class FloatRegisters {
 
   
   static const SetType NonAllocatableMask =
-      (SetType(1) << FloatRegisters::f23) * Spread;
+      (SetType((1U << FloatRegisters::f22) | (1U << FloatRegisters::f23))) *
+      Spread;
 
   static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 
