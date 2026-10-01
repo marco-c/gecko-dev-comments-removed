@@ -23,9 +23,6 @@
 
 #include <stdatomic.h>
 
-#include "refstruct.h"
-
-#include "thread.h"
 #include "pixdesc.h"
 #include "hwcontext.h"
 #include "vulkan_functions.h"
@@ -111,26 +108,9 @@ typedef struct FFVkBuffer {
     AVBufferRef *host_ref;
 } FFVkBuffer;
 
-
-#define FF_VK_EXEC_MAX_FRAME_DEPS 64
-#define FF_VK_EXEC_MAX_BUF_DEPS 256
-#define FF_VK_EXEC_MAX_SW_FRAME_DEPS 16
-#define FF_VK_EXEC_MAX_SEM_OPS (FF_VK_EXEC_MAX_FRAME_DEPS*AV_NUM_DATA_POINTERS)
-
-
-#define FF_VK_DEFAULT_EXEC_CONTEXTS 4
-
-typedef struct FFVkExecObjDep {
-    uint64_t obj;
-    VkObjectType type;
-} FFVkExecObjDep;
-
 typedef struct FFVkExecContext {
     uint32_t idx;
     const struct FFVkExecPool *parent;
-
-    
-
     int had_submission;
 
     
@@ -142,13 +122,7 @@ typedef struct FFVkExecContext {
     VkCommandBuffer buf;
 
     
-
-    VkSemaphore sem;
-    uint64_t sem_value;
-
-    
-
-    pthread_mutex_t lock;
+    VkFence fence;
 
     
     void *opaque;
@@ -157,39 +131,46 @@ typedef struct FFVkExecContext {
     int query_idx;
 
     
-    AVBufferRef *buf_deps[FF_VK_EXEC_MAX_BUF_DEPS];
+    AVBufferRef **buf_deps;
     int nb_buf_deps;
+    unsigned int buf_deps_alloc_size;
 
     
-    void *refstruct_deps[FF_VK_EXEC_MAX_BUF_DEPS];
-    int nb_refstruct_deps;
-
-    
-    FFVkExecObjDep obj_deps[FF_VK_EXEC_MAX_BUF_DEPS];
-    int nb_obj_deps;
-
-    
-    AVFrame *frame_deps[FF_VK_EXEC_MAX_FRAME_DEPS];
+    AVFrame **frame_deps;
+    unsigned int frame_deps_alloc_size;
     int nb_frame_deps;
 
     
-    AVFrame *sw_frame_deps[FF_VK_EXEC_MAX_SW_FRAME_DEPS];
+    AVFrame **sw_frame_deps;
+    unsigned int sw_frame_deps_alloc_size;
     int nb_sw_frame_deps;
 
-    VkSemaphoreSubmitInfo sem_wait[FF_VK_EXEC_MAX_SEM_OPS];
+    VkSemaphoreSubmitInfo *sem_wait;
+    unsigned int sem_wait_alloc;
     int sem_wait_cnt;
 
-    VkSemaphoreSubmitInfo sem_sig[FF_VK_EXEC_MAX_SEM_OPS];
+    VkSemaphoreSubmitInfo *sem_sig;
+    unsigned int sem_sig_alloc;
     int sem_sig_cnt;
 
-    uint64_t *sem_sig_val_dst[FF_VK_EXEC_MAX_SEM_OPS];
+    uint64_t **sem_sig_val_dst;
+    unsigned int sem_sig_val_dst_alloc;
     int sem_sig_val_dst_cnt;
 
-    uint8_t frame_locked[FF_VK_EXEC_MAX_FRAME_DEPS];
-    VkAccessFlagBits access_dst[FF_VK_EXEC_MAX_FRAME_DEPS];
-    VkImageLayout layout_dst[FF_VK_EXEC_MAX_FRAME_DEPS];
-    uint32_t queue_family_dst[FF_VK_EXEC_MAX_FRAME_DEPS];
-    uint8_t frame_update[FF_VK_EXEC_MAX_FRAME_DEPS];
+    uint8_t *frame_locked;
+    unsigned int frame_locked_alloc_size;
+
+    VkAccessFlagBits *access_dst;
+    unsigned int access_dst_alloc;
+
+    VkImageLayout *layout_dst;
+    unsigned int layout_dst_alloc;
+
+    uint32_t *queue_family_dst;
+    unsigned int queue_family_dst_alloc;
+
+    uint8_t *frame_update;
+    unsigned int frame_update_alloc_size;
 } FFVkExecContext;
 
 typedef struct FFVulkanDescriptorSet {
@@ -312,9 +293,6 @@ typedef struct FFVulkanContext {
 #endif
     VkQueueFamilyQueryResultStatusPropertiesKHR *query_props;
     VkQueueFamilyVideoPropertiesKHR *video_props;
-#ifdef VK_KHR_maintenance9
-    VkQueueFamilyOwnershipTransferPropertiesKHR *ownership_props;
-#endif
     VkQueueFamilyProperties2 *qf_props;
     int tot_nb_qfs;
     VkPhysicalDeviceHostImageCopyPropertiesEXT host_image_props;
@@ -324,12 +302,7 @@ typedef struct FFVulkanContext {
     uint32_t coop_mat_props_nb;
 
     VkPhysicalDeviceShaderAtomicFloatFeaturesEXT atomic_float_feats;
-    AVRefStructPool *imageviews_pool;
-
     VkPhysicalDeviceVulkan12Features feats_12;
-#ifdef VK_KHR_unified_image_layouts
-    VkPhysicalDeviceUnifiedImageLayoutsFeaturesKHR unified_layout_feats;
-#endif
     VkPhysicalDeviceFeatures2 feats;
 
     VkMemoryPropertyFlagBits host_cached_flag;
@@ -503,35 +476,15 @@ void ff_vk_exec_wait(FFVulkanContext *s, FFVkExecContext *e);
 
 
 
-
-
-
-
-
-
-void ff_vk_exec_add_dep_refstruct(FFVulkanContext *s, FFVkExecContext *e,
-                                  void *obj);
-
-
-
-void ff_vk_exec_move_dep_refstruct(FFVulkanContext *s, FFVkExecContext *e,
-                                   void *obj);
-
-
-
-void ff_vk_exec_add_dep_obj(FFVulkanContext *s, FFVkExecContext *e,
-                            VkObjectType type, uint64_t obj);
-
-void ff_vk_exec_add_dep_wait_sem(FFVulkanContext *s, FFVkExecContext *e,
-                                 VkSemaphore sem, uint64_t val,
-                                 VkPipelineStageFlagBits2 stage);
-void ff_vk_exec_add_dep_signal_sem(FFVulkanContext *s, FFVkExecContext *e,
-                                   VkSemaphore sem, uint64_t val,
-                                   VkPipelineStageFlagBits2 stage);
-void ff_vk_exec_add_dep_bool_sem(FFVulkanContext *s, FFVkExecContext *e,
-                                 VkSemaphore *sem, int nb,
-                                 VkPipelineStageFlagBits2 stage,
-                                 int wait); 
+int ff_vk_exec_add_dep_buf(FFVulkanContext *s, FFVkExecContext *e,
+                           AVBufferRef **deps, int nb_deps, int ref);
+int ff_vk_exec_add_dep_wait_sem(FFVulkanContext *s, FFVkExecContext *e,
+                                VkSemaphore sem, uint64_t val,
+                                VkPipelineStageFlagBits2 stage);
+int ff_vk_exec_add_dep_bool_sem(FFVulkanContext *s, FFVkExecContext *e,
+                                VkSemaphore *sem, int nb,
+                                VkPipelineStageFlagBits2 stage,
+                                int wait); 
 int ff_vk_exec_add_dep_frame(FFVulkanContext *s, FFVkExecContext *e, AVFrame *f,
                              VkPipelineStageFlagBits2 wait_stage,
                              VkPipelineStageFlagBits2 signal_stage);
@@ -542,7 +495,7 @@ void ff_vk_exec_update_frame(FFVulkanContext *s, FFVkExecContext *e, AVFrame *f,
 int ff_vk_exec_mirror_sem_value(FFVulkanContext *s, FFVkExecContext *e,
                                 VkSemaphore *dst, uint64_t *dst_val,
                                 AVFrame *f);
-void ff_vk_exec_discard(FFVulkanContext *s, FFVkExecContext *e);
+void ff_vk_exec_discard_deps(FFVulkanContext *s, FFVkExecContext *e);
 
 
 
@@ -550,23 +503,6 @@ void ff_vk_exec_discard(FFVulkanContext *s, FFVkExecContext *e);
 int ff_vk_create_imageview(FFVulkanContext *s,
                            VkImageView *img_view, VkImageAspectFlags *aspect,
                            AVFrame *f, int plane, enum FFVkShaderRepFormat rep_fmt);
-
-
-typedef struct FFVkImageViews {
-    int nb_views;
-
-    VkDevice dev;
-    const VkAllocationCallbacks *alloc;
-    PFN_vkDestroyImageView destroy_image_view;
-
-    VkImageView views[AV_NUM_DATA_POINTERS];
-} FFVkImageViews;
-
-
-
-
-
-FFVkImageViews *ff_vk_imageviews_alloc(FFVulkanContext *s, int nb_views);
 
 
 
@@ -604,21 +540,6 @@ void ff_vk_frame_barrier(FFVulkanContext *s, FFVkExecContext *e,
 
 
 
-
-
-
-
-
-int ff_vk_image_create(FFVulkanContext *s, VkImage *img, VkDeviceMemory *mem,
-                       int width, int height, VkFormat format, int nb_layers,
-                       VkImageTiling tiling, VkImageUsageFlags usage,
-                       VkImageCreateFlags flags, void *create_pnext);
-
-
-
-
-
-void ff_vk_image_free(FFVulkanContext *s, VkImage *img, VkDeviceMemory *mem);
 
 int ff_vk_alloc_mem(FFVulkanContext *s, VkMemoryRequirements *req,
                     VkMemoryPropertyFlagBits req_flags, void *alloc_extension,
@@ -660,18 +581,16 @@ void ff_vk_free_buf(FFVulkanContext *s, FFVkBuffer *buf);
 
 
 
-int ff_vk_get_pooled_buffer(FFVulkanContext *ctx, AVRefStructPool **buf_pool,
-                            FFVkBuffer **buf, VkBufferUsageFlags usage,
+int ff_vk_get_pooled_buffer(FFVulkanContext *ctx, AVBufferPool **buf_pool,
+                            AVBufferRef **buf, VkBufferUsageFlags usage,
                             void *create_pNext, size_t size,
                             VkMemoryPropertyFlagBits mem_props);
 
 
 
 
-
-int ff_vk_host_map_buffer(FFVulkanContext *s, FFVkBuffer **dst,
-                          uint8_t *src_data, VkDeviceSize size,
-                          const AVBufferRef *src_buf,
+int ff_vk_host_map_buffer(FFVulkanContext *s, AVBufferRef **dst,
+                          uint8_t *src_data, const AVBufferRef *src_buf,
                           VkBufferUsageFlags usage);
 
 
