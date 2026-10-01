@@ -149,6 +149,22 @@ async function isUrlPrefetched(url) {
 }
 
 
+
+
+
+async function waitUntilPrefetched(t, url, deadline_ms) {
+  const start = performance.now();
+  let count = 0;
+  while (true) {
+    count = await isUrlPrefetched(url);
+    if (count > 0 || performance.now() - start >= deadline_ms) {
+      return count;
+    }
+    await new Promise(resolve => t.step_timeout(resolve, 100));
+  }
+}
+
+
 async function spawnWindowWithReference(t, options = {}, uuid = token()) {
   let agent = new PrefetchAgent(uuid, t);
   let w = window.open(agent.getExecutorURL(options), '_blank', options);
