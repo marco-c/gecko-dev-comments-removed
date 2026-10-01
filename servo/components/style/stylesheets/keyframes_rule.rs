@@ -7,6 +7,8 @@
 use crate::derives::*;
 use crate::error_reporting::ContextualParseError;
 use crate::parser::{Parse, ParserContext};
+#[cfg(feature = "servo")]
+use crate::properties::PropertyDeclarationIdSet;
 use crate::properties::{
     LonghandId, PropertyDeclaration, PropertyDeclarationBlock, PropertyDeclarationId,
     longhands::{
@@ -453,14 +455,59 @@ pub struct KeyframesAnimation {
     
     pub steps_with_range_name: Vec<KeyframesStep>,
     
+    #[cfg(feature = "servo")]
+    pub properties_changed: PropertyDeclarationIdSet,
+    
     pub vendor_prefix: Option<VendorPrefix>,
 }
 
+#[cfg(feature = "servo")]
+type AnimatedPropertiesInner = PropertyDeclarationIdSet;
+#[cfg(feature = "gecko")]
+type AnimatedPropertiesInner = bool;
 
-fn has_animated_properties(
+#[derive(Default)]
+struct AnimatedProperties(AnimatedPropertiesInner);
+
+#[cfg(feature = "servo")]
+impl AnimatedProperties {
+    const CAN_STOP_AFTER_FINDING_PROPERTY: bool = false;
+
+    #[inline]
+    fn insert_animated_property(&mut self, declaration_id: PropertyDeclarationId) {
+        self.0.insert(declaration_id);
+    }
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+#[cfg(feature = "gecko")]
+impl AnimatedProperties {
+    const CAN_STOP_AFTER_FINDING_PROPERTY: bool = true;
+
+    #[inline]
+    fn insert_animated_property(&mut self, _: PropertyDeclarationId) {
+        self.0 = true;
+    }
+
+    #[inline]
+    fn is_empty(&self) -> bool {
+        !self.0
+    }
+}
+
+
+
+
+fn get_animated_properties(
     keyframes: &[Arc<Locked<Keyframe>>],
     guard: &SharedRwLockReadGuard,
-) -> bool {
+) -> AnimatedProperties {
+    let mut animated_properties = AnimatedProperties::default();
+
     
     
     for keyframe in keyframes {
@@ -485,11 +532,14 @@ fn has_animated_properties(
                 continue;
             }
 
-            return true;
+            animated_properties.insert_animated_property(declaration_id);
+            if AnimatedProperties::CAN_STOP_AFTER_FINDING_PROPERTY {
+                return animated_properties;
+            }
         }
     }
 
-    false
+    animated_properties
 }
 
 impl KeyframesAnimation {
@@ -509,11 +559,21 @@ impl KeyframesAnimation {
         let mut result = KeyframesAnimation {
             steps: vec![],
             steps_with_range_name: vec![],
+            #[cfg(feature = "servo")]
+            properties_changed: PropertyDeclarationIdSet::default(),
             vendor_prefix,
         };
 
-        if keyframes.is_empty() || !has_animated_properties(keyframes, guard) {
+        if keyframes.is_empty() {
             return result;
+        }
+
+        let animated_properties = get_animated_properties(keyframes, guard);
+        if animated_properties.is_empty() {
+            return result;
+        }
+        #[cfg(feature = "servo")] {
+            result.properties_changed = animated_properties.0;
         }
 
         
@@ -542,6 +602,27 @@ impl KeyframesAnimation {
         
         
         steps.sort_by_key(|step| step.start_offset.percentage);
+
+        
+        #[cfg(feature = "servo")] {
+            if steps.is_empty() || steps[0].start_offset.percentage.0 != 0. {
+                steps.insert(
+                    0,
+                    KeyframesStep::new(
+                        KeyframeSelector::from_percentage(KeyframePercentage::new(0.)),
+                        KeyframesStepValue::ComputedValues,
+                        guard,
+                    ),
+                );
+            }
+            if steps.last().unwrap().start_offset.percentage.0 != 1. {
+                steps.push(KeyframesStep::new(
+                    KeyframeSelector::from_percentage(KeyframePercentage::new(1.)),
+                    KeyframesStepValue::ComputedValues,
+                    guard,
+                ));
+            }
+        }
 
         result.steps = steps;
         result
