@@ -11506,11 +11506,14 @@ pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_GetComputationSteps(
-    str: &nsAString,
+    str: &nsACString,
     element: &RawGeckoElement,
     pseudo_type: PseudoStyleType,
     style: &ComputedValues,
     raw_data: &PerDocumentStyleData,
+    
+    
+    percentage_basis: f32,
     out: &mut nsTArray<nsCString>,
 ) {
     use style::custom_properties::VariableValue;
@@ -11670,8 +11673,15 @@ pub unsafe extern "C" fn Servo_GetComputationSteps(
 
     
     node = node.map_leaves(|leaf| match *leaf {
-        
-        
+        Leaf::Percentage(p) => {
+            
+            
+            if percentage_basis.is_nan() {
+                return leaf.clone();
+            }
+
+            Leaf::Length(NoCalcLength::from_px(p.get() * percentage_basis))
+        },
         Leaf::Length(l) => {
             let result = l.to_computed_value(&context);
             Leaf::Length(NoCalcLength::from_computed_value(&result))
