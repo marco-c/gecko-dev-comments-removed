@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SMILAnimationFunction.h"
 
 #include <algorithm>
@@ -200,25 +198,19 @@ void SMILAnimationFunction::ComposeResult(const SMILAttr& aSMILAttr,
   if (values.Length() == 1 && !IsToAnimation()) {
     
     result = values[0];
-    mPrevSampleWasSingleValueAnimation = true;
+    mPrevSampleWasSingleValueAnimation = !(GetAccumulate() && mRepeatIteration);
 
   } else if (mLastValue) {
     
-    const SMILValue& last = values.LastElement();
-    result = last;
-
-    
-    if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
-      
-      
-      result.Add(last, mRepeatIteration);
-    }
-
+    result = values.LastElement();
   } else {
     
     if (NS_FAILED(InterpolateResult(values, result, aResult))) return;
-
-    if (NS_FAILED(AccumulateResult(values, result))) return;
+  }
+  if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
+    
+    
+    result.Add(values.LastElement(), mRepeatIteration);
   }
 
   
@@ -428,17 +420,6 @@ nsresult SMILAnimationFunction::InterpolateResult(const SMILValueArray& aValues,
     rv = NS_OK;
   }
   return rv;
-}
-
-nsresult SMILAnimationFunction::AccumulateResult(const SMILValueArray& aValues,
-                                                 SMILValue& aResult) {
-  if (!IsToAnimation() && GetAccumulate() && mRepeatIteration) {
-    
-    
-    aResult.Add(aValues.LastElement(), mRepeatIteration);
-  }
-
-  return NS_OK;
 }
 
 
