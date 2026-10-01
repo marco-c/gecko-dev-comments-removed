@@ -686,6 +686,10 @@ function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
 
 
 
+
+
+
+
 function synthesizeMouse(
   aTarget,
   aOffsetX,
@@ -793,6 +797,8 @@ function synthesizeMouseAtPoint(
           modifiers,
           pressure: aEvent.pressure,
           inputSource,
+          movementX: aEvent.movementX,
+          movementY: aEvent.movementY,
         },
         {
           isDOMEventSynthesized,
@@ -814,6 +820,8 @@ function synthesizeMouseAtPoint(
           modifiers,
           pressure: aEvent.pressure,
           inputSource,
+          movementX: aEvent.movementX,
+          movementY: aEvent.movementY,
         },
         {
           isDOMEventSynthesized,
@@ -834,6 +842,8 @@ function synthesizeMouseAtPoint(
           modifiers,
           pressure: aEvent.pressure,
           inputSource,
+          movementX: aEvent.movementX,
+          movementY: aEvent.movementY,
         },
         {
           isDOMEventSynthesized,
