@@ -882,6 +882,19 @@ bool SaturateScalarOrVectorCommon(ConvertStructState &state,
         });
     }
 
+    
+    
+    if (state.config.convertType == ConvertType::OriginalToModified)
+    {
+        for (uint8_t d = dim; d < saturation; ++d)
+        {
+            state.addConversion([=](Access::Env &, OriginalAccess &, ModifiedAccess &m) {
+                auto &m_ = AccessIndex(m, d);
+                return Access{*CreateZeroNode(m_.getType()), m_};
+            });
+        }
+    }
+
     return true;
 }
 
