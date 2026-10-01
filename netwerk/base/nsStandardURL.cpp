@@ -1436,9 +1436,6 @@ nsresult nsStandardURL::SetSpecWithEncoding(const nsACString& input,
     return NS_ERROR_MALFORMED_URI;
   }
 
-  
-  nsStandardURL prevURL(false, false);
-  prevURL.CopyMembers(this, eHonorRef, ""_ns);
   Clear();
 
   if (IsSpecialProtocol(filteredURI)) {
@@ -1477,10 +1474,9 @@ nsresult nsStandardURL::SetSpecWithEncoding(const nsACString& input,
   }
 
   if (NS_FAILED(rv)) {
+    
+    
     Clear();
-    
-    
-    CopyMembers(&prevURL, eHonorRef, ""_ns);
     return rv;
   }
 
