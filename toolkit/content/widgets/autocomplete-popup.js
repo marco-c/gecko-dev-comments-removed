@@ -547,6 +547,7 @@
             secondary = {
               type: secondaryAction.type,
               label: secondaryAction.label,
+              tooltip: secondaryAction.tooltip,
             };
             
             
