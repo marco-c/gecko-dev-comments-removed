@@ -344,31 +344,6 @@ class LoadInfo final : public nsILoadInfo {
   dom::ReferrerPolicy GetFrameReferrerPolicySnapshot() const;
   void SetFrameReferrerPolicySnapshot(dom::ReferrerPolicy aPolicy);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void SetPolicyContainerToInherit(
-      nsIPolicyContainer* aPolicyContainerToInherit);
-
   bool HasIsThirdPartyContextToTopWindowSet() {
     return mIsThirdPartyContextToTopWindow.isSome();
   }

@@ -339,6 +339,20 @@ nsresult JSURLInputStream::EvaluateScript(
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    RefPtr policyContainerToInherit = mozilla::MakeRefPtr<PolicyContainer>();
+    policyContainerToInherit->InitFromOther(
+        PolicyContainer::Cast(targetDoc->GetPolicyContainer()));
+    loadInfo->SetPolicyContainerToInherit(policyContainerToInherit);
+
+    
+    
     if (nsCOMPtr<nsIChannel> originalChannel = targetDoc->GetChannel()) {
       nsCOMPtr<nsILoadInfo> originalLoadInfo = originalChannel->LoadInfo();
       if (Maybe<PermissionsPolicyInfo> containerPolicy =
