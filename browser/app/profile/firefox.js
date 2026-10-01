@@ -2372,10 +2372,6 @@ pref("browser.ml.linkPreview.supportedLocales", "en");
 pref("browser.ml.pageAssist.enabled", false);
 
 
-
-pref("browser.ml.onnxNativeAvailabilityReported", false);
-
-
 pref("browser.smartwindow.enabled", false);
 
 pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.freetls.fastly.net/v1");
