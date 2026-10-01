@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_quota_originorpatternstring_h_
 #define mozilla_dom_quota_originorpatternstring_h_
 
@@ -37,6 +35,8 @@ class OriginScope {
           mAttributes(MakeUnique<OriginAttributes>(*aOther.mAttributes)) {}
 
     Origin(Origin&& aOther) = default;
+
+    bool operator==(const OriginScope& aOther) = delete;
 
     const PrincipalMetadata& GetPrincipalMetadata() const {
       return mPrincipalMetadata;
@@ -410,8 +410,6 @@ class OriginScope {
     PatternMatcher patternMatcher(aOther);
     return mData.match(PatternMatcher(aOther));
   }
-
-  bool operator==(const OriginScope& aOther) = delete;
 };
 
 }  

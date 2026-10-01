@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_DIRECTORYLOCK_H_
 #define DOM_QUOTA_DIRECTORYLOCK_H_
 
-template <typename T, typename Serialized>
-class EnumSet;
+#include <cstdint>
+
+#include "mozilla/EnumSet.h"
 
 template <class T>
 class RefPtr;
