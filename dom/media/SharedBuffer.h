@@ -2,12 +2,12 @@
 
 
 
-
 #ifndef MOZILLA_SHAREDBUFFER_H_
 #define MOZILLA_SHAREDBUFFER_H_
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/fallible.h"
 #include "mozilla/mozalloc.h"
 #include "nsISupportsImpl.h"
 

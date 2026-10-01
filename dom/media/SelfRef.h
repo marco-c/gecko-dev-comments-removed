@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef SELF_REF_H
 #define SELF_REF_H
 
 #include "mozilla/Attributes.h"
+#include "nsDebug.h"
 
 namespace mozilla {
 

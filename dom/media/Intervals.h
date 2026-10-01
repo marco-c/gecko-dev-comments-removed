@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_INTERVALS_H_
 #define DOM_MEDIA_INTERVALS_H_
 
@@ -62,12 +60,7 @@ class Interval {
         mEnd(std::move(aOther.mEnd)),
         mFuzz(std::move(aOther.mFuzz)) {}
 
-  SelfType& operator=(const SelfType& aOther) {
-    mStart = aOther.mStart;
-    mEnd = aOther.mEnd;
-    mFuzz = aOther.mFuzz;
-    return *this;
-  }
+  SelfType& operator=(const SelfType& aOther) = default;
 
   SelfType& operator=(SelfType&& aOther) {
     MOZ_ASSERT(&aOther != this, "self-moves are prohibited");

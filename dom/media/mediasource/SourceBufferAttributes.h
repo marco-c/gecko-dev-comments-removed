@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SourceBufferAttributes_h_
 #define mozilla_SourceBufferAttributes_h_
 
@@ -32,6 +30,8 @@ class SourceBufferAttributes {
         mAppendState(AppendState::WAITING_FOR_SEGMENT) {}
 
   SourceBufferAttributes(const SourceBufferAttributes& aOther) = default;
+
+  SourceBufferAttributes() = delete;
 
   double GetAppendWindowStart() const { return mAppendWindowStart; }
 
@@ -97,8 +97,6 @@ class SourceBufferAttributes {
       default;
 
  private:
-  SourceBufferAttributes() = delete;
-
   double mAppendWindowStart;
   double mAppendWindowEnd;
   dom::SourceBufferAppendMode mAppendMode;

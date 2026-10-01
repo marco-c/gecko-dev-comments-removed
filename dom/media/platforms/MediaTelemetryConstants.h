@@ -2,9 +2,10 @@
 
 
 
-
 #ifndef dom_media_platforms_MediaTelemetryConstants_h_
 #define dom_media_platforms_MediaTelemetryConstants_h_
+
+#include <cstdint>
 
 namespace mozilla {
 namespace media {

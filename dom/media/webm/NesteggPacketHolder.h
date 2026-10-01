@@ -1,8 +1,6 @@
 
 
 
-
-
 #if !defined(NesteggPacketHolder_h_)
 #  define NesteggPacketHolder_h_
 
@@ -10,8 +8,11 @@
 
 #  include <deque>
 
+#  include "mozilla/Assertions.h"
+#  include "mozilla/RefPtr.h"
 #  include "nestegg/nestegg.h"
 #  include "nsAutoRef.h"
+#  include "nsISupportsImpl.h"
 
 namespace mozilla {
 
@@ -29,6 +30,9 @@ class NesteggPacketHolder {
         mDuration(-1),
         mTrack(0),
         mIsKeyframe(false) {}
+
+  NesteggPacketHolder(const NesteggPacketHolder& aOther) = delete;
+  NesteggPacketHolder& operator=(NesteggPacketHolder const& aOther) = delete;
 
   bool Init(nestegg_packet* aPacket, int64_t aOffset, unsigned aTrack,
             bool aIsKeyframe) {
@@ -76,6 +80,13 @@ class NesteggPacketHolder {
     MOZ_ASSERT(IsInitialized());
     return mIsKeyframe;
   }
+  
+  int64_t DiscardPaddingUs() const {
+    MOZ_ASSERT(IsInitialized());
+    int64_t paddingNs = 0;
+    nestegg_packet_discard_padding(mPacket, &paddingNs);
+    return paddingNs / 1000;
+  }
 
  private:
   ~NesteggPacketHolder() { nestegg_free_packet(mPacket); }
@@ -100,10 +111,6 @@ class NesteggPacketHolder {
 
   
   bool mIsKeyframe;
-
-  
-  NesteggPacketHolder(const NesteggPacketHolder& aOther);
-  NesteggPacketHolder& operator=(NesteggPacketHolder const& aOther);
 };
 
 

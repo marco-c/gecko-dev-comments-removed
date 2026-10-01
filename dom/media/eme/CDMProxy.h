@@ -270,7 +270,7 @@ class CDMProxy {
     MOZ_ASSERT(NS_IsMainThread());
   }
 
-  virtual ~CDMProxy() {}
+  virtual ~CDMProxy() = default;
 
   
   template <class Type>

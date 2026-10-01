@@ -2,13 +2,12 @@
 
 
 
-
-
 #ifndef MOZILLA_SOURCEBUFFERTASK_H_
 #define MOZILLA_SOURCEBUFFERTASK_H_
 
 #include <utility>
 
+#include "MediaContainerType.h"
 #include "MediaResult.h"
 #include "SourceBufferAttributes.h"
 #include "TimeUnits.h"

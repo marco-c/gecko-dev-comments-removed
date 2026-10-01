@@ -38,8 +38,6 @@
 
 
 
-
-
 #ifndef nriceresolverfake_h_
 #define nriceresolverfake_h_
 
@@ -47,6 +45,8 @@
 #include <string>
 
 #include "csi_platform.h"
+#include "mozilla/Assertions.h"
+#include "prio.h"
 
 typedef struct nr_resolver_ nr_resolver;
 typedef struct nr_resolver_vtbl_ nr_resolver_vtbl;

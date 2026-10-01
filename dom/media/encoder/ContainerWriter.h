@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ContainerWriter_h_
 #define ContainerWriter_h_
 
@@ -17,7 +16,7 @@ namespace mozilla {
 class ContainerWriter {
  public:
   ContainerWriter() : mInitialized(false), mIsWritingComplete(false) {}
-  virtual ~ContainerWriter() {}
+  virtual ~ContainerWriter() = default;
   
   enum {
     CREATE_AUDIO_TRACK = 1 << 0,

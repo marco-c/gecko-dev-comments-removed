@@ -5,6 +5,9 @@
 #ifndef mozilla_dom_UnboundedMPSCQueue_h
 #define mozilla_dom_UnboundedMPSCQueue_h
 
+#include <atomic>
+#include <cstddef>
+
 namespace mozilla {
 
 
@@ -46,6 +49,8 @@ class UnboundedMPSCQueue {
     Message* front = mHead.load(std::memory_order_relaxed);
     delete front;
   }
+  UnboundedMPSCQueue(const UnboundedMPSCQueue&) = delete;
+  void operator=(const UnboundedMPSCQueue&) = delete;
 
   void Push(UnboundedMPSCQueue<T>::Message* aMessage) {
     
@@ -122,9 +127,6 @@ class UnboundedMPSCQueue {
   
   
   std::atomic<Message*> mTail;
-
-  UnboundedMPSCQueue(const UnboundedMPSCQueue&) = delete;
-  void operator=(const UnboundedMPSCQueue&) = delete;
 };
 
 }  

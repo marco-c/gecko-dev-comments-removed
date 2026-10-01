@@ -30,7 +30,6 @@
 
 
 
-
 #ifndef GMP_VIDEO_ENCODE_h_
 #define GMP_VIDEO_ENCODE_h_
 
@@ -44,7 +43,7 @@
 
 class GMPVideoEncoderCallback {
  public:
-  virtual ~GMPVideoEncoderCallback() {}
+  virtual ~GMPVideoEncoderCallback() = default;
 
   virtual void Encoded(GMPVideoEncodedFrame* aEncodedFrame,
                        const uint8_t* aCodecSpecificInfo,
@@ -66,7 +65,7 @@ class GMPVideoEncoderCallback {
 
 class GMPVideoEncoder {
  public:
-  virtual ~GMPVideoEncoder() {}
+  virtual ~GMPVideoEncoder() = default;
 
   
   

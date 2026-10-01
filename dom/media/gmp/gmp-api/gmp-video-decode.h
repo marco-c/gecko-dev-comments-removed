@@ -30,7 +30,6 @@
 
 
 
-
 #ifndef GMP_VIDEO_DECODE_h_
 #define GMP_VIDEO_DECODE_h_
 
@@ -44,7 +43,7 @@
 
 class GMPVideoDecoderCallback {
  public:
-  virtual ~GMPVideoDecoderCallback() {}
+  virtual ~GMPVideoDecoderCallback() = default;
 
   virtual void Decoded(GMPVideoi420Frame* aDecodedFrame) = 0;
 
@@ -74,7 +73,7 @@ class GMPVideoDecoderCallback {
 
 class GMPVideoDecoder {
  public:
-  virtual ~GMPVideoDecoder() {}
+  virtual ~GMPVideoDecoder() = default;
 
   
   

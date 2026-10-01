@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef CDMCaps_h_
 #define CDMCaps_h_
 
@@ -22,6 +20,10 @@ class CDMCaps {
  public:
   CDMCaps();
   ~CDMCaps();
+
+  
+  CDMCaps(const CDMCaps&) = delete;
+  CDMCaps& operator=(const CDMCaps&) = delete;
 
   struct KeyStatus {
     KeyStatus(const CencKeyId& aId, const nsString& aSessionId,
@@ -69,10 +71,6 @@ class CDMCaps {
   nsTArray<KeyStatus> mKeyStatuses;
 
   nsTArray<WaitForKeys> mWaitForKeys;
-
-  
-  CDMCaps(const CDMCaps&) = delete;
-  CDMCaps& operator=(const CDMCaps&) = delete;
 };
 
 }  
