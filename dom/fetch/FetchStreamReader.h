@@ -119,6 +119,12 @@ class FetchStreamReader final : public GlobalTeardownObserver,
   
   
   
+  bool IsConsuming() const { return !!mReader; }
+
+  
+  
+  
+  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void FollowSignal(AbortSignalImpl* aSignal);
 

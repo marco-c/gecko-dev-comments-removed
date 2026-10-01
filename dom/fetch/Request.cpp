@@ -144,6 +144,10 @@ SafeRefPtr<Request> Request::Constructor(
   RefPtr<AbortSignal> signal;
   bool bodyFromInit = false;
   RefPtr<FetchStreamReader> temporaryStreamReader;
+  
+  
+  
+  RefPtr<ReadableStream> temporaryStreamBody;
 
   if (aInput.IsRequest()) {
     RefPtr<Request> inputReq = &aInput.GetAsRequest();
@@ -508,6 +512,7 @@ SafeRefPtr<Request> Request::Constructor(
 
         
         request->SetHasStreamBody(true);
+        temporaryStreamBody = &readableStream;
 
         
         if (nsIInputStream* underlyingSource =
@@ -572,11 +577,18 @@ SafeRefPtr<Request> Request::Constructor(
   auto domRequest =
       MakeSafeRefPtr<Request>(aGlobal, std::move(request), signal);
 
+  
+  
+  
   if (temporaryStreamReader) {
     domRequest->mFetchStreamReader = temporaryStreamReader.forget();
     if (signal) {
       domRequest->mFetchStreamReader->FollowSignal(signal);
     }
+  }
+
+  if (temporaryStreamBody) {
+    domRequest->SetReadableStreamBody(aCx, temporaryStreamBody);
   }
 
   if (aInput.IsRequest() && !bodyFromInit) {

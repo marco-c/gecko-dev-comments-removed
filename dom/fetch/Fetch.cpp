@@ -1364,7 +1364,9 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
     if (mFetchStreamReader) {
       
       MOZ_ASSERT(!mReadableStreamBody->MaybeGetInputStreamIfUnread());
-      mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
+      if (!mFetchStreamReader->IsConsuming()) {
+        mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
+      }
       return;
     }
     
