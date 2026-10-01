@@ -930,7 +930,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
                const gfxFontStyle* aStyle, nsAtom* aLanguage,
                bool aExplicitLanguage, gfxTextPerfMetrics* aTextPerf,
                gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize,
-               StyleFontVariantEmoji aVariantEmoji);
+               mozilla::StyleFontVariantEmoji aVariantEmoji);
 
   virtual ~gfxFontGroup();
 
@@ -1424,7 +1424,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
 
   bool mResolvedFonts = false;  
 
-  StyleFontVariantEmoji mFontVariantEmoji = StyleFontVariantEmoji::Normal;
+  mozilla::StyleFontVariantEmoji mFontVariantEmoji =
+      mozilla::StyleFontVariantEmoji::Normal;
 
   
   mozilla::StyleGenericFontFamily mFallbackGeneric =

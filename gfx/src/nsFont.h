@@ -17,7 +17,7 @@ struct gfxFontStyle;
 
 
 struct nsFont final {
-  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontWidth FontWidth;
   typedef mozilla::FontSlantStyle FontSlantStyle;
   typedef mozilla::FontWeight FontWeight;
 
@@ -48,7 +48,7 @@ struct nsFont final {
   
   FontSlantStyle style = FontSlantStyle::NORMAL;
   FontWeight weight = FontWeight::NORMAL;
-  FontStretch stretch = FontStretch::NORMAL;
+  FontWidth width = FontWidth::NORMAL;
 
   
   
@@ -66,7 +66,8 @@ struct nsFont final {
       mozilla::StyleFontVariantNumeric::NORMAL;
   uint8_t variantPosition = NS_FONT_VARIANT_POSITION_NORMAL;
   uint8_t variantWidth = NS_FONT_VARIANT_WIDTH_NORMAL;
-  StyleFontVariantEmoji variantEmoji = StyleFontVariantEmoji::Normal;
+  mozilla::StyleFontVariantEmoji variantEmoji =
+      mozilla::StyleFontVariantEmoji::Normal;
 
   
   uint8_t smoothing = NS_FONT_SMOOTHING_AUTO;
