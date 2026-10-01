@@ -580,6 +580,9 @@ pref("toolkit.telemetry.user_characteristics_ping.logLevel", "Warn");
   pref("toolkit.asyncshutdown.crash_timeout", 60000); 
 #endif // !defined(MOZ_ASAN) && !defined(MOZ_TSAN)
 
+
+pref("toolkit.asyncshutdown.crash_timeout_additional_wait", 10000); 
+
 pref("toolkit.asyncshutdown.log", false);
 
 
