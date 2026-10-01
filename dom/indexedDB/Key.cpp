@@ -931,6 +931,10 @@ Result<Ok, nsresult> Key::EncodeBinary(
     return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
   }
 
+  if (aArrayBufferOrView.isResizable()) {
+    return Err(NS_ERROR_DOM_INDEXEDDB_DATA_ERR);
+  }
+
   
   
   

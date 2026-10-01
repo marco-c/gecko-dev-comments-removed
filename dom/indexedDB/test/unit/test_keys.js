@@ -292,6 +292,12 @@ function* testSteps() {
     [1, [null]],
     [1, [/x/]],
     [1, [{}]],
+    
+    
+    
+    
+    new ArrayBuffer(8, { maxByteLength: 16 }),
+    new Uint8Array(new ArrayBuffer(8, { maxByteLength: 16 })),
   ];
 
   try {
