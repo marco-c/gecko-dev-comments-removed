@@ -255,17 +255,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 };
 
 
-
-
-
-
-enum class StyleTextWrapStyle : uint8_t {
-  Auto = 0,
-  Stable,
-  Balance,
-};
-
-
 enum class StyleUnicodeBidi : uint8_t {
   Normal,
   Embed,
