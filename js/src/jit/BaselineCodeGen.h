@@ -524,7 +524,11 @@ class BaselineInterpreterHandler {
   NonAssertingLabel codeCoverageAtPCLabel_;
 
   
-  BaselineInterpreter::ICReturnOffsetVector icReturnOffsets_;
+  BaselineInterpreter::ICBailoutStubOffsetVector icBailoutStubOffsets_;
+
+  
+  
+  mozilla::Maybe<uint32_t> icReturnOffset_;
 
   
   BaselineInterpreter::CallVMOffsets callVMOffsets_;
@@ -551,8 +555,19 @@ class BaselineInterpreterHandler {
   }
   CodeOffsetVector& codeCoverageOffsets() { return codeCoverageOffsets_; }
 
-  BaselineInterpreter::ICReturnOffsetVector& icReturnOffsets() {
-    return icReturnOffsets_;
+  BaselineInterpreter::ICBailoutStubOffsetVector& icBailoutStubOffsets() {
+    return icBailoutStubOffsets_;
+  }
+
+  void setICReturnOffset(uint32_t offset) {
+    MOZ_ASSERT(icReturnOffset_.isNothing());
+    icReturnOffset_.emplace(offset);
+  }
+  uint32_t takeICReturnOffset() {
+    MOZ_ASSERT(icReturnOffset_.isSome());
+    uint32_t offset = *icReturnOffset_;
+    icReturnOffset_.reset();
+    return offset;
   }
 
   void setCurrentOp(JSOp op) { currentOp_.emplace(op); }
@@ -629,7 +644,7 @@ class BaselineInterpreterGenerator final : private BaselineInterpreterCodeGen {
  private:
   [[nodiscard]] bool emitInterpreterLoop();
   [[nodiscard]] bool emitDebugTrap();
-  void emitICBailoutStub();
+  [[nodiscard]] bool emitICBailoutStub();
 
   void emitOutOfLineCodeCoverageInstrumentation();
   [[nodiscard]] bool emitOutOfLineGeneratorResumePrologue();
