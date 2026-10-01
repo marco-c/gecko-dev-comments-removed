@@ -3307,8 +3307,10 @@ void js::wasm::TraceInstanceEdge(JSTracer* trc, Instance* instance,
 }
 
 static uintptr_t* GetFrameScanStartForStackMap(
-    const Frame* frame, const StackMap* map,
+    const wasm::WasmFrameIter& wfi, const StackMap* map,
     uintptr_t* highestByteVisitedInPrevFrame) {
+  const Frame* frame = wfi.frame();
+
   
   
   
@@ -3328,6 +3330,13 @@ static uintptr_t* GetFrameScanStartForStackMap(
   
   
   
+  
+  
+  
+  if (highestByteVisitedInPrevFrame && *highestByteVisitedInPrevFrame != 0 &&
+      wfi.skippedReturnCallTrampoline()) {
+    *highestByteVisitedInPrevFrame += SizeOfHiddenReturnCallFrame();
+  }
 #ifndef JS_CODEGEN_ARM64
   MOZ_ASSERT_IF(
       highestByteVisitedInPrevFrame && *highestByteVisitedInPrevFrame != 0,
@@ -3356,9 +3365,10 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
   if (!map) {
     return 0;
   }
+
   Frame* frame = wfi.frame();
   uintptr_t* stackWords =
-      GetFrameScanStartForStackMap(frame, map, &highestByteVisitedInPrevFrame);
+      GetFrameScanStartForStackMap(wfi, map, &highestByteVisitedInPrevFrame);
 
   
   for (uint32_t i = 0; i < map->header.numMappedWords; i++) {
@@ -3403,8 +3413,7 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
   if (!map) {
     return;
   }
-  Frame* frame = wfi.frame();
-  uintptr_t* stackWords = GetFrameScanStartForStackMap(frame, map, nullptr);
+  uintptr_t* stackWords = GetFrameScanStartForStackMap(wfi, map, nullptr);
 
   
   

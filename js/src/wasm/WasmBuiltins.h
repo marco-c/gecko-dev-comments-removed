@@ -139,6 +139,7 @@ enum class SymbolicAddress {
   ArrayInitElem,
   ArrayCopy,
   SlotsToAllocKindBytesTable,
+  ReturnCallTrampoline,
 #ifdef ENABLE_WASM_JSPI
   ContNew,
   ContNewEmpty,
@@ -312,6 +313,10 @@ inline jit::ABIKind ABIForBuiltin(SymbolicAddress sym) {
 
 bool LookupBuiltinThunk(void* pc, const CodeRange** codeRange,
                         const uint8_t** codeBase);
+
+
+
+bool IsReturnCallTrampolineReturnAddress(const void* pc);
 
 
 

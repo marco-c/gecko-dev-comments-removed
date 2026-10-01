@@ -1775,6 +1775,9 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
 #endif  
     case SymbolicAddress::SlotsToAllocKindBytesTable:
       return (void*)gc::slotsToAllocKindBytes;
+    case SymbolicAddress::ReturnCallTrampoline:
+      
+      MOZ_CRASH("ReturnCallTrampoline has no C++ address");
     case SymbolicAddress::ExceptionNew:
       *abiType = Args_General2;
       MOZ_ASSERT(*abiType == ToABIType(SASigExceptionNew));
@@ -1877,6 +1880,8 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
 
     
     case SymbolicAddress::SlotsToAllocKindBytesTable:
+    
+    case SymbolicAddress::ReturnCallTrampoline:
       return false;
 
     
@@ -2148,17 +2153,19 @@ using TypedNativeToCodeRangeMap =
 using SymbolicAddressToCodeRangeArray =
     EnumeratedArray<SymbolicAddress, uint32_t, size_t(SymbolicAddress::Limit)>;
 
-struct BuiltinThunks {
+struct GlobalStubs {
   uint8_t* codeBase;
   size_t codeSize;
   CodeRangeVector codeRanges;
   TypedNativeToCodeRangeMap typedNativeToCodeRange;
   SymbolicAddressToCodeRangeArray symbolicAddressToCodeRange;
   uint32_t provisionalLazyJitEntryOffset = 0;
+  
+  uint32_t returnCallTrampolineOffset = 0;
 
-  BuiltinThunks() : codeBase(nullptr), codeSize(0) {}
+  GlobalStubs() : codeBase(nullptr), codeSize(0) {}
 
-  ~BuiltinThunks() {
+  ~GlobalStubs() {
     if (codeBase) {
       DeallocateExecutableMemory(codeBase, codeSize);
     }
@@ -2166,7 +2173,7 @@ struct BuiltinThunks {
 };
 
 MOZ_RUNINIT Mutex initBuiltinThunks(mutexid::WasmInitBuiltinThunks);
-mozilla::Atomic<const BuiltinThunks*> builtinThunks;
+mozilla::Atomic<const GlobalStubs*> builtinThunks;
 
 bool wasm::EnsureBuiltinThunksInitialized() {
   AutoMarkJitCodeWritableForThread writable;
@@ -2180,7 +2187,7 @@ bool wasm::EnsureBuiltinThunksInitialized(
     return true;
   }
 
-  auto thunks = MakeUnique<BuiltinThunks>();
+  auto thunks = MakeUnique<GlobalStubs>();
   if (!thunks) {
     return false;
   }
@@ -2248,6 +2255,20 @@ bool wasm::EnsureBuiltinThunksInitialized(
 
   
   
+  {
+    CallableOffsets offsets;
+    if (!GenerateReturnCallTrampoline(masm, &offsets)) {
+      return false;
+    }
+    thunks->returnCallTrampolineOffset = offsets.begin;
+    if (!thunks->codeRanges.emplaceBack(CodeRange::ReturnCallTrampoline,
+                                        offsets)) {
+      return false;
+    }
+  }
+
+  
+  
   
   
   
@@ -2307,14 +2328,21 @@ bool wasm::EnsureBuiltinThunksInitialized(
 
 void wasm::ReleaseBuiltinThunks() {
   if (builtinThunks) {
-    const BuiltinThunks* ptr = builtinThunks;
-    js_delete(const_cast<BuiltinThunks*>(ptr));
+    const GlobalStubs* ptr = builtinThunks;
+    js_delete(const_cast<GlobalStubs*>(ptr));
     builtinThunks = nullptr;
   }
 }
 
 void* wasm::SymbolicAddressTarget(SymbolicAddress sym) {
   MOZ_ASSERT(builtinThunks);
+
+  
+  
+  if (sym == SymbolicAddress::ReturnCallTrampoline) {
+    const GlobalStubs& thunks = *builtinThunks;
+    return thunks.codeBase + thunks.returnCallTrampolineOffset;
+  }
 
   ABIFunctionType abiType;
   void* funcPtr = AddressOf(sym, &abiType);
@@ -2323,7 +2351,7 @@ void* wasm::SymbolicAddressTarget(SymbolicAddress sym) {
     return funcPtr;
   }
 
-  const BuiltinThunks& thunks = *builtinThunks;
+  const GlobalStubs& thunks = *builtinThunks;
   uint32_t codeRangeIndex = thunks.symbolicAddressToCodeRange[sym];
   return thunks.codeBase + thunks.codeRanges[codeRangeIndex].begin();
 }
@@ -2331,7 +2359,7 @@ void* wasm::SymbolicAddressTarget(SymbolicAddress sym) {
 void* wasm::ProvisionalLazyJitEntryStub() {
   MOZ_ASSERT(builtinThunks);
 
-  const BuiltinThunks& thunks = *builtinThunks;
+  const GlobalStubs& thunks = *builtinThunks;
   return thunks.codeBase + thunks.provisionalLazyJitEntryOffset;
 }
 
@@ -2392,7 +2420,7 @@ void* wasm::MaybeGetTypedNative(JSFunction* f, const FuncType& funcType) {
     return nullptr;
   }
 
-  const BuiltinThunks& thunks = *builtinThunks;
+  const GlobalStubs& thunks = *builtinThunks;
 
   
   
@@ -2424,7 +2452,7 @@ bool wasm::LookupBuiltinThunk(void* pc, const CodeRange** codeRange,
     return false;
   }
 
-  const BuiltinThunks& thunks = *builtinThunks;
+  const GlobalStubs& thunks = *builtinThunks;
   if (pc < thunks.codeBase || pc >= thunks.codeBase + thunks.codeSize) {
     return false;
   }
@@ -2435,4 +2463,13 @@ bool wasm::LookupBuiltinThunk(void* pc, const CodeRange** codeRange,
   *codeRange = LookupInSorted(thunks.codeRanges, target);
 
   return !!*codeRange;
+}
+
+bool wasm::IsReturnCallTrampolineReturnAddress(const void* pc) {
+  const GlobalStubs* thunks = builtinThunks;
+  MOZ_ASSERT(thunks);
+  
+  
+  return (const uint8_t*)pc ==
+         thunks->codeBase + thunks->returnCallTrampolineOffset;
 }
