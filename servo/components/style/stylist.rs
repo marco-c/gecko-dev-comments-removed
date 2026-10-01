@@ -3074,6 +3074,10 @@ where
         None => return ScopeRootCandidates::default(),
         Some(ref c) => c,
     };
+    if id.0 <= condition_ref.parent.0 {
+        debug_assert!(false, "@scope bookkeeping is corrupt.");
+        return ScopeRootCandidates::default();
+    }
     
     
     
@@ -4344,7 +4348,7 @@ impl CascadeData {
                         .cascade_flags
                         .insert(RuleCascadeFlags::APPEARANCE_BASE);
                 },
-                CssRule::Scope(ref rule) => {
+                CssRule::Scope(ref rule) if self.scope_conditions.len() <= u16::MAX.into() => {
                     containing_rule_state.nested_declarations_context =
                         NestedDeclarationsContext::Scope;
                     let id = ScopeConditionId(self.scope_conditions.len() as u16);
