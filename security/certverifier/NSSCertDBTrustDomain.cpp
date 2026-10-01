@@ -1630,10 +1630,8 @@ void DisableMD5() {
 
 
 
-
-
 bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
-                      const nsCString& dir,  const char* params) {
+                      const nsCString& dir) {
   
   
   
@@ -1657,11 +1655,6 @@ bool LoadUserModuleAt(const char* moduleName, const char* libraryName,
   pkcs11ModuleSpec.AppendLiteral("\" library=\"");
   pkcs11ModuleSpec.Append(fullLibraryPath);
   pkcs11ModuleSpec.AppendLiteral("\"");
-  if (params) {
-    pkcs11ModuleSpec.AppendLiteral("\" parameters=\"");
-    pkcs11ModuleSpec.Append(params);
-    pkcs11ModuleSpec.AppendLiteral("\"");
-  }
 
   UniqueSECMODModule userModule(SECMOD_LoadUserModule(
       const_cast<char*>(pkcs11ModuleSpec.get()), nullptr, false));
@@ -1750,7 +1743,7 @@ bool LoadOSClientCertsModule() {
 bool LoadLoadableRoots(const nsCString& dir) {
   int unusedModType;
   (void)SECMOD_DeleteModule("Root Certs", &unusedModType);
-  return LoadUserModuleAt(kRootModuleName.get(), "nssckbi", dir, nullptr);
+  return LoadUserModuleAt(kRootModuleName.get(), "nssckbi", dir);
 }
 
 extern "C" {
