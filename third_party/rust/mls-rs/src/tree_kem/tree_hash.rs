@@ -3,6 +3,7 @@
 
 
 use super::leaf_node::LeafNode;
+use super::math::SubTree;
 use super::node::{LeafIndex, NodeVec};
 use super::tree_math::BfsIterTopDown;
 use crate::client::MlsError;
@@ -103,7 +104,7 @@ impl TreeKemPublic {
                     .current
                     .get(2 * l as usize)
                     .is_none()
-                    .then_some(LeafIndex(l))
+                    .then_some(LeafIndex::unchecked(l))
             }))
             .collect::<Vec<_>>();
 
@@ -150,7 +151,7 @@ impl TreeKemPublic {
         subtree_root: u32,
     ) -> Result<&[LeafIndex], MlsError> {
         let unmerged = &self.nodes.borrow_as_parent(node_unmerged)?.unmerged_leaves;
-        let (left, right) = tree_math::subtree(subtree_root);
+        let SubTree { left, right } = tree_math::subtree(subtree_root);
         let mut start = 0;
         while start < unmerged.len() && unmerged[start] < left {
             start += 1;
@@ -162,11 +163,22 @@ impl TreeKemPublic {
         Ok(&unmerged[start..end])
     }
 
+    
     fn different_unmerged(&self, ancestor: u32, descendant: u32) -> Result<bool, MlsError> {
-        Ok(!self.nodes.is_blank(ancestor)?
-            && !self.nodes.is_blank(descendant)?
-            && self.unmerged_in_subtree(ancestor, descendant)?
-                != self.nodes.borrow_as_parent(descendant)?.unmerged_leaves)
+        
+        if self.nodes.is_blank(descendant)? {
+            return Ok(false);
+        }
+
+        
+        let ancestor_unmerged = if self.nodes.is_blank(ancestor)? {
+            &[][..]
+        } else {
+            self.unmerged_in_subtree(ancestor, descendant)?
+        };
+
+        
+        Ok(ancestor_unmerged != self.nodes.borrow_as_parent(descendant)?.unmerged_leaves)
     }
 
     #[cfg_attr(not(mls_build_async), maybe_async::must_be_sync)]
@@ -203,12 +215,11 @@ impl TreeKemPublic {
 
                 
                 
-                let (start_leaf, end_leaf) = tree_math::subtree(n as u32);
 
                 tree_hash(
                     &mut tree_hashes[p as usize],
                     &self.nodes,
-                    Some((*start_leaf..*end_leaf).map(LeafIndex).collect_vec()),
+                    Some(tree_math::subtree(n as u32).into_iter().collect_vec()),
                     &self.nodes.borrow_as_parent(p)?.unmerged_leaves,
                     num_leaves as u32,
                     cipher_suite,
@@ -272,7 +283,7 @@ async fn tree_hash<P: CipherSuiteProvider>(
     cipher_suite_provider: &P,
 ) -> Result<(), MlsError> {
     let leaves_to_update =
-        leaves_to_update.unwrap_or_else(|| (0..num_leaves).map(LeafIndex).collect::<Vec<_>>());
+        leaves_to_update.unwrap_or_else(|| (0..num_leaves).map(LeafIndex::unchecked).collect_vec());
 
     
     hashes.resize(num_leaves as usize * 2 - 1, TreeHash::default());

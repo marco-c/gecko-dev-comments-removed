@@ -21,10 +21,6 @@ pub mod test_suite;
 #[derive(Clone, PartialEq, Eq, MlsSize, MlsEncode, MlsDecode)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    all(feature = "ffi", not(test)),
-    safer_ffi_gen::ffi_type(clone, opaque)
-)]
 
 pub struct HpkeCiphertext {
     #[mls_codec(with = "mls_rs_codec::byte_vec")]
@@ -37,10 +33,7 @@ pub struct HpkeCiphertext {
 
 impl Debug for HpkeCiphertext {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("HpkeCiphertext")
-            .field("kem_output", &crate::debug::pretty_bytes(&self.kem_output))
-            .field("ciphertext", &crate::debug::pretty_bytes(&self.ciphertext))
-            .finish()
+        f.debug_struct("HpkeCiphertext").finish()
     }
 }
 
@@ -48,10 +41,6 @@ impl Debug for HpkeCiphertext {
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord, MlsSize, MlsDecode, MlsEncode)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
-
-
-
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HpkePublicKey(
     #[mls_codec(with = "mls_rs_codec::byte_vec")]
@@ -96,10 +85,6 @@ impl AsRef<[u8]> for HpkePublicKey {
 
 #[derive(Clone, PartialEq, Eq, MlsSize, MlsEncode, MlsDecode, ZeroizeOnDrop)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
-
-
-
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HpkeSecretKey(
     #[mls_codec(with = "mls_rs_codec::byte_vec")]
@@ -109,9 +94,7 @@ pub struct HpkeSecretKey(
 
 impl Debug for HpkeSecretKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        crate::debug::pretty_bytes(&self.0)
-            .named("HpkeSecretKey")
-            .fmt(f)
+        f.debug_struct("HpkeSecretKey").finish()
     }
 }
 
@@ -136,6 +119,19 @@ impl AsRef<[u8]> for HpkeSecretKey {
 }
 
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct HpkePsk<'a> {
+    pub id: &'a [u8],
+    pub value: &'a [u8],
+}
+
+impl<'a> HpkePsk<'a> {
+    pub fn new(id: &'a [u8], value: &'a [u8]) -> Self {
+        Self { id, value }
+    }
+}
+
+
 
 
 
@@ -153,7 +149,11 @@ pub trait HpkeContextS {
     async fn seal(&mut self, aad: Option<&[u8]>, data: &[u8]) -> Result<Vec<u8>, Self::Error>;
 
     
-    async fn export(&self, exporter_context: &[u8], len: usize) -> Result<Vec<u8>, Self::Error>;
+    async fn export(
+        &self,
+        exporter_context: &[u8],
+        len: usize,
+    ) -> Result<Zeroizing<Vec<u8>>, Self::Error>;
 }
 
 
@@ -171,18 +171,24 @@ pub trait HpkeContextR {
 
     
     
-    async fn open(&mut self, aad: Option<&[u8]>, ciphertext: &[u8])
-        -> Result<Vec<u8>, Self::Error>;
+    async fn open(
+        &mut self,
+        aad: Option<&[u8]>,
+        ciphertext: &[u8],
+    ) -> Result<Zeroizing<Vec<u8>>, Self::Error>;
 
     
-    async fn export(&self, exporter_context: &[u8], len: usize) -> Result<Vec<u8>, Self::Error>;
+    async fn export(
+        &self,
+        exporter_context: &[u8],
+        len: usize,
+    ) -> Result<Zeroizing<Vec<u8>>, Self::Error>;
 }
 
 
 
 #[derive(Clone, PartialEq, Eq, Hash, Ord, PartialOrd, MlsSize, MlsEncode, MlsDecode)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
-
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SignaturePublicKey(
     #[mls_codec(with = "mls_rs_codec::byte_vec")]
@@ -197,7 +203,6 @@ impl Debug for SignaturePublicKey {
             .fmt(f)
     }
 }
-
 
 impl SignaturePublicKey {
     pub fn new(bytes: Vec<u8>) -> Self {
@@ -240,10 +245,6 @@ impl From<SignaturePublicKey> for Vec<u8> {
 }
 
 
-
-
-
-
 #[derive(Clone, PartialEq, Eq, ZeroizeOnDrop, MlsSize, MlsEncode, MlsDecode)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SignatureSecretKey {
@@ -254,12 +255,9 @@ pub struct SignatureSecretKey {
 
 impl Debug for SignatureSecretKey {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        crate::debug::pretty_bytes(&self.bytes)
-            .named("SignatureSecretKey")
-            .fmt(f)
+        f.debug_struct("SignatureSecretKey").finish()
     }
 }
-
 
 impl SignatureSecretKey {
     pub fn new(bytes: Vec<u8>) -> Self {
@@ -407,6 +405,18 @@ pub trait CipherSuiteProvider: Send + Sync {
     
     
     
+    async fn hpke_seal_psk(
+        &self,
+        remote_key: &HpkePublicKey,
+        info: &[u8],
+        aad: Option<&[u8]>,
+        pt: &[u8],
+        psk: HpkePsk<'_>,
+    ) -> Result<HpkeCiphertext, Self::Error>;
+
+    
+    
+    
     
     
     async fn hpke_open(
@@ -416,7 +426,19 @@ pub trait CipherSuiteProvider: Send + Sync {
         local_public: &HpkePublicKey,
         info: &[u8],
         aad: Option<&[u8]>,
-    ) -> Result<Vec<u8>, Self::Error>;
+    ) -> Result<Zeroizing<Vec<u8>>, Self::Error>;
+
+    
+    
+    async fn hpke_open_psk(
+        &self,
+        ciphertext: &HpkeCiphertext,
+        local_secret: &HpkeSecretKey,
+        local_public: &HpkePublicKey,
+        info: &[u8],
+        aad: Option<&[u8]>,
+        psk: HpkePsk<'_>,
+    ) -> Result<Zeroizing<Vec<u8>>, Self::Error>;
 
     
     

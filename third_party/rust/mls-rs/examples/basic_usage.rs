@@ -9,7 +9,7 @@ use mls_rs::{
         basic::{BasicCredential, BasicIdentityProvider},
         SigningIdentity,
     },
-    CipherSuite, CipherSuiteProvider, Client, CryptoProvider, ExtensionList,
+    CipherSuite, CipherSuiteProvider, Client, CryptoProvider,
 };
 
 const CIPHERSUITE: CipherSuite = CipherSuite::CURVE25519_AES128;
@@ -44,11 +44,11 @@ fn main() -> Result<(), MlsError> {
     let bob = make_client(crypto_provider.clone(), "bob")?;
 
     
-    let mut alice_group = alice.create_group(ExtensionList::default(), Default::default())?;
+    let mut alice_group = alice.group_builder()?.build()?;
 
     
     let bob_key_package =
-        bob.generate_key_package_message(Default::default(), Default::default())?;
+        bob.generate_key_package_message(Default::default(), Default::default(), None)?;
 
     
     let alice_commit = alice_group
@@ -62,7 +62,7 @@ fn main() -> Result<(), MlsError> {
     alice_group.apply_pending_commit()?;
 
     
-    let (mut bob_group, _) = bob.join_group(None, &alice_commit.welcome_messages[0])?;
+    let (mut bob_group, _) = bob.join_group(None, &alice_commit.welcome_messages[0], None)?;
 
     
     let msg = alice_group.encrypt_application_message(b"hello world", Default::default())?;
@@ -70,7 +70,7 @@ fn main() -> Result<(), MlsError> {
     
     let msg = bob_group.process_incoming_message(msg)?;
 
-    println!("Received message: {:?}", msg);
+    println!("Received message: {msg:?}");
 
     
     alice_group.write_to_storage()?;
