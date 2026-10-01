@@ -65,10 +65,6 @@ using namespace mozilla::net;
 
 
 
-static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
-
-
-
 
 
 
@@ -1317,9 +1313,13 @@ void nsHostResolver::PrepareRecordExpirationAddrRecord(
   MOZ_ASSERT(((bool)rec->addr_info) != rec->negative);
   mQueue.mLock.AssertCurrentThreadOwns();
   if (!rec->addr_info) {
-    rec->SetExpiration(TimeStamp::NowLoRes(), NEGATIVE_RECORD_LIFETIME, 0);
+    
+    
+    unsigned int negativeLifetime =
+        StaticPrefs::network_dnsNegativeCacheExpiration();
+    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, 0);
     LOG(("Caching host [%s] negative record for %u seconds.\n", rec->host.get(),
-         NEGATIVE_RECORD_LIFETIME));
+         negativeLifetime));
     return;
   }
 
