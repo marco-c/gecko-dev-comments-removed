@@ -1997,6 +1997,18 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
+  virtual nsresult GetNativeMenuItemKeyEquivalent(const nsAString& aElementId,
+                                                  nsAString& aResult) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  
+
+
+
+
+
+
 
 
 

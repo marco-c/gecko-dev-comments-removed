@@ -104,6 +104,9 @@ class nsMenuItemX final : public nsChangeObserver,
   nsMenuX* mMenuParent = nullptr;                
   nsMenuGroupOwnerX* mMenuGroupOwner = nullptr;  
   RefPtr<mozilla::dom::Element> mCommandElement;
+  
+  
+  RefPtr<mozilla::dom::Element> mKeyElement;
   RefPtr<mozilla::dom::Element> mImageElement;
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;  
   bool mIsChecked = false;
