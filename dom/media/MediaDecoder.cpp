@@ -1354,7 +1354,9 @@ IntervalType MediaDecoder::GetSeekableImpl() {
   if (!IsMediaSeekable()) {
     return IntervalType();
   }
-  if (!IsTransportSeekable()) {
+  
+  
+  if (!IsTransportSeekable() || (IsLiveStream() && IsInfinite())) {
     return IntervalType(positiveBuffered);
   }
 
