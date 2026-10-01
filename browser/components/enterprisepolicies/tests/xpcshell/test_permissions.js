@@ -426,7 +426,8 @@ add_task(async function test_sanitizeonshutdown_exceptions() {
 
 
 
-add_task(async function test_cookies_allow_does_not_persist_on_shutdown() {
+
+add_task(async function test_cookies_allow_persists_on_shutdown_compat() {
   await setupPolicyEngineWithJson({
     policies: {
       Cookies: {
@@ -438,11 +439,121 @@ add_task(async function test_cookies_allow_does_not_persist_on_shutdown() {
   equal(
     PermissionTestUtils.testPermission(uri, "cookie"),
     Ci.nsIPermissionManager.ALLOW_ACTION,
-    "Cookies.Allow still sets the cookie permission"
+    "Cookies.Allow sets the cookie permission"
   );
   equal(
     PermissionTestUtils.testPermission(uri, "persist-data-on-shutdown"),
-    Ci.nsIPermissionManager.UNKNOWN_ACTION,
-    "Cookies.Allow does not set persist-data-on-shutdown"
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Cookies.Allow also sets persist-data-on-shutdown for backwards compat"
   );
+  let permission = PermissionTestUtils.getPermissionObject(
+    uri,
+    "persist-data-on-shutdown",
+    true
+  );
+  ok(permission, "Permission object exists");
+  equal(
+    permission.expireType,
+    Ci.nsIPermissionManager.EXPIRE_POLICY,
+    "Permission expireType is EXPIRE_POLICY"
+  );
+});
+
+
+
+
+add_task(async function test_cookies_allow_no_persist_when_exceptions_set() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Cookies: {
+        Allow: ["https://cookieonly.example.com"],
+      },
+      SanitizeOnShutdown: {
+        Cookies: true,
+        Exceptions: ["https://persist.example.com"],
+      },
+    },
+  });
+  let cookieUri = URI("https://cookieonly.example.com");
+  equal(
+    PermissionTestUtils.testPermission(cookieUri, "cookie"),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "Cookies.Allow still sets the cookie permission"
+  );
+  equal(
+    PermissionTestUtils.testPermission(cookieUri, "persist-data-on-shutdown"),
+    Ci.nsIPermissionManager.UNKNOWN_ACTION,
+    "Cookies.Allow does not set persist-data-on-shutdown when " +
+      "SanitizeOnShutdown.Exceptions is present"
+  );
+  let exceptionUri = URI("https://persist.example.com");
+  equal(
+    PermissionTestUtils.testPermission(
+      exceptionUri,
+      "persist-data-on-shutdown"
+    ),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "SanitizeOnShutdown.Exceptions sets persist-data-on-shutdown"
+  );
+});
+
+
+add_task(async function test_trailing_dot_host() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      Permissions: {
+        Notifications: {
+          Allow: ["https://dot-allow.example.com."],
+          Block: ["https://dot-block.example.com"],
+        },
+        Camera: {
+          Block: ["https://127.0.0.1"],
+        },
+      },
+    },
+  });
+
+  equal(
+    PermissionTestUtils.testPermission(
+      URI("https://dot-block.example.com."),
+      "desktop-notification"
+    ),
+    Ci.nsIPermissionManager.DENY_ACTION,
+    "A blocked bare host is also denied on its trailing dot form"
+  );
+
+  equal(
+    PermissionTestUtils.testPermission(
+      URI("https://dot-allow.example.com"),
+      "desktop-notification"
+    ),
+    Ci.nsIPermissionManager.ALLOW_ACTION,
+    "An allowed trailing dot host is also allowed on its bare form"
+  );
+
+  equal(
+    PermissionTestUtils.testPermission(URI("https://127.0.0.1"), "camera"),
+    Ci.nsIPermissionManager.DENY_ACTION,
+    "An IP address site list entry still gets its permission"
+  );
+
+  let { isTrailingDotPolicyDuplicate } = ChromeUtils.importESModule(
+    "resource://gre/modules/PoliciesHelpers.sys.mjs"
+  );
+  for (let [origin, expected] of [
+    ["https://dot-block.example.com.", true],
+    ["https://dot-block.example.com", false],
+  ]) {
+    equal(
+      isTrailingDotPolicyDuplicate(
+        PermissionTestUtils.getPermissionObject(
+          URI(origin),
+          "desktop-notification",
+          true
+        )
+      ),
+      expected,
+      `A permission list skips ${origin}: ${expected}`
+    );
+  }
 });
