@@ -42,25 +42,32 @@ add_task(async function test_mini_window_from_region() {
   removeTestTabs(EXAMPLE_URL);
 });
 
-add_task(async function test_open_panel_suppressed_in_mini_window_mode() {
+add_task(async function test_open_panel_renders_chooser_in_mini_window_mode() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, EXAMPLE_URL);
   let browser = tab.linkedBrowser;
 
   
   
-  
   ScreenshotsUtils.setPerBrowserState(browser, {
     mode: SELECTION_MODES.MINI_WINDOW,
   });
-  let result = ScreenshotsUtils.openPanel(browser);
+  ScreenshotsUtils.openPanel(browser);
 
-  Assert.equal(result, null, "openPanel is a no-op in mini-window mode");
-  Assert.equal(
-    ScreenshotsUtils.panelForBrowser(browser),
-    null,
-    "no Screenshots panel was created for a mini-window browser"
+  let panel = ScreenshotsUtils.panelForBrowser(browser);
+  Assert.ok(panel, "openPanel created a panel for a mini-window browser");
+
+  let shadow = panel.querySelector("screenshots-buttons").shadowRoot;
+  Assert.ok(
+    shadow.querySelector(".mini-window-chooser"),
+    "the panel renders the chooser rather than the save buttons"
+  );
+  Assert.ok(
+    !shadow.getElementById("visible-page"),
+    "the Screenshots save buttons are not rendered"
   );
 
+  
+  ScreenshotsUtils.closePanel(browser);
   ScreenshotsUtils.browserToScreenshotsState.delete(browser);
   BrowserTestUtils.removeTab(tab);
 });
