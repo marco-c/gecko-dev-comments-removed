@@ -264,8 +264,7 @@ bool ChannelPosix::ProcessIncomingMessages() {
     DCHECK(bytes_read);
 
     
-    const int* wire_fds = nullptr;
-    unsigned num_wire_fds = 0;
+    nsTArray<mozilla::UniqueFileHandle> wire_fds;
 
     
     
@@ -289,17 +288,25 @@ bool ChannelPosix::ProcessIncomingMessages() {
         if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
           const unsigned payload_len = cmsg->cmsg_len - CMSG_LEN(0);
           DCHECK(payload_len % sizeof(int) == 0);
-          wire_fds = reinterpret_cast<int*>(CMSG_DATA(cmsg));
-          num_wire_fds = payload_len / 4;
+          int* const raw_wire_fds = reinterpret_cast<int*>(CMSG_DATA(cmsg));
+          const size_t num_wire_fds = payload_len / sizeof(int);
+          
+          wire_fds.SetCapacity(num_wire_fds);
+          for (size_t i = 0; i < num_wire_fds; ++i) {
+            MOZ_RELEASE_ASSERT(raw_wire_fds[i] >= -1);
+            wire_fds.AppendElement(raw_wire_fds[i]);
+#ifndef MSG_CMSG_CLOEXEC
+            mozilla::SetCloseOnExec(wire_fds[i]);
+#endif
+          }
 
           if (msg.msg_flags & MSG_CTRUNC) {
             CHROMIUM_LOG(ERROR)
                 << "SCM_RIGHTS message was truncated"
                 << " cmsg_len:" << cmsg->cmsg_len << " fd:" << pipe_;
-            for (unsigned i = 0; i < num_wire_fds; ++i)
-              IGNORE_EINTR(close(wire_fds[i]));
             return false;
           }
+
           break;
         }
       }
@@ -311,38 +318,10 @@ bool ChannelPosix::ProcessIncomingMessages() {
 
     
     
-    const int* fds;
-    unsigned num_fds;
-    unsigned fds_i = 0;  
-
-    if (input_overflow_fds_.empty()) {
-      fds = wire_fds;
-      num_fds = num_wire_fds;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (num_wire_fds > 0) {
-        const size_t prev_size = input_overflow_fds_.size();
-        input_overflow_fds_.resize(prev_size + num_wire_fds);
-        memcpy(&input_overflow_fds_[prev_size], wire_fds,
-               num_wire_fds * sizeof(int));
-      }
-      fds = &input_overflow_fds_[0];
-      num_fds = input_overflow_fds_.size();
-    }
+    nsTArray<mozilla::UniqueFileHandle> fds = std::move(input_overflow_fds_);
+    fds.AppendElements(std::move(wire_fds));
+    
+    size_t fds_i = 0;
 
     
     
@@ -411,18 +390,19 @@ bool ChannelPosix::ProcessIncomingMessages() {
 
       Message& m = *incoming_message_;
 
-      if (m.header()->num_handles) {
+      size_t msg_num_handles = m.header()->num_handles;
+      if (msg_num_handles > 0) {
         
         const char* error = nullptr;
-        if (m.header()->num_handles > num_fds - fds_i) {
+        if (msg_num_handles > fds.Length() - fds_i) {
           
           
           error = "Message needs unreceived descriptors";
         }
 
-        size_t maxHandles = std::min<size_t>(
+        size_t max_handles = std::min<size_t>(
             m.size(), IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE);
-        if (m.header()->num_handles > maxHandles) {
+        if (msg_num_handles > max_handles) {
           
           error = "Message requires an excessive number of descriptors";
         }
@@ -430,12 +410,8 @@ bool ChannelPosix::ProcessIncomingMessages() {
         if (error) {
           CHROMIUM_LOG(WARNING)
               << error << " channel:" << this << " message-type:" << m.type()
-              << " header()->num_handles:" << m.header()->num_handles
-              << " num_fds:" << num_fds << " fds_i:" << fds_i;
-          
-          for (unsigned i = fds_i; i < num_fds; ++i)
-            IGNORE_EINTR(close(fds[i]));
-          input_overflow_fds_.clear();
+              << " header()->num_handles:" << msg_num_handles
+              << " fds.Length():" << fds.Length() << " fds_i:" << fds_i;
           
           return false;
         }
@@ -453,16 +429,11 @@ bool ChannelPosix::ProcessIncomingMessages() {
         }
 #endif
 
-        nsTArray<mozilla::UniqueFileHandle> handles(m.header()->num_handles);
-        for (unsigned end_i = fds_i + m.header()->num_handles; fds_i < end_i;
-             ++fds_i) {
-          mozilla::UniqueFileHandle fh(fds[fds_i]);
-#ifndef MSG_CMSG_CLOEXEC
-          mozilla::SetCloseOnExec(fh);
-#endif
-          handles.AppendElement(std::move(fh));
+        nsTArray<mozilla::UniqueFileHandle> msg_handles(msg_num_handles);
+        for (size_t i = 0; i < msg_num_handles; ++i, ++fds_i) {
+          msg_handles.AppendElement(std::move(fds[fds_i]));
         }
-        m.SetAttachedFileHandles(std::move(handles));
+        m.SetAttachedFileHandles(std::move(msg_handles));
       }
 
       
@@ -501,14 +472,16 @@ bool ChannelPosix::ProcessIncomingMessages() {
       incoming_message_ = nullptr;
     }
 
-    input_overflow_fds_ = std::vector<int>(&fds[fds_i], &fds[num_fds]);
+    
+    fds.RemoveElementsAt(0, fds_i);
+    MOZ_ASSERT(input_overflow_fds_.IsEmpty());
+    input_overflow_fds_ = std::move(fds);
 
     
     
     
     if (!incoming_message_ && input_buf_offset_ == 0 &&
-        !input_overflow_fds_.empty()) {
-      
+        !input_overflow_fds_.IsEmpty()) {
       return false;
     }
   }
@@ -690,6 +663,7 @@ bool ChannelPosix::ProcessOutgoingMessages() {
 
       is_blocked_on_write_ = true;
       if (IOThread().IsOnCurrentThread()) {
+        IOThread().AssertOnCurrentThread();
         
         
         MessageLoopForIO::current()->WatchFileDescriptor(
@@ -859,11 +833,7 @@ void ChannelPosix::CloseLocked() {
   }
 
   
-  for (std::vector<int>::iterator i = input_overflow_fds_.begin();
-       i != input_overflow_fds_.end(); ++i) {
-    IGNORE_EINTR(close(*i));
-  }
-  input_overflow_fds_.clear();
+  input_overflow_fds_.Clear();
 
 #if defined(XP_DARWIN)
   pending_fds_.clear();
