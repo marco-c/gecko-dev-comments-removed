@@ -38,9 +38,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
  public:
-  BounceTrackingProtectionStorage()
-      : mMonitor("mozilla::BounceTrackingProtectionStorage::mMonitor"),
-        mPendingWrites(0) {};
+  BounceTrackingProtectionStorage();
 
   
   [[nodiscard]] nsresult Init();
@@ -214,7 +212,7 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   
   
   
-  StateGlobalMap mStateGlobal{};
+  StateGlobalMap mStateGlobal;
 
   
   

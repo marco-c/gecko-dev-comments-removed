@@ -20,6 +20,7 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "nsCharSeparatedTokenizer.h"
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
