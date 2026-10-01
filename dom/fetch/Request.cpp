@@ -13,11 +13,15 @@
 #include "mozilla/dom/FetchUtil.h"
 #include "mozilla/dom/Headers.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
+#include "mozilla/dom/TransformStream.h"
+#include "mozilla/dom/TransformStreamBinding.h"
 #include "mozilla/dom/URL.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/WritableStream.h"
 #include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
@@ -158,7 +162,7 @@ SafeRefPtr<Request> Request::Constructor(
       hasCopiedBody = true;
     } else {
       inputReq->GetBody(getter_AddRefs(body));
-      if (inputReq->BodyUsed()) {
+      if (inputReq->IsBodyUnusable()) {
         aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
         return nullptr;
       }
@@ -510,8 +514,6 @@ SafeRefPtr<Request> Request::Constructor(
           return nullptr;
         }
 
-        
-        request->SetHasStreamBody(true);
         temporaryStreamBody = &readableStream;
 
         
@@ -525,12 +527,6 @@ SafeRefPtr<Request> Request::Constructor(
           aRv = FetchStreamReader::Create(aCx, aGlobal,
                                           getter_AddRefs(streamReader),
                                           getter_AddRefs(pipeInputStream));
-          if (NS_WARN_IF(aRv.Failed())) {
-            return nullptr;
-          }
-
-          
-          streamReader->StartConsuming(aCx, &readableStream, aRv);
           if (NS_WARN_IF(aRv.Failed())) {
             return nullptr;
           }
@@ -577,14 +573,8 @@ SafeRefPtr<Request> Request::Constructor(
   auto domRequest =
       MakeSafeRefPtr<Request>(aGlobal, std::move(request), signal);
 
-  
-  
-  
   if (temporaryStreamReader) {
     domRequest->mFetchStreamReader = temporaryStreamReader.forget();
-    if (signal) {
-      domRequest->mFetchStreamReader->FollowSignal(signal);
-    }
   }
 
   if (temporaryStreamBody) {
@@ -596,6 +586,41 @@ SafeRefPtr<Request> Request::Constructor(
     nsCOMPtr<nsIInputStream> body;
     inputReq->GetBody(getter_AddRefs(body));
     if (body) {
+      if (inputReq->mFetchStreamReader) {
+        
+        
+        JS::Rooted<JSObject*> globalObject(aCx, aGlobal->GetGlobalJSObject());
+        GlobalObject global(aCx, globalObject);
+        RefPtr<TransformStream> transform = TransformStream::Constructor(
+            global, Optional<JS::Handle<JSObject*>>(), QueuingStrategy(),
+            QueuingStrategy(), aRv);
+        if (aRv.Failed()) {
+          return nullptr;
+        }
+        ReadableWritablePair pair;
+        pair.mReadable = transform->Readable();
+        pair.mWritable = transform->Writable();
+        RefPtr<ReadableStream> source = inputReq->mReadableStreamBody;
+        
+        
+        
+        RefPtr<ReadableStream> proxy =
+            source->PipeThrough(pair, StreamPipeOptions(), aRv);
+        if (aRv.Failed()) {
+          return nullptr;
+        }
+        nsCOMPtr<nsIInputStream> proxyInput;
+        aRv = FetchStreamReader::Create(
+            aCx, aGlobal, getter_AddRefs(domRequest->mFetchStreamReader),
+            getter_AddRefs(proxyInput));
+        if (aRv.Failed()) {
+          return nullptr;
+        }
+        domRequest->SetBody(nullptr, 0);
+        domRequest->SetBody(proxyInput, -1);
+        domRequest->SetReadableStreamBody(aCx, proxy);
+        return domRequest;
+      }
       inputReq->SetBody(nullptr, 0);
       inputReq->SetBodyUsed(aCx, aRv);
       if (NS_WARN_IF(aRv.Failed())) {
@@ -606,9 +631,19 @@ SafeRefPtr<Request> Request::Constructor(
   return domRequest;
 }
 
-SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
-  if (BodyUsed()) {
+SafeRefPtr<Request> Request::Clone(JSContext* aCx, ErrorResult& aRv) {
+  if (IsBodyUnusable()) {
     aRv.ThrowTypeError<MSG_FETCH_BODY_CONSUMED_ERROR>();
+    return nullptr;
+  }
+
+  RefPtr<ReadableStream> body;
+  RefPtr<FetchStreamReader> streamReader;
+  nsCOMPtr<nsIInputStream> inputStream;
+  MaybeTeeReadableStreamBody(aCx, getter_AddRefs(body),
+                             getter_AddRefs(streamReader),
+                             getter_AddRefs(inputStream), aRv);
+  if (aRv.Failed()) {
     return nullptr;
   }
 
@@ -618,13 +653,29 @@ SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
     return nullptr;
   }
 
-  
-  
-  
-  
-  MaybeRebindReadableStreamBody();
+  auto clone =
+      MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
+  if (body) {
+    clone->SetBody(nullptr, 0);
+    clone->SetBody(inputStream, -1);
+    clone->mFetchStreamReader = streamReader.forget();
+    clone->SetReadableStreamBody(aCx, body);
+  } else {
+    
+    MaybeRebindReadableStreamBody();
+  }
+  return clone;
+}
 
-  return MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
+void Request::FollowBodySignal() {
+  if (!mSignal) {
+    return;
+  }
+  if (mFetchStreamReader) {
+    mFetchStreamReader->FollowSignal(mSignal);
+  } else if (mReadableStreamBody) {
+    Follow(mSignal);
+  }
 }
 
 Headers* Request::Headers_() {

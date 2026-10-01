@@ -116,9 +116,6 @@ class FetchStreamReader final : public GlobalTeardownObserver,
                       ErrorResult& aRv);
 
   
-  
-  
-  
   bool IsConsuming() const { return !!mReader; }
 
   

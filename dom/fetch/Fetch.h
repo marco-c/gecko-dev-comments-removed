@@ -131,6 +131,21 @@ class FetchBody : public FetchBodyBase, public AbortFollower {
 
   bool BodyUsed() const;
 
+  
+  
+  bool IsBodyUnusable() const;
+
+  
+  
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void CancelBody(JSContext* aCx, ErrorResult& aRv,
+                  JS::Handle<JS::Value> aReason = JS::UndefinedHandleValue);
+
   already_AddRefed<Promise> ArrayBuffer(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, BodyConsumer::ConsumeType::ArrayBuffer, aRv);
   }
