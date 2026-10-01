@@ -130,17 +130,6 @@ enum class ListStyle : uint8_t {
 };
 
 
-enum class StyleTextDecorationStyle : uint8_t {
-  None,  
-  Dotted,
-  Dashed,
-  Solid,
-  Double,
-  Wavy,
-  Sentinel = Wavy
-};
-
-
 enum class StyleWhiteSpaceCollapse : uint8_t {
   Collapse = 0,
   
