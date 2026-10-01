@@ -1187,6 +1187,11 @@ async function withPipWindow(
 
 
 
+
+
+
+
+
 async function waitForControl(button) {
   await BrowserTestUtils.waitForMutationCondition(
     button,

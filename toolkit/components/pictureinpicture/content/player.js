@@ -492,12 +492,18 @@ let Player = {
             !this.didTabOverrideControlFocus &&
             !this.controls.contains(document.activeElement)
           ) {
-            this.didTabOverrideControlFocus = true;
-            event.preventDefault();
             if (!event.shiftKey) {
+              this.didTabOverrideControlFocus = true;
+              event.preventDefault();
+              
               this.playpauseButton.focus();
             } else {
-              this.seekBackward.focus();
+              let previousControl = this.getControlBefore(this.playpauseButton);
+              if (previousControl) {
+                this.didTabOverrideControlFocus = true;
+                event.preventDefault();
+                previousControl.focus();
+              }
             }
           }
         } else if (event.keyCode == KeyEvent.DOM_VK_ESCAPE) {
@@ -1472,9 +1478,42 @@ let Player = {
     this.closePipWindow({ reason: "Shortcut" });
   },
 
+  
+
+
+
+
+
+
+
+  getControlBefore(control) {
+    let controls = this.focusableControls;
+    let index = controls.indexOf(control);
+    if (index < 0) {
+      return null;
+    }
+    return controls.at(index - 1) ?? null;
+  },
+
   get controls() {
     delete this.controls;
     return (this.controls = document.getElementById("controls"));
+  },
+
+  
+
+
+
+
+
+
+
+  get focusableControls() {
+    return [
+      ...this.controls.querySelectorAll(
+        "button.control-item, input.control-item"
+      ),
+    ].filter(control => !control.disabled && control.checkVisibility());
   },
 
   get scrubber() {
