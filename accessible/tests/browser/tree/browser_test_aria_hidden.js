@@ -44,7 +44,9 @@ addAccessibleTask(
   <p id="content">I am some content in a document</p>
   `,
   async function testTabDocument(browser, docAcc) {
-    const originalTree = { DOCUMENT: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] };
+    const originalTree = {
+      DOCUMENT: [{ TEXT_CONTAINER: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] }],
+    };
     testAccessibleTree(docAcc, originalTree);
   },
   {
@@ -63,6 +65,7 @@ addAccessibleTask(
 
 
 
+
 addAccessibleTask(
   `
   <p id="content">I am some content in a document</p>
@@ -72,13 +75,22 @@ addAccessibleTask(
 
     testAccessibleTree(docAcc, originalTree);
     info("Adding aria-hidden=true to content doc");
-    const unexpectedEvents = { unexpected: [[EVENT_REORDER, docAcc]] };
-    await contentSpawnMutation(browser, unexpectedEvents, function () {
-      const b = content.document.body;
-      b.setAttribute("aria-hidden", "true");
-    });
+    
+    
+    
+    
+    await contentSpawnMutation(
+      browser,
+      { expected: [[EVENT_REORDER, docAcc]] },
+      function () {
+        const b = content.document.body;
+        b.setAttribute("aria-hidden", "true");
+      }
+    );
 
-    testAccessibleTree(docAcc, originalTree);
+    testAccessibleTree(docAcc, {
+      DOCUMENT: [{ TEXT_CONTAINER: [{ PARAGRAPH: [{ TEXT_LEAF: [] }] }] }],
+    });
   },
   { chrome: true, topLevel: true, iframe: false, remoteIframe: false }
 );

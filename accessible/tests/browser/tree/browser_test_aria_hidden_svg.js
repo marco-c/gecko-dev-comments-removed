@@ -106,10 +106,7 @@ addAccessibleTask(
     testAccessibleTree(svgRoot, originalTree);
     info("Adding aria-hidden=true to svg");
     
-    
-    
-    
-    const unexpectedEvents = { expected: [[EVENT_REORDER, SVG_DOCUMENT_ID]] };
+    const unexpectedEvents = { unexpected: [[EVENT_REORDER, SVG_DOCUMENT_ID]] };
     info("Adding aria-hidden");
     await contentSpawnMutation(
       browser,
@@ -120,26 +117,7 @@ addAccessibleTask(
       },
       [SVG_DOCUMENT_ID]
     );
-    
-    
-    
-    
-    const newTree = {
-      DOCUMENT: [
-        {
-          DIAGRAM: [
-            {
-              TEXT_CONTAINER: [
-                {
-                  TEXT_LEAF: [],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    testAccessibleTree(svgRoot, newTree);
+    testAccessibleTree(svgRoot, originalTree);
   },
   { chrome: true, topLevel: true, iframe: false, remoteIframe: false }
 );
