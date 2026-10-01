@@ -3499,7 +3499,15 @@ void nsIFrame::BuildDisplayListForStackingContext(
               ->IsMaybeAsynchronouslyScrolled()) {
         shouldFlattenStickyItem = false;
       }
-      stickyScrollContainer->SetShouldFlatten(shouldFlattenStickyItem);
+      
+      
+      
+      
+      
+      
+      if (!aBuilder->IsInViewTransitionCapture()) {
+        stickyScrollContainer->SetShouldFlatten(shouldFlattenStickyItem);
+      }
     }
 
     if (shouldFlattenStickyItem) {
