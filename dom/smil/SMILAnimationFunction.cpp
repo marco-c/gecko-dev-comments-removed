@@ -818,7 +818,7 @@ void SMILAnimationFunction::CheckKeySplines(uint32_t aNumValues) {
     return;
   }
 
-  if (mKeySplines.Length() < 1) {
+  if (mKeySplines.IsEmpty()) {
     
     SetKeySplinesErrorFlag(true);
     return;
