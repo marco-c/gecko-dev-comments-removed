@@ -11,13 +11,16 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-const DEVICE_DIR: &str = "device";
+
+const GL_BACKEND: &str = "device/gl.rs";
 
 
 
 const ALLOWLIST: &[&str] = &[
     "lib.rs",
     "renderer/init.rs",
+    
+    "device/mod.rs",
 ];
 
 
@@ -75,7 +78,7 @@ fn gl_does_not_leak_outside_device_layer() {
             .unwrap()
             .replace('\\', "/");
 
-        if rel.starts_with(&format!("{}/", DEVICE_DIR)) {
+        if rel == GL_BACKEND {
             continue;
         }
 
@@ -112,9 +115,9 @@ fn gl_does_not_leak_outside_device_layer() {
 
     assert!(
         unexpected.is_empty(),
-        "GL references found outside src/{}/. Route them through the Device API \
-         instead of adding to the allowlist:\n{}",
-        DEVICE_DIR,
+        "GL references found outside src/{}. Route them through the GpuBackend \
+         trait instead of adding to the allowlist:\n{}",
+        GL_BACKEND,
         unexpected.join("\n"),
     );
 
