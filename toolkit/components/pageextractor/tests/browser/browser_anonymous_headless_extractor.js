@@ -10,6 +10,14 @@ const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
 
+
+
+
+const TEST_DIR = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  ""
+);
+
 const SIMPLE_PAGE = `
   <!DOCTYPE html>
   <html><head><meta charset="utf-8"><title>t</title></head>
@@ -176,6 +184,45 @@ add_task(async function test_anonymous_fetch_rejects_non_loopback_http() {
     }),
     /Only https: URLs are supported for anonymous fetches/,
     "anonymous fetch with non-loopback http: URL should be rejected"
+  );
+});
+
+
+
+
+
+
+add_task(async function test_anonymous_fetch_meta_refresh_never_runs() {
+  const selfRedirect = (mode, to) =>
+    `https://example.com${TEST_DIR}client_redirect.sjs?` +
+    `${mode}|${encodeURIComponent(to)}`;
+
+  const refreshed = await PageExtractorParent.getHeadlessExtractor({
+    urlString: selfRedirect(
+      "meta",
+      `https://w3c-test.org${TEST_DIR}redirect_target.html`
+    ),
+    callback: async pageExtractor => pageExtractor.getText(),
+    anonymousFetch: true,
+  });
+  is(
+    refreshed.text,
+    "This page redirects itself.",
+    "the meta refresh never runs, so the requested page is the one read"
+  );
+
+  const replaced = await PageExtractorParent.getHeadlessExtractor({
+    urlString: selfRedirect(
+      "replace",
+      `https://example.com${TEST_DIR}redirect_target.html`
+    ),
+    callback: async pageExtractor => pageExtractor.getText(),
+    anonymousFetch: true,
+  });
+  is(
+    replaced.text,
+    "This page was reached through a redirect.",
+    "location.replace() is script rather than an automatic feature, so it is followed"
   );
 });
 
