@@ -214,6 +214,14 @@ macro_rules! declare_interners {
                 )+
             }
 
+            fn take_pending_updates(&mut self) -> InternerUpdates {
+                InternerUpdates {
+                    $(
+                        $name: self.$name.take_pending_updates(),
+                    )+
+                }
+            }
+
             fn end_frame_and_get_pending_updates(&mut self) -> InternerUpdates {
                 InternerUpdates {
                     $(
@@ -637,6 +645,7 @@ impl SceneBuilderThread {
                     epoch,
                     pipeline_id,
                     display_list,
+                    namespace,
                 } => {
                     let (builder_start_time_ns, builder_end_time_ns, send_time_ns) =
                       display_list.times();
@@ -665,12 +674,11 @@ impl SceneBuilderThread {
                     scene.set_display_list(
                         pipeline_id,
                         epoch,
+                        namespace,
                         display_list,
                     );
                 }
                 SceneMsg::RenderOffscreen(pipeline_id) => {
-                    
-                    
                     
                     
                     
@@ -759,11 +767,9 @@ impl SceneBuilderThread {
         
         
         
-        
-        debug_assert!(
-            offscreen_scenes.is_empty() || interner_updates.is_some(),
-            "RenderOffscreen without a main scene rebuild to flush its interned items",
-        );
+        if !offscreen_scenes.is_empty() && interner_updates.is_none() {
+            interner_updates = Some(doc.interners.take_pending_updates());
+        }
 
         let scene_build_time_ms =
             profiler::ns_to_ms(zeitstempel::now() - scene_build_start);

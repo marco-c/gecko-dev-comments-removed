@@ -356,6 +356,12 @@ impl<I: Internable> Interner<I> {
 
     
     
+    pub fn take_pending_updates(&mut self) -> UpdateList<I::Key> {
+        self.update_list.take_and_preallocate()
+    }
+
+    
+    
     
     pub fn end_frame_and_get_pending_updates(&mut self) -> UpdateList<I::Key> {
         let mut update_list = self.update_list.take_and_preallocate();
