@@ -1,12 +1,10 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
-
+# for socket
 OS_LIBS += CONFIG["SOCKET_LIBS"]
 
 if CONFIG["OS_TARGET"] != "WINNT":
@@ -69,14 +67,14 @@ if CONFIG["OS_TARGET"] in ("DragonFly", "FreeBSD", "NetBSD", "OpenBSD"):
         "/dom/media/webrtc/transport/third_party/nrappkit/src/port/darwin/include",
     ]
 
-
+# SCTP DEFINES
 if CONFIG["OS_TARGET"] == "WINNT":
     DEFINES["WIN"] = True
-    
+    # for stun.h
     DEFINES["WIN32"] = True
     DEFINES["__Userspace_os_Windows"] = 1
 else:
-    
+    # Works for Darwin, Linux, Android. Probably doesn't work for others.
     DEFINES["__Userspace_os_%s" % CONFIG["OS_TARGET"]] = 1
 
 if CONFIG["OS_TARGET"] in ("Darwin", "Android"):
@@ -102,3 +100,8 @@ LOCAL_INCLUDES += [
 ]
 
 FINAL_LIBRARY = "xul-gtest"
+
+LICENSED_UNDER += ["libjingle"]
+LICENSED_UNDER["libjingle"].paths = [
+    "gtest_utils.h",
+]
