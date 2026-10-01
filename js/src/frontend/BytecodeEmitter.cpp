@@ -1594,6 +1594,12 @@ bool BytecodeEmitter::emitTDZCheckIfNeeded(TaggedParserAtomIndex name,
     return true;
   }
 
+  
+  
+  if (name == TaggedParserAtomIndex::WellKnown::dot_initializers_()) {
+    return true;
+  }
+
   Maybe<MaybeCheckTDZ> check =
       innermostTDZCheckCache->needsTDZCheck(this, name);
   if (!check) {
