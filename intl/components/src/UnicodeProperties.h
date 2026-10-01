@@ -338,6 +338,18 @@ class UnicodeProperties final {
   
   
   
+  static inline Script GetScriptCodeFromString(const char* aStr) {
+    UScriptCode icu_script;
+    UErrorCode status = U_ZERO_ERROR;
+    if (uscript_getCode(aStr, &icu_script, 1, &status) == 1) {
+      return Script(icu_script);
+    }
+    return Script::UNKNOWN;
+  }
+
+  
+  
+  
   static bool IsScriptioContinua(char16_t aChar) {
     Script sc = GetScriptCode(aChar);
     return sc == Script::THAI || sc == Script::MYANMAR || sc == Script::KHMER ||
