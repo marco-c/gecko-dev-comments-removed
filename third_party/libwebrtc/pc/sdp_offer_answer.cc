@@ -4952,7 +4952,7 @@ SdpOfferAnswerHandler::FindAvailableTransceiverToReceive(
   
   
   
-  for (auto transceiver : transceivers()->List()) {
+  for (const auto& transceiver : transceivers()->List()) {
     if (transceiver->media_type() == media_type &&
         transceiver->internal()->created_by_addtrack() && !transceiver->mid() &&
         !transceiver->stopped()) {
@@ -5922,7 +5922,7 @@ void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
   }
   
   auto transceiver_list = transceivers()->List();
-  for (auto transceiver : transceiver_list) {
+  for (const auto& transceiver : transceiver_list) {
     
     
     
