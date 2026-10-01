@@ -445,9 +445,6 @@ enum class StyleColorInterpolation : uint8_t {
 };
 
 
-enum class StyleBackfaceVisibility : uint8_t { Hidden = 0, Visible = 1 };
-
-
 enum class StyleBlend : uint8_t {
   Normal = 0,
   Multiply,
