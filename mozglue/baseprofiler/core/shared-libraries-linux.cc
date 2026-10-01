@@ -4,24 +4,15 @@
 
 #include "mozilla/SharedLibraries.h"
 
+#define PATH_MAX_TOSTRING(x) #x
+#define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
+#include <fstream>
+#include "platform.h"
 #include "mozilla/Sprintf.h"
-
-#if defined(GP_OS_android)
-
-#  define PATH_MAX_TOSTRING(x) #x
-#  define PATH_MAX_STRING(x) PATH_MAX_TOSTRING(x)
-#  include <fstream>
-#  include "platform.h"
-#endif
-
-#if defined(GP_OS_linux)
-#  include <sys/auxv.h>
-#endif
 
 #include <algorithm>
 #include <arpa/inet.h>
@@ -267,7 +258,7 @@ const size_t kMDGUIDSize = sizeof(MDGUID);
 
 class FileID {
  public:
-  explicit FileID(const std::string& path) : path_(path) {}
+  explicit FileID(const char* path) : path_(path) {}
   ~FileID() = default;
 
   
@@ -649,6 +640,24 @@ class FileID {
 
 
 
+struct LoadedLibraryInfo {
+  LoadedLibraryInfo(const char* aName, unsigned long aBaseAddress,
+                    unsigned long aFirstMappingStart,
+                    unsigned long aLastMappingEnd,
+                    std::optional<std::vector<uint8_t>>&& aElfFileIdentifier)
+      : mName(aName),
+        mBaseAddress(aBaseAddress),
+        mFirstMappingStart(aFirstMappingStart),
+        mLastMappingEnd(aLastMappingEnd),
+        mElfFileIdentifier(std::move(aElfFileIdentifier)) {}
+
+  std::string mName;
+  unsigned long mBaseAddress;
+  unsigned long mFirstMappingStart;
+  unsigned long mLastMappingEnd;
+  std::optional<std::vector<uint8_t>> mElfFileIdentifier;
+};
+
 static std::string IDtoUUIDString(const std::vector<uint8_t>& aIdentifier) {
   std::string uuid = FileID::ConvertIdentifierToUUIDString(aIdentifier);
   
@@ -665,7 +674,7 @@ static std::string IDtoString(const std::vector<uint8_t>& aIdentifier) {
 
 
 static std::optional<std::vector<uint8_t>> getElfFileIdentifierFromFile(
-    const std::string& bin_name) {
+    const char* bin_name) {
   std::vector<uint8_t> identifier;
   identifier.reserve(kDefaultBuildIdSize);
 
@@ -697,158 +706,110 @@ static std::string getCodeId(
   return {};
 }
 
-#if defined(GP_OS_linux)
-
-
-static std::string GetExecutablePath() {
-  const char* execfn = reinterpret_cast<const char*>(getauxval(AT_EXECFN));
-  if (!execfn || execfn[0] == '\0') {
-    return {};
-  }
-  if (execfn[0] == '/') {
-    return execfn;
-  }
-
-  
-  
-  
-  
-  
-  
-  char resolved[PATH_MAX];
-  if (!realpath(execfn, resolved)) {
-    return execfn;
-  }
-  return resolved;
-}
-#endif  
-
 static SharedLibrary SharedLibraryAtPath(
-    std::string pathStr, unsigned long libStart, unsigned long libEnd,
+    const char* path, unsigned long libStart, unsigned long libEnd,
     unsigned long offset = 0,
     const std::optional<std::vector<uint8_t>>& elfFileIdentifier =
         std::nullopt) {
+  std::string pathStr = path;
+
   size_t pos = pathStr.rfind('/');
   std::string nameStr =
       (pos != std::string::npos) ? pathStr.substr(pos + 1) : pathStr;
 
   const auto identifier = elfFileIdentifier
                               ? elfFileIdentifier
-                              : getElfFileIdentifierFromFile(pathStr);
+                              : getElfFileIdentifierFromFile(path);
 
   return SharedLibrary(libStart, libEnd, offset, getBreakpadId(identifier),
                        getCodeId(identifier), nameStr, pathStr, nameStr,
                        pathStr, std::string{}, "");
 }
 
+static int dl_iterate_callback(struct dl_phdr_info* dl_info, size_t size,
+                               void* data) {
+  auto libInfoList = reinterpret_cast<std::vector<LoadedLibraryInfo>*>(data);
 
-class DLIterateState {
- public:
-  SharedLibraryInfo& mInfo;
-#if defined(GP_OS_linux)
-  bool mExeNameAssigned = false;
-  std::string mExeName;
-#endif
+  if (dl_info->dlpi_phnum <= 0) return 0;
 
-  DLIterateState(SharedLibraryInfo& aInfo, std::string&& aExeName)
-      : mInfo(aInfo), mExeName(aExeName) {}
+  unsigned long baseAddress = dl_info->dlpi_addr;
 
-  static int Callback(struct dl_phdr_info* dl_info, size_t size, void* data) {
-    DLIterateState* state = reinterpret_cast<DLIterateState*>(data);
-    return state->CallbackInternal(dl_info, size);
-  }
-
-  int CallbackInternal(struct dl_phdr_info* dl_info, size_t size) {
-    if (dl_info->dlpi_phnum <= 0) {
-      return 0;
-    }
-
-    unsigned long baseAddress = dl_info->dlpi_addr;
-
-    
-    
-    
-    
-    
-    
-    
-    if (baseAddress == 0) {
-      return 0;
-    }
-
-    unsigned long firstMappingStart = -1;
-    unsigned long lastMappingEnd = 0;
-    std::vector<uint8_t> elfFileIdentifier;
-
-    for (size_t i = 0; i < dl_info->dlpi_phnum; i++) {
-      
-      if (dl_info->dlpi_phdr[i].p_type == PT_LOAD) {
-        unsigned long start =
-            dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr;
-        unsigned long end = start + dl_info->dlpi_phdr[i].p_memsz;
-        if (start < firstMappingStart) {
-          firstMappingStart = start;
-        }
-        if (end > lastMappingEnd) {
-          lastMappingEnd = end;
-        }
-      }
-
-      
-      
-      if (dl_info->dlpi_phdr[i].p_type == PT_NOTE &&
-          elfFileIdentifier.empty()) {
-        const void* section_start = reinterpret_cast<const void*>(
-            dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr);
-        size_t section_length = dl_info->dlpi_phdr[i].p_memsz;
-        FileID::ElfClassBuildIDNoteIdentifier(section_start, section_length,
-                                              elfFileIdentifier);
-      }
-    }
-
-    auto optionalElfFileId =
-        elfFileIdentifier.size() > 0
-            ? std::make_optional(std::move(elfFileIdentifier))
-            : std::nullopt;
-    
-    
-    std::string libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
-
-#if defined(GP_OS_linux)
-    
-    
-    
-    if (!mExeNameAssigned) {
-      
-
-      
-      MOZ_ASSERT(libName.empty());
-
-      
-      MOZ_ASSERT(reinterpret_cast<void*>(getauxval(AT_PHDR)) ==
-                 dl_info->dlpi_phdr);
-
-#  ifdef MOZ_DEBUG
-      unsigned long entry = getauxval(AT_ENTRY);
-      MOZ_ASSERT(entry != 0 && firstMappingStart <= entry &&
-                 entry < lastMappingEnd);
-#  endif
-
-      libName = mExeName;
-      mExeNameAssigned = true;
-    }
-#endif
-
-    mInfo.AddSharedLibrary(SharedLibraryAtPath(
-        libName, firstMappingStart, lastMappingEnd,
-        firstMappingStart - baseAddress, optionalElfFileId));
-
+  
+  
+  
+  
+  
+  
+  
+  if (baseAddress == 0) {
     return 0;
   }
-};
+
+  unsigned long firstMappingStart = -1;
+  unsigned long lastMappingEnd = 0;
+  std::vector<uint8_t> elfFileIdentifier;
+
+  for (size_t i = 0; i < dl_info->dlpi_phnum; i++) {
+    
+    if (dl_info->dlpi_phdr[i].p_type == PT_LOAD) {
+      unsigned long start = dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr;
+      unsigned long end = start + dl_info->dlpi_phdr[i].p_memsz;
+      if (start < firstMappingStart) {
+        firstMappingStart = start;
+      }
+      if (end > lastMappingEnd) {
+        lastMappingEnd = end;
+      }
+    }
+
+    
+    
+    if (dl_info->dlpi_phdr[i].p_type == PT_NOTE && elfFileIdentifier.empty()) {
+      const void* section_start = reinterpret_cast<const void*>(
+          dl_info->dlpi_addr + dl_info->dlpi_phdr[i].p_vaddr);
+      size_t section_length = dl_info->dlpi_phdr[i].p_memsz;
+      FileID::ElfClassBuildIDNoteIdentifier(section_start, section_length,
+                                            elfFileIdentifier);
+    }
+  }
+
+  auto optionalElfFileId =
+      elfFileIdentifier.size() > 0
+          ? std::make_optional(std::move(elfFileIdentifier))
+          : std::nullopt;
+  
+  
+  const char* libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
+  libInfoList->push_back(LoadedLibraryInfo(libName, baseAddress,
+                                           firstMappingStart, lastMappingEnd,
+                                           std::move(optionalElfFileId)));
+
+  return 0;
+}
 
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo info;
+
+#if defined(GP_OS_linux)
+  
+  
+  char exeName[PATH_MAX];
+  memset(exeName, 0, sizeof(exeName));
+
+  ssize_t exeNameLen = readlink("/proc/self/exe", exeName, sizeof(exeName) - 1);
+  if (exeNameLen == -1) {
+    
+    exeName[0] = '\0';
+    exeNameLen = 0;
+    
+  } else {
+    
+    MOZ_RELEASE_ASSERT(exeNameLen >= 0 &&
+                       exeNameLen < static_cast<ssize_t>(sizeof(exeName)));
+  }
+
+  unsigned long exeExeAddr = 0;
+#endif
 
 #if defined(GP_OS_android)
   
@@ -861,7 +822,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   }
 #endif
 
-#if defined(GP_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
   
   pid_t pid = mozilla::baseprofiler::profiler_current_process_id().ToNumber();
   char path[PATH_MAX];
@@ -888,6 +849,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       continue;
     }
 
+#  if defined(GP_OS_linux)
+    
+    if (exeNameLen > 0 && strcmp(modulePath, exeName) == 0) {
+      exeExeAddr = start;
+    }
+#  elif defined(GP_OS_android)
     
     
     if (0 == strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
@@ -899,17 +866,35 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
         break;
       }
     }
+#  endif
   }
 #endif
 
-#if defined(GP_OS_linux)
-  DLIterateState state(info, GetExecutablePath());
-#else
-  DLIterateState state(info);
-#endif
+  std::vector<LoadedLibraryInfo> libInfoList;
 
   
-  dl_iterate_phdr(DLIterateState::Callback, &state);
+  dl_iterate_phdr(dl_iterate_callback, &libInfoList);
+
+#if defined(GP_OS_linux)
+  bool exeNameAssigned = false;
+#endif
+  for (const auto& libInfo : libInfoList) {
+    const char* libraryName = libInfo.mName.c_str();
+#if defined(GP_OS_linux)
+    
+    
+    if (!exeNameAssigned && libInfo.mFirstMappingStart <= exeExeAddr &&
+        exeExeAddr <= libInfo.mLastMappingEnd && libInfo.mName.empty()) {
+      libraryName = exeName;
+      exeNameAssigned = true;
+    }
+#endif
+
+    info.AddSharedLibrary(SharedLibraryAtPath(
+        libraryName, libInfo.mFirstMappingStart, libInfo.mLastMappingEnd,
+        libInfo.mFirstMappingStart - libInfo.mBaseAddress,
+        libInfo.mElfFileIdentifier));
+  }
 
   return info;
 }
