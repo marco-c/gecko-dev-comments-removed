@@ -4132,6 +4132,23 @@ pref("extensions.formautofill.addresses.storage.rust.migrationTestVersion", 0);
 
 pref("extensions.formautofill.addresses.storage.rust.migrationAttempts", 0);
 
+
+
+
+pref("extensions.formautofill.creditCards.storage.rust.enabled", false);
+
+
+
+pref("extensions.formautofill.creditCards.storage.rust.active", false);
+
+
+pref("extensions.formautofill.creditCards.storage.rust.runMigrationTest", false);
+
+
+pref("extensions.formautofill.creditCards.storage.rust.migrationTestVersion", 0);
+
+
+pref("extensions.formautofill.creditCards.storage.rust.migrationAttempts", 0);
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
