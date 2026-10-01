@@ -6569,8 +6569,6 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
 
     const auto childWM = childFrame->GetWritingMode();
     const IntrinsicSizeInput childInput(aInput, childWM, flexWM);
-    const auto* styleFrame = nsLayoutUtils::GetStyleFrame(childFrame);
-    const auto* childStylePos = styleFrame->StylePosition();
 
     
     
@@ -6592,21 +6590,10 @@ nscoord nsFlexContainerFrame::ComputeIntrinsicISize(
         ShouldStretchCrossSize(this, childFrame, flexWM,
                                axisTracker.CrossAxis())) {
       
-      
-      const auto offsets = childFrame->IntrinsicBSizeOffsets();
-      
-      
-      
-      
-      const auto stretchedStyleCrossSize =
-          StyleSize::FromAppUnits(nsLayoutUtils::ComputeStretchSize(
-              aInput.mPercentageBasisForChildren->BSize(flexWM), offsets.margin,
-              offsets.BorderPadding(), childStylePos->mBoxSizing));
-      
       if (flexWM.IsOrthogonalTo(childWM)) {
-        sizeOverrides.mStyleISize.emplace(stretchedStyleCrossSize);
+        sizeOverrides.mStyleISize.emplace(StyleSize::Stretch());
       } else {
-        sizeOverrides.mStyleBSize.emplace(stretchedStyleCrossSize);
+        sizeOverrides.mStyleBSize.emplace(StyleSize::Stretch());
       }
     }
     nscoord childISize = nsLayoutUtils::IntrinsicForContainer(
