@@ -79,12 +79,6 @@ enum class StyleGeometryBox : uint8_t {
 };
 
 
-enum class StyleFieldSizing : bool {
-  Fixed,
-  Content,
-};
-
-
 enum class StyleShapeSourceType : uint8_t {
   None,
   Image,  
