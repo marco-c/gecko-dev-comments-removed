@@ -14,6 +14,10 @@
 
 
 
+
+
+
+
 function resizeChromeWindowTo(width, height) {
   const initialWidth = window.outerWidth;
   const initialHeight = window.outerHeight;
@@ -62,10 +66,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_content_lead() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     ok(
       band.classList.contains("side-by-side-content-lead"),
@@ -236,10 +241,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_widgets_lead() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     ok(
       band.classList.contains("side-by-side-widgets-lead"),
@@ -343,10 +349,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_below_threshold() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     
     
@@ -416,10 +423,11 @@ test_newtab({
   },
 
   test: async function test_side_by_side_with_no_widgets_recenters() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     ok(
       band.classList.contains("side-by-side-content-lead"),
@@ -431,9 +439,9 @@ test_newtab({
     );
 
     const column = content.document.querySelector(".layout-content-column");
-    Assert.notEqual(
-      content.window.getComputedStyle(column, "::before").borderTopColor,
-      "rgba(0, 0, 0, 0)",
+    Assert.equal(
+      content.window.getComputedStyle(column, "::before").content,
+      '""',
       "The lone content section is still framed"
     );
     Assert.equal(
@@ -452,10 +460,11 @@ test_newtab({
 
   
   test: async function test_side_by_side_five_variant_four_cards() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     
     
@@ -504,10 +513,11 @@ test_newtab({
   
   
   test: async function test_side_by_side_four_column_variant_stops_at_three() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     
     
@@ -583,10 +593,11 @@ test_newtab({
   
   
   test: async function test_single_section_stops_at_four_cards() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     
     
@@ -629,10 +640,11 @@ test_newtab({
   
   
   test: async function test_default_layout_is_untouched() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     Assert.equal(
       band.className,
@@ -691,10 +703,11 @@ test_newtab({
   
   
   test: async function test_side_by_side_holds_two_cards_below_pair() {
-    const band = await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".content-full-width"),
-      "Wait for the content band to render"
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(".layout-content-column.has-feed"),
+      "Wait for the feed's layout to render"
     );
+    const band = content.document.querySelector(".content-full-width");
 
     
     
