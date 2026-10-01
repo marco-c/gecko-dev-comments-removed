@@ -3,10 +3,10 @@
 
 
 pub use lockstore_rs::LockstoreDatastore;
-use lockstore_rs::{KEYSTORE_FILENAME, Keystore, LockstoreError};
+use lockstore_rs::{Keystore, LockstoreError, KEYSTORE_FILENAME};
 use nserror::{
-    NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE,
-    NS_ERROR_NOT_INITIALIZED, NS_OK, nsresult,
+    nsresult, NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE,
+    NS_ERROR_NOT_INITIALIZED, NS_OK,
 };
 use nsstring::{nsACString, nsCString};
 use std::path::PathBuf;
@@ -185,6 +185,31 @@ pub extern "C" fn keystore_is_dek_extractable(
     }
 }
 
+
+
+
+
+#[no_mangle]
+pub extern "C" fn keystore_dek_exists(
+    handle: &KeystoreHandle,
+    dek_name: &nsACString,
+    out_exists: &mut bool,
+) -> nsresult {
+    if dek_name.is_empty() {
+        log::error!("DEK name cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let dek_name_str = dek_name.to_utf8();
+    match handle.keystore.dek_exists(&dek_name_str) {
+        Ok(b) => {
+            *out_exists = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn keystore_get_dek(
     handle: &KeystoreHandle,
@@ -324,6 +349,29 @@ pub extern "C" fn keystore_switch_kek(
         .keystore
         .switch_kek(&dek_name_str, &old_str, &new_str)
     {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn keystore_migrate_deks(
+    handle: &KeystoreHandle,
+    from_kek_ref: &nsACString,
+    to_kek_ref: &nsACString,
+) -> nsresult {
+    if from_kek_ref.is_empty() || to_kek_ref.is_empty() {
+        log::error!("from_kek_ref and to_kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    let from_str = from_kek_ref.to_utf8();
+    let to_str = to_kek_ref.to_utf8();
+    match handle.keystore.migrate_deks(&from_str, &to_str) {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(&e),
     }
@@ -478,6 +526,33 @@ pub extern "C" fn keystore_unlock_kek(
     }
 }
 
+
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn keystore_change_kek_password(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+    old_secret: &nsACString,
+    new_secret: &nsACString,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    
+    let old_buf = Zeroizing::new(old_secret[..].to_vec());
+    let new_buf = Zeroizing::new(new_secret[..].to_vec());
+    let kek_ref_str = kek_ref.to_utf8();
+    result_to_nsresult(
+        handle
+            .keystore
+            .change_kek_password(&kek_ref_str, &old_buf, &new_buf),
+    )
+}
+
 #[no_mangle]
 pub extern "C" fn keystore_lock_kek(handle: &KeystoreHandle, kek_ref: &nsACString) -> nsresult {
     if kek_ref.is_empty() {
@@ -500,6 +575,29 @@ pub extern "C" fn keystore_is_kek_unlocked(
     match handle.keystore.is_kek_unlocked(&kek_ref_str) {
         Ok(b) => {
             *out_unlocked = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(&e),
+    }
+}
+
+
+
+
+
+#[no_mangle]
+pub extern "C" fn keystore_kek_exists(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+    out_exists: &mut bool,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    match handle.keystore.kek_exists(&kek_ref_str) {
+        Ok(b) => {
+            *out_exists = b;
             NS_OK
         }
         Err(e) => error_to_nsresult(&e),
