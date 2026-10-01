@@ -11,13 +11,12 @@ use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::surface::SurfaceInfo;
 use crate::prim_store::PrimitiveScratchBuffer;
-use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplateCommonData};
+use crate::prim_store::{PrimitiveStore, PrimKeyCommonData, PrimTemplate, PrimTemplateCommonData};
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, MAX_VERTEX_TEXTURE_WIDTH};
 use crate::resource_cache::ResourceCache;
 use crate::util::MatrixHelpers;
 use crate::prim_store::{InternablePrimitive, PrimitiveKind};
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
-use std::ops;
 
 use super::storage;
 
@@ -71,34 +70,7 @@ impl TextRunKey {
 
 impl intern::InternDebug for TextRunKey {}
 
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
-pub struct TextRunTemplate {
-    pub common: PrimTemplateCommonData,
-    pub font: FontInstance,
-    
-    
-    
-    
-    
-    pub glyphs: Vec<GlyphInstance>,
-    pub shadow: bool,
-    pub requested_raster_space: RasterSpace,
-}
-
-impl ops::Deref for TextRunTemplate {
-    type Target = PrimTemplateCommonData;
-    fn deref(&self) -> &Self::Target {
-        &self.common
-    }
-}
-
-impl ops::DerefMut for TextRunTemplate {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.common
-    }
-}
+pub type TextRunTemplate = PrimTemplate<TextRun>;
 
 impl From<TextRunKey> for TextRunTemplate {
     fn from(item: TextRunKey) -> Self {
@@ -114,17 +86,19 @@ impl From<TextRunKey> for TextRunTemplate {
             })
             .collect();
 
-        TextRunTemplate {
+        PrimTemplate {
             common,
-            font: item.font,
-            glyphs,
-            shadow: item.shadow,
-            requested_raster_space: item.requested_raster_space,
+            kind: TextRun {
+                font: item.font,
+                glyphs,
+                shadow: item.shadow,
+                requested_raster_space: item.requested_raster_space,
+            },
         }
     }
 }
 
-impl TextRunTemplate {
+impl TextRun {
     
     
     
@@ -170,6 +144,9 @@ pub type TextRunDataHandle = intern::Handle<TextRun>;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct TextRun {
     pub font: FontInstance,
+    
+    
+    
     
     
     pub glyphs: Vec<GlyphInstance>,
@@ -245,7 +222,7 @@ pub struct TextRunScratch {
     pub local_raster: bool,
 }
 
-impl TextRunTemplate {
+impl TextRun {
     
     
     fn compute_font_instance(
@@ -656,6 +633,6 @@ fn test_struct_sizes() {
     
     
     assert_eq!(mem::size_of::<TextRun>(), 80, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 112, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 120, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 112, "TextRunKey size changed");
 }
