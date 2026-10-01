@@ -44,21 +44,31 @@ let initialWidth;
 
 
 
-function setSize(width, height) {
-  initialHeight = window.innerHeight;
-  initialWidth = window.innerWidth;
-  let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
+async function setSize(width, height) {
   const dpr = window.devicePixelRatio;
+  const contentRect = gBrowser.selectedBrowser.getBoundingClientRect();
+  initialWidth ??= contentRect.width;
+  initialHeight ??= contentRect.height;
+  const deviceWidth = Math.round(width * dpr);
+  const deviceHeight = Math.round(height * dpr);
+  
+  
+  if (
+    Math.round(contentRect.width * dpr) === deviceWidth &&
+    Math.round(contentRect.height * dpr) === deviceHeight
+  ) {
+    return;
+  }
+  let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
   window.docShell.treeOwner
     .QueryInterface(Ci.nsIDocShellTreeOwner)
-    .setPrimaryContentSize(Math.round(width * dpr), Math.round(height * dpr));
-  return resizePromise;
+    .setPrimaryContentSize(deviceWidth, deviceHeight);
+  await resizePromise;
 }
 
+
 function resetSize() {
-  let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
-  window.resizeTo(initialWidth, initialHeight);
-  return resizePromise;
+  return setSize(initialWidth, initialHeight);
 }
 
 add_task(async function test_newtab_last_LinkMenu() {
