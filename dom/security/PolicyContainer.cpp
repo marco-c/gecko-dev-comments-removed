@@ -154,20 +154,24 @@ void PolicyContainer::InitFromOther(PolicyContainer* aOther) {
   }
 
   if (aOther->mCSP) {
-    RefPtr<nsCSPContext> csp = new nsCSPContext();
-    csp = new nsCSPContext();
+    RefPtr csp = MakeRefPtr<nsCSPContext>();
     csp->InitFromOther(nsCSPContext::Cast(aOther->mCSP));
     mCSP = csp;
   }
 
   if (aOther->mIntegrityPolicy) {
-    RefPtr<dom::IntegrityPolicy> integrityPolicy = new dom::IntegrityPolicy();
+    RefPtr integrityPolicy = MakeRefPtr<IntegrityPolicy>();
     integrityPolicy->InitFromOther(
         IntegrityPolicy::Cast(aOther->mIntegrityPolicy));
     mIntegrityPolicy = integrityPolicy;
   }
 
-  
+  if (aOther->mConnectionAllowlists) {
+    
+    
+    mConnectionAllowlists = aOther->mConnectionAllowlists;
+    mConnectionAllowlists->Freeze();  
+  }
 
   mIPAddressSpace = aOther->mIPAddressSpace;
 }

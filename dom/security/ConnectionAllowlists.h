@@ -44,6 +44,13 @@ class ConnectionAllowlists final {
                                const nsACString& aReportOnlyHeader,
                                ConnectionAllowlists** aResult);
   void SetResponseURI(nsIURI* aURI);
+  
+  
+  void Freeze() {
+#ifdef DEBUG
+    mFrozen = true;
+#endif
+  }
 
   bool ShouldLoad(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
 
@@ -111,6 +118,9 @@ class ConnectionAllowlists final {
   Maybe<Allowlist> mEnforcement;
   Maybe<Allowlist> mReportOnly;
   nsCOMPtr<nsIURI> mResponseURI;
+#ifdef DEBUG
+  bool mFrozen = false;
+#endif
 };
 
 }  
