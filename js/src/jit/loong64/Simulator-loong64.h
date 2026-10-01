@@ -75,8 +75,7 @@ const int kNumFPURegisters = 32;
 
 
 
-const int kFCSRRegister = 0;
-const int kInvalidFPUControlRegister = -1;
+
 const uint32_t kFPUInvalidResult = static_cast<uint32_t>(1 << 31) - 1;
 const int32_t kFPUInvalidResultNegative = static_cast<int32_t>(1u << 31);
 const uint64_t kFPU64InvalidResult =
@@ -168,7 +167,7 @@ class Simulator {
     no_reg = -1,
     zero_reg = 0,
     ra,
-    gp,
+    tp,
     sp,
     a0,
     a1,
@@ -187,7 +186,7 @@ class Simulator {
     t6,
     t7,
     t8,
-    tp,
+    rx,
     fp,
     s0,
     s1,
@@ -200,9 +199,6 @@ class Simulator {
     s8,
     pc,  
     kNumSimuRegisters,
-    
-    v0 = a0,
-    v1 = a1,
   };
 
   
@@ -277,7 +273,6 @@ class Simulator {
 
   
   
-  
   void setRegister(int reg, int64_t value);
   int64_t getRegister(int reg) const;
   
@@ -298,8 +293,6 @@ class Simulator {
                                      int fpureg);
 
   int64_t getFpuRegister(int fpureg) const;
-  
-  
   int32_t getFpuRegisterWord(int fpureg) const;
   int32_t getFpuRegisterSignedWord(int fpureg) const;
   int32_t getFpuRegisterHiWord(int fpureg) const;
@@ -308,8 +301,6 @@ class Simulator {
 
   void setCFRegister(int cfreg, bool value);
   bool getCFRegister(int cfreg) const;
-
-  void setFCSRRoundingMode(FPURoundingMode mode);
 
   void setFCSRBit(uint32_t cc, bool value);
   bool testFCSRBit(uint32_t cc);
@@ -327,7 +318,6 @@ class Simulator {
   unsigned int getFCSRRoundingMode();
   template <typename T>
   bool setFCSRRoundError(double original, double rounded);
-  bool setFCSRRound64Error(float original, float rounded);
 
   template <typename T>
   void roundAccordingToFCSR(T toRound, T* rounded, int32_t* rounded_int);
@@ -401,9 +391,7 @@ class Simulator {
     
     
     
-    end_sim_pc = -2,
-    
-    Unpredictable = 0xbadbeaf
+    end_sim_pc = -2
   };
 
   bool init();
