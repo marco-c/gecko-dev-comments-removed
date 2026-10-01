@@ -1373,6 +1373,12 @@ void CanvasRenderingContext2D::ResetBitmap(bool aFreeBuffer) {
   mFrameCaptureState = FrameCaptureState::CLEAN;
 }
 
+void CanvasRenderingContext2D::OnWindowDestroy() {
+  
+  
+  ResetBitmap();
+}
+
 void CanvasRenderingContext2D::OnShutdown() {
   RefPtr<PersistentBufferProvider> provider = mBufferProvider;
 
