@@ -608,6 +608,7 @@ std::vector<Resolution> EncoderStreamFactory::GetStreamResolutions(
     
     
     
+    
     if (has_scale_resolution_down_to && restrictions_.has_value() &&
         restrictions_->max_pixels_per_frame().has_value()) {
       int max_pixels =
@@ -632,7 +633,8 @@ std::vector<Resolution> EncoderStreamFactory::GetStreamResolutions(
         }
         prev_pixel_count = pixel_count;
       }
-      max_num_layers = restricted_num_layers.value_or(max_num_layers);
+      max_num_layers = std::max(min_num_layers,
+                                restricted_num_layers.value_or(max_num_layers));
     }
 
     Resolution norm_resolution =
