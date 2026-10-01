@@ -172,6 +172,10 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
 #ifdef MOZ_AUTH_EXTENSION
     
     
+    mAllowDefaultCredentials = CanUseDefaultCredentials(channel, isProxyAuth);
+
+    
+    
     
     
     bool forceGeneric = ForceGenericNTLM();
@@ -179,8 +183,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
       
       
       
-      if (!*continuationState &&
-          CanUseDefaultCredentials(channel, isProxyAuth)) {
+      if (!*continuationState && mAllowDefaultCredentials) {
         
         
         
@@ -281,6 +284,14 @@ nsHttpNTLMAuth::GenerateCredentials(
 
   
   if (aChallenge.Equals("NTLM"_ns, nsCaseInsensitiveCStringComparator)) {
+    
+    
+    if (mUseNative && !mAllowDefaultCredentials &&
+        (user.IsEmpty() || pass.IsEmpty())) {
+      LOG(("Not using default credentials for an untrusted host\n"));
+      return NS_ERROR_ABORT;
+    }
+
     
     nsCOMPtr<nsIURI> uri;
     rv = authChannel->GetURI(getter_AddRefs(uri));

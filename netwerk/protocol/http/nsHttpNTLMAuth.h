@@ -27,6 +27,10 @@ class nsHttpNTLMAuth : public nsIHttpAuthenticator {
   
   bool mUseNative{false};
 
+  
+  
+  bool mAllowDefaultCredentials{false};
+
   static StaticRefPtr<nsHttpNTLMAuth> gSingleton;
 };
 
