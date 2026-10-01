@@ -678,6 +678,44 @@ pub struct MappedTransferBuffer<'a> {
     pub data: &'a [u8]
 }
 
+
+
+
+#[derive(Debug)]
+pub struct Fence(usize);
+
+#[derive(Debug, PartialEq)]
+pub enum FenceStatus {
+    Signaled,
+    Pending,
+    
+    Error,
+}
+
+
+
+#[derive(Debug)]
+pub enum UploadBufferMapping {
+    Unmapped,
+    
+    Transient(ptr::NonNull<mem::MaybeUninit<u8>>),
+    
+    
+    Persistent(ptr::NonNull<mem::MaybeUninit<u8>>),
+}
+
+
+#[derive(Debug)]
+pub struct UploadChunk<'a> {
+    pub rect: DeviceIntRect,
+    
+    pub stride: Option<i32>,
+    
+    pub offset: usize,
+    pub format_override: Option<ImageFormat>,
+    pub texture: &'a Texture,
+}
+
 impl<'a> Drop for MappedTransferBuffer<'a> {
     fn drop(&mut self) {
         self.device.gl.unmap_buffer(gl::PIXEL_PACK_BUFFER);
@@ -3735,6 +3773,232 @@ impl Device {
 
     
     
+    
+    pub fn allocate_upload_buffer(
+        &mut self,
+        buffer: &mut TransferBuffer,
+        size: usize,
+        usage_hint: VertexUsageHint,
+        persistent: bool,
+    ) -> Result<UploadBufferMapping, String> {
+        assert_eq!(buffer.reserved_size, 0);
+        buffer.reserved_size = size;
+
+        self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.id);
+        if persistent {
+            assert!(self.capabilities.supports_buffer_storage);
+            self.gl.buffer_storage(
+                gl::PIXEL_UNPACK_BUFFER,
+                size as _,
+                ptr::null(),
+                gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT,
+            );
+            let ptr = self.gl.map_buffer_range(
+                gl::PIXEL_UNPACK_BUFFER,
+                0,
+                size as _,
+                
+                
+                
+                gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_FLUSH_EXPLICIT_BIT,
+            ) as *mut _;
+
+            let ptr = ptr::NonNull::new(ptr).ok_or_else(
+                || format!("Failed to persistently map TransferBuffer of size {} bytes", size)
+            )?;
+
+            Ok(UploadBufferMapping::Persistent(ptr))
+        } else {
+            self.gl.buffer_data_untyped(
+                gl::PIXEL_UNPACK_BUFFER,
+                size as _,
+                ptr::null(),
+                usage_hint.to_gl(),
+            );
+            let ptr = self.gl.map_buffer_range(
+                gl::PIXEL_UNPACK_BUFFER,
+                0,
+                size as _,
+                
+                
+                gl::MAP_WRITE_BIT,
+            ) as *mut _;
+
+            let ptr = ptr::NonNull::new(ptr).ok_or_else(
+                || format!("Failed to transiently map TransferBuffer of size {} bytes", size)
+            )?;
+
+            Ok(UploadBufferMapping::Transient(ptr))
+        }
+    }
+
+    
+    
+    
+    pub fn map_upload_buffer(
+        &mut self,
+        buffer: &TransferBuffer,
+    ) -> Result<ptr::NonNull<mem::MaybeUninit<u8>>, String> {
+        self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.id);
+        let ptr = self.gl.map_buffer_range(
+            gl::PIXEL_UNPACK_BUFFER,
+            0,
+            buffer.reserved_size as _,
+            gl::MAP_WRITE_BIT | gl::MAP_UNSYNCHRONIZED_BIT,
+        ) as *mut _;
+
+        ptr::NonNull::new(ptr).ok_or_else(
+            || format!("Failed to transiently map TransferBuffer of size {} bytes", buffer.reserved_size)
+        )
+    }
+
+    
+    
+    
+    pub fn flush_upload_buffer(
+        &mut self,
+        buffer: &TransferBuffer,
+        mapping: &UploadBufferMapping,
+        size_used: usize,
+        chunks: &[UploadChunk],
+    ) {
+        self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.id);
+        match mapping {
+            UploadBufferMapping::Unmapped => unreachable!("upload buffer should be mapped at this stage."),
+            UploadBufferMapping::Transient(_) => {
+                self.gl.unmap_buffer(gl::PIXEL_UNPACK_BUFFER);
+            }
+            UploadBufferMapping::Persistent(_) => {
+                self.gl.flush_mapped_buffer_range(gl::PIXEL_UNPACK_BUFFER, 0, size_used as _);
+            }
+        }
+        for chunk in chunks {
+            self.upload_chunk(chunk.texture, chunk.rect, chunk.stride, chunk.format_override, chunk.offset);
+        }
+        self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, 0);
+    }
+
+    
+    
+    pub fn orphan_upload_buffer(&mut self, buffer: &mut TransferBuffer) {
+        self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.id);
+        self.gl.buffer_data_untyped(
+            gl::PIXEL_UNPACK_BUFFER,
+            0,
+            ptr::null(),
+            gl::STREAM_DRAW,
+        );
+        self.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, 0);
+        buffer.reserved_size = 0;
+    }
+
+    
+    pub fn upload_texture_region(
+        &mut self,
+        texture: &Texture,
+        rect: DeviceIntRect,
+        stride: Option<i32>,
+        format_override: Option<ImageFormat>,
+        data: &[u8],
+    ) {
+        if cfg!(debug_assertions) {
+            let mut bound_buffer = [0];
+            unsafe {
+                self.gl.get_integer_v(gl::PIXEL_UNPACK_BUFFER_BINDING, &mut bound_buffer);
+            }
+            assert_eq!(bound_buffer[0], 0, "GL_PIXEL_UNPACK_BUFFER must not be bound for immediate uploads.");
+        }
+        self.upload_chunk(texture, rect, stride, format_override, data.as_ptr() as usize);
+    }
+
+    
+    
+    fn upload_chunk(
+        &mut self,
+        texture: &Texture,
+        rect: DeviceIntRect,
+        stride: Option<i32>,
+        format_override: Option<ImageFormat>,
+        source: usize,
+    ) {
+        self.bind_texture(DEFAULT_TEXTURE, texture, Swizzle::default());
+
+        let format = format_override.unwrap_or(texture.format);
+        let (gl_format, bpp, data_type) = match format {
+            ImageFormat::R8 => (gl::RED, 1, gl::UNSIGNED_BYTE),
+            ImageFormat::R16 => (gl::RED, 2, gl::UNSIGNED_SHORT),
+            ImageFormat::BGRA8 => (self.bgra_formats.external, 4, self.bgra_pixel_type),
+            ImageFormat::RGBA8 => (gl::RGBA, 4, gl::UNSIGNED_BYTE),
+            ImageFormat::RG8 => (gl::RG, 2, gl::UNSIGNED_BYTE),
+            ImageFormat::RG16 => (gl::RG, 4, gl::UNSIGNED_SHORT),
+            ImageFormat::RGBAF32 => (gl::RGBA, 16, gl::FLOAT),
+            ImageFormat::RGBAI32 => (gl::RGBA_INTEGER, 16, gl::INT),
+        };
+
+        let row_length = match stride {
+            Some(value) => value / bpp,
+            None => texture.size.width,
+        };
+
+        if stride.is_some() {
+            self.gl.pixel_store_i(
+                gl::UNPACK_ROW_LENGTH,
+                row_length as _,
+            );
+        }
+
+        let pos = rect.min;
+        let size = rect.size();
+        let gl_target = get_gl_target(texture.target);
+
+        self.gl.tex_sub_image_2d_pbo(
+            gl_target,
+            0,
+            pos.x as _,
+            pos.y as _,
+            size.width as _,
+            size.height as _,
+            gl_format,
+            data_type,
+            source,
+        );
+
+        
+        if texture.filter == TextureFilter::Trilinear {
+            self.gl.generate_mipmap(gl_target);
+        }
+
+        
+        if stride.is_some() {
+            self.gl.pixel_store_i(gl::UNPACK_ROW_LENGTH, 0 as _);
+        }
+    }
+
+    
+    
+    pub fn create_fence(&mut self) -> Option<Fence> {
+        let sync = self.gl.fence_sync(gl::SYNC_GPU_COMMANDS_COMPLETE, 0);
+        if sync.is_null() {
+            None
+        } else {
+            Some(Fence(sync as usize))
+        }
+    }
+
+    pub fn poll_fence(&self, fence: &Fence) -> FenceStatus {
+        match self.gl.client_wait_sync(fence.0 as gl::GLsync, 0, 0) {
+            gl::TIMEOUT_EXPIRED => FenceStatus::Pending,
+            gl::ALREADY_SIGNALED | gl::CONDITION_SATISFIED => FenceStatus::Signaled,
+            gl::WAIT_FAILED | _ => FenceStatus::Error,
+        }
+    }
+
+    pub fn delete_fence(&mut self, fence: Fence) {
+        self.gl.delete_sync(fence.0 as gl::GLsync);
+    }
+
+    
+    
     fn required_upload_size_and_stride(&self, size: DeviceIntSize, format: ImageFormat) -> (usize, usize) {
         assert!(size.width >= 0);
         assert!(size.height >= 0);
@@ -4641,15 +4905,6 @@ pub struct FormatDesc {
 }
 
 #[derive(Debug)]
-struct UploadChunk<'a> {
-    rect: DeviceIntRect,
-    stride: Option<i32>,
-    offset: usize,
-    format_override: Option<ImageFormat>,
-    texture: &'a Texture,
-}
-
-#[derive(Debug)]
 struct PixelBuffer<'a> {
     size_used: usize,
     
@@ -4672,12 +4927,6 @@ impl<'a> PixelBuffer<'a> {
             mapping,
         }
     }
-
-    fn flush_chunks(&mut self, device: &mut Device) {
-        for chunk in self.chunks.drain(..) {
-            TextureUploader::update_impl(device, chunk);
-        }
-    }
 }
 
 impl<'a> Drop for PixelBuffer<'a> {
@@ -4686,19 +4935,12 @@ impl<'a> Drop for PixelBuffer<'a> {
     }
 }
 
-#[derive(Debug)]
-enum PBOMapping {
-    Unmapped,
-    Transient(ptr::NonNull<mem::MaybeUninit<u8>>),
-    Persistent(ptr::NonNull<mem::MaybeUninit<u8>>),
-}
-
-impl PBOMapping {
+impl UploadBufferMapping {
     fn get_ptr(&self) -> ptr::NonNull<mem::MaybeUninit<u8>> {
         match self {
-            PBOMapping::Unmapped => unreachable!("Cannot get pointer to unmapped TransferBuffer."),
-            PBOMapping::Transient(ptr) => *ptr,
-            PBOMapping::Persistent(ptr) => *ptr,
+            UploadBufferMapping::Unmapped => unreachable!("Cannot get pointer to unmapped TransferBuffer."),
+            UploadBufferMapping::Transient(ptr) => *ptr,
+            UploadBufferMapping::Persistent(ptr) => *ptr,
         }
     }
 }
@@ -4707,7 +4949,7 @@ impl PBOMapping {
 #[derive(Debug)]
 struct UploadPBO {
     pbo: TransferBuffer,
-    mapping: PBOMapping,
+    mapping: UploadBufferMapping,
     can_recycle: bool,
 }
 
@@ -4718,7 +4960,7 @@ impl UploadPBO {
                 id: 0,
                 reserved_size: 0,
             },
-            mapping: PBOMapping::Unmapped,
+            mapping: UploadBufferMapping::Unmapped,
             can_recycle: false,
         }
     }
@@ -4739,7 +4981,7 @@ pub struct UploadBufferPool {
     returned_buffers: Vec<UploadPBO>,
     
     
-    waiting_buffers: Vec<(gl::GLsync, Vec<UploadPBO>)>,
+    waiting_buffers: Vec<(Fence, Vec<UploadPBO>)>,
     
     
     orphaned_buffers: Vec<TransferBuffer>,
@@ -4747,7 +4989,7 @@ pub struct UploadBufferPool {
 
 impl UploadBufferPool {
     pub fn new(device: &mut Device, default_size: usize) -> Self {
-        let usage_hint = match device.upload_method {
+        let usage_hint = match *device.upload_method() {
             UploadMethod::Immediate => VertexUsageHint::Stream,
             UploadMethod::PixelBuffer(usage_hint) => usage_hint,
         };
@@ -4769,17 +5011,17 @@ impl UploadBufferPool {
         
         
         let mut first_not_signalled = self.waiting_buffers.len();
-        for (i, (sync, buffers)) in self.waiting_buffers.iter_mut().enumerate() {
-            match device.gl.client_wait_sync(*sync, 0, 0) {
-                gl::TIMEOUT_EXPIRED => {
+        for (i, (fence, buffers)) in self.waiting_buffers.iter_mut().enumerate() {
+            match device.poll_fence(fence) {
+                FenceStatus::Pending => {
                     first_not_signalled = i;
                     break;
                 },
-                gl::ALREADY_SIGNALED | gl::CONDITION_SATISFIED => {
+                FenceStatus::Signaled => {
                     self.available_buffers.extend(buffers.drain(..));
                 }
-                gl::WAIT_FAILED | _ => {
-                    warn!("glClientWaitSync error in UploadBufferPool::begin_frame()");
+                FenceStatus::Error => {
+                    warn!("fence poll error in UploadBufferPool::begin_frame()");
                     for buffer in buffers.drain(..) {
                         device.delete_transfer_buffer(buffer.pbo);
                     }
@@ -4788,8 +5030,8 @@ impl UploadBufferPool {
         }
 
         
-        for (sync, _) in self.waiting_buffers.drain(0..first_not_signalled) {
-            device.gl.delete_sync(sync);
+        for (fence, _) in self.waiting_buffers.drain(0..first_not_signalled) {
+            device.delete_fence(fence);
         }
     }
 
@@ -4797,14 +5039,16 @@ impl UploadBufferPool {
     
     pub fn end_frame(&mut self, device: &mut Device) {
         if !self.returned_buffers.is_empty() {
-            let sync = device.gl.fence_sync(gl::SYNC_GPU_COMMANDS_COMPLETE, 0);
-            if !sync.is_null() {
-                self.waiting_buffers.push((sync, mem::replace(&mut self.returned_buffers, Vec::new())))
-            } else {
-                warn!("glFenceSync error in UploadBufferPool::end_frame()");
+            match device.create_fence() {
+                Some(fence) => {
+                    self.waiting_buffers.push((fence, mem::replace(&mut self.returned_buffers, Vec::new())))
+                }
+                None => {
+                    warn!("fence creation error in UploadBufferPool::end_frame()");
 
-                for buffer in self.returned_buffers.drain(..) {
-                    device.delete_transfer_buffer(buffer.pbo);
+                    for buffer in self.returned_buffers.drain(..) {
+                        device.delete_transfer_buffer(buffer.pbo);
+                    }
                 }
             }
         }
@@ -4819,7 +5063,7 @@ impl UploadBufferPool {
         
         
         
-        let (can_recycle, size) = if min_size <= self.default_size && device.capabilities.supports_nonzero_pbo_offsets {
+        let (can_recycle, size) = if min_size <= self.default_size && device.get_capabilities().supports_nonzero_pbo_offsets {
             (true, self.default_size)
         } else {
             (false, min_size)
@@ -4831,28 +5075,16 @@ impl UploadBufferPool {
                 assert_eq!(buffer.pbo.reserved_size, size);
                 assert!(buffer.can_recycle);
 
-                device.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.pbo.id);
-
                 match buffer.mapping {
-                    PBOMapping::Unmapped => {
+                    UploadBufferMapping::Unmapped => {
                         
-                        let ptr = device.gl.map_buffer_range(
-                            gl::PIXEL_UNPACK_BUFFER,
-                            0,
-                            buffer.pbo.reserved_size as _,
-                            gl::MAP_WRITE_BIT | gl::MAP_UNSYNCHRONIZED_BIT,
-                        ) as *mut _;
-
-                        let ptr = ptr::NonNull::new(ptr).ok_or_else(
-                            || format!("Failed to transiently map TransferBuffer of size {} bytes", buffer.pbo.reserved_size)
-                        )?;
-
-                        buffer.mapping = PBOMapping::Transient(ptr);
+                        let ptr = device.map_upload_buffer(&buffer.pbo)?;
+                        buffer.mapping = UploadBufferMapping::Transient(ptr);
                     }
-                    PBOMapping::Transient(_) => {
+                    UploadBufferMapping::Transient(_) => {
                         unreachable!("Transiently mapped UploadPBO must be unmapped before returning to pool.");
                     }
-                    PBOMapping::Persistent(_) => {
+                    UploadBufferMapping::Persistent(_) => {
                     }
                 }
 
@@ -4867,54 +5099,8 @@ impl UploadBufferPool {
             None => device.create_transfer_buffer(),
         };
 
-        assert_eq!(pbo.reserved_size, 0);
-        pbo.reserved_size = size;
-
-        device.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, pbo.id);
-        let mapping = if device.capabilities.supports_buffer_storage && can_recycle {
-            device.gl.buffer_storage(
-                gl::PIXEL_UNPACK_BUFFER,
-                pbo.reserved_size as _,
-                ptr::null(),
-                gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT,
-            );
-            let ptr = device.gl.map_buffer_range(
-                gl::PIXEL_UNPACK_BUFFER,
-                0,
-                pbo.reserved_size as _,
-                
-                
-                
-                gl::MAP_WRITE_BIT | gl::MAP_PERSISTENT_BIT | gl::MAP_FLUSH_EXPLICIT_BIT,
-            ) as *mut _;
-
-            let ptr = ptr::NonNull::new(ptr).ok_or_else(
-                || format!("Failed to transiently map TransferBuffer of size {} bytes", pbo.reserved_size)
-            )?;
-
-            PBOMapping::Persistent(ptr)
-        } else {
-            device.gl.buffer_data_untyped(
-                gl::PIXEL_UNPACK_BUFFER,
-                pbo.reserved_size as _,
-                ptr::null(),
-                self.usage_hint.to_gl(),
-            );
-            let ptr = device.gl.map_buffer_range(
-                gl::PIXEL_UNPACK_BUFFER,
-                0,
-                pbo.reserved_size as _,
-                
-                
-                gl::MAP_WRITE_BIT,
-            ) as *mut _;
-
-            let ptr = ptr::NonNull::new(ptr).ok_or_else(
-                || format!("Failed to transiently map TransferBuffer of size {} bytes", pbo.reserved_size)
-            )?;
-
-            PBOMapping::Transient(ptr)
-        };
+        let persistent = device.get_capabilities().supports_buffer_storage && can_recycle;
+        let mapping = device.allocate_upload_buffer(&mut pbo, size, self.usage_hint, persistent)?;
 
         Ok(UploadPBO { pbo, mapping, can_recycle })
     }
@@ -4923,25 +5109,16 @@ impl UploadBufferPool {
     
     fn return_pbo(&mut self, device: &mut Device, mut buffer: UploadPBO) {
         assert!(
-            !matches!(buffer.mapping, PBOMapping::Transient(_)),
+            !matches!(buffer.mapping, UploadBufferMapping::Transient(_)),
             "Transiently mapped UploadPBO must be unmapped before returning to pool.",
         );
 
         if buffer.can_recycle {
             self.returned_buffers.push(buffer);
         } else {
-            device.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.pbo.id);
-            device.gl.buffer_data_untyped(
-                gl::PIXEL_UNPACK_BUFFER,
-                0,
-                ptr::null(),
-                gl::STREAM_DRAW,
-            );
-            buffer.pbo.reserved_size = 0;
+            device.orphan_upload_buffer(&mut buffer.pbo);
             self.orphaned_buffers.push(buffer.pbo);
         }
-
-        device.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, 0);
     }
 
     
@@ -4952,8 +5129,8 @@ impl UploadBufferPool {
         for buffer in self.returned_buffers.drain(..) {
             device.delete_transfer_buffer(buffer.pbo)
         }
-        for (sync, buffers) in self.waiting_buffers.drain(..) {
-            device.gl.delete_sync(sync);
+        for (fence, buffers) in self.waiting_buffers.drain(..) {
+            device.delete_fence(fence);
             for buffer in buffers {
                 device.delete_transfer_buffer(buffer.pbo)
             }
@@ -4985,8 +5162,8 @@ impl UploadBufferPool {
         for buffer in self.returned_buffers.drain(..) {
             device.delete_transfer_buffer(buffer.pbo)
         }
-        for (sync, buffers) in self.waiting_buffers.drain(..) {
-            device.gl.delete_sync(sync);
+        for (fence, buffers) in self.waiting_buffers.drain(..) {
+            device.delete_fence(fence);
             for buffer in buffers {
                 device.delete_transfer_buffer(buffer.pbo)
             }
@@ -5051,7 +5228,7 @@ impl<'a> TextureUploader<'a> {
         format: ImageFormat,
         size: DeviceIntSize,
     ) -> Result<UploadStagingBuffer<'a>, String> {
-        assert!(matches!(device.upload_method, UploadMethod::PixelBuffer(_)), "Texture uploads should only be staged when using pixel buffers.");
+        assert!(matches!(device.upload_method(), UploadMethod::PixelBuffer(_)), "Texture uploads should only be staged when using pixel buffers.");
 
         
         
@@ -5069,7 +5246,7 @@ impl<'a> TextureUploader<'a> {
             None => PixelBuffer::new(self.pbo_pool.get_pbo(device, dst_size)?),
         };
 
-        if !device.capabilities.supports_nonzero_pbo_offsets {
+        if !device.get_capabilities().supports_nonzero_pbo_offsets {
             assert_eq!(buffer.size_used, 0, "TransferBuffer uploads from non-zero offset are not supported.");
         }
         assert!(buffer.size_used + dst_size <= buffer.inner.pbo.reserved_size, "PixelBuffer is too small");
@@ -5148,23 +5325,16 @@ impl<'a> TextureUploader<'a> {
         let src_size = (rect.height() as usize - 1) * src_stride + width_bytes;
         assert!(src_size <= len * mem::size_of::<T>());
 
-        match device.upload_method {
+        match *device.upload_method() {
             UploadMethod::Immediate => {
-                if cfg!(debug_assertions) {
-                    let mut bound_buffer = [0];
-                    unsafe {
-                        device.gl.get_integer_v(gl::PIXEL_UNPACK_BUFFER_BINDING, &mut bound_buffer);
-                    }
-                    assert_eq!(bound_buffer[0], 0, "GL_PIXEL_UNPACK_BUFFER must not be bound for immediate uploads.");
-                }
-
-                Self::update_impl(device, UploadChunk {
-                    rect,
-                    stride: Some(src_stride as i32),
-                    offset: data as _,
-                    format_override,
+                let src = unsafe { slice::from_raw_parts(data as *const u8, src_size) };
+                device.upload_texture_region(
                     texture,
-                });
+                    rect,
+                    Some(src_stride as i32),
+                    format_override,
+                    src,
+                );
 
                 width_bytes * rect.height() as usize
             }
@@ -5202,18 +5372,16 @@ impl<'a> TextureUploader<'a> {
     }
 
     fn flush_buffer(device: &mut Device, pbo_pool: &mut UploadBufferPool, mut buffer: PixelBuffer) {
-        device.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, buffer.inner.pbo.id);
-        match buffer.inner.mapping {
-            PBOMapping::Unmapped => unreachable!("UploadPBO should be mapped at this stage."),
-            PBOMapping::Transient(_) => {
-                device.gl.unmap_buffer(gl::PIXEL_UNPACK_BUFFER);
-                buffer.inner.mapping = PBOMapping::Unmapped;
-            }
-            PBOMapping::Persistent(_) => {
-                device.gl.flush_mapped_buffer_range(gl::PIXEL_UNPACK_BUFFER, 0, buffer.size_used as _);
-            }
+        device.flush_upload_buffer(
+            &buffer.inner.pbo,
+            &buffer.inner.mapping,
+            buffer.size_used,
+            &buffer.chunks,
+        );
+        buffer.chunks.clear();
+        if let UploadBufferMapping::Transient(_) = buffer.inner.mapping {
+            buffer.inner.mapping = UploadBufferMapping::Unmapped;
         }
-        buffer.flush_chunks(device);
         let pbo = mem::replace(&mut buffer.inner, UploadPBO::empty());
         pbo_pool.return_pbo(device, pbo);
     }
@@ -5223,62 +5391,6 @@ impl<'a> TextureUploader<'a> {
     pub fn flush(mut self, device: &mut Device) {
         for buffer in self.buffers.drain(..) {
             Self::flush_buffer(device, self.pbo_pool, buffer);
-        }
-
-        device.gl.bind_buffer(gl::PIXEL_UNPACK_BUFFER, 0);
-    }
-
-    fn update_impl(device: &mut Device, chunk: UploadChunk) {
-        device.bind_texture(DEFAULT_TEXTURE, chunk.texture, Swizzle::default());
-
-        let format = chunk.format_override.unwrap_or(chunk.texture.format);
-        let (gl_format, bpp, data_type) = match format {
-            ImageFormat::R8 => (gl::RED, 1, gl::UNSIGNED_BYTE),
-            ImageFormat::R16 => (gl::RED, 2, gl::UNSIGNED_SHORT),
-            ImageFormat::BGRA8 => (device.bgra_formats.external, 4, device.bgra_pixel_type),
-            ImageFormat::RGBA8 => (gl::RGBA, 4, gl::UNSIGNED_BYTE),
-            ImageFormat::RG8 => (gl::RG, 2, gl::UNSIGNED_BYTE),
-            ImageFormat::RG16 => (gl::RG, 4, gl::UNSIGNED_SHORT),
-            ImageFormat::RGBAF32 => (gl::RGBA, 16, gl::FLOAT),
-            ImageFormat::RGBAI32 => (gl::RGBA_INTEGER, 16, gl::INT),
-        };
-
-        let row_length = match chunk.stride {
-            Some(value) => value / bpp,
-            None => chunk.texture.size.width,
-        };
-
-        if chunk.stride.is_some() {
-            device.gl.pixel_store_i(
-                gl::UNPACK_ROW_LENGTH,
-                row_length as _,
-            );
-        }
-
-        let pos = chunk.rect.min;
-        let size = chunk.rect.size();
-        let gl_target = get_gl_target(chunk.texture.target);
-
-        device.gl.tex_sub_image_2d_pbo(
-            gl_target,
-            0,
-            pos.x as _,
-            pos.y as _,
-            size.width as _,
-            size.height as _,
-            gl_format,
-            data_type,
-            chunk.offset,
-        );
-
-        
-        if chunk.texture.filter == TextureFilter::Trilinear {
-            device.gl.generate_mipmap(gl_target);
-        }
-
-        
-        if chunk.stride.is_some() {
-            device.gl.pixel_store_i(gl::UNPACK_ROW_LENGTH, 0 as _);
         }
     }
 }
