@@ -463,6 +463,7 @@ pref("browser.urlbar.newtab.featureGate", true);
 #else
 pref("browser.urlbar.newtab.featureGate", false);
 #endif
+pref("browser.urlbar.newtab.variantA", false);
 
 
 
