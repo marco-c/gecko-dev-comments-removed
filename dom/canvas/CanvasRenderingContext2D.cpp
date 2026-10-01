@@ -5559,8 +5559,26 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   if (currentFont.IsEmpty()) {
     currentFont = kDefaultFontStyle;
   }
-  if (!SetFontInternal(currentFont, err) || err.Failed()) {
-    err.SuppressException();
+
+  bool fontWasSet = SetFontInternal(currentFont, err) && !err.Failed();
+  err.SuppressException();
+  
+  
+  if (GetPresShell() != presShell || (presShell && presShell->IsDestroying())) {
+    
+    
+    
+    fontWasSet = false;
+    presShell = GetPresShell();
+    presContext = presShell ? presShell->GetPresContext() : nullptr;
+    if (presContext) {
+      visProvider = presContext;
+    } else {
+      visProvider = mOffscreenCanvas;
+    }
+  }
+
+  if (!fontWasSet) {
     
     nsAtom* language = nsGkAtoms::x_western;
     bool explicitLanguage = false;
