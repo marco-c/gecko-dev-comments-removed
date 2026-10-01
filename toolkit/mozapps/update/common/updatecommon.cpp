@@ -55,8 +55,6 @@ typedef struct _REPARSE_DATA_BUFFER {
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
 #endif
 
-UpdateLog::UpdateLog() : logFP(nullptr) {}
-
 void UpdateLog::Init(NS_tchar* logFilePath) {
   if (logFP) {
     return;
@@ -559,4 +557,9 @@ void LogToOS(const NS_tchar* message) {
 #if defined(XP_MACOSX)
   os_log(updaterLogger, "%{public}s", message);
 #endif
+}
+
+bool EnvHasValue(const char* name) {
+  const char* val = getenv(name);
+  return (val && *val);
 }
