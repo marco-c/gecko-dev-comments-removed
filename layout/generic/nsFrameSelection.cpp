@@ -2771,8 +2771,13 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
     bool aRemoveOutsideOfCellRange, mozilla::dom::Selection& aNormalSelection) {
   MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
-  nsTableWrapperFrame* tableFrame =
+  
+  
+  nsTableWrapperFrame* tableFrameCast =
       do_QueryFrame(aTableContent->GetPrimaryFrame());
+  
+  
+  AutoWeakFrame tableFrame(tableFrameCast);
   if (!tableFrame) {
     return NS_ERROR_FAILURE;
   }
@@ -2804,6 +2809,9 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
             curColIndex < minColIndex || curColIndex > maxColIndex) {
           aNormalSelection.RemoveRangeAndUnselectFramesAndNotifyListeners(
               *range, IgnoreErrors());
+          if (!tableFrame.IsAlive()) {
+            return NS_OK;
+          }
           
           mSelectedCellIndex--;
         }
@@ -2811,15 +2819,22 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
       } else {
         
         
+
+        MOZ_ASSERT(tableFrame.IsAlive());
+        
+        
+        
+        auto tempTableFrame =
+            static_cast<nsTableWrapperFrame*>(tableFrame.GetFrame());
         nsTableCellFrame* cellFrame =
-            tableFrame->GetCellFrameAt(curRowIndex, curColIndex);
+            tempTableFrame->GetCellFrameAt(curRowIndex, curColIndex);
 
         uint32_t origRowIndex = cellFrame->RowIndex();
         uint32_t origColIndex = cellFrame->ColIndex();
         uint32_t actualRowSpan =
-            tableFrame->GetEffectiveRowSpanAt(origRowIndex, origColIndex);
+            tempTableFrame->GetEffectiveRowSpanAt(origRowIndex, origColIndex);
         uint32_t actualColSpan =
-            tableFrame->GetEffectiveColSpanAt(curRowIndex, curColIndex);
+            tempTableFrame->GetEffectiveColSpanAt(curRowIndex, curColIndex);
         if (origRowIndex <= static_cast<uint32_t>(maxRowIndex) &&
             maxRowIndex >= 0 &&
             origRowIndex + actualRowSpan - 1 >=
@@ -2830,6 +2845,9 @@ nsresult nsFrameSelection::TableSelection::UnselectCells(
                 static_cast<uint32_t>(minColIndex)) {
           aNormalSelection.RemoveRangeAndUnselectFramesAndNotifyListeners(
               *range, IgnoreErrors());
+          if (!tableFrame.IsAlive()) {
+            return NS_OK;
+          }
           
           mSelectedCellIndex--;
         }
@@ -2864,8 +2882,13 @@ static nsresult AddCellsToSelection(const nsIContent* aTableContent,
                                     Selection& aNormalSelection) {
   MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
-  nsTableWrapperFrame* tableFrame =
+  
+  
+  nsTableWrapperFrame* tableFrameCast =
       do_QueryFrame(aTableContent->GetPrimaryFrame());
+  
+  
+  AutoWeakFrame tableFrame(tableFrameCast);
   if (!tableFrame) {  
     return NS_ERROR_FAILURE;
   }
@@ -2875,7 +2898,12 @@ static nsresult AddCellsToSelection(const nsIContent* aTableContent,
   while (true) {
     uint32_t col = aStartColumnIndex;
     while (true) {
-      nsTableCellFrame* cellFrame = tableFrame->GetCellFrameAt(row, col);
+      MOZ_ASSERT(tableFrame.IsAlive());
+      
+      
+      
+      auto cellFrame = static_cast<nsTableWrapperFrame*>(tableFrame.GetFrame())
+                           ->GetCellFrameAt(row, col);
 
       
       
@@ -2884,7 +2912,7 @@ static nsresult AddCellsToSelection(const nsIContent* aTableContent,
         uint32_t origCol = cellFrame->ColIndex();
         if (origRow == row && origCol == col && !cellFrame->IsSelected()) {
           result = SelectCellElement(cellFrame->GetContent(), aNormalSelection);
-          if (NS_FAILED(result)) {
+          if (NS_FAILED(result) || !tableFrame.IsAlive()) {
             return result;
           }
         }
