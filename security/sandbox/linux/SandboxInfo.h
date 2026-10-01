@@ -62,9 +62,9 @@ class SandboxInfo {
   uint32_t AsInteger() const { return mFlags; }
 
  private:
+  SandboxInfo();  
   enum Flags mFlags;
   static const MOZ_EXPORT SandboxInfo sSingleton;
-  SandboxInfo();
 };
 
 }  
