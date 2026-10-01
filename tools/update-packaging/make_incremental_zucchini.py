@@ -607,6 +607,13 @@ def download_file(url, save_path, allow_staging, signing_cert=None):
         verify_signature(save_path, signing_cert)
 
 
+def cleanup_workdir(workdir):
+    try:
+        shutil.rmtree(workdir)
+    except OSError as e:
+        log(f"Could not remove work directory {workdir}: {e}", "cleanup_workdir")
+
+
 def process_single(
     update_number,
     from_mar_url,
@@ -645,6 +652,10 @@ def process_single(
             mar_manifest["previousVersion"] = previousVersion
         
         if validate_mar_channel_id(target_mar, mar_channel_id):
+            
+            
+            
+            cleanup_workdir(workdir)
             return None, mar_manifest, from_hashes
         else:
             
