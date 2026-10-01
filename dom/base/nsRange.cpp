@@ -1258,11 +1258,11 @@ void nsRange::AssertIfMismatchRootAndRangeBoundaries(
 
 
 template <typename SPT, typename SRT, typename EPT, typename ERT>
-void nsRange::
-    DoSetRange(const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
-               const RangeBoundaryBase<EPT, ERT>& aEndBoundary,
-               nsINode* aRootNode,
-               bool aNotInsertedYet , RangeBehaviour aRangeBehaviour ) {
+void nsRange::DoSetRange(
+    const RangeBoundaryBase<SPT, SRT>& aStartBoundary,
+    const RangeBoundaryBase<EPT, ERT>& aEndBoundary, nsINode* aRootNode,
+    bool aNotInsertedYet , RangeBehaviour aRangeBehaviour
+    ) {
   mIsPositioned = aStartBoundary.IsSetAndValid() &&
                   aEndBoundary.IsSetAndValid() && aRootNode;
   MOZ_ASSERT_IF(!mIsPositioned, !aStartBoundary.IsSet());
