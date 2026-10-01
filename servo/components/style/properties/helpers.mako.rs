@@ -2,7 +2,7 @@
 
 
 
-<%! from data import to_rust_ident, to_camel_case, SYSTEM_FONT_LONGHANDS %>
+<%! from data import to_camel_case, SYSTEM_FONT_LONGHANDS %>
 
 <%def name="longhand(property)">
 
@@ -192,79 +192,6 @@ pub mod ${property.ident} {
         <specified::${property.predefined_type} as crate::parser::Parse>::parse(context, input)
         % endif
     }
-    % elif property.keyword:
-    pub use self::computed_value::T as SpecifiedValue;
-    pub mod computed_value {
-        #[allow(unused_imports)]
-        use crate::derives::*;
-        #[derive(
-            Clone,
-            Copy,
-            Debug,
-            Deserialize,
-            Eq,
-            FromPrimitive,
-            Hash,
-            MallocSizeOf,
-            Parse,
-            PartialEq,
-            Serialize,
-            SpecifiedValueInfo,
-            ToAnimatedValue,
-            ToComputedValue,
-            ToCss,
-            ToResolvedValue,
-            ToShmem,
-            ToTyped,
-        )]
-        pub enum T {
-        % for variant in property.keyword.values_for(engine):
-        <%
-            aliases = []
-            for alias, v in property.keyword.aliases_for(engine).items():
-                if variant == v:
-                    aliases.append(alias)
-        %>
-        % if aliases:
-        #[parse(aliases = "${','.join(sorted(aliases))}")]
-        % endif
-        ${to_camel_case(variant)},
-        % endfor
-        }
-    }
-    #[inline]
-    pub fn get_initial_value() -> computed_value::T {
-        computed_value::T::${to_camel_case(property.keyword.values[0])}
-    }
-    #[inline]
-    pub fn get_initial_specified_value() -> SpecifiedValue {
-        SpecifiedValue::${to_camel_case(property.keyword.values[0])}
-    }
-    #[inline]
-    pub fn parse(_context: &ParserContext, input: &mut Parser)
-                         -> Result<SpecifiedValue, ParseError> {
-        SpecifiedValue::parse(input)
-    }
-
-    #[cfg(feature = "gecko")]
-    impl SpecifiedValue {
-        
-        
-        
-        pub fn from_gecko_keyword(kw: u32) -> Self {
-            use crate::gecko_bindings::structs;
-            % for value in property.keyword.values_for(engine):
-            
-            const ${to_rust_ident(value).upper()}: u32 = structs::${property.keyword.gecko_constant(value)} as u32;
-            % endfor
-            match kw {
-                % for value in property.keyword.values_for(engine):
-                ${to_rust_ident(value).upper()} => Self::${to_camel_case(value)},
-                % endfor
-                _ => panic!("Found unexpected value in style struct for ${property.name} property"),
-            }
-        }
-    }
     % endif
     % if property.vector:
     } 
@@ -283,7 +210,7 @@ pub mod ${property.ident} {
     
     
     % if property.vector:
-    <% allow_empty = not property.initial_value and not property.keyword %>
+    <% allow_empty = not property.initial_value %>
     #[allow(unused_imports)]
     use smallvec::SmallVec;
 
