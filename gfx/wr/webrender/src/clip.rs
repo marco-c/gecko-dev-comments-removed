@@ -1509,7 +1509,6 @@ impl ClipStore {
                 
                 
                 
-                
                 ClipSnap::Exact => node.unsnapped_clip_rect,
             };
 

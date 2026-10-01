@@ -73,6 +73,18 @@ pub struct SceneSpatialNode {
     pub is_root_coord_system: bool,
 }
 
+
+
+
+
+
+
+
+
+
+
+const REFERENCE_FRAME_ORIGIN_QUANTUM: f32 = 1.0 / 128.0;
+
 impl SceneSpatialNode {
     pub fn new_reference_frame(
         parent_index: Option<SpatialNodeIndex>,
@@ -84,6 +96,17 @@ impl SceneSpatialNode {
         is_root_coord_system: bool,
         is_pipeline_root: bool,
     ) -> Self {
+        
+        
+        
+        
+        let origin_in_parent_reference_frame = {
+            let q = REFERENCE_FRAME_ORIGIN_QUANTUM;
+            LayoutVector2D::new(
+                (origin_in_parent_reference_frame.x / q).round() * q,
+                (origin_in_parent_reference_frame.y / q).round() * q,
+            )
+        };
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform,
@@ -223,29 +246,6 @@ pub struct SpatialNode {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-const DEVICE_OFFSET_QUANTUM: f32 = 1.0 / 128.0;
-
-fn quantize_device_offset(value: f32) -> f32 {
-    (value / DEVICE_OFFSET_QUANTUM).round() * DEVICE_OFFSET_QUANTUM
-}
-
-
-
-
-
-
-
 fn snap_offset<OffsetUnits, ScaleUnits>(
     offset: Vector2D<f32, OffsetUnits>,
     scale: Vector2D<f32, ScaleUnits>,
@@ -256,8 +256,8 @@ fn snap_offset<OffsetUnits, ScaleUnits>(
     
     
     
-    let snapped_x = quantize_device_offset(offset.x * scale.x).round();
-    let snapped_y = quantize_device_offset(offset.y * scale.y).round();
+    let snapped_x = (offset.x * scale.x).round();
+    let snapped_y = (offset.y * scale.y).round();
     Vector2D::new(
         if scale.x != 0.0 { snapped_x / scale.x } else { offset.x },
         if scale.y != 0.0 { snapped_y / scale.y } else { offset.y },
@@ -496,10 +496,7 @@ impl SpatialNode {
                             
                             cs_scale_offset = scale_offset.then(&state.coordinate_system_relative_scale_offset);
                             if let ReferenceFrameKind::Transform { should_snap: true, .. } = info.kind {
-                                cs_scale_offset.offset = Vector2D::new(
-                                    quantize_device_offset(cs_scale_offset.offset.x).round(),
-                                    quantize_device_offset(cs_scale_offset.offset.y).round(),
-                                );
+                                cs_scale_offset.offset = cs_scale_offset.offset.round();
                             }
                         }
                         None => reset_cs_id = true,
