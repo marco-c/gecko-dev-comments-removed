@@ -2250,28 +2250,58 @@ void MacroAssemblerLOONG64::minMaxDouble(FloatRegister srcDest,
                                          bool isMax) {
   if (srcDest == second) return;
 
-  if (!handleNaN) {
-    if (isMax) {
-      as_fmax_d(srcDest, srcDest, second);
-    } else {
-      as_fmin_d(srcDest, srcDest, second);
-    }
-    return;
-  }
-
   Label nan, done;
 
-  
-  ma_bc_d(srcDest, second, &nan, Assembler::DoubleUnordered, ShortJump);
+  if (handleNaN) {
+    ma_bc_d(srcDest, second, &nan, Assembler::DoubleUnordered, ShortJump);
+  }
+
+  ScratchDoubleScope2 fpscratch2(asMasm());
+  as_fmov_d(fpscratch2, srcDest);  
   if (isMax) {
     as_fmax_d(srcDest, srcDest, second);
   } else {
     as_fmin_d(srcDest, srcDest, second);
   }
-  ma_b(&done, ShortJump);
 
-  bind(&nan);
-  as_fadd_d(srcDest, srcDest, second);
+  {
+    UseScratchRegisterScope temps(asMasm());
+    const Register scratch = temps.Acquire();
+
+    as_movfr2gr_d(scratch, srcDest);
+    
+    as_bstrpick_d(scratch, scratch, 62, 0);
+    ma_b(scratch, zero, &done, Assembler::NotEqual, ShortJump);
+  }
+
+  {
+    
+    
+    
+    
+    UseScratchRegisterScope temps(asMasm());
+    const Register scratch = temps.Acquire();
+    const Register scratch2 = temps.Acquire();
+
+    as_movfr2gr_d(scratch, fpscratch2);
+    as_movfr2gr_d(scratch2, second);
+    
+    
+    if (isMax) {
+      as_and(scratch, scratch, scratch2);
+    } else {
+      as_or(scratch, scratch, scratch2);
+    }
+    as_bstrins_d(scratch, zero, 62, 0);
+    as_movgr2fr_d(srcDest, scratch);
+  }
+
+  if (handleNaN) {
+    ma_b(&done, ShortJump);
+
+    bind(&nan);
+    as_fadd_d(srcDest, srcDest, second);
+  }
 
   bind(&done);
 }
@@ -2281,28 +2311,58 @@ void MacroAssemblerLOONG64::minMaxFloat32(FloatRegister srcDest,
                                           bool isMax) {
   if (srcDest == second) return;
 
-  if (!handleNaN) {
-    if (isMax) {
-      as_fmax_s(srcDest, srcDest, second);
-    } else {
-      as_fmin_s(srcDest, srcDest, second);
-    }
-    return;
-  }
-
   Label nan, done;
 
-  
-  ma_bc_s(srcDest, second, &nan, Assembler::DoubleUnordered, ShortJump);
+  if (handleNaN) {
+    ma_bc_s(srcDest, second, &nan, Assembler::DoubleUnordered, ShortJump);
+  }
+
+  ScratchFloat32Scope2 fpscratch2(asMasm());
+  as_fmov_s(fpscratch2, srcDest);  
   if (isMax) {
     as_fmax_s(srcDest, srcDest, second);
   } else {
     as_fmin_s(srcDest, srcDest, second);
   }
-  ma_b(&done, ShortJump);
 
-  bind(&nan);
-  as_fadd_s(srcDest, srcDest, second);
+  {
+    UseScratchRegisterScope temps(asMasm());
+    const Register scratch = temps.Acquire();
+
+    as_movfr2gr_s(scratch, srcDest);
+    
+    as_bstrpick_w(scratch, scratch, 30, 0);
+    ma_b(scratch, zero, &done, Assembler::NotEqual, ShortJump);
+  }
+
+  {
+    
+    
+    
+    
+    UseScratchRegisterScope temps(asMasm());
+    const Register scratch = temps.Acquire();
+    const Register scratch2 = temps.Acquire();
+
+    as_movfr2gr_s(scratch, fpscratch2);
+    as_movfr2gr_s(scratch2, second);
+    
+    
+    if (isMax) {
+      as_and(scratch, scratch, scratch2);
+    } else {
+      as_or(scratch, scratch, scratch2);
+    }
+    as_bstrins_w(scratch, zero, 30, 0);
+    as_movgr2fr_w(srcDest, scratch);
+  }
+
+  if (handleNaN) {
+    ma_b(&done, ShortJump);
+
+    bind(&nan);
+    as_fadd_s(srcDest, srcDest, second);
+  }
 
   bind(&done);
 }
