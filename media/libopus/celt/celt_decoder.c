@@ -281,11 +281,27 @@ void opus_custom_decoder_destroy(CELTDecoder *st)
 }
 #endif 
 
-#if !defined(CUSTOM_MODES) && !defined(ENABLE_OPUS_CUSTOM_API) && !defined(ENABLE_QEXT)
 
 
 
-static void deemphasis_stereo_simple(celt_sig *in[], opus_res *pcm, int N, const opus_val16 coef0,
+opus_val32 celt_deemphasis_c(opus_res *y, const opus_val32 *x, opus_val16 coef0,
+      opus_val32 m, int N)
+{
+   int j;
+   for (j=0;j<N;j++)
+   {
+      celt_sig tmp = SATURATE(x[j] + VERY_SMALL + m, SIG_SAT);
+      m = MULT16_32_Q15(coef0, tmp);
+      y[j] = SIG2RES(tmp);
+   }
+   return m;
+}
+
+
+
+
+
+void deemphasis_stereo_simple_c(celt_sig *in[], opus_res *pcm, int N, opus_val16 coef0,
       celt_sig *mem)
 {
    celt_sig * OPUS_RESTRICT x0;
@@ -310,13 +326,12 @@ static void deemphasis_stereo_simple(celt_sig *in[], opus_res *pcm, int N, const
    mem[0] = m0;
    mem[1] = m1;
 }
-#endif
 
 #ifndef RESYNTH
 static
 #endif
 void deemphasis(celt_sig *in[], opus_res *pcm, int N, int C, int downsample, const opus_val16 *coef,
-      celt_sig *mem, int accum)
+      celt_sig *mem, int accum, int arch)
 {
    int c;
    int Nd;
@@ -328,10 +343,11 @@ void deemphasis(celt_sig *in[], opus_res *pcm, int N, int C, int downsample, con
    
    if (downsample == 1 && C == 2 && !accum)
    {
-      deemphasis_stereo_simple(in, pcm, N, coef[0], mem);
+      deemphasis_stereo_simple(in, pcm, N, coef[0], mem, arch);
       return;
    }
 #endif
+   (void)arch;
    ALLOC(scratch, N, celt_sig);
    coef0 = coef[0];
    Nd = N/downsample;
@@ -378,6 +394,11 @@ void deemphasis(celt_sig *in[], opus_res *pcm, int N, int C, int downsample, con
                m = MULT16_32_Q15(coef0, tmp);
                y[j*C] = ADD_RES(y[j*C], SIG2RES(tmp));
             }
+         } else if (C == 1)
+         {
+            
+
+            m = celt_deemphasis(y, x, coef0, m, N, arch);
          } else
          {
             for (j=0;j<N;j++)
@@ -641,8 +662,11 @@ void update_plc_state(LPCNetPLCState *lpcnet, celt_sig *decode_mem[2], float *pl
    int i;
    int tmp_read_post, tmp_fec_skip;
    int offset;
-   celt_sig buf48k[DECODE_BUFFER_SIZE];
-   opus_int16 buf16k[PLC_UPDATE_SAMPLES];
+   VARDECL(celt_sig, buf48k);
+   VARDECL(opus_int16, buf16k);
+   SAVE_STACK;
+   ALLOC(buf48k, DECODE_BUFFER_SIZE, celt_sig);
+   ALLOC(buf16k, PLC_UPDATE_SAMPLES, opus_int16);
    if (CC == 1) OPUS_COPY(buf48k, decode_mem[0], DECODE_BUFFER_SIZE);
    else {
       for (i=0;i<DECODE_BUFFER_SIZE;i++) {
@@ -669,6 +693,7 @@ void update_plc_state(LPCNetPLCState *lpcnet, celt_sig *decode_mem[2], float *pl
    }
    lpcnet->fec_read_pos = tmp_read_post;
    lpcnet->fec_skip = tmp_fec_skip;
+   RESTORE_STACK;
 }
 #endif
 
@@ -1281,7 +1306,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
       , lpcnet
 #endif
                       );
-      deemphasis(out_syn, pcm, N, CC, st->downsample, mode->preemph, st->preemph_memD, accum);
+      deemphasis(out_syn, pcm, N, CC, st->downsample, mode->preemph, st->preemph_memD, accum, st->arch);
       RESTORE_STACK;
       return frame_size/st->downsample;
    }
@@ -1471,7 +1496,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
    }
    ALLOC(extra_quant, nbEBands+NB_QEXT_BANDS, int);
    ALLOC(extra_pulses, nbEBands+NB_QEXT_BANDS, int);
-   qext_bits = ((opus_int32)qext_bytes*8<<BITRES) - (opus_int32)ec_tell_frac(dec) - 1;
+   qext_bits = ((opus_int32)qext_bytes*8<<BITRES) - (opus_int32)ec_tell_frac(&ext_dec) - 1;
    clt_compute_extra_allocation(mode, qext_mode, start, end, qext_end, NULL, NULL,
          qext_bits, extra_pulses, extra_quant, C, LM, &ext_dec, 0, 0, 0);
    if (qext_bytes > 0) {
@@ -1504,7 +1529,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
       ec_dec_init(&dummy_dec, NULL, 0);
       OPUS_CLEAR(zeros, end);
       ext_balance = qext_bytes*(8<<BITRES) - ec_tell_frac(&ext_dec);
-      for (i=0;i<qext_end;i++) ext_balance -= extra_pulses[nbEBands+i] + C*(extra_quant[nbEBands+1]<<BITRES);
+      for (i=0;i<qext_end;i++) ext_balance -= extra_pulses[nbEBands+i] + C*(extra_quant[nbEBands+i]<<BITRES);
       unquant_fine_energy(qext_mode, 0, qext_end, st->qext_oldBandE, NULL, &extra_quant[nbEBands], &ext_dec, C);
       quant_all_bands(0, qext_mode, 0, qext_end, X, C==2 ? X+N : NULL, qext_collapse_masks,
             NULL, &extra_pulses[nbEBands], shortBlocks, spread_decision, qext_dual_stereo, qext_intensity, zeros,
@@ -1595,7 +1620,7 @@ int celt_decode_with_ec_dred(CELTDecoder * OPUS_RESTRICT st, const unsigned char
    if (qext_bytes) st->rng = st->rng ^ ext_dec.rng;
 #endif
 
-   deemphasis(out_syn, pcm, N, CC, st->downsample, mode->preemph, st->preemph_memD, accum);
+   deemphasis(out_syn, pcm, N, CC, st->downsample, mode->preemph, st->preemph_memD, accum, st->arch);
    st->loss_duration = 0;
    st->plc_duration = 0;
    st->last_frame_type = FRAME_NORMAL;

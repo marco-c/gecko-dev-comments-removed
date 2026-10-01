@@ -398,4 +398,10 @@ void celt_pitch_xcorr_float_neon(const opus_val16 *_x, const opus_val16 *_y,
       xcorr[i] = celt_inner_prod_neon(_x, _y+i, len);
    }
 }
+
+
+
+
+
+
 #endif
