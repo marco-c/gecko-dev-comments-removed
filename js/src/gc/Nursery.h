@@ -28,16 +28,6 @@
 #include "js/Utility.h"
 #include "js/Vector.h"
 
-
-
-
-
-
-
-#ifdef JS_64BIT
-#  define JS_CONTIGUOUS_NURSERY 1
-#endif
-
 #define FOR_EACH_NURSERY_PROFILE_TIME(_)
  \
   _(Total, "total")                           \
@@ -97,42 +87,6 @@ class TenuringTracer;
 
 class Nursery {
  public:
-  class PageRegion {
-   public:
-    PageRegion() = default;
-    PageRegion(uintptr_t start, size_t bytes) : start_(start), bytes_(bytes) {
-      MOZ_ASSERT(startAddress() % gc::SystemPageSize() == 0);
-      MOZ_ASSERT(size() % gc::SystemPageSize() == 0);
-    }
-
-    uintptr_t startAddress() const { return start_; }
-    size_t size() const { return bytes_; }
-
-    bool isEmpty() const { return size() == 0; }
-
-    void* startPtr() const { return reinterpret_cast<void*>(startAddress()); }
-
-    bool containsAddress(uintptr_t addr) const {
-      return addr - startAddress() < size();
-    }
-    bool containsPtr(const void* ptr) const {
-      return containsAddress(uintptr_t(ptr));
-    }
-
-    PageRegion slice(size_t start, size_t end) const {
-      MOZ_ASSERT(start <= end);
-      MOZ_ASSERT(end <= size());
-      MOZ_ASSERT(start % gc::SystemPageSize() == 0);
-      MOZ_ASSERT(end % gc::SystemPageSize() == 0);
-      return PageRegion(startAddress() + start, end - start);
-    }
-    PageRegion slice(size_t start) const { return slice(start, size()); }
-
-   private:
-    uintptr_t start_ = 0;
-    size_t bytes_ = 0;
-  };
-
   explicit Nursery(gc::GCRuntime* gc);
   ~Nursery();
 
@@ -391,8 +345,6 @@ class Nursery {
   
   static size_t roundSize(size_t size);
 
-  static constexpr size_t MaxNurseryBytesParam = 128 * 1024 * 1024;
-
   inline void addMallocedBufferBytes(size_t nbytes);
   inline void removeMallocedBufferBytes(size_t nbytes);
 
@@ -426,15 +378,9 @@ class Nursery {
   }
 
   
-  unsigned allocatedChunkCount() const {
-#ifdef JS_CONTIGUOUS_NURSERY
-    return maxChunkCount();
-#else
-    return toSpace.chunks_.length();
-#endif
-  }
-  uint32_t activeChunkCount() const { return toSpace.activeChunkCount(); }
-  uint32_t currentChunk() const { return toSpace.currentChunk(); }
+  unsigned allocatedChunkCount() const { return toSpace.chunks_.length(); }
+
+  uint32_t currentChunk() const { return toSpace.currentChunk_; }
   uint32_t startChunk() const { return toSpace.startChunk_; }
   uintptr_t startPosition() const { return toSpace.startPosition_; }
 
@@ -458,11 +404,12 @@ class Nursery {
   
   double calcPromotionRate(bool* validForTenuring) const;
 
-  NurseryChunk& chunk(unsigned index) const { return *toSpace.chunk(index); }
+  NurseryChunk& chunk(unsigned index) const { return *toSpace.chunks_[index]; }
 
-#ifdef JS_CONTIGUOUS_NURSERY
-  bool reserveContiguousNursery();
-#endif
+  
+  
+  void moveToStartOfChunk(unsigned chunkno);
+
   bool initFirstChunk(AutoLockGCBgAlloc& lock);
   void setCapacity(size_t newCapacity);
 
@@ -562,11 +509,9 @@ class Nursery {
   void shrinkAllocableSpace(size_t newCapacity);
   void minimizeAllocableSpace();
 
-#ifndef JS_CONTIGUOUS_NURSERY
   
   
   void freeChunksFrom(Space& space, unsigned firstFreeChunk);
-#endif
 
   
   
@@ -593,24 +538,6 @@ class Nursery {
   using BufferRelocationOverlay = void*;
   using BufferSet = HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>;
 
-  class ChunkRegion : public PageRegion {
-   public:
-    ChunkRegion() = default;
-    explicit ChunkRegion(PageRegion pages) : PageRegion(pages) {
-      MOZ_ASSERT(startAddress() % gc::ChunkSize == 0);
-      MOZ_ASSERT(size() % gc::ChunkSize == 0);
-    }
-    ChunkRegion(uintptr_t start, size_t size)
-        : ChunkRegion(PageRegion(start, size)) {}
-
-    size_t chunkCount() const { return size() / gc::ChunkSize; }
-    NurseryChunk* chunk(unsigned idx) const {
-      MOZ_ASSERT(idx < chunkCount());
-      uintptr_t addr = startAddress() + idx * gc::ChunkSize;
-      return reinterpret_cast<NurseryChunk*>(addr);
-    }
-  };
-
   struct Space {
     
 
@@ -620,19 +547,11 @@ class Nursery {
     
     uintptr_t currentEnd_ = 0;
 
-#ifdef JS_CONTIGUOUS_NURSERY
-    
-    
-    ChunkRegion region_;
-#else
     
     Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
-#endif  
 
     
-    
-    
-    uint32_t activeChunkCount_ = 0;
+    uint32_t currentChunk_ = 0;
 
     
     uint32_t maxChunkCount_ = 0;
@@ -656,23 +575,6 @@ class Nursery {
     inline bool isEmpty() const;
     inline bool isInside(const void* p) const;
 
-    uint32_t activeChunkCount() const { return activeChunkCount_; }
-
-    
-    uint32_t currentChunk() const {
-      MOZ_ASSERT(activeChunkCount());
-      return activeChunkCount() - 1;
-    }
-
-    NurseryChunk* chunk(unsigned index) const {
-      MOZ_ASSERT(index < activeChunkCount());
-#ifdef JS_CONTIGUOUS_NURSERY
-      return region_.chunk(index);
-#else
-      return chunks_[index];
-#endif  
-    }
-
     
     
     inline size_t offsetFromAddress(uintptr_t addr) const;
@@ -680,38 +582,19 @@ class Nursery {
 
     void setKind(gc::ChunkKind newKind);
 
-#ifdef JS_CONTIGUOUS_NURSERY
-    void initializeRegion(ChunkRegion region, size_t initialCapacity);
-    [[nodiscard]] bool grow(size_t oldCapacity, size_t newCapacity);
-    void shrinkSynchronously(size_t oldCapacity, size_t newCapacity);
-#endif
-
     void clear(Nursery* nursery);
-
-    
-    
-    void moveToStartOfFirstChunk(Nursery* nursery);
-    void moveToStartOfNextChunk(Nursery* nursery);
-
+    void moveToStartOfChunk(Nursery* nursery, unsigned chunkno);
     void setCurrentEnd(Nursery* nursery);
     void setStartToCurrentPosition();
-#ifndef JS_CONTIGUOUS_NURSERY
     bool commitSubChunkRegion(size_t oldCapacity, size_t newCapacity);
     void decommitSubChunkRegion(Nursery* nursery, size_t oldCapacity,
                                 size_t newCapacity);
-#endif
 
 #ifdef DEBUG
     void checkKind(gc::ChunkKind expected) const;
-#  ifndef JS_CONTIGUOUS_NURSERY
     size_t findChunkIndex(uintptr_t chunkAddr) const;
-#  endif
 #endif
   };
-
-#ifdef JS_CONTIGUOUS_NURSERY
-  ChunkRegion region_;
-#endif
 
   Space toSpace;
   Space fromSpace;
@@ -854,26 +737,18 @@ class Nursery {
 };
 
 MOZ_ALWAYS_INLINE bool Nursery::isInside(const void* p) const {
-#ifdef JS_CONTIGUOUS_NURSERY
-  return region_.containsPtr(p);
-#else
   
   
   return toSpace.isInside(p) || fromSpace.isInside(p);
-#endif  
 }
 
 MOZ_ALWAYS_INLINE bool Nursery::Space::isInside(const void* p) const {
-#ifdef JS_CONTIGUOUS_NURSERY
-  return region_.containsPtr(p);
-#else
   for (auto* chunk : chunks_) {
     if (uintptr_t(p) - uintptr_t(chunk) < gc::ChunkSize) {
       return true;
     }
   }
   return false;
-#endif  
 }
 
 }  

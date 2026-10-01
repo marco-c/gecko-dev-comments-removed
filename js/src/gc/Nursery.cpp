@@ -67,12 +67,9 @@ struct NurseryChunk : public ChunkBase {
   explicit NurseryChunk(JSRuntime* runtime, ChunkKind kind, uint8_t chunkIndex)
       : ChunkBase(runtime, &runtime->gc.storeBuffer(), kind, chunkIndex) {}
 
-  Nursery::ChunkRegion region() const {
-    return Nursery::ChunkRegion(uintptr_t(this), sizeof(*this));
-  }
-
   void poisonRange(size_t start, size_t end, uint8_t value,
                    MemCheckKind checkKind);
+  void poisonAfterEvict(size_t extent = ChunkSize);
 
   
   
@@ -113,72 +110,39 @@ class NurserySweepTask : public GCParallelTask {
 class NurseryDecommitTask : public GCParallelTask {
  public:
   explicit NurseryDecommitTask(gc::GCRuntime* gc);
+  bool reserveSpaceForChunks(size_t nchunks);
 
   bool isEmpty(const AutoLockHelperThreadState& lock) const;
 
-#ifndef JS_CONTIGUOUS_NURSERY
-  bool reserveSpaceForChunks(size_t nchunks);
   void queueChunk(NurseryChunk* chunk, const AutoLockHelperThreadState& lock);
-#endif
-  void queueRegion(Nursery::PageRegion region,
-                   const AutoLockHelperThreadState& lock);
+  void queueRange(size_t newCapacity, NurseryChunk* chunk,
+                  const AutoLockHelperThreadState& lock);
 
  private:
-#ifndef JS_CONTIGUOUS_NURSERY
+  struct Region {
+    NurseryChunk* chunk;
+    size_t startOffset;
+  };
+
   using NurseryChunkVector = Vector<NurseryChunk*, 0, SystemAllocPolicy>;
-#endif
-  using PageRegionVector = Vector<Nursery::PageRegion, 2, SystemAllocPolicy>;
+  using RegionVector = Vector<Region, 2, SystemAllocPolicy>;
 
   void run(AutoLockHelperThreadState& lock) override;
 
-#ifndef JS_CONTIGUOUS_NURSERY
   NurseryChunkVector& chunksToDecommit() { return chunksToDecommit_.ref(); }
   const NurseryChunkVector& chunksToDecommit() const {
     return chunksToDecommit_.ref();
   }
-#endif
-
-  PageRegionVector& regionsToDecommit() { return regionsToDecommit_.ref(); }
-  const PageRegionVector& regionsToDecommit() const {
+  RegionVector& regionsToDecommit() { return regionsToDecommit_.ref(); }
+  const RegionVector& regionsToDecommit() const {
     return regionsToDecommit_.ref();
   }
 
-#ifndef JS_CONTIGUOUS_NURSERY
   MainThreadOrGCTaskData<NurseryChunkVector> chunksToDecommit_;
-#endif
-  MainThreadOrGCTaskData<PageRegionVector> regionsToDecommit_;
+  MainThreadOrGCTaskData<RegionVector> regionsToDecommit_;
 };
 
 }  
-
-static void UnmapPages(Nursery::PageRegion region) {
-  if (region.isEmpty()) {
-    return;
-  }
-  gc::UnmapPages(region.startPtr(), region.size());
-}
-
-static void MarkPagesUnusedHard(Nursery::PageRegion region) {
-  if (region.isEmpty()) {
-    return;
-  }
-  gc::MarkPagesUnusedHard(region.startPtr(), region.size());
-}
-
-[[nodiscard]] static bool MarkPagesInUseHard(Nursery::PageRegion region) {
-  if (region.isEmpty()) {
-    return true;
-  }
-  return gc::MarkPagesInUseHard(region.startPtr(), region.size());
-}
-
-static void Poison(Nursery::PageRegion region, uint8_t poisonValue,
-                   MemCheckKind checkKind) {
-  if (region.isEmpty()) {
-    return;
-  }
-  js::Poison(region.startPtr(), poisonValue, region.size(), checkKind);
-}
 
 inline void js::NurseryChunk::poisonRange(size_t start, size_t end,
                                           uint8_t value,
@@ -198,15 +162,29 @@ inline void js::NurseryChunk::poisonRange(size_t start, size_t end,
   Poison(ptr, value, size, checkKind);
 }
 
+inline void js::NurseryChunk::poisonAfterEvict(size_t extent) {
+  poisonRange(NurseryChunkHeaderSize, extent, JS_SWEPT_NURSERY_PATTERN,
+              MemCheckKind::MakeNoAccess);
+}
+
 inline void js::NurseryChunk::markPagesUnusedHard(size_t startOffset) {
   MOZ_ASSERT(startOffset >= NurseryChunkHeaderSize);  
-  MarkPagesUnusedHard(region().slice(startOffset));
+  MOZ_ASSERT(startOffset >= SystemPageSize());
+  MOZ_ASSERT(startOffset <= ChunkSize);
+  uintptr_t start = uintptr_t(this) + startOffset;
+  size_t length = ChunkSize - startOffset;
+  MarkPagesUnusedHard(reinterpret_cast<void*>(start), length);
 }
 
 inline bool js::NurseryChunk::markPagesInUseHard(size_t startOffset,
                                                  size_t endOffset) {
   MOZ_ASSERT(startOffset >= NurseryChunkHeaderSize);
-  return MarkPagesInUseHard(region().slice(startOffset, endOffset));
+  MOZ_ASSERT(startOffset >= SystemPageSize());
+  MOZ_ASSERT(startOffset < endOffset);
+  MOZ_ASSERT(endOffset <= ChunkSize);
+  uintptr_t start = uintptr_t(this) + startOffset;
+  size_t length = endOffset - startOffset;
+  return MarkPagesInUseHard(reinterpret_cast<void*>(start), length);
 }
 
 
@@ -235,15 +213,9 @@ js::NurseryDecommitTask::NurseryDecommitTask(gc::GCRuntime* gc)
 
 bool js::NurseryDecommitTask::isEmpty(
     const AutoLockHelperThreadState& lock) const {
-#ifndef JS_CONTIGUOUS_NURSERY
-  if (!chunksToDecommit().empty()) {
-    return false;
-  }
-#endif
-  return regionsToDecommit().empty();
+  return chunksToDecommit().empty() && regionsToDecommit().empty();
 }
 
-#ifndef JS_CONTIGUOUS_NURSERY
 bool js::NurseryDecommitTask::reserveSpaceForChunks(size_t nchunks) {
   MOZ_ASSERT(isIdle());
   return chunksToDecommit().reserve(nchunks);
@@ -254,17 +226,19 @@ void js::NurseryDecommitTask::queueChunk(
   MOZ_ASSERT(isIdle(lock));
   MOZ_ALWAYS_TRUE(chunksToDecommit().append(chunk));
 }
-#endif
 
-void js::NurseryDecommitTask::queueRegion(
-    Nursery::PageRegion region, const AutoLockHelperThreadState& lock) {
+void js::NurseryDecommitTask::queueRange(
+    size_t newCapacity, NurseryChunk* chunk,
+    const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(isIdle(lock));
   MOZ_ASSERT(regionsToDecommit_.ref().length() < 2);
-  regionsToDecommit().infallibleAppend(region);
+  MOZ_ASSERT(newCapacity < ChunkSize);
+  MOZ_ASSERT(newCapacity % SystemPageSize() == 0);
+
+  regionsToDecommit().infallibleAppend(Region{chunk, newCapacity});
 }
 
 void js::NurseryDecommitTask::run(AutoLockHelperThreadState& lock) {
-#ifndef JS_CONTIGUOUS_NURSERY
   while (!chunksToDecommit().empty()) {
     NurseryChunk* nurseryChunk = chunksToDecommit().popCopy();
     AutoUnlockHelperThreadState unlock(lock);
@@ -274,12 +248,11 @@ void js::NurseryDecommitTask::run(AutoLockHelperThreadState& lock) {
     AutoLockGC lock(gc);
     gc->recycleChunk(tenuredChunk, lock);
   }
-#endif  
 
   while (!regionsToDecommit().empty()) {
-    Nursery::PageRegion region = regionsToDecommit().popCopy();
+    Region region = regionsToDecommit().popCopy();
     AutoUnlockHelperThreadState unlock(lock);
-    MarkPagesUnusedHard(region);
+    region.chunk->markPagesUnusedHard(region.startOffset);
   }
 }
 
@@ -437,43 +410,13 @@ void js::Nursery::enable() {
   MOZ_ALWAYS_TRUE(gc->storeBuffer().enable());
 }
 
-static size_t SemispaceSizeFactor(bool semispaceEnabled) {
-  return semispaceEnabled ? 2 : 1;
-}
-
-#ifdef JS_CONTIGUOUS_NURSERY
-bool js::Nursery::reserveContiguousNursery() {
-  size_t reservedBytes = MaxNurseryBytesParam;
-  void* pages = MapAlignedPages(reservedBytes, ChunkSize);
-  if (!pages) {
-    return false;
-  }
-  region_ = ChunkRegion(uintptr_t(pages), reservedBytes);
-  size_t spaceReservedBytes =
-      reservedBytes / SemispaceSizeFactor(semispaceEnabled());
-  auto loRegion = ChunkRegion(region_.slice(0, spaceReservedBytes));
-  auto hiRegion = ChunkRegion(region_.slice(spaceReservedBytes, reservedBytes));
-  toSpace.initializeRegion(loRegion, capacity());
-  fromSpace.initializeRegion(hiRegion, semispaceEnabled_ ? capacity() : 0);
-  return true;
-}
-#endif
-
 bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
   MOZ_ASSERT(!isEnabled());
-  MOZ_ASSERT(toSpace.maxChunkCount_ == 0);
-  MOZ_ASSERT(fromSpace.maxChunkCount_ == 0);
+  MOZ_ASSERT(toSpace.chunks_.length() == 0);
+  MOZ_ASSERT(fromSpace.chunks_.length() == 0);
 
   setCapacity(minSpaceSize());
 
-#ifdef JS_CONTIGUOUS_NURSERY
-  if (!reserveContiguousNursery()) {
-    setCapacity(0);
-    MOZ_ASSERT(toSpace.isEmpty());
-    MOZ_ASSERT(fromSpace.isEmpty());
-    return false;
-  }
-#else
   size_t nchunks = toSpace.maxChunkCount_ + fromSpace.maxChunkCount_;
   if (!decommitTask->reserveSpaceForChunks(nchunks) ||
       !allocateNextChunk(lock)) {
@@ -482,8 +425,14 @@ bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
     MOZ_ASSERT(fromSpace.isEmpty());
     return false;
   }
-#endif  
-  toSpace.moveToStartOfFirstChunk(this);
+
+  toSpace.moveToStartOfChunk(this, 0);
+  toSpace.setStartToCurrentPosition();
+
+  if (semispaceEnabled_) {
+    fromSpace.moveToStartOfChunk(this, 0);
+    fromSpace.setStartToCurrentPosition();
+  }
 
   MOZ_ASSERT(toSpace.isEmpty());
   MOZ_ASSERT(fromSpace.isEmpty());
@@ -504,15 +453,7 @@ bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
 }
 
 size_t RequiredChunkCount(size_t nbytes) {
-  if (nbytes == 0) {
-    return 0;
-  } else if (nbytes <= ChunkSize) {
-    MOZ_ASSERT(nbytes % SystemPageSize() == 0);
-    return 1;
-  } else {
-    MOZ_ASSERT(nbytes % ChunkSize == 0);
-    return nbytes / ChunkSize;
-  }
+  return nbytes <= ChunkSize ? 1 : nbytes / ChunkSize;
 }
 
 void js::Nursery::setCapacity(size_t newCapacity) {
@@ -535,15 +476,10 @@ void js::Nursery::disable() {
   sweepTask->join();
   decommitTask->join();
 
-#if JS_CONTIGUOUS_NURSERY
-  UnmapPages(region_);
-  region_ = ChunkRegion();
-#else
   
   freeChunksFrom(toSpace, 0);
   freeChunksFrom(fromSpace, 0);
   decommitTask->runFromMainThread();
-#endif
 
   setCapacity(0);
 
@@ -712,11 +648,24 @@ void js::Nursery::enterZealMode() {
 
   decommitTask->join();
 
-  
-  
-  if (capacity() < maxSpaceSize()) {
-    growAllocableSpace(maxSpaceSize());
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+
+  if (isSubChunkMode()) {
+    if (!chunk(0).markPagesInUseHard(capacity_, ChunkSize)) {
+      oomUnsafe.crash("Out of memory trying to extend chunk for zeal mode");
+    }
+    chunk(0).poisonRange(capacity_, ChunkSize, JS_FRESH_NURSERY_PATTERN,
+                         MemCheckKind::MakeUndefined);
   }
+
+  setCapacity(maxSpaceSize());
+
+  size_t nchunks = toSpace.maxChunkCount_ + fromSpace.maxChunkCount_;
+  if (!decommitTask->reserveSpaceForChunks(nchunks)) {
+    oomUnsafe.crash("Nursery::enterZealMode");
+  }
+
+  setCurrentEnd();
 }
 
 void js::Nursery::leaveZealMode() {
@@ -727,11 +676,16 @@ void js::Nursery::leaveZealMode() {
   MOZ_ASSERT(isEmpty());
 
   
-  
-  toSpace.moveToStartOfFirstChunk(this);
-  if (minSpaceSize() < capacity()) {
-    shrinkAllocableSpace(minSpaceSize());
+  setCapacity(minSpaceSize());
+
+  toSpace.moveToStartOfChunk(this, 0);
+  toSpace.setStartToCurrentPosition();
+
+  if (semispaceEnabled_) {
+    fromSpace.moveToStartOfChunk(this, 0);
+    fromSpace.setStartToCurrentPosition();
   }
+
   poisonAndInitCurrentChunk();
 }
 #endif  
@@ -786,12 +740,14 @@ MOZ_NEVER_INLINE JS::GCReason Nursery::handleAllocationFailure() {
 }
 
 bool Nursery::moveToNextChunk() {
-  if (activeChunkCount() == maxChunkCount()) {
+  unsigned chunkno = currentChunk() + 1;
+  MOZ_ASSERT(chunkno <= maxChunkCount());
+  MOZ_ASSERT(chunkno <= allocatedChunkCount());
+  if (chunkno == maxChunkCount()) {
     return false;
   }
 
-#ifndef JS_CONTIGUOUS_NURSERY
-  if (activeChunkCount() == allocatedChunkCount()) {
+  if (chunkno == allocatedChunkCount()) {
     TimeStamp start = TimeStamp::Now();
     {
       AutoLockGCBgAlloc lock(gc);
@@ -800,11 +756,10 @@ bool Nursery::moveToNextChunk() {
       }
     }
     timeInChunkAlloc_ += TimeStamp::Now() - start;
+    MOZ_ASSERT(chunkno < allocatedChunkCount());
   }
-#endif
-  MOZ_ASSERT(activeChunkCount() < allocatedChunkCount());
 
-  toSpace.moveToStartOfNextChunk(this);
+  moveToStartOfChunk(chunkno);
   poisonAndInitCurrentChunk();
   return true;
 }
@@ -1468,11 +1423,15 @@ void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
     previousGC.reason = reason;
     previousGC.tenuredBytes = result.tenuredBytes;
     previousGC.tenuredCells = result.tenuredCells;
-    previousGC.nurseryUsedChunkCount = toSpace.activeChunkCount();
+    previousGC.nurseryUsedChunkCount = currentChunk() + 1;
   }
 
   
   maybeResizeNursery(options, reason);
+
+  if (!semispaceEnabled()) {
+    poisonAndInitCurrentChunk();
+  }
 
   bool validPromotionRate;
   const double promotionRate = calcPromotionRate(&validPromotionRate);
@@ -1571,7 +1530,6 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   MOZ_ASSERT(toSpace.isEmpty());
   MOZ_ASSERT(toSpace.mallocedBuffers.empty());
   if (semispaceEnabled_) {
-    toSpace.moveToStartOfFirstChunk(this);
     poisonAndInitCurrentChunk();
   }
 
@@ -1672,15 +1630,17 @@ js::Nursery::CollectionResult js::Nursery::doCollection(AutoGCSession& session,
   if (semispaceEnabled_) {
     
     tenureThreshold_ = toSpace.offsetFromExclusiveAddress(position());
-    
   } else {
     
     swapSpaces();
-    
-    poisonAndInitCurrentChunk();
+    MOZ_ASSERT(toSpace.isEmpty());
   }
 
   MOZ_ASSERT(fromSpace.isEmpty());
+
+  if (semispaceEnabled_) {
+    poisonAndInitCurrentChunk();
+  }
 
   return {mover.getPromotedSize(), mover.getPromotedCells()};
 }
@@ -1983,15 +1943,16 @@ void Nursery::requestMinorGC(JS::GCReason reason) {
       InterruptReason::MinorGC);
 }
 
+size_t SemispaceSizeFactor(bool semispaceEnabled) {
+  return semispaceEnabled ? 2 : 1;
+}
+
 size_t js::Nursery::totalCapacity() const {
   return capacity() * SemispaceSizeFactor(semispaceEnabled_);
 }
 
 size_t js::Nursery::totalCommitted() const {
-  size_t size = capacity_;
-#ifndef JS_CONTIGUOUS_NURSERY
-  size = std::min(size, allocatedChunkCount() * gc::ChunkSize);
-#endif
+  size_t size = std::min(capacity_, allocatedChunkCount() * gc::ChunkSize);
   return size * SemispaceSizeFactor(semispaceEnabled_);
 }
 
@@ -2124,80 +2085,57 @@ void js::Nursery::clear() {
   MOZ_ASSERT(fromSpace.isEmpty());
 }
 
-#ifdef JS_CONTIGUOUS_NURSERY
-void js::Nursery::Space::initializeRegion(ChunkRegion region,
-                                          size_t initialCapacity) {
-  MOZ_ASSERT(initialCapacity == Nursery::roundSize(initialCapacity));
-  region_ = region;
-  maxChunkCount_ = RoundUp(initialCapacity, ChunkSize) / ChunkSize;
-
-  PageRegion used = region.slice(0, initialCapacity);
-  PageRegion unused = region.slice(initialCapacity);
-  Poison(used, JS_FRESH_NURSERY_PATTERN, MemCheckKind::MakeUndefined);
-  MarkPagesUnusedHard(unused);
-}
-
-bool js::Nursery::Space::grow(size_t oldCapacity, size_t newCapacity) {
-  PageRegion commitRange = region_.slice(oldCapacity, newCapacity);
-  if (!MarkPagesInUseHard(commitRange)) {
-    return false;
-  }
-  Poison(commitRange, JS_FRESH_NURSERY_PATTERN, MemCheckKind::MakeUndefined);
-  maxChunkCount_ = RoundUp(newCapacity, ChunkSize) / ChunkSize;
-  return true;
-}
-
-void js::Nursery::Space::shrinkSynchronously(size_t oldCapacity,
-                                             size_t newCapacity) {
-  UnmapPages(region_.slice(newCapacity, oldCapacity));
-  maxChunkCount_ = RoundUp(newCapacity, ChunkSize) / ChunkSize;
-}
-#endif
-
 void js::Nursery::Space::clear(Nursery* nursery) {
   GCRuntime* gc = nursery->gc;
 
   
-  
-  for (unsigned i = startChunk_; i < activeChunkCount(); ++i) {
-    NurseryChunk* chunk = this->chunk(i);
-    size_t start = i == startChunk_ ? startPosition_ - uintptr_t(chunk)
-                                    : NurseryChunkHeaderSize;
-    size_t end =
-        i == currentChunk() ? currentEnd_ - uintptr_t(chunk) : ChunkSize;
-    chunk->poisonRange(start, end, JS_SWEPT_NURSERY_PATTERN,
-                       MemCheckKind::MakeNoAccess);
-  }
-
-  MOZ_ASSERT(maxChunkCount_ > 0);
-  if (gc->hasZealMode(ZealMode::GenerationalGC) &&
-      activeChunkCount() < maxChunkCount_) {
+  unsigned firstClearChunk;
+  if (gc->hasZealMode(ZealMode::GenerationalGC) || nursery->semispaceEnabled_) {
     
-    
-    
-    
-    setStartToCurrentPosition();
+    firstClearChunk = startChunk_;
   } else {
     
-    moveToStartOfFirstChunk(nursery);
+    
+    MOZ_ASSERT(startChunk_ == 0);
+    firstClearChunk = 1;
   }
+  for (unsigned i = firstClearChunk; i < currentChunk_; ++i) {
+    chunks_[i]->poisonAfterEvict();
+  }
+  
+  
+  if (currentChunk_ >= firstClearChunk) {
+    size_t usedBytes = position_ - chunks_[currentChunk_]->start();
+    chunks_[currentChunk_]->poisonAfterEvict(NurseryChunkHeaderSize +
+                                             usedBytes);
+  }
+
+  
+  
+  MOZ_ASSERT(maxChunkCount_ > 0);
+  if (!gc->hasZealMode(ZealMode::GenerationalGC) ||
+      currentChunk_ + 1 == maxChunkCount_) {
+    moveToStartOfChunk(nursery, 0);
+  }
+
+  
+  setStartToCurrentPosition();
 }
 
-void js::Nursery::Space::moveToStartOfNextChunk(Nursery* nursery) {
-  MOZ_ASSERT(activeChunkCount() < maxChunkCount_);
-  unsigned chunkno = activeChunkCount_++;
-  position_ = chunk(chunkno)->start();
+void js::Nursery::moveToStartOfChunk(unsigned chunkno) {
+  toSpace.moveToStartOfChunk(this, chunkno);
+}
+
+void js::Nursery::Space::moveToStartOfChunk(Nursery* nursery,
+                                            unsigned chunkno) {
+  MOZ_ASSERT(chunkno < chunks_.length());
+
+  currentChunk_ = chunkno;
+  position_ = chunks_[chunkno]->start();
   setCurrentEnd(nursery);
 
   MOZ_ASSERT(position_ != 0);
   MOZ_ASSERT(currentEnd_ > position_);  
-}
-
-void js::Nursery::Space::moveToStartOfFirstChunk(Nursery* nursery) {
-  activeChunkCount_ = 0;
-  moveToStartOfNextChunk(nursery);
-  
-  setStartToCurrentPosition();
 }
 
 void js::Nursery::poisonAndInitCurrentChunk() {
@@ -2219,11 +2157,10 @@ void js::Nursery::Space::setCurrentEnd(Nursery* nursery) {
   
   chunkBytesToUse -= gc::CellAlignBytes;
 
-  currentEnd_ = uintptr_t(chunk(currentChunk())) +
+  currentEnd_ = uintptr_t(chunks_[currentChunk_]) +
                 std::min(nursery->capacity(), chunkBytesToUse);
 }
 
-#ifndef JS_CONTIGUOUS_NURSERY
 bool js::Nursery::allocateNextChunk(AutoLockGCBgAlloc& lock) {
   
   
@@ -2266,14 +2203,13 @@ bool js::Nursery::allocateNextChunk(AutoLockGCBgAlloc& lock) {
 
   return true;
 }
-#endif  
 
 void js::Nursery::setStartToCurrentPosition() {
   toSpace.setStartToCurrentPosition();
 }
 
 void js::Nursery::Space::setStartToCurrentPosition() {
-  startChunk_ = currentChunk();
+  startChunk_ = currentChunk_;
   startPosition_ = position_;
   MOZ_ASSERT(isEmpty());
 }
@@ -2295,17 +2231,6 @@ void js::Nursery::maybeResizeNursery(JS::GCOptions options,
 
   if (newCapacity == capacity()) {
     return;
-  }
-
-  if (semispaceEnabled()) {
-    if (newCapacity < usedSpace()) {
-      
-      return;
-    }
-  } else {
-    
-    
-    MOZ_ASSERT(isEmpty());
   }
 
   decommitTask->join();
@@ -2464,15 +2389,6 @@ void js::Nursery::growAllocableSpace(size_t newCapacity) {
   MOZ_ASSERT(newCapacity <= maxSpaceSize());
   MOZ_ASSERT(newCapacity > capacity());
 
-#ifdef JS_CONTIGUOUS_NURSERY
-  if (!toSpace.grow(capacity(), newCapacity)) {
-    return;
-  }
-  if (semispaceEnabled() && !fromSpace.grow(capacity(), newCapacity)) {
-    toSpace.shrinkSynchronously(newCapacity, capacity());
-    return;
-  }
-#else
   size_t nchunks =
       RequiredChunkCount(newCapacity) * SemispaceSizeFactor(semispaceEnabled_);
   if (!decommitTask->reserveSpaceForChunks(nchunks)) {
@@ -2486,25 +2402,25 @@ void js::Nursery::growAllocableSpace(size_t newCapacity) {
       return;
     }
   }
-#endif
 
   setCapacity(newCapacity);
 
-  
   toSpace.setCurrentEnd(this);
+  if (semispaceEnabled_) {
+    fromSpace.setCurrentEnd(this);
+  }
 }
 
-#ifndef JS_CONTIGUOUS_NURSERY
 bool js::Nursery::Space::commitSubChunkRegion(size_t oldCapacity,
                                               size_t newCapacity) {
-  MOZ_ASSERT(currentChunk() == 0);
+  MOZ_ASSERT(currentChunk_ == 0);
   MOZ_ASSERT(oldCapacity < ChunkSize);
   MOZ_ASSERT(newCapacity > oldCapacity);
 
   size_t newChunkEnd = std::min(newCapacity, ChunkSize);
 
   
-  if (!chunk(0)->markPagesInUseHard(oldCapacity, newChunkEnd)) {
+  if (!chunks_[0]->markPagesInUseHard(oldCapacity, newChunkEnd)) {
     
     return false;
   }
@@ -2512,8 +2428,8 @@ bool js::Nursery::Space::commitSubChunkRegion(size_t oldCapacity,
   
   
   
-  chunk(0)->poisonRange(oldCapacity, newChunkEnd, JS_FRESH_NURSERY_PATTERN,
-                        MemCheckKind::MakeUndefined);
+  chunks_[0]->poisonRange(oldCapacity, newChunkEnd, JS_FRESH_NURSERY_PATTERN,
+                          MemCheckKind::MakeUndefined);
   return true;
 }
 
@@ -2529,13 +2445,10 @@ void js::Nursery::freeChunksFrom(Space& space, const unsigned firstFreeChunk) {
   if ((firstChunkToDecommit == 0) && isSubChunkMode()) {
     
     
-    MOZ_ASSERT((semispaceEnabled_ && space.activeChunkCount() == 0) ||
-               space.currentChunk() == 0);
-    
-    
+    MOZ_ASSERT(space.currentChunk_ == 0);
     if (!space.chunks_[0]->markPagesInUseHard(capacity_, ChunkSize)) {
       
-      UnmapPages(space.chunks_[0]->region());
+      UnmapPages(space.chunks_[0], ChunkSize);
       firstChunkToDecommit = 1;
     }
   }
@@ -2549,29 +2462,16 @@ void js::Nursery::freeChunksFrom(Space& space, const unsigned firstFreeChunk) {
 
   space.chunks_.shrinkTo(firstFreeChunk);
 }
-#endif  
 
 void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
+  MOZ_ASSERT(!gc->hasZealMode(ZealMode::GenerationalGC));
   MOZ_ASSERT(newCapacity < capacity_);
-  MOZ_ASSERT(usedSpace() <= newCapacity);
 
-#ifdef JS_CONTIGUOUS_NURSERY
-  AutoLockHelperThreadState lock;
-  PageRegion region = toSpace.region_.slice(newCapacity, capacity());
-  
-  
-  MOZ_MAKE_MEM_UNDEFINED(region.startPtr(), region.size());
-  Poison(region, JS_FREED_CHUNK_PATTERN, MemCheckKind::MakeNoAccess);
-  decommitTask->queueRegion(region, lock);
-  if (semispaceEnabled()) {
+  if (semispaceEnabled() && usedSpace() >= newCapacity) {
     
-    decommitTask->queueRegion(fromSpace.region_.slice(newCapacity, capacity()),
-                              lock);
+    return;
   }
 
-  setCapacity(newCapacity);
-  toSpace.setCurrentEnd(this);
-#else   
   unsigned newCount = HowMany(newCapacity, ChunkSize);
   if (newCount < allocatedChunkCount()) {
     freeChunksFrom(toSpace, newCount);
@@ -2580,7 +2480,11 @@ void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
 
   size_t oldCapacity = capacity_;
   setCapacity(newCapacity);
+
   toSpace.setCurrentEnd(this);
+  if (semispaceEnabled_) {
+    fromSpace.setCurrentEnd(this);
+  }
 
   if (isSubChunkMode()) {
     toSpace.decommitSubChunkRegion(this, oldCapacity, newCapacity);
@@ -2588,24 +2492,22 @@ void js::Nursery::shrinkAllocableSpace(size_t newCapacity) {
       fromSpace.decommitSubChunkRegion(this, oldCapacity, newCapacity);
     }
   }
-#endif  
 }
 
-#ifndef JS_CONTIGUOUS_NURSERY
 void js::Nursery::Space::decommitSubChunkRegion(Nursery* nursery,
                                                 size_t oldCapacity,
                                                 size_t newCapacity) {
-  MOZ_ASSERT(currentChunk() == 0);
+  MOZ_ASSERT(currentChunk_ == 0);
   MOZ_ASSERT(newCapacity < ChunkSize);
   MOZ_ASSERT(newCapacity < oldCapacity);
 
   size_t oldChunkEnd = std::min(oldCapacity, ChunkSize);
-  PageRegion region = chunk(0)->region().slice(newCapacity, oldChunkEnd);
-  ::Poison(region, JS_SWEPT_NURSERY_PATTERN, MemCheckKind::MakeNoAccess);
+  chunks_[0]->poisonRange(newCapacity, oldChunkEnd, JS_SWEPT_NURSERY_PATTERN,
+                          MemCheckKind::MakeNoAccess);
+
   AutoLockHelperThreadState lock;
-  nursery->decommitTask->queueRegion(region, lock);
+  nursery->decommitTask->queueRange(newCapacity, chunks_[0], lock);
 }
-#endif  
 
 js::Nursery::Space::Space(gc::ChunkKind kind) : kind(kind) {
   MOZ_ASSERT(kind == ChunkKind::NurseryFromSpace ||
@@ -2620,8 +2522,8 @@ void js::Nursery::Space::setKind(ChunkKind newKind) {
 #endif
 
   kind = newKind;
-  for (uint32_t i = startChunk_; i < activeChunkCount(); i++) {
-    chunk(i)->kind = newKind;
+  for (NurseryChunk* chunk : chunks_) {
+    chunk->kind = newKind;
   }
 
 #ifdef DEBUG
@@ -2632,24 +2534,23 @@ void js::Nursery::Space::setKind(ChunkKind newKind) {
 #ifdef DEBUG
 void js::Nursery::Space::checkKind(ChunkKind expected) const {
   MOZ_ASSERT(kind == expected);
-  for (uint32_t i = startChunk_; i < activeChunkCount(); i++) {
-    MOZ_ASSERT(chunk(i)->getKind() == expected);
+  for (NurseryChunk* chunk : chunks_) {
+    MOZ_ASSERT(chunk->getKind() == expected);
   }
 }
 #endif
 
 #ifdef DEBUG
-#  ifndef JS_CONTIGUOUS_NURSERY
 size_t js::Nursery::Space::findChunkIndex(uintptr_t chunkAddr) const {
   for (size_t i = 0; i < chunks_.length(); i++) {
     if (uintptr_t(chunks_[i]) == chunkAddr) {
       return i;
     }
   }
+
   MOZ_CRASH("Nursery chunk not found");
 }
-#  endif  
-#endif    
+#endif
 
 gcstats::Statistics& js::Nursery::stats() const { return gc->stats(); }
 
