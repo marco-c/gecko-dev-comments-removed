@@ -7,7 +7,6 @@ import os
 config = {
     
     "default_actions": [
-        "clobber",
         "build",
     ],
     "vcs_share_base": "/builds/hg-shared",

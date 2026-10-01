@@ -12,7 +12,6 @@ config = {
     
     
     "default_actions": [
-        "clobber",
         "build",
     ],
     "secret_files": [
