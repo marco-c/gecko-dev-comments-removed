@@ -1449,14 +1449,25 @@ impl<'a> SceneBuilder<'a> {
 
                 layout.transformed_aa_edges &= info.transformed_aa_edges;
 
-                self.add_primitive(
-                    spatial_node_index,
-                    clip_node_id,
-                    &layout,
-                    RectanglePrim {
-                        color: info.color.into(),
-                    },
-                );
+                
+                
+                
+                
+                
+                let visible = match info.color {
+                    PropertyBinding::Value(color) => api::ColorU::from(color).a > 0,
+                    PropertyBinding::Binding(..) => true,
+                };
+                if visible {
+                    self.add_primitive(
+                        spatial_node_index,
+                        clip_node_id,
+                        &layout,
+                        RectanglePrim {
+                            color: info.color.into(),
+                        },
+                    );
+                }
 
                 if info.common.flags.contains(PrimitiveFlags::CHECKERBOARD_BACKGROUND) {
                     self.add_tile_cache_barrier_if_needed(SliceFlags::empty());
@@ -1842,19 +1853,17 @@ impl<'a> SceneBuilder<'a> {
         prim: P,
     )
     where
-        P: InternablePrimitive + IsVisible,
+        P: InternablePrimitive,
         Interners: AsMut<Interner<P>>,
     {
-        if prim.is_visible() {
-            self.clip_tree_builder.debug_check_clip_stack(clip_node_id);
+        self.clip_tree_builder.debug_check_clip_stack(clip_node_id);
 
-            self.add_prim_to_draw_list(
-                info,
-                spatial_node_index,
-                clip_node_id,
-                prim,
-            );
-        }
+        self.add_prim_to_draw_list(
+            info,
+            spatial_node_index,
+            clip_node_id,
+            prim,
+        );
     }
 
 
@@ -3739,11 +3748,6 @@ impl<'a> SceneBuilder<'a> {
 
         source
     }
-}
-
-
-pub trait IsVisible {
-    fn is_visible(&self) -> bool;
 }
 
 

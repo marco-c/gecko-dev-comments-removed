@@ -11,7 +11,6 @@ use crate::pattern::image::ImagePattern;
 use crate::quad::{self, QuadDescriptor, QuadTransformState};
 use crate::quad_clip::QuadClipStack;
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent, to_cache_size};
-use crate::scene_building::{IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
@@ -349,13 +348,6 @@ impl InternablePrimitive for NormalBorderPrim {
 }
 
 
-impl IsVisible for NormalBorderPrim {
-    fn is_visible(&self) -> bool {
-        true
-    }
-}
-
-
 
 
 
@@ -445,12 +437,6 @@ impl InternablePrimitive for ImageBorder {
         PrimitiveKind::ImageBorder {
             data_handle
         }
-    }
-}
-
-impl IsVisible for ImageBorder {
-    fn is_visible(&self) -> bool {
-        true
     }
 }
 

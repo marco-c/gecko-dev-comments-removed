@@ -1395,6 +1395,21 @@ impl DisplayListBuilder {
         bounds: LayoutRect,
         color: PropertyBinding<ColorF>,
     ) {
+        let (common, offset) = self.normalize_common(common);
+        let bounds = self.shift_rect(bounds, offset);
+        self.push_rect_prim(&common, bounds, color, EdgeMask::all());
+    }
+
+    
+    
+    
+    fn push_rect_prim(
+        &mut self,
+        common: &di::CommonItemProperties,
+        bounds: LayoutRect,
+        color: PropertyBinding<ColorF>,
+        transformed_aa_edges: EdgeMask,
+    ) {
         
         
         
@@ -1408,14 +1423,12 @@ impl DisplayListBuilder {
             return;
         }
 
-        let (common, offset) = self.normalize_common(common);
-        let item = di::DisplayItem::Rectangle(di::RectangleDisplayItem {
-            common,
+        self.push_item(&di::DisplayItem::Rectangle(di::RectangleDisplayItem {
+            common: *common,
             color,
-            bounds: self.shift_rect(bounds, offset),
-            transformed_aa_edges: EdgeMask::all(),
-        });
-        self.push_item(&item);
+            bounds,
+            transformed_aa_edges,
+        }));
     }
 
     pub fn push_hit_test(
@@ -2021,12 +2034,14 @@ impl DisplayListBuilder {
             &mut |solid_rect, color, aa_mask| {
                 
                 
-                self.push_item(&di::DisplayItem::Rectangle(di::RectangleDisplayItem {
-                    common,
-                    bounds: *solid_rect,
-                    color: PropertyBinding::Value(color.into()),
-                    transformed_aa_edges: aa_mask,
-                }));
+                
+                
+                self.push_rect_prim(
+                    &common,
+                    *solid_rect,
+                    PropertyBinding::Value(color.into()),
+                    aa_mask,
+                );
             },
         );
 

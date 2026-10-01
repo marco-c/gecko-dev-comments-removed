@@ -3,7 +3,6 @@
 
 
 use api::{PropertyBinding, ColorF};
-use crate::scene_building::{IsVisible};
 use crate::intern;
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
@@ -48,16 +47,6 @@ impl InternablePrimitive for RectanglePrim {
         }
     }
 }
-
-impl IsVisible for RectanglePrim {
-    fn is_visible(&self) -> bool {
-        match self.color {
-            PropertyBinding::Value(value) => value.a > 0,
-            PropertyBinding::Binding(..) => true,
-        }
-    }
-}
-
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
