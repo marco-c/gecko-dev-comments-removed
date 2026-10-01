@@ -433,11 +433,6 @@ class Longhand(Property):
         "font-feature-settings",
         "font-variation-settings",
         
-        "flex-grow",
-        "flex-shrink",
-        "stroke-miterlimit",
-        "-moz-box-flex",
-        
         "backdrop-filter",
         "box-shadow",
         "filter",
