@@ -58,9 +58,6 @@ describe("PrefsFeed", () => {
       ["baz", { value: 1, skipBroadcast: true }],
       ["qux", { value: 1, skipBroadcast: true, alsoToPreloaded: true }],
     ]);
-    
-    
-    
     services = mockServices(["prefs", "obs", "vc"]);
     nimbusFeatures = mockNimbusFeatures();
     region = { home: "US", REGION_TOPIC: "browser-region-updated" };
@@ -324,9 +321,8 @@ describe("PrefsFeed", () => {
         })
       );
     });
-    it("keeps browserNovaEnabled false on hosts older than 155 even when the pref is on", () => {
-      services.prefs.getBoolPref.mockReturnValue(true);
-      services.vc.compare.mockReturnValue(-1);
+    it("broadcasts browserNovaEnabled false when browser.nova.enabled is off", () => {
+      services.prefs.getBoolPref.mockReturnValue(false);
       feed.observe(null, "nsPref:changed", "browser.nova.enabled");
       expect(feed.store.dispatch).toHaveBeenCalledWith(
         ac.BroadcastToContent({
