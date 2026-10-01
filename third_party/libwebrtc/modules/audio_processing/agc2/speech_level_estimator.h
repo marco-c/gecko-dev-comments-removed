@@ -30,6 +30,8 @@ class SpeechLevelEstimator {
   virtual float GetLevelDbfs() const = 0;
   
   virtual bool IsConfident() const = 0;
+  
+  virtual bool IsBackgroundSpeaker() const = 0;
 
   virtual void Reset() = 0;
 

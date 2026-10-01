@@ -34,6 +34,9 @@ class SpeechLevelEstimatorImpl : public SpeechLevelEstimator {
   float GetLevelDbfs() const override { return level_dbfs_; }
   
   bool IsConfident() const override { return is_confident_; }
+  
+  
+  bool IsBackgroundSpeaker() const override { return false; }
 
   void Reset() override;
 
