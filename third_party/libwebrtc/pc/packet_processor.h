@@ -12,8 +12,8 @@
 
 #include <cstdint>
 #include <optional>
+#include <span>
 
-#include "api/array_view.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/copy_on_write_buffer.h"
 
@@ -42,7 +42,7 @@ class PacketProcessor {
   
   
   virtual CopyOnWriteBuffer ProcessOutgoingPacket(
-      ArrayView<const uint8_t> payload,
+      std::span<const uint8_t> payload,
       Timestamp send_time) = 0;
 
   
