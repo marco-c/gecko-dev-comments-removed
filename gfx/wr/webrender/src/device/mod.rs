@@ -18,12 +18,10 @@ use api::{ExternalTextureHandle, ImageDescriptor};
 use api::{ImageBufferKind, ImageFormat, Parameter};
 use api::units::*;
 use euclid::default::Transform3D;
-use malloc_size_of::MallocSizeOfOps;
 use std::borrow::Cow;
 use std::mem;
 use std::num::NonZeroUsize;
 use std::ops::{Deref, DerefMut};
-use std::os::raw::c_void;
 use std::ptr;
 use std::rc::Rc;
 use std::slice;
@@ -42,8 +40,30 @@ pub use self::upload::*;
 
 pub enum GpuBackendConfig {
     
+    Gl(GlBackendConfig),
+}
+
+
+pub struct GlBackendConfig {
     
-    Gl(Rc<dyn gleam::gl::Gl>),
+    
+    pub gl: Rc<dyn gleam::gl::Gl>,
+    
+    
+    pub allow_texture_storage: bool,
+    
+    
+    pub panic_on_error: bool,
+}
+
+impl GlBackendConfig {
+    pub fn new(gl: Rc<dyn gleam::gl::Gl>) -> Self {
+        GlBackendConfig {
+            gl,
+            allow_texture_storage: true,
+            panic_on_error: false,
+        }
+    }
 }
 
 
@@ -459,7 +479,7 @@ pub trait GpuBackend {
     fn echo_driver_messages(&self);
 
     
-    fn report_memory(&self, size_op_funs: &MallocSizeOfOps, swgl: *mut c_void) -> MemoryReport;
+    fn report_memory(&self) -> MemoryReport;
 
     fn depth_targets_memory(&self) -> usize;
 }
@@ -495,7 +515,7 @@ impl DerefMut for Device {
 impl Device {
     pub fn new(config: GpuBackendConfig, options: DeviceOptions) -> Device {
         let backend: Box<dyn GpuBackend> = match config {
-            GpuBackendConfig::Gl(gl) => Box::new(GlDevice::new(gl, options)),
+            GpuBackendConfig::Gl(config) => Box::new(GlDevice::new(config, options)),
         };
         Device {
             backend,
