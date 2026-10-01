@@ -7,7 +7,9 @@ mod send_tab;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use cli_support::fxa_creds::{self, CliFxa, WELL_KNOWN_SCOPES};
-use fxa_client::{FxaConfig, FxaServer};
+use fxa_client::{
+    DeviceCapability, DeviceConfig, DeviceType, FxaConfig, FxaEvent, FxaServer, FxaState,
+};
 
 static CLIENT_ID: &str = "a2270f727f45f648";
 
@@ -75,6 +77,8 @@ enum Command {
     
     AttachedClients,
     Disconnect,
+    
+    ForceAuthIssues,
 }
 
 fn main() -> Result<()> {
@@ -92,7 +96,12 @@ fn main() -> Result<()> {
             println!("The account state managed by this utility can be used by many app-services demos and examples.");
             println!("Run with `help` or `--help` for more");
             print_status(&fxa);
-            return Ok(());
+
+            
+            
+            
+            
+            return fxa.persist();
         }
         Some(Command::Login { scopes }) => {
             let scope_refs: Vec<&str> = if scopes.is_empty() {
@@ -134,6 +143,10 @@ fn main() -> Result<()> {
                     account.disconnect();
                 }
                 Command::Login { .. } => unreachable!(),
+                Command::ForceAuthIssues => {
+                    account.reset_auth_recheck_timer();
+                    account.on_auth_issues();
+                }
             }
         }
     }
@@ -164,13 +177,29 @@ impl Cli {
 fn print_status(fxa: &CliFxa) {
     match fxa.account() {
         None => println!("Not logged in"),
-        Some(account) => match account.check_authorization_status() {
-            Ok(status) if status.active => {
-                println!("Account is logged in and authorized by the server")
+        Some(account) => {
+            let mut state: FxaState = account.get_state();
+            if state == FxaState::Uninitialized {
+                state = account
+                    .process_event(FxaEvent::Initialize {
+                        device_config: DeviceConfig {
+                            name: "test-device".to_owned(),
+                            device_type: DeviceType::Mobile,
+                            capabilities: vec![DeviceCapability::SendTab],
+                        },
+                    })
+                    .unwrap();
             }
-            Ok(_) => println!("Account is logged in but not authorized by the server"),
-            Err(e) => println!("Account logged in but account status failed: {e}"),
-        },
+            println!("Account currently in state: {state}");
+
+            match account.check_authorization_status() {
+                Ok(status) if status.active => {
+                    println!("Account is logged in and authorized by the server")
+                }
+                Ok(_) => println!("Account is logged in but not authorized by the server"),
+                Err(e) => println!("Account logged in but account status failed: {e}"),
+            }
+        }
     }
 }
 

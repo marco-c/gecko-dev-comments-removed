@@ -3,6 +3,7 @@
 
 
 use std::collections::{HashMap, HashSet};
+use std::time::SystemTime;
 
 use crate::{
     internal::{
@@ -42,6 +43,19 @@ impl StateManager {
     }
 
     pub fn refresh_token(&self) -> Option<&RefreshToken> {
+        
+        
+        
+        if self.persisted_state.logged_out_from_auth_issues {
+            None
+        } else {
+            self.persisted_state.refresh_token.as_ref()
+        }
+    }
+
+    
+    
+    pub fn refresh_token_for_reauth(&self) -> Option<&RefreshToken> {
         self.persisted_state.refresh_token.as_ref()
     }
 
@@ -72,6 +86,31 @@ impl StateManager {
     
     pub fn update_server_local_device_info(&mut self, local_device: LocalDevice) {
         self.persisted_state.server_local_device_info = Some(local_device)
+    }
+
+    
+    
+    pub fn should_recheck_auth(&self) -> bool {
+        let last_auth_time: u64 = self.persisted_state.last_auth_check_time.unwrap_or(0);
+        
+        let next_auth_time = last_auth_time + (7 * 24 * 60 * 60);
+        
+        
+        
+        if let Ok(now) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            let now: u64 = now.as_secs();
+            if next_auth_time <= now {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub fn reset_auth_recheck_timer(&mut self) {
+        
+        if let Ok(now) = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            self.persisted_state.last_auth_check_time = Some(now.as_secs());
+        }
     }
 
     
@@ -209,9 +248,12 @@ impl StateManager {
         self.persisted_state.session_token = None;
         self.persisted_state.logged_out_from_auth_issues = false;
         self.persisted_state.last_seen_profile = None;
+        self.persisted_state.last_auth_check_time = None;
         self.flow_store.clear();
     }
 
+    
+    
     
     
     
@@ -222,7 +264,6 @@ impl StateManager {
     
     
     pub fn on_auth_issues(&mut self) {
-        self.persisted_state.refresh_token = None;
         self.persisted_state.scoped_keys = HashMap::new();
         self.persisted_state.commands_data = HashMap::new();
         self.persisted_state.access_token_cache = HashMap::new();
@@ -233,10 +274,10 @@ impl StateManager {
     }
 
     pub fn get_auth_state(&self) -> FxaRustAuthState {
-        if self.persisted_state.refresh_token.is_some() {
-            FxaRustAuthState::Connected
-        } else if self.persisted_state.logged_out_from_auth_issues {
+        if self.persisted_state.logged_out_from_auth_issues {
             FxaRustAuthState::AuthIssues
+        } else if self.persisted_state.refresh_token.is_some() {
+            FxaRustAuthState::Connected
         } else {
             FxaRustAuthState::Disconnected
         }

@@ -92,6 +92,7 @@ impl FirefoxAccount {
             last_seen_profile: None,
             access_token_cache: HashMap::new(),
             logged_out_from_auth_issues: false,
+            last_auth_check_time: None,
         })
     }
 
@@ -271,6 +272,19 @@ impl FirefoxAccount {
 
     pub fn simulate_permanent_auth_token_issue(&mut self) {
         self.state.simulate_permanent_auth_token_issue()
+    }
+
+    
+    
+    pub fn should_recheck_auth(&self) -> bool {
+        self.state.should_recheck_auth()
+    }
+
+    
+    
+    
+    pub fn reset_auth_recheck_timer(&mut self) {
+        self.state.reset_auth_recheck_timer();
     }
 }
 

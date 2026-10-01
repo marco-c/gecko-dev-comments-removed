@@ -15,6 +15,7 @@ use crate::error::{Error, InvalidPlaceInfo, Result};
 use crate::ffi::HistoryVisitInfo;
 use crate::ffi::TopFrecentSiteInfo;
 use crate::frecency::{calculate_frecency, DEFAULT_FRECENCY_SETTINGS};
+use crate::glean_metrics;
 use crate::types::{SyncStatus, UnknownFields, VisitType};
 use interrupt_support::SqlInterruptScope;
 use rusqlite::types::{FromSql, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
@@ -229,12 +230,6 @@ impl TopFrecentSiteInfo {
     }
 }
 
-#[derive(Debug)]
-pub struct RunMaintenanceMetrics {
-    pub pruned_visits: bool,
-    pub db_size_before: u32,
-    pub db_size_after: u32,
-}
 
 
 
@@ -246,23 +241,15 @@ pub struct RunMaintenanceMetrics {
 
 
 
-
-pub fn run_maintenance_prune(
-    conn: &PlacesDb,
-    db_size_limit: u32,
-    prune_limit: u32,
-) -> Result<RunMaintenanceMetrics> {
+pub fn run_maintenance_prune(conn: &PlacesDb, db_size_limit: u32, prune_limit: u32) -> Result<()> {
     let db_size_before = conn.get_db_size()?;
     let should_prune = db_size_limit > 0 && db_size_before > db_size_limit;
     if should_prune {
         history::prune_older_visits(conn, prune_limit)?;
     }
-    let db_size_after = conn.get_db_size()?;
-    Ok(RunMaintenanceMetrics {
-        pruned_visits: should_prune,
-        db_size_before,
-        db_size_after,
-    })
+    glean_metrics::places_manager::db_size_after_maintenance
+        .accumulate((conn.get_db_size()? / 1024) as i64);
+    Ok(())
 }
 
 

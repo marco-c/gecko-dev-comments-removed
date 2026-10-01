@@ -4,9 +4,9 @@
 
 use super::merge::{LocalLogin, MirrorLogin};
 use super::{IncomingLogin, SyncStatus};
-use crate::encryption::EncryptorDecryptor;
 use crate::error::*;
 use crate::util;
+use db_crypto::EncryptorDecryptor;
 use interrupt_support::SqlInterruptScope;
 use rusqlite::{named_params, Connection};
 use std::time::SystemTime;
@@ -316,7 +316,7 @@ impl UpdatePlan {
 #[cfg(not(feature = "keydb"))]
 #[cfg(test)]
 mod tests {
-    use nss::ensure_initialized;
+    use nss_as::ensure_initialized;
     use std::time::Duration;
 
     use super::*;
@@ -325,8 +325,8 @@ mod tests {
         get_server_modified, insert_encrypted_login, insert_login,
     };
     use crate::db::LoginDb;
-    use crate::encryption::test_utils::TEST_ENCDEC;
     use crate::login::test_utils::enc_login;
+    use crate::test_utils::TEST_ENCDEC;
 
     fn inc_login(id: &str, password: &str) -> crate::sync::IncomingLogin {
         IncomingLogin {
