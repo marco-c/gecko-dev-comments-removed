@@ -481,12 +481,6 @@ enum class StyleMaskComposite : uint8_t {
   Exclude
 };
 
-
-enum class StyleScrollBehavior : uint8_t {
-  Auto,
-  Smooth,
-};
-
 }  
 
 #endif 
