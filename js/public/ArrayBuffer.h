@@ -7,12 +7,14 @@
 #ifndef js_ArrayBuffer_h
 #define js_ArrayBuffer_h
 
+#include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 
 #include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"  
+
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
@@ -29,6 +31,20 @@ class JS_PUBLIC_API AutoRequireNoGC;
 
 
 extern JS_PUBLIC_API JSObject* NewArrayBuffer(JSContext* cx, size_t nbytes);
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* NewArrayBuffer(
+    JSContext* cx, mozilla::Span<const uint8_t> source);
 
 
 

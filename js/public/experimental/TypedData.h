@@ -393,6 +393,11 @@ class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
 
   static ArrayBuffer create(JSContext* cx, size_t nbytes);
 
+  
+  
+  
+  static ArrayBuffer create(JSContext* cx, mozilla::Span<const uint8_t> src);
+
   mozilla::Span<uint8_t> getData(bool* isSharedMemory,
                                  const JS::AutoRequireNoGC&);
 };
