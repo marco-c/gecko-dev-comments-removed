@@ -898,6 +898,11 @@ struct TrapData {
   
   bool failedUnwindSignatureMismatch;
 
+  
+  
+  
+  bool unwoundFrame;
+
   struct FaultInfo {
     uint32_t memoryIndex;
     uint64_t byteOffset;

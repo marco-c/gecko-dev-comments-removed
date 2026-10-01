@@ -287,6 +287,7 @@ void js::jit::JitActivation::startWasmTrap(wasm::Trap trap,
   wasmTrapData_->resumePC = resumePC;
   wasmTrapData_->unwoundPC = pc;
   wasmTrapData_->trap = trap;
+  wasmTrapData_->unwoundFrame = unwound;
   
   
   if (unwound) {
