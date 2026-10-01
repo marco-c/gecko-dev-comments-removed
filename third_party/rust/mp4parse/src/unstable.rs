@@ -152,15 +152,23 @@ pub fn create_sample_table(
 
     
     
+    
+    
+    
+    let stsz_sample_count = stsz.sample_count.to_usize();
+
+    
+    
 
     
     
     let total_sample_count = sample_to_chunk_iter(&stsc.samples, &stco.offsets)
         .map(|(_, sample_counts)| sample_counts.to_usize())
-        .try_fold(0usize, usize::checked_add)?;
+        .try_fold(0usize, usize::checked_add)?
+        .min(stsz_sample_count);
     let mut sample_table = TryVec::with_capacity(total_sample_count).ok()?;
 
-    for i in sample_to_chunk_iter(&stsc.samples, &stco.offsets) {
+    'chunks: for i in sample_to_chunk_iter(&stsc.samples, &stco.offsets) {
         let chunk_id = i.0 as usize;
         let sample_counts = i.1;
         let mut cur_position = match stco.offsets.get(chunk_id) {
@@ -168,6 +176,14 @@ pub fn create_sample_table(
             _ => return None,
         };
         for _ in 0..sample_counts {
+            if sample_table.len() >= stsz_sample_count {
+                debug!(
+                    "track {}: 'stco' declares more chunks than the {} samples \
+                     in 'stsz' can fill, ignoring the surplus",
+                    track.id, stsz_sample_count
+                );
+                break 'chunks;
+            }
             let start_offset = cur_position;
             let end_offset = match (stsz.sample_size, sample_size_iter.next()) {
                 (_, Some(t)) => (start_offset + *t)?,
