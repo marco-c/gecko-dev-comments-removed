@@ -422,6 +422,8 @@ impl<I: Internable> ops::Index<Handle<I>> for Interner<I> {
 
 
 
+
+
 #[macro_export]
 macro_rules! enumerate_interners {
     ($macro_name: ident) => {
@@ -447,8 +449,41 @@ macro_rules! enumerate_interners {
     }
 }
 
+
+
+
+
+
+
+
+
+
+macro_rules! enumerate_interning_report_fields {
+    ($macro_name: ident) => {
+        $macro_name! {
+            clip,
+            prim,
+            normal_border,
+            image_border,
+            image,
+            yuv_image,
+            line_decoration,
+            linear_grad,
+            radial_grad,
+            conic_grad,
+            picture,
+            text_run,
+            filter_data,
+            backdrop_capture,
+            backdrop_render,
+            polygon,
+            box_shadow,
+        }
+    }
+}
+
 macro_rules! declare_interning_memory_report {
-    ( $( $name:ident: $ty:ident, )+ ) => {
+    ( $( $name:ident, )+ ) => {
         ///
         #[repr(C)]
         #[derive(AddAssign, Clone, Debug, Default)]
@@ -461,7 +496,7 @@ macro_rules! declare_interning_memory_report {
     }
 }
 
-enumerate_interners!(declare_interning_memory_report);
+enumerate_interning_report_fields!(declare_interning_memory_report);
 
 
 /// cbindgen:derive-eq=false

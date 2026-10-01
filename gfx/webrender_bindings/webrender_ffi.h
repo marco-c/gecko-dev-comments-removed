@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef WR_h
 #define WR_h
 
