@@ -6391,11 +6391,16 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
 
   TransitionType transition =
       aFullscreen ? TransitionType::Fullscreen : TransitionType::Windowed;
+  const nsSizeMode sizeModeBefore = mSizeMode;
   if (receivedExpectedFullscreen) {
     
     HandleUpdateFullscreenOnResize();
   } else {
     
+    
+    
+    mUpdateFullscreenOnResize.reset();
+
     
     UpdateFullscreenState(aFullscreen, true);
 
@@ -6420,6 +6425,16 @@ void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   if (restoreKeyToPlayer && NSApp.isActive && mWindow.isVisible &&
       !mWindow.isKeyWindow) {
     [mWindow makeKeyAndOrderFront:nil];
+  }
+
+  
+  
+  
+  
+  
+  if (!receivedExpectedFullscreen && mSizeMode == sizeModeBefore &&
+      mWidgetListener) {
+    mWidgetListener->FullscreenChangeFailed(aFullscreen);
   }
 }
 
@@ -7882,20 +7897,14 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
-- (void)windowDidFailToEnterFullScreen:(NSNotification*)notification {
+- (void)windowDidFailToEnterFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }
 
   MOZ_ASSERT((mGeckoWindow->GetCocoaWindow().styleMask &
               NSWindowStyleMaskFullScreen) == 0);
-  MOZ_ASSERT(mGeckoWindow->SizeMode() == nsSizeMode_Fullscreen);
 
-  
-  
-  
-  
-  
   
   
   
@@ -7904,7 +7913,7 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   mGeckoWindow->CocoaWindowDidEnterFullscreen(false);
 }
 
-- (void)windowDidFailToExitFullScreen:(NSNotification*)notification {
+- (void)windowDidFailToExitFullScreen:(NSWindow*)window {
   if (!mGeckoWindow) {
     return;
   }

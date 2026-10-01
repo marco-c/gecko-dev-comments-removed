@@ -70,6 +70,14 @@ class nsIWidgetListener {
 
   virtual void SizeModeChanged(nsSizeMode aSizeMode) {}
 
+  
+
+
+
+
+
+  virtual void FullscreenChangeFailed(bool aInFullscreen) {}
+
   virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight) {
   }
   virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) {}

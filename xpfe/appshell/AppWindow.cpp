@@ -2641,6 +2641,17 @@ void AppWindow::SizeModeChanged(nsSizeMode aSizeMode) {
   
 }
 
+void AppWindow::FullscreenChangeFailed(bool aInFullscreen) {
+  
+  
+  
+  
+  
+  if (mFullscreenChangeState == FullscreenChangeState::NotChanging) {
+    FinishFullscreenChange(aInFullscreen);
+  }
+}
+
 void AppWindow::FullscreenWillChange(bool aInFullscreen) {
   if (mDocShell) {
     if (nsCOMPtr<nsPIDOMWindowOuter> ourWindow = mDocShell->GetWindow()) {
@@ -3149,6 +3160,12 @@ bool AppWindow::WidgetListenerDelegate::RequestWindowClose(nsIWidget* aWidget) {
 void AppWindow::WidgetListenerDelegate::SizeModeChanged(nsSizeMode aSizeMode) {
   RefPtr<AppWindow> holder = mAppWindow;
   holder->SizeModeChanged(aSizeMode);
+}
+
+void AppWindow::WidgetListenerDelegate::FullscreenChangeFailed(
+    bool aInFullscreen) {
+  RefPtr<AppWindow> holder = mAppWindow;
+  holder->FullscreenChangeFailed(aInFullscreen);
 }
 
 void AppWindow::WidgetListenerDelegate::MacFullscreenMenubarOverlapChanged(

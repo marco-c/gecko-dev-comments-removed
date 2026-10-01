@@ -1095,6 +1095,8 @@ class Window extends WindowBase {
     const initialState = window.windowState;
     
     
+    
+    
     if (
       expectedState == initialState &&
       window.fullScreen == (expectedState == window.STATE_FULLSCREEN)
