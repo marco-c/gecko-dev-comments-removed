@@ -60,6 +60,28 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![doc(html_root_url = "https://docs.rs/pkg-config/0.3")]
 
 use std::collections::HashMap;
@@ -67,11 +89,22 @@ use std::env;
 use std::error;
 use std::ffi::{OsStr, OsString};
 use std::fmt;
+use std::fmt::Display;
 use std::io;
 use std::ops::{Bound, RangeBounds};
 use std::path::PathBuf;
 use std::process::{Command, Output};
 use std::str;
+
+
+
+
+struct WrappedCommand {
+    inner: Command,
+    program: OsString,
+    env_vars: Vec<(OsString, OsString)>,
+    args: Vec<OsString>,
+}
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -83,6 +116,7 @@ pub struct Config {
     env_metadata: bool,
     print_system_libs: bool,
     print_system_cflags: bool,
+    probe_cflags: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -111,6 +145,7 @@ pub struct Library {
 }
 
 
+#[non_exhaustive]
 pub enum Error {
     
     
@@ -142,23 +177,109 @@ pub enum Error {
         command: String,
         output: Output,
     },
+}
 
-    #[doc(hidden)]
-    
-    __Nonexhaustive,
+impl WrappedCommand {
+    fn new<S: AsRef<OsStr>>(program: S) -> Self {
+        Self {
+            inner: Command::new(program.as_ref()),
+            program: program.as_ref().to_os_string(),
+            env_vars: Vec::new(),
+            args: Vec::new(),
+        }
+    }
+
+    fn args<I, S>(&mut self, args: I) -> &mut Self
+    where
+        I: IntoIterator<Item = S> + Clone,
+        S: AsRef<OsStr>,
+    {
+        self.inner.args(args.clone());
+        self.args
+            .extend(args.into_iter().map(|arg| arg.as_ref().to_os_string()));
+
+        self
+    }
+
+    fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
+        self.inner.arg(arg.as_ref());
+        self.args.push(arg.as_ref().to_os_string());
+
+        self
+    }
+
+    fn env<K, V>(&mut self, key: K, value: V) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        self.inner.env(key.as_ref(), value.as_ref());
+        self.env_vars
+            .push((key.as_ref().to_os_string(), value.as_ref().to_os_string()));
+
+        self
+    }
+
+    fn output(&mut self) -> io::Result<Output> {
+        self.inner.output()
+    }
+}
+
+
+
+
+
+
+
+
+fn quote_if_needed(arg: String) -> String {
+    if arg.contains(' ') {
+        format!("'{}'", arg)
+    } else {
+        arg
+    }
+}
+
+
+
+
+
+
+
+
+impl Display for WrappedCommand {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        let envs = self
+            .env_vars
+            .iter()
+            .map(|(env, arg)| format!("{}={}", env.to_string_lossy(), arg.to_string_lossy()))
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        
+        let args = self
+            .args
+            .iter()
+            .map(|arg| quote_if_needed(arg.to_string_lossy().to_string()))
+            .collect::<Vec<String>>()
+            .join(" ");
+
+        write!(f, "{} {} {}", envs, self.program.to_string_lossy(), args)
+    }
 }
 
 impl error::Error for Error {}
 
 impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         
         <Error as fmt::Display>::fmt(self, f)
     }
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Error::EnvNoPkgConfig(ref name) => write!(f, "Aborted because {} is set", name),
             Error::CrossCompilation => f.write_str(
@@ -177,10 +298,12 @@ impl fmt::Display for Error {
                     io::ErrorKind::NotFound => {
                         let crate_name =
                             std::env::var("CARGO_PKG_NAME").unwrap_or_else(|_| "sys".to_owned());
-                        let instructions = if cfg!(target_os = "macos") || cfg!(target_os = "ios") {
-                            "Try `brew install pkg-config` if you have Homebrew.\n"
+                        let instructions = if cfg!(target_os = "macos") {
+                            "Try `brew install pkgconf` if you have Homebrew.\n"
+                        } else if cfg!(target_os = "ios") {
+                            "" 
                         } else if cfg!(unix) {
-                            "Try `apt install pkg-config`, or `yum install pkg-config`,\n\
+                            "Try `apt install pkg-config`, or `yum install pkg-config`, or `brew install pkgconf`\n\
                             or `pkg install pkg-config`, or `apk add pkgconfig` \
                             depending on your distribution.\n"
                         } else {
@@ -208,12 +331,92 @@ impl fmt::Display for Error {
                 ref command,
                 ref output,
             } => {
-                write!(
+                let crate_name =
+                    env::var("CARGO_PKG_NAME").unwrap_or(String::from("<NO CRATE NAME>"));
+
+                writeln!(f)?;
+
+                
+                writeln!(
                     f,
-                    "`{}` did not exit successfully: {}\nerror: could not find system library '{}' required by the '{}' crate\n",
-                    command, output.status, name, env::var("CARGO_PKG_NAME").unwrap_or_default(),
+                    "pkg-config {}",
+                    match output.status.code() {
+                        Some(code) => format!("exited with status code {}", code),
+                        None => "was terminated by signal".to_string(),
+                    }
                 )?;
-                format_output(output, f)
+
+                
+                writeln!(f, "> {}\n", command)?;
+
+                
+                
+                
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                if !stderr.is_empty() {
+                    writeln!(f, "pkg-config output:")?;
+                    for line in stderr.lines() {
+                        writeln!(f, "  {}", line)?;
+                    }
+                    writeln!(f)?;
+                }
+
+                
+                writeln!(
+                    f,
+                    "The system library `{}` required by crate `{}` was not found.",
+                    name, crate_name
+                )?;
+                writeln!(
+                    f,
+                    "The file `{}.pc` needs to be installed and the PKG_CONFIG_PATH environment variable must contain its parent directory.",
+                    name
+                )?;
+
+                
+                if let Some(_code) = output.status.code() {
+                    
+                    
+                    let search_locations = ["PKG_CONFIG_PATH_FOR_TARGET", "PKG_CONFIG_PATH"];
+
+                    
+                    let mut search_data = None;
+                    for location in search_locations.iter() {
+                        if let Ok(search_path) = env::var(location) {
+                            search_data = Some((location, search_path));
+                            break;
+                        }
+                    }
+
+                    
+                    let hint = if let Some((search_location, search_path)) = search_data {
+                        writeln!(
+                            f,
+                            "{} contains the following:\n{}",
+                            search_location,
+                            search_path
+                                .split(':')
+                                .map(|path| format!("    - {}", path))
+                                .collect::<Vec<String>>()
+                                .join("\n"),
+                        )?;
+
+                        format!("you may need to install a package such as {name}, {name}-dev or {name}-devel.", name=name)
+                    } else {
+                        
+                        writeln!(f, "The PKG_CONFIG_PATH environment variable is not set.")?;
+
+                        format!(
+                            "if you have installed the library, try setting PKG_CONFIG_PATH to the directory containing `{}.pc`.",
+                            name
+                        )
+                    };
+
+                    
+                    writeln!(f, "\nHINT: {}", hint)?;
+                }
+
+                Ok(())
             }
             Error::Failure {
                 ref command,
@@ -226,12 +429,11 @@ impl fmt::Display for Error {
                 )?;
                 format_output(output, f)
             }
-            Error::__Nonexhaustive => panic!(),
         }
     }
 }
 
-fn format_output(output: &Output, f: &mut fmt::Formatter) -> fmt::Result {
+fn format_output(output: &Output, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     let stdout = String::from_utf8_lossy(&output.stdout);
     if !stdout.is_empty() {
         write!(f, "\n--- stdout\n{}", stdout)?;
@@ -270,7 +472,7 @@ pub fn target_supported() -> bool {
 pub fn get_variable(package: &str, variable: &str) -> Result<String, Error> {
     let arg = format!("--variable={}", variable);
     let cfg = Config::new();
-    let out = run(cfg.command(package, &[&arg]))?;
+    let out = cfg.run(package, &[&arg])?;
     Ok(str::from_utf8(&out).unwrap().trim_end().to_owned())
 }
 
@@ -287,6 +489,7 @@ impl Config {
             print_system_libs: true,
             cargo_metadata: true,
             env_metadata: true,
+            probe_cflags: true,
         }
     }
 
@@ -373,6 +576,14 @@ impl Config {
     }
 
     
+    
+    
+    pub fn probe_cflags(&mut self, probe: bool) -> &mut Config {
+        self.probe_cflags = probe;
+        self
+    }
+
+    
     #[doc(hidden)]
     pub fn find(&self, name: &str) -> Result<Library, String> {
         self.probe(name).map_err(|e| e.to_string())
@@ -392,7 +603,12 @@ impl Config {
 
         let mut library = Library::new();
 
-        let output = run(self.command(name, &["--libs", "--cflags"])).map_err(|e| match e {
+        let mut args = vec!["--libs"];
+        if self.probe_cflags {
+            args.push("--cflags");
+        }
+
+        let output = self.run(name, &args).map_err(|e| match e {
             Error::Failure { command, output } => Error::ProbeFailure {
                 name: name.to_owned(),
                 command,
@@ -402,7 +618,7 @@ impl Config {
         })?;
         library.parse_libs_cflags(name, &output, self);
 
-        let output = run(self.command(name, &["--modversion"]))?;
+        let output = self.run(name, &["--modversion"])?;
         library.parse_modversion(str::from_utf8(&output).unwrap());
 
         Ok(library)
@@ -421,15 +637,15 @@ impl Config {
 
         
         
-        match self.targetted_env_var("PKG_CONFIG_ALLOW_CROSS") {
+        match self.targeted_env_var("PKG_CONFIG_ALLOW_CROSS") {
             
             Some(ref val) if val == "0" => false,
             Some(_) => true,
             None => {
                 
                 
-                self.targetted_env_var("PKG_CONFIG").is_some()
-                    || self.targetted_env_var("PKG_CONFIG_SYSROOT_DIR").is_some()
+                self.targeted_env_var("PKG_CONFIG").is_some()
+                    || self.targeted_env_var("PKG_CONFIG_SYSROOT_DIR").is_some()
             }
         }
     }
@@ -440,11 +656,11 @@ impl Config {
         get_variable(package, variable).map_err(|e| e.to_string())
     }
 
-    fn targetted_env_var(&self, var_base: &str) -> Option<OsString> {
+    fn targeted_env_var(&self, var_base: &str) -> Option<OsString> {
         match (env::var("TARGET"), env::var("HOST")) {
             (Ok(target), Ok(host)) => {
                 let kind = if host == target { "HOST" } else { "TARGET" };
-                let target_u = target.replace("-", "_");
+                let target_u = target.replace('-', "_");
 
                 self.env_var_os(&format!("{}_{}", var_base, target))
                     .or_else(|| self.env_var_os(&format!("{}_{}", var_base, target_u)))
@@ -474,23 +690,55 @@ impl Config {
         self.statik.unwrap_or_else(|| self.infer_static(name))
     }
 
-    fn command(&self, name: &str, args: &[&str]) -> Command {
-        let exe = self
-            .targetted_env_var("PKG_CONFIG")
-            .unwrap_or_else(|| OsString::from("pkg-config"));
-        let mut cmd = Command::new(exe);
+    fn run(&self, name: &str, args: &[&str]) -> Result<Vec<u8>, Error> {
+        let pkg_config_exe = self.targeted_env_var("PKG_CONFIG");
+        let fallback_exe = if pkg_config_exe.is_none() {
+            Some(OsString::from("pkgconf"))
+        } else {
+            None
+        };
+        let exe = pkg_config_exe.unwrap_or_else(|| OsString::from("pkg-config"));
+
+        let mut cmd = self.command(exe, name, args);
+
+        match cmd.output().or_else(|e| {
+            if let Some(exe) = fallback_exe {
+                self.command(exe, name, args).output()
+            } else {
+                Err(e)
+            }
+        }) {
+            Ok(output) => {
+                if output.status.success() {
+                    Ok(output.stdout)
+                } else {
+                    Err(Error::Failure {
+                        command: format!("{}", cmd),
+                        output,
+                    })
+                }
+            }
+            Err(cause) => Err(Error::Command {
+                command: format!("{}", cmd),
+                cause,
+            }),
+        }
+    }
+
+    fn command(&self, exe: OsString, name: &str, args: &[&str]) -> WrappedCommand {
+        let mut cmd = WrappedCommand::new(exe);
         if self.is_static(name) {
             cmd.arg("--static");
         }
         cmd.args(args).args(&self.extra_args);
 
-        if let Some(value) = self.targetted_env_var("PKG_CONFIG_PATH") {
+        if let Some(value) = self.targeted_env_var("PKG_CONFIG_PATH") {
             cmd.env("PKG_CONFIG_PATH", value);
         }
-        if let Some(value) = self.targetted_env_var("PKG_CONFIG_LIBDIR") {
+        if let Some(value) = self.targeted_env_var("PKG_CONFIG_LIBDIR") {
             cmd.env("PKG_CONFIG_LIBDIR", value);
         }
-        if let Some(value) = self.targetted_env_var("PKG_CONFIG_SYSROOT_DIR") {
+        if let Some(value) = self.targeted_env_var("PKG_CONFIG_SYSROOT_DIR") {
             cmd.env("PKG_CONFIG_SYSROOT_DIR", value);
         }
         if self.print_system_libs {
@@ -502,19 +750,19 @@ impl Config {
         cmd.arg(name);
         match self.min_version {
             Bound::Included(ref version) => {
-                cmd.arg(&format!("{} >= {}", name, version));
+                cmd.arg(format!("{} >= {}", name, version));
             }
             Bound::Excluded(ref version) => {
-                cmd.arg(&format!("{} > {}", name, version));
+                cmd.arg(format!("{} > {}", name, version));
             }
             _ => (),
         }
         match self.max_version {
             Bound::Included(ref version) => {
-                cmd.arg(&format!("{} <= {}", name, version));
+                cmd.arg(format!("{} <= {}", name, version));
             }
             Bound::Excluded(ref version) => {
-                cmd.arg(&format!("{} < {}", name, version));
+                cmd.arg(format!("{} < {}", name, version));
             }
             _ => (),
         }
@@ -555,6 +803,7 @@ impl Default for Config {
             print_system_libs: false,
             cargo_metadata: false,
             env_metadata: false,
+            probe_cflags: false,
         }
     }
 }
@@ -577,69 +826,69 @@ impl Library {
 
     
     
-    fn extract_lib_from_filename<'a>(target: &str, filename: &'a str) -> Option<&'a str> {
+    pub fn extract_lib_from_filename<'a>(target: &str, filename: &'a str) -> Option<&'a str> {
         fn test_suffixes<'b>(filename: &'b str, suffixes: &[&str]) -> Option<&'b str> {
             for suffix in suffixes {
-                if filename.ends_with(suffix) {
-                    return Some(&filename[..filename.len() - suffix.len()]);
+                if let Some(lib) = filename.strip_suffix(suffix) {
+                    return Some(lib);
                 }
             }
             None
         }
 
         let prefix = "lib";
-        if target.contains("msvc") {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            return test_suffixes(filename, &[".lib"]);
-        } else if target.contains("windows") && target.contains("gnu") {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if filename.starts_with(prefix) {
+        if target.contains("windows") {
+            if target.contains("gnu") && filename.starts_with(prefix) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 let filename = &filename[prefix.len()..];
-                return test_suffixes(filename, &[".dll.a", ".dll", ".lib", ".a"]);
+                test_suffixes(filename, &[".dll.a", ".dll", ".lib", ".a"])
             } else {
-                return test_suffixes(filename, &[".dll.a", ".dll", ".lib"]);
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                test_suffixes(filename, &[".dll.a", ".dll", ".lib", ".a"])
             }
         } else if target.contains("apple") {
-            if filename.starts_with(prefix) {
-                let filename = &filename[prefix.len()..];
+            if let Some(filename) = filename.strip_prefix(prefix) {
                 return test_suffixes(filename, &[".a", ".so", ".dylib"]);
             }
-            return None;
+            None
         } else {
-            if filename.starts_with(prefix) {
-                let filename = &filename[prefix.len()..];
+            if let Some(filename) = filename.strip_prefix(prefix) {
                 return test_suffixes(filename, &[".a", ".so"]);
             }
-            return None;
+            None
         }
     }
 
     fn parse_libs_cflags(&mut self, name: &str, output: &[u8], config: &Config) {
-        let mut is_msvc = false;
         let target = env::var("TARGET");
-        if let Ok(target) = &target {
-            if target.contains("msvc") {
-                is_msvc = true;
-            }
-        }
+        let is_msvc = target
+            .as_ref()
+            .map(|target| target.contains("msvc"))
+            .unwrap_or(false);
 
         let system_roots = if cfg!(target_os = "macos") {
             vec![PathBuf::from("/Library"), PathBuf::from("/System")]
@@ -692,7 +941,11 @@ impl Library {
                         continue;
                     }
 
-                    if statik && is_static_available(val, &system_roots, &dirs) {
+                    if val.starts_with(':') {
+                        
+                        let meta = format!("rustc-link-arg={}{}", flag, val);
+                        config.print_metadata(&meta);
+                    } else if statik && is_static_available(val, &system_roots, &dirs) {
                         let meta = format!("rustc-link-lib=static={}", val);
                         config.print_metadata(&meta);
                     } else {
@@ -709,14 +962,18 @@ impl Library {
                         iter.next().map(|s| s.to_owned()),
                     );
                 }
+                "-u" => {
+                    let meta = format!("rustc-link-arg=-Wl,-u,{}", val);
+                    config.print_metadata(&meta);
+                }
                 _ => {}
             }
         }
 
         
         let mut iter = words.iter().flat_map(|arg| {
-            if arg.starts_with("-Wl,") {
-                arg[4..].split(',').collect()
+            if let Some(arg) = arg.strip_prefix("-Wl,") {
+                arg.split(',').collect()
             } else {
                 vec![arg.as_ref()]
             }
@@ -733,6 +990,12 @@ impl Library {
                 "-isystem" | "-iquote" | "-idirafter" => {
                     if let Some(inc) = iter.next() {
                         self.include_paths.push(PathBuf::from(inc));
+                    }
+                }
+                "-undefined" | "--undefined" => {
+                    if let Some(symbol) = iter.next() {
+                        let meta = format!("rustc-link-arg=-Wl,{},{}", part, symbol);
+                        config.print_metadata(&meta);
                     }
                 }
                 _ => {
@@ -768,8 +1031,8 @@ impl Library {
             }
         }
 
-        let mut linker_options = words.iter().filter(|arg| arg.starts_with("-Wl,"));
-        while let Some(option) = linker_options.next() {
+        let linker_options = words.iter().filter(|arg| arg.starts_with("-Wl,"));
+        for option in linker_options {
             let mut pop = false;
             let mut ld_option = vec![];
             for subopt in option[4..].split(',') {
@@ -795,7 +1058,7 @@ impl Library {
     }
 
     fn parse_modversion(&mut self, output: &str) {
-        self.version.push_str(output.lines().nth(0).unwrap().trim());
+        self.version.push_str(output.lines().next().unwrap().trim());
     }
 }
 
@@ -808,30 +1071,20 @@ fn envify(name: &str) -> String {
 
 
 fn is_static_available(name: &str, system_roots: &[PathBuf], dirs: &[PathBuf]) -> bool {
-    let libname = format!("lib{}.a", name);
+    let libnames = {
+        let mut names = vec![format!("lib{}.a", name)];
+
+        if cfg!(target_os = "windows") {
+            names.push(format!("{}.lib", name));
+        }
+
+        names
+    };
 
     dirs.iter().any(|dir| {
-        !system_roots.iter().any(|sys| dir.starts_with(sys)) && dir.join(&libname).exists()
+        let library_exists = libnames.iter().any(|libname| dir.join(libname).exists());
+        library_exists && !system_roots.iter().any(|sys| dir.starts_with(sys))
     })
-}
-
-fn run(mut cmd: Command) -> Result<Vec<u8>, Error> {
-    match cmd.output() {
-        Ok(output) => {
-            if output.status.success() {
-                Ok(output.stdout)
-            } else {
-                Err(Error::Failure {
-                    command: format!("{:?}", cmd),
-                    output,
-                })
-            }
-        }
-        Err(cause) => Err(Error::Command {
-            command: format!("{:?}", cmd),
-            cause,
-        }),
-    }
 }
 
 

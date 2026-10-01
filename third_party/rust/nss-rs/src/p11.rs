@@ -13,13 +13,10 @@
 )]
 use std::{
     cell::RefCell,
-    convert::TryFrom as _,
     fmt::{self, Debug, Formatter},
-    os::raw::{c_int, c_uint},
+    os::raw::c_int,
     ptr::null_mut,
 };
-
-use pkcs11_bindings::{CKA_EC_POINT, CKA_VALUE};
 
 use crate::{
     err::{Error, Res, secstatus_to_res},
@@ -82,21 +79,22 @@ impl PublicKey {
     
     
     
-    pub fn key_data(&self) -> Res<Vec<u8>> {
-        let mut buf = vec![0; 100];
-        let mut len: c_uint = 0;
-        secstatus_to_res(unsafe {
-            PK11_HPKE_Serialize(
-                **self,
-                buf.as_mut_ptr(),
-                &raw mut len,
-                c_uint::try_from(buf.len()).map_err(|_| Error::IntegerOverflow)?,
-            )
-        })?;
-        buf.truncate(usize::try_from(len).map_err(|_| Error::IntegerOverflow)?);
-        Ok(buf)
+    
+    
+    
+    
+    pub fn key_data(&self) -> Res<&[u8]> {
+        let ptr = unsafe { self.ptr.as_ref() }.ok_or(Error::InvalidInput)?;
+
+        if ptr.keyType != KeyType_ecKey && ptr.keyType != KeyType_ecMontKey {
+            return Err(Error::InvalidInput);
+        }
+
+        
+        Ok(unsafe { ptr.u.ec.as_ref().publicValue.as_slice() })
     }
 
+    
     pub fn key_data_alt(&self) -> Res<Vec<u8>> {
         let mut key_item = SECItemMut::make_empty();
         secstatus_to_res(unsafe {
@@ -236,7 +234,7 @@ impl Slot {
                 null_mut(),
                 c_int::try_from(key_size).map_err(|_| Error::IntegerOverflow)?,
                 null_mut(),
-                CK_FLAGS::from(CKF_ENCRYPT | CKF_DECRYPT),
+                CKF_ENCRYPT | CKF_DECRYPT,
                 PK11AttrFlags::from(PK11_ATTR_TOKEN | PK11_ATTR_PRIVATE | PK11_ATTR_SENSITIVE),
                 null_mut(),
             ))

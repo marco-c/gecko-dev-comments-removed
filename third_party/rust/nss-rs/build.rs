@@ -12,23 +12,30 @@
 
 use std::{
     collections::{HashMap, HashSet},
-    env,
-    error::Error,
-    fs,
+    env, fs,
     path::{Path, PathBuf},
     process::Command,
 };
 
-use bindgen::Builder;
-use semver::{Version, VersionReq};
+use bindgen::{
+    Builder,
+    callbacks::{IntKind, ParseCallbacks},
+};
 use serde_derive::Deserialize;
-
-#[path = "src/min_version.rs"]
-mod min_version;
-use min_version::MINIMUM_NSS_VERSION;
 
 const BINDINGS_DIR: &str = "bindings";
 const BINDINGS_CONFIG: &str = "bindings.toml";
+
+
+fn min_nss_version() -> String {
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let manifest = fs::read_to_string(Path::new(&manifest_dir).join("Cargo.toml")).unwrap();
+    let manifest: ::toml::Value = ::toml::from_str(&manifest).unwrap();
+    manifest["package"]["metadata"]["nss"]["min-version"]
+        .as_str()
+        .unwrap()
+        .to_owned()
+}
 
 
 #[derive(Deserialize)]
@@ -60,6 +67,27 @@ struct Bindings {
     
     #[serde(default)]
     cplusplus: bool,
+}
+
+impl Bindings {
+    fn check_sorted(&self, name: &str) {
+        for (field, values) in [
+            ("types", &self.types),
+            ("functions", &self.functions),
+            ("variables", &self.variables),
+            ("opaque", &self.opaque),
+            ("enums", &self.enums),
+            ("exclude", &self.exclude),
+        ] {
+            if let Some((a, b)) = values
+                .iter()
+                .zip(values.iter().skip(1))
+                .find(|(a, b)| a >= b)
+            {
+                panic!("{name}.{field} is not sorted (or has duplicates): {a:?} >= {b:?}");
+            }
+        }
+    }
 }
 
 
@@ -212,7 +240,46 @@ fn build_nss(dir: PathBuf) {
     assert!(status.success(), "NSS build failed");
 }
 
-fn dynamic_link() {
+
+
+fn lib_stem(name: &str) -> &str {
+    let name = name.strip_prefix("lib").unwrap_or(name);
+    name.split_once('.').map_or(name, |(stem, _)| stem)
+}
+
+
+
+
+
+
+
+fn rerun_if_libs_changed<S: AsRef<str>>(dir: &Path, libs: &[S]) {
+    let wanted: HashSet<&str> = libs.iter().map(|l| lib_stem(l.as_ref())).collect();
+    let Ok(entries) = fs::read_dir(dir) else {
+        println!(
+            "cargo:warning=can't read {}, so NSS changes there won't trigger a rebuild",
+            dir.display()
+        );
+        return;
+    };
+    for entry in entries.flatten() {
+        let (name, path) = (entry.file_name(), entry.path());
+        let (Some(name), Some(path)) = (name.to_str(), path.to_str()) else {
+            continue;
+        };
+        if !path.contains('\n') && wanted.contains(lib_stem(name)) {
+            println!("cargo:rerun-if-changed={path}");
+        }
+    }
+}
+
+
+fn link_search<S: AsRef<str>>(dir: &Path, libs: &[S]) {
+    println!("cargo:rustc-link-search=native={}", dir.display());
+    rerun_if_libs_changed(dir, libs);
+}
+
+fn dynamic_link() -> Vec<&'static str> {
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let dynamic_libs = if target_os == "windows" {
         [
@@ -229,16 +296,21 @@ fn dynamic_link() {
     for lib in dynamic_libs {
         println!("cargo:rustc-link-lib=dylib={lib}");
     }
-    maybe_link_freebl3();
+    dynamic_libs
+        .into_iter()
+        .chain(maybe_link_freebl3())
+        .collect()
 }
 
-fn maybe_link_freebl3() {
+fn maybe_link_freebl3() -> Option<&'static str> {
     if env::var("CARGO_FEATURE_BLAPI").is_ok() {
         println!("cargo:rustc-link-lib=dylib=freebl3");
+        return Some("freebl3");
     }
+    None
 }
 
-fn static_link() {
+fn static_link(libdir: &Path) -> Vec<&'static str> {
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let mut static_libs = vec![
         "certdb",
@@ -287,6 +359,7 @@ fn static_link() {
     }
     if target_arch == "aarch64" {
         static_libs.push("ghash-aes-aarch64_c_lib");
+        static_libs.push("aarch64-gcm-wrap_c_lib");
     }
     if target_arch == "x86_64" || target_arch == "x86" {
         static_libs.push("ghash-aes-x86_c_lib");
@@ -297,15 +370,58 @@ fn static_link() {
         static_libs.push("hw-acc-crypto-avx2");
         static_libs.push("intel-gcm-wrap_c_lib");
     }
-    for lib in static_libs {
+    
+    
+    for libname in ["pqcwrap_static", "crux"] {
+        if [format!("{libname}.lib"), format!("lib{libname}.a")]
+            .iter()
+            .any(|f| libdir.join(f).is_file())
+        {
+            static_libs.push(libname);
+        }
+    }
+    for lib in &static_libs {
         println!("cargo:rustc-link-lib=static={lib}");
     }
+    static_libs
 }
 
 fn get_includes(nsstarget: &Path, nssdist: &Path) -> Vec<PathBuf> {
     let nsprinclude = nsstarget.join("include").join("nspr");
     let nssinclude = nssdist.join("public").join("nss");
     vec![nsprinclude, nssinclude]
+}
+
+fn include_flags(includes: &[PathBuf]) -> Vec<String> {
+    includes
+        .iter()
+        .map(|i| format!("-I{}", i.to_str().unwrap()))
+        .collect()
+}
+
+
+
+#[derive(Debug)]
+struct Pkcs11Types;
+
+impl ParseCallbacks for Pkcs11Types {
+    fn int_macro(&self, name: &str, _: i64) -> Option<IntKind> {
+        
+        
+        let name = match name {
+            "CK_INVALID_HANDLE" => "CK_OBJECT_HANDLE",
+            n if n.starts_with("CKA_") => "CK_ATTRIBUTE_TYPE",
+            n if n.starts_with("CKF_") => "CK_FLAGS",
+            n if n.starts_with("CKG_") => "CK_GENERATOR_FUNCTION",
+            n if n.starts_with("CKM_") => "CK_MECHANISM_TYPE",
+            n if n.starts_with("CKD_") || n.starts_with("CK_") => "CK_ULONG",
+            _ => return None,
+        };
+        Some(IntKind::Custom {
+            name,
+            is_signed: false,
+        })
+    }
 }
 
 fn build_bindings(base: &str, bindings: &Bindings, flags: &[String], gecko: bool) {
@@ -319,6 +435,9 @@ fn build_bindings(base: &str, bindings: &Bindings, flags: &[String], gecko: bool
     let mut builder = Builder::default().header(header);
     builder = builder.generate_comments(false);
     builder = builder.size_t_is_usize(true);
+    if base == "nss_p11" {
+        builder = builder.parse_callbacks(Box::new(Pkcs11Types));
+    }
 
     builder = builder.clang_arg("-v");
 
@@ -336,7 +455,7 @@ fn build_bindings(base: &str, bindings: &Bindings, flags: &[String], gecko: bool
             builder = builder.clang_arg("-DANDROID");
         }
         if bindings.cplusplus {
-            builder = builder.clang_args(&["-x", "c++", "-std=c++14"]);
+            builder = builder.clang_args(["-x", "c++", "-std=c++14"]);
         }
     }
 
@@ -368,84 +487,66 @@ fn build_bindings(base: &str, bindings: &Bindings, flags: &[String], gecko: bool
         .expect("couldn't write bindings");
 }
 
-fn pkg_config() -> Result<Vec<String>, Box<dyn Error>> {
-    let modversion = Command::new("pkg-config")
-        .args(["--modversion", "nss"])
-        .output()?
-        .stdout;
-
-    let modversion = String::from_utf8(modversion)?;
-
-    let modversion = modversion.trim();
-
+fn setup_pkg_config(min_version: &str) -> Option<Vec<String>> {
     
     
-    let modversion_for_cmp = if modversion.chars().filter(|c| *c == '.').count() == 1 {
-        modversion.to_owned() + ".0"
-    } else {
-        modversion.to_owned()
+    
+    
+    let library = match pkg_config::Config::new()
+        .atleast_version(min_version)
+        .print_system_cflags(false)
+        .env_metadata(true)
+        .statik(false)
+        .probe("nss")
+    {
+        Ok(library) => library,
+        Err(e) => {
+            
+            if let Ok(found) = pkg_config::Config::new()
+                .cargo_metadata(false)
+                .env_metadata(false)
+                .probe("nss")
+            {
+                panic!(
+                    "nss-rs has NSS version requirement >={min_version}, found {}; \
+                     set NSS_DIR to a newer checkout, or NSS_NO_PKG_CONFIG=1 to build NSS from source",
+                    found.version
+                );
+            }
+            let detail = e
+                .to_string()
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ");
+            println!("cargo:warning=pkg-config found no usable NSS: {detail}");
+            return None;
+        }
     };
 
-    let modversion_for_cmp = Version::parse(&modversion_for_cmp)?;
-
-    let version_req = VersionReq::parse(&format!(">={}", MINIMUM_NSS_VERSION.trim()))?;
-
-    assert!(
-        version_req.matches(&modversion_for_cmp),
-        "nss-rs has NSS version requirement {version_req}, found {modversion}",
-    );
-
-    let cfg = Command::new("pkg-config")
-        .args(["--cflags", "--libs", "nss"])
-        .output()?
-        .stdout;
-
-    let cfg_str = String::from_utf8(cfg)?;
-
-    let mut flags: Vec<String> = Vec::new();
-    let mut lib_dirs: Vec<PathBuf> = Vec::new();
-
-    for f in cfg_str.split_whitespace() {
-        if f.starts_with("-I") {
-            flags.push(String::from(f));
-        } else if let Some(path) = f.strip_prefix("-L") {
-            println!("cargo:rustc-link-search=native={path}");
-            lib_dirs.push(PathBuf::from(path));
-        } else if let Some(lib) = f.strip_prefix("-l") {
-            println!("cargo:rustc-link-lib=dylib={lib}");
-        } else {
-            println!("cargo:warning=Unknown flag from pkg-config: {f}");
-        }
+    let libs = library
+        .libs
+        .iter()
+        .map(String::as_str)
+        .chain(maybe_link_freebl3())
+        .collect::<Vec<_>>();
+    for dir in &library.link_paths {
+        rerun_if_libs_changed(dir, &libs);
     }
 
-    if env::var("CARGO_FEATURE_BLAPI").is_ok() {
-        
-        
-        if let Ok(output) = Command::new("pkg-config")
-            .args(["--variable=libdir", "nss"])
-            .output()
-            && output.status.success()
-            && let Ok(s) = String::from_utf8(output.stdout)
-        {
-            let trimmed = s.trim();
-            if !trimmed.is_empty() {
-                let dir = PathBuf::from(trimmed);
-                if !lib_dirs.contains(&dir) {
-                    println!("cargo:rustc-link-search=native={}", dir.display());
-                    lib_dirs.push(dir);
-                }
-            }
-        }
-    }
-    maybe_link_freebl3();
+    let mut flags = include_flags(&library.include_paths);
+    let mut defines = library.defines.iter().collect::<Vec<_>>();
+    defines.sort();
+    flags.extend(defines.into_iter().map(|(name, value)| {
+        value
+            .as_ref()
+            .map_or_else(|| format!("-D{name}"), |value| format!("-D{name}={value}"))
+    }));
 
-    Ok(flags)
+    Some(flags)
 }
 
 fn setup_standalone(nss_dir: String) -> Vec<String> {
     let nss = PathBuf::from(nss_dir);
-    println!("cargo:rerun-if-env-changed=NSS_DIR");
-    println!("cargo:rerun-if-env-changed=NSS_PREBUILT");
 
     
     let nssdist = nss.parent().unwrap().join("dist");
@@ -461,26 +562,18 @@ fn setup_standalone(nss_dir: String) -> Vec<String> {
     let includes = get_includes(&nsstarget, &nssdist);
 
     let nsslibdir = nsstarget.join("lib");
-    println!(
-        "cargo:rustc-link-search=native={}",
-        nsslibdir.to_str().unwrap()
-    );
-    if env::var("CARGO_CFG_FUZZING").is_ok()
+    let libs = if env::var("CARGO_CFG_FUZZING").is_ok()
         || env::var("PROFILE").unwrap_or_default() == "debug"
         
         || env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows"
     {
-        static_link();
+        static_link(&nsslibdir)
     } else {
-        dynamic_link();
-    }
+        dynamic_link()
+    };
+    link_search(&nsslibdir, &libs);
 
-    let mut flags: Vec<String> = Vec::new();
-    for i in includes {
-        flags.push(String::from("-I") + i.to_str().unwrap());
-    }
-
-    flags
+    include_flags(&includes)
 }
 
 #[cfg(feature = "gecko")]
@@ -501,34 +594,23 @@ fn setup_for_gecko() -> Vec<String> {
         println!("cargo:rustc-link-lib=dylib={}", lib);
     }
 
-    if fold_libs {
-        println!(
-            "cargo:rustc-link-search=native={}",
-            TOPOBJDIR.join("security").display()
-        );
+    let lib_dirs = if fold_libs {
+        vec![TOPOBJDIR.join("security")]
     } else {
-        println!(
-            "cargo:rustc-link-search=native={}",
-            TOPOBJDIR.join("dist").join("bin").display()
-        );
         let nsslib_path = TOPOBJDIR.join("security").join("nss").join("lib");
-        println!(
-            "cargo:rustc-link-search=native={}",
-            nsslib_path.join("nss").join("nss_nss3").display()
-        );
-        println!(
-            "cargo:rustc-link-search=native={}",
-            nsslib_path.join("ssl").join("ssl_ssl3").display()
-        );
-        println!(
-            "cargo:rustc-link-search=native={}",
+        vec![
+            TOPOBJDIR.join("dist").join("bin"),
+            nsslib_path.join("nss").join("nss_nss3"),
+            nsslib_path.join("ssl").join("ssl_ssl3"),
             TOPOBJDIR
                 .join("config")
                 .join("external")
                 .join("nspr")
-                .join("pr")
-                .display()
-        );
+                .join("pr"),
+        ]
+    };
+    for dir in &lib_dirs {
+        link_search(dir, &libs);
     }
 
     let mut flags = BINDGEN_SYSTEM_FLAGS
@@ -557,60 +639,73 @@ fn setup_for_gecko() -> Vec<String> {
 }
 
 fn process_config(config: &mut HashMap<String, Bindings>) {
-    let mut excludes = HashMap::new();
-    for header in config.keys().cloned() {
-        
-        
-        
-        
-        
-        
-        excludes.insert(
-            header.clone(),
-            config
-                .iter()
-                .flat_map(|(h, b)| {
-                    if *h == header {
-                        vec![]
-                    } else {
-                        vec![&b.types, &b.functions, &b.variables]
-                    }
-                    .into_iter()
-                    .flat_map(|v| v.iter())
-                    .cloned()
-                })
-                .collect::<HashSet<String>>(),
-        );
+    for (n, b) in config.iter() {
+        b.check_sorted(n);
     }
 
-    for (header, excludes) in excludes {
+    let names = config.keys().cloned().collect::<Vec<_>>();
+    for name in names {
+        
+        
+        
+        
+        
+        
+        let excl = config
+            .iter()
+            .filter(|(n, _)| **n != name)
+            .flat_map(|(_, b)| [&b.types, &b.functions, &b.variables])
+            .flatten()
+            .cloned()
+            .collect::<Vec<_>>();
+
         config
-            .get_mut(&header)
-            .expect("key disappeared from config?")
+            .get_mut(&name)
+            .expect("key disappeared from config?") 
             .exclude
-            .extend(excludes);
+            .extend(excl);
+    }
+
+    for b in config.values_mut() {
+        b.exclude.sort_unstable();
+        b.exclude.dedup();
     }
 }
 
 fn main() {
-    println!("cargo:rerun-if-changed=src/min_version.rs");
-    println!("cargo:rerun-if-changed=min_version.txt");
+    println!("cargo:rerun-if-changed=Cargo.toml");
     println!("cargo:rustc-check-cfg=cfg(nss_nodb)");
-    setup_clang();
-
-    let flags = if cfg!(feature = "gecko") {
-        setup_for_gecko()
-    } else if let Ok(nss_dir) = env::var("NSS_DIR") {
-        setup_standalone(nss_dir.trim().to_string())
-    } else {
-        pkg_config().unwrap_or_else(|_| setup_standalone(nss_dir()))
-    };
 
     let config_file = PathBuf::from(BINDINGS_DIR).join(BINDINGS_CONFIG);
     println!("cargo:rerun-if-changed={}", config_file.to_str().unwrap());
     let config = fs::read_to_string(config_file).expect("unable to read binding configuration");
     let mut config: HashMap<String, Bindings> = ::toml::from_str(&config).unwrap();
     process_config(&mut config);
+
+    setup_clang();
+
+    let min_version = min_nss_version();
+    println!("cargo:rustc-env=NSS_MIN_VERSION={min_version}");
+
+    for var in [
+        "NSS_DIR",
+        "NSS_PREBUILT",
+        "PKG_CONFIG_PATH",
+        "PKG_CONFIG_LIBDIR",
+        "PKG_CONFIG_SYSROOT_DIR",
+        "PKG_CONFIG_SYSTEM_INCLUDE_PATH",
+        "PKG_CONFIG_ALLOW_SYSTEM_CFLAGS",
+    ] {
+        println!("cargo:rerun-if-env-changed={var}");
+    }
+
+    let flags = if cfg!(feature = "gecko") {
+        setup_for_gecko()
+    } else if let Ok(nss_dir) = env::var("NSS_DIR") {
+        setup_standalone(nss_dir.trim().to_string())
+    } else {
+        setup_pkg_config(&min_version).unwrap_or_else(|| setup_standalone(nss_dir()))
+    };
 
     for (k, v) in &config {
         build_bindings(k, v, &flags[..], cfg!(feature = "gecko"));

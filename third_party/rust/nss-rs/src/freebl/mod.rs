@@ -14,7 +14,7 @@
 #[cfg(feature = "gecko")]
 use std::ffi::CStr;
 use std::{
-    os::raw::{c_int, c_uchar, c_uint, c_ulong, c_void},
+    os::raw::{c_int, c_uchar, c_uint, c_void},
     sync::OnceLock,
 };
 
@@ -37,32 +37,6 @@ pub struct AESContext {
 pub struct ChaCha20Poly1305Context {
     _private: [u8; 0],
 }
-
-
-
-
-
-
-
-
-
-
-#[repr(C, packed)]
-#[derive(Copy, Clone)]
-#[expect(non_snake_case, reason = "PKCS#11 naming conventions.")]
-pub struct CK_GCM_MESSAGE_PARAMS {
-    pub pIv: *mut c_uchar,
-    pub ulIvLen: c_ulong,
-    pub ulIvFixedBits: c_ulong,
-    pub ivGenerator: c_ulong, 
-    pub pTag: *mut c_uchar,
-    pub ulTagBits: c_ulong,
-}
-
-
-
-#[cfg(not(target_os = "windows"))]
-const _: () = assert!(size_of::<CK_GCM_MESSAGE_PARAMS>() == 6 * size_of::<c_ulong>());
 
 
 
