@@ -38,7 +38,7 @@ GetObjectFlagsForNewProperty(const JSClass* clasp, ObjectFlags flags, jsid id,
     
     
     
-    if (propFlags.isDataProperty() && !propFlags.writable()) {
+    if (propFlags.isDataDescriptor() && !propFlags.writable()) {
       flags.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
     } else if (propFlags.isAccessorProperty()) {
       
