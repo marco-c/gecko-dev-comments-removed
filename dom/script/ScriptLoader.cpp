@@ -4036,6 +4036,23 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
   return nsContentUtils::JSScriptBytecodeMimeType();
 }
 
+const Encoding* ScriptLoader::GetClassicScriptFallbackEncoding(
+    const ScriptLoadRequest* aRequest) {
+  if (aRequest->mClassicScriptHintEncoding) {
+    return aRequest->mClassicScriptHintEncoding;
+  }
+
+  
+  if (mDocument) {
+    return mDocument->GetDocumentCharacterSet();
+  }
+
+  
+  
+  
+  return WINDOWS_1252_ENCODING;
+}
+
 nsresult ScriptLoader::MaybePrepareForDiskCacheAfterExecute(
     ScriptLoadRequest* aRequest, nsresult aRv) {
   MOZ_ASSERT(!aRequest->IsWasmBytes());

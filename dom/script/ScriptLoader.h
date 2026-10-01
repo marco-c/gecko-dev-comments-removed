@@ -770,6 +770,12 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   
   
+  const Encoding* GetClassicScriptFallbackEncoding(
+      const ScriptLoadRequest* aRequest);
+
+  
+  
+  
   
   nsresult MaybePrepareForDiskCacheAfterExecute(ScriptLoadRequest* aRequest,
                                                 nsresult aRv);
