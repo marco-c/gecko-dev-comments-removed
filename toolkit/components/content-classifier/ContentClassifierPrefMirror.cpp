@@ -20,8 +20,30 @@ StaticAutoPtr<ContentClassifierPrefMirror>
 
 namespace {
 
-constexpr char kMirrorEnabledPref[] =
-    "privacy.trackingprotection.content.mirror.enabled";
+constexpr char kMirrorModePref[] =
+    "privacy.trackingprotection.content.mirror.mode";
+
+enum class MirrorMode : uint32_t {
+  Off = 0,
+  On = 1,
+  Handover = 2,
+};
+
+MirrorMode CurrentMode() {
+  switch (Preferences::GetUint(kMirrorModePref, uint32_t(MirrorMode::Off))) {
+    case 1:
+      return MirrorMode::On;
+    case 2:
+      return MirrorMode::Handover;
+    default:
+      return MirrorMode::Off;
+  }
+}
+
+
+
+constexpr char kOwnsPrefsPref[] =
+    "privacy.trackingprotection.content.mirror.owns_prefs";
 
 
 constexpr char kProtectionEnabledPref[] =
@@ -36,6 +58,11 @@ constexpr char kAnnotationEnginesPref[] =
     "privacy.trackingprotection.content.annotation.engines";
 constexpr char kAnnotationEnginesPBMPref[] =
     "privacy.trackingprotection.content.annotation.engines.pbmode";
+
+constexpr const char* kMirroredPrefs[] = {
+    kProtectionEnabledPref, kProtectionEnginesPref, kProtectionEnginesPBMPref,
+    kAnnotationEnabledPref, kAnnotationEnginesPref, kAnnotationEnginesPBMPref,
+};
 
 constexpr char kMajorExceptionsEngine[] = "major-exceptions";
 constexpr char kMinorExceptionsEngine[] = "minor-exceptions";
@@ -160,12 +187,11 @@ void ContentClassifierPrefMirror::Init() {
   sRegistered = true;
 
   
-  
   RunOnShutdown([] { Shutdown(); });
 
   Preferences::RegisterCallbackAndCall(
       &ContentClassifierPrefMirror::OnMirrorPrefChange,
-      nsDependentCString(kMirrorEnabledPref));
+      nsDependentCString(kMirrorModePref));
 }
 
 ContentClassifierPrefMirror::ContentClassifierPrefMirror() {
@@ -187,25 +213,61 @@ void ContentClassifierPrefMirror::OnMirrorPrefChange(const char* aPref,
                                                      void* aData) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  bool enabled = Preferences::GetBool(kMirrorEnabledPref, false);
-  if (enabled == !!sInstance) {
-    
-    return;
-  }
+  switch (CurrentMode()) {
+    case MirrorMode::On:
+      if (!sInstance) {
+        sInstance = new ContentClassifierPrefMirror();
+      }
+      sInstance->ScheduleSync();
+      return;
 
-  if (!enabled) {
-    Shutdown();
-    return;
-  }
+    case MirrorMode::Handover: {
+      
+      Shutdown();
+      nsresult rv = Preferences::ClearUser(kOwnsPrefsPref);
+      NS_WARNING_ASSERTION(
+          NS_SUCCEEDED(rv),
+          "Failed to clear the ContentClassifierMirror owning pref");
+      return;
+    }
 
-  sInstance = new ContentClassifierPrefMirror();
-  sInstance->ScheduleSync();
+    case MirrorMode::Off:
+      
+      
+      Shutdown();
+      ReleaseMirroredPrefs();
+      return;
+  }
 }
 
 
 void ContentClassifierPrefMirror::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   sInstance = nullptr;
+}
+
+
+void ContentClassifierPrefMirror::ReleaseMirroredPrefs() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  if (!Preferences::GetBool(kOwnsPrefsPref, false)) {
+    return;
+  }
+
+  nsresult rv;
+
+  for (const char* pref : kMirroredPrefs) {
+    rv = Preferences::ClearUser(pref);
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "Failed to clear a ContentClassifierMirror mirrored pref");
+  }
+
+  rv = Preferences::ClearUser(kOwnsPrefsPref);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "Failed to clear the ContentClassifierMirror owning pref");
 }
 
 
@@ -234,8 +296,7 @@ void ContentClassifierPrefMirror::ScheduleSync() {
 void ContentClassifierPrefMirror::Sync() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!Preferences::GetBool(kMirrorEnabledPref, false)) {
-    
+  if (CurrentMode() != MirrorMode::On) {
     
     return;
   }
@@ -265,6 +326,10 @@ void ContentClassifierPrefMirror::Sync() {
   Preferences::SetBool(
       kAnnotationEnabledPref,
       !annotationEngines.IsEmpty() || !annotationEnginesPBM.IsEmpty());
+
+  
+  
+  Preferences::SetBool(kOwnsPrefsPref, true);
 }
 
 }  
