@@ -2088,6 +2088,18 @@ void Document::LoadEventFired() {
   }
 }
 
+void Document::ReportPageLoadTelemetry() {
+  
+  
+  if (mPageLoadTelemetryReported) {
+    return;
+  }
+  mPageLoadTelemetryReported = true;
+
+  ReportPageLoadEvent();
+  ReportLCP();
+}
+
 void Document::ReportPageLoadEvent() {
   
   
@@ -12657,9 +12669,7 @@ void Document::Destroy() {
   ReportDocumentUseCounters();
   
   
-  
-  ReportPageLoadEvent();
-  ReportLCP();
+  ReportPageLoadTelemetry();
   SetDevToolsWatchingDOMMutations(false);
 
   mIsGoingAway = true;
@@ -13098,6 +13108,12 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
 
   if (!inFrameLoaderSwap) {
     UpdateVisibilityState();
+
+    
+    
+    
+    
+    ReportPageLoadTelemetry();
   }
 
   EnumerateExternalResources([aPersisted](Document& aExternalResource)
