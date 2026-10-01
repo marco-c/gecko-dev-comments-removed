@@ -173,6 +173,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     ".apk",  
     
+    
     ".applescript",
     
     

@@ -21,6 +21,7 @@ static const char* const kTestFileExtensions[] = {
     ".air",     
     ".apk",     
     ".app",     
+    ".appcontent-ms",
     ".applescript",
     ".application",  
     ".appref-ms",    

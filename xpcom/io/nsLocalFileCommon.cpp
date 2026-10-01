@@ -42,6 +42,7 @@ const char* const sExecutableExts[] = {
   ".afploc",      
   ".air",         
   ".app",         
+  ".appcontent-ms",
   ".application", 
   ".appref-ms",   
   ".appx",
