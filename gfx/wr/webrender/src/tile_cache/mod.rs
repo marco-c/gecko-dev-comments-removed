@@ -1927,7 +1927,6 @@ impl TileCacheInstance {
                                 
                                 let native_surface_id =
                                 resource_cache.create_compositor_surface(
-                                    DeviceIntPoint::zero(),
                                     native_surface_size,
                                     is_opaque,
                                 );
