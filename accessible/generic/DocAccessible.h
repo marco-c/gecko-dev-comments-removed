@@ -515,7 +515,16 @@ class DocAccessible : public HyperTextAccessible,
   
 
 
-  void UpdateRootElIfNeeded();
+  void UpdateRootElement();
+
+  
+
+
+
+
+
+
+  void UpdateDocRoleMapEntry();
 
   
 
@@ -902,8 +911,6 @@ class DocAccessible : public HyperTextAccessible,
   friend class ::nsAccessibilityService;
 
  private:
-  void SetRoleMapEntryForDoc(dom::Element* aElement);
-
   
 
 

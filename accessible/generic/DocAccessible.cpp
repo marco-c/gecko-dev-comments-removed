@@ -1850,7 +1850,7 @@ void DocAccessible::DoInitialUpdate() {
   }
 
   
-  UpdateRootElIfNeeded();
+  UpdateRootElement();
 
   
   CacheChildrenInSubtree(this);
@@ -2159,8 +2159,12 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
   if (aAttribute == nsGkAtoms::role) {
     
     
-    if (mContent == aElement) {
-      UpdateRootElIfNeeded();
+    
+    
+    
+    
+    if (mContent == aElement || IsBodyElement(aElement)) {
+      UpdateDocRoleMapEntry();
       return true;
     }
 
@@ -2251,14 +2255,33 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
   return false;
 }
 
-void DocAccessible::UpdateRootElIfNeeded() {
-  dom::Element* rootEl = mDocumentNode->GetRootElement();
-  mContent = rootEl;
+void DocAccessible::UpdateDocRoleMapEntry() {
+  
+  
+  dom::Element* roleEl = mDocumentNode->GetBodyElement();
+  if (!roleEl) {
+    roleEl = mDocumentNode->GetRootElement();
+  }
+  const nsRoleMapEntry* entry = aria::GetRoleMap(roleEl);
+  if (entry && !nsAccUtils::IsARIARoleAllowedOnContentDoc(entry->role) &&
+      
+      
+      (entry->role != roles::ALERT || mDocumentNode->IsContentDocument())) {
+    
+    
+    entry = nullptr;
+  }
+
   const uint8_t oldRoleMapEntryIndex = mRoleMapEntryIndex;
-  SetRoleMapEntryForDoc(rootEl);
+  SetRoleMapEntry(entry);
   if (mIPCDoc && mRoleMapEntryIndex != oldRoleMapEntryIndex) {
     mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
   }
+}
+
+void DocAccessible::UpdateRootElement() {
+  mContent = mDocumentNode->GetRootElement();
+  UpdateDocRoleMapEntry();
 }
 
 
@@ -2432,7 +2455,7 @@ void DocAccessible::ProcessContentInserted(
 
   
   if (aContainer == this) {
-    UpdateRootElIfNeeded();
+    UpdateRootElement();
   }
 
   InsertIterator iter(aContainer, aNodes);
@@ -3206,19 +3229,6 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(
         ->ScheduleNotification<DocAccessible, LocalAccessible>(
             this, &DocAccessible::ARIAActiveDescendantChanged, widget);
   }
-}
-
-void DocAccessible::SetRoleMapEntryForDoc(dom::Element* aElement) {
-  const nsRoleMapEntry* entry = aria::GetRoleMap(aElement);
-  if (!entry || nsAccUtils::IsARIARoleAllowedOnContentDoc(entry->role) ||
-      
-      
-      (entry->role == roles::ALERT && !mDocumentNode->IsContentDocument())) {
-    SetRoleMapEntry(entry);
-    return;
-  }
-  
-  SetRoleMapEntry(nullptr);
 }
 
 bool DocAccessible::IsRootContent(nsINode* aNode) const {
