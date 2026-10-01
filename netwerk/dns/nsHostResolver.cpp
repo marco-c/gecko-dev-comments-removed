@@ -634,6 +634,21 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
             glean::dns::lookup_method.AccumulateSingleSample(
                 METHOD_NETWORK_FIRST);
           }
+          
+          
+          
+          
+          
+          
+          
+          
+          nsLiteralCString missReason =
+              rec->mValidStart.IsNull() ? "absent"_ns
+              : (rec->CheckExpiration(now) == nsHostRecord::EXP_EXPIRED)
+                  ? "expired"_ns
+                  : "refresh"_ns;
+          glean::dns::cache_miss_reason.Get(RecordFamilyLabel(rec), missReason)
+              .Add(1);
           if (NS_FAILED(rv) && callback->isInList()) {
             callback->remove();
           } else {
