@@ -417,11 +417,17 @@ impl SpaceSnapper {
     
     pub fn snap_rect_rounded<F>(&self, rect: &Box2D<f32, F>, rounding: SnapRounding) -> Box2D<f32, F> where F: fmt::Debug {
         debug_assert!(!self.enabled || self.current_target_spatial_node_index != SpatialNodeIndex::INVALID);
+        
+        
+        if rounding == SnapRounding::Exact {
+            return *rect;
+        }
         match self.snapping_transform {
             Some(SnapTransform { ref scale_offset, swap_xy }) => {
                 let rect = if swap_xy { swap_box_xy(rect) } else { *rect };
                 let device_rect: DeviceRect = scale_offset.map_rect(&rect);
                 let snapped: DeviceRect = match rounding {
+                    SnapRounding::Exact => unreachable!("returned above"),
                     SnapRounding::Nearest => device_rect.snap(),
                     SnapRounding::RoundOut => device_rect.round_out(),
                     SnapRounding::Line { horizontal } =>
@@ -438,6 +444,10 @@ impl SpaceSnapper {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SnapRounding {
+    
+    
+    
+    Exact,
     
     
     Nearest,
