@@ -331,6 +331,22 @@ const MOCK_RS_RECORDS = [
       prompts: "Tabs:\n{titles}",
       version: "v1.0",
     },
+    {
+      kind: "module",
+      feature: "browser-context",
+      module: "tab",
+      model: "generic",
+      prompts: "Active tab:\n{url}\n{title}\n{description}",
+      version: "1.0",
+    },
+    {
+      kind: "module",
+      feature: "browser-context",
+      module: "mentions",
+      model: "generic",
+      prompts: "Mentioned tabs:\n{contextUrls}",
+      version: "1.0",
+    },
   ]);
 
 add_setup(async function () {
@@ -1402,6 +1418,48 @@ async function getSmartbarContextChips(browser) {
 
 
 
+async function removeSmartbarContextChip(browser, label) {
+  await SpecialPowers.spawn(browser, [label], async chipLabel => {
+    const smartbar = content.document
+      .querySelector("ai-window")
+      .shadowRoot.querySelector("#ai-window-smartbar");
+    const container = smartbar.querySelector(".smartbar-context-chips-header");
+    const chip = () =>
+      [...container.shadowRoot.querySelectorAll("ai-website-chip")].find(
+        c => c.label === chipLabel
+      );
+    await ContentTaskUtils.waitForMutationCondition(
+      container.shadowRoot,
+      { childList: true, subtree: true },
+      chip,
+      `Wait for the "${chipLabel}" chip`
+    );
+    chip().shadowRoot.querySelector(".chip-remove").click();
+  });
+}
+
+
+
+
+
+
+
+
+
+async function addTabsInNewGroup(win, urls, group) {
+  const tabs = urls.map(url => BrowserTestUtils.addTab(win.gBrowser, url));
+  await Promise.all(
+    tabs.map(tab => BrowserTestUtils.browserLoaded(tab.linkedBrowser))
+  );
+  return win.gBrowser.addTabGroup(tabs, group);
+}
+
+
+
+
+
+
+
 async function getSmartbarModelSelectData(browser) {
   return SpecialPowers.spawn(browser, [], async () => {
     const aiWindowElement = content.document.querySelector("ai-window");
@@ -1714,5 +1772,31 @@ async function getUserMessageChipLabels(sidebarBrowser, messageIndex = 0) {
     return Array.from(chips).map(
       chip => chip.shadowRoot?.querySelector(".chip-label")?.textContent ?? ""
     );
+  });
+}
+
+
+
+
+
+
+
+
+async function getUserMessageChipTypes(browser, messageIndex) {
+  const aichatBrowser = await getAichatBrowser(browser);
+  return SpecialPowers.spawn(aichatBrowser, [messageIndex], async msgIndex => {
+    const chatContent = content.document.querySelector("ai-chat-content");
+    const chipContainer = () =>
+      chatContent.shadowRoot.querySelectorAll(
+        ".chat-bubble-user website-chip-container"
+      )[msgIndex];
+    await ContentTaskUtils.waitForMutationCondition(
+      chatContent.shadowRoot,
+      { childList: true, subtree: true },
+      chipContainer,
+      `Wait for the chips in user message ${msgIndex}`
+    );
+    const { websites } = chipContainer().wrappedJSObject;
+    return websites.map(website => website.type);
   });
 }
