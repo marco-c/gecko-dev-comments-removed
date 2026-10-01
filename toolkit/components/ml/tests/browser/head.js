@@ -1453,6 +1453,12 @@ async function checkForRemoteType(remoteType) {
 }
 
 
+
+const { runOnBothInferenceProcesses } = ChromeUtils.importESModule(
+  "resource://testing-common/MLTestUtils.sys.mjs"
+).MLTestUtils;
+
+
 const TINYSTORIES_GREEDY_SAMPLERS = [
   { type: "top-k", topK: 1 },
   { type: "dist" },
