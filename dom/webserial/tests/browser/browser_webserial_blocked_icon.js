@@ -2,7 +2,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/base/content/test/permissions/head.js",
+  "chrome://mochitests/content/browser/browser/base/content/test/browser-permissions/head.js",
   this
 );
 
