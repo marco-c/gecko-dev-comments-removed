@@ -2027,6 +2027,12 @@ pref("browser.newtabpage.activity-stream.widgets.system.focusTimer.region-block"
 pref("browser.newtabpage.activity-stream.widgets.focusTimer.region-block", "DE,FR,PL,US");
 
 
+
+
+pref("browser.newtabpage.activity-stream.widgets.system.clocks.region-block", "PL");
+pref("browser.newtabpage.activity-stream.widgets.clocks.region-block", "DE,FR,PL,US");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
 
 
