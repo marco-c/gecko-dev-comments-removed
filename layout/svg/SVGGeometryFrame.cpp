@@ -267,9 +267,11 @@ void SVGGeometryFrame::ReflowSVG() {
     return;
   }
 
+  
+  
   SVGBBoxFlags flags = {SVGBBoxFlag::IncludeFillGeometry,
-                        SVGBBoxFlag::IncludeStroke,
-                        SVGBBoxFlag::IncludeMarkers};
+                        SVGBBoxFlag::IncludeStroke, SVGBBoxFlag::IncludeMarkers,
+                        SVGBBoxFlag::EstimateStrokeBounds};
 
   
   
@@ -448,7 +450,8 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
       
 
       Maybe<Rect> strokeBBoxExtents;
-      if (StaticPrefs::svg_Moz2D_strokeBounds_enabled()) {
+      if (!aFlags.contains(SVGBBoxFlag::EstimateStrokeBounds) &&
+          StaticPrefs::svg_Moz2D_strokeBounds_enabled()) {
         if (userToOuterSVG) {
           Matrix m = ToMatrix(*userToOuterSVG);
           Matrix outerSVGToBBox = aToBBoxUserspace * m.Inverse();

@@ -39,6 +39,8 @@ enum class SVGBBoxFlag : uint16_t {
   IncludeMarkers,
   IncludeClipped,
   
+  EstimateStrokeBounds,
+  
   
   
   UseFrameBoundsForOuterSVG,
