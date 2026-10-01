@@ -8,13 +8,14 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/ProcInfo.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/hwinference/PHWInferenceParent.h"
 #include "mozilla/ipc/UtilityMediaService.h"
 
 namespace mozilla::hwinference {
+
+class HWInferenceProcess;
 
 
 class HWInferenceParent final : public PHWInferenceParent {
@@ -42,26 +43,30 @@ class HWInferenceParent final : public PHWInferenceParent {
     return ipc::UtilityActorName::HwInference;
   }
 
+  
   nsresult BindToUtilityProcess(
       const RefPtr<ipc::UtilityProcessParent>& aUtilityParent);
 
   
-  
   RefPtr<GenericNonExclusivePromise> WhenReady() { return mReadyPromise; }
 
   
-  
-  
-  static void StartContentSpeechRecognition(
+  void StartContentSpeechRecognition(
       Endpoint<PSpeechRecognitionParent>&& aEndpoint,
       dom::ContentParentId aChildId);
 
-  static RefPtr<HWInferenceParent> GetSingleton();
-
  private:
   friend PHWInferenceParent;
-  static StaticRefPtr<HWInferenceParent> sInstance;
+  friend class HWInferenceProcess;
+
   ~HWInferenceParent() = default;
+
+  
+  template <typename Send>
+  void SendWhenReady(Send&& aSend);
+
+  
+  HWInferenceProcess* mOwner = nullptr;
 
   const RefPtr<GenericNonExclusivePromise::Private> mReadyPromise =
       new GenericNonExclusivePromise::Private(

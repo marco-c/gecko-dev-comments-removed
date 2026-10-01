@@ -153,6 +153,7 @@
 #include "mozilla/hal_sandbox/PHalParent.h"
 #ifndef ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
+#  include "mozilla/hwinference/HWInferenceProcess.h"
 #  include "mozilla/hwinference/PSpeechRecognitionChild.h"
 #endif  
 #include "mozilla/intl/L10nRegistry.h"
@@ -5193,8 +5194,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateAudioIPCConnection(
 void ContentParent::EnsureHWInferenceConnection() {
   
   
-  mHWInferenceKeepAlive =
-      UtilityProcessManager::GetSingleton()->AcquireContentHWInferenceProcess();
+  mHWInferenceKeepAlive = hwinference::HWInferenceProcess::Content().Acquire();
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvAcquireHWInferenceProcess() {
@@ -5217,8 +5217,9 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
     return IPC_OK();
   }
 
-  hwinference::HWInferenceParent::StartContentSpeechRecognition(
-      std::move(aEndpoint), mChildID);
+  hwinference::HWInferenceProcess::Content()
+      .Actor()
+      ->StartContentSpeechRecognition(std::move(aEndpoint), mChildID);
   return IPC_OK();
 }
 
