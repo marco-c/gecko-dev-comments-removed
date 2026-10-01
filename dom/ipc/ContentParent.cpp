@@ -843,39 +843,43 @@ already_AddRefed<ContentParent> ContentParent::MinTabSelect(
 
 
 UniqueContentParentKeepAlive ContentParent::GetUsedBrowserProcess(
-    const RemoteType& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-    uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority,
-    uint64_t aBrowserId) {
+    const RemoteType& aRemoteType, bool aPreferUsed, uint64_t aBrowserId) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   AutoRestore ar(sInProcessSelector);
   sInProcessSelector = true;
 #endif
 
-  uint32_t numberOfParents = aContentParents.Length();
-  if (aPreferUsed && numberOfParents) {
-    
-    
-    
-    aMaxContentParents = numberOfParents;
-  }
+  
+  
+  if (!StaticPrefs::dom_ipc_disableContentProcessReuse()) {
+    nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
 
-  
-  
-  RefPtr<ContentParent> selected;
-  if (!StaticPrefs::dom_ipc_disableContentProcessReuse() &&
-      (selected =
-           MinTabSelect(aContentParents, aMaxContentParents, aBrowserId))) {
-    if (profiler_thread_is_being_profiled_for_markers()) {
-      nsPrintfCString marker("Reused process %u",
-                             (unsigned int)selected->ChildID());
-      PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
+    uint32_t maxContentParents;
+    uint32_t numberOfParents = contentParents.Length();
+    if (aPreferUsed && numberOfParents) {
+      
+      
+      
+      maxContentParents = numberOfParents;
+    } else {
+      maxContentParents = GetMaxProcessCount(aRemoteType);
     }
-    MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-            ("GetUsedProcess: Reused process id=%p childID=%" PRIu64 " for %s",
-             selected.get(), (uint64_t)selected->ChildID(),
-             aRemoteType.Stringify().get()));
-    selected->AssertAlive();
-    return selected->AddKeepAlive(aBrowserId);
+
+    if (RefPtr<ContentParent> selected =
+            MinTabSelect(contentParents, maxContentParents, aBrowserId)) {
+      if (profiler_thread_is_being_profiled_for_markers()) {
+        nsPrintfCString marker("Reused process %u",
+                               (unsigned int)selected->ChildID());
+        PROFILER_MARKER_TEXT("Process", DOM, {}, marker);
+      }
+      MOZ_LOG(
+          ContentParent::GetLog(), LogLevel::Debug,
+          ("GetUsedProcess: Reused process id=%p childID=%" PRIu64 " for %s",
+           selected.get(), (uint64_t)selected->ChildID(),
+           aRemoteType.Stringify().get()));
+      selected->AssertAlive();
+      return selected->AddKeepAlive(aBrowserId);
+    }
   }
 
   
@@ -909,7 +913,7 @@ UniqueContentParentKeepAlive ContentParent::GetUsedBrowserProcess(
     
     preallocated->mRemoteType = aRemoteType;
     preallocated->LoadedOrigins()->SetRemoteType(preallocated->mRemoteType);
-    preallocated->AddToPool(aContentParents);
+    preallocated->AddToPool(GetOrCreatePool(aRemoteType));
 
     
     if (!preallocated->IsLaunching()) {
@@ -968,15 +972,9 @@ UniqueContentParentKeepAlive ContentParent::GetNewOrUsedLaunchingBrowserProcess(
     }
   }
 
-  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
-
   if (!contentParent) {
     
-    uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
-
-    contentParent =
-        GetUsedBrowserProcess(aRemoteType, contentParents, maxContentParents,
-                              aPreferUsed, aPriority, aBrowserId);
+    contentParent = GetUsedBrowserProcess(aRemoteType, aPreferUsed, aBrowserId);
     MOZ_DIAGNOSTIC_ASSERT_IF(contentParent, !contentParent->IsShuttingDown());
   }
 
@@ -1002,7 +1000,7 @@ UniqueContentParentKeepAlive ContentParent::GetNewOrUsedLaunchingBrowserProcess(
     PreallocatedProcessManager::AddBlocker(aRemoteType, contentParent.get());
 
     
-    contentParent->AddToPool(contentParents);
+    contentParent->AddToPool(GetOrCreatePool(aRemoteType));
 
     MOZ_LOG(
         ContentParent::GetLog(), LogLevel::Debug,
