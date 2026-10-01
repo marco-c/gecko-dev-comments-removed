@@ -25,6 +25,10 @@ const PREF_ENABLED = "signon.storage.rust.enabled";
 const PREF_ACTIVE = "signon.storage.rust.active";
 const PREF_ATTEMPTS = "signon.storage.rust.migrationAttempts";
 const PREF_VULN = "signon.management.page.vulnerable-passwords.enabled";
+const PREF_RESTORE_VERSION = "signon.storage.rust.restoreVersion";
+const PREF_RESTORE_ATTEMPTS = "signon.storage.rust.restoreAttempts";
+const PREF_RESTORE_ATTEMPTS_VERSION =
+  "signon.storage.rust.restoreAttemptsVersion";
 
 
 
@@ -43,7 +47,15 @@ async function cleanup() {
   await jsonStore.clearAllPotentiallyVulnerablePasswords();
   await rustStore.removeAllLoginsAsync();
   await rustStore.clearAllPotentiallyVulnerablePasswords();
-  for (const pref of [PREF_ENABLED, PREF_ACTIVE, PREF_ATTEMPTS, PREF_VULN]) {
+  for (const pref of [
+    PREF_ENABLED,
+    PREF_ACTIVE,
+    PREF_ATTEMPTS,
+    PREF_VULN,
+    PREF_RESTORE_VERSION,
+    PREF_RESTORE_ATTEMPTS,
+    PREF_RESTORE_ATTEMPTS_VERSION,
+  ]) {
     Services.prefs.clearUserPref(pref);
   }
   Services.fog.testResetFOG();
@@ -189,6 +201,50 @@ add_task(async function test_migration_moves_vulnerable_passwords() {
   Assert.ok(
     await rustStore.isPotentiallyVulnerablePassword(stored),
     "vulnerable password migrated to the Rust store"
+  );
+}).skip(isRustBackend);
+
+
+
+
+add_task(async function test_restore_counts_a_login_deleted_in_rust() {
+  await cleanup();
+  await LoginTestUtils.addLogin({
+    username: "alice",
+    password: "pw-alice",
+    origin: "https://alice.example.com",
+  });
+  await LoginTestUtils.addLogin({
+    username: "bob",
+    password: "pw-bob",
+    origin: "https://bob.example.com",
+  });
+
+  Services.prefs.setBoolPref(PREF_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_ACTIVE, false);
+  await migrate();
+
+  const rustLogins = await rustStore.getAllLogins();
+  await rustStore.removeLoginAsync(rustLogins.find(l => l.username == "bob"));
+
+  
+  Services.prefs.setBoolPref(PREF_ENABLED, false);
+  await migrate();
+
+  await TestUtils.waitForCondition(
+    () => Glean.pwmgr.rustRestoreStatus.testGetValue(),
+    "the restore reported its result"
+  );
+  const { extra } = Glean.pwmgr.rustRestoreStatus.testGetValue()[0];
+  Assert.equal(
+    extra.number_of_logins_to_delete,
+    "1",
+    "the login deleted in Rust is counted"
+  );
+  Assert.equal(
+    (await jsonStore.getAllLogins(false)).length,
+    2,
+    "and left alone in the JSON store, which is what the count is about"
   );
 }).skip(isRustBackend);
 
