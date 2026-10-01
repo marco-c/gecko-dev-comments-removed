@@ -778,7 +778,7 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
     
     
 #   if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
-       defined(JS_CODEGEN_ARM64)
+       defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_LOONG64)
       
 #   else
 #     error "Need to consider SIMD alignment on this target."
