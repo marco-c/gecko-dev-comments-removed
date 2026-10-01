@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemHashSource.h"
 
 #include "FileSystemParentTypes.h"
@@ -46,6 +44,8 @@ Result<EntryId, QMResult> FileSystemHashSource::GenerateHash(
 
 Result<Name, QMResult> FileSystemHashSource::EncodeHash(const FileId& aFileId) {
   MOZ_ASSERT(32u == aFileId.Value().Length());
+  QM_TRY(OkIf(32u == aFileId.Value().Length()),
+         Err(QMResult(NS_ERROR_DOM_NOT_FOUND_ERR)));
   nsCString encoded;
   base32encode(&aFileId.Value(), &encoded);
 
