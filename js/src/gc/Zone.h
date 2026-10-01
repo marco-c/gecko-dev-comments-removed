@@ -637,12 +637,11 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   static constexpr JitDiscardOptions DefaultJitDiscardOptions() { return {}; }
 
   
-  void forceDiscardJitCode(
-      JS::GCContext* gcx,
-      const JitDiscardOptions& options = DefaultJitDiscardOptions());
+  
+  void discardJitCode(JS::GCContext* gcx, const JitDiscardOptions& options =
+                                              DefaultJitDiscardOptions());
 
-  void resetAllocSitesAndInvalidate(bool resetNurserySites,
-                                    bool resetPretenuredSites);
+  void discardJitCodeForAllRealms(JS::GCContext* gcx);
 
   void traceWeakJitScripts(JSTracer* trc);
 

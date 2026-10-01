@@ -612,6 +612,7 @@ bool TrialInliner::canInline(JSContext* cx, JSScript* script,
     return false;
   }
   
+  
   if (script->realm() != caller->realm()) {
     JitSpew(JitSpew_WarpTrialInlining, "SKIP: cross-realm call");
     return false;

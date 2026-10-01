@@ -668,6 +668,8 @@ class MOZ_RAII AutoKeepJitScripts {
 
 
 
+
+
 void MarkActiveICScriptsAndCopyStubs(Zone* zone);
 
 #ifdef JS_STRUCTURED_SPEW

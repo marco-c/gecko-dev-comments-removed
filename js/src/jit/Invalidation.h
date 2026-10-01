@@ -46,6 +46,7 @@ class IonScriptKey {
 using IonScriptKeyVector = JS::GCVector<IonScriptKey, 1, SystemAllocPolicy>;
 
 
+
 void InvalidateAll(JS::GCContext* gcx, JS::Zone* zone);
 void FinishInvalidation(JS::GCContext* gcx, JSScript* script);
 

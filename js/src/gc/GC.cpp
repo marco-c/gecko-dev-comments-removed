@@ -2958,11 +2958,40 @@ bool GCRuntime::prepareZonesForCollection(bool* isFullOut) {
   return any;
 }
 
+void GCRuntime::setRealmPreserveJitCodeFlags(Zone* zone,
+                                             const TimeStamp& currentTime,
+                                             bool canAllocateMoreCode,
+                                             Compartment* activeCompartment) {
+  for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+    bool isActiveCompartment = r->compartment() == activeCompartment;
+    bool preserve = shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
+                                          isActiveCompartment);
+    r->jitRealm().setPreservingCode(preserve);
+  }
+}
+
+void GCRuntime::clearRealmPreserveJitCodeFlags(Zone* zone) {
+  for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+    r->jitRealm().setPreservingCode(false);
+  }
+}
+
 
 
 void GCRuntime::maybeDiscardJitCodeForGC() {
   size_t nurserySiteResetCount = 0;
   size_t pretenuredSiteResetCount = 0;
+
+  
+  
+  bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
+  TimeStamp currentTime = TimeStamp::Now();
+
+  Compartment* activeCompartment = nullptr;
+  jit::JitActivationIterator activation(rt->mainContextFromOwnThread());
+  if (!activation.done()) {
+    activeCompartment = activation->compartment();
+  }
 
   js::CancelOffThreadCompile(rt, JS::Zone::Prepare);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
@@ -2970,20 +2999,22 @@ void GCRuntime::maybeDiscardJitCodeForGC() {
 
     
     
+    setRealmPreserveJitCodeFlags(zone, currentTime, canAllocateMoreCode,
+                                 activeCompartment);
+    auto clearFlags =
+        MakeScopeExit([&] { clearRealmPreserveJitCodeFlags(zone); });
+
+    
+    
     PretenuringZone& pz = zone->pretenuring;
     bool resetNurserySites = pz.shouldResetNurseryAllocSites();
     bool resetPretenuredSites = pz.shouldResetPretenuredAllocSites();
 
-    if (!zone->isAnyRealmPreservingCode()) {
-      Zone::JitDiscardOptions options;
-      options.discardJitScripts = true;
-      options.resetNurseryAllocSites = resetNurserySites;
-      options.resetPretenuredAllocSites = resetPretenuredSites;
-      zone->forceDiscardJitCode(rt->gcContext(), options);
-    } else if (resetNurserySites || resetPretenuredSites) {
-      zone->resetAllocSitesAndInvalidate(resetNurserySites,
-                                         resetPretenuredSites);
-    }
+    Zone::JitDiscardOptions options;
+    options.discardJitScripts = true;
+    options.resetNurseryAllocSites = resetNurserySites;
+    options.resetPretenuredAllocSites = resetPretenuredSites;
+    zone->discardJitCode(rt->gcContext(), options);
 
     if (resetNurserySites) {
       nurserySiteResetCount++;
@@ -3185,17 +3216,6 @@ void BackgroundUnmarkTask::unmark() {
 void GCRuntime::endPreparePhase() {
   MOZ_ASSERT(unmarkTask.isIdle());
 
-  
-  
-  bool canAllocateMoreCode = jit::CanLikelyAllocateMoreExecutableMemory();
-  auto currentTime = TimeStamp::Now();
-
-  Compartment* activeCompartment = nullptr;
-  jit::JitActivationIterator activation(rt->mainContextFromOwnThread());
-  if (!activation.done()) {
-    activeCompartment = activation->compartment();
-  }
-
   for (CompartmentsIter c(rt); !c.done(); c.next()) {
     c->gcState.scheduledForDestruction = false;
     c->gcState.maybeAlive = false;
@@ -3203,14 +3223,10 @@ void GCRuntime::endPreparePhase() {
     if (c->invisibleToDebugger()) {
       c->gcState.maybeAlive = true;  
     }
-    bool isActiveCompartment = c == activeCompartment;
     for (RealmsInCompartmentIter r(c); !r.done(); r.next()) {
       if (r->shouldTraceGlobal() || !r->zone()->isGCScheduled()) {
         c->gcState.maybeAlive = true;
       }
-      bool preserve = shouldPreserveJITCode(r, currentTime, canAllocateMoreCode,
-                                            isActiveCompartment);
-      r->jitRealm().setPreservingCode(preserve);
       if (r->hasBeenEnteredIgnoringJit()) {
         c->gcState.hasEnteredRealm = true;
       }

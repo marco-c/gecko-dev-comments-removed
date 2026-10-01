@@ -311,21 +311,40 @@ bool Zone::isAnyRealmPreservingCode() {
   return false;
 }
 
-void Zone::forceDiscardJitCode(JS::GCContext* gcx,
-                               const JitDiscardOptions& options) {
+void Zone::discardJitCodeForAllRealms(JS::GCContext* gcx) {
+  MOZ_ASSERT(!isAnyRealmPreservingCode());
+  discardJitCode(gcx);
+}
+
+void Zone::discardJitCode(JS::GCContext* gcx,
+                          const JitDiscardOptions& options) {
   if (!jitZone()) {
     return;
   }
 
   
   
+  
   jit::ICStubSpace discardedStubSpace;
   const mozilla::TimeStamp now = mozilla::TimeStamp::Now();
+  size_t numRealms = 0;
+  size_t numDiscardedRealms = 0;
   for (RealmsInZoneIter r(this); !r.done(); r.next()) {
+    numRealms++;
+    if (r->jitRealm().isPreservingCode()) {
+      continue;
+    }
+    numDiscardedRealms++;
     if (options.discardJitScripts) {
       r->jitRealm().setLastDiscardedCodeTime(now);
     }
     discardedStubSpace.transferFrom(*r->jitRealm().stubSpace());
+  }
+
+  bool resetAllocSites =
+      options.resetNurseryAllocSites || options.resetPretenuredAllocSites;
+  if (numDiscardedRealms == 0 && !resetAllocSites) {
+    return;
   }
 
 #ifdef DEBUG
@@ -344,6 +363,22 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
   jitZone()->forEachJitScript<jit::IncludeDyingScripts>(
       [&](jit::JitScript* jitScript) {
         JSScript* script = jitScript->owningScript();
+        if (script->realm()->jitRealm().isPreservingCode()) {
+          
+          
+          if (resetAllocSites &&
+              jitScript->resetAllocSites(options.resetNurseryAllocSites,
+                                         options.resetPretenuredAllocSites)) {
+            if (script->hasIonScript()) {
+              jit::Invalidate(runtime_->mainContextFromOwnThread(), script,
+                               true,
+                               false);
+            }
+          }
+          MOZ_ASSERT(!jitScript->icScript()->active());
+          return;
+        }
+
         jit::FinishInvalidation(gcx, script);
 
         
@@ -386,8 +421,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
         jitScript->purgeInactiveICScripts();
         jitScript->purgeStubs(script);
 
-        if (options.resetNurseryAllocSites ||
-            options.resetPretenuredAllocSites) {
+        if (resetAllocSites) {
           jitScript->resetAllocSites(options.resetNurseryAllocSites,
                                      options.resetPretenuredAllocSites);
         }
@@ -399,7 +433,10 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
   
   
   
-  if (!jitZone()->keepRegExpJitCode()) {
+  
+  const bool discardRegExpJitCode =
+      numDiscardedRealms == numRealms && !jitZone()->keepRegExpJitCode();
+  if (discardRegExpJitCode) {
     for (auto regExp = cellIterUnsafe<RegExpShared>(); !regExp.done();
          regExp.next()) {
       regExp->discardJitCode();
@@ -416,7 +453,9 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
   discardedStubSpace.freeAllAfterMinorGC(this);
   for (RealmsInZoneIter r(this); !r.done(); r.next()) {
-    r->jitRealm().purgeIonCacheIRStubInfo();
+    if (!r->jitRealm().isPreservingCode()) {
+      r->jitRealm().purgeIonCacheIRStubInfo();
+    }
   }
 
   
@@ -425,44 +464,20 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     char discardingBaseline = 'Y';
     char discardingIon = 'Y';
 
-    char discardingRegExp = jitZone()->keepRegExpJitCode() ? 'N' : 'Y';
+    char discardingRegExp = discardRegExpJitCode ? 'Y' : 'N';
     char discardingNurserySites = options.resetNurseryAllocSites ? 'Y' : 'N';
     char discardingPretenuredSites =
         options.resetPretenuredAllocSites ? 'Y' : 'N';
 
-    char buf[100];
+    char buf[160];
     SprintfLiteral(buf,
-                   "JitScript:%c Baseline:%c Ion:%c "
+                   "Realms:%zu/%zu JitScript:%c Baseline:%c Ion:%c "
                    "RegExp:%c NurserySites:%c PretenuredSites:%c",
-                   discardingJitScript, discardingBaseline, discardingIon,
-                   discardingRegExp, discardingNurserySites,
-                   discardingPretenuredSites);
+                   numDiscardedRealms, numRealms, discardingJitScript,
+                   discardingBaseline, discardingIon, discardingRegExp,
+                   discardingNurserySites, discardingPretenuredSites);
     gcx->runtime()->geckoProfiler().markEvent("DiscardJit", buf);
   }
-}
-
-void JS::Zone::resetAllocSitesAndInvalidate(bool resetNurserySites,
-                                            bool resetPretenuredSites) {
-  MOZ_ASSERT(resetNurserySites || resetPretenuredSites);
-
-  if (!jitZone()) {
-    return;
-  }
-
-  JSContext* cx = runtime_->mainContextFromOwnThread();
-  jitZone()->forEachJitScript<jit::IncludeDyingScripts>(
-      [&](jit::JitScript* jitScript) {
-        if (jitScript->resetAllocSites(resetNurserySites,
-                                       resetPretenuredSites)) {
-          JSScript* script = jitScript->owningScript();
-          CancelOffThreadIonCompile(script);
-          if (script->hasIonScript()) {
-            jit::Invalidate(cx, script,
-                             true,
-                             true);
-          }
-        }
-      });
 }
 
 void JS::Zone::traceWeakJitScripts(JSTracer* trc) {
@@ -543,9 +558,7 @@ Zone* Zone::nextZone() const {
 
 void Zone::prepareForMovingGC() {
   JS::GCContext* gcx = runtimeFromMainThread()->gcContext();
-
-  MOZ_ASSERT(!isAnyRealmPreservingCode());
-  forceDiscardJitCode(gcx);
+  discardJitCodeForAllRealms(gcx);
 }
 
 void Zone::fixupAfterMovingGC() {
