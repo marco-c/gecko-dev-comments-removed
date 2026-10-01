@@ -4697,8 +4697,6 @@ class HTMLEditor final : public EditorBase,
   bool mDisabledLinkHandling = false;
   bool mOldLinkHandlingEnabled = false;
 
-  bool mHasBeforeInputBeenCanceled = false;
-
   bool mHasFocus = false;
   bool mIsInDesignMode = false;
 
