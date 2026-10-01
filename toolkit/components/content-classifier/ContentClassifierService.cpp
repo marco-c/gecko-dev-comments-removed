@@ -32,7 +32,6 @@
 #include "nsIURI.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsNetUtil.h"
-#include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
 #include "nsIWebProgressListener.h"
@@ -244,11 +243,7 @@ NS_IMETHODIMP ContentClassifierProbeReport::GetResults(
 }
 
 NS_IMPL_ISUPPORTS(ContentClassifierService, nsIAsyncShutdownBlocker,
-                  nsIContentClassifierService, nsIMemoryReporter)
-
-MOZ_DEFINE_MALLOC_SIZE_OF(ContentClassifierServiceMallocSizeOf)
-MOZ_DEFINE_MALLOC_ENCLOSING_SIZE_OF(
-    ContentClassifierServiceMallocEnclosingSizeOf)
+                  nsIContentClassifierService)
 
 ContentClassifierService::ContentClassifierService()
     : mLock("ContentClassifierService::mLock"),
@@ -261,93 +256,6 @@ ContentClassifierService::ContentClassifierService()
 }
 
 ContentClassifierService::~ContentClassifierService() = default;
-
-NS_IMETHODIMP ContentClassifierService::CollectReports(
-    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
-    bool aAnonymize) {
-  
-  
-  struct EngineSizes {
-    nsCString mFeatureName;
-    ContentClassifierEngineSizes mSizes;
-  };
-
-  
-  
-  nsTArray<EngineSizes> engines;
-  {
-    MutexAutoLock lock(mLock);
-    engines.SetCapacity(mEngines.Count());
-    for (const auto& entry : mEngines) {
-      engines.AppendElement(
-          EngineSizes{nsCString(entry.GetKey()),
-                      entry.GetData()->SizeOfIncludingThis(
-                          ContentClassifierServiceMallocSizeOf,
-                          ContentClassifierServiceMallocEnclosingSizeOf)});
-    }
-  }
-
-  
-  
-#define REPORT(_path, _amount, _desc)                                    \
-  aHandleReport->Callback(""_ns, _path, KIND_HEAP, UNITS_BYTES, _amount, \
-                          nsLiteralCString(_desc), aData)
-
-  for (const auto& engine : engines) {
-    REPORT(nsPrintfCString("explicit/content-classifier/engines/%s/objects",
-                           engine.mFeatureName.get()),
-           engine.mSizes.objects,
-           "Memory used by the content classifier engine objects.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/filter-rules",
-                        engine.mFeatureName.get()),
-        engine.mSizes.filter_rules,
-        "Memory used by the parsed filter rules for this feature, held as one "
-        "flatbuffer that the matching engine reads directly.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/domain-hashes",
-                        engine.mFeatureName.get()),
-        engine.mSizes.domain_hashes,
-        "Memory used by the index from domain hash to filter list position, "
-        "rebuilt in memory each time this feature's rules are loaded.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/regex-table",
-                        engine.mFeatureName.get()),
-        engine.mSizes.regex_table,
-        "Memory used by the lookup table for the regexes compiled on demand "
-        "while matching. Excludes the compiled regexes themselves, which the "
-        "regex engine gives no way to measure.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/enabled-tags",
-                        engine.mFeatureName.get()),
-        engine.mSizes.enabled_tags,
-        "Memory used by the tag names enabled on this engine, which gate "
-        "tagged filters.");
-
-    REPORT(
-        nsPrintfCString("explicit/content-classifier/engines/%s/cosmetic-cache",
-                        engine.mFeatureName.get()),
-        engine.mSizes.cosmetic_cache,
-        "Memory owned by the cosmetic filter cache beyond the filter data it "
-        "shares with the matcher. The rules it serves are reported under "
-        "filter-rules, not here.");
-
-    REPORT(nsPrintfCString("explicit/content-classifier/engines/%s/resources",
-                           engine.mFeatureName.get()),
-           engine.mSizes.resources,
-           "Memory used by this engine's redirect and scriptlet resource "
-           "backend. Excludes whatever the backend stores, which Firefox never "
-           "populates.");
-  }
-
-#undef REPORT
-
-  return NS_OK;
-}
 
 
 bool ContentClassifierService::IsEnabled() {
@@ -592,11 +500,6 @@ void ContentClassifierService::Init() {
   
   
   
-  RegisterWeakMemoryReporter(this);
-
-  
-  
-  
   if (sEnabled && HasAnyActiveRemoteSettingsFeatures()) {
     InitRSClient();
   }
@@ -706,8 +609,6 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
     mInitPhase = InitPhase::ShutdownStarted;
     mBuildThread = nullptr;
   }
-
-  UnregisterWeakMemoryReporter(this);
 
   
   
@@ -1213,15 +1114,10 @@ NS_IMETHODIMP ContentClassifierService::ProbeFeature(
     rv = backgroundThread->Dispatch(
         NS_NewRunnableFunction(
             "ContentClassifierService::ProbeFeature",
-            [self = RefPtr{this}, engine = std::move(engine),
-             request = std::move(request), promiseHolder]() {
-              
-              
-              ContentClassifierEngineResult er = [&] {
-                MutexAutoLock lock(self->mLock);
-                return engine->CheckNetworkRequest(
-                    request,  false);
-              }();
+            [engine = std::move(engine), request = std::move(request),
+             promiseHolder]() {
+              ContentClassifierEngineResult er = engine->CheckNetworkRequest(
+                  request,  false);
               nsCOMPtr<nsIContentClassifierProbeResult> probe =
                   MakeProbeResult(er);
               NS_DispatchToMainThread(NS_NewRunnableFunction(

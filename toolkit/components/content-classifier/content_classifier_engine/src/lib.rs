@@ -2,12 +2,10 @@
 
 
 
-use std::os::raw::c_void;
 use std::sync::Mutex;
 
 use cstr::cstr;
 use etp_engine::Engine;
-use malloc_size_of::MallocSizeOfOps;
 use nserror::{nsresult, NS_ERROR_INVALID_ARG, NS_ERROR_SERVICE_NOT_AVAILABLE, NS_OK};
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
@@ -70,59 +68,6 @@ pub unsafe extern "C" fn content_classifier_engine_destroy(
 ) {
     if !engine.is_null() {
         drop(Box::from_raw(engine));
-    }
-}
-
-
-
-
-pub type ContentClassifierMallocSizeOf = unsafe extern "C" fn(ptr: *const c_void) -> usize;
-
-
-
-#[repr(C)]
-#[derive(Default)]
-pub struct ContentClassifierEngineSizes {
-    
-    
-    
-    pub objects: usize,
-    
-    pub filter_rules: usize,
-    
-    pub domain_hashes: usize,
-    
-    pub regex_table: usize,
-    
-    pub enabled_tags: usize,
-    
-    
-    pub cosmetic_cache: usize,
-    
-    pub resources: usize,
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn content_classifier_engine_size_of(
-    engine: *const ContentClassifierFFIEngine,
-    malloc_size_of: ContentClassifierMallocSizeOf,
-    malloc_enclosing_size_of: ContentClassifierMallocSizeOf,
-) -> ContentClassifierEngineSizes {
-    if engine.is_null() {
-        return ContentClassifierEngineSizes::default();
-    }
-
-    let mut ops = MallocSizeOfOps::new(malloc_size_of, Some(malloc_enclosing_size_of));
-    let breakdown = (*engine).engine.memory_breakdown(&mut ops);
-
-    ContentClassifierEngineSizes {
-        objects: malloc_size_of(engine.cast::<c_void>()) + breakdown.objects,
-        filter_rules: breakdown.filter_rules,
-        domain_hashes: breakdown.domain_hashes,
-        regex_table: breakdown.regex_table,
-        enabled_tags: breakdown.enabled_tags,
-        cosmetic_cache: breakdown.cosmetic_cache,
-        resources: breakdown.resources,
     }
 }
 

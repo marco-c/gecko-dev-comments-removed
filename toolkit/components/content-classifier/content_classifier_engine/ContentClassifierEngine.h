@@ -7,7 +7,6 @@
 
 #include "content_classifier_ffi.h"
 
-#include "mozilla/MemoryReporting.h"
 #include "nsError.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -105,20 +104,6 @@ class ContentClassifierEngine final {
 
   ContentClassifierEngineResult CheckNetworkRequest(
       const ContentClassifierRequest& aRequest, bool aPreviouslyMatched);
-
-  
-  
-  
-  
-  ContentClassifierEngineSizes SizeOfIncludingThis(
-      MallocSizeOf aMallocSizeOf, MallocSizeOf aMallocEnclosingSizeOf) const {
-    ContentClassifierEngineSizes sizes =
-        mEngine ? content_classifier_engine_size_of(mEngine, aMallocSizeOf,
-                                                    aMallocEnclosingSizeOf)
-                : ContentClassifierEngineSizes{};
-    sizes.objects += aMallocSizeOf(this);
-    return sizes;
-  }
 
  private:
   ~ContentClassifierEngine() {
