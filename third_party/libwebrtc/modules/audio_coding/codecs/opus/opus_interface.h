@@ -172,8 +172,13 @@ int16_t WebRtcOpus_SetMaxPlaybackRate(OpusEncInst* inst, int32_t frequency_hz);
 
 
 
+
+
+
+
+
 int16_t WebRtcOpus_GetMaxPlaybackRate(OpusEncInst* const inst,
-                                      int32_t* result_hz);
+                                      int32_t* result_bandwidth);
 
 
 
