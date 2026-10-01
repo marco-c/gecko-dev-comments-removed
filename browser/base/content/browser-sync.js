@@ -808,6 +808,7 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
     viewAllBtn.onclick = () => {
       CustomizableUI.hidePanelForNode(viewAllBtn);
       SidebarController.show("viewTabsSidebar");
+      gSync.emitFxaToolbarTelemetry("view_all_synced_tabs", viewAllBtn);
     };
   }
 
@@ -2806,8 +2807,12 @@ var gSync = {
     
     
     
+    
+    
     if (
-      sourceElement.closest?.('[id^="PanelUI-fxa-menu"], #PanelUI-profiles')
+      sourceElement.closest?.(
+        '[id^="PanelUI-fxa-menu"], #PanelUI-profiles, #PanelUI-fxa-device-view-all-tabs'
+      )
     ) {
       return "fxa_avatar_menu";
     }
