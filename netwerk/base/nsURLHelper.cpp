@@ -23,7 +23,8 @@
 #include "nsDOMString.h"
 #include "nsEscape.h"
 #include "nsIFile.h"
-#include "nsURLParsers.h"
+#include "nsIURLParser.h"
+#include "nsNetCID.h"
 #include "prnetdb.h"
 
 using namespace mozilla;
@@ -38,9 +39,9 @@ static StaticMutex gInitLock MOZ_ANNOTATED;
 
 
 static Atomic<bool, MemoryOrdering::Relaxed> gInitialized(false);
-static StaticRefPtr<nsBaseURLParser> gNoAuthURLParser;
-static StaticRefPtr<nsBaseURLParser> gAuthURLParser;
-static StaticRefPtr<nsBaseURLParser> gStdURLParser;
+static StaticRefPtr<nsIURLParser> gNoAuthURLParser;
+static StaticRefPtr<nsIURLParser> gAuthURLParser;
+static StaticRefPtr<nsIURLParser> gStdURLParser;
 
 static void EnsureGlobalsAreInited() {
   if (!gInitialized) {
@@ -51,11 +52,25 @@ static void EnsureGlobalsAreInited() {
       return;
     }
 
-    
-    
-    gNoAuthURLParser = new nsNoAuthURLParser();
-    gAuthURLParser = new nsAuthURLParser();
-    gStdURLParser = new nsStdURLParser();
+    nsCOMPtr<nsIURLParser> parser;
+
+    parser = do_GetService(NS_NOAUTHURLPARSER_CONTRACTID);
+    NS_ASSERTION(parser, "failed getting 'noauth' url parser");
+    if (parser) {
+      gNoAuthURLParser = parser.forget();
+    }
+
+    parser = do_GetService(NS_AUTHURLPARSER_CONTRACTID);
+    NS_ASSERTION(parser, "failed getting 'auth' url parser");
+    if (parser) {
+      gAuthURLParser = parser.forget();
+    }
+
+    parser = do_GetService(NS_STDURLPARSER_CONTRACTID);
+    NS_ASSERTION(parser, "failed getting 'std' url parser");
+    if (parser) {
+      gStdURLParser = parser.forget();
+    }
 
     gInitialized = true;
   }
@@ -77,21 +92,21 @@ void net_ShutdownURLHelper() {
 
 
 
-already_AddRefed<nsBaseURLParser> net_GetAuthURLParser() {
+already_AddRefed<nsIURLParser> net_GetAuthURLParser() {
   EnsureGlobalsAreInited();
-  RefPtr<nsBaseURLParser> keepMe = gAuthURLParser;
+  RefPtr<nsIURLParser> keepMe = gAuthURLParser;
   return keepMe.forget();
 }
 
-already_AddRefed<nsBaseURLParser> net_GetNoAuthURLParser() {
+already_AddRefed<nsIURLParser> net_GetNoAuthURLParser() {
   EnsureGlobalsAreInited();
-  RefPtr<nsBaseURLParser> keepMe = gNoAuthURLParser;
+  RefPtr<nsIURLParser> keepMe = gNoAuthURLParser;
   return keepMe.forget();
 }
 
-already_AddRefed<nsBaseURLParser> net_GetStdURLParser() {
+already_AddRefed<nsIURLParser> net_GetStdURLParser() {
   EnsureGlobalsAreInited();
-  RefPtr<nsBaseURLParser> keepMe = gStdURLParser;
+  RefPtr<nsIURLParser> keepMe = gStdURLParser;
   return keepMe.forget();
 }
 
@@ -161,7 +176,7 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
     return NS_ERROR_UNEXPECTED;
   }
 
-  RefPtr<nsBaseURLParser> parser = net_GetNoAuthURLParser();
+  nsCOMPtr<nsIURLParser> parser = net_GetNoAuthURLParser();
   NS_ENSURE_TRUE(parser, NS_ERROR_UNEXPECTED);
 
   uint32_t pathPos, filepathPos, directoryPos, basenamePos, extensionPos;
@@ -446,28 +461,29 @@ bool net_IsAbsoluteURL(const nsACString& uri) {
 void net_FilterURIString(const nsACString& input, nsACString& result) {
   result.Truncate();
 
-  const char* start = input.BeginReading();
-  const char* end = input.EndReading();
+  const auto* start = input.BeginReading();
+  const auto* end = input.EndReading();
 
   
+  auto charFilter = [](char c) { return static_cast<uint8_t>(c) > 0x20; };
+  const auto* newStart = std::find_if(start, end, charFilter);
+  const auto* newEnd =
+      std::find_if(std::reverse_iterator<decltype(end)>(end),
+                   std::reverse_iterator<decltype(newStart)>(newStart),
+                   charFilter)
+          .base();
+
   
-  
-  
-  const char* newStart = start;
-  while (newStart != end && static_cast<uint8_t>(*newStart) <= 0x20) {
-    ++newStart;
-  }
-  const char* newEnd = newStart;
   bool needsStrip = false;
-  for (const char* p = newStart; p != end; ++p) {
-    char c = *p;
-    if (static_cast<uint8_t>(c) > 0x20) {
-      newEnd = p + 1;
-    } else if (c == '\t' || c == '\n' || c == '\r') {
+  const ASCIIMaskArray& mask = ASCIIMask::MaskCRLFTab();
+  for (const auto* itr = start; itr != end; ++itr) {
+    if (ASCIIMask::IsMasked(mask, *itr)) {
       needsStrip = true;
+      break;
     }
   }
 
+  
   
   if (newStart == start && newEnd == end && !needsStrip) {
     result = input;
@@ -476,7 +492,7 @@ void net_FilterURIString(const nsACString& input, nsACString& result) {
 
   result.Assign(Substring(newStart, newEnd));
   if (needsStrip) {
-    result.StripTaggedASCII(ASCIIMask::MaskCRLFTab());
+    result.StripTaggedASCII(mask);
   }
 }
 
