@@ -318,14 +318,6 @@ enum class StyleMaskType : uint8_t {
 };
 
 
-enum class StyleTextRendering : uint8_t {
-  Auto,
-  Optimizespeed,
-  Optimizelegibility,
-  Geometricprecision,
-};
-
-
 enum class StyleColorInterpolation : uint8_t {
   Auto = 0,
   Srgb = 1,
