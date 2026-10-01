@@ -18,6 +18,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/BaseMargin.h"
@@ -284,7 +285,15 @@ class nsWindow : public nsIWidget {
   mozilla::widget::IMContextWrapper* GetIMContext() const { return mIMContext; }
 
   bool DispatchCommandEvent(nsAtom* aCommand);
-  bool DispatchContentCommandEvent(mozilla::EventMessage aMsg);
+
+  
+
+
+
+
+
+  mozilla::Result<bool, nsresult> DispatchContentCommandEvent(
+      mozilla::EventMessage);
 
   
   gboolean OnExposeEvent(cairo_t* cr);
