@@ -2,9 +2,18 @@
 
 
 add_setup(async function () {
-  await BrowserTestUtils.openNewForegroundTab({
+  const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:logins",
+  });
+  
+  
+  
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.documentElement.classList.contains("initialized"),
+      "Waiting for about:logins to be initialized"
+    );
   });
   registerCleanupFunction(() => {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
