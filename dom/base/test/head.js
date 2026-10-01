@@ -1,3 +1,9 @@
+const { SpecialPowersForProcess } = ChromeUtils.importESModule(
+  "resource://testing-common/SpecialPowersProcessActor.sys.mjs"
+);
+
+const scope = this;
+
 async function newFocusedWindow(trigger, isInitialBlank = false) {
   let winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
   let delayedStartupPromise = BrowserTestUtils.waitForNewWindow();
@@ -43,7 +49,7 @@ function optional_ev(...args) {
   return event;
 }
 
-async function jsCacheContentTask(test, item) {
+async function jsCacheContentProcessTask(test, item) {
   const defaultSkippedEvents = test.skippedEvents ?? [
     
     "compile:main thread",
@@ -69,7 +75,9 @@ async function jsCacheContentTask(test, item) {
       return false;
     }
 
-    if (event.hasElement) {
+    if (event.hasElement === "dontcare") {
+      
+    } else if (event.hasElement) {
       if (param.id !== "watchme") {
         return false;
       }
@@ -140,6 +148,23 @@ async function jsCacheContentTask(test, item) {
   };
   Services.obs.addObserver(observer, "ScriptLoaderTest");
 
+  await promise;
+
+  Services.obs.removeObserver(observer, "ScriptLoaderTest");
+
+  return result;
+}
+
+function jsCacheContentJumpTask(test, item) {
+  const link = content.document.createElement("a");
+  link.textContent = "link";
+  link.href = item.page;
+  content.document.body.appendChild(link);
+
+  link.click();
+}
+
+async function jsCacheContentScriptTask(test, item) {
   const script = content.document.createElement("script");
   script.id = "watchme";
   if (test.module || item.module) {
@@ -165,13 +190,7 @@ async function jsCacheContentTask(test, item) {
   });
   content.document.body.appendChild(script);
 
-  await promise;
-
   await onLoadPromise;
-
-  Services.obs.removeObserver(observer, "ScriptLoaderTest");
-
-  return result;
 }
 
 async function runJSCacheTests(tests) {
@@ -212,7 +231,10 @@ async function runJSCacheTests(tests) {
 
           if (!test.skipReload) {
             
-            await BrowserTestUtils.reloadTab(tab);
+            await BrowserTestUtils.loadURIString({
+              browser: tab.linkedBrowser,
+              uriString: JS_CACHE_BASE_URL + "empty.html",
+            });
           }
 
           if (item.clearMemory) {
@@ -253,15 +275,44 @@ async function runJSCacheTests(tests) {
               Services.obs.notifyObservers(null, "memory-pressure-stop");
             });
           }
-          const result = await SpecialPowers.spawn(
-            browser,
-            [test, item],
-            jsCacheContentTask
+
+          
+          
+          const proc = browser.browsingContext.currentWindowGlobal.domProcess;
+          const processBoundSpecialPowers = new SpecialPowersForProcess(
+            scope,
+            proc
           );
+          const eventsPromise = processBoundSpecialPowers.spawn(
+            [test, item],
+            jsCacheContentProcessTask
+          );
+
+          if (item.page) {
+            await SpecialPowers.spawn(
+              browser,
+              [test, item],
+              jsCacheContentJumpTask
+            );
+          } else {
+            await SpecialPowers.spawn(
+              browser,
+              [test, item],
+              jsCacheContentScriptTask
+            );
+          }
+
+          const result = await eventsPromise;
+
+          await processBoundSpecialPowers.destroy();
+
           ok(result, "Received expected events");
           if (item.verifyText) {
             const text = await SpecialPowers.spawn(browser, [], function () {
-              return content.document.body.textContent;
+              return content.document.body.textContent.replace(
+                /[ \r\n\t]*/g,
+                ""
+              );
             });
             is(text, item.verifyText);
           }
