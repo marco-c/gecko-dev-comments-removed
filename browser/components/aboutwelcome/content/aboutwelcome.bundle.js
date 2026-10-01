@@ -180,7 +180,7 @@ __webpack_require__.r(__webpack_exports__);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(8);
  var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(13);
- var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(34);
+ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(35);
 
 
 
@@ -2473,6 +2473,8 @@ const screenContentShape = {
     
     
     style: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object),
+    
+    pill_nav_label: localizableThingPropTypes,
     
     data: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOfType([(prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().array), (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object)])
   })]),
@@ -4788,20 +4790,20 @@ __webpack_require__.r(__webpack_exports__);
  var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
  var _AddonsPicker__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(16);
  var _SingleSelect__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(18);
- var _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(21);
- var _MultiSelect__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(22);
- var _TextAreaTile__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(23);
- var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(24);
- var _EmbeddedThemePicker__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(25);
- var _EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(26);
- var _ActionChecklist__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(27);
- var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(28);
- var _ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(29);
+ var _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(22);
+ var _MultiSelect__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(23);
+ var _TextAreaTile__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(24);
+ var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(25);
+ var _EmbeddedThemePicker__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(26);
+ var _EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(27);
+ var _ActionChecklist__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(28);
+ var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(29);
+ var _ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(30);
  var _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(3);
- var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(30);
- var _PinnableSitesList__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(31);
- var _ContentToggle__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(32);
- var _TextBoxTile__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(33);
+ var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(31);
+ var _PinnableSitesList__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(32);
+ var _ContentToggle__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(33);
+ var _TextBoxTile__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(34);
  var _LinkParagraph__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(14);
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 
@@ -5385,6 +5387,8 @@ __webpack_require__.r(__webpack_exports__);
  var _TileButton__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(19);
  var _TileList__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(20);
  var _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(3);
+ var _CarouselNav__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
+
 
 
 
@@ -5407,6 +5411,17 @@ const SingleSelect = ({
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
+  const cardRefs = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(new Map());
+  const handlePillSelect = id => {
+    setActiveSingleSelectSelection(id, singleSelectId);
+    const card = cardRefs.current.get(id);
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    card?.scrollIntoView?.({
+      behavior: reduceMotion ? "auto" : "smooth",
+      inline: "center",
+      block: "nearest"
+    });
+  };
   const autoTriggerAllowed = itemAction => {
     
     const allowedActions = ["SET_PREF"];
@@ -5449,7 +5464,12 @@ const SingleSelect = ({
   const CONFIGURABLE_STYLES = ["background", "border", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: `tiles-single-select-container`
-  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
+  }, isSingleSelect ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CarouselNav__WEBPACK_IMPORTED_MODULE_5__.CarouselNav, {
+    items: content.tiles?.data,
+    activeId: activeSingleSelectSelections[singleSelectId],
+    onSelect: handlePillSelect,
+    navLabel: content.tiles?.pill_nav_label
+  }) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
     className: `tiles-single-select-section ${category}`
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: content.tiles?.subtitle || content.subtitle
@@ -5501,6 +5521,13 @@ const SingleSelect = ({
       text: valOrObj(tooltip)
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
       className: `select-item ${type} ${selected ? " selected" : ""}`,
+      ref: el => {
+        if (el) {
+          cardRefs.current.set(value, el);
+        } else {
+          cardRefs.current.delete(value);
+        }
+      },
       onKeyDown: e => handleKeyDown(e),
       style: {
         ..._lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -5644,6 +5671,67 @@ const TileList = props => {
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "text body-text"
   }))))));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
+   CarouselNav: () => ( CarouselNav)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
+
+
+
+
+
+const CarouselNav = ({
+  items = [],
+  activeId,
+  onSelect,
+  navLabel
+}) => {
+  const groupRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const onSelectRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(onSelect);
+  onSelectRef.current = onSelect;
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const group = groupRef.current;
+    if (!group) {
+      return undefined;
+    }
+    const handleChange = () => onSelectRef.current?.(group.value);
+    group.addEventListener("change", handleChange);
+    return () => group.removeEventListener("change", handleChange);
+  }, []);
+  const pillItems = items.filter(item => item?.pill && item.id);
+  if (pillItems.length < 2) {
+    return null;
+  }
+  const labelProps = navLabel?.raw ? {
+    "aria-label": navLabel.raw
+  } : {
+    "data-l10n-id": navLabel?.string_id ?? "onboarding-carousel-nav"
+  };
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "carousel-nav"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("moz-segmented-control", _extends({
+    ref: groupRef,
+    value: activeId
+  }, labelProps), pillItems.map(({
+    id,
+    pill
+  }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("moz-segmented-control-item", {
+    key: id,
+    value: id,
+    label: pill.label?.raw,
+    "data-l10n-id": pill.label?.string_id,
+    iconsrc: pill.icon
+  }))));
 };
 
  }),
