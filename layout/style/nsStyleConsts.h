@@ -222,9 +222,6 @@ enum class ListStyle : uint8_t {
 };
 
 
-enum class StyleListStylePosition : uint8_t { Inside, Outside };
-
-
 enum class StyleObjectFit : uint8_t {
   Fill,
   Contain,
