@@ -490,8 +490,10 @@ class CommonBackend(BuildBackend):
                 
                 
                 if os.path.isabs(s):
-                    s = mozpath.relpath(s, output_directory)
-                f.write(includeTemplate % {"cppfile": s})
+                    rel_path = mozpath.relpath(s, output_directory)
+                else:
+                    rel_path = s
+                f.write(includeTemplate % {"cppfile": rel_path})
                 f.write("\n")
 
     def _write_unified_files(
