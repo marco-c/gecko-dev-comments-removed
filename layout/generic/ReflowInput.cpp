@@ -2156,47 +2156,18 @@ void ReflowInput::InitConstraints(
             StyleLengthPercentage::FromAppUnits(stretchBSize));
       }
     }
-    bool isAutoBSize = blockSize->BehavesLikeInitialValueOnBlockAxis();
 
     
     
-    if (blockSize->HasPercent()) {
-      if (NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
-        
-        
-        
-        if (mFlags.mIsReplaced && mStyleDisplay->IsInlineOutsideStyle()) {
-          
-          NS_ASSERTION(cbri, "no containing block");
-          
-          if (!wm.IsVertical() &&
-              eCompatibility_NavQuirks == aPresContext->CompatibilityMode()) {
-            if (!cbri->mFrame->IsTableCellFrame() &&
-                !cbri->mFrame->IsFlexOrGridItem()) {
-              cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
-              if (cbSize.BSize(wm) == NS_UNCONSTRAINEDSIZE) {
-                isAutoBSize = true;
-              }
-            } else {
-              isAutoBSize = true;
-            }
-          }
-          
-          
-          
-          else {
-            nscoord computedBSize = cbri->ComputedSize(wm).BSize(wm);
-            if (NS_UNCONSTRAINEDSIZE != computedBSize) {
-              cbSize.BSize(wm) = computedBSize;
-            } else {
-              isAutoBSize = true;
-            }
-          }
-        } else {
-          
-          isAutoBSize = true;
-        }
-      }
+    
+    
+    
+    if (aPresContext->CompatibilityMode() == eCompatibility_NavQuirks &&
+        blockSize->HasPercent() && cbSize.BSize(wm) == NS_UNCONSTRAINEDSIZE &&
+        mFlags.mIsReplaced && mStyleDisplay->IsInlineOutsideStyle() &&
+        !wm.IsVertical() && !cbri->mFrame->IsTableCellFrame() &&
+        !cbri->mFrame->IsFlexOrGridItem()) {
+      cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(cbri);
     }
 
     
@@ -2257,11 +2228,12 @@ void ReflowInput::InitConstraints(
       }
 
       
-      if (StyleDisplay::TableColumn == mStyleDisplay->mDisplay ||
-          StyleDisplay::TableColumnGroup == mStyleDisplay->mDisplay) {
-        
-        isAutoBSize = true;
-      }
+      
+      const bool isAutoBSize =
+          StyleDisplay::TableColumn == mStyleDisplay->mDisplay ||
+          StyleDisplay::TableColumnGroup == mStyleDisplay->mDisplay ||
+          nsLayoutUtils::IsAutoBSize(*blockSize, cbSize.BSize(wm));
+
       
       
       if (isAutoBSize || blockSize->HasLengthAndPercentage()) {
