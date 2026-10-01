@@ -13,7 +13,9 @@ pub mod query;
 mod types;
 mod upload;
 
-use api::{ExternalTextureHandle, ImageBufferKind, ImageDescriptor, ImageFormat, Parameter};
+#[cfg(feature = "capture")]
+use api::{ExternalTextureHandle, ImageDescriptor};
+use api::{ImageBufferKind, ImageFormat, Parameter};
 use api::units::*;
 use euclid::default::Transform3D;
 use malloc_size_of::MallocSizeOfOps;
@@ -112,8 +114,6 @@ pub trait GpuBackend {
     fn bind_texture(&mut self, slot: TextureSlot, texture: &Texture, swizzle: Swizzle);
 
     fn bind_external_texture(&mut self, slot: TextureSlot, external_texture: &ExternalTexture);
-
-    fn reset_read_target(&mut self);
 
     
     
@@ -351,8 +351,7 @@ pub trait GpuBackend {
     
     fn upload_texture_immediate(&mut self, texture: &Texture, pixels: &[u8]);
 
-    fn read_pixels(&mut self, img_desc: &ImageDescriptor) -> Vec<u8>;
-
+    
     
     
     
@@ -360,17 +359,24 @@ pub trait GpuBackend {
     
     fn read_pixels_into(
         &mut self,
+        target: ReadTarget,
         rect: FramebufferIntRect,
         format: ImageFormat,
         output: &mut [u8],
     );
 
     
-    fn attach_read_texture_external(
-        &mut self, handle: ExternalTextureHandle, target: ImageBufferKind
-    );
+    
+    fn read_texture(&mut self, texture: &Texture, format: ImageFormat, output: &mut [u8]);
 
-    fn attach_read_texture(&mut self, texture: &Texture);
+    
+    #[cfg(feature = "capture")]
+    fn read_external_texture(
+        &mut self,
+        handle: ExternalTextureHandle,
+        target: ImageBufferKind,
+        desc: &ImageDescriptor,
+    ) -> Vec<u8>;
 
     fn bind_vao(&mut self, vao: &VAO);
 
