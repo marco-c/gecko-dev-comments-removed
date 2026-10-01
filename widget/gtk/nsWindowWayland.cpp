@@ -217,6 +217,12 @@ void nsWindowWayland::WaylandDragWorkaround(GdkEventButton* aEvent) {
   NS_WARNING(
       "Quit unfinished Wayland Drag and Drop operation. Buggy Wayland "
       "compositor?");
+
+  
+  
+  
+  
+  currentDragSession->UserCancelled();
   currentDragSession->EndDragSession(true, 0);
 }
 
