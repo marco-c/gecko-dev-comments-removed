@@ -2009,6 +2009,12 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-weather-config",
 pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config", "bg,cs,da,de,el,en-CA,en-GB,en-US,es-ES,et,fi,fr,hr,hu,is,it,lv,nb-NO,nl,pl,pt-PT,ro,sk,sl,sv-SE,tr");
 
 
+
+
+
+pref("browser.newtabpage.activity-stream.widgets.system.region-block", "");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
 
 
