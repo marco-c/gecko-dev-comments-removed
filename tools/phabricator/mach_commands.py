@@ -3,9 +3,20 @@
 
 
 from pathlib import Path
+from typing import Optional
 
 import mozfile
 from mach.decorators import Command, CommandArgument
+
+
+def _find_moz_phab(tool_dir: Path) -> Optional[Path]:
+    candidate = tool_dir / "moz-phab"
+    if candidate.exists():
+        return candidate
+    candidate = candidate.with_suffix(".exe")
+    if candidate.exists():
+        return candidate
+    return None
 
 
 @Command(
@@ -18,7 +29,8 @@ from mach.decorators import Command, CommandArgument
     "--force",
     "-f",
     action="store_true",
-    help="Force installation even if already installed.",
+    help="Force installation even if already installed. This also recreates the "
+    "tool environment, which is needed after a Python version upgrade.",
 )
 def install_moz_phab(command_context, force=False):
     import logging
@@ -51,11 +63,11 @@ def install_moz_phab(command_context, force=False):
 
     command_context.log(logging.INFO, "run", {}, "Installing moz-phab using uv")
 
-    cmd = ["uv", "tool", "install", "MozPhab"]
+    install_cmd = ["uv", "tool", "install", "MozPhab"]
     if force:
-        cmd.append("--force")
+        install_cmd.extend(["--force", "--reinstall"])
 
-    result = subprocess.run(cmd, check=False)
+    result = subprocess.run(install_cmd, check=False, text=True)
 
     if result.returncode != 0:
         command_context.log(
@@ -74,10 +86,37 @@ def install_moz_phab(command_context, force=False):
 
     if tool_dir_result.returncode == 0:
         tool_dir = Path(tool_dir_result.stdout.strip())
-        moz_phab_path = tool_dir / "moz-phab"
+        moz_phab_path = _find_moz_phab(tool_dir)
 
-        if not moz_phab_path.exists():
-            moz_phab_path = moz_phab_path.with_suffix(".exe")
+        if moz_phab_path is None and not force:
+            command_context.log(
+                logging.WARNING,
+                "shim_missing",
+                {},
+                f"uv reports mozphab is installed at {tool_dir} but it's "
+                f"missing from there. Attempting to reinstall with --force.",
+            )
+            install_cmd.append("--force")
+            result = subprocess.run(install_cmd, check=False, text=True)
+            if result.returncode != 0:
+                command_context.log(
+                    logging.ERROR,
+                    "install_failed",
+                    {},
+                    "Failed to reinstall moz-phab with --force. Please check that uv is working correctly.",
+                )
+                sys.exit(1)
+            moz_phab_path = _find_moz_phab(tool_dir)
+
+        if moz_phab_path is None:
+            command_context.log(
+                logging.ERROR,
+                "shim_missing",
+                {},
+                f"moz-phab shim is missing from {tool_dir} even after a --force "
+                f"reinstall. Please run 'uv tool install MozPhab --force' manually.",
+            )
+            sys.exit(1)
 
         subprocess.run([moz_phab_path, "install-certificate"], check=True)
     else:
