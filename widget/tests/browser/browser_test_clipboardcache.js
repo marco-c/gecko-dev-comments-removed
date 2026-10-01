@@ -44,6 +44,9 @@ function getClipboardCacheFDCount() {
 
     
     dir.initWithPath(PathUtils.join(PathUtils.tempDir, "mozilla-temp-files"));
+    if (!dir.exists()) {
+      return 0;
+    }
   } else {
     dir.initWithPath("/dev/fd");
   }
@@ -66,7 +69,7 @@ function getClipboardCacheFDCount() {
 
 async function testCopyPaste(isPrivate) {
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: isPrivate });
-  let tab = await BrowserTestUtils.openNewForegroundTab(win);
+  let tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
   let browser = tab.linkedBrowser;
 
   
