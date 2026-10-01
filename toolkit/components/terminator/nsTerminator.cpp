@@ -281,11 +281,7 @@ void RunWatchdog(void*) {
 
     MaybeSaveShutdownHangProfile();
 
-    if (lastPhase == mozilla::ShutdownPhase::NotInShutdown) {
-      
-      CrashReporter::SetMinidumpAnalysisAllThreads();
-      MOZ_CRASH("Shutdown hanging before starting any known phase.");
-    }
+    MOZ_ASSERT(lastPhase != mozilla::ShutdownPhase::NotInShutdown);
 
     if (workersMsg) {
       CrashReporter::SetMinidumpAnalysisAllThreads();
