@@ -1,10 +1,10 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+//! Specified values.
+//!
+//! TODO(emilio): Enhance docs.
 
 use super::CSSFloat;
 use super::computed::{Context, ToComputedValue};
@@ -126,6 +126,7 @@ pub use self::svg::StrokeLinecap;
 pub use self::svg::StrokeLinejoin;
 pub use self::svg::MaskType;
 pub use self::svg::MaskMode;
+pub use self::svg::MaskComposite;
 pub use self::svg_path::SVGPathData;
 pub use self::text::RubyPosition;
 pub use self::text::{HyphenateCharacter, HyphenateLimitChars};
@@ -203,8 +204,8 @@ pub mod tree_counting;
 pub mod ui;
 pub mod url;
 
-
-
+/// <angle> | <percentage>
+/// https://drafts.csswg.org/css-values/#typedef-angle-percentage
 #[allow(missing_docs)]
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 pub enum AngleOrPercentage {
@@ -225,8 +226,8 @@ impl AngleOrPercentage {
         Angle::parse_internal(context, input, allow_unitless_zero).map(AngleOrPercentage::Angle)
     }
 
-    
-    
+    /// Allow unitless angles, used for conic-gradients as specified by the spec.
+    /// https://drafts.csswg.org/css-images-4/#valdef-conic-gradient-angle
     pub fn parse_with_unitless(
         context: &ParserContext,
         input: &mut Parser,
@@ -241,12 +242,12 @@ impl Parse for AngleOrPercentage {
     }
 }
 
-
-
-
-
-
-
+/// <number> | <percentage>
+///
+/// Accepts only non-negative numbers.
+///
+/// TODO(Bug 2040559) - Convert this into a NumericUnion, instead of an enum over
+/// Number and Percentage. Both types are also NumericUnions of unitless floats.
 #[allow(missing_docs)]
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub enum NumberOrPercentage {
@@ -275,7 +276,7 @@ impl NumberOrPercentage {
         .map(NumberOrPercentage::Number)
     }
 
-    
+    /// Parse a non-negative number or percentage.
     pub fn parse_non_negative(
         context: &ParserContext,
         input: &mut Parser,
@@ -283,7 +284,7 @@ impl NumberOrPercentage {
         Self::parse_with_clamping_mode(context, input, AllowedNumericType::NonNegative)
     }
 
-    
+    /// Convert the number or the percentage to a number.
     pub fn to_percentage(self) -> Option<Percentage> {
         match self {
             Self::Percentage(p) => Some(p),
@@ -291,7 +292,7 @@ impl NumberOrPercentage {
         }
     }
 
-    
+    /// Convert the number or the percentage to a number.
     pub fn to_number(&self) -> Option<Number> {
         match self {
             Self::Percentage(p) => p.to_number(),
@@ -299,7 +300,7 @@ impl NumberOrPercentage {
         }
     }
 
-    
+    /// Gets a reference to the underlying percentage, or None if this is a number
     pub fn as_percentage(&self) -> Option<&Percentage> {
         match self {
             NumberOrPercentage::Percentage(percentage) => Some(percentage),
@@ -307,8 +308,8 @@ impl NumberOrPercentage {
         }
     }
 
-    
-    
+    /// If this is a non-calc percentage, replaces it with the equivalent
+    /// number; otherwise, returns the original value.
     pub fn into_simplified_number(self) -> NumberOrPercentage {
         match self.as_percentage().and_then(|p| p.get()) {
             Some(p) => NumberOrPercentage::Number(Number::new(p)),
@@ -316,7 +317,7 @@ impl NumberOrPercentage {
         }
     }
 
-    
+    /// Attempts to resolve this number or percentage to a computed value.
     pub fn to_computed_value_without_context(&self) -> Result<computed::NumberOrPercentage, ()> {
         Ok(match self {
             NumberOrPercentage::Percentage(percentage) => computed::NumberOrPercentage::Percentage(
@@ -335,17 +336,17 @@ impl Parse for NumberOrPercentage {
     }
 }
 
-
+/// A non-negative <number> | <percentage>.
 pub type NonNegativeNumberOrPercentage = NonNegative<NumberOrPercentage>;
 
 impl NonNegativeNumberOrPercentage {
-    
+    /// Returns the `100%` value.
     #[inline]
     pub fn hundred_percent() -> Self {
         NonNegative(NumberOrPercentage::Percentage(Percentage::hundred()))
     }
 
-    
+    /// Return a particular number.
     #[inline]
     pub fn new_number(n: f32) -> Self {
         NonNegative(NumberOrPercentage::Number(Number::new(n)))
@@ -360,14 +361,14 @@ impl Parse for NonNegativeNumberOrPercentage {
     }
 }
 
-
+/// A specified CSS `opacity`
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
 pub struct Opacity(NumberOrPercentage);
 
 impl Parse for Opacity {
-    
-    
-    
+    /// Opacity accepts <number> | <percentage>, so we parse it as NumberOrPercentage,
+    /// and then convert into an Number if it's a non-calc Percentage.
+    /// https://drafts.csswg.org/css-color-4/#serializing-opacity-values
     fn parse(context: &ParserContext, input: &mut Parser) -> Result<Self, ParseError> {
         Ok(Opacity(
             NumberOrPercentage::parse(context, input)?.into_simplified_number(),
@@ -382,8 +383,8 @@ impl ToComputedValue for Opacity {
     fn to_computed_value(&self, context: &Context) -> CSSFloat {
         let value = self.0.to_computed_value(context).value();
         if context.for_smil_animation {
-            
-            
+            // SMIL expects to be able to interpolate between out-of-range
+            // opacity values.
             value
         } else {
             value.min(1.0).max(0.0)
@@ -398,26 +399,26 @@ impl ToComputedValue for Opacity {
     }
 }
 
-
+/// The specified value of a grid `<track-breadth>`
 pub type TrackBreadth = GenericTrackBreadth<LengthPercentage>;
 
-
+/// The specified value of a grid `<track-size>`
 pub type TrackSize = GenericTrackSize<LengthPercentage>;
 
-
+/// The specified value of a grid `<track-size>+`
 pub type ImplicitGridTracks = GenericImplicitGridTracks<TrackSize>;
 
-
-
+/// The specified value of a grid `<track-list>`
+/// (could also be `<auto-track-list>` or `<explicit-track-list>`)
 pub type TrackList = GenericTrackList<LengthPercentage, Integer>;
 
-
+/// The specified value of a `<grid-line>`.
 pub type GridLine = GenericGridLine<Integer>;
 
-
+/// `<grid-template-rows> | <grid-template-columns>`
 pub type GridTemplateComponent = GenericGridTemplateComponent<LengthPercentage, Integer>;
 
-
+/// rect(...)
 pub type ClipRect = generics::GenericClipRect<LengthOrAuto>;
 
 impl Parse for ClipRect {
@@ -427,7 +428,7 @@ impl Parse for ClipRect {
 }
 
 impl ClipRect {
-    
+    /// Parses a rect(<top>, <left>, <bottom>, <right>), allowing quirks.
     fn parse_quirky(
         context: &ParserContext,
         input: &mut Parser,
@@ -471,11 +472,11 @@ impl ClipRect {
     }
 }
 
-
+/// rect(...) | auto
 pub type ClipRectOrAuto = generics::GenericClipRectOrAuto<ClipRect>;
 
 impl ClipRectOrAuto {
-    
+    /// Parses a ClipRect or Auto, allowing quirks.
     pub fn parse_quirky(
         context: &ParserContext,
         input: &mut Parser,
@@ -489,19 +490,19 @@ impl ClipRectOrAuto {
     }
 }
 
-
+/// Whether quirks are allowed in this context.
 #[derive(Clone, Copy, PartialEq)]
 pub enum AllowQuirks {
-    
+    /// Quirks are not allowed.
     No,
-    
+    /// Quirks are allowed, in quirks mode.
     Yes,
-    
+    /// Quirks are always allowed, used for SVG lengths.
     Always,
 }
 
 impl AllowQuirks {
-    
+    /// Returns `true` if quirks are allowed in this context.
     pub fn allowed(self, quirks_mode: QuirksMode) -> bool {
         match self {
             AllowQuirks::Always => true,
@@ -512,25 +513,25 @@ impl AllowQuirks {
 }
 
 #[derive(Clone, Debug, PartialEq, MallocSizeOf, ToShmem)]
-
+/// A namespace wrapper to distinguish between valid variants
 pub enum ParsedNamespace {
-    
+    /// Unregistered namespace
     Unknown,
-    
+    /// Registered namespace
     Known(Namespace),
 }
 
 impl ParsedNamespace {
-    
-    
+    /// Parse a namespace prefix and resolve it to the correct
+    /// namespace URI.
     pub fn parse(
         namespaces: &FxHashMap<Prefix, Namespace>,
         input: &mut Parser,
     ) -> Result<Self, ParseError> {
-        
-        
-        
-        
+        // We don't need to keep the prefix because different
+        // prefixes can resolve to the same id. Additionally,
+        // we also don't need it for serialization as substitution
+        // functions serialize from the direct css declaration.
         parse_namespace(namespaces, input).map(|(_prefix, namespace)| namespace)
     }
 }
@@ -541,7 +542,7 @@ impl Default for ParsedNamespace {
     }
 }
 
-
+/// Try to parse a namespace and return it if parsed, or none if there was not one present
 pub fn parse_namespace(
     namespaces: &FxHashMap<Prefix, Namespace>,
     input: &mut Parser,

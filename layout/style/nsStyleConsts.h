@@ -288,14 +288,6 @@ enum class StyleBlend : uint8_t {
   PlusLighter,
 };
 
-
-enum class StyleMaskComposite : uint8_t {
-  Add = 0,
-  Subtract,
-  Intersect,
-  Exclude
-};
-
 }  
 
 #endif 
