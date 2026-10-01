@@ -111,14 +111,6 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
     return call_factory_.get();
   }
   UniqueRandomIdGenerator* ssrc_generator() { return &ssrc_generator_; }
-  
-  
-  
-  
-  bool use_rtx() const { return use_rtx_; }
-
-  
-  void set_use_rtx(bool use_rtx) { use_rtx_ = use_rtx; }
 
   
   void ApplyGlobalAudioOptions(const AudioOptions& options);
@@ -176,10 +168,6 @@ class ConnectionContext final : public RefCountedNonVirtual<ConnectionContext> {
   std::unique_ptr<PacketSocketFactory> default_socket_factory_
       RTC_GUARDED_BY(signaling_thread_);
   std::unique_ptr<SctpTransportFactoryInterface> const sctp_factory_;
-
-  
-  
-  bool use_rtx_;
 
   
   

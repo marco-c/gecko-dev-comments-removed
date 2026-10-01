@@ -135,7 +135,7 @@ class CodecLookupHelperForPeerConnection : public CodecLookupHelper {
   explicit CodecLookupHelperForPeerConnection(PeerConnection* self)
       : self_(self),
         codec_vendor_(self_->context()->media_engine(),
-                      self_->context()->use_rtx(),
+                      true,
                       self_->trials()) {}
 
   webrtc::PayloadTypeSuggester* PayloadTypeSuggester() override {
@@ -1126,7 +1126,8 @@ PeerConnection::AddTransceiver(MediaType media_type,
   std::vector<Codec> codecs;
   
   
-  CodecVendor codec_vendor(context_->media_engine(), false, trials());
+  CodecVendor codec_vendor(context_->media_engine(), false,
+                           trials());
   if (media_type == MediaType::VIDEO) {
     codecs = codec_vendor.video_send_codecs().codecs();
   } else {
@@ -1201,7 +1202,8 @@ scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   }
 
   scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
-  CodecVendor codec_vendor(context_->media_engine(), false, trials());
+  CodecVendor codec_vendor(context_->media_engine(), false,
+                           trials());
 
   if (kind == MediaStreamTrackInterface::kAudioKind) {
     auto audio_sender = AudioRtpSender::Create(
