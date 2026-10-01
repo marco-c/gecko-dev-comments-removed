@@ -505,6 +505,10 @@ bool SMRegExpMacroAssembler::SkipUntilBitInTableUseSimd(int advance_by) {
   if (!js::jit::Assembler::HasSSSE3()) {
     return false;
   }
+#  elif defined(JS_CODEGEN_LOONG64)
+  if (!js::jit::Assembler::HasLSX()) {
+    return false;
+  }
 #  endif
   
   
