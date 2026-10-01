@@ -2096,6 +2096,10 @@ void Document::ReportPageLoadTelemetry() {
   }
   mPageLoadTelemetryReported = true;
 
+  
+  
+  AccumulatePageLoadTelemetry();
+
   ReportPageLoadEvent();
   ReportLCP();
 }
@@ -2103,7 +2107,7 @@ void Document::ReportPageLoadTelemetry() {
 void Document::ReportPageLoadEvent() {
   
   
-  if (!mPageloadEventData.HasLoadTime()) {
+  if (!mPageLoadMetricsAccumulated) {
     return;
   }
   MOZ_ASSERT(IsTopLevelContentDocument());
@@ -2138,7 +2142,11 @@ void Document::ReportPageLoadEvent() {
   
   
   
-  if (const nsDOMNavigationTiming* timing = GetNavigationTiming()) {
+  
+  
+  
+  if (const nsDOMNavigationTiming* timing =
+          mPageLoadCompleted ? GetNavigationTiming() : nullptr) {
     if (TimeStamp navigationStart = timing->GetNavigationStartTimeStamp()) {
       if (TimeStamp lcpTime = timing->GetLargestContentfulRenderTimeStamp()) {
         mPageloadEventData.set_lcpTime(static_cast<uint32_t>(
@@ -2277,6 +2285,12 @@ void Document::ReportPageLoadEvent() {
 }
 
 void Document::AccumulatePageLoadTelemetry() {
+  
+  
+  if (mPageLoadMetricsAccumulated) {
+    return;
+  }
+
   
   if (!ShouldIncludeInTelemetry() || !IsTopLevelContentDocument() ||
       !GetNavigationTiming()) {
@@ -2429,46 +2443,52 @@ void Document::AccumulatePageLoadTelemetry() {
   }
 
   
-  if (TimeStamp loadEventStart =
-          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+  
+  if (responseStart) {
     TimeDuration responseTime = responseStart - navigationStart;
     if (responseTime > zeroDuration) {
       mPageloadEventData.set_responseTime(
           static_cast<uint32_t>(responseTime.ToMilliseconds()));
     }
+  }
+
+  TimeStamp requestStart;
+  timedChannel->GetRequestStart(&requestStart);
+  if (requestStart) {
+    TimeDuration timeToRequestStart = requestStart - navigationStart;
+    if (timeToRequestStart > zeroDuration) {
+      mPageloadEventData.set_timeToRequestStart(
+          static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
+    } else {
+      
+      
+      
+      
+      mPageloadEventData.set_timeToRequestStart(0);
+    }
+  }
+
+  TimeStamp secureConnectStart;
+  TimeStamp connectEnd;
+  timedChannel->GetSecureConnectionStart(&secureConnectStart);
+  timedChannel->GetConnectEnd(&connectEnd);
+  if (secureConnectStart && connectEnd) {
+    TimeDuration tlsHandshakeTime = connectEnd - secureConnectStart;
+    if (tlsHandshakeTime > zeroDuration) {
+      mPageloadEventData.set_tlsHandshakeTime(
+          static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
+    }
+  }
+
+  
+  if (TimeStamp loadEventStart =
+          GetNavigationTiming()->GetLoadEventStartTimeStamp()) {
+    mPageLoadCompleted = true;
 
     TimeDuration loadTime = loadEventStart - navigationStart;
     if (loadTime > zeroDuration) {
       mPageloadEventData.set_loadTime(
           static_cast<uint32_t>(loadTime.ToMilliseconds()));
-    }
-
-    TimeStamp requestStart;
-    timedChannel->GetRequestStart(&requestStart);
-    if (requestStart) {
-      TimeDuration timeToRequestStart = requestStart - navigationStart;
-      if (timeToRequestStart > zeroDuration) {
-        mPageloadEventData.set_timeToRequestStart(
-            static_cast<uint32_t>(timeToRequestStart.ToMilliseconds()));
-      } else {
-        
-        
-        
-        
-        mPageloadEventData.set_timeToRequestStart(0);
-      }
-    }
-
-    TimeStamp secureConnectStart;
-    TimeStamp connectEnd;
-    timedChannel->GetSecureConnectionStart(&secureConnectStart);
-    timedChannel->GetConnectEnd(&connectEnd);
-    if (secureConnectStart && connectEnd) {
-      TimeDuration tlsHandshakeTime = connectEnd - secureConnectStart;
-      if (tlsHandshakeTime > zeroDuration) {
-        mPageloadEventData.set_tlsHandshakeTime(
-            static_cast<uint32_t>(tlsHandshakeTime.ToMilliseconds()));
-      }
     }
   }
 
@@ -18213,7 +18233,9 @@ void Document::ReportLCP() {
 
   
   
-  if (!mPageLoadMetricsAccumulated || !mPageLoadWasForeground) {
+  
+  if (!mPageLoadMetricsAccumulated || !mPageLoadWasForeground ||
+      !mPageLoadCompleted) {
     return;
   }
 

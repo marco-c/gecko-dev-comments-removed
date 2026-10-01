@@ -5974,6 +5974,10 @@ class Document : public nsINode,
   bool mPageLoadWasForeground = false;
 
   
+  
+  bool mPageLoadCompleted = false;
+
+  
   bool mPageLoadTelemetryReported = false;
 
   
