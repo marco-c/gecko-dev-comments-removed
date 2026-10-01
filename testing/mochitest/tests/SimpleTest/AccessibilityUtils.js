@@ -63,7 +63,18 @@ this.AccessibilityUtils = (function () {
   ]);
 
   
+  
+  
+  
+  
+  const FOCUSABLE_VALUE_ROLES = new Set([
+    Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
+    Ci.nsIAccessibleRole.ROLE_SEPARATOR,
+  ]);
+
+  
   const INTERACTIVE_IF_FOCUSABLE_ROLES = new Set([
+    ...FOCUSABLE_VALUE_ROLES,
     
     Ci.nsIAccessibleRole.ROLE_ARTICLE,
     
@@ -74,8 +85,6 @@ this.AccessibilityUtils = (function () {
     Ci.nsIAccessibleRole.ROLE_PAGETABLIST,
     
     Ci.nsIAccessibleRole.ROLE_ROWHEADER,
-    Ci.nsIAccessibleRole.ROLE_SCROLLBAR,
-    Ci.nsIAccessibleRole.ROLE_SEPARATOR,
     Ci.nsIAccessibleRole.ROLE_TOOLBAR,
   ]);
 
@@ -232,6 +241,20 @@ this.AccessibilityUtils = (function () {
     accessible.getState(state, {});
 
     return !!(state.value & stateToMatch);
+  }
+
+  
+
+
+
+
+
+
+  function isFocusableValueRole(accessible) {
+    return (
+      FOCUSABLE_VALUE_ROLES.has(accessible.role) &&
+      matchState(accessible, STATE_FOCUSABLE)
+    );
   }
 
   
@@ -935,10 +958,13 @@ this.AccessibilityUtils = (function () {
 
 
   function assertInteractive(accessible) {
+    const focusableValueRole = isFocusableValueRole(accessible);
+
     if (
       gEnv.mustBeEnabled &&
       gEnv.actionCountRule &&
-      accessible.actionCount === 0
+      accessible.actionCount === 0 &&
+      !focusableValueRole
     ) {
       a11yFail("Node does not support any accessible actions", accessible);
 
@@ -948,7 +974,8 @@ this.AccessibilityUtils = (function () {
     if (
       gEnv.mustBeEnabled &&
       gEnv.interactiveRule &&
-      !INTERACTIVE_ROLES.has(accessible.role)
+      !INTERACTIVE_ROLES.has(accessible.role) &&
+      !focusableValueRole
     ) {
       if (
         
@@ -1202,7 +1229,7 @@ this.AccessibilityUtils = (function () {
         const targetAcc = relation.getTarget(0);
         return targetAcc;
       }
-      if (INTERACTIVE_ROLES.has(acc.role)) {
+      if (INTERACTIVE_ROLES.has(acc.role) || isFocusableValueRole(acc)) {
         return acc;
       }
     }
