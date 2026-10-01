@@ -149,11 +149,11 @@ nsresult HttpTransactionParent::Init(
   
   
   if (!SendInit(caps, infoArgs, *requestHead, ipcStream, requestContentLength,
-                browserId, trafficCategory, requestContextID, classOfService,
-                initialRwin, responseTimeoutEnabled, mChannelId,
-                !!mTransactionObserver, throttleQueue, mIsDocumentLoad,
-                aParentIpAddressSpace, aLnaPermissionStatus, mRedirectStart,
-                mRedirectEnd)) {
+                mRequestBodyIsStreaming, browserId, trafficCategory,
+                requestContextID, classOfService, initialRwin,
+                responseTimeoutEnabled, mChannelId, !!mTransactionObserver,
+                throttleQueue, mIsDocumentLoad, aParentIpAddressSpace,
+                aLnaPermissionStatus, mRedirectStart, mRedirectEnd)) {
     return NS_ERROR_FAILURE;
   }
 

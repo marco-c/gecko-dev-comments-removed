@@ -183,7 +183,7 @@ class HttpTransactionShell : public nsISupports {
   
   
   
-  virtual void SetRequestBodyIsStreaming(bool aIsStreaming) {}
+  virtual void SetRequestBodyIsStreaming(bool aIsStreaming) = 0;
 
   virtual TimeStamp GetOnStartRequestStartTime() const { return TimeStamp(); }
   virtual TimeStamp GetDataAvailableStartTime() const { return TimeStamp(); }
