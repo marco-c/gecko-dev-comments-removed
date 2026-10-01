@@ -137,10 +137,13 @@ pub trait GpuBackend {
     
     
     
+    
+    
     fn link_program(
         &mut self,
         program: &mut Program,
         descriptor: &VertexDescriptor,
+        samplers: &[(&'static str, TextureSlot)],
     ) -> Result<(), ShaderError>;
 
     
@@ -255,8 +258,6 @@ pub trait GpuBackend {
         base_filename: &str,
         features: &[&'static str],
     ) -> (String, String);
-
-    fn bind_shader_samplers(&mut self, program: &Program, bindings: &[(&'static str, TextureSlot)]);
 
     fn set_uniforms(
         &self,
@@ -595,10 +596,27 @@ impl Device {
         base_filename: &'static str,
         features: &[&'static str],
         descriptor: &VertexDescriptor,
+        samplers: &[(&'static str, TextureSlot)],
     ) -> Result<Program, ShaderError> {
         let mut program = self.create_program(base_filename, features)?;
-        self.link_program(&mut program, descriptor)?;
+        self.backend.link_program(&mut program, descriptor, samplers)?;
         Ok(program)
+    }
+
+    pub fn link_program<S>(
+        &mut self,
+        program: &mut Program,
+        descriptor: &VertexDescriptor,
+        samplers: &[(&'static str, S)],
+    ) -> Result<(), ShaderError>
+    where
+        S: Into<TextureSlot> + Copy,
+    {
+        let samplers: Vec<(&'static str, TextureSlot)> = samplers
+            .iter()
+            .map(|&(name, slot)| (name, slot.into()))
+            .collect();
+        self.backend.link_program(program, descriptor, &samplers)
     }
 
     
@@ -636,17 +654,6 @@ impl Device {
         S: Into<TextureSlot>,
     {
         self.backend.bind_external_texture(slot.into(), external_texture)
-    }
-
-    pub fn bind_shader_samplers<S>(&mut self, program: &Program, bindings: &[(&'static str, S)])
-    where
-        S: Into<TextureSlot> + Copy,
-    {
-        let bindings: Vec<(&'static str, TextureSlot)> = bindings
-            .iter()
-            .map(|&(name, slot)| (name, slot.into()))
-            .collect();
-        self.backend.bind_shader_samplers(program, &bindings)
     }
 
     pub fn update_vao_main_vertices<V>(

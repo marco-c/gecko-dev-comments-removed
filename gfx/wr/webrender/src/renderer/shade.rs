@@ -216,13 +216,10 @@ impl LazilyCompiledShader {
     fn build_program(&self, device: &mut Device) -> Result<Program, ShaderError> {
         let mut program = device.create_program(self.name, &self.features)?;
 
-        if let Err(err) = device.link_program(&mut program, self.vertex_descriptor()) {
+        if let Err(err) = device.link_program(&mut program, self.vertex_descriptor(), SAMPLER_BINDINGS) {
             device.delete_program(program);
             return Err(err);
         }
-
-        device.bind_program(&program);
-        device.bind_shader_samplers(&program, SAMPLER_BINDINGS);
 
         Ok(program)
     }
@@ -324,7 +321,7 @@ impl LazilyCompiledShader {
             let vertex_descriptor = self.vertex_descriptor();
 
             let program = self.program.as_mut().unwrap();
-            if let Err(err) = device.link_program(program, vertex_descriptor) {
+            if let Err(err) = device.link_program(program, vertex_descriptor, SAMPLER_BINDINGS) {
                 
                 
                 
@@ -334,10 +331,6 @@ impl LazilyCompiledShader {
                 }
                 return Err(err);
             }
-
-            let program = self.program.as_mut().unwrap();
-            device.bind_program(program);
-            device.bind_shader_samplers(&program, SAMPLER_BINDINGS);
 
             if let Some(profile) = &mut profile {
                 let end_time = zeitstempel::now();
