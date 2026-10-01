@@ -257,7 +257,7 @@ class nsIOService final : public nsIIOService,
   
   mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted{0};
 
-  RefPtr<SocketProcessHost> mSocketProcess;
+  SocketProcessHost* mSocketProcess{nullptr};
 
   
   

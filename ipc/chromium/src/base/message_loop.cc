@@ -75,8 +75,9 @@ static LPTOP_LEVEL_EXCEPTION_FILTER GetTopSEHFilter() {
 
 
 
-class MessageLoop::EventTarget final : public nsISerialEventTarget,
-                                       public nsITargetShutdownTask {
+class MessageLoop::EventTarget : public nsISerialEventTarget,
+                                 public nsITargetShutdownTask,
+                                 public MessageLoop::DestructionObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
@@ -97,30 +98,28 @@ class MessageLoop::EventTarget final : public nsISerialEventTarget,
 
   explicit EventTarget(MessageLoop* aLoop)
       : mMutex("MessageLoop::EventTarget"), mLoop(aLoop) {
-    mThread = PR_GetCurrentThread();
+    aLoop->AddDestructionObserver(this);
   }
 
-  
-  
-  
-  
-  
-  
-  void BeginDestroy() {
+ private:
+  virtual ~EventTarget() {
+    if (mLoop) {
+      mLoop->RemoveDestructionObserver(this);
+    }
+  }
+
+  void WillDestroyCurrentMessageLoop() override {
     {
       mozilla::MutexAutoLock lock(mMutex);
+      
+      
+      
+      mLoop->RemoveDestructionObserver(this);
       mLoop = nullptr;
     }
 
     TargetShutdown();
   }
-
-  
-  
-  void EndDestroy() { mThread = nullptr; }
-
- private:
-  ~EventTarget() = default;
 
   mozilla::Mutex mMutex;
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
@@ -133,15 +132,13 @@ NS_IMPL_ISUPPORTS(MessageLoop::EventTarget, nsIEventTarget,
 
 NS_IMETHODIMP_(bool)
 MessageLoop::EventTarget::IsOnCurrentThreadInfallible() {
-  
-  
-  
-  return false;
+  mozilla::MutexAutoLock lock(mMutex);
+  return mLoop == MessageLoop::current();
 }
 
 NS_IMETHODIMP
 MessageLoop::EventTarget::IsOnCurrentThread(bool* aResult) {
-  *aResult = IsOnCurrentThread();
+  *aResult = IsOnCurrentThreadInfallible();
   return NS_OK;
 }
 
@@ -308,8 +305,6 @@ MessageLoop::MessageLoop(Type type, nsISerialEventTarget* aEventTarget)
 MessageLoop::~MessageLoop() {
   DCHECK(this == current());
 
-  mEventTarget->BeginDestroy();
-
   
   FOR_EACH_OBSERVER(DestructionObserver, destruction_observers_,
                     WillDestroyCurrentMessageLoop());
@@ -331,8 +326,6 @@ MessageLoop::~MessageLoop() {
     if (!did_work) break;
   }
   DCHECK(!did_work);
-
-  mEventTarget->EndDestroy();
 
   
   get_tls_ptr().Set(nullptr);

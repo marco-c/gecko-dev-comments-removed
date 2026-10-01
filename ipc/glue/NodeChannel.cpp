@@ -274,9 +274,8 @@ void NodeChannel::OnChannelConnected(base::ProcessId aPeerPid) {
 
   
   
-  RefPtr<GeckoChildProcessHost> host(mChildProcessHost);
-  if (host) {
-    host->OnChannelConnected(aPeerPid);
+  if (mChildProcessHost) {
+    mChildProcessHost->OnChannelConnected(aPeerPid);
   }
 }
 

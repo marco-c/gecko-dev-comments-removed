@@ -32,6 +32,7 @@ namespace gfx {
 
 VRProcessParent::VRProcessParent(Listener* aListener)
     : GeckoChildProcessHost(GeckoProcessType_VR),
+      mTaskFactory(this),
       mListener(aListener),
       mLaunchPhase(LaunchPhase::Unlaunched),
       mChannelClosed(false),
@@ -91,19 +92,45 @@ bool VRProcessParent::WaitForLaunch() {
 void VRProcessParent::Shutdown() {
   MOZ_ASSERT(!mShutdownRequested);
   mListener = nullptr;
-  mShutdownRequested = true;
 
   if (mVRChild) {
     
     if (!mChannelClosed) {
       mVRChild->Close();
-      MOZ_ASSERT(!mVRChild);
     }
+    
+    
+    mShutdownRequested = true;
+
 #ifndef NS_FREE_PERMANENT_DATA
     
     
     KillHard("NormalShutdown");
 #endif
+
+    
+    
+    
+    
+    
+    
+    return;
+  }
+
+  DestroyProcess();
+}
+
+void VRProcessParent::DestroyProcess() {
+  if (mLaunchThread) {
+    
+    
+    {
+      MonitorAutoLock lock(mMonitor);
+      mTaskFactory.RevokeAll();
+    }
+
+    mLaunchThread->Dispatch(NS_NewRunnableFunction("DestroyProcessRunnable",
+                                                   [this] { Destroy(); }));
   }
 }
 
@@ -167,19 +194,25 @@ void VRProcessParent::OnChannelConnected(base::ProcessId peer_pid) {
 
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
-  NS_DispatchToMainThread(
-      NewRunnableMethod("VRProcessParent::OnChannelConnectedTask", this,
-                        &VRProcessParent::OnChannelConnectedTask));
+  
+  
+  RefPtr<Runnable> runnable;
+  {
+    MonitorAutoLock lock(mMonitor);
+    runnable = mTaskFactory.NewRunnableMethod(
+        &VRProcessParent::OnChannelConnectedTask);
+  }
+  NS_DispatchToMainThread(runnable);
 }
 
 void VRProcessParent::OnChannelConnectedTask() {
-  if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
+  if (mLaunchPhase == LaunchPhase::Waiting) {
     InitAfterConnect(true);
   }
 }
 
 void VRProcessParent::OnChannelErrorTask() {
-  if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
+  if (mLaunchPhase == LaunchPhase::Waiting) {
     InitAfterConnect(false);
   }
 }
@@ -189,6 +222,8 @@ void VRProcessParent::OnChannelClosed() {
   if (!mShutdownRequested && mListener) {
     
     mListener->OnProcessUnexpectedShutdown(this);
+  } else {
+    DestroyProcess();
   }
 
   

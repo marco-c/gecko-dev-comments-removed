@@ -18,6 +18,8 @@
 #include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/ScopedPort.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
+#include "mozilla/Atomics.h"
+#include "mozilla/LinkedList.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/MozPromise.h"
@@ -95,8 +97,8 @@ typedef mozilla::MozPromise<base::ProcessHandle, LaunchError, false>
 
 extern LazyLogModule gChildProcessLifecycleLog;
 
-class GeckoChildProcessHost
-    : public SupportsThreadSafeWeakPtr<GeckoChildProcessHost> {
+class GeckoChildProcessHost : public SupportsWeakPtr,
+                              public LinkedListElement<GeckoChildProcessHost> {
  protected:
   typedef mozilla::Monitor Monitor;
   typedef std::vector<std::string> StringVector;
@@ -105,10 +107,18 @@ class GeckoChildProcessHost
   using ProcessId = base::ProcessId;
   using ProcessHandle = base::ProcessHandle;
 
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(GeckoChildProcessHost)
-
   explicit GeckoChildProcessHost(GeckoProcessType aProcessType,
                                  bool aIsFileContent = false);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void Destroy();
 
   static uint32_t GetUniqueID();
 
@@ -219,17 +229,20 @@ class GeckoChildProcessHost
   
   void DisableOSActivityMode();
 #endif  
+  typedef std::function<void(GeckoChildProcessHost*)> GeckoProcessCallback;
 
   
-  static nsTArray<RefPtr<GeckoChildProcessHost>> GetAll();
+  
+  
+  
+  
+  static void GetAll(const GeckoProcessCallback& aCallback);
 
   friend class BaseProcessLauncher;
   friend class PosixProcessLauncher;
   friend class WindowsProcessLauncher;
 
  protected:
-  friend class SupportsThreadSafeWeakPtr<GeckoChildProcessHost>;
-
   virtual ~GeckoChildProcessHost();
   GeckoProcessType mProcessType;
   GeckoChildID mChildID;
@@ -328,9 +341,17 @@ class GeckoChildProcessHost
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
 
   
+  void RemoveFromProcessList();
+
+  
   nsCOMPtr<nsIFile> mProfileDir;
 
-  static std::atomic<uint32_t> sNextUniqueID;
+  mozilla::Atomic<bool> mDestroying;
+
+  static uint32_t sNextUniqueID;
+  static StaticAutoPtr<LinkedList<GeckoChildProcessHost>>
+      sGeckoChildProcessHosts MOZ_GUARDED_BY(sMutex);
+  static StaticMutex sMutex;
 };
 
 nsCOMPtr<nsISerialEventTarget> GetIPCLauncher();

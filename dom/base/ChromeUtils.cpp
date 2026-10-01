@@ -1971,20 +1971,21 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
        nsTArray<UtilityInfo>());
 
   
-  for (auto& geckoProcess : mozilla::ipc::GeckoChildProcessHost::GetAll()) {
-    base::ProcessId childPid = geckoProcess->GetChildProcessId();
-    if (childPid == 0) {
-      
-      
-      continue;
-    }
-    mozilla::ProcType type = mozilla::ProcType::Unknown;
+  mozilla::ipc::GeckoChildProcessHost::GetAll(
+      [&requests](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
+        base::ProcessId childPid = aGeckoProcess->GetChildProcessId();
+        if (childPid == 0) {
+          
+          
+          return;
+        }
+        mozilla::ProcType type = mozilla::ProcType::Unknown;
 
-    switch (geckoProcess->GetProcessType()) {
-      case GeckoProcessType::GeckoProcessType_Content: {
-        
-        continue;
-      }
+        switch (aGeckoProcess->GetProcessType()) {
+          case GeckoProcessType::GeckoProcessType_Content: {
+            
+            return;
+          }
 
 #define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
                            process_bin_type, procinfo_typename,               \
@@ -2003,39 +2004,39 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
 #endif  
 #undef SKIP_PROCESS_TYPE_CONTENT
 #undef GECKO_PROCESS_TYPE
-      default:
+          default:
+            
+            break;
+        }
+
         
-        break;
-    }
+        nsTArray<UtilityInfo> utilityActors;
+        if (aGeckoProcess->GetProcessType() ==
+            GeckoProcessType::GeckoProcessType_Utility) {
+          RefPtr<mozilla::ipc::UtilityProcessManager> upm =
+              mozilla::ipc::UtilityProcessManager::GetSingleton();
+          if (!utilityActors.AppendElements(upm->GetActors(aGeckoProcess),
+                                            fallible)) {
+            NS_WARNING("Error adding actors");
+            return;
+          }
+        }
 
-    
-    nsTArray<UtilityInfo> utilityActors;
-    if (geckoProcess->GetProcessType() ==
-        GeckoProcessType::GeckoProcessType_Utility) {
-      RefPtr<mozilla::ipc::UtilityProcessManager> upm =
-          mozilla::ipc::UtilityProcessManager::GetSingleton();
-      if (!utilityActors.AppendElements(upm->GetActors(geckoProcess),
-                                        fallible)) {
-        NS_WARNING("Error adding actors");
-        continue;
-      }
-    }
-
-    requests.EmplaceBack(
-         childPid,
-         type,
-         ""_ns,
-         nsTArray<WindowInfo>(),  
-                                                     
-                                                     
-         std::move(utilityActors),
-         0  
+        requests.EmplaceBack(
+             childPid,
+             type,
+             ""_ns,
+             nsTArray<WindowInfo>(),  
+                                                         
+                                                         
+             std::move(utilityActors),
+             0  
 #ifdef XP_MACOSX
-        ,
-         geckoProcess->GetChildTask()
+            ,
+             aGeckoProcess->GetChildTask()
 #endif  
-    );
-  }
+        );
+      });
 
   
   for (const auto* contentParent : contentParents) {

@@ -394,40 +394,41 @@ void MemoryTelemetry::GatherTotalMemory() {
   mGatheringTotalMemory = true;
 
   nsTArray<ChildProcessInfo> infos;
-  for (auto& geckoProcess : mozilla::ipc::GeckoChildProcessHost::GetAll()) {
-    if (!geckoProcess->GetChildProcessHandle()) {
-      continue;
-    }
+  mozilla::ipc::GeckoChildProcessHost::GetAll(
+      [&](mozilla::ipc::GeckoChildProcessHost* aGeckoProcess) {
+        if (!aGeckoProcess->GetChildProcessHandle()) {
+          return;
+        }
 
-    ChildProcessInfo info{};
-    info.mType = geckoProcess->GetProcessType();
+        ChildProcessInfo info{};
+        info.mType = aGeckoProcess->GetProcessType();
 
-    
-    
-    
-    if (info.mType != GeckoProcessType_Content) {
-      continue;
-    }
+        
+        
+        
+        if (info.mType != GeckoProcessType_Content) {
+          return;
+        }
 
 #if defined(XP_WIN)
-    if (!::DuplicateHandle(::GetCurrentProcess(),
-                           geckoProcess->GetChildProcessHandle(),
-                           ::GetCurrentProcess(), &info.mHandle, 0, false,
-                           DUPLICATE_SAME_ACCESS)) {
-      continue;
-    }
+        if (!::DuplicateHandle(::GetCurrentProcess(),
+                               aGeckoProcess->GetChildProcessHandle(),
+                               ::GetCurrentProcess(), &info.mHandle, 0, false,
+                               DUPLICATE_SAME_ACCESS)) {
+          return;
+        }
 #elif defined(XP_MACOSX)
-    info.mHandle = geckoProcess->GetChildTask();
-    if (mach_port_mod_refs(mach_task_self(), info.mHandle, MACH_PORT_RIGHT_SEND,
-                           1) != KERN_SUCCESS) {
-      continue;
-    }
+        info.mHandle = aGeckoProcess->GetChildTask();
+        if (mach_port_mod_refs(mach_task_self(), info.mHandle,
+                               MACH_PORT_RIGHT_SEND, 1) != KERN_SUCCESS) {
+          return;
+        }
 #else
-    info.mHandle = geckoProcess->GetChildProcessId();
+        info.mHandle = aGeckoProcess->GetChildProcessId();
 #endif
 
-    infos.AppendElement(info);
-  }
+        infos.AppendElement(info);
+      });
 
   RefPtr<MemoryTelemetry> self = this;
   mThreadPool->Dispatch(NS_NewRunnableFunction(
