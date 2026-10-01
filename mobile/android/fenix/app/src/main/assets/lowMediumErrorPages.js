@@ -71,7 +71,6 @@ function injectValues(queryMap) {
     document.getElementById("viewArchivedButton").textContent =
       queryMap.archiveCheckButtonLabel;
     document.getElementById("viewArchivedButton").style.display = "block";
-    injectArchiveDescription(queryMap);
     document.getElementById("archiveNotFoundText").textContent =
       queryMap.archiveNotFoundMessage;
     document.getElementById("archiveSearchWebLink").textContent =
@@ -86,37 +85,6 @@ function injectValues(queryMap) {
 
 
 const ERROR_PAGE_ACTION_PREFIX = "firefox-error-action://";
-
-
-
-const WAYBACK_MACHINE_URL = "https://web.archive.org/";
-
-
-
-
-
-function injectArchiveDescription(queryMap) {
-  const description = document.getElementById("archiveDescription");
-  const sentence = queryMap.archiveDescriptionMessage;
-  if (!sentence) {
-    return;
-  }
-  const label = queryMap.archiveDescriptionLinkLabel;
-  const labelIndex = label ? sentence.indexOf(label) : -1;
-  if (labelIndex === -1) {
-    description.textContent = sentence;
-  } else {
-    const link = document.createElement("a");
-    link.href = WAYBACK_MACHINE_URL;
-    link.textContent = label;
-    description.replaceChildren(
-      sentence.slice(0, labelIndex),
-      link,
-      sentence.slice(labelIndex + label.length)
-    );
-  }
-  description.hidden = false;
-}
 
 
 
@@ -164,7 +132,6 @@ async function viewArchivedVersion(queryMap) {
 
 function showNoArchiveFound(archiveUrl) {
   document.getElementById("viewArchivedButton").style.display = "none";
-  document.getElementById("archiveDescription").hidden = true;
   document.getElementById("archiveWarningContent").hidden = false;
   document
     .getElementById("archiveSearchWebLink")
@@ -181,14 +148,12 @@ function showNoArchiveFound(archiveUrl) {
 
 function showArchiveError(queryMap) {
   document.getElementById("viewArchivedButton").style.display = "none";
-  document.getElementById("archiveDescription").hidden = true;
   const errorContent = document.getElementById("archiveErrorContent");
   errorContent.hidden = false;
   document.getElementById("archiveRetryLink").onclick = e => {
     e.preventDefault();
     errorContent.hidden = true;
     document.getElementById("viewArchivedButton").style.display = "block";
-    document.getElementById("archiveDescription").hidden = false;
     viewArchivedVersion(queryMap);
   };
 }
