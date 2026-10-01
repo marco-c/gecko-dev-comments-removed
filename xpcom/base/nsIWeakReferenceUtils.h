@@ -26,7 +26,7 @@ inline nsresult CallQueryReferent(T* aSource, DestinationType** aDestination) {
 }
 
 inline const nsQueryReferent do_QueryReferent(nsIWeakReference* aRawPtr,
-                                              nsresult* aError = 0) {
+                                              nsresult* aError = nullptr) {
   return nsQueryReferent(aRawPtr, aError);
 }
 
@@ -34,9 +34,9 @@ inline const nsQueryReferent do_QueryReferent(nsIWeakReference* aRawPtr,
 
 
 extern nsIWeakReference* NS_GetWeakReference(nsISupports*,
-                                             nsresult* aResult = 0);
+                                             nsresult* aResult = nullptr);
 extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
-                                             nsresult* aResult = 0);
+                                             nsresult* aResult = nullptr);
 
 
 
@@ -47,17 +47,17 @@ extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
 
 
 inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
-    nsISupports* aRawPtr, nsresult* aError = 0) {
+    nsISupports* aRawPtr, nsresult* aError = nullptr) {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
 
 inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
-    nsISupportsWeakReference* aRawPtr, nsresult* aError = 0) {
+    nsISupportsWeakReference* aRawPtr, nsresult* aError = nullptr) {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
 
 inline void do_GetWeakReference(nsIWeakReference* aRawPtr,
-                                nsresult* aError = 0) {
+                                nsresult* aError = nullptr) {
   
   
   
