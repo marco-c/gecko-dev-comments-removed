@@ -16,7 +16,7 @@ enum GeckoProcessType {
                            process_bin_type, procinfo_typename,               \
                            webidl_typename, allcaps_name)                     \
   GeckoProcessType_##enum_name = (enum_value),
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
   GeckoProcessType_End,
   GeckoProcessType_Invalid = GeckoProcessType_End

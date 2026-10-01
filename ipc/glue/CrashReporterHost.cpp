@@ -172,7 +172,7 @@ void CrashReporterHost::RecordCrashWithTelemetry(GeckoProcessType aProcessType,
   case GeckoProcessType_##enum_name:                                          \
     key.AssignLiteral(string_name);                                           \
     break;
-#include "mozilla/GeckoProcessTypes.h"
+#include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
     
     
