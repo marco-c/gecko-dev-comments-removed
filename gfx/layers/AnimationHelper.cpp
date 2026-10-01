@@ -67,13 +67,18 @@ static Maybe<double> GetScrollProgress(
 
 static dom::Nullable<TimeDuration> CalculateElapsedTimeForScrollTimeline(
     const Maybe<APZSampler::ScrollOffsetAndRange> aScrollMeta,
-    const ScrollTimelineOptions& aOptions, const StickyTimeDuration& aEndTime,
-    const TimeDuration& aStartTime, float aPlaybackRate) {
+    const ScrollTimelineOptions& aOptions, const TimeDuration& aStartTime,
+    float aPlaybackRate) {
   const auto progress = GetScrollProgress(aScrollMeta, aOptions);
   if (!progress) {
     return nullptr;
   }
-  auto timelineTime = TimeDuration(aEndTime.MultDouble(*progress));
+  
+  
+  
+  
+  const auto timelineTime = TimeDuration::FromMilliseconds(
+      *progress * PROGRESS_TIMELINE_DURATION_MILLISEC);
   return dom::Animation::CurrentTimeFromTimelineTime(timelineTime, aStartTime,
                                                      aPlaybackRate);
 }
@@ -95,7 +100,7 @@ static dom::Nullable<TimeDuration> CalculateElapsedTime(
         aAPZSampler->GetCurrentScrollOffsetAndRange(
             aLayersId, aAnimation.mScrollTimelineOptions.value().source(),
             aProofOfMapLock),
-        aAnimation.mScrollTimelineOptions.value(), aAnimation.mTiming.EndTime(),
+        aAnimation.mScrollTimelineOptions.value(),
         aAnimation.mStartTime.refOr(aAnimation.mHoldTime),
         aAnimation.mPlaybackRate);
   }
@@ -211,8 +216,14 @@ static AnimationHelper::SampleResult SampleAnimationForProperty(
         return dom::Animation::ProgressTimelinePosition::NotBoundary;
       }
 
-      const auto minTimelineTime = animation.mStartTime.valueOr(TimeDuration{});
-      const TimeDuration maxTimelineTime{animation.mTiming.EndTime()};
+      
+      
+      const auto minTimelineTime = TimeDuration::FromMilliseconds(
+          animation.mScrollTimelineOptions->rangeStart() *
+          PROGRESS_TIMELINE_DURATION_MILLISEC);
+      const auto maxTimelineTime = TimeDuration::FromMilliseconds(
+          animation.mScrollTimelineOptions->rangeEnd() *
+          PROGRESS_TIMELINE_DURATION_MILLISEC);
 
       return dom::Animation::AtTimelineBoundary(
           TimeDuration::FromMilliseconds(*progress *

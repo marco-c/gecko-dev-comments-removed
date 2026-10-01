@@ -266,11 +266,6 @@ class ScrollTimeline : public AnimationTimeline,
     
     
     const auto interval = IntervalForAttachmentRange(aRange);
-    
-    
-    
-    
-    
     return TimeDuration::FromMilliseconds(
         (interval.second > interval.first ? interval.second - interval.first
                                           : 0.0) *
