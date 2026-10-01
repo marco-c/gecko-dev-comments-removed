@@ -14,6 +14,7 @@
 #include "nsIChannel.h"
 #include "nsIInputStream.h"
 #include "nsIRequest.h"
+#include "nsThreadUtils.h"
 
 class nsIReferrerInfo;
 class nsIURI;
@@ -176,14 +177,28 @@ class ThreadSafeRequestHandle final {
   ThreadSafeRequestHandle(JS::loader::ScriptLoadRequest* aRequest,
                           nsISerialEventTarget* aSyncTarget);
 
-  JS::loader::ScriptLoadRequest* GetRequest() const { return mRequest; }
+  JS::loader::ScriptLoadRequest* GetRequest() const {
+    AssertRequestNotHandedOff();
+    return mRequest;
+  }
 
   WorkerLoadContext* GetContext();
 
-  bool IsEmpty() { return !mRequest; }
+  bool IsEmpty() const {
+    AssertRequestNotHandedOff();
+    return !mRequest;
+  }
 
   
   void SetRunnable(workerinternals::loader::ScriptLoaderRunnable* aRunnable);
+
+  
+  
+  
+  
+  bool ExecutionScheduled() const;
+
+  void SetExecutionScheduled();
 
   
   nsresult OnStreamComplete(nsresult aStatus);
@@ -204,10 +219,14 @@ class ThreadSafeRequestHandle final {
 
   already_AddRefed<workerinternals::loader::CacheCreator> GetCacheCreator();
 
-  bool mExecutionScheduled = false;
-
  private:
   ~ThreadSafeRequestHandle();
+
+  
+  
+  void AssertRequestNotHandedOff() const {
+    MOZ_ASSERT_IF(NS_IsMainThread(), !mExecutionScheduled);
+  }
 
   
   
@@ -217,6 +236,17 @@ class ThreadSafeRequestHandle final {
   RefPtr<workerinternals::loader::ScriptLoaderRunnable> mRunnable
       MOZ_GUARDED_BY(mMutex);
 
+  
+  
+  
+  bool mExecutionScheduled = false;
+
+  
+  
+  
+  
+  
+  
   RefPtr<JS::loader::ScriptLoadRequest> mRequest;
   nsCOMPtr<nsISerialEventTarget> mOwningEventTarget;
 };

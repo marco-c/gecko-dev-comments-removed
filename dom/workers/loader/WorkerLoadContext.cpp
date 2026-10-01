@@ -31,7 +31,18 @@ ThreadSafeRequestHandle::ThreadSafeRequestHandle(
     : mRequest(aRequest), mOwningEventTarget(aSyncTarget) {}
 
 WorkerLoadContext* ThreadSafeRequestHandle::GetContext() {
+  AssertRequestNotHandedOff();
   return mRequest->GetWorkerLoadContext();
+}
+
+bool ThreadSafeRequestHandle::ExecutionScheduled() const {
+  AssertIsOnMainThread();
+  return mExecutionScheduled;
+}
+
+void ThreadSafeRequestHandle::SetExecutionScheduled() {
+  AssertIsOnMainThread();
+  mExecutionScheduled = true;
 }
 
 void ThreadSafeRequestHandle::SetRunnable(
@@ -127,8 +138,17 @@ ThreadSafeRequestHandle::~ThreadSafeRequestHandle() {
   
   
   
+  bool hasRequest;
+  {
+    MutexAutoLock lock(mMutex);
+    hasRequest = !!mRequest;
+  }
+
   
-  if (!mRequest || mOwningEventTarget->IsOnCurrentThread()) {
+  
+  
+  
+  if (!hasRequest || mOwningEventTarget->IsOnCurrentThread()) {
     return;
   }
 
