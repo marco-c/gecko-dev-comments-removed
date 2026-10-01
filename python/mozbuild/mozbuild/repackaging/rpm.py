@@ -223,7 +223,14 @@ def _get_command(source_dir, target_dir, arch):
 
     if _is_chroot_available(arch):
         flattened_command = " ".join(command)
+        
+        
+        
+        
         command = [
+            "unshare",
+            "--user",
+            "--map-root-user",
             "chroot",
             _get_chroot_path(arch),
             "bash",
