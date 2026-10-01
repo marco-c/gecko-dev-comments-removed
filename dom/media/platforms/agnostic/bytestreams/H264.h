@@ -297,6 +297,26 @@ struct SPSData {
 
 
 
+
+
+
+  uint32_t max_num_reorder_frames = {};
+
+  
+
+
+
+
+
+
+  uint32_t max_dec_frame_buffering = {};
+
+  
+
+
+
+
+
   bool gaps_in_frame_num_allowed_flag = {};
 
   
@@ -531,6 +551,12 @@ class H264 {
   static uint32_t ComputeMaxRefFrames(
       const mozilla::MediaByteBuffer* aExtraData);
 
+  
+  
+  
+  static uint32_t ComputeMaxNumReorderFrames(
+      const mozilla::MediaByteBuffer* aExtraData);
+
   enum class FrameType {
     
     
@@ -576,7 +602,7 @@ class H264 {
       const uint8_t* aNAL, size_t aLength);
   static bool vui_parameters(mozilla::BitReader& aBr, SPSData& aDest);
   
-  static void hrd_parameters(mozilla::BitReader& aBr);
+  static bool hrd_parameters(mozilla::BitReader& aBr);
   static uint8_t NumSPS(const mozilla::MediaByteBuffer* aExtraData);
   
   
