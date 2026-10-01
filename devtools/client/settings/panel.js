@@ -4,6 +4,7 @@
 
 "use strict";
 
+
 class SettingsPanel {
   destroy() {}
 }
