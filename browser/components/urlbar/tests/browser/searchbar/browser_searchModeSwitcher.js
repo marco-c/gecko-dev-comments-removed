@@ -17,15 +17,24 @@ add_setup(async function setup() {
 
 add_task(async function test_keyword_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [["keyword.enabled", false]],
+    set: [
+      ["keyword.enabled", false],
+      
+      
+      
+      
+      
+      ["browser.urlbar.ipc.chromeMessagePassing", false],
+    ],
   });
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   
-  await TestUtils.waitForCondition(
-    async () =>
-      SearchbarTestUtils.getSearchModeSwitcherIcon(win) ==
-      (await SearchService.defaultEngine.getIconURL())
+  await TestUtils.waitForCondition(async () =>
+    SearchbarTestUtils.searchModeSwitcherIconIs(
+      win,
+      await SearchService.defaultEngine.getIconURL()
+    )
   );
 
   Assert.ok(
@@ -35,7 +44,7 @@ add_task(async function test_keyword_disabled() {
   );
 
   Assert.equal(
-    document
+    win.document
       .querySelector("#searchbar-new .searchmode-switcher")
       .getAttribute("data-l10n-id"),
     "urlbar-searchmode-button3",
@@ -74,8 +83,7 @@ add_task(async function test_scotchbonnet_disabled() {
   });
   Assert.ok(true, "Entered search mode");
 
-  document.querySelector("#searchbar-new .searchmode-switcher-close").click();
-  await SearchbarTestUtils.assertSearchMode(window, null);
+  await SearchbarTestUtils.exitSearchMode(window, { waitForSearch: false });
   Assert.ok(true, "Exited search mode");
 
   await SpecialPowers.popPrefEnv();
