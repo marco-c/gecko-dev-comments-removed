@@ -354,3 +354,27 @@ add_setup(async function os_key_store_setup() {
     await OSKeyStoreTestUtils.cleanup();
   });
 });
+
+
+
+
+
+
+
+
+if (
+  Services.prefs.getBoolPref(
+    "extensions.formautofill.addresses.storage.rust.enabled",
+    false
+  )
+) {
+  registerCleanupFunction(function rust_served_the_addresses() {
+    Assert.ok(
+      Services.prefs.getBoolPref(
+        "extensions.formautofill.addresses.storage.rust.active",
+        false
+      ),
+      "the Rust store served addresses, so this run exercised it"
+    );
+  });
+}

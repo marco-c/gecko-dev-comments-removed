@@ -1,0 +1,11 @@
+
+
+
+"use strict";
+
+
+
+Services.scriptloader.loadSubScript(
+  gTestPath.replace("/browser/rust/", "/browser/"),
+  this
+);
