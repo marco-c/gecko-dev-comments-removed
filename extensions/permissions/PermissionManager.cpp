@@ -829,7 +829,10 @@ nsresult PermissionManager::Init() {
 
     
     
-    ClearOnShutdown(&sInstanceHolder);
+    RunOnShutdown([] {
+      StaticMutexAutoLock lock(sCreationMutex);
+      sInstanceHolder = nullptr;
+    });
     return NS_OK;
   }
 
