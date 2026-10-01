@@ -6,11 +6,18 @@
 #ifndef mozilla_hwinference_TextGenerationChild_h
 #define mozilla_hwinference_TextGenerationChild_h
 
+#include <functional>
+
+#include "mozilla/Atomics.h"
+#include "nsIThread.h"
 #include "mozilla/hwinference/PTextGenerationChild.h"
 #include "mozilla/ipc/FileDescriptor.h"
 
-namespace mozilla::hwinference {
+namespace mozilla::llama {
+class LlamaBackend;
+}
 
+namespace mozilla::hwinference {
 
 
 
@@ -22,10 +29,9 @@ class TextGenerationChild final : public PTextGenerationChild {
                       const TextGenerationOptions& aOptions);
 
   
-  
   void Initialize();
 
-  mozilla::ipc::IPCResult RecvGenerate(const GenerateRequest& aRequest,
+  mozilla::ipc::IPCResult RecvGenerate(GenerateRequest&& aRequest,
                                        GenerateResolver&& aResolve);
   mozilla::ipc::IPCResult RecvClear();
   mozilla::ipc::IPCResult RecvCancel();
@@ -34,10 +40,33 @@ class TextGenerationChild final : public PTextGenerationChild {
 
  private:
   friend PTextGenerationChild;
-  ~TextGenerationChild() = default;
+  class Generation;
+
+  ~TextGenerationChild();
+
+  
+  LoadResult LoadOnThread();
+
+  
+  void DispatchToActorThread(const char* aName, std::function<void()>&& aFn);
 
   ipc::FileDescriptor mModel;
-  TextGenerationOptions mOptions;
+  const TextGenerationOptions mOptions;
+
+  
+  const nsCOMPtr<nsIThread> mGenerationThread;
+  
+  const nsCOMPtr<nsISerialEventTarget> mActorThread;
+
+  
+  RefPtr<llama::LlamaBackend> mBackend;
+  nsCString mLoadError;
+  nsTArray<ChatMessage> mHistory;
+
+  
+  RefPtr<Generation> mCurrentGeneration;
+
+  Atomic<bool> mShutdown{false};
 };
 
 }  
