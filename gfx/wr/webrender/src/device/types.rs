@@ -758,11 +758,9 @@ pub struct DeviceOptions {
     pub upload_method: UploadMethod,
     pub batched_upload_threshold: i32,
     pub cached_programs: Option<Rc<ProgramCache>>,
-    pub allow_texture_storage_support: bool,
     pub allow_texture_swizzling: bool,
     pub dump_shader_source: Option<String>,
     pub surface_origin_is_top_left: bool,
-    pub panic_on_gl_error: bool,
 }
 
 #[derive(Debug)]
@@ -770,9 +768,7 @@ pub struct Capabilities {
     
     pub supports_multisampling: bool,
     
-    pub supports_copy_image_sub_data: bool,
-    
-    pub supports_buffer_storage: bool,
+    pub supports_persistent_upload_buffers: bool,
     
     pub supports_advanced_blend_equation: bool,
     
@@ -782,21 +778,11 @@ pub struct Capabilities {
     pub supports_dual_source_blending: bool,
     
     
-    pub supports_khr_debug: bool,
-    
-    pub supports_texture_swizzle: bool,
-    
-    
-    pub supports_nonzero_pbo_offsets: bool,
-    
-    pub supports_texture_usage: bool,
+    pub supports_upload_buffer_offsets: bool,
     
     pub supports_render_target_partial_update: bool,
     
     pub supports_shader_storage_object: bool,
-    
-    
-    pub requires_batched_texture_uploads: Option<bool>,
     
     
     pub supports_alpha_target_clears: bool,
@@ -807,12 +793,7 @@ pub struct Capabilities {
     
     pub prefers_clear_scissor: bool,
     
-    
-    pub supports_render_target_invalidate: bool,
-    
     pub supports_r8_texture_upload: bool,
-    
-    pub supports_qcom_tiled_rendering: bool,
     
     
     pub uses_native_clip_mask: bool,
@@ -822,7 +803,7 @@ pub struct Capabilities {
     
     
     
-    pub supports_image_external_essl3: bool,
+    pub supports_external_textures_in_all_shaders: bool,
     
     pub supports_texture_rect: bool,
     
@@ -832,8 +813,6 @@ pub struct Capabilities {
     
     
     pub readback_rows_top_down: bool,
-    
-    pub requires_vao_rebind_after_orphaning: bool,
     
     
     
