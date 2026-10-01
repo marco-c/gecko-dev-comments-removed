@@ -109,6 +109,15 @@ test_highlights(
 test_highlights(
   1, 
   async function check_highlights_context_menu() {
+    
+    
+    const bookmarkIconSelector =
+      "[data-section-id='highlights'] .card-outer .card-context-icon.icon-bookmark-added";
+    await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector(bookmarkIconSelector),
+      "The highlight is a bookmark card to begin with"
+    );
+
     const menuButton = content.document.querySelector(
       "[data-section-id='highlights'] .card-outer .context-menu-button"
     );
@@ -130,10 +139,7 @@ test_highlights(
     removeBookmarkBtn.click();
 
     await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelectorAll(
-          "[data-section-id='highlights'] .card-outer:not(.placeholder)"
-        ),
+      () => !content.document.querySelector(bookmarkIconSelector),
       "no more bookmark cards should be visible"
     );
   }
