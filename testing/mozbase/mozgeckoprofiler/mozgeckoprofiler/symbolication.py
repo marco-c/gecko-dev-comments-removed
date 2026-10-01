@@ -169,50 +169,59 @@ def symbolicate_profile_file(in_path, out_path, symbol_dir=None):
             text=True,
         )
 
-        
-        server_url = ""
-        start = time.time()
-        with samply_process.stdout:
-            for line in iter(samply_process.stdout.readline, ""):
-                if line.startswith("http"):
-                    url = unquote(line)
-                    server_url = str(url.split("symbolServer=", 1)[-1])
-                    break
-                timeout = time.time() - start
-                if timeout > SYMBOL_SERVER_TIMEOUT:
-                    raise TimeoutError(
-                        f"Server timed out after exceeding {SYMBOL_SERVER_TIMEOUT} seconds. Time elapsed : {timeout} seconds."
-                    )
+        try:
+            
+            server_url = ""
+            start = time.time()
+            with samply_process.stdout:
+                for line in iter(samply_process.stdout.readline, ""):
+                    if line.startswith("http"):
+                        url = unquote(line)
+                        server_url = str(url.split("symbolServer=", 1)[-1])
+                        break
+                    timeout = time.time() - start
+                    if timeout > SYMBOL_SERVER_TIMEOUT:
+                        raise TimeoutError(
+                            f"Server timed out after exceeding {SYMBOL_SERVER_TIMEOUT} seconds. Time elapsed : {timeout} seconds."
+                        )
 
-        profiler_edit_cmd = [
-            node_path,
-            "--max-old-space-size=8192",
-            str(profiler_edit_path),
-            "-i",
-            str(in_path),
-            "-o",
-            str(out_path),
-            "--symbolicate-with-server",
-            server_url,
-        ]
-        LOG.info(f"Running profiler-edit command: {profiler_edit_cmd}")
-        with subprocess.Popen(
-            profiler_edit_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        ) as profiler_edit_process:
-            for line in profiler_edit_process.stdout:
-                LOG.info(f"profiler-edit {line.strip()}")
+            if not server_url:
+                raise RuntimeError(
+                    "samply exited without reporting a symbol server URL."
+                )
 
-        
-        if platform.system() == "Windows":
-            samply_process.terminate()
-        else:
-            samply_process.send_signal(signal.SIGINT)  
+            profiler_edit_cmd = [
+                node_path,
+                "--max-old-space-size=8192",
+                str(profiler_edit_path),
+                "-i",
+                str(in_path),
+                "-o",
+                str(out_path),
+                "--symbolicate-with-server",
+                server_url,
+            ]
+            LOG.info(f"Running profiler-edit command: {profiler_edit_cmd}")
+            with subprocess.Popen(
+                profiler_edit_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            ) as profiler_edit_process:
+                for line in profiler_edit_process.stdout:
+                    LOG.info(f"profiler-edit {line.strip()}")
+        finally:
+            if platform.system() == "Windows":
+                samply_process.terminate()
+            else:
+                samply_process.send_signal(signal.SIGINT)  
 
-        samply_process.wait(timeout=SAMPLY_WAIT_TIMEOUT)
+            try:
+                samply_process.wait(timeout=SAMPLY_WAIT_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                samply_process.kill()
+                samply_process.wait()
 
         
         
