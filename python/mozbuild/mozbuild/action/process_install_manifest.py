@@ -40,7 +40,8 @@ def process_manifest(destdir, paths, track, no_symlinks=False, defines={}):
     else:
         
         
-        remove_unaccounted = False
+        
+        remove_unaccounted = FileRegistry()
         remove_empty_directories = False
         remove_all_directory_symlinks = False
 
