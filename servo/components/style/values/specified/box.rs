@@ -1510,6 +1510,7 @@ impl LineClamp {
     }
 
     
+    #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: fmt::Write,
@@ -1963,6 +1964,7 @@ pub enum Appearance {
 
 impl Appearance {
     
+    #[cfg_attr(feature = "servo", allow(unused))]
     pub(crate) fn parse_legacy(
         context: &ParserContext,
         input: &mut Parser,
