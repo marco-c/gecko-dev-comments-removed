@@ -1,7 +1,7 @@
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=441737
+-->
 <head>
   <title>nsIAccessibleDocument chrome tests</title>
   <link rel="stylesheet" type="text/css" href="chrome://mochikit/content/tests/SimpleTest/test.css" />
@@ -33,9 +33,9 @@
         // No actions wanted on doc
         is(docAcc.actionCount, 0, "Wrong number of actions for document!");
 
-        // attributes should contain tag:body
+        // attributes should contain tag:html
         const attributes = docAcc.attributes;
-        is(attributes.getStringProperty("tag"), "body",
+        is(attributes.getStringProperty("tag"), "html",
            "Wrong attribute on document!");
 
         // Document URL.
