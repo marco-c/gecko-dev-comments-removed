@@ -25,12 +25,12 @@ function checkStateChangeEvent(event, state, isExtraState, isEnabled) {
 
 
 let iframeSrc = `data:text/html,
-  <html>
+  <html id='iframe'>
     <head>
       <meta charset='utf-8'/>
       <title>Inner Iframe</title>
     </head>
-    <body id='iframe'></body>
+    <body></body>
   </html>`;
 
 

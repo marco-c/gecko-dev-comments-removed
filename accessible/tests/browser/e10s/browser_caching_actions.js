@@ -224,9 +224,11 @@ addAccessibleTask(
     
     
     
+    let e = waitForEvent(EVENT_REORDER, docAcc);
     await invokeContentTask(browser, [], () => {
       content.document.body.onclick = () => {};
     });
+    await e;
     await untilCacheIs(
       () => findAccessibleChildByID(docAcc, "link1")?.actionCount,
       1,
