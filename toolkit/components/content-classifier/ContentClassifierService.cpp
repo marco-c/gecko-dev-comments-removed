@@ -32,6 +32,7 @@
 #include "nsIURI.h"
 #include "nsIWritablePropertyBag2.h"
 #include "nsNetUtil.h"
+#include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
 #include "nsContentUtils.h"
 #include "nsIWebProgressListener.h"
@@ -243,7 +244,9 @@ NS_IMETHODIMP ContentClassifierProbeReport::GetResults(
 }
 
 NS_IMPL_ISUPPORTS(ContentClassifierService, nsIAsyncShutdownBlocker,
-                  nsIContentClassifierService)
+                  nsIContentClassifierService, nsIMemoryReporter)
+
+MOZ_DEFINE_MALLOC_SIZE_OF(ContentClassifierServiceMallocSizeOf)
 
 ContentClassifierService::ContentClassifierService()
     : mLock("ContentClassifierService::mLock"),
@@ -256,6 +259,44 @@ ContentClassifierService::ContentClassifierService()
 }
 
 ContentClassifierService::~ContentClassifierService() = default;
+
+NS_IMETHODIMP ContentClassifierService::CollectReports(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    bool aAnonymize) {
+  
+  
+  struct EngineSizes {
+    nsCString mFeatureName;
+    ContentClassifierEngineSizes mSizes;
+  };
+
+  
+  
+  nsTArray<EngineSizes> engines;
+  {
+    MutexAutoLock lock(mLock);
+    engines.SetCapacity(mEngines.Count());
+    for (const auto& entry : mEngines) {
+      engines.AppendElement(
+          EngineSizes{nsCString(entry.GetKey()),
+                      entry.GetData()->SizeOfIncludingThis(
+                          ContentClassifierServiceMallocSizeOf)});
+    }
+  }
+
+  for (const auto& engine : engines) {
+    
+    
+    nsPrintfCString path("explicit/content-classifier/engines/%s/objects",
+                         engine.mFeatureName.get());
+
+    aHandleReport->Callback(
+        ""_ns, path, KIND_HEAP, UNITS_BYTES, engine.mSizes.objects,
+        "Memory used by the content classifier engine objects."_ns, aData);
+  }
+
+  return NS_OK;
+}
 
 
 bool ContentClassifierService::IsEnabled() {
@@ -500,6 +541,11 @@ void ContentClassifierService::Init() {
   
   
   
+  RegisterWeakMemoryReporter(this);
+
+  
+  
+  
   if (sEnabled && HasAnyActiveRemoteSettingsFeatures()) {
     InitRSClient();
   }
@@ -609,6 +655,8 @@ NS_IMETHODIMP ContentClassifierService::BlockShutdown(
     mInitPhase = InitPhase::ShutdownStarted;
     mBuildThread = nullptr;
   }
+
+  UnregisterWeakMemoryReporter(this);
 
   
   
