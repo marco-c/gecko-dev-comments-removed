@@ -38,6 +38,9 @@ var { DEVICE_TYPE_MOBILE, DEVICE_TYPE_TABLET } = ChromeUtils.importESModule(
 
 const MIN_STATUS_ANIMATION_DURATION = 1600;
 
+const APP_MENU_SIGN_IN_PROMO_DISMISSED_PREF =
+  "identity.fxaccounts.toolbar.appMenuSignInPromo.dismissed";
+
 
 
 const FXA_CTA_UTM_PARAMS = {
@@ -1371,6 +1374,13 @@ var gSync = {
       "FXA_CTA_MENU_ENABLED",
       "identity.fxaccounts.toolbar.pxiToolbarEnabled"
     );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "APP_MENU_SIGN_IN_PROMO_DISMISSED",
+      APP_MENU_SIGN_IN_PROMO_DISMISSED_PREF,
+      false,
+      () => this.updateAppMenuSignInPromo()
+    );
   },
 
   maybeUpdateUIState() {
@@ -1484,10 +1494,16 @@ var gSync = {
     EnsureFxAccountsWebChannel();
 
     
+    
     PanelMultiView.getViewNode(
       document,
-      "appMenu-fxa-sign-in-promo-button"
+      "appMenu-fxa-sign-in-promo-link"
     ).addEventListener("click", this);
+    PanelMultiView.getViewNode(
+      document,
+      "appMenu-fxa-sign-in-promo-dismiss-button"
+    ).addEventListener("click", this);
+    this.updateAppMenuSignInPromo();
 
     
     PanelMultiView.getViewNode(
@@ -1623,6 +1639,23 @@ var gSync = {
     if (NimbusFeatures.fxaAppMenuItem.getVariable("ctaCopyVariant")) {
       NimbusFeatures.fxaAppMenuItem.recordExposureEvent();
     }
+  },
+
+  
+
+
+
+
+
+  updateAppMenuSignInPromo() {
+    document.documentElement.toggleAttribute(
+      "fxa-sign-in-promo-dismissed",
+      this.APP_MENU_SIGN_IN_PROMO_DISMISSED
+    );
+  },
+
+  dismissAppMenuSignInPromo() {
+    Services.prefs.setBoolPref(APP_MENU_SIGN_IN_PROMO_DISMISSED_PREF, true);
   },
 
   onFxAPanelViewShowing(panelview) {
@@ -1918,11 +1951,14 @@ var gSync = {
       case "PanelUI-fxa-menu-sign-in-promo-button":
         this.openFxAEmailFirstPageFromFxaMenu(button);
         break;
-      case "appMenu-fxa-sign-in-promo-button":
+      case "appMenu-fxa-sign-in-promo-link":
       case "appMenu-fxa-signed-out-sign-in-button":
         
         this.openFxAEmailFirstPageFromFxaMenu(button);
         PanelUI.hide();
+        break;
+      case "appMenu-fxa-sign-in-promo-dismiss-button":
+        this.dismissAppMenuSignInPromo();
         break;
       case "PanelUI-fxa-menu-account-signout-button":
         this.disconnect();
