@@ -205,19 +205,22 @@ class SummaryGraphPath extends Component {
       
       
       
-      return dom.svg();
+      return dom.svg({
+        width: "0",
+        height: "0",
+      });
     }
 
-    const { playbackRate } = animation.state;
+    const { playbackRate, playBackRateMultiplier } = animation.state;
     const { createdTime } = animation.state.absoluteValues;
-    const absPlaybackRate = Math.abs(playbackRate);
+    const multiplier = Math.abs(playbackRate) * playBackRateMultiplier;
 
     
     
     
-    const offset = createdTime * absPlaybackRate;
-    const startTime = timeScale.minStartTime * absPlaybackRate;
-    const totalDuration = timeScale.getDuration() * absPlaybackRate;
+    const offset = createdTime * multiplier;
+    const startTime = timeScale.minStartTime * multiplier;
+    const totalDuration = timeScale.getDuration() * multiplier;
     const opacity = Math.max(
       1 / keyframesList.length,
       MIN_KEYFRAMES_EASING_OPACITY
