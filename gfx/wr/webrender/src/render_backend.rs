@@ -159,6 +159,61 @@ macro_rules! declare_data_stores {
 
 crate::enumerate_interners!(declare_data_stores);
 
+macro_rules! declare_dl_stores {
+    ( $( $field:ident : $key:ty => $template:ty, $gauge:ident, $report:ident, )* ) => {
+        /// The follower stores for everything interned by the content display
+        /// list builders, fed by `DlUpdates` from the scene builder.
+        ///
+        /// Separate from `DataStores` rather than a field on it: these are per
+        /// render backend while `DataStores` is per document, so a field would
+        /// mean either duplicating entries per document or introducing
+        /// sharing. It also means "which store does this handle refer to?" is
+        /// answered by the handle's type, with no runtime discriminator.
+        #[derive(Default)]
+        pub struct DlStores {
+            $( pub $field: crate::dl_interner::DlStore<$key, $template>, )*
+        }
+
+        // Until the first type is listed nothing in here has anything to do.
+        #[allow(unused_variables, unused_mut)]
+        impl DlStores {
+            /// Apply a transaction's ops and report what they did. The counts
+            /// join the interners' in `INTERN_INSERTIONS` / `INTERN_REMOVALS`,
+            /// and the store sizes go to the per-type `INTERNED_*` gauges.
+            fn apply(
+                &mut self,
+                updates: DlUpdates,
+                profile: &mut TransactionProfile,
+            ) -> (usize, usize) {
+                let mut totals = (0, 0);
+                $(
+                    
+                    let (ins, rem) = crate::dl_interner::count_dl_ops(&updates.$field);
+                    totals.0 += ins;
+                    totals.1 += rem;
+                    self.$field.apply(updates.$field);
+                    profile.set(profiler::$gauge, self.$field.len());
+                )*
+                totals
+            }
+
+            /// Release the namespaces a transaction's `DlUpdates::closes`
+            /// held back from `apply`.
+            fn close(&mut self, namespaces: &[crate::dl_interner::DlNamespace]) {
+                for &namespace in namespaces {
+                    $( self.$field.close(namespace); )*
+                }
+            }
+
+            fn report_memory(&self, ops: &mut MallocSizeOfOps, r: &mut MemoryReport) {
+                $( r.interning.dl_stores.$report += self.$field.size_of(ops); )*
+            }
+        }
+    }
+}
+
+crate::enumerate_dl_stores!(declare_dl_stores);
+
 impl DataStores {
     
     
@@ -923,6 +978,19 @@ pub struct RenderBackend {
     
     last_touched_window: Option<RenderBackendId>,
 
+    
+    
+    
+    
+    
+    dl_stores: DlStores,
+    
+    
+    
+    
+    
+    held_dl_updates: FastHashMap<DocumentId, DlUpdates>,
+
     size_of_ops: Option<MallocSizeOfOps>,
     namespace_alloc_by_client: bool,
 }
@@ -991,6 +1059,8 @@ impl RenderBackend {
             windows: FastHashMap::default(),
             document_to_window: FastHashMap::default(),
             last_touched_window: None,
+            dl_stores: DlStores::default(),
+            held_dl_updates: FastHashMap::default(),
             size_of_ops,
             namespace_alloc_by_client,
         }
@@ -1180,8 +1250,53 @@ impl RenderBackend {
         }
 
         let mut built_frame = false;
+        let mut dl_closes = Vec::new();
         for mut txn in txns.drain(..) {
            let has_built_scene = txn.built_scene.is_some();
+
+            
+            
+            
+            
+            let dead: Vec<DocumentId> = self.held_dl_updates
+                .keys()
+                .filter(|id| !self.documents.contains_key(id))
+                .copied()
+                .collect();
+            for id in dead {
+                let mut held = self.held_dl_updates.remove(&id).unwrap();
+                let closes = mem::take(&mut held.closes);
+                self.dl_stores.apply(held, &mut txn.profile);
+                self.dl_stores.close(&closes);
+            }
+
+            
+            
+            
+            
+            self.dl_stores.close(&mem::take(&mut dl_closes));
+
+            
+            
+            
+            
+            
+            
+            
+            
+            let mut dl_updates = self.held_dl_updates
+                .remove(&txn.document_id)
+                .unwrap_or_default();
+            dl_updates.append(mem::take(&mut txn.dl_updates));
+            let dl_counts = if has_built_scene || !self.documents.contains_key(&txn.document_id) {
+                dl_closes = mem::take(&mut dl_updates.closes);
+                self.dl_stores.apply(dl_updates, &mut txn.profile)
+            } else {
+                if !dl_updates.is_empty() {
+                    self.held_dl_updates.insert(txn.document_id, dl_updates);
+                }
+                (0, 0)
+            };
 
             
             
@@ -1237,6 +1352,13 @@ impl RenderBackend {
                 if let Some(updates) = txn.interner_updates.take() {
                     doc.data_stores.apply_updates(updates, &mut doc.profile);
                 }
+
+                
+                
+                
+                let (insertions, removals) = dl_counts;
+                doc.profile.add(profiler::INTERN_INSERTIONS, insertions);
+                doc.profile.add(profiler::INTERN_REMOVALS, removals);
 
                 
                 
@@ -1344,6 +1466,7 @@ impl RenderBackend {
                 }
             }
         }
+        self.dl_stores.close(&dl_closes);
 
         built_frame
     }
@@ -2231,6 +2354,9 @@ impl RenderBackend {
 
             doc.data_stores.report_memory(ops, &mut report)
         }
+
+        
+        self.dl_stores.report_memory(ops, &mut report);
 
         for win in self.windows.values_mut() {
             (*report) += win.resource_cache.report_memory(op);

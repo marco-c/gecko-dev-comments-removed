@@ -523,12 +523,17 @@ pub struct InterningMemoryReport {
     pub interners: InternerSubReport,
     
     pub data_stores: InternerSubReport,
+    
+    
+    
+    pub dl_stores: InternerSubReport,
 }
 
 impl ::std::ops::AddAssign for InterningMemoryReport {
     fn add_assign(&mut self, other: InterningMemoryReport) {
         self.interners += other.interners;
         self.data_stores += other.data_stores;
+        self.dl_stores += other.dl_stores;
     }
 }
 

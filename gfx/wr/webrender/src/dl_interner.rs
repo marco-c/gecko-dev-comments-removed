@@ -24,9 +24,53 @@
 use crate::intern::ItemUid;
 use crate::internal_types::{FastHashMap, FastHashSet};
 use api::interning::{BuildId, BuilderId};
-use api::PipelineId;
+use api::{FontRenderMode, IdNamespace, PipelineId};
+use glyph_rasterizer::SharedFontResources;
 use std::marker::PhantomData;
 use std::{fmt, ops};
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! enumerate_dl_stores {
+    ($macro_name: ident) => {
+        $macro_name! {
+        }
+    }
+}
+
+
+
+
+
+#[macro_export]
+macro_rules! enumerate_scene_dl_stores {
+    ($macro_name: ident) => {
+        $macro_name! {
+        }
+    }
+}
+
+
+pub struct DlResolveContext<'a> {
+    
+    
+    pub id_namespace: IdNamespace,
+    pub fonts: &'a SharedFontResources,
+    pub default_font_render_mode: FontRenderMode,
+}
+
+
+
+pub trait DlResolve<K>: Sized {
+    fn resolve(key: &K, ctx: &DlResolveContext) -> Self;
+}
 
 
 
@@ -373,6 +417,46 @@ pub enum DlOp<T> {
         slot: u32,
     },
     Close(DlNamespace),
+}
+
+
+
+
+pub fn resolve_into<K, T>(
+    ops: &mut Vec<DlOp<T>>,
+    namespace: DlNamespace,
+    delta: &api::interning::InternOps<K>,
+    mut resolve: impl FnMut(&K) -> T,
+) {
+    for add in &delta.adds {
+        ops.push(DlOp::Insert {
+            namespace,
+            slot: add.slot,
+            value: resolve(&add.key),
+        });
+    }
+
+    for &slot in &delta.removes {
+        ops.push(DlOp::Remove { namespace, slot });
+    }
+}
+
+
+
+
+pub fn count_dl_ops<T>(ops: &[DlOp<T>]) -> (usize, usize) {
+    let mut insertions = 0;
+    let mut removals = 0;
+
+    for op in ops {
+        match op {
+            DlOp::Insert { .. } => insertions += 1,
+            DlOp::Remove { .. } => removals += 1,
+            DlOp::Open(..) | DlOp::Close(..) => {}
+        }
+    }
+
+    (insertions, removals)
 }
 
 
