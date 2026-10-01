@@ -20,10 +20,9 @@ async function doTest(exitSearchMode) {
   let win = await BrowserTestUtils.openNewBrowserWindow();
 
   
-  
-  EventUtils.synthesizeKey("k", { accelKey: true }, win);
-  await UrlbarTestUtils.promiseSearchComplete(win);
-  Assert.ok(!win.gURLBar.view.isOpen, "The view is closed");
+  await UrlbarTestUtils.promisePopupOpen(win, () =>
+    EventUtils.synthesizeKey("k", { accelKey: true }, win)
+  );
   await UrlbarTestUtils.assertSearchMode(win, {
     engineName: SearchService.defaultEngine.name,
     isGeneralPurposeEngine: true,

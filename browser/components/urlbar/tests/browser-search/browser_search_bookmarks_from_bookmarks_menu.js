@@ -35,7 +35,14 @@ add_task(async function searchBookmarksFromBooksmarksMenu() {
   );
   EventUtils.synthesizeMouseAtCenter(searchBookmarksButton, {});
 
-  await UrlbarTestUtils.promiseSearchComplete(window);
+  await new Promise(resolve => {
+    window.gURLBar.controller.addListener({
+      onViewOpen() {
+        window.gURLBar.controller.removeListener(this);
+        resolve();
+      },
+    });
+  });
 
   
   is(
