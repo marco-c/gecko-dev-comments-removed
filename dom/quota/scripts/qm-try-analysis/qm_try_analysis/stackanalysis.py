@@ -34,6 +34,20 @@ def extractBuildIDs(rows):
     return buildids
 
 
+SEARCHFOX_URL = "https://searchfox.org/firefox-main/rev/{}/{}#{}"
+
+
+
+
+def constructSearchfoxLinks(gitcommits, rows):
+    for row in rows:
+        commit = gitcommits.get(row["build_id"])
+        if commit:
+            row["searchfox"] = SEARCHFOX_URL.format(
+                commit, row["source_file"].replace("\\", "/"), row["source_line"]
+            )
+
+
 
 
 def constructHGLinks(buildids, rows):
@@ -222,6 +236,7 @@ def collectRawStacks(rows):
                 "stack_id": stack_id,
                 "client_id": row["client_id"],
                 "session_id": row["session_id"],
+                "build_id": row["build_id"],
                 "submit_timeabs": row["submit_timeabs"],
                 "context": row["context"],
                 "frames": [],
@@ -229,6 +244,7 @@ def collectRawStacks(rows):
 
         stack["frames"].append({
             "location": row["location"],
+            "searchfox": row.get("searchfox"),
             "source_file": row["source_file"],
             "source_line": row["source_line"],
             "seq": row["seq"],
