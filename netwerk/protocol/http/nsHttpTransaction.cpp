@@ -16,6 +16,7 @@
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/SlicedInputStream.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/glean/NetwerkMetrics.h"
@@ -317,6 +318,20 @@ nsresult nsHttpTransaction::Init(
   if (mHasRequestBody && NS_SUCCEEDED(NS_CloneInputStream(
                              requestBody, getter_AddRefs(requestBodyClone)))) {
     requestBody = requestBodyClone;
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsIInputStream> cappedRequestBody;
+  if (mHasRequestBody && requestContentLength && !mRequestBodyIsStreaming) {
+    nsCOMPtr<nsIInputStream> bodyToWrap =
+        requestBodyClone ? requestBodyClone.forget()
+                         : nsCOMPtr<nsIInputStream>(requestBody);
+    cappedRequestBody =
+        new SlicedInputStream(bodyToWrap.forget(), 0, requestContentLength);
+    requestBody = cappedRequestBody;
   }
 
   requestContentLength += mReqHeaderBuf.Length();
