@@ -102,9 +102,12 @@ def symbolicate_profiles(profile_dir=None, symbol_dir=None):
         LOG.warning("No profile directory specified, skipping symbolication")
         return
 
+    
+    
     profile_files = sorted(
         profile
-        for profile in profile_dir.glob("profile_*.json")
+        for pattern in ("profile_*.json", "profile_*.json.gz")
+        for profile in profile_dir.glob(pattern)
         if "resource-usage" not in profile.name
     )
 
