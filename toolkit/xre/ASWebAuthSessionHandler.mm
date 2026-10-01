@@ -41,7 +41,7 @@ static void CancelRequestObject(id requestObject) {
 
 class ASWebAuthSessionRequestWrapper final : public nsIASWebAuthSessionRequest {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASWEBAUTHSESSIONREQUEST
 
   ASWebAuthSessionRequestWrapper(id aRequestObject, NSString* aUuid,
@@ -174,7 +174,8 @@ ASWebAuthSessionRequestWrapper::Cancel() {
 
 - (void)beginHandlingWebAuthenticationSessionRequest:
     (ASWebAuthenticationSessionRequest*)request {
-  MOZ_ASSERT(NS_IsMainThread());
+  
+  
   MOZ_LOG(gASWebAuthLog, mozilla::LogLevel::Info,
           ("beginHandlingWebAuthenticationSessionRequest"));
 
@@ -222,7 +223,7 @@ ASWebAuthSessionRequestWrapper::Cancel() {
 
 - (void)cancelWebAuthenticationSessionRequest:
     (ASWebAuthenticationSessionRequest*)request {
-  MOZ_ASSERT(NS_IsMainThread());
+  
   MOZ_LOG(gASWebAuthLog, mozilla::LogLevel::Info,
           ("cancelWebAuthenticationSessionRequest"));
 
