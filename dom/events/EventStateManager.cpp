@@ -1043,10 +1043,32 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 #endif
   
   
-  if (aEvent->IsTrusted() &&
-      ((mouseEvent && mouseEvent->IsReal()) ||
-       aEvent->mClass == eWheelEventClass) &&
-      !PointerLockManager::IsLocked()) {
+  const bool shouldStoreLastKnownPoints = [&]() {
+    if (!aEvent->IsTrusted()) {
+      return false;
+    }
+    if (PointerLockManager::IsLocked()) {
+      return false;
+    }
+    if (mouseEvent) {
+      if (!mouseEvent->IsReal()) {
+        return false;
+      }
+      
+      
+      
+      
+      
+      
+      if (mouseEvent->mMovement) {
+        return false;
+      }
+      return true;
+    }
+    return aEvent->mClass == eWheelEventClass;
+  }();
+
+  if (shouldStoreLastKnownPoints) {
     
     
     
@@ -5331,6 +5353,7 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
   newEvent->mModifiers = aMouseEvent->mModifiers;
   newEvent->mInputSource = aMouseEvent->mInputSource;
   newEvent->pointerId = aMouseEvent->pointerId;
+  newEvent->mMovement = aMouseEvent->mMovement;
   
   
   if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce &&
