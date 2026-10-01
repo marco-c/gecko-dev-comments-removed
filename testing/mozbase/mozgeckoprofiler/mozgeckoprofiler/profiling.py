@@ -12,37 +12,54 @@ LOG = get_proxy_logger("profiler")
 
 
 def symbolicate_profile_json(profile_path, symbol_dir=None):
-    """Symbolicate a profile in place.
+    """Symbolicate a profile, replacing it with a gzipped symbolicated profile.
+
+    Symbolicated profiles are always gzipped, whatever the input's compression,
+    so the result is named ".json.gz". The profile therefore moves when it was
+    not already named that way, and callers should use the returned path.
 
     Args:
-        profile_path (path): The profile to symbolicate. Rewritten in place,
-            keeping its original compression. Left untouched if symbolication
-            fails.
+        profile_path (path): The profile to symbolicate.
         symbol_dir (path): Directory of Breakpad symbols to use. When omitted,
             it is looked up with get_extracted_symbols().
+
+    Returns:
+        Path: Where the symbolicated profile ended up, or profile_path
+            unchanged when symbolication failed.
     """
     profile_path = Path(profile_path)
     stat = profile_path.stat()
 
+    if profile_path.name.endswith(".gz"):
+        final_path = profile_path
+    else:
+        final_path = profile_path.with_name(profile_path.name + ".gz")
+        if final_path.exists():
+            
+            LOG.warning(
+                f"Not renaming {profile_path.name} to {final_path.name}: "
+                "a profile of that name already exists."
+            )
+            final_path = profile_path
+
     
     
     
     
-    
-    
-    suffix = ".json.gz" if profile_path.name.endswith(".gz") else ".json"
-    out_path = profile_path.with_name(f".{profile_path.name}.sym{suffix}")
+    out_path = final_path.with_name(f".{final_path.name}.sym.json.gz")
 
     LOG.info(f"Symbolicating {profile_path.name} ({stat.st_size} bytes)...")
     try:
         if not symbolicate_profile_file(profile_path, out_path, symbol_dir):
             LOG.warning(f"Not replacing {profile_path.name}: symbolication failed.")
-            return
+            return profile_path
 
         sym_size = out_path.stat().st_size
-        os.replace(out_path, profile_path)
+        os.replace(out_path, final_path)
+        if final_path != profile_path:
+            profile_path.unlink()
         LOG.info(
-            f"Successfully symbolicated {profile_path.name}: "
+            f"Successfully symbolicated {profile_path.name} -> {final_path.name}: "
             f"{stat.st_size} bytes -> {sym_size} bytes"
         )
     finally:
@@ -51,7 +68,8 @@ def symbolicate_profile_json(profile_path, symbol_dir=None):
     
     
     
-    os.utime(profile_path, (stat.st_atime, stat.st_mtime))
+    os.utime(final_path, (stat.st_atime, stat.st_mtime))
+    return final_path
 
 
 def symbolicate_profiles(profile_dir=None, symbol_dir=None):
