@@ -717,6 +717,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitVulkanDecoder() {
           mLib->av_buffer_unref(&mVulkanDeviceContext);
         }
         ReleaseCodecContext();
+        VulkanDeviceHolder::Drop(mVulkanDeviceHolder);
       });
 
   nsAutoCString rendererNode(gfx::gfxVars::DrmRenderDevice());
@@ -1010,6 +1011,9 @@ FFmpegVideoDecoder<LIBAV_VER>::~FFmpegVideoDecoder() {
   
   
   ReleaseSurfaceMediaCodec();
+#endif
+#ifdef MOZ_USE_HWDECODE_VULKAN
+  VulkanDeviceHolder::Drop(mVulkanDeviceHolder);
 #endif
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION_ASSERT_ENABLED
   
@@ -2661,6 +2665,9 @@ void FFmpegVideoDecoder<LIBAV_VER>::ProcessShutdown() {
     mLib->av_buffer_unref(&mVAAPIDeviceContext);
     mLib->av_buffer_unref(&mVulkanDeviceContext);
   }
+#  ifdef MOZ_USE_HWDECODE_VULKAN
+  VulkanDeviceHolder::Drop(mVulkanDeviceHolder);
+#  endif
 #endif
 #ifdef MOZ_ENABLE_D3D11VA
   if (IsHardwareAccelerated()) {
