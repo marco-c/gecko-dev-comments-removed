@@ -1332,11 +1332,14 @@ void nsHostResolver::PrepareRecordExpirationAddrRecord(
   if (!rec->addr_info) {
     
     
+    
     unsigned int negativeLifetime =
         StaticPrefs::network_dnsNegativeCacheExpiration();
-    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, 0);
-    LOG(("Caching host [%s] negative record for %u seconds.\n", rec->host.get(),
-         negativeLifetime));
+    unsigned int negativeGrace =
+        StaticPrefs::network_dnsNegativeCacheExpirationGracePeriod();
+    rec->SetExpiration(TimeStamp::NowLoRes(), negativeLifetime, negativeGrace);
+    LOG(("Caching host [%s] negative record for %u seconds (grace %u).\n",
+         rec->host.get(), negativeLifetime, negativeGrace));
     return;
   }
 
@@ -1725,9 +1728,15 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
     }
     LOG(("nsHostResolver::CompleteLookupByType record %p [%s] status %x\n",
          typeRec.get(), typeRec->host.get(), (unsigned int)status));
+    
+    
+    
+    
+    
     typeRec->SetExpiration(
         TimeStamp::NowLoRes(),
-        StaticPrefs::network_dns_negative_ttl_for_type_record(), 0);
+        StaticPrefs::network_dns_negative_ttl_for_type_record(),
+        StaticPrefs::network_dnsNegativeCacheExpirationGracePeriod());
     MOZ_ASSERT(aResult.is<TypeRecordEmpty>());
     status = NS_ERROR_UNKNOWN_HOST;
     typeRec->negative = true;
