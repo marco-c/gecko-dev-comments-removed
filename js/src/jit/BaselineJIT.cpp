@@ -280,7 +280,7 @@ static bool DispatchOffThreadBaselineCompile(JSContext* cx,
 
 
 static bool DispatchOffThreadBaselineBatchImpl(JSContext* cx, bool isEager) {
-  BaselineCompileQueue& queue = cx->realm()->baselineCompileQueue();
+  BaselineCompileQueue& queue = cx->realm()->jitRealm().baselineCompileQueue();
   MOZ_ASSERT(queue.numQueued() > 0);
 
   
