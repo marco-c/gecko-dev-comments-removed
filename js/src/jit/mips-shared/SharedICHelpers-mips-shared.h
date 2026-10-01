@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_mips_shared_SharedICHelpers_mips_shared_h
 #define jit_mips_shared_SharedICHelpers_mips_shared_h
 
@@ -52,10 +50,9 @@ inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
       Address(FramePointer, BaselineStubFrameLayout::ICStubOffsetFromFP),
       ICStubReg);
   masm.movePtr(FramePointer, StackPointer);
-  masm.Pop(FramePointer);
 
   
-  masm.Pop(ICTailCallReg);
+  masm.PopRegs(FramePointer, ICTailCallReg);
 
   
   {

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_SharedICHelpers_riscv64_h
 #define jit_riscv64_SharedICHelpers_riscv64_h
 #include "jit/BaselineIC.h"
@@ -29,8 +27,7 @@ inline void EmitCallIC(MacroAssembler& masm, CodeOffset* callOffset) {
   masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), R2.scratchReg());
 
   
-  masm.call(R2.scratchReg());
-  *callOffset = CodeOffset(masm.currentOffset());
+  *callOffset = masm.call(R2.scratchReg());
 }
 inline void EmitReturnFromIC(MacroAssembler& masm) { masm.branch(ra); }
 inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
@@ -39,10 +36,9 @@ inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm) {
       ICStubReg);
 
   masm.movePtr(FramePointer, StackPointer);
-  masm.Pop(FramePointer);
 
   
-  masm.Pop(ICTailCallReg);
+  masm.PopRegs(FramePointer, ICTailCallReg);
 
   
   {
