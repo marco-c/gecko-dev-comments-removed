@@ -87,6 +87,12 @@ struct SupportDecoderParams;
 
 
 
+
+constexpr int kLowH264QpThreshold = 24;
+constexpr int kHighH264QpThreshold = 37;
+
+
+
 [[nodiscard]] media::DecodeSupportSet WebrtcGmpDecoderSupports(
     const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
 [[nodiscard]] media::EncodeSupportSet WebrtcGmpEncoderSupports(
