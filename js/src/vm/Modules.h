@@ -46,6 +46,17 @@ ModuleNamespaceObject* GetOrCreateModuleNamespace(
     JSContext* cx, Handle<ModuleObject*> module,
     ImportPhase phase = ImportPhase::Evaluation);
 
+ModuleObject* GetImportedModule(JSContext* cx, Handle<ModuleObject*> referrer,
+                                Handle<ModuleRequestObject*> moduleRequest);
+
+
+
+
+bool EvaluateModuleSync(JSContext* cx, Handle<ModuleObject*> module);
+
+
+bool IsModuleSCCEvaluated(ModuleObject* module);
+
 void AsyncModuleExecutionFulfilled(JSContext* cx, Handle<ModuleObject*> module);
 
 

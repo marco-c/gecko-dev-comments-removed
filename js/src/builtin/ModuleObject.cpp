@@ -394,7 +394,9 @@ bool IndirectBindingMap::lookup(jsid name, ModuleEnvironmentObject** envOut,
 
 
 static const JSClass moduleNamespaceProxyClass =
-    PROXY_CLASS_DEF("Module Namespace", JSCLASS_HAS_RESERVED_SLOTS(ModuleNamespaceObject::ModuleNamespaceSlot::SlotCount));
+    PROXY_CLASS_DEF("Module Namespace",
+                    JSCLASS_HAS_RESERVED_SLOTS(
+                        ModuleNamespaceObject::ModuleNamespaceSlot::SlotCount));
 
 
 constexpr ModuleNamespaceObject::ProxyHandler
@@ -409,8 +411,7 @@ bool ModuleNamespaceObject::isInstance(HandleValue value) {
 ModuleNamespaceObject* ModuleNamespaceObject::create(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports,
-    MutableHandle<UniquePtr<IndirectBindingMap>> bindings,
-    ImportPhase phase) {
+    MutableHandle<UniquePtr<IndirectBindingMap>> bindings, ImportPhase phase) {
   RootedValue priv(cx, ObjectValue(*module));
   ProxyOptions options;
   options.setLazyProto(true);
@@ -567,13 +568,52 @@ bool ModuleNamespaceObject::ProxyHandler::preventExtensions(
   return true;
 }
 
+
+
+static bool IsSymbolLikeNamespaceKey(JSContext* cx, const jsid& prop,
+                                     ModuleNamespaceObject* ns) {
+  
+  
+  
+  return prop.isSymbol() || (ns->isDeferred() && prop.isAtom(cx->names().then));
+}
+
+
+static bool EnsureDeferredModuleEvaluated(JSContext* cx,
+                                          Handle<ModuleNamespaceObject*> ns) {
+  
+  if (ns->isDeferred()) {
+    
+    Rooted<ModuleObject*> module(cx, &ns->module());
+
+    
+    if (!js::EvaluateModuleSync(cx, module)) {
+      return false;
+    }
+
+    MOZ_ASSERT(module->status() == ModuleStatus::Evaluated);
+  }
+
+  
+  
+  return true;
+}
+
+
+
 bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
     JSContext* cx, HandleObject proxy, HandleId id,
     MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+
+  
+  
+  
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
-      desc.set(Some(PropertyDescriptor::Data(StringValue(cx->names().Module))));
+      JSAtom* toStringTag =
+          ns->isDeferred() ? cx->names().DeferredModule : cx->names().Module;
+      desc.set(Some(PropertyDescriptor::Data(StringValue(toStringTag))));
       return true;
     }
 
@@ -581,6 +621,13 @@ bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
     return true;
   }
 
+  
+  
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
+  }
+
+  
   const IndirectBindingMap& bindings = ns->bindings();
   ModuleEnvironmentObject* env;
   mozilla::Maybe<PropertyInfo> prop;
@@ -590,12 +637,15 @@ bool ModuleNamespaceObject::ProxyHandler::getOwnPropertyDescriptor(
     return true;
   }
 
+  
   RootedValue value(cx, env->getSlot(prop->slot()));
   if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
     ReportUninitializedModuleBinding(cx, id);
     return false;
   }
 
+  
+  
   desc.set(
       Some(PropertyDescriptor::Data(value, {JS::PropertyAttribute::Enumerable,
                                             JS::PropertyAttribute::Writable})));
@@ -635,41 +685,45 @@ static bool ValidatePropertyDescriptor(
   return result.succeed();
 }
 
+
+
 bool ModuleNamespaceObject::ProxyHandler::defineProperty(
     JSContext* cx, HandleObject proxy, HandleId id,
     Handle<PropertyDescriptor> desc, ObjectOpResult& result) const {
-  if (id.isSymbol()) {
-    if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
-      RootedValue value(cx, StringValue(cx->names().Module));
-      return ValidatePropertyDescriptor(cx, desc, false, false, false, value,
-                                        result);
-    }
-    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
-  }
-
-  const IndirectBindingMap& bindings =
-      proxy->as<ModuleNamespaceObject>().bindings();
-  ModuleEnvironmentObject* env;
-  mozilla::Maybe<PropertyInfo> prop;
-  if (!bindings.lookup(id, &env, &prop)) {
-    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
-  }
-
-  RootedValue value(cx, env->getSlot(prop->slot()));
-  if (value.isMagic(JS_UNINITIALIZED_LEXICAL)) {
-    ReportUninitializedModuleBinding(cx, id);
+  Rooted<mozilla::Maybe<PropertyDescriptor>> currentDesc(cx);
+  if (!getOwnPropertyDescriptor(cx, proxy, id, &currentDesc)) {
     return false;
   }
 
-  return ValidatePropertyDescriptor(cx, desc, true, true, false, value, result);
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (currentDesc.isNothing()) {
+    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
+  }
+
+  RootedValue value(cx, currentDesc->value());
+  return ValidatePropertyDescriptor(cx, desc, currentDesc->writable(),
+                                    currentDesc->enumerable(),
+                                    currentDesc->configurable(), value, result);
 }
 
 bool ModuleNamespaceObject::ProxyHandler::has(JSContext* cx, HandleObject proxy,
                                               HandleId id, bool* bp) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     *bp = id.isWellKnownSymbol(JS::SymbolCode::toStringTag);
     return true;
+  }
+
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
   }
 
   *bp = ns->bindings().has(id);
@@ -680,14 +734,20 @@ bool ModuleNamespaceObject::ProxyHandler::get(JSContext* cx, HandleObject proxy,
                                               HandleValue receiver, HandleId id,
                                               MutableHandleValue vp) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
-      vp.setString(cx->names().Module);
+      JSAtom* toStringTag =
+          ns->isDeferred() ? cx->names().DeferredModule : cx->names().Module;
+      vp.setString(toStringTag);
       return true;
     }
 
     vp.setUndefined();
     return true;
+  }
+
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
   }
 
   ModuleEnvironmentObject* env;
@@ -718,29 +778,46 @@ bool ModuleNamespaceObject::ProxyHandler::delete_(
     JSContext* cx, HandleObject proxy, HandleId id,
     ObjectOpResult& result) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
-  if (id.isSymbol()) {
+  
+  
+  
+  
+  if (IsSymbolLikeNamespaceKey(cx, id, ns)) {
     if (id.isWellKnownSymbol(JS::SymbolCode::toStringTag)) {
       return result.failCantDelete();
     }
-
     return result.succeed();
   }
 
+  
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
+  }
+
+  
   if (ns->bindings().has(id)) {
     return result.failCantDelete();
   }
 
+  
   return result.succeed();
 }
 
 bool ModuleNamespaceObject::ProxyHandler::ownPropertyKeys(
     JSContext* cx, HandleObject proxy, MutableHandleIdVector props) const {
   Rooted<ModuleNamespaceObject*> ns(cx, &proxy->as<ModuleNamespaceObject>());
+
+  
+  if (!EnsureDeferredModuleEvaluated(cx, ns)) {
+    return false;
+  }
+
   uint32_t count = ns->exports().length();
   if (!props.reserve(props.length() + count + 1)) {
     return false;
   }
 
+  
   for (JSAtom* atom : ns->exports()) {
     props.infallibleAppend(AtomToId(atom));
   }
@@ -1650,8 +1727,7 @@ void ModuleObject::onTopLevelEvaluationFinished(ModuleObject* module) {
 
 ModuleNamespaceObject* ModuleObject::createNamespace(
     JSContext* cx, Handle<ModuleObject*> self,
-    MutableHandle<UniquePtr<ExportNameVector>> exports,
-    ImportPhase phase) {
+    MutableHandle<UniquePtr<ExportNameVector>> exports, ImportPhase phase) {
   Rooted<UniquePtr<IndirectBindingMap>> bindings(cx);
   bindings = cx->make_unique<IndirectBindingMap>();
   if (!bindings) {
@@ -2273,10 +2349,9 @@ bool ModuleBuilder::processImportWithPhase(
   eitherParser_.computeLineAndColumn(localNameNode->pn_pos.begin, &line,
                                      &column);
 
-  ImportNameValueType importNameValue =
-      phase == ImportPhase::Source ?
-          ImportNameValueType::Source :
-          ImportNameValueType::Namespace;
+  ImportNameValueType importNameValue = phase == ImportPhase::Source
+                                            ? ImportNameValueType::Source
+                                            : ImportNameValueType::Namespace;
 
   auto entry = StencilModuleEntry::importEntry(
       moduleRequestIndex, localName, TaggedParserAtomIndex(), importNameValue,

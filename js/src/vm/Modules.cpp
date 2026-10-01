@@ -25,17 +25,18 @@
 #include "js/Context.h"                 
 #include "js/ErrorReport.h"             
 #include "js/friend/StackLimits.h"      
-#include "js/RootingAPI.h"              
-#include "js/Value.h"                   
-#include "js/WasmModule.h"              
-#include "vm/EnvironmentObject.h"       
-#include "vm/JSAtomUtils.h"             
-#include "vm/JSContext.h"               
-#include "vm/JSObject.h"                
-#include "vm/JSONParser.h"              
-#include "vm/JSScript.h"                
-#include "vm/List.h"                    
-#include "vm/Runtime.h"                 
+#include "js/Promise.h"     
+#include "js/RootingAPI.h"  
+#include "js/Value.h"       
+#include "js/WasmModule.h"  
+#include "vm/EnvironmentObject.h"  
+#include "vm/JSAtomUtils.h"        
+#include "vm/JSContext.h"          
+#include "vm/JSObject.h"           
+#include "vm/JSONParser.h"         
+#include "vm/JSScript.h"           
+#include "vm/List.h"               
+#include "vm/Runtime.h"            
 #include "wasm/WasmCompile.h"
 
 #include "builtin/HandlerFunction-inl.h"  
@@ -783,7 +784,7 @@ static bool SyntheticModuleGetExportedNames(
 }
 
 
-static ModuleObject* GetImportedModule(
+ModuleObject* js::GetImportedModule(
     JSContext* cx, Handle<ModuleObject*> referrer,
     Handle<ModuleRequestObject*> moduleRequest) {
   MOZ_ASSERT(referrer);
@@ -1267,9 +1268,10 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
 
   
   
-  Rooted<ModuleNamespaceObject*> ns(
-      cx, phase == ImportPhase::Deferred ? module->maybeDeferredNamespace()
-                                         : module->namespace_());
+  
+  Rooted<ModuleNamespaceObject*> ns(cx, phase == ImportPhase::Deferred
+                                            ? module->maybeDeferredNamespace()
+                                            : module->namespace_());
 
   
   if (!ns) {
@@ -1373,8 +1375,7 @@ struct AtomComparator {
 
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
-    MutableHandle<UniquePtr<ExportNameVector>> exports,
-    ImportPhase phase) {
+    MutableHandle<UniquePtr<ExportNameVector>> exports, ImportPhase phase) {
   
   
   
@@ -2301,7 +2302,6 @@ static bool InnerModuleEvaluation(JSContext* cx, Handle<ModuleObject*> module,
 
   
   if (!module->hasCyclicModuleFields()) {
-    
     
     
     
@@ -3365,5 +3365,150 @@ static bool DynamicImportRejected(JSContext* cx, unsigned argc, Value* vp) {
 
   
   args.rval().setUndefined();
+  return true;
+}
+
+
+bool js::IsModuleSCCEvaluated(ModuleObject* module) {
+  MOZ_ASSERT(module->hasCyclicModuleFields());
+
+  
+  if (module->hasCycleRoot()) {
+    
+    
+    return module->getCycleRoot()->status() == ModuleStatus::Evaluated;
+  }
+
+  
+  
+  return module->status() == ModuleStatus::Evaluated;
+}
+
+
+
+
+
+static bool ReadyForSyncExecution(JSContext* cx, Handle<ModuleObject*> module,
+                                  MutableHandle<ModuleSet> seen, bool* ready) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
+  
+  if (!module->hasCyclicModuleFields()) {
+    *ready = true;
+    return true;
+  }
+
+  
+  
+  
+  auto ptr = seen.lookupForAdd(module);
+  if (ptr) {
+    *ready = true;
+    return true;
+  }
+
+  
+  if (!seen.add(ptr, module)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  if (IsModuleSCCEvaluated(module)) {
+    *ready = true;
+    return true;
+  }
+
+  
+  
+  ModuleStatus status = module->status();
+  if (status == ModuleStatus::Evaluating ||
+      status == ModuleStatus::EvaluatingAsync) {
+    *ready = false;
+    return true;
+  }
+
+  
+  MOZ_ASSERT(status == ModuleStatus::Linked ||
+             status == ModuleStatus::Evaluated);
+
+  
+  if (module->hasTopLevelAwait()) {
+    *ready = false;
+    return true;
+  }
+
+  
+  
+  Rooted<ModuleObject*> requiredModule(cx);
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  for (const RequestedModule& request : module->requestedModules()) {
+    
+    
+    moduleRequest = request.moduleRequest();
+    requiredModule = GetImportedModule(cx, module, moduleRequest);
+    MOZ_ASSERT(requiredModule);
+
+    
+    
+    if (!ReadyForSyncExecution(cx, requiredModule, seen, ready)) {
+      return false;
+    }
+    if (!*ready) {
+      return true;
+    }
+  }
+
+  
+  *ready = true;
+  return true;
+}
+
+
+bool js::EvaluateModuleSync(JSContext* cx, Handle<ModuleObject*> module) {
+  
+  
+  Rooted<ModuleSet> seen(cx);
+  bool ready = false;
+  if (!ReadyForSyncExecution(cx, module, &seen, &ready)) {
+    return false;
+  }
+  if (!ready) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_MODULE_SYNC_EVALUATION_NOT_READY);
+    return false;
+  }
+
+  
+  Rooted<Value> rval(cx);
+  if (!JS::ModuleEvaluate(cx, module, &rval)) {
+    return false;
+  }
+
+  
+  MOZ_ASSERT(rval.isObject());
+  Rooted<PromiseObject*> promise(cx, &rval.toObject().as<PromiseObject>());
+  MOZ_ASSERT(promise->state() != JS::PromiseState::Pending);
+
+  
+  if (promise->state() == JS::PromiseState::Rejected) {
+    
+    
+    
+    RootedObject promiseObj(cx, promise);
+    if (!JS::SetSettledPromiseIsHandled(cx, promiseObj)) {
+      return false;
+    }
+
+    
+    Rooted<Value> reason(cx, promise->reason());
+    cx->setPendingException(reason, ShouldCaptureStack::Maybe);
+    return false;
+  }
+
+  
   return true;
 }
