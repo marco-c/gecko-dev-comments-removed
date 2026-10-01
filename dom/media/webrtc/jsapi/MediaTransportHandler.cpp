@@ -1961,22 +1961,27 @@ void MediaTransportHandlerSTS::OnCandidateError(NrIceMediaStream* aStream,
   OnCandidateError(std::move(info));
 }
 
-dom::RTCErrorParams GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
+
+
+
+Maybe<dom::RTCErrorParams> GetErrorInfo(const TransportLayerDtls& aDtlsLayer) {
   dom::RTCErrorInit error;
   if (aDtlsLayer.HasFingerprintError()) {
     
     
     error.mErrorDetail = dom::RTCErrorDetailType::Fingerprint_failure;
-  } else {
+  } else if (aDtlsLayer.HasDtlsFailureError()) {
     error.mErrorDetail = dom::RTCErrorDetailType::Dtls_failure;
     
     aDtlsLayer.GetSentAlert().apply(
         [&](auto value) { error.mSentAlert.Construct(value); });
     aDtlsLayer.GetReceivedAlert().apply(
         [&](auto value) { error.mReceivedAlert.Construct(value); });
+  } else {
+    return Nothing();
   }
 
-  return dom::RTCErrorParams{error, aDtlsLayer.GetErrorDescription()};
+  return Some(dom::RTCErrorParams{error, aDtlsLayer.GetErrorDescription()});
 }
 
 void MediaTransportHandlerSTS::OnStateChange(TransportLayer* aLayer,
@@ -2040,7 +2045,7 @@ void MediaTransportHandlerSTS::UpdateReportedState(
     if (NS_WARN_IF(!dtlsLayer)) {
       MOZ_ASSERT(false);
     } else {
-      error = Some(GetErrorInfo(*dtlsLayer));
+      error = GetErrorInfo(*dtlsLayer);
     }
   }
 
