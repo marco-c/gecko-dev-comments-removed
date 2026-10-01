@@ -119,6 +119,14 @@ struct ExpressionParser<'a> {
 
     
     
+    
+    
+    
+    
+    pending_hint: Option<u32>,
+
+    
+    
     spans: Option<Vec<Span>>,
 }
 
@@ -132,12 +140,21 @@ enum Paren {
 enum Level<'a> {
     
     
-    EndWith(Instruction<'a>, Option<Span>),
+    
+    
+    
+    
+    EndWith(Instruction<'a>, Option<Span>, Option<u32>),
 
     
     
     
-    If(If<'a>),
+    
+    
+    
+    
+    
+    If(If<'a>, Option<u32>),
 
     
     
@@ -168,6 +185,7 @@ impl<'a> ExpressionParser<'a> {
             raw_instrs: Vec::new(),
             stack: Vec::new(),
             branch_hints: Vec::new(),
+            pending_hint: None,
             spans: if parser.track_instr_spans() {
                 Some(Vec::new())
             } else {
@@ -189,7 +207,7 @@ impl<'a> ExpressionParser<'a> {
             
             
             
-            if let Some(Level::If(_)) = self.stack.last() {
+            if let Some(Level::If(..)) = self.stack.last() {
                 if !parser.is_empty() && !parser.peek::<LParen>()? {
                     return Err(parser.error("expected `(`"));
                 }
@@ -200,7 +218,10 @@ impl<'a> ExpressionParser<'a> {
                 
                 Paren::None => {
                     let span = parser.cur_span();
-                    self.push_instr(parser.parse()?, span);
+                    
+                    
+                    let hint = self.pending_hint.take();
+                    self.push_instr_with_hint(parser.parse()?, span, hint);
                 }
 
                 
@@ -227,53 +248,75 @@ impl<'a> ExpressionParser<'a> {
                     }
 
                     let span = parser.cur_span();
+                    
+                    
+                    
+                    let hint = self.pending_hint.take();
                     match parser.parse()? {
+                        
                         
                         
                         
                         i @ Instruction::Block(_)
                         | i @ Instruction::Loop(_)
                         | i @ Instruction::TryTable(_) => {
-                            self.push_instr(i, span);
+                            self.push_instr_with_hint(i, span, hint);
                             self.stack
-                                .push(Level::EndWith(Instruction::End(None), None));
+                                .push(Level::EndWith(Instruction::End(None), None, None));
                         }
 
+                        
+                        
                         
                         
                         
                         i @ Instruction::If(_) => {
-                            self.stack.push(Level::If(If::Clause(i, span)));
+                            self.stack.push(Level::If(If::Clause(i, span), hint));
                         }
 
                         
                         
                         
-                        other => self.stack.push(Level::EndWith(other, Some(span))),
+                        
+                        other => self.stack.push(Level::EndWith(other, Some(span), hint)),
                     }
                 }
 
                 
                 
                 
-                Paren::Right(span) => match self.stack.pop().unwrap() {
-                    Level::EndWith(i, s) => self.push_instr(i, s.unwrap_or(span)),
-                    Level::IfArm => {}
-                    Level::BranchHint => {}
+                Paren::Right(span) => {
+                    let level = self.stack.pop().unwrap();
+                    
+                    
+                    
+                    if !matches!(level, Level::BranchHint) {
+                        self.check_hint_consumed(parser)?;
+                    }
+                    match level {
+                        Level::EndWith(i, s, hint) => {
+                            self.push_instr_with_hint(i, s.unwrap_or(span), hint)
+                        }
+                        Level::IfArm => {}
+                        Level::BranchHint => {}
 
-                    
-                    
-                    
-                    
-                    Level::If(If::Clause(..)) => {
-                        return Err(parser.error("previous `if` had no `then`"));
+                        
+                        
+                        
+                        
+                        Level::If(If::Clause(..), _) => {
+                            return Err(parser.error("previous `if` had no `then`"));
+                        }
+                        Level::If(_, _) => {
+                            self.push_instr(Instruction::End(None), span);
+                        }
                     }
-                    Level::If(_) => {
-                        self.push_instr(Instruction::End(None), span);
-                    }
-                },
+                }
             }
         }
+        
+        
+        self.check_hint_consumed(parser)?;
         Ok(())
     }
 
@@ -283,11 +326,12 @@ impl<'a> ExpressionParser<'a> {
             match self.paren(parser)? {
                 Paren::Left => {
                     let span = parser.cur_span();
-                    self.stack.push(Level::EndWith(parser.parse()?, Some(span)));
+                    self.stack
+                        .push(Level::EndWith(parser.parse()?, Some(span), None));
                 }
                 Paren::Right(span) => {
                     let (top_instr, span) = match self.stack.pop().unwrap() {
-                        Level::EndWith(i, s) => (i, s.unwrap_or(span)),
+                        Level::EndWith(i, s, _) => (i, s.unwrap_or(span)),
                         _ => panic!("unknown level type"),
                     };
                     self.push_instr(top_instr, span);
@@ -333,8 +377,8 @@ impl<'a> ExpressionParser<'a> {
     
     fn handle_if_lparen(&mut self, parser: Parser<'a>) -> Result<bool> {
         
-        let i = match self.stack.last_mut() {
-            Some(Level::If(i)) => i,
+        let (i, pending) = match self.stack.last_mut() {
+            Some(Level::If(i, pending)) => (i, pending),
             _ => return Ok(false),
         };
 
@@ -347,11 +391,17 @@ impl<'a> ExpressionParser<'a> {
                 if !parser.peek::<kw::then>()? {
                     return Ok(false);
                 }
+                
+                
+                if self.pending_hint.is_some() {
+                    return Err(Self::hint_placement_error(parser));
+                }
                 parser.parse::<kw::then>()?;
                 let instr = mem::replace(if_instr, Instruction::End(None));
                 let span = *if_instr_span;
+                let hint = pending.take();
                 *i = If::Then;
-                self.push_instr(instr, span);
+                self.push_instr_with_hint(instr, span, hint);
                 self.stack.push(Level::IfArm);
                 Ok(true)
             }
@@ -383,10 +433,13 @@ impl<'a> ExpressionParser<'a> {
             _ => return Err(parser.error("invalid value for branch hint")),
         };
 
-        self.branch_hints.push(BranchHint {
-            instr_index: self.raw_instrs.len(),
-            value,
-        });
+        
+        
+        
+        if self.pending_hint.is_some() {
+            return Err(parser.error("@metadata.code.branch_hint annotation: duplicate annotation"));
+        }
+        self.pending_hint = Some(value);
         Ok(())
     }
 
@@ -395,6 +448,35 @@ impl<'a> ExpressionParser<'a> {
         if let Some(spans) = &mut self.spans {
             spans.push(span);
         }
+    }
+
+    
+    
+    
+    
+    fn check_hint_consumed(&self, parser: Parser<'a>) -> Result<()> {
+        if self.pending_hint.is_some() {
+            return Err(Self::hint_placement_error(parser));
+        }
+        Ok(())
+    }
+
+    fn hint_placement_error(parser: Parser<'a>) -> crate::Error {
+        parser.error("@metadata.code.branch_hint annotation: must precede an instruction")
+    }
+
+    
+    
+    
+    
+    fn push_instr_with_hint(&mut self, instr: Instruction<'a>, span: Span, hint: Option<u32>) {
+        if let Some(value) = hint {
+            self.branch_hints.push(BranchHint {
+                instr_index: self.raw_instrs.len(),
+                value,
+            });
+        }
+        self.push_instr(instr, span);
     }
 }
 
@@ -1195,7 +1277,8 @@ instructions! {
         Suspend(Index<'a>)             : [0xe2] : "suspend",
         Resume(Resume<'a>)             : [0xe3] : "resume",
         ResumeThrow(ResumeThrow<'a>)   : [0xe4] : "resume_throw",
-        Switch(Switch<'a>)             : [0xe5] : "switch",
+        ResumeThrowRef(ResumeThrowRef<'a>) : [0xe5] : "resume_throw_ref",
+        Switch(Switch<'a>)             : [0xe6] : "switch",
 
         // Wide arithmetic proposal
         I64Add128   : [0xfc, 19] : "i64.add128",
@@ -1207,9 +1290,9 @@ instructions! {
         StructNewDesc(Index<'a>) : [0xfb, 32] : "struct.new_desc",
         StructNewDefaultDesc(Index<'a>) : [0xfb, 33] : "struct.new_default_desc",
         RefGetDesc(Index<'a>): [0xfb, 34] : "ref.get_desc",
-        RefCastDesc(RefCastDesc<'a>) : [] : "ref.cast_desc",
-        BrOnCastDesc(Box<BrOnCastDesc<'a>>) : [] : "br_on_cast_desc",
-        BrOnCastDescFail(Box<BrOnCastDescFail<'a>>) : [] : "br_on_cast_desc_fail",
+        RefCastDescEq(RefCastDescEq<'a>) : [] : "ref.cast_desc_eq",
+        BrOnCastDescEq(Box<BrOnCastDescEq<'a>>) : [] : "br_on_cast_desc_eq",
+        BrOnCastDescEqFail(Box<BrOnCastDescEqFail<'a>>) : [] : "br_on_cast_desc_eq_fail",
     }
 }
 
@@ -1308,6 +1391,23 @@ impl<'a> Parse<'a> for ResumeThrow<'a> {
         Ok(ResumeThrow {
             type_index: parser.parse()?,
             tag_index: parser.parse()?,
+            table: parser.parse()?,
+        })
+    }
+}
+
+
+#[derive(Debug, Clone)]
+#[allow(missing_docs)]
+pub struct ResumeThrowRef<'a> {
+    pub type_index: Index<'a>,
+    pub table: ResumeTable<'a>,
+}
+
+impl<'a> Parse<'a> for ResumeThrowRef<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        Ok(ResumeThrowRef {
+            type_index: parser.parse()?,
             table: parser.parse()?,
         })
     }
@@ -1956,14 +2056,14 @@ impl<'a> Parse<'a> for BrOnCastFail<'a> {
 
 
 #[derive(Debug, Clone)]
-pub struct RefCastDesc<'a> {
+pub struct RefCastDescEq<'a> {
     
     pub r#type: RefType<'a>,
 }
 
-impl<'a> Parse<'a> for RefCastDesc<'a> {
+impl<'a> Parse<'a> for RefCastDescEq<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(RefCastDesc {
+        Ok(RefCastDescEq {
             r#type: parser.parse()?,
         })
     }
@@ -1971,7 +2071,7 @@ impl<'a> Parse<'a> for RefCastDesc<'a> {
 
 
 #[derive(Debug, Clone)]
-pub struct BrOnCastDesc<'a> {
+pub struct BrOnCastDescEq<'a> {
     
     pub label: Index<'a>,
     
@@ -1980,9 +2080,9 @@ pub struct BrOnCastDesc<'a> {
     pub to_type: RefType<'a>,
 }
 
-impl<'a> Parse<'a> for BrOnCastDesc<'a> {
+impl<'a> Parse<'a> for BrOnCastDescEq<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(BrOnCastDesc {
+        Ok(BrOnCastDescEq {
             label: parser.parse()?,
             from_type: parser.parse()?,
             to_type: parser.parse()?,
@@ -1992,7 +2092,7 @@ impl<'a> Parse<'a> for BrOnCastDesc<'a> {
 
 
 #[derive(Debug, Clone)]
-pub struct BrOnCastDescFail<'a> {
+pub struct BrOnCastDescEqFail<'a> {
     
     pub label: Index<'a>,
     
@@ -2001,9 +2101,9 @@ pub struct BrOnCastDescFail<'a> {
     pub to_type: RefType<'a>,
 }
 
-impl<'a> Parse<'a> for BrOnCastDescFail<'a> {
+impl<'a> Parse<'a> for BrOnCastDescEqFail<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(BrOnCastDescFail {
+        Ok(BrOnCastDescEqFail {
             label: parser.parse()?,
             from_type: parser.parse()?,
             to_type: parser.parse()?,

@@ -186,9 +186,6 @@ impl TypeData for Range<CoreTypeId> {
 
 
 
-
-
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 
 #[doc(hidden)]
@@ -196,29 +193,38 @@ pub struct TypeInfo(u32);
 
 impl TypeInfo {
     
+    const SIZE_BITS: u32 = 24;
+    
+    const DEPTH_BITS: u32 = 7;
+
+    const SIZE_OFFSET: u32 = 0;
+    const DEPTH_OFFSET: u32 = Self::SIZE_OFFSET + Self::SIZE_BITS;
+
+    const SIZE_MASK: u32 = ((1 << Self::SIZE_BITS) - 1) << Self::SIZE_OFFSET;
+    #[cfg(feature = "component-model")]
+    const DEPTH_MASK: u32 = ((1 << Self::DEPTH_BITS) - 1) << Self::DEPTH_OFFSET;
+
+    const MAX_SIZE: u32 = (1 << Self::SIZE_BITS) - 1;
+    const MAX_DEPTH: u32 = (1 << Self::DEPTH_BITS) - 1;
+
+    
     
     
     
     pub(crate) fn new() -> TypeInfo {
-        TypeInfo::_new(1, false)
-    }
-
-    
-    
-    #[cfg(feature = "component-model")]
-    pub(crate) fn borrow() -> TypeInfo {
-        TypeInfo::_new(1, true)
+        TypeInfo::_new(1, 1)
     }
 
     
     
     pub(crate) fn core(size: u32) -> TypeInfo {
-        TypeInfo::_new(size, false)
+        TypeInfo::_new(size, 1)
     }
 
-    fn _new(size: u32, contains_borrow: bool) -> TypeInfo {
-        assert!(size < (1 << 24));
-        TypeInfo(size | ((contains_borrow as u32) << 31))
+    fn _new(size: u32, depth: u32) -> TypeInfo {
+        assert!(size <= Self::MAX_SIZE);
+        assert!(depth <= Self::MAX_DEPTH);
+        TypeInfo((size << Self::SIZE_OFFSET) | (depth << Self::DEPTH_OFFSET))
     }
 
     
@@ -230,23 +236,30 @@ impl TypeInfo {
     
     
     #[cfg(feature = "component-model")]
-    pub(crate) fn combine(&mut self, other: TypeInfo, offset: usize) -> Result<()> {
-        *self = TypeInfo::_new(
-            super::combine_type_sizes(self.size(), other.size(), offset)?,
-            self.contains_borrow() || other.contains_borrow(),
-        );
+    pub(crate) fn combine(&mut self, other: TypeInfo, offset: u64) -> Result<()> {
+        let depth = self.depth().max(other.depth().saturating_add(1));
+        let size = super::combine_type_sizes(self.size(), other.size(), offset)?;
+        *self = TypeInfo::_new(size, depth);
         Ok(())
     }
 
     pub(crate) fn size(&self) -> u32 {
-        self.0 & 0xffffff
+        (self.0 & Self::SIZE_MASK) >> Self::SIZE_OFFSET
     }
 
+    
     #[cfg(feature = "component-model")]
-    pub(crate) fn contains_borrow(&self) -> bool {
-        (self.0 >> 31) != 0
+    pub(crate) fn depth(&self) -> u32 {
+        (self.0 & Self::DEPTH_MASK) >> Self::DEPTH_OFFSET
     }
 }
+
+const _: () = {
+    assert!(TypeInfo::DEPTH_OFFSET + TypeInfo::DEPTH_BITS <= 32);
+    assert!(TypeInfo::MAX_SIZE > crate::limits::MAX_WASM_TYPE_SIZE);
+    #[cfg(feature = "component-model")]
+    assert!(TypeInfo::MAX_DEPTH > crate::limits::MAX_WASM_COMPONENT_TYPE_DEPTH);
+};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -957,7 +970,7 @@ impl TypeList {
 
     
     
-    pub fn intern_sub_type(&mut self, sub_ty: SubType, offset: usize) -> CoreTypeId {
+    pub fn intern_sub_type(&mut self, sub_ty: SubType, offset: u64) -> CoreTypeId {
         let (_is_new, group_id) =
             self.intern_canonical_rec_group(true, RecGroup::implicit(offset, sub_ty));
         self[group_id].start
@@ -965,7 +978,7 @@ impl TypeList {
 
     
     
-    pub fn intern_func_type(&mut self, ty: FuncType, offset: usize) -> CoreTypeId {
+    pub fn intern_func_type(&mut self, ty: FuncType, offset: u64) -> CoreTypeId {
         self.intern_sub_type(SubType::func(ty, false), offset)
     }
 
@@ -974,7 +987,7 @@ impl TypeList {
         &self,
         rec_group: RecGroupId,
         index: u32,
-        offset: usize,
+        offset: u64,
     ) -> Result<CoreTypeId> {
         let elems = &self[rec_group];
         let len = elems.end.index() - elems.start.index();
@@ -1031,7 +1044,7 @@ impl TypeList {
         &self,
         rec_group: RecGroupId,
         index: PackedIndex,
-        offset: usize,
+        offset: u64,
     ) -> Result<CoreTypeId> {
         self.at_canonicalized_unpacked_index(rec_group, index.unpack(), offset)
     }
@@ -1043,7 +1056,7 @@ impl TypeList {
         &self,
         rec_group: RecGroupId,
         index: UnpackedIndex,
-        offset: usize,
+        offset: u64,
     ) -> Result<CoreTypeId> {
         match index {
             UnpackedIndex::Module(_) => panic!("not canonicalized"),
@@ -1114,7 +1127,7 @@ impl TypeList {
             if let Some(id) = index.as_core_type_id() {
                 id
             } else {
-                self.at_canonicalized_unpacked_index(group.unwrap(), index, usize::MAX)
+                self.at_canonicalized_unpacked_index(group.unwrap(), index, u64::MAX)
                     .expect("type references are checked during canonicalization")
             }
         };

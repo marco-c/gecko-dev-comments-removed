@@ -327,14 +327,19 @@ impl ComponentBuilder {
     }
 
     
-    pub fn import(&mut self, name: &str, ty: ComponentTypeRef) -> u32 {
+    pub fn import<'a>(
+        &mut self,
+        name: impl Into<ComponentExternName<'a>>,
+        ty: ComponentTypeRef,
+    ) -> u32 {
+        let name = name.into();
         let ret = match &ty {
-            ComponentTypeRef::Instance(_) => self.instances.add(Some(name)),
-            ComponentTypeRef::Func(_) => self.funcs.add(Some(name)),
-            ComponentTypeRef::Type(..) => self.types.add(Some(name)),
-            ComponentTypeRef::Component(_) => self.components.add(Some(name)),
-            ComponentTypeRef::Module(_) => self.core_modules.add(Some(name)),
-            ComponentTypeRef::Value(_) => self.values.add(Some(name)),
+            ComponentTypeRef::Instance(_) => self.instances.add(Some(&name.name)),
+            ComponentTypeRef::Func(_) => self.funcs.add(Some(&name.name)),
+            ComponentTypeRef::Type(..) => self.types.add(Some(&name.name)),
+            ComponentTypeRef::Component(_) => self.components.add(Some(&name.name)),
+            ComponentTypeRef::Module(_) => self.core_modules.add(Some(&name.name)),
+            ComponentTypeRef::Value(_) => self.values.add(Some(&name.name)),
         };
         self.imports().import(name, ty);
         ret
@@ -345,15 +350,16 @@ impl ComponentBuilder {
     
     
     
-    pub fn export(
+    pub fn export<'a>(
         &mut self,
-        name: &str,
+        name: impl Into<ComponentExternName<'a>>,
         kind: ComponentExportKind,
         idx: u32,
         ty: Option<ComponentTypeRef>,
     ) -> u32 {
-        self.exports().export(name, kind, idx, ty);
-        self.inc_kind(Some(name), kind)
+        let name = name.into();
+        self.exports().export(name.clone(), kind, idx, ty);
+        self.inc_kind(Some(&name.name), kind)
     }
 
     
@@ -449,12 +455,6 @@ impl ComponentBuilder {
     }
 
     
-    pub fn resource_drop_async(&mut self, ty: u32) -> u32 {
-        self.canonical_functions().resource_drop_async(ty);
-        self.core_funcs.add(Some("resource.drop async"))
-    }
-
-    
     pub fn resource_new(&mut self, ty: u32) -> u32 {
         self.canonical_functions().resource_new(ty);
         self.core_funcs.add(Some("resource.new"))
@@ -507,21 +507,15 @@ impl ComponentBuilder {
     }
 
     
-    pub fn context_get(&mut self, i: u32) -> u32 {
-        self.canonical_functions().context_get(i);
+    pub fn context_get(&mut self, ty: ValType, i: u32) -> u32 {
+        self.canonical_functions().context_get(ty, i);
         self.core_funcs.add(Some(&format!("context.get {i}")))
     }
 
     
-    pub fn context_set(&mut self, i: u32) -> u32 {
-        self.canonical_functions().context_set(i);
+    pub fn context_set(&mut self, ty: ValType, i: u32) -> u32 {
+        self.canonical_functions().context_set(ty, i);
         self.core_funcs.add(Some(&format!("context.set {i}")))
-    }
-
-    
-    pub fn thread_yield(&mut self, cancellable: bool) -> u32 {
-        self.canonical_functions().thread_yield(cancellable);
-        self.core_funcs.add(Some("thread.yield"))
     }
 
     
@@ -670,16 +664,14 @@ impl ComponentBuilder {
     }
 
     
-    pub fn waitable_set_wait(&mut self, cancellable: bool, memory: u32) -> u32 {
-        self.canonical_functions()
-            .waitable_set_wait(cancellable, memory);
+    pub fn waitable_set_wait(&mut self, memory: u32) -> u32 {
+        self.canonical_functions().waitable_set_wait(memory);
         self.core_funcs.add(Some("waitable-set.wait"))
     }
 
     
-    pub fn waitable_set_poll(&mut self, cancellable: bool, memory: u32) -> u32 {
-        self.canonical_functions()
-            .waitable_set_poll(cancellable, memory);
+    pub fn waitable_set_poll(&mut self, memory: u32) -> u32 {
+        self.canonical_functions().waitable_set_poll(memory);
         self.core_funcs.add(Some("waitable-set.poll"))
     }
 
@@ -709,27 +701,45 @@ impl ComponentBuilder {
     }
 
     
-    pub fn thread_switch_to(&mut self, cancellable: bool) -> u32 {
-        self.canonical_functions().thread_switch_to(cancellable);
-        self.core_funcs.add(Some("thread.switch-to"))
-    }
-
-    
-    pub fn thread_suspend(&mut self, cancellable: bool) -> u32 {
-        self.canonical_functions().thread_suspend(cancellable);
-        self.core_funcs.add(Some("thread.suspend"))
-    }
-
-    
     pub fn thread_resume_later(&mut self) -> u32 {
         self.canonical_functions().thread_resume_later();
         self.core_funcs.add(Some("thread.resume-later"))
     }
 
     
-    pub fn thread_yield_to(&mut self, cancellable: bool) -> u32 {
-        self.canonical_functions().thread_yield_to(cancellable);
-        self.core_funcs.add(Some("thread.yield-to"))
+    pub fn thread_suspend(&mut self) -> u32 {
+        self.canonical_functions().thread_suspend();
+        self.core_funcs.add(Some("thread.suspend"))
+    }
+
+    
+    pub fn thread_yield(&mut self) -> u32 {
+        self.canonical_functions().thread_yield();
+        self.core_funcs.add(Some("thread.yield"))
+    }
+
+    
+    pub fn thread_suspend_then_resume(&mut self) -> u32 {
+        self.canonical_functions().thread_suspend_then_resume();
+        self.core_funcs.add(Some("thread.suspend-then-resume"))
+    }
+
+    
+    pub fn thread_yield_then_resume(&mut self) -> u32 {
+        self.canonical_functions().thread_yield_then_resume();
+        self.core_funcs.add(Some("thread.yield-then-resume"))
+    }
+
+    
+    pub fn thread_suspend_then_promote(&mut self) -> u32 {
+        self.canonical_functions().thread_suspend_then_promote();
+        self.core_funcs.add(Some("thread.suspend-then-promote"))
+    }
+
+    
+    pub fn thread_yield_then_promote(&mut self) -> u32 {
+        self.canonical_functions().thread_yield_then_promote();
+        self.core_funcs.add(Some("thread.yield-then-resume"))
     }
 
     

@@ -1,5 +1,34 @@
+use crate::kw;
 use crate::parser::{Cursor, Parse, Parser, Peek, Result};
 use crate::token::Index;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub(crate) fn allow_legacy_indices() -> bool {
+    const DEFAULT: bool = false;
+    static ALLOW: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
+        match std::env::var("WAST_STRICT_COMPONENT_INDICES").as_deref() {
+            Ok("0") => true,
+            Ok(_) => false,
+            Err(_) => DEFAULT,
+        }
+    });
+    *ALLOW
+}
 
 fn peek<K: Peek>(cursor: Cursor) -> Result<bool> {
     
@@ -133,22 +162,97 @@ where
 }
 
 
-#[derive(Clone, Debug)]
-pub struct IndexOrCoreRef<'a, K>(pub CoreItemRef<'a, K>);
 
-impl<'a, K> Parse<'a> for IndexOrCoreRef<'a, K>
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct CorePrefixedRef<'a, K, const LEGACY: bool>(pub CoreItemRef<'a, K>);
+
+impl<'a, K, const LEGACY: bool> Parse<'a> for CorePrefixedRef<'a, K, LEGACY>
 where
-    K: Parse<'a> + Default,
+    K: Parse<'a> + Peek + Default,
 {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         if parser.peek::<Index<'_>>()? {
-            Ok(IndexOrCoreRef(CoreItemRef {
+            return Ok(CorePrefixedRef(CoreItemRef {
                 kind: K::default(),
                 idx: parser.parse()?,
                 export_name: None,
-            }))
-        } else {
-            Ok(IndexOrCoreRef(parser.parens(|p| p.parse())?))
+            }));
         }
+        parser.parens(|parser| {
+            if LEGACY && parser.peek::<K>()? {
+                if !allow_legacy_indices() {
+                    let name = K::display().trim_matches('`');
+                    return Err(parser.error(format!(
+                        "the `core` keyword is required in this reference: \
+                         `({name} ...)` should be written `(core {name} ...)` \
+                         (or set WAST_STRICT_COMPONENT_INDICES=0 to accept \
+                         the legacy syntax)"
+                    )));
+                }
+            } else {
+                parser.parse::<kw::core>()?;
+            }
+            let item = parser.parse::<CoreItemRef<'a, K>>()?;
+            Ok(CorePrefixedRef(item))
+        })
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub(crate) fn parse_core_prefixed_contents<'a, K>(
+    parser: Parser<'a>,
+    kind: K,
+) -> Result<CoreItemRef<'a, K>>
+where
+    K: Parse<'a> + Peek + Default,
+{
+    if parser.peek::<Index<'_>>()? {
+        let idx = parser.parse()?;
+        let export_name = if parser.peek::<&str>()? {
+            if !allow_legacy_indices() {
+                let name = K::display().trim_matches('`');
+                return Err(parser.error(format!(
+                    "an export name must be written inside a nested \
+                     reference: `({name} $i \"name\")` should be written \
+                     `({name} (core {name} $i \"name\"))` \
+                     (or set WAST_STRICT_COMPONENT_INDICES=0 to accept \
+                     the legacy syntax)"
+                )));
+            }
+            Some(parser.parse()?)
+        } else {
+            None
+        };
+        return Ok(CoreItemRef {
+            kind,
+            idx,
+            export_name,
+        });
+    }
+    parser.parens(|parser| {
+        parser.parse::<kw::core>()?;
+        parser.parse::<CoreItemRef<'a, K>>()
+    })
 }

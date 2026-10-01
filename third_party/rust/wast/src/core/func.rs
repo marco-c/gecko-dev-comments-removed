@@ -33,6 +33,8 @@ pub enum FuncKind<'a> {
     
     
     
+    
+    
     Import(InlineImport<'a>, bool),
 
     

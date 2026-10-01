@@ -13,7 +13,7 @@
 
 
 
-use crate::{BinaryReader, BinaryReaderError, ConstExpr, FromReader, Result, SectionLimited};
+use crate::{BinaryReader, ConstExpr, Error, FromReader, Result, SectionLimited};
 use core::ops::Range;
 
 
@@ -24,7 +24,7 @@ pub struct Data<'a> {
     
     pub data: &'a [u8],
     
-    pub range: Range<usize>,
+    pub range: Range<u64>,
 }
 
 
@@ -77,7 +77,7 @@ impl<'a> FromReader<'a> for Data<'a> {
                 }
             }
             _ => {
-                return Err(BinaryReaderError::new(
+                return Err(Error::new(
                     "invalid flags byte in data segment",
                     segment_start,
                 ));

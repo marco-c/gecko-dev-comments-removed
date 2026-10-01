@@ -1,6 +1,6 @@
 use crate::limits::MAX_WASM_CANONICAL_OPTIONS;
 use crate::prelude::*;
-use crate::{BinaryReader, ComponentValType, FromReader, Result, SectionLimited};
+use crate::{BinaryReader, ComponentValType, FromReader, Result, SectionLimited, ValType};
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,6 +15,7 @@ pub enum CanonicalOption {
     
     
     Memory(u32),
+    
     
     
     
@@ -64,11 +65,6 @@ pub enum CanonicalFunction {
         resource: u32,
     },
     
-    ResourceDropAsync {
-        
-        resource: u32,
-    },
-    
     
     ResourceRep {
         
@@ -108,15 +104,26 @@ pub enum CanonicalFunction {
     
     TaskCancel,
     
-    ContextGet(u32),
-    
-    ContextSet(u32),
-    
-    
-    ThreadYield {
+    ContextGet {
         
-        cancellable: bool,
+        
+        
+        ty: ValType,
+        
+        slot: u32,
     },
+    
+    ContextSet {
+        
+        
+        
+        ty: ValType,
+        
+        slot: u32,
+    },
+    
+    
+    ThreadYield,
     
     SubtaskDrop,
     
@@ -248,16 +255,10 @@ pub enum CanonicalFunction {
     
     WaitableSetWait {
         
-        
-        cancellable: bool,
-        
         memory: u32,
     },
     
     WaitableSetPoll {
-        
-        
-        cancellable: bool,
         
         memory: u32,
     },
@@ -275,22 +276,17 @@ pub enum CanonicalFunction {
         table_index: u32,
     },
     
-    ThreadSwitchTo {
-        
-        cancellable: bool,
-    },
-    
-    ThreadSuspend {
-        
-        cancellable: bool,
-    },
-    
     ThreadResumeLater,
     
-    ThreadYieldTo {
-        
-        cancellable: bool,
-    },
+    ThreadSuspend,
+    
+    ThreadSuspendThenResume,
+    
+    ThreadYieldThenResume,
+    
+    ThreadSuspendThenPromote,
+    
+    ThreadYieldThenPromote,
 }
 
 
@@ -320,9 +316,6 @@ impl<'a> FromReader<'a> for CanonicalFunction {
             0x03 => CanonicalFunction::ResourceDrop {
                 resource: reader.read()?,
             },
-            0x07 => CanonicalFunction::ResourceDropAsync {
-                resource: reader.read()?,
-            },
             0x04 => CanonicalFunction::ResourceRep {
                 resource: reader.read()?,
             },
@@ -332,16 +325,17 @@ impl<'a> FromReader<'a> for CanonicalFunction {
                 result: crate::read_resultlist(reader)?,
                 options: read_opts(reader)?,
             },
-            0x0a => match reader.read_u8()? {
-                0x7f => CanonicalFunction::ContextGet(reader.read_var_u32()?),
-                x => return reader.invalid_leading_byte(x, "context.get intrinsic type"),
+            0x05 => CanonicalFunction::TaskCancel,
+            0x0a => CanonicalFunction::ContextGet {
+                ty: reader.read()?,
+                slot: reader.read_var_u32()?,
             },
-            0x0b => match reader.read_u8()? {
-                0x7f => CanonicalFunction::ContextSet(reader.read_var_u32()?),
-                x => return reader.invalid_leading_byte(x, "context.set intrinsic type"),
+            0x0b => CanonicalFunction::ContextSet {
+                ty: reader.read()?,
+                slot: reader.read_var_u32()?,
             },
-            0x0c => CanonicalFunction::ThreadYield {
-                cancellable: reader.read()?,
+            0x06 => CanonicalFunction::SubtaskCancel {
+                async_: reader.read()?,
             },
             0x0d => CanonicalFunction::SubtaskDrop,
             0x0e => CanonicalFunction::StreamNew { ty: reader.read()? },
@@ -391,14 +385,18 @@ impl<'a> FromReader<'a> for CanonicalFunction {
             0x1e => CanonicalFunction::ErrorContextDrop,
 
             0x1f => CanonicalFunction::WaitableSetNew,
-            0x20 => CanonicalFunction::WaitableSetWait {
-                cancellable: reader.read()?,
-                memory: reader.read()?,
-            },
-            0x21 => CanonicalFunction::WaitableSetPoll {
-                cancellable: reader.read()?,
-                memory: reader.read()?,
-            },
+            0x20 => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::WaitableSetWait {
+                    memory: reader.read()?,
+                }
+            }
+            0x21 => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::WaitableSetPoll {
+                    memory: reader.read()?,
+                }
+            }
             0x22 => CanonicalFunction::WaitableSetDrop,
             0x23 => CanonicalFunction::WaitableJoin,
             0x26 => CanonicalFunction::ThreadIndex,
@@ -406,20 +404,31 @@ impl<'a> FromReader<'a> for CanonicalFunction {
                 func_ty_index: reader.read()?,
                 table_index: reader.read()?,
             },
-            0x28 => CanonicalFunction::ThreadSwitchTo {
-                cancellable: reader.read()?,
-            },
-            0x29 => CanonicalFunction::ThreadSuspend {
-                cancellable: reader.read()?,
-            },
-            0x2a => CanonicalFunction::ThreadResumeLater,
-            0x2b => CanonicalFunction::ThreadYieldTo {
-                cancellable: reader.read()?,
-            },
-            0x06 => CanonicalFunction::SubtaskCancel {
-                async_: reader.read()?,
-            },
-            0x05 => CanonicalFunction::TaskCancel,
+            0x28 => CanonicalFunction::ThreadResumeLater,
+            0x29 => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::ThreadSuspend
+            }
+            0x0c => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::ThreadYield
+            }
+            0x2a => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::ThreadSuspendThenResume
+            }
+            0x2b => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::ThreadYieldThenResume
+            }
+            0x2c => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::ThreadSuspendThenPromote
+            }
+            0x2d => {
+                read_legacy_cancellation_byte(reader)?;
+                CanonicalFunction::ThreadYieldThenPromote
+            }
             0x40 => CanonicalFunction::ThreadSpawnRef {
                 func_ty_index: reader.read()?,
             },
@@ -437,6 +446,20 @@ fn read_opts(reader: &mut BinaryReader<'_>) -> Result<Box<[CanonicalOption]>> {
     reader
         .read_iter(MAX_WASM_CANONICAL_OPTIONS, "canonical options")?
         .collect::<Result<_>>()
+}
+
+fn read_legacy_cancellation_byte(reader: &mut BinaryReader<'_>) -> Result<()> {
+    Ok(match reader.read_u8()? {
+        0x00 => {}
+        0x01 => {
+            return reader.invalid_leading_byte(
+                0x01,
+                "zero byte; this was historically accepted \
+                 as `cancellable` until WebAssembly/component-model#716",
+            );
+        }
+        x => return reader.invalid_leading_byte(x, "zero byte"),
+    })
 }
 
 impl<'a> FromReader<'a> for CanonicalOption {

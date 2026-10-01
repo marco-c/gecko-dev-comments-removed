@@ -114,3 +114,20 @@ impl Encode for MemoryType {
         }
     }
 }
+
+impl MemoryType {
+    
+    
+    pub const fn page_size_log2(&self) -> u32 {
+        const DEFAULT_WASM_PAGE_SIZE_LOG2: u32 = 16;
+        match self.page_size_log2 {
+            Some(log2) => log2,
+            None => DEFAULT_WASM_PAGE_SIZE_LOG2,
+        }
+    }
+
+    
+    pub const fn page_size(&self) -> u32 {
+        1 << self.page_size_log2()
+    }
+}

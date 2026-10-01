@@ -57,6 +57,7 @@ impl<T: WasmModuleResources> FuncToValidate<T> {
 
 
 
+#[derive(Clone)]
 pub struct FuncValidator<T> {
     validator: OperatorValidator,
     resources: T,
@@ -123,6 +124,19 @@ impl<T: WasmModuleResources> FuncValidator<T> {
         while !reader.eof() {
             
             
+            #[cfg(all(debug_check_try_op, feature = "try-op"))]
+            {
+                let snapshot = self.validator.clone();
+                let op = reader.peek_operator(&self.visitor(reader.original_position()))?;
+                self.validator.begin_try_op();
+                let _ = self.op(reader.original_position(), &op);
+                self.validator.rollback();
+                self.validator.pop_push_log.clear();
+                assert!(self.validator == snapshot);
+            }
+
+            
+            
             #[cfg(debug_assertions)]
             let (ops_before, arity) = {
                 let op = reader.peek_operator(&self.visitor(reader.original_position()))?;
@@ -187,7 +201,7 @@ arity mismatch in validation
     
     
     
-    pub fn define_locals(&mut self, offset: usize, count: u32, ty: ValType) -> Result<()> {
+    pub fn define_locals(&mut self, offset: u64, count: u32, ty: ValType) -> Result<()> {
         self.validator
             .define_locals(offset, count, ty, &self.resources)
     }
@@ -198,8 +212,24 @@ arity mismatch in validation
     
     
     
-    pub fn op(&mut self, offset: usize, operator: &Operator<'_>) -> Result<()> {
+    
+    pub fn op(&mut self, offset: u64, operator: &Operator<'_>) -> Result<()> {
         self.visitor(offset).visit_operator(operator)
+    }
+
+    
+    
+    
+    #[cfg(feature = "try-op")]
+    pub fn try_op(&mut self, offset: u64, operator: &Operator<'_>) -> Result<()> {
+        self.validator.begin_try_op();
+        let res = self.op(offset, operator);
+        if res.is_ok() {
+            self.validator.commit();
+        } else {
+            self.validator.rollback();
+        }
+        res
     }
 
     
@@ -223,7 +253,7 @@ arity mismatch in validation
     
     pub fn visitor<'this, 'a: 'this>(
         &'this mut self,
-        offset: usize,
+        offset: u64,
     ) -> impl VisitOperator<'a, Output = Result<()>> + ModuleArity + FrameStack + 'this {
         self.validator.with_resources(&self.resources, offset)
     }
@@ -234,7 +264,7 @@ arity mismatch in validation
     #[cfg(feature = "simd")]
     pub fn simd_visitor<'this, 'a: 'this>(
         &'this mut self,
-        offset: usize,
+        offset: u64,
     ) -> impl crate::VisitSimdOperator<'a, Output = Result<()>> + ModuleArity + 'this {
         self.validator.with_resources_simd(&self.resources, offset)
     }
@@ -367,7 +397,7 @@ mod tests {
         fn type_index_of_function(&self, _at: u32) -> Option<u32> {
             todo!()
         }
-        fn check_heap_type(&self, _t: &mut HeapType, _offset: usize) -> Result<()> {
+        fn check_heap_type(&self, _t: &mut HeapType, _offset: u64) -> Result<()> {
             Ok(())
         }
         fn top_type(&self, _heap_type: &HeapType) -> HeapType {
@@ -455,7 +485,7 @@ mod tests {
                             op.operator_arity(&func_validator)
                                 .expect("valid operators should have arity"),
                         );
-                        func_validator.op(usize::MAX, &op).expect("should be valid");
+                        func_validator.op(u64::MAX, &op).expect("should be valid");
                     }
                     actual.push(arity);
                 }

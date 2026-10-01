@@ -15,7 +15,7 @@
 
 use crate::limits::{MAX_WASM_CATCHES, MAX_WASM_HANDLERS};
 use crate::prelude::*;
-use crate::{BinaryReader, BinaryReaderError, FromReader, Result, ValType};
+use crate::{BinaryReader, Error, FromReader, Result, ValType};
 use core::{fmt, mem};
 
 
@@ -182,7 +182,7 @@ impl<'a> Iterator for BrTableTargets<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.remaining == 0 {
             if !self.reader.eof() {
-                return Some(Err(BinaryReaderError::new(
+                return Some(Err(Error::new(
                     "trailing data in br_table",
                     self.reader.original_position(),
                 )));
@@ -292,6 +292,18 @@ impl From<V128> for i128 {
 impl From<V128> for u128 {
     fn from(bits: V128) -> u128 {
         u128::from_le_bytes(bits.0)
+    }
+}
+
+impl From<i128> for V128 {
+    fn from(value: i128) -> Self {
+        V128(i128::to_le_bytes(value))
+    }
+}
+
+impl From<u128> for V128 {
+    fn from(value: u128) -> Self {
+        V128(u128::to_le_bytes(value))
     }
 }
 
@@ -463,7 +475,7 @@ impl<'a> OperatorsReader<'a> {
     }
 
     
-    pub fn original_position(&self) -> usize {
+    pub fn original_position(&self) -> u64 {
         self.reader.original_position()
     }
 
@@ -550,7 +562,7 @@ impl<'a> OperatorsReader<'a> {
     }
 
     
-    pub fn read_with_offset(&mut self) -> Result<(Operator<'a>, usize)> {
+    pub fn read_with_offset(&mut self) -> Result<(Operator<'a>, u64)> {
         let pos = self.reader.original_position();
         Ok((self.read()?, pos))
     }
@@ -668,7 +680,7 @@ impl<'a> OperatorsIteratorWithOffsets<'a> {
 }
 
 impl<'a> Iterator for OperatorsIteratorWithOffsets<'a> {
-    type Item = Result<(Operator<'a>, usize)>;
+    type Item = Result<(Operator<'a>, u64)>;
 
     
     

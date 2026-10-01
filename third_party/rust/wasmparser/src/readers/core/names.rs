@@ -13,9 +13,7 @@
 
 
 
-use crate::{
-    BinaryReader, BinaryReaderError, FromReader, Result, SectionLimited, Subsection, Subsections,
-};
+use crate::{BinaryReader, Error, FromReader, Result, SectionLimited, Subsection, Subsections};
 use core::ops::Range;
 
 
@@ -84,7 +82,7 @@ pub enum Name<'a> {
         
         name: &'a str,
         
-        name_range: Range<usize>,
+        name_range: Range<u64>,
     },
     
     Function(NameMap<'a>),
@@ -116,7 +114,7 @@ pub enum Name<'a> {
         data: &'a [u8],
         
         
-        range: Range<usize>,
+        range: Range<u64>,
     },
 }
 
@@ -125,13 +123,12 @@ pub type NameSectionReader<'a> = Subsections<'a, Name<'a>>;
 
 impl<'a> Subsection<'a> for Name<'a> {
     fn from_reader(id: u8, mut reader: BinaryReader<'a>) -> Result<Self> {
-        let data = reader.remaining_buffer();
-        let offset = reader.original_position();
         Ok(match id {
             0 => {
+                let offset = reader.original_position();
                 let name = reader.read_string()?;
                 if !reader.eof() {
-                    return Err(BinaryReaderError::new(
+                    return Err(Error::new(
                         "trailing data at the end of a name",
                         reader.original_position(),
                     ));
@@ -154,8 +151,8 @@ impl<'a> Subsection<'a> for Name<'a> {
             11 => Name::Tag(NameMap::new(reader)?),
             ty => Name::Unknown {
                 ty,
-                data,
-                range: offset..offset + data.len(),
+                data: reader.remaining_buffer(),
+                range: reader.remaining_range(),
             },
         })
     }

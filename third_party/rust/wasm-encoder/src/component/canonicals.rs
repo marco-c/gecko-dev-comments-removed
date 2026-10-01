@@ -1,4 +1,6 @@
-use crate::{ComponentSection, ComponentSectionId, ComponentValType, Encode, encode_section};
+use crate::{
+    ComponentSection, ComponentSectionId, ComponentValType, Encode, ValType, encode_section,
+};
 use alloc::vec::Vec;
 
 
@@ -153,14 +155,6 @@ impl CanonicalFunctionSection {
     }
 
     
-    pub fn resource_drop_async(&mut self, ty_index: u32) -> &mut Self {
-        self.bytes.push(0x07);
-        ty_index.encode(&mut self.bytes);
-        self.num_added += 1;
-        self
-    }
-
-    
     
     pub fn resource_rep(&mut self, ty_index: u32) -> &mut Self {
         self.bytes.push(0x04);
@@ -235,30 +229,21 @@ impl CanonicalFunctionSection {
     }
 
     
-    pub fn context_get(&mut self, i: u32) -> &mut Self {
+    
+    pub fn context_get(&mut self, ty: ValType, i: u32) -> &mut Self {
         self.bytes.push(0x0a);
-        self.bytes.push(0x7f);
+        ty.encode(&mut self.bytes);
         i.encode(&mut self.bytes);
         self.num_added += 1;
         self
     }
 
     
-    pub fn context_set(&mut self, i: u32) -> &mut Self {
+    
+    pub fn context_set(&mut self, ty: ValType, i: u32) -> &mut Self {
         self.bytes.push(0x0b);
-        self.bytes.push(0x7f);
+        ty.encode(&mut self.bytes);
         i.encode(&mut self.bytes);
-        self.num_added += 1;
-        self
-    }
-
-    
-    
-    
-    
-    pub fn thread_yield(&mut self, cancellable: bool) -> &mut Self {
-        self.bytes.push(0x0c);
-        self.bytes.push(if cancellable { 1 } else { 0 });
         self.num_added += 1;
         self
     }
@@ -470,9 +455,9 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn waitable_set_wait(&mut self, async_: bool, memory: u32) -> &mut Self {
+    pub fn waitable_set_wait(&mut self, memory: u32) -> &mut Self {
         self.bytes.push(0x20);
-        self.bytes.push(if async_ { 1 } else { 0 });
+        self.bytes.push(0);
         memory.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -480,9 +465,9 @@ impl CanonicalFunctionSection {
 
     
     
-    pub fn waitable_set_poll(&mut self, async_: bool, memory: u32) -> &mut Self {
+    pub fn waitable_set_poll(&mut self, memory: u32) -> &mut Self {
         self.bytes.push(0x21);
-        self.bytes.push(if async_ { 1 } else { 0 });
+        self.bytes.push(0);
         memory.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -523,36 +508,56 @@ impl CanonicalFunctionSection {
     }
 
     
-    
-    pub fn thread_switch_to(&mut self, cancellable: bool) -> &mut Self {
-        self.bytes.push(0x28);
-        self.bytes.push(if cancellable { 1 } else { 0 });
-        self.num_added += 1;
-        self
-    }
-
-    
-    
-    pub fn thread_suspend(&mut self, cancellable: bool) -> &mut Self {
-        self.bytes.push(0x29);
-        self.bytes.push(if cancellable { 1 } else { 0 });
-        self.num_added += 1;
-        self
-    }
-
-    
-    
     pub fn thread_resume_later(&mut self) -> &mut Self {
-        self.bytes.push(0x2a);
+        self.bytes.push(0x28);
         self.num_added += 1;
         self
     }
 
     
+    pub fn thread_suspend(&mut self) -> &mut Self {
+        self.bytes.push(0x29);
+        self.bytes.push(0);
+        self.num_added += 1;
+        self
+    }
+
     
-    pub fn thread_yield_to(&mut self, cancellable: bool) -> &mut Self {
+    pub fn thread_yield(&mut self) -> &mut Self {
+        self.bytes.push(0x0c);
+        self.bytes.push(0);
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn thread_suspend_then_resume(&mut self) -> &mut Self {
+        self.bytes.push(0x2a);
+        self.bytes.push(0);
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn thread_yield_then_resume(&mut self) -> &mut Self {
         self.bytes.push(0x2b);
-        self.bytes.push(if cancellable { 1 } else { 0 });
+        self.bytes.push(0);
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn thread_suspend_then_promote(&mut self) -> &mut Self {
+        self.bytes.push(0x2c);
+        self.bytes.push(0);
+        self.num_added += 1;
+        self
+    }
+
+    
+    pub fn thread_yield_then_promote(&mut self) -> &mut Self {
+        self.bytes.push(0x2d);
+        self.bytes.push(0);
         self.num_added += 1;
         self
     }

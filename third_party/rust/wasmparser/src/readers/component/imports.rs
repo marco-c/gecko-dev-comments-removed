@@ -79,7 +79,7 @@ impl<'a> FromReader<'a> for ComponentTypeRef {
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ComponentImport<'a> {
     
-    pub name: ComponentImportName<'a>,
+    pub name: ComponentExternName<'a>,
     
     pub ty: ComponentTypeRef,
 }
@@ -112,34 +112,98 @@ pub type ComponentImportSectionReader<'a> = SectionLimited<'a, ComponentImport<'
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[allow(missing_docs)]
-pub struct ComponentImportName<'a>(pub &'a str);
+pub struct ComponentExternName<'a> {
+    pub name: &'a str,
+    pub implements: Option<&'a str>,
+    pub version_suffix: Option<&'a str>,
+    pub external_id: Option<&'a str>,
+}
 
-impl<'a> FromReader<'a> for ComponentImportName<'a> {
+impl<'a> FromReader<'a> for ComponentExternName<'a> {
+    fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
+        let has_options = match reader.read_u8()? {
+            
+            0x00 => false,
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            0x01 => false,
+
+            0x02 => {
+                if reader.cm_implements() || reader.cm_canon_names() {
+                    true
+                } else {
+                    bail!(
+                        reader.original_position() - 1,
+                        "the `cm-implements` feature is not active"
+                    )
+                }
+            }
+
+            x => return reader.invalid_leading_byte(x, "component name"),
+        };
+        let mut ret = ComponentExternName {
+            name: reader.read_string()?,
+            implements: None,
+            version_suffix: None,
+            external_id: None,
+        };
+        if has_options {
+            for _ in 0..reader.read_var_u32()? {
+                let pos = reader.original_position();
+                match reader.read()? {
+                    ComponentNameOpt::Implements(name) => {
+                        if ret.implements.is_some() {
+                            bail!(pos, "duplicate 'implements' option in name");
+                        }
+                        ret.implements = Some(name);
+                    }
+                    ComponentNameOpt::VersionSuffix(name) => {
+                        if ret.version_suffix.is_some() {
+                            bail!(pos, "duplicate 'versionsuffix' option in name");
+                        }
+                        ret.version_suffix = Some(name);
+                    }
+                    ComponentNameOpt::ExternalId(name) => {
+                        if ret.external_id.is_some() {
+                            bail!(pos, "duplicate 'external-id' option in name");
+                        }
+                        ret.external_id = Some(name);
+                    }
+                }
+            }
+        }
+        Ok(ret)
+    }
+}
+
+enum ComponentNameOpt<'a> {
+    Implements(&'a str),
+    VersionSuffix(&'a str),
+    ExternalId(&'a str),
+}
+
+impl<'a> FromReader<'a> for ComponentNameOpt<'a> {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
         match reader.read_u8()? {
-            
-            0x00 => {}
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            0x01 => {}
-
-            x => return reader.invalid_leading_byte(x, "import name"),
+            0x00 => Ok(ComponentNameOpt::Implements(reader.read()?)),
+            0x01 => Ok(ComponentNameOpt::VersionSuffix(reader.read()?)),
+            0x02 => Ok(ComponentNameOpt::ExternalId(reader.read()?)),
+            x => return reader.invalid_leading_byte(x, "name option"),
         }
-        Ok(ComponentImportName(reader.read_string()?))
     }
 }

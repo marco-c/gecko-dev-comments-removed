@@ -54,6 +54,9 @@ impl<'a> Module<'a> {
     
     
     pub fn resolve(&mut self) -> std::result::Result<Names<'a>, crate::Error> {
+        
+        
+        crate::gensym::reset();
         let names = match &mut self.kind {
             ModuleKind::Text(fields) => crate::core::resolve::resolve(fields)?,
             ModuleKind::Binary(_blobs) => Default::default(),

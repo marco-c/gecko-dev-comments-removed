@@ -1,6 +1,6 @@
+use crate::Error;
 use crate::core::*;
 use crate::token::Index;
-use crate::{Error, gensym};
 
 mod deinline_import_export;
 mod names;
@@ -20,10 +20,6 @@ pub enum Ns {
 }
 
 pub fn resolve<'a>(fields: &mut Vec<ModuleField<'a>>) -> Result<Names<'a>, Error> {
-    
-    
-    gensym::reset();
-
     
     
     

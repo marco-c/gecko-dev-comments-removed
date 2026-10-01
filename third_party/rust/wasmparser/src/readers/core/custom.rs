@@ -23,7 +23,7 @@ impl<'a> CustomSectionReader<'a> {
 
     
     
-    pub fn data_offset(&self) -> usize {
+    pub fn data_offset(&self) -> u64 {
         self.reader.original_position()
     }
 
@@ -33,9 +33,14 @@ impl<'a> CustomSectionReader<'a> {
     }
 
     
+    pub fn data_range(&self) -> Range<u64> {
+        self.reader.remaining_range()
+    }
+
     
     
-    pub fn range(&self) -> Range<usize> {
+    
+    pub fn range(&self) -> Range<u64> {
         self.reader.range()
     }
 
@@ -97,6 +102,11 @@ impl<'a> CustomSectionReader<'a> {
             }
             _ => KnownCustom::Unknown,
         }
+    }
+
+    
+    pub fn data_reader(&self) -> BinaryReader<'a> {
+        self.reader.shrink()
     }
 }
 

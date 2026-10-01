@@ -9,7 +9,7 @@ pub type RelocationEntryReader<'a> = SectionLimited<'a, RelocationEntry>;
 #[derive(Debug, Clone)]
 pub struct RelocSectionReader<'a> {
     section: u32,
-    range: Range<usize>,
+    range: Range<u64>,
     entries: SectionLimited<'a, RelocationEntry>,
 }
 
@@ -32,7 +32,7 @@ impl<'a> RelocSectionReader<'a> {
     }
 
     
-    pub fn range(&self) -> Range<usize> {
+    pub fn range(&self) -> Range<u64> {
         self.range.clone()
     }
 
@@ -242,8 +242,16 @@ pub struct RelocationEntry {
 impl RelocationEntry {
     
     
-    pub fn relocation_range(&self) -> Range<usize> {
-        (self.offset as usize)..(self.offset as usize + self.ty.extent())
+    pub fn relocation_range(&self) -> Result<Range<usize>> {
+        let start = self.offset as usize;
+        let end = start
+            .checked_add(self.ty.extent())
+            
+            
+            .ok_or_else(|| {
+                crate::Error::new("relocation range end overflow", self.offset as u64)
+            })?;
+        Ok(start..end)
     }
 }
 
@@ -296,5 +304,23 @@ impl<'a> FromReader<'a> for RelocationEntry {
             index,
             addend,
         })
+    }
+}
+
+
+#[test]
+fn relocation_range_does_not_overflow() {
+    let entry = RelocationEntry {
+        ty: RelocationType::FunctionIndexLeb,
+        offset: 0xFFFF_FFFC,
+        index: 0,
+        addend: 0,
+    };
+    if cfg!(target_pointer_width = "32") {
+        assert!(entry.relocation_range().is_err());
+    } else {
+        let range = entry.relocation_range().unwrap();
+        assert_eq!(range.start, 0xFFFF_FFFC);
+        assert_eq!(range.end, 0xFFFF_FFFC + 5);
     }
 }

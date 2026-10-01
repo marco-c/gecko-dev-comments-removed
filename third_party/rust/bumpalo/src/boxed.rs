@@ -121,22 +121,22 @@
 
 use {
     crate::Bump,
-    {
-        core::{
-            any::Any,
-            borrow,
-            cmp::Ordering,
-            convert::TryFrom,
-            future::Future,
-            hash::{Hash, Hasher},
-            iter::FusedIterator,
-            mem::ManuallyDrop,
-            ops::{Deref, DerefMut},
-            pin::Pin,
-            task::{Context, Poll},
-        },
-        core_alloc::fmt,
+    core::{
+        any::Any,
+        borrow,
+        cmp::Ordering,
+        convert::TryFrom,
+        future::Future,
+        hash::{Hash, Hasher},
+        iter::FusedIterator,
+        marker::PhantomData,
+        mem::ManuallyDrop,
+        ops::{Deref, DerefMut},
+        pin::Pin,
+        ptr::NonNull,
+        task::{Context, Poll},
     },
+    core_alloc::fmt,
 };
 
 
@@ -144,7 +144,7 @@ use {
 
 
 #[repr(transparent)]
-pub struct Box<'a, T: ?Sized>(&'a mut T);
+pub struct Box<'a, T: ?Sized>(NonNull<T>, PhantomData<&'a T>);
 
 impl<'a, T> Box<'a, T> {
     
@@ -162,14 +162,14 @@ impl<'a, T> Box<'a, T> {
     
     #[inline(always)]
     pub fn new_in(x: T, a: &'a Bump) -> Box<'a, T> {
-        Box(a.alloc(x))
+        Box(a.alloc(x).into(), PhantomData)
     }
 
     
     
     #[inline(always)]
     pub fn pin_in(x: T, a: &'a Bump) -> Pin<Box<'a, T>> {
-        Box(a.alloc(x)).into()
+        Box(a.alloc(x).into(), PhantomData).into()
     }
 
     
@@ -234,7 +234,9 @@ impl<'a, T: ?Sized> Box<'a, T> {
     
     #[inline]
     pub unsafe fn from_raw(raw: *mut T) -> Self {
-        Box(&mut *raw)
+        
+        
+        Box(unsafe { NonNull::new_unchecked(raw) }, PhantomData)
     }
 
     
@@ -280,8 +282,8 @@ impl<'a, T: ?Sized> Box<'a, T> {
     
     #[inline]
     pub fn into_raw(b: Box<'a, T>) -> *mut T {
-        let mut b = ManuallyDrop::new(b);
-        b.deref_mut().0 as *mut T
+        let b = ManuallyDrop::new(b);
+        b.0.as_ptr()
     }
 
     
@@ -338,7 +340,7 @@ impl<'a, T: ?Sized> Drop for Box<'a, T> {
     fn drop(&mut self) {
         unsafe {
             
-            core::ptr::drop_in_place(self.0);
+            core::ptr::drop_in_place(self.0.as_ptr());
         }
     }
 }
@@ -346,7 +348,10 @@ impl<'a, T: ?Sized> Drop for Box<'a, T> {
 impl<'a, T> Default for Box<'a, [T]> {
     fn default() -> Box<'a, [T]> {
         
-        Box(&mut [])
+        Box(
+            NonNull::new(&mut []).expect("Reference to empty list is NonNull"),
+            PhantomData,
+        )
     }
 }
 
@@ -547,17 +552,54 @@ impl<'a, T: ?Sized> fmt::Pointer for Box<'a, T> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(doctest)]
+fn _doctest_only() {}
+
 impl<'a, T: ?Sized> Deref for Box<'a, T> {
     type Target = T;
 
     fn deref(&self) -> &T {
-        &*self.0
+        
+        
+        
+        unsafe { self.0.as_ref() }
     }
 }
 
 impl<'a, T: ?Sized> DerefMut for Box<'a, T> {
     fn deref_mut(&mut self) -> &mut T {
-        self.0
+        
+        
+        
+        unsafe { self.0.as_mut() }
     }
 }
 
@@ -651,6 +693,12 @@ impl<'a, T: ?Sized> AsMut<T> for Box<'a, T> {
 
 impl<'a, T: ?Sized> Unpin for Box<'a, T> {}
 
+
+unsafe impl<'a, T: ?Sized + Send> Send for Box<'a, T> {}
+
+
+unsafe impl<'a, T: ?Sized + Sync> Sync for Box<'a, T> {}
+
 impl<'a, F: ?Sized + Future + Unpin> Future for Box<'a, F> {
     type Output = F::Output;
 
@@ -678,6 +726,22 @@ impl<'a, T, const N: usize> TryFrom<Box<'a, [T]>> for Box<'a, [T; N]> {
             Ok(unsafe { Box::from_raw(ptr) })
         } else {
             Err(slice)
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serialize {
+    use super::*;
+
+    use serde::{Serialize, Serializer};
+
+    impl<'a, T> Serialize for Box<'a, T>
+    where
+        T: Serialize,
+    {
+        fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+            T::serialize(self, serializer)
         }
     }
 }

@@ -592,13 +592,13 @@ pub enum Error<E = Infallible> {
     
     UnsupportedCoreTypeInComponent,
     
-    ParseError(wasmparser::BinaryReaderError),
+    ParseError(wasmparser::Error),
     
     UserError(E),
 }
 
-impl<E> From<wasmparser::BinaryReaderError> for Error<E> {
-    fn from(err: wasmparser::BinaryReaderError) -> Self {
+impl<E> From<wasmparser::Error> for Error<E> {
+    fn from(err: wasmparser::Error) -> Self {
         Self::ParseError(err)
     }
 }
@@ -679,19 +679,20 @@ pub mod utils {
             reencoder.intersperse_section_hook(module, after, before)
         }
 
-        
-        
-        
-        
-        
-        
-        let orig_offset = parser.offset() as usize;
-        let get_original_section = |range: Range<usize>| {
-            data.get(range.start - orig_offset..range.end - orig_offset)
-                .ok_or(Error::InvalidCodeSectionSize)
-        };
         let mut last_section = None;
 
+        let start_offset = parser.offset();
+        
+        
+        let get_original_section = |range: Range<u64>| {
+            let start = range.start - start_offset;
+            let end = range.end - start_offset;
+            let Ok(end) = usize::try_from(end) else {
+                return Err(Error::InvalidCodeSectionSize);
+            };
+            let data_range = start as usize..end;
+            data.get(data_range).ok_or(Error::InvalidCodeSectionSize)
+        };
         for section in parser.parse_all(data) {
             match section? {
                 wasmparser::Payload::Version {
@@ -841,8 +842,6 @@ pub mod utils {
                     )?;
                     let mut codes = crate::CodeSection::new();
 
-                    
-                    
                     
                     
                     
@@ -1726,7 +1725,7 @@ pub mod utils {
             (map $arg:ident targets) => ((
                 $arg
                     .targets()
-                    .collect::<Result<Vec<_>, wasmparser::BinaryReaderError>>()?
+                    .collect::<Result<Vec<_>, wasmparser::Error>>()?
                     .into(),
                 $arg.default(),
             ));

@@ -72,7 +72,7 @@ impl<'a> FunctionBody<'a> {
     }
 
     
-    pub fn range(&self) -> Range<usize> {
+    pub fn range(&self) -> Range<u64> {
         self.reader.range()
     }
 
@@ -105,7 +105,7 @@ impl<'a> LocalsReader<'a> {
     }
 
     
-    pub fn original_position(&self) -> usize {
+    pub fn original_position(&self) -> u64 {
         self.reader.original_position()
     }
 

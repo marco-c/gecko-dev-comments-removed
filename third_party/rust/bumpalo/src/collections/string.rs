@@ -679,6 +679,7 @@ impl<'bump> String<'bump> {
     
     
     
+    #[inline]
     pub fn from_str_in(s: &str, bump: &'bump Bump) -> String<'bump> {
         let len = s.len();
         let mut t = String::with_capacity_in(len, bump);
@@ -1291,35 +1292,57 @@ impl<'bump> String<'bump> {
     where
         F: FnMut(char) -> bool,
     {
-        let len = self.len();
-        let mut del_bytes = 0;
-        let mut idx = 0;
+        struct SetLenOnDrop<'a, 'bump> {
+            s: &'a mut String<'bump>,
+            idx: usize,
+            del_bytes: usize,
+        }
 
-        while idx < len {
-            let ch = unsafe { self.get_unchecked(idx..len).chars().next().unwrap() };
+        impl<'a, 'bump> Drop for SetLenOnDrop<'a, 'bump> {
+            fn drop(&mut self) {
+                let new_len = self.idx - self.del_bytes;
+                debug_assert!(new_len <= self.s.len());
+                unsafe { self.s.vec.set_len(new_len) };
+            }
+        }
+
+        let len = self.len();
+        let mut guard = SetLenOnDrop {
+            s: self,
+            idx: 0,
+            del_bytes: 0,
+        };
+
+        while guard.idx < len {
+            let ch =
+                
+                
+                
+                unsafe { guard.s.get_unchecked(guard.idx..len).chars().next().unwrap_unchecked() };
             let ch_len = ch.len_utf8();
 
             if !f(ch) {
-                del_bytes += ch_len;
-            } else if del_bytes > 0 {
-                unsafe {
-                    ptr::copy(
-                        self.vec.as_ptr().add(idx),
-                        self.vec.as_mut_ptr().add(idx - del_bytes),
-                        ch_len,
-                    );
-                }
+                guard.del_bytes += ch_len;
+            } else if guard.del_bytes > 0 {
+                
+                
+                
+                
+                
+                
+                ch.encode_utf8(unsafe {
+                    core::slice::from_raw_parts_mut(
+                        guard.s.as_mut_ptr().add(guard.idx - guard.del_bytes),
+                        ch.len_utf8(),
+                    )
+                });
             }
 
             
-            idx += ch_len;
+            guard.idx += ch_len;
         }
 
-        if del_bytes > 0 {
-            unsafe {
-                self.vec.set_len(len - del_bytes);
-            }
-        }
+        drop(guard);
     }
 
     
@@ -2150,3 +2173,19 @@ impl<'a, 'bump> DoubleEndedIterator for Drain<'a, 'bump> {
 }
 
 impl<'a, 'bump> FusedIterator for Drain<'a, 'bump> {}
+
+#[cfg(feature = "serde")]
+mod serialize {
+    use super::*;
+
+    use serde::{Serialize, Serializer};
+
+    impl<'bump> Serialize for String<'bump> {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.serialize_str(&self)
+        }
+    }
+}

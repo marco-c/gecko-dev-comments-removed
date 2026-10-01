@@ -1,7 +1,7 @@
 use crate::limits::*;
 use crate::prelude::*;
 use crate::{
-    BinaryReader, ComponentAlias, ComponentExportName, ComponentImport, ComponentTypeRef,
+    BinaryReader, ComponentAlias, ComponentExternName, ComponentImport, ComponentTypeRef,
     FromReader, Import, RecGroup, Result, SectionLimited, TypeRef, ValType,
 };
 use core::fmt;
@@ -326,7 +326,7 @@ pub enum ComponentTypeDeclaration<'a> {
     
     Export {
         
-        name: ComponentExportName<'a>,
+        name: ComponentExternName<'a>,
         
         ty: ComponentTypeRef,
     },
@@ -367,7 +367,7 @@ pub enum InstanceTypeDeclaration<'a> {
     
     Export {
         
-        name: ComponentExportName<'a>,
+        name: ComponentExternName<'a>,
         
         ty: ComponentTypeRef,
     },
@@ -417,21 +417,17 @@ pub struct VariantCase<'a> {
     pub name: &'a str,
     
     pub ty: Option<ComponentValType>,
-    
-    pub refines: Option<u32>,
 }
 
 impl<'a> FromReader<'a> for VariantCase<'a> {
     fn from_reader(reader: &mut BinaryReader<'a>) -> Result<Self> {
-        Ok(VariantCase {
-            name: reader.read()?,
-            ty: reader.read()?,
-            refines: match reader.read_u8()? {
-                0x0 => None,
-                0x1 => Some(reader.read_var_u32()?),
-                x => return reader.invalid_leading_byte(x, "variant case refines"),
-            },
-        })
+        let name = reader.read()?;
+        let ty = reader.read()?;
+        match reader.read_u8()? {
+            0x0 => {}
+            x => return reader.invalid_leading_byte(x, "zero byte required"),
+        }
+        Ok(VariantCase { name, ty })
     }
 }
 
@@ -449,7 +445,7 @@ pub enum ComponentDefinedType<'a> {
     
     Map(ComponentValType, ComponentValType),
     
-    FixedSizeList(ComponentValType, u32),
+    FixedLengthList(ComponentValType, u32),
     
     Tuple(Box<[ComponentValType]>),
     
@@ -513,7 +509,7 @@ impl<'a> ComponentDefinedType<'a> {
             },
             0x69 => ComponentDefinedType::Own(reader.read()?),
             0x68 => ComponentDefinedType::Borrow(reader.read()?),
-            0x67 => ComponentDefinedType::FixedSizeList(reader.read()?, reader.read_var_u32()?),
+            0x67 => ComponentDefinedType::FixedLengthList(reader.read()?, reader.read_var_u32()?),
             0x66 => ComponentDefinedType::Stream(reader.read()?),
             0x65 => ComponentDefinedType::Future(reader.read()?),
             x => return reader.invalid_leading_byte(x, "component defined type"),
