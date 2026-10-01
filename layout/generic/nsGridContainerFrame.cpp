@@ -5932,12 +5932,25 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
 
   gfxContext* rc = &aGridRI.mRenderingContext;
   PhysicalAxis axis = gridWM.PhysicalAxis(aAxis);
-  nscoord size = nsLayoutUtils::IntrinsicForAxis(
-      axis, rc, child, aConstraint, Some(aPercentageBasis),
-      nsLayoutUtils::BAIL_IF_REFLOW_NEEDED, aMinSizeClamp, aOverrides);
   auto childWM = child->GetWritingMode();
   const bool isOrthogonal = childWM.IsOrthogonalTo(gridWM);
   auto childAxis = isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
+
+  StyleSizeOverrides overrides = aOverrides;
+  if (childAxis == LogicalAxis::Inline && !overrides.mStyleBSize) {
+    const bool stretchesInBlockAxis =
+        child->StylePosition()
+            ->BSize(childWM, AnchorPosResolutionParams::From(child))
+            ->IsAuto() &&
+        aGridRI.mFrame->GridItemShouldStretch(child, LogicalAxis::Block);
+    if (stretchesInBlockAxis) {
+      overrides.mStyleBSize.emplace(StyleSize::Stretch());
+    }
+  }
+
+  nscoord size = nsLayoutUtils::IntrinsicForAxis(
+      axis, rc, child, aConstraint, Some(aPercentageBasis),
+      nsLayoutUtils::BAIL_IF_REFLOW_NEEDED, aMinSizeClamp, overrides);
   if (size == NS_INTRINSIC_ISIZE_UNKNOWN && childAxis == LogicalAxis::Block) {
     if (aGridRI.mIsGridIntrinsicSizing && aAxis == LogicalAxis::Block &&
         !StaticPrefs::layout_css_grid_intrinsic_sizing_measure_bsize()) {
@@ -10276,24 +10289,18 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
                                     NS_UNCONSTRAINEDSIZE, constraint);
 
-  if (IsRowSubgrid()) {
-    
-    
-    
-    const auto* subgrid = GetProperty(Subgrid::Prop());
-    const auto parentAxis =
-        subgrid->mIsOrthogonal ? LogicalAxis::Inline : LogicalAxis::Block;
-    const auto* parentSizes =
-        ParentGridContainerForSubgrid()->GetUsedTrackSizes();
-    if (!parentSizes || !parentSizes->mCanResolveLineRangeSize[parentAxis]) {
-      return gridRI.mCols.TotalTrackSizeWithoutAlignment(this);
-    }
-  }
-
   const nscoord contentBoxBSize =
       aInput.mPercentageBasisForChildren
           ? aInput.mPercentageBasisForChildren->BSize(gridRI.mWM)
           : NS_UNCONSTRAINEDSIZE;
+
+  if (IsRowSubgrid() && contentBoxBSize == NS_UNCONSTRAINEDSIZE) {
+    
+    
+    
+    
+    return gridRI.mCols.TotalTrackSizeWithoutAlignment(this);
+  }
 
   
   
