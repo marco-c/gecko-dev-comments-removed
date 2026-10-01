@@ -30,6 +30,8 @@ scale(*) fuzzy(1,40000) == linear-aligned-clip.yaml linear-aligned-clip-ref.yaml
 
 scale(*) fuzzy(1,172000) == linear-decompose-mask-seam.yaml linear-decompose-mask-seam-ref.yaml
 
+scale(*) fuzzy(1,10000) == linear-large-offset-seam.yaml linear-large-offset-seam-ref.yaml
+
 platform(linux,mac) fuzzy(1,80000) == radial-circle.yaml radial-circle-ref.png
 platform(linux,mac) fuzzy(1,80000) == radial-ellipse.yaml radial-ellipse-ref.png
 
@@ -41,10 +43,10 @@ scale(*) == norm-linear-1.yaml norm-linear-1-ref.yaml
 scale(*) == norm-linear-2.yaml norm-linear-2-ref.yaml
 scale(*) == norm-linear-3.yaml norm-linear-3-ref.yaml
 scale(*) == norm-linear-4.yaml norm-linear-4-ref.yaml
-== norm-linear-degenerate.yaml norm-radial-degenerate-ref.yaml
+scale(*) == norm-linear-degenerate.yaml norm-radial-degenerate-ref.yaml
 
 scale(*) == norm-radial-1.yaml norm-radial-1-ref.yaml
-== norm-radial-2.yaml norm-radial-2-ref.yaml
+scale(*) == norm-radial-2.yaml norm-radial-2-ref.yaml
 scale(*) == norm-radial-3.yaml norm-radial-3-ref.yaml
 scale(*) == norm-radial-degenerate.yaml norm-radial-degenerate-ref.yaml
 
