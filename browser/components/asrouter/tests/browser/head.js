@@ -27,6 +27,12 @@ const { sinon } = ChromeUtils.importESModule(
 const BROWSER_GLUE =
   Cc["@mozilla.org/browser/browserglue;1"].getService().wrappedJSObject;
 
+ChromeUtils.defineLazyGetter(this, "PlacesFrecencyRecalculator", () => {
+  return Cc["@mozilla.org/places/frecency-recalculator;1"].getService(
+    Ci.nsIObserver
+  ).wrappedJSObject;
+});
+
 
 const calloutId = "feature-callout";
 const calloutSelector = `#${calloutId}.featureCallout`;
