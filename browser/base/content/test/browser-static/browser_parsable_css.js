@@ -161,6 +161,10 @@ let propNameAllowlist = [
     propName: "--panel-background-color-dimmed-further",
     isFromDevTools: false,
   },
+  {
+    propName: "--panel-text-color-dimmed-further",
+    isFromDevTools: false,
+  },
 
   
   
