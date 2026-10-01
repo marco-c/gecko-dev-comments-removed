@@ -42,7 +42,6 @@ class MOZ_RAII ReentrancyGuard {
   ~ReentrancyGuard() {}  
 #endif
 
- private:
   ReentrancyGuard(const ReentrancyGuard&) = delete;
   void operator=(const ReentrancyGuard&) = delete;
 };
