@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 import { CONTENT_MESSAGE_TYPE } from "common/Actions.mjs";
 import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
@@ -12,10 +12,10 @@ import {
 } from "lib/ActivityStream.sys.mjs";
 import { mockServices, stubGlobals } from "test/jest/test-utils";
 
-// Stand-ins for the lazily loaded feed classes. The real feed modules cannot be
-// imported here (they statically import resource://gre/modules/*), and the
-// assertions below only care that the factory registered for each pref returns
-// a feed.
+
+
+
+
 function feedStubs() {
   return {
     AboutPreferences: class AboutPreferences {},
@@ -37,8 +37,8 @@ function FakeStore() {
   return { init: jest.fn(), uninit: jest.fn(), feeds: { get: () => {} } };
 }
 
-// Enough of DefaultPrefs for the dynamic pref computation: it reads back
-// whatever default was last written for a pref.
+
+
 class FakeDefaultPrefs {
   constructor(config) {
     this._config = config;
@@ -55,13 +55,13 @@ class FakeDefaultPrefs {
   }
 }
 
-/**
- * A jest.fn() with sinon's withArgs semantics: the first matching argument
- * prefix wins, and anything unmatched falls through to `fallback`.
- *
- * @param {Function} fallback Implementation for unmatched calls.
- * @returns {Function} jest.fn() with an extra whenCalledWith(...args) helper.
- */
+
+
+
+
+
+
+
 function argsStub(fallback = () => undefined) {
   const behaviors = [];
   const fn = jest.fn((...args) => {
@@ -141,10 +141,10 @@ describe("ActivityStream", () => {
     expect(noCreatedInstantAS.createdInstant).toBeNull();
   });
   it("should have a createdInstant value exposed if constructed with one", () => {
-    // The Node environment does not know what Temporal is, but we can pretend
-    // that a Date is a temporal, since ActivityStream isn't really doing any
-    // type-checking here - it's just holding onto whatever it was constructed
-    // with, and exposing it with a getter.
+    
+    
+    
+    
     const instant = new Date();
     const createdInstantAS = new ActivityStream(instant);
     expect(createdInstantAS.createdInstant).toBe(instant);
@@ -274,7 +274,7 @@ describe("ActivityStream", () => {
       expect(callback).toHaveBeenCalledWith(10);
     });
     it("should not migrate a pref if the user has not set a custom value", () => {
-      // we bailed out early so we don't check the pref type later
+      
       services.prefs.prefHasUserValue.mockReturnValue(false);
       as._migratePref("oldPrefName");
       expect(services.prefs.getPrefType).not.toHaveBeenCalled();
@@ -282,17 +282,17 @@ describe("ActivityStream", () => {
     it("should use the proper pref getter for each type", () => {
       services.prefs.prefHasUserValue.mockReturnValue(true);
 
-      // Integer
+      
       services.prefs.getPrefType.mockReturnValue(services.prefs.PREF_INT);
       as._migratePref("oldPrefName", () => {});
       expect(services.prefs.getIntPref).toHaveBeenCalledWith("oldPrefName");
 
-      // Boolean
+      
       services.prefs.getPrefType.mockReturnValue(services.prefs.PREF_BOOL);
       as._migratePref("oldPrefName", () => {});
       expect(services.prefs.getBoolPref).toHaveBeenCalledWith("oldPrefName");
 
-      // String
+      
       services.prefs.getPrefType.mockReturnValue(services.prefs.PREF_STRING);
       as._migratePref("oldPrefName", () => {});
       expect(services.prefs.getStringPref).toHaveBeenCalledWith("oldPrefName");
@@ -351,10 +351,10 @@ describe("ActivityStream", () => {
       getStringPrefStub = argsStub();
       services.prefs.getStringPref = getStringPrefStub;
 
-      // Set default regions
+      
       getStringPrefStub.whenCalledWith(REGION_WEATHER_CONFIG).returns("US, CA");
 
-      // Set default locales
+      
       getStringPrefStub
         .whenCalledWith(LOCALE_WEATHER_CONFIG)
         .returns("en-US,en-GB,en-CA");
@@ -466,8 +466,8 @@ describe("ActivityStream", () => {
       expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
     });
     it("should wait for the region when a list restricts it", () => {
-      // Bug 2063361: showing the widget and then taking it away is worse than
-      // a brief absence, so an unresolved region loses to a populated list.
+      
+      
       getStringPrefStub
         .whenCalledWith(`${BRANCH}widgets.system.region-block`)
         .returns("CN,JP,RU");
@@ -494,6 +494,57 @@ describe("ActivityStream", () => {
       } finally {
         globalThis.AppConstants.NIGHTLY_BUILD = wasNightly;
       }
+    });
+  });
+  describe("marketGate - lists", () => {
+    let getStringPrefStub;
+    const CONTAINER_PREF = "widgets.system.enabled";
+    const AVAILABLE_PREF = "widgets.system.lists.enabled";
+    const ENABLED_PREF = "widgets.lists.enabled";
+    const BRANCH = "browser.newtabpage.activity-stream.";
+    beforeEach(() => {
+      services.locale.appLocaleAsBCP47 = "en-US";
+      getStringPrefStub = argsStub((_pref, defaultValue) => defaultValue);
+      services.prefs.getStringPref = getStringPrefStub;
+    });
+    it("should be available and on everywhere by default", () => {
+      region.home = "CZ";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(true);
+    });
+    it("should stay available but turn off in a blocked region", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.lists.region-block`)
+        .returns("DE,FR,PL,US");
+      region.home = "US";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(CONTAINER_PREF).value).toBe(true);
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
+    });
+    it("should not follow the container block list", () => {
+      
+      
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.region-block`)
+        .returns("JP");
+      region.home = "JP";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(CONTAINER_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(true);
+    });
+    it("should be unavailable and off in PL", () => {
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.system.lists.region-block`)
+        .returns("PL");
+      getStringPrefStub
+        .whenCalledWith(`${BRANCH}widgets.lists.region-block`)
+        .returns("DE,FR,PL,US");
+      region.home = "PL";
+      as._updateDynamicPrefs();
+      expect(PREFS_CONFIG.get(AVAILABLE_PREF).value).toBe(false);
+      expect(PREFS_CONFIG.get(ENABLED_PREF).value).toBe(false);
     });
   });
   describe("getWeatherWidgetSize", () => {
@@ -546,8 +597,8 @@ describe("ActivityStream", () => {
     });
   });
   describe("newtabWallpapers.customWallpaper.library.enabled", () => {
-    // firefox.js turns the library on from 158. Turning it on here as well
-    // would reach a train-hopped host whose backup keeps one wallpaper.
+    
+    
     it("should default to false", () => {
       expect(
         PREFS_CONFIG.get("newtabWallpapers.customWallpaper.library.enabled")
@@ -568,10 +619,10 @@ describe("ActivityStream", () => {
       getStringPrefStub = argsStub();
       services.prefs.getStringPref = getStringPrefStub;
 
-      // Set default regions
+      
       getStringPrefStub.whenCalledWith(REGION_TOPICS_CONFIG).returns("US, CA");
 
-      // Set default locales
+      
       getStringPrefStub
         .whenCalledWith(LOCALE_TOPICS_CONFIG)
         .returns("en-US,en-GB,en-CA");
@@ -635,12 +686,12 @@ describe("ActivityStream", () => {
       getStringPrefStub = argsStub();
       services.prefs.getStringPref = getStringPrefStub;
 
-      // Set default regions
+      
       getStringPrefStub
         .whenCalledWith(REGION_TOPIC_LABEL_CONFIG)
         .returns("US, CA");
 
-      // Set default locales
+      
       getStringPrefStub
         .whenCalledWith(LOCALE_TOPIC_LABEL_CONFIG)
         .returns("en-US,en-GB,en-CA");
@@ -1072,7 +1123,7 @@ describe("ActivityStream", () => {
     beforeEach(() => {
       jest.useFakeTimers();
 
-      // Have addObserver cause prefHasUserValue to now return true then observe
+      
       services.obs.addObserver.mockImplementation(() => {
         setTimeout(notifyRegionUpdated);
       });
@@ -1177,7 +1228,7 @@ describe("ActivityStream", () => {
     });
 
     it("should be 'google' elsewhere", () => {
-      // A selection of other geos
+      
       const geos = ["BR", "CA", "ES", "ID", "IN"];
       for (const geo of geos) {
         region.home = geo;
