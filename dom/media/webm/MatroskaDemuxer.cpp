@@ -162,15 +162,12 @@ nsresult MatroskaDemuxer::SetContainerAudioCodecInfo(
         aacCodecSpecificData.mEncoderDelayFrames = 0;
       }
 
-      uint64_t frameCount;
-      int r = nestegg_read_total_frames_count(aContext, &frameCount);
-      if (r == -1) {
-        return NS_ERROR_FAILURE;
-      }
-      aacCodecSpecificData.mMediaFrameCount = frameCount;
-      MKV_DEBUG(
-          "AAC stream in MKV container, media frames: {}, delay frames : {}",
-          frameCount, aacCodecSpecificData.mEncoderDelayFrames);
+      
+      
+      
+      
+      MKV_DEBUG("AAC stream in MKV container, delay frames : {}",
+                aacCodecSpecificData.mEncoderDelayFrames);
       mInfo.mAudio.mCodecSpecificConfig =
           AudioCodecSpecificVariant{std::move(aacCodecSpecificData)};
       break;
