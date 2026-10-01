@@ -160,29 +160,9 @@ function singleChangedEvent() {
   return events[0];
 }
 
-
-
-
-function setupProfileService() {
-  let profD = do_get_profile();
-
-  let dataHome = profD.clone();
-  dataHome.append("data");
-  dataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-  let dataHomeLocal = profD.clone();
-  dataHomeLocal.append("local");
-  dataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-  let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
-    Ci.nsIXREDirProvider
-  );
-  xreDirProvider.setUserDataDirectory(dataHome, false);
-  xreDirProvider.setUserDataDirectory(dataHomeLocal, true);
-}
-
 add_setup(function () {
-  setupProfileService();
+  do_get_profile();
+  Cc["@mozilla.org/xre/directory-provider;1"].getService(Ci.nsIXREDirProvider);
   Services.fog.initializeFOG();
 
   let shellCid = MockRegistrar.register(
