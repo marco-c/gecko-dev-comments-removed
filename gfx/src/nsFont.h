@@ -25,10 +25,10 @@ struct nsFont final {
   mozilla::StyleFontFamily family;
 
   
-  mozilla::StyleFontFeatureSettings fontFeatureSettings;
+  CopyableTArray<gfxFontFeature> fontFeatureSettings;
 
   
-  mozilla::StyleFontVariationSettings fontVariationSettings;
+  CopyableTArray<gfxFontVariation> fontVariationSettings;
 
   
   mozilla::NonNegativeLength size{0};

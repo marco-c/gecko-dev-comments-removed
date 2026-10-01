@@ -39,7 +39,6 @@ pub trait TaggedFontValue {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C)]
 pub struct FeatureTagValue<Integer> {
     
     pub tag: FontTag,
@@ -92,7 +91,6 @@ where
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(C)]
 pub struct VariationValue<Number> {
     
     #[animation(constant)]
@@ -125,15 +123,14 @@ impl<T> TaggedFontValue for VariationValue<T> {
     ToTyped,
 )]
 #[css(comma)]
-#[repr(transparent)]
 #[typed(todo_derive_fields)]
-pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub ThinVec<T>);
+pub struct FontSettings<T>(#[css(if_empty = "normal", iterable)] pub Box<[T]>);
 
 impl<T> FontSettings<T> {
     
     #[inline]
     pub fn normal() -> Self {
-        FontSettings(Default::default())
+        FontSettings(vec![].into_boxed_slice())
     }
 }
 
@@ -151,10 +148,11 @@ impl<T: Parse> Parse for FontSettings<T> {
         Ok(FontSettings(
             input
                 .parse_comma_separated(|i| T::parse(context, i))?
-                .into(),
+                .into_boxed_slice(),
         ))
     }
 }
+
 
 
 
@@ -176,7 +174,6 @@ impl<T: Parse> Parse for FontSettings<T> {
     ToResolvedValue,
     ToShmem,
 )]
-#[repr(transparent)]
 pub struct FontTag(pub u32);
 
 impl fmt::Debug for FontTag {

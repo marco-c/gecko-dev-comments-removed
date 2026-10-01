@@ -112,7 +112,7 @@ struct gfxFontStyle {
   
 
   
-  mozilla::StyleFontFeatureSettings featureSettings;
+  CopyableTArray<gfxFontFeature> featureSettings;
 
   
   
@@ -125,7 +125,7 @@ struct gfxFontStyle {
   RefPtr<gfxFontFeatureValueSet> featureValueLookup;
 
   
-  mozilla::StyleFontVariationSettings variationSettings;
+  CopyableTArray<gfxFontVariation> variationSettings;
 
   
   gfxFloat size;

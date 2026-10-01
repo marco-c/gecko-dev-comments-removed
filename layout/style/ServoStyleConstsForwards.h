@@ -66,9 +66,13 @@ using StyleUnparsedValue = CopyableTArray<StyleUnparsedSegment>;
 struct StyleNumericValue;
 
 namespace gfx {
+struct FontVariation;
+struct FontFeature;
 class FontPaletteValueSet;
 }  
 }  
+using gfxFontVariation = mozilla::gfx::FontVariation;
+using gfxFontFeature = mozilla::gfx::FontFeature;
 struct gfxFontVariationAxis;
 
 enum nsCSSUnit : uint32_t;
