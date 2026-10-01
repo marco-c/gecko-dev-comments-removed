@@ -146,6 +146,37 @@ const tests = {
     rmSync("tests/build", { recursive: true, force: true });
     return errors.length === 0;
   },
+
+  
+  
+  
+  async pairedTextColors() {
+    logStart("paired text colors");
+
+    let { tokensTable } = await import("../dist/semantic-categories.mjs");
+    let tokenNames = new Set(
+      Object.values(tokensTable)
+        .flat()
+        .map(token => token.name)
+    );
+
+    let errors = [];
+    for (let tokenName of tokenNames) {
+      let match = tokenName.match(
+        /^--(?<family>.+?)background-color(?<variant>.*)$/
+      );
+      if (!match || !tokenNames.has(`--${match.groups.family}text-color`)) {
+        continue;
+      }
+      let counterpart = `--${match.groups.family}text-color${match.groups.variant}`;
+      if (!tokenNames.has(counterpart)) {
+        errors.push(`${tokenName} has no ${counterpart} to pair with`);
+      }
+    }
+
+    logErrors("paired text colors", errors);
+    return errors.length === 0;
+  },
 };
 
 (async function runTests() {
