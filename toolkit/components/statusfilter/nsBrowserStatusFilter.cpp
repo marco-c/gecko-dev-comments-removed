@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsBrowserStatusFilter.h"
 #include "nsITimer.h"
 #include "nsString.h"
@@ -168,8 +167,9 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress* aWebProgress,
   
   if (mDisableStateChangeFilters || aStateFlags & STATE_IS_NETWORK ||
       aStateFlags & STATE_IS_REDIRECTED_DOCUMENT) {
-    return mListener->OnStateChange(aWebProgress, aRequest, aStateFlags,
-                                    aStatus);
+    nsCOMPtr<nsIWebProgressListener> listener = mListener;
+    return listener->OnStateChange(aWebProgress, aRequest, aStateFlags,
+                                   aStatus);
   }
 
   return NS_OK;
@@ -209,7 +209,8 @@ nsBrowserStatusFilter::OnLocationChange(nsIWebProgress* aWebProgress,
                                         uint32_t aFlags) {
   if (!mListener) return NS_OK;
 
-  return mListener->OnLocationChange(aWebProgress, aRequest, aLocation, aFlags);
+  nsCOMPtr<nsIWebProgressListener> listener = mListener;
+  return listener->OnLocationChange(aWebProgress, aRequest, aLocation, aFlags);
 }
 
 NS_IMETHODIMP
@@ -243,7 +244,8 @@ nsBrowserStatusFilter::OnSecurityChange(nsIWebProgress* aWebProgress,
                                         nsIRequest* aRequest, uint32_t aState) {
   if (!mListener) return NS_OK;
 
-  return mListener->OnSecurityChange(aWebProgress, aRequest, aState);
+  nsCOMPtr<nsIWebProgressListener> listener = mListener;
+  return listener->OnSecurityChange(aWebProgress, aRequest, aState);
 }
 
 NS_IMETHODIMP
@@ -252,7 +254,8 @@ nsBrowserStatusFilter::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
                                               uint32_t aEvent) {
   if (!mListener) return NS_OK;
 
-  return mListener->OnContentBlockingEvent(aWebProgress, aRequest, aEvent);
+  nsCOMPtr<nsIWebProgressListener> listener = mListener;
+  return listener->OnContentBlockingEvent(aWebProgress, aRequest, aEvent);
 }
 
 
@@ -308,14 +311,16 @@ void nsBrowserStatusFilter::MaybeSendProgress() {
   if (percentage > (mCurrentPercentage + 3)) {
     mCurrentPercentage = percentage;
     
-    mListener->OnProgressChange(nullptr, nullptr, 0, 0, (int32_t)mCurProgress,
-                                (int32_t)mMaxProgress);
+    nsCOMPtr<nsIWebProgressListener> listener = mListener;
+    listener->OnProgressChange(nullptr, nullptr, 0, 0, (int32_t)mCurProgress,
+                               (int32_t)mMaxProgress);
   }
 }
 
 void nsBrowserStatusFilter::MaybeSendStatus() {
   if (mStatusIsDirty) {
-    mListener->OnStatusChange(nullptr, nullptr, NS_OK, mStatusMsg.get());
+    nsCOMPtr<nsIWebProgressListener> listener = mListener;
+    listener->OnStatusChange(nullptr, nullptr, NS_OK, mStatusMsg.get());
     mCurrentStatusMsg = mStatusMsg;
     mStatusIsDirty = false;
   }
@@ -342,13 +347,14 @@ void nsBrowserStatusFilter::CallDelayedProgressListeners() {
 
   if (mDelayedProgress) {
     mDelayedProgress = false;
-    MaybeSendProgress();
+    if (mListener) {
+      MaybeSendProgress();
+    }
   }
 }
 
 void nsBrowserStatusFilter::TimeoutHandler(nsITimer* aTimer, void* aClosure) {
-  nsBrowserStatusFilter* self =
-      reinterpret_cast<nsBrowserStatusFilter*>(aClosure);
+  RefPtr self = static_cast<nsBrowserStatusFilter*>(aClosure);
   if (!self) {
     NS_ERROR("no self");
     return;
