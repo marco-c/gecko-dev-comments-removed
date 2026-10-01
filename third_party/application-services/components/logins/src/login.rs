@@ -281,8 +281,7 @@
 
 
 
-use crate::{error::*, util::sanitize_timestamp};
-use db_crypto::EncryptorDecryptor;
+use crate::{encryption::EncryptorDecryptor, error::*, util::sanitize_timestamp};
 use rusqlite::Row;
 use serde_derive::*;
 use sync_guid::Guid;
@@ -987,11 +986,10 @@ impl ValidateAndFixup for LoginEntry {
     }
 }
 
-#[cfg(not(feature = "keydb"))]
 #[cfg(test)]
 pub mod test_utils {
     use super::*;
-    use crate::test_utils::encrypt_struct;
+    use crate::encryption::test_utils::encrypt_struct;
 
     
     

@@ -25,8 +25,6 @@ impl Environment {
     pub fn into_url(self, path: &str) -> Url {
         let mut url = self.base_url();
         url.path_segments_mut()
-            
-            
             .expect("base URL must be hierarchical")
             .pop_if_empty()
             .extend(path.split('/').filter(|segment| !segment.is_empty()));

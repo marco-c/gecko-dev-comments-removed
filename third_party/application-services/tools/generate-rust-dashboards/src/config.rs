@@ -69,12 +69,6 @@ pub struct CounterMetric {
     pub metric: &'static str,
     
     pub applications: Vec<Application>,
-    pub options: CounterOptions,
-}
-
-#[derive(Default)]
-pub struct CounterOptions {
-    pub unique_user_counts: bool,
 }
 
 
@@ -91,15 +85,6 @@ pub struct LabeledCounterMetric {
     pub metric: &'static str,
     
     pub applications: Vec<Application>,
-    pub options: LabeledCounterOptions,
-}
-
-#[derive(Default)]
-pub struct LabeledCounterOptions {
-    pub unique_user_counts: bool,
-    
-    
-    pub labels: Option<Vec<String>>,
 }
 
 
@@ -184,12 +169,6 @@ pub struct EventsMetric {
     pub metrics: Vec<&'static str>,
     
     pub applications: Vec<Application>,
-    pub options: EventsOptions,
-}
-
-#[derive(Default)]
-pub struct EventsOptions {
-    pub unique_user_counts: bool,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

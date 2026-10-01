@@ -5,7 +5,7 @@
 
 
 
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Default)]
 pub struct Query {
     pub select: Vec<String>,
     pub from: String,

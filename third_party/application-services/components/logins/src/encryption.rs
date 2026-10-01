@@ -112,20 +112,20 @@ impl EncryptorDecryptor for ManagedEncryptorDecryptor {
         let keybytes = self
             .key_manager
             .get_key()
-            .map_err(|_| DbCryptoApiError::MissingKey)?;
-        let key = std::str::from_utf8(&keybytes).map_err(|_| DbCryptoApiError::InvalidKey)?;
+            .map_err(|_| LoginsApiError::MissingKey)?;
+        let key = std::str::from_utf8(&keybytes).map_err(|_| LoginsApiError::InvalidKey)?;
 
         let encdec = jwcrypto::EncryptorDecryptor::new(key)
-            .map_err(|_: jwcrypto::JwCryptoError| DbCryptoApiError::InvalidKey)?;
+            .map_err(|_: jwcrypto::JwCryptoError| LoginsApiError::InvalidKey)?;
 
         let cleartext =
-            std::str::from_utf8(&clearbytes).map_err(|e| DbCryptoApiError::EncryptionFailed {
+            std::str::from_utf8(&clearbytes).map_err(|e| LoginsApiError::EncryptionFailed {
                 reason: e.to_string(),
             })?;
         encdec
             .encrypt(cleartext)
             .map_err(
-                |e: jwcrypto::JwCryptoError| DbCryptoApiError::EncryptionFailed {
+                |e: jwcrypto::JwCryptoError| LoginsApiError::EncryptionFailed {
                     reason: e.to_string(),
                 },
             )
@@ -136,20 +136,20 @@ impl EncryptorDecryptor for ManagedEncryptorDecryptor {
         let keybytes = self
             .key_manager
             .get_key()
-            .map_err(|_| DbCryptoApiError::MissingKey)?;
-        let key = std::str::from_utf8(&keybytes).map_err(|_| DbCryptoApiError::InvalidKey)?;
+            .map_err(|_| LoginsApiError::MissingKey)?;
+        let key = std::str::from_utf8(&keybytes).map_err(|_| LoginsApiError::InvalidKey)?;
 
         let encdec = jwcrypto::EncryptorDecryptor::new(key)
-            .map_err(|_: jwcrypto::JwCryptoError| DbCryptoApiError::InvalidKey)?;
+            .map_err(|_: jwcrypto::JwCryptoError| LoginsApiError::InvalidKey)?;
 
         let ciphertext =
-            std::str::from_utf8(&cipherbytes).map_err(|e| DbCryptoApiError::DecryptionFailed {
+            std::str::from_utf8(&cipherbytes).map_err(|e| LoginsApiError::DecryptionFailed {
                 reason: e.to_string(),
             })?;
         encdec
             .decrypt(ciphertext)
             .map_err(
-                |e: jwcrypto::JwCryptoError| DbCryptoApiError::DecryptionFailed {
+                |e: jwcrypto::JwCryptoError| LoginsApiError::DecryptionFailed {
                     reason: e.to_string(),
                 },
             )
@@ -242,7 +242,6 @@ pub trait PrimaryPasswordAuthenticator: Send + Sync {
 #[cfg(feature = "keydb")]
 #[derive(uniffi::Object)]
 pub struct NSSKeyManager {
-    key_name: String,
     primary_password_authenticator: Arc<dyn PrimaryPasswordAuthenticator>,
     cached_key: RwLock<Option<Vec<u8>>>,
 }
@@ -254,13 +253,9 @@ impl NSSKeyManager {
     
     
     #[uniffi::constructor()]
-    pub fn new(
-        key_name: String,
-        primary_password_authenticator: Arc<dyn PrimaryPasswordAuthenticator>,
-    ) -> Self {
+    pub fn new(primary_password_authenticator: Arc<dyn PrimaryPasswordAuthenticator>) -> Self {
         assert_nss_initialized();
         Self {
-            key_name,
             primary_password_authenticator,
             cached_key: RwLock::new(None),
         }
@@ -273,9 +268,13 @@ impl NSSKeyManager {
 
 
 #[cfg(feature = "keydb")]
+static KEY_NAME: &str = "as-logins-key";
+
+
+#[cfg(feature = "keydb")]
 fn api_authentication_with_primary_password_is_needed() -> ApiResult<bool> {
     authentication_with_primary_password_is_needed().map_err(|e: nss_as::Error| {
-        DbCryptoApiError::NSSAuthenticationError {
+        LoginsApiError::NSSAuthenticationError {
             reason: e.to_string(),
         }
     })
@@ -285,7 +284,7 @@ fn api_authentication_with_primary_password_is_needed() -> ApiResult<bool> {
 #[cfg(feature = "keydb")]
 fn api_authenticate_with_primary_password(primary_password: &str) -> ApiResult<bool> {
     authenticate_with_primary_password(primary_password).map_err(|e: nss_as::Error| {
-        DbCryptoApiError::NSSAuthenticationError {
+        LoginsApiError::NSSAuthenticationError {
             reason: e.to_string(),
         }
     })
@@ -330,8 +329,7 @@ impl KeyManager for NSSKeyManager {
             return Ok(bytes);
         }
 
-        let key = get_or_create_aes256_key(self.key_name.as_str())
-            .map_err(|_| DbCryptoApiError::MissingKey)?;
+        let key = get_or_create_aes256_key(KEY_NAME).map_err(|_| LoginsApiError::MissingKey)?;
         let mut bytes: Vec<u8> = Vec::new();
         serde_json::to_writer(
             &mut bytes,
@@ -350,13 +348,34 @@ pub fn create_canary(text: &str, key: &str) -> ApiResult<String> {
 
 pub fn check_canary(canary: &str, text: &str, key: &str) -> ApiResult<bool> {
     let encdec = jwcrypto::EncryptorDecryptor::new(key)
-        .map_err(|_: jwcrypto::JwCryptoError| DbCryptoApiError::InvalidKey)?;
+        .map_err(|_: jwcrypto::JwCryptoError| LoginsApiError::InvalidKey)?;
     Ok(encdec.check_canary(canary, text).unwrap_or(false))
 }
 
 #[handle_error(Error)]
 pub fn create_key() -> ApiResult<String> {
     Ok(jwcrypto::EncryptorDecryptor::create_key()?)
+}
+
+#[cfg(test)]
+pub mod test_utils {
+    use super::*;
+    use serde::{de::DeserializeOwned, Serialize};
+
+    lazy_static::lazy_static! {
+        pub static ref TEST_ENCRYPTION_KEY: String = serde_json::to_string(&jwcrypto::Jwk::new_direct_key(Some("test-key".to_string())).unwrap()).unwrap();
+        pub static ref TEST_ENCDEC: Arc<ManagedEncryptorDecryptor> = Arc::new(ManagedEncryptorDecryptor::new(Arc::new(StaticKeyManager { key: TEST_ENCRYPTION_KEY.clone() })));
+    }
+
+    pub fn encrypt_struct<T: Serialize>(fields: &T) -> String {
+        let string = serde_json::to_string(fields).unwrap();
+        let cipherbytes = TEST_ENCDEC.encrypt(string.as_bytes().into()).unwrap();
+        std::str::from_utf8(&cipherbytes).unwrap().to_owned()
+    }
+    pub fn decrypt_struct<T: DeserializeOwned>(ciphertext: String) -> T {
+        let jsonbytes = TEST_ENCDEC.decrypt(ciphertext.as_bytes().into()).unwrap();
+        serde_json::from_str(std::str::from_utf8(&jsonbytes).unwrap()).unwrap()
+    }
 }
 
 #[cfg(not(feature = "keydb"))]
@@ -382,7 +401,7 @@ mod tests {
         let encdec = ManagedEncryptorDecryptor { key_manager };
         assert!(matches!(
             encdec.encrypt("secret".as_bytes().into()).err().unwrap(),
-            DbCryptoApiError::InvalidKey
+            LoginsApiError::InvalidKey
         ));
     }
 
@@ -392,14 +411,14 @@ mod tests {
         struct MyKeyManager {}
         impl KeyManager for MyKeyManager {
             fn get_key(&self) -> ApiResult<Vec<u8>> {
-                Err(DbCryptoApiError::MissingKey)
+                Err(LoginsApiError::MissingKey)
             }
         }
         let key_manager = Arc::new(MyKeyManager {});
         let encdec = ManagedEncryptorDecryptor { key_manager };
         assert!(matches!(
             encdec.encrypt("secret".as_bytes().into()).err().unwrap(),
-            DbCryptoApiError::MissingKey
+            LoginsApiError::MissingKey
         ));
     }
 
@@ -448,7 +467,7 @@ mod tests {
         let bad_key = "bad_key".to_owned();
         assert!(matches!(
             check_canary(&canary, CANARY_TEXT, &bad_key).err().unwrap(),
-            DbCryptoApiError::InvalidKey
+            LoginsApiError::InvalidKey
         ));
     }
 }
@@ -479,7 +498,7 @@ mod tests_keydb {
 
     fn profile_path() -> PathBuf {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../rc_crypto/nss/fixtures/profile")
+            .join("../support/rc_crypto/nss/fixtures/profile")
     }
 
     #[test]
@@ -501,10 +520,7 @@ mod tests_keydb {
         let mock_primary_password_authenticator = MockPrimaryPasswordAuthenticator {
             password: "password".to_string(),
         };
-        let nss_key_manager = NSSKeyManager::new(
-            String::from("as-logins-key"),
-            Arc::new(mock_primary_password_authenticator),
-        );
+        let nss_key_manager = NSSKeyManager::new(Arc::new(mock_primary_password_authenticator));
         
         let expected = [
             123, 34, 107, 116, 121, 34, 58, 34, 111, 99, 116, 34, 44, 34, 107, 34, 58, 34, 66, 74,
@@ -520,13 +536,9 @@ mod tests_keydb {
     fn test_nss_key_manager_caching() {
         ensure_initialized_with_profile_dir(profile_path());
         
-        let mock_primary_password_authenticator = MockPrimaryPasswordAuthenticator {
+        let nss_key_manager = NSSKeyManager::new(Arc::new(MockPrimaryPasswordAuthenticator {
             password: "password".to_string(),
-        };
-        let nss_key_manager = NSSKeyManager::new(
-            String::from("as-logins-key"),
-            Arc::new(mock_primary_password_authenticator),
-        );
+        }));
 
         let key = nss_key_manager.get_key().unwrap();
         assert_eq!(*nss_key_manager.cached_key.read(), Some(key.clone()));

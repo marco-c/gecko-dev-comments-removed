@@ -7,12 +7,12 @@
 
 
 
+use crate::encryption::EncryptorDecryptor;
 use crate::error::*;
 use crate::login::ValidateAndFixup;
 use crate::util::sanitize_timestamp;
 use crate::SecureLoginFields;
 use crate::{EncryptedLogin, LoginEntry, LoginFields, LoginMeta};
-use db_crypto::EncryptorDecryptor;
 use serde_derive::*;
 use sync15::bso::OutgoingBso;
 use sync_guid::Guid;
@@ -245,8 +245,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::encryption::test_utils::{encrypt_struct, TEST_ENCDEC};
     use crate::sync::merge::SyncLoginData;
-    use crate::test_utils::{encrypt_struct, TEST_ENCDEC};
     use crate::{EncryptedLogin, LoginFields, LoginMeta, SecureLoginFields};
     use sync15::bso::IncomingBso;
 
