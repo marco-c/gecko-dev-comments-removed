@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_JSEventHandler_h_
 #define mozilla_JSEventHandler_h_
 
@@ -56,6 +54,8 @@ class TypedEventHandler {
   }
 
   ~TypedEventHandler() { ReleaseHandler(); }
+
+  void operator=(const TypedEventHandler&) = delete;
 
   HandlerType Type() const { return HandlerType(mBits & eTypeBits); }
 
@@ -119,8 +119,6 @@ class TypedEventHandler {
   }
 
  private:
-  void operator=(const TypedEventHandler&) = delete;
-
   void ReleaseHandler() {
     nsISupports* ptr = Ptr();
     NS_IF_RELEASE(ptr);
