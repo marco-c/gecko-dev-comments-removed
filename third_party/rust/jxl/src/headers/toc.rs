@@ -85,6 +85,18 @@ impl IncrementalTocReader {
     }
 
     fn read_permutation(&mut self, br: &mut BitReader) -> Result<()> {
+        
+        
+        
+        if self.permuted {
+            
+            const MIN_BITS_PER_ENTRY: usize = 2 + 10;
+            let needed = (self.num_entries as usize).saturating_mul(MIN_BITS_PER_ENTRY);
+            let available = br.total_bits_available();
+            if needed > available {
+                return Err(Error::OutOfBounds((needed - available).div_ceil(8)));
+            }
+        }
         let permutation = Permutation::read_unconditional(
             &(),
             br,
