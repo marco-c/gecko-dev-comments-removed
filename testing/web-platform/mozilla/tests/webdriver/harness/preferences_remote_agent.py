@@ -1,21 +1,25 @@
 from support.helpers import read_user_preferences
 from tests.support.sync import Poll
 
+RECOMMENDED_PREF = "remote.prefs.recommended.applied"
 
-def test_remote_agent_recommended_preferences_applied(browser):
+
+def test_remote_agent_recommended_preferences_not_persisted(browser):
     
     
     current_browser = browser(use_bidi=True)
 
-    def pref_is_set(_):
+    def pref_is_persisted(_):
         preferences = read_user_preferences(current_browser.profile.profile, "prefs.js")
-        return preferences.get("remote.prefs.recommended.applied", False)
+        return RECOMMENDED_PREF in preferences
 
     
-    wait = Poll(
-        None,
-        timeout=5,
-        ignored_exceptions=IOError,
-        message="""Preference "remote.prefs.recommended.applied" is not true""",
+    
+    
+    
+    
+    wait = Poll(None, timeout=5, ignored_exceptions=IOError, raises=None)
+
+    assert not wait.until(pref_is_persisted), (
+        f'Preference "{RECOMMENDED_PREF}" was written to prefs.js'
     )
-    wait.until(pref_is_set)
