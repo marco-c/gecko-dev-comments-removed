@@ -1437,6 +1437,33 @@
 
 
 
+
+
+
+
+
+
+
+
+        create_window: function(type=null, context=null) {
+            return window.test_driver_internal.create_window(type, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         minimize_window: function(context=null) {
             return window.test_driver_internal.minimize_window(context);
         },
@@ -2642,6 +2669,10 @@
 
         async freeze(context=null) {
             throw new Error("freeze() is not implemented by testdriver-vendor.js");
+        },
+
+        async create_window(type=null, context=null) {
+            throw new Error("create_window() is not implemented by testdriver-vendor.js");
         },
 
         async minimize_window(context=null) {
