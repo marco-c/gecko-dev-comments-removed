@@ -205,14 +205,25 @@ void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
       continue;
     }
 
+    nsCOMPtr<nsIURI> candidateUri;
+    if (NS_FAILED(NS_NewURI(getter_AddRefs(candidateUri), candidate.url))) {
+      continue;
+    }
+
+    nsIURI* documentUri = mDocument->GetDocumentURI();
+    if (bool equals = false;
+        documentUri &&
+        NS_SUCCEEDED(documentUri->EqualsExceptRef(candidateUri, &equals)) &&
+        equals) {
+      continue;
+    }
+
     if (aURL) {
       
       
       
-      nsCOMPtr<nsIURI> uri;
       bool equals = false;
-      if (NS_FAILED(NS_NewURI(getter_AddRefs(uri), candidate.url)) ||
-          NS_FAILED(aURL->Equals(uri, &equals)) || !equals) {
+      if (NS_FAILED(aURL->Equals(candidateUri, &equals)) || !equals) {
         continue;
       }
     }
