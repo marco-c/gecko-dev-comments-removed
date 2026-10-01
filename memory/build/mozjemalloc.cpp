@@ -464,13 +464,11 @@ class ArenaCollection {
 
     
     
-    bool previous;
     {
       MutexAutoLock lock(mLock);
-      previous = mIsDeferredPurgeEnabled;
-      if (previous == aEnable) {
+      if (mIsDeferredPurgeEnabled == aEnable) {
         
-        return previous;
+        return aEnable;
       }
 
       mIsDeferredPurgeEnabled = aEnable;
@@ -482,7 +480,7 @@ class ArenaCollection {
 
     MayPurgeAll(PurgeIfThreshold, __func__);
 
-    return previous;
+    return aEnable;
   }
 
   bool IsDeferredPurgeEnabled() MOZ_REQUIRES(mLock) {
