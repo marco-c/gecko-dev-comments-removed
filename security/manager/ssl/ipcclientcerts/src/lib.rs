@@ -6,7 +6,7 @@
 
 use log::{debug, error, trace};
 use pkcs11_bindings::*;
-use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};
+use rsclientcerts::manager::Manager;
 use rsclientcerts::{
     declare_pkcs11_find_functions, declare_pkcs11_informational_functions,
     declare_pkcs11_pin_functions, declare_pkcs11_session_functions, declare_pkcs11_sign_functions,
@@ -21,7 +21,7 @@ use backend::Backend;
 
 
 
-static MANAGER: Mutex<Option<Manager<Backend, IsGeckoSearchingForClientCerts>>> = Mutex::new(None);
+static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
 
 
 
@@ -46,18 +46,6 @@ macro_rules! manager_guard_to_manager {
             None => return CKR_DEVICE_ERROR,
         }
     };
-}
-
-extern "C" {
-    fn IsGeckoSearchingForClientAuthCertificates() -> bool;
-}
-
-struct IsGeckoSearchingForClientCerts;
-
-impl IsSearchingForClientCerts for IsGeckoSearchingForClientCerts {
-    fn is_searching_for_client_certs() -> bool {
-        unsafe { IsGeckoSearchingForClientAuthCertificates() }
-    }
 }
 
 
