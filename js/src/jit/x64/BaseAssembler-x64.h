@@ -971,6 +971,20 @@ class BaseAssemblerX64 : public BaseAssembler {
 
   
 
+  void rdsspq_r(RegisterID dst) {
+    spew(currentOffset(), "rdsspq     %s", GPReg64Name(dst));
+    m_formatter.prefix(PRE_REP);
+    m_formatter.twoByteOp64(OP2_RDSSP, dst, GROUP21_OP_RDSSP);
+  }
+
+  void incsspq_r(RegisterID src) {
+    spew(currentOffset(), "incsspq    %s", GPReg64Name(src));
+    m_formatter.prefix(PRE_REP);
+    m_formatter.twoByteOp64(OP2_INCSSP, src, GROUP15_OP_INCSSP);
+  }
+
+  
+
   void vcvtsq2sd_rr(RegisterID src1, XMMRegisterID src0, XMMRegisterID dst) {
     twoByteOpInt64Simd("vcvtsi2sd", VEX_SD, OP2_CVTSI2SD_VsdEd, src1, src0,
                        dst);
