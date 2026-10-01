@@ -6827,6 +6827,112 @@ interface TextFormatUpdateEventInit extends EventInit {
     textFormats?: TextFormat[];
 }
 
+interface TextGenerationLogitBias {
+    
+    bias: number;
+    
+    token: number;
+}
+
+interface TextGenerationMessage {
+    
+    content: string;
+    
+    role: TextGenerationRole;
+}
+
+interface TextGenerationRequest {
+    
+    bufferLength?: number;
+    
+    maxTokens?: number;
+    
+    messages: TextGenerationMessage[];
+    
+    samplers?: TextGenerationSampler[];
+    
+    stopOnEndOfGenerationTokens?: boolean;
+    
+    stopTokens?: number[];
+}
+
+interface TextGenerationResourceSnapshot {
+    
+    cpuTimeMs: number;
+    
+    memoryBytes: number;
+}
+
+interface TextGenerationResources {
+    
+    after: TextGenerationResourceSnapshot;
+    
+    before: TextGenerationResourceSnapshot;
+}
+
+interface TextGenerationResult {
+    
+    content: string;
+    
+    reason: TextGenerationFinishReason;
+    
+    resources: TextGenerationResources;
+    
+    usage: TextGenerationUsage;
+}
+
+interface TextGenerationSampler {
+    
+    logitBias?: TextGenerationLogitBias[];
+    
+    seed?: number;
+    
+    temp?: number;
+    
+    topK?: number;
+    
+    topP?: number;
+    
+    type: TextGenerationSamplerType;
+}
+
+interface TextGenerationTimings {
+    
+    decodeMs: number;
+    
+    prefillMs: number;
+}
+
+interface TextGenerationUsage {
+    
+    generatedTokens: number;
+    
+    promptCharacters: number;
+    
+    promptTokens: number;
+    
+    timings: TextGenerationTimings;
+}
+
+interface TextGeneratorCreateOptions {
+    
+    batchSize?: number;
+    
+    contextSize?: number;
+    
+    featureId?: string;
+    
+    flashAttn?: boolean;
+    
+    kvCacheDtype?: TextGenerationKVCacheDtype;
+    
+    numThreads?: number;
+    
+    numThreadsDecoding?: number;
+    
+    ubatchSize?: number;
+}
+
 interface TextUpdateEventInit extends EventInit {
     
     selectionEnd?: number;
@@ -34649,6 +34755,27 @@ declare var TextFormatUpdateEvent: {
 };
 
 
+interface TextGenerator {
+    
+    cancel(): void;
+    
+    clear(): void;
+    
+    generate(request: TextGenerationRequest, onDelta?: TextGenerationDeltaCallback): Promise<TextGenerationResult>;
+    
+    terminate(): void;
+}
+
+declare var TextGenerator: {
+    prototype: TextGenerator;
+    new(): TextGenerator;
+    
+    isInstance: IsInstance<TextGenerator>;
+    
+    create(model: Blob, options?: TextGeneratorCreateOptions): Promise<TextGenerator>;
+};
+
+
 interface TextMetrics {
     
     readonly actualBoundingBoxAscent: number;
@@ -43608,6 +43735,11 @@ interface TestThrowingCallback {
     (): void;
 }
 
+interface TextGenerationDeltaCallback {
+    
+    (text: string): void;
+}
+
 interface ToolExecuteCallback {
     
     (input: any, client: ModelContextClient): any;
@@ -45023,6 +45155,10 @@ type TCPReadyState = "closed" | "closing" | "connecting" | "open";
 type TCPSocketBinaryType = "arraybuffer" | "string";
 type TaskPriority = "background" | "user-blocking" | "user-visible";
 type TensorDataLocation = "cpu" | "cpu-pinned" | "gpu-buffer" | "ml-tensor" | "none" | "texture";
+type TextGenerationFinishReason = "cancelled" | "eos" | "length" | "stop-token";
+type TextGenerationKVCacheDtype = "f16" | "f32" | "q4_0" | "q4_1" | "q5_0" | "q5_1" | "q8_0";
+type TextGenerationRole = "assistant" | "system" | "user";
+type TextGenerationSamplerType = "dist" | "logit-bias" | "temperature" | "top-k" | "top-p";
 type TextTrackKind = "captions" | "chapters" | "descriptions" | "metadata" | "subtitles";
 type TextTrackMode = "disabled" | "hidden" | "showing";
 type TouchEventsOverride = "disabled" | "enabled" | "none";
