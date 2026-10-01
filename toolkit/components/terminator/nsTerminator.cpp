@@ -43,7 +43,6 @@
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/UniquePtr.h"
 
 #include "mozilla/dom/workerinternals/RuntimeService.h"
 
@@ -145,12 +144,10 @@ PRThread* CreateSystemThread(void (*start)(void* arg), void* arg) {
 
 Atomic<uint32_t> gHeartbeat(0);
 
-struct Options {
-  
 
 
-  uint32_t crashAfterTicks;
-};
+
+Atomic<uint32_t> gCrashAfterTicks(0);
 
 
 
@@ -208,16 +205,9 @@ void MaybeSaveShutdownHangProfile() {
 
 
 
-void RunWatchdog(void* arg) {
+void RunWatchdog(void*) {
   NS_SetCurrentThreadName("Shutdown Hang Terminator");
 
-  
-  
-  UniquePtr<Options> options((Options*)arg);
-  uint32_t crashAfterTicks = options->crashAfterTicks;
-  options = nullptr;
-
-  const uint32_t timeToLive = crashAfterTicks;
   while (true) {
     
     
@@ -235,7 +225,7 @@ void RunWatchdog(void* arg) {
     usleep(HEARTBEAT_INTERVAL_MS * 1000 );
 #endif
 
-    if (gHeartbeat++ < timeToLive) {
+    if (gHeartbeat++ < gCrashAfterTicks) {
       continue;
     }
 
@@ -400,12 +390,11 @@ void nsTerminator::StartWatchdog() {
   }
 #endif
 
-  UniquePtr<Options> options(new Options());
   
-  options->crashAfterTicks = std::max(1, crashAfterMS / HEARTBEAT_INTERVAL_MS);
+  gCrashAfterTicks = std::max(1, crashAfterMS / HEARTBEAT_INTERVAL_MS);
 
   DebugOnly<PRThread*> watchdogThread =
-      CreateSystemThread(RunWatchdog, options.release());
+      CreateSystemThread(RunWatchdog, nullptr);
   MOZ_ASSERT(watchdogThread);
 }
 
@@ -473,5 +462,12 @@ nsTerminator::GetTicksForShutdownPhases(JSContext* aCx,
   }
 
   return NS_OK;
-}  
+}
+
+NS_IMETHODIMP
+nsTerminator::SetTicksBeforeCrash(uint32_t aTicks) {
+  gCrashAfterTicks = aTicks;
+  return NS_OK;
+}
+
 }  

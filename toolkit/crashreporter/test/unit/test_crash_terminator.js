@@ -7,7 +7,6 @@
 
 function setup_crash() {
   Services.prefs.setBoolPref("toolkit.terminator.testing", true);
-  Services.prefs.setIntPref("toolkit.asyncshutdown.crash_timeout", 150);
 
   
   
@@ -22,6 +21,10 @@ function setup_crash() {
   terminator.observe(null, "terminator-test-profile-before-change", null);
   terminator.observe(null, "terminator-test-xpcom-will-shutdown", null);
 
+  
+  
+  terminator.QueryInterface(Ci.nsITerminatorTest).setTicksBeforeCrash(1);
+
   dump("Waiting (actively) for the crash\n");
   Services.tm.spinEventLoopUntil(
     "Test(test_crash_terminator.js:setup_crash())",
@@ -32,6 +35,13 @@ function setup_crash() {
 function after_crash(mdump, extra) {
   info("Crash signature: " + JSON.stringify(extra, null, "\t"));
   Assert.equal(extra.ShutdownProgress, "xpcom-will-shutdown");
+  
+  
+  Assert.stringMatches(
+    extra.MozCrashReason,
+    /Shutdown hanging at step/,
+    "The terminator watchdog is what crashed us"
+  );
 }
 
 add_task(async function run_test() {
