@@ -7,6 +7,11 @@
 const { AutoTabGroupingSuggestions } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs"
 );
+const { NimbusTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
+
+NimbusTestUtils.init(this);
 
 function makeTab({
   url = "https://example.com/",
@@ -45,6 +50,7 @@ function makeCluster(size, cohesion = 0.5) {
 }
 
 add_setup(function () {
+  do_get_profile();
   Services.prefs.setIntPref(
     "browser.smartwindow.autoTabGrouping.minTabsPerGroup",
     2
@@ -404,4 +410,45 @@ add_task(function test_hasEnoughMemory_respectsThreshold() {
     AutoTabGroupingSuggestions.hasEnoughMemory,
     "Turning off the platform memory check turns off this one too"
   );
+});
+
+add_task(async function test_nimbus_overwrites_atg_prefs() {
+  
+  
+  
+  
+  const PREF_MIN_CANDIDATE_TABS =
+    "browser.smartwindow.autoTabGrouping.minCandidateTabs";
+  const PREF_MIN_COHESION = "browser.smartwindow.autoTabGrouping.minCohesion";
+
+  const defaults = Services.prefs.getDefaultBranch("");
+  defaults.setIntPref(PREF_MIN_CANDIDATE_TABS, 2);
+  defaults.setCharPref(PREF_MIN_COHESION, "0.15");
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_MIN_CANDIDATE_TABS),
+    2,
+    "minCandidateTabs starts at its in-tree default"
+  );
+
+  const { cleanup } = await NimbusTestUtils.setupTest();
+  const unenroll = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "autoTabGrouping",
+    value: { minCandidateTabs: 5, minCohesion: "0.5" },
+  });
+
+  Assert.equal(
+    Services.prefs.getIntPref(PREF_MIN_CANDIDATE_TABS),
+    5,
+    "enrolling overwrites the int pref (minCandidateTabs)"
+  );
+  
+  
+  Assert.equal(
+    Services.prefs.getCharPref(PREF_MIN_COHESION),
+    "0.5",
+    "enrolling overwrites the float-as-string pref (minCohesion)"
+  );
+
+  await unenroll();
+  await cleanup();
 });
