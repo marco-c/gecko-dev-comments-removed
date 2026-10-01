@@ -2,7 +2,7 @@
 
 
 
-use crate::{AsProcessReaderHandle, Pid, IO_TIMEOUT};
+use crate::{AsProcessReaderHandle, AsRawThreadHandle, FromRawThreadHandle, Pid, IO_TIMEOUT};
 use std::{
     ffi::{CStr, CString, OsString},
     mem::{zeroed, MaybeUninit},
@@ -90,6 +90,24 @@ impl AsProcessReaderHandle for ProcessHandle {
 impl Clone for ProcessHandle {
     fn clone(&self) -> Self {
         ProcessHandle(self.0.try_clone().unwrap())
+    }
+}
+
+
+
+pub type RawThreadHandle = i32;
+#[repr(transparent)]
+pub struct ThreadHandle(pub i32);
+
+impl AsRawThreadHandle for ThreadHandle {
+    fn as_raw_handle(&self) -> RawThreadHandle {
+        self.0
+    }
+}
+
+impl FromRawThreadHandle for ThreadHandle {
+    unsafe fn from_raw_handle(handle: RawThreadHandle) -> ThreadHandle {
+        ThreadHandle(handle)
     }
 }
 
