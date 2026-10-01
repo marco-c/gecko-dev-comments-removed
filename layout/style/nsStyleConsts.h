@@ -310,13 +310,6 @@ enum class StyleTextSizeAdjust : uint8_t {
 };
 
 
-enum class StyleTextOrientation : uint8_t {
-  Mixed,
-  Upright,
-  Sideways,
-};
-
-
 enum class StyleTextCombineUpright : uint8_t {
   None,
   All,
