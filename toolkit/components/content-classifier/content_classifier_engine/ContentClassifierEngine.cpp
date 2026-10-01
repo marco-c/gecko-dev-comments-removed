@@ -5,6 +5,7 @@
 #include "mozilla/ContentClassifierEngine.h"
 #include "ContentClassifierFeatureUtils.h"
 #include "ContentClassifierService.h"
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIEffectiveTLDService.h"
@@ -116,8 +117,6 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
 
   mIsNonRecommendedAddon = IsNonRecommendedAddonFromLoadInfo(loadInfo);
 
-  mValid = true;
-
   
   
   
@@ -167,12 +166,23 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   
   nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();
   if (loadingPrincipal) {
-    if (NS_FAILED(nsContentUtils::GetHostOrIPv6WithBrackets(loadingPrincipal,
-                                                            mSourceHostname))) {
+    
+    
+    
+    
+    
+    if (loadingPrincipal->IsSystemPrincipal() ||
+        loadingPrincipal->GetIsExpandedPrincipal()) {
       mSourceHostname.Truncate();
+      mSourceSchemelessSite.Truncate();
+    } else {
+      rv = nsContentUtils::GetHostOrIPv6WithBrackets(loadingPrincipal,
+                                                     mSourceHostname);
+      if (NS_FAILED(rv)) return;
+
+      rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
+      if (NS_FAILED(rv)) return;
     }
-    rv = loadingPrincipal->GetBaseDomain(mSourceSchemelessSite);
-    if (NS_FAILED(rv)) return;
   }
 
   
@@ -182,6 +192,8 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   
   mThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
   mThirdPartyToSource = !mSchemelessSite.Equals(mSourceSchemelessSite);
+
+  mValid = true;
 }
 
 static bool IsValidRequestType(const nsACString& aRequestType) {
