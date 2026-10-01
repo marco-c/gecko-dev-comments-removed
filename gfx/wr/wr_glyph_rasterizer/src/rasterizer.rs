@@ -1727,7 +1727,43 @@ pub type GlyphRasterResult = Result<RasterizedGlyph, GlyphRasterError>;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuGlyphCacheKey(pub u32);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const GLYPH_DIMENSION_LIMIT: i32 = 2048;
+
+
+
+fn rasterize_glyph_bounded(
+    context: &mut FontContext,
+    font: &FontInstance,
+    key: &GlyphKey,
+) -> GlyphRasterResult {
+    let glyph = context.rasterize_glyph(font, key)?;
+
+    if glyph.width > GLYPH_DIMENSION_LIMIT || glyph.height > GLYPH_DIMENSION_LIMIT {
+        return Err(GlyphRasterError::LoadFailed);
+    }
+
+    Ok(glyph)
+}
+
 fn pack_glyph_variants_horizontal(variants: &[RasterizedGlyph]) -> RasterizedGlyph {
+    
+    
     
     
     
@@ -1802,7 +1838,7 @@ fn process_glyph(
     let subpx_dir = key.subpixel_dir();
 
     let result = if subpx_dir == SubpixelDirection::None {
-        context.rasterize_glyph(&font, &key)
+        rasterize_glyph_bounded(context, &font, &key)
     } else {
         let offsets = [
             SubpixelOffset::Zero,
@@ -1830,7 +1866,7 @@ fn process_glyph(
         for point in points {
             let variant_key = GlyphKey::new(key.index(), point, subpx_dir);
 
-            match context.rasterize_glyph(&font, &variant_key) {
+            match rasterize_glyph_bounded(context, &font, &variant_key) {
                 Ok(glyph) => variants.push(glyph),
                 Err(e) => return GlyphRasterJob {
                     font: font,
@@ -2097,6 +2133,71 @@ mod test_glyph_rasterizer {
             |_, _| {},
             &mut Profiler,
         );
+    }
+
+    #[test]
+    fn test_oversized_glyph_is_dropped() {
+        
+        
+        
+        use std::fs::File;
+        use std::io::Read;
+        use api::{FontKey, FontInstanceKey, IdNamespace};
+        use api::units::DevicePoint;
+        use std::sync::Arc;
+        use crate::rasterizer::{BaseFontInstance, FontInstance, GlyphKey, GlyphRasterError,
+                                SubpixelDirection, rasterize_glyph_bounded,
+                                GLYPH_DIMENSION_LIMIT};
+        use crate::platform::font::FontContext;
+
+        let mut font_file =
+            File::open("../wrench/reftests/text/VeraBd.ttf").expect("Couldn't open font file");
+        let mut font_data = vec![];
+        font_file.read_to_end(&mut font_data).unwrap();
+
+        let font_key = FontKey::new(IdNamespace(0), 0);
+        let mut context = FontContext::new();
+        context.add_raw_font(&font_key, Arc::new(font_data), 0);
+
+        let instance = |size: f32| {
+            FontInstance::from_base(Arc::new(BaseFontInstance::new(
+                FontInstanceKey::new(IdNamespace(0), 0),
+                font_key,
+                size,
+                None,
+                None,
+                Vec::new(),
+            )))
+        };
+        let key = GlyphKey::new(36, DevicePoint::zero(), SubpixelDirection::None);
+
+        
+        let ordinary = rasterize_glyph_bounded(&mut context, &instance(32.0), &key).unwrap();
+        assert!(ordinary.width <= GLYPH_DIMENSION_LIMIT);
+        assert!(ordinary.height <= GLYPH_DIMENSION_LIMIT);
+
+        
+        
+        let oversized = instance(4000.0);
+        let raw = context.rasterize_glyph(&oversized, &key)
+                         .expect("backend should rasterize an oversized glyph");
+        assert!(raw.width > GLYPH_DIMENSION_LIMIT || raw.height > GLYPH_DIMENSION_LIMIT);
+
+        assert!(matches!(
+            rasterize_glyph_bounded(&mut context, &oversized, &key),
+            Err(GlyphRasterError::LoadFailed),
+        ));
+    }
+
+    #[test]
+    fn test_packed_glyph_entry_fits_i32() {
+        
+        
+        
+        use crate::rasterizer::GLYPH_DIMENSION_LIMIT;
+
+        let slot = GLYPH_DIMENSION_LIMIT as i64 + 1;
+        assert!(slot * 16 * slot * 4 < i32::MAX as i64);
     }
 
     #[test]
