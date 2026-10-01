@@ -183,34 +183,6 @@ async function populateWikipediaConfig() {
 
 const test = new SearchConfigTest([
   {
-    identifier: "amazondotcom-us",
-    default: {
-      
-    },
-    available: {
-      included: [
-        {
-          
-          regions: ["us"],
-        },
-      ],
-    },
-    details: [
-      {
-        domain: "amazon.com",
-        telemetryId: "amazondotcom-us-adm",
-        aliases: ["@amazon"],
-        included: [
-          {
-            regions: ["us"],
-          },
-        ],
-        noSuggestionsURL: true,
-        searchUrlCode: "tag=admarketus-20",
-      },
-    ],
-  },
-  {
     identifier: "baidu",
     aliases: ["@百度", "@baidu"],
     default: {
