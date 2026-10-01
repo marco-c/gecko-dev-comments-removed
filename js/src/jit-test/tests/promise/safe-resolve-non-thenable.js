@@ -1,8 +1,6 @@
 
 
 
-
-
 function observe(p) {
   let fulfilled = null, rejected = null;
   p.then(v => { fulfilled = {value: v}; },

@@ -7,8 +7,6 @@
 
 
 
-
-
 function measure(installResolution) {
   const {promise} = Promise.withResolvers();
 
