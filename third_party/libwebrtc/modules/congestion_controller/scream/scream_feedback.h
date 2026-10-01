@@ -13,6 +13,8 @@
 
 #include <stddef.h>
 
+#include <optional>
+
 #include "api/transport/network_types.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -39,19 +41,25 @@ struct ScreamFeedback {
 
   
   
-  TimeDelta min_one_way_delay = TimeDelta::PlusInfinity();
-  TimeDelta max_one_way_delay = TimeDelta::MinusInfinity();
+  struct DelayMetrics {
+    
+    
+    TimeDelta min_one_way_delay;
+    TimeDelta max_one_way_delay;
 
-  
-  
-  
-  TimeDelta feedback_hold_time = TimeDelta::Zero();
+    
+    
+    
+    TimeDelta feedback_hold_time;
 
-  
-  TimeDelta rtt_sample = TimeDelta::Zero();
+    
+    TimeDelta rtt_sample;
 
-  
-  Timestamp last_packet_receive_time = Timestamp::MinusInfinity();
+    
+    Timestamp last_packet_receive_time;
+  };
+
+  std::optional<DelayMetrics> delay_metrics;
 };
 
 

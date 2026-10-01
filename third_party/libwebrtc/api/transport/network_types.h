@@ -194,6 +194,12 @@ struct RTC_EXPORT PacketResult {
   bool reported_recovered_for_the_first_time = false;
 
   
+  
+  
+  
+  bool ambiguous_receive_time = false;
+
+  
   std::optional<RtpPacketInfo> rtp_packet_info;
 };
 
