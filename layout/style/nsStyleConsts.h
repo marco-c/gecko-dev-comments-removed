@@ -130,16 +130,6 @@ enum class ListStyle : uint8_t {
 };
 
 
-enum class StyleWhiteSpaceCollapse : uint8_t {
-  Collapse = 0,
-  
-  Preserve,
-  PreserveBreaks,
-  PreserveSpaces,
-  BreakSpaces,
-};
-
-
 
 }  
 
