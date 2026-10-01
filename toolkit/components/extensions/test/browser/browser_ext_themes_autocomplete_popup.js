@@ -21,11 +21,15 @@ const POPUP_TEXT_COLOR_BRIGHT = "#ffffff";
 const POPUP_SELECTED_COLOR = "#9400ff";
 const POPUP_SELECTED_TEXT_COLOR = "#09b9a6";
 
-const POPUP_URL_COLOR_DARK = novaEnabled ? "#3246b0" : "oklch(0.55 0.24 260)";
+
+
+const POPUP_URL_COLOR_DARK = novaEnabled ? "LinkText" : "oklch(0.55 0.24 260)";
 const POPUP_ACTION_COLOR_DARK = scotchBonnet
   ? POPUP_TEXT_COLOR_DARK
   : "#5b5b66";
-const POPUP_URL_COLOR_BRIGHT = novaEnabled ? "#4cc4e1" : "oklch(0.76 0.14 205)";
+const POPUP_URL_COLOR_BRIGHT = novaEnabled
+  ? "LinkText"
+  : "oklch(0.76 0.14 205)";
 const POPUP_ACTION_COLOR_BRIGHT = scotchBonnet
   ? POPUP_TEXT_COLOR_BRIGHT
   : "#bfbfc9";
@@ -37,11 +41,27 @@ ChromeUtils.defineESModuleGetters(this, {
   UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
 });
 
-function getComputedColorValue(color) {
+
+
+
+
+
+
+function getComputedColorValue(color, contextElement) {
   if (color.startsWith("oklch")) {
     return color;
   }
-  return `rgb(${hexToRGB(color).join(", ")})`;
+  if (color.startsWith("#")) {
+    return `rgb(${hexToRGB(color).join(", ")})`;
+  }
+  
+  
+  let probe = contextElement.ownerDocument.createElement("span");
+  probe.style.color = color;
+  contextElement.after(probe);
+  let computed = window.getComputedStyle(probe).color;
+  probe.remove();
+  return computed;
 }
 
 add_setup(async function () {
@@ -145,7 +165,7 @@ add_task(async function test_popup_url() {
 
   Assert.equal(
     window.getComputedStyle(urlResult.element.url).color,
-    getComputedColorValue(POPUP_URL_COLOR_DARK),
+    getComputedColorValue(POPUP_URL_COLOR_DARK, urlResult.element.url),
     `Urlbar popup url color should be set to ${POPUP_URL_COLOR_DARK}`
   );
 
@@ -184,7 +204,7 @@ add_task(async function test_popup_url() {
 
   Assert.equal(
     window.getComputedStyle(urlResult.element.url).color,
-    getComputedColorValue(POPUP_URL_COLOR_BRIGHT),
+    getComputedColorValue(POPUP_URL_COLOR_BRIGHT, urlResult.element.url),
     `Urlbar popup url color should be set to ${POPUP_URL_COLOR_BRIGHT}`
   );
 
