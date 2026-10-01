@@ -14,6 +14,7 @@
 namespace mozilla {
 class EncoderConfig;
 class MediaExtendedMIMEType;
+class TaskQueue;
 struct SupportDecoderParams;
 
 
@@ -33,6 +34,9 @@ SupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig);
 [[nodiscard]] RefPtr<PlatformDecoderModule::SupportsDecoderPromise>
 StrictSupportsVideoDecodeForWebrtc(const MediaExtendedMIMEType& aMime,
                                    const SupportDecoderParams& aParams);
+[[nodiscard]] RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+StrictSupportsVideoEncodeForWebrtc(const EncoderConfig& aConfig,
+                                   const RefPtr<TaskQueue>& aTaskQueue);
 
 
 

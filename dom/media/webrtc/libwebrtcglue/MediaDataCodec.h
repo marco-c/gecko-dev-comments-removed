@@ -51,6 +51,17 @@ class MediaDataCodec {
 
 
 
+
+
+
+  static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+  StrictSupportsEncoderCodec(const EncoderConfig& aConfig,
+                             const RefPtr<TaskQueue>& aTaskQueue);
+
+  
+
+
+
   static std::unique_ptr<WebrtcVideoEncoder> CreateEncoder(
       const webrtc::SdpVideoFormat& aFormat, HardwarePreference aHardwarePref);
 

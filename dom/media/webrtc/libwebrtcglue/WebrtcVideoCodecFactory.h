@@ -138,6 +138,14 @@ class WebrtcVideoEncoderFactory : public GmpPluginNotifierInterface,
   static RefPtr<PlatformEncoderModule::SupportsEncoderPromise> SupportsCodec(
       const EncoderConfig& aConfig);
 
+  
+  
+  
+  
+  static RefPtr<PlatformEncoderModule::SupportsEncoderPromise>
+  StrictSupportsCodec(const EncoderConfig& aConfig,
+                      const RefPtr<TaskQueue>& aTaskQueue);
+
   void DisconnectAll() override { mInternalFactory->DisconnectAll(); }
 
   MediaEventSource<uint64_t>& CreatedGmpPluginEvent() override {
