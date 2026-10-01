@@ -3664,6 +3664,12 @@ pref("browser.ml.modelCacheMaxSize", 4);
 
 pref("browser.ml.modelCacheTimeout", 120000);
 
+#ifdef NIGHTLY_BUILD
+  pref("browser.ml.llama.hwInference", true);
+#else
+  pref("browser.ml.llama.hwInference", false);
+#endif
+
 pref("browser.ml.minimumPhysicalMemory", 3);
 
 pref("browser.ml.checkForMemory", true);
