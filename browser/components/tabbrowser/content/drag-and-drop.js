@@ -894,14 +894,7 @@
         window.moveTo(left, top);
         window.focus();
       } else {
-        
-        
-        winWidth /= screenCssToDesktopScale;
-        winHeight /= screenCssToDesktopScale;
-
         let props = {
-          screenX: left,
-          screenY: top,
           suppressanimation: 1,
           metricsContext: gBrowser.TabMetrics.userTriggeredContext(
             gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
@@ -913,7 +906,14 @@
           
           
           
+          
+          
+          
+          
           props.suppressinitialfullscreen = 1;
+        } else {
+          props.screenX = left;
+          props.screenY = top;
         }
         gBrowser.replaceTabsWithWindow(draggedTab, props);
       }
