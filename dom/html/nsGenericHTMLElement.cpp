@@ -848,13 +848,15 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
         }
         if (IsInUncomposedDoc()) {
           RecomputeContainerTimingRootForSubtree();
-          
-          
-          
-          
-          if (aName == nsGkAtoms::containertiming && !aValue) {
-            ContainerTimingHelpers::DropRecordForContainerRoot(this);
-          }
+        }
+        
+        
+        
+        
+        
+        
+        if (aName == nsGkAtoms::containertiming && !aValue) {
+          ContainerTimingHelpers::DropRecordForContainerRoot(this);
         }
       }
     } else if (aName == nsGkAtoms::dir) {
