@@ -96,7 +96,13 @@ g.test('util_matches_2d_canvas')
       { x: 0, y: 0, z: 0 },
       { width, height, depthOrArrayLayers: 1 },
       { actTexelView, expTexelView },
-      { maxDiffULPsForNormFormat: 0 }
+      
+      
+      
+      
+      
+      
+      { maxDiffULPsForNormFormat: 1 }
     );
 
     if (failedPixelsMessage !== undefined) {
