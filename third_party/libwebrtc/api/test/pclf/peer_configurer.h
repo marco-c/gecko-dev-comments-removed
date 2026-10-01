@@ -86,10 +86,6 @@ class PeerConfigurer {
 
   
   
-  PeerConfigurer* SetUseNetworkThreadAsWorkerThread();
-
-  
-  
   
   PeerConfigurer* SetAsyncDnsResolverFactory(
       std::unique_ptr<webrtc::AsyncDnsResolverFactoryInterface>
