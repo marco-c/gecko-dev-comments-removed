@@ -105,6 +105,16 @@ const ETP_DISABLED_ASSETS = {
 };
 
 
+
+const BLOCKER_CLICK_METRICS = {
+  "tracking-content": "clickTrackers",
+  "social-tracking": "clickSocial",
+  "tracking-cookies": "clickCookies",
+  fingerprinter: "clickFingerprinters",
+  cryptominer: "clickCryptominers",
+};
+
+
 const HTTPS_ONLY_SETTINGS = ["on", "off", "off-temporarily"];
 
 const SMARTBLOCK_EMBED_INFO = [
@@ -973,6 +983,7 @@ class TrustPanel {
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-blockerView", event.target);
+    Glean.trustpanel.trackerListOpened.record();
   }
 
   async #openBlockerDetailsSubview(event, blocker, blocking) {
@@ -1016,6 +1027,11 @@ class TrustPanel {
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-blockerDetailsView", event.target);
+    
+    const metric = BLOCKER_CLICK_METRICS[blocker.l10nKeys.general];
+    if (metric) {
+      Glean.securityUiProtectionspopup[metric].record();
+    }
   }
 
   async #showClearCookiesSubview(event) {
