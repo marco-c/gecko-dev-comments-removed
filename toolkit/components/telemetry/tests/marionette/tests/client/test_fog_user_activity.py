@@ -35,16 +35,10 @@ class TestClientActivity(FOGTestCase):
         
         
         
-        
-        
         def is_startup_baseline_ping(ping):
             return (
                 ping["request_url"]["doc_type"] == "baseline"
-                and ping["payload"]["metrics"]
-                .get("labeled_counter", {})
-                .get("glean.validation.pings_submitted", {})
-                .get("events")
-                == 1
+                and ping["payload"]["ping_info"]["seq"] == 1
             )
 
         [ping0, ping1] = self.wait_for_pings(

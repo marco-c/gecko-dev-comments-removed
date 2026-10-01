@@ -15,6 +15,9 @@ add_setup(
     do_get_profile();
 
     
+    Services.prefs.clearUserPref("telemetry.fog.test.decelerate_early_events");
+
+    
     Services.fog.initializeFOG();
   }
 );
@@ -38,3 +41,21 @@ add_task(function test_fog_initialized_with_correct_rate_limit() {
     "FOG has been initialized with a ping rate limit of greater than 0."
   );
 });
+
+add_task(
+  
+  { skip_if: () => AppConstants.platform == "android" },
+  function test_fog_inits_with_early_event_acceleration() {
+    
+    
+    const numEvents = 100;
+    for (let i = 0; i < numEvents; i++) {
+      Glean.testOnly.eventPingEvent.record();
+    }
+    Assert.less(
+      Glean.testOnly.eventPingEvent.testGetValue()?.length || 0,
+      numEvents,
+      "At least one 'events' ping must've been sent early."
+    );
+  }
+);

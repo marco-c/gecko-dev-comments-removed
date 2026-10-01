@@ -256,6 +256,8 @@ int RunGTestFunc(int* argc, char** argv) {
   Preferences::SetInt("telemetry.fog.test.activity_limit", -1);
   Preferences::SetInt("telemetry.fog.test.inactivity_limit", -1);
   
+  Preferences::SetInt("telemetry.fog.test.decelerate_early_events", true);
+  
   Preferences::SetInt("idle.lastDailyNotification",
                       int32_t(PR_Now() / PR_USEC_PER_SEC));
   const nsCString empty;
