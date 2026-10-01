@@ -138,14 +138,17 @@ class nsPrintDialogWidgetGTK {
   GtkWidget* print_bg_colors_toggle;
   GtkWidget* print_bg_images_toggle;
   GtkWidget* selection_only_toggle;
-  GtkWidget* header_dropdown[3];  
-  GtkWidget* footer_dropdown[3];
+  
+  
+  RefPtr<GtkWidget> header_dropdown[3];  
+  RefPtr<GtkWidget> footer_dropdown[3];
 
   nsCOMPtr<nsIStringBundle> printBundle;
 
   bool useNativeSelection;
 
-  GtkWidget* ConstructHeaderFooterDropdown(const char16_t* currentString);
+  already_AddRefed<GtkWidget> ConstructHeaderFooterDropdown(
+      const char16_t* currentString);
   const char* OptionWidgetToString(GtkWidget* dropdown);
 
   
@@ -271,7 +274,8 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter* aParent,
         ConstructHeaderFooterDropdown(header_footer_str[i].get());
     
     
-    gtk_grid_attach(GTK_GRID(header_footer_grid), header_dropdown[i],
+    
+    gtk_grid_attach(GTK_GRID(header_footer_grid), header_dropdown[i].get(),
                      i,
                      0,  1,  1);
   }
@@ -291,7 +295,7 @@ nsPrintDialogWidgetGTK::nsPrintDialogWidgetGTK(nsPIDOMWindowOuter* aParent,
   for (unsigned int i = 0; i < std::size(footer_dropdown); i++) {
     footer_dropdown[i] =
         ConstructHeaderFooterDropdown(header_footer_str[i].get());
-    gtk_grid_attach(GTK_GRID(header_footer_grid), footer_dropdown[i],
+    gtk_grid_attach(GTK_GRID(header_footer_grid), footer_dropdown[i].get(),
                      i,
                      2,  1,  1);
   }
@@ -344,22 +348,22 @@ gint nsPrintDialogWidgetGTK::Run() {
 
 void nsPrintDialogWidgetGTK::ExportHeaderFooter(nsIPrintSettings* aNS) {
   const char* header_footer_str;
-  header_footer_str = OptionWidgetToString(header_dropdown[0]);
+  header_footer_str = OptionWidgetToString(header_dropdown[0].get());
   aNS->SetHeaderStrLeft(NS_ConvertUTF8toUTF16(header_footer_str));
 
-  header_footer_str = OptionWidgetToString(header_dropdown[1]);
+  header_footer_str = OptionWidgetToString(header_dropdown[1].get());
   aNS->SetHeaderStrCenter(NS_ConvertUTF8toUTF16(header_footer_str));
 
-  header_footer_str = OptionWidgetToString(header_dropdown[2]);
+  header_footer_str = OptionWidgetToString(header_dropdown[2].get());
   aNS->SetHeaderStrRight(NS_ConvertUTF8toUTF16(header_footer_str));
 
-  header_footer_str = OptionWidgetToString(footer_dropdown[0]);
+  header_footer_str = OptionWidgetToString(footer_dropdown[0].get());
   aNS->SetFooterStrLeft(NS_ConvertUTF8toUTF16(header_footer_str));
 
-  header_footer_str = OptionWidgetToString(footer_dropdown[1]);
+  header_footer_str = OptionWidgetToString(footer_dropdown[1].get());
   aNS->SetFooterStrCenter(NS_ConvertUTF8toUTF16(header_footer_str));
 
-  header_footer_str = OptionWidgetToString(footer_dropdown[2]);
+  header_footer_str = OptionWidgetToString(footer_dropdown[2].get());
   aNS->SetFooterStrRight(NS_ConvertUTF8toUTF16(header_footer_str));
 }
 
@@ -454,9 +458,12 @@ nsresult nsPrintDialogWidgetGTK::ExportSettings(nsIPrintSettings* aNSSettings) {
   return NS_OK;
 }
 
-GtkWidget* nsPrintDialogWidgetGTK::ConstructHeaderFooterDropdown(
+already_AddRefed<GtkWidget>
+nsPrintDialogWidgetGTK::ConstructHeaderFooterDropdown(
     const char16_t* currentString) {
   GtkWidget* dropdown = gtk_combo_box_text_new();
+  
+  g_object_ref_sink(dropdown);
   const char hf_options[][22] = {"headerFooterBlank", "headerFooterTitle",
                                  "headerFooterURL",   "headerFooterDate",
                                  "headerFooterPage",  "headerFooterPageTotal",
@@ -490,7 +497,7 @@ GtkWidget* nsPrintDialogWidgetGTK::ConstructHeaderFooterDropdown(
   }
 
   g_signal_connect(dropdown, "changed", (GCallback)ShowCustomDialog, dialog);
-  return dropdown;
+  return dont_AddRef(dropdown);
 }
 
 NS_IMPL_ISUPPORTS(nsPrintDialogServiceGTK, nsIPrintDialogService)
