@@ -217,6 +217,7 @@ class TextGenerationTest : public mozilla::gtest::ipc::TestUtilityProcess {
  protected:
   
   void SetUp() override { Preferences::SetUint(kGracePref, 0); }
+  void TearDown() override { Preferences::ClearUser(kGracePref); }
 };
 
 TEST_F(TextGenerationTest, GenerateFromModel) {
