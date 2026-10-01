@@ -709,62 +709,68 @@ void* ChunkCache::Recycle(size_t aSize, size_t aAlignment) {
     return nullptr;
   }
 
-  mMutex.Lock();
-  extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
-  if (!node) {
-    mMutex.Unlock();
-    return nullptr;
-  }
-  size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
-                    (uintptr_t)node->mAddr;
-  MOZ_ASSERT(node->mSize >= leadsize + aSize);
-  size_t trailsize = node->mSize - leadsize - aSize;
-  void* ret = (void*)((uintptr_t)node->mAddr + leadsize);
+  
+  
+  UniqueBaseNode new_node(new (fallible) extent_node_t());
 
   
   
-  MOZ_ASSERT(node->mChunkType == ZEROED_CHUNK);
-
   
-  gChunksBySize.Remove(node);
-  gChunksByAddress.Remove(node);
-  if (leadsize != 0) {
-    
-    node->mSize = leadsize;
-    gChunksBySize.Insert(node);
-    gChunksByAddress.Insert(node);
-    node = nullptr;
-  }
-  if (trailsize != 0) {
-    
+  UniqueBaseNode unused_node;
+
+  void* ret;
+  {
+    MutexAutoLock lock(mMutex);
+    extent_node_t* node = gChunksBySize.SearchOrNext(alloc_size);
     if (!node) {
-      
-      
-      
-      
-      mMutex.Unlock();
-      node = new (fallible) extent_node_t();
-      if (!node) {
-        base_chunk_dealloc(ret, aSize, ZEROED_CHUNK);
-        return nullptr;
-      }
-      mMutex.Lock();
+      return nullptr;
     }
-    node->mAddr = (void*)((uintptr_t)(ret) + aSize);
-    node->mSize = trailsize;
-    node->mChunkType = ZEROED_CHUNK;
-    gChunksBySize.Insert(node);
-    gChunksByAddress.Insert(node);
-    node = nullptr;
+    size_t leadsize = ALIGNMENT_CEILING((uintptr_t)node->mAddr, aAlignment) -
+                      (uintptr_t)node->mAddr;
+    MOZ_ASSERT(node->mSize >= leadsize + aSize);
+    size_t trailsize = node->mSize - leadsize - aSize;
+    if (leadsize != 0 && trailsize != 0 && !new_node) {
+      
+      
+      
+      return nullptr;
+    }
+    ret = (void*)((uintptr_t)node->mAddr + leadsize);
+
+    
+    
+    MOZ_ASSERT(node->mChunkType == ZEROED_CHUNK);
+
+    
+    gChunksBySize.Remove(node);
+    gChunksByAddress.Remove(node);
+    if (leadsize != 0) {
+      
+      node->mSize = leadsize;
+      gChunksBySize.Insert(node);
+      gChunksByAddress.Insert(node);
+      node = nullptr;
+    }
+    if (trailsize != 0) {
+      
+      if (!node) {
+        node = new_node.release();
+      }
+      node->mAddr = (void*)((uintptr_t)(ret) + aSize);
+      node->mSize = trailsize;
+      node->mChunkType = ZEROED_CHUNK;
+      gChunksBySize.Insert(node);
+      gChunksByAddress.Insert(node);
+      node = nullptr;
+    }
+
+    mRecycledSize -= aSize;
+
+    
+    
+    unused_node.reset(node);
   }
 
-  mRecycledSize -= aSize;
-
-  mMutex.Unlock();
-
-  if (node) {
-    delete node;
-  }
   if (!pages_commit(ret, aSize)) {
     return nullptr;
   }
