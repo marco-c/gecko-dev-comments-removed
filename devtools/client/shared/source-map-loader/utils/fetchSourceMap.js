@@ -82,6 +82,10 @@ async function _fetch(generatedSource, resolvedSourceMapURL, baseURL) {
   
   let map = await new SourceMapConsumer(fetched.content, baseURL);
 
+  if (!map?.sources.length) {
+    throw new Error("No sources are declared in this source map.");
+  }
+
   if (generatedSource.isWasm) {
     map = new WasmRemap(map);
     
