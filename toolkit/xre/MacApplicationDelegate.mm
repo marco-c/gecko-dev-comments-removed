@@ -17,6 +17,9 @@
 #include "NativeMenuMac.h"
 #import <Carbon/Carbon.h>
 
+#ifdef NIGHTLY_BUILD
+#  include "ASWebAuthSessionHandler.h"
+#endif
 #include "CustomCocoaEvents.h"
 #include "gfxPlatform.h"
 #include "nsCOMPtr.h"
@@ -129,6 +132,14 @@ void SetupMacApplicationDelegate(bool* gRestartedByOS) {
       sLaunchStatus == LaunchStatus::Initial,
       "Launch status should be in intial state when setting up delegate");
   sLaunchStatus = LaunchStatus::DelegateIsSetup;
+
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  
+  RegisterASWebAuthSessionHandler();
+#endif
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -340,9 +351,10 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   nsCOMPtr<nsIAppStartup> appService =
       do_GetService("@mozilla.org/toolkit/app-startup;1");
   if (appService) {
-    bool userAllowedQuit = true;
-    appService->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
-    if (!userAllowedQuit) {
+    
+    
+    appService->Quit(nsIAppStartup::eForceQuit, 0);
+    if (!appService->GetShuttingDown()) {
       return NSTerminateCancel;
     }
   }

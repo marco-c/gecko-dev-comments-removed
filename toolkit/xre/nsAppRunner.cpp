@@ -6398,8 +6398,7 @@ nsresult XREMain::XRE_mainRun() {
       
       
       if (MacRunFromDmgUtils::MaybeInstallAndRelaunch()) {
-        bool userAllowedQuit = true;
-        appStartup->Quit(nsIAppStartup::eForceQuit, 0, &userAllowedQuit);
+        appStartup->Quit(nsIAppStartup::eForceQuit, 0);
       }
 #  endif
 #endif

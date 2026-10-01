@@ -1757,7 +1757,7 @@ interface nsIAppStartup extends nsISupports, Enums<typeof nsIAppStartup_IDLShutd
   
   trackStartupCrashEnd(): void;
   
-  quit(aMode: u32, aExitCode?: i32): boolean;
+  quit(aMode: u32, aExitCode?: i32): void;
   
   advanceShutdownPhase(aPhase: nsIAppStartup.IDLShutdownPhase): void;
   
