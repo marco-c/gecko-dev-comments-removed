@@ -425,7 +425,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             
             return;
           }
-          if (updatedTab.removedByAdoption || updatedTab.addedByAdoption) {
+          if (event.detail.adoptingSplitView) {
             
             
             
