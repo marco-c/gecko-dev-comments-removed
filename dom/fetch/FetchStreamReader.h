@@ -8,7 +8,9 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/AbortFollower.h"
 #include "mozilla/dom/FetchBinding.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsIAsyncOutputStream.h"
@@ -16,11 +18,29 @@
 
 namespace mozilla::dom {
 
+class AbortSignalImpl;
 class ReadableStream;
 class ReadableStreamDefaultReader;
 class StrongWorkerRef;
 
 class FetchStreamReader;
+
+
+
+
+class FetchStreamReaderAbortFollower final : public AbortFollower {
+ public:
+  NS_DECL_ISUPPORTS
+
+  explicit FetchStreamReaderAbortFollower(FetchStreamReader* aReader);
+
+  void RunAbortAlgorithm() override;
+
+ private:
+  ~FetchStreamReaderAbortFollower() = default;
+
+  WeakPtr<FetchStreamReader> mReader;
+};
 
 class OutputStreamHolder final : public nsIOutputStreamCallback {
  public:
@@ -58,7 +78,8 @@ class OutputStreamHolder final : public nsIOutputStreamCallback {
   nsCOMPtr<nsIAsyncOutputStream> mOutput;
 };
 
-class FetchStreamReader final : public nsISupports, public SupportsWeakPtr {
+class FetchStreamReader final : public GlobalTeardownObserver,
+                                public SupportsWeakPtr {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(FetchStreamReader)
@@ -94,11 +115,40 @@ class FetchStreamReader final : public nsISupports, public SupportsWeakPtr {
   void StartConsuming(JSContext* aCx, ReadableStream* aStream,
                       ErrorResult& aRv);
 
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void FollowSignal(AbortSignalImpl* aSignal);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void RunAbortAlgorithm(AbortSignalImpl* aSignal);
+
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void CancelAndRelease(JSContext* aCx, JS::Handle<JS::Value> aReason);
+
+  
+  
+  void DisconnectFromOwner() override;
+
  private:
   explicit FetchStreamReader(nsIGlobalObject* aGlobal);
   ~FetchStreamReader();
 
   nsresult WriteBuffer();
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  void CancelReader(JSContext* aCx, JS::Handle<JS::Value> aReason);
+
+  
+  void ReleaseState(nsresult aStatus);
 
   
   
@@ -121,6 +171,8 @@ class FetchStreamReader final : public nsISupports, public SupportsWeakPtr {
 
   bool mHasOutstandingReadRequest = false;
   bool mStreamClosed = false;
+
+  RefPtr<FetchStreamReaderAbortFollower> mAbortFollower;
 };
 
 }  

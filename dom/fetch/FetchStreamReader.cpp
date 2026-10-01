@@ -27,6 +27,20 @@
 
 namespace mozilla::dom {
 
+NS_IMPL_ISUPPORTS0(FetchStreamReaderAbortFollower)
+
+FetchStreamReaderAbortFollower::FetchStreamReaderAbortFollower(
+    FetchStreamReader* aReader)
+    : mReader(aReader) {}
+
+void FetchStreamReaderAbortFollower::RunAbortAlgorithm() {
+  RefPtr<FetchStreamReader> reader = mReader.get();
+  if (!reader) {
+    return;
+  }
+  reader->RunAbortAlgorithm(Signal());
+}
+
 NS_IMPL_ISUPPORTS(OutputStreamHolder, nsIOutputStreamCallback)
 
 OutputStreamHolder::OutputStreamHolder(FetchStreamReader* aReader,
@@ -109,7 +123,21 @@ NS_IMETHODIMP OutputStreamHolder::OnOutputStreamReady(
 NS_IMPL_CYCLE_COLLECTING_ADDREF(FetchStreamReader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(FetchStreamReader)
 
-NS_IMPL_CYCLE_COLLECTION_WEAK_PTR(FetchStreamReader, mGlobal, mReader)
+NS_IMPL_CYCLE_COLLECTION_CLASS(FetchStreamReader)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FetchStreamReader)
+  
+  
+  if (tmp->mAbortFollower) {
+    tmp->mAbortFollower->Unfollow();
+  }
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal, mReader, mAbortFollower)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(FetchStreamReader)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal, mReader, mAbortFollower)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FetchStreamReader)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
@@ -134,14 +162,28 @@ nsresult FetchStreamReader::Create(JSContext* aCx, nsIGlobalObject* aGlobal,
 
   streamReader->mOutput = new OutputStreamHolder(streamReader, pipeOut);
 
+  nsresult rv = streamReader->mOutput->Init(aCx);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
   pipeIn.forget(aInputStream);
   streamReader.forget(aStreamReader);
   return NS_OK;
 }
 
+
+
 FetchStreamReader::FetchStreamReader(nsIGlobalObject* aGlobal)
-    : mGlobal(aGlobal), mOwningEventTarget(mGlobal->SerialEventTarget()) {
+    : GlobalTeardownObserver(aGlobal),
+      mGlobal(aGlobal),
+      mOwningEventTarget(mGlobal->SerialEventTarget()) {
   MOZ_ASSERT(aGlobal);
+}
+
+void FetchStreamReader::DisconnectFromOwner() {
+  CloseAndRelease(nullptr, NS_ERROR_DOM_ABORT_ERR);
+  GlobalTeardownObserver::DisconnectFromOwner();
 }
 
 FetchStreamReader::~FetchStreamReader() {
@@ -172,27 +214,38 @@ void FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus) {
     }
     JS::Rooted<JS::Value> errorValue(aCx);
     if (ToJSValue(aCx, std::move(rv), &errorValue)) {
-      IgnoredErrorResult ignoredError;
-      
-      
-      
-      
-      RefPtr<Promise> cancelResultPromise =
-          MOZ_KnownLive(mReader)->Cancel(aCx, errorValue, ignoredError);
-      NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                           "Failed to cancel stream during close and release");
-      if (cancelResultPromise) {
-        bool setHandled = cancelResultPromise->SetAnyPromiseIsHandled();
-        NS_WARNING_ASSERTION(setHandled,
-                             "Failed to mark cancel promise as handled.");
-        (void)setHandled;
-      }
+      CancelReader(aCx, errorValue);
     }
 
     
     JS_ClearPendingException(aCx);
   }
 
+  ReleaseState(aStatus);
+}
+
+
+
+
+
+void FetchStreamReader::CancelReader(JSContext* aCx,
+                                     JS::Handle<JS::Value> aReason) {
+  MOZ_ASSERT(mReader);
+
+  IgnoredErrorResult ignoredError;
+  RefPtr<Promise> cancelResultPromise =
+      MOZ_KnownLive(mReader)->Cancel(aCx, aReason, ignoredError);
+  NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                       "Failed to cancel stream during close and release");
+  if (cancelResultPromise) {
+    bool setHandled = cancelResultPromise->SetAnyPromiseIsHandled();
+    NS_WARNING_ASSERTION(setHandled,
+                         "Failed to mark cancel promise as handled.");
+    (void)setHandled;
+  }
+}
+
+void FetchStreamReader::ReleaseState(nsresult aStatus) {
   mStreamClosed = true;
 
   mGlobal = nullptr;
@@ -205,6 +258,61 @@ void FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus) {
 
   mReader = nullptr;
   mBuffer.Clear();
+
+  if (mAbortFollower) {
+    mAbortFollower->Unfollow();
+    mAbortFollower = nullptr;
+  }
+}
+
+void FetchStreamReader::FollowSignal(AbortSignalImpl* aSignal) {
+  MOZ_ASSERT(aSignal);
+  MOZ_ASSERT(!mAbortFollower);
+  if (mStreamClosed) {
+    return;
+  }
+  
+  if (aSignal->Aborted()) {
+    RunAbortAlgorithm(aSignal);
+    return;
+  }
+  mAbortFollower = new FetchStreamReaderAbortFollower(this);
+  mAbortFollower->Follow(aSignal);
+}
+
+void FetchStreamReader::RunAbortAlgorithm(AbortSignalImpl* aSignal) {
+  MOZ_ASSERT(aSignal);
+
+  if (mStreamClosed) {
+    return;
+  }
+  AutoJSAPI jsapi;
+  if (!mGlobal || !jsapi.Init(mGlobal)) {
+    CloseAndRelease(nullptr, NS_ERROR_DOM_ABORT_ERR);
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JS::Value> reason(cx);
+  aSignal->GetReason(cx, &reason);
+  CancelAndRelease(cx, reason);
+}
+
+void FetchStreamReader::CancelAndRelease(JSContext* aCx,
+                                         JS::Handle<JS::Value> aReason) {
+  NS_ASSERT_OWNINGTHREAD(FetchStreamReader);
+  MOZ_ASSERT(aCx);
+
+  if (mStreamClosed) {
+    return;
+  }
+
+  RefPtr<FetchStreamReader> kungFuDeathGrip = this;
+  if (mReader) {
+    CancelReader(aCx, aReason);
+    JS_ClearPendingException(aCx);
+  }
+
+  ReleaseState(NS_ERROR_DOM_ABORT_ERR);
 }
 
 
@@ -217,9 +325,11 @@ void FetchStreamReader::StartConsuming(JSContext* aCx, ReadableStream* aStream,
              "nsIInputStream here. Extract nsIInputStream and read it instead "
              "to reduce overhead.");
 
-  aRv = mOutput->Init(aCx);
-  if (aRv.Failed()) {
-    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+  
+  
+  
+  if (mStreamClosed) {
+    aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return;
   }
 
