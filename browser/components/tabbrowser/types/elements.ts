@@ -7,60 +7,7 @@
 
 
 
-
-
-
-
-interface MozTabbrowserTab extends XULElement {
-  linkedBrowser: MozBrowser;
-  linkedPanel: string;
-  permanentKey: object;
-  container: MozTabbrowserTabs;
-  group: MozTabbrowserTabGroup | null;
-  splitview: MozTabSplitViewWrapper | null;
-  owner: MozTabbrowserTab | null;
-  successor: MozTabbrowserTab | null;
-  predecessors: Set<MozTabbrowserTab>;
-  tabs: MozTabbrowserTab[];
-  pinned: boolean;
-  visible: boolean;
-  selected: boolean;
-  multiselected: boolean;
-  closing: boolean;
-  soundPlaying: boolean;
-  hasTabNote: boolean;
-  initializingTab: boolean;
-  removedByAdoption: boolean;
-  index: number;
-  elementIndex: number;
-  userContextId: number;
-  label: string;
-  canonicalUrl: string;
-  muteReason: any;
-  initialize(): void;
-  setUserContextId(id: number): void;
-  _mouseenter(options?: { withoutPointerEvent?: boolean }): void;
-  _mouseleave(): void;
-
-  
-  _index: number;
-  _hover: boolean;
-  _fullyOpen: boolean;
-  _fullLabel: string;
-  _labelIsContentTitle: boolean;
-  _labelIsInitialTitle: boolean;
-  _pinnedUnscrollable: boolean;
-  _pendingPermitUnload: boolean;
-  _closedInMultiselection: boolean;
-  _soundPlayingAttrRemovalTimer: number;
-  _closeTimeAnimTimerId: any;
-  _closeTimeNoAnimTimerId: any;
-  _findBar: any;
-  _pendingFindBar: any;
-  _endRemoveArgs: any;
-  _browserParams: any;
-  _originalRegisteredOpenURI: any;
-}
+type MozTabbrowserTab = import("../content/tab.mjs").MozTabbrowserTab;
 
 type MozTabbrowserTabs = import("../content/tabs.mjs").MozTabbrowserTabs;
 
@@ -84,3 +31,14 @@ type MozTabSplitViewWrapper =
 
 type TabSplitViewStateData =
   import("../content/tabsplitview.mjs").TabSplitViewStateData;
+
+
+
+interface MozFindbar extends XULElement {
+  browser: MozBrowser;
+  readonly _findField: HTMLInputElement;
+  readonly FIND_NORMAL: number;
+  findMode: number;
+  close(noAnim?: boolean): void;
+  onFindCommand(): Promise<void>;
+}
