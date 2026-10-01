@@ -5,7 +5,15 @@
 #ifndef mozilla_dom_ConnectionAllowlists_h_
 #define mozilla_dom_ConnectionAllowlists_h_
 
+#include <cstdint>
+#include <memory>
+#include <type_traits>
+
+#include "mozilla/Maybe.h"
+#include "mozilla/net/urlpattern_glue.h"
 #include "nsISupportsImpl.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 namespace mozilla::dom {
 
@@ -19,8 +27,51 @@ class ConnectionAllowlists final {
 
   ConnectionAllowlists() = default;
 
+  
+  
+  
+  static nsresult ParseHeaders(const nsACString& aHeader,
+                               const nsACString& aReportOnlyHeader,
+                               ConnectionAllowlists** aResult);
+
  private:
   ~ConnectionAllowlists() = default;
+
+  enum class Disposition : uint8_t { Enforce, Report };
+  enum class Redirects : uint8_t { Block, Allow };
+  enum class WebRTC : uint8_t { Block, Allow };
+
+  
+  
+  struct UrlPatternDeleter {
+    void operator()(UrlPatternGlue aPattern) const {
+      urlpattern_pattern_free(aPattern);
+    }
+  };
+  using UrlPattern =
+      std::unique_ptr<std::remove_pointer_t<UrlPatternGlue>, UrlPatternDeleter>;
+
+  
+  
+  struct Allowlist {
+    nsTArray<UrlPattern> mPatterns;
+    
+    
+    
+    
+    bool mMatchesResponseOrigin = false;
+    
+    nsCString mReportingEndpoint;
+    Disposition mDisposition = Disposition::Enforce;
+    Redirects mRedirects = Redirects::Block;
+    WebRTC mWebRTC = WebRTC::Block;
+  };
+
+  static Maybe<Allowlist> ParseConnectionAllowlistHeader(
+      const nsACString& aHeader, Disposition aDisposition);
+
+  Maybe<Allowlist> mEnforcement;
+  Maybe<Allowlist> mReportOnly;
 };
 
 }  
