@@ -2540,7 +2540,7 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
         const auto userName = fnUnmapName(mappedName);
 
         auto loc = gl.fGetAttribLocation(prog, mappedName.c_str());
-        if (mappedName.find("gl_") == 0) {
+        if (mappedName.starts_with("gl_")) {
           
           
           loc = -1;
@@ -2814,7 +2814,7 @@ GLint WebGLContext::GetFragDataLocation(const WebGLProgram& prog,
 
   if (gl->WorkAroundDriverBugs() && gl->IsMesa()) {
     
-    if (mappedName.find("gl_") == 0) {
+    if (mappedName.starts_with("gl_")) {
       return -1;
     }
   }
