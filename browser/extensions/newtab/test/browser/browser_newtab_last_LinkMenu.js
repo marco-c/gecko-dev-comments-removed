@@ -97,23 +97,31 @@ add_task(async function test_newtab_last_LinkMenu() {
   
   const topSitesWidth = novaEnabled ? 900 : 600;
   const storiesWidth = novaEnabled ? 740 : 600;
-  const topSiteNthChild = novaEnabled ? "6n" : "2n";
 
   await setSize(topSitesWidth, 450);
 
   
-  await SpecialPowers.spawn(browser, [topSiteNthChild], async nthChild => {
+  await SpecialPowers.spawn(browser, [], async () => {
     
-    await ContentTaskUtils.waitForCondition(
-      () =>
-        content.document.querySelector(
-          `.top-site-outer:nth-child(${nthChild}) .context-menu-button`
+    
+    
+    const lastTileWithMenu = () => {
+      const tiles = [
+        ...content.document.querySelectorAll(
+          ".top-site-outer:not(.placeholder, .add-button-tile, .search-shortcut)"
         ),
-      "Wait for the topsite card and button"
+      ].filter(
+        tile =>
+          tile.querySelector(".context-menu-button") &&
+          tile.getBoundingClientRect().width
+      );
+      return tiles[tiles.length - 1];
+    };
+    await ContentTaskUtils.waitForCondition(
+      lastTileWithMenu,
+      "Wait for the topsite cards to render"
     );
-    const topsiteOuter = content.document.querySelector(
-      `.top-site-outer:nth-child(${nthChild})`
-    );
+    const topsiteOuter = lastTileWithMenu();
     const topsiteContextMenuButton = topsiteOuter.querySelector(
       ".context-menu-button"
     );
