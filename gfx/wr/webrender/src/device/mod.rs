@@ -118,6 +118,7 @@ pub trait GpuBackend {
     
     
     
+    
     fn begin_render_pass(&mut self, desc: &RenderPassDescriptor);
 
     
@@ -438,11 +439,12 @@ pub trait GpuBackend {
 
     
     
-    fn clear_target(
+    
+    fn clear_rect(
         &mut self,
+        rect: FramebufferIntRect,
         color: Option<[f32; 4]>,
         depth: Option<f32>,
-        rect: Option<FramebufferIntRect>,
     );
 
     
