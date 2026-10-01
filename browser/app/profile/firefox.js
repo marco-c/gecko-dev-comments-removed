@@ -2039,6 +2039,11 @@ pref("browser.newtabpage.activity-stream.widgets.system.pictureOfTheDay.region-b
 pref("browser.newtabpage.activity-stream.widgets.pictureOfTheDay.region-block", "DE,FR,PL,US");
 
 
+
+pref("browser.newtabpage.activity-stream.widgets.system.crossword.locale-config", "en-CA,en-GB,en-US");
+pref("browser.newtabpage.activity-stream.widgets.system.crossword.region-block", "PL");
+
+
 pref("browser.newtabpage.activity-stream.discoverystream.promoCard.visible", true);
 
 
