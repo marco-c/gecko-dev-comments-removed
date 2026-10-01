@@ -54,8 +54,6 @@ constexpr Outcome kInner{ExpectedTarget::Inner, EitherScrollDirection};
 constexpr Outcome kMiddle{ExpectedTarget::Middle, EitherScrollDirection};
 constexpr Outcome kRoot{ExpectedTarget::Root, EitherScrollDirection};
 constexpr Outcome kNone{ExpectedTarget::NoApzc, EitherScrollDirection};
-constexpr Outcome kRootVertical{ExpectedTarget::Root, VerticalScrollDirection};
-constexpr Outcome kNoneBlocked{ExpectedTarget::NoApzc, ScrollDirections()};
 
 
 struct TestCase {
@@ -67,6 +65,7 @@ struct TestCase {
   Outcome mWithOverscroll;
   Outcome mWithoutOverscroll;
 };
+
 
 
 
@@ -98,17 +97,18 @@ static const TestCase kTestCases[] = {
     
     
     {ObContain(kAtEnd),   kUnreached,          kUnreached,
-      
-     kNoneBlocked,   kNoneBlocked},
+     kInner,       kNone},
     {ObNone(kAtEnd),      kUnreached,          kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,        kNone},
     {ObContain(kNoRange), kUnreached,          kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,        kNone},
     {ObNone(kNoRange),    kUnreached,          kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,        kNone},
 
     
 
+    
+    
     
     
     {ObAuto(kAtEnd),      ObAuto(kRoom),       kUnreached,
@@ -120,17 +120,13 @@ static const TestCase kTestCases[] = {
     {ObAuto(kAtEnd),      ObNone(kRoom),       kUnreached,
      kMiddle,        kMiddle},
     {ObAuto(kAtEnd),      ObContain(kAtEnd),   kUnreached,
-      
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObNone(kAtEnd),      kUnreached,
-      
-     kNoneBlocked,   kNoneBlocked},
+     kInner,         kNone},
     {ObAuto(kAtEnd),      ObContain(kNoRange), kUnreached,
-      
-     kNoneBlocked,   kNoneBlocked},
+     kInner,         kNone},
     {ObAuto(kAtEnd),      ObNone(kNoRange),    kUnreached,
-      
-     kNoneBlocked,   kNoneBlocked},
+     kInner,         kNone},
 
     
     
@@ -143,14 +139,13 @@ static const TestCase kTestCases[] = {
     {ObAuto(kNoRange),    ObNone(kRoom),       kUnreached,
      kMiddle,        kMiddle},
     {ObAuto(kNoRange),    ObContain(kAtEnd),   kUnreached,
-      
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kNoRange),    ObNone(kAtEnd),      kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,          kNone},
     {ObAuto(kNoRange),    ObContain(kNoRange), kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,          kNone},
     {ObAuto(kNoRange),    ObNone(kNoRange),    kUnreached,
-     kNoneBlocked,   kNoneBlocked},
+     kNone,          kNone},
 
     
     {ObChain(kAtEnd),     ObAuto(kRoom),       kUnreached,
@@ -172,27 +167,21 @@ static const TestCase kTestCases[] = {
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObNone(kRoom),
      kRoot,          kRoot},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObAuto(kAtEnd),
-     kRootVertical,  kNone},
+     kRoot,          kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObContain(kAtEnd),
-     kRootVertical,  kNoneBlocked},
+     kRoot,          kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObChain(kAtEnd),
-      
-     kNone,          kNone},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObNone(kAtEnd),
-      
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObAuto(kNoRange),
-      
-     kNone,          kNone},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObContain(kNoRange),
-      
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObChain(kNoRange),
-      
-     kNone,          kNone},
+     kMiddle,        kNone},
     {ObAuto(kAtEnd),      ObAuto(kAtEnd),      ObNone(kNoRange),
-      
-     kNoneBlocked,   kNoneBlocked},
+     kMiddle,        kNone},
 };
 
 
@@ -244,7 +233,7 @@ static std::string Describe(ScrollDirections aDirections) {
   return result + "}";
 }
 
-class APZFindFirstScrollableTester : public APZCTreeManagerTester {
+class APZFindScrollTargetTester : public APZCTreeManagerTester {
  protected:
   UniquePtr<ScopedLayerTreeRegistration> registration;
 
@@ -370,7 +359,7 @@ class APZFindFirstScrollableTester : public APZCTreeManagerTester {
                     const Outcome& aExpected) {
     ScrollDirections directions;
     RefPtr<AsyncPanZoomController> target =
-        aChain->FindFirstScrollable(aInput, &directions, aInclude);
+        aChain->FindScrollTarget(aInput, &directions, aInclude);
     EXPECT_EQ(ApzcForTarget(aExpected.mTarget), target.get())
         << "unexpected target APZC";
     EXPECT_EQ(aExpected.mDirections, directions)
@@ -379,8 +368,8 @@ class APZFindFirstScrollableTester : public APZCTreeManagerTester {
   }
 };
 
-class APZFindFirstScrollableTableTester
-    : public APZFindFirstScrollableTester,
+class APZFindScrollTargetTableTester
+    : public APZFindScrollTargetTester,
       public testing::WithParamInterface<TestCase> {
  public:
   static std::string PrintFromParam(
@@ -391,7 +380,7 @@ class APZFindFirstScrollableTableTester
   }
 };
 
-TEST_P(APZFindFirstScrollableTableTester, AllReachableChainStates) {
+TEST_P(APZFindScrollTargetTableTester, AllReachableChainStates) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -416,10 +405,9 @@ TEST_P(APZFindFirstScrollableTableTester, AllReachableChainStates) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(ReachableChainStates,
-                         APZFindFirstScrollableTableTester,
+INSTANTIATE_TEST_SUITE_P(ReachableChainStates, APZFindScrollTargetTableTester,
                          testing::ValuesIn(kTestCases),
-                         APZFindFirstScrollableTableTester::PrintFromParam);
+                         APZFindScrollTargetTableTester::PrintFromParam);
 
 
 
@@ -433,7 +421,7 @@ INSTANTIATE_TEST_SUITE_P(ReachableChainStates,
 
 
 
-TEST_F(APZFindFirstScrollableTester, ScrollableOnTheOtherAxisIsSkipped) {
+TEST_F(APZFindScrollTargetTester, ScrollableOnTheOtherAxisIsSkipped) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -454,7 +442,7 @@ TEST_F(APZFindFirstScrollableTester, ScrollableOnTheOtherAxisIsSkipped) {
 }
 
 
-TEST_F(APZFindFirstScrollableTester, ContainVsNoneAtRoot) {
+TEST_F(APZFindScrollTargetTester, ContainVsNoneAtRoot) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -468,16 +456,16 @@ TEST_F(APZFindFirstScrollableTester, ContainVsNoneAtRoot) {
   SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
                         StyleOverscrollBehavior::Contain);
   CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kRootVertical);
+               kRoot);
 
   SetOverscrollBehavior(mRoot, StyleOverscrollBehavior::Auto,
                         StyleOverscrollBehavior::None);
   CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               Outcome{ExpectedTarget::NoApzc, HorizontalScrollDirection});
+               kNone);
 }
 
 
-TEST_F(APZFindFirstScrollableTester, RootOverscrollStripsZeroDeltaAxis) {
+TEST_F(APZFindScrollTargetTester, ReportedDirectionsKeepZeroDeltaAxis) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -492,18 +480,18 @@ TEST_F(APZFindFirstScrollableTester, RootOverscrollStripsZeroDeltaAxis) {
   ASSERT_EQ(EitherScrollDirection, mRoot->GetOverscrollableDirections());
 
   
+  
   PanGestureInput verticalPan = DownwardPan();
   CheckOutcome(chain, verticalPan,
-               OverscrollHandoffChain::IncludeOverscroll::Yes, kRootVertical);
+               OverscrollHandoffChain::IncludeOverscroll::Yes, kRoot);
 
-  
   PanGestureInput diagonalPan = DiagonalPan();
   CheckOutcome(chain, diagonalPan,
                OverscrollHandoffChain::IncludeOverscroll::Yes, kRoot);
 }
 
 
-TEST_F(APZFindFirstScrollableTester, RootOverscrollCannotRestoreBlockedAxis) {
+TEST_F(APZFindScrollTargetTester, RootOverscrollCannotRestoreBlockedAxis) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -528,7 +516,7 @@ TEST_F(APZFindFirstScrollableTester, RootOverscrollCannotRestoreBlockedAxis) {
 }
 
 
-TEST_F(APZFindFirstScrollableTester, HandoffNarrowsToSingleDirection) {
+TEST_F(APZFindScrollTargetTester, HandoffNarrowsToSingleDirection) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -546,7 +534,7 @@ TEST_F(APZFindFirstScrollableTester, HandoffNarrowsToSingleDirection) {
 }
 
 
-TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
+TEST_F(APZFindScrollTargetTester, ProgressiveNarrowingEndsScrollPass) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -566,7 +554,7 @@ TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
 
   
   CheckOutcome(chain, input, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kNoneBlocked);
+               kNone);
 }
 
 
@@ -575,7 +563,7 @@ TEST_F(APZFindFirstScrollableTester, ProgressiveNarrowingEmptiesDirections) {
 
 
 
-TEST_F(APZFindFirstScrollableTester, ZeroDeltaPanIsNotScrollable) {
+TEST_F(APZFindScrollTargetTester, ZeroDeltaPanIsNotScrollable) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -589,7 +577,7 @@ TEST_F(APZFindFirstScrollableTester, ZeroDeltaPanIsNotScrollable) {
                            ScreenPoint(50, 50), ScreenPoint(0, 0),
                            MODIFIER_NONE);
   CheckOutcome(chain, mayStart, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kNoneBlocked);
+               kNone);
 
   
   PanGestureInput pan = DownwardPan();
@@ -599,7 +587,7 @@ TEST_F(APZFindFirstScrollableTester, ZeroDeltaPanIsNotScrollable) {
 
 
 
-TEST_F(APZFindFirstScrollableTester, WheelInputSkipsOverscrollBranch) {
+TEST_F(APZFindScrollTargetTester, WheelInputSkipsOverscrollBranch) {
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   CreateThreeLevelChain();
 
@@ -619,7 +607,7 @@ TEST_F(APZFindFirstScrollableTester, WheelInputSkipsOverscrollBranch) {
   
   PanGestureInput pan = DownwardPan();
   CheckOutcome(chain, pan, OverscrollHandoffChain::IncludeOverscroll::Yes,
-               kRootVertical);
+               kRoot);
 }
 
 }  
