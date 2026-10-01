@@ -2,7 +2,7 @@
 
 
 
-#include "Link.h"
+#include "mozilla/dom/Link.h"
 
 #include "mozilla/Components.h"
 #include "mozilla/FocusModel.h"
