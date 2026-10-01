@@ -1048,13 +1048,6 @@ void LabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
   }
 
   
-  if (aElement->IsHTMLElement(nsGkAtoms::label) &&
-      aAttribute == nsGkAtoms::_for && aNameSpaceID == kNameSpaceID_None) {
-    SetDirty();
-    return;
-  }
-
-  
   if (aAttribute == nsGkAtoms::id && aNameSpaceID == kNameSpaceID_None) {
     SetDirty();
     return;
