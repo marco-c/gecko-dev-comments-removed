@@ -242,6 +242,19 @@ const char* ToString(TrapMachineInsn tmi);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 class FaultingCodeRange {
   
   

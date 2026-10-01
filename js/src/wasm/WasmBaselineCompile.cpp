@@ -1714,10 +1714,10 @@ void BaseCompiler::endCall(FunctionCall& call, size_t stackSpace) {
 
   if (call.restoreState == RestoreState::All) {
     fr.loadInstancePtr(InstanceReg);
-    masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+    masm.loadWasmPinnedRegsFromInstance();
     masm.switchToWasmInstanceRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
   } else if (call.restoreState == RestoreState::PinnedRegs) {
-    masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+    masm.loadWasmPinnedRegsFromInstance();
   }
 }
 
@@ -2138,14 +2138,23 @@ bool BaseCompiler::callIndirect(uint32_t funcTypeIndex, uint32_t tableIndex,
   }
   nullCheckFailed = nullref->entry();
 #endif
+
+  FaultingCodeRange fcr;
   if (!tailCall) {
-    masm.wasmCallIndirect(desc, callee, nullCheckFailed, fastCallOffset,
-                          slowCallOffset);
+    fcr = masm.wasmCallIndirect(desc, callee, nullCheckFailed, fastCallOffset,
+                                slowCallOffset);
   } else {
     ReturnCallAdjustmentInfo retCallInfo = BuildReturnCallAdjustmentInfo(
         this->funcType(), (*codeMeta_.types)[funcTypeIndex].funcType());
-    masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed, retCallInfo);
+    fcr =
+        masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed, retCallInfo);
   }
+  if (compilerEnv_.debugEnabled() && fcr.isValid() &&
+      !createStackMap(Some(Trap::IndirectCallToNull), fcr,
+                      HasDebugFrameWithLiveRefs::Maybe)) {
+    return false;
+  }
+
   return true;
 }
 
@@ -13029,9 +13038,7 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
     
     auto checkThisTrapKind_debugMode = [](Trap t) -> bool {
       
-      return t == Trap::InvalidConversionToInteger ||
-             t == Trap::IntegerOverflow || t == Trap::IntegerDivideByZero ||
-             t == Trap::NullPointerDereference || t == Trap::OutOfBounds;
+      return t != Trap::IndirectCallBadSig && t != Trap::StackOverflow;
     };
     auto checkThisTrapKind_normalMode = [](Trap t) -> bool {
       

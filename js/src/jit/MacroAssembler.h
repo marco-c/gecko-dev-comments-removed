@@ -3792,6 +3792,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   FaultingCodeRange wasmTrapInstruction() PER_SHARED_ARCH;
 
   
+  
   void appendAndVerify(wasm::Trap trap, wasm::TrapMachineInsn insn,
                        FaultingCodeRange fcr, const wasm::TrapSiteDesc& desc);
 
@@ -3805,8 +3806,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void loadWasmPinnedRegsFromInstance(
-      const wasm::MaybeTrapSiteDesc& trapSiteDesc);
+  
+
+#ifdef WASM_HAS_HEAPREG
+  [[nodiscard]]
+  FaultingCodeRange loadWasmPinnedRegsFromInstance(
+      const wasm::TrapSiteDesc& trapSiteDesc);
+#endif
+  void loadWasmPinnedRegsFromInstance();
 
   
   
@@ -4070,10 +4077,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void wasmCallIndirect(const wasm::CallSiteDesc& desc,
-                        const wasm::CalleeDesc& callee,
-                        Label* nullCheckFailedLabel, CodeOffset* fastCallOffset,
-                        CodeOffset* slowCallOffset);
+  
+  
+  [[nodiscard]]
+  FaultingCodeRange wasmCallIndirect(const wasm::CallSiteDesc& desc,
+                                     const wasm::CalleeDesc& callee,
+                                     Label* nullCheckFailedLabel,
+                                     CodeOffset* fastCallOffset,
+                                     CodeOffset* slowCallOffset);
 
   
   
@@ -4081,10 +4092,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  void wasmReturnCallIndirect(const wasm::CallSiteDesc& desc,
-                              const wasm::CalleeDesc& callee,
-                              Label* nullCheckFailedLabel,
-                              const ReturnCallAdjustmentInfo& retCallInfo);
+  
+  
+  [[nodiscard]]
+  FaultingCodeRange wasmReturnCallIndirect(
+      const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
+      Label* nullCheckFailedLabel, const ReturnCallAdjustmentInfo& retCallInfo);
 
   
   

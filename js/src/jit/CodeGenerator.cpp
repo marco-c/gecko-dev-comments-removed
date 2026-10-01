@@ -10568,13 +10568,17 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
             callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
-        masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed, retCallInfo);
+        
+        
+        (void)masm.wasmReturnCallIndirect(desc, callee, nullCheckFailed,
+                                          retCallInfo);
         
         return;
       }
       MOZ_ASSERT(!isReturnCall);
-      masm.wasmCallIndirect(desc, callee, nullCheckFailed, &retOffset,
-                            &secondRetOffset);
+      
+      (void)masm.wasmCallIndirect(desc, callee, nullCheckFailed, &retOffset,
+                                  &secondRetOffset);
       
       
       
@@ -10661,7 +10665,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
     MOZ_ASSERT(!switchRealm);
   }
   if (reloadPinnedRegs) {
-    masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+    masm.loadWasmPinnedRegsFromInstance();
   }
 
   switch (callee.which()) {
