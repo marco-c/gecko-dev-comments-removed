@@ -358,13 +358,26 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       }
 
       case JSOp::FunctionThis:
-        if (!script_->strict() && script_->hasNonSyntacticScope()) {
+        if (!script_->strict()) {
+          if (script_->hasNonSyntacticScope()) {
+            
+            
+            
+            
+            return abort(AbortReason::Disable,
+                         "JSOp::FunctionThis with non-syntactic scope");
+          }
+
           
           
-          
-          
-          return abort(AbortReason::Disable,
-                       "JSOp::FunctionThis with non-syntactic scope");
+          Handle<GlobalObject*> global = cx_->global();
+          if (!GlobalObject::ensureConstructor(cx_, global, JSProto_Number) ||
+              !GlobalObject::ensureConstructor(cx_, global, JSProto_Boolean) ||
+              !GlobalObject::ensureConstructor(cx_, global, JSProto_String) ||
+              !GlobalObject::ensureConstructor(cx_, global, JSProto_Symbol) ||
+              !GlobalObject::ensureConstructor(cx_, global, JSProto_BigInt)) {
+            return abort(AbortReason::Error);
+          }
         }
         break;
 
@@ -1301,6 +1314,9 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     }
   }
 
+  
+  
+  
   for (auto& pending : pendingFuseDeps) {
     auto addDep = [&](const auto& dep) {
       return oracle_->addFuseDependency(dep);

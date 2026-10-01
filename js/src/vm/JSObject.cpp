@@ -2121,6 +2121,9 @@ bool js::IsPrototypeOf(JSContext* cx, HandleObject protoObj, JSObject* obj,
 JSObject* js::PrimitiveToObject(JSContext* cx, const Value& v) {
   MOZ_ASSERT(v.isPrimitive());
 
+  
+  
+  
   switch (v.type()) {
     case ValueType::String: {
       Rooted<JSString*> str(cx, v.toString());
