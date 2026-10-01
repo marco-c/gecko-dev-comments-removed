@@ -85,6 +85,7 @@ fn test_frame_config() -> FrameBuilderConfig {
         low_quality_pinch_zoom: false,
         max_shared_surface_size: 2048,
         enable_dithering: false,
+        enable_yuv_overlay_stability: false,
     }
 }
 
@@ -132,7 +133,7 @@ impl TestWindow {
         let mut txn = Transaction::new();
         txn.use_scene_builder_thread();
         txn.set_root_pipeline(self.pipeline_id);
-        txn.set_display_list(self.epoch, builder.end());
+        txn.set_display_list(self.epoch, self.api.get_namespace_id(), builder.end());
         txn.generate_frame(0, true, false, RenderReasons::TESTING);
         self.epoch.0 += 1;
         let barrier = Self::arm_barrier(&mut txn);
