@@ -44,6 +44,27 @@ class BaseTimeDurationPlatformUtils {
 
 
 
+inline int64_t SaturatingTicksFromDouble(double aTicks) {
+  
+  
+  if (aTicks >= double(INT64_MAX)) {
+    return INT64_MAX;
+  }
+
+  
+  if (aTicks <= double(INT64_MIN)) {
+    return INT64_MIN;
+  }
+
+  return int64_t(aTicks);
+}
+
+
+
+
+
+
+
 
 
 
@@ -70,6 +91,15 @@ class BaseTimeDuration {
     mValue = aOther.mValue;
     return *this;
   }
+
+  
+  
+  BaseTimeDuration operator*(const double aMultiplier) const = delete;
+
+  
+  
+  
+  BaseTimeDuration operator/(const double aDivisor) const = delete;
 
   
   
@@ -168,16 +198,6 @@ class BaseTimeDuration {
     return FromTicks(std::min(aA.mValue, aB.mValue));
   }
 
- private:
-  
-  
-  BaseTimeDuration operator*(const double aMultiplier) const = delete;
-
-  
-  
-  
-  BaseTimeDuration operator/(const double aDivisor) const = delete;
-
  public:
   BaseTimeDuration MultDouble(double aMultiplier) const {
     return FromTicks(ValueCalculator::Multiply(mValue, aMultiplier));
@@ -262,18 +282,7 @@ class BaseTimeDuration {
   }
 
   static BaseTimeDuration FromTicks(double aTicks) {
-    
-    
-    if (aTicks >= double(INT64_MAX)) {
-      return FromTicks(INT64_MAX);
-    }
-
-    
-    if (aTicks <= double(INT64_MIN)) {
-      return FromTicks(INT64_MIN);
-    }
-
-    return FromTicks(int64_t(aTicks));
+    return FromTicks(SaturatingTicksFromDouble(aTicks));
   }
 
   
@@ -307,7 +316,7 @@ class TimeDurationValueCalculator {
 template <>
 inline int64_t TimeDurationValueCalculator::Multiply<double>(int64_t aA,
                                                              double aB) {
-  return static_cast<int64_t>(aA * aB);
+  return SaturatingTicksFromDouble(static_cast<double>(aA) * aB);
 }
 
 
