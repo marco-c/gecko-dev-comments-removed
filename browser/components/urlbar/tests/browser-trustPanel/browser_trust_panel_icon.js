@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const TRACKING_PAGE =
   
-  "http://tracking.example.org/browser/browser/base/content/test/browser-protectionsUI/trackingPage.html";
+  "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 
 const TEST_BREACH = {
   

@@ -6,7 +6,7 @@
 
 var testPage =
   "<body style='margin: 0'>" +
-  "  <img id='img' tabindex='1' src='http://example.org/browser/browser/base/content/test/browser-general/moz.png'>" +
+  "  <img id='img' tabindex='1' src='http://example.org/browser/browser/base/content/test/general/moz.png'>" +
   "  <div id='main' contenteditable='true'>Test <b>Bold</b> After Text</div>" +
   "</body>";
 
@@ -305,7 +305,7 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
 
   
   setClipboardHTMLData(
-    '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">'
+    '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">'
   );
 
   
@@ -332,7 +332,7 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
               if (
                 clipboardText !==
                 htmlPrefixChild +
-                  '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
+                  '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
                   htmlPostfixChild
               ) {
                 reject(
@@ -363,7 +363,7 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
     assertContentAnalysisRequest(
       mockCA.calls[0],
       htmlPrefix +
-        '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
+        '<img id="img" tabindex="1" src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
         htmlPostfix,
       mockCA.calls[0].userActionId,
       1
@@ -381,14 +381,14 @@ async function testClipboardWithContentAnalysis(allowPaste, plainTextOnly) {
       if (allowPaste) {
         expectedContents =
           '<i>Italic</i>&nbsp;<img id="img" tabindex="1" ' +
-          'src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
+          'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
           "Test <b>Bold</b> After<b></b>";
       } else {
         
         
         expectedContents = plainTextOnly
           ? '<img id="img" tabindex="1" ' +
-            'src="http://example.org/browser/browser/base/content/test/browser-general/moz.png">' +
+            'src="http://example.org/browser/browser/base/content/test/general/moz.png">' +
             "Test <b>Bold</b>"
           : "Test <b>Bold</b>";
       }
