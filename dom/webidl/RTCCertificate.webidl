@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -23,4 +22,12 @@ dictionary RTCDtlsFingerprint {
 interface RTCCertificate {
   readonly attribute DOMTimeStamp expires;
   sequence<RTCDtlsFingerprint> getFingerprints();
+
+  // Test-only: drop this certificate's backing entry from RTCCertStore so the
+  // next PeerConnectionImpl::SetCertificate that revives it via structured
+  // clone will fail verification and reject createOffer/createAnswer with
+  // InvalidAccessError. Lets mochitests exercise the stale-handle path
+  // without waiting for the hourly cleanup timer.
+  [ChromeOnly]
+  undefined invalidateForTesting();
 };
