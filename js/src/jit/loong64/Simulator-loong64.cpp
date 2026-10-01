@@ -27,6 +27,8 @@
 
 #include "jit/loong64/Simulator-loong64.h"
 
+#include "mozilla/Casting.h"
+
 #include <cinttypes>
 #include <cmath>
 #include <float.h>
@@ -2586,6 +2588,20 @@ T ReverseBits(T value) {
   return result;
 }
 
+template <typename T>
+inline constexpr T FPUDefaultQNaN() {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  
+  if constexpr (std::is_same_v<T, float>) {
+    
+    return mozilla::BitwiseCast<float>(UINT32_C(0x7fc00000));
+  } else {
+    
+    
+    return mozilla::BitwiseCast<double>(UINT64_C(0x7ff8000000000000));
+  }
+}
 
 
 template <typename T>
