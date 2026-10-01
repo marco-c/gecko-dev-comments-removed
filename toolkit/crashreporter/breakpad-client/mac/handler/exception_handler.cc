@@ -27,6 +27,7 @@
 
 
 
+#include <kern/exc_resource.h>
 #include <mach/exc.h>
 #include <mach/mig.h>
 #include <pthread.h>
@@ -138,6 +139,53 @@ kern_return_t ForwardException(mach_port_t task,
 
 
 
+bool IsNonFatalResourceException(int64_t code) {
+  switch (EXC_RESOURCE_DECODE_RESOURCE_TYPE(code)) {
+    case RESOURCE_TYPE_WAKEUPS:
+      
+      
+      
+      
+      
+    case RESOURCE_TYPE_IO:
+      
+    case RESOURCE_TYPE_THREADS:
+      
+      
+      return true;
+    case RESOURCE_TYPE_CPU:
+      
+      return EXC_RESOURCE_DECODE_FLAVOR(code) != FLAVOR_CPU_MONITOR_FATAL;
+    case RESOURCE_TYPE_MEMORY:
+      switch (EXC_RESOURCE_DECODE_FLAVOR(code)) {
+        case FLAVOR_HIGH_WATERMARK:
+        case FLAVOR_DIAG_MEMLIMIT:
+          
+          return true;
+        case FLAVOR_CONCLAVE_LIMIT:
+          
+        default:
+          return false;
+      }
+    case RESOURCE_TYPE_PORTS:
+      
+    default:
+      
+      return false;
+  }
+}
+
+
+
+
+bool ExceptionCannotBeHandled(mach_port_t task, exception_type_t exception,
+                              int64_t code) {
+  return (task != mach_task_self()) ||
+         ((exception == EXC_RESOURCE) && IsNonFatalResourceException(code));
+}
+
+
+
 
 
 
@@ -194,7 +242,8 @@ boolean_t mach_exc_server(mach_msg_header_t* InHeadP,
   Reply* OutP = (Reply*)OutHeadP;
 
   OutP->NDR = NDR_record;
-  if (In0P->task.name != mach_task_self()) {
+  if (ExceptionCannotBeHandled(In0P->task.name, In0P->exception,
+                               In0P->code[0])) {
     
     
     
@@ -648,8 +697,9 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
 
         self->ResumeThreads();
 
-        if (self->use_minidump_write_mutex_)
+        if (self->use_minidump_write_mutex_) {
           pthread_mutex_unlock(&self->minidump_write_mutex_);
+        }
       } else {
         bool crash_reported = false;
 
@@ -658,7 +708,8 @@ void* ExceptionHandler::WaitForMessage(void* exception_handler_class) {
         
         
         
-        if (receive.task.name == mach_task_self()) {
+        if (!ExceptionCannotBeHandled(receive.task.name, receive.exception,
+                                      receive.code[0])) {
           self->SuspendThreads();
 
 #if USE_PROTECTED_ALLOCATIONS

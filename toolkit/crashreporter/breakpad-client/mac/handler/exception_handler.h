@@ -62,6 +62,9 @@ using std::string;
 
 struct ExceptionParameters;
 
+
+bool IsNonFatalResourceException(int64_t code);
+
 enum HandlerThreadMessage {
   
   kWriteDumpMessage = 0,
