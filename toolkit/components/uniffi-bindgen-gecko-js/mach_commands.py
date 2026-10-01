@@ -108,7 +108,7 @@ def build_uniffi_targets(command_context):
     
     
     
-    megazord_build_kind = get_rust_build_kind(substs, megazord=True)
+    megazord_build_kind = get_rust_build_kind(substs, profile_suffix="megazord")
     megazord_path = mozpath.join(
         uniffi_objdir,
         substs["RUST_TARGET"],
