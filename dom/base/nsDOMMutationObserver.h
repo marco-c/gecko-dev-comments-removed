@@ -722,7 +722,10 @@ class nsAutoAnimationMutationBatch {
   
   
   
-  nsTArray<nsINode*> mBatchTargets;
+  
+  
+  
+  nsTArray<nsCOMPtr<nsINode>> mBatchTargets;
 };
 
 inline nsDOMMutationObserver* nsMutationReceiverBase::Observer() {
