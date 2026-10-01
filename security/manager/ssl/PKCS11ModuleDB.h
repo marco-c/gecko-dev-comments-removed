@@ -21,7 +21,6 @@ namespace psm {
 
 
 
-MOZ_CAN_RUN_SCRIPT
 void ShowProtectedAuthDialog(const nsCString& tokenName,
                              const nsString& promptId);
 

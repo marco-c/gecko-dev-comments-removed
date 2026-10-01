@@ -6,7 +6,6 @@
 #ifndef nsNSSDialogHelper_h
 #define nsNSSDialogHelper_h
 
-#include "mozilla/Attributes.h"
 #include "nsError.h"
 
 class mozIDOMWindowProxy;
@@ -32,7 +31,6 @@ class nsNSSDialogHelper {
 
 
 
-  MOZ_CAN_RUN_SCRIPT
   static nsresult openDialog(mozIDOMWindowProxy* window, const char* url,
                              nsISupports* params, bool modal = true);
 };
