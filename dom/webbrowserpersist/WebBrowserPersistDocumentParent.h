@@ -40,6 +40,12 @@ class WebBrowserPersistDocumentParent final
   
   void SetOnReady(nsIWebBrowserPersistDocumentReceiver* aOnReady);
 
+  
+  
+  
+  
+  bool IsUnclaimedStartState() const { return !mOnReady && !mReflection; }
+
   using Attrs = WebBrowserPersistDocumentAttrs;
 
   

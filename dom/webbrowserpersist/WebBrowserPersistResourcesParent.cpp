@@ -3,7 +3,6 @@
 
 
 
-
 #include "WebBrowserPersistResourcesParent.h"
 
 #include "mozilla/dom/BrowserParent.h"
@@ -56,10 +55,15 @@ mozilla::ipc::IPCResult WebBrowserPersistResourcesParent::RecvVisitResource(
 
 mozilla::ipc::IPCResult WebBrowserPersistResourcesParent::RecvVisitDocument(
     NotNull<PWebBrowserPersistDocumentParent*> aSubDocument) {
+  auto* subDocument =
+      static_cast<WebBrowserPersistDocumentParent*>(aSubDocument.get());
+  if (!subDocument->IsUnclaimedStartState()) {
+    return IPC_FAIL(this, "invalid subdocument actor state");
+  }
+
   
   
-  static_cast<WebBrowserPersistDocumentParent*>(aSubDocument.get())
-      ->SetOnReady(this);
+  subDocument->SetOnReady(this);
   return IPC_OK();
 }
 
