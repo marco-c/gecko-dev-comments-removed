@@ -349,24 +349,14 @@ bool StackMapGenerator::createStackMap(
   for (const Stk& v : stk) {
     switch (v.kind()) {
       
-      case Stk::MemI32:
-      case Stk::MemI64:
-      case Stk::MemF32:
-      case Stk::MemF64:
+      
       case Stk::ConstI32:
       case Stk::ConstI64:
       case Stk::ConstF32:
       case Stk::ConstF64:
 #ifdef ENABLE_JIT_SIMD
-      case Stk::MemV128:
       case Stk::ConstV128:
 #endif
-        continue;
-
-      
-      
-      
-      
       case Stk::LocalI32:
       case Stk::LocalI64:
       case Stk::LocalF32:
@@ -374,7 +364,21 @@ bool StackMapGenerator::createStackMap(
 #ifdef ENABLE_JIT_SIMD
       case Stk::LocalV128:
 #endif
-        MOZ_ASSERT(v.offs() <= framePushedAtEntryToBody.value());
+        continue;
+
+      
+      
+      
+      
+      
+      
+      case Stk::MemI32:
+      case Stk::MemI64:
+      case Stk::MemF32:
+      case Stk::MemF64:
+#ifdef ENABLE_JIT_SIMD
+      case Stk::MemV128:
+#endif
         continue;
 
       
