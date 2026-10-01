@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include <tuple>
 #include <vector>
 
 #include "rtc_base/buffer.h"
@@ -23,20 +24,19 @@
 
 using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
-using ::testing::make_tuple;
 using webrtc::rtcp::Remb;
 
 namespace webrtc {
 namespace {
-const uint32_t kSenderSsrc = 0x12345678;
-const uint32_t kRemoteSsrcs[] = {0x23456789, 0x2345678a, 0x2345678b};
-const uint32_t kBitrateBps = 0x3fb93 * 2;  
-const int64_t kBitrateBps64bit = int64_t{0x3fb93} << 30;
-const uint8_t kPacket[] = {0x8f, 206,  0x00, 0x07, 0x12, 0x34, 0x56, 0x78,
-                           0x00, 0x00, 0x00, 0x00, 'R',  'E',  'M',  'B',
-                           0x03, 0x07, 0xfb, 0x93, 0x23, 0x45, 0x67, 0x89,
-                           0x23, 0x45, 0x67, 0x8a, 0x23, 0x45, 0x67, 0x8b};
-const size_t kPacketLength = sizeof(kPacket);
+constexpr uint32_t kSenderSsrc = 0x12345678;
+constexpr uint32_t kRemoteSsrcs[] = {0x23456789, 0x2345678a, 0x2345678b};
+constexpr uint32_t kBitrateBps = 0x3fb93 * 2;  
+constexpr int64_t kBitrateBps64bit = int64_t{0x3fb93} << 30;
+constexpr uint8_t kPacket[] = {0x8f, 206,  0x00, 0x07, 0x12, 0x34, 0x56, 0x78,
+                               0x00, 0x00, 0x00, 0x00, 'R',  'E',  'M',  'B',
+                               0x03, 0x07, 0xfb, 0x93, 0x23, 0x45, 0x67, 0x89,
+                               0x23, 0x45, 0x67, 0x8a, 0x23, 0x45, 0x67, 0x8b};
+constexpr size_t kPacketLength = sizeof(kPacket);
 }  
 
 TEST(RtcpPacketRembTest, Create) {
@@ -48,7 +48,7 @@ TEST(RtcpPacketRembTest, Create) {
 
   Buffer packet = remb.Build();
 
-  EXPECT_THAT(make_tuple(packet.data(), packet.size()),
+  EXPECT_THAT(std::make_tuple(packet.data(), packet.size()),
               ElementsAreArray(kPacket));
 }
 

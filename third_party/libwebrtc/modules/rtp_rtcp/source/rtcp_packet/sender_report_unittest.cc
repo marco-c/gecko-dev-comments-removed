@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -23,22 +24,21 @@
 #include "test/rtcp_packet_parser.h"
 
 using ::testing::ElementsAreArray;
-using ::testing::make_tuple;
 using webrtc::rtcp::ReportBlock;
 using webrtc::rtcp::SenderReport;
 
 namespace webrtc {
 namespace {
-const uint32_t kSenderSsrc = 0x12345678;
-const uint32_t kRemoteSsrc = 0x23456789;
+constexpr uint32_t kSenderSsrc = 0x12345678;
+constexpr uint32_t kRemoteSsrc = 0x23456789;
 const NtpTime kNtp(0x11121418, 0x22242628);
-const uint32_t kRtpTimestamp = 0x33343536;
-const uint32_t kPacketCount = 0x44454647;
-const uint32_t kOctetCount = 0x55565758;
-const uint8_t kPacket[] = {0x80, 200,  0x00, 0x06, 0x12, 0x34, 0x56,
-                           0x78, 0x11, 0x12, 0x14, 0x18, 0x22, 0x24,
-                           0x26, 0x28, 0x33, 0x34, 0x35, 0x36, 0x44,
-                           0x45, 0x46, 0x47, 0x55, 0x56, 0x57, 0x58};
+constexpr uint32_t kRtpTimestamp = 0x33343536;
+constexpr uint32_t kPacketCount = 0x44454647;
+constexpr uint32_t kOctetCount = 0x55565758;
+constexpr uint8_t kPacket[] = {0x80, 200,  0x00, 0x06, 0x12, 0x34, 0x56,
+                               0x78, 0x11, 0x12, 0x14, 0x18, 0x22, 0x24,
+                               0x26, 0x28, 0x33, 0x34, 0x35, 0x36, 0x44,
+                               0x45, 0x46, 0x47, 0x55, 0x56, 0x57, 0x58};
 }  
 
 TEST(RtcpPacketSenderReportTest, CreateWithoutReportBlocks) {
@@ -50,7 +50,8 @@ TEST(RtcpPacketSenderReportTest, CreateWithoutReportBlocks) {
   sr.SetOctetCount(kOctetCount);
 
   Buffer raw = sr.Build();
-  EXPECT_THAT(make_tuple(raw.data(), raw.size()), ElementsAreArray(kPacket));
+  EXPECT_THAT(std::make_tuple(raw.data(), raw.size()),
+              ElementsAreArray(kPacket));
 }
 
 TEST(RtcpPacketSenderReportTest, ParseWithoutReportBlocks) {
