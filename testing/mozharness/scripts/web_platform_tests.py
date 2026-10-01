@@ -394,29 +394,16 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             
             cmd.append("--repeat=%s" % (self.repeat + 1))
 
-        
-        
-        
-        is_parallel_capable_mac = (
-            sys.platform.startswith("darwin")
-            and mozinfo.info.get("arch") == "aarch64"
-            and not mozinfo.info.get("macos_vm")
-            and list(test_types) == ["testharness"]
-            and not c["tag"]
-        )
         if (
             self.is_android
             or mozinfo.info["tsan"]
             or "wdspec" in test_types
-            or (not c["disable_fission"] and not is_parallel_capable_mac)
+            or not c["disable_fission"]
             
-            or ("reftest" in test_types and sys.platform.startswith("darwin"))
+            or "reftest" in test_types
+            and sys.platform.startswith("darwin")
         ):
             processes = 1
-        elif is_parallel_capable_mac:
-            
-            
-            processes = 3
         else:
             processes = 2
         cmd.append("--processes=%s" % processes)
