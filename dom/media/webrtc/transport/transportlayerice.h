@@ -5,8 +5,6 @@
 
 
 
-
-
 #ifndef transportlayerice_h_
 #define transportlayerice_h_
 
@@ -38,7 +36,7 @@ class TransportLayerIce : public TransportLayer {
   void IceReady(NrIceMediaStream* stream);
   void IceFailed(NrIceMediaStream* stream);
   void IcePacketReceived(NrIceMediaStream* stream, int component,
-                         const unsigned char* data, int len);
+                         MediaPacket& packet);
 
   
   sigslot::signal2<TransportLayer*, MediaPacket&> SignalPacketSending;

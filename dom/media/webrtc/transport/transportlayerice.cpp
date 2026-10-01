@@ -143,21 +143,14 @@ void TransportLayerIce::IceFailed(NrIceMediaStream* stream) {
 }
 
 void TransportLayerIce::IcePacketReceived(NrIceMediaStream* stream,
-                                          int component,
-                                          const unsigned char* data, int len) {
+                                          int component, MediaPacket& packet) {
   CheckThread();
   
   
   if (component_ != component) return;
 
   MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << stream->name() << ","
-                                 << component << "," << len << ")");
-  
-  
-  
-  MediaPacket packet;
-  packet.Copy(data, len);
-  packet.Categorize();
+                                 << component << "," << packet.len() << ")");
 
   SignalPacketReceived(this, packet);
 }

@@ -47,6 +47,7 @@
 #include <vector>
 
 #include "m_cpp_utils.h"
+#include "mediapacket.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nscore.h"
@@ -197,6 +198,9 @@ class NrIceMediaStream {
   
   void Ready(nr_ice_media_stream* stream);
   void Failed();
+  
+  void PacketReceived(nr_ice_media_stream* stream, int component_id,
+                      const unsigned char* data, int len);
 
   void OnGatheringStarted(nr_ice_media_stream* stream);
   void OnGatheringComplete(nr_ice_media_stream* stream);
@@ -231,7 +235,7 @@ class NrIceMediaStream {
 
   sigslot::signal1<NrIceMediaStream*> SignalReady;   
   sigslot::signal1<NrIceMediaStream*> SignalFailed;  
-  sigslot::signal4<NrIceMediaStream*, int, const unsigned char*, int>
+  sigslot::signal3<NrIceMediaStream*, int, MediaPacket&>
       SignalPacketReceived;  
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrIceMediaStream);
