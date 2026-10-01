@@ -4,7 +4,7 @@
 "use strict";
 
 const { BookmarksFileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/FileMigrators.sys.mjs"
+  "moz-src:///browser/components/migration/FileMigrators.sys.mjs"
 );
 
 const { MigrationWizardConstants } = ChromeUtils.importESModule(

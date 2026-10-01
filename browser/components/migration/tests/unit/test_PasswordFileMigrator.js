@@ -4,7 +4,7 @@
 "use strict";
 
 const { PasswordFileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/FileMigrators.sys.mjs"
+  "moz-src:///browser/components/migration/FileMigrators.sys.mjs"
 );
 const { LoginCSVImport } = ChromeUtils.importESModule(
   "resource://gre/modules/LoginCSVImport.sys.mjs"

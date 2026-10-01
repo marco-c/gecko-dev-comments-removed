@@ -10,7 +10,7 @@
 
 
 const { SafariProfileMigrator } = ChromeUtils.importESModule(
-  "resource:///modules/SafariProfileMigrator.sys.mjs"
+  "moz-src:///browser/components/migration/SafariProfileMigrator.sys.mjs"
 );
 
 const { sinon } = ChromeUtils.importESModule(
