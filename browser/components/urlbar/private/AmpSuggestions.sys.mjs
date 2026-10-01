@@ -9,8 +9,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AmpMatchingStrategy:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSuggest.sys.mjs",
-  CONTEXTUAL_SERVICES_PING_TYPES:
-    "resource:///modules/PartnerLinkAttribution.sys.mjs",
   ContextId: "moz-src:///browser/modules/ContextId.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   rawSuggestionUrlMatches:
@@ -24,6 +22,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const TIMESTAMP_TEMPLATE = "%YYYYMMDDHH%";
 const TIMESTAMP_LENGTH = 10;
 const TIMESTAMP_REGEXP = /^\d{10}$/;
+
+/**
+ * Possible values for `ping_type` in the `quick-suggest` ping.
+ */
+export const QUICK_SUGGEST_PING_TYPE = {
+  BLOCK: "quicksuggest-block",
+  CLICK: "quicksuggest-click",
+  IMPRESSION: "quicksuggest-impression",
+};
 
 /**
  * A feature that manages AMP suggestions.
@@ -227,6 +234,13 @@ export class AmpSuggestions extends SuggestProvider {
     return commands;
   }
 
+  /**
+   * @param {string} state
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {{index: number, result: UrlbarResult}[]} featureResults
+   * @param {object|null} details
+   */
   onImpression(state, queryContext, controller, featureResults, details) {
     // For the purpose of the `quick-suggest` impression ping, "impression"
     // means that one of these suggestions was visible at the time of an
@@ -243,6 +257,12 @@ export class AmpSuggestions extends SuggestProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   * @param {string} searchString
+   */
   onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
 
@@ -278,13 +298,13 @@ export class AmpSuggestions extends SuggestProvider {
     switch (details.selType) {
       case "quicksuggest":
         pingData = {
-          pingType: lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_SELECTION,
+          pingType: QUICK_SUGGEST_PING_TYPE.CLICK,
           reportingUrl: result.payload.sponsoredClickUrl,
         };
         break;
       case "dismiss":
         pingData = {
-          pingType: lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_BLOCK,
+          pingType: QUICK_SUGGEST_PING_TYPE.BLOCK,
           iabCategory: result.payload.sponsoredIabCategory,
         };
         break;
@@ -410,12 +430,12 @@ export class AmpSuggestions extends SuggestProvider {
     return this.#submitQuickSuggestPing({
       result,
       queryContext,
-      pingType: lazy.CONTEXTUAL_SERVICES_PING_TYPES.QS_IMPRESSION,
+      pingType: QUICK_SUGGEST_PING_TYPE.IMPRESSION,
       isClicked:
         // `selType` == "quicksuggest" if the result itself was clicked. It will
         // be a command name if a command was clicked, e.g., "dismiss". Match by
-        // id: on the message path the visible result and the picked result are
-        // reconstructed as distinct objects.
+        // id: the visible result and the picked result aren't necessarily the
+        // same object.
         result.id == details.result?.id && details.selType == "quicksuggest",
       reportingUrl: result.payload.sponsoredImpressionUrl,
     });

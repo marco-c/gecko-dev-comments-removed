@@ -463,9 +463,6 @@ async function cleanupPlaces() {
 
 
 
-
-
-
 function makeBookmarkResult(
   queryContext,
   {
@@ -479,7 +476,6 @@ function makeBookmarkResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
-    sendAttributionRequest = undefined,
     providerName = undefined,
   }
 ) {
@@ -513,9 +509,6 @@ function makeBookmarkResult(
   }
   if (isSponsored !== undefined) {
     payload.isSponsored = isSponsored;
-  }
-  if (sendAttributionRequest !== undefined) {
-    payload.sendAttributionRequest = sendAttributionRequest;
   }
 
   return new UrlbarResult({
@@ -938,9 +931,6 @@ function makeSearchResult(
 
 
 
-
-
-
 function makeVisitResult(
   queryContext,
   {
@@ -956,7 +946,6 @@ function makeVisitResult(
     lastVisit = undefined,
     isPinned = undefined,
     isSponsored = undefined,
-    sendAttributionRequest = undefined,
   }
 ) {
   let payload = {
@@ -977,9 +966,6 @@ function makeVisitResult(
   }
   if (isSponsored !== undefined) {
     payload.isSponsored = isSponsored;
-  }
-  if (sendAttributionRequest !== undefined) {
-    payload.sendAttributionRequest = sendAttributionRequest;
   }
 
   if (
