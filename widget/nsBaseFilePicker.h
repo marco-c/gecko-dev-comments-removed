@@ -6,13 +6,16 @@
 #ifndef nsBaseFilePicker_h_
 #define nsBaseFilePicker_h_
 
+#include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsIFilePicker.h"
 #include "nsISupports.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
+class nsIFile;
 class nsISimpleEnumerator;
 class nsIWidget;
 class nsIGlobalObject;
@@ -92,6 +95,19 @@ class nsBaseFilePicker : public nsIFilePicker {
   
   
   bool IsContentInitiated() const;
+
+  using ContentAnalysisPromise =
+      mozilla::MozPromise<nsCOMArray<nsIFile>, nsresult, true>;
+
+  
+  
+  bool ShouldRunContentAnalysis() const;
+
+  
+  
+  
+  RefPtr<ContentAnalysisPromise> CheckContentAnalysis(
+      nsCOMArray<nsIFile>&& aFiles);
 
   bool mAddToRecentDocs = true;
   nsCOMPtr<nsIFile> mDisplayDirectory;

@@ -5,9 +5,11 @@
 
 #include "nsBaseFilePicker.h"
 
+#include "ContentAnalysis.h"
 #include "WidgetUtils.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Components.h"
+#include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -437,6 +439,41 @@ bool nsBaseFilePicker::IsPickerInputProtected() const {
          IsWithinInputProtectionTimeRange(
              mShowTime, mozilla::TimeStamp::Now(),
              mozilla::StaticPrefs::security_notification_enable_delay());
+}
+
+bool nsBaseFilePicker::ShouldRunContentAnalysis() const {
+  if (mMode == nsIFilePicker::modeSave || !mBrowsingContext ||
+      mBrowsingContext->IsChrome() ||
+      !mozilla::StaticPrefs::
+          browser_contentanalysis_interception_point_file_upload_enabled()) {
+    return false;
+  }
+  nsCOMPtr<nsIContentAnalysis> contentAnalysis =
+      mozilla::components::nsIContentAnalysis::Service();
+  if (!contentAnalysis) {
+    return false;
+  }
+  
+  
+  bool isActive = false;
+  (void)contentAnalysis->GetIsActive(&isActive);
+  return isActive;
+}
+
+RefPtr<nsBaseFilePicker::ContentAnalysisPromise>
+nsBaseFilePicker::CheckContentAnalysis(nsCOMArray<nsIFile>&& aFiles) {
+  if (NS_WARN_IF(aFiles.IsEmpty()) || NS_WARN_IF(!mBrowsingContext)) {
+    return ContentAnalysisPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+  auto* windowGlobal = mBrowsingContext->Canonical()->GetCurrentWindowGlobal();
+  if (NS_WARN_IF(!windowGlobal)) {
+    return ContentAnalysisPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
+  }
+  
+  
+  return mozilla::contentanalysis::ContentAnalysis::CheckUploadsInBatchMode(
+      std::move(aFiles),  true, windowGlobal,
+      nsIContentAnalysisRequest::Reason::eFilePickerDialog);
 }
 
 nsresult nsBaseFilePicker::ResolveSpecialDirectory(
