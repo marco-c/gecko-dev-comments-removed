@@ -91,6 +91,9 @@ mermaid_init_config = {
 }
 
 
+mermaid_include_zenuml = True
+
+
 
 with open(OUR_DIR / "config.yml") as fh:
     config = yaml.safe_load(fh)
