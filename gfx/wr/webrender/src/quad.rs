@@ -724,10 +724,8 @@ fn prepare_quad_impl(
             Some(local_to_device) => local_to_device.map_rect(&local_bounds),
             
             
-            None => frame_state.surfaces[pic_context.surface_index.0].map_to_device_rect(
-                &clip_chain.pic_coverage_rect,
-                spatial_tree,
-            ),
+            None => frame_state.surfaces[pic_context.surface_index.0]
+                .map_to_device_rect(&clip_chain.pic_coverage_rect),
         };
 
         

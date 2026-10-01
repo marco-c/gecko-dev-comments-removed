@@ -150,6 +150,57 @@ fn raster_to_root_mapper(
 }
 
 
+
+
+
+
+
+
+
+
+
+
+fn picture_to_device_mapping(
+    surface_spatial_node_index: SpatialNodeIndex,
+    raster_spatial_node_index: SpatialNodeIndex,
+    device_pixel_scale: DevicePixelScale,
+    spatial_tree: &SpatialTree,
+) -> ScaleOffset {
+    let picture_to_raster = if raster_spatial_node_index == surface_spatial_node_index {
+        ScaleOffset::identity()
+    } else {
+        debug_assert_eq!(
+            device_pixel_scale.0, 1.0,
+            "a surface that rasterizes in another node's space carries no device scale",
+        );
+        debug_assert_eq!(
+            raster_spatial_node_index,
+            spatial_tree.root_reference_frame_index(),
+            "the only raster node a surface does not share is the root",
+        );
+
+        match spatial_tree.get_relative_transform(
+            surface_spatial_node_index,
+            raster_spatial_node_index,
+        ) {
+            CoordinateSpaceMapping::Local => ScaleOffset::identity(),
+            CoordinateSpaceMapping::ScaleOffset(scale_offset) => scale_offset,
+            CoordinateSpaceMapping::Transform(..) => {
+                debug_assert!(
+                    false,
+                    "surface at {:?} rasterizing in {:?} is not axis-aligned in it",
+                    surface_spatial_node_index,
+                    raster_spatial_node_index,
+                );
+                ScaleOffset::identity()
+            }
+        }
+    };
+
+    picture_to_raster.then_scale(device_pixel_scale.0)
+}
+
+
 const MAX_BLUR_RADIUS: f32 = 100.;
 
 
@@ -228,6 +279,11 @@ pub struct SurfaceInfo {
     
     
     pub map_local_to_picture: SpaceMapper<LayoutPixel, PicturePixel>,
+    
+    
+    
+    
+    pub picture_to_device: ScaleOffset,
     
     pub surface_spatial_node_index: SpatialNodeIndex,
     
@@ -362,6 +418,12 @@ impl SurfaceInfo {
             is_opaque: false,
             clipping_rect: PictureRect::zero(),
             map_local_to_picture,
+            picture_to_device: picture_to_device_mapping(
+                surface_spatial_node_index,
+                raster_spatial_node_index,
+                device_pixel_scale,
+                spatial_tree,
+            ),
             raster_spatial_node_index,
             surface_spatial_node_index,
             device_pixel_scale,
@@ -485,31 +547,26 @@ impl SurfaceInfo {
         self.culling_rect = expanded.unwrap_or_else(RasterRect::max_rect);
     }
 
+    
+    
+    pub fn update_picture_to_device_mapping(
+        &mut self,
+        spatial_tree: &SpatialTree,
+    ) {
+        self.picture_to_device = picture_to_device_mapping(
+            self.surface_spatial_node_index,
+            self.raster_spatial_node_index,
+            self.device_pixel_scale,
+            spatial_tree,
+        );
+    }
+
+    
     pub fn map_to_device_rect(
         &self,
         picture_rect: &PictureRect,
-        spatial_tree: &SpatialTree,
     ) -> DeviceRect {
-        let raster_rect = if self.raster_spatial_node_index != self.surface_spatial_node_index {
-            
-            
-            
-            assert_eq!(self.device_pixel_scale.0, 1.0);
-            assert_eq!(self.raster_spatial_node_index, spatial_tree.root_reference_frame_index());
-
-            let pic_to_raster = SpaceMapper::new_with_target(
-                self.raster_spatial_node_index,
-                self.surface_spatial_node_index,
-                WorldRect::max_rect(),
-                spatial_tree,
-            );
-
-            pic_to_raster.map(&picture_rect).unwrap()
-        } else {
-            picture_rect.cast_unit()
-        };
-
-        raster_rect * self.device_pixel_scale
+        self.picture_to_device.map_rect(picture_rect)
     }
 
     
@@ -517,32 +574,16 @@ impl SurfaceInfo {
     pub fn get_surface_rect(
         &self,
         local_rect: &PictureRect,
-        spatial_tree: &SpatialTree,
     ) -> Option<DeviceIntRect> {
         let local_rect = match local_rect.intersection(&self.clipping_rect) {
             Some(rect) => rect,
             None => return None,
         };
 
-        let raster_rect = if self.raster_spatial_node_index != self.surface_spatial_node_index {
-            assert_eq!(self.device_pixel_scale.0, 1.0);
+        
+        assert!(self.device_pixel_scale.0 > 0.0);
 
-            let local_to_world = SpaceMapper::new_with_target(
-                spatial_tree.root_reference_frame_index(),
-                self.surface_spatial_node_index,
-                WorldRect::max_rect(),
-                spatial_tree,
-            );
-
-            local_to_world.map(&local_rect).unwrap()
-        } else {
-            
-            assert!(self.device_pixel_scale.0 > 0.0);
-
-            local_rect.cast_unit()
-        };
-
-        let surface_rect = (raster_rect * self.device_pixel_scale).round_out().to_i32();
+        let surface_rect = self.map_to_device_rect(&local_rect).round_out().to_i32();
         if surface_rect.is_empty() {
             
             
