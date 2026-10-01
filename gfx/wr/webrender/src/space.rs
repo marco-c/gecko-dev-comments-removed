@@ -9,7 +9,7 @@ use std::fmt;
 
 use euclid::{Transform3D, Box2D, Point2D, Vector2D};
 
-use api::units::{DevicePoint, DeviceRect};
+use api::units::{DevicePoint, DeviceRect, LayoutSideOffsets};
 use crate::spatial_tree::{CoordinateSystemId, SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::surface::SurfaceInfo;
 use crate::util::project_rect;
@@ -426,6 +426,24 @@ impl SpaceSnapper {
                     SnapRounding::RoundOut => device_rect.round_out(),
                     SnapRounding::Line { horizontal } =>
                         snap_line_device_rect(&device_rect, horizontal ^ swap_xy),
+                    SnapRounding::BorderInner { .. } if swap_xy => device_rect.snap(),
+                    SnapRounding::BorderInner { ref widths } => {
+                        
+                        
+                        
+                        let inner: Box2D<f32, F> = Box2D::new(
+                            Point2D::new(rect.min.x + widths.left, rect.min.y + widths.top),
+                            Point2D::new(rect.max.x - widths.right, rect.max.y - widths.bottom),
+                        );
+                        let inner_device: DeviceRect = scale_offset.map_rect(&inner);
+                        snap_border_device_rect(
+                            &device_rect,
+                            &inner_device,
+                            widths,
+                            scale_offset.scale.x,
+                            scale_offset.scale.y,
+                        )
+                    }
                 };
                 let unmapped: Box2D<f32, F> = scale_offset.unmap_rect(&snapped);
                 if swap_xy { swap_box_xy(&unmapped) } else { unmapped }
@@ -457,6 +475,64 @@ pub enum SnapRounding {
     
     
     Line { horizontal: bool },
+    
+    
+    
+    
+    
+    
+    
+    BorderInner { widths: LayoutSideOffsets },
+}
+
+
+
+fn snap_border_device_rect(
+    r: &DeviceRect,
+    inner: &DeviceRect,
+    widths: &LayoutSideOffsets,
+    scale_x: f32,
+    scale_y: f32,
+) -> DeviceRect {
+    
+    
+    let snapped_width = |w: f32, s: f32| {
+        if w == 0.0 {
+            Some(0.0)
+        } else if w >= 1.0 && s > 0.0 {
+            Some((w * s).round().max(1.0))
+        } else {
+            None
+        }
+    };
+    let (Some(left), Some(top), Some(right), Some(bottom)) = (
+        snapped_width(widths.left, scale_x),
+        snapped_width(widths.top, scale_y),
+        snapped_width(widths.right, scale_x),
+        snapped_width(widths.bottom, scale_y),
+    ) else {
+        return r.snap();
+    };
+
+    if inner.is_empty() {
+        return r.snap();
+    }
+    let outer = r.snap();
+    let inner = inner.snap();
+
+    
+    
+    
+    
+    
+    let snapped = DeviceRect::new(
+        DevicePoint::new(outer.min.x.max(inner.min.x - left), outer.min.y.max(inner.min.y - top)),
+        DevicePoint::new(outer.max.x.min(inner.max.x + right), outer.max.y.min(inner.max.y + bottom)),
+    );
+    if snapped.width() < left + right || snapped.height() < top + bottom {
+        return outer;
+    }
+    snapped
 }
 
 
