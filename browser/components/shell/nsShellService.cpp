@@ -1,0 +1,12 @@
+
+
+
+
+#include "nsShellService.h"
+
+NS_IMPL_ISUPPORTS(nsShellService, nsIToolkitShellService)
+
+NS_IMETHODIMP nsShellService::IsDefaultApplication(bool* aIsDefaultBrowser) {
+  
+  return IsDefaultBrowser(false, aIsDefaultBrowser);
+}

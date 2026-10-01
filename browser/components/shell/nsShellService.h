@@ -5,9 +5,35 @@
 #ifndef BROWSER_COMPONENTS_SHELL_NSSHELLSERVICE_H_
 #define BROWSER_COMPONENTS_SHELL_NSSHELLSERVICE_H_
 
+#include "nsIToolkitShellService.h"
+
 #define PREF_CHECKDEFAULTBROWSER "browser.shell.checkDefaultBrowser"
 #define PREF_DEFAULTBROWSERCHECKCOUNT "browser.shell.defaultBrowserCheckCount"
 
 #define SHELL_BRAND_PROPERTIES_URI "chrome://branding/locale/brand.properties"
+
+
+
+
+
+
+
+
+
+class nsShellService : public nsIToolkitShellService {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSITOOLKITSHELLSERVICE
+
+ protected:
+  virtual ~nsShellService() = default;
+
+  
+
+
+
+
+  NS_IMETHOD IsDefaultBrowser(bool aForAllTypes, bool* aIsDefaultBrowser) = 0;
+};
 
 #endif  
