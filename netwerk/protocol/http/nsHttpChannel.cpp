@@ -8531,14 +8531,23 @@ void nsHttpChannel::MaybeStartDNSPrefetch() {
                                         });
     }
 
-    
-    
-    
-    
-    bool skipIPv4 = mCaps & NS_HTTP_DISABLE_IPV4;
-    bool skipIPv6 = (mCaps & NS_HTTP_DISABLE_IPV6) ||
-                    StaticPrefs::network_dns_disableIPv6();
-    (void)mDNSPrefetch->PrefetchHighPerFamily(dnsFlags, skipIPv4, skipIPv6);
+    if (StaticPrefs::network_http_happy_eyeballs_enabled()) {
+      
+      
+      
+      
+      bool skipIPv4 = mCaps & NS_HTTP_DISABLE_IPV4;
+      bool skipIPv6 = (mCaps & NS_HTTP_DISABLE_IPV6) ||
+                      StaticPrefs::network_dns_disableIPv6();
+      (void)mDNSPrefetch->PrefetchHighPerFamily(dnsFlags, skipIPv4, skipIPv6);
+    } else {
+      if (mCaps & NS_HTTP_DISABLE_IPV4) {
+        dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV4;
+      } else if (mCaps & NS_HTTP_DISABLE_IPV6) {
+        dnsFlags |= nsIDNSService::RESOLVE_DISABLE_IPV6;
+      }
+      (void)mDNSPrefetch->PrefetchHigh(dnsFlags);
+    }
   }
 }
 
