@@ -381,6 +381,15 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
 
   bool Match(Element* aElement);
+
+  enum class MatchSelfMode : uint8_t {
+    Insertion,
+    
+    
+    
+    Removal,
+  };
+
   
 
 
@@ -388,6 +397,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
 
 
+  template <MatchSelfMode Mode>
   bool MatchSelf(nsIContent* aContent);
 
   virtual nsINode* GetNextNode(nsINode* aCurrent);
