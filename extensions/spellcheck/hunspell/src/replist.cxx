@@ -78,6 +78,7 @@
 
 RepList::RepList(int n) {
   dat.reserve(std::min(n, 16384));
+  can_use_trie = true;
 }
 
 RepList::~RepList() {
@@ -86,20 +87,28 @@ RepList::~RepList() {
   }
 }
 
-int RepList::find(const char* word) {
+int RepList::find(const char* word, size_t max_len) {
   int p1 = 0;
   int p2 = dat.size() - 1;
   int ret = -1;
   while (p1 <= p2) {
     int m = ((unsigned)p1 + (unsigned)p2) >> 1;
-    int c = strncmp(word, dat[m]->pattern.c_str(), dat[m]->pattern.size());
+    const std::string& pattern = dat[m]->pattern;
+    
+    
+    size_t cmplen = pattern.size() < max_len ? pattern.size() : max_len;
+    int c = strncmp(word, pattern.c_str(), cmplen);
     if (c < 0)
       p2 = m - 1;
     else if (c > 0)
       p1 = m + 1;
-    else {      
-      ret = m;
+    else if (pattern.size() <= max_len) {  
+      ret = m;                             
       p1 = m + 1;
+    } else {
+      
+      
+      p2 = m - 1;
     }
   }
   return ret;
@@ -118,6 +127,7 @@ int RepList::add(const std::string& in_pat1, const std::string& pat2) {
   if (in_pat1.empty() || pat2.empty()) {
     return 1;
   }
+
   
   int type = 0;
   std::string pat1(in_pat1);
@@ -132,7 +142,20 @@ int RepList::add(const std::string& in_pat1, const std::string& pat2) {
   mystrrep(pat1, "_", " ");
 
   
-  int m = find(pat1.c_str());
+  
+  
+  
+  
+  if (type == 0 && can_use_trie) {
+    std::string out(pat2);
+    mystrrep(out, "_", " ");
+    trie.add(pat1, out);
+  } else {
+    can_use_trie = false;
+  }
+
+  
+  int m = find(pat1.c_str(), pat1.size());
   if (m >= 0 && dat[m]->pattern == pat1) {
     
     dat[m]->outstrings[type] = pat2;
@@ -159,6 +182,11 @@ int RepList::add(const std::string& in_pat1, const std::string& pat2) {
 }
 
 bool RepList::conv(const std::string& in_word, std::string& dest) {
+  
+  
+  if (can_use_trie && trie.get_status())
+    return trie.transcode(in_word, dest) != TranscodeResult::None;
+
   dest.clear();
 
   const size_t wordlen = in_word.size();
@@ -166,16 +194,29 @@ bool RepList::conv(const std::string& in_word, std::string& dest) {
 
   bool change = false;
   for (size_t i = 0; i < wordlen; ++i) {
-    int n = find(word + i);
+    int n = -1;
+    std::string l;
 
-    bool empty = n < 0;
-    if (empty) {
-      dest.push_back(word[i]);
-      continue;
+    
+    
+    
+    
+    for (size_t max_len = wordlen - i; max_len > 0;) {
+      int m = find(word + i, max_len);
+      if (m < 0)
+        break;
+      l = replace(wordlen - i, m, i == 0);
+      if (!l.empty()) {
+        n = m;
+        break;
+      }
+      size_t plen = dat[m]->pattern.size();
+      if (plen == 0)
+        break;
+      max_len = plen - 1;
     }
 
-    std::string l = replace(wordlen - i, n, i == 0);
-    if (l.empty()) {
+    if (n < 0) {
       dest.push_back(word[i]);
       continue;
     }

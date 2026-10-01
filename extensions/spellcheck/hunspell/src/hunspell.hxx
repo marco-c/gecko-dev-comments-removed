@@ -71,6 +71,7 @@
 #define MYSPELLMGR_HXX_
 
 #include "hunvisapi.h"
+#include "hunversion.h"
 #include "w_char.hxx"
 #include "atypes.hxx"
 #include <string>
@@ -98,6 +99,16 @@
 #endif
 
 class HunspellImpl;
+
+
+
+
+
+
+
+
+
+typedef void (*HunspellTraceCallback)(void* userdata, int depth, const char* line);
 
 class LIBHUNSPELL_DLL_EXPORTED Hunspell {
  private:
@@ -220,6 +231,11 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
   struct cs_info* get_csconv();
 
+  
+  static const char* get_library_version();
+
+  
+
   const char* get_version() const;
   const std::string& get_version_cpp() const;
 
@@ -228,6 +244,12 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
   
   bool input_conv(const std::string& word, std::string& dest);
   H_DEPRECATED int input_conv(const char* word, char* dest, size_t destsize);
+
+  
+
+
+
+  void set_trace_callback(HunspellTraceCallback callback, void* userdata);
 };
 
 #endif
