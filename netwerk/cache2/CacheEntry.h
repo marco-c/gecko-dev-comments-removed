@@ -444,6 +444,10 @@ class CacheEntry final : public nsIRunnable,
 
   nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
   mozilla::TimeStamp mLoadStart;
+  
+  
+  
+  mozilla::TimeStamp mRevalidatingSince MOZ_GUARDED_BY(mLock);
   uint32_t mUseCount{0};
 
   RefPtr<DictionaryCacheEntry> mDict;
