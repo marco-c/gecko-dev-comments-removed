@@ -7,6 +7,10 @@ const SHOW_SEARCH_PREF = "browser.newtabpage.activity-stream.showSearch";
 const SHOW_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.system.showWeather";
 const SHOW_WEATHER_PREF = "browser.newtabpage.activity-stream.showWeather";
+
+
+
+
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
 const NOVA_SHOW_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
@@ -98,7 +102,7 @@ add_task(async function test_weather_widget_visibility() {
 
   let { win, tab } = await openHomePreferences();
 
-  let weatherWrapper = getSettingControl("weather", win);
+  let weatherWrapper = getSettingControl("weatherStandalone", win);
   ok(
     !weatherWrapper || BrowserTestUtils.isHidden(weatherWrapper),
     "Weather control is hidden when system pref is false"
@@ -115,7 +119,7 @@ add_task(async function test_weather_widget_visibility() {
 
   ({ win, tab } = await openHomePreferences());
 
-  weatherWrapper = await settingControlRenders("weather", win);
+  weatherWrapper = await settingControlRenders("weatherStandalone", win);
   ok(weatherWrapper, "Weather control exists when system pref is true");
   ok(
     BrowserTestUtils.isVisible(weatherWrapper),
@@ -136,7 +140,7 @@ add_task(async function test_weather_toggle_functionality() {
 
   let { win, tab } = await openHomePreferences();
 
-  let weatherControl = await settingControlRenders("weather", win);
+  let weatherControl = await settingControlRenders("weatherStandalone", win);
   ok(weatherControl, "Weather control exists");
 
   let toggle = weatherControl.querySelector("moz-toggle");
@@ -175,7 +179,7 @@ add_task(async function test_weather_widget_visibility_nova() {
 
   let { win, tab } = await openHomePreferences();
 
-  let weatherWrapper = getSettingControl("weather", win);
+  let weatherWrapper = getSettingControl("weatherStandalone", win);
   ok(
     !weatherWrapper || BrowserTestUtils.isHidden(weatherWrapper),
     "Weather control is hidden when Nova system pref is false"
@@ -192,7 +196,7 @@ add_task(async function test_weather_widget_visibility_nova() {
 
   ({ win, tab } = await openHomePreferences());
 
-  weatherWrapper = await settingControlRenders("weather", win);
+  weatherWrapper = await settingControlRenders("weatherStandalone", win);
   ok(weatherWrapper, "Weather control exists when Nova system pref is true");
   ok(
     BrowserTestUtils.isVisible(weatherWrapper),
@@ -213,7 +217,7 @@ add_task(async function test_weather_toggle_functionality_nova() {
 
   let { win, tab } = await openHomePreferences();
 
-  let weatherControl = await settingControlRenders("weather", win);
+  let weatherControl = await settingControlRenders("weatherStandalone", win);
   ok(weatherControl, "Weather control exists");
 
   let toggle = weatherControl.querySelector("moz-toggle");

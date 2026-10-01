@@ -50,16 +50,17 @@ async function assertSectionDisabled(win) {
   );
 
   
+  
+  
   const novaEnabled = Services.prefs.getBoolPref(NOVA_ENABLED_PREF, false);
   for (let settingId of [
     "webSearch",
-    "weather",
     "widgets",
     "shortcuts",
     "stories",
     "supportFirefox",
     "recentActivity",
-    ...(novaEnabled ? ["firefoxLogo"] : []),
+    ...(novaEnabled ? ["firefoxLogo"] : ["weatherStandalone"]),
   ]) {
     let control = await settingControlRenders(settingId, win);
     ok(
