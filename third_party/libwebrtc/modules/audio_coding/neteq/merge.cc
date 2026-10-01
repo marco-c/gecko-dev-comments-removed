@@ -187,7 +187,7 @@ size_t Merge::GetExpandedSignal(size_t* old_length, size_t* expand_period) {
     
   }
   
-  RTC_DCHECK_GE(210 * kMaxSampleRate / 8000, *old_length);
+  RTC_DCHECK_LE(*old_length, 210 * kMaxSampleRate / 8000);
 
   AudioMultiVector expanded_temp(num_channels_);
   expand_->Process(&expanded_temp);
