@@ -18,7 +18,6 @@
 class nsAtom;
 class nsINode;
 class nsIPrincipal;
-class nsNodeInfoManager;
 
 namespace mozilla {
 class ErrorResult;
@@ -107,7 +106,7 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
 
 
 
-  void AdoptCachedAttributes(nsNodeInfoManager* aManager);
+  nsresult SetOwnerDocument(Document* aDocument);
 
   
 
