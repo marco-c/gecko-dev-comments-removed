@@ -2421,6 +2421,11 @@ pref("browser.smartwindow.smartformfill.enabled", false);
 pref("browser.smartwindow.smartformfill.disallowedRegions", "FR");
 
 
+
+
+pref("browser.smartwindow.smartformfill.minFormFields", 4);
+
+
 pref("browser.smartwindow.agent.enabled", true);
 pref("browser.smartwindow.agent.supportedRegions", "US,CA");
 

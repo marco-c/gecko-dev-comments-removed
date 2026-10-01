@@ -16,6 +16,7 @@ const FORM_URL =
   "https://example.com/browser/browser/components/aiwindow/ui/test/browser/test_smartformfill_autocomplete.html";
 const SOURCE_URL = "https://example.org/";
 const SMART_FORM_FILL_PREF = "browser.smartwindow.smartformfill.enabled";
+const MIN_FORM_FIELDS_PREF = "browser.smartwindow.smartformfill.minFormFields";
 
 const SMART_FORM_FILL_MODEL_PURPOSE = "smart-form-fill";
 const FIELD_CLASSIFICATION_SCHEMA = "SmartFormFillFieldClassification";
@@ -74,6 +75,8 @@ async function setupSmartFormFillAutocompleteTest() {
   await SpecialPowers.pushPrefEnv({
     set: [
       [SMART_FORM_FILL_PREF, true],
+      
+      [MIN_FORM_FIELDS_PREF, 1],
       ["signon.rememberSignons", true],
       ["signon.showAutoCompleteFooter", true],
       

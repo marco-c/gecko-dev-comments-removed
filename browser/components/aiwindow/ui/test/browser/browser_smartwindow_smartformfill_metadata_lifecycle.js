@@ -77,6 +77,31 @@ function rejectPendingMetadataRequest(mockEngineManager, schemaName, error) {
 
 
 
+async function waitForHiddenSmartFormFillEntry(popup) {
+  let item = popup.querySelector('[originaltype="smartFormFill"]');
+
+  if (item && !item.collapsed) {
+    await BrowserTestUtils.waitForMutationCondition(
+      popup,
+      { attributes: true, childList: true, subtree: true },
+      () => {
+        item = popup.querySelector('[originaltype="smartFormFill"]');
+        return !item || item.collapsed;
+      }
+    );
+  }
+
+  return item;
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -95,17 +120,7 @@ async function failFieldClassification(win, selector, mockEngineManager) {
     );
   }, "Waiting for Smart Form Fill metadata requests to settle");
 
-  let item = popup.querySelector('[originaltype="smartFormFill"]');
-  if (item && !item.collapsed) {
-    await BrowserTestUtils.waitForMutationCondition(
-      popup,
-      { attributes: true, childList: true, subtree: true },
-      () => {
-        item = popup.querySelector('[originaltype="smartFormFill"]');
-        return !item || item.collapsed;
-      }
-    );
-  }
+  const item = await waitForHiddenSmartFormFillEntry(popup);
 
   return { browser, popup, item };
 }
@@ -137,6 +152,22 @@ describe("Smart Form Fill metadata lifecycle", () => {
     Assert.ok(
       !engine?.runRequests.size,
       "Preparing the form should not start Smart Form Fill model requests"
+    );
+  });
+
+  it("hides the autocomplete entry once the user types in the field", async () => {
+    const { browser, popup } = await openAutocomplete(
+      win,
+      "#email",
+      mockEngineManager
+    );
+
+    await BrowserTestUtils.synthesizeKey("a", {}, browser);
+    const item = await waitForHiddenSmartFormFillEntry(popup);
+
+    Assert.ok(
+      !item || item.collapsed,
+      "A field the user typed in should get no Smart Form Fill entry"
     );
   });
 
