@@ -129,6 +129,7 @@ function findParams(records, { feature, model }) {
   return (
     (model && candidates.find(r => r.model === model)) ||
     candidates.find(r => r.model === GENERIC_MODEL_NAME) ||
+    candidates.find(r => r.is_default === true) ||
     null
   );
 }
@@ -328,15 +329,19 @@ export async function buildBrowserContextPrompt(
     // m.url is intentionally not wrapped in sanitizeUntrustedContent — it's a
     // structured value the model uses to navigate/fetch, and the spotlighting
     // tokens would corrupt it. The user-controlled label is sanitized.
-    const contextUrls = contextMentions
+    // Tab group mentions have no URL
+    const urlMentions = contextMentions.filter(m => m.url);
+    const contextUrls = urlMentions
       .map(
         m => `- URL: ${m.url}\n  Title: ${sanitizeUntrustedContent(m.label)}`
       )
       .join("\n");
-    browserContextMapping.contextUrls = contextUrls;
-    const record = findFragment("mentions");
-    if (record?.prompts) {
-      fragments.push(record.prompts);
+    if (urlMentions.length) {
+      browserContextMapping.contextUrls = contextUrls;
+      const record = findFragment("mentions");
+      if (record?.prompts) {
+        fragments.push(record.prompts);
+      }
     }
   }
 
@@ -567,11 +572,12 @@ export async function loadPromptV2(feature, opts = {}) {
     paramsRecord.modules?.find(m => m.name === opts.module)?.version ??
     paramsRecord.version;
 
-  // find the module record for the feature+module+model+version
+  // find the module record for the feature+module+model+version by the param
+  // record's model
   const moduleRecord = findModule(v2Records, {
     feature,
     module: opts.module,
-    options: { model, version: moduleVersion },
+    options: { model: paramsRecord.model, version: moduleVersion },
   });
   if (!moduleRecord?.prompts) {
     const err = new Error(
