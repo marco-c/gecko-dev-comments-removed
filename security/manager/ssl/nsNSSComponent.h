@@ -58,8 +58,11 @@ void PrepareForShutdownInSocketProcess();
 
 
 
-
-
+class AutoSearchingForCertificates {
+ public:
+  AutoSearchingForCertificates();
+  ~AutoSearchingForCertificates();
+};
 
 
 

@@ -51,6 +51,8 @@ class PKCS11ModuleChild final : public PPKCS11ModuleChild {
 
   ipc::IPCResult RecvCancelProtectedAuth(uint64_t uuid);
 
+  ipc::IPCResult RecvFindCertificates(FindCertificatesResolver&& aResolver);
+
   
   
   char* PromptForPassword(PK11SlotInfo* slot);

@@ -4,21 +4,12 @@
 
 use pkcs11_bindings::*;
 use rsclientcerts::cryptoki::*;
-use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};
+use rsclientcerts::manager::{
+    ClientCertsBackend, CryptokiObject, FindObjectsCallback, Sign, SignCallback,
+};
 use rsclientcerts_util::error::{Error, ErrorType};
 use rsclientcerts_util::*;
 use std::ffi::{c_char, c_void, CString};
-
-type FindObjectsCallback = Option<
-    unsafe extern "C" fn(
-        typ: u8,
-        data_len: usize,
-        data: *const u8,
-        extra_len: usize,
-        extra: *const u8,
-        ctx: *mut c_void,
-    ),
->;
 
 
 fn AndroidDoFindObjectsWrapper(callback: FindObjectsCallback, ctx: &mut FindObjectsContext) {
@@ -33,9 +24,6 @@ fn AndroidDoFindObjectsWrapper(callback: FindObjectsCallback, ctx: &mut FindObje
         AndroidDoFindObjects(callback, ctx as *mut _ as *mut c_void);
     }
 }
-
-type SignCallback =
-    Option<unsafe extern "C" fn(data_len: usize, data: *const u8, ctx: *mut c_void)>;
 
 
 fn AndroidDoSignWrapper(
@@ -193,13 +181,13 @@ unsafe extern "C" fn find_objects_callback(
     extra: *const u8,
     ctx: *mut c_void,
 ) {
-    let data = if data_len == 0 {
+    let data = if data_len == 0 || data.is_null() {
         &[]
     } else {
         std::slice::from_raw_parts(data, data_len)
     }
     .to_vec();
-    let extra = if extra_len == 0 {
+    let extra = if extra_len == 0 || extra.is_null() {
         &[]
     } else {
         std::slice::from_raw_parts(extra, extra_len)

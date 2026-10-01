@@ -352,6 +352,7 @@ mozilla::pkix::Result ClientAuthCertNonverifyingTrustDomain::FindIssuer(
 
   SECItem encodedIssuerNameItem =
       pkix::UnsafeMapInputToSECItem(encodedIssuerName);
+  AutoSearchingForCertificates _;
   
   
   
