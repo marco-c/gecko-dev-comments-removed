@@ -32,13 +32,13 @@ ChromeUtils.defineLazyGetter(this, "fxAccounts", () => {
 
 const TRACKING_PAGE =
   
-  "http://tracking.example.org/browser/browser/base/content/test/browser-protectionsUI/trackingPage.html";
+  "http://tracking.example.org/browser/browser/base/content/test/protectionsUI/trackingPage.html";
 
 
 
 const COOKIE_PAGE =
   
-  "http://not-tracking.example.com/browser/browser/base/content/test/browser-protectionsUI/cookiePage.html";
+  "http://not-tracking.example.com/browser/browser/base/content/test/protectionsUI/cookiePage.html";
 
 const TEST_BREACH = {
   
