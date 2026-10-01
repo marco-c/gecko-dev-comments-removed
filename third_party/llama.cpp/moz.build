@@ -180,3 +180,8 @@ if CONFIG["OS_TARGET"] == "WINNT":
   ]
 
 FINAL_LIBRARY = 'mozinference'
+
+
+
+
+LICENSED_UNDER += ["mit"]
