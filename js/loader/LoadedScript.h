@@ -6,7 +6,7 @@
 #define js_loader_LoadedScript_h
 
 #include "mozilla/dom/SRIMetadata.h"  
-#include "mozilla/Encoding.h" 
+#include "mozilla/Encoding.h"         
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MemoryReporting.h"
@@ -728,7 +728,9 @@ class LoadedScriptDelegate {
     GetLoadedScript()->RestoreSRIAndSerializedStencil(std::move(aBuffer));
   }
 
-  size_t GetSerializedStencilOffset() const { return GetLoadedScript()->GetSerializedStencilOffset(); }
+  size_t GetSerializedStencilOffset() const {
+    return GetLoadedScript()->GetSerializedStencilOffset();
+  }
 
   void SetAlignedSRILength(size_t aAlignedSRILength) {
     GetLoadedScript()->SetAlignedSRILength(aAlignedSRILength);
