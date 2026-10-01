@@ -161,16 +161,20 @@ bool Supports(ISA instruction_set_architecture) {
     
     
     
-    
-    
     return (cpu_info[2] & 0x10000000) != 0  &&
            (cpu_info[2] & 0x04000000) != 0  &&
            (cpu_info[2] & 0x08000000) != 0  &&
            (xgetbv(0) & 0x00000006) == 6  &&
-           (cpu_info7[1] & 0x00000020) != 0  &&
+#ifndef _MSC_VER
+           (cpu_info7[1] & 0x00000020) != 0 ;
+#else
+
+
+           (cpu_info7[1] & 0x00000020) != 0 /* AVX2 */ &&
            (cpu_info7[1] & 0x00000100) != 0 ;
+#endif
   }
-#endif  
+#endif
   if (instruction_set_architecture == ISA::kFMA3) {
     return 0 != (cpu_info[2] & 0x00001000);
   }
