@@ -2,7 +2,7 @@
 
 
 
-use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch, FontRenderMode};
+use api::{BuiltDisplayList, ColorF, DynamicProperties, Epoch, FontRenderMode, IdNamespace};
 use api::{PipelineId, PropertyBinding, PropertyBindingId, PropertyValue, MixBlendMode, StackingContext};
 use api::units::*;
 use api::channel::Sender;
@@ -207,6 +207,9 @@ impl SceneProperties {
 #[derive(Clone)]
 pub struct ScenePipeline {
     pub display_list: BuiltDisplayList,
+    
+    
+    pub namespace: IdNamespace,
 }
 
 
@@ -236,10 +239,12 @@ impl Scene {
         &mut self,
         pipeline_id: PipelineId,
         epoch: Epoch,
+        namespace: IdNamespace,
         display_list: BuiltDisplayList,
     ) {
         let new_pipeline = ScenePipeline {
             display_list,
+            namespace,
         };
 
         self.pipelines.insert(pipeline_id, new_pipeline);
@@ -355,6 +360,7 @@ impl BuiltScene {
                 low_quality_pinch_zoom: false,
                 max_shared_surface_size: 2048,
                 enable_dithering: false,
+                enable_yuv_overlay_stability: false,
             },
         }
     }
