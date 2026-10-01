@@ -46,7 +46,7 @@ bool ProcessFont(ots::OTSContext& context,
 
 class AllPassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t) override {
     return ots::TABLE_ACTION_PASSTHRU;
   }
@@ -55,7 +55,7 @@ class AllPassthruContext : public ots::OTSContext {
 
 class MaxpPassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('m', 'a', 'x', 'p'))
       return ots::TABLE_ACTION_PASSTHRU;
@@ -67,7 +67,7 @@ class MaxpPassthruContext : public ots::OTSContext {
 
 class NamePassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('n', 'a', 'm', 'e'))
       return ots::TABLE_ACTION_PASSTHRU;
@@ -78,7 +78,7 @@ class NamePassthruContext : public ots::OTSContext {
 
 class MaxpAndNamePassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('m', 'a', 'x', 'p') ||
         tag == OTS_TAG('n', 'a', 'm', 'e'))
@@ -91,7 +91,7 @@ class MaxpAndNamePassthruContext : public ots::OTSContext {
 
 class OutlinesPassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('g', 'l', 'y', 'f') ||
         tag == OTS_TAG('l', 'o', 'c', 'a') ||
@@ -105,7 +105,7 @@ class OutlinesPassthruContext : public ots::OTSContext {
 
 class MaxpDropContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('m', 'a', 'x', 'p'))
       return ots::TABLE_ACTION_DROP;
@@ -116,7 +116,7 @@ class MaxpDropContext : public ots::OTSContext {
 
 class AllDropContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t) override {
     return ots::TABLE_ACTION_DROP;
   }
@@ -125,7 +125,7 @@ class AllDropContext : public ots::OTSContext {
 
 class AllSanitizeContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t) override {
     return ots::TABLE_ACTION_SANITIZE;
   }
@@ -136,7 +136,7 @@ class AllSanitizeContext : public ots::OTSContext {
 
 class MaxpAndOutlinesPassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('m', 'a', 'x', 'p') ||
         tag == OTS_TAG('g', 'l', 'y', 'f') ||
@@ -153,7 +153,7 @@ class MaxpAndOutlinesPassthruContext : public ots::OTSContext {
 
 class HeadPassthruContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('h', 'e', 'a', 'd'))
       return ots::TABLE_ACTION_PASSTHRU;
@@ -164,7 +164,7 @@ class HeadPassthruContext : public ots::OTSContext {
 
 class MaxpSoftSanitizeContext : public ots::OTSContext {
  public:
-  void Message(int, const char*, ...) {}
+  void Message(int, const char*, ...) override {}
   ots::TableAction GetTableAction(uint32_t tag) override {
     if (tag == OTS_TAG('m', 'a', 'x', 'p'))
       return ots::TABLE_ACTION_SANITIZE_SOFT;
