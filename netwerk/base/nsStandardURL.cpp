@@ -809,7 +809,9 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   if (mDirectory.mLen > 0) {
     CoalescePath(buf + mDirectory.mPos);
   }
-  mSpec.Truncate(strlen(buf));
+  
+  
+  mSpec.SetLength(mPath.mPos + mPath.mLen);
   ResetSpecHash();
 
   if (MOZ_UNLIKELY(mSpec.Length() > approxLen)) {
