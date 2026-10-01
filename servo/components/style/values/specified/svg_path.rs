@@ -712,7 +712,14 @@ impl<'a> PathParser<'a> {
     fn new(bytes: &'a [u8]) -> Self {
         PathParser {
             chars: bytes.iter().cloned().peekable(),
-            path: Vec::new(),
+            
+            
+            
+            
+            
+            
+            
+            path: Vec::with_capacity(bytes.len() / 32),
         }
     }
 
