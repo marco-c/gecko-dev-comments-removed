@@ -211,15 +211,6 @@ enum class ListStyle : uint8_t {
 };
 
 
-enum class StyleObjectFit : uint8_t {
-  Fill,
-  Contain,
-  Cover,
-  None,
-  ScaleDown,
-};
-
-
 enum class StyleTextDecorationStyle : uint8_t {
   None,  
   Dotted,
