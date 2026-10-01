@@ -1281,6 +1281,7 @@ struct BaseMarkerType {
   
   static constexpr bool ETWStoreName = false;
 
+  
   static constexpr MarkerSchema::ETWMarkerGroup Group =
       MarkerSchema::ETWMarkerGroup::Generic;
 
