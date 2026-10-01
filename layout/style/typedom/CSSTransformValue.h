@@ -62,8 +62,10 @@ class CSSTransformValue final : public CSSStyleValue {
   
   uint32_t Length() const;
 
+  
   bool Is2D() const;
 
+  
   already_AddRefed<DOMMatrix> ToMatrix(ErrorResult& aRv);
 
   CSSTransformComponent* IndexedGetter(uint32_t aIndex, bool& aFound);

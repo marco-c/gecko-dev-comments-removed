@@ -19,6 +19,8 @@
 #include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/CSSTransformValueBinding.h"
 #include "mozilla/dom/CSSTranslate.h"
+#include "mozilla/dom/DOMMatrix.h"
+#include "nsFmtString.h"
 #include "nsString.h"
 
 namespace mozilla::dom {
@@ -141,11 +143,36 @@ already_AddRefed<CSSTransformValue> CSSTransformValue::Constructor(
 
 uint32_t CSSTransformValue::Length() const { return mValues.Length(); }
 
-bool CSSTransformValue::Is2D() const { return true; }
+
+bool CSSTransformValue::Is2D() const {
+  for (const auto& value : mValues) {
+    if (!value->Is2D()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 
 already_AddRefed<DOMMatrix> CSSTransformValue::ToMatrix(ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  
+  auto matrix = MakeRefPtr<DOMMatrix>(mParent);
+
+  
+  for (const auto& value : mValues) {
+    
+    RefPtr<DOMMatrix> funcMatrix = value->ToMatrix(aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    
+    matrix->MultiplySelf(*funcMatrix);
+  }
+
+  
+  return matrix.forget();
 }
 
 CSSTransformComponent* CSSTransformValue::IndexedGetter(uint32_t aIndex,
@@ -162,7 +189,20 @@ CSSTransformComponent* CSSTransformValue::IndexedGetter(uint32_t aIndex,
 void CSSTransformValue::IndexedSetter(uint32_t aIndex,
                                       CSSTransformComponent& aVal,
                                       ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (aIndex > mValues.Length()) {
+    aRv.ThrowRangeError(nsFmtCString("Index {} is out of range.", aIndex));
+    return;
+  }
+
+  if (aIndex < mValues.Length()) {
+    mValues[aIndex] = &aVal;
+    return;
+  }
+
+  if (!mValues.AppendElement(&aVal, fallible)) {
+    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+    return;
+  }
 }
 
 

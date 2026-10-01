@@ -319,6 +319,7 @@ class DOMMatrix : public DOMMatrixReadOnly {
   
   
   
+  DOMMatrix* MultiplySelf(const DOMMatrix& aOther);
   DOMMatrix* MultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* PreMultiplySelf(const DOMMatrixInit& aOther, ErrorResult& aRv);
   DOMMatrix* TranslateSelf(double aTx, double aTy, double aTz = 0);
