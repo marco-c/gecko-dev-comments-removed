@@ -1114,10 +1114,15 @@ NS_IMETHODIMP ContentClassifierService::ProbeFeature(
     rv = backgroundThread->Dispatch(
         NS_NewRunnableFunction(
             "ContentClassifierService::ProbeFeature",
-            [engine = std::move(engine), request = std::move(request),
-             promiseHolder]() {
-              ContentClassifierEngineResult er = engine->CheckNetworkRequest(
-                  request,  false);
+            [self = RefPtr{this}, engine = std::move(engine),
+             request = std::move(request), promiseHolder]() {
+              
+              
+              ContentClassifierEngineResult er = [&] {
+                MutexAutoLock lock(self->mLock);
+                return engine->CheckNetworkRequest(
+                    request,  false);
+              }();
               nsCOMPtr<nsIContentClassifierProbeResult> probe =
                   MakeProbeResult(er);
               NS_DispatchToMainThread(NS_NewRunnableFunction(
