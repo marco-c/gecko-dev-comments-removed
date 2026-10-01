@@ -3,9 +3,9 @@
 
 
 config = {
-    "debug_build": True,
+    "debug_build": False,
     "env": {
         "XPCOM_DEBUG_BREAK": "stack-and-abort",
     },
-    "mozconfig_variant": "debug-searchfox",
+    "mozconfig_variant": "opt-searchfox",
 }

@@ -14,10 +14,6 @@ config = {
     "upload_env": {
         "UPLOAD_PATH": "/builds/worker/artifacts",
     },
-    
-    
-    
-    "platform": "linux64",
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "DISPLAY": ":2",
@@ -29,9 +25,12 @@ config = {
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "LC_ALL": "C",
         "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
-        
     },
+    "mozconfig_variant": "opt-searchfox-clang",
+    
+    
+    
+    "platform": "linux64",
     
     "mozconfig_platform": "linux64",
-    "mozconfig_variant": "debug-static-analysis-clang",
 }

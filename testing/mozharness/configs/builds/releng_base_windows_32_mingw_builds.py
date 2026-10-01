@@ -32,7 +32,6 @@ config = {
     
     
     "platform": "win32-mingw32",
-    "stage_platform": "win32-mingw32",
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
         "DISPLAY": ":2",

@@ -3,7 +3,6 @@
 
 
 config = {
-    "stage_platform": "android-arm-lite",
     "mozconfig_platform": "android-arm",
     "extra_mozconfig_content": ["ac_add_options --enable-geckoview-lite"],
 }

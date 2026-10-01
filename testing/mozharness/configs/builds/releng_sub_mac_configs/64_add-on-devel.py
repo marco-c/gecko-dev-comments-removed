@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "macosx64-add-on-devel",
     
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),

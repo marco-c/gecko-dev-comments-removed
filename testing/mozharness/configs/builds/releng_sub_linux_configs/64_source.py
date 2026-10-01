@@ -4,7 +4,6 @@
 
 config = {
     "default_actions": ["package-source"],
-    "stage_platform": "source",  
     "env": {
         "HG_SHARE_BASE_DIR": "/builds/hg-shared",
         "TINDERBOX_OUTPUT": "1",

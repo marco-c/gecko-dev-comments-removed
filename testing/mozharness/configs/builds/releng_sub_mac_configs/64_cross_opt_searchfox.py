@@ -5,11 +5,14 @@
 import os
 
 config = {
+    "default_actions": [
+        "clobber",
+        "build",
+    ],
+    "debug_build": False,
     
     "env": {
         "MOZBUILD_STATE_PATH": os.path.join(os.getcwd(), ".mozbuild"),
-        "MOZ_AUTOMATION": "1",
-        "DISPLAY": ":2",
         "HG_SHARE_BASE_DIR": "/builds/hg-shared",
         "MOZ_OBJDIR": "%(abs_obj_dir)s",
         "TINDERBOX_OUTPUT": "1",
@@ -17,10 +20,10 @@ config = {
         "TOOLTOOL_HOME": "/builds",
         "MOZ_CRASHREPORTER_NO_REPORT": "1",
         "LC_ALL": "C",
-        "ASAN_OPTIONS": "detect_leaks=0",
+        "XPCOM_DEBUG_BREAK": "stack-and-abort",
         
-        "PATH": "/usr/local/bin:/bin:\
-/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
+        "PATH": "/tools/python/bin:/opt/local/bin:/usr/bin:"
+        "/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/X11/bin",
     },
-    
+    "mozconfig_variant": "opt-searchfox",
 }

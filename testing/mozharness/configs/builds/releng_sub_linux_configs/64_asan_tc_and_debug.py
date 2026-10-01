@@ -5,7 +5,6 @@
 import os
 
 config = {
-    "stage_platform": "linux64-asan-debug",
     "debug_build": True,
     
     "env": {

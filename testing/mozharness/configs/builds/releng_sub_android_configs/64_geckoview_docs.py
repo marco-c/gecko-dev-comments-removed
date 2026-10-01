@@ -3,7 +3,6 @@
 
 
 config = {
-    "stage_platform": "android-geckoview-docs",
     "mozconfig_platform": "android-arm",
     "mozconfig_variant": "nightly-android-lints",
     
