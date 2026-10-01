@@ -74,6 +74,24 @@ impl Default for Engine {
     }
 }
 
+#[cfg(feature = "malloc-size-of")]
+impl Engine {
+    
+    
+    
+    
+    
+    
+    pub fn memory_breakdown(
+        &self,
+        ops: &mut malloc_size_of::MallocSizeOfOps,
+    ) -> crate::malloc_size_of_impls::EngineMemoryBreakdown {
+        let mut breakdown = crate::malloc_size_of_impls::EngineMemoryBreakdown::default();
+        breakdown.add_filter_data(&self.filter_data_context, ops);
+        breakdown
+    }
+}
+
 impl Engine {
     
     pub fn from_rules(
