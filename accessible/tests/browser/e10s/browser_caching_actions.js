@@ -222,17 +222,28 @@ addAccessibleTask(
     is(link1Acc.firstChild.actionCount, 0, "linkable child's actions removed");
 
     
+    
+    
     await invokeContentTask(browser, [], () => {
       content.document.body.onclick = () => {};
     });
-    await untilCacheIs(() => docAcc.actionCount, 1, "Doc has 1 action");
+    await untilCacheIs(
+      () => findAccessibleChildByID(docAcc, "link1")?.actionCount,
+      1,
+      "link has clickAncestor action"
+    );
+    is(docAcc.actionCount, 0, "Doc has no actions");
     await _testActions("link1", ["clickAncestor"]);
 
     await invokeContentTask(browser, [], () => {
       content.document.body.onclick = null;
     });
-    await untilCacheIs(() => docAcc.actionCount, 0, "Doc has no actions");
-    is(link1Acc.actionCount, 0, "link has no actions");
+    await untilCacheIs(
+      () => findAccessibleChildByID(docAcc, "link1")?.actionCount,
+      0,
+      "link has no actions"
+    );
+    is(docAcc.actionCount, 0, "Doc still has no actions");
 
     
     
@@ -307,4 +318,34 @@ addAccessibleTask(
     iframe: false, 
     remoteIframe: false, 
   }
+);
+
+
+
+
+
+
+addAccessibleTask(
+  `hello`,
+  async function testBodyAndDocActionsAreSeparate(browser, docAcc) {
+    let bodyAcc = findAccessibleChildByID(docAcc, DEFAULT_CONTENT_DOC_BODY_ID);
+    ok(!bodyAcc, "The body doesn't have an acc yet");
+    is(docAcc.actionCount, 0, "Doc has no actions");
+    let e = waitForEvent(EVENT_SHOW, DEFAULT_CONTENT_DOC_BODY_ID);
+    await invokeContentTask(browser, [], () => {
+      content.document.body.onclick = () => {};
+    });
+    await e;
+
+    bodyAcc = findAccessibleChildByID(docAcc, DEFAULT_CONTENT_DOC_BODY_ID);
+    await untilCacheIs(() => bodyAcc.actionCount, 1, "Body has 1 action");
+    is(docAcc.actionCount, 0, "Doc still has no actions");
+
+    await invokeContentTask(browser, [], () => {
+      content.document.documentElement.onclick = () => {};
+    });
+    await untilCacheIs(() => docAcc.actionCount, 1, "Doc has 1 action");
+    is(bodyAcc.actionCount, 1, "Body action count is unchanged");
+  },
+  { topLevel: true, chrome: true }
 );
