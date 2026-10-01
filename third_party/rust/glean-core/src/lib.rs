@@ -184,6 +184,8 @@ pub struct InternalConfiguration {
     pub session_inactivity_timeout_ms: u64,
     
     pub events_ping_acceleration_factor: Option<u32>,
+    
+    pub enable_store_submitted_pings: bool,
 }
 
 
@@ -795,6 +797,9 @@ pub fn shutdown() {
         }
 
         if let Some(database) = &glean.data_store {
+            if let Err(e) = database.cleanup_submitted_pings(None) {
+                log::info!("Could not clean up submitted_pings table: {:?}", e);
+            }
             if let Err(e) = database.run_maintenance(false) {
                 log::info!("Can't run database maintenance on shutdown: {:?}", e);
             }
@@ -963,6 +968,78 @@ pub fn glean_set_upload_enabled(enabled: bool) {
 
 pub fn glean_set_collection_enabled(enabled: bool) {
     glean_set_upload_enabled(enabled)
+}
+
+
+pub fn glean_set_store_submitted_pings_enabled(enabled: bool) {
+    if !was_initialize_called() {
+        return;
+    }
+
+    launch_with_glean_mut(move |glean| {
+        glean.store_submitted_pings_enabled = enabled;
+    });
+}
+
+
+pub struct SubmittedPing {
+    
+    pub document_id: String,
+    
+    pub ping: String,
+    
+    pub submitted_date: String,
+    
+    pub uploaded_date: Option<String>,
+    
+    pub upload_failed: Option<String>,
+    
+    pub payload: Option<JsonValue>,
+}
+
+impl From<database::sqlite::SubmittedPing> for SubmittedPing {
+    fn from(value: database::sqlite::SubmittedPing) -> Self {
+        SubmittedPing {
+            document_id: value.document_id.clone(),
+            ping: value.ping.clone(),
+            submitted_date: value.submitted_date.0.to_rfc3339(),
+            uploaded_date: value.uploaded_date.as_ref().map(|d| d.0.to_rfc3339()),
+            upload_failed: value.upload_failed.as_ref().map(|d| d.0.to_rfc3339()),
+            payload: value.payload(),
+        }
+    }
+}
+
+
+pub fn glean_get_all_stored_submitted_pings() -> Vec<SubmittedPing> {
+    core::with_glean(|glean| glean.storage().get_all_submitted_pings())
+        .into_iter()
+        .map(|p| p.into())
+        .collect()
+}
+
+
+
+
+
+
+pub fn glean_get_stored_submitted_pings_by_name(ping: String) -> Vec<SubmittedPing> {
+    core::with_glean(|glean| glean.storage().get_submitted_pings_by_name(&ping))
+        .into_iter()
+        .map(|p| p.into())
+        .collect()
+}
+
+
+pub fn glean_clear_stored_submitted_pings() {
+    launch_with_glean(|glean| {
+        if let Err(e) = glean
+            .storage()
+            .cleanup_submitted_pings(Some(chrono::Utc::now()))
+        {
+            log::warn!("Unable to clear stored submitted pings: {:?}", e);
+        }
+    });
 }
 
 

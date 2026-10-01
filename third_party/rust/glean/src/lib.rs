@@ -41,7 +41,7 @@ pub use glean_core::{
     },
     traits, AttributionMetrics, CommonMetricData, DistributionMetrics, Error, ErrorType, Glean,
     HistogramType, LabeledMetricData, Lifetime, PingRateLimit, RecordedExperiment, Result,
-    SessionMode,
+    SessionMode, SubmittedPing,
 };
 
 mod configuration;
@@ -136,6 +136,7 @@ fn initialize_internal(cfg: Configuration, client_info: ClientInfoMetrics) -> Op
         session_sample_rate: cfg.session_sample_rate,
         session_inactivity_timeout_ms: cfg.session_inactivity_timeout.as_millis() as u64,
         events_ping_acceleration_factor: cfg.events_ping_acceleration_factor.map(|x| x as u32),
+        enable_store_submitted_pings: cfg.enable_store_submitted_pings,
     };
 
     glean_core::glean_initialize(core_cfg, client_info.into(), callbacks);
@@ -178,6 +179,32 @@ pub fn set_upload_enabled(enabled: bool) {
 
 pub fn set_collection_enabled(enabled: bool) {
     glean_core::glean_set_collection_enabled(enabled)
+}
+
+
+pub fn set_store_submitted_pings_enabled(enabled: bool) {
+    glean_core::glean_set_store_submitted_pings_enabled(enabled)
+}
+
+
+
+
+
+pub fn get_all_stored_submitted_pings() -> Vec<glean_core::SubmittedPing> {
+    glean_core::glean_get_all_stored_submitted_pings()
+}
+
+
+
+
+
+pub fn get_stored_submitted_pings_by_name(ping: String) -> Vec<glean_core::SubmittedPing> {
+    glean_core::glean_get_stored_submitted_pings_by_name(ping)
+}
+
+
+pub fn clear_stored_submitted_pings() {
+    glean_core::glean_clear_stored_submitted_pings()
 }
 
 
