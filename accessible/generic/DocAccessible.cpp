@@ -3253,13 +3253,8 @@ void DocAccessible::ARIAActiveDescendantIDMaybeMoved(
 }
 
 bool DocAccessible::IsRootContent(nsINode* aNode) const {
-  
-  
-  
-  MOZ_ASSERT(!mContent || !mContent->IsInComposedDoc() ||
-                 mDocumentNode->GetRootElement() == mContent,
-             "The doc acc should be bound to the root element");
-  return mContent == aNode;
+  return mContent && mDocumentNode->GetRootElement() == mContent &&
+         mContent == aNode;
 }
 
 bool DocAccessible::IsBodyElement(const nsINode* aNode) const {
