@@ -111,10 +111,14 @@ class ContentClassifierEngine final {
 
   
   
+  
+  
+  
   ContentClassifierEngineSizes SizeOfIncludingThis(
-      MallocSizeOf aMallocSizeOf) const {
+      MallocSizeOf aMallocSizeOf, MallocSizeOf aMallocEnclosingSizeOf) const {
     ContentClassifierEngineSizes sizes =
-        mEngine ? content_classifier_engine_size_of(mEngine, aMallocSizeOf)
+        mEngine ? content_classifier_engine_size_of(mEngine, aMallocSizeOf,
+                                                    aMallocEnclosingSizeOf)
                 : ContentClassifierEngineSizes{};
     sizes.objects += aMallocSizeOf(this);
     return sizes;

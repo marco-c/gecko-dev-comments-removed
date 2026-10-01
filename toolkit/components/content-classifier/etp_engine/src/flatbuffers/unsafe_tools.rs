@@ -100,4 +100,11 @@ impl VerifiedFlatbufferMemory {
     pub fn data(&self) -> &[u8] {
         &self.raw_data[self.start..]
     }
+
+    
+    
+    #[cfg(feature = "malloc-size-of")]
+    pub(crate) fn backing_vec(&self) -> &Vec<u8> {
+        &self.raw_data
+    }
 }
