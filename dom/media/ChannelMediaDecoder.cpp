@@ -312,7 +312,6 @@ void ChannelMediaDecoder::NotifyDownloadEnded(nsresult aStatus) {
   if (NS_SUCCEEDED(aStatus)) {
     
     GetStateMachine()->DispatchIsLiveStream(false);
-    NotifyReaderDataArrived();
   }
 
   MediaDecoderOwner* owner = GetOwner();

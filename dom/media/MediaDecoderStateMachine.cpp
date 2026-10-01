@@ -3896,11 +3896,6 @@ void MediaDecoderStateMachine::BufferedRangeUpdated() {
   MOZ_ASSERT(OnTaskQueue());
 
   
-  if (!mIsMSE && IsLiveStream() &&
-      (mDuration.Ref().isNothing() || mDuration.Ref()->IsInfinite())) {
-    return;
-  }
-
   
   
   
