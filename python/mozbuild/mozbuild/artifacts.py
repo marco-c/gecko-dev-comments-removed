@@ -1228,7 +1228,9 @@ class TaskCache(CacheManager):
         
         
         
-        if job.endswith("-opt"):
+        
+        
+        if job.endswith("-opt") and "-appservices-" not in job:
             if os.environ.get("MOZ_ARTIFACT_ALLOW_NON_SHIPPABLE"):
                 trees = [f"{tree}.shippable", tree]
             else:
@@ -1438,6 +1440,8 @@ class Artifacts:
             target_suffix = "-opt"
 
         if self._substs.get("MOZ_BUILD_APP", "") == "mobile/android":
+            if self._substs.get("MOZ_APPSERVICES_IN_TREE"):
+                target_suffix = "-appservices" + target_suffix
             if self._substs["ANDROID_CPU_ARCH"] == "x86_64":
                 return "android-x86_64" + target_suffix
             if self._substs["ANDROID_CPU_ARCH"] == "arm64-v8a":
