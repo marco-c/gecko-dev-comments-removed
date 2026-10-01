@@ -44,6 +44,46 @@ template <size_t I>
 using Index = typename std::integral_constant<size_t, I>;
 
 
+enum class CanSet {
+  
+  ParentOnly,
+
+  
+  
+  EmbedderOnly,
+
+  
+  
+  EmbedderOrParentOnly,
+
+  
+  
+  OwnerOnly,
+
+  
+  
+  OwnerOrParentOnly,
+
+  
+  
+  Unrestricted,
+
+  
+  Custom,
+};
+
+struct FieldInfo {
+  
+  bool mTopOnly = false;
+
+  
+  CanSet mCanSet = CanSet::ParentOnly;
+};
+
+
+constexpr FieldInfo FieldInfoOrDefault(FieldInfo aInfo = {}) { return aInfo; }
+
+
 
 template <size_t I, size_t S>
 struct Empty {};
@@ -59,6 +99,17 @@ struct Field {
 template <size_t I, typename T, size_t S>
 using SizedField = std::conditional_t<((sizeof(T) > 8) ? 8 : sizeof(T)) == S,
                                       Field<I, T>, Empty<I, S>>;
+
+
+
+enum class CanSetResult : uint8_t {
+  
+  Deny,
+  
+  Allow,
+  
+  Revert,
+};
 
 template <typename Context>
 class Transaction {
@@ -118,6 +169,9 @@ class Transaction {
   
   
   IndexSet Validate(Context* aOwner, ContentParent* aSource);
+
+  template <size_t I>
+  CanSetResult ValidateOne(Index<I>, Context* aOwner, ContentParent* aSource);
 
   template <typename F>
   static void EachIndex(F&& aCallback) {
@@ -219,17 +273,6 @@ class FieldStorage {
 
 
 
-enum class CanSetResult : uint8_t {
-  
-  Deny,
-  
-  Allow,
-  
-  Revert,
-};
-
-
-
 
 
 
@@ -249,9 +292,9 @@ struct GetFieldSetterType<nsCString> {
 template <typename T>
 using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
 
-#define MOZ_DECL_SYNCED_CONTEXT_FIELD_INDEX(name, type) IDX_##name,
+#define MOZ_DECL_SYNCED_CONTEXT_FIELD_INDEX(name, type, ...) IDX_##name,
 
-#define MOZ_DECL_SYNCED_CONTEXT_FIELD_GETSET(name, type)                       \
+#define MOZ_DECL_SYNCED_CONTEXT_FIELD_GETSET(name, type, ...)                  \
   const type& Get##name() const { return mFields.template Get<IDX_##name>(); } \
                                                                                \
   [[nodiscard]] nsresult Set##name(                                            \
@@ -269,25 +312,32 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
     }                                                                          \
   }
 
-#define MOZ_DECL_SYNCED_CONTEXT_TRANSACTION_SET(name, type)  \
-  template <typename U>                                      \
-  void Set##name(U&& aValue) {                               \
-    this->template Set<IDX_##name>(std::forward<U>(aValue)); \
+#define MOZ_DECL_SYNCED_CONTEXT_TRANSACTION_SET(name, type, ...) \
+  template <typename U>                                          \
+  void Set##name(U&& aValue) {                                   \
+    this->template Set<IDX_##name>(std::forward<U>(aValue));     \
   }
-#define MOZ_DECL_SYNCED_CONTEXT_INDEX_TO_NAME(name, type) \
-  case IDX_##name:                                        \
+#define MOZ_DECL_SYNCED_CONTEXT_INDEX_TO_NAME(name, type, ...) \
+  case IDX_##name:                                             \
     return #name;
 
-#define MOZ_DECL_SYNCED_FIELD_INHERIT(name, type) \
- public                                           \
+#define MOZ_DECL_SYNCED_FIELD_INHERIT(name, type, ...) \
+ public                                                \
   syncedcontext::SizedField<IDX_##name, type, Size>,
 
-#define MOZ_DECL_SYNCED_CONTEXT_BASE_FIELD_GETTER(name, type) \
-  type& Get(FieldIndex<IDX_##name>) {                         \
-    return Field<IDX_##name, type>::mField;                   \
-  }                                                           \
-  const type& Get(FieldIndex<IDX_##name>) const {             \
-    return Field<IDX_##name, type>::mField;                   \
+#define MOZ_DECL_SYNCED_CONTEXT_BASE_FIELD_GETTER(name, type, ...) \
+  type& Get(FieldIndex<IDX_##name>) {                              \
+    return Field<IDX_##name, type>::mField;                        \
+  }                                                                \
+  const type& Get(FieldIndex<IDX_##name>) const {                  \
+    return Field<IDX_##name, type>::mField;                        \
+  }
+
+#define MOZ_DECL_SYNCED_CONTEXT_FIELDINFO_GET(name, type, ...)                \
+  static constexpr ::mozilla::dom::syncedcontext::FieldInfo FieldIndexToInfo( \
+      FieldIndex<IDX_##name>) {                                               \
+    using CanSet [[maybe_unused]] = mozilla::dom::syncedcontext::CanSet;      \
+    return ::mozilla::dom::syncedcontext::FieldInfoOrDefault(__VA_ARGS__);    \
   }
 
 
@@ -305,6 +355,8 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
   /* Helper for overloading methods like `CanSet` and `DidSet` */              \
   template <size_t I>                                                          \
   using FieldIndex = typename ::mozilla::dom::syncedcontext::Index<I>;         \
+                                                                               \
+  eachfield(MOZ_DECL_SYNCED_CONTEXT_FIELDINFO_GET);                            \
                                                                                \
   /* Fields contain all synced fields defined by                               \
    * `eachfield(MOZ_DECL_SYNCED_FIELD_INHERIT)`, but only those where the size \
