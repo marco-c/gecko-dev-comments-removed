@@ -4,12 +4,15 @@
 
 #include "ConnectionAllowlists.h"
 
+#include <functional>
 #include <utility>
 
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/net/SFV.h"
 #include "mozilla/net/URLPatternGlue.h"
+#include "nsNetUtil.h"
+#include "nsScriptSecurityManager.h"
 #include "nsString.h"
 
 using namespace mozilla;
@@ -152,6 +155,84 @@ nsresult ConnectionAllowlists::ParseHeaders(const nsACString& aHeader,
   allowlists->mReportOnly = std::move(reportOnly);
   allowlists.forget(aResult);
   return NS_OK;
+}
+
+void ConnectionAllowlists::SetResponseURI(nsIURI* aURI) { mResponseURI = aURI; }
+
+bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
+                                      nsILoadInfo* aLoadInfo) const {
+  
+  
+  
+  return !ShouldBlockURL(aURI, aLoadInfo);
+}
+
+
+bool ConnectionAllowlists::MatchURL(nsIURI* aURI,
+                                    const Allowlist& aAllowlist) const {
+  
+  
+  if (aURI->SchemeIs("about") || aURI->SchemeIs("data") ||
+      aURI->SchemeIs("blob")) {
+    return true;
+  }
+
+  
+  
+  if (aAllowlist.mMatchesResponseOrigin && mResponseURI) {
+    if (nsScriptSecurityManager::SecurityCompareURIs(mResponseURI, aURI)) {
+      return true;
+    }
+  }
+
+  
+  nsAutoCString spec;
+  if (NS_WARN_IF(NS_FAILED(aURI->GetSpec(spec)))) {
+    return false;
+  }
+  UrlPatternInput input = net::CreateUrlPatternInput(spec);
+
+  
+  for (const auto& pattern : aAllowlist.mPatterns) {
+    
+    
+    if (net::UrlPatternTest(pattern.get(), input, Nothing())) {
+      return true;
+    }
+  }
+
+  
+  return false;
+}
+
+
+bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
+                                          nsILoadInfo* aLoadInfo) const {
+  
+  for (const Maybe<Allowlist>& allowlist :
+       {std::cref(mEnforcement), std::cref(mReportOnly)}) {
+    if (allowlist.isNothing()) {
+      continue;
+    }
+
+    
+    if (MatchURL(aURI, *allowlist)) {
+      continue;
+    }
+
+    
+    
+    
+
+    
+    if (allowlist->mDisposition == Disposition::Enforce) {
+      LOG("Blocking URL: {}", aURI->GetSpecOrDefault());
+      return true;
+    }
+  }
+
+  
+  return false;
 }
 
 }  
