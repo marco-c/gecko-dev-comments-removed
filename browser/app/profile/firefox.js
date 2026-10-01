@@ -3759,8 +3759,6 @@ pref("browser.ipProtection.hasSeenFeature", false);
 
 pref("browser.ipProtection.l10nGateVersion", 0);
 
-pref("browser.ipProtection.openedPanelWithLocation", false);
-
 pref("browser.ipProtection.features.siteExceptions", true);
 
 pref("browser.ipProtection.features.siteInclusions", false);
