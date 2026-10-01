@@ -23,13 +23,6 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-
 class ContentClassifierPrefMirror final {
  public:
   
@@ -49,10 +42,6 @@ class ContentClassifierPrefMirror final {
   static void OnMirrorPrefChange(const char* aPref, void* aData);
 
   static void Shutdown();
-
-  
-  
-  static void ReleaseMirroredPrefs();
 
   
   static void OnPrefChange(const char* aPref, void* aData);
