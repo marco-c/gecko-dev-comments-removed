@@ -52,6 +52,7 @@ class ScreamNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate CreateFirstUpdate(Timestamp now);
   NetworkControlUpdate CreateUpdate(Timestamp now);
   std::optional<PacerConfig> MaybeCreatePacerConfig(Timestamp now);
+  DataRate GetPacingRate() const;
   
   
   
