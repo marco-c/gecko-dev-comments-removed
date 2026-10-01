@@ -3,15 +3,26 @@
 
 "use strict";
 
+const { NimbusTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
 const { PushNotificationHelper } = ChromeUtils.importESModule(
   "resource://gre/modules/PushNotificationHelper.sys.mjs"
 );
 
+NimbusTestUtils.init(this);
+
+const AVAILABLE_PREF = "app.backgroundNotifications.helper.available";
 const ENABLED_PREF = "app.backgroundNotifications.helper.enabled";
 
+function setPrefs({ available, enabled }) {
+  Services.prefs.setBoolPref(AVAILABLE_PREF, available);
+  Services.prefs.setBoolPref(ENABLED_PREF, enabled);
+}
 
 
-function withStubs(task) {
+
+function stubLaunchers() {
   const original = {
     start: PushNotificationHelper.start,
     stop: PushNotificationHelper.stop,
@@ -21,76 +32,175 @@ function withStubs(task) {
   PushNotificationHelper.start = () => calls.start++;
   PushNotificationHelper.stop = () => calls.stop++;
 
+  return {
+    calls,
+    restore() {
+      PushNotificationHelper.start = original.start;
+      PushNotificationHelper.stop = original.stop;
+    },
+  };
+}
+
+
+
+function withStubs(prefs, task) {
+  const { calls, restore } = stubLaunchers();
+
   try {
+    setPrefs(prefs);
+    calls.start = 0;
+    calls.stop = 0;
+
     return task(calls);
   } finally {
-    PushNotificationHelper.start = original.start;
-    PushNotificationHelper.stop = original.stop;
+    restore();
   }
 }
 
+add_setup(async function () {
+  do_get_profile();
+});
+
 registerCleanupFunction(() => {
-  Services.prefs.clearUserPref(ENABLED_PREF);
+  
+  
+  const { restore } = stubLaunchers();
+  try {
+    Services.prefs.clearUserPref(AVAILABLE_PREF);
+    Services.prefs.clearUserPref(ENABLED_PREF);
+  } finally {
+    restore();
+  }
 });
 
-add_task(async function test_enabled_starts() {
-  Services.prefs.setBoolPref(ENABLED_PREF, true);
 
-  withStubs(calls => {
-    PushNotificationHelper.update();
-    Assert.equal(calls.start, 1, "helper is started when enabled");
-    Assert.equal(calls.stop, 0, "nothing is stopped when enabled");
+
+add_task(async function test_update_needs_both_prefs() {
+  for (const available of [false, true]) {
+    for (const enabled of [false, true]) {
+      const shouldRun = available && enabled;
+      const state = `available=${available} enabled=${enabled}`;
+
+      withStubs({ available, enabled }, calls => {
+        PushNotificationHelper.update();
+        Assert.equal(
+          calls.start,
+          shouldRun ? 1 : 0,
+          `starts once for ${state}`
+        );
+        Assert.equal(calls.stop, shouldRun ? 0 : 1, `stops once for ${state}`);
+      });
+    }
+  }
+});
+
+add_task(async function test_flipping_the_gate_on_starts() {
+  withStubs({ available: false, enabled: true }, calls => {
+    Services.prefs.setBoolPref(AVAILABLE_PREF, true);
+    Assert.equal(calls.start, 1, "flipping on starts without an update()");
   });
 });
 
-add_task(async function test_disabled_stops() {
-  Services.prefs.setBoolPref(ENABLED_PREF, false);
-
-  withStubs(calls => {
-    PushNotificationHelper.update();
-    Assert.equal(calls.stop, 1, "helper is stopped when disabled");
-    Assert.equal(calls.start, 0, "nothing is started when disabled");
+add_task(async function test_flipping_the_gate_off_stops() {
+  withStubs({ available: true, enabled: true }, calls => {
+    Services.prefs.setBoolPref(AVAILABLE_PREF, false);
+    Assert.equal(calls.stop, 1, "flipping off stops without an update()");
   });
 });
 
-add_task(async function test_flipping_pref_on_starts() {
-  Services.prefs.setBoolPref(ENABLED_PREF, false);
-
-  withStubs(calls => {
+add_task(async function test_flipping_the_user_switch_on_starts() {
+  withStubs({ available: true, enabled: false }, calls => {
     Services.prefs.setBoolPref(ENABLED_PREF, true);
-    Assert.equal(
-      calls.start,
-      1,
-      "flipping on starts without an explicit update()"
-    );
+    Assert.equal(calls.start, 1, "flipping on starts without an update()");
   });
 });
 
-add_task(async function test_flipping_pref_off_stops() {
-  Services.prefs.setBoolPref(ENABLED_PREF, true);
-
-  withStubs(calls => {
+add_task(async function test_flipping_the_user_switch_off_stops() {
+  withStubs({ available: true, enabled: true }, calls => {
     Services.prefs.setBoolPref(ENABLED_PREF, false);
-    Assert.equal(
-      calls.stop,
-      1,
-      "flipping off stops without an explicit update()"
+    Assert.equal(calls.stop, 1, "flipping off stops without an update()");
+  });
+});
+
+
+
+add_task(async function test_the_user_switch_cannot_defeat_the_gate() {
+  withStubs({ available: false, enabled: false }, calls => {
+    Services.prefs.setBoolPref(ENABLED_PREF, true);
+    Assert.equal(calls.start, 0, "nothing starts while the gate is closed");
+  });
+});
+
+add_task(async function test_set_enabled_writes_the_user_pref() {
+  withStubs({ available: true, enabled: false }, calls => {
+    PushNotificationHelper.setEnabled(true);
+    Assert.ok(
+      Services.prefs.getBoolPref(ENABLED_PREF),
+      "setEnabled(true) turns the user switch on"
+    );
+    Assert.equal(calls.start, 1, "and starts the helper");
+
+    PushNotificationHelper.setEnabled(false);
+    Assert.ok(
+      !Services.prefs.getBoolPref(ENABLED_PREF),
+      "setEnabled(false) turns it back off"
+    );
+    Assert.equal(calls.stop, 1, "and stops the helper");
+  });
+});
+
+
+
+add_task(async function test_set_enabled_leaves_the_gate_alone() {
+  withStubs({ available: true, enabled: true }, () => {
+    PushNotificationHelper.setEnabled(false);
+    Assert.ok(
+      Services.prefs.getBoolPref(AVAILABLE_PREF),
+      "the Nimbus-owned gate is untouched"
     );
   });
 });
 
 
 
-add_task(async function test_startup_while_disabled_stops_orphans() {
-  Services.prefs.setBoolPref(ENABLED_PREF, false);
 
-  withStubs(calls => {
-    PushNotificationHelper.init();
-    Assert.equal(
-      calls.stop,
-      1,
-      "startup stops a helper left by a prior session"
+add_task(async function test_nimbus_owns_the_gate() {
+  const { restore } = stubLaunchers();
+  Services.prefs.clearUserPref(AVAILABLE_PREF);
+
+  try {
+    const { cleanup } = await NimbusTestUtils.setupTest();
+    const unenroll = await NimbusTestUtils.enrollWithFeatureConfig({
+      featureId: "pushNotificationHelper",
+      value: { available: true },
+    });
+
+    Assert.ok(
+      Services.prefs.getBoolPref(AVAILABLE_PREF, false),
+      "enrolling opens the gate"
     );
-    Assert.equal(calls.start, 0, "startup does not launch one while disabled");
+
+    await unenroll();
+
+    
+    
+    Assert.ok(
+      !Services.prefs.getBoolPref(AVAILABLE_PREF, false),
+      "unenrolling closes it again in the same session"
+    );
+
+    await cleanup();
+  } finally {
+    restore();
+  }
+});
+
+
+
+add_task(async function test_startup_while_off_stops_orphans() {
+  withStubs({ available: true, enabled: false }, calls => {
+    PushNotificationHelper.init();
+    Assert.equal(calls.stop, 1, "startup stops a helper left by a prior run");
+    Assert.equal(calls.start, 0, "and does not launch one while off");
   });
 });
