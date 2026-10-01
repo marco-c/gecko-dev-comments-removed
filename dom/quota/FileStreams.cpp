@@ -100,23 +100,22 @@ NS_IMETHODIMP FileQuotaStreamWithWrite<FileStreamBase>::Write(
   QM_SCOPED_CONTEXT("FileStreamWriteFailure"_ns);
 
   const auto resyncQuotaUsage = [this](const auto&) {
-    if (FileQuotaStreamWithWrite::mQuotaObject) {
+    QM_WARNONLY_TRY(([this]() -> Result<Ok, nsresult> {
+      if (!FileQuotaStreamWithWrite::mQuotaObject) {
+        return Ok{};
+      }
+
       
       
       
       int64_t currentSize;
-      const nsresult getSizeRv = FileStreamBase::GetSize(&currentSize);
-      if (NS_SUCCEEDED(getSizeRv)) {
-        const bool res =
-            FileQuotaStreamWithWrite::mQuotaObject->MaybeUpdateSize(
-                currentSize,
-                 true);
-        QM_WARNONLY_TRY(OkIf(res));
-        MOZ_ASSERT(res);
-      } else {
-        QM_WARNONLY_TRY(MOZ_TO_RESULT(getSizeRv));
-      }
-    }
+      QM_TRY(MOZ_TO_RESULT(FileStreamBase::GetSize(&currentSize)));
+
+      QM_TRY(
+          MOZ_TO_RESULT(FileQuotaStreamWithWrite::mQuotaObject->MaybeUpdateSize(
+              currentSize,  true)));
+      return Ok{};
+    })());
   };
 
   QM_TRY(MOZ_TO_RESULT(FileStreamBase::Write(aBuf, aCount, _retval)),
