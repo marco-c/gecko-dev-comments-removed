@@ -293,10 +293,33 @@ void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
        iter != absCB->GetChildList().end();) {
     
     nsIFrame* const child = *iter++;
-    if (aOnlyFirstInFlows == OnlyFirstInFlows::No || !child->GetPrevInFlow()) {
-      absCB->StealFrame(child);
+    nsIFrame* const childPrevInFlow = child->GetPrevInFlow();
+    if (aOnlyFirstInFlows == OnlyFirstInFlows::Yes && childPrevInFlow) {
+      continue;
+    }
+    absCB->StealFrame(child);
+    if (childPrevInFlow && childPrevInFlow->GetParent() == aDelegatingFrame) {
+      
+      
+      mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
+    } else {
+      
+      
+      
       mAbsoluteFrames.AppendFrame(aDelegatingFrame, child);
-      child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+      if (!childPrevInFlow) {
+        child->RemoveStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+      }
+    }
+  }
+
+  if (aOnlyFirstInFlows == OnlyFirstInFlows::No) {
+    
+    
+    nsFrameList pushedFrames = absCB->StealPushedChildList();
+    if (pushedFrames.NotEmpty()) {
+      mPushedAbsoluteFrames.AppendFrames(aDelegatingFrame,
+                                         std::move(pushedFrames));
     }
   }
 }
