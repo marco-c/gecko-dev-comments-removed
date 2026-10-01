@@ -117,12 +117,13 @@ add_task(async function test_only_allowed_shortcuts_kept_in_popup() {
     "close (Ctrl+W) stays enabled"
   );
   let back = doc.getElementById("goBackKb") || doc.getElementById("goBackKb2");
-  Assert.ok(back && !back.hasAttribute("disabled"), "back stays enabled");
+  Assert.equal(back?.getAttribute("disabled"), "true", "back is disabled");
   let forward =
     doc.getElementById("goForwardKb") || doc.getElementById("goForwardKb2");
-  Assert.ok(
-    forward && !forward.hasAttribute("disabled"),
-    "forward stays enabled"
+  Assert.equal(
+    forward?.getAttribute("disabled"),
+    "true",
+    "forward is disabled"
   );
   
   
