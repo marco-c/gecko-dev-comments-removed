@@ -84,6 +84,8 @@ PolicyContainer::Write(nsIObjectOutputStream* aStream) {
   
   
 
+  
+
   MOZ_TRY(aStream->Write16(static_cast<uint16_t>(mIPAddressSpace)));
 
   return NS_OK;
@@ -108,6 +110,12 @@ void PolicyContainer::ToArgs(const PolicyContainer* aPolicy,
     aArgs.integrityPolicy() = Some(integrityPolicyArgs);
   }
 
+  if (aPolicy->mConnectionAllowlists) {
+    mozilla::ipc::ConnectionAllowlistsArgs connectionAllowlistsArgs;
+    aPolicy->mConnectionAllowlists->ToArgs(connectionAllowlistsArgs);
+    aArgs.connectionAllowlists() = Some(std::move(connectionAllowlistsArgs));
+  }
+
   aArgs.ipAddressSpace() = aPolicy->mIPAddressSpace;
 }
 
@@ -127,6 +135,12 @@ void PolicyContainer::FromArgs(const mozilla::ipc::PolicyContainerArgs& aArgs,
     IntegrityPolicy::FromArgs(*aArgs.integrityPolicy(),
                               getter_AddRefs(integrityPolicy));
     policy->SetIntegrityPolicy(integrityPolicy);
+  }
+
+  if (aArgs.connectionAllowlists().isSome()) {
+    RefPtr<ConnectionAllowlists> connectionAllowlists =
+        ConnectionAllowlists::FromArgs(*aArgs.connectionAllowlists());
+    policy->SetConnectionAllowlists(connectionAllowlists);
   }
 
   policy->SetIPAddressSpace(aArgs.ipAddressSpace());
@@ -152,6 +166,8 @@ void PolicyContainer::InitFromOther(PolicyContainer* aOther) {
         IntegrityPolicy::Cast(aOther->mIntegrityPolicy));
     mIntegrityPolicy = integrityPolicy;
   }
+
+  
 
   mIPAddressSpace = aOther->mIPAddressSpace;
 }
@@ -183,6 +199,8 @@ bool PolicyContainer::Equals(const PolicyContainer* aContainer,
           IntegrityPolicy::Cast(aOtherContainer->mIntegrityPolicy))) {
     return false;
   }
+
+  
 
   if (aContainer->mIPAddressSpace != aOtherContainer->mIPAddressSpace) {
     return false;
