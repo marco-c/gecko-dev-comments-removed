@@ -1248,11 +1248,16 @@ auto DocumentLoadListener::OpenDocument(
   
   
   
+  
+  
   {
+    constexpr nsLoadFlags allowedDifferentLoadFlags =
+        nsLoadGroup::kInheritedLoadFlags |
+        nsLoadGroup::LOAD_DOCUMENT_NEEDS_COOKIE;
     const nsLoadFlags parentLoadFlags = aLoadState->CalculateChannelLoadFlags(
         browsingContext, aUriModified, std::move(aIsEmbeddingBlockedError));
     const nsLoadFlags differing = parentLoadFlags ^ aLoadFlags;
-    if (differing & ~nsLoadGroup::kInheritedLoadFlags) {
+    if (differing & ~allowedDifferentLoadFlags) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
       MOZ_CRASH_UNSAFE_PRINTF(
           "DocumentLoadListener::OpenDocument: Unexpected load flags: "
