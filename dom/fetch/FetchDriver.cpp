@@ -1103,6 +1103,25 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
                 contentLength == InternalResponse::UNKNOWN_BODY_SIZE);
 
   if (httpChannel) {
+    
+    
+    
+    
+    if (mRequest->HasStreamBody()) {
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+      bool synthesizedByServiceWorker =
+          loadInfo && loadInfo->GetServiceWorkerTaintingSynthesized();
+      if (!synthesizedByServiceWorker) {
+        nsAutoCString protocolVersion;
+        rv = httpChannel->GetProtocolVersion(protocolVersion);
+        if (NS_SUCCEEDED(rv) && !protocolVersion.EqualsLiteral("h2") &&
+            !protocolVersion.EqualsLiteral("h3")) {
+          FailWithNetworkError(NS_ERROR_DOM_NETWORK_ERR);
+          return NS_ERROR_DOM_NETWORK_ERR;
+        }
+      }
+    }
+
     channel->GetContentType(contentType);
 
     uint32_t responseStatus = 0;
@@ -1692,6 +1711,20 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
                                     nsIAsyncVerifyRedirectCallback* aCallback) {
   nsCOMPtr<nsIHttpChannel> oldHttpChannel = do_QueryInterface(aOldChannel);
   nsCOMPtr<nsIHttpChannel> newHttpChannel = do_QueryInterface(aNewChannel);
+
+  
+  
+  if (mRequest->HasStreamBody() && oldHttpChannel) {
+    uint32_t responseStatus = 0;
+    nsresult rv = oldHttpChannel->GetResponseStatus(&responseStatus);
+    if (NS_SUCCEEDED(rv) && responseStatus != 303) {
+      
+      FailWithNetworkError(NS_ERROR_DOM_NETWORK_ERR);
+      aCallback->OnRedirectVerifyCallback(NS_ERROR_DOM_NETWORK_ERR);
+      return NS_OK;
+    }
+  }
+
   if (oldHttpChannel && newHttpChannel) {
     nsAutoCString method;
     mRequest->GetMethod(method);
@@ -1699,6 +1732,9 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
     
     bool rewriteToGET = false;
     (void)oldHttpChannel->ShouldStripRequestBodyHeader(method, &rewriteToGET);
+    if (rewriteToGET) {
+      mRequest->SetHasStreamBody(false);
+    }
 
     
     
