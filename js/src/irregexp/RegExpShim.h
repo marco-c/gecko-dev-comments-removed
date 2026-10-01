@@ -1338,47 +1338,44 @@ class RegExpData : public HeapObject {
 
   Tagged<String> escaped_source() const { return String(inner()->getSource()); }
 
-  
-
-  
-  static constexpr int kQuickCheckBitsetChars = 256;
-  static constexpr int kQuickCheckBitsetBitsPerWord = 32;
+  static constexpr int kQuickCheckBitsetChars =
+      js::RegExpShared::QuickCheckBitsetChars;
+  static constexpr int kQuickCheckBitsetBitsPerWord =
+      js::RegExpShared::QuickCheckBitsetBitsPerWord;
   static constexpr int kQuickCheckBitsetWords =
-      kQuickCheckBitsetChars / kQuickCheckBitsetBitsPerWord;
+      js::RegExpShared::QuickCheckBitsetWords;
 
-  
-  
-  static constexpr std::pair<int, uint32_t> QuickCheckBitsetBit(uint8_t c) {
-    return {c / kQuickCheckBitsetBitsPerWord,
-            uint32_t{1} << (c % kQuickCheckBitsetBitsPerWord)};
-  }
-
-  inline uint32_t quick_check_mask() const { return 0; }
-  inline void set_quick_check_mask(uint32_t value) {}
-
-  inline uint32_t quick_check_value() const { return 0; }
-  inline void set_quick_check_value(uint32_t value) {}
-
-  inline void set_quick_check_reject_bitset_word(int index, uint32_t value) {}
-
-  enum InternalFlag : uint32_t {
-    
-    
-    
-    kHasQuickCheck = 1 << 0,
+  enum InternalFlags : uint8_t {
+    kHasQuickCheck =
+        static_cast<uint8_t>(js::RegExpShared::InternalFlag::HasQuickCheck),
   };
 
-  inline uint32_t internal_flags() const { return 0; }
-  inline void set_internal_flags(uint32_t value) {}
-
-  inline void clear_quick_check() {}
-
-  
-  
-  
-  bool QuickCheckRejects(base::Vector<const uint8_t> subject, int index) const {
-    return false;
+  static constexpr std::pair<int, uint32_t> QuickCheckBitsetBit(uint8_t c) {
+    return js::RegExpShared::quickCheckBitsetBit(c);
   }
+
+  inline uint32_t quick_check_mask() const { return inner()->quickCheckMask(); }
+  inline void set_quick_check_mask(uint32_t value) {
+    inner()->setQuickCheckMask(value);
+  }
+
+  inline uint32_t quick_check_value() const {
+    return inner()->quickCheckValue();
+  }
+  inline void set_quick_check_value(uint32_t value) {
+    inner()->setQuickCheckValue(value);
+  }
+
+  inline void set_quick_check_reject_bitset_word(int index, uint32_t value) {
+    inner()->setQuickCheckRejectBitsetWord(index, value);
+  }
+
+  inline uint8_t internal_flags() const { return inner()->internalFlags(); }
+  inline void set_internal_flags(uint32_t value) {
+    inner()->setInternalFlags(value);
+  }
+
+  inline void clear_quick_check() { inner()->clearQuickCheck(); }
 
  private:
   js::RegExpShared* inner() const {

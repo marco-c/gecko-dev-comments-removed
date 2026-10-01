@@ -719,6 +719,37 @@ bool RegExpShared::compileIfNecessary(JSContext* cx,
 }
 
 
+
+bool RegExpShared::quickCheckRejects(const JS::Latin1Char* chars, size_t length,
+                                     size_t index) const {
+  MOZ_ASSERT(hasQuickCheck());
+
+  
+  if (index >= length) {
+    return false;
+  }
+
+  
+  auto [word, bit] = quickCheckBitsetBit(chars[index]);
+  if ((quickCheckRejectBitset_[word] & bit) != 0) {
+    return true;
+  }
+
+  
+  if (index + sizeof(uint32_t) <= length) {
+    
+    
+    uint32_t word;
+    memcpy(&word, chars + index, sizeof(word));
+    if ((word & quickCheckMask_) != quickCheckValue_) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
 RegExpRunStatus RegExpShared::execute(JSContext* cx,
                                       MutableHandleRegExpShared re,
                                       Handle<JSLinearString*> input,
@@ -730,6 +761,14 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
   
   if (!compileIfNecessary(cx, re, input, RegExpShared::CodeKind::Any)) {
     return RegExpRunStatus::Error;
+  }
+
+  if (re->hasQuickCheck() && input->hasLatin1Chars()) {
+    AutoCheckCannotGC nogc;
+    if (re->quickCheckRejects(input->latin1Chars(nogc), input->length(),
+                              start)) {
+      return RegExpRunStatus::Success_NotFound;
+    }
   }
 
   
