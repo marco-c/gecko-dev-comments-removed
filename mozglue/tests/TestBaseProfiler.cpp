@@ -4646,28 +4646,24 @@ void TestMarkerNoPayload() {
   printf("TestMarkerNoPayload done\n");
 }
 
+
+
+struct MarkerTypeTestMinimal
+    : public mozilla::BaseMarkerType<MarkerTypeTestMinimal> {
+  static constexpr const char* Name = "test-minimal";
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr const char* TooltipLabel = "tooltip for test-minimal";
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"text", MS::InputType::CString, "Text", MS::Format::String},
+  };
+};
+
 void TestUserMarker() {
   printf("TestUserMarker...\n");
-
-  
-  
-  struct MarkerTypeTestMinimal {
-    static constexpr Span<const char> MarkerTypeName() {
-      return MakeStringSpan("test-minimal");
-    }
-    static void StreamJSONMarkerData(
-        mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-        const std::string& aText) {
-      aWriter.StringProperty("text", aText);
-    }
-    static mozilla::MarkerSchema MarkerTypeDisplay() {
-      using MS = mozilla::MarkerSchema;
-      MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-      schema.SetTooltipLabel("tooltip for test-minimal");
-      schema.AddKeyLabelFormat("text", "Text", MS::Format::String);
-      return schema;
-    }
-  };
 
   mozilla::ProfileBufferChunkManagerSingle chunkManager(1024);
   mozilla::ProfileChunkedBuffer buffer(
