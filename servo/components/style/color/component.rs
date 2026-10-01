@@ -14,7 +14,7 @@ use crate::{
     values::{
         animated::ToAnimatedValue,
         computed,
-        specified::calc::{CalcNode, CalcParseFlags, Leaf, PercentageContext},
+        specified::calc::{CalcParseFlags, Leaf, PercentageContext, SpecifiedCalcNode},
     },
 };
 use cssparser::{Parser, Token, color::OPAQUE};
@@ -31,7 +31,7 @@ pub enum ColorComponent<ValueType> {
     
     ChannelKeyword(ChannelKeyword),
     
-    Calc(Box<CalcNode>),
+    Calc(Box<SpecifiedCalcNode>),
     
     AlphaOmitted,
 }
@@ -84,10 +84,10 @@ impl<ValueType: ColorComponentType> ColorComponent<ValueType> {
                 _ => return Err(ParseError::unexpected_token()),
             }),
             Token::Function(ref name) => {
-                let function = CalcNode::math_function(context, name)?;
+                let function = SpecifiedCalcNode::math_function(context, name)?;
                 let mut flags = CalcParseFlags::new(percentage_context);
                 flags.color_components = allowed_channel_keywords;
-                let mut node = CalcNode::parse(context, input, function, flags)?;
+                let mut node = SpecifiedCalcNode::parse(context, input, function, flags)?;
                 node.simplify_and_sort();
                 if !node
                     .numeric_type()
