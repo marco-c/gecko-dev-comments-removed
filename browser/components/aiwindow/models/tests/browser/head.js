@@ -15,6 +15,10 @@ const { openAIEngine } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
+const { MockRegistrar } = ChromeUtils.importESModule(
+  "resource://testing-common/MockRegistrar.sys.mjs"
+);
+
 
 
 
@@ -309,4 +313,34 @@ async function withServer(serverOptions, task) {
 
 function startTitleGenerationServer(title) {
   return startMockOpenAI({ streamChunks: [title] });
+}
+
+
+
+
+
+
+
+function mockAlertsService() {
+  const alerts = [];
+  const observers = [];
+  const service = {
+    QueryInterface: ChromeUtils.generateQI(["nsIAlertsService"]),
+    showAlert(alert, observer) {
+      alerts.push(alert);
+      observers.push(observer);
+    },
+    closeAlert() {},
+  };
+  const cid = MockRegistrar.register("@mozilla.org/alerts-service;1", service);
+  return {
+    alerts,
+    observers,
+    
+    reset: () => {
+      alerts.length = 0;
+      observers.length = 0;
+    },
+    cleanup: () => MockRegistrar.unregister(cid),
+  };
 }
