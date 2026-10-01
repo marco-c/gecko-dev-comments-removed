@@ -641,8 +641,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   static constexpr JitDiscardOptions DefaultJitDiscardOptions() { return {}; }
 
-  void maybeDiscardJitCode(JS::GCContext* gcx);
-
   
   void forceDiscardJitCode(
       JS::GCContext* gcx,
