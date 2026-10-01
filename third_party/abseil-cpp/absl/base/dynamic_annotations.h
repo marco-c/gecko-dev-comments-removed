@@ -83,9 +83,7 @@
 
 #if defined(__clang__)
 #define ABSL_INTERNAL_ANNOTALYSIS_ENABLED 1
-#if !defined(SWIG)
 #define ABSL_INTERNAL_IGNORE_READS_ATTRIBUTE_ENABLED 1
-#endif
 #else
 #define ABSL_INTERNAL_ANNOTALYSIS_ENABLED 0
 #endif
@@ -199,6 +197,7 @@
 
 
 
+#pragma GCC visibility push(default)
 ABSL_INTERNAL_BEGIN_EXTERN_C
 void AnnotateRWLockCreate(const char* file, int line,
                           const volatile void* lock);
@@ -218,6 +217,7 @@ void AnnotateBenignRaceSized(const char* file, int line,
 void AnnotateThreadName(const char* file, int line, const char* name);
 void AnnotateEnableRaceDetection(const char* file, int line, int enable);
 ABSL_INTERNAL_END_EXTERN_C
+#pragma GCC visibility pop
 
 #else  
 
@@ -294,12 +294,14 @@ ABSL_INTERNAL_END_EXTERN_C
 
 
 
+#pragma GCC visibility push(default)
 ABSL_INTERNAL_BEGIN_EXTERN_C
 void AnnotateIgnoreReadsBegin(const char* file, int line)
     ABSL_INTERNAL_IGNORE_READS_BEGIN_ATTRIBUTE;
 void AnnotateIgnoreReadsEnd(const char* file,
                             int line) ABSL_INTERNAL_IGNORE_READS_END_ATTRIBUTE;
 ABSL_INTERNAL_END_EXTERN_C
+#pragma GCC visibility pop
 
 #elif defined(ABSL_INTERNAL_ANNOTALYSIS_ENABLED)
 
@@ -350,10 +352,12 @@ ABSL_INTERNAL_STATIC_INLINE void ABSL_INTERNAL_C_SYMBOL(
 
 
 
+#pragma GCC visibility push(default)
 ABSL_INTERNAL_BEGIN_EXTERN_C
 void AnnotateIgnoreWritesBegin(const char* file, int line);
 void AnnotateIgnoreWritesEnd(const char* file, int line);
 ABSL_INTERNAL_END_EXTERN_C
+#pragma GCC visibility pop
 
 #else
 

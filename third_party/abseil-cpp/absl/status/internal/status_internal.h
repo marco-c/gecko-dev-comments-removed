@@ -21,6 +21,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -28,14 +29,13 @@
 #include "absl/base/config.h"
 #include "absl/base/nullability.h"
 #include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/optional_ref.h"
 #include "absl/types/source_location.h"
 #include "absl/types/span.h"
-
-#ifndef SWIG
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -52,21 +52,16 @@ class ABSL_MUST_USE_RESULT ABSL_ATTRIBUTE_TRIVIAL_ABI
     Status;
 #endif
 
-ABSL_NAMESPACE_END
-}  
-#endif  
-
-namespace absl {
-ABSL_NAMESPACE_BEGIN
-
 enum class StatusCode : int;
 enum class StatusToStringMode : int;
 
+
+template <typename T>
+class StatusOr;
+
 namespace status_internal {
-#ifndef SWIG
 class StatusPrivateAccessor;
 class StatusPrivateAccessorForStatusBuilder;
-#endif  
 
 
 struct Payload {
@@ -76,6 +71,9 @@ struct Payload {
 
 using Payloads = absl::InlinedVector<Payload, 1>;
 
+template <typename T>
+using EnableIfString = std::enable_if_t<std::is_same_v<T, std::string>>;
+
 
 class StatusRep {
  public:
@@ -84,6 +82,14 @@ class StatusRep {
       : ref_(int32_t{1}),
         code_(code_arg),
         message_(message_arg),
+        payloads_(std::move(payloads_arg)) {}
+
+  template <typename String, typename = EnableIfString<String>>
+  StatusRep(absl::StatusCode code_arg, String&& message_arg,
+            std::unique_ptr<status_internal::Payloads> payloads_arg)
+      : ref_(int32_t{1}),
+        code_(code_arg),
+        message_(std::forward<String>(message_arg)),
         payloads_(std::move(payloads_arg)) {}
 
   absl::StatusCode code() const { return code_; }
@@ -130,13 +136,21 @@ class StatusRep {
   StatusRep* absl_nonnull CloneAndUnref() const;
 
  private:
+  friend class absl::Status;
+
   mutable std::atomic<int32_t> ref_;
   absl::StatusCode code_;
 
   
   
   
+  
+  
+  
+  
+  
   std::string message_;
+
   absl::InlinedVector<absl::SourceLocation, 1> source_locations_;
   std::unique_ptr<status_internal::Payloads> payloads_;
 };

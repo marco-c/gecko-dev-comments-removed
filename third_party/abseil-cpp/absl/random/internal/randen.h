@@ -17,6 +17,7 @@
 
 #include <cstddef>
 
+#include "absl/base/config.h"
 #include "absl/random/internal/platform.h"
 #include "absl/random/internal/randen_hwaes.h"
 #include "absl/random/internal/randen_slow.h"
@@ -44,7 +45,7 @@ class Randen {
   
   
   
-  inline void Generate(void* state) const {
+  void Generate(void* state) const {
 #if ABSL_RANDOM_INTERNAL_AES_DISPATCH
     
     if (has_crypto_) {
@@ -65,7 +66,7 @@ class Randen {
   
   
   
-  inline void Absorb(const void* seed, void* state) const {
+  void Absorb(const void* seed, void* state) const {
 #if ABSL_RANDOM_INTERNAL_AES_DISPATCH
     
     if (has_crypto_) {

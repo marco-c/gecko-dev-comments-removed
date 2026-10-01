@@ -22,6 +22,7 @@
 #include <tuple>
 #include <type_traits>
 
+#include "absl/base/config.h"
 #include "absl/meta/type_traits.h"
 #include "absl/types/optional.h"
 
@@ -194,8 +195,6 @@ class node_handle<Policy, PolicyTraits, Alloc,
 
   constexpr node_handle() {}
 
-  
-  
   auto key() const
       -> decltype(PolicyTraits::mutable_key(std::declval<slot_type*>())) {
     return PolicyTraits::mutable_key(this->slot());

@@ -28,6 +28,7 @@
 
 #include "absl/base/config.h"
 #include "absl/flags/internal/parse.h"
+#include "absl/strings/string_view.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -123,6 +124,21 @@ void ReportUnrecognizedFlags(
 
 
 std::vector<char*> ParseCommandLine(int argc, char* argv[]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void DisableFlagfileAndEnvParsing();
 
 ABSL_NAMESPACE_END
 }  

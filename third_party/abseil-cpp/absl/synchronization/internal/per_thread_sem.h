@@ -27,9 +27,11 @@
 
 #include <atomic>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/thread_identity.h"
 #include "absl/synchronization/internal/create_thread_identity.h"
 #include "absl/synchronization/internal/kernel_timeout.h"
+#include "absl/time/time.h"
 
 namespace gloop_do_not_use {
 struct SynchronizationBenchmarkPeer;
@@ -79,6 +81,10 @@ class PerThreadSem {
   static inline bool Wait(KernelTimeout t);
 
   
+  
+  static inline bool WaitAbsolute(absl::Time t);
+
+  
   friend class PerThreadSemTest;
   friend class absl::Mutex;
   friend struct ::gloop_do_not_use::SynchronizationBenchmarkPeer;
@@ -119,6 +125,10 @@ void absl::synchronization_internal::PerThreadSem::Post(
 bool absl::synchronization_internal::PerThreadSem::Wait(
     absl::synchronization_internal::KernelTimeout t) {
   return ABSL_INTERNAL_C_SYMBOL(AbslInternalPerThreadSemWait)(t);
+}
+
+bool absl::synchronization_internal::PerThreadSem::WaitAbsolute(absl::Time t) {
+  return Wait(KernelTimeout(t));
 }
 
 #endif  

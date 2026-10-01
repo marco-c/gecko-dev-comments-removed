@@ -13,12 +13,14 @@
 
 
 #include "absl/strings/internal/charconv_parse.h"
-#include "absl/strings/charconv.h"
 
 #include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 
+#include "absl/base/config.h"
+#include "absl/strings/charconv.h"
 #include "absl/strings/internal/memutil.h"
 
 namespace absl {
@@ -246,8 +248,9 @@ constexpr int DigitMagnitude<16>() {
 
 
 template <int base, typename T>
-int ConsumeDigits(const char* begin, const char* end, int max_digits, T* out,
-                  bool* dropped_nonzero_digit) {
+ptrdiff_t ConsumeDigits(const char* begin, const char* end,
+                        ptrdiff_t max_digits, T* out,
+                        bool* dropped_nonzero_digit) {
   if (base == 10) {
     assert(max_digits <= std::numeric_limits<T>::digits10);
   } else if (base == 16) {
@@ -282,7 +285,7 @@ int ConsumeDigits(const char* begin, const char* end, int max_digits, T* out,
     *dropped_nonzero_digit = true;
   }
   *out = accumulator;
-  return static_cast<int>(begin - original_begin);
+  return begin - original_begin;
 }
 
 
@@ -370,24 +373,22 @@ strings_internal::ParsedFloat ParseFloat(const char* begin, const char* end,
   }
   uint64_t mantissa = 0;
 
-  int exponent_adjustment = 0;
+  ptrdiff_t exponent_adjustment = 0;
   bool mantissa_is_inexact = false;
-  int pre_decimal_digits = ConsumeDigits<base>(
+  ptrdiff_t pre_decimal_digits = ConsumeDigits<base>(
       begin, end, MantissaDigitsMax<base>(), &mantissa, &mantissa_is_inexact);
   begin += pre_decimal_digits;
-  int digits_left;
+  ptrdiff_t digits_left;
   if (pre_decimal_digits >= DigitLimit<base>()) {
     
     return result;
   } else if (pre_decimal_digits > MantissaDigitsMax<base>()) {
     
     
-    exponent_adjustment =
-        static_cast<int>(pre_decimal_digits - MantissaDigitsMax<base>());
+    exponent_adjustment = pre_decimal_digits - MantissaDigitsMax<base>();
     digits_left = 0;
   } else {
-    digits_left =
-        static_cast<int>(MantissaDigitsMax<base>() - pre_decimal_digits);
+    digits_left = MantissaDigitsMax<base>() - pre_decimal_digits;
   }
   if (begin < end && *begin == '.') {
     ++begin;
@@ -398,14 +399,14 @@ strings_internal::ParsedFloat ParseFloat(const char* begin, const char* end,
       while (begin < end && *begin == '0') {
         ++begin;
       }
-      int zeros_skipped = static_cast<int>(begin - begin_zeros);
+      ptrdiff_t zeros_skipped = begin - begin_zeros;
       if (zeros_skipped >= DigitLimit<base>()) {
         
         return result;
       }
-      exponent_adjustment -= static_cast<int>(zeros_skipped);
+      exponent_adjustment -= zeros_skipped;
     }
-    int post_decimal_digits = ConsumeDigits<base>(
+    ptrdiff_t post_decimal_digits = ConsumeDigits<base>(
         begin, end, digits_left, &mantissa, &mantissa_is_inexact);
     begin += post_decimal_digits;
 
@@ -482,15 +483,26 @@ strings_internal::ParsedFloat ParseFloat(const char* begin, const char* end,
     return result;
   }
 
-  
-  result.type = strings_internal::FloatType::kNumber;
   if (result.mantissa > 0) {
-    result.exponent = result.literal_exponent +
-                      (DigitMagnitude<base>() * exponent_adjustment);
+    const ptrdiff_t exponent = result.literal_exponent +
+                               (DigitMagnitude<base>() * exponent_adjustment);
+
+    if (exponent < (std::numeric_limits<int>::min)() ||
+        exponent > (std::numeric_limits<int>::max)()) {
+      
+      
+      return result;
+    }
+
+    result.exponent = static_cast<int>(exponent);
   } else {
     result.exponent = 0;
   }
   result.end = begin;
+
+  
+  result.type = strings_internal::FloatType::kNumber;
+
   return result;
 }
 

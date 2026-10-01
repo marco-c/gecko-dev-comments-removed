@@ -16,7 +16,20 @@
 
 #include "absl/debugging/failure_signal_handler.h"
 
+#include <algorithm>
+#include <atomic>
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
+#include <cstring>
+#include <ctime>
+
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/internal/raw_logging.h"
+#include "absl/base/internal/sysinfo.h"
+#include "absl/debugging/internal/examine_stack.h"
+#include "absl/debugging/stacktrace.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -41,20 +54,6 @@
 #include <sys/prctl.h>
 #endif
 
-#include <algorithm>
-#include <atomic>
-#include <cerrno>
-#include <csignal>
-#include <cstdio>
-#include <cstring>
-#include <ctime>
-
-#include "absl/base/attributes.h"
-#include "absl/base/internal/raw_logging.h"
-#include "absl/base/internal/sysinfo.h"
-#include "absl/debugging/internal/examine_stack.h"
-#include "absl/debugging/stacktrace.h"
-
 #if !defined(_WIN32) && !defined(__wasi__)
 #define ABSL_HAVE_SIGACTION
 
@@ -71,7 +70,7 @@
 
 #ifdef ABSL_HAVE_PTHREAD_CPU_NUMBER_NP
 #error ABSL_HAVE_PTHREAD_CPU_NUMBER_NP cannot be directly set
-#elif defined(__APPLE__) && defined(__has_include) &&              \
+#elif defined(__APPLE__) &&                                        \
     ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&    \
       __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 110000) ||  \
      (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&   \
@@ -220,7 +219,7 @@ static bool SetupAlternateStackOnce() {
 
 static int MaybeSetupAlternateStack() {
 #ifdef ABSL_HAVE_SIGALTSTACK
-  ABSL_ATTRIBUTE_UNUSED static const bool kOnce = SetupAlternateStackOnce();
+  [[maybe_unused]] static const bool kOnce = SetupAlternateStackOnce();
   return SA_ONSTACK;
 #else
   return 0;
@@ -383,10 +382,16 @@ static void AbslFailureSignalHandler(int signo, siginfo_t*, void* ucontext) {
       
       
       PortableSleepForSeconds(3);
-      RaiseToDefaultHandler(signo);
+    } else {
       
-      return;
+      
+      
+      
     }
+
+    RaiseToDefaultHandler(signo);
+    
+    return;
   }
 
   

@@ -15,6 +15,7 @@
 #ifndef ABSL_CRC_INTERNAL_CRC_H_
 #define ABSL_CRC_INTERNAL_CRC_H_
 
+#include <cstddef>
 #include <cstdint>
 
 #include "absl/base/config.h"
@@ -45,6 +46,11 @@ class CRC {
   
   virtual void Extend(uint32_t* crc, const void* bytes,
                       size_t length) const = 0;
+
+  
+  
+  virtual void ExtendAndCopy(uint32_t* crc, void* __restrict dst,
+                             const void* __restrict src, size_t length) const;
 
   
   

@@ -12,8 +12,10 @@
 
 
 #include <cstddef>
+#include <iterator>
 #include <string>
 
+#include "absl/time/civil_time.h"
 #include "absl/time/internal/test_util.h"
 #include "absl/time/time.h"
 #include "benchmark/benchmark.h"
@@ -29,7 +31,7 @@ const char* const kFormats[] = {
     "%Y-%m-%d%ET%H:%M:%S",  
     "%Y-%m-%d",             
 };
-const int kNumFormats = sizeof(kFormats) / sizeof(kFormats[0]);
+const int kNumFormats = std::size(kFormats);
 }  
 
 void BM_Format_FormatTime(benchmark::State& state) {

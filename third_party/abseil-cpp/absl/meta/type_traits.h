@@ -35,13 +35,17 @@
 #ifndef ABSL_META_TYPE_TRAITS_H_
 #define ABSL_META_TYPE_TRAITS_H_
 
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
+#include <version>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
@@ -271,22 +275,16 @@ using type_identity_t = typename type_identity<T>::type;
 
 namespace type_traits_internal {
 
-#if (defined(__cpp_lib_is_invocable) && __cpp_lib_is_invocable >= 201703L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-
 template <typename>
 struct result_of;
 template <typename F, typename... Args>
 struct result_of<F(Args...)> : std::invoke_result<F, Args...> {};
-#else
-template <typename F>
-using result_of = std::result_of<F>;
-#endif
 
 }  
 
 template <typename F>
-using result_of_t = typename type_traits_internal::result_of<F>::type;
+using result_of_t [[deprecated("Use std::invoke_result_t instead.")]] =
+    typename type_traits_internal::result_of<F>::type;
 
 namespace type_traits_internal {
 
@@ -342,69 +340,12 @@ inline void AssertHashEnabled() {
   Helper::Sink(Helper::DoIt<Ts>()...);
 }
 
-}  
-
-
-
-namespace swap_internal {
-
-
-using std::swap;
-
-
-
-void swap();
+template <class T>
+using IsSwappable ABSL_DEPRECATE_AND_INLINE() = std::is_swappable<T>;
 
 template <class T>
-using IsSwappableImpl = decltype(swap(std::declval<T&>(), std::declval<T&>()));
-
-
-template <class T,
-          class IsNoexcept = std::integral_constant<
-              bool, noexcept(swap(std::declval<T&>(), std::declval<T&>()))>>
-using IsNothrowSwappableImpl = std::enable_if_t<IsNoexcept::value>;
-
-
-
-
-
-template <class T>
-struct IsSwappable
-    : absl::type_traits_internal::is_detected<IsSwappableImpl, T> {};
-
-
-
-
-
-template <class T>
-struct IsNothrowSwappable
-    : absl::type_traits_internal::is_detected<IsNothrowSwappableImpl, T> {};
-
-
-
-
-
-template <class T, std::enable_if_t<IsSwappable<T>::value, int> = 0>
-void Swap(T& lhs, T& rhs) noexcept(IsNothrowSwappable<T>::value) {
-  swap(lhs, rhs);
-}
-
-
-
-
-
-
-using StdSwapIsUnconstrained = IsSwappable<void()>;
-
-}  
-
-namespace type_traits_internal {
-
-
-using swap_internal::IsNothrowSwappable;
-using swap_internal::IsSwappable;
-using swap_internal::StdSwapIsUnconstrained;
-using swap_internal::Swap;
+using IsNothrowSwappable ABSL_DEPRECATE_AND_INLINE() =
+    std::is_nothrow_swappable<T>;
 
 }  
 
@@ -471,8 +412,7 @@ using swap_internal::Swap;
 
 template <class T>
 struct is_trivially_relocatable
-    : std::integral_constant<bool, __builtin_is_cpp_trivially_relocatable(T)> {
-};
+    : std::bool_constant<__builtin_is_cpp_trivially_relocatable(T)> {};
 #elif ABSL_HAVE_BUILTIN(__is_trivially_relocatable) && defined(__clang__) && \
     !(defined(_WIN32) || defined(_WIN64)) && !defined(__APPLE__) &&          \
     !defined(__NVCC__)
@@ -481,10 +421,9 @@ struct is_trivially_relocatable
 
 template <class T>
 struct is_trivially_relocatable
-    : std::integral_constant<bool,
-                             std::is_trivially_copyable_v<T> ||
-                                 (__is_trivially_relocatable(T) &&
-                                  std::is_trivially_move_assignable_v<T>)> {};
+    : std::bool_constant<std::is_trivially_copyable_v<T> ||
+                         (__is_trivially_relocatable(T) &&
+                          std::is_trivially_move_assignable_v<T>)> {};
 #else
 
 
@@ -564,22 +503,49 @@ struct IsOwnerImpl<
 template <typename T>
 struct IsOwner : IsOwnerImpl<T> {};
 
+template <typename T>
+struct IsOwner<T&> : std::false_type {};
+
+template <typename T>
+struct IsOwner<T&&> : std::false_type {};
+
+template <typename T>
+struct IsOwner<const T> : IsOwner<T> {};
+
+template <typename T>
+struct IsOwner<volatile T> : IsOwner<T> {};
+
+template <typename T>
+struct IsOwner<const volatile T> : IsOwner<T> {};
+
+template <typename T>
+struct IsOwner<std::reference_wrapper<T>> : std::false_type {};
+
+template <typename T, std::size_t N>
+struct IsOwner<std::array<T, N>>
+    : std::conditional_t<N != 0, IsOwner<T>, std::false_type> {};
+
 
 
 template <typename T1, typename T2>
-struct IsOwner<std::pair<T1, T2>>
-    : std::integral_constant<
-          bool, std::conditional_t<std::is_reference_v<T1>, std::false_type,
-                                   IsOwner<std::remove_cv_t<T1>>>::value &&
-                    std::conditional_t<std::is_reference_v<T2>, std::false_type,
-                                       IsOwner<std::remove_cv_t<T2>>>::value> {
-};
+struct IsOwner<std::pair<T1, T2>> : IsOwner<std::tuple<T1, T2>> {};
 
 template <typename T, typename Traits, typename Alloc>
 struct IsOwner<std::basic_string<T, Traits, Alloc>> : std::true_type {};
 
 template <typename T, typename Alloc>
 struct IsOwner<std::vector<T, Alloc>> : std::true_type {};
+
+template <typename... T>
+struct IsOwner<std::tuple<T...>>
+    : std::bool_constant<(sizeof...(T) > 0) &&
+                         
+                         
+                         
+                         (true && ... && IsOwner<T>::value)> {};
+
+template <typename... T>
+struct IsOwner<std::variant<T...>> : IsOwner<std::tuple<T...>> {};
 
 
 
@@ -605,18 +571,49 @@ struct IsViewImpl<
 
 
 template <typename T>
-struct IsView : std::integral_constant<bool, std::is_pointer_v<T> ||
-                                                 IsViewImpl<T>::value> {};
+struct IsView
+    : std::bool_constant<std::is_pointer_v<T> || IsViewImpl<T>::value> {};
+
+template <typename T>
+struct IsView<T&> : std::true_type {};
+
+template <typename T>
+struct IsView<T&&> : std::true_type {};
+
+template <typename T>
+struct IsView<const T> : IsView<T> {};
+
+template <typename T>
+struct IsView<volatile T> : IsView<T> {};
+
+template <typename T>
+struct IsView<const volatile T> : IsView<T> {};
+
+template <typename T>
+struct IsView<std::reference_wrapper<T>> : std::true_type {};
+
+template <typename T, std::size_t N>
+struct IsView<std::array<T, N>>
+    : std::conditional_t<N != 0, IsView<T>, std::false_type> {};
 
 
 
 template <typename T1, typename T2>
-struct IsView<std::pair<T1, T2>>
-    : std::integral_constant<bool, IsView<std::remove_cv_t<T1>>::value &&
-                                       IsView<std::remove_cv_t<T2>>::value> {};
+struct IsView<std::pair<T1, T2>> : IsView<std::tuple<T1, T2>> {};
 
 template <typename Char, typename Traits>
 struct IsView<std::basic_string_view<Char, Traits>> : std::true_type {};
+
+template <typename... T>
+struct IsView<std::tuple<T...>>
+    : std::bool_constant<(sizeof...(T) > 0) &&
+                         
+                         
+                         
+                         (true && ... && IsView<T>::value)> {};
+
+template <typename... T>
+struct IsView<std::variant<T...>> : IsView<std::tuple<T...>> {};
 
 #ifdef __cpp_lib_span
 template <typename T>
@@ -631,9 +628,10 @@ struct IsView<std::span<T>> : std::true_type {};
 
 
 template <typename T, typename U>
-using IsLifetimeBoundAssignment = std::conjunction<
-    std::integral_constant<bool, !std::is_lvalue_reference_v<U>>,
-    IsOwner<absl::remove_cvref_t<U>>, IsView<absl::remove_cvref_t<T>>>;
+using IsLifetimeBoundAssignment =
+    std::conjunction<std::bool_constant<!std::is_lvalue_reference_v<U>>,
+                     IsOwner<absl::remove_cvref_t<U>>,
+                     IsView<absl::remove_cvref_t<T>>>;
 
 }  
 

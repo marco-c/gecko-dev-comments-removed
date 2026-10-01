@@ -69,6 +69,7 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace {
 
+
 typedef int (*Unwinder)(void**, int*, int, int, const void*, int*);
 std::atomic<Unwinder> custom;
 
@@ -160,8 +161,14 @@ void SetStackUnwinder(Unwinder w) {
   custom.store(w, std::memory_order_release);
 }
 
-int DefaultStackUnwinder(void** pcs, int* sizes, int depth, int skip,
-                         const void* uc, int* min_dropped_frames) {
+
+
+
+
+
+ABSL_ATTRIBUTE_NOINLINE ABSL_ATTRIBUTE_NO_TAIL_CALL int DefaultStackUnwinder(
+    void** pcs, int* sizes, int depth, int skip, const void* uc,
+    int* min_dropped_frames) {
   skip++;  
   decltype(&UnwindImpl<false, false>) f;
   if (sizes == nullptr) {

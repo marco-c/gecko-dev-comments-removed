@@ -24,6 +24,8 @@ declare_args() {
   moz_webrtc_build = true
 }
 
+CHECK_INCLUDES_STRICT_PUBLIC_INCLUDES_PRIVATE = false
+
 template("absl_source_set") {
   source_set(target_name) {
     if (defined(invoker.testonly) && invoker.testonly && !absl_build_tests) {
@@ -43,14 +45,11 @@ template("absl_source_set") {
 
         # Silence -Wcomma / -Wtautological-type-limit-compare spam from
         # third-party abseil sources. See bug 1965053.
-        # clang 23 also enables -Wunused-template by default, which fires on
-        # the abseil sources.
         if (!defined(cflags_cc)) {
           cflags_cc = []
         }
         cflags_cc += [
           "-Wno-comma",
-          "-Wno-unused-template",
           "-Wno-tautological-type-limit-compare",
         ]
       }

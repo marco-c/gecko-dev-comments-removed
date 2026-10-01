@@ -63,6 +63,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/container/internal/btree.h"  
 #include "absl/container/internal/btree_container.h"  
 #include "absl/container/internal/common.h"
@@ -94,7 +95,7 @@ using map_params = typename ApplyWithoutDefaultSuffix<
              typename btree_map_defaults<Key, Data>::IsMulti>,
     TypeList<Key, Data, Compare, Alloc,
              std::integral_constant<int, TargetNodeSize>,
-             std::integral_constant<bool, IsMulti>>>::type;
+             std::bool_constant<IsMulti>>>::type;
 
 }  
 
@@ -353,11 +354,6 @@ class ABSL_ATTRIBUTE_OWNER btree_map
   
   using Base::try_emplace;
 
-  
-  
-  
-  
-  
   
   
   
@@ -720,11 +716,6 @@ class ABSL_ATTRIBUTE_OWNER btree_multimap
   
   using Base::emplace_hint;
 
-  
-  
-  
-  
-  
   
   
   

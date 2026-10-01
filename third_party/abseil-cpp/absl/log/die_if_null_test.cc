@@ -26,7 +26,7 @@
 
 namespace {
 
-auto* test_env ABSL_ATTRIBUTE_UNUSED = ::testing::AddGlobalTestEnvironment(
+auto* test_env [[maybe_unused]] = ::testing::AddGlobalTestEnvironment(
     new absl::log_internal::LogTestEnvironment);
 
 

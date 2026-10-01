@@ -19,11 +19,6 @@
 #ifndef ABSL_HASH_INTERNAL_HASH_H_
 #define ABSL_HASH_INTERNAL_HASH_H_
 
-#ifdef __APPLE__
-#include <Availability.h>
-#include <TargetConditionals.h>
-#endif
-
 
 
 #include "absl/base/config.h"
@@ -31,10 +26,8 @@
 
 
 
-#if defined(__has_include)
 #if __has_include(<version>)
 #define ABSL_INTERNAL_VERSION_HEADER_AVAILABLE 1
-#endif
 #endif
 
 
@@ -91,6 +84,11 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
+
+#ifdef __APPLE__
+#include <Availability.h>
+#include <TargetConditionals.h>
+#endif
 
 #if defined(__cpp_lib_filesystem) && __cpp_lib_filesystem >= 201703L && \
     !defined(__XTENSA__)
@@ -397,7 +395,7 @@ struct is_uniquely_represented<unsigned __int128> : std::true_type {};
 #endif  
 
 template <typename T>
-struct FitsIn64Bits : std::integral_constant<bool, sizeof(T) <= 8> {};
+struct FitsIn64Bits : std::bool_constant<sizeof(T) <= 8> {};
 
 struct CombineRaw {
   template <typename H>
@@ -575,9 +573,7 @@ H AbslHashValue(H hash_state, T C::*ptr) {
 #else
   
   
-#ifdef __cpp_lib_has_unique_object_representations
     static_assert(std::has_unique_object_representations_v<T C::*>);
-#endif  
     return n;
 #endif
   };
@@ -653,6 +649,8 @@ H AbslHashValue(H hash_state, const std::shared_ptr<T>& ptr) {
 
 
 
+
+
 template <typename H>
 H AbslHashValue(H hash_state, absl::string_view str) {
   return H::combine_contiguous(std::move(hash_state), str.data(), str.size());
@@ -661,6 +659,9 @@ H AbslHashValue(H hash_state, absl::string_view str) {
 
 template <typename Char, typename Alloc, typename H,
           typename = std::enable_if_t<std::is_same_v<Char, wchar_t> ||
+#ifdef __cpp_char8_t
+                                      std::is_same_v<Char, char8_t> ||
+#endif
                                       std::is_same_v<Char, char16_t> ||
                                       std::is_same_v<Char, char32_t>>>
 H AbslHashValue(
@@ -670,8 +671,12 @@ H AbslHashValue(
 }
 
 
+
 template <typename Char, typename H,
           typename = std::enable_if_t<std::is_same_v<Char, wchar_t> ||
+#ifdef __cpp_char8_t
+                                      std::is_same_v<Char, char8_t> ||
+#endif
                                       std::is_same_v<Char, char16_t> ||
                                       std::is_same_v<Char, char32_t>>>
 H AbslHashValue(H hash_state, std::basic_string_view<Char> str) {
@@ -696,9 +701,25 @@ H AbslHashValue(H hash_state, const Path& path) {
   
   
   
-  
-  
-  return H::combine(std::move(hash_state), std::filesystem::hash_value(path));
+  size_t count = 0;
+
+  for (const Path& component : path) {
+    std::basic_string_view<typename Path::value_type> part = component.native();
+
+    
+    
+    
+    
+    if (!part.empty() &&
+        (*part.begin() == '/' || *part.begin() == Path::preferred_separator)) {
+      part = std::basic_string_view<typename Path::value_type>(
+          &Path::preferred_separator, 1);
+    }
+
+    hash_state = H::combine(std::move(hash_state), part);
+    ++count;
+  }
+  return H::combine(std::move(hash_state), count);
 }
 
 #endif  
@@ -763,8 +784,10 @@ AbslHashValue(H hash_state, const std::vector<T, Allocator>& vector) {
 
 
 
-#if defined(ABSL_IS_BIG_ENDIAN) && \
-    (defined(__GLIBCXX__) || defined(__GLIBCPP__))
+
+
+
+
 
 
 
@@ -774,29 +797,42 @@ template <typename H, typename T, typename Allocator>
 std::enable_if_t<is_hashable<T>::value && std::is_same_v<T, bool>, H>
 AbslHashValue(H hash_state, const std::vector<T, Allocator>& vector) {
   typename H::AbslInternalPiecewiseCombiner combiner;
-  for (const auto& i : vector) {
-    unsigned char c = static_cast<unsigned char>(i);
-    hash_state = combiner.add_buffer(std::move(hash_state), &c, sizeof(c));
+  const size_t size = vector.size();
+  size_t i = 0;
+  
+  while (i + 64 <= size) {
+    uint64_t word = 0;
+    for (size_t j = 0; j < 64; ++j) {
+      word |= static_cast<uint64_t>(vector[i + j]) << j;
+    }
+    if constexpr (absl::endian::native == absl::endian::big) {
+      word = absl::byteswap(word);
+    }
+    hash_state = combiner.add_buffer(
+        std::move(hash_state), reinterpret_cast<const unsigned char*>(&word),
+        sizeof(word));
+    i += 64;
   }
+  
+  if (i < size) {
+    uint64_t word = 0;
+    const size_t rem = size - i;
+    for (size_t j = 0; j < rem; ++j) {
+      word |= static_cast<uint64_t>(vector[i + j]) << j;
+    }
+    if constexpr (absl::endian::native == absl::endian::big) {
+      word = absl::byteswap(word);
+    }
+    hash_state = combiner.add_buffer(
+        std::move(hash_state), reinterpret_cast<const unsigned char*>(&word),
+        (rem + 7) / 8);
+  }
+  
+  
+  
   return H::combine(combiner.finalize(std::move(hash_state)),
-                    WeaklyMixedInteger{vector.size()});
+                    WeaklyMixedInteger{size});
 }
-#else
-
-
-
-
-
-
-
-template <typename H, typename T, typename Allocator>
-std::enable_if_t<is_hashable<T>::value && std::is_same_v<T, bool>, H>
-AbslHashValue(H hash_state, const std::vector<T, Allocator>& vector) {
-  return H::combine(std::move(hash_state),
-                    std::hash<std::vector<T, Allocator>>{}(vector),
-                    WeaklyMixedInteger{vector.size()});
-}
-#endif
 
 
 
@@ -939,8 +975,6 @@ std::enable_if_t<std::conjunction_v<is_hashable<T>...>, H> AbslHashValue(
 
 
 
-#if defined(ABSL_IS_BIG_ENDIAN) && \
-    (defined(__GLIBCXX__) || defined(__GLIBCPP__))
 
 
 
@@ -949,13 +983,37 @@ std::enable_if_t<std::conjunction_v<is_hashable<T>...>, H> AbslHashValue(
 template <typename H, size_t N>
 H AbslHashValue(H hash_state, const std::bitset<N>& set) {
   typename H::AbslInternalPiecewiseCombiner combiner;
-  for (size_t i = 0; i < N; i++) {
-    unsigned char c = static_cast<unsigned char>(set[i]);
-    hash_state = combiner.add_buffer(std::move(hash_state), &c, sizeof(c));
+  size_t i = 0;
+  
+  while (i + 64 <= N) {
+    uint64_t word = 0;
+    for (size_t j = 0; j < 64; ++j) {
+      word |= static_cast<uint64_t>(set[i + j]) << j;
+    }
+    if constexpr (absl::endian::native == absl::endian::big) {
+      word = absl::byteswap(word);
+    }
+    hash_state = combiner.add_buffer(
+        std::move(hash_state), reinterpret_cast<const unsigned char*>(&word),
+        sizeof(word));
+    i += 64;
+  }
+  
+  if (i < N) {
+    uint64_t word = 0;
+    const size_t rem = N - i;
+    for (size_t j = 0; j < rem; ++j) {
+      word |= static_cast<uint64_t>(set[i + j]) << j;
+    }
+    if constexpr (absl::endian::native == absl::endian::big) {
+      word = absl::byteswap(word);
+    }
+    hash_state = combiner.add_buffer(
+        std::move(hash_state), reinterpret_cast<const unsigned char*>(&word),
+        (rem + 7) / 8);
   }
   return H::combine(combiner.finalize(std::move(hash_state)), N);
 }
-#endif
 
 
 
@@ -1366,8 +1424,8 @@ struct HashSelect {
 };
 
 template <typename T>
-struct is_hashable
-    : std::integral_constant<bool, HashSelect::template Apply<T>::value> {};
+struct is_hashable : std::bool_constant<HashSelect::template Apply<T>::value> {
+};
 
 class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   template <typename T>
@@ -1511,6 +1569,8 @@ struct PoisonedHash : private AggregateBarrier {
   PoisonedHash() = delete;
   PoisonedHash(const PoisonedHash&) = delete;
   PoisonedHash& operator=(const PoisonedHash&) = delete;
+  void operator()() const = delete;
+  size_t hash_with_seed() const = delete;
 };
 
 template <typename T>
@@ -1519,8 +1579,8 @@ struct HashImpl {
     return MixingHashState::hash(value);
   }
 
- private:
-  friend struct HashWithSeed;
+ protected:
+  friend HashWithSeed;
 
   size_t hash_with_seed(const T& value, size_t seed) const {
     return MixingHashState::hash_with_seed(value, seed);
@@ -1530,6 +1590,58 @@ struct HashImpl {
 template <typename T>
 struct Hash
     : std::conditional_t<is_hashable<T>::value, HashImpl<T>, PoisonedHash> {};
+
+template <typename T, typename... Ts>
+inline constexpr bool pack_contains_v = (std::is_same_v<T, Ts> || ...);
+
+template <size_t>
+struct EmptyDuplicatedHash {
+  void operator()() const = delete;
+  size_t hash_with_seed() const = delete;
+};
+
+template <typename... Ts>
+class TransparentHashImpl;
+
+template <typename T>
+class TransparentHashImpl<T> : private Hash<T> {
+ public:
+  using Hash<T>::operator();
+  using Hash<T>::hash_with_seed;
+};
+
+template <typename T, typename... Ts>
+using TransparentHashImplSingle =
+    std::conditional_t<pack_contains_v<T, Ts...>,
+                       EmptyDuplicatedHash<sizeof...(Ts)>, Hash<T>>;
+
+template <typename T, typename... Ts>
+class TransparentHashImpl<T, Ts...>
+    : private TransparentHashImpl<Ts...>,
+      private TransparentHashImplSingle<T, Ts...> {
+ public:
+  using TransparentHashImpl<Ts...>::operator();
+  using TransparentHashImplSingle<T, Ts...>::operator();
+  using TransparentHashImpl<Ts...>::hash_with_seed;
+  using TransparentHashImplSingle<T, Ts...>::hash_with_seed;
+};
+
+template <typename... Ts>
+using TransparentHashBase =
+    std::conditional_t<(... && is_hashable<Ts>::value),
+                       TransparentHashImpl<Ts...>, PoisonedHash>;
+
+template <typename... Ts>
+class TransparentHash : private TransparentHashBase<Ts...> {
+ public:
+  using is_transparent = void;
+  using TransparentHashBase<Ts...>::operator();
+
+ private:
+  friend HashWithSeed;
+
+  using TransparentHashBase<Ts...>::hash_with_seed;
+};
 
 template <typename H>
 template <typename T, typename... Ts>

@@ -23,6 +23,7 @@
 #ifndef ABSL_BASE_INTERNAL_HARDENING_H_
 #define ABSL_BASE_INTERNAL_HARDENING_H_
 
+#include <atomic>
 #include <cstddef>
 
 #include "absl/base/config.h"
@@ -33,8 +34,6 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 
 namespace base_internal {
-
-void SetAbslHardeningEnabled(bool enabled);
 
 
 
@@ -131,20 +130,6 @@ constexpr void HardeningAssertNonNull(T ptr) {
   }
 #endif
 }
-
-class ScopedSetAbslHardeningForTesting {
- private:
-  bool prev_state_;
-
- public:
-  explicit ScopedSetAbslHardeningForTesting([[maybe_unused]] bool enabled) {
-    prev_state_ = false;
-    SetAbslHardeningEnabled(enabled);
-  }
-  ~ScopedSetAbslHardeningForTesting() {
-    absl::base_internal::SetAbslHardeningEnabled(prev_state_);
-  }
-};
 
 }  
 

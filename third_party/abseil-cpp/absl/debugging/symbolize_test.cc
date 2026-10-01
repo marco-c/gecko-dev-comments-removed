@@ -13,10 +13,33 @@
 
 
 #include "absl/debugging/symbolize.h"
-#include <cstddef>
 
+#include <cerrno>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/base/attributes.h"
+#include "absl/base/casts.h"
+#include "absl/base/config.h"
+#include "absl/base/internal/direct_mmap.h"
+#include "absl/base/internal/low_level_alloc.h"
+#include "absl/base/internal/per_thread_tls.h"
+#include "absl/base/optimization.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/debugging/internal/stack_consumption.h"
 #include "absl/debugging/internal/symbolize.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
@@ -25,26 +48,8 @@
 #ifndef _WIN32
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #endif
-
-#include <cstring>
-#include <iostream>
-#include <memory>
-
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "absl/base/attributes.h"
-#include "absl/base/casts.h"
-#include "absl/base/config.h"
-#include "absl/base/internal/low_level_alloc.h"
-#include "absl/base/internal/per_thread_tls.h"
-#include "absl/base/optimization.h"
-#include "absl/cleanup/cleanup.h"
-#include "absl/debugging/internal/stack_consumption.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
 
 #if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
 #define MAP_ANONYMOUS MAP_ANON
@@ -245,7 +250,7 @@ static const char *SymbolizeStackConsumption(void *pc, int *stack_consumed) {
 
 static int GetStackConsumptionUpperLimit() {
   
-  int stack_consumption_upper_limit = 2048;
+  int stack_consumption_upper_limit = 4096;
 #if defined(ABSL_HAVE_ADDRESS_SANITIZER) || \
     defined(ABSL_HAVE_MEMORY_SANITIZER) || defined(ABSL_HAVE_THREAD_SANITIZER)
   
@@ -438,6 +443,120 @@ TEST(Symbolize, ForEachSection) {
 
   close(fd);
 }
+
+#if defined(ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE)
+
+
+
+
+static std::string MakeElfWithSymtabEntSize(uint64_t sym_entsize) {
+  ElfW(Ehdr) ehdr;
+  memset(&ehdr, 0, sizeof(ehdr));
+  memcpy(ehdr.e_ident, ELFMAG, SELFMAG);
+  ehdr.e_ident[EI_CLASS] = (sizeof(void*) == 8) ? ELFCLASS64 : ELFCLASS32;
+  ehdr.e_ident[EI_DATA] = ELFDATA2LSB;
+  ehdr.e_ident[EI_VERSION] = EV_CURRENT;
+  ehdr.e_type = ET_DYN;
+  ehdr.e_version = EV_CURRENT;
+  ehdr.e_phoff = sizeof(ElfW(Ehdr));
+  ehdr.e_phentsize = sizeof(ElfW(Phdr));
+  ehdr.e_phnum = 1;
+  ehdr.e_shoff = sizeof(ElfW(Ehdr)) + sizeof(ElfW(Phdr));
+  ehdr.e_shentsize = sizeof(ElfW(Shdr));
+  ehdr.e_shnum = 2;
+  ehdr.e_shstrndx = 0;
+
+  ElfW(Phdr) phdr;
+  memset(&phdr, 0, sizeof(phdr));
+  phdr.p_type = PT_LOAD;
+  phdr.p_flags = PF_R | PF_X;
+  phdr.p_filesz = 0x1000;
+  phdr.p_memsz = 0x1000;
+  phdr.p_align = 0x1000;
+
+  
+  
+  ElfW(Shdr) null_shdr;
+  memset(&null_shdr, 0, sizeof(null_shdr));
+
+  ElfW(Shdr) symtab;
+  memset(&symtab, 0, sizeof(symtab));
+  symtab.sh_type = SHT_SYMTAB;
+  symtab.sh_link = 0;
+  symtab.sh_size = sizeof(ElfW(Sym));
+  symtab.sh_entsize = sym_entsize;
+  symtab.sh_offset = ehdr.e_shoff + 2 * sizeof(ElfW(Shdr));
+
+  std::string image;
+  image.append(reinterpret_cast<const char*>(&ehdr), sizeof(ehdr));
+  image.append(reinterpret_cast<const char*>(&phdr), sizeof(phdr));
+  image.append(reinterpret_cast<const char*>(&null_shdr), sizeof(null_shdr));
+  image.append(reinterpret_cast<const char*>(&symtab), sizeof(symtab));
+  
+  image.resize(image.size() + sizeof(ElfW(Sym)), '\0');
+  return image;
+}
+
+
+
+class TempFile {
+ public:
+  explicit TempFile(absl::string_view content) {
+    std::string dir = testing::TempDir();
+    if (dir.empty() || dir.back() != '/') {
+      dir.push_back('/');
+    }
+    path_ = dir + "absl_bad_symtab_XXXXXX";
+    int fd = mkstemp(path_.data());
+    CHECK_NE(fd, -1);
+    CHECK_EQ(write(fd, content.data(), content.size()),
+             static_cast<ssize_t>(content.size()));
+    close(fd);
+  }
+  ~TempFile() { unlink(path_.c_str()); }
+
+  TempFile(const TempFile&) = delete;
+  TempFile& operator=(const TempFile&) = delete;
+
+  const char* path() const { return path_.c_str(); }
+
+ private:
+  std::string path_;
+};
+
+
+
+
+
+TEST(Symbolize, InvalidSymtabEntSizeDoesNotCrash) {
+  TempFile file(MakeElfWithSymtabEntSize(0));
+
+  
+  const size_t page_size = static_cast<size_t>(sysconf(_SC_PAGESIZE));
+  void* region =
+      absl::base_internal::DirectMmap(nullptr, page_size, PROT_READ | PROT_EXEC,
+                                      MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+  if (region == MAP_FAILED) {
+    GTEST_SKIP() << "Unable to map an executable page: errno=" << errno;
+  }
+  absl::Cleanup unmap = [&] {
+    absl::base_internal::DirectMunmap(region, page_size);
+  };
+
+  
+  
+  
+  ASSERT_TRUE(absl::debugging_internal::RegisterFileMappingHint(
+      region, static_cast<char*>(region) + page_size, 0, file.path()));
+
+  
+  
+  char symbol_buf[512];
+  
+  EXPECT_FALSE(absl::Symbolize(static_cast<char*>(region) + 8, symbol_buf,
+                               sizeof(symbol_buf)));
+}
+#endif  
 #endif  
         
 

@@ -75,6 +75,8 @@
 
 
 
+
+
 #ifndef ABSL_HASH_HASH_H_
 #define ABSL_HASH_HASH_H_
 
@@ -254,6 +256,89 @@ ABSL_NAMESPACE_BEGIN
 
 template <typename T>
 using Hash = absl::hash_internal::Hash<T>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename... Ts>
+using TransparentHash = absl::hash_internal::TransparentHash<Ts...>;
 
 
 

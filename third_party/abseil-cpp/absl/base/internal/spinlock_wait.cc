@@ -16,10 +16,12 @@
 
 
 
+#include "absl/base/internal/spinlock_wait.h"
+
 #include <atomic>
 #include <cstdint>
 
-#include "absl/base/internal/spinlock_wait.h"
+#include "absl/base/config.h"
 
 #if defined(_WIN32)
 #include "absl/base/internal/spinlock_win32.inc"

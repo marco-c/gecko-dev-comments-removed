@@ -49,10 +49,6 @@
 
 
 
-#if defined(_MSC_VER)
-#include <winsock2.h>  
-#endif
-
 #include <algorithm>
 #include <cassert>
 #include <chrono>  
@@ -72,6 +68,10 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/time/time.h"
+
+#if defined(_MSC_VER)
+#include <winsock2.h>  
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -834,7 +834,7 @@ bool ConsumeDurationUnit(const char** start, const char* end, Duration* unit) {
         default:
           break;
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case 1:
       switch (**start) {
         case 's':
@@ -897,7 +897,16 @@ bool ParseDuration(absl::string_view dur_sv, Duration* d) {
       return false;
     }
     if (int_part != 0) dur += sign * int_part * unit;
-    if (frac_part != 0) dur += sign * frac_part * unit / frac_scale;
+    if (frac_part != 0) {
+      
+      
+      
+      
+      const uint128 ticks = MakeU128Ticks(unit) *
+                            static_cast<uint64_t>(frac_part) /
+                            static_cast<uint64_t>(frac_scale);
+      dur += MakeDurationFromU128(ticks, sign < 0);
+    }
   }
   *d = dur;
   return true;

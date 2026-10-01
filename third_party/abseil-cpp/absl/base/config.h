@@ -244,41 +244,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
-#error ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE cannot be directly set
-#define ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE 1
-#endif
-
-
-
-
-
-#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE
-#error ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE cannot be directly set
-#else
-#define ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE 1
-#endif
-
-
-
-
-#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE
-#error ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE cannot be directly set
-#else
-#define ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE 1
-#endif
-
-
-
-
-#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE
-#error ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE cannot be directly set
-#define ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE 1
-#endif
-
-
-
-
 #ifdef ABSL_HAVE_THREAD_LOCAL
 #error ABSL_HAVE_THREAD_LOCAL cannot be directly set
 #elif !defined(__XTENSA__)
@@ -374,13 +339,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_MMAP
 #error ABSL_HAVE_MMAP cannot be directly set
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
-    defined(_AIX) || defined(__ros__) || defined(__asmjs__) ||            \
-    defined(__EMSCRIPTEN__) || defined(__Fuchsia__) || defined(__sun) ||  \
-    defined(__myriad2__) || defined(__HAIKU__) || defined(__OpenBSD__) || \
-    defined(__NetBSD__) || defined(__QNX__) || defined(__VXWORKS__) ||    \
-    defined(__hexagon__) || defined(__XTENSA__) ||                        \
-    defined(_WASI_EMULATED_MMAN)
+#elif defined(__wasi__)
+
+#if defined(_WASI_EMULATED_MMAN)
+#define ABSL_HAVE_MMAP 1
+#endif
+#elif __has_include(<sys/mman.h>)
 #define ABSL_HAVE_MMAP 1
 #endif
 
@@ -512,12 +476,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
        __cpp_lib_source_location >= 201907L) || \
     (defined(ABSL_INTERNAL_CPLUSPLUS_LANG) &&   \
      ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L)
-#ifdef __has_include
 #if __has_include(<source_location>)
-#define ABSL_HAVE_STD_SOURCE_LOCATION 1
-#endif
-#else
-
 #define ABSL_HAVE_STD_SOURCE_LOCATION 1
 #endif
 #endif
@@ -637,14 +596,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-#if 0 
 #ifdef ABSL_HAVE_THREAD_SANITIZER
 #error "ABSL_HAVE_THREAD_SANITIZER cannot be directly set."
 #elif defined(__SANITIZE_THREAD__)
 #define ABSL_HAVE_THREAD_SANITIZER 1
 #elif ABSL_HAVE_FEATURE(thread_sanitizer)
 #define ABSL_HAVE_THREAD_SANITIZER 1
-#endif
 #endif
 
 
@@ -696,7 +653,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-#if 0 
 #ifdef ABSL_HAVE_LEAK_SANITIZER
 #error "ABSL_HAVE_LEAK_SANITIZER cannot be directly set."
 #elif defined(LEAK_SANITIZER)
@@ -710,18 +666,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #elif defined(ABSL_HAVE_ADDRESS_SANITIZER) && !defined(_WIN32)
 
 #define ABSL_HAVE_LEAK_SANITIZER 1
-#endif
-#endif
-
-
-
-
-
-
-#ifdef ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION
-#error "ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION cannot be directly set."
-#else
-#define ABSL_HAVE_CLASS_TEMPLATE_ARGUMENT_DEDUCTION 1
 #endif
 
 

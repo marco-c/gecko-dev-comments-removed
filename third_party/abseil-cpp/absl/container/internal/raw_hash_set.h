@@ -177,9 +177,6 @@
 
 
 
-
-
-
 #ifndef ABSL_CONTAINER_INTERNAL_RAW_HASH_SET_H_
 #define ABSL_CONTAINER_INTERNAL_RAW_HASH_SET_H_
 
@@ -204,6 +201,7 @@
 #include "absl/base/internal/endian.h"
 #include "absl/base/internal/iterator_traits.h"
 #include "absl/base/internal/raw_logging.h"
+#include "absl/base/internal/unaligned_access.h"
 #include "absl/base/macros.h"
 #include "absl/base/optimization.h"
 #include "absl/base/options.h"
@@ -228,10 +226,6 @@
 
 #if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
 #include <ranges>  
-#endif
-
-#if defined(__i386__) || defined(__x86_64__)
-#include <immintrin.h>
 #endif
 
 namespace absl {
@@ -328,11 +322,16 @@ struct IsDecomposable<
         std::declval<Ts>()...))>,
     Policy, Hash, Eq, Ts...> : std::true_type {};
 
-ABSL_DLL extern ctrl_t kDefaultIterControl;
+template <typename T, template <typename...> class Template>
+struct is_instance_of : std::false_type {};
+template <template <typename...> class Template, typename... Args>
+struct is_instance_of<Template<Args...>, Template> : std::true_type {};
+
+ABSL_DLL extern char kDefaultIterSlot;
 
 
 
-inline ctrl_t* DefaultIterControl() { return &kDefaultIterControl; }
+inline void* DefaultIterSlot() { return &kDefaultIterSlot; }
 
 
 
@@ -347,6 +346,21 @@ inline ctrl_t* SooControl() {
 }
 
 inline bool IsSooControl(const ctrl_t* ctrl) { return ctrl == SooControl(); }
+
+
+ABSL_DLL extern const ctrl_t kInsertIteratorControl[2];
+
+
+inline ctrl_t* InsertIteratorControl() {
+  
+  
+  
+  return const_cast<ctrl_t*>(kInsertIteratorControl);
+}
+
+inline bool IsInsertIteratorControl(const ctrl_t* ctrl) {
+  return ctrl == InsertIteratorControl();
+}
 
 
 GenerationType* EmptyGeneration();
@@ -366,11 +380,7 @@ inline bool IsEmptyGeneration(const GenerationType* generation) {
 
 constexpr size_t SooCapacity() { return 1; }
 
-constexpr size_t MaxSmallCapacity() { return 1; }
-
-constexpr size_t MaxCapacityWithBlockedElements() {
-  return Group::kWidth - 1;
-}
+inline constexpr size_t kMaxSmallCapacity = 1;
 
 struct soo_tag_t {};
 
@@ -389,7 +399,7 @@ constexpr bool IsValidCapacity(size_t n) { return ((n + 1) & n) == 0 && n > 0; }
 
 
 constexpr bool IsSmallCapacity(size_t capacity) {
-  return capacity <= MaxSmallCapacity();
+  return capacity <= kMaxSmallCapacity;
 }
 
 
@@ -401,7 +411,7 @@ constexpr bool is_single_group(size_t capacity) {
 
 
 constexpr bool IsCapacityValidForBlockedElements(size_t cap) {
-  return !IsSmallCapacity(cap) && cap <= MaxCapacityWithBlockedElements();
+  return !IsSmallCapacity(cap);
 }
 
 
@@ -430,13 +440,16 @@ constexpr size_t PreviousCapacity(size_t n) {
 
 
 
+constexpr inline size_t kMaxCapacityForLoadFactorOne = Group::kWidth * 4 - 1;
+
+
 
 constexpr size_t CapacityToGrowth(size_t capacity) {
   ABSL_SWISSTABLE_ASSERT(IsValidCapacity(capacity));
   
-  if (Group::kWidth == 8 && capacity == 7) {
+  if (capacity <= kMaxCapacityForLoadFactorOne) {
     
-    return 6;
+    return capacity - (capacity >= Group::kWidth - 1);
   }
   return capacity - capacity / 8;
 }
@@ -453,7 +466,13 @@ constexpr size_t SizeToCapacity(size_t size) {
   
   
   
-  int leading_zeros = absl::countl_zero(size);
+  int leading_zeros = absl::countl_zero(
+      size +
+      
+      (size >= Group::kWidth / 2));
+  if (size < kMaxCapacityForLoadFactorOne) {
+    return (~size_t{}) >> leading_zeros;
+  }
   constexpr size_t kLast3Bits = size_t{7} << (sizeof(size_t) * 8 - 3);
   
   
@@ -462,10 +481,6 @@ constexpr size_t SizeToCapacity(size_t size) {
   size_t max_size_for_next_capacity = kLast3Bits >> leading_zeros;
   
   leading_zeros -= static_cast<int>(size > max_size_for_next_capacity);
-  if constexpr (Group::kWidth == 8) {
-    
-    leading_zeros -= (size == 7);
-  }
   return (~size_t{}) >> leading_zeros;
 }
 
@@ -548,28 +563,17 @@ class HashtableCapacityImpl {
     
     
     
-    static_assert(MaxSmallCapacity() == 1);
+    static_assert(kMaxSmallCapacity == 1);
     return capacity_data_ <= 1;
-  }
-
-  constexpr size_t mask(size_t value) const {
-#ifdef __BMI2__
-    if constexpr (StorageMode == kCapacityByLog) {
-      if constexpr (sizeof(size_t) == 8) {
-        return _bzhi_u64(value, capacity_data_);
-      } else {
-        return _bzhi_u32(value, capacity_data_);
-      }
-    }
-#endif  
-    return value & capacity();
   }
 
  private:
   
   
   enum InvalidCapacity : IntType {
-    kAboveMaxValidCapacity = (std::numeric_limits<IntType>::max)() - 100,
+    kAboveMaxValidCapacity = StorageMode == kCapacityByValue
+                                 ? (std::numeric_limits<IntType>::max)() - 100
+                                 : 64 - 10,
     kReentrance,
     kDestroyed,
 
@@ -591,40 +595,156 @@ template <HashtableCapacityStorageMode StorageMode>
 class HashtableInlineDataImpl;
 
 
-uint16_t NextHashTableSeed();
+uint8_t NextHashTableSeed();
 
 
 
 
-template <typename StorageType>
-class PerTableSeedImpl {
+class PerTableSeed {
  public:
-  using IntType = StorageType;
-
-  
-  
-  
-  
-  
-  
-  static constexpr size_t kBitCount = sizeof(IntType) * 8;
-
-  
-  
-  static constexpr IntType kSampledSeed = static_cast<IntType>(~IntType{0});
-
   
   size_t seed() const { return seed_; }
 
  private:
-  template <HashtableCapacityStorageMode StorageMode>
+  template <HashtableCapacityStorageMode StorageModeOfData>
   friend class HashtableInlineDataImpl;
 
-  explicit PerTableSeedImpl(uint64_t seed)
-      : seed_(static_cast<IntType>(seed)) {}
+  explicit PerTableSeed(uint64_t seed)
+      : seed_(static_cast<uint16_t>(seed)) {}
 
-  const IntType seed_;
+  const uint16_t seed_;
 };
+
+
+
+
+
+
+
+
+
+
+class BlockedInfo {
+ public:
+  constexpr BlockedInfo(uint8_t log2_period, uint8_t tail_blocked)
+      : log2_period_(log2_period), tail_blocked_(tail_blocked) {
+    ABSL_ASSUME(log2_period < 64);
+  }
+
+  
+  
+  constexpr uint8_t log2_period() const { return log2_period_; }
+  
+  constexpr uint8_t tail_blocked() const { return tail_blocked_; }
+
+  
+  
+  
+  constexpr size_t blocked_before(size_t index) const {
+    return index >> log2_period();
+  }
+
+  
+  constexpr size_t total_blocked_count(size_t capacity) const {
+    return blocked_before(capacity) + tail_blocked();
+  }
+
+ private:
+  uint8_t log2_period_;
+  uint8_t tail_blocked_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GrowthInfoLowerBound {
+ public:
+  static constexpr uint8_t kGrowthLeftMask = 0x7Fu;
+  static constexpr uint8_t kDeletedBit = 0x80u;
+  static constexpr size_t kMaxGrowthLeftLowerBound = 127;
+  static_assert(kMaxGrowthLeftLowerBound == kGrowthLeftMask);
+
+  explicit constexpr GrowthInfoLowerBound(uint8_t growth_left)
+      : growth_left_(growth_left) {}
+
+  
+  uint8_t ToRawData() const { return growth_left_; }
+
+  
+  
+  
+  constexpr bool HasNoDeletedAndGrowthLeft() const {
+    return static_cast<int8_t>(growth_left_) > 0;
+  }
+
+  
+  
+  
+  constexpr bool HasDeletedAndGrowthLeft() const {
+    return growth_left_ > kDeletedBit;
+  }
+
+  
+  
+  
+  constexpr bool HasNoGrowthLeftAndNoDeleted() const {
+    return growth_left_ == 0;
+  }
+
+  
+  
+  constexpr bool HasNoGrowthLeftAndHaveDeleted() const {
+    return growth_left_ == kDeletedBit;
+  }
+
+  
+  constexpr bool HasNoDeleted() const {
+    return (growth_left_ & kDeletedBit) == 0;
+  }
+
+  
+  
+  
+  
+  constexpr uint8_t GetGrowthLeft() const {
+    return growth_left_ & kGrowthLeftMask;
+  }
+
+ private:
+  uint8_t growth_left_;
+};
+
+
 
 
 
@@ -632,15 +752,27 @@ class PerTableSeedImpl {
 
 template <HashtableCapacityStorageMode StorageMode>
 class HashtableInlineDataImpl {
+  
+  
+  
+  
+  static constexpr size_t kSeedBitCount = 5;
+
  public:
   static constexpr HashtableCapacityStorageMode kStorageMode = StorageMode;
-  using PerTableSeed = PerTableSeedImpl<
-      std::conditional_t<StorageMode == kCapacityByValue, uint16_t, uint8_t>>;
   using HashtableCapacity = HashtableCapacityImpl<StorageMode>;
+  static constexpr size_t kGrowthInfoLowerBoundBitCount = 8;
+  static constexpr size_t kBlockedElementBitCount = 3;
+  static constexpr size_t kMaxBlockedElementCount =
+      (uint64_t{1} << kBlockedElementBitCount) - 1;
+  static constexpr size_t kCapacityBitCount =
+      StorageMode == kCapacityByValue ? sizeof(HashtableCapacity) * 8 : 6;
+  static constexpr size_t kCapacityBitStoredInDataCount =
+      StorageMode == kCapacityByValue ? 0 : kCapacityBitCount;
   static constexpr size_t kSizeBitCount =
-      StorageMode == kCapacityByValue
-          ? 64 - PerTableSeed::kBitCount - 1
-          : 64 - PerTableSeed::kBitCount - sizeof(HashtableCapacity) * 8 - 1;
+      64 -
+      (kBlockedElementBitCount + kSeedBitCount + kGrowthInfoLowerBoundBitCount +
+        1 + kCapacityBitStoredInDataCount);
 
   explicit HashtableInlineDataImpl(uninitialized_tag_t) {}
   explicit HashtableInlineDataImpl(HashtableCapacity capacity,
@@ -684,18 +816,18 @@ class HashtableInlineDataImpl {
         (data_ & kMetadataMask) | (static_cast<uint64_t>(size) << kSizeShift);
   }
 
-  PerTableSeed seed() const { return PerTableSeed(data_ & kSeedMask); }
-
-  void generate_new_seed() {
-    set_seed(static_cast<typename PerTableSeed::IntType>(NextHashTableSeed()));
+  PerTableSeed seed() const {
+    return PerTableSeed(ToPublicSeed(data_ & kSeedMask));
   }
 
+  void generate_new_seed() { set_seed(NextHashTableSeed()); }
+
   
   
-  void set_sampled_seed() { set_seed(PerTableSeed::kSampledSeed); }
+  void set_sampled_seed() { set_seed(kSampledSeed); }
 
   bool is_sampled_seed() const {
-    return seed().seed() == PerTableSeed::kSampledSeed;
+    return seed().seed() == ToPublicSeed(kSampledSeed);
   }
 
   
@@ -706,6 +838,72 @@ class HashtableInlineDataImpl {
   
   void set_has_infoz() { data_ |= kHasInfozMask; }
 
+  
+  size_t blocked_element_count() const {
+    return (data_ & kBlockedElementMask) >> kBlockedElementsShift;
+  }
+  
+  
+  
+  
+  void init_blocked_element_count(uint64_t count) {
+    ABSL_SWISSTABLE_ASSERT(blocked_element_count() == 0);
+    ABSL_SWISSTABLE_ASSERT(count <= kMaxBlockedElementCount);
+    data_ |= count << kBlockedElementsShift;
+  }
+  void set_blocked_element_count_to_zero() { data_ &= ~kBlockedElementMask; }
+
+  GrowthInfoLowerBound growth_info_lower_bound() const {
+    ABSL_SWISSTABLE_ASSERT(!is_small() &&
+                           "we do not track growth for small tables");
+    return GrowthInfoLowerBound(static_cast<uint8_t>(
+        (data_ & kGrowthInfoLowerBoundMask) >> kGrowthInfoLowerBoundShift));
+  }
+
+  void set_growth_info_lower_bound(
+      GrowthInfoLowerBound growth_info_lower_bound) {
+    data_ = (data_ & ~kGrowthInfoLowerBoundMask) |
+            (uint64_t{growth_info_lower_bound.ToRawData()}
+             << kGrowthInfoLowerBoundShift);
+  }
+
+  
+  
+  void overwrite_empty_as_full() {
+    ABSL_SWISSTABLE_ASSERT(growth_info_lower_bound().GetGrowthLeft() > 0);
+    data_ -= kGrowthInfoLowerBoundOne;
+  }
+
+  
+  
+  
+  void overwrite_full_as_empty_in_lower_bound() {
+    increment_growth_info_lower_bound(1);
+  }
+
+  
+  
+  
+  void increment_growth_info_lower_bound(size_t increment) {
+    ABSL_SWISSTABLE_ASSERT(growth_info_lower_bound().GetGrowthLeft() +
+                               increment <=
+                           GrowthInfoLowerBound::kMaxGrowthLeftLowerBound);
+    data_ += increment << kGrowthInfoLowerBoundShift;
+  }
+
+  
+  
+  void overwrite_control_as_full(ctrl_t ctrl) {
+    ABSL_SWISSTABLE_ASSERT(growth_info_lower_bound().GetGrowthLeft() >=
+                           static_cast<size_t>(IsEmpty(ctrl)));
+    data_ -= static_cast<size_t>(IsEmpty(ctrl)) << kGrowthInfoLowerBoundShift;
+  }
+
+  
+  void overwrite_full_as_deleted() {
+    data_ |= (GrowthInfoLowerBound::kDeletedBit << kGrowthInfoLowerBoundShift);
+  }
+
   void set_no_seed_for_testing() { data_ &= ~kSeedMask; }
 
  private:
@@ -715,24 +913,46 @@ class HashtableInlineDataImpl {
   
   
   
-  static constexpr size_t kDataBitCount =
-      PerTableSeed::kBitCount + 1 + kSizeBitCount;
+  
+  
+  
+
+  static constexpr size_t kDataBitCount = 64 - kCapacityBitStoredInDataCount;
   static constexpr size_t kSizeShift = kDataBitCount - kSizeBitCount;
   static constexpr uint64_t kSizeOneNoMetadata = uint64_t{1} << kSizeShift;
   static constexpr uint64_t kMetadataMask = kSizeOneNoMetadata - 1;
-  static constexpr uint64_t kSeedMask =
-      (uint64_t{1} << PerTableSeed::kBitCount) - 1;
+  static constexpr uint64_t kSeedMask = (uint64_t{1} << kSeedBitCount) - 1;
   
   static constexpr uint64_t kHasInfozMask = kSeedMask + 1;
+  static constexpr uint64_t kBlockedElementsShift = kSeedBitCount + 1;
+  static constexpr uint64_t kBlockedElementMask = kMaxBlockedElementCount
+                                                  << kBlockedElementsShift;
+  static constexpr uint64_t kGrowthInfoLowerBoundShift =
+      kBlockedElementsShift + kBlockedElementBitCount;
+  static constexpr uint64_t kGrowthInfoLowerBoundOne =
+      uint64_t{1} << kGrowthInfoLowerBoundShift;
+  static constexpr uint64_t kGrowthInfoLowerBoundMask =
+      uint64_t{0xff} << kGrowthInfoLowerBoundShift;
   
   
   static constexpr uint64_t kSooHasTriedSamplingMask = 1;
 
-  void set_seed(typename PerTableSeed::IntType seed) {
-    data_ = (data_ & ~kSeedMask) | seed;
+  
+  
+  static constexpr uint8_t kSampledSeed = (1 << kSeedBitCount) - 1;
+
+  static constexpr uint64_t ToPublicSeed(uint64_t seed) {
+    
+    
+    
+    return seed << kCapacityBitStoredInDataCount;
   }
 
-  uint64_t capacity_internal_ : sizeof(HashtableCapacity) * 8;
+  void set_seed(uint8_t seed) {
+    data_ = (data_ & ~kSeedMask) | (seed & kSeedMask);
+  }
+
+  uint64_t capacity_internal_ : kCapacityBitCount;
   uint64_t data_ : kDataBitCount;
 };
 
@@ -752,8 +972,13 @@ using HashtableInlineData = HashtableInlineDataImpl<kCapacityByLog>;
 #else
 using HashtableInlineData = HashtableInlineDataImpl<kCapacityByValue>;
 #endif  
-using PerTableSeed = HashtableInlineData::PerTableSeed;
 using HashtableCapacity = HashtableInlineData::HashtableCapacity;
+
+
+
+constexpr size_t kMaxBlockedElementsForLargeTables = 5;
+static_assert(kMaxBlockedElementsForLargeTables <=
+              HashtableInlineData::kMaxBlockedElementCount);
 
 
 inline size_t H1(size_t hash) { return hash; }
@@ -908,170 +1133,6 @@ using HashSetIteratorGenerationInfo = HashSetIteratorGenerationInfoDisabled;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class GrowthInfoAccessor;
-
-
-
-
-class GrowthInfoLowerBound {
- public:
-  static constexpr uint8_t kGrowthLeftMask = 0x7Fu;
-  static constexpr uint8_t kDeletedBit = 0x80u;
-  static constexpr uint64_t kMaxGrowthLeftLowerBound = 127;
-  static_assert(kMaxGrowthLeftLowerBound == kGrowthLeftMask);
-
-  explicit constexpr GrowthInfoLowerBound(uint8_t growth_left)
-      : growth_left_(growth_left) {}
-
-  
-  
-  
-  constexpr bool HasNoDeletedAndGrowthLeft() const {
-    return static_cast<int8_t>(growth_left_) > 0;
-  }
-
-  
-  
-  
-  constexpr bool HasDeletedAndGrowthLeft() const {
-    return growth_left_ > kDeletedBit;
-  }
-
-  
-  
-  
-  constexpr bool HasNoGrowthLeftAndNoDeleted() const {
-    return growth_left_ == 0;
-  }
-
-  
-  
-  constexpr bool HasNoGrowthLeftAndHaveDeleted() const {
-    return growth_left_ == kDeletedBit;
-  }
-
-  
-  constexpr bool HasNoDeleted() const {
-    return (growth_left_ & kDeletedBit) == 0;
-  }
-
-  
-  
-  
-  
-  constexpr uint8_t GetGrowthLeft() const {
-    return growth_left_ & kGrowthLeftMask;
-  }
-
- private:
-  uint8_t growth_left_;
-};
-
-
-
-class GrowthInfoAccessor {
- public:
-  
-  
-  static constexpr uint64_t kLowerBoundShift = 64 - 8;
-
-  explicit GrowthInfoAccessor(void* control)
-      : growth_info_lower_bound_(reinterpret_cast<uint8_t*>(control) - 1) {}
-
-  
-  
-  void InitGrowthLeftNoDeleted(size_t growth_left, size_t capacity);
-
-  
-  
-  
-  
-  GrowthInfoLowerBound RebalanceGrowthLeftLowerBound(size_t capacity);
-
-  
-  void OverwriteFullAsEmpty();
-
-  
-  
-  void OverwriteEmptyAsFull() {
-    ABSL_SWISSTABLE_ASSERT(GetGrowthLeftLowerBound() > 0);
-    --(*growth_info_lower_bound_);
-  }
-
-  
-  
-  void OverwriteControlAsFull(ctrl_t ctrl) {
-    ABSL_SWISSTABLE_ASSERT(GetGrowthLeftLowerBound() >=
-                           static_cast<size_t>(IsEmpty(ctrl)));
-    *growth_info_lower_bound_ -= static_cast<size_t>(IsEmpty(ctrl));
-  }
-
-  
-  void OverwriteFullAsDeleted() {
-    *growth_info_lower_bound_ |= GrowthInfoLowerBound::kDeletedBit;
-  }
-
-  
-  
-  GrowthInfoLowerBound GetGrowthInfoLowerBound() const {
-    return GrowthInfoLowerBound(*growth_info_lower_bound_);
-  }
-
-  
-  size_t GetGrowthLeftLowerBound() const {
-    return GetGrowthInfoLowerBound().GetGrowthLeft();
-  }
-
-  
-  
-  
-  size_t GetGrowthLeftTotalSlow(size_t capacity) const;
-
- private:
-  void* full_growth_info_ptr() const { return growth_info_lower_bound_ - 7; }
-
-  GrowthInfoLowerBound RebalanceGrowthLeftLowerBoundLargeCapacity();
-
-  
-  
-  
-  
-  
-  
-  uint8_t* growth_info_lower_bound_;
-};
-
-
-
-
-
-
 constexpr size_t NumClonedBytes() { return Group::kWidth - 1; }
 
 
@@ -1082,23 +1143,21 @@ constexpr size_t NumControlBytes(size_t capacity) {
 
 
 constexpr size_t GrowthInfoSizeForCapacity(size_t capacity) {
-  if (IsSmallCapacity(capacity)) {
-    return 0;
-  }
   return capacity <= GrowthInfoLowerBound::kMaxGrowthLeftLowerBound
-             ? sizeof(uint8_t)
+             ? 0
              : sizeof(uint64_t);
 }
 
 
 
-constexpr size_t ControlOffset(bool has_infoz, size_t capacity) {
+constexpr size_t MetadataBeforeControlSize(bool has_infoz, size_t capacity) {
   if (ABSL_PREDICT_FALSE(has_infoz)) {
     
     
-    return sizeof(HashtablezInfoHandle) + sizeof(uint64_t);
+    return sizeof(HashtablezInfoHandle) + sizeof(uint64_t) +
+           NumGenerationBytes();
   }
-  return GrowthInfoSizeForCapacity(capacity);
+  return GrowthInfoSizeForCapacity(capacity) + NumGenerationBytes();
 }
 
 
@@ -1113,16 +1172,21 @@ class RawHashSetLayout {
   explicit RawHashSetLayout(size_t capacity, size_t slot_size,
                             size_t slot_align, bool has_infoz,
                             size_t blocked_element_count)
-      : control_offset_(ControlOffset(has_infoz, capacity)),
-        generation_offset_(control_offset_ + NumControlBytes(capacity)),
-        slot_offset_(
-            AlignUpTo(generation_offset_ + NumGenerationBytes(), slot_align)),
-        alloc_size_(slot_offset_ +
-                    (capacity - blocked_element_count) * slot_size) {
+      : control_offset_(MetadataBeforeControlSize(has_infoz, capacity)),
+        generation_offset_(control_offset_ - NumGenerationBytes()),
+        slot_offset_(control_offset_ + NumControlBytes(capacity)) {
     ABSL_SWISSTABLE_ASSERT(IsValidCapacity(capacity));
+    size_t aligned_slot_offset = AlignUpTo(slot_offset_, slot_align);
+    size_t slot_array_padding = aligned_slot_offset - slot_offset_;
+    slot_offset_ = aligned_slot_offset;
     ABSL_SWISSTABLE_ASSERT(
         slot_size <=
         ((std::numeric_limits<size_t>::max)() - slot_offset_) / capacity);
+    control_offset_ += slot_array_padding;
+    generation_offset_ += slot_array_padding;
+    ABSL_SWISSTABLE_ASSERT(!IsSmallCapacity(capacity) ||
+                           control_offset_ == slot_offset_);
+    alloc_size_ = slot_offset_ + (capacity - blocked_element_count) * slot_size;
   }
 
   
@@ -1169,11 +1233,6 @@ struct HeapPtrs {
   
   
   MaybeInitializedPtr<ctrl_t> control;
-
-  
-  
-  
-  MaybeInitializedPtr<void> slot_array;
 };
 
 
@@ -1188,12 +1247,6 @@ union HeapOrSoo {
   MaybeInitializedPtr<ctrl_t> control() const {
     ABSL_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.control);
   }
-  MaybeInitializedPtr<void>& slot_array() {
-    ABSL_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.slot_array);
-  }
-  MaybeInitializedPtr<void> slot_array() const {
-    ABSL_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(heap.slot_array);
-  }
   void* get_soo_data() {
     ABSL_SWISSTABLE_IGNORE_UNINITIALIZED_RETURN(soo_data);
   }
@@ -1204,12 +1257,6 @@ union HeapOrSoo {
   HeapPtrs heap;
   unsigned char soo_data[MaxSooSlotSize()];
 };
-
-
-
-inline GrowthInfoAccessor GetGrowthInfoFromControl(ctrl_t* control) {
-  return GrowthInfoAccessor(control);
-}
 
 
 
@@ -1264,11 +1311,16 @@ class CommonFields : public CommonFieldsGenerationInfo {
   void set_control(ctrl_t* c) { heap_or_soo_.control().set(c); }
 
   
-  void* slot_array() const { return heap_or_soo_.slot_array().get(); }
-  MaybeInitializedPtr<void> slots_union() const {
-    return heap_or_soo_.slot_array();
+  
+  
+  
+  
+  
+  void* slot_array(size_t capacity) const {
+    ABSL_SWISSTABLE_ASSERT(capacity == this->capacity());
+    ctrl_t* ctrl = control();
+    return ctrl + NumControlBytes(capacity);
   }
-  void set_slots(void* s) { heap_or_soo_.slot_array().set(s); }
 
   
   size_t size() const { return inline_data_.size(); }
@@ -1335,10 +1387,47 @@ class CommonFields : public CommonFieldsGenerationInfo {
   }
   bool is_small() const { return inline_data_.is_small(); }
 
-  GrowthInfoAccessor growth_info() const {
-    ABSL_SWISSTABLE_ASSERT(GrowthInfoSizeForCapacity(capacity()) > 0);
-    return GetGrowthInfoFromControl(control());
+  
+  
+  
+  GrowthInfoLowerBound GetGrowthInfoLowerBound() const {
+    return inline_data_.growth_info_lower_bound();
   }
+
+  
+  size_t GetGrowthLeftLowerBound() const {
+    return inline_data_.growth_info_lower_bound().GetGrowthLeft();
+  }
+
+  
+  
+  size_t GetGrowthLeftTotalSlow(size_t capacity) const;
+
+  
+  
+  void InitGrowthLeftNoDeleted(size_t growth_left, size_t capacity);
+
+  
+  void OverwriteFullAsDeleted() { inline_data_.overwrite_full_as_deleted(); }
+
+  
+  
+  void OverwriteEmptyAsFull() { inline_data_.overwrite_empty_as_full(); }
+
+  
+  
+  void OverwriteControlAsFull(ctrl_t ctrl) {
+    inline_data_.overwrite_control_as_full(ctrl);
+  }
+
+  
+  void OverwriteFullAsEmpty();
+
+  
+  
+  
+  
+  GrowthInfoLowerBound RebalanceGrowthLeftLowerBound(size_t capacity);
 
   bool has_infoz() const { return inline_data_.has_infoz(); }
   void set_has_infoz() {
@@ -1346,22 +1435,12 @@ class CommonFields : public CommonFieldsGenerationInfo {
     inline_data_.set_has_infoz();
   }
 
-  HashtablezInfoHandle* infoz_ptr() const {
-    
-    ABSL_SWISSTABLE_ASSERT(
-        reinterpret_cast<uintptr_t>(control()) % alignof(size_t) == 0);
-    ABSL_SWISSTABLE_ASSERT(has_infoz());
-    return reinterpret_cast<HashtablezInfoHandle*>(
-        control() - ControlOffset(true, capacity()));
-  }
+  HashtablezInfoHandle infoz_ptr() const;
 
   HashtablezInfoHandle infoz() {
-    return has_infoz() ? *infoz_ptr() : HashtablezInfoHandle();
+    return has_infoz() ? infoz_ptr() : HashtablezInfoHandle();
   }
-  void set_infoz(HashtablezInfoHandle infoz) {
-    ABSL_SWISSTABLE_ASSERT(has_infoz());
-    *infoz_ptr() = infoz;
-  }
+  void set_infoz(HashtablezInfoHandle infoz);
 
   bool should_rehash_for_bug_detection_on_insert() const {
     if constexpr (!SwisstableGenerationsEnabled()) {
@@ -1383,19 +1462,17 @@ class CommonFields : public CommonFieldsGenerationInfo {
   
   
   size_t blocked_element_count() const {
-    size_t cap = capacity();
-    if (!IsCapacityValidForBlockedElements(cap)) {
-      return 0;
-    }
-    ABSL_SWISSTABLE_ASSERT(is_single_group(cap));
-    
-    
-    
-    ABSL_SWISSTABLE_ASSERT(cap <=
-                           GrowthInfoLowerBound::kMaxGrowthLeftLowerBound);
-    return CapacityToGrowth(cap) - size() -
-           
-           growth_info().GetGrowthLeftLowerBound();
+    return inline_data_.blocked_element_count();
+  }
+  
+  
+  
+  
+  void init_blocked_element_count(size_t count) {
+    inline_data_.init_blocked_element_count(count);
+  }
+  void set_blocked_element_count_to_zero() {
+    inline_data_.set_blocked_element_count_to_zero();
   }
 
   
@@ -1447,6 +1524,27 @@ class CommonFields : public CommonFieldsGenerationInfo {
     return (size_t{1} << HasInfozShift()) - 1;
   }
 
+  void* GrowthInfoOverflowAddress() const {
+    return reinterpret_cast<void*>(
+        reinterpret_cast<uintptr_t>(control()) -
+        sizeof(uint64_t) - NumGenerationBytes());
+  }
+
+  size_t GetOverflowGrowthLeft() const {
+    ABSL_SWISSTABLE_ASSERT(capacity() >
+                           GrowthInfoLowerBound::kMaxGrowthLeftLowerBound);
+    return static_cast<size_t>(
+        base_internal::UnalignedLoad64(GrowthInfoOverflowAddress()));
+  }
+
+  void SetGrowthInfoOverflow(size_t overflow) {
+    ABSL_SWISSTABLE_ASSERT(capacity() >
+                           GrowthInfoLowerBound::kMaxGrowthLeftLowerBound);
+    base_internal::UnalignedStore64(GrowthInfoOverflowAddress(), overflow);
+  }
+
+  GrowthInfoLowerBound RebalanceGrowthLeftLowerBoundLargeCapacity();
+
   
   
   void AssertInSooMode() const {
@@ -1456,9 +1554,6 @@ class CommonFields : public CommonFieldsGenerationInfo {
 
   void AssertNotDebugCapacityImpl() const;
 
-  
-  
-  
   HashtableInlineData inline_data_;
 
   
@@ -1479,14 +1574,14 @@ class raw_hash_set;
 void ConvertDeletedToEmptyAndFullToDeleted(ctrl_t* ctrl, size_t capacity);
 
 template <class InputIter>
-size_t SelectBucketCountForIterRange(InputIter first, InputIter last,
-                                     size_t bucket_count) {
-  if (bucket_count != 0) {
-    return bucket_count;
+size_t SelectReservationSizeForIterRange(InputIter first, InputIter last,
+                                         size_t reservation_size) {
+  if (reservation_size != 0) {
+    return reservation_size;
   }
   if (base_internal::IsAtLeastIterator<std::random_access_iterator_tag,
                                        InputIter>()) {
-    return SizeToCapacity(static_cast<size_t>(std::distance(first, last)));
+    return static_cast<size_t>(std::distance(first, last));
   }
   return 0;
 }
@@ -1520,7 +1615,12 @@ T CrashIfIteratorIsInvalid(const T* ptr) {
   return ret;
 }
 
-inline void AssertIsFull(const ctrl_t* ctrl, GenerationType generation,
+
+
+
+
+inline void AssertIsFull(const ctrl_t* const& ctrl, const void* slot,
+                         GenerationType generation,
                          const GenerationType* generation_ptr,
                          const char* operation) {
   if (!SwisstableDebugEnabled()) return;
@@ -1529,10 +1629,10 @@ inline void AssertIsFull(const ctrl_t* ctrl, GenerationType generation,
   
   
   
-  if (ABSL_PREDICT_FALSE(ctrl == nullptr)) {
+  if (ABSL_PREDICT_FALSE(slot == nullptr)) {
     ABSL_RAW_LOG(FATAL, "%s called on end() iterator.", operation);
   }
-  if (ABSL_PREDICT_FALSE(ctrl == DefaultIterControl())) {
+  if (ABSL_PREDICT_FALSE(slot == DefaultIterSlot())) {
     ABSL_RAW_LOG(FATAL, "%s called on default-constructed iterator.",
                  operation);
   }
@@ -1563,12 +1663,13 @@ inline void AssertIsFull(const ctrl_t* ctrl, GenerationType generation,
 }
 
 
-inline void AssertIsValidForComparison(const ctrl_t* ctrl,
+inline void AssertIsValidForComparison(const ctrl_t* const& ctrl,
+                                       const void* slot,
                                        GenerationType generation,
                                        const GenerationType* generation_ptr) {
   if (!SwisstableDebugEnabled()) return;
   const bool ctrl_is_valid_for_comparison =
-      ctrl == nullptr || ctrl == DefaultIterControl() ||
+      slot == nullptr || slot == DefaultIterSlot() ||
       IsFull(CrashIfIteratorIsInvalid(ctrl));
   if (SwisstableGenerationsEnabled()) {
     if (ABSL_PREDICT_FALSE(generation !=
@@ -1597,33 +1698,34 @@ inline void AssertIsValidForComparison(const ctrl_t* ctrl,
 
 
 
-
-
-inline bool AreItersFromSameContainer(const ctrl_t* ctrl_a,
-                                      const ctrl_t* ctrl_b,
-                                      const void* const& slot_a,
-                                      const void* const& slot_b) {
+inline bool AreItersFromSameContainer(const ctrl_t* const& ctrl_a,
+                                      const ctrl_t* const& ctrl_b,
+                                      const void* slot_a, const void* slot_b) {
   
-  if (ctrl_a == nullptr || ctrl_b == nullptr) return true;
+  if (slot_a == nullptr || slot_b == nullptr) return true;
+  
+  if (IsInsertIteratorControl(ctrl_a) || IsInsertIteratorControl(ctrl_b)) {
+    return true;
+  }
   const bool a_is_soo = IsSooControl(ctrl_a);
   if (a_is_soo != IsSooControl(ctrl_b)) return false;
   if (a_is_soo) return slot_a == slot_b;
 
-  const void* low_slot = slot_a;
-  const void* hi_slot = slot_b;
+  const void* low_ctrl = ctrl_a;
+  const void* hi_ctrl = ctrl_b;
   if (ctrl_a > ctrl_b) {
-    std::swap(ctrl_a, ctrl_b);
-    std::swap(low_slot, hi_slot);
+    std::swap(low_ctrl, hi_ctrl);
+    std::swap(slot_a, slot_b);
   }
-  return ctrl_b < low_slot && low_slot <= hi_slot;
+  return hi_ctrl < slot_a && slot_a <= slot_b;
 }
 
 
 
 
-inline void AssertSameContainer(const ctrl_t* ctrl_a, const ctrl_t* ctrl_b,
-                                const void* const& slot_a,
-                                const void* const& slot_b,
+inline void AssertSameContainer(const ctrl_t* const& ctrl_a,
+                                const ctrl_t* const& ctrl_b, const void* slot_a,
+                                const void* slot_b,
                                 const GenerationType* generation_ptr_a,
                                 const GenerationType* generation_ptr_b) {
   if (!SwisstableDebugEnabled()) return;
@@ -1641,8 +1743,8 @@ inline void AssertSameContainer(const ctrl_t* ctrl_a, const ctrl_t* ctrl_b,
     }
   };
 
-  const bool a_is_default = ctrl_a == DefaultIterControl();
-  const bool b_is_default = ctrl_b == DefaultIterControl();
+  const bool a_is_default = slot_a == DefaultIterSlot();
+  const bool b_is_default = slot_b == DefaultIterSlot();
   if (a_is_default && b_is_default) return;
   fail_if(a_is_default != b_is_default,
           "Comparing default-constructed hashtable iterator with a "
@@ -1658,8 +1760,8 @@ inline void AssertSameContainer(const ctrl_t* ctrl_a, const ctrl_t* ctrl_b,
     fail_if(a_is_empty && b_is_empty,
             "Comparing iterators from different empty hashtables.");
 
-    const bool a_is_end = ctrl_a == nullptr;
-    const bool b_is_end = ctrl_b == nullptr;
+    const bool a_is_end = slot_a == nullptr;
+    const bool b_is_end = slot_b == nullptr;
     fail_if(a_is_end || b_is_end,
             "Comparing iterator with an end() iterator from a different "
             "hashtable.");
@@ -1676,6 +1778,10 @@ inline void AssertSameContainer(const ctrl_t* ctrl_a, const ctrl_t* ctrl_b,
 struct FindInfo {
   size_t offset;
   size_t probe_length;
+};
+
+struct ProbeCapacity {
+  size_t capacity;
 };
 
 
@@ -1705,37 +1811,36 @@ class probe_seq {
   
   
   
-  probe_seq(HashtableCapacity capacity, size_t hash)
-      : capacity_(capacity), offset_(capacity.mask(hash)) {}
+  probe_seq(ProbeCapacity capacity, size_t hash)
+      : capacity_(capacity.capacity), offset_(hash & capacity_) {}
 
   
   size_t offset() const { return offset_; }
-  size_t offset(size_t i) const { return capacity_.mask(offset_ + i); }
+  size_t offset(size_t i) const { return (offset_ + i) & capacity_; }
 
   void next() {
     index_ += Width;
     offset_ += index_;
-    offset_ = capacity_.mask(offset_);
+    offset_ &= capacity_;
   }
   
   size_t index() const { return index_; }
 
  private:
-  HashtableCapacity capacity_;
+  size_t capacity_;
   size_t offset_;
   size_t index_ = 0;
 };
 
 
-inline probe_seq<Group::kWidth> probe_h1(HashtableCapacity capacity,
-                                         size_t h1) {
+inline probe_seq<Group::kWidth> probe_h1(ProbeCapacity capacity, size_t h1) {
   return probe_seq<Group::kWidth>(capacity, h1);
 }
-inline probe_seq<Group::kWidth> probe(HashtableCapacity capacity, size_t hash) {
+inline probe_seq<Group::kWidth> probe(ProbeCapacity capacity, size_t hash) {
   return probe_h1(capacity, H1(hash));
 }
 inline probe_seq<Group::kWidth> probe(const CommonFields& common, size_t hash) {
-  return probe(common.capacity_impl(), hash);
+  return probe(ProbeCapacity{common.capacity()}, hash);
 }
 
 constexpr size_t kProbedElementIndexSentinel = ~size_t{};
@@ -1826,6 +1931,9 @@ constexpr bool ShouldSampleHashtablezInfoForAlloc() {
   return std::is_same_v<CharAlloc, std::allocator<char>>;
 }
 
+constexpr size_t kStandardBackingArrayAlignment =
+    BackingArrayAlignment(alignof(size_t));
+
 
 template <size_t AlignOfBackingArray, typename Alloc>
 void* AllocateBackingArray(void* alloc, size_t n) {
@@ -1833,20 +1941,16 @@ void* AllocateBackingArray(void* alloc, size_t n) {
 }
 
 template <size_t AlignOfBackingArray, typename Alloc>
-void DeallocateBackingArray(void* alloc, size_t capacity, ctrl_t* ctrl,
-                            size_t slot_size, size_t slot_align, bool had_infoz,
-                            size_t blocked_element_count) {
-  RawHashSetLayout layout(capacity, slot_size, slot_align, had_infoz,
-                          blocked_element_count);
-  void* backing_array = ctrl - layout.control_offset();
-  
-  SanitizerUnpoisonMemoryRegion(backing_array, layout.alloc_size());
-  Deallocate<AlignOfBackingArray>(static_cast<Alloc*>(alloc), backing_array,
-                                  layout.alloc_size());
+void DeallocateBackingArray(void* alloc, void* backing_array, size_t n) {
+  Deallocate<AlignOfBackingArray>(static_cast<Alloc*>(alloc), backing_array, n);
 }
 
 using DeallocBackingArrayFn =
-    decltype(&DeallocateBackingArray<8, std::allocator<char>>);
+    decltype(&DeallocateBackingArray<kStandardBackingArrayAlignment,
+                                     std::allocator<char>>);
+inline constexpr DeallocBackingArrayFn kStandardDeallocBackingArrayFn =
+    &DeallocateBackingArray<kStandardBackingArrayAlignment,
+                            std::allocator<char>>;
 
 
 
@@ -1897,6 +2001,49 @@ struct PolicyFunctions {
 
   uint8_t soo_capacity() const {
     return static_cast<uint8_t>(soo_enabled ? SooCapacity() : 0);
+  }
+};
+
+using DestroySlotFn = void (*)(void* set, void* slot);
+
+
+
+
+
+
+struct DtorPolicy {
+  uint32_t slot_size;
+  uint16_t slot_align;
+  DestroySlotFn destroy_slot;
+
+  template <uint32_t kSlotSize, uint16_t kSlotAlign>
+  static const DtorPolicy& GetTrivialDestructRef() {
+    return R<kSlotSize, kSlotAlign>();
+  }
+
+  template <typename SetType>
+  static const DtorPolicy& GetRef() {
+    return R<SetType>();
+  }
+
+ private:
+  
+  
+  
+  template <uint32_t kSlotSize, uint16_t kSlotAlign>
+  static const DtorPolicy& R() {
+    static constexpr DtorPolicy p = {kSlotSize, kSlotAlign,
+                                     nullptr};
+    return p;
+  }
+  template <typename SetType>
+  static const DtorPolicy& R() {
+    static constexpr DtorPolicy p = {
+        sizeof(typename SetType::slot_type),
+        alignof(typename SetType::slot_type),
+        SetType::get_destroy_slot_fn(),
+    };
+    return p;
   }
 };
 
@@ -1970,16 +2117,6 @@ void ReserveTableToFitNewSize(CommonFields& common,
 
 
 
-
-
-
-
-
-void ReserveEmptyNonAllocatedTableToFitBucketCount(
-    CommonFields& common, const PolicyFunctions& policy, size_t bucket_count);
-
-
-
 void Rehash(CommonFields& common, const PolicyFunctions& policy, size_t n);
 
 
@@ -1997,29 +2134,20 @@ void Copy(CommonFields& common, const PolicyFunctions& policy,
 
 constexpr size_t OptimalMemcpySizeForSooSlotTransfer(
     size_t slot_size, size_t max_soo_slot_size = MaxSooSlotSize()) {
-  static_assert(MaxSooSlotSize() >= 8, "unexpectedly small SOO slot size");
+  static_assert(MaxSooSlotSize() >= 4, "unexpectedly small SOO slot size");
+  static_assert(MaxSooSlotSize() <= 8, "unexpectedly large SOO slot size");
   if (slot_size == 1) {
     return 1;
   }
   if (slot_size <= 3) {
     return 4;
   }
-  
-  
-  if (slot_size <= 8) {
-    return 8;
-  }
-  if (max_soo_slot_size <= 16) {
+  if (slot_size == max_soo_slot_size) {
     return max_soo_slot_size;
   }
-  if (slot_size <= 16) {
-    return 16;
-  }
-  if (max_soo_slot_size <= 24) {
-    return max_soo_slot_size;
-  }
-  static_assert(MaxSooSlotSize() <= 24, "unexpectedly large SOO slot size");
-  return 24;
+  
+  
+  return 8;
 }
 
 
@@ -2027,7 +2155,7 @@ constexpr size_t OptimalMemcpySizeForSooSlotTransfer(
 
 
 template <size_t SooSlotMemcpySize, bool TransferUsesMemcpy>
-size_t GrowSooTableToNextCapacityAndPrepareInsert(
+void* GrowSooTableToNextCapacityAndPrepareInsert(
     CommonFields& common, const PolicyFunctions& policy,
     absl::FunctionRef<size_t(size_t)> get_hash, bool force_sampling);
 
@@ -2035,9 +2163,9 @@ size_t GrowSooTableToNextCapacityAndPrepareInsert(
 
 
 
-std::pair<ctrl_t*, void*> PrepareInsertSmallNonSoo(
-    CommonFields& common, const PolicyFunctions& policy,
-    absl::FunctionRef<size_t(size_t)> get_hash);
+void* PrepareInsertSmallNonSoo(CommonFields& common,
+                               const PolicyFunctions& policy,
+                               absl::FunctionRef<size_t(size_t)> get_hash);
 
 
 
@@ -2052,8 +2180,6 @@ void ResizeAllocatedTableWithSeedChange(CommonFields& common,
 void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
                        void* alloc, bool reuse);
 
-using DestroySlotFn = void (*)(void* set, void* slot);
-
 
 
 
@@ -2062,8 +2188,9 @@ void DestroySlots(CommonFields& c, size_t slot_size,
 
 
 
-void DeallocBackingArray(CommonFields& c, size_t slot_size, size_t slot_align,
-                         DeallocBackingArrayFn dealloc, void* alloc);
+void UnregisterAndDeallocBackingArray(CommonFields& c, const DtorPolicy& policy,
+                                      DeallocBackingArrayFn dealloc,
+                                      void* alloc);
 
 
 template <bool kSooEnabled>
@@ -2076,21 +2203,20 @@ void Clear(CommonFields& c, const PolicyFunctions& policy,
 
 
 
+template <bool kSooEnabled>
+void Destruct(CommonFields& c, const DtorPolicy& policy,
+              DeallocBackingArrayFn dealloc, void* alloc);
 
+template <bool kSooEnabled>
+void Destruct(CommonFields& c, const DtorPolicy& policy,
+              DeallocBackingArrayFn dealloc);
 
-void DestructSoo(CommonFields& c, size_t slot_size, size_t slot_align,
-                 DestroySlotFn destroy_slot, DeallocBackingArrayFn dealloc,
-                 void* alloc);
-
-
-
-void DestructNonSoo(CommonFields& c, size_t slot_size, size_t slot_align,
-                    DestroySlotFn destroy_slot, DeallocBackingArrayFn dealloc,
-                    void* alloc);
+template <bool kSooEnabled>
+void Destruct(CommonFields& c, const DtorPolicy& policy);
 
 
 void EraseMetaOnlySmall(CommonFields& c, bool soo_enabled, size_t slot_size);
-void EraseMetaOnlyLarge(CommonFields& c, const ctrl_t* ctrl, size_t slot_size);
+void EraseMetaOnlyLarge(CommonFields& c, size_t index, size_t slot_size);
 
 
 
@@ -2127,14 +2253,13 @@ void* GetRefForEmptyClass(CommonFields& common);
 
 
 
-
-size_t PrepareInsertLarge(CommonFields& common, const PolicyFunctions& policy,
-                          size_t hash, Group::NonIterableBitMaskType mask_empty,
-                          FindInfo target_group);
-
+void* PrepareInsertLarge(CommonFields& common, const PolicyFunctions& policy,
+                         size_t hash, Group::NonIterableBitMaskType mask_empty,
+                         FindInfo target_group);
 
 
-size_t PrepareInsertLargeGenerationsEnabled(
+
+void* PrepareInsertLargeGenerationsEnabled(
     CommonFields& common, const PolicyFunctions& policy, size_t hash,
     Group::NonIterableBitMaskType mask_empty, FindInfo target_group,
     absl::FunctionRef<size_t(size_t)> recompute_hash);
@@ -2222,16 +2347,23 @@ class raw_hash_set {
 
   using slot_type = typename PolicyTraits::slot_type;
 
-  constexpr static bool kIsDefaultHash =
+  constexpr static bool kIsAbslHash =
       std::is_same_v<hasher, absl::Hash<key_type>> ||
-      std::is_same_v<hasher, absl::container_internal::StringHash>;
+      std::is_same_v<hasher, absl::container_internal::StringHash> ||
+      
+      
+      
+      is_instance_of<hasher, absl::hash_internal::TransparentHash>::value;
+  
+  
+  
+  
+  
+  
+  
+  constexpr static size_t kSeedShift =
+      kIsAbslHash ? 0 : HashtableInlineData::kCapacityBitStoredInDataCount;
 
-  
-  
-  
-  
-  
-  
   constexpr static bool SooEnabled() {
     return PolicyTraits::soo_enabled() &&
            sizeof(slot_type) <= sizeof(HeapOrSoo) &&
@@ -2334,7 +2466,9 @@ class raw_hash_set {
     using pointer = std::remove_reference_t<reference>*;
     using difference_type = typename raw_hash_set::difference_type;
 
-    iterator() {}
+    
+    
+    iterator() : slot_(static_cast<slot_type*>(DefaultIterSlot())) {}
 
     
     reference operator*() const {
@@ -2354,7 +2488,7 @@ class raw_hash_set {
       ++ctrl_;
       ++slot_;
       skip_empty_or_deleted();
-      if (ABSL_PREDICT_FALSE(*ctrl_ == ctrl_t::kSentinel)) ctrl_ = nullptr;
+      if (ABSL_PREDICT_FALSE(*ctrl_ == ctrl_t::kSentinel)) slot_ = nullptr;
       return *this;
     }
     
@@ -2365,11 +2499,13 @@ class raw_hash_set {
     }
 
     friend bool operator==(const iterator& a, const iterator& b) {
-      AssertIsValidForComparison(a.ctrl_, a.generation(), a.generation_ptr());
-      AssertIsValidForComparison(b.ctrl_, b.generation(), b.generation_ptr());
+      AssertIsValidForComparison(a.ctrl_, a.slot_, a.generation(),
+                                 a.generation_ptr());
+      AssertIsValidForComparison(b.ctrl_, b.slot_, b.generation(),
+                                 b.generation_ptr());
       AssertSameContainer(a.ctrl_, b.ctrl_, a.slot_, b.slot_,
                           a.generation_ptr(), b.generation_ptr());
-      return a.ctrl_ == b.ctrl_;
+      return a.unchecked_equals(b);
     }
     friend bool operator!=(const iterator& a, const iterator& b) {
       return !(a == b);
@@ -2383,26 +2519,14 @@ class raw_hash_set {
           slot_(slot) {
       
       
-      ABSL_ASSUME(ctrl != nullptr);
-    }
-    
-    
-    
-    iterator(ctrl_t* ctrl, MaybeInitializedPtr<void> slot,
-             const GenerationType* generation_ptr)
-        : HashSetIteratorGenerationInfo(generation_ptr),
-          ctrl_(ctrl),
-          slot_(to_slot(slot.get())) {
-      
-      
-      ABSL_ASSUME(ctrl != nullptr);
+      ABSL_ASSUME(slot != nullptr);
     }
     
     explicit iterator(const GenerationType* generation_ptr)
-        : HashSetIteratorGenerationInfo(generation_ptr), ctrl_(nullptr) {}
+        : HashSetIteratorGenerationInfo(generation_ptr), slot_(nullptr) {}
 
     void assert_is_full(const char* operation) const {
-      AssertIsFull(ctrl_, generation(), generation_ptr(), operation);
+      AssertIsFull(ctrl_, slot_, generation(), generation_ptr(), operation);
     }
 
     
@@ -2418,9 +2542,7 @@ class raw_hash_set {
     
     
     
-    bool unchecked_equals(const iterator& b) const {
-      return ctrl_ == b.control();
-    }
+    bool unchecked_equals(const iterator& b) const { return slot_ == b.slot(); }
 
     
     
@@ -2431,12 +2553,10 @@ class raw_hash_set {
 
     
     
-    ctrl_t* ctrl_ = DefaultIterControl();
-    
-    
     union {
-      slot_type* slot_;
+      ctrl_t* ctrl_;
     };
+    slot_type* slot_;
   };
 
   class const_iterator {
@@ -2496,68 +2616,68 @@ class raw_hash_set {
       std::is_nothrow_default_constructible_v<key_equal> &&
       std::is_nothrow_default_constructible_v<allocator_type>) {}
 
-  explicit raw_hash_set(
-      size_t bucket_count, const hasher& hash = hasher(),
-      const key_equal& eq = key_equal(),
-      const allocator_type& alloc = allocator_type())
+  explicit raw_hash_set(size_t reservation_size, const hasher& hash = hasher(),
+                        const key_equal& eq = key_equal(),
+                        const allocator_type& alloc = allocator_type())
       : settings_(CommonFields::CreateDefault<SooEnabled()>(), hash, eq,
                   alloc) {
-    if (bucket_count > DefaultCapacity()) {
-      ReserveEmptyNonAllocatedTableToFitBucketCount(
-          common(), GetPolicyFunctions(),
-          (std::min)(bucket_count, MaxValidCapacity()));
+    if (reservation_size > DefaultCapacity()) {
+      ReserveTableToFitNewSize(common(), GetPolicyFunctions(),
+                               reservation_size);
     }
   }
 
-  raw_hash_set(size_t bucket_count, const hasher& hash,
+  raw_hash_set(size_t reservation_size, const hasher& hash,
                const allocator_type& alloc)
-      : raw_hash_set(bucket_count, hash, key_equal(), alloc) {}
+      : raw_hash_set(reservation_size, hash, key_equal(), alloc) {}
 
-  raw_hash_set(size_t bucket_count, const allocator_type& alloc)
-      : raw_hash_set(bucket_count, hasher(), key_equal(), alloc) {}
+  raw_hash_set(size_t reservation_size, const allocator_type& alloc)
+      : raw_hash_set(reservation_size, hasher(), key_equal(), alloc) {}
 
   explicit raw_hash_set(const allocator_type& alloc)
       : raw_hash_set(0, hasher(), key_equal(), alloc) {}
 
   template <class InputIter>
-  raw_hash_set(InputIter first, InputIter last, size_t bucket_count = 0,
+  raw_hash_set(InputIter first, InputIter last, size_t reservation_size = 0,
                const hasher& hash = hasher(), const key_equal& eq = key_equal(),
                const allocator_type& alloc = allocator_type())
-      : raw_hash_set(SelectBucketCountForIterRange(first, last, bucket_count),
-                     hash, eq, alloc) {
+      : raw_hash_set(
+            SelectReservationSizeForIterRange(first, last, reservation_size),
+            hash, eq, alloc) {
     insert(first, last);
   }
 
   template <class InputIter>
-  raw_hash_set(InputIter first, InputIter last, size_t bucket_count,
+  raw_hash_set(InputIter first, InputIter last, size_t reservation_size,
                const hasher& hash, const allocator_type& alloc)
-      : raw_hash_set(first, last, bucket_count, hash, key_equal(), alloc) {}
+      : raw_hash_set(first, last, reservation_size, hash, key_equal(), alloc) {}
 
   template <class InputIter>
-  raw_hash_set(InputIter first, InputIter last, size_t bucket_count,
+  raw_hash_set(InputIter first, InputIter last, size_t reservation_size,
                const allocator_type& alloc)
-      : raw_hash_set(first, last, bucket_count, hasher(), key_equal(), alloc) {}
+      : raw_hash_set(first, last, reservation_size, hasher(), key_equal(),
+                     alloc) {}
 
 #if defined(__cpp_lib_containers_ranges) && \
     __cpp_lib_containers_ranges >= 202202L
   template <typename R>
-  raw_hash_set(std::from_range_t, R&& rg, size_type bucket_count = 0,
+  raw_hash_set(std::from_range_t, R&& rg, size_type reservation_size = 0,
                const hasher& hash = hasher(), const key_equal& eq = key_equal(),
                const allocator_type& alloc = allocator_type())
-      : raw_hash_set(std::begin(rg), std::end(rg), bucket_count, hash, eq,
+      : raw_hash_set(std::begin(rg), std::end(rg), reservation_size, hash, eq,
                      alloc) {}
 
   template <typename R>
-  raw_hash_set(std::from_range_t, R&& rg, size_type bucket_count,
+  raw_hash_set(std::from_range_t, R&& rg, size_type reservation_size,
                const allocator_type& alloc)
-      : raw_hash_set(std::from_range, std::forward<R>(rg), bucket_count,
+      : raw_hash_set(std::from_range, std::forward<R>(rg), reservation_size,
                      hasher(), key_equal(), alloc) {}
 
   template <typename R>
-  raw_hash_set(std::from_range_t, R&& rg, size_type bucket_count,
+  raw_hash_set(std::from_range_t, R&& rg, size_type reservation_size,
                const hasher& hash, const allocator_type& alloc)
-      : raw_hash_set(std::from_range, std::forward<R>(rg), bucket_count, hash,
-                     key_equal(), alloc) {}
+      : raw_hash_set(std::from_range, std::forward<R>(rg), reservation_size,
+                     hash, key_equal(), alloc) {}
 #endif
 
   template <class InputIter>
@@ -2587,35 +2707,38 @@ class raw_hash_set {
   
   template <class T, RequiresNotInit<T> = 0,
             std::enable_if_t<Insertable<T>::value, int> = 0>
-  raw_hash_set(std::initializer_list<T> init, size_t bucket_count = 0,
+  raw_hash_set(std::initializer_list<T> init, size_t reservation_size = 0,
                const hasher& hash = hasher(), const key_equal& eq = key_equal(),
                const allocator_type& alloc = allocator_type())
-      : raw_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
+      : raw_hash_set(init.begin(), init.end(), reservation_size, hash, eq,
+                     alloc) {}
 
-  raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count = 0,
-               const hasher& hash = hasher(), const key_equal& eq = key_equal(),
+  raw_hash_set(std::initializer_list<init_type> init,
+               size_t reservation_size = 0, const hasher& hash = hasher(),
+               const key_equal& eq = key_equal(),
                const allocator_type& alloc = allocator_type())
-      : raw_hash_set(init.begin(), init.end(), bucket_count, hash, eq, alloc) {}
+      : raw_hash_set(init.begin(), init.end(), reservation_size, hash, eq,
+                     alloc) {}
 
   template <class T, RequiresNotInit<T> = 0,
             std::enable_if_t<Insertable<T>::value, int> = 0>
-  raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
+  raw_hash_set(std::initializer_list<T> init, size_t reservation_size,
                const hasher& hash, const allocator_type& alloc)
-      : raw_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
+      : raw_hash_set(init, reservation_size, hash, key_equal(), alloc) {}
 
-  raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
+  raw_hash_set(std::initializer_list<init_type> init, size_t reservation_size,
                const hasher& hash, const allocator_type& alloc)
-      : raw_hash_set(init, bucket_count, hash, key_equal(), alloc) {}
+      : raw_hash_set(init, reservation_size, hash, key_equal(), alloc) {}
 
   template <class T, RequiresNotInit<T> = 0,
             std::enable_if_t<Insertable<T>::value, int> = 0>
-  raw_hash_set(std::initializer_list<T> init, size_t bucket_count,
+  raw_hash_set(std::initializer_list<T> init, size_t reservation_size,
                const allocator_type& alloc)
-      : raw_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
+      : raw_hash_set(init, reservation_size, hasher(), key_equal(), alloc) {}
 
-  raw_hash_set(std::initializer_list<init_type> init, size_t bucket_count,
+  raw_hash_set(std::initializer_list<init_type> init, size_t reservation_size,
                const allocator_type& alloc)
-      : raw_hash_set(init, bucket_count, hasher(), key_equal(), alloc) {}
+      : raw_hash_set(init, reservation_size, hasher(), key_equal(), alloc) {}
 
   template <class T, RequiresNotInit<T> = 0,
             std::enable_if_t<Insertable<T>::value, int> = 0>
@@ -2713,7 +2836,7 @@ class raw_hash_set {
   iterator begin() ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (ABSL_PREDICT_FALSE(empty())) return end();
     if (is_small()) return single_iterator();
-    iterator it = {control(), common().slots_union(),
+    iterator it = {control(), slot_array(capacity()),
                    common().generation_ptr()};
     it.skip_empty_or_deleted();
     ABSL_SWISSTABLE_ASSERT(IsFull(*it.control()));
@@ -2781,7 +2904,7 @@ class raw_hash_set {
                                  IsLifetimeBoundAssignmentFrom<T>::value,
                              int> = 0>
   std::pair<iterator, bool> insert(
-      T&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+      T&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS)
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return this->template insert<T, 0>(std::forward<T>(value));
   }
@@ -2810,7 +2933,7 @@ class raw_hash_set {
                                  IsLifetimeBoundAssignmentFrom<const T&>::value,
                              int> = 0>
   std::pair<iterator, bool> insert(
-      const T& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+      const T& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS)
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return this->template insert<T, 0>(value);
   }
@@ -2830,7 +2953,7 @@ class raw_hash_set {
   }
 #if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
   std::pair<iterator, bool> insert(
-      init_type&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+      init_type&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS)
       ABSL_ATTRIBUTE_LIFETIME_BOUND
     requires(IsLifetimeBoundAssignmentFrom<init_type>::value)
   {
@@ -2852,7 +2975,7 @@ class raw_hash_set {
                                  IsLifetimeBoundAssignmentFrom<T>::value,
                              int> = 0>
   iterator insert(const_iterator hint,
-                  T&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this))
+                  T&& value ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS)
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return this->template insert<T, 0>(hint, std::forward<T>(value));
   }
@@ -2994,12 +3117,12 @@ class raw_hash_set {
                         F&& f) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     auto res = find_or_prepare_insert(key);
     if (res.second) {
-      slot_type* slot = res.first.slot();
+      slot_type* slot = res.first;
       allocator_type alloc(char_alloc_ref());
       std::forward<F>(f)(constructor(&alloc, &slot));
       ABSL_SWISSTABLE_ASSERT(!slot);
     }
-    return res.first;
+    return non_iterable_iterator_at_slot(res.first);
   }
 
   
@@ -3137,8 +3260,7 @@ class raw_hash_set {
 
   void reserve(size_t n) {
     if (ABSL_PREDICT_TRUE(n > DefaultCapacity())) {
-      ReserveTableToFitNewSize(common(), GetPolicyFunctions(),
-                               (std::min)(n, MaxValidSize()));
+      ReserveTableToFitNewSize(common(), GetPolicyFunctions(), n);
     }
   }
 
@@ -3170,7 +3292,7 @@ class raw_hash_set {
     if (is_small()) return;
     auto seq = probe(common(), hash_of(key));
     PrefetchToLocalCache(control() + seq.offset());
-    PrefetchToLocalCache(slot_array() + seq.offset());
+    PrefetchToLocalCache(slot_array(capacity()) + seq.offset());
 #endif  
   }
 
@@ -3187,7 +3309,7 @@ class raw_hash_set {
     AssertOnFind(key);
     if (is_small()) return find_small(key);
     prefetch_heap_block();
-    return find_large(key, hash_of(key));
+    return find_large(key);
   }
 
   template <class K = key_type>
@@ -3284,6 +3406,7 @@ class raw_hash_set {
       HashtableDebugAccess;
 
   friend struct absl::container_internal::HashtableFreeFunctionsAccess;
+  friend DtorPolicy;
 
   struct FindElement {
     template <class K, class... Args>
@@ -3300,7 +3423,7 @@ class raw_hash_set {
       if (res.second) {
         s.emplace_at(res.first, std::forward<Args>(args)...);
       }
-      return res;
+      return {s.non_iterable_iterator_at_slot(res.first), res.second};
     }
     raw_hash_set& s;
   };
@@ -3311,11 +3434,11 @@ class raw_hash_set {
     std::pair<iterator, bool> operator()(const K& key, Args&&...) && {
       auto res = s.find_or_prepare_insert(key);
       if (res.second) {
-        s.transfer(res.first.slot(), &slot);
+        s.transfer(res.first, &slot);
       } else if (do_destroy) {
         s.destroy(&slot);
       }
-      return res;
+      return {s.non_iterable_iterator_at_slot(res.first), res.second};
     }
     raw_hash_set& s;
     
@@ -3345,29 +3468,34 @@ class raw_hash_set {
   
   
   template <class K = key_type>
-  iterator find_small(const key_arg<K>& key) {
+  ABSL_ATTRIBUTE_ALWAYS_INLINE iterator find_small(const key_arg<K>& key) {
     ABSL_SWISSTABLE_ASSERT(is_small());
     return empty() || !equal_to(key, single_slot()) ? end() : single_iterator();
   }
 
   template <class K = key_type>
-  iterator find_large(const key_arg<K>& key, size_t hash) {
+  iterator find_large(const key_arg<K>& key) {
     ABSL_SWISSTABLE_ASSERT(!is_small());
-    auto seq = probe(common(), hash);
+    const size_t cap = common().capacity();
+    ABSL_ASSUME(cap > kMaxSmallCapacity);
+    const size_t hash = hash_of(key);
+    auto seq = probe(ProbeCapacity{cap}, hash);
     const h2_t h2 = H2(hash);
-    const ctrl_t* ctrl = control();
+    ctrl_t* ctrl = control();
+    slot_type* slot_array = to_slot(common().slot_array(cap));
     while (true) {
 #ifndef ABSL_HAVE_MEMORY_SANITIZER
-      absl::PrefetchToLocalCache(slot_array() + seq.offset());
+      absl::PrefetchToLocalCache(slot_array + seq.offset());
 #endif
       Group g{ctrl + seq.offset()};
       for (uint32_t i : g.Match(h2)) {
-        if (ABSL_PREDICT_TRUE(equal_to(key, slot_array() + seq.offset(i))))
-          return iterator_at(seq.offset(i));
+        const size_t offset = seq.offset(i);
+        if (ABSL_PREDICT_TRUE(equal_to(key, slot_array + offset)))
+          return iterator_at_ptr(ctrl + offset, slot_array + offset);
       }
       if (ABSL_PREDICT_TRUE(g.MaskEmpty())) return end();
       seq.next();
-      ABSL_SWISSTABLE_ASSERT(seq.index() <= capacity() && "full table!");
+      ABSL_SWISSTABLE_ASSERT(seq.index() <= cap && "full table!");
     }
   }
 
@@ -3394,7 +3522,7 @@ class raw_hash_set {
   }
 
   void clear_backing_array(bool reuse) {
-    ABSL_SWISSTABLE_ASSERT(capacity() > MaxSmallCapacity());
+    ABSL_SWISSTABLE_ASSERT(capacity() > kMaxSmallCapacity);
     ClearBackingArray(common(), GetPolicyFunctions(), &char_alloc_ref(), reuse);
   }
 
@@ -3404,30 +3532,33 @@ class raw_hash_set {
     DestroySlots(common(), sizeof(slot_type), get_destroy_slot_fn());
   }
 
-  void dealloc() {
-    ABSL_SWISSTABLE_ASSERT(capacity() > DefaultCapacity());
-    DeallocBackingArray(common(), sizeof(slot_type), alignof(slot_type),
-                        get_dealloc_backing_array_fn(), &char_alloc_ref());
-  }
-
   void destructor_impl() {
     if (SwisstableGenerationsEnabled() &&
         maybe_invalid_capacity().IsMovedFrom()) {
       return;
     }
+    constexpr bool kIsStandardBackingArrayAlignment =
+        std::is_same_v<CharAlloc, std::allocator<char>> &&
+        BackingArrayAlignment(alignof(slot_type)) ==
+            kStandardBackingArrayAlignment;
     if constexpr (SooEnabled()) {
       if (is_small() &&
           (PolicyTraits::template destroy_is_trivial<Alloc>() || empty())) {
         return;
       }
-      DestructSoo(common(), sizeof(slot_type), alignof(slot_type),
-                  get_destroy_slot_fn(), get_dealloc_backing_array_fn(),
-                  &char_alloc_ref());
     } else {
       if (capacity() == 0) return;
-      DestructNonSoo(common(), sizeof(slot_type), alignof(slot_type),
-                     get_destroy_slot_fn(), get_dealloc_backing_array_fn(),
-                     &char_alloc_ref());
+    }
+    if constexpr (std::is_empty_v<Alloc>) {
+      if constexpr (kIsStandardBackingArrayAlignment) {
+        Destruct<SooEnabled()>(common(), GetDtorPolicy());
+      } else {
+        Destruct<SooEnabled()>(common(), GetDtorPolicy(),
+                               get_dealloc_backing_array_fn());
+      }
+    } else {
+      Destruct<SooEnabled()>(common(), GetDtorPolicy(),
+                             get_dealloc_backing_array_fn(), &char_alloc_ref());
     }
   }
 
@@ -3446,7 +3577,11 @@ class raw_hash_set {
     EraseMetaOnlySmall(common(), SooEnabled(), sizeof(slot_type));
   }
   void erase_meta_only_large(const_iterator it) {
-    EraseMetaOnlyLarge(common(), it.control(), sizeof(slot_type));
+    EraseMetaOnlyLarge(common(),
+                       
+                       
+                       static_cast<size_t>(it.slot() - slot_array(capacity())),
+                       sizeof(slot_type));
   }
 
   template <class K>
@@ -3457,12 +3592,13 @@ class raw_hash_set {
   }
   template <class K>
   ABSL_ATTRIBUTE_ALWAYS_INLINE size_t hash_of(const K& key) const {
-    return HashElement<hasher, kIsDefaultHash>{hash_ref(),
-                                               common().seed().seed()}(key);
+    return HashElement<hasher, kIsAbslHash, kSeedShift>{
+        hash_ref(), common().seed().seed()}(key);
   }
   ABSL_ATTRIBUTE_ALWAYS_INLINE size_t hash_of(slot_type* slot) const {
     return PolicyTraits::apply(
-        HashElement<hasher, kIsDefaultHash>{hash_ref(), common().seed().seed()},
+        HashElement<hasher, kIsAbslHash, kSeedShift>{hash_ref(),
+                                                     common().seed().seed()},
         PolicyTraits::element(slot));
   }
 
@@ -3537,7 +3673,7 @@ class raw_hash_set {
     hash_ref() = that.hash_ref();
     eq_ref() = that.eq_ref();
     CopyAlloc(char_alloc_ref(), that.char_alloc_ref(),
-              std::integral_constant<bool, propagate_alloc>());
+              std::bool_constant<propagate_alloc>());
     that.common() = CommonFields::CreateDefault<SooEnabled()>();
     annotate_for_bug_detection_on_move(that);
     return *this;
@@ -3551,7 +3687,11 @@ class raw_hash_set {
       insert(std::move(PolicyTraits::element(it.slot())));
       that.destroy(it.slot());
     }
-    if (!that.is_soo()) that.dealloc();
+    if (!that.is_soo()) {
+      UnregisterAndDeallocBackingArray(that.common(), that.GetDtorPolicy(),
+                                       that.get_dealloc_backing_array_fn(),
+                                       &that.char_alloc_ref());
+    }
     that.common() = CommonFields::CreateDefault<SooEnabled()>();
     annotate_for_bug_detection_on_move(that);
     return *this;
@@ -3578,92 +3718,93 @@ class raw_hash_set {
   }
 
   template <class K>
-  std::pair<iterator, bool> find_or_prepare_insert_soo(const K& key) {
+  ABSL_ATTRIBUTE_ALWAYS_INLINE std::pair<slot_type*, bool>
+  find_or_prepare_insert_soo(const K& key) {
     ABSL_SWISSTABLE_ASSERT(is_soo());
     bool force_sampling;
+    slot_type* slot = single_slot();
     if (empty()) {
       if (!should_sample_soo()) {
         common().set_full_soo();
-        return {single_iterator(), true};
+        return {slot, true};
       }
       force_sampling = true;
-    } else if (equal_to(key, single_slot())) {
-      return {single_iterator(), false};
+    } else if (equal_to(key, slot)) {
+      return {slot, false};
     } else {
       force_sampling = false;
     }
     ABSL_SWISSTABLE_ASSERT(capacity() == 1);
     constexpr bool kUseMemcpy =
         PolicyTraits::transfer_uses_memcpy() && SooEnabled();
-    size_t index = GrowSooTableToNextCapacityAndPrepareInsert<
-        kUseMemcpy ? OptimalMemcpySizeForSooSlotTransfer(sizeof(slot_type)) : 0,
-        kUseMemcpy>(common(), GetPolicyFunctions(),
-                    HashKey<hasher, K, kIsDefaultHash>{hash_ref(), key},
-                    force_sampling);
-    return {iterator_at(index), true};
+    slot = to_slot(
+        GrowSooTableToNextCapacityAndPrepareInsert<
+            kUseMemcpy ? OptimalMemcpySizeForSooSlotTransfer(sizeof(slot_type))
+                       : 0,
+            kUseMemcpy>(
+            common(), GetPolicyFunctions(),
+            HashKey<hasher, K, kIsAbslHash, kSeedShift>{hash_ref(), key},
+            force_sampling));
+    return {slot, true};
   }
 
   template <class K>
-  std::pair<iterator, bool> find_or_prepare_insert_small(const K& key) {
+  ABSL_ATTRIBUTE_ALWAYS_INLINE std::pair<slot_type*, bool>
+  find_or_prepare_insert_small(const K& key) {
     ABSL_SWISSTABLE_ASSERT(is_small());
     if constexpr (SooEnabled()) {
       return find_or_prepare_insert_soo(key);
     }
     if (!empty()) {
       if (equal_to(key, single_slot())) {
-        return {single_iterator(), false};
+        return {single_slot(), false};
       }
     }
-    return {iterator_at_ptr(PrepareInsertSmallNonSoo(
+    return {to_slot(PrepareInsertSmallNonSoo(
                 common(), GetPolicyFunctions(),
-                HashKey<hasher, K, kIsDefaultHash>{hash_ref(), key})),
+                HashKey<hasher, K, kIsAbslHash, kSeedShift>{hash_ref(), key})),
             true};
   }
 
   template <class K>
-  std::pair<iterator, bool> find_or_prepare_insert_large(const K& key) {
+  std::pair<slot_type*, bool> find_or_prepare_insert_large(const K& key) {
     ABSL_SWISSTABLE_ASSERT(!is_soo());
     prefetch_heap_block();
+    const size_t cap = capacity();
+    ABSL_ASSUME(cap > kMaxSmallCapacity);
     const size_t hash = hash_of(key);
-    auto seq = probe(common(), hash);
+    auto seq = probe(ProbeCapacity{cap}, hash);
     const h2_t h2 = H2(hash);
     const ctrl_t* ctrl = control();
-    size_t index;
-    bool inserted;
-    
-    
-    [&]() ABSL_ATTRIBUTE_ALWAYS_INLINE {
-      while (true) {
+    slot_type* slot_array = to_slot(common().slot_array(cap));
+    while (true) {
 #ifndef ABSL_HAVE_MEMORY_SANITIZER
-        absl::PrefetchToLocalCache(slot_array() + seq.offset());
+      absl::PrefetchToLocalCache(slot_array + seq.offset());
 #endif
-        Group g{ctrl + seq.offset()};
-        for (uint32_t i : g.Match(h2)) {
-          if (ABSL_PREDICT_TRUE(equal_to(key, slot_array() + seq.offset(i)))) {
-            index = seq.offset(i);
-            inserted = false;
-            return;
-          }
+      Group g{ctrl + seq.offset()};
+      for (uint32_t i : g.Match(h2)) {
+        slot_type* slot = slot_array + seq.offset(i);
+        if (ABSL_PREDICT_TRUE(equal_to(key, slot))) {
+          return {slot, false};
         }
-        auto mask_empty = g.MaskEmpty();
-        if (ABSL_PREDICT_TRUE(mask_empty)) {
-          size_t target_group_offset = seq.offset();
-          index = SwisstableGenerationsEnabled()
-                      ? PrepareInsertLargeGenerationsEnabled(
-                            common(), GetPolicyFunctions(), hash, mask_empty,
-                            FindInfo{target_group_offset, seq.index()},
-                            HashKey<hasher, K, kIsDefaultHash>{hash_ref(), key})
-                      : PrepareInsertLarge(
-                            common(), GetPolicyFunctions(), hash, mask_empty,
-                            FindInfo{target_group_offset, seq.index()});
-          inserted = true;
-          return;
-        }
-        seq.next();
-        ABSL_SWISSTABLE_ASSERT(seq.index() <= capacity() && "full table!");
       }
-    }();
-    return {iterator_at(index), inserted};
+      auto mask_empty = g.MaskEmpty();
+      if (ABSL_PREDICT_TRUE(mask_empty)) {
+        size_t target_group_offset = seq.offset();
+        void* slot = SwisstableGenerationsEnabled()
+                         ? PrepareInsertLargeGenerationsEnabled(
+                               common(), GetPolicyFunctions(), hash, mask_empty,
+                               FindInfo{target_group_offset, seq.index()},
+                               HashKey<hasher, K, kIsAbslHash, kSeedShift>{
+                                   hash_ref(), key})
+                         : PrepareInsertLarge(
+                               common(), GetPolicyFunctions(), hash, mask_empty,
+                               FindInfo{target_group_offset, seq.index()});
+        return {to_slot(slot), true};
+      }
+      seq.next();
+      ABSL_SWISSTABLE_ASSERT(seq.index() <= capacity() && "full table!");
+    }
   }
 
   template <class InputIt>
@@ -3726,10 +3867,10 @@ class raw_hash_set {
   
   
   template <class K>
-  std::pair<iterator, bool> find_or_prepare_insert(const K& key) {
+  std::pair<slot_type*, bool> find_or_prepare_insert(const K& key) {
     AssertOnFind(key);
-    if (is_small()) return find_or_prepare_insert_small(key);
-    return find_or_prepare_insert_large(key);
+    return is_small() ? find_or_prepare_insert_small(key)
+                      : find_or_prepare_insert_large(key);
   }
 
   
@@ -3741,33 +3882,38 @@ class raw_hash_set {
   
   
   template <class... Args>
-  void emplace_at(iterator iter, Args&&... args) {
-    construct(iter.slot(), std::forward<Args>(args)...);
+  void emplace_at(slot_type* slot, Args&&... args) {
+    construct(slot, std::forward<Args>(args)...);
 
     
     
     assert((is_small() ||
-            PolicyTraits::apply(FindElement{*this}, *iter) == iter) &&
+            PolicyTraits::apply(FindElement{*this}, PolicyTraits::element(slot))
+                    .slot() == slot) &&
            "constructed value does not match the lookup key");
   }
 
+  
+  
+  iterator non_iterable_iterator_at_slot(slot_type* slot)
+      ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return {InsertIteratorControl(), slot, common().generation_ptr()};
+  }
   iterator iterator_at(size_t i) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return {control() + i, slot_array() + i, common().generation_ptr()};
   }
   const_iterator iterator_at(size_t i) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return const_cast<raw_hash_set*>(this)->iterator_at(i);
   }
-  iterator iterator_at_ptr(std::pair<ctrl_t*, void*> ptrs)
+  iterator iterator_at_ptr(ctrl_t* ctrl, void* slot)
       ABSL_ATTRIBUTE_LIFETIME_BOUND {
-    return {ptrs.first, to_slot(ptrs.second), common().generation_ptr()};
+    return {ctrl, to_slot(slot), common().generation_ptr()};
   }
 
   reference unchecked_deref(iterator it) { return it.unchecked_deref(); }
 
  private:
   friend struct RawHashSetTestOnlyAccess;
-
-  GrowthInfoAccessor growth_info() const { return common().growth_info(); }
 
   
   
@@ -3791,9 +3937,9 @@ class raw_hash_set {
     ABSL_SWISSTABLE_ASSERT(!is_soo());
     return common().control();
   }
-  slot_type* slot_array() const {
+  slot_type* slot_array(size_t capacity) const {
     ABSL_SWISSTABLE_ASSERT(!is_soo());
-    return static_cast<slot_type*>(common().slot_array());
+    return static_cast<slot_type*>(common().slot_array(capacity));
   }
   slot_type* soo_slot() {
     ABSL_SWISSTABLE_ASSERT(is_soo());
@@ -3806,7 +3952,9 @@ class raw_hash_set {
   }
   slot_type* single_slot() {
     ABSL_SWISSTABLE_ASSERT(is_small());
-    return SooEnabled() ? soo_slot() : slot_array();
+    return SooEnabled()
+               ? soo_slot()
+               : to_slot(common().slot_array(1));
   }
   const slot_type* single_slot() const {
     return const_cast<raw_hash_set*>(this)->single_slot();
@@ -3877,6 +4025,7 @@ class raw_hash_set {
       void (*encode_probed_element)(void* probed_storage, h2_t h2,
                                     size_t source_offset, size_t h1)) {
     const size_t new_capacity = common.capacity();
+    ABSL_ASSUME(new_capacity > kMaxSmallCapacity);
     const size_t old_capacity = PreviousCapacity(new_capacity);
     ABSL_ASSUME(old_capacity + 1 >= Group::kWidth);
     ABSL_ASSUME((old_capacity + 1) % Group::kWidth == 0);
@@ -3884,7 +4033,7 @@ class raw_hash_set {
     auto* set = reinterpret_cast<raw_hash_set*>(&common);
     slot_type* old_slots_ptr = to_slot(old_slots);
     ctrl_t* new_ctrl = common.control();
-    slot_type* new_slots = set->slot_array();
+    slot_type* new_slots = set->slot_array(new_capacity);
 
     for (size_t group_index = 0; group_index < old_capacity;
          group_index += Group::kWidth) {
@@ -3927,6 +4076,21 @@ class raw_hash_set {
                                    CharAlloc>;
   }
 
+  static const DtorPolicy& GetDtorPolicy() {
+    static_assert(sizeof(slot_type) <= (std::numeric_limits<uint32_t>::max)(),
+                  "Slot size is too large. Use std::unique_ptr for value type "
+                  "or use absl::node_hash_{map,set}.");
+    static_assert(alignof(slot_type) <=
+                  size_t{(std::numeric_limits<uint16_t>::max)()});
+    if constexpr (PolicyTraits::template destroy_is_trivial<Alloc>()) {
+      return DtorPolicy::GetTrivialDestructRef<
+          static_cast<uint32_t>(sizeof(slot_type)),
+          static_cast<uint16_t>(alignof(slot_type))>();
+    } else {
+      return DtorPolicy::GetRef<raw_hash_set>();
+    }
+  }
+
   static const PolicyFunctions& GetPolicyFunctions() {
     static_assert(sizeof(slot_type) <= (std::numeric_limits<uint32_t>::max)(),
                   "Slot size is too large. Use std::unique_ptr for value type "
@@ -3949,7 +4113,8 @@ class raw_hash_set {
         
         std::is_empty_v<hasher> ? &GetRefForEmptyClass
                                 : &raw_hash_set::get_hash_ref_fn,
-        PolicyTraits::template get_hash_slot_fn<hasher, kIsDefaultHash>(),
+        PolicyTraits::template get_hash_slot_fn<hasher, kIsAbslHash,
+                                                kSeedShift>(),
         PolicyTraits::transfer_uses_memcpy()
             ? TransferNRelocatable<sizeof(slot_type)>
             : &raw_hash_set::transfer_n_slots_fn,
@@ -3997,7 +4162,9 @@ struct HashtableFreeFunctionsAccess {
           auto* slot = static_cast<SlotType*>(slot_void);
           if (pred(Set::PolicyTraits::element(slot))) {
             c->destroy(slot);
-            EraseMetaOnlyLarge(c->common(), ctrl, sizeof(*slot));
+            EraseMetaOnlyLarge(c->common(),
+                               static_cast<size_t>(ctrl - c->control()),
+                               sizeof(*slot));
             ++num_deleted;
           }
         });
@@ -4052,7 +4219,7 @@ struct HashtableDebugAccess<Set, std::void_t<typename Set::raw_hash_set>> {
   using Traits = typename Set::PolicyTraits;
   using Slot = typename Traits::slot_type;
 
-  constexpr static bool kIsDefaultHash = Set::kIsDefaultHash;
+  constexpr static bool kIsAbslHash = Set::kIsAbslHash;
 
   static size_t GetNumProbes(const Set& set,
                              const typename Set::key_type& key) {
@@ -4065,7 +4232,7 @@ struct HashtableDebugAccess<Set, std::void_t<typename Set::raw_hash_set>> {
     while (true) {
       container_internal::Group g{ctrl + seq.offset()};
       for (uint32_t i : g.Match(h2)) {
-        if (set.equal_to(key, set.slot_array() + seq.offset(i)))
+        if (set.equal_to(key, set.slot_array(set.capacity()) + seq.offset(i)))
           return num_probes;
         ++num_probes;
       }
@@ -4097,37 +4264,51 @@ struct HashtableDebugAccess<Set, std::void_t<typename Set::raw_hash_set>> {
 
 
 
-extern template size_t GrowSooTableToNextCapacityAndPrepareInsert<0, false>(
+extern template void* GrowSooTableToNextCapacityAndPrepareInsert<0, false>(
     CommonFields&, const PolicyFunctions&, absl::FunctionRef<size_t(size_t)>,
     bool);
-extern template size_t GrowSooTableToNextCapacityAndPrepareInsert<1, true>(
+extern template void* GrowSooTableToNextCapacityAndPrepareInsert<1, true>(
     CommonFields&, const PolicyFunctions&, absl::FunctionRef<size_t(size_t)>,
     bool);
-extern template size_t GrowSooTableToNextCapacityAndPrepareInsert<4, true>(
-    CommonFields&, const PolicyFunctions&, absl::FunctionRef<size_t(size_t)>,
-    bool);
-extern template size_t GrowSooTableToNextCapacityAndPrepareInsert<8, true>(
+extern template void* GrowSooTableToNextCapacityAndPrepareInsert<4, true>(
     CommonFields&, const PolicyFunctions&, absl::FunctionRef<size_t(size_t)>,
     bool);
 #if UINTPTR_MAX == UINT64_MAX
-extern template size_t GrowSooTableToNextCapacityAndPrepareInsert<16, true>(
+extern template void* GrowSooTableToNextCapacityAndPrepareInsert<8, true>(
     CommonFields&, const PolicyFunctions&, absl::FunctionRef<size_t(size_t)>,
     bool);
 #endif
 
-extern template void* AllocateBackingArray<
-    BackingArrayAlignment(alignof(size_t)), std::allocator<char>>(void* alloc,
-                                                                  size_t n);
-extern template void DeallocateBackingArray<
-    BackingArrayAlignment(alignof(size_t)), std::allocator<char>>(
-    void* alloc, size_t capacity, ctrl_t* ctrl, size_t slot_size,
-    size_t slot_align, bool had_infoz, size_t blocked_element_count);
+extern template void* AllocateBackingArray<kStandardBackingArrayAlignment,
+                                           std::allocator<char>>(void* alloc,
+                                                                 size_t n);
+extern template void
+DeallocateBackingArray<kStandardBackingArrayAlignment, std::allocator<char>>(
+    void* alloc, void* backing_array, size_t n);
 
-extern template void Clear<true>(CommonFields& c, const PolicyFunctions& policy,
-                                 DestroySlotFn destroy_slot, void* alloc);
+extern template void Clear<true>(CommonFields& c,
+                                                 const PolicyFunctions& policy,
+                                                 DestroySlotFn destroy_slot,
+                                                 void* alloc);
 extern template void Clear<false>(CommonFields& c,
-                                  const PolicyFunctions& policy,
-                                  DestroySlotFn destroy_slot, void* alloc);
+                                                  const PolicyFunctions& policy,
+                                                  DestroySlotFn destroy_slot,
+                                                  void* alloc);
+
+extern template void Destruct<true>(
+    CommonFields& c, const DtorPolicy& policy, DeallocBackingArrayFn dealloc,
+    void* alloc);
+extern template void Destruct<true>(
+    CommonFields& c, const DtorPolicy& policy, DeallocBackingArrayFn dealloc);
+extern template void Destruct<true>(CommonFields& c,
+                                                    const DtorPolicy& policy);
+extern template void Destruct<false>(
+    CommonFields& c, const DtorPolicy& policy, DeallocBackingArrayFn dealloc,
+    void* alloc);
+extern template void Destruct<false>(
+    CommonFields& c, const DtorPolicy& policy, DeallocBackingArrayFn dealloc);
+extern template void Destruct<false>(CommonFields& c,
+                                                     const DtorPolicy& policy);
 
 }  
 ABSL_NAMESPACE_END

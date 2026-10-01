@@ -94,7 +94,7 @@ TEST(StrJoin, APIExamples) {
   {
     
     const int a[] = {1, 2, 3, -4};
-    EXPECT_EQ("1-2-3--4", absl::StrJoin(a, a + ABSL_ARRAYSIZE(a), "-"));
+    EXPECT_EQ("1-2-3--4", absl::StrJoin(a, a + std::size(a), "-"));
   }
 
   {
@@ -135,6 +135,16 @@ TEST(StrJoin, APIExamples) {
   
   
   
+
+  {
+    
+    
+    
+    std::vector<absl::string_view> v = {absl::string_view(),
+                                        absl::string_view()};
+    EXPECT_EQ(absl::StrJoin(v, absl::string_view()), "");
+    EXPECT_EQ(absl::StrJoin(v, ":"), ":");
+  }
 
   {
     

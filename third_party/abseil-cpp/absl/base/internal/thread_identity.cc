@@ -14,7 +14,17 @@
 
 #include "absl/base/internal/thread_identity.h"
 
-#if !defined(_WIN32)
+#include <atomic>
+#include <cassert>
+#include <memory>
+
+#include "absl/base/attributes.h"
+#include "absl/base/call_once.h"
+#include "absl/base/config.h"
+#include "absl/base/internal/raw_logging.h"
+#include "absl/base/internal/spinlock.h"
+
+#if ABSL_THREAD_IDENTITY_MODE != ABSL_THREAD_IDENTITY_MODE_USE_CPP11
 #include <pthread.h>
 #ifndef __wasi__
 
@@ -22,15 +32,6 @@
 #include <signal.h>
 #endif
 #endif
-
-#include <atomic>
-#include <cassert>
-#include <memory>
-
-#include "absl/base/attributes.h"
-#include "absl/base/call_once.h"
-#include "absl/base/internal/raw_logging.h"
-#include "absl/base/internal/spinlock.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -84,7 +85,7 @@ void SetCurrentThreadIdentity(ThreadIdentity* identity,
   absl::call_once(init_thread_identity_key_once, AllocateThreadIdentityKey,
                   reclaimer);
 
-#if defined(__wasi__) || defined(__EMSCRIPTEN__) || \
+#if defined(__wasi__) || defined(__EMSCRIPTEN__) || defined(__MINGW32__) || \
     defined(__hexagon__)
   
   

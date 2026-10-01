@@ -72,7 +72,8 @@ ABSL_NAMESPACE_BEGIN
 
 
 
-class SourceLocation {
+class
+    SourceLocation {
   struct PrivateTag {
    private:
     explicit PrivateTag() = default;
@@ -110,7 +111,8 @@ class SourceLocation {
   
   static constexpr SourceLocation current(
       PrivateTag = PrivateTag{}, std::uint_least32_t line = __builtin_LINE(),
-      const char* absl_nonnull file_name = __builtin_FILE()) {
+      const char*
+          absl_nonnull file_name = __builtin_FILE()) {
     return SourceLocation(line, file_name);
   }
 #else
@@ -130,7 +132,8 @@ class SourceLocation {
 
   
   
-  constexpr const char* absl_nonnull file_name() const noexcept {
+  constexpr const char*
+      absl_nonnull file_name() const noexcept {
     return file_name_;
   }
 
@@ -146,8 +149,10 @@ class SourceLocation {
  private:
   
   
-  constexpr SourceLocation(std::uint_least32_t line,
-                           const char* absl_nonnull file_name)
+  constexpr SourceLocation(
+      std::uint_least32_t line,
+      const char*
+          absl_nonnull file_name)
       : line_(line), file_name_(file_name) {}
 
   
@@ -162,7 +167,8 @@ class SourceLocation {
   
   std::uint_least32_t line_ = 0;
   std::uint_least32_t unused_column_ = 0;
-  const char* absl_nonnull file_name_ = "";
+  const char*
+      absl_nonnull file_name_ = "";
 };
 
 ABSL_NAMESPACE_END

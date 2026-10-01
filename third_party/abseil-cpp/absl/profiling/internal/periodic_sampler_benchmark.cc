@@ -12,6 +12,8 @@
 
 
 
+#include "absl/base/config.h"
+#include "absl/base/optimization.h"
 #include "absl/profiling/internal/periodic_sampler.h"
 #include "benchmark/benchmark.h"
 

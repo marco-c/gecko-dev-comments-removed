@@ -23,11 +23,14 @@
 #ifndef ABSL_STRINGS_ESCAPING_H_
 #define ABSL_STRINGS_ESCAPING_H_
 
+#include <cassert>
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/base/nullability.h"
 #include "absl/strings/ascii.h"
@@ -177,7 +180,7 @@ bool WebSafeBase64Unescape(absl::string_view src,
 
 
 
-ABSL_DEPRECATED("Use the HexStringToBytes() that returns a bool")
+[[deprecated("Use the HexStringToBytes() that returns a bool")]]
 std::string HexStringToBytes(absl::string_view from);
 
 
@@ -185,6 +188,74 @@ std::string HexStringToBytes(absl::string_view from);
 
 
 std::string BytesToHexString(absl::string_view from);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] std::string UrlEscape(absl::string_view input);
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] std::optional<std::string> UrlUnescape(absl::string_view input);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+[[nodiscard]] std::string UrlEscapePlus(absl::string_view input);
+
+
+
+
+
+[[nodiscard]] std::optional<std::string> UrlUnescapePlus(
+    absl::string_view input);
 
 ABSL_NAMESPACE_END
 }  

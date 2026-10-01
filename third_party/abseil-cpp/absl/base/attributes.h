@@ -375,9 +375,9 @@
 
 
 #define ABSL_ATTRIBUTE_SECTION_START(name) \
-  (reinterpret_cast<void *>(__start_##name))
+  (reinterpret_cast<void*>(__start_##name))
 #define ABSL_ATTRIBUTE_SECTION_STOP(name) \
-  (reinterpret_cast<void *>(__stop_##name))
+  (reinterpret_cast<void*>(__stop_##name))
 
 #else  
 
@@ -389,8 +389,8 @@
 #define ABSL_INIT_ATTRIBUTE_SECTION_VARS(name)
 #define ABSL_DEFINE_ATTRIBUTE_SECTION_VARS(name)
 #define ABSL_DECLARE_ATTRIBUTE_SECTION_VARS(name)
-#define ABSL_ATTRIBUTE_SECTION_START(name) (reinterpret_cast<void *>(0))
-#define ABSL_ATTRIBUTE_SECTION_STOP(name) (reinterpret_cast<void *>(0))
+#define ABSL_ATTRIBUTE_SECTION_START(name) (reinterpret_cast<void*>(0))
+#define ABSL_ATTRIBUTE_SECTION_STOP(name) (reinterpret_cast<void*>(0))
 
 #endif  
 
@@ -414,16 +414,6 @@
 #define ABSL_ATTRIBUTE_STACK_ALIGN_FOR_OLD_LIBC
 #define ABSL_REQUIRE_STACK_ALIGN_TRAMPOLINE (0)
 #endif
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -577,12 +567,10 @@
 
 
 
-#if ABSL_HAVE_ATTRIBUTE(unused) || (defined(__GNUC__) && !defined(__clang__))
-#undef ABSL_ATTRIBUTE_UNUSED
-#define ABSL_ATTRIBUTE_UNUSED __attribute__((__unused__))
-#else
-#define ABSL_ATTRIBUTE_UNUSED
+#ifdef ABSL_ATTRIBUTE_UNUSED
+#error "ABSL_ATTRIBUTE_UNUSED should not be defined."
 #endif
+#define ABSL_ATTRIBUTE_UNUSED [[maybe_unused]]
 
 
 
@@ -645,42 +633,13 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifdef ABSL_FALLTHROUGH_INTENDED
 #error "ABSL_FALLTHROUGH_INTENDED should not be defined."
-#elif ABSL_HAVE_CPP_ATTRIBUTE(fallthrough)
-#define ABSL_FALLTHROUGH_INTENDED [[fallthrough]]
-#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::fallthrough)
-#define ABSL_FALLTHROUGH_INTENDED [[clang::fallthrough]]
-#elif ABSL_HAVE_CPP_ATTRIBUTE(gnu::fallthrough)
-#define ABSL_FALLTHROUGH_INTENDED [[gnu::fallthrough]]
-#else
-#define ABSL_FALLTHROUGH_INTENDED \
-  do {                            \
-  } while (0)
 #endif
-
+#define ABSL_FALLTHROUGH_INTENDED                                         \
+  struct _absl_fallthrough_intended_macro;                                \
+  (void)sizeof(_absl_fallthrough_intended_macro*);                        \
+  [[fallthrough]]
 
 
 
@@ -727,8 +686,8 @@
 #if defined(__GNUC__) || defined(__clang__)
 
 #define ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING \
-  _Pragma("GCC diagnostic push")             \
-  _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+  _Pragma("GCC diagnostic push")                             \
+      _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #define ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING \
   _Pragma("GCC diagnostic pop")
 #elif defined(_MSC_VER)
@@ -764,40 +723,36 @@
 
 
 
-#ifdef __cplusplus
-#if ABSL_HAVE_CPP_ATTRIBUTE(clang::require_explicit_initialization)
+#if defined(__cplusplus) && !defined(SWIG)
+#if defined(_MSC_VER) && !defined(__clang__)
 
-#define ABSL_REQUIRE_EXPLICIT_INIT \
+#define ABSL_REQUIRE_EXPLICIT_INIT
+#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::require_explicit_initialization)
+#define ABSL_REQUIRE_EXPLICIT_INIT             \
   [[clang::require_explicit_initialization]] = \
-    AbslInternal_YouForgotToExplicitlyInitializeAField::v
+      AbslInternal_YouForgotToExplicitlyInitializeAField::v
 #else
 #define ABSL_REQUIRE_EXPLICIT_INIT \
   = AbslInternal_YouForgotToExplicitlyInitializeAField::v
 #endif
-
 #else
-
 #if ABSL_HAVE_ATTRIBUTE(require_explicit_initialization)
 #define ABSL_REQUIRE_EXPLICIT_INIT \
   __attribute__((require_explicit_initialization))
 #else
+
 #define ABSL_REQUIRE_EXPLICIT_INIT
-
+#endif
 #endif
 
-#endif
-
-#ifdef __cplusplus
+#if defined(__cplusplus) && !defined(SWIG)
 struct AbslInternal_YouForgotToExplicitlyInitializeAField {
   
   
   
   template <class T>
-#if !defined(SWIG)
-  constexpr
-#endif
-  operator T() const  {
-    const void *volatile deliberately_volatile_ptr = nullptr;
+  constexpr operator T() const  {
+    const void* volatile deliberately_volatile_ptr = nullptr;
     
     for (;;) {
       
@@ -810,7 +765,6 @@ struct AbslInternal_YouForgotToExplicitlyInitializeAField {
   static AbslInternal_YouForgotToExplicitlyInitializeAField v;
 };
 #endif
-
 
 
 
@@ -941,6 +895,23 @@ struct AbslInternal_YouForgotToExplicitlyInitializeAField {
 
 
 
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::lifetime_capture_by_this)
+#define ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS \
+  [[clang::lifetime_capture_by_this]]
+#elif ABSL_HAVE_CPP_ATTRIBUTE(clang::lifetime_capture_by)
+#define ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS \
+  ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY(this)
+#else
+#define ABSL_INTERNAL_ATTRIBUTE_CAPTURED_BY_THIS
+#endif
+
+
+
+
+
+
+
+
 
 
 
@@ -1049,6 +1020,7 @@ struct AbslInternal_YouForgotToExplicitlyInitializeAField {
 #else
 #define ABSL_ATTRIBUTE_NO_UNIQUE_ADDRESS
 #endif
+
 
 
 

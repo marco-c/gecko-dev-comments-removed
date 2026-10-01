@@ -39,6 +39,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/container/hash_container_defaults.h"
 #include "absl/container/internal/container_memory.h"
@@ -51,6 +52,15 @@ namespace container_internal {
 template <class K, class V>
 struct FlatHashMapPolicy;
 }  
+
+
+
+
+
+
+
+
+
 
 
 
@@ -430,11 +440,6 @@ class ABSL_ATTRIBUTE_OWNER flat_hash_map
   
   
   
-  
-  
-  
-  
-  
   using Base::extract;
 
   
@@ -682,10 +687,10 @@ struct FlatHashMapPolicy {
                                                    std::forward<Args>(args)...);
   }
 
-  template <class Hash, bool kIsDefault>
+  template <class Hash, bool kIsDefault, size_t kSeedShift>
   static constexpr HashSlotFn get_hash_slot_fn() {
     return memory_internal::IsLayoutCompatible<K, V>::value
-               ? &TypeErasedApplyToSlotFn<Hash, K, kIsDefault>
+               ? &TypeErasedApplyToSlotFn<Hash, K, kIsDefault, kSeedShift>
                : nullptr;
   }
 

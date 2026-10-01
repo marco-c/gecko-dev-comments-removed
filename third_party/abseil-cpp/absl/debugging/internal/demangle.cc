@@ -17,6 +17,7 @@
 
 #include "absl/debugging/internal/demangle.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -459,19 +460,32 @@ static bool ZeroOrMore(ParseFunc parse_func, State *state) {
 
 
 static void Append(State *state, const char *const str, const size_t length) {
-  for (size_t i = 0; i < length; ++i) {
-    if (state->parse_state.out_cur_idx + 1 <
-        state->out_end_idx) {  
-      state->out[state->parse_state.out_cur_idx++] = str[i];
-    } else {
-      
-      state->parse_state.out_cur_idx = state->out_end_idx + 1;
-      break;
-    }
+  if (length == 0) {
+    return;
   }
-  if (state->parse_state.out_cur_idx < state->out_end_idx) {
-    state->out[state->parse_state.out_cur_idx] =
-        '\0';  
+
+  
+  const int cap = state->out_end_idx - state->parse_state.out_cur_idx;
+
+  
+  
+  if (cap <= 0) {
+    return;
+  }
+
+  
+  
+  std::char_traits<char>::copy(state->out + state->parse_state.out_cur_idx, str,
+                               (std::min)(length, static_cast<size_t>(cap)));
+
+  
+  if (length < static_cast<size_t>(cap)) {
+    state->parse_state.out_cur_idx += static_cast<int>(length);
+    state->out[state->parse_state.out_cur_idx] = '\0';
+  } else {
+    
+    state->parse_state.out_cur_idx = state->out_end_idx + 1;
+    state->out[state->out_end_idx - 1] = '\0';
   }
 }
 
@@ -893,8 +907,11 @@ static bool ParseAbiTags(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
 
-  while (ParseOneCharToken(state, 'B')) {
-    ParseState copy = state->parse_state;
+  for (;;) {
+    const ParseState copy = state->parse_state;
+    if (!ParseOneCharToken(state, 'B')) {
+      break;
+    }
     MaybeAppend(state, "[abi:");
 
     if (!ParseSourceName(state)) {
@@ -956,6 +973,7 @@ static bool ParseUnnamedTypeName(State *state) {
 
   
   if (ParseTwoCharToken(state, "Ut") && Optional(ParseNumber(state, &which)) &&
+      which >= -1 &&                                   
       which <= std::numeric_limits<int>::max() - 2 &&  
       ParseOneCharToken(state, '_')) {
     MaybeAppend(state, "{unnamed type#");
@@ -971,6 +989,7 @@ static bool ParseUnnamedTypeName(State *state) {
       ZeroOrMore(ParseTemplateParamDecl, state) &&
       OneOrMore(ParseType, state) && RestoreAppend(state, copy.append) &&
       ParseOneCharToken(state, 'E') && Optional(ParseNumber(state, &which)) &&
+      which >= -1 &&                                   
       which <= std::numeric_limits<int>::max() - 2 &&  
       ParseOneCharToken(state, '_')) {
     MaybeAppend(state, "{lambda()#");
@@ -1626,7 +1645,11 @@ static bool ParseBuiltinType(State *state) {
       return false;
     }
     MaybeAppend(state, "_Float");
-    MaybeAppendDecimal(state, number);
+    if (number >= 0) {
+      MaybeAppendDecimal(state, number);
+    } else {
+      MaybeAppend(state, "?");  
+    }
     if (ParseOneCharToken(state, 'x')) {
       MaybeAppend(state, "x");
       return true;
@@ -2927,13 +2950,9 @@ static bool Overflowed(const State *state) {
 
 
 bool Demangle(const char* mangled, char* out, size_t out_size) {
-
-
-#if 0
   if (mangled[0] == '_' && mangled[1] == 'R') {
     return DemangleRustSymbolEncoding(mangled, out, out_size);
   }
-#endif
 
   State state;
   InitState(&state, mangled, out, out_size);
