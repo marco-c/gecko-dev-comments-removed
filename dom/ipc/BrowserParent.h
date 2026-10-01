@@ -821,12 +821,12 @@ class BrowserParent final : public PBrowserParent,
   
   
   
-  static BrowserParent* sFocus;
+  static WeakPtr<BrowserParent>& FocusSlot();
 
   
   
   
-  static BrowserParent* sTopLevelWebFocus;
+  static WeakPtr<BrowserParent>& TopLevelWebFocusSlot();
 
   
   static void SetTopLevelWebFocus(BrowserParent* aBrowserParent);
@@ -840,7 +840,7 @@ class BrowserParent final : public PBrowserParent,
   static BrowserParent* UpdateFocus();
 
   
-  static BrowserParent* sLastMouseRemoteTarget;
+  static WeakPtr<BrowserParent>& LastMouseRemoteTargetSlot();
 
   
   
