@@ -13,6 +13,7 @@
 
 use malloc_size_of::{MallocShallowSizeOf, MallocSizeOf, MallocSizeOfOps};
 
+use crate::blocker::Blocker;
 use crate::filters::filter_data_context::FilterDataContextRef;
 use crate::flatbuffers::unsafe_tools::VerifiedFlatbufferMemory;
 
@@ -34,6 +35,12 @@ pub struct EngineMemoryBreakdown {
 
     
     pub domain_hashes: usize,
+
+    
+    pub regex_table: usize,
+
+    
+    pub enabled_tags: usize,
 }
 
 impl EngineMemoryBreakdown {
@@ -53,6 +60,34 @@ impl EngineMemoryBreakdown {
         
         
         self.domain_hashes += filter_data.unique_domains_hashes_map.shallow_size_of(ops);
+    }
+
+    pub(crate) fn add_blocker(&mut self, blocker: &Blocker, ops: &mut MallocSizeOfOps) {
+        
+        
+        self.enabled_tags += blocker.tags_enabled.size_of(ops);
+
+        if let Some(regex_manager) = blocker.try_borrow_regex_manager() {
+            self.regex_table += regex_manager.table_size_of(ops);
+        }
+    }
+}
+
+impl Blocker {
+    
+    
+    #[cfg(feature = "single-thread")]
+    pub(crate) fn try_borrow_regex_manager(
+        &self,
+    ) -> Option<std::cell::Ref<'_, crate::regex_manager::RegexManager>> {
+        self.regex_manager.try_borrow().ok()
+    }
+
+    #[cfg(not(feature = "single-thread"))]
+    pub(crate) fn try_borrow_regex_manager(
+        &self,
+    ) -> Option<std::sync::MutexGuard<'_, crate::regex_manager::RegexManager>> {
+        self.regex_manager.try_lock().ok()
     }
 }
 

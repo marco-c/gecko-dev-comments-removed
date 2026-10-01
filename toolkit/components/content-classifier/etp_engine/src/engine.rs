@@ -82,12 +82,26 @@ impl Engine {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn memory_breakdown(
         &self,
         ops: &mut malloc_size_of::MallocSizeOfOps,
     ) -> crate::malloc_size_of_impls::EngineMemoryBreakdown {
         let mut breakdown = crate::malloc_size_of_impls::EngineMemoryBreakdown::default();
         breakdown.add_filter_data(&self.filter_data_context, ops);
+        breakdown.add_blocker(&self.blocker, ops);
         breakdown
     }
 }

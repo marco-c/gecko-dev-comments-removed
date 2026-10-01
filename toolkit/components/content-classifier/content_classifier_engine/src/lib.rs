@@ -92,6 +92,10 @@ pub struct ContentClassifierEngineSizes {
     pub filter_rules: usize,
     
     pub domain_hashes: usize,
+    
+    pub regex_table: usize,
+    
+    pub enabled_tags: usize,
 }
 
 
@@ -118,6 +122,8 @@ pub unsafe extern "C" fn content_classifier_engine_size_of(
         objects: malloc_size_of(engine.cast::<c_void>()) + breakdown.objects,
         filter_rules: breakdown.filter_rules,
         domain_hashes: breakdown.domain_hashes,
+        regex_table: breakdown.regex_table,
+        enabled_tags: breakdown.enabled_tags,
     }
 }
 
