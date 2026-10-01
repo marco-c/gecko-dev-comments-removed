@@ -1,0 +1,117 @@
+
+
+
+
+
+
+
+
+
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["test.wait300msAfterTabSwitch", true]],
+  });
+});
+
+add_task(async function test_content_and_chrome_selection() {
+  let testPage =
+    "data:text/html," +
+    '<textarea id="textarea">Write something here</textarea>';
+  let DOMWindowUtils = EventUtils._getDOMWindowUtils(window);
+  let selectedText;
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage);
+  await BrowserTestUtils.synthesizeMouse(
+    "#textarea",
+    0,
+    0,
+    {},
+    gBrowser.selectedBrowser
+  );
+  await BrowserTestUtils.synthesizeKey(
+    "KEY_ArrowRight",
+    { shiftKey: true, ctrlKey: true },
+    gBrowser.selectedBrowser
+  );
+  selectedText = DOMWindowUtils.GetSelectionAsPlaintext();
+  is(
+    selectedText,
+    "Write something here",
+    "The macOS services got the selected content text"
+  );
+  gURLBar.value = "test.mozilla.org";
+  await gURLBar.editor.selectAll();
+  selectedText = DOMWindowUtils.GetSelectionAsPlaintext();
+  is(
+    selectedText,
+    "test.mozilla.org",
+    "The macOS services got the selected chrome text"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+
+
+
+
+
+add_task(async function test_active_selection_switches_properly() {
+  let testPage1 =
+    
+    "data:text/html," +
+    '<textarea id="textarea">Write something here</textarea>';
+  let testPage2 =
+    
+    "data:text/html," + '<textarea id="textarea">Nothing available</textarea>';
+  let DOMWindowUtils = EventUtils._getDOMWindowUtils(window);
+  let selectedText;
+
+  let tab1 = await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage1);
+  await BrowserTestUtils.synthesizeMouse(
+    "#textarea",
+    0,
+    0,
+    {},
+    gBrowser.selectedBrowser
+  );
+  await BrowserTestUtils.synthesizeKey(
+    "KEY_ArrowRight",
+    { shiftKey: true, ctrlKey: true },
+    gBrowser.selectedBrowser
+  );
+
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser, testPage2);
+  await BrowserTestUtils.synthesizeMouse(
+    "#textarea",
+    0,
+    0,
+    {},
+    gBrowser.selectedBrowser
+  );
+  await BrowserTestUtils.synthesizeKey(
+    "KEY_ArrowRight",
+    { shiftKey: true, ctrlKey: true },
+    gBrowser.selectedBrowser
+  );
+
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+  selectedText = DOMWindowUtils.GetSelectionAsPlaintext();
+  is(
+    selectedText,
+    "Write something here",
+    "The macOS services got the selected content text"
+  );
+
+  await BrowserTestUtils.switchTab(gBrowser, tab2);
+  selectedText = DOMWindowUtils.GetSelectionAsPlaintext();
+  is(
+    selectedText,
+    "Nothing available",
+    "The macOS services got the selected content text"
+  );
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
