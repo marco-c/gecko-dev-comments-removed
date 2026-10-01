@@ -103,24 +103,24 @@ add_task(async function test_purge_counting() {
   Assert.equal(do_count_cookies_in_db(schema12db.db), allCookieCount);
 
   
-  let cookieCountNonPart = Services.cookies.getCookiesFromHost(
+  let cookieCountNonPart = Services.cookies.countCookiesFromHost(
     hostNonPartitioned,
     {}
-  ).length;
+  ); 
   Assert.equal(cookieCountNonPart, cookieNum1);
   let cookieCountNonPartOA = Services.cookies.getCookiesFromHost(
     hostNonPartitioned,
     { userContextId: 8 }
-  ).length;
+  ).length; 
   Assert.equal(cookieCountNonPartOA, cookieNum2);
   let cookieCountPart = Services.cookies.getCookiesFromHost(hostPartitioned, {
     partitionKey: "(https,example.com)",
-  }).length;
+  }).length; 
   Assert.equal(cookieCountPart, cookieNum3);
   let cookieCountPartOA = Services.cookies.getCookiesFromHost(hostPartitioned, {
     partitionKey: "(https,example.com)",
     userContextId: 7,
-  }).length;
+  }).length; 
   Assert.equal(cookieCountPartOA, cookieNum4);
 
   

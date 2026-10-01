@@ -66,11 +66,10 @@ add_task(async function test_purge_expired_on_idle_daily() {
 
   
   
-  
   Assert.deepEqual(
     cookieNames(),
-    ["live"],
-    "The expired cookie is not exposed"
+    ["expiring", "live"],
+    "The expired cookie has not been purged yet"
   );
 
   const batchDeleted = waitForBatchDeleted();

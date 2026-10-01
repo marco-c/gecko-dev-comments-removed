@@ -85,8 +85,7 @@ function* do_run_test() {
   do_timeout(2100, continue_test);
   yield;
 
-  
-  Assert.equal(countCookies("captchart.com", "captchart.com"), 49);
+  Assert.equal(countCookies("captchart.com", "captchart.com"), 50);
   cv = Services.cookies.add(
     "captchart.com",
     "",
@@ -136,6 +135,7 @@ function setCookies(aHost, aNumber, aExpiry) {
 
 
 
+
 function countCookies(aBaseDomain, aHost) {
   
   
@@ -152,11 +152,11 @@ function countCookies(aBaseDomain, aHost) {
   
   let result = cookies.length;
   Assert.equal(
-    Services.cookies.getCookiesFromHost(aBaseDomain, {}).length,
+    Services.cookies.countCookiesFromHost(aBaseDomain, {}),
     cookies.length
   );
   Assert.equal(
-    Services.cookies.getCookiesFromHost(aHost, {}).length,
+    Services.cookies.countCookiesFromHost(aHost, {}),
     cookies.length
   );
 

@@ -75,11 +75,11 @@ add_task(async () => {
   do_load_profile();
 
   
-  Assert.equal(Services.cookies.getCookiesFromHost("999.com", {}).length, 1);
-  Assert.equal(Services.cookies.getCookiesFromHost("abc.com", {}).length, 0);
-  Assert.equal(Services.cookies.getCookiesFromHost("100.com", {}).length, 1);
-  Assert.equal(Services.cookies.getCookiesFromHost("400.com", {}).length, 1);
-  Assert.equal(Services.cookies.getCookiesFromHost("xyz.com", {}).length, 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("999.com", {}), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("abc.com", {}), 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("100.com", {}), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("400.com", {}), 1);
+  Assert.equal(Services.cookies.countCookiesFromHost("xyz.com", {}), 0);
 
   
   Assert.equal(do_count_cookies(), CMAX);
@@ -87,7 +87,7 @@ add_task(async () => {
   
   for (let i = 0; i < CMAX; ++i) {
     let host = i.toString() + ".com";
-    Assert.equal(Services.cookies.getCookiesFromHost(host, {}).length, 1);
+    Assert.equal(Services.cookies.countCookiesFromHost(host, {}), 1);
   }
 
   
@@ -122,7 +122,7 @@ add_task(async () => {
   Assert.equal(do_count_cookies(), CMAX - 200);
   for (let i = 100; i < CMAX - 100; ++i) {
     let host = i.toString() + ".com";
-    Assert.equal(Services.cookies.getCookiesFromHost(host, {}).length, 1);
+    Assert.equal(Services.cookies.countCookiesFromHost(host, {}), 1);
   }
 
   Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");

@@ -23,10 +23,7 @@ add_task(async function test_all_cookies() {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    1
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 1);
 
   await new Promise(aResolve => {
     Services.clearData.deleteData(
@@ -38,10 +35,7 @@ add_task(async function test_all_cookies() {
     );
   });
 
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    0
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 0);
 });
 
 add_task(async function test_range_cookies() {
@@ -60,10 +54,7 @@ add_task(async function test_range_cookies() {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    1
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 1);
 
   
   let from = Date.now() + 60 * 60;
@@ -80,10 +71,7 @@ add_task(async function test_range_cookies() {
     );
   });
 
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    1
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 1);
 
   
   from = Date.now() - 60 * 60;
@@ -100,10 +88,7 @@ add_task(async function test_range_cookies() {
     );
   });
 
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    0
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 0);
 });
 
 add_task(async function test_principal_cookies() {
@@ -122,10 +107,7 @@ add_task(async function test_principal_cookies() {
     Ci.nsICookie.SCHEME_HTTPS
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    1
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 1);
 
   let uri = Services.io.newURI("http://example.com");
   let principal = Services.scriptSecurityManager.createContentPrincipal(
@@ -144,10 +126,7 @@ add_task(async function test_principal_cookies() {
     );
   });
 
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    1
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 1);
 
   
   uri = Services.io.newURI("http://example.net");
@@ -164,10 +143,7 @@ add_task(async function test_principal_cookies() {
     );
   });
 
-  Assert.equal(
-    Services.cookies.getCookiesFromHost("example.net", {}).length,
-    0
-  );
+  Assert.equal(Services.cookies.countCookiesFromHost("example.net", {}), 0);
 });
 
 add_task(async function test_localfile_cookies() {
@@ -186,7 +162,7 @@ add_task(async function test_localfile_cookies() {
     Ci.nsICookie.SCHEME_HTTP
   );
   Assert.equal(cv.result, Ci.nsICookieValidation.eOK, "Valid cookie");
-  Assert.notEqual(Services.cookies.getCookiesFromHost("", {}).length, 0);
+  Assert.notEqual(Services.cookies.countCookiesFromHost("", {}), 0);
 
   await new Promise(aResolve => {
     Services.clearData.deleteDataFromLocalFiles(
@@ -195,7 +171,7 @@ add_task(async function test_localfile_cookies() {
       aResolve
     );
   });
-  Assert.equal(Services.cookies.getCookiesFromHost("", {}).length, 0);
+  Assert.equal(Services.cookies.countCookiesFromHost("", {}), 0);
 });
 
 
