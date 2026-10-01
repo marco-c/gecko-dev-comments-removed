@@ -144,16 +144,6 @@ public final class RemoteManager implements IBinder.DeathRecipient {
         mCodecs.add(proxy);
         return proxy;
       } else {
-        
-        
-        
-        
-        
-        try {
-          mRemote.endRequest();
-        } catch (final RemoteException e) {
-          Log.e(LOGTAG, "fail to report remote codec creation failure", e);
-        }
         return null;
       }
     } catch (final RemoteException e) {

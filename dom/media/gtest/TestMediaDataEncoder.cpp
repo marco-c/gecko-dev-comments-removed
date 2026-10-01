@@ -76,12 +76,6 @@ using namespace mozilla;
 static gfx::IntSize kImageSize(640, 480);
 static gfx::IntSize kImageSize4K(3840, 2160);
 
-
-
-
-
-static gfx::IntSize kImageSizeLevel5Cap(3160, 1776);
-
 MOZ_RUNINIT const H264Specific kH264SpecificAnnexB(H264_PROFILE_BASE,
                                                    H264_LEVEL::H264_LEVEL_3,
                                                    H264BitStreamFormat::ANNEXB);
@@ -89,23 +83,16 @@ MOZ_RUNINIT const H264Specific kH264SpecificAVCC(H264_PROFILE_BASE,
                                                  H264_LEVEL::H264_LEVEL_3,
                                                  H264BitStreamFormat::AVC);
 
-
-
-MOZ_RUNINIT const H264Specific kH264SpecificLevel5AnnexB(
-    H264_PROFILE_BASE, H264_LEVEL::H264_LEVEL_5, H264BitStreamFormat::ANNEXB);
-
 class MediaDataEncoderTest : public testing::Test {
  protected:
   void SetUp() override {
     mData.Init(kImageSize);
     mData4K.Init(kImageSize4K);
-    mDataLevel5Cap.Init(kImageSizeLevel5Cap);
   }
 
   void TearDown() override {
     mData.Deinit();
     mData4K.Deinit();
-    mDataLevel5Cap.Deinit();
   }
 
  public:
@@ -211,7 +198,6 @@ class MediaDataEncoderTest : public testing::Test {
  public:
   FrameSource mData;
   FrameSource mData4K;
-  FrameSource mDataLevel5Cap;
 };
 
 already_AddRefed<MediaDataEncoder> CreateVideoEncoder(
@@ -472,8 +458,7 @@ TEST_F(MediaDataEncoderTest, H264Inits) {
 
 static void H264EncodesTest(Usage aUsage,
                             const EncoderConfig::CodecSpecific& aSpecific,
-                            MediaDataEncoderTest::FrameSource& aFrameSource,
-                            bool aToleratesInitFailureOnAndroid = false) {
+                            MediaDataEncoderTest::FrameSource& aFrameSource) {
   ASSERT_TRUE(aSpecific.is<H264Specific>());
   ASSERT_TRUE(aSpecific.as<H264Specific>().mFormat ==
                   H264BitStreamFormat::ANNEXB ||
@@ -487,13 +472,7 @@ static void H264EncodesTest(Usage aUsage,
     RefPtr<MediaDataEncoder> e = CreateH264Encoder(
         aUsage, EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
         aFrameSource.GetSize(), ScalabilityMode::None, aSpecific);
-    bool initOk = EnsureInit(e);
-#ifdef MOZ_WIDGET_ANDROID
-    if (!initOk && aToleratesInitFailureOnAndroid) {
-      return;
-    }
-#endif
-    EXPECT_TRUE(initOk);
+    EXPECT_TRUE(EnsureInit(e));
     MediaDataEncoder::EncodedData output =
         GET_OR_RETURN_ON_ERROR(Encode(e, 1UL, aFrameSource));
     EXPECT_EQ(output.Length(), 1UL);
@@ -554,36 +533,6 @@ TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRecord) {
 TEST_F(MediaDataEncoderTest, H264Encodes4KAVCCRealtime) {
   SKIP_IF_ANDROID_SW();  
   H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAVCC), mData4K);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-TEST_F(MediaDataEncoderTest, H264EncodesLevel5CapAnnexBRealtime) {
-#ifdef XP_MACOSX
-  GTEST_SKIP() << "Bug 2074146: VideoToolbox drops frames at this size";
-#endif
-  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificAnnexB),
-                  mDataLevel5Cap,  true);
-}
-
-
-
-
-TEST_F(MediaDataEncoderTest, H264EncodesLevel5CapMatchedLevelAnnexBRealtime) {
-#ifdef XP_MACOSX
-  GTEST_SKIP() << "Bug 2074146: VideoToolbox drops frames at this size";
-#endif
-  H264EncodesTest(Usage::Realtime, AsVariant(kH264SpecificLevel5AnnexB),
-                  mDataLevel5Cap,  true);
 }
 
 static void H264EncodeBatchTest(
