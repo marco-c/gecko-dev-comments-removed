@@ -212,6 +212,9 @@ std::ostream& operator<<(std::ostream& aStream, nsDirection aDirection) {
 struct nsContentAndOffset {
   nsIContent* mContent = nullptr;
   int32_t mOffset = 0;
+  
+  
+  bool mIsTerminalNewlineInText = false;
 };
 
 #include "nsILineIterator.h"
@@ -9752,6 +9755,7 @@ static nsContentAndOffset FindLineBreakInText(nsIFrame* aFrame,
   int32_t endOffset = aFrame->GetOffsets().second;
   result.mContent = aFrame->GetContent();
   result.mOffset = endOffset - (aDirection == eDirPrevious ? 0 : 1);
+  result.mIsTerminalNewlineInText = true;
   return result;
 }
 
@@ -9873,6 +9877,14 @@ nsresult nsIFrame::PeekOffsetForParagraph(PeekOffsetStruct* aPos) {
     if (blockFrameOrBR.mContent) {
       aPos->mResultContent = blockFrameOrBR.mContent;
       aPos->mContentOffset = blockFrameOrBR.mOffset;
+      if (blockFrameOrBR.mIsTerminalNewlineInText) {
+        
+        
+        
+        
+        
+        aPos->mAttach = CaretAssociationHint::After;
+      }
       break;
     }
     frame = parent;
