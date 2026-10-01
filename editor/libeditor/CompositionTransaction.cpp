@@ -36,14 +36,7 @@ already_AddRefed<CompositionTransaction> CompositionTransaction::Create(
   
   EditorDOMPointInText pointToInsert;
   if (Text* textNode = composition->GetContainerTextNode()) {
-    pointToInsert.Set(textNode, composition->XPOffsetInTextNode());
-    NS_WARNING_ASSERTION(
-        pointToInsert.GetContainerAs<Text>() ==
-            composition->GetContainerTextNode(),
-        "The editor tries to insert composition string into different node");
-    NS_WARNING_ASSERTION(
-        pointToInsert.Offset() == composition->XPOffsetInTextNode(),
-        "The editor tries to insert composition string into different offset");
+    pointToInsert.Set(textNode, composition->ClampedStartOffsetInTextNode());
   } else {
     pointToInsert = aPointToInsert;
   }
@@ -60,7 +53,10 @@ CompositionTransaction::CompositionTransaction(
     EditorBase& aEditorBase, const nsAString& aStringToInsert,
     const EditorDOMPointInText& aPointToInsert)
     : mOffset(aPointToInsert.Offset()),
-      mReplaceLength(aEditorBase.GetComposition()->XPLengthInTextNode()),
+      mReplaceOffset(
+          aEditorBase.GetComposition()->StartOffsetMaybeInFollowingTextNode()),
+      mReplaceLength(
+          aEditorBase.GetComposition()->LengthMaybeInFollowingTextNode()),
       mRanges(aEditorBase.GetComposition()->GetRanges()),
       mStringToInsert(aStringToInsert),
       mEditorBase(&aEditorBase),
@@ -112,10 +108,11 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  const RefPtr<Text> textNode = GetTextNode();
+  RefPtr<Text> textNode = GetTextNode();
   if (NS_WARN_IF(!textNode)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
+  uint32_t offsetInTextNode = mOffset;
 
   
   if (NS_WARN_IF(!mEditorBase->GetSelectionController())) {
@@ -126,11 +123,10 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
 
   
   if (mReplaceLength == 0) {
-    IgnoredErrorResult error;
-    editorBase->DoInsertText(*textNode, mOffset, mStringToInsert, error);
-    if (error.Failed()) {
+    nsresult rv = editorBase->DoInsertText(*textNode, mOffset, mStringToInsert);
+    if (NS_FAILED(rv)) [[unlikely]] {
       NS_WARNING("EditorBase::DoInsertText() failed");
-      return error.StealNSResult();
+      return rv;
     }
     editorBase->RangeUpdaterRef().SelAdjInsertText(*textNode, mOffset,
                                                    mStringToInsert.Length());
@@ -142,20 +138,57 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     
     
     
+    const auto [replaceStartInFirstText, replaceableLengthInFirstText] =
+        [&]() MOZ_NEVER_INLINE_DEBUG -> std::pair<uint32_t, uint32_t> {
+      
+      
+      if (mReplaceOffset <= textNode->TextDataLength() ||
+          mEditorBase->IsTextEditor()) [[likely]] {
+        const uint32_t lengthInFirstText =
+            std::min(mReplaceLength,
+                     static_cast<uint32_t>(std::max<int64_t>(
+                         textNode->TextDataLength() - mReplaceOffset, 0)));
+        return {std::min(mReplaceOffset, textNode->TextDataLength()),
+                lengthInFirstText};
+      }
+      
+      
+      
+      
+      Text* compositionStartTextNode = textNode;
+      uint32_t startOffsetOfCompositionStartTextNode = 0;
+      uint32_t endOffsetOfCompositionStartTextNode =
+          compositionStartTextNode->TextDataLength();
+      for (RefPtr<Text> text =
+               Text::FromNodeOrNull(compositionStartTextNode->GetNextSibling());
+           text; text = Text::FromNodeOrNull(
+                     compositionStartTextNode->GetNextSibling())) {
+        compositionStartTextNode = text;
+        startOffsetOfCompositionStartTextNode =
+            endOffsetOfCompositionStartTextNode;
+        endOffsetOfCompositionStartTextNode +=
+            compositionStartTextNode->TextDataLength();
+        if (mReplaceOffset <= endOffsetOfCompositionStartTextNode) [[likely]] {
+          break;
+        }
+      }
+      textNode = compositionStartTextNode;
+      offsetInTextNode = mReplaceOffset - startOffsetOfCompositionStartTextNode;
+      const uint32_t replaceEndOffset = mReplaceOffset + mReplaceLength;
+      const uint32_t replaceEndOffsetInCompositionStartTextNode =
+          std::min(replaceEndOffset - startOffsetOfCompositionStartTextNode,
+                   endOffsetOfCompositionStartTextNode);
+      return {offsetInTextNode,
+              replaceEndOffsetInCompositionStartTextNode - offsetInTextNode};
+    }();
     
     
-    
-    const uint32_t replaceableLengthInFirstText =
-        std::min(mReplaceLength, static_cast<uint32_t>(std::max<int64_t>(
-                                     textNode->TextDataLength() - mOffset, 0)));
-    IgnoredErrorResult error;
-    
-    
-    editorBase->DoReplaceText(*textNode, mOffset, replaceableLengthInFirstText,
-                              mStringToInsert, error);
-    if (error.Failed()) [[unlikely]] {
+    nsresult rv = editorBase->DoReplaceText(*textNode, replaceStartInFirstText,
+                                            replaceableLengthInFirstText,
+                                            mStringToInsert);
+    if (NS_FAILED(rv)) [[unlikely]] {
       NS_WARNING("EditorBase::DoReplaceText() failed");
-      return error.StealNSResult();
+      return rv;
     }
 
     
@@ -163,11 +196,11 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     
     
     editorBase->RangeUpdaterRef().SelAdjDeleteText(
-        *textNode, mOffset, replaceableLengthInFirstText);
+        *textNode, replaceStartInFirstText, replaceableLengthInFirstText);
     
     
-    editorBase->RangeUpdaterRef().SelAdjInsertText(*textNode, mOffset,
-                                                   mStringToInsert.Length());
+    editorBase->RangeUpdaterRef().SelAdjInsertText(
+        *textNode, replaceStartInFirstText, mStringToInsert.Length());
 
     if (replaceableLengthInFirstText < mReplaceLength) {
       
@@ -175,7 +208,6 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
       
       
       uint32_t remainingLength = mReplaceLength - replaceableLengthInFirstText;
-      IgnoredErrorResult ignoredError;
       for (RefPtr<Text> text = Text::FromNodeOrNull(textNode->GetNextSibling());
            text && remainingLength;
            text = Text::FromNodeOrNull(text->GetNextSibling())) {
@@ -183,10 +215,11 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
             std::min(text->TextDataLength(), remainingLength);
         
         
-        editorBase->DoDeleteText(*text, 0, deletableLengthInText, ignoredError);
-        NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                             "EditorBase::DoDeleteText() failed, but ignored");
-        ignoredError.SuppressException();
+        nsresult rv = editorBase->DoDeleteText(*text, 0, deletableLengthInText);
+        if (NS_FAILED(rv)) [[unlikely]] {
+          NS_WARNING("EditorBase::DoDeleteText() failed, but ignored");
+          return rv;
+        }
         editorBase->RangeUpdaterRef().SelAdjDeleteText(*text, 0,
                                                        deletableLengthInText);
         remainingLength -= deletableLengthInText;
@@ -194,14 +227,19 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     }
   }
 
-  nsresult rv = SetSelectionForRanges();
+  nsresult rv = SetSelectionForRanges(*textNode, offsetInTextNode);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
       "CompositionTransaction::SetSelectionForRanges() failed");
 
   if (TextComposition* composition = editorBase->GetComposition()) {
     composition->OnUpdateCompositionInEditor(mStringToInsert, *textNode,
-                                             mOffset);
+                                             offsetInTextNode);
+  }
+
+  if (GetTextNode() != textNode) [[unlikely]] {
+    MOZ_ASSERT(editorBase->IsHTMLEditor());
+    UpdateTextNodeAndOffset(*textNode, offsetInTextNode);
   }
 
   return rv;
@@ -221,17 +259,17 @@ NS_IMETHODIMP CompositionTransaction::UndoTransaction() {
   }
 
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
-  IgnoredErrorResult error;
-  editorBase->DoDeleteText(*textNode, mOffset, mStringToInsert.Length(), error);
-  if (MOZ_UNLIKELY(error.Failed())) {
+  nsresult rv =
+      editorBase->DoDeleteText(*textNode, mOffset, mStringToInsert.Length());
+  if (NS_FAILED(rv)) [[unlikely]] {
     NS_WARNING("EditorBase::DoDeleteText() failed");
-    return error.StealNSResult();
+    return rv;
   }
 
   
-  editorBase->CollapseSelectionTo(EditorRawDOMPoint(textNode, mOffset), error);
-  NS_ASSERTION(!error.Failed(), "EditorBase::CollapseSelectionTo() failed");
-  return error.StealNSResult();
+  rv = editorBase->CollapseSelectionTo(EditorRawDOMPoint(textNode, mOffset));
+  NS_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::CollapseSelectionTo() failed");
+  return rv;
 }
 
 NS_IMETHODIMP CompositionTransaction::RedoTransaction() {
@@ -290,17 +328,14 @@ void CompositionTransaction::MarkFixed() { mFixed = true; }
 
 
 
-nsresult CompositionTransaction::SetSelectionForRanges() {
+nsresult CompositionTransaction::SetSelectionForRanges(Text& aText,
+                                                       uint32_t aOffset) {
   if (NS_WARN_IF(!mEditorBase)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  const RefPtr<Text> textNode = GetTextNode();
-  if (NS_WARN_IF(!textNode)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
   RefPtr<TextRangeArray> ranges = mRanges;
-  nsresult rv = SetIMESelection(editorBase, textNode, mOffset,
+  nsresult rv = SetIMESelection(editorBase, &aText, aOffset,
                                 mStringToInsert.Length(), ranges);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "CompositionTransaction::SetIMESelection() failed");

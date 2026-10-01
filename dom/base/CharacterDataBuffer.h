@@ -335,6 +335,16 @@ class CharacterDataBuffer final {
   [[nodiscard]] bool BufferEquals(const CharacterDataBuffer& aOther) const;
 
   
+
+
+  [[nodiscard]] bool Equals(const nsAString& aString) const;
+
+  
+
+
+  [[nodiscard]] bool Equals(const nsACString& aString) const;
+
+  
   
   constexpr static uint32_t kNotFound = UINT32_MAX;
 

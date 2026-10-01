@@ -668,6 +668,13 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 
   
+
+
+  [[nodiscard]] bool IsScriptElement() const {
+    return IsHTMLElement(nsGkAtoms::script) || IsSVGElement(nsGkAtoms::script);
+  }
+
+  
   virtual const mozilla::dom::LinkStyle* AsLinkStyle() const { return nullptr; }
   mozilla::dom::LinkStyle* AsLinkStyle() {
     return const_cast<mozilla::dom::LinkStyle*>(
