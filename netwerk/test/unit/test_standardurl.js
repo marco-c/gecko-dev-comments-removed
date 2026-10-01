@@ -1259,3 +1259,40 @@ add_task(async function test_bug1998992() {
     "SetQuery should reject queries that exceed max length after encoding"
   );
 });
+
+
+
+
+
+add_task(async function test_bug2049622() {
+  const maxLength = Services.prefs.getIntPref(
+    "network.standard-url.max-length"
+  );
+
+  const spec = "http://example.com/dir/file.html?q=1#ref";
+  let uri = stringToURL(spec);
+
+  
+  
+  
+  const numChars = Math.ceil((maxLength - uri.spec.length + 100) / 6);
+  const longPath = "/" + "é".repeat(numChars);
+
+  Assert.throws(
+    () => {
+      uri.mutate().setPathQueryRef(longPath).finalize();
+    },
+    /NS_ERROR_MALFORMED_URI/,
+    "SetPathQueryRef should reject paths that exceed max length after encoding"
+  );
+
+  Assert.throws(
+    () => {
+      uri.mutate().setFilePath(longPath).finalize();
+    },
+    /NS_ERROR_MALFORMED_URI/,
+    "SetFilePath should reject file paths that exceed max length after encoding"
+  );
+
+  Assert.equal(uri.spec, spec, "the original URL is untouched");
+});
