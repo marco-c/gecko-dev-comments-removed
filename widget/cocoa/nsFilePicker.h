@@ -67,6 +67,12 @@ class nsFilePicker final : public nsBaseFilePicker {
   
   
   
+  void FinishOpenOrFolderPanel(nsIFilePickerShownCallback* aCallback,
+                               ResultCode aResult);
+
+  
+  
+  
   
   
   
