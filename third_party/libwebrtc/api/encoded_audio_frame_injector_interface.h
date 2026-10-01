@@ -21,7 +21,8 @@
 namespace webrtc {
 
 
-using TargetBitrateCallback = absl::AnyInvocable<void(int32_t target_bitrate)>;
+using TargetBitrateCallback =
+    absl::AnyInvocable<void(int32_t target_bitrate) const>;
 
 
 class EncodedAudioFrameInjectorInterface : public RefCountInterface {

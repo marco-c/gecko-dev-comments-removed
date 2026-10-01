@@ -193,14 +193,14 @@ class ProxyAudioEncoder : public AudioEncoder {
     return std::make_pair(TimeDelta::Millis(20), TimeDelta::Millis(20));
   }
 
+  
   void OnReceivedUplinkAllocation(BitrateAllocationUpdate update) override {
-    RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
     injector_->InvokeBitrateInfoCallback(update.target_bitrate.bps());
   }
 
-  
-  
-  void OnReceivedTargetAudioBitrate(int target_bps) override {}
+  void OnReceivedTargetAudioBitrate(int target_bps) override {
+    injector_->InvokeBitrateInfoCallback(target_bps);
+  }
 
   EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
                          std::span<const int16_t> audio,
@@ -321,9 +321,9 @@ EncodedAudioFrameInjector::CreateEncoderFactory() {
           scoped_refptr<EncodedAudioFrameInjector>(this)));
 }
 
+
 void EncodedAudioFrameInjector::InvokeBitrateInfoCallback(
     int32_t allocated_bitrate) {
-  RTC_DCHECK_RUN_ON(&encoder_sequence_checker_);
   if (bitrate_callback_) {
     bitrate_callback_(allocated_bitrate);
   }
