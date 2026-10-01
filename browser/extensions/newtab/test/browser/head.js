@@ -76,6 +76,10 @@ function clearPinnedTopSites() {
   );
 }
 
+
+
+add_setup(clearPinnedTopSites);
+
 async function setTestTopSites() {
   await pushPrefs([
     "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
