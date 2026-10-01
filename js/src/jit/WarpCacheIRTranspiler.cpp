@@ -7272,7 +7272,7 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitGuardNoAllocationMetadataBuilder(
+bool WarpCacheIRTranspiler::emitAssertNoAllocationMetadataBuilder(
     uint32_t builderAddrOffset) {
   
   
