@@ -13,13 +13,17 @@ use super::crash_generation::get_auxv_info;
 
 use anyhow::{bail, Result};
 use cfg_if::cfg_if;
-use crash_helper_common::{BreakpadChar, BreakpadData, BreakpadString, Pid};
+use crash_helper_common::{
+    BreakpadChar, BreakpadData, BreakpadString, ExtraCrashData, GeckoChildId, Pid,
+    RawProcessHandle, RawThreadHandle,
+};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::DirectAuxvDumpInfo;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::os::fd::{FromRawFd, OwnedFd};
 use std::{
-    ffi::{c_char, c_void, OsString},
+    ffi::{c_void, OsString},
+    path::PathBuf,
     ptr::NonNull,
     sync::Mutex,
 };
@@ -30,7 +34,7 @@ type BreakpadInitType = *const u16;
 type NativeProcessId = windows_sys::Win32::Foundation::HANDLE;
 
 #[cfg(target_os = "macos")]
-type BreakpadInitType = *const c_char;
+type BreakpadInitType = *const crate::c_char;
 #[cfg(target_os = "macos")]
 type NativeProcessId = u32;
 
@@ -69,8 +73,12 @@ impl BreakpadProcessId {
 
 #[repr(C)]
 pub struct BreakpadContext {
-    callback:
-        unsafe extern "C" fn(*const c_void, BreakpadProcessId, *const c_char, *const BreakpadChar),
+    callback: unsafe extern "C" fn(
+        *const c_void,
+        BreakpadProcessId,
+        Option<&ExtraCrashData>,
+        *const BreakpadChar,
+    ),
     generator: *const Mutex<CrashGenerator>,
 }
 
@@ -88,6 +96,19 @@ extern "C" {
     ) -> *mut c_void;
     fn CrashGenerationServer_shutdown(server: *mut c_void);
     fn CrashGenerationServer_set_path(server: *mut c_void, path: *const BreakpadChar);
+    fn WriteMinidumpForProcess(
+        aId: GeckoChildId,
+        aPid: RawProcessHandle,
+        aBlamedThread: RawThreadHandle,
+        #[cfg(any(target_os = "android", target_os = "linux"))] auxv_cb: extern "C" fn(
+            crash_helper_common::Pid,
+            *mut DirectAuxvDumpInfo,
+        )
+            -> bool,
+        aDumpPath: *const BreakpadChar,
+        aResultPath: *mut BreakpadChar,
+        aResultLen: usize,
+    ) -> bool;
 }
 
 pub(crate) struct BreakpadCrashGenerator {
@@ -123,7 +144,7 @@ impl BreakpadCrashGenerator {
         finalize_callback: unsafe extern "C" fn(
             *const c_void,
             BreakpadProcessId,
-            *const c_char,
+            Option<&ExtraCrashData>,
             *const BreakpadChar,
         ),
     ) -> Result<BreakpadCrashGenerator> {
@@ -178,6 +199,48 @@ impl BreakpadCrashGenerator {
             let path = path.into_raw();
             CrashGenerationServer_set_path(self.ptr.as_ptr(), path);
         };
+    }
+
+    pub(crate) fn generate_minidump(
+        id: GeckoChildId,
+        process: RawProcessHandle,
+        thread: RawThreadHandle,
+        dump_path: PathBuf,
+    ) -> Option<PathBuf> {
+        
+        const MINIDUMP_FILENAME_LEN: usize = 40;
+
+        let dump_path = dump_path.into_os_string();
+        
+        let output_path_len =
+            <OsString as BreakpadString>::len(&dump_path) + 1 + MINIDUMP_FILENAME_LEN + 1;
+        let mut output_path = Vec::<BreakpadChar>::with_capacity(output_path_len);
+        let raw_path = <OsString as BreakpadString>::into_raw(dump_path);
+        output_path.fill(0);
+
+        let res = unsafe {
+            WriteMinidumpForProcess(
+                id,
+                process,
+                thread,
+                #[cfg(any(target_os = "android", target_os = "linux"))]
+                get_auxv_info,
+                raw_path,
+                output_path.as_mut_ptr(),
+                output_path_len,
+            )
+        };
+
+        
+        let _raw_path = unsafe { <OsString as BreakpadString>::from_raw(raw_path) };
+
+        if res {
+            Some(PathBuf::from(unsafe {
+                <OsString as BreakpadString>::from_ptr(output_path.as_ptr())
+            }))
+        } else {
+            None
+        }
     }
 }
 
