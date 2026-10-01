@@ -891,13 +891,18 @@ TEST(TestCookie, TestCookieMain)
   
   PR_Sleep(4 * PR_TicksPerSecond());
   
-  
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CountCookiesFromHostNative(
       "cookiemgr.test"_ns, &attrs, &hostCookies)));
-  EXPECT_EQ(hostCookies, 2u);
+  EXPECT_EQ(hostCookies, 1u);
   EXPECT_TRUE(NS_SUCCEEDED(cookieMgr2->CookieExistsNative(
       "cookiemgr.test"_ns, "/foo"_ns, "test2"_ns, &attrs, &found)));
-  EXPECT_TRUE(found);
+  EXPECT_FALSE(found);
+  cookies.SetLength(0);
+  EXPECT_NS_SUCCEEDED(cookieMgr->GetCookies(cookies));
+  EXPECT_EQ(cookies.Length(), 2ul);
+  cookies.SetLength(0);
+  EXPECT_NS_SUCCEEDED(cookieMgr->GetSessionCookies(cookies));
+  EXPECT_EQ(cookies.Length(), 2ul);
   
   EXPECT_NS_SUCCEEDED(cookieMgr->RemoveAll());
   cookies.SetLength(0);
@@ -1348,24 +1353,6 @@ TEST(TestCookie, RemoveOlderCookiesByBytesEntryFreed)
   EXPECT_FALSE(storage->mHostTable.GetEntry(key));
 }
 
-static bool HasCookiesForSite(CookieStorage* aStorage,
-                              const nsACString& aBaseDomain,
-                              const OriginAttributesPattern& aPattern) {
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-  bool hasCookies = false;
-
-  aStorage->ForEachCookie(aBaseDomain, aPattern, [&](Cookie* aCookie) {
-    if (aCookie->IsExpired(currentTimeInMSec)) {
-      return true;
-    }
-
-    hasCookies = true;
-    return false;
-  });
-
-  return hasCookies;
-}
-
 
 
 
@@ -1405,16 +1392,16 @@ TEST(TestCookie, HasCookiesForSite)
   nonPbPattern.mPrivateBrowsingId.Construct(0);
 
   
-  EXPECT_FALSE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
-  EXPECT_FALSE(HasCookiesForSite(storage, "other.test"_ns, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies(baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies("other.test"_ns, nonPbPattern));
 
   
   OriginAttributes defaultAttrs;
   addCookie(defaultAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 
   
-  EXPECT_FALSE(HasCookiesForSite(storage, "other.test"_ns, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies("other.test"_ns, nonPbPattern));
 
   
   
@@ -1423,7 +1410,7 @@ TEST(TestCookie, HasCookiesForSite)
   OriginAttributes containerAttrs;
   containerAttrs.mUserContextId = 1;
   addCookie(containerAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 
   
   RefPtr<TestableCookieStorage> pbOnly = TestableCookieStorage::Create();
@@ -1431,11 +1418,11 @@ TEST(TestCookie, HasCookiesForSite)
   OriginAttributes pbAttrs;
   pbAttrs.mPrivateBrowsingId = 1;
   addCookie(pbAttrs, kFuture);
-  EXPECT_FALSE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies(baseDomain, nonPbPattern));
   
   OriginAttributesPattern pbPattern;
   pbPattern.mPrivateBrowsingId.Construct(1);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, pbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, pbPattern));
 
   
   
@@ -1445,17 +1432,17 @@ TEST(TestCookie, HasCookiesForSite)
   OriginAttributes partAttrs;
   partAttrs.mPartitionKey = u"(http,other.test)"_ns;
   addCookie(partAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 
   RefPtr<TestableCookieStorage> expiredOnly = TestableCookieStorage::Create();
   storage = expiredOnly;
   addCookie(defaultAttrs, kPast);
-  EXPECT_FALSE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookies(baseDomain, nonPbPattern));
 
   OriginAttributes otherAttrs;
   otherAttrs.mUserContextId = 2;
   addCookie(otherAttrs, kFuture);
-  EXPECT_TRUE(HasCookiesForSite(storage, baseDomain, nonPbPattern));
+  EXPECT_TRUE(storage->HasCookies(baseDomain, nonPbPattern));
 }
 
 namespace mozilla::net {

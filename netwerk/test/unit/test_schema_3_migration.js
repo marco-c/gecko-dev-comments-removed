@@ -157,7 +157,7 @@ function* do_run_test() {
   Assert.equal(Services.cookies.countCookiesFromHost("foo.com", {}), 20);
 
   
-  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 20);
+  Assert.equal(Services.cookies.countCookiesFromHost("bar.com", {}), 0);
 
   
   

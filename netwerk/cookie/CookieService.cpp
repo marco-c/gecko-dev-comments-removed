@@ -689,7 +689,7 @@ CookieService::GetCookies(nsTArray<RefPtr<nsICookie>>& aCookies) {
   mPersistentStorage->EnsureInitialized();
 
   
-  mPersistentStorage->GetCookies(aCookies);
+  mPersistentStorage->GetAll(aCookies);
 
   return NS_OK;
 }
@@ -997,7 +997,6 @@ void CookieService::GetCookiesForURI(
         nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aHostURI);
 
     int64_t currentTimeInUsec = PR_Now();
-    int64_t currentTimeInMSec = currentTimeInUsec / PR_USEC_PER_MSEC;
     bool stale = false;
 
     nsTArray<RefPtr<Cookie>> cookies;
@@ -1035,11 +1034,6 @@ void CookieService::GetCookiesForURI(
 
       
       if (!CookieCommons::PathMatches(cookie, pathFromURI)) {
-        continue;
-      }
-
-      
-      if (cookie->IsExpired(currentTimeInMSec)) {
         continue;
       }
 
@@ -1366,14 +1360,7 @@ CookieService::CountCookiesFromHostNative(const nsACString& aHost,
   }
 
   CookieStorage* storage = PickStorage(*aOriginAttributes);
-
-  uint32_t count = 0;
-  storage->ForEachCookie(baseDomain, *aOriginAttributes, [&](Cookie*) {
-    ++count;
-    return true;
-  });
-
-  *aCountFromHost = count;
+  *aCountFromHost = storage->CountCookies(baseDomain, *aOriginAttributes);
 
   return NS_OK;
 }
@@ -1404,19 +1391,7 @@ CookieService::HasCookiesForSite(const nsACString& aHost,
   CookieStorage* storage = PickStorage(pattern);
   storage->EnsureInitialized();
 
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-  bool hasCookies = false;
-
-  storage->ForEachCookie(baseDomain, pattern, [&](Cookie* aCookie) {
-    if (aCookie->IsExpired(currentTimeInMSec)) {
-      return true;
-    }
-
-    hasCookies = true;
-    return false;
-  });
-
-  *aResult = hasCookies;
+  *aResult = storage->HasCookies(baseDomain, pattern);
   return NS_OK;
 }
 
@@ -1638,7 +1613,8 @@ CookieService::RemoveAllSince(int64_t aSinceWhen, JSContext* aCx,
   nsTArray<RefPtr<nsICookie>> cookieList;
 
   
-  mPersistentStorage->GetAll(cookieList);
+  mPersistentStorage->GetAll(cookieList,
+                             CookieStorage::ExpiredCookies::Include);
 
   RefPtr<RemoveAllSinceRunnable> runMe = new RemoveAllSinceRunnable(
       promise, this, std::move(cookieList), aSinceWhen);
@@ -1796,11 +1772,6 @@ void CookieService::GetCookiesFromHost(
 
   CookieStorage* storage = PickStorage(aOriginAttributes);
   storage->GetCookiesFromHost(aBaseDomain, aOriginAttributes, aCookies);
-
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-  aCookies.RemoveElementsBy([currentTimeInMSec](const RefPtr<Cookie>& aCookie) {
-    return aCookie->IsExpired(currentTimeInMSec);
-  });
 }
 
 void CookieService::StaleCookies(const nsTArray<RefPtr<Cookie>>& aCookies,
@@ -1831,20 +1802,7 @@ bool CookieService::HasExistingCookies(
   }
 
   CookieStorage* storage = PickStorage(aOriginAttributes);
-
-  int64_t currentTimeInMSec = PR_Now() / PR_USEC_PER_MSEC;
-  bool hasExistingCookies = false;
-
-  storage->ForEachCookie(aBaseDomain, aOriginAttributes, [&](Cookie* aCookie) {
-    if (aCookie->IsExpired(currentTimeInMSec)) {
-      return true;
-    }
-
-    hasExistingCookies = true;
-    return false;
-  });
-
-  return hasExistingCookies;
+  return storage->HasCookies(aBaseDomain, aOriginAttributes);
 }
 
 void CookieService::AddCookieFromDocument(
