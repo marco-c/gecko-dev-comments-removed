@@ -10,7 +10,8 @@ XPCOMUtils.defineLazyScriptGetter(
   "chrome://browser/content/browser-fullScreenAndPointerLock.js"
 );
 
-const TEST_URL = "https://example.com/";
+const TEST_URL =
+  "https://example.com/browser/dom/webauthn/tests/browser/tab_login_form.html";
 var gAuthenticatorId;
 
 
@@ -45,6 +46,7 @@ add_task(test_register);
 add_task(test_register_escape);
 add_task(test_sign);
 add_task(test_sign_escape);
+add_task(test_sign_password_manager);
 add_task(test_tab_switching);
 add_task(test_window_switching);
 add_task(async function test_setup_softtoken() {
@@ -209,6 +211,82 @@ async function test_sign_escape() {
 
   
   await BrowserTestUtils.removeTab(tab);
+}
+
+
+
+async function test_sign_password_manager() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["signon.rememberSignons", true],
+      ["signon.testOnlyUserHasInteractedByPrefValue", true],
+      ["signon.testOnlyUserHasInteractedWithDocument", true],
+      ["toolkit.telemetry.ipcBatchTimeout", 0],
+    ],
+  });
+
+  let formProcessed = listenForTestNotification("FormProcessed");
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+  info("Waiting for page to load");
+  await formProcessed;
+
+  info("Submitting the login form");
+  let formSubmitted = listenForTestNotification([
+    "FormProcessed",
+    "ShowDoorhanger",
+  ]);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    content.document.getElementById("form-basic").submit();
+  });
+
+  
+  info("Waiting for password manager prompt");
+  await formSubmitted;
+
+  
+  
+  let notificationPromise = promiseNotification("webauthn-prompt-presence");
+  let active = true;
+  let request = promiseWebAuthnGetAssertion(tab)
+    .then(arrivingHereIsBad)
+    .catch(e => {
+      
+      
+      
+      is(e.name, "NotAllowedError", "error is NotAllowedError");
+      isnot(
+        e.message.indexOf("user denied permission"),
+        -1,
+        `error message includes 'user denied permission': ${e.message}`
+      );
+
+      
+      
+      
+      is(
+        e.message.indexOf("CredentialsContainer"),
+        -1,
+        `error message does not include 'CredentialsContainer': ${e.message}`
+      );
+    })
+    .then(() => (active = false));
+
+  
+  info("Waiting for WebAuthn notification");
+  await notificationPromise;
+
+  
+  ok(active, "WebAuthn prompt should still be active");
+  PopupNotifications.panel.firstElementChild.button.click();
+  await request;
+
+  
+  
+  ok(!active, "WebAuthn prompt should now be inactive");
+
+  
+  await BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
 }
 
 
