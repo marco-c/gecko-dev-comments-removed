@@ -8,6 +8,7 @@
 #include "nsCOMPtr.h"
 #include "nsIFile.h"
 #include "nsString.h"
+#include "nsIRelativeFilePref.h"
 
 
 
