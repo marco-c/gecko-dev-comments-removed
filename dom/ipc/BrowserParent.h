@@ -550,11 +550,6 @@ class BrowserParent final : public PBrowserParent,
       const double& aDeltaY, const int32_t& aModifierFlags,
       const Maybe<uint64_t>& aCallbackId);
 
-  mozilla::ipc::IPCResult RecvLockNativePointer(
-      const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
-
-  mozilla::ipc::IPCResult RecvUnlockNativePointer();
-
   mozilla::ipc::IPCResult RecvSetNativePointerLockMode(
       const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
 
@@ -808,8 +803,6 @@ class BrowserParent final : public PBrowserParent,
   
   bool QueryDropLinksForVerification();
 
-  void UnlockNativePointer();
-
  private:
   
   
@@ -1014,14 +1007,6 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
-
-  
-  
-  bool mLockedNativePointer : 1;
-
-  
-  
-  bool mWaitingForNativeMouseMoveAfterUnlock : 1;
 
   
   bool mShowingTooltip : 1;

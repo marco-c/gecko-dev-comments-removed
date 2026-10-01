@@ -5767,22 +5767,7 @@ void EventStateManager::UpdateLastRefPointOfMouseEvent(
   
   
   
-  
-  
-  
-  
-  if (PointerLockManager::ShouldResetPointer() && aMouseEvent->mWidget &&
-      !StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    
-    
-    
-    
-    
-    
-    aMouseEvent->mLastRefPoint =
-        GetWindowClientSizeAndCenterPoint(aMouseEvent->mWidget).second;
-
-  } else if (lastRefPoint == kInvalidRefPoint) {
+  if (lastRefPoint == kInvalidRefPoint) {
     
     
     
@@ -5816,10 +5801,7 @@ void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
   }
 
   
-  
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(sPreLockScreenPoint == kInvalidRefPoint);
   MOZ_ASSERT(sSynthCenteringPoint == kInvalidRefPoint);
 
@@ -5838,12 +5820,7 @@ void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
   
   sLastRefPoint = sLastRefPointOfRawUpdate =
       GetWindowClientSizeAndCenterPoint(aWidget).second;
-
-  
-  
-  if (StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    sSynthCenteringPoint = sLastRefPoint;
-  }
+  sSynthCenteringPoint = sLastRefPoint;
 
   aWidget->SynthesizeNativeMouseMove(
       sLastRefPoint + aWidget->WidgetToScreenOffset(), nullptr);
@@ -5859,10 +5836,7 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
   }
 
   
-  
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   if ((aMouseEvent->mMessage != ePointerRawUpdate &&
        aMouseEvent->mMessage != eMouseMove &&
@@ -5881,12 +5855,6 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
 
     auto [size, center] =
         GetWindowClientSizeAndCenterPoint(aMouseEvent->mWidget);
-    if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-      if (aMouseEvent->mRefPoint != center) {
-        return Some(center);
-      }
-      return Nothing();
-    }
 
     
     
@@ -5923,20 +5891,6 @@ void EventStateManager::ResetPointerToWindowCenterWhilePointerLocked(
     aMouseEvent->mWidget->SynthesizeNativeMouseMove(
         sSynthCenteringPoint + aMouseEvent->mWidget->WidgetToScreenOffset(),
         nullptr);
-    return;
-  }
-
-  if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    if (aMouseEvent->mRefPoint == sSynthCenteringPoint) {
-      
-      
-      aMouseEvent->StopPropagation();
-      
-      
-      if (updateSynthCenteringPoint) {
-        sSynthCenteringPoint = kInvalidRefPoint;
-      }
-    }
     return;
   }
 
@@ -5978,10 +5932,7 @@ void EventStateManager::ReleaseLockedPointer(nsIWidget* aWidget) {
   }
 
   
-  
-  MOZ_ASSERT_IF(
-      StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled(),
-      XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   
   

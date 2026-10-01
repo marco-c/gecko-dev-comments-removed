@@ -519,18 +519,16 @@ void PointerLockManager::SetLockedRemoteTarget(BrowserParent* aBrowserParent,
   MOZ_POINTERLOCK_LOG("Set locked remote target to 0x%p", aBrowserParent);
   sLockedRemoteTarget = aBrowserParent;
   PointerEventHandler::ReleaseAllPointerCaptureRemoteTarget();
-  if (StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    
-    
-    
-    
-    
-    
-    
-    PresShell::SetCapturingContent(element, CaptureFlags::PointerLock);
-    EventStateManager::RequestLockPointer(widget, presContext,
-                                          aUnadjustedMovement);
-  }
+  
+  
+  
+  
+  
+  
+  
+  PresShell::SetCapturingContent(element, CaptureFlags::PointerLock);
+  EventStateManager::RequestLockPointer(widget, presContext,
+                                        aUnadjustedMovement);
 }
 
 
@@ -555,10 +553,7 @@ void PointerLockManager::ReleaseLockedRemoteTarget(
 
 
 bool PointerLockManager::ShouldResetPointer() {
-  if (!StaticPrefs::dom_pointer_lock_reset_to_center_from_parent_enabled()) {
-    return IsLocked();
-  }
-
+  
   
   
   return XRE_IsParentProcess() && (GetLockedRemoteTarget() || IsLocked());
