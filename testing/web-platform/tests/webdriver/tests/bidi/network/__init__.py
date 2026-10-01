@@ -399,12 +399,9 @@ PHASE_TO_EVENT_MAP = {
 
 expires_a_day_from_now = datetime.now(timezone.utc) + timedelta(days=1)
 expires_a_day_from_now_timestamp = int(expires_a_day_from_now.timestamp())
-
-
-
 expires_interval = int_interval(
-    expires_a_day_from_now_timestamp - 1,
-    expires_a_day_from_now_timestamp + 1,
+    expires_a_day_from_now_timestamp - 5,
+    expires_a_day_from_now_timestamp + 5,
 )
 
 
