@@ -14,6 +14,7 @@
 use malloc_size_of::{MallocShallowSizeOf, MallocSizeOf, MallocSizeOfOps};
 
 use crate::blocker::Blocker;
+use crate::cosmetic_filter_cache::CosmeticFilterCache;
 use crate::filters::filter_data_context::FilterDataContextRef;
 use crate::flatbuffers::unsafe_tools::VerifiedFlatbufferMemory;
 
@@ -41,6 +42,10 @@ pub struct EngineMemoryBreakdown {
 
     
     pub enabled_tags: usize,
+
+    
+    
+    pub cosmetic_cache: usize,
 }
 
 impl EngineMemoryBreakdown {
@@ -70,6 +75,17 @@ impl EngineMemoryBreakdown {
         if let Some(regex_manager) = blocker.try_borrow_regex_manager() {
             self.regex_table += regex_manager.table_size_of(ops);
         }
+    }
+
+    
+    
+    
+    
+    pub(crate) fn add_cosmetic_cache(
+        &mut self,
+        _cosmetic_cache: &CosmeticFilterCache,
+        _ops: &mut MallocSizeOfOps,
+    ) {
     }
 }
 
