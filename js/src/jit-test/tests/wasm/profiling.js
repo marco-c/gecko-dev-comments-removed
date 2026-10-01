@@ -117,7 +117,7 @@ for (let type of ['f32', 'f64']) {
         
         
         
-        if (getBuildConfiguration("arm64") || getBuildConfiguration("loong64")) {
+        if (getBuildConfiguration("arm64") || getBuildConfiguration("loong64") || getBuildConfiguration("riscv64")) {
             continue;
         }
         test(`(module
