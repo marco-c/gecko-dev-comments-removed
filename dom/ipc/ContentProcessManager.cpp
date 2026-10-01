@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ContentProcessManager.h"
 
 #include "ContentParent.h"
@@ -80,14 +78,23 @@ bool ContentProcessManager::RegisterRemoteFrame(BrowserParent* aChildBp) {
       });
 }
 
-void ContentProcessManager::UnregisterRemoteFrame(const TabId& aChildTabId) {
+void ContentProcessManager::UnregisterRemoteFrame(BrowserParent* aChildBp) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aChildBp);
 
-  auto childBp = mBrowserParentMap.Extract(aChildTabId);
-  MOZ_DIAGNOSTIC_ASSERT(childBp);
+  if (auto entry = mBrowserParentMap.Lookup(aChildBp->GetTabId())) {
+    if (entry.Data() != aChildBp) {
+      MOZ_DIAGNOSTIC_CRASH("Unexpected BrowserParent");
+      return;
+    }
+    entry.Remove();
 
-  
-  (*childBp)->GetBrowsingContext()->Group()->RemoveKeepAlive();
+    
+    
+    aChildBp->GetBrowsingContext()->Group()->RemoveKeepAlive();
+    return;
+  }
+  MOZ_DIAGNOSTIC_CRASH("BrowserParent not found");
 }
 
 ContentParentId ContentProcessManager::GetTabProcessId(

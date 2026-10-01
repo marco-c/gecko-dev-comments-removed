@@ -1386,7 +1386,9 @@ already_AddRefed<RemoteBrowser> ContentParent::CreateBrowser(
   if (NS_WARN_IF(!cpm)) {
     return nullptr;
   }
-  cpm->RegisterRemoteFrame(browserParent);
+  if (NS_WARN_IF(!cpm->RegisterRemoteFrame(browserParent))) {
+    return nullptr;
+  }
 
   
   ManagedEndpoint<PBrowserChild> childEp =

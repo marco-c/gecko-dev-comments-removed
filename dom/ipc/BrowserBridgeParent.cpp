@@ -84,7 +84,9 @@ nsresult BrowserBridgeParent::InitWithProcess(
   if (!cpm) {
     return NS_ERROR_UNEXPECTED;
   }
-  cpm->RegisterRemoteFrame(browserParent);
+  if (NS_WARN_IF(!cpm->RegisterRemoteFrame(browserParent))) {
+    return NS_ERROR_UNEXPECTED;
+  }
 
   
   ManagedEndpoint<PBrowserChild> childEp =

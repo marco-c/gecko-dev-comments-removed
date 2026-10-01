@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ContentProcessManager_h
 #define mozilla_dom_ContentProcessManager_h
 
@@ -39,12 +37,13 @@ class ContentProcessManager final {
   
 
 
-  bool RegisterRemoteFrame(BrowserParent* aChildBp);
+  [[nodiscard]] bool RegisterRemoteFrame(BrowserParent* aChildBp);
 
   
 
 
-  void UnregisterRemoteFrame(const TabId& aChildTabId);
+
+  void UnregisterRemoteFrame(BrowserParent* aChildBp);
 
   
 
