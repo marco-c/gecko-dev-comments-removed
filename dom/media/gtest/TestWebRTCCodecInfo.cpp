@@ -318,6 +318,52 @@ TEST_F(WebRTCCodecInfoTest, AV1BlockedByWebRTCPref) {
 }
 
 
+
+TEST_F(WebRTCCodecInfoTest, H264InvalidFmtpParamsUnsupported) {
+  const auto codecInfo = WebrtcCodecInfo::Create();
+  for (const char* type :
+       {"video/h264;profile-level-id=zze01f",
+        "video/h264;profile-level-id=42e0",
+        "video/h264;profile-level-id=f4001f", "video/h264;packetization-mode=3",
+        "video/h264;packetization-mode=banana"}) {
+    SCOPED_TRACE(type);
+    EXPECT_FALSE(SupportsSWDecode(*codecInfo, type));
+    EXPECT_FALSE(SupportsSWEncode(*codecInfo, type));
+  }
+
+  EXPECT_TRUE(SupportsSWDecode(*codecInfo, "video/h264"));
+  EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/h264"));
+  EXPECT_TRUE(SupportsSWDecode(
+      *codecInfo, "video/h264;profile-level-id=42e01f;packetization-mode=1"));
+  EXPECT_TRUE(SupportsSWEncode(
+      *codecInfo, "video/h264;profile-level-id=42e01f;packetization-mode=1"));
+}
+
+
+
+TEST_F(WebRTCCodecInfoTest, AV1InvalidFmtpParamsUnsupported) {
+  const auto codecInfo = WebrtcCodecInfo::Create();
+  EXPECT_FALSE(SupportsSWDecode(*codecInfo, "video/av1;profile=9"));
+  EXPECT_FALSE(SupportsSWEncode(*codecInfo, "video/av1;profile=9"));
+  EXPECT_FALSE(SupportsSWDecode(*codecInfo, "video/av1;level-idx=99"));
+  EXPECT_FALSE(SupportsSWEncode(*codecInfo, "video/av1;level-idx=99"));
+  EXPECT_FALSE(SupportsSWDecode(*codecInfo, "video/av1;tier=2"));
+  EXPECT_FALSE(SupportsSWEncode(*codecInfo, "video/av1;tier=2"));
+
+  EXPECT_TRUE(SupportsSWDecode(*codecInfo, "video/av1"));
+  EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/av1"));
+  EXPECT_TRUE(
+      SupportsSWDecode(*codecInfo, "video/av1;profile=0;level-idx=9;tier=0"));
+  EXPECT_TRUE(
+      SupportsSWEncode(*codecInfo, "video/av1;profile=0;level-idx=9;tier=0"));
+
+  
+  EXPECT_TRUE(SupportsSWDecode(*codecInfo, "video/h264"));
+  EXPECT_TRUE(SupportsSWEncode(*codecInfo, "video/h264"));
+  TestAudioDecodeEncodeSWHW(codecInfo.get());
+}
+
+
 TEST_F(WebRTCCodecInfoTest, VP9BlockedByWebRTCPref) {
   const ScopedPrefSetter vp9Pref("media.peerconnection.video.vp9_enabled",
                                  false);
