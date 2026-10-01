@@ -156,7 +156,6 @@ class FrameSkipper {
 
 
 
-
 static Atomic<bool> sStackWalkLocksInitialized;
 static Array<SRWLOCK*, 2> sStackWalkLocks;
 
@@ -166,6 +165,8 @@ void InitializeStackWalkLocks(const Array<void*, 2>& aStackWalkLocks) {
   sStackWalkLocks[1] = reinterpret_cast<SRWLOCK*>(aStackWalkLocks[1]);
   sStackWalkLocksInitialized = true;
 }
+
+
 
 
 
@@ -200,6 +201,10 @@ AutoSuppressStackWalking::~AutoSuppressStackWalking() {
 
 bool IsStackWalkingSafe() {
   
+  if (sStackWalkSuppressions != 0) {
+    return false;
+  }
+
   if (sStackWalkLocksInitialized) {
     bool isSafe = false;
     if (::TryAcquireSRWLockShared(sStackWalkLocks[0])) {
@@ -212,8 +217,7 @@ bool IsStackWalkingSafe() {
     return isSafe;
   }
 
-  
-  return sStackWalkSuppressions == 0;
+  return true;
 }
 
 static uint8_t* sJitCodeRegionStart;
@@ -563,11 +567,6 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
 #  endif
 
 #  if defined(_M_AMD64) || defined(_M_ARM64)
-  
-  
-  
-  
-  
   
   
   

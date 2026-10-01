@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/WindowsStackWalkInitialization.h"
 
 #include "nsWindowsDllInterceptor.h"
@@ -65,7 +63,6 @@ void WindowsStackWalkInitialization() {
 
     if (locksArePlausible) {
       InitializeStackWalkLocks(stackWalkLocks);
-      return;
     }
   }
 

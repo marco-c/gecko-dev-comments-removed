@@ -18,7 +18,6 @@
 
 
 
-
 MFBT_API
 void InitializeStackWalkLocks(const mozilla::Array<void*, 2>& aStackWalkLocks);
 
