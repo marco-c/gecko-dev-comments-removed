@@ -49,7 +49,7 @@ add_task(async function test_icon_is_search_glass_when_empty() {
   });
 
   await TestUtils.waitForCondition(
-    () => getSwitcherIconUrl(window) == DEFAULT_ENGINE_ICON,
+    () => UrlbarTestUtils.searchModeSwitcherIconIs(window, DEFAULT_ENGINE_ICON),
     "Icon should be default engine icon when focused"
   );
 
@@ -74,12 +74,12 @@ add_task(async function test_icon_updates_to_engine_icon_on_search_result() {
   }, "Waiting for a default engine SEARCH result at index 0");
 
   await TestUtils.waitForCondition(
-    () => getSwitcherIconUrl(window) == DEFAULT_ENGINE_ICON,
+    () => UrlbarTestUtils.searchModeSwitcherIconIs(window, DEFAULT_ENGINE_ICON),
     "Waiting for icon to update to the default engine's icon"
   );
 
-  Assert.equal(
-    getSwitcherIconUrl(window),
+  await UrlbarTestUtils.assertSearchModeSwitcherIcon(
+    window,
     DEFAULT_ENGINE_ICON,
     "Icon should match the default engine's icon"
   );
@@ -173,7 +173,7 @@ add_task(async function test_icon_updates() {
   EventUtils.synthesizeKey("KEY_ArrowUp", { accelKey: true }, window);
 
   await TestUtils.waitForCondition(
-    () => getSwitcherIconUrl(window) == DEFAULT_ENGINE_ICON,
+    () => UrlbarTestUtils.searchModeSwitcherIconIs(window, DEFAULT_ENGINE_ICON),
     "Switch to engine icon to indicate change in search mode"
   );
 
@@ -189,4 +189,45 @@ add_task(async function test_icon_updates() {
   await UrlbarTestUtils.exitSearchMode(window, { backspace: true });
   await UrlbarTestUtils.promisePopupClose(window);
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_superseded_icon_update_does_not_paint() {
+  let tabsMode = UrlbarShared.LOCAL_SEARCH_MODES.find(
+    m => m.source == UrlbarShared.RESULT_SOURCE.TABS
+  );
+
+  gURLBar.searchMode = {
+    source: UrlbarShared.RESULT_SOURCE.TABS,
+    entry: "other",
+  };
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) == tabsMode.icon,
+    "The local search mode's icon is shown while the mode is active"
+  );
+
+  
+  
+  let { promise: held, resolve: release } = Promise.withResolvers();
+  let store = gURLBar.controller.engineStore;
+  store.init = () => {
+    delete store.init;
+    return held;
+  };
+  let superseded = gURLBar.searchModeSwitcher.updateSearchIcon({
+    searchModeChanged: true,
+  });
+
+  gURLBar.searchMode = null;
+  await TestUtils.waitForCondition(
+    () => getSwitcherIconUrl(window) != tabsMode.icon,
+    "The icon leaves the local search mode with it"
+  );
+
+  release();
+  await superseded;
+  Assert.notEqual(
+    getSwitcherIconUrl(window),
+    tabsMode.icon,
+    "The superseded lookup did not paint the local search mode's icon again"
+  );
 });
