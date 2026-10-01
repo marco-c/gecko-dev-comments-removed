@@ -152,8 +152,12 @@ function addContentHelpers() {
 
 
 
-    async openContextMenuAndGetOptions(selector) {
-      const item = document.querySelector(selector);
+
+    async openContextMenuAndGetOptions(itemOrSelector) {
+      const item =
+        typeof itemOrSelector === "string"
+          ? document.querySelector(itemOrSelector)
+          : itemOrSelector;
       const contextButton = item.querySelector(".context-menu-button");
       contextButton.click();
       

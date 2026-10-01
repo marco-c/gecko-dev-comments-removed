@@ -2,19 +2,11 @@
 
 
 
-
-
-
-
 test_newtab({
+  before: setDefaultTopSites,
   test: async function test_contextMenuIcons() {
-    const siteSelector = ".top-sites-list:not(.search-shortcut, .placeholder)";
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(siteSelector),
-      "Topsites have loaded"
-    );
-    const contextMenuItems =
-      await content.openContextMenuAndGetOptions(siteSelector);
+    const tile = await content.waitForAnyTopSite();
+    const contextMenuItems = await content.openContextMenuAndGetOptions(tile);
     let icon = contextMenuItems[0].querySelector(".icon");
     ok(!icon, "icon was not rendered");
   },
