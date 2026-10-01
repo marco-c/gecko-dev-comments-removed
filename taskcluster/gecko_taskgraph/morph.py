@@ -352,7 +352,12 @@ def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config
                 "-".join(label_parts[:-1]) if chunk_index == -2 else task.label
             )
 
-            if label_parts[chunk_index].isnumeric() and label_no_chunk in glob_tasks:
+            
+            
+            
+            if label_parts[chunk_index].isnumeric() and (
+                label_no_chunk in glob_tasks or label_no_chunk in tasks
+            ):
                 task.attributes["task_duplicates"] = count
             elif task.label in tasks:
                 task.attributes["task_duplicates"] = count
