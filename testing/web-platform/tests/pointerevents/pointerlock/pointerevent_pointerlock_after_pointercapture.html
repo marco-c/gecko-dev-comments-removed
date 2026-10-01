@@ -9,7 +9,7 @@
         <script src="/resources/testdriver.js"></script>
         <script src="/resources/testdriver-actions.js"></script>
         <script src="/resources/testdriver-vendor.js"></script>
-        
+        <!-- Additional helper script for common checks across event types -->
         <script type="text/javascript" src="../pointerevent_support.js"></script>
         <script>
             var got_capture = false;
@@ -43,7 +43,9 @@
                     lost_capture = true;
                 });
                 on_event(document,"pointerlockerror", function() {
-                    assert_unreached("Pointer lock error");
+                    test_pointerEvent.step(function(){
+                        assert_unreached("Pointer lock error");
+                    });
                 })
 
                 injectInput().then(function(){
