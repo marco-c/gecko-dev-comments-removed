@@ -1749,7 +1749,9 @@ bool NativeLayerCARepresentation::ApplyChanges(
 
   MOZ_ASSERT(aUpdate == UpdateType::All);
 
-  if (mWrappingCALayer && mMutatedSpecializeVideo) {
+  if (mWrappingCALayer && (mMutatedSpecializeVideo || mMutatedIsDRM)) {
+    
+    
     
     
 #ifdef NIGHTLY_BUILD
@@ -1815,6 +1817,7 @@ bool NativeLayerCARepresentation::ApplyChanges(
         [(AVSampleBufferDisplayLayer*)mContentCALayer
             setControlTimebase:timebase];
         CFRelease(timebase);
+        ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
       } else {
 #ifdef NIGHTLY_BUILD
         if (aIsVideo &&
@@ -1840,10 +1843,6 @@ bool NativeLayerCARepresentation::ApplyChanges(
 
       [mRoundedClipCALayer addSublayer:mContentCALayer];
     }
-  }
-
-  if (aSpecializeVideo && mMutatedIsDRM) {
-    ((AVSampleBufferDisplayLayer*)mContentCALayer).preventsCapture = aIsDRM;
   }
 
   bool shouldTintOpaqueness = StaticPrefs::gfx_core_animation_tint_opaque();
