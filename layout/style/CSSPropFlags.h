@@ -42,20 +42,15 @@ enum class CSSPropFlags : uint16_t {
   ScrollLinkedEffective = 1 << 4,
 
   
-  
-  
-  Internal = 1 << 5,
+  SerializedByServo = 1 << 5,
 
   
-  SerializedByServo = 1 << 6,
+  IsLogical = 1 << 6,
 
   
-  IsLogical = 1 << 7,
-
-  
-  AffectsLayout = 1 << 8,
-  AffectsOverflow = 1 << 9,
-  AffectsPaint = 1 << 10,
+  AffectsLayout = 1 << 7,
+  AffectsOverflow = 1 << 8,
+  AffectsPaint = 1 << 9,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSPropFlags)

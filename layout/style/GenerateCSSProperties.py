@@ -142,13 +142,10 @@ interface """
         if ruleType not in p.rule_types_allowed_names():
             continue
 
-        pref = p.gecko_pref
+        if not potentially_exposed(p):
+            continue
 
         propId = p.ident
-        if p.idl_method == "MozAppearance":
-            
-            
-            pref = "layout.css.moz-appearance.webidl.enabled"
         if p.type() == "alias":
             if p.gecko_pref == p.original.gecko_pref:
                 
@@ -162,18 +159,10 @@ interface """
             "SetterNeedsSubjectPrincipal=NonSystem",
         ]
 
-        if pref:
-            assert not is_internal(p)
-            
-            
-            if p.name == "backdrop-filter":
-                extendedAttrs.append('Func="nsCSSProps::IsBackdropFilterAvailable"')
-            else:
-                extendedAttrs.append('Pref="%s"' % pref)
-        elif p.explicitly_enabled_in_chrome():
-            extendedAttrs.append("ChromeOnly")
-        elif is_internal(p):
-            continue
+        if conditionally_exposed(p):
+            extendedAttrs.append(
+                f'Func="nsCSSProps::IsPropertyExposedToJS<eCSSProperty_{propId}>"'
+            )
 
         def add_extra_accessors(p):
             
@@ -292,17 +281,19 @@ class PropertyWrapper(object):
     def __init__(self, index, prop):
         self.index = index
         self.prop = prop
-        self.idlname = None if is_internal(prop) else idl_attribute(prop)
+        self.idlname = idl_attribute(prop) if potentially_exposed(prop) else None
 
     def __getattr__(self, name):
         return getattr(self.prop, name)
 
 
+def conditionally_exposed(prop):
+    return prop.gecko_pref or prop.explicitly_enabled_in_chrome()
 
-def is_internal(prop):
-    
-    
-    return not prop.gecko_pref and not prop.enabled_in_content()
+
+
+def potentially_exposed(prop):
+    return conditionally_exposed(prop) or prop.enabled_in_content()
 
 
 
@@ -344,12 +335,10 @@ def serialized_by_servo(prop):
     return prop.name not in LONGHANDS_NOT_SERIALIZED_WITH_SERVO
 
 
-def exposed_on_getcs(prop):
+def potentially_exposed_on_getcs(prop):
     if "style" not in prop.rule_types_allowed_names():
         return False
-    if is_internal(prop):
-        return False
-    return True
+    return potentially_exposed(prop)
 
 
 def cpp_flags(prop):
@@ -365,8 +354,6 @@ def cpp_flags(prop):
         result.append("EnabledInUASheetsAndChrome")
     elif prop.explicitly_enabled_in_ua_sheets():
         result.append("EnabledInUASheets")
-    if is_internal(prop):
-        result.append("Internal")
     if prop.enabled_in == "":
         result.append("Inaccessible")
     for k, v in RUST_TO_CPP_FLAGS.items():
@@ -657,7 +644,7 @@ def gen_computed_style(output):
         return (order, p.name)
 
     def has_cpp_getter(p):
-        if not exposed_on_getcs(p):
+        if not potentially_exposed_on_getcs(p):
             return False
         if serialized_by_servo(p):
             return False
@@ -679,7 +666,7 @@ def gen_computed_style(output):
     index_map = {}
     non_aliases = properties.longhands + properties.shorthands
     for i, p in enumerate(sorted(non_aliases, key=order_key)):
-        can_be_exposed = "true" if exposed_on_getcs(p) else "false"
+        can_be_exposed = "true" if potentially_exposed_on_getcs(p) else "false"
         entries.append(
             "{{ eCSSProperty_{}, {}, &nsComputedDOMStyle::{}}}".format(
                 p.ident, can_be_exposed, getter_entry(p)
