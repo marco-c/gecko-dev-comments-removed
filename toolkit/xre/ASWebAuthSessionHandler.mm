@@ -231,7 +231,7 @@ API_AVAILABLE(macos(12.0))
   mozilla::CopyNSStringToXPCOMString(request.UUID.UUIDString, uuidXPCOM);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "ASWebAuthSessionHandler::cancelHandling",
-      [uuidXPCOM = nsString(uuidXPCOM)]() {
+      [request = [request retain], uuidXPCOM = nsString(uuidXPCOM)]() {
         sPendingBeginRequests.Remove(uuidXPCOM);
 
         nsCOMPtr<nsIObserverService> obsServ =
@@ -240,6 +240,12 @@ API_AVAILABLE(macos(12.0))
           obsServ->NotifyObservers(nullptr, "aswebauthsession-request-cancel",
                                    uuidXPCOM.get());
         }
+
+        
+        
+        
+        CancelRequestObject(request);
+        [request release];
       }));
 }
 
