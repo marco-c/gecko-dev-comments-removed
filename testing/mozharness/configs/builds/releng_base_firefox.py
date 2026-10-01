@@ -2,6 +2,4 @@
 
 
 
-config = {
-    "app_name": "browser",
-}
+config = {}

@@ -45,7 +45,6 @@ config = {
         "PATH": "/usr/local/bin:/bin:/usr/bin",
         "SHIP_LICENSED_FONTS": "1",
     },
-    "app_name": "mobile/android",
     
     
     "disable_package_metrics": True,

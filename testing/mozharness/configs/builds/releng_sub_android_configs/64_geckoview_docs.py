@@ -3,8 +3,6 @@
 
 
 config = {
-    "mozconfig_platform": "android-arm",
-    "mozconfig_variant": "nightly-android-lints",
     
     "disable_package_metrics": True,
     "postflight_build_mach_commands": [
