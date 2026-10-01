@@ -336,6 +336,15 @@ WebrtcVideoEncoder::EncoderInfo WebrtcMediaDataEncoder::GetEncoderInfo() const {
   info.is_hardware_accelerated = false;
   info.supports_simulcast = false;
 
+  if (mCodecSpecific.codecType == webrtc::VideoCodecType::kVideoCodecH264) {
+    
+    
+    
+    
+    info.scaling_settings = WebrtcVideoEncoder::ScalingSettings(
+        kLowH264QpThreshold, kHighH264QpThreshold);
+  }
+
 #ifdef MOZ_WIDGET_ANDROID
   
   
