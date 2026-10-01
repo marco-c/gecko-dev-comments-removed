@@ -4215,6 +4215,34 @@ const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
 const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
 const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
+
+
+const CORNER_IMAGE_LOGICAL_POSITIONS = new Map([["bottom-start", ["bottom-left", "bottom-right"]], ["bottom-end", ["bottom-right", "bottom-left"]], ["top-start", ["top-left", "top-right"]], ["top-end", ["top-right", "top-left"]]]);
+
+
+
+
+
+
+function resolveCornerImagePosition(position) {
+  const logical = CORNER_IMAGE_LOGICAL_POSITIONS.get(position);
+  if (logical) {
+    const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+    return logical[isRTL ? 1 : 0];
+  }
+  return CORNER_IMAGE_POSITIONS.has(position) ? position : DEFAULT_CORNER_IMAGE_POSITION;
+}
+
+
+
+
+function resolveDirectionalImage(image) {
+  const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+  return isRTL && image?.rtl ? {
+    ...image,
+    ...image.rtl
+  } : image;
+}
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -4568,21 +4596,22 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       ref: titleRef
     }));
   }
-  renderPicture({
-    imageURL = "chrome://branding/content/about-logo.svg",
-    darkModeImageURL,
-    reducedMotionImageURL,
-    darkModeReducedMotionImageURL,
-    videoURL,
-    alt = "",
-    width,
-    height,
-    marginBlock,
-    marginInline,
-    style,
-    imgStyle,
-    className = "logo-container"
-  }) {
+  renderPicture(image) {
+    const {
+      imageURL = "chrome://branding/content/about-logo.svg",
+      darkModeImageURL,
+      reducedMotionImageURL,
+      darkModeReducedMotionImageURL,
+      videoURL,
+      alt = "",
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      style,
+      imgStyle,
+      className = "logo-container"
+    } = resolveDirectionalImage(image);
     function getLoadingStrategy() {
       for (let url of [imageURL, darkModeImageURL, reducedMotionImageURL, darkModeReducedMotionImageURL]) {
         if (MultiStageUtils.getLoadingStrategyFor(url) === "lazy") {
@@ -4665,9 +4694,9 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       className: "noodle yellow-circle"
     }));
   }
-  renderCornerImage() {
+  renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
-    const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position) ? cornerImage.position : DEFAULT_CORNER_IMAGE_POSITION;
+    const position = resolveCornerImagePosition(cornerImage.position);
     const entranceAnimation = cornerImage.entrance_animation ?? {};
     const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(entranceAnimation.type) ? entranceAnimation.type : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
     return external_React_default().createElement("div", {
@@ -4677,6 +4706,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
       darkModeImageURL: cornerImage.darkModeImageURL,
       reducedMotionImageURL: cornerImage.reducedMotionImageURL,
       darkModeReducedMotionImageURL: cornerImage.darkModeReducedMotionImageURL,
+      rtl: cornerImage.rtl,
       height: cornerImage.height,
       width: cornerImage.width,
       marginBlock: cornerImage.marginBlock,
@@ -4689,7 +4719,7 @@ class ProtonScreen extends (external_React_default()).PureComponent {
         "--corner-image-entrance-delay": entranceAnimation.delay,
         ...cornerImage.style
       },
-      className: `corner-image ${position} entrance-${entranceType}`
+      className: `corner-image ${position}${anchor === "screen" ? ` entrance-${entranceType}` : ""}`
     }));
   }
   renderLanguageSwitcher() {
@@ -4944,7 +4974,14 @@ class ProtonScreen extends (external_React_default()).PureComponent {
     } = this.props;
     const includeNoodles = content.has_noodles;
     const isCenterLargeFullscreen = content.position === "center-large" && !!content.fullscreen;
-    const includeCornerImage = !!content.corner_image && isCenterLargeFullscreen;
+    
+    
+    
+    
+    let cornerImageAnchor = null;
+    if (content.corner_image) {
+      cornerImageAnchor = isCenterLargeFullscreen ? "screen" : "card";
+    }
     const secondaryCTATop = content.secondary_button_top ? external_React_default().createElement(SecondaryCTA, {
       content: content,
       handleAction: this.props.handleAction,
@@ -4989,12 +5026,12 @@ class ProtonScreen extends (external_React_default()).PureComponent {
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, includeCornerImage ? this.renderCornerImage() : null, isCenterPosition ? null : this.renderSecondarySection(content), external_React_default().createElement("div", {
+    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), external_React_default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",
       style: content.screen_style && MultiStageUtils.getValidStyle(content.screen_style, ["width", "padding", "height"])
-    }, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, external_React_default().createElement("div", {
+    }, cornerImageAnchor === "card" ? this.renderCornerImage("card") : null, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, external_React_default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
       style: {
         background: isCenterPosition && !isCenterLargeFullscreen && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
@@ -5232,6 +5269,15 @@ const screenContentShape = {
     
     videoURL: (prop_types_default()).string,
     
+    
+    rtl: prop_types_default().shape({
+      imageURL: (prop_types_default()).string,
+      darkModeImageURL: (prop_types_default()).string,
+      reducedMotionImageURL: (prop_types_default()).string,
+      darkModeReducedMotionImageURL: (prop_types_default()).string,
+      videoURL: (prop_types_default()).string
+    }),
+    
     alt: prop_types_default().oneOfType([(prop_types_default()).string, (prop_types_default()).object]),
     
     width: (prop_types_default()).string,
@@ -5251,7 +5297,18 @@ const screenContentShape = {
     
     darkModeReducedMotionImageURL: (prop_types_default()).string,
     
-    position: prop_types_default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right"]),
+    
+    rtl: prop_types_default().shape({
+      imageURL: (prop_types_default()).string,
+      darkModeImageURL: (prop_types_default()).string,
+      reducedMotionImageURL: (prop_types_default()).string,
+      darkModeReducedMotionImageURL: (prop_types_default()).string
+    }),
+    
+    
+    
+    
+    position: prop_types_default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right", "bottom-start", "bottom-end", "top-start", "top-end"]),
     
     width: (prop_types_default()).string,
     

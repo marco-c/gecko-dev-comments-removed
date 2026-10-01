@@ -1290,6 +1290,34 @@ const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
 const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
 const DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION = "none";
+
+
+const CORNER_IMAGE_LOGICAL_POSITIONS = new Map([["bottom-start", ["bottom-left", "bottom-right"]], ["bottom-end", ["bottom-right", "bottom-left"]], ["top-start", ["top-left", "top-right"]], ["top-end", ["top-right", "top-left"]]]);
+
+
+
+
+
+
+function resolveCornerImagePosition(position) {
+  const logical = CORNER_IMAGE_LOGICAL_POSITIONS.get(position);
+  if (logical) {
+    const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+    return logical[isRTL ? 1 : 0];
+  }
+  return CORNER_IMAGE_POSITIONS.has(position) ? position : DEFAULT_CORNER_IMAGE_POSITION;
+}
+
+
+
+
+function resolveDirectionalImage(image) {
+  const isRTL = typeof document !== "undefined" && document.documentElement.matches(":dir(rtl)");
+  return isRTL && image?.rtl ? {
+    ...image,
+    ...image.rtl
+  } : image;
+}
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -1643,21 +1671,22 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       ref: titleRef
     }));
   }
-  renderPicture({
-    imageURL = "chrome://branding/content/about-logo.svg",
-    darkModeImageURL,
-    reducedMotionImageURL,
-    darkModeReducedMotionImageURL,
-    videoURL,
-    alt = "",
-    width,
-    height,
-    marginBlock,
-    marginInline,
-    style,
-    imgStyle,
-    className = "logo-container"
-  }) {
+  renderPicture(image) {
+    const {
+      imageURL = "chrome://branding/content/about-logo.svg",
+      darkModeImageURL,
+      reducedMotionImageURL,
+      darkModeReducedMotionImageURL,
+      videoURL,
+      alt = "",
+      width,
+      height,
+      marginBlock,
+      marginInline,
+      style,
+      imgStyle,
+      className = "logo-container"
+    } = resolveDirectionalImage(image);
     function getLoadingStrategy() {
       for (let url of [imageURL, darkModeImageURL, reducedMotionImageURL, darkModeReducedMotionImageURL]) {
         if (_lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getLoadingStrategyFor(url) === "lazy") {
@@ -1740,9 +1769,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       className: "noodle yellow-circle"
     }));
   }
-  renderCornerImage() {
+  renderCornerImage(anchor) {
     const cornerImage = this.props.content.corner_image;
-    const position = CORNER_IMAGE_POSITIONS.has(cornerImage.position) ? cornerImage.position : DEFAULT_CORNER_IMAGE_POSITION;
+    const position = resolveCornerImagePosition(cornerImage.position);
     const entranceAnimation = cornerImage.entrance_animation ?? {};
     const entranceType = CORNER_IMAGE_ENTRANCE_ANIMATIONS.has(entranceAnimation.type) ? entranceAnimation.type : DEFAULT_CORNER_IMAGE_ENTRANCE_ANIMATION;
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -1752,6 +1781,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       darkModeImageURL: cornerImage.darkModeImageURL,
       reducedMotionImageURL: cornerImage.reducedMotionImageURL,
       darkModeReducedMotionImageURL: cornerImage.darkModeReducedMotionImageURL,
+      rtl: cornerImage.rtl,
       height: cornerImage.height,
       width: cornerImage.width,
       marginBlock: cornerImage.marginBlock,
@@ -1764,7 +1794,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         "--corner-image-entrance-delay": entranceAnimation.delay,
         ...cornerImage.style
       },
-      className: `corner-image ${position} entrance-${entranceType}`
+      className: `corner-image ${position}${anchor === "screen" ? ` entrance-${entranceType}` : ""}`
     }));
   }
   renderLanguageSwitcher() {
@@ -2019,7 +2049,14 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     } = this.props;
     const includeNoodles = content.has_noodles;
     const isCenterLargeFullscreen = content.position === "center-large" && !!content.fullscreen;
-    const includeCornerImage = !!content.corner_image && isCenterLargeFullscreen;
+    
+    
+    
+    
+    let cornerImageAnchor = null;
+    if (content.corner_image) {
+      cornerImageAnchor = isCenterLargeFullscreen ? "screen" : "card";
+    }
     const secondaryCTATop = content.secondary_button_top ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__.SecondaryCTA, {
       content: content,
       handleAction: this.props.handleAction,
@@ -2064,12 +2101,12 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, includeCornerImage ? this.renderCornerImage() : null, isCenterPosition ? null : this.renderSecondarySection(content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",
       style: content.screen_style && _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.getValidStyle(content.screen_style, ["width", "padding", "height"])
-    }, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, cornerImageAnchor === "card" ? this.renderCornerImage("card") : null, isCenterLargeFullscreen ? null : secondaryCTATop, includeNoodles ? this.renderNoodles() : null, content.more_button ? this.renderMoreButton() : null, content.dismiss_button && !content.reverse_split ? this.renderDismissButton() : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
       style: {
         background: isCenterPosition && !isCenterLargeFullscreen && this.getEffectiveBackground(content) ? this.getEffectiveBackground(content) : null,
@@ -2307,6 +2344,15 @@ const screenContentShape = {
     
     videoURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     
+    
+    rtl: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+      imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      videoURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+    }),
+    
     alt: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOfType([(prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string), (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object)]),
     
     width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
@@ -2326,7 +2372,18 @@ const screenContentShape = {
     
     darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     
-    position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right"]),
+    
+    rtl: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().shape({
+      imageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      reducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
+      darkModeReducedMotionImageURL: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string)
+    }),
+    
+    
+    
+    
+    position: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["bottom-left", "bottom-right", "top-left", "top-right", "bottom-start", "bottom-end", "top-start", "top-end"]),
     
     width: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().string),
     
