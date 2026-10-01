@@ -63,9 +63,14 @@ test_newtab({
     Assert.equal(defaultTopSitesNumber, 5, "5 top sites are loaded by default");
 
     
-    const secondTopSite = content.document
-      .querySelectorAll(siteSelector)[1]
-      .getAttribute("href");
+    
+    const siteHref = site =>
+      site.querySelector(".top-site-button").getAttribute("href");
+
+    
+    const secondTopSite = siteHref(
+      content.document.querySelectorAll(siteSelector)[1]
+    );
 
     const contextMenuItems =
       await content.openContextMenuAndGetOptions(siteSelector);
@@ -79,7 +84,7 @@ test_newtab({
     
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.document.querySelector(siteSelector).getAttribute("href") ===
+        siteHref(content.document.querySelector(siteSelector)) ===
         secondTopSite,
       "First default topsite was dismissed"
     );
