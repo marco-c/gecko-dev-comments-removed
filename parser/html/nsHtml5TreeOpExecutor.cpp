@@ -258,7 +258,8 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
   
   
   
-  DidBuildModelImpl(aTerminated || NS_FAILED(IsBroken()));
+  const bool terminated = aTerminated || NS_FAILED(IsBroken());
+  DidBuildModelImpl(terminated);
 
   bool destroying = true;
   if (mDocShell) {
@@ -290,8 +291,11 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
 
   
   
+  
+  const RefPtr<nsHtml5Parser> parser = GetParser();
+
   if (mStarted) {
-    mDocument->EndLoad();
+    mDocument->EndLoad( !terminated);
 
     
     
@@ -311,7 +315,7 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
     
     bool httpOk = false;
     nsCOMPtr<nsIChannel> channel;
-    nsresult rv = GetParser()->GetChannel(getter_AddRefs(channel));
+    nsresult rv = parser->GetChannel(getter_AddRefs(channel));
     if (NS_SUCCEEDED(rv) && channel) {
       nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(channel);
       if (httpChannel) {
@@ -422,7 +426,7 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
   
   
   
-  GetParser()->DropStreamParser();
+  parser->DropStreamParser();
   DropParserAndPerfHint();
 #ifdef GATHER_DOCWRITE_STATISTICS
   printf("UNSAFE SCRIPTS: %d\n", sUnsafeDocWrites);
