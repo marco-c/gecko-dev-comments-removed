@@ -386,6 +386,22 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
+
+
+
+  Mozilla.UITour.showHome = function (hash) {
+    _sendEvent("showHome", {
+      hash,
+    });
+  };
+
+  
+
+
+
+
   Mozilla.UITour.showProtectionReport = function () {
     _sendEvent("showProtectionReport");
   };
