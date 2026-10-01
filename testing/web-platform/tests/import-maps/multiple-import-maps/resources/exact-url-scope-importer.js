@@ -1,6 +1,0 @@
-
-
-
-
-
-globalThis.doImport = (specifier) => import(specifier);
