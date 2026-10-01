@@ -8,13 +8,25 @@ async function assertIsAtRestartRequiredPage(browser) {
 
   
   
-  let title = doc.getElementById("title");
-  let description = doc.getElementById("errorLongContent");
+  let title = doc.getElementById("error-title");
+  let description = doc.getElementById("error-intro");
+  let illustration = doc.querySelector(".img-container > img");
   let restartButton = doc.getElementById("restart");
 
   Assert.ok(title, "Title element exists.");
   Assert.ok(description, "Description element exists.");
+  Assert.ok(illustration, "Illustration exists.");
   Assert.ok(restartButton, "Restart button exists.");
+  Assert.equal(
+    restartButton.localName,
+    "moz-button",
+    "Restart button uses the shared button widget."
+  );
+
+  await TestUtils.waitForCondition(
+    () => doc.activeElement == restartButton,
+    "Waiting for the restart button to take focus."
+  );
 }
 
 
