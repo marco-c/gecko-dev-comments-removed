@@ -338,6 +338,7 @@ nsresult mozInlineSpellStatus::FinishInitOnEvent(
     
     
     
+    mSetAnchorToCaret = SetAnchorToCaret::No;
     MOZ_ASSERT(!mAnchorRange);
     if (Document* doc = GetDocument()) {
       Selection* selection = doc->GetSelection(IgnoreErrors());

@@ -135,7 +135,7 @@ class mozInlineSpellStatus {
 
   
   
-  const SetAnchorToCaret mSetAnchorToCaret;
+  SetAnchorToCaret mSetAnchorToCaret;
 
   
   const int32_t mNewNavigationPositionOffset;
