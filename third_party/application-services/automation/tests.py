@@ -117,11 +117,6 @@ def should_run_rust_tests(package, min_version):
     
     if min_version and package.name == "error-support-tests":
         return False
-    
-    
-    
-    if package.name.startswith("megazord") or package.name == "swift_components_docs":
-        return False
     return True
 
 
