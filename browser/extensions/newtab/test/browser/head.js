@@ -135,6 +135,23 @@ function addContentHelpers() {
 
 
 
+
+    async waitForAnyTopSite() {
+      const selector =
+        ".top-site-outer:not(.search-shortcut, .placeholder, .add-button-tile)";
+      await ContentTaskUtils.waitForCondition(
+        () => document.querySelector(selector),
+        "Wait for a top site tile"
+      );
+      return document.querySelector(selector);
+    },
+
+    
+
+
+
+
+
     async openContextMenuAndGetOptions(selector) {
       const item = document.querySelector(selector);
       const contextButton = item.querySelector(".context-menu-button");
