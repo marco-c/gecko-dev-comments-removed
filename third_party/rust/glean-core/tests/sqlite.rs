@@ -1,6 +1,7 @@
 
 
 
+#![cfg(feature = "sqlite")]
 
 mod common;
 use std::fs;

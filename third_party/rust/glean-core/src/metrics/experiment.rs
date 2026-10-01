@@ -205,7 +205,12 @@ impl ExperimentMetric {
     
     
     pub fn test_get_value(&self, glean: &Glean) -> Option<RecordedExperiment> {
-        match glean.storage().get_metric(self.meta(), INTERNAL_STORAGE) {
+        match glean.storage().get_metric(
+            #[cfg(not(feature = "sqlite"))]
+            glean,
+            self.meta(),
+            INTERNAL_STORAGE,
+        ) {
             Some(Metric::Experiment(e)) => Some(e),
             _ => None,
         }

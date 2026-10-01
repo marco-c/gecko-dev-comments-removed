@@ -6,13 +6,27 @@ use std::fmt::Display;
 use std::sync::atomic::{AtomicU8, Ordering};
 
 use malloc_size_of_derive::MallocSizeOf;
+
+#[cfg(feature = "sqlite")]
 use rusqlite::Transaction;
 
 use crate::error::{Error, ErrorKind};
+#[cfg(feature = "sqlite")]
 use crate::error_recording::record_error_sqlite;
-use crate::metrics::dual_labeled_counter::validate_dual_label_sqlite;
-use crate::metrics::labeled::validate_dynamic_label_sqlite;
-use crate::{ErrorType, Glean};
+
+#[cfg(feature = "sqlite")]
+use crate::metrics::{
+    dual_labeled_counter::validate_dual_label_sqlite, labeled::validate_dynamic_label_sqlite,
+};
+
+#[cfg(not(feature = "sqlite"))]
+use crate::metrics::{
+    dual_labeled_counter::validate_dual_label_rkv,
+    labeled::{combine_base_identifier_and_label, validate_dynamic_label_rkv},
+};
+#[cfg(feature = "sqlite")]
+use crate::ErrorType;
+use crate::Glean;
 use serde::{Deserialize, Serialize};
 
 
@@ -150,6 +164,7 @@ impl From<CommonMetricData> for CommonMetricDataInternal {
 }
 
 
+#[cfg(feature = "sqlite")]
 pub enum LabelCheck {
     
     NoLabel,
@@ -160,6 +175,7 @@ pub enum LabelCheck {
     Error(String, i32),
 }
 
+#[cfg(feature = "sqlite")]
 impl LabelCheck {
     
     pub fn label(&self) -> &str {
@@ -182,6 +198,7 @@ impl LabelCheck {
             return;
         };
 
+        #[cfg(feature = "sqlite")]
         record_error_sqlite(
             glean,
             tx,
@@ -190,6 +207,9 @@ impl LabelCheck {
             ErrorType::InvalidLabel,
             *count,
         );
+
+        #[cfg(not(feature = "sqlite"))]
+        todo!()
     }
 
     
@@ -241,8 +261,40 @@ impl CommonMetricDataInternal {
     
     
     
+    #[cfg(not(feature = "sqlite"))]
+    pub(crate) fn identifier(&self, glean: &Glean, record: bool) -> String {
+        let base_identifier = self.base_identifier();
+
+        if let Some(label) = &self.inner.label {
+            let label = match label {
+                MetricLabel::Static(label) => label.to_string(),
+                MetricLabel::Label(label) => {
+                    validate_dynamic_label_rkv(glean, self, &base_identifier, label, record)
+                }
+                MetricLabel::KeyOnly(..) => {
+                    validate_dual_label_rkv(glean, self, &base_identifier, label, record)
+                }
+                MetricLabel::CategoryOnly(..) => {
+                    validate_dual_label_rkv(glean, self, &base_identifier, label, record)
+                }
+                MetricLabel::KeyAndCategory(..) => {
+                    validate_dual_label_rkv(glean, self, &base_identifier, label, record)
+                }
+            };
+
+            combine_base_identifier_and_label(&base_identifier, &label)
+        } else {
+            base_identifier
+        }
+    }
+
     
     
+    
+    
+    
+    
+    #[cfg(feature = "sqlite")]
     pub(crate) fn check_labels(&self, tx: &rusqlite::Connection) -> LabelCheck {
         let base_identifier = self.base_identifier();
 

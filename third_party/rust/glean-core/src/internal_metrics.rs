@@ -362,6 +362,9 @@ pub struct DatabaseMetrics {
     pub load_error: StringMetric,
 
     
+    pub rkv_load_error: StringMetric,
+
+    
     pub write_time: TimingDistributionMetric,
 
     
@@ -397,6 +400,14 @@ impl DatabaseMetrics {
 
             load_error: StringMetric::new(CommonMetricData {
                 name: "load_error".into(),
+                category: "glean.database".into(),
+                send_in_pings: vec!["metrics".into(), "health".into()],
+                lifetime: Lifetime::Ping,
+                ..Default::default()
+            }),
+
+            rkv_load_error: StringMetric::new(CommonMetricData {
+                name: "rkv_load_error".into(),
                 category: "glean.database".into(),
                 send_in_pings: vec!["metrics".into(), "health".into()],
                 lifetime: Lifetime::Ping,

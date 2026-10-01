@@ -1,3 +1,8 @@
+
+
+
+#![cfg(feature = "sqlite")]
+
 mod common;
 use std::fs;
 use std::os::unix::fs::MetadataExt;
