@@ -394,16 +394,29 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             
             cmd.append("--repeat=%s" % (self.repeat + 1))
 
+        
+        
+        
+        is_parallel_capable_mac = (
+            sys.platform.startswith("darwin")
+            and mozinfo.info.get("arch") == "aarch64"
+            and not mozinfo.info.get("macos_vm")
+            and list(test_types) == ["testharness"]
+            and not c["tag"]
+        )
         if (
             self.is_android
             or mozinfo.info["tsan"]
             or "wdspec" in test_types
-            or not c["disable_fission"]
+            or (not c["disable_fission"] and not is_parallel_capable_mac)
             
-            or "reftest" in test_types
-            and sys.platform.startswith("darwin")
+            or ("reftest" in test_types and sys.platform.startswith("darwin"))
         ):
             processes = 1
+        elif is_parallel_capable_mac:
+            
+            
+            processes = 3
         else:
             processes = 2
         cmd.append("--processes=%s" % processes)
@@ -677,10 +690,14 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         
         
-        
-        gmp_paths = [
-            os.path.join(dirs["abs_test_bin_dir"], "plugins", "gmp-fake", "1.0")
-        ]
+        widevine_path = self.query_gmp_path("gmp-widevinecdm")
+        if widevine_path:
+            self.info(f"Using the Widevine CDM in {widevine_path}")
+            gmp_paths = [widevine_path]
+        else:
+            gmp_paths = [
+                os.path.join(dirs["abs_test_bin_dir"], "plugins", "gmp-fake", "1.0")
+            ]
         openh264_path = self.query_gmp_path("gmp-gmpopenh264")
         if openh264_path:
             self.info(f"Using the OpenH264 GMP plugin in {openh264_path}")
