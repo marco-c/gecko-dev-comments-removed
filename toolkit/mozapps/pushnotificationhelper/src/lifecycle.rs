@@ -23,16 +23,22 @@ use std::path::Path;
 
 use fnv::FnvHasher;
 use windows_sys::Win32::Foundation::{
-    CloseHandle, GetLastError, ERROR_ALREADY_EXISTS, HANDLE, WAIT_OBJECT_0,
+    CloseHandle, GetLastError, LocalFree, ERROR_ALREADY_EXISTS, ERROR_FILE_NOT_FOUND, HANDLE,
+    WAIT_OBJECT_0,
 };
+use windows_sys::Win32::Security::Authorization::{
+    ConvertStringSecurityDescriptorToSecurityDescriptorW, SDDL_REVISION_1,
+};
+use windows_sys::Win32::Security::{PSECURITY_DESCRIPTOR, SECURITY_ATTRIBUTES};
 use windows_sys::Win32::System::Threading::{
-    CreateEventW, CreateMutexW, OpenEventW, SetEvent, WaitForMultipleObjects, EVENT_MODIFY_STATE,
-    INFINITE,
+    CreateEventExW, CreateEventW, CreateMutexW, OpenEventW, SetEvent, WaitForMultipleObjects,
+    CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS, EVENT_MODIFY_STATE, INFINITE,
+    SYNCHRONIZATION_SYNCHRONIZE,
 };
 
 
-
-const PREFIX: &str = "Local\\MozillaNotificationHelper";
+#[link(name = "advapi32")]
+unsafe extern "system" {}
 
 struct OwnedHandle(HANDLE);
 
@@ -101,6 +107,9 @@ struct Event {
 
 impl Event {
     
+    const BROADCAST_RIGHTS: u32 = SYNCHRONIZATION_SYNCHRONIZE | EVENT_MODIFY_STATE;
+
+    
     
     fn create(name: &str) -> Result<Self, String> {
         let name = wide(name);
@@ -110,6 +119,67 @@ impl Event {
         let handle = unsafe { CreateEventW(std::ptr::null(), 1, 0, name.as_ptr()) };
         let handle = OwnedHandle::new(handle)
             .ok_or_else(|| format!("CreateEventW failed: {}", last_error()))?;
+
+        Ok(Event { handle })
+    }
+
+    fn broadcast_sddl() -> String {
+        
+        const AUTHENTICATED_USERS: &str = "AU";
+        const LOCAL_SYSTEM: &str = "SY";
+        const ADMINISTRATORS: &str = "BA";
+
+        
+        let allow = |rights: u32, trustee: &str| format!("(A;;{rights};;;{trustee})");
+
+        format!(
+            "D:{}{}{}",
+            allow(Self::BROADCAST_RIGHTS, AUTHENTICATED_USERS),
+            allow(EVENT_ALL_ACCESS, LOCAL_SYSTEM),
+            allow(EVENT_ALL_ACCESS, ADMINISTRATORS),
+        )
+    }
+
+    
+    fn create_shared(name: &str) -> Result<Self, String> {
+        let name = wide(name);
+        let sddl = wide(&Self::broadcast_sddl());
+
+        let mut descriptor: PSECURITY_DESCRIPTOR = std::ptr::null_mut();
+        let converted = unsafe {
+            ConvertStringSecurityDescriptorToSecurityDescriptorW(
+                sddl.as_ptr(),
+                SDDL_REVISION_1,
+                &mut descriptor,
+                std::ptr::null_mut(),
+            )
+        };
+        if converted == 0 {
+            return Err(format!(
+                "ConvertStringSecurityDescriptorToSecurityDescriptorW failed: {}",
+                last_error()
+            ));
+        }
+
+        let attributes = SECURITY_ATTRIBUTES {
+            nLength: size_of::<SECURITY_ATTRIBUTES>() as u32,
+            lpSecurityDescriptor: descriptor,
+            bInheritHandle: 0,
+        };
+
+        let handle = unsafe {
+            CreateEventExW(
+                &attributes,
+                name.as_ptr(),
+                CREATE_EVENT_MANUAL_RESET,
+                Self::BROADCAST_RIGHTS,
+            )
+        };
+        let error = last_error();
+        unsafe { LocalFree(descriptor) };
+
+        let handle =
+            OwnedHandle::new(handle).ok_or_else(|| format!("CreateEventExW failed: {error}"))?;
 
         Ok(Event { handle })
     }
@@ -125,7 +195,7 @@ impl StopEvent {
     pub fn open(profile: &Path) -> Result<Self, String> {
         Ok(StopEvent {
             profile: Event::create(&object_name("stop", Some(profile))?)?,
-            install: Event::create(&object_name("stop", None)?)?,
+            install: Event::create_shared(&object_name("stop", None)?)?,
         })
     }
 
@@ -156,11 +226,19 @@ pub fn send_stop_signal(profile: Option<&Path>) -> Result<(), String> {
 
     
     let handle = unsafe { OpenEventW(EVENT_MODIFY_STATE, 0, name.as_ptr()) };
+    if handle.is_null() {
+        
+        
+        
+        return match last_error() {
+            ERROR_FILE_NOT_FOUND => Ok(()),
+            error => Err(format!("OpenEventW failed: {error}")),
+        };
+    }
 
     
-    let Some(handle) = OwnedHandle::new(handle) else {
-        return Ok(());
-    };
+    let handle =
+        OwnedHandle::new(handle).ok_or_else(|| format!("OpenEventW failed: {}", last_error()))?;
 
     
     
@@ -177,6 +255,10 @@ pub fn send_stop_signal(profile: Option<&Path>) -> Result<(), String> {
 
 
 fn object_name(kind: &str, profile: Option<&Path>) -> Result<String, String> {
+    
+    const LOCAL_PREFIX: &str = "Local\\MozillaNotificationHelper";
+    const GLOBAL_PREFIX: &str = "Global\\MozillaNotificationHelper";
+
     let exe = std::env::current_exe().map_err(|e| format!("cannot locate this binary: {e}"))?;
     let install = exe
         .parent()
@@ -189,7 +271,13 @@ fn object_name(kind: &str, profile: Option<&Path>) -> Result<String, String> {
         hasher.write(path_key(profile).as_bytes());
     }
 
-    Ok(format!("{PREFIX}-{kind}-{:016x}", hasher.finish()))
+    let prefix = if profile.is_some() {
+        LOCAL_PREFIX
+    } else {
+        GLOBAL_PREFIX
+    };
+
+    Ok(format!("{prefix}-{kind}-{:016x}", hasher.finish()))
 }
 
 
@@ -218,6 +306,15 @@ fn wide(value: &str) -> Vec<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::sync::Mutex;
+
+    use windows_sys::Win32::System::Threading::ResetEvent;
+
+    
+    
+    
+    static BROADCAST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn name_ignores_path_case() {
@@ -288,6 +385,8 @@ mod tests {
 
     #[test]
     fn signal_does_not_reach_another_profile() {
+        let _serial = BROADCAST_LOCK.lock().unwrap();
+
         let mine = Path::new(r"c:\profiles\mine");
         let event = StopEvent::open(mine).unwrap();
         let waiter = std::thread::spawn(move || event.wait());
@@ -324,5 +423,44 @@ mod tests {
         let two = ProfileGuard::acquire(Path::new(r"c:\profiles\two")).unwrap();
 
         assert!(one.is_some() && two.is_some());
+    }
+
+    
+    
+    #[test]
+    fn only_the_broadcast_name_is_global() {
+        let profile = Path::new(r"c:\profiles\a");
+
+        assert!(object_name("stop", None).unwrap().starts_with("Global\\"));
+        assert!(object_name("stop", Some(profile))
+            .unwrap()
+            .starts_with("Local\\"));
+        assert!(object_name("profile", Some(profile))
+            .unwrap()
+            .starts_with("Local\\"));
+    }
+
+    #[test]
+    fn a_broadcast_signal_wakes_every_helper() {
+        let _serial = BROADCAST_LOCK.lock().unwrap();
+
+        
+        
+        let broadcast = Event::create_shared(&object_name("stop", None).unwrap()).unwrap();
+
+        let one = StopEvent::open(Path::new(r"c:\profiles\broadcast-one")).unwrap();
+        let two = StopEvent::open(Path::new(r"c:\profiles\broadcast-two")).unwrap();
+        let waiters = [
+            std::thread::spawn(move || one.wait()),
+            std::thread::spawn(move || two.wait()),
+        ];
+
+        send_stop_signal(None).unwrap();
+
+        for waiter in waiters {
+            waiter.join().unwrap().unwrap();
+        }
+
+        assert_ne!(unsafe { ResetEvent(broadcast.handle.get()) }, 0);
     }
 }
