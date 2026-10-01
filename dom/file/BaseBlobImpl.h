@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_BaseBlobImpl_h
 #define mozilla_dom_BaseBlobImpl_h
 
@@ -68,7 +66,7 @@ class BaseBlobImpl : public BlobImpl {
 
   void GetMozFullPathInternal(nsAString& aFileName, ErrorResult& aRv) override;
 
-  uint64_t GetSize(ErrorResult& aRv) override { return mLength; }
+  uint64_t GetSize(ErrorResult& aRv) const override { return mLength; }
 
   void GetType(nsAString& aType) override;
 
