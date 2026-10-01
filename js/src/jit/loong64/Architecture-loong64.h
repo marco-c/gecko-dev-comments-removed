@@ -512,6 +512,22 @@ FloatRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set) {
 
 inline bool hasMultiAlias() { return false; }
 
+
+template <typename T>
+inline constexpr T FPUDefaultQNaN() {
+  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
+
+  
+  if constexpr (std::is_same_v<T, float>) {
+    
+    return mozilla::BitwiseCast<float>(UINT32_C(0x7fc00000));
+  } else {
+    
+    
+    return mozilla::BitwiseCast<double>(UINT64_C(0x7ff8000000000000));
+  }
+}
+
 enum class LOONG64Extension : uint32_t {
   
   Initialized,

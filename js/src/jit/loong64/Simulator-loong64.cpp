@@ -2610,21 +2610,6 @@ T ReverseBits(T value) {
   return result;
 }
 
-template <typename T>
-inline constexpr T FPUDefaultQNaN() {
-  static_assert(std::is_same_v<T, float> || std::is_same_v<T, double>);
-
-  
-  if constexpr (std::is_same_v<T, float>) {
-    
-    return mozilla::BitwiseCast<float>(UINT32_C(0x7fc00000));
-  } else {
-    
-    
-    return mozilla::BitwiseCast<double>(UINT64_C(0x7ff8000000000000));
-  }
-}
-
 static constexpr bool FPUIsSNaN(float v) {
   constexpr uint32_t kFP32QuietNaNMask = UINT32_C(0x00400000);
   return std::isnan(v) &&
