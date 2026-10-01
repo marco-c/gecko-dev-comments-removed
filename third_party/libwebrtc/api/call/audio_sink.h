@@ -16,6 +16,8 @@
 
 namespace webrtc {
 
+class RtpPacketInfos;
+
 
 class AudioSinkInterface {
  public:
@@ -26,18 +28,21 @@ class AudioSinkInterface {
          size_t samples_per_channel,
          int sample_rate,
          size_t channels,
-         uint32_t timestamp)
+         uint32_t timestamp,
+         const RtpPacketInfos* packet_infos = nullptr)
         : data(data),
           samples_per_channel(samples_per_channel),
           sample_rate(sample_rate),
           channels(channels),
-          timestamp(timestamp) {}
+          timestamp(timestamp),
+          packet_infos(packet_infos) {}
 
     const int16_t* data;         
     size_t samples_per_channel;  
     int sample_rate;             
     size_t channels;             
     uint32_t timestamp;          
+    const RtpPacketInfos* packet_infos;
   };
 
   virtual void OnData(const Data& audio) = 0;

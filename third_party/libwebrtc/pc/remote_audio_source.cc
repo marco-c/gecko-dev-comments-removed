@@ -10,8 +10,7 @@
 
 #include "pc/remote_audio_source.h"
 
-#include <stddef.h>
-
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -20,6 +19,7 @@
 #include "absl/algorithm/container.h"
 #include "api/call/audio_sink.h"
 #include "api/media_stream_interface.h"
+#include "api/rtp_packet_infos.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
@@ -155,13 +155,16 @@ void RemoteAudioSource::RemoveSink(AudioTrackSinkInterface* sink) {
 void RemoteAudioSource::OnData(const AudioSinkInterface::Data& audio) {
   
   TRACE_EVENT0("webrtc", "RemoteAudioSource::OnData");
+  const RtpPacketInfos empty_packet_infos;
+  const RtpPacketInfos& packet_infos =
+      audio.packet_infos != nullptr ? *audio.packet_infos : empty_packet_infos;
   MutexLock lock(&sink_lock_);
   for (auto* sink : sinks_) {
     
     
     sink->OnData(audio.data, 16, audio.sample_rate, audio.channels,
                  audio.samples_per_channel,
-                 std::nullopt);
+                 std::nullopt, packet_infos);
   }
 }
 

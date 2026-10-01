@@ -37,6 +37,8 @@
 
 namespace webrtc {
 
+class RtpPacketInfos;
+
 
 class ObserverInterface {
  public:
@@ -203,6 +205,7 @@ class RTC_EXPORT VideoTrackInterface : public MediaStreamTrackInterface,
 
 class AudioTrackSinkInterface {
  public:
+  
   virtual void OnData(const void* ,
                       int ,
                       int ,
@@ -226,6 +229,20 @@ class AudioTrackSinkInterface {
     
     return OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,
                   number_of_frames);
+  }
+
+  
+  
+  
+  virtual void OnData(const void* audio_data,
+                      int bits_per_sample,
+                      int sample_rate,
+                      size_t number_of_channels,
+                      size_t number_of_frames,
+                      std::optional<int64_t> absolute_capture_timestamp_ms,
+                      const RtpPacketInfos& ) {
+    OnData(audio_data, bits_per_sample, sample_rate, number_of_channels,
+           number_of_frames, absolute_capture_timestamp_ms);
   }
 
   
