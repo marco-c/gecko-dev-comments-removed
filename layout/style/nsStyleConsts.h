@@ -229,15 +229,6 @@ enum class StyleWhiteSpaceCollapse : uint8_t {
 };
 
 
-enum class StyleImeMode : uint8_t {
-  Auto,
-  Normal,
-  Active,
-  Disabled,
-  Inactive,
-};
-
-
 
 
 enum class StyleWindowShadow : uint8_t {
