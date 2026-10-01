@@ -18,7 +18,6 @@
 #define wasm_binary_h
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Maybe.h"
 
 #include <type_traits>
 
@@ -639,13 +638,6 @@ class Decoder {
   void skipAndFinishCustomSection(const BytecodeRange& range);
 
   [[nodiscard]] bool skipCustomSection(CodeMetadata* codeMeta);
-
-  
-
-  [[nodiscard]] bool startNameSubsection(NameType nameType,
-                                         mozilla::Maybe<uint32_t>* endOffset);
-  [[nodiscard]] bool finishNameSubsection(uint32_t endOffset);
-  [[nodiscard]] bool skipNameSubsection();
 
   
   
