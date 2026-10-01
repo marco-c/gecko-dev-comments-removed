@@ -937,10 +937,16 @@ pub enum DisplayListSection {
 
 
 
+
+
+
+
+
+
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 struct AuOffset {
-    x: i32,
-    y: i32,
+    x: i64,
+    y: i64,
 }
 
 impl AuOffset {
@@ -1020,7 +1026,7 @@ impl AuGrid {
     
     
     
-    fn add(&self, v: f32, off_au: i32, off_grid: &mut u32) -> f32 {
+    fn add(&self, v: f32, off_au: i64, off_grid: &mut u32) -> f32 {
         if off_au == 0 {
             return v;
         }
@@ -1041,8 +1047,8 @@ impl AuGrid {
     
     fn vec_to_au(&self, v: LayoutVector2D, off_grid: &mut u32) -> AuOffset {
         AuOffset {
-            x: self.to_au(v.x, off_grid) as i32,
-            y: self.to_au(v.y, off_grid) as i32,
+            x: self.to_au(v.x, off_grid) as i64,
+            y: self.to_au(v.y, off_grid) as i64,
         }
     }
 }
