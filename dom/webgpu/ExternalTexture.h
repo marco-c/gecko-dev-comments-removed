@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef ExternalTexture_H_
 #define ExternalTexture_H_
 
@@ -234,8 +233,7 @@ class ExternalTextureSourceHost {
   
   
   
-  bool OnBeforeQueueSubmit(WebGPUParent* aParent, RawId aDeviceId,
-                           RawId aQueueId);
+  bool OnBeforeQueueSubmit(WebGPUParent* aParent, RawId aQueueId);
 
  private:
   ExternalTextureSourceHost(Span<const RawId> aTextureIds,
