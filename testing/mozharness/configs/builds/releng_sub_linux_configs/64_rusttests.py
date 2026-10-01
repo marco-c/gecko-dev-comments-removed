@@ -19,7 +19,6 @@ config = {
         
         "PATH": ":/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
     },
-    "app_name": "tools/rusttests",
     "disable_package_metrics": True,
     
 }
