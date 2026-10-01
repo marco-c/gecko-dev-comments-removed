@@ -314,10 +314,24 @@ void SpeculationRules::HoverContentChanged(nsIContent* aContent) {
 
   
   
-  NS_NewTimerWithFuncCallback(
-      getter_AddRefs(mHoverTimer), HoverTimerFired, this,
-      StaticPrefs::dom_speculation_rules_moderate_hover_delay_ms(),
-      nsITimer::TYPE_ONE_SHOT, "SpeculationRules::HoverTimerFired"_ns);
+  uint32_t eagerDelay =
+      StaticPrefs::dom_speculation_rules_eager_hover_delay_ms();
+  uint32_t moderateDelay =
+      StaticPrefs::dom_speculation_rules_moderate_hover_delay_ms();
+  if (eagerDelay < moderateDelay) {
+    ArmHoverTimer(eagerDelay, Eagerness::Eager);
+  } else {
+    ArmHoverTimer(moderateDelay, Eagerness::Moderate);
+  }
+}
+
+void SpeculationRules::ArmHoverTimer(uint32_t aDelayMs, Eagerness aLevel) {
+  mHoverTimerLevel = aLevel;
+  
+  
+  NS_NewTimerWithFuncCallback(getter_AddRefs(mHoverTimer), HoverTimerFired,
+                              this, aDelayMs, nsITimer::TYPE_ONE_SHOT,
+                              "SpeculationRules::HoverTimerFired"_ns);
 }
 
 void SpeculationRules::CancelHoverTimer() {
@@ -341,11 +355,24 @@ void SpeculationRules::HoverTimerFired(nsITimer* aTimer, void* aClosure) {
   if (!link || !link->IsInComposedDoc()) {
     return;
   }
-  nsCOMPtr<nsIURI> uri = link->GetHrefURI();
-  if (uri) {
-    
-    
-    speculationRules->EnactCandidates(uri, Eagerness::Moderate);
+  Eagerness level = speculationRules->mHoverTimerLevel;
+  if (nsCOMPtr<nsIURI> uri = link->GetHrefURI()) {
+    speculationRules->EnactCandidates(uri, level);
+
+    if (level == Eagerness::Eager) {
+      uint32_t eagerDelay =
+          StaticPrefs::dom_speculation_rules_eager_hover_delay_ms();
+      uint32_t moderateDelay =
+          StaticPrefs::dom_speculation_rules_moderate_hover_delay_ms();
+      if (moderateDelay > eagerDelay) {
+        speculationRules->ArmHoverTimer(moderateDelay - eagerDelay,
+                                        Eagerness::Moderate);
+      } else {
+        
+        
+        speculationRules->EnactCandidates(uri, Eagerness::Moderate);
+      }
+    }
   }
 }
 

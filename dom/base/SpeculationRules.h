@@ -62,6 +62,9 @@ class SpeculationRules final {
   
   void EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel);
 
+  
+  
+  void ArmHoverTimer(uint32_t aDelayMs, Eagerness aLevel);
   void CancelHoverTimer();
   static void HoverTimerFired(nsITimer* aTimer, void* aClosure);
 
@@ -91,6 +94,10 @@ class SpeculationRules final {
   
   RefPtr<Element> mHoverLink;
   nsCOMPtr<nsITimer> mHoverTimer;
+  
+  
+  
+  Eagerness mHoverTimerLevel{Eagerness::Eager};
 };
 
 }  
