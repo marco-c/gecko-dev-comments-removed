@@ -178,7 +178,7 @@ struct gfxFontStyle {
   uint8_t variantCaps : 3;  
 
   
-  uint8_t variantSubSuper : 2;  
+  mozilla::StyleFontVariantPosition variantSubSuper : 2;  
 
   
   uint8_t sizeAdjustBasis : 3;  
@@ -1630,11 +1630,13 @@ class gfxFont {
   
   
   
-  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const uint8_t* aString,
-                              uint32_t aLength, Script aRunScript);
+  bool SupportsSubSuperscript(mozilla::StyleFontVariantPosition aSubSuperscript,
+                              const uint8_t* aString, uint32_t aLength,
+                              Script aRunScript);
 
-  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const char16_t* aString,
-                              uint32_t aLength, Script aRunScript);
+  bool SupportsSubSuperscript(mozilla::StyleFontVariantPosition aSubSuperscript,
+                              const char16_t* aString, uint32_t aLength,
+                              Script aRunScript);
 
   
   bool FeatureWillHandleChar(Script aRunScript, uint32_t aFeature,
