@@ -4328,8 +4328,8 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     auto overscroll = GetOverscrollBehaviorInfo();
-    if (overscroll.mBehaviorX != OverscrollBehavior::Auto ||
-        overscroll.mBehaviorY != OverscrollBehavior::Auto) {
+    if (overscroll.mBehaviorX != StyleOverscrollBehavior::Auto ||
+        overscroll.mBehaviorY != StyleOverscrollBehavior::Auto) {
       info += CompositorHitTestFlags::eRequiresTargetConfirmation;
     }
 

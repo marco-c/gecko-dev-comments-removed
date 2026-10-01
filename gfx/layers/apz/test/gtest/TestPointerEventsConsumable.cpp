@@ -53,8 +53,8 @@ class APZCArePointerEventsConsumable : public APZCTreeManagerTester {
     return new TouchBlockState(aApzc, flags, counter);
   }
 
-  void UpdateOverscrollBehavior(ViewID aScrollId, OverscrollBehavior aX,
-                                OverscrollBehavior aY) {
+  void UpdateOverscrollBehavior(ViewID aScrollId, StyleOverscrollBehavior aX,
+                                StyleOverscrollBehavior aY) {
     auto* layer = layers[aScrollId - START_SCROLL_ID];
     ModifyFrameMetrics(layer, [aX, aY](ScrollMetadata& sm, FrameMetrics& _) {
       OverscrollBehaviorInfo overscroll;
@@ -234,8 +234,8 @@ TEST_F(APZCArePointerEventsConsumable, NestedElementCannotScroll) {
   
   
   
-  UpdateOverscrollBehavior(START_SCROLL_ID + 1, OverscrollBehavior::None,
-                           OverscrollBehavior::None);
+  UpdateOverscrollBehavior(START_SCROLL_ID + 1, StyleOverscrollBehavior::None,
+                           StyleOverscrollBehavior::None);
   expected = {true, true};
   actual = apzc->ArePointerEventsConsumable(blockState, touchMove);
   EXPECT_EQ(expected, actual);
