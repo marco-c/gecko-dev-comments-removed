@@ -12,9 +12,12 @@
 #include "MOZShareURLPasteboardItem.h"
 #include "Units.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Element.h"
+#include "nsCOMPtr.h"
 #include "nsIFrame.h"
 #include "nsIWidget.h"
+#include "nsMacSharingCopyOverride.h"
 #include "nsPresContext.h"
 
 using namespace mozilla;
@@ -38,25 +41,33 @@ NS_IMPL_ISUPPORTS(nsMacSharingService, nsIMacSharingService)
 
 
 
+
+
+
+
 @interface SharingServicePickerDelegate
     : NSObject <NSSharingServicePickerDelegate> {
   NSSharingServicePicker* mPicker;
   NSUserActivity* mShareActivity;
+  mozilla::UniquePtr<MacShareCopyOverride> mCopyOverride;
   BOOL mIsMultiUrl;
 }
 - (id)initWithPicker:(NSSharingServicePicker*)aPicker
             activity:(NSUserActivity*)aActivity
-          isMultiUrl:(BOOL)aIsMultiUrl;
+          isMultiUrl:(BOOL)aIsMultiUrl
+        copyOverride:(mozilla::UniquePtr<MacShareCopyOverride>&&)aCopyOverride;
 
 @end
 
 @implementation SharingServicePickerDelegate
 - (id)initWithPicker:(NSSharingServicePicker*)aPicker
             activity:(NSUserActivity*)aActivity
-          isMultiUrl:(BOOL)aIsMultiUrl {
+          isMultiUrl:(BOOL)aIsMultiUrl
+        copyOverride:(mozilla::UniquePtr<MacShareCopyOverride>&&)aCopyOverride {
   self = [super init];
   mPicker = [aPicker retain];
   mShareActivity = [aActivity retain];
+  mCopyOverride = std::move(aCopyOverride);
   mIsMultiUrl = aIsMultiUrl;
   return self;
 }
@@ -90,6 +101,9 @@ NS_IMPL_ISUPPORTS(nsMacSharingService, nsIMacSharingService)
 }
 
 - (void)dealloc {
+  
+  
+  mCopyOverride = nullptr;
   [mShareActivity resignCurrent];
   [mShareActivity invalidate];
   [mShareActivity release];
@@ -198,13 +212,35 @@ static NSUserActivity* MakeSingleUrlActivity(NSURL* aURL, NSString* aTitle) {
   return activity;
 }
 
+
+
+
+static mozilla::UniquePtr<MacShareCopyOverride> MakeCopyOverride(
+    nsIMacShareCustomItem* aCopyItem) {
+  if (!aCopyItem) {
+    return nullptr;
+  }
+  nsAutoString label;
+  aCopyItem->GetLabel(label);
+  nsCOMPtr<nsIMacShareCustomItemHandler> handler;
+  aCopyItem->GetHandler(getter_AddRefs(handler));
+  if (label.IsEmpty() || !handler) {
+    return nullptr;
+  }
+  nsCOMPtr<nsIMacShareCustomItemHandler> handlerRef = handler;
+  return MacShareCopyOverride::Create(nsCocoaUtils::ToNSString(label), ^{
+    handlerRef->Handle();
+  });
+}
+
 }  
 
 NS_IMETHODIMP
 nsMacSharingService::ShareUrlWithPicker(mozilla::dom::Element* aAnchor,
                                         const nsTArray<nsString>& aUrls,
                                         const nsTArray<nsString>& aTitles,
-                                        const nsAString& aShareTitle) {
+                                        const nsAString& aShareTitle,
+                                        nsIMacShareCustomItem* aCopyItem) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
   if (!aAnchor || aUrls.IsEmpty()) {
     return NS_ERROR_INVALID_ARG;
@@ -226,14 +262,17 @@ nsMacSharingService::ShareUrlWithPicker(mozilla::dom::Element* aAnchor,
   NS_ENSURE_SUCCESS(rv, rv);
 
   NSUserActivity* shareActivity = MakeSingleUrlActivity(singleURL, shareTitle);
+  mozilla::UniquePtr<MacShareCopyOverride> copyOverride =
+      MakeCopyOverride(aCopyItem);
 
   NSSharingServicePicker* picker =
       [[NSSharingServicePicker alloc] initWithItems:@[ shareItem ]];
 
-  SharingServicePickerDelegate* delegate =
-      [[SharingServicePickerDelegate alloc] initWithPicker:picker
-                                                  activity:shareActivity
-                                                isMultiUrl:!isSingle];
+  SharingServicePickerDelegate* delegate = [[SharingServicePickerDelegate alloc]
+      initWithPicker:picker
+            activity:shareActivity
+          isMultiUrl:!isSingle
+        copyOverride:std::move(copyOverride)];
   
   
   
