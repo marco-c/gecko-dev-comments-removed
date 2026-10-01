@@ -47,19 +47,24 @@ async function openContextMenuForSelector(browser, selector) {
   );
 
   
-  let browserOffsets = browser.getBoundingClientRect();
-  let offsetX = browserOffsets.x + inputCoords.x;
-  let offsetY = browserOffsets.y + inputCoords.y;
-
   
   
-  
-  let eventDetails = { type: "mousedown", button: 2 };
-  EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  let eventDetails = { button: 2 };
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    inputCoords.x,
+    inputCoords.y,
+    eventDetails,
+    browser
+  );
 
   
   eventDetails = { type: "contextmenu", button: 2 };
-  EventUtils.synthesizeMouseAtPoint(offsetX, offsetY, eventDetails);
+  await BrowserTestUtils.synthesizeMouseAtPoint(
+    inputCoords.x,
+    inputCoords.y,
+    eventDetails,
+    browser
+  );
 
   await SpecialPowers.spawn(browser, [], async () => {
     await content.contextmenuPromise;
