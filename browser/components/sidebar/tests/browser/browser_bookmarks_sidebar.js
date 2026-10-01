@@ -7,6 +7,9 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
 
+const { openFolder, openToolbarFolder, findBookmarkItemByGuid } =
+  SidebarTestUtils.bookmarks;
+
 const TEST_URL = "https://example.com/";
 const TEST_URL_2 = "https://example.org/";
 const UPDATED_BOOKMARKS_PREF = "sidebar.updatedBookmarks.enabled";
@@ -18,20 +21,6 @@ add_setup(async () => {
     set: [[UPDATED_BOOKMARKS_PREF, true]],
   });
 });
-
-async function showBookmarksSidebar() {
-  if (SidebarController.currentID !== "viewBookmarksSidebar") {
-    await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
-  }
-  const { contentDocument, contentWindow } = SidebarController.browser;
-  await TestUtils.waitForCondition(
-    () => contentDocument.querySelector("sidebar-bookmarks"),
-    "Wait for sidebar-bookmarks element"
-  );
-  const component = contentDocument.querySelector("sidebar-bookmarks");
-  await component.updateComplete;
-  return { component, contentWindow };
-}
 
 async function addBookmark({
   url = TEST_URL,
@@ -112,38 +101,6 @@ async function addBookmarkViaContextMenu(triggerEl, url) {
 
 
 
-async function openFolder(folderDetails) {
-  if (!folderDetails.open) {
-    folderDetails.querySelector("summary").click();
-    await BrowserTestUtils.waitForMutationCondition(
-      folderDetails,
-      { attributes: true },
-      () => folderDetails.open
-    );
-  }
-}
-
-
-
-
-
-
-
-async function openToolbarFolder(tabList) {
-  const toolbarFolder = await findBookmarkItemByGuid(
-    tabList,
-    "folderEls",
-    PlacesUtils.bookmarks.toolbarGuid
-  );
-  await openFolder(toolbarFolder);
-  return toolbarFolder;
-}
-
-
-
-
-
-
 
 
 async function getBookmarkRow(tabList, bookmark) {
@@ -184,22 +141,6 @@ async function getBookmarkList(tabList, parentGuid) {
     list = folder.querySelector("sidebar-bookmark-list");
   }
   return list;
-}
-
-
-
-
-
-
-
-
-
-async function findBookmarkItemByGuid(list, query, guid) {
-  return BrowserTestUtils.waitForMutationCondition(
-    list.shadowRoot,
-    { childList: true, subtree: true },
-    () => [...list[query]].find(element => element.guid === guid)
-  );
 }
 
 
