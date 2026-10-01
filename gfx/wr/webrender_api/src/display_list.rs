@@ -1636,8 +1636,8 @@ impl DisplayListBuilder {
     
     pub fn create_gradient(
         &mut self,
-        start_point: LayoutPoint,
-        end_point: LayoutPoint,
+        start_point: LayoutVector2D,
+        end_point: LayoutVector2D,
         stops: Vec<di::GradientStop>,
         extend_mode: di::ExtendMode,
     ) -> (di::Gradient, Vec<di::GradientStop>) {
@@ -1649,7 +1649,7 @@ impl DisplayListBuilder {
     
     pub fn create_radial_gradient(
         &mut self,
-        center: LayoutPoint,
+        center: LayoutVector2D,
         radius: LayoutSize,
         stops: Vec<di::GradientStop>,
         extend_mode: di::ExtendMode,
@@ -1662,7 +1662,7 @@ impl DisplayListBuilder {
     
     pub fn create_conic_gradient(
         &mut self,
-        center: LayoutPoint,
+        center: LayoutVector2D,
         angle: f32,
         stops: Vec<di::GradientStop>,
         extend_mode: di::ExtendMode,
@@ -1969,8 +1969,8 @@ impl DisplayListBuilder {
 
         let mut tile_size = resolve_tile_size(&bounds, tile_size);
 
-        let mut start = gradient.start_point;
-        let mut end = gradient.end_point;
+        let mut start = gradient.start;
+        let mut end = gradient.end;
         
         
         
@@ -1994,8 +1994,8 @@ impl DisplayListBuilder {
             common,
             bounds,
             gradient: di::Gradient {
-                start_point: start,
-                end_point: end,
+                start,
+                end,
                 ..gradient
             },
             tile_size,

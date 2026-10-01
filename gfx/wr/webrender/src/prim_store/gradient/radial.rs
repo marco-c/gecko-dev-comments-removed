@@ -42,7 +42,7 @@ pub struct RadialGradientTemplate {
     pub common: PrimTemplateCommonData,
     pub extend_mode: ExtendMode,
     pub params: RadialGradientParams,
-    pub center: LayoutPoint,
+    pub center: LayoutVector2D,
     
     
     
@@ -60,13 +60,8 @@ impl PatternBuilder for RadialGradientTemplate {
         _sub_rect: Option<DeviceRect>,
         state: &mut PatternBuilderState,
     ) -> Pattern {
-        
-        
-        
-        let center = pattern_rect.min + self.center.to_vector();
-
         radial_gradient_pattern(
-            center,
+            pattern_rect.min + self.center,
             self.params.start_radius,
             self.params.end_radius,
             self.params.ratio_xy,

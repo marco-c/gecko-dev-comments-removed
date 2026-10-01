@@ -19,7 +19,7 @@ use crate::{
 };
 use crate::key_types::{
     BorderRadiusAu, ConicGradientParams, GradientStopKey, NinePatchDescriptor,
-    NormalBorderAu, PointKey, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
+    NormalBorderAu, PrimKeyCommonData, RadialGradientParams, SizeKey, StretchSizeKey,
     VectorKey,
 };
 use crate::units::{LayoutSideOffsetsAu, TileOffset};
@@ -136,8 +136,8 @@ pub struct BackdropRender {
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct LinearGradient {
     pub extend_mode: ExtendMode,
-    pub start_point: PointKey,
-    pub end_point: PointKey,
+    pub start_point: VectorKey,
+    pub end_point: VectorKey,
     
     
     pub stretch_ratio: SizeKey,
@@ -150,7 +150,7 @@ pub struct LinearGradient {
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct RadialGradient {
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: RadialGradientParams,
     
     
@@ -163,7 +163,7 @@ pub struct RadialGradient {
 #[derive(Clone, Debug, Eq, MallocSizeOf, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ConicGradient {
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: ConicGradientParams,
     
     
@@ -183,8 +183,8 @@ pub struct ConicGradient {
 pub struct LinearGradientKey {
     pub common: PrimKeyCommonData,
     pub extend_mode: ExtendMode,
-    pub start_point: PointKey,
-    pub end_point: PointKey,
+    pub start_point: VectorKey,
+    pub end_point: VectorKey,
     
     
     pub stretch_ratio: SizeKey,
@@ -214,7 +214,7 @@ impl LinearGradientKey {
 pub struct RadialGradientKey {
     pub common: PrimKeyCommonData,
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: RadialGradientParams,
     
     
@@ -243,7 +243,7 @@ impl RadialGradientKey {
 pub struct ConicGradientKey {
     pub common: PrimKeyCommonData,
     pub extend_mode: ExtendMode,
-    pub center: PointKey,
+    pub center: VectorKey,
     pub params: ConicGradientParams,
     
     
