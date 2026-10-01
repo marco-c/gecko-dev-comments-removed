@@ -115,6 +115,11 @@ class H265NALU final {
            mNalUnitType == NAL_TYPES::IDR_N_LP;
   }
 
+  bool IsIRAP() const {
+    return mNalUnitType >= NAL_TYPES::BLA_W_LP &&
+           mNalUnitType <= NAL_TYPES::CRA_NUT;
+  }
+
   bool IsSPS() const { return mNalUnitType == NAL_TYPES::SPS_NUT; }
   bool IsVPS() const { return mNalUnitType == NAL_TYPES::VPS_NUT; }
   bool IsPPS() const { return mNalUnitType == NAL_TYPES::PPS_NUT; }
@@ -410,6 +415,11 @@ class H265 final {
   
   
   static Result<bool, nsresult> IsKeyFrame(
+      const mozilla::MediaRawData* aSample);
+
+  
+  
+  static Result<bool, nsresult> IsRandomAccessPoint(
       const mozilla::MediaRawData* aSample);
 
   
