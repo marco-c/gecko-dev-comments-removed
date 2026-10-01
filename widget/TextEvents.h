@@ -1448,6 +1448,21 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
   }
 
   
+
+
+
+
+  [[nodiscard]] bool DispatchedByValidDispatcher() const {
+    
+    
+    if (mFlags.CameFromAnotherProcess()) {
+      return true;
+    }
+    
+    return mDispatchedByTextEventDispatcher;
+  }
+
+  
   uint32_t mOffset = 0;
   
   uint32_t mLength = 0;
@@ -1458,6 +1473,8 @@ class WidgetSelectionEvent final : public WidgetGUIEvent {
       ExpandToClusterBoundary::Yes;
   
   bool mSucceeded = false;
+  
+  bool mDispatchedByTextEventDispatcher = false;
   
   
   int16_t mReason = nsISelectionListener::NO_REASON;

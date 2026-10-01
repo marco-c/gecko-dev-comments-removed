@@ -56,6 +56,37 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
   }
 
   
+
+
+
+
+
+  [[nodiscard]] bool DispatchedByValidDispatcher() const {
+    
+    
+    if (mFlags.CameFromAnotherProcess()) {
+      return true;
+    }
+    switch (mMessage) {
+      case eContentCommandCut:
+      case eContentCommandCopy:
+      case eContentCommandPaste:
+      case eContentCommandDelete:
+      case eContentCommandUndo:
+      case eContentCommandRedo:
+      case eContentCommandInsertText:
+      case eContentCommandReplaceText:
+      case eContentCommandPasteTransferable:
+        
+        
+        return mDispatchedByTextEventDispatcher;
+      default:
+        
+        return true;
+    }
+  }
+
+  
   mozilla::Maybe<nsString> mString;  
 
   
@@ -103,6 +134,9 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
   
   
   bool mIsEnabled;  
+
+  
+  bool mDispatchedByTextEventDispatcher = false;
 
   void AssignContentCommandEventData(const WidgetContentCommandEvent& aEvent,
                                      bool aCopyTargets) {
