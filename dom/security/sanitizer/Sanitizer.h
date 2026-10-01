@@ -22,6 +22,7 @@ class nsISupports;
 namespace mozilla {
 
 class ErrorResult;
+enum UseCounter : int16_t;
 
 namespace dom {
 
@@ -139,8 +140,40 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
   bool CommentsAllowed() const { return mComments; }
 
+  
+  
+  
+  
+  void RecordSanitizeUse() const;
+
  private:
   ~Sanitizer() = default;
+
+  
+  
+  
+  
+  
+  void RecordConfigKeyUse(UseCounter aCounter) const;
+
+  
+  
+  void RecordConfigChange(UseCounter aCounter);
+
+  void RecordDictionaryConfigKeyUses(const SanitizerConfig& aConfig) const;
+
+  
+  
+  
+  template <typename T>
+  void RecordElementAttributeKeyUses(const T& aElement) const;
+
+  
+  
+  
+  
+  bool AllowElementInternal(
+      const StringOrSanitizerElementNamespaceWithAttributes& aElement);
 
   void CanonicalizeConfiguration(const SanitizerConfig& aConfig,
                                  bool aPermissiveDefaults, ErrorResult& aRv);
@@ -224,6 +257,14 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
   
   
   bool mIsDefaultConfig = false;
+
+  
+  
+  
+  
+  
+  
+  bool mCountsAsDefaultConfig = false;
 };
 }  
 }  
