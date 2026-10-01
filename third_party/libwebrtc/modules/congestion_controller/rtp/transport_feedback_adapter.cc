@@ -305,6 +305,7 @@ TransportFeedbackAdapter::ProcessCongestionControlFeedback(
 
   int ignored_packets = 0;
   int failed_lookups = 0;
+  bool unexpected_arrival_time_offset = false;
   bool supports_ecn = true;
   std::vector<PacketResult> packet_result_vector;
   std::optional<MinMax> sequence_number_in_report;
@@ -330,9 +331,40 @@ TransportFeedbackAdapter::ProcessCongestionControlFeedback(
     PacketResult result;
     result.sent_packet = packet_feedback->sent;
     if (packet_info.arrival_time_offset.IsFinite()) {
-      result.receive_time = current_offset_ - packet_info.arrival_time_offset;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      TimeDelta time_between_two_last_feedback =
+          feedback_delta > TimeDelta::Zero()
+              ? feedback_delta + TimeDelta::Millis(1)
+              : TimeDelta::PlusInfinity();
+      TimeDelta feedback_send_time_delta =
+          std::max(feedback_receive_time - packet_feedback->sent.send_time,
+                   TimeDelta::Millis(0));
+      TimeDelta max_expected_ato =
+          std::min(time_between_two_last_feedback, feedback_send_time_delta);
+      TimeDelta arrival_time_offset = packet_info.arrival_time_offset;
+      if (arrival_time_offset > max_expected_ato) {
+        RTC_LOG_IF(LS_WARNING, !unexpected_arrival_time_offset)
+            << "Arrival time offset " << packet_info.arrival_time_offset
+            << " exceeds max expected ATO " << max_expected_ato
+            << " (feedback_send_time_delta: " << feedback_send_time_delta
+            << ", time_between_two_last_feedback: "
+            << time_between_two_last_feedback << ")";
+        unexpected_arrival_time_offset = true;
+        arrival_time_offset = max_expected_ato;
+      }
+      result.receive_time = current_offset_ - arrival_time_offset;
       supports_ecn &= packet_info.ecn != EcnMarking::kNotEct;
-      result.arrival_time_offset = packet_info.arrival_time_offset;
+      result.arrival_time_offset = arrival_time_offset;
     }
     result.ecn = packet_info.ecn;
     result.sent_with_ect1 = packet_feedback->sent_with_ect1;
