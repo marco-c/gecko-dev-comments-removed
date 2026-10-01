@@ -3021,7 +3021,7 @@ toolbar#nav-bar {
             
             
             args.append("-marionette")
-            args.append("-remote-allow-system-access")
+            env["MOZ_REMOTE_ALLOW_SYSTEM_ACCESS"] = "1"
 
             
             
