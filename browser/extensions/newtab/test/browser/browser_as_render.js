@@ -10,6 +10,9 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.newtab.featureGate", false]],
   });
+  
+  
+  NewTabPagePreloading.removePreloadedBrowser(window);
 });
 
 test_newtab({
