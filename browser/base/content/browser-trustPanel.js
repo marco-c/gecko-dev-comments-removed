@@ -115,6 +115,14 @@ const BLOCKER_CLICK_METRICS = {
 };
 
 
+
+const OPENING_REASONS = {
+  SHIELD_BUTTON_CLICKED: "shieldButtonClicked",
+  EMBED_PLACEHOLDER_BUTTON: "embedPlaceholderButton",
+  UNKNOWN: "unknown",
+};
+
+
 const CLOSING_REASONS = {
   DISMISSED: "dismissed",
   NAVIGATED: "navigated",
@@ -211,7 +219,7 @@ class TrustPanel {
   #lastBrowser = null;
 
   #popupToggleDelayTimer = null;
-  #openingReason = null;
+  #openingReason = OPENING_REASONS.UNKNOWN;
   #closingReason = null;
   #shownAt = null;
 
@@ -291,7 +299,10 @@ class TrustPanel {
       return; 
     }
 
-    this.showPopup({ event, reason: "shieldButtonClicked" });
+    this.showPopup({
+      event,
+      reason: OPENING_REASONS.SHIELD_BUTTON_CLICKED,
+    });
   }
 
   async onContentBlockingEvent(
@@ -408,7 +419,7 @@ class TrustPanel {
 
     await this.#updatePopup();
 
-    this.#openingReason = opts.reason;
+    this.#openingReason = opts.reason ?? OPENING_REASONS.UNKNOWN;
 
     PanelMultiView.openPopup(this.#popup, anchor, {
       position: "bottomleft topleft",
@@ -428,6 +439,7 @@ class TrustPanel {
         breaches: applicableBreaches,
         hasMonitorAccountOrStoredPasswords,
       }),
+      opening_reason: this.#openingReason,
       trackers_blocked: blockedTrackersCount > 0,
     });
   }
@@ -1979,7 +1991,7 @@ class TrustPanel {
           { once: true }
         );
         multiview.setAttribute("mainViewId", "trustpanel-blockerView");
-        this.showPopup({ reason: "embedPlaceholderButton" });
+        this.showPopup({ reason: OPENING_REASONS.EMBED_PLACEHOLDER_BUTTON });
         break;
       }
     }
@@ -2027,7 +2039,7 @@ class TrustPanel {
     PopupNotifications.suppressWhileOpen(this.#popup);
     
     
-    if (this.#openingReason == "embedPlaceholderButton") {
+    if (this.#openingReason == OPENING_REASONS.EMBED_PLACEHOLDER_BUTTON) {
       this.#disablePopupToggles();
       this.#popupToggleDelayTimer = setTimeout(() => {
         this.#enablePopupToggles();
@@ -2044,7 +2056,7 @@ class TrustPanel {
     
     if (this.#shownAt !== null) {
       Glean.trustpanel.closed.record({
-        opening_reason: this.#openingReason ?? "unknown",
+        opening_reason: this.#openingReason,
         closing_reason: this.#closingReason ?? CLOSING_REASONS.DISMISSED,
         duration_ms: Math.round(performance.now() - this.#shownAt),
       });
