@@ -53,12 +53,16 @@ impl PingUploader for ViaductUploader {
 
         
         
-        let result =
-            if localhost_port == 0 && requires_ohttp && should_ohttp_upload(&upload_request) {
-                ohttp_upload(upload_request)
-            } else {
-                viaduct_upload(upload_request)
-            };
+        let result = if localhost_port == 0 && requires_ohttp {
+            
+            
+            if !should_ohttp_upload(&upload_request) {
+                return UploadResult::unrecoverable_failure();
+            }
+            ohttp_upload(upload_request)
+        } else {
+            viaduct_upload(upload_request)
+        };
 
         log::trace!(
             "FOG Ping Uploader completed uploading (Result {:?})",
