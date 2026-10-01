@@ -33,7 +33,15 @@ uint16_t RotorRule::Match(Accessible* aAcc) {
     result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   }
 
-  if (mDirectDescendantsFrom && (aAcc != mDirectDescendantsFrom)) {
+  if (mDirectDescendantsFrom && aAcc != mDirectDescendantsFrom) {
+    if (aAcc->TagName() == nsGkAtoms::body && mDirectDescendantsFrom->IsDoc() &&
+        aAcc->Parent() == mDirectDescendantsFrom) {
+      
+      
+      
+      
+      return result;
+    }
     result |= nsIAccessibleTraversalRule::FILTER_IGNORE_SUBTREE;
   }
 
