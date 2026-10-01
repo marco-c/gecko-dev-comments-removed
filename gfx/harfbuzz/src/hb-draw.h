@@ -206,6 +206,61 @@ typedef void (*hb_draw_close_path_func_t) (hb_draw_funcs_t *dfuncs, void *draw_d
 
 
 
+
+
+
+typedef hb_bool_t (*hb_draw_set_budget_func_t) (hb_draw_funcs_t *dfuncs,
+						 void *draw_data,
+						 int64_t budget,
+						 void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int64_t (*hb_draw_get_budget_func_t) (hb_draw_funcs_t *dfuncs,
+					      void *draw_data,
+					      void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int64_t *(*hb_draw_get_budget_remaining_func_t) (hb_draw_funcs_t *dfuncs,
+							 void *draw_data,
+							 void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
 HB_EXTERN void
 hb_draw_funcs_set_move_to_func (hb_draw_funcs_t        *dfuncs,
 				hb_draw_move_to_func_t  func,
@@ -276,6 +331,54 @@ hb_draw_funcs_set_close_path_func (hb_draw_funcs_t           *dfuncs,
 				   void *user_data, hb_destroy_func_t destroy);
 
 
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_draw_funcs_set_set_budget_func (hb_draw_funcs_t         *dfuncs,
+				   hb_draw_set_budget_func_t  func,
+				   void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_draw_funcs_set_get_budget_func (hb_draw_funcs_t         *dfuncs,
+				   hb_draw_get_budget_func_t  func,
+				   void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_draw_funcs_set_get_budget_remaining_func (hb_draw_funcs_t                   *dfuncs,
+					     hb_draw_get_budget_remaining_func_t  func,
+					     void *user_data, hb_destroy_func_t destroy);
+
+
 HB_EXTERN hb_draw_funcs_t *
 hb_draw_funcs_create (void);
 
@@ -305,6 +408,16 @@ hb_draw_funcs_make_immutable (hb_draw_funcs_t *dfuncs);
 
 HB_EXTERN hb_bool_t
 hb_draw_funcs_is_immutable (hb_draw_funcs_t *dfuncs);
+
+HB_EXTERN hb_bool_t
+hb_draw_set_budget (hb_draw_funcs_t *dfuncs, void *draw_data,
+		    int64_t budget);
+
+HB_EXTERN int64_t
+hb_draw_get_budget (hb_draw_funcs_t *dfuncs, void *draw_data);
+
+HB_EXTERN int64_t
+hb_draw_get_budget_remaining (hb_draw_funcs_t *dfuncs, void *draw_data);
 
 
 HB_EXTERN void

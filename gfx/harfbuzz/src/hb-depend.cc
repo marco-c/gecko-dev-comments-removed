@@ -34,6 +34,7 @@
 #include "hb-ot-layout-gsub-table.hh"
 #include "hb-ot-math-table.hh"
 #include "hb-ot-cff1-table.hh"
+#include "hb-ot-var-varc-table.hh"
 #include "OT/Color/COLR/COLR.hh"
 #include "OT/Color/COLR/colrv1-depend.hh"
 
@@ -93,13 +94,9 @@ hb_depend_data_builder_t::compile (hb_face_t *face)
 #ifndef HB_NO_CFF
   OT::cff1_subset_accelerator_t (face).depend (this);
 #endif
-  
-
-
-
-
-
-
+#ifndef HB_NO_VAR_COMPOSITES
+  face->table.VARC->depend (this);
+#endif
   return successful;
 }
 

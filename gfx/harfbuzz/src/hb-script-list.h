@@ -237,6 +237,9 @@ HB_END_DECLS
 
 
 
+
+
+
 typedef enum
 {
   HB_SCRIPT_COMMON			= HB_TAG ('Z','y','y','y'), 
@@ -472,6 +475,13 @@ typedef enum
   HB_SCRIPT_SIDETIC			= HB_TAG ('S','i','d','t'), 
   HB_SCRIPT_TAI_YO			= HB_TAG ('T','a','y','o'), 
   HB_SCRIPT_TOLONG_SIKI			= HB_TAG ('T','o','l','s'), 
+
+  
+
+
+  HB_SCRIPT_JURCHEN			= HB_TAG ('J','u','r','c'), 
+  HB_SCRIPT_PROTO_CUNEIFORM		= HB_TAG ('P','c','u','n'), 
+  HB_SCRIPT_SEAL				= HB_TAG ('S','e','a','l'), 
 
   
   HB_SCRIPT_INVALID			= HB_TAG_NONE,

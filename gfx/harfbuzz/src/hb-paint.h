@@ -63,6 +63,109 @@ HB_BEGIN_DECLS
 
 typedef struct hb_paint_funcs_t hb_paint_funcs_t;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef hb_bool_t (*hb_paint_set_budget_func_t) (hb_paint_funcs_t *funcs,
+						  void *paint_data,
+						  int64_t budget,
+						  void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int64_t (*hb_paint_get_budget_func_t) (hb_paint_funcs_t *funcs,
+					       void *paint_data,
+					       void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef int64_t *(*hb_paint_get_budget_remaining_func_t) (hb_paint_funcs_t *funcs,
+							  void *paint_data,
+							  void *user_data);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_paint_funcs_set_set_budget_func (hb_paint_funcs_t         *funcs,
+				    hb_paint_set_budget_func_t  func,
+				    void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_paint_funcs_set_get_budget_func (hb_paint_funcs_t         *funcs,
+				    hb_paint_get_budget_func_t  func,
+				    void *user_data, hb_destroy_func_t destroy);
+
+
+
+
+
+
+
+
+
+
+
+
+HB_EXTERN void
+hb_paint_funcs_set_get_budget_remaining_func (hb_paint_funcs_t                   *funcs,
+					      hb_paint_get_budget_remaining_func_t  func,
+					      void *user_data, hb_destroy_func_t destroy);
+
 HB_EXTERN hb_paint_funcs_t *
 hb_paint_funcs_create (void);
 
@@ -92,6 +195,16 @@ hb_paint_funcs_make_immutable (hb_paint_funcs_t *funcs);
 
 HB_EXTERN hb_bool_t
 hb_paint_funcs_is_immutable (hb_paint_funcs_t *funcs);
+
+HB_EXTERN hb_bool_t
+hb_paint_set_budget (hb_paint_funcs_t *funcs, void *paint_data,
+		     int64_t budget);
+
+HB_EXTERN int64_t
+hb_paint_get_budget (hb_paint_funcs_t *funcs, void *paint_data);
+
+HB_EXTERN int64_t
+hb_paint_get_budget_remaining (hb_paint_funcs_t *funcs, void *paint_data);
 
 
 

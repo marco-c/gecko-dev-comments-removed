@@ -111,6 +111,22 @@ struct hb_gpu_draw_t
   int y_scale = 0;
 
   
+
+
+
+  int64_t  budget = HB_BUDGET_DEFAULT;
+  int64_t  budget_remaining = HB_BUDGET_GLYPH;
+
+  void recharge_budget ()
+  {
+    budget_remaining = budget == HB_BUDGET_DEFAULT ?
+		       HB_BUDGET_GLYPH : budget;
+  }
+
+  int64_t *get_budget_remaining ()
+  { return &budget_remaining; }
+
+  
   hb_gpu_encode_scratch_t scratch;
 
   

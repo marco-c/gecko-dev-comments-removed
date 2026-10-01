@@ -40,7 +40,15 @@ struct hb_paint_extents_context_t
     transforms.clear ();
     clips.clear ();
     groups.clear ();
-    work_left = HB_PAINT_EXTENTS_MAX_WORK;
+    
+
+
+    if (unlikely (!budget_initialized))
+    {
+      budget = HB_BUDGET_DEFAULT;
+      budget_initialized = true;
+    }
+    recharge_budget ();
 
     transforms.push (hb_transform_t<>{});
     clips.push (hb_bounds_t<>{hb_bounds_t<>::UNBOUNDED});
@@ -135,8 +143,15 @@ struct hb_paint_extents_context_t
   
 
 
+  int64_t budget = HB_BUDGET_DEFAULT;
+  bool budget_initialized = true;
+  int64_t budget_remaining = HB_BUDGET_GLYPH;
 
-  int64_t work_left = HB_PAINT_EXTENTS_MAX_WORK;
+  void recharge_budget ()
+  {
+    budget_remaining = budget == HB_BUDGET_DEFAULT ?
+		       HB_BUDGET_GLYPH : budget;
+  }
 
   protected:
   hb_vector_t<hb_transform_t<>> transforms;

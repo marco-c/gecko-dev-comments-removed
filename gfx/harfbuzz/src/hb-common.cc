@@ -433,14 +433,8 @@ hb_script_from_iso15924_tag (hb_tag_t tag)
   
   tag = (tag & 0xDFDFDFDFu) | 0x00202020u;
 
-  switch (tag) {
-
-    
-
-
-    case HB_TAG('Q','a','a','i'): return HB_SCRIPT_INHERITED;
-    case HB_TAG('Q','a','a','c'): return HB_SCRIPT_COPTIC;
-
+  switch (tag)
+  {
     
     case HB_TAG('A','r','a','n'): return HB_SCRIPT_ARABIC;
     case HB_TAG('C','y','r','s'): return HB_SCRIPT_CYRILLIC;

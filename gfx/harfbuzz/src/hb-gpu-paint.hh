@@ -278,7 +278,15 @@ struct hb_gpu_paint_t
 
 
 
-  int64_t work_left = HB_GPU_PAINT_MAX_WORK;
+
+  int64_t budget = HB_BUDGET_DEFAULT;
+  int64_t budget_remaining = HB_BUDGET_GLYPH;
+
+  void recharge_budget ()
+  {
+    budget_remaining = budget == HB_BUDGET_DEFAULT ?
+		       HB_BUDGET_GLYPH : budget;
+  }
 
   
 

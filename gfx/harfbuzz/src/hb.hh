@@ -160,7 +160,6 @@
 
 
 #include "hb-config.hh"
-#include "hb-limits.hh"
 
 
 
@@ -385,6 +384,13 @@
 #  define HB_NODISCARD
 #endif
 
+
+#if __cplusplus >= 201703L
+#  define HB_NODISCARD_STRUCT [[nodiscard]]
+#else
+#  define HB_NODISCARD_STRUCT
+#endif
+
 #ifdef _WIN32
    
 
@@ -557,6 +563,7 @@ extern "C" void  hb_free_impl(void *ptr);
 
 
 
+#include "hb-limits.hh"
 #include "hb-cplusplus.hh"
 #include "hb-meta.hh"
 #include "hb-mutex.hh"

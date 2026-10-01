@@ -133,6 +133,16 @@
 #define HB_SVG_MAX_DOCUMENT_SIZE ((size_t) 16 << 20)
 #endif
 
+
+
+
+
+
+
+#ifndef HB_VECTOR_MAX_DOCUMENT_SIZE
+#define HB_VECTOR_MAX_DOCUMENT_SIZE ((unsigned) 16 << 20)
+#endif
+
 #ifndef HB_RASTER_MAX_BUFFER_SIZE
 #define HB_RASTER_MAX_BUFFER_SIZE ((size_t) 1 << 30)
 #endif
@@ -161,53 +171,43 @@
 
 
 
-#ifndef HB_VARC_MAX_WORK
-#define HB_VARC_MAX_WORK ((int64_t) 1 << 20)
+#define HB_BUDGET_1	1u
+#define HB_BUDGET_2	2u
+#define HB_BUDGET_4	4u
+#define HB_BUDGET_8	8u
+#define HB_BUDGET_16	16u
+#define HB_BUDGET_32	32u
+#define HB_BUDGET_64	64u
+#define HB_BUDGET_128	128u
+#define HB_BUDGET_256	256u
+#define HB_BUDGET_512	512u
+#define HB_BUDGET_1024	1024u
+
+
+
+#ifndef HB_BUDGET_GLYPH
+#define HB_BUDGET_GLYPH ((int64_t) 1 << 24)
 #endif
 
 
 
-#ifndef HB_PAINT_EXTENTS_MAX_WORK
-#define HB_PAINT_EXTENTS_MAX_WORK ((int64_t) 1 << 20)
+static HB_ALWAYS_INLINE bool
+hb_budget_spend (int64_t &budget, unsigned int cost, unsigned int mult = 1)
+{
+  budget -= (int64_t) cost * mult;
+  return budget >= 0;
+}
+
+
+
+
+#ifndef HB_BUDGET_RASTER_PIXELS
+#define HB_BUDGET_RASTER_PIXELS ((int64_t) 1 << 26)
 #endif
 
 
-#ifndef HB_GPU_PAINT_MAX_WORK
-#define HB_GPU_PAINT_MAX_WORK ((int64_t) 1 << 20)
-#endif
-
-
-
-#ifndef HB_VECTOR_MAX_DRAW_WORK
-#define HB_VECTOR_MAX_DRAW_WORK ((int64_t) 16 << 20)
-#endif
-
-
-
-#ifndef HB_VECTOR_MAX_PAINT_WORK
-#define HB_VECTOR_MAX_PAINT_WORK ((int64_t) 16 << 20)
-#endif
-
-
-
-
-
-
-
-#ifndef HB_RASTER_MAX_PAINT_WORK
-#define HB_RASTER_MAX_PAINT_WORK ((int64_t) 1 << 26)
-#endif
-
-#ifndef HB_RASTER_MAX_PAINT_WORK_PASSES
-#define HB_RASTER_MAX_PAINT_WORK_PASSES 4
-#endif
-
-
-
-
-
-#ifndef HB_RASTER_MAX_DRAW_WORK
-#define HB_RASTER_MAX_DRAW_WORK ((int64_t) 1 << 24)
+#ifndef HB_BUDGET_RASTER_PAINT_PASSES
+#define HB_BUDGET_RASTER_PAINT_PASSES 4
 #endif
 
 

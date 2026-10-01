@@ -178,7 +178,8 @@ struct SimpleGlyph
   }
 
   bool get_contour_points (contour_point_vector_t &points ,
-			   bool phantom_only = false) const
+			   bool phantom_only = false,
+			   int64_t *budget = nullptr) const
   {
     const HBUINT16 *endPtsOfContours = &StructAfter<HBUINT16> (header);
     int num_contours = header.numberOfContours;
@@ -186,6 +187,11 @@ struct SimpleGlyph
     
     if (unlikely (!bytes.check_range (&endPtsOfContours[num_contours]))) return false;
     unsigned int num_points = endPtsOfContours[num_contours - 1] + 1;
+    if (unlikely (num_points < (unsigned) num_contours)) return false;
+
+    
+
+    if (budget && unlikely (!hb_budget_spend (*budget, HB_BUDGET_1, num_points))) return false;
 
     unsigned old_length = points.length;
     points.alloc (points.length + num_points + 4); 

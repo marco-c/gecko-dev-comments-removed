@@ -132,16 +132,56 @@ struct hb_raster_paint_t
 
 
 
-  int64_t work_left = HB_RASTER_MAX_PAINT_WORK;
+
+
+
+
+
+
+
+
+
+
+  int64_t budget = HB_BUDGET_DEFAULT;
+  int64_t budget_remaining = HB_BUDGET_GLYPH;
+  int64_t pixel_remaining = HB_BUDGET_RASTER_PIXELS;
 
   
+
+  int64_t get_default_pixel_budget () const
+  {
+    return hb_max ((int64_t) HB_BUDGET_RASTER_PIXELS,
+		   (int64_t) HB_BUDGET_RASTER_PAINT_PASSES *
+		   fixed_extents.width * fixed_extents.height);
+  }
+
+  void recharge_budget ()
+  {
+    budget_remaining = budget == HB_BUDGET_DEFAULT ?
+		       (int64_t) HB_BUDGET_GLYPH : budget;
+    pixel_remaining = budget == HB_BUDGET_UNLIMITED ? budget :
+		      (surface_stack.length ? get_default_pixel_budget () :
+					      (int64_t) HB_BUDGET_RASTER_PIXELS);
+  }
 
   
 
   bool charge_work (int64_t work)
   {
-    if (unlikely (work_left <= 0)) return false;
-    work_left -= work;
+    if (unlikely (pixel_remaining < 0)) return false;
+    pixel_remaining -= work;
+    return true;
+  }
+
+  
+  bool precharge_work (int64_t work)
+  {
+    if (unlikely (pixel_remaining < work))
+    {
+      pixel_remaining = -1;
+      return false;
+    }
+    pixel_remaining -= work;
     return true;
   }
 
