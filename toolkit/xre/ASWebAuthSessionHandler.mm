@@ -262,6 +262,11 @@ class API_AVAILABLE(macos(12.0)) ASWebAuthServiceReadyObserver final
                      const char16_t* aData) override {
     if (!strcmp(aTopic, "aswebauthsession-service-shutdown")) {
       sServiceReady = false;
+      
+      
+      for (const auto& request : sPendingBeginRequests.Values()) {
+        request->Cancel();
+      }
       sPendingBeginRequests.Clear();
       return NS_OK;
     }
