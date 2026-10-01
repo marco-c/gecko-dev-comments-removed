@@ -1565,6 +1565,76 @@ let interfaceNamesInGlobalScope = [
   
   { name: "SpecialPowers", insecureContext: true },
   
+  {
+    name: "SpeechGrammar",
+    insecureContext: true,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechGrammarList",
+    insecureContext: true,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognition",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionAlternative",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionErrorEvent",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionErrorEvent",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionEvent",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionPhrase",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionResult",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "SpeechRecognitionResultList",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
+  
   { name: "SpeechSynthesis", insecureContext: true },
   
   { name: "SpeechSynthesisErrorEvent", insecureContext: true },
@@ -2273,6 +2343,27 @@ let interfaceNamesInGlobalScope = [
   { name: "updateCommands", insecureContext: true },
   
   { name: "visualViewport", insecureContext: true },
+  
+  {
+    name: "webkitSpeechGrammar",
+    insecureContext: true,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "webkitSpeechGrammarList",
+    insecureContext: true,
+    nightly: true,
+    android: false,
+  },
+  
+  {
+    name: "webkitSpeechRecognition",
+    insecureContext: false,
+    nightly: true,
+    android: false,
+  },
   
   { name: "webkitURL", insecureContext: true },
   
