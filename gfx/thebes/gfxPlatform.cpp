@@ -698,9 +698,9 @@ static void FinishAsyncMemoryReport() {
 
 
 
-#define REPORT_DL_STORE(id)                     \
-  helper.Report(aReport.interning.dl_stores.id, \
-                "interning/" #id "/dl-stores");
+#define REPORT_DL_STORE(id)                                             \
+  helper.Report(aReport.interning.dl_stores.id, "interning/" #id "/dl-" \
+                                                                 "stores");
 
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
 
