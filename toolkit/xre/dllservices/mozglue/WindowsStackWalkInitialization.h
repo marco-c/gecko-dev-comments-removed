@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsStackWalkInitialization_h
 #define mozilla_WindowsStackWalkInitialization_h
 
@@ -14,6 +12,13 @@ namespace mozilla {
 
 #if defined(_M_AMD64) || defined(_M_ARM64)
 MFBT_API void WindowsStackWalkInitialization();
+
+
+
+
+
+
+MFBT_API bool InstallStackWalkSuppressionHooks();
 
 MFBT_API bool CollectStackWalkLocks(Array<void*, 2>& aStackWalkLocks);
 
