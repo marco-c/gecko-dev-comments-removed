@@ -495,6 +495,14 @@ class LoadedScript final : public nsISupports {
   
   bool IsSRIMetadataReusableBy(const mozilla::dom::SRIMetadata& aSRIMetadata);
 
+  bool DependsOnClassicScriptHintEncoding() const {
+    return mDependsOnClassicScriptHintEncoding;
+  }
+
+  void SetDependsOnClassicScriptHintEncoding() {
+    mDependsOnClassicScriptHintEncoding = true;
+  }
+
  public:
   
 
@@ -562,6 +570,9 @@ class LoadedScript final : public nsISupports {
 
   
   uint64_t mIsEverHitFromMemoryCache : 1;
+
+  
+  uint64_t mDependsOnClassicScriptHintEncoding : 1;
 
   nsCOMPtr<nsIURI> mURI;
 

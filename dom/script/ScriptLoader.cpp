@@ -666,6 +666,9 @@ void ScriptLoader::RunScriptWhenSafe(ScriptLoadRequest* aRequest) {
 
 nsresult ScriptLoader::RestartLoad(ScriptLoadRequest* aRequest) {
   aRequest->getLoadedScript()->DropSRIOrSRIAndSerializedStencil();
+  if (aRequest->IsRetrievedFromMemoryCache()) {
+    aRequest->ResetCacheEntry();
+  }
   TRACE_FOR_TEST(aRequest, "load:fallback");
 
   
@@ -710,9 +713,9 @@ static nsSecurityFlags CORSModeToSecurityFlags(CORSMode aCORSMode) {
   return securityFlags;
 }
 
-void ScriptLoader::OnDelayedReady(
-    ScriptLoadRequest* aRequest,
-    const Maybe<nsAutoString>& aCharsetForPreload) {
+void ScriptLoader::OnDelayedReady(ScriptLoadRequest* aRequest,
+                                  const Maybe<nsAutoString>& aCharsetForPreload,
+                                  bool aDelayedEncodingCheck) {
   if (!mDocument) {
     return;
   }
@@ -723,6 +726,20 @@ void ScriptLoader::OnDelayedReady(
 
   MOZ_ASSERT(aRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(aRequest->IsDelayingReady());
+
+  if (aDelayedEncodingCheck) {
+    if (aRequest->getLoadedScript()->mClassicScriptEncoding !=
+        GetClassicScriptFallbackEncoding(aRequest)) {
+      LOG(
+          ("ScriptLoader (%p): Restarting "
+           "ScriptLoadRequest(%p) because of encoding mismatch %s.",
+           this, aRequest, aRequest->URI()->GetSpecOrDefault().get()));
+      RestartLoad(aRequest);
+      return;
+    }
+
+    EmulateNetworkEvents(aRequest, aCharsetForPreload);
+  }
 
   aRequest->SetReady();
   MaybeMoveToLoadedList(aRequest);
@@ -735,13 +752,29 @@ nsresult ScriptLoader::StartClassicLoad(
   if (aRequest->IsRetrievedFromMemoryCache()) {
     
     
-    EmulateNetworkEvents(aRequest, aCharsetForPreload);
+    
+    
+    
+    
+    
+    
+    
+    
+    bool delayedEncodingCheck = false;
+    if (aRequest->IsClassicScript() &&
+        aRequest->GetScriptLoadContext()->IsPreload() &&
+        aRequest->getLoadedScript()->DependsOnClassicScriptHintEncoding() &&
+        !aRequest->mClassicScriptHintEncoding) {
+      delayedEncodingCheck = true;
+    } else {
+      EmulateNetworkEvents(aRequest, aCharsetForPreload);
+    }
 
     nsCOMPtr<nsIRunnable> runnable =
         mozilla::NewRunnableMethod<RefPtr<ScriptLoadRequest>,
-                                   const Maybe<nsAutoString>>(
+                                   const Maybe<nsAutoString>, bool>(
             "ScriptLoader::OnDelayedReady", this, &ScriptLoader::OnDelayedReady,
-            aRequest, aCharsetForPreload);
+            aRequest, aCharsetForPreload, delayedEncodingCheck);
     mDocument->Dispatch(runnable.forget());
     return NS_OK;
   }
@@ -1362,6 +1395,44 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
          this, aRequest->getLoadedScript(), aRequest,
          aRequest->URI()->GetSpecOrDefault().get()));
     return;
+  }
+
+  if (aRequest->IsClassicScript() &&
+      cacheResult.mCompleteValue->DependsOnClassicScriptHintEncoding() &&
+      cacheResult.mCompleteValue->mClassicScriptEncoding !=
+          GetClassicScriptFallbackEncoding(aRequest)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (aRequestType == ScriptLoadRequestType::Preload &&
+        !aRequest->mClassicScriptHintEncoding) {
+      
+      LOG(
+          ("ScriptLoader (%p): Deferring the encoding comparion for a "
+           "preload ScriptLoadRequest(%p) without a hint encoding %s.",
+           this, aRequest,
+           cacheResult.mCompleteValue->GetURI()->GetSpecOrDefault().get()));
+    } else {
+      aRequest->NoCacheEntryFound(aReferrerPolicy, aFetchOptions, aURI);
+      LOG(
+          ("ScriptLoader (%p): Created LoadedScript (%p) for "
+           "ScriptLoadRequest(%p) because cache has different encoding %s.",
+           this, aRequest->getLoadedScript(), aRequest,
+           aRequest->URI()->GetSpecOrDefault().get()));
+      return;
+    }
   }
 
   if (!cacheResult.mCompleteValue->IsSRIMetadataReusableBy(

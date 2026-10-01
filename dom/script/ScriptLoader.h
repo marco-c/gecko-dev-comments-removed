@@ -588,9 +588,19 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
                             const Maybe<nsAutoString>& aCharsetForPreload);
 
+  
+
+
+
+
+
+
+
+
   MOZ_CAN_RUN_SCRIPT void OnDelayedReady(
       ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+      const Maybe<nsAutoString>& aCharsetForPreload,
+      bool aDelayedEncodingCheck);
 
   static void PrepareCacheInfoChannel(nsIChannel* aChannel,
                                       ScriptLoadRequest* aRequest);

@@ -245,4 +245,15 @@ void ScriptLoadRequest::NoCacheEntryFound(
   mState = State::Fetching;
 }
 
+void ScriptLoadRequest::ResetCacheEntry() {
+  MOZ_ASSERT(IsRetrievedFromMemoryCache());
+
+  mIsRetrievedFromMemoryCache = false;
+
+  
+  
+  mLoadedScript = new LoadedScript(mKind, mLoadedScript->GetURI());
+  mState = State::Fetching;
+}
+
 }  
