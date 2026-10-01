@@ -760,7 +760,7 @@ static nsresult ReadDir(nsDir* aDir, PRDirFlags aFlags, nsString& aName) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  while (1) {
+  while (true) {
     BOOL rv;
     if (aDir->firstEntry) {
       aDir->firstEntry = false;
@@ -3049,15 +3049,9 @@ nsresult nsLocalFile::LookupExtensionIn(const char* const* aExtensionsArray,
   
   int32_t dotIdx = path.RFindChar(char16_t('.'));
   if (dotIdx != kNotFound) {
-    
-    char16_t* p = path.BeginWriting();
-    for (p += dotIdx + 1; *p; ++p) {
-      *p += (*p >= L'A' && *p <= L'Z') ? 'a' - 'A' : 0;
-    }
-
     nsDependentSubstring ext = Substring(path, dotIdx);
     for (size_t i = 0; i < aArrayLength; ++i) {
-      if (ext.EqualsASCII(aExtensionsArray[i])) {
+      if (ext.EqualsIgnoreCase(aExtensionsArray[i])) {
         
         *aResult = true;
         break;
@@ -3721,7 +3715,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsDriveEnumerator, nsSimpleEnumerator,
 nsDriveEnumerator::nsDriveEnumerator(bool aUseDOSDevicePathSyntax)
     : mUseDOSDevicePathSyntax(aUseDOSDevicePathSyntax) {}
 
-nsDriveEnumerator::~nsDriveEnumerator() {}
+nsDriveEnumerator::~nsDriveEnumerator() = default;
 
 nsresult nsDriveEnumerator::Init() {
   
