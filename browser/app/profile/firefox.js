@@ -3028,6 +3028,10 @@ pref("browser.screenshots.folderList", 4);
 pref("browser.screenshots.dir", "");
 
 
+pref("browser.mini-window.enabled", false);
+pref("browser.mini-window.log", false);
+
+
 pref("doh-rollout.clearModeOnShutdown", false);
 
 
