@@ -1,0 +1,11 @@
+
+
+
+
+
+
+
+
+fn main() {
+    mozbuild::link_nss();
+}
