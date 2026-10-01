@@ -23,6 +23,7 @@ use crate::gradient_builder::GradientBuilder;
 use crate::color::{ColorF, ColorU};
 use crate::font::{FontInstanceKey, GlyphInstance, GlyphOptions};
 use crate::image::{ColorDepth, ImageKey};
+use crate::interning::{self, DlDelta};
 use crate::key_types::{EdgeMask, GradientStopKey, StretchSizeKey};
 use crate::prim_geometry::{
     apply_gradient_local_clip, image_stretch_size, optimize_linear_gradient,
@@ -139,6 +140,11 @@ pub struct DisplayListPayload {
 
     
     pub spatial_tree: Vec<u8>,
+
+    
+    
+    
+    pub interner_delta: Vec<u8>,
 }
 
 impl DisplayListPayload {
@@ -146,6 +152,7 @@ impl DisplayListPayload {
         DisplayListPayload {
             items_data: Vec::new(),
             spatial_tree: Vec::new(),
+            interner_delta: Vec::new(),
         }
     }
 
@@ -171,7 +178,8 @@ impl DisplayListPayload {
 
     fn size_in_bytes(&self) -> usize {
         self.items_data.len() +
-        self.spatial_tree.len()
+        self.spatial_tree.len() +
+        self.interner_delta.len()
     }
 
     #[cfg(feature = "serialize")]
@@ -189,7 +197,8 @@ impl DisplayListPayload {
 impl MallocSizeOf for DisplayListPayload {
     fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
         self.items_data.size_of(ops) +
-        self.spatial_tree.size_of(ops)
+        self.spatial_tree.size_of(ops) +
+        self.interner_delta.size_of(ops)
     }
 }
 
@@ -198,6 +207,10 @@ impl MallocSizeOf for DisplayListPayload {
 pub struct BuiltDisplayList {
     payload: DisplayListPayload,
     descriptor: BuiltDisplayListDescriptor,
+    
+    
+    
+    delta: DlDelta,
 }
 
 impl MallocSizeOf for BuiltDisplayList {
@@ -369,7 +382,13 @@ impl<'de> Deserialize<'de> for BuiltDisplayList {
             payload: DisplayListPayload {
                 items_data,
                 spatial_tree,
+                interner_delta: Vec::new(),
             },
+            
+            
+            
+            
+            delta: DlDelta::default(),
         })
     }
 }
@@ -509,18 +528,45 @@ pub struct AuxIter<'a, T> {
 }
 
 impl BuiltDisplayList {
+    
+    
     pub fn from_data(
         payload: DisplayListPayload,
         descriptor: BuiltDisplayListDescriptor,
     ) -> Self {
+        let delta = if payload.interner_delta.is_empty() {
+            DlDelta::default()
+        } else {
+            bincode::deserialize(&payload.interner_delta)
+                .expect("corrupt display list interner delta")
+        };
+
         BuiltDisplayList {
             payload,
             descriptor,
+            delta,
         }
     }
 
-    pub fn into_data(self) -> (DisplayListPayload, BuiltDisplayListDescriptor) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn into_data(mut self) -> (DisplayListPayload, BuiltDisplayListDescriptor) {
+        self.payload.interner_delta = bincode::serialize(&self.delta)
+            .expect("failed to encode display list interner delta");
+
         (self.payload, self.descriptor)
+    }
+
+    
+    pub fn delta(&self) -> &DlDelta {
+        &self.delta
     }
 
     pub fn items_data(&self) -> &[u8] {
@@ -1103,6 +1149,11 @@ pub struct DisplayListBuilder {
     
     
     raster_space_stack: Vec<di::RasterSpace>,
+    
+    
+    
+    
+    interners: interning::DlInterners,
 }
 
 
@@ -1150,6 +1201,7 @@ impl DisplayListBuilder {
             shadow_capture: Vec::new(),
             pending_shadows: Vec::new(),
             raster_space_stack: vec![di::RasterSpace::Screen],
+            interners: interning::DlInterners::default(),
         }
     }
 
@@ -1170,6 +1222,8 @@ impl DisplayListBuilder {
 
         self.raster_space_stack.clear();
         self.raster_space_stack.push(di::RasterSpace::Screen);
+
+        
     }
 
     
@@ -2936,6 +2990,7 @@ impl DisplayListBuilder {
         self.builder_start_time = zeitstempel::now();
         self.reset();
         self.au_grid = AuGrid::new(au_per_dev_px);
+        self.interners.begin_build();
     }
 
     pub fn end(&mut self) -> (PipelineId, BuiltDisplayList) {
@@ -2968,6 +3023,10 @@ impl DisplayListBuilder {
         );
         let end_time = zeitstempel::now();
 
+        
+        
+        let delta = self.interners.end_build();
+
         self.state = BuildState::Idle;
 
         (
@@ -2983,6 +3042,7 @@ impl DisplayListBuilder {
                     off_grid_coords: self.off_grid_coords,
                 },
                 payload,
+                delta,
             },
         )
     }

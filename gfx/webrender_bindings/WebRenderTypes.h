@@ -797,6 +797,9 @@ struct ByteBuffer {
 struct BuiltDisplayList {
   wr::VecU8 dl_items;
   wr::VecU8 dl_spatial_tree;
+  
+  
+  wr::VecU8 dl_interner_delta;
   wr::BuiltDisplayListDescriptor dl_desc;
 };
 
