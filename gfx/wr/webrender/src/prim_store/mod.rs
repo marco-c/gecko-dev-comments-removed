@@ -362,13 +362,7 @@ impl PrimitiveInstance {
     
     
     
-    
-    
-    
     pub fn snap_policy(&self, data_stores: &DataStores) -> SnapPolicy {
-        if data_stores.prim_has_anti_aliasing(self) {
-            return SnapPolicy { rect: SnapRounding::Exact, clip: ClipSnap::Exact };
-        }
         if !self.kind.snaps() {
             return SnapPolicy { rect: SnapRounding::RoundOut, clip: ClipSnap::Exact };
         }
