@@ -27,6 +27,7 @@ void gfxConfigManager::Init() {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   EmplaceUserPref("gfx.webrender.compositor", mWrCompositorEnabled);
+  mWrLayerCompositorEnabled = StaticPrefs::gfx_webrender_layer_compositor();
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
   mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
@@ -165,7 +166,9 @@ void gfxConfigManager::ConfigureWebRender() {
   
   
   
-  if (!mHwStretchingSupport.IsFullySupported() && mScaledResolution) {
+  
+  if (!mWrLayerCompositorEnabled && !mHwStretchingSupport.IsFullySupported() &&
+      mScaledResolution) {
     nsPrintfCString failureId(
         "FEATURE_FAILURE_NO_HARDWARE_STRETCHING_B%uW%uF%uN%uE%u",
         mHwStretchingSupport.mBoth, mHwStretchingSupport.mWindowOnly,
