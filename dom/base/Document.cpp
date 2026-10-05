@@ -21637,7 +21637,7 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   
   aError = nsContentUtils::ParseDocumentHTML(
       *compliantString, doc,
-       sanitize,
+       false,
       sanitizeWhileParsing ? sanitizer.get() : nullptr,  false);
   if (aError.Failed()) {
     return nullptr;
@@ -21687,7 +21687,7 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
   
   
   aError = nsContentUtils::ParseDocumentHTML(
-      aHTML, doc,  true,
+      aHTML, doc,  false,
       sanitizeWhileParsing ? sanitizer.get() : nullptr,  true);
   if (aError.Failed()) {
     return nullptr;
