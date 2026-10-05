@@ -397,17 +397,18 @@ nsTimerImpl::nsTimerImpl(nsITimer* aTimer, nsIEventTarget* aTarget)
 }
 
 TimeDuration nsTimerImpl::AcceptableFiringDelay() const {
+  if (!IsSlack() && !IsLowPriority()) {
+    return TimeDuration::Zero();
+  }
   
-  
-  
-  constexpr int64_t timerDurationDivider = 8;
-  static_assert(
-      std::has_single_bit(static_cast<uint64_t>(timerDurationDivider)));
+  constexpr int64_t slackDivider = 8;
+  static_assert(std::has_single_bit(static_cast<uint64_t>(slackDivider)),
+                "division must be a shift");
   const TimeDuration minDelay = TimeDuration::FromMilliseconds(
       mozilla::StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
   const TimeDuration maxDelay = TimeDuration::FromMilliseconds(
       mozilla::StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
-  return std::clamp(mDelay / timerDurationDivider, minDelay, maxDelay);
+  return std::clamp(mDelay / slackDivider, minDelay, maxDelay);
 }
 
 
