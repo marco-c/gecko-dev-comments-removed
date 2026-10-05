@@ -35,16 +35,15 @@ class OpenTabsInSplitView extends MozLitElement {
 
   constructor() {
     super();
-    this.currentWindow =
-      this.documentGlobal.top.browsingContext.embedderWindowGlobal.browsingContext.window;
+    this.currentWindow = /** @type {CanonicalBrowsingContext} */ (
+      this.documentGlobal.top.browsingContext
+    ).embedderWindowGlobal.browsingContext.window;
     if (lazy.PrivateBrowsingUtils.isWindowPrivate(this.currentWindow)) {
       this.openTabsTarget = lazy.getTabsTargetForWindow(this.currentWindow);
     } else {
       this.openTabsTarget = lazy.NonPrivateTabs;
     }
-    this.controller = new lazy.OpenTabsController(this, {
-      component: "splitview",
-    });
+    this.controller = new lazy.OpenTabsController();
     this.listenersAdded = false;
     this.searchQuery = "";
   }
@@ -95,7 +94,8 @@ class OpenTabsInSplitView extends MozLitElement {
   }
 
   getWindow() {
-    return window.browsingContext.embedderWindowGlobal.browsingContext.window;
+    return /** @type {CanonicalBrowsingContext} */ (window.browsingContext)
+      .embedderWindowGlobal.browsingContext.window;
   }
 
   get currentSplitView() {
@@ -196,7 +196,10 @@ class OpenTabsInSplitView extends MozLitElement {
               () => html`
                 <sidebar-tab-list
                   maxTabsLength="-1"
-                  .tabItems=${this.controller.getTabListItems(filteredTabs)}
+                  .tabItems=${this.controller.getTabListItems(
+                    filteredTabs,
+                    false
+                  )}
                   @fxview-tab-list-primary-action=${this.onTabListRowClick}
                 >
                 </sidebar-tab-list>
@@ -215,7 +218,7 @@ class OpenTabsInSplitView extends MozLitElement {
         : html`<moz-card>
             <sidebar-tab-list
               maxTabsLength="-1"
-              .tabItems=${this.controller.getTabListItems(filteredTabs)}
+              .tabItems=${this.controller.getTabListItems(filteredTabs, false)}
               @fxview-tab-list-primary-action=${this.onTabListRowClick}
             >
             </sidebar-tab-list>
