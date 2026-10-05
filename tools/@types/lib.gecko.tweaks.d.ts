@@ -25,6 +25,11 @@ interface ChromeWindow extends Window {
   isChromeWindow: true;
 }
 
+
+interface XULMenuElement {
+  readonly menupopup: XULPopupElement;
+}
+
 interface XULElementTagNameMap {
   browser: MozBrowser;
   iframe: XULFrameElement;
