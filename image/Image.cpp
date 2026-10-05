@@ -35,8 +35,20 @@ WebRenderImageProvider::WebRenderImageProvider(const ImageResource* aImage)
 
 
 
+static void GetTruncatedSpec(nsIURI* aURI, nsCString& aSpec) {
+  aURI->GetSpec(aSpec);
+
+  
+  static const size_t max = 256;
+  if (aSpec.Length() > max) {
+    aSpec.Truncate(max);
+    aSpec.AppendLiteral(" (truncated)");
+  }
+}
+
 ImageMemoryCounter::ImageMemoryCounter(imgRequest* aRequest,
-                                       SizeOfState& aState, bool aIsUsed)
+                                       SizeOfState& aState, bool aIsUsed,
+                                       bool aAnonymize)
     : mProgress(UINT32_MAX),
       mType(UINT16_MAX),
       mIsUsed(aIsUsed),
@@ -45,10 +57,12 @@ ImageMemoryCounter::ImageMemoryCounter(imgRequest* aRequest,
   MOZ_ASSERT(aRequest);
 
   
-  nsCOMPtr<nsIURI> imageURL;
-  nsresult rv = aRequest->GetURI(getter_AddRefs(imageURL));
-  if (NS_SUCCEEDED(rv) && imageURL) {
-    imageURL->GetSpec(mURI);
+  if (!aAnonymize) {
+    nsCOMPtr<nsIURI> imageURL;
+    nsresult rv = aRequest->GetURI(getter_AddRefs(imageURL));
+    if (NS_SUCCEEDED(rv) && imageURL) {
+      GetTruncatedSpec(imageURL, mURI);
+    }
   }
 
   mType = imgIContainer::TYPE_REQUEST;
@@ -62,7 +76,8 @@ ImageMemoryCounter::ImageMemoryCounter(imgRequest* aRequest,
 }
 
 ImageMemoryCounter::ImageMemoryCounter(imgRequest* aRequest, Image* aImage,
-                                       SizeOfState& aState, bool aIsUsed)
+                                       SizeOfState& aState, bool aIsUsed,
+                                       bool aAnonymize)
     : mProgress(UINT32_MAX),
       mType(UINT16_MAX),
       mIsUsed(aIsUsed),
@@ -73,8 +88,8 @@ ImageMemoryCounter::ImageMemoryCounter(imgRequest* aRequest, Image* aImage,
 
   
   nsCOMPtr<nsIURI> imageURL(aImage->GetURI());
-  if (imageURL) {
-    imageURL->GetSpec(mURI);
+  if (imageURL && !aAnonymize) {
+    GetTruncatedSpec(imageURL, mURI);
   }
 
   ImageIntrinsicSize size;
