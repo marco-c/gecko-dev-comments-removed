@@ -337,6 +337,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void PrepareConnInfoForRetry(nsresult aReason);
   
   
+  void DisableHttp3ForRestart();
+  
+  
   already_AddRefed<nsHttpConnectionInfo> PrepareFastFallbackConnInfo(
       bool aEchConfigUsed);
 
