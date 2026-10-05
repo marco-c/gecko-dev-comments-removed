@@ -44,6 +44,7 @@ def build_document(
     )
     from mozbuild.vendor.sbom_cargo import collect_dependency_kinds, crate_records
     from mozbuild.vendor.sbom_cyclonedx import build_bom, to_json, utc_timestamp
+    from mozbuild.vendor.sbom_npm import npm_records, upgrade_manifest_purls
 
     substs = substs or {}
     log = log or (lambda message: None)
@@ -72,6 +73,22 @@ def build_document(
         log(
             "cargo metadata unavailable; crate dependency kinds not collected.",
         )
+
+    
+    
+    packages, npm_edges = npm_records(topsrcdir)
+    records.extend(packages)
+    dependencies.update(npm_edges)
+
+    
+    
+    upgraded = upgrade_manifest_purls(records, topsrcdir)
+
+    log(
+        f"{len(packages)} npm packages bundled into the product "
+        "(dev-only dependencies excluded); "
+        f"{upgraded} vendored manifest(s) given a pkg:npm purl.",
+    )
 
     
     
@@ -155,7 +172,7 @@ def build_document(
         )
     log(
         f"{len(records)} components ({len(crates)} crates, "
-        f"{len(notices)} license notices).",
+        f"{len(packages)} npm packages, {len(notices)} license notices).",
     )
     return document
 
