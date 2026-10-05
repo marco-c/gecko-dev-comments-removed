@@ -3,6 +3,19 @@
 
 "use strict";
 
+const { TopSites } = ChromeUtils.importESModule(
+  "resource:///modules/topsites/TopSites.sys.mjs"
+);
+
+
+
+async function getTopSites() {
+  if (Services.prefs.getBoolPref("browser.topsites.component.enabled")) {
+    return TopSites.getSites();
+  }
+  return AboutNewTab.getTopSites();
+}
+
 
 
 
@@ -20,6 +33,14 @@ add_task(async function test_click_urlbar_results() {
     ],
   });
 
+  
+  
+  
+  await TestUtils.waitForCondition(
+    async () => (await getTopSites()).length,
+    "Waiting for the Top Sites row to be populated"
+  );
+
   await TestUtils.waitForCondition(() => {
     return BrowserTestUtils.isVisible(document.querySelector("sidebar-main"));
   }, "The new sidebar is shown.");
@@ -36,9 +57,10 @@ add_task(async function test_click_urlbar_results() {
         document.querySelector("#urlbar .urlbar-input-box"),
         {}
       );
-      await TestUtils.waitForCondition(() => {
-        return BrowserTestUtils.isVisible(urlbarResultsElem);
-      });
+      await TestUtils.waitForCondition(
+        () => BrowserTestUtils.isVisible(urlbarResultsElem),
+        "Waiting for the urlbar results view to be shown"
+      );
 
       let promiseClicked = BrowserTestUtils.waitForEvent(
         urlbarResultsElem,

@@ -14,6 +14,11 @@ const TEST_VALUE = "example.com";
 
 add_setup(async function () {
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.suggest.enabled", false]],
+  });
+
+  
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 });
 
