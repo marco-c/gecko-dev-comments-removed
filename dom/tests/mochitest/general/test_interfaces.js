@@ -1539,7 +1539,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ScrollAreaEvent", insecureContext: true },
   
-  { name: "ScrollTimeline", insecureContext: true, nightly: true },
+  { name: "ScrollTimeline", insecureContext: true },
   
   { name: "SecurityPolicyViolationEvent", insecureContext: true },
   
@@ -1757,7 +1757,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "VideoPlaybackQuality", insecureContext: true },
   
-  { name: "ViewTimeline", insecureContext: true, nightly: true },
+  { name: "ViewTimeline", insecureContext: true },
   
   { name: "ViewTransition", insecureContext: true },
   
