@@ -207,12 +207,10 @@ async function testMenuItemDisabled({ url, prefEnabled, selection }) {
       
       
       
+      
       EventUtils.synthesizeMouseAtCenter(
         window.gURLBar.inputField,
-        {
-          type: "mousedown",
-          button: 2,
-        },
+        { button: 2 },
         window
       );
     }
