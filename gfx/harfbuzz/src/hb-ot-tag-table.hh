@@ -1659,6 +1659,13 @@ hb_ot_tags_from_complex_language (const char   *lang_str,
       *count = 1;
       return true;
     }
+    if (subtag_matches (p, limit, "-fonupa", 7))
+    {
+      
+      tags[0] = HB_TAG('U','P','P','H');  
+      *count = 1;
+      return true;
+    }
     if (subtag_matches (p, limit, "-geok", 5))
     {
       
@@ -3110,6 +3117,8 @@ hb_ot_ambiguous_tag_to_language (hb_tag_t tag)
     return hb_language_from_string ("tmh", -1);  
   case HB_TAG('T','O','D',' '):  
     return hb_language_from_string ("xwo", -1);  
+  case HB_TAG('U','P','P','H'):  
+    return hb_language_from_string ("und-fonupa", -1);  
   case HB_TAG('W','D','T',' '):  
     return hb_language_from_string ("wdt", -1);  
   case HB_TAG('W','Y','N',' '):  

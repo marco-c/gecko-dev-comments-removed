@@ -138,7 +138,19 @@ _hb_ft_font_destroy (void *data)
   if (ft_font->unref)
   {
     if (ft_font->static_library)
+    {
+      
+
+
+
+
+
+
+
+      hb_blob_t *blob = hb_blob_reference ((hb_blob_t *) ft_font->ft_face->generic.data);
       _hb_ft_face_destroy_static (ft_font->ft_face);
+      hb_blob_destroy (blob);
+    }
     else
       _hb_ft_face_destroy (ft_font->ft_face);
   }

@@ -122,6 +122,12 @@
 
 
 
+#ifndef HB_GPU_PAINT_MAX_SUB_BYTES
+#define HB_GPU_PAINT_MAX_SUB_BYTES ((unsigned) 64 << 20)
+#endif
+
+
+
 
 
 
