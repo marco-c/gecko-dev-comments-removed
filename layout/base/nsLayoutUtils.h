@@ -2402,7 +2402,7 @@ class nsLayoutUtils {
   
   static mozilla::SurfaceFromElementResult SurfaceFromVideoFrame(
       mozilla::dom::VideoFrame* aVideoFrame, uint32_t aSurfaceFlags,
-      RefPtr<DrawTarget>& aTarget);
+      RefPtr<DrawTarget>& aTarget, bool aOptimizeSourceSurface = true);
   static mozilla::SurfaceFromElementResult SurfaceFromVideoFrame(
       mozilla::dom::VideoFrame* aVideoFrame, uint32_t aSurfaceFlags = 0) {
     RefPtr<DrawTarget> target = nullptr;

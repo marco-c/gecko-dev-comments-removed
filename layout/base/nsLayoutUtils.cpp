@@ -7128,7 +7128,7 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromOffscreenCanvas(
 
 SurfaceFromElementResult nsLayoutUtils::SurfaceFromVideoFrame(
     VideoFrame* aVideoFrame, uint32_t aSurfaceFlags,
-    RefPtr<DrawTarget>& aTarget) {
+    RefPtr<DrawTarget>& aTarget, bool aOptimizeSourceSurface) {
   SurfaceFromElementResult result;
 
   RefPtr<layers::Image> layersImage = aVideoFrame->GetImage();
@@ -7218,7 +7218,7 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromVideoFrame(
     result.mPrincipal = global->PrincipalOrNull();
   }
 
-  if (aTarget) {
+  if (aTarget && aOptimizeSourceSurface) {
     
     
     
