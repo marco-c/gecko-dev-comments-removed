@@ -1362,10 +1362,18 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   }
 
   
+  
+  WindowGlobalInit derivedInit(aInit);
+  derivedInit.context().mFields =
+      WindowGlobalActor::ComputeInitialFields(browsingContext);
   RefPtr<WindowGlobalParent> wgp =
-      WindowGlobalParent::CreateDisconnected(aInit, Manager());
+      WindowGlobalParent::CreateDisconnected(derivedInit, Manager());
+  if (!wgp) {
+    return IPC_FAIL(this, "Failed to create WindowGlobalParent");
+  }
+
   BindPWindowGlobalEndpoint(std::move(aEndpoint), wgp);
-  wgp->Init();
+  wgp->InitFromContentProcess(aInit.context().mFields, Manager());
   return IPC_OK();
 }
 

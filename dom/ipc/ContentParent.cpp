@@ -4294,8 +4294,13 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
   MaybeInvalidTabContext tc(aContext);
   MOZ_ASSERT(tc.IsValid());
 
+  
+  
+  WindowGlobalInit derivedWindowInit(aInitialWindowInit);
+  derivedWindowInit.context().mFields =
+      WindowGlobalActor::ComputeInitialFields(browsingContext);
   RefPtr<WindowGlobalParent> initialWindow =
-      WindowGlobalParent::CreateDisconnected(aInitialWindowInit, this);
+      WindowGlobalParent::CreateDisconnected(derivedWindowInit, this);
   if (!initialWindow) {
     return IPC_FAIL(this, "Failed to create WindowGlobalParent");
   }
@@ -4325,7 +4330,8 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
 
   browsingContext->SetCurrentBrowserParent(parent);
 
-  initialWindow->Init();
+  initialWindow->InitFromContentProcess(aInitialWindowInit.context().mFields,
+                                        this);
 
   
   

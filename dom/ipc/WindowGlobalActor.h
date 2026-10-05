@@ -8,6 +8,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/JSActor.h"
 #include "mozilla/dom/JSActorManager.h"
+#include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalTypes.h"
 #include "nsILoadInfo.h"
 #include "nsIOpenWindowInfo.h"
@@ -32,6 +33,11 @@ class WindowGlobalActor : public JSActorManager {
   
   
   static WindowGlobalInit WindowInitializer(nsGlobalWindowInner* aWindow);
+
+  
+  
+  static WindowContext::FieldValues ComputeInitialFields(
+      dom::BrowsingContext* aBrowsingContext);
 
   
   

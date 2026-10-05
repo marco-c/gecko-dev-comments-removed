@@ -27,40 +27,35 @@
 namespace mozilla::dom {
 
 
-static nsILoadInfo::CrossOriginEmbedderPolicy InheritedPolicy(
-    dom::BrowsingContext* aBrowsingContext) {
-  WindowContext* inherit = aBrowsingContext->GetParentWindowContext();
-  if (inherit) {
-    return inherit->GetEmbedderPolicy();
-  }
-
-  return nsILoadInfo::EMBEDDER_POLICY_NULL;
-}
-
-
 
 WindowGlobalInit WindowGlobalActor::BaseInitializer(
     dom::BrowsingContext* aBrowsingContext, uint64_t aInnerWindowId,
     uint64_t aOuterWindowId) {
   MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
 
-  using Indexes = WindowContext::FieldIndexes;
-
   WindowGlobalInit init;
   auto& ctx = init.context();
   ctx.mInnerWindowId = aInnerWindowId;
   ctx.mOuterWindowId = aOuterWindowId;
   ctx.mBrowsingContextId = aBrowsingContext->Id();
-
-  
-  
-  auto& fields = ctx.mFields;
-  fields.Get<Indexes::IDX_EmbedderPolicy>() = InheritedPolicy(aBrowsingContext);
-  fields.Get<Indexes::IDX_AutoplayPermission>() =
-      nsIPermissionManager::UNKNOWN_ACTION;
-  fields.Get<Indexes::IDX_AllowJavascript>() = true;
-  fields.Get<Indexes::IDX_IsFramebustingAllowed>() = aBrowsingContext->IsTop();
+  ctx.mFields = ComputeInitialFields(aBrowsingContext);
   return init;
+}
+
+
+WindowContext::FieldValues WindowGlobalActor::ComputeInitialFields(
+    dom::BrowsingContext* aBrowsingContext) {
+  MOZ_DIAGNOSTIC_ASSERT(aBrowsingContext);
+
+  WindowContext::FieldValues fields;
+  if (WindowContext* parent = aBrowsingContext->GetParentWindowContext()) {
+    
+    fields.Get<WindowContext::IDX_EmbedderPolicy>() =
+        parent->GetEmbedderPolicy();
+  }
+  fields.Get<WindowContext::IDX_IsFramebustingAllowed>() =
+      aBrowsingContext->IsTop();
+  return fields;
 }
 
 WindowGlobalInit WindowGlobalActor::AboutBlankInitializer(
