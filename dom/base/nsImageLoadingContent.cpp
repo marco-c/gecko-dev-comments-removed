@@ -1477,28 +1477,26 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
 }
 
 CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
   Element* element = AsContent()->AsElement();
   if (nsIFrame* frame = element->GetPrimaryFrame(FlushType::Layout)) {
     return CSSIntSize::FromAppUnitsRounded(frame->GetContentRect().Size());
   }
 
-  CSSIntSize size;
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  size = NaturalSize(DoDensityCorrection::No);
+  CSSIntSize size = NaturalSize(DoDensityCorrection::Yes);
 
-  
-  
-  
-  
   
   const nsAttrValue* value;
   if ((value = element->GetParsedAttr(nsGkAtoms::width)) &&
@@ -1506,6 +1504,7 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
     size.width = value->GetIntegerValue();
   }
 
+  
   if ((value = element->GetParsedAttr(nsGkAtoms::height)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.height = value->GetIntegerValue();
