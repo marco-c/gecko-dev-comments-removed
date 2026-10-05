@@ -1306,6 +1306,15 @@ this.AccessibilityUtils = (function () {
 
   const AccessibilityUtils = {
     assertCanBeClicked(node) {
+      if (node.frameLoader?.isRemoteFrame) {
+        
+        
+        
+        a11yWarn("Unable to perform a11y checks in a remote document", {
+          DOMNode: node,
+        });
+        return;
+      }
       
       
       
