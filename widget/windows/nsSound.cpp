@@ -3,33 +3,15 @@
 
 
 
-#include <stdio.h>
 #include <windows.h>
-
-#include "nsString.h"
-#include "nscore.h"
-
 
 #include <mmsystem.h>
 
 #include "HeadlessSound.h"
 #include "gfxPlatform.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Logging.h"
-#include "mozilla/Services.h"
-#include "nsCRT.h"
-#include "nsIObserverService.h"
-#include "nsIThread.h"
-#include "nsNativeCharsetUtils.h"
 #include "nsSound.h"
-#include "nsThreadUtils.h"
-#include "prtime.h"
-
-using mozilla::LogLevel;
-
-#ifdef DEBUG
-static mozilla::LazyLogModule gWin32SoundLog("nsSound");
-#endif
 
 
 
@@ -52,53 +34,43 @@ static bool ShouldSuppressPlaySound() {
   return false;
 }
 
-class nsSoundPlayer : public mozilla::Runnable {
- public:
-  explicit nsSoundPlayer(const nsAString& aSoundName)
-      : mozilla::Runnable("nsSoundPlayer"),
-        mSoundName(aSoundName),
-        mSoundData(nullptr) {}
 
-  nsSoundPlayer(const uint8_t* aData, size_t aSize)
-      : mozilla::Runnable("nsSoundPlayer"), mSoundName(u""_ns) {
-    MOZ_ASSERT(aSize > 0, "Size should not be zero");
-    MOZ_ASSERT(aData, "Data shoud not be null");
 
-    
-    mSoundData = new uint8_t[aSize];
-    memcpy(mSoundData, aData, aSize);
+
+static mozilla::Atomic<bool> sPlaying(false);
+
+static const wchar_t* GetEventSoundAlias(uint32_t aEventId) {
+  switch (aEventId) {
+    case nsISound::EVENT_NEW_MAIL_RECEIVED:
+      return L"MailBeep";
+    case nsISound::EVENT_ALERT_DIALOG_OPEN:
+      return L"SystemExclamation";
+    case nsISound::EVENT_CONFIRM_DIALOG_OPEN:
+      return L"SystemQuestion";
+    case nsISound::EVENT_MENU_EXECUTE:
+      return L"MenuCommand";
+    case nsISound::EVENT_MENU_POPUP:
+      return L"MenuPopup";
+    case nsISound::EVENT_EDITOR_MAX_LEN:
+      return L".Default";
+    default:
+      
+      
+      return nullptr;
   }
-
-  NS_DECL_NSIRUNNABLE
-
- protected:
-  ~nsSoundPlayer();
-
-  nsString mSoundName;
-  uint8_t* mSoundData;
-};
-
-NS_IMETHODIMP
-nsSoundPlayer::Run() {
-  if (ShouldSuppressPlaySound()) {
-    return NS_OK;
-  }
-
-  MOZ_ASSERT(!mSoundName.IsEmpty() || mSoundData,
-             "Sound name or sound data should be specified");
-  DWORD flags = SND_NODEFAULT | SND_ASYNC;
-
-  if (mSoundData) {
-    flags |= SND_MEMORY;
-    ::PlaySoundW(reinterpret_cast<LPCWSTR>(mSoundData), nullptr, flags);
-  } else {
-    flags |= SND_ALIAS;
-    ::PlaySoundW(mSoundName.get(), nullptr, flags);
-  }
-  return NS_OK;
 }
 
-nsSoundPlayer::~nsSoundPlayer() { delete[] mSoundData; }
+static void CALLBACK PlayEventSoundCallback(PTP_CALLBACK_INSTANCE,
+                                            void* aEventId) {
+  if (!ShouldSuppressPlaySound()) {
+    
+    
+    auto eventId = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(aEventId));
+    ::PlaySoundW(GetEventSoundAlias(eventId), nullptr,
+                 SND_ALIAS | SND_ASYNC | SND_NODEFAULT);
+  }
+  sPlaying = false;
+}
 
 mozilla::StaticRefPtr<nsISound> nsSound::sInstance;
 
@@ -108,12 +80,7 @@ already_AddRefed<nsISound> nsSound::GetInstance() {
     if (gfxPlatform::IsHeadless()) {
       sInstance = mozilla::MakeRefPtr<mozilla::widget::HeadlessSound>();
     } else {
-      auto sound = mozilla::MakeRefPtr<nsSound>();
-      nsresult rv = sound->CreatePlayerThread();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return nullptr;
-      }
-      sInstance = sound.forget();
+      sInstance = mozilla::MakeRefPtr<nsSound>();
     }
     ClearOnShutdown(&sInstance);
   }
@@ -122,38 +89,7 @@ already_AddRefed<nsISound> nsSound::GetInstance() {
   return service.forget();
 }
 
-#ifndef SND_PURGE
-
-
-#  define SND_PURGE 0
-#endif
-
-NS_IMPL_ISUPPORTS(nsSound, nsISound, nsIObserver)
-
-nsSound::nsSound() : mInited(false) {}
-
-nsSound::~nsSound() {}
-
-void nsSound::PurgeLastSound() {
-  
-  if (mSoundPlayer) {
-    if (mPlayerThread) {
-      mPlayerThread->Dispatch(
-          NS_NewRunnableFunction("nsSound::PurgeLastSound",
-                                 [player = std::move(mSoundPlayer)]() {
-                                   
-                                   
-                                   
-                                   
-                                   if (ShouldSuppressPlaySound()) {
-                                     return;
-                                   }
-                                   ::PlaySoundW(nullptr, nullptr, SND_PURGE);
-                                 }),
-          NS_DISPATCH_NORMAL);
-    }
-  }
-}
+NS_IMPL_ISUPPORTS(nsSound, nsISound)
 
 NS_IMETHODIMP nsSound::Beep() {
   ::MessageBeep(0);
@@ -161,105 +97,25 @@ NS_IMETHODIMP nsSound::Beep() {
   return NS_OK;
 }
 
-nsresult nsSound::CreatePlayerThread() {
-  if (mPlayerThread) {
-    return NS_OK;
-  }
-  if (NS_WARN_IF(NS_FAILED(NS_NewNamedThread("PlayEventSound",
-                                             getter_AddRefs(mPlayerThread))))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
-  if (!observerService) {
-    return NS_ERROR_FAILURE;
-  }
-
-  observerService->AddObserver(this, "xpcom-shutdown-threads", false);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsSound::Observe(nsISupports* aSubject, const char* aTopic,
-                 const char16_t* aData) {
-  if (!strcmp(aTopic, "xpcom-shutdown-threads")) {
-    PurgeLastSound();
-
-    if (mPlayerThread) {
-      mPlayerThread->Shutdown();
-      mPlayerThread = nullptr;
-    }
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsSound::Init() {
-  if (mInited) {
-    return NS_OK;
-  }
-
-  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
-  
-  
-  
-  
-  
-  
-  
-  mPlayerThread->Dispatch(
-      NS_NewRunnableFunction("nsSound::Init",
-                             []() {
-                               if (ShouldSuppressPlaySound()) {
-                                 return;
-                               }
-                               ::PlaySoundW(nullptr, nullptr, SND_PURGE);
-                             }),
-      NS_DISPATCH_NORMAL);
-
-  mInited = true;
-
-  return NS_OK;
-}
+NS_IMETHODIMP nsSound::Init() { return NS_OK; }
 
 NS_IMETHODIMP nsSound::PlayEventSound(uint32_t aEventId) {
-  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
-  PurgeLastSound();
-
-  const wchar_t* sound = nullptr;
-  switch (aEventId) {
-    case EVENT_NEW_MAIL_RECEIVED:
-      sound = L"MailBeep";
-      break;
-    case EVENT_ALERT_DIALOG_OPEN:
-      sound = L"SystemExclamation";
-      break;
-    case EVENT_CONFIRM_DIALOG_OPEN:
-      sound = L"SystemQuestion";
-      break;
-    case EVENT_MENU_EXECUTE:
-      sound = L"MenuCommand";
-      break;
-    case EVENT_MENU_POPUP:
-      sound = L"MenuPopup";
-      break;
-    case EVENT_EDITOR_MAX_LEN:
-      sound = L".Default";
-      break;
-    default:
-      
-      
-      return NS_OK;
+  if (!GetEventSoundAlias(aEventId)) {
+    return NS_OK;
   }
-  NS_ASSERTION(sound, "sound is null");
-  MOZ_ASSERT(!mSoundPlayer, "mSoundPlayer should be null");
-  mSoundPlayer = mozilla::MakeRefPtr<nsSoundPlayer>(nsDependentString(sound));
-  MOZ_ASSERT(mSoundPlayer, "Could not create player");
-  nsresult rv = mPlayerThread->Dispatch(mSoundPlayer, NS_DISPATCH_NORMAL);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+
+  
+  
+  
+  
+  if (sPlaying.exchange(true)) {
+    return NS_OK;
+  }
+  if (!::TrySubmitThreadpoolCallback(
+          PlayEventSoundCallback,
+          reinterpret_cast<void*>(static_cast<uintptr_t>(aEventId)), nullptr)) {
+    sPlaying = false;
+    return NS_ERROR_FAILURE;
   }
   return NS_OK;
 }
