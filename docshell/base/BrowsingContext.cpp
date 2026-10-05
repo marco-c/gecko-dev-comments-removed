@@ -351,6 +351,84 @@ bool BrowsingContext::SameOriginWithTop() {
 }
 
 
+BrowsingContext::FieldValues BrowsingContext::ComputeInitialFields(
+    WindowContext* aParentWindow, BrowsingContext* aOpener,
+    BrowsingContextGroup* aGroup, Type aType) {
+  BrowsingContext* const parentBC =
+      aParentWindow ? aParentWindow->GetBrowsingContext() : nullptr;
+
+  BrowsingContext* const inherit = parentBC ? parentBC : aOpener;
+
+  FieldValues fields;
+  if (inherit) {
+    fields.Get<IDX_AllowContentRetargeting>() =
+        inherit->GetAllowContentRetargetingOnChildren();
+    fields.Get<IDX_AllowContentRetargetingOnChildren>() =
+        inherit->GetAllowContentRetargetingOnChildren();
+    fields.Get<IDX_DefaultLoadFlags>() = inherit->GetDefaultLoadFlags();
+    fields.Get<IDX_UseGlobalHistory>() = inherit->GetUseGlobalHistory();
+    fields.Get<IDX_AllowJavascript>() = inherit->GetAllowJavascript();
+    fields.Get<IDX_IPAddressSpace>() = inherit->GetIPAddressSpace();
+    fields.Get<IDX_ParentalControlsEnabled>() =
+        inherit->GetParentalControlsEnabled();
+  }
+
+  if (aOpener) {
+    fields.Get<IDX_OpenerId>() = aOpener->Id();
+    fields.Get<IDX_HadOriginalOpener>() = true;
+    fields.Get<IDX_MessageManagerGroup>() =
+        aOpener->Top()->GetMessageManagerGroup();
+
+    if (aType == Type::Chrome && !aParentWindow) {
+      
+      fields.Get<IDX_PrefersColorSchemeOverride>() =
+          aOpener->Top()->GetPrefersColorSchemeOverride();
+    }
+  }
+
+  if (aParentWindow) {
+    fields.Get<IDX_EmbedderInnerWindowId>() = aParentWindow->Id();
+    
+    fields.Get<IDX_EmbeddedInContentDocument>() = parentBC->IsContent();
+    fields.Get<IDX_BrowserId>() = parentBC->GetBrowserId();
+    fields.Get<IDX_AncestorLoading>() = parentBC->GetAncestorLoading();
+    fields.Get<IDX_FullZoom>() = parentBC->FullZoom();
+    fields.Get<IDX_TextZoom>() = parentBC->TextZoom();
+  } else if (aGroup->IsPotentiallyCrossOriginIsolated()) {
+    
+    
+    fields.Get<IDX_OpenerPolicy>() =
+        nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
+  }
+
+  fields.Get<IDX_ExplicitActive>() = [&] {
+    if (parentBC || aType == Type::Content) {
+      
+      
+      
+      
+      return ExplicitActiveStatus::None;
+    }
+    
+    return ExplicitActiveStatus::Active;
+  }();
+
+  
+  
+  fields.Get<IDX_FullscreenAllowedByOwner>() = !aParentWindow;
+
+  if (!inherit && XRE_IsParentProcess()) {
+    fields.Get<IDX_ParentalControlsEnabled>() =
+        CanonicalBrowsingContext::ShouldEnforceParentalControls();
+  }
+
+  fields.Get<IDX_ShouldDelayMediaFromStart>() =
+      !parentBC && StaticPrefs::media_block_autoplay_until_in_foreground();
+
+  return fields;
+}
+
+
 already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     nsGlobalWindowInner* aParent, BrowsingContext* aOpener,
     BrowsingContextGroup* aSpecificGroup, const nsAString& aName, Type aType,
@@ -373,8 +451,6 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
       aParent ? aParent->GetBrowsingContext() : nullptr;
   RefPtr<WindowContext> parentWC =
       aParent ? aParent->GetWindowContext() : nullptr;
-  BrowsingContext* inherit = parentBC ? parentBC.get() : aOpener;
-
   
   RefPtr<BrowsingContextGroup> group = aSpecificGroup;
   if (aType == Type::Chrome) {
@@ -384,47 +460,31 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
     group = BrowsingContextGroup::Select(parentWC, aOpener);
   }
 
-  
-  FieldValues fields;
+  MOZ_DIAGNOSTIC_ASSERT_IF(aOpener, !aParent);
+  MOZ_DIAGNOSTIC_ASSERT_IF(aOpener, aOpener->Group() == group);
+  MOZ_DIAGNOSTIC_ASSERT_IF(aOpener, aOpener->mType == aType);
+  MOZ_DIAGNOSTIC_ASSERT_IF(aParent, parentBC->Group() == group);
+  MOZ_DIAGNOSTIC_ASSERT_IF(aParent, parentBC->mType == aType);
+
+  FieldValues fields = ComputeInitialFields(parentWC, aOpener, group, aType);
   fields.Get<IDX_Name>() = aName;
+  fields.Get<IDX_HistoryID>() = nsID::GenerateUUID();
+  fields.Get<IDX_IsPopupRequested>() = aOptions.isPopupRequested;
+  fields.Get<IDX_TopLevelCreatedByWebContent>() =
+      aOptions.topLevelCreatedByWebContent;
 
-  if (aOpener) {
-    MOZ_DIAGNOSTIC_ASSERT(!aParent,
-                          "new BC with both initial opener and parent");
-    MOZ_DIAGNOSTIC_ASSERT(aOpener->Group() == group);
-    MOZ_DIAGNOSTIC_ASSERT(aOpener->mType == aType);
-    fields.Get<IDX_OpenerId>() = aOpener->Id();
-    fields.Get<IDX_HadOriginalOpener>() = true;
-    fields.Get<IDX_MessageManagerGroup>() =
-        aOpener->Top()->GetMessageManagerGroup();
-
-    if (aType == Type::Chrome && !aParent) {
-      
-      fields.Get<IDX_PrefersColorSchemeOverride>() =
-          aOpener->Top()->GetPrefersColorSchemeOverride();
-    }
-  }
-
-  if (aParent) {
-    MOZ_DIAGNOSTIC_ASSERT(parentBC->Group() == group);
-    MOZ_DIAGNOSTIC_ASSERT(parentBC->mType == aType);
-    
-    fields.Get<IDX_EmbeddedInContentDocument>() =
-        parentBC->mType == Type::Content;
-
+  if (parentWC) {
     
     
-    auto readystate = aParent->GetDocument()->GetReadyStateEnum();
+    const auto readystate = aParent->GetDocument()->GetReadyStateEnum();
     fields.Get<IDX_AncestorLoading>() =
-        parentBC->GetAncestorLoading() ||
+        fields.Get<IDX_AncestorLoading>() ||
         readystate == Document::ReadyState::READYSTATE_LOADING ||
         readystate == Document::ReadyState::READYSTATE_INTERACTIVE;
+  } else {
+    fields.Get<IDX_BrowserId>() = nsContentUtils::GenerateBrowserId();
   }
 
-  fields.Get<IDX_BrowserId>() =
-      parentBC ? parentBC->GetBrowserId() : nsContentUtils::GenerateBrowserId();
-
-  fields.Get<IDX_OpenerPolicy>() = nsILoadInfo::OPENER_POLICY_UNSAFE_NONE;
   if (aOpener && aOpener->SameOriginWithTop()) {
     
     
@@ -433,14 +493,14 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
 
     
     
-    bool isPotentiallyCrossOriginIsolated =
+    const bool isPotentiallyCrossOriginIsolated =
         fields.Get<IDX_OpenerPolicy>() ==
         nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
     MOZ_RELEASE_ASSERT(isPotentiallyCrossOriginIsolated ==
                        group->IsPotentiallyCrossOriginIsolated());
   } else if (aOpener) {
     
-    auto topPolicy = aOpener->Top()->GetOpenerPolicy();
+    const auto topPolicy = aOpener->Top()->GetOpenerPolicy();
     MOZ_RELEASE_ASSERT(
         topPolicy == nsILoadInfo::OPENER_POLICY_UNSAFE_NONE ||
         topPolicy == nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_ALLOW_POPUPS ||
@@ -449,75 +509,10 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
       
       fields.Get<IDX_OpenerPolicy>() = topPolicy;
     }
-  } else if (!aParent && group->IsPotentiallyCrossOriginIsolated()) {
-    
-    
-    fields.Get<IDX_OpenerPolicy>() =
-        nsILoadInfo::OPENER_POLICY_SAME_ORIGIN_EMBEDDER_POLICY_REQUIRE_CORP;
   }
-
-  fields.Get<IDX_HistoryID>() = nsID::GenerateUUID();
-  fields.Get<IDX_ExplicitActive>() = [&] {
-    if (parentBC || aType == Type::Content) {
-      
-      
-      
-      
-      return ExplicitActiveStatus::None;
-    }
-    
-    return ExplicitActiveStatus::Active;
-  }();
-
-  fields.Get<IDX_FullZoom>() = parentBC ? parentBC->FullZoom() : 1.0f;
-  fields.Get<IDX_TextZoom>() = parentBC ? parentBC->TextZoom() : 1.0f;
-
-  bool allowContentRetargeting =
-      inherit ? inherit->GetAllowContentRetargetingOnChildren() : true;
-  fields.Get<IDX_AllowContentRetargeting>() = allowContentRetargeting;
-  fields.Get<IDX_AllowContentRetargetingOnChildren>() = allowContentRetargeting;
-
-  
-  
-  fields.Get<IDX_FullscreenAllowedByOwner>() = !aParent;
-
-  fields.Get<IDX_DefaultLoadFlags>() =
-      inherit ? inherit->GetDefaultLoadFlags() : nsIRequest::LOAD_NORMAL;
-
-  fields.Get<IDX_UseGlobalHistory>() =
-      inherit ? inherit->GetUseGlobalHistory() : false;
-
-  fields.Get<IDX_AllowJavascript>() =
-      inherit ? inherit->GetAllowJavascript() : true;
-
-  fields.Get<IDX_IPAddressSpace>() = inherit
-                                         ? inherit->GetIPAddressSpace()
-                                         : nsILoadInfo::IPAddressSpace::Unknown;
-
-  bool parentalControlsEnabled;
-  if (inherit) {
-    parentalControlsEnabled = inherit->GetParentalControlsEnabled();
-  } else if (XRE_IsParentProcess()) {
-    parentalControlsEnabled =
-        CanonicalBrowsingContext::ShouldEnforceParentalControls();
-  } else {
-    parentalControlsEnabled = false;
-  }
-
-  fields.Get<IDX_ParentalControlsEnabled>() = parentalControlsEnabled;
-
-  fields.Get<IDX_IsPopupRequested>() = aOptions.isPopupRequested;
-
-  fields.Get<IDX_TopLevelCreatedByWebContent>() =
-      aOptions.topLevelCreatedByWebContent;
 
   if (aOptions.isForPrinting && !parentBC) {
     fields.Get<IDX_IsPrinting>() = true;
-  }
-
-  if (!parentBC) {
-    fields.Get<IDX_ShouldDelayMediaFromStart>() =
-        StaticPrefs::media_block_autoplay_until_in_foreground();
   }
 
   RefPtr<BrowsingContext> context;
@@ -534,7 +529,7 @@ already_AddRefed<BrowsingContext> BrowsingContext::CreateDetached(
   context->mWindowless = aOptions.windowless;
   context->mEmbeddedByThisProcess = XRE_IsParentProcess() || aParent;
   context->mCreatedDynamically = aOptions.createdDynamically;
-  if (inherit) {
+  if (BrowsingContext* inherit = parentBC ? parentBC.get() : aOpener) {
     context->mPrivateBrowsingId = inherit->mPrivateBrowsingId;
     context->mUseRemoteTabs = inherit->mUseRemoteTabs;
     context->mUseRemoteSubframes = inherit->mUseRemoteSubframes;
@@ -595,6 +590,28 @@ mozilla::ipc::IPCResult BrowsingContext::CreateFromIPC(
 
   RefPtr<WindowContext> parent = aInit.GetParent();
 
+  
+  
+  
+  FieldValues fields;
+  if (XRE_IsContentProcess()) {
+    fields = std::move(aInit.mFields);
+  } else {
+    RefPtr<BrowsingContext> opener;
+    if (aInit.GetOpenerId() != 0) {
+      opener = BrowsingContext::Get(aInit.GetOpenerId());
+      MOZ_DIAGNOSTIC_ASSERT(opener && opener->Group() == aGroup,
+                            "validated by RecvCreateBrowsingContext");
+    }
+    fields = ComputeInitialFields(parent, opener, aGroup, Type::Content);
+    if (!parent) {
+      
+      
+      fields.Get<IDX_TopLevelCreatedByWebContent>() = true;
+      fields.Get<IDX_PendingInitialization>() = true;
+    }
+  }
+
   RefPtr<BrowsingContext> context;
   if (XRE_IsParentProcess()) {
     
@@ -603,10 +620,22 @@ mozilla::ipc::IPCResult BrowsingContext::CreateFromIPC(
     uint64_t embedderProcessId = (aInit.mWindowless || parent) ? originId : 0;
     context = new CanonicalBrowsingContext(parent, aGroup, aInit.mId, originId,
                                            embedderProcessId, Type::Content,
-                                           std::move(aInit.mFields));
+                                           std::move(fields));
   } else {
     context = new BrowsingContext(parent, aGroup, aInit.mId, Type::Content,
-                                  std::move(aInit.mFields));
+                                  std::move(fields));
+  }
+
+  Transaction correction;
+  if (XRE_IsParentProcess()) {
+    MOZ_DIAGNOSTIC_ASSERT(!context->EverAttached());
+    Transaction::ReconcileInitialFields(context, std::move(aInit.mFields),
+                                        aOriginProcess, correction);
+    
+    
+    if (!parent && context->GetBrowserId() == 0) {
+      return IPC_FAIL(aOriginProcess, "Invalid BrowserId for new toplevel");
+    }
   }
 
   context->mWindowless = aInit.mWindowless;
@@ -639,6 +668,10 @@ mozilla::ipc::IPCResult BrowsingContext::CreateFromIPC(
   Register(context);
 
   context->Attach( true, aOriginProcess);
+
+  if (XRE_IsParentProcess()) {
+    correction.SendCorrection(context, aOriginProcess);
+  }
   return IPC_OK();
 }
 
@@ -3153,15 +3186,6 @@ already_AddRefed<WindowContext> BrowsingContext::IPCInitializer::GetParent() {
   return parent.forget();
 }
 
-already_AddRefed<BrowsingContext> BrowsingContext::IPCInitializer::GetOpener() {
-  RefPtr<BrowsingContext> opener;
-  if (GetOpenerId() != 0) {
-    opener = BrowsingContext::Get(GetOpenerId());
-    MOZ_RELEASE_ASSERT(opener);
-  }
-  return opener.forget();
-}
-
 void BrowsingContext::StartDelayedAutoplayMediaComponents() {
   if (!mDocShell) {
     return;
@@ -4222,7 +4246,11 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint64_t& aValue,
     return false;
   }
 
-  return GetBrowserId() == 0 && Children().IsEmpty();
+  if (GetBrowserId() != 0 || !Children().IsEmpty()) {
+    return false;
+  }
+  RefPtr<BrowsingContext> existing = GetCurrentTopByBrowserId(aValue);
+  return !existing;
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_PendingInitialization>,

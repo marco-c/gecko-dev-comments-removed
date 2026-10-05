@@ -216,6 +216,14 @@ class WindowGlobalParent final : public WindowContext,
   
   void Init() final;
 
+  
+  
+  
+  
+  
+  void InitFromContentProcess(const FieldValues& aRequested,
+                              ContentParent* aSource);
+
   nsIGlobalObject* GetParentObject();
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
