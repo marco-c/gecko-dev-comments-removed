@@ -67,8 +67,13 @@ SpeculationRuleSet::Parse(const nsACString& aSource, nsIURI* aDocumentBaseUri,
                             errorNumber);
 }
 
-void SpeculationRuleSet::ConsiderLoads(PrefetchCandidates* aCandidates) {
-  consider_speculative_loads_for_rule_set(this, aCandidates);
+void SpeculationRuleSet::ConsiderLoads(PrefetchCandidates* aCandidates,
+                                       const nsTArray<const Element*>& aLinks) {
+  consider_speculative_loads_for_rule_set(this, aCandidates, &aLinks);
+}
+
+bool SpeculationRuleSet::HasDocumentRules() const {
+  return speculation_rule_set_has_document_rules(this);
 }
 
 void SpeculationRuleSet::SetUseCounters(Document& aDocument) const {
