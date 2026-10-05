@@ -191,6 +191,12 @@ function evalWithDebugger(string, options = {}, webConsole) {
 
   const evalOptions = {};
 
+  
+  
+  if (!frame && !options.preferConsoleCommandsOverLocalSymbols) {
+    evalOptions.allowRedeclaringExistingLexicalBinding = true;
+  }
+
   const urlOption =
     options.url || (options.eager ? "debugger eager eval code" : null);
   if (typeof urlOption === "string") {

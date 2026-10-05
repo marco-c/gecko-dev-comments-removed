@@ -252,7 +252,11 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
 
   
   
-  UsesArgumentsIntrinsics = 1 << 30,
+  UsesArgumentsIntrinsics = 1u << 30,
+
+  
+  
+  AllowRedeclaringExistingLexicalBinding = 1u << 31,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {

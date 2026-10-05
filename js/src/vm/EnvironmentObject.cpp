@@ -23,6 +23,7 @@
 #include "vm/Realm.h"
 #include "vm/Scope.h"
 #include "vm/Shape.h"
+#include "vm/Watchtower.h"
 #include "wasm/WasmDebug.h"
 #include "wasm/WasmDebugFrame.h"
 #include "wasm/WasmInstance.h"
@@ -3843,14 +3844,21 @@ static void ReportRuntimeRedeclaration(JSContext* cx,
 
 [[nodiscard]] static bool CheckLexicalNameConflict(
     JSContext* cx, Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv,
-    HandleObject varObj, Handle<PropertyName*> name) {
+    HandleObject varObj, Handle<PropertyName*> name, bool isConst,
+    bool allowRedeclaringExistingLexicalBinding) {
   const char* redeclKind = nullptr;
   RootedId id(cx, NameToId(name));
   mozilla::Maybe<PropertyInfo> prop, shadowedExistingProp;
 
   if ((prop = lexicalEnv->lookup(cx, name))) {
     
-    redeclKind = prop->writable() ? "let" : "const";
+    
+    
+    
+    bool existingIsConst = !prop->writable();
+    if (!allowRedeclaringExistingLexicalBinding || existingIsConst != isConst) {
+      redeclKind = prop->writable() ? "let" : "const";
+    }
   } else if (varObj->is<NativeObject>() &&
              (prop = varObj->as<NativeObject>().lookup(cx, name))) {
     
@@ -3973,16 +3981,44 @@ static void ReportCannotDeclareGlobalBinding(JSContext* cx,
 
 
 
+[[nodiscard]] static bool DefineLexicalBinding(
+    JSContext* cx, Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv,
+    Handle<PropertyName*> name, HandleId id, HandleValue uninitialized,
+    unsigned attrs, bool allowRedeclaringExistingLexicalBinding,
+    bool* anyRedeclared) {
+  if (allowRedeclaringExistingLexicalBinding) {
+    mozilla::Maybe<PropertyInfo> prop = lexicalEnv->lookup(cx, name);
+    if (prop.isSome()) {
+      MOZ_ASSERT(prop->isDataProperty());
+      MOZ_ASSERT(prop->writable() == !(attrs & JSPROP_READONLY));
+      lexicalEnv->setSlot(prop->slot(), uninitialized);
+      *anyRedeclared = true;
+      return true;
+    }
+  }
+
+  return NativeDefineDataProperty(cx, lexicalEnv, id, uninitialized, attrs);
+}
+
+
+
+
 static bool InitGlobalOrEvalDeclarations(
     JSContext* cx, HandleScript script,
-    Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv,
-    HandleObject varObj) {
+    Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv, HandleObject varObj,
+    bool allowRedeclaringExistingLexicalBinding) {
   Rooted<BindingIter> bi(cx, BindingIter(script));
   RootedTuple<PropertyName*, JSObject*, jsid, Value> declRoots(cx);
   RootedField<PropertyName*> name(declRoots);
   RootedField<JSObject*> obj2(declRoots);
   RootedField<jsid> id(declRoots);
   RootedField<Value> uninitialized(declRoots);
+
+  
+  
+  
+  bool anyRedeclared = false;
+
   for (; bi; bi++) {
     if (bi.isTopLevelFunction()) {
       continue;
@@ -4017,8 +4053,9 @@ static bool InitGlobalOrEvalDeclarations(
       case BindingKind::Let: {
         id = NameToId(name);
         uninitialized = MagicValue(JS_UNINITIALIZED_LEXICAL);
-        if (!NativeDefineDataProperty(cx, lexicalEnv, id, uninitialized,
-                                      attrs)) {
+        if (!DefineLexicalBinding(cx, lexicalEnv, name, id, uninitialized,
+                                  attrs, allowRedeclaringExistingLexicalBinding,
+                                  &anyRedeclared)) {
           return false;
         }
 
@@ -4029,6 +4066,13 @@ static bool InitGlobalOrEvalDeclarations(
         MOZ_CRASH("Expected binding kind");
         return false;
     }
+  }
+
+  if (anyRedeclared) {
+    
+    
+    
+    Watchtower::watchGlobalLexicalRedeclaration(cx, lexicalEnv);
   }
 
   return true;
@@ -4128,8 +4172,8 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
 
 [[nodiscard]] static bool CheckGlobalDeclarationConflicts(
     JSContext* cx, HandleScript script,
-    Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv,
-    HandleObject varObj) {
+    Handle<ExtensibleLexicalEnvironmentObject*> lexicalEnv, HandleObject varObj,
+    bool allowRedeclaringExistingLexicalBinding) {
   
   
   
@@ -4171,7 +4215,9 @@ static bool InitHoistedFunctionDeclarations(JSContext* cx, HandleScript script,
   
   for (; bi; bi++) {
     name = bi.name()->asPropertyName();
-    if (!CheckLexicalNameConflict(cx, lexicalEnv, varObj, name)) {
+    if (!CheckLexicalNameConflict(cx, lexicalEnv, varObj, name,
+                                  bi.kind() == BindingKind::Const,
+                                  allowRedeclaringExistingLexicalBinding)) {
       return false;
     }
   }
@@ -4306,18 +4352,25 @@ bool js::GlobalOrEvalDeclInstantiation(JSContext* cx, HandleObject envChain,
   RootedObject varObj(cx, &GetVariablesObject(envChain));
   Rooted<ExtensibleLexicalEnvironmentObject*> lexicalEnv(cx);
 
+  bool allowRedeclaringExistingLexicalBinding =
+      script->allowRedeclaringExistingLexicalBinding();
+  MOZ_ASSERT_IF(script->isForEval(), !allowRedeclaringExistingLexicalBinding);
+
   if (script->isForEval()) {
     if (!CheckEvalDeclarationConflicts(cx, script, envChain, varObj)) {
       return false;
     }
   } else {
     lexicalEnv = &NearestEnclosingExtensibleLexicalEnvironment(envChain);
-    if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv, varObj)) {
+    if (!CheckGlobalDeclarationConflicts(
+            cx, script, lexicalEnv, varObj,
+            allowRedeclaringExistingLexicalBinding)) {
       return false;
     }
   }
 
-  if (!InitGlobalOrEvalDeclarations(cx, script, lexicalEnv, varObj)) {
+  if (!InitGlobalOrEvalDeclarations(cx, script, lexicalEnv, varObj,
+                                    allowRedeclaringExistingLexicalBinding)) {
     return false;
   }
 

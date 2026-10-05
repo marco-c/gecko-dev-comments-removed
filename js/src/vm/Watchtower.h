@@ -156,6 +156,11 @@ class Watchtower {
     }
     return watchProtoChangeSlow(cx, obj);
   }
+
+  
+  
+  static void watchGlobalLexicalRedeclaration(JSContext* cx,
+                                              Handle<NativeObject*> obj);
 };
 
 }  
