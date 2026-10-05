@@ -159,25 +159,23 @@ bool HttpChannelParent::Init(const HttpChannelCreationArgs& aArgs) {
     case HttpChannelCreationArgs::THttpChannelOpenArgs: {
       const HttpChannelOpenArgs& a = aArgs.get_HttpChannelOpenArgs();
       return DoAsyncOpen(
-          a.uri(), a.original(), a.doc(), a.referrerInfo(), a.apiRedirectTo(),
-          a.topWindowURI(), a.loadFlags(), a.requestHeaders(),
-          a.requestMethod(), a.uploadStream(), a.uploadStreamIsStreaming(),
-          a.priority(), a.classOfService(), a.redirectionLimit(),
-          a.thirdPartyFlags(), a.resumeAt(), a.startPos(), a.entityID(),
-          a.allowSpdy(), a.allowHttp3(), a.allowAltSvc(), a.beConservative(),
-          a.bypassProxy(), a.tlsFlags(), a.loadInfo(), a.cacheKey(),
-          a.requestContextID(), a.preflightArgs(), a.initialRwin(),
-          a.blockAuthPrompt(), a.allowStaleCacheContent(),
-          a.preferCacheLoadOverBypass(), a.contentTypeHint(), a.requestMode(),
-          a.redirectMode(), a.channelId(), a.contentWindowId(),
-          a.preferredAlternativeTypes(), a.browserId(),
+          a.uri(), a.original(), a.doc(), a.referrerInfo(), a.topWindowURI(),
+          a.loadFlags(), a.requestHeaders(), a.requestMethod(),
+          a.uploadStream(), a.uploadStreamIsStreaming(), a.priority(),
+          a.classOfService(), a.redirectionLimit(), a.thirdPartyFlags(),
+          a.resumeAt(), a.startPos(), a.entityID(), a.allowSpdy(),
+          a.allowHttp3(), a.allowAltSvc(), a.beConservative(), a.bypassProxy(),
+          a.tlsFlags(), a.loadInfo(), a.cacheKey(), a.requestContextID(),
+          a.preflightArgs(), a.initialRwin(), a.blockAuthPrompt(),
+          a.allowStaleCacheContent(), a.preferCacheLoadOverBypass(),
+          a.contentTypeHint(), a.requestMode(), a.redirectMode(), a.channelId(),
+          a.contentWindowId(), a.preferredAlternativeTypes(), a.browserId(),
           a.launchServiceWorkerStart(), a.launchServiceWorkerEnd(),
           a.dispatchFetchEventStart(), a.dispatchFetchEventEnd(),
           a.handleFetchEventStart(), a.handleFetchEventEnd(),
-          a.forceMainDocumentChannel(), a.navigationStartTimeStamp(),
-          a.earlyHintPreloaderId(), a.classicScriptHintCharset(),
-          a.documentCharacterSet(), a.isUserAgentHeaderModified(),
-          a.initiatorType());
+          a.navigationStartTimeStamp(), a.earlyHintPreloaderId(),
+          a.classicScriptHintCharset(), a.documentCharacterSet(),
+          a.isUserAgentHeaderModified(), a.initiatorType());
     }
     case HttpChannelCreationArgs::THttpChannelConnectArgs: {
       const HttpChannelConnectArgs& cArgs = aArgs.get_HttpChannelConnectArgs();
@@ -421,17 +419,17 @@ void HttpChannelParent::InvokeEarlyHintPreloader(
 
 bool HttpChannelParent::DoAsyncOpen(
     nsIURI* aURI, nsIURI* aOriginalURI, nsIURI* aDocURI,
-    nsIReferrerInfo* aReferrerInfo, nsIURI* aAPIRedirectToURI,
-    nsIURI* aTopWindowURI, const uint32_t& aLoadFlags,
-    const RequestHeaderTuples& requestHeaders, const nsCString& requestMethod,
-    const Maybe<IPCStream>& uploadStream, const bool& uploadStreamIsStreaming,
-    const int16_t& priority, const ClassOfService& classOfService,
-    const uint8_t& redirectionLimit, const uint32_t& thirdPartyFlags,
-    const bool& doResumeAt, const uint64_t& startPos, const nsCString& entityID,
-    const bool& allowSpdy, const bool& allowHttp3, const bool& allowAltSvc,
-    const bool& beConservative, const bool& bypassProxy,
-    const uint32_t& tlsFlags, const LoadInfoArgs& aLoadInfoArgs,
-    const uint32_t& aCacheKey, const uint64_t& aRequestContextID,
+    nsIReferrerInfo* aReferrerInfo, nsIURI* aTopWindowURI,
+    const uint32_t& aLoadFlags, const RequestHeaderTuples& requestHeaders,
+    const nsCString& requestMethod, const Maybe<IPCStream>& uploadStream,
+    const bool& uploadStreamIsStreaming, const int16_t& priority,
+    const ClassOfService& classOfService, const uint8_t& redirectionLimit,
+    const uint32_t& thirdPartyFlags, const bool& doResumeAt,
+    const uint64_t& startPos, const nsCString& entityID, const bool& allowSpdy,
+    const bool& allowHttp3, const bool& allowAltSvc, const bool& beConservative,
+    const bool& bypassProxy, const uint32_t& tlsFlags,
+    const LoadInfoArgs& aLoadInfoArgs, const uint32_t& aCacheKey,
+    const uint64_t& aRequestContextID,
     const Maybe<CorsPreflightArgs>& aCorsPreflightArgs,
     const uint32_t& aInitialRwin, const bool& aBlockAuthPrompt,
     const bool& aAllowStaleCacheContent, const bool& aPreferCacheLoadOverBypass,
@@ -446,7 +444,6 @@ bool HttpChannelParent::DoAsyncOpen(
     const TimeStamp& aDispatchFetchEventEnd,
     const TimeStamp& aHandleFetchEventStart,
     const TimeStamp& aHandleFetchEventEnd,
-    const bool& aForceMainDocumentChannel,
     const TimeStamp& aNavigationStartTimeStamp,
     const uint64_t& aEarlyHintPreloaderId,
     const nsAString& aClassicScriptHintCharset,
@@ -504,6 +501,24 @@ bool HttpChannelParent::DoAsyncOpen(
     return SendFailedAsyncOpen(rv);
   }
 
+  
+  
+  
+  
+  nsIPrincipal* loadingPrincipal = loadInfo->GetLoadingPrincipal();
+  bool isSystemPrincipal =
+      loadingPrincipal && loadingPrincipal->IsSystemPrincipal();
+  ExtContentPolicy extType = loadInfo->GetExternalContentPolicyType();
+  if (!isSystemPrincipal &&
+      (extType == ExtContentPolicy::TYPE_DOCUMENT ||
+       extType == ExtContentPolicy::TYPE_SUBDOCUMENT ||
+       extType == ExtContentPolicy::TYPE_OBJECT ||
+       (aLoadFlags & (nsIChannel::LOAD_DOCUMENT_URI |
+                      nsIRequest::LOAD_DOCUMENT_NEEDS_COOKIE |
+                      nsIRequest::LOAD_HTML_OBJECT_DATA)))) {
+    return SendFailedAsyncOpen(NS_ERROR_CONTENT_BLOCKED);
+  }
+
   nsCOMPtr<nsIChannel> channel;
   rv = mHttpHandler->NewProxiedChannel(aURI, nullptr, 0, nullptr, loadInfo,
                                        getter_AddRefs(channel));
@@ -553,20 +568,12 @@ bool HttpChannelParent::DoAsyncOpen(
   httpChannel->SetClassicScriptHintCharset(aClassicScriptHintCharset);
   httpChannel->SetDocumentCharacterSet(aDocumentCharacterSet);
 
-  if (aAPIRedirectToURI) {
-    httpChannel->RedirectTo(aAPIRedirectToURI);
-  }
-
   if (aTopWindowURI) {
     httpChannel->SetTopWindowURI(aTopWindowURI);
   }
 
   if (aLoadFlags != nsIRequest::LOAD_NORMAL) {
     httpChannel->SetLoadFlags(aLoadFlags);
-  }
-
-  if (aForceMainDocumentChannel) {
-    httpChannel->SetIsMainDocumentChannel(true);
   }
 
   for (uint32_t i = 0; i < requestHeaders.Length(); i++) {
@@ -856,7 +863,6 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
     const uint32_t& aSourceRequestBlockingReason,
     const Maybe<ChildLoadInfoForwarderArgs>& aTargetLoadInfoForwarder,
     const uint32_t& loadFlags, nsIReferrerInfo* aReferrerInfo,
-    nsIURI* aAPIRedirectURI,
     const Maybe<CorsPreflightArgs>& aCorsPreflightArgs) {
   LOG(("HttpChannelParent::RecvRedirect2Verify [this=%p result=%" PRIx32 "]\n",
        this, static_cast<uint32_t>(aResult)));
@@ -873,11 +879,6 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
         do_QueryInterface(mRedirectChannel);
 
     if (newHttpChannel) {
-      if (aAPIRedirectURI) {
-        rv = newHttpChannel->RedirectTo(aAPIRedirectURI);
-        MOZ_ASSERT(NS_SUCCEEDED(rv));
-      }
-
       for (uint32_t i = 0; i < changedHeaders.Length(); i++) {
         if (changedHeaders[i].mEmpty) {
           rv = newHttpChannel->SetEmptyRequestHeader(changedHeaders[i].mHeader);
