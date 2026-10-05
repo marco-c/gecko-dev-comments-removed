@@ -3,6 +3,44 @@
 const { SearchService } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/search/SearchService.sys.mjs"
 );
+const { SearchTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SearchTestUtils.sys.mjs"
+);
+
+SearchTestUtils.init(this);
+
+add_setup(async function () {
+  
+  
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    {
+      identifier: "google",
+      base: {
+        name: "Google",
+        aliases: ["google"],
+        urls: {
+          search: {
+            base: "https://www.google.com/search",
+            searchTermParamName: "q",
+          },
+        },
+      },
+    },
+    {
+      identifier: "baidu",
+      base: {
+        name: "百度",
+        aliases: ["百度", "baidu"],
+        urls: {
+          search: {
+            base: "https://www.baidu.com/baidu",
+            searchTermParamName: "wd",
+          },
+        },
+      },
+    },
+  ]);
+});
 
 
 test_newtab({
@@ -424,7 +462,8 @@ test_newtab({
         engineName: engine.name,
         entry: "topsites_newtab",
         isPreview: false,
-        isGeneralPurposeEngine: false,
+        isGeneralPurposeEngine: true,
+        source: UrlbarShared.RESULT_SOURCE.SEARCH,
       },
       "The Urlbar is in search mode."
     );

@@ -8,6 +8,45 @@
 
 
 
+const { SearchTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SearchTestUtils.sys.mjs"
+);
+
+SearchTestUtils.init(this);
+
+add_setup(async function () {
+  
+  
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    {
+      identifier: "google",
+      base: {
+        name: "Google",
+        aliases: ["google"],
+        urls: {
+          search: {
+            base: "https://www.google.com/search",
+            searchTermParamName: "q",
+          },
+        },
+      },
+    },
+    {
+      identifier: "baidu",
+      base: {
+        name: "百度",
+        aliases: ["百度", "baidu"],
+        urls: {
+          search: {
+            base: "https://www.baidu.com/baidu",
+            searchTermParamName: "wd",
+          },
+        },
+      },
+    },
+  ]);
+});
+
 test_newtab({
   async before() {
     

@@ -14,6 +14,17 @@ function assertContainerUnmoved() {
 }
 
 add_setup(async function setup() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
+  });
+
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
   containerHeight = gURLBar.parentNode.getBoundingClientRect().height;

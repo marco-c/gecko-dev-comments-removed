@@ -8,6 +8,16 @@ const {
   ExtensionUtils: { makeDataURI },
 } = ChromeUtils.importESModule("resource://gre/modules/ExtensionUtils.sys.mjs");
 
+const { SearchTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SearchTestUtils.sys.mjs"
+);
+
+SearchTestUtils.init(this);
+
+
+const BAIDU_SHORTCUT_URL = "https://baidu.com";
+const BAIDU_KEYWORD = "@百度";
+
 
 const IMAGE_1x1 =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
@@ -53,13 +63,44 @@ add_setup(async function () {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
 
+  
+  
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    {
+      identifier: "google",
+      base: {
+        name: "Google",
+        aliases: ["google"],
+        urls: {
+          search: {
+            base: "https://www.google.com/search",
+            searchTermParamName: "q",
+          },
+        },
+      },
+    },
+    {
+      identifier: "baidu",
+      base: {
+        name: "百度",
+        aliases: ["百度", "baidu"],
+        urls: {
+          search: {
+            base: "https://www.baidu.com/baidu",
+            searchTermParamName: "wd",
+          },
+        },
+      },
+    },
+  ]);
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["test.wait300msAfterTabSwitch", true],
       
       [
         "browser.newtabpage.activity-stream.default.sites",
-        "https://www.youtube.com/,https://www.facebook.com/,https://www.amazon.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/",
+        "https://www.youtube.com/,https://www.facebook.com/,https://www.baidu.com/,https://www.reddit.com/,https://www.wikipedia.org/,https://twitter.com/",
       ],
       
       ["browser.newtabpage.activity-stream.feeds.system.topsites", false],
@@ -67,6 +108,10 @@ add_setup(async function () {
       [
         "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts",
         true,
+      ],
+      [
+        "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts.searchEngines",
+        "baidu",
       ],
     ],
   });
@@ -88,8 +133,8 @@ add_task(async function test_topSites_newtab_emptyHistory() {
   let expectedResults = [
     {
       type: "search",
-      url: "https://amazon.com",
-      title: "@amazon",
+      url: BAIDU_SHORTCUT_URL,
+      title: BAIDU_KEYWORD,
       favicon: null,
     },
     {
@@ -156,8 +201,8 @@ add_task(async function test_topSites_newtab_visits() {
   let expectedResults = [
     {
       type: "search",
-      url: "https://amazon.com",
-      title: "@amazon",
+      url: BAIDU_SHORTCUT_URL,
+      title: BAIDU_KEYWORD,
       favicon: null,
     },
     {
@@ -295,9 +340,9 @@ add_task(async function test_topSites_newtab_visits_favicons() {
   let expectedResults = [
     {
       type: "search",
-      url: "https://amazon.com",
-      title: "@amazon",
-      favicon: await makeDataURI(`${base}amazon@2x.png`),
+      url: BAIDU_SHORTCUT_URL,
+      title: BAIDU_KEYWORD,
+      favicon: await makeDataURI(`${base}baidu-com@2x.png`),
     },
     {
       type: "url",
@@ -383,10 +428,10 @@ add_task(async function test_topSites_newtab_visits_favicons_limit() {
   let expectedResults = [
     {
       type: "search",
-      url: "https://amazon.com",
-      title: "@amazon",
+      url: BAIDU_SHORTCUT_URL,
+      title: BAIDU_KEYWORD,
       favicon: await makeDataURI(
-        "chrome://activity-stream/content/data/content/tippytop/images/amazon@2x.png"
+        "chrome://activity-stream/content/data/content/tippytop/images/baidu-com@2x.png"
       ),
     },
     {

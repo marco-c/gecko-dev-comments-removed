@@ -29,6 +29,17 @@ async function checkOpensOnFocus(win = window) {
 
 add_setup(async function () {
   
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
+  });
+
+  
   await PlacesTestUtils.addVisits([
     {
       uri: "http://mochi.test:8888/",

@@ -12,7 +12,16 @@ async function unloadSearchExtension(extension) {
 add_setup(async function setup() {
   requestLongerTimeout(5);
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.suggest.enabled", false]],
+    set: [
+      ["browser.search.suggest.enabled", false],
+      
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
   });
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(

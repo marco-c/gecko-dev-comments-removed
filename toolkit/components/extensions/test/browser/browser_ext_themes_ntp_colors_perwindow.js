@@ -11,6 +11,17 @@ const outerWrapperClass = Services.prefs.getBoolPref(
   : ".outer-wrapper";
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
+  });
+
   SpecialPowers.registerConsoleListener(function onConsoleMessage(msg) {
     if (msg.isWarning || !msg.errorMessage) {
       

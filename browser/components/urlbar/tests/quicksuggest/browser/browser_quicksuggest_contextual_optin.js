@@ -8,7 +8,15 @@ add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.ipc.chromeMessagePassing", false]],
+    set: [
+      ["browser.urlbar.ipc.chromeMessagePassing", false],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
   });
   registerCleanupFunction(async () => {
     UrlbarPrefs.clear("quicksuggest.online.enabled");

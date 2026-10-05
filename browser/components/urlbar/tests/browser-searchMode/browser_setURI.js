@@ -14,7 +14,15 @@
 
 add_task(async function setURI() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+    set: [
+      ["browser.urlbar.scotchBonnet.enableOverride", false],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
   });
   for (let test of [
     
