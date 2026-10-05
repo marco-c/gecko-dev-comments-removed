@@ -60,7 +60,7 @@ async function renderPromo({
 
     
     
-    let isExperiment = window.PrivateBrowsingRecordClick("PromoLink");
+    let isExperiment = window.PrivateBrowsingIsEnrolledInExperiment();
     const promoButtonData = promoButton?.action?.data;
     if (
       promoButton?.action?.type === "SHOW_SPOTLIGHT" &&
@@ -77,7 +77,6 @@ async function renderPromo({
       type: "BLOCK_MESSAGE_BY_ID",
       data: { id: messageId },
     });
-    window.PrivateBrowsingRecordClick("DismissButton");
     container.remove();
   };
 
@@ -409,9 +408,6 @@ document.addEventListener("DOMContentLoaded", function () {
     "href",
     RPMGetFormatURLPref("app.support.baseURL") + "private-browsing-myths"
   );
-  linkEl.addEventListener("click", () => {
-    window.PrivateBrowsingRecordClick("InfoLink");
-  });
 
   const isNovaEnabled = RPMGetBoolPref("browser.nova.enabled", false);
   const isPrivateWindowRedesignEnabled =
@@ -435,7 +431,6 @@ document.addEventListener("DOMContentLoaded", function () {
     basicsLink.hidden = false;
     basicsLink.addEventListener("click", async e => {
       e.preventDefault();
-      window.PrivateBrowsingRecordClick("PrivateWindowBasicsLink");
       
       await RPMSendAsyncMessage("TRIGGER_MESSAGING_EVENT", {
         id: "privateWindowBasicsLinkClick",
