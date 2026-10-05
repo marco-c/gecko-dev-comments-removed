@@ -820,13 +820,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "discoverystream.optIn-region-weather-config",
-    {
-      title: "Regions for weather opt-in.",
-      value: "DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT",
-    },
-  ],
-  [
     "weather.optInDisplayed",
     {
       title:
@@ -984,13 +977,6 @@ export const PREFS_CONFIG = new Map([
       title: "Enable system error and usage data collection",
       value: true,
       value_local_dev: false,
-    },
-  ],
-  [
-    "telemetry.structuredIngestion.endpoint",
-    {
-      title: "Structured Ingestion telemetry server endpoint",
-      value: "https://incoming.telemetry.mozilla.org/submit",
     },
   ],
   [

@@ -101,11 +101,6 @@ add_setup(async function () {
     `http://example.com`
   );
 
-  Services.prefs.setBoolPref(
-    "browser.newtabpage.activity-stream.telemetry.structuredIngestion",
-    false
-  );
-
   
   await SearchTestUtils.installSearchExtension(
     {
