@@ -37,11 +37,12 @@
 
 
 
+
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #  error "A little-endian target is required."
 #endif
-#if !(defined(__aarch64__) || defined(__SSSE3__))
-#  error "Must be targeting SSSE3 or above (notably AVX+BMI), or aarch64."
+#if !(defined(__aarch64__) || defined(__SSSE3__) || defined(__loongarch_sx))
+#  error "Must be targeting SSSE3 or above (notably AVX+BMI), aarch64, or LSX."
 #endif
 
 
@@ -188,6 +189,11 @@
 
 #  include <arm_neon.h>
 
+#elif defined(__loongarch_sx)
+
+#  include <lsxintrin.h>
+typedef uint8_t uint8x16_t __attribute__((vector_size(16)));
+
 #else  
 
 #  include <tmmintrin.h>
@@ -213,6 +219,17 @@ const uint8x16_t ALL_ONES = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 MOZ_ALWAYS_INLINE_EVEN_DEBUG uint8x16_t TableLookup(uint8x16_t aTable,
                                                     uint8x16_t aNibbles) {
   return vqtbl1q_u8(aTable, aNibbles);
+}
+
+#elif defined(__loongarch_sx)
+
+
+
+MOZ_ALWAYS_INLINE_EVEN_DEBUG uint8x16_t TableLookup(uint8x16_t aTable,
+                                                    uint8x16_t aNibbles) {
+  return reinterpret_cast<uint8x16_t>(
+      __lsx_vshuf_b(__lsx_vldi(0), reinterpret_cast<__m128i>(aTable),
+                    reinterpret_cast<__m128i>(aNibbles)));
 }
 
 #else  
@@ -405,6 +422,12 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG size_t AccelerateTextNodeImpl(
     if (max != 0) {
       return size_t((current - aInput) + 16 - max);
     }
+#elif defined(__loongarch_sx)
+    int int_mask = __lsx_vpickve2gr_hu(
+        __lsx_vmskltz_b(reinterpret_cast<__m128i>(mask)), 0);
+    if (int_mask != 0) {
+      return size_t((current - aInput) + __builtin_ctz(int_mask));
+    }
 #else  
     int int_mask = _mm_movemask_epi8(mask);
     if (int_mask != 0) {
@@ -452,6 +475,11 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG uint32_t CountEscaped(const CharT* aInput,
     
     
     numEncodedChars += vaddvq_u8(mask & ALL_ONES);
+#elif defined(__loongarch_sx)
+    
+    
+    numEncodedChars += static_cast<uint32_t>(__lsx_vpickve2gr_d(
+        __lsx_vpcnt_d(__lsx_vmskltz_b(reinterpret_cast<__m128i>(mask))), 0));
 #else  
     numEncodedChars += __builtin_popcount(_mm_movemask_epi8(mask));
 #endif
@@ -476,6 +504,12 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG bool ContainsMarkup(const char16_t* aInput,
 #if defined(__aarch64__)
     uint8_t max = vmaxvq_u8(mask);
     if (max != 0) {
+      return true;
+    }
+#elif defined(__loongarch_sx)
+    int int_mask = __lsx_vpickve2gr_hu(
+        __lsx_vmskltz_b(reinterpret_cast<__m128i>(mask)), 0);
+    if (int_mask != 0) {
       return true;
     }
 #else  

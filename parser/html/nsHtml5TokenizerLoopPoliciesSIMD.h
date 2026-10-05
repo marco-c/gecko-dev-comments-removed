@@ -15,6 +15,7 @@
 
 
 
+
 struct nsHtml5FastestPolicySIMD {
   static const bool reportErrors = false;
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t transition(
