@@ -369,6 +369,14 @@ class LIRGeneratorShared {
   inline void lowerConstantDouble(double d, MInstruction* mir);
   inline void lowerConstantFloat32(float f, MInstruction* mir);
 
+  
+  
+  
+  bool lowerForALUWithShiftedOperand(JSOp op, MBinaryInstruction* mir,
+                                     MDefinition* lhs, MDefinition* rhs) {
+    return false;
+  }
+
   bool canSpecializeWasmCompareAndSelect(MCompare::CompareType compTy,
                                          MIRType insTy);
   void lowerWasmCompareAndSelect(MWasmSelect* ins, MDefinition* lhs,
