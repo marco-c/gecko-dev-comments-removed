@@ -5,6 +5,8 @@
 #ifndef jit_arm64_MacroAssembler_arm64_h
 #define jit_arm64_MacroAssembler_arm64_h
 
+#include "mozilla/MathAlgorithms.h"
+
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -81,6 +83,37 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   static MemOperand toMemOperand(const Address& a) {
     MOZ_ASSERT(a.base.code != Registers::xzr, "Unexpected XZR");
     return MemOperand(toARMRegister(a.base, 64), a.offset);
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MemOperand toSharedMemOperand(const Address& a, unsigned sizeLog2,
+                                const ARMRegister& temp) {
+    MemOperand mem = toMemOperand(a);
+    int64_t offset = a.offset;
+    
+    if (IsImmLSScaled(offset, sizeLog2) || IsImmLSUnscaled(offset)) {
+      return mem;
+    }
+    
+    int64_t high = offset & ~int64_t(0xFFF);
+    int64_t low = offset - high;
+    if (IsImmAddSub(high >= 0 ? high : -high) &&
+        (IsImmLSScaled(low, sizeLog2) || IsImmLSUnscaled(low))) {
+      Add(temp, mem.base(), Operand(high));
+      return MemOperand(temp, low);
+    }
+    
+    Mov(temp, offset);
+    return MemOperand(mem.base(), temp);
   }
   FaultingCodeRange doBaseIndex(const vixl::CPURegister& rt,
                                 const BaseIndex& addr, vixl::LoadStoreOp op) {
@@ -2219,9 +2252,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     const ARMRegister scratch32 = temps.AcquireW();
     MOZ_ASSERT(scratch32.asUnsized() != addr.base);
 
-    load32(addr, scratch32.asUnsized());
+    MemOperand mem = toSharedMemOperand(
+        addr, mozilla::FloorLog2(sizeof(int32_t)), temps.AcquireX());
+    Ldr(scratch32, mem);
     Add(scratch32, scratch32, Operand(1));
-    store32(scratch32.asUnsized(), addr);
+    Str(scratch32, mem);
   }
 
   void breakpoint();
