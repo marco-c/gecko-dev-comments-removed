@@ -2016,6 +2016,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.locale-weather-config",
 
 
 
+
 pref("browser.newtabpage.activity-stream.widgets.system.region-block", "");
 
 
