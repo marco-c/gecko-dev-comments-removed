@@ -141,14 +141,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                              Register allocSite, Register output,
                              const wasm::TrapSiteDesc& trapSiteDesc);
 
-#ifdef ENABLE_WASM_JSPI
-  void callWasmUpdateSuspenderState(wasm::UpdateSuspenderStateAction kind,
-                                    Register suspender, Register temp);
-  
-  
-  void prepareWasmStackSwitchTrampolineCall(Register suspender, Register data);
-#endif
-
   void setCompilationTime(mozilla::TimeDuration duration) {
     compileTime_ = duration;
   }
@@ -477,6 +469,8 @@ class CodeGenerator final : public CodeGeneratorSpecific {
     }
     return false;
   }
+
+  void maybeEmitSetInPureCall(MInstruction* mir, bool value, Register scratch);
 };
 
 }  
