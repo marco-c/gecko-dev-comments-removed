@@ -77,7 +77,7 @@ void moz_wasm2c_memgrow_failed() {
 
 
 
-void w2c_env_mozalloc_handle_oom(void* ctx, uint32_t size) {
+void w2c_env_mozalloc_handle_oom(void* , uint32_t size) {
   mozalloc_handle_oom(size);
 }
 }

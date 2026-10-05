@@ -58,15 +58,16 @@ FileDescriptorOutputStream::Flush() {
 }
 
 NS_IMETHODIMP
-FileDescriptorOutputStream::WriteFrom(nsIInputStream* fromStream,
-                                      uint32_t count, uint32_t* retval) {
+FileDescriptorOutputStream::WriteFrom(nsIInputStream* ,
+                                      uint32_t ,
+                                      uint32_t* ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-FileDescriptorOutputStream::WriteSegments(nsReadSegmentFun reader,
-                                          void* closure, uint32_t count,
-                                          uint32_t* retval) {
+FileDescriptorOutputStream::WriteSegments(nsReadSegmentFun ,
+                                          void* , uint32_t ,
+                                          uint32_t* ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

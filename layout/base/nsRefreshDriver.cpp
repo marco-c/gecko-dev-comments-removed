@@ -374,7 +374,7 @@ class RefreshDriverTimer {
 
   
   
-  static void TimerTick(nsITimer* aTimer, void* aClosure) {
+  static void TimerTick(nsITimer* , void* aClosure) {
     RefPtr<RefreshDriverTimer> timer =
         static_cast<RefreshDriverTimer*>(aClosure);
     timer->Tick();
@@ -1097,7 +1097,7 @@ class InactiveRefreshDriverTimer final
     mIsTicking = false;
   }
 
-  void ScheduleNextTick(TimeStamp aNowTime) override {
+  void ScheduleNextTick(TimeStamp ) override {
     if (mDisableAfterMilliseconds > 0.0 &&
         mNextTickDuration > mDisableAfterMilliseconds) {
       
@@ -1147,7 +1147,7 @@ class InactiveRefreshDriverTimer final
     mNextDriverIndex++;
   }
 
-  static void TimerTickOne(nsITimer* aTimer, void* aClosure) {
+  static void TimerTickOne(nsITimer* , void* aClosure) {
     RefPtr<InactiveRefreshDriverTimer> timer =
         static_cast<InactiveRefreshDriverTimer*>(aClosure);
     timer->TickOne();
@@ -2878,7 +2878,7 @@ void nsRefreshDriver::NotifyTransactionCompleted(
   }
 }
 
-void nsRefreshDriver::WillRefresh(mozilla::TimeStamp aTime) {
+void nsRefreshDriver::WillRefresh(mozilla::TimeStamp ) {
   mRootRefresh->RemoveRefreshObserver(this, FlushType::Style);
   mRootRefresh = nullptr;
   if (mSkippedPaints) {
