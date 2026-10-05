@@ -51,6 +51,11 @@ JSString* ObjectClassToString(JSContext* cx, JSObject* obj);
                                                    JS::Value* vp);
 
 
+[[nodiscard]] bool CopyDataProperties(JSContext* cx, JS::HandleObject target,
+                                      JS::HandleValue source,
+                                      JS::HandleObject excludedItems);
+
+
 
 
 
