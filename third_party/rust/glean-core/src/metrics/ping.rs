@@ -2,16 +2,15 @@
 
 
 
+use crate::database::StoredSubmittedPingHandler;
 use crate::ping::PingMaker;
 use crate::upload::PingPayload;
 use crate::Glean;
-#[cfg(feature = "sqlite")]
 use chrono::Utc;
+use malloc_size_of_derive::MallocSizeOf;
 use std::fmt;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-
-use malloc_size_of_derive::MallocSizeOf;
 use uuid::Uuid;
 
 
@@ -354,7 +353,6 @@ impl PingType {
                         .add_sync(glean, 1);
                 }
 
-                #[cfg(feature = "sqlite")]
                 if glean.store_submitted_pings_enabled {
                     if let Err(e) = glean.storage().store_submitted_ping(
                         ping.doc_id,

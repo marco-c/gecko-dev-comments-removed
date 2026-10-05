@@ -25,6 +25,7 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, UNIX_EPOCH};
 use std::{fmt, fs};
 
+use chrono::{DateTime, Utc};
 use crossbeam_channel::unbounded;
 use log::LevelFilter;
 use malloc_size_of_derive::MallocSizeOf;
@@ -68,6 +69,7 @@ mod fd_logger;
 pub use crate::common_metric_data::{CommonMetricData, Lifetime, MetricLabel};
 pub use crate::core::Glean;
 pub use crate::core_metrics::{AttributionMetrics, ClientInfoMetrics, DistributionMetrics};
+use crate::database::StoredSubmittedPingHandler;
 use crate::dispatcher::is_test_mode;
 pub use crate::error::{Error, ErrorKind, Result};
 pub use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
@@ -983,6 +985,7 @@ pub fn glean_set_store_submitted_pings_enabled(enabled: bool) {
 }
 
 
+#[derive(Clone)]
 pub struct SubmittedPing {
     
     pub document_id: String,
@@ -996,6 +999,33 @@ pub struct SubmittedPing {
     pub upload_failed: Option<String>,
     
     pub payload: Option<JsonValue>,
+}
+
+impl SubmittedPing {
+    
+    pub fn submitted_date(&self) -> DateTime<Utc> {
+        DateTime::parse_from_rfc3339(&self.submitted_date)
+            .map(|d| d.to_utc())
+            .unwrap()
+    }
+
+    
+    pub fn uploaded_date(&self) -> Option<DateTime<Utc>> {
+        self.uploaded_date.as_ref().map(|uploaded_date| {
+            DateTime::parse_from_rfc3339(uploaded_date)
+                .map(|d| d.to_utc())
+                .unwrap()
+        })
+    }
+
+    
+    pub fn upload_failed(&self) -> Option<DateTime<Utc>> {
+        self.upload_failed.as_ref().map(|upload_failed| {
+            DateTime::parse_from_rfc3339(upload_failed)
+                .map(|d| d.to_utc())
+                .unwrap()
+        })
+    }
 }
 
 #[cfg(feature = "sqlite")]
@@ -1014,16 +1044,8 @@ impl From<database::sqlite::SubmittedPing> for SubmittedPing {
 
 
 pub fn glean_get_all_stored_submitted_pings() -> Vec<SubmittedPing> {
-    #[cfg(feature = "sqlite")]
-    {
-        core::with_glean(|glean| glean.storage().get_all_submitted_pings())
-            .into_iter()
-            .map(|p| p.into())
-            .collect()
-    }
-
-    #[cfg(not(feature = "sqlite"))]
-    Vec::new()
+    block_on_dispatcher();
+    core::with_glean(|glean| glean.storage().get_all_submitted_pings())
 }
 
 
@@ -1032,24 +1054,12 @@ pub fn glean_get_all_stored_submitted_pings() -> Vec<SubmittedPing> {
 
 
 pub fn glean_get_stored_submitted_pings_by_name(ping: String) -> Vec<SubmittedPing> {
-    #[cfg(feature = "sqlite")]
-    {
-        core::with_glean(|glean| glean.storage().get_submitted_pings_by_name(&ping))
-            .into_iter()
-            .map(|p| p.into())
-            .collect()
-    }
-
-    #[cfg(not(feature = "sqlite"))]
-    {
-        _ = ping;
-        Vec::new()
-    }
+    block_on_dispatcher();
+    core::with_glean(|glean| glean.storage().get_submitted_pings_by_name(&ping))
 }
 
 
 pub fn glean_clear_stored_submitted_pings() {
-    #[cfg(feature = "sqlite")]
     launch_with_glean(|glean| {
         if let Err(e) = glean
             .storage()

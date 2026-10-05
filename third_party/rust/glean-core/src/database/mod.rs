@@ -10,6 +10,8 @@ pub mod migration;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
 
+use crate::{JsonValue, Result};
+use chrono::{DateTime, Utc};
 #[cfg(feature = "sqlite")]
 pub use conn_ext::ConnExt;
 
@@ -21,3 +23,74 @@ pub use sqlite::Database;
 
 #[cfg(not(feature = "sqlite"))]
 pub use rkv::Database;
+
+
+pub(crate) trait StoredSubmittedPingHandler {
+    
+    fn get_all_submitted_pings(&self) -> Vec<crate::SubmittedPing>;
+
+    
+    
+    
+    
+    
+    fn get_submitted_pings_by_name(&self, ping: &str) -> Vec<crate::SubmittedPing>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn mark_ping_as_uploaded(&self, document_id: &str, date_uploaded: DateTime<Utc>) -> usize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn mark_ping_as_upload_failed(&self, document_id: &str) -> usize;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn store_submitted_ping(
+        &self,
+        document_id: &str,
+        ping: &str,
+        date_submitted: DateTime<Utc>,
+        date_uploaded: Option<DateTime<Utc>>,
+        upload_failed: Option<DateTime<Utc>>,
+        payload: JsonValue,
+    ) -> Result<()>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn cleanup_submitted_pings(&self, before_time: Option<DateTime<Utc>>) -> Result<()>;
+}
