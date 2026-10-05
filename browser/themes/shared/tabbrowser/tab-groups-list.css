@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-tab-groups-list:not([hidden]) {
+tab-groups-list {
   display: flex;
   flex-direction: column;
 
@@ -66,6 +66,12 @@ tab-groups-list:not([hidden]) {
     fill: var(--tab-group-background-color);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     stroke: var(--tab-group-background-color);
+    /* This icon is intentionally sized between existing icon-size tokens. */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    width: 22px;
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    height: 22px;
+    content: url("chrome://browser/skin/tabbrowser/tab-group-label-22.svg");
   }
 
   &.tab-group-icon-closed {
