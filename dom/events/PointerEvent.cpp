@@ -454,12 +454,19 @@ void PointerEvent::GetCoalescedEvents(
 
       
       MOZ_ASSERT(!domEvent->mEvent->mTarget);
-      
-      domEvent->mEvent->mTarget = mEvent->mTarget;
 
       
       
       domEvent->DuplicatePrivateData();
+
+      
+      
+      
+      
+      
+      
+      
+      domEvent->mEvent->mTarget = mEvent->mTarget;
 
       mCoalescedEvents.AppendElement(domEvent);
     }
