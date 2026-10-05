@@ -1383,6 +1383,12 @@ already_AddRefed<Promise> nsImageLoadingContent::RecognizeCurrentImageText(
 
 CSSIntSize nsImageLoadingContent::NaturalSize(
     DoDensityCorrection aDensityCorrection) {
+  
+  
+  
+
+  
+  
   if (!mCurrentRequest) {
     return {};
   }
@@ -1405,8 +1411,21 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
   
   
   
+  
+  
+  
+  
+
+  
+  
+  
+  
   CSSIntSize size;  
-  size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
+
+  
+  bool isUsingFallbackWidth = !intrinsicSize.mWidth;
+  size.width = isUsingFallbackWidth ? kFallbackIntrinsicWidthInPixels
+                                    : CSSIntCoord(*intrinsicSize.mWidth);
 
   
   bool isUsingFallbackHeight = !intrinsicSize.mHeight;
@@ -1418,11 +1437,19 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     if (isUsingFallbackHeight) {
       
       
+      
+      
+      
       size.height = ratio.Inverted().ApplyTo(size.width);
-      isUsingFallbackHeight = false;
-    } else if (!intrinsicSize.mWidth) {
+      isUsingFallbackHeight = isUsingFallbackWidth;
+    } else if (isUsingFallbackWidth) {
+      
+      
+      
+      
       
       size.width = ratio.ApplyTo(size.height);
+      isUsingFallbackWidth = false;
     }
   }
 
@@ -1440,7 +1467,9 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     }
   }
 
-  resolution.ApplyXTo(size.width);
+  if (!isUsingFallbackWidth) {
+    resolution.ApplyXTo(size.width);
+  }
   if (!isUsingFallbackHeight) {
     resolution.ApplyYTo(size.height);
   }
