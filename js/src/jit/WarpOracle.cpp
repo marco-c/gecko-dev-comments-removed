@@ -1754,7 +1754,7 @@ bool WarpScriptOracle::maybeReplaceNurseryPointer(
     size_t offset) {
   
   
-  MOZ_ASSERT(ValueOrNurseryValueIndex::fromValue(v).isValue());
+  MOZ_RELEASE_ASSERT(ValueOrNurseryValueIndex::fromValue(v).isValue());
 
   if (!v.isGCThing() || !IsInsideNursery(v.toGCThing())) {
     return true;
