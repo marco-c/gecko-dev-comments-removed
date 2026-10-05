@@ -11,7 +11,8 @@
 
 #include <stddef.h>  
 
-#include "jstypes.h"        
+#include "jstypes.h"  
+
 #include "js/RootingAPI.h"  
 #include "js/TypeDecls.h"  
 
@@ -73,6 +74,9 @@ extern JS_PUBLIC_API bool JS_RefreshCrossCompartmentWrappers(
 
 
 extern JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id);
+
+
+
 
 
 
