@@ -26,8 +26,11 @@ class DMABUFTextureHostOGL : public TextureHost {
   bool IsValid() override { return !!mSurface; }
 
   gfx::SurfaceFormat GetFormat() const override;
+
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
-      gfx::DataSourceSurface* aSurface) override;
+      gfx::DataSourceSurface* aSurface) override {
+    return nullptr;  
+  }
 
   gl::GLContext* gl() const;
 

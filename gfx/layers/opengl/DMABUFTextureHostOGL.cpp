@@ -34,15 +34,6 @@ gfx::SurfaceFormat DMABUFTextureHostOGL::GetFormat() const {
   return mSurface->GetFormat();
 }
 
-already_AddRefed<gfx::DataSourceSurface> DMABUFTextureHostOGL::GetAsSurface(
-    gfx::DataSourceSurface* aSurface) {
-  if (!mSurface) {
-    return nullptr;
-  }
-  
-  return mSurface->GetAsSourceSurface();
-}
-
 gfx::YUVColorSpace DMABUFTextureHostOGL::GetYUVColorSpace() const {
   if (!mSurface) {
     return gfx::YUVColorSpace::Identity;

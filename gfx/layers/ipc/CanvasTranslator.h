@@ -474,14 +474,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
       TextureHost* aTextureHost,
       const SurfaceDescriptorRemoteDecoder& aSurfaceDescriptor);
 
-#ifdef MOZ_WIDGET_GTK
-  
-  
-  
-  already_AddRefed<gfx::SourceSurface> GetZeroCopySurfaceFromDMABuf(
-      TextureHost* aTextureHost);
-#endif
-
   bool UsePendingCanvasTranslatorEvents();
   void PostCanvasTranslatorEvents(const MutexAutoLock& aProofOfLock);
   void HandleCanvasTranslatorEvents();
