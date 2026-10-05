@@ -74,6 +74,12 @@ add_setup(async function () {
     set: [
       ["browser.urlbar.autoFill", true],
       ["browser.urlbar.scotchBonnet.enableOverride", false],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
     ],
   });
   

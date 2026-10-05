@@ -161,12 +161,55 @@ const TEST_DATA = [
 ];
 
 add_setup(async function () {
+  
+  
+  
+  await SearchTestUtils.updateRemoteSettingsConfig([
+    {
+      identifier: "google",
+      base: {
+        name: "Google",
+        aliases: ["google"],
+        urls: {
+          search: {
+            base: "https://www.google.com/search",
+            searchTermParamName: "q",
+          },
+        },
+      },
+    },
+    {
+      identifier: "baidu",
+      base: {
+        name: "百度",
+        aliases: ["百度", "baidu"],
+        urls: {
+          search: {
+            base: "https://www.baidu.com/baidu",
+            searchTermParamName: "wd",
+          },
+        },
+      },
+    },
+  ]);
+
   await SpecialPowers.pushPrefEnv({
     set: [
       
       
       
       ["ui.popup.disable_autohide", true],
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://www.baidu.com/",
+      ],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts.searchEngines",
+        "baidu",
+      ],
     ],
   });
 
@@ -175,6 +218,8 @@ add_setup(async function () {
     uri: "http://example.com/titled",
     title: "example title",
   });
+
+  await updateTopSites(sites => sites?.[0]?.searchTopSite, true);
 
   registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();

@@ -18,7 +18,15 @@ const TEST_URL = `${TEST_BASE_URL}dummy_page.html`;
 
 add_task(async function test_with_oneoff_button() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+    set: [
+      ["browser.urlbar.scotchBonnet.enableOverride", false],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
   });
   info("Loading test page into first tab");
   let promiseLoad = BrowserTestUtils.browserLoaded(

@@ -11,6 +11,12 @@ add_task(async function test_click_urlbar_results() {
     set: [
       [VERTICAL_TABS_PREF, true],
       [SIDEBAR_VISIBILITY_PREF, "always-show"],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
     ],
   });
 

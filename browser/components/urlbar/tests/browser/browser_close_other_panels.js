@@ -12,6 +12,19 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
 );
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
+add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
+    ],
+  });
+});
+
 add_task(async function () {
   for (let openFn of [
     () => {

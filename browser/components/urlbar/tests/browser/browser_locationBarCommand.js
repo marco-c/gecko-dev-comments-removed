@@ -15,6 +15,12 @@ add_setup(async function () {
     set: [
       ["browser.altClickSave", true],
       ["browser.urlbar.autoFill", false],
+      
+      
+      [
+        "browser.newtabpage.activity-stream.default.sites",
+        "https://example.com/",
+      ],
     ],
   });
 });
