@@ -15,15 +15,10 @@ DESKTOP_DEFAULT(MaxTouchPointsCollapse)
 DESKTOP_DEFAULT(IMEStyle)
 
 #ifdef NIGHTLY_BUILD
-
-
-
 DESKTOP_DEFAULT(WebGLRendererConstant)
-DESKTOP_DEFAULT(WebGLVendorConstant)
 DESKTOP_DEFAULT(WebGLVendorSanitize)
 
 ANDROID_DEFAULT(WebGLRendererConstant)
-ANDROID_DEFAULT(WebGLVendorConstant)
 ANDROID_DEFAULT(WebGLVendorSanitize)
 #endif
 

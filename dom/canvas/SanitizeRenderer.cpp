@@ -388,6 +388,12 @@ std::string SanitizeRenderer(const std::string& raw_renderer) {
 
 
 
+
+
+
+
+
+
 std::string SanitizeVendor(const std::string& raw_vendor) {
   if (Contains(raw_vendor, "NVIDIA")) {
     return "NVIDIA Corporation";
@@ -399,31 +405,9 @@ std::string SanitizeVendor(const std::string& raw_vendor) {
       Contains(raw_vendor, "Advanced Micro Devices")) {
     return "AMD";
   }
-  if (Contains(raw_vendor, "Qualcomm")) {
-    return "Qualcomm";
-  }
-  if (Contains(raw_vendor, "ARM")) {
-    return "ARM";
-  }
   if (Contains(raw_vendor, "Apple")) {
     return "Apple";
   }
-  if (Contains(raw_vendor, "Samsung")) {
-    return "Samsung";
-  }
-  if (Contains(raw_vendor, "Mesa") || Contains(raw_vendor, "X.Org")) {
-    return "Mesa";
-  }
-  if (Contains(raw_vendor, "Microsoft")) {
-    return "Microsoft";
-  }
-  if (Contains(raw_vendor, "VMware")) {
-    return "VMware";
-  }
-  if (Contains(raw_vendor, "Google")) {
-    return "Google";
-  }
-
   return "Other";
 }
 
