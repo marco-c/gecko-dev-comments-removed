@@ -546,7 +546,8 @@ nsFocusManager::MoveFocus(mozIDOMWindowProxy* aWindow, Element* aStartElement,
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
 
   
-  if (RefPtr<Document> doc = window->GetExtantDoc()) {
+  RefPtr<Document> doc = window->GetExtantDoc();
+  if (doc) {
     doc->FlushPendingNotifications(FlushType::EnsurePresShellInitAndFrames);
   }
 
@@ -574,6 +575,12 @@ nsFocusManager::MoveFocus(mozIDOMWindowProxy* aWindow, Element* aStartElement,
   } else if (aType == MOVEFOCUS_ROOT || aType == MOVEFOCUS_CARET) {
     
     ClearFocus(window);
+    if (aType == MOVEFOCUS_CARET && doc) {
+      
+      
+      
+      doc->SetPreviouslyFocusedContent(nullptr);
+    }
   }
 
   LOGFOCUS(("<<MoveFocus end>>"));
