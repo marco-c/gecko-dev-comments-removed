@@ -146,7 +146,7 @@ fn report_main() {
                             "ProductName": "Bar",
                             "ReleaseChannel": "release",
                             "BuildID": "1234",
-                            "StackTraces": {},
+                            "StackTraces": "{}",
                             "Version": "100.0",
                             "ServerURL": "https://reports.example",
                             "TelemetryServerURL": "https://telemetry.example",
@@ -338,13 +338,3 @@ mod fd_cleanup {
         Ok(())
     }
 }
-
-
-
-#[cfg(all(target_os = "windows", target_env = "gnu"))]
-#[link(name = "bcryptprimitives")]
-extern "C" {}
-
-#[cfg(windows)]
-#[link(name = "rpcrt4")]
-extern "C" {}

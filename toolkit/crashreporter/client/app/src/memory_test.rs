@@ -5,7 +5,7 @@
 
 
 use {
-    crate::std::{env, mem::size_of},
+    crate::std::{env, io::Write, mem::size_of},
     anyhow::Context,
     memtest::{Outcome, Runner, RunnerArgs, TestKind},
     rand::{seq::SliceRandom, thread_rng},
@@ -13,10 +13,18 @@ use {
 };
 
 
-#[cfg(windows)]
-#[link(name = "runtimeobject")]
-#[link(name = "propsys")]
-extern "C" {}
+
+macro_rules! quiet_println {
+    ( $($e:expr),* ) => {{
+        let _ = writeln!(std::io::stdout(), $($e),*);
+    }};
+}
+
+macro_rules! quiet_eprintln {
+    ( $($e:expr),* ) => {{
+        let _ = writeln!(std::io::stderr(), $($e),*);
+    }};
+}
 
 
 
@@ -24,7 +32,7 @@ pub fn main() {
     let (mem_usize_count, memtest_runner_args, memtest_kinds) = match parse_args() {
         Ok(parsed) => parsed,
         Err(e) => {
-            eprintln!("Error: {e:?}");
+            quiet_eprintln!("Error: {e:?}");
             std::process::exit(1);
         }
     };
@@ -41,7 +49,7 @@ pub fn main() {
         .any(|report| matches!(report.outcome, Ok(Outcome::Fail(_))))
         .into();
 
-    println!("{}", output_json.to_string());
+    quiet_println!("{}", output_json.to_string());
 }
 
 
@@ -166,6 +174,7 @@ pub mod child {
             if let Err(e) = self.child.wait() {
                 log::warn!("failed to wait on memtest process after kill: {e}");
             }
+            unsafe { ManuallyDrop::drop(&mut self.child) };
         }
     }
 

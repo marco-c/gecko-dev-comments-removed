@@ -17,10 +17,6 @@ use windows_sys::Win32::{
     UI::WindowsAndMessaging::CharUpperBuffW,
 };
 
-
-#[link(name = "wintrust")]
-extern "C" {}
-
 type DWORD = u32;
 
 mod strings;

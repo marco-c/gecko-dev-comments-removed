@@ -140,10 +140,6 @@ mod tests {
         System::Threading::{GetCurrentThread, OpenThreadToken},
     };
 
-    
-    #[link(name = "advapi32")]
-    extern "C" {}
-
     #[test]
     
     fn test_get_user_id() {

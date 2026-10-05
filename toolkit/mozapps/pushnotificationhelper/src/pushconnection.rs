@@ -17,10 +17,6 @@ fn check_win_api() -> u32 {
     unsafe { GetLastError() }
 }
 
-
-#[link(name = "winhttp")]
-unsafe extern "system" {}
-
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("WinHttpWebSocketCompleteUpgrade failed: {0}")]

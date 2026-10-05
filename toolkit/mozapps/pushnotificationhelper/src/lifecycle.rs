@@ -36,10 +36,6 @@ use windows_sys::Win32::System::Threading::{
     SYNCHRONIZATION_SYNCHRONIZE,
 };
 
-
-#[link(name = "advapi32")]
-unsafe extern "system" {}
-
 struct OwnedHandle(HANDLE);
 
 

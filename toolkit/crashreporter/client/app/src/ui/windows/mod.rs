@@ -16,11 +16,6 @@
 
 
 
-
-
-#[link(name = "uxtheme", kind = "static")]
-extern "C" {}
-
 use super::model::{self, Application, Element, ElementStyle, TypedElement};
 use crate::data::{Property, Synchronized};
 use dpi::Dpi;

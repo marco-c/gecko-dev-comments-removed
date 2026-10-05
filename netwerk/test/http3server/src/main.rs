@@ -1879,13 +1879,3 @@ extern "C" fn __tsan_default_suppressions() -> *const std::os::raw::c_char {
     )
     .as_ptr() as *const _
 }
-
-
-#[cfg_attr(target_os = "windows", link(name = "runtimeobject"))]
-extern "C" {}
-#[cfg_attr(target_os = "windows", link(name = "propsys"))]
-extern "C" {}
-#[cfg_attr(target_os = "windows", link(name = "iphlpapi"))]
-extern "C" {}
-#[cfg_attr(target_os = "windows", link(name = "rpcrt4"))]
-extern "C" {}
