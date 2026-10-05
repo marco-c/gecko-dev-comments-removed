@@ -12,11 +12,11 @@
 #ifndef mozilla_BloomFilter_h
 #define mozilla_BloomFilter_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Likely.h"
-
 #include <cstdint>
 #include <cstring>
+
+#include "mozilla/Attributes.h"
+#include "mozilla/Likely.h"
 
 namespace mozilla {
 
@@ -101,7 +101,7 @@ class BitBloomFilter {
  public:
   BitBloomFilter() {
     static_assert(KeySize >= 3, "KeySize too small");
-    static_assert(KeySize <= kKeyShift, "KeySize too big");
+    static_assert(KeySize <= 18, "KeySize too big");
 
     
     
@@ -133,13 +133,17 @@ class BitBloomFilter {
   bool mightContain(uint32_t aHash) const;
 
  private:
-  static const size_t kArraySize = (1 << (KeySize - 3));
-  static const uint32_t kKeyMask = (1 << KeySize) - 1;
-  static const uint32_t kKeyShift = 16;
+  static constexpr uint32_t kHashBits = sizeof(uint32_t) * 8;
+  static constexpr uint32_t kKeyShift = kHashBits / 2;
+  static constexpr size_t kArraySize = size_t(1) << (KeySize - 3);
+  static constexpr uint32_t kKeyMask = (uint32_t(1) << KeySize) - 1;
 
   static uint32_t hash1(uint32_t aHash) { return aHash & kKeyMask; }
   static uint32_t hash2(uint32_t aHash) {
-    return (aHash >> kKeyShift) & kKeyMask;
+    if constexpr (KeySize <= kKeyShift) {
+      return (aHash >> kKeyShift) & kKeyMask;
+    }
+    return aHash >> (kHashBits - KeySize);
   }
 
   bool getSlot(uint32_t aHash) const {
@@ -195,6 +199,7 @@ MOZ_ALWAYS_INLINE bool BitBloomFilter<KeySize, T>::mightContain(
   uint32_t hash = aValue->hash();
   return mightContain(hash);
 }
+
 
 
 
