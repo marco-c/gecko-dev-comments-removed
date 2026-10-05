@@ -132,6 +132,9 @@ pub struct WebRenderOptions {
     
     
     pub enable_yuv_overlay_stability: bool,
+    
+    
+    pub limit_sdr_yuv_external_composites: bool,
     pub max_recorded_profiles: usize,
     pub precache_flags: ShaderPrecacheFlags,
     
@@ -248,6 +251,7 @@ impl Default for WebRenderOptions {
             enable_aa: true,
             enable_dithering: false,
             enable_yuv_overlay_stability: false,
+            limit_sdr_yuv_external_composites: false,
             debug_flags: DebugFlags::empty(),
             max_recorded_profiles: 0,
             precache_flags: ShaderPrecacheFlags::empty(),
@@ -802,6 +806,7 @@ pub fn create_webrender_instance(
         force_redraw: true,
         compositor_config: options.compositor_config,
         current_compositor_kind: compositor_kind,
+        limit_sdr_yuv_external_composites: options.limit_sdr_yuv_external_composites,
         allocated_native_surfaces: FastHashSet::default(),
         debug_overlay_state: DebugOverlayState::new(),
         buffer_damage_tracker: BufferDamageTracker::default(),

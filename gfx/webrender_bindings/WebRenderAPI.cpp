@@ -280,6 +280,13 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
               "Failed to make GL context current"_ns, __func__);
         }
 
+        bool limitSdrYuvExternalComposites = false;
+#ifdef XP_WIN
+        
+        limitSdrYuvExternalComposites =
+            !swgl && !gfx::gfxVars::AdapterVendorID().EqualsLiteral("0x8086");
+#endif
+
         if (!wr_window_new(
                 aWindowId, aSize.width, aSize.height,
                 aWindowKind == WindowKind::MAIN, supportLowPriorityTransactions,
@@ -303,7 +310,8 @@ RefPtr<WebRenderAPI::CreatePromise> WebRenderAPI::Create(
                 StaticPrefs::gfx_webrender_low_quality_pinch_zoom_AtStartup(),
                 StaticPrefs::gfx_webrender_max_shared_surface_size_AtStartup(),
                 StaticPrefs::gfx_webrender_enable_subpixel_aa_AtStartup(),
-                compositor->ShouldUseLayerCompositor())) {
+                compositor->ShouldUseLayerCompositor(),
+                limitSdrYuvExternalComposites)) {
           
           
           MOZ_ASSERT(errorMessage);
