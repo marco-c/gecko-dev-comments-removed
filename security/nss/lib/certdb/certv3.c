@@ -55,15 +55,6 @@ CERT_FindNSCertTypeExtension(CERTCertificate *cert, SECItem *retItem)
 
 
 
-char *
-CERT_FindNSStringExtension(CERTCertificate *cert, int oidtag)
-{
-    return NULL;
-}
-
-
-
-
 SECStatus
 CERT_FindKeyUsageExtension(CERTCertificate *cert, SECItem *retItem)
 {

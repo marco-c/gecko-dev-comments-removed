@@ -1154,6 +1154,8 @@ pk11_loadPrivKeyWithFlags(PK11SlotInfo *slot, SECKEYPrivateKey *privKey,
         
 
 
+
+
         { CKA_MODULUS, NULL, 0 },
         { CKA_PRIVATE_EXPONENT, NULL, 0 },
         { CKA_PUBLIC_EXPONENT, NULL, 0 },
@@ -1163,11 +1165,9 @@ pk11_loadPrivKeyWithFlags(PK11SlotInfo *slot, SECKEYPrivateKey *privKey,
         { CKA_EXPONENT_2, NULL, 0 },
         { CKA_COEFFICIENT, NULL, 0 },
         { CKA_DECRYPT, NULL, 0 },
-        { CKA_DERIVE, NULL, 0 },
         { CKA_SIGN, NULL, 0 },
         { CKA_SIGN_RECOVER, NULL, 0 },
         { CKA_UNWRAP, NULL, 0 },
-        { CKA_DECAPSULATE, NULL, 0 },
         
 
         { CKA_TOKEN, NULL, 0 },
@@ -1175,9 +1175,9 @@ pk11_loadPrivKeyWithFlags(PK11SlotInfo *slot, SECKEYPrivateKey *privKey,
         { CKA_MODIFIABLE, NULL, 0 },
         { CKA_SENSITIVE, NULL, 0 },
         { CKA_EXTRACTABLE, NULL, 0 },
-        { CKA_PARAMETER_SET, NULL, 0 },
-        { CKA_SEED, NULL, 0 },
 #define NUM_RESERVED_ATTRS 5 
+
+
     };
     CK_BBOOL cktrue = CK_TRUE;
     CK_BBOOL ckfalse = CK_FALSE;
@@ -1313,6 +1313,9 @@ pk11_loadPrivKeyWithFlags(PK11SlotInfo *slot, SECKEYPrivateKey *privKey,
         PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return NULL;
     }
+
+    
+    PR_ASSERT(count <= (templateSize - NUM_RESERVED_ATTRS));
 
     arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL)
@@ -1614,7 +1617,7 @@ PK11_GenerateKeyPairWithOpFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
         case CKM_RSA_PKCS_KEY_PAIR_GEN:
         case CKM_RSA_X9_31_KEY_PAIR_GEN:
             rsaParams = (PK11RSAGenParams *)param;
-            if (rsaParams->pe == 0) {
+            if (rsaParams->pe == 0 || rsaParams->pe > PR_UINT32_MAX) {
                 PORT_SetError(SEC_ERROR_INVALID_ARGS);
                 return NULL;
             }

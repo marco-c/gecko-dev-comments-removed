@@ -21,23 +21,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-static struct PK11GlobalStruct {
-    int transaction;
-    PRBool inTransaction;
-    char *(PR_CALLBACK *getPass)(PK11SlotInfo *, PRBool, void *);
-    PRBool(PR_CALLBACK *verifyPass)(PK11SlotInfo *, void *);
-    PRBool(PR_CALLBACK *isLoggedIn)(PK11SlotInfo *, void *);
-} PK11_Global = { 1, PR_FALSE, NULL, NULL, NULL };
+static PK11PasswordFunc PK11GlobalGetPass = NULL;
 
 
 
@@ -46,6 +30,24 @@ static struct PK11GlobalStruct {
 
 static PRBool pk11_IsLoggedIn(PK11SlotInfo *slot, void *wincx,
                               PRBool alreadyLocked);
+
+void
+pk11_SetLastLoginCheck(PK11SlotInfo *slot, PRIntervalTime val)
+{
+    PR_Lock(slot->nssTokenLock);
+    slot->lastLoginCheck = val;
+    PR_Unlock(slot->nssTokenLock);
+}
+
+static PRIntervalTime
+pk11_GetLastLoginCheck(PK11SlotInfo *slot)
+{
+    PRIntervalTime val;
+    PR_Lock(slot->nssTokenLock);
+    val = slot->lastLoginCheck;
+    PR_Unlock(slot->nssTokenLock);
+    return val;
+}
 
 
 
@@ -81,16 +83,13 @@ pk11_CheckPassword(PK11SlotInfo *slot, CK_SESSION_HANDLE session,
         crv = PK11_GETTAB(slot)->C_Login(session,
                                          contextSpecific ? CKU_CONTEXT_SPECIFIC : CKU_USER,
                                          (unsigned char *)pw, len);
-        slot->lastLoginCheck = 0;
-        mustRetry = PR_FALSE;
         if (!alreadyLocked)
             PK11_ExitSlotMonitor(slot);
+        pk11_SetLastLoginCheck(slot, 0);
+        mustRetry = PR_FALSE;
         switch (crv) {
             
             case CKR_OK:
-                
-                slot->authTransact = PK11_Global.transaction;
-            
             case CKR_USER_ALREADY_LOGGED_IN:
                 slot->authTime = currtime;
                 rv = SECSuccess;
@@ -176,12 +175,11 @@ PK11_CheckUserPassword(PK11SlotInfo *slot, const char *pw)
 
     crv = PK11_GETTAB(slot)->C_Login(slot->session, CKU_USER,
                                      (unsigned char *)pw, len);
-    slot->lastLoginCheck = 0;
     PK11_ExitSlotMonitor(slot);
+    pk11_SetLastLoginCheck(slot, 0);
     switch (crv) {
         
         case CKR_OK:
-            slot->authTransact = PK11_Global.transaction;
             slot->authTime = currtime;
             rv = SECSuccess;
             break;
@@ -204,31 +202,13 @@ PK11_Logout(PK11SlotInfo *slot)
     
     PK11_EnterSlotMonitor(slot);
     crv = PK11_GETTAB(slot)->C_Logout(slot->session);
-    slot->lastLoginCheck = 0;
     PK11_ExitSlotMonitor(slot);
+    pk11_SetLastLoginCheck(slot, 0);
     if (crv != CKR_OK) {
         PORT_SetError(PK11_MapError(crv));
         return SECFailure;
     }
     return SECSuccess;
-}
-
-
-
-
-
-void
-PK11_StartAuthTransaction(void)
-{
-    PK11_Global.transaction++;
-    PK11_Global.inTransaction = PR_TRUE;
-}
-
-void
-PK11_EndAuthTransaction(void)
-{
-    PK11_Global.transaction++;
-    PK11_Global.inTransaction = PR_FALSE;
 }
 
 
@@ -257,14 +237,11 @@ PK11_HandlePasswordCheck(PK11SlotInfo *slot, void *wincx)
     if (!PK11_IsLoggedIn(slot, wincx)) {
         NeedAuth = PR_TRUE;
     } else if (askpw == -1) {
-        if (!PK11_Global.inTransaction ||
-            (PK11_Global.transaction != slot->authTransact)) {
-            PK11_EnterSlotMonitor(slot);
-            PK11_GETTAB(slot)->C_Logout(slot->session);
-            slot->lastLoginCheck = 0;
-            PK11_ExitSlotMonitor(slot);
-            NeedAuth = PR_TRUE;
-        }
+        PK11_EnterSlotMonitor(slot);
+        PK11_GETTAB(slot)->C_Logout(slot->session);
+        PK11_ExitSlotMonitor(slot);
+        pk11_SetLastLoginCheck(slot, 0);
+        NeedAuth = PR_TRUE;
     }
     if (NeedAuth)
         PK11_DoPassword(slot, slot->session, PR_TRUE,
@@ -382,13 +359,15 @@ PK11_CheckSSOPassword(PK11SlotInfo *slot, char *ssopw)
     }
 
     
+    if (!haveMonitor) {
+        PK11_EnterSlotMonitor(slot);
+    }
     crv = PK11_GETTAB(slot)->C_Login(rwsession, CKU_SO,
                                      (unsigned char *)ssopw, len);
-    if (!haveMonitor)
-        PK11_EnterSlotMonitor(slot);
-    slot->lastLoginCheck = 0;
-    if (!haveMonitor)
+    if (!haveMonitor) {
         PK11_ExitSlotMonitor(slot);
+    }
+    pk11_SetLastLoginCheck(slot, 0);
     switch (crv) {
         
         case CKR_OK:
@@ -402,31 +381,18 @@ PK11_CheckSSOPassword(PK11SlotInfo *slot, char *ssopw)
             PORT_SetError(PK11_MapError(crv));
             rv = SECFailure; 
     }
-    PK11_GETTAB(slot)->C_Logout(rwsession);
-    if (!haveMonitor)
+    if (!haveMonitor) {
         PK11_EnterSlotMonitor(slot);
-    slot->lastLoginCheck = 0;
-    if (!haveMonitor)
+    }
+    PK11_GETTAB(slot)->C_Logout(rwsession);
+    if (!haveMonitor) {
         PK11_ExitSlotMonitor(slot);
+    }
+    pk11_SetLastLoginCheck(slot, 0);
 
     
     PK11_RestoreROSession(slot, rwsession);
     return rv;
-}
-
-
-
-
-SECStatus
-PK11_VerifyPW(PK11SlotInfo *slot, char *pw)
-{
-    int len = PORT_Strlen(pw);
-
-    if ((slot->minPassword > len) || (slot->maxPassword < len)) {
-        PORT_SetError(SEC_ERROR_BAD_DATA);
-        return SECFailure;
-    }
-    return SECSuccess;
 }
 
 
@@ -454,9 +420,7 @@ PK11_InitPin(PK11SlotInfo *slot, const char *ssopw, const char *userpw)
     rwsession = PK11_GetRWSession(slot);
     if (rwsession == CK_INVALID_HANDLE) {
         PORT_SetError(SEC_ERROR_BAD_DATA);
-        PK11_EnterSlotMonitor(slot);
-        slot->lastLoginCheck = 0;
-        PK11_ExitSlotMonitor(slot);
+        pk11_SetLastLoginCheck(slot, 0);
         return rv;
     }
     haveMonitor = PK11_RWSessionHasLock(slot, rwsession);
@@ -469,13 +433,15 @@ PK11_InitPin(PK11SlotInfo *slot, const char *ssopw, const char *userpw)
     }
 
     
+    if (!haveMonitor) {
+        PK11_EnterSlotMonitor(slot);
+    }
     crv = PK11_GETTAB(slot)->C_Login(rwsession, CKU_SO,
                                      (unsigned char *)ssopw, ssolen);
-    if (!haveMonitor)
-        PK11_EnterSlotMonitor(slot);
-    slot->lastLoginCheck = 0;
-    if (!haveMonitor)
+    if (!haveMonitor) {
         PK11_ExitSlotMonitor(slot);
+    }
+    pk11_SetLastLoginCheck(slot, 0);
     if (crv != CKR_OK) {
         PORT_SetError(PK11_MapError(crv));
         goto done;
@@ -489,22 +455,28 @@ PK11_InitPin(PK11SlotInfo *slot, const char *ssopw, const char *userpw)
     }
 
 done:
-    PK11_GETTAB(slot)->C_Logout(rwsession);
-    if (!haveMonitor)
+    if (!haveMonitor) {
         PK11_EnterSlotMonitor(slot);
-    slot->lastLoginCheck = 0;
-    if (!haveMonitor)
+    }
+    PK11_GETTAB(slot)->C_Logout(rwsession);
+    if (!haveMonitor) {
         PK11_ExitSlotMonitor(slot);
+    }
+    pk11_SetLastLoginCheck(slot, 0);
     PK11_RestoreROSession(slot, rwsession);
     if (rv == SECSuccess) {
         
         PK11_InitToken(slot, PR_TRUE);
         if (slot->needLogin) {
-            PK11_EnterSlotMonitor(slot);
+            if (!haveMonitor) {
+                PK11_EnterSlotMonitor(slot);
+            }
             PK11_GETTAB(slot)->C_Login(slot->session, CKU_USER,
                                        (unsigned char *)userpw, len);
-            slot->lastLoginCheck = 0;
-            PK11_ExitSlotMonitor(slot);
+            if (!haveMonitor) {
+                PK11_ExitSlotMonitor(slot);
+            }
+            pk11_SetLastLoginCheck(slot, 0);
         }
     }
     return rv;
@@ -560,27 +532,15 @@ PK11_ChangePW(PK11SlotInfo *slot, const char *oldpw, const char *newpw)
 static char *
 pk11_GetPassword(PK11SlotInfo *slot, PRBool retry, void *wincx)
 {
-    if (PK11_Global.getPass == NULL)
+    if (PK11GlobalGetPass == NULL)
         return NULL;
-    return (*PK11_Global.getPass)(slot, retry, wincx);
+    return (*PK11GlobalGetPass)(slot, retry, wincx);
 }
 
 void
 PK11_SetPasswordFunc(PK11PasswordFunc func)
 {
-    PK11_Global.getPass = func;
-}
-
-void
-PK11_SetVerifyPasswordFunc(PK11VerifyPasswordFunc func)
-{
-    PK11_Global.verifyPass = func;
-}
-
-void
-PK11_SetIsLoggedInFunc(PK11IsLoggedInFunc func)
-{
-    PK11_Global.isLoggedIn = func;
+    PK11GlobalGetPass = func;
 }
 
 
@@ -605,23 +565,8 @@ PK11_DoPassword(PK11SlotInfo *slot, CK_SESSION_HANDLE session,
     }
 
     
-
-
-
-
-
-
-
-
-
-    if (pk11_IsLoggedIn(slot, NULL, alreadyLocked) &&
-        (PK11_Global.verifyPass != NULL)) {
-        if (!PK11_Global.verifyPass(slot, wincx)) {
-            PORT_SetError(SEC_ERROR_BAD_PASSWORD);
-            return SECFailure;
-        }
-        return SECSuccess;
-    }
+    
+    (void)pk11_IsLoggedIn(slot, NULL, alreadyLocked);
 
     
 
@@ -768,6 +713,8 @@ PK11_IsLoggedIn(PK11SlotInfo *slot, void *wincx)
     return pk11_IsLoggedIn(slot, wincx, PR_FALSE);
 }
 
+#define LOGIN_DELAY_TIME PR_SecondsToInterval(1)
+
 static PRBool
 pk11_IsLoggedIn(PK11SlotInfo *slot, void *wincx, PRBool alreadyLocked)
 {
@@ -776,11 +723,6 @@ pk11_IsLoggedIn(PK11SlotInfo *slot, void *wincx, PRBool alreadyLocked)
     int timeout = slot->timeout;
     CK_RV crv;
     PRIntervalTime curTime;
-    static PRIntervalTime login_delay_time = 0;
-
-    if (login_delay_time == 0) {
-        login_delay_time = PR_SecondsToInterval(1);
-    }
 
     
 
@@ -792,11 +734,6 @@ pk11_IsLoggedIn(PK11SlotInfo *slot, void *wincx, PRBool alreadyLocked)
             timeout = def_slot->timeout;
             PK11_FreeSlot(def_slot);
         }
-    }
-
-    if ((wincx != NULL) && (PK11_Global.isLoggedIn != NULL) &&
-        (*PK11_Global.isLoggedIn)(slot, wincx) == PR_FALSE) {
-        return PR_FALSE;
     }
 
     
@@ -813,9 +750,9 @@ pk11_IsLoggedIn(PK11SlotInfo *slot, void *wincx, PRBool alreadyLocked)
             if (!alreadyLocked)
                 PK11_EnterSlotMonitor(slot);
             PK11_GETTAB(slot)->C_Logout(slot->session);
-            slot->lastLoginCheck = 0;
             if (!alreadyLocked)
                 PK11_ExitSlotMonitor(slot);
+            pk11_SetLastLoginCheck(slot, 0);
         } else {
             slot->authTime = currtime;
         }
@@ -823,14 +760,15 @@ pk11_IsLoggedIn(PK11SlotInfo *slot, void *wincx, PRBool alreadyLocked)
 
     if (!alreadyLocked)
         PK11_EnterSlotMonitor(slot);
-    if (pk11_InDelayPeriod(slot->lastLoginCheck, login_delay_time, &curTime)) {
+    PRIntervalTime lastLoginCheck = pk11_GetLastLoginCheck(slot);
+    if (pk11_InDelayPeriod(lastLoginCheck, LOGIN_DELAY_TIME, &curTime)) {
         sessionInfo.state = slot->lastState;
         crv = CKR_OK;
     } else {
         crv = PK11_GETTAB(slot)->C_GetSessionInfo(slot->session, &sessionInfo);
         if (crv == CKR_OK) {
             slot->lastState = sessionInfo.state;
-            slot->lastLoginCheck = curTime;
+            pk11_SetLastLoginCheck(slot, curTime);
         }
     }
     if (!alreadyLocked)

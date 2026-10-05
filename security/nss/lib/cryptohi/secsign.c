@@ -491,6 +491,23 @@ const SEC_ASN1Template CERT_SignedDataTemplate[] = {
 
 SEC_ASN1_CHOOSER_IMPLEMENT(CERT_SignedDataTemplate)
 
+static SECOidTag
+seckey_CurveOidFromPrivKey(const SECKEYPrivateKey *privKey)
+{
+    SECItem params;
+    SECStatus rv;
+    SECOidTag tag;
+
+    rv = PK11_ReadAttribute(privKey->pkcs11Slot, privKey->pkcs11ID,
+                            CKA_EC_PARAMS, NULL, &params);
+    if (rv != SECSuccess) {
+        return SEC_OID_UNKNOWN;
+    }
+    tag = SECKEY_GetECCOid(&params);
+    SECITEM_FreeItem(&params, PR_FALSE);
+    return tag;
+}
+
 static SECStatus
 sec_DerSignData(PLArenaPool *arena, SECItem *result,
                 const unsigned char *buf, int len, SECKEYPrivateKey *pk,
@@ -528,6 +545,9 @@ sec_DerSignData(PLArenaPool *arena, SECItem *result,
                 break;
             case ecKey:
                 algID = SEC_OID_ANSIX962_ECDSA_SHA256_SIGNATURE;
+                break;
+            case edKey:
+                algID = seckey_CurveOidFromPrivKey(pk);
                 break;
             case mldsaKey:
                 algID = seckey_GetParameterSet(pk);
@@ -616,7 +636,7 @@ SGN_Digest(SECKEYPrivateKey *privKey,
         return SECFailure;
     }
 
-    if (privKey->keyType == mldsaKey) {
+    if ((privKey->keyType == mldsaKey) || (privKey->keyType == edKey)) {
         
 
 
@@ -779,6 +799,19 @@ SEC_GetSignatureAlgorithmOidTag(KeyType keyType, SECOidTag hashAlgTag)
                 default:
                     break;
             }
+            break;
+        case edKey:
+            
+
+            switch (hashAlgTag) {
+                case SEC_OID_ED25519_SIGNATURE:
+                    
+                    sigTag = hashAlgTag;
+                    break;
+                default:
+                    break;
+            }
+            break;
         default:
             break;
     }
@@ -797,20 +830,38 @@ SEC_GetSignatureAlgorithmOidTagByKey(const SECKEYPrivateKey *privKey, const SECK
     
     if (privKey) {
         keyType = privKey->keyType;
-        
+        switch (keyType) {
+            case mldsaKey:
+                
 
-        if (keyType == mldsaKey) {
-            hashAlgTag = seckey_GetParameterSet(privKey);
+                hashAlgTag = seckey_GetParameterSet(privKey);
+                break;
+            case edKey:
+                
+                hashAlgTag = seckey_CurveOidFromPrivKey(privKey);
+                break;
+            default:
+                
+                break;
         }
     } else {
         
         PORT_Assert(pubKey != NULL);
         PORT_Assert(privKey == NULL);
         keyType = pubKey->keyType;
-        
+        switch (keyType) {
+            case mldsaKey:
+                
 
-        if (keyType == mldsaKey) {
-            hashAlgTag = pubKey->u.mldsa.paramSet;
+                hashAlgTag = pubKey->u.mldsa.paramSet;
+                break;
+            case edKey:
+                
+                hashAlgTag = SECKEY_GetECCOid(&pubKey->u.ec.DEREncodedParams);
+                break;
+            default:
+                
+                break;
         }
     }
     return SEC_GetSignatureAlgorithmOidTag(keyType, hashAlgTag);

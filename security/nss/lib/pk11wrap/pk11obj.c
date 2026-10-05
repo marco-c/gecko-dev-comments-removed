@@ -1373,7 +1373,6 @@ PK11_UnwrapPrivKey(PK11SlotInfo *slot, PK11SymKey *wrappingKey,
         SECITEM_FreeItem(param_free, PR_TRUE);
         return NULL;
     }
-    SECITEM_FreeItem(param_free, PR_TRUE);
     privKey = pk11_MakePrivKey(slot, nullKey, !perm , privKeyID, wincx);
     if (!privKey) {
         goto loser;
@@ -1413,6 +1412,7 @@ PK11_UnwrapPrivKey(PK11SlotInfo *slot, PK11SymKey *wrappingKey,
         SECKEY_DestroyPublicKey(pubKey);
         SECITEM_FreeItem(ck_id, PR_TRUE);
     }
+    SECITEM_FreeItem(param_free, PR_TRUE);
     return privKey;
 
 loser:
@@ -2359,79 +2359,6 @@ pk11_TraverseAllSlots(SECStatus (*callback)(PK11SlotInfo *, void *),
     PK11_FreeSlotList(list);
 
     return SECSuccess;
-}
-
-CK_OBJECT_HANDLE *
-PK11_FindObjectsFromNickname(char *nickname, PK11SlotInfo **slotptr,
-                             CK_OBJECT_CLASS objclass, int *returnCount, void *wincx)
-{
-    char *tokenName;
-    char *delimit;
-    PK11SlotInfo *slot;
-    CK_OBJECT_HANDLE *objID;
-    CK_ATTRIBUTE findTemplate[] = {
-        { CKA_LABEL, NULL, 0 },
-        { CKA_CLASS, NULL, 0 },
-    };
-    const size_t findCount = sizeof(findTemplate) / sizeof(findTemplate[0]);
-    SECStatus rv;
-    PK11_SETATTRS(&findTemplate[1], CKA_CLASS, &objclass, sizeof(objclass));
-
-    *slotptr = slot = NULL;
-    *returnCount = 0;
-    
-    if ((delimit = PORT_Strchr(nickname, ':')) != NULL) {
-        int len = delimit - nickname;
-        tokenName = (char *)PORT_Alloc(len + 1);
-        if (!tokenName) {
-            return CK_INVALID_HANDLE;
-        }
-        PORT_Memcpy(tokenName, nickname, len);
-        tokenName[len] = 0;
-
-        slot = *slotptr = PK11_FindSlotByName(tokenName);
-        PORT_Free(tokenName);
-        
-
-        if (slot == NULL) {
-            slot = *slotptr = PK11_GetInternalKeySlot();
-        } else {
-            nickname = delimit + 1;
-        }
-    } else {
-        *slotptr = slot = PK11_GetInternalKeySlot();
-    }
-    if (slot == NULL) {
-        return CK_INVALID_HANDLE;
-    }
-
-    rv = pk11_AuthenticateUnfriendly(slot, PR_TRUE, wincx);
-    if (rv != SECSuccess) {
-        PK11_FreeSlot(slot);
-        *slotptr = NULL;
-        return CK_INVALID_HANDLE;
-    }
-
-    findTemplate[0].pValue = nickname;
-    findTemplate[0].ulValueLen = PORT_Strlen(nickname);
-    objID = pk11_FindObjectsByTemplate(slot, findTemplate, findCount, returnCount);
-    if (objID == NULL) {
-        
-
-
-        findTemplate[0].ulValueLen += 1;
-        objID = pk11_FindObjectsByTemplate(slot, findTemplate, findCount,
-                                           returnCount);
-        if (objID == NULL) {
-            
-            
-            PK11_FreeSlot(slot);
-            *slotptr = NULL;
-            *returnCount = 0;
-        }
-    }
-
-    return objID;
 }
 
 SECItem *

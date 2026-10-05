@@ -819,10 +819,14 @@ sftkdb_HasPasswordSet(SFTKDBHandle *keydb)
 }
 
 
-SECStatus
+static SECStatus
 sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key,
                            const char *pw, SECItem *value,
-                           PRBool *tokenRemoved);
+                           PRBool *tokenRemoved, PRBool allowKDFUpgrade);
+static SECStatus sftkdb_checkPassword(SFTKDBHandle *keydb, const char *pw,
+                                      PRBool *tokenRemoved,
+                                      PRBool allowKDFUpgrade);
+static SECStatus sftkdb_upgradeKDF(SFTKDBHandle *keydb, const char *pw);
 
 
 
@@ -887,7 +891,8 @@ sftkdb_CheckPasswordNull(SFTKDBHandle *keydb, PRBool *tokenRemoved)
         goto done;
     }
 
-    rv = sftkdb_finishPasswordCheck(keydb, &key, "", &value, tokenRemoved);
+    rv = sftkdb_finishPasswordCheck(keydb, &key, "", &value, tokenRemoved,
+                                    PR_FALSE);
 
 done:
     if (key.data) {
@@ -908,8 +913,12 @@ done:
 
 
 
-SECStatus
-sftkdb_CheckPassword(SFTKDBHandle *keydb, const char *pw, PRBool *tokenRemoved)
+
+
+
+static SECStatus
+sftkdb_checkPassword(SFTKDBHandle *keydb, const char *pw, PRBool *tokenRemoved,
+                     PRBool allowKDFUpgrade)
 {
     SECStatus rv;
     SECItem salt, value;
@@ -951,7 +960,8 @@ sftkdb_CheckPassword(SFTKDBHandle *keydb, const char *pw, PRBool *tokenRemoved)
         goto done;
     }
 
-    rv = sftkdb_finishPasswordCheck(keydb, &key, pw, &value, tokenRemoved);
+    rv = sftkdb_finishPasswordCheck(keydb, &key, pw, &value, tokenRemoved,
+                                    allowKDFUpgrade);
 
 done:
     if (key.data) {
@@ -962,9 +972,19 @@ done:
 
 
 
+
 SECStatus
+sftkdb_CheckPassword(SFTKDBHandle *keydb, const char *pw, PRBool *tokenRemoved)
+{
+    return sftkdb_checkPassword(keydb, pw, tokenRemoved, PR_TRUE);
+}
+
+
+
+static SECStatus
 sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
-                           SECItem *value, PRBool *tokenRemoved)
+                           SECItem *value, PRBool *tokenRemoved,
+                           PRBool allowKDFUpgrade)
 {
     SECItem *result = NULL;
     SECStatus rv;
@@ -1097,6 +1117,30 @@ sftkdb_finishPasswordCheck(SFTKDBHandle *keydb, SECItem *key, const char *pw,
                 sftkdb_Update(keydb->peerDB, key);
             }
             sftkdb_Update(keydb, key);
+        }
+
+        
+
+
+
+        if (allowKDFUpgrade && *pw != 0 && !keydb->usesLegacyStorage &&
+            !(keydb->db->sdb_flags & SDB_RDONLY) && !keydb->update) {
+            sftkCipherValue cipherValue;
+            cipherValue.param = NULL;
+            cipherValue.arena = NULL;
+            if (sftkdb_decodeCipherText(value, &cipherValue) == SECSuccess &&
+                cipherValue.param->iter < iterationCount) {
+                if (sftkdb_upgradeKDF(keydb, pw) != SECSuccess) {
+                    
+                    PORT_SetError(0);
+                }
+            }
+            if (cipherValue.param) {
+                nsspkcs5_DestroyPBEParameter(cipherValue.param);
+            }
+            if (cipherValue.arena) {
+                PORT_FreeArena(cipherValue.arena, PR_FALSE);
+            }
         }
     } else {
         rv = SECFailure;
@@ -1354,9 +1398,15 @@ sftkdb_convertObjects(SFTKDBHandle *handle, CK_ATTRIBUTE *template,
 
 
 
-SECStatus
-sftkdb_ChangePassword(SFTKDBHandle *keydb,
-                      char *oldPin, char *newPin, PRBool *tokenRemoved)
+
+
+
+
+
+static SECStatus
+sftkdb_reencryptDatabase(SFTKDBHandle *keydb, const char *oldPin,
+                         const char *newPin, PRBool *tokenRemoved,
+                         PRBool skipOldPinCheck)
 {
     SECStatus rv = SECSuccess;
     SECItem plainText;
@@ -1382,7 +1432,6 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
 
     newKey.data = NULL;
 
-    
     crv = (*keydb->db->sdb_Begin)(keydb->db);
     if (crv != CKR_OK) {
         rv = SECFailure;
@@ -1392,23 +1441,29 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
     salt.len = sizeof(saltData);
     value.data = valueData;
     value.len = sizeof(valueData);
-    crv = (*db->sdb_GetMetaData)(db, "password", &salt, &value);
-    if (crv == CKR_OK) {
-        rv = sftkdb_CheckPassword(keydb, oldPin, tokenRemoved);
-        if (rv == SECFailure) {
-            goto loser;
-        }
-    } else {
+
+    if (skipOldPinCheck) {
+        
         salt.len = 0;
+    } else {
+        crv = (*db->sdb_GetMetaData)(db, "password", &salt, &value);
+        if (crv == CKR_OK) {
+            rv = sftkdb_checkPassword(keydb, oldPin, tokenRemoved, PR_FALSE);
+            if (rv == SECFailure) {
+                goto loser;
+            }
+        } else {
+            salt.len = 0;
+        }
     }
 
     preferred_salt_length = SHA384_LENGTH;
-
     
     if (!newPin || *newPin == 0) {
         preferred_salt_length = SHA1_LENGTH;
     }
 
+    PORT_Assert(preferred_salt_length <= SDB_MAX_META_DATA_LEN);
     if (salt.len != preferred_salt_length) {
         salt.len = preferred_salt_length;
         RNG_GenerateGlobalRandomBytes(salt.data, salt.len);
@@ -1424,9 +1479,6 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
     if (rv != SECSuccess) {
         goto loser;
     }
-
-    
-
 
     crv = sftkdb_convertObjects(keydb, NULL, 0, &newKey, iterationCount);
     if (crv != CKR_OK) {
@@ -1453,7 +1505,6 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
             rv = SECFailure;
             goto loser;
         }
-
         myClass = CKO_TRUST;
         crv = sftkdb_convertObjects(certdb, &objectType, 1, &newKey,
                                     iterationCount);
@@ -1486,7 +1537,6 @@ sftkdb_ChangePassword(SFTKDBHandle *keydb,
     }
 
     keydb->newKey = NULL;
-
     sftkdb_switchKeys(keydb, &newKey, iterationCount);
 
 loser:
@@ -1499,8 +1549,31 @@ loser:
     if (rv != SECSuccess) {
         (*keydb->db->sdb_Abort)(keydb->db);
     }
-
     return rv;
+}
+
+
+
+
+
+
+
+static SECStatus
+sftkdb_upgradeKDF(SFTKDBHandle *keydb, const char *pw)
+{
+    PRBool tokenRemoved = PR_FALSE;
+    return sftkdb_reencryptDatabase(keydb, pw, pw, &tokenRemoved, PR_TRUE);
+}
+
+
+
+
+SECStatus
+sftkdb_ChangePassword(SFTKDBHandle *keydb,
+                      char *oldPin, char *newPin, PRBool *tokenRemoved)
+{
+    return sftkdb_reencryptDatabase(keydb, oldPin, newPin, tokenRemoved,
+                                    PR_FALSE);
 }
 
 

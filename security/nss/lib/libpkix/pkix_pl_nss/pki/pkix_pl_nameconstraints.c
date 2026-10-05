@@ -1031,8 +1031,6 @@ pkix_pl_CertNameConstraints_CopyNssNameConstraints(
 
 
 
-
-
                 nssCopyTo = NULL;
                 PKIX_CERTNAMECONSTRAINTS_DEBUG
                         ("\t\tCalling CERT_CopyNameConstraint).\n");

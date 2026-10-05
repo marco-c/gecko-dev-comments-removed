@@ -73,9 +73,6 @@ void CERT_AddGeneralNameToList(CERTGeneralNameList *list,
                                SECItem *oid);
 
 
-CERTGeneralNameList *CERT_DupGeneralNameList(CERTGeneralNameList *list);
-
-
 
 
 extern int CERT_GetNamesLength(CERTGeneralName *names);

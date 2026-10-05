@@ -643,9 +643,9 @@ CONST_OID curve25519[] = { 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01 
 
 
 
-CONST_OID ed25519PublicKey[] = { 0x2B, 0x65, 0x70 };
-CONST_OID ed25519Signature[] = { 0x2B, 0x65, 0x70 };
 
+
+CONST_OID ed25519[] = { 0x2B, 0x65, 0x70 };
 
 CONST_OID x25519PublicKey[] = { 0x2b, 0x65, 0x6e };
 
@@ -1870,11 +1870,14 @@ const static SECOidData oids[SEC_OID_TOTAL] = {
     ODE(SEC_OID_XYBER768D00,
         "X25519+Kyber768 key exchange", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION),
 
-    OD(ed25519Signature, SEC_OID_ED25519_SIGNATURE, "X9.62 EDDSA signature", CKM_EDDSA,
-       INVALID_CERT_EXTENSION),
+    
 
-    OD(ed25519PublicKey, SEC_OID_ED25519_PUBLIC_KEY,
-       "X9.62 elliptic edwards curve public key", CKM_EC_EDWARDS_KEY_PAIR_GEN, INVALID_CERT_EXTENSION),
+
+    ODE(SEC_OID_RESERVED_OLD_EDSIG, "Reserved", CKM_INVALID_MECHANISM,
+        INVALID_CERT_EXTENSION),
+
+    OD(ed25519, SEC_OID_ED25519,
+       "Elliptic Edwards Curve 25519", CKM_EDDSA, INVALID_CERT_EXTENSION),
 
     OD(dhSinglePassstdDHsha1kdfscheme, SEC_OID_DHSINGLEPASS_STDDH_SHA1KDF_SCHEME,
        "Elliptic Curve Diffie-Hellman Single Pass Standard with SHA1 KDF", CKM_ECDH1_DERIVE,
@@ -2350,6 +2353,12 @@ SECOID_FindOIDByTag(SECOidTag tagnum)
 {
     if (tagnum >= SEC_OID_TOTAL) {
         return (SECOidData *)secoid_FindDynamicByTag(tagnum);
+    }
+
+    
+
+    if (tagnum == SEC_OID_RESERVED_OLD_EDSIG) {
+        tagnum = SEC_OID_ED25519;
     }
 
     PORT_Assert((unsigned int)tagnum < SEC_OID_TOTAL);

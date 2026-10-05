@@ -1558,7 +1558,7 @@ main(int argc, char **argv)
     CK_TOKEN_INFO tokenInfo;
     CK_FUNCTION_LIST_PTR pFunctionList = NULL;
     CK_RV crv = CKR_OK;
-    CK_SESSION_HANDLE hRwSession;
+    CK_SESSION_HANDLE hRwSession = CK_INVALID_HANDLE;
     CK_SLOT_ID *pSlotList = NULL;
     CK_ULONG slotIndex = 0;
 
@@ -1900,6 +1900,11 @@ main(int argc, char **argv)
 
 cleanup:
     if (pFunctionList) {
+        if (hRwSession != CK_INVALID_HANDLE) {
+            
+
+            (void)pFunctionList->C_CloseSession(hRwSession);
+        }
         
         
         crv = pFunctionList->C_Finalize(NULL);

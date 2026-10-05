@@ -828,18 +828,6 @@ loser:
     return SECFailure;
 }
 
-CERTGeneralNameList *
-CERT_DupGeneralNameList(CERTGeneralNameList *list)
-{
-    if (list != NULL) {
-        PR_Lock(list->lock);
-        PORT_ReleaseAssert(list->refCount > 0);
-        list->refCount++;
-        PR_Unlock(list->lock);
-    }
-    return list;
-}
-
 
 CERTNameConstraint *
 CERT_CopyNameConstraint(PLArenaPool *arena, CERTNameConstraint *dest,
@@ -1510,51 +1498,6 @@ cert_CompareNameWithConstraints(const CERTGeneralName *name,
     }
 
     return SECFailure;
-}
-
-
-
-
-
-SECStatus
-CERT_AddNameConstraintByGeneralName(PLArenaPool *arena,
-                                    CERTNameConstraint **constraints,
-                                    CERTGeneralName *name)
-{
-    SECStatus rv;
-    CERTNameConstraint *current = NULL;
-    CERTNameConstraint *first = *constraints;
-    void *mark = NULL;
-
-    mark = PORT_ArenaMark(arena);
-
-    current = PORT_ArenaZNew(arena, CERTNameConstraint);
-    if (current == NULL) {
-        rv = SECFailure;
-        goto done;
-    }
-
-    rv = cert_CopyOneGeneralName(arena, &current->name, name);
-    if (rv != SECSuccess) {
-        goto done;
-    }
-
-    current->name.l.prev = current->name.l.next = &(current->name.l);
-
-    if (first == NULL) {
-        *constraints = current;
-        PR_INIT_CLIST(&current->l);
-    } else {
-        PR_INSERT_BEFORE(&current->l, &first->l);
-    }
-
-done:
-    if (rv == SECFailure) {
-        PORT_ArenaRelease(arena, mark);
-    } else {
-        PORT_ArenaUnmark(arena, mark);
-    }
-    return rv;
 }
 
 

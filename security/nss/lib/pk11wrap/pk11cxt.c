@@ -785,23 +785,6 @@ PK11_RestoreContext(PK11Context *cx, unsigned char *save, int len)
 
 
 
-
-
-PRBool
-PK11_HashOK(SECOidTag algID)
-{
-    PK11Context *cx;
-
-    cx = PK11_CreateDigestContext(algID);
-    if (cx == NULL)
-        return PR_FALSE;
-    PK11_DestroyContext(cx, PR_TRUE);
-    return PR_TRUE;
-}
-
-
-
-
 SECStatus
 PK11_DigestBegin(PK11Context *cx)
 {

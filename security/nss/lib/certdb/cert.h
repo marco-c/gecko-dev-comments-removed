@@ -492,21 +492,6 @@ extern CERTCertificate *CERT_FindCertByName(CERTCertDBHandle *handle,
 
 
 
-extern CERTCertificate *CERT_FindCertByNameString(CERTCertDBHandle *handle,
-                                                  char *name);
-
-
-
-
-
-
-extern CERTCertificate *CERT_FindCertByKeyID(CERTCertDBHandle *handle,
-                                             SECItem *name, SECItem *keyID);
-
-
-
-
-
 
 extern CERTCertificate *CERT_FindCertByIssuerAndSN(
     CERTCertDBHandle *handle, CERTIssuerAndSN *issuerAndSN);
@@ -781,6 +766,9 @@ extern char *CERT_GetCertUid(const CERTName *name);
 extern SECStatus CERT_GetCertTrust(const CERTCertificate *cert,
                                    CERTCertTrust *trust);
 
+extern SECStatus CERT_GetDERCertTrust(SECItem *derCert,
+                                      CERTCertTrust *trust);
+
 extern SECStatus CERT_ChangeCertTrust(CERTCertDBHandle *handle,
                                       CERTCertificate *cert,
                                       CERTCertTrust *trust);
@@ -926,8 +914,6 @@ extern SECStatus CERT_FindCertExtension(const CERTCertificate *cert, int tag,
 extern SECStatus CERT_FindNSCertTypeExtension(CERTCertificate *cert,
                                               SECItem *value);
 
-extern char *CERT_FindNSStringExtension(CERTCertificate *cert, int oidtag);
-
 extern SECStatus CERT_FindCertExtensionByOID(CERTCertificate *cert,
                                              SECItem *oid, SECItem *value);
 
@@ -979,13 +965,6 @@ extern SECStatus CERT_CheckCertUsage(CERTCertificate *cert,
 
 
 
-extern SECStatus CERT_FindCRLExtensionByOID(CERTCrl *crl, SECItem *oid,
-                                            SECItem *value);
-
-extern SECStatus CERT_FindCRLExtension(CERTCrl *crl, int tag, SECItem *value);
-
-extern SECStatus CERT_FindInvalidDateExten(CERTCrl *crl, PRTime *value);
-
 
 
 
@@ -1018,9 +997,6 @@ extern void CERT_FreeNicknames(CERTCertNicknames *nicknames);
 extern PRBool CERT_CompareCerts(const CERTCertificate *c1,
                                 const CERTCertificate *c2);
 
-extern PRBool CERT_CompareCertsForRedirection(CERTCertificate *c1,
-                                              CERTCertificate *c2);
-
 
 
 
@@ -1031,12 +1007,6 @@ extern void CERT_FreeDistNames(CERTDistNames *names);
 
 
 extern CERTDistNames *CERT_DupDistNames(CERTDistNames *orig);
-
-
-
-
-extern CERTDistNames *CERT_DistNamesFromNicknames(CERTCertDBHandle *handle,
-                                                  char **nicknames, int nnames);
 
 
 
@@ -1076,9 +1046,6 @@ char *CERT_FixupEmailAddr(const char *emailAddr);
 
 
 SECStatus CERT_DecodeTrustString(CERTCertTrust *trust, const char *trusts);
-
-
-char *CERT_EncodeTrustString(CERTCertTrust *trust);
 
 
 CERTCertificate *CERT_PrevSubjectCert(CERTCertificate *cert);
@@ -1171,14 +1138,9 @@ CERTNameConstraint *CERT_GetPrevNameConstraint(CERTNameConstraint *current);
 
 void CERT_DestroyUserNotice(CERTUserNotice *userNotice);
 
-char *CERT_GetCertCommentString(CERTCertificate *cert);
-
 PRBool CERT_GovtApprovedBitSet(CERTCertificate *cert);
 
 SECStatus CERT_AddPermNickname(CERTCertificate *cert, char *nickname);
-
-CERTCertList *CERT_MatchUserCert(CERTCertDBHandle *handle, SECCertUsage usage,
-                                 int nCANames, char **caNames, void *proto_win);
 
 CERTCertList *CERT_NewCertList(void);
 
@@ -1350,21 +1312,6 @@ CERTCertNicknames *CERT_NicknameStringsFromCertList(CERTCertList *certList,
 
 
 
-char *CERT_ExtractNicknameString(char *namestring, char *expiredString,
-                                 char *notYetGoodString);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 char *CERT_GetCertNicknameWithValidity(PLArenaPool *arena,
                                        CERTCertificate *cert,
@@ -1376,21 +1323,6 @@ char *CERT_GetCertNicknameWithValidity(PLArenaPool *arena,
 
 
 char *CERT_DerNameToAscii(SECItem *dername);
-
-
-
-
-
-
-
-
-
-
-
-CERTCertificate *CERT_FindMatchingCert(CERTCertDBHandle *handle,
-                                       SECItem *derName, CERTCertOwner owner,
-                                       SECCertUsage usage, PRBool preferTrusted,
-                                       PRTime validTime, PRBool validOnly);
 
 
 
@@ -1420,19 +1352,6 @@ CERTStatusConfig *CERT_GetStatusConfig(CERTCertDBHandle *handle);
 
 
 void CERT_SetStatusConfig(CERTCertDBHandle *handle, CERTStatusConfig *config);
-
-
-
-
-
-
-
-void CERT_LockCertRefCount(CERTCertificate *cert);
-
-
-
-
-void CERT_UnlockCertRefCount(CERTCertificate *cert);
 
 
 

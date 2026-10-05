@@ -72,8 +72,6 @@ struct PK11SlotInfoStr {
     int askpw;           
     int timeout;         
 
-    int authTransact;    
-
     PRTime authTime;     
     int minPassword;     
     int maxPassword;     
@@ -106,11 +104,13 @@ struct PK11SlotInfoStr {
     CK_FLAGS RSAInfoFlags;
     PRBool protectedAuthPath;
     PRBool isActiveCard;
-    PRIntervalTime lastLoginCheck;
     unsigned int lastState;
+
     
-    NSSToken *nssToken;
     PRLock *nssTokenLock;
+    NSSToken *nssToken;
+    PRIntervalTime lastLoginCheck;
+
     
     CK_TOKEN_INFO tokenInfo;
     

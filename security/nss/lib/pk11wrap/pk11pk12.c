@@ -22,6 +22,7 @@
 #include "secasn1.h"
 #include "secerr.h"
 #include "prerror.h"
+#include "secder.h"
 
 
 
@@ -108,8 +109,10 @@ struct SECKEYRawPrivateKeyStr {
 typedef struct SECKEYRawPrivateKeyStr SECKEYRawPrivateKey;
 
 SEC_ASN1_MKSUB(SEC_AnyTemplate)
-SEC_ASN1_MKSUB(SECOID_AlgorithmIDTemplate)
+SEC_ASN1_MKSUB(SEC_BitStringTemplate)
+SEC_ASN1_MKSUB(SEC_ObjectIDTemplate)
 SEC_ASN1_MKSUB(SEC_OctetStringTemplate)
+SEC_ASN1_MKSUB(SECOID_AlgorithmIDTemplate)
 
 
 
@@ -128,6 +131,11 @@ const SEC_ASN1Template SECKEY_SetOfAttributeTemplate[] = {
     { SEC_ASN1_SET_OF, 0, SECKEY_AttributeTemplate },
 };
 
+
+
+
+
+
 const SEC_ASN1Template SECKEY_PrivateKeyInfoTemplate[] = {
     { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SECKEYPrivateKeyInfo) },
     { SEC_ASN1_INTEGER, offsetof(SECKEYPrivateKeyInfo, version) },
@@ -138,6 +146,32 @@ const SEC_ASN1Template SECKEY_PrivateKeyInfoTemplate[] = {
     { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED | SEC_ASN1_CONTEXT_SPECIFIC | 0,
       offsetof(SECKEYPrivateKeyInfo, attributes),
       SECKEY_SetOfAttributeTemplate },
+    { 0 }
+};
+
+
+struct SECKEYPrivateKeyInfoV2Str {
+    SECKEYPrivateKeyInfo v1;
+    SECItem publicKey;
+};
+
+typedef struct SECKEYPrivateKeyInfoV2Str SECKEYPrivateKeyInfoV2;
+
+
+
+static const SEC_ASN1Template seckey_PrivateKeyInfoV2Template[] = {
+    { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SECKEYPrivateKeyInfoV2) },
+    { SEC_ASN1_INTEGER, offsetof(SECKEYPrivateKeyInfoV2, v1.version) },
+    { SEC_ASN1_INLINE | SEC_ASN1_XTRN,
+      offsetof(SECKEYPrivateKeyInfoV2, v1.algorithm),
+      SEC_ASN1_SUB(SECOID_AlgorithmIDTemplate) },
+    { SEC_ASN1_OCTET_STRING, offsetof(SECKEYPrivateKeyInfoV2, v1.privateKey) },
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONSTRUCTED | SEC_ASN1_CONTEXT_SPECIFIC | 0,
+      offsetof(SECKEYPrivateKeyInfoV2, v1.attributes),
+      SECKEY_SetOfAttributeTemplate },
+    { SEC_ASN1_OPTIONAL | SEC_ASN1_CONTEXT_SPECIFIC | SEC_ASN1_XTRN | 1,
+      offsetof(SECKEYPrivateKeyInfoV2, publicKey),
+      SEC_ASN1_SUB(SEC_BitStringTemplate) },
     { 0 }
 };
 
@@ -187,9 +221,6 @@ const SEC_ASN1Template SECKEY_PQPrivateKeyKeyExportTemplate[] = {
     { SEC_ASN1_OCTET_STRING, offsetof(SECKEYRawPrivateKey, u.pq.privateValue) },
     { 0 }
 };
-
-SEC_ASN1_MKSUB(SEC_BitStringTemplate)
-SEC_ASN1_MKSUB(SEC_ObjectIDTemplate)
 
 const SEC_ASN1Template SECKEY_ECPrivateKeyExportTemplate[] = {
     { SEC_ASN1_SEQUENCE, 0, NULL, sizeof(SECKEYRawPrivateKey) },
@@ -353,35 +384,59 @@ PK11_ImportDERPrivateKeyInfo(PK11SlotInfo *slot, SECItem *derPKI,
                                                     NULL, wincx);
 }
 
+SECKEYPrivateKeyInfo *
+_PK11_DERPrivateKeyToPrivateKeyInfo(SECItem *derPKI)
+{
+    SECKEYPrivateKeyInfoV2 *pkiV2 = NULL;
+    PLArenaPool *temparena = NULL;
+    SECStatus rv = SECFailure;
+    unsigned long version = 0;
+
+    temparena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+    if (!temparena) {
+        return NULL;
+    }
+
+    pkiV2 = PORT_ArenaZNew(temparena, SECKEYPrivateKeyInfoV2);
+    if (!pkiV2) {
+        goto loser;
+    }
+    pkiV2->v1.arena = temparena;
+
+    rv = SEC_ASN1DecodeItem(pkiV2->v1.arena, pkiV2, seckey_PrivateKeyInfoV2Template,
+                            derPKI);
+    if (rv != SECSuccess) {
+        
+
+
+        goto loser;
+    }
+    
+    if (SEC_ASN1DecodeInteger(&pkiV2->v1.version, &version) != SECSuccess) {
+        goto loser; 
+    }
+    if ((version > 1) || ((version == 0) && (pkiV2->publicKey.data != NULL))) {
+        PORT_SetError(SEC_ERROR_BAD_DER);
+        goto loser;
+    }
+
+    return &(pkiV2->v1);
+
+loser:
+    PORT_FreeArena(temparena, PR_TRUE);
+    return NULL;
+}
+
 SECStatus
 PK11_ImportDERPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot, SECItem *derPKI,
                                          SECItem *nickname, const SECItem *publicValue,
                                          PRBool isPerm, PRBool isPrivate, unsigned int keyUsage,
                                          SECKEYPrivateKey **privk, void *wincx)
 {
-    SECKEYPrivateKeyInfo *pki = NULL;
-    PLArenaPool *temparena = NULL;
+    SECKEYPrivateKeyInfo *pki = _PK11_DERPrivateKeyToPrivateKeyInfo(derPKI);
     SECStatus rv = SECFailure;
 
-    temparena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
-    if (!temparena) {
-        return rv;
-    }
-
-    pki = PORT_ArenaZNew(temparena, SECKEYPrivateKeyInfo);
-    if (!pki) {
-        PORT_FreeArena(temparena, PR_FALSE);
-        return rv;
-    }
-    pki->arena = temparena;
-
-    rv = SEC_ASN1DecodeItem(pki->arena, pki, SECKEY_PrivateKeyInfoTemplate,
-                            derPKI);
-    if (rv != SECSuccess) {
-        
-
-
-        PORT_FreeArena(temparena, PR_TRUE);
+    if (pki == NULL) {
         return rv;
     }
     if (pki->privateKey.data == NULL || pki->privateKey.len == 0) {
@@ -389,10 +444,13 @@ PK11_ImportDERPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot, SECItem *derPKI,
 
 
 
-        PORT_FreeArena(temparena, PR_TRUE);
+        PORT_FreeArena(pki->arena, PR_TRUE);
         PORT_SetError(SEC_ERROR_BAD_KEY);
         return SECFailure;
     }
+
+    
+
 
     rv = PK11_ImportPrivateKeyInfoAndReturnKey(slot, pki, nickname,
                                                publicValue, isPerm, isPrivate,
