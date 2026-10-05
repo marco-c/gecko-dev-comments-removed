@@ -1111,8 +1111,6 @@ nsStylePosition::nsStylePosition()
       mFlexBasis(StyleFlexBasis::Size(StyleSize::Auto())),
       mAspectRatio(StyleAspectRatio::Auto()),
       mGridAutoFlow(StyleGridAutoFlow::ROW),
-      mMasonryAutoFlow(
-          {StyleMasonryPlacement::Pack, StyleMasonryItemOrder::DefiniteFirst}),
       mAlignContent({StyleAlignFlags::NORMAL}),
       mAlignItems({StyleAlignFlags::NORMAL}),
       mAlignSelf({StyleAlignFlags::AUTO}),
@@ -1164,7 +1162,6 @@ nsStylePosition::nsStylePosition(const nsStylePosition& aSource)
       mGridAutoRows(aSource.mGridAutoRows),
       mAspectRatio(aSource.mAspectRatio),
       mGridAutoFlow(aSource.mGridAutoFlow),
-      mMasonryAutoFlow(aSource.mMasonryAutoFlow),
       mAlignContent(aSource.mAlignContent),
       mAlignItems(aSource.mAlignItems),
       mAlignSelf(aSource.mAlignSelf),
@@ -1205,14 +1202,6 @@ static bool IsEqualInsetType(const StyleRect<StyleInset>& aSides1,
 
 nsChangeHint nsStylePosition::CalcDifference(
     const nsStylePosition& aNewData, const ComputedStyle& aOldStyle) const {
-  if (mGridTemplateColumns.IsMasonry() !=
-          aNewData.mGridTemplateColumns.IsMasonry() ||
-      mGridTemplateRows.IsMasonry() != aNewData.mGridTemplateRows.IsMasonry()) {
-    
-    
-    return nsChangeHint_ReconstructFrame;
-  }
-
   nsChangeHint hint = nsChangeHint(0);
 
   
@@ -1277,8 +1266,7 @@ nsChangeHint nsStylePosition::CalcDifference(
       mGridTemplateAreas != aNewData.mGridTemplateAreas ||
       mGridAutoColumns != aNewData.mGridAutoColumns ||
       mGridAutoRows != aNewData.mGridAutoRows ||
-      mGridAutoFlow != aNewData.mGridAutoFlow ||
-      mMasonryAutoFlow != aNewData.mMasonryAutoFlow) {
+      mGridAutoFlow != aNewData.mGridAutoFlow) {
     return hint | nsChangeHint_AllReflowHints;
   }
 

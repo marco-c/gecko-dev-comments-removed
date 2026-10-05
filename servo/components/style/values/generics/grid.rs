@@ -928,10 +928,6 @@ pub enum GenericGridTemplateComponent<L, I> {
     #[animation(error)]
     #[typed(skip)]
     Subgrid(Box<GenericLineNameList<I>>),
-    
-    
-    #[typed(skip)]
-    Masonry,
 }
 
 pub use self::GenericGridTemplateComponent as GridTemplateComponent;

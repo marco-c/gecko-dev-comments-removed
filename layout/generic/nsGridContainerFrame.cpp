@@ -75,16 +75,11 @@ namespace mozilla {
 
 template <>
 inline Span<const StyleOwnedSlice<StyleCustomIdent>>
-GridTemplate::LineNameLists(bool aIsSubgrid) const {
+GridTemplate::LineNameLists() const {
   if (IsTrackList()) {
     return AsTrackList()->line_names.AsSpan();
   }
-  if (IsSubgrid() && aIsSubgrid) {
-    
-    
-    return {};
-  }
-  MOZ_ASSERT(IsNone() || IsMasonry() || (IsSubgrid() && !aIsSubgrid));
+  MOZ_ASSERT(IsNone() || IsSubgrid());
   return {};
 }
 
@@ -1187,19 +1182,6 @@ struct nsGridContainerFrame::GridItemInfo {
   
   
   
-  static bool RowMasonryOrdered(const GridItemInfo* a, const GridItemInfo* b) {
-    return a->mArea.mRows.mStart == 0 && b->mArea.mRows.mStart != 0 &&
-           !a->mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
-  }
-  static bool ColMasonryOrdered(const GridItemInfo* a, const GridItemInfo* b) {
-    return a->mArea.mCols.mStart == 0 && b->mArea.mCols.mStart != 0 &&
-           !a->mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW);
-  }
-
-  
-  
-  
-  
   
   static bool RowMasonryDefiniteFirst(const GridItemInfo* a,
                                       const GridItemInfo* b) {
@@ -1991,7 +1973,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   
   
   void ExpandRepeatLineNames(const TrackSizingFunctions& aTracks) {
-    auto lineNameLists = aTracks.mTemplate.LineNameLists(false);
+    auto lineNameLists = aTracks.mTemplate.LineNameLists();
 
     const auto& trackListValues = aTracks.mTrackListValues;
     const NameList* nameListToMerge = nullptr;
@@ -4601,7 +4583,7 @@ void nsGridContainerFrame::InitImplicitNamedAreas(
     areas->clear();
   }
   auto Add = [&](const GridTemplate& aTemplate, bool aIsSubgrid) {
-    AddImplicitNamedAreas(aTemplate.LineNameLists(aIsSubgrid));
+    AddImplicitNamedAreas(aTemplate.LineNameLists());
     for (auto& value : aTemplate.TrackListValues()) {
       if (value.IsTrackRepeat()) {
         AddImplicitNamedAreas(value.AsTrackRepeat().line_names.AsSpan());
@@ -8867,17 +8849,12 @@ nscoord nsGridContainerFrame::MasonryLayout(GridReflowInput& aGridRI,
       }
     }
   }
-  const auto masonryAutoFlow = aGridRI.mGridStyle->mMasonryAutoFlow;
-  const bool definiteFirst =
-      masonryAutoFlow.order == StyleMasonryItemOrder::DefiniteFirst;
   if (masonryAxis == LogicalAxis::Block) {
     std::stable_sort(sortedItems.begin(), sortedItems.end(),
-                     definiteFirst ? GridItemInfo::RowMasonryDefiniteFirst
-                                   : GridItemInfo::RowMasonryOrdered);
+                     GridItemInfo::RowMasonryDefiniteFirst);
   } else {
     std::stable_sort(sortedItems.begin(), sortedItems.end(),
-                     definiteFirst ? GridItemInfo::ColMasonryDefiniteFirst
-                                   : GridItemInfo::ColMasonryOrdered);
+                     GridItemInfo::ColMasonryDefiniteFirst);
   }
 
   FrameHashtable pushedItems;
@@ -8920,7 +8897,6 @@ nscoord nsGridContainerFrame::MasonryLayout(GridReflowInput& aGridRI,
   uint32_t cursor = 0;
   const auto containerToMasonryBoxOffset =
       fragStartPos - aContentArea.Start(masonryAxis, wm);
-  const bool isPack = masonryAutoFlow.placement == StyleMasonryPlacement::Pack;
   bool didAlignStartAlignedFirstItems = false;
 
   
@@ -8956,10 +8932,6 @@ nscoord nsGridContainerFrame::MasonryLayout(GridReflowInput& aGridRI,
     auto& gridAxisRange = aItem->mArea.LineRangeForAxis(gridAxis);
     bool isAutoPlaced = aItem->mState[gridAxis] & ItemState::eAutoPlacement;
     uint32_t start = isAutoPlaced ? 0 : gridAxisRange.mStart;
-    if (isAutoPlaced && !isPack) {
-      start = cursor;
-      isAutoPlaced = false;
-    }
     const uint32_t extent = gridAxisRange.Extent();
     if (start + extent > gridAxisTrackCount) {
       
@@ -10121,11 +10093,6 @@ nsFrameState nsGridContainerFrame::ComputeSelfSubgridMasonryBits() const {
     } else {
       bits |= NS_STATE_GRID_IS_ROW_MASONRY;
     }
-  } else if (pos->mGridTemplateRows.IsMasonry()) {
-    
-    bits |= NS_STATE_GRID_IS_ROW_MASONRY;
-  } else if (pos->mGridTemplateColumns.IsMasonry()) {
-    bits |= NS_STATE_GRID_IS_COL_MASONRY;
   }
 
   
