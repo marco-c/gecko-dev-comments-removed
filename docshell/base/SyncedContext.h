@@ -148,25 +148,6 @@ class Transaction {
                                         ContentParent* aSource);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static void ReconcileInitialFields(Context* aOwner,
-                                     typename Context::FieldValues&& aRequested,
-                                     ContentParent* aSource,
-                                     Transaction<Context>& aCorrection);
-
-  
-  void SendCorrection(Context* aOwner, ContentParent* aTarget);
-
-  
   mozilla::ipc::IPCResult CommitFromIPC(const MaybeDiscarded<Context>& aOwner,
                                         uint64_t aEpoch, ContentChild* aSource);
 
@@ -361,12 +342,12 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
     return Field<Context, IDX_##name, type>::mField;               \
   }
 
-#define MOZ_DECL_SYNCED_CONTEXT_FIELDINFO_GET(name, type, ...)             \
-  static constexpr ::mozilla::dom::syncedcontext::FieldInfo<type>          \
-  FieldIndexToInfo(FieldIndex<IDX_##name>) {                               \
-    using CanSet [[maybe_unused]] = ::mozilla::dom::syncedcontext::CanSet; \
-    return ::mozilla::dom::syncedcontext::FieldInfoOrDefault<type>(        \
-        __VA_ARGS__);                                                      \
+#define MOZ_DECL_SYNCED_CONTEXT_FIELDINFO_GET(name, type, ...)           \
+  static constexpr ::mozilla::dom::syncedcontext::FieldInfo<type>        \
+  FieldIndexToInfo(FieldIndex<IDX_##name>) {                             \
+    using CanSet [[maybe_unused]] = mozilla::dom::syncedcontext::CanSet; \
+    return ::mozilla::dom::syncedcontext::FieldInfoOrDefault<type>(      \
+        __VA_ARGS__);                                                    \
   }
 
 
