@@ -158,7 +158,7 @@ bool RenderCompositorANGLE::Initialize(nsACString& aError) {
   }
 
   
-  if (!UseLayerCompositor()) {
+  if (!UseCompositor()) {
     if (!CreateSwapChain(aError)) {
       
       return false;
@@ -290,7 +290,7 @@ bool RenderCompositorANGLE::CreateSwapChainForHWND() {
 }
 
 bool RenderCompositorANGLE::CreateSwapChain(nsACString& aError) {
-  MOZ_ASSERT(!UseLayerCompositor());
+  MOZ_ASSERT(!UseCompositor());
 
   mFirstPresent = true;
   CreateSwapChainForDCompIfPossible();
@@ -335,7 +335,7 @@ void RenderCompositorANGLE::CreateSwapChainForDCompIfPossible() {
   
   
   const bool useTripleBuffering =
-      gfx::gfxVars::UseWebRenderTripleBufferingWin() && !UseLayerCompositor();
+      gfx::gfxVars::UseWebRenderTripleBufferingWin() && !UseCompositor();
   RefPtr<IDXGISwapChain1> swapChain1 =
       CreateSwapChainForDComp(useTripleBuffering);
   if (swapChain1) {
@@ -422,7 +422,7 @@ bool RenderCompositorANGLE::ShouldUseAlpha() const {
 bool RenderCompositorANGLE::BeginFrame() {
   mWidget->AsWindows()->UpdateCompositorWndSizeIfNecessary();
 
-  if (!UseLayerCompositor()) {
+  if (!UseCompositor()) {
     if (NS_WARN_IF(!mSwapChainUsingAlpha && ShouldUseAlpha())) {
       if (NS_WARN_IF(!RecreateNonNativeCompositorSwapChain())) {
         return false;
@@ -460,7 +460,7 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
     mFence->IncrementAndSignal();
   }
 
-  if (!UseLayerCompositor()) {
+  if (!UseCompositor()) {
     auto start = TimeStamp::Now();
     if (auto* fxrHandler = mWidget->AsWindows()->GetFxrOutputHandler()) {
       
@@ -705,7 +705,7 @@ bool RenderCompositorANGLE::MakeCurrent() {
 }
 
 LayoutDeviceIntSize RenderCompositorANGLE::GetBufferSize() {
-  if (!UseLayerCompositor()) {
+  if (!UseCompositor()) {
     MOZ_ASSERT(mBufferSize.isSome());
     if (mBufferSize.isNothing()) {
       return LayoutDeviceIntSize();
@@ -810,12 +810,16 @@ gfx::DeviceResetReason RenderCompositorANGLE::IsContextLost(bool aForce) {
   return layers::DXGIErrorToDeviceResetReason(reason);
 }
 
+bool RenderCompositorANGLE::UseCompositor() const {
+  return mDCLayerTree && mDCLayerTree->UseCompositor();
+}
+
 bool RenderCompositorANGLE::UseLayerCompositor() const {
   return mDCLayerTree && mDCLayerTree->UseLayerCompositor();
 }
 
 bool RenderCompositorANGLE::SupportAsyncScreenshot() {
-  return !UseLayerCompositor();
+  return !UseCompositor();
 }
 
 bool RenderCompositorANGLE::ShouldUseNativeCompositor() { return false; }
@@ -917,7 +921,7 @@ void RenderCompositorANGLE::InitializeUsePartialPresent() {
   
   
   
-  mUsePartialPresent = !UseLayerCompositor() &&
+  mUsePartialPresent = !UseCompositor() &&
                        !mWidget->AsWindows()->HasFxrOutputHandler() &&
                        gfx::gfxVars::WebRenderMaxPartialPresentRects() > 0;
 }
@@ -944,7 +948,7 @@ bool RenderCompositorANGLE::MaybeReadback(
     const Range<uint8_t>& aReadbackBuffer, bool* aNeedsYFlip) {
   MOZ_ASSERT(aReadbackFormat == wr::ImageFormat::BGRA8);
 
-  if (!UseLayerCompositor()) {
+  if (!UseCompositor()) {
     return false;
   }
 
