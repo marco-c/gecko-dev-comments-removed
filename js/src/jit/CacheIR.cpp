@@ -8192,6 +8192,12 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStringSplitString() {
   MOZ_ASSERT(arg(1).isString());
 
   
+  if (!GlobalObject::getArrayShapeWithDefaultProto(cx_)) {
+    cx_->recoverFromResourceExhaustion();
+    return AttachDecision::NoAction;
+  }
+
+  
   initializeInputOperand();
 
   
