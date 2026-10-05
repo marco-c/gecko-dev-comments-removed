@@ -68,7 +68,7 @@
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
 
-#include "jit/JitHints-inl.h"          
+#include "jit/JitHints-inl.h"  
 #include "jit/JitScript-inl.h"         
 #include "vm/EnvironmentObject-inl.h"  
 #include "vm/JSFunction-inl.h"         
@@ -2728,6 +2728,15 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
     
     if (!doAggressive) {
       if (!jitHints->mightHaveEagerBaselineHint(script)) {
+        if (!jitHints->mightHaveEagerBaselineInterpreterHint(script)) {
+          continue;
+        }
+        if (!jit::CanBaselineInterpretScript(script)) {
+          continue;
+        }
+        if (!script->ensureHasJitScript(cx, keepJitScript)) {
+          return false;
+        }
         continue;
       }
     }
