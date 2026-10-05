@@ -1976,6 +1976,13 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
 
     mFetchHandlerFinish = TimeStamp::Now();
 
+    
+    
+    
+    RefPtr<Request> request = fetchEvent->Request_();
+    const bool hasStreamBody = request && request->HasStreamBody();
+    const bool streamBodyUnusable = hasStreamBody && request->IsBodyUnusable();
+
     if (fetchEvent->DefaultPrevented(CallerType::NonSystem)) {
       
       
@@ -1987,13 +1994,33 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
               NS_ERROR_INTERCEPTION_FAILED,
               FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
           __func__);
+    } else if (streamBodyUnusable) {
+      
+      
+      mHandled->MaybeRejectWithNetworkError(
+          "Streaming request body was used before network fallback"_ns);
+      mRespondWithPromiseHolder.Resolve(
+          FetchEventRespondWithResult(CancelInterceptionArgs(
+              NS_ERROR_INTERCEPTION_FAILED,
+              FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
+          __func__);
     } else {
       
       
+      
+      
+      nsCOMPtr<nsIInputStream> fallbackBody;
+      if (hasStreamBody) {
+        IgnoredErrorResult rv;
+        fallbackBody = request->TakeBodyForServiceWorker(aCx, rv);
+      }
       mHandled->MaybeResolveWithUndefined();
       mRespondWithPromiseHolder.Resolve(
           FetchEventRespondWithResult(ResetInterceptionArgs(
-              FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish))),
+              FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish),
+              fallbackBody ? Some(mozilla::ipc::EagerIPCStream{
+                                 WrapNotNull(fallbackBody)})
+                           : Nothing())),
           __func__);
     }
   } else {

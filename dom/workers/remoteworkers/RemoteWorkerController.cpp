@@ -604,14 +604,18 @@ RemoteWorkerController::PendingSWFetchEventOp::PendingSWFetchEventOp(
   IPCInternalRequest& req = mArgs.common().internalRequest();
   if (req.body().isSome() &&
       req.body().ref().type() == BodyStreamVariant::TParentToParentStream) {
-    nsCOMPtr<nsIInputStream> stream;
     auto streamLength = req.bodySize();
     const auto& uuid = req.body().ref().get_ParentToParentStream().uuid();
 
     auto storage = RemoteLazyInputStreamStorage::Get().unwrapOr(nullptr);
     MOZ_DIAGNOSTIC_ASSERT(storage);
-    storage->GetStream(uuid, 0, streamLength, getter_AddRefs(mBodyStream));
-    storage->ForgetStream(uuid);
+    if (req.hasStreamBody()) {
+      
+      mBodyStream = storage->ForgetStream(uuid);
+    } else {
+      storage->GetStream(uuid, 0, streamLength, getter_AddRefs(mBodyStream));
+      storage->ForgetStream(uuid);
+    }
 
     MOZ_DIAGNOSTIC_ASSERT(mBodyStream);
 
@@ -635,6 +639,15 @@ bool RemoteWorkerController::PendingSWFetchEventOp::MaybeStart(
     mPromise = nullptr;
     
     
+    return true;
+  }
+
+  
+  
+  if (NS_WARN_IF(mArgs.common().internalRequest().hasStreamBody() &&
+                 !mBodyStream)) {
+    mPromise->Reject(NS_ERROR_FAILURE, __func__);
+    mPromise = nullptr;
     return true;
   }
 
