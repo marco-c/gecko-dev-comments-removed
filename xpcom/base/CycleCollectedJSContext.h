@@ -90,6 +90,18 @@ class MicroTaskRunnable : public LinkedListElement<MicroTaskRunnable> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS MayConsumeMicroTask {
  public:
   virtual ~MayConsumeMicroTask() = default;
@@ -97,70 +109,24 @@ class MOZ_STACK_CLASS MayConsumeMicroTask {
   
   
   
-  bool IsJSMicroTask() const { return JS::IsJSMicroTask(mMicroTask); }
-
-  
-  
-  
-  
-  
-  MicroTaskRunnable* MaybeUnwrapTaskToRunnable() const;
-
-  
-  
-  JSObject* GetExecutionGlobalFromJSMicroTask() const {
-    MOZ_ASSERT(IsJSMicroTask());
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    MOZ_ASSERT(task);
-    return JS::GetExecutionGlobalFromJSMicroTask(task);
-  }
-
-  
-  
-  
-  
-
-  bool GetFlowIdFromJSMicroTask(uint64_t* aFlowId) const {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    MOZ_ASSERT(task);
-    return JS::GetFlowIdFromJSMicroTask(task, aFlowId);
-  }
-
-  JSObject* MaybeGetPromiseFromJSMicroTask() const {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    MOZ_ASSERT(task);
-    return JS::MaybeGetPromiseFromJSMicroTask(task);
-  }
-
-  bool MaybeGetHostDefinedDataFromJSMicroTask(
-      JS::MutableHandle<JSObject*> aIncumbentGlobal,
-      JS::MutableHandle<JSObject*> aOptionalHostDefinedData) const {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    if (!task) {
-      return false;
-    }
-    return JS::MaybeGetHostDefinedDataFromJSMicroTask(task, aIncumbentGlobal,
-                                                      aOptionalHostDefinedData);
-  }
-
-  bool MaybeGetAllocationSiteFromJSMicroTask(
-      JS::MutableHandle<JSObject*> out) const {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    if (!task) {
-      return false;
-    }
-    return JS::MaybeGetAllocationSiteFromJSMicroTask(task, out);
-  }
+  bool IsJSMicroTask() const { return mMicroTask->isJS(); }
 
   void trace(JSTracer* aTrc) {
-    TraceRoot(aTrc, &mMicroTask, "MayConsumeMicroTask value");
+    JS::GCPolicy<Maybe<JS::MicroTask>>::trace(aTrc, &mMicroTask,
+                                              "MayConsumeMicroTask value");
   }
 
  protected:
-  explicit MayConsumeMicroTask(JS::GenericMicroTask aMicroTask)
-      : mMicroTask(aMicroTask) {}
+  friend JS::JSMicroTaskRef AsJSMicroTask(
+      JS::Handle<MayConsumeMicroTask> aMicroTask);
+  friend MicroTaskRunnable* MaybeUnwrapTaskToRunnable(
+      JS::Handle<MayConsumeMicroTask> aMicroTask);
 
-  JS::GenericMicroTask mMicroTask;
+  MayConsumeMicroTask() = default;
+  explicit MayConsumeMicroTask(Maybe<JS::MicroTask>&& aMicroTask)
+      : mMicroTask(std::move(aMicroTask)) {}
+
+  Maybe<JS::MicroTask> mMicroTask;
 };
 
 
@@ -171,7 +137,7 @@ class MOZ_STACK_CLASS MayConsumeMicroTask {
 class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
  public:
   
-  MustConsumeMicroTask() : MayConsumeMicroTask(JS::GenericMicroTask()) {}
+  MustConsumeMicroTask() = default;
 
   
   
@@ -189,7 +155,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   MustConsumeMicroTask(const MustConsumeMicroTask&) = delete;
   MustConsumeMicroTask& operator=(const MustConsumeMicroTask&) = delete;
   MustConsumeMicroTask(MustConsumeMicroTask&& other)
-      : MayConsumeMicroTask(other.mMicroTask) {
+      : MayConsumeMicroTask(std::move(other.mMicroTask)) {
     other.markAsConsumed();
   }
   MustConsumeMicroTask& operator=(MustConsumeMicroTask&& other) noexcept {
@@ -197,7 +163,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
     MOZ_ASSERT(this->IsConsumed());
 
     if (this != &other) {
-      mMicroTask = other.mMicroTask;
+      mMicroTask = std::move(other.mMicroTask);
 
       
       other.markAsConsumed();
@@ -206,7 +172,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   }
 
   
-  bool IsConsumed() const { return mMicroTask.isUndefined(); }
+  bool IsConsumed() const { return mMicroTask.isNothing(); }
 
   
   explicit operator bool() const { return !IsConsumed(); }
@@ -224,7 +190,10 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   
   
   
-  already_AddRefed<MicroTaskRunnable> MaybeConsumeAsOwnedRunnable();
+  friend already_AddRefed<MicroTaskRunnable> MaybeConsumeAsOwnedRunnable(
+      JS::MutableHandle<MustConsumeMicroTask> aMicroTask);
+  friend bool RunAndConsumeJSMicroTask(
+      JSContext* aCx, JS::MutableHandle<MustConsumeMicroTask> aMicroTask);
 
   
   
@@ -237,29 +206,19 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
   
   void ConsumeByPrependToQueue(JSContext* aCx) {
     MOZ_ASSERT(!IsConsumed(), "Attempting to consume an already-consumed task");
-    if (!JS::PrependMicroTask(aCx, mMicroTask)) {
+    if (!JS::PrependMicroTask(aCx, *mMicroTask)) {
       
       NS_ABORT_OOM(0);
     }
     markAsConsumed();
   }
 
-  bool RunAndConsumeJSMicroTask(JSContext* aCx) {
-    MOZ_ASSERT(!JS_IsExceptionPending(aCx));
-    JS::Rooted<JS::JSMicroTask*> task(
-        aCx, JS::ToMaybeWrappedJSMicroTask(mMicroTask));
-    MOZ_ASSERT(task);
-    bool v = JS::RunJSMicroTask(aCx, task);
-    markAsConsumed();
-    return v;
-  }
-
  private:
-  explicit MustConsumeMicroTask(JS::GenericMicroTask aMicroTask)
-      : MayConsumeMicroTask(aMicroTask) {}
+  explicit MustConsumeMicroTask(Maybe<JS::MicroTask>&& aMicroTask)
+      : MayConsumeMicroTask(std::move(aMicroTask)) {}
 
   
-  void markAsConsumed() { mMicroTask.setUndefined(); }
+  void markAsConsumed() { mMicroTask.reset(); }
 };
 
 
@@ -270,7 +229,7 @@ class MOZ_STACK_CLASS MustConsumeMicroTask : public MayConsumeMicroTask {
 class MOZ_STACK_CLASS WontConsumeMicroTask : public MayConsumeMicroTask {
  public:
   
-  WontConsumeMicroTask() : MayConsumeMicroTask(JS::GenericMicroTask()) {}
+  WontConsumeMicroTask() = default;
 
   
   friend WontConsumeMicroTask PeekNextMicroTask(JSContext* aCx);
@@ -278,9 +237,9 @@ class MOZ_STACK_CLASS WontConsumeMicroTask : public MayConsumeMicroTask {
   ~WontConsumeMicroTask() = default;
 
  private:
-  explicit WontConsumeMicroTask(JS::GenericMicroTask aMicroTask)
-      : MayConsumeMicroTask(aMicroTask) {
-    MOZ_RELEASE_ASSERT(!aMicroTask.isNullOrUndefined());
+  explicit WontConsumeMicroTask(Maybe<JS::MicroTask>&& aMicroTask)
+      : MayConsumeMicroTask(std::move(aMicroTask)) {
+    MOZ_RELEASE_ASSERT(mMicroTask.isSome());
   }
 };
 

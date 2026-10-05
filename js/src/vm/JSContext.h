@@ -146,16 +146,33 @@ enum class ShouldCaptureStack { Maybe, Always };
 
 
 
-struct MicroTaskQueueElement {
-  MOZ_IMPLICIT
-  MicroTaskQueueElement(const JS::Value& val) : value(val) {}
+class MicroTaskQueueElement {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  using Kind = JS::MicroTask::Kind;
 
-  operator JS::Value() const { return value; }
+  
+  
+  
+  template <typename... Args>
+  explicit MicroTaskQueueElement(Kind kind, Args&&... args)
+      : microTask_(kind, std::forward<Args>(args)...) {}
+
+  explicit MicroTaskQueueElement(const JS::MicroTask& microTask)
+      : microTask_(microTask) {}
+
+  const JS::MicroTask& toMicroTask() const { return microTask_; }
 
   void trace(JSTracer* trc);
 
  private:
-  JS::Value value;
+  JS::MicroTask microTask_;
 };
 
 
@@ -178,13 +195,17 @@ struct MicroTaskQueueSet {
   MicroTaskQueueSet(const MicroTaskQueueSet&) = delete;
   MicroTaskQueueSet& operator=(const MicroTaskQueueSet&) = delete;
 
-  bool enqueueRegularMicroTask(JSContext* cx, const JS::GenericMicroTask&);
-  bool enqueueDebugMicroTask(JSContext* cx, const JS::GenericMicroTask&);
-  bool prependRegularMicroTask(JSContext* cx, const JS::GenericMicroTask&);
+  bool enqueueRegularMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
+                               const JS::Value&);
+  bool enqueueRegularMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool enqueueDebugMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
+                             const JS::Value&);
+  bool enqueueDebugMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool prependRegularMicroTask(JSContext* cx, const JS::MicroTask&);
 
-  JS::GenericMicroTask popFront();
-  JS::GenericMicroTask popDebugFront();
-  JS::GenericMicroTask peekFront();
+  mozilla::Maybe<JS::MicroTask> popFront();
+  mozilla::Maybe<JS::MicroTask> popDebugFront();
+  mozilla::Maybe<JS::MicroTask> peekFront();
 
   bool empty() { return microTaskQueue.empty() && debugMicroTaskQueue.empty(); }
 

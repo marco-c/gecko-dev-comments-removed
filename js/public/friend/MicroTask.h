@@ -5,6 +5,9 @@
 #ifndef js_friend_MicroTask_h
 #define js_friend_MicroTask_h
 
+#include "mozilla/Assertions.h"
+#include "mozilla/Maybe.h"
+
 #include "jstypes.h"
 
 #include "js/GCPolicyAPI.h"
@@ -12,7 +15,10 @@
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
 #include "js/Value.h"
-#include "js/ValueArray.h"
+
+namespace js {
+class MicroTaskQueueElement;
+}  
 
 namespace JS {
 
@@ -49,6 +55,7 @@ namespace JS {
 
 
 
+class JSMicroTaskRef;
 
 
 
@@ -59,21 +66,174 @@ namespace JS {
 
 
 
-using GenericMicroTask = JS::Value;
-using JSMicroTask = JSObject;
 
-JS_PUBLIC_API bool IsJSMicroTask(const JS::GenericMicroTask& hv);
-JS_PUBLIC_API JSMicroTask* ToUnwrappedJSMicroTask(
-    const JS::GenericMicroTask& genericMicroTask);
-JS_PUBLIC_API JSMicroTask* ToMaybeWrappedJSMicroTask(
-    const JS::GenericMicroTask& genericMicroTask);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MicroTask {
+ public:
+  MicroTask() = delete;
+
+  
+  static MicroTask FromEmbedderValue(const JS::Value& value) {
+    return MicroTask(Kind::Embedder, value);
+  }
+
+  
+  static MicroTask FromEmbedderPtr(void* ptr) {
+    return MicroTask(Kind::Embedder, JS::PrivateValue(ptr));
+  }
+
+  bool isJS() const { return kind_ == Kind::JS; }
+  bool isEmbedder() const { return kind_ == Kind::Embedder; }
+
+  
+  const JS::Value& embedderValue() const {
+    MOZ_ASSERT(isEmbedder());
+    return value_;
+  }
+
+  void* embedderPtr() const {
+    MOZ_ASSERT(isEmbedder());
+    MOZ_ASSERT(value_.isDouble());
+    return value_.toPrivate();
+  }
+
+  
+  
+  inline JSMicroTaskRef asJS() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS_PUBLIC_API void trace(JSTracer* trc, const char* name);
+
+ private:
+  friend class JSMicroTaskRef;
+  friend class js::MicroTaskQueueElement;
+
+  
+  
+  
+  
+  
+  
+  enum class Kind : uint8_t { Embedder, JS };
+
+  explicit MicroTask(Kind kind, const JS::Value& value)
+      : kind_(kind), value_(value) {}
+
+  Kind kind_;
+  JS::Value value_;
+};
+
+}  
+
+namespace JS {
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx, Handle<MicroTask> task);
 
 
 
 
 JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx,
-                                  Handle<JS::JSMicroTask*> entry);
+                                  Handle<mozilla::Maybe<MicroTask>> task);
+
+
+
+
+
+
+
+
+class MOZ_TEMPORARY_CLASS JSMicroTaskRef {
+ public:
+  JSMicroTaskRef(const JSMicroTaskRef&) = delete;
+  JSMicroTaskRef(JSMicroTaskRef&&) = delete;
+  JSMicroTaskRef& operator=(const JSMicroTaskRef&) = delete;
+  JSMicroTaskRef& operator=(JSMicroTaskRef&&) = delete;
+
+  
+  
+  JS_PUBLIC_API JSObject* executionGlobal() &&;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  JS_PUBLIC_API bool maybeGetHostDefinedData(
+      MutableHandleObject incumbentGlobal,
+      MutableHandleObject optionalHostDefinedData) &&;
+  JS_PUBLIC_API bool maybeGetAllocationSite(MutableHandleObject out) &&;
+
+  
+  JS_PUBLIC_API JSObject* maybeGetPromise() &&;
+
+  
+  
+  
+  JS_PUBLIC_API bool getFlowId(uint64_t* uid) &&;
+
+ private:
+  friend class MicroTask;
+  friend bool RunJSMicroTask(JSContext* cx, Handle<MicroTask> task);
+  friend bool RunJSMicroTask(JSContext* cx,
+                             Handle<mozilla::Maybe<MicroTask>> task);
+
+  explicit JSMicroTaskRef(const MicroTask& task) : task_(task) {
+    MOZ_ASSERT(task.isJS());
+  }
+
+  
+  
+  bool run(JSContext* cx) &&;
+
+  JSObject* maybeWrappedObject() const {
+    
+    
+    MOZ_ASSERT(task_.value_.isObject());
+    return &task_.value_.toObject();
+  }
+
+  const MicroTask& task_;
+};
+
+inline JSMicroTaskRef MicroTask::asJS() const { return JSMicroTaskRef(*this); }
 
 
 
@@ -89,12 +249,14 @@ JS_PUBLIC_API bool RunJSMicroTask(JSContext* cx,
 
 
 
-JS_PUBLIC_API bool EnqueueMicroTask(JSContext* cx,
-                                    const GenericMicroTask& entry);
-JS_PUBLIC_API bool EnqueueDebugMicroTask(JSContext* cx,
-                                         const GenericMicroTask& entry);
-JS_PUBLIC_API bool PrependMicroTask(JSContext* cx,
-                                    const GenericMicroTask& entry);
+
+
+
+
+
+JS_PUBLIC_API bool EnqueueMicroTask(JSContext* cx, const MicroTask& entry);
+JS_PUBLIC_API bool EnqueueDebugMicroTask(JSContext* cx, const MicroTask& entry);
+JS_PUBLIC_API bool PrependMicroTask(JSContext* cx, const MicroTask& entry);
 
 
 
@@ -110,14 +272,16 @@ JS_PUBLIC_API bool PrependMicroTask(JSContext* cx,
 
 
 
-JS_PUBLIC_API GenericMicroTask DequeueNextMicroTask(JSContext* cx);
-JS_PUBLIC_API GenericMicroTask DequeueNextDebuggerMicroTask(JSContext* cx);
-JS_PUBLIC_API GenericMicroTask DequeueNextRegularMicroTask(JSContext* cx);
+JS_PUBLIC_API mozilla::Maybe<MicroTask> DequeueNextMicroTask(JSContext* cx);
+JS_PUBLIC_API mozilla::Maybe<MicroTask> DequeueNextDebuggerMicroTask(
+    JSContext* cx);
+JS_PUBLIC_API mozilla::Maybe<MicroTask> DequeueNextRegularMicroTask(
+    JSContext* cx);
 
 
 
 
-JS_PUBLIC_API GenericMicroTask PeekNextMicroTask(JSContext* cx);
+JS_PUBLIC_API mozilla::Maybe<MicroTask> PeekNextMicroTask(JSContext* cx);
 
 
 JS_PUBLIC_API bool HasAnyMicroTasks(JSContext* cx);
@@ -131,10 +295,6 @@ JS_PUBLIC_API bool HasRegularMicroTasks(JSContext* cx);
 
 
 JS_PUBLIC_API size_t GetRegularMicroTaskCount(JSContext* cx);
-
-
-
-JS_PUBLIC_API JSObject* GetExecutionGlobalFromJSMicroTask(JSMicroTask* entry);
 
 
 
@@ -157,26 +317,35 @@ SaveMicroTaskQueue(JSContext* cx);
 JS_PUBLIC_API void RestoreMicroTaskQueue(
     JSContext* cx, js::UniquePtr<SavedMicroTaskQueue> savedQueue);
 
+template <>
+struct GCPolicy<JS::MicroTask> : public StructGCPolicy<JS::MicroTask> {
+  static void trace(JSTracer* trc, JS::MicroTask* task, const char* name) {
+    task->trace(trc, name);
+  }
+};
 
+}  
 
+namespace js {
 
+template <typename Wrapper>
+class WrappedPtrOperations<JS::MicroTask, Wrapper> {
+  const JS::MicroTask& task() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
 
+ public:
+  bool isJS() const { return task().isJS(); }
+  bool isEmbedder() const { return task().isEmbedder(); }
+  const JS::Value& embedderValue() const { return task().embedderValue(); }
+  inline JS::JSMicroTaskRef asJS() const;
+};
 
-
-
-
-JS_PUBLIC_API bool MaybeGetHostDefinedDataFromJSMicroTask(
-    JSMicroTask* entry, MutableHandleObject incumbentGlobal,
-    MutableHandleObject optionalHostDefinedData);
-JS_PUBLIC_API bool MaybeGetAllocationSiteFromJSMicroTask(
-    JSMicroTask* entry, MutableHandleObject out);
-
-JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(JSMicroTask* entry);
-
-
-
-
-JS_PUBLIC_API bool GetFlowIdFromJSMicroTask(JSMicroTask* entry, uint64_t* uid);
+template <typename Wrapper>
+inline JS::JSMicroTaskRef WrappedPtrOperations<JS::MicroTask, Wrapper>::asJS()
+    const {
+  return task().asJS();
+}
 
 }  
 
