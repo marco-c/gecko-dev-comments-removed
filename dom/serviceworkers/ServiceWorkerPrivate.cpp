@@ -820,7 +820,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       cjsData, domain,
        true,
-       Some(ipcClientInfo.ToIPC()),
+       ipcClientInfo.ToIPC(),
 
       
       
@@ -857,11 +857,9 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
   
   
   nsILoadInfo::IPAddressSpace ipAddressSpace = nsILoadInfo::Unknown;
-  if (mRemoteWorkerData.clientInfo().isSome()) {
-    ClientInfo current(mRemoteWorkerData.clientInfo().ref());
-    if (const auto& args = current.GetPolicyContainerArgs()) {
-      ipAddressSpace = args->ipAddressSpace();
-    }
+  ClientInfo current(mRemoteWorkerData.clientInfo());
+  if (const auto& args = current.GetPolicyContainerArgs()) {
+    ipAddressSpace = args->ipAddressSpace();
   }
 
   mClientInfo = ClientManager::CreateInfo(
@@ -872,9 +870,9 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
     mozilla::ipc::PolicyContainerArgs policyContainerArgs;
     policyContainerArgs.ipAddressSpace() = ipAddressSpace;
     ipcClientInfo.SetPolicyContainerArgs(policyContainerArgs);
-    mRemoteWorkerData.clientInfo().ref() = ipcClientInfo.ToIPC();
+    mRemoteWorkerData.clientInfo() = ipcClientInfo.ToIPC();
   } else {
-    mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
+    mRemoteWorkerData.clientInfo() = mClientInfo.ref().ToIPC();
   }
 }
 
