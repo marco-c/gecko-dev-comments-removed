@@ -823,8 +823,7 @@ TimerThread::Run() {
 
       
       const auto [wakeupTime, wakeupTolerance] = ComputeWakeupTimeFromTimers();
-      mLatestIntendedWakeupTime =
-          wakeupTime.IsNull() ? TimeStamp{} : wakeupTime + wakeupTolerance;
+      mIntendedWakeupTime = wakeupTime;
       waitTolerance = wakeupTolerance;
 
       
@@ -833,7 +832,6 @@ TimerThread::Run() {
 
 #if TIMER_THREAD_STATISTICS
       CollectTimersFiredStatistics(timersFiredThisWakeup);
-      mIntendedWakeupTime = wakeupTime;
 #endif
 
       
@@ -852,10 +850,7 @@ TimerThread::Run() {
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
     } else {
-      mLatestIntendedWakeupTime = TimeStamp{};
-#if TIMER_THREAD_STATISTICS
       mIntendedWakeupTime = TimeStamp{};
-#endif
       
       
       
@@ -914,10 +909,9 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
       StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
   const TimeDuration firingDelay = ComputeAcceptableFiringDelay(
       aTimer->mDelay, minTimerDelay, maxTimerDelay);
-  
   const bool firingBeforeNextWakeup =
-      mLatestIntendedWakeupTime.IsNull() ||
-      (aTimer->mTimeout + firingDelay < mLatestIntendedWakeupTime);
+      mIntendedWakeupTime.IsNull() ||
+      (aTimer->mTimeout + firingDelay < mIntendedWakeupTime);
   const bool wakeUpTimerThread =
       mWaiting && (firingBeforeNextWakeup || aTimer->mDelay.IsZero());
 

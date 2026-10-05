@@ -355,12 +355,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   
   
-  TimeStamp mLatestIntendedWakeupTime;
-
-#if TIMER_THREAD_STATISTICS
-  
   TimeStamp mIntendedWakeupTime;
 
+#if TIMER_THREAD_STATISTICS
   static constexpr size_t sTimersFiredPerWakeupBucketCount = 16;
   static inline constexpr std::array<size_t, sTimersFiredPerWakeupBucketCount>
       sTimersFiredPerWakeupThresholds = {
