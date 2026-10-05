@@ -489,7 +489,12 @@ void HTMLImageElement::UnbindFromTree(UnbindContext& aContext) {
   nsImageLoadingContent::UnbindFromTree();
   nsGenericHTMLElement::UnbindFromTree(aContext);
 
-  UpdateAutoSizeObserver();
+  if (!aContext.IsMove()) {
+    
+    
+    
+    UpdateAutoSizeObserver();
+  }
 
   if (wasInPicture != IsInPicture()) {
     MOZ_ASSERT(wasInPicture);
