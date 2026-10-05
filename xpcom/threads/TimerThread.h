@@ -104,9 +104,10 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   };
 
   struct Entry final : EntryKey {
-    explicit Entry(nsTimerImpl& aTimerImpl)
+    explicit Entry(nsTimerImpl& aTimerImpl) MOZ_REQUIRES(aTimerImpl.mMutex)
         : EntryKey(aTimerImpl),
           mDelay(aTimerImpl.mDelay),
+          mFiringDelay(aTimerImpl.AcceptableFiringDelay()),
           mTimerImpl(&aTimerImpl) {}
 
     
@@ -126,6 +127,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 #endif
 
     TimeDuration mDelay;
+    TimeDuration mFiringDelay;
     RefPtr<nsTimerImpl> mTimerImpl;
   };
 
@@ -145,18 +147,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   WakeupTime ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  TimeDuration ComputeAcceptableFiringDelay(TimeDuration timerDuration,
-                                            TimeDuration minDelay,
-                                            TimeDuration maxDelay) const;
 
   
   
