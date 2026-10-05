@@ -59,6 +59,12 @@ add_setup(async function () {
     Services.prefs.clearUserPref("privacy.purge_trackers.last_purge");
     
     
+    
+    Services.prefs.clearUserPref(
+      "privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings"
+    );
+    
+    
     resetPurgeTrackerServiceState();
     await new Promise(resolve => {
       Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, resolve);
