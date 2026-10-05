@@ -1341,12 +1341,6 @@ var gProtectionsHandler = {
 
 
 
-  _hasClickedSmartBlockEmbedToggle: false,
-
-  
-
-
-
   _protectionsPopupOpeningReason: null,
 
   _protectionsPopup: null,
@@ -1795,21 +1789,12 @@ var gProtectionsHandler = {
       window.removeEventListener("focus", this, true);
       this._protectionsPopupTPSwitch.removeEventListener("toggle", this);
 
-      
-      if (!event.target.hasAttribute("toast")) {
-        Glean.securityUiProtectionspopup.closeProtectionsPopup.record({
-          openingReason: this._protectionsPopupOpeningReason,
-          smartblockToggleClicked: this._hasClickedSmartBlockEmbedToggle,
-        });
-      }
-
       if (this._protectionsPopupToggleDelayTimer) {
         clearTimeout(this._protectionsPopupToggleDelayTimer);
         this._enablePopupToggles();
         delete this._protectionsPopupToggleDelayTimer;
       }
 
-      this._hasClickedSmartBlockEmbedToggle = false;
       this._protectionsPopupOpeningReason = null;
     }
   },
@@ -2454,13 +2439,6 @@ var gProtectionsHandler = {
         } else {
           this._sendReblockMessageToSmartblock(shimId);
         }
-
-        Glean.securityUiProtectionspopup.clickSmartblockembedsToggle.record({
-          isBlock: !newToggleState,
-          openingReason: this._protectionsPopupOpeningReason,
-        });
-
-        this._hasClickedSmartBlockEmbedToggle = true;
       });
 
       this._protectionsPopupSmartblockToggleContainer.insertAdjacentElement(
