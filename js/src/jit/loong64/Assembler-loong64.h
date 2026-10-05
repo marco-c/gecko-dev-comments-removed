@@ -2123,6 +2123,17 @@ class AssemblerLOONG64 : public AssemblerShared {
   static std::optional<uint16_t> EncodeVldiImmediate(const SimdConstant& v);
 
   
+  
+  static bool CanEncodeSimdCompareImmediateFor(wasm::SimdOp op,
+                                               const SimdConstant& value);
+
+  
+  
+  template <typename T>
+  static std::optional<int64_t> EncodeSimdCompareImmediate(
+      const SimdConstant& rhs, Condition cond);
+
+  
   void bind(Label* label, BufferOffset boff = BufferOffset());
   virtual void bind(InstImm* inst, uintptr_t branch, uintptr_t target) = 0;
   void bind(CodeLabel* label) { label->target()->bind(currentOffset()); }
