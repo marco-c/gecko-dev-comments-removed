@@ -96,23 +96,6 @@ ServiceWorkerUnregisterJob::ClearNotifications() {
 
 already_AddRefed<GenericPromise>
 ServiceWorkerUnregisterJob::ClearPushSubscriptions() {
-  if (StaticPrefs::dom_push_window_pushmanager_enabled()) {
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIURI> scopeURI;
-    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(scopeURI), mScope))) {
-      nsCString path;
-      scopeURI->GetFilePath(path);
-      if (path.EqualsLiteral("/")) {
-        return GenericPromise::CreateAndResolve(true, __func__).forget();
-      }
-    }
-  }
   nsresult rv = NS_OK;
   nsCOMPtr<nsIPushService> pushService =
       do_GetService("@mozilla.org/push/Service;1", &rv);
