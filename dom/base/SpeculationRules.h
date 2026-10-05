@@ -19,10 +19,6 @@ class nsIScriptElement;
 class nsITimer;
 class nsIURI;
 
-namespace mozilla {
-class ManagedPostRefreshObserver;
-}
-
 namespace mozilla::dom {
 
 class Document;
@@ -62,12 +58,6 @@ class SpeculationRules final {
   
   
   
-  bool WaitForPendingFrames();
-
-  
-  
-  
-  
   
   
   void EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel);
@@ -86,9 +76,6 @@ class SpeculationRules final {
 
   
   bool mConsiderSpeculativeLoadsMicrotaskQueued{false};
-
-  
-  RefPtr<ManagedPostRefreshObserver> mPendingFramesObserver;
 
   
   
