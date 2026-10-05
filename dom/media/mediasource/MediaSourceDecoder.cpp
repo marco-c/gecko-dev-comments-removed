@@ -262,7 +262,18 @@ void MediaSourceDecoder::SetMediaSourceDuration(const TimeUnit& aDuration) {
   if (aDuration.IsPositiveOrZero()) {
     
     
-    SetExplicitDuration(aDuration.ToBase(USECS_PER_S).ToSeconds());
+    TimeUnit inUsec = aDuration.ToBase(USECS_PER_S);
+    if (inUsec.IsValid()) {
+      SetExplicitDuration(inUsec.ToSeconds());
+    } else {
+      
+      
+      MSE_DEBUG(
+          "SetMediaSourceDuration: duration overflow converting to usecs "
+          "(duration=%s)",
+          aDuration.ToString().get());
+      SetExplicitDuration(aDuration.ToSeconds());
+    }
   } else {
     SetExplicitDuration(PositiveInfinity<double>());
   }

@@ -616,6 +616,15 @@ void MediaSource::DurationChangeOnEndOfStream() {
   
   
   media::TimeUnit newDuration = highestEndTime.ToBase(USECS_PER_S);
+  
+  
+  
+  if (!newDuration.IsValid()) {
+    MSE_DEBUG(
+        "DurationChangeOnEndOfStream: duration overflow (highestEndTime=%s)",
+        highestEndTime.ToString().get());
+    return;
+  }
   MSE_DEBUG("DurationChangeOnEndOfStream(newDuration={})",
             newDuration.ToString().get());
   if (mDecoder->GetDuration() == newDuration.ToSeconds()) {
