@@ -153,12 +153,17 @@ Atomic<uint32_t> gCrashAfterTicks(0);
 
 
 
+Atomic<bool, Relaxed> gCrashRequestedByTest(false);
+
+
+
+
 
 
 
 
 void MaybeSaveShutdownHangProfile() {
-  if (!profiler_is_active()) {
+  if (!profiler_is_active() || gCrashRequestedByTest) {
     return;
   }
 
@@ -475,6 +480,7 @@ nsTerminator::GetTicksForShutdownPhases(JSContext* aCx,
 
 NS_IMETHODIMP
 nsTerminator::SetTicksBeforeCrash(uint32_t aTicks) {
+  gCrashRequestedByTest = true;
   gCrashAfterTicks = aTicks;
   return NS_OK;
 }
