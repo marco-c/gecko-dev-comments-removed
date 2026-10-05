@@ -33,7 +33,7 @@ NS_INTERFACE_MAP_END
 
 nsINode* HTMLAllCollection::GetParentObject() const { return mDocument; }
 
-uint32_t HTMLAllCollection::Length() { return Collection()->Length(true); }
+uint32_t HTMLAllCollection::Length() { return Collection()->Length(); }
 
 Element* HTMLAllCollection::Item(uint32_t aIndex) {
   nsIContent* item = Collection()->Item(aIndex);
@@ -130,14 +130,14 @@ void HTMLAllCollection::NamedGetter(
   
   
   
-  if (docAllList->Item(1, true)) {
+  if (docAllList->Item(1)) {
     aFound = true;
     aResult.SetValue().SetAsHTMLCollection() = docAllList;
     return;
   }
 
   
-  if (Element* element = docAllList->Item(0, true)) {
+  if (Element* element = docAllList->Item(0)) {
     aFound = true;
     aResult.SetValue().SetAsElement() = element;
     return;

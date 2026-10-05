@@ -43,7 +43,7 @@ nsresult HTMLOptionsCollection::GetOptionIndex(Element* aOption,
                                                bool aForward, int32_t* aIndex) {
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript(),
              "Callers must hold a script blocker");
-  BringSelfUpToDate(true);
+  BringSelfUpToDate();
 
   
   int32_t index;

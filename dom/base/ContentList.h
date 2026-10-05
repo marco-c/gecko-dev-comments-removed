@@ -69,8 +69,6 @@ class BaseContentList : public NodeList {
 
   void Reset() { mElements.Clear(); }
 
-  virtual int32_t IndexOf(nsIContent* aContent, bool aDoFlush);
-
   JSObject* WrapObject(JSContext* cx,
                        JS::Handle<JSObject*> aGivenProto) override = 0;
 
@@ -287,33 +285,21 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
  public:
   
-  int32_t IndexOf(nsIContent* aContent, bool aDoFlush) override;
   int32_t IndexOf(nsIContent* aContent) override;
   nsINode* GetParentObject() override { return mRootNode; }
 
-  uint32_t Length() final { return Length(true); }
+  uint32_t Length() final;
   Element* Item(uint32_t aIndex) final;
-  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override {
-    Element* item = NamedItem(aName, true);
-    aFound = !!item;
-    return item;
-  }
+  Element* GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
   void GetSupportedNames(nsTArray<nsString>& aNames) override {
     GetSupportedNames(aNames, nullptr);
   }
 
   void GetSupportedNames(nsTArray<nsString>& aNames,
                          FilterElementWithName aFilter) {
-    BringSelfUpToDate(true);
+    BringSelfUpToDate();
     HTMLCollection::GetSupportedNames(aNames, aFilter);
   }
-
-  using HTMLCollection::NamedItem;
-
-  
-  uint32_t Length(bool aDoFlush);
-  Element* Item(uint32_t aIndex, bool aDoFlush);
-  Element* NamedItem(const nsAString& aName, bool aDoFlush);
 
   
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -367,7 +353,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
   inline void InvalidateNamedItemsCacheForInsertion(Element&);
   inline void InvalidateNamedItemsCacheForDeletion(Element&);
 
-  void EnsureNamedItemsCacheValid(bool aDoFlush);
+  void EnsureNamedItemsCacheValid();
 
   
 
@@ -431,7 +417,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
 
 
-  void BringSelfUpToDate(bool aDoFlush);
+  void BringSelfUpToDate();
 
   
 
