@@ -5,8 +5,9 @@
 #ifndef TimerThread_h_
 #define TimerThread_h_
 
-#include "TimerThreadMonitor.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/ProfilerUtils.h"
+#include "mozilla/Span.h"
 #include "nsIObserver.h"
 #include "nsIRunnable.h"
 #include "nsIThread.h"
@@ -14,11 +15,184 @@
 #include "nsThreadUtils.h"
 #include "nsTimerImpl.h"
 
+#if defined(XP_WIN)
+#  include <windows.h>
+#endif
+
 
 
 #define TIMER_THREAD_STATISTICS 0
 
 class TimerThread final : public mozilla::Runnable, public nsIObserver {
+ private:
+#if defined(XP_WIN)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class MOZ_CAPABILITY("monitor") HiResWindowsMonitor final {
+   public:
+    explicit HiResWindowsMonitor(const char* aName)
+        : mMutex(aName), mHandles{{
+            CreateWaitableTimerEx(nullptr, nullptr,
+                                  CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+                                  TIMER_ALL_ACCESS),
+            CreateEvent(nullptr, FALSE, FALSE, nullptr),
+            CreateWaitableTimerEx(nullptr, nullptr, 0, TIMER_ALL_ACCESS)
+          }} {
+      
+      
+      
+      
+      
+      MOZ_RELEASE_ASSERT(GetEvent() != nullptr);
+      MOZ_RELEASE_ASSERT(GetLoResTimer() != nullptr);
+    }
+
+    ~HiResWindowsMonitor() {
+      [[maybe_unused]] const BOOL b0 = CloseHandle(GetLoResTimer());
+      MOZ_ASSERT(b0 != 0);
+      [[maybe_unused]] const BOOL b1 = CloseHandle(GetEvent());
+      MOZ_ASSERT(b1 != 0);
+      if (GetHiResTimer()) {
+        [[maybe_unused]] const BOOL b2 = CloseHandle(GetHiResTimer());
+        MOZ_ASSERT(b2 != 0);
+      }
+    }
+
+    MOZ_ALWAYS_INLINE void Lock() MOZ_CAPABILITY_ACQUIRE() { mMutex.Lock(); }
+
+    MOZ_ALWAYS_INLINE void Unlock() MOZ_CAPABILITY_RELEASE() {
+      mMutex.Unlock();
+    }
+
+    
+    void Wait() MOZ_REQUIRES(this) {
+      Unlock();
+      WaitForSingleObject(GetEvent(), INFINITE);
+      Lock();
+    }
+
+   private:
+    void WaitHiRes(const LARGE_INTEGER* aDuration) MOZ_REQUIRES(this) {
+      const BOOL b = SetWaitableTimerEx(GetHiResTimer(), aDuration, 0, nullptr,
+                                        nullptr, nullptr, 0);
+      MOZ_RELEASE_ASSERT(b != 0);
+      mMutex.AssertCurrentThreadOwns();
+      Unlock();
+      const mozilla::Span<const HANDLE, 2> handles{GetHiResHandles()};
+      WaitForMultipleObjects(handles.size(), handles.data(), FALSE, INFINITE);
+      Lock();
+    }
+
+    void WaitLoRes(const LARGE_INTEGER* aDuration, const uint64_t aTolerance_ms)
+        MOZ_REQUIRES(this) {
+      const BOOL b = SetWaitableTimerEx(GetLoResTimer(), aDuration, 0, nullptr,
+                                        nullptr, nullptr, aTolerance_ms);
+      MOZ_RELEASE_ASSERT(b != 0);
+      mMutex.AssertCurrentThreadOwns();
+      Unlock();
+      const mozilla::Span<const HANDLE, 2> handles{GetLoResHandles()};
+      WaitForMultipleObjects(handles.size(), handles.data(), FALSE, INFINITE);
+      Lock();
+    }
+
+   public:
+    
+    void Wait(const uint64_t aDuration_us, const uint64_t aTolerance_ms)
+        MOZ_REQUIRES(this) {
+      
+      
+      const LARGE_INTEGER duration{
+          .QuadPart = static_cast<int64_t>(aDuration_us) * -10LL};
+
+      if (aTolerance_ms <= sHiResThreshold_ms && GetHiResTimer()) {
+        WaitHiRes(&duration);
+      } else {
+        WaitLoRes(&duration, aTolerance_ms);
+      }
+    }
+
+    
+    
+    MOZ_ALWAYS_INLINE void Wait(const double aDuration_us,
+                                const double aTolerance_ms) MOZ_REQUIRES(this) {
+      const uint64_t duration_us =
+          static_cast<uint64_t>(std::max(aDuration_us, 0.0));
+      const uint64_t tolerance_ms =
+          static_cast<uint64_t>(std::max(aTolerance_ms, 0.0));
+      Wait(duration_us, tolerance_ms);
+    }
+
+    
+    
+    void Wait(mozilla::TimeDuration aDuration, mozilla::TimeDuration aTolerance)
+        MOZ_REQUIRES(this) {
+      if (aDuration != TimeDuration::Forever()) {
+        Wait(aDuration.ToMicroseconds(), aTolerance.ToMilliseconds());
+      } else {
+        Wait();
+      }
+    }
+
+    
+    MOZ_ALWAYS_INLINE void Notify() {
+      const BOOL b = SetEvent(GetEvent());
+      MOZ_RELEASE_ASSERT(b != 0);
+    }
+
+    void AssertCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(this) {
+      mMutex.AssertCurrentThreadOwns();
+    }
+
+    void AssertNotCurrentThreadOwns() const MOZ_ASSERT_CAPABILITY(!this) {
+      mMutex.AssertNotCurrentThreadOwns();
+    }
+
+   private:
+    
+    static constexpr uint64_t sHiResThreshold_ms = 16;
+
+    
+    
+    MOZ_ALWAYS_INLINE HANDLE GetHiResTimer() const { return mHandles[0]; }
+    MOZ_ALWAYS_INLINE HANDLE GetEvent() const { return mHandles[1]; }
+    MOZ_ALWAYS_INLINE HANDLE GetLoResTimer() const { return mHandles[2]; }
+
+    
+    
+    MOZ_ALWAYS_INLINE mozilla::Span<const HANDLE, 2> GetHiResHandles() const {
+      return mozilla::Span<const HANDLE, 3>{mHandles}.Subspan<0, 2>();
+    }
+
+    
+    
+    MOZ_ALWAYS_INLINE mozilla::Span<const HANDLE, 2> GetLoResHandles() const {
+      return mozilla::Span<const HANDLE, 3>{mHandles}.Subspan<1, 2>();
+    }
+
+    mozilla::Mutex mMutex;
+    std::array<HANDLE, 3> mHandles;
+  };
+
+  typedef HiResWindowsMonitor TimerThreadMonitor;
+
+#else
+  typedef mozilla::Monitor TimerThreadMonitor;
+#endif
+
+  using TimerThreadMonitorAutoLock =
+      mozilla::MonitorAutoLockBase<TimerThreadMonitor>;
+  using TimerThreadMonitorAutoUnlock =
+      mozilla::MonitorAutoUnlockBase<TimerThreadMonitor>;
+
  public:
   typedef mozilla::MutexAutoLock MutexAutoLock;
   typedef mozilla::TimeStamp TimeStamp;
@@ -69,7 +243,7 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   
-  mozilla::TimerThreadMonitor mMonitor;
+  TimerThreadMonitor mMonitor;
 
   bool mShutdown MOZ_GUARDED_BY(mMonitor);
   bool mWaiting MOZ_GUARDED_BY(mMonitor);
@@ -104,10 +278,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   };
 
   struct Entry final : EntryKey {
-    explicit Entry(nsTimerImpl& aTimerImpl) MOZ_REQUIRES(aTimerImpl.mMutex)
+    explicit Entry(nsTimerImpl& aTimerImpl)
         : EntryKey(aTimerImpl),
           mDelay(aTimerImpl.mDelay),
-          mFiringDelay(aTimerImpl.AcceptableFiringDelay()),
           mTimerImpl(&aTimerImpl) {}
 
     
@@ -127,7 +300,6 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 #endif
 
     TimeDuration mDelay;
-    TimeDuration mFiringDelay;
     RefPtr<nsTimerImpl> mTimerImpl;
   };
 
@@ -147,6 +319,18 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   
   
   WakeupTime ComputeWakeupTimeFromTimers() const MOZ_REQUIRES(mMonitor);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  TimeDuration ComputeAcceptableFiringDelay(TimeDuration timerDuration,
+                                            TimeDuration minDelay,
+                                            TimeDuration maxDelay) const;
 
   
   
@@ -171,12 +355,9 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
 
   
   
-  TimeStamp mLatestIntendedWakeupTime;
-
-#if TIMER_THREAD_STATISTICS
-  
   TimeStamp mIntendedWakeupTime;
 
+#if TIMER_THREAD_STATISTICS
   static constexpr size_t sTimersFiredPerWakeupBucketCount = 16;
   static inline constexpr std::array<size_t, sTimersFiredPerWakeupBucketCount>
       sTimersFiredPerWakeupThresholds = {
@@ -218,4 +399,4 @@ class TimerThread final : public mozilla::Runnable, public nsIObserver {
   void PrintStatistics() const;
 #endif
 };
-#endif 
+#endif

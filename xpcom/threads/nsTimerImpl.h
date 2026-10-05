@@ -120,9 +120,6 @@ class nsTimerImpl {
   }
 
   
-  mozilla::TimeDuration AcceptableFiringDelay() const MOZ_REQUIRES(mMutex);
-
-  
   bool IsInTimerThread() const { return mIsInTimerThread; }
 
   

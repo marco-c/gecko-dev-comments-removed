@@ -4,6 +4,8 @@
 
 #include "TimerThread.h"
 
+#include <bit>
+
 #include "GeckoProfiler.h"
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ChaosMode.h"
@@ -614,6 +616,11 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
 
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
+
   
   
   
@@ -622,7 +629,9 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
   
-  TimeStamp cutoffTime = bundleWakeup + mTimers[0].mFiringDelay;
+  TimeStamp cutoffTime =
+      bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
+                                                  minTimerDelay, maxTimerDelay);
 
   const size_t timerCount = mTimers.Length();
   for (size_t entryIndex = 1; entryIndex < timerCount; ++entryIndex) {
@@ -642,13 +651,30 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
     
     
     bundleWakeup = curTimerDue;
-    cutoffTime = std::min(curTimerDue + curEntry.mFiringDelay, cutoffTime);
+    const TimeDuration timerDelay = ComputeAcceptableFiringDelay(
+        curEntry.mDelay, minTimerDelay, maxTimerDelay);
+    cutoffTime = std::min(curTimerDue + timerDelay, cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
-  MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <= mTimers[0].mFiringDelay);
+  MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <=
+             ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
+                                          maxTimerDelay));
 
   return {bundleWakeup, cutoffTime - bundleWakeup};
+}
+
+TimeDuration TimerThread::ComputeAcceptableFiringDelay(
+    TimeDuration timerDuration, TimeDuration minDelay,
+    TimeDuration maxDelay) const {
+  
+  
+  
+  constexpr int64_t timerDurationDivider = 8;
+  static_assert(
+      std::has_single_bit(static_cast<uint64_t>(timerDurationDivider)));
+  const TimeDuration tmp = timerDuration / timerDurationDivider;
+  return std::clamp(tmp, minDelay, maxDelay);
 }
 
 uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
@@ -743,7 +769,11 @@ void TimerThread::Wait(TimeDuration aWaitFor, TimeDuration aTolerance)
   mNotified = false;
   {
     AUTO_PROFILER_MARKER("TimerThread::Wait", OTHER);
+#if defined(XP_WIN)
     mMonitor.Wait(aWaitFor, aTolerance);
+#else
+    mMonitor.Wait(aWaitFor);
+#endif
   }
   mWaiting = false;
 }
@@ -793,8 +823,7 @@ TimerThread::Run() {
 
       
       const auto [wakeupTime, wakeupTolerance] = ComputeWakeupTimeFromTimers();
-      mLatestIntendedWakeupTime =
-          wakeupTime.IsNull() ? TimeStamp{} : wakeupTime + wakeupTolerance;
+      mIntendedWakeupTime = wakeupTime;
       waitTolerance = wakeupTolerance;
 
       
@@ -803,7 +832,6 @@ TimerThread::Run() {
 
 #if TIMER_THREAD_STATISTICS
       CollectTimersFiredStatistics(timersFiredThisWakeup);
-      mIntendedWakeupTime = wakeupTime;
 #endif
 
       
@@ -822,10 +850,7 @@ TimerThread::Run() {
                   ("waiting for %f\n", waitFor.ToMilliseconds()));
       }
     } else {
-      mLatestIntendedWakeupTime = TimeStamp{};
-#if TIMER_THREAD_STATISTICS
       mIntendedWakeupTime = TimeStamp{};
-#endif
       
       
       
@@ -878,11 +903,15 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   
   
   
-  const TimeDuration firingDelay = aTimer->AcceptableFiringDelay();
-  
+  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
+  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
+      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
+  const TimeDuration firingDelay = ComputeAcceptableFiringDelay(
+      aTimer->mDelay, minTimerDelay, maxTimerDelay);
   const bool firingBeforeNextWakeup =
-      mLatestIntendedWakeupTime.IsNull() ||
-      (aTimer->mTimeout + firingDelay < mLatestIntendedWakeupTime);
+      mIntendedWakeupTime.IsNull() ||
+      (aTimer->mTimeout + firingDelay < mIntendedWakeupTime);
   const bool wakeUpTimerThread =
       mWaiting && (firingBeforeNextWakeup || aTimer->mDelay.IsZero());
 
