@@ -2294,9 +2294,10 @@ void Navigation::CreateNavigationActivationFrom(
 
 void Navigation::SetSerializedStateIntoOngoingAPIMethodTracker(
     nsIStructuredCloneContainer* aSerializedState) {
-  MOZ_DIAGNOSTIC_ASSERT(mOngoingAPIMethodTracker);
   
-  mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker->SetSerializedState(aSerializedState);
+  }
 }
 
 }  
