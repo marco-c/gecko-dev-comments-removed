@@ -150,19 +150,30 @@ class MicroTaskQueueElement {
  public:
   
   
-  
-  
-  
-  
-  
-  using Kind = JS::MicroTask::Kind;
+  enum class Kind : uint8_t {
+    Embedder = JS::MicroTask::Kind::Embedder,
+
+    
+    DefaultJSTask = JS::MicroTask::Kind::FirstJSKind,
+
+    
+
+    
+    
+    
+    LastQueueElementKind
+  };
+
+  static_assert(static_cast<uint8_t>(Kind::LastQueueElementKind) <
+                JS::MicroTask::Kind::EndJSKind);
 
   
   
   
   template <typename... Args>
   explicit MicroTaskQueueElement(Kind kind, Args&&... args)
-      : microTask_(kind, std::forward<Args>(args)...) {}
+      : microTask_(static_cast<JS::MicroTask::Kind>(kind),
+                   std::forward<Args>(args)...) {}
 
   explicit MicroTaskQueueElement(const JS::MicroTask& microTask)
       : microTask_(microTask) {}
@@ -195,12 +206,23 @@ struct MicroTaskQueueSet {
   MicroTaskQueueSet(const MicroTaskQueueSet&) = delete;
   MicroTaskQueueSet& operator=(const MicroTaskQueueSet&) = delete;
 
-  bool enqueueRegularMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
-                               const JS::Value&);
+  template <typename... Args>
+  bool enqueueRegularMicroTask(JSContext* cx, MicroTaskQueueElement::Kind kind,
+                               Args&&... args) {
+    JS_LOG(mtq, Verbose, "JS: Enqueue Regular MT");
+    JS::JobQueueMayNotBeEmpty(cx);
+    return microTaskQueue.emplaceBack(kind, std::forward<Args>(args)...);
+  }
   bool enqueueRegularMicroTask(JSContext* cx, const JS::MicroTask&);
-  bool enqueueDebugMicroTask(JSContext* cx, MicroTaskQueueElement::Kind,
-                             const JS::Value&);
+
+  template <typename... Args>
+  bool enqueueDebugMicroTask(JSContext* cx, MicroTaskQueueElement::Kind kind,
+                             Args&&... args) {
+    JS_LOG(mtq, Verbose, "JS: Enqueue Debug MT");
+    return debugMicroTaskQueue.emplaceBack(kind, std::forward<Args>(args)...);
+  }
   bool enqueueDebugMicroTask(JSContext* cx, const JS::MicroTask&);
+
   bool prependRegularMicroTask(JSContext* cx, const JS::MicroTask&);
 
   mozilla::Maybe<JS::MicroTask> popFront();

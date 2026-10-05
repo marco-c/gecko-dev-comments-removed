@@ -97,7 +97,13 @@ class MicroTask {
     return MicroTask(Kind::Embedder, JS::PrivateValue(ptr));
   }
 
-  bool isJS() const { return kind_ == Kind::JS; }
+  bool isJS() const {
+    if (kind_ >= Kind::FirstJSKind) {
+      MOZ_ASSERT(kind_ < Kind::EndJSKind);
+      return true;
+    }
+    return false;
+  }
   bool isEmbedder() const { return kind_ == Kind::Embedder; }
 
   
@@ -141,10 +147,20 @@ class MicroTask {
   
   
   
-  enum class Kind : uint8_t { Embedder, JS };
+  
+  
+  
+  static constexpr uint8_t JSKindsAllocated = 16;
+  enum Kind : uint8_t {
+    Embedder = 0,
+    FirstJSKind,
+    EndJSKind = FirstJSKind + JSKindsAllocated,
+  };
 
   explicit MicroTask(Kind kind, const JS::Value& value)
-      : kind_(kind), value_(value) {}
+      : kind_(kind), value_(value) {
+    MOZ_ASSERT(kind_ < Kind::EndJSKind);
+  }
 
   Kind kind_;
   JS::Value value_;
