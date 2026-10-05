@@ -144,6 +144,11 @@ class MicroTask {
   
   
   
+  uint8_t kind() const { return kind_; }
+
+  
+  
+  
   
   
   
