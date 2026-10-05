@@ -309,7 +309,8 @@ nsLoadGroup::GetLoadFlags(uint32_t* aLoadFlags) {
 
 NS_IMETHODIMP
 nsLoadGroup::SetLoadFlags(uint32_t aLoadFlags) {
-  mLoadFlags = aLoadFlags;
+  MOZ_ASSERT(!(aLoadFlags & ~kInheritedLoadFlags));
+  mLoadFlags = aLoadFlags & kInheritedLoadFlags;
   return NS_OK;
 }
 
@@ -356,10 +357,7 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
   if (mDefaultLoadRequest) {
     mDefaultLoadRequest->GetLoadFlags(&mLoadFlags);
     
-    
-    
-    
-    mLoadFlags &= nsIRequest::LOAD_INHERIT_MASK;
+    mLoadFlags &= kInheritedLoadFlags;
 
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(aRequest);
     mDefaultLoadIsTimed = timedChannel != nullptr;
@@ -1036,10 +1034,9 @@ void nsLoadGroup::TelemetryReportChannel(nsITimedChannel* aTimedChannel,
 
 nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
                                      nsLoadFlags& outFlags) {
-  nsresult rv;
+  MOZ_ASSERT(!(mLoadFlags & ~kInheritedLoadFlags));
   nsLoadFlags flags, oldFlags;
-
-  rv = aRequest->GetLoadFlags(&flags);
+  nsresult rv = aRequest->GetLoadFlags(&flags);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1047,10 +1044,7 @@ nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
   oldFlags = flags;
 
   
-  flags |= mLoadFlags & kInheritedLoadFlags;
-
-  
-  flags |= mDefaultLoadFlags;
+  flags |= mLoadFlags | mDefaultLoadFlags;
 
   if (flags != oldFlags) {
     rv = aRequest->SetLoadFlags(flags);
@@ -1062,10 +1056,9 @@ nsresult nsLoadGroup::MergeLoadFlags(nsIRequest* aRequest,
 
 nsresult nsLoadGroup::MergeDefaultLoadFlags(nsIRequest* aRequest,
                                             nsLoadFlags& outFlags) {
-  nsresult rv;
   nsLoadFlags flags, oldFlags;
 
-  rv = aRequest->GetLoadFlags(&flags);
+  nsresult rv = aRequest->GetLoadFlags(&flags);
   if (NS_FAILED(rv)) {
     return rv;
   }
