@@ -36,11 +36,11 @@ class Symbol
   JSAtom* description() const { return headerPtr(); }
 
  private:
-  SymbolCode code_;
+  const SymbolCode code_;
 
   
   
-  js::HashNumber hash_;
+  const js::HashNumber hash_;
 
   Symbol(SymbolCode code, js::HashNumber hash, Handle<JSAtom*> desc)
       : CellWithTenuredGCPointer(desc), code_(code), hash_(hash) {}
@@ -92,10 +92,6 @@ class Symbol
 
   
   bool isPermanentAndMayBeShared() const { return isWellKnownSymbol(); }
-
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mallocSizeOf(this);
-  }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;  
