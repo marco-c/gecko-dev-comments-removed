@@ -418,18 +418,19 @@ bool nsBaseFilePicker::IsPotentiallyReadableDirectory(nsIFile& aDirectory) {
 #ifdef XP_MACOSX
   
   return true;
-#endif
-#ifdef MOZ_WIDGET_GTK
+#else
+#  ifdef MOZ_WIDGET_GTK
   if (mozilla::widget::IsRunningUnderFlatpakOrSnap()) {
     
     
     return true;
   }
-#endif
+#  endif
   bool isDirectory = false;
   bool isReadable = false;
   return NS_SUCCEEDED(aDirectory.IsDirectory(&isDirectory)) && isDirectory &&
          NS_SUCCEEDED(aDirectory.IsReadable(&isReadable)) && isReadable;
+#endif
 }
 
 bool nsBaseFilePicker::IsContentInitiated() const {
