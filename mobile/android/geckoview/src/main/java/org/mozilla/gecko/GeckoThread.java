@@ -382,7 +382,11 @@ public class GeckoThread extends Thread {
     }
   }
 
-  private static ArrayList<String> getEnvFromExtras(final Bundle extras) {
+  
+
+
+
+  public static ArrayList<String> getEnvFromExtras(final Bundle extras) {
     if (extras == null) {
       return new ArrayList<>();
     }
