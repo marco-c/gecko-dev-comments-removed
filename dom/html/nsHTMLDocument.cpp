@@ -826,14 +826,6 @@ void nsHTMLDocument::GetFormsAndFormControls(ContentList** aFormList,
                                              ContentList** aFormControlList) {
   RefPtr<ContentListHolder> holder = mContentListHolder;
   if (!holder) {
-    
-    
-    
-    
-    
-    
-    FlushPendingNotifications(FlushType::Content);
-
     RefPtr<ContentList> htmlForms = GetExistingForms();
     if (!htmlForms) {
       

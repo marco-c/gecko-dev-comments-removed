@@ -27,13 +27,12 @@ static bool MatchOption(Element* aElement, int32_t aNamespaceID, nsAtom* aAtom,
   return HTMLOptionsCollection::IsValidOption(*option, *root);
 }
 
-HTMLOptionsCollection::HTMLOptionsCollection(HTMLSelectElement* aRoot,
-                                             bool aFromParser)
+HTMLOptionsCollection::HTMLOptionsCollection(HTMLSelectElement* aRoot)
     : ContentList(aRoot, MatchOption, nullptr, aRoot,
                    true,  nullptr,
                    kNameSpaceID_None,
                    false,
-                   true, aFromParser) {}
+                   true) {}
 
 HTMLSelectElement* HTMLOptionsCollection::Select() const {
   return static_cast<HTMLSelectElement*>(mRootNode);

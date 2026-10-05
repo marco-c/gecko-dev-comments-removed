@@ -251,15 +251,11 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
 
 
-
-
   ContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
               nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom, bool aDeep = true,
-              bool aLiveList = true, bool aKnownParserCreated = false);
+              bool aLiveList = true);
 
   
-
-
 
 
 
@@ -281,8 +277,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
               nsContentListDestroyFunc aDestroyFunc, void* aData,
               bool aDeep = true, nsAtom* aMatchAtom = nullptr,
               int32_t aMatchNameSpaceId = kNameSpaceID_None,
-              bool aFuncMayDependOnAttr = true, bool aLiveList = true,
-              bool aKnownParserCreated = false);
+              bool aFuncMayDependOnAttr = true, bool aLiveList = true);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -492,10 +487,6 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
 
   bool mFuncMayDependOnAttr : 1;
-  
-
-
-  bool mFlushesNeeded : 1;
   
 
 

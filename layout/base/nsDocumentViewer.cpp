@@ -611,18 +611,6 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
 
   AttachToTopLevelWidget();
 
-  if (aDoInitialReflow) {
-    
-    
-    
-    
-    
-    
-    
-    
-    mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
-  }
-
   mPresShell->BeginObservingDocument();
 
   

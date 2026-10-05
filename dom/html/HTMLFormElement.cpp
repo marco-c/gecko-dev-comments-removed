@@ -638,11 +638,6 @@ nsresult HTMLFormElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
 nsresult HTMLFormElement::DoReset() {
   
-  if (Document* doc = GetComposedDoc()) {
-    doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-  }
-
-  
   uint32_t numElements = mControls->Length();
   for (uint32_t elementX = 0; elementX < numElements; ++elementX) {
     
@@ -668,11 +663,6 @@ nsresult HTMLFormElement::DoReset() {
 nsresult HTMLFormElement::DoSubmit(Event* aEvent) {
   Document* doc = GetComposedDoc();
   NS_ASSERTION(doc, "Should never get here without a current doc");
-
-  
-  if (doc) {
-    doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-  }
 
   
   

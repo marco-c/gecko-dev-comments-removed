@@ -2,7 +2,6 @@
 
 
 
-
 #include "XPathResult.h"
 
 #include "mozilla/dom/Attr.h"
@@ -82,10 +81,6 @@ nsINode* XPathResult::IterateNext(ErrorResult& aRv) {
   if (!isIterator()) {
     aRv.ThrowTypeError("Result is not an iterator");
     return nullptr;
-  }
-
-  if (mDocument) {
-    mDocument->FlushPendingNotifications(FlushType::Content);
   }
 
   if (mInvalidIteratorState) {

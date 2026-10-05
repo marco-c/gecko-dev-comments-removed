@@ -20,14 +20,10 @@ namespace mozilla {
 
 
 enum class FlushType : uint8_t {
-  None,             
-  Event,            
-  Content,          
-  ContentAndNotify, 
-
-
-  Style,            
-  Frames,           
+  None,   
+  Event,  
+  Style,  
+  Frames, 
   EnsurePresShellInitAndFrames, 
 
   InterruptibleLayout, 
@@ -43,8 +39,6 @@ const EnumeratedArray<FlushType, const char*, size_t(FlushType::Count)>
     kFlushTypeNames = {
   "",
   "Event",
-  "Content",
-  "ContentAndNotify",
   "Style",
   
   

@@ -11989,15 +11989,15 @@ void Document::FlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
 
   RefPtr<Document> documentOnStack = this;
 
+  if (flushType < FlushType::Style) {
+    
+    return;
+  }
+
   
   
   
-  
-  
-  
-  if ((!IsHTMLDocument() || (flushType > FlushType::ContentAndNotify &&
-                             mPresShell && !mPresShell->DidInitialize())) &&
-      (mParser || mWeakSink)) {
+  if (mPresShell && !mPresShell->DidInitialize() && (mParser || mWeakSink)) {
     nsCOMPtr<nsIContentSink> sink;
     if (mParser) {
       sink = mParser->GetContentSink();
@@ -12009,17 +12009,12 @@ void Document::FlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     }
     
     
-    if (sink && (flushType == FlushType::Content || IsSafeToFlush())) {
+    if (sink && IsSafeToFlush()) {
       sink->FlushPendingNotifications(flushType);
     }
   }
 
   
-
-  if (flushType <= FlushType::ContentAndNotify) {
-    
-    return;
-  }
 
   
   

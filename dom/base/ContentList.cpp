@@ -252,7 +252,7 @@ static StaticAutoPtr<nsTHashtable<CacheableFuncStringContentList::HashEntry>>
 
 ContentList::ContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
                          nsAtom* aHTMLMatchAtom, nsAtom* aXMLMatchAtom,
-                         bool aDeep, bool aLiveList, bool aKnownParserCreated)
+                         bool aDeep, bool aLiveList)
     : mRootNode(aRootNode),
       mMatchNameSpaceId(aMatchNameSpaceId),
       mHTMLMatchAtom(aHTMLMatchAtom),
@@ -277,21 +277,13 @@ ContentList::ContentList(nsINode* aRootNode, int32_t aMatchNameSpaceId,
     SetEnabledCallbacks(nsIMutationObserver::kNodeWillBeDestroyed);
     mRootNode->AddMutationObserver(this);
   }
-
-  
-  
-  
-  
-  
-  mFlushesNeeded = (aKnownParserCreated || aRootNode->IsInUncomposedDoc()) &&
-                   !mIsHTMLDocument;
 }
 
 ContentList::ContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
                          nsContentListDestroyFunc aDestroyFunc, void* aData,
                          bool aDeep, nsAtom* aMatchAtom,
                          int32_t aMatchNameSpaceId, bool aFuncMayDependOnAttr,
-                         bool aLiveList, bool aKnownParserCreated)
+                         bool aLiveList)
     : mRootNode(aRootNode),
       mMatchNameSpaceId(aMatchNameSpaceId),
       mHTMLMatchAtom(aMatchAtom),
@@ -313,10 +305,6 @@ ContentList::ContentList(nsINode* aRootNode, nsContentListMatchFunc aFunc,
     SetEnabledCallbacks(nsIMutationObserver::kNodeWillBeDestroyed);
     mRootNode->AddMutationObserver(this);
   }
-
-  
-  mFlushesNeeded = (aKnownParserCreated || aRootNode->IsInUncomposedDoc()) &&
-                   !aRootNode->OwnerDoc()->IsHTMLDocument();
 }
 
 ContentList::~ContentList() {
@@ -345,15 +333,6 @@ uint32_t ContentList::Length(bool aDoFlush) {
 }
 
 Element* ContentList::Item(uint32_t aIndex, bool aDoFlush) {
-  if (mRootNode && aDoFlush && mFlushesNeeded) {
-    
-    Document* doc = mRootNode->GetUncomposedDoc();
-    if (doc) {
-      
-      doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-    }
-  }
-
   if (mState != State::UpToDate) {
     PopulateSelf(std::min(aIndex, UINT32_MAX - 1) + 1);
   }
@@ -870,14 +849,6 @@ void ContentList::RemoveFromHashtable() {
 }
 
 void ContentList::BringSelfUpToDate(bool aDoFlush) {
-  if (mFlushesNeeded && mRootNode && aDoFlush) {
-    
-    if (Document* doc = mRootNode->GetUncomposedDoc()) {
-      
-      doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-    }
-  }
-
   if (mState != State::UpToDate) {
     PopulateSelf(uint32_t(-1));
   }

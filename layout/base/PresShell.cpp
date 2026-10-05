@@ -4608,12 +4608,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   
   doc->FlushExternalResources(flushType);
 
-  
-  
-  
-  
-  doc->FlushPendingNotifications(FlushType::ContentAndNotify);
-
   doc->UpdateSVGUseElementShadowTrees();
 
   
