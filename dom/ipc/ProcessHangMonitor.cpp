@@ -1004,7 +1004,7 @@ mozilla::ipc::IPCResult HangMonitorParent::RecvHangEvidence(
   
   nsAutoString crashId;
 
-  mHangMonitor->InitiateCPOWTimeout();
+  mHangMonitor->InitiateReplyTimeout();
 
   MonitorAutoLock lock(mMonitor);
 
@@ -1022,7 +1022,7 @@ mozilla::ipc::IPCResult HangMonitorParent::RecvClearHang() {
     return IPC_OK();
   }
 
-  mHangMonitor->InitiateCPOWTimeout();
+  mHangMonitor->InitiateReplyTimeout();
 
   MonitorAutoLock lock(mMonitor);
 
@@ -1198,7 +1198,7 @@ static bool InterruptCallback(JSContext* cx) {
 
 ProcessHangMonitor* ProcessHangMonitor::sInstance;
 
-ProcessHangMonitor::ProcessHangMonitor() : mCPOWTimeout(false) {
+ProcessHangMonitor::ProcessHangMonitor() : mReplyTimeout(false) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (XRE_IsContentProcess()) {
@@ -1267,19 +1267,19 @@ bool ProcessHangMonitor::IsDebuggerStartupComplete() {
   return HangMonitorChild::Get()->IsDebuggerStartupComplete();
 }
 
-bool ProcessHangMonitor::ShouldTimeOutCPOWs() {
+bool ProcessHangMonitor::ShouldTimeOutReplies() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  if (mCPOWTimeout) {
-    mCPOWTimeout = false;
+  if (mReplyTimeout) {
+    mReplyTimeout = false;
     return true;
   }
   return false;
 }
 
-void ProcessHangMonitor::InitiateCPOWTimeout() {
+void ProcessHangMonitor::InitiateReplyTimeout() {
   MOZ_RELEASE_ASSERT(IsOnThread());
-  mCPOWTimeout = true;
+  mReplyTimeout = true;
 }
 
 static already_AddRefed<PProcessHangMonitorParent> CreateHangMonitorParent(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_ProcessHangMonitor_h
 #define mozilla_ProcessHangMonitor_h
 
@@ -78,8 +76,8 @@ class ProcessHangMonitor final : public nsIObserver {
 
   bool IsDebuggerStartupComplete();
 
-  void InitiateCPOWTimeout();
-  bool ShouldTimeOutCPOWs();
+  void InitiateReplyTimeout();
+  bool ShouldTimeOutReplies();
 
   nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable);
   bool IsOnThread();
@@ -87,7 +85,7 @@ class ProcessHangMonitor final : public nsIObserver {
  private:
   static ProcessHangMonitor* sInstance;
 
-  Atomic<bool> mCPOWTimeout;
+  Atomic<bool> mReplyTimeout;
 
   nsCOMPtr<nsIThread> mThread;
 };
