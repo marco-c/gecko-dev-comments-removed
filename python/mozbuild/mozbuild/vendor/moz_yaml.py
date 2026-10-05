@@ -165,8 +165,6 @@ def _schema_1():
             Required("url"): FqdnUrl(),
             Required("license"): Msg(License(), msg="Unsupported License"),
             "license-file": All(str, Length(min=1)),
-            
-            "npm-name": All(str, Length(min=1)),
             Required("release"): All(str, Length(min=1)),
             
             
