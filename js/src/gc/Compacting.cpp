@@ -837,8 +837,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
     
     traceEmbeddingGrayRoots(&trc);
-    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
-        &trc, Compartment::GrayEdges);
+    traceIncomingCrossCompartmentEdgesForZoneGC(&trc, GrayEdges);
   }
 
   

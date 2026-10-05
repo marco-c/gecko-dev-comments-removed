@@ -232,11 +232,30 @@ void js::gc::GCRuntime::traceRuntimeForMajorGC(JSTracer* trc,
     
     
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_CCWS);
-    Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
-        trc, Compartment::NonGrayEdges);
+    traceIncomingCrossCompartmentEdgesForZoneGC(trc, NonGrayEdges);
   }
 
   traceRuntimeCommon(trc, MarkRuntime);
+}
+
+void js::gc::GCRuntime::traceIncomingCrossCompartmentEdgesForZoneGC(
+    JSTracer* trc, gc::EdgeSelector whichEdges) {
+  MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+
+  for (ZonesIter zone(trc->runtime(), SkipAtoms); !zone.done(); zone.next()) {
+    if (zone->isCollectingFromAnyThread()) {
+      continue;
+    }
+
+    for (CompartmentsInZoneIter c(zone); !c.done(); c.next()) {
+      c->traceWrapperTargetsInCollectedZones(trc, whichEdges);
+    }
+  }
+
+  
+  if (whichEdges != gc::GrayEdges) {
+    DebugAPI::traceCrossCompartmentEdges(trc);
+  }
 }
 
 void js::gc::GCRuntime::traceRuntimeForMinorGC(JSTracer* trc,
@@ -398,7 +417,7 @@ IncrementalProgress GCRuntime::traceEmbeddingGrayRoots(JSTracer* trc,
 
 #ifdef DEBUG
 class AssertNoRootsTracer final : public JS::CallbackTracer {
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     MOZ_CRASH("There should not be any roots during runtime shutdown");
   }
 
