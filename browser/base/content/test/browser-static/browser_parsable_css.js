@@ -269,6 +269,10 @@ let propNameAllowlist = [
   
   
   { propName: "--fc-icon-success-color", isFromDevTools: false },
+
+  
+  
+  { propName: "--theme-preview-rtl-flip", isFromDevTools: false },
 ];
 
 
