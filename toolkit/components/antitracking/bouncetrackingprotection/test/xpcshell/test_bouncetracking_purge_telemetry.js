@@ -145,3 +145,16 @@ add_task(async function test_purging_increments_classified_tracker_counter() {
   
   Services.fog.testResetFOG();
 });
+
+add_task(async function test_purge_ping_submitted_on_idle_daily() {
+  let submitted = false;
+  GleanPings.bounceTrackingProtection.testBeforeNextSubmit(() => {
+    submitted = true;
+  });
+
+  
+  
+  btp.QueryInterface(Ci.nsIObserver).observe(null, "idle-daily", null);
+
+  Assert.ok(submitted, "idle-daily submitted the purge telemetry ping");
+});
