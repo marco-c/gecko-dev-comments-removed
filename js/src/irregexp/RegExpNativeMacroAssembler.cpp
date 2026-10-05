@@ -468,21 +468,25 @@ void SMRegExpMacroAssembler::EmitSkipUntilBitInTableSimd(
   masm_.compareInt8x16(Assembler::Equal, result, bitmask, result);
 
   
+  
+  
+  
 #  if defined(JS_CODEGEN_ARM64)
-  masm_.bitmaskInt8x16(result, temp1_, bitmask);
-#  elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  masm_.nibbleMaskInt8x16(result, temp1_, bitmask);
+  masm_.branchTestPtr(Assembler::Zero, temp1_, temp1_, &advanceVector);
+  masm_.ctz64(js::jit::Register64(temp1_), js::jit::Register64(temp0_));
+  masm_.rshiftPtr(Imm32(2), temp0_);
+#  elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
+      defined(JS_CODEGEN_LOONG64)
   masm_.bitmaskInt8x16(result, temp1_);
-#  elif defined(JS_CODEGEN_LOONG64)
-  masm_.bitmaskInt8x16(result, temp1_);
+  masm_.branchTest32(Assembler::Zero, temp1_, temp1_, &advanceVector);
+  masm_.ctz32(temp1_, temp0_, true);
 #  else
 #    error Unsupported SIMD architecture
 #  endif
 
-  masm_.branchTest32(Assembler::Zero, temp1_, temp1_, &advanceVector);
-
   
   
-  masm_.ctz32(temp1_, temp0_, true);
   masm_.addPtr(temp0_, current_position_);
   masm_.jump(LabelOrBacktrack(on_match));
 

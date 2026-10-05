@@ -1489,6 +1489,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void rightShiftInt64x2(FloatRegister lhs, Register rhs, FloatRegister dest,
                          bool isUnsigned);
 
+  
+  
+  inline void nibbleMaskInt8x16(FloatRegister src, Register dest,
+                                FloatRegister temp);
+
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister) {
     Fmov(ARMRegister(dest.valueReg(), 64), ARMFPRegister(src, 64));
   }
