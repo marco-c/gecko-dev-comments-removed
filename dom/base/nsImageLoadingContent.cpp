@@ -1399,30 +1399,26 @@ CSSIntSize nsImageLoadingContent::NaturalSize(
     return {};
   }
 
+  
+  
+  
+  
+  
+  
   CSSIntSize size;  
-  if (!StaticPrefs::image_natural_size_fallback_enabled()) {
-    size.width = intrinsicSize.mWidth.valueOr(0);
-    size.height = intrinsicSize.mHeight.valueOr(0);
-  } else {
-    
-    
-    
-    
-    
-    
-    size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
-    size.height =
-        intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
-    AspectRatio ratio = image->GetIntrinsicRatio();
-    if (ratio) {
-      if (!intrinsicSize.mHeight) {
-        
-        
-        size.height = ratio.Inverted().ApplyTo(size.width);
-      } else if (!intrinsicSize.mWidth) {
-        
-        size.width = ratio.ApplyTo(size.height);
-      }
+  size.width = intrinsicSize.mWidth.valueOr(kFallbackIntrinsicWidthInPixels);
+  size.height =
+      intrinsicSize.mHeight.valueOr(kFallbackIntrinsicHeightInPixels);
+
+  AspectRatio ratio = image->GetIntrinsicRatio();
+  if (ratio) {
+    if (!intrinsicSize.mHeight) {
+      
+      
+      size.height = ratio.Inverted().ApplyTo(size.width);
+    } else if (!intrinsicSize.mWidth) {
+      
+      size.width = ratio.ApplyTo(size.height);
     }
   }
 
@@ -1451,23 +1447,17 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
   }
 
   CSSIntSize size;
-  nsCOMPtr<imgIContainer> image;
-  if (StaticPrefs::image_natural_size_fallback_enabled()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    size = NaturalSize(DoDensityCorrection::No);
-  } else if (mCurrentRequest) {
-    mCurrentRequest->GetImage(getter_AddRefs(image));
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size = NaturalSize(DoDensityCorrection::No);
 
   
   
@@ -1478,15 +1468,11 @@ CSSIntSize nsImageLoadingContent::GetWidthHeightForImage() {
   if ((value = element->GetParsedAttr(nsGkAtoms::width)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.width = value->GetIntegerValue();
-  } else if (image) {
-    image->GetWidth(&size.width);
   }
 
   if ((value = element->GetParsedAttr(nsGkAtoms::height)) &&
       value->Type() == nsAttrValue::eInteger) {
     size.height = value->GetIntegerValue();
-  } else if (image) {
-    image->GetHeight(&size.height);
   }
 
   NS_ASSERTION(size.width >= 0, "negative width");
