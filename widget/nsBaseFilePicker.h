@@ -67,7 +67,8 @@ class nsBaseFilePicker : public nsIFilePicker {
                                                mozilla::TimeStamp aNow,
                                                uint32_t aProtectionMs);
 
-  static bool IsReadableDirectory(nsIFile& aDirectory);
+  
+  static bool IsPotentiallyReadableDirectory(nsIFile& aDirectory);
 
  protected:
   virtual ~nsBaseFilePicker();
