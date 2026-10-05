@@ -37,7 +37,6 @@ sys.path.insert(0, str(OUR_DIR))
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosectionlabel",
     "sphinx.ext.doctest",
     "sphinx.ext.graphviz",
     "sphinx.ext.napoleon",
@@ -163,13 +162,6 @@ html_context = {
     "github_repo": "firefox",
     "github_version": "main",
 }
-
-
-
-
-
-
-autosectionlabel_maxdepth = 1
 
 
 def install_sphinx_design(app, pagename, templatename, context, doctree):
