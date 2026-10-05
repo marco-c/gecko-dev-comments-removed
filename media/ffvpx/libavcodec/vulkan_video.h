@@ -20,6 +20,7 @@
 #define AVCODEC_VULKAN_VIDEO_H
 
 #include "avcodec.h"
+#include "libavutil/refstruct.h"
 #include "libavutil/vulkan.h"
 
 #include <vk_video/vulkan_video_codecs_common.h>
@@ -29,14 +30,44 @@
 #define CODEC_VER_PAT(ver) (ver & ((1 << 12) - 1))
 #define CODEC_VER(ver) CODEC_VER_MAJ(ver), CODEC_VER_MIN(ver), CODEC_VER_PAT(ver)
 
+
+typedef struct FFVkVideoDPBImage {
+    VkImage img;
+    VkDeviceMemory mem;
+    VkImageView view;
+    VkImageAspectFlags aspect;
+    VkImageLayout layout;
+} FFVkVideoDPBImage;
+
+
+typedef struct FFVkVideoDPB {
+    
+
+    FFVulkanContext *s;
+
+    AVRefStructPool *img_pool; 
+
+    VkDevice dev;
+    const VkAllocationCallbacks *alloc;
+    PFN_vkDestroyImageView destroy_image_view;
+    PFN_vkDestroyImage destroy_image;
+    PFN_vkFreeMemory free_memory;
+
+    VkFormat format;
+    VkImageUsageFlags usage;
+    VkImageTiling tiling;
+    void *create_pnext;
+    int width, height, nb_layers;
+} FFVkVideoDPB;
+
 typedef struct FFVkVideoSession {
     VkVideoSessionKHR session;
     VkDeviceMemory *mem;
     uint32_t nb_mem;
 
-    AVBufferRef *dpb_hwfc_ref;
+    FFVkVideoDPB *dpb;
     int layered_dpb;
-    AVFrame *layered_frame;
+    FFVkVideoDPBImage *layered_img;
     VkImageView layered_view;
     VkImageAspectFlags layered_aspect;
 } FFVkVideoCommon;
@@ -81,9 +112,17 @@ StdVideoAV1Profile     ff_vk_av1_profile_to_vk(int profile);
 
 
 
-int ff_vk_create_view(FFVulkanContext *s, FFVkVideoCommon *common,
-                      VkImageView *view, VkImageAspectFlags *aspect,
-                      AVVkFrame *src, VkFormat vkf, VkImageUsageFlags flags);
+int ff_vk_create_view(FFVulkanContext *s, VkImageView *view,
+                      VkImageAspectFlags *aspect, VkImage img,
+                      VkFormat vkf, VkImageUsageFlags usage, int layered);
+
+
+
+
+int ff_vk_video_dpb_init(FFVulkanContext *s, FFVkVideoCommon *common,
+                         VkFormat format, VkImageUsageFlags usage,
+                         VkImageTiling tiling, void *create_pnext,
+                         int width, int height, int nb_layers);
 
 
 
