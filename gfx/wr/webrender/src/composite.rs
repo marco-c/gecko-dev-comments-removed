@@ -259,7 +259,7 @@ impl ExternalSurfaceDescriptor {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct ExternalPlaneDescriptor {
     pub texture: TextureSource,
     pub uv_rect: TexelRect,
@@ -285,6 +285,7 @@ impl ResolvedExternalSurfaceIndex {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, PartialEq)]
 pub enum ResolvedExternalSurfaceColorData {
     Yuv {
         
