@@ -46,7 +46,7 @@ static constexpr double MinHeapGrowthFactor =
 
 
 static constexpr double MaxHeapGrowthFactor = 100;
-static constexpr size_t MaxNurseryBytesParam = Nursery::MaxNurseryBytesParam;
+static constexpr size_t MaxNurseryBytesParam = 128 * 1024 * 1024;
 
 namespace {
 
