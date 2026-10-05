@@ -1789,7 +1789,7 @@ add_task(
       source: "newtab",
       position: 1,
       reporting_url: "https://test.reporting.net/",
-      advertiser: "adnoid ads",
+      advertiser_name: "adnoid ads",
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -1822,7 +1822,7 @@ add_task(
 
     let data = {
       type: "click",
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       tile_id: 42,
       source: "newtab",
       position: 0,
@@ -1903,7 +1903,7 @@ add_task(
         source: "newtab",
         position: 1,
         reporting_url: "https://test.reporting.net/",
-        advertiser: "adnoid ads",
+        advertiser_name: "adnoid ads",
       },
     });
 
@@ -1952,7 +1952,7 @@ add_task(
         source: "newtab",
         position: 1,
         reporting_url: "https://test.reporting.net/",
-        advertiser: "adnoid ads",
+        advertiser_name: "adnoid ads",
       },
     });
 
@@ -1981,8 +1981,8 @@ add_task(
       source: "newtab",
       position: 0,
       isPinned: false,
-      smartScores: { moo: 1 },
-      smartWeights: { moo: 0 },
+      smart_scores: { moo: 1 },
+      smart_weights: { moo: 0 },
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -2069,7 +2069,7 @@ add_task(
         tile_id: 42,
         source: "newtab",
         position: 1,
-        advertiser: "adnoid ads",
+        advertiser_name: "adnoid ads",
         is_ad_eligible_position: true,
       },
     });
@@ -2135,8 +2135,8 @@ add_task(
       source: "newtab",
       position: 0,
       isPinned: false,
-      smartScores: { moo: 1 },
-      smartWeights: { moo: 0 },
+      smart_scores: { moo: 1 },
+      smart_weights: { moo: 0 },
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -2797,7 +2797,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "adnoid ads",
+      advertiser_name: "adnoid ads",
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -2838,7 +2838,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 0,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
     };
     const SESSION_ID = "decafc0ffee";
     sandbox.stub(instance.sessions, "get").returns({ session_id: SESSION_ID });
@@ -2917,7 +2917,7 @@ const SPONSORED_TOPSITES_TILE_ID_PATHS = [
           tile_id: 4567,
           source: "newtab",
           position: 1,
-          advertiser: "adnoid ads",
+          advertiser_name: "adnoid ads",
         },
       }),
   },
@@ -2931,7 +2931,7 @@ const SPONSORED_TOPSITES_TILE_ID_PATHS = [
           tile_id: 4567,
           source: "newtab",
           position: 0,
-          advertiser: "adnoid ads",
+          advertiser_name: "adnoid ads",
         },
       }),
   },
@@ -3229,8 +3229,6 @@ add_task(function test_randomizeOrganicContentEvent() {
     corpus_item_id: `item-${id}`,
     topic: "a",
     is_sponsored: false,
-    section_id: "section",
-    section_position: 3,
     variant_id: 0,
     source_section_id: "src-section",
   });
@@ -3311,6 +3309,55 @@ add_task(function test_randomizeOrganicContentEvent_tracks_layout_name() {
     result.source_section_id,
     "swapped-source",
     "source_section_id tracks the swapped section"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_randomizeOrganicContentEvent_section_position() {
+  info(
+    "randomizeOrganicContentEvent should only swap in items from rendered " +
+      "sections and report the rendered position of the swapped section"
+  );
+  let sandbox = sinon.createSandbox();
+  let instance = new TelemetryFeed();
+  const PORT_ID = "port123";
+  const session = instance.addSession(PORT_ID);
+
+  await instance.onAction({
+    type: actionTypes.CARD_SECTIONS_ORDER,
+    meta: { fromTarget: PORT_ID },
+    data: { sections: ["orig-section", "swapped-section"] },
+  });
+
+  const item = {
+    corpus_item_id: "orig",
+    section: "orig-section",
+    section_position: 0,
+  };
+  sandbox.stub(instance, "getRecommendationCount").returns(10);
+  sandbox
+    .stub(instance, "getAllRecommendations")
+    .returns([
+      { corpus_item_id: "hidden", section: "hidden" },
+      { corpus_item_id: "unsectioned" },
+      { corpus_item_id: "swapped", section: "swapped-section" },
+    ]);
+  instance._privateRandomContentTelemetryProbablityValues = { epsilon: 30 };
+  sandbox.stub(NewTabContentPing, "decideWithProbability").returns(false);
+  sandbox.stub(NewTabContentPing, "secureRandIntInRange").returns(0);
+
+  const result = instance.randomizeOrganicContentEvent(item, session);
+
+  Assert.equal(
+    result.corpus_item_id,
+    "swapped",
+    "Only items from rendered sections are candidates"
+  );
+  Assert.equal(
+    result.section_position,
+    1,
+    "section_position is the swapped section's rendered position"
   );
 
   sandbox.restore();
@@ -3790,7 +3837,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       visible_topsites: 8,
       frecency_boosted: true,
     };
@@ -3810,7 +3857,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       visible_topsites: 8,
       frecency_boosted: true,
     };
@@ -3871,7 +3918,7 @@ add_task(
       tile_id: 42,
       source: "newtab",
       position: 1,
-      advertiser: "test advertiser",
+      advertiser_name: "test advertiser",
       visible_topsites: 8,
       frecency_boosted: false,
     };
