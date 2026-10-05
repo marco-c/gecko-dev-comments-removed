@@ -46,6 +46,12 @@ async function test() {
     gutter,
     iframe.contentWindow
   );
+  
+  EventUtils.sendMouseEvent(
+    { type: "mouseup", shiftKey: true },
+    gutter,
+    iframe.contentWindow
+  );
   is(ed.getSelection(), "", "shift-click");
 
   teardown(ed, win);
