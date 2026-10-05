@@ -396,9 +396,9 @@ JSObject* PushManager::WrapObject(JSContext* aCx,
 }
 
 
-already_AddRefed<PushManager> PushManager::Constructor(GlobalObject& aGlobal,
-                                                       const nsAString& aScope,
-                                                       ErrorResult& aRv) {
+already_AddRefed<PushManager> PushManager::Create(GlobalObject& aGlobal,
+                                                  const nsAString& aScope,
+                                                  ErrorResult& aRv) {
   if (!NS_IsMainThread()) {
     RefPtr<PushManager> ret = new PushManager(aScope);
     return ret.forget();
@@ -414,6 +414,38 @@ already_AddRefed<PushManager> PushManager::Constructor(GlobalObject& aGlobal,
   RefPtr<PushManager> ret = new PushManager(global, impl);
 
   return ret.forget();
+}
+
+
+already_AddRefed<PushManager> PushManager::Create(JSContext* aCx,
+                                                  nsGlobalWindowInner* aWindow,
+                                                  ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
+  
+  nsIURI* documentURI = aWindow->GetDocumentURI();
+  if (NS_WARN_IF(!documentURI)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  nsCOMPtr<nsIURI> scopeURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), "/", documentURI);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+  nsAutoCString scopeURL;
+  rv = scopeURI->GetSpec(scopeURL);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+  GlobalObject global(aCx, aWindow->GetGlobalJSObject());
+  return Create(global, NS_ConvertUTF8toUTF16(scopeURL), aRv);
 }
 
 bool PushManager::IsEnabled(JSContext* aCx, JSObject* aGlobal) {
