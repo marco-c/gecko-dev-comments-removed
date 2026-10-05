@@ -3279,7 +3279,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   inline void compareInt8x16(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared, arm64, loong64);
+      DEFINED_ON(x86_shared, arm64);
 
   
   inline void compareInt8x16(Assembler::Condition cond, FloatRegister lhs,
@@ -3297,7 +3297,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   inline void compareInt16x8(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared, arm64, loong64);
+      DEFINED_ON(x86_shared, arm64);
 
   
   inline void compareInt32x4(Assembler::Condition cond, FloatRegister rhs,
@@ -3306,7 +3306,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void compareInt32x4(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(x86_shared, arm64, loong64);
+      DEFINED_ON(x86_shared, arm64);
 
   
   inline void compareInt32x4(Assembler::Condition cond, FloatRegister lhs,
@@ -3333,7 +3333,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void compareInt64x2(Assembler::Condition cond, FloatRegister lhs,
                              const SimdConstant& rhs, FloatRegister dest)
-      DEFINED_ON(arm64, loong64);
+      DEFINED_ON(arm64);
 
   
   inline void testBitsInt8x16(FloatRegister lhs, FloatRegister rhs,
