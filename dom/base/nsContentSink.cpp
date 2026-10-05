@@ -13,7 +13,6 @@
 
 #include "HTMLLinkElement.h"
 #include "MediaList.h"
-#include "mozAutoDocUpdate.h"
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
@@ -32,7 +31,6 @@
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/LinkStyle.h"
 #include "mozilla/dom/ModuleLoader.h"
-#include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptLoader.h"
@@ -73,27 +71,18 @@ using namespace mozilla;
 using namespace mozilla::css;
 using namespace mozilla::dom;
 
-LazyLogModule gContentSinkLogModuleInfo("nscontentsink");
-
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsContentSink)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsContentSink)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsContentSink)
   NS_INTERFACE_MAP_ENTRY(nsICSSLoaderObserver)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
-  NS_INTERFACE_MAP_ENTRY(nsIDocumentObserver)
-  NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
-  NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
-  NS_INTERFACE_MAP_ENTRY(nsINamed)
-  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDocumentObserver)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsICSSLoaderObserver)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsContentSink)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsContentSink)
-  if (tmp->mDocument) {
-    tmp->mDocument->RemoveObserver(tmp);
-  }
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mParser)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
@@ -110,15 +99,9 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsContentSink)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 nsContentSink::nsContentSink()
-    : mBackoffCount(0),
-      mLastNotificationTime(0),
-      mLayoutStarted(0),
+    : mLayoutStarted(0),
       mDynamicLowerValue(0),
-      mParsing(0),
-      mDroppedTimer(0),
       mDeferredLayoutStart(0),
-      mDeferredFlushTags(0),
-      mIsDocumentObserver(0),
       mRunsToCompletion(0),
       mIsBlockingOnload(false),
       mDeflectedCount(0),
@@ -126,28 +109,15 @@ nsContentSink::nsContentSink()
       mCurrentParseEndTime(0),
       mBeginLoadTime(0),
       mLastSampledUserEventTime(0),
-      mInMonolithicContainer(0),
-      mInNotification(0),
-      mUpdatesInNotification(0),
       mPendingSheetCount(0) {
   NS_ASSERTION(!mLayoutStarted, "What?");
   NS_ASSERTION(!mDynamicLowerValue, "What?");
-  NS_ASSERTION(!mParsing, "What?");
   NS_ASSERTION(mLastSampledUserEventTime == 0, "What?");
   NS_ASSERTION(mDeflectedCount == 0, "What?");
-  NS_ASSERTION(!mDroppedTimer, "What?");
-  NS_ASSERTION(mInMonolithicContainer == 0, "What?");
-  NS_ASSERTION(mInNotification == 0, "What?");
   NS_ASSERTION(!mDeferredLayoutStart, "What?");
 }
 
-nsContentSink::~nsContentSink() {
-  if (mDocument) {
-    
-    
-    mDocument->RemoveObserver(this);
-  }
-}
+nsContentSink::~nsContentSink() = default;
 
 nsresult nsContentSink::Init(Document* aDoc, nsIURI* aURI,
                              nsISupports* aContainer, nsIChannel* aChannel) {
@@ -177,8 +147,6 @@ nsresult nsContentSink::Init(Document* aDoc, nsIURI* aURI,
 
   mNodeInfoManager = aDoc->NodeInfoManager();
 
-  mBackoffCount = StaticPrefs::content_notify_backoffcount();
-
   if (StaticPrefs::content_sink_enable_perf_mode() != 0) {
     mDynamicLowerValue = StaticPrefs::content_sink_enable_perf_mode() == 1;
   }
@@ -197,19 +165,14 @@ nsContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
   --mPendingSheetCount;
 
   const bool loadedAllSheets = !mPendingSheetCount;
-  if (loadedAllSheets && (mDeferredLayoutStart || mDeferredFlushTags)) {
-    if (mDeferredFlushTags) {
-      FlushTags();
-    }
-    if (mDeferredLayoutStart) {
-      
-      
-      
-      
-      
-      
-      StartLayout(false);
-    }
+  if (loadedAllSheets && mDeferredLayoutStart) {
+    
+    
+    
+    
+    
+    
+    StartLayout(false);
 
     
     ScrollToRef();
@@ -607,16 +570,7 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
         PropertiesFile::LAYOUT_PROPERTIES, "ForcedLayoutStart");
   }
 
-  
-  
-  
-  
-  
-  
-  FlushTags();
-
   mLayoutStarted = true;
-  mLastNotificationTime = PR_Now();
 
   mDocument->SetMayStartLayout(true);
   RefPtr<PresShell> presShell = mDocument->GetPresShell();
@@ -636,134 +590,6 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
   
 
   mDocument->SetScrollToRef(mDocument->GetDocumentURI());
-}
-
-void nsContentSink::NotifyAppend(nsIContent* aContainer, uint32_t aStartIndex) {
-  mInNotification++;
-
-  {
-    
-    
-    
-    MOZ_AUTO_DOC_UPDATE(aContainer->OwnerDoc(), true);
-    MutationObservers::NotifyContentAppended(
-        aContainer, aContainer->GetChildAt_Deprecated(aStartIndex), {});
-    mLastNotificationTime = PR_Now();
-  }
-
-  mInNotification--;
-}
-
-NS_IMETHODIMP
-nsContentSink::Notify(nsITimer* timer) {
-  if (mParsing) {
-    
-    mDroppedTimer = true;
-    return NS_OK;
-  }
-
-  if (WaitForPendingSheets()) {
-    mDeferredFlushTags = true;
-  } else {
-    FlushTags();
-
-    
-    
-    ScrollToRef();
-  }
-
-  mNotificationTimer = nullptr;
-  return NS_OK;
-}
-
-bool nsContentSink::IsTimeToNotify() {
-  if (!StaticPrefs::content_notify_ontimer() || !mLayoutStarted ||
-      !mBackoffCount || mInMonolithicContainer) {
-    return false;
-  }
-
-  if (WaitForPendingSheets()) {
-    mDeferredFlushTags = true;
-    return false;
-  }
-
-  PRTime now = PR_Now();
-
-  int64_t interval = GetNotificationInterval();
-  int64_t diff = now - mLastNotificationTime;
-
-  if (diff > interval) {
-    mBackoffCount--;
-    return true;
-  }
-
-  return false;
-}
-
-nsresult nsContentSink::WillInterruptImpl() {
-  nsresult result = NS_OK;
-
-  SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
-             SINK_TRACE_CALLS, ("nsContentSink::WillInterrupt: this=%p", this));
-#ifndef SINK_NO_INCREMENTAL
-  if (WaitForPendingSheets()) {
-    mDeferredFlushTags = true;
-  } else if (StaticPrefs::content_notify_ontimer() && mLayoutStarted) {
-    if (mBackoffCount && !mInMonolithicContainer) {
-      int64_t now = PR_Now();
-      int64_t interval = GetNotificationInterval();
-      int64_t diff = now - mLastNotificationTime;
-
-      
-      if (diff > interval || mDroppedTimer) {
-        mBackoffCount--;
-        SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
-                   SINK_TRACE_REFLOW,
-                   ("nsContentSink::WillInterrupt: flushing tags since we've "
-                    "run out time; backoff count: %d",
-                    mBackoffCount));
-        result = FlushTags();
-        if (mDroppedTimer) {
-          ScrollToRef();
-          mDroppedTimer = false;
-        }
-      } else if (!mNotificationTimer) {
-        interval -= diff;
-        int32_t delay = interval;
-
-        
-        delay /= PR_USEC_PER_MSEC;
-
-        NS_NewTimerWithCallback(getter_AddRefs(mNotificationTimer), this, delay,
-                                nsITimer::TYPE_ONE_SHOT);
-        if (mNotificationTimer) {
-          SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
-                     SINK_TRACE_REFLOW,
-                     ("nsContentSink::WillInterrupt: setting up timer with "
-                      "delay %d",
-                      delay));
-        }
-      }
-    }
-  } else {
-    SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
-               SINK_TRACE_REFLOW,
-               ("nsContentSink::WillInterrupt: flushing tags "
-                "unconditionally"));
-    result = FlushTags();
-  }
-#endif
-
-  mParsing = false;
-
-  return result;
-}
-
-void nsContentSink::WillResumeImpl() {
-  SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
-             SINK_TRACE_CALLS, ("nsContentSink::WillResume: this=%p", this));
-
-  mParsing = true;
 }
 
 nsresult nsContentSink::DidProcessATokenImpl() {
@@ -813,36 +639,6 @@ nsresult nsContentSink::DidProcessATokenImpl() {
   return NS_OK;
 }
 
-
-
-void nsContentSink::BeginUpdate(Document* aDocument) {
-  
-  if (mInNotification > 0 && mUpdatesInNotification < 2) {
-    ++mUpdatesInNotification;
-  }
-
-  
-  
-  
-  
-  
-
-  if (!mInNotification++) {
-    FlushTags();
-  }
-}
-
-void nsContentSink::EndUpdate(Document* aDocument) {
-  
-  
-  
-  
-  
-  if (!--mInNotification) {
-    UpdateChildCounts();
-  }
-}
-
 void nsContentSink::DidBuildModelImpl(bool aTerminated) {
   MOZ_ASSERT(aTerminated || (mParser && mParser->IsParserClosed()) ||
                  mDocument->GetReadyStateEnum() == Document::READYSTATE_LOADING,
@@ -858,16 +654,6 @@ void nsContentSink::DidBuildModelImpl(bool aTerminated) {
 
   if (!mDocument->HaveFiredDOMTitleChange()) {
     mDocument->NotifyPossibleTitleChange(false);
-  }
-
-  
-  if (mNotificationTimer) {
-    SINK_TRACE(static_cast<LogModule*>(gContentSinkLogModuleInfo),
-               SINK_TRACE_REFLOW,
-               ("nsContentSink::DidBuildModel: canceling notification "
-                "timeout"));
-    mNotificationTimer->Cancel();
-    mNotificationTimer = nullptr;
   }
 }
 
@@ -995,10 +781,4 @@ void nsContentSink::NotifyDocElementCreated(Document* aDoc) {
 
   nsContentUtils::DispatchChromeEvent(aDoc, aDoc, u"DOMDocElementInserted"_ns,
                                       CanBubble::eYes, Cancelable::eNo);
-}
-
-NS_IMETHODIMP
-nsContentSink::GetName(nsACString& aName) {
-  aName.AssignLiteral("nsContentSink_timer");
-  return NS_OK;
 }

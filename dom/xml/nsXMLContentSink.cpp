@@ -222,7 +222,7 @@ nsXMLContentSink::DidBuildModel(bool aTerminated) {
     return NS_OK;
   }
 
-  FlushTags();
+  FlushText();
 
   DidBuildModelImpl(aTerminated);
 
@@ -426,12 +426,9 @@ nsXMLContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
 }
 
 NS_IMETHODIMP
-nsXMLContentSink::WillInterrupt(void) {
-  FlushText(false);
-  return WillInterruptImpl();
-}
+nsXMLContentSink::WillInterrupt(void) { return FlushText(false); }
 
-void nsXMLContentSink::WillResume() { WillResumeImpl(); }
+void nsXMLContentSink::WillResume() {}
 
 NS_IMETHODIMP
 nsXMLContentSink::SetParser(nsParserBase* aParser) {
@@ -1425,12 +1422,6 @@ void nsXMLContentSink::FlushPendingNotifications(FlushType aType) {
     
     MaybeStartLayout(true);
   }
-}
-
-nsresult nsXMLContentSink::FlushTags() {
-  mDeferredFlushTags = false;
-  
-  return FlushText(false);
 }
 
 void nsXMLContentSink::ContinueInterruptedParsingIfEnabled() {

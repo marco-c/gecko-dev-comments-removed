@@ -228,7 +228,6 @@ nsHtml5TreeOpExecutor::WillParse() {
 
 NS_IMETHODIMP
 nsHtml5TreeOpExecutor::WillBuildModel() {
-  mDocument->AddObserver(this);
   WillBuildModelImpl();
   GetDocument()->BeginLoad();
   if (mDocShell && !GetDocument()->GetWindow() && !IsExternalViewSource()) {
@@ -282,7 +281,6 @@ nsHtml5TreeOpExecutor::DidBuildModel(bool aTerminated) {
   }
 
   ScrollToRef();
-  mDocument->RemoveObserver(this);
   if (!mParser) {
     
     
