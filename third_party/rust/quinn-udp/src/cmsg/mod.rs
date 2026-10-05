@@ -1,8 +1,6 @@
 use std::{
     ffi::{c_int, c_uchar},
-    marker::PhantomData,
-    ops::Deref,
-    ptr::{self, NonNull},
+    ptr,
 };
 
 #[cfg(unix)]
@@ -22,7 +20,7 @@ pub(crate) use imp::Aligned;
 
 pub(crate) struct Encoder<'a, M: MsgHdr> {
     hdr: &'a mut M,
-    cmsg: Option<NonNull<M::ControlMessage>>,
+    cmsg: Option<&'a mut M::ControlMessage>,
     len: usize,
 }
 
@@ -33,10 +31,7 @@ impl<'a, M: MsgHdr> Encoder<'a, M> {
     
     pub(crate) unsafe fn new(hdr: &'a mut M) -> Self {
         Self {
-            
-            
-            
-            cmsg: NonNull::new(hdr.cmsg_first_hdr()),
+            cmsg: hdr.cmsg_first_hdr().as_mut(),
             hdr,
             len: 0,
         }
@@ -46,7 +41,9 @@ impl<'a, M: MsgHdr> Encoder<'a, M> {
     
     
     
+    
     pub(crate) fn push<T: Copy>(&mut self, level: c_int, ty: c_int, value: T) {
+        assert!(align_of::<T>() <= align_of::<M::ControlMessage>());
         let space = M::ControlMessage::cmsg_space(size_of_val(&value));
         assert!(
             self.hdr.control_len() >= self.len + space,
@@ -54,21 +51,13 @@ impl<'a, M: MsgHdr> Encoder<'a, M> {
             self.len + space,
             self.hdr.control_len()
         );
-        let cmsg = self
-            .cmsg
-            .take()
-            .expect("no control buffer space remaining")
-            .as_ptr();
-        
-        
+        let cmsg = self.cmsg.take().expect("no control buffer space remaining");
+        cmsg.set(level, ty, M::ControlMessage::cmsg_len(size_of_val(&value)));
         unsafe {
-            (*cmsg).set(level, ty, M::ControlMessage::cmsg_len(size_of_val(&value)));
-            
-            
-            ptr::write_unaligned(M::ControlMessage::cmsg_data(cmsg).cast::<T>(), value);
-            self.cmsg = NonNull::new(self.hdr.cmsg_nxt_hdr(cmsg));
+            ptr::write(cmsg.cmsg_data() as *const T as *mut T, value);
         }
         self.len += space;
+        self.cmsg = unsafe { self.hdr.cmsg_nxt_hdr(cmsg).as_mut() };
     }
 
     
@@ -85,9 +74,19 @@ impl<M: MsgHdr> Drop for Encoder<'_, M> {
     }
 }
 
+
+
+
+pub(crate) unsafe fn decode<T: Copy, C: CMsgHdr>(cmsg: &impl CMsgHdr) -> T {
+    debug_assert_eq!(cmsg.len(), C::cmsg_len(size_of::<T>()));
+    
+    
+    ptr::read_unaligned(cmsg.cmsg_data() as *const T)
+}
+
 pub(crate) struct Iter<'a, M: MsgHdr> {
     hdr: &'a M,
-    cmsg: Option<NonNull<M::ControlMessage>>,
+    cmsg: Option<&'a M::ControlMessage>,
 }
 
 impl<'a, M: MsgHdr> Iter<'a, M> {
@@ -99,25 +98,17 @@ impl<'a, M: MsgHdr> Iter<'a, M> {
     pub(crate) unsafe fn new(hdr: &'a M) -> Self {
         Self {
             hdr,
-            
-            
-            
-            cmsg: NonNull::new(hdr.cmsg_first_hdr()),
+            cmsg: hdr.cmsg_first_hdr().as_ref(),
         }
     }
 }
 
 impl<'a, M: MsgHdr> Iterator for Iter<'a, M> {
-    type Item = CMsg<'a, M::ControlMessage>;
+    type Item = &'a M::ControlMessage;
 
     fn next(&mut self) -> Option<Self::Item> {
         let current = self.cmsg.take()?;
-        
-        self.cmsg = NonNull::new(unsafe { self.hdr.cmsg_nxt_hdr(current.as_ptr()) });
-        let current = CMsg {
-            ptr: current,
-            _lifetime: PhantomData,
-        };
+        self.cmsg = unsafe { self.hdr.cmsg_nxt_hdr(current).as_ref() };
 
         #[cfg(apple_fast)]
         {
@@ -134,67 +125,12 @@ impl<'a, M: MsgHdr> Iterator for Iter<'a, M> {
 }
 
 
-
-
-
-
-#[derive(Clone, Copy)]
-pub(crate) struct CMsg<'a, C: CMsgHdr> {
-    ptr: NonNull<C>,
-    _lifetime: PhantomData<&'a C>,
-}
-
-impl<C: CMsgHdr> CMsg<'_, C> {
-    
-    
-    
-    
-    
-    pub(crate) unsafe fn decode<T: Copy>(&self) -> T {
-        debug_assert_eq!(self.len(), C::cmsg_len(size_of::<T>()));
-        
-        
-        
-        unsafe { ptr::read_unaligned(self.data().cast::<T>()) }
-    }
-
-    
-    
-    
-    
-    pub(crate) fn data(&self) -> *const c_uchar {
-        
-        unsafe { C::cmsg_data(self.ptr.as_ptr()) }
-    }
-}
-
-impl<C: CMsgHdr> Deref for CMsg<'_, C> {
-    type Target = C;
-
-    fn deref(&self) -> &Self::Target {
-        
-        unsafe { self.ptr.as_ref() }
-    }
-}
-
-
 pub(crate) trait MsgHdr {
     type ControlMessage: CMsgHdr;
 
-    
-    
-    
-    
-    
     fn cmsg_first_hdr(&self) -> *mut Self::ControlMessage;
 
-    
-    
-    
-    
-    
-    
-    unsafe fn cmsg_nxt_hdr(&self, cmsg: *const Self::ControlMessage) -> *mut Self::ControlMessage;
+    fn cmsg_nxt_hdr(&self, cmsg: &Self::ControlMessage) -> *mut Self::ControlMessage;
 
     
     
@@ -210,14 +146,7 @@ pub(crate) trait CMsgHdr {
 
     fn cmsg_space(length: usize) -> usize;
 
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn cmsg_data(this: *const Self) -> *mut c_uchar;
+    fn cmsg_data(&self) -> *mut c_uchar;
 
     fn set(&mut self, level: c_int, ty: c_int, len: usize);
 
@@ -226,44 +155,3 @@ pub(crate) trait CMsgHdr {
 
 #[cfg(unix)]
 pub(crate) const LEN: usize = 96;
-
-#[cfg(all(test, unix))]
-mod tests {
-    use std::mem;
-
-    use super::*;
-
-    
-    
-    
-    
-    #[test]
-    fn roundtrip() {
-        let mut buf = Aligned([0u8; LEN]);
-        let mut hdr = unsafe { mem::zeroed::<libc::msghdr>() };
-        hdr.msg_control = buf.0.as_mut_ptr() as _;
-        hdr.msg_controllen = LEN as _;
-
-        let mut encoder = unsafe { Encoder::new(&mut hdr) };
-        encoder.push(1, 2, 0x1234_5678u32);
-        encoder.push(3, 4, [0xabu8; 5]);
-        encoder.push(5, 6, 0x0102u16);
-        encoder.finish();
-        assert!(hdr.msg_controllen > 0);
-
-        let mut iter = unsafe { Iter::new(&hdr) };
-        let cmsg = iter.next().unwrap();
-        assert_eq!((cmsg.cmsg_level, cmsg.cmsg_type), (1, 2));
-        assert_eq!(unsafe { cmsg.decode::<u32>() }, 0x1234_5678);
-
-        let cmsg = iter.next().unwrap();
-        assert_eq!((cmsg.cmsg_level, cmsg.cmsg_type), (3, 4));
-        assert_eq!(unsafe { cmsg.decode::<[u8; 5]>() }, [0xab; 5]);
-
-        let cmsg = iter.next().unwrap();
-        assert_eq!((cmsg.cmsg_level, cmsg.cmsg_type), (5, 6));
-        assert_eq!(unsafe { cmsg.decode::<u16>() }, 0x0102);
-
-        assert!(iter.next().is_none());
-    }
-}
