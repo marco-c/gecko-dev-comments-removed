@@ -5773,6 +5773,8 @@ function addUtmParams(url, utmTerm) {
 
 
 const TRANSITION_OUT_TIME = 1000;
+
+const CARD_STACK_TRANSITION_OUT_TIME = 400;
 const LANGUAGE_MISMATCH_SCREEN_ID = "AW_LANGUAGE_MISMATCH";
 const MultiStageAboutWelcome = props => {
   const gateInitialPaint = props.gateInitialPaint ?? false;
@@ -5879,11 +5881,20 @@ const MultiStageAboutWelcome = props => {
       requestAnimationFrame(() => requestAnimationFrame(() => setTransition("")));
     }
   }, [transition]);
+  const isCardStack = defaultScreens?.[0]?.content?.position === "card-stack";
+  const transitionOutTime = isCardStack ? CARD_STACK_TRANSITION_OUT_TIME : TRANSITION_OUT_TIME;
 
   
   const handleTransition = goBack => {
     
     if (transition === "out") {
+      return;
+    }
+
+    
+    
+    if (isCardStack && !goBack && index >= screens.length - 1) {
+      window.AWFinish();
       return;
     }
 
@@ -5901,7 +5912,7 @@ const MultiStageAboutWelcome = props => {
       } else {
         window.AWFinish();
       }
-    }, props.transitions ? TRANSITION_OUT_TIME : 0);
+    }, props.transitions ? transitionOutTime : 0);
   };
   (0,external_React_namespaceObject.useEffect)(() => {
     
@@ -5922,7 +5933,7 @@ const MultiStageAboutWelcome = props => {
         setTimeout(() => {
           setTransition(props.transitions ? "in" : "");
           setScreenIndex(Math.min(state, screens.length - 1));
-        }, props.transitions ? TRANSITION_OUT_TIME : 0);
+        }, props.transitions ? transitionOutTime : 0);
       };
 
       
@@ -5938,7 +5949,9 @@ const MultiStageAboutWelcome = props => {
       window.addEventListener("popstate", handler);
       return () => window.removeEventListener("popstate", handler);
     }
-    return false;
+    
+    
+    return undefined;
   }, []); 
 
   const [multiSelects, setMultiSelects] = (0,external_React_namespaceObject.useState)({});
@@ -6677,7 +6690,6 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
 
 
 
-
 function MultistageWithDismiss({
   config,
   handleDismiss,
@@ -6691,8 +6703,37 @@ function MultistageWithDismiss({
   
   
   const isCardStack = config.screens?.[0]?.content?.position === "card-stack";
+  const transitions = config.transitions ?? false;
+  const animateCardStack = isCardStack && transitions;
+  const [isExiting, setIsExiting] = (0,external_React_namespaceObject.useState)(false);
+  const exitTimeout = (0,external_React_namespaceObject.useRef)(null);
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!animateCardStack) {
+      return undefined;
+    }
+    const finish = window.AWFinish;
+    window.AWFinish = () => {
+      if (exitTimeout.current) {
+        return;
+      }
+      setIsExiting(true);
+      exitTimeout.current = setTimeout(finish, CARD_STACK_TRANSITION_OUT_TIME);
+    };
+    return () => {
+      window.AWFinish = finish;
+      clearTimeout(exitTimeout.current);
+      exitTimeout.current = null;
+    };
+  }, [animateCardStack]);
+  const wrapperClasses = ["multistage-newtab-wrapper"];
+  if (animateCardStack) {
+    wrapperClasses.push("card-stack-animated");
+  }
+  if (isExiting) {
+    wrapperClasses.push("card-stack-exiting");
+  }
   return external_React_default().createElement("div", {
-    className: "multistage-newtab-wrapper",
+    className: wrapperClasses.join(" "),
     style: config.wrapper_content_style ? MultiStageUtils.getValidStyle(config.wrapper_content_style, ["height"]) : {
       height: "500px"
     }
@@ -6705,12 +6746,20 @@ function MultistageWithDismiss({
   }), external_React_default().createElement(MultiStageAboutWelcome, {
     defaultScreens: config.screens,
     message_id: config.id,
-    transitions: config.transitions ?? false,
+    transitions: transitions,
     backdrop: config.backdrop,
     startScreen: 0,
     updateHistory: false
   }));
 }
+;
+
+
+
+
+
+
+
 window.mountMultistageMessage = function mountMultistageMessage(container, props) {
   const {
     messageData,

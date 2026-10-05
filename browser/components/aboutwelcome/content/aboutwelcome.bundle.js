@@ -167,6 +167,7 @@ const MultiStageUtils = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   CARD_STACK_TRANSITION_OUT_TIME: () => ( CARD_STACK_TRANSITION_OUT_TIME),
    MultiStageAboutWelcome: () => ( MultiStageAboutWelcome),
    ProgressBar: () => ( ProgressBar),
    SecondaryCTA: () => ( SecondaryCTA),
@@ -195,6 +196,8 @@ __webpack_require__.r(__webpack_exports__);
 
 
 const TRANSITION_OUT_TIME = 1000;
+
+const CARD_STACK_TRANSITION_OUT_TIME = 400;
 const LANGUAGE_MISMATCH_SCREEN_ID = "AW_LANGUAGE_MISMATCH";
 const MultiStageAboutWelcome = props => {
   const gateInitialPaint = props.gateInitialPaint ?? false;
@@ -301,11 +304,20 @@ const MultiStageAboutWelcome = props => {
       requestAnimationFrame(() => requestAnimationFrame(() => setTransition("")));
     }
   }, [transition]);
+  const isCardStack = defaultScreens?.[0]?.content?.position === "card-stack";
+  const transitionOutTime = isCardStack ? CARD_STACK_TRANSITION_OUT_TIME : TRANSITION_OUT_TIME;
 
   
   const handleTransition = goBack => {
     
     if (transition === "out") {
+      return;
+    }
+
+    
+    
+    if (isCardStack && !goBack && index >= screens.length - 1) {
+      window.AWFinish();
       return;
     }
 
@@ -323,7 +335,7 @@ const MultiStageAboutWelcome = props => {
       } else {
         window.AWFinish();
       }
-    }, props.transitions ? TRANSITION_OUT_TIME : 0);
+    }, props.transitions ? transitionOutTime : 0);
   };
   (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
     
@@ -344,7 +356,7 @@ const MultiStageAboutWelcome = props => {
         setTimeout(() => {
           setTransition(props.transitions ? "in" : "");
           setScreenIndex(Math.min(state, screens.length - 1));
-        }, props.transitions ? TRANSITION_OUT_TIME : 0);
+        }, props.transitions ? transitionOutTime : 0);
       };
 
       
@@ -360,7 +372,9 @@ const MultiStageAboutWelcome = props => {
       window.addEventListener("popstate", handler);
       return () => window.removeEventListener("popstate", handler);
     }
-    return false;
+    
+    
+    return undefined;
   }, []); 
 
   const [multiSelects, setMultiSelects] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
