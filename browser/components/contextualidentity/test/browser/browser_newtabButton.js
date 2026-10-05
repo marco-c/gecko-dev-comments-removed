@@ -81,8 +81,10 @@ add_task(async function test_containers_with_left_click() {
 
   let popupShownPromise = BrowserTestUtils.waitForEvent(popup, "popupshown");
   let popupHiddenPromise = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+  
   EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mousedown" });
   await popupShownPromise;
+  EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mouseup" });
   let contextIdItems = popup.querySelectorAll("menuitem");
   
   is(contextIdItems.length, 7, "Has 7 menu items");
@@ -94,6 +96,7 @@ add_task(async function test_containers_with_left_click() {
     EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mousedown" });
 
     await popupShownPromise;
+    EventUtils.synthesizeMouseAtCenter(newTabButton, { type: "mouseup" });
     let contextIdItem = popup.querySelector(
       `menuitem[data-usercontextid="${i}"]`
     );
