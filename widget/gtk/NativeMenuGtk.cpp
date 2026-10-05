@@ -25,6 +25,7 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsStubMutationObserver.h"
+#include "nsThreadUtils.h"
 #include "nsWindow.h"
 
 #ifdef MOZ_WAYLAND
@@ -423,20 +424,38 @@ void NativeMenuGtk::ShowMenuAtPosition(nsIFrame* aClickedFrame,
 }
 
 bool NativeMenuGtk::Close() {
-  if (!mMenuModel->IsShowing()) {
-    return false;
+  if (mMenuModel->IsShowing()) {
+    
+    gtk_menu_popdown(GTK_MENU(mNativeMenu.get()));
   }
-  gtk_menu_popdown(GTK_MENU(mNativeMenu.get()));
-  return true;
+  
+  
+  return FinishClose();
 }
 
+
+
+
 void NativeMenuGtk::OnUnmap() {
-  FireEvent(eXULPopupHiding);
-
+  
   mMenuModel->DidHide();
+  mClosePending = true;
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      "NativeMenuGtk::OnUnmap",
+      [self = RefPtr{this}]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY { self->FinishClose(); }));
+}
 
+bool NativeMenuGtk::FinishClose() {
+  if (!mClosePending) {
+    return false;
+  }
+  mClosePending = false;
+
+  FireEvent(eXULPopupHiding);
   FireEvent(eXULPopupHidden);
   OnClosed();
+  return true;
 }
 
 void NativeMenuGtk::ActivateItem(dom::Element* aItemElement, Modifiers,
