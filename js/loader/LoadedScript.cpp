@@ -7,6 +7,7 @@
 #include "mozilla/dom/ScriptLoadContext.h"  
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"     
+#include "mozilla/Span.h"       
 #include "mozilla/Sprintf.h"    
 #include "mozilla/UniquePtr.h"  
 
@@ -111,6 +112,7 @@ LoadedScript::LoadedScript(ScriptKind aKind, nsIURI* aURI)
       mIsDirty(false),
       mTookLongInPreviousRuns(false),
       mIsEverHitFromMemoryCache(false),
+      mDependsOnClassicScriptHintEncoding(false),
       mURI(aURI),
       mReceivedScriptTextLength(0) {
   MOZ_ASSERT(mURI);
@@ -224,6 +226,55 @@ bool LoadedScript::IsSRIMetadataReusableBy(
   }
 
   return aSRIMetadata.CanTrustBeDelegatedTo(*mSRIMetadata);
+}
+
+void LoadedScript::WriteIntoEncodingHeader(EncodingHeader* aHeader) const {
+  if (!IsClassicScript() || !mClassicScriptEncoding) {
+    memset(aHeader, 0, EncodingHeaderSize);
+    return;
+  }
+
+  aHeader->mDependsOnClassicScriptHintEncoding =
+      mDependsOnClassicScriptHintEncoding ? 1 : 0;
+
+  nsAutoCString name;
+  mClassicScriptEncoding->Name(name);
+  MOZ_ASSERT(name.Length() <
+             EncodingHeader::ClassicScriptEncodingMaxLength - 1);
+
+  memset(aHeader->mClassicScriptEncoding, 0,
+         EncodingHeader::ClassicScriptEncodingMaxLength);
+  memcpy(aHeader->mClassicScriptEncoding, name.get(), name.Length());
+}
+
+bool LoadedScript::ReadFromEncodingHeader(const EncodingHeader* aHeader) {
+  if (!IsClassicScript()) {
+    if (aHeader->mDependsOnClassicScriptHintEncoding) {
+      return false;
+    }
+    if (aHeader->mClassicScriptEncoding[0] != '\0') {
+      return false;
+    }
+    mDependsOnClassicScriptHintEncoding = false;
+    mClassicScriptEncoding = nullptr;
+    return true;
+  }
+
+  mDependsOnClassicScriptHintEncoding =
+      aHeader->mDependsOnClassicScriptHintEncoding;
+
+  size_t encodingStringLen = strlen(aHeader->mClassicScriptEncoding);
+  if (encodingStringLen == 0) {
+    mClassicScriptEncoding = nullptr;
+    return true;
+  }
+
+  mClassicScriptEncoding = mozilla::Encoding::ForLabel(
+      mozilla::Span(aHeader->mClassicScriptEncoding, encodingStringLen));
+  if (!mClassicScriptEncoding) {
+    return false;
+  }
+  return true;
 }
 
 
