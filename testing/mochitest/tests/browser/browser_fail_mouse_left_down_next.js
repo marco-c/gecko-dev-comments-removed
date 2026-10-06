@@ -1,0 +1,10 @@
+
+
+
+"use strict";
+
+
+
+add_task(async function mouseIsUp() {
+  ok(!window.windowUtils.isMouseDown, "The mouse is up when the test starts");
+});
