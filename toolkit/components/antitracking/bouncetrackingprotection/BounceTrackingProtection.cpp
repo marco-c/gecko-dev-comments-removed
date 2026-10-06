@@ -1299,15 +1299,26 @@ nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
 
   NS_ENSURE_TRUE(pattern.ToJSON(oaPatternString), NS_ERROR_FAILURE);
 
+  
+  
+  static_assert(
+      nsIClearDataService::CLEAR_STATE_FOR_TRACKER_PURGING ==
+          ((nsIClearDataService::CLEAR_ALL_CACHES |
+            nsIClearDataService::CLEAR_COOKIES_AND_SITE_DATA |
+            nsIClearDataService::CLEAR_CLIENT_AUTH_REMEMBER_SERVICE |
+            nsIClearDataService::CLEAR_MEDIA_DEVICES |
+            nsIClearDataService::CLEAR_STORAGE_ACCESS) &
+           ~nsIClearDataService::CLEAR_BOUNCE_TRACKING_PROTECTION_STATE),
+      "CLEAR_STATE_FOR_TRACKER_PURGING is out of sync with "
+      "CLEAR_COOKIES_AND_SITE_DATA");
+
   rv = clearDataService->DeleteDataFromSiteAndOriginAttributesPatternString(
       aHost, oaPatternString, false,
       
       
       
       
-      nsIClearDataService::CLEAR_STATE_FOR_TRACKER_PURGING &
-          ~nsIClearDataService::CLEAR_BOUNCE_TRACKING_PROTECTION_STATE,
-      cb);
+      nsIClearDataService::CLEAR_STATE_FOR_TRACKER_PURGING, cb);
   NS_ENSURE_SUCCESS(rv, rv);
 
   clearPromise.forget(aClearPromise);

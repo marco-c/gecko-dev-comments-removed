@@ -33,7 +33,7 @@ var {
   HttpServer,
 } = ChromeUtils.importESModule("resource://testing-common/httpd.sys.mjs");
 
-do_get_profile();
+do_get_profile(true);
 
 
 Cc["@mozilla.org/psm;1"].getService(Ci.nsISupports);
