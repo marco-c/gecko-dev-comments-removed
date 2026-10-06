@@ -362,6 +362,12 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   OffscreenCanvas* GetOffscreenCanvas() const { return mOffscreenCanvas; }
   void FlushOffscreenCanvas();
 
+  
+  
+  
+  void NotifyOwnerDocumentActivityChanged();
+  void NodeInfoChanged(Document* aOldDoc) override;
+
   layers::ImageContainer* GetImageContainer() const { return mImageContainer; }
 
   bool UsingCaptureStream() const { return !!mRequestedFrameRefreshObserver; }

@@ -51,6 +51,11 @@ class OffscreenCanvasDisplayHelper final {
 
   void FlushForDisplay();
 
+  
+  
+  
+  void SetPresentationEnabled(bool aEnabled);
+
   bool CommitFrameToCompositor(nsICanvasRenderingContextInternal* aContext,
                                const Maybe<OffscreenCanvasDisplayData>& aData);
 
@@ -106,6 +111,8 @@ class OffscreenCanvasDisplayHelper final {
   mozilla::layers::ImageContainer::FrameID mLastFrameID MOZ_GUARDED_BY(mMutex) =
       0;
   bool mPendingInvalidate MOZ_GUARDED_BY(mMutex) = false;
+  bool mPresentationEnabled MOZ_GUARDED_BY(mMutex) = true;
+  bool mPendingPresent MOZ_GUARDED_BY(mMutex) = false;
   bool mIsWriteOnly MOZ_GUARDED_BY(mMutex) = false;
   RefPtr<nsIPrincipal> mExpandedReader MOZ_GUARDED_BY(mMutex);
 };
