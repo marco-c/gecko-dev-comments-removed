@@ -1277,17 +1277,18 @@ void GeckoMediaPluginServiceParent::ReAddOnGMPThread(
   AssertOnGMPThread();
   GMP_LOG_DEBUG("{}::{}: {}", __CLASS__, __FUNCTION__, fmt::ptr((void*)aOld));
 
-  RefPtr<GMPParent> gmp;
   if (!mShuttingDownOnGMPThread) {
     
     
     
     
-    gmp = ClonePlugin(aOld);
+    
+    
+    RefPtr<GMPParent> gmp = ClonePlugin(aOld);
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mPlugins.Contains(aOld));
-    if (mPlugins.Contains(aOld)) {
-      mPlugins[mPlugins.IndexOf(aOld)] = gmp;
+    size_t index = mPlugins.IndexOf(aOld);
+    if (index != mPlugins.NoIndex) {
+      mPlugins[index] = std::move(gmp);
     }
   } else {
     
