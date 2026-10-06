@@ -2071,6 +2071,26 @@ ScriptLoadRequest* ScriptLoader::LookupPreloadRequest(
     return nullptr;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (request->IsRetrievedFromMemoryCache() &&
+      request->getLoadedScript()->DependsOnClassicScriptHintEncoding() &&
+      request->getLoadedScript()->ClassicScriptEncoding() !=
+          GetClassicScriptFallbackEncoding(elementEncoding)) {
+    
+    request->Cancel();
+    return nullptr;
+  }
+
   if (!aSRIMetadata.CanTrustBeDelegatedTo(request->mIntegrity)) {
     
     
@@ -4026,8 +4046,13 @@ nsCString& ScriptLoader::BytecodeMimeTypeFor(
 
 const Encoding* ScriptLoader::GetClassicScriptFallbackEncoding(
     const ScriptLoadRequest* aRequest) {
-  if (aRequest->mClassicScriptHintEncoding) {
-    return aRequest->mClassicScriptHintEncoding;
+  return GetClassicScriptFallbackEncoding(aRequest->mClassicScriptHintEncoding);
+}
+
+const Encoding* ScriptLoader::GetClassicScriptFallbackEncoding(
+    const Encoding* aClassicScriptHintEncoding) {
+  if (aClassicScriptHintEncoding) {
+    return aClassicScriptHintEncoding;
   }
 
   
