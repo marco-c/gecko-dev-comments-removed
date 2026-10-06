@@ -853,7 +853,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
   
-  nsClassHashtable<nsCStringHashKey, nsCString> mAltSvcMappingTemptativeMap;
+  DataMutex<nsClassHashtable<nsCStringHashKey, nsCString>>
+      mAltSvcMappingTemptativeMap{"nsHttpHandler::AltSvcMappingTemptativeMap"};
 
   nsCOMPtr<nsIHttpActivityDistributor> mActivityDistributor;
 };
