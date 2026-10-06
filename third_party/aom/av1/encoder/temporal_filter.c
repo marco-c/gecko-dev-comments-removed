@@ -382,6 +382,27 @@ static void tf_motion_search(AV1_COMP *cpi, MACROBLOCK *mb,
     *is_dc_diff_large = 50 * error < sse;
     if (src_var <= 2 * (int64_t)distortion) *is_low_cntras = 1;
 
+#if CONFIG_AV1_HIGHBITDEPTH
+    const MACROBLOCKD *xd = &mb->e_mbd;
+    if (xd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+      
+      
+      
+      unsigned int zero_sse;
+      unsigned int zero_error = cpi->ppi->fn_ptr[block_size].vf(
+          ref_frame->y_buffer + y_offset, y_stride,
+          frame_to_filter->y_buffer + y_offset, y_stride, &zero_sse);
+      if (zero_error <= error + (error >> 4) || (zero_error / mb_pels) < 16) {
+        best_mv.as_mv = kZeroMv;
+        block_mv = kZeroMv;
+        *ref_mv = kZeroMv;
+        error = zero_error;
+        distortion = (int)zero_error;
+        block_mse = DIVIDE_AND_ROUND(error, mb_pels);
+      }
+    }
+#endif
+
     
     if (allow_me_for_sub_blks) {
       
@@ -1092,7 +1113,12 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
     
     
     bool allow_me_for_sub_blks = true;
-    if (cpi->sf.hl_sf.allow_sub_blk_me_in_tf) {
+    
+    
+    
+    if (mbd->bd > 8 && cpi->oxcf.algo_cfg.sharpness == 3) {
+      allow_me_for_sub_blks = false;
+    } else if (cpi->sf.hl_sf.allow_sub_blk_me_in_tf) {
       const int is_hbd = is_frame_high_bitdepth(frame_to_filter);
       
       double blk_4x4_var_min = DBL_MAX;
@@ -1139,7 +1165,7 @@ void av1_tf_do_filtering_row(AV1_COMP *cpi, ThreadData *td, int mb_row) {
         filter_strength = AOMMIN(filter_strength, 1);
 
       if (cpi->oxcf.algo_cfg.sharpness == 3 && is_low_cntras)
-        filter_strength = AOMMIN(filter_strength, 3);
+        filter_strength = AOMMIN(filter_strength, mbd->bd > 8 ? 0 : 3);
 
       
       if (frame == filter_frame_idx) {  
@@ -1698,6 +1724,10 @@ void av1_tf_info_filtering(TEMPORAL_FILTER_INFO *tf_info, AV1_COMP *cpi,
       int buf_idx = gf_group->frame_type[gf_index] == INTER_FRAME;
       int lookahead_idx = gf_group->arf_src_offset[gf_index] +
                           gf_group->cur_frame_idx[gf_index];
+      if (!av1_lookahead_peek(cpi->ppi->lookahead, lookahead_idx,
+                              cpi->compressor_stage)) {
+        continue;
+      }
       
       
       

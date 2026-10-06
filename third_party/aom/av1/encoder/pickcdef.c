@@ -899,7 +899,7 @@ void av1_cdef_search(AV1_COMP *cpi) {
   
   cdef_alloc_data(cm, cdef_search_ctx);
   
-  if (cpi->mt_info.num_workers > 1) {
+  if (cpi->mt_info.num_mod_workers[MOD_CDEF_SEARCH] > 1) {
     av1_cdef_mse_calc_frame_mt(cpi);
   } else {
     cdef_mse_calc_frame(cdef_search_ctx, cm->error, adaptive_cdef_mode);

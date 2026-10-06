@@ -1654,6 +1654,7 @@ enum aome_enc_control_id {
 
 
 
+
   AV1E_SET_MODE_REF_DELTA_ENABLED = 176,
 
   
@@ -1777,7 +1778,17 @@ typedef enum {
   AOM_TUNE_PSNR = 0,
   AOM_TUNE_SSIM = 1,
   
+  
+
+
+
+
   AOM_TUNE_VMAF_WITH_PREPROCESSING = 4,
+  
+
+
+
+
   AOM_TUNE_VMAF_WITHOUT_PREPROCESSING = 5,
   AOM_TUNE_VMAF_MAX_GAIN = 6,
   AOM_TUNE_VMAF_NEG_MAX_GAIN = 7,

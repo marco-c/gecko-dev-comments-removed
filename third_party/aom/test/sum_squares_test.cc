@@ -53,7 +53,7 @@ class SumSquaresTest : public ::testing::TestWithParam<TestFuncs> {
   }
 
   void TearDown() override { aom_free(src_); }
-  void RunTest(bool is_random);
+  void RunTest(bool is_random, bool multiple_of_4);
   void RunSpeedTest();
 
   void GenRandomData(int width, int height, int stride) {
@@ -84,13 +84,15 @@ class SumSquaresTest : public ::testing::TestWithParam<TestFuncs> {
 };
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(SumSquaresTest);
 
-void SumSquaresTest::RunTest(bool is_random) {
+void SumSquaresTest::RunTest(bool is_random, bool multiple_of_4) {
   int failed = 0;
   for (int k = 0; k < kNumIterations; k++) {
-    const int width = 4 * (rnd_(31) + 1);   
-    const int height = 4 * (rnd_(31) + 1);  
-    int stride = 4 << rnd_(7);              
-    while (stride < width) {                
+    
+    const int width = multiple_of_4 ? 4 * (rnd_(31) + 1) : rnd_(127) + 1;
+    
+    const int height = multiple_of_4 ? 4 * (rnd_(31) + 1) : rnd_(127) + 1;
+    int stride = 4 << rnd_(7);  
+    while (stride < width) {    
       stride = 4 << rnd_(7);
     }
     if (is_random) {
@@ -145,11 +147,16 @@ void SumSquaresTest::RunSpeedTest() {
 }
 
 TEST_P(SumSquaresTest, OperationCheck) {
-  RunTest(true);  
+  RunTest(true, true);  
 }
 
 TEST_P(SumSquaresTest, ExtremeValues) {
-  RunTest(false);  
+  RunTest(false, true);  
+}
+
+TEST_P(SumSquaresTest, ArbitraryWidthAndHeight) {
+  
+  RunTest(true, false);
 }
 
 TEST_P(SumSquaresTest, DISABLED_Speed) { RunSpeedTest(); }
@@ -793,7 +800,7 @@ class Highbd2dVarTest : public ::testing::TestWithParam<TestFuncVar2D> {
   }
 
   void TearDown() override { aom_free(src_); }
-  void RunTest(bool is_random);
+  void RunTest(bool is_random, bool multiple_of_4);
   void RunSpeedTest();
 
   void GenRandomData(int width, int height, int stride) {
@@ -824,13 +831,15 @@ class Highbd2dVarTest : public ::testing::TestWithParam<TestFuncVar2D> {
 };
 GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(Highbd2dVarTest);
 
-void Highbd2dVarTest::RunTest(bool is_random) {
+void Highbd2dVarTest::RunTest(bool is_random, bool multiple_of_4) {
   int failed = 0;
   for (int k = 0; k < kNumIterations; k++) {
-    const int width = 4 * (rnd_(63) + 1);   
-    const int height = 4 * (rnd_(63) + 1);  
-    int stride = 4 << rnd_(8);              
-    while (stride < width) {                
+    
+    const int width = multiple_of_4 ? 4 * (rnd_(63) + 1) : rnd_(255) + 1;
+    
+    const int height = multiple_of_4 ? 4 * (rnd_(63) + 1) : rnd_(255) + 1;
+    int stride = 4 << rnd_(8);  
+    while (stride < width) {    
       stride = 4 << rnd_(8);
     }
     if (is_random) {
@@ -886,11 +895,16 @@ void Highbd2dVarTest::RunSpeedTest() {
 }
 
 TEST_P(Highbd2dVarTest, OperationCheck) {
-  RunTest(true);  
+  RunTest(true, true);  
 }
 
 TEST_P(Highbd2dVarTest, ExtremeValues) {
-  RunTest(false);  
+  RunTest(false, true);  
+}
+
+TEST_P(Highbd2dVarTest, ArbitraryWidthAndHeight) {
+  
+  RunTest(true, false);
 }
 
 TEST_P(Highbd2dVarTest, DISABLED_Speed) { RunSpeedTest(); }

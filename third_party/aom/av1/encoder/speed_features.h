@@ -1258,6 +1258,11 @@ typedef struct INTER_MODE_SPEED_FEATURES {
   
   
   
+  float bias_gm_mode_rd_scale_pct;
+
+  
+  
+  
   
   int skip_cmp_using_top_cmp_avg_est_rd_lvl;
 
@@ -1854,6 +1859,14 @@ typedef struct REAL_TIME_SPEED_FEATURES {
   int selective_cdf_update;
   
   int rt_use_intrabc;
+  
+  int rt_prune_intrabc_nonrd;
+  
+  
+  
+  
+  
+  int rt_intrabc_miss_mode;
 
   
   int force_only_last_ref;

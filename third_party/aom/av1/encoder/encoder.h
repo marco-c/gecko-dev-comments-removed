@@ -3589,6 +3589,12 @@ typedef struct AV1_COMP {
 
 
 
+  int mb_weber_stats_alloc_size;
+
+  
+
+
+
   int *prep_rate_estimates;
 
   
@@ -3616,6 +3622,11 @@ typedef struct AV1_COMP {
 
 
   int *mb_delta_q;
+
+  
+
+
+  int mb_delta_q_alloc_size;
 
   
 
@@ -4287,16 +4298,26 @@ static inline int get_mi_ext_idx(const int mi_row, const int mi_col,
   return mi_ext_row * mbmi_ext_stride + mi_ext_col;
 }
 
+
+
 static inline void set_pixels_to_frame_edge(MACROBLOCK *x, int bw, int bh,
                                             int mi_col, int mi_row, int mi_cols,
                                             int mi_rows, int frame_width,
                                             int frame_height,
                                             bool do_border_pad) {
-  int total_frame_width = do_border_pad ? frame_width : (mi_cols * 4);
-  int total_frame_height = do_border_pad ? frame_height : (mi_rows * 4);
+  
+  
+  
+  
+  
+  int boundary_frame_width =
+      do_border_pad ? frame_width : (mi_cols << MI_SIZE_LOG2);
+  int boundary_frame_height =
+      do_border_pad ? frame_height : (mi_rows << MI_SIZE_LOG2);
 
-  x->pix_to_bottom_edge = total_frame_height - ((mi_row + bh) << MI_SIZE_LOG2);
-  x->pix_to_right_edge = total_frame_width - ((mi_col + bw) << MI_SIZE_LOG2);
+  x->pix_to_bottom_edge =
+      boundary_frame_height - ((mi_row + bh) << MI_SIZE_LOG2);
+  x->pix_to_right_edge = boundary_frame_width - ((mi_col + bw) << MI_SIZE_LOG2);
 }
 
 
@@ -4432,6 +4453,12 @@ static inline int is_psnr_calc_enabled(const AV1_COMP *cpi) {
 
   return cpi->ppi->b_calculate_psnr && !is_stat_generation_stage(cpi) &&
          cm->show_frame && !cpi->is_dropped_frame;
+}
+
+
+static inline int is_vmaf_tuning_mode(const aom_tune_metric tuning) {
+  return tuning == AOM_TUNE_VMAF_MAX_GAIN ||
+         tuning == AOM_TUNE_VMAF_NEG_MAX_GAIN;
 }
 
 static inline int is_frame_resize_pending(const AV1_COMP *const cpi) {

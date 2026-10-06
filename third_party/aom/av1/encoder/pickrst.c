@@ -1170,30 +1170,35 @@ static int linsolve_wiener(int n, int64_t *A, int stride, int64_t *b,
     
     
     
-    
-    
-    
-    
     int64_t max_abs_akj = 0;
     for (int j = 0; j < n; j++) {
       const int64_t abs_akj = llabs(A[k * stride + j]);
       if (abs_akj > max_abs_akj) max_abs_akj = abs_akj;
     }
     const int scale_threshold = 1 << 22;
-    const int scaler_A = max_abs_akj < scale_threshold ? 1 : (1 << 6);
-    const int scaler_c = max_abs_akj < scale_threshold ? 1 : (1 << 7);
-    const int scaler = scaler_c * scaler_A;
 
     
-    for (int i = k; i < n - 1; i++) {
-      if (A[k * stride + k] == 0) return 0;
-      const int64_t c = A[(i + 1) * stride + k] / scaler_c;
-      const int64_t cd = A[k * stride + k];
-      for (int j = 0; j < n; j++) {
-        A[(i + 1) * stride + j] -=
-            A[k * stride + j] / scaler_A * c / cd * scaler;
+    if (max_abs_akj < scale_threshold) {
+      for (int i = k; i < n - 1; i++) {
+        if (A[k * stride + k] == 0) return 0;
+        const int64_t c = A[(i + 1) * stride + k];
+        const int64_t cd = A[k * stride + k];
+        for (int j = 0; j < n; j++) {
+          A[(i + 1) * stride + j] -= A[k * stride + j] * c / cd;
+        }
+        b[i + 1] -= c * b[k] / cd;
       }
-      b[i + 1] -= c * b[k] / cd * scaler_c;
+    } else {
+      
+      for (int i = k; i < n - 1; i++) {
+        if (A[k * stride + k] == 0) return 0;
+        const double c = A[(i + 1) * stride + k];
+        const double cd = A[k * stride + k];
+        for (int j = 0; j < n; j++) {
+          A[(i + 1) * stride + j] -= (int64_t)(A[k * stride + j] * c / cd);
+        }
+        b[i + 1] -= (int64_t)(c * b[k] / cd);
+      }
     }
   }
   

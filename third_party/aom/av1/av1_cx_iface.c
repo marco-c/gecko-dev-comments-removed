@@ -887,8 +887,7 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
 #endif
 
 #if !CONFIG_TUNE_VMAF
-  if (extra_cfg->tuning >= AOM_TUNE_VMAF_WITH_PREPROCESSING &&
-      extra_cfg->tuning <= AOM_TUNE_VMAF_NEG_MAX_GAIN) {
+  if (is_vmaf_tuning_mode(extra_cfg->tuning)) {
     ERROR(
         "This error may be related to the wrong configuration options: try to "
         "set -DCONFIG_TUNE_VMAF=1 at the time CMake is run.");
@@ -1681,13 +1680,24 @@ static aom_codec_err_t encoder_set_config(aom_codec_alg_priv_t *ctx,
     
     
     
+    
+    
+    
+    
+    
+    
+    const bool allow_ref_scaled_upscale =
+        cfg->g_forced_max_frame_width && cfg->g_forced_max_frame_height &&
+        ctx->oxcf.mode == REALTIME && cfg->g_pass == AOM_RC_ONE_PASS &&
+        cfg->g_lag_in_frames == 0;
     if (ctx->ppi->cpi->svc.number_spatial_layers == 1 &&
         ctx->ppi->cpi->last_coded_width && ctx->ppi->cpi->last_coded_height &&
         (!valid_ref_frame_size(ctx->ppi->cpi->last_coded_width,
                                ctx->ppi->cpi->last_coded_height, cfg->g_w,
                                cfg->g_h) ||
-         ((int)cfg->g_w > ctx->ppi->cpi->last_coded_width) ||
-         ((int)cfg->g_h > ctx->ppi->cpi->last_coded_height))) {
+         (!allow_ref_scaled_upscale &&
+          (((int)cfg->g_w > ctx->ppi->cpi->last_coded_width) ||
+           ((int)cfg->g_h > ctx->ppi->cpi->last_coded_height))))) {
       force_key = 1;
     }
   }
@@ -3233,7 +3243,9 @@ static aom_codec_err_t encoder_destroy(aom_codec_alg_priv_t *ctx) {
 
   if (ctx->ppi) {
     AV1_PRIMARY *ppi = ctx->ppi;
-    av1_extrc_delete(&ppi->cpi->ext_ratectrl);
+    if (ppi->cpi) {
+      av1_extrc_delete(&ppi->cpi->ext_ratectrl);
+    }
     for (int i = 0; i < MAX_PARALLEL_FRAMES - 1; i++) {
       if (ppi->parallel_frames_data[i].cx_data) {
         free(ppi->parallel_frames_data[i].cx_data);
@@ -3406,8 +3418,7 @@ static aom_codec_err_t encoder_encode(aom_codec_alg_priv_t *ctx,
   }
 
 #if CONFIG_TUNE_VMAF
-  if (ctx->extra_cfg.tuning >= AOM_TUNE_VMAF_WITH_PREPROCESSING &&
-      ctx->extra_cfg.tuning <= AOM_TUNE_VMAF_NEG_MAX_GAIN) {
+  if (is_vmaf_tuning_mode(ctx->extra_cfg.tuning)) {
     aom_init_vmaf_model(&ppi->cpi->vmaf_info.vmaf_model,
                         ppi->cpi->oxcf.tune_cfg.vmaf_model_path);
   }
@@ -4081,10 +4092,16 @@ static aom_codec_err_t ctrl_set_number_spatial_layers(aom_codec_alg_priv_t *ctx,
   
   
   
+  
+  
+  
+  
   if (number_spatial_layers <= 0 ||
-      number_spatial_layers > MAX_NUM_SPATIAL_LAYERS)
+      number_spatial_layers > MAX_NUM_SPATIAL_LAYERS || ctx->ppi->use_svc)
     return AOM_CODEC_INVALID_PARAM;
   ctx->ppi->number_spatial_layers = number_spatial_layers;
+  ctx->ppi->cpi->common.spatial_layer_id = clamp(
+      ctx->ppi->cpi->common.spatial_layer_id, 0, number_spatial_layers - 1);
   
   
   
@@ -4100,7 +4117,10 @@ static aom_codec_err_t ctrl_set_layer_id(aom_codec_alg_priv_t *ctx,
   aom_svc_layer_id_t *const data = va_arg(args, aom_svc_layer_id_t *);
   if (data->spatial_layer_id < 0 || data->temporal_layer_id < 0 ||
       data->spatial_layer_id >= (int)ctx->ppi->number_spatial_layers ||
-      data->temporal_layer_id >= (int)ctx->ppi->number_temporal_layers) {
+      data->temporal_layer_id >= (int)ctx->ppi->number_temporal_layers ||
+      data->spatial_layer_id >= (int)ctx->ppi->cpi->svc.number_spatial_layers ||
+      data->temporal_layer_id >=
+          (int)ctx->ppi->cpi->svc.number_temporal_layers) {
     return AOM_CODEC_INVALID_PARAM;
   }
   ctx->ppi->cpi->common.spatial_layer_id = data->spatial_layer_id;
@@ -4152,20 +4172,16 @@ static aom_codec_err_t ctrl_set_svc_params(aom_codec_alg_priv_t *ctx,
     ctx->next_frame_flags |= AOM_EFLAG_FORCE_KF;
     av1_set_svc_seq_params(ppi);
     av1_free_svc_cyclic_refresh(cpi);
-    
-    
-    
-    
-    
-    cpi->svc.spatial_layer_id =
-        clamp(cpi->svc.spatial_layer_id, 0, cpi->svc.number_spatial_layers - 1);
-    cpi->svc.temporal_layer_id = clamp(cpi->svc.temporal_layer_id, 0,
-                                       cpi->svc.number_temporal_layers - 1);
-    cpi->common.spatial_layer_id = clamp(cpi->common.spatial_layer_id, 0,
-                                         cpi->svc.number_spatial_layers - 1);
-    cpi->common.temporal_layer_id = clamp(cpi->common.temporal_layer_id, 0,
-                                          cpi->svc.number_temporal_layers - 1);
   }
+
+  
+  
+  
+  
+  cpi->common.spatial_layer_id = cpi->svc.spatial_layer_id =
+      clamp(cpi->svc.spatial_layer_id, 0, cpi->svc.number_spatial_layers - 1);
+  cpi->common.temporal_layer_id = cpi->svc.temporal_layer_id =
+      clamp(cpi->svc.temporal_layer_id, 0, cpi->svc.number_temporal_layers - 1);
 
   if (ppi->number_spatial_layers > 1 || ppi->number_temporal_layers > 1) {
     unsigned int sl, tl;
@@ -4894,6 +4910,9 @@ static aom_codec_err_t encoder_set_option(aom_codec_alg_priv_t *ctx,
   } else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.force_max_q, argv,
                               err_string)) {
     extra_cfg.force_max_q = arg_parse_uint_helper(&arg, err_string);
+  } else if (arg_match_helper(&arg, &g_av1_codec_arg_defs.resize_mode, argv,
+                              err_string)) {
+    ctx->cfg.rc_resize_mode = arg_parse_uint_helper(&arg, err_string);
   } else {
     match = 0;
     snprintf(err_string, ARG_ERR_MSG_MAX_LEN, "Cannot find aom option %s",

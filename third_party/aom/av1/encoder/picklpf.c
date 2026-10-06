@@ -297,6 +297,9 @@ void av1_pick_filter_level(const YV12_BUFFER_CONFIG *sd, AV1_COMP *cpi,
     
     
     
+    
+    
+    
     int filt_guess;
     switch (seq_params->bit_depth) {
       case AOM_BITS_8:

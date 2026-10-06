@@ -9,6 +9,8 @@
 
 
 
+#include "av1/common/av1_inv_txfm2d.h"
+
 #include "config/aom_dsp_rtcd.h"
 #include "config/av1_rtcd.h"
 

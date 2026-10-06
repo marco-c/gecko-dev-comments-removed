@@ -778,6 +778,13 @@ static int denoise_and_encode(AV1_COMP *const cpi, uint8_t *const dest,
 #endif
   
   YV12_BUFFER_CONFIG *source_buffer = frame_input->source;
+
+  
+  
+  
+  cm->current_frame.frame_type = frame_params->frame_type;
+  av1_set_frame_size(cpi, cm->width, cm->height);
+
   
   if (apply_filtering) {
     int show_existing_alt_ref = 0;
@@ -788,8 +795,6 @@ static int denoise_and_encode(AV1_COMP *const cpi, uint8_t *const dest,
         cpi, cpi->oxcf.frm_dim_cfg.width, cpi->oxcf.frm_dim_cfg.height,
         cpi->gf_frame_index, &bottom_index, &top_index);
 
-    
-    cm->current_frame.frame_type = frame_params->frame_type;
     if (update_type == KF_UPDATE || update_type == ARF_UPDATE) {
       YV12_BUFFER_CONFIG *tf_buf = av1_tf_info_get_filtered_buf(
           &cpi->ppi->tf_info, cpi->gf_frame_index, &frame_diff);
@@ -830,14 +835,17 @@ static int denoise_and_encode(AV1_COMP *const cpi, uint8_t *const dest,
       
       
       
-      av1_temporal_filter(cpi, arf_src_index, cpi->gf_frame_index, &frame_diff,
-                          tf_buf_second_arf);
-      show_existing_alt_ref =
-          av1_check_show_filtered_frame(tf_buf_second_arf, &frame_diff, q_index,
-                                        cm->seq_params->bit_depth, 1, 1);
-      if (show_existing_alt_ref) {
-        aom_extend_frame_borders(tf_buf_second_arf, av1_num_planes(cm));
-        frame_input->source = tf_buf_second_arf;
+      if (av1_lookahead_peek(cpi->ppi->lookahead, arf_src_index,
+                             cpi->compressor_stage)) {
+        av1_temporal_filter(cpi, arf_src_index, cpi->gf_frame_index,
+                            &frame_diff, tf_buf_second_arf);
+        show_existing_alt_ref = av1_check_show_filtered_frame(
+            tf_buf_second_arf, &frame_diff, q_index, cm->seq_params->bit_depth,
+            1, 1);
+        if (show_existing_alt_ref) {
+          aom_extend_frame_borders(tf_buf_second_arf, av1_num_planes(cm));
+          frame_input->source = tf_buf_second_arf;
+        }
       }
       
       cpi->common.showable_frame |= 1;
@@ -859,9 +867,6 @@ static int denoise_and_encode(AV1_COMP *const cpi, uint8_t *const dest,
   int set_mv_params = frame_params->frame_type == KEY_FRAME ||
                       update_type == ARF_UPDATE || update_type == GF_UPDATE;
   cm->show_frame = frame_params->show_frame;
-  cm->current_frame.frame_type = frame_params->frame_type;
-  
-  av1_set_frame_size(cpi, cm->width, cm->height);
   if (set_mv_params) av1_set_mv_search_params(cpi);
 
 #if CONFIG_RD_COMMAND
@@ -1769,8 +1774,7 @@ int av1_encode_strategy(AV1_COMP *const cpi, size_t *const size,
 
 #if CONFIG_TUNE_VMAF
   if (!is_stat_generation_stage(cpi) &&
-      (oxcf->tune_cfg.tuning >= AOM_TUNE_VMAF_WITH_PREPROCESSING &&
-       oxcf->tune_cfg.tuning <= AOM_TUNE_VMAF_NEG_MAX_GAIN)) {
+      is_vmaf_tuning_mode(oxcf->tune_cfg.tuning)) {
     av1_update_vmaf_curve(cpi);
   }
 #endif
