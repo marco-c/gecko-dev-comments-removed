@@ -3070,6 +3070,12 @@ pref("browser.screenshots.dir", "");
 pref("browser.mini-window.enabled", false);
 pref("browser.mini-window.log", false);
 
+pref("browser.mini-window.toolbar.hide-delay-ms", 2000);
+
+pref("browser.mini-window.toolbar.edge-zone-px", 12);
+
+pref("browser.mini-window.toolbar.hover-reveal-delay-ms", 50);
+
 
 pref("doh-rollout.clearModeOnShutdown", false);
 
