@@ -8,7 +8,6 @@
 #include "MediaCodecsSupport.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/MediaDrmCDMProxy.h"
-#include "mozilla/StaticPtr.h"  
 
 namespace mozilla {
 
@@ -33,13 +32,6 @@ class AndroidDecoderModule : public PlatformDecoderModule {
 
   static media::DecodeSupportSet SupportsMimeType(const nsACString& aMimeType);
 
-  static nsTArray<nsCString> GetSupportedMimeTypes();
-  
-  static nsTArray<nsCString> GetSupportedMimeTypesPrefixed();
-
-  static void SetSupportedMimeTypes();
-  static void SetSupportedMimeTypes(nsTArray<nsCString>&& aSupportedTypes);
-
   media::DecodeSupportSet Supports(
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const override;
@@ -58,24 +50,7 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   explicit AndroidDecoderModule(CDMProxy* aProxy = nullptr);
   virtual ~AndroidDecoderModule() = default;
 
-  static bool AreSupportedMimeTypesReady();
-  static bool IsSupportedCodecsReady();
-
   RefPtr<MediaDrmCDMProxy> mProxy;
-  
-  static inline StaticAutoPtr<nsTArray<nsCString>> sSupportedSwMimeTypes
-      MOZ_GUARDED_BY(sMutex);
-  
-  static inline StaticAutoPtr<nsTArray<nsCString>> sSupportedHwMimeTypes
-      MOZ_GUARDED_BY(sMutex);
-  
-  
-  
-  
-  static inline StaticAutoPtr<media::MediaCodecsSupported> sSupportedCodecs
-      MOZ_GUARDED_BY(sMutex);
-
-  static inline StaticMutex sMutex;
 };
 
 extern LazyLogModule sAndroidDecoderModuleLog;
