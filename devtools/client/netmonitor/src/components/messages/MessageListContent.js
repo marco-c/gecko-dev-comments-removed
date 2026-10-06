@@ -53,8 +53,6 @@ loader.lazyGetter(this, "MessageListItem", function () {
   );
 });
 
-const LEFT_MOUSE_BUTTON = 0;
-
 
 
 
@@ -203,10 +201,10 @@ class MessageListContent extends Component {
     });
   }
 
-  onMouseDown(evt, item) {
-    if (evt.button === LEFT_MOUSE_BUTTON) {
-      this.props.selectMessage(item);
-    }
+  
+  
+  onClick(item) {
+    this.props.selectMessage(item);
   }
 
   onContextMenu(evt, item) {
@@ -367,7 +365,7 @@ class MessageListContent extends Component {
               item,
               index,
               isSelected: item === selectedMessage,
-              onMouseDown: evt => this.onMouseDown(evt, item),
+              onClick: () => this.onClick(item),
               onContextMenu: evt => this.onContextMenu(evt, item),
               connector,
               visibleColumns,
