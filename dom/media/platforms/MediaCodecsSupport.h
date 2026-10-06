@@ -67,6 +67,9 @@ enum class MediaCodecsSupport : int {
 using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
 
 
+enum class DrmSchemeSupport : uint8_t { Unknown, Unsupported, Supported };
+
+
 inline constexpr MediaCodecsSupported kMediaCodecsDecodeMask = {
 #define X(name)                                                             \
   MediaCodecsSupport::SW_DECODE(name), MediaCodecsSupport::HW_DECODE(name), \
