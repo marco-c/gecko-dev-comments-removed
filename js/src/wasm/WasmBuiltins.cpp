@@ -36,6 +36,7 @@
 #include "js/friend/StackLimits.h"    
 #include "js/Printf.h"                
 #include "threading/Mutex.h"
+#include "util/Denormals.h"
 #include "util/Memory.h"
 #include "util/Poison.h"
 #include "util/PortableMath.h"
@@ -989,6 +990,7 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
 static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
   
   
+  MOZ_ASSERT(!DenormalsDisabled());
   JSContext* cx = TlsContext.get();
 #ifdef ENABLE_WASM_JSPI
   MOZ_ASSERT(!cx->wasm().onContStack());
@@ -1019,6 +1021,7 @@ static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
 
 
 static void* WasmHandleTrap() {
+  MOZ_RELEASE_ASSERT(!DenormalsDisabled());
   JSContext* cx = TlsContext.get();  
   JitActivation* activation = CallingActivation(cx);
 #ifdef ENABLE_WASM_JSPI
@@ -1112,12 +1115,6 @@ static void* WasmHandleTrap() {
   }
 
   MOZ_CRASH("unexpected trap");
-}
-
-static void WasmReportV128JSCall() {
-  JSContext* cx = TlsContext.get();  
-  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                           JSMSG_WASM_BAD_VAL_TYPE);
 }
 
 static int32_t CoerceInPlace_ToInt32(Value* rawVal) {
@@ -1482,9 +1479,6 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
     case SymbolicAddress::HandleTrap:
       *abiType = Args_General0;
       return FuncCast(WasmHandleTrap, *abiType);
-    case SymbolicAddress::ReportV128JSCall:
-      *abiType = Args_General0;
-      return FuncCast(WasmReportV128JSCall, *abiType);
     case SymbolicAddress::CallImport_General:
       *abiType = Args_Int32_GeneralInt32Int32General;
       return FuncCast(Instance::callImport_general, *abiType);
@@ -1963,7 +1957,6 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
     case SymbolicAddress::WakeM32:
     case SymbolicAddress::WakeM64:
     case SymbolicAddress::CoerceInPlace_JitEntry:
-    case SymbolicAddress::ReportV128JSCall:
     case SymbolicAddress::MemCopyM32:
     case SymbolicAddress::MemCopySharedM32:
     case SymbolicAddress::MemCopyM64:

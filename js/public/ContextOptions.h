@@ -25,6 +25,7 @@ class JS_PUBLIC_API ContextOptions {
         wasmBaseline_(true),
         wasmIon_(true),
         testWasmAwaitTier2_(false),
+        wasmDisablesDenormals_(false),
         disableIon_(false),
         disableEvalSecurityChecks_(false),
         disableFilenameSecurityChecks_(false),
@@ -69,6 +70,12 @@ class JS_PUBLIC_API ContextOptions {
     testWasmAwaitTier2_ = flag;
     return *this;
   }
+
+  
+  
+  
+  bool wasmDisablesDenormals() const { return wasmDisablesDenormals_; }
+  ContextOptions& setWasmDisablesDenormals();
 
   
   
@@ -156,6 +163,7 @@ class JS_PUBLIC_API ContextOptions {
   bool wasmBaseline_ : 1;
   bool wasmIon_ : 1;
   bool testWasmAwaitTier2_ : 1;
+  bool wasmDisablesDenormals_ : 1;
 
   
   bool disableIon_ : 1;

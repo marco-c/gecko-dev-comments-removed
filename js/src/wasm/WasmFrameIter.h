@@ -406,6 +406,58 @@ void SetExitFP(jit::MacroAssembler& masm, ExitReason reason,
                jit::Register activation, jit::Register scratch);
 void ClearExitFP(jit::MacroAssembler& masm, jit::Register activation);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void GenerateEnterWasmFPEnvironment(jit::MacroAssembler& masm,
+                                    jit::Register instance);
+void GenerateLeaveWasmFPEnvironment(jit::MacroAssembler& masm,
+                                    jit::Register instance);
+
+
+void AssertDenormalsEnabled(jit::MacroAssembler& masm);
+
 #ifdef ENABLE_WASM_JSPI
 
 

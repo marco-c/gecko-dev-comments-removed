@@ -250,6 +250,7 @@
 #include "js/HeapAPI.h"  
 #include "js/Printer.h"
 #include "js/SliceBudget.h"
+#include "util/Denormals.h"
 #include "util/DifferentialTesting.h"
 #include "vm/BigIntType.h"
 #include "vm/EnvironmentObject.h"
@@ -5046,6 +5047,9 @@ MOZ_NEVER_INLINE GCRuntime::IncrementalResult GCRuntime::gcCycle(
 
   
   MOZ_ASSERT(reason != JS::GCReason::RESET);
+
+  
+  MOZ_ASSERT(!DenormalsDisabled());
 
   
   

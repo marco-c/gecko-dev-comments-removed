@@ -770,6 +770,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   
   masm.assertStackAlignment(WasmStackAlignment);
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
   CallFuncExport(masm, fe, funcPtr);
   masm.assertStackAlignment(WasmStackAlignment);
 
@@ -792,6 +793,10 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   WasmPop(masm, argv);
 
   WasmPop(masm, InstanceReg);
+
+  
+  
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
   
 #ifdef JS_CODEGEN_ARM64
@@ -910,6 +915,15 @@ static void GenerateBigIntInitialization(MacroAssembler& masm,
                       SymbolicAddress::AllocateBigInt);
   masm.storeCallPointerResult(scratch);
 
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(wasm::NeedsBuiltinThunk(SymbolicAddress::AllocateBigInt));
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
+
   masm.assertStackAlignment(ABIStackAlignment);
   masm.freeStack(frameSize);
 
@@ -951,14 +965,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
 
   MOZ_ASSERT(masm.framePushed() == 0);
-
-  if (funcType.hasUnexposableArgOrRet()) {
-    GenerateJitEntryLoadInstance(masm);
-    CallSymbolicAddress(masm, !fe.hasEagerStubs(),
-                        SymbolicAddress::ReportV128JSCall);
-    GenerateJitEntryThrow(masm);
-    return FinishOffsets(masm, offsets);
-  }
+  MOZ_RELEASE_ASSERT(!funcType.hasUnexposableArgOrRet());
 
   
   const unsigned AlignedExitFooterFrameSize =
@@ -1240,6 +1247,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
   
   masm.assertStackAlignment(WasmStackAlignment);
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
   CallFuncExport(masm, fe, funcPtr);
   masm.assertStackAlignment(WasmStackAlignment);
 
@@ -1251,6 +1259,10 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   masm.moveToStackPtr(FramePointer);
   masm.setFramePushed(0);
+
+  
+  
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
   
   Label exception;
@@ -1354,6 +1366,15 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
     CallSymbolicAddress(masm, !fe.hasEagerStubs(),
                         SymbolicAddress::CoerceInPlace_JitEntry);
     masm.assertStackAlignment(ABIStackAlignment);
+
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(wasm::NeedsBuiltinThunk(SymbolicAddress::CoerceInPlace_JitEntry));
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
     
     masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg,
@@ -1542,6 +1563,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 
   masm.assertStackAlignment(WasmStackAlignment);
   MoveSPForJitABI(masm);
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
   masm.callJit(ImmPtr(callee));
 #ifdef JS_CODEGEN_ARM64
   
@@ -1550,6 +1572,10 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
 #endif
   masm.freeStackTo(fakeFramePushed);
   masm.assertStackAlignment(WasmStackAlignment);
+
+  
+  
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
   
   GenPrintf(DebugChannel::Function, masm, "wasm-function[%d]; returns ",
@@ -1752,7 +1778,7 @@ static void FillArgumentArrayForJitExit(MacroAssembler& masm, Register instance,
                                         unsigned funcImportIndex,
                                         const FuncType& funcType,
                                         unsigned argOffset, Register scratch,
-                                        Register scratch2, Label* throwLabel) {
+                                        Register scratch2) {
   MOZ_ASSERT(scratch != scratch2);
 
   
@@ -2250,7 +2276,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
 
   
   FillArgumentArrayForJitExit(masm, InstanceReg, funcImportIndex, funcType,
-                              argOffset, scratch, scratch2, throwLabel);
+                              argOffset, scratch, scratch2);
 
   
   
@@ -2744,6 +2770,10 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
 
   
   
+  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
+
+  
+  
   
   Register originalStackPointer = ABINonArgReg3;
 #ifdef ENABLE_WASM_JSPI
@@ -2806,8 +2836,16 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   
   
   
+  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
+
+  
+  
+  
+  
   masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
   masm.PopRegsInMask(RegsToPreserve);
+
 #ifdef JS_CODEGEN_ARM64
   WasmPop(masm, lr);
   masm.abiret();
@@ -3141,6 +3179,11 @@ void wasm::GenerateJumpToCatchHandler(MacroAssembler& masm, Register rfe,
   masm.loadStackPtr(Address(rfe, ResumeFromException::offsetOfStackPointer()));
   MoveSPForJitABI(masm);
   wasm::ClobberWasmRegsForLongJmp(masm, scratch1);
+
+  
+  
+  GenerateEnterWasmFPEnvironment(masm, InstanceReg);
+
   masm.jump(scratch1);
 }
 
@@ -3156,6 +3199,10 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   masm.bind(throwLabel);
 
   offsets->begin = masm.currentOffset();
+
+  
+  
+  AssertDenormalsEnabled(masm);
 
   
   

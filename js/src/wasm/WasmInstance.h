@@ -121,6 +121,13 @@ class alignas(16) Instance {
   
   mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
 
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+  
+  
+  
+  uint32_t hasWasmMxcsr_;
+#endif
+
   
   
   
@@ -206,6 +213,17 @@ class alignas(16) Instance {
 
   
   uint32_t maxInitializedGlobalsIndexPlus1_;
+
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+  
+  
+  
+  
+  
+  
+  uint32_t ieeeMxcsr_;
+  uint32_t wasmMxcsr_;
+#endif
 
   
   void* allocatedBase_;
@@ -318,6 +336,11 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfInterrupt() {
     return offsetof(Instance, interrupt_);
   }
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+  static constexpr size_t offsetOfHasWasmMxcsr() {
+    return offsetof(Instance, hasWasmMxcsr_);
+  }
+#endif
   static constexpr size_t offsetOfAllocSites() {
     return offsetof(Instance, allocSites_);
   }
@@ -351,6 +374,14 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfCallRefMetrics() {
     return offsetof(Instance, callRefMetrics_);
   }
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+  static constexpr size_t offsetOfIeeeMxcsr() {
+    return offsetof(Instance, ieeeMxcsr_);
+  }
+  static constexpr size_t offsetOfWasmMxcsr() {
+    return offsetof(Instance, wasmMxcsr_);
+  }
+#endif
   static constexpr size_t offsetOfData() { return offsetof(Instance, data_); }
   static constexpr size_t offsetInData(size_t offset) {
     return offsetOfData() + offset;
