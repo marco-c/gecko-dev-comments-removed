@@ -934,10 +934,6 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
                                      int32_t aNameSpaceID, nsAtom* aAttribute,
                                      AttrModType aModType,
                                      const nsAttrValue* aOldValue) {
-  if (!HasLoadState(eTreeConstructed)) {
-    
-    return;
-  }
   if (sIsAttrElementChanging) {
     
     return;
@@ -2299,10 +2295,6 @@ void DocAccessible::UpdateDocRoleMapEntry() {
 
   const uint8_t oldRoleMapEntryIndex = mRoleMapEntryIndex;
   SetRoleMapEntry(entry);
-  
-  
-  
-  MOZ_ASSERT(mContent);
   if (mIPCDoc && mRoleMapEntryIndex != oldRoleMapEntryIndex) {
     mIPCDoc->SendRoleChangedEvent(mRoleMapEntryIndex);
   }
