@@ -263,8 +263,6 @@ class CommonBackend(BuildBackend):
             return True
 
         if isinstance(obj, XPIDLModule):
-            
-            
             self._idl_manager.link_module(obj)
 
         elif isinstance(obj, ConfigFileSubstitution):
