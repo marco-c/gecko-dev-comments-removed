@@ -47,7 +47,7 @@ class TRR : public Runnable,
   
   explicit TRR(AHostResolver* aResolver, nsACString& aHost, enum TrrType aType,
                const nsACString& aOriginSuffix, bool aPB,
-               bool aUseFreshConnection);
+               bool aUseFreshConnection, nsIEventTarget* aTarget);
 
   NS_IMETHOD Run() override;
   void Cancel(nsresult aStatus);
@@ -69,6 +69,7 @@ class TRR : public Runnable,
   RequestPurpose Purpose() { return mPurpose; }
   void SetPurpose(RequestPurpose aPurpose) { mPurpose = aPurpose; }
   TRRSkippedReason SkipReason() const { return mTRRSkippedReason; }
+  nsIEventTarget* Target() const { return mTarget; }
 
  protected:
   virtual ~TRR() = default;
@@ -107,6 +108,8 @@ class TRR : public Runnable,
 
   void StoreIPHintAsDNSRecord(const struct SVCB& aSVCBRecord);
 
+  static already_AddRefed<nsIEventTarget> DefaultTarget();
+
   nsCOMPtr<nsIChannel> mChannel;
   enum TrrType mType { TRRTYPE_A };
   UniquePtr<DNSPacket> mPacket;
@@ -125,6 +128,12 @@ class TRR : public Runnable,
   nsCString mCname;
   uint32_t mCnameLoop = kCnameChaseMax;  
 
+  
+  
+  
+  
+  bool mHTTPSAliasFollow = false;
+
   uint32_t mTTL = UINT32_MAX;
   TypeRecordResultType mResult = mozilla::AsVariant(Nothing());
 
@@ -140,6 +149,10 @@ class TRR : public Runnable,
 
   
   bool mUseFreshConnection = false;
+
+  
+  
+  const nsCOMPtr<nsIEventTarget> mTarget;
 };
 
 }  
