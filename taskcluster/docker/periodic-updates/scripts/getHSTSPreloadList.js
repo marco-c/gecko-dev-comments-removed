@@ -327,10 +327,12 @@ function probeResult(status) {
   }
 }
 
-function extendsStreak(record) {
+function isFailedRun(status) {
+  let result = probeResult(status);
   return (
-    record.result != "ok" &&
-    !(record.result == "no-header" && record.httpStatus < 400)
+    result != "ok" &&
+    status.error != ERROR_MAX_AGE_TOO_LOW &&
+    !(result == "no-header" && status.httpStatus < 400)
   );
 }
 
@@ -362,7 +364,7 @@ async function writeProbeResults(probedStatuses, previousPath) {
     if (record.result == "connect-failed") {
       record.nsresult = status.nsresult;
     }
-    if (extendsStreak(record)) {
+    if (isFailedRun(status)) {
       let streak = previousHosts[status.name]?.streak;
       record.streak = {
         count: (streak?.count ?? 0) + 1,
@@ -574,9 +576,7 @@ async function main(args) {
     
     if (
       !status.forceInclude &&
-      status.error != ERROR_NONE &&
-      status.error != ERROR_NO_HSTS_HEADER &&
-      status.error != ERROR_MAX_AGE_TOO_LOW &&
+      isFailedRun(status) &&
       status.name in currentHosts
     ) {
       
