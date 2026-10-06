@@ -7,6 +7,9 @@ add_task(async function () {
     set: [
       ["browser.search.separatePrivateDefault.enabled", true],
       ["browser.search.separatePrivateDefault.featureGate", true],
+      
+      
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
 

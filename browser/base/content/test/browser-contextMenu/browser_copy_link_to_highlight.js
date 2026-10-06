@@ -10,6 +10,9 @@ add_setup(async function () {
     set: [
       ["privacy.query_stripping.strip_list", "stripParam"],
       ["privacy.query_stripping.strip_on_share.enabled", true],
+      
+      
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
 

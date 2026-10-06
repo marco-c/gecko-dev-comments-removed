@@ -286,6 +286,9 @@ add_task(async function test_highlight_selection() {
         set: [
           ["pdfjs.annotationEditorMode", 0],
           ["pdfjs.enableComment", false],
+          
+          
+          ["ui.mouse.right_click.select_under_cursor", false],
         ],
       });
 

@@ -30,7 +30,12 @@ function checkIsLinkMenuItemVisible(visibleMenuItemIds) {
 
 add_task(async function overrideContext_in_extension_tab() {
   await SpecialPowers.pushPrefEnv({
-    set: [["security.allow_eval_with_system_principal", true]],
+    set: [
+      ["security.allow_eval_with_system_principal", true],
+      
+      
+      ["ui.mouse.right_click.select_under_cursor", false],
+    ],
   });
 
   function extensionTabScript() {

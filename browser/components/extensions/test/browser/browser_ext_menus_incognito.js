@@ -1,5 +1,13 @@
 "use strict";
 
+add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+});
+
 
 add_task(async function test_no_show_hide_for_private_window() {
   function background() {

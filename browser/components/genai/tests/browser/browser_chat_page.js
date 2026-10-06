@@ -124,6 +124,9 @@ add_task(async function test_page_and_tab_menu_prompt() {
       ["browser.ml.chat.page", true],
       ["browser.ml.chat.page.menuBadge", true],
       ["sidebar.revamp", true],
+      
+      
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
   await SidebarTestUtils.ensureLauncherVisible(window);

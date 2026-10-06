@@ -186,8 +186,13 @@ add_task(async function test_view_image_revoked_cached_blob() {
 
 add_task(async function test_view_image_inline_svg_bgimage() {
   await SpecialPowers.pushPrefEnv({
-    
-    set: [["security.data_uri.block_toplevel_data_uri_navigations", true]],
+    set: [
+      
+      ["security.data_uri.block_toplevel_data_uri_navigations", true],
+      
+      
+      ["ui.mouse.right_click.select_under_cursor", false],
+    ],
   });
   await test_view_image_works({
     page: "test_view_image_inline_svg.html",

@@ -58,6 +58,14 @@ if (AppConstants.platform == "macosx") {
   contextMenuItems["context-navigation"] = "hidden";
 }
 
+add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+});
+
 add_task(async function pageaction_popup_contextmenu() {
   let extension = ExtensionTestUtils.loadExtension(extData);
   await extension.startup();

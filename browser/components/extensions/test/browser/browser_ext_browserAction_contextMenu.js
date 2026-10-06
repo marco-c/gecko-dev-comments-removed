@@ -76,6 +76,9 @@ add_setup(async function test_setup() {
         "extensions.abuseReport.amoFormURL",
         "https://example.org/%LOCALE%/firefox/feedback/addon/%addonID%/",
       ],
+      
+      
+      ["ui.mouse.right_click.select_under_cursor", false],
     ],
   });
 });

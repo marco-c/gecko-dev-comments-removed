@@ -26,6 +26,12 @@ add_setup(async function () {
   SimpleTest.requestCompleteLog();
 
   
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+
+  
   someOtherTab = gBrowser.selectedTab;
   testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, PAGE);
   registerCleanupFunction(() => BrowserTestUtils.removeTab(testTab));

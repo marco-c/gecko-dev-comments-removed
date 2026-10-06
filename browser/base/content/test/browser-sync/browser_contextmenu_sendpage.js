@@ -26,6 +26,12 @@ const fxaDevices = [
 ];
 
 add_setup(async function () {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.mouse.right_click.select_under_cursor", false]],
+  });
+
   await promiseSyncReady();
   await SearchService.init();
   

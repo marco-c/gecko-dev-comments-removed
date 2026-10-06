@@ -4789,6 +4789,24 @@ nsresult nsIFrame::HandleEvent(nsPresContext* aPresContext,
     return HandleDrag(aPresContext, aEvent, aEventStatus);
   }
 
+  if (aEvent->mMessage == eContextMenu) {
+    
+    
+    const bool isMenuCanceled =
+        *aEventStatus == nsEventStatus_eConsumeNoDefault &&
+        (Preferences::GetBool("dom.event.contextmenu.enabled", true) ||
+         (mContent && mContent->NodePrincipal()->IsSystemPrincipal()));
+    
+    
+    WidgetMouseEvent* mouseEvent = aEvent->AsMouseEvent();
+    if (!isMenuCanceled && mouseEvent && mouseEvent->IsReal() &&
+        aEvent->IsTrusted()) {
+      HandleContextMenuEventToSelectWordOrLink(*mouseEvent);
+      
+    }
+    return NS_OK;
+  }
+
   if ((aEvent->mClass == eMouseEventClass &&
        aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary) ||
       aEvent->mClass == eTouchEventClass) {
@@ -5204,16 +5222,18 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
 
   const bool isSecondaryButton =
       aMouseEvent->mButton == MouseButton::eSecondary;
-  if (isSecondaryButton &&
-      !MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
-          *frameselection, *aMouseEvent, *offsets.content,
-          
-          
-          
-          
-          
-          offsets.StartOffset())) {
-    return NS_OK;
+  if (isSecondaryButton) {
+    if (!MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
+            *frameselection, *aMouseEvent, *offsets.content,
+            
+            
+            
+            
+            
+            
+            offsets.StartOffset())) {
+      return NS_OK;
+    }
   }
 
   if (aMouseEvent->mMessage == eMouseDown &&
@@ -5428,6 +5448,114 @@ bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
          
          
          contentAsTextControl;
+}
+
+void nsIFrame::HandleContextMenuEventToSelectWordOrLink(
+    const WidgetMouseEvent& aContextMenuEvent) {
+  MOZ_ASSERT(aContextMenuEvent.mMessage == eContextMenu);
+
+  if (!StaticPrefs::ui_mouse_right_click_select_under_cursor()) {
+    return;
+  }
+
+  
+  
+  if (aContextMenuEvent.IsContextMenuKeyEvent()) {
+    return;
+  }
+
+  if (!ShouldHandleSelectionMovementEvents(ForSelectionStart::Yes)) {
+    return;
+  }
+
+  const nsPoint pt = nsLayoutUtils::GetEventCoordinatesRelativeTo(
+      &aContextMenuEvent, RelativeTo{this});
+  ContentOffsets offsets = GetContentOffsetsFromPoint(pt, SKIP_HIDDEN);
+  if (!offsets.content) {
+    return;
+  }
+
+  const RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
+  if (!frameSelection) {
+    return;
+  }
+
+  if (!SelectingWordOrLinkAtEventPointAllowed(
+          *frameSelection, aContextMenuEvent, pt, *offsets.content,
+          offsets.StartOffset())) {
+    return;
+  }
+
+  SelectWordOrLinkAtPoint(pt,
+                          MOZ_KnownLive(*offsets.content) );
+}
+
+bool nsIFrame::SelectingWordOrLinkAtEventPointAllowed(
+    const nsFrameSelection& aFrameSelection,
+    const WidgetMouseEvent& aContextMenuEvent, const nsPoint& aPoint,
+    const nsIContent& aContentAtEventPoint, int32_t aOffsetAtEventPoint) const {
+  MOZ_ASSERT(aContextMenuEvent.mMessage == eContextMenu);
+
+  const bool contentIsEditable = aContentAtEventPoint.IsEditable();
+  if (contentIsEditable &&
+      !StaticPrefs::ui_mouse_right_click_select_in_editable()) {
+    return false;
+  }
+
+  
+  
+  
+  if (aContextMenuEvent.IsShift()) {
+    return false;
+  }
+
+  if (NS_WARN_IF(aOffsetAtEventPoint < 0)) {
+    return false;
+  }
+
+  const Selection& selection = aFrameSelection.NormalSelection();
+  
+  
+  if (nsContentUtils::IsPointInSelection(
+          selection, aContentAtEventPoint,
+          static_cast<uint32_t>(aOffsetAtEventPoint),
+          true )) {
+    return false;
+  }
+
+  
+  
+  
+  const nsIFrame* const frameAtPoint =
+      nsLayoutUtils::GetFrameForPoint(RelativeTo{this}, aPoint);
+  return frameAtPoint && frameAtPoint->IsTextFrame();
+}
+
+nsresult nsIFrame::SelectWordOrLinkAtPoint(
+    const nsPoint& aPoint, const nsIContent& aContentAtEventPoint) {
+  Element* linkToSelect = nullptr;
+  for (Element* element :
+       aContentAtEventPoint.InclusiveFlatTreeAncestorsOfType<Element>()) {
+    if (element->IsLink()) {
+      linkToSelect = element;
+      break;
+    }
+  }
+  if (!linkToSelect) {
+    return SelectByTypeAtPoint(aPoint, eSelectWord, eSelectWord, 0);
+  }
+
+  RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
+  if (!frameSelection) {
+    return NS_OK;
+  }
+  
+  
+  const uint32_t endOffset = linkToSelect->GetChildCount();
+  nsCOMPtr<nsIContent> link = linkToSelect;
+  return frameSelection->HandleClick(
+      link, 0u, endOffset, nsFrameSelection::FocusMode::kCollapseToNewPoint,
+      CaretAssociationHint::After);
 }
 
 nsresult nsIFrame::SelectByTypeAtPoint(const nsPoint& aPoint,
