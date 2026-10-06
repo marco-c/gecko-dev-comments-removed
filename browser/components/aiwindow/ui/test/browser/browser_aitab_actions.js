@@ -4,6 +4,12 @@
 "use strict";
 
 
+Services.scriptloader.loadSubScript(
+  getRootDirectory(gTestPath) + "head_aitab.js",
+  this
+);
+
+
 
 
 
@@ -33,16 +39,6 @@ const PAGE_URL = `about:smartpage?page=${SLUG}`;
 
 
 const gOpenedWindows = new Set();
-
-
-
-
-
-
-const PAGE_CONFIG = {
-  header: { type: "header", title: "Delete me", subhead: "A page to remove" },
-  blocks: [],
-};
 
 
 
