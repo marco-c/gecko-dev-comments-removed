@@ -759,6 +759,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   const Encoding* GetClassicScriptFallbackEncoding(
       const ScriptLoadRequest* aRequest);
+  const Encoding* GetClassicScriptFallbackEncoding(
+      const Encoding* aClassicScriptHintEncoding);
 
   
   
