@@ -8424,6 +8424,22 @@ static void DisplayLine(nsDisplayListBuilder* aBuilder,
 
 
 
+static void DisplayLineClampAbsPosDescendants(
+    nsDisplayListBuilder* aBuilder,
+    nsBlockFrame::LineIterator aFirstSkippedLine,
+    nsBlockFrame::LineIterator aLineEnd, const nsDisplayListSet& aLists,
+    nsBlockFrame* aFrame, int32_t aDepth, int32_t& aDrawnLines) {
+  nsDisplayListBuilder::AutoInLineClampAbsPosTraversal traversal(aBuilder);
+  bool foundClamp = false;
+
+  for (auto line = aFirstSkippedLine; line != aLineEnd; ++line) {
+    DisplayLine(aBuilder, line, line->IsInline(), aLists, aFrame, nullptr, 0,
+                aDepth, aDrawnLines, foundClamp);
+  }
+}
+
+
+
 
 
 static void WalkInlineDescendantsToDisplayAbsoluteFrames(
@@ -8500,6 +8516,9 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   if (HidesContent()) {
     return;
   }
+
+  const bool skipClampedContent =
+      StaticPrefs::layout_css_webkit_line_clamp_skip_paint();
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
@@ -8581,7 +8600,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
     if ((HasLineClampEllipsis() || HasLineClampEllipsisDescendant() ||
          LineClampIsClampedToZero()) &&
-        StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
+        skipClampedContent) {
       
       
       
@@ -8594,7 +8613,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsLineBox* cursor = canUseCursor
                           ? GetFirstLineContaining(aBuilder->GetDirtyRect().y)
                           : nullptr;
-  LineIterator line_end = LinesEnd();
+  const LineIterator line_end = LinesEnd();
 
   TextOverflow* textOverflowPtr = textOverflow.get();
   bool foundClamp = false;
@@ -8613,8 +8632,7 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         if (ShouldDescendIntoLine(lineArea)) {
           DisplayLine(aBuilder, line, line->IsInline(), aLists, this, nullptr,
                       0, depth, drawnLines, foundClamp);
-          MOZ_ASSERT(!foundClamp ||
-                     !StaticPrefs::layout_css_webkit_line_clamp_skip_paint());
+          MOZ_ASSERT(!foundClamp || !skipClampedContent);
         }
       }
     }
@@ -8639,8 +8657,11 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           backplateColor.value());
     };
 
-    if (!(LineClampIsClampedToZero() &&
-          StaticPrefs::layout_css_webkit_line_clamp_skip_paint())) {
+    LineIterator firstSkippedLine =
+        LineClampIsClampedToZero() && skipClampedContent ? LinesBegin()
+                                                         : line_end;
+
+    if (firstSkippedLine == line_end) {
       for (LineIterator line = LinesBegin(); line != line_end; ++line) {
         const nsRect lineArea = line->InkOverflowRect();
         const bool lineInLine = line->IsInline();
@@ -8680,12 +8701,20 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           }
         }
         foundClamp = foundClamp || line->HasLineClampEllipsis();
-        if (foundClamp &&
-            StaticPrefs::layout_css_webkit_line_clamp_skip_paint()) {
+        if (foundClamp && skipClampedContent) {
+          firstSkippedLine = line.next();
           break;
         }
         lineCount++;
       }
+    }
+
+    const bool hasForcedDisplayListDescend =
+        HasAnyStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO);
+
+    if (firstSkippedLine != line_end && hasForcedDisplayListDescend) {
+      DisplayLineClampAbsPosDescendants(aBuilder, firstSkippedLine, line_end,
+                                        aLists, this, depth, drawnLines);
     }
 
     if (GetPrevInFlow() || GetNextInFlow()) {
