@@ -149,7 +149,7 @@ class MediaDataEncoderTest : public testing::Test {
           new layers::RecyclingPlanarYCbCrImage(mRecycleBin);
       img->CopyData(mYUV);
       RefPtr<MediaData> frame = VideoData::CreateFromImage(
-          kImageSize, 0,
+          mSize, 0,
           
           
           
