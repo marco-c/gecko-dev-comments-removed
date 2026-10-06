@@ -5552,6 +5552,12 @@ static bool EnableShellAllocationMetadataBuilder(JSContext* cx, unsigned argc,
                                                  Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
+  
+  
+  if (!GlobalObject::ensureConstructor(cx, cx->global(), JSProto_Array)) {
+    return false;
+  }
+
   SetAllocationMetadataBuilder(
       cx, &ShellAllocationMetadataBuilder::metadataBuilder);
 
