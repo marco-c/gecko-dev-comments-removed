@@ -2274,7 +2274,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvPDocAccessibleConstructor(
 
   RefPtr<WindowGlobalParent> embedderWgp =
       GetBrowsingContext()->GetEmbedderWindowGlobal();
-  if (NS_WARN_IF(!IsTop() && !embedderWgp)) {
+  if (NS_WARN_IF(!IsTop() && (!embedderWgp || embedderWgp->IsDiscarded()))) {
     
     
     

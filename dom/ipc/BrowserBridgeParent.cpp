@@ -315,10 +315,15 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(uint64_t aID) {
     
     RefPtr<WindowGlobalParent> embedderWgp =
         GetBrowsingContext()->GetEmbedderWindowGlobal();
-    auto* embedderDoc = embedderWgp
-                            ? a11y::DocAccessibleParent::GetFrom(
-                                  embedderWgp,  true)
-                            : nullptr;
+    if (!embedderWgp || embedderWgp->IsDiscarded()) {
+      
+      
+      
+      
+      return IPC_OK();
+    }
+    auto* embedderDoc = a11y::DocAccessibleParent::GetFrom(
+        embedderWgp,  true);
     if (!embedderDoc) {
       return IPC_FAIL(this, "Embedder's PDocAccessible doesn't exist");
     }
