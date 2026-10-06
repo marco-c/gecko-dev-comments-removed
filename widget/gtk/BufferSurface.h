@@ -10,8 +10,10 @@
 
 #include "GLTypes.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/Types.h"
 #include "nsISupportsImpl.h"
+#include "nsString.h"
 
 typedef void* EGLImageKHR;
 struct wl_buffer;
@@ -36,6 +38,8 @@ struct wl_buffer;
 #  define VA_FOURCC_P016 0x36313050
 #endif
 
+#define BUFFER_SURFACE_PLANES 4
+
 namespace mozilla {
 namespace gfx {
 class DrawTarget;
@@ -47,6 +51,11 @@ class GLContext;
 }  
 }  
 
+class DMABufSurface;
+class DMABufSurfaceRGBA;
+class DMABufSurfaceYUV;
+class SHMBufSurface;
+
 class BufferSurface {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(BufferSurface)
@@ -56,40 +65,61 @@ class BufferSurface {
     SURFACE_YUV = 1,
   };
 
+  nsAutoCString GetDebugTag() const;
+
 #ifdef MOZ_LOGGING
   constexpr static const char* sSurfaceTypeNames[] = {"RGBA", "YUV"};
 #endif
 
+  virtual DMABufSurface* GetAsDMABufSurface() { return nullptr; }
+  virtual DMABufSurfaceRGBA* GetAsDMABufSurfaceRGBA() { return nullptr; }
+  virtual DMABufSurfaceYUV* GetAsDMABufSurfaceYUV() { return nullptr; }
+  virtual SHMBufSurface* GetAsSHMBufSurface() { return nullptr; }
+
   
   
-  virtual int GetWidth(int aPlane = 0) = 0;
-  virtual int GetHeight(int aPlane = 0) = 0;
+  int GetWidth(int aPlane = 0) const { return mWidth[aPlane]; }
+  int GetHeight(int aPlane = 0) const { return mHeight[aPlane]; }
+  mozilla::gfx::IntSize GetSize(uint8_t aPlane = 0) const {
+    return mozilla::gfx::IntSize(GetWidth(aPlane), GetHeight(aPlane));
+  }
 
   
   
   virtual already_AddRefed<mozilla::gfx::DrawTarget> Lock() { return nullptr; }
   virtual void* GetImageData() { return nullptr; }
 
+  virtual bool CreateTextures(mozilla::gl::GLContext* aGLContext);
   
   
-  virtual bool CreateTexture(mozilla::gl::GLContext* aGLContext,
-                             int aPlane = 0) {
-    return false;
-  }
-  virtual void ReleaseTextures() {}
-  virtual GLuint GetTexture(int aPlane = 0) { return 0; }
-  virtual EGLImageKHR GetEGLImage(int aPlane = 0) { return nullptr; }
-  virtual int GetTextureCount() { return 0; }
+  
+  
+  void MarkTextureDirty() { mTextureIsDirty = true; }
+  
+  
+  void ReleaseTextures();
+  
+  bool HoldsTexture() const;
+  GLuint GetTexture(int aPlane = 0) { return mTexture[aPlane]; }
+  EGLImageKHR GetEGLImage(int aPlane = 0) { return mEGLImage[aPlane]; }
+  
+  
+  
+  virtual int GetTextureCount() { return mBufferPlaneCount; }
 
   SurfaceType GetSurfaceType() const;
   const char* GetSurfaceTypeName() const {
     return sSurfaceTypeNames[static_cast<int>(GetSurfaceType())];
   };
 
+  void SetFormat(mozilla::gfx::SurfaceFormat aFormat);
+
   bool HasAlpha() const;
   mozilla::gfx::SurfaceFormat GetFormat() const;
   int32_t GetFOURCCFormat() const { return mFOURCCFormat; };
   int GetFormatBPP() const;
+  mozilla::gfx::ColorDepth GetColorDepth() const;
+
 #ifdef MOZ_WAYLAND
   int GetWLFormat() const;
 #endif
@@ -130,8 +160,10 @@ class BufferSurface {
     mColorRange = aColorRange;
   };
 
-  virtual void SetWPChromaLocation(uint32_t aWPChromaLocation) {};
-  virtual uint32_t GetWPChromaLocation() { return 0; }
+  void SetWPChromaLocation(uint32_t aWPChromaLocation) {
+    mWPChromaLocation = aWPChromaLocation;
+  }
+  uint32_t GetWPChromaLocation() { return mWPChromaLocation; }
 
 #ifdef MOZ_WAYLAND
   int GetWLColorCoeficients();
@@ -153,18 +185,72 @@ class BufferSurface {
   virtual wl_buffer* CreateWlBuffer() { return nullptr; }
 #endif
 
+  
+  
+  
+  virtual uint32_t GetUID() const { return mUID; };
+
+  
+  
+  uint32_t GetPID() const { return mPID; };
+
+  bool Matches(BufferSurface* aSurface) const {
+    return mUID == aSurface->mUID && mPID == aSurface->mPID;
+  }
+
+  bool CanRecycle() const { return mCanRecycle && mPID; }
+  void DisableRecycle() { mCanRecycle = false; }
+
  protected:
   BufferSurface() = default;
   virtual ~BufferSurface();
 
+  
+  
+  virtual bool CreateTexture(mozilla::gl::GLContext* aGLContext, int aPlane) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  static void SetTextureFilters(mozilla::gl::GLContext* aGL, GLuint aTexture,
+                                GLenum aTarget);
+  static void SetTextureFilters(mozilla::gl::GLContext* aGL, GLuint aTexture);
+
   size_t GetUsedMemory(int aWidth, int aHeight) const;
 
   
+  
+  
   int32_t mFOURCCFormat = 0;
+  mozilla::Maybe<mozilla::gfx::ColorDepth> mColorDepth;
+
+  
+  
+  int mWidth[BUFFER_SURFACE_PLANES] = {};
+  int mHeight[BUFFER_SURFACE_PLANES] = {};
+
+  
+  
+  
+  int mBufferPlaneCount = 0;
+  int32_t mStrides[BUFFER_SURFACE_PLANES] = {};
+  int32_t mOffsets[BUFFER_SURFACE_PLANES] = {};
 
   
   
   RefPtr<mozilla::gl::GLContext> mGL;
+
+  
+  
+  EGLImageKHR mEGLImage[BUFFER_SURFACE_PLANES] = {};
+  GLuint mTexture[BUFFER_SURFACE_PLANES] = {};
+
+  
+  bool mTextureIsDirty = false;
 
   mozilla::gfx::ColorRange mColorRange = mozilla::gfx::ColorRange::LIMITED;
   mozilla::gfx::YUVColorSpace mColorSpace =
@@ -174,6 +260,21 @@ class BufferSurface {
   mozilla::gfx::TransferFunction mTransferFunction =
       mozilla::gfx::TransferFunction::Default;
   mozilla::gfx::HDRMetadata mHDRMetadata{};
+  
+  
+  uint32_t mWPChromaLocation = 0;
+
+  
+  
+  
+  uint32_t mUID = 0;
+  uint32_t mPID = 0;
+
+  
+  
+  
+  
+  bool mCanRecycle = true;
 };
 
 #endif
