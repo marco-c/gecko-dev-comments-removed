@@ -23,6 +23,21 @@ namespace mozilla {
 
 class ModuleEvaluator;
 
+
+
+
+
+
+
+
+
+
+
+
+
+bool ValidateAndResolveModuleFile(const ipc::FileDescriptor& aFile,
+                                  nsAString& aOutNtPath);
+
 using UntrustedModulesPromise =
     MozPromise<Maybe<UntrustedModulesData>, nsresult, true>;
 

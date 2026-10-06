@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsWindowsDllInterceptor.h"
 #include "mozilla/ImportDir.h"
 #include "mozilla/NativeNt.h"
@@ -64,6 +62,18 @@ static LauncherVoidResultWithLineInfo InitializeDllBlocklistOOPInternal(
       aTransferMgr, intcpt, "LdrLoadDll", &freestanding::patched_LdrLoadDll);
   if (!ok) {
     return LAUNCHER_ERROR_FROM_DETOUR_ERROR(intcpt.GetLastDetourError());
+  }
+
+  
+  if (gBlocklistInitFlags & eDllBlocklistInitFlagWasBootstrapped) {
+#  if defined(DEBUG) && defined(_M_X64) && !defined(__MINGW64__)
+    MOZ_ASSERT(!HasStackCookieCheck(
+        reinterpret_cast<uintptr_t>(&freestanding::patched_NtCreateSection)));
+#  endif  
+
+    (void)freestanding::stub_NtCreateSection.SetDetour(
+        aTransferMgr, intcpt, "NtCreateSection",
+        &freestanding::patched_NtCreateSection);
   }
 
   

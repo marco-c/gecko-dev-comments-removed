@@ -400,11 +400,71 @@ NTSTATUS NTAPI patched_LdrLoadDll(PWCHAR aDllPath, PULONG aFlags,
 CrossProcessDllInterceptor::FuncHookType<NtMapViewOfSectionPtr>
     stub_NtMapViewOfSection;
 
+CrossProcessDllInterceptor::FuncHookType<NtCreateSectionPtr>
+    stub_NtCreateSection;
+
+
+
+static SafeThreadLocal<HANDLE> sPendingFileHandle;
+
+static nt::AutoHandle TakePendingFileHandle() {
+  HANDLE pending = sPendingFileHandle.get();
+  if (pending) {
+    sPendingFileHandle.set(nullptr);
+  }
+  return nt::AutoHandle(pending);
+}
+
+
+
+NTSTATUS NTAPI patched_NtCreateSection(PHANDLE aSectionHandle,
+                                       ACCESS_MASK aDesiredAccess,
+                                       POBJECT_ATTRIBUTES aObjectAttributes,
+                                       PLARGE_INTEGER aMaximumSize,
+                                       ULONG aSectionPageProtection,
+                                       ULONG aAllocationAttributes,
+                                       HANDLE aFileHandle) {
+  NTSTATUS stubStatus = stub_NtCreateSection(
+      aSectionHandle, aDesiredAccess, aObjectAttributes, aMaximumSize,
+      aSectionPageProtection, aAllocationAttributes, aFileHandle);
+  if (!NT_SUCCESS(stubStatus)) {
+    return stubStatus;
+  }
+
+  
+  
+  if (!(aDesiredAccess & SECTION_MAP_EXECUTE) || aObjectAttributes ||
+      aMaximumSize || aSectionPageProtection != PAGE_EXECUTE ||
+      aAllocationAttributes != SEC_IMAGE || !aFileHandle) {
+    return stubStatus;
+  }
+
+  
+  
+  
+  
+  
+  HANDLE duplicate = nullptr;
+  if (!NT_SUCCESS(::NtDuplicateObject(nt::kCurrentProcess, aFileHandle,
+                                      nt::kCurrentProcess, &duplicate,
+                                      SYNCHRONIZE, 0, 0))) {
+    
+    
+    return stubStatus;
+  }
+
+  
+  nt::AutoHandle stale(TakePendingFileHandle());
+  sPendingFileHandle.set(duplicate);
+  return stubStatus;
+}
+
 
 
 
 MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
-    HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus) {
+    HANDLE aProcess, PVOID* aBaseAddress, NTSTATUS aStubStatus,
+    nt::AutoHandle&& aFileHandle) {
   
   MEMORY_BASIC_INFORMATION mbi;
   NTSTATUS ntStatus =
@@ -527,7 +587,7 @@ MOZ_NEVER_INLINE NTSTATUS AfterMapViewOfExecutableSection(
   if (nt::RtlGetProcessHeap()) {
     ModuleLoadFrame::NotifySectionMap(
         nt::AllocatedUnicodeString(sectionFileName), *aBaseAddress, aStubStatus,
-        loadStatus, isInjectedDependent);
+        loadStatus, isInjectedDependent, std::move(aFileHandle));
   }
 
   if (loadStatus == ModuleLoadInfo::Status::Loaded ||
@@ -571,6 +631,10 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
       };
 
   
+  
+  nt::AutoHandle fileHandle(TakePendingFileHandle());
+
+  
   NTSTATUS stubStatus = stub_NtMapViewOfSection(
       aSection, aProcess, aBaseAddress, aZeroBits, aCommitSize, aSectionOffset,
       aViewSize, aInheritDisposition, aAllocationType, aProtectionFlags);
@@ -604,8 +668,8 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  NTSTATUS rv =
-      AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
+  NTSTATUS rv = AfterMapViewOfExecutableSection(
+      aProcess, aBaseAddress, stubStatus, std::move(fileHandle));
   if (FAILED(rv)) {
     rollback();
   }

@@ -5,6 +5,7 @@
 #include "UntrustedModulesProcessor.h"
 
 #include <windows.h>
+#include <aclapi.h>
 
 #include "GMPPlatform.h"
 #include "GMPServiceParent.h"
@@ -22,16 +23,179 @@
 #include "mozilla/RDDProcessManager.h"
 #include "mozilla/Services.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "ModuleEvaluator.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsIObserverService.h"
 #include "nsTHashtable.h"
 #include "nsThreadUtils.h"
+#include "nsWindowsHelpers.h"
 #include "nsXULAppAPI.h"
 #include "private/prpriv.h"  
 
 namespace mozilla {
+
+
+
+static const uint32_t kMaxNtPathLen = 0x8000;
+
+
+
+
+
+static bool GetPathFromHandle(HANDLE aFile, DWORD aFlags, nsAString& aOutPath) {
+  aOutPath.Truncate();
+
+  for (uint32_t bufLen = MAX_PATH; bufLen <= kMaxNtPathLen; bufLen *= 2) {
+    nsAutoString buf;
+    if (!buf.SetLength(bufLen, fallible)) {
+      return false;
+    }
+
+    DWORD charsWritten = ::GetFinalPathNameByHandleW(
+        aFile, reinterpret_cast<wchar_t*>(buf.BeginWriting()), bufLen, aFlags);
+    if (!charsWritten) {
+      return false;
+    }
+
+    if (charsWritten >= bufLen) {
+      
+      continue;
+    }
+
+    buf.SetLength(charsWritten);
+    aOutPath = buf;
+    return true;
+  }
+
+  return false;
+}
+
+
+
+
+static bool IsRemoteFile(HANDLE aFile) {
+  nsAutoString dosPath;
+  if (!GetPathFromHandle(aFile, FILE_NAME_OPENED | VOLUME_NAME_DOS, dosPath)) {
+    
+    return true;
+  }
+
+  
+  if (StringBeginsWith(dosPath, u"\\\\?\\UNC\\"_ns,
+                       nsCaseInsensitiveStringComparator)) {
+    return true;
+  }
+
+  if (dosPath.Length() < 7 || !StringBeginsWith(dosPath, u"\\\\?\\"_ns) ||
+      dosPath[5] != u':') {
+    
+    return true;
+  }
+
+  
+  const wchar_t root[] = {static_cast<wchar_t>(dosPath[4]), L':', L'\\', L'\0'};
+  UINT driveType = ::GetDriveTypeW(root);
+  return driveType == DRIVE_REMOTE || driveType == DRIVE_UNKNOWN ||
+         driveType == DRIVE_NO_ROOT_DIR;
+}
+
+
+
+
+
+
+static bool IsBelowMediumIntegrityFile(HANDLE aFile) {
+  
+  UniqueFileHandle labelAccess(
+      ::ReOpenFile(aFile, READ_CONTROL,
+                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0));
+  if (!labelAccess) {
+    
+    return true;
+  }
+
+  PACL sacl = nullptr;
+  PSECURITY_DESCRIPTOR rawSd = nullptr;
+  if (::GetSecurityInfo(labelAccess.get(), SE_FILE_OBJECT,
+                        LABEL_SECURITY_INFORMATION, nullptr, nullptr, nullptr,
+                        &sacl, &rawSd) != ERROR_SUCCESS) {
+    
+    return true;
+  }
+
+  UniquePtr<void, LocalFreeDeleter> sd(rawSd);
+
+  if (!sacl) {
+    
+    return false;
+  }
+
+  for (WORD i = 0; i < sacl->AceCount; ++i) {
+    VOID* rawAce = nullptr;
+    if (!::GetAce(sacl, i, &rawAce)) {
+      return true;
+    }
+
+    auto* header = static_cast<ACE_HEADER*>(rawAce);
+    if (header->AceType != SYSTEM_MANDATORY_LABEL_ACE_TYPE) {
+      continue;
+    }
+
+    auto* labelAce = static_cast<SYSTEM_MANDATORY_LABEL_ACE*>(rawAce);
+    auto* sid = reinterpret_cast<PSID>(&labelAce->SidStart);
+    PUCHAR subAuthorityCount = ::GetSidSubAuthorityCount(sid);
+    if (!subAuthorityCount || !*subAuthorityCount) {
+      return true;
+    }
+
+    DWORD* rid = ::GetSidSubAuthority(sid, *subAuthorityCount - 1);
+    if (!rid) {
+      return true;
+    }
+
+    return *rid < SECURITY_MANDATORY_MEDIUM_RID;
+  }
+
+  
+  return false;
+}
+
+bool ValidateAndResolveModuleFile(const ipc::FileDescriptor& aFile,
+                                  nsAString& aOutNtPath) {
+  aOutNtPath.Truncate();
+
+  if (!aFile.IsValid()) {
+    return false;
+  }
+
+  UniqueFileHandle file(aFile.ClonePlatformHandle());
+  if (!file) {
+    return false;
+  }
+
+  
+  
+  if (::GetFileType(file.get()) != FILE_TYPE_DISK) {
+    return false;
+  }
+
+  
+  
+  
+  if (IsRemoteFile(file.get()) || IsBelowMediumIntegrityFile(file.get())) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  return GetPathFromHandle(file.get(), FILE_NAME_OPENED | VOLUME_NAME_NT,
+                           aOutNtPath);
+}
 
 class MOZ_RAII BackgroundPriorityRegion final {
  public:
@@ -557,6 +721,10 @@ RefPtr<ModuleRecord> UntrustedModulesProcessor::GetModuleRecord(
     const glue::EnhancedModuleLoadInfo& aModuleLoadInfo) {
   MOZ_ASSERT(!XRE_IsParentProcess());
 
+  
+  
+  
+  
   return aModules.Get(aModuleLoadInfo.mNtLoadInfo.mSectionName.AsString());
 }
 
@@ -808,7 +976,8 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
         NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
   }
 
-  nsTHashtable<nsStringCaseInsensitiveHashKey> moduleNtPathSet;
+  nsTHashtable<nsStringCaseInsensitiveHashKey> alreadyAdded;
+  ModuleIdentifiers moduleIdents;
 
   
   for (UnprocessedModuleLoadInfoContainer* container : loadsToProcess) {
@@ -819,7 +988,22 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
           NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
     }
 
-    moduleNtPathSet.PutEntry(entry.mNtLoadInfo.mSectionName.AsString());
+    if (!entry.mNtLoadInfo.mFileHandle) {
+      
+      continue;
+    }
+
+    nsDependentString sectionName(entry.mNtLoadInfo.mSectionName.AsString());
+    if (!alreadyAdded.EnsureInserted(sectionName)) {
+      continue;
+    }
+
+    ipc::FileDescriptor file(entry.mNtLoadInfo.mFileHandle.get());
+    if (!file.IsValid()) {
+      continue;
+    }
+
+    moduleIdents.AppendElement(std::move(file));
   }
 
   if (!IsReadyForBackgroundProcessing()) {
@@ -827,13 +1011,10 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
         NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
   }
 
-  MOZ_ASSERT(!moduleNtPathSet.IsEmpty());
-  if (moduleNtPathSet.IsEmpty()) {
+  if (moduleIdents.IsEmpty()) {
     
     return GetModulesTrustPromise::CreateAndResolve(Nothing(), __func__);
   }
-
-  ModuleIdentifiers moduleNtPaths(std::move(moduleNtPathSet));
 
   if (!IsReadyForBackgroundProcessing()) {
     return GetModulesTrustPromise::CreateAndReject(
@@ -843,9 +1024,9 @@ UntrustedModulesProcessor::ProcessModuleLoadQueueChildProcess(
   RefPtr<UntrustedModulesProcessor> self(this);
 
   auto invoker = [self = std::move(self),
-                  moduleNtPaths = std::move(moduleNtPaths),
+                  moduleIdentifiers = std::move(moduleIdents),
                   priority = aPriority]() mutable {
-    return self->SendGetModulesTrust(std::move(moduleNtPaths), priority);
+    return self->SendGetModulesTrust(std::move(moduleIdentifiers), priority);
   };
 
   RefPtr<GetModulesTrustPromise::Private> p(
@@ -1028,16 +1209,22 @@ RefPtr<ModulesTrustPromise> UntrustedModulesProcessor::GetModulesTrustInternal(
     return ModulesTrustPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
-  for (auto& resolvedNtPath :
-       aModIdents.mModuleNtPaths.as<ModuleIdentifiers::VecType>()) {
+  for (auto& file : aModIdents) {
     if (!IsReadyForBackgroundProcessing()) {
       return ModulesTrustPromise::CreateAndReject(
           NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
     }
 
-    MOZ_ASSERT(!resolvedNtPath.IsEmpty());
-    if (resolvedNtPath.IsEmpty()) {
+    
+    nsAutoString resolvedNtPath;
+    if (!ValidateAndResolveModuleFile(file, resolvedNtPath) ||
+        resolvedNtPath.IsEmpty()) {
       continue;
+    }
+
+    if (!IsReadyForBackgroundProcessing()) {
+      return ModulesTrustPromise::CreateAndReject(
+          NS_ERROR_ILLEGAL_DURING_SHUTDOWN, __func__);
     }
 
     RefPtr<ModuleRecord> module(GetOrAddModuleRecord(modEval, resolvedNtPath));

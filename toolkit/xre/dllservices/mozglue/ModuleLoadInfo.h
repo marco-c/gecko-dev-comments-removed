@@ -162,6 +162,11 @@ struct ModuleLoadInfo final {
   
   const void* mBaseAddr;
   
+  
+  
+  
+  nt::AutoHandle mFileHandle;
+  
   Vector<PVOID, 0, nt::RtlAllocPolicy> mBacktrace;
   
   Status mStatus;
