@@ -1042,7 +1042,6 @@ class ListOriginsOp final
     : public OpenStorageDirectoryHelper<
           ResolvableNormalOriginOp<CStringArray,  true>>,
       public TraverseRepositoryHelper {
-  
   nsTArray<nsCString> mOrigins;
 
  public:
