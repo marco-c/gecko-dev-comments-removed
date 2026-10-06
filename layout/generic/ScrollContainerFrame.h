@@ -510,9 +510,10 @@ class ScrollContainerFrame : public nsContainerFrame,
 
 
 
-  void ScrollToCSSPixelsForApz(const CSSPoint& aScrollPosition,
-                               ScrollSnapTargetIds&& aLastSnapTargetIds,
-                               const APZScrollGeneration& aGenerationOnApz);
+
+  [[nodiscard]] bool ScrollToCSSPixelsForApz(
+      const CSSPoint& aScrollPosition, ScrollSnapTargetIds&& aLastSnapTargetIds,
+      const APZScrollGeneration& aGenerationOnApz);
 
   
 
