@@ -89,6 +89,27 @@ function assertNoMiniWindowsOpen() {
 
 
 
+async function waitForNoMiniWindowsOpen() {
+  await TestUtils.waitForCondition(() => {
+    if (MiniWindowManager._miniwindows.size) {
+      return false;
+    }
+    for (let win of Services.wm.getEnumerator("navigator:browser")) {
+      if (win.document.documentElement.hasAttribute("mini-window")) {
+        return false;
+      }
+    }
+    return true;
+  }, "all mini windows fully torn down");
+  assertNoMiniWindowsOpen();
+}
+
+
+
+
+
+
+
 function removeTestTabs(urlPrefix = "https://example.com/") {
   for (let t of [...gBrowser.tabs]) {
     if (t.linkedBrowser?.currentURI?.spec.startsWith(urlPrefix)) {
