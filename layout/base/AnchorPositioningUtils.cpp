@@ -1171,10 +1171,6 @@ static void UpdateScrollShift(
   
   
   aPositioned->SetPosition(aPositioned->GetPosition() - delta);
-  aPositioned->UpdateOverflow();
-  
-  
-  
   
   aOct.AddFrame(aPositioned->GetParent(),
                 OverflowChangedTracker::CHILDREN_CHANGED);
