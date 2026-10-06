@@ -91,6 +91,49 @@ TEST(AutoRefCnt, ThreadSafeAutoRefCntBalance)
             nsThreadSafeAutoRefCntRunner::sDecToZero);
 }
 
+struct ExternallyReclaimedObject {
+  ThreadSafeAutoRefCnt mRefCnt{1};
+};
+
+class nsThreadSafeAutoRefCntFinalReleaseRunner final : public Runnable {
+ public:
+  explicit nsThreadSafeAutoRefCntFinalReleaseRunner(
+      ExternallyReclaimedObject* aObject)
+      : Runnable("nsThreadSafeAutoRefCntFinalReleaseRunner"),
+        mObject(aObject) {}
+
+  NS_IMETHOD Run() final {
+    --mObject->mRefCnt;
+    return NS_OK;
+  }
+
+ private:
+  ~nsThreadSafeAutoRefCntFinalReleaseRunner() = default;
+
+  ExternallyReclaimedObject* mObject;
+};
+
+
+
+
+
+
+
+TEST(AutoRefCnt, ThreadSafeAutoRefCntReclaimedByOtherThread)
+{
+  auto* object = new ExternallyReclaimedObject();
+  nsCOMPtr<nsIThread> thread;
+  nsresult rv =
+      NS_NewNamedThread("AutoRefCnt Test", getter_AddRefs(thread),
+                        new nsThreadSafeAutoRefCntFinalReleaseRunner(object));
+  ASSERT_NS_SUCCEEDED(rv);
+  while (object->mRefCnt != 0) {
+    cpu_pause();
+  }
+  delete object;
+  thread->Shutdown();
+}
+
 
 
 
