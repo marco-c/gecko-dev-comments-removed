@@ -150,6 +150,12 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
                         uint64_t aWakeCount) {
   ProcessType processType = gThisProcessType;
 
+  
+  
+  if (aThreadName.EqualsLiteral("glean.dispatcher")) {
+    return;
+  }
+
   if (processType == ProcessType::eUnknown) {
     if (XRE_IsParentProcess()) {
       
