@@ -4300,6 +4300,13 @@
   value: false
   mirror: always
 
+# window.pushManager
+# https://w3c.github.io/push-api/#extensions-to-the-serviceworkerregistration-interface
+- name: dom.push.window_pushmanager.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Preference that is primarily used for testing of problematic file paths.
 # It can also be used for switching between different storage directories, but
 # such feature is not officially supported.
@@ -10787,16 +10794,6 @@
   mirror: always
   rust: true
 
-# Whether to enable generalized CSS Attr Support. If this pref is set to false
-# we treat attr as a regular function with support only for the `content` css
-# property. If it is set to true, attr is parsed as a subtitution function.
-# https://drafts.csswg.org/css-values-5/#attr-notation
-- name: layout.css.attr.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
 # Whether to enable CSS @custom-media
 # https://drafts.csswg.org/mediaqueries-5/
 # TODO(emilio): Needs more tests before enabling.
@@ -11019,13 +11016,6 @@
 
 # Is multiple color items upported for color-mix()?
 - name: layout.css.color-mix-multi-color.enabled
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-  rust: true
-
-# Whether alt text in content is enabled.
-- name: layout.css.content.alt-text.enabled
   type: RelaxedAtomicBool
   value: true
   mirror: always
@@ -16443,7 +16433,7 @@
 # events (e.g. application-background on Android) instead of being torn down.
 - name: network.trr.preserve_on_background
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # When true, the TRR transaction gets marked and runnables
@@ -17000,7 +16990,7 @@
 # When true, allow HTTP/3 first behavior when enabled via remote settings
 - name: network.trr.allow_default_http3_first
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
 
 # When true, a http request will be upgraded to https when HTTPS RR is
@@ -17466,11 +17456,7 @@
 # Only effective on Linux/Android (TCP_USER_TIMEOUT, kernel 2.6.37+).
 - name: network.tcp.user_timeout
   type: RelaxedAtomicInt32
-#ifdef NIGHTLY_BUILD
   value: 30
-#else
-  value: 0
-#endif
   mirror: always
 
 # Maximum unsent data (bytes) in the kernel send buffer before a TCP socket
@@ -17478,11 +17464,7 @@
 # connections. 0 = disabled (kernel default). Effective on Linux 4.6+ and macOS.
 - name: network.tcp.notsent_lowat
   type: RelaxedAtomicInt32
-#ifdef NIGHTLY_BUILD
   value: 32768
-#else
-  value: 0
-#endif
   mirror: always
 
 # Whether to redirect a failing request to an essential domain

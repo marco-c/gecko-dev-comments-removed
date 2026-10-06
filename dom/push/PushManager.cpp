@@ -17,12 +17,14 @@
 #include "mozilla/dom/ServiceWorker.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "mozilla/dom/notification/NotificationUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsIGlobalObject.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIPushService.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {
@@ -396,9 +398,9 @@ JSObject* PushManager::WrapObject(JSContext* aCx,
 }
 
 
-already_AddRefed<PushManager> PushManager::Constructor(GlobalObject& aGlobal,
-                                                       const nsAString& aScope,
-                                                       ErrorResult& aRv) {
+already_AddRefed<PushManager> PushManager::Create(GlobalObject& aGlobal,
+                                                  const nsAString& aScope,
+                                                  ErrorResult& aRv) {
   if (!NS_IsMainThread()) {
     RefPtr<PushManager> ret = new PushManager(aScope);
     return ret.forget();
@@ -414,6 +416,38 @@ already_AddRefed<PushManager> PushManager::Constructor(GlobalObject& aGlobal,
   RefPtr<PushManager> ret = new PushManager(global, impl);
 
   return ret.forget();
+}
+
+
+already_AddRefed<PushManager> PushManager::Create(JSContext* aCx,
+                                                  nsGlobalWindowInner* aWindow,
+                                                  ErrorResult& aRv) {
+  
+  
+  
+  
+  
+  
+  
+  nsIURI* documentURI = aWindow->GetDocumentURI();
+  if (NS_WARN_IF(!documentURI)) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+  nsCOMPtr<nsIURI> scopeURI;
+  nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), "/", documentURI);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+  nsAutoCString scopeURL;
+  rv = scopeURI->GetSpec(scopeURL);
+  if (NS_FAILED(rv)) {
+    aRv.Throw(rv);
+    return nullptr;
+  }
+  GlobalObject global(aCx, aWindow->GetGlobalJSObject());
+  return Create(global, NS_ConvertUTF8toUTF16(scopeURL), aRv);
 }
 
 bool PushManager::IsEnabled(JSContext* aCx, JSObject* aGlobal) {
@@ -455,8 +489,61 @@ void PushManager::GetSupportedContentEncodings(
   aEncodings.set(object);
 }
 
+static bool IsPushSubscriptionDenied(nsIGlobalObject* aGlobal) {
+  nsCOMPtr<nsIPrincipal> principal;
+  nsCOMPtr<nsIPrincipal> effectiveStoragePrincipal;
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal);
+  if (window) {
+    principal = nsGlobalWindowInner::Cast(window)->GetPrincipal();
+    effectiveStoragePrincipal =
+        nsGlobalWindowInner::Cast(window)->GetEffectiveStoragePrincipal();
+  } else if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
+    principal = workerPrivate->GetPrincipal();
+    effectiveStoragePrincipal = workerPrivate->GetEffectiveStoragePrincipal();
+  }
+  if (!principal || !effectiveStoragePrincipal) {
+    return true;
+  }
+
+  bool denied = notification::IsNotificationForbiddenFor(
+      principal, effectiveStoragePrincipal, true,
+      notification::PermissionCheckPurpose::PushSubscribe);
+  if (denied || !window) {
+    return denied;
+  }
+
+  nsCOMPtr<nsIPrincipal> topLevelPrincipal;
+  BrowsingContext* top = window->GetBrowsingContext()->Top();
+  if (nsPIDOMWindowOuter* outer = top->GetDOMWindow()) {
+    if (nsPIDOMWindowInner* inner = outer->GetCurrentInnerWindow()) {
+      topLevelPrincipal = nsGlobalWindowInner::Cast(inner)->GetPrincipal();
+    }
+  }
+  return !topLevelPrincipal || !principal->Subsumes(topLevelPrincipal);
+}
+
 already_AddRefed<Promise> PushManager::Subscribe(
     const PushSubscriptionOptionsInit& aOptions, ErrorResult& aRv) {
+  
+  
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  if (IsPushSubscriptionDenied(mGlobal)) {
+    aRv.ThrowNotAllowedError(
+        "Permission to create push subscription is denied.");
+    return nullptr;
+  }
+
   if (mImpl) {
     MOZ_ASSERT(NS_IsMainThread());
     return mImpl->Subscribe(aOptions, aRv);
