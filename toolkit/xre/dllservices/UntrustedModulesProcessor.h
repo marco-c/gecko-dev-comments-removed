@@ -23,21 +23,6 @@ namespace mozilla {
 
 class ModuleEvaluator;
 
-
-
-
-
-
-
-
-
-
-
-
-
-bool ValidateAndResolveModuleSection(const ipc::FileDescriptor& aSection,
-                                     nsAString& aOutNtPath);
-
 using UntrustedModulesPromise =
     MozPromise<Maybe<UntrustedModulesData>, nsresult, true>;
 
@@ -88,7 +73,7 @@ class UntrustedModulesProcessor final : public nsIObserver,
 
   
   
-  RefPtr<ModulesTrustPromise> GetModulesTrust(ModuleIdentifiers&& aModIdents,
+  RefPtr<ModulesTrustPromise> GetModulesTrust(ModulePaths&& aModPaths,
                                               bool aRunAtNormalPriority);
 
   UntrustedModulesProcessor(const UntrustedModulesProcessor&) = delete;
@@ -144,9 +129,8 @@ class UntrustedModulesProcessor final : public nsIObserver,
   RefPtr<UntrustedModulesPromise> GetProcessedDataInternalChildProcess();
 
   RefPtr<ModulesTrustPromise> GetModulesTrustInternal(
-      ModuleIdentifiers&& aModIdents, bool aRunAtNormalPriority);
-  RefPtr<ModulesTrustPromise> GetModulesTrustInternal(
-      ModuleIdentifiers&& aModIdents);
+      ModulePaths&& aModPaths, bool aRunAtNormalPriority);
+  RefPtr<ModulesTrustPromise> GetModulesTrustInternal(ModulePaths&& aModPaths);
 
   
   RefPtr<ModuleRecord> GetOrAddModuleRecord(const ModuleEvaluator& aModEval,
@@ -157,8 +141,8 @@ class UntrustedModulesProcessor final : public nsIObserver,
       const ModulesMap& aModules,
       const glue::EnhancedModuleLoadInfo& aModuleLoadInfo);
 
-  RefPtr<GetModulesTrustIpcPromise> SendGetModulesTrust(
-      ModuleIdentifiers&& aModules, Priority aPriority);
+  RefPtr<GetModulesTrustIpcPromise> SendGetModulesTrust(ModulePaths&& aModules,
+                                                        Priority aPriority);
 
   void CompleteProcessing(ModulesMapResultWithLoads&& aModulesAndLoads);
   RefPtr<UntrustedModulesPromise> GetAllProcessedData(StaticString aSource);

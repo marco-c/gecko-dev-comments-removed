@@ -24,9 +24,7 @@ ModuleLoadFrame::ModuleLoadFrame(PCUNICODE_STRING aRequestedDllName)
 ModuleLoadFrame::ModuleLoadFrame(nt::AllocatedUnicodeString&& aSectionName,
                                  const void* aMapBaseAddr, NTSTATUS aNtStatus,
                                  ModuleLoadInfo::Status aLoadStatus,
-                                 bool aIsDependent,
-                                 nt::AutoHandle&& aSectionHandle,
-                                 bool aSectionHandleUnavailable)
+                                 bool aIsDependent)
     : mPrev(sTopFrame.get()),
       mContext(nullptr),
       mLSPSubstitutionRequired(false),
@@ -34,11 +32,6 @@ ModuleLoadFrame::ModuleLoadFrame(nt::AllocatedUnicodeString&& aSectionName,
       mLoadInfo(std::move(aSectionName), aMapBaseAddr, aLoadStatus,
                 aIsDependent) {
   sTopFrame.set(this);
-
-  
-  
-  mLoadInfo.mSectionHandle = std::move(aSectionHandle);
-  mLoadInfo.mSectionHandleUnavailable = aSectionHandleUnavailable;
 
   gLoaderPrivateAPI.NotifyBeginDllLoad(&mContext, mLoadInfo.mSectionName);
 }
@@ -78,8 +71,7 @@ void ModuleLoadFrame::SetLSPSubstitutionRequired(PCUNICODE_STRING aLeafName) {
 void ModuleLoadFrame::NotifySectionMap(
     nt::AllocatedUnicodeString&& aSectionName, const void* aMapBaseAddr,
     NTSTATUS aMapNtStatus, ModuleLoadInfo::Status aLoadStatus,
-    bool aIsDependent, nt::AutoHandle&& aSectionHandle,
-    bool aSectionHandleUnavailable) {
+    bool aIsDependent) {
   ModuleLoadFrame* topFrame = sTopFrame.get();
   if (!topFrame) {
     
@@ -88,15 +80,13 @@ void ModuleLoadFrame::NotifySectionMap(
     
     if (gLoaderPrivateAPI.IsDefaultObserver()) {
       OnBareSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                       aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                       aSectionHandleUnavailable);
+                       aLoadStatus, aIsDependent);
     }
     return;
   }
 
   topFrame->OnSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                         aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                         aSectionHandleUnavailable);
+                         aLoadStatus, aIsDependent);
 }
 
 
@@ -106,35 +96,28 @@ void ModuleLoadFrame::OnSectionMap(nt::AllocatedUnicodeString&& aSectionName,
                                    const void* aMapBaseAddr,
                                    NTSTATUS aMapNtStatus,
                                    ModuleLoadInfo::Status aLoadStatus,
-                                   bool aIsDependent,
-                                   nt::AutoHandle&& aSectionHandle,
-                                   bool aSectionHandleUnavailable) {
+                                   bool aIsDependent) {
   if (mLoadInfo.mBaseAddr) {
     
     
     OnBareSectionMap(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                     aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                     aSectionHandleUnavailable);
+                     aLoadStatus, aIsDependent);
     return;
   }
 
   mLoadInfo.mSectionName = std::move(aSectionName);
   mLoadInfo.mBaseAddr = aMapBaseAddr;
   mLoadInfo.mStatus = aLoadStatus;
-  mLoadInfo.mSectionHandle = std::move(aSectionHandle);
-  mLoadInfo.mSectionHandleUnavailable = aSectionHandleUnavailable;
 }
 
 
 void ModuleLoadFrame::OnBareSectionMap(
     nt::AllocatedUnicodeString&& aSectionName, const void* aMapBaseAddr,
     NTSTATUS aMapNtStatus, ModuleLoadInfo::Status aLoadStatus,
-    bool aIsDependent, nt::AutoHandle&& aSectionHandle,
-    bool aSectionHandleUnavailable) {
+    bool aIsDependent) {
   
   ModuleLoadFrame frame(std::move(aSectionName), aMapBaseAddr, aMapNtStatus,
-                        aLoadStatus, aIsDependent, std::move(aSectionHandle),
-                        aSectionHandleUnavailable);
+                        aLoadStatus, aIsDependent);
 }
 
 NTSTATUS ModuleLoadFrame::SetLoadStatus(NTSTATUS aNtStatus,

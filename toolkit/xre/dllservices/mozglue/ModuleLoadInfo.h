@@ -28,7 +28,6 @@ struct ModuleLoadInfo final {
         mThreadId(nt::RtlGetCurrentThreadId()),
         mRequestedDllName(aRequestedDllName),
         mBaseAddr(nullptr),
-        mSectionHandleUnavailable(false),
         mStatus(Status::Loaded),
         mIsDependent(false) {
 #  if defined(IMPL_MFBT)
@@ -50,7 +49,6 @@ struct ModuleLoadInfo final {
         mThreadId(nt::RtlGetCurrentThreadId()),
         mSectionName(std::move(aSectionName)),
         mBaseAddr(aBaseAddr),
-        mSectionHandleUnavailable(false),
         mStatus(aLoadStatus),
         mIsDependent(aIsDependent) {
 #  if defined(IMPL_MFBT)
@@ -163,18 +161,6 @@ struct ModuleLoadInfo final {
   nt::AllocatedUnicodeString mSectionName;
   
   const void* mBaseAddr;
-  
-  
-  
-  
-  
-  nt::AutoHandle mSectionHandle;
-  
-  
-  
-  
-  
-  bool mSectionHandleUnavailable;
   
   Vector<PVOID, 0, nt::RtlAllocPolicy> mBacktrace;
   

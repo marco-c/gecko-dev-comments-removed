@@ -126,10 +126,6 @@ add_task(async function test_send_ping() {
     "'sanitizationFailures' is 0"
   );
   Assert.equal(curProcInfo.trustTestFailures, 0, "'trustTestFailures' is 0");
-  
-  
-  Assert.equal(curProcInfo.unverifiableLoads, 0, "'unverifiableLoads' is 0");
-  Assert.equal(curProcInfo.rejectedSections, 0, "'rejectedSections' is 0");
 
   Assert.equal(
     curProcInfo.combinedStacks.stacks.length,
