@@ -96,7 +96,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   void VSyncCallbackHandler(uint32_t aTime, bool aEmulated);
 
   RefPtr<widget::WaylandBuffer> BorrowExternalBuffer(
-      RefPtr<DMABufSurface> aDMABufSurface);
+      RefPtr<BufferSurface> aBufferSurface);
 
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
@@ -156,7 +156,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
 
   
   
-  RefPtr<widget::WaylandBufferSHM> mTmpBuffer;
+  RefPtr<widget::WaylandBuffer> mTmpBuffer;
 
   
   
@@ -175,7 +175,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
 
   
   
-  nsTArray<widget::WaylandBufferDMABUFHolder> mExternalBuffers;
+  nsTArray<widget::WaylandBufferHolder> mExternalBuffers;
 
   
   mozilla::Atomic<bool, mozilla::Relaxed> mFrameInProcess{false};
@@ -284,6 +284,8 @@ class NativeLayerWayland : public NativeLayer {
 
  protected:
   ~NativeLayerWayland();
+
+  virtual RefPtr<BufferSurface> GetSurface() { return nullptr; }
 
   
   
@@ -396,10 +398,11 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
   void NotifySurfaceReady() override {};
   void AttachExternalImage(wr::RenderTextureHost* aExternalImage) override;
   bool IsFrontBufferChanged() override;
-  RefPtr<DMABufSurface> GetSurface();
 
   NativeLayerWaylandExternal(NativeLayerRootWayland* aRootLayer,
                              bool aIsOpaque);
+ protected:
+   RefPtr<BufferSurface> GetSurface() override;
 
  private:
   ~NativeLayerWaylandExternal() override;
@@ -410,7 +413,8 @@ class NativeLayerWaylandExternal final : public NativeLayerWayland {
   bool CommitFrontBufferToScreenLocked(
       const widget::WaylandSurfaceLock& aProofOfLock) override;
 
-  RefPtr<wr::RenderDMABUFTextureHost> mTextureHost;
+  uintptr_t mLastSurface = 0;
+  RefPtr<wr::RenderTextureHost> mTextureHost;
 };
 
 class NativeLayerRootSnapshotterWayland final
