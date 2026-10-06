@@ -305,6 +305,50 @@ describe("aichat open link", () => {
       BrowserTestUtils.removeTab(newTab);
     });
 
+    it("should open about:smartwindowtasks links in a new tab", async () => {
+      const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
+
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        content.document.dispatchEvent(
+          new content.CustomEvent("AIChatContent:OpenLink", {
+            bubbles: true,
+            detail: { url: "about:smartwindowtasks" },
+          })
+        );
+      });
+
+      const newTab = await newTabPromise;
+      Assert.ok(newTab, "A new tab should open for about:smartwindowtasks url");
+      BrowserTestUtils.removeTab(newTab);
+    });
+
+    
+    
+    it("should open about:smartpage links in a new tab", async () => {
+      await SpecialPowers.pushPrefEnv({
+        set: [["browser.smartwindow.aitab.enabled", true]],
+      });
+      const url = "about:smartpage?page=dashboard";
+
+      try {
+        const newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, url);
+        await SpecialPowers.spawn(chatTab.linkedBrowser, [url], targetUrl => {
+          content.document.dispatchEvent(
+            new content.CustomEvent("AIChatContent:OpenLink", {
+              bubbles: true,
+              detail: { url: targetUrl },
+            })
+          );
+        });
+
+        const newTab = await newTabPromise;
+        Assert.ok(newTab, "The smartpage opens in a new tab");
+        BrowserTestUtils.removeTab(newTab);
+      } finally {
+        await SpecialPowers.popPrefEnv();
+      }
+    });
+
     it("should switch to an existing about:preferences tab instead of opening a new one", async () => {
       const prefsTab = await BrowserTestUtils.openNewForegroundTab(
         gBrowser,
@@ -338,7 +382,13 @@ describe("aichat open link", () => {
       const initialTabCount = gBrowser.tabs.length;
 
       await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
-        for (const url of ["about:config", "about:blank", "about:newtab"]) {
+        for (const url of [
+          "about:config",
+          "about:blank",
+          "about:newtab",
+          "about:smartpage",
+          "about:smartpage?page=bad/path",
+        ]) {
           content.document.dispatchEvent(
             new content.CustomEvent("AIChatContent:OpenLink", {
               bubbles: true,
@@ -359,6 +409,35 @@ describe("aichat open link", () => {
   });
 
   describe("aichat about:preferences link rendering", () => {
+    it("should retain only seen about:smartpage links", async () => {
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        await content.customElements.whenDefined("ai-chat-message");
+        const url = "about:smartpage?page=dashboard";
+
+        for (const seen of [false, true]) {
+          const el = content.document.createElement("ai-chat-message");
+          content.document.body.appendChild(el);
+          el.setAttribute("data-message-role", "assistant");
+
+          const message = el.wrappedJSObject || el;
+          message.seenUrls = Cu.cloneInto(new Set(seen ? [url] : []), content);
+          message.message = `View [Dashboard](${url})`;
+
+          await ContentTaskUtils.waitForCondition(
+            () => el.shadowRoot?.querySelector(".message-assistant a"),
+            "The smartpage link renders"
+          );
+          const link = el.shadowRoot.querySelector(".message-assistant a");
+          Assert.equal(
+            link.getAttribute("href"),
+            seen ? url : null,
+            `The ${seen ? "seen" : "unseen"} smartpage link has the expected href`
+          );
+          el.remove();
+        }
+      });
+    });
+
     it("should render about:preferences links as clickable", async () => {
       await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
         await content.customElements.whenDefined("ai-chat-message");
@@ -412,6 +491,46 @@ describe("aichat open link", () => {
           `.message-assistant a[href="about:config"]`
         );
         Assert.ok(!link, "about:config link should have href stripped");
+        el.remove();
+      });
+    });
+
+    it("should render a localized message link via data-l10n-name", async () => {
+      await SpecialPowers.spawn(chatTab.linkedBrowser, [], async () => {
+        await content.customElements.whenDefined("ai-chat-message");
+
+        const el = content.document.createElement("ai-chat-message");
+        content.document.body.appendChild(el);
+
+        const elJS = el.wrappedJSObject || el;
+        
+        
+        el.setAttribute("data-message-role", "assistant");
+        elJS.messageL10n = Cu.cloneInto(
+          {
+            id: "smartwindow-agent-monitor-watching",
+            args: { monitorName: "Example", schedule: "daily at 9:00 AM" },
+            link: { l10nName: "tasks", href: "about:smartwindowtasks" },
+          },
+          content
+        );
+
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            el.shadowRoot?.querySelector(
+              `.message-assistant a[href="about:smartwindowtasks"]`
+            ),
+          "Localized message link should render with its href"
+        );
+
+        const link = el.shadowRoot.querySelector(
+          `.message-assistant a[href="about:smartwindowtasks"]`
+        );
+        Assert.ok(link, "Localized link keeps its href");
+        Assert.ok(
+          link.textContent.trim().length,
+          "Localized link text is filled from the l10n message"
+        );
         el.remove();
       });
     });

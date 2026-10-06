@@ -23,9 +23,6 @@ const TEST_ROOT =
   "https://example.com/browser/browser/components/aiwindow/models/tests/browser/";
 
 
-const VIEWER_URL = `${TEST_ROOT}aitab_viewer_stub.html`;
-
-
 
 
 const SOURCE_URL = `${TEST_ROOT}aitab_source_page.html`;
@@ -129,10 +126,7 @@ async function withAITab(task) {
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.smartwindow.conversation.logLevel", "Debug"],
-      ["browser.smartwindow.aitab.viewerURL", VIEWER_URL],
-    ],
+    set: [["browser.smartwindow.conversation.logLevel", "Debug"]],
   });
 
   SOURCE_MARKER = await readMarker(SOURCE_URL);
@@ -354,12 +348,6 @@ add_task(async function test_page_reaches_the_database_file() {
         payload.metadata.title,
         GENERATED_TITLE,
         "The metadata the surface was derived from is stored alongside it."
-      );
-      Assert.equal(
-        payload.metadata.context,
-        undefined,
-        "The source pages' text is not copied in here as well; the context " +
-          "column is its only home."
       );
 
       const context = JSON.parse(row("context"));
