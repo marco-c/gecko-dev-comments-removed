@@ -31,16 +31,7 @@ type UrlbarResultCommand = {
 
 
 
-  l10n?: { id: string; args?: L10nArgs };
-  
-
-
-
-  type?: "checkbox";
-  
-
-
-  checked?: boolean;
+  l10n?: L10nIdArgs;
   
 
 
