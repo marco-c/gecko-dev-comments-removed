@@ -765,9 +765,8 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
 
     
     
-    const bool antialiased =
-        SVGUtils::ToAntialiasMode(style->mShapeRendering) !=
-        AntialiasMode::NONE;
+    const bool antialiased = SVGUtils::ToAntialiasMode(
+                                 style->mShapeRendering) != AntialiasMode::NONE;
     aBuilder.PushRect(wrRect, wrRect, !aItem->BackfaceIsHidden(), antialiased,
                       false, color);
   }
