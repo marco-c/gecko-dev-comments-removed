@@ -38,6 +38,15 @@
 
 using namespace mozilla::gfx;
 
+
+
+#undef LOGDMABUF
+#ifdef MOZ_LOGGING
+#  define LOGDMABUF(args) MOZ_LOG(gDmabufLog, mozilla::LogLevel::Debug, args)
+#else
+#  define LOGDMABUF(args)
+#endif 
+
 #ifndef GBM_FORMAT_P010
 #  define GBM_FORMAT_P010 \
     __gbm_fourcc_code('P', '0', '1', '0') /* 2x2 subsampled Cr:Cb plane */

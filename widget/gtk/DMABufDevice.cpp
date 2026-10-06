@@ -31,6 +31,15 @@
 
 using namespace mozilla::gfx;
 
+
+
+#undef LOGDMABUF
+#ifdef MOZ_LOGGING
+#  define LOGDMABUF(args) MOZ_LOG(gDmabufLog, mozilla::LogLevel::Debug, args)
+#else
+#  define LOGDMABUF(args)
+#endif 
+
 namespace mozilla {
 namespace widget {
 
