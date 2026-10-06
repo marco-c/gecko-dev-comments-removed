@@ -4381,15 +4381,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  if (aBuilder->IsInLineClampAbsPosTraversal()) {
-    const bool isOnForcedDescendPath = childOrOutOfFlow->HasAnyStateBits(
-        NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO);
-
-    if (!isOnForcedDescendPath) {
-      return;
-    }
-  }
-
   
   
   
@@ -4556,13 +4547,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
 
   NS_ASSERTION(!isStackingContext || pseudoStackingContext,
                "Stacking contexts must also be pseudo-stacking-contexts");
-
-  Maybe<nsDisplayListBuilder::AutoInLineClampAbsPosTraversal>
-      buildAbsPosNormally;
-  if (aBuilder->IsInLineClampAbsPosTraversal() &&
-      child->IsAbsolutelyPositioned() && savedOutOfFlowData) {
-    buildAbsPosNormally.emplace(aBuilder, false);
-  }
 
   nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
       aBuilder, child, visible, dirty);
