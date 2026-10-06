@@ -294,16 +294,16 @@ void WindowSurfaceWaylandMB::Commit(
   IncrementBufferAge(aWaylandSurfaceLock);
 }
 
-RefPtr<WaylandBufferSHM> WindowSurfaceWaylandMB::ObtainBufferFromPool(
+RefPtr<WaylandBuffer> WindowSurfaceWaylandMB::ObtainBufferFromPool(
     const WaylandSurfaceLock& aWaylandSurfaceLock,
     const LayoutDeviceIntSize& aSize) {
   if (!mAvailableBuffers.IsEmpty()) {
-    RefPtr<WaylandBufferSHM> buffer = mAvailableBuffers.PopLastElement();
+    RefPtr<WaylandBuffer> buffer = mAvailableBuffers.PopLastElement();
     mInUseBuffers.AppendElement(buffer);
     return buffer;
   }
 
-  RefPtr<WaylandBufferSHM> buffer = WaylandBufferSHM::Create(aSize);
+  RefPtr<WaylandBuffer> buffer = WaylandBuffer::CreateSHM(aSize);
   if (buffer) {
     mInUseBuffers.AppendElement(buffer);
   }
@@ -313,7 +313,7 @@ RefPtr<WaylandBufferSHM> WindowSurfaceWaylandMB::ObtainBufferFromPool(
 
 void WindowSurfaceWaylandMB::ReturnBufferToPool(
     const WaylandSurfaceLock& aWaylandSurfaceLock,
-    const RefPtr<WaylandBufferSHM>& aBuffer) {
+    const RefPtr<WaylandBuffer>& aBuffer) {
   if (aBuffer->IsAttached(aWaylandSurfaceLock)) {
     mPendingBuffers.AppendElement(aBuffer);
   } else if (aBuffer->IsMatchingSize(mWindowSize)) {
@@ -351,13 +351,13 @@ void WindowSurfaceWaylandMB::CollectPendingSurfaces(
 
 void WindowSurfaceWaylandMB::IncrementBufferAge(
     const WaylandSurfaceLock& aWaylandSurfaceLock) {
-  for (const RefPtr<WaylandBufferSHM>& buffer : mInUseBuffers) {
+  for (const RefPtr<WaylandBuffer>& buffer : mInUseBuffers) {
     buffer->IncrementBufferAge();
   }
-  for (const RefPtr<WaylandBufferSHM>& buffer : mPendingBuffers) {
+  for (const RefPtr<WaylandBuffer>& buffer : mPendingBuffers) {
     buffer->IncrementBufferAge();
   }
-  for (const RefPtr<WaylandBufferSHM>& buffer : mAvailableBuffers) {
+  for (const RefPtr<WaylandBuffer>& buffer : mAvailableBuffers) {
     buffer->IncrementBufferAge();
   }
 }
