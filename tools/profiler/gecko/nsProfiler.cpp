@@ -1117,8 +1117,7 @@ void nsProfiler::GatheredOOPProfile(
   if (!aProfile.IsEmpty()) {
     if (mWriter->ChunkedWriteFunc().Length() + aProfile.Length() <
         scLengthAccumulationThreshold) {
-      
-      mWriter->Splice(PromiseFlatCString(aProfile));
+      mWriter->Splice(aProfile);
     } else {
       LogEvent([&](Json::Value& aEvent) {
         aEvent.append(
