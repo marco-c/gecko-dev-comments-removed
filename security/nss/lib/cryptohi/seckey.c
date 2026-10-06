@@ -2019,6 +2019,42 @@ SECKEY_ConvertToPublicKey(SECKEYPrivateKey *privk)
     return NULL;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+static SECOidTag
+seckey_GetRFC8410AlgTag(const SECKEYPublicKey *pubk)
+{
+    SECOidTag curve = SECKEY_GetECCOid(&pubk->u.ec.DEREncodedParams);
+
+    switch (pubk->keyType) {
+        case ecMontKey:
+            if (curve == SEC_OID_X25519 || curve == SEC_OID_CURVE25519) {
+                return SEC_OID_X25519;
+            }
+            break;
+        case edKey:
+            if (curve == SEC_OID_ED25519) {
+                return SEC_OID_ED25519_PUBLIC_KEY;
+            }
+            break;
+        default:
+            break;
+    }
+
+    PORT_SetError(SEC_ERROR_UNSUPPORTED_KEYALG);
+    return SEC_OID_UNKNOWN;
+}
+
 static CERTSubjectPublicKeyInfo *
 seckey_CreateSubjectPublicKeyInfo_helper(SECKEYPublicKey *pubk)
 {
@@ -2127,7 +2163,10 @@ seckey_CreateSubjectPublicKeyInfo_helper(SECKEYPublicKey *pubk)
                 break;
             case edKey:
             case ecMontKey:
-                tag = SECKEY_GetECCOid(&pubk->u.ec.DEREncodedParams);
+                tag = seckey_GetRFC8410AlgTag(pubk);
+                if (tag == SEC_OID_UNKNOWN) {
+                    break;
+                }
                 rv = SECOID_SetAlgorithmID(arena, &spki->algorithm,
                                            tag,
                                            &params);

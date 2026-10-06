@@ -85,6 +85,11 @@ NSS_CMSSignedData_Destroy(NSSCMSSignedData *sigd)
     }
 
     
+
+    sigd->certs = NULL;
+    sigd->tempCerts = NULL;
+    sigd->certLists = NULL;
+    sigd->signerInfos = NULL;
     NSS_CMSContentInfo_Destroy(&(sigd->contentInfo));
 }
 

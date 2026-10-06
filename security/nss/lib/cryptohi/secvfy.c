@@ -778,6 +778,15 @@ vfy_CreateContext(const SECKEYPublicKey *key, const SECItem *sig,
     }
     
 
+
+
+    if ((type == mldsaKey) && (encAlg != key->u.mldsa.paramSet)) {
+        SECITEM_FreeItem(mechparamsp, PR_FALSE);
+        PORT_SetError(SEC_ERROR_PKCS7_KEYALG_MISMATCH);
+        return NULL;
+    }
+    
+
     if (((type == mldsaKey) || (type == edKey)) && (hashAlg == SEC_OID_UNKNOWN)) {
         hashAlg = encAlg;
     }

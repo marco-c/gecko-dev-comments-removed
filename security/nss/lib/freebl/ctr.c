@@ -12,13 +12,6 @@
 #include "pkcs11t.h"
 #include "secerr.h"
 
-#ifdef USE_HW_AES
-#ifdef NSS_X86_OR_X64
-#include "intel-aes.h"
-#endif
-#include "rijndael.h"
-#endif
-
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include <arm_neon.h>
 #endif
@@ -91,6 +84,7 @@ CTR_DestroyContext(CTRContext *ctr, PRBool freeit)
 
 
 
+
 static void
 ctr_GetNextCtr(unsigned char *counter, unsigned int counterBits,
                unsigned int blocksize)
@@ -109,9 +103,10 @@ ctr_GetNextCtr(unsigned char *counter, unsigned int counterBits,
         return;
     }
     
+
     mask = (1 << counterBits) - 1;
-    count = ++(*counterPtr) & mask;
-    *counterPtr = ((*counterPtr) & ~mask) | count;
+    count = *counterPtr;
+    *counterPtr = (count & ~mask) | ((count + 1) & mask);
     return;
 }
 
@@ -134,18 +129,50 @@ ctr_xor(unsigned char *target, const unsigned char *x,
     }
 }
 
+
+
+
+
+
+
+
+
+static SECStatus
+ctr_UpdateBlock(CTRContext *ctr, unsigned char *outbuf,
+                const unsigned char *inbuf, unsigned int count,
+                unsigned int blocksize)
+{
+    unsigned int tmp;
+    SECStatus rv;
+
+    rv = (*ctr->cipher)(ctr->context, ctr->buffer, &tmp, blocksize,
+                        ctr->counter, blocksize, blocksize);
+    ctr_GetNextCtr(ctr->counter, ctr->counterBits, blocksize);
+    if (ctr->checkWrap) {
+        if (PORT_Memcmp(ctr->counter, ctr->counterFirst, blocksize) == 0) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
+            return SECFailure;
+        }
+    }
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+    ctr_xor(outbuf, inbuf, ctr->buffer, count);
+    ctr->bufPtr = count;
+    return SECSuccess;
+}
+
 SECStatus
 CTR_Update(CTRContext *ctr, unsigned char *outbuf,
            unsigned int *outlen, unsigned int maxout,
            const unsigned char *inbuf, unsigned int inlen,
            unsigned int blocksize)
 {
-    unsigned int tmp;
     SECStatus rv;
 
     
     if (ctr->counterBits < (sizeof(unsigned int) * 8) &&
-        inlen > ((1 << ctr->counterBits) - 2) * AES_BLOCK_SIZE) {
+        inlen > ((1ULL << ctr->counterBits) - 2) * AES_BLOCK_SIZE) {
         PORT_SetError(SEC_ERROR_INPUT_LEN);
         return SECFailure;
     }
@@ -170,19 +197,10 @@ CTR_Update(CTRContext *ctr, unsigned char *outbuf,
     }
 
     while (inlen >= blocksize) {
-        rv = (*ctr->cipher)(ctr->context, ctr->buffer, &tmp, blocksize,
-                            ctr->counter, blocksize, blocksize);
-        ctr_GetNextCtr(ctr->counter, ctr->counterBits, blocksize);
-        if (ctr->checkWrap) {
-            if (PORT_Memcmp(ctr->counter, ctr->counterFirst, blocksize) == 0) {
-                PORT_SetError(SEC_ERROR_INVALID_ARGS);
-                return SECFailure;
-            }
-        }
+        rv = ctr_UpdateBlock(ctr, outbuf, inbuf, blocksize, blocksize);
         if (rv != SECSuccess) {
             return SECFailure;
         }
-        ctr_xor(outbuf, inbuf, ctr->buffer, blocksize);
         outbuf += blocksize;
         inbuf += blocksize;
         *outlen += blocksize;
@@ -191,86 +209,10 @@ CTR_Update(CTRContext *ctr, unsigned char *outbuf,
     if (inlen == 0) {
         return SECSuccess;
     }
-    rv = (*ctr->cipher)(ctr->context, ctr->buffer, &tmp, blocksize,
-                        ctr->counter, blocksize, blocksize);
-    ctr_GetNextCtr(ctr->counter, ctr->counterBits, blocksize);
-    if (ctr->checkWrap) {
-        if (PORT_Memcmp(ctr->counter, ctr->counterFirst, blocksize) == 0) {
-            PORT_SetError(SEC_ERROR_INVALID_ARGS);
-            return SECFailure;
-        }
-    }
+    rv = ctr_UpdateBlock(ctr, outbuf, inbuf, inlen, blocksize);
     if (rv != SECSuccess) {
         return SECFailure;
     }
-    ctr_xor(outbuf, inbuf, ctr->buffer, inlen);
-    ctr->bufPtr = inlen;
     *outlen += inlen;
     return SECSuccess;
 }
-
-#if defined(USE_HW_AES) && defined(_MSC_VER) && defined(NSS_X86_OR_X64)
-SECStatus
-CTR_Update_HW_AES(CTRContext *ctr, unsigned char *outbuf,
-                  unsigned int *outlen, unsigned int maxout,
-                  const unsigned char *inbuf, unsigned int inlen,
-                  unsigned int blocksize)
-{
-    unsigned int fullblocks;
-    unsigned int tmp;
-    SECStatus rv;
-
-    
-    if (ctr->counterBits < (sizeof(unsigned int) * 8) &&
-        inlen > ((1 << ctr->counterBits) - 2) * AES_BLOCK_SIZE) {
-        PORT_SetError(SEC_ERROR_INPUT_LEN);
-        return SECFailure;
-    }
-    if (maxout < inlen) {
-        *outlen = inlen;
-        PORT_SetError(SEC_ERROR_OUTPUT_LEN);
-        return SECFailure;
-    }
-    *outlen = 0;
-    if (ctr->bufPtr != blocksize) {
-        unsigned int needed = PR_MIN(blocksize - ctr->bufPtr, inlen);
-        ctr_xor(outbuf, inbuf, ctr->buffer + ctr->bufPtr, needed);
-        ctr->bufPtr += needed;
-        outbuf += needed;
-        inbuf += needed;
-        *outlen += needed;
-        inlen -= needed;
-        if (inlen == 0) {
-            return SECSuccess;
-        }
-        PORT_Assert(ctr->bufPtr == blocksize);
-    }
-
-    if (inlen >= blocksize) {
-        rv = intel_aes_ctr_worker(((AESContext *)(ctr->context))->Nr)(
-            ctr, outbuf, outlen, maxout, inbuf, inlen, blocksize);
-        if (rv != SECSuccess) {
-            return SECFailure;
-        }
-        fullblocks = (inlen / blocksize) * blocksize;
-        *outlen += fullblocks;
-        outbuf += fullblocks;
-        inbuf += fullblocks;
-        inlen -= fullblocks;
-    }
-
-    if (inlen == 0) {
-        return SECSuccess;
-    }
-    rv = (*ctr->cipher)(ctr->context, ctr->buffer, &tmp, blocksize,
-                        ctr->counter, blocksize, blocksize);
-    ctr_GetNextCtr(ctr->counter, ctr->counterBits, blocksize);
-    if (rv != SECSuccess) {
-        return SECFailure;
-    }
-    ctr_xor(outbuf, inbuf, ctr->buffer, inlen);
-    ctr->bufPtr = inlen;
-    *outlen += inlen;
-    return SECSuccess;
-}
-#endif

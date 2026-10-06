@@ -481,14 +481,6 @@ nssTrustDomain_GetCertForIssuerAndSNFromCache(
 
 
 
-NSS_EXTERN NSSCertificate *
-nssTrustDomain_GetCertByDERFromCache(
-    NSSTrustDomain *td,
-    NSSDER *der);
-
-
-
-
 
 NSS_EXTERN NSSCertificate **
 nssTrustDomain_GetCertsFromCache(
