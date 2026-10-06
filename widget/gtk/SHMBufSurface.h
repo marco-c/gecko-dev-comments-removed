@@ -6,49 +6,113 @@
 #define SHMBufSurface_h_
 
 #include "Units.h"
+#include "WUniquePtr.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"
+#include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/widget/BufferSurface.h"
 
 struct wl_shm_pool;
+namespace mozilla::layers {
+class BufferDescriptor;
+}
+class DMABufSurface;
 
-namespace mozilla::widget {
-
-
-
-
-class SHMBufSurface final : public BufferSurface {
+class SHMBufSurface : public BufferSurface {
  public:
-  static RefPtr<SHMBufSurface> Create(const LayoutDeviceIntSize& aSize,
-                                      int32_t aFOURCCFormat);
+  SHMBufSurface* GetAsSHMBufSurface() override { return this; }
 
-  already_AddRefed<gfx::DataSourceSurface> GetAsSourceSurface() override;
-
-  already_AddRefed<mozilla::gfx::DrawTarget> Lock() override;
   void* GetImageData() override;
+  SHMBufSurface();
 
-  int GetWidth(int aPlane = 0) override { return mSize.width; }
-  int GetHeight(int aPlane = 0) override { return mSize.height; }
+  virtual already_AddRefed<DMABufSurface> UploadToDMABufSurface(
+      mozilla::gl::GLContext* aGLContext) {
+    return nullptr;
+  }
 
-  void Clear();
-
-  wl_buffer* CreateWlBuffer() override;
-
- private:
-  bool CreateImpl(const LayoutDeviceIntSize& aSize, int32_t aFOURCCFormat);
-
-  SHMBufSurface() = default;
+ protected:
   ~SHMBufSurface() override;
 
-  LayoutDeviceIntSize mSize;
-  wl_shm_pool* mShmPool = nullptr;
+  
+  
+  bool CreateTexture(mozilla::gl::GLContext* aGLContext, int aPlane) override;
+
+  
+  
+  
+  
+  virtual bool UploadTexture(int aPlane, bool aNeedInit) = 0;
+
+  
+  uint8_t* mBuffer = nullptr;
+
+  
+  
+  
+  mozilla::WUniquePtr<wl_shm_pool> mShmPool;
   mozilla::ipc::MutableSharedMemoryHandle mShmHandle;
   mozilla::ipc::SharedMemoryMapping mShm;
 };
 
-}  
+class SHMBufSurfaceRGBA final : public SHMBufSurface {
+ public:
+  static RefPtr<SHMBufSurfaceRGBA> Create(const mozilla::gfx::IntSize& aSize,
+                                          int32_t aFOURCCFormat);
+  static RefPtr<SHMBufSurfaceRGBA> Create(
+      uint8_t* aBuffer, const mozilla::layers::BufferDescriptor& aDescriptor);
+
+  already_AddRefed<mozilla::gfx::DataSourceSurface> GetAsSourceSurface()
+      override;
+  already_AddRefed<mozilla::gfx::DrawTarget> Lock() override;
+
+  already_AddRefed<DMABufSurface> UploadToDMABufSurface(
+      mozilla::gl::GLContext* aGLContext) override;
+
+  int GetTextureCount() override { return 1; }
+
+#ifdef MOZ_WAYLAND
+  wl_buffer* CreateWlBuffer() override;
+#endif
+
+  SHMBufSurfaceRGBA();
+
+ private:
+  ~SHMBufSurfaceRGBA() override {}
+
+  bool UploadTexture(int aPlane, bool aNeedInit) override;
+
+  bool CreateImpl(const mozilla::gfx::IntSize& aSize, int32_t aFOURCCFormat);
+  bool CreateImpl(uint8_t* aBuffer,
+                  const mozilla::layers::BufferDescriptor& aDescriptor);
+};
+
+class SHMBufSurfaceYUV final : public SHMBufSurface {
+ public:
+  static RefPtr<SHMBufSurfaceYUV> Create(
+      uint8_t* aBuffer, const mozilla::layers::BufferDescriptor& aDescriptor);
+
+  already_AddRefed<mozilla::gfx::DataSourceSurface> GetAsSourceSurface()
+      override {
+    return nullptr;
+  };
+
+  already_AddRefed<DMABufSurface> UploadToDMABufSurface(
+      mozilla::gl::GLContext* aGLContext) override;
+
+  SHMBufSurfaceYUV();
+
+ private:
+  ~SHMBufSurfaceYUV() override {}
+
+  bool UploadTexture(int aPlane, bool aNeedInit) override;
+
+  bool CreateImpl(uint8_t* aBuffer,
+                  const mozilla::layers::BufferDescriptor& aDescriptor);
+
+  mozilla::layers::YCbCrDescriptor mDescriptor;
+};
 
 #endif
