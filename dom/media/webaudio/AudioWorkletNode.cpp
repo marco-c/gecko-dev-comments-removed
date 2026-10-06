@@ -12,6 +12,7 @@
 #include "AudioWorkletImpl.h"
 #include "PlayingRefChangeHandler.h"
 #include "Tracing.h"
+#include "blink/DenormalDisabler.h"
 #include "js/Array.h"  
 #include "js/CallAndConstruct.h"  
 #include "js/Exception.h"
@@ -504,6 +505,10 @@ void WorkletNodeEngine::ProcessBlocksOnPorts(AudioNodeTrack* aTrack,
       output.AllocateChannels(1);
     }
   }
+
+  
+  
+  WebCore::DenormalEnabler denormals;
 
   AutoEntryScript aes(mGlobal, "Worklet Process");
   JSContext* cx = aes.cx();

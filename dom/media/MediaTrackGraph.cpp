@@ -1234,7 +1234,11 @@ void MediaTrackGraphImpl::ProduceDataForTracksBlockByBlock(
 
   while (mProcessedTime < mStateComputedTime) {
     
+    
+    
+    WebCore::DenormalEnabler enableForMicroTasks;
     nsAutoMicroTask mt;
+    WebCore::DenormalDisabler disableForRendering;
 
     GraphTime next = RoundUpToNextAudioBlock(mProcessedTime);
     for (uint32_t i = mFirstCycleBreaker; i < mTracks.Length(); ++i) {
@@ -1432,6 +1436,8 @@ void MediaTrackGraphImpl::Process(MixerCallbackReceiver* aMixerReceiver) {
   if (mStateComputedTime == mProcessedTime) {  
     return;
   }
+
+  WebCore::DenormalDisabler disabler;
 
   
   bool allBlockedForever = true;
@@ -1637,8 +1643,6 @@ auto MediaTrackGraphImpl::OneIterationImpl(
   MOZ_POP_THREAD_SAFETY
 
   MOZ_ASSERT(OnGraphThread());
-
-  WebCore::DenormalDisabler disabler;
 
   
   SwapMessageQueues();
