@@ -38,11 +38,10 @@ add_task(async function () {
   );
 
   
-  EventUtils.sendMouseEvent(
-    { type: "mousedown" },
+  clickOnRequestRow(
     document.querySelector(
       `.request-list-item .requests-list-file[title="${REQUEST}"]`
-    )
+    ).parentNode
   );
 
   

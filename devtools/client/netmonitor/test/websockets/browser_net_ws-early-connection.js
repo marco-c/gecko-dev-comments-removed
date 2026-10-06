@@ -41,7 +41,7 @@ add_task(async function () {
   Assert.notStrictEqual(index, -1, "There must be one WS connection request");
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[index]);
+  clickOnRequestRow(requests[index].closest(".request-list-item"));
 
   info("Waiting for WS frames...");
 

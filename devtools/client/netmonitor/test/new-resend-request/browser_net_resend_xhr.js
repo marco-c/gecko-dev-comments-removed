@@ -33,7 +33,7 @@ add_task(async function () {
 
   
   const firstRequest = document.querySelectorAll(".request-list-item")[0];
-  EventUtils.sendMouseEvent({ type: "mousedown" }, firstRequest);
+  clickOnRequestRow(firstRequest);
 
   
   const { getSelectedRequest } = windowRequire(

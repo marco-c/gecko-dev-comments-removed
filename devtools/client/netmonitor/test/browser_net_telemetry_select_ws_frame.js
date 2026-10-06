@@ -32,7 +32,7 @@ add_task(async function () {
   is(requests.length, 1, "There should be one request");
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, requests[0]);
+  clickOnRequestRow(requests[0]);
 
   
   const wait = waitForDOM(
@@ -62,7 +62,7 @@ add_task(async function () {
   );
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, frames[0]);
+  clickInView(frames[0]);
   await payloadResolved;
 
   

@@ -47,7 +47,7 @@ add_task(async function () {
   );
 
   
-  EventUtils.sendMouseEvent({ type: "mousedown" }, file);
+  clickOnRequestRow(file.parentNode);
 
   
   await waitUntil(() =>
