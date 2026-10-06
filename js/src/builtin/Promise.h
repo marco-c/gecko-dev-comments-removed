@@ -278,8 +278,7 @@ struct PromiseReactionRecordBuilder {
 
 [[nodiscard]] bool SafeResolvePromise(JSContext* cx,
                                       JS::Handle<PromiseObject*> promise,
-                                      JS::Handle<JS::Value> resolution,
-                                      bool* deferred);
+                                      JS::Handle<JS::Value> resolution);
 
 [[nodiscard]] bool InternalAsyncGeneratorAwait(
     JSContext* cx, JS::Handle<AsyncGeneratorObject*> generator,

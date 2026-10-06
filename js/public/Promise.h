@@ -502,13 +502,9 @@ extern JS_PUBLIC_API bool RejectPromise(JSContext* cx,
 
 
 
-
-
-
 extern JS_PUBLIC_API bool SafeResolve(JSContext* cx,
                                       JS::HandleObject promiseObj,
-                                      JS::HandleValue resolutionValue,
-                                      bool* deferred = nullptr);
+                                      JS::HandleValue resolutionValue);
 
 
 
