@@ -178,6 +178,8 @@ impl<K> DlHandle<K> {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 struct BuilderState {
     namespace: DlNamespace,
     
@@ -216,6 +218,8 @@ pub enum DeltaAction {
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Default)]
 pub struct DlBuilderMap {
     by_pipeline: FastHashMap<PipelineId, BuilderState>,
@@ -243,6 +247,14 @@ impl DlBuilderMap {
             .get(pipeline_id)
             .unwrap_or_else(|| panic!("no namespace for {:?}", pipeline_id));
         (namespace, self.generations[namespace.0 as usize])
+    }
+
+    
+    
+    pub fn live_namespaces(&self) -> impl Iterator<Item = (DlNamespace, u32)> + '_ {
+        self.by_pipeline.values().map(move |state| {
+            (state.namespace, self.generations[state.namespace.0 as usize])
+        })
     }
 
     fn bump_generation(&mut self, namespace: DlNamespace) {
@@ -461,6 +473,12 @@ pub fn count_dl_ops<T>(ops: &[DlOp<T>]) -> (usize, usize) {
 
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[cfg_attr(
+    any(feature = "capture", feature = "replay"),
+    serde(bound(serialize = "T: serde::Serialize", deserialize = "T: serde::Deserialize<'de>"))
+)]
 pub struct DlStore<K, T> {
     
     
@@ -477,6 +495,8 @@ pub struct DlStore<K, T> {
     _marker: PhantomData<K>,
 }
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 struct Entry<T> {
     
@@ -558,6 +578,43 @@ impl<K, T> DlStore<K, T> {
             .filter(|slots| slots.is_some())
             .unwrap_or_else(|| panic!("namespace {} is not open", namespace.0));
         *slots = None;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn reconcile(&mut self, builders: &DlBuilderMap) {
+        let live: Vec<(DlNamespace, u32)> = builders.live_namespaces().collect();
+
+        for (index, slots) in self.namespaces.iter_mut().enumerate() {
+            if slots.is_some() && !live.iter().any(|(ns, _)| ns.0 as usize == index) {
+                *slots = None;
+            }
+        }
+
+        for (namespace, generation) in live {
+            let index = namespace.0 as usize;
+            if index >= self.namespaces.len() {
+                self.namespaces.resize_with(index + 1, || None);
+            }
+            if self.namespaces[index].is_none() {
+                self.namespaces[index] = Some(Vec::new());
+            }
+
+            #[cfg(debug_assertions)]
+            {
+                if index >= self.generations.len() {
+                    self.generations.resize(index + 1, 0);
+                }
+                self.generations[index] = generation;
+            }
+            #[cfg(not(debug_assertions))]
+            let _ = generation;
+        }
     }
 
     pub fn insert(&mut self, namespace: DlNamespace, slot: u32, value: T) {
@@ -709,6 +766,38 @@ mod tests {
         store.insert(DlNamespace(0), 0, 200);
 
         store.get(stale);
+    }
+
+    #[test]
+    fn reconcile_matches_open_namespaces_to_the_builder_map() {
+        
+        
+        let mut alloc = DlBuilderMap::default();
+        let stale = alloc.get_or_alloc(pipeline(1)).0;
+        let kept = alloc.get_or_alloc(pipeline(2)).0;
+
+        let mut store = store();
+        store.open(stale);
+        store.open(kept);
+        store.insert(kept, 0, 100);
+        let handle = h(&store, kept, 0);
+
+        alloc.remove_pipeline(pipeline(1));
+        alloc.take_removals();
+        let fresh = alloc.get_or_alloc(pipeline(3)).0;
+        assert_eq!(fresh, stale, "expected the released namespace to be reused");
+        let late = alloc.get_or_alloc(pipeline(4)).0;
+
+        store.reconcile(&alloc);
+
+        assert_eq!(store.get(handle), Some(&100), "a surviving entry was lost");
+        assert_eq!(store.len(), 1);
+        store.insert(late, 0, 200);
+        store.insert(fresh, 0, 300);
+        store.close(late);
+        store.close(fresh);
+        store.close(kept);
+        assert_eq!(store.len(), 0);
     }
 
     #[test]
