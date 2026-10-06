@@ -1093,7 +1093,6 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   if (!defaultAnchor) {
     return {};
   }
-  const auto compensatingForScroll = aReferenceData.CompensatingForScrollAxes();
   
   
   
@@ -1120,6 +1119,8 @@ static ScrollShifts FindScrollCompensatedAnchorShift(
   }();
 
   const nsPoint scrollCompensatedDelta = [&]() -> nsPoint {
+    const auto compensatingForScroll =
+        aReferenceData.CompensatingForScrollAxes();
     if (compensatingForScroll.isEmpty()) {
       return {};
     }
