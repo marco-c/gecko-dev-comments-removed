@@ -169,9 +169,11 @@ void nsTableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
   
-  const nsStyleTableBorder* tableStyle = StyleTableBorder();
-  bool borderCollapse =
-      (StyleBorderCollapse::Collapse == tableStyle->mBorderCollapse);
+  
+  const bool borderCollapse =
+      aPrevInFlow ? static_cast<nsTableFrame*>(aPrevInFlow)->IsBorderCollapse()
+                  : StyleTableBorder()->mBorderCollapse ==
+                        StyleBorderCollapse::Collapse;
   SetBorderCollapse(borderCollapse);
   if (borderCollapse) {
     SetNeedToCalcHasBCBorders(true);
