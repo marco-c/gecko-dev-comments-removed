@@ -17,7 +17,7 @@ AOM_DIR = '../../third_party/aom'
 def write_aom_config(system, arch, variables, cache_variables):
     
     variables['year'] = datetime.datetime.now().year
-    cmake_parse(variables, [], [AOM_DIR], os.path.join(AOM_DIR, 'build', 'cmake',
+    cmake_parse(variables, [], [AOM_DIR], os.path.join(AOM_DIR, 'cmake',
                 'generate_aom_config_templates.cmake'), 'libaom')
 
     
@@ -77,6 +77,7 @@ if __name__ == '__main__':
         'CMAKE_INSTALL_PREFIX': 'INSTALLDIR',
         'CMAKE_SYSTEM_NAME': 'Linux',
         'CMAKE_SYSTEM_PROCESSOR': 'x86_64',
+        'ENABLE_APPS': 0,
         'ENABLE_EXAMPLES': 0,
         'ENABLE_TESTS': 0,
         'ENABLE_TOOLS': 0,
