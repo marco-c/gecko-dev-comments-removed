@@ -41,8 +41,6 @@ EXEC			= exec
 # Testing frameworks support
 ################################################################################
 
-testxpcobjdir = $(DEPTH)/_tests/xpcshell
-
 ifdef ENABLE_TESTS
 ifdef CPP_UNIT_TESTS
 ifdef COMPILE_ENVIRONMENT
@@ -58,16 +56,6 @@ CPP_UNIT_TESTS_DEST = $(DIST)/cppunittests
 CPP_UNIT_TESTS_TARGET = target
 INSTALL_TARGETS += CPP_UNIT_TESTS
 endif
-
-run-cppunittests::
-	@$(PYTHON3) $(MOZILLA_DIR)/testing/runcppunittests.py --xre-path=$(DIST)/bin --symbols-path=$(DIST)/crashreporter-symbols $(CPP_UNIT_TESTS)
-
-cppunittests-remote:
-	$(PYTHON3) -u $(MOZILLA_DIR)/testing/remotecppunittests.py \
-		--xre-path=$(DEPTH)/dist/bin \
-		--localLib=$(DEPTH)/dist/$(MOZ_APP_NAME) \
-		--deviceIP=${TEST_DEVICE} \
-		$(CPP_UNIT_TESTS) $(EXTRA_TEST_ARGS); \
 
 endif # COMPILE_ENVIRONMENT
 endif # CPP_UNIT_TESTS
@@ -202,15 +190,6 @@ SIMPLE_PROGRAMS :=
 HOST_SHARED_LIBRARY :=
 HOST_PROGRAM :=
 HOST_SIMPLE_PROGRAMS :=
-endif
-
-ifdef MACH
-ifndef NO_BUILDSTATUS_MESSAGES
-define BUILDSTATUS
-@echo 'BUILDSTATUS@$(relativesrcdir) $1'
-
-endef
-endif
 endif
 
 define SUBMAKE # $(call SUBMAKE,target,directory,static)
