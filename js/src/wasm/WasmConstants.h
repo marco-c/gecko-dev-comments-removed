@@ -1086,6 +1086,10 @@ enum class MozOp {
 #ifdef ENABLE_WASM_JSPI
   
   GuardSuspending,
+
+  
+  
+  ExternToCont,
 #endif
 
   Limit

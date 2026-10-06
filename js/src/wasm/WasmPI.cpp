@@ -818,6 +818,7 @@ class PromisingFunctionModuleFactory {
   
   
   
+  
   bool encodeReactionFunction(CodeMetadata& codeMeta, Bytes& bytecode) {
     Encoder encoder(bytecode, *codeMeta.types);
 
@@ -836,6 +837,10 @@ class PromisingFunctionModuleFactory {
 
     
     if (!encoder.writeOp(Op::LocalGet) || !encoder.writeVarU32(contIndex)) {
+      return false;
+    }
+    if (!encoder.writeOp(MozOp::ExternToCont) ||
+        !encoder.writeVarU32(baseTypeIndex_ + ContTypeIndex)) {
       return false;
     }
 
@@ -1041,8 +1046,7 @@ class PromisingFunctionModuleFactory {
     
     
     ValTypeVector reactionParams, reactionResults;
-    if (!reactionParams.emplaceBack(RefType::fromTypeDef(
-            &codeMeta->types->type(baseTypeIndex_ + ContTypeIndex), true)) ||
+    if (!reactionParams.emplaceBack(RefType::extern_()) ||
         !reactionParams.emplaceBack(RefType::extern_())) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -1255,6 +1259,7 @@ static bool WasmPromiseReaction(JSContext* cx, unsigned argc, Value* vp) {
                .as<PromiseObject>());
   JS::RootedValueArray<2> argv(cx);
   JS::Rooted<JS::Value> rval(cx);
+  MOZ_ASSERT(callee->getExtendedSlot(CONT_SLOT).toObject().is<ContObject>());
   argv[0].set(callee->getExtendedSlot(CONT_SLOT));
   argv[1].setObject(*promisingPromiseObject);
 
