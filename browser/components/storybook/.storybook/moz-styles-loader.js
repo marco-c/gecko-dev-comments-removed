@@ -230,7 +230,7 @@ async function rewriteCssUris(source) {
     
     let cssImport = `__chrome_styles_loader__${path
       .basename(localPath, ".css")
-      .replaceAll("-", "")}Styles`;
+      .replaceAll(/[-.]/g, "")}Styles`;
 
     
     if (
