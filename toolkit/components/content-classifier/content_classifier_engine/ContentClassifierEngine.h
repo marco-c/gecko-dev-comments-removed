@@ -107,7 +107,8 @@ class ContentClassifierEngine final {
   const ContentClassifierFeature& Feature() const { return mFeature; }
 
   ContentClassifierEngineResult CheckNetworkRequest(
-      const ContentClassifierRequest& aRequest, bool aPreviouslyMatched);
+      const ContentClassifierRequest& aRequest, bool aPreviouslyMatched,
+      bool aMatchDocumentAsNetworkRequest);
 
   
   

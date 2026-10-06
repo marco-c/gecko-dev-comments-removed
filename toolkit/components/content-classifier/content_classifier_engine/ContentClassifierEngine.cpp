@@ -27,7 +27,8 @@ bool IsNonRecommendedAddonFromLoadInfo(nsILoadInfo* aLoadInfo) {
 }  
 
 ContentClassifierEngineResult ContentClassifierEngine::CheckNetworkRequest(
-    const ContentClassifierRequest& aRequest, bool aPreviouslyMatched) {
+    const ContentClassifierRequest& aRequest, bool aPreviouslyMatched,
+    bool aMatchDocumentAsNetworkRequest) {
   if (!mEngine || !sInitializedETLDService) {
     return ContentClassifierEngineResult(NS_ERROR_NOT_INITIALIZED, mFeature);
   }
@@ -40,17 +41,34 @@ ContentClassifierEngineResult ContentClassifierEngine::CheckNetworkRequest(
   bool important = false;
   nsCString exception;
 
-  const nsCString& sourceHostname = mFeature.mUseTopWindowAsSource
-                                        ? aRequest.mTopWindowHostname
-                                        : aRequest.mSourceHostname;
-  const bool thirdParty = mFeature.mUseTopWindowAsSource
-                              ? aRequest.mThirdParty
-                              : aRequest.mThirdPartyToSource;
+  
+  const bool topLevelDocumentLoad =
+      aRequest.mRequestType.EqualsLiteral("document");
+
+  const nsCString* sourceHostname = &aRequest.mSourceHostname;
+  bool thirdParty = aRequest.mThirdPartyToSource;
+  if (topLevelDocumentLoad) {
+    sourceHostname = &aRequest.mHostname;
+    thirdParty = false;
+  } else if (mFeature.mUseTopWindowAsSource) {
+    sourceHostname = &aRequest.mTopWindowHostname;
+    thirdParty = aRequest.mThirdParty;
+  }
+
+  
+  
+  
+  
+  constexpr auto kOtherRequestType = "other"_ns;
+  const nsACString& requestType =
+      aMatchDocumentAsNetworkRequest && topLevelDocumentLoad
+          ? static_cast<const nsACString&>(kOtherRequestType)
+          : static_cast<const nsACString&>(aRequest.mRequestType);
 
   nsresult rv = content_classifier_engine_check_network_request_preparsed(
-      mEngine, &aRequest.mUrl, &aRequest.mHostname, &sourceHostname,
-      &aRequest.mRequestType, thirdParty, aPreviouslyMatched, &matched,
-      &important, &exception);
+      mEngine, &aRequest.mUrl, &aRequest.mHostname, sourceHostname,
+      &requestType, thirdParty, aPreviouslyMatched, &matched, &important,
+      &exception);
   return ContentClassifierEngineResult(matched, !exception.IsEmpty(), important,
                                        rv, mFeature);
 }
@@ -140,6 +158,18 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   if (NS_FAILED(rv)) return;
 
   
+  if (contentPolicyType == ExtContentPolicyType::TYPE_DOCUMENT) {
+    mTopWindowHostname = mHostname;
+    mTopWindowSchemelessSite = mSchemelessSite;
+    mSourceHostname = mHostname;
+    mSourceSchemelessSite = mSchemelessSite;
+    mThirdParty = false;
+    mThirdPartyToSource = false;
+    mValid = true;
+    return;
+  }
+
+  
   
   nsCOMPtr<nsIURI> topWindowURI;
   if (NS_SUCCEEDED(net::UrlClassifierCommon::GetTopWindowURI(
@@ -160,8 +190,6 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
     }
   }
 
-  
-  
   
   
   nsCOMPtr<nsIPrincipal> loadingPrincipal = loadInfo->GetLoadingPrincipal();

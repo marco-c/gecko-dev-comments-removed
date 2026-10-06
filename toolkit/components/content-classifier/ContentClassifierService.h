@@ -95,7 +95,7 @@ struct ContentClassifierFeature {
   
   
   
-  bool (*mRequestFilter)(const ContentClassifierRequest&);
+  bool (*mRequestFilter)(const ContentClassifierRequest&, ClassifyMode);
 
   
   
@@ -293,7 +293,7 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   ContentClassifierResult ClassifyWithEngines(
       const nsTArray<RefPtr<ContentClassifierEngine>>& aEngines,
-      const ContentClassifierRequest& aRequest, bool aIndependentEngines)
+      const ContentClassifierRequest& aRequest, ClassifyMode aMode)
       MOZ_REQUIRES(mLock);
 
   

@@ -3,6 +3,7 @@
 
 
 #include "ContentClassifierFeatureUtils.h"
+#include "ContentClassifierService.h"
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -64,14 +65,14 @@ NS_IMETHODIMP HarmfulAddonPingSender::Observe(nsISupports*, const char* aTopic,
 }  
 
 
-bool ContentClassifierFeatureUtils::IsThirdPartyRequest(
-    const ContentClassifierRequest& aRequest) {
-  return aRequest.ThirdParty();
+bool ContentClassifierFeatureUtils::IsThirdPartyUnlessAnnotating(
+    const ContentClassifierRequest& aRequest, ClassifyMode aMode) {
+  return aMode == ClassifyMode::Annotate || aRequest.ThirdParty();
 }
 
 
 bool ContentClassifierFeatureUtils::IsNonRecommendedAddonRequest(
-    const ContentClassifierRequest& aRequest) {
+    const ContentClassifierRequest& aRequest, ClassifyMode) {
   return aRequest.IsNonRecommendedAddon();
 }
 
