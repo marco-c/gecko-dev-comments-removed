@@ -132,7 +132,11 @@ class TestHelpers(unittest.TestCase):
             ),
             ["MIT"],
         )
-        self.assertEqual(licenses_from_metadata(metadata(License="APL 2")), ["APL 2"])
+        self.assertEqual(
+            licenses_from_metadata(metadata(License="APL 2")), ["Apache-2.0"]
+        )
+        self.assertEqual(licenses_from_metadata(metadata(License="MPL2")), ["MPL-2.0"])
+        self.assertEqual(licenses_from_metadata(metadata(License="BSD")), ["BSD"])
         
         self.assertEqual(
             licenses_from_metadata(
@@ -249,7 +253,7 @@ class TestPythonRecords(PythonFixture):
         self.assertEqual(record["description"], "Localization library")
         self.assertEqual(record["website"], "https://example.com/fluent")
         self.assertEqual(record["vcs"], "https://example.com/fluent")
-        self.assertEqual(record["licenses"], ["APL 2"])
+        self.assertEqual(record["licenses"], ["Apache-2.0"])
         self.assertEqual(record["kinds"], ["dev"])
         self.assertEqual(record["occurrences"], ["third_party/python/fluent.syntax"])
         
