@@ -17,7 +17,7 @@ TOPDIR = os.path.join(os.path.dirname(__file__), "..")
 def install_reqs():
     """We install requirements one by one, with no cache, and in isolated mode."""
     try:
-        import yaml  
+        import arsenic  
 
         return False
     except Exception:
