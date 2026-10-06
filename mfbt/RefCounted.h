@@ -10,14 +10,9 @@
 #include <type_traits>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefCountType.h"
-
-#ifdef __wasi__
-#  include "mozilla/WasiAtomic.h"
-#else
-#  include <atomic>
-#endif  
 
 #if defined(MOZ_SUPPORT_LEAKCHECKING) && defined(NS_BUILD_REFCNT_LOGGING)
 #  define MOZ_REFCOUNTED_LEAK_CHECKING
@@ -178,28 +173,7 @@ class RC<T, AtomicRefCount> {
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
-  T operator--() {
-    
-    
-    
-    
-    T result = mValue.fetch_sub(1, std::memory_order_release) - 1;
-    if (result == 0) {
-      
-      
-      
-      
-#if defined(MOZ_TSAN) || defined(__wasi__)
-      
-      
-      
-      (void)mValue.load(std::memory_order_acquire);
-#else
-      std::atomic_thread_fence(std::memory_order_acquire);
-#endif
-    }
-    return result;
-  }
+  T operator--() { return AtomicRefCountDecrement(mValue); }
 
 #ifdef DEBUG
   

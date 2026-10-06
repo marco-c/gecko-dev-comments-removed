@@ -31,6 +31,10 @@
 #  include <emmintrin.h>
 #endif
 
+#ifdef MOZ_TSAN
+#  include <sanitizer/tsan_interface.h>
+#endif
+
 namespace mozilla {
 
 
@@ -539,6 +543,37 @@ inline void cpu_pause() {
 #else
   __asm__ __volatile__("" ::: "memory");
 #endif
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+MOZ_ALWAYS_INLINE T AtomicRefCountDecrement(std::atomic<T>& aCount) {
+  T result = aCount.fetch_sub(1, std::memory_order_release) - 1;
+  if (result == 0) {
+#if defined(__wasi__)
+    
+    (void)aCount.load(std::memory_order_acquire);
+#else
+    std::atomic_thread_fence(std::memory_order_acquire);
+#  ifdef MOZ_TSAN
+    
+    
+    __tsan_acquire(&aCount);
+#  endif
+#endif
+  }
+  return result;
 }
 
 }  

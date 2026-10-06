@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "mozilla/Assertions.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/MacroForEach.h"
@@ -398,26 +399,7 @@ class ThreadSafeAutoRefCnt {
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
   MOZ_ALWAYS_INLINE nsrefcnt operator--() {
-    
-    
-    
-    
-    nsrefcnt result = mValue.fetch_sub(1, std::memory_order_release) - 1;
-    if (result == 0) {
-      
-      
-      
-      
-#ifdef MOZ_TSAN
-      
-      
-      
-      mValue.load(std::memory_order_acquire);
-#else
-      std::atomic_thread_fence(std::memory_order_acquire);
-#endif
-    }
-    return result;
+    return mozilla::AtomicRefCountDecrement(mValue);
   }
 
   MOZ_ALWAYS_INLINE nsrefcnt operator=(nsrefcnt aValue) {
