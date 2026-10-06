@@ -284,6 +284,7 @@ void TSFTextStore::DidLockGranted() {
   if (mDestroyed || !mWidget || mWidget->Destroyed()) {
     mPendingSelectionChangeData.reset();
     mHasReturnedNoLayoutError = false;
+    mNeedsToNotifyTSFOfLayoutChange = false;
   }
 }
 
@@ -300,6 +301,7 @@ void TSFTextStore::FlushPendingActions() {
     }
     mPendingSelectionChangeData.reset();
     mHasReturnedNoLayoutError = false;
+    mNeedsToNotifyTSFOfLayoutChange = false;
     return;
   }
 
@@ -670,7 +672,7 @@ void TSFTextStore::MaybeFlushPendingNotifications() {
     }
   }
 
-  if (mHasReturnedNoLayoutError) {
+  if (mHasReturnedNoLayoutError || mNeedsToNotifyTSFOfLayoutChange) {
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::MaybeFlushPendingNotifications(), "
              "calling TSFTextStore::NotifyTSFOfLayoutChange()...",
@@ -3504,18 +3506,12 @@ nsresult TSFTextStore::OnLayoutChangeInternal() {
   
   
   
-  MOZ_LOG(gIMELog, LogLevel::Info,
-          ("0x%p   TSFTextStore::OnLayoutChangeInternal(), calling "
-           "NotifyTSFOfLayoutChange()...",
-           this));
-  if (NS_WARN_IF(!NotifyTSFOfLayoutChange())) {
-    rv = NS_ERROR_FAILURE;
-  }
-
+  
   MOZ_LOG(gIMELog, LogLevel::Debug,
           ("0x%p   TSFTextStore::OnLayoutChangeInternal(), calling "
            "MaybeFlushPendingNotifications()...",
            this));
+  mNeedsToNotifyTSFOfLayoutChange = true;
   MaybeFlushPendingNotifications();
 
   return rv;
@@ -3533,7 +3529,9 @@ bool TSFTextStore::NotifyTSFOfLayoutChange() {
 
   
   
+  
   mHasReturnedNoLayoutError = false;
+  mNeedsToNotifyTSFOfLayoutChange = false;
 
   
   

@@ -979,6 +979,9 @@ class TSFTextStore final : public TSFTextStoreBase,
   bool mHasReturnedNoLayoutError = false;
   
   
+  bool mNeedsToNotifyTSFOfLayoutChange = false;
+  
+  
   bool mPendingToCreateNativeCaret = false;
   
   
