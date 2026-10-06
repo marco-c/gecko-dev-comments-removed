@@ -130,6 +130,7 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
     AVCodec* codec = FindHardwareAVCodec(mLib, mCodecID, AV_HWDEVICE_TYPE_NONE);
     if (codec) {
       rv = InitDecoder(codec, &options);
+      mIsMediaCodec = NS_SUCCEEDED(rv);
     }
   }
 
@@ -265,6 +266,9 @@ RefPtr<MediaDataDecoder::FlushPromise>
 FFmpegAudioDecoder<LIBAV_VER>::ProcessFlush() {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   mInputTimes.Clear();
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  mHasSentDrainPacket = false;
+#endif
   return FFmpegDataDecoder::ProcessFlush();
 }
 
@@ -410,24 +414,34 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DecodeUsingFFmpeg(
   
   
   int32_t submitted = 0;
-  int ret = mLib->avcodec_send_packet(mCodecContext, aPacket);
-  switch (ret) {
-    case AVRESULT_OK:
-      submitted++;
-      break;
-    case AVERROR(EAGAIN):
-      FFMPEG_LOG("  av_codec_send_packet: EAGAIN.");
-      MOZ_ASSERT(false, "EAGAIN");
-      break;
-    case AVERROR_EOF:
-      FFMPEG_LOG("  End of stream.");
-      return MediaResult(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
-                         RESULT_DETAIL("End of stream"));
-    default:
-      NS_WARNING("FFmpeg audio decoder error (avcodec_send_packet).");
-      return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
-                         RESULT_DETAIL("FFmpeg audio error"));
+  int ret = 0;
+#  if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  
+  const bool draining = aPacket->size == 0;
+  if (!draining || !mHasSentDrainPacket) {
+#  endif
+    ret = mLib->avcodec_send_packet(mCodecContext, aPacket);
+    switch (ret) {
+      case AVRESULT_OK:
+        submitted++;
+        break;
+      case AVERROR(EAGAIN):
+        FFMPEG_LOG("  av_codec_send_packet: EAGAIN.");
+        MOZ_ASSERT(false, "EAGAIN");
+        break;
+      case AVERROR_EOF:
+        FFMPEG_LOG("  End of stream.");
+        return MediaResult(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
+                           RESULT_DETAIL("End of stream"));
+      default:
+        NS_WARNING("FFmpeg audio decoder error (avcodec_send_packet).");
+        return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                           RESULT_DETAIL("FFmpeg audio error"));
+    }
+#  if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+    mHasSentDrainPacket = draining && ret == AVRESULT_OK;
   }
+#  endif
 
   MediaResult rv;
   media::NullableTimeUnit previousEnd;
@@ -453,6 +467,19 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DecodeUsingFFmpeg(
         }
         FFMPEG_LOG("  EAGAIN (packets submitted: {}).", submitted);
         rv = NS_OK;
+#  if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+        
+        
+        
+        
+        if (draining && mIsMediaCodec &&
+            !mLib->moz_avcodec_mediacodec_is_eos(mCodecContext) &&
+            MaybeDeferDrain(aResults)) {
+          FFMPEG_LOG("  MediaCodec still holding frames, polling for them");
+          return MediaResult(NS_ERROR_NOT_AVAILABLE,
+                             RESULT_DETAIL("Drain deferred"));
+        }
+#  endif
         break;
       }
       case AVERROR_EOF: {

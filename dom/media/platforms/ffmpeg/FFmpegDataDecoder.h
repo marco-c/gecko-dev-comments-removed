@@ -8,6 +8,9 @@
 #include "FFmpegLibWrapper.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/StaticMutex.h"
+#ifdef MOZ_WIDGET_ANDROID
+#  include "nsITimer.h"
+#endif
 
 
 #include "FFmpegLibs.h"
@@ -98,7 +101,25 @@ class FFmpegDataDecoder<LIBAV_VER>
   RefPtr<DecodePromise> ProcessDrain();
   MozPromiseHolder<DecodePromise> mDrainPromise;
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  
+  bool MaybeDeferDrain(const DecodedData& aResults);
+  virtual void ResumeDrain();
+#endif
+
  private:
+#ifdef MOZ_WIDGET_ANDROID
+  void OnDrainTimer();
+  void CancelDrainTimer();
+
+  nsCOMPtr<nsITimer> mDrainTimer;
+  uint32_t mDrainAttempts = 0;
+  bool mDrainTimedOut = false;
+#endif
+
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
   virtual MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
                                bool* aGotFrame,
