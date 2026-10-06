@@ -1367,14 +1367,16 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
                         SymbolicAddress::CoerceInPlace_JitEntry);
     masm.assertStackAlignment(ABIStackAlignment);
 
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(wasm::NeedsBuiltinThunk(SymbolicAddress::CoerceInPlace_JitEntry));
-  GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(
+        wasm::NeedsBuiltinThunk(SymbolicAddress::CoerceInPlace_JitEntry));
+    GenerateLeaveWasmFPEnvironment(masm, InstanceReg);
 
     
     masm.branchTest32(Assembler::NonZero, ReturnReg, ReturnReg,
