@@ -2,9 +2,10 @@
 
 
 
-use nsstring::nsString;
+use nsstring::{nsACString, nsCString, nsString};
 use serde::{Deserialize, Deserializer};
 use thin_vec::ThinVec;
+use url::Url;
 
 #[derive(Clone, Copy, Deserialize, Default)]
 #[repr(u8)]
@@ -46,22 +47,23 @@ fn forgiving_deserialize<'a, T: Deserialize<'a> + Default, D: Deserializer<'a>>(
 pub struct DeclarativePushAction {
     action: nsString,
     title: nsString,
-    navigate: nsString,
+    navigate: nsCString,
 }
 
 #[repr(C)]
 pub struct DeclarativePushData {
     title: nsString,
-    navigate: nsString,
+    navigate: nsCString,
     lang: nsString,
     body: nsString,
-    icon: nsString,
+    icon: nsCString,
     tag: nsString,
     data: nsString,
     actions: ThinVec<DeclarativePushAction>,
     dir: DeclarativePushDir,
     silent: bool,
     require_interaction: bool,
+    mutable: bool,
 }
 
 #[derive(Deserialize)]
@@ -69,16 +71,6 @@ struct ActionJSON {
     action: String,
     title: String,
     navigate: String,
-}
-
-impl ActionJSON {
-    fn to_ffi(self) -> DeclarativePushAction {
-        DeclarativePushAction {
-            action: nsString::from(&self.action),
-            title: nsString::from(&self.title),
-            navigate: nsString::from(&self.navigate),
-        }
-    }
 }
 
 
@@ -97,13 +89,15 @@ struct NotificationJSON {
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     tag: String,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
-    icon: String,
+    icon: Option<String>,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     silent: bool,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     requireInteraction: bool,
     #[serde(default, deserialize_with = "forgiving_deserialize")]
     actions: Vec<Forgiving<ActionJSON>>,
+    #[serde(default, deserialize_with = "forgiving_deserialize")]
+    mutable: bool,
 }
 
 
@@ -114,7 +108,11 @@ struct DeclarativePushJSON {
 }
 
 
-fn parse_declarative_push_option(data: &[u8]) -> Option<DeclarativePushData> {
+fn parse_declarative_push_option(
+    data: &[u8],
+    base_url: &nsACString,
+) -> Option<DeclarativePushData> {
+    let base_url = base_url.to_utf8();
     
     
     
@@ -132,32 +130,54 @@ fn parse_declarative_push_option(data: &[u8]) -> Option<DeclarativePushData> {
             nsString::from(&string)
         }
     };
+    let base_url = Url::parse(base_url.as_ref()).ok()?;
+    let mut actions = ThinVec::with_capacity(notification.actions.len());
+    for action in notification.actions {
+        
+        
+        
+        
+        
+        
+        
+        let Forgiving::Ok(action) = action else {
+            continue;
+        };
+        
+        
+        
+        let navigate: String = base_url.join(&action.navigate).ok()?.into();
+        actions.push(DeclarativePushAction {
+            action: nsString::from(&action.action),
+            title: nsString::from(&action.title),
+            navigate: nsCString::from(navigate),
+        });
+    }
+    
+    
+    
+    
+    let mut icon = String::new();
+    if let Some(icon_relative) = notification.icon
+        && let Ok(url) = base_url.join(&icon_relative) {
+        icon = url.into();
+    };
+    
+    
+    let navigate: String = base_url.join(&notification.navigate).ok()?.into();
     Some(DeclarativePushData {
         title: nsString::from(&notification.title),
-        navigate: nsString::from(&notification.navigate),
+        navigate: nsCString::from(navigate),
         data,
         dir: notification.dir,
         lang: nsString::from(&notification.lang),
         body: nsString::from(&notification.body),
-        icon: nsString::from(&notification.icon),
+        icon: nsCString::from(icon),
         tag: nsString::from(&notification.tag),
         silent: notification.silent,
         require_interaction: notification.requireInteraction,
-        
-        
-        
-        
-        
-        
-        
-        actions: notification
-            .actions
-            .into_iter()
-            .filter_map(|action| match action {
-                Forgiving::Ok(value) => Some(value.to_ffi()),
-                Forgiving::WrongType(_) => None,
-            })
-            .collect(),
+        actions,
+        mutable: notification.mutable,
     })
 }
 
@@ -167,9 +187,11 @@ fn parse_declarative_push_option(data: &[u8]) -> Option<DeclarativePushData> {
 pub unsafe extern "C" fn parse_declarative_push(
     data: *const u8,
     length: usize,
+    base_url: &nsACString,
     output: &mut DeclarativePushData,
 ) -> bool {
-    match parse_declarative_push_option(unsafe { std::slice::from_raw_parts(data, length) }) {
+    let data = unsafe { std::slice::from_raw_parts(data, length) };
+    match parse_declarative_push_option(data, base_url) {
         Some(push) => {
             *output = push;
             true
