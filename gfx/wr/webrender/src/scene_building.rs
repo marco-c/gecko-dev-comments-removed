@@ -1298,15 +1298,17 @@ impl<'a> SceneBuilder<'a> {
             common.clip_chain_id,
         );
 
+        let aligned_aa_edges = if common.flags.contains(PrimitiveFlags::ANTIALISED) {
+            EdgeMask::all()
+        } else {
+            EdgeMask::empty()
+        };
+
         let layout = LayoutPrimitiveInfo {
             rect: prim_rect,
             clip_rect,
             flags: common.flags,
-            
-            
-            
-            
-            aligned_aa_edges: EdgeMask::empty(),
+            aligned_aa_edges,
             transformed_aa_edges: EdgeMask::all(),
         };
 
