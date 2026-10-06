@@ -284,25 +284,9 @@ bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
     return true;
   }
 
-  if (mRequest->mClassicScriptHintEncoding) {
-    mDecoder = MakeUnique<ScriptDecoder>(mRequest->mClassicScriptHintEncoding,
-                                         ScriptDecoder::BOMHandling::Ignore);
-    return true;
-  }
-
-  
-  if (mScriptLoader->mDocument) {
-    encoding = mScriptLoader->mDocument->GetDocumentCharacterSet();
-    mDecoder =
-        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
-    return true;
-  }
-
-  
-  
-  
-  mDecoder = MakeUnique<ScriptDecoder>(WINDOWS_1252_ENCODING,
-                                       ScriptDecoder::BOMHandling::Ignore);
+  encoding = mScriptLoader->GetClassicScriptFallbackEncoding(mRequest);
+  mDecoder =
+      MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
   return true;
 }
 
