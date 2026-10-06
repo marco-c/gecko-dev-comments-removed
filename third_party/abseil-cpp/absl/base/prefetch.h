@@ -133,6 +133,8 @@ void PrefetchToLocalCacheNta(const void* addr);
 
 
 
+
+
 void PrefetchToLocalCacheForWrite(const void* addr);
 
 #if ABSL_HAVE_BUILTIN(__builtin_prefetch) || defined(__GNUC__)
@@ -154,15 +156,7 @@ ABSL_ATTRIBUTE_ALWAYS_INLINE inline void PrefetchToLocalCacheNta(
 
 ABSL_ATTRIBUTE_ALWAYS_INLINE inline void PrefetchToLocalCacheForWrite(
     const void* addr) {
-  
-  
-  
-  
-#if defined(__x86_64__) && !defined(__PRFCHW__)
-  asm("prefetchw %0" : : "m"(*reinterpret_cast<const char*>(addr)));
-#else
   __builtin_prefetch(addr, 1, 3);
-#endif
 }
 
 #elif defined(ABSL_INTERNAL_HAVE_SSE)
@@ -183,12 +177,8 @@ ABSL_ATTRIBUTE_ALWAYS_INLINE inline void PrefetchToLocalCacheForWrite(
     const void* addr) {
 #if defined(_MM_HINT_ET0)
   _mm_prefetch(reinterpret_cast<const char*>(addr), _MM_HINT_ET0);
-#elif !defined(_MSC_VER) && defined(__x86_64__)
-  
-  
-  
-  
-  asm("prefetchw %0" : : "m"(*reinterpret_cast<const char*>(addr)));
+#else
+  _mm_prefetch(reinterpret_cast<const char*>(addr), _MM_HINT_T0);
 #endif
 }
 
