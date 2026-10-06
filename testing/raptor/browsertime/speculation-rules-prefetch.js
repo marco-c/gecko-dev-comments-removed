@@ -9,10 +9,24 @@ const { logTest } = require("./utils/profiling");
 const EAGERNESS_LEVELS = ["immediate", "eager", "moderate", "conservative"];
 const SOURCES = ["document", "list"];
 
+async function moveToInstantly(commands, selector) {
+  const element = await commands.element.getByCss(selector);
+  const actions = commands.action.getActions();
+  await actions.move({ origin: element, duration: 0 }).perform();
+  await actions.clear();
+}
 
 
 
-async function navigateWithPrefetch(commands, eagerness, selector, dwellMs) {
+
+
+async function navigateWithPrefetch(
+  commands,
+  eagerness,
+  selector,
+  dwellMs,
+  log
+) {
   switch (eagerness) {
     case "immediate":
       
@@ -22,8 +36,13 @@ async function navigateWithPrefetch(commands, eagerness, selector, dwellMs) {
     case "eager":
     case "moderate":
       
-      await commands.mouse.moveTo.bySelector(selector);
+      
+      
+      
+      await moveToInstantly(commands, selector);
+      log("hover done");
       await commands.wait.byTime(dwellMs);
+      log("click issued");
       await commands.mouse.singleClick.bySelector(selector);
       break;
     case "conservative":
@@ -80,7 +99,21 @@ module.exports = logTest(
     await commands.wait.byTime(250);
 
     await commands.measure.start();
-    await navigateWithPrefetch(commands, eagerness, `#${buttonId}`, dwellMs);
+    
+    const stamp = what =>
+      context.log.info(
+        `speculation-rules-prefetch: ${what} at ` +
+          `${Math.round(performance.timeOrigin + performance.now())}`
+      );
+    stamp("trigger");
+    await navigateWithPrefetch(
+      commands,
+      eagerness,
+      `#${buttonId}`,
+      dwellMs,
+      stamp
+    );
+    stamp("clicked");
     await commands.wait.byTime(2500);
     await commands.measure.stop();
 
