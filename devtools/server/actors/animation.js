@@ -699,9 +699,16 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
       }
     }
 
+    
+    
+    const win = rawNode.ownerDocument.defaultView;
     this.actors = [];
 
     for (const animation of animations) {
+      if (this.#shouldIgnoreAnimation(animation, win)) {
+        continue;
+      }
+
       const createdTime = this.getCreatedTime(animation);
       const actor = new AnimationActor(this, animation, createdTime);
       this.actors.push(actor);
@@ -712,9 +719,6 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
     
     
     this.stopAnimationsUpdates();
-    
-    
-    const win = rawNode.ownerDocument.defaultView;
     this.observer = new win.MutationObserver(this.onAnimationMutation);
     this.observer.observe(rawNode, {
       animations: true,
@@ -786,6 +790,14 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
 
         
         
+        const win = animation.effect.target.ownerDocument.defaultView;
+
+        if (this.#shouldIgnoreAnimation(animation, win)) {
+          continue;
+        }
+
+        
+        
         
         const index = this.actors.findIndex(a => {
           const isSameType = a.animation.constructor === animation.constructor;
@@ -827,6 +839,25 @@ exports.AnimationsActor = class AnimationsActor extends Actor {
         this.emit("mutations", eventData);
       });
     }
+  }
+
+  
+
+
+
+
+
+
+  #shouldIgnoreAnimation(animation, win) {
+    
+    if (
+      win.ScrollTimeline &&
+      win.ScrollTimeline.isInstance(animation.timeline)
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   
