@@ -351,7 +351,9 @@ def components_for_unmatched(records, notices, is_file=None):
             
             "purl": None,
             "type": "file" if all(is_file(path) for path in paths) else "library",
-            "licenses": [notice["spdx"]] if notice["spdx"] else [],
+            
+            
+            "licenses": [notice["spdx"] or notice["title"]],
             "website": notice["url"],
             "vcs": None,
             "bugzilla": None,
