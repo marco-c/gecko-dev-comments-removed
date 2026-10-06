@@ -707,8 +707,8 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
       IsDebuggerScript()) {
     request = new ScriptLoadRequest(ScriptKind::eClassic, SRIMetadata(),
-                                    nullptr,  
-                                    loadContext);
+                                     nullptr, loadContext,
+                                     nullptr);
   } else {
     
     

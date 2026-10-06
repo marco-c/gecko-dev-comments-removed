@@ -15,6 +15,7 @@
 #include "js/loader/ScriptLoadRequestList.h"
 #include "js/loader/ScriptLoaderInterface.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/Encoding.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/ScriptLoadContext.h"
@@ -491,7 +492,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
       ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
-      ScriptLoadRequestType aRequestType);
+      ScriptLoadRequestType aRequestType,
+      const Encoding* aClassicScriptPreloadHintEncoding);
 
   
 
@@ -506,12 +508,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  void EmulateNetworkEvents(ScriptLoadRequest* aRequest,
-                            const Maybe<nsAutoString>& aCharsetForPreload);
+  void EmulateNetworkEvents(ScriptLoadRequest* aRequest);
 
-  void NotifyObserversForCachedScript(
-      ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+  void NotifyObserversForCachedScript(ScriptLoadRequest* aRequest);
 
   
 
@@ -577,18 +576,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-  nsresult StartLoad(ScriptLoadRequest* aRequest,
-                     const Maybe<nsAutoString>& aCharsetForPreload);
+  nsresult StartLoad(ScriptLoadRequest* aRequest);
   
 
 
 
-  nsresult StartClassicLoad(ScriptLoadRequest* aRequest,
-                            const Maybe<nsAutoString>& aCharsetForPreload);
+  nsresult StartClassicLoad(ScriptLoadRequest* aRequest);
 
-  MOZ_CAN_RUN_SCRIPT void OnDelayedReady(
-      ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+  MOZ_CAN_RUN_SCRIPT void OnDelayedReady(ScriptLoadRequest* aRequest);
 
   static void PrepareCacheInfoChannel(nsIChannel* aChannel,
                                       ScriptLoadRequest* aRequest);
@@ -597,8 +592,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
       nsIChannel* aChannel, ScriptLoadRequest* aRequest);
 
   [[nodiscard]] static nsresult PrepareHttpRequestAndInitiatorType(
-      nsIChannel* aChannel, ScriptLoadRequest* aRequest,
-      const Maybe<nsAutoString>& aCharsetForPreload);
+      nsIChannel* aChannel, ScriptLoadRequest* aRequest);
 
   [[nodiscard]] nsresult PrepareIncrementalStreamLoader(
       nsIIncrementalStreamLoader** aOutLoader, nsIChannel* aChannel,
@@ -607,13 +601,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
 
 
-
-
-
-
   nsresult StartLoadInternal(ScriptLoadRequest* aRequest,
-                             nsSecurityFlags securityFlags,
-                             const Maybe<nsAutoString>& aCharsetForPreload);
+                             nsSecurityFlags securityFlags);
 
   
 
@@ -968,7 +957,6 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   
   struct PreloadInfo {
     RefPtr<ScriptLoadRequest> mRequest;
-    nsString mCharset;
   };
 
   friend void ImplCycleCollectionUnlink(ScriptLoader::PreloadInfo& aField);
