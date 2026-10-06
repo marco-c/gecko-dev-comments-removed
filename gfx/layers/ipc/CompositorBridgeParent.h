@@ -492,16 +492,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
       LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
 
   
-  template <typename Function>
-  static void ForEachLayerTreeStateUnderLock(
-      const StaticMonitorAutoLock& aProofOfLock, Function&& aFn) {
-    sIndirectLayerTreesLock.AssertCurrentThreadOwns();
-    for (auto& entry : sIndirectLayerTrees) {
-      aFn(entry.first, entry.second);
-    }
-  }
-
-  
 
 
 
