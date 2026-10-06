@@ -62,14 +62,33 @@ enum class MediaCodecsSupport : int {
 #undef X
       SENTINEL
 };
+
+
+using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
+
+
+inline constexpr MediaCodecsSupported kMediaCodecsDecodeMask = {
+#define X(name)                                                             \
+  MediaCodecsSupport::SW_DECODE(name), MediaCodecsSupport::HW_DECODE(name), \
+      MediaCodecsSupport::LACK_HW_EXTENSION(name),
+    CODEC_LIST
+#undef X
+};
+
+
+inline constexpr MediaCodecsSupported kMediaCodecsEncodeMask = {
+#define X(name) \
+  MediaCodecsSupport::SW_ENCODE(name), MediaCodecsSupport::HW_ENCODE(name),
+    CODEC_LIST
+#undef X
+};
+
 #undef SW_DECODE
 #undef HW_DECODE
 #undef SW_ENCODE
 #undef HW_ENCODE
+#undef LACK_HW_EXTENSION
 #undef CODEC_LIST  // end of macros!
-
-
-using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
 
 
 enum class DecodeSupport : int {
@@ -206,6 +225,16 @@ class MCSInfo final {
       const MediaCodec& aCodec, const DecodeSupport& aSupport);
   static MediaCodecsSupport GetMediaCodecsSupportEnum(
       const MediaCodec& aCodec, const EncodeSupport& aSupport);
+
+  
+  static MediaCodecsSupported GetDecodeSupported(
+      const MediaCodecsSupported& aSupportedCodecs) {
+    return aSupportedCodecs & kMediaCodecsDecodeMask;
+  }
+  static MediaCodecsSupported GetEncodeSupported(
+      const MediaCodecsSupported& aSupportedCodecs) {
+    return aSupportedCodecs & kMediaCodecsEncodeMask;
+  }
 
   
   static bool SupportsSoftwareDecode(
