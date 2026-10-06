@@ -1,12 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// When using a solid color with clip masking, the cost of loading the clip mask
-// in the blend stage exceeds the cost of processing the color. Here we handle
-// the entire span of clip mask texture before the blend stage to more
-// efficiently process it and modulate it with color without incurring blend
-// stage overheads.
+
+
+
+
+
+
+
+
 #include <cstdint>
 
 template <typename P, typename C>
@@ -24,9 +24,9 @@ static void commit_masked_solid_span(P* buf, C color, int len) {
   restore_clip_mask();
 }
 
-// When using a solid color with anti-aliasing, most of the solid span will not
-// benefit from anti-aliasing in the opaque region. We only want to apply the AA
-// blend stage in the non-opaque start and end of the span where AA is needed.
+
+
+
 template <typename P, typename R>
 static ALWAYS_INLINE void commit_aa_solid_span(P* buf, R r, int len) {
   if (int start = min((get_aa_opaque_start(buf) + 3) & ~3, len)) {
@@ -46,20 +46,20 @@ static ALWAYS_INLINE void commit_aa_solid_span(P* buf, R r, int len) {
   }
 }
 
-// Forces a value with vector run-class to have scalar run-class.
+
 template <typename T>
 static ALWAYS_INLINE auto swgl_forceScalar(T v) -> decltype(force_scalar(v)) {
   return force_scalar(v);
 }
 
-// Advance all varying inperpolants by a single chunk
+
 #define swgl_stepInterp() step_interp_inputs()
 
-// Pseudo-intrinsic that accesses the interpolation step for a given varying
+
 #define swgl_interpStep(v) (interp_step.v)
 
-// Commit an entire span of a solid color. This dispatches to clip-masked and
-// anti-aliased fast-paths as appropriate.
+
+
 #define swgl_commitSolid(format, v, n)                                   \
   do {                                                                   \
     int len = (n);                                                       \
@@ -97,7 +97,7 @@ static ALWAYS_INLINE auto swgl_forceScalar(T v) -> decltype(force_scalar(v)) {
     swgl_SpanLength -= swgl_StepSize;                   \
   } while (0)
 
-// Commit a single chunk of a color
+
 #define swgl_commitColor(format, color) \
   swgl_commitChunk(format, pack_pixels_##format(color))
 #define swgl_commitColorRGBA8(color) swgl_commitColor(RGBA8, color)
@@ -118,18 +118,18 @@ static ALWAYS_INLINE bool swgl_isTextureR8(S s) {
   return s->format == TextureFormat::R8;
 }
 
-// Use the default linear quantization scale of 128. This gives 7 bits of
-// fractional precision, which when multiplied with a signed 9 bit value
-// still fits in a 16 bit integer.
+
+
+
 const int swgl_LinearQuantizeScale = 128;
 
-// Quantizes UVs for access into a linear texture.
+
 template <typename S, typename T>
 static ALWAYS_INLINE T swgl_linearQuantize(S s, T p) {
   return linearQuantize(p, swgl_LinearQuantizeScale, s);
 }
 
-// Quantizes an interpolation step for UVs for access into a linear texture.
+
 template <typename S, typename T>
 static ALWAYS_INLINE T swgl_linearQuantizeStep(S s, T p) {
   return samplerScale(s, p) * swgl_LinearQuantizeScale;
@@ -157,8 +157,8 @@ static ALWAYS_INLINE bool matchTextureFormat(S s, UNUSED uint8_t* buf) {
   return swgl_isTextureR8(s);
 }
 
-// Quantizes the UVs to the 2^7 scale needed for calculating fractional offsets
-// for linear sampling.
+
+
 #define LINEAR_QUANTIZE_UV(sampler, uv, uv_step, uv_rect, min_uv, max_uv)     \
   uv = swgl_linearQuantize(sampler, uv);                                      \
   vec2_scalar uv_step =                                                       \
@@ -169,8 +169,8 @@ static ALWAYS_INLINE bool matchTextureFormat(S s, UNUSED uint8_t* buf) {
       max(swgl_linearQuantize(sampler, vec2_scalar{uv_rect.z, uv_rect.w}),    \
           min_uv);
 
-// Implements the fallback linear filter that can deal with clamping and
-// arbitrary scales.
+
+
 template <bool BLEND, typename S, typename C, typename P>
 static P* blendTextureLinearFallback(S sampler, vec2 uv, int span,
                                      vec2_scalar uv_step, vec2_scalar min_uv,
@@ -198,10 +198,10 @@ static ALWAYS_INLINE V4<int16_t> applyFracX(V4<int16_t> r, I16 fracx) {
   return r * fracx;
 }
 
-// Implements a faster linear filter that works with axis-aligned constant Y but
-// scales less than 1, i.e. upscaling. In this case we can optimize for the
-// constant Y fraction as well as load all chunks from memory in a single tap
-// for each row.
+
+
+
+
 template <bool BLEND, typename S, typename C, typename P>
 static void blendTextureLinearUpscale(S sampler, vec2 uv, int span,
                                       vec2_scalar uv_step, vec2_scalar min_uv,
@@ -213,6 +213,12 @@ static void blendTextureLinearUpscale(S sampler, vec2 uv, int span,
   ivec2 i(clamp(uv, min_uv, max_uv));
   ivec2 frac = i;
   i >>= 7;
+  int32_t maxX = int32_t(sampler->width) - swgl_StepSize;
+  if (i.x.x < 0 || i.x.x > maxX) {
+    blendTextureLinearFallback<BLEND>(sampler, uv, span, uv_step, min_uv,
+                                      max_uv, color, buf);
+    return;
+  }
   P* row0 = (P*)sampler->buf + computeRow(sampler, ivec2_scalar(0, i.y.x));
   P* row1 = row0 + computeNextRowOffset(sampler, ivec2_scalar(0, i.y.x));
   I16 fracx = computeFracX(sampler, i, frac);
@@ -223,31 +229,38 @@ static void blendTextureLinearUpscale(S sampler, vec2 uv, int span,
       CONVERT(unaligned_load<packed_type>(&row1[i.x.x]), signed_unpacked_type);
   auto src = castForShuffle(src0 + (((src1 - src0) * fracy) >> 7));
 
-  // We attempt to sample ahead by one chunk and interpolate it with the current
-  // one. However, due to the complication of upscaling, we may not necessarily
-  // shift in all the next set of samples.
+  
+  
+  
   for (P* end = buf + span; buf < end; buf += 4) {
+    Float prevX = uv.x;
     uv.x += uv_step.x;
     I32 ixn = cast(uv.x);
     I16 fracn = computeFracNoClamp(ixn);
     ixn >>= 7;
+    
+    if (uint32_t(ixn.x) > uint32_t(maxX)) {
+      blendTextureLinearFallback<BLEND>(sampler, {prevX, uv.y}, int(end - buf),
+                                        uv_step, min_uv, max_uv, color, buf);
+      return;
+    }
     auto src0n = CONVERT(unaligned_load<packed_type>(&row0[ixn.x]),
                          signed_unpacked_type);
     auto src1n = CONVERT(unaligned_load<packed_type>(&row1[ixn.x]),
                          signed_unpacked_type);
     auto srcn = castForShuffle(src0n + (((src1n - src0n) * fracy) >> 7));
 
-    // Since we're upscaling, we know that a source pixel has a larger footprint
-    // than the destination pixel, and thus all the source pixels needed for
-    // this chunk will fall within a single chunk of texture data. However,
-    // since the source pixels don't map 1:1 with destination pixels, we need to
-    // shift the source pixels over based on their offset from the start of the
-    // chunk. This could conceivably be optimized better with usage of PSHUFB or
-    // VTBL instructions However, since PSHUFB requires SSSE3, instead we resort
-    // to masking in the correct pixels to avoid having to index into memory.
-    // For the last sample to interpolate with, we need to potentially shift in
-    // a sample from the next chunk over in the case the samples fill out an
-    // entire chunk.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     auto shuf = src;
     auto shufn = SHUFFLE(src, ixn.x == i.x.w ? srcn.yyyy : srcn, 1, 2, 3, 4);
     if (i.x.y == i.x.x) {
@@ -263,8 +276,8 @@ static void blendTextureLinearUpscale(S sampler, vec2 uv, int span,
       shufn = shufn.xyzz;
     }
 
-    // Convert back to a signed unpacked type so that we can interpolate the
-    // final result.
+    
+    
     auto interp = bit_cast<signed_unpacked_type>(shuf);
     auto interpn = bit_cast<signed_unpacked_type>(shufn);
     interp += applyFracX(interpn - interp, fracx) >> 7;
@@ -278,11 +291,11 @@ static void blendTextureLinearUpscale(S sampler, vec2 uv, int span,
   }
 }
 
-// This is the fastest variant of the linear filter that still provides
-// filtering. In cases where there is no scaling required, but we have a
-// subpixel offset that forces us to blend in neighboring pixels, we can
-// optimize away most of the memory loads and shuffling that is required by the
-// fallback filter.
+
+
+
+
+
 template <bool BLEND, typename S, typename C, typename P>
 static void blendTextureLinearFast(S sampler, vec2 uv, int span,
                                    vec2_scalar min_uv, vec2_scalar max_uv,
@@ -302,8 +315,8 @@ static void blendTextureLinearFast(S sampler, vec2 uv, int span,
   auto src1 = CONVERT(unaligned_load<packed_type>(row1), signed_unpacked_type);
   auto src = castForShuffle(src0 + (((src1 - src0) * fracy) >> 7));
 
-  // Since there is no scaling, we sample ahead by one chunk and interpolate it
-  // with the current one. We can then reuse this value on the next iteration.
+  
+  
   for (P* end = buf + span; buf < end; buf += 4) {
     row0 += 4;
     row1 += 4;
@@ -313,9 +326,9 @@ static void blendTextureLinearFast(S sampler, vec2 uv, int span,
         CONVERT(unaligned_load<packed_type>(row1), signed_unpacked_type);
     auto srcn = castForShuffle(src0n + (((src1n - src0n) * fracy) >> 7));
 
-    // For the last sample to interpolate with, we need to potentially shift in
-    // a sample from the next chunk over since the samples fill out an entire
-    // chunk.
+    
+    
+    
     auto interp = bit_cast<signed_unpacked_type>(src);
     auto interpn =
         bit_cast<signed_unpacked_type>(SHUFFLE(src, srcn, 1, 2, 3, 4));
@@ -328,9 +341,9 @@ static void blendTextureLinearFast(S sampler, vec2 uv, int span,
   }
 }
 
-// Implements a faster linear filter that works with axis-aligned constant Y but
-// downscaling the texture by half. In this case we can optimize for the
-// constant X/Y fractions and reduction factor while minimizing shuffling.
+
+
+
 template <bool BLEND, typename S, typename C, typename P>
 static NO_INLINE void blendTextureLinearDownscale(S sampler, vec2 uv, int span,
                                                   vec2_scalar min_uv,
@@ -376,19 +389,19 @@ static NO_INLINE void blendTextureLinearDownscale(S sampler, vec2 uv, int span,
 }
 
 enum LinearFilter {
-  // No linear filter is needed.
+  
   LINEAR_FILTER_NEAREST = 0,
-  // The most general linear filter that handles clamping and varying scales.
+  
   LINEAR_FILTER_FALLBACK,
-  // A linear filter optimized for axis-aligned upscaling.
+  
   LINEAR_FILTER_UPSCALE,
-  // A linear filter with no scaling but with subpixel offset.
+  
   LINEAR_FILTER_FAST,
-  // A linear filter optimized for 2x axis-aligned downscaling.
+  
   LINEAR_FILTER_DOWNSCALE
 };
 
-// Dispatches to an appropriate linear filter depending on the selected filter.
+
 template <bool BLEND, typename S, typename C, typename P>
 static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
                                      vec2_scalar uv_step, vec2_scalar min_uv,
@@ -396,9 +409,9 @@ static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
                                      LinearFilter filter) {
   P* end = buf + span;
   if (filter != LINEAR_FILTER_FALLBACK) {
-    // If we're not using the fallback, then Y is constant across the entire
-    // row. We just need to ensure that we handle any samples that might pull
-    // data from before the start of the row and require clamping.
+    
+    
+    
     float beforeDist = max(0.0f, min_uv.x) - uv.x.x;
     if (beforeDist > 0) {
       int before = clamp(int(ceil(beforeDist / uv_step.x)) * swgl_StepSize, 0,
@@ -407,9 +420,9 @@ static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
                                               min_uv, max_uv, color, buf);
       uv.x += (before / swgl_StepSize) * uv_step.x;
     }
-    // We need to check how many samples we can take from inside the row without
-    // requiring clamping. In case the filter oversamples the row by a step, we
-    // subtract off a step from the width to leave some room.
+    
+    
+    
     float insideDist =
         min(max_uv.x, float((int(sampler->width) - swgl_StepSize) *
                             swgl_LinearQuantizeScale)) -
@@ -447,8 +460,8 @@ static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
       }
     }
   }
-  // If the fallback filter was requested, or if there are any samples left that
-  // may be outside the row and require clamping, then handle that with here.
+  
+  
   if (buf < end) {
     buf = blendTextureLinearFallback<BLEND>(
         sampler, uv, int(end - buf), uv_step, min_uv, max_uv, color, buf);
@@ -456,7 +469,7 @@ static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
   return buf;
 }
 
-// Helper function to quantize UVs for linear filtering before dispatch
+
 template <bool BLEND, typename S, typename C, typename P>
 static inline int blendTextureLinear(S sampler, vec2 uv, int span,
                                      const vec4_scalar& uv_rect, C color,
@@ -470,10 +483,10 @@ static inline int blendTextureLinear(S sampler, vec2 uv, int span,
   return span;
 }
 
-// Samples an axis-aligned span of on a single row of a texture using 1:1
-// nearest filtering. Sampling is constrained to only fall within the given UV
-// bounds. This requires a pointer to the destination buffer. An optional color
-// modulus can be supplied.
+
+
+
+
 template <bool BLEND, typename S, typename C, typename P>
 static int blendTextureNearestFast(S sampler, vec2 uv, int span,
                                    const vec4_scalar& uv_rect, C color,
@@ -490,19 +503,19 @@ static int blendTextureNearestFast(S sampler, vec2 uv, int span,
   ivec2_scalar maxUV =
       make_ivec2(samplerScale(sampler, vec2_scalar{uv_rect.z, uv_rect.w}));
 
-  // Calculate the row pointer within the buffer, clamping to within valid row
-  // bounds.
+  
+  
   P* row =
       &((P*)sampler
             ->buf)[clampCoord(clamp(i.y, minUV.y, maxUV.y), sampler->height) *
                    sampler->stride];
-  // Find clamped X bounds within the row.
+  
   int minX = clamp(minUV.x, 0, sampler->width - 1);
   int maxX = clamp(maxUV.x, minX, sampler->width - 1);
   int curX = i.x;
   int endX = i.x + span;
-  // If we need to start sampling below the valid sample bounds, then we need to
-  // fill this section with a constant clamped sample.
+  
+  
   if (curX < minX) {
     int n = min(minX, endX) - curX;
     auto src =
@@ -511,25 +524,25 @@ static int blendTextureNearestFast(S sampler, vec2 uv, int span,
     buf += n;
     curX += n;
   }
-  // Here we only deal with valid samples within the sample bounds. No clamping
-  // should occur here within these inner loops.
+  
+  
   int n = max(min(maxX + 1, endX) - curX, 0);
-  // Try to process as many chunks as possible with full loads and stores.
+  
   for (int end = curX + (n & ~3); curX < end; curX += 4, buf += 4) {
     auto src = applyColor(unaligned_load<packed_type>(&row[curX]), color);
     commit_blend_span<BLEND>(buf, src);
   }
   n &= 3;
-  // If we have any leftover samples after processing chunks, use partial loads
-  // and stores.
+  
+  
   if (n > 0) {
     auto src = applyColor(partial_load_span<packed_type>(&row[curX], n), color);
     commit_blend_span<BLEND>(buf, src, n);
     buf += n;
     curX += n;
   }
-  // If we still have samples left above the valid sample bounds, then we again
-  // need to fill this section with a constant clamped sample.
+  
+  
   if (curX < endX) {
     auto src =
         applyColor(unpack(bit_cast<packed_type>(V4<P>(row[maxX]))), color);
@@ -538,10 +551,10 @@ static int blendTextureNearestFast(S sampler, vec2 uv, int span,
   return span;
 }
 
-// We need to verify that the pixel step reasonably approximates stepping by a
-// single texel for every pixel we need to reproduce. Try to ensure that the
-// margin of error is no more than approximately 2^-7. Also, we check here if
-// the scaling can be quantized for acceleration.
+
+
+
+
 template <typename T>
 static ALWAYS_INLINE int spanNeedsScale(int span, T P) {
   span &= ~(128 - 1);
@@ -550,45 +563,45 @@ static ALWAYS_INLINE int spanNeedsScale(int span, T P) {
   return scaled != span ? (scaled == span * 2 ? 2 : 1) : 0;
 }
 
-// Helper function to decide whether we can safely apply 1:1 nearest filtering
-// without diverging too much from the linear filter.
+
+
 template <typename S, typename T>
 static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
-  // If each row is not wide enough for linear filtering, then just use nearest
-  // filtering.
+  
+  
   if (sampler->width < 2) {
     return LINEAR_FILTER_NEAREST;
   }
-  // First verify if the row Y doesn't change across samples
+  
   if (P.y.x != P.y.y) {
     return LINEAR_FILTER_FALLBACK;
   }
   P = samplerScale(sampler, P);
   if (int scale = spanNeedsScale(span, P)) {
-    // If the source region is not flipped and smaller than the destination,
-    // then we can use the upscaling filter since row Y is constant.
+    
+    
     return P.x.x < P.x.y && P.x.y - P.x.x <= 1
                ? LINEAR_FILTER_UPSCALE
                : (scale == 2 ? LINEAR_FILTER_DOWNSCALE
                              : LINEAR_FILTER_FALLBACK);
   }
-  // Also verify that we're reasonably close to the center of a texel
-  // so that it doesn't look that much different than if a linear filter
-  // was used.
+  
+  
+  
   if ((int(P.x.x * 4.0f + 0.5f) & 3) != 2 ||
       (int(P.y.x * 4.0f + 0.5f) & 3) != 2) {
-    // The source and destination regions are the same, but there is a
-    // significant subpixel offset. We can use a faster linear filter to deal
-    // with the offset in this case.
+    
+    
+    
     return LINEAR_FILTER_FAST;
   }
-  // Otherwise, we have a constant 1:1 step and we're stepping reasonably close
-  // to the center of each pixel, so it's safe to disable the linear filter and
-  // use nearest.
+  
+  
+  
   return LINEAR_FILTER_NEAREST;
 }
 
-// Commit an entire span with linear filtering
+
 #define swgl_commitTextureLinear(format, s, p, uv_rect, color, n)              \
   do {                                                                         \
     auto packed_color = packColor(swgl_Out##format, color);                    \
@@ -617,7 +630,7 @@ static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
 #define swgl_commitTextureLinearR8(s, p, uv_rect) \
   swgl_commitTextureLinear(R8, s, p, uv_rect, NoColor(), swgl_SpanLength)
 
-// Commit a partial span with linear filtering, optionally inverting the color
+
 #define swgl_commitPartialTextureLinearR8(len, s, p, uv_rect) \
   swgl_commitTextureLinear(R8, s, p, uv_rect, NoColor(),      \
                            min(int(len), swgl_SpanLength))
@@ -625,14 +638,14 @@ static inline LinearFilter needsTextureLinear(S sampler, T P, int span) {
   swgl_commitTextureLinear(R8, s, p, uv_rect, InvertColor(),        \
                            min(int(len), swgl_SpanLength))
 
-// Commit an entire span with linear filtering that is scaled by a color
+
 #define swgl_commitTextureLinearColorRGBA8(s, p, uv_rect, color) \
   swgl_commitTextureLinear(RGBA8, s, p, uv_rect, color, swgl_SpanLength)
 #define swgl_commitTextureLinearColorR8(s, p, uv_rect, color) \
   swgl_commitTextureLinear(R8, s, p, uv_rect, color, swgl_SpanLength)
 
-// Helper function that samples from an R8 texture while expanding it to support
-// a differing framebuffer format.
+
+
 template <bool BLEND, typename S, typename C, typename P>
 static inline int blendTextureLinearR8(S sampler, vec2 uv, int span,
                                        const vec4_scalar& uv_rect, C color,
@@ -651,7 +664,7 @@ static inline int blendTextureLinearR8(S sampler, vec2 uv, int span,
   return span;
 }
 
-// Commit an entire span with linear filtering while expanding from R8 to RGBA8
+
 #define swgl_commitTextureLinearColorR8ToRGBA8(s, p, uv_rect, color)      \
   do {                                                                    \
     auto packed_color = packColor(swgl_OutRGBA8, color);                  \
@@ -669,27 +682,27 @@ static inline int blendTextureLinearR8(S sampler, vec2 uv, int span,
 #define swgl_commitTextureLinearR8ToRGBA8(s, p, uv_rect) \
   swgl_commitTextureLinearColorR8ToRGBA8(s, p, uv_rect, NoColor())
 
-// Compute repeating UVs, possibly constrained by tile repeat limits
+
 static inline vec2 tileRepeatUV(vec2 uv, const vec2_scalar& tile_repeat) {
   if (tile_repeat.x > 0.0f) {
-    // Clamp to a number slightly less than the tile repeat limit so that
-    // it results in a number close to but not equal to 1 after fract().
-    // This avoids fract() yielding 0 if the limit was left as whole integer.
+    
+    
+    
     uv = clamp(uv, vec2_scalar(0.0f), tile_repeat - 1.0e-6f);
   }
   return fract(uv);
 }
 
-// Compute the number of non-repeating steps before we need to potentially
-// repeat the UVs.
+
+
 static inline int computeNoRepeatSteps(Float uv, float uv_step,
                                        float tile_repeat, int steps) {
   if (uv.w < uv.x) {
-    // Ensure the UV taps are ordered low to high.
+    
     uv = uv.wzyx;
   }
-  // Check if the samples cross the boundary of the next whole integer or the
-  // tile repeat limit, whichever is lower.
+  
+  
   float limit = floor(uv.x) + 1.0f;
   if (tile_repeat > 0.0f) {
     limit = min(limit, tile_repeat);
@@ -701,7 +714,7 @@ static inline int computeNoRepeatSteps(Float uv, float uv_step,
              : 0;
 }
 
-// Blends an entire span of texture with linear filtering and repeating UVs.
+
 template <bool BLEND, typename S, typename C, typename P>
 static int blendTextureLinearRepeat(S sampler, vec2 uv, int span,
                                     const vec2_scalar& tile_repeat,
@@ -713,12 +726,12 @@ static int blendTextureLinearRepeat(S sampler, vec2 uv, int span,
   }
   vec2_scalar uv_scale = {uv_repeat.z - uv_repeat.x, uv_repeat.w - uv_repeat.y};
   vec2_scalar uv_offset = {uv_repeat.x, uv_repeat.y};
-  // Choose a linear filter to use for no-repeat sub-spans
+  
   LinearFilter filter =
       needsTextureLinear(sampler, uv * uv_scale + uv_offset, span);
-  // We need to step UVs unscaled and unquantized so that we can modulo them
-  // with fract. We use uv_scale and uv_offset to map them into the correct
-  // range.
+  
+  
+  
   vec2_scalar uv_step =
       float(swgl_StepSize) * vec2_scalar{uv.x.y - uv.x.x, uv.y.y - uv.y.x};
   uv_scale = swgl_linearQuantizeStep(sampler, uv_scale);
@@ -729,7 +742,7 @@ static int blendTextureLinearRepeat(S sampler, vec2 uv, int span,
       swgl_linearQuantize(sampler, vec2_scalar{uv_rect.z, uv_rect.w}), min_uv);
   for (P* end = buf + span; buf < end; buf += swgl_StepSize, uv += uv_step) {
     int steps = int(end - buf) / swgl_StepSize;
-    // Find the sub-span before UVs repeat to avoid expensive repeat math
+    
     steps = computeNoRepeatSteps(uv.x, uv_step.x, tile_repeat.x, steps);
     if (steps > 0) {
       steps = computeNoRepeatSteps(uv.y, uv_step.y, tile_repeat.y, steps);
@@ -743,7 +756,7 @@ static int blendTextureLinearRepeat(S sampler, vec2 uv, int span,
         uv += steps * uv_step;
       }
     }
-    // UVs might repeat within this step, so explicitly compute repeated UVs
+    
     vec2 repeated_uv = clamp(
         tileRepeatUV(uv, tile_repeat) * uv_scale + uv_offset, min_uv, max_uv);
     commit_blend_span<BLEND>(
@@ -753,7 +766,7 @@ static int blendTextureLinearRepeat(S sampler, vec2 uv, int span,
   return span;
 }
 
-// Commit an entire span with linear filtering and repeating UVs
+
 #define swgl_commitTextureLinearRepeat(format, s, p, tile_repeat, uv_repeat,   \
                                        uv_rect, color)                         \
   do {                                                                         \
@@ -786,8 +799,8 @@ static ALWAYS_INLINE PackedRGBA8 textureNearestPacked(UNUSED uint32_t* buf,
   return textureNearestPackedRGBA8(sampler, i);
 }
 
-// Blends an entire span of texture with nearest filtering and either
-// repeated or clamped UVs.
+
+
 template <bool BLEND, bool REPEAT, typename S, typename C, typename P>
 static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
                                      const vec2_scalar& tile_repeat,
@@ -797,8 +810,8 @@ static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
     return 0;
   }
   if (!REPEAT) {
-    // If clamping, then we step pre-scaled to the sampler. For repeat modes,
-    // this will be accomplished via uv_scale instead.
+    
+    
     uv = samplerScale(sampler, uv);
   }
   vec2_scalar uv_step =
@@ -806,12 +819,12 @@ static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
   vec2_scalar min_uv = samplerScale(sampler, vec2_scalar{uv_rect.x, uv_rect.y});
   vec2_scalar max_uv = samplerScale(sampler, vec2_scalar{uv_rect.z, uv_rect.w});
   vec2_scalar uv_scale = max_uv - min_uv;
-  // If the effective sampling area of this texture is only a single pixel, then
-  // treat it as a solid span. For repeat modes, the bounds are specified on
-  // pixel boundaries, whereas for clamp modes, bounds are on pixel centers, so
-  // the test varies depending on which. If the sample range on an axis is
-  // greater than one pixel, we can still check if we don't move far enough from
-  // the pixel center on that axis to hit the next pixel.
+  
+  
+  
+  
+  
+  
   if ((int(min_uv.x) + (REPEAT ? 1 : 0) >= int(max_uv.x) ||
        (abs(uv_step.x) * span * (REPEAT ? uv_scale.x : 1.0f) < 0.5f)) &&
       (int(min_uv.y) + (REPEAT ? 1 : 0) >= int(max_uv.y) ||
@@ -828,7 +841,7 @@ static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
     for (P* end = buf + span; buf < end; buf += swgl_StepSize, uv += uv_step) {
       if (REPEAT) {
         int steps = int(end - buf) / swgl_StepSize;
-        // Find the sub-span before UVs repeat to avoid expensive repeat math
+        
         steps = computeNoRepeatSteps(uv.x, uv_step.x, tile_repeat.x, steps);
         if (steps > 0) {
           steps = computeNoRepeatSteps(uv.y, uv_step.y, tile_repeat.y, steps);
@@ -850,7 +863,7 @@ static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
         }
       }
 
-      // UVs might repeat within this step, so explicitly compute repeated UVs
+      
       vec2 repeated_uv = REPEAT
                              ? tileRepeatUV(uv, tile_repeat) * uv_scale + min_uv
                              : clamp(uv, min_uv, max_uv);
@@ -863,18 +876,18 @@ static int blendTextureNearestRepeat(S sampler, vec2 uv, int span,
   return span;
 }
 
-// Determine if we can use the fast nearest filter for the given nearest mode.
-// If the Y coordinate varies more than half a pixel over
-// the span (which might cause the texel to alias to the next one), or the span
-// needs X scaling, then we have to use the fallback.
+
+
+
+
 template <typename S, typename T>
 static ALWAYS_INLINE bool needsNearestFallback(S sampler, T P, int span) {
   P = samplerScale(sampler, P);
   return (P.y.y - P.y.x) * span >= 0.5f || spanNeedsScale(span, P);
 }
 
-// Commit an entire span with nearest filtering and either clamped or repeating
-// UVs
+
+
 #define swgl_commitTextureNearest(format, s, p, uv_rect, color)               \
   do {                                                                        \
     auto packed_color = packColor(swgl_Out##format, color);                   \
@@ -929,7 +942,7 @@ static ALWAYS_INLINE bool needsNearestFallback(S sampler, T P, int span) {
                                                   uv_repeat, uv_rect, color) \
   swgl_commitTextureNearestRepeat(RGBA8, s, p, tile_repeat, uv_repeat, color)
 
-// Commit an entire span of texture with filtering determined by sampler state.
+
 #define swgl_commitTexture(format, s, ...)               \
   do {                                                   \
     if (s->filter == TextureFilter::LINEAR) {            \
@@ -946,9 +959,9 @@ static ALWAYS_INLINE bool needsNearestFallback(S sampler, T P, int span) {
 #define swgl_commitTextureRepeatColorRGBA8(...) \
   swgl_commitTexture(RepeatColorRGBA8, __VA_ARGS__)
 
-// Commit an entire span of a separable pass of a Gaussian blur that falls
-// within the given radius scaled by supplied coefficients, clamped to uv_rect
-// bounds.
+
+
+
 template <bool BLEND, typename S, typename P>
 static int blendGaussianBlur(S sampler, vec2 uv, const vec4_scalar& uv_rect,
                              P* buf, int span, bool hori, int radius,
@@ -997,7 +1010,7 @@ static int blendGaussianBlur(S sampler, vec2 uv, const vec4_scalar& uv_rect,
 #define swgl_commitGaussianBlurR8(s, p, uv_rect, hori, radius, coeffs) \
   swgl_commitGaussianBlur(R8, s, p, uv_rect, hori, radius, coeffs)
 
-// Convert and pack planar YUV samples to RGB output using a color space
+
 static ALWAYS_INLINE PackedRGBA8 convertYUV(const YUVMatrix& rgb_from_ycbcr,
                                             U16 y, U16 u, U16 v) {
   auto yy = V8<int16_t>(zip(y, y));
@@ -1016,7 +1029,7 @@ static inline bool validYUVFormat(S0 sampler0) {
   }
 }
 
-// Helper functions to sample from planar YUV textures before converting to RGB
+
 template <typename S0>
 static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0,
                                            const YUVMatrix& rgb_from_ycbcr,
@@ -1095,13 +1108,13 @@ static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0, S1 sampler1,
     }
     case TextureFormat::RG16: {
       assert(sampler0->format == TextureFormat::R16);
-      // The rescaling factor represents how many bits to add to renormalize the
-      // texture to 16 bits, and so the color depth is actually 16 minus the
-      // rescaling factor.
-      // Need to right shift the sample by the amount of bits over 8 it
-      // occupies. On output from textureLinearUnpackedR16, we have lost 1 bit
-      // of precision at the low end already, hence 1 is subtracted from the
-      // color depth.
+      
+      
+      
+      
+      
+      
+      
       int colorDepth = 16 - rescaleFactor;
       int rescaleBits = (colorDepth - 1) - 8;
       auto y = textureLinearUnpackedR16(sampler0, uv0) >> rescaleBits;
@@ -1168,13 +1181,13 @@ static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0, S1 sampler1,
       return convertYUV(rgb_from_ycbcr, y, u, v);
     }
     case TextureFormat::R16: {
-      // The rescaling factor represents how many bits to add to renormalize the
-      // texture to 16 bits, and so the color depth is actually 16 minus the
-      // rescaling factor.
-      // Need to right shift the sample by the amount of bits over 8 it
-      // occupies. On output from textureLinearUnpackedR16, we have lost 1 bit
-      // of precision at the low end already, hence 1 is subtracted from the
-      // color depth.
+      
+      
+      
+      
+      
+      
+      
       int colorDepth = 16 - rescaleFactor;
       int rescaleBits = (colorDepth - 1) - 8;
       auto y = textureLinearUnpackedR16(sampler0, uv0) >> rescaleBits;
@@ -1188,8 +1201,8 @@ static ALWAYS_INLINE PackedRGBA8 sampleYUV(S0 sampler0, ivec2 uv0, S1 sampler1,
   }
 }
 
-// Fallback helper for when we can't specifically accelerate YUV with
-// composition.
+
+
 template <bool BLEND, typename S0, typename S1, typename S2, typename P,
           typename C>
 static void blendYUVFallback(P* buf, int span, S0 sampler0, vec2 uv0,
@@ -1238,14 +1251,14 @@ static int blendYUV(P* buf, int span, S0 sampler0, vec2 uv0,
   return span;
 }
 
-// A variant of the blendYUV that attempts to reuse the inner loops from the
-// CompositeYUV infrastructure. CompositeYUV imposes stricter requirements on
-// the source data, which in turn allows it to be much faster than blendYUV.
-// At a minimum, we need to ensure that we are outputting to a BGRA8 framebuffer
-// and that no color scaling is applied, which we can accomplish via template
-// specialization. We need to further validate inside that texture formats
-// and dimensions are sane for video and that the video is axis-aligned before
-// acceleration can proceed.
+
+
+
+
+
+
+
+
 template <bool BLEND>
 static int blendYUV(uint32_t* buf, int span, sampler2DRect sampler0, vec2 uv0,
                     const vec4_scalar& uv_rect0, sampler2DRect sampler1,
@@ -1263,18 +1276,18 @@ static int blendYUV(uint32_t* buf, int span, sampler2DRect sampler0, vec2 uv0,
   LINEAR_QUANTIZE_UV(sampler1, uv1, uv_step1, uv_rect1, min_uv1, max_uv1);
   LINEAR_QUANTIZE_UV(sampler2, uv2, uv_step2, uv_rect2, min_uv2, max_uv2);
   auto* end = buf + span;
-  // CompositeYUV imposes further restrictions on the source textures, such that
-  // the the Y/U/V samplers must all have a matching format, the U/V samplers
-  // must have matching sizes and sample coordinates, and there must be no
-  // change in row across the entire span.
+  
+  
+  
+  
   if (sampler0->format == sampler1->format &&
       sampler1->format == sampler2->format &&
       sampler1->width == sampler2->width &&
       sampler1->height == sampler2->height && uv_step0.y == 0 &&
       uv_step0.x > 0 && uv_step1.y == 0 && uv_step1.x > 0 &&
       uv_step1 == uv_step2 && uv1.x.x == uv2.x.x && uv1.y.x == uv2.y.x) {
-    // CompositeYUV does not support a clamp rect, so we must take care to
-    // advance till we're inside the bounds of the clamp rect.
+    
+    
     int outside = min(int(ceil(max((min_uv0.x - uv0.x.x) / uv_step0.x,
                                    (min_uv1.x - uv1.x.x) / uv_step1.x))),
                       (end - buf) / swgl_StepSize);
@@ -1289,34 +1302,34 @@ static int blendYUV(uint32_t* buf, int span, sampler2DRect sampler0, vec2 uv0,
       uv1.x += outside * uv_step1.x;
       uv2.x += outside * uv_step2.x;
     }
-    // Find the amount of chunks inside the clamp rect before we hit the
-    // maximum. If there are any chunks inside, we can finally dispatch to
-    // CompositeYUV.
+    
+    
+    
     int inside = min(int(min((max_uv0.x - uv0.x.x) / uv_step0.x,
                              (max_uv1.x - uv1.x.x) / uv_step1.x)),
                      (end - buf) / swgl_StepSize);
     if (inside > 0) {
-      // We need the color depth, which is relative to the texture format and
-      // rescale factor.
+      
+      
       int colorDepth =
           (sampler0->format == TextureFormat::R16 ? 16 : 8) - rescaleFactor;
-      // Finally, call the inner loop of CompositeYUV.
+      
       const auto rgb_from_ycbcr =
           YUVMatrix::From(ycbcr_bias, rgb_from_debiased_ycbcr, rescaleFactor);
       linear_row_yuv<BLEND>(
           buf, inside * swgl_StepSize, sampler0, force_scalar(uv0),
           uv_step0.x / swgl_StepSize, sampler1, sampler2, force_scalar(uv1),
           uv_step1.x / swgl_StepSize, colorDepth, rgb_from_ycbcr);
-      // Now that we're done, advance past the processed inside portion.
+      
       buf += inside * swgl_StepSize;
       uv0.x += inside * uv_step0.x;
       uv1.x += inside * uv_step1.x;
       uv2.x += inside * uv_step2.x;
     }
   }
-  // We either got here because we have some samples outside the clamp rect, or
-  // because some of the preconditions were not satisfied. Process whatever is
-  // left of the span.
+  
+  
+  
   blendYUVFallback<BLEND>(buf, end - buf, sampler0, uv0, uv_step0, min_uv0,
                           max_uv0, sampler1, uv1, uv_step1, min_uv1, max_uv1,
                           sampler2, uv2, uv_step2, min_uv2, max_uv2, ycbcr_bias,
@@ -1324,12 +1337,12 @@ static int blendYUV(uint32_t* buf, int span, sampler2DRect sampler0, vec2 uv0,
   return span;
 }
 
-// Commit a single chunk of a YUV surface represented by multiple planar
-// textures. This requires a color space specifier selecting how to convert
-// from YUV to RGB output. In the case of HDR formats, a rescaling factor
-// selects how many bits of precision must be utilized on conversion. See the
-// sampleYUV dispatcher functions for the various supported plane
-// configurations this intrinsic accepts.
+
+
+
+
+
+
 #define swgl_commitTextureLinearYUV(...)                                    \
   do {                                                                      \
     int drawn = 0;                                                          \
@@ -1342,20 +1355,20 @@ static int blendYUV(uint32_t* buf, int span, sampler2DRect sampler0, vec2 uv0,
     swgl_SpanLength -= drawn;                                               \
   } while (0)
 
-// Commit a single chunk of a YUV surface scaled by a color.
+
 #define swgl_commitTextureLinearColorYUV(...) \
   swgl_commitTextureLinearYUV(__VA_ARGS__)
 
-// Checks that a gradient with the specified number of stops exists at the UV
-// coords of the address within an RGBA32F texture. If so, a linear address
-// within the texture is returned that may be used to sample the gradient
-// colors and stop offsets later, otherwise a negative value is returned.
+
+
+
+
 static inline int swgl_validateGradientFromStops(sampler2D sampler,
                                                  ivec2_scalar address,
                                                  int entries) {
-  // 1px (4 floats per color stop).
+  
   int colors_size = entries;
-  // 4 stop offsets (4 floats) per px.
+  
   int stops_size = ((entries + 3) & ~3) / 4;
   return sampler->format == TextureFormat::RGBA32F && address.y >= 0 &&
                  address.y < int(sampler->height) && address.x >= 0 &&
@@ -1365,10 +1378,10 @@ static inline int swgl_validateGradientFromStops(sampler2D sampler,
              : -1;
 }
 
-// Precomputed noise for adding directly to four horizontally contiguous pixels
-// TODO: These should be updated for parity with the shader dither
-// implementation once something more final exists there. Right now, these are
-// very close but slightly off.
+
+
+
+
 static const WideRGBA8 ditherNoise[64] = {
     {2, 2, 2, 128, 194, 194, 194, 128, 50, 50, 50, 128, 242, 242, 242, 128},
     {194, 194, 194, 128, 50, 50, 50, 128, 242, 242, 242, 128, 14, 14, 14, 128},
@@ -1468,51 +1481,51 @@ static ALWAYS_INLINE const WideRGBA8* getDitherNoise(int32_t fragCoordY) {
   return &ditherNoise[(fragCoordY & 7) * 8];
 }
 
-// Values in color should be in the 0..0xFF00 range so that dithering has
-// enough overhead to avoid overflow and underflow.
+
+
 static ALWAYS_INLINE WideRGBA8 dither(WideRGBA8 color, int32_t fragCoordX,
                                       const WideRGBA8* ditherNoiseYIndexed) {
   return color + ditherNoiseYIndexed[fragCoordX & 7];
 }
 
-/// Find the gradient stops pair affecting the current offset by searching
-/// into gradient stop offsets organized in a tree structure.
-///
-/// This is ported from sample_gradient_stops_tree in ps_quad_gradient.glsl.
-/// The tree structure is explained in the documentation of
-/// write_gpu_gradient_stops_tree in prim_store/gradient/mod.rs
+
+
+
+
+
+
 static int32_t findGradientStopPair(float offset, float* stops,
                                     int32_t numStops,
                                     float& prevOffset,
                                     float& nextOffset) {
     int32_t levelBaseAddr = 0;
-    // Number of blocks of 4 indices for the current level.
-    // At the root, a single block is stored. Each level stores
-    // 5 times more blocks than the previous one.
+    
+    
+    
     int32_t levelStride = 1;
-    // Relative address within the current level.
+    
     int32_t offsetInLevel = 0;
-    // By the end of this function, this will contain the index of the
-    // second stop of the pair we are looking for.
+    
+    
     int32_t index = 0;
 
-    // The index distance between consecutive stop offsets at
-    // the current level. At the last level, the stride is 1.
-    // each has a 5 times more stride than the next (so the
-    // index stride starts high and is divided by 5 at each
-    // iteration).
+    
+    
+    
+    
+    
     int32_t indexStride = 1;
     while (indexStride * 5 <= numStops) {
         indexStride *= 5;
     }
 
 
-    // We take advantage of the fact that stop offsets are normalized from
-    // 0 to 1 which means that the first offset is always 0 and the last is
-    // always 1.
-    // This is important because in the loop, we won't be setting prevOffset
-    // if offset is < 0.0 and won't be setting nextOffset if offset > 1.0,
-    // so initializing them this way here handles those cases.
+    
+    
+    
+    
+    
+    
     prevOffset = 0.0;
     nextOffset = 1.0;
 
@@ -1527,8 +1540,8 @@ static int32_t findGradientStopPair(float offset, float* stops,
         float currentStops2 = stops[addr + 2];
         float currentStops3 = stops[addr + 3];
 
-        // Determine which of the five partitions (sub-trees)
-        // to take next.
+        
+        
         int32_t nextPartition = 4;
         if (currentStops0 > offset) {
             nextPartition = 0;
@@ -1552,8 +1565,8 @@ static int32_t findGradientStopPair(float offset, float* stops,
         index += nextPartition * indexStride;
 
         if (indexStride == 1) {
-            // If the index stride is 1, we visited a leaf,
-            // we are done.
+            
+            
             break;
         }
 
@@ -1563,7 +1576,7 @@ static int32_t findGradientStopPair(float offset, float* stops,
         offsetInLevel = offsetInLevel * 5 + nextPartition;
     }
 
-    // clamp the index to [1..numStops]
+    
     if (index < 1) {
         index = 1;
     } else if (index > numStops - 1) {
@@ -1573,7 +1586,7 @@ static int32_t findGradientStopPair(float offset, float* stops,
     return index - 1;
 }
 
-// Samples an entire span of a linear gradient.
+
 template <bool BLEND, bool DITHER>
 static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
                                           int colorsAddress, float stopCount,
@@ -1582,25 +1595,25 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
                                           float startOffset, uint32_t* buf,
                                           int span, vec4 fragCoord = vec4()) {
   assert(sampler->format == TextureFormat::RGBA32F);
-  // Stop offsets are expected to be stored just after the colors.
+  
   assert(colorsAddress >= 0 && colorsAddress < offsetsAddress);
   assert(offsetsAddress >= 0 && offsetsAddress + (stopCount + 3) / 4 <
                                     int(sampler->height * sampler->stride));
   float* stopOffsets = (float*)&sampler->buf[offsetsAddress];
   Float* stopColors = (Float*)&sampler->buf[colorsAddress];
 
-  // Number of pixels per chunks.
+  
   const float CHUNK_SIZE = 4.0f;
 
-  // Only incremented in the case of dithering
-  // Only incremented in the case of dithering
+  
+  
   int32_t currentFragCoordX = int32_t(fragCoord.x.x);
   const auto* ditherNoiseYIndexed =
       DITHER ? getDitherNoise(int32_t(fragCoord.y.x)) : nullptr;
 
-  // Get the pixel delta from the difference in offset steps. This represents
-  // how far within the gradient offset range we advance for every step in
-  // output.
+  
+  
+  
   vec2_scalar posStep = dFdx(pos);
   float delta = dot(posStep, scaleDir);
   if (!isfinite(delta)) {
@@ -1608,12 +1621,12 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
   }
 
   for (; span > 0;) {
-    // The number of pixels that are affected by the current gradient stop pair.
+    
     float subSpan = span;
 
-    // Compute the gradient offset from the position.
+    
     Float offset = pos.x * scaleDir.x + pos.y * scaleDir.y - startOffset;
-    // If repeat is desired, we need to limit the offset to a fractional value.
+    
     if (gradientRepeat) {
       offset = fract(offset);
     }
@@ -1622,22 +1635,22 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
     float prevOffset = 0.0;
     float nextOffset = 0.0;
     if (offset.x < 0) {
-      // If before the start of the gradient stop range, then use the first
-      // stop.
+      
+      
       if (delta > 0) {
         subSpan = min(subSpan, -offset.x / delta);
       }
     } else if (offset.x >= 1) {
-      // If beyond the end of the gradient stop range, then use the last
-      // stop.
+      
+      
       stopIndex = stopCount - 1;
       if (delta < 0) {
         subSpan = min(subSpan, (1.0f - offset.x) / delta);
       }
     } else {
-      // Otherwise, we're inside the gradient stop range. Find the pair
-      // that affect the start of the current block and how many blocks
-      // are affected by the same pair.
+      
+      
+      
       stopIndex =
           findGradientStopPair(offset.x, stopOffsets, stopCount,
                                prevOffset, nextOffset);
@@ -1646,44 +1659,44 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
       subSpan = min(subSpan, offsetRange / delta);
     }
 
-    // Ensure that we advance by at least a pixel.
+    
     subSpan = max(ceil(subSpan), 1.0f);
 
-    // Sample the start colors of the gradient stop pair. These are scaled to
-    // a range of 0..0xFF00, as that is the largest shifted value that can fit
-    // in a U16.  Since we are only doing addition with the step value, we can
-    // still represent negative step values without having to use an explicit
-    // sign bit, as the result will still come out the same, allowing us to gain
-    // an extra bit of precision. We will later shift these into 8 bit output
-    // range while committing the span, but stepping with higher precision to
-    // avoid banding. We convert from RGBA to BGRA here to avoid doing this in
-    // the inner loop.
-    // The 256 factor is a leftover from a previous version of this code that
-    // uses a 256 pixels gradient table. The math could be simplified to avoid
-    // it but this change requires careful consideration of its interactions
-    // with the dithering code.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     auto colorScale = (DITHER ? float(0xFF00) : 255.0f) * 256.0f;
     auto minColorF = stopColors[stopIndex].zyxw * colorScale;
     auto maxColorF = stopColors[stopIndex + 1].zyxw * colorScale;
     auto deltaOffset = nextOffset - prevOffset;
-    // Get the color range of the merged gradient, normalized to its size.
+    
     Float colorRangeF = deltaOffset == 0.0f
                             ? Float(0.0f)
                             : (maxColorF - minColorF) * (1.0 / deltaOffset);
 
-    // Compute the actual starting color of the current start offset within
-    // the merged gradient. The value 0.5 is added to the low bits (0x80) so
-    // that the color will effectively round to the nearest increment below.
+    
+    
+    
     auto colorF =
         minColorF + colorRangeF * (offset.x - prevOffset) + float(0x80);
 
-    // Compute the portion of the color range that we advance on each chunk.
+    
     Float deltaColorF = colorRangeF * delta * CHUNK_SIZE;
-    // Quantize the color delta and current color. These have already been
-    // scaled to the 0..0xFF00 range, so we just need to round them to U16.
+    
+    
     auto deltaColor = repeat4(CONVERT(round_pixel(deltaColorF, 1), U16));
-    // If there are any amount of whole chunks of a merged gradient found,
-    // then we want to process that as a single gradient span.
+    
+    
     int chunks = int(subSpan) / 4;
     if (chunks > 0) {
       for (int remaining = chunks;;) {
@@ -1692,10 +1705,10 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
                     CONVERT(round_pixel(colorF + deltaColorF * 0.25f, 1), U16),
                     CONVERT(round_pixel(colorF + deltaColorF * 0.5f, 1), U16),
                     CONVERT(round_pixel(colorF + deltaColorF * 0.75f, 1), U16));
-        // Finally, step the current color through the output chunks, shifting
-        // it into 8 bit range and outputting as we go. Only process a segment
-        // at a time to avoid overflowing 8-bit precision due to rounding of
-        // deltas.
+        
+        
+        
+        
         int segment = min(remaining, 256 / 4);
         for (auto* end = buf + segment * 4; buf < end; buf += 4) {
           if (DITHER) {
@@ -1718,12 +1731,12 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
       pos += posStep * float(chunks) * CHUNK_SIZE;
     }
 
-    // We may have a partial chunk to write.
+    
     int remainder = int(subSpan - chunks * 4);
     if (remainder > 0) {
       assert(remainder < 4);
-      // The logic here is similar to the full chunks loop above, but we do a
-      // partial write instead of a pushing a full chunk.
+      
+      
       auto color =
           combine(CONVERT(round_pixel(colorF, 1), U16),
                   CONVERT(round_pixel(colorF + deltaColorF * 0.25f, 1), U16),
@@ -1786,8 +1799,8 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
 template <bool CLAMP, typename V>
 static ALWAYS_INLINE V fastSqrt(V v) {
   if (CLAMP) {
-    // Clamp to avoid zero or negative: the reciprocal square root of zero is
-    // infinity, and the multiply below would then produce a NaN.
+    
+    
     v = max(v, V(1.0e-12f));
   }
 #if USE_SSE2 || USE_NEON
@@ -1797,7 +1810,7 @@ static ALWAYS_INLINE V fastSqrt(V v) {
 #endif
 }
 
-// Samples an entire span of a radial gradient.
+
 template <bool BLEND, bool DITHER>
 static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
                                           int colorsAddress, float stopCount,
@@ -1805,32 +1818,32 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
                                           float startRadius, uint32_t* buf,
                                           int span, vec4 fragCoord = vec4()) {
   assert(sampler->format == TextureFormat::RGBA32F);
-  // Stop offsets are expected to be stored just after the colors.
+  
   assert(colorsAddress >= 0 && colorsAddress < offsetsAddress);
   assert(offsetsAddress >= 0 && offsetsAddress + (stopCount + 3) / 4 <
                                     int(sampler->height * sampler->stride));
   float* stopOffsets = (float*)&sampler->buf[offsetsAddress];
   Float* stopColors = (Float*)&sampler->buf[colorsAddress];
-  // clang-format off
-  // Given position p, delta d, and radius r, we need to repeatedly solve the
-  // following quadratic for the pixel offset t:
-  //    length(p + t*d) = r
-  //    (px + t*dx)^2 + (py + t*dy)^2 = r^2
-  // Rearranged into quadratic equation form (t^2*a + t*b + c = 0) this is:
-  //    t^2*(dx^2+dy^2) + t*2*(dx*px+dy*py) + (px^2+py^2-r^2) = 0
-  //    t^2*d.d + t*2*d.p + (p.p-r^2) = 0
-  // The solution of the quadratic formula t=(-b+-sqrt(b^2-4ac))/2a reduces to:
-  //    t = -d.p/d.d +- sqrt((d.p/d.d)^2 - (p.p-r^2)/d.d)
-  // Note that d.p, d.d, p.p, and r^2 are constant across the gradient, and so
-  // we cache them below for faster computation.
-  //
-  // The quadratic has two solutions, representing the span intersecting the
-  // given radius of gradient, which can occur at two offsets. If there is only
-  // one solution (where b^2-4ac = 0), this represents the point at which the
-  // span runs tangent to the radius. This middle point is significant in that
-  // before it, we walk down the gradient ramp, and after it, we walk up the
-  // ramp.
-  // clang-format on
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   vec2_scalar pos0 = {pos.x.x, pos.y.x};
   vec2_scalar delta = {pos.x.y - pos.x.x, pos.y.y - pos.y.x};
   float deltaDelta = dot(delta, delta);
@@ -1838,7 +1851,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     return false;
   }
 
-  // Only incremented in the case of dithering
+  
   int32_t currentFragCoordX = int32_t(fragCoord.x.x);
   const auto* ditherNoiseYIndexed =
       DITHER ? getDitherNoise(int32_t(fragCoord.y.x)) : nullptr;
@@ -1849,69 +1862,69 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     middleT = -dot(delta, pos0) * invDelta;
     middleB = middleT * middleT - dot(pos0, pos0) * invDelta;
   } else {
-    // If position is invariant, just set the coefficients so the quadratic
-    // always reduces to the end of the span.
+    
+    
     invDelta = 0.0f;
     middleT = float(span);
     middleB = 0.0f;
   }
 
-  // Convert delta to change in position per chunk.
+  
   delta *= 4;
   deltaDelta *= 4 * 4;
-  // clang-format off
-  // Given current position p and delta d, we reduce:
-  //    length(p) = sqrt(dot(p,p)) = dot(p,p) * invsqrt(dot(p,p))
-  // where dot(p+d,p+d) can be accumulated as:
-  //    (x+dx)^2+(y+dy)^2 = (x^2+y^2) + 2(x*dx+y*dy) + (dx^2+dy^2)
-  //                      = p.p + 2p.d + d.d
-  // Since p increases by d every loop iteration, p.d increases by d.d, and thus
-  // we can accumulate d.d to calculate 2p.d, then allowing us to get the next
-  // dot-product by adding it to dot-product p.p of the prior iteration. This
-  // saves us some multiplications and an expensive sqrt inside the inner loop.
-  // clang-format on
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   Float dotPos = dot(pos, pos);
   Float dotPosDelta = 2.0f * dot(pos, delta) + deltaDelta;
   float deltaDelta2 = 2.0f * deltaDelta;
 
   for (int t = 0; t < span;) {
-    // Compute the gradient table offset from the current position.
+    
     Float offset = fastSqrt<true>(dotPos) - startRadius;
     float adjustedStartRadius = startRadius;
-    // If repeat is desired, we need to limit the offset to a fractional value.
+    
     if (repeat) {
-      // The non-repeating radius at which the gradient table actually starts,
-      // startRadius + floor(offset) = startRadius + (offset - fract(offset)).
+      
+      
       adjustedStartRadius += offset.x;
       offset = fract(offset);
       adjustedStartRadius -= offset.x;
     }
 
-    // We need to find the pair of gradient stops that affect the the current
-    // portion of the span as well as the intercept point where we leave this
-    // gradient.
+    
+    
+    
     float intercept = -1;
     int32_t stopIndex = 0;
     float prevOffset = 0.0f;
     float nextOffset = 0.0f;
     if (offset.x < 0) {
-      // If inside the inner radius of the gradient table, then use the first
-      // stop. Set the intercept to advance forward to the start of the gradient
-      // table.
+      
+      
+      
       if (t >= middleT) {
         intercept = startRadius;
       }
     } else if (offset.x >= 1) {
-      // If outside the outer radius of the gradient table, then use the last
-      // stop. Set the intercept to advance toward the valid part of the
-      // gradient table if going in, or just run to the end of the span if going
-      // away from the gradient.
+      
+      
+      
+      
       stopIndex = stopCount - 1;
       if (t < middleT) {
         intercept = startRadius + 1;
       }
     } else {
-      // Otherwise, we're inside the valid part of the gradient table.
+      
 
       stopIndex =
           findGradientStopPair(offset.x, stopOffsets, stopCount,
@@ -1922,8 +1935,8 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
         intercept = adjustedStartRadius + prevOffset;
       }
     }
-    // Solve the quadratic for t to find where the current stop pair ends. If no
-    // intercept is found, just go to the middle or end of the span.
+    
+    
     float endT = t >= middleT ? span : min(span, int(middleT));
     if (intercept >= 0) {
       float b = middleB + intercept * intercept * invDelta;
@@ -1931,42 +1944,42 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
         b = fastSqrt<false>(b);
         endT = min(endT, t >= middleT ? middleT + b : middleT - b);
       } else {
-        // Due to the imprecision of fastSqrt in offset calculations, solving
-        // the quadratic may fail. However, if the discriminant is still close
-        // to 0, then just assume it is 0.
+        
+        
+        
         endT = min(endT, middleT);
       }
     }
-    // Ensure that we are advancing by at least one pixel at each iteration.
+    
     endT = max(ceil(endT), t + 1.0f);
 
-    // Figure out how many pixels belonging to whole chunks are inside the
-    // gradient stop pair.
+    
+    
     int inside = int(endT - t) & ~3;
-    // Convert start and end colors to BGRA and scale to 0..0xFF00 range
-    // (for dithered) and 0.255 range (for non-dithered).
+    
+    
     auto minColorF =
         stopColors[stopIndex].zyxw * (DITHER ? float(0xFF00) : 255.0f);
     auto maxColorF =
         stopColors[stopIndex + 1].zyxw * (DITHER ? float(0xFF00) : 255.0f);
 
-    // Compute the change in color per change in gradient offset.
+    
     auto deltaOffset = nextOffset - prevOffset;
     Float deltaColorF =
         deltaOffset == 0.0f
             ?
-            // Note: If we take this branch, we know that we are going to fill
-            // some pixels with a solid color (we are in or out of the range of
-            // gradient stops). We could leverage that to skip the offset
-            // calculation.
+            
+            
+            
+            
             Float(0.0f)
             : (maxColorF - minColorF) / deltaOffset;
-    // Subtract off the color difference of the beginning of the current span
-    // from the beginning of the gradient.
+    
+    
     Float colorF = minColorF - deltaColorF * (adjustedStartRadius + prevOffset);
-    // Finally, walk over the span accumulating the position dot product and
-    // getting its sqrt as an offset into the color ramp. At this point we just
-    // need to round to an integer and pack down to pixel format.
+    
+    
+    
     for (auto* end = buf + inside; buf < end; buf += 4) {
       Float offsetG = fastSqrt<true>(dotPos);
       if (DITHER) {
@@ -1989,20 +2002,20 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       dotPos += dotPosDelta;
       dotPosDelta += deltaDelta2;
     }
-    // Advance past the portion of gradient we just processed.
+    
     t += inside;
 
-    // If we hit the end of the span, exit out now.
+    
     if (t >= span) {
       break;
     }
 
-    // Otherwise we may have a partial chunk to write.
+    
     int remainder = endT - t;
     if (remainder > 0) {
       assert(remainder < 4);
-      // The logic here is similar to the full chunks loop above, but we do a
-      // partial write instead of a pushing a full chunk.
+      
+      
       Float offsetG = fastSqrt<true>(dotPos);
       if (DITHER) {
         auto color = combine(
@@ -2025,29 +2038,29 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       buf += remainder;
       t += remainder;
 
-      // dotPosDelta's members are monotonically increasing, so adjusting the
-      // step only requires undoing the factor of 4 and multiplying with the
-      // actual number of remainder pixels.
+      
+      
+      
       float partialDeltaDelta2 = deltaDelta2 * 0.25f * float(remainder);
       dotPosDelta += partialDeltaDelta2;
 
-      // For dotPos, however, there is a compounding effect that makes the math
-      // trickier. For simplicity's sake we are just computing the the
-      // parameters for a single-pixel step and applying it remainder times.
+      
+      
+      
 
-      // The deltaDelta2 for a single-pixel step (undoing the 4*4 factor we did
-      // earlier when making deltaDelta2 work for 4-pixels chunks).
+      
+      
       float singlePxDeltaDelta2 = deltaDelta2 * 0.0625f;
-      // The first single-pixel delta for dotPos (The difference between
-      // dotPos's first two lanes).
+      
+      
       float dotPosDeltaFirst = dotPos.y - dotPos.x;
-      // For each 1-pixel step the delta is applied and monotonically increased
-      // by singleDeltaDelta2.
+      
+      
       Float pxOffsets = {0.0f, 1.0f, 2.0f, 3.0f};
       Float partialDotPosDelta =
           pxOffsets * singlePxDeltaDelta2 + dotPosDeltaFirst;
 
-      // Apply each single-pixel step.
+      
       for (int i = 0; i < remainder; ++i) {
         dotPos += partialDotPosDelta;
         partialDotPosDelta += singlePxDeltaDelta2;
@@ -2057,10 +2070,10 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
   return true;
 }
 
-// Commits an entire span of a radial gradient similar to
-// swgl_commitLinearGradientFromStopsRGBA8, but given a varying 2D position
-// scaled to gradient-space and a radius at which the distance from the origin
-// maps to the start of the gradient.
+
+
+
+
 #define swgl_commitRadialGradientFromStopsRGBA8(                            \
     sampler, offsetsAddress, colorsAddress, size, repeat, pos, startRadius) \
   do {                                                                      \
@@ -2099,11 +2112,11 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
     }                                                                       \
   } while (0)
 
-// Extension to set a clip mask image to be sampled during blending. The offset
-// specifies the positioning of the clip mask image relative to the viewport
-// origin. The bounding box specifies the rectangle relative to the clip mask's
-// origin that constrains sampling within the clip mask. Blending must be
-// enabled for this to work.
+
+
+
+
+
 static sampler2D swgl_ClipMask = nullptr;
 static IntPoint swgl_ClipMaskOffset = {0, 0};
 static IntRect swgl_ClipMaskBounds = {0, 0, 0, 0};
@@ -2118,8 +2131,8 @@ static IntRect swgl_ClipMaskBounds = {0, 0, 0, 0};
     }                                                          \
   } while (0)
 
-// Extension to enable anti-aliasing for the given edges of a quad.
-// Blending must be enable for this to work.
+
+
 static int swgl_AAEdgeMask = 0;
 
 static ALWAYS_INLINE int calcAAEdgeMask(bool on) { return on ? 0xF : 0; }
@@ -2152,11 +2165,11 @@ static ALWAYS_INLINE int calcAAEdgeMask(bvec4_scalar mask) {
     swgl_BlendAlphaRGBA8 = alphas(swgl_BlendColorRGBA8);      \
   } while (0)
 
-// Dispatch helper used by the GLSL translator to swgl_drawSpan functions.
-// The number of pixels committed is tracked by checking for the difference in
-// swgl_SpanLength. Any varying interpolants used will be advanced past the
-// committed part of the span in case the fragment shader must be executed for
-// any remaining pixels that were not committed by the span shader.
+
+
+
+
+
 #define DISPATCH_DRAW_SPAN(self, format)        \
   do {                                          \
     int total = self->swgl_SpanLength;          \
