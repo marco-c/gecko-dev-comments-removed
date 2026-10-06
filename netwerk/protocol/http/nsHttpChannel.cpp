@@ -5500,6 +5500,17 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
         LoadAllowStaleCacheContent(), LoadForceValidateCacheContent(),
         isImmutable, LoadCustomConditionalRequest(), mRequestHead, entry,
         cacheControlRequest, fromPreviousSession, &doBackgroundValidation);
+
+    
+    
+    
+    
+    if (doValidation && mLoadInfo->GetActivatedFromNavigationalPrefetch()) {
+      LOG(
+          ("  serving speculation-rules prefetch from cache without "
+           "validation"));
+      doValidation = false;
+    }
   }
 
   nsAutoCString requestedETag;

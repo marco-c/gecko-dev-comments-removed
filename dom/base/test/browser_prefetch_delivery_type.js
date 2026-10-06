@@ -5,7 +5,7 @@ const BASE = "https://example.com/browser/dom/base/test/";
 function targetURL(token, { noStore = false } = {}) {
   
   return (
-    `${BASE}file_pageload_prefetch_target.sjs?v=${token}` +
+    `${BASE}file_pageload_prefetch_target.sjs?v=${token}-${Date.now()}` +
     (noStore ? "&nostore=1" : "")
   );
 }
@@ -68,7 +68,7 @@ add_task(async function test_navigation_served_from_prefetch() {
 });
 
 
-add_task(async function test_matched_prefetch_not_served_from_cache() {
+add_task(async function test_nostore_prefetch_served_from_cache() {
   const target = targetURL("nostore", { noStore: true });
   Assert.equal(
     await deliveryTypeAfterNavigating(
@@ -76,8 +76,8 @@ add_task(async function test_matched_prefetch_not_served_from_cache() {
       target,
       true
     ),
-    "",
-    "A matched prefetch that did not serve the navigation reports no deliveryType."
+    "navigational-prefetch",
+    "A navigation served from a no-store prefetch reports deliveryType."
   );
 });
 
