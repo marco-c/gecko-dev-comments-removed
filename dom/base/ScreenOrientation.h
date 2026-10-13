@@ -64,6 +64,10 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
+  
+  
+  static void ReleaseLock(Document* aDocument);
+
   static void UpdateActiveOrientationLock(hal::ScreenOrientation aOrientation);
   static void AbortInProcessOrientationPromises(
       BrowsingContext* aBrowsingContext);
@@ -96,6 +100,7 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   
   void UnlockDeviceOrientation();
   void CleanupFullscreenListener();
+  void ReleaseOwnLock();
 
   
   
@@ -124,9 +129,7 @@ class ScreenOrientation final : public DOMEventTargetHelper {
   
   
   
-  
-  
-  bool mTriedToLockDeviceOrientation = false;
+  bool mLocked = false;
 };
 
 }  
