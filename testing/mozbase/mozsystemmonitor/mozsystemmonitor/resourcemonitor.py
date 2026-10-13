@@ -1494,13 +1494,27 @@ class SystemResourceMonitor:
         else:
             
             status = (data.get("status") or data.get("level")).upper()
+            
+            
+            
+            expected = data.get("expected")
+            as_expected = expected is None or expected.upper() == status
             marker_name = status
 
             
             if status == "PASS":
-                marker_data["color"] = "green"
+                if as_expected:
+                    marker_data["color"] = "green"
+                else:
+                    
+                    marker_name = "UNEXPECTED-PASS"
+                    marker_data["color"] = "orange"
             elif status == "FAIL":
-                marker_data["color"] = "orange"
+                if as_expected:
+                    marker_name = "KNOWN-FAIL"
+                    marker_data["color"] = "yellow"
+                else:
+                    marker_data["color"] = "orange"
             elif status == "ERROR":
                 marker_data["color"] = "red"
 
