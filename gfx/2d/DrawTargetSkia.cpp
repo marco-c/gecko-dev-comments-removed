@@ -2348,6 +2348,13 @@ void DrawTargetSkia::DetachAllSnapshots() {
   if (mSnapshot) {
     if (mSnapshot->hasOneRef()) {
       
+      
+      
+      
+      SkPixmap pixmap;
+      MOZ_DIAGNOSTIC_ASSERT(!mSnapshot->mImage || mSnapshot->mImage->unique() ||
+                                !mSnapshot->mImage->peekPixels(&pixmap),
+                            "Snapshot image outlived its lock");
       mSnapshot = nullptr;
       return;
     }
