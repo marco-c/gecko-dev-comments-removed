@@ -283,7 +283,12 @@ def _collect(pipe, poll_interval):
             for p in psutil.process_iter():
                 pid = p.pid
                 try:
-                    create_time = p.create_time()
+                    with p.oneshot():
+                        create_time = p.create_time()
+                        
+                        
+                        if p.status() == psutil.STATUS_ZOMBIE:
+                            continue
                 except psutil.Error:
                     
                     continue
