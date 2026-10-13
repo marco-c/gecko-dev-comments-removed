@@ -468,7 +468,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   const nsCString& Http3QlogDir();
 
   float FocusedWindowTransactionRatio() const {
-    return mFocusedWindowTransactionRatio;
+    auto ratio = mFocusedWindowTransactionRatio.Lock();
+    return *ratio;
   }
 
   
@@ -578,22 +579,22 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
 
-  enum HttpVersion mHttpVersion { HttpVersion::v1_1 };
-  enum HttpVersion mProxyHttpVersion { HttpVersion::v1_1 };
+  Atomic<enum HttpVersion, Relaxed> mHttpVersion{HttpVersion::v1_1};
+  Atomic<enum HttpVersion, Relaxed> mProxyHttpVersion{HttpVersion::v1_1};
   uint32_t mCapabilities{NS_HTTP_ALLOW_KEEPALIVE};
 
-  bool mFastFallbackToIPv4{false};
-  PRIntervalTime mIdleTimeout;
-  PRIntervalTime mSpdyTimeout;
-  PRIntervalTime mResponseTimeout;
+  Atomic<bool, Relaxed> mFastFallbackToIPv4{false};
+  Atomic<PRIntervalTime, Relaxed> mIdleTimeout;
+  Atomic<PRIntervalTime, Relaxed> mSpdyTimeout;
+  Atomic<PRIntervalTime, Relaxed> mResponseTimeout;
   Atomic<bool, Relaxed> mResponseTimeoutEnabled{false};
-  uint32_t mNetworkChangedTimeout{5000};  
-  uint16_t mMaxRequestAttempts{6};
+  Atomic<uint32_t, Relaxed> mNetworkChangedTimeout{5000};  
+  Atomic<uint32_t, Relaxed> mMaxRequestAttempts{6};
   uint16_t mMaxRequestDelay{10};
-  uint16_t mIdleSynTimeout{250};
-  uint16_t mFallbackSynTimeout{5};  
+  Atomic<uint32_t, Relaxed> mIdleSynTimeout{250};
+  Atomic<uint32_t, Relaxed> mFallbackSynTimeout{5};  
 
-  bool mH2MandatorySuiteEnabled{false};
+  Atomic<bool, Relaxed> mH2MandatorySuiteEnabled{false};
   uint16_t mMaxUrgentExcessiveConns{3};
   uint16_t mMaxConnections{24};
   uint8_t mMaxPersistentConnectionsPerServer{2};
@@ -618,7 +619,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   bool mBeConservativeForProxy{true};
 
-  uint8_t mQoSBits{0x00};
+  Atomic<uint32_t, Relaxed> mQoSBits{0x00};
 
   bool mEnforceAssocReq{false};
 
@@ -678,65 +679,68 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   uint32_t mDebugObservations : 1;
 
-  uint32_t mEnableAltSvc : 1;
+  Atomic<bool, Relaxed> mEnableAltSvc{false};
 
   
   SpdyInformation mSpdyInfo;
 
-  uint32_t mSpdySendingChunkSize{ASpdySession::kSendingChunkSize};
-  uint32_t mSpdySendBufferSize{ASpdySession::kTCPSendBufferSize};
-  uint32_t mSpdyPushAllowance{
+  Atomic<uint32_t, Relaxed> mSpdySendingChunkSize{
+      ASpdySession::kSendingChunkSize};
+  Atomic<uint32_t, Relaxed> mSpdySendBufferSize{
+      ASpdySession::kTCPSendBufferSize};
+  Atomic<uint32_t, Relaxed> mSpdyPushAllowance{
       ASpdySession::kInitialPushAllowance};  
-  uint32_t mSpdyPullAllowance{ASpdySession::kInitialRwin};
-  uint32_t mDefaultSpdyConcurrent{ASpdySession::kDefaultMaxConcurrent};
-  PRIntervalTime mSpdyPingThreshold;
-  PRIntervalTime mSpdyPingTimeout;
+  Atomic<uint32_t, Relaxed> mSpdyPullAllowance{ASpdySession::kInitialRwin};
+  Atomic<uint32_t, Relaxed> mDefaultSpdyConcurrent{
+      ASpdySession::kDefaultMaxConcurrent};
+  Atomic<PRIntervalTime, Relaxed> mSpdyPingThreshold;
+  Atomic<PRIntervalTime, Relaxed> mSpdyPingTimeout;
 
   
   
-  uint32_t mConnectTimeout{90000};
+  Atomic<uint32_t, Relaxed> mConnectTimeout{90000};
 
   
   
-  uint32_t mTLSHandshakeTimeout{30000};
+  Atomic<uint32_t, Relaxed> mTLSHandshakeTimeout{30000};
 
   
   
-  uint32_t mParallelSpeculativeConnectLimit{6};
+  Atomic<uint32_t, Relaxed> mParallelSpeculativeConnectLimit{6};
 
   
   
-  bool mRequestTokenBucketEnabled{true};
+  Atomic<bool, Relaxed> mRequestTokenBucketEnabled{true};
   uint16_t mRequestTokenBucketMinParallelism{6};
   uint32_t mRequestTokenBucketHz{100};    
   uint32_t mRequestTokenBucketBurst{32};  
 
   
   
-  bool mCriticalRequestPrioritization{true};
+  Atomic<bool, Relaxed> mCriticalRequestPrioritization{true};
 
   
 
   
-  bool mTCPKeepaliveShortLivedEnabled{false};
+  Atomic<bool, Relaxed> mTCPKeepaliveShortLivedEnabled{false};
   
-  int32_t mTCPKeepaliveShortLivedTimeS{60};
+  Atomic<int32_t, Relaxed> mTCPKeepaliveShortLivedTimeS{60};
   
-  int32_t mTCPKeepaliveShortLivedIdleTimeS{10};
+  Atomic<int32_t, Relaxed> mTCPKeepaliveShortLivedIdleTimeS{10};
 
   
-  bool mTCPKeepaliveLongLivedEnabled{false};
+  Atomic<bool, Relaxed> mTCPKeepaliveLongLivedEnabled{false};
   
-  int32_t mTCPKeepaliveLongLivedIdleTimeS{600};
+  Atomic<int32_t, Relaxed> mTCPKeepaliveLongLivedIdleTimeS{600};
 
   
   
-  FrameCheckLevel mEnforceH1Framing{FRAMECHECK_BARELY};
+  Atomic<FrameCheckLevel, Relaxed> mEnforceH1Framing{FRAMECHECK_BARELY};
 
   nsCOMPtr<nsIRequestContextService> mRequestContextService;
 
   
-  uint32_t mDefaultHpackBuffer{4096};
+  Atomic<uint32_t, Relaxed> mDefaultHpackBuffer{4096};
 
   
   Atomic<uint32_t, Relaxed> mQpackTableSize{4096};
@@ -746,7 +750,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   nsCString mHttp3QlogDir;
 
   
-  float mFocusedWindowTransactionRatio{0.9f};
+  mutable DataMutex<float> mFocusedWindowTransactionRatio{
+      0.9f, "nsHttpHandler::FocusedWindowTransactionRatio"};
 
   HttpTrafficAnalyzer mHttpTrafficAnalyzer;
 
