@@ -3935,6 +3935,12 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   std::vector<scoped_refptr<RtpReceiverInterface>> removed_receivers;
   
   
+  std::vector<std::pair<scoped_refptr<RtpSenderInternal>,
+                        std::vector<RtpEncodingParameters>>>
+      senders_to_restore;
+
+  
+  
   std::vector<RtpTransceiverProxyRefPtr> transceivers_to_remove;
   absl::Cleanup cleanup_remove = [&] {
     for (const auto& transceiver : transceivers_to_remove) {
@@ -3995,6 +4001,13 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
 
     RTC_DCHECK(transceiver->internal()->mid().has_value());
     network_tasks.Add(transceiver->internal()->GetClearChannelNetworkTask());
+    auto sender_internal = transceiver->internal()->sender_internal();
+    
+    
+    
+    
+    worker_tasks.AddWithFinalizer(
+        sender_internal->SetSsrcTask(0, 0));
     worker_tasks.Add(transceiver->internal()->GetDeleteChannelWorkerTask(
         false));
 
@@ -4011,11 +4024,13 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
         transceivers_to_remove.push_back(transceiver);
       }
     }
-    auto sender_internal = transceiver->internal()->sender_internal();
     if (stable_state.init_send_encodings()) {
-      sender_internal->set_init_send_encodings(
-          stable_state.init_send_encodings().value());
+      
+      
+      senders_to_restore.emplace_back(std::move(sender_internal),
+                                      *stable_state.init_send_encodings());
     }
+
     transceiver->internal()->SetTransport(nullptr, std::nullopt);
     if (stable_state.has_m_section()) {
       transceiver->internal()->set_mid(stable_state.mid());
@@ -4027,6 +4042,10 @@ RTCError SdpOfferAnswerHandler::Rollback(SdpType desc_type) {
   RTC_DCHECK(e.ok());  
   e = worker_tasks.Run();
   RTC_DCHECK(e.ok());  
+
+  for (const auto& [sender, encodings] : senders_to_restore) {
+    sender->set_init_send_encodings(encodings);
+  }
   e = transport_controller_s()->RollbackTransports();
   if (!e.ok()) {
     return e;
