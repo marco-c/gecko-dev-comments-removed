@@ -45,6 +45,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
+#include "p2p/base/p2p_transport_channel.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
@@ -180,15 +181,43 @@ RTCError JsepTransportController::SetLocalDescription_n(
   
   
   
-  if (ice_role_ == ICEROLE_CONTROLLING) {
+  
+  
+  
+  if (config_.redetermine_role_on_ice_restart && HasIceRestart_n(local_desc)) {
+    ice_role_initialized_ = false;
+  }
+
+  if (!ice_role_initialized_) {
+    ice_role_initialized_ = true;
     const IceRole role =
         (type == SdpType::kOffer) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
-    
-    
-    
     SetIceRole_n(role);
   }
   return ApplyDescription_n(true, type, local_desc, remote_desc);
+}
+
+bool JsepTransportController::HasIceRestart_n(
+    const SessionDescription* local_desc) const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  for (const ContentInfo& content_info : local_desc->contents()) {
+    const JsepTransport* transport = GetJsepTransportForMid(content_info.mid());
+    const TransportInfo* transport_info =
+        local_desc->GetTransportInfoByName(content_info.mid());
+    if (!transport || !transport->local_description() || !transport_info) {
+      continue;
+    }
+
+    const TransportDescription& old_description =
+        transport->local_description()->transport_desc;
+    const TransportDescription& new_description = transport_info->description;
+    if (IceCredentialsChanged(
+            old_description.ice_ufrag, old_description.ice_pwd,
+            new_description.ice_ufrag, new_description.ice_pwd)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 RTCError JsepTransportController::SetRemoteDescription(
