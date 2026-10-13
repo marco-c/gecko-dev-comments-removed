@@ -6,12 +6,25 @@
 #define MOZILLA_GFX_PRINTTARGETWINDOWS_H
 
 #include "PrintTarget.h"
+#include "mozilla/UniquePtr.h"
 
 
 #include <windows.h>
 
+#include <memory>
+
+namespace SkGDI {
+class Document;
+}
+
 namespace mozilla {
 namespace gfx {
+
+class DrawEventRecorderMemory;
+class InlineTranslator;
+
+
+
 
 
 
@@ -22,17 +35,32 @@ class PrintTargetWindows final : public PrintTarget {
 
   nsresult BeginPrinting(const nsAString& aTitle,
                          const nsAString& aPrintToFileName,
-                         uint64_t aBrowsingContextId, int32_t aStartPage,
+                         uint64_t aInnerWindowId, int32_t aStartPage,
                          int32_t aEndPage) override;
   nsresult EndPrinting() override;
   nsresult AbortPrinting() override;
   nsresult BeginPage(const IntSize& aSizeInPoints) override;
   nsresult EndPage() override;
 
+  already_AddRefed<DrawTarget> MakeDrawTarget(
+      const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) final;
+  already_AddRefed<DrawTarget> GetReferenceDrawTarget() final;
+
  private:
   PrintTargetWindows(cairo_surface_t* aCairoSurface, const IntSize& aSize,
                      HDC aDC);
+  PrintTargetWindows(std::unique_ptr<SkGDI::Document> aDocument,
+                     const IntSize& aSize, HDC aDC);
+  ~PrintTargetWindows() override;
+
   HDC mDC;
+
+  
+  
+  
+  std::unique_ptr<SkGDI::Document> mDocument;
+  RefPtr<DrawEventRecorderMemory> mRecorder;
+  UniquePtr<InlineTranslator> mTranslator;
 };
 
 }  
