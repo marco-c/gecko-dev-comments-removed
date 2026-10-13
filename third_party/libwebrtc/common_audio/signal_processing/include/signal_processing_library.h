@@ -662,18 +662,6 @@ void WebRtcSpl_GetHanningWindow(int16_t* window, size_t size);
 
 
 
-
-
-
-
-
-void WebRtcSpl_SqrtOfOneMinusXSquared(int16_t* in_vector,
-                                      size_t vector_length,
-                                      int16_t* out_vector);
-
-
-
-
 int16_t WebRtcSpl_RandU(uint32_t* seed);
 int16_t WebRtcSpl_RandN(uint32_t* seed);
 int16_t WebRtcSpl_RandUArray(int16_t* vector,
