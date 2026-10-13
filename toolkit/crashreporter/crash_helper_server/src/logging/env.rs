@@ -5,6 +5,7 @@
 use cfg_if::cfg_if;
 use mozbuild::config;
 use std::{
+    ffi::OsString,
     fs::{self, File},
     io,
     path::PathBuf,
@@ -12,7 +13,7 @@ use std::{
 
 
 pub(crate) fn init() {
-    let user_app_data_dir = guess_user_app_data_dir();
+    let user_app_data_dir = guess_user_app_data_dir(std::env::var_os("MOZ_APP_DATA"));
     let log_target = make_log_target(user_app_data_dir);
 
     env_logger::builder()
@@ -28,7 +29,13 @@ pub(crate) fn init() {
 
 
 
-fn guess_user_app_data_dir() -> Option<PathBuf> {
+
+
+fn guess_user_app_data_dir(custom_dir: Option<OsString>) -> Option<PathBuf> {
+    if let Some(custom_dir) = custom_dir.and_then(path_from_env_value) {
+        return Some(custom_dir);
+    }
+
     let home_dir = dirs::home_dir()?;
 
     cfg_if! {
@@ -52,6 +59,46 @@ fn guess_user_app_data_dir() -> Option<PathBuf> {
     }
 }
 
+
+
+
+
+#[cfg(unix)]
+fn path_from_env_value(value: OsString) -> Option<PathBuf> {
+    use std::{ffi::OsStr, os::unix::ffi::OsStrExt, path::Path};
+
+    let bytes = value.as_bytes();
+    match bytes {
+        [b'/', ..] => Some(PathBuf::from(value)),
+        [b'~'] | [b'~', b'/'] => dirs::home_dir(),
+        [b'~', suffix @ ..] if suffix.starts_with(b"/") => {
+            
+            
+            
+            let mut path = dirs::home_dir()?.into_os_string();
+            path.push(OsStr::from_bytes(suffix));
+            Some(PathBuf::from(path))
+        }
+        [b'~', rest @ ..] => {
+            let users_dir = if cfg!(target_os = "macos") {
+                "/Users"
+            } else {
+                "/home"
+            };
+            Some(Path::new(users_dir).join(OsStr::from_bytes(rest)))
+        }
+        _ => None,
+    }
+}
+
+
+
+
+#[cfg(not(unix))]
+fn path_from_env_value(_value: OsString) -> Option<PathBuf> {
+    None
+}
+
 fn make_log_target(log_directory: Option<PathBuf>) -> Box<dyn io::Write + Send + 'static> {
     if let Some(log_directory) = log_directory.map(|path| path.join("Crash Reports")) {
         if fs::create_dir_all(&log_directory).is_ok() {
@@ -63,4 +110,70 @@ fn make_log_target(log_directory: Option<PathBuf>) -> Box<dyn io::Write + Send +
     }
 
     Box::new(io::stderr())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn custom_app_data_dir_is_used() {
+        let custom_dir = std::env::temp_dir().join("custom_app_data");
+        assert_eq!(
+            guess_user_app_data_dir(Some(custom_dir.clone().into_os_string())),
+            Some(custom_dir)
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn custom_app_data_dir_with_tilde_is_expanded() {
+        use std::path::Path;
+
+        let home_dir = dirs::home_dir().unwrap();
+        assert_eq!(
+            guess_user_app_data_dir(Some(OsString::from("~"))),
+            Some(home_dir.clone())
+        );
+        assert_eq!(
+            guess_user_app_data_dir(Some(OsString::from("~/some/dir"))),
+            Some(home_dir.join("some/dir"))
+        );
+        assert_eq!(
+            guess_user_app_data_dir(Some(OsString::from("~//some/dir"))),
+            Some(home_dir.join("some/dir"))
+        );
+        let users_dir = if cfg!(target_os = "macos") {
+            "/Users"
+        } else {
+            "/home"
+        };
+        assert_eq!(
+            guess_user_app_data_dir(Some(OsString::from("~someone/some/dir"))),
+            Some(Path::new(users_dir).join("someone/some/dir"))
+        );
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn custom_app_data_dir_is_ignored_on_windows() {
+        let default_dir = guess_user_app_data_dir(None);
+        for value in [r"C:/custom/data", r"C:\custom\data"] {
+            assert_eq!(
+                guess_user_app_data_dir(Some(OsString::from(value))),
+                default_dir
+            );
+        }
+    }
+
+    #[test]
+    fn empty_or_relative_custom_app_data_dir_is_ignored() {
+        let default_dir = guess_user_app_data_dir(None);
+        assert_eq!(guess_user_app_data_dir(Some(OsString::new())), default_dir);
+        assert_eq!(
+            guess_user_app_data_dir(Some(OsString::from("relative/dir"))),
+            default_dir
+        );
+    }
 }
