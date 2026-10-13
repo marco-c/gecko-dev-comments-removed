@@ -32,11 +32,14 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
       : mIsDrawing(aSVGDocumentWrapper->mIsDrawing),
         
         
-        mPAR(aSVGContext, aSVGDocumentWrapper->GetSVGRootElement()),
-        
-        mTime(aSVGDocumentWrapper->GetSVGRootElement(), aAnimationTime) {
+        mPAR(aSVGContext, aSVGDocumentWrapper->GetSVGRootElement()) {
     MOZ_ASSERT(!mIsDrawing.SavedValue());
     MOZ_ASSERT(aSVGDocumentWrapper->GetDocument());
+
+    
+    
+    aSVGDocumentWrapper->mIsDrawing = true;
+    mTime.emplace(aSVGDocumentWrapper->GetSVGRootElement(), aAnimationTime);
 
     if (auto* pc = aSVGDocumentWrapper->GetDocument()->GetPresContext()) {
       pc->SetLinkParametersOverride(aSVGContext.GetLinkParameters());
@@ -51,8 +54,6 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
       }());
     }
 
-    aSVGDocumentWrapper->mIsDrawing = true;
-
     
     if (aContextPaint) {
       MOZ_ASSERT(aSVGContext.GetContextPaint());
@@ -64,7 +65,7 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
  private:
   AutoRestore<bool> mIsDrawing;
   AutoPreserveAspectRatioOverride mPAR;
-  AutoSVGTimeSetRestore mTime;
+  Maybe<AutoSVGTimeSetRestore> mTime;
   Maybe<AutoSetRestoreSVGContextPaint> mContextPaint;
 };
 
