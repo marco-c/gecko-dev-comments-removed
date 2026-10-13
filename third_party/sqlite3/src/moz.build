@@ -145,3 +145,13 @@ DEFINES['SQLITE_ENABLE_CARRAY'] = 1
 
 
 DEFINES['SQLITE_ENABLE_PERCENTILE'] = 1
+
+
+LICENSES += ['sqlite']
+LICENSES['sqlite'].title = 'SQLite Public Domain Dedication'
+LICENSES['sqlite'].acknowledgement = (
+    'The <a href="https://www.sqlite.org/">sqlite</a> database engine '
+    '(D. Richard Hipp and team)'
+)
+
+LICENSED_UNDER += ['sqlite']
