@@ -340,10 +340,13 @@ function parseDeclarationsInternal(
 
   
   
+  const IMPORTANT_STATE_NONE = Symbol();
   
+  const IMPORTANT_STATE_SAW_EXCLAMATION = Symbol();
   
+  const IMPORTANT_STATE_COMPLETE = Symbol();
   
-  let importantState = 0;
+  let importantState = IMPORTANT_STATE_NONE;
   
   
   let importantWS = false;
@@ -357,7 +360,7 @@ function parseDeclarationsInternal(
   const resetStateForNextDeclaration = () => {
     current = "";
     currentBlocks = [];
-    importantState = 0;
+    importantState = IMPORTANT_STATE_NONE;
     importantWS = false;
     declarations.push(getEmptyDeclaration());
     lastProp = declarations.at(-1);
@@ -379,13 +382,13 @@ function parseDeclarationsInternal(
     } else if (
       lastProp.name &&
       !current &&
-      !importantState &&
+      importantState == IMPORTANT_STATE_NONE &&
       !lastProp.priority &&
       lastProp.colonOffsets[1]
     ) {
       
       lastProp.colonOffsets[1] = token.endOffset;
-    } else if (importantState === 1) {
+    } else if (importantState === IMPORTANT_STATE_SAW_EXCLAMATION) {
       importantWS = true;
     }
 
@@ -466,7 +469,7 @@ function parseDeclarationsInternal(
       current += token.text;
     } else if (token.tokenType === "Colon") {
       
-      importantState = 0;
+      importantState = IMPORTANT_STATE_NONE;
       importantWS = false;
       if (!lastProp.name) {
         
@@ -500,9 +503,9 @@ function parseDeclarationsInternal(
         currentBlocks = [];
         break;
       }
-      if (importantState === 2) {
+      if (importantState === IMPORTANT_STATE_COMPLETE) {
         lastProp.priority = "important";
-      } else if (importantState === 1) {
+      } else if (importantState === IMPORTANT_STATE_SAW_EXCLAMATION) {
         current += "!";
         if (importantWS) {
           current += " ";
@@ -511,24 +514,27 @@ function parseDeclarationsInternal(
       lastProp.value = cssTrim(current);
       resetStateForNextDeclaration();
     } else if (token.tokenType === "Ident") {
-      if (token.text === "important" && importantState === 1) {
-        importantState = 2;
+      if (
+        token.text === "important" &&
+        importantState === IMPORTANT_STATE_SAW_EXCLAMATION
+      ) {
+        importantState = IMPORTANT_STATE_COMPLETE;
       } else {
-        if (importantState > 0) {
+        if (importantState !== IMPORTANT_STATE_NONE) {
           current += "!";
           if (importantWS) {
             current += " ";
           }
-          if (importantState === 2) {
+          if (importantState === IMPORTANT_STATE_COMPLETE) {
             current += "important ";
           }
-          importantState = 0;
+          importantState = IMPORTANT_STATE_NONE;
           importantWS = false;
         }
         current += token.text;
       }
     } else if (token.tokenType === "Delim" && token.text === "!") {
-      importantState = 1;
+      importantState = IMPORTANT_STATE_SAW_EXCLAMATION;
     } else if (token.tokenType === "WhiteSpace") {
       if (current !== "") {
         current = current.trimEnd() + " ";
@@ -553,15 +559,15 @@ function parseDeclarationsInternal(
         current = current.trimEnd() + " ";
       }
     } else {
-      if (importantState > 0) {
+      if (importantState !== IMPORTANT_STATE_NONE) {
         current += "!";
         if (importantWS) {
           current += " ";
         }
-        if (importantState === 2) {
+        if (importantState === IMPORTANT_STATE_COMPLETE) {
           current += "important ";
         }
-        importantState = 0;
+        importantState = IMPORTANT_STATE_NONE;
         importantWS = false;
       }
       current += inputString.substring(token.startOffset, token.endOffset);
@@ -582,9 +588,9 @@ function parseDeclarationsInternal(
       }
     } else {
       
-      if (importantState === 2) {
+      if (importantState === IMPORTANT_STATE_COMPLETE) {
         lastProp.priority = "important";
-      } else if (importantState === 1) {
+      } else if (importantState === IMPORTANT_STATE_SAW_EXCLAMATION) {
         current += "!";
       }
       lastProp.value = cssTrim(current);
