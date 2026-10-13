@@ -44,7 +44,6 @@
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "api/video/encoded_image.h"
-#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
 #include "api/video/video_layers_allocation.h"
@@ -640,35 +639,6 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
 void RtpVideoSender::OnFrameDropped(uint32_t ,
                                     int ,
                                     bool ) {}
-
-void RtpVideoSender::OnBitrateAllocationUpdated(
-    const VideoBitrateAllocation& bitrate) {
-  RTC_DCHECK_RUN_ON(&transport_checker_);
-  MutexLock lock(&mutex_);
-  if (IsActiveLocked()) {
-    if (rtp_streams_.size() == 1) {
-      
-      rtp_streams_[0].rtp_rtcp->SetVideoBitrateAllocation(bitrate);
-    } else {
-      std::vector<std::optional<VideoBitrateAllocation>> layer_bitrates =
-          bitrate.GetSimulcastAllocations();
-      
-      
-      for (size_t i = 0; i < rtp_streams_.size(); ++i) {
-        
-        
-        if (layer_bitrates[i]) {
-          rtp_streams_[i].rtp_rtcp->SetVideoBitrateAllocation(
-              *layer_bitrates[i]);
-        } else {
-          
-          rtp_streams_[i].rtp_rtcp->SetVideoBitrateAllocation(
-              VideoBitrateAllocation());
-        }
-      }
-    }
-  }
-}
 
 void RtpVideoSender::OnVideoLayersAllocationUpdated(
     const VideoLayersAllocation& allocation) {
