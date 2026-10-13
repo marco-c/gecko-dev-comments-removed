@@ -643,6 +643,35 @@ class MOZ_STACK_CLASS WSScanResult final {
     return mIgnoredLineBreak;
   }
 
+  
+
+
+
+  [[nodiscard]] bool IgnoredLineBreakIsRequiredInPlaintextMailComposer() const {
+    if (!mIgnoredLineBreak || !mIgnoredLineBreak->IsHTMLBRElement()) {
+      return false;
+    }
+    
+    if (ReachedOtherBlockElement() &&
+        HTMLEditUtils::IsMailCiteElement(*ElementPtr()) &&
+        HTMLEditUtils::IsInlineContent(*ElementPtr(),
+                                       BlockInlineCheck::UseHTMLDefaultStyle)) {
+      return true;
+    }
+    
+    const Element* const blockElement = HTMLEditUtils::GetAncestorElement(
+        mIgnoredLineBreak->BRElementRef(),
+        HTMLEditUtils::ClosestEditableBlockElement,
+        BlockInlineCheck::UseComputedDisplayStyle);
+    if (blockElement && HTMLEditUtils::IsMailCiteElement(*blockElement) &&
+        HTMLEditUtils::IsInlineContent(*blockElement,
+                                       BlockInlineCheck::UseHTMLDefaultStyle)) {
+      return true;
+    }
+    
+    return false;
+  }
+
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const ScanDirection& aDirection) {
     return aStream << (aDirection == ScanDirection::Backward

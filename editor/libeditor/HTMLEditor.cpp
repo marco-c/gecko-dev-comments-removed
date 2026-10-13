@@ -4439,23 +4439,6 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsInContentNode());
   MOZ_ASSERT(aNextOrAfterModifiedPoint.IsSetAndValid());
 
-  
-  
-  
-  
-  if (IsPlaintextMailComposer()) {
-    const Element* const blockElement =
-        HTMLEditUtils::GetInclusiveAncestorElement(
-            *aNextOrAfterModifiedPoint.ContainerAs<nsIContent>(),
-            HTMLEditUtils::ClosestEditableBlockElement,
-            BlockInlineCheck::UseComputedDisplayStyle);
-    if (blockElement && HTMLEditUtils::IsMailCiteElement(*blockElement) &&
-        HTMLEditUtils::IsInlineContent(*blockElement,
-                                       BlockInlineCheck::UseHTMLDefaultStyle)) {
-      return NS_OK;
-    }
-  }
-
   const bool isWhiteSpacePreformatted = EditorUtils::IsWhiteSpacePreformatted(
       *aNextOrAfterModifiedPoint.ContainerAs<nsIContent>());
   const DebugOnly<bool> isNewLinePreformatted =
@@ -4469,21 +4452,13 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
       nextThing.MaybeIgnoredLineBreak();
   if (unnecessaryLineBreak.isNothing() ||
       !unnecessaryLineBreak->IsInclusiveDescendantOf(aEditingHost) ||
-      !unnecessaryLineBreak->IsDeletableFromComposedDoc()) [[likely]] {
+      !unnecessaryLineBreak->IsDeletableFromComposedDoc() ||
+      (IsPlaintextMailComposer() &&
+       nextThing.IgnoredLineBreakIsRequiredInPlaintextMailComposer()))
+      [[likely]] {
     return NS_OK;
   }
   if (unnecessaryLineBreak->IsHTMLBRElement()) {
-    
-    
-    
-    if (IsPlaintextMailComposer()) {
-      if (nextThing.ReachedOtherBlockElement() &&
-          HTMLEditUtils::IsMailCiteElement(*nextThing.ElementPtr()) &&
-          HTMLEditUtils::IsInlineContent(
-              *nextThing.ElementPtr(), BlockInlineCheck::UseHTMLDefaultStyle)) {
-        return NS_OK;
-      }
-    }
     
     
     
