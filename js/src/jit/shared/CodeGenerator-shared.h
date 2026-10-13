@@ -412,6 +412,15 @@ class CodeGeneratorShared : public LElementVisitor {
     return deoptLabel_.used() || deoptJumpPending_;
   }
 
+  
+  void emitBailoutOOL(LSnapshot* snapshot);
+
+
+
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
+    defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+  void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
+#endif
   void bailoutFrom(Label* label, LSnapshot* snapshot);
   void bailout(LSnapshot* snapshot);
 
