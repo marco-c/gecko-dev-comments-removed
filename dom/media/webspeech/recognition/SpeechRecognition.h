@@ -350,15 +350,6 @@ class SpeechRecognition final
   RefPtr<TrackListener> mListener;
   
   RefPtr<SpeechRecognitionBackend> mBackend;
-
-  static nsTHashSet<nsCString> sDownloadingLanguages
-      MOZ_GUARDED_BY(sMainThreadCapability);
-  
-  
-  
-  static nsTHashMap<nsCStringHashKey,
-                    RefPtr<GenericNonExclusivePromise::Private>>
-      sLanguageDownloadPromises MOZ_GUARDED_BY(sMainThreadCapability);
 };
 
 }  
