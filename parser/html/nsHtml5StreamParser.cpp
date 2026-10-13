@@ -110,11 +110,24 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(nsHtml5StreamParser)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsHtml5StreamParser)
   tmp->DropTimer();
+  tmp->Terminate();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRequest)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner)
-  tmp->mExecutorFlusher = nullptr;
-  tmp->mLoadFlusher = nullptr;
-  tmp->mExecutor = nullptr;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsHtml5StreamParser)

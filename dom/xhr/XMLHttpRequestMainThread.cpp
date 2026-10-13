@@ -390,6 +390,16 @@ void XMLHttpRequestMainThread::SetAssociatedBrowsingContextID(uint64_t aId) {
 }
 
 void XMLHttpRequestMainThread::ResetResponse() {
+  if (RefPtr<nsXHRParseEndListener> listener = mParseEndListener.forget()) {
+    if (mResponseXML) {
+      if (EventListenerManager* manager =
+              mResponseXML->GetExistingListenerManager()) {
+        manager->RemoveEventListenerByType(listener,
+                                           kLiteralString_DOMContentLoaded,
+                                           TrustedEventsAtSystemGroupBubble());
+      }
+    }
+  }
   mResponseXML = nullptr;
   mResponseBody.Truncate();
   TruncateResponseText();
@@ -1051,6 +1061,9 @@ void XMLHttpRequestMainThread::CloseRequest(nsresult detail) {
                                "XMLHttpRequestMainThread::CloseRequest"_ns);
   }
   CancelTimeoutTimer();
+  if (mResponseXML) {
+    mResponseXML->StopDocumentLoad();
+  }
 }
 
 void XMLHttpRequestMainThread::CloseRequestWithError(
@@ -2007,6 +2020,30 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
   mFlagParseBody = true;
   if (mErrorLoad == ErrorType::eOK) {
     ChangeState(XMLHttpRequest_Binding::HEADERS_RECEIVED);
+  }
+
+  
+
+  if (request != mChannel) {
+    
+    return NS_OK;
+  }
+
+  
+  if (mState == XMLHttpRequest_Binding::UNSENT) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (mFlagAborted) {
+    return NS_BINDING_ABORTED;
+  }
+
+  
+  if (mFlagTimedOut) {
+    return NS_OK;
   }
 
   ResetResponse();
