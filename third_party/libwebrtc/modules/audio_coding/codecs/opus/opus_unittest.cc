@@ -18,6 +18,7 @@
 #include <memory>
 #include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <vector>
 
@@ -105,6 +106,11 @@ void CreateSingleOrMultiStreamDecoder(WebRtcOpusDecInst** opus_decoder,
 int SamplesPerChannel(int sample_rate_hz, int duration_ms) {
   const int samples_per_ms = CheckedDivExact(sample_rate_hz, 1000);
   return samples_per_ms * duration_ms;
+}
+
+bool IsOpusFixedPoint() {
+  return std::string_view(opus_get_version_string()).find("-fixed") !=
+         std::string_view::npos;
 }
 
 using test::AudioLoop;
@@ -331,16 +337,11 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
   
   const int kCheckTimeMs = 4000;
 
-#if defined(OPUS_FIXED_POINT)
   
   
   
   
-  const uint16_t kOutputValueBound = 30;
-
-#else
-  const uint16_t kOutputValueBound = 2;
-#endif
+  const uint16_t output_value_bound = IsOpusFixedPoint() ? 30 : 2;
 
   int time = 0;
   while (time < kRunTimeMs) {
@@ -361,7 +362,7 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
         EXPECT_EQ(2, audio_type);  
         if (time >= kCheckTimeMs) {
           CheckAudioBounded(output_data_decode, output_samples, channels_,
-                            kOutputValueBound);
+                            output_value_bound);
         }
       } else {
         EXPECT_GT(encoded_bytes_, 1U);
@@ -393,7 +394,7 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
       EXPECT_EQ(2, audio_type);  
       if (time >= kCheckTimeMs) {
         CheckAudioBounded(output_data_decode, output_samples, channels_,
-                          kOutputValueBound);
+                          output_value_bound);
       }
     } else {
       EXPECT_GT(encoded_bytes_, 1U);
