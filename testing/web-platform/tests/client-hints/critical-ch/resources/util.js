@@ -1,5 +1,15 @@
 ECHO_URL = "resources/echo-critical-hint.py"
 REDIRECT_URL = "resources/redirect-critical-hint.py"
+CLEAR_URL = "resources/clear-client-hints.html"
+
+
+
+
+
+
+
+
+clear_client_hints = () => fetch(CLEAR_URL);
 
 message_listener = (t, message) =>
   (e) => {
@@ -7,11 +17,21 @@ message_listener = (t, message) =>
     t.done();
   }
 
+
+
+
+let message_test_queue = Promise.resolve();
+
 make_message_test = (url, message) =>
   (t) => {
-    popup_window = window.open("/common/blank.html");
-    assert_not_equals(popup_window, null, "Popup windows not allowed?");
-    window.addEventListener('message', message_listener(t, message));
-    popup_window.location = url;
-    t.add_cleanup(popup_window.close);
+    message_test_queue = message_test_queue.then(() => new Promise((resolve) => {
+      t.add_cleanup(resolve);
+      clear_client_hints().then(t.step_func(() => {
+        const popup_window = window.open("/common/blank.html");
+        assert_not_equals(popup_window, null, "Popup windows not allowed?");
+        t.add_cleanup(() => popup_window.close());
+        window.addEventListener('message', message_listener(t, message), {once: true});
+        popup_window.location = url;
+      }));
+    }));
   }
