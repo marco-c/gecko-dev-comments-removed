@@ -373,11 +373,7 @@ class IPPProxyManagerSingleton extends EventTarget {
    * Started is true if successfully connected, error contains the error message if it fails.
    */
   async start(userAction = true, inPrivateBrowsing = false, country) {
-    if (this.#state === IPPProxyStates.ACTIVATING) {
-      if (!this.#activatingPromise) {
-        throw new Error(ERRORS.MISSING_PROMISE);
-      }
-
+    if (this.#activatingPromise) {
       return this.#activatingPromise;
     }
 
@@ -403,8 +399,6 @@ class IPPProxyManagerSingleton extends EventTarget {
       abortController.abort(ERRORS.TIMEOUT);
     }, lazy.timeout);
 
-    this.#setState(IPPProxyStates.ACTIVATING);
-
     const { promise: abortPromise, reject } = Promise.withResolvers();
     abortSignal.addEventListener(
       "abort",
@@ -414,12 +408,18 @@ class IPPProxyManagerSingleton extends EventTarget {
       { once: true }
     );
 
+    const clearActivation = () => {
+      this.#activatingPromise = null;
+      this.#activationAbortController = null;
+    };
+
     this.#activatingPromise = Promise.race([
       this.#startInternal(abortSignal, country),
       abortPromise,
     ])
       .then(
         started => {
+          clearActivation();
           if (this.#state === IPPProxyStates.PAUSED) {
             return { started: false, error: ERRORS.QUOTA_EXHAUSTED };
           }
@@ -440,17 +440,15 @@ class IPPProxyManagerSingleton extends EventTarget {
           return { started: true };
         },
         error => {
-          this.#activationAbortController = null;
+          clearActivation();
           this.cancelChannelFilter();
           this.#setErrorState(error);
           return { started: false, error };
         }
       )
-      .finally(() => {
-        lazy.clearTimeout(timeoutId);
-        this.#activatingPromise = null;
-        this.#activationAbortController = null;
-      });
+      .finally(() => lazy.clearTimeout(timeoutId));
+
+    this.#setState(IPPProxyStates.ACTIVATING);
     return this.#activatingPromise;
   }
 
@@ -532,15 +530,13 @@ class IPPProxyManagerSingleton extends EventTarget {
    * True if started by user action, false if system action
    */
   async stop(userAction = true) {
-    if (this.#state === IPPProxyStates.ACTIVATING) {
-      if (!this.#activatingPromise) {
-        throw new Error(ERRORS.MISSING_PROMISE);
-      }
+    if (this.#activatingPromise) {
       if (!this.#activationAbortController) {
         throw new Error(ERRORS.MISSING_ABORT);
       }
-      this.#activationAbortController?.abort(ERRORS.CANCELED);
-      await this.#activatingPromise.then(() => this.stop(userAction));
+      const activating = this.#activatingPromise;
+      this.#activationAbortController.abort(ERRORS.CANCELED);
+      await activating.then(() => this.stop(userAction));
       return;
     }
 
