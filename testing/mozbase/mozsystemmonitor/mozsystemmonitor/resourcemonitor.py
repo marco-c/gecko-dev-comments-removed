@@ -282,7 +282,11 @@ def _collect(pipe, poll_interval):
             updated_known_processes = dict()
             for p in psutil.process_iter():
                 pid = p.pid
-                create_time = p.create_time()
+                try:
+                    create_time = p.create_time()
+                except psutil.Error:
+                    
+                    continue
                 
                 if pid in known_processes and create_time == known_processes[pid][0]:
                     updated_known_processes[pid] = known_processes[pid]
