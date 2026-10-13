@@ -802,29 +802,6 @@ int WebRtcSpl_DownsampleFast_mips(const int16_t* data_in,
 
 
 
-int WebRtcSpl_ComplexFFT(int16_t vector[], int stages, int mode);
-int WebRtcSpl_ComplexIFFT(int16_t vector[], int stages, int mode);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void WebRtcSpl_ComplexBitReverse(int16_t* __restrict complex_data, int stages);
-
-
-
-
-
 
 
 
