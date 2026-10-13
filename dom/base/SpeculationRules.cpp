@@ -5,7 +5,6 @@
 #include "mozilla/dom/SpeculationRules.h"
 
 #include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/PresShell.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -23,8 +22,6 @@
 #include "nsITimer.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
-#include "nsPresContext.h"
-#include "nsRefreshObservers.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
 
@@ -162,12 +159,6 @@ void SpeculationRules::InnerConsiderLoads() {
 
   
   
-  if (WaitForPendingFrames()) {
-    return;
-  }
-
-  
-  
   
   nsTArray<const Element*> links;
   FindMatchingLinks(links);
@@ -195,40 +186,6 @@ void SpeculationRules::InnerConsiderLoads() {
   
   
   EnactCandidates(nullptr, Eagerness::Immediate);
-}
-
-bool SpeculationRules::WaitForPendingFrames() {
-  if (mPendingFramesObserver) {
-    return true;
-  }
-
-  PresShell* presShell = mDocument->GetPresShell();
-  if (!presShell || !presShell->NeedFlush(FlushType::Frames, false)) {
-    return false;
-  }
-  nsPresContext* presContext = presShell->GetPresContext();
-  if (!presContext) {
-    return false;
-  }
-
-  
-  
-  if (std::none_of(
-          mRuleSetsFromScript.begin(), mRuleSetsFromScript.end(),
-          [](auto& entry) { return entry.GetData()->HasDocumentRules(); })) {
-    return false;
-  }
-
-  mPendingFramesObserver = MakeRefPtr<ManagedPostRefreshObserver>(
-      presContext, [self = RefPtr{this}](bool aWasCanceled) {
-        self->mPendingFramesObserver = nullptr;
-        if (!aWasCanceled) {
-          self->InnerConsiderLoads();
-        }
-        return ManagedPostRefreshObserver::Unregister::Yes;
-      });
-  presContext->RegisterManagedPostRefreshObserver(mPendingFramesObserver);
-  return true;
 }
 
 void SpeculationRules::EnactCandidates(nsIURI* aURL, Eagerness aTriggerLevel) {
