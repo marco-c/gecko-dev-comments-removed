@@ -53,7 +53,14 @@ XPCSHELL_FUNCS = "add_task", "run_test", "run_next_test"
 
 STUB_RETURN_JS = """\
 globalThis.__perfdocsStubObject = () =>
-  new Proxy({}, { get: (t, p) => (typeof p === "symbol" ? undefined : {}) });
+  new Proxy(() => globalThis.__perfdocsStubObject(), {
+    get: (t, p) =>
+      p in t
+        ? Reflect.get(t, p)
+        : typeof p === "symbol"
+          ? undefined
+          : globalThis.__perfdocsStubObject(),
+  });
 """
 
 
