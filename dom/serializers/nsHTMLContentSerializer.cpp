@@ -57,12 +57,10 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
     return true;
   }
 
-  nsresult rv;
   nsAutoString valueStr;
 
   for (const uint32_t index : mozilla::IntegerRange(count)) {
     const nsAttrName* name = aElement->GetAttrNameAt(index);
-    int32_t namespaceID = name->NamespaceID();
     nsAtom* attrName = name->LocalName();
 
     
@@ -71,29 +69,31 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
         StringBeginsWith(attrNameStr, u"-moz"_ns)) {
       continue;
     }
-    aElement->GetAttr(namespaceID, attrName, valueStr);
 
+    const int32_t attrNamespaceID = name->NamespaceID();
     if (mIsCopying && mIsFirstChildOfOL && aTagName == nsGkAtoms::li &&
         aNamespace == kNameSpaceID_XHTML && attrName == nsGkAtoms::value &&
-        namespaceID == kNameSpaceID_None) {
+        attrNamespaceID == kNameSpaceID_None) {
       
       continue;
     }
-    bool isJS = IsJavaScript(aElement, attrName, namespaceID, valueStr);
 
-    if (((attrName == nsGkAtoms::href && (namespaceID == kNameSpaceID_None ||
-                                          namespaceID == kNameSpaceID_XLink)) ||
-         (attrName == nsGkAtoms::src && namespaceID == kNameSpaceID_None))) {
+    aElement->GetAttr(attrNamespaceID, attrName, valueStr);
+    bool isJS = IsJavaScript(aElement, attrName, attrNamespaceID, valueStr);
+
+    if (((attrName == nsGkAtoms::href &&
+          (attrNamespaceID == kNameSpaceID_None ||
+           attrNamespaceID == kNameSpaceID_XLink)) ||
+         (attrName == nsGkAtoms::src &&
+          attrNamespaceID == kNameSpaceID_None))) {
       
       if (mFlags & nsIDocumentEncoder::OutputAbsoluteLinks) {
         
         
         
-        nsIURI* uri = aElement->GetBaseURI();
-        if (uri) {
+        if (nsIURI* uri = aElement->GetBaseURI()) {
           nsAutoString absURI;
-          rv = NS_MakeAbsoluteURI(absURI, valueStr, uri);
-          if (NS_SUCCEEDED(rv)) {
+          if (NS_SUCCEEDED(NS_MakeAbsoluteURI(absURI, valueStr, uri))) {
             valueStr = std::move(absURI);
           }
         }
@@ -102,7 +102,7 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
 
     if (mRewriteEncodingDeclaration && aTagName == nsGkAtoms::meta &&
         aNamespace == kNameSpaceID_XHTML && attrName == nsGkAtoms::content &&
-        namespaceID == kNameSpaceID_None) {
+        attrNamespaceID == kNameSpaceID_None) {
       
       
       nsAutoString header;
@@ -112,20 +112,20 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
       }
     }
 
-    nsDependentAtomString nameStr(attrName);
     nsAutoString prefix;
-    if (namespaceID == kNameSpaceID_XML) {
+    if (attrNamespaceID == kNameSpaceID_XML) {
       prefix.AssignLiteral(u"xml");
-    } else if (namespaceID == kNameSpaceID_XLink) {
+    } else if (attrNamespaceID == kNameSpaceID_XLink) {
       prefix.AssignLiteral(u"xlink");
     }
 
     
-    if (aNamespace == kNameSpaceID_XHTML && namespaceID == kNameSpaceID_None &&
+    if (aNamespace == kNameSpaceID_XHTML &&
+        attrNamespaceID == kNameSpaceID_None &&
         IsShorthandAttr(attrName, aTagName) && valueStr.IsEmpty()) {
-      valueStr = nameStr;
+      valueStr = attrNameStr;
     }
-    NS_ENSURE_TRUE(SerializeAttr(prefix, nameStr, valueStr, aStr, !isJS),
+    NS_ENSURE_TRUE(SerializeAttr(prefix, attrNameStr, valueStr, aStr, !isJS),
                    false);
   }
 
