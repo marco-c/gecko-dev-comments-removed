@@ -285,12 +285,12 @@ struct nsFind::State final {
     return node ? node->GetAsText() : nullptr;
   }
 
-  Text* GetNextNode(bool aAlreadyMatching) {
+  Text* GetNextNode(bool aAlreadyMatching, bool aWalkBackwards) {
     if (MOZ_UNLIKELY(!mInitialized)) {
       MOZ_ASSERT(!aAlreadyMatching);
       Initialize();
     } else {
-      Advance(Initializing::No, aAlreadyMatching);
+      Advance(Initializing::No, aAlreadyMatching, aWalkBackwards);
       mIterOffset = -1;  
     }
     return GetCurrentNode();
@@ -300,7 +300,7 @@ struct nsFind::State final {
   enum class Initializing { No, Yes };
 
   
-  void Advance(Initializing, bool aAlreadyMatching);
+  void Advance(Initializing, bool aAlreadyMatching, bool aWalkBackwards);
   
   void Initialize();
 
@@ -363,7 +363,8 @@ struct nsFind::State final {
   const RangeBoundary& mStartPoint;
 };
 
-void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching) {
+void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching,
+                            bool aWalkBackwards) {
   MOZ_ASSERT(mInitialized);
 
   
@@ -375,7 +376,7 @@ void nsFind::State::Advance(Initializing aInitializing, bool aAlreadyMatching) {
 
   while (true) {
     nsIContent* current =
-        mFindBackward ? mIterator.GetPrev() : mIterator.GetNext();
+        aWalkBackwards ? mIterator.GetPrev() : mIterator.GetNext();
     if (!current) {
       return;
     }
@@ -416,7 +417,7 @@ void nsFind::State::Initialize() {
   const bool kAlreadyMatching = false;
   if (!AnalyzeNode(*current, nullptr, kAlreadyMatching,
                    mSkipNativeAnonymousContent, &mFoundBreak)) {
-    Advance(Initializing::Yes, kAlreadyMatching);
+    Advance(Initializing::Yes, kAlreadyMatching, mFindBackward);
     current = mIterator.GetCurrent();
     if (!current) {
       return;
@@ -503,6 +504,22 @@ nsFind::SetEntireWord(bool aEntireWord) {
 }
 
 NS_IMETHODIMP
+nsFind::GetSegmenterWordBoundaries(bool* aSegmenterWordBoundaries) {
+  if (!aSegmenterWordBoundaries) {
+    return NS_ERROR_NULL_POINTER;
+  }
+
+  *aSegmenterWordBoundaries = mSegmenterWordBoundaries;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFind::SetSegmenterWordBoundaries(bool aSegmenterWordBoundaries) {
+  mSegmenterWordBoundaries = aSegmenterWordBoundaries;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsFind::GetMatchDiacritics(bool* aMatchDiacritics) {
   if (!aMatchDiacritics) {
     return NS_ERROR_NULL_POINTER;
@@ -546,6 +563,74 @@ char32_t nsFind::DecodeChar(const char16_t* t2b, int32_t* index) const {
   return c;
 }
 
+bool nsFind::HasWordBoundaryAtOffset(int32_t aOffset, State& aState) {
+  MOZ_ASSERT(mWordBoundaryCache);
+  Text* queryNode = aState.GetCurrentNode();
+
+  if (!queryNode->DataBuffer().GetLength()) {
+    return false;
+  }
+
+  
+  if (auto* boundaries =
+          mWordBoundaryCache->Lookup(queryNode).DataPtrOrNull()) {
+    return boundaries->Contains(static_cast<uint32_t>(aOffset));
+  }
+
+  
+  Text* blockStart = FindBlockStart(queryNode, aState);
+  nsAutoString text;
+  AutoTArray<Text*, 8> collectedNodes;
+  CollectBlockText(blockStart, aState, text, collectedNodes);
+  if (collectedNodes.IsEmpty()) {
+    return false;
+  }
+
+  
+  
+  
+  mWordBreakIter.Reset(text);
+  auto nodeIter = collectedNodes.begin();
+  uint32_t globalIndex = 0;  
+  Text* prevNode = nullptr;
+
+  
+  mWordBoundaryCache->LookupOrInsert(collectedNodes[0]).Add(0);
+
+  auto* boundaries = &mWordBoundaryCache->LookupOrInsert(*nodeIter);
+  while (Maybe<uint32_t> boundary = mWordBreakIter.Next()) {
+    while (nodeIter != collectedNodes.end() &&
+           *boundary >= globalIndex + (*nodeIter)->Length()) {
+      globalIndex += (*nodeIter)->Length();
+      prevNode = *nodeIter;
+      ++nodeIter;
+      if (nodeIter != collectedNodes.end()) {
+        boundaries = &mWordBoundaryCache->LookupOrInsert(*nodeIter);
+      }
+    }
+    if (nodeIter == collectedNodes.end()) {
+      break;
+    }
+    uint32_t localIndex = *boundary - globalIndex;
+    boundaries->Add(localIndex);
+
+    
+    
+    if (localIndex == 0 && prevNode) {
+      
+      mWordBoundaryCache->Lookup(prevNode).Data().Add(prevNode->Length());
+    }
+  }
+
+  
+  Text* last = collectedNodes.LastElement();
+  mWordBoundaryCache->LookupOrInsert(last).Add(last->Length());
+
+  
+  return mWordBoundaryCache->LookupOrInsert(queryNode).Contains(
+      static_cast<uint32_t>(aOffset));
+}
+
 bool nsFind::BreakInBetween(char32_t x, char32_t y) {
   nsAutoStringN<4> text;
   AppendUCS4ToUTF16(x, text);
@@ -561,7 +646,7 @@ char32_t nsFind::PeekNextChar(State& aState, bool aAlreadyMatching) const {
   StateRestorer restorer(aState);
 
   while (true) {
-    const Text* text = aState.GetNextNode(aAlreadyMatching);
+    const Text* text = aState.GetNextNode(aAlreadyMatching, mFindBackward);
     if (!text || aState.ForcedBreak()) {
       return L'\0';
     }
@@ -583,6 +668,50 @@ char32_t nsFind::PeekNextChar(State& aState, bool aAlreadyMatching) const {
 
     int32_t index = mFindBackward ? len - 1 : 0;
     return t1b ? CHAR_TO_UNICHAR(t1b[index]) : DecodeChar(t2b, &index);
+  }
+}
+
+void nsFind::CollectBlockText(Text* aBlockStart, State& aState,
+                              nsAString& aCollectedText,
+                              nsTArray<Text*>& aCollectedNodes) const {
+  StateRestorer restorer(aState);
+  aState.PositionAt(*aBlockStart);
+
+  Text* text = aBlockStart;
+  while (true) {
+    const CharacterDataBuffer& buf = text->DataBuffer();
+    if (buf.GetLength()) {
+      buf.AppendTo(aCollectedText);
+      aCollectedNodes.AppendElement(text);
+    }
+
+    
+    
+    text = aState.GetNextNode(true, false);
+    if (!text || aState.ForcedBreak()) {
+      return;
+    }
+  }
+}
+
+Text* nsFind::FindBlockStart(Text* aFromNode, State& aState) const {
+  StateRestorer restorer(aState);
+  Text* blockStart = aFromNode;
+  while (true) {
+    
+    
+    
+    Text* text = aState.GetNextNode(true, true);
+
+    
+    
+    if (!text || aState.ForcedBreak()) {
+      return blockStart;
+    }
+    if (text->DataBuffer().GetLength() == 0) {
+      continue;
+    }
+    blockStart = text;
   }
 }
 
@@ -639,6 +768,11 @@ already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
   AutoRestore<nsContentUtils::NodeIndexCache*> restoreCache(mNodeIndexCache);
   if (!mNodeIndexCache) {
     mNodeIndexCache = &localCache;
+  }
+  WordBoundaryCache localWordBoundaryCache;
+  AutoRestore<WordBoundaryCache*> restoreWordBoundaryCache(mWordBoundaryCache);
+  if (mSegmenterWordBoundaries && !mWordBoundaryCache) {
+    mWordBoundaryCache = &localWordBoundaryCache;
   }
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   auto cmp = nsContentUtils::ComparePoints<TreeKind::ShadowIncludingDOM>(
@@ -758,7 +892,7 @@ already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
 
     
     if (!characterDataBuffer) {
-      current = state.GetNextNode(!!matchAnchorNode);
+      current = state.GetNextNode(!!matchAnchorNode, mFindBackward);
       if (!current) {
         DEBUG_FIND_PRINTF("Reached the end, matching: %d\n", !!matchAnchorNode);
         if (EndPartialMatch()) {
@@ -853,6 +987,10 @@ already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
 
     
     char32_t prevChar = c;
+
+    
+    const int32_t charStart = findex;
+
     
     
     
@@ -921,7 +1059,16 @@ already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
     
     
     bool wordBreakPrev = true;
-    if (mWordStartBounded && prevChar) {
+    if (mSegmenterWordBoundaries) {
+      
+      
+      const bool needsMatchStartBoundaryCheck =
+          mFindBackward ? mWordEndBounded : mWordStartBounded;
+      if (c == patc && !matchAnchorNode && needsMatchStartBoundaryCheck) {
+        wordBreakPrev = HasWordBoundaryAtOffset(
+            mFindBackward ? charStart + 1 : charStart, state);
+      }
+    } else if (prevChar && mWordStartBounded) {
       if (prevChar == NBSP_CHARCODE) {
         prevChar = CHAR_TO_UNICHAR(' ');
       }
@@ -962,7 +1109,14 @@ already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
 
         
         
-        if (mWordEndBounded || inWhitespace) {
+
+        
+        
+        const bool needsMatchEndBoundaryCheck =
+            mSegmenterWordBoundaries
+                ? (mFindBackward ? mWordStartBounded : mWordEndBounded)
+                : mWordEndBounded;
+        if (inWhitespace || needsMatchEndBoundaryCheck) {
           int32_t nextfindex = findex + incr;
 
           char32_t nextChar;
@@ -982,10 +1136,19 @@ already_AddRefed<dom::Range> nsFind::FindFromRangeBoundaries(
             nextChar = CHAR_TO_UNICHAR(' ');
           }
 
-          
-          if (mWordEndBounded && nextChar && !BreakInBetween(c, nextChar)) {
-            EndPartialMatch();
-            continue;
+          if (mSegmenterWordBoundaries) {
+            
+            if (needsMatchEndBoundaryCheck &&
+                !HasWordBoundaryAtOffset(mFindBackward ? findex : findex + 1,
+                                         state)) {
+              EndPartialMatch();
+              continue;
+            }
+          } else if (mWordEndBounded && nextChar) {
+            if (!BreakInBetween(c, nextChar)) {
+              EndPartialMatch();
+              continue;
+            }
           }
 
           if (inWhitespace && IsSpace(nextChar)) {

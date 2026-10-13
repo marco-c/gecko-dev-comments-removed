@@ -44,6 +44,32 @@ class nsFind : public nsIFind {
     mSkipNativeAnonymousContent = aSkipNativeAnonymousContent;
   }
 
+  
+  
+  
+  struct NodeBoundaries {
+    nsTArray<uint32_t> mBoundaries;
+    uint32_t mCursor = 0;
+
+    void Add(uint32_t aOffset) { mBoundaries.AppendElement(aOffset); }
+
+    bool Contains(uint32_t aOffset) {
+      while (mCursor < mBoundaries.Length() && mBoundaries[mCursor] < aOffset) {
+        ++mCursor;
+      }
+      while (mCursor > 0 && mBoundaries[mCursor - 1] >= aOffset) {
+        --mCursor;
+      }
+      return mCursor < mBoundaries.Length() && mBoundaries[mCursor] == aOffset;
+    }
+  };
+
+  using WordBoundaryCache =
+      nsTHashMap<nsPtrHashKey<mozilla::dom::Text>, NodeBoundaries>;
+  void SetWordBoundaryCache(WordBoundaryCache* aCache) {
+    mWordBoundaryCache = aCache;
+  }
+
   already_AddRefed<mozilla::dom::Range> FindFromRangeBoundaries(
       const nsAString& aPatText, const mozilla::RangeBoundary& aStartPoint,
       const mozilla::RangeBoundary& aEndPoint);
@@ -59,8 +85,10 @@ class nsFind : public nsIFind {
   bool mWordStartBounded = false;
   bool mWordEndBounded = false;
   bool mSkipNativeAnonymousContent = false;
+  bool mSegmenterWordBoundaries = false;
   mozilla::intl::WordBreakIteratorUtf16 mWordBreakIter{nullptr};
   nsContentUtils::NodeIndexCache* mNodeIndexCache = nullptr;
+  WordBoundaryCache* mWordBoundaryCache = nullptr;
   struct State;
   class StateRestorer;
 
@@ -73,6 +101,21 @@ class nsFind : public nsIFind {
   
   
   bool BreakInBetween(char32_t x, char32_t y);
+
+  
+  
+  
+  void CollectBlockText(mozilla::dom::Text* aBlockStart, State& aState,
+                        nsAString& aCollectedText,
+                        nsTArray<mozilla::dom::Text*>& aCollectedNodes) const;
+
+  
+  mozilla::dom::Text* FindBlockStart(mozilla::dom::Text* aFromNode,
+                                     State& aState) const;
+
+  
+  
+  bool HasWordBoundaryAtOffset(int32_t aOffset, State& aState);
 
   
   
