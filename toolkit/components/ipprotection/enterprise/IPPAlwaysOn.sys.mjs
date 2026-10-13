@@ -331,6 +331,4 @@ class IPPAlwaysOnSingleton {
 
 const IPPAlwaysOn = new IPPAlwaysOnSingleton();
 
-const IPPAlwaysOnHelpers = [IPPAlwaysOn];
-
-export { IPPAlwaysOnHelpers, IPPAlwaysOnSingleton };
+export { IPPAlwaysOn, IPPAlwaysOnSingleton };

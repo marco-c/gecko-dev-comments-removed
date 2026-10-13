@@ -50,8 +50,7 @@ flowchart LR
       IPPStartupCache["Startup Cache Helper"]
       IPProtectionServerlist
       IPPProxyManager
-      IPPAutoStart["Auto-Start Helper"]
-      IPPAutoRestoreHelper["Auto-Restore Helper"]
+      IPPAutoActivation["Auto-Activation Helper"]
       IPPNimbusHelper["Nimbus Eligibility Helper"]
       IPPSessionPrefManager["Session Pref Manager"]
       IPPSiteRuleManager
@@ -165,13 +164,13 @@ IPPNetworkErrorObserver
 
 The core helper list is defined in `IPProtectionActivator.sys.mjs` (toolkit).
 
-IPPAutoStart
+IPPAutoActivation
 
-: Activates the proxy at startup time when auto-start is enabled.
-
-IPPAutoRestoreHelper
-
-: Restores the proxy state after a crash or restart when auto-restore is enabled.
+: Brings the proxy up on its own on desktop: auto-start at startup, and
+  auto-restore of a session the user left the VPN on for. `desiredMode()`
+  decides the mode. `IPProtectionActivator` picks the activation helper per
+  build: this one on desktop, `IPPAlwaysOn` on enterprise, and none on Android,
+  where the embedder decides through `IPProtectionController`.
 
 IPPStartupCache
 
