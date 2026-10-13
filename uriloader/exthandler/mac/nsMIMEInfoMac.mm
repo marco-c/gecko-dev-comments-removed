@@ -4,7 +4,10 @@
 
 
 #import <ApplicationServices/ApplicationServices.h>
+#import <Cocoa/Cocoa.h>
 
+#include "AppleUtils.h"
+#include "nsCocoaUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsObjCExceptions.h"
 #include "nsMIMEInfoMac.h"
@@ -51,10 +54,9 @@ nsMIMEInfoMac::LaunchWithFile(nsIFile* aFile) {
     rv = localHandlerApp->GetExecutable(getter_AddRefs(application));
     NS_ENSURE_SUCCESS(rv, rv);
 
-  } else if (mPreferredAction == useSystemDefault) {
-    application = GetDefaultApplication();
-  } else
+  } else if (mPreferredAction != useSystemDefault) {
     return NS_ERROR_INVALID_ARG;
+  }
 
   
   nsCOMPtr<nsILocalFileMac> app;
@@ -62,20 +64,20 @@ nsMIMEInfoMac::LaunchWithFile(nsIFile* aFile) {
     app = do_QueryInterface(application, &rv);
     if (NS_FAILED(rv)) return rv;
   } else {
+    nsAutoreleasePool localPool;
+
     
     nsCOMPtr<nsILocalFileMac> tempFile = do_QueryInterface(aFile, &rv);
-    if (NS_FAILED(rv)) return rv;
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    FSRef tempFileRef;
-    tempFile->GetFSRef(&tempFileRef);
-
-    FSRef appFSRef;
-    if (::LSGetApplicationForItem(&tempFileRef, kLSRolesAll, &appFSRef,
-                                  nullptr) == noErr) {
-      MOZ_TRY(NS_NewLocalFileWithFSRef(&appFSRef, getter_AddRefs(app)));
-    } else {
+    mozilla::AutoCFTypeRef<CFURLRef> fileURL;
+    MOZ_TRY(tempFile->GetCFURL(fileURL.Receive()));
+    NSURL* appURL = [[NSWorkspace sharedWorkspace]
+        URLForApplicationToOpenURL:(NSURL*)fileURL.Ref()];
+    if (!appURL) {
       return NS_ERROR_FAILURE;
     }
+    MOZ_TRY(NS_NewLocalFileWithCFURL((CFURLRef)appURL, getter_AddRefs(app)));
   }
   return app->LaunchWithDoc(aFile, false);
 
