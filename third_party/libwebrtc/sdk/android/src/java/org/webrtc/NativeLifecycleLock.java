@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import androidx.annotation.Nullable;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
@@ -67,6 +68,34 @@ class NativeLifecycleLock {
     }
   }
 
+  @Nullable
+  <T> T callOrDefault(NativeCallable<T> callable, @Nullable T defaultValue) {
+    lock.readLock().lock();
+    try {
+      if (nativePointer == 0) {
+        Logging.w(className, className + " has been disposed.");
+        return defaultValue;
+      }
+      return callable.call();
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  @Nullable
+  <T> T callOrDefault(NativePointerCallable<T> callable, @Nullable T defaultValue) {
+    lock.readLock().lock();
+    try {
+      if (nativePointer == 0) {
+        Logging.w(className, className + " has been disposed.");
+        return defaultValue;
+      }
+      return callable.call(nativePointer);
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
   void run(NativeRunnable runnable) {
     lock.readLock().lock();
     try {
@@ -82,6 +111,34 @@ class NativeLifecycleLock {
     try {
       checkNotDisposed();
       runnable.run(nativePointer);
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  boolean runIfAlive(NativeRunnable runnable) {
+    lock.readLock().lock();
+    try {
+      if (nativePointer == 0) {
+        Logging.w(className, className + " has been disposed.");
+        return false;
+      }
+      runnable.run();
+      return true;
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  boolean runIfAlive(NativePointerRunnable runnable) {
+    lock.readLock().lock();
+    try {
+      if (nativePointer == 0) {
+        Logging.w(className, className + " has been disposed.");
+        return false;
+      }
+      runnable.run(nativePointer);
+      return true;
     } finally {
       lock.readLock().unlock();
     }

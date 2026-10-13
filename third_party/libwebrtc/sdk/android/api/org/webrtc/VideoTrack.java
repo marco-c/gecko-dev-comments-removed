@@ -27,7 +27,6 @@ public class VideoTrack extends MediaStreamTrack {
 
 
 
-
   public void addSink(VideoSink sink) {
     if (sink == null) {
       throw new IllegalArgumentException("The VideoSink is not allowed to be null");
@@ -52,7 +51,7 @@ public class VideoTrack extends MediaStreamTrack {
 
 
   public void removeSink(VideoSink sink) {
-    lifecycleLock.run(
+    lifecycleLock.runIfAlive(
         nativeTrack -> {
           synchronized (sinks) {
             final Long nativeSink = sinks.remove(sink);

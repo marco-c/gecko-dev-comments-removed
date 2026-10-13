@@ -123,7 +123,7 @@ public class DataChannel {
 
   
   public void unregisterObserver() {
-    lifecycleLock.run(
+    lifecycleLock.runIfAlive(
         () -> {
           nativeUnregisterObserver(nativeObserver);
           nativeObserver = 0;
@@ -152,7 +152,7 @@ public class DataChannel {
 
   
   public void close() {
-    lifecycleLock.run(() -> nativeClose());
+    lifecycleLock.runIfAlive(() -> nativeClose());
   }
 
   
@@ -173,11 +173,7 @@ public class DataChannel {
       return;
     }
     if (nativeObserver != 0) {
-      try {
-        unregisterObserver();
-      } catch (IllegalStateException e) {
-        
-      }
+      unregisterObserver();
     }
     lifecycleLock.dispose(channel -> JniCommon.nativeReleaseRef(channel));
   }
