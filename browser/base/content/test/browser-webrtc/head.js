@@ -703,6 +703,25 @@ async function getBrowsingContextsAndFrameIdsForSubFrames(
 
 
 
+let gPrincipalsRequestingDevices = new Map();
+function clearDevicePermissionsAtEnd(principal) {
+  if (!gPrincipalsRequestingDevices.size) {
+    registerCleanupFunction(() => {
+      for (let p of gPrincipalsRequestingDevices.values()) {
+        for (let type of ["camera", "microphone", "MediaManagerVideo"]) {
+          Services.perms.removeFromPrincipal(p, type);
+        }
+      }
+      gPrincipalsRequestingDevices.clear();
+    });
+  }
+  gPrincipalsRequestingDevices.set(principal.origin, principal);
+}
+
+
+
+
+
 
 
 
@@ -725,6 +744,11 @@ async function promiseRequestDevice(
   let bc =
     aBrowsingContext ??
     (await getBrowsingContextForFrame(gBrowser.selectedBrowser, aFrameId));
+  clearDevicePermissionsAtEnd(
+    BrowsingContext.isInstance(bc)
+      ? bc.top.currentWindowGlobal.documentPrincipal
+      : bc.contentPrincipal
+  );
 
   if (viaButtonClick) {
     return SpecialPowers.spawn(
