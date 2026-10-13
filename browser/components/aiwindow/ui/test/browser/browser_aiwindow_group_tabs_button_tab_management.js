@@ -384,6 +384,12 @@ describe("Auto Tab Grouping toolbar button", () => {
         [openRow, "Open group"],
         [savedRow, "Saved group"],
       ]) {
+        
+        
+        await TestUtils.waitForCondition(
+          () => accService.getAccessibleFor(groupRow)?.name === name,
+          `${name} gets its accessible name`
+        );
         const acc = accService.getAccessibleFor(groupRow);
         Assert.equal(
           acc.role,
