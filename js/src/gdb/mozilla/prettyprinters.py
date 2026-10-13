@@ -216,19 +216,21 @@ class TypeCache:
         self.uintptr_t = gdb.lookup_type("uintptr_t")
         try:
             self.JSString_ptr_t = gdb.lookup_type("JSString").pointer()
+            self.StringFlags_ptr_t = gdb.lookup_type("js::StringFlags").pointer()
             self.JSSymbol_ptr_t = gdb.lookup_type("JS::Symbol").pointer()
             self.JSObject_ptr_t = gdb.lookup_type("JSObject").pointer()
         except gdb.error:
             raise NotSpiderMonkeyObjfileError
 
+        self.mod_CellHeader = None
         self.mod_GCCellPtr = None
         self.mod_Interpreter = None
         self.mod_JSObject = None
         self.mod_JSOp = None
-        self.mod_JSString = None
         self.mod_JS_Value = None
         self.mod_ExecutableAllocator = None
         self.mod_IonGraph = None
+        self.mod_StringFlags = None
 
 
 
