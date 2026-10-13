@@ -146,10 +146,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
  protected:
   friend class VideoStreamEncoderFrameCadenceRestrictionTest;
 
-  
-  
-  TaskQueueBase* encoder_queue() { return encoder_queue_.get(); }
-
   void OnVideoSourceRestrictionsUpdated(
       VideoSourceRestrictions restrictions,
       const VideoAdaptationCounters& adaptation_counters,
