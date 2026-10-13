@@ -1727,8 +1727,6 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult TurnEditingOff();
 
   
-  
-  
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult EditingStateChanged();
 
   void MaybeEditingStateChanged();
