@@ -45,6 +45,17 @@ namespace webrtc {
 
 
 
+enum class NeuralResidualEchoEstimatorInitResult {
+  kSuccess = 0,
+  kModelLoadFailed = 1,
+  kDestroyedBeforeResolved = 2,
+  kNumCategories = 3,
+};
+
+
+
+
+
 
 class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
  public:
@@ -87,6 +98,7 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
   
   explicit NeuralResidualEchoEstimatorImpl(
       std::unique_ptr<ModelRunner> model_runner);
+  ~NeuralResidualEchoEstimatorImpl() override;
 
   void Estimate(
       const Block& render,
@@ -127,6 +139,8 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
   
   struct CrossThreadState : public RefCountInterface {
    public:
+    enum class Resolution { kPending, kSuccess, kFailed };
+
     
     
     
@@ -134,6 +148,12 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
       webrtc::MutexLock lock(&mutex_);
       RTC_DCHECK(!model_bundle_);
       model_bundle_ = std::move(bundle);
+      resolution_ = Resolution::kSuccess;
+    }
+
+    void MarkFailed() {
+      webrtc::MutexLock lock(&mutex_);
+      resolution_ = Resolution::kFailed;
     }
 
     
@@ -142,9 +162,15 @@ class NeuralResidualEchoEstimatorImpl : public NeuralResidualEchoEstimator {
       return std::move(model_bundle_);
     }
 
+    Resolution GetResolution() const {
+      webrtc::MutexLock lock(&mutex_);
+      return resolution_;
+    }
+
    private:
     mutable webrtc::Mutex mutex_;
     std::unique_ptr<ModelBundle> model_bundle_ RTC_GUARDED_BY(mutex_);
+    Resolution resolution_ RTC_GUARDED_BY(mutex_) = Resolution::kPending;
   };
 
   
