@@ -80,24 +80,6 @@ class DeleteRangeTransaction final : public EditAggregateTransaction {
 
 
 
-  nsresult MaybeExtendDeletingRangeWithSurroundingWhitespace(
-      dom::Range& aRange) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   nsresult AppendTransactionsToDeleteIn(
       const EditorRawDOMRange& aRangeToDelete);

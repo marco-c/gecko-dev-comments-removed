@@ -635,6 +635,25 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
   ExtendAnchorFocusRangeFor(const EditorBase& aEditorBase,
                             nsIEditor::EDirection aDirectionAndAmount);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void MaybeExtendAnchorFocusRangeToDeleteAdjacentWhiteSpace(
+      const EditorBase& aEditorBase);
+
  private:
   void SetNewCaretAssociationHint(
       const RawRangeBoundary& aRawRangeBoundary,

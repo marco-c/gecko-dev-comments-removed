@@ -1022,6 +1022,22 @@ class EditorBase : public nsIEditor,
       mSelectionCreatedByDoubleclick = aSelectionCreatedByDoubleclick;
     }
 
+    
+
+
+
+    void SetSelectionCreatedByDoubleclickOfEditActionDispatchingInputEvent(
+        bool aSelectionCreatedByDoubleclick) {
+      for (AutoEditActionDataSetter* editActionData = this; editActionData;
+           editActionData = editActionData->mParentData) {
+        if (editActionData->mDispatchingInputEvent) {
+          editActionData->SetSelectionCreatedByDoubleclick(
+              aSelectionCreatedByDoubleclick);
+          return;
+        }
+      }
+    }
+
     [[nodiscard]] bool SelectionCreatedByDoubleclick() const {
       return mSelectionCreatedByDoubleclick;
     }
@@ -1676,6 +1692,14 @@ class EditorBase : public nsIEditor,
   EditAction GetEditAction() const {
     return mEditActionData ? mEditActionData->GetEditAction()
                            : EditAction::eNone;
+  }
+
+  
+
+
+
+  [[nodiscard]] bool IsSelectionCreatedByDoubleclick() const {
+    return mEditActionData && mEditActionData->SelectionCreatedByDoubleclick();
   }
 
   
