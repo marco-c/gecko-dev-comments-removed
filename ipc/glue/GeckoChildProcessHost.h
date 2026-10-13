@@ -356,6 +356,19 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
 
 nsCOMPtr<nsISerialEventTarget> GetIPCLauncher();
 
+#ifdef MOZ_WIDGET_COCOA
+enum class MacOSChildProcessBundleType { EME, GPU, PKCS11, Default, Count };
+
+nsLiteralCString GetChildProcessBundleNameForTesting(
+    MacOSChildProcessBundleType aBundleType);
+
+
+
+
+bool ResolveChildProcessPathFromPlistForTesting(
+    MacOSChildProcessBundleType aBundleType, nsACString& aExecutablePath);
+#endif  
+
 } 
 } 
 

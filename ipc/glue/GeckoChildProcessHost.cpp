@@ -15,12 +15,14 @@
 #  include <mach/mach_traps.h>
 #  include "base/rand_util.h"
 #  include "chrome/common/mach_ipc_mac.h"
+#  include "mozilla/StaticPrefs_dom.h"
 #  include "mozilla/StaticPrefs_layers.h"
 #  include "mozilla/StaticPrefs_media.h"
 #endif
 #ifdef MOZ_WIDGET_COCOA
 #  include <bsm/libbsm.h>
 #  include <servers/bootstrap.h>
+#  include "mozilla/EnumeratedArray.h"
 #  include "nsILocalFileMac.h"
 #endif
 
@@ -516,6 +518,199 @@ void GeckoChildProcessHost::Destroy() {
                   [this](const Value&) { delete this; });
 }
 
+#ifdef MOZ_WIDGET_COCOA
+
+static mozilla::StaticMutex sCachedExecutablePathMutex;
+static mozilla::EnumeratedArray<MacOSChildProcessBundleType, const char*,
+                                size_t(MacOSChildProcessBundleType::Count)>
+    sCachedExecutablePaths MOZ_GUARDED_BY(sCachedExecutablePathMutex);
+
+
+
+
+static MacOSChildProcessBundleType GetMacOSChildProcessBundleType(
+    GeckoProcessType processType, SandboxingKind utilitySandbox) {
+  if (processType == GeckoProcessType_GMPlugin &&
+      mozilla::StaticPrefs::media_plugin_helper_process_enabled()) {
+    return MacOSChildProcessBundleType::EME;
+  }
+  if (processType == GeckoProcessType_GPU &&
+      mozilla::StaticPrefs::layers_gpu_process_executable_enabled()) {
+    return MacOSChildProcessBundleType::GPU;
+  }
+#  if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  if (processType == GeckoProcessType_Utility &&
+      utilitySandbox == PKCS11_MODULE) {
+    return MacOSChildProcessBundleType::PKCS11;
+  }
+#  endif
+  return MacOSChildProcessBundleType::Default;
+}
+
+static nsLiteralCString GetBundleNameForType(
+    MacOSChildProcessBundleType bundleType) {
+  switch (bundleType) {
+    case MacOSChildProcessBundleType::EME:
+      return nsLiteralCString(MOZ_EME_PROCESS_BUNDLENAME);
+    case MacOSChildProcessBundleType::GPU:
+      return nsLiteralCString(MOZ_GPU_PROCESS_BUNDLENAME);
+#  if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+    case MacOSChildProcessBundleType::PKCS11:
+      return nsLiteralCString(MOZ_PKCS11_PROCESS_BUNDLENAME);
+#  else
+    case MacOSChildProcessBundleType::PKCS11:
+#  endif
+    case MacOSChildProcessBundleType::Default:
+      return nsLiteralCString(MOZ_CHILD_PROCESS_BUNDLENAME);
+    case MacOSChildProcessBundleType::Count:
+      break;
+  }
+  MOZ_CRASH("Unexpected MacOSChildProcessBundleType");
+}
+
+#  define BUNDLE_EXEC_PATH(name)    \
+    MOZ_##name##_PROCESS_BUNDLENAME \
+        "/Contents/MacOS/" MOZ_##name##_PROCESS_NAME_BRANDED
+
+
+static const char* GetBundleExecutablePathForType(
+    MacOSChildProcessBundleType bundleType) {
+  switch (bundleType) {
+    case MacOSChildProcessBundleType::EME:
+      return BUNDLE_EXEC_PATH(EME);
+    case MacOSChildProcessBundleType::GPU:
+      return BUNDLE_EXEC_PATH(GPU);
+#  if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+    case MacOSChildProcessBundleType::PKCS11:
+      return BUNDLE_EXEC_PATH(PKCS11);
+#  else
+    case MacOSChildProcessBundleType::PKCS11:
+#  endif
+    
+    case MacOSChildProcessBundleType::Default:
+      return MOZ_CHILD_PROCESS_BUNDLENAME
+          "/Contents/MacOS/" MOZ_CHILD_PROCESS_NAME;
+    case MacOSChildProcessBundleType::Count:
+      break;
+  }
+  MOZ_CRASH("Unexpected MacOSChildProcessBundleType");
+}
+
+#  undef BUNDLE_EXEC_PATH
+
+
+
+static void GetExecutablePathFromBranding(
+    FilePath& aExecutablePath, MacOSChildProcessBundleType aBundleType) {
+  const char* executablePath = GetBundleExecutablePathForType(aBundleType);
+
+  if (ShouldHaveDirectoryService()) {
+    MOZ_ASSERT(gGREBinPath);
+    nsCOMPtr<nsIFile> childProcPath;
+    if (NS_SUCCEEDED(NS_NewLocalFile(nsDependentString(gGREBinPath),
+                                     getter_AddRefs(childProcPath)))) {
+      if (NS_SUCCEEDED(childProcPath->AppendRelativeNativePath(
+              nsDependentCString(executablePath)))) {
+        nsCString tempCPath;
+        if (NS_SUCCEEDED(childProcPath->GetNativePath(tempCPath))) {
+          aExecutablePath = FilePath(tempCPath.get());
+        }
+      }
+    }
+  }
+
+  if (aExecutablePath.empty()) {
+    aExecutablePath = FilePath(CommandLine::ForCurrentProcess()->argv()[0]);
+    aExecutablePath = aExecutablePath.DirName();
+    aExecutablePath = aExecutablePath.Append(executablePath);
+  }
+}
+
+
+static bool GetExecutablePathFromPlist(
+    FilePath& aExecutablePath, MacOSChildProcessBundleType aBundleType) {
+  if (!ShouldHaveDirectoryService()) {
+    return false;
+  }
+
+  MOZ_ASSERT(gGREBinPath);
+
+  nsCOMPtr<nsIFile> bundlePath;
+  if (NS_FAILED(NS_NewLocalFile(nsDependentString(gGREBinPath),
+                                getter_AddRefs(bundlePath)))) {
+    return false;
+  }
+
+  const nsLiteralCString bundleName = GetBundleNameForType(aBundleType);
+  if (NS_FAILED(bundlePath->AppendNative(bundleName))) {
+    return false;
+  }
+
+  nsCString bundlePathStr = bundlePath->NativePath();
+
+  nsAutoCString executablePath;
+  if (NS_FAILED(nsMacUtilsImpl::GetExecutablePathFromBundle(bundlePathStr,
+                                                            executablePath))) {
+    return false;
+  }
+
+  aExecutablePath = FilePath(executablePath.get());
+  return true;
+}
+
+static void GetPathToBinaryMacOS(FilePath& aExecutablePath,
+                                 GeckoProcessType aProcessType,
+                                 SandboxingKind aUtilitySandbox) {
+  MacOSChildProcessBundleType bundleType =
+      GetMacOSChildProcessBundleType(aProcessType, aUtilitySandbox);
+
+  {
+    StaticMutexAutoLock lock(sCachedExecutablePathMutex);
+    if (sCachedExecutablePaths[bundleType]) {
+      aExecutablePath = FilePath(sCachedExecutablePaths[bundleType]);
+      return;
+    }
+  }
+
+  bool resolved = false;
+  if (mozilla::StaticPrefs::dom_ipc_processLaunch_useMacPlists_AtStartup()) {
+    resolved = GetExecutablePathFromPlist(aExecutablePath, bundleType);
+    if (!resolved) {
+      MOZ_LOG(gChildProcessLifecycleLog, LogLevel::Warning,
+              ("Could not read the executable name from %s; falling back to "
+               "compile-time branding, which may not match the files on disk",
+               GetBundleNameForType(bundleType).get()));
+    }
+  }
+  if (!resolved) {
+    GetExecutablePathFromBranding(aExecutablePath, bundleType);
+  }
+
+  StaticMutexAutoLock lock(sCachedExecutablePathMutex);
+  if (!sCachedExecutablePaths[bundleType]) {
+    sCachedExecutablePaths[bundleType] =
+        moz_xstrdup(aExecutablePath.value().c_str());
+  }
+}
+
+nsLiteralCString GetChildProcessBundleNameForTesting(
+    MacOSChildProcessBundleType aBundleType) {
+  return GetBundleNameForType(aBundleType);
+}
+
+bool ResolveChildProcessPathFromPlistForTesting(
+    MacOSChildProcessBundleType aBundleType, nsACString& aExecutablePath) {
+  FilePath executablePath;
+  if (!GetExecutablePathFromPlist(executablePath, aBundleType)) {
+    return false;
+  }
+
+  aExecutablePath.Assign(executablePath.value().c_str());
+  return true;
+}
+
+#endif  
+
 
 mozilla::BinPathType BaseProcessLauncher::GetPathToBinary(
     FilePath& exePath, GeckoProcessType processType,
@@ -537,75 +732,35 @@ mozilla::BinPathType BaseProcessLauncher::GetPathToBinary(
   }
 
 #ifdef MOZ_WIDGET_COCOA
-  
-  
-  
-  nsCString bundleName;
-  std::string executableLeafName;
-  if (processType == GeckoProcessType_GMPlugin &&
-      mozilla::StaticPrefs::media_plugin_helper_process_enabled()) {
-    
-    bundleName = MOZ_EME_PROCESS_BUNDLENAME;
-    executableLeafName = MOZ_EME_PROCESS_NAME_BRANDED;
-  } else if (processType == GeckoProcessType_GPU &&
-             mozilla::StaticPrefs::layers_gpu_process_executable_enabled()) {
-    
-    bundleName = MOZ_GPU_PROCESS_BUNDLENAME;
-    executableLeafName = MOZ_GPU_PROCESS_NAME_BRANDED;
-#  if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-  } else if (processType == GeckoProcessType_Utility &&
-             utilitySandbox == PKCS11_MODULE) {
-    bundleName = MOZ_PKCS11_PROCESS_BUNDLENAME;
-    executableLeafName = MOZ_PKCS11_PROCESS_NAME_BRANDED;
-#  endif
-  } else {
-    
-    bundleName = MOZ_CHILD_PROCESS_BUNDLENAME;
-    executableLeafName = MOZ_CHILD_PROCESS_NAME;
-  }
-#endif
-
+  GetPathToBinaryMacOS(exePath, processType, utilitySandbox);
+#elif defined(XP_WIN)
   if (ShouldHaveDirectoryService()) {
     MOZ_ASSERT(gGREBinPath);
-#ifdef XP_WIN
     exePath = FilePath(char16ptr_t(gGREBinPath));
-#elif MOZ_WIDGET_COCOA
-    nsCOMPtr<nsIFile> childProcPath;
-    if (NS_SUCCEEDED(NS_NewLocalFile(nsDependentString(gGREBinPath),
-                                     getter_AddRefs(childProcPath)))) {
-      
-      
-      if (NS_SUCCEEDED(childProcPath->AppendNative(bundleName)) &&
-          NS_SUCCEEDED(childProcPath->AppendNative("Contents"_ns)) &&
-          NS_SUCCEEDED(childProcPath->AppendNative("MacOS"_ns))) {
-        nsCString tempCPath;
-        if (NS_SUCCEEDED(childProcPath->GetNativePath(tempCPath))) {
-          exePath = FilePath(tempCPath.get());
-        }
-      }
-    }
+  }
+
+  if (exePath.empty()) {
+    exePath =
+        FilePath::FromWStringHack(CommandLine::ForCurrentProcess()->program());
+    exePath = exePath.DirName();
+  }
+
+  exePath = exePath.AppendASCII(MOZ_CHILD_PROCESS_NAME);
 #else
+  if (ShouldHaveDirectoryService()) {
+    MOZ_ASSERT(gGREBinPath);
     nsCString path;
     if (NS_SUCCEEDED(
             NS_CopyUnicodeToNative(nsDependentString(gGREBinPath), path))) {
       exePath = FilePath(path.get());
     }
-#endif
   }
 
   if (exePath.empty()) {
-#ifdef XP_WIN
-    exePath =
-        FilePath::FromWStringHack(CommandLine::ForCurrentProcess()->program());
-#else
     exePath = FilePath(CommandLine::ForCurrentProcess()->argv()[0]);
-#endif
     exePath = exePath.DirName();
   }
 
-#ifdef MOZ_WIDGET_COCOA
-  exePath = exePath.Append(executableLeafName);
-#else
   exePath = exePath.AppendASCII(MOZ_CHILD_PROCESS_NAME);
 #endif
 

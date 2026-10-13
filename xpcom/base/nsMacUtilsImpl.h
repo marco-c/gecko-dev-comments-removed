@@ -66,6 +66,12 @@ nsCString CodeSignatureTypeToString(CodeSignatureType aType);
 
 CodeSignatureType GetSignatureType(const nsCString& aPath);
 
+
+
+
+nsresult GetExecutablePathFromBundle(const nsCString& aBundlePath,
+                                     nsACString& aExecutablePath);
+
 }  
 
 #endif 
