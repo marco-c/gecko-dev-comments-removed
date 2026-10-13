@@ -967,24 +967,24 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
     return;
   }
 
-  LocalAccessible* accessible = GetAccessible(aElement);
+  LocalAccessible* accessible = GetAccessibleOrDocument(aElement);
   if (!accessible) {
-    if (mContent == aElement) {
+    if (aModType == AttrModType::Addition &&
+        aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
       
       
-      accessible = this;
-    } else {
-      if (aModType == AttrModType::Addition &&
-          aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
-        
-        
-        ContentInserted(aElement, aElement->GetNextSibling());
-        return;
-      }
-      
-      
+      ContentInserted(aElement, aElement->GetNextSibling());
       return;
     }
+    if (aAttribute == nsGkAtoms::contenteditable) {
+      
+      
+      ContentInserted(aElement, aElement->GetNextSibling());
+      return;
+    }
+    
+    
+    return;
   }
 
   MOZ_ASSERT(accessible->IsBoundToParent() || accessible->IsDoc(),

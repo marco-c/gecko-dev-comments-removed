@@ -278,10 +278,6 @@ addAccessibleTask(
     ]);
     
     await invokeContentTask(browser, [], () => {
-      
-      
-      
-      content.document.body.setAttribute("aria-label", "body");
       content.document.body.contentEditable = "true";
     });
     await evs;
@@ -373,4 +369,28 @@ addAccessibleTask(
     chrome: true,
     topLevel: true,
   }
+);
+
+
+
+
+
+
+addAccessibleTask(
+  `<span id="editable"></span>`,
+  async function testEditableBecomesAccessible(browser, docAcc) {
+    
+    let editable = findAccessibleChildByID(docAcc, "editable");
+    ok(!editable, "editable does not have an Accessible");
+
+    const shown = waitForEvent(EVENT_SHOW, "editable");
+    info("Setting contentEditable on editable");
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("editable").contentEditable = "true";
+    });
+    editable = (await shown).accessible;
+    ok(editable, "editable has an Accessible");
+    testStates(editable, 0, EXT_STATE_EDITABLE);
+  },
+  { chrome: true, topLevel: true }
 );
