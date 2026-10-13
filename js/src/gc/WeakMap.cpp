@@ -113,8 +113,10 @@ bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor,
       
       
       delegate->storeBuffer()->putWholeCell(key);
-    } else if (!addEphemeronEdge(mapColor, &delegate->asTenured(), key)) {
-      return false;
+    } else if (delegate->zone()->isGCMarking()) {
+      if (!addEphemeronEdge(mapColor, &delegate->asTenured(), key)) {
+        return false;
+      }
     }
   }
 
@@ -129,7 +131,10 @@ bool WeakMapBase::addEphemeronEdge(MarkColor color, gc::TenuredCell* src,
                                    gc::TenuredCell* dst) {
   
 
-  auto& edgeTable = src->zone()->gcEphemeronEdges();
+  Zone* zone = src->zone();
+  MOZ_ASSERT(zone->isGCMarking());
+
+  auto& edgeTable = zone->gcEphemeronEdges();
   auto p = edgeTable.lookupForAdd(src);
   if (!p) {
     if (!edgeTable.add(p, src, EphemeronEdgeVector())) {
