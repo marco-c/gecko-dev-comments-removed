@@ -61,8 +61,7 @@ nr_stun_receive_message(nr_stun_message *req, nr_stun_message *msg)
     
 
 
-    if (msg->header.magic_cookie == NR_STUN_MAGIC_COOKIE
-     || msg->header.magic_cookie == NR_STUN_MAGIC_COOKIE2) {
+    if (msg->header.magic_cookie == NR_STUN_MAGIC_COOKIE) {
 #endif
     if (!nr_is_stun_message(msg->buffer, msg->length)) {
         r_log(NR_LOG_STUN, LOG_WARNING, "Not a STUN message");
@@ -107,12 +106,6 @@ nr_stun_receive_message(nr_stun_message *req, nr_stun_message *msg)
         }
 
         break;
-
-#ifdef USE_STUND_0_96
-    case NR_STUN_MAGIC_COOKIE2:
-        
-        break;
-#endif 
 
     default:
 #ifdef USE_RFC_3489_BACKWARDS_COMPATIBLE
@@ -325,12 +318,6 @@ nr_stun_receive_request_or_indication_short_term_auth(nr_stun_message *msg,
         }
 
         break;
-
-#ifdef USE_STUND_0_96
-    case NR_STUN_MAGIC_COOKIE2:
-        
-        break;
-#endif 
     }
 
     _status=0;
@@ -361,12 +348,6 @@ nr_stun_receive_response_short_term_auth(nr_stun_message *res)
         }
 
         break;
-
-#ifdef USE_STUND_0_96
-    case NR_STUN_MAGIC_COOKIE2:
-        
-        break;
-#endif 
     }
 
    _status=0;
@@ -483,12 +464,6 @@ nr_stun_receive_request_long_term_auth(nr_stun_message *req, nr_stun_server_ctx 
         }
 
         break;
-
-#ifdef USE_STUND_0_96
-    case NR_STUN_MAGIC_COOKIE2:
-        
-        break;
-#endif 
     }
 
     _status=0;
@@ -539,12 +514,6 @@ nr_stun_receive_response_long_term_auth(nr_stun_message *res, nr_stun_client_ctx
         }
 
         break;
-
-#ifdef USE_STUND_0_96
-    case NR_STUN_MAGIC_COOKIE2:
-        
-        break;
-#endif 
     }
 
     _status=0;
