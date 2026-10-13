@@ -811,7 +811,7 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
   
   
   
-  nsTArray<PContentPermissionRequestParent*> parentArray =
+  nsTArray<RefPtr<PContentPermissionRequestParent>> parentArray =
       nsContentPermissionUtils::GetContentPermissionRequestParentById(mTabId);
   for (auto& permissionRequestParent : parentArray) {
     (void)PContentPermissionRequestParent::Send__delete__(

@@ -3014,14 +3014,15 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
   MOZ_ASSERT(!mDestroyed);
   mDestroyed = true;
 
-  nsTArray<PContentPermissionRequestChild*> childArray =
+  nsTArray<RefPtr<PContentPermissionRequestChild>> childArray =
       nsContentPermissionUtils::GetContentPermissionRequestChildById(
           GetTabId());
 
   
   
   for (auto& permissionRequestChild : childArray) {
-    auto* child = static_cast<RemotePermissionRequest*>(permissionRequestChild);
+    auto* child =
+        static_cast<RemotePermissionRequest*>(permissionRequestChild.get());
     child->Destroy();
   }
 
