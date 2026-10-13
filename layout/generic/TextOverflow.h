@@ -260,9 +260,6 @@ class TextOverflow final {
   nsSize mBlockSize;
   WritingMode mBlockWM;
   bool mCanHaveInlineAxisScrollbar;
-  
-  
-  const bool mInLineClampContext;
   bool mAdjustForPixelSnapping;
 
   class Marker {
@@ -278,17 +275,15 @@ class TextOverflow final {
       mEdgeAligned = false;
     }
 
+    inline bool IsIStartSuppressed() { return mTextOverflowStyle->IsClip(); }
+    inline bool IsIEndSuppressed() {
+      return IsIStartSuppressed() && !HasBlockEllipsis();
+    }
+
     
 
 
     void SetupString(nsIFrame* aFrame);
-
-    bool IsSuppressed(bool aInLineClampContext) const {
-      if (aInLineClampContext) {
-        return !HasBlockEllipsis();
-      }
-      return mTextOverflowStyle->IsClip();
-    }
     bool IsNeeded() const { return mHasOverflow || HasBlockEllipsis(); }
     void Reset() {
       mHasOverflow = false;
