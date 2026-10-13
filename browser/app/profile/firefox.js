@@ -2366,6 +2366,14 @@ pref("sidebar.openTabsPanel.hoverPreview.enabled", true);
 
 pref("sidebar.notification.badge.aichat", false);
 
+
+
+
+pref(
+  "sidebar.newTool.migration.passwords",
+  '{"visibilityPref":"browser.contextual-password-manager.enabled"}'
+);
+
 pref("browser.resourceMonitor.enabled", false);
 
 
