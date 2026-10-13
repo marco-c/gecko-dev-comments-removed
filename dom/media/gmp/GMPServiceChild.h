@@ -49,6 +49,11 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService {
   static void UpdateGMPCapabilities(
       nsTArray<mozilla::dom::GMPCapabilityData>&& aCapabilities);
 
+  
+  
+  static bool HasCapabilityForAPI(const nsACString& aAPI,
+                                  const nsTArray<nsCString>& aTags);
+
   void BeginShutdown();
 
  protected:
