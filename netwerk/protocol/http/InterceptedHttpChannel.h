@@ -72,6 +72,8 @@ class InterceptedHttpChannel final
   nsCOMPtr<nsIInputStream> mBodyReader;
   nsCOMPtr<nsISupports> mReleaseHandle;
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
+  
+  Atomic<bool> mHasProgressSink{false};
   nsCOMPtr<nsIInterceptedBodyCallback> mBodyCallback;
   nsCOMPtr<nsICacheInfoChannel> mSynthesizedCacheInfo;
   RefPtr<nsInputStreamPump> mPump;
