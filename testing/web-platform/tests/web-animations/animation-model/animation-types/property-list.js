@@ -10,19 +10,25 @@ const gCSSProperties1 = {
   'align-content': {
     
     types: [
-      { type: 'discrete' , options: [ [ 'flex-start', 'flex-end' ] ] }
+      { type: 'discrete' , options: [
+        [ 'flex-start', 'flex-end', 'flow-start', 'flow-end' ]
+      ] }
     ]
   },
   'align-items': {
     
     types: [
-      { type: 'discrete', options: [ [ 'flex-start', 'flex-end' ] ] }
+      { type: 'discrete', options: [
+        [ 'flex-start', 'flex-end', 'flow-start', 'flow-end' ]
+      ] }
     ]
   },
   'align-self': {
     
     types: [
-      { type: 'discrete', options: [ [ 'flex-start', 'flex-end' ] ] }
+      { type: 'discrete', options: [
+        [ 'flex-start', 'flex-end', 'flow-start', 'flow-end' ]
+      ] }
     ]
   },
   'anchor-name': {
@@ -832,343 +838,290 @@ const gCSSProperties1 = {
 const gCSSProperties2 = {
   'inline-size': {
     
-    types: [
-    ]
+    types: []
   },
   'isolation': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'isolate' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'isolate']]}]
   },
   'justify-content': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'justify-items': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'justify-self': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'left': {
     
-    types: [
-    ]
+    types: []
   },
   'letter-spacing': {
     
-    types: [ 'lengthPercentageOrCalc' ]
+    types: ['lengthPercentageOrCalc']
   },
   'lighting-color': {
     
-    types: [ 'color' ]
+    types: ['color']
   },
   'line-height': {
     
-    types: [
-        { type: 'discrete', options: [ [ 'normal', '10px' ],
-                                       [ 'normal', '10', 'normal', '100px' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options: [['normal', '10px'], ['normal', '10', 'normal', '100px']]
+    }]
   },
   'list-style': {
     
     types: [
-      { type: 'discrete', options: [ [ 'inside url("http://localhost/test-1") circle', 'outside url("http://localhost/test-2") square' ] ] },
+      {
+        type: 'discrete',
+        options: [[
+          'inside url("http://localhost/test-1") circle',
+          'outside url("http://localhost/test-2") square'
+        ]]
+      },
     ]
   },
   'list-style-image': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'list-style-position': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'inside', 'outside' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['inside', 'outside']]}]
   },
   'list-style-type': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'circle', 'square' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['circle', 'square']]}]
   },
-  "math-depth": {
+  'math-depth': {
     
-    types: [ "integer" ],
+    types: ['integer'],
   },
-  "math-shift": {
+  'math-shift': {
     
     types: [
-      { type: "discrete", options: [ [ "normal", "compact" ] ] },
+      {type: 'discrete', options: [['normal', 'compact']]},
     ],
   },
-  "math-style": {
+  'math-style': {
     
     types: [
-      { type: "discrete", options: [ [ "normal", "compact" ] ] },
+      {type: 'discrete', options: [['normal', 'compact']]},
     ],
   },
   'margin-block-end': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-block-start': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-bottom': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-inline-end': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-inline-start': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-left': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-right': {
     
-    types: [
-    ]
+    types: []
   },
   'margin-top': {
     
-    types: [
-    ]
+    types: []
   },
   'marker-end': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'marker-mid': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'marker-start': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'mask': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'mask-clip': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'content-box', 'border-box' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['content-box', 'border-box']]}]
   },
   'mask-composite': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'add', 'subtract' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['add', 'subtract']]}]
   },
   'mask-image': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'mask-mode': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'alpha', 'luminance' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['alpha', 'luminance']]}]
   },
   'mask-origin': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'content-box', 'border-box' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['content-box', 'border-box']]}]
   },
   'mask-position': {
     
-    types: [
-    ]
+    types: []
   },
   'mask-position-x': {
     
-    types: [
-    ]
+    types: []
   },
   'mask-position-y': {
     
-    types: [
-    ]
+    types: []
   },
   'mask-repeat': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'space', 'round' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['space', 'round']]}]
   },
   'mask-size': {
     
-    types: [
-    ]
+    types: []
   },
   'mask-type': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'alpha', 'luminance' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['alpha', 'luminance']]}]
   },
   'max-block-size': {
     
-    types: [
-    ]
+    types: []
   },
   'max-height': {
     
-    types: [
-    ]
+    types: []
   },
   'max-inline-size': {
     
-    types: [
-    ]
+    types: []
   },
   'max-width': {
     
-    types: [
-    ]
+    types: []
   },
   'min-block-size': {
     
-    types: [
-    ]
+    types: []
   },
   'min-height': {
     
-    types: [
-    ]
+    types: []
   },
   'min-inline-size': {
     
-    types: [
-    ]
+    types: []
   },
   'min-width': {
     
-    types: [
-    ]
+    types: []
   },
   'mix-blend-mode': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'multiply', 'screen' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['multiply', 'screen']]}]
   },
   'object-fit': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'fill', 'contain' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['fill', 'contain']]}]
   },
   'object-position': {
     
-    types: [
-    ]
+    types: []
   },
   'inset-block-end': {
     
-    types: [
-    ]
+    types: []
   },
   'inset-block-start': {
     
-    types: [
-    ]
+    types: []
   },
   'inset-inline-end': {
     
-    types: [
-    ]
+    types: []
   },
   'inset-inline-start': {
     
-    types: [
-    ]
+    types: []
   },
   'offset-distance': {
     
-    types: [ 'lengthPercentageOrCalc' ]
+    types: ['lengthPercentageOrCalc']
   },
   'offset-path': {
     
-    types: [
-    ]
+    types: []
   },
   'opacity': {
     
-    types: [
-    ]
+    types: []
   },
   'order': {
     
-    types: [ 'integer' ]
+    types: ['integer']
   },
   'outline-color': {
     
-    types: [ 'color' ]
+    types: ['color']
   },
   'outline-offset': {
     
-    types: [ 'length' ]
+    types: ['length']
   },
   'outline-style': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'none', 'dotted' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['none', 'dotted']]}]
   },
   'outline-width': {
     
-    types: [ 'length' ],
+    types: ['length'],
     setup: t => {
       const element = createElement(t);
       element.style.outlineStyle = 'solid';
@@ -1177,422 +1130,323 @@ const gCSSProperties2 = {
   },
   'overflow': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'visible', 'hidden' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['visible', 'hidden']]}]
   },
   'overflow-wrap': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'normal', 'break-word' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['normal', 'break-word']]}]
   },
   'overflow-x': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'visible', 'hidden' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['visible', 'hidden']]}]
   },
   'overflow-y': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'visible', 'hidden' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['visible', 'hidden']]}]
   },
   'padding-block-end': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-block-start': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-bottom': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-inline-end': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-inline-start': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-left': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-right': {
     
-    types: [
-    ]
+    types: []
   },
   'padding-top': {
     
-    types: [
-    ]
+    types: []
   },
   'page-break-after': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'always', 'auto' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['always', 'auto']]}]
   },
   'page-break-before': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'always', 'auto' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['always', 'auto']]}]
   },
   'page-break-inside': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'avoid' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'avoid']]}]
   },
   'paint-order': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'fill', 'stroke' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['fill', 'stroke']]}]
   },
   'path-length': {
     
-    types: [ 'length' ],
+    types: ['length'],
     setup: t => {
       return createElement(t, 'path');
     }
   },
   'perspective': {
     
-    types: [ 'length' ]
+    types: ['length']
   },
   'perspective-origin': {
     
-    types: [ 'position' ]
+    types: ['position']
   },
   'place-content': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'place-items': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'place-self': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'pointer-events': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'fill', 'none' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['fill', 'none']]}]
   },
   'position': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'absolute', 'fixed' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['absolute', 'fixed']]}]
   },
   'position-anchor': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', '--anchor' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', '--anchor']]}]
   },
   'position-visibility': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'always', 'anchors-valid' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['always', 'anchor-valid']]}]
   },
   'position-try-fallbacks': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'none', 'flip-block' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['none', 'flip-block']]}]
   },
   'position-try-order': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'normal', 'most-width' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['normal', 'most-width']]}]
   },
   'quotes': {
     
-    types: [
-      { type: 'discrete', options: [ [ '"“" "”" "‘" "’"', '"‘" "’" "“" "”"' ] ] }
-    ]
+    types:
+        [{type: 'discrete', options: [['"“" "”" "‘" "’"', '"‘" "’" "“" "”"']]}]
   },
   'resize': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'both', 'horizontal' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['both', 'horizontal']]}]
   },
   'right': {
     
-    types: [
-    ]
+    types: []
   },
   'ruby-align': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'center' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'center']]}]
   },
   'ruby-position': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'under', 'over' ] ] }
-    ],
+    types: [{type: 'discrete', options: [['under', 'over']]}],
     setup: t => {
       return createElement(t, 'ruby');
     }
   },
   'scroll-behavior': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'smooth' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'smooth']]}]
   },
   'scroll-snap-align': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'none', 'start' ]] }
-    ]
+    types: [{type: 'discrete', options: [['none', 'start']]}]
   },
   'scroll-snap-stop': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'normal', 'always' ]] }
-    ]
+    types: [{type: 'discrete', options: [['normal', 'always']]}]
   },
   'scroll-snap-type': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'none', 'x mandatory' ]] }
-    ]
+    types: [{type: 'discrete', options: [['none', 'x mandatory']]}]
   },
   'scrollbar-color': {
     
-    types: [ 'colorPair' ]
+    types: ['colorPair']
   },
   'scrollbar-gutter': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'stable' ], [ 'auto', 'stable both-edges' ], [ 'stable', 'stable both-edges' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options: [
+        ['auto', 'stable'], ['auto', 'stable both-edges'],
+        ['stable', 'stable both-edges']
+      ]
+    }]
   },
   'scrollbar-width': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'thin' ], [ 'auto', 'none' ], [ 'thin', 'none' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options: [['auto', 'thin'], ['auto', 'none'], ['thin', 'none']]
+    }]
   },
   'shape-outside': {
     
-    types: [
-      { type: 'discrete',
-        options: [ [ 'url("http://localhost/test-1")',
-                     'url("http://localhost/test-2")' ] ] }
-    ]
+    types: [{
+      type: 'discrete',
+      options:
+          [['url("http://localhost/test-1")', 'url("http://localhost/test-2")']]
+    }]
   },
   'shape-rendering': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'optimizeSpeed', 'crispEdges' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['optimizeSpeed', 'crispEdges']]}]
   },
   'stop-color': {
     
-    types: [ 'color' ]
+    types: ['color']
   },
   'stop-opacity': {
     
-    types: [ 'opacity' ]
+    types: ['opacity']
   },
   'stroke': {
     
-    types: [
-    ]
+    types: []
   },
   'stroke-color': {
     
-    types: [ 'color' ]
+    types: ['color']
   },
   'stroke-dasharray': {
     
-    types: [
-      'dasharray',
-      { type: 'discrete', options: [ [ 'none', '10px, 20px' ] ] }
-    ]
+    types: ['dasharray', {type: 'discrete', options: [['none', '10px, 20px']]}]
   },
   'stroke-dashoffset': {
     
-    types: [
-    ]
+    types: []
   },
   'stroke-linecap': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'round', 'square' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['round', 'square']]}]
   },
   'stroke-linejoin': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'round', 'miter' ] ] }
-    ],
+    types: [{type: 'discrete', options: [['round', 'miter']]}],
     setup: t => {
       return createElement(t, 'rect');
     }
   },
   'stroke-miterlimit': {
     
-    types: [ 'positiveNumber' ]
+    types: ['positiveNumber']
   },
   'stroke-opacity': {
     
-    types: [ 'opacity' ]
+    types: ['opacity']
   },
   'stroke-width': {
     
-    types: [
-    ]
+    types: []
   },
   'table-layout': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'fixed' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'fixed']]}]
   },
   'text-align': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'text-align-last': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'start', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['start', 'end']]}]
   },
   'text-anchor': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'middle', 'end' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['middle', 'end']]}]
   },
   'text-autospace': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'normal', 'no-autospace' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['normal', 'no-autospace']]}]
   },
   'text-box-edge': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'text' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'text']]}]
   },
   'text-box-trim': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'none', 'trim-start' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['none', 'trim-start']]}]
   },
   'text-decoration': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'underline', 'overline' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['underline', 'overline']]}]
   },
   'text-decoration-color': {
     
-    types: [ 'color' ]
+    types: ['color']
   },
   'text-decoration-line': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'underline', 'overline' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['underline', 'overline']]}]
   },
   'text-decoration-skip': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'none' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'none']]}]
   },
   'text-decoration-skip-ink': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'none' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'none']]}]
   },
   'text-decoration-style': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'solid', 'dotted' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['solid', 'dotted']]}]
   },
   'text-emphasis-color': {
     
-    types: [ 'color' ]
+    types: ['color']
   },
   'text-emphasis-position': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'over', 'under left' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['over', 'under left']]}]
   },
   'text-emphasis-style': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'circle', 'open dot' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['circle', 'open dot']]}]
   },
   'text-group-align': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'none', 'center' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['none', 'center']]}]
   },
   'text-indent': {
     
-    types: [
-    ]
+    types: []
   },
   'text-overflow': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'clip', 'ellipsis' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['clip', 'ellipsis']]}]
   },
   'text-rendering': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'optimizeSpeed', 'optimizeLegibility' ] ] }
-    ]
+    types:
+        [{type: 'discrete', options: [['optimizeSpeed', 'optimizeLegibility']]}]
   },
   'text-shadow': {
     
-    types: [ 'textShadowList' ],
+    types: ['textShadowList'],
     setup: t => {
       const element = createElement(t);
       element.style.color = 'green';
@@ -1601,61 +1455,47 @@ const gCSSProperties2 = {
   },
   'text-spacing-trim': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'normal', 'space-all' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['normal', 'space-all']]}]
   },
   'text-transform': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'capitalize', 'uppercase' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['capitalize', 'uppercase']]}]
   },
   'text-wrap': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'wrap', 'nowrap' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['wrap', 'nowrap']]}]
   },
   'touch-action': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'auto', 'none' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['auto', 'none']]}]
   },
   'top': {
     
-    types: [
-    ]
+    types: []
   },
   'transform': {
     
-    types: [ 'transformList' ]
+    types: ['transformList']
   },
   'transform-box': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'fill-box', 'border-box' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['fill-box', 'border-box']]}]
   },
   'transform-origin': {
     
-    types: [
-    ]
+    types: []
   },
   'transform-style': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'flat', 'preserve-3d' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['flat', 'preserve-3d']]}]
   },
   'rotate': {
     
-    types: [ 'rotateList' ]
+    types: ['rotateList']
   },
   'translate': {
     
-    types: [ 'translateList' ],
+    types: ['translateList'],
     setup: t => {
       
       const element = createElement(t);
@@ -1666,66 +1506,57 @@ const gCSSProperties2 = {
   },
   'scale': {
     
-    types: [ 'scaleList' ]
+    types: ['scaleList']
   },
   'vector-effect': {
     
     types: [
-      { type: 'discrete', options: [ [ 'none', 'non-scaling-stroke' ] ] },
+      {type: 'discrete', options: [['none', 'non-scaling-stroke']]},
     ]
   },
   'vertical-align': {
     
-    types: [
-    ]
+    types: []
   },
   'view-transition-class': {
     
     types: [
-      { type: 'discrete', options: [ [ 'none', 'card scale-animation' ] ] },
+      {type: 'discrete', options: [['none', 'card scale-animation']]},
     ]
   },
   'view-transition-name': {
     
     types: [
-      { type: 'discrete', options: [ [ 'none', 'header' ] ] },
+      {type: 'discrete', options: [['none', 'header']]},
     ]
   },
   'visibility': {
     
-    types: [ 'visibility' ]
+    types: ['visibility']
   },
   'white-space': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'pre', 'nowrap' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['pre', 'nowrap']]}]
   },
   'white-space-collapse': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'collapse', 'preserve' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['collapse', 'preserve']]}]
   },
   'width': {
     
-    types: [
-    ]
+    types: []
   },
   'word-break': {
     
-    types: [
-      { type: 'discrete', options: [ [ 'keep-all', 'break-all' ] ] }
-    ]
+    types: [{type: 'discrete', options: [['keep-all', 'break-all']]}]
   },
   'word-spacing': {
     
-    types: [ 'lengthPercentageOrCalc' ]
+    types: ['lengthPercentageOrCalc']
   },
   'z-index': {
     
-    types: [
-    ]
+    types: []
   },
 };
 
