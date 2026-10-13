@@ -1140,7 +1140,7 @@ static const char* const kMainThreadName = "GeckoMain";
     defined(__aarch64__)
 #  define UNWINDING_REGS_HAVE_LR_R11
 #elif defined(GP_PLAT_loongarch64_linux) || defined(GP_PLAT_riscv64_linux)
-#  define UNWINDING_REGS_HAVE_RA
+#  define UNWINDING_REGS_HAVE_RA_T3
 #endif
 
 
@@ -1169,8 +1169,9 @@ class Registers {
 #elif defined(UNWINDING_REGS_HAVE_LR_R11)
   Address mLR{nullptr};   
   Address mR11{nullptr};  
-#elif defined(UNWINDING_REGS_HAVE_RA)
+#elif defined(UNWINDING_REGS_HAVE_RA_T3)
   Address mRA{nullptr};  
+  Address mT3{nullptr};  
 #endif
 
 #if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
@@ -1491,7 +1492,7 @@ static void DoPeriodicSample(PSLockRef aLock,
 #undef UNWINDING_REGS_HAVE_R10_R12
 #undef UNWINDING_REGS_HAVE_LR_R7
 #undef UNWINDING_REGS_HAVE_LR_R11
-#undef UNWINDING_REGS_HAVE_RA
+#undef UNWINDING_REGS_HAVE_RA_T3
 
 
 
