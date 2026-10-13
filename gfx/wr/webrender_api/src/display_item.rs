@@ -236,6 +236,11 @@ pub struct RectClipDisplayItem {
     pub id: ClipId,
     pub spatial_id: SpatialId,
     pub clip_rect: LayoutRect,
+    
+    
+    
+    
+    pub anti_aliased: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -248,6 +253,8 @@ pub struct RoundedRectClipDisplayItem {
     
     
     pub snap_outset: f32,
+    
+    pub anti_aliased: bool,
 }
 
 
@@ -1648,7 +1655,7 @@ pub enum FilterOp {
     
     
     
-    SVGFEDisplacementMap { node: FilterOpGraphNode, scale: f32,
+    SVGFEDisplacementMap { node: FilterOpGraphNode, scale_x: f32, scale_y: f32,
         x_channel_selector: u32, y_channel_selector: u32 },
     
     

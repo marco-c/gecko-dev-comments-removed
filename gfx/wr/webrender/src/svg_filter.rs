@@ -299,7 +299,7 @@ pub enum FilterGraphOpKey {
     
     
     
-    SVGFEDisplacementMap{scale: Au, x_channel_selector: u32,
+    SVGFEDisplacementMap{scale_x: Au, scale_y: Au, x_channel_selector: u32,
         y_channel_selector: u32},
     
     
@@ -589,9 +589,10 @@ impl From<FilterGraphOp> for FilterGraphOpKey {
                     limiting_cone_angle: Au::from_f32_px(limiting_cone_angle),
                 }
             }
-            FilterGraphOp::SVGFEDisplacementMap { scale, x_channel_selector, y_channel_selector } => {
+            FilterGraphOp::SVGFEDisplacementMap { scale_x, scale_y, x_channel_selector, y_channel_selector } => {
                 FilterGraphOpKey::SVGFEDisplacementMap{
-                    scale: Au::from_f32_px(scale),
+                    scale_x: Au::from_f32_px(scale_x),
+                    scale_y: Au::from_f32_px(scale_y),
                     x_channel_selector,
                     y_channel_selector,
                 }
@@ -1083,7 +1084,7 @@ pub enum FilterGraphOp {
     
     
     
-    SVGFEDisplacementMap{scale: f32, x_channel_selector: u32,
+    SVGFEDisplacementMap{scale_x: f32, scale_y: f32, x_channel_selector: u32,
         y_channel_selector: u32},
     
     
