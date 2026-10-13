@@ -14,9 +14,17 @@
 
 
 
+
 "use strict";
 
-const compatData = require("@mdn/browser-compat-data");
+const dataPath = process.argv[2];
+if (!dataPath) {
+  console.error(
+    "Usage: node bin/update.js <path to @mdn/browser-compat-data data.json>"
+  );
+  process.exit(1);
+}
+const compatData = require(require("path").resolve(dataPath));
 const { properties } = compatData.css;
 
 const { TARGET_BROWSER_ID } = require("../constants.js");
