@@ -537,22 +537,6 @@ class ChunkInfo {
   }
 };
 
-enum class InvalidEscapeType {
-  
-  None,
-  
-  Hexadecimal,
-  
-  Unicode,
-  
-  
-  UnicodeOverflow,
-  
-  Octal,
-  
-  EightOrNine
-};
-
 class TokenStreamAnyChars : public TokenStreamShared {
  private:
   
@@ -627,24 +611,6 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
   mutable JS::ColumnNumberUnsignedOffset lastComputedColumnOffset_;
-
-  
-
-  
-
-
-
-
-
-  uint32_t invalidTemplateEscapeOffset = 0;
-
-  
-
-
-
-
-
-  InvalidEscapeType invalidTemplateEscapeType = InvalidEscapeType::None;
 
   
   
@@ -802,27 +768,11 @@ class TokenStreamAnyChars : public TokenStreamShared {
     setSawDeprecatedContent(DeprecatedContent::EightOrNineEscape);
   }
 
-  bool hasInvalidTemplateEscape() const {
-    return invalidTemplateEscapeType != InvalidEscapeType::None;
-  }
-  void clearInvalidTemplateEscape() {
-    invalidTemplateEscapeType = InvalidEscapeType::None;
-  }
-
  private:
   
   
   bool strictMode() const {
     return strictModeGetter_ && strictModeGetter_->strictMode();
-  }
-
-  void setInvalidTemplateEscape(uint32_t offset, InvalidEscapeType type) {
-    MOZ_ASSERT(type != InvalidEscapeType::None);
-    if (invalidTemplateEscapeType != InvalidEscapeType::None) {
-      return;
-    }
-    invalidTemplateEscapeOffset = offset;
-    invalidTemplateEscapeType = type;
   }
 
  public:
@@ -2034,11 +1984,21 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
   void newAtomToken(TokenKind kind, TaggedParserAtomIndex atom,
                     TokenStart start, TokenStreamShared::Modifier modifier,
                     TokenKind* out) {
-    MOZ_ASSERT(kind == TokenKind::String || kind == TokenKind::TemplateHead ||
-               kind == TokenKind::NoSubsTemplate);
+    MOZ_ASSERT(kind == TokenKind::String);
 
     Token* token = newToken(kind, start, modifier, out);
     token->setAtom(atom);
+  }
+
+  void newTemplateToken(TokenKind kind, TaggedParserAtomIndex atom,
+                        uint32_t invalidEscapeOffset,
+                        InvalidEscapeType invalidEscapeType, TokenStart start,
+                        TokenStreamShared::Modifier modifier, TokenKind* out) {
+    MOZ_ASSERT(kind == TokenKind::TemplateHead ||
+               kind == TokenKind::NoSubsTemplate);
+
+    Token* token = newToken(kind, start, modifier, out);
+    token->setTemplate(atom, invalidEscapeOffset, invalidEscapeType);
   }
 
   void newNameToken(TaggedParserAtomIndex name, TokenStart start,
@@ -2481,6 +2441,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   using GeneralCharsBase::newPrivateNameToken;
   using GeneralCharsBase::newRegExpToken;
   using GeneralCharsBase::newSimpleToken;
+  using GeneralCharsBase::newTemplateToken;
   using SpecializedChars::getNonAsciiCodePoint;
   using SpecializedChars::getNonAsciiCodePointDontNormalize;
   using TokenStreamCharsShared::copyCharBufferTo;
@@ -2523,12 +2484,13 @@ class MOZ_STACK_CLASS TokenStreamSpecific
   
   
   bool checkForInvalidTemplateEscapeError() {
-    if (anyCharsAccess().invalidTemplateEscapeType == InvalidEscapeType::None) {
+    const Token& token = anyCharsAccess().currentToken();
+    if (!token.hasInvalidTemplateEscape()) {
       return true;
     }
 
-    reportInvalidEscapeError(anyCharsAccess().invalidTemplateEscapeOffset,
-                             anyCharsAccess().invalidTemplateEscapeType);
+    reportInvalidEscapeError(token.invalidTemplateEscapeOffset(),
+                             token.invalidTemplateEscapeType());
     return false;
   }
 

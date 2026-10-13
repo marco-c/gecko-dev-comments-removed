@@ -56,6 +56,22 @@ enum class IdentifierEscapes { None, SawUnicodeEscape };
 
 enum class NameVisibility { Public, Private };
 
+enum class InvalidEscapeType : uint8_t {
+  
+  None,
+  
+  Hexadecimal,
+  
+  Unicode,
+  
+  
+  UnicodeOverflow,
+  
+  Octal,
+  
+  EightOrNine
+};
+
 class TokenStreamShared;
 
 struct Token {
@@ -128,7 +144,27 @@ struct Token {
    private:
     friend struct Token;
 
-    TrivialTaggedParserAtomIndex atom;
+    
+    struct {
+      
+
+
+
+
+      TrivialTaggedParserAtomIndex atom;
+
+      
+
+
+
+      uint32_t invalidEscapeOffset;
+
+      
+
+
+
+      InvalidEscapeType invalidEscapeType;
+    } atomData;
 
     struct {
       
@@ -154,13 +190,20 @@ struct Token {
 
   void setName(TaggedParserAtomIndex name) {
     MOZ_ASSERT(type == TokenKind::Name || type == TokenKind::PrivateName);
-    u.atom = TrivialTaggedParserAtomIndex::from(name);
+    u.atomData.atom = TrivialTaggedParserAtomIndex::from(name);
   }
 
   void setAtom(TaggedParserAtomIndex atom) {
-    MOZ_ASSERT(type == TokenKind::String || type == TokenKind::TemplateHead ||
-               type == TokenKind::NoSubsTemplate);
-    u.atom = TrivialTaggedParserAtomIndex::from(atom);
+    MOZ_ASSERT(type == TokenKind::String);
+    u.atomData.atom = TrivialTaggedParserAtomIndex::from(atom);
+  }
+
+  void setTemplate(TaggedParserAtomIndex atom, uint32_t invalidEscapeOffset,
+                   InvalidEscapeType invalidEscapeType) {
+    MOZ_ASSERT(isTemplate());
+    u.atomData.atom = TrivialTaggedParserAtomIndex::from(atom);
+    u.atomData.invalidEscapeOffset = invalidEscapeOffset;
+    u.atomData.invalidEscapeType = invalidEscapeType;
   }
 
   void setRegExpFlags(JS::RegExpFlags flags) {
@@ -178,13 +221,32 @@ struct Token {
 
   TaggedParserAtomIndex name() const {
     MOZ_ASSERT(type == TokenKind::Name || type == TokenKind::PrivateName);
-    return u.atom;
+    return u.atomData.atom;
+  }
+
+  bool isTemplate() const {
+    return type == TokenKind::TemplateHead || type == TokenKind::NoSubsTemplate;
   }
 
   TaggedParserAtomIndex atom() const {
-    MOZ_ASSERT(type == TokenKind::String || type == TokenKind::TemplateHead ||
-               type == TokenKind::NoSubsTemplate);
-    return u.atom;
+    MOZ_ASSERT(type == TokenKind::String || isTemplate());
+    MOZ_ASSERT_IF(isTemplate(), !hasInvalidTemplateEscape());
+    return u.atomData.atom;
+  }
+
+  bool hasInvalidTemplateEscape() const {
+    MOZ_ASSERT(isTemplate());
+    return u.atomData.invalidEscapeType != InvalidEscapeType::None;
+  }
+
+  uint32_t invalidTemplateEscapeOffset() const {
+    MOZ_ASSERT(hasInvalidTemplateEscape());
+    return u.atomData.invalidEscapeOffset;
+  }
+
+  InvalidEscapeType invalidTemplateEscapeType() const {
+    MOZ_ASSERT(isTemplate());
+    return u.atomData.invalidEscapeType;
   }
 
   JS::RegExpFlags regExpFlags() const {
