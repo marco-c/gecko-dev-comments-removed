@@ -82,8 +82,6 @@ class GMPServiceCreateHelper final : public mozilla::Runnable {
  public:
   static already_AddRefed<GeckoMediaPluginService> GetOrCreate() {
     RefPtr<GeckoMediaPluginService> service;
-    GMP_LOG_DEBUG("GMPServiceCreateHelper::GetOrCreate: mainThread={}",
-                  NS_IsMainThread());
 
     if (NS_IsMainThread()) {
       service = GetOrCreateOnMainThread();
@@ -91,15 +89,10 @@ class GMPServiceCreateHelper final : public mozilla::Runnable {
       RefPtr<GMPServiceCreateHelper> createHelper =
           new GMPServiceCreateHelper();
 
-      GMP_LOG_DEBUG(
-          "GMPServiceCreateHelper::GetOrCreate: waiting for main thread");
       mozilla::SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(),
                                               createHelper, true);
 
       service = std::move(createHelper->mService);
-      GMP_LOG_DEBUG(
-          "GMPServiceCreateHelper::GetOrCreate: main thread returned {}",
-          static_cast<void*>(service.get()));
     }
 
     return service.forget();
@@ -112,22 +105,14 @@ class GMPServiceCreateHelper final : public mozilla::Runnable {
 
   static already_AddRefed<GeckoMediaPluginService> GetOrCreateOnMainThread() {
     MOZ_ASSERT(NS_IsMainThread());
-    GMP_LOG_DEBUG(
-        "GMPServiceCreateHelper::GetOrCreateOnMainThread: singleton={}",
-        static_cast<void*>(sSingletonService.get()));
 
     if (!sSingletonService) {
       
       
       
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
-        GMP_LOG_DEBUG(
-            "GMPServiceCreateHelper: refusing creation during shutdown");
         return nullptr;
       }
-      GMP_LOG_DEBUG(
-          "GMPServiceCreateHelper: creating singleton, parentProcess={}",
-          XRE_IsParentProcess());
       if (XRE_IsParentProcess()) {
         RefPtr<GeckoMediaPluginServiceParent> service =
             new GeckoMediaPluginServiceParent();
@@ -149,8 +134,6 @@ class GMPServiceCreateHelper final : public mozilla::Runnable {
         sSingletonService = service;
       }
       ClearOnShutdown(&sSingletonService);
-      GMP_LOG_DEBUG("GMPServiceCreateHelper: created singleton={}",
-                    static_cast<void*>(sSingletonService.get()));
     }
 
     RefPtr<GeckoMediaPluginService> service = sSingletonService.get();

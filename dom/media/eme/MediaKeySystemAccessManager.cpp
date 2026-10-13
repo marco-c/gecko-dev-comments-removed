@@ -437,27 +437,9 @@ void MediaKeySystemAccessManager::RequestMediaKeySystemAccess(
     return;
   }
 
-  MediaKeySystemAccess::GetKeySystemStatus(*aRequest)->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr{this}, request = std::move(aRequest)](
-          MediaKeySystemAccess::KeySystemStatusPromise::ResolveOrRejectValue&&
-              aResult) mutable {
-        if (self->mShuttingDown || aResult.IsReject()) {
-          request->RejectPromiseWithInvalidAccessError(
-              "Failed to check CDM installation"_ns);
-          return;
-        }
-        self->OnKeySystemStatus(std::move(request),
-                                std::move(aResult.ResolveValue()));
-      });
-}
-
-void MediaKeySystemAccessManager::OnKeySystemStatus(
-    UniquePtr<PendingRequest> aRequest,
-    MediaKeySystemAccess::KeySystemStatus aStatus) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MediaKeySystemStatus status = aStatus.mStatus;
-  const nsCString& message = aStatus.mMessage;
+  nsAutoCString message;
+  MediaKeySystemStatus status =
+      MediaKeySystemAccess::GetKeySystemStatus(*aRequest, message);
 
   nsPrintfCString msg(
       "MediaKeySystemAccess::GetKeySystemStatus(%s) "
@@ -651,27 +633,23 @@ nsresult MediaKeySystemAccessManager::Observe(nsISupports* aSubject,
     
     
     
-    for (const auto& request : mPendingInstallRequests) {
-      MediaKeySystemAccess::GetKeySystemStatus(*request)->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [self = RefPtr{this}, timer = request->mTimer](
-              const MediaKeySystemAccess::KeySystemStatusPromise::
-                  ResolveOrRejectValue& aResult) {
-            if (aResult.IsReject() ||
-                aResult.ResolveValue().mStatus ==
-                    MediaKeySystemStatus::Cdm_not_installed) {
-              return;
-            }
-            for (size_t i = 0; i < self->mPendingInstallRequests.Length();
-                 ++i) {
-              if (self->mPendingInstallRequests[i]->mTimer == timer) {
-                auto request = std::move(self->mPendingInstallRequests[i]);
-                self->mPendingInstallRequests.RemoveElementAt(i);
-                self->RetryRequest(std::move(request));
-                return;
-              }
-            }
-          });
+    nsTArray<UniquePtr<PendingRequest>> requests;
+    for (size_t i = mPendingInstallRequests.Length(); i-- > 0;) {
+      nsAutoCString message;
+      MediaKeySystemStatus status = MediaKeySystemAccess::GetKeySystemStatus(
+          *mPendingInstallRequests[i], message);
+      if (status == MediaKeySystemStatus::Cdm_not_installed) {
+        
+        continue;
+      }
+      
+      requests.AppendElement(std::move(mPendingInstallRequests[i]));
+      mPendingInstallRequests.RemoveElementAt(i);
+    }
+    
+    
+    for (size_t i = requests.Length(); i-- > 0;) {
+      RetryRequest(std::move(requests[i]));
     }
   } else if (!strcmp(aTopic, "timer-callback")) {
     
@@ -713,7 +691,6 @@ bool MediaKeySystemAccessManager::EnsureObserversAdded() {
 
 void MediaKeySystemAccessManager::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-  mShuttingDown = true;
   MKSAM_LOG_DEBUG("");
   for (const UniquePtr<PendingRequest>& installRequest :
        mPendingInstallRequests) {

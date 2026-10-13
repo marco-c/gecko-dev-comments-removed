@@ -7,9 +7,7 @@
 #include "EMEUtils.h"
 #include "GMPUtils.h"
 #include "KeySystemNames.h"
-#include "VideoUtils.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/TaskQueue.h"
 #include "mozilla/dom/ChromeUtilsBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsPrintfCString.h"
@@ -31,7 +29,6 @@ namespace mozilla {
 
 
 bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
-  MOZ_ASSERT(!NS_IsMainThread());
 #ifdef MOZ_WIDGET_ANDROID
   
   if (IsWidevineKeySystem(aKeySystem) &&
@@ -73,17 +70,6 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
 #endif
 
   return false;
-}
-
-
-RefPtr<GenericPromise> KeySystemConfig::SupportsAsync(
-    const nsAString& aKeySystem) {
-  RefPtr<TaskQueue> queue =
-      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
-                        "KeySystemConfig::SupportsAsync");
-  return InvokeAsync(queue, __func__, [keySystem = nsString(aKeySystem)]() {
-    return GenericPromise::CreateAndResolve(Supports(keySystem), __func__);
-  });
 }
 
  void KeySystemConfig::CreateClearKeyKeySystemConfigs(
@@ -210,33 +196,6 @@ RefPtr<GenericPromise> KeySystemConfig::SupportsAsync(
 RefPtr<KeySystemConfig::SupportedConfigsPromise>
 KeySystemConfig::CreateKeySystemConfigs(
     const nsTArray<KeySystemConfigRequest>& aRequests) {
-  using RequestsPromise =
-      MozPromise<nsTArray<KeySystemConfigRequest>, bool, true>;
-  RefPtr<TaskQueue> queue =
-      TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
-                        "KeySystemConfig::CreateKeySystemConfigs");
-  return InvokeAsync(queue, __func__,
-                     [requests = aRequests.Clone()]() mutable {
-                       requests.RemoveElementsBy([](const auto& request) {
-                         return !Supports(request.mKeySystem);
-                       });
-                       return RequestsPromise::CreateAndResolve(
-                           std::move(requests), __func__);
-                     })
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [](nsTArray<KeySystemConfigRequest>&& aRequests) {
-            return CreateSupportedKeySystemConfigs(aRequests);
-          },
-          [](bool aIgnored) {
-            return SupportedConfigsPromise::CreateAndReject(aIgnored, __func__);
-          });
-}
-
-
-RefPtr<KeySystemConfig::SupportedConfigsPromise>
-KeySystemConfig::CreateSupportedKeySystemConfigs(
-    const nsTArray<KeySystemConfigRequest>& aRequests) {
   
   
 
@@ -245,6 +204,10 @@ KeySystemConfig::CreateSupportedKeySystemConfigs(
 
   for (const auto& request : aRequests) {
     const nsAString& keySystem = request.mKeySystem;
+    if (!Supports(keySystem)) {
+      continue;
+    }
+
     if (IsClearkeyKeySystem(keySystem)) {
       CreateClearKeyKeySystemConfigs(request, outConfigs);
     } else if (IsWidevineKeySystem(keySystem)) {

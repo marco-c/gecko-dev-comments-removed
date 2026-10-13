@@ -1262,11 +1262,8 @@ MediaCapabilities::CheckVideoDecodingInfo(
         const nsCString type = config->mMimeType;
         const gfx::IntSize resolution = config->GetAsVideoInfo()->mImage;
         SupportDecoderParams params{*config, media::VideoFrameRate(frameRate)};
-        LOG("Starting async decoder support query for '{}', strict={}", type,
-            checkDecoderInstance);
         RefPtr<PDMSupportsDecoderPromise> supportsPromise =
             PDMFactorySupport::IsSupportedAsync(params);
-        LOG("Async decoder support query for '{}' returned a promise", type);
 
         if (checkDecoderInstance) {
           

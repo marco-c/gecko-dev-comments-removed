@@ -53,14 +53,9 @@ class MediaKeySystemAccess final : public nsISupports, public nsWrapperCache {
 
   already_AddRefed<Promise> CreateMediaKeys(ErrorResult& aRv);
 
-  struct KeySystemStatus {
-    MediaKeySystemStatus mStatus;
-    nsCString mMessage;
-  };
-  using KeySystemStatusPromise = MozPromise<KeySystemStatus, nsresult, true>;
-
-  static RefPtr<KeySystemStatusPromise> GetKeySystemStatus(
-      const MediaKeySystemAccessRequest& aRequest);
+  static MediaKeySystemStatus GetKeySystemStatus(
+      const MediaKeySystemAccessRequest& aRequest,
+      nsACString& aOutExceptionMessage);
 
   static void NotifyObservers(nsPIDOMWindowInner* aWindow,
                               const nsAString& aKeySystem,

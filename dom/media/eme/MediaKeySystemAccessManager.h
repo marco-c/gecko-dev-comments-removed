@@ -223,9 +223,6 @@ class MediaKeySystemAccessManager final : public nsIObserver, public nsINamed {
   
   void RequestMediaKeySystemAccess(UniquePtr<PendingRequest> aRequest);
 
-  void OnKeySystemStatus(UniquePtr<PendingRequest> aRequest,
-                         MediaKeySystemAccess::KeySystemStatus aStatus);
-
   
   
   void ProvideAccess(UniquePtr<PendingRequest> aRequest);
@@ -246,7 +243,6 @@ class MediaKeySystemAccessManager final : public nsIObserver, public nsINamed {
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   bool mAddedObservers = false;
-  bool mShuttingDown = false;
 
   
   

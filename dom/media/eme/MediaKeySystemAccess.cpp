@@ -94,50 +94,41 @@ enum class SecureLevel {
   Hardware,
 };
 
-using KeySystemStatusPromise = MediaKeySystemAccess::KeySystemStatusPromise;
-using KeySystemStatus = MediaKeySystemAccess::KeySystemStatus;
+static MediaKeySystemStatus EnsureCDMInstalled(const nsAString& aKeySystem,
+                                               const SecureLevel aSecure,
+                                               nsACString& aOutMessage) {
+  if (aSecure == SecureLevel::Software &&
+      !KeySystemConfig::Supports(aKeySystem)) {
+    aOutMessage = "CDM is not installed"_ns;
+    return MediaKeySystemStatus::Cdm_not_installed;
+  }
 
-static RefPtr<KeySystemStatusPromise> ResolveKeySystemStatus(
-    MediaKeySystemStatus aStatus, const nsACString& aMessage = ""_ns) {
-  return KeySystemStatusPromise::CreateAndResolve(
-      KeySystemStatus{aStatus, nsCString(aMessage)}, __func__);
-}
-
-static RefPtr<KeySystemStatusPromise> EnsureCDMInstalled(
-    const nsAString& aKeySystem, const SecureLevel aSecure) {
-  nsString keySystem(aKeySystem);
 #ifdef MOZ_WMF_CDM
   if (aSecure == SecureLevel::Hardware) {
     
+    nsAutoString hardwareKeySystem;
     if (IsWidevineKeySystem(aKeySystem) ||
         IsWidevineExperimentKeySystemAndSupported(aKeySystem)) {
-      keySystem = NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName);
+      hardwareKeySystem =
+          NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName);
     } else if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
-      keySystem = NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware);
+      hardwareKeySystem = NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware);
     } else {
       MOZ_ASSERT_UNREACHABLE("Not supported key system for HWDRM!");
     }
+    if (!KeySystemConfig::Supports(hardwareKeySystem)) {
+      aOutMessage = "CDM is not installed"_ns;
+      return MediaKeySystemStatus::Cdm_not_installed;
+    }
   }
 #endif
-  return KeySystemConfig::SupportsAsync(keySystem)->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [](bool aSupported) {
-        return aSupported
-                   ? ResolveKeySystemStatus(MediaKeySystemStatus::Available)
-                   : ResolveKeySystemStatus(
-                         MediaKeySystemStatus::Cdm_not_installed,
-                         "CDM is not installed"_ns);
-      },
-      [](nsresult aRv) {
-        return KeySystemStatusPromise::CreateAndReject(aRv, __func__);
-      });
+
+  return MediaKeySystemStatus::Available;
 }
 
 
-RefPtr<MediaKeySystemAccess::KeySystemStatusPromise>
-MediaKeySystemAccess::GetKeySystemStatus(
-    const MediaKeySystemAccessRequest& aRequest) {
-  MOZ_ASSERT(NS_IsMainThread());
+MediaKeySystemStatus MediaKeySystemAccess::GetKeySystemStatus(
+    const MediaKeySystemAccessRequest& aRequest, nsACString& aOutMessage) {
   const nsString& keySystem = aRequest.mKeySystem;
 
   MOZ_ASSERT(StaticPrefs::media_eme_enabled() ||
@@ -146,7 +137,7 @@ MediaKeySystemAccess::GetKeySystemStatus(
   LOG("checking if CDM is installed or disabled for {}",
       NS_ConvertUTF16toUTF8(keySystem).get());
   if (IsClearkeyKeySystem(keySystem)) {
-    return EnsureCDMInstalled(keySystem, SecureLevel::Software);
+    return EnsureCDMInstalled(keySystem, SecureLevel::Software, aOutMessage);
   }
 
   
@@ -163,33 +154,33 @@ MediaKeySystemAccess::GetKeySystemStatus(
   if (IsWidevineKeySystem(keySystem) && !shouldCheckL1Installation) {
     if (Preferences::GetBool("media.gmp-widevinecdm.visible", false)) {
       if (!Preferences::GetBool("media.gmp-widevinecdm.enabled", false)) {
-        return ResolveKeySystemStatus(MediaKeySystemStatus::Cdm_disabled,
-                                      "Widevine EME disabled"_ns);
+        aOutMessage = "Widevine EME disabled"_ns;
+        return MediaKeySystemStatus::Cdm_disabled;
       }
-      return EnsureCDMInstalled(keySystem, SecureLevel::Software);
+      return EnsureCDMInstalled(keySystem, SecureLevel::Software, aOutMessage);
 #ifdef MOZ_WIDGET_ANDROID
     } else if (Preferences::GetBool("media.mediadrm-widevinecdm.visible",
                                     false)) {
       media::DrmSchemeSupport support = gfx::gfxVars::WidevineSupport();
       if (support == media::DrmSchemeSupport::Unknown) {
-        return ResolveKeySystemStatus(
-            MediaKeySystemStatus::Cdm_not_installed,
-            "Waiting for MediaDrm Widevine support"_ns);
+        aOutMessage = "Waiting for MediaDrm Widevine support"_ns;
+        return MediaKeySystemStatus::Cdm_not_installed;
       }
       if (support != media::DrmSchemeSupport::Supported) {
-        return ResolveKeySystemStatus(
-            MediaKeySystemStatus::Cdm_not_supported,
-            "KeySystem or Minimum API level not met for Widevine EME"_ns);
+        aOutMessage = nsLiteralCString(
+            "KeySystem or Minimum API level not met for Widevine EME");
+        return MediaKeySystemStatus::Cdm_not_supported;
       }
-      return ResolveKeySystemStatus(MediaKeySystemStatus::Available);
+      return MediaKeySystemStatus::Available;
 #endif
     }
   }
 
 #ifdef MOZ_WMF_CDM
   
-  if (IsPlayReadyKeySystemAndSupported(keySystem)) {
-    return EnsureCDMInstalled(keySystem, SecureLevel::Software);
+  if (IsPlayReadyKeySystemAndSupported(keySystem) &&
+      KeySystemConfig::Supports(keySystem)) {
+    return MediaKeySystemStatus::Available;
   }
 
   
@@ -200,14 +191,14 @@ MediaKeySystemAccess::GetKeySystemStatus(
     
     
     if (!Preferences::GetBool("media.gmp-widevinecdm-l1.enabled", false)) {
-      return ResolveKeySystemStatus(MediaKeySystemStatus::Cdm_disabled,
-                                    "Widevine L1 EME disabled"_ns);
+      aOutMessage = "Widevine L1 EME disabled"_ns;
+      return MediaKeySystemStatus::Cdm_disabled;
     }
-    return EnsureCDMInstalled(keySystem, SecureLevel::Hardware);
+    return EnsureCDMInstalled(keySystem, SecureLevel::Hardware, aOutMessage);
   }
 #endif
 
-  return ResolveKeySystemStatus(MediaKeySystemStatus::Cdm_not_supported);
+  return MediaKeySystemStatus::Cdm_not_supported;
 }
 
 static KeySystemConfig::EMECodecString ToEMEAPICodecString(
