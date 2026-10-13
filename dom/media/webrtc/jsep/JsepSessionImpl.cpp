@@ -317,7 +317,8 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
 
   if (msection->GetMediaType() != SdpMediaSection::MediaType::kApplication) {
     
-    msection->GetAttributeList().SetAttribute(
+    
+    local->GetAttributeList().SetAttribute(
         MakeUnique<SdpFlagAttribute>(SdpAttribute::kExtmapAllowMixedAttribute));
   }
 
