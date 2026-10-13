@@ -3070,6 +3070,17 @@ static void WrapSeparatorTransform(nsDisplayListBuilder* aBuilder,
   aParticipants->AppendToTop(item);
 }
 
+static bool HitTestsCapturedElementsAtLivePosition(nsPresContext* aPc) {
+  switch (StaticPrefs::dom_viewTransitions_hit_testing()) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    default:
+      return aPc->IsChrome();
+  }
+}
+
 
 
 
@@ -3284,7 +3295,13 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
-  if (capturedByViewTransition && aBuilder->IsForEventDelivery()) {
+  
+  
+  
+  
+  
+  if (capturedByViewTransition && aBuilder->IsForEventDelivery() &&
+      !HitTestsCapturedElementsAtLivePosition(PresContext())) {
     return;
   }
 
