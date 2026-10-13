@@ -319,6 +319,9 @@ bool WarpBuilder::build() {
   
   
   for (auto iter = pendingInnerLoopResumes_.iter(); !iter.done(); iter.next()) {
+    if (!alloc().ensureBallast()) {
+      return false;
+    }
     MBasicBlock* block = iter.get().value();
     MOZ_ASSERT(!block->hasLastIns());
     block->add(MBail::New(alloc(), BailoutKind::UncompiledGeneratorResume));
