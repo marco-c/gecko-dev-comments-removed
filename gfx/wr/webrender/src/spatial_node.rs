@@ -73,18 +73,6 @@ pub struct SceneSpatialNode {
     pub is_root_coord_system: bool,
 }
 
-
-
-
-
-
-
-
-
-
-
-const REFERENCE_FRAME_ORIGIN_QUANTUM: f32 = 1.0 / 128.0;
-
 impl SceneSpatialNode {
     pub fn new_reference_frame(
         parent_index: Option<SpatialNodeIndex>,
@@ -96,17 +84,6 @@ impl SceneSpatialNode {
         is_root_coord_system: bool,
         is_pipeline_root: bool,
     ) -> Self {
-        
-        
-        
-        
-        let origin_in_parent_reference_frame = {
-            let q = REFERENCE_FRAME_ORIGIN_QUANTUM;
-            LayoutVector2D::new(
-                (origin_in_parent_reference_frame.x / q).round() * q,
-                (origin_in_parent_reference_frame.y / q).round() * q,
-            )
-        };
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform,
@@ -238,6 +215,37 @@ pub struct SpatialNode {
     
     
     pub is_ancestor_or_self_animating: bool,
+
+    
+    pub is_slice_root: bool,
+
+    
+    
+    
+    pub slice_root_snap_offset: WorldVector2D,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const DEVICE_OFFSET_QUANTUM: f32 = 1.0 / 128.0;
+
+fn quantize_device_offset(value: f32) -> f32 {
+    (value / DEVICE_OFFSET_QUANTUM).round() * DEVICE_OFFSET_QUANTUM
 }
 
 
@@ -256,8 +264,8 @@ fn snap_offset<OffsetUnits, ScaleUnits>(
     
     
     
-    let snapped_x = (offset.x * scale.x).round();
-    let snapped_y = (offset.y * scale.y).round();
+    let snapped_x = quantize_device_offset(offset.x * scale.x).round();
+    let snapped_y = quantize_device_offset(offset.y * scale.y).round();
     Vector2D::new(
         if scale.x != 0.0 { snapped_x / scale.x } else { offset.x },
         if scale.y != 0.0 { snapped_y / scale.y } else { offset.y },
@@ -496,7 +504,10 @@ impl SpatialNode {
                             
                             cs_scale_offset = scale_offset.then(&state.coordinate_system_relative_scale_offset);
                             if let ReferenceFrameKind::Transform { should_snap: true, .. } = info.kind {
-                                cs_scale_offset.offset = cs_scale_offset.offset.round();
+                                cs_scale_offset.offset = Vector2D::new(
+                                    quantize_device_offset(cs_scale_offset.offset.x).round(),
+                                    quantize_device_offset(cs_scale_offset.offset.y).round(),
+                                );
                             }
                         }
                         None => reset_cs_id = true,
@@ -591,6 +602,28 @@ impl SpatialNode {
                     .pre_offset(snap_offset(added_offset, state.coordinate_system_relative_scale_offset.scale).to_untyped());
 
                 self.coordinate_system_id = state.current_coordinate_system_id;
+            }
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        self.slice_root_snap_offset = WorldVector2D::zero();
+        if self.is_slice_root {
+            if let SpatialNodeType::ScrollFrame(..) | SpatialNodeType::StickyFrame(..) = self.node_type {
+                debug_assert_eq!(self.coordinate_system_id, CoordinateSystemId::root());
+                let offset = self.content_transform.offset;
+                let snapped = Vector2D::new(
+                    quantize_device_offset(offset.x).round(),
+                    quantize_device_offset(offset.y).round(),
+                );
+                self.slice_root_snap_offset = WorldVector2D::from_untyped(snapped - offset);
+                self.content_transform.offset = snapped;
+                self.viewport_transform.offset += self.slice_root_snap_offset.to_untyped();
             }
         }
 
@@ -691,6 +724,7 @@ impl SpatialNode {
         
         
         
+        state.coordinate_system_relative_scale_offset.offset += self.slice_root_snap_offset.to_untyped();
         match self.node_type {
             SpatialNodeType::StickyFrame(ref info) => {
                 
