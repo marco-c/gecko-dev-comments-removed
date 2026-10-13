@@ -14,7 +14,7 @@ add_task(async function test_shareablePage() {
       { id: "share-panel-copy-link", visible: true, name: "Copy link" },
       {
         id: "share-panel-os-share",
-        visible: AppConstants.platform === "win", 
+        visible: AppConstants.platform !== "linux",
         name: "OS share",
       },
       {
