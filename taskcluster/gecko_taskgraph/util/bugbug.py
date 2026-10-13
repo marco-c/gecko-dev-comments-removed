@@ -3,6 +3,7 @@
 
 
 
+import functools
 import hashlib
 import os
 import pathlib
@@ -10,7 +11,6 @@ import sys
 import time
 
 import requests
-from mozbuild.util import memoize
 from taskgraph import create
 from taskgraph.util import json
 from taskgraph.util.taskcluster import requests_retry_session
@@ -30,6 +30,10 @@ CT_LOW = 0.7
 CT_MEDIUM = 0.8
 CT_HIGH = 0.9
 
+
+
+CT_LEVELS = {CT_LOW: "low", CT_MEDIUM: "medium", CT_HIGH: "high"}
+
 GROUP_TRANSLATIONS = {
     "testing/web-platform/tests": "",
     "testing/web-platform/mozilla/tests": "/_mozilla",
@@ -44,11 +48,30 @@ def translate_group(group):
     return group
 
 
+def get_confidence_threshold(data, kind, confidence_threshold):
+    """Return the threshold to use for the "tasks" or "groups" (`kind`) of a bugbug reply.
+
+    The scale of the confidences depends on bugbug's models, so bugbug returns the thresholds
+    matching the preset ones (computed when training its models) in "confidence_thresholds".
+    Other thresholds, or preset ones when bugbug didn't return any, are used as they are.
+    """
+    level = CT_LEVELS.get(confidence_threshold)
+    if level is None:
+        return confidence_threshold
+
+    return (
+        data
+        .get("confidence_thresholds", {})
+        .get(kind, {})
+        .get(level, confidence_threshold)
+    )
+
+
 class BugbugTimeoutException(Exception):
     pass
 
 
-@memoize
+@functools.cache
 def get_session():
     s = requests.Session()
     s.headers.update({"X-API-KEY": "gecko-taskgraph"})
@@ -98,7 +121,7 @@ def _write_perfherder_data(lower_is_better):
             json.dump(perfherder_data, f)
 
 
-@memoize
+@functools.cache
 def push_schedules(branch, rev):
     
     if create.testing:
@@ -150,7 +173,7 @@ def push_schedules(branch, rev):
     return data
 
 
-@memoize
+@functools.cache
 def patch_schedules(base_rev, patch_content, mode="quick"):
     """Query BugBug API with a patch to get test recommendations.
 
