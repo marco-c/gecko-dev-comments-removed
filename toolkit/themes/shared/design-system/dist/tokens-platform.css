@@ -42,7 +42,7 @@
     --font-size-small: 1rem;
 
     /** input **/
-    --input-text-background-color: Field;
+    --input-background-color: Field;
     --input-text-color: FieldText;
 
     /** link **/
@@ -52,7 +52,6 @@
 
     /** panel **/
     --panel-background-color: Field;
-    --panel-border-color: var(--border-color-deemphasized);
     --panel-footer-background-color: color-mix(in srgb, currentColor 17%, transparent);
     --panel-text-color: FieldText;
 
@@ -118,11 +117,10 @@
       --info-bar-border-color: var(--border-color-deemphasized);
 
       /** input **/
-      --input-text-background-color: Field;
+      --input-background-color: Field;
 
       /** panel **/
       --panel-background-color: Field;
-      --panel-border-color: var(--border-color-deemphasized);
       --panel-text-color: FieldText;
 
       /** popup **/
@@ -182,7 +180,7 @@
       --color-accent-primary-selected: light-dark(var(--color-blue-60), var(--color-cyan-30));
 
       /** input **/
-      --input-text-background-color: light-dark(var(--color-white), #42414d);
+      --input-background-color: light-dark(var(--color-white), #42414d);
       --input-text-color: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
 
       /** link **/
@@ -192,7 +190,6 @@
 
       /** panel **/
       --panel-background-color: light-dark(var(--color-white), rgb(66, 65, 77));
-      --panel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
       --panel-footer-background-color: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
       --panel-text-color: light-dark(var(--color-black), rgb(251, 251, 254));
 
@@ -257,11 +254,10 @@
         --info-bar-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-gray-60));
 
         /** input **/
-        --input-text-background-color: var(--background-color-box);
+        --input-background-color: var(--background-color-box);
 
         /** panel **/
         --panel-background-color: var(--popup-background-color);
-        --panel-border-color: var(--popup-border-color);
         --panel-text-color: var(--text-color);
 
         /** popup **/
