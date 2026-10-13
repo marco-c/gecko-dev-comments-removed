@@ -4208,10 +4208,11 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
   
   class NodeInfo* nodeInfo = aNode->mNodeInfo;
   RefPtr<class NodeInfo> newNodeInfo;
+  Document* newDoc =
+      nodeInfoManager ? nodeInfoManager->GetDocument() : aNode->OwnerDoc();
   if (nodeInfoManager) {
     
     
-    Document* newDoc = nodeInfoManager->GetDocument();
     if (NS_WARN_IF(!newDoc)) {
       aError.Throw(NS_ERROR_UNEXPECTED);
       return nullptr;
@@ -4249,7 +4250,7 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
 
     
     
-    if (elem) {
+    if (elem && !newDoc->IsStaticDocument()) {
       Element* cloneElem = clone->AsElement();
       CustomElementRegistry* registry = nullptr;
 
