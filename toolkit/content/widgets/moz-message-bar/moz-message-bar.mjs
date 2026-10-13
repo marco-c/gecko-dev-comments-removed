@@ -47,7 +47,7 @@ const messageTypeToIconData = {
  *  Custom event indicating that message bar was dismissed by the user.
  */
 
-export default class MozMessageBar extends MozLitElement {
+export class MozMessageBar extends MozLitElement {
   static queries = {
     actionsSlot: "slot[name=actions]",
     actionsEl: ".actions",
@@ -236,7 +236,7 @@ export default class MozMessageBar extends MozLitElement {
                     ${this.message}
                   </span>
                 </slot>
-                <span class="link"> ${this.supportLinkTemplate()} </span>
+                <span class="link">${this.supportLinkTemplate()}</span>
               </div>
             </div>
           </div>
