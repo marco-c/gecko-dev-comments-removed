@@ -1688,10 +1688,32 @@ void IMContextWrapper::NotifyIMEOfFocusChange(IMEFocusState aIMEFocusState) {
 
 void IMContextWrapper::OnSelectionChange(
     nsWindow* aCaller, const IMENotification& aIMENotification) {
-  const bool isSelectionRangeChanged =
-      mContentSelection.isNothing() ||
-      !aIMENotification.mSelectionChangeData.EqualsRange(
-          mContentSelection.ref());
+  const bool isSelectionRangeChanged = [&]() {
+    if (mContentSelection.isNothing()) [[unlikely]] {
+      return true;
+    }
+    
+    
+    if (aIMENotification.mSelectionChangeData.EqualsRange(
+            mContentSelection.ref())) {
+      return false;
+    }
+    if (!EditorHasCompositionString()) {
+      return true;
+    }
+    
+    
+    
+    
+    
+    if (!aIMENotification.mSelectionChangeData.HasRange()) [[unlikely]] {
+      return false;
+    }
+    return aIMENotification.mSelectionChangeData.StartOffset() >=
+               mCompositionStart &&
+           aIMENotification.mSelectionChangeData.EndOffset() <=
+               mCompositionStart + mDispatchedCompositionString.Length();
+  }();
   mContentSelection =
       Some(ContentSelection(aIMENotification.mSelectionChangeData));
   const bool retrievedSurroundingSignalReceived =
@@ -1768,7 +1790,7 @@ void IMContextWrapper::OnSelectionChange(
     return;
   }
 
-  bool occurredBeforeComposition =
+  const bool occurredBeforeComposition =
       IsComposing() && !selectionChangeData.mOccurredDuringComposition &&
       !selectionChangeData.mCausedByComposition;
   if (occurredBeforeComposition) {
@@ -2618,6 +2640,16 @@ bool IMContextWrapper::DispatchCompositionChangeEvent(
   mCompositionTargetRange.mOffset =
       mCompositionStart + rangeArray->TargetClauseOffset();
   mCompositionTargetRange.mLength = rangeArray->TargetClauseLength();
+
+  
+  
+  
+  
+  const uint32_t caretOffsetInCompositionString =
+      rangeArray->HasCaret() ? rangeArray->GetCaretPosition()
+                             : mDispatchedCompositionString.Length();
+  mContentSelection->Collapse(mCompositionStart +
+                              caretOffsetInCompositionString);
 
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
   nsEventStatus status;
