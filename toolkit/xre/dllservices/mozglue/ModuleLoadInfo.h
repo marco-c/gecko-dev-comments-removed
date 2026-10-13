@@ -25,7 +25,7 @@ struct ModuleLoadInfo final {
   
   
   static constexpr uint64_t kMagic = 0xF14D6F644C6F6164ull;
-  static constexpr uint32_t kVersion = 1;
+  static constexpr uint32_t kVersion = 2;
 
   
   
