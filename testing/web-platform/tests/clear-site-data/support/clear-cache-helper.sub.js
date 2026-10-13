@@ -92,7 +92,16 @@ function openTestPageHelper(test, firstUuid, testUrls, curIdx, assert, resolve) 
             openTestPageHelper(test, firstUuid, testUrls, curIdx + 1, assert, resolve);
         } else {
             
-            assert(firstUuid, curUuid);
+            
+            
+            
+            
+            const equal = firstUuid === curUuid;
+            if (assert === assert_equals) {
+                assert_true(equal, "first and last value should be equal (served from cache)");
+            } else {
+                assert_false(equal, "first and last value should differ (cache was cleared)");
+            }
             resolve();
         }
     }), {once: true});
