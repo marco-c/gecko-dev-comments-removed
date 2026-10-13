@@ -15,6 +15,7 @@
 #include "mozilla/UniquePtr.h"
 #include <algorithm>
 #include <bit>
+#include <memory>
 
 
 static mozilla::LazyLogModule gUrlClassifierPrefixSetLog(
@@ -89,8 +90,8 @@ void UrlClassifierPrefixSetReporter::Register(VariableLengthPrefixSet* aSet,
   nsCString path = nsPrintfCString(
       "explicit/storage/prefix-set/%s",
       (!aName.IsEmpty() ? PromiseFlatCString(aName).get() : "?!"));
-  sPrefixSetReporter->mSets.AppendElement(
-      TrackedPrefixSet{ThreadSafeWeakPtr<VariableLengthPrefixSet>(aSet), path});
+  sPrefixSetReporter->mSets.AppendElement(TrackedPrefixSet{
+      ThreadSafeWeakPtr<VariableLengthPrefixSet>(aSet), std::move(path)});
 }
 
 
@@ -215,7 +216,7 @@ nsresult VariableLengthPrefixSet::SetPrefixes(AddPrefixArray& aAddPrefixes,
   }
   completions.Sort();
 
-  UniquePtr<nsCString> completionStr(new nsCString);
+  UniquePtr<nsCString> completionStr = std::make_unique<nsCString>();
   completionStr->SetCapacity(completions.Length() * COMPLETE_SIZE);
   for (size_t i = 0; i < completions.Length(); i++) {
     const char* buf = reinterpret_cast<const char*>(completions[i].buf);
@@ -298,7 +299,7 @@ nsresult VariableLengthPrefixSet::GetPrefixes(PrefixStringMap& aPrefixMap) {
 
   size_t count = array.Length();
   if (count) {
-    UniquePtr<nsCString> prefixes(new nsCString());
+    UniquePtr<nsCString> prefixes = std::make_unique<nsCString>();
     if (!prefixes->SetLength(PREFIX_SIZE_FIXED * count, fallible)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -455,7 +456,7 @@ nsresult VariableLengthPrefixSet::LoadPrefixes(nsCOMPtr<nsIInputStream>& in) {
     NS_ENSURE_TRUE(stringLength % prefixSize == 0, NS_ERROR_FILE_CORRUPTED);
     uint32_t prefixCount = stringLength / prefixSize;
 
-    UniquePtr<nsCString> vlPrefixes(new nsCString());
+    UniquePtr<nsCString> vlPrefixes = std::make_unique<nsCString>();
     if (!vlPrefixes->SetLength(stringLength, fallible)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }

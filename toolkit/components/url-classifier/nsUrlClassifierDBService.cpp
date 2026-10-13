@@ -1071,11 +1071,16 @@ nsresult nsUrlClassifierDBServiceWorker::CacheCompletions(
     }
     if (activeTable) {
       UniquePtr<ProtocolParser> pParse;
+      
+      
+      
+      
       if (result->Ver() == CacheResult::V2) {
         pParse.reset(new ProtocolParserV2());
       } else {
         pParse.reset(new ProtocolParserProtobuf());
       }
+      
 
       RefPtr<TableUpdate> tu = pParse->GetTableUpdate(result->table);
 

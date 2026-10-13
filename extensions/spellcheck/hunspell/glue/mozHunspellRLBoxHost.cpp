@@ -3,6 +3,7 @@
 
 
 #include <limits>
+#include <memory>
 
 #include "mozHunspellRLBoxHost.h"
 #include "mozilla/DebugOnly.h"
@@ -111,8 +112,8 @@ tainted_hunspell<uint32_t> mozHunspellCallbacks::CreateFilemgr(
         
         uint32_t freshId = GetFreshId();
         
-        sFileMgrMap[freshId] = std::unique_ptr<mozHunspellFileMgrHost>(
-            new mozHunspellFileMgrHost(cFilename));
+        sFileMgrMap[freshId] =
+            std::make_unique<mozHunspellFileMgrHost>(cFilename);
 
         return freshId;
       });

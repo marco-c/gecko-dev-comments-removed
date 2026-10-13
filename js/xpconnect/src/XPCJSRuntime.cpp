@@ -29,6 +29,8 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
 
+#include <memory>
+
 #include "AccessCheck.h"
 #include "ExpandedPrincipal.h"
 #include "jsapi.h"
@@ -3270,7 +3272,8 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
   
   
   
-  mozilla::UniquePtr<XPCJSSourceHook> hook(new XPCJSSourceHook);
+  mozilla::UniquePtr<XPCJSSourceHook> hook =
+      std::make_unique<XPCJSSourceHook>();
   js::SetSourceHook(cx, std::move(hook));
 
   

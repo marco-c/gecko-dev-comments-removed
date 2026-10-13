@@ -2,6 +2,7 @@
 
 
 
+#include <memory>
 #include <unordered_map>
 
 #include "GeckoProfiler.h"
@@ -218,7 +219,7 @@ void AddBlobFont(WrFontInstanceKey aInstanceKey, WrFontKey aFontKey,
     }
     if (aNumVariations) {
       font.mNumVariations = aNumVariations;
-      font.mVariations.reset(new wr::FontVariation[aNumVariations]);
+      font.mVariations = std::make_unique<wr::FontVariation[]>(aNumVariations);
       PodCopy(font.mVariations.get(),
               reinterpret_cast<const wr::FontVariation*>(aVariations),
               aNumVariations);

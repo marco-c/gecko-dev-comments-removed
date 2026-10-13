@@ -5,6 +5,7 @@
 #include "SMILAnimationController.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "SMILCSSProperty.h"
 #include "SMILCompositor.h"
@@ -277,8 +278,8 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
 
   
-  std::unique_ptr<SMILCompositorTable> currentCompositorTable(
-      new SMILCompositorTable(0));
+  std::unique_ptr<SMILCompositorTable> currentCompositorTable =
+      std::make_unique<SMILCompositorTable>(0);
 
   
   

@@ -160,6 +160,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include <memory>
 #include <utility>
 
 #include "js/SliceBudget.h"
@@ -497,7 +498,6 @@ class EdgePool {
       return mPointer->ptrInfo;
     }
     bool operator==(const Iterator& aOther) const = default;
-    bool operator!=(const Iterator& aOther) const = default;
 
 #ifdef DEBUG_CC_GRAPH
     bool Initialized() const { return mPointer != nullptr; }
@@ -4191,7 +4191,7 @@ void nsCycleCollector_startup() {
   CollectorData* data = new CollectorData;
   data->mCollector = new nsCycleCollector();
   data->mContext = nullptr;
-  data->mStats.reset(new mozilla::CycleCollectorStats());
+  data->mStats = std::make_unique<mozilla::CycleCollectorStats>();
 
   sCollectorData.set(data);
 }

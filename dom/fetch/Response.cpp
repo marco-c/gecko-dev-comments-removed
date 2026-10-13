@@ -4,6 +4,8 @@
 
 #include "Response.h"
 
+#include <memory>
+
 #include "BodyExtractor.h"
 #include "FetchStreamReader.h"
 #include "InternalResponse.h"
@@ -195,7 +197,7 @@ already_AddRefed<Response> Response::Redirect(const GlobalObject& aGlobal,
       MOZ_ASSERT(doc);
       info.InitFromDocument(doc);
 
-      principalInfo.reset(new mozilla::ipc::PrincipalInfo());
+      principalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>();
       nsresult rv =
           PrincipalToPrincipalInfo(doc->NodePrincipal(), principalInfo.get());
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -394,6 +396,12 @@ already_AddRefed<Response> Response::Clone(JSContext* aCx, ErrorResult& aRv) {
     response->SetReadableStreamBody(aCx, body);
     response->mFetchStreamReader = streamReader;
     ir->SetBody(inputStream, InternalResponse::UNKNOWN_BODY_SIZE);
+  } else {
+    
+    
+    
+    
+    MaybeRebindReadableStreamBody();
   }
 
   return response.forget();

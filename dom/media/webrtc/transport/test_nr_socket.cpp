@@ -90,6 +90,7 @@
 #include "test_nr_socket.h"
 
 #include <cstdint>
+#include <memory>
 
 #include "mozilla/RefPtr.h"
 
@@ -522,7 +523,7 @@ int TestNrSocket::connect(const nr_transport_addr* addr) {
     
     
     
-    connect_fake_stun_address_.reset(new nr_transport_addr);
+    connect_fake_stun_address_ = std::make_unique<nr_transport_addr>();
     nr_transport_addr_copy(connect_fake_stun_address_.get(), addr);
 
     

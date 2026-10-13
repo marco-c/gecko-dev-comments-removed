@@ -3,6 +3,7 @@
 
 
 #include <algorithm>
+#include <memory>
 
 #include "GLContext.h"
 #include "MozFramebuffer.h"
@@ -1057,7 +1058,7 @@ void WebGLContext::DrawElementsInstanced(const GLenum mode,
           [[unlikely]] {
         
         
-        errorScope.reset(new gl::GLContext::LocalErrorScope(*gl));
+        errorScope = std::make_unique<gl::GLContext::LocalErrorScope>(*gl);
       }
 
       if (indexCount && instanceCount) {
