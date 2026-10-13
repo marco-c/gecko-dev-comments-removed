@@ -11,6 +11,7 @@ import os
 import platform
 import re
 import sys
+import threading
 from subprocess import PIPE, Popen
 
 
@@ -18,6 +19,8 @@ from subprocess import PIPE, Popen
 line_re = re.compile(r"#\d+: .+\[.+ \+0x[0-9A-Fa-f]+\]")
 
 fix_stacks = None
+
+fix_stacks_lock = threading.Lock()
 
 
 def autobootstrap():
@@ -104,9 +107,6 @@ def fixSymbols(
     if line_re.search(line_str) is None:
         return line
 
-    if not fix_stacks:
-        initFixStacks(jsonMode, slowWarning, breakpadSymsDir, hide_errors)
-
     
     
     
@@ -114,9 +114,13 @@ def fixSymbols(
     is_missing_newline = not line_str.endswith("\n")
     if is_missing_newline:
         line_str = line_str + "\n"
-    fix_stacks.stdin.write(line_str)
-    fix_stacks.stdin.flush()
-    out = fix_stacks.stdout.readline()
+
+    with fix_stacks_lock:
+        if not fix_stacks:
+            initFixStacks(jsonMode, slowWarning, breakpadSymsDir, hide_errors)
+        fix_stacks.stdin.write(line_str)
+        fix_stacks.stdin.flush()
+        out = fix_stacks.stdout.readline()
     if is_missing_newline:
         out = out[:-1]
 
