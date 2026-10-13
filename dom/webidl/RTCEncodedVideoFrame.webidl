@@ -40,7 +40,8 @@ interface RTCEncodedVideoFrame {
     [Throws]
     constructor(RTCEncodedVideoFrame originalFrame, optional RTCEncodedVideoFrameOptions options = {});
     readonly attribute RTCEncodedVideoFrameType type;
-    readonly attribute unsigned long timestamp;
+    readonly attribute unsigned long timestamp;    // legacy name of metadata rtpTimestamp
+    [SetterThrows]
     attribute ArrayBuffer data;
     RTCEncodedVideoFrameMetadata getMetadata();
 };
