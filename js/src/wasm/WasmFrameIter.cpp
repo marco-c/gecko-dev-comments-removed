@@ -33,7 +33,6 @@
 #include "wasm/WasmStubs.h"
 
 #include "jit/MacroAssembler-inl.h"
-#include "vm/JSContext-inl.h"
 #include "wasm/WasmInstance-inl.h"
 
 #ifdef XP_WIN
@@ -358,14 +357,8 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
   
   
   
+  Frame* returnCallOriginalFP = fp_;
   if (!code_ && wasm::IsReturnCallTrampolineReturnAddress(returnAddress)) {
-    
-    
-    
-    instance_ = ExtractCallerInstanceFromFrameWithInstances(fp_);
-    if (isLeavingFrame) {
-      cx()->setRealmForJitExceptionHandler(instance_->realm());
-    }
     fp_ = fp_->wasmCaller();
     returnAddress = fp_->returnAddress();
     code_ = LookupCode(returnAddress, &codeRange);
@@ -490,9 +483,13 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
   CallSite site;
   MOZ_ALWAYS_TRUE(code_->lookupCallSite(returnAddress, &site));
 
-  
-  
-  if (!skippedReturnCallTrampoline_ && site.mightBeCrossInstance()) {
+  if (skippedReturnCallTrampoline_) {
+    
+    
+    
+    instance_ =
+        ExtractCallerInstanceFromFrameWithInstances(returnCallOriginalFP);
+  } else if (site.mightBeCrossInstance()) {
     instance_ = ExtractCallerInstanceFromFrameWithInstances(prevFP);
   }
 
