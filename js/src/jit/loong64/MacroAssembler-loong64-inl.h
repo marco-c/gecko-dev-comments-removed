@@ -2533,10 +2533,7 @@ void MacroAssembler::splatX16(Register src, FloatRegister dest) {
 
 void MacroAssembler::splatX16(uint32_t srcLane, FloatRegister src,
                               FloatRegister dest) {
-  UseScratchRegisterScope temps(asMasm());
-  const Register scratch = temps.Acquire();
-  extractLaneInt8x16(srcLane, src, scratch);
-  splatX16(scratch, dest);
+  as_vreplvei_b(dest, src, srcLane);
 }
 
 void MacroAssembler::splatX8(Register src, FloatRegister dest) {
@@ -2545,10 +2542,7 @@ void MacroAssembler::splatX8(Register src, FloatRegister dest) {
 
 void MacroAssembler::splatX8(uint32_t srcLane, FloatRegister src,
                              FloatRegister dest) {
-  UseScratchRegisterScope temps(asMasm());
-  const Register scratch = temps.Acquire();
-  extractLaneInt16x8(srcLane, src, scratch);
-  splatX8(scratch, dest);
+  as_vreplvei_h(dest, src, srcLane);
 }
 
 void MacroAssembler::splatX4(Register src, FloatRegister dest) {
@@ -2557,16 +2551,12 @@ void MacroAssembler::splatX4(Register src, FloatRegister dest) {
 
 void MacroAssembler::splatX4(FloatRegister src, FloatRegister dest) {
   
-  
-  as_vshuf4i_w(dest, src, 0b00000000);
+  as_vreplvei_w(dest, src, 0);
 }
 
 void MacroAssembler::splatX2(FloatRegister src, FloatRegister dest) {
   
-  
-  
-  
-  as_vshuf4i_d(dest, src, 0b00001010);
+  as_vreplvei_d(dest, src, 0);
 }
 
 void MacroAssembler::extractLaneInt8x16(uint32_t lane, FloatRegister src,
@@ -2598,19 +2588,12 @@ void MacroAssembler::extractLaneInt32x4(uint32_t lane, FloatRegister src,
 
 void MacroAssembler::extractLaneFloat32x4(uint32_t lane, FloatRegister src,
                                           FloatRegister dest) {
-  
-  
-  
-  as_vshuf4i_w(dest, src, 0b01010101 * lane);
+  as_vreplvei_w(dest, src, lane);
 }
 
 void MacroAssembler::extractLaneFloat64x2(uint32_t lane, FloatRegister src,
                                           FloatRegister dest) {
-  
-  
-  
-  
-  as_vshuf4i_d(dest, src, 0b00001010 | (0b00000101 * lane));
+  as_vreplvei_d(dest, src, lane);
 }
 
 void MacroAssembler::replaceLaneInt8x16(unsigned lane, Register rhs,
