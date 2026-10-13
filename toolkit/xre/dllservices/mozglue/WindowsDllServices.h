@@ -148,6 +148,10 @@ struct EnhancedModuleLoadInfo final {
 class DllServices : public detail::DllServicesBase {
  public:
   void DispatchDllLoadNotification(ModuleLoadInfo&& aModLoadInfo) final {
+    if (!aModLoadInfo.HasCompatibleLayout()) {
+      return;
+    }
+
     
     
     
@@ -174,6 +178,10 @@ class DllServices : public detail::DllServicesBase {
 
   void DispatchModuleLoadBacklogNotification(
       ModuleLoadInfoVec&& aEvents) final {
+    if (!aEvents.empty() && !aEvents.begin()->HasCompatibleLayout()) {
+      return;
+    }
+
     nsCOMPtr<nsIRunnable> runnable(
         NewRunnableMethod<StoreCopyPassByRRef<ModuleLoadInfoVec>>(
             "DllServices::NotifyModuleLoadBacklog", this,

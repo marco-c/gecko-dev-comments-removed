@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LoaderObserver.h"
 
 #include "mozilla/BaseProfilerMarkers.h"
@@ -53,6 +51,10 @@ void LoaderObserver::OnEndDllLoad(void* aContext, NTSTATUS aNtStatus,
         "DllLoad", OTHER, MarkerTiming::IntervalEnd(),
         mozilla::ProfilerString8View::WrapNullTerminatedString(
             utf8RequestedDllName.get()));
+  }
+
+  if (!aModuleLoadInfo.HasCompatibleLayout()) {
+    return;
   }
 
   
@@ -126,6 +128,10 @@ void LoaderObserver::Disable() {
 }
 
 void LoaderObserver::OnForward(ModuleLoadInfoVec&& aInfo) {
+  if (!aInfo.empty() || !aInfo.begin()->HasCompatibleLayout()) {
+    return;
+  }
+
   AutoExclusiveLock lock(mLock);
   if (!mModuleLoads) {
     mModuleLoads = new ModuleLoadInfoVec();

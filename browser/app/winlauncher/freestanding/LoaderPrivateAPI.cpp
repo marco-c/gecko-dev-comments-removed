@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "LoaderPrivateAPI.h"
 
 #include "mozilla/Assertions.h"
@@ -127,7 +125,8 @@ void DefaultLoaderObserver::OnEndDllLoad(void* aContext, NTSTATUS aNtStatus,
                                          ModuleLoadInfo&& aModuleLoadInfo) {
   
   
-  if (!NT_SUCCESS(aNtStatus) || !aModuleLoadInfo.WasMapped()) {
+  if (!aModuleLoadInfo.HasCompatibleLayout() || !NT_SUCCESS(aNtStatus) ||
+      !aModuleLoadInfo.WasMapped()) {
     return;
   }
 
@@ -190,10 +189,15 @@ bool LoaderPrivateAPIImp::SubstituteForLSP(PCUNICODE_STRING aLSPLeafName,
 void LoaderPrivateAPIImp::NotifyEndDllLoad(void* aContext,
                                            NTSTATUS aLoadNtStatus,
                                            ModuleLoadInfo&& aModuleLoadInfo) {
-  aModuleLoadInfo.SetEndLoadTimeStamp();
+  
+  
+  
+  if (aModuleLoadInfo.HasCompatibleLayout()) {
+    aModuleLoadInfo.SetEndLoadTimeStamp();
 
-  if (NT_SUCCESS(aLoadNtStatus)) {
-    aModuleLoadInfo.CaptureBacktrace();
+    if (NT_SUCCESS(aLoadNtStatus)) {
+      aModuleLoadInfo.CaptureBacktrace();
+    }
   }
 
   

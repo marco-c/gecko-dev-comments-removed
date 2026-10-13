@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "gtest/gtest.h"
 
 #include "mozilla/glue/WindowsDllServices.h"
@@ -80,4 +78,23 @@ TEST(TestDllServices, DoNotGetNestedMicrosoftCertificate)
   ::WaitForSingleObject(threadW, INFINITE);
   EXPECT_EQ(info.orgName,
             u"Microsoft Windows Software Compatibility Publisher"_ns);
+}
+
+
+
+
+TEST(TestDllServices, RejectIncompatibleModuleLoadInfo)
+{
+  RefPtr<DllServices> dllSvc(DllServices::Get());
+
+  ModuleLoadInfo noMagic;
+  noMagic.mMagic = 0;
+  EXPECT_FALSE(noMagic.HasCompatibleLayout());
+  dllSvc->DispatchDllLoadNotification(std::move(noMagic));
+
+  ModuleLoadInfoVec backlog;
+  ASSERT_TRUE(backlog.emplaceBack(ModuleLoadInfo()));
+  EXPECT_FALSE(backlog.begin()->HasCompatibleLayout());
+  dllSvc->DispatchModuleLoadBacklogNotification(std::move(backlog));
+  EXPECT_EQ(backlog.length(), 1u);
 }

@@ -8,6 +8,8 @@
 #include "mozilla/NativeNt.h"
 #include "mozilla/Vector.h"
 
+class TestDllServices_RejectIncompatibleModuleLoadInfo_Test;
+
 namespace mozilla {
 
 struct ModuleLoadInfo final {
@@ -16,6 +18,14 @@ struct ModuleLoadInfo final {
     Blocked,
     Redirected,
   };
+
+  
+  
+  
+  
+  
+  static constexpr uint64_t kMagic = 0xF14D6F644C6F6164ull;
+  static constexpr uint32_t kVersion = 1;
 
   
 #if !defined(MOZILLA_INTERNAL_API)
@@ -113,7 +123,6 @@ struct ModuleLoadInfo final {
   ModuleLoadInfo(ModuleLoadInfo&&) = default;
   ModuleLoadInfo& operator=(ModuleLoadInfo&&) = default;
 
-  ModuleLoadInfo() = delete;
   ModuleLoadInfo(const ModuleLoadInfo&) = delete;
   ModuleLoadInfo& operator=(const ModuleLoadInfo&) = delete;
 
@@ -148,6 +157,18 @@ struct ModuleLoadInfo final {
   bool WasBlocked() const { return mStatus == ModuleLoadInfo::Status::Blocked; }
 
   
+
+
+
+
+  bool HasCompatibleLayout() const {
+    return mMagic == kMagic && mVersion == kVersion;
+  }
+
+  
+  uint64_t mMagic = kMagic;
+  uint32_t mVersion = kVersion;
+  
   LARGE_INTEGER mBeginTimestamp;
   
   LARGE_INTEGER mLoadTimeInfo;
@@ -172,6 +193,20 @@ struct ModuleLoadInfo final {
   Status mStatus;
   
   bool mIsDependent;
+
+ private:
+  
+  
+  ModuleLoadInfo()
+      : mVersion(kVersion + 1),
+        mBeginTimestamp(),
+        mLoadTimeInfo(),
+        mThreadId(0),
+        mBaseAddr(nullptr),
+        mStatus(Status::Loaded),
+        mIsDependent(false) {}
+
+  friend class ::TestDllServices_RejectIncompatibleModuleLoadInfo_Test;
 };
 
 using ModuleLoadInfoVec = Vector<ModuleLoadInfo, 0, nt::RtlAllocPolicy>;
