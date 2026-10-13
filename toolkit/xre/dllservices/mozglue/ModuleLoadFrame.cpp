@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ModuleLoadFrame.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/UniquePtr.h"
@@ -53,6 +51,13 @@ void ModuleLoadFrame::StaticInit(nt::LoaderObserver* aNewObserver,
     aOutWinLauncher->mHandleLauncherError =
         sLoaderAPI->GetHandleLauncherErrorFn();
     aOutWinLauncher->mSharedSection = sLoaderAPI->GetSharedSection();
+  }
+
+  
+  
+  if (!ModuleLoadInfo::IsLayoutCompatible(::GetModuleHandleW(nullptr))) {
+    gFallbackLoaderAPI.SetObserver(aNewObserver);
+    sLoaderAPI = &gFallbackLoaderAPI;
   }
 }
 

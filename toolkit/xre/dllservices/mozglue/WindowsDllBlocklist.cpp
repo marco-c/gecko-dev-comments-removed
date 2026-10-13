@@ -2,7 +2,6 @@
 
 
 
-
 #include <windows.h>
 #include <winternl.h>
 
@@ -726,10 +725,22 @@ MFBT_API void DllBlocklist_SetFullDllServices(
   if (aSvc) {
     aSvc->SetAuthenticodeImpl(GetAuthenticode());
     aSvc->SetWinLauncherServices(gWinLauncher);
+
+    
+    
+    if (!ModuleLoadInfo::IsLayoutCompatible(::GetModuleHandleW(L"xul.dll"))) {
+      gMozglueLoaderObserver.Disable();
+      return;
+    }
+
     gMozglueLoaderObserver.Forward(aSvc);
   }
 
   gDllServices = aSvc;
+}
+
+extern "C" MFBT_API uint32_t ModuleLoadInfoLayoutVersion() {
+  return ModuleLoadInfo::kVersion;
 }
 
 MFBT_API void DllBlocklist_SetBasicDllServices(
