@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <variant>
@@ -32,6 +33,16 @@ using FrameType = VideoEncoderInterface::FrameType;
 class VideoEncoderFactoryInterface {
  public:
   enum class RateControlMode { kCqp, kCbr };
+
+  
+  
+  
+  enum class CbrSetting {
+    
+    
+    kBufferSizes,
+    kMaxIntraBitrateFactor
+  };
 
   class Capabilities {
    public:
@@ -71,10 +82,10 @@ class VideoEncoderFactoryInterface {
         scaling_factors_ = std::move(val);
       }
 
-      const std::vector<FrameType>& supported_frame_types() const {
+      const std::set<FrameType>& supported_frame_types() const {
         return supported_frame_types_;
       }
-      void set_supported_frame_types(std::vector<FrameType> val) {
+      void set_supported_frame_types(std::set<FrameType> val) {
         supported_frame_types_ = std::move(val);
       }
 
@@ -85,7 +96,7 @@ class VideoEncoderFactoryInterface {
       BufferSpaceType buffer_space_type_ = BufferSpaceType::kSingleKeyframe;
       int max_spatial_layers_ = 0;
       std::vector<Rational> scaling_factors_;
-      std::vector<FrameType> supported_frame_types_;
+      std::set<FrameType> supported_frame_types_;
     };
 
     class InputConstraints {
@@ -126,14 +137,26 @@ class VideoEncoderFactoryInterface {
         qp_range_ = {min_qp, max_qp};
       }
 
-      const std::vector<RateControlMode>& rc_modes() const { return rc_modes_; }
-      void set_rc_modes(std::vector<RateControlMode> val) {
+      const std::set<RateControlMode>& rc_modes() const { return rc_modes_; }
+      void set_rc_modes(std::set<RateControlMode> val) {
         rc_modes_ = std::move(val);
+      }
+
+      
+      
+      
+      
+      const std::set<CbrSetting>& supported_cbr_settings() const {
+        return supported_cbr_settings_;
+      }
+      void set_supported_cbr_settings(std::set<CbrSetting> val) {
+        supported_cbr_settings_ = std::move(val);
       }
 
      private:
       std::pair<int, int> qp_range_ = {0, 0};
-      std::vector<RateControlMode> rc_modes_;
+      std::set<RateControlMode> rc_modes_;
+      std::set<CbrSetting> supported_cbr_settings_;
     };
 
     class Performance {
@@ -201,10 +224,35 @@ class VideoEncoderFactoryInterface {
   class StaticEncoderSettings {
    public:
     struct Cqp {};
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     struct Cbr {
       
+      
+      
+      
       TimeDelta max_buffer_size;
+      
+      
+      
+      
       TimeDelta target_buffer_size;
+      
+      
+      
+      
+      
+      
+      double max_intra_bitrate_factor = 3.0;
     };
 
     StaticEncoderSettings() = default;
