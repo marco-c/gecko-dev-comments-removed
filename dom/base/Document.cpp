@@ -11524,7 +11524,12 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   if (HasViewportSizeOverrideForMiniWindow()) {
     
     
-    CSSToScreenScale minZoom = layoutDeviceScale * ViewportMinScale();
+    
+    
+    
+    
+    CSSToScreenScale minZoom =
+        layoutDeviceScale * LayoutDeviceToScreenScale(0.01f);
     CSSToScreenScale maxZoom = layoutDeviceScale * ViewportMaxScale();
     return nsViewportInfo(
         defaultScale, minZoom, maxZoom, mViewportSizeOverrideForMiniWindow,
