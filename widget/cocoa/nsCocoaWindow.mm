@@ -6782,11 +6782,6 @@ void nsCocoaWindow::ProcessTransitions() {
 
       case TransitionType::Zoom:
         if (!mWindow.zoomed) {
-          
-          
-          if (mSizeMode == nsSizeMode_Normal) {
-            mRestoredBounds = Some(mBounds);
-          }
           [mWindow zoom:nil];
         }
         break;
@@ -7801,6 +7796,15 @@ void nsCocoaWindow::CocoaSendToplevelDeactivateEvents() {
   }
 }
 
+
+
+
+void nsCocoaWindow::SaveRestoredBounds() {
+  if (mSizeMode == nsSizeMode_Normal) {
+    mRestoredBounds = Some(mBounds);
+  }
+}
+
 void nsCocoaWindow::CocoaWindowDidResize() {
   
   
@@ -8102,6 +8106,12 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   RollUpPopups();
 }
 
+- (void)windowWillStartLiveResize:(NSNotification*)aNotification {
+  if (mGeckoWindow) {
+    mGeckoWindow->SaveRestoredBounds();
+  }
+}
+
 - (void)windowDidMove:(NSNotification*)aNotification {
   if (mGeckoWindow) mGeckoWindow->ReportMoveEvent();
 }
@@ -8149,6 +8159,9 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
     return NO;  
   }
   mHasEverBeenZoomed = YES;
+  if (mGeckoWindow) {
+    mGeckoWindow->SaveRestoredBounds();
+  }
   return YES;
 }
 
