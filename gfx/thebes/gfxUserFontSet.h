@@ -264,6 +264,7 @@ struct gfxUserFontAttributes {
 class gfxUserFontSet {
   friend class gfxUserFontEntry;
   friend class gfxOTSMessageContext;
+  friend class gfxPlatformFontList;
 
  public:
   using FontWidth = mozilla::FontWidth;
@@ -561,6 +562,11 @@ class gfxUserFontSet {
 
   
   bool mRebuildLocalRules;
+
+  
+  
+  
+  bool mDestroying = false;
 
   
   uint32_t mDownloadCount;

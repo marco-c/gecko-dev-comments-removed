@@ -554,11 +554,16 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   void AddUserFontSet(gfxUserFontSet* aUserFontSet) {
     AutoLock lock(mLock);
-    mUserFontSetList.Insert(aUserFontSet);
+    if (!aUserFontSet->mDestroying) {
+      mUserFontSetList.Insert(aUserFontSet);
+    }
   }
 
+  
+  
   void RemoveUserFontSet(gfxUserFontSet* aUserFontSet) {
     AutoLock lock(mLock);
+    aUserFontSet->mDestroying = true;
     mUserFontSetList.Remove(aUserFontSet);
   }
 
