@@ -4705,7 +4705,19 @@ SSLExp_GetResumptionTokenInfo(const PRUint8 *tokenData, unsigned int tokenLen,
         return SECFailure;
     }
 
-    token.peerCert = CERT_DupCertificate(sid.peerCert);
+    
+
+    if (sid.peerCertDER.data) {
+        token.peerCert = CERT_NewTempCertificate(NULL, 
+                                                 &sid.peerCertDER,
+                                                 NULL, PR_FALSE, PR_TRUE);
+        if (!token.peerCert) {
+            ssl_DestroySID(&sid, PR_FALSE);
+            return SECFailure;
+        }
+    } else {
+        token.peerCert = NULL;
+    }
 
     token.alpnSelectionLen = sid.u.ssl3.alpnSelection.len;
     token.alpnSelection = PORT_ZAlloc(token.alpnSelectionLen);

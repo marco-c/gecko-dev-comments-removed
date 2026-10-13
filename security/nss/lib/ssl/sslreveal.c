@@ -24,8 +24,11 @@ SSL_RevealCert(PRFileDesc *fd)
     
 
 
-    if (sslsocket && sslsocket->sec.peerCert)
-        cert = CERT_DupCertificate(sslsocket->sec.peerCert);
+    if (sslsocket && sslsocket->sec.peerCertDER.data) {
+        cert = CERT_NewTempCertificate(sslsocket->dbHandle,
+                                       &sslsocket->sec.peerCertDER,
+                                       NULL, PR_FALSE, PR_TRUE);
+    }
 
     return cert;
 }

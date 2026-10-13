@@ -432,7 +432,9 @@ struct sslSessionIDStr {
 
 
 
-    CERTCertificate *peerCert;
+    
+
+    SECItem peerCertDER;
     SECItemArray peerCertStatus;        
     const char *peerID;                 
     const char *urlSvrName;             
@@ -1032,7 +1034,20 @@ struct sslSecurityInfoStr {
     sslBuffer writeBuf; 
 
     CERTCertificate *localCert;
-    CERTCertificate *peerCert;
+    
+
+
+
+
+
+
+
+
+
+    SECItem peerCertDER;
+    CERTSubjectPublicKeyInfo *peerCertSPKI;
+    
+
     SECKEYPublicKey *peerKey;
 
     SSLAuthType authType;
@@ -1649,6 +1664,16 @@ extern PRBool ssl_SignatureSchemeEnabled(const sslSocket *ss,
 extern PRBool ssl_IsSupportedSignatureScheme(SSLSignatureScheme scheme);
 extern SECStatus ssl_CheckSignatureSchemeConsistency(
     sslSocket *ss, SSLSignatureScheme scheme, CERTSubjectPublicKeyInfo *spki);
+
+
+
+
+extern CERTSubjectPublicKeyInfo *ssl_ExtractSPKIFromDER(const SECItem *derCert);
+
+
+extern SECStatus ssl_SetPeerCertificate(sslSecurityInfo *sec,
+                                        const SECItem *derCert);
+extern void ssl_ClearPeerCertificate(sslSecurityInfo *sec);
 extern SECStatus ssl_ParseSignatureSchemes(const sslSocket *ss, PLArenaPool *arena,
                                            SSLSignatureScheme **schemesOut,
                                            unsigned int *numSchemesOut,

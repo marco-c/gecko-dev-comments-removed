@@ -139,19 +139,6 @@ NSS_CMSMessage_Copy(NSSCMSMessage *cmsg)
 
 
 
-PLArenaPool *
-NSS_CMSMessage_GetArena(NSSCMSMessage *cmsg)
-{
-    if (cmsg == NULL) {
-        return NULL;
-    }
-
-    return cmsg->poolp;
-}
-
-
-
-
 NSSCMSContentInfo *
 NSS_CMSMessage_GetContentInfo(NSSCMSMessage *cmsg)
 {
@@ -231,32 +218,6 @@ NSS_CMSMessage_ContentLevel(NSSCMSMessage *cmsg, int n)
 
 
 PRBool
-NSS_CMSMessage_ContainsCertsOrCrls(NSSCMSMessage *cmsg)
-{
-    NSSCMSContentInfo *cinfo;
-
-    if (cmsg == NULL) {
-        return PR_FALSE;
-    }
-
-    
-    for (cinfo = &(cmsg->contentInfo); cinfo != NULL;
-         cinfo = NSS_CMSContentInfo_GetChildContentInfo(cinfo)) {
-        SECOidTag tag = NSS_CMSContentInfo_GetContentTypeTag(cinfo);
-        if (tag != SEC_OID_PKCS7_SIGNED_DATA)
-            continue; 
-
-        if (NSS_CMSSignedData_ContainsCertsOrCrls(NSS_CMSContentInfo_GetContent(cinfo)))
-            return PR_TRUE;
-        
-    }
-    return PR_FALSE;
-}
-
-
-
-
-PRBool
 NSS_CMSMessage_IsEncrypted(NSSCMSMessage *cmsg)
 {
     NSSCMSContentInfo *cinfo;
@@ -317,31 +278,5 @@ NSS_CMSMessage_IsSigned(NSSCMSMessage *cmsg)
                 break;
         }
     }
-    return PR_FALSE;
-}
-
-
-
-
-
-
-
-PRBool
-NSS_CMSMessage_IsContentEmpty(NSSCMSMessage *cmsg, unsigned int minLen)
-{
-    SECItem *item = NULL;
-
-    if (cmsg == NULL) {
-        return PR_TRUE;
-    }
-
-    item = NSS_CMSContentInfo_GetContent(NSS_CMSMessage_GetContentInfo(cmsg));
-
-    if (!item) {
-        return PR_TRUE;
-    } else if (item->len <= minLen) {
-        return PR_TRUE;
-    }
-
     return PR_FALSE;
 }

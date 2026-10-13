@@ -724,6 +724,14 @@ CERT_DecodeDERCertificate(SECItem *derSignedCert, PRBool copyDER,
     int rv;
     int len;
     char *tmpname;
+    PRErrorCode savedErr;
+
+    
+
+
+
+
+    savedErr = PORT_GetError();
 
     
     arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
@@ -829,6 +837,7 @@ CERT_DecodeDERCertificate(SECItem *derSignedCert, PRBool copyDER,
     cert->pkcs11ID = CK_INVALID_HANDLE;
     cert->dbnickname = NULL;
 
+    PORT_SetError(savedErr);
     return (cert);
 
 loser:

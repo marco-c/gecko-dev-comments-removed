@@ -26,47 +26,6 @@ SEC_BEGIN_PROTOS
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern SECStatus NSS_SMIMEUtil_EnableCipher(long which, int on);
-
-
-
-
-PRBool NSS_SMIMEUtil_EncryptionEnabled(int which);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 extern SECStatus NSS_SMIMEUtils_AllowCipher(long which, int on);
 
 
@@ -80,26 +39,6 @@ extern PRBool NSS_SMIMEUtil_DecryptionAllowed(SECAlgorithmID *algid, PK11SymKey 
 
 
 extern PRBool NSS_SMIMEUtil_EncryptionAllowed(SECAlgorithmID *algid, PK11SymKey *key);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern PRBool NSS_SMIMEUtil_EncryptionPossible(void);
 
 
 
@@ -120,26 +59,6 @@ extern PRBool NSS_SMIMEUtil_KeyEncodingAllowed(SECAlgorithmID *algtag,
 
 extern PRBool NSS_SMIMEUtil_KeyDecodingAllowed(SECAlgorithmID *algtag,
                                                SECKEYPrivateKey *key);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern PRBool NSS_SMIMEUtil_EncryptionPossible(void);
 
 
 

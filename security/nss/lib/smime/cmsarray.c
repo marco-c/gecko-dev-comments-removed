@@ -26,17 +26,6 @@
 
 
 
-void **
-NSS_CMSArray_Alloc(PLArenaPool *poolp, int n)
-{
-    return (void **)PORT_ArenaZAlloc(poolp, n * sizeof(void *));
-}
-
-
-
-
-
-
 SECStatus
 NSS_CMSArray_Add(PLArenaPool *poolp, void ***array, void *obj)
 {

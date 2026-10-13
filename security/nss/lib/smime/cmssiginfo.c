@@ -758,16 +758,6 @@ NSS_CMSSignerInfo_AddAuthAttr(NSSCMSSignerInfo *signerinfo, NSSCMSAttribute *att
 
 
 
-SECStatus
-NSS_CMSSignerInfo_AddUnauthAttr(NSSCMSSignerInfo *signerinfo, NSSCMSAttribute *attr)
-{
-    return NSS_CMSAttributeArray_AddAttr(signerinfo->cmsg->poolp, &(signerinfo->unAuthAttr), attr);
-}
-
-
-
-
-
 
 
 
@@ -939,27 +929,6 @@ NSS_CMSSignerInfo_AddMSSMIMEEncKeyPrefs(NSSCMSSignerInfo *signerinfo, CERTCertif
 
 loser:
     PORT_ArenaRelease(poolp, mark);
-    return SECFailure;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-SECStatus
-NSS_CMSSignerInfo_AddCounterSignature(NSSCMSSignerInfo *signerinfo,
-                                      SECOidTag digestalg, CERTCertificate signingcert)
-{
-    
     return SECFailure;
 }
 

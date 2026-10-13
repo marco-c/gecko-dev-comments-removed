@@ -6,8 +6,10 @@
 
 
 
+#include "nssrenam.h" 
 #include "ssl.h"
 #include "sslimpl.h"
+#include "secder.h"        
 #include "secoid.h"        
 #include "pk11func.h"      
 #include "nss.h"           
@@ -1040,4 +1042,112 @@ NSS_FindCertKEAType(CERTCertificate *cert)
         default:
             return ssl_kea_null;
     }
+}
+
+
+
+
+
+static CERTSubjectPublicKeyInfo *
+ssl_CopySPKI(const CERTSubjectPublicKeyInfo *from)
+{
+    CERTSubjectPublicKeyInfo *spki;
+    PLArenaPool *arena;
+
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
+    if (!arena) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        return NULL;
+    }
+
+    spki = PORT_ArenaZNew(arena, CERTSubjectPublicKeyInfo);
+    if (!spki) {
+        PORT_FreeArena(arena, PR_FALSE);
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        return NULL;
+    }
+    spki->arena = arena;
+
+    
+
+    if (SECKEY_CopySubjectPublicKeyInfo(arena, spki,
+                                        (CERTSubjectPublicKeyInfo *)from) !=
+        SECSuccess) {
+        PORT_FreeArena(arena, PR_FALSE);
+        return NULL;
+    }
+    return spki;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+CERTSubjectPublicKeyInfo *
+ssl_ExtractSPKIFromDER(const SECItem *derCert)
+{
+    CERTCertificate *cert;
+    CERTSubjectPublicKeyInfo *spki;
+
+    if (!derCert || !derCert->data || !derCert->len) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
+
+    
+
+    cert = CERT_DecodeDERCertificate((SECItem *)derCert, PR_FALSE, NULL);
+    if (!cert) {
+        return NULL;
+    }
+
+    spki = ssl_CopySPKI(&cert->subjectPublicKeyInfo);
+    CERT_DestroyCertificate(cert);
+    return spki;
+}
+
+void
+ssl_ClearPeerCertificate(sslSecurityInfo *sec)
+{
+    SECITEM_FreeItem(&sec->peerCertDER, PR_FALSE);
+    SECKEY_DestroySubjectPublicKeyInfo(sec->peerCertSPKI);
+    sec->peerCertSPKI = NULL;
+}
+
+
+
+
+
+
+
+
+
+
+SECStatus
+ssl_SetPeerCertificate(sslSecurityInfo *sec, const SECItem *derCert)
+{
+    SECItem der = { siBuffer, NULL, 0 };
+    CERTSubjectPublicKeyInfo *spki;
+
+    spki = ssl_ExtractSPKIFromDER(derCert);
+    if (!spki) {
+        return SECFailure;
+    }
+    if (SECITEM_CopyItem(NULL, &der, derCert) != SECSuccess) {
+        SECKEY_DestroySubjectPublicKeyInfo(spki);
+        return SECFailure;
+    }
+
+    ssl_ClearPeerCertificate(sec);
+    sec->peerCertDER = der;
+    sec->peerCertSPKI = spki;
+    return SECSuccess;
 }

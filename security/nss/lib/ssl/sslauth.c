@@ -2,6 +2,7 @@
 
 
 
+#include "nssrenam.h" 
 #include "cert.h"
 #include "secitem.h"
 #include "ssl.h"
@@ -22,8 +23,9 @@ SSL_PeerCertificate(PRFileDesc *fd)
                  SSL_GETPID(), fd));
         return 0;
     }
-    if (ss->opt.useSecurity && ss->sec.peerCert) {
-        return CERT_DupCertificate(ss->sec.peerCert);
+    if (ss->opt.useSecurity && ss->sec.peerCertDER.data) {
+        return CERT_NewTempCertificate(ss->dbHandle, &ss->sec.peerCertDER,
+                                       NULL, PR_FALSE, PR_TRUE);
     }
     return 0;
 }
@@ -45,7 +47,7 @@ SSLExp_PeerCertificateChainDER(PRFileDesc *fd, SECItemArray **out)
                  SSL_GETPID(), fd));
         return SECFailure;
     }
-    if (!ss->opt.useSecurity || !ss->sec.peerCert) {
+    if (!ss->opt.useSecurity || !ss->sec.peerCertDER.data) {
         PORT_SetError(SSL_ERROR_NO_CERTIFICATE);
         return SECFailure;
     }
@@ -61,7 +63,7 @@ SSLExp_PeerCertificateChainDER(PRFileDesc *fd, SECItemArray **out)
     }
 
     index = 0;
-    rv = SECITEM_CopyItem(NULL, &chain->items[index++], &ss->sec.peerCert->derCert);
+    rv = SECITEM_CopyItem(NULL, &chain->items[index++], &ss->sec.peerCertDER);
     if (rv != SECSuccess) {
         goto loser; 
     }
@@ -96,7 +98,7 @@ SSL_PeerCertificateChain(PRFileDesc *fd)
                  SSL_GETPID(), fd));
         return NULL;
     }
-    if (!ss->opt.useSecurity || !ss->sec.peerCert) {
+    if (!ss->opt.useSecurity || !ss->sec.peerCertDER.data) {
         PORT_SetError(SSL_ERROR_NO_CERTIFICATE);
         return NULL;
     }
@@ -104,8 +106,9 @@ SSL_PeerCertificateChain(PRFileDesc *fd)
     if (!chain) {
         return NULL;
     }
-    cert = CERT_DupCertificate(ss->sec.peerCert);
-    if (CERT_AddCertToListTail(chain, cert) != SECSuccess) {
+    cert = CERT_NewTempCertificate(ss->dbHandle, &ss->sec.peerCertDER,
+                                   NULL, PR_FALSE, PR_TRUE);
+    if (!cert || CERT_AddCertToListTail(chain, cert) != SECSuccess) {
         goto loser;
     }
     for (cur = ss->ssl3.peerCertChain; cur; cur = cur->next) {
@@ -206,9 +209,15 @@ SSL_SecurityStatus(PRFileDesc *fd, int *op, char **cp, int *kp0, int *kp1,
         }
 
         if (ip || sp) {
-            CERTCertificate *cert;
+            CERTCertificate *cert = NULL;
 
-            cert = ss->sec.peerCert;
+            
+
+
+            if (ss->sec.peerCertDER.data) {
+                cert = CERT_DecodeDERCertificate(&ss->sec.peerCertDER,
+                                                 PR_FALSE, NULL);
+            }
             if (cert) {
                 if (ip) {
                     *ip = CERT_NameToAscii(&cert->issuer);
@@ -216,6 +225,7 @@ SSL_SecurityStatus(PRFileDesc *fd, int *op, char **cp, int *kp0, int *kp1,
                 if (sp) {
                     *sp = CERT_NameToAscii(&cert->subject);
                 }
+                CERT_DestroyCertificate(cert);
             } else {
                 if (ip) {
                     *ip = PORT_Strdup("no certificate");
@@ -300,6 +310,7 @@ SSL_AuthCertificate(void *arg, PRFileDesc *fd, PRBool checkSig, PRBool isServer)
     SECCertUsage certUsage;
     const char *hostname = NULL;
     SECItemArray *certStatusArray;
+    CERTCertificate *peerCert;
 
     ss = ssl_FindSocket(fd);
     PORT_Assert(ss != NULL);
@@ -310,10 +321,26 @@ SSL_AuthCertificate(void *arg, PRFileDesc *fd, PRBool checkSig, PRBool isServer)
     handle = (CERTCertDBHandle *)arg;
     certStatusArray = &ss->sec.ci.sid->peerCertStatus;
 
+    
+
+
+
+
+
+    if (!ss->sec.peerCertDER.data) {
+        PORT_SetError(SSL_ERROR_NO_CERTIFICATE);
+        return SECFailure;
+    }
+    peerCert = CERT_NewTempCertificate(handle, &ss->sec.peerCertDER,
+                                       NULL, PR_FALSE, PR_TRUE);
+    if (!peerCert) {
+        return SECFailure;
+    }
+
     PRTime now = ssl_Time(ss);
     if (certStatusArray->len) {
         PORT_SetError(0);
-        if (CERT_CacheOCSPResponseFromSideChannel(handle, ss->sec.peerCert, now,
+        if (CERT_CacheOCSPResponseFromSideChannel(handle, peerCert, now,
                                                   &certStatusArray->items[0],
                                                   ss->pkcs11PinArg) !=
             SECSuccess) {
@@ -329,13 +356,13 @@ SSL_AuthCertificate(void *arg, PRFileDesc *fd, PRBool checkSig, PRBool isServer)
 
     CERTCertList *peerChain = SSL_PeerCertificateChain(fd);
 
-    rv = CERT_VerifyCert(handle, ss->sec.peerCert, checkSig, certUsage,
+    rv = CERT_VerifyCert(handle, peerCert, checkSig, certUsage,
                          now, ss->pkcs11PinArg, NULL);
 
     CERT_DestroyCertList(peerChain);
 
     if (rv != SECSuccess || isServer)
-        return rv;
+        goto done;
 
     
 
@@ -343,11 +370,13 @@ SSL_AuthCertificate(void *arg, PRFileDesc *fd, PRBool checkSig, PRBool isServer)
 
     hostname = ss->url;
     if (hostname && hostname[0])
-        rv = CERT_VerifyCertName(ss->sec.peerCert, hostname);
+        rv = CERT_VerifyCertName(peerCert, hostname);
     else
         rv = SECFailure;
     if (rv != SECSuccess)
         PORT_SetError(SSL_ERROR_BAD_CERT_DOMAIN);
 
+done:
+    CERT_DestroyCertificate(peerCert);
     return rv;
 }

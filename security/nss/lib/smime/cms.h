@@ -171,12 +171,6 @@ NSS_CMSMessage_Copy(NSSCMSMessage *cmsg);
 
 
 
-extern PLArenaPool *
-NSS_CMSMessage_GetArena(NSSCMSMessage *cmsg);
-
-
-
-
 extern NSSCMSContentInfo *
 NSS_CMSMessage_GetContentInfo(NSSCMSMessage *cmsg);
 
@@ -208,12 +202,6 @@ NSS_CMSMessage_ContentLevel(NSSCMSMessage *cmsg, int n);
 
 
 extern PRBool
-NSS_CMSMessage_ContainsCertsOrCrls(NSSCMSMessage *cmsg);
-
-
-
-
-extern PRBool
 NSS_CMSMessage_IsEncrypted(NSSCMSMessage *cmsg);
 
 
@@ -228,15 +216,6 @@ NSS_CMSMessage_IsEncrypted(NSSCMSMessage *cmsg);
 
 extern PRBool
 NSS_CMSMessage_IsSigned(NSSCMSMessage *cmsg);
-
-
-
-
-
-
-
-extern PRBool
-NSS_CMSMessage_IsContentEmpty(NSSCMSMessage *cmsg, unsigned int minLen);
 
 
 
@@ -463,12 +442,6 @@ NSS_CMSSignedData_Decode_AfterData(NSSCMSSignedData *sigd);
 extern SECStatus
 NSS_CMSSignedData_Decode_AfterEnd(NSSCMSSignedData *sigd);
 
-
-
-
-extern NSSCMSSignerInfo **
-NSS_CMSSignedData_GetSignerInfos(NSSCMSSignedData *sigd);
-
 extern int
 NSS_CMSSignedData_SignerInfoCount(NSSCMSSignedData *sigd);
 
@@ -486,12 +459,6 @@ NSS_CMSSignedData_GetDigestAlgs(NSSCMSSignedData *sigd);
 
 extern NSSCMSContentInfo *
 NSS_CMSSignedData_GetContentInfo(NSSCMSSignedData *sigd);
-
-
-
-
-extern SECItem **
-NSS_CMSSignedData_GetCertificateList(NSSCMSSignedData *sigd);
 
 extern SECStatus
 NSS_CMSSignedData_ImportCerts(NSSCMSSignedData *sigd, CERTCertDBHandle *certdb,
@@ -678,13 +645,6 @@ NSS_CMSSignerInfo_AddAuthAttr(NSSCMSSignerInfo *signerinfo, NSSCMSAttribute *att
 
 
 
-extern SECStatus
-NSS_CMSSignerInfo_AddUnauthAttr(NSSCMSSignerInfo *signerinfo, NSSCMSAttribute *attr);
-
-
-
-
-
 
 
 
@@ -725,13 +685,6 @@ NSS_CMSSignerInfo_AddSMIMEEncKeyPrefs(NSSCMSSignerInfo *signerinfo, CERTCertific
 
 SECStatus
 NSS_CMSSignerInfo_AddMSSMIMEEncKeyPrefs(NSSCMSSignerInfo *signerinfo, CERTCertificate *cert, CERTCertDBHandle *certdb);
-
-
-
-
-extern SECStatus
-NSS_CMSSignerInfo_AddCounterSignature(NSSCMSSignerInfo *signerinfo,
-                                      SECOidTag digestalg, CERTCertificate signingcert);
 
 
 
@@ -829,9 +782,6 @@ NSS_CMSEnvelopedData_Decode_AfterEnd(NSSCMSEnvelopedData *envd);
 extern void
 NSS_CMSAuthEnvelopedData_Destroy(NSSCMSAuthEnvelopedData *authenvd);
 
-extern NSSCMSContentInfo *
-NSS_CMSAuthEnvelopedData_GetContentInfo(NSSCMSAuthEnvelopedData *authenvd);
-
 extern SECStatus
 NSS_CMSAuthEnvelopedData_Decode_BeforeData(NSSCMSAuthEnvelopedData *authenvd);
 
@@ -896,18 +846,12 @@ SECStatus NSS_CMSRecipientInfo_GetCertAndKey(NSSCMSRecipientInfo *ri,
 extern int
 NSS_CMSRecipientInfo_GetVersion(NSSCMSRecipientInfo *ri);
 
-extern SECItem *
-NSS_CMSRecipientInfo_GetEncryptedKey(NSSCMSRecipientInfo *ri, int subIndex);
-
 
 
 
 SECStatus NSS_CMSRecipientInfo_Encode(PLArenaPool *poolp,
                                       const NSSCMSRecipientInfo *src,
                                       SECItem *returned);
-
-extern SECOidTag
-NSS_CMSRecipientInfo_GetKeyEncryptionAlgorithmTag(NSSCMSRecipientInfo *ri);
 
 extern SECStatus
 NSS_CMSRecipientInfo_WrapBulkKey(NSSCMSRecipientInfo *ri, PK11SymKey *bulkkey,

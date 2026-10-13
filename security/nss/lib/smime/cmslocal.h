@@ -196,11 +196,6 @@ extern NSSCMSRecipientEncryptedKey *NSS_CMSRecipientEncryptedKey_Create(PLArenaP
 
 
 
-extern void **
-NSS_CMSArray_Alloc(PLArenaPool *poolp, int n);
-
-
-
 
 extern SECStatus
 NSS_CMSArray_Add(PLArenaPool *poolp, void ***array, void *obj);
@@ -238,15 +233,8 @@ NSS_CMSArray_Sort(void **primary, int (*compare)(void *, void *), void **seconda
 
 
 
-
 extern NSSCMSAttribute *
 NSS_CMSAttribute_Create(PLArenaPool *poolp, SECOidTag oidtag, SECItem *value, PRBool encoded);
-
-
-
-
-extern SECStatus
-NSS_CMSAttribute_AddValue(PLArenaPool *poolp, NSSCMSAttribute *attr, SECItem *value);
 
 
 

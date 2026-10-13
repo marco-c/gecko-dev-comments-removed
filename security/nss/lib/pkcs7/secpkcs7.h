@@ -352,19 +352,6 @@ extern SECStatus SEC_PKCS7AddSignedAttribute(SEC_PKCS7ContentInfo *cinfo,
 
 
 
-
-
-
-extern SECStatus SEC_PKCS7AddCertChain(SEC_PKCS7ContentInfo *cinfo,
-                                       CERTCertificate *cert,
-                                       CERTCertDBHandle *certdb);
-
-
-
-
-
-
-
 extern SECStatus SEC_PKCS7AddCertificate(SEC_PKCS7ContentInfo *cinfo,
                                          CERTCertificate *cert);
 
@@ -593,26 +580,6 @@ SEC_PKCS7GetEncryptionAlgorithm(SEC_PKCS7ContentInfo *cinfo);
 
 
 extern SECStatus
-SEC_PKCS7EncryptContents(PLArenaPool *poolp,
-                         SEC_PKCS7ContentInfo *cinfo,
-                         SECItem *key,
-                         void *wincx);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern SECStatus
 SEC_PKCS7DecryptContents(PLArenaPool *poolp,
                          SEC_PKCS7ContentInfo *cinfo,
                          SECItem *key,
@@ -625,12 +592,6 @@ SEC_PKCS7DecryptContents(PLArenaPool *poolp,
 
 extern SECItem **
 SEC_PKCS7GetCertificateList(SEC_PKCS7ContentInfo *cinfo);
-
-
-
-
-extern int
-SEC_PKCS7GetKeyLength(SEC_PKCS7ContentInfo *cinfo);
 
 
 SEC_END_PROTOS

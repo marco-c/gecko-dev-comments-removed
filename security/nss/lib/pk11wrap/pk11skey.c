@@ -455,7 +455,8 @@ PK11_VerifyKeyOK(PK11SymKey *key)
 static PK11SymKey *
 pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
                            PK11Origin origin, PRBool isToken, CK_ATTRIBUTE *keyTemplate,
-                           unsigned int templateCount, SECItem *key, void *wincx)
+                           unsigned int templateCount, unsigned int keyTemplateSize,
+                           SECItem *key, PRBool force, void *wincx)
 {
     PK11SymKey *symKey;
     SECStatus rv;
@@ -467,6 +468,13 @@ pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
 
     symKey->size = key->len;
 
+    PORT_Assert(templateCount < keyTemplateSize);
+    if (templateCount >= keyTemplateSize) {
+        
+
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return NULL;
+    }
     PK11_SETATTRS(&keyTemplate[templateCount], CKA_VALUE, key->data, key->len);
     templateCount++;
 
@@ -480,12 +488,79 @@ pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     
     rv = PK11_CreateNewObject(slot, symKey->session, keyTemplate,
                               templateCount, isToken, &symKey->objectID);
-    if (rv != SECSuccess) {
+    if (rv == SECSuccess) {
+        return symKey;
+    }
+    
+    if (!force) {
+        PK11_FreeSymKey(symKey);
+        return NULL;
+    }
+    
+    CK_MECHANISM_TYPE hmac = CKM_SHA256_HMAC;
+    int hmac_size = 32;
+    if (!PK11_DoesMechanism(slot, PK11_GetKeyGenWithSize(hmac, hmac_size)) ||
+        !PK11_DoesMechanism(slot, CKM_CONCATENATE_DATA_AND_BASE)) {
+        
+        PK11_FreeSymKey(symKey);
+        return NULL;
+    }
+    
+
+
+
+
+    
+    PK11SymKey *seedKey = PK11_KeyGen(slot, hmac, NULL, hmac_size, wincx);
+
+    if (seedKey == NULL) {
         PK11_FreeSymKey(symKey);
         return NULL;
     }
 
-    return symKey;
+    
+    CK_KEY_DERIVATION_STRING_DATA params = { 0 };
+    CK_MECHANISM mechanism = { 0, NULL, 0 };
+    params.pData = key->data;
+    params.ulLen = key->len;
+    mechanism.mechanism = CKM_CONCATENATE_DATA_AND_BASE;
+    mechanism.pParameter = &params;
+    mechanism.ulParameterLen = sizeof(params);
+
+    
+
+
+
+    CK_ULONG valueLen; 
+
+    if (!pk11_FindAttrInTemplate(keyTemplate, templateCount, CKA_VALUE_LEN)) {
+        
+        PORT_Assert(templateCount < keyTemplateSize);
+        if (templateCount >= keyTemplateSize) {
+            
+
+            PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+            return NULL;
+        }
+        valueLen = (CK_ULONG)key->len;
+        keyTemplate[templateCount].type = CKA_VALUE_LEN;
+        keyTemplate[templateCount].pValue = (void *)&valueLen;
+        keyTemplate[templateCount].ulValueLen = sizeof(valueLen);
+        templateCount++;
+    }
+
+    CK_RV crv = PK11_GETTAB(slot)->C_DeriveKey(symKey->session, &mechanism,
+                                               seedKey->objectID, keyTemplate,
+                                               templateCount,
+                                               &symKey->objectID);
+    PK11_FreeSymKey(seedKey);
+    if (crv == CKR_OK) {
+        return symKey;
+    }
+
+    PORT_SetError(PK11_MapError(crv));
+    PK11_FreeSymKey(symKey);
+    return NULL;
 }
 
 
@@ -502,6 +577,7 @@ PK11_ImportSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     CK_BBOOL cktrue = CK_TRUE; 
     CK_ATTRIBUTE keyTemplate[5];
     CK_ATTRIBUTE *attrs = keyTemplate;
+    unsigned int keyTemplateSize = PR_ARRAY_SIZE(keyTemplate);
 
     
 
@@ -519,11 +595,12 @@ PK11_ImportSymKey(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     PK11_SETATTRS(attrs, operation, &cktrue, 1);
     attrs++;
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount + 1 <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount + 1 <= keyTemplateSize);
 
     keyType = PK11_GetKeyType(type, key->len);
     symKey = pk11_ImportSymKeyWithTempl(slot, type, origin, PR_FALSE,
-                                        keyTemplate, templateCount, key, wincx);
+                                        keyTemplate, templateCount, keyTemplateSize,
+                                        key, PR_FALSE, wincx);
     return symKey;
 }
 
@@ -569,6 +646,7 @@ PK11_ImportSymKeyWithFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     CK_BBOOL cktrue = CK_TRUE; 
     CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS];
     CK_ATTRIBUTE *attrs = keyTemplate;
+    unsigned int keyTemplateSize = PR_ARRAY_SIZE(keyTemplate);
 
     
 
@@ -598,11 +676,12 @@ PK11_ImportSymKeyWithFlags(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
         attrs++;
     }
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount + 1 <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount + 1 <= keyTemplateSize);
 
     keyType = PK11_GetKeyType(type, key->len);
     symKey = pk11_ImportSymKeyWithTempl(slot, type, origin, isPerm,
-                                        keyTemplate, templateCount, key, wincx);
+                                        keyTemplate, templateCount, keyTemplateSize,
+                                        key, PR_FALSE, wincx);
     if (symKey && isPerm) {
         symKey->owner = PR_FALSE;
     }
@@ -2638,7 +2717,8 @@ static PK11SymKey *
 pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
                 CK_MECHANISM *mech, SECItem *inKey, CK_MECHANISM_TYPE target,
                 CK_ATTRIBUTE *keyTemplate, unsigned int templateCount,
-                int key_size, void *wincx, CK_RV *crvp, PRBool isPerm)
+                unsigned int keyTemplateSize, int key_size, void *wincx,
+                CK_RV *crvp, PRBool isPerm)
 {
     CK_ULONG len;
     SECItem outKey;
@@ -2703,8 +2783,9 @@ pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
 
     if (PK11_DoesMechanism(slot, target)) {
         symKey = pk11_ImportSymKeyWithTempl(slot, target, PK11_OriginUnwrap,
-                                            isPerm, keyTemplate,
-                                            templateCount, &outKey, wincx);
+                                            isPerm, keyTemplate, templateCount,
+                                            keyTemplateSize, &outKey, PR_TRUE,
+                                            wincx);
     } else {
         slot = PK11_GetBestSlot(target, wincx);
         if (slot == NULL) {
@@ -2715,8 +2796,9 @@ pk11_HandUnwrap(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
             return NULL;
         }
         symKey = pk11_ImportSymKeyWithTempl(slot, target, PK11_OriginUnwrap,
-                                            isPerm, keyTemplate,
-                                            templateCount, &outKey, wincx);
+                                            isPerm, keyTemplate, templateCount,
+                                            keyTemplateSize, &outKey, PR_TRUE,
+                                            wincx);
         PK11_FreeSlot(slot);
     }
     PORT_Free(outKey.data);
@@ -2751,6 +2833,8 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
     CK_ATTRIBUTE keyTemplate[MAX_TEMPL_ATTRS + MAX_ADD_ATTRS];
 #undef MAX_ADD_ATTRS
     CK_ATTRIBUTE *attrs = keyTemplate;
+    unsigned int keyTemplateSize = PR_ARRAY_SIZE(keyTemplate);
+
     unsigned int templateCount;
 
     if (numAttrs > MAX_TEMPL_ATTRS) {
@@ -2800,7 +2884,7 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
     }
 
     templateCount = attrs - keyTemplate;
-    PR_ASSERT(templateCount <= sizeof(keyTemplate) / sizeof(CK_ATTRIBUTE));
+    PR_ASSERT(templateCount <= keyTemplateSize);
 
     
 
@@ -2837,8 +2921,8 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
 
     if ((mechanism_info.flags & CKF_DECRYPT) && !PK11_DoesMechanism(slot, target)) {
         symKey = pk11_HandUnwrap(slot, wrappingKey, &mechanism, wrappedKey,
-                                 target, keyTemplate, templateCount, keySize,
-                                 wincx, &crv, isPerm);
+                                 target, keyTemplate, templateCount,
+                                 keyTemplateSize, keySize, wincx, &crv, isPerm);
         if (symKey) {
             if (param_free)
                 SECITEM_FreeItem(param_free, PR_TRUE);
@@ -2896,7 +2980,8 @@ pk11_AnyUnwrapKey(PK11SlotInfo *slot, CK_OBJECT_HANDLE wrappingKey,
             
             symKey = pk11_HandUnwrap(slot, wrappingKey, &mechanism, wrappedKey,
                                      target, keyTemplate, templateCount,
-                                     keySize, wincx, NULL, isPerm);
+                                     keyTemplateSize, keySize, wincx, NULL,
+                                     isPerm);
         }
     }
 
