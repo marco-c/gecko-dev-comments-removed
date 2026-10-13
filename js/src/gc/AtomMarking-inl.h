@@ -216,6 +216,17 @@ MOZ_ALWAYS_INLINE bool AtomRefRuntime::inlinedRecordRefFallible(Zone* zone,
   return inlinedRecordRefInternal(zone, thing, lock);
 }
 
+template <typename T>
+void AtomRefRuntime::recordRef(JSContext* cx, T* thing) {
+  
+  
+  
+  
+  ReadBarrier(thing);
+
+  inlinedRecordRefInfallible(cx->zone(), thing);
+}
+
 }  
 }  
 
