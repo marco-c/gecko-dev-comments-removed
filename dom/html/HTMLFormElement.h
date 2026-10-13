@@ -494,13 +494,13 @@ class HTMLFormElement final : public nsGenericHTMLElement {
   Maybe<uint64_t> mCurrentLoadId;
 
   
-  nsGenericHTMLFormElement* mDefaultSubmitElement;
+  RefPtr<nsGenericHTMLFormElement> mDefaultSubmitElement;
 
   
-  nsGenericHTMLFormElement* mFirstSubmitInElements;
+  RefPtr<nsGenericHTMLFormElement> mFirstSubmitInElements;
 
   
-  nsGenericHTMLFormElement* mFirstSubmitNotInElements;
+  RefPtr<nsGenericHTMLFormElement> mFirstSubmitNotInElements;
 
   
   
