@@ -26,6 +26,15 @@ const APIS = {
   GetPidForTab({ tab }) {
     return browser.test.getPidForTab(tab.id);
   },
+  GetBrowsingContextGroupIdForTab({ tab }) {
+    return browser.test.getBrowsingContextGroupIdForTab(tab.id);
+  },
+  GetRemoteTypeForTab({ tab }) {
+    return browser.test.getRemoteTypeForTab(tab.id);
+  },
+  MintPictureInPicturePlacementToken({ tab }) {
+    return browser.test.mintPictureInPicturePlacementToken(tab.id);
+  },
   WaitForContentTransformsReceived({ tab }) {
     return browser.test.waitForContentTransformsReceived(tab.id);
   },

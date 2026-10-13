@@ -15,6 +15,8 @@ ChromeUtils.defineESModuleGetters(this, {
   Blocklist: "resource://gre/modules/Blocklist.sys.mjs",
   EventDispatcher: "resource://gre/modules/Messaging.sys.mjs",
   GeckoViewActorManager: "resource://gre/modules/GeckoViewActorManager.sys.mjs",
+  GeckoViewPictureInPictureController:
+    "resource://gre/modules/GeckoViewPictureInPicture.sys.mjs",
   GeckoViewSettings: "resource://gre/modules/GeckoViewSettings.sys.mjs",
   GeckoViewUtils: "resource://gre/modules/GeckoViewUtils.sys.mjs",
   InitializationTracker: "resource://gre/modules/GeckoViewTelemetry.sys.mjs",
@@ -435,13 +437,25 @@ function createBrowser(settings) {
   browser.setAttribute("flex", "1");
   browser.setAttribute("maychangeremoteness", "true");
   browser.setAttribute("remote", "true");
-  browser.setAttribute(
-    "remoteType",
-    ChromeUtils.predictRemoteTypeForURI(null, {
+  const pipPlacement = settings.pictureInPictureToken
+    ? GeckoViewPictureInPictureController.consumePlacement(
+        settings.pictureInPictureToken
+      )
+    : null;
+  let remoteType;
+  if (pipPlacement) {
+    browser.setAttribute(
+      "initialBrowsingContextGroupId",
+      pipPlacement.browsingContextGroupId
+    );
+    remoteType = pipPlacement.remoteType;
+  } else {
+    remoteType = ChromeUtils.predictRemoteTypeForURI(null, {
       window,
       geckoViewSessionContextId: settings.sessionContextId ?? undefined,
-    })
-  );
+    });
+  }
+  browser.setAttribute("remoteType", remoteType);
   browser.setAttribute("messagemanagergroup", "browsers");
   browser.setAttribute("manualactiveness", "true");
 

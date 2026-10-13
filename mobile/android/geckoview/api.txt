@@ -2180,6 +2180,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoSessionSettings.Builder contextId(@Nullable String);
     method @NonNull public GeckoSessionSettings.Builder displayMode(int);
     method @NonNull public GeckoSessionSettings.Builder fullAccessibilityTree(boolean);
+    method @NonNull public GeckoSessionSettings.Builder pictureInPictureToken(@NonNull String);
     method @NonNull public GeckoSessionSettings.Builder screenId(int);
     method @NonNull public GeckoSessionSettings.Builder suspendMediaWhenInactive(boolean);
     method @NonNull public GeckoSessionSettings.Builder usePrivateMode(boolean);

@@ -18,8 +18,10 @@ exclude: true
     [`ContentDelegate.onExternalResponse`][160.1] now contains a filename validated with the same
     rules desktop applies when saving a download, instead of the header sent by the server.
     ([bug 1822968]({{bugzilla}}1822968))
+- Added [`GeckoSessionSettings.Builder.pictureInPictureToken`][160.2] so the session created for a picture-in-picture request is opened in the browsing context group and content process of the video it clones. ([bug 2065579]({{bugzilla}}2065579))
 
 [160.1]: {{javadoc_uri}}/GeckoSession.ContentDelegate.html#onExternalResponse(org.mozilla.geckoview.GeckoSession,org.mozilla.geckoview.WebResponse)
+[160.2]: {{javadoc_uri}}/GeckoSessionSettings.Builder.html#pictureInPictureToken(java.lang.String)
 
 ## v157
 - Added [`GeckoSession.getPdfViewerEditor`][157.1] and
@@ -2093,4 +2095,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 55cd455785615eb939cf804b61c033a5f1631a0c
+[api-version]: 584391acb0e3a7a66ad9c84b95992bd460865c2e

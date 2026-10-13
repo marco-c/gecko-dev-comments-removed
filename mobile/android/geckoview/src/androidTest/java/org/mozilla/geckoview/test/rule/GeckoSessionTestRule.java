@@ -2551,6 +2551,20 @@ public class GeckoSessionTestRule implements TestRule {
     return dblPid.intValue();
   }
 
+  public long getSessionBrowsingContextGroupId(final @NonNull GeckoSession session) {
+    final Double dblId =
+        (Double) webExtensionApiCall(session, "GetBrowsingContextGroupIdForTab", null);
+    return dblId.longValue();
+  }
+
+  public String getSessionRemoteType(final @NonNull GeckoSession session) {
+    return (String) webExtensionApiCall(session, "GetRemoteTypeForTab", null);
+  }
+
+  public String mintPictureInPicturePlacementToken(final @NonNull GeckoSession session) {
+    return (String) webExtensionApiCall(session, "MintPictureInPicturePlacementToken", null);
+  }
+
   public void waitForContentTransformsReceived(final @NonNull GeckoSession session) {
     webExtensionApiCall(session, "WaitForContentTransformsReceived", null);
   }
