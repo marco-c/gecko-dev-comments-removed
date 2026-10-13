@@ -1,0 +1,30 @@
+
+
+TEST_HTML = "<button id='test' aria-brailleroledescription=''> </div>"
+
+def test_atspi(atspi, session, inline):
+    session.url = inline(TEST_HTML)
+
+    
+    
+
+    node = atspi.find_node("test", session.url)
+    assert 'brailleroledescription' not in atspi.Accessible.get_attributes(node)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

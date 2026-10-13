@@ -1,0 +1,36 @@
+
+
+TEST_HTML = "<div role='group' id='test' aria-live='off'> <div role='group' id='child'>content</div> </div>"
+
+def test_atspi(atspi, session, inline):
+    session.url = inline(TEST_HTML)
+
+    
+    
+    
+    
+
+    node = atspi.find_node("test", session.url)
+    assert "live:off" in atspi.Accessible.get_attributes_as_array(node)
+    assert "container-live:off" in atspi.Accessible.get_attributes_as_array(node)
+    assert "container-live:off" in atspi.Accessible.get_attributes_as_array(node)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

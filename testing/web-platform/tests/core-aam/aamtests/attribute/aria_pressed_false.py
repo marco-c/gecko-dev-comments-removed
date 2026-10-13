@@ -1,0 +1,32 @@
+
+
+TEST_HTML = "<div role='button' id='test' aria-pressed='false'>content</div>"
+
+def test_atspi(atspi, session, inline):
+    session.url = inline(TEST_HTML)
+
+    
+    
+
+    node = atspi.find_node("test", session.url)
+    assert "STATE_PRESSED" not in atspi.get_state_list_helper(node)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
