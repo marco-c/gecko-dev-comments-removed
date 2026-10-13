@@ -3073,27 +3073,31 @@ impl TileCacheInstance {
         }
 
         
-        for sub_slice in &mut self.sub_slices {
-            for dirty_test in self.deferred_dirty_tests.drain(..) {
-                
-                let mut total_dirty_rect = PictureRect::zero();
+        
+        
+        for dirty_test in self.deferred_dirty_tests.drain(..) {
+            
+            let mut total_dirty_rect = PictureRect::zero();
 
+            for sub_slice in &self.sub_slices {
                 for y in dirty_test.tile_rect.min.y .. dirty_test.tile_rect.max.y {
                     for x in dirty_test.tile_rect.min.x .. dirty_test.tile_rect.max.x {
                         let key = TileOffset::new(x, y);
-                        let tile = sub_slice.tiles.get_mut(&key).expect("bug: no tile");
+                        let tile = sub_slice.tiles.get(&key).expect("bug: no tile");
                         total_dirty_rect = total_dirty_rect.union(&tile.cached_surface.local_dirty_rect);
                     }
                 }
+            }
 
-                
-                
-                
-                
-                
-                
-                
-                if total_dirty_rect.intersects(&dirty_test.prim_rect) {
+            
+            
+            
+            
+            
+            
+            
+            if total_dirty_rect.intersects(&dirty_test.prim_rect) {
+                for sub_slice in &mut self.sub_slices {
                     for y in dirty_test.tile_rect.min.y .. dirty_test.tile_rect.max.y {
                         for x in dirty_test.tile_rect.min.x .. dirty_test.tile_rect.max.x {
                             let key = TileOffset::new(x, y);
