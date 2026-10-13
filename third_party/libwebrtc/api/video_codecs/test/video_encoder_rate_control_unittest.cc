@@ -127,6 +127,12 @@ class VideoEncoderRateControlTestBase : public ::testing::Test {
     return MaxTemporalLayers() >= num_temporal_layers;
   }
 
+  int MaxSpatialLayers() const {
+    return encoder_factory_->GetEncoderCapabilities()
+        .prediction_constraints()
+        .max_spatial_layers();
+  }
+
   int NumReferenceBuffers() const {
     return encoder_factory_->GetEncoderCapabilities()
         .prediction_constraints()
@@ -175,6 +181,21 @@ class VideoEncoderRateControlTestBase : public ::testing::Test {
   }
 
   
+  scoped_refptr<VideoFrameBuffer> NextFrame(Resolution resolution) {
+    test::FrameGeneratorInterface::VideoFrameData frame_data =
+        frame_generator_->NextFrame();
+    RTC_CHECK(frame_data.buffer != nullptr);
+    if (frame_data.buffer->width() == resolution.width &&
+        frame_data.buffer->height() == resolution.height) {
+      return frame_data.buffer;
+    }
+    scoped_refptr<I420Buffer> scaled_buffer =
+        I420Buffer::Create(resolution.width, resolution.height);
+    scaled_buffer->ScaleFrom(*frame_data.buffer->ToI420());
+    return scaled_buffer;
+  }
+
+  
   struct EncodeSettings {
     int num_frames = 0;
     DataRate target_bitrate = DataRate::Zero();
@@ -210,18 +231,7 @@ class VideoEncoderRateControlTestBase : public ::testing::Test {
     scoped_refptr<VideoFrameBuffer> frame;
     for (int i = 0; i < settings.num_frames; ++i) {
       if (frame == nullptr || !settings.repeat_frame) {
-        test::FrameGeneratorInterface::VideoFrameData frame_data =
-            frame_generator_->NextFrame();
-        ASSERT_TRUE(frame_data.buffer != nullptr);
-        if (frame_data.buffer->width() == settings.resolution.width &&
-            frame_data.buffer->height() == settings.resolution.height) {
-          frame = frame_data.buffer;
-        } else {
-          scoped_refptr<I420Buffer> scaled_buffer = I420Buffer::Create(
-              settings.resolution.width, settings.resolution.height);
-          scaled_buffer->ScaleFrom(*frame_data.buffer->ToI420());
-          frame = scaled_buffer;
-        }
+        frame = NextFrame(settings.resolution);
       }
 
       std::optional<TemporalLayerPatternForTest::FrameConfig> frame_config;
@@ -400,12 +410,6 @@ class VideoEncoderRateControlTestBase : public ::testing::Test {
     std::vector<int> frames_per_layer(num_temporal_layers, 0);
     std::vector<double> psnr_sum_per_layer(num_temporal_layers, 0.0);
     for (const AccumulatedData& frame : encoded_frames_) {
-      
-      
-      
-      if (frame.is_keyframe) {
-        continue;
-      }
       ASSERT_LT(frame.temporal_id, num_temporal_layers);
       per_layer[frame.temporal_id].Add(frame);
       ++frames_per_layer[frame.temporal_id];
@@ -882,6 +886,99 @@ TEST_P(TemporalLayerRateControlTest, AdheresToLayerAllocation) {
     EXPECT_GT(MeanPsnrOfTemporalLayer(0), MeanPsnr());
   }
 }
+
+
+
+
+
+
+
+
+
+
+TEST_P(VideoEncoderRateControlTest, SpatialLayerAllocation) {
+  if (!SupportsCbr()) {
+    GTEST_SKIP() << "Encoder does not support CBR mode.";
+  }
+  if (MaxSpatialLayers() < 2) {
+    GTEST_SKIP() << "Encoder does not support spatial layers.";
+  }
+
+  constexpr Resolution kResolution = kQvgaResolution;
+  constexpr TimeDelta kFrameInterval = 1 / Frequency::Hertz(30);
+  constexpr DataRate kTargetBitrate = DataRate::KilobitsPerSec(300);
+  constexpr int kNumTemporalUnits = TimeDelta::Seconds(10) / kFrameInterval;
+
+  for (int num_spatial_layers = 2; num_spatial_layers <= MaxSpatialLayers();
+       ++num_spatial_layers) {
+    SCOPED_TRACE(num_spatial_layers);
+    SetUpCbrEncoder(kResolution);
+
+    
+    
+    
+    const int weight_sum = num_spatial_layers * (num_spatial_layers + 1) / 2;
+    std::vector<DataRate> layer_bitrates;
+    for (int sid = 0; sid < num_spatial_layers; ++sid) {
+      layer_bitrates.push_back(kTargetBitrate * (sid + 1) / weight_sum);
+    }
+
+    std::vector<AccumulatedData> per_layer(num_spatial_layers);
+    for (int tu = 0; tu < kNumTemporalUnits; ++tu) {
+      std::vector<EncOut> outs(num_spatial_layers);
+      std::vector<VideoEncoderInterface::FrameEncodeSettings> frame_settings;
+      for (int sid = 0; sid < num_spatial_layers; ++sid) {
+        Fb builder;
+        builder.Res(kResolution)
+            .S(sid)
+            .Cbr({.duration = kFrameInterval,
+                  .target_bitrate = layer_bitrates[sid]})
+            .Upd(sid)
+            .Out(outs[sid]);
+        if (tu == 0 && sid == 0) {
+          builder.Key();
+        } else {
+          std::vector<int> references;
+          if (tu > 0) {
+            references.push_back(sid);
+          }
+          if (sid > 0) {
+            references.push_back(sid - 1);
+          }
+          builder.Delta().Ref(references);
+        }
+        frame_settings.push_back(builder.Build());
+      }
+      encoder_->Encode(NextFrame(kResolution),
+                       TemporalUnitSettings(current_timestamp_),
+                       std::move(frame_settings));
+
+      for (int sid = 0; sid < num_spatial_layers; ++sid) {
+        ASSERT_THAT(outs[sid], HasBitstreamAndMetaData());
+        const AccumulatedData frame = {
+            .actual = DataSize::Bytes(outs[sid].bitstream.size()),
+            .ideal = layer_bitrates[sid] * kFrameInterval,
+            .duration = kFrameInterval,
+            .is_keyframe = tu == 0 && sid == 0};
+        encoded_frames_.push_back(frame);
+        per_layer[sid].Add(frame);
+      }
+      current_timestamp_ += kFrameInterval;
+      time_controller_.AdvanceTime(kFrameInterval);
+    }
+
+    VerifyTotalDeviation(5.0);
+    
+    
+    
+    for (int sid = 0; sid < num_spatial_layers; ++sid) {
+      EXPECT_NEAR(per_layer[sid].deviation_pct(), 0.0, 8.0)
+          << "S" << sid << " (actual: " << per_layer[sid].actual.bytes()
+          << " bytes, target: " << per_layer[sid].ideal.bytes() << " bytes)";
+    }
+  }
+}
+
 
 
 
