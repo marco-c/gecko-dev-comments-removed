@@ -2,9 +2,10 @@
 
 
 
-#include "mozilla/Maybe.h"   
-#include "mozilla/Span.h"    
-#include "mozilla/Vector.h"  
+#include "mozilla/FloatingPoint.h"  
+#include "mozilla/Maybe.h"          
+#include "mozilla/Span.h"           
+#include "mozilla/Vector.h"         
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -556,20 +557,14 @@ bool DebuggerScript::CallData::getChildScripts() {
 }
 
 static bool ScriptOffset(JSContext* cx, const Value& v, size_t* offsetp) {
-  double d;
-  size_t off;
-
-  bool ok = v.isNumber();
-  if (ok) {
-    d = v.toNumber();
-    off = size_t(d);
-  }
-  if (!ok || off != d) {
+  int64_t off;
+  if (!v.isNumber() || !mozilla::NumberEqualsInt64(v.toNumber(), &off) ||
+      off < 0 || off > UINT32_MAX) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_DEBUG_BAD_OFFSET);
     return false;
   }
-  *offsetp = off;
+  *offsetp = static_cast<size_t>(off);
   return true;
 }
 
