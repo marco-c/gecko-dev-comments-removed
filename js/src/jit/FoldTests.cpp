@@ -126,17 +126,19 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
 
 
 
-
+static void DiscardTestedPhi(MPhi* phi) {
+  for (size_t i = 0; i < phi->numOperands(); i++) {
+    phi->getOperand(i)->setImplicitlyUsedUnchecked();
+  }
+  phi->block()->discardPhi(phi);
+}
 
 
 
 [[nodiscard]] static bool UpdateGotoSuccessor(TempAllocator& alloc,
                                               MBasicBlock* block,
-                                              MDefinition* blockResult,
                                               MBasicBlock* target,
                                               MBasicBlock* existingPred) {
-  blockResult->setImplicitlyUsedUnchecked();
-
   MInstruction* ins = block->lastIns();
   MOZ_RELEASE_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
@@ -303,14 +305,14 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
   
 
   
-  phiBlock->discardPhi(*phiBlock->phisBegin());
+  DiscardTestedPhi(phi);
 
   
   
 
   if (IsTestInputMaybeToBool(initialTest, trueResult)) {
-    if (!UpdateGotoSuccessor(graph.alloc(), trueBranch, trueResult,
-                             finalTest->ifTrue(), testBlock)) {
+    if (!UpdateGotoSuccessor(graph.alloc(), trueBranch, finalTest->ifTrue(),
+                             testBlock)) {
       return false;
     }
   } else {
@@ -322,8 +324,8 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
   }
 
   if (IsTestInputMaybeToBool(initialTest, falseResult)) {
-    if (!UpdateGotoSuccessor(graph.alloc(), falseBranch, falseResult,
-                             finalTest->ifFalse(), testBlock)) {
+    if (!UpdateGotoSuccessor(graph.alloc(), falseBranch, finalTest->ifFalse(),
+                             testBlock)) {
       return false;
     }
   } else {
@@ -500,7 +502,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   
 
   
-  phiBlock->discardPhi(*phiBlock->phisBegin());
+  DiscardTestedPhi(phi);
 
   
   
@@ -512,8 +514,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
       return false;
     }
   } else if (IsTestInputMaybeToBool(initialTest, trueResult)) {
-    if (!UpdateGotoSuccessor(graph.alloc(), trueBranch, trueResult,
-                             finalTest->ifTrue(), testBlock)) {
+    if (!UpdateGotoSuccessor(graph.alloc(), trueBranch, finalTest->ifTrue(),
+                             testBlock)) {
       return false;
     }
   } else {
@@ -531,8 +533,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
       return false;
     }
   } else if (IsTestInputMaybeToBool(initialTest, falseResult)) {
-    if (!UpdateGotoSuccessor(graph.alloc(), falseBranch, falseResult,
-                             finalTest->ifFalse(), testBlock)) {
+    if (!UpdateGotoSuccessor(graph.alloc(), falseBranch, finalTest->ifFalse(),
+                             testBlock)) {
       return false;
     }
   } else {
@@ -709,7 +711,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   
 
   
-  phiBlock->discardPhi(*phiBlock->phisBegin());
+  DiscardTestedPhi(phi);
 
   
   if (!UpdateTestSuccessors(graph.alloc(), newTestBlock, newTestInput,
