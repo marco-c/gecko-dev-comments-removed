@@ -106,11 +106,12 @@ class PdfStructTreeBuilder {
   RefPtr<ReadyPromise::Private> mReadyPromise;
   int mLastPdfId = 0;
   
-  mozilla::HashMap<GlobalAccessibleId, int, PairHasher<uint64_t, uint64_t>>
-      mAccToPdf;
+  bool mBuilt = false;
+  
+  HashMap<GlobalAccessibleId, int, PairHasher<uint64_t, uint64_t>> mAccToPdf;
 
   
-  friend class nsTArrayElementTraits<mozilla::a11y::PdfStructTreeBuilder>;
+  friend class nsTArrayElementTraits<a11y::PdfStructTreeBuilder>;
 };
 
 }  
