@@ -686,6 +686,8 @@ class DesktopInstance(GeckoInstance):
         
         "browser.newtabpage.activity-stream.testing.shouldInitializeFeeds": False,
         
+        "browser.newtabpage.activity-stream.widgets.enabled": False,
+        
         
         "browser.pagethumbnails.capturing_disabled": True,
         
