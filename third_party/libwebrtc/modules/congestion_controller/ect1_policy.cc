@@ -9,9 +9,44 @@
 
 #include "modules/congestion_controller/ect1_policy.h"
 
+#include <algorithm>
+#include <optional>
+
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
+namespace {
+
+
+
+
+
+
+
+constexpr TimeDelta kEct1FeedbackTimeoutBeforeAck = TimeDelta::Millis(500);
+constexpr TimeDelta kEct1FeedbackTimeoutAfterAck = TimeDelta::Seconds(5);
+
+
+
+
+
+
+constexpr TimeDelta kMaxCountedSendGap = TimeDelta::Millis(200);
+
+
+
+
+static_assert(kMaxCountedSendGap < kEct1FeedbackTimeoutBeforeAck);
+
+
+
+
+
+constexpr TimeDelta kEct1RetryDelay = TimeDelta::Seconds(10);
+
+}  
 
 void Ect1Policy::SetFeedbackSupportsEcn(bool supports_ecn) {
   feedback_supports_ecn_ = supports_ecn;
@@ -26,22 +61,67 @@ void Ect1Policy::SetCongestionControllerSupportsEcn(bool supports_ecn) {
 void Ect1Policy::OnNetworkRouteChanged() {
   
   route_bleaches_ect1_ = false;
+  ect1_drop_detected_time_ = std::nullopt;
+  ect1_drop_retried_ = false;
+  ect1_preserved_on_route_ = false;
+  time_sending_ect1_without_feedback_ = TimeDelta::Zero();
   LogIfDecisionChanged();
 }
 
-void Ect1Policy::OnPacketsFeedback(bool has_bleached_ect1) {
-  if (route_bleaches_ect1_ || !has_bleached_ect1) {
-    return;
+void Ect1Policy::OnPacketsFeedback(bool has_bleached_ect1,
+                                   bool has_preserved_ect1) {
+  
+  
+  time_sending_ect1_without_feedback_ = TimeDelta::Zero();
+  if (has_preserved_ect1) {
+    ect1_preserved_on_route_ = true;
   }
-  route_bleaches_ect1_ = true;
-  RTC_LOG(LS_INFO) << "Transport does not preserve the ECT(1) marking. Stop "
-                      "sending ECT(1) on this route.";
+  if (has_bleached_ect1 && !route_bleaches_ect1_) {
+    route_bleaches_ect1_ = true;
+    RTC_LOG(LS_INFO) << "Transport does not preserve the ECT(1) marking. Stop "
+                        "sending ECT(1) on this route.";
+  }
   LogIfDecisionChanged();
+}
+
+void Ect1Policy::OnPacketSent(Timestamp send_time, bool sent_as_ect1) {
+  if (ect1_drop_detected_time_.has_value() && !ect1_drop_retried_ &&
+      send_time - *ect1_drop_detected_time_ > kEct1RetryDelay) {
+    ect1_drop_retried_ = true;
+    
+    ect1_drop_detected_time_ = std::nullopt;
+    time_sending_ect1_without_feedback_ = TimeDelta::Zero();
+    RTC_LOG(LS_INFO) << "Retrying ECT(1) on this route.";
+  }
+
+  if (sent_as_ect1) {
+    if (last_send_time_.has_value()) {
+      time_sending_ect1_without_feedback_ +=
+          std::min(send_time - *last_send_time_, kMaxCountedSendGap);
+    }
+    TimeDelta timeout = Ect1FeedbackTimeout();
+    if (!ect1_drop_detected_time_.has_value() &&
+        time_sending_ect1_without_feedback_ > timeout) {
+      ect1_drop_detected_time_ = send_time;
+      RTC_LOG(LS_INFO) << "No feedback while sending ECT(1) packets during "
+                       << ToString(timeout)
+                       << ". Assuming the transport drops them. Stop sending "
+                          "ECT(1) on this route.";
+    }
+  }
+  last_send_time_ = send_time;
+
+  LogIfDecisionChanged();
+}
+
+TimeDelta Ect1Policy::Ect1FeedbackTimeout() const {
+  return ect1_preserved_on_route_ ? kEct1FeedbackTimeoutAfterAck
+                                  : kEct1FeedbackTimeoutBeforeAck;
 }
 
 bool Ect1Policy::ShouldSendEct1() const {
   return feedback_supports_ecn_ && congestion_controller_supports_ecn_ &&
-         !route_bleaches_ect1_;
+         !route_bleaches_ect1_ && !ect1_drop_detected_time_.has_value();
 }
 
 void Ect1Policy::LogIfDecisionChanged() {

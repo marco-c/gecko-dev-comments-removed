@@ -226,10 +226,13 @@ struct RTC_EXPORT TransportPacketsFeedback {
 
   
   bool HasPacketWithEcnCe() const;
-
+  
   
   
   bool HasPacketWithBleachedEct1() const;
+  
+  
+  bool HasPacketWithEcn() const;
 };
 
 

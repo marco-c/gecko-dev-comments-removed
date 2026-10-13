@@ -136,7 +136,22 @@ bool TransportPacketsFeedback::HasPacketWithBleachedEct1() const {
     
     
     
-    if (fb.sent_with_ect1 && fb.IsReceived() && fb.ecn == EcnMarking::kNotEct) {
+    
+    if (fb.sent_with_ect1 && fb.IsReceived() && fb.ecn != EcnMarking::kEct1 &&
+        fb.ecn != EcnMarking::kCe) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TransportPacketsFeedback::HasPacketWithEcn() const {
+  for (const PacketResult& fb : packet_feedbacks) {
+    
+    
+    
+    if (fb.sent_with_ect1 && fb.IsReceived() &&
+        (fb.ecn == EcnMarking::kEct1 || fb.ecn == EcnMarking::kCe)) {
       return true;
     }
   }

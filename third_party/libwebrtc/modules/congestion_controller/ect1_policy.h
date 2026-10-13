@@ -10,7 +10,20 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_ECT1_POLICY_H_
 #define MODULES_CONGESTION_CONTROLLER_ECT1_POLICY_H_
 
+#include <optional>
+
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+
 namespace webrtc {
+
+
+
+
+
+
+
+
 
 
 
@@ -30,16 +43,35 @@ class Ect1Policy {
   void OnNetworkRouteChanged();
   
   
-  void OnPacketsFeedback(bool has_bleached_ect1);
+  
+  
+  
+  void OnPacketsFeedback(bool has_bleached_ect1, bool has_preserved_ect1);
+
+  
+  
+  void OnPacketSent(Timestamp send_time, bool sent_as_ect1);
 
   bool ShouldSendEct1() const;
 
  private:
   void LogIfDecisionChanged();
 
+  
+  TimeDelta Ect1FeedbackTimeout() const;
+
   bool feedback_supports_ecn_ = false;
   bool congestion_controller_supports_ecn_ = false;
   bool route_bleaches_ect1_ = false;
+  
+  std::optional<Timestamp> ect1_drop_detected_time_;
+  
+  bool ect1_drop_retried_ = false;
+  bool ect1_preserved_on_route_ = false;
+  
+  TimeDelta time_sending_ect1_without_feedback_ = TimeDelta::Zero();
+  
+  std::optional<Timestamp> last_send_time_;
   bool logged_send_ect1_ = false;
 };
 
