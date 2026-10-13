@@ -169,7 +169,7 @@ bool nsGNOMEShellService::CheckHandlerMatchesAppName(
 }
 
 NS_IMETHODIMP
-nsGNOMEShellService::IsDefaultBrowser(bool aForAllTypes,
+nsGNOMEShellService::IsDefaultBrowser(bool ,
                                       bool* aIsDefaultBrowser) {
   *aIsDefaultBrowser = false;
 
@@ -353,7 +353,7 @@ static nsresult WriteImage(const nsCString& aPath, imgIContainer* aImage) {
 NS_IMETHODIMP
 nsGNOMEShellService::SetDesktopBackground(dom::Element* aElement,
                                           int32_t aPosition,
-                                          const nsACString& aImageName) {
+                                          const nsACString& ) {
   nsCOMPtr<nsIImageLoadingContent> imageContent = do_QueryInterface(aElement);
   if (!imageContent) {
     return NS_ERROR_FAILURE;
