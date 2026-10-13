@@ -24,16 +24,24 @@ let detectedFields = [
   "cc-csc",
 ];
 
+let expectedDetectFieldsResult;
+
 
 function detectFields(fieldDetails) {
+  if (!expectedDetectFieldsResult) {
+    return false;
+  }
+
   for (let fd of fieldDetails) {
-    if (fd.fieldName || !fd.mlData) {
+    if (!FormAutofillUtils.canUseML(fd)) {
       continue;
     }
 
     fd.fieldName = detectedFields.shift();
     fd.reason = "ml";
   }
+
+  return true;
 }
 
 add_setup(async function () {
@@ -55,7 +63,6 @@ add_setup(async function () {
     set: [
       ["extensions.formautofill.useml", true],
       ["extensions.formautofill.useml.nativeOnnxAvailable", true],
-      ["extensions.formautofill.useml.successful", false],
     ],
   });
 
@@ -65,7 +72,6 @@ add_setup(async function () {
 });
 
 add_heuristic_tests([
-  
   
   {
     fixtureData: `
@@ -79,11 +85,12 @@ add_heuristic_tests([
       <p><label>country: <input type="text" id="country" name="country"/></label></p>
       <p><label>tel: <input type="text" id="tel" name="tel" autocomplete="tel"/></label></p>
       <p><label>email: <input type="email" id="email" name="email"/></label></p>`,
+    onTestStart: async () => {
+      expectedDetectFieldsResult = false;
+    },
     onTestComplete: async () => {
       
-      await SpecialPowers.pushPrefEnv({
-        set: [["extensions.formautofill.useml.successful", true]],
-      });
+      expectedDetectFieldsResult = true;
       await assertTelemetry({
         given_name: "0",
         family_name: "0",
