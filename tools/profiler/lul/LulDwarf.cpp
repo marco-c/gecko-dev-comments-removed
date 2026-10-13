@@ -2207,6 +2207,31 @@ unsigned int DwarfCFIToModule::RegisterNames::MIPS() {
   return 8 + 8 + 8 + 8 + 9 + 8 + 7 + 7 + 6;
 }
 
+unsigned int DwarfCFIToModule::RegisterNames::LOONGARCH() {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  return 32 + 32 + 8 + 1 + 32 + 32;
+}
+
 
 int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader,
                        ImageSlice expr, bool debug, bool pushCfaAtStart,
