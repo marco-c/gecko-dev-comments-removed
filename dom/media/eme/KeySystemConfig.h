@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
 #define DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
 
@@ -185,6 +183,7 @@ struct KeySystemConfig {
 
   
   static bool Supports(const nsAString& aKeySystem);
+  static RefPtr<GenericPromise> SupportsAsync(const nsAString& aKeySystem);
 
   enum class DecryptionInfo : uint8_t {
     Software,
@@ -238,6 +237,9 @@ struct KeySystemConfig {
   ContainerSupport mWebM;
 
  private:
+  static RefPtr<SupportedConfigsPromise> CreateSupportedKeySystemConfigs(
+      const nsTArray<KeySystemConfigRequest>& aRequests);
+
   static void CreateClearKeyKeySystemConfigs(
       const KeySystemConfigRequest& aRequest,
       nsTArray<KeySystemConfig>& aOutConfigs);

@@ -182,6 +182,7 @@ nsCString GMPInfoFileParser::Get(const nsCString& aKey) const {
 
 bool HaveGMPFor(const nsACString& aAPI, const nsTArray<nsCString>& aTags) {
   GMP_LOG_DEBUG("HaveGMPFor: api={}, mainThread={}", aAPI, NS_IsMainThread());
+  MOZ_ASSERT(!NS_IsMainThread());
   for (const auto& tag : aTags) {
     GMP_LOG_DEBUG("HaveGMPFor: api={}, tag={}", aAPI, tag);
   }
