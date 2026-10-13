@@ -13,6 +13,8 @@
 #include <cstddef>
 #include <map>
 #include <span>
+#include <utility>
+#include <vector>
 
 #include "api/payload_type.h"
 #include "api/rtc_error.h"
@@ -27,10 +29,12 @@ namespace webrtc {
 
 namespace {
 
-RTCError CheckInputConsistency(std::span<const Codec> codecs) {
-  std::map<int, int> pt_to_index;
-  
-  
+
+
+
+
+RTCError CheckPayloadTypesAreUnique(std::span<const Codec> codecs,
+                                    std::map<int, int>& pt_to_index) {
   for (size_t i = 0; i < codecs.size(); i++) {
     const Codec& codec = codecs[i];
     if (codec.id != PayloadType::NotSet()) {
@@ -44,6 +48,15 @@ RTCError CheckInputConsistency(std::span<const Codec> codecs) {
       }
     }
   }
+  return RTCError::OK();
+}
+
+
+
+
+RTCError CheckReferencedCodecsArePresent(
+    std::span<const Codec> codecs,
+    const std::map<int, int>& pt_to_index) {
   for (const Codec& codec : codecs) {
     switch (codec.GetResiliencyType()) {
       case Codec::ResiliencyType::kRed:
@@ -107,6 +120,15 @@ RTCError CheckInputConsistency(std::span<const Codec> codecs) {
   return RTCError::OK();
 }
 
+RTCError CheckInputConsistency(std::span<const Codec> codecs) {
+  std::map<int, int> pt_to_index;
+  RTCError error = CheckPayloadTypesAreUnique(codecs, pt_to_index);
+  if (!error.ok()) {
+    return error;
+  }
+  return CheckReferencedCodecsArePresent(codecs, pt_to_index);
+}
+
 }  
 
 
@@ -134,8 +156,29 @@ CodecList::PushResult CodecList::PushIfNotPresent(const Codec& codec) {
   return PushResult::kInserted;
 }
 
+void CodecList::push_back(const Codec& codec) {
+  codecs_.push_back(codec);
+  
+  
+  
+#if RTC_DCHECK_IS_ON
+  std::map<int, int> pt_to_index;
+  RTC_DCHECK(CheckPayloadTypesAreUnique(codecs_, pt_to_index).ok());
+#endif
+}
+
 void CodecList::CheckConsistency() {
   RTC_DCHECK(CheckInputConsistency(codecs_).ok());
+}
+
+RTCErrorOr<std::vector<Codec>> CodecList::Finalize() && {
+  std::vector<Codec> codecs = std::move(codecs_);
+  codecs_.clear();
+  RTCError error = CheckInputConsistency(codecs);
+  if (!error.ok()) {
+    return error;
+  }
+  return codecs;
 }
 
 }  

@@ -67,10 +67,10 @@ class CodecList {
   const_iterator end() const { return codecs_.end(); }
   const Codec& operator[](size_t i) const { return codecs_[i]; }
   Codec& operator[](size_t i) { return codecs_[i]; }
-  void push_back(const Codec& codec) {
-    codecs_.push_back(codec);
-    CheckConsistency();
-  }
+  
+  
+  
+  void push_back(const Codec& codec);
   bool empty() const { return codecs_.empty(); }
   void clear() { codecs_.clear(); }
   size_t size() const { return codecs_.size(); }
@@ -81,7 +81,21 @@ class CodecList {
   
   
   
+  
   void CheckConsistency();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  [[nodiscard]] RTCErrorOr<std::vector<Codec>> Finalize() &&;
 
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const CodecList& list) {

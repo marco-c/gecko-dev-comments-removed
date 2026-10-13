@@ -1246,7 +1246,7 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
   
   
   RemoveRedCodecsWithoutPrimary(filtered_codecs.writable_codecs());
-  return filtered_codecs.codecs();
+  return std::move(filtered_codecs).Finalize();
 }
 
 RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
@@ -1395,7 +1395,7 @@ RTCErrorOr<Codecs> CodecVendor::GetNegotiatedCodecsForAnswer(
     RecordCodecIdsAndLinkRed(pt_suggester, mid,
                              negotiated_codecs.writable_codecs());
   }
-  return negotiated_codecs.codecs();
+  return std::move(negotiated_codecs).Finalize();
 }
 
 TypedCodecVendor InitTypedCodecVendor(const MediaEngineInterface* media_engine,
