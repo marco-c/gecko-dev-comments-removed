@@ -2490,7 +2490,7 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
                         
                         
                         
-                        nsAutoMicroTask mt;
+                        nsAutoMicroTaskForDocument mt(&aDoc);
                         UpdateAndReduceAnimations(aDoc);
                       }
                       if (RefPtr pc = aDoc.GetPresContext()) {

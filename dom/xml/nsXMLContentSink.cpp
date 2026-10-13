@@ -155,7 +155,12 @@ nsresult nsXMLContentSink::MaybePrettyPrint() {
     
     
     
-    nsAutoMicroTask mt;
+    nsAutoMicroTaskForDocument mt(mDocument);
+  }
+
+  if (mDocument->GetRootElement() != mDocElement) {
+    mPrettyPrintXML = false;
+    return NS_OK;
   }
 
   
@@ -527,7 +532,7 @@ nsresult nsXMLContentSink::CreateElement(
 
   if (customElementDefinition) {
     {
-      nsAutoMicroTask mt;
+      nsAutoMicroTaskForDocument mt(mDocument);
     }
 
     Maybe<AutoCEReaction> autoCEReaction;
@@ -632,7 +637,7 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
     
     
     {
-      nsAutoMicroTask mt;
+      nsAutoMicroTaskForDocument mt(mDocument);
     }
 
     

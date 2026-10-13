@@ -133,6 +133,7 @@ class PropertyDescriptor;
 }  
 
 namespace mozilla {
+class CycleCollectedJSContext;
 class Dispatcher;
 class EditorBase;
 class ErrorResult;
@@ -4074,6 +4075,20 @@ class MOZ_STACK_CLASS nsAutoScriptBlockerSuppressNodeRemoved
   ~nsAutoScriptBlockerSuppressNodeRemoved() {
     --nsContentUtils::sDOMNodeRemovedSuppressCount;
   }
+};
+
+
+
+
+
+class MOZ_STACK_CLASS nsAutoMicroTaskForDocument {
+ public:
+  explicit nsAutoMicroTaskForDocument(const mozilla::dom::Document* aDocument);
+  MOZ_CAN_RUN_SCRIPT ~nsAutoMicroTaskForDocument();
+
+ private:
+  
+  mozilla::CycleCollectedJSContext* const mContext;
 };
 
 namespace mozilla::dom {

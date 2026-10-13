@@ -249,8 +249,11 @@ bool ScriptElement::MaybeProcessScript(const nsAString& aSourceText) {
       
       
       if (mKind == JS::loader::ScriptKind::eClassic && !mExternal) {
-        nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-            "ScriptElement::MaybeProcessScript", []() { nsAutoMicroTask mt; }));
+        nsContentUtils::AddScriptRunner(
+            NS_NewRunnableFunction("ScriptElement::MaybeProcessScript",
+                                   [doc = RefPtr{cont->OwnerDoc()}]() {
+                                     nsAutoMicroTaskForDocument mt(doc);
+                                   }));
       }
       return false;
     }

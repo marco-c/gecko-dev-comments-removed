@@ -256,7 +256,7 @@ nsresult txMozillaXMLOutput::endElement() MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         
         
         {
-          nsAutoMicroTask mt;
+          nsAutoMicroTaskForDocument mt(mDocument);
         }
         bool block = sele->AttemptToExecute(nullptr );
         

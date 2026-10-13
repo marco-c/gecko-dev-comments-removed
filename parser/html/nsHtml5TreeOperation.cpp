@@ -807,7 +807,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     
     
     {
-      nsAutoMicroTask mt;
+      nsAutoMicroTaskForDocument mt(document);
     }
     
     
@@ -1622,7 +1622,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
 
     nsresult operator()(const opMicrotaskCheckpoint& aOperation) {
       nsHtml5AutoPauseUpdate autoPauseContentUpdate(mBuilder);
-      nsAutoMicroTask mt;
+      nsAutoMicroTaskForDocument mt(mBuilder->GetDocument());
       return NS_OK;
     }
 
