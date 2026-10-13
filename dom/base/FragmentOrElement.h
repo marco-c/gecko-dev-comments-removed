@@ -52,27 +52,6 @@ struct CustomElementData;
 
 
 
-class nsNodeSupportsWeakRefTearoff final : public nsISupportsWeakReference {
- public:
-  explicit nsNodeSupportsWeakRefTearoff(nsINode* aNode) : mNode(aNode) {}
-
-  
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
-
-  
-  NS_DECL_NSISUPPORTSWEAKREFERENCE
-
-  NS_DECL_CYCLE_COLLECTION_CLASS(nsNodeSupportsWeakRefTearoff)
-
- private:
-  ~nsNodeSupportsWeakRefTearoff() = default;
-
-  nsCOMPtr<nsINode> mNode;
-};
-
-
-
-
 
 namespace mozilla::dom {
 
