@@ -583,7 +583,12 @@ class GitRepository(Repository):
         self._run("config", key, value)
         print(f'Set git config: "{key} = {value}"')
 
-    def configure(self, state_dir: Path, update_only: bool = False):
+    def configure(
+        self,
+        state_dir: Path,
+        update_only: bool = False,
+        no_system_changes: bool = False,
+    ):
         """Run the Git configuration steps."""
         if not update_only:
             print("Configuring git...")
@@ -640,7 +645,7 @@ class GitRepository(Repository):
             elif system == "Darwin":
                 
                 self.set_config_key_value(key="core.fsmonitor", value="true")
-            elif system == "Linux":
+            elif system == "Linux" and not no_system_changes:
                 
                 
                 subprocess.run(
