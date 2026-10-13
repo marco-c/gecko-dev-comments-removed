@@ -518,14 +518,17 @@ bool TurnPort::CreateTurnClientSocket() {
 
   
   
+  socket_->SubscribeCloseEvent(
+      this, [this](AsyncPacketSocket* s, int err) { OnSocketClose(s, err); });
+
+  
+  
   
   if (server_address_.proto == PROTO_TCP ||
       server_address_.proto == PROTO_TLS ||
       server_address_.proto == PROTO_DTLS) {
     socket_->SubscribeConnect(
         this, [this](AsyncPacketSocket* socket) { OnSocketConnect(socket); });
-    socket_->SubscribeCloseEvent(
-        this, [this](AsyncPacketSocket* s, int err) { OnSocketClose(s, err); });
   } else {
     state_ = STATE_CONNECTED;
   }
@@ -1002,9 +1005,10 @@ void TurnPort::Release() {
 
 void TurnPort::Close() {
   if (!ready()) {
-    OnAllocateError(
-        STUN_ERROR_SERVER_NOT_REACHABLE,
-        GetProtocol() != PROTO_UDP ? "Failed to establish connection" : "");
+    OnAllocateError(STUN_ERROR_SERVER_NOT_REACHABLE,
+                    GetProtocol() != PROTO_UDP
+                        ? "Failed to establish connection"
+                        : "Socket was closed");
   }
   request_manager_.Clear();
   

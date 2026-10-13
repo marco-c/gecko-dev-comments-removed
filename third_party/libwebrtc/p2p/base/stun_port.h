@@ -148,6 +148,8 @@ class RTC_EXPORT UDPPort : public Port {
 
   void OnReadyToSend(AsyncPacketSocket* socket);
 
+  void OnSocketClose(AsyncPacketSocket* socket, int error);
+
   
   void MaybePrepareStunCandidate();
 
