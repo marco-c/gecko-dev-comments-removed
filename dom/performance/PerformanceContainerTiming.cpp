@@ -146,9 +146,25 @@ void ContainerTimingHelpers::MaybeProcessPaintForContainer(
   Element* paintedElement = Element::FromNode(aPaintedContent);
   if (!paintedElement) {
     paintedElement = aPaintedContent->GetParentElement();
+
+    if (!paintedElement) {
+      return;
+    }
   }
-  if (!paintedElement) {
+
+  if (!paintedElement->IsInUncomposedDoc()) {
     return;
+  }
+
+  
+  
+  if (paintedElement->IsInNativeAnonymousSubtree()) {
+    paintedElement = Element::FromNodeOrNull(
+        paintedElement->FindFirstNonChromeOnlyAccessContent());
+
+    if (!paintedElement) {
+      return;
+    }
   }
 
   Element* nearestRoot = paintedElement->GetContainerTimingRoot();

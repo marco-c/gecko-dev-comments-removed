@@ -3054,7 +3054,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
   
   
   if (aContext.OwnerDoc().MayHaveContainerTimingAttributes() &&
-      aContext.InUncomposedDoc()) {
+      aContext.InUncomposedDoc() && !IsInNativeAnonymousSubtree()) {
     UpdateContainerTimingRootFromParent(&aParent);
   }
 
