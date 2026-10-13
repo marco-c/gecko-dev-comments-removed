@@ -299,6 +299,10 @@ class StringBuilder {
     MOZ_ASSERT(len >= numHeaderChars_);
     return len - numHeaderChars_;
   }
+  size_t spareCapacity() const {
+    return isLatin1() ? latin1Chars().capacity() - latin1Chars().length()
+                      : twoByteChars().capacity() - twoByteChars().length();
+  }
   char16_t getChar(size_t idx) const {
     idx += numHeaderChars_;
     return isLatin1() ? latin1Chars()[idx] : twoByteChars()[idx];
