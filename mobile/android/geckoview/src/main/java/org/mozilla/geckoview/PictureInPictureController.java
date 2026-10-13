@@ -23,6 +23,7 @@ public class PictureInPictureController {
 
   public static class SessionPictureInPicture {
     private static final String REQUEST_EVENT = "GeckoView:PictureInPicture:Request";
+    private static final String EXIT_EVENT = "GeckoView:PictureInPicture:Exit";
     private static final String LAUNCH_EVENT = "GeckoView:PictureInPicture:Launch";
     private static final String CLOSE_EVENT = "GeckoView:PictureInPicture:Close";
 
@@ -50,6 +51,19 @@ public class PictureInPictureController {
     public @NonNull GeckoResult<Void> request() {
       ThreadUtils.assertOnHandlerThread();
       return mSession.getEventDispatcher().queryVoid(REQUEST_EVENT);
+    }
+
+    
+
+
+
+
+
+
+    @UiThread
+    public @NonNull GeckoResult<Void> exit() {
+      ThreadUtils.assertOnUiThread();
+      return mSession.getEventDispatcher().queryVoid(EXIT_EVENT);
     }
 
     

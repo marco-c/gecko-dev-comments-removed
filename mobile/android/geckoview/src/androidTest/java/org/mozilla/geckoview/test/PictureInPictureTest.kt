@@ -6,7 +6,6 @@ package org.mozilla.geckoview.test
 import androidx.annotation.OptIn
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import junit.framework.TestCase.assertNull
 import org.hamcrest.Matchers.equalTo
 import org.junit.Assert.fail
 import org.junit.Before
@@ -18,7 +17,6 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.PictureInPictureController
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
-import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.NullDelegate
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
 import org.mozilla.geckoview.test.util.UiThreadUtils
 
@@ -37,23 +35,42 @@ class PictureInPictureTest : BaseSessionTest() {
         )
     }
 
+    @WithDisplay(width = 100, height = 100)
     @Test
-    @NullDelegate(PictureInPictureController.SessionPictureInPicture.Delegate::class)
-    fun delegateRoundTrip() {
-        val delegate = object : PictureInPictureController.SessionPictureInPicture.Delegate {}
+    fun exitWithAWindowDoesNotAskTheEmbedderToClose() {
+        val delegate = registerDelegate()
+        val source = startPictureInPicture(delegate).source
 
-        mainSession.pictureInPictureDelegate = delegate
+        sessionRule.waitForResult(source.sessionPictureInPicture.exit())
+        source.waitForRoundTrip()
+
         assertThat(
-            "Delegate should be the one that was set",
-            mainSession.pictureInPictureDelegate,
-            equalTo(delegate),
+            "The embedder closed the window itself, so it must not be asked to close it",
+            delegate.exitCount,
+            equalTo(0),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun exitPictureInPictureWithoutWindowIsNoOp() {
+        val delegate = registerDelegate()
+
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        mainSession.sessionPictureInPicture.exit()
+        mainSession.waitForRoundTrip()
+
+        val source = startPictureInPicture(delegate).source
+
+        assertThat(
+            "A stray exit must not have left state that breaks a later request",
+            delegate.enterCount,
+            equalTo(1),
         )
 
-        mainSession.pictureInPictureDelegate = null
-        assertNull(
-            "Delegate should be cleared",
-            mainSession.pictureInPictureDelegate,
-        )
+        sessionRule.waitForResult(source.sessionPictureInPicture.exit())
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -90,6 +107,7 @@ class PictureInPictureTest : BaseSessionTest() {
             PictureInPictureController.SessionPictureInPicture.Delegate::class,
             "onEnterPictureInPicture",
         )
+        sessionRule.waitForResult(mainSession.sessionPictureInPicture.exit())
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -182,6 +200,7 @@ class PictureInPictureTest : BaseSessionTest() {
             PictureInPictureController.SessionPictureInPicture.Delegate::class,
             "onEnterPictureInPicture",
         )
+        sessionRule.waitForResult(mainSession.sessionPictureInPicture.exit())
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -279,6 +298,38 @@ class PictureInPictureTest : BaseSessionTest() {
 
         openPlayerSession(delegate)
         sessionRule.waitForResult(current)
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun aRequestForTheVideoAlreadyInTheWindowKeepsIt() {
+        val delegate = registerDelegate()
+        val source = startPictureInPicture(delegate).source
+
+        source.evaluateJS("document.querySelector('video').src = 'videos/gizmo.webm?next'")
+        source.playVideo()
+
+        source.setFocused(true)
+        sessionRule.waitForResult(source.sessionPictureInPicture.request())
+        source.waitForRoundTrip()
+
+        assertThat(
+            "The window already shows this video, so no new one must be asked for",
+            delegate.enterCount,
+            equalTo(1),
+        )
+        assertThat(
+            "The window must not be closed",
+            delegate.exitCount,
+            equalTo(0),
+        )
+        assertThat(
+            "The video must still be cloned into the window",
+            sessionRule.isVideoCloning(source, "video"),
+            equalTo(true),
+        )
+
+        sessionRule.waitForResult(source.sessionPictureInPicture.exit())
     }
 
     @WithDisplay(width = 100, height = 100)
