@@ -1877,11 +1877,6 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   
   
   
-  
-  
-  
-  
-  
   RootedField<JSObject*, 4> promise(roots, reaction->promise());
   if (promise) {
     if (promise->is<PromiseObject>()) {
