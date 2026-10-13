@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 
 async function setupForms(numUsernameOnly, numBasic) {
@@ -54,6 +56,20 @@ async function setupForms(numUsernameOnly, numBasic) {
   return tab;
 }
 
+async function checkChildHistogram(id, index, expected) {
+  let histogram;
+  await TestUtils.waitForCondition(() => {
+    let histograms = Services.telemetry.getSnapshotForHistograms(
+      "main",
+      false 
+    ).content;
+
+    histogram = histograms[id];
+    return !!histogram && histogram.values[index] == expected;
+  });
+  Assert.equal(histogram.values[index], expected);
+}
+
 add_setup(async function () {
   SpecialPowers.pushPrefEnv({
     set: [
@@ -63,57 +79,54 @@ add_setup(async function () {
   });
 
   
-  await Services.fog.testFlushAllChildren();
-  Services.fog.testResetFOG();
+  
+  await new Promise(res => setTimeout(res, 1000));
+  Services.telemetry.getSnapshotForHistograms("main", true );
 });
 
 add_task(async function test_oneUsernameOnlyForm() {
-  Services.fog.testResetFOG();
   const numUsernameOnlyForms = 1;
   const numBasicForms = 0;
 
   let tab = await setupForms(numUsernameOnlyForms, numBasicForms);
 
-  await Services.fog.testFlushAllChildren();
-  Assert.equal(
-    Glean.pwmgr.isUsernameOnlyForm.true.testGetValue(),
-    numUsernameOnlyForms,
-    "Username-only forms counted"
+  await checkChildHistogram(
+    "PWMGR_IS_USERNAME_ONLY_FORM",
+    1,
+    numUsernameOnlyForms
   );
 
   BrowserTestUtils.removeTab(tab);
+  Services.telemetry.getSnapshotForHistograms("main", true );
 });
 
 add_task(async function test_multipleUsernameOnlyForms() {
-  Services.fog.testResetFOG();
   const numUsernameOnlyForms = 3;
   const numBasicForms = 2;
 
   let tab = await setupForms(numUsernameOnlyForms, numBasicForms);
 
-  await Services.fog.testFlushAllChildren();
-  Assert.equal(
-    Glean.pwmgr.isUsernameOnlyForm.true.testGetValue(),
-    numUsernameOnlyForms,
-    "Username-only forms counted"
+  await checkChildHistogram(
+    "PWMGR_IS_USERNAME_ONLY_FORM",
+    1,
+    numUsernameOnlyForms
   );
 
   BrowserTestUtils.removeTab(tab);
+  Services.telemetry.getSnapshotForHistograms("main", true );
 });
 
 add_task(async function test_multipleDocument() {
-  Services.fog.testResetFOG();
   
   let numUsernameOnlyForms1 = 2;
   let numBasicForms1 = 2;
 
   let tab1 = await setupForms(numUsernameOnlyForms1, numBasicForms1);
 
-  await Services.fog.testFlushAllChildren();
-  Assert.equal(
-    Glean.pwmgr.isUsernameOnlyForm.true.testGetValue(),
-    numUsernameOnlyForms1,
-    "Username-only forms counted"
+  await checkChildHistogram(
+    "PWMGR_IS_USERNAME_ONLY_FORM",
+    1,
+    numUsernameOnlyForms1
   );
 
   
@@ -122,11 +135,10 @@ add_task(async function test_multipleDocument() {
 
   let tab2 = await setupForms(numUsernameOnlyForms2, numBasicForms2);
 
-  await Services.fog.testFlushAllChildren();
-  Assert.equal(
-    Glean.pwmgr.isUsernameOnlyForm.true.testGetValue(),
-    numUsernameOnlyForms1 + numUsernameOnlyForms2,
-    "Username-only forms counted across documents"
+  await checkChildHistogram(
+    "PWMGR_IS_USERNAME_ONLY_FORM",
+    1,
+    numUsernameOnlyForms1 + numUsernameOnlyForms2
   );
 
   
@@ -134,21 +146,21 @@ add_task(async function test_multipleDocument() {
 
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
+  Services.telemetry.getSnapshotForHistograms("main", true );
 });
 
 add_task(async function test_tooManyUsernameOnlyForms() {
-  Services.fog.testResetFOG();
   const numUsernameOnlyForms = 25;
   const numBasicForms = 2;
 
   let tab = await setupForms(numUsernameOnlyForms, numBasicForms);
 
-  await Services.fog.testFlushAllChildren();
-  Assert.equal(
-    Glean.pwmgr.isUsernameOnlyForm.true.testGetValue(),
-    numUsernameOnlyForms,
-    "Username-only forms counted"
+  await checkChildHistogram(
+    "PWMGR_IS_USERNAME_ONLY_FORM",
+    1,
+    numUsernameOnlyForms
   );
 
   BrowserTestUtils.removeTab(tab);
+  Services.telemetry.getSnapshotForHistograms("main", true );
 });

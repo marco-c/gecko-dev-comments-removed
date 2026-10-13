@@ -23,8 +23,7 @@ function loginList() {
 
 
 
-add_setup(async function test_initialize() {
-  Services.fog.testResetFOG();
+add_task(async function test_initialize() {
   Services.prefs.setBoolPref("signon.showAutoCompleteFooter", true);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("signon.showAutoCompleteFooter");
@@ -67,10 +66,14 @@ add_task(async function test_autocomplete_footer_onclick() {
         "Search string should not be set to filter logins"
       );
 
-      await Services.fog.testFlushAllChildren();
-      Assert.equal(
-        1,
-        Glean.pwmgr.openManagementAutocomplete.testGetValue().length
+      
+      await LoginTestUtils.telemetry.waitForEventCount(1);
+
+      
+      TelemetryTestUtils.assertEvents(
+        [["pwmgr", "open_management", "autocomplete"]],
+        { category: "pwmgr", method: "open_management" },
+        { clear: true, process: "content" }
       );
 
       await passwordManager.close();
@@ -113,10 +116,10 @@ add_task(async function test_autocomplete_footer_keydown() {
       );
 
       
-      await Services.fog.testFlushAllChildren();
-      Assert.equal(
-        2,
-        Glean.pwmgr.openManagementAutocomplete.testGetValue().length
+      TelemetryTestUtils.assertEvents(
+        [["pwmgr", "open_management", "autocomplete"]],
+        { category: "pwmgr", method: "open_management" },
+        { clear: true, process: "content" }
       );
 
       await passwordManager.close();

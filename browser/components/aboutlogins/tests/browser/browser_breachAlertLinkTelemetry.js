@@ -1,6 +1,10 @@
 
 
 
+const { TelemetryTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TelemetryTestUtils.sys.mjs"
+);
+
 EXPECTED_BREACH = {
   AddedDate: "2018-12-20T23:56:26Z",
   BreachDate: "2018-12-16",

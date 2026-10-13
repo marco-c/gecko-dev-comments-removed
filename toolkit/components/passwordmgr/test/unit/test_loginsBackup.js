@@ -13,6 +13,9 @@ ChromeUtils.defineESModuleGetters(this, {
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
+const { TelemetryTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/TelemetryTestUtils.sys.mjs"
+);
 
 const rawLogin1 = {
   id: 1,
@@ -48,10 +51,12 @@ const rawLogin2 = {
   timesUsed: 1,
 };
 
-add_setup(() => {
-  do_get_profile();
-  Services.fog.initializeFOG();
-});
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
 
 
 
@@ -91,7 +96,7 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
   Assert.ok(await IOUtils.exists(store._options.backupTo));
 
   
-  Services.fog.testResetFOG();
+  Services.telemetry.clearEvents();
 
   await store.load();
 
@@ -107,9 +112,14 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
     "Logins backup was used successfully when logins.json was missing"
   );
 
-  let events = Glean.jsonfile.loadLogins.testGetValue();
-  Assert.equal(events.length, 2);
-  Assert.equal(events[1].extra.value, "used_backup");
+  TelemetryTestUtils.assertEvents(
+    [
+      ["jsonfile", "load", "logins"],
+      ["jsonfile", "load", "logins", "used_backup"],
+    ],
+    {},
+    { clear: true }
+  );
   info(
     "Telemetry was recorded accurately when logins-backup.json is used when logins.json was missing"
   );
@@ -121,7 +131,7 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
   });
 
   
-  Services.fog.testResetFOG();
+  Services.telemetry.clearEvents();
 
   
   store.data.logins = [];
@@ -145,11 +155,15 @@ add_task(async function test_logins_store_missing_or_corrupt_with_backup() {
     "Logins backup was used successfully when logins.json was corrupt"
   );
 
-  events = Glean.jsonfile.loadLogins.testGetValue();
-  Assert.equal(events.length, 3);
-  Assert.equal(events[0].extra.value, "error_syntaxerror");
-  Assert.equal(events[1].extra.value, "invalid_json");
-  Assert.equal(events[2].extra.value, "used_backup");
+  TelemetryTestUtils.assertEvents(
+    [
+      ["jsonfile", "load", "logins", "error_syntaxerror"],
+      ["jsonfile", "load", "logins", "invalid_json"],
+      ["jsonfile", "load", "logins", "used_backup"],
+    ],
+    {},
+    { clear: true }
+  );
   info(
     "Telemetry was recorded accurately when logins-backup.json is used when logins.json was corrupt"
   );
