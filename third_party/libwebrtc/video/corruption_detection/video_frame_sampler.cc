@@ -137,7 +137,7 @@ std::unique_ptr<VideoFrameSampler> VideoFrameSampler::Create(
     default:
       
       return std::make_unique<I420FrameSampler>(
-          frame.video_frame_buffer()->ToI420());
+          frame.video_frame_buffer()->ToI420ForInspection());
   }
 }
 

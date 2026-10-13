@@ -94,6 +94,20 @@ class RTC_EXPORT VideoFrameBuffer : public RefCountInterface {
   
   
   
+  
+  
+  
+  
+  virtual scoped_refptr<I420BufferInterface> ToI420ForInspection();
+
+  
+  
+  
+  
+  
+  
+  
+  
   virtual const I420BufferInterface* GetI420() const;
 
   
