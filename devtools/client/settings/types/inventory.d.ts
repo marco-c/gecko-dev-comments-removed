@@ -1,0 +1,21 @@
+
+
+
+
+import { Toolbox } from "../../framework/toolbox.js";
+import { callbacks } from "../inventory.mjs";
+
+export type SettingChangeHandler = (context: { toolbox: Toolbox }) => void;
+
+export interface BaseSetting {
+  id: string;
+  pref: string;
+  l10nId: string;
+  changeAction?: keyof typeof callbacks;
+}
+
+export interface BooleanSetting extends BaseSetting {
+  type: "boolean";
+}
+
+export type Setting = BooleanSetting;

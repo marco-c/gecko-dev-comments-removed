@@ -4,8 +4,12 @@
 
 BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
 
+DIRS += [
+    "components",
+]
+
 DevToolsModules(
     "events.mjs",
+    "inventory.mjs",
     "panel.mjs",
-    "settings.mjs",
 )
