@@ -470,15 +470,6 @@ bool InitPreferredSampleRate() MOZ_REQUIRES(sMutex) {
   if (sPreferredSampleRate != 0) {
     return true;
   }
-#ifdef MOZ_WIDGET_ANDROID
-  int rate = AndroidGetAudioOutputSampleRate();
-  if (rate > 0) {
-    sPreferredSampleRate = rate;
-    return true;
-  } else {
-    return false;
-  }
-#else
   RefPtr<CubebHandle> handle = GetCubebUnlocked();
   if (!handle) {
     return false;
@@ -491,7 +482,6 @@ bool InitPreferredSampleRate() MOZ_REQUIRES(sMutex) {
     }
   }
   sPreferredSampleRate = rate;
-#endif
   MOZ_ASSERT(sPreferredSampleRate);
   return true;
 }
@@ -780,13 +770,6 @@ uint32_t GetCubebMTGLatencyInFrames(cubeb_stream_params* params) {
     return sCubebMTGLatencyInFrames;
   }
 
-#ifdef MOZ_WIDGET_ANDROID
-  int32_t frames = AndroidGetAudioOutputFramesPerBuffer();
-  
-  
-  
-  return std::max(1024, frames);
-#else
   RefPtr<CubebHandle> handle = GetCubebUnlocked();
   if (!handle) {
     return sCubebMTGLatencyInFrames;  
@@ -805,7 +788,6 @@ uint32_t GetCubebMTGLatencyInFrames(cubeb_stream_params* params) {
     return sCubebMTGLatencyInFrames;  
   }
   return latency_frames;
-#endif
 }
 
 static const char* gInitCallbackPrefs[] = {
@@ -1066,24 +1048,6 @@ bool EstimatedLatencyDefaultDevices(double* aMean, double* aStdDev,
 
   return true;
 }
-
-#ifdef MOZ_WIDGET_ANDROID
-int32_t AndroidGetAudioOutputSampleRate() {
-  if (java::GeckoAppShell::IsIsolatedProcess()) {
-    return 44100;  
-  }
-
-  int32_t sample_rate = java::GeckoAppShell::GetAudioOutputSampleRate();
-  return sample_rate;
-}
-int32_t AndroidGetAudioOutputFramesPerBuffer() {
-  if (java::GeckoAppShell::IsIsolatedProcess()) {
-    return 512;  
-  }
-  int32_t frames = java::GeckoAppShell::GetAudioOutputFramesPerBuffer();
-  return frames;
-}
-#endif
 
 }  
 }  
