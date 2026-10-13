@@ -281,6 +281,7 @@ TextOverflow::TextOverflow(nsDisplayListBuilder* aBuilder,
       mBlockSize(aBlockFrame->GetSize()),
       mBlockWM(aBlockFrame->GetWritingMode()),
       mCanHaveInlineAxisScrollbar(false),
+      mInLineClampContext(aBlockFrame->IsInLineClampContext()),
       mAdjustForPixelSnapping(false) {
   if (mScrollContainerFrame) {
     auto scrollbarStyle =
@@ -483,8 +484,8 @@ LogicalRect TextOverflow::ExamineLineFrames(nsLineBox* aLine,
                                             FrameHashtable* aFramesToHide,
                                             AlignmentEdges* aAlignmentEdges) {
   
-  bool suppressIStart = mIStart.IsIStartSuppressed();
-  bool suppressIEnd = mIEnd.IsIEndSuppressed();
+  bool suppressIStart = mIStart.IsSuppressed(mInLineClampContext);
+  bool suppressIEnd = mIEnd.IsSuppressed(mInLineClampContext);
   if (mCanHaveInlineAxisScrollbar) {
     LogicalPoint pos(mBlockWM, mScrollContainerFrame->GetScrollPosition(),
                      mBlockSize);
@@ -687,15 +688,10 @@ void TextOverflow::ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
   mIStart.Reset();
   mIStart.mActive = !mIStart.mTextOverflowStyle->IsClip();
   mIEnd.Reset();
-  Maybe<Marker> prevIEnd;
   if (aLine->HasLineClampEllipsis()) {
-    prevIEnd = Some(mIEnd);
     mIEnd.mBlockEllipsis = mBlock->GetLineClampBlockEllipsis();
-    
-    
-    mIEnd.mInitialized = false;
   }
-  mIEnd.mActive = !mIEnd.IsIEndSuppressed();
+  mIEnd.mActive = !mIEnd.IsSuppressed(mInLineClampContext);
 
   FrameHashtable framesToHide(64);
   AlignmentEdges alignmentEdges;
@@ -706,9 +702,9 @@ void TextOverflow::ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
   if (!needIStart && !needIEnd) {
     return;
   }
-  NS_ASSERTION(!mIStart.IsIStartSuppressed() || !needIStart,
+  NS_ASSERTION(!mIStart.IsSuppressed(mInLineClampContext) || !needIStart,
                "left marker when not needed");
-  NS_ASSERTION(!mIEnd.IsIEndSuppressed() || !needIEnd,
+  NS_ASSERTION(!mIEnd.IsSuppressed(mInLineClampContext) || !needIEnd,
                "right marker when not needed");
 
   
@@ -757,11 +753,6 @@ void TextOverflow::ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
   }
   CreateMarkers(aLine, needIStart, needIEnd, insideMarkersArea, contentArea,
                 aLineNumber);
-  if (prevIEnd) {
-    
-    
-    mIEnd = prevIEnd.extract();
-  }
 }
 
 void TextOverflow::PruneDisplayListContents(
