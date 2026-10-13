@@ -62,6 +62,12 @@ namespace gc {
 
 
 
+
+
+
+
+
+
 size_t AtomRefRuntime::allocateIndex(GCRuntime* gc) {
   
 
@@ -172,36 +178,22 @@ void AtomRefRuntime::refineZoneBitmapsForCollectedZones(GCRuntime* gc) {
 
 
 
-
-
 #if JS_BITS_PER_WORD == 32
-static constexpr uintptr_t BlackBitMask = 0x55555555;
+static constexpr uintptr_t GrayOrBlackBitMask = 0xaaaaaaaa;
 #else
-static constexpr uintptr_t BlackBitMask = 0x5555555555555555;
+static constexpr uintptr_t GrayOrBlackBitMask = 0xaaaaaaaaaaaaaaaa;
 #endif
-static constexpr uintptr_t GrayOrBlackBitMask = ~BlackBitMask;
 
-static void PropagateBlackBitsToGrayOrBlackBits(DenseBitmap& bitmap,
-                                                Arena* arena) {
-  
-  
-  MOZ_ASSERT(
-      TraceKindCanBeMarkedGray(MapAllocToTraceKind(arena->getAllocKind())));
-  MOZ_ASSERT((arena->getThingSize() / CellBytesPerMarkBit) % 2 == 0);
-
-  bitmap.forEachWord(
-      arena->atomBitmapStart(), ArenaBitmapWords,
-      [](uintptr_t& word) { word |= (word & BlackBitMask) << 1; });
-}
-
-static void PropagateBlackBitsToGrayOrBlackBits(
+static void PropagateGrayOrBlackBitsToBlackBits(
     uintptr_t (&words)[ArenaBitmapWords]) {
+  
+  
   for (uintptr_t& word : words) {
-    word |= (word & BlackBitMask) << 1;
+    word |= (word & GrayOrBlackBitMask) >> 1;
   }
 }
 
-static void PropagateGrayOrBlackBitsToBlackBits(SparseBitmap& bitmap,
+static void PropagateGrayOrBlackBitsToBlackBits(DenseBitmap& bitmap,
                                                 Arena* arena) {
   
   
@@ -248,8 +240,7 @@ bool AtomRefRuntime::computeBitmapFromChunkMarkBits(GCRuntime* gc,
         MOZ_ASSERT(!ArenaContainsGrayCells(arena));
       } else if (TraceKindCanBeMarkedGray(MapAllocToTraceKind(thingKind))) {
         
-        
-        PropagateBlackBitsToGrayOrBlackBits(bitmap, arena);
+        PropagateGrayOrBlackBitsToBlackBits(bitmap, arena);
       }
     }
   }
@@ -284,7 +275,7 @@ void AtomRefRuntime::refineZoneBitmapForCollectedZone(Zone* zone,
   } else if (TraceKindCanBeMarkedGray(MapAllocToTraceKind(kind))) {
     uintptr_t words[ArenaBitmapWords];
     memcpy(words, chunkWords, sizeof(words));
-    PropagateBlackBitsToGrayOrBlackBits(words);
+    PropagateGrayOrBlackBitsToBlackBits(words);
     zone->referencedAtoms().bitwiseAndRangeWith(arena->atomBitmapStart(),
                                                 ArenaBitmapWords, words);
     return;
@@ -342,29 +333,11 @@ void AtomRefRuntime::markAtomsUsedByUncollectedZones(
   BitwiseOrIntoChunkMarkBits(gc->atomsZone(), *markedUnion);
 }
 
-void AtomRefRuntime::unmarkAllGrayReferences(GCRuntime* gc) {
-  for (ZonesIter sourceZone(gc, SkipAtoms); !sourceZone.done();
-       sourceZone.next()) {
-    MOZ_ASSERT(!sourceZone->isAtomsZone());
-    auto& bitmap = sourceZone->referencedAtoms();
-    for (ArenaIter arena(gc->atomsZone(), AllocKind::SYMBOL); !arena.done();
-         arena.next()) {
-      PropagateGrayOrBlackBitsToBlackBits(bitmap, arena);
-    }
-#ifdef DEBUG
-    for (auto cell = gc->atomsZone()->cellIter<JS::Symbol>(); !cell.done();
-         cell.next()) {
-      MOZ_ASSERT(getRefColor(sourceZone, cell.get()) != CellColor::Gray);
-    }
-#endif
-  }
-}
-
 template void AtomRefRuntime::recordRef(JSContext* cx, JSAtom* thing);
 template void AtomRefRuntime::recordRef(JSContext* cx, JS::Symbol* thing);
 
 template <typename T>
-CellColor AtomRefRuntime::getRefColor(Zone* zone, T* thing) {
+bool AtomRefRuntime::hasRef(Zone* zone, T* thing) {
   static_assert(std::is_same_v<T, JSAtom> || std::is_same_v<T, JS::Symbol>,
                 "Should only be called with JSAtom* or JS::Symbol* argument");
 
@@ -373,85 +346,63 @@ CellColor AtomRefRuntime::getRefColor(Zone* zone, T* thing) {
   MOZ_ASSERT(thing->zoneFromAnyThread()->isAtomsZone());
 
   if (!zone->runtimeFromAnyThread()->permanentAtomsPopulated()) {
-    return CellColor::Black;
+    return true;
   }
 
   if (thing->isPermanentAndMayBeShared()) {
-    return CellColor::Black;
+    return true;
   }
 
   if constexpr (std::is_same_v<T, JSAtom>) {
     if (thing->isPinned()) {
-      return CellColor::Black;
+      return true;
     }
   }
 
   AutoMarkingLock lock(zone, atomRefLock);
 
   size_t bit = getAtomBit(&thing->asTenured());
-
   size_t blackBit = bit + size_t(ColorBit::BlackBit);
+#ifdef DEBUG
   size_t grayOrBlackBit = bit + size_t(ColorBit::GrayOrBlackBit);
+#endif
 
   SparseBitmap& bitmap = zone->referencedAtoms();
 
-  MOZ_ASSERT_IF((std::is_same_v<T, JSAtom>),
-                !bitmap.readonlyThreadsafeGetBit(grayOrBlackBit));
-  MOZ_ASSERT_IF((std::is_same_v<T, JS::Symbol>) &&
-                    bitmap.readonlyThreadsafeGetBit(blackBit),
-                bitmap.readonlyThreadsafeGetBit(grayOrBlackBit));
-
-  if (bitmap.readonlyThreadsafeGetBit(blackBit)) {
-    return CellColor::Black;
-  }
-
-  if constexpr (std::is_same_v<T, JS::Symbol>) {
-    if (bitmap.readonlyThreadsafeGetBit(grayOrBlackBit)) {
-      return CellColor::Gray;
-    }
-  }
-
-  return CellColor::White;
+  MOZ_ASSERT(!bitmap.readonlyThreadsafeGetBit(grayOrBlackBit));
+  return bitmap.readonlyThreadsafeGetBit(blackBit);
 }
 
-template CellColor AtomRefRuntime::getRefColor(Zone* zone, JSAtom* thing);
-template CellColor AtomRefRuntime::getRefColor(Zone* zone, JS::Symbol* thing);
+template bool AtomRefRuntime::hasRef(Zone* zone, JSAtom* thing);
+template bool AtomRefRuntime::hasRef(Zone* zone, JS::Symbol* thing);
 
-CellColor AtomRefRuntime::getRefColorForIndex(Zone* zone, size_t bitIndex) {
+bool AtomRefRuntime::hasRefForIndex(Zone* zone, size_t bitIndex) {
   MOZ_ASSERT(zone->runtimeFromAnyThread()->permanentAtomsPopulated());
 
   size_t blackBit = bitIndex + size_t(ColorBit::BlackBit);
+#ifdef DEBUG
   size_t grayOrBlackBit = bitIndex + size_t(ColorBit::GrayOrBlackBit);
+#endif
 
   SparseBitmap& bitmap = zone->referencedAtoms();
-  bool blackBitSet = bitmap.readonlyThreadsafeGetBit(blackBit);
-  bool grayOrBlackBitSet = bitmap.readonlyThreadsafeGetBit(grayOrBlackBit);
-
-  if (blackBitSet) {
-    return CellColor::Black;
-  }
-
-  if (grayOrBlackBitSet) {
-    return CellColor::Gray;
-  }
-
-  return CellColor::White;
+  MOZ_ASSERT(!bitmap.readonlyThreadsafeGetBit(grayOrBlackBit));
+  return bitmap.readonlyThreadsafeGetBit(blackBit);
 }
 
 #ifdef DEBUG
 
 template <>
-CellColor AtomRefRuntime::getRefColor(Zone* zone, TenuredCell* thing) {
+bool AtomRefRuntime::hasRef(Zone* zone, TenuredCell* thing) {
   MOZ_ASSERT(thing);
   MOZ_ASSERT(thing->zoneFromAnyThread()->isAtomsZone());
 
   if (thing->is<JSString>()) {
     JSString* str = thing->as<JSString>();
-    return getRefColor(zone, &str->asAtom());
+    return hasRef(zone, &str->asAtom());
   }
 
   if (thing->is<JS::Symbol>()) {
-    return getRefColor(zone, thing->as<JS::Symbol>());
+    return hasRef(zone, thing->as<JS::Symbol>());
   }
 
   MOZ_CRASH("Unexpected atom kind");

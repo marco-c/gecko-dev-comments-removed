@@ -28,8 +28,8 @@ grayRoot().push(s);
 other.s = undefined;
 s = undefined;
 gc();
-assertEq(getAtomMarkColor(this, index), 'gray');
-assertEq(getAtomMarkColor(other, index), 'gray'); 
+assertEq(getAtomMarkColor(this, index), 'black');
+assertEq(getAtomMarkColor(other, index), 'black'); 
 assertEq(getMarks()[0], 'gray');
 
 

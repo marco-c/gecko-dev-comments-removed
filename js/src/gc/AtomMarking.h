@@ -67,12 +67,6 @@ class AtomRefRuntime {
   
   
   
-  
-  void unmarkAllGrayReferences(GCRuntime* gc);
-
-  
-  
-  
   static size_t getAtomBit(TenuredCell* thing);
 
  private:
@@ -104,24 +98,13 @@ class AtomRefRuntime {
   template <typename T>
   [[nodiscard]] MOZ_ALWAYS_INLINE bool inlinedRecordRefFallible(Zone* zone,
                                                                 T* thing);
-
   
   template <typename T>
-  CellColor getRefColor(Zone* zone, T* thing);
-
-  
-  template <typename T>
-  bool hasRef(Zone* zone, T* thing) {
-    return getRefColor(zone, thing) != CellColor::White;
-  }
+  bool hasRef(Zone* zone, T* thing);
 
   
   
-  CellColor getRefColorForIndex(Zone* zone, size_t bitIndex);
-
-  
-  
-  void maybeUnmarkGrayAtomically(Zone* zone, JS::Symbol* symbol);
+  bool hasRefForIndex(Zone* zone, size_t bitIndex);
 };
 
 }  

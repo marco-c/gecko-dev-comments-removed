@@ -782,7 +782,7 @@ class GCRuntime {
 
   
   
-  CellColor isAtomReferencedByUncollectedZone(TenuredCell* atom);
+  bool isAtomReferencedByUncollectedZone(TenuredCell* atom);
   template <typename T>
   void maybeMarkWeaklyHeldAtom(T* atom);
 
