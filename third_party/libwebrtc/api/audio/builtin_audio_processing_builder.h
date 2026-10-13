@@ -57,6 +57,18 @@ class RTC_EXPORT BuiltinAudioProcessingBuilder
   }
 
   
+  const std::optional<EchoCanceller3Config>& echo_canceller_config() const {
+    return echo_canceller_config_;
+  }
+
+  
+  
+  const std::optional<EchoCanceller3Config>&
+  echo_canceller_multichannel_config() const {
+    return echo_canceller_multichannel_config_;
+  }
+
+  
   BuiltinAudioProcessingBuilder& SetEchoControlFactory(
       std::unique_ptr<EchoControlFactory> echo_control_factory) {
     echo_control_factory_ = std::move(echo_control_factory);
