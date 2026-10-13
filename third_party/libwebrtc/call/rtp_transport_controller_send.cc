@@ -409,12 +409,9 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     UpdateInitialConstraints(msg.constraints);
   }
 
-  if (is_controller_supporting_ecn && !sending_packets_as_ect1_) {
-    RTC_LOG(LS_INFO)
-        << "Enabling sending packets as ECT1 again after route change. ";
-    sending_packets_as_ect1_ = true;
-    packet_router_.SetSendPacketsAsEct1(sending_packets_as_ect1_);
-  }
+  
+  ect1_policy_.OnNetworkRouteChanged();
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
 }
 
 void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
@@ -604,19 +601,15 @@ void RtpTransportControllerSend::SetPreferredRtcpCcAckType(
   RTC_DCHECK_RUN_ON(worker_thread_);
   RTC_DCHECK(preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB ||
              preferred_rtcp_cc_ack_type == RtcpFeedbackType::TRANSPORT_CC);
-  if (preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB) {
-    rfc_8888_feedback_negotiated_ = true;
-    sending_packets_as_ect1_ = true;
-    RTC_LOG_F(LS_INFO)
-        << "Sending packets as ECT1(1) and assume RFC 8888 feedback.";
-  } else {
-    rfc_8888_feedback_negotiated_ = false;
-    sending_packets_as_ect1_ = false;
-    RTC_LOG_F(LS_INFO) << "Assume TWCC feedback.";
-  }
+  rfc_8888_feedback_negotiated_ =
+      preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB;
+  RTC_LOG_F(LS_INFO) << "Assume "
+                     << (rfc_8888_feedback_negotiated_ ? "RFC 8888" : "TWCC")
+                     << " feedback.";
   packet_router_.SetGenerateTransportSequenceNumbers(
       rfc_8888_feedback_negotiated_);
-  packet_router_.SetSendPacketsAsEct1(sending_packets_as_ect1_);
+  ect1_policy_.SetFeedbackSupportsEcn(rfc_8888_feedback_negotiated_);
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
   
   
   
@@ -735,24 +728,8 @@ void RtpTransportControllerSend::HandleTransportPacketsFeedback(
   if (controller_) {
     PostUpdates(controller_->OnTransportPacketsFeedback(feedback));
   }
-  if (sending_packets_as_ect1_) {
-    bool congestion_controller_support_ecn =
-        controller_ && controller_->SupportsEcnAdaptation();
-    bool transport_bleaches_ect1 = feedback.HasPacketWithBleachedEct1();
-    
-    
-    
-    if (transport_bleaches_ect1 || !congestion_controller_support_ecn) {
-      sending_packets_as_ect1_ = false;
-      packet_router_.SetSendPacketsAsEct1(sending_packets_as_ect1_);
-      RTC_LOG(LS_INFO) << "Transport does "
-                       << (transport_bleaches_ect1 ? "not " : "")
-                       << "preserve the ECT(1) marking. Congestion Controller "
-                          "does "
-                       << (congestion_controller_support_ecn ? "" : "not ")
-                       << "support ECN. Stop sending ECT(1).";
-    }
-  }
+  ect1_policy_.OnPacketsFeedback(feedback.HasPacketWithBleachedEct1());
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
 
   
   UpdateCongestedState();
@@ -788,6 +765,9 @@ void RtpTransportControllerSend::MaybeCreateControllers() {
     controller_ = factory.Create(initial_config_);
     process_interval_ = factory.GetProcessInterval();
   }
+  ect1_policy_.SetCongestionControllerSupportsEcn(
+      controller_->SupportsEcnAdaptation());
+  packet_router_.SetSendPacketsAsEct1(ect1_policy_.ShouldSendEct1());
   UpdateControllerWithTimeInterval();
   StartProcessPeriodicTasks();
 }
