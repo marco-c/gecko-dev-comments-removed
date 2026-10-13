@@ -307,9 +307,14 @@ GeneratorObject* GeneratorObject::create(JSContext* cx, HandleFunction fun) {
 
   
   
+  
+  
+  
+  
   RootedTuple<Value, JSObject*> roots(cx);
   RootedField<Value, 0> pval(roots);
-  if (!GetProperty(cx, fun, fun, cx->names().prototype, &pval)) {
+  if (!fun->isSelfHostedBuiltin() &&
+      !GetProperty(cx, fun, fun, cx->names().prototype, &pval)) {
     return nullptr;
   }
   RootedField<JSObject*, 1> proto(roots,

@@ -43,7 +43,7 @@ const JSClassOps AsyncGeneratorObject::classOps_ = {
 
 
 
-static AsyncGeneratorObject* OrdinaryCreateFromConstructorAsynGen(
+static AsyncGeneratorObject* OrdinaryCreateFromConstructorAsyncGen(
     JSContext* cx, HandleFunction constructor) {
   
   
@@ -53,8 +53,13 @@ static AsyncGeneratorObject* OrdinaryCreateFromConstructorAsynGen(
 
   
   
+  
+  
+  
+  
   RootedValue protoVal(cx);
-  if (!GetProperty(cx, constructor, constructor, cx->names().prototype,
+  if (!constructor->isSelfHostedBuiltin() &&
+      !GetProperty(cx, constructor, constructor, cx->names().prototype,
                    &protoVal)) {
     return nullptr;
   }
@@ -91,7 +96,7 @@ AsyncGeneratorObject* AsyncGeneratorObject::create(JSContext* cx,
   MOZ_ASSERT(asyncGen->isAsync() && asyncGen->isGenerator());
 
   AsyncGeneratorObject* generator =
-      OrdinaryCreateFromConstructorAsynGen(cx, asyncGen);
+      OrdinaryCreateFromConstructorAsyncGen(cx, asyncGen);
   if (!generator) {
     return nullptr;
   }
