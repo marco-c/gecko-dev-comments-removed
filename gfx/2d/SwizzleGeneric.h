@@ -249,10 +249,9 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> PremultiplyVector_SIMD(
                                       xsimd::batch<uint32_t, Arch>(0x00FF0000));
   }
   
-  
-  rb = xsimd::fma(rb, a16, xsimd::batch<uint16_t, Arch>(0x80));
+  rb = xsimd::fma(rb, a16, xsimd::batch<uint16_t, Arch>(0xFF));
   rb = (rb + (rb >> 8)) >> 8;
-  ga = xsimd::fma(ga, a16, xsimd::batch<uint16_t, Arch>(0x80));
+  ga = xsimd::fma(ga, a16, xsimd::batch<uint16_t, Arch>(0xFF));
   ga = (ga + (ga >> 8)) >> 8;
   
   if constexpr (aSwapRB) {
@@ -316,11 +315,9 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
   
   
   
-  
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
-  auto rb = (aRb * qHi16 + xsimd::mul_hi(aRb, qLo16) + ((aRb * qLo16) >> 15)) &
-            lowByte;
-  ga = (ga * qHi16 + xsimd::mul_hi(ga, qLo16) + ((ga * qLo16) >> 15)) & lowByte;
+  auto rb = (aRb * qHi16 + xsimd::mul_hi(aRb, qLo16)) & lowByte;
+  ga = (ga * qHi16 + xsimd::mul_hi(ga, qLo16)) & lowByte;
   
   
   auto alpha =
