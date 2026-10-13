@@ -303,39 +303,21 @@ TEST(FrameBuffer3Test, InterleavedStream) {
 }
 
 TEST(FrameBuffer3Test, LegacyFrameIdJumpBehavior) {
-  {
-    FieldTrials field_trials =
-        CreateTestFieldTrials("WebRTC-LegacyFrameIdJumpBehavior/Disabled/");
-    FrameBuffer buffer(10, 100,
-                       field_trials);
+  FieldTrials field_trials = CreateTestFieldTrials();
+  FrameBuffer buffer(10, 100,
+                     field_trials);
 
-    EXPECT_TRUE(buffer.InsertFrame(
-        test::FakeFrameBuilder().Time(20).Id(3).AsLast().Build()));
-    EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(),
-                ElementsAre(FrameWithId(3)));
-    EXPECT_FALSE(buffer.InsertFrame(
-        test::FakeFrameBuilder().Time(30).Id(2).AsLast().Build()));
-    EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(), IsEmpty());
-  }
-
-  {
-    
-    FieldTrials field_trials = CreateTestFieldTrials();
-    FrameBuffer buffer(10, 100,
-                       field_trials);
-
-    EXPECT_TRUE(buffer.InsertFrame(
-        test::FakeFrameBuilder().Time(20).Id(3).AsLast().Build()));
-    EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(),
-                ElementsAre(FrameWithId(3)));
-    EXPECT_FALSE(buffer.InsertFrame(
-        test::FakeFrameBuilder().Time(30).Id(2).Refs({1}).AsLast().Build()));
-    EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(), IsEmpty());
-    EXPECT_TRUE(buffer.InsertFrame(
-        test::FakeFrameBuilder().Time(40).Id(1).AsLast().Build()));
-    EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(),
-                ElementsAre(FrameWithId(1)));
-  }
+  EXPECT_TRUE(buffer.InsertFrame(
+      test::FakeFrameBuilder().Time(20).Id(3).AsLast().Build()));
+  EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(),
+              ElementsAre(FrameWithId(3)));
+  EXPECT_FALSE(buffer.InsertFrame(
+      test::FakeFrameBuilder().Time(30).Id(2).Refs({1}).AsLast().Build()));
+  EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(), IsEmpty());
+  EXPECT_TRUE(buffer.InsertFrame(
+      test::FakeFrameBuilder().Time(40).Id(1).AsLast().Build()));
+  EXPECT_THAT(buffer.ExtractNextDecodableTemporalUnit(),
+              ElementsAre(FrameWithId(1)));
 }
 
 TEST(FrameBuffer3Test, TotalNumberOfContinuousTemporalUnits) {
