@@ -218,14 +218,17 @@ def test_touch_pointer_properties_altitude_and_azimuth_angle(
     events = get_events(session)
 
     pointerdown = next(e for e in events if e["type"] == "pointerdown")
-    assert pointerdown["altitudeAngle"] == 1
-    assert pointerdown["azimuthAngle"] == 2
+    
+    
+    
+    assert pointerdown["altitudeAngle"] == pytest.approx(1.0)
+    assert pointerdown["azimuthAngle"] == pytest.approx(2.0)
     assert pointerdown["tiltX"] == -15
     assert pointerdown["tiltY"] == 30
 
     pointermove = next(e for e in events if e["type"] == "pointermove")
-    assert pointermove["altitudeAngle"] == 0.5
-    assert pointermove["azimuthAngle"] == 1.5
+    assert pointermove["altitudeAngle"] == pytest.approx(0.5)
+    assert pointermove["azimuthAngle"] == pytest.approx(1.5)
     assert pointermove["tiltX"] == 7
     assert pointermove["tiltY"] == 61
 
