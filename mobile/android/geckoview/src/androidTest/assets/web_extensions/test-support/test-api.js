@@ -105,6 +105,14 @@ this.test = class extends ExtensionAPI {
           );
         },
 
+        
+        async isVideoCloning(tabId, selector) {
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "IsVideoCloning",
+            { selector }
+          );
+        },
+
         async getRequestedLocales() {
           return Services.locale.requestedLocales;
         },

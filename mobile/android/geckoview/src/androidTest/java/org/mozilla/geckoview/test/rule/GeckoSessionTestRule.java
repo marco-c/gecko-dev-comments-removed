@@ -2810,6 +2810,24 @@ public class GeckoSessionTestRule implements TestRule {
             });
   }
 
+  
+
+
+
+
+
+
+
+  public boolean isVideoCloning(final GeckoSession session, final String selector) {
+    return (Boolean)
+        webExtensionApiCall(
+            session,
+            "IsVideoCloning",
+            args -> {
+              args.put("selector", selector);
+            });
+  }
+
   public List<String> getRequestedLocales() {
     try {
       final JSONArray locales = (JSONArray) webExtensionApiCall("GetRequestedLocales", null);

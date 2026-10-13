@@ -5,30 +5,34 @@
 import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
 
 /**
- * The placement a session cloning a video has to be opened in, and the request
- * that asked for it. A placement is pending from the moment its token is minted
- * until a session is opened against it. The embedder shows a single
- * picture-in-picture window, so there is at most one of these, whichever session
- * it came from: a request supersedes whatever came before it.
+ * A request is pending from the moment the launch event is sent until either
+ * its player is set up or a newer request supersedes it, and active from then
+ * until the window closes. The embedder can only show one window, so a request
+ * supersedes whatever came before it, whichever session it came from.
  *
  * @typedef {object} PiP
- * @property {"pending"} state
- * @property {number} bcGroupId
- *   Browsing context group of the source, which the player session is opened in.
- * @property {string} remoteType
- *   Content process the player session has to be opened in, for the same reason.
- * @property {?string} token
- *   Placement token handed to the embedder, until a session is opened against
- *   it. Null once consumed: a token places a single session.
- * @property {object} videoRef
- *   Opaque reference to the video element, handed to the player actor to clone.
- *   Absent for a placement no request has claimed.
+ * @property {"pending"|"active"} state
  * @property {object} sourceDispatcher
  *   EventDispatcher of the source session.
+ * @property {object} videoRef
+ *   ContentDOMReference to the video element, handed to the player actor to
+ *   clone. Absent for a placement no request has claimed.
+ * @property {Element} playerBrowser
+ *   Active only. Browser of the player session showing the cloned video.
+ * @property {number} bcGroupId
+ *   Pending only. Browsing context group of the source, which the player
+ *   session is opened in.
+ * @property {string} remoteType
+ *   Pending only. Content process the player session has to be opened in, for
+ *   the same reason.
+ * @property {?string} token
+ *   Pending only. Placement token handed to the embedder, until a session is
+ *   opened against it. Null once consumed: a token places a single session.
  * @property {Function} resolve
- *   Settles the promise returned by request() once the player is set up.
+ *   Pending only. Settles the promise returned by request() once the player is
+ *   set up.
  * @property {Function} reject
- *   Settles that promise if setting the player up failed.
+ *   Pending only. Settles that promise if setting the player up failed.
  */
 
 /** @type {?PiP} */
@@ -52,6 +56,21 @@ export const GeckoViewPictureInPictureController = {
         new Error("No EventDispatcher for the requesting session")
       );
     }
+
+    // The window already clones this video. A second player would not help, since a video is
+    // cloned into a single element and the old player stops the clone when it unloads.
+    if (
+      gPiP?.state === "active" &&
+      gPiP.videoRef.browsingContextId === videoRef.browsingContextId &&
+      gPiP.videoRef.id === videoRef.id
+    ) {
+      return Promise.resolve();
+    }
+
+    // A request that supersedes an unanswered one takes its placement with it.
+    this._takePending()?.reject?.(
+      new Error("Superseded by a newer picture-in-picture request")
+    );
 
     const token = this.mintPlacementToken(bcGroupId, remoteType);
 
@@ -137,6 +156,52 @@ export const GeckoViewPictureInPictureController = {
       }
     }
   },
+
+  // Sets up the player in the session opened for this browsing context group.
+  claimPlayerSession(browser) {
+    const bcGroupId = browser.browsingContext.group.id;
+    if (gPiP?.state !== "pending" || gPiP.bcGroupId !== bcGroupId) {
+      return;
+    }
+
+    // A token minted without a video to clone places the session and nothing more.
+    const pending = this._takePending();
+    if (!pending.videoRef) {
+      return;
+    }
+
+    this._setupPlayer(browser, pending);
+  },
+
+  // Drops the pending request, and with it the placement its token stands for.
+  _takePending() {
+    if (gPiP?.state !== "pending") {
+      return null;
+    }
+    const pending = gPiP;
+    gPiP = null;
+    return pending;
+  },
+
+  async _setupPlayer(
+    playerBrowser,
+    { videoRef, sourceDispatcher, resolve, reject }
+  ) {
+    try {
+      await playerBrowser.browsingContext.currentWindowGlobal
+        .getActor("GeckoViewPictureInPicturePlayer")
+        .setupPlayer(videoRef);
+      // A request that landed while we were switching state from pending to active takes priority.
+      if (gPiP) {
+        reject(new Error("Superseded by a newer picture-in-picture request"));
+        return;
+      }
+      gPiP = { state: "active", sourceDispatcher, playerBrowser, videoRef };
+      resolve();
+    } catch (e) {
+      reject(e);
+    }
+  },
 };
 
 /**
@@ -148,6 +213,11 @@ export class GeckoViewPictureInPicture extends GeckoViewModule {
   onInit() {
     debug`onInit`;
     this.registerListener(["GeckoView:PictureInPicture:Request"]);
+
+    // A session opened against a placement is the player for the request that minted its token.
+    if (this.settings.pictureInPictureToken) {
+      GeckoViewPictureInPictureController.claimPlayerSession(this.browser);
+    }
   }
 
   onEvent(aEvent, aData, aCallback) {

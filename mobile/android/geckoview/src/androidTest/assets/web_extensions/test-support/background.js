@@ -23,6 +23,9 @@ const APIS = {
   GetLinkColor({ tab, selector }) {
     return browser.test.getLinkColor(tab.id, selector);
   },
+  IsVideoCloning({ tab, selector }) {
+    return browser.test.isVideoCloning(tab.id, selector);
+  },
   GetPidForTab({ tab }) {
     return browser.test.getPidForTab(tab.id);
   },
