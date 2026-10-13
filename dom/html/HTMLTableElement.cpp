@@ -25,7 +25,6 @@ namespace mozilla::dom {
 
 
 
-
 class TableRowsCollection final : public HTMLCollection,
                                   public nsStubMutationObserver {
  public:
@@ -36,7 +35,6 @@ class TableRowsCollection final : public HTMLCollection,
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
   uint32_t Length() override;
   Element* Item(uint32_t aIndex) override;
@@ -55,13 +53,7 @@ class TableRowsCollection final : public HTMLCollection,
   
   void CleanUp();
   void LastRelease() override { CleanUp(); }
-  virtual ~TableRowsCollection() {
-    
-    
-    
-    
-    CleanUp();
-  }
+  virtual ~TableRowsCollection() { CleanUp(); }
 
   
   
@@ -94,7 +86,7 @@ class TableRowsCollection final : public HTMLCollection,
                        int32_t aIndexGuess = -1);
 
   
-  HTMLTableElement* mParent;
+  RefPtr<HTMLTableElement> mParent;
 
   
   
@@ -181,7 +173,18 @@ JSObject* TableRowsCollection::WrapObject(JSContext* aCx,
   return HTMLCollection_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(TableRowsCollection, HTMLCollection, mRows)
+NS_IMPL_CYCLE_COLLECTION_CLASS(TableRowsCollection)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(TableRowsCollection,
+                                                HTMLCollection)
+  tmp->CleanUp();
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(TableRowsCollection,
+                                                  HTMLCollection)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mParent)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRows)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(TableRowsCollection)
   NS_INTERFACE_MAP_ENTRY(nsIMutationObserver)
@@ -472,14 +475,6 @@ void TableRowsCollection::ContentWillBeRemoved(nsIContent* aChild,
     
     mFootStart -= removed;
   }
-}
-
-void TableRowsCollection::NodeWillBeDestroyed(nsINode* aNode) {
-  
-  
-  
-  mInitialized = false;
-  CleanUp();
 }
 
 
@@ -879,8 +874,7 @@ void HTMLTableElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLTableElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLTableElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::cellpadding}, {nsGkAtoms::cellspacing},
       {nsGkAtoms::border},      {nsGkAtoms::width},

@@ -79,7 +79,7 @@ class HTMLFormControlsCollection final : public HTMLCollection {
  public:
   static bool ShouldBeInElements(const nsIFormControl* aFormControl);
 
-  HTMLFormElement* mForm;  
+  RefPtr<HTMLFormElement> mForm;
 
   
   

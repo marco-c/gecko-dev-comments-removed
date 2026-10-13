@@ -230,6 +230,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
 
  public:
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ContentList, HTMLCollection)
 
   
 
@@ -306,7 +307,6 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
   bool MatchesKey(const ContentListKey& aKey) const {
     
@@ -337,6 +337,11 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
   class HashEntry;
 
  protected:
+  
+
+
+  virtual void DisconnectFromRoot();
+
   
   
   
@@ -433,7 +438,7 @@ class ContentList : public HTMLCollection, public nsStubMultiMutationObserver {
     }
   }
 
-  nsINode* mRootNode;  
+  RefPtr<nsINode> mRootNode;
   int32_t mMatchNameSpaceId;
   RefPtr<nsAtom> mHTMLMatchAtom;
   RefPtr<nsAtom> mXMLMatchAtom;
@@ -628,10 +633,10 @@ class LabelsNodeList final : public ContentList {
 
   void ResetRoots();
 
-  void LastRelease() override;
-
  protected:
   virtual ~LabelsNodeList();
+
+  void DisconnectFromRoot() override;
 
   nsINode* GetNextNode(nsINode* aCurrent) override;
 
