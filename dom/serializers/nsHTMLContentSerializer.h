@@ -31,10 +31,20 @@ class nsHTMLContentSerializer final : public nsXHTMLContentSerializer {
   NS_IMETHOD AppendDocumentStart(mozilla::dom::Document* aDocument) override;
 
  protected:
-  [[nodiscard]] bool SerializeHTMLAttributes(
-      mozilla::dom::Element* aContent, mozilla::dom::Element* aOriginalElement,
-      nsAString& aTagPrefix, const nsAString& aTagNamespaceURI,
-      nsAtom* aTagName, int32_t aNamespace, nsAString& aStr);
+  
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] bool SerializeHTMLAttributes(mozilla::dom::Element* aElement,
+                                             nsAtom* aTagName,
+                                             int32_t aNamespace,
+                                             nsAString& aStr);
 
   [[nodiscard]] virtual bool AppendAndTranslateEntities(
       const nsAString& aStr, nsAString& aOutputStr) override;
