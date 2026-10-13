@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from webdriver import WebElement

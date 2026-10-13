@@ -1,7 +1,3 @@
-
-
-
-
 import asyncio
 import pytest
 from webdriver.error import TimeoutException

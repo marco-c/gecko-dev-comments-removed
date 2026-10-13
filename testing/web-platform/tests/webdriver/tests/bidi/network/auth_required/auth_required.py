@@ -1,7 +1,3 @@
-
-
-
-
 import asyncio
 import pytest
 from webdriver.bidi.modules.network import AuthCredentials

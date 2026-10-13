@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from tests.classic.perform_actions.support.refine import (

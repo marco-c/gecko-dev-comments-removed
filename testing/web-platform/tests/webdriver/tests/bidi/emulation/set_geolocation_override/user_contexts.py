@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from webdriver.bidi.modules.emulation import CoordinatesOptions

@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 from . import MAX_TOUCHES_PER_USER_CONTEXT, MAX_TOUCHES_GLOBAL
 

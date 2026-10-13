@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 import webdriver.bidi.error as error

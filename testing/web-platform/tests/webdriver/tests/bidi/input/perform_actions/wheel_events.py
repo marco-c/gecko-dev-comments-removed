@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from webdriver.bidi.modules.input import Actions, get_element_origin

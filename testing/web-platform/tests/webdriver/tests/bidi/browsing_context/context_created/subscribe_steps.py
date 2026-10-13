@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from .. import assert_browsing_context

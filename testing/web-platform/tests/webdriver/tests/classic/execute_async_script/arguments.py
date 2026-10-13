@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from webdriver.client import ShadowRoot, WebElement, WebFrame, WebWindow

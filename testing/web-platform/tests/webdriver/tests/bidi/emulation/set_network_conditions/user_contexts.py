@@ -1,7 +1,3 @@
-
-
-
-
 import pytest
 
 from . import OFFLINE_NETWORK_CONDITIONS
