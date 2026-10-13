@@ -7,8 +7,6 @@ import {
   getExpressions,
   getSelectedSource,
   getSelectedScopeMappings,
-  getSelectedFrameBindings,
-  getIsPaused,
   getSelectedFrame,
   getCurrentThread,
   isMapScopesEnabled,
@@ -184,12 +182,15 @@ function evaluateExpression(expression) {
 
 
 
+
+
+
+
+
 export function getMappedExpression(expression, thread, thunkArgs) {
   const { getState, parserWorker } = thunkArgs;
   const mappings = getSelectedScopeMappings(getState(), thread);
-  const bindings = getSelectedFrameBindings(getState(), thread);
 
-  
   
   
   
@@ -197,15 +198,13 @@ export function getMappedExpression(expression, thread, thunkArgs) {
   
   
   const shouldMapScopes = isMapScopesEnabled(getState()) && mappings;
-  if (!shouldMapScopes && !expression.match(/(await|=)/)) {
+  if (!shouldMapScopes && !expression.match(/await/)) {
     return null;
   }
 
   return parserWorker.mapExpression(
     expression,
     mappings,
-    bindings || [],
-    features.mapExpressionBindings && getIsPaused(getState(), thread),
     features.mapAwaitExpression
   );
 }
