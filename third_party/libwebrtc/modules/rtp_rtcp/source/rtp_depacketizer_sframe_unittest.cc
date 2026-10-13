@@ -30,7 +30,7 @@ using ::testing::ElementsAreArray;
 
 
 uint8_t MakeDescriptorByte(bool s, bool e, bool t) {
-  std::bitset<8> bits;
+  std::bitset<SframeDescriptor::kNumBits> bits;
   bits.set(SframeDescriptor::kSBit, s);
   bits.set(SframeDescriptor::kEBit, e);
   bits.set(SframeDescriptor::kTBit, t);
