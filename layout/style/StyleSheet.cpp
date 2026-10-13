@@ -548,7 +548,9 @@ void StyleSheet::GetSourceURL(nsACString& aSourceURL) {
   Servo_StyleSheet_GetSourceURL(mInner->mContents, &aSourceURL);
 }
 
-css::Rule* StyleSheet::GetDOMOwnerRule() const { return GetOwnerRule(); }
+already_AddRefed<css::Rule> StyleSheet::GetDOMOwnerRule() const {
+  return do_AddRef(GetOwnerRule());
+}
 
 
 

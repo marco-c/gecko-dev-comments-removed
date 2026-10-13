@@ -339,7 +339,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   
   
-  css::Rule* GetDOMOwnerRule() const;
+  already_AddRefed<css::Rule> GetDOMOwnerRule() const;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal, ErrorResult&);
   uint32_t InsertRule(const nsACString& aRule, uint32_t aIndex,
                       nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
