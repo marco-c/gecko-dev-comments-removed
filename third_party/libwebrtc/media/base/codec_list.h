@@ -43,11 +43,22 @@ class CodecList {
     return CodecList(codecs);
   }
   
+  enum class PushResult {
+    
+    kInserted,
+    
+    kDuplicate,
+    
+    
+    
+    
+    kConflict,
+  };
+
   
   
   
-  
-  bool PushIfNotPresent(const Codec& codec);
+  [[nodiscard]] PushResult PushIfNotPresent(const Codec& codec);
 
   
   iterator begin() { return codecs_.begin(); }

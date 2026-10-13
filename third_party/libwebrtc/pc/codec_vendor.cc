@@ -176,6 +176,27 @@ const RTCErrorOr<std::vector<const Codec*>> GetAssociatedCodecsForRed(
   return codecs;
 }
 
+
+
+
+
+
+RTCError PushCodec(CodecList& codecs, const Codec& codec) {
+  if (codecs.PushIfNotPresent(codec) == CodecList::PushResult::kConflict) {
+    
+    
+    
+    
+    
+    
+    RTC_DCHECK_NOTREACHED()
+        << "Conflicting payload type assignment. Could not add " << codec
+        << " since payload type " << codec.id
+        << " is already used by a different codec.";
+  }
+  return RTCError::OK();
+}
+
 RTCError MergeRtxCodec(const CodecConfiguration& config,
                        const Codec& primary_codec,
                        absl::string_view mid,
@@ -360,7 +381,10 @@ RTCError MergeCodecsFromConfigurations(
         return result.MoveError();
       }
       primary_codec.id = result.value();
-      offered_codecs.PushIfNotPresent(primary_codec);
+      RTCError error = PushCodec(offered_codecs, primary_codec);
+      if (!error.ok()) {
+        return error;
+      }
     } else {
       primary_codec = *primary_it;
     }
@@ -443,7 +467,10 @@ RTCError MergeCodecsLegacy(const CodecList& reference_codecs,
         return suggestion.MoveError();
       }
       codec.id = suggestion.value();
-      offered_codecs.PushIfNotPresent(codec);
+      RTCError error = PushCodec(offered_codecs, codec);
+      if (!error.ok()) {
+        return error;
+      }
     }
   }
 
@@ -475,7 +502,10 @@ RTCError MergeCodecsLegacy(const CodecList& reference_codecs,
         return suggestion.MoveError();
       }
       rtx_codec.id = suggestion.value();
-      offered_codecs.PushIfNotPresent(rtx_codec);
+      RTCError error = PushCodec(offered_codecs, rtx_codec);
+      if (!error.ok()) {
+        return error;
+      }
     } else if (reference_codec.GetResiliencyType() ==
                    Codec::ResiliencyType::kRed &&
                !FindMatchingCodec(reference_codecs, offered_codecs,
@@ -500,7 +530,10 @@ RTCError MergeCodecsLegacy(const CodecList& reference_codecs,
           return suggestion.MoveError();
         }
         red_codec.id = suggestion.value();
-        offered_codecs.PushIfNotPresent(red_codec);
+        RTCError error = PushCodec(offered_codecs, red_codec);
+        if (!error.ok()) {
+          return error;
+        }
         continue;
       }
       if (associated_codecs.value().size() < 2) {
@@ -536,7 +569,10 @@ RTCError MergeCodecsLegacy(const CodecList& reference_codecs,
         return suggestion.MoveError();
       }
       red_codec.id = suggestion.value();
-      offered_codecs.PushIfNotPresent(red_codec);
+      RTCError error = PushCodec(offered_codecs, red_codec);
+      if (!error.ok()) {
+        return error;
+      }
     }
   }
 
@@ -1044,9 +1080,12 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
         pt_suggester.AddLocalMapping(mid, codec.id, codec);
       }
     }
-    MergeCodecsByDirection(media_description_options.type,
-                           media_description_options.direction, mid, codecs,
-                           pt_suggester, false);
+    RTCError error = MergeCodecsByDirection(
+        media_description_options.type, media_description_options.direction,
+        mid, codecs, pt_suggester, false);
+    if (!error.ok()) {
+      return error;
+    }
   } else {
     
     
@@ -1058,29 +1097,42 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
         return checked_codec_list.MoveError();
       }
       
-      MergeCodecsLegacy(checked_codec_list.value(), mid, codecs, pt_suggester,
-                        true);
+      RTCError error =
+          MergeCodecsLegacy(checked_codec_list.value(), mid, codecs,
+                            pt_suggester, true);
+      if (!error.ok()) {
+        return error;
+      }
     }
     
-    if (media_description_options.type == MediaType::AUDIO) {
-      MergeCodecsLegacy(audio_recv_codecs_.codecs(), mid, codecs, pt_suggester,
-                        true);
-      MergeCodecsLegacy(audio_send_codecs_.codecs(), mid, codecs, pt_suggester,
-                        true);
-    } else {
-      MergeCodecsLegacy(video_recv_codecs_.codecs(), mid, codecs, pt_suggester,
-                        true);
-      MergeCodecsLegacy(video_send_codecs_.codecs(), mid, codecs, pt_suggester,
-                        true);
+    const TypedCodecVendor& recv_codecs =
+        media_description_options.type == MediaType::AUDIO ? audio_recv_codecs_
+                                                           : video_recv_codecs_;
+    const TypedCodecVendor& send_codecs =
+        media_description_options.type == MediaType::AUDIO ? audio_send_codecs_
+                                                           : video_send_codecs_;
+    RTCError error =
+        MergeCodecsLegacy(recv_codecs.codecs(), mid, codecs, pt_suggester,
+                          true);
+    if (!error.ok()) {
+      return error;
+    }
+    error = MergeCodecsLegacy(send_codecs.codecs(), mid, codecs, pt_suggester,
+                              true);
+    if (!error.ok()) {
+      return error;
     }
   }
 
   CodecList filtered_codecs;
   CodecList supported_codecs;
   if (payload_types_in_transport_) {
-    MergeCodecsByDirection(
+    RTCError error = MergeCodecsByDirection(
         media_description_options.type, media_description_options.direction,
         mid, supported_codecs, pt_suggester, true);
+    if (!error.ok()) {
+      return error;
+    }
   } else {
     supported_codecs =
         media_description_options.type == MediaType::AUDIO
@@ -1111,9 +1163,18 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
         const MediaContentDescription* mcd =
             current_content->media_description();
         for (const Codec& codec : mcd->codecs()) {
-          if (FindMatchingCodec(mcd->codecs(), codecs.codecs(), codec)) {
-            filtered_codecs.push_back(codec);
-            pt_suggester.AddLocalMapping(mid, codec.id, codec);
+          
+          
+          
+          
+          std::optional<Codec> found_codec =
+              FindMatchingCodec(mcd->codecs(), codecs.codecs(), codec);
+          if (found_codec) {
+            RTCError error = PushCodec(filtered_codecs, *found_codec);
+            if (!error.ok()) {
+              return error;
+            }
+            pt_suggester.AddLocalMapping(mid, found_codec->id, *found_codec);
           }
         }
       }
@@ -1143,7 +1204,10 @@ RTCErrorOr<std::vector<Codec>> CodecVendor::GetNegotiatedCodecsForOffer(
               }
             }
           }
-          filtered_codecs.PushIfNotPresent(*found_codec);
+          RTCError error = PushCodec(filtered_codecs, *found_codec);
+          if (!error.ok()) {
+            return error;
+          }
         }
       }
     }

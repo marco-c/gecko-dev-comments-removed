@@ -43,8 +43,41 @@ TEST(CodecList, RejectIllegalConstructorArguments) {
   EXPECT_EQ(checked_codec_list.error().type(), RTCErrorType::INVALID_PARAMETER);
 }
 
+TEST(CodecList, PushIfNotPresentAddsCodec) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.size(), 1U);
+  EXPECT_EQ(list[0], vp8);
+}
+
+TEST(CodecList, PushIfNotPresentIgnoresIdenticalCodec) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kDuplicate);
+  EXPECT_EQ(list.size(), 1U);
+}
+
+
+
+TEST(CodecList, PushIfNotPresentReportsPayloadTypeCollision) {
+  CodecList list;
+  Codec vp8 = CreateVideoCodec({SdpVideoFormat{"VP8"}});
+  vp8.id = 96;
+  Codec vp9 = CreateVideoCodec({SdpVideoFormat{"VP9"}});
+  vp9.id = 96;
+  EXPECT_EQ(list.PushIfNotPresent(vp8), CodecList::PushResult::kInserted);
+  EXPECT_EQ(list.PushIfNotPresent(vp9), CodecList::PushResult::kConflict);
+  
+  EXPECT_EQ(list.size(), 1U);
+  EXPECT_EQ(list[0], vp8);
+}
+
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-TEST(CodecList, CrashOnIllegalConstructorArguments) {
+TEST(CodecListDeathTest, CrashOnIllegalConstructorArguments) {
   
   
   
