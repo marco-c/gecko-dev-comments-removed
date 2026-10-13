@@ -66,6 +66,7 @@ void GeckoProfilerRuntime::setTerminatingFlowMarker(
     void (*fn)(mozilla::MarkerCategory, const char*, uint64_t)) {
   terminatingFlowMarker_ = fn;
 }
+
 bool GeckoProfilerRuntime::insertScriptSource(ScriptSource* scriptSource) {
   MOZ_ASSERT(scriptSource);
   auto guard = scriptSources_.writeLock();
