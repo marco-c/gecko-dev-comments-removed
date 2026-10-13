@@ -650,7 +650,6 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
 
 
 
-
   void MaybeExtendAnchorFocusRangeToDeleteAdjacentWhiteSpace(
       const EditorBase& aEditorBase);
 
