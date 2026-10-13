@@ -56,6 +56,16 @@ interface Document {
   ): XULElement;
 }
 
+interface CustomElementRegistry {
+  
+  
+  define(
+    name: string,
+    constructor: new () => XULElement,
+    options?: ElementDefinitionOptions
+  ): void;
+}
+
 type nsIGleanPingNoReason = {
   [K in keyof nsIGleanPing]: K extends "submit"
     ? (_?: never) => void
