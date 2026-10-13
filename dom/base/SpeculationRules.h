@@ -64,6 +64,8 @@ class SpeculationRules final {
   
   bool WaitForPendingFrames();
 
+  bool IsFrameConstructionPending() const;
+
   
   
   
@@ -87,6 +89,7 @@ class SpeculationRules final {
   
   bool mConsiderSpeculativeLoadsMicrotaskQueued{false};
 
+  
   
   RefPtr<ManagedPostRefreshObserver> mPendingFramesObserver;
 
