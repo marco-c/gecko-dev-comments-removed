@@ -447,6 +447,9 @@ void DcSctpSocket::RestoreFromState(const DcSctpSocketHandoverState& state) {
       tcb_->RestoreFromState(now, state);
 
       SetState(State::kEstablished, "restored from handover state");
+      
+      
+      tcb_->SendBufferedPackets(now);
       callbacks_.OnConnected();
     }
   }
