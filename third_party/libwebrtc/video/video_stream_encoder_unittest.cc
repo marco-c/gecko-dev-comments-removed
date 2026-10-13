@@ -428,6 +428,11 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
       
       
       TaskQueueBase* encoder_queue_ptr,
+      
+      
+      scoped_refptr<FakeResource> fake_cpu_resource,
+      scoped_refptr<FakeResource> fake_quality_resource,
+      FakeAdaptationConstraint* fake_adaptation_constraint,
       SendStatisticsProxy* stats_proxy,
       VideoStreamEncoderSettings settings,
       VideoStreamEncoder::BitrateAllocationCallbackType
@@ -446,17 +451,16 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
             std::move(encoder_queue),
             allocation_callback_type,
             nullptr,  
-            std::move(encoder_switch_request_callback)),
+            std::move(encoder_switch_request_callback),
+            AdaptationInjectionsForTest{
+                .resources = {{fake_quality_resource,
+                               VideoAdaptationReason::kQuality},
+                              {fake_cpu_resource, VideoAdaptationReason::kCpu}},
+                .constraints = {fake_adaptation_constraint}}),
         time_controller_(time_controller),
         encoder_queue_ptr_(encoder_queue_ptr),
-        fake_cpu_resource_(FakeResource::Create("FakeResource[CPU]")),
-        fake_quality_resource_(FakeResource::Create("FakeResource[QP]")),
-        fake_adaptation_constraint_("FakeAdaptationConstraint") {
-    InjectAdaptationResource(fake_quality_resource_,
-                             VideoAdaptationReason::kQuality);
-    InjectAdaptationResource(fake_cpu_resource_, VideoAdaptationReason::kCpu);
-    InjectAdaptationConstraint(&fake_adaptation_constraint_);
-  }
+        fake_cpu_resource_(std::move(fake_cpu_resource)),
+        fake_quality_resource_(std::move(fake_quality_resource)) {}
 
   void SetSourceAndWaitForRestrictionsUpdated(
       VideoSourceInterface<VideoFrame>* source,
@@ -526,7 +530,6 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   CpuOveruseDetectorProxy* overuse_detector_proxy_;
   scoped_refptr<FakeResource> fake_cpu_resource_;
   scoped_refptr<FakeResource> fake_quality_resource_;
-  FakeAdaptationConstraint fake_adaptation_constraint_;
 };
 
 
@@ -932,9 +935,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoStreamEncoderSettings settings = video_send_config_.encoder_settings;
     video_stream_encoder_ = std::make_unique<VideoStreamEncoderUnderTest>(
         env_, &time_controller_, std::move(cadence_adapter),
-        std::move(encoder_queue), encoder_queue_ptr, stats_proxy_.get(),
-        std::move(settings), allocation_callback_type, num_cores,
-        std::move(encoder_switch_request_callback_));
+        std::move(encoder_queue), encoder_queue_ptr,
+        FakeResource::Create("FakeResource[CPU]"),
+        FakeResource::Create("FakeResource[QP]"), &fake_adaptation_constraint_,
+        stats_proxy_.get(), std::move(settings), allocation_callback_type,
+        num_cores, std::move(encoder_switch_request_callback_));
     video_stream_encoder_->SetSink(&sink_, false);
     video_stream_encoder_->SetSource(&video_source_,
                                      DegradationPreference::MAINTAIN_FRAMERATE);
@@ -1724,6 +1729,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
   std::unique_ptr<MockableSendStatisticsProxy> stats_proxy_;
   TestSink sink_;
   AdaptingFrameForwarder video_source_{&time_controller_};
+  
+  
+  FakeAdaptationConstraint fake_adaptation_constraint_{
+      "FakeAdaptationConstraint"};
   std::unique_ptr<VideoStreamEncoderUnderTest> video_stream_encoder_;
   EncoderSwitchRequestCallback encoder_switch_request_callback_;
 };
