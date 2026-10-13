@@ -1530,6 +1530,21 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   
+  
+  
+  inline void lshift32ThenAdd(Imm32 shift, Register rhs,
+                              Register srcDest) PER_SHARED_ARCH;
+  inline void lshift32ThenOr(Imm32 shift, Register rhs,
+                             Register srcDest) PER_SHARED_ARCH;
+  inline void rshiftPtrThenXor(Imm32 shift, Register rhs,
+                               Register srcDest) PER_SHARED_ARCH;
+  inline void rotateLeft64ThenXor(Imm32 count, Register64 rhs,
+                                  Register64 srcDest) PER_SHARED_ARCH;
+
+  
+  
+
+  
   inline void clz32(Register src, Register dest,
                     bool knownNotZero) PER_SHARED_ARCH;
   inline void ctz32(Register src, Register dest,
