@@ -52,7 +52,7 @@ impl Default for GpuBufferBlockI {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuBufferBlockF {
@@ -60,7 +60,7 @@ pub struct GpuBufferBlockF {
 }
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuBufferBlockI {
