@@ -3462,6 +3462,12 @@ pref("browser.search.removeEngineInfobar.enabled", true);
 
 
 
+pref("browser.search.configV3.featureGate", false);
+
+
+
+
+
 
 
 
