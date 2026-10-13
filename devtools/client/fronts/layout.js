@@ -130,13 +130,6 @@ class GridFront extends FrontClassWithSpec(gridSpec) {
   
 
 
-  get gridFragments() {
-    return this._form.gridFragments;
-  }
-
-  
-
-
   get isSubgrid() {
     return !!this._form.isSubgrid;
   }

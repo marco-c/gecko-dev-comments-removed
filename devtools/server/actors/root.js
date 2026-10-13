@@ -146,9 +146,6 @@ class RootActor extends Actor {
       
       
       supportsEnableWindowGlobalThreadActors: true,
-      
-      
-      supportsGridGetFragments: true,
     };
   }
 
