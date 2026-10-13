@@ -1579,7 +1579,8 @@ auto nsWindow::Bounds::ComputeX11(const nsWindow* aWindow) -> Bounds {
   LOG_WIN(aWindow, "  mClientArea %s", ToString(result.mClientArea).c_str());
 
   if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
-      result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
+      (!aWindow->mHasReceivedSizeAllocate &&
+       (result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1))) {
     
     
     result.mClientArea =
@@ -1630,7 +1631,8 @@ auto nsWindow::Bounds::ComputeWayland(const nsWindow* aWindow) -> Bounds {
           ToString(result.mClientMargin).c_str());
 
   if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
-      result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
+      (!aWindow->mHasReceivedSizeAllocate &&
+       (result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1))) {
     
     
     result.mClientMargin = aWindow->ToplevelUsesCSD() ? aWindow->mClientMargin
