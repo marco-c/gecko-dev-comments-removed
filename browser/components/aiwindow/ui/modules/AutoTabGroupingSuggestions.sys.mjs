@@ -47,32 +47,27 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "maxGroups",
-  "browser.smartwindow.autoTabGrouping.maxGroups",
-  3
+  "browser.smartwindow.autoTabGrouping.maxGroups"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minTabsPerGroup",
-  "browser.smartwindow.autoTabGrouping.minTabsPerGroup",
-  2
+  "browser.smartwindow.autoTabGrouping.minTabsPerGroup"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "preloadEnabled",
-  "browser.smartwindow.autoTabGrouping.preloadModels",
-  true
+  "browser.smartwindow.autoTabGrouping.preloadModels"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "checkForMemory",
-  "browser.ml.checkForMemory",
-  true
+  "browser.ml.checkForMemory"
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minimumPhysicalMemoryGiB",
-  "browser.ml.minimumPhysicalMemory",
-  3
+  "browser.ml.minimumPhysicalMemory"
 );
 
 const ONE_GIB = 1024 ** 3;
@@ -84,9 +79,42 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minCohesion",
   "browser.smartwindow.autoTabGrouping.minCohesion",
-  "0.15",
+  null,
   null,
   value => parseFloat(value)
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "supportedLocales",
+  "browser.smartwindow.autoTabGrouping.supportedLocales",
+  null,
+  null,
+  value =>
+    value
+      .split(",")
+      .map(locale => locale.trim().toLowerCase())
+      .filter(Boolean)
+);
+
+// Clustering cutoff, in thousandths (650 => 0.65). Nimbus can change these after
+// the manager is built, so they are re-applied whenever they change.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "thresholdInt",
+  "browser.tabs.groups.smart.agglomerativeThresholdInt",
+  null,
+  () => AutoTabGroupingSuggestions._applyClusteringThreshold()
+);
+
+// Clustering cutoff for non-English locales, in thousandths (550 => 0.55).
+// 0 keeps the shared browser.tabs.groups.smart.agglomerativeThresholdInt.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "nonEnglishThresholdInt",
+  "browser.smartwindow.autoTabGrouping.nonEnglishThresholdInt",
+  null,
+  () => AutoTabGroupingSuggestions._applyClusteringThreshold()
 );
 
 // Tab-group color names, mirroring MozTabbrowserTabGroupMenu.COLORS. Each name
@@ -141,13 +169,35 @@ export const AutoTabGroupingSuggestions = {
   // Organize Tabs is only reachable from an active Smart Window, which the user
   // has already opted into, so the extra opt-in prefs that
   // SmartTabGroupingManager.isEnabled checks for the tab strip's own suggestions
-  // don't apply here. All we need is on-device ML and isAllowed's locale check.
+  // don't apply here. All we need is our own feature pref, on-device ML and our
+  // own locale gate.
   get isAvailable() {
     return (
       Services.prefs.getBoolPref("browser.ml.enable", false) &&
-      lazy.SmartTabGroupingManager.isAllowed &&
+      Services.prefs.getBoolPref(
+        "browser.smartwindow.autoTabGrouping.enabled",
+        false
+      ) &&
+      this.isLocaleSupported &&
       this.hasEnoughMemory
     );
+  },
+
+  /**
+   * Whether the app locale is in supportedLocales, matched by language, so "fr"
+   * allows both fr and fr-CA.
+   *
+   * @returns {boolean}
+   */
+  get isLocaleSupported() {
+    const locale = Services.locale.appLocaleAsBCP47.toLowerCase();
+    return lazy.supportedLocales.some(
+      supported => locale === supported || locale.startsWith(`${supported}-`)
+    );
+  },
+
+  get isEnglishLocale() {
+    return Services.locale.appLocaleAsBCP47.startsWith("en");
   },
 
   /**
@@ -170,8 +220,25 @@ export const AutoTabGroupingSuggestions = {
       config.topicGeneration.featureId = SW_TOPIC_FEATURE_ID;
       config.topicGeneration.engineId = SW_TOPIC_ENGINE_ID;
       this._manager = new lazy.SmartTabGroupingManager(config);
+      this._applyClusteringThreshold();
     }
     return this._manager;
+  },
+
+  // The embedding model needs a stricter cutoff for non-English titles than the
+  // shared English-tuned one.
+  _applyClusteringThreshold() {
+    if (!this._manager) {
+      return;
+    }
+    const thresholdInt =
+      !this.isEnglishLocale && lazy.nonEnglishThresholdInt > 0
+        ? lazy.nonEnglishThresholdInt
+        : lazy.thresholdInt;
+    if (thresholdInt > 0) {
+      this._manager.config.clustering.agglomerativeThreshold =
+        thresholdInt / 1000;
+    }
   },
 
   /**
