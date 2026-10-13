@@ -20,7 +20,6 @@
 #include <span>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "api/field_trials_view.h"
 #include "api/rtp_packet_sender.h"
 #include "api/transport/network_types.h"
@@ -139,7 +138,7 @@ class PacingController {
   void SetCongested(bool congested);
 
   
-  ABSL_DEPRECATED("Use SetPacerConfig")
+  [[deprecated("Use SetPacerConfig")]]
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate);
   void SetPacerConfig(PacerConfig pacer_config);
 
@@ -156,7 +155,7 @@ class PacingController {
   
   
   
-  ABSL_DEPRECATED("Use SetPacerConfig")
+  [[deprecated("Use SetPacerConfig")]]
   void SetSendBurstInterval(TimeDelta burst_interval);
 
   

@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "api/media_types.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
@@ -112,7 +111,7 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   
   
   
-  ABSL_DEPRECATED("Use SetDirectionWithError instead")
+  [[deprecated("Use SetDirectionWithError instead")]]
   virtual void SetDirection(RtpTransceiverDirection new_direction);
   virtual RTCError SetDirectionWithError(RtpTransceiverDirection new_direction);
 
@@ -147,7 +146,7 @@ class RTC_EXPORT RtpTransceiverInterface : public RefCountInterface {
   
   
   virtual void StopInternal();
-  ABSL_DEPRECATED("Use StopStandard instead") virtual void Stop();
+  [[deprecated("Use StopStandard instead")]] virtual void Stop();
 
   
   
