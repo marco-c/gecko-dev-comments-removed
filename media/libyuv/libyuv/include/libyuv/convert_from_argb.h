@@ -197,6 +197,7 @@ int ARGBToI444(const uint8_t* src_argb,
                int height);
 
 
+
 LIBYUV_API
 int ARGBToI444Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -259,6 +260,7 @@ int ABGRToI422(const uint8_t* src_abgr,
                int dst_stride_v,
                int width,
                int height);
+
 
 
 LIBYUV_API
@@ -409,6 +411,7 @@ int ARGBToNV12(const uint8_t* src_argb,
                int height);
 
 
+
 LIBYUV_API
 int ARGBToNV12Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -430,6 +433,7 @@ int ARGBToNV16(const uint8_t* src_argb,
                int dst_stride_uv,
                int width,
                int height);
+
 
 
 LIBYUV_API
@@ -455,6 +459,7 @@ int ARGBToNV24(const uint8_t* src_argb,
                int height);
 
 
+
 LIBYUV_API
 int ARGBToNV24Matrix(const uint8_t* src_argb,
                      int src_stride_argb,
@@ -465,6 +470,7 @@ int ARGBToNV24Matrix(const uint8_t* src_argb,
                      const struct ArgbConstants* argbconstants,
                      int width,
                      int height);
+
 
 
 LIBYUV_API
@@ -488,6 +494,78 @@ int ARGBToNV21(const uint8_t* src_argb,
                int dst_stride_vu,
                int width,
                int height);
+
+
+LIBYUV_API
+int ARGBToP010(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+
+LIBYUV_API
+int ARGBToP010Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint16_t* dst_y,
+                     int dst_stride_y,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+
+LIBYUV_API
+int ARGBToP210(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+
+LIBYUV_API
+int ARGBToP210Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint16_t* dst_y,
+                     int dst_stride_y,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
+
+
+LIBYUV_API
+int ARGBToP410(const uint8_t* src_argb,
+               int src_stride_argb,
+               uint16_t* dst_y,
+               int dst_stride_y,
+               uint16_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+
+
+LIBYUV_API
+int ARGBToP410Matrix(const uint8_t* src_argb,
+                     int src_stride_argb,
+                     uint16_t* dst_y,
+                     int dst_stride_y,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     const struct ArgbConstants* argbconstants,
+                     int width,
+                     int height);
 
 
 LIBYUV_API

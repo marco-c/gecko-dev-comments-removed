@@ -53,14 +53,16 @@ void Convert16To8Plane(const uint16_t* src_y,
 
 
 
+
 LIBYUV_API
-void Convert8To16Plane(const uint8_t* src_y,
-                       int src_stride_y,
-                       uint16_t* dst_y,
-                       int dst_stride_y,
-                       int bits,  
-                       int width,
-                       int height);
+void Convert8To16Plane(
+    const uint8_t* src_y,
+    int src_stride_y,
+    uint16_t* dst_y,
+    int dst_stride_y,
+    int bits,  
+    int width,
+    int height);
 
 LIBYUV_API
 void Convert8To8Plane(const uint8_t* src_y,

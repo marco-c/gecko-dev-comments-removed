@@ -248,12 +248,14 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
 static bool have_feature(const char* feature) {
   
   
+  
+  
   int64_t feature_present = 0;
   size_t size = sizeof(feature_present);
   if (sysctlbyname(feature, &feature_present, &size, NULL, 0) != 0) {
     return false;
   }
-  return feature_present;
+  return feature_present != 0;
 }
 
 
@@ -265,7 +267,14 @@ LIBYUV_API SAFEBUFFERS int AArch64CpuCaps() {
     features |= kCpuHasNeonDotProd;
     if (have_feature("hw.optional.arm.FEAT_I8MM")) {
       features |= kCpuHasNeonI8MM;
-      if (have_feature("hw.optional.arm.FEAT_SME")) {
+      
+      
+      
+      
+      
+      
+      if (have_feature("hw.optional.arm.sme_max_svl_b") &&
+          have_feature("hw.optional.arm.FEAT_SME")) {
         features |= kCpuHasSME;
         if (have_feature("hw.optional.arm.FEAT_SME2")) {
           features |= kCpuHasSME2;
@@ -295,7 +304,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
   int flag = 0;
   FILE* f = fopen(cpuinfo_name, "re");
   if (!f) {
-#if defined(__riscv_vector)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv) && __riscv_xlen == 64
     
     
     return kCpuHasRVV;
@@ -355,7 +364,7 @@ LIBYUV_API SAFEBUFFERS int RiscvCpuCaps(const char* cpuinfo_name) {
         }
       }
     }
-#if defined(__riscv_vector)
+#if !defined(LIBYUV_DISABLE_RVV) && defined(__riscv) && __riscv_xlen == 64
     
     else if ((memcmp(cpuinfo_line, "vendor_id\t: GenuineIntel", 24) == 0) ||
              (memcmp(cpuinfo_line, "vendor_id\t: AuthenticAMD", 24) == 0)) {
@@ -397,6 +406,7 @@ static SAFEBUFFERS int GetCpuFlags(void) {
   int cpu_info7[4] = {0, 0, 0, 0};
   int cpu_einfo7[4] = {0, 0, 0, 0};
   int cpu_info24[4] = {0, 0, 0, 0};
+  int cpu_info21[4] = {0, 0, 0, 0};
   int cpu_amdinfo21[4] = {0, 0, 0, 0};
   CpuId(0, 0, cpu_info0);
   CpuId(1, 0, cpu_info1);
@@ -404,6 +414,9 @@ static SAFEBUFFERS int GetCpuFlags(void) {
     CpuId(7, 0, cpu_info7);
     CpuId(7, 1, cpu_einfo7);
     CpuId(0x80000021, 0, cpu_amdinfo21);
+  }
+  if (cpu_info0[0] >= 0x21) {
+    CpuId(0x21, 0, cpu_info21);
   }
   if (cpu_info0[0] >= 0x24) {
     CpuId(0x24, 0, cpu_info24);
@@ -435,7 +448,8 @@ static SAFEBUFFERS int GetCpuFlags(void) {
                   ((cpu_info7[2] & 0x00000800) ? kCpuHasAVX512VNNI : 0) |
                   ((cpu_info7[2] & 0x00001000) ? kCpuHasAVX512VBITALG : 0) |
                   ((cpu_einfo7[3] & 0x00080000) ? kCpuHasAVX10 : 0) |
-                  ((cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0);
+                  ((cpu_info7[3] & 0x02000000) ? kCpuHasAMXINT8 : 0) |
+                  ((cpu_info21[0] & 0x00800000) ? kCpuHasAVX512BMM : 0);
       if (cpu_info0[0] >= 0x24 && (cpu_einfo7[3] & 0x00080000)) {
         cpu_info |= ((cpu_info24[1] & 0xFF) >= 2) ? kCpuHasAVX10_2 : 0;
       }
@@ -477,6 +491,12 @@ static SAFEBUFFERS int GetCpuFlags(void) {
 #if defined(__riscv) && defined(__linux__)
   cpu_info = RiscvCpuCaps("/proc/cpuinfo");
   cpu_info |= kCpuHasRISCV;
+#endif  
+#if defined(__wasm__)
+  cpu_info = kCpuHasWASM;
+#if !defined(LIBYUV_DISABLE_WASM) && defined(__wasm_simd128__)
+  cpu_info |= kCpuHasWASMSIMD;
+#endif
 #endif  
   cpu_info |= kCpuInitialized;
   return cpu_info;

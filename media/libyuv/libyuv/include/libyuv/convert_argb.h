@@ -1704,6 +1704,18 @@ int P210ToARGBMatrix(const uint16_t* src_y,
 
 
 LIBYUV_API
+int P410ToARGBMatrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint8_t* dst_argb,
+                     int dst_stride_argb,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
+
+LIBYUV_API
 int P010ToAR30Matrix(const uint16_t* src_y,
                      int src_stride_y,
                      const uint16_t* src_uv,
@@ -1727,6 +1739,18 @@ int P210ToAR30Matrix(const uint16_t* src_y,
                      int height);
 
 
+LIBYUV_API
+int P410ToAR30Matrix(const uint16_t* src_y,
+                     int src_stride_y,
+                     const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint8_t* dst_ar30,
+                     int dst_stride_ar30,
+                     const struct YuvConstants* yuvconstants,
+                     int width,
+                     int height);
+
+
 
 #define P012ToARGBMatrix P010ToARGBMatrix
 
@@ -1736,6 +1760,10 @@ int P210ToAR30Matrix(const uint16_t* src_y,
 
 #define P212ToAR30Matrix P210ToAR30Matrix
 
+#define P412ToARGBMatrix P410ToARGBMatrix
+
+#define P412ToAR30Matrix P410ToAR30Matrix
+
 
 #define P016ToARGBMatrix P010ToARGBMatrix
 
@@ -1744,6 +1772,10 @@ int P210ToAR30Matrix(const uint16_t* src_y,
 #define P216ToARGBMatrix P210ToARGBMatrix
 
 #define P216ToAR30Matrix P210ToAR30Matrix
+
+#define P416ToARGBMatrix P410ToARGBMatrix
+
+#define P416ToAR30Matrix P410ToAR30Matrix
 
 
 LIBYUV_API

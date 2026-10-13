@@ -70,6 +70,10 @@ static const int kCpuHasLSX = 0x100;
 static const int kCpuHasLASX = 0x200;
 
 
+static const int kCpuHasWASM = 0x40;
+static const int kCpuHasWASMSIMD = 0x100;
+
+
 
 LIBYUV_API
 int InitCpuFlags(void);

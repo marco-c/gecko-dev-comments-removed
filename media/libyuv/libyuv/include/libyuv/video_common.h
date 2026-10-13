@@ -62,6 +62,9 @@ enum FourCC {
   FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
   FOURCC_NV16 = FOURCC('N', 'V', '1', '6'),
   FOURCC_NV24 = FOURCC('N', 'V', '2', '4'),
+  FOURCC_P010 = FOURCC('P', '0', '1', '0'),
+  FOURCC_P210 = FOURCC('P', '2', '1', '0'),
+  FOURCC_P410 = FOURCC('P', '4', '1', '0'),
   FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
   FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
   FOURCC_I010 = FOURCC('I', '0', '1', '0'),  
@@ -116,8 +119,6 @@ enum FourCC {
   FOURCC_F210 = FOURCC('F', '2', '1', '0'),  
   FOURCC_H210 = FOURCC('H', '2', '1', '0'),  
   FOURCC_U210 = FOURCC('U', '2', '1', '0'),  
-  FOURCC_P010 = FOURCC('P', '0', '1', '0'),
-  FOURCC_P210 = FOURCC('P', '2', '1', '0'),
 
   
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  
@@ -197,6 +198,7 @@ enum FourCCBpp {
   FOURCC_BPP_H210 = 20,
   FOURCC_BPP_P010 = 15,
   FOURCC_BPP_P210 = 20,
+  FOURCC_BPP_P410 = 30,
   FOURCC_BPP_MJPG = 0,  
   FOURCC_BPP_H264 = 0,
   FOURCC_BPP_IYUV = 12,

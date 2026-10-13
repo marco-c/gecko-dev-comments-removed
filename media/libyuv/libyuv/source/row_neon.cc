@@ -491,12 +491,11 @@ void NV12ToRGB24Row_NEON(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants,
                          int width) {
   asm volatile(
-      YUVTORGB_SETUP
-      "1:          \n"  
+      YUVTORGB_SETUP "1:          \n"  
       READNV12 YUVTORGB RGBTORGB8
-      "subs        %[width], %[width], #8        \n"
-      "vst3.8      {d0, d2, d4}, [%[dst_rgb24]]! \n"
-      "bgt         1b                            \n"
+                     "subs        %[width], %[width], #8        \n"
+                     "vst3.8      {d0, d2, d4}, [%[dst_rgb24]]! \n"
+                     "bgt         1b                            \n"
       : [src_y] "+r"(src_y),                               
         [src_uv] "+r"(src_uv),                             
         [dst_rgb24] "+r"(dst_rgb24),                       
@@ -512,12 +511,11 @@ void NV21ToRGB24Row_NEON(const uint8_t* src_y,
                          const struct YuvConstants* yuvconstants,
                          int width) {
   asm volatile(
-      YUVTORGB_SETUP
-      "1:          \n"  
+      YUVTORGB_SETUP "1:          \n"  
       READNV21 YUVTORGB RGBTORGB8
-      "subs        %[width], %[width], #8        \n"
-      "vst3.8      {d0, d2, d4}, [%[dst_rgb24]]! \n"
-      "bgt         1b                            \n"
+                     "subs        %[width], %[width], #8        \n"
+                     "vst3.8      {d0, d2, d4}, [%[dst_rgb24]]! \n"
+                     "bgt         1b                            \n"
       : [src_y] "+r"(src_y),                               
         [src_vu] "+r"(src_vu),                             
         [dst_rgb24] "+r"(dst_rgb24),                       
@@ -1374,17 +1372,18 @@ void RAWToRGBARow_NEON(const uint8_t* src_raw, uint8_t* dst_rgba, int width) {
 void RAWToRGB24Row_NEON(const uint8_t* src_raw, uint8_t* dst_rgb24, int width) {
   asm volatile(
       "1:          \n"
-      "vld3.8      {d1, d2, d3}, [%0]!           \n"  
-      "subs        %2, %2, #8                    \n"  
-      "vswp.u8     d1, d3                        \n"  
-      "vst3.8      {d1, d2, d3}, [%1]!           \n"  
-                                                      
+      "vld3.8      {d0, d2, d4}, [%0]!           \n"  
+      "vld3.8      {d1, d3, d5}, [%0]!           \n"
+      "subs        %2, %2, #16                   \n"  
+      "vswp.u8     q0, q2                        \n"  
+      "vst3.8      {d0, d2, d4}, [%1]!           \n"  
+      "vst3.8      {d1, d3, d5}, [%1]!           \n"  
       "bgt         1b                            \n"
       : "+r"(src_raw),    // %0
         "+r"(dst_rgb24),  // %1
         "+r"(width)       // %2
       :
-      : "cc", "memory", "d1", "d2", "d3"  // Clobber List
+      : "cc", "memory", "q0", "q1", "q2"  // Clobber List
   );
 }
 
@@ -1940,8 +1939,8 @@ void RGBToUV444MatrixRow_NEON(const uint8_t* src_rgb,
       : "r"(&c->kRGBToU),  // %4
         "r"(&c->kRGBToV),  // %5
         "r"(&c->kAddUV)    // %6
-      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7",
-        "q10", "q11", "q12", "q13");
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q10",
+        "q11", "q12", "q13");
 }
 
 
@@ -2087,8 +2086,8 @@ void RGBToUVMatrixRow_NEON(const uint8_t* src_rgb,
         "+r"(width)        // %4
       : "r"(&c->kRGBToU),  // %5
         "r"(&c->kRGBToV)   // %6
-      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8",
-        "q9", "q11", "q12", "q14", "q15");
+      : "cc", "memory", "q0", "q1", "q2", "q3", "q4", "q5", "q8", "q9", "q11",
+        "q12", "q14", "q15");
 }
 
 void RGB24ToUVRow_NEON(const uint8_t* src_rgb24,
@@ -3113,7 +3112,7 @@ void BlendPlaneRow_NEON(const uint8_t* src0,
       "vmov.u16    q15, #255                     \n"
       "subs        %4, %4, #32                   \n"
       "blt         19f                           \n"
-      "1:                                        \n"
+      "1:          \n"
       "vld1.8      {q0, q1}, [%0]!               \n"  
       "vld1.8      {q2, q3}, [%1]!               \n"  
       "vld1.8      {q8, q9}, [%2]!               \n"  
@@ -3128,7 +3127,9 @@ void BlendPlaneRow_NEON(const uint8_t* src0,
       "pld         [%2, #448]                    \n"
       "vmull.u8    q7, d3, d19                   \n"
       "vmlal.u8    q4, d4, d20                   \n"  
+                                                      
       "vmlal.u8    q5, d5, d21                   \n"  
+                                                      
       "vmlal.u8    q6, d6, d22                   \n"
       "vmlal.u8    q7, d7, d23                   \n"
       "vaddhn.u16  d0, q4, q15                   \n"  
@@ -3137,7 +3138,7 @@ void BlendPlaneRow_NEON(const uint8_t* src0,
       "vaddhn.u16  d3, q7, q15                   \n"
       "vst1.8      {q0, q1}, [%3]!               \n"  
       "bge         1b                            \n"
-      "19:                                       \n"
+      "19:         \n"
       "adds        %4, %4, #32                   \n"
       "ble         99f                           \n"
 
@@ -3149,11 +3150,13 @@ void BlendPlaneRow_NEON(const uint8_t* src0,
       "vmull.u8    q4, d0, d4                    \n"  
       "vmull.u8    q5, d1, d5                    \n"  
       "vmlal.u8    q4, d2, d24                   \n"  
+                                                      
       "vmlal.u8    q5, d3, d25                   \n"  
+                                                      
       "vaddhn.u16  d0, q4, q15                   \n"  
       "vaddhn.u16  d1, q5, q15                   \n"  
       "vst1.8      {q0}, [%3]!                   \n"  
-      "99:                                       \n"
+      "99:         \n"
       : "+r"(src0),   // %0
         "+r"(src1),   // %1
         "+r"(alpha),  // %2

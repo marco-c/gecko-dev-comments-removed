@@ -605,6 +605,7 @@ TEST_F(LibYUVScaleTest, ARGBScale_LargeHeightOverflow) {
   memset(orig_pixels, 128, src_w * src_h * 4);
 
   
+  
   for (int dst_w : {4, 2}) {
     int res = ARGBScale(orig_pixels, src_w * 4, src_w, src_h, dest_pixels,
                         dst_w * 4, dst_w, 2, kFilterBilinear);

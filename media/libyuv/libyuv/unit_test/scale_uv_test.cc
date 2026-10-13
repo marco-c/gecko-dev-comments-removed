@@ -13,6 +13,7 @@
 
 #include "../unit_test/unit_test.h"
 #include "libyuv/cpu_id.h"
+#include "libyuv/scale.h"
 #include "libyuv/scale_uv.h"
 
 namespace libyuv {
@@ -101,7 +102,7 @@ static int UVTestFilter(int src_width,
         DX(benchmark_width_, nom, denom), DX(benchmark_height_, nom, denom), \
         kFilter##filter, benchmark_iterations_, disable_cpu_flags_,          \
         benchmark_cpu_info_);                                                \
-    EXPECT_EQ(0, diff);                                                      \
+    ASSERT_EQ(0, diff);                                                      \
   }
 
 #if defined(ENABLE_FULL_TESTS)
@@ -132,14 +133,14 @@ TEST_FACTOR(3, 1, 3)
     int diff = UVTestFilter(benchmark_width_, benchmark_height_, width,     \
                             height, kFilter##filter, benchmark_iterations_, \
                             disable_cpu_flags_, benchmark_cpu_info_);       \
-    EXPECT_LE(diff, max_diff);                                              \
+    ASSERT_LE(diff, max_diff);                                              \
   }                                                                         \
   TEST_F(LibYUVScaleTest, name##From##width##x##height##_##filter) {        \
     int diff = UVTestFilter(width, height, Abs(benchmark_width_),           \
                             Abs(benchmark_height_), kFilter##filter,        \
                             benchmark_iterations_, disable_cpu_flags_,      \
                             benchmark_cpu_info_);                           \
-    EXPECT_LE(diff, max_diff);                                              \
+    ASSERT_LE(diff, max_diff);                                              \
   }
 
 #if defined(ENABLE_FULL_TESTS)
@@ -171,7 +172,7 @@ TEST_SCALETO(UVScale, 1920, 1080)
         UVTestFilter(benchmark_width_, benchmark_height_, benchmark_height_,   \
                      benchmark_width_, kFilter##filter, benchmark_iterations_, \
                      disable_cpu_flags_, benchmark_cpu_info_);                 \
-    EXPECT_LE(diff, max_diff);                                                 \
+    ASSERT_LE(diff, max_diff);                                                 \
   }
 
 #if defined(ENABLE_FULL_TESTS)
@@ -202,14 +203,14 @@ TEST_F(LibYUVScaleTest, UVTest3x) {
             kFilterBilinear);
   }
 
-  EXPECT_EQ(225, dest_pixels[0]);
-  EXPECT_EQ(255 - 225, dest_pixels[1]);
+  ASSERT_EQ(225, dest_pixels[0]);
+  ASSERT_EQ(255 - 225, dest_pixels[1]);
 
   UVScale(orig_pixels, kSrcStride, 480, 3, dest_pixels, kDstStride, 160, 1,
           kFilterNone);
 
-  EXPECT_EQ(225, dest_pixels[0]);
-  EXPECT_EQ(255 - 225, dest_pixels[1]);
+  ASSERT_EQ(225, dest_pixels[0]);
+  ASSERT_EQ(255 - 225, dest_pixels[1]);
 
   free_aligned_buffer_page_end(dest_pixels);
   free_aligned_buffer_page_end(orig_pixels);
@@ -233,17 +234,135 @@ TEST_F(LibYUVScaleTest, UVTest4x) {
             kFilterBilinear);
   }
 
-  EXPECT_EQ(66, dest_pixels[0]);
-  EXPECT_EQ(190, dest_pixels[1]);
+  ASSERT_EQ(66, dest_pixels[0]);
+  ASSERT_EQ(190, dest_pixels[1]);
 
   UVScale(orig_pixels, kSrcStride, 64, 4, dest_pixels, kDstStride, 16, 1,
           kFilterNone);
 
-  EXPECT_EQ(2, dest_pixels[0]);  
-  EXPECT_EQ(255 - 2, dest_pixels[1]);
+  ASSERT_EQ(2, dest_pixels[0]);  
+  ASSERT_EQ(255 - 2, dest_pixels[1]);
 
   free_aligned_buffer_page_end(dest_pixels);
   free_aligned_buffer_page_end(orig_pixels);
+}
+
+
+
+
+
+static int UVTestBoxAgainstPlanes(int src_width,
+                                  int src_height,
+                                  int dst_width,
+                                  int dst_height,
+                                  int cpu_info) {
+  if (!SizeValid(src_width, src_height, dst_width, dst_height)) {
+    return 0;
+  }
+  int64_t src_uv_plane_size = src_width * src_height * 2LL;
+  int64_t src_plane_size = src_width * src_height * 1LL;
+  int64_t dst_uv_plane_size = dst_width * dst_height * 2LL;
+  int64_t dst_plane_size = dst_width * dst_height * 1LL;
+
+  align_buffer_page_end(src_uv, src_uv_plane_size);
+  align_buffer_page_end(src_u, src_plane_size);
+  align_buffer_page_end(src_v, src_plane_size);
+  align_buffer_page_end(dst_uv, dst_uv_plane_size);
+  align_buffer_page_end(dst_u, dst_plane_size);
+  align_buffer_page_end(dst_v, dst_plane_size);
+  if (!src_uv || !src_u || !src_v || !dst_uv || !dst_u || !dst_v) {
+    printf("Skipped.  Alloc failed " FILELINESTR(__FILE__, __LINE__) "\n");
+    return 0;
+  }
+  MemRandomize(src_uv, src_uv_plane_size);
+  memset(dst_uv, 123, dst_uv_plane_size);
+  for (int i = 0; i < src_width * src_height; ++i) {
+    src_u[i] = src_uv[i * 2 + 0];
+    src_v[i] = src_uv[i * 2 + 1];
+  }
+
+  MaskCpuFlags(cpu_info);
+  UVScale(src_uv, src_width * 2, src_width, src_height, dst_uv, dst_width * 2,
+          dst_width, dst_height, kFilterBox);
+  ScalePlane(src_u, src_width, src_width, src_height, dst_u, dst_width,
+             dst_width, dst_height, kFilterBox);
+  ScalePlane(src_v, src_width, src_width, src_height, dst_v, dst_width,
+             dst_width, dst_height, kFilterBox);
+
+  int max_diff = 0;
+  for (int i = 0; i < dst_width * dst_height; ++i) {
+    int du = Abs(dst_uv[i * 2 + 0] - dst_u[i]);
+    int dv = Abs(dst_uv[i * 2 + 1] - dst_v[i]);
+    if (du > max_diff) {
+      max_diff = du;
+    }
+    if (dv > max_diff) {
+      max_diff = dv;
+    }
+  }
+
+  free_aligned_buffer_page_end(dst_v);
+  free_aligned_buffer_page_end(dst_u);
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(src_v);
+  free_aligned_buffer_page_end(src_u);
+  free_aligned_buffer_page_end(src_uv);
+  return max_diff;
+}
+
+
+
+
+#define TEST_BOXPLANE(name, swidth, sheight, dwidth, dheight, max_diff)     \
+  TEST_F(LibYUVScaleTest, UVScaleBoxMatchesPlane##name) {                   \
+    int diff_c = UVTestBoxAgainstPlanes(swidth, sheight, dwidth, dheight,   \
+                                        disable_cpu_flags_);                \
+    ASSERT_LE(diff_c, max_diff);                                            \
+    int diff_opt = UVTestBoxAgainstPlanes(swidth, sheight, dwidth, dheight, \
+                                          benchmark_cpu_info_);             \
+    ASSERT_LE(diff_opt, max_diff);                                          \
+  }
+
+TEST_BOXPLANE(By2, 960, 540, 480, 270, 0)         
+TEST_BOXPLANE(By3, 960, 540, 320, 180, 0)         
+TEST_BOXPLANE(By3Rounded, 640, 360, 214, 120, 0)  
+TEST_BOXPLANE(By4, 960, 540, 240, 135, 1)         
+TEST_BOXPLANE(By3_75, 960, 540, 256, 144, 0)      
+TEST_BOXPLANE(By6, 640, 360, 106, 60, 0)          
+TEST_BOXPLANE(By8, 640, 360, 80, 45, 0)           
+TEST_BOXPLANE(OddTail, 33, 17, 7, 5, 0)           
+TEST_BOXPLANE(Tiny, 80, 60, 3, 2, 0)              
+#undef TEST_BOXPLANE
+
+
+
+
+TEST_F(LibYUVScaleTest, UVScaleBoxAverages) {
+  const int kSrcWidth = 48;
+  const int kSrcHeight = 24;
+  const int kDstWidth = kSrcWidth / 3;
+  const int kDstHeight = kSrcHeight / 3;
+  align_buffer_page_end(src_uv, kSrcWidth * kSrcHeight * 2);
+  align_buffer_page_end(dst_uv, kDstWidth * kDstHeight * 2);
+
+  memset(src_uv, 255, kSrcWidth * kSrcHeight * 2);
+  for (int y = 0; y < kSrcHeight; y += 3) {
+    for (int x = 0; x < kSrcWidth; x += 3) {
+      src_uv[(y * kSrcWidth + x) * 2 + 0] = 0;
+      src_uv[(y * kSrcWidth + x) * 2 + 1] = 0;
+    }
+  }
+  memset(dst_uv, 123, kDstWidth * kDstHeight * 2);
+
+  UVScale(src_uv, kSrcWidth * 2, kSrcWidth, kSrcHeight, dst_uv, kDstWidth * 2,
+          kDstWidth, kDstHeight, kFilterBox);
+
+  for (int i = 0; i < kDstWidth * kDstHeight * 2; ++i) {
+    ASSERT_EQ(226, dst_uv[i]) << "at " << i;
+  }
+
+  free_aligned_buffer_page_end(dst_uv);
+  free_aligned_buffer_page_end(src_uv);
 }
 
 }  
