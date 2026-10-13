@@ -81,19 +81,31 @@ add_task(async function () {
   
   
 
-  
-  
-  
   const lastModified = getCacheDetailsValue(document, "Last Modified");
   info("Retrieved lastModified value: " + lastModified);
-  ok(!!lastModified, "Last Modified was found in the cache panel");
+  ok(
+    !lastModified.includes("Not Available"),
+    "Last Modified is set to a value other than unavailable"
+  );
+
+  const lastFetched = getCacheDetailsValue(document, "Last Fetched");
+  info("Retrieved lastFetched value: " + lastFetched);
+  ok(
+    !lastFetched.includes("Not Available"),
+    "Last Fetched is set to a value other than unavailable"
+  );
+
+  is(
+    getCacheDetailsValue(document, "Data Size"),
+    "6",
+    "Data Size matches the size of the cached response body"
+  );
 
   
-  const expires = getCacheDetailsValue(document, "Expires");
-  info("Retrieved expires value: " + expires);
-  ok(
-    !expires.includes("Not Available"),
-    "Expires is set to a value other than unavailable"
+  is(
+    getCacheDetailsValue(document, "Expires"),
+    "Not Available",
+    "Expires is `Not Available` for a no-cache response"
   );
 });
 
