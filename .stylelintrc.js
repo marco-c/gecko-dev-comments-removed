@@ -32,6 +32,7 @@ module.exports = {
     "stylelint-use-logical",
   ],
   ignoreFiles,
+  reportUnscopedDisables: true,
   rules: {
     
     "color-no-invalid-hex": null,
