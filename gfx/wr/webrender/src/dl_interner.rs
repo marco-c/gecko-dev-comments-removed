@@ -17,10 +17,6 @@
 
 
 
-
-
-#![allow(dead_code)]
-
 use crate::intern::ItemUid;
 use crate::internal_types::{FastHashMap, FastHashSet};
 use api::interning::{BuildId, BuilderId};
@@ -41,9 +37,11 @@ use std::{fmt, ops};
 macro_rules! enumerate_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            rectangles: api::interned_prims::RectangleKey => crate::prim_store::rectangle::RectangleTemplate, INTERNED_PRIMITIVES, prim,
         }
     }
 }
+
 
 
 
@@ -53,11 +51,14 @@ macro_rules! enumerate_dl_stores {
 macro_rules! enumerate_scene_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            rectangles: api::interned_prims::RectangleKey => crate::prim_store::PrimPlacement, prim,
         }
     }
 }
 
 
+
+#[allow(dead_code)]
 pub struct DlResolveContext<'a> {
     
     

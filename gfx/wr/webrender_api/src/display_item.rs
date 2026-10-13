@@ -330,15 +330,17 @@ pub struct ScrollFrameDescriptor {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RectangleDisplayItem {
-    pub common: CommonItemProperties,
-    pub bounds: LayoutRect,
-    pub color: PropertyBinding<ColorF>,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
     
     
     
-    pub transformed_aa_edges: EdgeMask,
+    
+    
+    
+    pub rect: crate::interning::Handle<crate::interned_prims::RectangleKey>,
 }
 
 
