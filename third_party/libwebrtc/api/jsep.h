@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/base/nullability.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
@@ -394,6 +395,14 @@ class RTC_EXPORT CreateSessionDescriptionObserver : public RefCountInterface {
   
   
   virtual void OnFailure(RTCError error) = 0;
+
+  
+  
+  
+  
+  virtual void OnOperationComplete(absl::AnyInvocable<void() &&> callback) {
+    std::move(callback)();
+  }
 
  protected:
   ~CreateSessionDescriptionObserver() override = default;

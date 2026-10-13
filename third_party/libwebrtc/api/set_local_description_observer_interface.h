@@ -11,6 +11,9 @@
 #ifndef API_SET_LOCAL_DESCRIPTION_OBSERVER_INTERFACE_H_
 #define API_SET_LOCAL_DESCRIPTION_OBSERVER_INTERFACE_H_
 
+#include <utility>
+
+#include "absl/functional/any_invocable.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
 
@@ -23,6 +26,13 @@ class SetLocalDescriptionObserverInterface : public RefCountInterface {
  public:
   
   virtual void OnSetLocalDescriptionComplete(RTCError error) = 0;
+
+  
+  
+  
+  virtual void OnOperationComplete(absl::AnyInvocable<void() &&> callback) {
+    std::move(callback)();
+  }
 };
 
 }  

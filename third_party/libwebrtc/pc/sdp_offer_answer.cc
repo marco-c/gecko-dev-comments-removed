@@ -1613,7 +1613,7 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
  public:
   CreateSessionDescriptionObserverOperationWrapper(
       scoped_refptr<CreateSessionDescriptionObserver> observer,
-      std::function<void()> operation_complete_callback,
+      absl::AnyInvocable<void() &&> operation_complete_callback,
       WeakPtr<SdpOfferAnswerHandler> sdp_handler,
       SdpType type)
       : observer_(std::move(observer)),
@@ -1639,11 +1639,11 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
       sdp_handler_->TraceCreateSessionDescriptionComplete(type_, desc,
                                                           RTCError::OK());
     }
-    
-    
-    operation_complete_callback_();
+    scoped_refptr<CreateSessionDescriptionObserver> observer = observer_;
+    auto operation_complete_callback = std::move(operation_complete_callback_);
+    observer->OnOperationComplete(std::move(operation_complete_callback));
     desc->RelinquishThreadOwnership();
-    observer_->OnSuccess(desc);
+    observer->OnSuccess(desc);
   }
 
   void OnFailure(RTCError error) override {
@@ -1655,8 +1655,10 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
       sdp_handler_->TraceCreateSessionDescriptionComplete(type_, nullptr,
                                                           error);
     }
-    operation_complete_callback_();
-    observer_->OnFailure(std::move(error));
+    scoped_refptr<CreateSessionDescriptionObserver> observer = observer_;
+    auto operation_complete_callback = std::move(operation_complete_callback_);
+    observer->OnOperationComplete(std::move(operation_complete_callback));
+    observer->OnFailure(std::move(error));
   }
 
  private:
@@ -1664,7 +1666,7 @@ class SdpOfferAnswerHandler::CreateSessionDescriptionObserverOperationWrapper
   bool was_called_ = false;
 #endif  
   scoped_refptr<CreateSessionDescriptionObserver> observer_;
-  std::function<void()> operation_complete_callback_;
+  absl::AnyInvocable<void() &&> operation_complete_callback_;
   const WeakPtr<SdpOfferAnswerHandler> sdp_handler_;
   const SdpType type_;
 };
@@ -2110,14 +2112,11 @@ void SdpOfferAnswerHandler::SetLocalDescription(
           observer->OnSetLocalDescriptionComplete(RTCError(
               RTCErrorType::INTERNAL_ERROR,
               "SetLocalDescription failed because the session was shut down"));
-          operations_chain_callback();
+          observer->OnOperationComplete(std::move(operations_chain_callback));
           return;
         }
         this_weak_ptr->DoSetLocalDescription(std::move(desc), observer);
-        
-        
-        
-        operations_chain_callback();
+        observer->OnOperationComplete(std::move(operations_chain_callback));
       });
 }
 
@@ -3550,7 +3549,8 @@ AddIceCandidateResult SdpOfferAnswerHandler::AddIceCandidateInternal(
 
 void SdpOfferAnswerHandler::AddIceCandidate(
     std::unique_ptr<IceCandidate> candidate,
-    std::function<void(RTCError)> callback) {
+    absl::AnyInvocable<void(RTCError, absl::AnyInvocable<void() &&>) &&>
+        callback) {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::AddIceCandidate");
   RTC_DCHECK_RUN_ON(signaling_thread());
   
@@ -3559,35 +3559,34 @@ void SdpOfferAnswerHandler::AddIceCandidate(
   operations_chain_->ChainOperation(
       [this_weak_ptr = weak_ptr_factory_.GetWeakPtr(),
        candidate = std::move(candidate), callback = std::move(callback)](
-          std::function<void()> operations_chain_callback) {
+          std::function<void()> operations_chain_callback) mutable {
         auto result =
             this_weak_ptr
                 ? this_weak_ptr->AddIceCandidateInternal(candidate.get())
                 : kAddIceCandidateFailClosed;
+        RTCError error = RTCError::OK();
         switch (result) {
           case AddIceCandidateResult::kAddIceCandidateSuccess:
           case AddIceCandidateResult::kAddIceCandidateFailNotReady:
-            
-            callback(RTCError::OK());
             break;
           case AddIceCandidateResult::kAddIceCandidateFailClosed:
             
             
-            callback(RTCError(
+            error = RTCError(
                 RTCErrorType::INVALID_STATE,
-                "AddIceCandidate failed because the session was shut down"));
+                "AddIceCandidate failed because the session was shut down");
             break;
           case AddIceCandidateResult::kAddIceCandidateFailNoRemoteDescription:
             
             
-            callback(RTCError(RTCErrorType::INVALID_STATE,
-                              "The remote description was null"));
+            error = RTCError(RTCErrorType::INVALID_STATE,
+                             "The remote description was null");
             break;
           case AddIceCandidateResult::kAddIceCandidateFailNullCandidate:
             
             
-            callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                              "Error processing ICE candidate"));
+            error = RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                             "Error processing ICE candidate");
             break;
           case AddIceCandidateResult::kAddIceCandidateFailNotValid:
           case AddIceCandidateResult::kAddIceCandidateFailInAddition:
@@ -3595,15 +3594,17 @@ void SdpOfferAnswerHandler::AddIceCandidate(
             
             
             
-            callback(RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                              "Error processing ICE candidate"));
+            error = RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                             "Error processing ICE candidate");
             break;
           default:
             RTC_DCHECK_NOTREACHED();
+            error = RTCError(RTCErrorType::INTERNAL_ERROR,
+                             "Unexpected AddIceCandidate result");
+            break;
         }
-        
-        
-        operations_chain_callback();
+        std::move(callback)(std::move(error),
+                            std::move(operations_chain_callback));
       });
 }
 
