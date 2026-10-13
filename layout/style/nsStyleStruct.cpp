@@ -3707,6 +3707,7 @@ ContainSizeAxes nsStyleDisplay::GetContainSizeAxes(
     return ContainSizeAxes(false, false);
   }
 
+  
   if (PrecludesSizeContainmentOrContentVisibilityWithFrame(aFrame)) {
     return ContainSizeAxes(false, false);
   }
@@ -3714,14 +3715,21 @@ ContainSizeAxes nsStyleDisplay::GetContainSizeAxes(
   
   
   
-  if (MOZ_LIKELY(!(mEffectiveContainment & StyleContain::SIZE)) &&
+  
+  
+  
+  
+  
+  
+  bool hasContainInlineSize(mEffectiveContainment & StyleContain::INLINE_SIZE);
+  bool hasContainBlockSize(mEffectiveContainment & StyleContain::BLOCK_SIZE);
+  if (MOZ_UNLIKELY(hasContainBlockSize && hasContainInlineSize) ||
       MOZ_UNLIKELY(aFrame.HidesContent())) {
     return ContainSizeAxes(true, true);
   }
 
-  return ContainSizeAxes(
-      static_cast<bool>(mEffectiveContainment & StyleContain::INLINE_SIZE),
-      static_cast<bool>(mEffectiveContainment & StyleContain::BLOCK_SIZE));
+  
+  return ContainSizeAxes(hasContainInlineSize, hasContainBlockSize);
 }
 
 StyleContentVisibility nsStyleDisplay::ContentVisibility(
