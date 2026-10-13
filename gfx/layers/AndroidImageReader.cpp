@@ -19,6 +19,7 @@
 #include "ScopedGLHelpers.h"
 #include "mozilla/RemoteMediaManagerParent.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
@@ -26,11 +27,49 @@
 #include "mozilla/layers/AndroidImageConsumer.h"
 #include "mozilla/webrender/RenderThread.h"
 #include "nsProxyRelease.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace layers {
 
-constinit static RefPtr<gl::GLContext> sAImageSnapshotContext;
+static StaticMutex sAImageReadbackMutex;
+
+
+static bool sAImageReadbackShuttingDown MOZ_GUARDED_BY(sAImageReadbackMutex) =
+    false;
+constinit static RefPtr<gl::GLContext> sAImageSnapshotContext
+    MOZ_GUARDED_BY(sAImageReadbackMutex);
+
+static void DestroyAImageSnapshotContext() MOZ_REQUIRES(sAImageReadbackMutex) {
+  if (!sAImageSnapshotContext) {
+    return;
+  }
+
+  
+  
+  
+  const auto egl = gl::GLContextEGL::Cast(sAImageSnapshotContext)->mEgl;
+  sAImageSnapshotContext = nullptr;
+  if (!egl->fMakeCurrent(EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+    gfxCriticalNote
+        << "Failed to release destroyed ImageReader snapshot context";
+  }
+  gl::GLContext::ResetTLSCurrentContext();
+}
+
+static void ReleaseAImageSnapshotContext() MOZ_REQUIRES(sAImageReadbackMutex) {
+  if (!sAImageSnapshotContext) {
+    return;
+  }
+
+  const auto egl = gl::GLContextEGL::Cast(sAImageSnapshotContext)->mEgl;
+  if (!egl->fMakeCurrent(EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+    
+    gfxCriticalNote << "Failed to release ImageReader snapshot context";
+    DestroyAImageSnapshotContext();
+  }
+  gl::GLContext::ResetTLSCurrentContext();
+}
 
 AndroidImageReaderImage::AndroidImageReaderImage(
     const GpuProcessAndroidImageReaderId aImageReaderId,
@@ -86,6 +125,11 @@ nsresult AndroidImageReaderImage::BuildSurfaceDescriptorBuffer(
     const std::function<MemoryOrShmem(uint32_t)>& aAllocate) {
   MOZ_ASSERT(RemoteMediaManagerParent::OnManagerThread());
 
+  StaticMutexAutoLock lock(sAImageReadbackMutex);
+  if (sAImageReadbackShuttingDown) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   if (!sAImageSnapshotContext) {
     nsCString discardFailureId;
     sAImageSnapshotContext =
@@ -94,7 +138,16 @@ nsresult AndroidImageReaderImage::BuildSurfaceDescriptorBuffer(
       NS_WARNING("Failed to create snapshot GLContext");
       return NS_ERROR_FAILURE;
     }
+    
+    
+    sAImageSnapshotContext->mOwningThreadId = Nothing();
   }
+
+  
+  
+  auto releaseContext = MakeScopeExit([]() MOZ_REQUIRES(sAImageReadbackMutex) {
+    ReleaseAImageSnapshotContext();
+  });
 
   auto* imageReaderMap = layers::GpuProcessAndroidImageReaderMap::Get();
   if (!imageReaderMap) {
@@ -126,9 +179,8 @@ nsresult AndroidImageReaderImage::BuildSurfaceDescriptorBuffer(
     return NS_ERROR_FAILURE;
   }
 
-  bool ret = imageReader->UpdateTexImageWithReadback(
-      mFrameId, sAImageSnapshotContext, surface, size, format);
-  if (!ret) {
+  if (!imageReader->UpdateTexImageWithReadback(mFrameId, sAImageSnapshotContext,
+                                               surface, size, format)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -365,7 +417,9 @@ bool AndroidImageReader::UpdateTexImageWithReadback(
     return false;
   }
 
-  aGL->MakeCurrent();
+  if (!aGL->MakeCurrent()) {
+    return false;
+  }
   gl::ScopedTexture scopedTex(aGL);
 
   const auto& gle = gl::GLContextEGL::Cast(aGL);
@@ -575,13 +629,26 @@ StaticAutoPtr<GpuProcessAndroidImageReaderMap>
 
 
 void GpuProcessAndroidImageReaderMap::Init() {
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(XRE_IsGPUProcess());
 
+  StaticMutexAutoLock lock(sAImageReadbackMutex);
+  MOZ_ASSERT(!sInstance);
+  MOZ_ASSERT(!sAImageSnapshotContext);
+  sAImageReadbackShuttingDown = false;
   sInstance = new GpuProcessAndroidImageReaderMap();
 }
 
 
-void GpuProcessAndroidImageReaderMap::Shutdown() { sInstance = nullptr; }
+void GpuProcessAndroidImageReaderMap::Shutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  StaticMutexAutoLock lock(sAImageReadbackMutex);
+  sAImageReadbackShuttingDown = true;
+  DestroyAImageSnapshotContext();
+  sInstance = nullptr;
+}
 
 GpuProcessAndroidImageReaderMap::GpuProcessAndroidImageReaderMap()
     : mMonitor("GpuProcessAndroidImageReaderMap.mMonitor") {}
@@ -699,7 +766,7 @@ void GpuProcessAndroidImageReaderMap::UnregisterImageConsumer(
 
 GpuProcessAndroidImageReaderMap::ImageReaderHolder::ImageReaderHolder(
     AndroidImageReader* aImageReader)
-    : mImageReader(RefPtr<AndroidImageReader>(aImageReader)) {}
+    : mImageReader(aImageReader) {}
 
 GpuProcessAndroidImageReaderMap::ImageReaderHolder::~ImageReaderHolder() {}
 

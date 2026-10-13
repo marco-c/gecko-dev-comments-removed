@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "nsAtomHashKeys.h"
 #include "nsBaseHashtable.h"
 #include "nsCOMPtr.h"
@@ -73,6 +74,18 @@ struct nsKeyClass<RefPtr<nsAtom>> {
 template <>
 struct nsKeyClass<nsID> {
   using type = nsIDHashKey;
+};
+
+
+
+
+
+
+
+
+template <typename T>
+struct nsKeyClass<ThreadSafeWeakPtr<T>> {
+  using type = nsGenericHashKey<ThreadSafeWeakPtr<T>>;
 };
 
 }  
