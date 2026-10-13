@@ -20,6 +20,7 @@ exclude: true
     ([bug 1822968]({{bugzilla}}1822968))
 - Added [`GeckoSessionSettings.Builder.pictureInPictureToken`][160.2] so the session created for a picture-in-picture request is opened in the browsing context group and content process of the video it clones. ([bug 2065579]({{bugzilla}}2065579))
 - Added experimental [`PictureInPictureController.SessionPictureInPicture.Delegate`][160.3], registered with [`GeckoSession.setPictureInPictureDelegate`][160.4], which is notified via [`onEnterPictureInPicture`][160.5] when Gecko wants a picture-in-picture window opened for a video. Added [`GeckoSession.getSessionPictureInPicture`][160.7], whose [`request`][160.6] asks Gecko for a window for the video the session last started playing. ([bug 2065581]({{bugzilla}}2065581))
+- Added experimental [`onExitPictureInPicture`][160.8] so the application is told when the picture-in-picture window it opened should be closed. ([bug 2065581]({{bugzilla}}2065581))
 
 [160.1]: {{javadoc_uri}}/GeckoSession.ContentDelegate.html#onExternalResponse(org.mozilla.geckoview.GeckoSession,org.mozilla.geckoview.WebResponse)
 [160.2]: {{javadoc_uri}}/GeckoSessionSettings.Builder.html#pictureInPictureToken(java.lang.String)
@@ -28,6 +29,7 @@ exclude: true
 [160.5]: {{javadoc_uri}}/PictureInPictureController.SessionPictureInPicture.Delegate.html#onEnterPictureInPicture(org.mozilla.geckoview.GeckoSession,java.lang.String)
 [160.6]: {{javadoc_uri}}/PictureInPictureController.SessionPictureInPicture.html#request()
 [160.7]: {{javadoc_uri}}/GeckoSession.html#getSessionPictureInPicture()
+[160.8]: {{javadoc_uri}}/PictureInPictureController.SessionPictureInPicture.Delegate.html#onExitPictureInPicture(org.mozilla.geckoview.GeckoSession)
 
 ## v157
 - Added [`GeckoSession.getPdfViewerEditor`][157.1] and
@@ -2101,4 +2103,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 0119fef57bdbc3c5ff8716c8d60f7bdf28222191
+[api-version]: cd9bd8c610f9b1e2876ab9d6fdcd13d31ab09eba

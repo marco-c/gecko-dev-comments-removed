@@ -196,6 +196,11 @@ class PictureInPictureTest : BaseSessionTest() {
             sessionRule.isVideoCloning(source, "video"),
             equalTo(true),
         )
+        assertThat(
+            "Cloning must not have reported a failure",
+            delegate.exitCount,
+            equalTo(0),
+        )
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -276,8 +281,60 @@ class PictureInPictureTest : BaseSessionTest() {
         sessionRule.waitForResult(current)
     }
 
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun requestPictureInPictureFindsAVideoInAnUnfocusedFrame() {
+        val delegate = registerDelegate()
+
+        mainSession.loadTestPath(VIDEO_IN_IFRAME_PATH)
+        mainSession.waitForPageStop()
+        mainSession.setFocused(true)
+        mainSession.playVideoInSubframe()
+        mainSession.evaluateJS("window.focus()")
+
+        val cloned = mainSession.sessionPictureInPicture.request()
+        UiThreadUtils.waitForCondition(
+            { delegate.enterCount > 0 },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+        openPlayerSession(delegate)
+        sessionRule.waitForResult(cloned)
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun failureToCloneClosesTheWindow() {
+        val delegate = registerDelegate()
+
+        mainSession.loadTestPath(VIDEO_IN_IFRAME_PATH)
+        mainSession.waitForPageStop()
+        mainSession.setFocused(true)
+        mainSession.playVideoInSubframe()
+
+        mainSession.sessionPictureInPicture.request()
+        UiThreadUtils.waitForCondition(
+            { delegate.enterCount > 0 },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+
+        mainSession.evaluateJS("document.getElementById('pipFrame').remove()")
+
+        openPlayerSession(delegate)
+
+        UiThreadUtils.waitForCondition(
+            { delegate.exitCount > 0 },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+        assertThat(
+            "Embedder must be told to close the window it opened",
+            delegate.exitCount,
+            equalTo(1),
+        )
+    }
+
     private class CapturingDelegate : PictureInPictureController.SessionPictureInPicture.Delegate {
         var enterCount = 0
+        var exitCount = 0
         var placementToken = ""
 
         override fun onEnterPictureInPicture(
@@ -286,6 +343,10 @@ class PictureInPictureTest : BaseSessionTest() {
         ) {
             this.placementToken = placementToken
             enterCount++
+        }
+
+        override fun onExitPictureInPicture(session: GeckoSession) {
+            exitCount++
         }
     }
 
@@ -320,6 +381,21 @@ class PictureInPictureTest : BaseSessionTest() {
         return sessionRule.createOpenSession(
             GeckoSessionSettings.Builder(mainSession.settings).pictureInPictureToken(delegate.placementToken).build()
         )
+    }
+
+    private fun GeckoSession.playVideoInSubframe() {
+        val playing =
+            this.evaluatePromiseJS(
+                """new Promise(r => document.getElementById('pipFrame').contentDocument
+                   .querySelector('video').addEventListener('playing', r, { once: true }))"""
+            )
+        this.evaluateJS(
+            """const v = document.getElementById('pipFrame').contentDocument.querySelector('video');
+               v.loop = true;
+               v.play()"""
+        )
+        playing.value
+        this.evaluateJS("document.getElementById('pipFrame').contentWindow.focus()")
     }
 
     private fun GeckoSession.playVideo() {
