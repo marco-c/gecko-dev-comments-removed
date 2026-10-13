@@ -291,6 +291,9 @@ struct GLContextSymbols final {
                                       GLsizei srcWidth, GLsizei srcHeight,
                                       GLsizei srcDepth);
 
+  
+  void(GLAPIENTRY* fClipControl)(GLenum, GLenum);
+
   GLenum(GLAPIENTRY* fGetGraphicsResetStatus)();
 
   
