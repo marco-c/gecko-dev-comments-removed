@@ -23,9 +23,37 @@
 #include "builtin/Boolean-inl.h"  
 #include "vm/JSContext-inl.h"     
 
+using namespace js;
+
+#ifdef DEBUG
+
+static inline bool CheckOperandZone(JSContext* cx, gc::Cell* cell) {
+  
+  Zone* zone = cell->zoneFromAnyThread();
+  return zone == cx->zone() || zone->isAtomsZone();
+}
+
+static inline bool CheckSymbolKind(JS::Symbol* symbol) {
+  
+  
+  return symbol->isUnique() == symbol->isLocal();
+}
+
+#endif
+
 static bool EqualGivenSameType(JSContext* cx, const JS::Value& lval,
                                const JS::Value& rval, bool* equal) {
+#ifdef DEBUG
   MOZ_ASSERT(JS::SameType(lval, rval));
+  if (cx && lval.isGCThing()) {
+    MOZ_ASSERT(CheckOperandZone(cx, lval.toGCThing()));
+    MOZ_ASSERT(CheckOperandZone(cx, rval.toGCThing()));
+  }
+  if (lval.isSymbol()) {
+    MOZ_ASSERT(CheckSymbolKind(lval.toSymbol()));
+    MOZ_ASSERT(CheckSymbolKind(rval.toSymbol()));
+  }
+#endif
 
   if (lval.isString()) {
     return js::EqualStrings(cx, lval.toString(), rval.toString(), equal);

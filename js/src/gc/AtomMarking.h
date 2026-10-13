@@ -122,11 +122,6 @@ class AtomRefRuntime {
   
   
   void maybeUnmarkGrayAtomically(Zone* zone, JS::Symbol* symbol);
-
-#ifdef DEBUG
-  bool hasRefToId(Zone* zone, jsid id);
-  bool hasRefToValue(Zone* zone, const Value& value);
-#endif
 };
 
 }  

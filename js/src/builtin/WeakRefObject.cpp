@@ -68,7 +68,8 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     
     MaybePreserveDOMWrapper(cx, object);
   } else {
-    JS::Symbol* symbol = target.toSymbol();
+    JS::Symbol* symbol = UnwrapSymbol(target.toSymbol());
+    target = SymbolValue(symbol);
     isPermanent = symbol->isPermanentAndMayBeShared();
   }
 
@@ -218,8 +219,18 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (!JS_WrapValue(cx, &target)) {
-    return false;
+  if (target.isObject()) {
+    if (!JS_WrapValue(cx, &target)) {
+      return false;
+    }
+  } else {
+    
+    
+    RootedSymbol symbol(cx, target.toSymbol());
+    if (!cx->wrapOrRecordRef(&symbol)) {
+      return false;
+    }
+    target = SymbolValue(symbol);
   }
 
   args.rval().set(target);

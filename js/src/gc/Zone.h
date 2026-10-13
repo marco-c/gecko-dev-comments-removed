@@ -68,6 +68,18 @@ struct UniqueIdGCPolicy {
 using UniqueIdMap = GCHashMap<Cell*, uint64_t, PointerHasher<Cell*>,
                               SystemAllocPolicy, UniqueIdGCPolicy>;
 
+
+
+
+
+
+
+
+
+using LocalSymbolMap =
+    GCHashMap<HeapPtr<JS::Symbol*>, HeapPtr<JS::Symbol*>,
+              DefaultHasher<HeapPtr<JS::Symbol*>>, ZoneAllocPolicy>;
+
 template <typename T>
 class ZoneAllCellIter;
 
@@ -536,6 +548,9 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadOrGCTaskData<js::UniquePtr<js::AtomCacheHashTable>> atomCache_;
 
   
+  js::MainThreadOrGCTaskData<js::gc::LocalSymbolMap> localSymbolMap_;
+
+  
   js::MainThreadOrGCTaskData<js::ExternalStringCache> externalStringCache_;
 
   
@@ -865,6 +880,14 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
 
   void dropStringWrappersOnGC();
+
+  js::gc::LocalSymbolMap& localSymbolMap() { return localSymbolMap_.ref(); }
+  void traceIncomingSymbolEdgesForZoneGC(JSTracer* trc,
+                                         js::gc::EdgeSelector whichEdges);
+  void traceWeakLocalSymbolEdges(JSTracer* trc);
+#ifdef DEBUG
+  bool hasLocalSymbol(JS::Symbol* symbol);
+#endif
 
   void traceWeakCCWEdges(JSTracer* trc);
   static void fixupAllCrossCompartmentWrappersAfterMovingGC(JSTracer* trc);

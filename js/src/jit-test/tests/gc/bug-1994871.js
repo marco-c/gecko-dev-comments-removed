@@ -5,7 +5,7 @@
 gczeal(0);
 
 
-let s = Symbol();
+let s = Symbol.for("foo");
 addMarkObservers([s]);
 let other = newGlobal({newCompartment: true});
 

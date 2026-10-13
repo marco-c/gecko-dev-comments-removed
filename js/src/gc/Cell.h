@@ -999,6 +999,23 @@ inline bool TenuredThingIsMarkedAny<Cell>(Cell* thing) {
   return thing->asTenured().isMarkedAny();
 }
 
+
+template <typename T>
+bool ShouldTraceEdge(T* source, gc::EdgeSelector whichEdges) {
+  switch (whichEdges) {
+    case gc::AllEdges:
+      return true;
+    case gc::NonGrayEdges:
+      return !source->isMarkedGray();
+    case gc::GrayEdges:
+      return source->isMarkedGray();
+    case gc::BlackEdges:
+      return source->isMarkedBlack();
+    default:
+      MOZ_CRASH("Unexpected EdgeSelector value");
+  }
+}
+
 class MarkingLock : public LightLock {
  public:
   MarkingLock() : LightLock(js::mutexid::GCMarkingLock) {}

@@ -339,14 +339,16 @@ static inline bool ShouldMark(MarkColor color, T* thing) {
   
   
   
+  Zone* zone = thing->asTenured().zoneFromAnyThread();
   if (std::is_same_v<T, JS::Symbol> && color == MarkColor::Black) {
-    return true;
+    if (zone->isAtomsZone()) {
+      return true;
+    }
   }
 
   
   
   
-  Zone* zone = thing->asTenured().zoneFromAnyThread();
   return zone->shouldMarkInZone(color);
 }
 
@@ -892,6 +894,13 @@ static inline void MaybeUnmarkGraySymbol(JSRuntime* runtime,
   }
 
   AtomRefRuntime& atomReferences = runtime->gc.atomReferences;
+  if (target->isUnique()) {
+    
+    MOZ_ASSERT_IF(target->zone()->isAtomsZone(),
+                  !atomReferences.hasRef(sourceZone, target));
+    return;
+  }
+
   MOZ_ASSERT(atomReferences.hasRef(sourceZone, target));
   atomReferences.maybeUnmarkGrayAtomically(sourceZone, target);
 }
@@ -1336,11 +1345,15 @@ bool MarkingTracerT<opts>::mark(T* thing) {
 
   if constexpr (std::is_same_v<T, JS::Symbol>) {
     
+    if (IsOwnedByOtherRuntime(this->runtime(), thing)) {
+      return false;
+    }
+
     
     
-    if (IsOwnedByOtherRuntime(this->runtime(), thing) ||
-        (markColor() == MarkColor::Gray &&
-         !thing->zone()->isGCMarkingOrVerifyingPreBarriers())) {
+    Zone* zone = thing->zone();
+    if (markColor() == MarkColor::Gray && zone->isAtomsZone() &&
+        !zone->isGCMarkingOrVerifyingPreBarriers()) {
       return false;
     }
   }
@@ -3135,7 +3148,9 @@ static void MaybeMarkWeaklyHeldAtom(T* thing) {
   
   
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    thing->runtimeFromAnyThread()->gc.maybeMarkWeaklyHeldAtom(thing);
+    if (!thing->isUnique()) {
+      thing->runtimeFromAnyThread()->gc.maybeMarkWeaklyHeldAtom(thing);
+    }
   } else if constexpr (std::is_same_v<T, JSString>) {
     if (thing->isAtom()) {
       thing->runtimeFromAnyThread()->gc.maybeMarkWeaklyHeldAtom(
@@ -3216,8 +3231,10 @@ inline bool SweepingTracer::onEdge(T** thingp, const char* name) {
   
   
   
+  
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    if (!thing->isMarkedBlack() && !allowSweepingSymbolsEarly) {
+    if (thing->isShared() && !thing->isMarkedBlack() &&
+        !allowSweepingSymbolsEarly) {
       MOZ_ASSERT(!zone->isGCMarking());
     }
   }
@@ -3406,8 +3423,8 @@ bool UnmarkGrayTracer<opts>::onChild(T* thing) {
   
   
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    MOZ_ASSERT(zone->isAtomsZone());
-    if (sourceZone) {
+    if (thing->isShared() && !thing->isUnique() && sourceZone) {
+      MOZ_ASSERT(zone->isAtomsZone());
       GCRuntime* gc = &this->runtime()->gc;
       gc->atomReferences.maybeUnmarkGrayAtomically(sourceZone, thing);
     }

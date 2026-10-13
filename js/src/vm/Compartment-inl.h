@@ -36,8 +36,8 @@ inline bool JS::Compartment::wrap(JSContext* cx, JS::MutableHandleValue vp) {
 
 
 
-
   if (vp.isSymbol()) {
+    MOZ_ASSERT(vp.toSymbol()->isUnique() == vp.toSymbol()->isLocal());
     return cx->wrapOrRecordRefToValue(vp);
   }
 

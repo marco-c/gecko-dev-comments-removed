@@ -1,5 +1,6 @@
 
 
+
 gczeal(0);
 let global = newGlobal({newCompartment: true});
 global.eval('var x = {}');
@@ -7,13 +8,13 @@ gc();
 
 
 let atom = Symbol();
-assertEq(isAtomMarked(this, atom), true);
+assertEq(isAtomMarked(this, atom), false);
 assertEq(isAtomMarked(global, atom), false);
 global.x[atom] = 0;
-assertEq(isAtomMarked(global, atom), true);
+assertEq(isAtomMarked(global, atom), false);
 
 
-let sym = Symbol("baz");
+let sym = Symbol.for("baz");
 assertEq(isAtomMarked(this, sym), true);
 assertEq(isAtomMarked(global, sym), false);
 global.x[sym] = 0;
