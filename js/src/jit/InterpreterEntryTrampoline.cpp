@@ -189,8 +189,12 @@ void JitRuntime::generateInterpreterEntryTrampoline(MacroAssembler& masm) {
   
   if (IsBaselineInterpreterEnabled()) {
     uint32_t offset = startTrampolineCode(masm);
-    if (!vmInterpreterEntryOffset_) {
-      vmInterpreterEntryOffset_ = offset;
+    if (!masm.oom()) {
+      
+      if (!vmInterpreterEntryOffset_) {
+        vmInterpreterEntryOffset_ = offset;
+      }
+      MOZ_RELEASE_ASSERT(vmInterpreterEntryOffset_ == offset);
     }
   }
 
