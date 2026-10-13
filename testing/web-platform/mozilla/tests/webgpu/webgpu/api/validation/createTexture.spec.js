@@ -496,10 +496,7 @@ fn((t) => {
 
   
   
-  const supportsUnaligned = hasFeature(
-    t.device.features,
-    'texture-compression-unaligned'
-  );
+  const supportsUnaligned = hasFeature(t.device.features, 'texture-compression-unaligned');
   const success = supportsUnaligned || _success;
 
   t.expectValidationError(() => {
@@ -765,10 +762,7 @@ fn((t) => {
 
   
   
-  const supportsUnaligned = hasFeature(
-    t.device.features,
-    'texture-compression-unaligned'
-  );
+  const supportsUnaligned = hasFeature(t.device.features, 'texture-compression-unaligned');
   const success =
   (supportsUnaligned ||
   size[0] % info.blockWidth === 0 && size[1] % info.blockHeight === 0) &&
@@ -1005,10 +999,7 @@ fn((t) => {
 
   
   
-  const supportsUnaligned = hasFeature(
-    t.device.features,
-    'texture-compression-unaligned'
-  );
+  const supportsUnaligned = hasFeature(t.device.features, 'texture-compression-unaligned');
   const success =
   (supportsUnaligned ||
   size[0] % info.blockWidth === 0 && size[1] % info.blockHeight === 0) &&

@@ -496,10 +496,7 @@ g.test('texture_size,default_value_and_smallest_size,compressed_format')
 
     
     
-    const supportsUnaligned = hasFeature(
-      t.device.features,
-      'texture-compression-unaligned' as GPUFeatureName
-    );
+    const supportsUnaligned = hasFeature(t.device.features, 'texture-compression-unaligned');
     const success = supportsUnaligned || _success;
 
     t.expectValidationError(() => {
@@ -765,10 +762,7 @@ g.test('texture_size,2d_texture,compressed_format')
 
     
     
-    const supportsUnaligned = hasFeature(
-      t.device.features,
-      'texture-compression-unaligned' as GPUFeatureName
-    );
+    const supportsUnaligned = hasFeature(t.device.features, 'texture-compression-unaligned');
     const success =
       (supportsUnaligned ||
         (size[0] % info.blockWidth === 0 && size[1] % info.blockHeight === 0)) &&
@@ -1005,10 +999,7 @@ g.test('texture_size,3d_texture,compressed_format')
 
     
     
-    const supportsUnaligned = hasFeature(
-      t.device.features,
-      'texture-compression-unaligned' as GPUFeatureName
-    );
+    const supportsUnaligned = hasFeature(t.device.features, 'texture-compression-unaligned');
     const success =
       (supportsUnaligned ||
         (size[0] % info.blockWidth === 0 && size[1] % info.blockHeight === 0)) &&
