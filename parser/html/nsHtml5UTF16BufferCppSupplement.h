@@ -2,6 +2,8 @@
 
 
 
+#include "nsHtml5UTF16Buffer.h"
+
 nsHtml5UTF16Buffer::nsHtml5UTF16Buffer(char16_t* aBuffer, int32_t aEnd)
     : buffer(aBuffer), start(0), end(aEnd) {
   MOZ_COUNT_CTOR(nsHtml5UTF16Buffer);

@@ -7,6 +7,9 @@
 
 #include "mozilla/Utf16.h"
 
+#include "nsHtml5Tokenizer.h"
+
+class nsHtml5Highlighter;
 
 
 
