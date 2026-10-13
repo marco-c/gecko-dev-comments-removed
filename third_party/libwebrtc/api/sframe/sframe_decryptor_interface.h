@@ -12,8 +12,12 @@
 #define API_SFRAME_SFRAME_DECRYPTOR_INTERFACE_H_
 
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <span>
 
+#include "absl/functional/any_invocable.h"
+#include "api/frame_transformer_interface.h"
 #include "api/ref_count.h"
 #include "api/rtc_error.h"
 
@@ -24,6 +28,31 @@ enum class SframeDecryptErrorType {
   kKeyId,           
   kSyntax,          
 };
+
+
+
+
+struct SframeDecryptError {
+  SframeDecryptErrorType error_type;
+  
+  
+  std::optional<uint64_t> key_id;
+  
+  
+  
+  
+  
+  std::unique_ptr<TransformableFrameInterface> frame;
+};
+
+
+
+
+
+
+
+
+using SframeDecryptErrorCallback = absl::AnyInvocable<void(SframeDecryptError)>;
 
 
 class SframeDecryptorInterface : public RefCountInterface {
