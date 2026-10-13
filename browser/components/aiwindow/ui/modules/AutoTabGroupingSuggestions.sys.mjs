@@ -265,7 +265,13 @@ export const AutoTabGroupingSuggestions = {
 
   async _preloadModels() {
     try {
-      await this.manager.preloadAllModels();
+      // Only English can fall back to the on-device naming model; other locales
+      // just warm the embedding engine used for clustering.
+      if (this.isEnglishLocale) {
+        await this.manager.preloadAllModels();
+      } else {
+        await this.manager.initEmbeddingEngine();
+      }
     } catch (e) {
       lazy.console.warn("Preloading the tab grouping models failed", e);
     }
@@ -366,12 +372,19 @@ export const AutoTabGroupingSuggestions = {
     if (this._labelCache.has(key)) {
       return this._labelCache.get(key);
     }
-    // Fall back to on-device only when the LLM throws (unavailable). A successful
-    // empty result is a deliberate decline (NSFW); keep it so the group is dropped.
+    // English falls back to on-device only when the LLM throws (unavailable). A
+    // successful empty result is a deliberate decline (NSFW); keep it so the
+    // group is dropped.
     let label;
     try {
       label = await this._llmLabelForGroup(tabs);
     } catch (e) {
+      // The on-device model only names groups in English, so other locales drop
+      // the group instead. Not cached, so the next open retries the LLM.
+      if (!this.isEnglishLocale) {
+        lazy.console.warn("LLM labeling failed; dropping the group", e);
+        return "";
+      }
       lazy.console.warn("LLM labeling failed; falling back to on-device", e);
       label = await this.manager.getPredictedLabelForGroup(tabs, otherTabs);
     }
@@ -382,8 +395,9 @@ export const AutoTabGroupingSuggestions = {
     return label;
   },
 
-  // Name a group with the Smart Window LLM. Throws when unavailable (caller falls
-  // back to on-device); returns "" on a deliberate decline (NSFW), which drops it.
+  // Name a group with the Smart Window LLM. Throws when unavailable (English
+  // falls back to on-device, other locales drop the group); returns "" on a
+  // deliberate decline (NSFW), which drops it.
   async _llmLabelForGroup(tabs) {
     const fxAccountToken = await lazy.openAIEngine.getFxAccountToken();
     if (!fxAccountToken) {
@@ -414,14 +428,27 @@ export const AutoTabGroupingSuggestions = {
     conversation.addUserMessage(lazy.renderPrompt(userTemplate, { titles }));
     const response = await conversation.run({ fxAccountToken });
     const raw = response?.finalOutput?.trim() || "";
-    let label = lazy.sanitizeUntrustedContent(raw, true).trim();
-    if (label.length > MAX_LABEL_LENGTH) {
-      const cut = label.slice(0, MAX_LABEL_LENGTH);
-      const lastSpace = cut.lastIndexOf(" ");
-      label = lastSpace > 0 ? cut.slice(0, lastSpace) : cut;
+    return this.trimLabel(lazy.sanitizeUntrustedContent(raw, true).trim());
+  },
+
+  /**
+   * Cuts a label to MAX_LABEL_LENGTH on a word boundary and drops a dangling
+   * connective the cut can leave behind ("Features and", "Recettes et"). Labels
+   * that fit are left alone, since a trailing "et" or "or" there is a real word
+   * (Eastern Time, "Bijoux en or").
+   *
+   * @param {string} label
+   * @returns {string}
+   */
+  trimLabel(label) {
+    if (label.length <= MAX_LABEL_LENGTH) {
+      return label;
     }
-    // Drop a dangling trailing connective left by truncation ("Features and").
-    return label.replace(/\s+(and|or|&)$/i, "").trim();
+    const cut = label.slice(0, MAX_LABEL_LENGTH);
+    const lastSpace = cut.lastIndexOf(" ");
+    return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut)
+      .replace(/\s+(and|or|&|et|ou|und|oder)$/i, "")
+      .trim();
   },
 
   /**

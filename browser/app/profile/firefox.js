@@ -2455,7 +2455,7 @@ pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
 pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 2);
 pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
 pref("browser.smartwindow.autoTabGrouping.timeoutMs", 8000);
-pref("browser.smartwindow.autoTabGrouping.supportedLocales", "en");
+pref("browser.smartwindow.autoTabGrouping.supportedLocales", "en,fr");
 pref("browser.smartwindow.autoTabGrouping.nonEnglishThresholdInt", 550);
 pref("browser.smartwindow.autoTabGrouping.loglevel", "Warn");
 
