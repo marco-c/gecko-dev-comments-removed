@@ -51,8 +51,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) final;
 
-  bool ReflowFinished() final;
-
   mozilla::dom::HTMLOptionElement* GetCurrentOption() const;
 
 #ifdef DEBUG_FRAME_DUMP
@@ -76,7 +74,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   nscoord GetBSizeOfARow();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnSelectionReset();
-  void OptionsAdded();
 
   
 
@@ -159,15 +156,9 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   uint32_t mNumDisplayRows = 0;
   nscoord mBSizeOfARow = -1;
 
-  bool mNeedToReset : 1;
-  bool mPostChildrenLoadedReset : 1;
-
   
   
-  bool mMightNeedSecondPass : 1;
-
-  
-  bool mReflowWasInterrupted : 1;
+  bool mMightNeedSecondPass : 1 = false;
 };
 
 #endif 
