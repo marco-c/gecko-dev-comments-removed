@@ -12,23 +12,15 @@
 
 #if defined(WEBRTC_ALLOCATION_COUNTER_AVAILABLE)
 
-#include <stdlib.h>
-
 #include <cstddef>
+#include <cstdlib>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "test/gtest.h"
 
 namespace {
-#if defined(ABSL_HAVE_THREAD_LOCAL)
-ABSL_CONST_INIT thread_local size_t g_new_count = 0u;
-ABSL_CONST_INIT thread_local size_t g_delete_count = 0u;
-#elif defined(WEBRTC_POSIX)
-#error Handle WEBRTC_POSIX
-#else
-#error Unsupported platform
-#endif
+constinit thread_local size_t g_new_count = 0u;
+constinit thread_local size_t g_delete_count = 0u;
 }  
 
 void* operator new(size_t s) {

@@ -15,16 +15,11 @@
 #include <atomic>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/synchronization/mutex.h"
 
 #import "RTCAudioSessionConfiguration.h"
 #import "base/RTCLogging.h"
-
-#if !defined(ABSL_HAVE_THREAD_LOCAL)
-#error ABSL_HAVE_THREAD_LOCAL should be defined for MacOS / iOS Targets.
-#endif
 
 NSString *const kRTCAudioSessionErrorDomain =
     @"org.webrtc.RTC_OBJC_TYPE(RTCAudioSession)";
@@ -36,7 +31,7 @@ namespace {
 
 
 
-ABSL_CONST_INIT thread_local bool mutex_locked = false;
+constinit thread_local bool mutex_locked = false;
 }  
 
 @interface RTC_OBJC_TYPE (RTCAudioSession)
