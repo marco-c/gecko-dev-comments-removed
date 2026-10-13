@@ -65,6 +65,10 @@ git format-patch --no-numbered <new-angle-base-revision> -o <path/to/firefox/che
 
 Then commit the new patches and re-run `mach vendor`.
 
+## Regression Testing
+
+After vendoring ANGLE, WebGL regression tests can be run via `mach try --preset webgl`.
+
 ## Build file generation
 
 The `moz.build` files used to build ANGLE are generated using the `gn_processor.py` script, which is invoked automatically from `update-angle.py`. Metadata required for this can be found in `gfx/angle/gn-configs/angle.json`. This metadata configures which GN target is built, and with which GN args, for each platform. It can also be used to override `DEFINES` and other sandbox variables, and specify which files must be built as non-unified sources. This is the preferred mechanism for configuring ANGLE's build for our needs, and should be used rather than patches where possible as patches increase the likelihood of conflicts when updating.
