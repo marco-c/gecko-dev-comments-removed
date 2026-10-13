@@ -2598,6 +2598,13 @@ def build_task(config, tasks):
         tags = task.get("tags", {})
         attributes = task.get("attributes", {})
 
+        
+        
+        
+        
+        if task.get("task-from"):
+            attributes["task-from"] = os.path.join(config.path, task["task-from"])
+
         tags.update({
             "createdForUser": config.params["owner"],
             "kind": config.kind,
