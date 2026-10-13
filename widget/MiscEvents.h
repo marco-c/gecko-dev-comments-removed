@@ -67,6 +67,16 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
     if (mFlags.CameFromAnotherProcess()) {
       return true;
     }
+    if (ShouldBeDispatchedByTextEventDispatcher()) {
+      
+      
+      return mDispatchedByTextEventDispatcher;
+    }
+    
+    return true;
+  }
+
+  [[nodiscard]] bool ShouldBeDispatchedByTextEventDispatcher() const {
     switch (mMessage) {
       case eContentCommandCut:
       case eContentCommandCopy:
@@ -77,12 +87,9 @@ class WidgetContentCommandEvent final : public WidgetGUIEvent {
       case eContentCommandInsertText:
       case eContentCommandReplaceText:
       case eContentCommandPasteTransferable:
-        
-        
-        return mDispatchedByTextEventDispatcher;
-      default:
-        
         return true;
+      default:
+        return false;
     }
   }
 

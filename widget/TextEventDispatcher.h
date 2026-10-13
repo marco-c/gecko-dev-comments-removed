@@ -34,7 +34,7 @@ class PuppetWidget;
 
 
 class TextEventDispatcher final {
-  ~TextEventDispatcher() = default;
+  ~TextEventDispatcher() { MOZ_ASSERT(!mBatching); }
 
   NS_INLINE_DECL_REFCOUNTING(TextEventDispatcher)
 
@@ -237,9 +237,17 @@ class TextEventDispatcher final {
   
 
 
+
+
+
+
   void DispatchContentCommandEvent(WidgetContentCommandEvent& aEvent);
 
   
+
+
+
+
 
 
 
@@ -256,11 +264,19 @@ class TextEventDispatcher final {
 
 
 
+
+
+
+
   Result<bool, nsresult> DispatchInsertTextCommandEvent(
       const nsAString& aString,
       OnlyEnabledCheck aOnlyEnabledCheck = OnlyEnabledCheck::No);
 
   
+
+
+
+
 
 
 
@@ -449,6 +465,25 @@ class TextEventDispatcher final {
                                    void* aData = nullptr,
                                    bool aNeedsCallback = false);
 
+  
+
+
+  [[nodiscard]] bool IsBatching() const { return !!mBatching; }
+
+  
+
+
+
+
+  void BeginBatch() { mBatching++; }
+
+  
+
+
+
+
+  nsresult EndBatch();
+
  private:
   
   
@@ -473,6 +508,11 @@ class TextEventDispatcher final {
   nsString mCompositionString = VoidString();
   
   nsString mHandlingCompositionString = VoidString();
+
+  
+  
+  
+  nsTArray<UniquePtr<WidgetGUIEvent>> mPendingEvents;
 
   
   
@@ -570,6 +610,8 @@ class TextEventDispatcher final {
     eSameProcessSyncInputTransaction
   };
 
+  uint32_t mBatching = 0;
+
   InputTransactionType mInputTransactionType;
 
   bool IsForTests() const {
@@ -613,16 +655,22 @@ class TextEventDispatcher final {
 
   void InitEvent(WidgetGUIEvent& aEvent) const;
 
-  
-
-
-  nsEventStatus DispatchEvent(nsIWidget* aWidget, WidgetGUIEvent& aEvent);
+  enum class DispatchingPendingEvent : bool { No, Yes };
 
   
 
 
-  nsEventStatus DispatchInputEvent(nsIWidget* aWidget,
-                                   WidgetInputEvent& aEvent);
+  nsEventStatus DispatchEvent(nsIWidget* aWidget, WidgetGUIEvent& aEvent,
+                              DispatchingPendingEvent aDispatchingPendingEvent =
+                                  DispatchingPendingEvent::No);
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsEventStatus
+  DispatchInputEvent(nsIWidget* aWidget, WidgetInputEvent& aEvent,
+                     DispatchingPendingEvent aDispatchingPendingEvent =
+                         DispatchingPendingEvent::No);
 
   
 
@@ -689,6 +737,92 @@ class TextEventDispatcher final {
 
 
   void UpdateNotificationRequests();
+
+  
+
+
+
+
+
+
+
+
+  [[nodiscard]] static bool EventCancelsComposition(
+      uint32_t aIndex,
+      const nsTArray<UniquePtr<WidgetGUIEvent>>& aPendingEvents,
+      const nsAString& aCompositionString);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] Maybe<uint32_t>
+  GetFollowingCommitEventIndexWithoutComposingState(
+      uint32_t aIndex,
+      const nsTArray<UniquePtr<WidgetGUIEvent>>& aPendingEvents,
+      Maybe<WidgetCompositionEvent>& aAlternativeCommitEvent);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [[nodiscard]] Maybe<uint32_t> GetFollowingConclusionCompositionEvent(
+      uint32_t aIndex,
+      const nsTArray<UniquePtr<WidgetGUIEvent>>& aPendingEvents,
+      Maybe<WidgetCompositionEvent>& aAlternativeCommitEvent);
+};
+
+
+
+
+class MOZ_STACK_CLASS AutoTextEventDispatcherBatch {
+ public:
+  explicit AutoTextEventDispatcherBatch(TextEventDispatcher& aDispatcher)
+      : mDispatcher(aDispatcher) {
+    MOZ_ASSERT(mDispatcher->GetWidget());
+    MOZ_ASSERT(!mDispatcher->GetWidget()->Destroyed());
+    mDispatcher->BeginBatch();
+  }
+
+  ~AutoTextEventDispatcherBatch() {
+    if (mBatching) {
+      mDispatcher->EndBatch();
+    }
+  }
+
+  nsresult FlushPendingEvents() {
+    if (!mBatching) {
+      return NS_OK;
+    }
+    mBatching = false;
+    return mDispatcher->EndBatch();
+  }
+
+ private:
+  MOZ_KNOWN_LIVE OwningNonNull<TextEventDispatcher> mDispatcher;
+  bool mBatching = true;
 };
 
 }  
