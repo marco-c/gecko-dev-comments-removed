@@ -42,3 +42,9 @@ interface MozFindbar extends XULElement {
   close(noAnim?: boolean): void;
   onFindCommand(): Promise<void>;
 }
+
+
+
+interface MozToolbarbutton extends XULElement {
+  readonly icon: Element | null;
+}
