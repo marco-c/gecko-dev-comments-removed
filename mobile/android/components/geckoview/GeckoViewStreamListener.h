@@ -46,6 +46,9 @@ class GeckoViewStreamListener : public nsIStreamListener,
 
   virtual nsresult HandleWebResponse(nsIRequest* aRequest);
 
+  
+  virtual void AmendWebResponse(java::WebResponse::Builder::Param aBuilder) {}
+
   virtual void SendWebResponse(java::WebResponse::Param aResponse) = 0;
 
   virtual void CompleteWithError(nsresult aStatus, nsIChannel* aChannel) = 0;
