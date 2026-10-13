@@ -118,6 +118,15 @@ interface nsICryptoHash extends nsISupports {
   update(aData: ArrayLike<number>, aLen: number): void;
 }
 
+
+interface ReadUTF8Options {
+  decrypt?: string;
+}
+
+interface WriteOptions {
+  encrypt?: string;
+}
+
 interface nsIDOMWindow extends Window {}
 
 interface nsISimpleEnumerator extends Iterable<any> {}

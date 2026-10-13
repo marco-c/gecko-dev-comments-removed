@@ -27,6 +27,10 @@
 
 class nsFileRandomAccessStream;
 
+namespace mozilla::security::lockstore {
+class LockstoreService;
+}
+
 namespace mozilla {
 
 
@@ -277,6 +281,7 @@ class IOUtils final {
   struct InternalFileInfo;
   struct InternalWriteOpts;
   class MozLZ4;
+  class Encryption;
   class EventQueue;
   class State;
 
@@ -326,11 +331,17 @@ class IOUtils final {
 
 
 
-  static Result<JsBuffer, IOError> ReadSync(nsIFile* aFile,
-                                            const uint64_t aOffset,
-                                            const Maybe<uint32_t> aMaxBytes,
-                                            const bool aDecompress,
-                                            BufferKind aBufferKind);
+
+
+
+
+
+
+  static Result<JsBuffer, IOError> ReadSync(
+      nsIFile* aFile, const uint64_t aOffset, const Maybe<uint32_t> aMaxBytes,
+      const bool aDecompress, const nsCString& aDecryptKeyId,
+      security::lockstore::LockstoreService* aLockstore,
+      BufferKind aBufferKind);
 
   
 
@@ -342,10 +353,18 @@ class IOUtils final {
 
 
 
-  static Result<JsBuffer, IOError> ReadUTF8Sync(nsIFile* aFile,
-                                                const bool aDecompress);
+
+
+
+
+  static Result<JsBuffer, IOError> ReadUTF8Sync(
+      nsIFile* aFile, const bool aDecompress, const nsCString& aDecryptKeyId,
+      security::lockstore::LockstoreService* aLockstore);
 
   
+
+
+
 
 
 
@@ -359,7 +378,8 @@ class IOUtils final {
 
   static Result<uint32_t, IOError> WriteSync(
       nsIFile* aFile, const Span<const uint8_t>& aByteArray,
-      const InternalWriteOpts& aOptions);
+      const InternalWriteOpts& aOptions,
+      security::lockstore::LockstoreService* aLockstore);
 
   
 
@@ -738,6 +758,7 @@ struct IOUtils::InternalWriteOpts {
   dom::WriteMode mMode;
   bool mFlush = false;
   bool mCompress = false;
+  nsCString mEncryptKeyId;
   size_t mLengthHint = 0;
 
   static Result<InternalWriteOpts, IOUtils::IOError> FromBinding(
@@ -778,6 +799,49 @@ class IOUtils::MozLZ4 {
 
   static Result<IOUtils::JsBuffer, IOError> Decompress(
       Span<const uint8_t> aFileContents, IOUtils::BufferKind);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class IOUtils::Encryption {
+ public:
+  static constexpr std::array<uint8_t, 8> MAGIC_NUMBER{
+      {'m', 'o', 'z', 'E', 'n', 'c', '0', '\0'}};
+  static constexpr size_t VERSION_OFFSET = 6;
+  static constexpr uint8_t CURRENT_VERSION = '0';
+
+  static bool IsEncrypted(Span<const uint8_t> aData);
+
+  
+
+
+
+  static Result<nsTArray<uint8_t>, IOError> Encrypt(
+      Span<const uint8_t> aPlaintext,
+      security::lockstore::LockstoreService* aLockstore,
+      const nsACString& aKeyId);
+
+  
+
+
+
+
+  static Result<IOUtils::JsBuffer, IOError> Decrypt(
+      Span<const uint8_t> aFileContents,
+      security::lockstore::LockstoreService* aLockstore,
+      const nsACString& aKeyId, IOUtils::BufferKind);
 };
 
 class IOUtilsShutdownBlocker : public nsIAsyncShutdownBlocker,
