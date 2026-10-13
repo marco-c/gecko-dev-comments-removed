@@ -556,9 +556,8 @@ struct arena_t : public BaseAllocClass {
   
   
   ArenaPurgeResult Purge(PurgeCondition aCond, mozilla::PurgeStats& aStats,
-                         const mozilla::Maybe<std::function<bool()>>&
-                             aKeepGoing = mozilla::Nothing())
-      MOZ_EXCLUDES(mLock);
+                         purge_keep_going_t aKeepGoing = nullptr,
+                         void* aClosure = nullptr) MOZ_EXCLUDES(mLock);
 
   
   
@@ -571,10 +570,11 @@ struct arena_t : public BaseAllocClass {
   
   
   
-  ArenaPurgeResult PurgeLoop(
-      PurgeCondition aCond, const char* aCaller, uint32_t aReuseGraceMS = 0,
-      mozilla::Maybe<std::function<bool()>> aKeepGoing = mozilla::Nothing())
-      MOZ_EXCLUDES(mLock);
+  
+  ArenaPurgeResult PurgeLoop(PurgeCondition aCond, const char* aCaller,
+                             uint32_t aReuseGraceMS = 0,
+                             purge_keep_going_t aKeepGoing = nullptr,
+                             void* aClosure = nullptr) MOZ_EXCLUDES(mLock);
 
   class PurgeInfo {
    private:
@@ -653,9 +653,10 @@ struct arena_t : public BaseAllocClass {
   arena_chunk_t* PurgeGetDirtyChunk(PurgeCondition aCond,
                                     mozilla::PurgeStats& aStats);
 
-  ArenaPurgeResult PurgeDirtyPages(
-      arena_chunk_t* aChunk, PurgeCondition aCond, mozilla::PurgeStats& aStats,
-      const mozilla::Maybe<std::function<bool()>>& aKeepGoing);
+  ArenaPurgeResult PurgeDirtyPages(arena_chunk_t* aChunk, PurgeCondition aCond,
+                                   mozilla::PurgeStats& aStats,
+                                   purge_keep_going_t aKeepGoing,
+                                   void* aClosure);
 
  public:
   void HardPurge();
