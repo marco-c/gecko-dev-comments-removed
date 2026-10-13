@@ -329,6 +329,14 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   MaybeCreateFactoryOverride();
   void ClearFrameInjector();
 
+  
+  
+  
+  
+  
+  std::optional<RtpParameters> ApplyInitParameters_w(
+      std::optional<uint32_t> ssrc) RTC_RUN_ON(worker_thread_);
+
   const Environment env_;
   TaskQueueBase* const signaling_thread_;
   Thread* const worker_thread_;

@@ -809,8 +809,7 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
     AddTrackToStats();
   }
 
-  RtpParameters current_parameters;
-  bool params_modified = false;
+  std::optional<RtpParameters> applied_parameters;
 
   auto [video_factory, audio_factory] = MaybeCreateFactoryOverride();
 
@@ -820,46 +819,8 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
                                 audio_encoder_factory_override =
                                     std::move(audio_factory)]() mutable {
     RTC_DCHECK_RUN_ON(worker_thread_);
-    if (!init_parameters_.encodings.empty() ||
-        init_parameters_.degradation_preference.has_value()) {
-      if (ssrc != 0) {
-        RTC_DCHECK(media_channel_);
-        
-        
-        
-        
-        
-        current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        
-        
-        RTC_CHECK_GE(current_parameters.encodings.size(),
-                     init_parameters_.encodings.size());
-        for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
-          init_parameters_.encodings[i].ssrc =
-              current_parameters.encodings[i].ssrc;
-          init_parameters_.encodings[i].rid =
-              current_parameters.encodings[i].rid;
-          current_parameters.encodings[i] = init_parameters_.encodings[i];
-        }
-        current_parameters.degradation_preference =
-            init_parameters_.degradation_preference;
-        params_modified =
-            media_channel_
-                ->SetRtpSendParameters(ssrc, current_parameters, nullptr)
-                .ok();
-        if (params_modified) {
-          
-          current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        }
-      }
-      
-      
-      
-      
-      
-      init_parameters_.encodings.clear();
-      init_parameters_.degradation_preference = std::nullopt;
-    }
+    applied_parameters = ApplyInitParameters_w(
+        ssrc != 0 ? std::make_optional(ssrc) : std::nullopt);
 
     
     
@@ -885,13 +846,79 @@ void RtpSenderBase::SetSsrc(uint32_t ssrc) {
       }
     }
   });
-  if (params_modified) {
+  if (applied_parameters.has_value()) {
     
     
     
     
-    cached_parameters_ = std::move(current_parameters);
+    cached_parameters_ = std::move(applied_parameters);
   }
+}
+
+std::optional<RtpParameters> RtpSenderBase::ApplyInitParameters_w(
+    std::optional<uint32_t> ssrc) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  if (init_parameters_.encodings.empty() &&
+      !init_parameters_.degradation_preference.has_value()) {
+    return std::nullopt;
+  }
+
+  std::optional<RtpParameters> applied_parameters;
+
+  
+  
+  if (ssrc.has_value()) {
+    RTC_DCHECK(media_channel_);
+    
+    
+    
+    
+    
+    RtpParameters current_parameters =
+        media_channel_->GetRtpSendParameters(*ssrc);
+    
+    
+    
+    
+    
+    
+    
+    const size_t layers = std::min(current_parameters.encodings.size(),
+                                   init_parameters_.encodings.size());
+    if (layers < init_parameters_.encodings.size()) {
+      RTC_LOG(LS_WARNING) << "The media channel has "
+                          << current_parameters.encodings.size()
+                          << " send layer(s) for ssrc " << *ssrc
+                          << " but the sender was configured with "
+                          << init_parameters_.encodings.size()
+                          << ". Dropping the surplus layers.";
+    }
+    for (size_t i = 0; i < layers; ++i) {
+      init_parameters_.encodings[i].ssrc = current_parameters.encodings[i].ssrc;
+      init_parameters_.encodings[i].rid = current_parameters.encodings[i].rid;
+      current_parameters.encodings[i] = init_parameters_.encodings[i];
+    }
+    if (!current_parameters.encodings.empty()) {
+      current_parameters.degradation_preference =
+          init_parameters_.degradation_preference;
+      if (media_channel_
+              ->SetRtpSendParameters(*ssrc, current_parameters, nullptr)
+              .ok()) {
+        
+        applied_parameters = media_channel_->GetRtpSendParameters(*ssrc);
+      }
+    }
+  }
+
+  
+  
+  
+  
+  
+  init_parameters_.encodings.clear();
+  init_parameters_.degradation_preference = std::nullopt;
+
+  return applied_parameters;
 }
 
 ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
@@ -921,49 +948,8 @@ ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
              -> RTCErrorOr<ScopedOperationsBatcher::FinalizerTask> {
     RTC_DCHECK_RUN_ON(worker_thread_);
 
-    RtpParameters current_parameters;
-    bool params_modified = false;
-
-    if (!init_parameters_.encodings.empty() ||
-        init_parameters_.degradation_preference.has_value()) {
-      if (ssrc != 0) {
-        RTC_DCHECK(media_channel_);
-        
-        
-        
-        
-        
-        current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        
-        
-        RTC_CHECK_GE(current_parameters.encodings.size(),
-                     init_parameters_.encodings.size());
-        for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
-          init_parameters_.encodings[i].ssrc =
-              current_parameters.encodings[i].ssrc;
-          init_parameters_.encodings[i].rid =
-              current_parameters.encodings[i].rid;
-          current_parameters.encodings[i] = init_parameters_.encodings[i];
-        }
-        current_parameters.degradation_preference =
-            init_parameters_.degradation_preference;
-        params_modified =
-            media_channel_
-                ->SetRtpSendParameters(ssrc, current_parameters, nullptr)
-                .ok();
-        if (params_modified) {
-          
-          current_parameters = media_channel_->GetRtpSendParameters(ssrc);
-        }
-      }
-      
-      
-      
-      
-      
-      init_parameters_.encodings.clear();
-      init_parameters_.degradation_preference = std::nullopt;
-    }
+    std::optional<RtpParameters> applied_parameters = ApplyInitParameters_w(
+        ssrc != 0 ? std::make_optional(ssrc) : std::nullopt);
 
     
     
@@ -989,15 +975,14 @@ ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
       }
     }
 
-    if (params_modified) {
+    if (applied_parameters.has_value()) {
       return ScopedOperationsBatcher::FinalizerTask(
-          [this, current_parameters = std::move(current_parameters)]() mutable {
+          [this, applied_parameters = std::move(applied_parameters)]() mutable {
             RTC_DCHECK_RUN_ON(signaling_thread_);
-            cached_parameters_ = std::move(current_parameters);
+            cached_parameters_ = std::move(applied_parameters);
           });
-    } else {
-      return ScopedOperationsBatcher::FinalizerTask();
     }
+    return ScopedOperationsBatcher::FinalizerTask();
   };
 }
 
