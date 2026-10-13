@@ -8,6 +8,8 @@ const NEWTAB_ENABLED_PREF = "browser.newtabpage.enabled";
 const DEFAULT_HOMEPAGE_URL = "about:home";
 
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
+const WEATHER_SYSTEM_PREF =
+  "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
 
 const CLASSIC_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.system.showWeather";
@@ -20,6 +22,7 @@ add_setup(async function () {
       [HOMEPAGE_PREF, DEFAULT_HOMEPAGE_URL],
       [NEWTAB_ENABLED_PREF, false],
       
+      [WEATHER_SYSTEM_PREF, true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
     ],

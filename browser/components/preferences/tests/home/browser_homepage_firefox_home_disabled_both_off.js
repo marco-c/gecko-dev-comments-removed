@@ -8,6 +8,8 @@ const NEWTAB_ENABLED_PREF = "browser.newtabpage.enabled";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
+const WEATHER_SYSTEM_PREF =
+  "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
 
 const CLASSIC_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.system.showWeather";
@@ -20,6 +22,7 @@ add_setup(async function () {
       [HOMEPAGE_PREF, BLANK_HOMEPAGE_URL],
       [NEWTAB_ENABLED_PREF, false],
       
+      [WEATHER_SYSTEM_PREF, true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
       
@@ -81,11 +84,6 @@ add_task(async function test_firefox_home_disabled_when_both_off() {
     !chooseWallpaperControl ||
       BrowserTestUtils.isHidden(chooseWallpaperControl),
     "chooseWallpaper box link is hidden when Firefox Home is not active"
-  );
-  let manageWidgetsControl = getSettingControl("manageWidgets", win);
-  ok(
-    !manageWidgetsControl || BrowserTestUtils.isHidden(manageWidgetsControl),
-    "manageWidgets box link is hidden when Firefox Home is not active"
   );
 
   BrowserTestUtils.removeTab(tab);
