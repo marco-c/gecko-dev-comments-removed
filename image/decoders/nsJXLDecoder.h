@@ -164,7 +164,9 @@ class nsJXLDecoder final : public Decoder {
   WriteOnce<PixelFormat> mPixelFormat;
 
   
-  Vector<uint8_t> mU8RowBuf;
+  
+  
+  Vector<uint8_t> mPipeInputRowBuf;
 
   
   
