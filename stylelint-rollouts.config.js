@@ -215,7 +215,6 @@ module.exports = [
       "browser/themes/shared/tabbrowser/fullscreen-and-pointerlock.css",
       "browser/themes/shared/tabbrowser/tab-hover-preview.css",
       "browser/themes/shared/tabbrowser/tabs.css",
-      "browser/themes/shared/toolbarbutton-icons.css",
       "browser/themes/shared/toolbarbuttons.css",
       "browser/themes/shared/translations/panel.css",
       "browser/themes/shared/urlbar.css",
