@@ -10,10 +10,13 @@
 
 #include "pc/sdp_payload_type_suggester.h"
 
+#include <iterator>
 #include <map>
 #include <string>
 #include <utility>
 
+#include "absl/base/nullability.h"
+#include "absl/cleanup/cleanup.h"
 #include "absl/strings/string_view.h"
 #include "api/jsep.h"
 #include "api/payload_type.h"
@@ -26,10 +29,30 @@
 #include "media/base/codec_comparators.h"
 #include "pc/session_description.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/containers/flat_map.h"
+#include "rtc_base/containers/flat_set.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
+namespace {
+
+
+
+RTCError RecordCodecs(const ContentInfo& content,
+                      PayloadTypeRecorder& recorder,
+                      flat_set<PayloadType>& payload_types_in_use) {
+  for (const Codec& codec : content.media_description()->codecs()) {
+    RTCError error = recorder.AddMapping(codec.id, codec);
+    if (!error.ok()) {
+      return error;
+    }
+    payload_types_in_use.insert(codec.id);
+  }
+  return RTCError::OK();
+}
+
+}  
 
 
 RTCErrorOr<PayloadType> SdpPayloadTypeSuggester::SuggestPayloadType(
@@ -126,35 +149,79 @@ RTCError SdpPayloadTypeSuggester::Update(const SessionDescription* description,
   if (type == SdpType::kAnswer) {
     bundle_manager_.Commit();
   }
+  
+  
+  
+  flat_map<PayloadTypeRecorder*, flat_set<PayloadType>> payload_types_in_use;
+  flat_set<PayloadTypeRecorder*> modified_recorders;
+  for (const ContentInfo& content : description->contents()) {
+    if (!content.rejected) {
+      PayloadTypeRecorder& recorder = LookupRecorder(content.mid(), local);
+      if (modified_recorders.insert(&recorder).second) {
+        recorder.DisallowRedefinition();
+      }
+    }
+  }
+  auto reallow_guard = absl::MakeCleanup([&modified_recorders] {
+    for (PayloadTypeRecorder* recorder : modified_recorders) {
+      recorder->ReallowRedefinition();
+    }
+  });
   for (const ContentInfo& content : description->contents()) {
     if (content.rejected) {
       continue;
     }
     PayloadTypeRecorder& recorder = LookupRecorder(content.mid(), local);
-    recorder.DisallowRedefinition();
-    RTCError error;
-    for (const Codec& codec : content.media_description()->codecs()) {
-      error = recorder.AddMapping(codec.id, codec);
-      if (!error.ok()) {
-        break;
-      }
-    }
-    recorder.ReallowRedefinition();
+    RTCError error =
+        RecordCodecs(content, recorder, payload_types_in_use[&recorder]);
     if (!error.ok()) {
       return error;
     }
+    RecordRtpHeaderExtensions(content, type);
+  }
+  
+  
+  
+  
+  for (auto& [recorder, payload_types] : payload_types_in_use) {
+    recorder->RetainOnly(payload_types);
+  }
+  EraseUnusedRecorders(description);
+  payload_type_picker_.ReleaseUnusedPayloadTypes();
+  return RTCError::OK();
+}
 
-    BundleTypeRecorder& bundle_recorder = LookupBundleRecorder(content.mid());
-    for (const auto& extension :
-         content.media_description()->rtp_header_extensions()) {
-      bundle_recorder.header_extensions().AddMapping(
-          extension.id, extension.uri, extension.encrypt);
-    }
-    if (type == SdpType::kAnswer) {
-      bundle_recorder.header_extensions().Commit();
+void SdpPayloadTypeSuggester::RecordRtpHeaderExtensions(
+    const ContentInfo& content,
+    SdpType type) {
+  BundleTypeRecorder& bundle_recorder = LookupBundleRecorder(content.mid());
+  for (const auto& extension :
+       content.media_description()->rtp_header_extensions()) {
+    bundle_recorder.header_extensions().AddMapping(extension.id, extension.uri,
+                                                   extension.encrypt);
+  }
+  if (type == SdpType::kAnswer) {
+    bundle_recorder.header_extensions().Commit();
+  }
+}
+
+void SdpPayloadTypeSuggester::EraseUnusedRecorders(
+    const SessionDescription* absl_nonnull description) {
+  
+  
+  
+  
+  
+  flat_set<std::string> recorders_in_use;
+  for (const ContentInfo& content : description->contents()) {
+    if (!content.rejected) {
+      recorders_in_use.insert(BundleRecorderName(content.mid()));
     }
   }
-  return RTCError::OK();
+  for (auto it = recorder_by_mid_.begin(); it != recorder_by_mid_.end();) {
+    it = recorders_in_use.contains(it->first) ? std::next(it)
+                                              : recorder_by_mid_.erase(it);
+  }
 }
 
 PayloadTypeRecorder& SdpPayloadTypeSuggester::LookupRecorder(
@@ -167,19 +234,23 @@ PayloadTypeRecorder& SdpPayloadTypeSuggester::LookupRecorder(
 
 SdpPayloadTypeSuggester::BundleTypeRecorder&
 SdpPayloadTypeSuggester::LookupBundleRecorder(absl::string_view mid) {
-  const ContentGroup* group = bundle_manager_.LookupGroupByMid(mid);
-  std::string transport_mapped_name;
-  if (group) {
-    const std::string* group_name = group->FirstContentName();
-    RTC_CHECK(group_name);  
-    transport_mapped_name = *group_name;
-  } else {
-    
-    transport_mapped_name = mid;
-  }
+  std::string transport_mapped_name = BundleRecorderName(mid);
   return recorder_by_mid_
       .try_emplace(std::move(transport_mapped_name), payload_type_picker_, env_)
       .first->second;
+}
+
+std::string SdpPayloadTypeSuggester::BundleRecorderName(
+    absl::string_view mid) const {
+  const ContentGroup* absl_nullable group =
+      bundle_manager_.LookupGroupByMid(mid);
+  if (group == nullptr) {
+    
+    return std::string(mid);
+  }
+  const std::string* group_name = group->FirstContentName();
+  RTC_CHECK(group_name);  
+  return *group_name;
 }
 
 }  
