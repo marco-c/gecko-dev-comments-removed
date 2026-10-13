@@ -183,6 +183,10 @@ template <typename T>
 
 template <typename T>
  bool StableCellHasher<T>::match(const Key& k, const Lookup& l) {
+  
+  
+  static_assert(!IsBarriered<Key>::value);
+
   if (k == l) {
     return true;
   }
@@ -198,11 +202,9 @@ template <typename T>
   
   
   
-  if (!gc::HasUniqueId(k)) {
-    Key key = k;
-    MOZ_ASSERT(key->zoneFromAnyThread()->needsMarkingBarrier() &&
-               !key->isMarkedAny());
-  }
+  MOZ_ASSERT_IF(!gc::HasUniqueId(k),
+                k->isTenured() && k->zoneFromAnyThread()->isGCSweeping() &&
+                    !k->isMarkedAny());
   MOZ_ASSERT(gc::HasUniqueId(l));
 #endif
 
