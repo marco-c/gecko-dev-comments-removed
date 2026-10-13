@@ -6,10 +6,14 @@
 
 
 
+
 "use strict";
 
 const { RustAutofillStore } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillStore.sys.mjs"
+);
+const { UpdatableCreditCardFields } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
 );
 
 
@@ -114,4 +118,30 @@ add_task(async function store_closes_immediately_when_phase_closed() {
 
   await handler._registerShutdownBlocker(phase);
   Assert.equal(store.shutdownCount, 1, "store closed immediately");
+});
+
+add_task(async function ensure_open_yields_a_store_that_holds_a_key() {
+  
+  
+  
+  const handler = makeHandler();
+  const store = await handler.ensureOpen();
+
+  const { guid } = await store.addCreditCard(
+    new UpdatableCreditCardFields({
+      ccName: "",
+      ccNumber: "4111111111111111",
+      ccExpMonth: 0,
+      ccExpYear: 0,
+      ccType: "",
+    })
+  );
+  Assert.equal(
+    (await store.getCreditCard(guid)).ccNumber,
+    "4111111111111111",
+    "the store encrypts with a key of its own and reads back what it wrote"
+  );
+
+  await store.deleteCreditCard(guid);
+  await handler.finalize();
 });

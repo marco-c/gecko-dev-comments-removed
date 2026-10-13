@@ -16,11 +16,12 @@ const { RustAutofillCreditCardsAdapter } = ChromeUtils.importESModule(
 const { RustAutofillAdapterBase } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillAdapterBase.sys.mjs"
 );
-const { Store } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
-);
-const { OSKeyStore } = ChromeUtils.importESModule(
-  "resource://gre/modules/OSKeyStore.sys.mjs"
+const { createAutofillKey, createAutofillStoreWithStaticKeyManager } =
+  ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
+  );
+const { initialize: initRustComponents } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustInitRustComponents.sys.mjs"
 );
 
 const TEST_NUMBER = "4111111111111111";
@@ -53,13 +54,88 @@ function waitForStorageChanged(expectedAction) {
   });
 }
 
+
+async function collect(asyncIterator) {
+  const records = [];
+  for await (const record of asyncIterator) {
+    records.push(record);
+  }
+  return records;
+}
+
+
+
 async function newAdapter(name) {
-  const store = await Store.init(FileTestUtils.getTempFile(name).path);
+  await initRustComponents(PathUtils.profileDir);
+  const store = await createAutofillStoreWithStaticKeyManager(
+    FileTestUtils.getTempFile(name).path,
+    createAutofillKey()
+  );
   return { store, adapter: new RustAutofillCreditCardsAdapter(store) };
 }
 
+
+async function storedNumber(store, guid) {
+  return (await store.getCreditCard(guid)).ccNumber;
+}
+
+add_task(async function test_duplicates_are_found_by_the_number() {
+  const { adapter } = await newAdapter("autofill-cc-adapter-dupe.sqlite");
+  const guid = await adapter.add(TEST_RECORD);
+  await adapter.add({ ...TEST_RECORD, "cc-number": TEST_NUMBER_AMEX });
+
+  
+  
+  const found = await collect(
+    adapter.getDuplicateRecords({
+      ...TEST_RECORD,
+      "cc-exp-year": 2031,
+    })
+  );
+  Assert.deepEqual(
+    found.map(r => r.guid),
+    [guid],
+    "the card with that number, and not the other one"
+  );
+
+  Assert.deepEqual(
+    await collect(adapter.getDuplicateRecords({ "cc-name": "Jane Doe" })),
+    [],
+    "a record with no number matches nothing"
+  );
+});
+
+add_task(async function test_a_match_has_to_agree_on_every_stated_field() {
+  const { adapter } = await newAdapter("autofill-cc-adapter-match.sqlite");
+  const guid = await adapter.add(TEST_RECORD);
+
+  Assert.deepEqual(
+    (await collect(adapter.getMatchRecords({ ...TEST_RECORD }))).map(
+      r => r.guid
+    ),
+    [guid],
+    "the same card matches"
+  );
+  Assert.deepEqual(
+    await collect(
+      adapter.getMatchRecords({ ...TEST_RECORD, "cc-exp-year": 2031 })
+    ),
+    [],
+    "a card that differs on a stated field does not, though it is a duplicate"
+  );
+  Assert.deepEqual(
+    (
+      await collect(
+        adapter.getMatchRecords({ "cc-number": TEST_NUMBER, "cc-name": "" })
+      )
+    ).map(r => r.guid),
+    [guid],
+    "a field the caller did not state is not compared"
+  );
+});
+
 add_task(async function test_adapter_crud_and_computed_fields() {
-  const { adapter } = await newAdapter("autofill-cc-adapter.sqlite");
+  const { store, adapter } = await newAdapter("autofill-cc-adapter.sqlite");
 
   
   
@@ -88,15 +164,19 @@ add_task(async function test_adapter_crud_and_computed_fields() {
 
   
   Assert.notEqual(fetched["cc-number"], TEST_NUMBER, "number is not in clear");
+  Assert.ok(
+    !("cc-number-encrypted" in fetched),
+    "nor is a ciphertext, which the store keeps to itself"
+  );
   Assert.equal(
     fetched["cc-number"],
     maskFor(TEST_NUMBER),
     "masked number keeps the last four digits and nothing else"
   );
   Assert.equal(
-    await OSKeyStore.decrypt(fetched["cc-number-encrypted"], "formautofill_cc"),
+    await storedNumber(store, guid),
     TEST_NUMBER,
-    "the stored ciphertext decrypts to the number that was written"
+    "the store holds the number that was written"
   );
 
   
@@ -131,7 +211,9 @@ add_task(async function test_adapter_crud_and_computed_fields() {
 });
 
 add_task(async function test_update_without_restating_the_number() {
-  const { adapter } = await newAdapter("autofill-cc-adapter-update.sqlite");
+  const { store, adapter } = await newAdapter(
+    "autofill-cc-adapter-update.sqlite"
+  );
   const guid = await adapter.add(TEST_RECORD);
 
   
@@ -142,7 +224,7 @@ add_task(async function test_update_without_restating_the_number() {
   const updated = await adapter.get(guid);
   Assert.equal(updated["cc-name"], "Jane Q. Doe", "update persisted cc-name");
   Assert.equal(
-    await OSKeyStore.decrypt(updated["cc-number-encrypted"], "formautofill_cc"),
+    await storedNumber(store, guid),
     TEST_NUMBER,
     "the number survives an edit that did not restate it"
   );
@@ -181,11 +263,12 @@ add_task(async function test_update_after_a_scrub_does_not_store_the_mask() {
   
   await store.scrubEncryptedData();
 
-  const scrubbed = await adapter.get(guid);
-  Assert.ok(
-    !scrubbed["cc-number-encrypted"],
-    "the ciphertext is gone after a scrub"
+  Assert.equal(
+    await storedNumber(store, guid),
+    "",
+    "the number is gone after a scrub"
   );
+  const scrubbed = await adapter.get(guid);
   Assert.ok(scrubbed["cc-number"], "but the mask is still derived from last4");
 
   await Assert.rejects(
@@ -213,7 +296,9 @@ add_task(async function test_update_without_a_number_is_refused() {
 });
 
 add_task(async function test_update_replacing_the_number() {
-  const { adapter } = await newAdapter("autofill-cc-adapter-renumber.sqlite");
+  const { store, adapter } = await newAdapter(
+    "autofill-cc-adapter-renumber.sqlite"
+  );
   const guid = await adapter.add(TEST_RECORD);
 
   const replacement = "5555555555554444";
@@ -221,7 +306,7 @@ add_task(async function test_update_replacing_the_number() {
 
   const updated = await adapter.get(guid);
   Assert.equal(
-    await OSKeyStore.decrypt(updated["cc-number-encrypted"], "formautofill_cc"),
+    await storedNumber(store, guid),
     replacement,
     "a restated number is re-encrypted"
   );
@@ -234,7 +319,9 @@ add_task(async function test_update_replacing_the_number() {
 });
 
 add_task(async function test_shorter_number_reads_back_at_the_fixed_width() {
-  const { adapter } = await newAdapter("autofill-cc-adapter-amex.sqlite");
+  const { store, adapter } = await newAdapter(
+    "autofill-cc-adapter-amex.sqlite"
+  );
   const guid = await adapter.add({
     ...TEST_RECORD,
     "cc-number": TEST_NUMBER_AMEX,
@@ -257,7 +344,7 @@ add_task(async function test_shorter_number_reads_back_at_the_fixed_width() {
   );
   Assert.equal(fetched["cc-type"], "amex", "cc-type still detected");
   Assert.equal(
-    await OSKeyStore.decrypt(fetched["cc-number-encrypted"], "formautofill_cc"),
+    await storedNumber(store, guid),
     TEST_NUMBER_AMEX,
     "and the number itself is unharmed"
   );
@@ -311,7 +398,9 @@ add_task(async function test_billing_address_guid_does_not_survive() {
 });
 
 add_task(async function test_add_many_with_meta_bulk_import() {
-  const { adapter } = await newAdapter("autofill-cc-adapter-bulk.sqlite");
+  const { store, adapter } = await newAdapter(
+    "autofill-cc-adapter-bulk.sqlite"
+  );
 
   const records = [
     {
@@ -361,10 +450,7 @@ add_task(async function test_add_many_with_meta_bulk_import() {
   
   
   Assert.equal(
-    await OSKeyStore.decrypt(
-      byGuid.BulkGuid0001["cc-number-encrypted"],
-      "formautofill_cc"
-    ),
+    await storedNumber(store, "BulkGuid0001"),
     TEST_NUMBER,
     "and the number was encrypted by this store"
   );
@@ -510,10 +596,6 @@ add_task(async function test_record_for_migration_export() {
     TEST_NUMBER,
     "the number is handed over in the clear"
   );
-  Assert.ok(
-    !("cc-number-encrypted" in exported),
-    "and this store's ciphertext is not"
-  );
   Assert.equal(exported.guid, guid, "the rest of the record comes along");
   Assert.equal(exported["cc-name"], "Jane Doe", "including the name");
 
@@ -523,25 +605,36 @@ add_task(async function test_record_for_migration_export() {
     maskFor(TEST_NUMBER),
     "the record passed in keeps its mask"
   );
-  Assert.ok(stored["cc-number-encrypted"], "and its ciphertext");
 });
 
 add_task(async function test_migration_export_refuses_an_unreadable_number() {
-  const { adapter } = await newAdapter("autofill-cc-adapter-exportbad.sqlite");
+  
+  
+  const path = FileTestUtils.getTempFile(
+    "autofill-cc-adapter-exportbad.sqlite"
+  ).path;
+  await initRustComponents(PathUtils.profileDir);
+  const writer = new RustAutofillCreditCardsAdapter(
+    await createAutofillStoreWithStaticKeyManager(path, createAutofillKey())
+  );
+  const guid = await writer.add(TEST_RECORD);
+  const reader = new RustAutofillCreditCardsAdapter(
+    await createAutofillStoreWithStaticKeyManager(path, createAutofillKey())
+  );
 
   
   
-  
+  await Assert.rejects(
+    reader.get(guid),
+    /CryptoError|reason:/,
+    "a card another key wrote cannot be read"
+  );
+
   
   
   await Assert.rejects(
-    adapter._recordForMigrationExport({
-      guid: "BadGuid00001",
-      "cc-name": "Jane Doe",
-      "cc-number": maskFor(TEST_NUMBER),
-      "cc-number-encrypted": "this is not a ciphertext",
-    }),
-    /./,
+    reader._recordForMigrationExport(await writer.get(guid)),
+    /reason:/,
     "a number that will not decrypt throws rather than being copied without it"
   );
 });
@@ -603,7 +696,7 @@ add_task(async function test_bulk_import_refuses_a_masked_number() {
         timeLastModified: 1,
       },
     ]),
-    /Got a masked cc-number when encrypting/,
+    /Got a masked cc-number when writing/,
     "the batch fails rather than storing the mask as the card number"
   );
   Assert.equal((await adapter.getAll()).length, 0, "and nothing was written");
@@ -623,14 +716,11 @@ add_task(async function test_update_cannot_store_a_mask_as_the_number() {
   const guid = await adapter.add(TEST_RECORD);
   await Assert.rejects(
     adapter.update(guid, { "cc-name": "Jane Q. Doe" }, true),
-    /Got a masked cc-number when encrypting/,
-    "a masked number is refused rather than encrypted as the card"
+    /Got a masked cc-number when writing/,
+    "a masked number is refused rather than stored as the card"
   );
   Assert.equal(
-    await OSKeyStore.decrypt(
-      (await adapter.get(guid))["cc-number-encrypted"],
-      "formautofill_cc"
-    ),
+    await storedNumber(store, guid),
     TEST_NUMBER,
     "and the stored number is untouched"
   );

@@ -18,11 +18,15 @@
 
 
 
+
 const { FormAutofillStorage, formAutofillStorage } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofillStorage.sys.mjs"
 );
 const { RustAutofillCreditCardsAdapter } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillCreditCardStorage.sys.mjs"
+);
+const { CryptoError } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustAutofill.sys.mjs"
 );
 const { OSKeyStore } = ChromeUtils.importESModule(
   "resource://gre/modules/OSKeyStore.sys.mjs"
@@ -86,7 +90,15 @@ function card(name) {
   };
 }
 
+
+
+
 const decryptNumber = cipher => OSKeyStore.decrypt(cipher, "formautofill_cc");
+
+const rustStore = () => new RustAutofillStore().ensureOpen();
+
+const rustNumber = async guid =>
+  (await (await rustStore()).getCreditCard(guid)).ccNumber;
 
 async function setupStorageWithCards(fileName, names) {
   Services.prefs.setBoolPref(ENABLED_PREF, false);
@@ -168,20 +180,21 @@ add_task(async function test_the_number_is_re_encrypted_by_the_target() {
   s = await enableRust(s);
 
   const after = await s.creditCards.get(guids[0]);
-  
-  
-  
-  
-  Assert.notEqual(
-    after["cc-number-encrypted"],
+  Assert.ok(
     before["cc-number-encrypted"],
-    "the target wrote its own ciphertext"
+    "the source held the number as its own ciphertext"
+  );
+  
+  
+  Assert.ok(
+    !("cc-number-encrypted" in after),
+    "the target was handed the number rather than the ciphertext"
   );
   
   Assert.equal(
-    await decryptNumber(after["cc-number-encrypted"]),
+    await rustNumber(guids[0]),
     NUMBERS["Ann One"],
-    "and it decrypts to the number that was saved"
+    "and it holds the number that was saved"
   );
 
   await s._finalize();
@@ -227,21 +240,21 @@ add_task(async function test_a_decrypt_failure_refuses_rather_than_copies() {
   
   
   
-  const realDecrypt = OSKeyStore.decrypt;
+  
+  const store = await rustStore();
+  const realGet = store.getCreditCard.bind(store);
   let calls = 0;
-  OSKeyStore.decrypt = async function (...args) {
+  store.getCreditCard = async function (guid) {
     
-    if (++calls <= 2) {
-      return realDecrypt.apply(this, args);
+    if (++calls > 2) {
+      throw new CryptoError("decryption failed");
     }
-    const e = new Error("keystore became unavailable");
-    e.result = Cr.NS_ERROR_FAILURE;
-    throw e;
+    return realGet(guid);
   };
   try {
     s = await disableRust(s);
   } finally {
-    OSKeyStore.decrypt = realDecrypt;
+    delete store.getCreditCard;
   }
 
   
@@ -253,13 +266,9 @@ add_task(async function test_a_decrypt_failure_refuses_rather_than_copies() {
   
   for (const [i, name] of ["Ann One", "Bob Two"].entries()) {
     const after = await s.creditCards.get(guids[i]);
+    Assert.deepEqual(after, before[i], `${name} was not rewritten`);
     Assert.equal(
-      after["cc-number-encrypted"],
-      before[i]["cc-number-encrypted"],
-      `${name} was not rewritten`
-    );
-    Assert.equal(
-      await decryptNumber(after["cc-number-encrypted"]),
+      await rustNumber(guids[i]),
       NUMBERS[name],
       `${name}'s number is still readable`
     );
@@ -350,7 +359,7 @@ add_task(async function test_flipping_the_pref_switches_a_running_session() {
   Assert.equal((await rust.getAll()).length, 2, "the cards came across");
   Assert.ok(await rust.get(guids[0]), "with their guids preserved");
   Assert.equal(
-    await decryptNumber((await rust.get(guids[0]))["cc-number-encrypted"]),
+    await rustNumber(guids[0]),
     NUMBERS["Ann One"],
     "and their numbers re-encrypted into the target"
   );
@@ -503,7 +512,7 @@ add_task(async function test_a_scrubbed_store_defers_the_copy_back() {
   
   
   
-  const store = await new RustAutofillStore().ensureOpen();
+  const store = await rustStore();
   await store.scrubEncryptedData();
 
   s = await disableRust(s);
@@ -523,8 +532,9 @@ add_task(async function test_a_scrubbed_store_defers_the_copy_back() {
   for (const guid of guids) {
     const after = await s.creditCards.get(guid);
     Assert.ok(after, `${guid} is still in the store that held it`);
-    Assert.ok(
-      !after["cc-number-encrypted"],
+    Assert.equal(
+      await rustNumber(guid),
+      "",
       "still scrubbed, and not rewritten with the mask as its number"
     );
   }
