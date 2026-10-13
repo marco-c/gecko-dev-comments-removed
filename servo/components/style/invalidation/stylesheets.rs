@@ -264,8 +264,11 @@ impl StylesheetInvalidationSet {
                 None => return false,
             };
 
-            if self.style_fully_invalid {
-                debug!("process_invalidations: fully_invalid({:?})", root);
+            if self.style_fully_invalid || self.cascade_data_difference.layer_order_changed {
+                debug!(
+                    "fully_invalid = {}, layer_order_changed = {}",
+                    self.style_fully_invalid, self.cascade_data_difference.layer_order_changed,
+                );
                 data.hint.insert(RestyleHint::restyle_subtree());
                 return true;
             }
@@ -635,15 +638,12 @@ impl StylesheetInvalidationSet {
                 
                 
             },
-            LayerBlock(..) | LayerStatement(..) => {
+            LayerStatement(..) => {
                 
                 
-                
-                
-                self.invalidate_fully()
             },
             Document(..) | Import(..) | Media(..) | Supports(..) | Container(..)
-            | StartingStyle(..) | AppearanceBase(..) => {
+            | LayerBlock(..) | StartingStyle(..) | AppearanceBase(..) => {
                 
             },
             FontFace(..) => {
