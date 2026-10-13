@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/strings/string_view.h"
 #include "api/environment/environment.h"
 #include "api/payload_type.h"
@@ -40,15 +41,25 @@ class PayloadTypePicker final {
   PayloadTypePicker(PayloadTypePicker&&) = delete;
   PayloadTypePicker& operator=(PayloadTypePicker&&) = delete;
   
-  
   RTCErrorOr<PayloadType> SuggestMapping(Codec codec,
-                                         const PayloadTypeRecorder* excluder,
                                          bool pick_from_top_of_range = false);
   RTCError AddMapping(PayloadType payload_type, Codec codec);
   std::optional<Codec> LookupCodec(PayloadType payload_type) const;
   bool IsSeen(PayloadType payload_type) const {
-    return seen_payload_types_.contains(payload_type.value());
+    return seen_payload_types_.contains(payload_type);
   }
+
+  
+  
+  
+  void RegisterRecorder(const PayloadTypeRecorder* absl_nonnull recorder);
+  void UnregisterRecorder(const PayloadTypeRecorder* absl_nonnull recorder);
+
+  
+  
+  
+  
+  void ReleaseUnusedPayloadTypes();
 
  private:
   class MapEntry final {
@@ -68,6 +79,12 @@ class PayloadTypePicker final {
   };
   std::vector<MapEntry> entries_;
   flat_set<PayloadType> seen_payload_types_;
+  
+  
+  
+  flat_set<PayloadType> default_payload_types_;
+  
+  flat_set<const PayloadTypeRecorder* absl_nonnull> recorders_;
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const PayloadTypePicker& picker) {
     sink.Append("Reserved:");
@@ -84,14 +101,27 @@ class PayloadTypePicker final {
 class PayloadTypeRecorder final {
  public:
   explicit PayloadTypeRecorder(PayloadTypePicker& suggester)
-      : suggester_(suggester) {}
+      : suggester_(suggester) {
+    suggester_.RegisterRecorder(this);
+  }
+  PayloadTypeRecorder(const PayloadTypeRecorder&) = delete;
+  PayloadTypeRecorder& operator=(const PayloadTypeRecorder&) = delete;
+  PayloadTypeRecorder(PayloadTypeRecorder&&) = delete;
+  PayloadTypeRecorder& operator=(PayloadTypeRecorder&&) = delete;
   ~PayloadTypeRecorder() {
     
     RTC_DCHECK(disallow_redefinition_level_ == 0);
+    suggester_.UnregisterRecorder(this);
   }
 
   RTCError AddMapping(PayloadType payload_type, Codec codec);
   std::vector<std::pair<PayloadType, Codec>> GetMappings() const;
+  
+  
+  void AddPayloadTypesTo(flat_set<PayloadType>& payload_types) const;
+  
+  
+  void RetainOnly(const flat_set<PayloadType>& payload_types);
   RTCErrorOr<PayloadType> LookupPayloadType(Codec codec) const;
   RTCErrorOr<Codec> LookupCodec(PayloadType payload_type) const;
   
