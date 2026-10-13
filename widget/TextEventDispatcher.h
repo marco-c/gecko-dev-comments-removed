@@ -118,21 +118,43 @@ class TextEventDispatcher final {
 
 
 
-  nsresult GetState() const;
+  [[nodiscard]] nsresult GetState() const;
 
   
 
 
 
 
-  bool IsComposing() const { return mIsComposing; }
+  [[nodiscard]] bool IsComposing() const {
+    return !mCompositionString.IsVoid();
+  }
 
   
 
 
 
 
-  bool IsHandlingComposition() const { return mIsHandlingComposition; }
+  [[nodiscard]] bool IsHandlingComposition() const {
+    return !mHandlingCompositionString.IsVoid();
+  }
+
+  
+
+
+
+
+  [[nodiscard]] const nsString& GetCompositionString() const {
+    return mCompositionString;
+  }
+
+  
+
+
+
+
+  [[nodiscard]] const nsString& GetHandlingCompositionString() const {
+    return mHandlingCompositionString;
+  }
 
   
 
@@ -447,6 +469,10 @@ class TextEventDispatcher final {
   
   
   Maybe<WritingMode> mWritingMode;
+  
+  nsString mCompositionString = VoidString();
+  
+  nsString mHandlingCompositionString = VoidString();
 
   
   
@@ -573,12 +599,6 @@ class TextEventDispatcher final {
         MOZ_CRASH("Define the behavior of new InputTransactionType");
     }
   }
-
-  
-  bool mIsComposing;
-
-  
-  bool mIsHandlingComposition;
 
   
   
