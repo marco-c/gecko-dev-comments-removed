@@ -50,7 +50,6 @@ add_task(async function openDebuggerFromDialog() {
   
   
   
-  
   ChromeUtils.notifyDevToolsOpened();
   registerCleanupFunction(() => ChromeUtils.notifyDevToolsClosed());
   tab.linkedBrowser.browsingContext.watchedByDevTools = true;
@@ -89,6 +88,41 @@ add_task(async function openDebuggerFromDialog() {
   await assertPausedAtSourceAndLine(dbg, source.id, 14);
 
   await closeTabAndToolbox();
+});
+
+
+
+add_task(async function debugScriptHiddenWithoutDevTools() {
+  const tab = await addTab(EXAMPLE_URL + "doc-slow-script.html");
+
+  const alert = BrowserTestUtils.waitForGlobalNotificationBar(
+    window,
+    "process-hang"
+  );
+
+  info("Execute an infinite loop");
+  SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
+    content.wrappedJSObject.infiniteLoop();
+  }).catch(() => {});
+
+  info("Wait for the slow script warning");
+  const notification = await alert;
+
+  const buttons = notification.buttonContainer.getElementsByTagName("button");
+  const labels = Array.from(buttons, button => button.getAttribute("label"));
+  const debugLabel = gNavigatorBundle.getString(
+    "processHang.button_debug.label"
+  );
+
+  ok(
+    !labels.includes(debugLabel),
+    "The 'debug script' button is not offered when DevTools are not open on the tab"
+  );
+
+  info("Stop the hung script to unblock cleanup");
+  buttons[0].click();
+
+  await removeTab(tab);
 });
 
 
