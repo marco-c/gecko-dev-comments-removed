@@ -118,7 +118,6 @@ class BaselineFrameSlot {
   uint32_t slot() const { return slot_; }
 
   bool operator==(const BaselineFrameSlot& other) const = default;
-  bool operator!=(const BaselineFrameSlot& other) const = default;
 };
 
 
@@ -782,8 +781,14 @@ class MOZ_RAII CacheIRCompiler {
   
   
   FloatRegisterSet liveVolatileFloatRegs() const {
-    return FloatRegisterSet::Intersect(liveFloatRegs_.set(),
-                                       FloatRegisterSet::Volatile());
+    FloatRegisterSet regs = FloatRegisterSet::Intersect(
+        liveFloatRegs_.set(), FloatRegisterSet::Volatile());
+    
+    
+    if (allocator.hasAutoScratchFloatRegisterSpill()) {
+      regs.takeAllocatable(FloatReg0);
+    }
+    return regs;
   }
 
   
