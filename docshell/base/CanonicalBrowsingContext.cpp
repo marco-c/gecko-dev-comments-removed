@@ -17,6 +17,7 @@
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/BrowsingContextBinding.h"
 #include "mozilla/dom/BrowsingContextGroup.h"
+#include "mozilla/dom/ChromeUtils.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/Navigation.h"
@@ -338,9 +339,10 @@ void CanonicalBrowsingContext::ReplacedBy(
 
   
   
-  if (GetWatchedByDevToolsInternal()) {
-    txn.SetWatchedByDevToolsInternal(true);
-  }
+  
+  bool watched =
+      GetWatchedByDevToolsInternal() && ChromeUtils::IsDevToolsOpened();
+  txn.SetWatchedByDevToolsInternal(watched);
 
   
   
