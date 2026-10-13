@@ -138,13 +138,6 @@ public final class GeckoClipboardContentProvider extends ContentProvider {
   }
 
   
-   static void cancelSession(final long sessionId) {
-    synchronized (sLock) {
-      sOpenSessions.remove(sessionId);
-    }
-  }
-
-  
 
 
 
@@ -157,7 +150,7 @@ public final class GeckoClipboardContentProvider extends ContentProvider {
 
 
 
-   static ClipData commitSessionToClipData(
+  private static ClipData commitSessionToClipData(
       final Context context, final long sessionId, final CharSequence text, final String htmlText) {
     final Session session;
     synchronized (sLock) {
@@ -215,6 +208,31 @@ public final class GeckoClipboardContentProvider extends ContentProvider {
       clipData.addItem(new ClipData.Item(payloadUri));
     }
     return clipData;
+  }
+
+  
+
+
+
+
+   static boolean commitSessionToClipboard(
+      final Context context,
+      final long sessionId,
+      final CharSequence text,
+      final String htmlText,
+      final boolean isPrivateData) {
+    synchronized (sLock) {
+      final ClipData clipData = commitSessionToClipData(context, sessionId, text, htmlText);
+      if (clipData != null) {
+        if (Clipboard.setData(context, clipData, isPrivateData)) {
+          return true;
+        }
+      }
+      
+      sOpenSessions.remove(sessionId);
+      sCommittedSessions.remove(sessionId);
+      return false;
+    }
   }
 
   private static Uri buildItemUri(
