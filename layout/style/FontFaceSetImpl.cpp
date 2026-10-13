@@ -241,6 +241,11 @@ void FontFaceSetImpl::FindMatchingFontFaces(
   }
 }
 
+bool FontFaceSetImpl::ReadyPromiseIsPending() const {
+  RecursiveMutexAutoLock lock(mMutex);
+  return mOwner && mOwner->ReadyPromiseIsPending();
+}
+
 FontFaceSetLoadStatus FontFaceSetImpl::Status() {
   RecursiveMutexAutoLock lock(mMutex);
   FlushUserFontSet();
@@ -767,7 +772,6 @@ void FontFaceSetImpl::CheckLoadingStarted() {
   }
 
   mStatus = FontFaceSetLoadStatus::Loading;
-  mLoadingFinishedScheduled = false;
 
   if (IsOnOwningThread()) {
     OnLoadingStarted();
@@ -817,7 +821,7 @@ void FontFaceSetImpl::CheckLoadingFinished() {
     return;
   }
 
-  if (mLoadingFinishedScheduled) {
+  if (!ReadyPromiseIsPending()) {
     
     
     return;
@@ -829,22 +833,21 @@ void FontFaceSetImpl::CheckLoadingFinished() {
   }
 
   mStatus = FontFaceSetLoadStatus::Loaded;
-  mLoadingFinishedScheduled = true;
+
+  if (IsOnOwningThread()) {
+    OnLoadingFinished();
+    return;
+  }
 
   DispatchToOwningThread(
       "FontFaceSetImpl::CheckLoadingFinished",
-      [self = RefPtr{this}]()
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { self->OnLoadingFinished(); });
+      [self = RefPtr{this}]() { self->OnLoadingFinished(); });
 }
 
 void FontFaceSetImpl::OnLoadingFinished() {
   RecursiveMutexAutoLock lock(mMutex);
-  if (mStatus != FontFaceSetLoadStatus::Loaded) {
-    
-    return;
-  }
-  if (RefPtr owner = mOwner) {
-    owner->MaybeResolve();
+  if (mOwner) {
+    mOwner->MaybeResolve();
   }
 }
 

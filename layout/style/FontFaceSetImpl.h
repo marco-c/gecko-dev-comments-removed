@@ -201,7 +201,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   void CheckLoadingFinishedAfterDelay();
 
   void OnLoadingStarted() { DispatchLoadingEventAndReplaceReadyPromise(); }
-  MOZ_CAN_RUN_SCRIPT void OnLoadingFinished();
+  void OnLoadingFinished();
 
   
   
@@ -234,6 +234,9 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
 
   bool HasLoadingFontFaces();
+
+  
+  bool ReadyPromiseIsPending() const;
 
   
   virtual void UpdateHasLoadingFontFaces();
@@ -272,10 +275,6 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   
   dom::FontFaceSetLoadStatus mStatus MOZ_GUARDED_BY(mMutex);
-
-  
-  
-  bool mLoadingFinishedScheduled MOZ_GUARDED_BY(mMutex) = false;
 
   
   
