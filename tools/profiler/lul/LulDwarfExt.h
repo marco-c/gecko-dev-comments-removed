@@ -1233,6 +1233,9 @@ class DwarfCFIToModule : public CallFrameInfo::Handler {
 
     
     static unsigned int LOONGARCH();
+
+    
+    static unsigned int RISCV();
   };
 
   

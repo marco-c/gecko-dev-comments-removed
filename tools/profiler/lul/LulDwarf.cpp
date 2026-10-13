@@ -2232,6 +2232,29 @@ unsigned int DwarfCFIToModule::RegisterNames::LOONGARCH() {
   return 32 + 32 + 8 + 1 + 32 + 32;
 }
 
+unsigned int DwarfCFIToModule::RegisterNames::RISCV() {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  return 32 + 32 + 8 * 4 + 32;
+}
+
 
 int32_t parseDwarfExpr(Summariser* summ, const ByteReader* reader,
                        ImageSlice expr, bool debug, bool pushCfaAtStart,
