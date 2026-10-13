@@ -22,6 +22,9 @@ interface MozTabbrowserTabGroupLabel extends XULElement {
 
   container: MozTabbrowserTabs;
   group: MozTabbrowserTabGroup;
+
+  
+  elementIndex: number;
 }
 
 type MozTabSplitViewWrapper =
@@ -46,5 +49,19 @@ interface MozFindbar extends XULElement {
 
 
 interface MozToolbarbutton extends XULElement {
+  readonly menupopup: XULPopupElement | null;
   readonly icon: Element | null;
+}
+
+
+
+interface MozArrowScrollbox extends XULElement {
+  readonly overflowing: boolean;
+  smoothScroll: boolean;
+  readonly scrollClientRect: DOMRect;
+  readonly _scrollButtonDown: Element;
+  _getScrollableElements(): Element[];
+  _canScrollToElement(element: Element): boolean;
+  ensureElementIsVisible(element: Element, aInstant?: boolean): void;
+  scrollByPixels(aPixels: number, aInstant?: boolean): void;
 }
