@@ -21,15 +21,28 @@ class ApmDataDumper;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
  public:
-  static constexpr float kDefaultBackgroundSpeakerOffsetDbfs = 10.0f;
+  static constexpr float kDefaultBackgroundSpeakerOffsetDbfs = 7.0f;
+  static constexpr int kDefaultMaxTimeToUpdateMs = 5000;
 
   SpeechLevelEstimatorExperimentalImpl(
       ApmDataDumper* apm_data_dumper,
       const AudioProcessing::Config::GainController2::AdaptiveDigital& config,
       int adjacent_speech_frames_threshold,
-      float background_speaker_offset_dbfs);
+      float background_speaker_offset_dbfs,
+      int max_time_to_update_ms);
   SpeechLevelEstimatorExperimentalImpl(
       const SpeechLevelEstimatorExperimentalImpl&) = delete;
   SpeechLevelEstimatorExperimentalImpl& operator=(
@@ -47,6 +60,8 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
   float GetBackgroundSpeakerOffsetDbfs() const {
     return background_speaker_offset_dbfs_;
   }
+  
+  int GetMaxTimeToUpdateMs() const { return max_time_to_update_ms_; }
 
   void Reset() override;
 
@@ -60,7 +75,7 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
 
   void UpdateIsConfident();
 
-  void ResetLevelEstimatorState(LevelEstimatorState& state) const;
+  void ResetLevelEstimatorState();
 
   void DumpDebugData() const;
 
@@ -69,12 +84,15 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
   const float initial_speech_level_dbfs_;
   const int adjacent_speech_frames_threshold_;
   const float background_speaker_offset_dbfs_;
+  const int max_time_to_update_ms_;
+  const int max_frames_to_update_;
   LevelEstimatorState preliminary_state_;
   LevelEstimatorState reliable_state_;
   float level_dbfs_;
   bool is_confident_;
   bool is_background_speaker_;
   int num_adjacent_speech_frames_;
+  int num_frames_in_current_update_window_;
   float tracking_level_dbfs_;
 };
 
