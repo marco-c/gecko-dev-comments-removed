@@ -643,6 +643,8 @@ EventStateManager* EventStateManager::sActiveESM = nullptr;
 EventStateManager* EventStateManager::sCursorSettingManager = nullptr;
 constinit AutoWeakFrame EventStateManager::sLastDragOverFrame{};
 LayoutDeviceIntPoint EventStateManager::sPreLockScreenPoint = kInvalidRefPoint;
+Maybe<CSSIntPoint> EventStateManager::sLastRealScreenPoint;
+bool EventStateManager::sRestorePointerAfterUnlock = false;
 LayoutDeviceIntPoint EventStateManager::sLastRefPoint = kInvalidRefPoint;
 LayoutDeviceIntPoint EventStateManager::sLastRefPointOfRawUpdate =
     kInvalidRefPoint;
@@ -1077,6 +1079,9 @@ nsresult EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
             .extract());
     sLastClientPoint = RoundedToInt(Event::GetClientCoords(
         aPresContext, aEvent, aEvent->mRefPoint, CSSDoublePoint{0, 0}));
+    if (!aEvent->mFlags.mIsSynthesizedForTests) {
+      sLastRealScreenPoint = Some(sLastScreenPoint);
+    }
   }
 
   *aStatus = nsEventStatus_eIgnore;
@@ -5835,8 +5840,10 @@ void EventStateManager::RequestLockPointer(nsIWidget* aWidget,
 
   
   
+  sRestorePointerAfterUnlock = sLastRealScreenPoint.isSome();
   sPreLockScreenPoint = LayoutDeviceIntPoint::Round(
-      sLastScreenPoint * aPresContext->CSSToDevPixelScale());
+      sLastRealScreenPoint.valueOr(sLastScreenPoint) *
+      aPresContext->CSSToDevPixelScale());
 
   
   
@@ -5963,10 +5970,16 @@ void EventStateManager::ReleaseLockedPointer(nsIWidget* aWidget) {
 
   LayoutDeviceIntPoint preLockScreenPoint = sPreLockScreenPoint;
   sPreLockScreenPoint = kInvalidRefPoint;
+  const bool restorePointer = sRestorePointerAfterUnlock;
+  sRestorePointerAfterUnlock = false;
 
   if (aWidget) {
     
     aWidget->UnlockNativePointer();
+
+    if (!restorePointer) {
+      return;
+    }
 
     
     

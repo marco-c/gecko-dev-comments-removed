@@ -1432,6 +1432,12 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   
   
+  static Maybe<CSSIntPoint> sLastRealScreenPoint;
+  static bool sRestorePointerAfterUnlock;
+
+  
+  
+  
   
   
   static LayoutDeviceIntPoint sSynthCenteringPoint;
