@@ -20,9 +20,20 @@ declare global {
     static implementCustomInterface(cls: MozElementBase, ifaces: nsIID[]): void;
     static readonly fragment: DocumentFragment;
     initializeAttributeInheritance(): void;
+    attributeChangedCallback(
+      name: string,
+      oldValue: string | null,
+      newValue: string | null
+    ): void;
   }
   class MozHTMLElement extends HTMLElement implements MozElementBase {
     static implementCustomInterface(cls: MozElementBase, ifaces: nsIID[]): void;
+  }
+
+  
+  
+  interface MozTabbox extends MozXULElement {
+    readonly tabpanels: XULElement;
   }
 
   
@@ -32,6 +43,25 @@ declare global {
     disabled: boolean;
     tabIndex: number;
     selectedIndex: number;
+    readonly switchByScrolling: boolean;
+    get selectedItem(): MozTab | null;
+    set selectedItem(val: MozTab | null);
+    get tabbox(): MozTabbox;
+    
+    
+    get ariaFocusableItems(): XULElement[];
+    get ariaFocusedIndex(): number;
+    get ariaFocusedItem(): XULElement | null;
+    set ariaFocusedItem(val: XULElement | null);
+    baseConnect(): void;
+    updateWheelListeners(): void;
+    advanceSelectedTab(aDir?: -1 | 1, aWrap?: boolean, aEvent?: Event): void;
+    advanceSelectedItem(aDir?: -1 | 1, aWrap?: boolean): void;
+    _selectNewTab(
+      aNewTab: MozTab,
+      aFallbackDir?: -1 | 1,
+      aWrap?: boolean
+    ): void;
     
     
     findNextTab<T extends MozTab>(
