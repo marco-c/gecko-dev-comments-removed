@@ -168,9 +168,7 @@ add_task(async function test_tab_out_of_subtitles_panel() {
 
       
       
-      let checkedFontSize = settingsPanel.querySelector(
-        'input[type="radio"][name="cc-size"]:checked'
-      );
+      let checkedFontSize = settingsPanel.querySelector("moz-radio[checked]");
       Assert.ok(checkedFontSize, "Found the checked font size radio");
       checkedFontSize.focus();
 
