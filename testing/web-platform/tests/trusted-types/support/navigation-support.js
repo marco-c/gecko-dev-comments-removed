@@ -123,6 +123,15 @@ function navigateToJavascriptURL(reportOnly) {
     
     
     document.addEventListener("DOMContentLoaded", bounceEventToOpener);
+
+    document.addEventListener("securitypolicyviolation", violationEvent => {
+      
+      
+      if (cspDirectives.includes(violationEvent.effectiveDirective)) {
+        bounceEventToOpener(violationEvent);
+      }
+    });
+
     
     if (params.has("navigationattempted")) {
       return;
@@ -182,9 +191,6 @@ function navigateToJavascriptURL(reportOnly) {
           
           
           
-          
-          
-          
           if (window.requestIdleCallback) {
             await new Promise(resolve => {
               requestIdleCallback(resolve);
@@ -201,7 +207,6 @@ function navigateToJavascriptURL(reportOnly) {
         window.opener.postMessage(`Unexpected exception: ${exception.message}`, "*");
         return;
       }
-      violations.forEach(violationEvent => bounceEventToOpener(violationEvent));
       if (violations.length == 0 &&
           [null, "throw", "make-invalid"].includes(params.get("defaultpolicy"))) {
         window.opener.postMessage("No securitypolicyviolation reported!", "*");
