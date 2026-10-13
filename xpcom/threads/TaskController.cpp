@@ -1013,8 +1013,8 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
     sIdleMemoryCleanupWantsLaterScheduled = false;
   }
 
-  auto result =
-      moz_may_purge_now( true, reuseGracePeriod, Nothing());
+  auto result = moz_may_purge_now( true, reuseGracePeriod,
+                                  nullptr, nullptr);
   switch (result) {
     case may_purge_now_result_t::Done:
       
@@ -1093,6 +1093,11 @@ struct IdlePurgeMarker : mozilla::BaseMarkerType<IdlePurgeMarker> {
 
 namespace mozilla {
 
+static bool KeepPurgingUntilDeadline(void* aClosure) {
+  const auto& deadline = *static_cast<const TimeStamp*>(aClosure);
+  return deadline.IsNull() || TimeStamp::Now() <= deadline;
+}
+
 
 
 
@@ -1117,10 +1122,8 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
   may_purge_now_result_t result;
   do {
     num_calls++;
-    result = moz_may_purge_now(
-         false, reuseGracePeriod, Some([aDeadline] {
-          return aDeadline.IsNull() || TimeStamp::Now() <= aDeadline;
-        }));
+    result = moz_may_purge_now( false, reuseGracePeriod,
+                               KeepPurgingUntilDeadline, &aDeadline);
   } while ((result == may_purge_now_result_t::NeedsMore) &&
            (aDeadline.IsNull() || TimeStamp::Now() <= aDeadline));
 
