@@ -492,10 +492,7 @@ static const uint32_t SizeOfReturnAddressAfterCall = 0;
 
 
 
-
-
-
-static const uint32_t JumpImmediateRange = ((1 << 27) - (20 * 1024 * 1024));
+static const uint32_t JumpImmediateRange = INT32_MAX;
 
 struct FloatRegister {
   typedef FloatRegisters Codes;
