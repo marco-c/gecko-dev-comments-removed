@@ -147,7 +147,10 @@ void RenderAndroidHardwareBufferTextureHost::DeleteTextureHandle() {
     return;
   }
   MOZ_ASSERT(mGL);
-  mGL->fDeleteTextures(1, &mTextureHandle);
+  
+  if (mGL->MakeCurrent()) {
+    mGL->fDeleteTextures(1, &mTextureHandle);
+  }
   mTextureHandle = 0;
 }
 
