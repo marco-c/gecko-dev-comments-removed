@@ -331,6 +331,11 @@ struct NativeLayerCARepresentation {
   CALayer* mRoundedClipCALayer = nullptr;   
   CALayer* mContentCALayer = nullptr;       
   CALayer* mOpaquenessTintLayer = nullptr;  
+  
+  
+  
+  
+  CALayer* mProtectedBackingLayer = nullptr;  
 
 #ifdef NIGHTLY_BUILD
   bool mLogNextVideoSurface = false;
