@@ -23,6 +23,8 @@ class MOZ_STATIC_CLASS MOZ_TRIVIAL_CTOR_DTOR NativeNtBlockSet final {
     NativeNtBlockSetEntry(const UNICODE_STRING& aName, uint64_t aVersion,
                           NativeNtBlockSetEntry* aNext)
         : mName(aName), mVersion(aVersion), mNext(aNext) {}
+    
+    
     UNICODE_STRING mName;
     uint64_t mVersion;
     NativeNtBlockSetEntry* mNext;
@@ -33,6 +35,7 @@ class MOZ_STATIC_CLASS MOZ_TRIVIAL_CTOR_DTOR NativeNtBlockSet final {
   constexpr NativeNtBlockSet() : mFirstEntry(nullptr) {}
   ~NativeNtBlockSet() = default;
 
+  
   void Add(const UNICODE_STRING& aName, uint64_t aVersion);
   void Write(WritableBuffer& buffer);
 
