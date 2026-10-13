@@ -45,3 +45,17 @@ function toolsAreEqual(actual, expected) {
 
   return true;
 }
+
+
+
+function waitForToolCancel(toolName) {
+  return new Promise(resolve => {
+    const listener = e => {
+      if (e.toolName === toolName) {
+        document.modelContext.removeEventListener('toolcancel', listener);
+        resolve(e);
+      }
+    };
+    document.modelContext.addEventListener('toolcancel', listener);
+  });
+}
