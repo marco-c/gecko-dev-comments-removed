@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_dom_WebTaskSchedulerWorker_h
 #define mozilla_dom_WebTaskSchedulerWorker_h
 
@@ -46,8 +43,7 @@ class WebTaskSchedulerWorker final : public WebTaskScheduler {
  private:
   ~WebTaskSchedulerWorker() = default;
 
-  nsresult SetTimeoutForDelayedTask(WebTask* aTask, uint64_t aDelay,
-                                    EventQueuePriority aPriority) override;
+  nsresult SetTimeoutForDelayedTask(WebTask* aTask, uint64_t aDelay) override;
   bool DispatchEventLoopRunnable(EventQueuePriority aPriority) override;
 
   RefPtr<StrongWorkerRef> mWorkerRef;

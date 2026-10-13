@@ -2,9 +2,6 @@
 
 
 
-
-
-
 #ifndef mozilla_dom_WebSchedulerMainThread_h
 #define mozilla_dom_WebSchedulerMainThread_h
 
@@ -35,8 +32,7 @@ class WebTaskSchedulerMainThread final : public WebTaskScheduler {
   void DecreaseNumNormalOrHighPriorityQueuesHaveTaskScheduled() override;
 
  private:
-  nsresult SetTimeoutForDelayedTask(WebTask* aTask, uint64_t aDelay,
-                                    EventQueuePriority aPriority) override;
+  nsresult SetTimeoutForDelayedTask(WebTask* aTask, uint64_t aDelay) override;
   bool DispatchEventLoopRunnable(EventQueuePriority aPriority) override;
 
   ~WebTaskSchedulerMainThread() = default;
