@@ -7,7 +7,10 @@ import {
   when,
   ifDefined,
 } from "chrome://global/content/vendor/lit.all.mjs";
-import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
+import {
+  MozLitElement,
+  hasModifierKey,
+} from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-support-link.mjs";
 
@@ -32,7 +35,6 @@ import "chrome://global/content/elements/moz-support-link.mjs";
  *   sub-pages and search-results states where no category should be highlighted.
  * @property {Array} pageNavButtons - The array of all page nav buttons
  * @property {Array} secondaryNavButtons - The array of all secondary nav buttons
- * @property {Array} visiblePageNavButtons - The array of visible page nav buttons
  * @slot [default] - Used to append moz-page-nav-button elements to the navigation.
  * @slot [subheading] - Used to append page specific search input or notification to the nav.
  */
@@ -44,7 +46,6 @@ export default class MozPageNav extends MozLitElement {
     allowNoSelection: { type: Boolean },
     pageNavButtons: { type: Array, state: true },
     secondaryNavButtons: { type: Array, state: true },
-    visiblePageNavButtons: { type: Array, state: true },
   };
 
   static queries = {
@@ -60,24 +61,36 @@ export default class MozPageNav extends MozLitElement {
      */
     this.type = "default";
     this.allowNoSelection = false;
+    /** @type {MozPageNavButton[]} */
     this.pageNavButtons = [];
+    /** @type {MozPageNavButton[]} */
     this.secondaryNavButtons = [];
-    this.visiblePageNavButtons = [];
   }
 
+  get visiblePageNavButtons() {
+    return this.pageNavButtons.filter(this.checkElementVisibility);
+  }
+
+  /**
+   * @param {HTMLSlotElement} el
+   */
   getSlottedChildren(el) {
     return el
       ?.assignedElements()
-      .filter(element => element?.localName === "moz-page-nav-button");
+      .filter(element => element instanceof MozPageNavButton);
   }
 
+  /**
+   * @param {MozPageNavButton} element
+   */
   checkElementVisibility(element) {
     let computedStyles = window.getComputedStyle(element);
     return (
+      computedStyles &&
       !element.hidden &&
       computedStyles.getPropertyValue("display") !== "none" &&
       computedStyles.getPropertyValue("visibility") !== "hidden" &&
-      computedStyles.getPropertyValue("opacity") > 0
+      computedStyles.getPropertyValue("opacity") != "0"
     );
   }
 
@@ -86,6 +99,9 @@ export default class MozPageNav extends MozLitElement {
   }
 
   handleFocus(e) {
+    if (hasModifierKey(e)) {
+      return;
+    }
     if (e.key == "ArrowDown" || e.key == "ArrowRight") {
       e.preventDefault();
       this.focusNextView();
@@ -113,14 +129,17 @@ export default class MozPageNav extends MozLitElement {
     }
   }
 
+  /**
+   * @param {Event & { target: HTMLSlotElement}} event
+   */
   onPrimaryNavChange(event) {
     this.pageNavButtons = this.getSlottedChildren(event.target);
-    this.visiblePageNavButtons = this.pageNavButtons.filter(
-      this.checkElementVisibility
-    );
     this.updateNavButtonsState();
   }
 
+  /**
+   * @param {Event & { target: HTMLSlotElement}} event
+   */
   onSecondaryNavChange(event) {
     this.secondaryNavButtons = this.getSlottedChildren(event.target);
     let secondaryNavElements = event.target.assignedElements();
@@ -136,9 +155,7 @@ export default class MozPageNav extends MozLitElement {
     for (let button of this.pageNavButtons) {
       button.selected = button.view == this.currentView;
     }
-    let visibleButtons = this.pageNavButtons.filter(
-      this.checkElementVisibility
-    );
+    let visibleButtons = this.visiblePageNavButtons;
     for (let button of visibleButtons) {
       isViewSelected = isViewSelected || button.selected;
     }
@@ -218,6 +235,11 @@ export class MozPageNavButton extends MozLitElement {
     supportPage: { type: String, attribute: "support-page" },
     title: { type: String, mapped: true },
   };
+
+  constructor() {
+    super();
+    this.selected = false;
+  }
 
   connectedCallback() {
     super.connectedCallback();
