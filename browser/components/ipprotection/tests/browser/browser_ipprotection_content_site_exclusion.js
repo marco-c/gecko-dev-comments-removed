@@ -24,7 +24,6 @@ add_task(async function test_site_exclusion_feature_pref_disabled() {
   Services.perms.removeByType(PERM_NAME);
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
-  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -269,7 +268,6 @@ add_task(
 
     let setRuleSpy = sandbox.spy(IPPPermissionRules, "setRule");
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
-    sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
     
     let tab = await BrowserTestUtils.openNewForegroundTab(
@@ -371,7 +369,6 @@ add_task(
     });
 
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
-    sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
     const PROTECTED_SITE = "https://example.com";
     const EXCLUDED_SITE = "https://example.org";
@@ -465,7 +462,6 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   });
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
-  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
   const PROTECTED_SITE = "https://example.com";
   const EXCLUDED_SITE = "https://example.org";
@@ -553,7 +549,6 @@ add_task(async function test_site_exclusion_updates_on_tab_switch() {
   });
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
-  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
   const PROTECTED_SITE = "https://example.com";
   const EXCLUDED_SITE = "https://example.org";
@@ -693,7 +688,6 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
 
   sandbox.stub(IPPSiteRuleManager, "canManage").returns(false);
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
-  sandbox.stub(IPPProxyManager, "mode").value(IPPMode.MODE_FULL);
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, ABOUT_PAGE);
 

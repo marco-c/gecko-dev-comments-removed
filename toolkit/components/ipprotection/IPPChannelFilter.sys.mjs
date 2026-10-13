@@ -24,8 +24,6 @@ const isXpcshell = Services.env.exists("XPCSHELL_TEST_PROFILE_DIR");
 
 /**
  * The IPP Mode the default behavior of Channels
- *
- * @typedef {number} IPPProxyMode
  */
 export const IPPMode = Object.freeze({
   /**
@@ -44,16 +42,6 @@ export const IPPMode = Object.freeze({
    * Tunnel No requests by default.
    */
   MODE_INCLUSION: 3,
-
-  from(value) {
-    return Object.values(IPPMode).includes(value) ? value : IPPMode.MODE_FULL;
-  },
-
-  getDefault() {
-    return IPPMode.from(
-      Services.prefs.getIntPref(MODE_PREF, IPPMode.MODE_FULL)
-    );
-  },
 });
 
 const TRACKING_FLAGS =
@@ -83,6 +71,15 @@ export class IPPChannelFilter {
    */
   static create() {
     return new IPPChannelFilter();
+  }
+
+  /**
+   * Sets the IPP Mode.
+   *
+   * @param {IPPMode} [mode] - the new mode
+   */
+  static setMode(mode) {
+    Services.prefs.setIntPref(MODE_PREF, mode);
   }
 
   /**
@@ -204,6 +201,15 @@ export class IPPChannelFilter {
     Object.freeze(proxyInfo);
     this.proxyInfo = proxyInfo;
     this.#processPendingChannels();
+  }
+
+  constructor() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "mode",
+      MODE_PREF,
+      IPPMode.MODE_FULL
+    );
   }
 
   /**
@@ -433,9 +439,6 @@ export class IPPChannelFilter {
       }
     }
   }
-
-  /** @type {IPPProxyMode} Set by IPPProxyManager. */
-  mode = IPPMode.MODE_FULL;
 
   /**
    * Returns true if this filter is active.

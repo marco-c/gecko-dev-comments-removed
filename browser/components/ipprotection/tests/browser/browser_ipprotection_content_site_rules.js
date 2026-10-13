@@ -857,21 +857,20 @@ add_task(async function test_site_rule_status_inclusion_from_rule() {
     isReady: true,
   });
 
-  
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    MOCK_SITE_NAME
-  );
-
   const principal =
     Services.scriptSecurityManager.createContentPrincipalFromOrigin(
       MOCK_SITE_NAME
     );
   IPPPermissionRules.setRule(principal, IPPPrincipalRules.INCLUDED);
-  await waitForProxyState(IPPProxyStates.ACTIVE);
 
-  let content = await openPanel();
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    MOCK_SITE_NAME
+  );
+
+  let content = await openPanel({
+    isProtectionEnabled: false,
+  });
 
   Assert.ok(
     content.state.siteData?.hasSiteRule,
@@ -882,11 +881,15 @@ add_task(async function test_site_rule_status_inclusion_from_rule() {
     "The panel should resolve the rule as an inclusion"
   );
 
+  await checkSiteRuleStatus(
+    content,
+    INCLUSION_DESCRIPTION_L10N_ID,
+    VPN_ON_ICON
+  );
+
   await closePanel();
   BrowserTestUtils.removeTab(tab);
-  
   IPPPermissionRules.setRule(principal, IPPPrincipalRules.DEFAULT);
-  await waitForProxyState(IPPProxyStates.READY);
   await SpecialPowers.popPrefEnv();
 });
 

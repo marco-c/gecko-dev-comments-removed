@@ -150,10 +150,6 @@ export class IPProtectionToolbarButton {
       "IPPProxyManager:StateChanged",
       this.handleEvent
     );
-    lazy.IPPProxyManager.addEventListener(
-      "IPPProxyManager:ModeChanged",
-      this.handleEvent
-    );
     lazy.IPPSiteRuleManager.addEventListener(
       "SiteRuleManager:RuleChanged",
       this.handleEvent
@@ -218,7 +214,6 @@ export class IPProtectionToolbarButton {
     if (
       event.type !== "IPProtectionService:StateChanged" &&
       event.type !== "IPPProxyManager:StateChanged" &&
-      event.type !== "IPPProxyManager:ModeChanged" &&
       event.type !== "SiteRuleManager:RuleChanged" &&
       event.type !== "TabSelect"
     ) {
@@ -290,7 +285,7 @@ export class IPProtectionToolbarButton {
       lazy.IPPSiteRuleManager.canManage(principal) &&
       lazy.IPPSiteRuleManager.getRule(principal) ===
         lazy.IPPPrincipalRules.INCLUDED;
-    let isActive = lazy.IPPProxyManager.isDefaultModeActive;
+    let isActive = lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
     let isPaused = lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED;
 
     // Show error icon when proxy manager is in ERROR state.
@@ -534,10 +529,6 @@ export class IPProtectionToolbarButton {
     );
     lazy.IPPProxyManager.removeEventListener(
       "IPPProxyManager:StateChanged",
-      this.handleEvent
-    );
-    lazy.IPPProxyManager.removeEventListener(
-      "IPPProxyManager:ModeChanged",
       this.handleEvent
     );
     lazy.IPPSiteRuleManager.removeEventListener(

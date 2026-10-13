@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { IPPChannelFilter } = ChromeUtils.importESModule(
+const { IPPChannelFilter, IPPMode } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs"
 );
 
@@ -908,6 +908,7 @@ add_task(async function test_shouldProxy_ipp_exception() {
 
 add_task(async function test_shouldProxy() {
   const INCLUSION_PREF = "browser.ipProtection.inclusion.match_patterns";
+  const MODE_PREF = "browser.ipProtection.mode";
   const GUARDIAN_PREF = "browser.ipProtection.guardian.endpoint";
 
   
@@ -919,10 +920,9 @@ add_task(async function test_shouldProxy() {
 
   
   
-  const makeFilter = (mode = IPPMode.MODE_FULL) => {
+  const makeFilter = () => {
     const f = IPPChannelFilter.create();
     f.proxyInfo = {};
-    f.mode = mode;
     return f;
   };
 
@@ -953,12 +953,12 @@ add_task(async function test_shouldProxy() {
   Services.prefs.clearUserPref(INCLUSION_PREF);
 
   
+  Services.prefs.setIntPref(MODE_PREF, IPPMode.MODE_INCLUSION);
   Assert.ok(
-    !makeFilter(IPPMode.MODE_INCLUSION).shouldProxy(
-      makeChannel("http://example.com/")
-    ),
+    !makeFilter().shouldProxy(makeChannel("http://example.com/")),
     "MODE_INCLUSION: non-included URL should not be proxied"
   );
+  Services.prefs.clearUserPref(MODE_PREF);
 
   
   Assert.ok(

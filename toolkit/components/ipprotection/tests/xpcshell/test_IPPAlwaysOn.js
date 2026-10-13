@@ -6,6 +6,9 @@
 const { IPPAlwaysOnSingleton } = ChromeUtils.importESModule(
   "resource://testing-common/ipprotection/IPPAlwaysOn.sys.mjs"
 );
+const { IPPEarlyStartupFilter } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPEarlyStartupFilter.sys.mjs"
+);
 const { IPProtectionServerlist, PrefServerList } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
@@ -140,22 +143,44 @@ add_task(async function test_proxy_starts_on_service_ready() {
   sandbox.restore();
 });
 
-add_task(async function test_traffic_is_held_from_init() {
+add_task(async function test_proxy_starts_when_early_filter_marked_active() {
   const sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
+  
+  
+  
+  
   const alwaysOn = makeAlwaysOn(sandbox);
-  registerAsHelper(alwaysOn);
+  const earlyFilter = new IPPEarlyStartupFilter(() => alwaysOn.alwaysOnEnabled);
+  IPProtectionActivator.addHelpers([alwaysOn, earlyFilter]);
+  IPProtectionActivator.setupHelpers();
 
+  
+  
+  const waitForTrulyActive = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () =>
+      IPPProxyManager.state === IPPProxyStates.ACTIVE &&
+      !!IPPProxyManager.channelFilter()?.proxyInfo
+  );
   IPProtectionService.init();
+  await waitForTrulyActive;
 
+  Assert.equal(
+    IPPProxyManager.state,
+    IPPProxyStates.ACTIVE,
+    "Proxy should be ACTIVE"
+  );
   Assert.ok(
-    IPPProxyManager.channelFilter()?.active,
-    "Traffic should be held as soon as always-on is initialized"
+    IPPProxyManager.channelFilter()?.proxyInfo,
+    "proxyInfo should be set, not just the filter registered"
   );
 
   alwaysOn.uninit();
-  await stopProxyForCleanup();
+  earlyFilter.uninit();
+  await IPPProxyManager.stop(false);
   IPProtectionService.uninit();
   restoreHelpers();
   sandbox.restore();

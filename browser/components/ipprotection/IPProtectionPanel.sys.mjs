@@ -17,8 +17,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPOnboardingMessage:
     "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs",
-  IPPMode:
-    "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
   ERRORS: "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
@@ -411,7 +409,8 @@ export class IPProtectionPanel {
       unauthenticated:
         lazy.IPProtectionService.state ===
         lazy.IPProtectionStates.UNAUTHENTICATED,
-      isProtectionEnabled: lazy.IPPProxyManager.isDefaultModeActive,
+      isProtectionEnabled:
+        lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
       location: lazy.EGRESS_LOCATION || null,
       locationsList: lazy.IPProtectionServerlist.countries,
       error: "",
@@ -537,15 +536,6 @@ export class IPProtectionPanel {
       if (location?.country.locked) {
         country = undefined;
       }
-    }
-
-    // A connection kept up for the always-on sites is widened, not restarted.
-    if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE) {
-      if (country) {
-        lazy.IPPProxyManager.switch(country);
-      }
-      lazy.IPPProxyManager.setMode(lazy.IPPMode.getDefault());
-      return;
     }
 
     const { error } = await lazy.IPPProxyManager.start(
@@ -973,10 +963,6 @@ export class IPProtectionPanel {
       this.handleEvent
     );
     lazy.IPPProxyManager.addEventListener(
-      "IPPProxyManager:ModeChanged",
-      this.handleEvent
-    );
-    lazy.IPPProxyManager.addEventListener(
       "IPPProxyManager:UsageChanged",
       this.handleEvent
     );
@@ -1005,10 +991,6 @@ export class IPProtectionPanel {
     );
     lazy.IPPProxyManager.removeEventListener(
       "IPPProxyManager:StateChanged",
-      this.handleEvent
-    );
-    lazy.IPPProxyManager.removeEventListener(
-      "IPPProxyManager:ModeChanged",
       this.handleEvent
     );
     lazy.IPPProxyManager.removeEventListener(
@@ -1197,7 +1179,6 @@ export class IPProtectionPanel {
       this.enroll({ entrypoint: "vpn_integration_panel" });
     } else if (
       event.type == "IPPProxyManager:StateChanged" ||
-      event.type == "IPPProxyManager:ModeChanged" ||
       event.type == "IPProtectionService:StateChanged" ||
       event.type === "IPPAuthProvider:StateChanged"
     ) {
@@ -1210,7 +1191,8 @@ export class IPProtectionPanel {
         unauthenticated:
           lazy.IPProtectionService.state ===
           lazy.IPProtectionStates.UNAUTHENTICATED,
-        isProtectionEnabled: lazy.IPPProxyManager.isDefaultModeActive,
+        isProtectionEnabled:
+          lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE,
         hasUpgraded: lazy.IPProtectionService.authProvider.hasUpgraded,
         error: errorType,
         isActivating:

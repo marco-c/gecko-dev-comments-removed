@@ -1,9 +1,7 @@
 # Constants
 
 The `ERRORS` constants for the IP Protection feature are defined in
-`toolkit/components/ipprotection/IPPProxyManager.sys.mjs`, and the
-`IPPMode` constants in
-`toolkit/components/ipprotection/IPPChannelFilter.sys.mjs`.
+`toolkit/components/ipprotection/IPPProxyManager.sys.mjs`.
 
 ## Error Codes
 
@@ -99,27 +97,3 @@ recorded as its `errorType`.
 from `start()` or `stop()` as `Error` objects and bypass the activation
 promise; they represent internal consistency violations and do not affect proxy
 state.
-
-(proxy-modes)=
-## Proxy Modes
-
-`IPPMode` are the routing behaviors a connection can run in, applied to
-requests that no `IPPSiteRuleManager` rule matched. `IPPMode.from()` maps any
-other value onto `MODE_FULL`, and `IPPMode.getDefault()` reads the mode new
-connections start in from `browser.ipProtection.mode`.
-
-`IPPMode.MODE_FULL` (`0`)
-
-: Route every request. The default.
-
-`IPPMode.MODE_PB` (`1`)
-
-: Route only requests made from a private browsing window.
-
-`IPPMode.MODE_TRACKER` (`2`)
-
-: Route only requests classified as third-party tracking.
-
-`IPPMode.MODE_INCLUSION` (`3`)
-
-: Route nothing unless a site rule includes it.
