@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "proxy/ScriptedProxyHandler.h"
 
 #include "mozilla/Maybe.h"
@@ -1196,6 +1194,10 @@ ScriptedProxyHandler::checkGetTrapResult(JSContext* cx, HandleObject target,
     
     if (desc->isDataDescriptor() && !desc->configurable() &&
         !desc->writable()) {
+      
+      
+      MOZ_ASSERT_IF(target->is<NativeObject>(),
+                    target->needsProxyGetSetResultValidation());
       bool same;
       if (!SameValue(cx, trapResult, desc->value(), &same)) {
         return GetTrapValidationResult::Exception;
