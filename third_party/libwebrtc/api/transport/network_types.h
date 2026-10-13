@@ -16,6 +16,7 @@
 #include <optional>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "api/transport/ecn_marking.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
@@ -211,6 +212,7 @@ struct RTC_EXPORT TransportPacketsFeedback {
   Timestamp feedback_time = Timestamp::PlusInfinity();
   DataSize data_in_flight = DataSize::Zero();
 
+  ABSL_DEPRECATED("Use HasPacketWithBleachedEct1() instead")
   bool transport_supports_ecn = false;
   std::vector<PacketResult> packet_feedbacks;
 
@@ -224,6 +226,10 @@ struct RTC_EXPORT TransportPacketsFeedback {
 
   
   bool HasPacketWithEcnCe() const;
+
+  
+  
+  bool HasPacketWithBleachedEct1() const;
 };
 
 

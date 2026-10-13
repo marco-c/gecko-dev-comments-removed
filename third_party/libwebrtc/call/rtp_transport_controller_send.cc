@@ -740,17 +740,19 @@ void RtpTransportControllerSend::HandleTransportPacketsFeedback(
   if (sending_packets_as_ect1_) {
     bool congestion_controller_support_ecn =
         controller_ && controller_->SupportsEcnAdaptation();
+    bool transport_bleaches_ect1 = feedback.HasPacketWithBleachedEct1();
     
     
-    if (!feedback.transport_supports_ecn ||
-        !congestion_controller_support_ecn) {
+    
+    if (transport_bleaches_ect1 || !congestion_controller_support_ecn) {
       sending_packets_as_ect1_ = false;
       packet_router_.ConfigureForRtcpFeedback(
           rfc_8888_feedback_negotiated_,
           sending_packets_as_ect1_);
-      RTC_LOG(LS_INFO) << "Transport is "
-                       << (!feedback.transport_supports_ecn ? "not " : "")
-                       << "ECN capable. Congestion Controller does "
+      RTC_LOG(LS_INFO) << "Transport does "
+                       << (transport_bleaches_ect1 ? "not " : "")
+                       << "preserve the ECT(1) marking. Congestion Controller "
+                          "does "
                        << (congestion_controller_support_ecn ? "" : "not ")
                        << "support ECN. Stop sending ECT(1).";
     }
