@@ -632,6 +632,9 @@ struct InitContextDesc final {
 
 constexpr uint32_t kMaxTransformFeedbackSeparateAttribs = 4;
 
+
+constexpr uint32_t kMaxUniformBlockSize = 64 * 1024;
+
 struct Limits final {
   ExtensionBits supportedExtensions;
 
