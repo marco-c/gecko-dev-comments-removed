@@ -119,6 +119,7 @@ class GeckoEngineSession(
     internal var currentUrl: String? = null
     internal var currentTitle: String? = null
     internal var lastLoadRequestUri: String? = null
+    internal var lastLoadRequestIsFromDirectNavigation: Boolean = false
     internal var pageLoadingUrl: String? = null
     internal var appRedirectUrl: String? = null
     internal var scrollY: Int = 0
@@ -299,6 +300,29 @@ class GeckoEngineSession(
                     notifyObservers {
                         onSaveToPdfException(throwable)
                     }
+                    GeckoResult()
+                },
+            )
+    }
+
+    /** See [EngineSession.requestPdfToShare] */
+    override fun requestPdfToShare(
+        onResult: (Response) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        pdfToDownload()
+            .then(
+                { webResponse ->
+                    if (webResponse?.body == null) {
+                        onException(IllegalStateException("No PDF available"))
+                        return@then GeckoResult<Void>()
+                    }
+
+                    onResult(webResponse.toResponse())
+                    GeckoResult()
+                },
+                { throwable ->
+                    onException(throwable)
                     GeckoResult()
                 },
             )
@@ -1144,6 +1168,9 @@ class GeckoEngineSession(
                     lastLoadRequestUri = ""
                 }
 
+                val isFromDirectNavigation =
+                    request.isDirectNavigation || (request.isRedirect && lastLoadRequestIsFromDirectNavigation)
+
                 val interceptor = settings.requestInterceptor
                 val interceptionResponse =
                     if (
@@ -1155,6 +1182,7 @@ class GeckoEngineSession(
                         val engineSession = this@GeckoEngineSession
                         val isSameDomain =
                             engineSession.currentUrl?.tryGetHostFromUrl() == request.uri.tryGetHostFromUrl()
+                        val sourceUrl = if (isFromDirectNavigation) null else engineSession.currentUrl
                         interceptor
                             .onLoadRequest(
                                 engineSession,
@@ -1176,6 +1204,7 @@ class GeckoEngineSession(
                                                 appIntent = appIntent,
                                                 fallbackUrl = fallbackUrl,
                                                 appName = appName,
+                                                sourceUrl = sourceUrl,
                                             )
                                         }
                                     }
@@ -1199,6 +1228,7 @@ class GeckoEngineSession(
                 }
 
                 lastLoadRequestUri = request.uri
+                lastLoadRequestIsFromDirectNavigation = isFromDirectNavigation
                 return interceptionResponse
             }
         }
