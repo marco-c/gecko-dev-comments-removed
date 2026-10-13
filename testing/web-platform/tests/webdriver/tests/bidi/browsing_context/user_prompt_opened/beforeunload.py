@@ -47,4 +47,6 @@ async def test_beforeunload(
     )
 
     
-    navigation_future.cancel()
+    
+    
+    await wait_for_future_safe(navigation_future)
