@@ -6452,6 +6452,7 @@ void HTMLMediaElement::Error(uint16_t aErrorCode,
 }
 
 void HTMLMediaElement::PlaybackEnded() {
+  RefPtr<HTMLMediaElement> kungFuDeathGrip(this);
   
   AddRemoveSelfReference();
 
