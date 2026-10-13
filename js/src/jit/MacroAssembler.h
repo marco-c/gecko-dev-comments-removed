@@ -1530,6 +1530,18 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   
+  
+  
+  inline void lshift32ThenAdd(Imm32 shift, Register rhs, Register srcDest);
+  inline void lshift32ThenOr(Imm32 shift, Register rhs, Register srcDest);
+  inline void rshiftPtrThenXor(Imm32 shift, Register rhs, Register srcDest);
+  inline void rotateLeft64ThenXor(Imm32 count, Register64 rhs,
+                                  Register64 srcDest);
+
+  
+  
+
+  
   inline void clz32(Register src, Register dest,
                     bool knownNotZero) PER_SHARED_ARCH;
   inline void ctz32(Register src, Register dest,
@@ -5851,7 +5863,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void allocateString(Register result, Register temp, gc::AllocKind allocKind,
                       gc::Heap initialHeap, Label* fail);
   void nurseryAllocateBigInt(Register result, Register temp, Label* fail);
-  void copySlotsFromTemplate(Register obj,
+  void copySlotsFromTemplate(Register obj, Register temp,
                              const TemplateNativeObject& templateObj,
                              uint32_t start, uint32_t end);
   void fillSlotsWithConstantValue(Address addr, Register temp, uint32_t start,

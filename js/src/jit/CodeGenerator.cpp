@@ -2511,14 +2511,28 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   masm.branchTwoByteString(input, &doneQuickCheck);
 
   
+  
   masm.loadStringLength(input, temp2);
   masm.branch32(Assembler::GreaterThanOrEqual, lastIndex, temp2,
                 &doneQuickCheck);
+  masm.loadStringChars(input, temp3, CharEncoding::Latin1);
+
+  
+  Label skipMask;
+  masm.sub32(Imm32(4), temp2);
+  masm.branch32(Assembler::GreaterThan, lastIndex, temp2, &skipMask);
+
+  
+  masm.load32(BaseIndex(temp3, lastIndex, TimesOne), temp2);
+  masm.and32(Address(regexpReg, RegExpShared::offsetOfQuickCheckMask()), temp2);
+  masm.branch32(Assembler::NotEqual,
+                Address(regexpReg, RegExpShared::offsetOfQuickCheckValue()),
+                temp2, notFound);
+  masm.bind(&skipMask);
 
   
   
-  masm.loadStringChars(input, temp2, CharEncoding::Latin1);
-  masm.load8ZeroExtend(BaseIndex(temp2, lastIndex, TimesOne), temp2);
+  masm.load8ZeroExtend(BaseIndex(temp3, lastIndex, TimesOne), temp2);
 
   
   static_assert(RegExpShared::QuickCheckBitsetBitsPerWord == 32);
@@ -2532,21 +2546,6 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
               temp3);
   masm.flexibleRshift32(temp2, temp3);
   masm.branchTest32(Assembler::NonZero, temp3, Imm32(1), notFound);
-
-  
-  masm.loadStringLength(input, temp2);
-  masm.sub32(Imm32(4), temp2);
-  masm.branch32(Assembler::GreaterThan, lastIndex, temp2, &doneQuickCheck);
-
-  
-  masm.loadStringChars(input, temp2, CharEncoding::Latin1);
-  masm.load32(BaseIndex(temp2, lastIndex, TimesOne), temp2);
-
-  
-  masm.and32(Address(regexpReg, RegExpShared::offsetOfQuickCheckMask()), temp2);
-  masm.branch32(Assembler::NotEqual,
-                Address(regexpReg, RegExpShared::offsetOfQuickCheckValue()),
-                temp2, notFound);
   masm.bind(&doneQuickCheck);
 
   
@@ -2626,22 +2625,6 @@ static bool PrepareAndExecuteRegExp(MacroAssembler& masm, Register regexp,
   return true;
 }
 
-
-
-template <uint32_t FromBitMask, uint32_t ToBitMask>
-static void ShiftFlag32(MacroAssembler& masm, Register reg) {
-  static_assert(std::has_single_bit(FromBitMask));
-  static_assert(std::has_single_bit(ToBitMask));
-  static_assert(FromBitMask != ToBitMask);
-  constexpr uint32_t fromShift = std::countr_zero(FromBitMask);
-  constexpr uint32_t toShift = std::countr_zero(ToBitMask);
-  if (fromShift < toShift) {
-    masm.lshift32(Imm32(toShift - fromShift), reg);
-  } else {
-    masm.rshift32(Imm32(fromShift - toShift), reg);
-  }
-}
-
 static void EmitInitDependentStringBase(MacroAssembler& masm,
                                         Register dependent, Register base,
                                         Register temp1, Register temp2,
@@ -2670,11 +2653,14 @@ static void EmitInitDependentStringBase(MacroAssembler& masm,
     
     
     masm.nor32(Imm32(~StringFlags::ATOM_BIT), temp1, temp2);
-    ShiftFlag32<StringFlags::ATOM_BIT, StringFlags::DEPENDED_ON_BIT>(masm,
-                                                                     temp2);
-    masm.or32(temp2, temp1);
+    constexpr uint32_t AtomIndex = std::countr_zero(StringFlags::ATOM_BIT);
+    constexpr uint32_t DependedOnIndex =
+        std::countr_zero(StringFlags::DEPENDED_ON_BIT);
+    static_assert(AtomIndex < DependedOnIndex);
+    constexpr uint32_t ShiftAmount = DependedOnIndex - AtomIndex;
+    masm.lshift32ThenOr(Imm32(ShiftAmount), temp1, temp2);
+    masm.store32(temp2, Address(base, JSString::offsetOfFlags()));
     masm.movePtr(base, temp2);
-    masm.store32(temp1, Address(temp2, JSString::offsetOfFlags()));
   }
   masm.bind(&markedDependedOn);
 
