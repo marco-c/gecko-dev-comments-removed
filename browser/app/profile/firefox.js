@@ -3852,7 +3852,7 @@ pref("toolkit.rust-components.logging.crates", "");
 pref("toolkit.rust-components.logging.internal-level", "Warn");
 
 
-pref("browser.settings-redesign.enabled", true, locked);
+pref("browser.settings-redesign.enabled", true);
 
 
 
