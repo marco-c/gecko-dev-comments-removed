@@ -282,10 +282,6 @@ enum may_purge_now_result_t {
   WantsLater,
 };
 
-
-
-typedef bool (*purge_keep_going_t)(void* aClosure);
-
 #ifdef __cplusplus
 }  
 #endif

@@ -11,8 +11,6 @@
 #ifndef malloc_decls_h
 #  define malloc_decls_h
 
-#  include <stdlib.h>
-
 #  include "mozjemalloc_types.h"
 
 #  define MALLOC_FUNCS_MALLOC_BASE 1
@@ -26,6 +24,15 @@
     (MALLOC_FUNCS_ARENA_BASE | MALLOC_FUNCS_ARENA_ALLOC)
 #  define MALLOC_FUNCS_ALL \
     (MALLOC_FUNCS_MALLOC | MALLOC_FUNCS_JEMALLOC | MALLOC_FUNCS_ARENA)
+
+
+
+
+
+#  if !defined(MALLOC_DECL) && defined(__cplusplus)
+#    include <functional>
+#    include "mozilla/Maybe.h"
+#  endif
 
 #endif  
 
@@ -153,15 +160,9 @@ MALLOC_DECL(moz_enable_deferred_purge, bool, bool)
 
 
 
-
-
-
-
-
-
 #    ifdef __cplusplus
 MALLOC_DECL(moz_may_purge_now, may_purge_now_result_t, bool, uint32_t,
-            purge_keep_going_t, void*)
+            const mozilla::Maybe<std::function<bool()>>&)
 #    endif
 
 

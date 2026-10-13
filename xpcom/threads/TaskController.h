@@ -285,16 +285,6 @@ class IdleTaskManager : public TaskManager {
 
 
 
-
-class LowestTaskManager : public TaskManager {
- public:
-  bool IsSuspended(const MutexAutoLock& aProofOfLock) override;
-};
-
-
-
-
-
 class TaskController {
  public:
   explicit TaskController();
@@ -319,8 +309,6 @@ class TaskController {
     mIdleTaskManager = aIdleTaskManager;
   }
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
-
-  LowestTaskManager* GetLowestTaskManager() { return mLowestTaskManager.get(); }
 
   uint64_t RunOutOfMTTasksCount() { return mRunOutOfMTTasksCounter; }
 
@@ -371,18 +359,19 @@ class TaskController {
 
 #ifdef MOZ_MEMORY
   
-  static void SetupMemoryCleanup();
+  static void SetupIdleMemoryCleanup();
 
   
-  void UpdateMemoryCleanupPrefs();
-
-  
-  void MayScheduleMemoryCleanup();
+  void UpdateIdleMemoryCleanupPrefs();
 
   
   
+  void MayScheduleIdleMemoryCleanup();
+
   
-  void RequestMemoryCleanup(StaticString aReason);
+  
+  
+  void RequestIdleMemoryCleanup(StaticString aReason);
 #endif
 
  private:
@@ -487,9 +476,6 @@ class TaskController {
   CondVar* mExternalCondVar = nullptr;
   
   RefPtr<IdleTaskManager> mIdleTaskManager;
-
-  
-  RefPtr<LowestTaskManager> mLowestTaskManager;
 
   
   std::atomic<uint64_t> mRunOutOfMTTasksCounter;

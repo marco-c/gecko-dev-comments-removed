@@ -405,7 +405,7 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
 
 #ifdef MOZ_MEMORY
   
-  mozilla::TaskController::SetupMemoryCleanup();
+  mozilla::TaskController::SetupIdleMemoryCleanup();
 #endif
 
   

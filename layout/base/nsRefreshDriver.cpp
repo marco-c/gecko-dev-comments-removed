@@ -647,8 +647,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     TaskController* taskController = TaskController::Get();
     IdleTaskManager* idleTaskManager = taskController->GetIdleTaskManager();
     VsyncTaskManager* vsyncTaskManager = VsyncTaskManager::Get();
-    LowestTaskManager* lowestTaskManager =
-        taskController->GetLowestTaskManager();
 
     
     
@@ -656,9 +654,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
         taskController->PendingMainthreadTaskCountIncludingSuspended();
     uint64_t pendingIdleTaskCount = idleTaskManager->PendingTaskCount();
     uint64_t pendingVsyncTaskCount = vsyncTaskManager->PendingTaskCount();
-    uint64_t pendingLowestTaskCount = lowestTaskManager->PendingTaskCount();
-    if (!(pendingTaskCount > (pendingIdleTaskCount + pendingVsyncTaskCount +
-                              pendingLowestTaskCount))) {
+    if (!(pendingTaskCount > (pendingIdleTaskCount + pendingVsyncTaskCount))) {
       return false;
     }
     if (aCheckOnlyNewPendingTasks) {
@@ -667,10 +663,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
     uint64_t idleTaskCount = idleTaskManager->ProcessedTaskCount();
 
-    
-    
-    
-    
     
     
     

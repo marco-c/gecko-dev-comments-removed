@@ -1355,7 +1355,7 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult) {
     
     
     
-    TaskController::Get()->MayScheduleMemoryCleanup();
+    TaskController::Get()->MayScheduleIdleMemoryCleanup();
   }
 #endif
 

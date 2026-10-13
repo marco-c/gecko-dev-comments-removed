@@ -26,7 +26,7 @@ function newTimer(name, delay, type) {
 const ignoredTimers = [
   "BackgroundHangThread_timer", 
   "CCGCScheduler::EnsureGCRunner", 
-  "MemoryCleanupWantsLaterCheck", 
+  "IdleMemoryCleanupWantsLaterCheck", 
   "dom::IdleGCTimerCallback", 
   "dom::PeriodicGCTimerCallback", 
   "IdleRunnableWrapper::SetTimer", 
