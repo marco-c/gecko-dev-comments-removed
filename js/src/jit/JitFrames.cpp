@@ -1487,10 +1487,6 @@ void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
   uintptr_t highestByteVisitedInPrevWasmFrame = 0;
 
   for (JitFrameIter frames(activation); !frames.done(); ++frames) {
-    if (wasm::Instance* exitInstance = frames.wasmExitInstance()) {
-      
-      wasm::TraceInstanceEdge(trc, exitInstance, "JitFrameIter exit instance");
-    }
     if (frames.isJSJit()) {
       const JSJitFrameIter& jitFrame = frames.asJSJit();
       switch (jitFrame.type()) {

@@ -58,7 +58,6 @@ JitFrameIter& JitFrameIter::operator=(const JitFrameIter& another) {
   MOZ_ASSERT(this != &another);
 
   act_ = another.act_;
-  wasmExitInstance_ = another.wasmExitInstance_;
   mustUnwindActivation_ = another.mustUnwindActivation_;
 
   if (isSome()) {
@@ -149,7 +148,6 @@ bool JitFrameIter::done() const {
 }
 
 void JitFrameIter::settle() {
-  wasmExitInstance_ = nullptr;
   if (isJSJit()) {
     const jit::JSJitFrameIter& jitFrame = asJSJit();
     if (jitFrame.type() != jit::FrameType::WasmToJSJit) {
@@ -183,12 +181,8 @@ void JitFrameIter::settle() {
 
     iter_.destroy();
     iter_.construct<wasm::WasmFrameIter>(act_, prevFP);
-    if (asWasm().done()) {
-      
-      
-      
-      wasmExitInstance_ = asWasm().exitInstance();
-    }
+    MOZ_ASSERT(!asWasm().done());
+    return;
   }
 
   if (isWasm()) {

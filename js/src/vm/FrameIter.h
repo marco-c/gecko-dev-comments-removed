@@ -108,9 +108,6 @@ class JitFrameIter {
  protected:
   jit::JitActivation* act_ = nullptr;
   mozilla::MaybeOneOf<jit::JSJitFrameIter, wasm::WasmFrameIter> iter_ = {};
-  
-  
-  wasm::Instance* wasmExitInstance_ = nullptr;
   bool mustUnwindActivation_ = false;
 
   void settle();
@@ -128,7 +125,6 @@ class JitFrameIter {
   void reset() {
     MOZ_ASSERT(isSome());
     iter_.destroy();
-    wasmExitInstance_ = nullptr;
   }
 
   bool isJSJit() const {
@@ -146,7 +142,6 @@ class JitFrameIter {
   const wasm::WasmFrameIter& asWasm() const {
     return iter_.ref<wasm::WasmFrameIter>();
   }
-  wasm::Instance* wasmExitInstance() const { return wasmExitInstance_; }
 
   
   const jit::JitActivation* activation() const { return act_; }
