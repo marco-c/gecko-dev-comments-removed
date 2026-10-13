@@ -601,6 +601,10 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     
     features->Add(dom::GPUFeatureName::Core_features_and_limits, aRv);
 
+    
+    
+    
+    
     RefPtr<SupportedLimits> limits = new SupportedLimits(this, deviceLimits);
 
     ffi::WGPUFfiDeviceDescriptor ffiDesc = {};
