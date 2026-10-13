@@ -7,6 +7,7 @@
 #include "APZTestCommon.h"
 #include "FrameMetrics.h"
 #include "InputUtils.h"
+#include "Units.h"
 #include "gtest/gtest.h"
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ServoComputedData.h"
@@ -107,6 +108,13 @@ class APZCPanningTester : public APZCBasicTester {
     PanGesture(PanGestureInput::PANGESTURE_END, apzc, ScreenIntPoint(50, 80),
                ScreenPoint(0, 0), mcc->Time(), MODIFIER_NONE,
                true);
+  }
+};
+
+class APZCDPITester : public APZCBasicTester {
+ protected:
+  virtual TestAPZCTreeManager* CreateTreeManager() override {
+    return new TestAPZCTreeManager(mcc, CSSToLayoutDeviceScale{2.0F});
   }
 };
 
@@ -677,6 +685,7 @@ TEST_F(APZCPanningTester, HoldGesture_DuringAutoscrollAnimation) {
   
   apzc->AssertStateIsAutoscroll();
 }
+
 TEST_F(APZCPanningTester, Autoscroll_ScrollWheelCooldown) {
   auto cooldownMS = StaticPrefs::apz_autoscroll_scroll_wheel_cooldown();
   
@@ -707,4 +716,31 @@ TEST_F(APZCPanningTester, Autoscroll_ScrollWheelCooldown) {
   
   Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
   apzc->AssertStateIsReset();
+}
+
+TEST_F(APZCDPITester, AutoScroll_DPITest) {
+  
+  apzc->StartAutoscroll(ScreenPoint(5, 5));
+  apzc->AssertStateIsAutoscroll();
+
+  
+  
+  tm->SetCurrentMousePosition(ScreenPoint(29, 5));
+
+  
+  mcc->AdvanceByMillis(100);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+
+  
+  EXPECT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(0, 0));
+
+  
+  tm->SetCurrentMousePosition(ScreenPoint(30, 5));
+
+  
+  mcc->AdvanceByMillis(100);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+
+  
+  EXPECT_NE(apzc->GetFrameMetrics().GetVisualScrollOffset(), CSSPoint(0, 0));
 }
