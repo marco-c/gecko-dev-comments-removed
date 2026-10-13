@@ -202,7 +202,13 @@ void VideoSink::SetPlaying(bool aPlaying, StopReason aReason) {
     
     TimeStamp nowTime;
     const auto clockTime = mAudioSink->GetPosition(&nowTime);
-    RefPtr<VideoData> currentFrame = VideoQueue().PeekFront();
+    
+    
+    
+    AutoTArray<RefPtr<VideoData>, 10> frames;
+    VideoQueue().GetElementsAfter(clockTime, &frames);
+    RefPtr<VideoData> currentFrame =
+        frames.IsEmpty() ? VideoQueue().PeekBack() : frames[0];
     if (currentFrame) {
       RenderVideoFrames(Span(&currentFrame, 1), clockTime.ToMicroseconds(),
                         nowTime);
