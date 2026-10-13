@@ -705,6 +705,14 @@ add_task(useAMOStageCert(), async function test_broken_file() {
 
 
 
+
+
+
+
+
+
+
+
 add_task(
   {
     ...useAMOStageCert(),
@@ -714,6 +722,10 @@ add_task(
   async function test_broken_file_not_requiring_signatures() {
     
     
+    
+    
+    const { SIGNED_TYPES } = AddonTestUtils.getXPIExports().XPIDatabase;
+    Assert.ok(SIGNED_TYPES.delete("dictionary"), "SIGNED_TYPES had dictionary");
     let addon = await promiseInstallWebExtension({
       useAddonManager: true,
       manifest: {
@@ -745,11 +757,22 @@ add_task(
     Assert.equal(addon.isActive, true);
     Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_NOT_REQUIRED);
 
-    await addon.uninstall();
     AddonManager.removeAddonListener(listener);
 
     AddonTestUtils.checkMessages(messages, {
       expected: [{ message: /verifyBundleSignedState failed for broken@dict/ }],
     });
+
+    
+    SIGNED_TYPES.add("dictionary");
+    
+    
+    changes = await verifySignatures();
+    Assert.equal(changes.disabled.length, 1);
+    Assert.ok(addon.appDisabled);
+    Assert.ok(!addon.isActive);
+    Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_BROKEN);
+
+    await addon.uninstall();
   }
 );

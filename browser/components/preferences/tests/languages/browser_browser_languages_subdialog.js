@@ -55,6 +55,9 @@ async function createLanguageToolsFile() {
 
 async function createDictionaryBrowseResults() {
   let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
+  
+  
+  
   let dictionaryPath = testDir + "/../addons/pl-dictionary.xpi";
   let filename = "dictionaries.json";
   let response = {
