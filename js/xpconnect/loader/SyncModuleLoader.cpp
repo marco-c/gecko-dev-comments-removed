@@ -242,6 +242,9 @@ void SyncModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {}
 
 nsresult SyncModuleLoader::ProcessRequests() {
   
+  
+  
+  nsresult result = NS_OK;
   while (!mLoadRequests.isEmpty()) {
     RefPtr<ScriptLoadRequest> request = mLoadRequests.StealFirst();
     ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
@@ -249,12 +252,12 @@ nsresult SyncModuleLoader::ProcessRequests() {
     if (!moduleRequest->mModuleScript) {
       
       
-      mLoadRequests.CancelRequestsAndClear();
-      return NS_ERROR_FAILURE;
+      
+      result = NS_ERROR_FAILURE;
     }
   }
 
-  return NS_OK;
+  return result;
 }
 
 }  
