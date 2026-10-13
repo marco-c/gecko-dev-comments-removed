@@ -1388,12 +1388,13 @@ bool TaskController::DoExecuteNextTaskOnlyMainThreadInternal(
       if (!result) {
         
         
+        
         auto insertion =
             mMainThreadTasks.insert(std::move(mCurrentTasksMT.top()));
         MOZ_ASSERT(insertion.second);
         task->mIterator = insertion.first;
         if (manager) {
-          manager->WillRunTask();
+          manager->DidQueueTask();
         }
       } else {
         task->mCompleted = true;
