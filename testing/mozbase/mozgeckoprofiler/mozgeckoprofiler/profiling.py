@@ -13,6 +13,10 @@ from .symbolication import get_extracted_symbols, symbolicate_profile_file
 LOG = get_proxy_logger("profiler")
 
 
+
+MAX_SYMBOLICATABLE_PROFILE_SIZE = 2**29 - 24
+
+
 def _gzip_file(in_path, out_path):
     with open(in_path, "rb") as f_in, gzip.open(out_path, "wb") as f_out:
         shutil.copyfileobj(f_in, f_out, 1024 * 1024)
@@ -57,9 +61,23 @@ def symbolicate_profile_json(profile_path, symbol_dir=None):
     
     out_path = final_path.with_name(f".{final_path.name}.sym.json.gz")
 
-    LOG.info(f"Symbolicating {profile_path.name} ({stat.st_size} bytes)...")
     try:
-        if symbolicate_profile_file(profile_path, out_path, symbol_dir):
+        
+        
+        
+        
+        
+        if stat.st_size > MAX_SYMBOLICATABLE_PROFILE_SIZE:
+            LOG.warning(
+                f"Not symbolicating {profile_path.name}: its {stat.st_size} bytes "
+                "are too large for profiler-edit."
+            )
+            symbolicated = False
+        else:
+            LOG.info(f"Symbolicating {profile_path.name} ({stat.st_size} bytes)...")
+            symbolicated = symbolicate_profile_file(profile_path, out_path, symbol_dir)
+
+        if symbolicated:
             sym_size = out_path.stat().st_size
             os.replace(out_path, final_path)
             LOG.info(
