@@ -22,6 +22,14 @@ let detectedFields = [
   "cc-exp-month",
   "cc-exp-year",
   "cc-csc",
+  
+  "other",
+  "tel",
+  "given-name",
+  
+  "other",
+  "tel",
+  "given-name",
 ];
 
 let expectedDetectFieldsResult;
@@ -32,14 +40,19 @@ function detectFields(fieldDetails) {
     return false;
   }
 
+  let mlFieldResults = [];
+  let results = [];
   for (let fd of fieldDetails) {
     if (!FormAutofillUtils.canUseML(fd)) {
       continue;
     }
 
-    fd.fieldName = detectedFields.shift();
-    fd.reason = "ml";
+    mlFieldResults.push(fd);
+    results.push({ label: detectedFields.shift() });
   }
+
+  let ML = new FormAutofillML();
+  ML.applyResults(mlFieldResults, results);
 
   return true;
 }
@@ -189,6 +202,57 @@ add_heuristic_tests([
       {
         invalid: true,
         fields: [{ fieldName: "postal-code", reason: "ml" }],
+      },
+    ],
+  },
+  
+  {
+    fixtureData: `
+      <p><label>Organization<input id="special"></label></p>
+      <p><label>tel: <input type="text" id="tel" name="tel"/></label></p>
+      <p><label>email: <input type="email" id="email" name="email"/></label></p>
+      <p><label>family name: <input id="family" name="familyname"/></label></p>`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "tel", reason: "ml" },
+          
+          
+          { fieldName: "email", reason: "regex-heuristic" },
+          
+          { fieldName: "given-name", reason: "ml" },
+        ],
+      },
+    ],
+  },
+  
+  
+  {
+    fixtureData: `
+      <p><label>Organization<input id="special"></label></p>
+      <p><label>tel: <input type="text" id="tel" name="tel"/></label></p>
+      <p><label>email: <input type="email" id="email" name="email"/></label></p>
+      <p><label>family name: <input id="family" name="familyname"/></label></p>`,
+    onTestSetup: () => {
+      return SpecialPowers.pushPrefEnv({
+        set: [["extensions.formautofill.useml.useHeuristicsForOther", true]],
+      });
+    },
+    onTestComplete: () => {
+      return SpecialPowers.popPrefEnv();
+    },
+    expectedResult: [
+      {
+        fields: [
+          
+          { fieldName: "organization", reason: "regex-heuristic" },
+          { fieldName: "tel", reason: "ml" },
+          
+          
+          { fieldName: "email", reason: "regex-heuristic" },
+          
+          { fieldName: "given-name", reason: "ml" },
+        ],
       },
     ],
   },

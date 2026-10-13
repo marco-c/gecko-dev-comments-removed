@@ -4081,6 +4081,10 @@ pref("extensions.formautofill.useml.ignoreFieldTypes", "");
 
 
 
+pref("extensions.formautofill.useml.useHeuristicsForOther", false);
+
+
+
 
 
 
