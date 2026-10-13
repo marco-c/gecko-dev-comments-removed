@@ -24,6 +24,8 @@ class Summariser {
   
   virtual void Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
                     int16_t oldReg, int64_t offset);
+  
+  virtual void UndefineRule(uintptr_t aAddress, int aReg);
 
   virtual uint32_t AddPfxInstr(PfxInstr pfxi);
 
