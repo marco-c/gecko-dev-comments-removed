@@ -1,12 +1,15 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs";
 
 /**
- * The placement a session cloning a video has to be opened in. A placement is
- * pending from the moment its token is minted until a session is opened against
- * it. The embedder shows a single picture-in-picture window, so there is at most
- * one of these, whichever session it came from.
+ * The placement a session cloning a video has to be opened in, and the request
+ * that asked for it. A placement is pending from the moment its token is minted
+ * until a session is opened against it. The embedder shows a single
+ * picture-in-picture window, so there is at most one of these, whichever session
+ * it came from: a request supersedes whatever came before it.
  *
  * @typedef {object} PiP
  * @property {"pending"} state
@@ -17,6 +20,15 @@
  * @property {?string} token
  *   Placement token handed to the embedder, until a session is opened against
  *   it. Null once consumed: a token places a single session.
+ * @property {object} videoRef
+ *   Opaque reference to the video element, handed to the player actor to clone.
+ *   Absent for a placement no request has claimed.
+ * @property {object} sourceDispatcher
+ *   EventDispatcher of the source session.
+ * @property {Function} resolve
+ *   Settles the promise returned by request() once the player is set up.
+ * @property {Function} reject
+ *   Settles that promise if setting the player up failed.
  */
 
 /** @type {?PiP} */
@@ -27,6 +39,37 @@ let gPiP = null;
  * whose video it clones.
  */
 export const GeckoViewPictureInPictureController = {
+  // `sourceDispatcher` must be the EventDispatcher of the session the video lives in: the embedder
+  // identifies the tab to return to when the picture-in-picture window is expanded by which
+  // session the launch event arrives on.
+  request(sourceWGP, videoRef, sourceDispatcher) {
+    const bc = sourceWGP.browsingContext;
+    const bcGroupId = bc.group.id;
+    const remoteType = sourceWGP.domProcess.remoteType;
+
+    if (!sourceDispatcher) {
+      return Promise.reject(
+        new Error("No EventDispatcher for the requesting session")
+      );
+    }
+
+    const token = this.mintPlacementToken(bcGroupId, remoteType);
+
+    const { promise, resolve, reject } = Promise.withResolvers();
+    Object.assign(gPiP, {
+      videoRef,
+      sourceDispatcher,
+      resolve,
+      reject,
+    });
+
+    sourceDispatcher.sendRequest("GeckoView:PictureInPicture:Launch", {
+      placementToken: token,
+    });
+
+    return promise;
+  },
+
   // Mints a token standing for the placement a session cloning the video has to be opened in, to
   // be handed to the embedder. Good for a single session, until it is consumed.
   mintPlacementToken(bcGroupId, remoteType) {
@@ -47,8 +90,82 @@ export const GeckoViewPictureInPictureController = {
     const { bcGroupId, remoteType } = gPiP;
     return { browsingContextGroupId: bcGroupId, remoteType };
   },
+
+  // Requests picture-in-picture for the video the focused frame is playing.
+  async requestForCurrentMedia(browser, sourceDispatcher) {
+    // The session's own browsing context only reaches the top document, whose <video> elements
+    // are the ones outside any frame, so a video in an iframe would be invisible to it and lives
+    // in another process. Focus names the frame the user last interacted with.
+    const bc = Services.focus.focusedContentBrowsingContext;
+    if (bc?.top !== browser.browsingContext) {
+      await this._requestForAnyFrame(browser, sourceDispatcher);
+      return;
+    }
+
+    const wgp = bc.currentWindowGlobal;
+    const active = await wgp
+      .getActor("GeckoViewPictureInPictureSource")
+      .sendQuery("GeckoView:PictureInPicture:FindVideo");
+    if (!active) {
+      await this._requestForAnyFrame(browser, sourceDispatcher);
+      return;
+    }
+    await this.request(wgp, active.videoRef, sourceDispatcher);
+  },
+
+  // The embedder asks from outside the page, so the user may have moved focus off the frame playing
+  // the video since starting it. Falls back to the first frame of the session, in tree order, that
+  // is playing a video.
+  async _requestForAnyFrame(browser, sourceDispatcher) {
+    for (const bc of browser.browsingContext.getAllBrowsingContextsInSubtree()) {
+      const wgp = bc.currentWindowGlobal;
+      if (!wgp) {
+        continue;
+      }
+      let active;
+      try {
+        active = await wgp
+          .getActor("GeckoViewPictureInPictureSource")
+          .sendQuery("GeckoView:PictureInPicture:FindVideo");
+      } catch (e) {
+        // The frame navigated or went away while it was being asked.
+        continue;
+      }
+      if (active) {
+        await this.request(wgp, active.videoRef, sourceDispatcher);
+        return;
+      }
+    }
+  },
 };
 
-const { debug, warn } = GeckoViewPictureInPictureController.initLogging(
-  "GeckoViewPictureInPictureController"
+/**
+ * GeckoViewModule for the requests a session makes about the picture-in-picture
+ * window showing one of its videos. One instance per session; the shared state
+ * it acts on lives in [GeckoViewPictureInPictureController] above.
+ */
+export class GeckoViewPictureInPicture extends GeckoViewModule {
+  onInit() {
+    debug`onInit`;
+    this.registerListener(["GeckoView:PictureInPicture:Request"]);
+  }
+
+  onEvent(aEvent, aData, aCallback) {
+    debug`onEvent: event=${aEvent}, data=${aData}`;
+    switch (aEvent) {
+      case "GeckoView:PictureInPicture:Request":
+        GeckoViewPictureInPictureController.requestForCurrentMedia(
+          this.browser,
+          this.eventDispatcher
+        ).then(
+          () => aCallback.onSuccess(null),
+          e => aCallback.onError(e.message)
+        );
+        break;
+    }
+  }
+}
+
+const { debug, warn } = GeckoViewPictureInPicture.initLogging(
+  "GeckoViewPictureInPicture"
 );

@@ -791,7 +791,19 @@ function startup() {
     {
       name: "GeckoViewPictureInPicture",
       onInit: {
+        resource: "resource://gre/modules/GeckoViewPictureInPicture.sys.mjs",
         actors: {
+          
+          GeckoViewPictureInPictureSource: {
+            child: {
+              esModuleURI:
+                "resource:///actors/GeckoViewPictureInPictureSourceChild.sys.mjs",
+            },
+            allFrames: true,
+            messageManagerGroups: ["browsers"],
+            safeForUntrustedWebProcess: true,
+          },
+          
           
           
           

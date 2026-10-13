@@ -164,6 +164,10 @@ public class GeckoSession {
   private TranslationsController.SessionTranslation mTranslations =
       new TranslationsController.SessionTranslation(this);
 
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  private final PictureInPictureController.SessionPictureInPicture mPictureInPicture =
+      new PictureInPictureController.SessionPictureInPicture(this);
+
   
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
   private PageExtractionController.SessionPageExtractor mPageExtractor;
@@ -1301,6 +1305,10 @@ public class GeckoSession {
   private final TranslationsController.SessionTranslation.Handler mTranslationsHandler =
       mTranslations.getHandler();
 
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  private final PictureInPictureController.SessionPictureInPicture.Handler
+      mPictureInPictureHandler = mPictureInPicture.getHandler();
+
    int handlersCount;
 
   private final GeckoSessionHandler<?>[] mSessionHandlers =
@@ -1316,6 +1324,7 @@ public class GeckoSession {
         mScrollHandler,
         mSelectionActionDelegate,
         mTranslationsHandler,
+        mPictureInPictureHandler,
         mContentBlockingHandler,
         mMediaSessionHandler,
         mExperimentHandler
@@ -3504,6 +3513,42 @@ public class GeckoSession {
   @AnyThread
   public void exitFullScreen() {
     mEventDispatcher.dispatch("GeckoViewContent:ExitFullScreen", null);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  @ExperimentalGeckoViewApi
+  public @NonNull PictureInPictureController.SessionPictureInPicture getSessionPictureInPicture() {
+    return mPictureInPicture;
+  }
+
+  
+
+
+
+
+  @UiThread
+  @ExperimentalGeckoViewApi
+  public void setPictureInPictureDelegate(
+      final @Nullable PictureInPictureController.SessionPictureInPicture.Delegate delegate) {
+    mPictureInPictureHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+  @UiThread
+  @ExperimentalGeckoViewApi
+  public @Nullable PictureInPictureController.SessionPictureInPicture.Delegate
+      getPictureInPictureDelegate() {
+    return mPictureInPictureHandler.getDelegate();
   }
 
   
