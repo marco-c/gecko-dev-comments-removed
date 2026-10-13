@@ -56,7 +56,6 @@
 #include "nsICertStorage.h"
 #include "nsIChannelEventSink.h"
 #include "nsIClassifiedChannel.h"
-#include "nsIConsoleReportCollector.h"
 #include "nsIContentSniffer.h"
 #include "nsIDownloader.h"
 #include "nsIEnterprisePolicies.h"
@@ -2977,38 +2976,6 @@ bool handleResultFunc(bool aAllowSTS, bool aIsStsHost) {
   return false;
 };
 
-void NS_LogSecureUpgradeToConsole(nsIURI* aURI, nsILoadInfo* aLoadInfo,
-                                  nsIConsoleReportCollector* aReportCollector,
-                                  const nsACString& aMechanism) {
-  MOZ_ASSERT(aLoadInfo);
-  MOZ_ASSERT(aReportCollector);
-  if (!aLoadInfo || !aReportCollector) {
-    return;
-  }
-
-  
-  
-  nsCOMPtr<nsIURI> reportURI = aURI;
-  if (aLoadInfo->GetExternalContentPolicyType() ==
-      ExtContentPolicy::TYPE_WEBSOCKET) {
-    (void)NS_MutateURI(aURI).SetScheme("ws"_ns).Finalize(reportURI);
-  }
-
-  nsAutoCString scheme;
-  reportURI->GetScheme(scheme);
-  scheme.AppendLiteral("s");
-  nsAutoCString spec;
-  reportURI->GetSpec(spec);
-
-  aReportCollector->AddConsoleReport(
-      nsIScriptError::warningFlag, aMechanism,
-      PropertiesFile::SECURITY_PROPERTIES, spec, 0, 0,
-      "SecureUpgradeRequest"_ns,
-      {NS_ConvertUTF8toUTF16(aMechanism), NS_ConvertUTF8toUTF16(spec),
-       NS_ConvertUTF8toUTF16(scheme)});
-}
-
-
 
 
 
@@ -3138,11 +3105,9 @@ static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
 
 
 nsresult NS_ShouldSecureUpgrade(
-    nsIURI* aURI, nsILoadInfo* aLoadInfo,
-    nsIConsoleReportCollector* aReportCollector,
-    nsIPrincipal* aChannelResultPrincipal, bool aAllowSTS,
-    const OriginAttributes& aOriginAttributes, bool& aShouldUpgrade,
-    std::function<void(bool, nsresult)>&& aResultCallback,
+    nsIURI* aURI, nsILoadInfo* aLoadInfo, nsIPrincipal* aChannelResultPrincipal,
+    bool aAllowSTS, const OriginAttributes& aOriginAttributes,
+    bool& aShouldUpgrade, std::function<void(bool, nsresult)>&& aResultCallback,
     bool& aWillCallback) {
   MOZ_ASSERT(XRE_IsParentProcess());
   if (!XRE_IsParentProcess()) {
@@ -3197,19 +3162,13 @@ nsresult NS_ShouldSecureUpgrade(
   static Atomic<bool, Relaxed> storageReady(false);
   if (!storageReady && gSocketTransportService && aResultCallback) {
     nsCOMPtr<nsILoadInfo> loadInfo = aLoadInfo;
-    nsCOMPtr<nsIConsoleReportCollector> reportCollector = aReportCollector;
     nsCOMPtr<nsIURI> uri = aURI;
     auto callbackWrapper = [resultCallback{std::move(aResultCallback)}, uri,
-                            loadInfo, reportCollector](bool aShouldUpgrade,
-                                                       nsresult aStatus) {
+                            loadInfo](bool aShouldUpgrade, nsresult aStatus) {
       MOZ_ASSERT(NS_IsMainThread());
 
       
       if (aShouldUpgrade || NS_FAILED(aStatus)) {
-        if (aShouldUpgrade && NS_SUCCEEDED(aStatus)) {
-          NS_LogSecureUpgradeToConsole(uri, loadInfo, reportCollector,
-                                       "HSTS"_ns);
-        }
         resultCallback(aShouldUpgrade, aStatus);
         return;
       }
@@ -3261,7 +3220,6 @@ nsresult NS_ShouldSecureUpgrade(
   
   
   if (aShouldUpgrade) {
-    NS_LogSecureUpgradeToConsole(aURI, aLoadInfo, aReportCollector, "HSTS"_ns);
     aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::HSTS);
   }
   if (!aShouldUpgrade) {
