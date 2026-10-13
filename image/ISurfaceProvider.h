@@ -100,7 +100,7 @@ class ISurfaceProvider : public WebRenderImageProvider {
     MOZ_ASSERT(aImageKey, "Must have a valid image key");
   }
 
-  virtual ~ISurfaceProvider() {}
+  virtual ~ISurfaceProvider() = default;
 
   
   
@@ -165,6 +165,9 @@ class MOZ_STACK_CLASS DrawableSurface final {
     aOther.mHaveSurface = false;
     return *this;
   }
+
+  DrawableSurface(const DrawableSurface& aOther) = delete;
+  DrawableSurface& operator=(const DrawableSurface& aOther) = delete;
 
   
 
@@ -256,9 +259,6 @@ class MOZ_STACK_CLASS DrawableSurface final {
   imgFrame* operator->() { return DrawableRef().get(); }
 
  private:
-  DrawableSurface(const DrawableSurface& aOther) = delete;
-  DrawableSurface& operator=(const DrawableSurface& aOther) = delete;
-
   DrawableFrameRef& DrawableRef() {
     MOZ_ASSERT(mHaveSurface);
 
@@ -334,7 +334,7 @@ class SimpleSurfaceProvider final : public ISurfaceProvider {
   }
 
  private:
-  virtual ~SimpleSurfaceProvider() {}
+  virtual ~SimpleSurfaceProvider() = default;
 
   NotNull<RefPtr<imgFrame>> mSurface;
   DrawableFrameRef mLockRef;
