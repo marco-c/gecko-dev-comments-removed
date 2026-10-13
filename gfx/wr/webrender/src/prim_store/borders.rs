@@ -127,8 +127,19 @@ impl NormalBorderData {
         
         
         
-        let scale_width = clamp_to_scale_factor(raster_scale.0, false);
-        let scale_height = clamp_to_scale_factor(raster_scale.1, false);
+        
+        let prim_spatial_node = frame_context.spatial_tree
+            .get_spatial_node(quad_transform.prim_spatial_node_index());
+        let scale_may_change = prim_spatial_node.is_ancestor_or_self_animating
+            || prim_spatial_node.is_ancestor_or_self_zooming;
+        let (scale_width, scale_height) = if scale_may_change {
+            (
+                clamp_to_scale_factor(raster_scale.0, false),
+                clamp_to_scale_factor(raster_scale.1, false),
+            )
+        } else {
+            (raster_scale.0.abs(), raster_scale.1.abs())
+        };
         
         let mut scale = LayoutToDeviceScale::new(
             scale_width.max(scale_height) * device_pixel_scale.0,
