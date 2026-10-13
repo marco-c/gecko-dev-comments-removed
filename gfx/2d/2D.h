@@ -2320,6 +2320,7 @@ class GFX2D_API Factory {
 
 
 
+
   static already_AddRefed<NativeFontResource> CreateNativeFontResource(
       const uint8_t* aData, uint32_t aSize, FontType aFontType,
       void* aFontContext = nullptr);
