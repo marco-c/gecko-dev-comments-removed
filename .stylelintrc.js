@@ -32,8 +32,6 @@ module.exports = {
     "stylelint-use-logical",
   ],
   ignoreFiles,
-  reportNeedlessDisables: true,
-  reportUnscopedDisables: true,
   rules: {
     
     "color-no-invalid-hex": null,
@@ -435,8 +433,6 @@ module.exports = {
         "layout/**",
         
         "testing/**",
-        "**/test/**",
-        "**/tests/**",
         
         "toolkit/themes/shared/colorpicker-common.css",
         "toolkit/themes/shared/colorpicker.css",
