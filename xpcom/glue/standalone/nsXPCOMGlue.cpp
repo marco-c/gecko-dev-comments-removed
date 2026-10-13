@@ -134,7 +134,7 @@ using ReadDependentCBResult = ::mozilla::Result<::mozilla::Ok, DLErrorType>;
 
 static ReadDependentCBResult ReadDependentCB(
     pathstr_t aDependentLib, LibLoadingStrategy aLibLoadingStrategy) {
-#if !defined(MOZ_LINKER) && !defined(__ANDROID__)
+#if !defined(MOZ_LINKER)
   
   
   
