@@ -16,14 +16,13 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
 
 namespace webrtc {
 namespace test {
 
 
-ABSL_CONST_INIT extern const absl::string_view kPathDelimiter;
+constinit extern const absl::string_view kPathDelimiter;
 
 
 
