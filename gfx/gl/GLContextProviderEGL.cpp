@@ -185,8 +185,8 @@ static EGLSurface CreateSurfaceFromNativeWindow(
     gfxCriticalNote << "Failed to obtain native window from Surface";
     return EGL_NO_SURFACE;
   }
-  const auto& display = egl.mLib->fGetDisplay(EGL_DEFAULT_DISPLAY);
-  newSurface = egl.mLib->fCreateWindowSurface(display, config, nativeWindow, 0);
+  newSurface =
+      egl.mLib->fCreateWindowSurface(egl.mDisplay, config, nativeWindow, 0);
   ANativeWindow_release(nativeWindow);
 #else
   newSurface = egl.fCreateWindowSurface(config, window, nullptr);
@@ -323,16 +323,8 @@ already_AddRefed<GLContext> GLContextEGLFactory::Create(
   return glContext.forget();
 }
 
-
 EGLSurface GLContextEGL::CreateEGLSurfaceForCompositorWidget(
     widget::CompositorWidget* aCompositorWidget, const EGLConfig aConfig) {
-  nsCString discardFailureId;
-  const auto egl = DefaultEglDisplay(&discardFailureId);
-  if (!egl) {
-    gfxCriticalNote << "Failed to load EGL library 6!";
-    return EGL_NO_SURFACE;
-  }
-
   MOZ_ASSERT(aCompositorWidget);
   EGLNativeWindowType window =
       GET_NATIVE_WINDOW_FROM_COMPOSITOR_WIDGET(aCompositorWidget);
@@ -340,8 +332,7 @@ EGLSurface GLContextEGL::CreateEGLSurfaceForCompositorWidget(
     gfxCriticalNote << "window is null";
     return EGL_NO_SURFACE;
   }
-
-  return mozilla::gl::CreateSurfaceFromNativeWindow(*egl, window, aConfig);
+  return mozilla::gl::CreateSurfaceFromNativeWindow(*mEgl, window, aConfig);
 }
 
 GLContextEGL::GLContextEGL(const std::shared_ptr<EglDisplay> egl,
@@ -624,8 +615,6 @@ GLint GLContextEGL::GetBufferAge() const {
   return 0;
 }
 
-#define LOCAL_EGL_CONTEXT_PROVOKING_VERTEX_DONT_CARE_MOZ 0x6000
-
 RefPtr<GLContextEGL> GLContextEGL::CreateGLContext(
     const std::shared_ptr<EglDisplay> egl, const GLContextDesc& desc,
     EGLConfig surfaceConfig, EGLSurface surface, const bool useGles,
@@ -681,14 +670,6 @@ RefPtr<GLContextEGL> GLContextEGL::CreateGLContext(
   if (!debugFlags && flags & CreateContextFlags::NO_VALIDATION &&
       egl->IsExtensionSupported(EGLExtension::KHR_create_context_no_error)) {
     required_attribs.push_back(LOCAL_EGL_CONTEXT_OPENGL_NO_ERROR_KHR);
-    required_attribs.push_back(LOCAL_EGL_TRUE);
-  }
-
-  if (flags & CreateContextFlags::PROVOKING_VERTEX_DONT_CARE &&
-      egl->IsExtensionSupported(
-          EGLExtension::MOZ_create_context_provoking_vertex_dont_care)) {
-    required_attribs.push_back(
-        LOCAL_EGL_CONTEXT_PROVOKING_VERTEX_DONT_CARE_MOZ);
     required_attribs.push_back(LOCAL_EGL_TRUE);
   }
 
