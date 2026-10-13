@@ -1144,7 +1144,22 @@ KeyHandlingState IMContextWrapper::OnKeyEvent(
   }
 
   mHandlingKeyEvent = aEvent;
-  gboolean isFiltered = gtk_im_context_filter_keypress(currentContext, aEvent);
+  gboolean isFiltered = [&]() {
+    MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+                "{}   Calling gtk_im_context_filter_keypress() with a batch...",
+                static_cast<void*>(this));
+    RefPtr<TextEventDispatcher> dispatcher(GetTextEventDispatcher());
+    MOZ_DIAGNOSTIC_ASSERT(dispatcher);
+    AutoTextEventDispatcherBatch batchEvents(*dispatcher);
+    const auto ret = gtk_im_context_filter_keypress(currentContext, aEvent);
+    MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+                "{}   Called gtk_im_context_filter_keypress(), ending the "
+                "batch (pending events={})...",
+                static_cast<void*>(this), dispatcher->GetPendingEventCount());
+    return ret;
+  }();
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info, "{}   The batch finished",
+              static_cast<void*>(this));
 
   
   
@@ -1303,9 +1318,10 @@ void IMContextWrapper::OnFocusChangeInGecko(bool aFocus) {
 }
 
 void IMContextWrapper::ResetIME() {
-  MOZ_LOG(gIMELog, LogLevel::Info,
-          ("0x%p ResetIME(), mCompositionState=%s, mIMEFocusState=%s", this,
-           GetCompositionStateName(), ToString(mIMEFocusState).c_str()));
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{} ResetIME(), mCompositionState={}, mIMEFocusState={}",
+              static_cast<void*>(this), GetCompositionStateName(),
+              mIMEFocusState);
 
   GtkIMContext* activeContext = GetActiveContext();
   if (MOZ_UNLIKELY(!activeContext)) {
@@ -1318,6 +1334,9 @@ void IMContextWrapper::ResetIME() {
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
 
   mPendingResettingIMContext = false;
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{}   ResetIME() calling gtk_im_context_reset()...",
+              static_cast<void*>(this));
   gtk_im_context_reset(activeContext);
 
   
@@ -1325,19 +1344,25 @@ void IMContextWrapper::ResetIME() {
   if (!lastFocusedWindow ||
       NS_WARN_IF(lastFocusedWindow != mLastFocusedWindow) ||
       lastFocusedWindow->Destroyed()) {
+    MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+                "{}   ResetIME() called gtk_im_context_reset() and focused "
+                "window is changed, "
+                "activeContext={}, mCompositionState={}, mIMEFocusState={}",
+                static_cast<void*>(this), static_cast<void*>(activeContext),
+                GetCompositionStateName(), mIMEFocusState);
     return;
   }
 
   nsAutoString compositionString;
   GetCompositionString(activeContext, compositionString);
 
-  MOZ_LOG(gIMELog, LogLevel::Debug,
-          ("0x%p   ResetIME() called gtk_im_context_reset(), "
-           "activeContext=0x%p, mCompositionState=%s, compositionString=%s, "
-           "mIMEFocusState=%s",
-           this, activeContext, GetCompositionStateName(),
-           NS_ConvertUTF16toUTF8(compositionString).get(),
-           ToString(mIMEFocusState).c_str()));
+  MOZ_LOG_FMT(gIMELog, LogLevel::Info,
+              "{}   ResetIME() called gtk_im_context_reset(), "
+              "activeContext={}, mCompositionState={}, compositionString={}, "
+              "mIMEFocusState={}",
+              static_cast<void*>(this), static_cast<void*>(activeContext),
+              GetCompositionStateName(),
+              NS_ConvertUTF16toUTF8(compositionString).get(), mIMEFocusState);
 
   
   

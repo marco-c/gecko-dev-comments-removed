@@ -473,6 +473,13 @@ class TextEventDispatcher final {
   
 
 
+  [[nodiscard]] uint32_t GetPendingEventCount() const {
+    return mPendingEvents.Length();
+  }
+
+  
+
+
 
 
   void BeginBatch() { mBatching++; }
