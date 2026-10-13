@@ -1342,7 +1342,8 @@ void AllocationSequence::DisableEquivalentPhases(const Network* network,
   }
   
   
-  if (absl::c_any_of(session_->ports_,
+  if ((state_ == kRunning && !IsFlagSet(PORTALLOCATOR_DISABLE_TCP)) ||
+      absl::c_any_of(session_->ports_,
                      [this](const BasicPortAllocatorSession::PortData& p) {
                        return !p.pruned() && p.port()->Network() == network_ &&
                               p.port()->GetProtocol() == PROTO_TCP &&
