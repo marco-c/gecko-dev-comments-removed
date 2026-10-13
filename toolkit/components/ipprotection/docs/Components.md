@@ -166,11 +166,12 @@ The core helper list is defined in `IPProtectionActivator.sys.mjs` (toolkit).
 
 IPPAutoActivation
 
-: Brings the proxy up on its own on desktop: auto-start at startup, and
-  auto-restore of a session the user left the VPN on for. `desiredMode()`
-  decides the mode. `IPProtectionActivator` picks the activation helper per
-  build: this one on desktop, `IPPAlwaysOn` on enterprise, and none on Android,
-  where the embedder decides through `IPProtectionController`.
+: Brings the proxy up on its own on desktop: auto-start at startup,
+  auto-restore of a session the user left the VPN on for, and a connection in
+  inclusion mode while at least one site is marked as always using the VPN.
+  `IPProtectionActivator` picks the activation helper per build: this one on
+  desktop, `IPPAlwaysOn` on enterprise, and none on Android, where the embedder
+  decides through `IPProtectionController`.
 
 IPPStartupCache
 

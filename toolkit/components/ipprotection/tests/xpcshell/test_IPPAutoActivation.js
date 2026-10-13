@@ -15,7 +15,10 @@ const FEATURE_PREF = "browser.ipProtection.features.autoStart";
 const AUTOSTART_PREF = "browser.ipProtection.autoStartEnabled";
 const AUTO_RESTORE_PREF = "browser.ipProtection.autoRestoreEnabled";
 const USER_ENABLED_PREF = "browser.ipProtection.userEnabled";
+const MATCH_PATTERNS_PREF = "browser.ipProtection.inclusion.match_patterns";
 const REASON_PREFS = [FEATURE_PREF, AUTOSTART_PREF, USER_ENABLED_PREF];
+const PERM_NAME = "ipp-vpn";
+const SITE = "https://always-on.example.com";
 
 
 
@@ -24,6 +27,18 @@ const REASON_PREFS = [FEATURE_PREF, AUTOSTART_PREF, USER_ENABLED_PREF];
 function enableAutoStart() {
   Services.prefs.setBoolPref(AUTOSTART_PREF, true);
   Services.prefs.setBoolPref(FEATURE_PREF, true);
+}
+
+
+
+
+
+
+function setSiteRule(rule) {
+  IPPPermissionRules.setRule(
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(SITE),
+    rule
+  );
 }
 
 
@@ -56,6 +71,8 @@ async function withAutoActivation(body, { signedIn = true } = {}) {
     await IPPProxyManager.stop(false);
     IPProtectionService.uninit();
     REASON_PREFS.forEach(pref => Services.prefs.clearUserPref(pref));
+    Services.prefs.clearUserPref(MATCH_PATTERNS_PREF);
+    Services.perms.removeByType(PERM_NAME);
   }
 }
 
@@ -74,9 +91,10 @@ add_setup(async function () {
   Services.prefs.setBoolPref(AUTO_RESTORE_PREF, true);
 
   registerCleanupFunction(() => {
-    [...REASON_PREFS, AUTO_RESTORE_PREF].forEach(pref =>
+    [...REASON_PREFS, AUTO_RESTORE_PREF, MATCH_PATTERNS_PREF].forEach(pref =>
       Services.prefs.clearUserPref(pref)
     );
+    Services.perms.removeByType(PERM_NAME);
   });
 });
 
@@ -254,4 +272,139 @@ add_task(async function test_no_restore_when_service_cannot_serve() {
     },
     { signedIn: false }
   );
+});
+
+
+
+
+
+add_task(async function test_inclusion_asks_for_a_narrow_connection() {
+  await withAutoActivation(async autoActivation => {
+    setSiteRule(IPPPrincipalRules.INCLUDED);
+
+    Assert.equal(
+      autoActivation.desiredMode(),
+      IPPMode.MODE_INCLUSION,
+      "An included site should want a narrow connection"
+    );
+
+    const activated = waitForProxyState(IPPProxyStates.ACTIVE);
+    autoActivation.init();
+    await activated;
+
+    Assert.equal(
+      IPPProxyManager.mode,
+      IPPMode.MODE_INCLUSION,
+      "The proxy should only route the included sites"
+    );
+  });
+});
+
+
+
+
+
+add_task(async function test_inclusion_from_any_provider() {
+  await withAutoActivation(async autoActivation => {
+    setSiteRule(IPPPrincipalRules.EXCLUDED);
+    Assert.equal(
+      autoActivation.desiredMode(),
+      null,
+      "An exclusion is not an inclusion"
+    );
+
+    Services.prefs.setStringPref(
+      MATCH_PATTERNS_PREF,
+      JSON.stringify(["*://always-on.example.com/*"])
+    );
+    Assert.equal(
+      autoActivation.desiredMode(),
+      IPPMode.MODE_INCLUSION,
+      "A site included through the match patterns pref should want a narrow connection"
+    );
+  });
+});
+
+
+
+
+
+add_task(async function test_inclusion_comes_back_after_a_stop() {
+  await withAutoActivation(async autoActivation => {
+    setSiteRule(IPPPrincipalRules.INCLUDED);
+    const activated = waitForProxyState(IPPProxyStates.ACTIVE);
+    autoActivation.init();
+    await activated;
+
+    
+    IPPProxyManager.setMode(IPPMode.MODE_FULL);
+    await IPPProxyManager.stop(true);
+    await waitForProxyState(IPPProxyStates.ACTIVE);
+
+    Assert.equal(
+      IPPProxyManager.mode,
+      IPPMode.MODE_INCLUSION,
+      "Stopping should leave a connection for the included sites"
+    );
+  });
+});
+
+
+
+
+
+add_task(async function test_restore_replaces_a_pending_inclusion() {
+  await withAutoActivation(async autoActivation => {
+    Services.prefs.setBoolPref(USER_ENABLED_PREF, true);
+    setSiteRule(IPPPrincipalRules.INCLUDED);
+
+    autoActivation.init();
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.ACTIVATING,
+      "The narrow activation should be in flight"
+    );
+
+    Services.obs.notifyObservers(null, "sessionstore-restoring-on-startup");
+    await waitForProxyState(IPPProxyStates.ACTIVE);
+
+    Assert.equal(
+      IPPProxyManager.mode,
+      IPPMode.MODE_FULL,
+      "The restore should have replaced the narrow activation"
+    );
+  });
+});
+
+
+
+
+
+add_task(async function test_inclusion_follows_the_rules() {
+  await withAutoActivation(async autoActivation => {
+    autoActivation.init();
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.READY,
+      "The proxy should start idle"
+    );
+
+    setSiteRule(IPPPrincipalRules.INCLUDED);
+    await waitForProxyState(IPPProxyStates.ACTIVE);
+    Assert.equal(
+      IPPProxyManager.mode,
+      IPPMode.MODE_INCLUSION,
+      "A new inclusion should bring a narrow connection up"
+    );
+
+    
+    const stopped = waitForProxyState(IPPProxyStates.READY);
+    setSiteRule(IPPPrincipalRules.DEFAULT);
+    await stopped;
+    Assert.equal(
+      IPPProxyManager.state,
+      IPPProxyStates.READY,
+      "The last inclusion going away should take the connection down"
+    );
+  });
 });

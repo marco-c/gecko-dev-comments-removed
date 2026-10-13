@@ -8,6 +8,10 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPPrincipalRules:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
+  IPPSiteRuleManager:
+    "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs",
   IPPMode:
     "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPProtectionServerlist:
@@ -38,20 +42,21 @@ const USER_ENABLED_PREF = "browser.ipProtection.userEnabled";
 const RESTORING_ON_STARTUP = "sessionstore-restoring-on-startup";
 
 /**
- * Brings the proxy up on its own on desktop: at startup when auto-start is on,
- * and for a session the user left the VPN on for when auto-restore is on.
- * `desiredMode()` decides the mode. Full protection is owed once: the flag is
- * cleared when the proxy is asked to come up and set again when the service
- * returns to READY.
+ * Brings the proxy up without the user asking: auto-start, auto-restore, and
+ * a narrow connection for the sites marked as always using the VPN.
  */
 export class IPPAutoActivationSingleton {
   #initialized = false;
   #fullProtectionOwed = false;
   #hasRestoringObserver = false;
   #willRestore = false;
+  /** @type {{ mode: import("./IPPChannelFilter.sys.mjs").IPPProxyMode, promise: Promise } | null} */
+  #activation = null;
 
   constructor() {
     this.handleEvent = this.#handleEvent.bind(this);
+    this.handleProxyEvent = this.#handleProxyEvent.bind(this);
+    this.handleRuleEvent = this.#handleRuleEvent.bind(this);
 
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
@@ -107,6 +112,10 @@ export class IPPAutoActivationSingleton {
     return this.#willRestore;
   }
 
+  get inclusionWanted() {
+    return lazy.IPPSiteRuleManager.hasRule(lazy.IPPPrincipalRules.INCLUDED);
+  }
+
   /**
    * The mode an idle proxy should come up in, or null to leave it alone. Full
    * protection wins over anything narrower.
@@ -119,6 +128,9 @@ export class IPPAutoActivationSingleton {
     }
     if (this.#fullProtectionOwed) {
       return lazy.IPPMode.MODE_FULL;
+    }
+    if (this.inclusionWanted) {
+      return lazy.IPPMode.MODE_INCLUSION;
     }
     return null;
   }
@@ -133,17 +145,22 @@ export class IPPAutoActivationSingleton {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
+    lazy.IPPProxyManager.addEventListener(
+      "IPPProxyManager:StateChanged",
+      this.handleProxyEvent
+    );
+    lazy.IPPSiteRuleManager.addEventListener(
+      "SiteRuleManager:RuleChanged",
+      this.handleRuleEvent
+    );
 
     if (this.autoStart) {
       this.#fullProtectionOwed = true;
-      this.#maybeActivate();
-      return;
-    }
-
-    if (this.autoRestore) {
+    } else if (this.autoRestore) {
       Services.obs.addObserver(this, RESTORING_ON_STARTUP);
       this.#hasRestoringObserver = true;
     }
+    this.#maybeActivate();
   }
 
   initOnStartupCompleted() {
@@ -159,7 +176,7 @@ export class IPPAutoActivationSingleton {
     this.#initialized = false;
     this.#fullProtectionOwed = false;
 
-    if (this.#willRestore) {
+    if (this.#willRestore || this.#activation) {
       this.#willRestore = false;
       lazy.IPPProxyManager.stop(false);
     }
@@ -167,6 +184,14 @@ export class IPPAutoActivationSingleton {
     lazy.IPProtectionService.removeEventListener(
       "IPProtectionService:StateChanged",
       this.handleEvent
+    );
+    lazy.IPPProxyManager.removeEventListener(
+      "IPPProxyManager:StateChanged",
+      this.handleProxyEvent
+    );
+    lazy.IPPSiteRuleManager.removeEventListener(
+      "SiteRuleManager:RuleChanged",
+      this.handleRuleEvent
     );
     this.#stopObservingRestore();
   }
@@ -203,6 +228,14 @@ export class IPPAutoActivationSingleton {
       return;
     }
 
+    if (this.#activation) {
+      // Full protection replaces a narrower activation still in flight.
+      if (mode === lazy.IPPMode.MODE_FULL && this.#activation.mode !== mode) {
+        lazy.IPPProxyManager.stop(false).then(() => this.#maybeActivate());
+      }
+      return;
+    }
+
     // A busy proxy is either already doing this or waiting on the user.
     const state = lazy.IPPProxyManager.state;
     if (
@@ -214,15 +247,53 @@ export class IPPAutoActivationSingleton {
 
     // Cleared on the ask, not on success, so neither a failure nor the user
     // turning it off is retried.
-    this.#fullProtectionOwed = false;
+    if (mode === lazy.IPPMode.MODE_FULL) {
+      this.#fullProtectionOwed = false;
+    }
 
     lazy.logConsole.info("Starting the proxy, mode:", mode);
-    lazy.IPPProxyManager.start(
+    const promise = lazy.IPPProxyManager.start(
       false,
       PrivateBrowsingUtils.permanentPrivateBrowsing,
       undefined,
       mode
     );
+    this.#activation = { mode, promise };
+    promise.finally(() => {
+      if (this.#activation?.promise === promise) {
+        this.#activation = null;
+      }
+    });
+  }
+
+  #handleProxyEvent() {
+    switch (lazy.IPPProxyManager.state) {
+      case lazy.IPPProxyStates.ACTIVE:
+        this.#activation = null;
+        break;
+
+      case lazy.IPPProxyStates.READY:
+        // Not when an activation of ours is what just failed.
+        if (!this.#activation) {
+          this.#maybeActivate();
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  #handleRuleEvent() {
+    // The last inclusion going away takes a narrow connection down.
+    if (
+      this.desiredMode() === null &&
+      lazy.IPPProxyManager.mode === lazy.IPPMode.MODE_INCLUSION
+    ) {
+      lazy.IPPProxyManager.stop(false);
+      return;
+    }
+    this.#maybeActivate();
   }
 
   #handleEvent() {

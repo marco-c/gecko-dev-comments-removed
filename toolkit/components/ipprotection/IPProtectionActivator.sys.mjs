@@ -10,6 +10,7 @@ import { IPPNimbusHelper } from "moz-src:///toolkit/components/ipprotection/IPPN
 import { IPProtectionServerlist } from "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs";
 import { IPPStartupCache } from "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs";
 import { IPPSessionPrefManager } from "moz-src:///toolkit/components/ipprotection/IPPSessionPrefManager.sys.mjs";
+import { IPPSiteRuleManager } from "moz-src:///toolkit/components/ipprotection/IPPSiteRuleManager.sys.mjs";
 
 const lazy = {};
 
@@ -42,6 +43,7 @@ function activationHelper() {
 const coreHelpers = [
   IPPStartupCache,
   IPProtectionServerlist,
+  IPPSiteRuleManager,
   IPPProxyManager,
   IPPLifecycleHelper,
   IPPSessionPrefManager,
