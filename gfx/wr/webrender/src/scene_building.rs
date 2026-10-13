@@ -983,6 +983,13 @@ impl<'a> SceneBuilder<'a> {
                     DisplayItem::Iframe(ref info) => {
                         tracy_rs::profile_scope!("iframe");
 
+                        
+                        
+                        if info.pipeline_id == bc.pipeline_id
+                            || stack.iter().any(|ctx| ctx.pipeline_id == info.pipeline_id) {
+                            continue;
+                        }
+
                         let space = self.get_space(info.space_and_clip.spatial_id);
                         
                         
