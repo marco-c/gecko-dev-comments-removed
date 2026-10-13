@@ -110,12 +110,9 @@ add_task(async function searchbar() {
   });
 });
 
-
-
-
 add_task(async function handoff() {
   await doHandoffTest({
-    trigger: win => doEngagementAndNavigateBack(win, () => doClick()),
+    trigger: win => doEngagementAndNavigateBack(win, () => doEnter({}, win)),
     assert: () => assertBounceTelemetry([{ sap: "handoff" }]),
   });
 });
