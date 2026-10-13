@@ -13,6 +13,7 @@ import androidx.annotation.NonNull;
 
  final class ServiceUtils {
   private static final String DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX = "0";
+  private static final String ISOLATED_GMPLUGIN_SERVICE_NAME = "isolatedGmplugin";
 
   private ServiceUtils() {}
 
@@ -51,12 +52,21 @@ import androidx.annotation.NonNull;
 
 
   public static String buildIsolatedSvcName(@NonNull final GeckoProcessType type) {
+    if (type == GeckoProcessType.CONTENT_ISOLATED_WITH_ZYGOTE) {
+      return buildSvcName(type);
+    }
+
     if (GeckoProcessManager.isContent(type)) {
       return buildSvcName(type, DEFAULT_ISOLATED_CONTENT_SERVICE_NAME_SUFFIX);
     }
 
     
     return buildSvcName(type);
+  }
+
+  
+  public static String buildIsolatedGmpSvcName() {
+    return GeckoChildProcessServices.class.getName() + "$" + ISOLATED_GMPLUGIN_SERVICE_NAME;
   }
 
   
