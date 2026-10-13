@@ -78,6 +78,43 @@ function createPaymentMethodManifestUrl(testId, options = {}) {
 
 
 
+function createWebAppManifestUrl(testId, options = {}) {
+  const origin = options.origin || location.origin;
+  const url = new URL(
+      `${origin}/payment-method-manifest/resources/web-app-manifest.py`);
+  url.searchParams.set('id', testId);
+  if (options.app !== undefined) {
+    url.searchParams.set('app', options.app);
+  }
+  if (options.redirect_location !== undefined) {
+    url.searchParams.set('redirect_location', options.redirect_location);
+  }
+  if (options.status !== undefined) {
+    url.searchParams.set('status', options.status);
+  }
+  if (options.body !== undefined) {
+    url.searchParams.set('body', options.body);
+  }
+  if (options.content_type !== undefined) {
+    url.searchParams.set('content_type', options.content_type);
+  }
+  return url.href;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 async function waitForServerAccessLogs(t, testId, requiredCount = 2, timeout = 3000, interval = 100) {
