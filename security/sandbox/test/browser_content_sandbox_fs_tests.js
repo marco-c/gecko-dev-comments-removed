@@ -263,16 +263,16 @@ async function testFileAccessMacOnly() {
   
   
   
-  let macTempDir = GetDirFromEnvVariable("TMPDIR");
+  let macTempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
 
   macTempDir.normalize();
   Assert.ok(
     macTempDir.path.startsWith("/private/var"),
-    "$TMPDIR is in /private/var"
+    "Temp dir is in /private/var"
   );
 
   tests.push({
-    desc: `$TMPDIR (${macTempDir.path})`,
+    desc: `temp dir (${macTempDir.path})`,
     ok: false,
     browser: webBrowser,
     file: macTempDir,
@@ -281,7 +281,7 @@ async function testFileAccessMacOnly() {
   });
   if (fileContentProcessEnabled) {
     tests.push({
-      desc: `$TMPDIR (${macTempDir.path})`,
+      desc: `temp dir (${macTempDir.path})`,
       ok: true,
       browser: fileBrowser,
       file: macTempDir,
