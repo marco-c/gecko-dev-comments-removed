@@ -380,7 +380,8 @@ class Nursery {
   
   unsigned allocatedChunkCount() const { return toSpace.chunks_.length(); }
 
-  uint32_t currentChunk() const { return toSpace.currentChunk_; }
+  uint32_t activeChunkCount() const { return toSpace.activeChunkCount(); }
+  uint32_t currentChunk() const { return toSpace.currentChunk(); }
   uint32_t startChunk() const { return toSpace.startChunk_; }
   uintptr_t startPosition() const { return toSpace.startPosition_; }
 
@@ -404,11 +405,7 @@ class Nursery {
   
   double calcPromotionRate(bool* validForTenuring) const;
 
-  NurseryChunk& chunk(unsigned index) const { return *toSpace.chunks_[index]; }
-
-  
-  
-  void moveToStartOfChunk(unsigned chunkno);
+  NurseryChunk& chunk(unsigned index) const { return *toSpace.chunk(index); }
 
   bool initFirstChunk(AutoLockGCBgAlloc& lock);
   void setCapacity(size_t newCapacity);
@@ -551,7 +548,9 @@ class Nursery {
     Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
 
     
-    uint32_t currentChunk_ = 0;
+    
+    
+    uint32_t activeChunkCount_ = 0;
 
     
     uint32_t maxChunkCount_ = 0;
@@ -575,6 +574,19 @@ class Nursery {
     inline bool isEmpty() const;
     inline bool isInside(const void* p) const;
 
+    uint32_t activeChunkCount() const { return activeChunkCount_; }
+
+    
+    uint32_t currentChunk() const {
+      MOZ_ASSERT(activeChunkCount());
+      return activeChunkCount() - 1;
+    }
+
+    NurseryChunk* chunk(unsigned index) const {
+      MOZ_ASSERT(index < activeChunkCount());
+      return chunks_[index];
+    }
+
     
     
     inline size_t offsetFromAddress(uintptr_t addr) const;
@@ -583,7 +595,12 @@ class Nursery {
     void setKind(gc::ChunkKind newKind);
 
     void clear(Nursery* nursery);
-    void moveToStartOfChunk(Nursery* nursery, unsigned chunkno);
+
+    
+    
+    void moveToStartOfFirstChunk(Nursery* nursery);
+    void moveToStartOfNextChunk(Nursery* nursery);
+
     void setCurrentEnd(Nursery* nursery);
     void setStartToCurrentPosition();
     bool commitSubChunkRegion(size_t oldCapacity, size_t newCapacity);
