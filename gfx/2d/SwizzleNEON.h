@@ -132,16 +132,16 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
   
   
   
-  auto rb = vhaddq_u16(vmulq_u16(aRb, q1234lohi.val[1]),
-                       vreinterpretq_u16_s16(vqdmulhq_s16(
-                           vreinterpretq_s16_u16(aRb),
-                           vreinterpretq_s16_u16(q1234lohi.val[0]))));
+  auto rb = vrhaddq_u16(vmulq_u16(aRb, q1234lohi.val[1]),
+                        vreinterpretq_u16_s16(vqdmulhq_s16(
+                            vreinterpretq_s16_u16(aRb),
+                            vreinterpretq_s16_u16(q1234lohi.val[0]))));
 
   
-  auto ga = vhaddq_u16(vmulq_u16(aGa, q1234lohi.val[1]),
-                       vreinterpretq_u16_s16(vqdmulhq_s16(
-                           vreinterpretq_s16_u16(aGa),
-                           vreinterpretq_s16_u16(q1234lohi.val[0]))));
+  auto ga = vrhaddq_u16(vmulq_u16(aGa, q1234lohi.val[1]),
+                        vreinterpretq_u16_s16(vqdmulhq_s16(
+                            vreinterpretq_s16_u16(aGa),
+                            vreinterpretq_s16_u16(q1234lohi.val[0]))));
 
   
   
