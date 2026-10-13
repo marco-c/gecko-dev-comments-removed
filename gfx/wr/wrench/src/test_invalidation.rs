@@ -332,14 +332,23 @@ impl<'a> TestHarness<'a> {
         let expected_radius = BorderRadius {
             top_left: LayoutSize::new(20.0, 20.0),
             top_right: LayoutSize::new(20.0, 20.0),
-            bottom_left: LayoutSize::new(15.0, 15.0),
-            bottom_right: LayoutSize::new(15.0, 15.0),
+            bottom_left: LayoutSize::zero(),
+            bottom_right: LayoutSize::zero(),
             shape_top_left: 1.0,
             shape_top_right: 1.0,
             shape_bottom_left: 1.0,
             shape_bottom_right: 1.0,
         };
         assert_eq!(clip.radius, expected_radius, "Combined clip radii");
+
+        
+        
+        
+        let results = self.render_yaml("rounded_rect_intersect_mixed");
+        let clip = results.pc_debug.slice(0).compositor_clip.as_ref().expect(
+            "Expected one of the rounded rects to be the compositor clip"
+        );
+        assert_eq!(clip.radius, BorderRadius::uniform(clip.radius.top_left.width), "Uniform clip radii");
     }
 
     
@@ -354,7 +363,7 @@ impl<'a> TestHarness<'a> {
         
         let cases = [
             ("rounded-clip", true),
-            ("per-corner-radius", true),
+            ("single-radius-zero-corners", true),
             ("radius-clamped", true),
             ("two-clips-combined", true),
             ("rect-and-rounded", true),
@@ -364,6 +373,9 @@ impl<'a> TestHarness<'a> {
             
             ("elliptical-radius", false),
             ("corner-shape", false),
+            
+            
+            ("per-corner-radius", false),
             
             
             ("scrolled-clip", true),

@@ -483,6 +483,23 @@ fn find_scroll_root(
 
 
 
+
+fn has_single_corner_radius(radius: &BorderRadius) -> bool {
+    let mut single = None;
+    for corner in [radius.top_left, radius.top_right, radius.bottom_left, radius.bottom_right] {
+        if corner.width > 0.0 || corner.height > 0.0 {
+            match single {
+                None => single = Some(corner),
+                Some(r) if r != corner => return false,
+                Some(_) => {}
+            }
+        }
+    }
+    true
+}
+
+
+
 fn create_tile_cache(
     debug_flags: DebugFlags,
     slice_flags: SliceFlags,
@@ -572,7 +589,8 @@ fn create_tile_cache(
                     
                     let br = clamped_radius(&BorderRadius::from(radius), node.unsnapped_clip_rect.size());
                     if !debug_flags.contains(DebugFlags::DISABLE_COMPOSITOR_CLIPS) &&
-                       br.can_use_fast_path_in(&node.unsnapped_clip_rect) {
+                       br.can_use_fast_path_in(&node.unsnapped_clip_rect) &&
+                       has_single_corner_radius(&br) {
                         rounded_rect_count += 1;
 
                         if accumulated_rounded_rect.is_none() {
@@ -613,6 +631,7 @@ fn create_tile_cache(
                             acc_rect, acc_radius,
                             node.unsnapped_clip_rect, radius,
                         )
+                        .filter(|(_, combined_radius)| has_single_corner_radius(combined_radius))
                     }
                     _ => None,
                 };
