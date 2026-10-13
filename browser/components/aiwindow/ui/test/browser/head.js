@@ -110,7 +110,7 @@ let gIntentEngineStub;
 
 
 const MOCK_RS_RECORDS = [
-  ["chat", 11],
+  ["chat", 12],
   ["title-generation", 1],
   ["tab-group-naming", 1],
   ["conversation-starters-sidebar-system", 1],
@@ -221,7 +221,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v11.0",
+      version: "v12.0",
       is_default: true,
     },
     {
@@ -239,7 +239,7 @@ const MOCK_RS_RECORDS = [
       service_type: "ai",
       purpose: "chat",
       parameters: {},
-      version: "v11.0",
+      version: "v12.0",
     },
     {
       kind: "params",
@@ -257,7 +257,7 @@ const MOCK_RS_RECORDS = [
       purpose: "chat",
       parameters: {},
       prompts: "Test system prompt.",
-      version: "v11.0",
+      version: "v12.0",
     },
     {
       kind: "params",
@@ -274,7 +274,7 @@ const MOCK_RS_RECORDS = [
       service_type: "ai",
       purpose: "chat",
       parameters: {},
-      version: "v11.0",
+      version: "v12.0",
     },
     
     
