@@ -30,8 +30,8 @@ user-login = "Amanieu"
 user-name = "Amanieu d'Antras"
 
 [[publisher.audio_thread_priority]]
-version = "0.37.0"
-when = "2026-08-10"
+version = "0.38.0"
+when = "2026-09-17"
 user-id = 1258
 user-login = "padenot"
 user-name = "Paul Adenot"
@@ -542,13 +542,6 @@ when = "2024-04-25"
 user-id = 2915
 user-login = "Amanieu"
 user-name = "Amanieu d'Antras"
-
-[[publisher.paste]]
-version = "1.0.11"
-when = "2022-12-17"
-user-id = 3618
-user-login = "dtolnay"
-user-name = "David Tolnay"
 
 [[publisher.pe-unwind-info]]
 version = "0.6.0"
@@ -1547,6 +1540,12 @@ notes = """
 No `unsafe` code in this update. Lots of changes but all
 object-file-format-related, everything looks good.
 """
+
+[[audits.bytecode-alliance.audits.pastey]]
+who = "Chris Fallin <chris@cfallin.org>"
+criteria = "safe-to-deploy"
+version = "0.2.1"
+notes = "No unsafe code."
 
 [[audits.bytecode-alliance.audits.percent-encoding]]
 who = "Alex Crichton <alex@alexcrichton.com>"
