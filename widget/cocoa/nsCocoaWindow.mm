@@ -7220,6 +7220,17 @@ void nsCocoaWindow::DispatchSizeModeEvent() {
   }
 }
 
+
+
+
+static bool IsOcclusionTrackingDisabledByEnv() {
+  static const bool sDisabled = [] {
+    const char* env = getenv("MOZ_WINDOW_OCCLUSION");
+    return env && *env != '1';
+  }();
+  return sDisabled;
+}
+
 void nsCocoaWindow::DispatchOcclusionEvent() {
   if (!mWindow) {
     return;
@@ -7251,7 +7262,7 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
 
   
   bool newOcclusionState =
-      !keyOrMainNonFullscreen &&
+      !IsOcclusionTrackingDisabledByEnv() && !keyOrMainNonFullscreen &&
       !(mHasStartedNativeFullscreen ||
         ([mWindow occlusionState] & NSWindowOcclusionStateVisible));
 
