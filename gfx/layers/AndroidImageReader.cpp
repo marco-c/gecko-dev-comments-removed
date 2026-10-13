@@ -412,8 +412,8 @@ bool AndroidImageReader::UpdateTexImageWithReadback(
   MonitorAutoLock lock(mMonitor);
 
   DoUpdateTexImage(lock, aFrameId);
-  if (!mCurrentImage) {
-    MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+  
+  if (!mCurrentImage || mCurrentFrameId != aFrameId) {
     return false;
   }
 
@@ -501,25 +501,52 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
 
   mIsPendingNextImage = true;
 
-  MOZ_ASSERT(!mWaitingFrameAvailable);
-  mWaitingFrameAvailable = true;
+  
+  
+  const TimeStamp deadline =
+      TimeStamp::Now() + TimeDuration::FromMilliseconds(20);
+  bool updated = false;
 
-  if (!MaybeReleaseFrameToCodec(aProofOfLock, aFrameId,  true)) {
-    mWaitingFrameAvailable = false;
-    return false;
-  }
-
-  const TimeDuration timeout = TimeDuration::FromMilliseconds(20);
-
-  while (mWaitingFrameAvailable) {
-    CVStatus status = mMonitor.Wait(timeout);
-    if (status == CVStatus::Timeout) {
-      gfxCriticalNoteOnce << "UpdateTexImage wait timeout";
-      return false;
+  while (mCurrentFrameId != aFrameId) {
+    if (mPendingFrameId.isNothing()) {
+      MOZ_ASSERT(!mWaitingFrameAvailable);
+      mPendingFrameId = Some(aFrameId);
+      mWaitingFrameAvailable = true;
+      if (!MaybeReleaseFrameToCodec(aProofOfLock, aFrameId,
+                                     true)) {
+        mPendingFrameId.reset();
+        mWaitingFrameAvailable = false;
+        return updated;
+      }
     }
+
+    while (mWaitingFrameAvailable) {
+      const TimeDuration remaining = deadline - TimeStamp::Now();
+      if (remaining <= TimeDuration()) {
+        gfxCriticalNoteOnce << "UpdateTexImage wait timeout";
+        
+        
+        break;
+      }
+      mMonitor.Wait(remaining);
+    }
+
+    
+    
+    if (!AcquirePendingImage()) {
+      
+      
+      return updated;
+    }
+    updated = true;
   }
 
-  mWaitingFrameAvailable = false;
+  return updated;
+}
+
+bool AndroidImageReader::AcquirePendingImage() {
+  MOZ_ASSERT(mPendingFrameId.isSome());
+  
 
   AImage* image = nullptr;
   media_status_t ret = AMEDIA_OK;
@@ -551,6 +578,11 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
     return false;
   }
 
+  
+  const AndroidMediaCodecFrameId frameId = mPendingFrameId.value();
+  mPendingFrameId.reset();
+  mWaitingFrameAvailable = false;
+
   AHardwareBuffer* nativeBuffer = nullptr;
   media_status_t result = AImage_getHardwareBuffer(image, &nativeBuffer);
   if (!nativeBuffer) {
@@ -575,7 +607,7 @@ bool AndroidImageReader::DoUpdateTexImage(const MonitorAutoLock& aProofOfLock,
 
   mCurrentImage = new AndroidImageWrapper(this, image, nativeBuffer, size,
                                           format, std::move(fence));
-  mCurrentFrameId = aFrameId;
+  mCurrentFrameId = frameId;
 
   MOZ_ASSERT(static_cast<int32_t>(mAcquiredImageCount) <= mMaxImageCount);
 
