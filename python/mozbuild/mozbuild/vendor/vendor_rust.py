@@ -333,7 +333,6 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     RUNTIME_LICENSE_PACKAGE_ALLOWLIST = {
         "BSD-2-Clause": [
             "arrayref",
-            "mach",
             "qlog",
         ],
         "BSD-3-Clause": [
