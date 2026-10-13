@@ -28,6 +28,9 @@ add_task(async function test_cropped_navigation_returns_tab_home() {
   let mini = [...MiniWindowManager._miniwindows][0];
 
   
+  await SimpleTest.promiseFocus(miniWin);
+
+  
   
   let closed = BrowserTestUtils.domWindowClosed(miniWin);
   await BrowserTestUtils.synthesizeMouseAtCenter("#redirect", {}, mini.browser);
@@ -40,6 +43,45 @@ add_task(async function test_cropped_navigation_returns_tab_home() {
   );
   Assert.ok(true, "Successfully navigated");
 
+  removeTestTabs(EXAMPLE_URL);
+});
+
+
+
+
+
+
+
+
+
+async function navigateFromPage({ miniWindowActive }) {
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, REDIRECT_URL);
+  let miniWin = await popTabForTest(tab, croppedInfoFor(tab.linkedBrowser));
+  let mini = [...MiniWindowManager._miniwindows][0];
+  await SimpleTest.promiseFocus(miniWindowActive ? miniWin : window);
+
+  let closed = BrowserTestUtils.domWindowClosed(miniWin);
+  await SpecialPowers.spawn(mini.browser, [NEXT_URL], url => {
+    content.location.href = url;
+  });
+  await closed;
+
+  assertNoMiniWindowsOpen();
+  return TestUtils.waitForCondition(
+    () => gBrowser.tabs.find(t => t.linkedBrowser.currentURI.spec === NEXT_URL),
+    "the tab came back and the navigation continued"
+  );
+}
+
+add_task(async function test_page_navigation_returns_tab_quietly() {
+  let returned = await navigateFromPage({ miniWindowActive: false });
+  Assert.notEqual(gBrowser.selectedTab, returned, "the tab isn't selected");
+  removeTestTabs(EXAMPLE_URL);
+});
+
+add_task(async function test_page_navigation_in_active_mini_window_focuses() {
+  let returned = await navigateFromPage({ miniWindowActive: true });
+  Assert.equal(gBrowser.selectedTab, returned, "the tab is selected");
   removeTestTabs(EXAMPLE_URL);
 });
 
