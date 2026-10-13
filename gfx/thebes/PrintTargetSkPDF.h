@@ -7,19 +7,21 @@
 
 #include "PrintTarget.h"
 #include "mozilla/UniquePtr.h"
+#include "nsCOMPtr.h"
+#include "skia/include/core/SkCanvas.h"
+#include "skia/include/core/SkStream.h"
+#include "skia/include/docs/SkPDFDocument.h"
 
-class SkCanvas;
-class SkWStream;
-class SkDynamicMemoryWStream;
-class SkDocument;
-
-namespace mozilla::gfx {
+namespace mozilla {
+namespace gfx {
 
 
 
 
 class PrintTargetSkPDF final : public PrintTarget {
  public:
+  static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
+      UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints);
   static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
       nsIOutputStream* aStream, const IntSize& aSizeInPoints);
 
@@ -42,15 +44,26 @@ class PrintTargetSkPDF final : public PrintTarget {
   PrintTargetSkPDF(const IntSize& aSize, UniquePtr<SkWStream> aStream);
   virtual ~PrintTargetSkPDF();
 
-  struct SkPDFDocState;
-  UniquePtr<SkPDFDocState> mState;
   
-  UniquePtr<SkPDFDocState> mRefState;
+  
+  sk_sp<SkDocument> mPDFDoc;
 
   
+  UniquePtr<SkWStream> mOStream;
+
+  
+  
+  SkCanvas* mPageCanvas;
   RefPtr<DrawTarget> mPageDT;
+
+  
+  sk_sp<SkDocument> mRefPDFDoc;
+  
+  SkCanvas* mRefCanvas;
+  SkDynamicMemoryWStream mRefOStream;
 };
 
+}  
 }  
 
 #endif 

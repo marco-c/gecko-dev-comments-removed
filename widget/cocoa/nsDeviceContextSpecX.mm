@@ -22,9 +22,7 @@
 #include "nsCRT.h"
 #include "nsCUPSShim.h"
 #include "nsCocoaUtils.h"
-#include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
-#include "nsIFileStreams.h"
 #include "nsILocalFileMac.h"
 #include "nsIOutputStream.h"
 #include "nsPaper.h"
@@ -373,31 +371,23 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
   const double width = right - left;
   const double height = bottom - top;
   IntSize size = IntSize::Ceil(width, height);
-  if (!mPrintViaSkPDF) {
-    return PrintTargetCG::CreateOrNull(mOutputStream, mPrintSession,
-                                       mPageFormat, mPMPrintSettings, size);
-  }
-  auto stream = [&]() -> nsCOMPtr<nsIOutputStream> {
+
+  if (mPrintViaSkPDF) {
     if (mOutputStream) {
-      return mOutputStream;
+      return PrintTargetSkPDF::CreateOrNull(mOutputStream, size);
     }
     nsresult rv =
         NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mTempFile));
     NS_ENSURE_SUCCESS(rv, nullptr);
-    
-    
-    
     nsAutoCString tempPath("tmp-printing.pdf");
     mTempFile->AppendNative(tempPath);
     rv = mTempFile->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
     NS_ENSURE_SUCCESS(rv, nullptr);
+    mTempFile->GetNativePath(tempPath);
+    auto stream = MakeUnique<SkFILEWStream>(tempPath.get());
+    return PrintTargetSkPDF::CreateOrNull(std::move(stream), size);
+  }
 
-    nsCOMPtr<nsIFileOutputStream> stream =
-        do_CreateInstance("@mozilla.org/network/file-output-stream;1");
-    if (NS_FAILED(stream->Init(mTempFile, -1, -1, 0))) {
-      return nullptr;
-    }
-    return stream;
-  }();
-  return PrintTargetSkPDF::CreateOrNull(stream, size);
+  return PrintTargetCG::CreateOrNull(mOutputStream, mPrintSession, mPageFormat,
+                                     mPMPrintSettings, size);
 }
