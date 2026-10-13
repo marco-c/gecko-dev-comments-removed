@@ -381,6 +381,19 @@ void Port::OnReadPacket(const ReceivedIpPacket& packet, ProtocolType proto) {
   } else if (!msg) {
     
   } else if (msg->type() == STUN_BINDING_REQUEST) {
+    if (ice_role_ == ICEROLE_UNKNOWN) {
+      
+      
+      
+      
+      RTC_LOG(LS_WARNING) << ToString() << ": Dropping "
+                          << StunMethodToString(msg->type())
+                          << " id=" << hex_encode(msg->transaction_id())
+                          << " from unknown address "
+                          << addr.ToSensitiveString()
+                          << " since the port has no ICE role.";
+      return;
+    }
     RTC_LOG(LS_INFO) << "Received " << StunMethodToString(msg->type())
                      << " id=" << hex_encode(msg->transaction_id())
                      << " from unknown address " << addr.ToSensitiveString();
