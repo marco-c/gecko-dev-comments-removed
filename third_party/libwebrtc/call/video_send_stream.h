@@ -244,6 +244,8 @@ class VideoSendStream {
   
   
   virtual void AddAdaptationResource(scoped_refptr<Resource> resource) = 0;
+  
+  
   virtual std::vector<scoped_refptr<Resource>> GetAdaptationResources() = 0;
 
   virtual void SetSource(

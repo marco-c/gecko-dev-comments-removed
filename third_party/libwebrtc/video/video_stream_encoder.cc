@@ -855,24 +855,6 @@ void VideoStreamEncoder::AddAdaptationResource(
   });
 }
 
-std::vector<scoped_refptr<Resource>>
-VideoStreamEncoder::GetAdaptationResources() {
-  RTC_DCHECK_RUN_ON(worker_queue_);
-  
-  
-  
-  
-  Event event;
-  std::vector<scoped_refptr<Resource>> resources;
-  encoder_queue_->PostTask([&] {
-    RTC_DCHECK_RUN_ON(encoder_queue_.get());
-    resources = resource_adaptation_processor_->GetResources();
-    event.Set();
-  });
-  event.Wait(Event::kForever);
-  return resources;
-}
-
 void VideoStreamEncoder::SetSource(
     VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
