@@ -23,7 +23,6 @@ const { createAutofillKey, createAutofillStoreWithStaticKeyManager } =
 const { initialize: initRustComponents } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustInitRustComponents.sys.mjs"
 );
-
 const TEST_NUMBER = "4111111111111111";
 
 
