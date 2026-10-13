@@ -2419,8 +2419,11 @@ RTCStatsCollector::PrepareTransceiverStatsInfosAndCallStats_s_w() {
           std::move(voice_media_info), std::move(video_media_info),
           std::move(stats.sender_infos), std::move(sender_parameters),
           std::move(stats.receiver_infos), std::move(receiver_parameters));
-      if (stats.media_type == MediaType::AUDIO) {
-        has_audio_receiver |= stats.has_receivers;
+      
+      if (stats.media_type == MediaType::AUDIO && stats.has_receivers &&
+          (stats.current_direction == RtpTransceiverDirection::kSendRecv ||
+           stats.current_direction == RtpTransceiverDirection::kRecvOnly)) {
+        has_audio_receiver = true;
       }
     }
 
