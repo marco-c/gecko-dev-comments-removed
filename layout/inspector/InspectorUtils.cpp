@@ -1272,9 +1272,10 @@ void InspectorUtils::GetCSSRegisteredProperty(
 
 
 bool InspectorUtils::ValueMatchesSyntax(GlobalObject&, Document& aDocument,
+                                        const nsACString& aProperty,
                                         const nsACString& aValue,
                                         const nsACString& aSyntax) {
-  return Servo_Value_Matches_Syntax(&aValue, &aSyntax,
+  return Servo_Value_Matches_Syntax(&aProperty, &aValue, &aSyntax,
                                     aDocument.DefaultStyleAttrURLData());
 }
 
@@ -1526,7 +1527,8 @@ static float GetParentFontSizePercentageBasis(
   if (!aPseudo.IsNotPseudo()) {
     parentStyle = GetCleanComputedStyleForElement(
         &aElement, PseudoStyleRequest::NotPseudo());
-  } else if (Element* parent = aElement.GetFlattenedTreeParentElement()) {
+  } else if (RefPtr<Element> parent =
+                 aElement.GetFlattenedTreeParentElement()) {
     
     
     parentStyle = GetCleanComputedStyleForElement(
@@ -1638,11 +1640,6 @@ void InspectorUtils::GetComputationSteps(GlobalObject& aGlobalObject,
                                          Element& aElement,
                                          const nsAString& aPseudo,
                                          nsTArray<nsCString>& aResult) {
-  Document* doc = aElement.GetComposedDoc();
-  if (!doc) {
-    return;
-  }
-
   auto pseudo = PseudoStyleRequest::Parse(
       aPseudo, aElement.OwnerDoc()->DefaultStyleAttrURLData());
   if (!pseudo) {
@@ -1661,7 +1658,8 @@ void InspectorUtils::GetComputationSteps(GlobalObject& aGlobalObject,
       GetPercentageBasisFor(aProperty, aElement, *pseudo, *computedStyle);
 
   Servo_GetComputationSteps(&aExpression, &aElement, pseudo->mType,
-                            computedStyle, doc->EnsureStyleSet().RawData(),
+                            computedStyle,
+                            aElement.OwnerDoc()->EnsureStyleSet().RawData(),
                             percentageBasis, &aResult);
 }
 
@@ -1671,14 +1669,6 @@ void InspectorUtils::GetSubstitutedValue(GlobalObject& aGlobalObject,
                                          Element& aElement,
                                          const nsAString& aPseudo,
                                          nsACString& aResult) {
-  Document* doc = aElement.GetComposedDoc();
-  if (!doc) {
-    
-    
-    aResult.SetIsVoid(true);
-    return;
-  }
-
   auto pseudo = PseudoStyleRequest::Parse(
       aPseudo, aElement.OwnerDoc()->DefaultStyleAttrURLData());
   if (!pseudo) {
@@ -1699,9 +1689,9 @@ void InspectorUtils::GetSubstitutedValue(GlobalObject& aGlobalObject,
     return;
   }
 
-  Servo_GetSubstitutedValue(&aExpression, &aElement, pseudo->mType,
-                            computedStyle, doc->EnsureStyleSet().RawData(),
-                            &aResult);
+  Servo_GetSubstitutedValue(
+      &aExpression, &aElement, pseudo->mType, computedStyle,
+      aElement.OwnerDoc()->EnsureStyleSet().RawData(), &aResult);
 }
 
 }  
