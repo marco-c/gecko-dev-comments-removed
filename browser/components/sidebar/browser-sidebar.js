@@ -382,7 +382,9 @@ var SidebarController = {
   _aiWindowObserverAdded: false,
   _windowRestoredObserverAdded: false,
   _mainResizeObserver: null,
-  _ongoingAnimations: [],
+  _activeViewTransition: null,
+  _viewTransitionPromise: null,
+  _inViewTransitionUpdate: false,
   _collapsedWidthMeasurementID: 0,
   _expandOnHoverToggleID: 0,
 
@@ -1010,6 +1012,11 @@ var SidebarController = {
     let sidebarMain = document.querySelector("sidebar-main");
 
     
+    document.documentElement.toggleAttribute(
+      "sidebar-positionend",
+      !this._positionStart
+    );
+    
     this._box.toggleAttribute("sidebar-positionend", !this._positionStart);
     sidebarMain.toggleAttribute("sidebar-positionend", !this._positionStart);
     
@@ -1320,13 +1327,14 @@ var SidebarController = {
       
       
       
-      this.hide({
-        triggerNode,
-        dismissPanel:
-          this.sidebarRevampEnabled && !this._state.launcherHiddenWithPanel,
+      return this._maybeAnimate(() => {
+        this.hide({
+          triggerNode,
+          dismissPanel:
+            this.sidebarRevampEnabled && !this._state.launcherHiddenWithPanel,
+        });
+        this.updateToolbarButton();
       });
-      this.updateToolbarButton();
-      return Promise.resolve();
     }
 
     if (!this.sidebarRevampEnabled) {
@@ -1338,14 +1346,23 @@ var SidebarController = {
       }
     }
 
-    return this.show(commandID, triggerNode);
+    return this._showAnimated(commandID, triggerNode);
   },
 
-  _getRects(animatingElements) {
-    return animatingElements.map(e => [
-      e.hidden,
-      e.getBoundingClientRect().toJSON(),
-    ]);
+  
+
+
+
+
+
+
+
+  async _showAnimated(commandID, triggerNode) {
+    let shown;
+    await this._maybeAnimate(() => {
+      shown = this.show(commandID, triggerNode);
+    });
+    return shown;
   },
 
   
@@ -1359,182 +1376,12 @@ var SidebarController = {
       return null;
     }
     const tasks = [this.sidebarMain.updateComplete];
-    if (this._ongoingAnimations?.length) {
-      tasks.push(
-        ...this._ongoingAnimations.map(animation => animation.finished)
-      );
+    
+    
+    if (this._viewTransitionPromise && !this._inViewTransitionUpdate) {
+      tasks.push(this._viewTransitionPromise);
     }
     return Promise.allSettled(tasks);
-  },
-
-  async _animateSidebarContainer() {
-    let tabbox = document.getElementById("tabbrowser-tabbox");
-    let animatingElements;
-    let expandOnHoverEnabled = document.documentElement.hasAttribute(
-      "sidebar-expand-on-hover"
-    );
-    if (expandOnHoverEnabled) {
-      animatingElements = [this.sidebarContainer];
-    } else {
-      animatingElements = [
-        this.sidebarContainer,
-        this._box,
-        this._splitter,
-        tabbox,
-      ];
-    }
-    let resetElements = () => {
-      for (let el of animatingElements) {
-        el.style.minWidth =
-          el.style.maxWidth =
-          el.style.marginLeft =
-          el.style.marginRight =
-          el.style.display =
-            "";
-      }
-      this.sidebarContainer.toggleAttribute(
-        "sidebar-ongoing-animations",
-        false
-      );
-      this._box.toggleAttribute("sidebar-ongoing-animations", false);
-      tabbox.toggleAttribute("sidebar-ongoing-animations", false);
-      this.sidebarMain.toggleAttribute("sidebar-ongoing-animations", false);
-    };
-    if (this._ongoingAnimations.length) {
-      this._ongoingAnimations.forEach(a => a.cancel());
-      this._ongoingAnimations = [];
-      resetElements();
-    }
-
-    let fromRects = this._getRects(animatingElements);
-
-    
-    
-    await new Promise(resolve => {
-      queueMicrotask(() => resolve(this.sidebarMain.updateComplete));
-    });
-    let toRects = this._getRects(animatingElements);
-
-    const options = {
-      duration: document.documentElement.hasAttribute("sidebar-expand-on-hover")
-        ? this._animationExpandOnHoverDurationMs
-        : this._animationDurationMs,
-      easing: "ease-in-out",
-    };
-    let animations = [];
-    let sidebarOnLeft = this._positionStart != RTL_UI;
-    let sidebarShift = 0;
-    
-    
-    
-    const launcherHidden = this._state.launcherHiddenWithPanel;
-    for (let i = 0; i < animatingElements.length; ++i) {
-      const el = animatingElements[i];
-      const [wasHidden, from] = fromRects[i];
-      const [isHidden, to] = toRects[i];
-
-      
-      
-      const isSidebar = launcherHidden
-        ? el === this._box
-        : el === this.sidebarContainer;
-
-      if (wasHidden != isHidden) {
-        if (wasHidden) {
-          from.left = from.right = sidebarOnLeft ? to.left : to.right;
-        } else {
-          to.left = to.right = sidebarOnLeft ? from.left : from.right;
-        }
-      }
-      const widthGrowth = to.width - from.width;
-      if (isSidebar) {
-        sidebarShift = widthGrowth;
-      }
-
-      let fromTranslate = sidebarOnLeft
-        ? from.left - to.left
-        : from.right - to.right;
-      let toTranslate = 0;
-
-      
-      
-      
-      el.style.minWidth =
-        el.style.maxWidth =
-        el.style.marginLeft =
-        el.style.marginRight =
-        el.style.display =
-          "";
-      if (isHidden && !wasHidden) {
-        el.style.display = "flex";
-      }
-
-      
-      
-      if (widthGrowth < 0) {
-        el.style.minWidth = el.style.maxWidth = from.width + "px";
-        el.style["margin-" + (sidebarOnLeft ? "right" : "left")] =
-          widthGrowth + "px";
-        if (isSidebar) {
-          toTranslate = sidebarOnLeft ? widthGrowth : -widthGrowth;
-        } else if (el === this._box) {
-          
-          
-          
-          
-          fromTranslate = sidebarOnLeft ? -sidebarShift : sidebarShift;
-          toTranslate = sidebarOnLeft
-            ? fromTranslate + widthGrowth
-            : fromTranslate - widthGrowth;
-        }
-      } else if (isSidebar) {
-        fromTranslate += sidebarOnLeft ? -widthGrowth : widthGrowth;
-      }
-
-      animations.push(
-        el.animate(
-          [
-            { translate: `${fromTranslate}px 0 0` },
-            { translate: `${toTranslate}px 0 0` },
-          ],
-          options
-        )
-      );
-      if (!isSidebar || !this._positionStart || launcherHidden) {
-        continue;
-      }
-      
-      
-      if (!this._state.launcherExpanded) {
-        animations.push(
-          this.sidebarMain.animate(
-            [{ translate: "0" }, { translate: `${-toTranslate}px 0 0` }],
-            options
-          )
-        );
-      } else {
-        animations.push(
-          this.sidebarMain.animate(
-            [{ translate: `${-fromTranslate}px 0 0` }, { translate: "0" }],
-            options
-          )
-        );
-      }
-    }
-    this._ongoingAnimations = animations;
-    this.sidebarContainer.toggleAttribute("sidebar-ongoing-animations", true);
-    this.sidebarMain.toggleAttribute("sidebar-ongoing-animations", true);
-    this._box.toggleAttribute("sidebar-ongoing-animations", true);
-    tabbox.toggleAttribute("sidebar-ongoing-animations", true);
-    await Promise.allSettled(animations.map(a => a.finished));
-    if (this._ongoingAnimations === animations) {
-      this._ongoingAnimations = [];
-      resetElements();
-    }
-
-    if (expandOnHoverEnabled) {
-      this._reconcileHoverState();
-    }
   },
 
   
@@ -1560,45 +1407,47 @@ var SidebarController = {
       await this.toggleExpandOnHover(initialExpandedValue);
     }
 
-    if (this._animationEnabled && !window.gReduceMotion) {
-      this._animateSidebarContainer();
-    }
-
-    if (expandOnToggle) {
-      
-      this._state.updateVisibility(true, !initialExpandedValue);
-      this.updateToolbarButton();
-      return;
-    }
-
-    if (this._state.launcherHiddenWithPanel) {
-      
-      
-      
-      if (this.isOpen) {
-        this.hide({ dismissPanel: false });
-      } else {
-        let commandID = this._state.command || this.lastOpenedId;
-        if (!commandID || !this.sidebars.has(commandID)) {
-          commandID = this.sidebars.keys().next().value;
-        }
-        await this.show(commandID);
+    const update = () => {
+      if (expandOnToggle) {
+        
+        this._state.updateVisibility(true, !initialExpandedValue);
+        this.updateToolbarButton();
+        return;
       }
-      this.updateToolbarButton();
-      return;
-    }
 
-    const shouldShowLauncher = !this._state.launcherVisible;
-    
-    this._state.updateVisibility(shouldShowLauncher);
-    
-    if (shouldShowLauncher && this._state.command) {
-      await this.show(this._state.command);
-    } else if (!shouldShowLauncher) {
+      if (this._state.launcherHiddenWithPanel) {
+        
+        
+        
+        if (this.isOpen) {
+          this.hide({ dismissPanel: false });
+        } else {
+          let commandID = this._state.command || this.lastOpenedId;
+          if (!commandID || !this.sidebars.has(commandID)) {
+            commandID = this.sidebars.keys().next().value;
+          }
+          this.show(commandID);
+        }
+        this.updateToolbarButton();
+        return;
+      }
+
+      const shouldShowLauncher = !this._state.launcherVisible;
       
-      this.hide({ dismissPanel: false });
-    }
-    this.updateToolbarButton();
+      this._state.updateVisibility(shouldShowLauncher);
+      
+      if (shouldShowLauncher && this._state.command) {
+        this.show(this._state.command);
+      } else if (!shouldShowLauncher) {
+        
+        if (!this.isOpen) {
+          this.updateToolbarButton();
+        }
+        
+        this.hide({ dismissPanel: false });
+      }
+    };
+    await this._maybeAnimate(update);
   },
 
   
@@ -1737,7 +1586,7 @@ var SidebarController = {
 
 
   _reconcileHoverState() {
-    if (this._ongoingAnimations.length || this._isMenuPopupOpen()) {
+    if (this._activeViewTransition || this._isMenuPopupOpen()) {
       return;
     }
     let isHovered = this._checkIsHoveredOverLauncher();
@@ -2574,15 +2423,99 @@ var SidebarController = {
     }
   },
 
+  
+
+
+
+
+
+
+
+  async _maybeAnimate(callback) {
+    if (
+      !this.sidebarRevampEnabled ||
+      !this._animationEnabled ||
+      window.gReduceMotion ||
+      this._inViewTransitionUpdate
+    ) {
+      return callback();
+    }
+    
+    
+    let promise = this._startViewTransition(callback);
+    this._viewTransitionPromise = promise;
+    try {
+      return await promise;
+    } finally {
+      if (this._viewTransitionPromise == promise) {
+        this._viewTransitionPromise = null;
+      }
+    }
+  },
+
+  
+
+
+
+
+
+  async _startViewTransition(callback) {
+    await this.sidebarMain.updateComplete;
+    let wasOpen = this.isOpen;
+    let previousID = this.currentID;
+    let wasLauncherVisible = this._state.launcherVisible;
+    let wasLauncherExpanded = this._state.launcherExpanded;
+    let transition = document.startViewTransition(async () => {
+      this._inViewTransitionUpdate = true;
+      try {
+        await callback();
+      } finally {
+        this._inViewTransitionUpdate = false;
+      }
+      let { launcherVisible, launcherExpanded } = this._state;
+      if (launcherExpanded != wasLauncherExpanded) {
+        transition.types.add(launcherExpanded ? "expand" : "collapse");
+      }
+      if (launcherVisible != wasLauncherVisible) {
+        transition.types.add(
+          launcherVisible ? "launcher-enter" : "launcher-exit"
+        );
+        transition.types.add(
+          launcherVisible ? "launcher-show" : "launcher-hide"
+        );
+      } else if (launcherVisible && launcherExpanded != wasLauncherExpanded) {
+        transition.types.add(
+          launcherExpanded ? "launcher-enter" : "launcher-exit"
+        );
+      }
+      if (this.isOpen != wasOpen) {
+        transition.types.add(this.isOpen ? "panel-open" : "panel-close");
+      } else if (this.isOpen && this.currentID != previousID) {
+        transition.types.add("panel-switch");
+      }
+      await this.sidebarMain.updateComplete;
+    });
+    this._activeViewTransition = transition;
+    
+    transition.ready.catch(() => {});
+    return transition.finished.finally(() => {
+      if (this._activeViewTransition == transition) {
+        this._activeViewTransition = null;
+        if (document.documentElement.hasAttribute("sidebar-expand-on-hover")) {
+          this._reconcileHoverState();
+        }
+      }
+    });
+  },
+
   debouncedMouseEnter() {
     const contentArea = document.getElementById("tabbrowser-tabbox");
     this._box.toggleAttribute("sidebar-launcher-hovered", true);
     contentArea.toggleAttribute("sidebar-launcher-hovered", true);
-    this._state.launcherHoverActive = true;
-    if (this._animationEnabled && !window.gReduceMotion) {
-      this._animateSidebarContainer();
-    }
-    this._state.launcherExpanded = true;
+    this._maybeAnimate(() => {
+      this._state.launcherHoverActive = true;
+      this._state.launcherExpanded = true;
+    });
     this._mouseEnterDeferred.resolve();
   },
 
@@ -2592,11 +2525,10 @@ var SidebarController = {
     const contentArea = document.getElementById("tabbrowser-tabbox");
     this._box.toggleAttribute("sidebar-launcher-hovered", false);
     contentArea.toggleAttribute("sidebar-launcher-hovered", false);
-    this._state.launcherHoverActive = false;
-    if (this._animationEnabled && !window.gReduceMotion) {
-      this._animateSidebarContainer();
-    }
-    this._state.launcherExpanded = false;
+    this._maybeAnimate(() => {
+      this._state.launcherHoverActive = false;
+      this._state.launcherExpanded = false;
+    });
   },
 
   collapseOnEscape() {
@@ -2614,7 +2546,7 @@ var SidebarController = {
   onMouseLeave() {
     
     
-    if (this._ongoingAnimations.length || this._isMenuPopupOpen()) {
+    if (this._activeViewTransition || this._isMenuPopupOpen()) {
       return;
     }
     if (this._escapedWhileHovered) {
@@ -2631,7 +2563,7 @@ var SidebarController = {
     if (this._state.launcherExpanded) {
       return;
     }
-    if (this._ongoingAnimations.length || this._isMenuPopupOpen()) {
+    if (this._activeViewTransition || this._isMenuPopupOpen()) {
       return;
     }
     if (this._escapedWhileHovered) {
@@ -2696,7 +2628,7 @@ var SidebarController = {
     }
     await this.waitUntilStable();
     let collapsedWidth = await window.promiseDocumentFlushed(
-      () => this._getRects([this.sidebarContainer])[0][1].width
+      () => this.sidebarContainer.getBoundingClientRect().width
     );
 
     if (measurementID !== this._collapsedWidthMeasurementID) {
@@ -2752,8 +2684,18 @@ var SidebarController = {
     }
   },
 
+  _updateExpandOnHoverDuration() {
+    document.documentElement.style.setProperty(
+      "--sidebar-expand-on-hover-duration",
+      `${this._animationExpandOnHoverDurationMs}ms`
+    );
+  },
+
   async toggleExpandOnHover(isEnabled, isDragEnded) {
     const toggleID = ++this._expandOnHoverToggleID;
+    if (isEnabled) {
+      this._updateExpandOnHoverDuration();
+    }
     document.documentElement.toggleAttribute(
       "sidebar-expand-on-hover",
       isEnabled
@@ -2859,8 +2801,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
       !SidebarController.uninitializing &&
       !SidebarController.inSingleTabWindow
     ) {
-      SidebarController.setPosition();
       SidebarController.recordPositionSetting(newValue);
+      
+      
+      SidebarController._maybeAnimate(() => {
+        SidebarController.setPosition();
+      });
     }
   }
 );
@@ -2872,15 +2818,10 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
-  "_animationDurationMs",
-  "sidebar.animation.duration-ms",
-  200
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  SidebarController,
   "_animationExpandOnHoverDurationMs",
   "sidebar.animation.expand-on-hover.duration-ms",
-  400
+  200,
+  () => SidebarController._updateExpandOnHoverDuration()
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,
@@ -2962,13 +2903,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
           "sidebar.verticalTabs"
         );
         SidebarController._state.revampVisibility = newValue;
-        if (
-          SidebarController._animationEnabled &&
-          !window.gReduceMotion &&
-          newValue !== "expand-on-hover"
-        ) {
-          SidebarController._animateSidebarContainer();
-        }
 
         
         let forceExpand = false;
