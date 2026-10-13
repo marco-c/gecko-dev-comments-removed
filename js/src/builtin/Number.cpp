@@ -10,12 +10,14 @@
 
 #include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Utf8.h"
 
 #include <algorithm>
+#include <array>
 #include <charconv>
 #include <iterator>
 #include <limits>
@@ -65,6 +67,7 @@ using namespace js;
 
 using mozilla::Abs;
 using mozilla::AsciiAlphanumericToNumber;
+using mozilla::FloorLog2;
 using mozilla::IsAsciiAlphanumeric;
 using mozilla::IsAsciiDigit;
 using mozilla::MaxNumberValue;
@@ -881,25 +884,69 @@ static size_t Int32ToCString(Int32ToCStringBuf* cbuf, T i) {
   return Int32ToCString<T, Base>(cbuf->sbuf, i);
 }
 
+
+
+
+
+
+
+
+static constexpr auto CountDigitsTable = [] {
+  std::array<uint64_t, 32> table{};
+  uint64_t pow10 = 10;
+  uint64_t digits = 1;
+  for (size_t k = 0; k < table.size(); k++) {
+    while (pow10 <= (uint64_t{1} << k)) {
+      pow10 *= 10;
+      digits++;
+    }
+    table[k] = pow10 <= UINT32_MAX ? ((digits + 1) << 32) - pow10
+                                   : digits << 32;
+  }
+  return table;
+}();
+static constexpr size_t CountDigits(uint32_t x) {
+  return (x + CountDigitsTable[FloorLog2(x)]) >> 32;
+}
+static_assert(CountDigits(0) == 1);
+static_assert(CountDigits(1) == 1);
+static_assert(CountDigits(9) == 1);
+static_assert(CountDigits(10) == 2);
+static_assert(CountDigits(99) == 2);
+static_assert(CountDigits(100) == 3);
+static_assert(CountDigits(999) == 3);
+static_assert(CountDigits(1000) == 4);
+static_assert(CountDigits(9999) == 4);
+static_assert(CountDigits(10000) == 5);
+static_assert(CountDigits(99999) == 5);
+static_assert(CountDigits(100000) == 6);
+static_assert(CountDigits(999999) == 6);
+static_assert(CountDigits(1000000) == 7);
+static_assert(CountDigits(9999999) == 7);
+static_assert(CountDigits(10000000) == 8);
+static_assert(CountDigits(99999999) == 8);
+static_assert(CountDigits(100000000) == 9);
+static_assert(CountDigits(999999999) == 9);
+static_assert(CountDigits(1000000000) == 10);
+static_assert(CountDigits(INT32_MAX) == 10);
+static_assert(CountDigits(UINT32_MAX) == 10);
+
 static bool AppendInt32ToStringBuilder(StringBuilder& sb, int32_t i) {
   MOZ_ASSERT(sb.isUnderlyingBufferLatin1());
 
-  
-  static constexpr size_t maxSize =
-      Int32ToCStringBuf::MaximumInt32ToStringLength - 1;
-
-  if (!sb.growByUninitialized(maxSize)) {
+  const size_t len = CountDigits(Abs(i)) + (i < 0);
+  if (!sb.growByUninitialized(len)) {
     return false;
   }
 
   char* end = reinterpret_cast<char*>(sb.end<Latin1Char>());
-  char* appendPtr = end - maxSize;
+  char* appendPtr = end - len;
 
-  auto result = std::to_chars(appendPtr, end, i);
-  MOZ_ASSERT(result.ec == std::errc());
+  mozilla::DebugOnly<std::to_chars_result> result =
+      std::to_chars(appendPtr, end, i);
+  MOZ_ASSERT(result.value.ec == std::errc());
+  MOZ_ASSERT(result.value.ptr == end);
 
-  size_t len = result.ptr - appendPtr;
-  sb.shrinkBy(maxSize - len);
   return true;
 }
 
