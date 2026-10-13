@@ -557,7 +557,7 @@ void FFmpegVideoDecoder<LIBAV_VER>::PrepareVulkanDrmModifiersForSwFormat(
     }
   }
   mVulkanDecoder.InitDrmModifiers(vkCtx->phys_dev, vkFormat, compositorMods,
-                                  aImageUsages);
+                                  aImageUsages, mCodecID);
 }
 
 #  endif
