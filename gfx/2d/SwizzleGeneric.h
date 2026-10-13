@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZILLA_GFX_SWIZZLE_GENERIC_H_
 #define MOZILLA_GFX_SWIZZLE_GENERIC_H_
@@ -9,9 +9,9 @@
 
 namespace mozilla::gfx {
 
-
-
-
+// We should generally prefer to specialize LoadRemainder_SIMD and
+// StoreRemainder_SIMD to avoid the memcpy call which doesn't get optimized out.
+// The implementations below should provide an acceptable baseline though.
 template <class Arch>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> LoadRemainder_SIMD(
     const uint8_t* aSrc, size_t aLength) {
@@ -54,8 +54,8 @@ static MOZ_ALWAYS_INLINE void ProcessChunk_SIMD(const uint8_t*& aSrc,
   const uint8_t* end = aSrc + aAlignedRow;
 
   if constexpr (Unroll) {
-    
-    
+    // Process two vectors per iteration. clang unrolls the loop on the fallback
+    // path with SSE2 and does better than our algorithm can without unrolling.
     const uint8_t* end2 = aSrc + (aAlignedRow & ~(2 * batchBytes - 1));
     while (aSrc < end2) {
       auto px0 = xsimd::batch<uint8_t, Arch>::load_unaligned(aSrc);
@@ -68,7 +68,7 @@ static MOZ_ALWAYS_INLINE void ProcessChunk_SIMD(const uint8_t*& aSrc,
       aDst += 2 * batchBytes;
     }
 
-    
+    // Process the last full vector, if any.
     if (aSrc < end) {
       auto px = xsimd::batch<uint8_t, Arch>::load_unaligned(aSrc);
       px = Op(px);
@@ -86,7 +86,7 @@ static MOZ_ALWAYS_INLINE void ProcessChunk_SIMD(const uint8_t*& aSrc,
     }
   }
 
-  
+  // Handle any remaining pixels that could not fit in one vector.
   if (aRemainder) {
     auto px = LoadRemainder_SIMD<Arch>(aSrc, aRemainder);
     px = Op(px);
@@ -110,7 +110,7 @@ static MOZ_ALWAYS_INLINE void Process_SIMD(const uint8_t* aSrc, int32_t aSrcGap,
   static constexpr int32_t batchPixels = xsimd::batch<uint32_t, Arch>::size;
   int32_t alignedRow = 4 * (aSize.width & ~(batchPixels - 1));
   int32_t remainder = aSize.width & (batchPixels - 1);
-  
+  // Fold remainder into stride gap.
   aSrcGap += 4 * remainder;
   aDstGap += 4 * remainder;
 
@@ -136,8 +136,8 @@ struct SwizzleVectorSwapRbMask {
   }
 };
 
-
-
+// Swaps 8-bit R and B channels within each pixel. If the target supports byte
+// shuffle, then this is likely ideal. Otherwise it should be specialized.
 template <class Arch>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwapRB8_SIMD(
     const xsimd::batch<uint8_t, Arch>& aPx) {
@@ -146,8 +146,8 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwapRB8_SIMD(
   return xsimd::shuffle(aPx, aPx, swapRbMask);
 }
 
-
-
+// Swaps 16-bit R and B channels within each pixel. This doesn't require a byte
+// shuffle, and instead can be a 16-bit rotate of each 32-bit lane.
 template <class Arch>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint16_t, Arch> SwapRB16_SIMD(
     const xsimd::batch<uint16_t, Arch>& aRb) {
@@ -155,7 +155,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint16_t, Arch> SwapRB16_SIMD(
   return xsimd::bitwise_cast<uint16_t>((rb32 << 16) | (rb32 >> 16));
 }
 
-
+// Forces the A channel to 0xFF.
 template <class Arch>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> OpaqueAlpha_SIMD(
     const xsimd::batch<uint8_t, Arch>& aPx) {
@@ -163,7 +163,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> OpaqueAlpha_SIMD(
                                       xsimd::batch<uint32_t, Arch>(0xFF000000));
 }
 
-
+// Swizzle a vector of pixels, swapping and making opaque as desired.
 template <class Arch, bool aSwapRB, bool aOpaqueAlpha>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwizzleVector_SIMD(
     const xsimd::batch<uint8_t, Arch>& aSrc) {
@@ -181,7 +181,7 @@ template <class Arch, bool aSwapRB, bool aOpaqueAlpha>
 static MOZ_ALWAYS_INLINE void SwizzleRow_SIMD(const uint8_t* aSrc,
                                               uint8_t* aDst, int32_t aLength) {
   ProcessRow_SIMD<Arch, SwizzleVector_SIMD<Arch, aSwapRB, aOpaqueAlpha>,
-                   true>(aSrc, aDst, aLength);
+                  /* Unroll */ true>(aSrc, aDst, aLength);
 }
 
 template <class Arch, bool aSwapRB, bool aOpaqueAlpha>
@@ -189,38 +189,38 @@ static MOZ_ALWAYS_INLINE void Swizzle_SIMD(const uint8_t* aSrc, int32_t aSrcGap,
                                            uint8_t* aDst, int32_t aDstGap,
                                            IntSize aSize) {
   Process_SIMD<Arch, SwizzleVector_SIMD<Arch, aSwapRB, aOpaqueAlpha>,
-                true>(aSrc, aSrcGap, aDst, aDstGap, aSize);
+               /* Unroll */ true>(aSrc, aSrcGap, aDst, aDstGap, aSize);
 }
 
-
+// Convert from CMYK to BGRX/RGBX, swapping and inverting as desired.
 template <class Arch, bool aSwapRB, bool aInverted>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> SwizzleCmykVector_SIMD(
     const xsimd::batch<uint8_t, Arch>& aSrc) {
   xsimd::batch<uint8_t, Arch> src;
-  
+  // Invert if necessary, as the math expects inverted CMYK.
   if constexpr (!aInverted) {
     src = ~aSrc;
   } else {
     src = aSrc;
   }
-  
+  // Isolate iC and iY with mask.
   auto px16 = xsimd::bitwise_cast<uint16_t>(src);
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
   auto icy = px16 & lowByte;
-  
+  // Isolate iM and iK by shifting down to bottom of word.
   auto imk = px16 >> 8;
   auto ik16 = ExtractAlpha_SIMD<Arch>(src, imk);
-  
-  
+  // Multiply each channel by the iK, add 1, divide by 255, all in place. This
+  // is equivalent to iC * iK / 255.
   icy = icy * ik16;
   icy = (icy + (icy >> 8) + xsimd::batch<uint16_t, Arch>(1)) >> 8;
   imk = imk * ik16;
   imk = (imk + (imk >> 8) + xsimd::batch<uint16_t, Arch>(1)) >> 8;
-  
+  // Swap R and B if necessary.
   if constexpr (aSwapRB) {
     icy = SwapRB16_SIMD<Arch>(icy);
   }
-  
+  // Combine back to final pixel.
   return OpaqueAlpha_SIMD<Arch>(xsimd::bitwise_cast<uint8_t>(icy | (imk << 8)));
 }
 
@@ -231,33 +231,34 @@ void MOZ_ALWAYS_INLINE SwizzleCmykRow_SIMD(const uint8_t* aSrc, uint8_t* aDst,
       aSrc, aDst, aLength);
 }
 
-
+// Premultiply a vector of pixels, swapping and making opaque as desired.
 template <class Arch, bool aSwapRB, bool aOpaqueAlpha>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> PremultiplyVector_SIMD(
     const xsimd::batch<uint8_t, Arch>& aSrc) {
-  
+  // Isolate R and B with mask.
   auto px16 = xsimd::bitwise_cast<uint16_t>(aSrc);
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
   auto rb = px16 & lowByte;
-  
+  // Isolate G and A by shifting down to bottom of word.
   auto ga = px16 >> 8;
   auto a16 = ExtractAlpha_SIMD<Arch>(aSrc, ga);
-  
+  // If format is not opaque, force A to 255 so that A*alpha/255 = alpha.
   if constexpr (!aOpaqueAlpha) {
     ga =
         xsimd::bitwise_cast<uint16_t>(xsimd::bitwise_cast<uint32_t>(ga) |
                                       xsimd::batch<uint32_t, Arch>(0x00FF0000));
   }
-  
-  rb = xsimd::fma(rb, a16, xsimd::batch<uint16_t, Arch>(0xFF));
+  // Multiply each channel by the alpha, rounding to nearest when dividing by
+  // 255.
+  rb = xsimd::fma(rb, a16, xsimd::batch<uint16_t, Arch>(0x80));
   rb = (rb + (rb >> 8)) >> 8;
-  ga = xsimd::fma(ga, a16, xsimd::batch<uint16_t, Arch>(0xFF));
+  ga = xsimd::fma(ga, a16, xsimd::batch<uint16_t, Arch>(0x80));
   ga = (ga + (ga >> 8)) >> 8;
-  
+  // Swap R and B if necessary.
   if constexpr (aSwapRB) {
     rb = SwapRB16_SIMD<Arch>(rb);
   }
-  
+  // Combine back to final pixel.
   auto px = xsimd::bitwise_cast<uint8_t>(rb | (ga << 8));
   if constexpr (aOpaqueAlpha) {
     px = OpaqueAlpha_SIMD<Arch>(px);
@@ -295,55 +296,57 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyReverse_SIMD(
     const xsimd::batch<uint32_t, Arch>& aRecip,
     const xsimd::batch<uint16_t, Arch>& aRb,
     const xsimd::batch<uint16_t, Arch>& aGa) {
-  
-  
-  
+  // Split each reciprocal into low and high 16-bit halves, each duplicated into
+  // both 16-bit words of its lane to line up with the R/B and G/A word layout
+  // (Qn Qn per pixel): qLo = Q & 0xFFFF, qHi = Q >> 16.
   auto qLo = aRecip & xsimd::batch<uint32_t, Arch>(0x0000FFFF);
   qLo = qLo | (qLo << 16);
   auto qHi = aRecip >> 16;
   qHi = qHi | (qHi << 16);
   auto qLo16 = xsimd::bitwise_cast<uint16_t>(qLo);
   auto qHi16 = xsimd::bitwise_cast<uint16_t>(qHi);
-  
+  // Isolate G now so that we don't accidentally unpremultiply A.
   auto ga =
       xsimd::bitwise_cast<uint16_t>(xsimd::bitwise_cast<uint32_t>(aGa) &
                                     xsimd::batch<uint32_t, Arch>(0x000000FF));
-  
-  
-  
-  
-  
-  
-  
+  // Rounded (channel * reciprocal) >> 16 in 16-bit lanes. Since
+  //   channel*Q = channel*qHi*0x10000 + channel*qLo,
+  //   (channel*Q) >> 16 = channel*qHi + ((channel*qLo) >> 16)
+  //                     = mullo(channel, qHi) + mulhi(channel, qLo),
+  // the top bit of mullo(channel, qLo) supplies the rounding carry.
+  // mullo gives the exact low 16 bits of channel*qHi; masking to a byte keeps
+  // the high byte clear for the recombine below and makes any out-of-range
+  // (channel > alpha) input wrap to the low byte exactly as the scalar path.
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
-  auto rb = (aRb * qHi16 + xsimd::mul_hi(aRb, qLo16)) & lowByte;
-  ga = (ga * qHi16 + xsimd::mul_hi(ga, qLo16)) & lowByte;
-  
-  
+  auto rb = (aRb * qHi16 + xsimd::mul_hi(aRb, qLo16) + ((aRb * qLo16) >> 15)) &
+            lowByte;
+  ga = (ga * qHi16 + xsimd::mul_hi(ga, qLo16) + ((ga * qLo16) >> 15)) & lowByte;
+  // Combine back to final pixel with rb | (ga << 8) | (aSrc & 0xFF000000),
+  // which will add back on the original alpha value unchanged.
   auto alpha =
       xsimd::bitwise_cast<uint16_t>(xsimd::bitwise_cast<uint32_t>(aSrc) &
                                     xsimd::batch<uint32_t, Arch>(0xFF000000));
   return xsimd::bitwise_cast<uint8_t>(rb | (ga << 8) | alpha);
 }
 
-
+// Unpremultiply a vector of pixels, swapping and making opaque as desired.
 template <class Arch, bool aSwapRB>
 static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpremultiplyVector_SIMD(
     const xsimd::batch<uint8_t, Arch>& aSrc) {
-  
+  // Isolate R and B with mask.
   const xsimd::batch<uint16_t, Arch> lowByte(0x00FF);
   auto px16 = xsimd::bitwise_cast<uint16_t>(aSrc);
   auto rb = px16 & lowByte;
-  
+  // Swap R and B if necessary.
   if constexpr (aSwapRB) {
     rb = SwapRB16_SIMD<Arch>(rb);
   }
 
-  
+  // Isolate G and A by shifting down to bottom of word.
   auto ga = px16 >> 8;
-  
+  // Extract the reciprocals from the lookup table.
   auto recip = UnpremultiplyLookup_SIMD<Arch>(aSrc, ga);
-  
+  // Perform the unpremultiply.
   return UnpremultiplyReverse_SIMD<Arch>(aSrc, recip, rb, ga);
 }
 
@@ -367,13 +370,13 @@ static MOZ_ALWAYS_INLINE void Unpremultiply_SIMD(const uint8_t* aSrc,
 template <bool aSwapRB>
 struct UnpackRowRGB24ExpandMask {
   static constexpr uint8_t get(uint8_t i, uint8_t) {
-    
-    
+    // Every 4th byte is the alpha which we turn opaque in another step. Here,
+    // we just duplicate the first channel into the alpha.
     uint8_t channel = i % 4;
     if (channel == 3) {
       return 0;
     }
-    
+    // Swap R and B if necessary as well.
     uint8_t pixel = i / 4;
     return 3 * pixel + (aSwapRB ? 2 - channel : channel);
   }
@@ -385,7 +388,7 @@ static MOZ_ALWAYS_INLINE xsimd::batch<uint8_t, Arch> UnpackBatchRGB24_SIMD(
   constexpr auto expandMask =
       xsimd::make_batch_constant<uint8_t, UnpackRowRGB24ExpandMask<aSwapRB>,
                                  Arch>();
-  
+  // Expand the packed RGB pixels to RGBX and force the alpha to be opaque.
   return OpaqueAlpha_SIMD<Arch>(xsimd::swizzle(aSrc, expandMask));
 }
 
@@ -393,20 +396,20 @@ template <class Arch, bool aSwapRB>
 static MOZ_ALWAYS_INLINE void UnpackRowRGB24_SIMD(const uint8_t* aSrc,
                                                   uint8_t* aDst,
                                                   int32_t aLength) {
-  
-  
+  // Each pass writes batchSize pixels (4, 8, 16), or batchBytes bytes (16,
+  // 32, 64).
   static constexpr int32_t batchPixels = xsimd::batch<uint32_t, Arch>::size;
   static constexpr int32_t batchBytes = xsimd::batch<uint8_t, Arch>::size;
 
-  
-  
+  // Each pass reads batchBytes worth of data, which maps to batchPackedPixels
+  // (6, 11, 22) packed pixels (rounded up) per pass.
   static constexpr int32_t batchPackedPixels = (batchBytes + 2) / 3;
 
-  
-  
-  
-  
-  
+  // The main loop reads batchBytes at once, overrunning the packed pixels it
+  // consumes, so alignedRow marks the pixels that can be read that way
+  // without running past the source. The trailing pixels (and short rows that
+  // cannot use the main loop at all) are handled with safe partial loads
+  // instead.
   int32_t alignedRow = 0;
   if (aLength >= batchPackedPixels) {
     static constexpr int32_t batchPackedPixelsOverrun =
@@ -414,9 +417,9 @@ static MOZ_ALWAYS_INLINE void UnpackRowRGB24_SIMD(const uint8_t* aSrc,
     alignedRow = (aLength - batchPackedPixelsOverrun) & ~(batchPixels - 1);
   }
 
-  
-  
-  
+  // Because we are expanding in place, process strictly back to front. Handle
+  // the trailing pixels first, in up to batchPixels chunks, using loads that
+  // never read past the 3*aLength source bytes.
   for (int32_t pos = aLength; pos > alignedRow;) {
     int32_t n = pos - alignedRow < batchPixels ? pos - alignedRow : batchPixels;
     int32_t start = pos - n;
@@ -430,7 +433,7 @@ static MOZ_ALWAYS_INLINE void UnpackRowRGB24_SIMD(const uint8_t* aSrc,
     pos = start;
   }
 
-  
+  // Process the remaining aligned pixels as full vectors, back to front.
   const uint8_t* src = aSrc + (alignedRow - batchPixels) * 3;
   uint8_t* dst = aDst + (alignedRow - batchPixels) * 4;
   while (src >= aSrc) {
@@ -442,6 +445,6 @@ static MOZ_ALWAYS_INLINE void UnpackRowRGB24_SIMD(const uint8_t* aSrc,
   }
 }
 
-}  
+}  // namespace mozilla::gfx
 
-#endif 
+#endif /* MOZILLA_GFX_SWIZZLE_GENERIC_H_ */
