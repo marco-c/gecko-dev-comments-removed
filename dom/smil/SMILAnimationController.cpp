@@ -232,6 +232,9 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   AutoRestore<bool> autoRestoreRunningSample(mRunningSample);
   mRunningSample = true;
 
+  nsCOMPtr<dom::Document> kungFuDeathGrip(mDocument);
+  (void)kungFuDeathGrip;
+
   
   
   
