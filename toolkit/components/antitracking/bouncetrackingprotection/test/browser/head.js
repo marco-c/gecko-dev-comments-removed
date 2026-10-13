@@ -596,20 +596,30 @@ async function runTestBounce(options = {}) {
     targetURL
   );
 
+  let bounceURL = getBounceURL({
+    bounceType,
+    targetURL,
+    setState,
+    setStateSameSiteFrame,
+    setStateCrossSiteFrame,
+    setStateInWebWorker,
+    setStateInNestedWebWorker,
+    setCookieViaImage,
+  });
+
   
-  await navigateLinkClick(
-    browser,
-    getBounceURL({
-      bounceType,
-      targetURL,
-      setState,
-      setStateSameSiteFrame,
-      setStateCrossSiteFrame,
-      setStateInWebWorker,
-      setStateInNestedWebWorker,
-      setCookieViaImage,
-    })
-  );
+  
+  
+  let targetURLStoppedPromise;
+  if (closeTabAfterBounce) {
+    targetURLStoppedPromise = BrowserTestUtils.browserStopped(
+      browser,
+      bounceURL.href
+    );
+  }
+
+  
+  await navigateLinkClick(browser, bounceURL);
 
   await targetURLLoadedPromise;
 
@@ -619,6 +629,8 @@ async function runTestBounce(options = {}) {
   
   
   if (closeTabAfterBounce) {
+    await targetURLStoppedPromise;
+
     
     
     BrowserTestUtils.removeTab(tab);
