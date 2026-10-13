@@ -125,6 +125,13 @@ class CompileDBBackend(CommonBackend):
             
             c.insert(-1, "-ferror-limit=0")
 
+            
+            
+            
+            
+            if "-xc++" in c:
+                c = [arg for arg in c if arg != "-TP"]
+
             per_source_flags = self._per_source_flags.get(filename)
             if per_source_flags is not None:
                 c.extend(per_source_flags)
