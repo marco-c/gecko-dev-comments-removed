@@ -6281,6 +6281,13 @@ void CodeGenerator::emitCallNative(LCallIns* call, JSNative native,
   masm.moveStackPtrTo(argVpReg);
 
   
+  if constexpr (std::is_same_v<LCallIns, LCallClassHook>) {
+    masm.Push(ToRegister(call->getCallee()));
+  } else {
+    masm.Push(ImmGCPtr(call->mir()->getSingleTarget()->rawNativeJSFunction()));
+  }
+
+  
   masm.Push(argUintNReg);
 
   
@@ -6449,6 +6456,11 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
   MOZ_ASSERT(target->hasJitInfo());
   MOZ_ASSERT(call->mir()->isCallDOMNative());
 
+  
+  
+  
+  MOZ_RELEASE_ASSERT(!call->mir()->maybeCrossRealm());
+
   int unusedStack = UnusedStackBytesForCall(call->mir()->paddedNumStackArgs());
 
   
@@ -6507,12 +6519,6 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
   masm.Push(argObj);
   masm.moveStackPtrTo(argObj);
 
-  if (call->mir()->maybeCrossRealm()) {
-    
-    masm.movePtr(ImmGCPtr(target->rawNativeJSFunction()), argJSContext);
-    masm.switchToObjectRealm(argJSContext, argJSContext);
-  }
-
   bool preTenureWrapperAllocation =
       call->mir()->to<MCallDOMNative>()->initialHeap() == gc::Heap::Tenured;
   if (preTenureWrapperAllocation) {
@@ -6562,12 +6568,6 @@ void CodeGenerator::visitCallDOMNative(LCallDOMNative* call) {
 
   static_assert(!JSReturnOperand.aliases(ReturnReg),
                 "Clobbering ReturnReg should not affect the return value");
-
-  
-  
-  if (call->mir()->maybeCrossRealm()) {
-    masm.switchToRealm(gen->realm->realmPtr(), ReturnReg);
-  }
 
   
   
@@ -7052,15 +7052,18 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
   masm.pushValue(JSVAL_TYPE_OBJECT, calleeReg);
 
   
+  masm.moveStackPtrTo(scratch2);
+
+  
+  masm.push(calleeReg);
+
+  
 #ifdef JS_SIMULATOR
   masm.movePtr(ImmPtr(RedirectedCallAnyNative()), calleeReg);
 #else
   masm.loadPrivate(Address(calleeReg, JSFunction::offsetOfNativeOrEnv()),
                    calleeReg);
 #endif
-
-  
-  masm.moveStackPtrTo(scratch2);
 
   
   masm.push(argcReg);

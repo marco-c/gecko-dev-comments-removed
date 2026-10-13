@@ -1211,6 +1211,7 @@ bool IonCacheIRCompiler::emitCallNativeGetterResult(
   masm.moveStackPtrTo(argVp.get());
 
   
+  masm.Push(ImmGCPtr(target));
   masm.Push(argUintN);
   pushStubCodePointer();
 
@@ -1725,6 +1726,7 @@ bool IonCacheIRCompiler::emitCallNativeSetter(ObjOperandId receiverId,
   masm.move32(Imm32(1), argUintN);
 
   
+  masm.Push(ImmGCPtr(target));
   masm.Push(argUintN);
   pushStubCodePointer();
 

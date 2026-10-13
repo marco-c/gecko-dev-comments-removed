@@ -686,6 +686,11 @@ class NativeExitFrameLayout {
 
   
   
+  
+  JSObject* savedCallee_;
+
+  
+  
   uint32_t loCalleeResult_;
   uint32_t hiCalleeResult_;
 
@@ -699,6 +704,7 @@ class NativeExitFrameLayout {
     return reinterpret_cast<JS::Value*>(&loCalleeResult_);
   }
   inline uintptr_t argc() const { return argc_; }
+  inline JSObject** savedCallee() { return &savedCallee_; }
 };
 
 class CallNativeExitFrameLayout : public NativeExitFrameLayout {
@@ -728,6 +734,9 @@ class IonOOLNativeExitFrameLayout {
   uintptr_t argc_;
 
   
+  JSObject* savedCallee_;
+
+  
   
   uint32_t loCalleeResult_;
   uint32_t hiCalleeResult_;
@@ -755,6 +764,7 @@ class IonOOLNativeExitFrameLayout {
   }
   inline JS::Value* thisp() { return reinterpret_cast<JS::Value*>(&loThis_); }
   inline uintptr_t argc() const { return argc_; }
+  inline JSObject** savedCallee() { return &savedCallee_; }
 };
 
 
