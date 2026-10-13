@@ -1621,17 +1621,21 @@ already_AddRefed<a11y::LocalAccessible> nsCocoaWindow::GetWindowAccessible() {
 
   
   
+  
+  
   if (mAccessible && mAccessible->IsAlive()) {
     RefPtr<a11y::LocalAccessible> ret;
     CallQueryReferent(mAccessible.get(), static_cast<a11y::LocalAccessible**>(
                                              getter_AddRefs(ret)));
-    return ret.forget();
+    if (ret && ret->Document()) {
+      return ret.forget();
+    }
   }
 
   
   
   RefPtr<a11y::LocalAccessible> acc = GetRootAccessible();
-  if (GetWindowType() == WindowType::Popup) {
+  if (acc && GetWindowType() == WindowType::Popup) {
     
     
     if (nsIFrame* popupFrame = GetFrame()) {
