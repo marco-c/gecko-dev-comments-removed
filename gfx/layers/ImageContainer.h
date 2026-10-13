@@ -836,8 +836,15 @@ struct PlanarYCbCrData {
   }
 
   
+  
+  Maybe<gfx::IntSize> GetCheckedYDataSize() const;
+
+  
+  
+  
   gfx::IntSize YDataSize() const {
-    return gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost());
+    return GetCheckedYDataSize().valueOr(
+        gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost()));
   }
 
   

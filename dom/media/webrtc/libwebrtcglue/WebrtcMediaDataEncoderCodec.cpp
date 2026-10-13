@@ -400,7 +400,9 @@ static already_AddRefed<VideoData> CreateVideoDataFromWebrtcVideoFrame(
   yCbCrData.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
 
   RefPtr image = MakeRefPtr<RecyclingPlanarYCbCrImage>(new BufferRecycleBin());
-  image->CopyData(yCbCrData);
+  if (NS_FAILED(image->CopyData(yCbCrData))) {
+    return nullptr;
+  }
 
   
   
@@ -489,6 +491,9 @@ int32_t WebrtcMediaDataEncoder::Encode(
   RefPtr<VideoData> data = CreateVideoDataFromWebrtcVideoFrame(
       aInputFrame, (*aFrameTypes)[0] == webrtc::VideoFrameType::kVideoFrameKey,
       TimeUnit::FromSeconds(1.0 / mMaxFrameRate));
+  if (!data) {
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   const gfx::IntSize displaySize = data->mDisplay;
 
   
