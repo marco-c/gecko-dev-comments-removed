@@ -396,6 +396,11 @@ pub struct PrimitiveList {
     
     pub yuv_image_surface_count: usize,
     pub needs_scissor_rect: bool,
+    
+    
+    
+    
+    pub shadow_offset: LayoutVector2D,
 }
 
 impl PrimitiveList {
@@ -407,6 +412,7 @@ impl PrimitiveList {
             image_surface_count: 0,
             yuv_image_surface_count: 0,
             needs_scissor_rect: false,
+            shadow_offset: LayoutVector2D::zero(),
         }
     }
 
@@ -825,6 +831,7 @@ impl PictureInstance {
             surface_index,
             dirty_region_count,
             subpixel_mode,
+            shadow_offset: self.prim_list.shadow_offset,
         };
 
         let scratch_handle = scratch.frame.pictures.push(picture_scratch);
@@ -1355,6 +1362,7 @@ impl PictureInstance {
         
         
         let mut snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
+        snapper.set_shadow_offset(self.prim_list.shadow_offset);
 
         for cluster in &mut self.prim_list.clusters {
             cluster.flags.remove(ClusterFlags::IS_VISIBLE);

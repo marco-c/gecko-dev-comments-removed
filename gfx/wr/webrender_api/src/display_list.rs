@@ -1939,6 +1939,7 @@ impl DisplayListBuilder {
                         mode: ClipMode::ClipOut,
                     },
                     0.0,
+                    false,
                 ));
 
                 (shadow_rect, shadow_radius, shadow_inset)
@@ -1954,6 +1955,7 @@ impl DisplayListBuilder {
                             mode: ClipMode::ClipOut,
                         },
                         spread_radius,
+                        false,
                     ));
                 }
 
@@ -1971,6 +1973,7 @@ impl DisplayListBuilder {
                 mode: ClipMode::Clip,
             },
             0.0,
+            false,
         ));
 
         
@@ -2277,6 +2280,35 @@ impl DisplayListBuilder {
         flags: di::StackingContextFlags,
         snapshot: Option<di::SnapshotInfo>
     ) {
+        self.push_stacking_context_impl(
+            spatial_id,
+            prim_flags,
+            clip_chain_id,
+            transform_style,
+            mix_blend_mode,
+            filters,
+            filter_datas,
+            raster_space,
+            flags,
+            snapshot,
+            LayoutVector2D::zero(),
+        );
+    }
+
+    fn push_stacking_context_impl(
+        &mut self,
+        spatial_id: di::SpatialId,
+        prim_flags: di::PrimitiveFlags,
+        clip_chain_id: Option<di::ClipChainId>,
+        transform_style: di::TransformStyle,
+        mix_blend_mode: di::MixBlendMode,
+        filters: &[di::FilterOp],
+        filter_datas: &[di::FilterData],
+        raster_space: di::RasterSpace,
+        flags: di::StackingContextFlags,
+        snapshot: Option<di::SnapshotInfo>,
+        shadow_offset: LayoutVector2D,
+    ) {
         self.push_filters(filters, filter_datas, spatial_id);
 
         
@@ -2304,6 +2336,7 @@ impl DisplayListBuilder {
                 clip_chain_id,
                 raster_space: resolved_raster_space,
                 flags,
+                shadow_offset,
             },
         });
 
@@ -2609,12 +2642,32 @@ impl DisplayListBuilder {
         spatial_id: di::SpatialId,
         clip_rect: LayoutRect,
     ) -> di::ClipId {
+        self.define_clip_rect_impl(spatial_id, clip_rect, false)
+    }
+
+    
+    
+    pub fn define_anti_aliased_clip_rect(
+        &mut self,
+        spatial_id: di::SpatialId,
+        clip_rect: LayoutRect,
+    ) -> di::ClipId {
+        self.define_clip_rect_impl(spatial_id, clip_rect, true)
+    }
+
+    fn define_clip_rect_impl(
+        &mut self,
+        spatial_id: di::SpatialId,
+        clip_rect: LayoutRect,
+        anti_aliased: bool,
+    ) -> di::ClipId {
         let id = self.generate_clip_index();
 
         let item = di::DisplayItem::RectClip(di::RectClipDisplayItem {
             id,
             spatial_id,
             clip_rect: self.normalize_rect(clip_rect, spatial_id),
+            anti_aliased,
         });
 
         self.push_item(&item);
@@ -2626,7 +2679,17 @@ impl DisplayListBuilder {
         spatial_id: di::SpatialId,
         clip: di::ComplexClipRegion,
     ) -> di::ClipId {
-        self.define_clip_rounded_rect_impl(spatial_id, clip, 0.0)
+        self.define_clip_rounded_rect_impl(spatial_id, clip, 0.0, false)
+    }
+
+    
+    
+    pub fn define_anti_aliased_clip_rounded_rect(
+        &mut self,
+        spatial_id: di::SpatialId,
+        clip: di::ComplexClipRegion,
+    ) -> di::ClipId {
+        self.define_clip_rounded_rect_impl(spatial_id, clip, 0.0, true)
     }
 
     
@@ -2636,6 +2699,7 @@ impl DisplayListBuilder {
         spatial_id: di::SpatialId,
         mut clip: di::ComplexClipRegion,
         snap_outset: f32,
+        anti_aliased: bool,
     ) -> di::ClipId {
         let id = self.generate_clip_index();
 
@@ -2646,6 +2710,7 @@ impl DisplayListBuilder {
             spatial_id,
             clip,
             snap_outset,
+            anti_aliased,
         });
 
         self.push_item(&item);
@@ -2832,7 +2897,9 @@ impl DisplayListBuilder {
             let sc_clip = shadow.space_and_clip.clip_chain_id;
             let sc_clip = (sc_clip != di::ClipChainId::INVALID).then_some(sc_clip);
 
-            self.push_stacking_context(
+            
+            
+            self.push_stacking_context_impl(
                 shadow.space_and_clip.spatial_id,
                 di::PrimitiveFlags::default(),
                 sc_clip,
@@ -2843,6 +2910,7 @@ impl DisplayListBuilder {
                 di::RasterSpace::Screen,
                 di::StackingContextFlags::empty(),
                 None,
+                s.offset,
             );
 
             
