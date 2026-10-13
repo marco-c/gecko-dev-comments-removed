@@ -164,6 +164,23 @@
     get disableUserActions() {
       return this.getAttribute("disableUserActions") == "true";
     }
+
+    
+
+
+
+
+
+
+
+
+    _handleEnter(event) {
+      if (this.hasAttribute("noentertoggle") && !this._editingColumn) {
+        return false;
+      }
+      return super._handleEnter(event);
+    }
+
     
 
 

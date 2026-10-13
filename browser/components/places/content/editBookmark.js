@@ -946,7 +946,20 @@ var gEditItemOverlay = {
       this._folderMenuList.selectedItem = item;
       
       
-      setTimeout(() => this.toggleFolderTreeVisibility(), 100);
+      
+      
+      const menupopup = this._folderMenuList.menupopup;
+      if (menupopup.state == "hiding" || menupopup.isNativeMenu) {
+        if (menupopup.state == "closed") {
+          this.toggleFolderTreeVisibility();
+        } else {
+          menupopup.addEventListener(
+            "popuphidden",
+            () => this.toggleFolderTreeVisibility(),
+            { once: true }
+          );
+        }
+      }
       return;
     }
 
@@ -1285,6 +1298,7 @@ ChromeUtils.defineLazyGetter(gEditItemOverlay, "_folderTree", () => {
           data-l10n-id="bookmark-overlay-folders-tree"
           editable="true"
           disableUserActions="true"
+          noentertoggle=""
           hidecolumnpicker="true">
       <treecols>
         <treecol anonid="title" flex="1" primary="true" hideheader="true"/>
