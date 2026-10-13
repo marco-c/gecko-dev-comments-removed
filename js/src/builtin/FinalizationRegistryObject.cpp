@@ -379,20 +379,6 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
     return false;
   }
 
-  
-  Rooted<FinalizationQueueObject*> queue(cx, registry->queue());
-  Rooted<FinalizationRecordObject*> record(
-      cx, FinalizationRecordObject::create(cx, queue, heldValue));
-  if (!record) {
-    return false;
-  }
-
-  if (!addRegistration(cx, registry, unregisterToken, record)) {
-    return false;
-  }
-  auto registrationGuard = mozilla::MakeScopeExit(
-      [&] { removeRegistrationOnError(registry, unregisterToken, record); });
-
   bool isPermanent = false;
   if (target.isObject()) {
     
@@ -411,6 +397,23 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
     target = SymbolValue(symbol);
     isPermanent = symbol->isPermanentAndMayBeShared();
   }
+
+  
+  Rooted<FinalizationQueueObject*> queue(cx, registry->queue());
+  Rooted<FinalizationRecordObject*> record(
+      cx, FinalizationRecordObject::create(cx, queue, heldValue));
+  if (!record) {
+    return false;
+  }
+
+  
+  
+  JS::AutoAssertNoGC nogc(cx);
+  if (!addRegistration(cx, registry, unregisterToken, record)) {
+    return false;
+  }
+  auto registrationGuard = mozilla::MakeScopeExit(
+      [&] { removeRegistrationOnError(registry, unregisterToken, record); });
 
   
   
@@ -478,15 +481,15 @@ void FinalizationRegistryObject::removeRegistrationOnError(
   JS::AutoAssertNoGC nogc;
 
   if (unregisterToken.isUndefined()) {
-    MOZ_ASSERT(registry->recordsWithoutToken()->back() == record);
+    MOZ_RELEASE_ASSERT(registry->recordsWithoutToken()->back() == record);
     registry->recordsWithoutToken()->popBack();
     return;
   }
 
   auto ptr = registry->registrations()->lookup(unregisterToken);
-  MOZ_ASSERT(ptr.found());
+  MOZ_RELEASE_ASSERT(ptr.found());
   FinalizationRecordVector& records = ptr->value();
-  MOZ_ASSERT(records.back() == record);
+  MOZ_RELEASE_ASSERT(records.back() == record);
   records.popBack();
   if (records.empty()) {
     registry->registrations()->remove(ptr);
