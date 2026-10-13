@@ -413,6 +413,10 @@ tryselect = ExperimentalOverride(
         "skip-unless-changed": All(
             "skip-unless-changed", "bugbug-reduced", split_args=split_bugbug_arg
         ),
+        
+        
+        
+        "skip-unless-backstop": Alias("bugbug-reduced"),
         "skip-unless-expanded": Alias("bugbug-reduced"),
         "test-verify": "base:test",
         "upload-symbols": Alias("always"),
