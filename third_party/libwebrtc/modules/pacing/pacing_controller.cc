@@ -206,7 +206,17 @@ void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
     
     
     
+    const int packets_before = packet_queue_.SizeInPackets();
     packet_queue_.RemovePacketsForSsrc(packet->Ssrc());
+    const int discarded = packets_before - packet_queue_.SizeInPackets();
+    if (discarded > 0) {
+      
+      
+      RTC_LOG(LS_INFO) << "Pacer: discarded " << discarded
+                       << " queued packets for ssrc " << packet->Ssrc()
+                       << " on key frame with rtp timestamp "
+                       << packet->Timestamp();
+    }
     std::optional<uint32_t> rtx_ssrc =
         packet_sender_->GetRtxSsrcForMedia(packet->Ssrc());
     if (rtx_ssrc) {
