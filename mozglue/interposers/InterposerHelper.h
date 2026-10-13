@@ -35,7 +35,7 @@ static inline void* dlopen_wrapper(const char* aPath, int flags) {
 template <typename T>
 static T get_real_symbol(const char* aName, T aReplacementSymbol) {
   
-  static_assert(std::is_function<typename std::remove_pointer<T>::type>::value);
+  static_assert(std::is_function_v<std::remove_pointer_t<T>>);
 
   
   T real_symbol = dlsym_wrapper<T>(RTLD_NEXT, aName);
