@@ -158,6 +158,16 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   already_AddRefed<nsIThread> GetSocketThread() { return GetThreadSafely(); }
 
+  
+  
+  
+  
+  
+  bool IsShuttingDownOrShutDown() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return !mInitialized || mShuttingDown;
+  }
+
  private:
   
   
