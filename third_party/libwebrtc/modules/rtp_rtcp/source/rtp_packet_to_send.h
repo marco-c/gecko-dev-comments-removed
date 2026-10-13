@@ -80,6 +80,12 @@ class RtpPacketToSend : public RtpPacket {
 
   
   
+  
+  void set_allow_sending(bool allow_sending) { allow_sending_ = allow_sending; }
+  bool allow_sending() const { return allow_sending_; }
+
+  
+  
   scoped_refptr<RefCountedBase> additional_data() const {
     return additional_data_;
   }
@@ -173,6 +179,7 @@ class RtpPacketToSend : public RtpPacket {
   bool fec_protect_packet_ = false;
   bool is_red_ = false;
   bool send_as_ect1_ = false;
+  bool allow_sending_ = true;
   std::optional<TimeDelta> time_in_send_queue_;
 };
 
