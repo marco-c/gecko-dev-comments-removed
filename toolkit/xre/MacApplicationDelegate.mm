@@ -27,6 +27,9 @@
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsIAppStartup.h"
+#include "nsIAppShell.h"
+#include "nsExceptionHandler.h"
+#include "mozilla/TimeStamp.h"
 #include "nsIObserverService.h"
 #include "nsISupportsPrimitives.h"
 #include "nsObjCExceptions.h"
@@ -72,6 +75,63 @@ enum class LaunchStatus {
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
+
+#ifdef EARLY_BETA_OR_EARLIER
+static mozilla::TimeStamp sStartupRunLoopStart;
+static uint32_t sStartupRunLoopWakes = 0;
+static double sStartupRunLoopLastWakeMs = 0;
+
+static nsCString& StartupRunLoopEvents() {
+  static mozilla::NeverDestroyed<nsCString> sEvents;
+  return *sEvents;
+}
+
+static double StartupRunLoopMs() {
+  return (mozilla::TimeStamp::Now() - sStartupRunLoopStart).ToMilliseconds();
+}
+
+static void RecordStartupRunLoopAnnotation() {
+  nsAutoCString value(StartupRunLoopEvents());
+  value.AppendPrintf(" wakes=%u lastwake=%.0f", sStartupRunLoopWakes,
+                     sStartupRunLoopLastWakeMs);
+  CrashReporter::RecordAnnotationNSCString(
+      CrashReporter::Annotation::MacStartupRunLoop, value);
+}
+
+static uint32_t EventloopNestingLevel() {
+  uint32_t nesting = 0;
+  if (nsCOMPtr<nsIAppShell> appShell =
+          do_GetService("@mozilla.org/widget/appshell/mac;1")) {
+    appShell->GetEventloopNestingLevel(&nesting);
+  }
+  return nesting;
+}
+
+
+
+static void LogStartupRunLoopEvent(const char* aFormat, ...)
+    MOZ_FORMAT_PRINTF(1, 2);
+static void LogStartupRunLoopEvent(const char* aFormat, ...) {
+  if (sLaunchStatus != LaunchStatus::CollectingURLs) {
+    return;
+  }
+  nsCString& events = StartupRunLoopEvents();
+  if (events.Length() < 1024) {
+    if (!events.IsEmpty()) {
+      events.Append(' ');
+    }
+    va_list args;
+    va_start(args, aFormat);
+    events.AppendVprintf(aFormat, args);
+    va_end(args);
+  }
+  RecordStartupRunLoopAnnotation();
+}
+
+#  define LOG_STARTUP_RUN_LOOP_EVENT(...) LogStartupRunLoopEvent(__VA_ARGS__)
+#else
+#  define LOG_STARTUP_RUN_LOOP_EVENT(...)
+#endif
 
 static nsTArray<nsCString>& StartupURLs() {
   static mozilla::NeverDestroyed<nsTArray<nsCString>> sStartupURLs;
@@ -161,9 +221,13 @@ void InitializeMacApp() {
           CFRunLoopObserverInvalidate(aObserver);
           CFRelease(aObserver);
 
+          LOG_STARTUP_RUN_LOOP_EVENT("obs:n%u,r%d", EventloopNestingLevel(),
+                                     [NSApp isRunning] ? 1 : 0);
+
           
           
           [NSApp stop:NSApp];
+          LOG_STARTUP_RUN_LOOP_EVENT("stop:r%d", [NSApp isRunning] ? 1 : 0);
 
           
           
@@ -184,7 +248,28 @@ void InitializeMacApp() {
         nullptr);
     CFRunLoopAddObserver(CFRunLoopGetCurrent(), observer,
                          kCFRunLoopCommonModes);
+#ifdef EARLY_BETA_OR_EARLIER
+    sStartupRunLoopStart = mozilla::TimeStamp::Now();
+    CFRunLoopObserverRef wakeObserver = CFRunLoopObserverCreate(
+        kCFAllocatorDefault, kCFRunLoopAfterWaiting,  true,
+         0,
+        [](CFRunLoopObserverRef, CFRunLoopActivity, void*) {
+          ++sStartupRunLoopWakes;
+          sStartupRunLoopLastWakeMs = StartupRunLoopMs();
+          RecordStartupRunLoopAnnotation();
+        },
+        nullptr);
+    CFRunLoopAddObserver(CFRunLoopGetCurrent(), wakeObserver,
+                         kCFRunLoopCommonModes);
+#endif
+    LOG_STARTUP_RUN_LOOP_EVENT("run");
     [NSApp run];
+#ifdef EARLY_BETA_OR_EARLIER
+    CFRunLoopObserverInvalidate(wakeObserver);
+    CFRelease(wakeObserver);
+    CrashReporter::UnrecordAnnotation(
+        CrashReporter::Annotation::MacStartupRunLoop);
+#endif
   }
   sLaunchStatus = LaunchStatus::CollectedURLs;
 }
@@ -243,6 +328,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication*)theApp
                     hasVisibleWindows:(BOOL)flag {
+  LOG_STARTUP_RUN_LOOP_EVENT("reopen");
   nsCOMPtr<nsINativeAppSupport> nas = NS_GetNativeAppSupport();
   NS_ENSURE_TRUE(nas, NO);
 
@@ -317,7 +403,14 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
+#ifdef EARLY_BETA_OR_EARLIER
+- (void)applicationDidFinishLaunching:(NSNotification*)notification {
+  LOG_STARTUP_RUN_LOOP_EVENT("didfinish");
+}
+#endif
+
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
+  LOG_STARTUP_RUN_LOOP_EVENT("willfinish");
   
   
   [[NSUserDefaults standardUserDefaults]
@@ -329,6 +422,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:
     (NSApplication*)sender {
+  LOG_STARTUP_RUN_LOOP_EVENT("term");
   nsCOMPtr<nsIObserverService> obsServ =
       do_GetService("@mozilla.org/observer-service;1");
   if (!obsServ) return NSTerminateNow;
@@ -387,6 +481,7 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 }
 
 - (BOOL)openURLs:(NSArray<NSURL*>*)urls {
+  LOG_STARTUP_RUN_LOOP_EVENT("urls");
   nsTArray<const char*> args([urls count] * 2 + 2);
   
   args.AppendElement(nullptr);
