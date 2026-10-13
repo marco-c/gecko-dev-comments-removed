@@ -2128,7 +2128,10 @@ impl<'a, W: Write> Writer<'a, W> {
                         write!(self.out, ", ")?;
                         if let crate::AtomicFunction::Subtract = *fun {
                             
-                            write!(self.out, "-")?;
+                            
+                            
+                            
+                            write!(self.out, "- ")?;
                         }
                         self.write_expr(value, ctx)?;
                         writeln!(self.out, ");")?;
@@ -2284,6 +2287,7 @@ impl<'a, W: Write> Writer<'a, W> {
             }
             Statement::CooperativeStore { .. } => unimplemented!(),
             Statement::RayPipelineFunction(_) => unimplemented!(),
+            Statement::DebugPrintf { .. } => unimplemented!(),
         }
 
         Ok(())

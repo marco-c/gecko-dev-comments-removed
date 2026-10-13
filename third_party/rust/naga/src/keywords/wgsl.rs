@@ -444,6 +444,7 @@ pub const BUILTIN_IDENTIFIERS: &[&str] = &[
     "quadSwapX",
     "quadSwapY",
     
+    "debugPrintf",
     "i64",
     "u64",
     "f64",

@@ -920,8 +920,17 @@ pub struct Buffer {
     
     
     
-    size: wgt::BufferAddress,
+    
+    
+    
+    
+    allocated_size: wgt::BufferAddress,
     allocation: suballocation::Allocation,
+
+    
+    
+    
+    _drop_guard: Option<crate::DropGuard>,
 }
 
 impl Buffer {
@@ -935,14 +944,7 @@ unsafe impl Sync for Buffer {}
 
 impl crate::DynBuffer for Buffer {}
 
-impl crate::BufferBinding<'_, Buffer> {
-    fn resolve_size(&self) -> wgt::BufferAddress {
-        match self.size {
-            Some(size) => size.get(),
-            None => self.buffer.size - self.offset,
-        }
-    }
-
+impl<S> crate::BufferBinding<'_, Buffer, S> {
     
     fn resolve_address(&self) -> wgt::BufferAddress {
         (unsafe { self.buffer.resource.GetGPUVirtualAddress() }) + self.offset
@@ -963,6 +965,11 @@ pub struct Texture {
     
     
     plane_slice_override: Option<u32>,
+
+    
+    
+    
+    _drop_guard: Option<crate::DropGuard>,
 }
 
 impl Texture {
@@ -1650,6 +1657,7 @@ impl crate::Surface for Surface {
                 sc.format.theoretical_memory_footprint(sc.size),
             ),
             plane_slice_override: None,
+            _drop_guard: None,
         };
         Ok(crate::AcquiredSurfaceTexture {
             texture,

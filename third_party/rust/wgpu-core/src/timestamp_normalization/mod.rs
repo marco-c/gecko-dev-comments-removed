@@ -255,6 +255,14 @@ impl TimestampNormalizer {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub unsafe fn create_normalization_bind_group(
         &self,
         device: &Device,

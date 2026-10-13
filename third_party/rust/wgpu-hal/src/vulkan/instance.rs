@@ -83,6 +83,22 @@ unsafe extern "system" fn debug_utils_messenger_callback(
         return vk::FALSE;
     }
 
+    
+    
+    
+    
+    
+    const DEBUG_PRINTF_MESSAGE_ID: i32 = 0x4fe1fef9;
+    if cd.message_id_number == DEBUG_PRINTF_MESSAGE_ID {
+        
+        let message =
+            unsafe { cd.message_as_c_str() }.map_or(Cow::Borrowed(""), CStr::to_string_lossy);
+
+        log::info!("[shader debugPrintf] {}", message);
+
+        return vk::FALSE;
+    }
+
     let level = match message_severity {
         
         
@@ -346,7 +362,7 @@ impl super::Instance {
             extensions.push(khr::get_display_properties2::NAME);
         }
 
-        if flags.contains(wgt::InstanceFlags::DEBUG) {
+        if flags.intersects(wgt::InstanceFlags::DEBUG | wgt::InstanceFlags::DEBUG_PRINTF) {
             
             extensions.push(ext::debug_utils::NAME);
         }
@@ -861,6 +877,20 @@ impl super::Instance {
             .intersects(wgt::InstanceFlags::GPU_BASED_VALIDATION)
             && validation_features_are_enabled;
 
+        
+        
+        
+        
+        let should_enable_debug_printf = desc.flags.intersects(wgt::InstanceFlags::DEBUG_PRINTF)
+            && validation_features_are_enabled;
+
+        if desc.flags.intersects(wgt::InstanceFlags::DEBUG_PRINTF) && !should_enable_debug_printf {
+            log::warn!(
+                "InstanceFlags::DEBUG_PRINTF was requested, but shader debug printf output will \
+                 not be captured: it requires the validation layers, which are not available."
+            );
+        }
+
         let has_nv_optimus = find_layer(&instance_layers, c"VK_LAYER_NV_optimus").is_some();
 
         let has_obs_layer = find_layer(&instance_layers, c"VK_LAYER_OBS_HOOK").is_some();
@@ -989,7 +1019,7 @@ impl super::Instance {
 
             
             let mut validation_features;
-            let mut validation_feature_list: ArrayVec<_, 3>;
+            let mut validation_feature_list: ArrayVec<_, 4>;
             if validation_features_are_enabled {
                 validation_feature_list = ArrayVec::new();
 
@@ -1002,6 +1032,11 @@ impl super::Instance {
                     validation_feature_list.push(vk::ValidationFeatureEnableEXT::GPU_ASSISTED);
                     validation_feature_list
                         .push(vk::ValidationFeatureEnableEXT::GPU_ASSISTED_RESERVE_BINDING_SLOT);
+                }
+
+                
+                if should_enable_debug_printf {
+                    validation_feature_list.push(vk::ValidationFeatureEnableEXT::DEBUG_PRINTF);
                 }
 
                 validation_features = vk::ValidationFeaturesEXT::default()

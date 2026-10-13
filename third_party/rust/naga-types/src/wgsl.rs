@@ -1,0 +1,124 @@
+
+
+
+pub mod language_extension {
+
+    
+    
+    
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    pub enum LanguageExtension {
+        Implemented(ImplementedLanguageExtension),
+        Unimplemented(UnimplementedLanguageExtension),
+    }
+
+    impl LanguageExtension {
+        const READONLY_AND_READWRITE_STORAGE_TEXTURES: &'static str =
+            "readonly_and_readwrite_storage_textures";
+        const PACKED4X8_INTEGER_DOT_PRODUCT: &'static str = "packed_4x8_integer_dot_product";
+        const UNRESTRICTED_POINTER_PARAMETERS: &'static str = "unrestricted_pointer_parameters";
+        const POINTER_COMPOSITE_ACCESS: &'static str = "pointer_composite_access";
+        const IMMEDIATE_ADDRESS_SPACE: &'static str = "immediate_address_space";
+
+        
+        pub fn from_ident(s: &str) -> Option<Self> {
+            Some(match s {
+                Self::READONLY_AND_READWRITE_STORAGE_TEXTURES => Self::Implemented(
+                    ImplementedLanguageExtension::ReadOnlyAndReadWriteStorageTextures,
+                ),
+                Self::PACKED4X8_INTEGER_DOT_PRODUCT => {
+                    Self::Implemented(ImplementedLanguageExtension::Packed4x8IntegerDotProduct)
+                }
+                Self::UNRESTRICTED_POINTER_PARAMETERS => Self::Unimplemented(
+                    UnimplementedLanguageExtension::UnrestrictedPointerParameters,
+                ),
+                Self::POINTER_COMPOSITE_ACCESS => {
+                    Self::Implemented(ImplementedLanguageExtension::PointerCompositeAccess)
+                }
+                Self::IMMEDIATE_ADDRESS_SPACE => {
+                    Self::Implemented(ImplementedLanguageExtension::ImmediateAddressSpace)
+                }
+                _ => return None,
+            })
+        }
+
+        
+        pub const fn to_ident(self) -> &'static str {
+            match self {
+                Self::Implemented(kind) => kind.to_ident(),
+                Self::Unimplemented(kind) => match kind {
+                    UnimplementedLanguageExtension::UnrestrictedPointerParameters => {
+                        Self::UNRESTRICTED_POINTER_PARAMETERS
+                    }
+                },
+            }
+        }
+    }
+
+    
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[cfg_attr(test, derive(strum::VariantArray))]
+    pub enum ImplementedLanguageExtension {
+        ReadOnlyAndReadWriteStorageTextures,
+        Packed4x8IntegerDotProduct,
+        PointerCompositeAccess,
+        ImmediateAddressSpace,
+    }
+
+    impl ImplementedLanguageExtension {
+        
+        pub const VARIANTS: &'static [Self] = &[
+            Self::ReadOnlyAndReadWriteStorageTextures,
+            Self::Packed4x8IntegerDotProduct,
+            Self::PointerCompositeAccess,
+            Self::ImmediateAddressSpace,
+        ];
+
+        
+        pub const fn all() -> &'static [Self] {
+            Self::VARIANTS
+        }
+
+        
+        pub const fn to_ident(self) -> &'static str {
+            match self {
+                ImplementedLanguageExtension::ReadOnlyAndReadWriteStorageTextures => {
+                    LanguageExtension::READONLY_AND_READWRITE_STORAGE_TEXTURES
+                }
+                ImplementedLanguageExtension::Packed4x8IntegerDotProduct => {
+                    LanguageExtension::PACKED4X8_INTEGER_DOT_PRODUCT
+                }
+                ImplementedLanguageExtension::PointerCompositeAccess => {
+                    LanguageExtension::POINTER_COMPOSITE_ACCESS
+                }
+                ImplementedLanguageExtension::ImmediateAddressSpace => {
+                    LanguageExtension::IMMEDIATE_ADDRESS_SPACE
+                }
+            }
+        }
+    }
+
+    #[test]
+    
+    
+    fn test_manual_variants_array_is_correct() {
+        assert_eq!(
+            <ImplementedLanguageExtension as strum::VariantArray>::VARIANTS,
+            ImplementedLanguageExtension::VARIANTS
+        );
+    }
+
+    
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    pub enum UnimplementedLanguageExtension {
+        UnrestrictedPointerParameters,
+    }
+
+    impl UnimplementedLanguageExtension {
+        pub const fn tracking_issue_num(self) -> u16 {
+            match self {
+                Self::UnrestrictedPointerParameters => 5158,
+            }
+        }
+    }
+}

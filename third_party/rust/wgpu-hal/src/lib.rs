@@ -300,7 +300,7 @@ use core::{
     borrow::Borrow,
     error::Error,
     fmt,
-    num::{NonZeroU32, NonZeroU64},
+    num::NonZeroU32,
     ops::{Range, RangeInclusive},
     ptr::NonNull,
 };
@@ -324,13 +324,21 @@ pub const MAX_MIP_LEVELS: u32 = 16;
 /// cbindgen:ignore
 pub const QUERY_SIZE: wgt::BufferAddress = 8;
 
+
+#[doc(hidden)]
+pub const EXTERNAL_TEXTURE_PARAMS_SIZE: wgt::BufferAddress = 208;
+
+
+
+pub const UNIVERSAL_BUFFER_SIZE_ALIGNMENT: wgt::BufferAddress = 256;
+
 pub type Label<'a> = Option<&'a str>;
 pub type MemoryRange = Range<wgt::BufferAddress>;
 pub type FenceValue = u64;
 pub type AtomicFenceValue = wgpu_sync::atomic::AtomicU64;
 
 
-#[cfg(all(any(gles, vulkan, metal), not(webgl)))]
+#[cfg(all(any(gles, vulkan, metal, dx12), not(webgl)))]
 pub type DropCallback = Box<dyn FnOnce() + Send + Sync + 'static>;
 
 
@@ -341,7 +349,7 @@ pub type DropCallback = Box<dyn FnOnce() + Send + Sync + 'static>;
 #[cfg(webgl)]
 pub type DropCallback = Box<dyn FnOnce() + 'static>;
 
-#[cfg(any(gles, vulkan, metal))]
+#[cfg(any(gles, vulkan, metal, dx12))]
 pub struct DropGuard {
     callback: Option<DropCallback>,
 }
@@ -355,7 +363,7 @@ unsafe impl Send for DropGuard {}
 #[cfg(all(webgl, send_sync))]
 unsafe impl Sync for DropGuard {}
 
-#[cfg(any(gles, vulkan, metal))]
+#[cfg(any(gles, vulkan, metal, dx12))]
 impl DropGuard {
     #[cfg(any(native, Emscripten))]
     fn from_option(callback: Option<DropCallback>) -> Option<Self> {
@@ -378,7 +386,7 @@ impl DropGuard {
     }
 }
 
-#[cfg(any(gles, vulkan, metal))]
+#[cfg(any(gles, vulkan, metal, dx12))]
 impl Drop for DropGuard {
     fn drop(&mut self) {
         if let Some(cb) = self.callback.take() {
@@ -387,7 +395,7 @@ impl Drop for DropGuard {
     }
 }
 
-#[cfg(any(gles, vulkan, metal))]
+#[cfg(any(gles, vulkan, metal, dx12))]
 impl fmt::Debug for DropGuard {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("DropGuard").finish()
@@ -444,6 +452,7 @@ impl From<gpu_allocator::AllocationError> for DeviceError {
 
 
 #[cfg_attr(not(any(dx12, vulkan)), expect(dead_code))]
+#[derive(Clone, Copy)]
 pub(crate) struct AllocationSizes {
     pub(crate) min_device_memblock_size: u64,
     pub(crate) max_device_memblock_size: u64,
@@ -489,6 +498,17 @@ impl AllocationSizes {
                     max_host_memblock_size: host_size.end.clamp(4 * MB, 256 * MB),
                 }
             }
+        }
+    }
+
+    
+    
+    #[allow(dead_code, reason = "only the vulkan backend has a transient pool")]
+    pub(crate) fn transient(self) -> Self {
+        Self {
+            min_device_memblock_size: self.min_device_memblock_size / 4,
+            min_host_memblock_size: self.min_host_memblock_size / 4,
+            ..self
         }
     }
 }
@@ -921,10 +941,22 @@ pub trait Device: WasmNotSendSync {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn create_buffer(
         &self,
         desc: &BufferDescriptor,
-    ) -> Result<<Self::A as Api>::Buffer, DeviceError>;
+    ) -> Result<(<Self::A as Api>::Buffer, wgt::BufferAddress), DeviceError>;
 
     
     
@@ -1087,6 +1119,12 @@ pub trait Device: WasmNotSendSync {
     ) -> Result<<Self::A as Api>::ShaderModule, ShaderError>;
     unsafe fn destroy_shader_module(&self, module: <Self::A as Api>::ShaderModule);
 
+    
+    
+    
+    
+    
+    
     #[allow(clippy::type_complexity)]
     unsafe fn create_render_pipeline(
         &self,
@@ -1098,6 +1136,11 @@ pub trait Device: WasmNotSendSync {
     ) -> Result<<Self::A as Api>::RenderPipeline, PipelineError>;
     unsafe fn destroy_render_pipeline(&self, pipeline: <Self::A as Api>::RenderPipeline);
 
+    
+    
+    
+    
+    
     #[allow(clippy::type_complexity)]
     unsafe fn create_compute_pipeline(
         &self,
@@ -1109,6 +1152,12 @@ pub trait Device: WasmNotSendSync {
     ) -> Result<<Self::A as Api>::ComputePipeline, PipelineError>;
     unsafe fn destroy_compute_pipeline(&self, pipeline: <Self::A as Api>::ComputePipeline);
 
+    
+    
+    
+    
+    
+    
     #[allow(clippy::type_complexity)]
     unsafe fn create_ray_tracing_pipeline(
         &self,
@@ -1674,15 +1723,43 @@ pub trait CommandEncoder: WasmNotSendSync + fmt::Debug {
 
     unsafe fn set_render_pipeline(&mut self, pipeline: &<Self::A as Api>::RenderPipeline);
 
+    
+    
+    
+    
+    
+    
+    
     unsafe fn set_index_buffer<'a>(
         &mut self,
-        binding: BufferBinding<'a, <Self::A as Api>::Buffer>,
+        binding: BufferBinding<'a, <Self::A as Api>::Buffer, wgt::BufferAddress>,
         format: wgt::IndexFormat,
     );
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn set_vertex_buffer<'a>(
         &mut self,
         index: u32,
-        binding: BufferBinding<'a, <Self::A as Api>::Buffer>,
+        binding: BufferBinding<'a, <Self::A as Api>::Buffer, wgt::BufferAddress>,
     );
     unsafe fn set_viewport(&mut self, rect: &Rect<f32>, depth_range: Range<f32>);
     unsafe fn set_scissor_rect(&mut self, rect: &Rect<u32>);
@@ -2030,6 +2107,7 @@ impl From<wgt::TextureFormat> for FormatAspects {
 bitflags!(
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct MemoryFlags: u32 {
+        /// The resource is short-lived and may be placed in a separate memory pool.
         const TRANSIENT = 1 << 0;
         const PREFER_COHERENT = 1 << 1;
     }
@@ -2211,6 +2289,15 @@ pub struct BufferMapping {
 #[derive(Clone, Debug)]
 pub struct BufferDescriptor<'a> {
     pub label: Label<'a>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub size: wgt::BufferAddress,
     pub usage: wgt::BufferUses,
     pub memory_flags: MemoryFlags,
@@ -2359,8 +2446,11 @@ pub struct PipelineLayoutDescriptor<'a, B: DynBindGroupLayout + ?Sized> {
 
 
 
+
+
+
 #[derive(Debug)]
-pub struct BufferBinding<'a, B: DynBuffer + ?Sized> {
+pub struct BufferBinding<'a, B: DynBuffer + ?Sized, S> {
     
     
     
@@ -2375,15 +2465,11 @@ pub struct BufferBinding<'a, B: DynBuffer + ?Sized> {
     pub offset: wgt::BufferAddress,
 
     
-    
-    
-    
-    
-    pub size: Option<wgt::BufferSize>,
+    pub size: S,
 }
 
 
-impl<B: DynBuffer + ?Sized> Clone for BufferBinding<'_, B> {
+impl<B: DynBuffer + ?Sized, S: Copy> Clone for BufferBinding<'_, B, S> {
     fn clone(&self) -> Self {
         BufferBinding {
             buffer: self.buffer,
@@ -2393,35 +2479,7 @@ impl<B: DynBuffer + ?Sized> Clone for BufferBinding<'_, B> {
     }
 }
 
-
-
-
-pub trait ShouldBeNonZeroExt {
-    fn get(&self) -> u64;
-}
-
-impl ShouldBeNonZeroExt for NonZeroU64 {
-    fn get(&self) -> u64 {
-        NonZeroU64::get(*self)
-    }
-}
-
-impl ShouldBeNonZeroExt for u64 {
-    fn get(&self) -> u64 {
-        *self
-    }
-}
-
-impl ShouldBeNonZeroExt for Option<NonZeroU64> {
-    fn get(&self) -> u64 {
-        match *self {
-            Some(non_zero) => non_zero.get(),
-            None => 0,
-        }
-    }
-}
-
-impl<'a, B: DynBuffer + ?Sized> BufferBinding<'a, B> {
+impl<'a, B: DynBuffer + ?Sized, S> BufferBinding<'a, B, S> {
     
     
     
@@ -2434,19 +2492,11 @@ impl<'a, B: DynBuffer + ?Sized> BufferBinding<'a, B> {
     
     
     
-    
-    
-    
-    
-    pub fn new_unchecked<S: Into<Option<NonZeroU64>>>(
-        buffer: &'a B,
-        offset: wgt::BufferAddress,
-        size: S,
-    ) -> Self {
+    pub fn new_unchecked(buffer: &'a B, offset: wgt::BufferAddress, size: S) -> Self {
         Self {
             buffer,
             offset,
-            size: size.into(),
+            size,
         }
     }
 
@@ -2474,7 +2524,7 @@ impl<'a, T: DynTextureView + ?Sized> Clone for TextureBinding<'a, T> {
 #[derive(Debug)]
 pub struct ExternalTextureBinding<'a, B: DynBuffer + ?Sized, T: DynTextureView + ?Sized> {
     pub planes: [TextureBinding<'a, T>; 3],
-    pub params: BufferBinding<'a, B>,
+    pub params: BufferBinding<'a, B, wgt::BufferSize>,
 }
 
 impl<'a, B: DynBuffer + ?Sized, T: DynTextureView + ?Sized> Clone
@@ -2516,7 +2566,7 @@ pub struct BindGroupDescriptor<
 > {
     pub label: Label<'a>,
     pub layout: &'a Bgl,
-    pub buffers: &'a [BufferBinding<'a, B>],
+    pub buffers: &'a [BufferBinding<'a, B, wgt::BufferSize>],
     pub samplers: &'a [&'a S],
     pub textures: &'a [TextureBinding<'a, T>],
     pub entries: &'a [BindGroupEntry],
@@ -2998,6 +3048,8 @@ pub struct AccelerationStructureDescriptor<'a> {
     pub label: Label<'a>,
     pub size: wgt::BufferAddress,
     pub format: AccelerationStructureFormat,
+    
+    
     pub allow_compaction: bool,
 }
 

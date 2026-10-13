@@ -384,7 +384,6 @@ impl Drop for Queue {
 pub struct Buffer {
     raw: Option<glow::Buffer>,
     target: BindTarget,
-    size: wgt::BufferAddress,
     
     map_flags: u32,
     

@@ -283,17 +283,21 @@ impl crate::Surface for super::Surface {
         render_layer.setFramebufferOnly(framebuffer_only);
         
         
-        let wants_edr = config.color_space.is_hdr();
-        if wants_edr != render_layer.wantsExtendedDynamicRangeContent() {
-            render_layer.setWantsExtendedDynamicRangeContent(wants_edr);
+        
+        
+        
+        if available!(macos = 10.11, ios = 16.0, visionos = 1.0) {
+            let wants_edr = config.color_space.is_hdr();
+            if wants_edr != render_layer.wantsExtendedDynamicRangeContent() {
+                render_layer.setWantsExtendedDynamicRangeContent(wants_edr);
+            }
         }
 
         let colorspace_name: Option<&'static CFString> = match config.color_space {
             wgt::SurfaceColorSpace::Auto => {
                 unreachable!("wgpu-core resolves `Auto` before configuring the surface")
             }
-            
-            wgt::SurfaceColorSpace::Srgb => None,
+            wgt::SurfaceColorSpace::Srgb => Some(unsafe { objc2_core_graphics::kCGColorSpaceSRGB }),
             wgt::SurfaceColorSpace::ExtendedSrgbLinear => {
                 Some(unsafe { objc2_core_graphics::kCGColorSpaceExtendedLinearSRGB })
             }

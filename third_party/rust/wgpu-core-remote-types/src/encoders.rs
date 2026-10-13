@@ -175,7 +175,7 @@ pub struct ComputePassDescriptor<'a> {
     pub timestamp_writes: Option<PassTimestampWrites>,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum CommandEncoderCommand<'a> {
     BeginRenderPass {
@@ -227,7 +227,7 @@ pub enum CommandEncoderCommand<'a> {
     },
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum RenderPassEncoderCommand {
     SetViewport {
@@ -255,7 +255,7 @@ pub enum RenderPassEncoderCommand {
     End,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum RenderBundleEncoderCommand<'a> {
     BindingCommand(BindingCommand),
@@ -267,7 +267,7 @@ pub enum RenderBundleEncoderCommand<'a> {
     },
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum ComputePassEncoderCommand {
     BindingCommand(BindingCommand),
@@ -285,7 +285,7 @@ pub enum ComputePassEncoderCommand {
     End,
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum DebugCommand {
     PushDebugGroup(String),
@@ -293,7 +293,7 @@ pub enum DebugCommand {
     InsertDebugMarker(String),
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum BindingCommand {
     SetBindGroup {
@@ -307,7 +307,7 @@ pub enum BindingCommand {
     },
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 
 pub enum RenderCommand {
     SetPipeline(id::RenderPipelineId),

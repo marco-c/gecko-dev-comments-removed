@@ -5,7 +5,12 @@ use alloc::{
     sync::{Arc, Weak},
     vec::Vec,
 };
-use core::{fmt, mem::ManuallyDrop, num::Saturating, ops::Range};
+use core::{
+    fmt,
+    mem::ManuallyDrop,
+    num::{NonZeroU32, Saturating},
+    ops::Range,
+};
 
 use arrayvec::ArrayVec;
 use thiserror::Error;
@@ -38,6 +43,10 @@ use crate::{
 #[derive(Clone, Debug, Error)]
 #[non_exhaustive]
 pub enum BindGroupLayoutEntryError {
+    #[error("Multiple binding types provided, expected exactly one")]
+    MultipleBindingTypesProvided,
+    #[error("No binding types provided, expected exactly one")]
+    NoBindingTypesProvided,
     #[error("Cube dimension is not expected for texture storage")]
     StorageTextureCube,
     #[error("Atomic storage textures are not allowed by baseline webgpu, they require the native only feature TEXTURE_ATOMIC")]
@@ -120,6 +129,17 @@ pub enum BindingError {
         offset: wgt::BufferAddress,
         buffer_size: u64,
     },
+    
+    
+    
+    
+    
+    #[error("Buffer {buffer}: Binding offset {offset} must be strictly less than buffer size {buffer_size}")]
+    BindingOffsetEqualsSize {
+        buffer: ResourceErrorIdent,
+        offset: wgt::BufferAddress,
+        buffer_size: u64,
+    },
     #[error("Unbinding vertex buffer at slot {slot} expects offset to be 0. However an offset of {offset} was provided.")]
     UnbindingVertexBufferOffsetNotZero { slot: u32, offset: u64 },
     #[error("Unbinding vertex buffer at slot {slot} expects size to be 0. However a size of {size} was provided.")]
@@ -132,6 +152,7 @@ impl WebGpuError for BindingError {
             Self::DestroyedResource(e) => e.webgpu_error_type(),
             Self::BindingRangeTooLarge { .. }
             | Self::BindingOffsetTooLarge { .. }
+            | Self::BindingOffsetEqualsSize { .. }
             | BindingError::UnbindingVertexBufferOffsetNotZero { .. }
             | BindingError::UnbindingVertexBufferSizeNotZero { .. } => ErrorType::Validation,
         }
@@ -726,15 +747,412 @@ pub struct BindGroupDescriptor<
 }
 
 
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct BufferBindingLayout {
+    
+    pub ty: wgt::BufferBindingType,
+
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub has_dynamic_offset: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub min_binding_size: Option<wgt::BufferSize>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SamplerBindingLayout {
+    
+    pub ty: wgt::SamplerBindingType,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct TextureBindingLayout {
+    
+    pub sample_type: wgt::TextureSampleType,
+    
+    pub view_dimension: wgt::TextureViewDimension,
+    
+    
+    
+    pub multisampled: bool,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct StorageTextureBindingLayout {
+    
+    pub access: wgt::StorageTextureAccess,
+    
+    pub format: wgt::TextureFormat,
+    
+    pub view_dimension: wgt::TextureViewDimension,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct AccelerationStructureBindingLayout {
+    
+    
+    
+    
+    pub vertex_return: bool,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ExternalTextureBindingLayout;
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct BindGroupLayoutEntry {
+    
+    
+    pub binding: u32,
+    
+    pub visibility: wgt::ShaderStages,
+
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub buffer: Option<BufferBindingLayout>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub sampler: Option<SamplerBindingLayout>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub texture: Option<TextureBindingLayout>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub storage_texture: Option<StorageTextureBindingLayout>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub external_texture: Option<ExternalTextureBindingLayout>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub acceleration_structure: Option<AccelerationStructureBindingLayout>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub count: Option<NonZeroU32>,
+}
+
+impl From<core::convert::Infallible> for CreateBindGroupLayoutError {
+    fn from(_: core::convert::Infallible) -> Self {
+        unreachable!()
+    }
+}
+
+impl From<wgt::BindGroupLayoutEntry> for BindGroupLayoutEntry {
+    fn from(val: wgt::BindGroupLayoutEntry) -> Self {
+        let wgt::BindGroupLayoutEntry {
+            binding,
+            visibility,
+            ty,
+            count,
+        } = val;
+        BindGroupLayoutEntry {
+            binding,
+            visibility,
+            buffer: if let wgt::BindingType::Buffer {
+                ty,
+                has_dynamic_offset,
+                min_binding_size,
+            } = ty
+            {
+                Some(BufferBindingLayout {
+                    ty,
+                    has_dynamic_offset,
+                    min_binding_size,
+                })
+            } else {
+                None
+            },
+            sampler: if let wgt::BindingType::Sampler(ty) = ty {
+                Some(SamplerBindingLayout { ty })
+            } else {
+                None
+            },
+            texture: if let wgt::BindingType::Texture {
+                sample_type,
+                view_dimension,
+                multisampled,
+            } = ty
+            {
+                Some(TextureBindingLayout {
+                    sample_type,
+                    view_dimension,
+                    multisampled,
+                })
+            } else {
+                None
+            },
+            storage_texture: if let wgt::BindingType::StorageTexture {
+                access,
+                format,
+                view_dimension,
+            } = ty
+            {
+                Some(StorageTextureBindingLayout {
+                    access,
+                    format,
+                    view_dimension,
+                })
+            } else {
+                None
+            },
+            external_texture: if let wgt::BindingType::ExternalTexture = ty {
+                Some(ExternalTextureBindingLayout {})
+            } else {
+                None
+            },
+            acceleration_structure: if let wgt::BindingType::AccelerationStructure {
+                vertex_return,
+            } = ty
+            {
+                Some(AccelerationStructureBindingLayout { vertex_return })
+            } else {
+                None
+            },
+            count,
+        }
+    }
+}
+
+impl TryInto<wgt::BindGroupLayoutEntry> for BindGroupLayoutEntry {
+    type Error = CreateBindGroupLayoutError;
+
+    fn try_into(self) -> Result<wgt::BindGroupLayoutEntry, Self::Error> {
+        let BindGroupLayoutEntry {
+            binding,
+            visibility,
+            buffer,
+            sampler,
+            texture,
+            storage_texture,
+            external_texture,
+            acceleration_structure,
+            count,
+        } = self;
+        let mut binding_ty: Option<wgt::BindingType> = None;
+        if let Some(BufferBindingLayout {
+            ty,
+            has_dynamic_offset,
+            min_binding_size,
+        }) = buffer
+        {
+            binding_ty = Some(wgt::BindingType::Buffer {
+                ty,
+                has_dynamic_offset,
+                min_binding_size,
+            });
+        }
+        if let Some(SamplerBindingLayout { ty }) = sampler {
+            if binding_ty.is_some() {
+                return Err(CreateBindGroupLayoutError::Entry {
+                    binding,
+                    error: BindGroupLayoutEntryError::MultipleBindingTypesProvided,
+                });
+            }
+            binding_ty = Some(wgt::BindingType::Sampler(ty))
+        }
+        if let Some(TextureBindingLayout {
+            sample_type,
+            view_dimension,
+            multisampled,
+        }) = texture
+        {
+            if binding_ty.is_some() {
+                return Err(CreateBindGroupLayoutError::Entry {
+                    binding,
+                    error: BindGroupLayoutEntryError::MultipleBindingTypesProvided,
+                });
+            }
+            binding_ty = Some(wgt::BindingType::Texture {
+                sample_type,
+                view_dimension,
+                multisampled,
+            })
+        }
+        if let Some(StorageTextureBindingLayout {
+            access,
+            format,
+            view_dimension,
+        }) = storage_texture
+        {
+            if binding_ty.is_some() {
+                return Err(CreateBindGroupLayoutError::Entry {
+                    binding,
+                    error: BindGroupLayoutEntryError::MultipleBindingTypesProvided,
+                });
+            }
+            binding_ty = Some(wgt::BindingType::StorageTexture {
+                access,
+                format,
+                view_dimension,
+            })
+        }
+        if let Some(ExternalTextureBindingLayout) = external_texture {
+            if binding_ty.is_some() {
+                return Err(CreateBindGroupLayoutError::Entry {
+                    binding,
+                    error: BindGroupLayoutEntryError::MultipleBindingTypesProvided,
+                });
+            }
+            binding_ty = Some(wgt::BindingType::ExternalTexture)
+        }
+        if let Some(AccelerationStructureBindingLayout { vertex_return }) = acceleration_structure {
+            if binding_ty.is_some() {
+                return Err(CreateBindGroupLayoutError::Entry {
+                    binding,
+                    error: BindGroupLayoutEntryError::MultipleBindingTypesProvided,
+                });
+            }
+            binding_ty = Some(wgt::BindingType::AccelerationStructure { vertex_return })
+        }
+        Ok(wgt::BindGroupLayoutEntry {
+            binding,
+            visibility,
+            ty: binding_ty.ok_or(CreateBindGroupLayoutError::Entry {
+                binding,
+                error: BindGroupLayoutEntryError::NoBindingTypesProvided,
+            })?,
+            count,
+        })
+    }
+}
+
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct BindGroupLayoutDescriptor<'a> {
+pub struct BindGroupLayoutDescriptor<'a, BGLE: Copy> {
     
     
     
     pub label: Label<'a>,
     
-    pub entries: Cow<'a, [wgt::BindGroupLayoutEntry]>,
+    pub entries: Cow<'a, [BGLE]>,
 }
 
 
@@ -1191,9 +1609,10 @@ pub enum BindError {
     )]
     DynamicOffsetCountNotZero { group: u32, actual: usize },
     #[error(
-        "{bind_group} {group} expects {expected} dynamic offset{s0}. However {actual} dynamic offset{s1} were provided.",
+        "{bind_group} at index {group} expects {expected} dynamic offset{s0}, but {actual} dynamic offset{s1} {to_be} provided",
         s0 = if *.expected >= 2 { "s" } else { "" },
         s1 = if *.actual >= 2 { "s" } else { "" },
+        to_be = if *.actual == 1 { "was" } else { "were" },
     )]
     MismatchedDynamicOffsetCount {
         bind_group: ResourceErrorIdent,

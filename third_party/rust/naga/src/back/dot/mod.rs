@@ -430,6 +430,15 @@ impl StatementGraph {
                         "TraceRay"
                     }
                 },
+                S::DebugPrintf {
+                    format: _,
+                    ref arguments,
+                } => {
+                    for &expr in arguments {
+                        self.dependencies.push((id, expr, "arg"));
+                    }
+                    "DebugPrintf"
+                }
             };
             
             last_node = merge_id;

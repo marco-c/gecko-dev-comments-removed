@@ -164,6 +164,7 @@ enum Varying {
     
     
     
+    
     UserDefined { location: u32, iv: InterfaceVar },
 
     
@@ -1006,7 +1007,8 @@ impl NumericType {
             | Vf::Float16x4
             | Vf::Float32x4
             | Vf::Unorm10_10_10_2
-            | Vf::Unorm8x4Bgra => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
+            | Vf::Unorm8x4Bgra
+            | Vf::Snorm10_10_10_2 => (NumericDimension::Vector(Vs::Quad), Scalar::F32),
             Vf::Float64 => (NumericDimension::Scalar, Scalar::F64),
             Vf::Float64x2 => (NumericDimension::Vector(Vs::Bi), Scalar::F64),
             Vf::Float64x3 => (NumericDimension::Vector(Vs::Tri), Scalar::F64),
@@ -1173,17 +1175,30 @@ impl BindingLayoutSource {
     }
 }
 
+
+
+
+
 #[derive(Debug, Clone, Default)]
 pub struct StageIo {
+    
     pub varyings: FastHashMap<wgt::ShaderLocation, InterfaceVar>,
+
+    
+    
     
     pub task_payload_size: Option<u32>,
+
+    
+    
     
     
     
     
     
     pub primitive_index: Option<bool>,
+
+    
     pub immediates: naga::valid::ImmediateUsage,
 }
 

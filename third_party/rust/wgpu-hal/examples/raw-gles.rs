@@ -175,15 +175,13 @@ fn main() {
                         },
                     ..
                 } => event_loop.exit(),
-                WindowEvent::Resized(size) => {
-                    if size.width != 0 && size.height != 0 {
-                        
-                        
-                        
-                        
-                        if let Some((gl_context, gl_surface, window)) = &self.state {
-                            window.resize_surface(gl_surface, gl_context);
-                        }
+                WindowEvent::Resized(size) if size.width != 0 && size.height != 0 => {
+                    
+                    
+                    
+                    
+                    if let Some((gl_context, gl_surface, window)) = &self.state {
+                        window.resize_surface(gl_surface, gl_context);
                     }
                 }
                 WindowEvent::RedrawRequested => {

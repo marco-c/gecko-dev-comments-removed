@@ -2386,6 +2386,11 @@ pub enum Statement {
         target: Handle<Expression>,
         data: CooperativeData,
     },
+    
+    DebugPrintf {
+        format: String,
+        arguments: Vec<Handle<Expression>>,
+    },
 }
 
 

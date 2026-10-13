@@ -3,7 +3,7 @@ use super::{DrawCommandFamily, Rect};
 use crate::command::serde_object_reference_struct;
 use crate::command::{ArcReferences, ReferenceType};
 use alloc::vec::Vec;
-use wgt::{BufferAddress, BufferSize, Color};
+use wgt::{BufferAddress, Color};
 
 #[cfg(feature = "serde")]
 use macro_rules_attribute::apply;
@@ -23,13 +23,13 @@ pub enum RenderCommand<R: ReferenceType> {
         buffer: R::Buffer,
         index_format: wgt::IndexFormat,
         offset: BufferAddress,
-        size: Option<BufferSize>,
+        size: Option<BufferAddress>, 
     },
     SetVertexBuffer {
         slot: u32,
         buffer: Option<R::Buffer>,
         offset: BufferAddress,
-        size: Option<BufferSize>,
+        size: Option<BufferAddress>, 
     },
     SetBlendConstant(Color),
     SetStencilReference(u32),

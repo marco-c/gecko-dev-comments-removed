@@ -81,6 +81,10 @@ pub(crate) struct BindGroups {
 
 impl BindGroups {
     
+    
+    
+    
+    
     pub(crate) fn new(
         indirect_validation: &IndirectValidation,
         device: &crate::device::Device,

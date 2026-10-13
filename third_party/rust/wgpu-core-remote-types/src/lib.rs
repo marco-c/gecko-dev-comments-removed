@@ -48,9 +48,34 @@ pub struct RequestAdapterOptions {
 
 assert_ffi_safe!(RequestAdapterOptions);
 
-pub type DeviceDescriptor<'a> = wgt::DeviceDescriptor<Label<'a>>;
+
+
+
+
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct DeviceDescriptor<'a> {
+    
+    pub label: Label<'a>,
+    
+    
+    
+    
+    
+    pub required_features: wgt::FeaturesWebGPU,
+    
+    
+    
+    
+    
+    pub required_limits: wgt::Limits,
+    
+    
+    
+    pub default_queue: QueueDescriptor<'a>,
+}
+
 pub type QueueDescriptor<'a> = wgt::QueueDescriptor<Label<'a>>;
-pub type BufferDescriptor<'a> = wgt::BufferDescriptor<Label<'a>>;
+pub type BufferDescriptor<'a> = wgt::BufferDescriptor<Label<'a>, wgt::BufferUsagesWebGPU>;
 pub type TextureDescriptor<'a> = wgt::TextureDescriptor<Label<'a>, Vec<wgt::TextureFormat>>;
 pub type ExternalTextureDescriptor<'a> = wgt::ExternalTextureDescriptor<Label<'a>>;
 
@@ -144,3 +169,33 @@ pub struct ShaderModuleDescriptor<'a> {
 }
 
 pub type QuerySetDescriptor<'a> = wgt::QuerySetDescriptor<Label<'a>>;
+
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub enum RequestDeviceError {
+    
+    UnsupportedFeature(String),
+    
+    FailedLimit(String),
+    
+    
+    
+    Other(String),
+}
+
+pub use naga_types::wgsl::language_extension::ImplementedLanguageExtension;
+
+
+
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub enum PipelineError {
+    Validation(String),
+    Internal(String),
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub enum BufferMapError {
+    Aborted(String),
+    Operation(String),
+}

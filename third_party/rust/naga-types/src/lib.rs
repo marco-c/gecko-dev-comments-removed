@@ -8,6 +8,7 @@ pub mod glsl;
 pub mod hlsl;
 pub mod msl;
 pub mod spv;
+pub mod wgsl;
 
 
 
@@ -316,6 +317,12 @@ pub enum VertexFormat {
         serde(rename = "unorm8x4-bgra")
     )]
     Unorm8x4Bgra = 44,
+    
+    #[cfg_attr(
+        any(feature = "serialize", feature = "deserialize"),
+        serde(rename = "snorm10-10-10-2")
+    )]
+    Snorm10_10_10_2 = 45,
 }
 
 impl VertexFormat {
@@ -346,7 +353,8 @@ impl VertexFormat {
             | Self::Uint32
             | Self::Sint32
             | Self::Unorm10_10_10_2
-            | Self::Unorm8x4Bgra => 4,
+            | Self::Unorm8x4Bgra
+            | Self::Snorm10_10_10_2 => 4,
             Self::Uint16x4
             | Self::Sint16x4
             | Self::Unorm16x4

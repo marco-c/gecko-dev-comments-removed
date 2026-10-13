@@ -37,6 +37,9 @@ pub enum Token<'a> {
     Word(&'a str),
 
     
+    String(&'a str),
+
+    
     
     Operation(char),
 
@@ -90,12 +93,31 @@ pub enum Token<'a> {
     ModuleDocComment(&'a str),
 
     
+    
+    
+    UnterminatedBlockComment(&'a str),
+
+    
     End,
 }
 
 fn consume_any(input: &str, what: impl Fn(char) -> bool) -> (&str, &str) {
     let pos = input.find(|c| !what(c)).unwrap_or(input.len());
     input.split_at(pos)
+}
+
+fn find_string_literal_end(input: &str) -> Option<usize> {
+    let mut escaped = false;
+    for (index, c) in input.char_indices() {
+        if escaped {
+            escaped = false;
+        } else if c == '\\' {
+            escaped = true;
+        } else if c == '"' {
+            return Some(index);
+        }
+    }
+    None
 }
 
 struct UnclosedCandidate {
@@ -265,6 +287,14 @@ fn consume_token(
         None => return (Token::End, ""),
     };
     match cur {
+        '"' => match find_string_literal_end(chars.as_str()) {
+            Some(len) => {
+                let content = &chars.as_str()[..len];
+                let rest = &chars.as_str()[len + 1..];
+                (Token::String(content), rest)
+            }
+            None => (Token::Unknown('"'), chars.as_str()),
+        },
         ':' | ';' | ',' => (Token::Separator(cur), chars.as_str()),
         '.' => {
             let og_chars = chars.as_str();
@@ -360,7 +390,7 @@ fn consume_token(
                         }
                     }
 
-                    (Token::End, "")
+                    (Token::UnterminatedBlockComment(input), "")
                 }
                 Some('=') => (Token::AssignmentOperation(cur), chars.as_str()),
                 _ => (Token::Operation(cur), og_chars),
@@ -959,6 +989,22 @@ fn test_tokens() {
     sub_test("No¾", &[Token::Word("No"), Token::Unknown('¾')]);
     sub_test("No好", &[Token::Word("No好")]);
     sub_test("_No", &[Token::Word("_No")]);
+    sub_test(
+        r#""debug \"value\": %d", next"#,
+        &[
+            Token::String(r#"debug \"value\": %d"#),
+            Token::Separator(','),
+            Token::Word("next"),
+        ],
+    );
+    sub_test(
+        r#""debug\\", next"#,
+        &[
+            Token::String(r#"debug\\"#),
+            Token::Separator(','),
+            Token::Word("next"),
+        ],
+    );
 
     sub_test_with_and_without_doc_comments(
         "*/*/***/*//=/*****//",
@@ -1261,5 +1307,13 @@ fn test_doc_comments_module() {
             Token::Word("const"),
             Token::ModuleDocComment("//! After anything else is not."),
         ],
+    );
+}
+
+#[test]
+fn test_block_comment_unclosed() {
+    sub_test_with_and_without_doc_comments(
+        "/** Unclosed Doc Comment",
+        &[Token::UnterminatedBlockComment("/** Unclosed Doc Comment")],
     );
 }

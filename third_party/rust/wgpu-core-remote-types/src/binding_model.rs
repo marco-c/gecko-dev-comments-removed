@@ -68,6 +68,159 @@ pub struct BindGroupDescriptor<'a> {
 }
 
 
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct BufferBindingLayout {
+    
+    pub ty: wgt::BufferBindingType,
+
+    
+    
+    
+    
+    
+    #[serde(default)]
+    pub has_dynamic_offset: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[serde(default)]
+    pub min_binding_size: Option<wgt::BufferSize>,
+}
+
+assert_ffi_safe!(BufferBindingLayout);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct SamplerBindingLayout {
+    
+    pub ty: wgt::SamplerBindingType,
+}
+
+assert_ffi_safe!(SamplerBindingLayout);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct TextureBindingLayout {
+    
+    pub sample_type: wgt::TextureSampleType,
+    
+    pub view_dimension: wgt::TextureViewDimension,
+    
+    
+    
+    pub multisampled: bool,
+}
+
+assert_ffi_safe!(TextureBindingLayout);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
+pub struct StorageTextureBindingLayout {
+    
+    pub access: wgt::StorageTextureAccess,
+    
+    pub format: wgt::TextureFormat,
+    
+    pub view_dimension: wgt::TextureViewDimension,
+}
+
+assert_ffi_safe!(StorageTextureBindingLayout);
+
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct BindGroupLayoutEntry {
+    
+    
+    pub binding: u32,
+    
+    pub visibility: wgt::ShaderStagesWebGPU,
+    
+    pub buffer: FfiOption<BufferBindingLayout>,
+    pub sampler: FfiOption<SamplerBindingLayout>,
+    pub texture: FfiOption<TextureBindingLayout>,
+    pub storage_texture: FfiOption<StorageTextureBindingLayout>,
+    pub external_texture: bool,
+}
+
+assert_ffi_safe!(BindGroupLayoutEntry);
+
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BindGroupLayoutDescriptor<'a> {
     
@@ -75,5 +228,5 @@ pub struct BindGroupLayoutDescriptor<'a> {
     
     pub label: Label<'a>,
     
-    pub entries: Cow<'a, [wgt::BindGroupLayoutEntry]>,
+    pub entries: Cow<'a, [BindGroupLayoutEntry]>,
 }

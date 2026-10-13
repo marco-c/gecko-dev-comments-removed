@@ -445,6 +445,93 @@ impl BlockContext<'_> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn maybe_write_immediate_vector_dynamic_access(
+        &mut self,
+        pointer: Handle<crate::Expression>,
+        block: &mut Block,
+    ) -> Result<Option<Word>, Error> {
+        
+        
+        let crate::Expression::Access {
+            base: vector_pointer,
+            index,
+        } = self.ir_function.expressions[pointer]
+        else {
+            return Ok(None);
+        };
+
+        
+        
+        if let GuardedIndex::Known(_) =
+            GuardedIndex::from_expression(index, &self.ir_function.expressions, self.ir_module)
+        {
+            return Ok(None);
+        }
+
+        
+        
+        let vector_pointer_ty = self.fun_info[vector_pointer]
+            .ty
+            .inner_with(&self.ir_module.types);
+        if vector_pointer_ty.pointer_space() != Some(crate::AddressSpace::Immediate) {
+            return Ok(None);
+        }
+        let Some(vector_base_ty) = vector_pointer_ty.pointer_base_type() else {
+            return Ok(None);
+        };
+        let crate::TypeInner::Vector { size, scalar } =
+            *vector_base_ty.inner_with(&self.ir_module.types)
+        else {
+            return Ok(None);
+        };
+
+        let vector_type_id = self.get_numeric_type_id(NumericType::Vector { size, scalar });
+        let component_type_id = self.get_numeric_type_id(NumericType::Scalar(scalar));
+
+        let vector_load_id = self.write_checked_load(
+            vector_pointer,
+            block,
+            AccessTypeAdjustment::None,
+            vector_type_id,
+        )?;
+
+        let result_id = self.write_vector_access(
+            component_type_id,
+            vector_pointer,
+            Some(vector_load_id),
+            GuardedIndex::Expression(index),
+            block,
+        )?;
+
+        Ok(Some(result_id))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn maybe_write_uniform_matcx2_dynamic_access(
         &mut self,
         pointer: Handle<crate::Expression>,
@@ -2773,7 +2860,11 @@ impl BlockContext<'_> {
         access_type_adjustment: AccessTypeAdjustment,
         result_type_id: Word,
     ) -> Result<Word, Error> {
-        if let Some(result_id) = self.maybe_write_uniform_matcx2_dynamic_access(pointer, block)? {
+        if let Some(result_id) = self.maybe_write_immediate_vector_dynamic_access(pointer, block)? {
+            Ok(result_id)
+        } else if let Some(result_id) =
+            self.maybe_write_uniform_matcx2_dynamic_access(pointer, block)?
+        {
             Ok(result_id)
         } else if let Some(result_id) =
             self.maybe_write_load_uniform_matcx2_struct_member(pointer, block)?
@@ -4187,6 +4278,19 @@ impl BlockContext<'_> {
                 }
                 Statement::RayPipelineFunction(ref fun) => {
                     self.write_ray_tracing_pipeline_function(fun, &mut block);
+                }
+                Statement::DebugPrintf {
+                    ref format,
+                    ref arguments,
+                } => {
+                    let mut format_params = Vec::with_capacity(arguments.len());
+                    for &arg in arguments {
+                        let word = self.cached[arg];
+                        format_params.push(word);
+                    }
+
+                    self.writer
+                        .write_debug_printf(&mut block, format, &format_params);
                 }
             }
         }

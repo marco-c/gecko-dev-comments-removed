@@ -289,6 +289,7 @@ pub struct RwLockReadGuard<'a, T> {
 
 pub struct RwLockWriteGuard<'a, T> {
     inner: wgpu_sync::RwLockWriteGuard<'a, T>,
+    #[cfg_attr(not(miri), expect(unused))] 
     saved: LockStateGuard,
 }
 
@@ -334,9 +335,13 @@ impl<'a, T> RwLockReadGuard<'a, T> {
     
     
     pub fn forget(this: Self) -> RankData {
+        
+        
+        let saved = core::mem::ManuallyDrop::new(this.saved);
         core::mem::forget(this.inner);
 
-        this.saved.0
+        
+        saved.0
     }
 }
 

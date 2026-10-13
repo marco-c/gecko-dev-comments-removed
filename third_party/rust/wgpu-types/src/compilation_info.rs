@@ -8,11 +8,19 @@ use serde::{Deserialize, Serialize};
 
 
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct CompilationInfo {
+pub struct CompilationInfo<SL = SourceLocation> {
     
-    pub messages: Vec<CompilationMessage>,
+    pub messages: Vec<CompilationMessage<SL>>,
+}
+
+impl<SL> Default for CompilationInfo<SL> {
+    fn default() -> Self {
+        Self {
+            messages: Default::default(),
+        }
+    }
 }
 
 
@@ -21,13 +29,13 @@ pub struct CompilationInfo {
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct CompilationMessage {
+pub struct CompilationMessage<SL = SourceLocation> {
     
     pub message: String,
     
     pub message_type: CompilationMessageType,
     
-    pub location: Option<SourceLocation>,
+    pub location: Option<SL>,
 }
 
 
@@ -51,6 +59,8 @@ pub enum CompilationMessageType {
 
 
 
+
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct SourceLocation {
@@ -63,4 +73,83 @@ pub struct SourceLocation {
     pub offset: u32,
     
     pub length: u32,
+}
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Utf16SourceLocation {
+    
+    pub line_number: u32,
+    
+    
+    pub line_position: u32,
+    
+    pub offset: u32,
+    
+    pub length: u32,
+}
+
+impl SourceLocation {
+    
+    pub fn to_utf16(&self, source: &str) -> Utf16SourceLocation {
+        let len_utf16 = |s: &str| s.chars().map(|c| c.len_utf16() as u32).sum::<u32>();
+        let start = self.offset as usize;
+        let end = start + self.length as usize;
+        let utf16_offset = len_utf16(&source[..start]);
+        let utf16_length = len_utf16(&source[start..end]);
+
+        let line_start = source[..start].rfind('\n').map_or(0, |pos| pos + 1);
+        let utf16_line_position = len_utf16(&source[line_start..start]) + 1;
+
+        Utf16SourceLocation {
+            line_number: self.line_number,
+            line_position: utf16_line_position,
+            offset: utf16_offset,
+            length: utf16_length,
+        }
+    }
+}
+
+impl Utf16SourceLocation {
+    
+    pub fn to_utf8(&self, source: &str) -> SourceLocation {
+        fn map_utf16_to_utf8_offset(utf16_offset: u32, text: &str) -> u32 {
+            let mut utf16_i = 0;
+            for (utf8_index, c) in text.char_indices() {
+                if utf16_i >= utf16_offset {
+                    return utf8_index as u32;
+                }
+                utf16_i += c.len_utf16() as u32;
+            }
+            if utf16_i >= utf16_offset {
+                text.len() as u32
+            } else {
+                log::error!("UTF16 offset {utf16_offset} is out of bounds for string {text}");
+                u32::MAX
+            }
+        }
+        let utf8_offset = map_utf16_to_utf8_offset(self.offset, source);
+        let utf8_length = map_utf16_to_utf8_offset(self.length, &source[utf8_offset as usize..]);
+
+        let prefix = &source[..utf8_offset as usize];
+        let line_start = prefix.rfind('\n').map(|pos| pos + 1).unwrap_or(0) as u32;
+        let utf8_line_position = utf8_offset - line_start + 1; 
+
+        SourceLocation {
+            line_number: self.line_number,
+            line_position: utf8_line_position,
+            offset: utf8_offset,
+            length: utf8_length,
+        }
+    }
 }

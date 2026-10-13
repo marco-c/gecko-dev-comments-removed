@@ -3,7 +3,7 @@
 
 
 pub mod enable_extension;
-pub(crate) mod language_extension;
+pub(crate) use naga_types::wgsl::language_extension;
 
 use alloc::boxed::Box;
 

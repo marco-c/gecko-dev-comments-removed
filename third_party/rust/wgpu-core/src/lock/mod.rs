@@ -31,6 +31,10 @@
 
 
 
+
+
+
+
 pub mod rank;
 
 #[cfg(feature = "std")] 
@@ -38,6 +42,7 @@ pub mod rank;
 mod ranked;
 
 #[cfg(feature = "observe_locks")]
+#[cfg_attr(wgpu_validate_locks, allow(dead_code))]
 mod observing;
 
 #[cfg_attr(any(wgpu_validate_locks, feature = "observe_locks"), allow(dead_code))]
@@ -46,7 +51,7 @@ mod vanilla;
 #[cfg(wgpu_validate_locks)]
 use ranked as chosen;
 
-#[cfg(feature = "observe_locks")]
+#[cfg(all(not(wgpu_validate_locks), feature = "observe_locks"))]
 use observing as chosen;
 
 #[cfg(not(any(wgpu_validate_locks, feature = "observe_locks")))]
