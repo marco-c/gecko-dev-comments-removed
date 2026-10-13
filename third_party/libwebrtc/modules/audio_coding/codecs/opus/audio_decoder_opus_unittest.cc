@@ -348,7 +348,9 @@ TEST(AudioDecoderOpusTest, MonoEncoderStereoDecoderOutputsTrivialStereoPlc) {
   constexpr int kIgnored = 123;
   decoder.GeneratePlc(kIgnored,
                       &concealment_audio);
-  RTC_CHECK_GT(concealment_audio.size(), 0);
+  
+  RTC_CHECK_EQ(concealment_audio.size(),
+               kSampleRateHz / 100 * kDecoderNumChannels);
   std::span<const int16_t> decoded_view(concealment_audio.data(),
                                         concealment_audio.size());
   
