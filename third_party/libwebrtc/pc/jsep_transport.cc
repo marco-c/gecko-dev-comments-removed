@@ -453,6 +453,28 @@ RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   
 
   RTC_DCHECK(rtp_dtls_transport());
+
+  
+  
+  IceConfig config = rtp_dtls_transport()->ice_transport()->config();
+  
+  
+  if (config.dtls_handshake_in_stun) {
+    
+    
+    config.dtls_handshake_in_stun =
+        local_description_->transport_desc.HasOption(ICE_OPTION_GOOG_SPED_V1) ||
+        (local_description_->transport_desc.HasOption(ICE_OPTION_SPED) &&
+         remote_description_->transport_desc.HasOption(ICE_OPTION_SPED));
+    rtp_dtls_transport()->ice_transport()->SetIceConfig(config);
+
+    if (rtcp_dtls_transport()) {
+      IceConfig rtcp_config = rtcp_dtls_transport()->ice_transport()->config();
+      rtcp_config.dtls_handshake_in_stun = config.dtls_handshake_in_stun;
+      rtcp_dtls_transport()->ice_transport()->SetIceConfig(rtcp_config);
+    }
+  }
+
   RTCError error = SetNegotiatedDtlsParameters(
       rtp_dtls_transport(), negotiated_dtls_role, remote_fingerprint.get());
   if (!error.ok()) {
@@ -462,19 +484,6 @@ RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   if (rtcp_dtls_transport()) {
     error = SetNegotiatedDtlsParameters(
         rtcp_dtls_transport(), negotiated_dtls_role, remote_fingerprint.get());
-  }
-
-  bool dtls_in_stun =
-      local_description_->transport_desc.HasOption(ICE_OPTION_GOOG_SPED_V1);
-
-  IceConfig config = rtp_dtls_transport()->ice_transport()->config();
-  config.dtls_handshake_in_stun = dtls_in_stun;
-  rtp_dtls_transport()->ice_transport()->SetIceConfig(config);
-
-  if (rtcp_dtls_transport()) {
-    IceConfig rtcp_config = rtcp_dtls_transport()->ice_transport()->config();
-    rtcp_config.dtls_handshake_in_stun = dtls_in_stun;
-    rtcp_dtls_transport()->ice_transport()->SetIceConfig(rtcp_config);
   }
 
   return error;

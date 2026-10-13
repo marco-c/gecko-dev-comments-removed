@@ -19,7 +19,6 @@
 #include "p2p/base/ice_credentials_iterator.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/rtc_certificate.h"
-#include "rtc_base/ssl_identity.h"
 
 namespace webrtc {
 
@@ -29,6 +28,9 @@ struct TransportOptions {
   
   
   bool enable_ice_renomination = false;
+  
+  
+  bool dtls_handshake_in_stun = false;
 };
 
 
@@ -88,13 +90,5 @@ class TransportDescriptionFactory {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace cricket {
-using ::webrtc::TransportDescriptionFactory;
-using ::webrtc::TransportOptions;
-}  
-#endif  
 
 #endif  

@@ -98,6 +98,8 @@ constexpr auto* ICE_OPTION_TRICKLE = "trickle";
 constexpr auto* ICE_OPTION_RENOMINATION = "renomination";
 constexpr auto* ICE_OPTION_GOOG_SPED_V1 = "googspedv1";
 
+constexpr auto* ICE_OPTION_SPED = "sped";
+
 std::optional<ConnectionRole> StringToConnectionRole(
     absl::string_view role_str);
 bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str);

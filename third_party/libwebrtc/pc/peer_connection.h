@@ -477,6 +477,7 @@ class PeerConnection : public PeerConnectionInternal,
     RTC_DCHECK_RUN_ON(signaling_thread());
     sdp_handler_->DisableSdpMungingChecksForTesting();
   }
+  bool CanAttemptDtlsStunPiggybacking() const override;
 
  protected:
   
@@ -638,8 +639,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   absl::AnyInvocable<void(const RtpPacketReceived& parsed_packet) const>
   InitializeUnDemuxablePacketHandler();
-
-  bool CanAttemptDtlsStunPiggybacking();
 
   
   

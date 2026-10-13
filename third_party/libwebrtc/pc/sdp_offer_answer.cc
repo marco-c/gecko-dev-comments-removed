@@ -5041,6 +5041,8 @@ void SdpOfferAnswerHandler::GetOptionsForOffer(
     options.transport_options.ice_restart = ice_restart;
     options.transport_options.enable_ice_renomination =
         pc_->configuration()->enable_ice_renomination;
+    options.transport_options.dtls_handshake_in_stun =
+        pc_->CanAttemptDtlsStunPiggybacking();
   }
 
   session_options->rtcp_cname = rtcp_cname_;
@@ -5334,6 +5336,8 @@ void SdpOfferAnswerHandler::GetOptionsForAnswer(
   for (auto& options : session_options->media_description_options) {
     options.transport_options.enable_ice_renomination =
         pc_->configuration()->enable_ice_renomination;
+    options.transport_options.dtls_handshake_in_stun =
+        pc_->CanAttemptDtlsStunPiggybacking();
   }
 
   session_options->rtcp_cname = rtcp_cname_;
