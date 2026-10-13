@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TextDecoderStream.h"
 
 #include "mozilla/Encoding.h"
@@ -95,7 +93,7 @@ class TextDecoderStreamAlgorithms : public TransformerAlgorithmsWrapper {
 
   
   MOZ_CAN_RUN_SCRIPT void TransformCallbackImpl(
-      JS::Handle<JS::Value> aChunk,
+      JSContext* aCx, JS::Handle<JS::Value> aChunk,
       TransformStreamDefaultController& aController,
       ErrorResult& aRv) override {
     
@@ -104,43 +102,29 @@ class TextDecoderStreamAlgorithms : public TransformerAlgorithmsWrapper {
 
     
 
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aController.GetParentObject())) {
-      aRv.ThrowUnknownError("Internal error");
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-
     
     
-    RootedUnion<OwningBufferSource> bufferSource(cx);
-    if (!bufferSource.Init(cx, aChunk)) {
+    RootedUnion<OwningBufferSource> bufferSource(aCx);
+    if (!bufferSource.Init(aCx, aChunk)) {
       aRv.MightThrowJSException();
-      aRv.StealExceptionFromJSContext(cx);
+      aRv.StealExceptionFromJSContext(aCx);
       return;
     }
 
-    DecodeBufferSourceAndEnqueue(cx, &bufferSource, false, aController, aRv);
+    DecodeBufferSourceAndEnqueue(aCx, &bufferSource, false, aController, aRv);
   }
 
   
   MOZ_CAN_RUN_SCRIPT void FlushCallbackImpl(
-      TransformStreamDefaultController& aController,
+      JSContext* aCx, TransformStreamDefaultController& aController,
       ErrorResult& aRv) override {
     
     
 
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aController.GetParentObject())) {
-      aRv.ThrowUnknownError("Internal error");
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-
     
     
     
-    DecodeBufferSourceAndEnqueue(cx, nullptr, true, aController, aRv);
+    DecodeBufferSourceAndEnqueue(aCx, nullptr, true, aController, aRv);
   }
 
  private:

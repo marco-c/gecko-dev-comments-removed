@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/TextEncoderStream.h"
 
 #include "js/ArrayBuffer.h"
@@ -141,51 +139,37 @@ class TextEncoderStreamAlgorithms : public TransformerAlgorithmsWrapper {
 
   
   MOZ_CAN_RUN_SCRIPT void TransformCallbackImpl(
-      JS::Handle<JS::Value> aChunk,
+      JSContext* aCx, JS::Handle<JS::Value> aChunk,
       TransformStreamDefaultController& aController,
       ErrorResult& aRv) override {
     
     
     
-
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aController.GetParentObject())) {
-      aRv.ThrowUnknownError("Internal error");
-      return;
-    }
-    JSContext* cx = jsapi.cx();
 
     
 
     
     
     nsString str;
-    if (!ConvertJSValueToString(cx, aChunk, eStringify, eStringify, str)) {
+    if (!ConvertJSValueToString(aCx, aChunk, eStringify, eStringify, str)) {
       aRv.MightThrowJSException();
-      aRv.StealExceptionFromJSContext(cx);
+      aRv.StealExceptionFromJSContext(aCx);
       return;
     }
 
-    EncodeAndEnqueue(cx, str, aController, false, aRv);
+    EncodeAndEnqueue(aCx, str, aController, false, aRv);
   }
 
   
   MOZ_CAN_RUN_SCRIPT void FlushCallbackImpl(
-      TransformStreamDefaultController& aController,
+      JSContext* aCx, TransformStreamDefaultController& aController,
       ErrorResult& aRv) override {
     
     
 
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(aController.GetParentObject())) {
-      aRv.ThrowUnknownError("Internal error");
-      return;
-    }
-    JSContext* cx = jsapi.cx();
-
     
     
-    EncodeAndEnqueue(cx, u""_ns, aController, true, aRv);
+    EncodeAndEnqueue(aCx, u""_ns, aController, true, aRv);
   }
 
  private:
