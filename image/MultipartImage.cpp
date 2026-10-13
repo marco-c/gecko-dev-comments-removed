@@ -302,12 +302,8 @@ nsresult MultipartImage::OnImageDataAvailable(nsIRequest* aRequest,
   
 
   
-  RefPtr<Image> nextPart = mNextPart;
-  if (nextPart) {
-    nextPart->OnImageDataAvailable(aRequest, aInStr, aSourceOffset, aCount);
-  } else {
-    InnerImage()->OnImageDataAvailable(aRequest, aInStr, aSourceOffset, aCount);
-  }
+  RefPtr<Image> part = mNextPart ? mNextPart.get() : InnerImage();
+  part->OnImageDataAvailable(aRequest, aInStr, aSourceOffset, aCount);
 
   return NS_OK;
 }
@@ -318,12 +314,8 @@ nsresult MultipartImage::OnImageDataComplete(nsIRequest* aRequest,
   
 
   
-  RefPtr<Image> nextPart = mNextPart;
-  if (nextPart) {
-    nextPart->OnImageDataComplete(aRequest, aStatus, aLastPart);
-  } else {
-    InnerImage()->OnImageDataComplete(aRequest, aStatus, aLastPart);
-  }
+  RefPtr<Image> part = mNextPart ? mNextPart.get() : InnerImage();
+  part->OnImageDataComplete(aRequest, aStatus, aLastPart);
 
   return NS_OK;
 }
