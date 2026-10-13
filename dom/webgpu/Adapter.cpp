@@ -12,10 +12,13 @@
 #include "SupportedFeatures.h"
 #include "SupportedLimits.h"
 #include "ipc/WebGPUChild.h"
+#include "mozilla/Assertions.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebGPUBinding.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
+#include "nsDebug.h"
 
 namespace mozilla::webgpu {
 
@@ -260,8 +263,24 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aChild,
       mLimits(new SupportedLimits(this, aInfo->limits)),
       mInfo(new AdapterInfo(this, aInfo)),
       mInfoInner(aInfo) {
-  ErrorResult ignoredRv;  
-                          
+  
+  
+  
+  
+  const auto addFeature = [&](const dom::GPUFeatureName aFeature) {
+    IgnoredErrorResult rv;
+    mFeatures->Add(aFeature, rv);
+    if (rv.Failed()) {
+      if (rv.ErrorCodeIs(NS_ERROR_UNEXPECTED)) {
+        NS_WARNING(
+            "`Adapter::Adapter`: failed to add feature: got "
+            "`NS_ERROR_UNEXPECTED`");
+      } else {
+        MOZ_CRASH_UNSAFE_PRINTF("`Adapter::Adapter`: failed to add feature: %d",
+                                rv.ErrorCodeAsInt());
+      }
+    }
+  };
 
   static const auto FEATURE_BY_BIT = []() {
     auto ret =
@@ -298,7 +317,7 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aChild,
 
     const auto featureForBit = FEATURE_BY_BIT.find(bit);
     if (featureForBit != FEATURE_BY_BIT.end()) {
-      mFeatures->Add(featureForBit->second, ignoredRv);
+      addFeature(featureForBit->second);
     } else {
       
       
@@ -319,7 +338,7 @@ Adapter::Adapter(Instance* const aParent, WebGPUChild* const aChild,
   
   
   
-  mFeatures->Add(dom::GPUFeatureName::Core_features_and_limits, ignoredRv);
+  addFeature(dom::GPUFeatureName::Core_features_and_limits);
 
   
   
