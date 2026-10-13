@@ -94,10 +94,11 @@ class SourceSurfaceRecording final : public SourceSurface {
     }
 
     
-    mRecorder->AddPendingDeletion([recorder = mRecorder.get(), self]() {
-      recorder->RemoveStoredObject(self);
-      recorder->RecordEvent(RecordedSourceSurfaceDestruction(self));
-    });
+    mRecorder->AddPendingDeletion(
+        [recorder = MOZ_KnownLive(mRecorder.get()), self]() {
+          recorder->RemoveStoredObject(self);
+          recorder->RecordEvent(RecordedSourceSurfaceDestruction(self));
+        });
   }
 
   SurfaceType GetType() const override { return SurfaceType::RECORDING; }
