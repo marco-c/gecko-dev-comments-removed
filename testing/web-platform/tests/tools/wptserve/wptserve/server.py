@@ -188,7 +188,7 @@ class WebTestServer(http.server.ThreadingHTTPServer):
         self.router = router
         self.rewriter = rewriter
 
-        self.scheme = "http2" if http2 else "https" if use_ssl else "http"
+        self.scheme = "http2" if http2 else "https" if use_ssl and not encrypt_after_connect else "http"
         self.logger = get_logger()
 
         self.latency = latency
@@ -324,9 +324,13 @@ class WebTestServer(http.server.ThreadingHTTPServer):
 class BaseWebTestRequestHandler(http.server.BaseHTTPRequestHandler):
     """RequestHandler for WebTestHttpd"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, request, client_address, server):
         self.logger = get_logger()
-        super().__init__(*args, **kwargs)
+        
+        
+        
+        self.scheme = server.scheme
+        super().__init__(request, client_address, server)
 
     def finish_handling_h1(self, request_line_is_valid):
 
@@ -411,7 +415,29 @@ class BaseWebTestRequestHandler(http.server.BaseHTTPRequestHandler):
             self.request = ssl_context.wrap_socket(self.connection,
                                                    server_side=True)
             self.setup()
+            self.scheme = "https"
+            
+            
+            
+            
+            self.close_connection = False
         return
+
+    def finish(self):
+        super().finish()
+        
+        
+        
+        
+        
+        
+        if isinstance(self.request, ssl.SSLSocket) and self.server.encrypt_after_connect:
+            try:
+                self.request.settimeout(1)
+                self.request.unwrap()
+            except (OSError, ValueError):
+                pass
+            self.request.close()
 
     def log_request(self, code="-", size="-"):
         if isinstance(code, http.HTTPStatus):
@@ -812,6 +838,7 @@ class H2HandlerCopy:
         self.path = self.headers['path']
         self.h2_stream_id = req_frame.stream_id
         self.server = handler.server
+        self.scheme = handler.scheme
         self.protocol_version = handler.protocol_version
         self.client_address = handler.client_address
         self.raw_requestline = ''
