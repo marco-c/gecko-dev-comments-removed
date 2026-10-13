@@ -79,7 +79,11 @@ class VideoEncoderInterface {
   class FrameEncodeSettings {
    public:
     struct Cbr {
+      
+      
       TimeDelta duration;
+      
+      
       DataRate target_bitrate;
     };
 

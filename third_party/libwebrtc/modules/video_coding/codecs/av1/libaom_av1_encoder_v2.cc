@@ -40,6 +40,7 @@
 #include "api/video_codecs/video_encoder_interface.h"
 #include "api/video_codecs/video_encoding_general.h"
 #include "modules/video_coding/utility/reference_buffer_tracker.h"
+#include "modules/video_coding/utility/temporal_layer_rate_tracker.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/rational.h"
@@ -78,15 +79,56 @@ constexpr int kNumBuffers = 8;
 constexpr int kMaxReferences = 3;
 constexpr int kMinEffortLevel = -2;  
 constexpr int kMaxEffortLevel = 4;   
-constexpr int kMaxSpatialLayersLimit = 4;
-constexpr int kMaxTemporalLayers = 4;
 constexpr int kRtpTicksPerSecond = 90000;
 constexpr int kRtpTicksPerMs = kRtpTicksPerSecond / 1000;
 
 constexpr int kDefaultMaxIntraBitratePct = 300;
 
-static_assert(kMaxSpatialLayersLimit <= AOM_MAX_SS_LAYERS);
-static_assert(kMaxTemporalLayers <= AOM_MAX_TS_LAYERS);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr int kMaxAdvertisedSpatialLayers = AOM_MAX_SS_LAYERS;
+constexpr int kMaxAdvertisedTemporalLayers = 4;
+static_assert(kMaxAdvertisedSpatialLayers * kMaxAdvertisedTemporalLayers <
+              AOM_MAX_LAYERS);
 
 constexpr std::array<Rational, 6> kSupportedScalingFactors = {
     {{.numerator = 16, .denominator = 1},
@@ -234,12 +276,12 @@ bool ValidateEncodeParams(
       return false;
     }
 
-    if (!in_range(0, kMaxSpatialLayersLimit, settings.spatial_id())) {
+    if (!in_range(0, kMaxAdvertisedSpatialLayers, settings.spatial_id())) {
       RTC_LOG(LS_ERROR) << "invalid spatial id " << settings.spatial_id();
       return false;
     }
 
-    if (!in_range(0, kMaxTemporalLayers, settings.temporal_id())) {
+    if (!in_range(0, kMaxAdvertisedTemporalLayers, settings.temporal_id())) {
       RTC_LOG(LS_ERROR) << "invalid temporal id " << settings.temporal_id();
       return false;
     }
@@ -478,12 +520,28 @@ aom_svc_ref_frame_config_t GetSvcRefFrameConfig(
   return ref_frame_config;
 }
 
-aom_svc_params_t GetSvcParams(
+
+
+
+
+int ToLibaomQuantizer(int target_qp) {
+  if (target_qp > 0 && target_qp < 4) {
+    target_qp = 4;
+  }
+  return std::clamp(target_qp / 4, 0, kMaxQuantizer);
+}
+
+}  
+
+aom_svc_params_t LibaomAv1EncoderV2::GetSvcParams(
     const VideoFrameBuffer& frame_buffer,
-    const std::vector<FrameEncodeSettings>& frame_settings) {
+    const std::vector<FrameEncodeSettings>& frame_settings) const {
   aom_svc_params_t svc_params = {};
   svc_params.number_spatial_layers = frame_settings.back().spatial_id() + 1;
-  svc_params.number_temporal_layers = kMaxTemporalLayers;
+  
+  
+  
+  svc_params.number_temporal_layers = kMaxAdvertisedTemporalLayers;
 
   std::span framerate_factor_view(svc_params.framerate_factor);
   std::span scaling_factor_num_view(svc_params.scaling_factor_num);
@@ -494,8 +552,12 @@ aom_svc_params_t GetSvcParams(
 
   
   
+  
+  
+  
+  
   for (int tid = 0; tid < svc_params.number_temporal_layers; ++tid) {
-    framerate_factor_view[tid] = 1;
+    framerate_factor_view[tid] = rate_tracker_->FramerateFactor(tid);
   }
 
   
@@ -512,11 +574,12 @@ aom_svc_params_t GetSvcParams(
     scaling_factor_num_view[settings.spatial_id()] = w_num / gcd;
     scaling_factor_den_view[settings.spatial_id()] = w_den / gcd;
 
-    const int flat_layer_id =
-        settings.spatial_id() * svc_params.number_temporal_layers +
-        settings.temporal_id();
+    const int first_layer_id =
+        settings.spatial_id() * svc_params.number_temporal_layers;
+    const int last_layer_id =
+        first_layer_id + svc_params.number_temporal_layers;
 
-    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " flat_layer_id=" << flat_layer_id
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " layer_id=" << first_layer_id
                         << " num="
                         << scaling_factor_num_view[settings.spatial_id()]
                         << " den="
@@ -530,44 +593,34 @@ aom_svc_params_t GetSvcParams(
             
             
             
-            const int last_temporal_layer_in_spatial_layer_id =
-                settings.spatial_id() * svc_params.number_temporal_layers +
-                (kMaxTemporalLayers - 1);
-            layer_target_bitrate_view[last_temporal_layer_in_spatial_layer_id] =
-                arg.target_bitrate.kbps();
-
-            layer_target_bitrate_view[flat_layer_id] =
-                arg.target_bitrate.kbps();
             
             
-            
-            max_quantizers_view[flat_layer_id] = kMaxQuantizer;
-            min_quantizers_view[flat_layer_id] = 0;
+            for (int id = first_layer_id; id < last_layer_id; ++id) {
+              const DataRate layer_bitrate = rate_tracker_->CumulativeBitrate(
+                  settings.spatial_id(), id - first_layer_id);
+              
+              
+              layer_target_bitrate_view[id] =
+                  std::max<int>(1, layer_bitrate.kbps());
+              
+              
+              
+              max_quantizers_view[id] = kMaxQuantizer;
+              min_quantizers_view[id] = 0;
+            }
           } else if constexpr (std::is_same_v<T, Cqp>) {
-            
-            
-            
-            
-            const int last_temporal_layer_in_spatial_layer_id =
-                settings.spatial_id() * svc_params.number_temporal_layers +
-                (kMaxTemporalLayers - 1);
-            layer_target_bitrate_view[last_temporal_layer_in_spatial_layer_id] =
-                1;
-            layer_target_bitrate_view[flat_layer_id] = 1;
-            
-            
-            
-            
-            
-            int target_qp =
-                (arg.target_qp > 0 && arg.target_qp < 4) ? 4 : arg.target_qp;
-            int quantizer = std::clamp(target_qp / 4, 0, kMaxQuantizer);
-            max_quantizers_view[flat_layer_id] = quantizer;
-            min_quantizers_view[flat_layer_id] = quantizer;
-            
-            
+            int quantizer = ToLibaomQuantizer(arg.target_qp);
+            for (int id = first_layer_id; id < last_layer_id; ++id) {
+              
+              
+              
+              
+              layer_target_bitrate_view[id] = 1;
+              max_quantizers_view[id] = quantizer;
+              min_quantizers_view[id] = quantizer;
+            }
             RTC_LOG(LS_WARNING)
-                << __FUNCTION__ << " svc_params.qp[" << flat_layer_id
+                << __FUNCTION__ << " svc_params.qp[" << first_layer_id
                 << "]=" << arg.target_qp << " (quantizer=" << quantizer << ")";
           }
         },
@@ -581,7 +634,8 @@ aom_svc_params_t GetSvcParams(
       sb << " S" << s << "=[ ";
       for (int t = 0; t < svc_params.number_temporal_layers; ++t) {
         int id = s * svc_params.number_temporal_layers + t;
-        sb << "T" << t << "=" << layer_target_bitrate_view[id] << " ";
+        sb << "T" << t << "=" << layer_target_bitrate_view[id] << "/"
+           << framerate_factor_view[t] << " ";
       }
       sb << "]";
     }
@@ -591,8 +645,6 @@ aom_svc_params_t GetSvcParams(
   return svc_params;
 }
 
-}  
-
 VideoEncoderFactoryInterface::Capabilities
 LibaomAv1EncoderV2::GetCapabilities() {
   return CapabilitiesBuilder()
@@ -601,11 +653,11 @@ LibaomAv1EncoderV2::GetCapabilities() {
                  p) {
             p.set_num_buffers(kNumBuffers);
             p.set_max_references(kMaxReferences);
-            p.set_max_temporal_layers(kMaxTemporalLayers);
+            p.set_max_temporal_layers(kMaxAdvertisedTemporalLayers);
             p.set_buffer_space_type(
                 VideoEncoderFactoryInterface::Capabilities::
                     PredictionConstraints::BufferSpaceType::kSingleKeyframe);
-            p.set_max_spatial_layers(kMaxSpatialLayersLimit);
+            p.set_max_spatial_layers(kMaxAdvertisedSpatialLayers);
             p.set_scaling_factors(
                 std::vector<Rational>(kSupportedScalingFactors.begin(),
                                       kSupportedScalingFactors.end()));
@@ -655,6 +707,7 @@ bool LibaomAv1EncoderV2::InitEncode(
 
   last_resolution_in_buffer_ = {};
   reference_buffer_tracker_.Reset();
+  rate_tracker_ = std::make_unique<TemporalLayerRateTracker>();
   content_type_.reset();
   effort_level_by_spatial_id_.fill(std::nullopt);
 
@@ -777,6 +830,14 @@ void LibaomAv1EncoderV2::Encode(
     return;
   }
 
+  for (const FrameEncodeSettings& settings : frame_settings) {
+    if (const Cbr* cbr = std::get_if<Cbr>(&settings.rate_options())) {
+      rate_tracker_->Update(
+          settings.spatial_id(), settings.temporal_id(), cbr->target_bitrate,
+          settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe);
+    }
+  }
+
   if (content_type_ != tu_settings.content_hint()) {
     if (tu_settings.content_hint() == ContentHint::kText ||
         tu_settings.content_hint() == ContentHint::kDetailed) {
@@ -790,15 +851,32 @@ void LibaomAv1EncoderV2::Encode(
   }
 
   if (cfg_.rc_end_usage == AOM_CBR) {
+    
+    
+    
     DataRate accum_rate = DataRate::Zero();
     for (const FrameEncodeSettings& settings : frame_settings) {
-      accum_rate += std::get<Cbr>(settings.rate_options()).target_bitrate;
+      accum_rate += rate_tracker_->StreamBitrate(settings.spatial_id());
     }
     cfg_.rc_target_bitrate = accum_rate.kbps();
+    
+    
+    cfg_.rc_min_quantizer = 0;
+    cfg_.rc_max_quantizer = kMaxQuantizer;
     RTC_LOG(LS_VERBOSE) << __FUNCTION__
                         << " cfg_.rc_target_bitrate=" << cfg_.rc_target_bitrate;
   } else if (cfg_.rc_end_usage == AOM_Q) {
     cfg_.rc_target_bitrate = 1;
+    
+    
+    
+    
+    
+    
+    int quantizer = ToLibaomQuantizer(
+        std::get<Cqp>(frame_settings[0].rate_options()).target_qp);
+    cfg_.rc_min_quantizer = quantizer;
+    cfg_.rc_max_quantizer = quantizer;
   }
 
   if (static_cast<int>(cfg_.g_w) != frame_buffer->width() ||
@@ -826,13 +904,28 @@ void LibaomAv1EncoderV2::Encode(
 
   
   
-  std::array<FrameEncodeSettings*, kMaxSpatialLayersLimit>
+  std::array<FrameEncodeSettings*, kMaxAdvertisedSpatialLayers>
       settings_for_spatial_id;
   settings_for_spatial_id.fill(nullptr);
   FrameEncodeSettings settings_for_unused_layer;
   for (FrameEncodeSettings& settings : frame_settings) {
     settings_for_spatial_id[settings.spatial_id()] = &settings;
   }
+
+  
+  
+  
+  
+  
+  
+  TimeDelta frame_interval = TimeDelta::Millis(1);
+  if (const Cbr* cbr = std::get_if<Cbr>(&frame_settings[0].rate_options())) {
+    frame_interval = cbr->duration;
+  }
+  
+  
+  const int64_t duration_in_rtp_ticks =
+      frame_interval.us() * kRtpTicksPerSecond / 1'000'000;
 
   for (int sid = frame_settings[0].spatial_id();
        sid < svc_params.number_spatial_layers; ++sid) {
@@ -843,41 +936,42 @@ void LibaomAv1EncoderV2::Encode(
 
     aom_svc_layer_id_t layer_id = {
         .spatial_layer_id = sid,
-        .temporal_layer_id = settings.temporal_id(),
+        
+        
+        
+        
+        
+        .temporal_layer_id = layer_enabled ? settings.temporal_id()
+                                           : frame_settings[0].temporal_id(),
     };
     SET_OR_RETURN(AV1E_SET_SVC_LAYER_ID, &layer_id);
     aom_svc_ref_frame_config_t ref_config =
         GetSvcRefFrameConfig(settings, reference_buffer_tracker_);
     SET_OR_RETURN(AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_config);
 
-    
-    TimeDelta duration = TimeDelta::Millis(1);
-    if (layer_enabled) {
-      if (const Cbr* cbr = std::get_if<Cbr>(&settings.rate_options())) {
-        duration = cbr->duration;
-      }
-
-      if (settings.effort_level() !=
-          effort_level_by_spatial_id_[settings.spatial_id()]) {
-        
-        
-        SET_OR_RETURN(AOME_SET_CPUUSED, 9 - settings.effort_level());
-        effort_level_by_spatial_id_[settings.spatial_id()] =
-            settings.effort_level();
-      }
+    if (layer_enabled &&
+        settings.effort_level() !=
+            effort_level_by_spatial_id_[settings.spatial_id()]) {
+      
+      
+      SET_OR_RETURN(AOME_SET_CPUUSED, 9 - settings.effort_level());
+      effort_level_by_spatial_id_[settings.spatial_id()] =
+          settings.effort_level();
     }
 
-    RTC_LOG(LS_VERBOSE)
-        << __FUNCTION__ << " timestamp="
-        << (tu_settings.presentation_timestamp().ms() * kRtpTicksPerMs)
-        << "  duration=" << (duration.ms() * kRtpTicksPerMs) << "  type="
-        << (settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe
-                ? "key"
-                : "delta");
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " timestamp="
+                        << (tu_settings.presentation_timestamp().ms() *
+                            kRtpTicksPerMs)
+                        << "  duration=" << duration_in_rtp_ticks
+                        << "  tid=" << layer_id.temporal_layer_id << "  type="
+                        << (settings.frame_type() ==
+                                    VideoEncoderInterface::FrameType::kKeyframe
+                                ? "key"
+                                : "delta");
     aom_codec_err_t ret = aom_codec_encode(
         &ctx_, &*image_to_encode_,
         tu_settings.presentation_timestamp().ms() * kRtpTicksPerMs,
-        duration.ms() * kRtpTicksPerMs,
+        duration_in_rtp_ticks,
         settings.frame_type() == VideoEncoderInterface::FrameType::kKeyframe
             ? AOM_EFLAG_FORCE_KF
             : 0);

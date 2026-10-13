@@ -871,8 +871,12 @@ const FixedBitrateTestParams kFixedBitrateConfigs[] = {
      TimeDelta::Seconds(5), 6.0},
     {"QvgaLowBitrate", kQvgaResolution, DataRate::KilobitsPerSec(25),
      TimeDelta::Seconds(10), 10.0},
+    
+    
+    
+    
     {"QvgaHighBitrate", kQvgaResolution, DataRate::KilobitsPerSec(375),
-     TimeDelta::Seconds(5), 5.0},
+     TimeDelta::Seconds(5), 6.0},
     {"HdNormalBitrate", kHdResolution, DataRate::KilobitsPerSec(2000),
      TimeDelta::Seconds(5), 5.0},
     {"HdLowBitrate", kHdResolution, DataRate::KilobitsPerSec(400),
