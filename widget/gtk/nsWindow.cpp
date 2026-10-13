@@ -1584,6 +1584,9 @@ auto nsWindow::Bounds::ComputeX11(const nsWindow* aWindow) -> Bounds {
     
     result.mClientArea =
         DesktopIntRect(systemDecorationOffset, toplevelBounds.Size());
+    if (aWindow->ToplevelUsesCSD()) {
+      result.mClientArea.Deflate(aWindow->mClientMargin);
+    }
   }
 
   result.mClientMargin =
@@ -1629,12 +1632,31 @@ auto nsWindow::Bounds::ComputeWayland(const nsWindow* aWindow) -> Bounds {
   if (result.mClientArea.X() < 0 || result.mClientArea.Y() < 0 ||
       result.mClientArea.Width() <= 1 || result.mClientArea.Height() <= 1) {
     
+    
+    result.mClientMargin = aWindow->ToplevelUsesCSD() ? aWindow->mClientMargin
+                                                      : DesktopIntMargin();
     result.mClientArea = toplevelBounds;
-    result.mClientMargin = {};
+    result.mClientArea.Deflate(result.mClientMargin);
   }
   return result;
 }
 #endif
+
+DesktopIntMargin nsWindow::Bounds::ComputeCSDMargin(GtkWidget* aShell,
+                                                    GtkWidget* aChild) {
+  GtkAllocation shell{};
+  GtkAllocation child{};
+  gtk_widget_get_allocation(aShell, &shell);
+  gtk_widget_get_allocation(aChild, &child);
+  if (child.x < 0 || child.y < 0) {
+    return {};
+  }
+  auto result =
+      DesktopIntMargin(child.y, shell.width - child.width - child.x,
+                       shell.height - child.height - child.y, child.x);
+  result.EnsureAtLeast(DesktopIntMargin());
+  return result;
+}
 
 auto nsWindow::Bounds::Compute(const nsWindow* aWindow) -> Bounds {
 #ifdef MOZ_X11
@@ -1708,6 +1730,10 @@ void nsWindow::RecomputeBounds(bool aScaleChange) {
     mLastSizeRequest.width += mClientMargin.LeftRight() - oldMargin.LeftRight();
     mLastSizeRequest.height +=
         mClientMargin.TopBottom() - oldMargin.TopBottom();
+    if (ToplevelUsesCSD()) {
+      
+      ApplySizeConstraints();
+    }
   }
 
   
@@ -4442,7 +4468,14 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     gtk_window_set_focus_on_map(GTK_WINDOW(mShell), FALSE);
   }
 
+  
+  
+  gtk_widget_show(container);
   gtk_widget_realize(container);
+  if (ToplevelUsesCSD()) {
+    mClientMargin = Bounds::ComputeCSDMargin(mShell, container);
+  }
+
   
   MOZ_DIAGNOSTIC_ASSERT(mGdkWindow, "MozContainer realize failed?");
 
@@ -4465,8 +4498,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   ConfigureToplevelWindow();
 
   
-  gtk_widget_show(container);
-
   if (shouldFocus) {
     gtk_widget_grab_focus(container);
   }
@@ -6724,9 +6755,8 @@ void nsWindow::SetCustomTitlebar(bool aState) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
-    gtk_widget_unrealize(GTK_WIDGET(mShell));
+    gtk_widget_unrealize(mShell);
 
-    
     
     
     
@@ -6734,19 +6764,31 @@ void nsWindow::SetCustomTitlebar(bool aState) {
                             aState ? gtk_fixed_new() : nullptr);
 
     
+    
+    
+    
+    
+    
+    
+    {
+      GtkWidget* placeholder = gtk_fixed_new();
+      gtk_widget_show(placeholder);
+      gtk_container_add(GTK_CONTAINER(mShell), placeholder);
+      GtkAllocation allocation{};
+      gtk_widget_get_preferred_width(mShell, nullptr, &allocation.width);
+      gtk_widget_get_preferred_height(mShell, nullptr, &allocation.height);
+      gtk_widget_size_allocate(mShell, &allocation);
+      
+      
+      
+      if (!visible && ToplevelUsesCSD()) {
+        mClientMargin = Bounds::ComputeCSDMargin(mShell, placeholder);
+      }
+      gtk_widget_destroy(placeholder);
+    }
 
-
-
-
-    GtkAllocation allocation = {0, 0, 0, 0};
-    gtk_widget_get_preferred_width(GTK_WIDGET(mShell), nullptr,
-                                   &allocation.width);
-    gtk_widget_get_preferred_height(GTK_WIDGET(mShell), nullptr,
-                                    &allocation.height);
-    gtk_widget_size_allocate(GTK_WIDGET(mShell), &allocation);
-
-    gtk_widget_realize(GTK_WIDGET(mShell));
-    gtk_widget_reparent(GTK_WIDGET(mContainer), GTK_WIDGET(mShell));
+    gtk_widget_realize(mShell);
+    gtk_widget_reparent(GTK_WIDGET(mContainer), mShell);
 #pragma GCC diagnostic pop
 
     if (AreBoundsSane()) {
