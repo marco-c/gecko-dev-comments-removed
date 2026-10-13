@@ -37,12 +37,6 @@ loader.lazyGetter(this, "RELOAD_PAGE_INFO", function () {
 
 
 
-const bugLink =
-  "https://bugzilla.mozilla.org/enter_bug.cgi?format=__default__&blocked=devtools-toolbox-crash&product=DevTools&component=";
-
-
-
-
 class AppErrorBoundary extends Component {
   static get propTypes() {
     return {
@@ -292,20 +286,41 @@ class AppErrorBoundary extends Component {
       msg += `## Client Packet:\n\`\`\`\n${JSON.stringify(clientPacket, null, 2)}\n\`\`\`\n\n`;
     }
 
+    
+    
+    const cropStackIfNeeded = stackStr => {
+      
+      
+      
+      const limit = 3000;
+      if (!stackStr || stackStr.length < limit) {
+        return stackStr;
+      }
+      const croppedStr = ` (…)`;
+      return stackStr.substring(0, limit - croppedStr.length) + croppedStr;
+    };
+
     if (serverPacket) {
       
       msg += `## Server Packet:\n\`\`\`\n${JSON.stringify({ ...serverPacket, stack: undefined, contentProcessStack: undefined }, null, 2)}\n\`\`\`\n\n`;
-      msg += `## Server Stack:\n\`\`\`\n${serverPacket.stack}\n\`\`\`\n\n`;
+      msg += `## Server Stack:\n\`\`\`\n${cropStackIfNeeded(serverPacket.stack)}\n\`\`\`\n\n`;
       if (serverPacket.contentProcessStack) {
-        msg += `## Server Content Process Stack:\n\`\`\`\n${serverPacket.contentProcessStack}\n\`\`\`\n\n`;
+        msg += `## Server Content Process Stack:\n\`\`\`\n${cropStackIfNeeded(serverPacket.contentProcessStack)}\n\`\`\`\n\n`;
       }
     }
 
-    msg += `## Stacktrace: \n\`\`\`\n${this.state.errorStack}\n\`\`\``;
+    msg += `## Stacktrace: \n\`\`\`\n${cropStackIfNeeded(this.state.errorStack)}\n\`\`\``;
 
-    return `${bugLink}${this.props.componentName}&comment=${encodeURIComponent(
-      msg
-    )}`;
+    const bugLinkSearchParams = new URLSearchParams({
+      
+      
+      format: "__default__",
+      blocked: "devtools-toolbox-crash",
+      product: "DevTools",
+      component: this.props.componentName,
+      comment: msg,
+    });
+    return `https://bugzilla.mozilla.org/enter_bug.cgi?${bugLinkSearchParams}`;
   }
 
   render() {
