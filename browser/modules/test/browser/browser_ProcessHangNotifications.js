@@ -97,10 +97,6 @@ TestHangReport.prototype = {
   },
 };
 
-
-let buttonCount =
-  AppConstants.MOZ_DEV_EDITION || AppConstants.NIGHTLY_BUILD ? 2 : 1;
-
 add_setup(async function () {
   
   
@@ -136,7 +132,8 @@ add_task(async function terminateScriptTest() {
     notification.currentNotification.buttonContainer.getElementsByTagName(
       "button"
     );
-  is(buttons.length, buttonCount, "proper number of buttons");
+  
+  is(buttons.length, 1, "Only one button displayed");
 
   
   buttons[0].click();
@@ -167,7 +164,8 @@ add_task(async function waitForScriptTest() {
     notification.currentNotification.buttonContainer.getElementsByTagName(
       "button"
     );
-  is(buttons.length, buttonCount, "proper number of buttons");
+  
+  is(buttons.length, 1, "Only one button displayed");
 
   await pushPrefs(["browser.hangNotification.waitPeriod", 1000]);
 
