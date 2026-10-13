@@ -17,7 +17,7 @@
 namespace mozilla {
 namespace layers {
 
-class APZInputBridge;
+class APZBridge;
 struct ZoomTarget;
 
 enum AllowedTouchBehavior {
@@ -123,7 +123,7 @@ class IAPZCTreeManager {
 
 
 
-  virtual APZInputBridge* InputBridge() = 0;
+  virtual APZBridge* Bridge() = 0;
 
  protected:
   

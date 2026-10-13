@@ -20,10 +20,10 @@
 #include "mozilla/TimeStamp.h"       
 #include "mozilla/UniquePtr.h"       
 #include "mozilla/gfx/CompositorHitTestInfo.h"
-#include "mozilla/gfx/Logging.h"            
-#include "mozilla/gfx/Matrix.h"             
-#include "mozilla/layers/APZInputBridge.h"  
-#include "mozilla/layers/APZUtils.h"        
+#include "mozilla/gfx/Logging.h"       
+#include "mozilla/gfx/Matrix.h"        
+#include "mozilla/layers/APZBridge.h"  
+#include "mozilla/layers/APZUtils.h"   
 #include "mozilla/layers/CompositorScrollUpdate.h"  
 #include "mozilla/layers/IAPZCTreeManager.h"        
 #include "mozilla/layers/KeyboardMap.h"             
@@ -111,7 +111,7 @@ struct ZoomTarget;
 
 
 
-class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
+class APZCTreeManager : public IAPZCTreeManager, public APZBridge {
   typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
   typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
   using HitTestResult = IAPZHitTester::HitTestResult;
@@ -455,7 +455,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   bool ChainHasFastPathApzAwareListener(const ScrollableLayerGuid& aHitGuid);
 
-  APZInputBridge* InputBridge() override { return this; }
+  APZBridge* Bridge() override { return this; }
 
   
 

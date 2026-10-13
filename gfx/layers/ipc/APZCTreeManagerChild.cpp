@@ -4,11 +4,11 @@
 
 #include "mozilla/layers/APZCTreeManagerChild.h"
 
-#include "InputData.h"                           
-#include "mozilla/dom/BrowserParent.h"           
-#include "mozilla/layers/APZCCallbackHelper.h"   
-#include "mozilla/layers/APZInputBridgeChild.h"  
-#include "mozilla/layers/DoubleTapToZoom.h"      
+#include "InputData.h"                          
+#include "mozilla/dom/BrowserParent.h"          
+#include "mozilla/layers/APZBridgeChild.h"      
+#include "mozilla/layers/APZCCallbackHelper.h"  
+#include "mozilla/layers/DoubleTapToZoom.h"     
 #include "mozilla/layers/GeckoContentController.h"  
 #include "mozilla/layers/RemoteCompositorSession.h"  
 #ifdef MOZ_WIDGET_ANDROID
@@ -28,25 +28,24 @@ void APZCTreeManagerChild::SetCompositorSession(
   
   MOZ_ASSERT(!mCompositorSession ^ !aSession);
   mCompositorSession = aSession;
-  if (mInputBridge) {
-    mInputBridge->SetCompositorSession(aSession);
+  if (mBridge) {
+    mBridge->SetCompositorSession(aSession);
   }
 }
 
-void APZCTreeManagerChild::SetInputBridge(
-    RefPtr<APZInputBridgeChild>&& aInputBridge) {
+void APZCTreeManagerChild::SetBridge(RefPtr<APZBridgeChild>&& aBridge) {
   
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(!mInputBridge);
+  MOZ_ASSERT(!mBridge);
 
-  mInputBridge = std::move(aInputBridge);
+  mBridge = std::move(aBridge);
 }
 
 void APZCTreeManagerChild::Destroy() {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mInputBridge) {
-    mInputBridge->Destroy();
-    mInputBridge = nullptr;
+  if (mBridge) {
+    mBridge->Destroy();
+    mBridge = nullptr;
   }
 }
 
@@ -98,11 +97,11 @@ void APZCTreeManagerChild::NotifyApzAwareListenerAdded(
   }
 }
 
-APZInputBridge* APZCTreeManagerChild::InputBridge() {
+APZBridge* APZCTreeManagerChild::Bridge() {
   MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(mInputBridge);
+  MOZ_ASSERT(mBridge);
 
-  return mInputBridge.get();
+  return mBridge.get();
 }
 
 }  

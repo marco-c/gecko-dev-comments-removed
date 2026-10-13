@@ -1561,7 +1561,7 @@ static bool WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput) {
   }
 
   WidgetWheelEvent wheelEvent = aPanInput.ToWidgetEvent(nullptr);
-  return APZInputBridge::ActionForWheelEvent(&wheelEvent).isSome();
+  return APZBridge::ActionForWheelEvent(&wheelEvent).isSome();
 }
 
 

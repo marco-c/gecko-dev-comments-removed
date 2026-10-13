@@ -49,8 +49,7 @@ void RemoteContentController::NotifyLayerTransforms(
     return;
   }
 
-  auto apzib =
-      CompositorBridgeParent::GetApzInputBridgeParentForRoot(mLayersId);
+  auto apzib = CompositorBridgeParent::GetApzBridgeParentForRoot(mLayersId);
   if (apzib) {
     (void)apzib->SendLayerTransforms(aTransforms);
   }
@@ -92,7 +91,7 @@ void RemoteContentController::HandleTapOnGPUProcessMainThread(
 
   
   auto apzib =
-      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+      CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
   if (apzib) {
     (void)apzib->SendHandleTap(aTapType, aPoint, aModifiers, aGuid,
                                aInputBlockId, aDoubleTapToZoomMetrics);
@@ -163,7 +162,7 @@ void RemoteContentController::NotifyPinchGestureOnGPUProcessMainThread(
   MOZ_ASSERT(NS_IsMainThread());
 
   auto apzib =
-      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+      CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
   if (apzib) {
     (void)apzib->SendNotifyPinchGesture(aType, aGuid, aFocusPoint, aSpanChange,
                                         aModifiers);
@@ -277,7 +276,7 @@ void RemoteContentController::UpdateOverscrollVelocity(
     }
 
     auto apzib =
-        CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+        CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
     if (apzib) {
       (void)apzib->SendUpdateOverscrollVelocity(aGuid, aX, aY, aIsRootContent);
     }
@@ -319,7 +318,7 @@ void RemoteContentController::UpdateOverscrollOffset(
     }
 
     auto apzib =
-        CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+        CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
     if (apzib) {
       (void)apzib->SendUpdateOverscrollOffset(aGuid, aX, aY, aIsRootContent);
     }
@@ -358,7 +357,7 @@ void RemoteContentController::HideDynamicToolbar(
     }
 
     auto apzib =
-        CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+        CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
     if (apzib) {
       (void)apzib->SendHideDynamicToolbar();
     }
@@ -473,7 +472,7 @@ void RemoteContentController::CancelAutoscrollCrossProcess(
   }
 
   auto apzib =
-      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+      CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
   if (apzib) {
     (void)apzib->SendCancelAutoscroll(aGuid.mScrollId);
   }
@@ -527,7 +526,7 @@ void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
   }
 
   auto apzib =
-      CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
+      CompositorBridgeParent::GetApzBridgeParentForRoot(aGuid.mLayersId);
   if (apzib) {
     (void)apzib->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
   }

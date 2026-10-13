@@ -2,8 +2,8 @@
 
 
 
-#ifndef mozilla_layers_APZInputBridge_h
-#define mozilla_layers_APZInputBridge_h
+#ifndef mozilla_layers_APZBridge_h
+#define mozilla_layers_APZBridge_h
 
 #include "Units.h"                  
 #include "mozilla/EventForwards.h"  
@@ -17,7 +17,7 @@ class InputData;
 
 namespace layers {
 
-class APZInputBridgeParent;
+class APZBridgeParent;
 class AsyncPanZoomController;
 class InputBlockState;
 class KeyboardMap;
@@ -230,7 +230,7 @@ struct APZEventResult {
 
 
 
-class APZInputBridge {
+class APZBridge {
  public:
   using InputBlockCallback = std::function<void(
       uint64_t aInputBlockId, const APZHandledResult& aHandledResult)>;
@@ -308,7 +308,7 @@ class APZInputBridge {
   virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
 
  protected:
-  friend class APZInputBridgeParent;
+  friend class APZBridgeParent;
 
   
   
@@ -322,7 +322,7 @@ class APZInputBridge {
       LayoutDeviceIntPoint aRefPoint, EventMessage aEventMessage,
       const Maybe<ScrollableLayerGuid>& aTargetGuid) = 0;
 
-  virtual ~APZInputBridge() = default;
+  virtual ~APZBridge() = default;
 };
 
 std::ostream& operator<<(std::ostream& aOut,
