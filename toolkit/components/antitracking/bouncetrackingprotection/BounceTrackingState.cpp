@@ -730,6 +730,8 @@ nsresult BounceTrackingState::OnStartNavigation(
 
   
   
+  nsAutoCString departingSiteHost;
+  
   
   
   
@@ -737,7 +739,8 @@ nsresult BounceTrackingState::OnStartNavigation(
   if (RefPtr<dom::BrowsingContext> browsingContext = CurrentBrowsingContext()) {
     if (browsingContext->GetHasLoadedNonInitialDocument()) {
       GetTopLevelSiteHost(browsingContext->GetCurrentWindowContext(),
-                          initialSiteHost);
+                          departingSiteHost);
+      initialSiteHost = departingSiteHost;
     } else if (RefPtr<dom::BrowsingContext> opener =
                    browsingContext->GetOpener()) {
       GetTopLevelSiteHost(opener->GetCurrentWindowContext(), initialSiteHost);
@@ -745,8 +748,8 @@ nsresult BounceTrackingState::OnStartNavigation(
   }
 
   MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-              "{}: siteHost: {}, initialSiteHost: {}", __FUNCTION__, siteHost,
-              initialSiteHost);
+              "{}: siteHost: {}, departingSiteHost: {}, initialSiteHost: {}",
+              __FUNCTION__, siteHost, departingSiteHost, initialSiteHost);
 
   
   
@@ -792,10 +795,12 @@ nsresult BounceTrackingState::OnStartNavigation(
   }
 
   
-  if (siteHost.IsEmpty()) {
+  
+  
+  if (departingSiteHost.IsEmpty()) {
     mBounceTrackingRecord->AddBounceHost("null"_ns);
   } else {
-    mBounceTrackingRecord->AddBounceHost(siteHost);
+    mBounceTrackingRecord->AddBounceHost(departingSiteHost);
   }
 
   return NS_OK;
