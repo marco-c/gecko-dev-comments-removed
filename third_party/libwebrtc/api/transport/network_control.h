@@ -14,7 +14,6 @@
 #include <memory>
 #include <optional>
 
-#include "absl/base/attributes.h"
 #include "api/environment/environment.h"
 #include "api/field_trials_view.h"
 #include "api/transport/network_types.h"
@@ -68,41 +67,39 @@ class NetworkControllerInterface {
   virtual ~NetworkControllerInterface() = default;
 
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkAvailability(
+  [[nodiscard]] virtual NetworkControlUpdate OnNetworkAvailability(
       NetworkAvailability) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkRouteChange(
+  [[nodiscard]] virtual NetworkControlUpdate OnNetworkRouteChange(
       NetworkRouteChange) = 0;
   
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnProcessInterval(
+  [[nodiscard]] virtual NetworkControlUpdate OnProcessInterval(
       ProcessInterval) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnRemoteBitrateReport(
+  [[nodiscard]] virtual NetworkControlUpdate OnRemoteBitrateReport(
       RemoteBitrateReport) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnRoundTripTimeUpdate(
+  [[nodiscard]] virtual NetworkControlUpdate OnRoundTripTimeUpdate(
       RoundTripTimeUpdate) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnSentPacket(
-      SentPacket) = 0;
+  [[nodiscard]] virtual NetworkControlUpdate OnSentPacket(SentPacket) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnReceivedPacket(
+  [[nodiscard]] virtual NetworkControlUpdate OnReceivedPacket(
       ReceivedPacket) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnStreamsConfig(
-      StreamsConfig) = 0;
+  [[nodiscard]] virtual NetworkControlUpdate OnStreamsConfig(StreamsConfig) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTargetRateConstraints(
+  [[nodiscard]] virtual NetworkControlUpdate OnTargetRateConstraints(
       TargetRateConstraints) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTransportLossReport(
+  [[nodiscard]] virtual NetworkControlUpdate OnTransportLossReport(
       TransportLossReport) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnTransportPacketsFeedback(
+  [[nodiscard]] virtual NetworkControlUpdate OnTransportPacketsFeedback(
       TransportPacketsFeedback) = 0;
   
-  ABSL_MUST_USE_RESULT virtual NetworkControlUpdate OnNetworkStateEstimate(
+  [[nodiscard]] virtual NetworkControlUpdate OnNetworkStateEstimate(
       NetworkStateEstimate) = 0;
   
   

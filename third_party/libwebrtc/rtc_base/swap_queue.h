@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -127,7 +126,7 @@ class SwapQueue {
   
   
   
-  ABSL_MUST_USE_RESULT bool Insert(T* input) {
+  [[nodiscard]] bool Insert(T* input) {
     RTC_DCHECK(input);
 
     RTC_DCHECK(queue_item_verifier_(*input));
@@ -168,7 +167,7 @@ class SwapQueue {
   
   
   
-  ABSL_MUST_USE_RESULT bool Remove(T* output) {
+  [[nodiscard]] bool Remove(T* output) {
     RTC_DCHECK(output);
 
     RTC_DCHECK(queue_item_verifier_(*output));

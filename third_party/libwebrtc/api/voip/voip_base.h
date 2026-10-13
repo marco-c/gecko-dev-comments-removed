@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <optional>
 
-#include "absl/base/attributes.h"
 
 namespace webrtc {
 
@@ -38,7 +37,7 @@ class Transport;
 
 enum class ChannelId : int {};
 
-enum class ABSL_MUST_USE_RESULT VoipResult {
+enum class [[nodiscard]] VoipResult {
   
   kOk,
   
@@ -113,4 +112,4 @@ class VoipBase {
 
 }  
 
-#endif  
+#endif

@@ -54,19 +54,19 @@ class BitstreamReader {
   void ConsumeBits(int bits);
 
   
-  ABSL_MUST_USE_RESULT int ReadBit();
+  [[nodiscard]] int ReadBit();
 
   
   
   
-  ABSL_MUST_USE_RESULT uint64_t ReadBits(int bits);
+  [[nodiscard]] uint64_t ReadBits(int bits);
 
   
   template <typename T,
             typename std::enable_if<std::is_unsigned<T>::value &&
                                     !std::is_same<T, bool>::value &&
                                     sizeof(T) <= 8>::type* = nullptr>
-  ABSL_MUST_USE_RESULT T Read() {
+  [[nodiscard]] T Read() {
     return dchecked_cast<T>(ReadBits(sizeof(T) * 8));
   }
 
@@ -74,7 +74,7 @@ class BitstreamReader {
   template <
       typename T,
       typename std::enable_if<std::is_same<T, bool>::value>::type* = nullptr>
-  ABSL_MUST_USE_RESULT bool Read() {
+  [[nodiscard]] bool Read() {
     return ReadBit() != 0;
   }
 
