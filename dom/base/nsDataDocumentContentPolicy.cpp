@@ -97,12 +97,7 @@ nsDataDocumentContentPolicy::ShouldLoad(nsIURI* aContentLocation,
     }
   }
 
-  mozilla::dom::Document* docToCheckForImage = doc->GetDisplayDocument();
-  if (!docToCheckForImage) {
-    docToCheckForImage = doc;
-  }
-
-  if (docToCheckForImage->IsBeingUsedAsImage()) {
+  if (doc->IsBeingUsedAsImage()) {
     
     
     
