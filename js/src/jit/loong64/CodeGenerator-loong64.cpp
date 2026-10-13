@@ -306,7 +306,7 @@ bool CodeGeneratorLOONG64::generateOutOfLineCode() {
     return false;
   }
 
-  if (deoptLabel_.used()) {
+  if (needsDeoptLabel()) {
     
     masm.bind(&deoptLabel_);
 

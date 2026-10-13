@@ -62,6 +62,10 @@ class CodeGeneratorShared : public LElementVisitor {
   NonAssertingLabel deoptLabel_;
 
   
+  
+  bool deoptJumpPending_ = false;
+
+  
   uint32_t inboundStackArgBytes_;
 
   js::Vector<CodegenSafepointIndex, 0, JitAllocPolicy> safepointIndices_;
@@ -396,6 +400,17 @@ class CodeGeneratorShared : public LElementVisitor {
   void addOutOfLineCode(OutOfLineCode* code, const MInstruction* mir);
   void addOutOfLineCode(OutOfLineCode* code, const BytecodeSite* site);
   bool generateOutOfLineCode();
+
+  
+  
+  
+  void jumpToDeoptLabel() {
+    MOZ_ASSERT(!deoptJumpPending_);
+    deoptJumpPending_ = true;
+  }
+  bool needsDeoptLabel() const {
+    return deoptLabel_.used() || deoptJumpPending_;
+  }
 
   void bailoutFrom(Label* label, LSnapshot* snapshot);
   void bailout(LSnapshot* snapshot);

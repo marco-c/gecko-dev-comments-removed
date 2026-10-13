@@ -57,7 +57,7 @@ bool CodeGeneratorARM::generateOutOfLineCode() {
     return false;
   }
 
-  if (deoptLabel_.used()) {
+  if (needsDeoptLabel()) {
     
     masm.bind(&deoptLabel_);
 
@@ -73,7 +73,7 @@ bool CodeGeneratorARM::generateOutOfLineCode() {
 
 void CodeGeneratorARM::emitBailoutOOL(LSnapshot* snapshot) {
   masm.push(Imm32(snapshot->snapshotOffset()));
-  masm.ma_b(&deoptLabel_);
+  jumpToDeoptLabel();
 }
 
 void CodeGeneratorARM::bailoutIf(Assembler::Condition condition,
