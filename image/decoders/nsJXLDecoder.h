@@ -113,6 +113,20 @@ class nsJXLDecoder final : public Decoder {
   void BuildCMSTransform();
   nsresult FinishFrame();
   void FlushPartialFrame();
+  
+  
+  
+  
+  bool MustUnpremultiplyJxlrsOutput() const;
+  
+  
+  
+  const uint8_t* UnpremultiplyForOurQcmsCall(const uint8_t* aRow);
+  
+  
+  
+  void ClampAndMaybeUnpremultiplyRgba8RowForPipe(
+      const uint8_t* aSrc, gfx::SwizzleRowFn aUnpremultiplyRow);
   bool WritePixelRowsToPipe();
 
   LexerResult DrainFrames();
@@ -166,15 +180,47 @@ class nsJXLDecoder final : public Decoder {
   
   
   
-  Vector<uint8_t> mPipeInputRowBuf;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
+  
   
   
   Vector<uint8_t> mPixelBuffer;
   Vector<uint8_t> mKBuffer;  
+
+  
+  Vector<uint8_t> mCMSInputRowBuf;
+
+  
+  Vector<uint8_t> mPipeInputRowBuf;
+
   Maybe<SurfacePipe> mCurrentPipe;
 
   bool mIteratorComplete : 1 = false;
+
+  
+  
+  bool mSourcePremultiplied : 1 = false;
 
   
   
