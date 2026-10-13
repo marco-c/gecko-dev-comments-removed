@@ -1671,10 +1671,13 @@ void JSContext::suspendExecutionTracing() {
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
 
 AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
-    : cx_(TlsContext.get()),
+    
+    
+    : cx_(TlsContext.initialized() ? TlsContext.get() : nullptr),
       nested_(cx_ ? cx_->hasAutoUnsafeCallWithABI : false),
       nogc(cx_) {
   if (!cx_) {
+    
     
     return;
   }

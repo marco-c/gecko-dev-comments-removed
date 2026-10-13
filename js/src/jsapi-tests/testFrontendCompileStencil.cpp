@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/Utf8.h"
 
@@ -52,6 +50,19 @@ BEGIN_FRONTEND_TEST(testFrontendContextCompileGlobalScriptToStencil) {
     JS::SourceText<char16_t> srcBuf;
     CHECK(srcBuf.init(fc, source, std::char_traits<char16_t>::length(source),
                       JS::SourceOwnership::Borrowed));
+    RefPtr<JS::Stencil> stencil =
+        JS::CompileGlobalScriptToStencil(fc, options, srcBuf);
+    CHECK(stencil);
+  }
+
+  {
+    
+    
+    const char source[] = "var a = 1 / 3; var b = 7 % 3; var c = 1 % 0.5;";
+
+    JS::SourceText<mozilla::Utf8Unit> srcBuf;
+    CHECK(
+        srcBuf.init(fc, source, strlen(source), JS::SourceOwnership::Borrowed));
     RefPtr<JS::Stencil> stencil =
         JS::CompileGlobalScriptToStencil(fc, options, srcBuf);
     CHECK(stencil);
