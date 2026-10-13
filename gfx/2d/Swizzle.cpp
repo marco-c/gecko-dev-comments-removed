@@ -284,13 +284,13 @@ static void PremultiplyChunkFallback(const uint8_t*& aSrc, uint8_t*& aDst,
     
     
     
-    rb = rb * a + 0x00800080;
+    rb = rb * a + 0x00FF00FF;
     rb = (rb + ((rb >> 8) & 0x00FF00FF)) & 0xFF00FF00;
 
     
     
     uint32_t g = color & (0xFF00 << aSrcRGBShift);
-    g = g * a + (0x8000 << aSrcRGBShift);
+    g = g * a + (0xFF00 << aSrcRGBShift);
     g = (g + (g >> 8)) & (0xFF0000 << aSrcRGBShift);
 
     
@@ -545,8 +545,6 @@ SwizzleRowFn PremultiplyRow(SurfaceFormat aSrcFormat, SurfaceFormat aDstFormat,
 
 
 
-
-
 #define UNPREMULQ(x) (0xFF00FFU / (x))
 #define UNPREMULQ_2(x) UNPREMULQ(x), UNPREMULQ((x) + 1)
 #define UNPREMULQ_4(x) UNPREMULQ_2(x), UNPREMULQ_2((x) + 2)
@@ -588,9 +586,9 @@ static void UnpremultiplyChunkFallback(const uint8_t*& aSrc, uint8_t*& aDst,
     
     
     uint32_t q = sUnpremultiplyTable[a];
-    aDst[aDstRGBIndex + 0] = (r * q + 0x8000) >> 16;
-    aDst[aDstRGBIndex + 1] = (g * q + 0x8000) >> 16;
-    aDst[aDstRGBIndex + 2] = (b * q + 0x8000) >> 16;
+    aDst[aDstRGBIndex + 0] = (r * q) >> 16;
+    aDst[aDstRGBIndex + 1] = (g * q) >> 16;
+    aDst[aDstRGBIndex + 2] = (b * q) >> 16;
     aDst[aDstAIndex] = a;
 
     aSrc += 4;
