@@ -7,7 +7,6 @@
 #include <algorithm>
 
 #include "GeckoProfiler.h"
-#include "IdleTaskRunner.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/EventQueue.h"
@@ -313,14 +312,45 @@ Task* Task::GetHighestPriorityDependency() {
 }
 
 #ifdef MOZ_MEMORY
-static StaticRefPtr<IdleTaskRunner> sIdleMemoryCleanupRunner;
+
+
+
+
+
+
+class InterruptiblePurgeTask final : public Task {
+ public:
+  InterruptiblePurgeTask()
+      : Task(Kind::MainThreadOnly, EventQueuePriority::Lowest) {
+    SetManager(TaskController::Get()->GetLowestTaskManager());
+  }
+
+  
+  
+  void RequestInterrupt(uint32_t) override { mInterrupted = true; }
+
+  bool GetName(nsACString& aName) override {
+    aName.AssignLiteral("IdlePurge");
+    return true;
+  }
+
+  TaskResult Run() override;
+
+ private:
+  
+  static bool KeepPurging(void* aClosure) {
+    return !static_cast<InterruptiblePurgeTask*>(aClosure)->mInterrupted;
+  }
+
+  Atomic<bool, Relaxed> mInterrupted{false};
+};
+
+static StaticRefPtr<InterruptiblePurgeTask> sPurgeTask;
+static bool sPurgeTaskQueued = false;
 static StaticRefPtr<nsITimer> sIdleMemoryCleanupWantsLater;
 static bool sIdleMemoryCleanupWantsLaterScheduled = false;
 
 static const char kEnableLazyPurgePref[] = "memory.lazypurge.enable";
-static const char kMaxPurgeDelayPref[] = "memory.lazypurge.maximum_delay";
-static const char kMinPurgeBudgetPref[] =
-    "memory.lazypurge.minimum_idle_budget";
 static const char kMinPurgeReuseGracePref[] =
     "memory.lazypurge.reuse_grace_period";
 #endif
@@ -398,10 +428,8 @@ void TaskController::Shutdown() {
   
   
   
-  if (sIdleMemoryCleanupRunner) {
-    sIdleMemoryCleanupRunner->Cancel();
-    sIdleMemoryCleanupRunner = nullptr;
-  }
+  sPurgeTaskQueued = false;
+  sPurgeTask = nullptr;
   if (sIdleMemoryCleanupWantsLater) {
     sIdleMemoryCleanupWantsLater->Cancel();
     sIdleMemoryCleanupWantsLater = nullptr;
@@ -876,8 +904,6 @@ void TaskController::UpdateIdleMemoryCleanupPrefs() {
 
 static void PrefChangeCallback(const char* aPrefName, void* aNull) {
   MOZ_ASSERT((0 == strcmp(aPrefName, kEnableLazyPurgePref)) ||
-             (0 == strcmp(aPrefName, kMaxPurgeDelayPref)) ||
-             (0 == strcmp(aPrefName, kMinPurgeBudgetPref)) ||
              (0 == strcmp(aPrefName, kMinPurgeReuseGracePref)));
 
   TaskController::Get()->UpdateIdleMemoryCleanupPrefs();
@@ -886,21 +912,13 @@ static void PrefChangeCallback(const char* aPrefName, void* aNull) {
 
 void TaskController::SetupIdleMemoryCleanup() {
   Preferences::RegisterCallback(PrefChangeCallback, kEnableLazyPurgePref);
-  Preferences::RegisterCallback(PrefChangeCallback, kMaxPurgeDelayPref);
-  Preferences::RegisterCallback(PrefChangeCallback, kMinPurgeBudgetPref);
   Preferences::RegisterCallback(PrefChangeCallback, kMinPurgeReuseGracePref);
   TaskController::Get()->UpdateIdleMemoryCleanupPrefs();
 }
 
-bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay);
-
 void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure);
 
-void CancelIdleMemoryCleanupTimerAndRunner() {
-  if (sIdleMemoryCleanupRunner) {
-    sIdleMemoryCleanupRunner->Cancel();
-    sIdleMemoryCleanupRunner = nullptr;
-  }
+void CancelIdleMemoryCleanupTimer() {
   if (sIdleMemoryCleanupWantsLaterScheduled) {
     MOZ_ASSERT(sIdleMemoryCleanupWantsLater);
     sIdleMemoryCleanupWantsLater->Cancel();
@@ -909,10 +927,6 @@ void CancelIdleMemoryCleanupTimerAndRunner() {
 }
 
 void ScheduleWantsLaterTimer(uint32_t aWantsLaterDelay) {
-  if (sIdleMemoryCleanupRunner) {
-    sIdleMemoryCleanupRunner->Cancel();
-    sIdleMemoryCleanupRunner = nullptr;
-  }
   nsresult timerInitOK = NS_OK;
   if (!sIdleMemoryCleanupWantsLater) {
     auto res = NS_NewTimerWithFuncCallback(
@@ -946,19 +960,20 @@ void ScheduleWantsLaterTimer(uint32_t aWantsLaterDelay) {
   }
 }
 
-void ScheduleIdleMemoryCleanup(uint32_t aWantsLaterDelay) {
-  TimeDuration maxPurgeDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::memory_lazypurge_maximum_delay());
-  TimeDuration minPurgeBudget = TimeDuration::FromMilliseconds(
-      StaticPrefs::memory_lazypurge_minimum_idle_budget());
 
-  CancelIdleMemoryCleanupTimerAndRunner();
-  sIdleMemoryCleanupRunner = IdleTaskRunner::Create(
-      [aWantsLaterDelay](TimeStamp aDeadline) {
-        return RunIdleMemoryCleanup(aDeadline, aWantsLaterDelay);
-      },
-      "TaskController::IdlePurgeRunner"_ns, TimeDuration(), maxPurgeDelay,
-      minPurgeBudget, true, [] { return AppShutdown::IsShutdownImpending(); });
+
+void ScheduleIdleMemoryCleanup() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (sPurgeTaskQueued) {
+    return;
+  }
+  CancelIdleMemoryCleanupTimer();
+  if (!sPurgeTask) {
+    sPurgeTask = new InterruptiblePurgeTask();
+  }
+  sPurgeTaskQueued = true;
+  RefPtr<Task> task = sPurgeTask.get();
+  TaskController::Get()->AddTask(task.forget());
 }
 }  
 
@@ -1012,9 +1027,6 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
   
   uint32_t wantsLaterDelay = reuseGracePeriod * 2;
 
-  MOZ_ASSERT(!sIdleMemoryCleanupRunner ||
-             !sIdleMemoryCleanupWantsLaterScheduled);
-
   
   if (aTimer) {
     sIdleMemoryCleanupWantsLaterScheduled = false;
@@ -1031,14 +1043,13 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
       
       
       
-      if (aTimer || sIdleMemoryCleanupRunner ||
-          sIdleMemoryCleanupWantsLaterScheduled) {
+      if (aTimer || sPurgeTaskQueued || sIdleMemoryCleanupWantsLaterScheduled) {
         PROFILER_MARKER("IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
                         IdlePurgePeekMarker,
                         ProfilerString8View::WrapNullTerminatedString(
                             "Done (Nothing left to purge)"),
                         ProfilerString8View::WrapNullTerminatedString(reason));
-        CancelIdleMemoryCleanupTimerAndRunner();
+        CancelIdleMemoryCleanupTimer();
       }
       break;
     case may_purge_now_result_t::WantsLater:
@@ -1056,15 +1067,13 @@ void CheckIdleMemoryCleanupNeeded(nsITimer* aTimer, void* aClosure) {
     case may_purge_now_result_t::NeedsMore:
       
       
-      if (!sIdleMemoryCleanupRunner) {
+      if (!sPurgeTaskQueued) {
         PROFILER_MARKER("IdlePurgePeek", GCCC, MarkerTiming::InstantNow(),
                         IdlePurgePeekMarker,
                         ProfilerString8View::WrapNullTerminatedString(
                             "NeedsMore (Schedule as-soon-as-idle cleanup)"),
                         ProfilerString8View::WrapNullTerminatedString(reason));
-        ScheduleIdleMemoryCleanup(wantsLaterDelay);
-      } else {
-        MOZ_ASSERT(!sIdleMemoryCleanupWantsLaterScheduled);
+        ScheduleIdleMemoryCleanup();
       }
       break;
   }
@@ -1100,10 +1109,6 @@ struct IdlePurgeMarker : mozilla::BaseMarkerType<IdlePurgeMarker> {
 
 namespace mozilla {
 
-static bool KeepPurgingUntilDeadline(void* aClosure) {
-  const auto& deadline = *static_cast<const TimeStamp*>(aClosure);
-  return deadline.IsNull() || TimeStamp::Now() <= deadline;
-}
 
 
 
@@ -1111,14 +1116,15 @@ static bool KeepPurgingUntilDeadline(void* aClosure) {
 
 
 
+Task::TaskResult InterruptiblePurgeTask::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
+  sPurgeTaskQueued = false;
 
+  if (AppShutdown::IsShutdownImpending()) {
+    return TaskResult::Complete;
+  }
 
-
-
-
-
-bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
-  MOZ_ASSERT(!sIdleMemoryCleanupWantsLaterScheduled);
+  mInterrupted = false;
 
   TimeStamp start_time = TimeStamp::Now();
   uint32_t num_calls = 0;
@@ -1130,22 +1136,28 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
   do {
     num_calls++;
     result = moz_may_purge_now( false, reuseGracePeriod,
-                               KeepPurgingUntilDeadline, &aDeadline);
-  } while ((result == may_purge_now_result_t::NeedsMore) &&
-           (aDeadline.IsNull() || TimeStamp::Now() <= aDeadline));
+                               KeepPurging, this);
+  } while ((result == may_purge_now_result_t::NeedsMore) && !mInterrupted);
 
   const char* last_result;
+  TaskResult taskResult = TaskResult::Complete;
   switch (result) {
     case may_purge_now_result_t::Done:
-      last_result = "Done (Cancel runner)";
-      CancelIdleMemoryCleanupTimerAndRunner();
+      last_result = "Done (Nothing left to purge)";
+      CancelIdleMemoryCleanupTimer();
       break;
     case may_purge_now_result_t::WantsLater:
       last_result = "WantsLater (Arming low priority timer)";
-      ScheduleWantsLaterTimer(aWantsLaterDelay);
+      
+      
+      ScheduleWantsLaterTimer(reuseGracePeriod * 2);
       break;
     case may_purge_now_result_t::NeedsMore:
-      last_result = "NeedsMore (wait for next idle slice)";
+      
+      
+      last_result = "NeedsMore (interrupted by a ready task)";
+      sPurgeTaskQueued = true;
+      taskResult = TaskResult::Incomplete;
       break;
   }
 
@@ -1154,8 +1166,8 @@ bool RunIdleMemoryCleanup(TimeStamp aDeadline, uint32_t aWantsLaterDelay) {
                   IdlePurgeMarker, num_calls,
                   ProfilerString8View::WrapNullTerminatedString(last_result));
 
-  return true;
-};
+  return taskResult;
+}
 
 void TaskController::MayScheduleIdleMemoryCleanup() {
   if (PendingMainthreadTaskCountIncludingSuspended() > 0) {
@@ -1170,7 +1182,7 @@ void TaskController::MayScheduleIdleMemoryCleanup() {
   }
 
   if (AppShutdown::IsShutdownImpending()) {
-    CancelIdleMemoryCleanupTimerAndRunner();
+    CancelIdleMemoryCleanupTimer();
     return;
   }
 
