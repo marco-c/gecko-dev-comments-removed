@@ -336,6 +336,20 @@ class IPPProxyManagerSingleton extends EventTarget {
   }
 
   /**
+   * Whether the proxy is up in the mode a user-started connection gets. A
+   * narrower connection, such as one kept up only for the sites that always
+   * use the VPN, does not count.
+   *
+   * @returns {boolean}
+   */
+  get isDefaultModeActive() {
+    return (
+      this.state === IPPProxyStates.ACTIVE &&
+      this.mode === lazy.IPPMode.getDefault()
+    );
+  }
+
+  /**
    * Resolves once an activation can do its work, so one requested too early
    * waits instead of being thrown away. A cached READY does not count: it is
    * carried over from the previous session.
