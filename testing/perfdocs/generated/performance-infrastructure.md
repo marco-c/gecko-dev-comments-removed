@@ -162,6 +162,7 @@ The devices are split across two device farms: a subset of the performance tests
     * `test-android-hw-a55-14-0-aarch64-shippable/opt`
     * `test-android-hw-a55-14-0-aarch64/opt`
   * `proj-autophone/gecko-t-lambda-perf-a55`
+    * `test-android-hw-a55-14-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-a55-14-0-aarch64-shippable/opt`
     * `test-android-hw-a55-14-0-aarch64/opt`
 
@@ -186,6 +187,7 @@ More Info: https://www.phonemore.com/specs/samsung/galaxy-a55/
 * **Machines**: 4 devices total
 * **Worker pools, and their platforms**:
   * `proj-autophone/gecko-t-bitbar-gw-perf-s24`
+    * `test-android-hw-s24-14-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-s24-14-0-aarch64-shippable/opt`
   * `proj-autophone/gecko-t-bitbar-gw-unit-s24`
 
@@ -210,6 +212,7 @@ More Info: https://www.phonemore.com/specs/samsung/galaxy-s24/sm-s921bds-128gb/
 * **Machines**: 4 devices total
 * **Worker pools, and their platforms**:
   * `proj-autophone/gecko-t-bitbar-gw-perf-p6`
+    * `test-android-hw-p6-13-0-aarch64-nightlyasrelease/opt`
     * `test-android-hw-p6-13-0-aarch64-shippable/opt`
   * `proj-autophone/gecko-t-bitbar-gw-unit-p6`
 
@@ -267,6 +270,24 @@ Instance Type: Standard_F8alds_v7
 Processor Name: AMD EPYC
 Total Number of Cores: 8 vCPUs
 Memory: 16 GB
+```
+
+(hardware-tart-mac-mini-m4)=
+
+#### Apple Silicon (M4) tart VMs
+
+macOS virtual machines run with tart on the Apple Silicon Mac Minis, two per host. Of the performance tests, only the AWSY pageload tests run on them.
+
+* **Location**: MDC1
+* **Worker pools, and their platforms**:
+  * `releng-hardware/gecko-t-osx-1500-m-vms`
+    * `test-macosx1500-aarch64-vms-shippable/opt`
+
+```text
+Model Identifier: VirtualMac2,1
+Host: Mac mini (Mac16,10), Apple M4, 16 GB
+Total Number of Cores: 4 vCPUs
+Memory: 8 GB
 ```
 
 
