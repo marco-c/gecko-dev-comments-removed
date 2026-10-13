@@ -61,9 +61,7 @@
 #  include "MacApplicationDelegate.h"
 #  include "MacAutoreleasePool.h"
 #  include "MacRunFromDmgUtils.h"
-#  ifdef NIGHTLY_BUILD
-#    include "ASWebAuthSessionHandler.h"
-#  endif
+#  include "ASWebAuthSessionHandler.h"
 
 #  include <sys/types.h>
 #  include <sys/sysctl.h>
@@ -3191,7 +3189,7 @@ static ReturnAbortOnError ShowProfileSelector(
 
 
 static bool ShouldSkipProfileDialogForWebAuth() {
-#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+#if defined(XP_MACOSX)
   return WasLaunchedByAuthenticationServices();
 #else
   return false;
@@ -6414,7 +6412,7 @@ nsresult XREMain::XRE_mainRun() {
 #  endif
 #endif
 
-#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+#if defined(XP_MACOSX)
       RegisterASWebAuthSessionObservers();
 #endif
 
