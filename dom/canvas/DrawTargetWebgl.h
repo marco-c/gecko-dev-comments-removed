@@ -247,6 +247,9 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
 
   uint32_t mMaxTextureSize = 0;
   bool mRasterizationTruncates = false;
+  
+  
+  bool mUseUploadBuffer = true;
 
   
   CompositionOp mLastCompositionOp = CompositionOp::OP_SOURCE;

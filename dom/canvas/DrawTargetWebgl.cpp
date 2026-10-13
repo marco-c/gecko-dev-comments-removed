@@ -589,6 +589,19 @@ bool SharedContextWebgl::Initialize() {
 
   mMaxTextureSize = initResult.limits.maxTex2dSize;
 
+  
+  
+  if (mWebgl->GL()->IsD3DANGLE()) {
+    mUseUploadBuffer = false;
+  }
+
+  
+  
+  if (kIsMacOS && initResult.vendor == gl::GLVendor::Intel &&
+      !mWebgl->GL()->IsMetalANGLE()) {
+    mUseUploadBuffer = false;
+  }
+
   if (kIsMacOS) {
     mRasterizationTruncates = initResult.vendor == gl::GLVendor::ATI;
   }
@@ -2666,8 +2679,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
         std::max(srcRect.height - 1, 0) * size_t(stride) + srcRect.width * bpp);
     
     
-    
-    if (range.Length() <= kUploadBufferSize && !mWebgl->GL()->IsD3DANGLE()) {
+    if (mUseUploadBuffer && range.Length() <= kUploadBufferSize) {
       CheckedInt<size_t> uploadOffset =
           RoundUpToMultipleOf(CheckedInt<size_t>(mUploadBufferOffset), 4);
       if (!uploadOffset.isValid()) {
