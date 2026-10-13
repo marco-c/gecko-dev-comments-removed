@@ -1197,7 +1197,7 @@ impl GlDevice {
 
         
         
-        let readback_rows_top_down = cfg!(windows) && gl.get_type() == gl::GlType::Gles;
+        let readback_rows_top_down = surface_origin_is_top_left;
 
         let mut requires_batched_texture_uploads = None;
         if is_software_webrender {
