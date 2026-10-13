@@ -188,14 +188,7 @@ class gfxDWriteFontFileLoader : public IDWriteFontFileLoader {
 
 
 
-  static IDWriteFontFileLoader* Instance() {
-    if (!mInstance) {
-      mInstance = new gfxDWriteFontFileLoader();
-      mozilla::gfx::Factory::GetDWriteFactory()->RegisterFontFileLoader(
-          mInstance);
-    }
-    return mInstance;
-  }
+  static IDWriteFontFileLoader* Instance();
 
   
 
@@ -212,9 +205,6 @@ class gfxDWriteFontFileLoader : public IDWriteFontFileLoader {
       gfxDWriteFontFileStream** aFontFileStream);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-
- private:
-  static IDWriteFontFileLoader* mInstance;
 };
 
 #endif 

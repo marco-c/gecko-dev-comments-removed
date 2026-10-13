@@ -55,17 +55,15 @@ class DWriteFontFileLoader : public IDWriteFontFileLoader {
 
 
 
-
   static IDWriteFontFileLoader* Instance() {
-    if (!mInstance) {
-      mInstance = new DWriteFontFileLoader();
-      Factory::GetDWriteFactory()->RegisterFontFileLoader(mInstance);
-    }
-    return mInstance;
+    
+    static IDWriteFontFileLoader* sInstance = [] {
+      IDWriteFontFileLoader* loader = new DWriteFontFileLoader();
+      Factory::GetDWriteFactory()->RegisterFontFileLoader(loader);
+      return loader;
+    }();
+    return sInstance;
   }
-
- private:
-  static IDWriteFontFileLoader* mInstance;
 };
 
 class DWriteFontFileStream final : public IDWriteFontFileStream {
@@ -129,8 +127,6 @@ class DWriteFontFileStream final : public IDWriteFontFileStream {
 
   ~DWriteFontFileStream();
 };
-
-IDWriteFontFileLoader* DWriteFontFileLoader::mInstance = nullptr;
 
 HRESULT STDMETHODCALLTYPE DWriteFontFileLoader::CreateStreamFromKey(
     const void* fontFileReferenceKey, UINT32 fontFileReferenceKeySize,

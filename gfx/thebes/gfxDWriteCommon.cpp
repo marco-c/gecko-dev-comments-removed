@@ -18,8 +18,6 @@ static uint64_t sNextFontFileKey = 0;
 MOZ_RUNINIT static std::unordered_map<uint64_t, gfxDWriteFontFileStream*>
     sFontFileStreams;
 
-IDWriteFontFileLoader* gfxDWriteFontFileLoader::mInstance = nullptr;
-
 IFACEMETHODIMP_(ULONG) gfxDWriteFontFileStream::Release() {
   MOZ_ASSERT(0 != mRefCnt, "dup release");
   uint32_t count = --mRefCnt;
@@ -91,6 +89,17 @@ HRESULT STDMETHODCALLTYPE gfxDWriteFontFileLoader::CreateStreamFromKey(
 }
 
 
+IDWriteFontFileLoader* gfxDWriteFontFileLoader::Instance() {
+  
+  static IDWriteFontFileLoader* sInstance = [] {
+    IDWriteFontFileLoader* loader = new gfxDWriteFontFileLoader();
+    gfx::Factory::GetDWriteFactory()->RegisterFontFileLoader(loader);
+    return loader;
+  }();
+  return sInstance;
+}
+
+
 HRESULT
 gfxDWriteFontFileLoader::CreateCustomFontFile(
     FontData* aFontData, IDWriteFontFile** aFontFile,
@@ -129,7 +138,7 @@ gfxDWriteFontFileLoader::CreateCustomFontFile(
 size_t gfxDWriteFontFileLoader::SizeOfIncludingThis(
     MallocSizeOf mallocSizeOf) const {
   
-  MOZ_ASSERT(this == mInstance);
+  MOZ_ASSERT(this == Instance());
 
   size_t sizes = mallocSizeOf(this);
 
