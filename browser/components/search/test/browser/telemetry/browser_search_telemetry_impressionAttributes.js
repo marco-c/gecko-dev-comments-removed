@@ -8,6 +8,9 @@ const TEST_URI = `
       Shopping
     </a>
     <div class="ai-summary">AI summary</div>
+    <div class="ai-summary-display" style="display: none;">AI summary</div>
+    <div class="ai-summary-opacity" style="opacity: 0;">AI summary</div>
+    <div class="ai-summary-visibility" style="visibility: hidden;">AI summary</div>
   </main>
 `;
 const URL =
@@ -395,6 +398,8 @@ add_task(async function test_impression_undefined() {
         is_shopping_page: "true",
         has_ai_summary: "unknown",
         shopping_tab_displayed: "unknown",
+        prescan: "not_run",
+        scan: "not_run",
       },
       adImpressions: [],
       abandonment: {
@@ -402,4 +407,40 @@ add_task(async function test_impression_undefined() {
       },
     },
   ]);
+});
+
+add_task(async function test_impression_hidden() {
+  resetTelemetry();
+
+  let config = createTestConfig({
+    impressionAttributes: [
+      {
+        key: "has_ai_summary",
+        element: {
+          selector:
+            ".ai-summary-display, .ai-summary-opacity, .ai-summary-visibility",
+        },
+      },
+    ],
+  });
+
+  SearchSERPTelemetry.overrideSearchTelemetryForTests(config);
+  await waitForIdle();
+
+  let promise = waitForPageWithImpression();
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, URL);
+
+  await waitForPageWithAdImpressions();
+
+  
+  assertSERPTelemetry([
+    {
+      impression: {
+        has_ai_summary: "false",
+      },
+    },
+  ]);
+
+  BrowserTestUtils.removeTab(tab);
+  await promise;
 });
