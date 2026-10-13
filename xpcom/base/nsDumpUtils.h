@@ -74,8 +74,8 @@ class FdWatcher : public MessageLoopForIO::Watcher, public nsIObserver {
   
   virtual void StopWatching();
 
-  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData) override {
+  NS_IMETHOD Observe(nsISupports* , const char* aTopic,
+                     const char16_t* ) override {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(!strcmp(aTopic, "xpcom-shutdown"));
 

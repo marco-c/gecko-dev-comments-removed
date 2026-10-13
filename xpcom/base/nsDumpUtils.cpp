@@ -401,8 +401,9 @@ void FifoWatcher::OnFileCanReadWithoutBlocking(int aFd) {
 
 
 
-nsresult nsDumpUtils::OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
-                                   const nsACString& aFoldername, Mode aMode) {
+nsresult nsDumpUtils::OpenTempFile(
+    const nsACString& aFilename, nsIFile** aFile,
+    [[maybe_unused]] const nsACString& aFoldername, Mode aMode) {
 #ifdef ANDROID
   
   

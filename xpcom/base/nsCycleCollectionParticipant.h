@@ -411,15 +411,15 @@ class NS_NO_VTABLE nsCycleCollectionParticipant {
   }
 
  protected:
-  NS_IMETHOD_(bool) CanSkipReal(void* aPtr, bool aRemovingAllowed) {
+  NS_IMETHOD_(bool) CanSkipReal(void* , bool ) {
     NS_ASSERTION(false, "Forgot to implement CanSkipReal?");
     return false;
   }
-  NS_IMETHOD_(bool) CanSkipInCCReal(void* aPtr) {
+  NS_IMETHOD_(bool) CanSkipInCCReal(void* ) {
     NS_ASSERTION(false, "Forgot to implement CanSkipInCCReal?");
     return false;
   }
-  NS_IMETHOD_(bool) CanSkipThisReal(void* aPtr) {
+  NS_IMETHOD_(bool) CanSkipThisReal(void* ) {
     NS_ASSERTION(false, "Forgot to implement CanSkipThisReal?");
     return false;
   }
@@ -473,17 +473,17 @@ class NS_NO_VTABLE nsXPCOMCycleCollectionParticipant
   if (TopThreeWordsEquals(                                                     \
           aIID, NS_GET_IID(nsXPCOMCycleCollectionParticipant),                 \
           NS_GET_IID(                                                          \
-              nsCycleCollectionISupports)) && /* The calls to LowWordEquals    \
-                                                 here are repeated inside the  \
-                                                 if branch. This is due to the \
-                                                 fact that we need to maintain \
-                                                 the if/else chain for these   \
-                                                 macros, so that the control   \
-                                                 flow never enters the if      \
-                                                 branch unless if we're        \
-                                                 certain one of the            \
-                                                 LowWordEquals() branches will \
-                                                 get executed. */              \
+              nsCycleCollectionISupports)) && 
+
+
+
+
+
+
+
+
+
+              \
       (LowWordEquals(aIID, NS_GET_IID(nsXPCOMCycleCollectionParticipant)) ||   \
        LowWordEquals(aIID, NS_GET_IID(nsCycleCollectionISupports)))) {         \
     if (LowWordEquals(aIID, NS_GET_IID(nsXPCOMCycleCollectionParticipant))) {  \
@@ -494,7 +494,7 @@ class NS_NO_VTABLE nsXPCOMCycleCollectionParticipant
       *aInstancePtr = NS_CYCLE_COLLECTION_CLASSNAME(_class)::Upcast(this);     \
       return NS_OK;                                                            \
     }                                                                          \
-    /* Avoid warnings about foundInterface being left uninitialized. */        \
+            \
     foundInterface = nullptr;                                                  \
   } else
 
@@ -575,10 +575,10 @@ T* DowncastCCParticipant(void* aPtr) {
 
 
 
-#define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(_class)                       \
-  NS_IMETHODIMP_(bool)                                                        \
-  NS_CYCLE_COLLECTION_CLASSNAME(_class)::CanSkipReal(void* p,                 \
-                                                     bool aRemovingAllowed) { \
+#define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(_class)  \
+  NS_IMETHODIMP_(bool)                                   \
+  NS_CYCLE_COLLECTION_CLASSNAME(_class)::CanSkipReal(    \
+      void* p, [[maybe_unused]] bool aRemovingAllowed) { \
     _class* tmp = DowncastCCParticipant<_class>(p);
 
 #define NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_END \
@@ -697,9 +697,10 @@ T* DowncastCCParticipant(void* aPtr) {
 
 
 
-#define NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(_class)               \
-  void NS_CYCLE_COLLECTION_CLASSNAME(_class)::Trace(               \
-      void* p, const TraceCallbacks& aCallbacks, void* aClosure) { \
+#define NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(_class)              \
+  void NS_CYCLE_COLLECTION_CLASSNAME(_class)::Trace(              \
+      void* p, [[maybe_unused]] const TraceCallbacks& aCallbacks, \
+      [[maybe_unused]] void* aClosure) {                          \
     _class* tmp = DowncastCCParticipant<_class>(p);
 
 #define NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(_class, _base_class) \
@@ -1204,4 +1205,4 @@ inline void ImplCycleCollectionTraverse(
       aField);
 }
 
-#endif  
+#endif

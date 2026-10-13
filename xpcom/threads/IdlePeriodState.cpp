@@ -100,7 +100,7 @@ TimeStamp IdlePeriodState::GetIdleDeadlineInternal(
 }
 
 TimeStamp IdlePeriodState::GetLocalIdleDeadline(
-    bool& aShuttingDown, const MutexAutoUnlock& aProofOfUnlock) {
+    bool& aShuttingDown, const MutexAutoUnlock& ) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
   
@@ -143,8 +143,8 @@ TimeStamp IdlePeriodState::GetLocalIdleDeadline(
   return idleDeadline;
 }
 
-TimeStamp IdlePeriodState::GetIdleToken(TimeStamp aLocalIdlePeriodHint,
-                                        const MutexAutoUnlock& aProofOfUnlock) {
+TimeStamp IdlePeriodState::GetIdleToken(
+    TimeStamp aLocalIdlePeriodHint, const MutexAutoUnlock& ) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
 
@@ -214,7 +214,7 @@ void IdlePeriodState::SetActive() {
   mActive = true;
 }
 
-void IdlePeriodState::SetPaused(const MutexAutoUnlock& aProofOfUnlock) {
+void IdlePeriodState::SetPaused(const MutexAutoUnlock& ) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");
   MOZ_ASSERT(mActive);
