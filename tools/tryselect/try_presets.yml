@@ -147,7 +147,7 @@ android-fullstack:
         # GeckoView tests (from android-geckoview preset)
         - "^source-test-mozlint eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
         # Miscellaneous Tests
-        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
+        - "^test-android !shippable '64 'em-14 !zygote 'gtest | 'cpp | 'geckoview-junit"
         # Mochitests
         - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
         - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
@@ -173,7 +173,7 @@ android-geckoview:
         # Lint
         - "^source-test-mozlint android-lints$ | eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
         # Miscellaneous Tests
-        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
+        - "^test-android !shippable '64 'em-14 !zygote 'gtest | 'cpp | 'geckoview-junit"
         # Mochitests
         - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
         - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
@@ -317,6 +317,19 @@ fpush-linux-android:
         - "'test-linux2404 'debug- !-shippable !-asan"
         - "'test-android-em 'debug"
         - "^build !-shippable !-signing !-asan !-fuzzing !-rusttests !-base-toolchain !-aar- !components !apk !bundle"
+
+freetype:
+    selector: fuzzy
+    description: >-
+        Android builds and the font-rendering tests (reftest, crashtest, WPT
+        reftest/crashtest, including on-device) used to validate FreeType
+        updates.
+    full: true
+    no_artifact: true
+    query:
+        - "'build-android !sym !docs !appservices !fenix"
+        - "'geckoview-reftest | 'geckoview-crashtest !swr !lite !shippable !ccov !ioi"
+        - "'geckoview-web-platform-tests-reftest-nofis | 'geckoview-web-platform-tests-crashtest-nofis !swr !lite !shippable !ccov !-cf"
 
 geckodriver:
     selector: fuzzy
