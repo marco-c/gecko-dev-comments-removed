@@ -1264,6 +1264,13 @@ bool WarpBuilder::build_SetArg(BytecodeLocation loc) {
     
     
     
+    
+    
+    
+    
+    if (info().isObservableSlot(info().argSlot(arg))) {
+      val->setImplicitlyUsedUnchecked();
+    }
     current->setArg(arg);
     return true;
   }
