@@ -586,17 +586,6 @@ pub struct PictureInstance {
     pub spatial_node_index: SpatialNodeIndex,
 
     
-    
-    
-    pub prev_local_rect: LayoutRect,
-
-    
-    
-    
-    
-    pub segments_are_valid: bool,
-
-    
     pub raster_space: RasterSpace,
 
     
@@ -690,8 +679,6 @@ impl PictureInstance {
             context_3d,
             is_backface_visible: prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE),
             spatial_node_index,
-            prev_local_rect: LayoutRect::zero(),
-            segments_are_valid: false,
             raster_space,
             flags,
             clip_root: None,
@@ -768,31 +755,11 @@ impl PictureInstance {
                 );
             }
             Some(ref mut raster_config) => {
-                let (pic_rect, force_scissor_rect) = {
-                    let surface = &frame_state.surfaces[raster_config.surface_index.0];
-                    (surface.clipped_local_rect, surface.force_scissor_rect)
-                };
+                let force_scissor_rect = frame_state
+                    .surfaces[raster_config.surface_index.0]
+                    .force_scissor_rect;
 
                 let parent_surface_index = parent_surface_index.expect("bug: no parent for child surface");
-
-                
-                
-                let local_rect = pic_rect * Scale::new(1.0);
-
-                
-                
-                
-                
-                
-                
-                
-                
-                if local_rect != self.prev_local_rect {
-                    
-                    
-                    self.segments_are_valid = false;
-                    self.prev_local_rect = local_rect;
-                }
 
                 let max_surface_size = frame_context.max_surface_size() as f32;
 
