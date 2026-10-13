@@ -638,7 +638,7 @@ bool CreateMediaContentAnswer(
     answer->set_cryptex_level(
         offer->cryptex_level() != MediaContentDescription::AttributeLevel::kNone
             ? offer->cryptex_level()
-            : MediaContentDescription::AttributeLevel::kSession);
+            : MediaContentDescription::AttributeLevel::kMedia);
   }
 
   answer->set_rtcp_mux(session_options.rtcp_mux_enabled && offer->rtcp_mux());
