@@ -28,6 +28,8 @@ import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/agent-monitor-item.mjs";
 // eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/aitab-tool-ui.mjs";
+// eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-textarea.mjs";
 import {
   dispatchClientError,
@@ -47,6 +49,7 @@ const INVALID_MESSAGE_DATA = {};
  * UI labels for tool results and follow-ups.
  */
 const UI_TYPES = {
+  AITAB: "aitab",
   WEBSITE_CONFIRMATION: "website-confirmation",
   TAB_GROUP_CONFIRMATION: "tab-group-confirmation",
   AI_ACTION_RESULT: "ai-action-result",
@@ -59,6 +62,7 @@ const UI_TYPES = {
  * UI update types for communicating user interactions with tool UIs back to the actor.
  */
 const UI_UPDATE_TYPES = {
+  OPEN_AITAB: "open-aitab",
   CONFIRMATION_TAB_SELECTION: "confirmation-tab-selection",
   CANCEL_TAB_SELECTION: "cancel-tab-selection",
   CONFIRM_TAB_GROUP_SELECTION: "confirm-tab-group-selection",
@@ -170,6 +174,7 @@ export class AIChatContent extends MozLitElement {
 
     // Initialize UI render map
     this.#uiRenderMap = {
+      [UI_TYPES.AITAB]: msg => this.#renderAITab(msg),
       [UI_TYPES.TAB_GROUP_CONFIRMATION]: msg =>
         this.#renderTabGroupConfirmation(msg),
       [UI_TYPES.WEBSITE_CONFIRMATION]: msg =>
@@ -238,12 +243,6 @@ export class AIChatContent extends MozLitElement {
 
   updated(changedProperties) {
     super.updated(changedProperties);
-    // When the conversation is replaced (e.g. switching to a tab with an empty
-    // sidebar) no scroll event fires, so recompute the jump-to-bottom button
-    // here to avoid it lingering from the previous conversation.
-    if (changedProperties.has("conversationState")) {
-      this.#updateJumpButtonState();
-    }
     this.#maybeFocusAgentMonitorCard();
   }
 
@@ -464,18 +463,9 @@ export class AIChatContent extends MozLitElement {
   }
 
   #initOverflowObserver() {
-    this.#overflowObserver = new ResizeObserver(() => {
-      // The wrapper resizes on every streamed chunk, and reading
-      // scrollHeight/clientHeight below forces a synchronous reflow. Coalesce
-      // to one read per frame.
-      if (this.#overflowRafId) {
-        return;
-      }
-      this.#overflowRafId = requestAnimationFrame(() => {
-        this.#overflowRafId = null;
-        this.#updateOverflowState();
-      });
-    });
+    this.#overflowObserver = new ResizeObserver(() =>
+      this.#updateOverflowState()
+    );
     this.updateComplete.then(() => {
       this.#overflowObserver.observe(
         this.shadowRoot.querySelector(".chat-inner-wrapper")
@@ -483,9 +473,15 @@ export class AIChatContent extends MozLitElement {
     });
   }
 
+  /**
+   * Toggle the scroll container's `overflowing` attribute (which drives the
+   * scroll fades) to match whether it actually scrolls, and recompute the
+   * jump-to-bottom button, which no scroll event covers when the change came
+   * from content rather than from scrolling.
+   */
   #updateOverflowState() {
-    const wrapper = this.shadowRoot.querySelector(".chat-content-wrapper");
-    const innerWrapper = this.shadowRoot.querySelector(".chat-inner-wrapper");
+    const wrapper = this.#wrapper;
+    const innerWrapper = this.shadowRoot?.querySelector(".chat-inner-wrapper");
 
     if (!wrapper || !innerWrapper) {
       return;
@@ -501,9 +497,6 @@ export class AIChatContent extends MozLitElement {
         wrapper.scrollHeight > wrapper.clientHeight + thresholdPadding
     );
 
-    // Recompute the jump-to-bottom button after content resizes (e.g.
-    // switching to an empty/short conversation) since no scroll event
-    // fires in that case and the button would otherwise stay visible.
     this.#updateJumpButtonState();
   }
 
@@ -1059,7 +1052,18 @@ export class AIChatContent extends MozLitElement {
       citations = [],
     } = event.detail;
 
-    if (!this.#isAIResponseValid(content, toolUIData)) {
+    const hasRenderableResponse = this.#isAIResponseValid(content, toolUIData);
+    const isToolUICleared = toolUIData === null;
+
+    if (!hasRenderableResponse) {
+      if (isToolUICleared) {
+        this.conversationState = this.conversationState.filter(message => {
+          const isMatchingMessage = message.messageId === messageId;
+          const hasToolUI = !!message.toolUIData;
+          const shouldRemoveMessage = isMatchingMessage && hasToolUI;
+          return !shouldRemoveMessage;
+        });
+      }
       return;
     }
 
@@ -1441,6 +1445,20 @@ export class AIChatContent extends MozLitElement {
 
     const renderFn = this.#uiRenderMap[toolUIData.uiType];
     return renderFn ? renderFn(msg) : nothing;
+  }
+
+  #renderAITab(msg) {
+    return html`<aitab-tool-ui
+      .state=${msg.toolUIData.properties?.state ?? "creating"}
+      .title=${msg.toolUIData.properties?.title ?? ""}
+      @aitab-open-request=${event =>
+        this.#dispatchToolUIUpdate({
+          messageId: msg.messageId,
+          toolCallId: msg.toolUIData.toolCallId,
+          updateType: UI_UPDATE_TYPES.OPEN_AITAB,
+          updateData: { openTarget: event.detail.openTarget },
+        })}
+    ></aitab-tool-ui>`;
   }
 
   #handleConfirmationSubmit = (event, messageId, toolCallId) => {
@@ -1968,6 +1986,10 @@ export class AIChatContent extends MozLitElement {
       lastItem?.type === "message" &&
       lastItem.msg?.role === "assistant" &&
       !!lastItem.msg?.body;
+    const aiTabCreating =
+      lastItem?.type === "message" &&
+      lastItem.msg?.toolUIData?.uiType === UI_TYPES.AITAB &&
+      lastItem.msg.toolUIData.properties?.state === "creating";
     return html`
       <link
         rel="stylesheet"
@@ -1977,12 +1999,13 @@ export class AIChatContent extends MozLitElement {
         <div class="chat-inner-wrapper">
           ${this.#renderMessages(renderItems)}
           ${this.#renderFollowUpSuggestions()}
-          ${this.#renderLoader(actionLogInProgress || replyStreaming)}
+          ${this.#renderLoader(
+            actionLogInProgress || replyStreaming || aiTabCreating
+          )}
           ${this.#renderError()}
         </div>
       </div>
-      <div class="fullpage-top-blur"></div>
-      <div class="fullpage-top-scrim"></div>
+      <div class="fullpage-top-box-shadow"></div>
       <kit-mention variant="sidebar"></kit-mention>
       <div
         class="assistant-response-announcer"
