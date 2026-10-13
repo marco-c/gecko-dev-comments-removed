@@ -149,6 +149,8 @@ class JS_PUBLIC_API Value;
 
 
 
+
+
 #define JSVAL_INT_BITS 32
 #define JSVAL_INT_MIN ((int32_t)0x80000000)
 #define JSVAL_INT_MAX ((int32_t)0x7fffffff)
@@ -164,8 +166,8 @@ class JS_PUBLIC_API Value;
 
 enum JSValueType : uint8_t {
   JSVAL_TYPE_DOUBLE = 0x00,
-  JSVAL_TYPE_INT32 = 0x01,
-  JSVAL_TYPE_BOOLEAN = 0x02,
+  JSVAL_TYPE_INT32 = 0x02,
+  JSVAL_TYPE_BOOLEAN = 0x03,
   JSVAL_TYPE_NULL = 0x04,
   JSVAL_TYPE_MAGIC = 0x05,
   JSVAL_TYPE_UNDEFINED = 0x06,
@@ -308,6 +310,8 @@ constexpr JSValueTag ValueUpperInclNumberTag = JSVAL_TAG_INT32;
 constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_PRIVATE_GCTHING;
 
 constexpr uint64_t ValueUpperExclShiftedNumberTag = JSVAL_SHIFTED_TAG_BOOLEAN;
+static_assert(JSVAL_TYPE_BOOLEAN == JSVAL_TYPE_INT32 + 1,
+              "Boolean must be the tag after the number tags");
 constexpr uint64_t ValueLowerInclShiftedGCThingTag =
     JSVAL_SHIFTED_TAG_PRIVATE_GCTHING;
 
