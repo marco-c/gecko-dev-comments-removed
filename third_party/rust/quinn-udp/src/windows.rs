@@ -286,32 +286,30 @@ impl UdpSocketState {
             
             match (cmsg.cmsg_level, cmsg.cmsg_type) {
                 (WinSock::IPPROTO_IP, WinSock::IP_PKTINFO) => {
-                    let pktinfo =
-                        unsafe { cmsg::decode::<WinSock::IN_PKTINFO, WinSock::CMSGHDR>(cmsg) };
+                    let pktinfo = unsafe { cmsg.decode::<WinSock::IN_PKTINFO>() };
                     
                     let ip4 = Ipv4Addr::from(u32::from_be(unsafe { pktinfo.ipi_addr.S_un.S_addr }));
                     dst_ip = Some(ip4.into());
                     interface_index = Some(pktinfo.ipi_ifindex);
                 }
                 (WinSock::IPPROTO_IPV6, WinSock::IPV6_PKTINFO) => {
-                    let pktinfo =
-                        unsafe { cmsg::decode::<WinSock::IN6_PKTINFO, WinSock::CMSGHDR>(cmsg) };
+                    let pktinfo = unsafe { cmsg.decode::<WinSock::IN6_PKTINFO>() };
                     
                     dst_ip = Some(IpAddr::from(unsafe { pktinfo.ipi6_addr.u.Byte }));
                     interface_index = Some(pktinfo.ipi6_ifindex);
                 }
                 (WinSock::IPPROTO_IP, WinSock::IP_ECN) => {
                     
-                    ecn_bits = unsafe { cmsg::decode::<c_int, WinSock::CMSGHDR>(cmsg) };
+                    ecn_bits = unsafe { cmsg.decode::<c_int>() };
                 }
                 (WinSock::IPPROTO_IPV6, WinSock::IPV6_ECN) => {
                     
-                    ecn_bits = unsafe { cmsg::decode::<c_int, WinSock::CMSGHDR>(cmsg) };
+                    ecn_bits = unsafe { cmsg.decode::<c_int>() };
                 }
                 (WinSock::IPPROTO_UDP, UDP_COALESCED_INFO) => {
                     
                     
-                    stride = unsafe { cmsg::decode::<u32, WinSock::CMSGHDR>(cmsg) };
+                    stride = unsafe { cmsg.decode::<u32>() };
                 }
                 _ => {}
             }
