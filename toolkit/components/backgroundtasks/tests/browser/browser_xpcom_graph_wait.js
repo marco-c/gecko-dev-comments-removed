@@ -102,7 +102,7 @@ const backgroundtaskPhases = {
         
         "resource:///modules/backgroundtasks/BackgroundTask_wait.sys.mjs",
 
-        "resource://gre/modules/ConsoleAPIStorage.sys.mjs",
+        "moz-src:///dom/console/ConsoleAPIStorage.sys.mjs",
         "resource://gre/modules/Timer.sys.mjs",
 
         
@@ -112,6 +112,7 @@ const backgroundtaskPhases = {
       ],
       services: [
         "@mozilla.org/consoleAPI-storage;1",
+        "@mozilla.org/network/protocol;1?name=moz-src",
         "@mozilla.org/process/environment;1",
       ],
     },
