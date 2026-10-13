@@ -1,0 +1,3 @@
+
+
+import '{{location[scheme]}}://{{domains[www1]}}:{{location[port]}}/content-security-policy/support/ping.js';
