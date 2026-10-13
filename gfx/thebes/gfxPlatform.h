@@ -6,6 +6,7 @@
 #define GFX_PLATFORM_H
 
 #include "GfxInfoCollector.h"
+#include "X11UndefineNone.h"
 #include "gfxSkipChars.h"
 #include "gfxTelemetry.h"
 #include "gfxTypes.h"
@@ -248,29 +249,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static already_AddRefed<DrawTarget> CreateDrawTargetForSurface(
       gfxASurface* aSurface, const mozilla::gfx::IntSize& aSize);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<SourceSurface> GetSourceSurfaceForSurface(
-      RefPtr<mozilla::gfx::DrawTarget> aTarget, gfxASurface* aSurface,
-      bool aIsPlugin = false);
-
-  static void ClearSourceSurfaceForSurface(gfxASurface* aSurface);
-
-  static already_AddRefed<DataSourceSurface> GetWrappedDataSourceSurface(
-      gfxASurface* aSurface);
 
   already_AddRefed<DrawTarget> CreateOffscreenContentDrawTarget(
       const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat,
@@ -969,7 +947,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static void InitOpenGLConfig();
 
-  static void VideoDecodingFailedChangedCallback(const char* aPref, void*);
+  static void HardwareVideoFailedChangedCallback(const char* aPref, void*);
 
   static void HWDRMFailedChangedCallback(const char* aPref, void*);
 
@@ -987,7 +965,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void InitGPUProcessPrefs();
   virtual void InitPlatformGPUProcessPrefs() {}
   virtual void InitPlatformHardwareVideoConfig() {}
-  virtual void InitPlatformHardwarDRMConfig() {}
+  virtual void InitPlatformHardwareDRMConfig() {}
 
   
   static void ReportTelemetry();
