@@ -260,13 +260,17 @@ RTCError PayloadTypePicker::AddMapping(PayloadType payload_type, Codec codec) {
   seen_payload_types_.insert(payload_type);
   
   
-  for (const MapEntry& entry : entries_) {
-    if (payload_type == entry.payload_type() &&
-        MatchesWithReferenceAttributes(codec, entry.codec())) {
+  
+  for (MapEntry& entry : entries_) {
+    if (payload_type == entry.payload_type()) {
+      if (MatchesWithReferenceAttributes(codec, entry.codec())) {
+        return RTCError::OK();
+      }
+      entry.set_codec(std::move(codec));
       return RTCError::OK();
     }
   }
-  entries_.emplace_back(MapEntry(payload_type, codec));
+  entries_.emplace_back(MapEntry(payload_type, std::move(codec)));
   return RTCError::OK();
 }
 
@@ -299,6 +303,9 @@ void PayloadTypePicker::ReleaseUnusedPayloadTypes() {
   for (const PayloadTypeRecorder* recorder : recorders_) {
     recorder->AddPayloadTypesTo(in_use);
   }
+  
+  
+  
   
   
   
@@ -343,12 +350,6 @@ RTCError PayloadTypeRecorder::AddMapping(PayloadType payload_type,
   payload_type_to_codec_.emplace(payload_type, codec);
   suggester_.AddMapping(payload_type, codec);
   return RTCError::OK();
-}
-
-std::vector<std::pair<PayloadType, Codec>> PayloadTypeRecorder::GetMappings()
-    const {
-  return std::vector<std::pair<PayloadType, Codec>>(
-      payload_type_to_codec_.begin(), payload_type_to_codec_.end());
 }
 
 void PayloadTypeRecorder::AddPayloadTypesTo(
@@ -402,13 +403,6 @@ void PayloadTypeRecorder::ReallowRedefinition() {
   --disallow_redefinition_level_;
 }
 
-void PayloadTypeRecorder::Commit() {
-  checkpoint_payload_type_to_codec_ = payload_type_to_codec_;
-}
-void PayloadTypeRecorder::Rollback() {
-  payload_type_to_codec_ = checkpoint_payload_type_to_codec_;
-}
-
 RTCError RtpHeaderExtensionRecorder::AddMapping(RtpHeaderExtensionId id,
                                                 absl::string_view uri,
                                                 bool encrypt) {
@@ -441,14 +435,6 @@ RTCErrorOr<RtpHeaderExtensionId> RtpHeaderExtensionRecorder::LookupId(
                     "No ID found for extension");
   }
   return it->second;
-}
-
-void RtpHeaderExtensionRecorder::Commit() {
-  checkpoint_uri_to_id_ = uri_to_id_;
-}
-
-void RtpHeaderExtensionRecorder::Rollback() {
-  uri_to_id_ = checkpoint_uri_to_id_;
 }
 
 RTCErrorOr<RtpHeaderExtensionId> RtpHeaderExtensionPicker::SuggestMapping(
