@@ -243,7 +243,7 @@ class nsCocoaUtils {
   
   static void HideOSChromeOnScreen(bool aShouldHide);
 
-  static nsIWidget* GetHiddenWindowWidget();
+  static already_AddRefed<nsIWidget> GetHiddenWindowWidget();
 
   
 
