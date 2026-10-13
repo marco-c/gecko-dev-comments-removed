@@ -1283,6 +1283,11 @@ impl ResourceCache {
 
     fn set_image_visible_rect(&mut self, key: ImageKey, rect: &DeviceIntRect) {
         if let Some(image) = self.resources.image_templates.get_mut(key) {
+            
+            
+            if !image.data.is_blob() {
+                return;
+            }
             image.visible_rect = *rect;
             image.descriptor.size = rect.size();
         }
