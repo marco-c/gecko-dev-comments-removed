@@ -93,6 +93,8 @@ Dav1dDecoder::~Dav1dDecoder() {
 }
 
 bool Dav1dDecoder::Configure(const Settings& settings) {
+  Release();
+
   Dav1dSettings s;
   dav1d_default_settings(&s);
 
@@ -138,24 +140,27 @@ int32_t Dav1dDecoder::Decode(const EncodedImage& encoded_image,
   ScopedDav1dData scoped_dav1d_data;
   Dav1dData& dav1d_data = scoped_dav1d_data.Data();
 
-  
-  
-  
-  
-  EncodedImageBufferInterface* bitstream_buffer =
-      encoded_image.GetEncodedData().release();
+  scoped_refptr<EncodedImageBufferInterface> bitstream_buffer =
+      encoded_image.GetEncodedData();
 
   
   
   
-  dav1d_data_wrap(
-      &dav1d_data, encoded_image.data(), encoded_image.size(),
-      
-      [](const uint8_t* , void* user_data) {
-        auto* bb = static_cast<EncodedImageBufferInterface*>(user_data);
-        bb->Release();
-      },
-      bitstream_buffer);
+  if (int wrap_res = dav1d_data_wrap(
+          &dav1d_data, encoded_image.data(), encoded_image.size(),
+          
+          [](const uint8_t* , void* user_data) {
+            auto* bb = static_cast<EncodedImageBufferInterface*>(user_data);
+            bb->Release();
+          },
+          bitstream_buffer.get())) {
+    RTC_LOG(LS_WARNING)
+        << "Dav1dDecoder::Decode wrapping the bitstream failed with error code "
+        << wrap_res;
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+  
+  bitstream_buffer.release();
 
   if (int decode_res = dav1d_send_data(context_, &dav1d_data)) {
     RTC_LOG(LS_WARNING)
