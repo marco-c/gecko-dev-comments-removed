@@ -105,14 +105,25 @@ impl ManagedEncryptorDecryptor {
     pub fn new(key_manager: Arc<dyn KeyManager>) -> Self {
         Self { key_manager }
     }
+
+    
+    
+    
+    
+    fn key(&self) -> ApiResult<Vec<u8>> {
+        self.key_manager.get_key().map_err(|e| match e {
+            DbCryptoApiError::NSSUninitialized
+            | DbCryptoApiError::NSSAuthenticationError { .. }
+            | DbCryptoApiError::AuthenticationError { .. }
+            | DbCryptoApiError::AuthenticationCanceled => e,
+            _ => DbCryptoApiError::MissingKey,
+        })
+    }
 }
 
 impl EncryptorDecryptor for ManagedEncryptorDecryptor {
     fn encrypt(&self, clearbytes: Vec<u8>) -> ApiResult<Vec<u8>> {
-        let keybytes = self
-            .key_manager
-            .get_key()
-            .map_err(|_| DbCryptoApiError::MissingKey)?;
+        let keybytes = self.key()?;
         let key = std::str::from_utf8(&keybytes).map_err(|_| DbCryptoApiError::InvalidKey)?;
 
         let encdec = jwcrypto::EncryptorDecryptor::new(key)
@@ -133,10 +144,7 @@ impl EncryptorDecryptor for ManagedEncryptorDecryptor {
     }
 
     fn decrypt(&self, cipherbytes: Vec<u8>) -> ApiResult<Vec<u8>> {
-        let keybytes = self
-            .key_manager
-            .get_key()
-            .map_err(|_| DbCryptoApiError::MissingKey)?;
+        let keybytes = self.key()?;
         let key = std::str::from_utf8(&keybytes).map_err(|_| DbCryptoApiError::InvalidKey)?;
 
         let encdec = jwcrypto::EncryptorDecryptor::new(key)
@@ -291,6 +299,19 @@ fn api_authenticate_with_primary_password(primary_password: &str) -> ApiResult<b
     })
 }
 
+
+#[cfg(feature = "keydb")]
+fn api_get_or_create_aes256_key(name: &str) -> ApiResult<Vec<u8>> {
+    get_or_create_aes256_key(name).map_err(|e: nss_as::Error| match e.kind() {
+        
+        
+        nss_as::ErrorKind::TokenNotAuthenticated => DbCryptoApiError::NSSAuthenticationError {
+            reason: e.to_string(),
+        },
+        _ => DbCryptoApiError::MissingKey,
+    })
+}
+
 #[cfg(feature = "keydb")]
 impl KeyManager for NSSKeyManager {
     fn get_key(&self) -> ApiResult<Vec<u8>> {
@@ -330,8 +351,7 @@ impl KeyManager for NSSKeyManager {
             return Ok(bytes);
         }
 
-        let key = get_or_create_aes256_key(self.key_name.as_str())
-            .map_err(|_| DbCryptoApiError::MissingKey)?;
+        let key = api_get_or_create_aes256_key(self.key_name.as_str())?;
         let mut bytes: Vec<u8> = Vec::new();
         serde_json::to_writer(
             &mut bytes,
@@ -451,6 +471,46 @@ mod tests {
             DbCryptoApiError::InvalidKey
         ));
     }
+
+    struct FailingKeyStore(fn() -> DbCryptoApiError);
+
+    impl KeyManager for FailingKeyStore {
+        fn get_key(&self) -> ApiResult<Vec<u8>> {
+            Err((self.0)())
+        }
+    }
+
+    
+    
+    
+    #[test]
+    fn test_unanswered_key_store_is_not_a_missing_key() {
+        let failures: [fn() -> DbCryptoApiError; 4] = [
+            || DbCryptoApiError::NSSUninitialized,
+            || DbCryptoApiError::NSSAuthenticationError {
+                reason: "token is not authenticated".to_string(),
+            },
+            || DbCryptoApiError::AuthenticationError {
+                reason: "no primary password".to_string(),
+            },
+            || DbCryptoApiError::AuthenticationCanceled,
+        ];
+
+        for failure in failures {
+            let encdec = ManagedEncryptorDecryptor::new(Arc::new(FailingKeyStore(failure)));
+
+            for error in [
+                encdec.encrypt(b"clearbytes".to_vec()).unwrap_err(),
+                encdec.decrypt(b"cipherbytes".to_vec()).unwrap_err(),
+            ] {
+                assert_eq!(
+                    std::mem::discriminant(&error),
+                    std::mem::discriminant(&failure()),
+                    "{error} was not passed on"
+                );
+            }
+        }
+    }
 }
 
 #[cfg(feature = "keydb")]
@@ -459,6 +519,11 @@ mod tests_keydb {
     use super::*;
     use nss_as::ensure_initialized_with_profile_dir;
     use std::path::PathBuf;
+    use std::sync::{Mutex, MutexGuard};
+
+    
+    
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     struct MockPrimaryPasswordAuthenticator {
         password: String,
@@ -482,6 +547,15 @@ mod tests_keydb {
             .join("../rc_crypto/nss/fixtures/profile")
     }
 
+    
+    
+    fn setup() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap_or_else(|err| err.into_inner());
+        ensure_initialized_with_profile_dir(profile_path());
+        assert!(authenticate_with_primary_password("password").unwrap());
+        guard
+    }
+
     #[test]
     fn test_ensure_initialized_with_profile_dir() {
         ensure_initialized_with_profile_dir(profile_path());
@@ -496,7 +570,7 @@ mod tests_keydb {
 
     #[test]
     fn test_nss_key_manager() {
-        ensure_initialized_with_profile_dir(profile_path());
+        let _guard = setup();
         
         let mock_primary_password_authenticator = MockPrimaryPasswordAuthenticator {
             password: "password".to_string(),
@@ -518,7 +592,7 @@ mod tests_keydb {
 
     #[test]
     fn test_nss_key_manager_caching() {
-        ensure_initialized_with_profile_dir(profile_path());
+        let _guard = setup();
         
         let mock_primary_password_authenticator = MockPrimaryPasswordAuthenticator {
             password: "password".to_string(),
@@ -545,7 +619,7 @@ mod tests_keydb {
 
     #[test]
     fn test_primary_password_authentication() {
-        ensure_initialized_with_profile_dir(profile_path());
+        let _guard = setup();
         assert!(authenticate_with_primary_password("password").unwrap());
     }
 }

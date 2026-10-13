@@ -55,12 +55,6 @@ impl MozAdsTelemetryWrapper {
 }
 
 impl Telemetry for MozAdsTelemetryWrapper {
-    
-    
-    fn shutdown(&self) {
-        let _dropped = self.inner.write().take();
-    }
-
     fn record(&self, event: &dyn Any) {
         let Some(inner) = self.inner.read().clone() else {
             return;
@@ -157,6 +151,12 @@ impl Telemetry for MozAdsTelemetryWrapper {
         eprintln!("Unsupported telemetry event type: {:?}", event.type_id());
         #[cfg(test)]
         panic!("Unsupported telemetry event type: {:?}", event.type_id());
+    }
+
+    
+    
+    fn shutdown(&self) {
+        let _dropped = self.inner.write().take();
     }
 }
 

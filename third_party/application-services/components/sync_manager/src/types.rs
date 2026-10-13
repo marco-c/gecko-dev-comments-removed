@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 use sync15::DeviceType;
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Record)]
 pub struct SyncParams {
     
     pub reason: SyncReason,
@@ -32,7 +32,7 @@ pub struct SyncParams {
     pub device_settings: DeviceSettings,
 }
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Enum)]
 pub enum SyncReason {
     Scheduled,
     User,
@@ -42,13 +42,13 @@ pub enum SyncReason {
     Backgrounded,
 }
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Enum)]
 pub enum SyncEngineSelection {
     All,
     Some { engines: Vec<String> },
 }
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Record)]
 pub struct SyncAuthInfo {
     pub kid: String,
     pub fxa_access_token: String,
@@ -56,14 +56,14 @@ pub struct SyncAuthInfo {
     pub tokenserver_url: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Record)]
 pub struct DeviceSettings {
     pub fxa_device_id: String,
     pub name: String,
     pub kind: DeviceType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Record)]
 pub struct SyncResult {
     
     pub status: ServiceStatus,
@@ -87,7 +87,7 @@ pub struct SyncResult {
     pub telemetry_json: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, uniffi::Enum)]
 pub enum ServiceStatus {
     Ok,
     NetworkError,

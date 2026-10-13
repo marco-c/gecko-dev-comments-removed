@@ -1,8 +1,0 @@
-
-
-
-
-
-fn main() {
-    uniffi::generate_scaffolding("./src/syncmanager.udl").unwrap();
-}

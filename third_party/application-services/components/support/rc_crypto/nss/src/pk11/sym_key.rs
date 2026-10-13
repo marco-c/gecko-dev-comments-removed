@@ -113,11 +113,22 @@ pub fn authentication_with_primary_password_is_needed() -> Result<bool> {
 
     let slot = slot::get_internal_key_slot()?;
 
+    Ok(!token_is_authenticated(&slot))
+}
+
+
+
+
+
+
+
+
+
+#[cfg(feature = "keydb")]
+fn token_is_authenticated(slot: &Slot) -> bool {
     unsafe {
-        Ok(
-            nss_sys::PK11_NeedLogin(slot.as_mut_ptr()) == nss_sys::PR_TRUE
-                && nss_sys::PK11_IsLoggedIn(slot.as_mut_ptr(), ptr::null_mut()) != nss_sys::PR_TRUE,
-        )
+        nss_sys::PK11_NeedLogin(slot.as_mut_ptr()) != nss_sys::PR_TRUE
+            || nss_sys::PK11_IsLoggedIn(slot.as_mut_ptr(), ptr::null_mut()) == nss_sys::PR_TRUE
     }
 }
 
@@ -143,9 +154,17 @@ pub fn authenticate_with_primary_password(primary_password: &str) -> Result<bool
 
 
 
+
+
+
+
 #[cfg(feature = "keydb")]
 pub fn get_or_create_aes256_key(name: &str) -> Result<Vec<u8>> {
-    let sym_key = match get_aes256_key(name)? {
+    
+    let lock = GLOBAL_TOKEN_LOCK.get_or_init(|| Mutex::new(()));
+    let _guard = lock.lock().unwrap();
+
+    let sym_key = match lookup_aes256_key(name)? {
         Some(sym_key) => sym_key,
         None => create_aes256_key(name)?,
     };
@@ -159,13 +178,32 @@ pub fn get_or_create_aes256_key(name: &str) -> Result<Vec<u8>> {
     Ok(buf.to_vec())
 }
 
+
+
+
+
+
 #[cfg(feature = "keydb")]
 pub fn get_aes256_key(name: &str) -> Result<Option<SymKey>> {
     
     let lock = GLOBAL_TOKEN_LOCK.get_or_init(|| Mutex::new(()));
     let _guard = lock.lock().unwrap();
 
+    lookup_aes256_key(name)
+}
+
+
+
+
+
+
+
+#[cfg(feature = "keydb")]
+fn lookup_aes256_key(name: &str) -> Result<Option<SymKey>> {
     let slot = slot::get_internal_key_slot()?;
+    if !token_is_authenticated(&slot) {
+        return Err(ErrorKind::TokenNotAuthenticated.into());
+    }
     let c_name = CString::new(name).map_err(|_| ErrorKind::NulError)?;
     let sym_key = unsafe {
         
@@ -176,11 +214,14 @@ pub fn get_aes256_key(name: &str) -> Result<Option<SymKey>> {
         ))
     };
     match sym_key {
-        Ok(sym_key) => match extract_aes256_key_value(slot, sym_key) {
-            Ok(key) => Ok(Some(key)),
-            Err(e) => Err(e),
-        },
-        Err(_) => Ok(None),
+        Ok(sym_key) => Ok(Some(extract_aes256_key_value(slot, sym_key)?)),
+        Err(_) => {
+            if token_is_authenticated(&slot) {
+                Ok(None)
+            } else {
+                Err(ErrorKind::TokenNotAuthenticated.into())
+            }
+        }
     }
 }
 
@@ -249,6 +290,8 @@ fn extract_aes256_key_value(slot: Slot, sym_key: SymKey) -> Result<SymKey> {
     Ok(sym_key)
 }
 
+
+
 #[cfg(feature = "keydb")]
 fn create_aes256_key(name: &str) -> Result<SymKey> {
     let mut key_bytes: [u8; nss_sys::AES_256_KEY_LENGTH as usize] =
@@ -274,6 +317,8 @@ fn create_aes256_key(name: &str) -> Result<SymKey> {
 
 
 
+
+
 #[cfg(feature = "keydb")]
 fn import_and_persist_sym_key(
     mechanism: nss_sys::CK_MECHANISM_TYPE,
@@ -281,17 +326,18 @@ fn import_and_persist_sym_key(
     operation: nss_sys::CK_ATTRIBUTE_TYPE,
     buf: &[u8],
 ) -> Result<SymKey> {
+    let slot = slot::get_internal_key_slot()?;
     
     
-    let lock = GLOBAL_TOKEN_LOCK.get_or_init(|| Mutex::new(()));
-    let _guard = lock.lock().unwrap();
+    if !token_is_authenticated(&slot) {
+        return Err(ErrorKind::TokenNotAuthenticated.into());
+    }
 
     let mut item = nss_sys::SECItem {
         type_: nss_sys::SECItemType::siBuffer as u32,
         data: buf.as_ptr() as *mut c_uchar,
         len: c_uint::try_from(buf.len())?,
     };
-    let slot = slot::get_internal_key_slot()?;
     unsafe {
         SymKey::from_ptr(nss_sys::PK11_ImportSymKeyWithFlags(
             slot.as_mut_ptr(),
@@ -312,31 +358,49 @@ mod keydb_test {
     use super::*;
     use crate::ensure_initialized_with_profile_dir;
     use std::path::PathBuf;
+    use std::sync::MutexGuard;
     use std::thread;
+
+    
+    
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn profile_path() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/profile")
     }
 
+    
+    
+    fn setup() -> MutexGuard<'static, ()> {
+        let guard = TEST_LOCK.lock().unwrap_or_else(|err| err.into_inner());
+        ensure_initialized_with_profile_dir(profile_path());
+        assert!(authenticate_with_primary_password("password").unwrap());
+        guard
+    }
+
+    
+    
+    fn unauthenticate_token() {
+        assert!(!authenticate_with_primary_password("not the password").unwrap());
+    }
+
     #[test]
     fn test_get_aes256_key_not_found() {
-        ensure_initialized_with_profile_dir(profile_path());
-        authenticate_with_primary_password("password").unwrap();
+        let _guard = setup();
         let result = get_aes256_key("unknown-key").unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn test_get_aes256_key() {
-        ensure_initialized_with_profile_dir(profile_path());
-        authenticate_with_primary_password("password").unwrap();
+        let _guard = setup();
         let result = get_aes256_key("as-logins-key").unwrap();
         assert!(result.is_some());
     }
 
     #[test]
     fn test_get_aes256_key_parallel() {
-        ensure_initialized_with_profile_dir(profile_path());
+        let _guard = setup();
 
         let threads: Vec<_> = (0..100)
             .map(|_| {
@@ -352,5 +416,35 @@ mod keydb_test {
         for handle in threads {
             handle.join().unwrap();
         }
+    }
+
+    #[test]
+    fn test_get_aes256_key_unauthenticated() {
+        let _guard = setup();
+        unauthenticate_token();
+
+        
+        let error = match get_aes256_key("as-logins-key") {
+            Ok(_) => panic!("an unauthenticated token answered a key lookup"),
+            Err(error) => error,
+        };
+        assert!(matches!(error.kind(), ErrorKind::TokenNotAuthenticated));
+    }
+
+    #[test]
+    fn test_get_or_create_aes256_key_unauthenticated_keeps_key() {
+        let _guard = setup();
+        let key = get_or_create_aes256_key("as-logins-key").unwrap();
+
+        unauthenticate_token();
+        assert!(matches!(
+            get_or_create_aes256_key("as-logins-key")
+                .unwrap_err()
+                .kind(),
+            ErrorKind::TokenNotAuthenticated
+        ));
+
+        authenticate_with_primary_password("password").unwrap();
+        assert_eq!(key, get_or_create_aes256_key("as-logins-key").unwrap());
     }
 }
