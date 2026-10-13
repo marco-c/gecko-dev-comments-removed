@@ -4,9 +4,10 @@
 
 #include "FuzzyLayer.h"
 
+#include <deque>
+
 #include "mozilla/Logging.h"
 #include "mozilla/StaticMutex.h"
-#include "nsDeque.h"
 #include "nsIRunnable.h"
 #include "nsSocketTransportService2.h"
 #include "nsTHashMap.h"
@@ -44,8 +45,18 @@ constinit static nsTHashMap<nsPtrHashKey<PRFileDesc>, NetworkFuzzingBuffer*>
 
 
 
-MOZ_RUNINIT static nsDeque<NetworkFuzzingBuffer>& gNetworkFuzzingBuffers =
-    *new nsDeque<NetworkFuzzingBuffer>();
+
+
+MOZ_RUNINIT static std::deque<NetworkFuzzingBuffer*> gNetworkFuzzingBuffers;
+
+static NetworkFuzzingBuffer* PopFrontNetworkFuzzingBuffer() {
+  if (gNetworkFuzzingBuffers.empty()) {
+    return nullptr;
+  }
+  NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.front();
+  gNetworkFuzzingBuffers.pop_front();
+  return buf;
+}
 
 
 
@@ -81,7 +92,7 @@ void addNetworkFuzzingBuffer(const uint8_t* data, size_t size, bool readFirst,
   buf->allowUnused = useIsOptional;
   buf->addr = nullptr;
 
-  gNetworkFuzzingBuffers.Push(buf);
+  gNetworkFuzzingBuffers.push_back(buf);
 
   fuzzingMainSignaledDone = false;
   fuzzingNoWaitRequired = false;
@@ -102,7 +113,7 @@ bool signalNetworkFuzzingDone() {
   if (fuzzingNoWaitRequired) {
     FUZZING_LOG(("[signalNetworkFuzzingDone] Purging remaining buffers."));
     
-    gNetworkFuzzingBuffers.Erase();
+    gNetworkFuzzingBuffers.clear();
     gFuzzingConnClosed = true;
     rv = true;
   } else {
@@ -146,7 +157,7 @@ static PRStatus FuzzyConnect(PRFileDesc* fd, const PRNetAddr* addr,
 
   StaticMutexAutoLock lock(gConnRecvMutex);
 
-  NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.PopFront();
+  NetworkFuzzingBuffer* buf = PopFrontNetworkFuzzingBuffer();
   if (!buf) {
     FUZZING_LOG(("[FuzzyConnect] Denying additional connection."));
     return PR_FAILURE;
@@ -172,7 +183,7 @@ static PRInt32 FuzzySendTo(PRFileDesc* fd, const void* buf, PRInt32 amount,
 
   NetworkFuzzingBuffer* fuzzBuf = gConnectedNetworkFuzzingBuffers.Get(fd);
   if (!fuzzBuf) {
-    NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.PopFront();
+    NetworkFuzzingBuffer* buf = PopFrontNetworkFuzzingBuffer();
     if (!buf) {
       FUZZING_LOG(("[FuzzySentTo] Denying additional connection."));
       return 0;
@@ -330,8 +341,8 @@ static PRStatus FuzzyClose(PRFileDesc* fd) {
     
     
     bool haveRemainingUnusedBuffers = false;
-    for (size_t i = 0; i < gNetworkFuzzingBuffers.GetSize(); ++i) {
-      NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers.ObjectAt(i);
+    for (size_t i = 0; i < gNetworkFuzzingBuffers.size(); ++i) {
+      NetworkFuzzingBuffer* buf = gNetworkFuzzingBuffers[i];
 
       if (!buf->allowUnused) {
         haveRemainingUnusedBuffers = true;
@@ -355,7 +366,7 @@ static PRStatus FuzzyClose(PRFileDesc* fd) {
       
       FUZZING_LOG(("[FuzzyClose] All connections closed, cleaning up."));
 
-      gNetworkFuzzingBuffers.Erase();
+      gNetworkFuzzingBuffers.clear();
       gFuzzingConnClosed = true;
 
       
