@@ -493,6 +493,9 @@ RefPtr<PDMSupportsDecoderPromise> PDMFactory::SupportsAsync(
 
   nsTArray<RefPtr<PDMSupportsDecoderPromise>> promises(mCurrentPDMs.Length());
   for (const auto& m : mCurrentPDMs) {
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+                "PDMFactory::SupportsAsync: checking {}, mime={}", m->Name(),
+                aParams.mConfig.mMimeType);
     if (!m->Supports(aParams, nullptr).isEmpty()) {
       promises.AppendElement(m->SupportsAsync(aParams));
     }

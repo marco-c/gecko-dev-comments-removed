@@ -181,14 +181,23 @@ nsCString GMPInfoFileParser::Get(const nsCString& aKey) const {
 }
 
 bool HaveGMPFor(const nsACString& aAPI, const nsTArray<nsCString>& aTags) {
+  GMP_LOG_DEBUG("HaveGMPFor: api={}, mainThread={}", aAPI, NS_IsMainThread());
+  for (const auto& tag : aTags) {
+    GMP_LOG_DEBUG("HaveGMPFor: api={}, tag={}", aAPI, tag);
+  }
   nsCOMPtr<mozIGeckoMediaPluginService> mps =
       do_GetService("@mozilla.org/gecko-media-plugin-service;1");
+  GMP_LOG_DEBUG("HaveGMPFor: api={}, service={}", aAPI,
+                static_cast<void*>(mps.get()));
   if (NS_WARN_IF(!mps)) {
     return false;
   }
 
   bool hasPlugin = false;
-  if (NS_FAILED(mps->HasPluginForAPI(aAPI, aTags, &hasPlugin))) {
+  nsresult rv = mps->HasPluginForAPI(aAPI, aTags, &hasPlugin);
+  GMP_LOG_DEBUG("HaveGMPFor: api={}, rv={}, hasPlugin={}", aAPI,
+                static_cast<uint32_t>(rv), hasPlugin);
+  if (NS_FAILED(rv)) {
     return false;
   }
   return hasPlugin;
