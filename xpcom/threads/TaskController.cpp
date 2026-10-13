@@ -341,6 +341,7 @@ TaskController::TaskController()
 #ifdef MOZ_MEMORY
       mIsLazyPurgeEnabled(false),
 #endif
+      mLowestTaskManager(new LowestTaskManager()),
       mRunOutOfMTTasksCounter(0) {
   InputTaskManager::Init();
   VsyncTaskManager::Init();
@@ -530,6 +531,12 @@ void TaskController::AddTask(already_AddRefed<Task> aTask) {
     MOZ_ASSERT(!otherTask->mTaskManager ||
                otherTask->mTaskManager == task->mTaskManager);
   }
+
+  MOZ_ASSERT(
+      task->mPriority != static_cast<uint32_t>(EventQueuePriority::Lowest) ||
+          task->mTaskManager == mLowestTaskManager,
+      "A lowest priority task needs the LowestTaskManager, or it will "
+      "be counted as work the main thread has to do.");
 #endif
 
   LogTask::LogDispatch(task);
@@ -1183,6 +1190,15 @@ void TaskController::RequestIdleMemoryCleanup(StaticString aReason) {
 }
 #endif
 
+bool LowestTaskManager::IsSuspended(const MutexAutoLock& aProofOfLock) {
+  
+  
+  
+  
+  IdleTaskManager* idleManager = TaskController::Get()->GetIdleTaskManager();
+  return idleManager && idleManager->PendingTaskCount();
+}
+
 bool TaskController::ExecuteNextTaskOnlyMainThreadInternal(
     const MutexAutoLock& aProofOfLock) MOZ_REQUIRES(mGraphMutex) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1238,6 +1254,11 @@ bool TaskController::ExecuteNextTaskOnlyMainThreadInternal(
     
     mIdleTaskManager->State().ForgetPendingTaskGuarantee();
 
+    
+    
+    
+    
+    
     if (mMainThreadTasks.empty()) {
       ++mRunOutOfMTTasksCounter;
 
