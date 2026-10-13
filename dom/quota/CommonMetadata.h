@@ -202,16 +202,10 @@ struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
 
   
   
-  template <typename T,
-            typename = std::enable_if_t<std::is_same_v<T, FullOriginMetadata>>>
-  bool EqualsIgnoringIntrinsicFields(const T& aOther) const {
-    return mSuffix == aOther.mSuffix && mGroup == aOther.mGroup &&
-           mOrigin == aOther.mOrigin &&
-           mPersistenceType == aOther.mPersistenceType &&
-           static_cast<const OriginStateMetadata&>(*this).Equals(
-               static_cast<const OriginStateMetadata&>(aOther)) &&
-           mClientUsages == aOther.mClientUsages &&
-           mOriginUsage == aOther.mOriginUsage;
+  void CopyIntrinsicFieldsFrom(const FullOriginMetadata& aOther) {
+    mStorageOrigin = aOther.mStorageOrigin;
+    mIsPrivate = aOther.mIsPrivate;
+    mQuotaVersion = aOther.mQuotaVersion;
   }
 
   

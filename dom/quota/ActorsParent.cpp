@@ -2710,29 +2710,12 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   bool cacheRowMatches = false;
-
-  
-  
-  
-  
-  FullOriginMetadata fullOriginMetadata = aFullOriginMetadata.Clone();
-
   if (aCacheMap.IsActive()) {
     Maybe<FullOriginMetadata> cachedMetadata = aCacheMap.Extract(
-        fullOriginMetadata.mPersistenceType, fullOriginMetadata.mOrigin);
+        aFullOriginMetadata.mPersistenceType, aFullOriginMetadata.mOrigin);
     if (cachedMetadata.isSome()) {
-      if (cachedMetadata->mLastAccessTime >
-          fullOriginMetadata.mLastAccessTime) {
-        fullOriginMetadata.mLastAccessTime = cachedMetadata->mLastAccessTime;
-      }
-
-      if (cachedMetadata->mLastMaintenanceDate >
-          fullOriginMetadata.mLastMaintenanceDate) {
-        fullOriginMetadata.mLastMaintenanceDate =
-            cachedMetadata->mLastMaintenanceDate;
-      }
-
-      if (cachedMetadata->EqualsIgnoringIntrinsicFields(fullOriginMetadata)) {
+      cachedMetadata->CopyIntrinsicFieldsFrom(aFullOriginMetadata);
+      if (cachedMetadata->Equals(aFullOriginMetadata)) {
         cacheRowMatches = true;
       }
     }
@@ -2741,14 +2724,15 @@ void QuotaManager::InitQuotaForOrigin(
   MutexAutoLock lock(mQuotaMutex);
 
   RefPtr<GroupInfo> groupInfo = LockedGetOrCreateGroupInfo(
-      fullOriginMetadata.mPersistenceType, fullOriginMetadata.mSuffix,
-      fullOriginMetadata.mGroup);
+      aFullOriginMetadata.mPersistenceType, aFullOriginMetadata.mSuffix,
+      aFullOriginMetadata.mGroup);
 
   auto originInfo = MakeRefPtr<OriginInfo>(
-      groupInfo, fullOriginMetadata.mOrigin, fullOriginMetadata.mStorageOrigin,
-      fullOriginMetadata.mIsPrivate, fullOriginMetadata.mClientUsages,
-      fullOriginMetadata.mOriginUsage, fullOriginMetadata.mLastAccessTime,
-      fullOriginMetadata.mLastMaintenanceDate, fullOriginMetadata.mPersisted,
+      groupInfo, aFullOriginMetadata.mOrigin,
+      aFullOriginMetadata.mStorageOrigin, aFullOriginMetadata.mIsPrivate,
+      aFullOriginMetadata.mClientUsages, aFullOriginMetadata.mOriginUsage,
+      aFullOriginMetadata.mLastAccessTime,
+      aFullOriginMetadata.mLastMaintenanceDate, aFullOriginMetadata.mPersisted,
       aDirectoryExists);
 
   
@@ -2782,9 +2766,15 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
+  
+  
+  
+  
+  
+  
   if (!cacheRowMatches &&
-      (fullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
-      aDirectoryExists && !mUsageModificationDisabled.load()) {
+      (aFullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
+      aFullOriginMetadata.mOriginUsage > 0) {
     originInfo->mMetadataDirty = true;
     auto* message = new UnboundedMPSCQueue<RefPtr<OriginInfo>>::Message();
     message->data = originInfo;
@@ -3226,7 +3216,7 @@ nsresult QuotaManager::LoadQuota() {
         } else {
           AddTemporaryOrigin(failedOrigin);
 
-          InitQuotaForOrigin(failedOrigin,  false);
+          InitQuotaForOrigin(failedOrigin);
         }
       }
 
@@ -3245,11 +3235,6 @@ nsresult QuotaManager::LoadQuota() {
     RemoveQuota();
     RemoveTemporaryOrigins();
     unaccessedOrigins.Clear();
-
-    
-    
-    
-    mUsageModificationDisabled.store(false);
 
     
     
@@ -6145,6 +6130,11 @@ void QuotaManager::FlushDirtyOriginInfos() {
     
     
     if (!info->LockedDirty()) {
+      continue;
+    }
+
+    if (flushed >= maxOriginsToSaveInOneBatch) {
+      itemsToRequeue.AppendElement(std::move(info));
       continue;
     }
 
