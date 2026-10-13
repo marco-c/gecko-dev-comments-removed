@@ -4,10 +4,21 @@
 
 "use strict";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfileKekPassword: "resource://gre/modules/ProfileKekPassword.sys.mjs",
+});
+
 document.addEventListener("dialogaccept", resetPassword);
 
 async function resetPassword(event) {
   event.preventDefault();
+
+  
+  
+  
+  
+  await lazy.ProfileKekPassword.discard();
 
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token

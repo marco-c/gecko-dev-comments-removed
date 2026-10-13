@@ -2,6 +2,11 @@
 
 
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfileKekPassword: "resource://gre/modules/ProfileKekPassword.sys.mjs",
+});
+
 var gRemovePasswordDialog = {
   _token: null,
   _okButton: null,
@@ -28,12 +33,54 @@ var gRemovePasswordDialog = {
 
   async removePassword(event) {
     event.preventDefault();
+    let kekMoved = false;
     try {
+      
+      
+      
+      if (await lazy.ProfileKekPassword.exists()) {
+        await lazy.ProfileKekPassword.update(this._password.value, "");
+        kekMoved = true;
+      }
       await this._token.changePassword(this._password.value, "");
       this.createAlert("pw-change-success-title", "settings-pp-erased-ok");
       window.close();
-    } catch (_) {
-      this.createAlert("pw-change-failed-title", "incorrect-pp");
+    } catch (e) {
+      
+      
+      
+      
+      
+      if (kekMoved) {
+        await lazy.ProfileKekPassword.update("", this._password.value).catch(
+          rollbackError =>
+            console.error(
+              "Failed to roll back the lockstore KEK",
+              rollbackError
+            )
+        );
+      }
+      let nssErrorsService = Cc["@mozilla.org/nss_errors_service;1"].getService(
+        Ci.nsINSSErrorsService
+      );
+      
+      let badPasswordResult = nssErrorsService.getXPCOMFromNSSError(
+        Ci.nsINSSErrorsService.NSS_SEC_ERROR_BASE + 15
+      );
+      
+      
+      
+      
+      if (
+        e.result == badPasswordResult ||
+        (!kekMoved && e.result == Cr.NS_ERROR_ABORT)
+      ) {
+        this._password.focus();
+        this._password.setAttribute("value", "");
+        this.createAlert("pw-change-failed-title", "incorrect-pp");
+      } else {
+        this.createAlert("pw-change-failed-title", "failed-pp-change");
+      }
     }
   },
 };

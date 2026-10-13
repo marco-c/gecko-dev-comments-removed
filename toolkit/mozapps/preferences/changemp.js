@@ -2,6 +2,11 @@
 
 
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfileKekPassword: "resource://gre/modules/ProfileKekPassword.sys.mjs",
+});
+
 function init() {
   process();
   document.addEventListener("dialogaccept", setPassword);
@@ -70,7 +75,17 @@ async function setPassword(event) {
     }
   }
 
+  let kekMoved = false;
   try {
+    
+    
+    
+    
+    
+    if (!token.hasPassword || (await lazy.ProfileKekPassword.exists())) {
+      await lazy.ProfileKekPassword.update(oldpwbox.value, pw1.value);
+      kekMoved = true;
+    }
     await token.changePassword(oldpwbox.value, pw1.value);
     createAlert(
       "pw-change-success-title",
@@ -78,6 +93,12 @@ async function setPassword(event) {
     );
     window.close();
   } catch (e) {
+    if (kekMoved) {
+      await lazy.ProfileKekPassword.update(pw1.value, oldpwbox.value).catch(
+        rollbackError =>
+          console.error("Failed to roll back the lockstore KEK", rollbackError)
+      );
+    }
     let nssErrorsService = Cc["@mozilla.org/nss_errors_service;1"].getService(
       Ci.nsINSSErrorsService
     );
@@ -85,7 +106,14 @@ async function setPassword(event) {
     let badPasswordResult = nssErrorsService.getXPCOMFromNSSError(
       Ci.nsINSSErrorsService.NSS_SEC_ERROR_BASE + 15
     );
-    if (e.result == badPasswordResult) {
+    
+    
+    
+    
+    if (
+      e.result == badPasswordResult ||
+      (!kekMoved && e.result == Cr.NS_ERROR_ABORT)
+    ) {
       oldpwbox.focus();
       oldpwbox.setAttribute("value", "");
       createAlert("pw-change-failed-title", "incorrect-pp");

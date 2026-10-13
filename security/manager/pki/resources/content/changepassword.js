@@ -6,6 +6,10 @@
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  ProfileKekPassword: "resource://gre/modules/ProfileKekPassword.sys.mjs",
+});
 
 ChromeUtils.defineLazyGetter(
   this,
@@ -83,11 +87,31 @@ async function setPassword(event) {
     }
   }
 
+  let kekMoved = false;
   try {
+    
+    
+    
+    if (
+      token.isInternalKeyToken &&
+      (!token.hasPassword || (await lazy.ProfileKekPassword.exists()))
+    ) {
+      await lazy.ProfileKekPassword.update(oldpwbox.value, pw1.value);
+      kekMoved = true;
+    }
     await token.changePassword(oldpwbox.value, pw1.value);
     doPrompt(pw1.value == "" ? "pippki-pw-erased-ok" : "pippki-pw-change-ok");
     window.close();
   } catch (e) {
+    
+    
+    
+    if (kekMoved) {
+      await lazy.ProfileKekPassword.update(pw1.value, oldpwbox.value).catch(
+        rollbackError =>
+          console.error("Failed to roll back the lockstore KEK", rollbackError)
+      );
+    }
     let nssErrorsService = Cc["@mozilla.org/nss_errors_service;1"].getService(
       Ci.nsINSSErrorsService
     );
@@ -95,7 +119,14 @@ async function setPassword(event) {
     let badPasswordResult = nssErrorsService.getXPCOMFromNSSError(
       Ci.nsINSSErrorsService.NSS_SEC_ERROR_BASE + 15
     );
-    if (e.result == badPasswordResult) {
+    
+    
+    
+    
+    if (
+      e.result == badPasswordResult ||
+      (!kekMoved && e.result == Cr.NS_ERROR_ABORT)
+    ) {
       oldpwbox.focus();
       oldpwbox.setAttribute("value", "");
       doPrompt("pippki-incorrect-pw");
