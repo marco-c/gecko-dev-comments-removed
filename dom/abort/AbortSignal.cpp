@@ -16,7 +16,6 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
-#include "nsTHashSet.h"
 
 namespace mozilla::dom {
 
@@ -351,21 +350,10 @@ already_AddRefed<AbortSignal> AbortSignal::Any(
   resultSignal->mDependent = true;
 
   
-  
-  
-  nsTHashSet<AbortSignal*> seenSourceSignals;
-  auto makeDependentOn = [&](AbortSignal* aSourceSignal) {
-    if (aSignals.Length() == 1 ||
-        seenSourceSignals.EnsureInserted(aSourceSignal)) {
-      resultSignal->MakeDependentOn(aSourceSignal);
-    }
-  };
-
-  
   for (const auto& signal : aSignals) {
     if (!signal->Dependent()) {
       
-      makeDependentOn(signal);
+      resultSignal->MakeDependentOn(signal);
     } else {
       
       for (const auto& sourceSignal : signal->mSourceSignals) {
@@ -376,7 +364,7 @@ already_AddRefed<AbortSignal> AbortSignal::Any(
           continue;
         }
         MOZ_ASSERT(!sourceSignal->Aborted() && !sourceSignal->Dependent());
-        makeDependentOn(sourceSignal);
+        resultSignal->MakeDependentOn(sourceSignal);
       }
     }
   }
@@ -390,8 +378,12 @@ void AbortSignal::MakeDependentOn(AbortSignal* aSignal) {
   MOZ_ASSERT(aSignal);
   
   
-  mSourceSignals.AppendElement(aSignal);
-  aSignal->mDependentSignals.AppendElement(this);
+  if (!mSourceSignals.Contains(aSignal)) {
+    mSourceSignals.AppendElement(aSignal);
+  }
+  if (!aSignal->mDependentSignals.Contains(this)) {
+    aSignal->mDependentSignals.AppendElement(this);
+  }
 }
 
 
