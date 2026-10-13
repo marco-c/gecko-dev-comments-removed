@@ -1234,7 +1234,20 @@ struct BaseCompiler final {
   
   
 
-  Address addressOfGlobalVar(const GlobalDesc& global, RegPtr tmp);
+  
+  
+  
+  class GlobalVarAddress {
+    Maybe<ScratchPtr> tmp_;
+    Address address_;
+
+    Address init(BaseCompiler& bc, const GlobalDesc& global);
+
+   public:
+    GlobalVarAddress(BaseCompiler& bc, const GlobalDesc& global)
+        : address_(init(bc, global)) {}
+    operator Address() const { return address_; }
+  };
 
   
   
