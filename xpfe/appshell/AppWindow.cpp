@@ -1124,12 +1124,10 @@ static Maybe<int32_t> ReadIntAttribute(const Element& aElement,
 bool AppWindow::LoadPositionFromXUL(int32_t aSpecWidth, int32_t aSpecHeight) {
   
   
-  if (mIsHiddenWindow) {
-    return false;
-  }
-
   
-  if (mWindow->SizeMode() != nsSizeMode_Normal) {
+  
+  if (mIsHiddenWindow || mWindow->SizeMode() != nsSizeMode_Normal ||
+      !StaticPrefs::browser_load_xul_position_enabled()) {
     return false;
   }
 
