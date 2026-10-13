@@ -48,7 +48,7 @@ bool RegExpStatics::executeLazy(JSContext* cx) {
 
 
 
-  MOZ_ASSERT(status == RegExpRunStatus::Success);
+  MOZ_RELEASE_ASSERT(status == RegExpRunStatus::Success);
 
   
   pendingLazyEvaluation = false;
