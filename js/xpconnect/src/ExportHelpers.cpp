@@ -2,24 +2,27 @@
 
 
 
-#include "xpcprivate.h"
-#include "WrapperFactory.h"
-#include "AccessCheck.h"
-#include "jsfriendapi.h"
-#include "js/CallAndConstruct.h"  
-#include "js/Exception.h"
-#include "js/PropertyAndElement.h"  
-#include "js/Proxy.h"
-#include "js/Wrapper.h"
-#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
+#include "mozilla/ErrorResult.h"
+
+#include "AccessCheck.h"
+#include "jsapi.h"
+#include "jsfriendapi.h"
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
-#include "js/Object.h"  
+#include "WrapperFactory.h"
+#include "xpcprivate.h"
+
+#include "js/CallAndConstruct.h"  
+#include "js/Exception.h"
+#include "js/Object.h"              
+#include "js/PropertyAndElement.h"  
+#include "js/Proxy.h"
+#include "js/Wrapper.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -416,11 +419,9 @@ bool NewFunctionForwarder(JSContext* cx, HandleId idArg, HandleObject callable,
     }
   }
 
-  
-  
-  
-  JSFunction* fun = js::NewFunctionByIdWithReserved(
-      cx, FunctionForwarder, nargs, JSFUN_CONSTRUCTOR, id);
+  unsigned flags = JS::IsConstructor(callable) ? JSFUN_CONSTRUCTOR : 0;
+  JSFunction* fun =
+      js::NewFunctionByIdWithReserved(cx, FunctionForwarder, nargs, flags, id);
   if (!fun) {
     return false;
   }
@@ -503,13 +504,13 @@ bool ExportFunction(JSContext* cx, HandleValue vfunction, HandleValue vscope,
       if (!funName) {
         funName = JS_GetEmptyString(cx);
       }
-      JS_MarkCrossZoneIdValue(cx, StringValue(funName));
 
       if (!JS_StringToId(cx, funName, &id)) {
         return false;
       }
-    } else {
-      JS_MarkCrossZoneId(cx, id);
+    }
+    if (!JS_WrapId(cx, &id)) {
+      return false;
     }
 
     if (!id.isString()) {
@@ -578,7 +579,9 @@ bool CreateObjectIn(JSContext* cx, HandleValue vobj,
   RootedObject obj(cx);
   {
     JSAutoRealm ar(cx, scope);
-    JS_MarkCrossZoneId(cx, options.defineAs);
+    if (!JS_WrapId(cx, &options.defineAs)) {
+      return false;
+    }
 
     obj = JS_NewPlainObject(cx);
     if (!obj) {

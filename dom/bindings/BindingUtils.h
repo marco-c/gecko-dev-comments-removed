@@ -18,6 +18,7 @@
 #include "js/experimental/BindingAllocs.h"
 #include "js/experimental/JitInfo.h"  
 #include "js/friend/WindowProxy.h"  
+#include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
@@ -1188,11 +1189,7 @@ MOZ_ALWAYS_INLINE bool MaybeWrapValue(JSContext* cx,
     
     
     
-    if (rval.isBigInt()) {
-      return JS_WrapValue(cx, rval);
-    }
-    MOZ_ASSERT(rval.isSymbol());
-    JS_MarkCrossZoneId(cx, JS::PropertyKey::Symbol(rval.toSymbol()));
+    return JS_WrapValue(cx, rval);
   }
   return true;
 }

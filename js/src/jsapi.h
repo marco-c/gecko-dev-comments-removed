@@ -143,16 +143,6 @@ extern JS_PUBLIC_API bool JS_WrapValue(JSContext* cx,
 
 extern JS_PUBLIC_API bool JS_WrapId(JSContext* cx, JS::MutableHandle<jsid> id);
 
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool JS_WrapIdValue(JSContext* cx,
-                                         JS::MutableHandle<JS::Value> value);
-
 extern JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx,
                                                    JS::HandleObject origobj,
                                                    JS::HandleObject target);
