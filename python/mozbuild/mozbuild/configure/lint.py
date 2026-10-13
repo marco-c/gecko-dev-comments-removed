@@ -6,10 +6,10 @@ import inspect
 import re
 import types
 from dis import Bytecode
-from functools import wraps
+from functools import cache, wraps
 from io import StringIO
 
-from mozbuild.util import memoize
+import mozpack.path as mozpath
 
 from . import (
     CombinedDependsFunction,
@@ -29,6 +29,41 @@ def code_replace(code, co_filename, co_name, co_firstlineno):
     )
 
 
+SUBST_CONSUMER_SUFFIXES = {
+    ".build",
+    ".conf",
+    ".gradle",
+    ".groovy",
+    ".in",
+    ".kt",
+    ".kts",
+    ".mk",
+    ".mozbuild",
+    ".py",
+}
+
+
+def find_unreferenced_configs(names, topsrcdir, paths):
+    word = re.compile(r"\w+")
+    unreferenced = set(names)
+    for path in paths:
+        suffix = mozpath.splitext(path)[1]
+        if suffix and suffix not in SUBST_CONSUMER_SUFFIXES:
+            continue
+        with open(
+            mozpath.join(topsrcdir, path), encoding="utf-8", errors="replace"
+        ) as fh:
+            for line in fh:
+                stripped = line.lstrip()
+                
+                
+                if not stripped.startswith("#") or "@" in stripped:
+                    unreferenced.difference_update(word.findall(line))
+        if not unreferenced:
+            break
+    return sorted(unreferenced)
+
+
 class LintSandbox(ConfigureSandbox):
     def __init__(self, environ=None, argv=None, stdout=None, stderr=None):
         out = StringIO()
@@ -40,6 +75,7 @@ class LintSandbox(ConfigureSandbox):
         self._has_imports = set()
         self._bool_options = []
         self._bool_func_options = []
+        self.set_configs = {}
         self.LOG = ""
         super().__init__({}, environ=environ, argv=argv, stdout=stdout, stderr=stderr)
 
@@ -176,7 +212,7 @@ class LintSandbox(ConfigureSandbox):
             return False
         return self._need_help_dependency(obj)
 
-    @memoize
+    @cache
     def _value_for_depends(self, obj):
         with_help = self._help_option in obj.dependencies
         if with_help:
@@ -201,6 +237,14 @@ class LintSandbox(ConfigureSandbox):
         self._check_option(result, *args, **kwargs)
 
         return result
+
+    def set_config_impl(self, name, value, when=None):
+        frame = inspect.currentframe().f_back
+        if frame.f_code.co_name == "<module>":
+            self.set_configs.setdefault(
+                name, (frame.f_code.co_filename, frame.f_lineno)
+            )
+        return super().set_config_impl(name, value, when)
 
     def _check_option(self, option, *args, **kwargs):
         self._check_help_message(option, *args, **kwargs)
