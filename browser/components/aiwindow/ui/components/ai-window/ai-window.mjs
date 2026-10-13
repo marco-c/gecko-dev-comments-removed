@@ -1689,17 +1689,35 @@ export class AIWindow extends MozLitElement {
         break;
 
       case "snooze":
-        lazy.ResumeActivity.dismissMemory(journeyId);
-        this.resumeCards = this.resumeCards.filter(
-          ({ memory }) => memory.id !== journeyId
-        );
-        if (!this.resumeCards.length) {
-          this.resumeCardsEmptyReason =
-            RESUME_SECTION_EMPTY_REASON.ALL_DISMISSED;
-        }
+        this.#snoozeResumeCard(journeyId);
         break;
     }
   };
+
+  /**
+   * Handles a resume card's close button by snoozing the card.
+   *
+   * @param {CustomEvent} event - The dismiss event
+   * @private
+   */
+  #handleResumeCardDismiss = event => {
+    this.#snoozeResumeCard(event.detail.journeyId);
+  };
+
+  /**
+   * Dismisses a resume card for the rest of the session.
+   *
+   * @param {string} journeyId - The resume card's journey/memory id
+   */
+  #snoozeResumeCard(journeyId) {
+    lazy.ResumeActivity.dismissMemory(journeyId);
+    this.resumeCards = this.resumeCards.filter(
+      ({ memory }) => memory.id !== journeyId
+    );
+    if (!this.resumeCards.length) {
+      this.resumeCardsEmptyReason = RESUME_SECTION_EMPTY_REASON.ALL_DISMISSED;
+    }
+  }
 
   /**
    * Opens a resume card's preview tabs as a group without the current
@@ -3933,6 +3951,8 @@ export class AIWindow extends MozLitElement {
                       .#handleResumeCardResume}
                     @smartwindow-resume-card:menu-item-selected=${this
                       .#handleResumeCardMenuItemSelected}
+                    @smartwindow-resume-card:dismiss=${this
+                      .#handleResumeCardDismiss}
                     @smartwindow-resume-section:hide=${this
                       .#handleResumeSectionHide}
                   ></smartwindow-resume-section>
