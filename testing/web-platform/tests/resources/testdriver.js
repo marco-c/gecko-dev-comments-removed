@@ -992,6 +992,37 @@
                     return window.test_driver_internal.bidi.emulation.set_touch_override(
                         params);
                 },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                set_viewport_meta_override: function (params) {
+                    assertBidiIsEnabled();
+                    return window.test_driver_internal.bidi.emulation.set_viewport_meta_override(
+                        params);
+                },
             },
             
 
@@ -1504,6 +1535,33 @@
 
         get_window_rect: function(context=null) {
             return window.test_driver_internal.get_window_rect(context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        navigate: function(url, context=null) {
+            return window.test_driver_internal.navigate(url, context);
         },
 
         
@@ -2557,6 +2615,10 @@
                 set_touch_override: function (params) {
                     throw new Error(
                         "bidi.emulation.set_touch_override is not implemented by testdriver-vendor.js");
+                },
+                set_viewport_meta_override: function (params) {
+                    throw new Error(
+                        "bidi.emulation.set_viewport_meta_override is not implemented by testdriver-vendor.js");
                 }
             },
             user_agent_client_hints: {
@@ -2673,6 +2735,10 @@
 
         async create_window(type=null, context=null) {
             throw new Error("create_window() is not implemented by testdriver-vendor.js");
+        },
+
+        async navigate(url, context=null) {
+            throw new Error("navigate() is not implemented by testdriver-vendor.js");
         },
 
         async minimize_window(context=null) {

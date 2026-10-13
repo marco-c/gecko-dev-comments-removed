@@ -215,7 +215,10 @@
     const create_context_action = function (name, context, params) {
         const context_params = {...params};
         if (context) {
-            context_params.context = get_window_id(context);
+            
+            
+            context_params.context = typeof context === "string" ?
+                context : get_window_id(context);
         }
         if (context === null && !is_test_context()) {
             context_params.context = get_window_id(window);
@@ -462,6 +465,16 @@
                 });
         }
 
+    window.test_driver_internal.bidi.emulation.set_viewport_meta_override =
+        function (params) {
+            return create_action(
+                "bidi.emulation.set_viewport_meta_override", {
+                    
+                    contexts: [window],
+                    ...(params ?? {})
+                });
+        }
+
     window.test_driver_internal.bidi.log.entry_added.subscribe =
         function (params) {
             return subscribe({
@@ -544,6 +557,10 @@
 
     window.test_driver_internal.create_window = function(type=null, context=null) {
         return create_context_action("create_window", context, {type});
+    };
+
+    window.test_driver_internal.navigate = function(url, context=null) {
+        return create_context_action("navigate", context, {url});
     };
 
     window.test_driver_internal.minimize_window = function(context=null) {
