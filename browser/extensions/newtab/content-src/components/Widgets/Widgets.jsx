@@ -28,9 +28,12 @@ import {
   WIDGET_REGISTRY,
   isWidgetAddable,
   isWidgetEnabled,
+  isWidgetExtensionUnavailable,
   resolveWidgetSize,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
+  resolveWidgetSrc,
+  getWidgetExtension,
   getHideAllTargets,
 } from "common/WidgetsRegistry.mjs";
 import {
@@ -141,6 +144,7 @@ function renderWeather({
 // eslint-disable-next-line complexity, max-statements
 function Widgets({ widgetIds }) {
   const prefs = useSelector(state => state.Prefs.values);
+  const extensionWidgets = useSelector(state => state.ExtensionWidgets);
   const weatherData = useSelector(state => state.Weather);
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
@@ -261,46 +265,13 @@ function Widgets({ widgetIds }) {
   // row here instead of disappearing.
   const weatherGoesToSidebar =
     resolveWidgetHasSidebar(weatherWidget, prefs) && weatherSize === "small";
-  const widgetEnabledMap = {
-    lists: listsEnabled,
-    focusTimer: timerEnabled,
-    weather: weatherEnabled && !weatherGoesToSidebar,
-    clocks: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "clocks"),
-      prefs,
-      widgetsEnabled
-    ),
-    privacy: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "privacy"),
-      prefs,
-      widgetsEnabled
-    ),
-    crossword: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "crossword"),
-      prefs,
-      widgetsEnabled
-    ),
-    stocks: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "stocks"),
-      prefs,
-      widgetsEnabled
-    ),
-    pictureOfTheDay: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "pictureOfTheDay"),
-      prefs,
-      widgetsEnabled
-    ),
-    recentSearches: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "recentSearches"),
-      prefs,
-      widgetsEnabled
-    ),
-    horoscopes: isWidgetEnabled(
-      WIDGET_REGISTRY.find(w => w.id === "horoscopes"),
-      prefs,
-      widgetsEnabled
-    ),
-  };
+  const widgetEnabledMap = {};
+  for (const widget of WIDGET_REGISTRY) {
+    widgetEnabledMap[widget.id] =
+      isWidgetEnabled(widget, prefs, widgetsEnabled) &&
+      !isWidgetExtensionUnavailable(widget, extensionWidgets);
+  }
+  widgetEnabledMap.weather = weatherEnabled && !weatherGoesToSidebar;
 
   // Given an explicit list, keep only those. Callers wanting every enabled
   // widget pass none, which is everything but a thematic space. This map is the
@@ -337,8 +308,10 @@ function Widgets({ widgetIds }) {
     WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) ||
     (!novaEnabled && weatherForecastEnabled);
 
-  const allWidgetsAdded = WIDGET_REGISTRY.filter(w =>
-    isWidgetAddable(w, prefs)
+  const allWidgetsAdded = WIDGET_REGISTRY.filter(
+    w =>
+      isWidgetAddable(w, prefs) &&
+      !isWidgetExtensionUnavailable(w, extensionWidgets)
   ).every(w => prefs[w.enabledPref]);
 
   const renderedWidgetSizes = WIDGET_REGISTRY.filter(
@@ -817,7 +790,7 @@ function Widgets({ widgetIds }) {
   const enabledWidgetIds = [];
   // Use effectiveOrder (matches the render loop) so optimistic reorders aren't briefly mis-hidden.
   for (const id of effectiveOrder) {
-    if (!WIDGET_ROW_COMPONENTS[id] || !widgetEnabledMap[id]) {
+    if (!widgetEnabledMap[id]) {
       continue;
     }
     enabledWidgetIds.push(id);
@@ -901,10 +874,10 @@ function Widgets({ widgetIds }) {
             effectiveOrder.map(id => {
               if (novaEnabled) {
                 const Component = WIDGET_ROW_COMPONENTS[id];
-                if (!Component || !widgetEnabledMap[id]) {
+                const entry = WIDGET_REGISTRY.find(w => w.id === id);
+                if (!widgetEnabledMap[id]) {
                   return null;
                 }
-                const entry = WIDGET_REGISTRY.find(w => w.id === id);
                 const size = entry ? resolveWidgetSize(entry, prefs) : null;
                 const renderIdx = enabledWidgetIds.indexOf(id);
                 const hiddenAttrs = {
@@ -941,13 +914,26 @@ function Widgets({ widgetIds }) {
                     {/* Contain a crash to this widget's cell so one failing
                       widget can't tear down the whole widgets section. */}
                     <ErrorBoundary className="widget-error-fallback">
-                      <Component
-                        dispatch={dispatch}
-                        handleUserInteraction={handleUserInteraction}
-                        isMaximized={isMaximized}
-                        widgetsMayBeMaximized={widgetsMayBeMaximized}
-                        widgetEnabledMap={widgetEnabledMap}
-                      />
+                      {Component ? (
+                        <Component
+                          dispatch={dispatch}
+                          handleUserInteraction={handleUserInteraction}
+                          isMaximized={isMaximized}
+                          widgetsMayBeMaximized={widgetsMayBeMaximized}
+                          widgetEnabledMap={widgetEnabledMap}
+                        />
+                      ) : (
+                        <moz-widget
+                          widget-id={id}
+                          size={size}
+                          padded={true}
+                          src={
+                            entry.extensionID
+                              ? getWidgetExtension(entry, extensionWidgets).src
+                              : resolveWidgetSrc(entry, prefs)
+                          }
+                        />
+                      )}
                     </ErrorBoundary>
                   </WidgetWrapper>
                 );
