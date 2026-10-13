@@ -16,3 +16,5 @@ prefs = [
 ]
 
 ["browser_creditCard_migration.js"]
+
+["browser_creditCard_primaryPassword.js"]
