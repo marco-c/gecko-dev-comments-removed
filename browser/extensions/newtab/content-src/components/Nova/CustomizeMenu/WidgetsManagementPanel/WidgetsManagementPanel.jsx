@@ -9,9 +9,7 @@ import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
-  getWidgetExtension,
   isWeatherAvailable,
-  isWidgetExtensionUnavailable,
   isWidgetToggleVisible,
   resolveWidgetSize,
 } from "common/WidgetsRegistry.mjs";
@@ -21,20 +19,15 @@ import { useWidgetLabels } from "./useWidgetLabels.jsx";
 
 function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
   const prefs = useSelector(state => state.Prefs.values);
-  const extensionWidgets = useSelector(state => state.ExtensionWidgets);
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
   const dispatch = useDispatch();
 
-  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired).map(w => ({
-    ...getWidgetExtension(w, extensionWidgets),
-    ...w,
-  }));
+  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
   // Weather also needs the legacy showWeather prefs the widget itself checks.
   const visibleWidgets = activeWidgets.filter(
     widget =>
       isWidgetToggleVisible(widget, prefs) &&
-      !isWidgetExtensionUnavailable(widget, extensionWidgets) &&
       (widget.id !== "weather" || isWeatherAvailable(prefs))
   );
 
@@ -43,7 +36,9 @@ function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
   const widgetLabels = useWidgetLabels(activeWidgets);
   const sortedWidgets = widgetLabels
     ? [...visibleWidgets].sort((a, b) =>
-        widgetLabels.get(a.id).localeCompare(widgetLabels.get(b.id))
+        (widgetLabels.get(a.id) ?? a.id).localeCompare(
+          widgetLabels.get(b.id) ?? b.id
+        )
       )
     : [];
 
@@ -121,10 +116,6 @@ function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
                   ontoggle={e => onToggleWidget(widget, e)}
                   // data-preference is read by CustomizeMenu's locked-pref sweep.
                   data-preference={widget.enabledPref}
-                  // Widgets with a customizeL10nId are labeled by the .label
-                  // attribute in that message, and extension widgets without
-                  // one are labeled with their name.
-                  label={widget.name}
                   data-l10n-id={widget.customizeL10nId}
                 />
               ))}

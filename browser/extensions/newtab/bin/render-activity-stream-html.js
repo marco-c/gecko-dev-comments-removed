@@ -59,7 +59,7 @@ function templateHTML(options) {
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; object-src 'none'; script-src resource: chrome:; connect-src https:; img-src https: data: blob: chrome:; media-src chrome:; style-src 'unsafe-inline'; frame-src https://stage-games-particle.merino.nonprod.webservices.mozgcp.net https://prod-games-particle.merino.prod.webservices.mozgcp.net moz-extension:;"
+      content="default-src 'none'; object-src 'none'; script-src resource: chrome:; connect-src https:; img-src https: data: blob: chrome:; media-src chrome:; style-src 'unsafe-inline'; frame-src https://stage-games-particle.merino.nonprod.webservices.mozgcp.net https://prod-games-particle.merino.prod.webservices.mozgcp.net;"
     />
     <meta name="color-scheme" content="light dark" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -158,11 +158,6 @@ function templateHTML(options) {
       async
       type="module"
       src="chrome://global/content/elements/moz-checkbox.mjs"
-    ></script>
-    <script
-      async
-      type="module"
-      src="chrome://browser/content/widgets/moz-widget.mjs"
     ></script>
   </body>
 </html>

@@ -10,8 +10,6 @@
 import { actionTypes as at } from "resource://newtab/common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
-  getWidgetExtension,
-  isWidgetExtensionUnavailable,
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
 } from "resource://newtab/common/WidgetsRegistry.mjs";
@@ -23,38 +21,29 @@ export const PREFERENCES_LOADED_EVENT_SUBPANE = "customHomepage-pane-loaded";
 
 /**
  * Returns the about:preferences toggle label of each widget by widget id, so
- * the Widgets group can be ordered by what the user reads. An entry without a
- * prefsL10nId is labelled with its name. A label that does not resolve maps
- * to its widget id.
+ * the Widgets group can be ordered by what the user reads. A label that does
+ * not resolve maps to its widget id.
  *
- * @param {(WidgetRegistryEntry & { name?: string })[]} widgets - registry
- *   entries merged with their ExtensionWidgets entry
+ * @param {WidgetRegistryEntry[]} widgets
  * @returns {Map<string, string>}
  */
 function widgetLabels(widgets) {
-  const localizedWidgets = widgets.filter(w => w.prefsL10nId);
   let messages = [];
   try {
     const strings = new Localization(["browser/newtab/newtab.ftl"], true);
     messages = strings.formatMessagesSync(
-      localizedWidgets.map(w => ({ id: w.prefsL10nId }))
+      widgets.map(w => ({ id: w.prefsL10nId }))
     );
   } catch (e) {
     // formatMessagesSync can throw; the pane still builds, sorted by id.
   }
-  const labels = new Map(
-    localizedWidgets.map((w, i) => [
+  return new Map(
+    widgets.map((w, i) => [
       w.id,
       messages[i]?.attributes?.find(attr => attr.name === "label")?.value ||
         w.id,
     ])
   );
-  for (const w of widgets) {
-    if (!w.prefsL10nId) {
-      labels.set(w.id, w.name || w.id);
-    }
-  }
-  return labels;
 }
 
 export class AboutPreferences {
@@ -238,12 +227,11 @@ export class AboutPreferences {
     // half is a snapshot (Nimbus sets it at load, it doesn't change live). The
     // dep id is the same as the registry trainhopEnabledKey.
     const widgetPrefs = this.store.getState()?.Prefs?.values ?? {};
-    const extensionWidgets = this.store.getState()?.ExtensionWidgets ?? {};
     const widgetToggleVisible = widget => deps =>
       isWidgetToggleVisible(widget, {
         ...widgetPrefs,
         [widget.systemEnabledPref]: deps[widget.trainhopEnabledKey]?.value,
-      }) && !isWidgetExtensionUnavailable(widget, extensionWidgets);
+      });
 
     // Build-time snapshot of whether the Widgets container is shown, used only
     // to decide Weather's placement in the items list below. The Widgets group's
@@ -313,10 +301,7 @@ export class AboutPreferences {
     });
 
     // Widgets: one settings pair per registry entry.
-    const prefsWidgets = WIDGET_REGISTRY.filter(w => !w.retired).map(w => ({
-      ...getWidgetExtension(w, extensionWidgets),
-      ...w,
-    }));
+    const prefsWidgets = WIDGET_REGISTRY.filter(w => !w.retired);
     for (const widget of prefsWidgets) {
       Preferences.addSetting({
         id: widget.trainhopEnabledKey,
@@ -556,9 +541,7 @@ export class AboutPreferences {
             .filter(w => weatherNested || w.id !== "weather")
             .map(({ id, prefsL10nId }) => ({
               id,
-              ...(prefsL10nId
-                ? { l10nId: prefsL10nId }
-                : { controlAttrs: { label: labels.get(id) } }),
+              l10nId: prefsL10nId,
               // Keeps the about:preferences#home-weather deep link working.
               ...(id === "weather" && { subcategory: "weather" }),
             })),
