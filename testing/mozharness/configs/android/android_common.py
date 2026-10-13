@@ -17,7 +17,6 @@ if "MOZ_FETCHES_DIR" in os.environ:
 def WebglSuite(name):
     return {
         "run_filename": "runtestsremote.py",
-        "test_summary": True,
         "testsdir": "mochitest",
         "options": [
             "--app=%(app)s",
@@ -30,6 +29,7 @@ def WebglSuite(name):
             "--symbols-path=%(symbols_path)s",
             "--quiet",
             "--log-errorsummary=%(error_summary_file)s",
+            "--log-testsummary=%(test_summary_file)s",
             "--screenshot-on-fail",
             "--subsuite=" + name,
             "--deviceSerial=%(device_serial)s",
@@ -60,7 +60,6 @@ config = {
     "suite_definitions": {
         "mochitest-plain": {
             "run_filename": "runtestsremote.py",
-            "test_summary": True,
             "testsdir": "mochitest",
             "options": [
                 "--app=%(app)s",
@@ -73,6 +72,7 @@ config = {
                 "--symbols-path=%(symbols_path)s",
                 "--quiet",
                 "--log-errorsummary=%(error_summary_file)s",
+                "--log-testsummary=%(test_summary_file)s",
                 "--extra-profile-file=fonts",
                 "--extra-profile-file=hyphenation",
                 "--screenshot-on-fail",
@@ -87,7 +87,6 @@ config = {
         "mochitest-webgpu": WebglSuite("webgpu"),
         "mochitest-plain-gpu": {
             "run_filename": "runtestsremote.py",
-            "test_summary": True,
             "testsdir": "mochitest",
             "options": [
                 "--app=%(app)s",
@@ -100,6 +99,7 @@ config = {
                 "--symbols-path=%(symbols_path)s",
                 "--quiet",
                 "--log-errorsummary=%(error_summary_file)s",
+                "--log-testsummary=%(test_summary_file)s",
                 "--screenshot-on-fail",
                 "--subsuite=gpu",
                 "--deviceSerial=%(device_serial)s",
@@ -107,7 +107,6 @@ config = {
         },
         "mochitest-media": {
             "run_filename": "runtestsremote.py",
-            "test_summary": True,
             "testsdir": "mochitest",
             "options": [
                 "--app=%(app)s",
@@ -120,6 +119,7 @@ config = {
                 "--symbols-path=%(symbols_path)s",
                 "--quiet",
                 "--log-errorsummary=%(error_summary_file)s",
+                "--log-testsummary=%(test_summary_file)s",
                 "--screenshot-on-fail",
                 "--subsuite=media",
                 "--deviceSerial=%(device_serial)s",
@@ -263,7 +263,6 @@ config = {
         },
         "xpcshell": {
             "run_filename": "remotexpcshelltests.py",
-            "test_summary": True,
             "testsdir": "xpcshell",
             "options": [
                 "--xre-path=%(xre_path)s",
@@ -273,6 +272,7 @@ config = {
                 "--symbols-path=%(symbols_path)s",
                 "--manifest=tests/xpcshell.toml",
                 "--log-errorsummary=%(error_summary_file)s",
+                "--log-testsummary=%(test_summary_file)s",
                 "--threads=10",
                 "--deviceSerial=%(device_serial)s",
                 "%(xpcshell_extra)s",

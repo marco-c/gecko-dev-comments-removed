@@ -259,7 +259,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                 "run-tests",
             ],
             require_config_file=require_config_file,
-            config={"require_test_zip": True, "test_summary": True},
+            config={"require_test_zip": True},
         )
 
         
@@ -375,7 +375,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         mozinfo.find_and_update_from_json(dirs["abs_test_install_dir"])
 
-        raw_log_file, error_summary_file = self.get_indexed_logs(
+        raw_log_file, error_summary_file, test_summary_file = self.get_indexed_logs(
             dirs["abs_blob_upload_dir"], "wpt"
         )
 
@@ -384,6 +384,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             "--log-wptreport=%s"
             % os.path.join(dirs["abs_blob_upload_dir"], "wptreport.json"),
             "--log-errorsummary=%s" % error_summary_file,
+            "--log-testsummary=%s" % test_summary_file,
             "--symbols-path=%s" % self.symbols_path,
             "--stackwalk-binary=%s" % self.query_minidump_stackwalk(),
             "--stackfix-dir=%s" % os.path.join(dirs["abs_test_install_dir"], "bin"),
@@ -685,9 +686,6 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             log_compact=True,
             error_list=BaseErrorList + WptHarnessErrorList,
             allow_crashes=True,
-            test_summary_file=self.query_test_summary_file(
-                dirs["abs_blob_upload_dir"], self.config
-            ),
         )
 
         env = {"MINIDUMP_SAVE_PATH": dirs["abs_blob_upload_dir"]}
@@ -797,26 +795,24 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                 if self.per_test_coverage:
                     self.set_coverage_env(final_env, is_baseline_test)
 
-                try:
-                    return_code = self.run_command(
-                        cmd,
-                        cwd=dirs["abs_work_dir"],
-                        output_timeout=1000,
-                        output_parser=parser,
-                        env=final_env,
+                return_code = self.run_command(
+                    cmd,
+                    cwd=dirs["abs_work_dir"],
+                    output_timeout=1000,
+                    output_parser=parser,
+                    env=final_env,
+                )
+
+                self.append_test_summary(dirs["abs_blob_upload_dir"])
+
+                if self.per_test_coverage:
+                    self.add_per_test_coverage_report(
+                        final_env, suite, per_test_args[-1]
                     )
 
-                    if self.per_test_coverage:
-                        self.add_per_test_coverage_report(
-                            final_env, suite, per_test_args[-1]
-                        )
-
-                    tbpl_status, log_level, summary = parser.evaluate_parser(
-                        return_code, previous_summary=summary
-                    )
-                finally:
-                    parser.finish()
-
+                tbpl_status, log_level, summary = parser.evaluate_parser(
+                    return_code, previous_summary=summary
+                )
                 self.record_status(tbpl_status, level=log_level)
 
                 if len(per_test_args) > 0:

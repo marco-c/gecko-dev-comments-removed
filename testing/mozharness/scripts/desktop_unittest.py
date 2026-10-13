@@ -694,7 +694,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             abs_app_dir = self.query_abs_app_dir()
             abs_res_dir = self.query_abs_res_dir()
 
-            raw_log_file, error_summary_file = self.get_indexed_logs(
+            raw_log_file, error_summary_file, test_summary_file = self.get_indexed_logs(
                 dirs["abs_blob_upload_dir"], suite
             )
 
@@ -706,6 +706,7 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                 "abs_res_dir": abs_res_dir,
                 "raw_log_file": raw_log_file,
                 "error_summary_file": error_summary_file,
+                "test_summary_file": test_summary_file,
                 "gtest_dir": os.path.join(dirs["abs_test_install_dir"], "gtest"),
             }
 
@@ -1358,10 +1359,6 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     config=self.config,
                     error_list=error_list,
                     log_obj=self.log_obj,
-                    test_summary_file=self.query_test_summary_file(
-                        dirs["abs_blob_upload_dir"],
-                        self.config["suite_definitions"][suite_category],
-                    ),
                 )
 
                 if suite_category == "reftest":
@@ -1466,38 +1463,37 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
                     if self.per_test_coverage:
                         self.set_coverage_env(final_env)
 
-                    try:
-                        with VideoTestRecorder(suite, self):
-                            return_code = self.run_command(
-                                final_cmd,
-                                cwd=dirs["abs_work_dir"],
-                                output_timeout=cmd_timeout,
-                                output_parser=parser,
-                                env=final_env,
-                            )
-
-                        if self.per_test_coverage:
-                            self.add_per_test_coverage_report(
-                                final_env, suite, per_test_args[-1]
-                            )
-
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-
-                        success_codes = None
-                        tbpl_status, log_level, summary = parser.evaluate_parser(
-                            return_code, success_codes, summary
+                    with VideoTestRecorder(suite, self):
+                        return_code = self.run_command(
+                            final_cmd,
+                            cwd=dirs["abs_work_dir"],
+                            output_timeout=cmd_timeout,
+                            output_parser=parser,
+                            env=final_env,
                         )
-                        parser.append_tinderboxprint_line(suite_name)
-                    finally:
-                        parser.finish()
+
+                    self.append_test_summary(dirs["abs_blob_upload_dir"])
+
+                    if self.per_test_coverage:
+                        self.add_per_test_coverage_report(
+                            final_env, suite, per_test_args[-1]
+                        )
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+
+                    success_codes = None
+                    tbpl_status, log_level, summary = parser.evaluate_parser(
+                        return_code, success_codes, summary
+                    )
+                    parser.append_tinderboxprint_line(suite_name)
 
                     self.record_status(tbpl_status, level=log_level)
                     if len(per_test_args) > 0:
