@@ -4986,7 +4986,8 @@ nsCSSFrameConstructor::FindElementData(const Element& aElement,
     
     if (aParentFrame && IsFrameForSVG(aParentFrame) &&
         !aParentFrame->IsSVGForeignObjectFrame() &&
-        !aElement.IsRootOfNativeAnonymousSubtree()) {
+        (aElement.GetParent() != aParentFrame->GetContent() ||
+         !aElement.IsRootOfNativeAnonymousSubtree())) {
       return nullptr;
     }
     if (aFlags.contains(ItemFlag::IsWithinSVGText)) {
