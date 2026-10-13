@@ -3501,21 +3501,6 @@ Maybe<webgl::ErrorInfo> CheckBindBufferRange(
     }
   }
 
-  
-  
-  if (isBuffer) {
-    if (!CheckedInt<GLintptr>(offset).isValid()) {
-      const auto info = nsPrintfCString("`offset` (%" PRIu64
-                                        ") must fit in GLintptr." offset);
-      return fnSome(LOCAL_GL_INVALID_VALUE, info);
-    }
-    if (!CheckedInt<GLsizeiptr>(size).isValid()) {
-      const auto info =
-          nsPrintfCString("`size` (%" PRIu64 ") must fit in GLsizeiptr.", size);
-      return fnSome(LOCAL_GL_INVALID_VALUE, info);
-    }
-  }
-
   return {};
 }
 
