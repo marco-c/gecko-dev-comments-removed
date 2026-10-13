@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.57
- * pdfjsBuild = 89b500f5e
+ * pdfjsVersion = 6.5.98
+ * pdfjsBuild = e0b4f473c
  */
 
 ;// ./web/ui_utils.js
@@ -901,7 +901,7 @@ const {
 } = globalThis.pdfjsLib;
 
 ;// ./web/internal_evt.js
-const INTERNAL_EVT = "c186cc9a-35f2-4903-bae3-54472b008de3";
+const INTERNAL_EVT = "00d6cec9-9520-48b0-bdb6-29767bc765ac";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -9053,11 +9053,14 @@ class PDFThumbnailViewer {
   #isInPasteMode = false;
   #hasUndoBarVisible = false;
   #newBadge = null;
+  #l10n = null;
+  #toggleBarId = 0;
   constructor({
     container,
     eventBus,
     linkService,
     renderingQueue,
+    l10n,
     maxCanvasPixels,
     maxCanvasDim,
     pageColors,
@@ -9076,6 +9079,7 @@ class PDFThumbnailViewer {
     this.eventBus = eventBus;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
+    this.#l10n = l10n;
     this.maxCanvasPixels = maxCanvasPixels;
     this.maxCanvasDim = maxCanvasDim;
     this.pageColors = pageColors || null;
@@ -9737,9 +9741,7 @@ class PDFThumbnailViewer {
     return size > 0 && size < this._thumbnails.length;
   }
   #toggleBar(type, message, args) {
-    this.#statusBar.classList.toggle("hidden", type !== "status");
-    this.#waitingBar.container.classList.toggle("hidden", type !== "waiting");
-    this.#undoBar.classList.toggle("hidden", type !== "undo");
+    const id = ++this.#toggleBarId;
     this.#hasUndoBarVisible = type === "undo";
     switch (type) {
       case "waiting":
@@ -9752,14 +9754,36 @@ class PDFThumbnailViewer {
         }
         break;
       case "status":
-        if (args) {
-          this.#statusLabel.setAttribute("data-l10n-args", JSON.stringify(args));
-        } else {
-          this.#statusLabel.removeAttribute("data-l10n-args");
+        {
+          const label = this.#statusLabel;
+          message ||= label.getAttribute("data-l10n-id");
+          this.#l10n.get(message, args).then(text => {
+            if (id !== this.#toggleBarId) {
+              return;
+            }
+            this.#l10n.pause();
+            label.setAttribute("data-l10n-id", message);
+            if (args) {
+              label.setAttribute("data-l10n-args", JSON.stringify(args));
+            } else {
+              label.removeAttribute("data-l10n-args");
+            }
+            label.textContent = text;
+            this.#l10n.resume();
+            this.#showBar(type, !!args);
+          });
+          return;
         }
-        this.#newBadge?.classList.toggle("hidden", !!args);
-        this.#deselectButton.classList.toggle("hidden", !args);
-        break;
+    }
+    this.#showBar(type);
+  }
+  #showBar(type, hasSelection = false) {
+    this.#statusBar.classList.toggle("hidden", type !== "status");
+    this.#waitingBar.container.classList.toggle("hidden", type !== "waiting");
+    this.#undoBar.classList.toggle("hidden", type !== "undo");
+    if (type === "status") {
+      this.#newBadge?.classList.toggle("hidden", hasSelection);
+      this.#deselectButton.classList.toggle("hidden", !hasSelection);
     }
   }
   #togglePasteMode(enable) {
@@ -9897,8 +9921,7 @@ class PDFThumbnailViewer {
     }
     const count = this.#selectedPages?.size || 0;
     if (type === "select") {
-      this.#statusLabel.setAttribute("data-l10n-id", count ? "pdfjs-views-manager-pages-status-action-label" : "pdfjs-views-manager-pages-status-none-action-label");
-      this.#toggleBar("status", "", count ? {
+      this.#toggleBar("status", count ? "pdfjs-views-manager-pages-status-action-label" : "pdfjs-views-manager-pages-status-none-action-label", count ? {
         count
       } : null);
       return;
@@ -13347,7 +13370,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "6.5.57";
+    const viewerVersion = "6.5.98";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -17924,6 +17947,7 @@ const PDFViewerApplication = {
         eventBus,
         renderingQueue,
         linkService,
+        l10n,
         maxCanvasPixels,
         maxCanvasDim,
         pageColors,
