@@ -119,7 +119,7 @@ public class PictureInPictureActivity extends AppCompatActivity {
   
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
   private void releaseSession() {
-    if (mSourceSession != null) {
+    if (mSourceSession != null && mSourceSession.isOpen()) {
       mSourceSession.getSessionPictureInPicture().exit();
       PipSessionHolder.releaseSource(mSourceSession);
     }

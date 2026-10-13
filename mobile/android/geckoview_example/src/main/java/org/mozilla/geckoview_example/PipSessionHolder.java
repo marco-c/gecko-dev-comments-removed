@@ -46,6 +46,19 @@ public final class PipSessionHolder {
 
 
   @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  public static void closeWindowFor(@NonNull final GeckoSession session) {
+    final PictureInPictureActivity window = getActiveActivity();
+    if (window != null && window.isShowingSource(session)) {
+      window.closeForGecko();
+    }
+    session.getSessionPictureInPicture().setKeepActive(false);
+  }
+
+  
+
+
+
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
   public static void releaseSource(@NonNull final GeckoSession session) {
     session.getSessionPictureInPicture().setKeepActive(false);
     if (session != sVisibleSession) {
