@@ -7,14 +7,14 @@ use mozbuild::config;
 use std::{
     ffi::OsString,
     fs::{self, File},
-    io,
+    io::{self, Write},
     path::PathBuf,
 };
 
 
 pub(crate) fn init() {
     let user_app_data_dir = guess_user_app_data_dir(std::env::var_os("MOZ_APP_DATA"));
-    let log_target = make_log_target(user_app_data_dir);
+    let log_target = make_log_target(user_app_data_dir, config::MOZ_UPDATE_CHANNEL);
 
     env_logger::builder()
         .filter_level(log::LevelFilter::Warn)
@@ -99,17 +99,27 @@ fn path_from_env_value(_value: OsString) -> Option<PathBuf> {
     None
 }
 
-fn make_log_target(log_directory: Option<PathBuf>) -> Box<dyn io::Write + Send + 'static> {
+fn make_log_target(
+    log_directory: Option<PathBuf>,
+    update_channel: &str,
+) -> Box<dyn Write + Send + 'static> {
     if let Some(log_directory) = log_directory.map(|path| path.join("Crash Reports")) {
         if fs::create_dir_all(&log_directory).is_ok() {
-            let log_path = log_directory.join(concat!(env!("CARGO_PKG_NAME"), ".log"));
-            if let Ok(log) = File::create(log_path) {
+            if let Ok(log) = File::create(log_directory.join(log_file_name(update_channel))) {
                 return Box::new(log);
             }
         }
     }
 
     Box::new(io::stderr())
+}
+
+
+
+
+
+fn log_file_name(update_channel: &str) -> String {
+    format!("{}-{}.log", env!("CARGO_PKG_NAME"), update_channel)
 }
 
 #[cfg(test)]
@@ -175,5 +185,54 @@ mod tests {
             guess_user_app_data_dir(Some(OsString::from("relative/dir"))),
             default_dir
         );
+    }
+
+    #[test]
+    fn log_file_is_truncated_on_start() {
+        let directory =
+            std::env::temp_dir().join(format!("crash_helper_truncate_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+
+        for line in ["first\n", "second\n"] {
+            let mut log = make_log_target(Some(directory.clone()), "nightly");
+            log.write_all(line.as_bytes()).unwrap();
+            log.flush().unwrap();
+        }
+        let path = directory
+            .join("Crash Reports")
+            .join("crash_helper_server-nightly.log");
+        assert_eq!(fs::read_to_string(&path).unwrap(), "second\n");
+
+        fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
+    fn log_files_of_other_channels_are_kept() {
+        let directory =
+            std::env::temp_dir().join(format!("crash_helper_channels_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+
+        let mut release_log = make_log_target(Some(directory.clone()), "release");
+        release_log.write_all(b"release error\n").unwrap();
+        release_log.flush().unwrap();
+        drop(release_log);
+
+        for line in ["first nightly run\n", "second nightly run\n"] {
+            let mut nightly_log = make_log_target(Some(directory.clone()), "nightly");
+            nightly_log.write_all(line.as_bytes()).unwrap();
+            nightly_log.flush().unwrap();
+        }
+
+        let crash_reports = directory.join("Crash Reports");
+        assert_eq!(
+            fs::read_to_string(crash_reports.join("crash_helper_server-release.log")).unwrap(),
+            "release error\n"
+        );
+        assert_eq!(
+            fs::read_to_string(crash_reports.join("crash_helper_server-nightly.log")).unwrap(),
+            "second nightly run\n"
+        );
+
+        fs::remove_dir_all(&directory).unwrap();
     }
 }
