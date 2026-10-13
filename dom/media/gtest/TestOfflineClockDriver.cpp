@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "MockGraphInterface.h"
 #include "gtest/gtest.h"
 #include "mozilla/gtest/WaitFor.h"
@@ -42,7 +40,7 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         .WillOnce([&](GraphTime aTime) {
           
           graph->StopIterating();
-          doneHolder.Resolve(true, __func__);
+          RefPtr(doneHolder.Steal())->Resolve(true, __func__);
         });
   }
 
