@@ -12,7 +12,7 @@ namespace mozilla {
 
 class SdpAttributeList {
  public:
-  virtual ~SdpAttributeList() {}
+  virtual ~SdpAttributeList() = default;
   typedef SdpAttribute::AttributeType AttributeType;
 
   

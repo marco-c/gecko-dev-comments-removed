@@ -2,12 +2,8 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_OPENCLIENTDIRECTORYUTILS_H_
 #define DOM_QUOTA_OPENCLIENTDIRECTORYUTILS_H_
-
-#include <functional>
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
@@ -83,10 +79,10 @@ auto MaybeInitialize(RefPtr<UniversalDirectoryLock> aDirectoryLock,
                                std::forward<Callable>(aCallable));
 }
 
-auto MaybeInitialize(RefPtr<UniversalDirectoryLock> aDirectoryLock,
-                     RefPtr<QuotaManager> aQuotaManager,
-                     RefPtr<BoolPromise> (QuotaManager::*aMethod)(
-                         RefPtr<UniversalDirectoryLock>)) {
+inline auto MaybeInitialize(RefPtr<UniversalDirectoryLock> aDirectoryLock,
+                            RefPtr<QuotaManager> aQuotaManager,
+                            RefPtr<BoolPromise> (QuotaManager::*aMethod)(
+                                RefPtr<UniversalDirectoryLock>)) {
   return MaybeInitializeHelper(
       std::move(aDirectoryLock),
       [quotaManager = std::move(aQuotaManager),

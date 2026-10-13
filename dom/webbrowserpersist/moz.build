@@ -1,10 +1,8 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-
-
-
-
-
+# moved from embedding/components/webbrowserpersist Jan 13, 2017
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
@@ -46,4 +44,13 @@ LOCAL_INCLUDES += [
     "/docshell/shistory",
     "/dom/base",
     "/dom/html",
+]
+
+SOURCE_HEADERS += [
+    "nsWebBrowserPersist.h",
+    "WebBrowserPersistRemoteDocument.h",
+    "WebBrowserPersistResourcesChild.h",
+    "WebBrowserPersistResourcesParent.h",
+    "WebBrowserPersistSerializeChild.h",
+    "WebBrowserPersistSerializeParent.h",
 ]

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_QUOTA_QUOTAREQUESTBASE_H_
 #define DOM_QUOTA_QUOTAREQUESTBASE_H_
 
@@ -21,9 +19,7 @@ class QuotaRequestBase : public NormalOriginOperationBase,
 
  protected:
   QuotaRequestBase(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
-                   const char* aName)
-      : NormalOriginOperationBase(std::move(aQuotaManager), aName),
-        mActorDestroyed(false) {}
+                   const char* aName);
 
   virtual ~QuotaRequestBase();
 

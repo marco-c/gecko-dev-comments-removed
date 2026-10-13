@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla.dom += [
     "FileSystemAccessHandleChild.h",
@@ -18,6 +16,7 @@ UNIFIED_SOURCES += [
     "FileSystemBackgroundRequestHandler.cpp",
     "FileSystemChildFactory.cpp",
     "FileSystemDirectoryIteratorFactory.cpp",
+    "FileSystemEntryMetadataArray.cpp",
     "FileSystemManagerChild.cpp",
     "FileSystemRequestHandler.cpp",
     "FileSystemShutdownBlocker.cpp",
@@ -33,3 +32,9 @@ LOCAL_INCLUDES += [
 FINAL_LIBRARY = "xul"
 
 include("/ipc/chromium/chromium-config.mozbuild")
+
+SOURCE_HEADERS += [
+    "FileSystemBackgroundRequestHandler.h",
+    "FileSystemDirectoryIteratorFactory.h",
+    "FileSystemEntryMetadataArray.h",
+]

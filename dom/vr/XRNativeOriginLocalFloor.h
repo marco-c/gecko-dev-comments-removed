@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XRNativeOriginLocalFloor_h_
 #define mozilla_dom_XRNativeOriginLocalFloor_h_
 
@@ -24,7 +22,7 @@ class XRNativeOriginLocalFloor : public XRNativeOrigin {
   gfx::PointDouble3D GetPosition() override;
 
  private:
-  ~XRNativeOriginLocalFloor() = default;
+  ~XRNativeOriginLocalFloor();
   RefPtr<gfx::VRDisplayClient> mDisplay;
   gfx::PointDouble3D mInitialPosition;
   gfx::Matrix4x4 mStandingTransform;

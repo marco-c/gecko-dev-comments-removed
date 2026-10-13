@@ -2,10 +2,10 @@
 
 
 
-
-
 #ifndef txOwningArray_h_
 #define txOwningArray_h_
+
+#include "nsTArray.h"
 
 
 

@@ -1371,6 +1371,8 @@ XMLHttpRequestWorker::~XMLHttpRequestWorker() {
   mozilla::DropJSObjects(this);
 }
 
+XMLHttpRequestWorker::ResponseData::ResponseData() : mResponseResult(NS_OK) {}
+
 NS_IMPL_ADDREF_INHERITED(XMLHttpRequestWorker, XMLHttpRequestEventTarget)
 NS_IMPL_RELEASE_INHERITED(XMLHttpRequestWorker, XMLHttpRequestEventTarget)
 
@@ -2098,6 +2100,15 @@ void XMLHttpRequestWorker::Abort(ErrorResult& aRv) {
   WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
   RefPtr<AbortRunnable> runnable = new AbortRunnable(workerPrivate, mProxy);
   runnable->Dispatch(workerPrivate, Canceling, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  if (!mProxy) {
+    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug, ("Abort(no proxy)"));
+    return;
+  }
 
   
   if ((mStateData->mReadyState == XMLHttpRequest_Binding::OPENED &&

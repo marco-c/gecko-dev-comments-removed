@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XMLHttpRequestWorker_h
 #define mozilla_dom_XMLHttpRequestWorker_h
 
@@ -43,7 +41,7 @@ class XMLHttpRequestWorker final : public SupportsWeakPtr,
     
     nsString mResponseJSON;
 
-    ResponseData() : mResponseResult(NS_OK) {}
+    ResponseData();
   };
 
   struct StateData {

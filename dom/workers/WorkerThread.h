@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_workers_WorkerThread_h_
 #define mozilla_dom_workers_WorkerThread_h_
 
@@ -36,8 +34,10 @@ class WorkerThreadFriendKey {
   friend class workerinternals::RuntimeService;
   friend class WorkerPrivate;
 
+  
   WorkerThreadFriendKey();
   ~WorkerThreadFriendKey();
+  
 };
 
 class WorkerThread final : public nsThread {

@@ -1,8 +1,6 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 XPIDL_MODULE = "content_geckomediaplugins"
 
@@ -130,7 +128,7 @@ DEFINES["MOZ_APP_NAME"] = '"%s"' % CONFIG["MOZ_APP_NAME"]
 include("/ipc/chromium/chromium-config.mozbuild")
 
 if CONFIG["MOZ_SANDBOX"]:
-    
+    # For sandbox includes and the include dependencies those have
     LOCAL_INCLUDES += [
         "/security/sandbox/chromium",
         "/security/sandbox/chromium-shim",
@@ -138,10 +136,19 @@ if CONFIG["MOZ_SANDBOX"]:
 
 
 FINAL_LIBRARY = "xul"
-
+# dom/media/webrtc/transport so we work with --disable-webrtc
 LOCAL_INCLUDES += [
     "/dom/media/webrtc/transport",
     "/xpcom/base",
     "/xpcom/build",
     "/xpcom/threads",
+]
+
+SOURCE_HEADERS += [
+    "CDMStorageIdProvider.h",
+    "ChromiumCDMAdapter.h",
+    "ChromiumCDMCallbackProxy.h",
+    "ChromiumCDMChild.h",
+    "ChromiumCDMCompat.h",
+    "GMPLog.h",
 ]

@@ -2,14 +2,17 @@
 
 
 
-
-
 #include "QuotaRequestBase.h"
 
 #include "mozilla/dom/quota/PQuotaUsageRequest.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 
 namespace mozilla::dom::quota {
+
+QuotaRequestBase::QuotaRequestBase(
+    MovingNotNull<RefPtr<QuotaManager>> aQuotaManager, const char* aName)
+    : NormalOriginOperationBase(std::move(aQuotaManager), aName),
+      mActorDestroyed(false) {}
 
 QuotaRequestBase::~QuotaRequestBase() {
   AssertIsOnOwningThread();

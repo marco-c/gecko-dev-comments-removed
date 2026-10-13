@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_dom_media_FileMediaResource_h
 #define mozilla_dom_media_FileMediaResource_h
 
@@ -14,12 +13,8 @@ namespace mozilla {
 class FileMediaResource : public BaseMediaResource {
  public:
   FileMediaResource(MediaResourceCallback* aCallback, nsIChannel* aChannel,
-                    nsIURI* aURI, int64_t aSize = -1 )
-      : BaseMediaResource(aCallback, aChannel, aURI),
-        mSize(aSize),
-        mLock("FileMediaResource.mLock"),
-        mSizeInitialized(aSize != -1) {}
-  ~FileMediaResource() = default;
+                    nsIURI* aURI, int64_t aSize = -1 );
+  ~FileMediaResource();
 
   
   nsresult Open(nsIStreamListener** aStreamListener) override;

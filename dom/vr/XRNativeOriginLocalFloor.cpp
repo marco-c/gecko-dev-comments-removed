@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XRNativeOriginLocalFloor.h"
 
 #include "VRDisplayClient.h"
@@ -23,6 +21,8 @@ XRNativeOriginLocalFloor::XRNativeOriginLocalFloor(
   const double kFloorFuzz = StaticPrefs::dom_vr_webxr_quantization();  
   mFloorRandom = double(rand()) / double(RAND_MAX) * kFloorFuzz;
 }
+
+XRNativeOriginLocalFloor::~XRNativeOriginLocalFloor() = default;
 
 gfx::PointDouble3D XRNativeOriginLocalFloor::GetPosition() {
   

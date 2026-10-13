@@ -2,11 +2,10 @@
 
 
 
-
-
 #if !defined(PureOmxPlatformLayer_h_)
 #  define PureOmxPlatformLayer_h_
 
+#  include "OMX_Component.h"
 #  include "OmxPlatformLayer.h"
 
 namespace mozilla {

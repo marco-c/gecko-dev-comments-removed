@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FS_CHILD_FILESYSTEMENTRYMETADATAARRAY_H_
 #define DOM_FS_CHILD_FILESYSTEMENTRYMETADATAARRAY_H_
 
@@ -18,7 +16,7 @@ class FileSystemEntryMetadataArray : public nsTArray<FileSystemEntryMetadata> {
   NS_INLINE_DECL_REFCOUNTING(FileSystemEntryMetadataArray);
 
  private:
-  ~FileSystemEntryMetadataArray() = default;
+  ~FileSystemEntryMetadataArray();
 };
 
 }  

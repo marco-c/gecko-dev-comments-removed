@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_XRNativeOriginViewer_h_
 #define mozilla_dom_XRNativeOriginViewer_h_
 
@@ -25,7 +23,7 @@ class XRNativeOriginViewer : public XRNativeOrigin {
   gfx::QuaternionDouble GetOrientation() override;
 
  private:
-  ~XRNativeOriginViewer() = default;
+  ~XRNativeOriginViewer();
   RefPtr<gfx::VRDisplayClient> mDisplay;
 };
 

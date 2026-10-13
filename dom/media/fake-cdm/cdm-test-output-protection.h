@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_FAKE_CDM_CDM_TEST_OUTPUT_PROTECTION_H_
 #define DOM_MEDIA_FAKE_CDM_CDM_TEST_OUTPUT_PROTECTION_H_
 
@@ -17,6 +15,8 @@
 
 #  include "opmapi.h"
 #endif
+
+#include "cdm-test-decryptor.h"
 
 namespace mozilla::cdmtest {
 

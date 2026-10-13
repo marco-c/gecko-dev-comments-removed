@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_SVG_SVGTRANSFORMLISTPARSER_H_
 #define DOM_SVG_SVGTRANSFORMLISTPARSER_H_
 
@@ -22,8 +20,7 @@ class SVGTransform;
 
 class SVGTransformListParser : public SVGDataParser {
  public:
-  explicit SVGTransformListParser(const nsAString& aValue)
-      : SVGDataParser(aValue) {}
+  explicit SVGTransformListParser(const nsAString& aValue);
 
   bool Parse();
 

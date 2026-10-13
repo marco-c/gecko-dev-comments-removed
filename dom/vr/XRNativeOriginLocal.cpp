@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "XRNativeOriginLocal.h"
 
 #include "VRDisplayClient.h"
@@ -14,6 +12,8 @@ XRNativeOriginLocal::XRNativeOriginLocal(gfx::VRDisplayClient* aDisplay)
     : mDisplay(aDisplay), mInitialPositionValid(false) {
   MOZ_ASSERT(aDisplay);
 }
+
+XRNativeOriginLocal::~XRNativeOriginLocal() = default;
 
 gfx::PointDouble3D XRNativeOriginLocal::GetPosition() {
   

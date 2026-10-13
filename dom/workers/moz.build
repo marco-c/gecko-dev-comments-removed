@@ -1,15 +1,13 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Workers")
 
 DIRS += ["remoteworkers", "sharedworkers", "loader"]
 
-
+# Public stuff.
 EXPORTS.mozilla.dom += [
     "ChromeWorker.h",
     "EventWithOptionsRunnable.h",
@@ -33,7 +31,7 @@ EXPORTS.mozilla.dom += [
     "WorkerTestUtils.h",
 ]
 
-
+# Private stuff.
 EXPORTS.mozilla.dom.workerinternals += [
     "JSSettings.h",
     "Queue.h",
@@ -112,3 +110,11 @@ MARIONETTE_MANIFESTS += ["test/marionette/manifest.toml"]
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
 BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
+
+SOURCE_HEADERS += [
+    "ChromeWorkerScope.h",
+    "MessageEventRunnable.h",
+    "WorkerCSPEventListener.h",
+    "WorkerEventTarget.h",
+    "WorkerThread.h",
+]

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ColorPickerParent.h"
 
 #include "mozilla/dom/BrowserParent.h"
@@ -12,6 +10,17 @@
 #include "nsComponentManagerUtils.h"
 
 using namespace mozilla::dom;
+
+ColorPickerParent::ColorPickerParent(BrowsingContext* aBrowsingContext,
+                                     const nsString& aTitle,
+                                     const nsString& aInitialColor,
+                                     const nsTArray<nsString>& aDefaultColors)
+    : mBrowsingContext(aBrowsingContext),
+      mTitle(aTitle),
+      mInitialColor(aInitialColor),
+      mDefaultColors(aDefaultColors.Clone()) {}
+
+ColorPickerParent::~ColorPickerParent() = default;
 
 NS_IMPL_ISUPPORTS(ColorPickerParent::ColorPickerShownCallback,
                   nsIColorPickerShownCallback);

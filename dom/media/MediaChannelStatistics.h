@@ -2,7 +2,6 @@
 
 
 
-
 #if !defined(MediaChannelStatistics_h_)
 #  define MediaChannelStatistics_h_
 
@@ -36,7 +35,7 @@ class MediaChannelStatistics {
 
   void Reset() {
     mLastStartTime = TimeStamp();
-    mAccumulatedTime = TimeDuration(0);
+    mAccumulatedTime = TimeDuration();
     mAccumulatedBytes = 0;
     mIsStarted = false;
   }

@@ -1,13 +1,11 @@
-
-
-
-
-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "DOM: Service Workers")
 
-
+# Public stuff.
 EXPORTS.mozilla.dom += [
     "FetchEventOpChild.h",
     "FetchEventOpParent.h",
@@ -101,9 +99,9 @@ IPDL_SOURCES += [
 ]
 
 LOCAL_INCLUDES += [
-    
+    # For HttpBaseChannel.h dependencies
     "/netwerk/base",
-    
+    # For HttpBaseChannel.h
     "/netwerk/protocol/http",
 ]
 
@@ -130,3 +128,20 @@ BROWSER_CHROME_MANIFESTS += [
 ]
 
 TEST_DIRS += ["test/gtest"]
+
+SOURCE_HEADERS += [
+    "ServiceWorkerContainerProxy.h",
+    "ServiceWorkerJob.h",
+    "ServiceWorkerJobQueue.h",
+    "ServiceWorkerPrivate.h",
+    "ServiceWorkerProxy.h",
+    "ServiceWorkerQuotaUtils.h",
+    "ServiceWorkerRegisterJob.h",
+    "ServiceWorkerRegistrationListener.h",
+    "ServiceWorkerRegistrationProxy.h",
+    "ServiceWorkerScriptCache.h",
+    "ServiceWorkerShutdownBlocker.h",
+    "ServiceWorkerUnregisterCallback.h",
+    "ServiceWorkerUnregisterJob.h",
+    "ServiceWorkerUpdateJob.h",
+]

@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ReadableStreamTee_h
 #define mozilla_dom_ReadableStreamTee_h
 
@@ -30,8 +28,7 @@ class ReadableStreamDefaultTeeSourceAlgorithms final
       ReadableStreamDefaultTeeSourceAlgorithms, UnderlyingSourceAlgorithmsBase)
 
   ReadableStreamDefaultTeeSourceAlgorithms(TeeState* aTeeState,
-                                           TeeBranch aBranch)
-      : mTeeState(aTeeState), mBranch(aBranch) {}
+                                           TeeBranch aBranch);
 
   MOZ_CAN_RUN_SCRIPT void StartCallback(
       JSContext* aCx, ReadableStreamControllerBase& aController,
@@ -48,7 +45,7 @@ class ReadableStreamDefaultTeeSourceAlgorithms final
       ErrorResult& aRv) override;
 
  protected:
-  ~ReadableStreamDefaultTeeSourceAlgorithms() override = default;
+  ~ReadableStreamDefaultTeeSourceAlgorithms();
 
  private:
   
@@ -65,8 +62,7 @@ struct ReadableStreamDefaultTeeReadRequest final : public ReadRequest {
 
   RefPtr<TeeState> mTeeState;
 
-  explicit ReadableStreamDefaultTeeReadRequest(TeeState* aTeeState)
-      : mTeeState(aTeeState) {}
+  explicit ReadableStreamDefaultTeeReadRequest(TeeState* aTeeState);
 
   void ChunkSteps(JSContext* aCx, JS::Handle<JS::Value> aChunk,
                   ErrorResult& aRv) override;

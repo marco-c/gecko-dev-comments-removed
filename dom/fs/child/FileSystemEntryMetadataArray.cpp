@@ -1,0 +1,13 @@
+
+
+
+
+#include "FileSystemEntryMetadataArray.h"
+
+#include "mozilla/dom/PFileSystemManager.h"
+
+namespace mozilla::dom::fs {
+
+FileSystemEntryMetadataArray::~FileSystemEntryMetadataArray() = default;
+
+}  

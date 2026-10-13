@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MITRE_ERROROBSERVER_H
 #define MITRE_ERROROBSERVER_H
 
@@ -16,7 +15,7 @@ class ErrorObserver {
   
 
 
-  virtual ~ErrorObserver() {};
+  virtual ~ErrorObserver() = default;
 
   
 
