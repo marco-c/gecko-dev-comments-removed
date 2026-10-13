@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import subprocess
+import textwrap
 import typing
 from collections import defaultdict
 from itertools import dropwhile
@@ -435,7 +436,71 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
                 return True
         return False
 
+    @staticmethod
+    def notice_licenses(package, license_string):
+        """The licenses `package` is only accepted under because it is named in
+        RUNTIME_LICENSE_PACKAGE_ALLOWLIST, which about:license must then carry.
+
+        Empty when one of its alternatives is accepted for every package."""
+        if re.search(r"\s+AND", license_string):
+            return []
+        license_list = re.split(r"\s*/\s*|\s+OR\s+", license_string)
+        if any(l in VendorRust.RUNTIME_LICENSE_ALLOWLIST for l in license_list):
+            return []
+        return [
+            l
+            for l in license_list
+            if package in VendorRust.RUNTIME_LICENSE_PACKAGE_ALLOWLIST.get(l, [])
+        ]
+
+    def _check_license_notices(self, vendor_dir, notice_licenses):
+        """Check that about:license covers every crate in `notice_licenses`, a
+        map from crate directory name to the licenses it needs a notice for."""
+        from mozbuild.licenses import covering_licenses, declared_coverage
+
+        if not notice_licenses:
+            return True
+
+        tracked = self.repository.get_tracked_files_finder()
+        mozbuild_paths = [
+            path
+            for pattern in ("**/moz.build", "**/*.mozbuild")
+            for path, _ in tracked.find(pattern)
+            
+            if not path.startswith("python/mozbuild/mozbuild/test/")
+        ]
+        coverage = declared_coverage(self.topsrcdir, mozbuild_paths)
+
+        def spdx_ids(license_id):
+            return set(re.findall(r"[\w.+-]+", coverage[license_id]["spdx"] or ""))
+
+        ok = True
+        for package, licenses in sorted(notice_licenses.items()):
+            crate_dir = mozpath.relpath(
+                mozpath.join(vendor_dir, package), self.topsrcdir
+            )
+            covering = covering_licenses(crate_dir, coverage)
+            if any(set(licenses) & spdx_ids(c) for c in covering):
+                continue
+            self.log(
+                logging.ERROR,
+                "package_license_notice_missing",
+                {},
+                textwrap.dedent(
+                    f"""\
+                    Package {package} is licensed under {" or ".join(licenses)}, which requires
+                    a notice in about:license, but no LICENSES declaration with that `spdx` covers
+                    {crate_dir}. Add it to the `paths` of one, such as the shared notices in
+                    toolkit/content/licenses/moz.build.
+                    """
+                ),
+            )
+            ok = False
+        return ok
+
     def _check_licenses(self, vendor_dir: str) -> bool:
+        notice_licenses = {}
+
         def verify_acceptable_license(package: str, license: str) -> bool:
             self.log(logging.DEBUG, "package_license", {}, f"has license {license}")
 
@@ -467,6 +532,8 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     """,
                     )
                     return False
+            if needed := self.notice_licenses(package, license):
+                notice_licenses[package] = needed
             return True
 
         def check_package(package_name: str) -> bool:
@@ -580,6 +647,7 @@ license file's hash.
             for p in os.listdir(vendor_dir)
             if os.path.isdir(os.path.join(vendor_dir, p))
         ]
+        results.append(self._check_license_notices(vendor_dir, notice_licenses))
         return all(results)
 
     def _check_build_rust(self, cargo_lock):
