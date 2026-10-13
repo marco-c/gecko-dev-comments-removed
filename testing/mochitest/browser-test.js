@@ -57,6 +57,7 @@ const SIMPLETEST_OVERRIDES = [
   "info",
   "expectAssertions",
   "requestCompleteLog",
+  "registerCleanupFunction",
 ];
 
 
@@ -518,7 +519,6 @@ Tester.prototype = {
       "top",
       "Application",
       "__SS_tabsToRestore",
-      "__SSi",
       "webConsoleCommandController",
       
       "MailMigrator",
