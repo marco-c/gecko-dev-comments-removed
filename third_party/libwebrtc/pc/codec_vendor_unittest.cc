@@ -25,6 +25,7 @@
 #include "api/rtp_parameters.h"
 #include "api/rtp_transceiver_direction.h"
 #include "api/test/rtc_error_matchers.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "call/fake_payload_type_suggester.h"
 #include "media/base/codec.h"
 #include "media/base/codec_list.h"
@@ -34,6 +35,7 @@
 #include "pc/media_options.h"
 #include "pc/rtp_parameters_conversion.h"
 #include "pc/session_description.h"
+#include "pc/test/full_codec_matrix.h"
 #include "rtc_base/checks.h"
 #include "test/create_test_environment.h"
 #include "test/create_test_field_trials.h"
@@ -50,6 +52,7 @@ using ::testing::Field;
 using ::testing::Ne;
 using ::testing::Not;
 using ::testing::Pair;
+using ::testing::StrCaseEq;
 
 Codec CreateRedAudioCodec(absl::string_view encoding_id) {
   Codec red = CreateAudioCodec(63, "red", 48000, 2);
@@ -75,6 +78,47 @@ const Codec kAudioCodecsAnswer[] = {
     CreateAudioCodec(102, "G722", 16000, 1),
     CreateAudioCodec(0, "PCMU", 8000, 1),
 };
+
+
+
+
+
+
+void OccupyDynamicPayloadTypes(FakePayloadTypeSuggester& pt_suggester,
+                               MediaType media_type,
+                               int free_payload_types) {
+  int filler = 0;
+  int left_free = 0;
+  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
+    for (int pt = first; pt <= last; ++pt) {
+      if (left_free < free_payload_types) {
+        ++left_free;
+        continue;
+      }
+      std::string name = absl::StrCat("filler", filler++);
+      pt_suggester.AddLocalMapping("filler", PayloadType(pt),
+                                   media_type == MediaType::AUDIO
+                                       ? CreateAudioCodec(pt, name, 16000, 1)
+                                       : CreateVideoCodec(pt, name));
+    }
+  }
+}
+
+
+
+
+void OccupyPayloadTypeRange(FakePayloadTypeSuggester& pt_suggester,
+                            MediaType media_type,
+                            int first,
+                            int last) {
+  for (int pt = first; pt <= last; ++pt) {
+    std::string name = absl::StrCat("filler", pt);
+    pt_suggester.AddLocalMapping("filler", PayloadType(pt),
+                                 media_type == MediaType::AUDIO
+                                     ? CreateAudioCodec(pt, name, 16000, 1)
+                                     : CreateVideoCodec(pt, name));
+  }
+}
 
 TEST(CodecVendorTest, TestSetAudioCodecs) {
   FieldTrials trials =
@@ -587,14 +631,8 @@ TEST(CodecVendorTest, OfferFailsWhenPayloadTypeSpaceIsExhausted) {
   
   
   FakePayloadTypeSuggester pt_suggester;
-  int filler = 0;
-  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
-    for (int pt = first; pt <= last; ++pt) {
-      pt_suggester.AddLocalMapping(
-          "filler", PayloadType(pt),
-          CreateVideoCodec(pt, absl::StrCat("filler", filler++)));
-    }
-  }
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            0);
 
   RTCErrorOr<std::vector<Codec>> offered_codecs =
       codec_vendor.GetNegotiatedCodecsForOffer(
@@ -624,17 +662,8 @@ TEST(CodecVendorTest, OfferDoesNotAssignPayloadTypesToUnofferedCodecs) {
   
   
   FakePayloadTypeSuggester pt_suggester;
-  int filler = 0;
-  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
-    for (int pt = first; pt <= last; ++pt) {
-      if (pt == 35) {
-        continue;
-      }
-      pt_suggester.AddLocalMapping(
-          "filler", PayloadType(pt),
-          CreateVideoCodec(pt, "filler" + std::to_string(filler++)));
-    }
-  }
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            1);
 
   RTCErrorOr<std::vector<Codec>> offered_codecs =
       codec_vendor.GetNegotiatedCodecsForOffer(
@@ -648,34 +677,37 @@ TEST(CodecVendorTest, OfferDoesNotAssignPayloadTypesToUnofferedCodecs) {
 
 
 
-TEST(CodecVendorTest,
-     OfferDoesNotAssignPayloadTypesToCodecsExcludedByPreferences) {
-  Environment env = CreateTestEnvironment(
-      {.field_trials = "WebRTC-PayloadTypesInTransport/Disabled/"});
+class CodecVendorPayloadTypeTest : public ::testing::TestWithParam<bool> {
+ protected:
+  bool payload_types_in_transport() const { return GetParam(); }
+
+  const Environment env_ = CreateTestEnvironment(
+      {.field_trials = absl::string_view(
+           GetParam() ? "WebRTC-PayloadTypesInTransport/Enabled/"
+                      : "WebRTC-PayloadTypesInTransport/Disabled/")});
+};
+
+
+
+TEST_P(CodecVendorPayloadTypeTest,
+       OfferDoesNotAssignPayloadTypesToExcludedCodecs) {
   FakeMediaEngine media_engine;
+  
+  
   media_engine.SetVideoCodecs({CreateVideoCodec(96, "vp8"),
                                CreateVideoCodec(97, "vp9"),
                                CreateVideoCodec(98, "av1")});
   CodecVendor codec_vendor(&media_engine,  false,
-                           env.field_trials());
+                           env_.field_trials());
 
   FakePayloadTypeSuggester pt_suggester;
-  int filler = 0;
-  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
-    for (int pt = first; pt <= last; ++pt) {
-      if (pt == 35) {
-        continue;
-      }
-      pt_suggester.AddLocalMapping(
-          "filler", PayloadType(pt),
-          CreateVideoCodec(pt, "filler" + std::to_string(filler++)));
-    }
-  }
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            1);
 
   MediaDescriptionOptions options(MediaType::VIDEO, "mid",
                                   RtpTransceiverDirection::kSendRecv, false);
   RtpCodecCapability pref;
-  pref.name = "vp8";
+  pref.name = "av1";
   pref.kind = MediaType::VIDEO;
   pref.clock_rate = 90000;
   options.codec_preferences = {pref};
@@ -685,7 +717,7 @@ TEST(CodecVendorTest,
                                                nullptr, pt_suggester);
   ASSERT_TRUE(offered_codecs.ok()) << offered_codecs.error().message();
   EXPECT_THAT(offered_codecs.value(),
-              ElementsAre(Field(&Codec::name, Eq("vp8"))));
+              ElementsAre(Field(&Codec::name, Eq("av1"))));
 }
 
 
@@ -701,17 +733,8 @@ TEST(CodecVendorTest, OfferDoesNotAssignPayloadTypesToDanglingRedCodecs) {
                            env.field_trials());
 
   FakePayloadTypeSuggester pt_suggester;
-  int filler = 0;
-  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
-    for (int pt = first; pt <= last; ++pt) {
-      if (pt == 35) {
-        continue;
-      }
-      pt_suggester.AddLocalMapping(
-          "filler", PayloadType(pt),
-          CreateAudioCodec(pt, "filler" + std::to_string(filler++), 16000, 1));
-    }
-  }
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::AUDIO,
+                            1);
 
   MediaDescriptionOptions options(MediaType::AUDIO, "mid",
                                   RtpTransceiverDirection::kSendRecv, false);
@@ -748,17 +771,8 @@ TEST(CodecVendorTest, OfferRespectsCodecsToInclude) {
                            env.field_trials());
 
   FakePayloadTypeSuggester pt_suggester;
-  int filler = 0;
-  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
-    for (int pt = first; pt <= last; ++pt) {
-      if (pt == 35) {
-        continue;
-      }
-      pt_suggester.AddLocalMapping(
-          "filler", PayloadType(pt),
-          CreateVideoCodec(pt, "filler" + std::to_string(filler++)));
-    }
-  }
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            1);
 
   MediaDescriptionOptions options(MediaType::VIDEO, "mid",
                                   RtpTransceiverDirection::kSendRecv, false);
@@ -786,17 +800,8 @@ TEST(CodecVendorTest, OfferRespectsDirectionWithPayloadTypesInTransport) {
                            env.field_trials());
 
   FakePayloadTypeSuggester pt_suggester;
-  int filler = 0;
-  for (auto [first, last] : {std::pair{35, 63}, std::pair{96, 127}}) {
-    for (int pt = first; pt <= last; ++pt) {
-      if (pt == 35) {
-        continue;
-      }
-      pt_suggester.AddLocalMapping(
-          "filler", PayloadType(pt),
-          CreateVideoCodec(pt, "filler" + std::to_string(filler++)));
-    }
-  }
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            1);
 
   RTCErrorOr<std::vector<Codec>> offered_codecs =
       codec_vendor.GetNegotiatedCodecsForOffer(
@@ -807,6 +812,217 @@ TEST(CodecVendorTest, OfferRespectsDirectionWithPayloadTypesInTransport) {
   EXPECT_THAT(offered_codecs.value(),
               ElementsAre(Field(&Codec::name, Eq("vp8"))));
 }
+
+
+
+TEST_P(CodecVendorPayloadTypeTest,
+       OfferDoesNotAssignPayloadTypesToComfortNoise) {
+  FakeMediaEngine media_engine;
+  
+  
+  media_engine.SetAudioCodecs({CreateAudioCodec(107, "CN", 48000, 1),
+                               CreateAudioCodec(111, "opus", 48000, 2)});
+  CodecVendor codec_vendor(&media_engine,  false,
+                           env_.field_trials());
+
+  
+  
+  
+  FakePayloadTypeSuggester pt_suggester;
+  OccupyDynamicPayloadTypes(
+      pt_suggester, MediaType::AUDIO,
+      payload_types_in_transport() ? 3 : 1);
+
+  MediaSessionOptions session_options;
+  session_options.vad_enabled = false;
+  RTCErrorOr<std::vector<Codec>> offered_codecs =
+      codec_vendor.GetNegotiatedCodecsForOffer(
+          MediaDescriptionOptions(MediaType::AUDIO, "mid",
+                                  RtpTransceiverDirection::kSendRecv, false),
+          session_options, nullptr, pt_suggester);
+  ASSERT_TRUE(offered_codecs.ok()) << offered_codecs.error().message();
+  EXPECT_THAT(offered_codecs.value(),
+              Not(Contains(Field(&Codec::name, StrCaseEq("CN")))));
+  EXPECT_THAT(offered_codecs.value(),
+              Contains(Field(&Codec::name, Eq("opus"))));
+}
+
+
+
+TEST_P(CodecVendorPayloadTypeTest,
+       AnswerDoesNotAssignPayloadTypesToExcludedCodecs) {
+  FakeMediaEngine media_engine;
+  
+  
+  media_engine.SetVideoCodecs({CreateVideoCodec(96, "vp8"),
+                               CreateVideoCodec(97, "vp9"),
+                               CreateVideoCodec(98, "av1")});
+  CodecVendor codec_vendor(&media_engine,  false,
+                           env_.field_trials());
+
+  FakePayloadTypeSuggester pt_suggester;
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            1);
+
+  MediaDescriptionOptions options(MediaType::VIDEO, "mid",
+                                  RtpTransceiverDirection::kSendRecv, false);
+  RtpCodecCapability pref;
+  pref.name = "av1";
+  pref.kind = MediaType::VIDEO;
+  pref.clock_rate = 90000;
+  options.codec_preferences = {pref};
+
+  std::vector<Codec> codecs_from_offer = {CreateVideoCodec(96, "vp8"),
+                                          CreateVideoCodec(98, "av1")};
+  RTCErrorOr<std::vector<Codec>> answered_codecs =
+      codec_vendor.GetNegotiatedCodecsForAnswer(
+          options, MediaSessionOptions(), RtpTransceiverDirection::kSendRecv,
+          RtpTransceiverDirection::kSendRecv, nullptr,
+          codecs_from_offer, pt_suggester);
+  ASSERT_TRUE(answered_codecs.ok()) << answered_codecs.error().message();
+  EXPECT_THAT(answered_codecs.value(),
+              ElementsAre(Field(&Codec::name, Eq("av1"))));
+}
+
+
+
+TEST(CodecVendorTest, AnswerDoesNotAssignPayloadTypesToComfortNoise) {
+  Environment env = CreateTestEnvironment(
+      {.field_trials = "WebRTC-PayloadTypesInTransport/Disabled/"});
+  FakeMediaEngine media_engine;
+  
+  
+  media_engine.SetAudioCodecs({CreateAudioCodec(107, "CN", 48000, 1),
+                               CreateAudioCodec(111, "opus", 48000, 2)});
+  CodecVendor codec_vendor(&media_engine,  false,
+                           env.field_trials());
+
+  FakePayloadTypeSuggester pt_suggester;
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::AUDIO,
+                            1);
+
+  MediaSessionOptions session_options;
+  session_options.vad_enabled = false;
+  std::vector<Codec> codecs_from_offer = {
+      CreateAudioCodec(111, "opus", 48000, 2)};
+  RTCErrorOr<std::vector<Codec>> answered_codecs =
+      codec_vendor.GetNegotiatedCodecsForAnswer(
+          MediaDescriptionOptions(MediaType::AUDIO, "mid",
+                                  RtpTransceiverDirection::kSendRecv, false),
+          session_options, RtpTransceiverDirection::kSendRecv,
+          RtpTransceiverDirection::kSendRecv, nullptr,
+          codecs_from_offer, pt_suggester);
+  ASSERT_TRUE(answered_codecs.ok()) << answered_codecs.error().message();
+  EXPECT_THAT(answered_codecs.value(),
+              ElementsAre(Field(&Codec::name, Eq("opus"))));
+}
+
+
+
+TEST(CodecVendorWithPayloadTypesInTransportTest,
+     OfferDoesNotAssignPayloadTypesToExcludedFecCodecs) {
+  Environment env = CreateTestEnvironment(
+      {.field_trials = "WebRTC-PayloadTypesInTransport/Enabled/"});
+  FakeMediaEngine media_engine;
+  
+  
+  media_engine.SetVideoCodecs({CreateVideoCodec(96, "vp8"),
+                               CreateVideoCodec(97, kUlpfecCodecName),
+                               CreateVideoCodec(98, kFlexfecCodecName)});
+  CodecVendor codec_vendor(&media_engine,  false,
+                           env.field_trials());
+
+  
+  
+  FakePayloadTypeSuggester pt_suggester;
+  OccupyDynamicPayloadTypes(pt_suggester, MediaType::VIDEO,
+                            1);
+
+  MediaDescriptionOptions options(MediaType::VIDEO, "mid",
+                                  RtpTransceiverDirection::kSendRecv, false);
+  RtpCodecCapability pref;
+  pref.name = "vp8";
+  pref.kind = MediaType::VIDEO;
+  pref.clock_rate = 90000;
+  options.codec_preferences = {pref};
+
+  RTCErrorOr<std::vector<Codec>> offered_codecs =
+      codec_vendor.GetNegotiatedCodecsForOffer(options, MediaSessionOptions(),
+                                               nullptr, pt_suggester);
+  ASSERT_TRUE(offered_codecs.ok()) << offered_codecs.error().message();
+  EXPECT_THAT(offered_codecs.value(),
+              ElementsAre(Field(&Codec::name, Eq("vp8"))));
+}
+
+
+
+std::vector<RtpCodecCapability> Vp8AndAv1Preferences() {
+  const std::vector<SdpVideoFormat> formats = test::HardwareVideoFormats();
+  RtpCodecCapability rtx;
+  rtx.name = kRtxCodecName;
+  rtx.kind = MediaType::VIDEO;
+  rtx.clock_rate = kVideoCodecClockrate;
+  return {
+      ToRtpCodecCapability(
+          CreateVideoCodec(PayloadType::NotSet(), formats.front())),
+      ToRtpCodecCapability(
+          CreateVideoCodec(PayloadType::NotSet(), formats.back())),
+      rtx,
+  };
+}
+
+
+
+std::vector<Codec> Vp8AndAv1Offer() {
+  const std::vector<SdpVideoFormat> formats = test::HardwareVideoFormats();
+  return {CreateVideoCodec(120, formats.front()), CreateVideoRtxCodec(121, 120),
+          CreateVideoCodec(122, formats.back()), CreateVideoRtxCodec(123, 122)};
+}
+
+
+
+
+
+
+
+
+
+TEST_P(CodecVendorPayloadTypeTest,
+       AnswerWithHardwareCodecMatrixUnderPayloadTypePressure) {
+  FakeMediaEngine media_engine;
+  media_engine.SetVideoCodecs(test::HardwareVideoCodecs());
+  CodecVendor codec_vendor(&media_engine,  true,
+                           env_.field_trials());
+
+  
+  
+  FakePayloadTypeSuggester pt_suggester;
+  OccupyPayloadTypeRange(pt_suggester, MediaType::VIDEO, 35, 63);
+  OccupyPayloadTypeRange(pt_suggester, MediaType::VIDEO, 96, 119);
+
+  MediaDescriptionOptions options(MediaType::VIDEO, "mid",
+                                  RtpTransceiverDirection::kSendRecv, false);
+  options.codec_preferences = Vp8AndAv1Preferences();
+
+  RTCErrorOr<std::vector<Codec>> answered_codecs =
+      codec_vendor.GetNegotiatedCodecsForAnswer(
+          options, MediaSessionOptions(), RtpTransceiverDirection::kSendRecv,
+          RtpTransceiverDirection::kSendRecv, nullptr,
+          Vp8AndAv1Offer(), pt_suggester);
+  ASSERT_TRUE(answered_codecs.ok()) << answered_codecs.error().message();
+  EXPECT_THAT(answered_codecs.value(),
+              Contains(Field(&Codec::name, StrCaseEq("VP8"))));
+  EXPECT_THAT(answered_codecs.value(),
+              Contains(Field(&Codec::name, StrCaseEq("AV1"))));
+}
+
+INSTANTIATE_TEST_SUITE_P(PayloadTypesInTransport,
+                         CodecVendorPayloadTypeTest,
+                         ::testing::Bool(),
+                         [](const ::testing::TestParamInfo<bool>& info)
+                             -> std::string {
+                           return info.param ? "Enabled" : "Disabled";
+                         });
 
 }  
 }  
