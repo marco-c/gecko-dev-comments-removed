@@ -13,7 +13,6 @@ const REMOTE_ENV = "AUTOCONFIG_TEST_REMOTE_URL";
 
 const AUTOCONFIG_INPUT_PREFS = [
   "general.config.filename",
-  "general.config.vendor",
   "autoadmin.global_config_url",
   "autoadmin.offline_failover",
   "autoadmin.append_emailaddr",
@@ -116,11 +115,18 @@ add_task(async function test_profile_prefs() {
   );
 
   
+  
   readConfig("autoconfig-admin.cfg", {
-    userPrefs: {
+    defaultPrefs: {
       "general.config.vendor": "notautoconfig",
-      "general.config.filename": "notautoconfig.cfg",
+      "autoadmin.global_config_url": remoteUrl,
     },
+  });
+  await awaitRemoteFetch("the remote file is fetched despite the vendor");
+
+  
+  readConfig("autoconfig-admin.cfg", {
+    userPrefs: { "general.config.vendor": "notautoconfig" },
     defaultPrefs: { "autoadmin.global_config_url": remoteUrl },
   });
   await awaitRemoteFetch(
@@ -129,16 +135,8 @@ add_task(async function test_profile_prefs() {
 
   
   readConfig("autoconfig-admin-pref.cfg", {
-    userPrefs: {
-      "general.config.vendor": "notautoconfig",
-      "autoadmin.global_config_url": "file:///nonexistent.jsc",
-    },
+    userPrefs: { "autoadmin.global_config_url": "file:///nonexistent.jsc" },
   });
-  equal(
-    "autoconfig",
-    prefs.getStringPref("general.config.vendor"),
-    "pref() in the .cfg sets the vendor"
-  );
   equal(
     remoteUrl,
     defPrefs.getStringPref("autoadmin.global_config_url"),

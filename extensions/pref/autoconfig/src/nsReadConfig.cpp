@@ -129,17 +129,14 @@ static const char* gBlockedConfigs[] = {"dsengine.cfg"};
 
 
 static const char* const gAutoConfigInputPrefs[] = {
-    "general.config.filename",      "general.config.vendor",
-    "autoadmin.global_config_url",  "autoadmin.offline_failover",
-    "autoadmin.append_emailaddr",   "autoadmin.refresh_interval",
-    "autoadmin.failover_to_cached",
+    "general.config.filename",    "autoadmin.global_config_url",
+    "autoadmin.offline_failover", "autoadmin.append_emailaddr",
+    "autoadmin.refresh_interval", "autoadmin.failover_to_cached",
 };
 
 nsresult nsReadConfig::readConfigFile() {
   nsresult rv = NS_OK;
   nsAutoCString lockFileName;
-  nsAutoCString lockVendor;
-  uint32_t fileNameLen = 0;
 
   nsCOMPtr<nsIPrefBranch> defaultPrefBranch;
   nsCOMPtr<nsIPrefService> prefService =
@@ -193,11 +190,6 @@ nsresult nsReadConfig::readConfigFile() {
   }
   
 
-  
-  
-  
-  
-
   nsCOMPtr<nsIPrefBranch> prefBranch;
   rv = prefService->GetBranch(nullptr, getter_AddRefs(prefBranch));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -214,26 +206,6 @@ nsresult nsReadConfig::readConfigFile() {
             ("error evaluating .cfg file %s %" PRIx32 "\n", lockFileName.get(),
              static_cast<uint32_t>(rv)));
     return rv;
-  }
-
-  rv = prefBranch->GetCharPref("general.config.filename", lockFileName);
-  if (NS_FAILED(rv))
-    
-    
-    return NS_ERROR_FAILURE;
-
-  rv = prefBranch->GetCharPref("general.config.vendor", lockVendor);
-  
-  if (NS_SUCCEEDED(rv)) {
-    fileNameLen = strlen(lockFileName.get());
-
-    
-    
-    
-
-    if (strncmp(lockFileName.get(), lockVendor.get(), fileNameLen - 4) != 0) {
-      return NS_ERROR_FAILURE;
-    }
   }
 
   
