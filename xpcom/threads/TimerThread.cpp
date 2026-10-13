@@ -4,8 +4,6 @@
 
 #include "TimerThread.h"
 
-#include <bit>
-
 #include "GeckoProfiler.h"
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ChaosMode.h"
@@ -616,11 +614,6 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
 
-  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
-  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
-
   
   
   
@@ -629,9 +622,7 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
   
   
   
-  TimeStamp cutoffTime =
-      bundleWakeup + ComputeAcceptableFiringDelay(mTimers[0].mDelay,
-                                                  minTimerDelay, maxTimerDelay);
+  TimeStamp cutoffTime = bundleWakeup + mTimers[0].mFiringDelay;
 
   const size_t timerCount = mTimers.Length();
   for (size_t entryIndex = 1; entryIndex < timerCount; ++entryIndex) {
@@ -651,30 +642,13 @@ TimerThread::WakeupTime TimerThread::ComputeWakeupTimeFromTimers() const {
     
     
     bundleWakeup = curTimerDue;
-    const TimeDuration timerDelay = ComputeAcceptableFiringDelay(
-        curEntry.mDelay, minTimerDelay, maxTimerDelay);
-    cutoffTime = std::min(curTimerDue + timerDelay, cutoffTime);
+    cutoffTime = std::min(curTimerDue + curEntry.mFiringDelay, cutoffTime);
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
-  MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <=
-             ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
-                                          maxTimerDelay));
+  MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <= mTimers[0].mFiringDelay);
 
   return {bundleWakeup, cutoffTime - bundleWakeup};
-}
-
-TimeDuration TimerThread::ComputeAcceptableFiringDelay(
-    TimeDuration timerDuration, TimeDuration minDelay,
-    TimeDuration maxDelay) const {
-  
-  
-  
-  constexpr int64_t timerDurationDivider = 8;
-  static_assert(
-      std::has_single_bit(static_cast<uint64_t>(timerDurationDivider)));
-  const TimeDuration tmp = timerDuration / timerDurationDivider;
-  return std::clamp(tmp, minDelay, maxDelay);
 }
 
 uint64_t TimerThread::FireDueTimers(TimeDuration aAllowedEarlyFiring) {
@@ -904,12 +878,7 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   
   
   
-  const TimeDuration minTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_minimum_firing_delay_tolerance_ms());
-  const TimeDuration maxTimerDelay = TimeDuration::FromMilliseconds(
-      StaticPrefs::timer_maximum_firing_delay_tolerance_ms());
-  const TimeDuration firingDelay = ComputeAcceptableFiringDelay(
-      aTimer->mDelay, minTimerDelay, maxTimerDelay);
+  const TimeDuration firingDelay = aTimer->AcceptableFiringDelay();
   
   const bool firingBeforeNextWakeup =
       mLatestIntendedWakeupTime.IsNull() ||
