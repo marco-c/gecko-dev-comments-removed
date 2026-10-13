@@ -13,6 +13,10 @@ import { UrlbarContentUtils } from "chrome://browser/content/urlbar/UrlbarConten
 import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs";
 
 /**
+ * @import { URILoadingHelper } from "resource:///modules/URILoadingHelper.sys.mjs"
+ */
+
+/**
  * @typedef {object} LocalSearchMode
  *   Represents a local search mode, e.g. bookmarks.
  *
@@ -29,6 +33,8 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
  *   The telemetry label for recording searches in this mode.
  * @property {string} uiLabel
  *   The L10n ID to use for the UI label.
+ * @property {string} [keyId]
+ *   The ID of the browser window's <key> element that enters the search mode.
  */
 
 /**
@@ -53,6 +59,11 @@ import UrlbarPrefs from "chrome://browser/content/urlbar/UrlbarContentPrefs.mjs"
  * @typedef {{urlLoad: UrlLoad, engineSearch?: never} |
  *           {engineSearch: EngineSearchLoad, urlLoad?: never}} UrlbarLoadRequest
  *  Either a URL or an engine search.
+ */
+
+/**
+ * @typedef {Parameters<URILoadingHelper["openLinkIn"]>[3]} LoadURLParams
+ *   The parameters related to how and where the result will be opened.
  */
 
 /**
@@ -96,16 +107,19 @@ export const UrlbarShared = {
    * chrome-only, and unlike `instanceof` it holds for a value from another
    * global; a content realm compares against its own interface object.
    *
+   * @template T
    * @param {any} value
    *   The value to check.
-   * @param {object} iface
+   * @param {{ new (...args: any[]): T; isInstance?: (obj: any) => boolean }} iface
    *   The interface, e.g. `KeyboardEvent`.
-   * @returns {boolean}
+   * @returns {value is T}
    */
-  isInstance:
-    typeof ChromeUtils != "undefined"
-      ? (value, iface) => iface.isInstance(value)
-      : (value, iface) => value instanceof iface,
+  isInstance(value, iface) {
+    if (typeof ChromeUtils != "undefined") {
+      return iface.isInstance(value);
+    }
+    return value instanceof iface;
+  },
 
   // REGEXP_ constants are duplicated from UrlUtils.sys.mjs
   // Regex matching on whitespaces.
@@ -448,6 +462,7 @@ export const UrlbarShared = {
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
         uiLabel: "urlbar-searchmode-tabs4",
+        keyId: "key_searchTabs",
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
