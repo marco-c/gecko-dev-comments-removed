@@ -52,6 +52,13 @@ static void ReportTelemetry(GleanLabel aLabel,
       
       
       return;
+    case PermissionCheckPurpose::PushSubscribe:
+      glean::web_notification::push_subscribe_origin
+          .EnumGet(
+              static_cast<glean::web_notification::PushSubscribeOriginLabel>(
+                  aLabel))
+          .Add();
+      return;
     default:
       MOZ_CRASH("Unknown permission checker");
       return;
@@ -542,7 +549,7 @@ RefPtr<NotificationPermissionPromise> EnsureValidNotificationPermission(
 
 Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
     const IPCNotificationOptions& aOptions, nsIPrincipal& aPrincipal,
-    Maybe<IPCImage>&& aIcon) {
+    imgIContainer* aIcon) {
   
   
   
@@ -578,13 +585,7 @@ Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
                       aOptions.lang(), aOptions.dataSerialized(), principal,
                       principal->GetIsInPrivateBrowsing(), requireInteraction,
                       aOptions.silent(), aOptions.vibrate()));
-
-  if (aIcon) {
-    if (nsCOMPtr<imgIContainer> image =
-            nsContentUtils::IPCImageToImage(*aIcon)) {
-      alert->SetImage(image);
-    }
-  }
+  alert->SetImage(aIcon);
 
   if (StaticPrefs::dom_webnotifications_actions_enabled()) {
     nsTArray<RefPtr<nsIAlertAction>> actions;

@@ -40,6 +40,7 @@ enum class PermissionCheckPurpose : uint8_t {
   PermissionAttribute,
   NotificationShow,
   LoadImageForShow,
+  PushSubscribe,
 };
 
 
@@ -93,7 +94,7 @@ nsresult PersistNotification(nsIPrincipal* aPrincipal,
 nsresult UnpersistNotification(nsIPrincipal* aPrincipal, const nsString& aId);
 Result<nsCOMPtr<nsIAlertNotification>, nsresult> CreateAlertForNotification(
     const IPCNotificationOptions& aOptions, nsIPrincipal& aPrincipal,
-    Maybe<IPCImage>&& aIcon);
+    imgIContainer* aIcon);
 
 
 class NotificationCallbacksCommon : public nsIAlertCallbacks {

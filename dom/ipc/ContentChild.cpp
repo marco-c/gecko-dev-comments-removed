@@ -1451,14 +1451,13 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
 
 mozilla::ipc::IPCResult ContentChild::RecvDecodeImage(
     NotNull<nsIURI*> aURI, const ImageIntSize& aSize, const bool& aStretch,
-    const ColorScheme& aColorScheme, DecodeImageResolver&& aResolver) {
+    const ColorScheme& aColorScheme, NotNull<nsIPrincipal*> aPrincipal,
+    DecodeImageResolver&& aResolver) {
   
   MaybeBecomeUntrusted();
 
   auto size = aSize.ToUnknownSize();
-  
-  
-  image::FetchDecodedImage(aURI, size, nsContentUtils::GetSystemPrincipal())
+  image::FetchDecodedImage(aURI, size, aPrincipal)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [size, aStretch, aColorScheme,
