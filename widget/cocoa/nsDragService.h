@@ -31,7 +31,11 @@ class nsDragSession : public nsBaseDragSession {
 
   
   
+  
   MOZ_CAN_RUN_SCRIPT void EndAsStale();
+
+  
+  void SetNativeDragViewForTests(ChildView* aView) { mNativeDragView = aView; }
 
   MOZ_CAN_RUN_SCRIPT nsresult
   EndDragSessionImpl(bool aDoneDrag, uint32_t aKeyModifiers) override;
@@ -81,7 +85,9 @@ class nsDragService final : public nsBaseDragService {
   
   
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void EndStaleDragSession();
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY static void EndStaleDragSession(
+      const char* aCaller);
 };
 
 #endif  

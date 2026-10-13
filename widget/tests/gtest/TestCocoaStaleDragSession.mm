@@ -5,11 +5,15 @@
 #include "gtest/gtest.h"
 
 #include "mozilla/Attributes.h"
+#include "mozilla/EventForwards.h"
+#include "mozilla/RefPtr.h"
 #include "nsCOMPtr.h"
 #include "nsDragService.h"
 #include "nsIDragService.h"
 #include "nsIDragSession.h"
 #include "nsServiceManagerUtils.h"
+
+extern bool gUserCancelledDrag;
 
 namespace {
 
@@ -26,12 +30,46 @@ bool HasCurrentSession(nsIDragService* aService) {
   return session != nullptr;
 }
 
+
+
+void GiveNativeDragView(nsIDragSession* aSession) {
+  static_cast<nsDragSession*>(aSession)->SetNativeDragViewForTests(
+      (ChildView*)[[NSView alloc] initWithFrame:NSZeroRect]);
+}
+
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void EndSession(nsIDragSession* aSession) {
   nsCOMPtr<nsIDragSession> session = aSession;
   session->EndDragSession(false, 0);
 }
 
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void EndAsStale(nsDragSession* aSession) {
+  RefPtr<nsDragSession> session = aSession;
+  session->EndAsStale();
+}
+
+
+
+class ReenteringDragSession final : public nsDragSession {
+ public:
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD FireDragEventAtSource(
+      mozilla::EventMessage aEventMessage, uint32_t aKeyModifiers) override {
+    if (aEventMessage == mozilla::eDragEnd) {
+      mWasCancelledAtDragEnd = mUserCancelled;
+      EndDragSession(false, 0);
+      mWasCancelledAfterReentry = mUserCancelled;
+    }
+    return NS_OK;
+  }
+
+  bool mWasCancelledAtDragEnd = false;
+  bool mWasCancelledAfterReentry = false;
+
+ private:
+  ~ReenteringDragSession() = default;
+};
+
 }  
+
 
 
 
@@ -45,8 +83,46 @@ TEST(CocoaStaleDragSession, EndsSessionWithoutNativeDrag)
   nsCOMPtr<nsIDragSession> session = StartSession(service);
   ASSERT_NE(session, nullptr);
   ASSERT_TRUE(HasCurrentSession(service));
+  GiveNativeDragView(session);
 
-  nsDragService::EndStaleDragSession();
+  nsDragService::EndStaleDragSession("test");
+  EXPECT_FALSE(HasCurrentSession(service));
+
+  
+  EXPECT_FALSE(gUserCancelledDrag);
+}
+
+
+
+TEST(CocoaStaleDragSession, ReportsCancellation)
+{
+  RefPtr<ReenteringDragSession> session =
+      mozilla::MakeRefPtr<ReenteringDragSession>();
+  GiveNativeDragView(session);
+
+  EndAsStale(session);
+  EXPECT_TRUE(session->mWasCancelledAtDragEnd);
+  EXPECT_TRUE(session->mWasCancelledAfterReentry);
+  EXPECT_FALSE(gUserCancelledDrag);
+}
+
+
+
+
+TEST(CocoaStaleDragSession, KeepsSessionFromOtherApplication)
+{
+  nsCOMPtr<nsIDragService> service =
+      do_GetService("@mozilla.org/widget/dragservice;1");
+  ASSERT_NE(service, nullptr);
+  ASSERT_FALSE(HasCurrentSession(service));
+
+  nsCOMPtr<nsIDragSession> session = StartSession(service);
+  ASSERT_NE(session, nullptr);
+
+  nsDragService::EndStaleDragSession("test");
+  EXPECT_TRUE(HasCurrentSession(service));
+
+  EndSession(session);
   EXPECT_FALSE(HasCurrentSession(service));
 }
 
@@ -62,8 +138,9 @@ TEST(CocoaStaleDragSession, KeepsSessionForTests)
   nsCOMPtr<nsIDragSession> session = StartSession(service);
   ASSERT_NE(session, nullptr);
   session->InitForTests(nsIDragService::DRAGDROP_ACTION_MOVE);
+  GiveNativeDragView(session);
 
-  nsDragService::EndStaleDragSession();
+  nsDragService::EndStaleDragSession("test");
   EXPECT_TRUE(HasCurrentSession(service));
 
   EndSession(session);

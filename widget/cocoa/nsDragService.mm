@@ -48,7 +48,7 @@ already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
 }
 
 
-void nsDragService::EndStaleDragSession() {
+void nsDragService::EndStaleDragSession(const char* aCaller) {
   nsCOMPtr<nsIDragService> service =
       do_GetService("@mozilla.org/widget/dragservice;1");
   if (!service) {
@@ -63,6 +63,9 @@ void nsDragService::EndStaleDragSession() {
 
   RefPtr<nsDragSession> dragSession =
       static_cast<nsDragSession*>(session.get());
+  MOZ_LOG(sCocoaLog, LogLevel::Info,
+          ("nsDragService::EndStaleDragSession: %s found session %p", aCaller,
+           dragSession.get()));
   dragSession->EndAsStale();
 }
 
@@ -70,16 +73,27 @@ void nsDragSession::EndAsStale() {
   
   
   
-  if (mEndingSession || mSessionIsSynthesizedForTests) {
+  
+  
+  
+  if (mEndingSession || mSessionIsSynthesizedForTests || !mNativeDragView) {
+    MOZ_LOG(
+        sCocoaLog, LogLevel::Info,
+        ("nsDragSession::EndAsStale: keeping session %p | ending: %d | "
+         "synthesized for tests: %d | native drag view: %p",
+         this, mEndingSession, mSessionIsSynthesizedForTests, mNativeDragView));
     return;
   }
 
+  MOZ_LOG(sCocoaLog, LogLevel::Info,
+          ("nsDragSession::EndAsStale: ending session %p", this));
   NS_WARNING("Ending a drag session that lost its native drag session.");
 
   
   
   
-  mUserCancelled = true;
+  
+  gUserCancelledDrag = true;
   if (mDataTransfer) {
     mDataTransfer->SetDropEffectInt(nsIDragService::DRAGDROP_ACTION_NONE);
   }
@@ -546,6 +560,12 @@ nsresult nsDragSession::EndDragSessionImpl(bool aDoneDrag,
                                            uint32_t aKeyModifiers) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
+  
+  
+  if (mEndingSession) {
+    return NS_ERROR_FAILURE;
+  }
+
   mNSDraggingSession = nil;
 
   if (mNativeDragView) {
@@ -558,6 +578,7 @@ nsresult nsDragSession::EndDragSessionImpl(bool aDoneDrag,
   }
 
   mUserCancelled = gUserCancelledDrag;
+  gUserCancelledDrag = false;
 
   nsresult rv = nsBaseDragSession::EndDragSessionImpl(aDoneDrag, aKeyModifiers);
   mDataItems = nullptr;

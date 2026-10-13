@@ -2424,7 +2424,7 @@ NSEvent* gLastDragMouseDownEvent = nil;
   
   
   
-  nsDragService::EndStaleDragSession();
+  nsDragService::EndStaleDragSession("mouseDown:");
   if (!mGeckoChild) {
     return;
   }
@@ -2573,8 +2573,9 @@ NSEvent* gLastDragMouseDownEvent = nil;
 
   
   
+  
   if (![NSEvent pressedMouseButtons]) {
-    nsDragService::EndStaleDragSession();
+    nsDragService::EndStaleDragSession("handleMouseMoved:");
   }
   if (!mGeckoChild) {
     return;
