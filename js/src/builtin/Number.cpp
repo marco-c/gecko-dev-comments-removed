@@ -900,8 +900,8 @@ static constexpr auto CountDigitsTable = [] {
       pow10 *= 10;
       digits++;
     }
-    table[k] = pow10 <= UINT32_MAX ? ((digits + 1) << 32) - pow10
-                                   : digits << 32;
+    table[k] =
+        pow10 <= UINT32_MAX ? ((digits + 1) << 32) - pow10 : digits << 32;
   }
   return table;
 }();
@@ -1637,10 +1637,10 @@ static bool AppendFracNumberToStringBuilder(StringBuilder& sb, double d) {
 
   static constexpr size_t maxSize = JS::MaximumNumberToStringLength;
   if (sb.spareCapacity() < maxSize) {
-      
-      ToCStringBuf buf;
-      size_t len = FracNumberToCString(&buf, d);
-      return sb.append(buf.sbuf, len);
+    
+    ToCStringBuf buf;
+    size_t len = FracNumberToCString(&buf, d);
+    return sb.append(buf.sbuf, len);
   }
   if (!sb.growByUninitialized(maxSize)) {
     return false;
