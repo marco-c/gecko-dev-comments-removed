@@ -3030,12 +3030,31 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
     }
   }
 
-  wasm::CallSiteDesc callSite(CallSiteKind::FuncRef);
-  wasm::CalleeDesc callee = wasm::CalleeDesc::wasmFuncRef();
-  CodeOffset fastCallOffset;
-  CodeOffset slowCallOffset;
-  masm.wasmCallRef(callSite, callee, &fastCallOffset, &slowCallOffset, nullptr,
-                   nullptr);
+  
+  
+  
+  
+  
+#  ifdef DEBUG
+  Label sameInstance;
+  masm.branchPtr(
+      Assembler::Equal,
+      Address(WasmCallRefReg, FunctionExtended::offsetOfExtendedSlot(
+                                  FunctionExtended::WASM_INSTANCE_SLOT)),
+      InstanceReg, &sameInstance);
+  masm.breakpoint();
+  masm.bind(&sameInstance);
+#  endif
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                     WasmCallerInstanceOffsetBeforeCall));
+  masm.storePtr(InstanceReg, Address(masm.getStackPointer(),
+                                     WasmCalleeInstanceOffsetBeforeCall));
+  masm.loadPtr(Address(WasmCallRefReg,
+                       FunctionExtended::offsetOfExtendedSlot(
+                           FunctionExtended::WASM_FUNC_UNCHECKED_ENTRY_SLOT)),
+               WasmCallRefCallScratchReg0);
+  masm.wasmMarkedSlowCall(wasm::CallSiteDesc(CallSiteKind::FuncRef),
+                          WasmCallRefCallScratchReg0);
 
   
   
