@@ -4518,6 +4518,12 @@ TEST(TestAudioTrackGraph, IOThreadDispatchDuringShutdown)
   
   
   (void)WaitFor(destroyPromise).unwrap()[0];
+  
+  
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchAndSpinEventLoopUntilComplete(
+      "TestAudioTrackGraph, IOThreadDispatchDuringShutdown"_ns,
+      ipc::IOThread::Get()->GetEventTarget(),
+      NS_NewRunnableFunction(__func__, [] {})));
   ProcessEventQueue();
 }
 
