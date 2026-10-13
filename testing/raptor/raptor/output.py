@@ -2033,6 +2033,15 @@ class BrowsertimeOutput(PerftestOutput):
             
             test.get("support_class").summarize_suites(suites)
 
+        
+        
+        for suite in suites:
+            if suite.get("replicates") is not None:
+                suite["orderedTrials"] = True
+            for subtest in suite["subtests"]:
+                if subtest.get("replicates") is not None:
+                    subtest["orderedTrials"] = True
+
         suites.sort(key=lambda suite: suite["name"])
 
         test_results["suites"] = suites
