@@ -49,6 +49,8 @@ class JitCode : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   uint8_t* allocatedMemory() const { return headerPtr() - headerSize_; }
 
+  JitCode() = delete;
+
  protected:
   ExecutablePool* pool_;
   uint32_t bufferSize_;  
@@ -66,7 +68,6 @@ class JitCode : public gc::TenuredCellWithNonGCPointer<uint8_t> {
                                    
   uint8_t localTracingSlots_;
 
-  JitCode() = delete;
   JitCode(uint8_t* code, uint32_t bufferSize, uint32_t headerSize,
           ExecutablePool* pool, CodeKind kind)
       : TenuredCellWithNonGCPointer(code),

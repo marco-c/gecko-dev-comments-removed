@@ -8,6 +8,7 @@
 #include "mozilla/MacroArgs.h"  
 
 #include "builtin/Eval.h"
+#include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"  
 #include "builtin/Object.h"        
 #include "builtin/Promise.h"       

@@ -11,6 +11,8 @@
 
 
 
+#include <cstdint>
+
 namespace js {
 namespace jit {
 
