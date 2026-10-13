@@ -18,7 +18,7 @@ add_task(async function () {
 
   
   info("Pretty print the source created by the evaluated expression");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
 
   const prettyEvaluatedSourceFilename =
     evaluatedSourceId.split("/").at(-1) + ":formatted";
@@ -31,7 +31,7 @@ add_task(async function () {
     prettySourceValue.trim(),
     `debugger;
 var foo;
-document.addEventListener('click', e => {
+document.addEventListener("click", e => {
   debugger;
 }, {
   once: true
@@ -62,7 +62,7 @@ document.addEventListener('click', e => {
 
   
   info("Pretty print the source created by the `eval` expression");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
 
   const prettyEvalSourceFilename =
     evalSourceId.split("/").at(-1) + ":formatted";
@@ -80,7 +80,7 @@ document.addEventListener('click', e => {
 setTimeout(
   () => {
     debugger;
-    document.addEventListener('click', e => {
+    document.addEventListener("click", e => {
       debugger;
     }, {
       once: true
@@ -107,7 +107,7 @@ setTimeout(
 
   
   info("Pretty print the source created with `new Function`");
-  await prettyPrint(dbg);
+  await togglePrettyPrint(dbg);
 
   const prettyNewFunctionSourceFilename =
     newFunctionSourceId.split("/").at(-1) + ":formatted";
@@ -126,7 +126,7 @@ setTimeout(
     prettyNewFunctionSourceValue.trim(),
     `function anonymous() {
   debugger;
-  document.addEventListener('click', function () {
+  document.addEventListener("click", function () {
     debugger;
   })
 }

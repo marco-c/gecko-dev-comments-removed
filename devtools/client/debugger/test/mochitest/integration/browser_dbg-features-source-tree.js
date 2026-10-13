@@ -419,7 +419,7 @@ add_task(async function testSourceTreeOnTheIntegrationTestPage() {
   assertBreakpointHeading(dbg, "query.js?x=1", 0);
   assertTextContentOnLine(dbg, 1, `function query() {`);
   
-  assertTextContentOnLine(dbg, 2, `console.log('query x=1');`);
+  assertTextContentOnLine(dbg, 2, `console.log("query x=1");`);
 
   
   pressKey(dbg, "quickOpen");
