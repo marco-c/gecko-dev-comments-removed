@@ -63,29 +63,31 @@ class NetworkContentActor extends Actor {
       
       
       const doc = this.targetActor.window.document;
-      const channelURI = lazy.NetUtil.newURI(url);
+      
+      
+      
+      let contentPolicyType = Number(
+        lazy.NetworkUtils.stringToCauseType(cause.type) ||
+          Ci.nsIContentPolicy.TYPE_OTHER
+      );
+      if (
+        [
+          Ci.nsIContentPolicy.TYPE_DOCUMENT,
+          Ci.nsIContentPolicy.TYPE_SUBDOCUMENT,
+          Ci.nsIContentPolicy.TYPE_OBJECT,
+        ].includes(contentPolicyType)
+      ) {
+        contentPolicyType = Ci.nsIContentPolicy.TYPE_OTHER;
+      }
 
       const channel = lazy.NetUtil.newChannel({
-        uri: channelURI,
+        uri: lazy.NetUtil.newURI(url),
         loadingNode: doc,
         securityFlags:
           securityFlags ||
           Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT,
-        contentPolicyType:
-          lazy.NetworkUtils.stringToCauseType(cause.type) ||
-          Ci.nsIContentPolicy.TYPE_OTHER,
+        contentPolicyType,
       });
-
-      
-      
-      if (
-        channel.loadInfo.externalContentPolicyType ==
-        Ci.nsIContentPolicy.TYPE_DOCUMENT
-      ) {
-        channel.loadInfo.httpsUpgradeTelemetry = channelURI.schemeIs("https")
-          ? Ci.nsILoadInfo.ALREADY_HTTPS
-          : Ci.nsILoadInfo.NO_UPGRADE;
-      }
 
       channel.QueryInterface(Ci.nsIHttpChannel);
       channel.loadGroup = doc.documentLoadGroup;
