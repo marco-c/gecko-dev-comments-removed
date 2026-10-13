@@ -360,7 +360,7 @@ struct arena_t : public BaseAllocClass {
   
   
   
-  mozilla::Atomic<uint64_t> mLastSignificantReuseNS;
+  mozilla::Atomic<uint64_t> mLastPageReuseNS;
 
  public:
   
@@ -683,7 +683,7 @@ struct arena_t : public BaseAllocClass {
   }
 
   
-  void NotifySignificantReuse() MOZ_EXCLUDES(mLock);
+  void NotifyPageReuse() MOZ_EXCLUDES(mLock);
 
   bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
 
