@@ -635,13 +635,15 @@ impl StylesheetInvalidationSet {
                 
                 
             },
-            LayerStatement(..) => {
+            LayerBlock(..) | LayerStatement(..) => {
+                
+                
                 
                 
                 self.invalidate_fully()
             },
             Document(..) | Import(..) | Media(..) | Supports(..) | Container(..)
-            | LayerBlock(..) | StartingStyle(..) | AppearanceBase(..) => {
+            | StartingStyle(..) | AppearanceBase(..) => {
                 
             },
             FontFace(..) => {
