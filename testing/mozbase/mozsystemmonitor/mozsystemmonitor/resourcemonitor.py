@@ -300,6 +300,13 @@ def _collect(pipe, poll_interval):
                     cmd = []
                     try:
                         cmd = p.cmdline()
+                    except psutil.AccessDenied:
+                        
+                        
+                        try:
+                            cmd = [p.name()]
+                        except Exception as e:
+                            cmd = ["exception", str(e)]
                     except Exception as e:
                         cmd = ["exception", str(e)]
                     ppid = 0
