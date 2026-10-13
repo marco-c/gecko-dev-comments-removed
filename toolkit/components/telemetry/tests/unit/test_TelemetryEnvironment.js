@@ -279,6 +279,10 @@ add_task(
     
     await SearchService.promiseInitialized;
 
+    
+    
+    await TelemetryEnvironment.testIsDefaultBrowser();
+
     environmentData = TelemetryEnvironment.currentEnvironment;
     TelemetryEnvironmentTesting.checkEnvironmentData(environmentData);
     Assert.ok(
@@ -289,6 +293,10 @@ add_task(
       typeof environmentData.settings.isDefaultBrowser,
       "boolean",
       "isDefaultBrowser must be of the right type."
+    );
+    Assert.equal(
+      typeof Glean.browser.defaultAtLaunch.testGetValue(),
+      "boolean"
     );
 
     
