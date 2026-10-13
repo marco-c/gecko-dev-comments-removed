@@ -175,6 +175,10 @@ struct ScreamV2Parameters {
   FieldTrialParameter<TimeDelta> min_pacing_delay_for_pushback;
   
   FieldTrialParameter<TimeDelta> max_pacing_delay_for_pushback;
+
+  
+  
+  FieldTrialParameter<bool> safe_reset_on_route_change;
 };
 
 }  
