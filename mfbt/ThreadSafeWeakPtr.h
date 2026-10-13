@@ -54,6 +54,7 @@
 #define mozilla_ThreadSafeWeakPtr_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/HashFunctions.h"
 #include "mozilla/RefCountType.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
@@ -212,17 +213,17 @@ class ThreadSafeWeakPtr {
   ThreadSafeWeakPtr& operator=(ThreadSafeWeakPtr&& aOther) = default;
   ThreadSafeWeakPtr(ThreadSafeWeakPtr&& aOther) = default;
 
-  ThreadSafeWeakPtr& operator=(const RefPtr<T>& aOther) {
-    if (aOther) {
-      
-      mRef = aOther->getThreadSafeWeakReference();
-    } else {
-      mRef = nullptr;
-    }
+  
+  
+  
+  
+  MOZ_IMPLICIT ThreadSafeWeakPtr(const T* aOther)
+      : mRef(aOther ? aOther->getThreadSafeWeakReference() : nullptr) {}
+
+  ThreadSafeWeakPtr& operator=(const T* aOther) {
+    mRef = aOther ? aOther->getThreadSafeWeakReference() : nullptr;
     return *this;
   }
-
-  explicit ThreadSafeWeakPtr(const RefPtr<T>& aOther) { *this = aOther; }
 
   ThreadSafeWeakPtr& operator=(decltype(nullptr)) {
     mRef = nullptr;
@@ -265,6 +266,8 @@ class ThreadSafeWeakPtr {
   bool operator!=(const U& aOther) const {
     return !(*this == aOther);
   }
+
+  HashNumber Hash() const { return HashGeneric(mRef.get()); }
 
   
   explicit operator RefPtr<T>() const { return getRefPtr(); }
