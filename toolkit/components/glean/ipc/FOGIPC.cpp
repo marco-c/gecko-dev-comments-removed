@@ -152,7 +152,9 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
 
   
   
-  if (aThreadName.EqualsLiteral("glean.dispatcher")) {
+  
+  if (aThreadName.EqualsLiteral("glean.dispatcher") ||
+      aThreadName.EqualsLiteral("glean.shutdown")) {
     return;
   }
 
