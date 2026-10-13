@@ -1235,13 +1235,15 @@ async function promiseSmartbarSuggestionsClose(browser) {
 
 
 
+
+
 async function assertSmartbarSuggestionsVisible(
   browser,
   shouldBeVisible,
   expectedPosition = "bottom"
 ) {
-  const aiWindowElement =
-    browser.contentWindow.document.querySelector("ai-window");
+  const contentWindow = browser.contentWindow;
+  const aiWindowElement = contentWindow.document.querySelector("ai-window");
   const smartbarElement = aiWindowElement.shadowRoot.querySelector(
     "#ai-window-smartbar"
   );
@@ -1256,6 +1258,41 @@ async function assertSmartbarSuggestionsVisible(
     smartbarElement.getAttribute("suggestions-position"),
     expectedPosition,
     `Suggestions position should be: ${expectedPosition}`
+  );
+
+  if (!shouldBeVisible) {
+    return;
+  }
+
+  const viewRect = urlbarView.getBoundingClientRect();
+  const inputRect = smartbarElement.inputField.getBoundingClientRect();
+  if (expectedPosition == "top") {
+    Assert.lessOrEqual(
+      viewRect.bottom,
+      inputRect.top,
+      "Suggestions should open above the input"
+    );
+  } else {
+    Assert.greaterOrEqual(
+      viewRect.top,
+      inputRect.bottom,
+      "Suggestions should open below the input"
+    );
+  }
+  Assert.greaterOrEqual(
+    viewRect.top,
+    0,
+    "Suggestions should not be cut off by the top of the window"
+  );
+  Assert.lessOrEqual(
+    viewRect.bottom,
+    contentWindow.innerHeight,
+    "Suggestions should not be cut off by the bottom of the window"
+  );
+  Assert.lessOrEqual(
+    inputRect.bottom,
+    contentWindow.innerHeight,
+    "Input should stay inside the window when the suggestions open"
   );
 }
 

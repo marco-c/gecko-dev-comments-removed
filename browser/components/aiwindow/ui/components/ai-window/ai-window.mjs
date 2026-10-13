@@ -853,6 +853,18 @@ export class AIWindow extends MozLitElement {
     }
   }
 
+  // Show the suggestions above the input when the Smartbar is at the bottom
+  // of the window, so the list is not cut off. The Smartbar is at the bottom
+  // in sidebar mode, and in fullpage mode after a chat starts.
+  #updateSmartbarSuggestionsPosition() {
+    const isAtBottom =
+      this.mode === MODE.SIDEBAR || this.classList.contains("chat-active");
+    this.#smartbar?.setAttribute(
+      "suggestions-position",
+      isAtBottom ? "top" : "bottom"
+    );
+  }
+
   #setupWindowModeObserver() {
     this.#windowModeObserver = (subject, topic) => {
       if (topic === "ai-window-state-changed") {
@@ -1777,12 +1789,6 @@ export class AIWindow extends MozLitElement {
       smartbarWrapper.appendChild(smartbar);
       this.renderRoot.querySelector("#smartbar-slot").append(smartbarWrapper);
 
-      // Always show the list of suggestions above input in sidebar mode and
-      // below when in fullpage mode.
-      smartbar.setAttribute(
-        "suggestions-position",
-        this.mode === MODE.SIDEBAR ? "top" : "bottom"
-      );
       smartbar.isSidebarMode = this.mode == MODE.SIDEBAR;
 
       smartbar.addEventListener("input", this.#handleSmartbarInput);
@@ -1796,6 +1802,7 @@ export class AIWindow extends MozLitElement {
       );
     }
     this.#smartbar = smartbar;
+    this.#updateSmartbarSuggestionsPosition();
     this.#memoriesButton = smartbar.querySelector("memories-icon-button");
     this.syncSmartbarMemoriesStateFromConversation();
 
@@ -2672,6 +2679,7 @@ export class AIWindow extends MozLitElement {
   #resetConversationState() {
     this.classList.remove("chat-active");
     this.#updateBrowserTabbable();
+    this.#updateSmartbarSuggestionsPosition();
     this.#hostBrowser?.setAttribute(
       "data-conversation-id",
       this.#conversation.id
@@ -2683,6 +2691,7 @@ export class AIWindow extends MozLitElement {
     if (isActive) {
       this.classList.add("chat-active");
       this.#updateBrowserTabbable();
+      this.#updateSmartbarSuggestionsPosition();
       this.#smartbar?.suppressStartQuery({ permanent: true });
       this.#smartbar?.view.close();
       if (this.#smartbar?.inputField) {
@@ -2693,6 +2702,7 @@ export class AIWindow extends MozLitElement {
 
     this.classList.remove("chat-active");
     this.#updateBrowserTabbable();
+    this.#updateSmartbarSuggestionsPosition();
     this.#smartbar?.unsuppressStartQuery();
     if (this.#smartbar?.inputField) {
       this.#smartbar.inputField.showPlaceholderAnimation =
