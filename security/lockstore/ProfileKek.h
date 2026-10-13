@@ -5,6 +5,8 @@
 #ifndef mozilla_security_lockstore_ProfileKek_h
 #define mozilla_security_lockstore_ProfileKek_h
 
+#include "mozilla/FunctionRef.h"
+#include "mozilla/Maybe.h"
 #include "nsLiteralString.h"
 
 namespace mozilla::security::lockstore {
@@ -17,12 +19,44 @@ constexpr auto kProfileKekId = "profile"_ns;
 constexpr auto kProfilePasswordKek = "lockstore::kek::password:profile"_ns;
 constexpr auto kProfileLocalKek = "lockstore::kek::local:profile"_ns;
 
+enum class PrimaryPasswordSync {
+  
+  Unlock,
+  
+  Adopt,
+};
 
 
 
 
 
-void WatchPrimaryPasswordLinkPref();
+
+
+
+
+
+
+
+Maybe<PrimaryPasswordSync> ChoosePrimaryPasswordSync(
+    bool aKekExists, bool aKekUnlocked, FunctionRef<bool()> aTokenHasPassword);
+
+
+
+
+
+
+
+bool SyncIsSkippable(PrimaryPasswordSync aSync);
+
+
+
+
+
+
+
+
+
+bool SyncProfileKekAtStartup();
 
 }  
 
