@@ -18,6 +18,8 @@
 
 
 
+
+
 JNIEnv *
 cubeb_get_jni_env_for_thread()
 {
