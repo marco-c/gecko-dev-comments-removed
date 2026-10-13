@@ -23,7 +23,9 @@ const EXPECTED_REFLOWS = [
 
 add_task(async function () {
   
-  gReduceMotionOverride = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 0]],
+  });
 
   
   

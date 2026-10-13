@@ -2,7 +2,9 @@
 
 add_setup(async function () {
   
-  gReduceMotionOverride = false;
+  await SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 0]],
+  });
 });
 
 
