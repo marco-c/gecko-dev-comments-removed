@@ -393,6 +393,7 @@ void pages_decommit(void* aAddr, size_t aSize) {
   return true;
 }
 
+#ifndef XP_WIN
 
 
 
@@ -400,6 +401,7 @@ void pages_decommit(void* aAddr, size_t aSize) {
 static void pages_purge(void* addr, size_t length) {
   pages_decommit(addr, length);
 }
+#endif
 
 
 
