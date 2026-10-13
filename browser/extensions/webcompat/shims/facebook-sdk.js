@@ -381,25 +381,39 @@ if (!window.FB) {
 
   
   
-  function ensureProxiedToUnshimmed(obj) {
+  
+  
+  
+  function ensureProxiedToUnshimmed(obj, path = []) {
+    const unshimmedTarget = () =>
+      haveUnshimmed
+        ? path.reduce((target, key) => target?.[key], window.FB)
+        : undefined;
     const shim = {};
     for (const key in obj) {
       const value = obj[key];
       if (typeof value === "function") {
         shim[key] = function () {
-          if (haveUnshimmed) {
-            return window.FB[key].apply(window.FB, arguments);
+          const target = unshimmedTarget();
+          if (typeof target?.[key] === "function") {
+            return target[key].apply(target, arguments);
           }
           return value.apply(this, arguments);
         };
       } else if (typeof value !== "object" || value === null) {
         shim[key] = value;
       } else {
-        shim[key] = ensureProxiedToUnshimmed(value);
+        shim[key] = ensureProxiedToUnshimmed(value, [...path, key]);
       }
     }
     return new Proxy(shim, {
-      get: (shimmed, key) => (haveUnshimmed ? window.FB : shimmed)[key],
+      get: (shimmed, key) => (unshimmedTarget() ?? shimmed)[key],
+      set: (shimmed, key, val) => {
+        
+        
+        Reflect.set(unshimmedTarget() ?? shimmed, key, val);
+        return true;
+      },
     });
   }
 
