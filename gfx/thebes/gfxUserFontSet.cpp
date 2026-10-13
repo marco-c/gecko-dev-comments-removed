@@ -418,7 +418,26 @@ void gfxUserFontEntry::FontLoadComplete() {
   }
 }
 
-void gfxUserFontEntry::ContinueLoad() {
+void gfxUserFontEntry::ScheduleContinueLoad() {
+  MOZ_ASSERT(NS_IsMainThread());
+  RefPtr<nsIRunnable> runnable =
+      NewRunnableMethod("gfxUserFontEntry::DoContinueLoad", this,
+                        &gfxUserFontEntry::DoContinueLoad);
+  
+  
+  if (!nsContentUtils::IsSafeToRunScript()) {
+    
+    
+    nsContentUtils::AddScriptRunner(runnable.forget());
+  } else {
+    
+    
+    NS_DispatchToCurrentThreadQueue(runnable.forget(),
+                                    EventQueuePriority::MediumHigh);
+  }
+}
+
+void gfxUserFontEntry::DoContinueLoad() {
   if (mUserFontLoadState == STATUS_NOT_LOADED) {
     
     
@@ -562,8 +581,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
           
           SetLoadState(STATUS_LOAD_PENDING);
           NS_DispatchToMainThread(
-              NewRunnableMethod("gfxUserFontEntry::ContinueLoad", this,
-                                &gfxUserFontEntry::ContinueLoad));
+              NewRunnableMethod("gfxUserFontEntry::DoContinueLoad", this,
+                                &gfxUserFontEntry::DoContinueLoad));
           return;
         }
 
@@ -594,22 +613,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
           fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
                               nsIScriptError::errorFlag, rv);
         } else if (!aIsContinue) {
-          RefPtr<nsIRunnable> runnable =
-              NewRunnableMethod("gfxUserFontEntry::ContinueLoad", this,
-                                &gfxUserFontEntry::ContinueLoad);
           SetLoadState(STATUS_LOAD_PENDING);
-          
-          
-          if (!nsContentUtils::IsSafeToRunScript()) {
-            
-            
-            nsContentUtils::AddScriptRunner(runnable.forget());
-          } else {
-            
-            
-            NS_DispatchToCurrentThreadQueue(runnable.forget(),
-                                            EventQueuePriority::MediumHigh);
-          }
+          ScheduleContinueLoad();
           return;
         } else {
           

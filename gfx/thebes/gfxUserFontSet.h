@@ -701,7 +701,8 @@ class gfxUserFontEntry : public gfxFontEntry {
 
   
   void LoadNextSrc();
-  void ContinueLoad();
+  void DoContinueLoad();
+  void ScheduleContinueLoad();
   void DoLoadNextSrc(bool aIsContinue);
 
   
