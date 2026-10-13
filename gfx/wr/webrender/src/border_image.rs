@@ -255,23 +255,30 @@ pub fn for_each_border_image_segment(
 
         
         
+        let natural_size = DeviceSize::new(
+            center_src.width() as f32 / sx,
+            center_src.height() as f32 / sy,
+        );
+
+        
+        
         
         
         
         let (src_size, dst_size, repeat) = if let Some((src_rect, dst_rect)) = center_v_rects {
-            (src_rect.size(), dst_rect.size(), nine_patch.repeat_horizontal)
+            (src_rect.size().to_f32(), dst_rect.size(), nine_patch.repeat_horizontal)
         } else {
             
             
             
             
             
-            let dst = LayoutSize::new(center_dst.width(), center_src.size().height as f32);
-            (center_src.size(), dst, nine_patch.repeat_horizontal)
+            let dst = LayoutSize::new(center_dst.width(), natural_size.height);
+            (natural_size, dst, nine_patch.repeat_horizontal)
         };
         compute_border_repetition_1d(
             dst_size,
-            src_size.to_f32(),
+            src_size,
             repeat,
             &mut stretch_size.width,
             &mut spacing.width,
@@ -284,17 +291,17 @@ pub fn for_each_border_image_segment(
         
         
         let (src_size, dst_size, repeat) = if let Some((src_rect, dst_rect)) = center_h_rects {
-            (src_rect.size(), dst_rect.size(), nine_patch.repeat_vertical)
+            (src_rect.size().to_f32(), dst_rect.size(), nine_patch.repeat_vertical)
         } else {
             
             
             
-            let dst = LayoutSize::new(center_src.size().width as f32, center_dst.height());
-            (center_src.size(), dst, nine_patch.repeat_vertical)
+            let dst = LayoutSize::new(natural_size.width, center_dst.height());
+            (natural_size, dst, nine_patch.repeat_vertical)
         };
         compute_border_repetition_1d(
             LayoutSize::new(dst_size.height, dst_size.width),
-            DeviceIntSize::new(src_size.height, src_size.width).to_f32(),
+            DeviceSize::new(src_size.height, src_size.width),
             repeat,
             &mut stretch_size.height,
             &mut spacing.height,
