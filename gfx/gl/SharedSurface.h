@@ -155,7 +155,7 @@ class SharedSurface {
 
   
   
-  virtual bool IsValid() const { return true; };
+  virtual bool IsValid() const { return bool(mDesc.gl); };
 
   virtual Maybe<layers::SurfaceDescriptor> ToSurfaceDescriptor() = 0;
 
