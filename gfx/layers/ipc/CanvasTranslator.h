@@ -253,7 +253,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
       uint64_t aKey) final;
 
   already_AddRefed<gfx::SourceSurface> LookupSourceSurfaceFromSurfaceDescriptor(
-      const SurfaceDescriptor& aDesc) final;
+      gfx::DrawTarget* aDT, const SurfaceDescriptor& aDesc) final;
 
   
 
@@ -479,7 +479,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   
   
   already_AddRefed<gfx::SourceSurface> GetZeroCopySurfaceFromDMABuf(
-      TextureHost* aTextureHost);
+      gfx::DrawTarget* aDT, TextureHost* aTextureHost);
 #endif
 
   bool UsePendingCanvasTranslatorEvents();

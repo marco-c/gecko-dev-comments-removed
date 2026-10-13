@@ -102,7 +102,8 @@ static const Etagere::AllocatorOptions kR8AllocatorOptions = {16, 1, 1, 0};
 #endif
 
 SharedTexture::SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
-                             const RefPtr<WebGLTexture>& aTexture)
+                             const RefPtr<WebGLTexture>& aTexture,
+                             const dom::ContentParentId& aContentId)
     : BackingTexture(aSize, aFormat, aTexture),
       mAtlasAllocator(
 #ifdef XP_WIN
@@ -111,7 +112,8 @@ SharedTexture::SharedTexture(const IntSize& aSize, SurfaceFormat aFormat,
                     aSize.width, aSize.height, &kR8AllocatorOptions)
               :
 #endif
-              Etagere::etagere_atlas_allocator_new(aSize.width, aSize.height)) {
+              Etagere::etagere_atlas_allocator_new(aSize.width, aSize.height)),
+      mContentId(aContentId) {
 }
 
 SharedTexture::~SharedTexture() {
@@ -432,7 +434,8 @@ void SharedContextWebgl::ClearCachesIfNecessary() {
 
 
 bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
-                           const RefPtr<SharedContextWebgl>& aSharedContext) {
+                           const RefPtr<SharedContextWebgl>& aSharedContext,
+                           const dom::ContentParentId& aContentId) {
   switch (format) {
     case SurfaceFormat::B8G8R8A8:
     case SurfaceFormat::B8G8R8X8:
@@ -453,6 +456,8 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
   mSharedContext = aSharedContext;
   mSharedContext->mDrawTargetCount++;
   gReportedTargetCount++;
+
+  mContentId = aContentId;
 
   if (size_t(std::max(size.width, size.height)) >
       mSharedContext->mMaxTextureSize) {
@@ -1060,14 +1065,15 @@ bool DrawTargetWebgl::CanCreate(const IntSize& aSize, SurfaceFormat aFormat) {
 
 already_AddRefed<DrawTargetWebgl> DrawTargetWebgl::Create(
     const IntSize& aSize, SurfaceFormat aFormat,
-    const RefPtr<SharedContextWebgl>& aSharedContext) {
+    const RefPtr<SharedContextWebgl>& aSharedContext,
+    const dom::ContentParentId& aContentId) {
   
   if (!CanCreate(aSize, aFormat)) {
     return nullptr;
   }
 
   RefPtr<DrawTargetWebgl> dt = new DrawTargetWebgl;
-  if (!dt->Init(aSize, aFormat, aSharedContext) || !dt->IsValid()) {
+  if (!dt->Init(aSize, aFormat, aSharedContext, aContentId) || !dt->IsValid()) {
     return nullptr;
   }
 
@@ -2855,8 +2861,8 @@ void SharedContextWebgl::BindScratchFramebuffer(TextureHandle* aHandle,
 
 
 already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
-    SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared,
-    bool aRenderable, const WebGLTexture* aAvoid) {
+    DrawTargetWebgl* aDT, SurfaceFormat aFormat, const IntSize& aSize,
+    bool aAllowShared, bool aRenderable, const WebGLTexture* aAvoid) {
   
   if (size_t(std::max(aSize.width, aSize.height)) > mMaxTextureSize) {
     return nullptr;
@@ -2870,13 +2876,17 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
   
   int32_t pageSize = int32_t(std::min(
       StaticPrefs::gfx_canvas_accelerated_shared_page_size(), mMaxTextureSize));
-  if (aAllowShared && std::max(aSize.width, aSize.height) <= pageSize / 2) {
+  if (aAllowShared && aDT &&
+      std::max(aSize.width, aSize.height) <= pageSize / 2) {
     
     
     
     
+    
+    const dom::ContentParentId& contentId = aDT->GetContentId();
     for (auto& shared : mSharedTextures) {
-      if (shared->GetFormat() == aFormat &&
+      if (shared->GetContentId() == contentId &&
+          shared->GetFormat() == aFormat &&
           shared->IsRenderable() == aRenderable &&
           shared->GetWebGLTexture() != aAvoid) {
         bool wasEmpty = !shared->HasAllocatedHandles();
@@ -2895,8 +2905,8 @@ already_AddRefed<TextureHandle> SharedContextWebgl::AllocateTextureHandle(
     
     if (!handle) {
       if (RefPtr<WebGLTexture> tex = mWebgl->CreateTexture()) {
-        RefPtr<SharedTexture> shared =
-            new SharedTexture(IntSize(pageSize, pageSize), aFormat, tex);
+        RefPtr<SharedTexture> shared = new SharedTexture(
+            IntSize(pageSize, pageSize), aFormat, tex, contentId);
         if (aRenderable) {
           shared->MarkRenderable();
         }
@@ -3346,7 +3356,7 @@ bool SharedContextWebgl::DrawRectAccel(
         
         
         handle = AllocateTextureHandle(
-            format, texSize,
+            mCurrentTarget, format, texSize,
             !aForceUpdate && surfacePattern.mExtendMode == ExtendMode::CLAMP);
         if (!handle) {
           MOZ_ASSERT(false);
@@ -3579,7 +3589,7 @@ already_AddRefed<WebGLTexture> SharedContextWebgl::GetFilterInputTexture(
     
     
     
-    handle = AllocateTextureHandle(format, texSize);
+    handle = AllocateTextureHandle(mCurrentTarget, format, texSize);
     if (!handle) {
       MOZ_ASSERT(false);
       return nullptr;
@@ -3645,8 +3655,8 @@ bool SharedContextWebgl::FilterRect(const Rect& aDestRect,
     
     
     
-    RefPtr<TextureHandle> targetHandle =
-        AllocateTextureHandle(format, targetSize, true, true, tex);
+    RefPtr<TextureHandle> targetHandle = AllocateTextureHandle(
+        mCurrentTarget, format, targetSize, true, true, tex);
     if (!targetHandle) {
       MOZ_ASSERT(false);
       return false;
@@ -3837,7 +3847,8 @@ bool SharedContextWebgl::BlurRectPass(
     
     
     RefPtr<TextureHandle> targetHandle = AllocateTextureHandle(
-        aFilter ? format : SurfaceFormat::A8, targetSize, true, true, tex);
+        mCurrentTarget, aFilter ? format : SurfaceFormat::A8, targetSize, true,
+        true, tex);
     if (!targetHandle) {
       MOZ_ASSERT(false);
       return false;
@@ -4022,7 +4033,7 @@ already_AddRefed<SourceSurface> SharedContextWebgl::DownscaleBlurInput(
       IntSize halfSize = (sourceRect.Size() + IntSize(1, 1)) / 2;
       
       RefPtr<TextureHandle> halfHandle = AllocateTextureHandle(
-          aSurface->GetFormat(), halfSize, true, true, fullTex);
+          mCurrentTarget, aSurface->GetFormat(), halfSize, true, true, fullTex);
       if (!halfHandle) {
         break;
       }
@@ -4232,7 +4243,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::ResolveFilterInputAccel(
                     RoundToFactor(aSourceRect.height, roundFactor))
           : aSourceRect.Size();
   RefPtr<TextureHandle> handle =
-      AllocateTextureHandle(aFormat, roundSize, true, true);
+      AllocateTextureHandle(aDT, aFormat, roundSize, true, true);
   if (!handle) {
     return nullptr;
   }
@@ -5014,8 +5025,8 @@ static inline AAStrokeMode SupportsAAStroke(const Pattern& aPattern,
 already_AddRefed<TextureHandle> SharedContextWebgl::DrawStrokeMask(
     const PathVertexRange& aVertexRange, const IntSize& aSize) {
   
-  RefPtr<TextureHandle> handle =
-      AllocateTextureHandle(SurfaceFormat::A8, aSize, true, true);
+  RefPtr<TextureHandle> handle = AllocateTextureHandle(
+      mCurrentTarget, SurfaceFormat::A8, aSize, true, true);
   if (!handle) {
     return nullptr;
   }
@@ -6725,14 +6736,14 @@ std::shared_ptr<gl::SharedSurface> SharedContextWebgl::ExportSharedSurface(
 }
 
 already_AddRefed<SourceSurface> SharedContextWebgl::ImportSurfaceDescriptor(
-    const layers::SurfaceDescriptor& aDesc, const IntSize& aSize,
-    SurfaceFormat aFormat) {
+    DrawTargetWebgl* aDT, const layers::SurfaceDescriptor& aDesc,
+    const IntSize& aSize, SurfaceFormat aFormat) {
   if (IsContextLost()) {
     return nullptr;
   }
 
   RefPtr<TextureHandle> handle =
-      AllocateTextureHandle(aFormat, aSize, true, true);
+      AllocateTextureHandle(aDT, aFormat, aSize, true, true);
   if (!handle) {
     return nullptr;
   }
@@ -6775,7 +6786,7 @@ already_AddRefed<SourceSurface> SharedContextWebgl::ImportSurfaceDescriptor(
 already_AddRefed<SourceSurface> DrawTargetWebgl::ImportSurfaceDescriptor(
     const layers::SurfaceDescriptor& aDesc, const IntSize& aSize,
     SurfaceFormat aFormat) {
-  return mSharedContext->ImportSurfaceDescriptor(aDesc, aSize, aFormat);
+  return mSharedContext->ImportSurfaceDescriptor(this, aDesc, aSize, aFormat);
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(
