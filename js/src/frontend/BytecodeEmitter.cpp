@@ -2169,6 +2169,11 @@ bool BytecodeEmitter::allocateResumeIndex(BytecodeOffset offset,
 bool BytecodeEmitter::allocateTableSwitchResumeIndexRange(
     mozilla::Span<BytecodeOffset> caseOffsets, BytecodeOffset switchOffset,
     uint32_t* firstResumeIndex) {
+  if (caseOffsets.empty()) {
+    
+    *firstResumeIndex = 0;
+    return true;
+  }
   auto& list = bytecodeSection().tableSwitchOffsetList();
 
   
