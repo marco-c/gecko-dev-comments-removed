@@ -4157,6 +4157,7 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
                     Decl(self.protocol.managedCxxType(managed, self.side), actor.name),
                 ],
                 ret=Type.BOOL,
+                warn_unused=True,
             )
         )
         bindmeth.addcode(
