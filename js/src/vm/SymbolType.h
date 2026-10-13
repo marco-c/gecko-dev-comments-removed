@@ -24,8 +24,48 @@ class JSONPrinter;
 
 namespace JS {
 
-class Symbol
-    : public js::gc::CellWithTenuredGCPointer<js::gc::TenuredCell, JSAtom> {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Symbol : public js::gc::CellWithTenuredGCPointer<js::gc::TenuredCell,
+                                                       js::gc::TenuredCell> {
   friend class js::gc::CellAllocator;
 
  public:
@@ -33,7 +73,7 @@ class Symbol
   void operator=(const Symbol&) = delete;
 
   
-  JSAtom* description() const { return headerPtr(); }
+  JSAtom* description() const;
 
  private:
   const SymbolCode code_;
@@ -43,7 +83,9 @@ class Symbol
   const js::HashNumber hash_;
 
   Symbol(SymbolCode code, js::HashNumber hash, Handle<JSAtom*> desc)
-      : CellWithTenuredGCPointer(desc), code_(code), hash_(hash) {}
+      : CellWithTenuredGCPointer(desc ? &desc->asTenured() : nullptr),
+        code_(code),
+        hash_(hash) {}
 
   static Symbol* newInternal(JSContext* cx, SymbolCode code,
                              js::HashNumber hash, Handle<JSAtom*> description);
@@ -68,6 +110,15 @@ class Symbol
   SymbolCode code() const { return code_; }
   js::HashNumber hash() const { return hash_; }
 
+  
+  bool isLocal() const;
+
+  
+  bool isShared() const;
+
+  
+  Symbol* sharedSymbol() const;
+
   bool isWellKnownSymbol() const {
     return uint32_t(code_) < WellKnownSymbolLimit;
   }
@@ -85,6 +136,8 @@ class Symbol
 
   
   bool isPrivateName() const { return code_ == SymbolCode::PrivateNameSymbol; }
+
+  bool isUnique() const { return code_ == JS::SymbolCode::UniqueSymbol; }
 
   static const JS::TraceKind TraceKind = JS::TraceKind::Symbol;
 
