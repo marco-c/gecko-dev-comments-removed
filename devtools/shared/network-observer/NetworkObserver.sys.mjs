@@ -211,6 +211,12 @@ export class NetworkObserver {
    */
   #decodeResponseBodies = true;
   /**
+   * Whether security information should be collected for requests.
+   *
+   * @type {boolean}
+   */
+  #collectSecurityInfo = true;
+  /**
    * Throttling configuration, see constructor of NetworkThrottleManager
    *
    * @type {object}
@@ -225,6 +231,7 @@ export class NetworkObserver {
 
   constructor(options = {}) {
     const {
+      collectSecurityInfo,
       decodeResponseBodies,
       ignoreChannelFunction,
       onNetworkEvent,
@@ -249,6 +256,10 @@ export class NetworkObserver {
     // Set decodeResponseBodies if provided, otherwise default to "true".
     if (typeof decodeResponseBodies === "boolean") {
       this.#decodeResponseBodies = decodeResponseBodies;
+    }
+
+    if (typeof collectSecurityInfo === "boolean") {
+      this.#collectSecurityInfo = collectSecurityInfo;
     }
 
     // Set the provided bodyLimit if any, otherwise use the default "0".
@@ -1283,6 +1294,7 @@ export class NetworkObserver {
     // Add listener for the response body.
     const newListener = new lazy.NetworkResponseListener(httpActivity, {
       decodedCertificateCache: this.#decodedCertificateCache,
+      collectSecurityInfo: this.#collectSecurityInfo,
       decodeResponseBody: this.#decodeResponseBodies,
       fromServiceWorker: httpActivity.fromServiceWorker,
       responseBodyLimit: this.#bodyLimit,
