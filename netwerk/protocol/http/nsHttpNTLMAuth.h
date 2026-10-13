@@ -23,14 +23,6 @@ class nsHttpNTLMAuth : public nsIHttpAuthenticator {
  private:
   virtual ~nsHttpNTLMAuth() = default;
 
-  
-  
-  bool mUseNative{false};
-
-  
-  
-  bool mAllowDefaultCredentials{false};
-
   static StaticRefPtr<nsHttpNTLMAuth> gSingleton;
 };
 
