@@ -11,13 +11,7 @@ const kGyroscopeSensorData = {
 
 
 const kGyroscopeReadings = {
-  readings: [
-    { x: 1, y: 2, z: 3 }
-  ],
-  expectedReadings: [
-    { x: 1.00007366, y: 2.00014732, z: 3.00022098 }
-  ],
-  expectedRemappedReadings: [
-    { x: -2.00014732, y: 1.00007366, z: 3.00022098 }
-  ]
+  readings: [{x: 1, y: 2, z: 3}],
+  expectedReadings: [{x: 1.00007366, y: 2.00014732, z: 3.00022098}],
+  expectedRemappedReadings: [{x: 2.00014732, y: -1.00007366, z: 3.00022098}]
 };
