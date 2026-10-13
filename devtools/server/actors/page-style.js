@@ -288,6 +288,7 @@ class PageStyleActor extends Actor {
           if (
             !InspectorUtils.valueMatchesSyntax(
               targetDocument,
+              name,
               ret[name].value,
               registeredProperty.syntax
             )
@@ -552,6 +553,7 @@ class PageStyleActor extends Actor {
         registeredProperty &&
         !InspectorUtils.valueMatchesSyntax(
           targetDocument,
+          property,
           match.value,
           registeredProperty.syntax
         )
@@ -772,7 +774,10 @@ class PageStyleActor extends Actor {
     
     
 
-    const relevantPseudoElements = [];
+    
+    
+    
+    const relevantPseudoElements = new Map();
     for (const readPseudo of PSEUDO_ELEMENTS) {
       if (!this.#pseudoIsRelevant(rawNode, readPseudo, isInherited)) {
         continue;
@@ -785,17 +790,24 @@ class PageStyleActor extends Actor {
           
           true
         ).forEach(name => {
-          relevantPseudoElements.push(`::highlight(${name})`);
+          relevantPseudoElements.set(`::highlight(${name})`, readPseudo);
         });
+      } else if (readPseudo === "::picker") {
+        relevantPseudoElements.set(
+          `::picker(${rawNode.nodeName.toLowerCase()})`,
+          readPseudo
+        );
       } else {
-        relevantPseudoElements.push(readPseudo);
+        relevantPseudoElements.set(readPseudo, readPseudo);
       }
     }
 
-    for (const readPseudo of relevantPseudoElements) {
+    for (const [pseudo, shortPseudo] of relevantPseudoElements) {
       const pseudoRules = this.#getElementRules(
         rawNode,
-        readPseudo,
+        
+        
+        pseudo,
         isInherited ? node : null,
         filter
       );
@@ -803,7 +815,9 @@ class PageStyleActor extends Actor {
       
       
       if (
-        SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(readPseudo) &&
+        
+        
+        SharedCssLogic.ELEMENT_BACKED_PSEUDO_ELEMENTS.has(shortPseudo) &&
         isInherited
       ) {
         rules.unshift(...pseudoRules);
@@ -979,9 +993,37 @@ class PageStyleActor extends Actor {
         
         return false;
       case "::picker-icon":
-      case "::picker":
-        
         return !isInherited && node.nodeName == "SELECT";
+      case "::picker": {
+        if (node.nodeName !== "SELECT") {
+          return false;
+        }
+
+        if (!isInherited) {
+          return true;
+        }
+
+        
+        
+        
+        
+        let traversedNode = this.selectedElement;
+        while (traversedNode) {
+          if (
+            
+            traversedNode.implementedPseudoElement === "::picker" &&
+            
+            traversedNode.flattenedTreeParentNode === node
+          ) {
+            
+            return true;
+          }
+          
+          traversedNode = traversedNode.flattenedTreeParentNode;
+        }
+
+        return false;
+      }
       case "::checkmark":
         return !isInherited && node.nodeName == "OPTION";
       case "::-webkit-scrollbar":
@@ -1269,7 +1311,7 @@ class PageStyleActor extends Actor {
     
     
     for (const keyframesRule of this.cssLogic.keyframesRules) {
-      if (!animationNames.includes(keyframesRule.name)) {
+      if (!animationNames.includes(CSS.escape(keyframesRule.name))) {
         continue;
       }
 
