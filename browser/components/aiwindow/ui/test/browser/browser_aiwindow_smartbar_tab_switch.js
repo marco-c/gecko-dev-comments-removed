@@ -10,7 +10,6 @@
 
 
 
-
 "use strict";
 
 add_task(async function test_smartbar_renders_switch_tab_chiclet() {
