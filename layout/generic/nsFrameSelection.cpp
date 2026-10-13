@@ -1226,7 +1226,9 @@ void nsFrameSelection::MaintainedRange::AdjustNormalSelection(
       (*relToStart > 0 && aNormalSelection.GetDirection() == eDirNext) ||
       (*relToEnd < 0 && aNormalSelection.GetDirection() == eDirPrevious)) {
     
-    aNormalSelection.ReplaceAnchorFocusRange(mRange);
+    const RefPtr range = mRange;
+    
+    aNormalSelection.ReplaceAnchorFocusRange(range);
     
     
     aNormalSelection.SetDirection(*relToStart > 0 ? eDirPrevious : eDirNext);
