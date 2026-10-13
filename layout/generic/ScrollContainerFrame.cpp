@@ -6331,10 +6331,6 @@ void ScrollContainerFrame::UpdateMinimumScaleSize(
 
   Document* doc = pc->Document();
   MOZ_ASSERT(doc, "The document should be valid");
-  if (doc->HasViewportSizeOverrideForMiniWindow()) {
-    
-    return;
-  }
   if (doc->GetFullscreenElement()) {
     
     

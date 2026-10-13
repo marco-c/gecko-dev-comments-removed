@@ -924,8 +924,7 @@ void PresShell::Init(nsPresContext* aPresContext) {
     mZoomConstraintsClient->Init(this, mDocument);
 
     
-    MaybeRecreateMobileViewportManager(
-        MobileViewportManagerUpdate::PresShellInit);
+    MaybeRecreateMobileViewportManager(false);
   }
 
   if (nsCOMPtr<nsIDocShell> docShell = mPresContext->GetDocShell()) {
@@ -12103,13 +12102,6 @@ MobileViewportManager* PresShell::GetMobileViewportManager() const {
   return mMobileViewportManager;
 }
 
-
-
-static bool ShouldSizeLayoutFromViewportInfo(const Document* aDocument) {
-  return nsLayoutUtils::ShouldHandleMetaViewport(aDocument) ||
-         aDocument->HasViewportSizeOverrideForMiniWindow();
-}
-
 Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
     PresShell* aPresShell, Document* aDocument) {
   
@@ -12119,7 +12111,7 @@ Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
       return Nothing();
     }
   }
-  if (ShouldSizeLayoutFromViewportInfo(aDocument)) {
+  if (nsLayoutUtils::ShouldHandleMetaViewport(aDocument)) {
     return Some(MobileViewportManager::ManagerType::VisualAndMetaViewport);
   }
   if (nsLayoutUtils::AllowZoomingForDocument(aDocument)) {
@@ -12128,8 +12120,7 @@ Maybe<MobileViewportManager::ManagerType> UseMobileViewportManager(
   return Nothing();
 }
 
-void PresShell::MaybeRecreateMobileViewportManager(
-    MobileViewportManagerUpdate aUpdate) {
+void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
   
   
   
@@ -12143,10 +12134,6 @@ void PresShell::MaybeRecreateMobileViewportManager(
   if (mvmType && mMobileViewportManager &&
       *mvmType == mMobileViewportManager->GetManagerType()) {
     
-    
-    if (aUpdate == MobileViewportManagerUpdate::LayoutViewportSizeMayChange) {
-      ForceResizeReflowWithCurrentDimensions();
-    }
     return;
   }
 
@@ -12188,7 +12175,7 @@ void PresShell::MaybeRecreateMobileViewportManager(
     }
   }
 
-  if (aUpdate != MobileViewportManagerUpdate::PresShellInit) {
+  if (aAfterInitialization) {
     
     if (mMobileViewportManager) {
       mMobileViewportManager->SetInitialViewport();
@@ -12203,7 +12190,8 @@ void PresShell::MaybeRecreateMobileViewportManager(
 }
 
 bool PresShell::UsesMobileViewportSizing() const {
-  return mMobileViewportManager && ShouldSizeLayoutFromViewportInfo(mDocument);
+  return mMobileViewportManager &&
+         nsLayoutUtils::ShouldHandleMetaViewport(mDocument);
 }
 
 

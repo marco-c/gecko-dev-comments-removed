@@ -430,23 +430,12 @@ class PresShell final : public nsStubDocumentObserver,
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool DoFlushLayout(bool aInterruptible);
 
-  enum class MobileViewportManagerUpdate : uint8_t {
-    
-    PresShellInit,
-    
-    
-    ManagerTypeMayChange,
-    
-    
-    LayoutViewportSizeMayChange,
-  };
-
   
 
 
 
   MOZ_CAN_RUN_SCRIPT void MaybeRecreateMobileViewportManager(
-      MobileViewportManagerUpdate aUpdate);
+      bool aAfterInitialization);
 
   
 

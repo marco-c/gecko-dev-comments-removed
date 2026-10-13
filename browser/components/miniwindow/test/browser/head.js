@@ -124,6 +124,20 @@ function removeTestTabs(urlPrefix = "https://example.com/") {
 
 
 
+
+function parseTranslate(transform) {
+  let m = /translate\(([-\d.]+)px(?:,\s*([-\d.]+)px)?\)/.exec(transform);
+  return m
+    ? { x: parseFloat(m[1]), y: m[2] !== undefined ? parseFloat(m[2]) : 0 }
+    : null;
+}
+
+
+
+
+
+
+
 async function popWholeTabForTest(tab) {
   let opened = BrowserTestUtils.domWindowOpenedAndLoaded(null);
   let winPromise = MiniWindowManager.popTab(tab);

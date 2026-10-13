@@ -620,7 +620,6 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   }
 
   Maybe<float> displayWidthChangeRatio;
-  const LayoutDeviceIntSize oldDisplaySize = mDisplaySize;
   if (Maybe<LayoutDeviceIntSize> newDisplaySize =
           mContext->GetDocumentViewerSize()) {
     
@@ -663,17 +662,15 @@ void MobileViewportManager::RefreshViewportSize(bool aForceAdjustResolution) {
   CSSSize viewport = viewportInfo.GetSize();
   MVM_LOG("%p: Computed CSS viewport %s\n", this, ToString(viewport).c_str());
 
-  if (!mInvalidViewport && !mIsFirstPaint && mMobileViewportSize == viewport &&
-      mDisplaySize == oldDisplaySize) {
+  if (!mInvalidViewport && !mIsFirstPaint && mMobileViewportSize == viewport) {
     
     return;
   }
 
   
   
-  MVM_LOG("%p: Updating properties because %d || %d || %d || %d\n", this,
-          mInvalidViewport, mIsFirstPaint, mMobileViewportSize != viewport,
-          mDisplaySize != oldDisplaySize);
+  MVM_LOG("%p: Updating properties because %d || %d\n", this, mIsFirstPaint,
+          mMobileViewportSize != viewport);
 
   if (mManagerType == ManagerType::VisualAndMetaViewport &&
       (aForceAdjustResolution || mContext->AllowZoomingForDocument())) {

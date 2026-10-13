@@ -15,8 +15,6 @@ prefs = [
 
 ["browser_framing.js"]
 
-["browser_framing_resize.js"]
-
 ["browser_last_tab.js"]
 
 ["browser_open_close.js"]
