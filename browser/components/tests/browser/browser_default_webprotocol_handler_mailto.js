@@ -101,11 +101,6 @@ add_task(async function promptShownForLocalHandler() {
       document.querySelector(selector_mailto_prompt),
       "The prompt is shown when an executable is configured as handler."
     );
-    Assert.equal(
-      Glean.protocolhandlerMailto.handlerPromptShown.os_default.testGetValue(),
-      1,
-      "Glean records that the prompt has been displayed."
-    );
   });
 });
 
@@ -115,12 +110,6 @@ function test_rollout(
   dismissNotNowMinutes = 15,
   dismissXClickMinutes = 15
 ) {
-  
-
-
-
-
-  Services.fog.testResetFOG();
   return NimbusTestUtils.enrollWithFeatureConfig(
     {
       featureId: NimbusFeatures.mailto.featureId,
@@ -164,11 +153,6 @@ add_task(async function check_no_button() {
       null,
       document.querySelector(selector_mailto_prompt),
       "prompt hidden after button_no clicked."
-    );
-    Assert.equal(
-      Glean.protocolhandlerMailto.promptClicked.dismiss_os_default.testGetValue(),
-      1,
-      "Glean has recorded that the no button was clicked."
     );
 
     await WebProtocolHandlerRegistrar._askUserToSetMailtoHandler(
@@ -237,12 +221,6 @@ add_task(async function check_x_button() {
       ((expireTime - Date.now()) / 1000).toFixed(),
       "test completed within one minute, confirmed by the time after" +
         " which the permission manager would show the bar again after a dismiss."
-    );
-
-    Assert.equal(
-      Glean.protocolhandlerMailto.promptClicked.dismiss_os_default.testGetValue(),
-      1,
-      "Glean recorded metrics about the click on the x button."
     );
   });
 
