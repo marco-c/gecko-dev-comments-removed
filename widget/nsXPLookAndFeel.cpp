@@ -545,6 +545,9 @@ static constexpr struct {
     {"ui.use_standins_for_native_colors"_ns, widget::ThemeChangeKind::Style},
     {"privacy.resistFingerprinting"_ns, widget::ThemeChangeKind::Style},
     
+    
+    {"layout.css.always_underline_links"_ns, widget::ThemeChangeKind::Style},
+    
 };
 
 
