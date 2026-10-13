@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const testPathUpgradeable = getRootDirectory(gTestPath).replace(
@@ -17,6 +18,9 @@ add_task(async function () {
     set: [
       ["network.dns.mock_HTTPS_RR_domain", "example.org"],
       ["network.dns.force_use_https_rr", true],
+      
+      
+      ["dom.security.https_first", false],
     ],
   });
 
@@ -29,6 +33,26 @@ add_task(async function () {
       ok(
         content.document.location.href.startsWith("https://"),
         "Should be https"
+      );
+    });
+
+    
+    
+    await SpecialPowers.spawn(browser, [], async () => {
+      const innerWindowId = content.windowGlobalChild.innerWindowId;
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          Services.console
+            .getMessageArray()
+            .some(
+              msg =>
+                msg instanceof Ci.nsIScriptError &&
+                msg.innerWindowID == innerWindowId &&
+                msg.message.includes("HTTPS RR:") &&
+                msg.message.includes("Upgrading insecure request") &&
+                msg.message.includes("example.org")
+            ),
+        "HTTPS RR upgrade message is reported to the loaded document's window"
       );
     });
   });

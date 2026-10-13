@@ -5317,6 +5317,14 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
 
   newChannel->SetLoadGroup(mLoadGroup);
   newChannel->SetNotificationCallbacks(mCallbacks);
+
+  
+  
+  nsCOMPtr<nsIConsoleReportCollector> reporter = do_QueryInterface(newChannel);
+  if (reporter) {
+    FlushConsoleReports(reporter);
+  }
+
   
   if (sameOriginWithOriginalUri) {
     newChannel->SetContentDisposition(mContentDispositionHint);
