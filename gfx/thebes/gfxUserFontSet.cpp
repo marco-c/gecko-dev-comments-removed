@@ -732,6 +732,13 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
                                         uint32_t aSanitizedLength,
                                         nsTArray<OTSMessage>&& aMessages) {
   
+  
+  MOZ_ASSERT(
+      mSrcList[aSrcIndex].mSourceType == gfxFontFaceSrc::eSourceType_URL ||
+          mSrcList[aSrcIndex].mSourceType == gfxFontFaceSrc::eSourceType_Buffer,
+      "unexpected source type reaching LoadPlatformFont");
+
+  
   auto atExit = MakeScopeExit([=]() { free((void*)aOriginalFontData); });
 
   
@@ -795,7 +802,10 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
         ("userfonts (%p) [src %d] failed uri: (%s) for (%s)"
          " error making platform font\n",
          fontSet.get(), aSrcIndex,
-         mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(),
+         
+         mSrcList[aSrcIndex].mURI
+             ? mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get()
+             : "(buffer)",
          FamilyName().get()));
     return false;
   }
@@ -850,8 +860,12 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
       ("userfonts (%p) [src %d] loaded uri: (%s) for (%s) "
        "(%p) gen: %8.8x compress: %d%%\n",
        fontSet.get(), aSrcIndex,
-       mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(), FamilyName().get(),
-       this, uint32_t(fontSet->GetGeneration()), fontCompressionRatio));
+       
+       mSrcList[aSrcIndex].mURI
+           ? mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get()
+           : "(buffer)",
+       FamilyName().get(), this, uint32_t(fontSet->GetGeneration()),
+       fontCompressionRatio));
 
   if (NS_IsMainThread()) {
     
