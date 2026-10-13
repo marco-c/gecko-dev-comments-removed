@@ -18,6 +18,9 @@
 #include "mozilla/image/SourceBuffer.h"
 #include "nsJPEGEncoder.h"
 #include "nsString.h"
+#include "skia/include/core/SkCanvas.h"
+#include "skia/include/core/SkStream.h"
+#include "skia/include/docs/SkPDFDocument.h"
 #include "skia/src/pdf/SkPDFUtils.h"
 
 #ifdef ACCESSIBILITY
@@ -142,26 +145,27 @@ static bool EncodeJpeg(SkWStream* aDst, const SkPixmap& aSrc, int aQuality) {
 
 namespace mozilla::gfx {
 
+struct PrintTargetSkPDF::SkPDFDocState {
+  explicit SkPDFDocState(UniquePtr<SkWStream> aStream)
+      : mOStream(std::move(aStream)) {}
+
+  
+  
+  
+  sk_sp<SkDocument> mDoc;
+  UniquePtr<SkWStream> mOStream;
+  SkCanvas* mCanvas = nullptr;  
+};
+
 PrintTargetSkPDF::PrintTargetSkPDF(const IntSize& aSize,
                                    UniquePtr<SkWStream> aStream)
     : PrintTarget( nullptr, aSize),
-      mOStream(std::move(aStream)),
-      mPageCanvas(nullptr),
-      mRefCanvas(nullptr) {}
+      mState(new SkPDFDocState(std::move(aStream))),
+      mRefState(new SkPDFDocState(std::make_unique<SkDynamicMemoryWStream>())) {
+}
 
 PrintTargetSkPDF::~PrintTargetSkPDF() {
   Finish();  
-
-  
-  
-  mPDFDoc = nullptr;
-  mRefPDFDoc = nullptr;
-}
-
-
-already_AddRefed<PrintTargetSkPDF> PrintTargetSkPDF::CreateOrNull(
-    UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints) {
-  return do_AddRef(new PrintTargetSkPDF(aSizeInPoints, std::move(aStream)));
 }
 
 class GkSkWStream final : public SkWStream {
@@ -198,7 +202,8 @@ class GkSkWStream final : public SkWStream {
 
 already_AddRefed<PrintTargetSkPDF> PrintTargetSkPDF::CreateOrNull(
     nsIOutputStream* aStream, const IntSize& aSizeInPoints) {
-  return CreateOrNull(MakeUnique<GkSkWStream>(aStream), aSizeInPoints);
+  return do_AddRef(
+      new PrintTargetSkPDF(aSizeInPoints, MakeUnique<GkSkWStream>(aStream)));
 }
 
 static SkPDF::Metadata GetDefaultMetadata() {
@@ -213,7 +218,7 @@ static SkPDF::Metadata GetDefaultMetadata() {
 
 nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
                                          const nsAString& aPrintToFileName,
-                                         uint64_t aBrowsingContextId,
+                                         uint64_t aInnerWindowId,
                                          int32_t aStartPage, int32_t aEndPage) {
   
   
@@ -235,7 +240,7 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
   
   SkPDF::StructureElementNode structRoot = {};
   if (auto* builder =
-          mozilla::a11y::PdfStructTreeBuilder::Get(aBrowsingContextId)) {
+          mozilla::a11y::PdfStructTreeBuilder::Get(aInnerWindowId)) {
     if (builder->BuildStructTree(structRoot)) {
       metadata.fStructureElementTreeRoot = &structRoot;
       metadata.fOutline = SkPDF::Metadata::Outline::StructureElementHeaders;
@@ -244,30 +249,30 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
 #endif
 
   
-  mPDFDoc = SkPDF::MakeDocument(mOStream.get(), metadata);
-
-  return mPDFDoc ? NS_OK : NS_ERROR_FAILURE;
+  mState->mDoc = SkPDF::MakeDocument(mState->mOStream.get(), metadata);
+  return mState->mDoc ? NS_OK : NS_ERROR_FAILURE;
 }
 
 nsresult PrintTargetSkPDF::BeginPage(const IntSize& aSizeInPoints) {
-  mPageCanvas = mPDFDoc->beginPage(mSize.width, mSize.height);
-
-  return !mPageCanvas ? NS_ERROR_FAILURE
-                      : PrintTarget::BeginPage(aSizeInPoints);
+  mState->mCanvas = mState->mDoc->beginPage(mSize.width, mSize.height);
+  if (!mState->mCanvas) {
+    return NS_ERROR_FAILURE;
+  }
+  return PrintTarget::BeginPage(aSizeInPoints);
 }
 
 nsresult PrintTargetSkPDF::EndPage() {
-  mPageCanvas = nullptr;
+  mState->mCanvas = nullptr;
   mPageDT = nullptr;
   return PrintTarget::EndPage();
 }
 
 nsresult PrintTargetSkPDF::EndPrinting() {
-  mPDFDoc->close();
-  if (mRefPDFDoc) {
-    mRefPDFDoc->close();
+  mState->mDoc->close();
+  if (mRefState->mDoc) {
+    mRefState->mDoc->close();
   }
-  mPageCanvas = nullptr;
+  mState->mCanvas = nullptr;
   mPageDT = nullptr;
   return NS_OK;
 }
@@ -278,7 +283,7 @@ void PrintTargetSkPDF::Finish() {
     
     return;
   }
-  mOStream->flush();
+  mState->mOStream->flush();
   PrintTarget::Finish();
 }
 
@@ -288,12 +293,12 @@ already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
     return PrintTarget::MakeDrawTarget(aSize, aRecorder);
   }
   
-  if (!mPageCanvas) {
+  if (!mState->mCanvas) {
     return nullptr;
   }
-  mPageDT = Factory::CreateDrawTargetWithSkCanvas(mPageCanvas);
+  mPageDT = Factory::CreateDrawTargetWithSkCanvas(mState->mCanvas);
   if (!mPageDT) {
-    mPageCanvas = nullptr;
+    mState->mCanvas = nullptr;
     return nullptr;
   }
   return do_AddRef(mPageDT);
@@ -302,21 +307,17 @@ already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
 already_AddRefed<DrawTarget> PrintTargetSkPDF::GetReferenceDrawTarget() {
   if (!mRefDT) {
     
-    mRefPDFDoc = SkPDF::MakeDocument(&mRefOStream, GetDefaultMetadata());
-    if (!mRefPDFDoc) {
+    mRefState->mDoc =
+        SkPDF::MakeDocument(mRefState->mOStream.get(), GetDefaultMetadata());
+    if (!mRefState->mDoc) {
       return nullptr;
     }
-    mRefCanvas = mRefPDFDoc->beginPage(mSize.width, mSize.height);
-    if (!mRefCanvas) {
+    mRefState->mCanvas = mRefState->mDoc->beginPage(mSize.width, mSize.height);
+    if (!mRefState->mCanvas) {
       return nullptr;
     }
-    RefPtr<DrawTarget> dt = Factory::CreateDrawTargetWithSkCanvas(mRefCanvas);
-    if (!dt) {
-      return nullptr;
-    }
-    mRefDT = std::move(dt);
+    mRefDT = Factory::CreateDrawTargetWithSkCanvas(mRefState->mCanvas);
   }
-
   return do_AddRef(mRefDT);
 }
 
