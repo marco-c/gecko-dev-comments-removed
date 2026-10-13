@@ -5,6 +5,8 @@
 #ifndef nsIWeakReferenceUtils_h_
 #define nsIWeakReferenceUtils_h_
 
+#include <type_traits>
+
 #include "nsCOMPtr.h"
 #include "nsIWeakReference.h"
 
@@ -37,46 +39,57 @@ extern nsIWeakReference* NS_GetWeakReference(nsISupports*,
                                              nsresult* aResult = nullptr);
 extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
                                              nsresult* aResult = nullptr);
+namespace mozilla::detail {
+template <class T>
+concept ProvidesWeakReferenceTearoff =
+    requires { T::kHasWeakReferenceTearoff; } && T::kHasWeakReferenceTearoff;
 
 
 
 
 
-
-
-
-
-inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
-    nsISupports* aRawPtr, nsresult* aError = nullptr) {
+template <class T>
+inline already_AddRefed<nsIWeakReference> GetCheckedWeakReference(
+    T* aRawPtr, nsresult* aError) {
+  static_assert(std::is_base_of_v<nsISupports, T>,
+                "do_GetWeakReference() requires an nsISupports object");
+  static_assert(!std::is_base_of_v<nsIWeakReference, T>,
+                "do_GetWeakReference() on a weak reference itself is very "
+                "likely a programmer error");
+  static_assert(!std::is_final_v<T> ||
+                    std::is_base_of_v<nsISupportsWeakReference, T> ||
+                    ProvidesWeakReferenceTearoff<T>,
+                "do_GetWeakReference() on a final class that does not "
+                "implement nsISupportsWeakReference always returns null; "
+                "derive from nsSupportsWeakReference or keep a strong ref");
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
+}  
 
+
+
+
+
+
+
+
+
+template <class T>
 inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
-    nsISupportsWeakReference* aRawPtr, nsresult* aError = nullptr) {
-  return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
-}
-
-inline void do_GetWeakReference(nsIWeakReference* aRawPtr,
-                                nsresult* aError = nullptr) {
-  
-  
-  
+    T* aRawPtr, nsresult* aError = nullptr) {
+  return mozilla::detail::GetCheckedWeakReference(aRawPtr, aError);
 }
 
 template <class T>
-inline void do_GetWeakReference(already_AddRefed<T>&) {
-  
-  
-  
-  
+inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
+    const RefPtr<T>& aPtr, nsresult* aError = nullptr) {
+  return mozilla::detail::GetCheckedWeakReference(aPtr.get(), aError);
 }
 
 template <class T>
-inline void do_GetWeakReference(already_AddRefed<T>&, nsresult*) {
-  
-  
-  
-  
+inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
+    const nsCOMPtr<T>& aPtr, nsresult* aError = nullptr) {
+  return mozilla::detail::GetCheckedWeakReference(aPtr.get(), aError);
 }
 
 #endif
