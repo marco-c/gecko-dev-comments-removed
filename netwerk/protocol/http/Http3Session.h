@@ -468,6 +468,9 @@ class Http3Session final : public Http3SessionBase,
   RefPtr<nsHttpTransaction> mFirstHttpTransaction;
 
   RefPtr<nsHttpConnectionInfo> mConnInfo;
+  
+  
+  Atomic<bool, Relaxed> mIsTrrServiceChannel{false};
 
   int64_t mTotalBytesRead = 0;     
   int64_t mTotalBytesWritten = 0;  
