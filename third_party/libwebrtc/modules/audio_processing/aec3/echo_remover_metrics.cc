@@ -47,8 +47,10 @@ EchoRemoverMetrics::EchoRemoverMetrics() {
 }
 
 void EchoRemoverMetrics::ResetMetrics() {
+  
+  
   erl_time_domain_ = DbMetric(0.f, 10000.f, 0.000f);
-  erle_time_domain_ = DbMetric(0.f, 0.f, 1000.f);
+  erle_time_domain_ = DbMetric(0.f, 1000.f, 0.f);
   saturated_capture_ = false;
 }
 
