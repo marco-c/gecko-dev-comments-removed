@@ -2,8 +2,6 @@
 
 
 
-#include "vm/FrameIter-inl.h"
-
 #include "mozilla/Assertions.h"  
 #include "mozilla/MaybeOneOf.h"  
 
@@ -29,6 +27,7 @@
 #include "wasm/WasmInstance.h"   
 
 #include "jit/JSJitFrameIter-inl.h"  
+#include "vm/FrameIter-inl.h"
 #include "vm/Stack-inl.h"  
 
 namespace JS {
@@ -59,6 +58,7 @@ JitFrameIter& JitFrameIter::operator=(const JitFrameIter& another) {
   MOZ_ASSERT(this != &another);
 
   act_ = another.act_;
+  wasmExitInstance_ = another.wasmExitInstance_;
   mustUnwindActivation_ = another.mustUnwindActivation_;
 
   if (isSome()) {
@@ -149,6 +149,7 @@ bool JitFrameIter::done() const {
 }
 
 void JitFrameIter::settle() {
+  wasmExitInstance_ = nullptr;
   if (isJSJit()) {
     const jit::JSJitFrameIter& jitFrame = asJSJit();
     if (jitFrame.type() != jit::FrameType::WasmToJSJit) {
@@ -182,8 +183,12 @@ void JitFrameIter::settle() {
 
     iter_.destroy();
     iter_.construct<wasm::WasmFrameIter>(act_, prevFP);
-    MOZ_ASSERT(!asWasm().done());
-    return;
+    if (asWasm().done()) {
+      
+      
+      
+      wasmExitInstance_ = asWasm().exitInstance();
+    }
   }
 
   if (isWasm()) {
@@ -558,6 +563,18 @@ bool FrameIter::isFunctionFrame() const {
       return false;
   }
   MOZ_CRASH("Unexpected state");
+}
+
+bool FrameIter::isResumingGenerator() const {
+  MOZ_ASSERT(!done());
+  if (isInterp()) {
+    return interpFrame()->isResumingGenerator();
+  }
+  if (isPhysicalJitFrame()) {
+    return physicalJitFrame()->isResumingGenerator();
+  }
+  
+  return false;
 }
 
 JSAtom* FrameIter::maybeFunctionDisplayAtom() const {
