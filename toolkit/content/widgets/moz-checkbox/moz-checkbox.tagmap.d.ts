@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozCheckbox } from "./moz-checkbox.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-checkbox": MozCheckbox;
+  }
+}

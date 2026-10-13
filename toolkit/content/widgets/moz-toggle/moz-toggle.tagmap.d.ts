@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozToggle } from "./moz-toggle.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-toggle": MozToggle;
+  }
+}

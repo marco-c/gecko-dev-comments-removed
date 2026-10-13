@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozTextarea } from "./moz-textarea.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-textarea": MozTextarea;
+  }
+}

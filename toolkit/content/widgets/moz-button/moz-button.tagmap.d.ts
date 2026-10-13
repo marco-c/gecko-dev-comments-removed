@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozButton } from "./moz-button.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-button": MozButton;
+  }
+}

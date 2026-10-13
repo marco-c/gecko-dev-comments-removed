@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputUrl } from "./moz-input-url.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-url": MozInputUrl;
+  }
+}

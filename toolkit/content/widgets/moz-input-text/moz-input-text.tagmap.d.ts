@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputText } from "./moz-input-text.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-text": MozInputText;
+  }
+}

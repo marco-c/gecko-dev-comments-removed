@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputTel } from "./moz-input-tel.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-tel": MozInputTel;
+  }
+}

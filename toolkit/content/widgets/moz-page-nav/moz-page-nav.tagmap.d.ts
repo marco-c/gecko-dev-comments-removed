@@ -1,0 +1,12 @@
+
+
+
+
+import type { MozPageNav, MozPageNavButton } from "./moz-page-nav.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-page-nav": MozPageNav;
+    "moz-page-nav-button": MozPageNavButton;
+  }
+}

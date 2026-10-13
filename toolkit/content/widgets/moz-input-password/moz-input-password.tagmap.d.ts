@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputPassword } from "./moz-input-password.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-password": MozInputPassword;
+  }
+}

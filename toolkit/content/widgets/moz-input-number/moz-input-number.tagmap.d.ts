@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputNumber } from "./moz-input-number.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-number": MozInputNumber;
+  }
+}

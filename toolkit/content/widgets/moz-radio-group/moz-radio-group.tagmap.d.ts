@@ -1,0 +1,12 @@
+
+
+
+
+import type { MozRadio, MozRadioGroup } from "./moz-radio-group.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-radio": MozRadio;
+    "moz-radio-group": MozRadioGroup;
+  }
+}

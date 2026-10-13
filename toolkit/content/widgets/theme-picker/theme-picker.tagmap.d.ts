@@ -1,0 +1,11 @@
+
+
+
+
+import type { ThemePicker } from "./theme-picker.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "theme-picker": ThemePicker;
+  }
+}

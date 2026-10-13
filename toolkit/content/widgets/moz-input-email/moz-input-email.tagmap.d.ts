@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputEmail } from "./moz-input-email.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-email": MozInputEmail;
+  }
+}

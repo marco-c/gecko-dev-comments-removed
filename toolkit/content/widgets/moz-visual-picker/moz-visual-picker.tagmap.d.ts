@@ -1,0 +1,15 @@
+
+
+
+
+import type {
+  MozVisualPicker,
+  MozVisualPickerItem,
+} from "./moz-visual-picker.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-visual-picker": MozVisualPicker;
+    "moz-visual-picker-item": MozVisualPickerItem;
+  }
+}

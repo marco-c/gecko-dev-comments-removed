@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozBadge } from "./moz-badge.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-badge": MozBadge;
+  }
+}

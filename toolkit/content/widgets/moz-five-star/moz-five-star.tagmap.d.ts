@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozFiveStar } from "./moz-five-star.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-five-star": MozFiveStar;
+  }
+}

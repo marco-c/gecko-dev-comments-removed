@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputColor } from "./moz-input-color.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-color": MozInputColor;
+  }
+}

@@ -1,0 +1,11 @@
+
+
+
+
+import type MozBoxItem from "./moz-box-item.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-box-item": MozBoxItem;
+  }
+}

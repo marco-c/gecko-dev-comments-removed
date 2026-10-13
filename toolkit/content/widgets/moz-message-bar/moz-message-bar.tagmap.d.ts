@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozMessageBar } from "./moz-message-bar.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-message-bar": MozMessageBar;
+  }
+}

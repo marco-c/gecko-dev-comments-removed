@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozCard } from "./moz-card.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-card": MozCard;
+  }
+}

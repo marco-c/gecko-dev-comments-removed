@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputFolder } from "./moz-input-folder.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-folder": MozInputFolder;
+  }
+}

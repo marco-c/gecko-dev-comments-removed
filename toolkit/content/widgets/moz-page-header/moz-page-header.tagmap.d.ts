@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozPageHeader } from "./moz-page-header.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-page-header": MozPageHeader;
+  }
+}

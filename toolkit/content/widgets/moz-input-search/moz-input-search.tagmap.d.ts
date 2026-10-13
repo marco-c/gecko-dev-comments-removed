@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozInputSearch } from "./moz-input-search.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-input-search": MozInputSearch;
+  }
+}

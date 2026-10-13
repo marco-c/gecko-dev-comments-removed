@@ -1,0 +1,12 @@
+
+
+
+
+import type { PanelItem, PanelList } from "./panel-list.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "panel-item": PanelItem;
+    "panel-list": PanelList;
+  }
+}

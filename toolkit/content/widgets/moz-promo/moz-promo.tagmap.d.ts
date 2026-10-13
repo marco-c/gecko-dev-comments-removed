@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozPromo } from "./moz-promo.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-promo": MozPromo;
+  }
+}

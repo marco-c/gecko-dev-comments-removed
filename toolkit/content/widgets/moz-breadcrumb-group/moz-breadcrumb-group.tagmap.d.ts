@@ -1,0 +1,15 @@
+
+
+
+
+import type {
+  MozBreadcrumb,
+  MozBreadcrumbGroup,
+} from "./moz-breadcrumb-group.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-breadcrumb": MozBreadcrumb;
+    "moz-breadcrumb-group": MozBreadcrumbGroup;
+  }
+}

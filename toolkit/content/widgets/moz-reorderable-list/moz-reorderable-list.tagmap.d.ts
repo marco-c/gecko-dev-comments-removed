@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozReorderableList } from "./moz-reorderable-list.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-reorderable-list": MozReorderableList;
+  }
+}

@@ -1,0 +1,11 @@
+
+
+
+
+import type { MozBoxLink } from "./moz-box-link.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "moz-box-link": MozBoxLink;
+  }
+}
