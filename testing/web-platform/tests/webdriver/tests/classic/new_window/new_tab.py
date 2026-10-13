@@ -46,6 +46,21 @@ def test_opens_about_blank_in_new_tab(session, inline):
     assert session.url == "about:blank"
 
 
+
+
+
+def test_first_navigation_replaces_about_blank(session, inline):
+    response = new_window(session, type_hint="tab")
+    value = assert_success(response)
+    assert value["type"] == "tab"
+
+    session.window_handle = value["handle"]
+    url = inline("<p>foo")
+    session.url = url
+    assert session.url == url
+    assert session.execute_script("return history.length") == 1
+
+
 def test_sets_no_window_name(session):
     response = new_window(session, type_hint="tab")
     value = assert_success(response)
