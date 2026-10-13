@@ -1,4 +1,6 @@
-This folder contains scripts and metadata required to vendor [ANGLE](https://chromium.googlesource.com/angle/angle) into Firefox. ANGLE's files are vendored into `third_party/angle`.
+# Vendoring ANGLE
+
+The `gfx/angle` folder contains scripts and metadata required to vendor [ANGLE](https://chromium.googlesource.com/angle/angle) into Firefox. ANGLE's files are vendored into `third_party/angle`.
 
 ## Updating ANGLE
 
@@ -10,13 +12,13 @@ ANGLE is vendored using the standard `mach vendor` command:
 
 where `revision` can be a branch name or specific revision. If omitted altogether, the version of ANGLE currently used by Chromium's Beta channel will be chosen.
 
-This will fetch and extract the specified version of ANGLE, along with a few of its required dependencies, then execute the `update-angle.py` script.
+This will fetch and extract the specified version of ANGLE, along with a few of its required dependencies, then execute the `gfx/angle/update-angle.py` script.
 
 `update-angle.py` will apply our patches, generate `moz.build` files required to build ANGLE, and vendor the required files into tree.
 
 ## Patches
 
-Patches applied to ANGLE live in the `patches` directory, and are applied in alphabetical order.
+Patches applied to ANGLE live in the `gfx/angle/patches` directory, and are applied in alphabetical order.
 
 They are applied by the `update-angle.py` script, rather than using `mach vendor`'s `patches` mechanism. This is because `updatebot` creates one commit before applying patches and another afterwards. We take care to only vendor the required source files into tree, and deciding which files to vendor must occur after applying patches, as the patches will affect the list of required files. Using the `patches` mechanism would therefore result in the first commit adding a huge number of unnecessary files to tree, which would then be removed by the second commit.
 
@@ -65,7 +67,7 @@ Then commit the new patches and re-run `mach vendor`.
 
 ## Build file generation
 
-The `moz.build` files used to build ANGLE are generated using the `gn_processor.py` script, which is invoked automatically from `update-angle.py`. Metadata required for this can be found in `gn-configs/angle.json`. This metadata configures which GN target is built, and with which GN args, for each platform. It can also be used to override `DEFINES` and other sandbox variables, and specify which files must be built as non-unified sources. This is the preferred mechanism for configuring ANGLE's build for our needs, and should be used rather than patches where possible as patches increase the likelihood of conflicts when updating.
+The `moz.build` files used to build ANGLE are generated using the `gn_processor.py` script, which is invoked automatically from `update-angle.py`. Metadata required for this can be found in `gfx/angle/gn-configs/angle.json`. This metadata configures which GN target is built, and with which GN args, for each platform. It can also be used to override `DEFINES` and other sandbox variables, and specify which files must be built as non-unified sources. This is the preferred mechanism for configuring ANGLE's build for our needs, and should be used rather than patches where possible as patches increase the likelihood of conflicts when updating.
 
 `gn_processor.py` is additionally used to determine the exact set of files required to be vendored into tree. We rely on this instead of `mach vendor`'s `include` and `exclude` steps, as they are too coarse to be effective for a project as complex as ANGLE.
 
