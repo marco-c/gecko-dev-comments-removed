@@ -5753,20 +5753,19 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
       nsIFrame::ReflowChildFlags::NoDeleteNextInFlowChild;
 
   
-  
-  
-  if (const GridItemCachedBAxisMeasurement* cachedMeasurement =
+  if (const auto* cache =
           aChild->GetProperty(GridItemCachedBAxisMeasurement::Prop());
       cachedMeasurement && cachedMeasurement->IsValidFor(aChild, aCBSize)) {
-    childSize.BSize(wm) = cachedMeasurement->BSize();
+    const nscoord cachedBSize = cachedMeasurement->BSize();
+    childSize.BSize(wm) = cachedBSize;
     childSize.ISize(wm) = aChild->ISize(wm);
     nsContainerFrame::FinishReflowChild(aChild, pc, childSize, &childRI, wm,
                                         LogicalPoint(wm), nsSize(), flags);
     GRID_LOG(
         "[perf] MeasuringReflow accepted cached value=%d, child=%p, "
         "aCBSize.ISize=%d",
-        cachedMeasurement->BSize(), aChild, aCBSize.ISize(wm));
-    return cachedMeasurement->BSize();
+        cachedBSize, aChild, aCBSize.ISize(wm));
+    return cachedBSize;
   }
 
   parent->ReflowChild(aChild, pc, childSize, childRI, wm, LogicalPoint(wm),
