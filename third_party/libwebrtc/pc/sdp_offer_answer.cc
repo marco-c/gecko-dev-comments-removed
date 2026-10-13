@@ -4787,7 +4787,10 @@ SdpOfferAnswerHandler::AssociateTransceiver(
     
     
     if (!transceiver) {
-      transceiver = transceivers()->FindByMLineIndex(mline_index);
+      
+      
+      
+      transceiver = transceivers()->FindUnassociatedByMLineIndex(mline_index);
     }
     if (!transceiver) {
       

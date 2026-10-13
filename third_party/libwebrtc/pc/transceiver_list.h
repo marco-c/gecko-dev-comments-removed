@@ -127,7 +127,10 @@ class TransceiverList {
   RtpTransceiverProxyRefPtr FindBySender(
       scoped_refptr<RtpSenderInterface> sender) const;
   RtpTransceiverProxyRefPtr FindByMid(absl::string_view mid) const;
-  RtpTransceiverProxyRefPtr FindByMLineIndex(size_t mline_index) const;
+  
+  
+  RtpTransceiverProxyRefPtr FindUnassociatedByMLineIndex(
+      size_t mline_index) const;
 
   
   TransceiverStableState* StableState(RtpTransceiverProxyRefPtr transceiver) {
