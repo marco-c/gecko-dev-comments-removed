@@ -366,6 +366,8 @@ struct AudioConfig {
   
   
   std::optional<std::string> sync_group;
+  
+  bool repeat = true;
 };
 
 struct VideoCodecConfig {
