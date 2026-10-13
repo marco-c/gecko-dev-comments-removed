@@ -2798,7 +2798,8 @@ void SdpOfferAnswerHandler::ApplyRemoteDescriptionUpdateTransceiverState(
       
       transceiver->set_current_direction(local_direction);
       
-      if (transceiver->mid()) {
+      
+      if (transceiver->mid() && !transceiver->stopped()) {
         auto it = dtls_transports_by_mid.find(*transceiver->mid());
         RTC_DCHECK(it != dtls_transports_by_mid.end());
         transceiver->SetTransport(it->second.transport,
@@ -4899,7 +4900,8 @@ void SdpOfferAnswerHandler::UpdateTransceiverChannel(
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::UpdateTransceiverChannel");
   RTC_DCHECK(IsUnifiedPlan());
   RTC_DCHECK(transceiver);
-  if (content.rejected) {
+  
+  if (content.rejected || transceiver->internal()->stopped()) {
     if (transceiver->internal()->HasChannel()) {
       network_teardown_tasks.Add(
           transceiver->internal()->GetClearChannelNetworkTask());
@@ -5993,6 +5995,10 @@ void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
   }
   
   auto transceiver_list = transceivers()->List();
+  
+  
+  ScopedOperationsBatcher network_teardown_tasks(context_->network_thread());
+  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
   for (const auto& transceiver : transceiver_list) {
     
     
@@ -6018,8 +6024,19 @@ void SdpOfferAnswerHandler::RemoveStoppedTransceivers() {
       RTC_LOG(LS_INFO)
           << "Dropping stopped transceiver that was never associated";
     }
+    
+    if (transceiver->internal()->HasChannel()) {
+      network_teardown_tasks.Add(
+          transceiver->internal()->GetClearChannelNetworkTask());
+      worker_tasks.Add(transceiver->internal()->GetDeleteChannelWorkerTask(
+          false));
+    }
     transceivers()->Remove(transceiver);
   }
+  RTCError error = network_teardown_tasks.Run();
+  RTC_DCHECK(error.ok());
+  error = worker_tasks.Run();
+  RTC_DCHECK(error.ok());
 }
 
 void SdpOfferAnswerHandler::RemoveUnusedChannels(
