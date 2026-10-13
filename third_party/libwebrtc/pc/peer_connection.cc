@@ -296,6 +296,10 @@ RTCError ValidateIceCandidatePoolSize(
 
 
 
+
+
+
+
 RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const PeerConnectionInterface::RTCConfiguration& existing_configuration) {
