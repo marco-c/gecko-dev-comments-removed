@@ -195,14 +195,21 @@ TimeStamp FontFaceSetDocumentImpl::GetNavigationStartTimeStamp() {
   return navStart;
 }
 
+
+
+
+
+
 void FontFaceSetDocumentImpl::EnsureReady() {
   MOZ_ASSERT(NS_IsMainThread());
+  {
+    RecursiveMutexAutoLock lock(mMutex);
+    if (mStatus == FontFaceSetLoadStatus::Loading) {
+      return;
+    }
+  }
 
-  
-  
-  
-  
-  if (!ReadyPromiseIsPending() && mDocument) {
+  if (mDocument) {
     mDocument->FlushPendingNotifications(FlushType::Layout);
   }
 }

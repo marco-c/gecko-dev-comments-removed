@@ -143,7 +143,7 @@ void FontFaceSetImpl::Destroy() {
 
 void FontFaceSetImpl::ParseFontShorthandForMatching(
     const nsACString& aFont, StyleFontFamilyList& aFamilyList,
-    FontWeight& aWeight, FontStretch& aStretch, FontSlantStyle& aStyle,
+    FontWeight& aWeight, FontWidth& aWidth, FontSlantStyle& aStyle,
     ErrorResult& aRv) {
   RefPtr<URLExtraData> url = GetURLExtraData();
   if (!url) {
@@ -151,8 +151,8 @@ void FontFaceSetImpl::ParseFontShorthandForMatching(
     return;
   }
 
-  if (!ServoCSSParser::ParseFontShorthandForMatching(
-          aFont, url, aFamilyList, aStyle, aStretch, aWeight)) {
+  if (!ServoCSSParser::ParseFontShorthandForMatching(aFont, url, aFamilyList,
+                                                     aStyle, aWidth, aWeight)) {
     aRv.ThrowSyntaxError("Invalid font shorthand");
     return;
   }
@@ -180,9 +180,9 @@ void FontFaceSetImpl::FindMatchingFontFaces(const nsACString& aFont,
 
   StyleFontFamilyList familyList;
   FontWeight weight;
-  FontStretch stretch;
+  FontWidth width;
   FontSlantStyle italicStyle;
-  ParseFontShorthandForMatching(aFont, familyList, weight, stretch, italicStyle,
+  ParseFontShorthandForMatching(aFont, familyList, weight, width, italicStyle,
                                 aRv);
   if (aRv.Failed()) {
     return;
@@ -191,7 +191,7 @@ void FontFaceSetImpl::FindMatchingFontFaces(const nsACString& aFont,
   gfxFontStyle style;
   style.style = italicStyle;
   style.weight = weight;
-  style.stretch = stretch;
+  style.width = width;
 
   
   nsTHashSet<FontFace*> matchingFaces;
@@ -239,11 +239,6 @@ void FontFaceSetImpl::FindMatchingFontFaces(
       aFontFaces.AppendElement(owner);
     }
   }
-}
-
-bool FontFaceSetImpl::ReadyPromiseIsPending() const {
-  RecursiveMutexAutoLock lock(mMutex);
-  return mOwner && mOwner->ReadyPromiseIsPending();
 }
 
 FontFaceSetLoadStatus FontFaceSetImpl::Status() {
@@ -588,14 +583,14 @@ nsresult FontFaceSetImpl::LogMessage(gfxUserFontEntry* aUserFontEntry,
 
   nsAutoCString weightString;
   aUserFontEntry->Weight().ToString(weightString);
-  nsAutoCString stretchString;
-  aUserFontEntry->Stretch().ToString(stretchString);
+  nsAutoCString widthString;
+  aUserFontEntry->Width().ToString(widthString);
   nsPrintfCString message(
       "downloadable font: %s "
-      "(font-family: \"%s\" style:%s weight:%s stretch:%s src index:%d)",
+      "(font-family: \"%s\" style:%s weight:%s width:%s src index:%d)",
       aMessage, familyName.get(),
       aUserFontEntry->IsItalic() ? "italic" : "normal",  
-      weightString.get(), stretchString.get(), aSrcIndex);
+      weightString.get(), widthString.get(), aSrcIndex);
 
   if (NS_FAILED(aStatus)) {
     message.AppendLiteral(": ");
@@ -772,6 +767,7 @@ void FontFaceSetImpl::CheckLoadingStarted() {
   }
 
   mStatus = FontFaceSetLoadStatus::Loading;
+  mLoadingFinishedScheduled = false;
 
   if (IsOnOwningThread()) {
     OnLoadingStarted();
@@ -821,7 +817,7 @@ void FontFaceSetImpl::CheckLoadingFinished() {
     return;
   }
 
-  if (!ReadyPromiseIsPending()) {
+  if (mLoadingFinishedScheduled) {
     
     
     return;
@@ -833,21 +829,22 @@ void FontFaceSetImpl::CheckLoadingFinished() {
   }
 
   mStatus = FontFaceSetLoadStatus::Loaded;
-
-  if (IsOnOwningThread()) {
-    OnLoadingFinished();
-    return;
-  }
+  mLoadingFinishedScheduled = true;
 
   DispatchToOwningThread(
       "FontFaceSetImpl::CheckLoadingFinished",
-      [self = RefPtr{this}]() { self->OnLoadingFinished(); });
+      [self = RefPtr{this}]()
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA { self->OnLoadingFinished(); });
 }
 
 void FontFaceSetImpl::OnLoadingFinished() {
   RecursiveMutexAutoLock lock(mMutex);
-  if (mOwner) {
-    mOwner->MaybeResolve();
+  if (mStatus != FontFaceSetLoadStatus::Loaded) {
+    
+    return;
+  }
+  if (RefPtr owner = mOwner) {
+    owner->MaybeResolve();
   }
 }
 

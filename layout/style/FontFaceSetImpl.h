@@ -201,7 +201,7 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   void CheckLoadingFinishedAfterDelay();
 
   void OnLoadingStarted() { DispatchLoadingEventAndReplaceReadyPromise(); }
-  void OnLoadingFinished();
+  MOZ_CAN_RUN_SCRIPT void OnLoadingFinished();
 
   
   
@@ -236,14 +236,11 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
   bool HasLoadingFontFaces();
 
   
-  bool ReadyPromiseIsPending() const;
-
-  
   virtual void UpdateHasLoadingFontFaces();
 
   void ParseFontShorthandForMatching(const nsACString& aFont,
                                      StyleFontFamilyList& aFamilyList,
-                                     FontWeight& aWeight, FontStretch& aStretch,
+                                     FontWeight& aWeight, FontWidth& aWidth,
                                      FontSlantStyle& aStyle, ErrorResult& aRv);
 
   virtual TimeStamp GetNavigationStartTimeStamp() = 0;
@@ -275,6 +272,10 @@ class FontFaceSetImpl : public nsISupports, public gfxUserFontSet {
 
   
   dom::FontFaceSetLoadStatus mStatus MOZ_GUARDED_BY(mMutex);
+
+  
+  
+  bool mLoadingFinishedScheduled MOZ_GUARDED_BY(mMutex) = false;
 
   
   
