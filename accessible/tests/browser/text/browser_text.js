@@ -371,15 +371,26 @@ addAccessibleTask(
 
 
 addAccessibleTask(
-  `<ol start="9"><li id="i1">i1</li><li id="i2">i2</li></ol>`,
+  `
+<ol start="9"><li id="i1">i1</li><li id="i2">i2</li></ol>
+<ol start="9"><li id="i3"></li><li id="i4"></li></ol>
+  `,
   async function testBulletUpdate(browser, docAcc) {
     const i2 = findAccessibleChildByID(docAcc, "i2");
     
     
     testCharacterCount(i2, 6);
     testText(i2, 0, 6, "10. i2");
-    let changed = waitForEvent(EVENT_TEXT_INSERTED, i2);
     info("Removing i1");
+    
+    
+    
+    
+    const i4 = findAccessibleChildByID(docAcc, "i4");
+    let changed = waitForEvents([
+      [EVENT_TEXT_INSERTED, i2],
+      [EVENT_TEXT_INSERTED, i4],
+    ]);
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("i1").remove();
     });
@@ -387,6 +398,19 @@ addAccessibleTask(
     
     testCharacterCount(i2, 5);
     testText(i2, 0, 5, "9. i2");
+
+    
+    
+    testCharacterCount(i4, 4);
+    testText(i4, 0, 4, "10. ");
+    info("Removing i3");
+    changed = waitForEvent(EVENT_TEXT_INSERTED, i4);
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("i3").remove();
+    });
+    await changed;
+    testCharacterCount(i4, 3);
+    testText(i4, 0, 3, "9. ");
   },
   { chrome: true, topLevel: true }
 );
