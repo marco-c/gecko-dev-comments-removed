@@ -126,6 +126,9 @@ enum ExtraCheck {
     Overlays(usize),
     
     Underlays(usize),
+    
+    
+    VertexDataUploads(usize),
 }
 
 impl ExtraCheck {
@@ -141,6 +144,8 @@ impl ExtraCheck {
                 x == results.last().unwrap().compositor_surface_overlays,
             ExtraCheck::Underlays(x) =>
                 x == results.last().unwrap().compositor_surface_underlays,
+            ExtraCheck::VertexDataUploads(x) =>
+                x == results.last().unwrap().vertex_data_uploads,
         }
     }
 }
@@ -567,6 +572,10 @@ impl ReftestManifest {
                     function if function.starts_with("underlays(") => {
                         let (_, args, _) = parse_function(function);
                         extra_checks.push(ExtraCheck::Underlays(args[0].parse().unwrap()));
+                    }
+                    function if function.starts_with("vertex_data_uploads(") => {
+                        let (_, args, _) = parse_function(function);
+                        extra_checks.push(ExtraCheck::VertexDataUploads(args[0].parse().unwrap()));
                     }
                     function if function.starts_with("max_surface_size(") => {
                         let (_, args, _) = parse_function(function);

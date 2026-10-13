@@ -758,8 +758,7 @@ pub struct Renderer {
     gpu_buffer_texture_i: Option<Texture>,
     gpu_buffer_texture_i_too_large: i32,
     gpu_buffer_last_data_i: Vec<GpuBufferBlockI>,
-    vertex_data_textures: Vec<vertex::VertexDataTextures>,
-    current_vertex_data_textures: usize,
+    vertex_data: vertex::VertexDataRing,
 
     pipeline_info: PipelineInfo,
 
@@ -3804,18 +3803,18 @@ impl Renderer {
     }
 
     
-    fn bind_frame_data(&mut self, frame: &mut Frame) {
+    fn bind_frame_data(&mut self, frame: &mut Frame, results: &mut RenderResults) {
         tracy_rs::profile_scope!("bind_frame_data");
 
         let _timer = self.gpu_profiler.start_timer(GPU_TAG_SETUP_DATA);
 
-        self.vertex_data_textures[self.current_vertex_data_textures].update(
+        if self.vertex_data.update(
             &mut self.device,
             &mut self.texture_upload_buffer_pool,
             frame,
-        );
-        self.current_vertex_data_textures =
-            (self.current_vertex_data_textures + 1) % VERTEX_DATA_TEXTURE_COUNT;
+        ) {
+            results.vertex_data_uploads += 1;
+        }
 
         if let Some(texture) = &self.gpu_buffer_texture_f {
             self.device.bind_texture(
@@ -4019,7 +4018,7 @@ impl Renderer {
         self.device.set_depth_write(false);
         self.set_blend_mode(BlendMode::None, FramebufferKind::Other);
 
-        self.bind_frame_data(frame);
+        self.bind_frame_data(frame, results);
 
         let bytes_to_mb = 1.0 / 1000000.0;
         let gpu_buffer_bytes_f = frame.gpu_buffer_f.size.to_f32().area() * 16.0;
@@ -4314,9 +4313,7 @@ impl Renderer {
         if let Some(texture) = self.gpu_buffer_texture_i {
             self.device.delete_texture(texture);
         }
-        for textures in self.vertex_data_textures.drain(..) {
-            textures.deinit(&mut self.device);
-        }
+        self.vertex_data.deinit(&mut self.device);
         self.texture_upload_buffer_pool.deinit(&mut self.device);
         self.staging_texture_pool.delete_textures(&mut self.device);
         self.texture_resolver.deinit(&mut self.device);
@@ -4357,9 +4354,11 @@ impl Renderer {
         }
 
         
-        for textures in &self.vertex_data_textures {
-            report.vertex_data_textures += textures.size_in_bytes();
-        }
+        report.vertex_data_textures += self.vertex_data.gpu_size_in_bytes();
+
+        
+        
+        report.upload_staging_memory += self.vertex_data.cpu_size_in_bytes();
 
         
         report += self.texture_resolver.report_memory();
@@ -4505,6 +4504,10 @@ pub struct RenderResults {
     
     
     pub compositor_surface_underlays: usize,
+
+    
+    
+    pub vertex_data_uploads: usize,
 }
 
 #[cfg(any(feature = "capture", feature = "replay"))]
