@@ -349,7 +349,7 @@ impl FrameBuilder {
         
         
         
-        scratch.primitive.frame.reset_draws(scene.prim_instances.len());
+        scratch.primitive.frame.reset_draws(scene.prim_store.pictures.len());
 
         
         

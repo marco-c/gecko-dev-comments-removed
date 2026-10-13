@@ -220,6 +220,9 @@ pub struct PrimitiveDrawHeader {
     pub prim_instance_index: PrimitiveInstanceIndex,
 
     
+    pub spatial_node_index: SpatialNodeIndex,
+
+    
     pub clip_chain: ClipChainInstance,
 
     
@@ -259,6 +262,7 @@ impl PrimitiveDrawHeader {
     pub fn new() -> Self {
         PrimitiveDrawHeader {
             prim_instance_index: PrimitiveInstanceIndex::INVALID,
+            spatial_node_index: SpatialNodeIndex::INVALID,
             state: DrawState::Unset,
             clip_chain: ClipChainInstance::empty(),
             clip_task_index: ClipTaskIndex::INVALID,
@@ -294,6 +298,7 @@ pub fn update_prim_visibility(
     }
     frame_state.visited_pictures[pic_index.0 as usize] = true;
     let pic = &store.pictures[pic_index.0 as usize];
+    let draws_start = frame_state.scratch.primitive.frame.begin_picture_draws();
 
     let (surface_index, pop_surface) = match pic.raster_config {
         Some(RasterConfig { surface_index, composite_mode: PictureCompositeMode::TileCache { .. }, .. }) => {
@@ -445,6 +450,7 @@ pub fn update_prim_visibility(
             
             let mut draw = PrimitiveDrawHeader::new();
             draw.prim_instance_index = PrimitiveInstanceIndex(prim_instance_index as u32);
+            draw.spatial_node_index = cluster.spatial_node_index;
             draw.snapped_pattern_rect = snapped_pattern_rect;
 
             
@@ -453,7 +459,7 @@ pub fn update_prim_visibility(
             let snapped_local_clip_rect = snap_local_clip_rect(
                 frame_state.data_stores.local_clip_rect(prim_instance),
                 &snapper,
-                policy.clip,
+                policy.local_clip(),
             );
 
             if let PrimitiveKind::Picture { pic_index, .. } = frame_state.prim_instances[prim_instance_index].kind {
@@ -617,6 +623,8 @@ pub fn update_prim_visibility(
             frame_state.scratch.primitive.frame.draw_mut(draw_index).state = new_state;
         }
     }
+
+    frame_state.scratch.primitive.frame.end_picture_draws(pic_index, draws_start);
 
     if let Some(snapshot) = &pic.snapshot {
         if snapshot.detached {
