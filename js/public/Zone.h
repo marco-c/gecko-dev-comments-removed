@@ -67,22 +67,8 @@ extern JS_PUBLIC_API void* JS_GetZoneUserData(JS::Zone* zone);
 extern JS_PUBLIC_API bool JS_RefreshCrossCompartmentWrappers(
     JSContext* cx, JS::Handle<JSObject*> obj);
 
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void JS_MarkCrossZoneIdValue(JSContext* cx,
-                                                  const JS::Value& value);
+JS_PUBLIC_API void JS_MarkCrossZoneId(JSContext* cx, jsid id);
+JS_PUBLIC_API void JS_MarkCrossZoneIdValue(JSContext* cx,
+                                           const JS::Value& value);
 
 #endif  

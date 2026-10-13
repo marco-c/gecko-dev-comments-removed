@@ -38,8 +38,7 @@ inline bool JS::Compartment::wrap(JSContext* cx, JS::MutableHandleValue vp) {
 
 
   if (vp.isSymbol()) {
-    cx->recordRefToValue(vp);
-    return true;
+    return cx->wrapOrRecordRefToValue(vp);
   }
 
   
