@@ -12,6 +12,14 @@ function assert_path_data_equals(actual, expected, epsilon = 0) {
 }
 
 
+function assert_path_segment_equals(actual, expected, epsilon = 0) {
+  assert_not_equals(actual, null, 'segment should not be null');
+  assert_equals(actual.type, expected.type, 'segment.type');
+  assert_array_approx_equals(actual.values, expected.values, epsilon,
+                             'segment.values');
+}
+
+
 function createPath(d) {
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   if (d !== undefined) {
