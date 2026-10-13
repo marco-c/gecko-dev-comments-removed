@@ -191,6 +191,11 @@ class RTC_EXPORT VideoEncoder {
 
     
     
+    
+    std::optional<size_t> max_pixels_per_frame;
+
+    
+    
     bool supports_native_handle;
 
     

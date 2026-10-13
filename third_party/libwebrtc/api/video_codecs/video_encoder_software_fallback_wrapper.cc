@@ -470,6 +470,10 @@ VideoEncoder::EncoderInfo VideoEncoderSoftwareFallbackWrapper::GetEncoderInfo()
   info.apply_alignment_to_all_simulcast_layers =
       fallback_encoder_info.apply_alignment_to_all_simulcast_layers ||
       default_encoder_info.apply_alignment_to_all_simulcast_layers;
+  
+  
+  
+  info.max_pixels_per_frame = fallback_encoder_info.max_pixels_per_frame;
 
   if (fallback_params_ && fallback_params_->vp8_specific_resolution_switch) {
     info.scaling_settings.min_pixels_per_frame = fallback_params_->min_pixels;

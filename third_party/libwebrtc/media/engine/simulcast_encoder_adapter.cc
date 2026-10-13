@@ -1153,6 +1153,12 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
     encoder_info.requested_resolution_alignment =
         std::lcm(primary_info.requested_resolution_alignment,
                  fallback_info.requested_resolution_alignment);
+    
+    
+    
+    
+    encoder_info.max_pixels_per_frame =
+        encoder_context->encoder().GetEncoderInfo().max_pixels_per_frame;
 
     encoder_info.apply_alignment_to_all_simulcast_layers =
         primary_info.apply_alignment_to_all_simulcast_layers ||
@@ -1228,6 +1234,15 @@ VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
     encoder_info.requested_resolution_alignment =
         std::lcm(encoder_info.requested_resolution_alignment,
                  encoder_impl_info.requested_resolution_alignment);
+    
+    
+    if (encoder_impl_info.max_pixels_per_frame.has_value() &&
+        (!encoder_info.max_pixels_per_frame.has_value() ||
+         *encoder_impl_info.max_pixels_per_frame <
+             *encoder_info.max_pixels_per_frame)) {
+      encoder_info.max_pixels_per_frame =
+          encoder_impl_info.max_pixels_per_frame;
+    }
     
     
     if (encoder_impl_info.apply_alignment_to_all_simulcast_layers ||
