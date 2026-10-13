@@ -795,7 +795,7 @@ nsresult HTMLFormElement::SubmitSubmission(
   }
 
   
-  Document* doc = GetComposedDoc();
+  RefPtr<Document> doc = GetComposedDoc();
   RefPtr<nsDocShell> container =
       doc ? nsDocShell::Cast(doc->GetDocShell()) : nullptr;
   if (!container || IsEditable()) {
