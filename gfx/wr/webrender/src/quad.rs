@@ -1041,7 +1041,10 @@ fn prepare_nine_patch(
             };
 
             if should_create_task(mode, x, y) {
-                let task_size = segment_device_rect.size().to_i32();
+                
+                
+                
+                let task_size = segment_device_rect.size().ceil().to_i32();
                 let task_id = add_render_task_with_mask(
                     pattern,
                     &local_bounds,
