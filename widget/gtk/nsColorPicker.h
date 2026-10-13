@@ -9,6 +9,7 @@
 
 #include "nsBaseColorPicker.h"
 #include "nsCOMPtr.h"
+#include "nsColor.h"
 #include "nsString.h"
 
 

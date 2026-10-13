@@ -6,7 +6,9 @@
 #define SHMBufSurface_h_
 
 #include "Units.h"
-#include "WUniquePtr.h"
+#ifdef MOZ_WAYLAND
+#  include "WUniquePtr.h"
+#endif
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
@@ -49,12 +51,14 @@ class SHMBufSurface : public BufferSurface {
   
   uint8_t* mBuffer = nullptr;
 
+#ifdef MOZ_WAYLAND
   
   
   
   mozilla::WUniquePtr<wl_shm_pool> mShmPool;
   mozilla::ipc::MutableSharedMemoryHandle mShmHandle;
   mozilla::ipc::SharedMemoryMapping mShm;
+#endif
 };
 
 class SHMBufSurfaceRGBA final : public SHMBufSurface {
@@ -80,7 +84,7 @@ class SHMBufSurfaceRGBA final : public SHMBufSurface {
   SHMBufSurfaceRGBA();
 
  private:
-  ~SHMBufSurfaceRGBA() override {}
+  ~SHMBufSurfaceRGBA() override = default;
 
   bool UploadTexture(int aPlane, bool aNeedInit) override;
 
@@ -105,7 +109,7 @@ class SHMBufSurfaceYUV final : public SHMBufSurface {
   SHMBufSurfaceYUV();
 
  private:
-  ~SHMBufSurfaceYUV() override {}
+  ~SHMBufSurfaceYUV() override = default;
 
   bool UploadTexture(int aPlane, bool aNeedInit) override;
 
