@@ -371,19 +371,18 @@ class TaskController {
 
 #ifdef MOZ_MEMORY
   
-  static void SetupIdleMemoryCleanup();
+  static void SetupMemoryCleanup();
 
   
-  void UpdateIdleMemoryCleanupPrefs();
+  void UpdateMemoryCleanupPrefs();
+
+  
+  void MayScheduleMemoryCleanup();
 
   
   
-  void MayScheduleIdleMemoryCleanup();
-
   
-  
-  
-  void RequestIdleMemoryCleanup(StaticString aReason);
+  void RequestMemoryCleanup(StaticString aReason);
 #endif
 
  private:
