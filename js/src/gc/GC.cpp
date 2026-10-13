@@ -2726,6 +2726,12 @@ void GCRuntime::purgeRuntime() {
 bool GCRuntime::shouldRealmPreserveJitCode(Realm* realm,
                                            const TimeStamp& currentTime) {
   
+  
+  if (realm->isDyingHint()) {
+    return false;
+  }
+
+  
   if (alwaysPreserveCode) {
     return true;
   }
@@ -2957,29 +2963,34 @@ void GCRuntime::setRealmPreserveJitCodeFlags(Zone* zone,
   }
 
   
-  bool preservingAllRealms = true;
+  
+  bool preserveCode = false;
   for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
     if (shouldRealmPreserveJitCode(r, currentTime)) {
-      r->jitRealm().setPreservingCode(true);
-    } else {
-      preservingAllRealms = false;
+      preserveCode = true;
+      break;
     }
-  }
-  if (preservingAllRealms) {
-    return;
   }
 
   
-  JSContext* cx = rt->mainContextFromOwnThread();
-  for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
-    if (iter->compartment()->zone() != zone) {
-      continue;
-    }
-    for (OnlyJSJitFrameIter frames(iter); !frames.done(); ++frames) {
-      const jit::JSJitFrameIter& frame = frames.frame();
-      if (frame.isScripted()) {
-        frame.script()->realm()->jitRealm().setPreservingCode(true);
+  
+  if (!preserveCode) {
+    JSContext* cx = rt->mainContextFromOwnThread();
+    for (jit::JitActivationIterator iter(cx); !iter.done(); ++iter) {
+      if (iter->compartment()->zone() == zone) {
+        preserveCode = true;
+        break;
       }
+    }
+  }
+
+  if (!preserveCode) {
+    return;
+  }
+
+  for (RealmsInZoneIter r(zone); !r.done(); r.next()) {
+    if (!r->isDyingHint()) {
+      r->jitRealm().setPreservingCode(true);
     }
   }
 }
@@ -5685,6 +5696,10 @@ MOZ_COLD bool GCRuntime::waitForBackgroundTasksOnAllocFailure() {
   }
 
   if (nursery().joinDecommitTask()) {
+    waited = true;
+  }
+
+  if (unmarkTask.join()) {
     waited = true;
   }
 
