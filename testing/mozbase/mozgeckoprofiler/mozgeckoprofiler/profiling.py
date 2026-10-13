@@ -90,6 +90,13 @@ def symbolicate_profiles(profile_dir=None, symbol_dir=None):
         for profile in profile_dir.glob(pattern)
         if "resource-usage" not in profile.name
     )
+    if not profile_files:
+        return
+
+    
+    
+    if symbol_dir is not None and not Path(symbol_dir).is_dir():
+        symbol_dir = None
 
     if symbol_dir is None:
         symbol_dir = get_extracted_symbols()
