@@ -278,8 +278,7 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   
 
   
-  std::unique_ptr<SMILCompositorTable> currentCompositorTable =
-      std::make_unique<SMILCompositorTable>(0);
+  auto currentCompositorTable = std::make_unique<SMILCompositorTable>(0);
 
   
   
