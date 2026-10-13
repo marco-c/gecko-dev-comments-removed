@@ -8,8 +8,6 @@ const NEWTAB_ENABLED_PREF = "browser.newtabpage.enabled";
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
 const NOVA_ENABLED_PREF = "browser.newtabpage.activity-stream.nova.enabled";
-const WEATHER_SYSTEM_PREF =
-  "browser.newtabpage.activity-stream.widgets.system.weather.enabled";
 
 const CLASSIC_WEATHER_SYSTEM_PREF =
   "browser.newtabpage.activity-stream.system.showWeather";
@@ -22,7 +20,6 @@ add_setup(async function () {
       [HOMEPAGE_PREF, BLANK_HOMEPAGE_URL],
       [NEWTAB_ENABLED_PREF, true],
       
-      [WEATHER_SYSTEM_PREF, true],
       ["browser.newtabpage.activity-stream.widgets.system.enabled", true],
       ["browser.newtabpage.activity-stream.feeds.system.topstories", true],
     ],

@@ -188,6 +188,8 @@ add_task(async function test_firefoxhome_widgets_blocked() {
         "browser.newtabpage.activity-stream.widgets.system.clocks.enabled",
         true,
       ],
+      
+      ["browser.newtabpage.activity-stream.widgets.enabled", true],
     ],
   });
 
@@ -201,19 +203,41 @@ add_task(async function test_firefoxhome_widgets_blocked() {
     },
   });
 
-  await BrowserTestUtils.withNewTab("about:preferences#home", async browser => {
-    let doc = browser.contentDocument;
-    let lists = await TestUtils.waitForCondition(() =>
-      doc.getElementById("setting-control-lists")
-    );
-    await lists.updateComplete;
-    ok(lists.disabled, "Blocked widget toggle is disabled");
-
-    let clocks = doc.getElementById("setting-control-clocks");
-    await clocks.updateComplete;
-    ok(!clocks.disabled, "Widget that was not blocked stays editable");
+  
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:home#customize-widgets",
+    waitForStateStop: true,
   });
 
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    let lists = await ContentTaskUtils.waitForCondition(
+      () =>
+        content.document.querySelector(
+          "dialog.customize-menu[open] #lists-toggle"
+        ),
+      "Wait for the Lists toggle in the Customize panel"
+    );
+    
+    
+    await ContentTaskUtils.waitForCondition(
+      () => lists.wrappedJSObject.disabled,
+      "Blocked widget toggle is disabled"
+    );
+    ok(lists.wrappedJSObject.disabled, "Blocked widget toggle is disabled");
+
+    let clocks = content.document.querySelector(
+      "dialog.customize-menu[open] #clocks-toggle"
+    );
+    ok(clocks, "Clock toggle is in the Customize panel");
+    ok(
+      !clocks.wrappedJSObject.disabled,
+      "Widget that was not blocked stays editable"
+    );
+  });
+
+  BrowserTestUtils.removeTab(tab);
   await setupPolicyEngineWithJson({
     policies: {
       FirefoxHome: {},
