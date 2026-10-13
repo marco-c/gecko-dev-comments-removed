@@ -14,6 +14,7 @@
 #include "mozilla/dom/HTMLFieldSetElement.h"
 #include "mozilla/dom/LifecycleCallbackArgs.h"
 #include "mozilla/dom/MutationObservers.h"
+#include "mozilla/dom/NodeBinding.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ValidityState.h"
 #include "nsContentUtils.h"
@@ -567,9 +568,25 @@ void ElementInternals::SetAttrElement(nsAtom* aAttr, Element* aElement) {
 #endif
 }
 
+
+
+
+
+
+
+
+static bool HasSameShadowIncludingRoot(Element& aTarget, Element& aOther) {
+  GetRootNodeOptions options;
+  options.mComposed = true;
+  return aTarget.GetRootNode(options) == aOther.GetRootNode(options);
+}
+
 Element* ElementInternals::GetAttrElement(nsAtom* aAttr) const {
   nsWeakPtr weakAttrEl = mAttrElementMap.Get(aAttr);
   nsCOMPtr<Element> attrEl = do_QueryReferent(weakAttrEl);
+  if (attrEl && !HasSameShadowIncludingRoot(*mTarget, *attrEl)) {
+    return nullptr;
+  }
   return attrEl;
 }
 
@@ -626,12 +643,17 @@ void ElementInternals::GetAttrElements(
   aElements.SetValue(nsTArray<RefPtr<Element>>());
   auto& [attrElements, cachedAttrElements] = attrElementsMaybeEntry.Data();
 
+  
+  
   auto getAttrAssociatedElements = [&, &attrElements = attrElements]() {
     CopyableTArray<RefPtr<Element>> elements;
 
     for (const nsWeakPtr& weakEl : attrElements) {
       
       if (RefPtr<Element> attrEl = do_QueryReferent(weakEl)) {
+        if (!HasSameShadowIncludingRoot(*mTarget, *attrEl)) {
+          continue;
+        }
         
         elements.AppendElement(std::move(attrEl));
       }
@@ -681,7 +703,8 @@ Maybe<nsTArray<RefPtr<Element>>> ElementInternals::GetAttrElements(
   nsTArray<RefPtr<Element>> elements;
   auto& [attrElements, cachedAttrElements] = attrElementsMaybeEntry.Data();
   for (const nsWeakPtr& weakEl : attrElements) {
-    if (RefPtr<Element> attrEl = do_QueryReferent(weakEl)) {
+    RefPtr<Element> attrEl = do_QueryReferent(weakEl);
+    if (attrEl && HasSameShadowIncludingRoot(*mTarget, *attrEl)) {
       elements.AppendElement(std::move(attrEl));
     }
   }
