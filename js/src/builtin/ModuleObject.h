@@ -441,9 +441,29 @@ class AsyncEvaluationOrder {
 
 
 
-using LoadedModuleMap =
-    GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
-              StableCellHasher<HeapPtr<JSObject*>>, SystemAllocPolicy>;
+struct ModuleRequestHasher {
+  using Key = HeapPtr<JSObject*>;
+  using Lookup = JSObject*;
+
+  static HashNumber hash(const Lookup& l) {
+    auto& request = l->as<ModuleRequestObject>();
+    MOZ_ASSERT(request.moduleType() != JS::ModuleType::Unknown);
+    return mozilla::AddToHash(request.specifier()->hash(),
+                              static_cast<uint32_t>(request.moduleType()),
+                              static_cast<uint32_t>(request.phase()));
+  }
+
+  
+  static bool match(const Key& k, const Lookup& l) {
+    auto& a = k->as<ModuleRequestObject>();
+    auto& b = l->as<ModuleRequestObject>();
+    return a.specifier() == b.specifier() && a.moduleType() == b.moduleType() &&
+           a.phase() == b.phase();
+  }
+};
+
+using LoadedModuleMap = GCHashMap<HeapPtr<JSObject*>, HeapPtr<ModuleObject*>,
+                                  ModuleRequestHasher, SystemAllocPolicy>;
 
 
 
