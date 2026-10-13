@@ -236,6 +236,9 @@ class TestDescriptionSchema(Schema, kw_only=True):
     
     variants: TOptional[list[str]] = None
     
+    
+    treeherder_group_variants: TOptional[bool] = None
+    
     run_without_variant: optionally_keyed_by("test-platform", bool, use_msgspec=True)  
     
     instance_size: optionally_keyed_by(  

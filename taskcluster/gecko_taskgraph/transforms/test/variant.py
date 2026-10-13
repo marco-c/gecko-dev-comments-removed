@@ -22,6 +22,7 @@ transforms = TransformSequence()
 class VariantEntry(Schema, kw_only=True):
     description: str
     suffix: str
+    treeherder_suffix: Optional[str] = None
     mozinfo: Optional[str] = None
     component: str
     expiration: str
@@ -98,15 +99,16 @@ def split_variants(config, tasks):
                 task_key[item] = variant_key[item]
         return task_key
 
-    def apply_variant(variant, task, name):
+    def apply_variant(variant, task, name, group_variants):
         task["description"] = variant["description"].format(**task)
 
         suffix = f"-{variant['suffix']}"
+        th_suffix = f"-{variant.get('treeherder-suffix') or variant['suffix']}"
         group, symbol = split_symbol(task["treeherder-symbol"])
-        if group != "?":
-            group += suffix
+        if group != "?" and not group_variants:
+            group += th_suffix
         else:
-            symbol += suffix
+            symbol = f"{symbol}{th_suffix}".lstrip("-")
         task["treeherder-symbol"] = join_symbol(group, symbol)
 
         
@@ -131,6 +133,7 @@ def split_variants(config, tasks):
     expired_variants = find_expired_variants(TEST_VARIANTS)
     for task in tasks:
         variants = task.pop("variants", [])
+        group_variants = task.pop("treeherder-group-variants", False)
         variants = remove_expired(variants, expired_variants)
 
         if task.pop("run-without-variant"):
@@ -151,7 +154,7 @@ def split_variants(config, tasks):
                     if not jsone.render(variant["when"], context):
                         break
 
-                taskv = apply_variant(variant, taskv, name)
+                taskv = apply_variant(variant, taskv, name, group_variants)
             else:
                 taskv["attributes"]["unittest_variant"] = name
                 yield taskv
