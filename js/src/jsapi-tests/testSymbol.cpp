@@ -2,8 +2,9 @@
 
 
 
-#include "js/Symbol.h"
 #include "jsapi-tests/tests.h"
+
+#include "js/Symbol.h"
 
 BEGIN_TEST(testSymbol_New) {
   using namespace JS;
@@ -11,7 +12,7 @@ BEGIN_TEST(testSymbol_New) {
   RootedString desc(cx, nullptr);
   RootedSymbol sym1(cx);
   CHECK(sym1 = NewSymbol(cx, desc));
-  CHECK_NULL(GetSymbolDescription(sym1));
+  CHECK_NULL(GetSymbolDescription(cx, sym1));
   RootedValue v(cx, SymbolValue(sym1));
   CHECK_EQUAL(JS_TypeOfValue(cx, v), JSTYPE_SYMBOL);
 
@@ -21,7 +22,7 @@ BEGIN_TEST(testSymbol_New) {
 
   CHECK(desc = JS_NewStringCopyZ(cx, "ponies"));
   CHECK(sym2 = NewSymbol(cx, desc));
-  CHECK_SAME(StringValue(GetSymbolDescription(sym2)), StringValue(desc));
+  CHECK_SAME(StringValue(GetSymbolDescription(cx, sym2)), StringValue(desc));
 
   return true;
 }
@@ -34,7 +35,7 @@ BEGIN_TEST(testSymbol_GetSymbolFor) {
   CHECK(desc);
   RootedSymbol sym1(cx);
   CHECK(sym1 = GetSymbolFor(cx, desc));
-  CHECK_SAME(StringValue(GetSymbolDescription(sym1)), StringValue(desc));
+  CHECK_SAME(StringValue(GetSymbolDescription(cx, sym1)), StringValue(desc));
 
   
   
@@ -67,7 +68,7 @@ BEGIN_TEST(testSymbol_GetWellKnownSymbol) {
   
   RootedString desc(cx);
   CHECK(desc = JS_NewStringCopyZ(cx, "Symbol.iterator"));
-  CHECK_SAME(StringValue(GetSymbolDescription(sym1)), StringValue(desc));
+  CHECK_SAME(StringValue(GetSymbolDescription(cx, sym1)), StringValue(desc));
 
   
   Rooted<Symbol*> sym2(cx);

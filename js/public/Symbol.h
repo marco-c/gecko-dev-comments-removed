@@ -44,7 +44,8 @@ extern JS_PUBLIC_API Symbol* GetSymbolFor(JSContext* cx, Handle<JSString*> key);
 
 
 
-extern JS_PUBLIC_API JSString* GetSymbolDescription(Handle<Symbol*> symbol);
+extern JS_PUBLIC_API JSString* GetSymbolDescription(JSContext* cx,
+                                                    Handle<Symbol*> symbol);
 
 
 #define JS_FOR_EACH_WELL_KNOWN_SYMBOL(MACRO) \
