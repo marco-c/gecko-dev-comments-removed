@@ -119,6 +119,9 @@ pub struct TileCacheBuilder {
     root_spatial_node_index: SpatialNodeIndex,
     
     debug_flags: DebugFlags,
+    
+    
+    pub backdrop_placement_node: Option<SpatialNodeIndex>,
 }
 
 
@@ -152,6 +155,7 @@ impl TileCacheBuilder {
             prev_scroll_root_cache: (SpatialNodeIndex::INVALID, SpatialNodeIndex::INVALID),
             root_spatial_node_index,
             debug_flags,
+            backdrop_placement_node: None,
         }
     }
 
@@ -293,11 +297,18 @@ impl TileCacheBuilder {
                 );
             }
             SliceKind::Default { ref mut secondary_slices } => {
-                assert_ne!(spatial_node_index, SpatialNodeIndex::UNKNOWN);
+                
+                
+                
+                let placement_node_index = if spatial_node_index == SpatialNodeIndex::UNKNOWN {
+                    self.backdrop_placement_node.expect("bug: unplaced prim in a non-atomic slice")
+                } else {
+                    spatial_node_index
+                };
 
                 
                 let scroll_root = find_scroll_root(
-                    spatial_node_index,
+                    placement_node_index,
                     &mut self.prev_scroll_root_cache,
                     spatial_tree,
                     
