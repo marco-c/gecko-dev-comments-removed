@@ -30,6 +30,9 @@ public class PictureInPictureController {
     private final GeckoSession mSession;
     private final Handler mHandler;
 
+    
+    private boolean mKeepActive;
+
      SessionPictureInPicture(final @NonNull GeckoSession session) {
       mSession = session;
       mHandler = new Handler(session);
@@ -67,8 +70,31 @@ public class PictureInPictureController {
     }
 
     
+
+
+
+
+
+
+
+
+
+    @UiThread
+    public void setKeepActive(final boolean keepActive) {
+      ThreadUtils.assertOnUiThread();
+      mKeepActive = keepActive;
+    }
+
+     boolean keepsActive() {
+      return mKeepActive;
+    }
+
+    
     public interface Delegate {
       
+
+
+
 
 
 

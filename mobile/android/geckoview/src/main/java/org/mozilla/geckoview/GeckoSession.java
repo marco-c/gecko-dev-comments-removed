@@ -2909,6 +2909,24 @@ public class GeckoSession {
 
 
 
+
+
+  @UiThread
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+   void maybeSetActive(final boolean active) {
+    if (!active && mPictureInPicture.keepsActive()) {
+      return;
+    }
+    setActive(active);
+  }
+
+  
+
+
+
+
+
+
   @AnyThread
   public void setFocused(final boolean focused) {
     mEventDispatcher.dispatch("GeckoView:DismissClipboardPermissionRequest", null);
