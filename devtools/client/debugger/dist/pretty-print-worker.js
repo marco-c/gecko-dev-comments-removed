@@ -10395,9 +10395,7 @@
       #writeToken(token) {
         if (token.type.label == "string") {
           this.#write(
-            `${token.quote}${stringSanitize(token.value, token.quote)}${
-          token.quote
-        }`,
+            `'${stringSanitize(token.value)}'`,
             token.loc.start.line,
             token.loc.start.column,
             true
@@ -10477,9 +10475,6 @@
 
         for (;;) {
           const token = res.getToken();
-          if (token.type.label == "string") {
-            token.quote = input[token.start];
-          }
           tokens.push(token);
           if (token.type.label == "eof") {
             break;
@@ -11252,11 +11247,7 @@
       "\n": "\\n",
       
       "'": "\\'",
-      
-      '"': '\\"',
     };
-
-    const quoteCharacters = ["'", '"'];
 
     const templateEscapeCharacters = {
       ...commonEscapeCharacters,
@@ -11275,6 +11266,9 @@
     const stringEscapeCharactersRegExp = new RegExp(stringRegExpString, "g");
     const templateEscapeCharactersRegExp = new RegExp(templateRegExpString, "g");
 
+    function stringSanitizerReplaceFunc(_, c) {
+      return stringEscapeCharacters[c];
+    }
     function templateSanitizerReplaceFunc(_, c) {
       return templateEscapeCharacters[c];
     }
@@ -11283,13 +11277,8 @@
 
 
 
-    function stringSanitize(str, quote) {
-      return str.replace(stringEscapeCharactersRegExp, (_, c) => {
-        if (quoteCharacters.includes(c) && c != quote) {
-          return c;
-        }
-        return stringEscapeCharacters[c];
-      });
+    function stringSanitize(str) {
+      return str.replace(stringEscapeCharactersRegExp, stringSanitizerReplaceFunc);
     }
     function templateSanitize(str) {
       return str.replace(
