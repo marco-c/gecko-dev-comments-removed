@@ -3346,6 +3346,9 @@ pref("devtools.anti-tracking.enabled", false);
 pref("devtools.application.sessionHistory.enabled", false);
 
 
+pref("devtools.application.speculativeLoads", false);
+
+
 
 
 pref("devtools.custom-formatters.enabled", false);
