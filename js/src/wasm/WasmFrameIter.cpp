@@ -315,7 +315,6 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
   
   unwoundContStack_ = nullptr;
 #endif
-  skippedReturnCallTrampoline_ = false;
 
   
   if (enableInlinedFrames_ && inlinedCallerOffsets_.size() > 0) {
@@ -361,20 +360,6 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
     if (activation_->isWasmTrapping()) {
       activation_->finishWasmTrap();
     }
-  }
-
-  
-  
-  
-  
-  Frame* returnCallOriginalFP = fp_;
-  if (!code_ && wasm::IsReturnCallTrampolineReturnAddress(returnAddress)) {
-    fp_ = fp_->wasmCaller();
-    returnAddress = fp_->returnAddress();
-    code_ = LookupCode(returnAddress, &codeRange);
-    skippedReturnCallTrampoline_ = true;
-    MOZ_RELEASE_ASSERT(
-        !wasm::IsReturnCallTrampolineReturnAddress(returnAddress));
   }
 
   if (!code_) {
@@ -493,13 +478,7 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
   CallSite site;
   MOZ_ALWAYS_TRUE(code_->lookupCallSite(returnAddress, &site));
 
-  if (skippedReturnCallTrampoline_) {
-    
-    
-    
-    instance_ =
-        ExtractCallerInstanceFromFrameWithInstances(returnCallOriginalFP);
-  } else if (site.mightBeCrossInstance()) {
+  if (site.mightBeCrossInstance()) {
     instance_ = ExtractCallerInstanceFromFrameWithInstances(prevFP);
   }
 
@@ -1702,11 +1681,7 @@ static inline void AssertMatchesCallSite(void* callerPC, uint8_t* callerFP) {
   const Code* code = LookupCode(callerPC, &callerCodeRange);
 
   if (!code) {
-    
-    
-    if (!wasm::IsReturnCallTrampolineReturnAddress(callerPC)) {
-      AssertDirectJitCall(callerFP);
-    }
+    AssertDirectJitCall(callerFP);
     return;
   }
 
@@ -1806,7 +1781,6 @@ void ProfilingFrameIterator::initFromExitFP(const Frame* fp) {
     case CodeRange::DebugStub:
     case CodeRange::RequestTierUpStub:
     case CodeRange::UpdateCallRefMetricsStub:
-    case CodeRange::ReturnCallTrampoline:
     case CodeRange::Throw:
     case CodeRange::FarJumpIsland:
       MOZ_CRASH("Unexpected CodeRange kind");
@@ -1861,17 +1835,7 @@ const Instance* js::wasm::GetNearestEffectiveInstance(const Frame* fp) {
 
     if (!code) {
       
-      
-      
-      
-      
-      
-      
-      
-      
-      if (!wasm::IsReturnCallTrampolineReturnAddress(returnAddress)) {
-        AssertDirectJitCall(fp->jitEntryCaller());
-      }
+      AssertDirectJitCall(fp->jitEntryCaller());
       return ExtractCalleeInstanceFromFrameWithInstances(fp);
     }
 
@@ -2200,27 +2164,6 @@ bool js::wasm::StartUnwinding(const RegisterState& registers,
       }
       fixedPC = nullptr;
       break;
-    case CodeRange::ReturnCallTrampoline:
-      
-      
-      
-      
-      
-      if (offsetInCode < codeRange->ret()) {
-        const auto* frame = Frame::fromUntaggedWasmExitFP(fp);
-        fixedPC = frame->returnAddress();
-        fixedFP = frame->rawCaller();
-      } else {
-        fixedFP = fp;
-#if defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64) || \
-    defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
-        fixedPC = (uint8_t*)registers.lr;
-#else
-        fixedPC = sp[0];
-#endif
-      }
-      AssertMatchesCallSite(fixedPC, fixedFP);
-      break;
     case CodeRange::Throw:
       
       
@@ -2323,19 +2266,6 @@ void ProfilingFrameIterator::operator++() {
   const CodeBlock* codeBlock = LookupCodeBlock(callerPC_, &codeRange_);
   code_ = codeBlock ? codeBlock->code : nullptr;
 
-  
-  
-  if (!code_ && wasm::IsReturnCallTrampolineReturnAddress(callerPC_)) {
-    const auto* hidden = Frame::fromUntaggedWasmExitFP(callerFP_);
-    callerPC_ = hidden->returnAddress();
-    callerFP_ = hidden->rawCaller();
-    stackAddress_ = callerFP_;
-    codeBlock = LookupCodeBlock(callerPC_, &codeRange_);
-    code_ = codeBlock ? codeBlock->code : nullptr;
-    
-    MOZ_RELEASE_ASSERT(!wasm::IsReturnCallTrampolineReturnAddress(callerPC_));
-  }
-
   if (!code_) {
     category_ = Category::Other;
     
@@ -2417,7 +2347,6 @@ void ProfilingFrameIterator::operator++() {
 #endif
     case CodeRange::InterpEntry:
     case CodeRange::JitEntry:
-    case CodeRange::ReturnCallTrampoline:
       MOZ_CRASH("should have been guarded above");
     case CodeRange::Throw:
       MOZ_CRASH("code range doesn't have frame");
@@ -2606,7 +2535,6 @@ const char* wasm::ThunkedNativeToDescription(SymbolicAddress func) {
       return "call to native cont.unwind function";
 #endif
     case SymbolicAddress::SlotsToAllocKindBytesTable:
-    case SymbolicAddress::ReturnCallTrampoline:
       MOZ_CRASH(
           "symbolic address was not code and should not have appeared here");
 #define VISIT_BUILTIN_FUNC(op, export, sa_name, ...) \
@@ -2643,8 +2571,6 @@ const char* ProfilingFrameIterator::label() const {
   static const char requestTierUpDescription[] = "tier-up request (in wasm)";
   static const char updateCallRefMetricsDescription[] =
       "update call_ref metrics (in wasm)";
-  static const char returnCallTrampolineDescription[] =
-      "return_call trampoline (in wasm)";
 
   if (!exitReason_.isFixed()) {
     return ThunkedNativeToDescription(exitReason_.symbolic());
@@ -2688,8 +2614,6 @@ const char* ProfilingFrameIterator::label() const {
       return requestTierUpDescription;
     case CodeRange::UpdateCallRefMetricsStub:
       return updateCallRefMetricsDescription;
-    case CodeRange::ReturnCallTrampoline:
-      return returnCallTrampolineDescription;
 #ifdef ENABLE_WASM_JSPI
     case CodeRange::ContBaseFrame:
       return "cont base frame";

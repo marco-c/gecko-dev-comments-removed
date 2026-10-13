@@ -1009,7 +1009,6 @@ class CodeRange {
     DebugStub,                 
     RequestTierUpStub,         
     UpdateCallRefMetricsStub,  
-    ReturnCallTrampoline,      
 #ifdef ENABLE_WASM_JSPI
     ContBaseFrame,  
 #endif
@@ -1082,7 +1081,6 @@ class CodeRange {
   bool isUpdateCallRefMetricsStub() const {
     return kind() == UpdateCallRefMetricsStub;
   }
-  bool isReturnCallTrampoline() const { return kind() == ReturnCallTrampoline; }
   bool isThunk() const { return kind() == FarJumpIsland; }
 
   
@@ -1092,7 +1090,7 @@ class CodeRange {
   bool hasReturn() const {
     return isFunction() || isImportExit() || isDebugStub() ||
            isRequestTierUpStub() || isUpdateCallRefMetricsStub() ||
-           isReturnCallTrampoline() || isJitEntry();
+           isJitEntry();
   }
   uint32_t ret() const {
     MOZ_ASSERT(hasReturn());
