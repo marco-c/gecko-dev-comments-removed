@@ -415,6 +415,12 @@ bool nsBaseFilePicker::IsWithinInputProtectionTimeRange(
 
 
 bool nsBaseFilePicker::IsPotentiallyReadableDirectory(nsIFile& aDirectory) {
+  if (XRE_IsContentProcess()) {
+    
+    
+    return true;
+  }
+
 #ifdef XP_MACOSX
   
   return true;
