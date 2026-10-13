@@ -13,6 +13,12 @@ const CANONICAL_URL_REDIRECTED =
 const PORTAL_NOTIFICATION_VALUE = "captive-portal-detected";
 const BAD_CERT_PAGE = "https://expired.example.com/";
 
+
+
+registerCleanupFunction(() =>
+  Services.perms.removeByType("https-only-load-insecure")
+);
+
 async function setupPrefsAndRecentWindowBehavior() {
   await SpecialPowers.pushPrefEnv({
     set: [
