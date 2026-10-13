@@ -582,9 +582,14 @@ void BaseStackFrame::zeroLocals(BaseRegAlloc* ra) {
   
   
   
+  
 
+#ifdef JS_CODEGEN_ARM64
+  ImmWord zero(0);
+#else
   RegI32 zero = ra->needI32();
   masm.mov(ImmWord(0), zero);
+#endif
 
   
   
@@ -600,7 +605,9 @@ void BaseStackFrame::zeroLocals(BaseRegAlloc* ra) {
     for (uint32_t i = low; i < high; i += wordSize) {
       masm.storePtr(zero, Address(sp_, localOffset(i + wordSize)));
     }
+#ifndef JS_CODEGEN_ARM64
     ra->freeI32(zero);
+#endif
     return;
   }
 
@@ -633,7 +640,9 @@ void BaseStackFrame::zeroLocals(BaseRegAlloc* ra) {
 
   ra->freeI32(p);
   ra->freeI32(lim);
+#ifndef JS_CODEGEN_ARM64
   ra->freeI32(zero);
+#endif
 }
 
 }  
