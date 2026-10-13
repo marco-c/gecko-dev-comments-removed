@@ -417,21 +417,31 @@ function generateDocumentation() {
 
   
   
+  
   let string_mapping = {
     BackgroundAppUpdate: "BackgroundAppUpdate2",
+    BlockAboutConfig: "BlockAboutConfig2",
+    BlockAboutProfiles: "BlockAboutProfiles2",
+    BlockAboutSupport: "BlockAboutSupport2",
+    BrowserDataBackup: "Backup",
     Certificates: "CertificatesDescription",
+    DisableDefaultBrowserAgent: "DisableDefaultBrowserAgent2",
     DisableFirefoxAccounts: "DisableFirefoxAccounts1",
     DisableMasterPasswordCreation: "DisablePrimaryPasswordCreation",
     DisablePasswordReveal: "DisablePasswordReveal2",
+    DisableProfileRefresh: "DisableProfileRefresh2",
+    DisableSafeMode: "DisableSafeMode2",
     DisableSetDesktopBackground: "DisableSetAsDesktopBackground",
+    DisableThirdPartyModuleBlocking: "DisableThirdPartyModuleBlocking2",
     FirefoxHome: "FirefoxHome2",
+    PasswordManagerEnabled: "PasswordManagerEnabled2",
     Permissions: "Permissions2",
     PopupBlocking: "PopupBlocking2",
     SanitizeOnShutdown: "SanitizeOnShutdown2",
+    SearchEngines: "SearchEngines2",
     SecurityDevices: "SecurityDevices2",
     SkipTermsOfUse: "SkipTermsOfUse2",
     WindowsSSO: "Windows10SSO",
-    BrowserDataBackup: "Backup",
   };
   let deprecated_policies = ["DisablePocket"];
 
