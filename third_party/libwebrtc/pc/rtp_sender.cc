@@ -907,6 +907,14 @@ std::optional<RtpParameters> RtpSenderBase::ApplyInitParameters_w(
               .ok()) {
         
         applied_parameters = media_channel_->GetRtpSendParameters(*ssrc);
+      } else {
+        
+        
+        
+        RTC_LOG(LS_WARNING) << "Failed to apply the configured send parameters "
+                               "to ssrc "
+                            << *ssrc << ". Keeping them for the next attempt.";
+        return std::nullopt;
       }
     }
   }
@@ -917,7 +925,13 @@ std::optional<RtpParameters> RtpSenderBase::ApplyInitParameters_w(
   
   
   init_parameters_.encodings.clear();
-  init_parameters_.degradation_preference = std::nullopt;
+  if (applied_parameters.has_value()) {
+    
+    
+    
+    
+    init_parameters_.degradation_preference = std::nullopt;
+  }
 
   return applied_parameters;
 }
