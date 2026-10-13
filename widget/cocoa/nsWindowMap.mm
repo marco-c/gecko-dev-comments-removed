@@ -257,22 +257,9 @@ static bool IsNonactivatingWindow(NSWindow* aWindow) {
   id delegate = window.delegate;
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) {
     [TopLevelWindowData deactivateInWindowViews:window];
-  } else if (window.isSheet || IsNonactivatingWindow(window)) {
+  } else if (window.isSheet || window.isMainWindow ||
+             IsNonactivatingWindow(window)) {
     [TopLevelWindowData deactivateInWindow:window];
-  } else if (window.isMainWindow) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (NSApp.keyWindow != window) {
-      [TopLevelWindowData deactivateInWindow:window];
-    }
   }
 }
 
