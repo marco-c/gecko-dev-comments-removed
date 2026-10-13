@@ -188,6 +188,32 @@ const TEST_DATA = [
   },
   
   {
+    input: "--x: !important;",
+    expected: [
+      {
+        name: "--x",
+        value: "",
+        priority: "important",
+        offsets: [0, 16],
+        isCustomProperty: true,
+      },
+    ],
+  },
+  
+  {
+    input: "--x: !important",
+    expected: [
+      {
+        name: "--x",
+        value: "",
+        priority: "important",
+        offsets: [0, 15],
+        isCustomProperty: true,
+      },
+    ],
+  },
+  
+  {
     input: "p1: v1 !IMPORTANT;",
     expected: [
       {
@@ -1671,8 +1697,7 @@ function assertDeclarations(input, actualDeclarations, expectedDeclarations) {
       const expected = expectedDeclarations[i];
       Assert.ok(!!actual);
       info(
-        "Check that the output item has the expected name, " +
-          "value and priority"
+        `Check that the output item has the expected name, value and priority for '${input}'`
       );
       Assert.equal(actual.name, expected.name, "Expected name");
       Assert.equal(actual.value, expected.value, "Expected value");

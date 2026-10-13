@@ -575,7 +575,7 @@ function parseDeclarationsInternal(
   }
 
   
-  if (current) {
+  if (current || importantState !== IMPORTANT_STATE_NONE) {
     
     if (isInNested && nestingLevel > 0) {
       
