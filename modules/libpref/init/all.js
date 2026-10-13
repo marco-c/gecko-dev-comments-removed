@@ -4093,6 +4093,14 @@ pref("extensions.formautofill.useml.features", "[]");
 
 
 
+
+
+
+pref("extensions.formautofill.useml.hint.fields",
+  "[\"email\",\"tel\",\"tel-country-code\",\"street-address\",\"address-line1\",\"address-line2\",\"address-line3\",\"postal-code\",\"address-level1\",\"address-level2\",\"organization\",\"country\",\"name\",\"given-name\",\"family-name\",\"cc-name\",\"cc-type\"]");
+
+
+
 pref("extensions.formautofill.useml.modelVersion", "");
 
 pref("extensions.formautofill.addresses.enabled", true);

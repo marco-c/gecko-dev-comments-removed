@@ -43,7 +43,7 @@ async function tokenize(browser, featuresJSON) {
     const out = {};
     for (const el of elements) {
       
-      out[el.id] = map ? map.get(el) : null;
+      out[el.id] = map ? map.get(el)[0] : null;
     }
     return out;
   });
