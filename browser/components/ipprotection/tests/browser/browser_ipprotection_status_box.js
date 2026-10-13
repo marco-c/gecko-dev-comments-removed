@@ -147,6 +147,7 @@ add_task(async function test_paused_content_upgraded() {
 
 
 
+
 add_task(async function test_showing_refreshes_usage_when_paused() {
   setupService({
     isReady: true,
@@ -175,12 +176,12 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
     "Usage should be refreshed when opening the panel while paused"
   );
   Assert.ok(
-    content.shadowRoot.querySelector("#enrolling-container"),
-    "Loading state should be shown while usage is refreshing"
+    content.statusBoxEl,
+    "Paused screen should be shown immediately while usage is refreshing"
   );
   Assert.ok(
-    !content.statusBoxEl,
-    "Paused screen should be hidden while usage is refreshing"
+    !content.shadowRoot.querySelector("#enrolling-container"),
+    "Loading state should not be shown while usage is refreshing"
   );
 
   resolve();
@@ -189,10 +190,6 @@ add_task(async function test_showing_refreshes_usage_when_paused() {
   await TestUtils.waitForCondition(
     () => content.statusBoxEl,
     "Paused screen should be shown once the usage refresh completes"
-  );
-  Assert.ok(
-    !content.shadowRoot.querySelector("#enrolling-container"),
-    "Loading state should be hidden once the usage refresh completes"
   );
 
   await setPanelState();
@@ -345,4 +342,33 @@ add_task(async function test_unavailable_error() {
   Assert.ok(footerButton, "Settings button should be present in footer");
 
   await closePanel();
+});
+
+
+
+
+add_task(async function test_unavailable_error_support_link_closes_panel() {
+  let content = await openPanel({
+    unauthenticated: false,
+    error: ERRORS.VPN_UNAVAILABLE,
+  });
+
+  let supportLink = content.statusBoxEl.descriptionEl.querySelector("a");
+  Assert.ok(supportLink, "Support link should be present");
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    Services.urlFormatter.formatURLPref("app.support.baseURL") +
+      LINKS.NO_ACCESS_SUPPORT_SLUG
+  );
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+  supportLink.click();
+  info("after click");
+  let newTab = await newTabPromise;
+  info("after newTabPromise");
+  await panelHiddenPromise;
+  info("afterpanelHiddenPromise");
+  await setPanelState();
+  info("after setPanelState");
+  BrowserTestUtils.removeTab(newTab);
 });
