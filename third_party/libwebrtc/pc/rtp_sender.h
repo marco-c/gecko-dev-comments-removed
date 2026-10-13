@@ -79,8 +79,17 @@ class RtpSenderInternal : public RtpSenderInterface {
   
   PLAN_B_ONLY virtual void SetSsrc(uint32_t ssrc) = 0;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
   [[nodiscard]] virtual ScopedOperationsBatcher::BatchTaskWithFinalizer
-  SetSsrcTask(uint32_t ssrc) = 0;
+  SetSsrcTask(uint32_t ssrc, size_t layer_count) = 0;
 
   virtual void set_stream_ids(const std::vector<std::string>& stream_ids) = 0;
   virtual void set_init_send_encodings(
@@ -184,7 +193,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   
   PLAN_B_ONLY void SetSsrc(uint32_t ssrc) override;
   ScopedOperationsBatcher::BatchTaskWithFinalizer SetSsrcTask(
-      uint32_t ssrc) override;
+      uint32_t ssrc,
+      size_t layer_count) override;
 
   uint32_t ssrc() const override {
     RTC_DCHECK_RUN_ON(signaling_thread_);

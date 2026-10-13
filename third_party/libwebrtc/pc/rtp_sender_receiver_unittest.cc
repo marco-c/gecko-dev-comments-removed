@@ -640,9 +640,13 @@ class RtpSenderReceiverTest
         voice_media_receive_channel_.get());
   }
 
-  void SetSsrc(uint32_t ssrc, RtpSenderInternal& sender) {
+  
+  
+  void SetSsrc(uint32_t ssrc,
+               RtpSenderInternal& sender,
+               size_t layer_count = 1) {
     ScopedOperationsBatcher worker_tasks(worker_thread_.get());
-    worker_tasks.AddWithFinalizer(sender.SetSsrcTask(ssrc));
+    worker_tasks.AddWithFinalizer(sender.SetSsrcTask(ssrc, layer_count));
   }
 
   test::RunLoop run_loop_;
@@ -1785,7 +1789,7 @@ TEST_F(RtpSenderReceiverTest, VideoSenderInitParametersMovedAfterNegotiation) {
     video_rtp_sender_->SetMediaChannel(
         video_media_send_channel()->AsVideoSendChannel());
   });
-  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_);
+  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_, 2);
 
   params = video_rtp_sender_->GetParameters();
   ASSERT_EQ(2u, params.encodings.size());
@@ -1831,7 +1835,7 @@ TEST_F(RtpSenderReceiverTest,
     video_rtp_sender_->SetMediaChannel(
         video_media_send_channel()->AsVideoSendChannel());
   });
-  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_);
+  SetSsrc(kVideoSsrcSimulcast, *video_rtp_sender_, 2);
 
   params = video_rtp_sender_->GetParameters();
   ASSERT_EQ(2u, params.encodings.size());
@@ -1875,6 +1879,48 @@ TEST_F(RtpSenderReceiverTest,
   SetSsrc(kVideoSsrc, *video_rtp_sender_);
 
   params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+
+  DestroyVideoRtpSender();
+}
+
+
+
+
+TEST_F(RtpSenderReceiverTest, SurplusLayersAreDroppedOnTheSignalingThread) {
+  AddVideoTrack(false);
+
+  MockSetStreamsObserver set_streams_observer;
+  video_rtp_sender_ = VideoRtpSender::Create(
+      CreateTestEnvironment(), signaling_thread_, worker_thread_.get(),
+      video_track_->id(), &set_streams_observer,
+      nullptr, nullptr,
+      {}, false,
+      {});
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
+  EXPECT_CALL(set_streams_observer, OnSetStreams());
+  video_rtp_sender_->SetStreams({local_stream_->id()});
+
+  std::vector<RtpEncodingParameters> init_encodings(2);
+  init_encodings[0].max_bitrate_bps = 60000;
+  init_encodings[1].max_bitrate_bps = 120000;
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  worker_thread_->BlockingCall([&] {
+    video_rtp_sender_->SetMediaChannel(
+        video_media_send_channel()->AsVideoSendChannel());
+  });
+
+  {
+    ScopedOperationsBatcher worker_tasks(worker_thread_.get());
+    ScopedOperationsBatcher::BatchTaskWithFinalizer task =
+        video_rtp_sender_->SetSsrcTask(kVideoSsrc, 1);
+    EXPECT_EQ(1u, video_rtp_sender_->init_send_encodings().size());
+    worker_tasks.AddWithFinalizer(std::move(task));
+  }
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
   ASSERT_EQ(1u, params.encodings.size());
   EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
 

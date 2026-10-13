@@ -2486,15 +2486,23 @@ void SdpOfferAnswerHandler::UpdateSenderSsrcsFromLocalDescription() {
       
       
       
-      worker_tasks.AddWithFinalizer(sender->SetSsrcTask(0));
+      worker_tasks.AddWithFinalizer(sender->SetSsrcTask(0, 0));
     } else {
       const std::vector<StreamParams>& streams =
           transceiver->channel_local_streams();
       sender->set_stream_ids(streams[0].stream_ids());
       std::vector<RtpEncodingParameters> encodings =
           sender->init_send_encodings();
+      
+      
+      
+      
+      
+      
+      std::vector<uint32_t> primary_ssrcs;
+      streams[0].GetPrimarySsrcs(&primary_ssrcs);
       worker_tasks.AddWithFinalizer(
-          sender->SetSsrcTask(streams[0].first_ssrc()));
+          sender->SetSsrcTask(streams[0].first_ssrc(), primary_ssrcs.size()));
       if (!encodings.empty()) {
         transceivers()
             ->StableState(transceiver_ext)

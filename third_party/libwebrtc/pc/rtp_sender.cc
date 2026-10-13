@@ -883,6 +883,7 @@ std::optional<RtpParameters> RtpSenderBase::ApplyInitParameters_w(
     
     
     
+    
     const size_t layers = std::min(current_parameters.encodings.size(),
                                    init_parameters_.encodings.size());
     if (layers < init_parameters_.encodings.size()) {
@@ -922,10 +923,27 @@ std::optional<RtpParameters> RtpSenderBase::ApplyInitParameters_w(
 }
 
 ScopedOperationsBatcher::BatchTaskWithFinalizer RtpSenderBase::SetSsrcTask(
-    uint32_t ssrc) {
+    uint32_t ssrc,
+    size_t layer_count) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   if (stopped_ || ssrc == ssrc_) {
     return nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (ssrc != 0 && layer_count < init_parameters_.encodings.size()) {
+    RTC_LOG(LS_WARNING) << "The local description describes " << layer_count
+                        << " send layer(s) but the sender was configured with "
+                        << init_parameters_.encodings.size()
+                        << ". Dropping the surplus layers.";
+    init_parameters_.encodings.resize(layer_count);
   }
 
   cached_parameters_.reset();
