@@ -788,6 +788,29 @@ function startup() {
         resource: "resource://gre/modules/GeckoViewPageExtractor.sys.mjs",
       },
     },
+    {
+      name: "GeckoViewPictureInPicture",
+      onInit: {
+        actors: {
+          
+          
+          
+          GeckoViewPictureInPicturePlayer: {
+            parent: {
+              esModuleURI:
+                "resource:///actors/GeckoViewPictureInPicturePlayerParent.sys.mjs",
+            },
+            child: {
+              esModuleURI:
+                "resource:///actors/GeckoViewPictureInPicturePlayerChild.sys.mjs",
+            },
+            allFrames: true,
+            messageManagerGroups: ["browsers"],
+            safeForUntrustedWebProcess: true,
+          },
+        },
+      },
+    },
   ]);
 
   
