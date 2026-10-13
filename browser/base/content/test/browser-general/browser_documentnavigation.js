@@ -317,7 +317,7 @@ add_task(async function () {
     "back focus with sidebar urlbar"
   );
 
-  SidebarController.toggle("viewBookmarksSidebar");
+  await SidebarController.toggle("viewBookmarksSidebar");
 });
 
 
