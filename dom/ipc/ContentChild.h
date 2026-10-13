@@ -954,6 +954,12 @@ class ContentChild final : public PContentChild,
   
   
   UniquePtr<hal::PerformanceHintSession> mPerformanceHintSession;
+
+#ifdef XP_WIN
+  
+  
+  bool mMainThreadPriorityRaised = false;
+#endif
 };
 
 inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
