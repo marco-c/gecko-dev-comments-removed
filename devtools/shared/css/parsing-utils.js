@@ -406,7 +406,9 @@ function parseDeclarationsInternal(
       
       token.tokenType === "CurlyBracketBlock" &&
       
-      !currentBlocks.length
+      !currentBlocks.length &&
+      
+      !lastProp.isCustomProperty
     ) {
       
 
@@ -442,14 +444,18 @@ function parseDeclarationsInternal(
       continue;
     } else if (
       token.tokenType === "CloseParenthesis" ||
-      token.tokenType === "CloseSquareBracket"
+      token.tokenType === "CloseSquareBracket" ||
+      
+      (lastProp.isCustomProperty && token.tokenType === "CloseCurlyBracket")
     ) {
       
       currentBlocks.pop();
       current += token.text;
     } else if (
       token.tokenType === "ParenthesisBlock" ||
-      token.tokenType === "SquareBracketBlock"
+      token.tokenType === "SquareBracketBlock" ||
+      
+      (lastProp.isCustomProperty && token.tokenType === "CurlyBracketBlock")
     ) {
       
       currentBlocks.push(token.text);
