@@ -772,13 +772,8 @@ VideoStreamEncoder::VideoStreamEncoder(
 
 VideoStreamEncoder::~VideoStreamEncoder() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  RTC_DCHECK(!video_source_sink_controller_.HasSource())
-      << "Must call ::Stop() before destruction.";
+  RTC_DCHECK(is_stopped_) << "Must call ::Stop() before destruction.";
 
-  
-  
-  
-  prepared_frames_processor_->StopCallbacks();
   
   
   
@@ -791,6 +786,12 @@ VideoStreamEncoder::~VideoStreamEncoder() {
 void VideoStreamEncoder::Stop() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   video_source_sink_controller_.SetSource(nullptr);
+  is_stopped_ = true;
+
+  
+  
+  
+  prepared_frames_processor_->StopCallbacks();
 
   Event shutdown_event;
   absl::Cleanup shutdown = [&shutdown_event] { shutdown_event.Set(); };
@@ -1854,12 +1855,19 @@ void VideoStreamEncoder::OnFramePrepared(size_t frame_id) {
     return;
   }
 
+  RTC_DCHECK_RUN_ON(encoder_queue_.get());
+
+  
+  if (is_stopped_)
+    return;
+
   for (auto& frame : pending_mapped_frames_) {
     if (frame.frame_id == frame_id) {
       frame.can_send = true;
       break;
     }
   }
+
   while (!pending_mapped_frames_.empty() &&
          pending_mapped_frames_.front().can_send) {
     auto& front = pending_mapped_frames_.front();
@@ -1871,6 +1879,7 @@ void VideoStreamEncoder::OnFramePrepared(size_t frame_id) {
 void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
                                                int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(encoder_queue_.get());
+
   input_state_provider_.OnFrameSizeObserved(video_frame.size());
 
   if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
