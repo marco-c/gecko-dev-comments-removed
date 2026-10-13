@@ -59,9 +59,10 @@ class PacketRouter : public PacingController::PacketSender {
   
   
   
+  void SetGenerateTransportSequenceNumbers(bool generate);
+
   
-  void ConfigureForRtcpFeedback(bool set_transport_seq,
-                                bool send_rtp_packets_as_ect1);
+  void SetSendPacketsAsEct1(bool send_as_ect1);
 
   void AddSendRtpModule(RtpRtcpInterface* rtp_module, bool remb_candidate);
   void RemoveSendRtpModule(RtpRtcpInterface* rtp_module);
