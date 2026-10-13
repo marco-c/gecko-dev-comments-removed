@@ -34,47 +34,58 @@ public class VideoSource extends MediaSource {
   @Nullable private VideoProcessor videoProcessor;
   private boolean isCapturerRunning;
 
-  private final CapturerObserver capturerObserver = new CapturerObserver() {
-    @Override
-    public void onCapturerStarted(boolean success) {
-      nativeAndroidVideoTrackSource.setState(success);
-      synchronized (videoProcessorLock) {
-        isCapturerRunning = success;
-        if (videoProcessor != null) {
-          videoProcessor.onCapturerStarted(success);
+  private final CapturerObserver capturerObserver =
+      new CapturerObserver() {
+        @Override
+        public void onCapturerStarted(boolean success) {
+          runWithReference(
+              () -> {
+                nativeAndroidVideoTrackSource.setState(success);
+                synchronized (videoProcessorLock) {
+                  isCapturerRunning = success;
+                  if (videoProcessor != null) {
+                    videoProcessor.onCapturerStarted(success);
+                  }
+                }
+              });
         }
-      }
-    }
 
-    @Override
-    public void onCapturerStopped() {
-      nativeAndroidVideoTrackSource.setState( false);
-      synchronized (videoProcessorLock) {
-        isCapturerRunning = false;
-        if (videoProcessor != null) {
-          videoProcessor.onCapturerStopped();
+        @Override
+        public void onCapturerStopped() {
+          runWithReference(
+              () -> {
+                nativeAndroidVideoTrackSource.setState( false);
+                synchronized (videoProcessorLock) {
+                  isCapturerRunning = false;
+                  if (videoProcessor != null) {
+                    videoProcessor.onCapturerStopped();
+                  }
+                }
+              });
         }
-      }
-    }
 
-    @Override
-    public void onFrameCaptured(VideoFrame frame) {
-      final VideoProcessor.FrameAdaptationParameters parameters =
-          nativeAndroidVideoTrackSource.adaptFrame(frame);
-      synchronized (videoProcessorLock) {
-        if (videoProcessor != null) {
-          videoProcessor.onFrameCaptured(frame, parameters);
-          return;
+        @Override
+        public void onFrameCaptured(VideoFrame frame) {
+          runWithReference(
+              () -> {
+                final VideoProcessor.FrameAdaptationParameters parameters =
+                    nativeAndroidVideoTrackSource.adaptFrame(frame);
+                synchronized (videoProcessorLock) {
+                  if (videoProcessor != null) {
+                    videoProcessor.onFrameCaptured(frame, parameters);
+                    return;
+                  }
+                }
+
+                VideoFrame adaptedFrame =
+                    VideoProcessor.applyFrameAdaptationParameters(frame, parameters);
+                if (adaptedFrame != null) {
+                  nativeAndroidVideoTrackSource.onFrameCaptured(adaptedFrame);
+                  adaptedFrame.release();
+                }
+              });
         }
-      }
-
-      VideoFrame adaptedFrame = VideoProcessor.applyFrameAdaptationParameters(frame, parameters);
-      if (adaptedFrame != null) {
-        nativeAndroidVideoTrackSource.onFrameCaptured(adaptedFrame);
-        adaptedFrame.release();
-      }
-    }
-  };
+      };
 
   public VideoSource(long nativeSource) {
     super(nativeSource);
@@ -100,22 +111,33 @@ public class VideoSource extends MediaSource {
 
   public void adaptOutputFormat(
       int landscapeWidth, int landscapeHeight, int portraitWidth, int portraitHeight, int fps) {
-    adaptOutputFormat(new AspectRatio(landscapeWidth, landscapeHeight),
+    adaptOutputFormat(
+        new AspectRatio(landscapeWidth, landscapeHeight),
          landscapeWidth * landscapeHeight,
         new AspectRatio(portraitWidth, portraitHeight),
-         portraitWidth * portraitHeight, fps);
+         portraitWidth * portraitHeight,
+        fps);
   }
 
   
-  public void adaptOutputFormat(AspectRatio targetLandscapeAspectRatio,
-      @Nullable Integer maxLandscapePixelCount, AspectRatio targetPortraitAspectRatio,
-      @Nullable Integer maxPortraitPixelCount, @Nullable Integer maxFps) {
-    nativeAndroidVideoTrackSource.adaptOutputFormat(targetLandscapeAspectRatio,
-        maxLandscapePixelCount, targetPortraitAspectRatio, maxPortraitPixelCount, maxFps);
+  public void adaptOutputFormat(
+      AspectRatio targetLandscapeAspectRatio,
+      @Nullable Integer maxLandscapePixelCount,
+      AspectRatio targetPortraitAspectRatio,
+      @Nullable Integer maxPortraitPixelCount,
+      @Nullable Integer maxFps) {
+    lifecycleLock.run(
+        () ->
+            nativeAndroidVideoTrackSource.adaptOutputFormat(
+                targetLandscapeAspectRatio,
+                maxLandscapePixelCount,
+                targetPortraitAspectRatio,
+                maxPortraitPixelCount,
+                maxFps));
   }
 
   public void setIsScreencast(boolean isScreencast) {
-    nativeAndroidVideoTrackSource.setIsScreencast(isScreencast);
+    lifecycleLock.run(() -> nativeAndroidVideoTrackSource.setIsScreencast(isScreencast));
   }
 
   

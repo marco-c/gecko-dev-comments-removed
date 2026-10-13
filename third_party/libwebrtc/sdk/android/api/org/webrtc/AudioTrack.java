@@ -20,7 +20,7 @@ public class AudioTrack extends MediaStreamTrack {
 
 
   public void setVolume(double volume) {
-    nativeSetVolume(getNativeAudioTrack(), volume);
+    lifecycleLock.run(nativeTrack -> nativeSetVolume(nativeTrack, volume));
   }
 
   

@@ -34,11 +34,16 @@ public class VideoTrack extends MediaStreamTrack {
     }
     
     
-    if (!sinks.containsKey(sink)) {
-      final long nativeSink = nativeWrapSink(sink);
-      sinks.put(sink, nativeSink);
-      nativeAddSink(getNativeMediaStreamTrack(), nativeSink);
-    }
+    lifecycleLock.run(
+        nativeTrack -> {
+          synchronized (sinks) {
+            if (!sinks.containsKey(sink)) {
+              final long nativeSink = nativeWrapSink(sink);
+              sinks.put(sink, nativeSink);
+              nativeAddSink(nativeTrack, nativeSink);
+            }
+          }
+        });
   }
 
   
@@ -47,21 +52,31 @@ public class VideoTrack extends MediaStreamTrack {
 
 
   public void removeSink(VideoSink sink) {
-    final Long nativeSink = sinks.remove(sink);
-    if (nativeSink != null) {
-      nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
-      nativeFreeSink(nativeSink);
-    }
+    lifecycleLock.run(
+        nativeTrack -> {
+          synchronized (sinks) {
+            final Long nativeSink = sinks.remove(sink);
+            if (nativeSink != null) {
+              nativeRemoveSink(nativeTrack, nativeSink);
+              nativeFreeSink(nativeSink);
+            }
+          }
+        });
   }
 
   @Override
   public void dispose() {
-    for (long nativeSink : sinks.values()) {
-      nativeRemoveSink(getNativeMediaStreamTrack(), nativeSink);
-      nativeFreeSink(nativeSink);
-    }
-    sinks.clear();
-    super.dispose();
+    lifecycleLock.dispose(
+        nativeTrack -> {
+          synchronized (sinks) {
+            for (long nativeSink : sinks.values()) {
+              nativeRemoveSink(nativeTrack, nativeSink);
+              nativeFreeSink(nativeSink);
+            }
+            sinks.clear();
+          }
+          JniCommon.nativeReleaseRef(nativeTrack);
+        });
   }
 
   
