@@ -103,10 +103,13 @@ know what you are doing.
 
 `browser.ipProtection.mode` (integer, default: `0`)
 
-: Selects which requests are proxied by `IPPChannelFilter`:
-  `0` routes all traffic (`MODE_FULL`), `1` only private browsing windows
-  (`MODE_PB`), `2` only requests classified as tracking (`MODE_TRACKER`),
-  (`MODE_INCLUSION`), `3` routes no traffic unless matching `browser.ipProtection.inclusion.match_patterns`.
+: `IPPMode` value new connections start in; anything else is treated as
+  `MODE_FULL`. Read at connection start, so it leaves a running connection
+  alone.
+
+  :::{seealso}
+  [IPPMode](Constants.md#proxy-modes)
+  :::
 
 `browser.ipProtection.inclusion.match_patterns` (string, default: `""`)
 

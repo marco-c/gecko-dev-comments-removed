@@ -10,6 +10,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPChannelFilter:
     "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
+  IPPMode:
+    "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs",
   IPPLifecycleHelper:
     "moz-src:///toolkit/components/ipprotection/IPPLifecycleHelper.sys.mjs",
   IPPNetworkUtils:
@@ -318,6 +320,10 @@ class IPPProxyManagerSingleton extends EventTarget {
     return this.#connection?.isolationKey;
   }
 
+  get mode() {
+    return this.#connection?.mode ?? null;
+  }
+
   get hasValidProxyPass() {
     return !!this.#pass?.isValid();
   }
@@ -337,9 +343,14 @@ class IPPProxyManagerSingleton extends EventTarget {
     return this.#connection;
   }
 
-  createChannelFilter() {
-    if (!this.#connection) {
-      this.#connection = lazy.IPPChannelFilter.create();
+  /**
+   * @param {import("./IPPChannelFilter.sys.mjs").IPPProxyMode} [mode]
+   */
+  createChannelFilter(mode) {
+    this.#connection ??= lazy.IPPChannelFilter.create();
+    this.#connection.mode =
+      mode === undefined ? lazy.IPPMode.getDefault() : lazy.IPPMode.from(mode);
+    if (!this.#connection.active) {
       this.#connection.start();
     }
   }
@@ -369,10 +380,12 @@ class IPPProxyManagerSingleton extends EventTarget {
    * @param {string} [country]
    * Optional ISO 3166-1 alpha-2 country code to route through. When
    * omitted, the recommended (anycast) location is used.
+   * @param {import("./IPPChannelFilter.sys.mjs").IPPProxyMode} [mode]
+   * Mode for this connection. When omitted, browser.ipProtection.mode decides.
    * @returns {Promise<{started: boolean, error?: string}>}
    * Started is true if successfully connected, error contains the error message if it fails.
    */
-  async start(userAction = true, inPrivateBrowsing = false, country) {
+  async start(userAction = true, inPrivateBrowsing = false, country, mode) {
     if (this.#activatingPromise) {
       return this.#activatingPromise;
     }
@@ -414,7 +427,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     };
 
     this.#activatingPromise = Promise.race([
-      this.#startInternal(abortSignal, country),
+      this.#startInternal(abortSignal, country, mode),
       abortPromise,
     ])
       .then(
@@ -452,7 +465,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     return this.#activatingPromise;
   }
 
-  async #startInternal(abortSignal, country) {
+  async #startInternal(abortSignal, country, mode) {
     // Check network status before attempting connection
     if (lazy.IPPNetworkUtils.isOffline) {
       throw ERRORS.NETWORK;
@@ -475,7 +488,7 @@ class IPPProxyManagerSingleton extends EventTarget {
       throw abortSignal.reason ?? ERRORS.CANCELED;
     }
 
-    this.createChannelFilter();
+    this.createChannelFilter(mode);
 
     // If the current proxy pass is valid, no need to re-authenticate.
     // Throws an error if the proxy pass is not available.
@@ -577,6 +590,34 @@ class IPPProxyManagerSingleton extends EventTarget {
     ) {
       this.refreshUsage();
     }
+  }
+
+  /**
+   * Change the mode of the active connection. Only channels opened from now on
+   * are affected.
+   *
+   * @param {import("./IPPChannelFilter.sys.mjs").IPPProxyMode} mode
+   * @returns {{changed: boolean, error?: string}}
+   */
+  setMode(mode) {
+    if (this.#state !== IPPProxyStates.ACTIVE) {
+      return { changed: false, error: ERRORS.NOT_READY };
+    }
+
+    this.#connection.mode = lazy.IPPMode.from(mode);
+    lazy.logConsole.debug("Switched to mode:", this.#connection.mode);
+
+    this.dispatchEvent(
+      new CustomEvent("IPPProxyManager:ModeChanged", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          mode: this.#connection.mode,
+        },
+      })
+    );
+
+    return { changed: true };
   }
 
   /**
