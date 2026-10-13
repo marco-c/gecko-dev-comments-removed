@@ -6,7 +6,9 @@
 #define util_StringBuilder_h
 
 #include "mozilla/CheckedInt.h"
+#include "mozilla/Latin1.h"
 #include "mozilla/MaybeOneOf.h"
+#include "mozilla/Span.h"
 #include "mozilla/Utf8.h"
 
 #include "frontend/FrontendContext.h"
@@ -199,6 +201,32 @@ class StringBuilder {
 
   [[nodiscard]] bool inflateChars();
 
+  void inflateLatin1Into(size_t destOffset, const Latin1Char* chars,
+                         size_t len) {
+    mozilla::ConvertLatin1toUtf16(
+        mozilla::AsChars(mozilla::Span<const Latin1Char>(chars, len)),
+        mozilla::Span<char16_t>(twoByteChars()).From(destOffset));
+  }
+
+  
+  [[nodiscard]] bool appendLatin1ToTwoByte(const Latin1Char* chars,
+                                           size_t len) {
+    MOZ_ASSERT(isTwoByte());
+    size_t destOffset = twoByteChars().length();
+    if (!twoByteChars().growByUninitialized(len)) {
+      return false;
+    }
+    inflateLatin1Into(destOffset, chars, len);
+    return true;
+  }
+
+  void infallibleAppendLatin1ToTwoByte(const Latin1Char* chars, size_t len) {
+    MOZ_ASSERT(isTwoByte());
+    size_t destOffset = twoByteChars().length();
+    twoByteChars().infallibleGrowByUninitialized(len);
+    inflateLatin1Into(destOffset, chars, len);
+  }
+
   template <typename CharT>
   JSLinearString* finishStringInternal(JSContext* cx, gc::Heap heap);
 
@@ -258,6 +286,13 @@ class StringBuilder {
       twoByteChars().shrinkTo(newLength);
     }
   }
+  void shrinkBy(size_t incr) {
+    if (isLatin1()) {
+      latin1Chars().shrinkBy(incr);
+    } else {
+      twoByteChars().shrinkBy(incr);
+    }
+  }
   bool empty() const { return length() == 0; }
   size_t length() const {
     size_t len = isLatin1() ? latin1Chars().length() : twoByteChars().length();
@@ -296,8 +331,9 @@ class StringBuilder {
   }
 
   [[nodiscard]] bool append(const Latin1Char* begin, const Latin1Char* end) {
+    MOZ_ASSERT(begin <= end);
     return isLatin1() ? latin1Chars().append(begin, end)
-                      : twoByteChars().append(begin, end);
+                      : appendLatin1ToTwoByte(begin, end - begin);
   }
   [[nodiscard]] bool append(const Latin1Char* chars, size_t len) {
     return append(chars, chars + len);
@@ -350,7 +386,7 @@ class StringBuilder {
     if (isLatin1()) {
       latin1Chars().infallibleAppend(chars, len);
     } else {
-      twoByteChars().infallibleAppend(chars, len);
+      infallibleAppendLatin1ToTwoByte(chars, len);
     }
   }
   void infallibleAppend(const char* chars, size_t len) {
@@ -468,7 +504,7 @@ inline bool StringBuilder::append(const JSLinearString* str) {
     }
   }
   return str->hasLatin1Chars()
-             ? twoByteChars().append(str->latin1Chars(nogc), str->length())
+             ? appendLatin1ToTwoByte(str->latin1Chars(nogc), str->length())
              : twoByteChars().append(str->twoByteChars(nogc), str->length());
 }
 
@@ -499,7 +535,7 @@ inline bool StringBuilder::appendSubstring(const JSLinearString* base,
     }
   }
   return base->hasLatin1Chars()
-             ? twoByteChars().append(base->latin1Chars(nogc) + off, len)
+             ? appendLatin1ToTwoByte(base->latin1Chars(nogc) + off, len)
              : twoByteChars().append(base->twoByteChars(nogc) + off, len);
 }
 
