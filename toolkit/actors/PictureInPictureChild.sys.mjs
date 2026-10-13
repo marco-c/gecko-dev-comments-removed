@@ -2579,20 +2579,15 @@ export class PictureInPictureChild extends JSWindowActorChild {
       }
     }
 
-    // On Android the embedder has already loaded a document in the player session, so there is
-    // nothing to wait for. Reloading would swap the WindowGlobal and destroy this actor before
-    // it could reply to PictureInPicture:SetupPlayer.
-    if (AppConstants.platform != "android") {
-      let loadPromise = new Promise(resolve => {
-        this.contentWindow.addEventListener("load", resolve, {
-          once: true,
-          mozSystemGroup: true,
-          capture: true,
-        });
+    let loadPromise = new Promise(resolve => {
+      this.contentWindow.addEventListener("load", resolve, {
+        once: true,
+        mozSystemGroup: true,
+        capture: true,
       });
-      this.contentWindow.location.reload();
-      await loadPromise;
-    }
+    });
+    this.contentWindow.location.reload();
+    await loadPromise;
 
     // We're committed to adding the video to this window now. Ensure we track
     // the content window before we do so, so that the toggle actor can
