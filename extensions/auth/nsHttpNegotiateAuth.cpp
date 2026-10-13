@@ -29,6 +29,7 @@
 #include "nsNetCID.h"
 #include "nsProxyRelease.h"
 #include "plbase64.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/Sprintf.h"
@@ -61,13 +62,80 @@ static const char kNegotiateAuthAllowProxies[] =
     "network.negotiate-auth.allow-proxies";
 static const char kNegotiateAuthAllowNonFqdn[] =
     "network.negotiate-auth.allow-non-fqdn";
-static const char kNegotiateAuthSSPI[] = "network.auth.use-sspi";
 static const char kSSOinPBmode[] = "network.auth.private-browsing-sso";
 
 mozilla::StaticRefPtr<nsHttpNegotiateAuth> nsHttpNegotiateAuth::gSingleton;
 
 #define kNegotiateLen (sizeof(kNegotiate) - 1)
 #define DEFAULT_THREAD_TIMEOUT_MS 30000
+
+
+
+
+
+
+
+
+
+class NegotiateAuthState final : public nsIAuthModule {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  NegotiateAuthState(already_AddRefed<nsIAuthModule> aModule,
+                     const nsACString& aServiceName, uint32_t aReqFlags)
+      : mModule(aModule), mServiceName(aServiceName), mReqFlags(aReqFlags) {}
+
+  NS_IMETHODIMP Init(const nsACString&, uint32_t, const nsAString&,
+                     const nsAString&, const nsAString&) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  NS_IMETHODIMP InitAsync(const nsACString&, uint32_t, const nsAString&,
+                          const nsAString&, const nsAString&,
+                          nsIAuthModuleInitCallback* aCallback) override {
+    if (!mInitDone.compareExchange(false, true)) {
+      aCallback->OnInitDone(NS_OK);
+      return NS_OK;
+    }
+    nsresult rv = mModule->InitAsync(mServiceName, mReqFlags, u""_ns, u""_ns,
+                                     u""_ns, aCallback);
+    if (rv == NS_ERROR_NOT_IMPLEMENTED) {
+      rv = mModule->Init(mServiceName, mReqFlags, u""_ns, u""_ns, u""_ns);
+      aCallback->OnInitDone(rv);
+      return NS_OK;
+    }
+    return rv;
+  }
+
+  NS_IMETHODIMP GetNextToken(const void* aInToken, uint32_t aInTokenLen,
+                             void** aOutToken,
+                             uint32_t* aOutTokenLen) override {
+    return mModule->GetNextToken(aInToken, aInTokenLen, aOutToken,
+                                 aOutTokenLen);
+  }
+
+  NS_IMETHODIMP Wrap(const void* aInToken, uint32_t aInTokenLen,
+                     bool aConfidential, void** aOutToken,
+                     uint32_t* aOutTokenLen) override {
+    return mModule->Wrap(aInToken, aInTokenLen, aConfidential, aOutToken,
+                         aOutTokenLen);
+  }
+
+  NS_IMETHODIMP Unwrap(const void* aInToken, uint32_t aInTokenLen,
+                       void** aOutToken, uint32_t* aOutTokenLen) override {
+    return mModule->Unwrap(aInToken, aInTokenLen, aOutToken, aOutTokenLen);
+  }
+
+ private:
+  ~NegotiateAuthState() = default;
+
+  nsCOMPtr<nsIAuthModule> mModule;
+  nsCString mServiceName;
+  const uint32_t mReqFlags;
+  mozilla::Atomic<bool> mInitDone{false};
+};
+
+NS_IMPL_ISUPPORTS(NegotiateAuthState, nsIAuthModule)
 
 
 
@@ -243,24 +311,22 @@ nsHttpNegotiateAuth::ChallengeReceived(nsIHttpAuthenticableChannel* authChannel,
   
   service.InsertLiteral("HTTP@", 0);
 
-  const char* authType;
-  if (TestBoolPref(kNegotiateAuthSSPI)) {
-    LOG(("  using negotiate-sspi\n"));
+  const char* authType = "negotiate-gss";
+#ifdef XP_WIN
+  if (mozilla::StaticPrefs::network_auth_use_sspi()) {
     authType = "negotiate-sspi";
-  } else {
-    LOG(("  using negotiate-gss\n"));
-    authType = "negotiate-gss";
   }
+#endif
+  LOG(("  using %s\n", authType));
 
   MOZ_ALWAYS_TRUE(module = nsIAuthModule::CreateInstance(authType));
 
-  rv = module->Init(service, req_flags, u""_ns, u""_ns, u""_ns);
-
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  module.forget(continuationState);
+  
+  
+  
+  nsCOMPtr<nsIAuthModule> state =
+      new NegotiateAuthState(module.forget(), service, req_flags);
+  state.forget(continuationState);
   return NS_OK;
 }
 
@@ -370,10 +436,11 @@ NS_IMPL_ISUPPORTS(GetNextTokenCompleteEvent, nsIRunnable, nsICancelable)
 
 
 
-class GetNextTokenRunnable final : public mozilla::Runnable {
-  ~GetNextTokenRunnable() override = default;
-
+class GetNextTokenRunnable final : public mozilla::Runnable,
+                                   public nsIAuthModuleInitCallback {
  public:
+  NS_DECL_ISUPPORTS_INHERITED
+
   GetNextTokenRunnable(
       nsMainThreadPtrHandle<nsIHttpAuthenticableChannel>& authChannel,
       const nsACString& challenge, bool isProxyAuth, const nsAString& domain,
@@ -394,19 +461,40 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
         mCompleteEvent(aCompleteEvent) {}
 
   NS_IMETHODIMP Run() override {
-    
     MOZ_ASSERT(!NS_IsMainThread());
+
+    nsCOMPtr<nsIAuthModule> module = do_QueryInterface(mContinuationState);
+    if (!module) {
+      return mCompleteEvent->DispatchError(mSessionState.forget(),
+                                           mContinuationState.forget());
+    }
+
+    
+    
+    
+    
+    
+    nsresult rv = module->InitAsync(""_ns, 0, u""_ns, u""_ns, u""_ns, this);
+    if (rv == NS_ERROR_NOT_IMPLEMENTED) {
+      return OnInitDone(NS_OK);
+    }
+    if (NS_FAILED(rv)) {
+      return mCompleteEvent->DispatchError(mSessionState.forget(),
+                                           mContinuationState.forget());
+    }
+    return NS_OK;
+  }
+
+  NS_IMETHODIMP OnInitDone(nsresult aResult) override {
+    if (NS_FAILED(aResult)) {
+      return mCompleteEvent->DispatchError(mSessionState.forget(),
+                                           mContinuationState.forget());
+    }
 
     nsCString creds;
     uint32_t flags;
     nsresult rv = ObtainCredentialsAndFlags(creds, &flags);
 
-    
-    
-    
-    
-    
-    
     if (NS_FAILED(rv)) {
       return mCompleteEvent->DispatchError(mSessionState.forget(),
                                            mContinuationState.forget());
@@ -416,9 +504,10 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
                                            mContinuationState.forget());
   }
 
-  NS_IMETHODIMP ObtainCredentialsAndFlags(nsCString& aCreds, uint32_t* aFlags) {
-    nsresult rv;
+ private:
+  ~GetNextTokenRunnable() override = default;
 
+  nsresult ObtainCredentialsAndFlags(nsCString& aCreds, uint32_t* aFlags) {
     nsISupports* sessionState = mSessionState;
     nsISupports* continuationState = mContinuationState;
     
@@ -427,16 +516,15 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    rv = GenerateCredentialsInternal(
+    nsresult rv = GenerateCredentialsInternal(
         mAuthChannel, mChallenge, mIsProxyAuth, mDomain, mUsername, mPassword,
         &sessionState, &continuationState, mCertDER, aFlags, aCreds);
+    
+    
+    
+    
+    
+    
     if (mSessionState != sessionState) {
       mSessionState = sessionState;
     }
@@ -446,7 +534,6 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
     return rv;
   }
 
- private:
   nsMainThreadPtrHandle<nsIHttpAuthenticableChannel> mAuthChannel;
   nsCString mChallenge;
   bool mIsProxyAuth;
@@ -458,6 +545,9 @@ class GetNextTokenRunnable final : public mozilla::Runnable {
   nsCOMPtr<nsISupports> mContinuationState;
   nsMainThreadPtrHandle<GetNextTokenCompleteEvent> mCompleteEvent;
 };
+
+NS_IMPL_ISUPPORTS_INHERITED(GetNextTokenRunnable, mozilla::Runnable,
+                            nsIAuthModuleInitCallback)
 
 }  
 
@@ -480,7 +570,7 @@ nsHttpNegotiateAuth::GenerateCredentialsAsync(
   
   if (!isProxyAuth && challenge.Length() <= kNegotiateLen &&
       mozilla::StaticPrefs::network_auth_negotiate_channel_binding() &&
-      TestBoolPref(kNegotiateAuthSSPI)) {
+      mozilla::StaticPrefs::network_auth_use_sspi()) {
     GetServerCertDER(authChannel, certDER);
   }
 #endif

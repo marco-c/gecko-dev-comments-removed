@@ -1362,11 +1362,6 @@ pref("network.negotiate-auth.allow-proxies", true);
 
 pref("network.negotiate-auth.gsslib", "");
 
-#ifdef XP_WIN
-  
-  pref("network.auth.use-sspi", true);
-#endif
-
 
 
 

@@ -1000,9 +1000,16 @@ nsresult nsDNSService::PreprocessHostname(bool aLocalDomain,
                                           const nsACString& aInput,
                                           nsACString& aACE) {
   
-  if (StaticPrefs::network_dns_blockDotOnion() &&
-      StringEndsWith(aInput, ".onion"_ns)) {
-    return NS_ERROR_UNKNOWN_HOST;
+  
+  if (StaticPrefs::network_dns_blockDotOnion()) {
+    uint32_t length = aInput.Length();
+    while (length && aInput[length - 1] == '.') {
+      --length;
+    }
+    if (StringEndsWith(Substring(aInput, 0, length), ".onion"_ns,
+                       nsCaseInsensitiveCStringComparator)) {
+      return NS_ERROR_UNKNOWN_HOST;
+    }
   }
 
   if (aLocalDomain) {
@@ -1261,12 +1268,6 @@ nsDNSService::ResolveNative(const nsACString& aHostname,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  return ResolveInternal(aHostname, flags, aOriginAttributes, result);
-}
-
-nsresult nsDNSService::DeprecatedSyncResolve(
-    const nsACString& aHostname, nsIDNSService::DNSFlags flags,
-    const OriginAttributes& aOriginAttributes, nsIDNSRecord** result) {
   return ResolveInternal(aHostname, flags, aOriginAttributes, result);
 }
 

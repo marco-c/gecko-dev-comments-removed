@@ -6,7 +6,9 @@
 #define nsAuthSSPI_h_
 
 #include "nsAuth.h"
+#include "nsCOMPtr.h"
 #include "nsIAuthModule.h"
+#include "nsIDNSListener.h"
 #include "nsString.h"
 #include "mozilla/UniquePtrExtensions.h"
 
@@ -26,10 +28,11 @@
 
 
 
-class nsAuthSSPI final : public nsIAuthModule {
+class nsAuthSSPI final : public nsIAuthModule, public nsIDNSListener {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAUTHMODULE
+  NS_DECL_NSIDNSLISTENER
 
   explicit nsAuthSSPI(pType package = PACKAGE_TYPE_NEGOTIATE);
 
@@ -41,7 +44,7 @@ class nsAuthSSPI final : public nsIAuthModule {
   typedef ::TimeStamp MS_TimeStamp;
 
  private:
-  nsresult MakeSN(const nsACString& principal, nsCString& result);
+  nsresult CompleteInit();
 
   
   
@@ -60,6 +63,10 @@ class nsAuthSSPI final : public nsIAuthModule {
   bool mIsFirst;
   void* mCertDERData;
   uint32_t mCertDERLength;
+
+  
+  nsCString mPendingServicePrefix;
+  nsCOMPtr<nsIAuthModuleInitCallback> mInitCallback;
 };
 
 #endif 
