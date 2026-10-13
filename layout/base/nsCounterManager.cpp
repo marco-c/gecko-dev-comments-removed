@@ -427,24 +427,28 @@ static bool HasCounters(const nsStyleContent& aStyle) {
          !aStyle.mCounterReset.IsEmpty() || !aStyle.mCounterSet.IsEmpty();
 }
 
+
+
+
+
+
+
+
+
+static bool RequiresListItemIncrement(const nsIFrame* aFrame) {
+  return aFrame->StyleDisplay()->IsListItem() && !aFrame->Style()->IsAnonBox();
+}
+
+bool nsCounterManager::HasCounterChanges(const nsIFrame* aFrame) {
+  return RequiresListItemIncrement(aFrame) ||
+         HasCounters(*aFrame->StyleContent());
+}
+
 bool nsCounterManager::AddCounterChanges(nsIFrame* aFrame) {
-  
-  
-  
-  
-  
-  
-  
-  
-  const bool requiresListItemIncrement =
-      aFrame->StyleDisplay()->IsListItem() && !aFrame->Style()->IsAnonBox();
+  MOZ_ASSERT(HasCounterChanges(aFrame));
 
+  const bool requiresListItemIncrement = RequiresListItemIncrement(aFrame);
   const nsStyleContent* styleContent = aFrame->StyleContent();
-
-  if (!requiresListItemIncrement && !HasCounters(*styleContent)) {
-    MOZ_ASSERT(!aFrame->HasAnyStateBits(NS_FRAME_HAS_CSS_COUNTER_STYLE));
-    return false;
-  }
 
   aFrame->AddStateBits(NS_FRAME_HAS_CSS_COUNTER_STYLE);
 
