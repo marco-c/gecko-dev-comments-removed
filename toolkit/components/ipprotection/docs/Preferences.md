@@ -92,6 +92,12 @@ know what you are doing.
 : Milliseconds to wait for a proxy activation or a proxy pass rotation to finish
   before aborting the attempt and moving to the error state.
 
+`browser.ipProtection.serviceWaitTimeout` (integer, default: `90000`)
+
+: Milliseconds `start()` holds traffic for a service that is not `READY` yet
+  but may still become so, as during startup. A wait is not a request, so it
+  is not bounded by the guardian timeout.
+
 `browser.ipProtection.guardian.retryAfter` (integer, default: `500`)
 
 : Milliseconds to delay before retrying a proxy pass fetch that failed with a

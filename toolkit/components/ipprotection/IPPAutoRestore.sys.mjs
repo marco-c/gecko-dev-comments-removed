@@ -74,19 +74,15 @@ export class IPPAutoRestoreSingleton {
   }
 
   initOnStartupCompleted() {
-    if (this.#willRestore) {
-      lazy.IPPProxyManager.start(
-        false,
-        PrivateBrowsingUtils.permanentPrivateBrowsing
-      );
-      this.#willRestore = false;
-    }
+    // The activation was waiting for this and completes on its own.
+    this.#willRestore = false;
     this.uninit();
   }
 
   uninit() {
     if (this.#willRestore) {
-      this.#cancelChannelFilter();
+      this.#willRestore = false;
+      lazy.IPPProxyManager.stop(false);
     }
     lazy.IPProtectionService.removeEventListener(
       "IPProtectionService:StateChanged",
@@ -106,17 +102,16 @@ export class IPPAutoRestoreSingleton {
     return this.#willRestore;
   }
 
-  #createChannelFilter() {
+  #startRestore() {
     if (!this.shouldRestore) {
       return;
     }
     this.#willRestore = true;
-    lazy.IPPProxyManager.createChannelFilter();
-  }
-
-  #cancelChannelFilter() {
-    this.#willRestore = false;
-    lazy.IPPProxyManager.cancelChannelFilter();
+    // Holds traffic from here; the work waits for startup to complete.
+    lazy.IPPProxyManager.start(
+      false,
+      PrivateBrowsingUtils.permanentPrivateBrowsing
+    );
   }
 
   observe(_subject, topic) {
@@ -127,7 +122,7 @@ export class IPPAutoRestoreSingleton {
     // If the cached service state is ready, hold restoring until the
     // proxy is started.
     if (lazy.IPProtectionService.state === lazy.IPProtectionStates.READY) {
-      this.#createChannelFilter();
+      this.#startRestore();
     }
 
     Services.obs.removeObserver(this, RESTORING_ON_STARTUP);

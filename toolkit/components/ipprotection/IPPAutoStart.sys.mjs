@@ -4,7 +4,6 @@
 
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-import { IPPEarlyStartupFilter } from "moz-src:///toolkit/components/ipprotection/IPPEarlyStartupFilter.sys.mjs";
 
 const lazy = {};
 
@@ -27,7 +26,7 @@ const AUTOSTART_PREF = "browser.ipProtection.autoStartEnabled";
  * calls `start()`. This is done only if the previous state was not a ACTIVE
  * because, in that case, more likely the VPN on/off state is an user decision.
  */
-class IPPAutoStartSingleton {
+export class IPPAutoStartSingleton {
   #shouldStartWhenReady = false;
 
   constructor() {
@@ -56,12 +55,15 @@ class IPPAutoStartSingleton {
   init() {
     if (this.autoStart && !this.handleEvent) {
       this.handleEvent = this.#handleEvent.bind(this);
-      this.#shouldStartWhenReady = true;
 
       lazy.IPProtectionService.addEventListener(
         "IPProtectionService:StateChanged",
         this.handleEvent
       );
+
+      // Asking now holds traffic for the whole of startup; the activation
+      // waits for the service. The listener is for a later return to READY.
+      this.#startProxy();
     }
   }
 
@@ -77,6 +79,14 @@ class IPPAutoStartSingleton {
       delete this.handleEvent;
       this.#shouldStartWhenReady = false;
     }
+  }
+
+  #startProxy() {
+    this.#shouldStartWhenReady = false;
+    lazy.IPPProxyManager.start(
+      false,
+      PrivateBrowsingUtils.permanentPrivateBrowsing
+    );
   }
 
   get autoStart() {
@@ -99,11 +109,7 @@ class IPPAutoStartSingleton {
 
       case lazy.IPProtectionStates.READY:
         if (this.#shouldStartWhenReady) {
-          this.#shouldStartWhenReady = false;
-          lazy.IPPProxyManager.start(
-            false,
-            PrivateBrowsingUtils.permanentPrivateBrowsing
-          );
+          this.#startProxy();
         }
         break;
 
@@ -115,9 +121,6 @@ class IPPAutoStartSingleton {
 
 const IPPAutoStart = new IPPAutoStartSingleton();
 
-const IPPAutoStartHelpers = [
-  IPPAutoStart,
-  new IPPEarlyStartupFilter(() => IPPAutoStart.autoStart),
-];
+const IPPAutoStartHelpers = [IPPAutoStart];
 
 export { IPPAutoStartHelpers };
