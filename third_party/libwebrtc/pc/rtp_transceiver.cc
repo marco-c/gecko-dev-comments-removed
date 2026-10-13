@@ -1017,8 +1017,7 @@ void RtpTransceiver::ApplySframeEnabled(bool sframe_enabled) {
   sframe_enabled_ = sframe_enabled;
 
   if (sframe_enabled && channel_) {
-    
-    
+    channel_->EnableSframe();
   }
 }
 

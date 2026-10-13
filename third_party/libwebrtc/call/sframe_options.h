@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef CALL_SFRAME_OPTIONS_H_
+#define CALL_SFRAME_OPTIONS_H_
+
+namespace webrtc {
+
+
+
+struct SframeSendOptions {
+  bool required = false;
+  
+  
+};
+
+
+
+struct SframeReceiveOptions {
+  bool required = false;
+  
+  
+};
+
+}  
+
+#endif  

@@ -262,6 +262,9 @@ class MediaSendChannelInterface {
   
   
   virtual void ResetEncoderFactoryOverride(uint32_t ssrc) = 0;
+
+  
+  virtual void EnableSframe() = 0;
 };
 
 class MediaReceiveChannelInterface {
@@ -336,6 +339,9 @@ class MediaReceiveChannelInterface {
   
   virtual std::optional<int> GetBaseMinimumPlayoutDelayMs(
       uint32_t ssrc) const = 0;
+
+  
+  virtual void EnableSframe() = 0;
 };
 
 

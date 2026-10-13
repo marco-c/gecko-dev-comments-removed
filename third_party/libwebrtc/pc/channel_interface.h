@@ -77,6 +77,11 @@ class ChannelInterface {
   virtual void Enable(bool enable) = 0;
 
   
+  
+  
+  virtual void EnableSframe() = 0;
+
+  
   virtual RTCError SetLocalContent(const MediaContentDescription* content,
                                    SdpType type) = 0;
   virtual RTCError SetRemoteContent(const MediaContentDescription* content,
