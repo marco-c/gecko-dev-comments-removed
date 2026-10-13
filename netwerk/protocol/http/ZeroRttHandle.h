@@ -115,7 +115,7 @@ class ZeroRttHandle {
   void Cleanup();
 
  private:
-  ~ZeroRttHandle() = default;
+  ~ZeroRttHandle();
 
   
   

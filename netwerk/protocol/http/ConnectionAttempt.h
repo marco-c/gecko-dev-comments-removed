@@ -62,7 +62,7 @@ class ConnectionAttempt : public nsSupportsWeakReference {
 
   
   
-  void ForgetRealTransaction() { mTransaction = nullptr; }
+  void ForgetRealTransaction();
 
  protected:
   virtual ~ConnectionAttempt() = default;
