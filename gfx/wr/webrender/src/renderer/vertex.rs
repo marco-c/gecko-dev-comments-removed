@@ -28,13 +28,6 @@ pub const VERTEX_TEXTURE_EXTRA_ROWS: i32 = 10;
 
 pub const MAX_VERTEX_TEXTURE_WIDTH: usize = webrender_build::MAX_VERTEX_TEXTURE_WIDTH;
 
-
-
-
-
-
-const MAX_TRACKED_UPLOAD_BYTES: usize = MAX_VERTEX_TEXTURE_WIDTH * 16;
-
 pub mod desc {
     use crate::device::{VertexAttribute, VertexAttributeKind, VertexDescriptor};
 
@@ -303,7 +296,7 @@ impl VertexDataTextures {
         }
     }
 
-    fn upload(&mut self, device: &mut Device, pbo_pool: &mut UploadBufferPool, frame: &mut Frame) {
+    pub fn update(&mut self, device: &mut Device, pbo_pool: &mut UploadBufferPool, frame: &mut Frame) {
         let mut texture_uploader = device.upload_texture(pbo_pool);
         self.prim_header_f_texture.update(
             device,
@@ -326,27 +319,25 @@ impl VertexDataTextures {
         
         
         texture_uploader.flush(device);
-    }
 
-    fn bind(&self, device: &mut Device) {
         device.bind_texture(
             super::TextureSampler::PrimitiveHeadersF,
-            self.prim_header_f_texture.texture(),
+            &self.prim_header_f_texture.texture(),
             Swizzle::default(),
         );
         device.bind_texture(
             super::TextureSampler::PrimitiveHeadersI,
-            self.prim_header_i_texture.texture(),
+            &self.prim_header_i_texture.texture(),
             Swizzle::default(),
         );
         device.bind_texture(
             super::TextureSampler::TransformPalette,
-            self.transforms_texture.texture(),
+            &self.transforms_texture.texture(),
             Swizzle::default(),
         );
         device.bind_texture(
             super::TextureSampler::RenderTasks,
-            self.render_task_texture.texture(),
+            &self.render_task_texture.texture(),
             Swizzle::default(),
         );
     }
@@ -363,171 +354,6 @@ impl VertexDataTextures {
         self.prim_header_f_texture.deinit(device);
         self.prim_header_i_texture.deinit(device);
         self.render_task_texture.deinit(device);
-    }
-}
-
-
-
-#[derive(Default)]
-struct LastUpload {
-    bytes: Vec<u8>,
-    
-    
-    
-    valid: bool,
-}
-
-impl LastUpload {
-    
-    
-    fn record_if_changed<T>(&mut self, data: &[T]) -> bool {
-        
-        
-        
-        if data.is_empty() {
-            return false;
-        }
-
-        
-        
-        
-        let bytes = unsafe {
-            std::slice::from_raw_parts(data.as_ptr() as *const u8, mem::size_of_val(data))
-        };
-
-        
-        
-        if bytes.len() > MAX_TRACKED_UPLOAD_BYTES {
-            self.bytes = Vec::new();
-            self.valid = false;
-            return true;
-        }
-
-        if self.valid && self.bytes == bytes {
-            return false;
-        }
-
-        self.bytes.clear();
-        self.bytes.extend_from_slice(bytes);
-        self.valid = true;
-        true
-    }
-
-    fn size_in_bytes(&self) -> usize {
-        self.bytes.capacity()
-    }
-}
-
-
-#[derive(Default)]
-struct VertexDataContents {
-    prim_header_f: LastUpload,
-    prim_header_i: LastUpload,
-    transforms: LastUpload,
-    render_tasks: LastUpload,
-    
-    
-    initialized: bool,
-}
-
-impl VertexDataContents {
-    
-    
-    fn record_if_changed(&mut self, frame: &Frame) -> bool {
-        
-        
-        
-        let changed = [
-            self.prim_header_f.record_if_changed(&frame.prim_headers.headers_float),
-            self.prim_header_i.record_if_changed(&frame.prim_headers.headers_int),
-            self.transforms.record_if_changed(&frame.transform_palette),
-            self.render_tasks.record_if_changed(&frame.render_tasks.task_data),
-        ].contains(&true);
-
-        let dirty = changed || !self.initialized;
-        self.initialized = true;
-        dirty
-    }
-
-    fn size_in_bytes(&self) -> usize {
-        self.prim_header_f.size_in_bytes()
-            + self.prim_header_i.size_in_bytes()
-            + self.transforms.size_in_bytes()
-            + self.render_tasks.size_in_bytes()
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-pub struct VertexDataRing {
-    sets: Vec<VertexDataTextures>,
-    
-    current: usize,
-    last_upload: VertexDataContents,
-}
-
-impl VertexDataRing {
-    pub fn new() -> Self {
-        let count = super::VERTEX_DATA_TEXTURE_COUNT;
-        let mut sets = Vec::with_capacity(count);
-        for _ in 0 .. count {
-            sets.push(VertexDataTextures::new());
-        }
-
-        VertexDataRing {
-            sets,
-            
-            current: count - 1,
-            last_upload: VertexDataContents::default(),
-        }
-    }
-
-    
-    
-    pub fn update(
-        &mut self,
-        device: &mut Device,
-        pbo_pool: &mut UploadBufferPool,
-        frame: &mut Frame,
-    ) -> bool {
-        let uploaded = self.last_upload.record_if_changed(frame);
-
-        if uploaded {
-            
-            
-            
-            
-            self.current = (self.current + 1) % super::VERTEX_DATA_TEXTURE_COUNT;
-            self.sets[self.current].upload(device, pbo_pool, frame);
-        }
-
-        self.sets[self.current].bind(device);
-
-        uploaded
-    }
-
-    
-    pub fn gpu_size_in_bytes(&self) -> usize {
-        self.sets.iter().map(|set| set.size_in_bytes()).sum()
-    }
-
-    
-    pub fn cpu_size_in_bytes(&self) -> usize {
-        self.last_upload.size_in_bytes()
-    }
-
-    pub fn deinit(&mut self, device: &mut Device) {
-        for set in self.sets.drain(..) {
-            set.deinit(device);
-        }
     }
 }
 
