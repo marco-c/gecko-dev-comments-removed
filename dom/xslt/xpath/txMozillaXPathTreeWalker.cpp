@@ -2,7 +2,6 @@
 
 
 
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -267,18 +266,21 @@ already_AddRefed<nsAtom> txXPathNodeUtils::getLocalName(
   return localName.forget();
 }
 
-nsAtom* txXPathNodeUtils::getPrefix(const txXPathNode& aNode) {
+already_AddRefed<nsAtom> txXPathNodeUtils::getPrefix(const txXPathNode& aNode) {
   if (aNode.isDocument()) {
     return nullptr;
   }
 
+  RefPtr<nsAtom> prefix;
   if (aNode.isContent()) {
     
     
-    return aNode.Content()->NodeInfo()->GetPrefixAtom();
+    prefix = aNode.Content()->NodeInfo()->GetPrefixAtom();
+  } else {
+    prefix =
+        aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->GetPrefix();
   }
-
-  return aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->GetPrefix();
+  return prefix.forget();
 }
 
 
