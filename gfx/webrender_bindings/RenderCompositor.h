@@ -105,13 +105,7 @@ class RenderCompositor {
 
   
   
-  virtual bool SupportsExternalBufferTextures() const {
-#ifdef MOZ_WAYLAND
-    return true;
-#else
-    return false;
-#endif
-  }
+  virtual bool SupportsExternalBufferTextures() const { return false; }
 
   virtual LayoutDeviceIntSize GetBufferSize() = 0;
 

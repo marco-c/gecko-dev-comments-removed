@@ -313,6 +313,8 @@ class DMABufSurfaceYUV final : public DMABufSurface {
       const VADRMPRIMESurfaceDescriptor& aVaDesc, int aWidth, int aHeight);
   static void ReleaseVADRMPRIMESurfaceDescriptor(
       VADRMPRIMESurfaceDescriptor& aDesc);
+  
+  
   static already_AddRefed<DMABufSurfaceYUV> CreateYUVSurface(
       mozilla::gl::GLContext* aGLContext, BufferSurface* aSourceSurface);
 
