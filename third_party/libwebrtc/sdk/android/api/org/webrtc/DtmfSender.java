@@ -12,22 +12,21 @@ package org.webrtc;
 
 
 public class DtmfSender {
-  private long nativeDtmfSender;
+  private final NativeLifecycleLock lifecycleLock;
 
   public DtmfSender(long nativeDtmfSender) {
-    this.nativeDtmfSender = nativeDtmfSender;
+    this.lifecycleLock = new NativeLifecycleLock("DtmfSender", nativeDtmfSender);
   }
 
   
 
 
   public boolean canInsertDtmf() {
-    checkDtmfSenderExists();
-    return nativeCanInsertDtmf(nativeDtmfSender);
+    return lifecycleLock.call(
+        nativeDtmfSender -> nativeCanInsertDtmf(nativeDtmfSender));
   }
 
   
-
 
 
 
@@ -44,16 +43,16 @@ public class DtmfSender {
 
 
   public boolean insertDtmf(String tones, int duration, int interToneGap) {
-    checkDtmfSenderExists();
-    return nativeInsertDtmf(nativeDtmfSender, tones, duration, interToneGap);
+    return lifecycleLock.call(
+        nativeDtmfSender ->
+            nativeInsertDtmf(nativeDtmfSender, tones, duration, interToneGap));
   }
 
   
 
 
   public String tones() {
-    checkDtmfSenderExists();
-    return nativeTones(nativeDtmfSender);
+    return lifecycleLock.call(nativeDtmfSender -> nativeTones(nativeDtmfSender));
   }
 
   
@@ -61,8 +60,7 @@ public class DtmfSender {
 
 
   public int duration() {
-    checkDtmfSenderExists();
-    return nativeDuration(nativeDtmfSender);
+    return lifecycleLock.call(nativeDtmfSender -> nativeDuration(nativeDtmfSender));
   }
 
   
@@ -71,20 +69,12 @@ public class DtmfSender {
 
 
   public int interToneGap() {
-    checkDtmfSenderExists();
-    return nativeInterToneGap(nativeDtmfSender);
+    return lifecycleLock.call(
+        nativeDtmfSender -> nativeInterToneGap(nativeDtmfSender));
   }
 
   public void dispose() {
-    checkDtmfSenderExists();
-    JniCommon.nativeReleaseRef(nativeDtmfSender);
-    nativeDtmfSender = 0;
-  }
-
-  private void checkDtmfSenderExists() {
-    if (nativeDtmfSender == 0) {
-      throw new IllegalStateException("DtmfSender has been disposed.");
-    }
+    lifecycleLock.dispose(JniCommon::nativeReleaseRef);
   }
 
   private static native boolean nativeCanInsertDtmf(long dtmfSender);
