@@ -684,6 +684,15 @@ impl CssRuleTypes {
     pub fn intersects(self, other: Self) -> bool {
         self.0 & other.0 != 0
     }
+
+    
+    pub fn allows_declarations(self) -> bool {
+        self.contains(CssRuleType::Keyframe)
+            || self.contains(CssRuleType::Page)
+            || self.contains(CssRuleType::Style)
+            || self.contains(CssRuleType::Scope)
+            || self.contains(CssRuleType::PositionTry)
+    }
 }
 
 #[allow(missing_docs)]

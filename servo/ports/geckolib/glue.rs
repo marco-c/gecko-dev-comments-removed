@@ -7125,6 +7125,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
     cond: &nsACString,
     params: &CssSupportsParams,
     raw_extra_data: *mut URLExtraData,
+    rule_type: CssRuleType,
 ) -> bool {
     let condition = unsafe { cond.as_str_unchecked() };
     let mut input = Parser::new(&condition);
@@ -7151,7 +7152,7 @@ pub unsafe extern "C" fn Servo_CSSSupports(
     let mut context = ParserContext::new(
         params.origin,
         url_data,
-        Some(CssRuleType::Style),
+        Some(rule_type),
         ParsingMode::DEFAULT,
         params.quirks.into(),
          Default::default(),

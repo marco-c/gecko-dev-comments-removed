@@ -712,8 +712,26 @@ bool InspectorUtils::Supports(GlobalObject&, const nsACString& aDeclaration,
                     ? nsCompatibility::eCompatibility_NavQuirks
                     : nsCompatibility::eCompatibility_FullStandards,
   };
+
+  auto type = [&] {
+    if (!aOptions.mRule) {
+      return StyleCssRuleType::Style;
+    }
+
+    
+    
+    auto relativeType =
+        aOptions.mRule->GetContainingRuleStateForParsing().mParseRelativeType;
+    if (relativeType) {
+      return *relativeType;
+    }
+
+    
+    return aOptions.mRule->Type();
+  }();
+
   return Servo_CSSSupports(&aDeclaration, &params,
-                            nullptr);
+                            nullptr, type);
 }
 
 bool InspectorUtils::CssPropertySupportsType(GlobalObject& aGlobalObject,

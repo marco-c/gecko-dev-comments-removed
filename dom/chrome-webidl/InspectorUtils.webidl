@@ -99,7 +99,7 @@ namespace InspectorUtils {
   sequence<DOMString> getRegisteredCssHighlights(Document document, optional boolean activeOnly = false);
   sequence<InspectorCSSPropertyDefinition> getCSSRegisteredProperties(Document document);
   InspectorCSSPropertyDefinition? getCSSRegisteredProperty(Document document, UTF8String name);
-  boolean valueMatchesSyntax(Document document, UTF8String value, UTF8String syntax);
+  boolean valueMatchesSyntax(Document document, UTF8String property, UTF8String value, UTF8String syntax);
 
   // Get the first rule body text within initialText
   // Consider the following example:
@@ -204,6 +204,7 @@ dictionary SupportsOptions {
   boolean userAgent = false;
   boolean chrome = false;
   boolean quirks = false;
+  CSSRule? rule = null;
 };
 
 dictionary PropertyNamesOptions {
