@@ -11,6 +11,10 @@ const { AITab } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs"
 );
 const { loadAssets, buildSurface } = AITab;
+const { FEATURE_MAJOR_VERSIONS, MODEL_FEATURES, parseVersion } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
 
 let gEnv;
 
@@ -51,6 +55,22 @@ add_task(function test_catalog_is_well_formed() {
     );
   }
   Assert.ok(cat.components.Page, "a Page component is defined");
+});
+
+add_task(function test_catalog_version_is_paired_with_aitab_major() {
+  
+  
+  
+  const parsed = parseVersion(gEnv.catalog.version);
+  Assert.ok(
+    parsed,
+    `catalog.version is "{major}.{minor}" (got ${JSON.stringify(gEnv.catalog.version)})`
+  );
+  Assert.equal(
+    parsed.major,
+    FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.AITAB],
+    "catalog major matches FEATURE_MAJOR_VERSIONS.aitab"
+  );
 });
 
 add_task(function test_bound_array_items_validated() {
