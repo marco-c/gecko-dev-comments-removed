@@ -3,16 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /**
- * @typedef {import("../aiwindow/ui/actors/AISmartBarParent.sys.mjs").AISmartBarParent} AISmartBarParent
+ * @import {AISmartBarParent} from "moz-src:///browser/components/aiwindow/ui/actors/AISmartBarParent.sys.mjs"
+ * @import {SmartbarInput} from "chrome://browser/content/urlbar/SmartbarInput.mjs"
  */
 import {
   SkippableTimer,
   UrlbarProvider,
+  UrlbarUtils,
 } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   AIWindowUI:
@@ -104,10 +105,11 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
    *   The query context object
    * @param {(provider: UrlbarProvider, result: UrlbarResult) => void} addCallback
    *   Callback invoked by the provider to add a new result.
+   * @param {UrlbarParentController} controller The controller instance.
    * @returns {Promise<void>}
    * @abstract
    */
-  async startQuery(queryContext, addCallback) {
+  async startQuery(queryContext, addCallback, controller) {
     let instance = this.queryInstance;
     let canReturnHeuristicResult = queryContext.sapName != "urlbar";
 
@@ -155,7 +157,7 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
       let engine = lazy.UrlbarSearchUtils.getDefaultEngine(
         queryContext.isPrivate
       );
-      let icon = await engine.getIconURL();
+      let icon = await UrlbarUtils.getEngineIconUrl(engine, controller);
       if (instance != this.queryInstance) {
         return;
       }
@@ -179,19 +181,36 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
     }
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController & {input: SmartbarInput}} controller
+   * @param {object} details
+   */
   async onEngagement(queryContext, controller, details) {
     let win = controller.input.inputField.documentGlobal;
     /** @type {AISmartBarParent} */
     let actor;
     if (queryContext.sapName == "urlbar") {
-      let browser = await this.#getSidebarBrowser(win);
-      if (win.closed) {
-        return;
+      let selectedBrowser = win.gBrowser?.selectedBrowser;
+      if (
+        selectedBrowser &&
+        lazy.AIWindow.isAIWindowNewTabPage(selectedBrowser.currentURI)
+      ) {
+        actor =
+          selectedBrowser.browsingContext?.currentWindowGlobal?.getActor(
+            "AISmartBar"
+          );
+      } else {
+        let browser = await this.#getSidebarBrowser(win);
+        if (win.closed) {
+          return;
+        }
+        actor =
+          browser.browsingContext?.currentWindowGlobal?.getActor("AISmartBar");
       }
-      actor =
-        browser.browsingContext?.currentWindowGlobal.getActor("AISmartBar");
     } else {
-      actor = win.browsingContext?.currentWindowGlobal.getActor("AISmartBar");
+      // @ts-expect-error bug 1957626
+      actor = win.browsingContext?.currentWindowGlobal?.getActor("AISmartBar");
     }
     if (!actor) {
       this.logger.error("AISmartBar actor not found");
