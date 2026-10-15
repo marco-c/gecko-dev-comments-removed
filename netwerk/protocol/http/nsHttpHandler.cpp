@@ -2352,6 +2352,8 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
         glean::http::dnt_usage.AccumulateSingleSample(1);
       }
     }
+
+    mActivityDistributor = nullptr;
   } else if (!strcmp(topic, "net:clear-active-logins")) {
     mAuthCache->ClearAll();
     mPrivateAuthCache->ClearAll();
