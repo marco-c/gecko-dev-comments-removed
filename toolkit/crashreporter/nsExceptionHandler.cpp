@@ -2593,9 +2593,6 @@ void MergeCrashAnnotations(AnnotationTable& aDst, const AnnotationTable& aSrc) {
 
 static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
   const time_t crashTime = time(nullptr);
-  nsAutoCString crashTimeStr;
-  crashTimeStr.AppendInt(static_cast<uint64_t>(crashTime));
-  aAnnotations[Annotation::CrashTime] = std::move(crashTimeStr);
 
   if (inactiveStateStart) {
     nsAutoCString inactiveDuration;
@@ -2642,28 +2639,6 @@ nsresult AppendAppNotesToCrashReport(const nsACString& data) {
   MutexAutoLock lock(*notesFieldLock);
   notesField->Append(data);
   return NS_OK;
-}
-
-nsresult RegisterAppMemory(void* ptr, size_t length) {
-  if (!GetEnabled()) return NS_ERROR_NOT_INITIALIZED;
-
-#if defined(XP_LINUX) || defined(XP_WIN)
-  gExceptionHandler->RegisterAppMemory(ptr, length);
-  return NS_OK;
-#else
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif
-}
-
-nsresult UnregisterAppMemory(void* ptr) {
-  if (!GetEnabled()) return NS_ERROR_NOT_INITIALIZED;
-
-#if defined(XP_LINUX) || defined(XP_WIN)
-  gExceptionHandler->UnregisterAppMemory(ptr);
-  return NS_OK;
-#else
-  return NS_ERROR_NOT_IMPLEMENTED;
-#endif
 }
 
 void SetIncludeContextHeap(bool aValue) {
@@ -3264,8 +3239,9 @@ nsresult OOPInit(nsIFile* aXREDirectory, bool force ) {
   
   
   crashHelperClient = crash_helper_launch(
-      (const BreakpadChar*)crashHelperPath.c_str(),
-      (const BreakpadChar*)NS_ConvertUTF8toUTF16(childCrashNotifyPipe).getW(),
+      mozilla::BitwiseCast<const BreakpadChar*>(crashHelperPath.c_str()),
+      mozilla::BitwiseCast<const BreakpadChar*>(
+          NS_ConvertUTF8toUTF16(childCrashNotifyPipe).getW()),
       mozilla::BitwiseCast<const BreakpadChar*>(tempPath.get()),
       gToolkitBuildID);
 #elif defined(XP_LINUX)
