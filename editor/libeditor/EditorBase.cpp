@@ -1166,10 +1166,6 @@ nsresult EditorBase::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
                          "CanHandleAndMaybeDispatchBeforeInputEvent() failed");
     return EditorBase::ToGenericNSResult(rv);
   }
-  if (editActionData.GetEditContext()) {
-    
-    return NS_OK;
-  }
 
   AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);
 
@@ -1234,10 +1230,6 @@ nsresult EditorBase::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
     NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
                          "CanHandleAndMaybeDispatchBeforeInputEvent() failed");
     return EditorBase::ToGenericNSResult(rv);
-  }
-  if (editActionData.GetEditContext()) {
-    
-    return NS_OK;
   }
 
   AutoUpdateViewBatch preventSelectionChangeEvent(*this, __FUNCTION__);

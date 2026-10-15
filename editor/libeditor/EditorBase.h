@@ -335,14 +335,10 @@ class EditorBase : public nsIEditor,
 
 
   bool CanUndo() const {
-    
-    
-    return (IsUndoRedoEnabled() && NumberOfUndoItems() > 0) ||
-           ComputeEditContext();
+    return IsUndoRedoEnabled() && NumberOfUndoItems() > 0;
   }
   bool CanRedo() const {
-    return (IsUndoRedoEnabled() && NumberOfRedoItems() > 0) ||
-           ComputeEditContext();
+    return IsUndoRedoEnabled() && NumberOfRedoItems() > 0;
   }
 
   
