@@ -158,6 +158,25 @@ function registerFakePath(key, file) {
   });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+async function copyFixtureDir(relativePath) {
+  let source = do_get_file(relativePath);
+  let target = do_get_tempdir();
+  target.append(source.leafName);
+  await IOUtils.copy(source.path, target.path, { recursive: true });
+  return target;
+}
+
 function getRootPath() {
   let dirKey;
   if (AppConstants.platform == "win") {
@@ -265,20 +284,8 @@ function createChromeBookmarkStructure(totalBookmarks = 100) {
 }
 
 
-
-function setupProfileService() {
-  let gDataHome = gProfD.clone();
-  gDataHome.append("data");
-  gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-  let gDataHomeLocal = gProfD.clone();
-  gDataHomeLocal.append("local");
-  gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
-
-  let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
-    Ci.nsIXREDirProvider
-  );
-  xreDirProvider.setUserDataDirectory(gDataHome, false);
-  xreDirProvider.setUserDataDirectory(gDataHomeLocal, true);
+function initDirectoryService() {
+  Cc["@mozilla.org/xre/directory-provider;1"].getService(Ci.nsIXREDirProvider);
 }
 
-add_setup(setupProfileService);
+add_setup(initDirectoryService);
