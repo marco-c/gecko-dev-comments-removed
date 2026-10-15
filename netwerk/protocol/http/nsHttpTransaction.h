@@ -571,9 +571,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mReportedResponseHeader{false};
 
   
-  bool mResponseHeadTaken MOZ_GUARDED_BY(mLock){false};
-  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers MOZ_GUARDED_BY(mLock);
-  bool mResponseTrailersTaken MOZ_GUARDED_BY(mLock){false};
+  bool mResponseHeadTaken{false};
+  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers;
+  bool mResponseTrailersTaken{false};
 
   
   
