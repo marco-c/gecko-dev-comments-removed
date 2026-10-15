@@ -7806,6 +7806,25 @@ struct SameDocumentNavigationState {
   bool mIdentical = false;
 };
 
+static bool IsSamePrincipalForDocumentURI(nsIPrincipal* aCurrentPrincipal,
+                                          nsIURI* aCurrentURI,
+                                          nsIURI* aNewURI) {
+  nsCOMPtr<nsIURI> principalURI = aCurrentPrincipal->GetURI();
+  if (aCurrentPrincipal->GetIsNullPrincipal()) {
+    if (nsCOMPtr<nsIPrincipal> precursor =
+            aCurrentPrincipal->GetPrecursorPrincipal()) {
+      principalURI = precursor->GetURI();
+    }
+  }
+
+  return !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                               aNewURI) &&
+         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                               aCurrentURI) &&
+         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(aCurrentURI,
+                                                               aNewURI);
+}
+
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                           SameDocumentNavigationState& aState) {
   MOZ_ASSERT(aLoadState);
@@ -7905,9 +7924,6 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
     aState.mHistoryNavBetweenSameDoc = mActiveEntry->SharesDocumentWith(
         aLoadState->GetLoadingSessionHistoryInfo()->mInfo);
   }
-  MOZ_LOG(gSHLog, LogLevel::Debug,
-          ("nsDocShell::IsSameDocumentNavigation %p NavBetweenSameDoc=%d", this,
-           aState.mHistoryNavBetweenSameDoc));
 
   
   
@@ -7929,52 +7945,56 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
   
   
   
-  if (aState.mHistoryNavBetweenSameDoc &&
-      !aLoadState->GetLoadingSessionHistoryInfo()->mLoadingCurrentEntry) {
-    return true;
-  }
-
-  MOZ_LOG(
-      gSHLog, LogLevel::Debug,
-      ("nsDocShell::IsSameDocumentNavigation %p !LoadIsFromSessionHistory=%s "
-       "!PostDataStream: %s mSameExceptHashes: %s mNewURIHasRef: %s",
-       this, !aLoadState->LoadIsFromSessionHistory() ? "true" : "false",
-       !aLoadState->PostDataStream() ? "true" : "false",
-       aState.mSameExceptHashes ? "true" : "false",
-       aState.mNewURIHasRef ? "true" : "false"));
-  return !aLoadState->LoadIsFromSessionHistory() &&
-         !aLoadState->PostDataStream() && aState.mSameExceptHashes &&
-         aState.mNewURIHasRef;
-}
-
-static bool IsSamePrincipalForDocumentURI(nsIPrincipal* aCurrentPrincipal,
-                                          nsIURI* aCurrentURI,
-                                          nsIURI* aNewURI) {
-  nsCOMPtr<nsIURI> principalURI = aCurrentPrincipal->GetURI();
-  if (aCurrentPrincipal->GetIsNullPrincipal()) {
-    if (nsCOMPtr<nsIPrincipal> precursor =
-            aCurrentPrincipal->GetPrecursorPrincipal()) {
-      principalURI = precursor->GetURI();
+  if (aLoadState->LoadIsFromSessionHistory()) {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("nsDocShell::IsSameDocumentNavigation history nav %p "
+             "NavBetweenSameDoc=%d",
+             this, aState.mHistoryNavBetweenSameDoc));
+    if (!aState.mHistoryNavBetweenSameDoc ||
+        aLoadState->GetLoadingSessionHistoryInfo()->mLoadingCurrentEntry) {
+      return false;
+    }
+  } else {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("nsDocShell::IsSameDocumentNavigation new shentry %p "
+             "!PostDataStream: %s mSameExceptHashes: %s mNewURIHasRef: %s",
+             this, !aLoadState->PostDataStream() ? "true" : "false",
+             aState.mSameExceptHashes ? "true" : "false",
+             aState.mNewURIHasRef ? "true" : "false"));
+    if (aLoadState->PostDataStream() || !aState.mSameExceptHashes ||
+        !aState.mNewURIHasRef) {
+      return false;
     }
   }
 
-  return !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                               aNewURI) &&
-         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                               aCurrentURI) &&
-         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(aCurrentURI,
-                                                               aNewURI);
+  
+  
+  
+  nsCOMPtr<nsIURI> newURI = aLoadState->URI();
+  if (aState.mSecureUpgradeURI) {
+    
+    nsresult rv =
+        NS_GetSecureUpgradedURI(aLoadState->URI(), getter_AddRefs(newURI));
+    NS_ENSURE_SUCCESS(rv, false);
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+        ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
+  }
+  RefPtr<Document> doc = GetExtantDocument();
+  NS_ENSURE_TRUE(doc, false);
+  if (!IsSamePrincipalForDocumentURI(doc->NodePrincipal(), mCurrentURI,
+                                     newURI)) {
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("nsDocShell::IsSameDocumentNavigation %p false, possible "
+             "violation of the same origin policy",
+             this));
+    return false;
+  }
+
+  return true;
 }
 
 nsresult nsDocShell::HandleSameDocumentNavigation(
-    nsDocShellLoadState* aLoadState, SameDocumentNavigationState& aState,
-    bool& aSameDocument) {
-  aSameDocument = true;
-#ifdef DEBUG
-  SameDocumentNavigationState state;
-  MOZ_ASSERT(IsSameDocumentNavigation(aLoadState, state));
-#endif
-
+    nsDocShellLoadState* aLoadState, SameDocumentNavigationState& aState) {
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("nsDocShell::HandleSameDocumentNavigation %p %s -> %s", this,
            mCurrentURI->GetSpecOrDefault().get(),
@@ -7989,20 +8009,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   nsCOMPtr<nsIURI> newURI = aLoadState->URI();
   if (aState.mSecureUpgradeURI) {
     MOZ_TRY(NS_GetSecureUpgradedURI(aLoadState->URI(), getter_AddRefs(newURI)));
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
-  }
-
-  
-  
-  if (!IsSamePrincipalForDocumentURI(doc->NodePrincipal(), mCurrentURI,
-                                     newURI)) {
-    aSameDocument = false;
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell[%p]: possible violation of the same origin policy "
-             "during same document navigation",
-             this));
-    return NS_OK;
   }
 
   
@@ -8724,22 +8730,20 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   if (sameDocument) {
-    nsresult rv = HandleSameDocumentNavigation(
-        aLoadState, sameDocumentNavigationState, sameDocument);
+    nsresult rv =
+        HandleSameDocumentNavigation(aLoadState, sameDocumentNavigationState);
     NS_ENSURE_SUCCESS(rv, rv);
     if (shouldTakeFocus) {
       mBrowsingContext->Focus(CallerType::System, IgnoreErrors());
     }
-    if (sameDocument) {
-      if (aLoadState->LoadIsFromSessionHistory() &&
-          (mLoadType & LOAD_CMD_HISTORY) &&
-          !aLoadState->IsResumingInterceptedNavigation()) {
-        
-        
-        SetOngoingNavigation(Nothing());
-      }
-      return rv;
+    if (aLoadState->LoadIsFromSessionHistory() &&
+        (mLoadType & LOAD_CMD_HISTORY) &&
+        !aLoadState->IsResumingInterceptedNavigation()) {
+      
+      
+      SetOngoingNavigation(Nothing());
     }
+    return rv;
   }
 
   
