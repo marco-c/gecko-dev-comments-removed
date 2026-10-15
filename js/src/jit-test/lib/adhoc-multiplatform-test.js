@@ -93,7 +93,7 @@ const archOptions =
            suffix: `ldp x29, x30, \\[sp\\], #16`
        },
        arm: {
-           encoding: `${HEX}{8}\\s+${HEX}{8}`,
+           encoding: `${HEX}{8}`,
            
            
            prefix: `str fp, \\[sp, #-4\\]!
