@@ -101,9 +101,7 @@ class ForkServiceChild final {
   Mutex mMutex;
   UniquePtr<MiniTransceiver> mTcver MOZ_GUARDED_BY(mMutex);
   bool mFailed MOZ_GUARDED_BY(mMutex);  
-  
-  
-  GeckoChildProcessHost* mProcess;
+  const RefPtr<GeckoChildProcessHost> mProcess;
 };
 
 

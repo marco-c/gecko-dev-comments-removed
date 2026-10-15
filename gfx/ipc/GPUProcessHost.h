@@ -147,8 +147,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   
   void KillHard(bool aGenerateMinidump);
 
-  void DestroyProcess();
-
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   static bool sLaunchWithMacSandbox;
   bool IsMacSandboxLaunchEnabled() override { return sLaunchWithMacSandbox; }
@@ -174,14 +172,6 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   bool mLaunchOomError MOZ_GUARDED_BY(mMonitor) = false;
 
   TimeStamp mLaunchTime;
-
-  
-  
-  
-  
-  
-  
-  const RefPtr<media::Refcountable<bool>> mLiveToken;
 
 #ifdef MOZ_WIDGET_ANDROID
   

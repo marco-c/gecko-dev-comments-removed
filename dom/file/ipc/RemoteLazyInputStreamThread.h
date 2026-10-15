@@ -2,14 +2,13 @@
 
 
 
-
-
 #ifndef mozilla_RemoteLazyInputStreamThread_h
 #define mozilla_RemoteLazyInputStreamThread_h
 
 #include "mozilla/RemoteLazyInputStreamChild.h"
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
+#include "nsIThread.h"
 #include "nsTArray.h"
 
 class nsIThread;

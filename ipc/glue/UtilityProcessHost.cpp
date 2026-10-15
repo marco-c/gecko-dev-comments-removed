@@ -60,7 +60,6 @@ UtilityProcessHost::UtilityProcessHost(SandboxingKind aSandbox,
                                        RefPtr<Listener> aListener)
     : GeckoChildProcessHost(GeckoProcessType_Utility),
       mListener(std::move(aListener)),
-      mLiveToken(new media::Refcountable<bool>(true)),
       mLaunchPromise(MakeRefPtr<LaunchPromiseType::Private>(__func__)) {
   MOZ_COUNT_CTOR(UtilityProcessHost);
   LOGD("[%p] UtilityProcessHost::UtilityProcessHost sandboxingKind=%" PRIu64,
@@ -83,8 +82,6 @@ UtilityProcessHost::~UtilityProcessHost() {
   LOGD("[%p] UtilityProcessHost::~UtilityProcessHost", this);
 #endif
 
-  
-  
   MOZ_ASSERT(!mForceKillTimer);
   MOZ_ASSERT(mShutdownPromise.IsEmpty());
 }
@@ -130,13 +127,8 @@ UtilityProcessHost::LaunchPromise() {
 
   WhenProcessHandleReady()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [this, liveToken = mLiveToken](
+      [this, self = RefPtr{this}](
           const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
-        if (!*liveToken) {
-          
-          
-          return;
-        }
         if (mLaunchCompleted) {
           return;
         }
@@ -160,9 +152,8 @@ void UtilityProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "UtilityProcessHost::OnChannelConnected",
-      [this, liveToken = mLiveToken]() {
-        if (*liveToken && mLaunchPhase == LaunchPhase::Waiting) {
+      "UtilityProcessHost::OnChannelConnected", [this, self = RefPtr{this}]() {
+        if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
           InitAfterConnect(true);
         }
       }));
@@ -251,14 +242,10 @@ RefPtr<UtilityProcessHost::ShutdownPromiseType> UtilityProcessHost::Shutdown() {
       mShutdownPromise.Ensure(__func__);
 
   RejectPromise(LaunchError("aborted by UtilityProcessHost::Shutdown"));
+  mShutdownRequested = true;
 
   if (mUtilityProcessParent) {
-    LOGD("[%p] UtilityProcessHost::Shutdown not destroying utility process.",
-         this);
-
-    
-    
-    mShutdownRequested = true;
+    LOGD("[%p] UtilityProcessHost::Shutdown calling Close.", this);
 
     
     if (mUtilityProcessParent->CanSend()) {
@@ -277,7 +264,7 @@ RefPtr<UtilityProcessHost::ShutdownPromiseType> UtilityProcessHost::Shutdown() {
     return shutdownPromise;
   }
 
-  DestroyProcess();
+  mShutdownPromise.ResolveIfExists(Ok{}, __func__);
   return shutdownPromise;
 }
 
@@ -296,11 +283,7 @@ void UtilityProcessHost::StartForceKillTimer() {
 
   NS_NewTimerWithCallback(
       getter_AddRefs(mForceKillTimer),
-      [this, liveToken = mLiveToken](nsITimer*) {
-        if (!*liveToken) {
-          
-          return;
-        }
+      [this, self = RefPtr{this}](nsITimer*) {
         LOGD("[%p] UtilityProcessHost force kill timer fired", this);
         NS_WARNING(
             "Utility process did not acknowledge shutdown in time, killing.");
@@ -325,7 +308,12 @@ void UtilityProcessHost::OnChannelClosed(
     mListener->OnProcessUnexpectedShutdown(this);
   }
 
-  DestroyProcess();
+  if (mForceKillTimer) {
+    mForceKillTimer->Cancel();
+    mForceKillTimer = nullptr;
+  }
+
+  mShutdownPromise.ResolveIfExists(Ok{}, __func__);
 
   
   UtilityProcessParent::Destroy(std::move(mUtilityProcessParent));
@@ -366,27 +354,6 @@ void UtilityProcessHost::KillHard(const char* aReason) {
                             &ProcessWatcher::EnsureProcessTerminated, handle,
                              true));
   }
-}
-
-void UtilityProcessHost::DestroyProcess() {
-  MOZ_ASSERT(NS_IsMainThread());
-  LOGD("[%p] UtilityProcessHost::DestroyProcess", this);
-
-  RejectPromise(LaunchError("UtilityProcessHost::DestroyProcess"));
-
-  if (mForceKillTimer) {
-    mForceKillTimer->Cancel();
-    mForceKillTimer = nullptr;
-  }
-
-  
-  mShutdownPromise.ResolveIfExists(Ok{}, __func__);
-
-  
-  *mLiveToken = false;
-
-  NS_DispatchToMainThread(
-      NS_NewRunnableFunction("DestroyProcessRunnable", [this] { Destroy(); }));
 }
 
 void UtilityProcessHost::ResolvePromise() {
