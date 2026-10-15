@@ -18,18 +18,26 @@ const CROP = { left: 100, top: 60, width: 300, height: 200 };
 
 
 
+
 function waitForFramed(browser, crop) {
   return SpecialPowers.spawn(browser, [crop], async c => {
     let vv = content.visualViewport;
-    await ContentTaskUtils.waitForCondition(
-      () =>
+    await ContentTaskUtils.waitForCondition(() => {
+      let scrollbarWidth = {};
+      let scrollbarHeight = {};
+      content.windowUtils.getScrollbarSizes(
+        content.document.documentElement,
+        scrollbarWidth,
+        scrollbarHeight
+      );
+      return (
         Math.abs(vv.pageLeft - c.left) < 2 &&
         Math.abs(vv.pageTop - c.top) < 2 &&
-        vv.width >= c.width - 2 &&
-        vv.height >= c.height - 2 &&
-        Math.min(vv.width - c.width, vv.height - c.height) < 2,
-      "the visual viewport frames the crop"
-    );
+        vv.width >= c.width - 2 - scrollbarWidth.value / vv.scale &&
+        vv.height >= c.height - 2 - scrollbarHeight.value / vv.scale &&
+        Math.min(vv.width - c.width, vv.height - c.height) < 2
+      );
+    }, "the visual viewport frames the crop");
   });
 }
 

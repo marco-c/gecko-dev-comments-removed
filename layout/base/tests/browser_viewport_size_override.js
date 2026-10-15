@@ -39,8 +39,18 @@ add_task(async function test_override_fixes_the_layout_viewport() {
         );
       }, "viewport units resolve against the overridden size");
 
+      
+      
+      let scrollbarWidth = {};
+      content.windowUtils.getScrollbarSizes(
+        doc.documentElement,
+        scrollbarWidth,
+        {}
+      );
       Assert.less(
-        Math.abs(content.visualViewport.width - visualWidth),
+        Math.abs(
+          content.visualViewport.width - (visualWidth - scrollbarWidth.value)
+        ),
         1,
         "the visual viewport still follows the browser"
       );
