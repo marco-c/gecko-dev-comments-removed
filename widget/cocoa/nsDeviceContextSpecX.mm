@@ -14,7 +14,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_print.h"
-#include "mozilla/gfx/PrintTargetCG.h"
 #include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "mozilla/glean/PrintingMetrics.h"
 
@@ -22,7 +21,9 @@
 #include "nsCRT.h"
 #include "nsCUPSShim.h"
 #include "nsCocoaUtils.h"
+#include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsIFileStreams.h"
 #include "nsILocalFileMac.h"
 #include "nsIOutputStream.h"
 #include "nsPaper.h"
@@ -38,7 +39,6 @@ using namespace mozilla;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::PrintEndDocumentPromise;
 using mozilla::gfx::PrintTarget;
-using mozilla::gfx::PrintTargetCG;
 using mozilla::gfx::PrintTargetSkPDF;
 
 
@@ -102,40 +102,6 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
   ::PMRetain(mPMPrintSettings);
   [printInfo release];
 
-  if (StaticPrefs::print_experimental_skpdf()) {
-    if (mOutputStream || StaticPrefs::print_skpdf_all_destinations()) {
-      mPrintViaSkPDF = true;
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      OSStatus status = noErr;
-      PMDestinationType destination;
-      status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings,
-                                             &destination);
-      if (status == noErr) {
-        if (destination == kPMDestinationPrinter ||
-            destination == kPMDestinationPreview) {
-          mPrintViaSkPDF = true;
-        } else if (destination == kPMDestinationFile) {
-          AutoCFTypeRef<CFURLRef> destURL(nullptr);
-          status = ::PMSessionCopyDestinationLocation(
-              mPrintSession, mPMPrintSettings, destURL.Receive());
-          if (status == noErr && IsPDFFileURL(destURL)) {
-            mPrintViaSkPDF = true;
-          }
-        }
-      }
-    }
-  }
-
   int16_t outputFormat = aPS->GetOutputFormat();
 
   if (outputFormat == nsIPrintSettings::kOutputFormatPDF) {
@@ -195,10 +161,6 @@ RefPtr<PrintEndDocumentPromise> nsDeviceContextSpecX::EndDocument() {
 nsresult nsDeviceContextSpecX::DoEndDocument() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  if (!mPrintViaSkPDF) {
-    
-    return NS_OK;
-  }
   if (mOutputStream) {
     
     return NS_OK;
@@ -321,8 +283,6 @@ nsresult nsDeviceContextSpecX::PrintPDFViaPrintSession(CFURLRef aPDFURL) {
       return NS_ERROR_FAILURE;
     }
     const CGRect mediaBox = CGPDFPageGetBoxRect(page, kCGPDFMediaBox);
-    
-    
     if (StaticPrefs::
             print_save_as_pdf_use_page_rule_size_as_paper_size_enabled()) {
       ::PMSetOrientation(mPageFormat,
@@ -371,23 +331,27 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
   const double width = right - left;
   const double height = bottom - top;
   IntSize size = IntSize::Ceil(width, height);
-
-  if (mPrintViaSkPDF) {
+  auto stream = [&]() -> nsCOMPtr<nsIOutputStream> {
     if (mOutputStream) {
-      return PrintTargetSkPDF::CreateOrNull(mOutputStream, size);
+      return mOutputStream;
     }
     nsresult rv =
         NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mTempFile));
     NS_ENSURE_SUCCESS(rv, nullptr);
+    
+    
+    
     nsAutoCString tempPath("tmp-printing.pdf");
     mTempFile->AppendNative(tempPath);
     rv = mTempFile->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
     NS_ENSURE_SUCCESS(rv, nullptr);
-    mTempFile->GetNativePath(tempPath);
-    auto stream = MakeUnique<SkFILEWStream>(tempPath.get());
-    return PrintTargetSkPDF::CreateOrNull(std::move(stream), size);
-  }
 
-  return PrintTargetCG::CreateOrNull(mOutputStream, mPrintSession, mPageFormat,
-                                     mPMPrintSettings, size);
+    nsCOMPtr<nsIFileOutputStream> stream =
+        do_CreateInstance("@mozilla.org/network/file-output-stream;1");
+    if (NS_FAILED(stream->Init(mTempFile, -1, -1, 0))) {
+      return nullptr;
+    }
+    return stream;
+  }();
+  return PrintTargetSkPDF::CreateOrNull(stream, size);
 }

@@ -97,11 +97,6 @@ class nsIDeviceContextSpec : public nsISupports {
   EndDocumentPromiseFromResult(nsresult aResult, mozilla::StaticString aSite);
 
   nsCOMPtr<nsIPrintSettings> mPrintSettings;
-
-  
-  
-  
-  bool mPrintViaSkPDF = false;
 };
 
 #endif
