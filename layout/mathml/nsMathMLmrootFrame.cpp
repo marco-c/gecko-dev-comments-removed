@@ -102,7 +102,7 @@ void nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
   
-  mSqrChar.Display(aBuilder, this, aLists, 0,  true);
+  mSqrChar.Display(aBuilder, this, aLists, 0);
 
   DisplayBar(aBuilder, this, mBarRect, aLists);
 }

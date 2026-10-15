@@ -44,12 +44,6 @@ class DrawTargetRecording final : public DrawTarget {
   }
   virtual bool IsRecording() const override { return true; }
 
-  
-  
-  bool SupportsGlyphSourceText() const override {
-    return mRecorder->SupportsGlyphSourceText();
-  }
-
   virtual void Link(const char* aLocalDest, const char* aURI,
                     const Rect& aRect) override;
   virtual void Destination(const char* aDestination,

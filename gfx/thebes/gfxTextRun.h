@@ -257,21 +257,6 @@ class gfxTextRun : public gfxShapedText {
     virtual uint32_t GetAppUnitsPerDevUnit() const = 0;
 
     virtual nscoord LetterSpacing() const = 0;
-
-    
-
-
-
-
-
-
-
-
-
-
-    virtual bool GetSourceText(Range aRange, nsAString& aText) const {
-      return false;
-    }
   };
 
   struct MOZ_STACK_CLASS DrawParams {

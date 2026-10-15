@@ -1841,10 +1841,7 @@ class GlyphBufferAzure {
         mBuffer(*mAutoBuffer.addr()),
         mBufSize(AUTO_BUFFER_SIZE),
         mCapacity(0),
-        mNumGlyphs(0),
-        mNextClusterStart(0),
-        mNextClusterEnd(0),
-        mBufferedClustersEnd(0) {}
+        mNumGlyphs(0) {}
 
   ~GlyphBufferAzure() {
     if (mNumGlyphs > 0) {
@@ -1896,25 +1893,12 @@ class GlyphBufferAzure {
     Glyph* glyph = mBuffer + mNumGlyphs++;
     glyph->mIndex = aGlyphID;
     glyph->mPosition = aPt;
-    if (mRunParams.sourceText) {
-      mBufferedClusters.AppendElement(mNextClusterStart);
-      mBufferedClustersEnd = mNextClusterEnd;
-    }
-  }
-
-  
-  
-  
-  void SetNextCluster(uint32_t aStart, uint32_t aEnd) {
-    mNextClusterStart = aStart;
-    mNextClusterEnd = aEnd;
   }
 
   void Flush() {
     if (mNumGlyphs > 0) {
       FlushGlyphs();
       mNumGlyphs = 0;
-      mBufferedClusters.ClearAndRetainStorage();
     }
   }
 
@@ -1932,19 +1916,6 @@ class GlyphBufferAzure {
     gfx::GlyphBuffer buf;
     buf.mGlyphs = mBuffer;
     buf.mNumGlyphs = mNumGlyphs;
-    if (mRunParams.sourceText) {
-      
-      
-      
-      MOZ_ASSERT(mBufferedClusters.Length() == mNumGlyphs);
-      uint32_t start = mBufferedClusters[0];
-      for (uint32_t& cluster : mBufferedClusters) {
-        cluster -= start;
-      }
-      buf.mText = mRunParams.sourceText->BeginReading() + start;
-      buf.mTextLength = mBufferedClustersEnd - start;
-      buf.mClusters = mBufferedClusters.Elements();
-    }
 
     const gfxContext::AzureState& state = mRunParams.context->CurrentState();
 
@@ -2072,19 +2043,6 @@ class GlyphBufferAzure {
   uint32_t mCapacity;   
   uint32_t mNumGlyphs;  
 
-  
-  
-  
-  nsTArray<uint32_t> mBufferedClusters;
-  
-  
-  
-  uint32_t mNextClusterStart;
-  uint32_t mNextClusterEnd;
-  
-  
-  uint32_t mBufferedClustersEnd;
-
 #undef AUTO_BUFFER_SIZE
 };
 
@@ -2138,26 +2096,9 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
   uint32_t capacityMult = 1 + aBuffer.mFontParams.extraStrikes;
   aBuffer.AddCapacity(aCount, capacityMult);
 
-  const uint32_t* charToByte = aBuffer.mRunParams.sourceCharToByte;
-  
-  
-  uint32_t clusterEnd = 0;
-
   bool emittedGlyphs = false;
 
   for (uint32_t i = 0; i < aCount; ++i, ++glyphData) {
-    if (charToByte && i >= clusterEnd) {
-      
-      
-      
-      clusterEnd = i + 1;
-      while (clusterEnd < aCount &&
-             !glyphData[clusterEnd - i].IsSimpleGlyph() &&
-             glyphData[clusterEnd - i].GetGlyphCount() == 0) {
-        ++clusterEnd;
-      }
-      aBuffer.SetNextCluster(charToByte[i], charToByte[clusterEnd]);
-    }
     if (glyphData->IsSimpleGlyph()) {
       float advance =
           glyphData->GetSimpleAdvance() * aBuffer.mFontParams.advanceDirection;
