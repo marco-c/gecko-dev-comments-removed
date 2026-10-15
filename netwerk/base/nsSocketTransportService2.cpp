@@ -444,12 +444,8 @@ nsSocketTransportService::AttachSocket(PRFileDesc* fd,
       ("nsSocketTransportService::AttachSocket [handler=%p]\n", handler));
 
 #ifdef XP_UNIX
-#  ifdef XP_DARWIN
   
-  static constexpr PROsfd kFDs = 4096;
-#  else
   static constexpr PROsfd kFDs = 65536;
-#  endif
   PROsfd osfd = PR_FileDesc2NativeHandle(fd);
   
   

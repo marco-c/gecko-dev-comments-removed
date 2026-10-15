@@ -1927,11 +1927,6 @@ nsXULAppInfo::AppendAppNotesToCrashReport(const nsACString& data) {
 }
 
 NS_IMETHODIMP
-nsXULAppInfo::RegisterAppMemory(uint64_t pointer, uint64_t len) {
-  return CrashReporter::RegisterAppMemory((void*)pointer, len);
-}
-
-NS_IMETHODIMP
 nsXULAppInfo::WriteMinidumpForException(void* aExceptionInfo) {
 #ifdef XP_WIN
   return CrashReporter::WriteMinidumpForException(
@@ -4398,15 +4393,11 @@ static bool CheckForUserMismatch() { return false; }
 void mozilla::startup::IncreaseDescriptorLimits() {
 #ifdef XP_UNIX
   
-#  ifdef XP_DARWIN
   
   
-  static constexpr rlim_t kFDs = 4096;
-#  else   
   
   
   static constexpr rlim_t kFDs = 65536;
-#  endif  
   struct rlimit rlim;
 
   if (getrlimit(RLIMIT_NOFILE, &rlim) != 0) {
