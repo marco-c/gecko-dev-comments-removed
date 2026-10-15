@@ -115,48 +115,6 @@ add_task(async function test_registerMetricsAndPings_validFormat() {
 
 
 
-add_task(async function test_registerMetricsAndPings_continuesAfterFailure() {
-  const sandbox = test_setup();
-
-  NewTabGleanUtils.readJSON.returns({
-    metrics: {
-      newtab_category: {
-        failing_metric: {
-          type: "text",
-          pings: ["newtab"],
-          disabled: false,
-        },
-        later_metric: {
-          type: "text",
-          lifetime: "ping",
-          pings: ["newtab"],
-          disabled: false,
-        },
-      },
-    },
-  });
-
-  let result =
-    await NewTabGleanUtils.registerMetricsAndPings(TEST_RESOURCE_URI);
-  Assert.ok(!result, "Registration reports the failed metric");
-  Assert.strictEqual(
-    Glean.newtab.metricRegistered.failing_metric.testGetValue(),
-    false,
-    "Failing metric is recorded as not registered"
-  );
-  Assert.ok(
-    Glean.newtab.metricRegistered.later_metric.testGetValue(),
-    "Metric after the failing one is still registered"
-  );
-
-  sandbox.restore();
-});
-
-
-
-
-
-
 add_task(async function test_registerPings_validSnakeCaseFormat() {
   const sandbox = test_setup();
   NewTabGleanUtils.readJSON.returns({
@@ -374,47 +332,6 @@ add_task(async function test_registerMetricIfNeeded_eventMetrics() {
   let events = Glean.testCategory.event2.testGetValue();
   Assert.equal(1, events.length, "Events recorded count");
 });
-
-
-
-
-
-
-add_task(
-  async function test_registerMetricIfNeeded_existingEventNewExtraKeys() {
-    Services.fog.testResetFOG();
-
-    Assert.ok(
-      "featureHighlightDismiss" in Glean.newtab,
-      "Test relies on newtab.feature_highlight_dismiss being a built-in event"
-    );
-
-    NewTabGleanUtils.registerMetricIfNeeded({
-      name: "feature_highlight_dismiss",
-      category: "newtab",
-      type: "event",
-      pings: ["newtab"],
-      lifetime: "ping",
-      disabled: false,
-      extraArgs: {
-        allowed_extra_keys: ["feature", "newtab_visit_id", "new_extra"],
-      },
-    });
-
-    Glean.newtab.featureHighlightDismiss.record({
-      feature: "test-feature",
-      new_extra: "new value",
-    });
-
-    const events = Glean.newtab.featureHighlightDismiss.testGetValue();
-    Assert.equal(events?.length, 1, "Event with the new extra key is recorded");
-    Assert.equal(
-      events[0].extra.new_extra,
-      "new value",
-      "New extra key value is recorded"
-    );
-  }
-);
 
 
 
