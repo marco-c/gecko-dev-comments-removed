@@ -6,14 +6,19 @@
 add_setup(async function () {
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
+  let provider = new UrlbarTestUtils.TestProvider({
+    results: [
+      new UrlbarResult({
+        type: UrlbarShared.RESULT_TYPE.URL,
+        source: UrlbarShared.RESULT_SOURCE.HISTORY,
+        payload: { url: "https://example.com/" },
+      }),
     ],
+    priority: Infinity,
   });
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
+  registerCleanupFunction(() => providersManager.unregisterProvider(provider));
 });
 
 add_task(async function toggle_readOnly() {
