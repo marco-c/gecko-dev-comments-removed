@@ -644,8 +644,8 @@ export class TelemetryFeed {
       );
       // sort from most recently followed to oldest. If followedAt is falsey, treat it as the oldest
       followed.sort((a, b) => {
-        const aDate = a[1].followedAt ? new Date(a[1].followedAt) : 0;
-        const bDate = b[1].followedAt ? new Date(b[1].followedAt) : 0;
+        const aDate = a[1].followedAt ? new Date(a[1].followedAt).getTime() : 0;
+        const bDate = b[1].followedAt ? new Date(b[1].followedAt).getTime() : 0;
         return bDate - aDate;
       });
 
