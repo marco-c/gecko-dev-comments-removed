@@ -490,6 +490,29 @@ add_task(async function test_refresh_discards_results_after_uninit() {
   sandbox.restore();
 });
 
+add_task(async function test_refresh_passes_isStartup_as_boolean() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(NimbusFeatures.newtab, "onUpdate");
+  let feed = getTopSitesFeedForTest(sandbox);
+  sandbox.stub(feed, "_readDefaults");
+  sandbox.stub(feed._contile, "refresh");
+  feed.init();
+  feed._startedUp = true;
+  feed._tippyTopProvider.initialized = true;
+  sandbox.stub(feed, "getLinksWithDefaults").resolves([]);
+
+  await feed.refresh({ broadcast: true, isStartup: false });
+
+  Assert.strictEqual(
+    feed.getLinksWithDefaults.firstCall.args[0],
+    false,
+    "getLinksWithDefaults gets the isStartup boolean, not an object that is always truthy"
+  );
+
+  feed.uninit();
+  sandbox.restore();
+});
+
 add_task(async function test_getLinksWithDefaults_filterAdult() {
   let sandbox = sinon.createSandbox();
   info("getLinksWithDefaults should filter out non-pinned adult sites");
