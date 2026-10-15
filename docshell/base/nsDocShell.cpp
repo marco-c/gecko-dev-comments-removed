@@ -12318,6 +12318,19 @@ nsresult nsDocShell::OnLinkClick(
 
   RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
       this, aContent, loadState, noOpenerImplied, aTriggeringPrincipal);
+
+  
+  
+  if (StaticPrefs::dom_links_sync_fragment_navigation()) {
+    SameDocumentNavigationState state;
+    if ((loadState->Target().IsEmpty() ||
+         loadState->TargetBrowsingContext() == GetBrowsingContext()) &&
+        IsSameDocumentNavigation(loadState, state)) {
+      ev->Run();
+      return NS_OK;
+    }
+  }
+
   RefPtr<nsIRunnable> runnable = ev;
   return Dispatch(runnable.forget());
 }
