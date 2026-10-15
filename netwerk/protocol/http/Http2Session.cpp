@@ -1404,6 +1404,8 @@ void Http2Session::CleanupStream(Http2StreamBase* aStream, nsresult aResult,
     return;
   }
 
+  RefPtr<Http2Session> self(this);
+
   
   if (!aStream->RecvdFin() && !aStream->RecvdReset() && aStream->StreamID() &&
       !(mInputFrameFinal &&
