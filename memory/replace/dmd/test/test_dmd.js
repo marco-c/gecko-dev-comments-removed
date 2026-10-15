@@ -13,8 +13,20 @@ var gPythonName = Services.env.get("PYTHON");
 
 const gCwd = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
 
+const gTempDir = do_get_tempdir();
+
 function getRelativeFile(...components) {
   return new FileUtils.File(PathUtils.join(gCwd.path, ...components));
+}
+
+function getTempFile(aFilename) {
+  return new FileUtils.File(PathUtils.join(gTempDir.path, aFilename));
+}
+
+
+function getScriptInputFile(aFilename) {
+  getRelativeFile(aFilename).copyTo(gTempDir, null);
+  return getTempFile(aFilename);
 }
 
 
@@ -72,10 +84,8 @@ function runProcess(aExeFile, aArgs) {
 }
 
 function test(aPrefix, aArgs) {
-  
-  
   let expectedFile = getRelativeFile(`${aPrefix}-expected.txt`);
-  let actualFile = getRelativeFile(`${aPrefix}-actual.txt`);
+  let actualFile = getTempFile(`${aPrefix}-actual.txt`);
 
   
 
@@ -142,11 +152,11 @@ function run_test() {
 
   Services.env.set("DMD", "1");
 
-  runProcess(gDmdTestFile, []);
+  runProcess(gDmdTestFile, [gTempDir.path]);
 
   function test2(aTestName, aMode) {
     let name = "complete-" + aTestName + "-" + aMode;
-    jsonFile = getRelativeFile(`${name}.json`);
+    jsonFile = getTempFile(`${name}.json`);
     test(name, [jsonFile.path]);
     jsonFile.remove(true);
   }
@@ -166,7 +176,7 @@ function run_test() {
   test2("partial", "live");
 
   
-  jsonFile = getRelativeFile("basic-scan.json");
+  jsonFile = getTempFile("basic-scan.json");
   ok(scanTest(jsonFile.path), "Basic scan test");
 
   let is64Bit = Services.appinfo.is64Bit;
@@ -191,7 +201,7 @@ function run_test() {
   
   
   
-  jsonFile = getRelativeFile("script-max-frames.json");
+  jsonFile = getScriptInputFile("script-max-frames.json");
   test("script-max-frames-8", [jsonFile.path]); 
   test("script-max-frames-3", [
     "--max-frames=3",
@@ -203,7 +213,7 @@ function run_test() {
   
   
   
-  jsonFile = getRelativeFile("script-sort-by.json.gz");
+  jsonFile = getScriptInputFile("script-sort-by.json.gz");
   test("script-sort-by-usable", ["--sort-by=usable", jsonFile.path]);
   test("script-sort-by-req", [
     "--sort-by=req",
@@ -215,16 +225,16 @@ function run_test() {
 
   
   
-  jsonFile = getRelativeFile("script-ignore-alloc-fns.json");
+  jsonFile = getScriptInputFile("script-ignore-alloc-fns.json");
   test("script-ignore-alloc-fns", ["--ignore-alloc-fns", jsonFile.path]);
 
   
-  jsonFile = getRelativeFile("script-diff-live1.json");
-  jsonFile2 = getRelativeFile("script-diff-live2.json");
+  jsonFile = getScriptInputFile("script-diff-live1.json");
+  jsonFile2 = getScriptInputFile("script-diff-live2.json");
   test("script-diff-live", [jsonFile.path, jsonFile2.path]);
 
   
-  jsonFile = getRelativeFile("script-diff-dark-matter1.json");
-  jsonFile2 = getRelativeFile("script-diff-dark-matter2.json");
+  jsonFile = getScriptInputFile("script-diff-dark-matter1.json");
+  jsonFile2 = getScriptInputFile("script-diff-dark-matter2.json");
   test("script-diff-dark-matter", [jsonFile.path, jsonFile2.path]);
 }
