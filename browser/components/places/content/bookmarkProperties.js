@@ -52,7 +52,6 @@
 
 
 
-
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -78,15 +77,6 @@ const ACTION_EDIT = 0;
 const ACTION_ADD = 1;
 
 var BookmarkPropertiesPanel = {
-  
-  __strings: null,
-  get _strings() {
-    if (!this.__strings) {
-      this.__strings = document.getElementById("stringBundle");
-    }
-    return this.__strings;
-  },
-
   _action: null,
   _itemType: null,
   _uri: null,
@@ -104,19 +94,10 @@ var BookmarkPropertiesPanel = {
 
 
 
-  _getAcceptLabel: function BPP__getAcceptLabel() {
-    return this._strings.getString("dialogAcceptLabelSaveItem");
-  },
-
-  
-
-
-
-
-  _getDialogTitle: function BPP__getDialogTitle() {
+  _getDialogTitleL10nId() {
     if (this._action == ACTION_ADD) {
       if (this._itemType == BOOKMARK_ITEM) {
-        return this._strings.getString("dialogTitleAddNewBookmark2");
+        return "bookmark-properties-title-add-bookmark";
       }
 
       
@@ -124,19 +105,19 @@ var BookmarkPropertiesPanel = {
         throw new Error("Unknown item type");
       }
       if (this._URIs.length) {
-        return this._strings.getString("dialogTitleAddMulti");
+        return "bookmark-properties-title-add-multiple-bookmarks";
       }
 
-      return this._strings.getString("dialogTitleAddBookmarkFolder");
+      return "bookmark-properties-title-add-folder";
     }
     if (this._action == ACTION_EDIT) {
       if (this._itemType === BOOKMARK_ITEM) {
-        return this._strings.getString("dialogTitleEditBookmark2");
+        return "bookmark-properties-title-edit-bookmark";
       }
 
-      return this._strings.getString("dialogTitleEditBookmarkFolder");
+      return "bookmark-properties-title-edit-folder";
     }
-    return "";
+    throw new TypeError("Unknown dialog action");
   },
 
   
@@ -178,7 +159,9 @@ var BookmarkPropertiesPanel = {
             }
           } else {
             this._uri = Services.io.newURI("about:blank");
-            this._title = this._strings.getString("newBookmarkDefault");
+            this._title = await document.l10n.formatValue(
+              "bookmark-properties-default-name-bookmark"
+            );
             this._dummyItem = true;
           }
 
@@ -198,10 +181,14 @@ var BookmarkPropertiesPanel = {
           this._itemType = BOOKMARK_FOLDER;
           if (!this._title) {
             if ("URIList" in dialogInfo) {
-              this._title = this._strings.getString("bookmarkAllTabsDefault");
+              this._title = await document.l10n.formatValue(
+                "bookmark-properties-default-name-all-tabs-folder"
+              );
               this._URIs = dialogInfo.URIList;
             } else {
-              this._title = this._strings.getString("newFolderDefault");
+              this._title = await document.l10n.formatValue(
+                "bookmark-properties-default-name-folder"
+              );
               this._dummyItem = true;
             }
           }
@@ -234,7 +221,9 @@ var BookmarkPropertiesPanel = {
       .getButton("accept");
     acceptButton.disabled = true;
     await this._determineItemInfo();
-    document.title = this._getDialogTitle();
+    document.title = await document.l10n.formatValue(
+      this._getDialogTitleL10nId()
+    );
 
     
     let title = { raw: document.title };
@@ -269,7 +258,10 @@ var BookmarkPropertiesPanel = {
     let acceptButton = document
       .getElementById("bookmarkpropertiesdialog")
       .getButton("accept");
-    acceptButton.label = this._getAcceptLabel();
+    document.l10n.setAttributes(
+      acceptButton,
+      "bookmark-properties-save-button"
+    );
     let acceptButtonDisabled = false;
 
     
