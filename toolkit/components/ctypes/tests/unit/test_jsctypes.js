@@ -392,21 +392,17 @@ function run_test() {
   
   
   
-  let unicodefile = do_get_file(CTYPES_UNICODE_LIB, true);
-  let copy = libfile.copyTo instanceof Function;
-  if (copy) {
-    libfile.copyTo(null, unicodefile.leafName);
+  let unicodefile;
+  if (libfile.copyTo instanceof Function) {
+    unicodefile = do_get_tempdir();
+    libfile.copyTo(unicodefile, CTYPES_UNICODE_LIB);
+    unicodefile.append(CTYPES_UNICODE_LIB);
+  } else {
+    unicodefile = do_get_file(CTYPES_UNICODE_LIB, true);
   }
   library = ctypes.open(unicodefile.path);
   run_void_tests(library);
   library.close();
-  if (copy) {
-    
-    
-    try {
-      unicodefile.remove(false);
-    } catch (e) {}
-  }
 }
 
 function run_abstract_class_tests() {
