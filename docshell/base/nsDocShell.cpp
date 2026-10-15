@@ -12536,14 +12536,6 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
       
       loadType = GetLoadTypeForFormSubmission(GetBrowsingContext(), aLoadState);
     }
-  } else {
-    
-    
-    bool inOnLoadHandler = false;
-    GetIsExecutingOnLoadHandler(&inOnLoadHandler);
-    if (inOnLoadHandler) {
-      loadType = LOAD_NORMAL_REPLACE;
-    }
   }
 
   RefPtr referrerInfo = elementCanHaveNoopener
