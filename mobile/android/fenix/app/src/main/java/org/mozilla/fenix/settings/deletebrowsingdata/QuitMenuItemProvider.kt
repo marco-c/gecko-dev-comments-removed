@@ -4,15 +4,20 @@
 
 package org.mozilla.fenix.settings.deletebrowsingdata
 
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItem
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
+import mozilla.components.compose.menu.store.MenuEvent
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import mozilla.components.compose.menu.ui.MenuItemState
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuHost
 import org.mozilla.fenix.components.menu.MenuItemProvider
 import org.mozilla.fenix.components.menu.store.MenuAction
 
@@ -23,17 +28,28 @@ import org.mozilla.fenix.components.menu.store.MenuAction
  *
  * @param appName The name of the application, which the item offers to quit.
  * @param deletesBrowsingDataOnQuit Whether the user asked for their browsing data to be deleted when quitting.
+ * @param deleteBrowsingDataController Provides the [DeleteBrowsingDataController] for deleting the data the user wants
+ *   gone when they quit the application. Asked for it only if they ever do, since building it is not free.
+ * @param quitApplicationDelegate Quits the application, once there is nothing left to delete.
+ * @param applicationScope [CoroutineScope] tied to the lifetime of the application, on which to delete the data since
+ *   that must complete even after the menu is closed.
  */
 class QuitMenuItemProvider(
     appName: String,
     deletesBrowsingDataOnQuit: Boolean,
+    private val deleteBrowsingDataController: () -> DeleteBrowsingDataController,
+    private val quitApplicationDelegate: () -> Unit,
+    private val applicationScope: CoroutineScope,
 ) : MenuItemProvider {
     override val itemFlow: StateFlow<MenuItem?> =
         MutableStateFlow(
             when (deletesBrowsingDataOnQuit) {
                 true ->
                     StandardMenuItem(
-                        title = Text.Resource(R.string.browser_menu_delete_browsing_data_on_quit, listOf(appName)),
+                        title =
+                            MenuItemTitle(
+                                Text.Resource(R.string.browser_menu_delete_browsing_data_on_quit, listOf(appName))
+                            ),
                         icon = MenuItemIconRes(iconsR.drawable.mozac_ic_cross_circle_fill_24),
                         onClickEvent = MenuAction.DeleteBrowsingDataAndQuit,
                         state = MenuItemState.WARNING,
@@ -42,4 +58,19 @@ class QuitMenuItemProvider(
                 else -> null
             }
         )
+
+    override fun handles(event: MenuEvent) = event == MenuAction.DeleteBrowsingDataAndQuit
+
+    /**
+     * The data is deleted after the menu is closed, and the application quit only after that. What is needed for this
+     * is resolved before closing the menu, and the work outliving the menu uses only that.
+     */
+    override fun onEvent(event: MenuEvent, menu: MenuHost) {
+        val controller = deleteBrowsingDataController()
+        val quitApplication = quitApplicationDelegate
+
+        menu.dismiss()
+
+        applicationScope.launch { controller.clearBrowsingDataOnQuit(onDeletionComplete = quitApplication) }
+    }
 }

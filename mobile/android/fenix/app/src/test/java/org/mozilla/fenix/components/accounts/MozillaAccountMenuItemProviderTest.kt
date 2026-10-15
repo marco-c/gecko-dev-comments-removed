@@ -9,8 +9,10 @@ import io.mockk.mockk
 import io.mockk.verify
 import java.io.ByteArrayInputStream
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -19,6 +21,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.data.MenuItemSummary
+import mozilla.components.compose.menu.data.MenuItemTitle
 import mozilla.components.compose.menu.data.StandardMenuItem
 import mozilla.components.compose.menu.ui.MenuItemIconBitmap
 import mozilla.components.compose.menu.ui.MenuItemIconDrawable
@@ -42,8 +45,10 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.ui.icons.R as iconsR
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuAccessPoint
+import org.mozilla.fenix.components.menu.fake.FakeMenuHost
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.robolectric.RobolectricTestRunner
 
@@ -133,7 +138,7 @@ class MozillaAccountMenuItemProviderTest {
 
             val item = provider().itemFlow.value as StandardMenuItem
 
-            assertEquals(Text.String(DISPLAY_NAME), item.title)
+            assertEquals(Text.String(DISPLAY_NAME), item.title.text)
             assertEquals(
                 MenuItemSummary(
                     text = Text.Resource(R.string.browser_menu_syncing_paused_caption),
@@ -157,7 +162,7 @@ class MozillaAccountMenuItemProviderTest {
 
             val item = provider().itemFlow.value as StandardMenuItem
 
-            assertEquals(Text.Resource(R.string.browser_menu_sign_back_in_to_sync), item.title)
+            assertEquals(Text.Resource(R.string.browser_menu_sign_back_in_to_sync), item.title.text)
         }
 
     @Test
@@ -175,7 +180,7 @@ class MozillaAccountMenuItemProviderTest {
 
         syncState.value = SyncState(account = account, accountState = Authenticated)
 
-        assertEquals(Text.String(DISPLAY_NAME), provider.itemFlow.first { it != null }?.title)
+        assertEquals(Text.String(DISPLAY_NAME), provider.itemFlow.first { it != null }?.title?.text)
     }
 
     @Test
@@ -216,13 +221,13 @@ class MozillaAccountMenuItemProviderTest {
     fun `WHEN the account changes THEN update the item`() = runTest {
         syncState.value = SyncState(accountState = NotAuthenticated)
         val provider = provider()
-        assertEquals(Text.Resource(R.string.browser_menu_sign_in), provider.itemFlow.value?.title)
+        assertEquals(Text.Resource(R.string.browser_menu_sign_in), provider.itemFlow.value?.title?.text)
 
         syncState.value = SyncState(account = account, accountState = Authenticated)
 
-        val updated = provider.itemFlow.first { it?.title == Text.String(DISPLAY_NAME) }
+        val updated = provider.itemFlow.first { it?.title?.text == Text.String(DISPLAY_NAME) }
 
-        assertEquals(Text.String(DISPLAY_NAME), updated?.title)
+        assertEquals(Text.String(DISPLAY_NAME), updated?.title?.text)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -243,6 +248,48 @@ class MozillaAccountMenuItemProviderTest {
 
             verify(exactly = 1) { httpClient.fetch(any()) }
         }
+
+    @Test
+    fun `GIVEN someone is signed in WHEN clicking the item THEN show their account settings in place of the menu`() =
+        runTest {
+            val menu = FakeMenuHost()
+
+            provider().onEvent(MenuAction.Navigate.MozillaAccount(Authenticated, MenuAccessPoint.Browser), menu)
+
+            assertEquals(NavGraphDirections.actionGlobalAccountSettingsFragment(), menu.directions)
+        }
+
+    @Test
+    fun `GIVEN the account needs signing in again WHEN clicking the item THEN offer signing back in`() = runTest {
+        val menu = FakeMenuHost()
+
+        provider().onEvent(MenuAction.Navigate.MozillaAccount(AuthenticationProblem, MenuAccessPoint.Browser), menu)
+
+        assertEquals(
+            NavGraphDirections.actionGlobalAccountProblemFragment(entrypoint = FenixFxAEntryPoint.BrowserToolbar),
+            menu.directions,
+        )
+    }
+
+    @Test
+    fun `GIVEN nobody is signed in WHEN clicking the item THEN offer signing in`() = runTest {
+        val menu = FakeMenuHost()
+
+        provider().onEvent(MenuAction.Navigate.MozillaAccount(NotAuthenticated, MenuAccessPoint.Browser), menu)
+
+        assertEquals(
+            NavGraphDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.BrowserToolbar),
+            menu.directions,
+        )
+    }
+
+    @Test
+    fun `WHEN asked about the events of the account item THEN handle only those`() = runTest {
+        val provider = provider()
+
+        assertTrue(provider.handles(MenuAction.Navigate.MozillaAccount(Authenticated, MenuAccessPoint.Browser)))
+        assertFalse(provider.handles(MenuAction.Navigate.Settings))
+    }
 
     // The account is observed and its avatar downloaded on a scope that runTest cancels at the end of each test.
     private fun TestScope.provider(httpClient: Client = mockk(relaxed = true)) =
@@ -272,7 +319,7 @@ class MozillaAccountMenuItemProviderTest {
         accountState: AccountState,
     ) =
         StandardMenuItem(
-            title = title,
+            title = MenuItemTitle(title),
             summary = MenuItemSummary(text = summary, maxLines = SUMMARY_MAX_LINES),
             icon = MenuItemIconRes(iconsR.drawable.mozac_ic_avatar_circle_24),
             onClickEvent =
