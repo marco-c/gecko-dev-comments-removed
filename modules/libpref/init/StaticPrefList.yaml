@@ -18127,7 +18127,7 @@
 
 # Annotate channels based on the tracking protection list in all modes
 - name: privacy.trackingprotection.annotate_channels
-  type: RelaxedAtomicBool
+  type: bool
   value: true
   mirror: always
 
