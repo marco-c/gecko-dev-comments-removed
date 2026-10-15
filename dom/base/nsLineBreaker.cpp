@@ -30,7 +30,12 @@ using mozilla::intl::WordBreakRule;
 
 
 
-static constexpr uint8_t kNonBreakableASCII[] = {
+
+
+
+
+
+static constexpr uint8_t kNonBreakableLatin1[] = {
     
 
 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0,
@@ -44,15 +49,31 @@ static constexpr uint8_t kNonBreakableASCII[] = {
 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 
 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0,
+
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1,
+
+0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     
 };
 
 template <typename T>
 static constexpr bool IsNonBreakableChar(T aChar) {
-  if (aChar < 0x20 || aChar > 0x7f) {
+  if (aChar < 0x20 || aChar > 0xff) {
     return false;
   }
-  return !!kNonBreakableASCII[aChar - 0x20];
+  return !!kNonBreakableLatin1[aChar - 0x20];
 }
 
 nsLineBreaker::~nsLineBreaker() {
