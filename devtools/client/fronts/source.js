@@ -60,43 +60,57 @@ class SourceFront extends FrontClassWithSpec(sourceSpec) {
 
   async source() {
     const response = await super.source();
-    return this._onSourceResponse(response);
+    return readSourceResponse(response);
   }
+}
 
-  _onSourceResponse(response) {
-    const { contentType, source } = response;
-    if (source instanceof ArrayBufferFront) {
-      return source.slice(0, source.length).then(function (resp) {
-        if (resp.error) {
-          return resp;
-        }
-        
-        
-        const str = atob(resp.encoded);
-        const newResponse = {
-          source: {
-            binary: str,
-            toString: () => "[wasm]",
-          },
-          contentType,
-        };
-        return newResponse;
-      });
-    }
 
-    return source.substring(0, source.length).then(function (resp) {
+
+
+
+
+
+
+
+
+
+
+
+
+function readSourceResponse(response) {
+  const { contentType, source } = response;
+  if (source instanceof ArrayBufferFront) {
+    return source.slice(0, source.length).then(function (resp) {
       if (resp.error) {
         return resp;
       }
-
+      
+      
+      const str = atob(resp.encoded);
       const newResponse = {
-        source: resp,
+        source: {
+          binary: str,
+          toString: () => "[wasm]",
+        },
         contentType,
       };
       return newResponse;
     });
   }
+
+  return source.substring(0, source.length).then(function (resp) {
+    if (resp.error) {
+      return resp;
+    }
+
+    const newResponse = {
+      source: resp,
+      contentType,
+    };
+    return newResponse;
+  });
 }
 
 exports.SourceFront = SourceFront;
+exports.readSourceResponse = readSourceResponse;
 registerFront(SourceFront);

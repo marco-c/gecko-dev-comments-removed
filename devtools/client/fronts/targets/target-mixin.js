@@ -10,6 +10,12 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/protocol.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "readSourceResponse",
+  "resource://devtools/client/fronts/source.js",
+  true
+);
 
 
 
@@ -272,17 +278,30 @@ function TargetMixin(parentClass) {
 
 
 
-    async getSourceContentForResource(resourceActor) {
+    async getSourceContentForResource(resourceType, resourceId) {
       const { resourceCommand } = this.commands;
-      switch (resourceActor.sourceObject.type) {
+      
+      
+      
+      if (this.getTrait("supportsGetSourceContentForResource")) {
+        const response = await super.getSourceContentForResource(
+          resourceType,
+          resourceId
+        );
+        
+        
+        return response ? readSourceResponse(response) : null;
+      }
+
+      switch (resourceType) {
         case resourceCommand.TYPES.STYLESHEET: {
           const stylesheetsFront = await this.getFront("stylesheets");
-          const sourceStr = await stylesheetsFront.getText(resourceActor.id);
+          const sourceStr = await stylesheetsFront.getText(resourceId);
           return { source: await sourceStr.string(), contentType: "text/css" };
         }
         case resourceCommand.TYPES.SOURCE: {
           const sourceFront = this.threadFront.source({
-            actor: resourceActor.id,
+            actor: resourceId,
           });
           const { source, contentType } = await sourceFront.source();
           return { source, contentType };

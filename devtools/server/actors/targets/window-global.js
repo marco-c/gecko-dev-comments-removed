@@ -95,6 +95,12 @@ loader.lazyRequireGetter(
   "resource://devtools/server/actors/emulation/touch-simulator.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "LongStringActor",
+  "resource://devtools/server/actors/string.js",
+  true
+);
 
 function getWindowID(window) {
   return window.windowGlobalChild.innerWindowId;
@@ -658,6 +664,24 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     return this._styleSheetsManager;
   }
 
+  async getSourceContentForResource(resourceType, resourceId) {
+    switch (resourceType) {
+      case "stylesheet": {
+        const stylesheetsManager = this.getStyleSheetsManager();
+        const source = await stylesheetsManager.getText(resourceId);
+        return {
+          source: new LongStringActor(this.conn, source),
+          contentType: "text/css",
+        };
+      }
+      case "source": {
+        const sourceActor = this.sourcesManager.getSourceActorById(resourceId);
+        return await sourceActor.source();
+      }
+    }
+    return null;
+  }
+
   _createExtraActors() {
     
     
@@ -764,6 +788,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
         navigation: true,
         
         navigationByIndex: true,
+        
+        
+        
+        supportsGetSourceContentForResource: true,
       },
     };
 
