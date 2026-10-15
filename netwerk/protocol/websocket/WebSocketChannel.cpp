@@ -3916,7 +3916,11 @@ nsresult WebSocketChannel::OnTransportAvailableInternal() {
 
 NS_IMETHODIMP
 WebSocketChannel::OnUpgradeFailed(nsresult aErrorCode) {
-  
+  if (!NS_IsMainThread()) {
+    return NS_DispatchToMainThread(NewRunnableMethod<nsresult>(
+        "net::WebSocketChannel::OnUpgradeFailed", this,
+        &WebSocketChannel::OnUpgradeFailed, aErrorCode));
+  }
 
   LOG(("WebSocketChannel::OnUpgradeFailed() %p [aErrorCode %" PRIx32 "]", this,
        static_cast<uint32_t>(aErrorCode)));
