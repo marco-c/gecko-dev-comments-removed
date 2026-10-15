@@ -32,6 +32,7 @@ module.exports = {
     "stylelint-use-logical",
   ],
   ignoreFiles,
+  reportNeedlessDisables: true,
   reportUnscopedDisables: true,
   rules: {
     

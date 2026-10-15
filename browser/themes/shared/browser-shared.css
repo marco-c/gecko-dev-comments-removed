@@ -777,7 +777,6 @@ menupopup::part(drop-indicator-container) {
 menupopup::part(drop-indicator-bar) {
   position: relative;
   /* these two margins must together compensate the indicator's height */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   margin-block: -1px;
 }
 
@@ -820,7 +819,6 @@ menupopup::part(drop-indicator) {
     background-color: var(--lwt-accent-color); /* Known opaque */
     background-image: image(var(--toolbar-background-color)), var(--toolbox-background-image);
     background-repeat: no-repeat, var(--toolbox-background-repeat);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     background-position:
       top left,
       var(--toolbox-background-position);
