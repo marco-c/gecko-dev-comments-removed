@@ -1028,87 +1028,88 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   uint32_t parentLoadType;
   parentDS->GetLoadType(&parentLoadType);
 
-  if (!aContinueHandlingSubframeHistory) {
-    if (nsDocShell::Cast(parentDS.get())->IsLoadingFromSessionHistory() &&
-        !GetCreatedDynamically()) {
-      if (XRE_IsContentProcess()) {
-        dom::ContentChild* contentChild = dom::ContentChild::GetSingleton();
-        nsCOMPtr<nsILoadGroup> loadGroup;
-        GetLoadGroup(getter_AddRefs(loadGroup));
-        if (contentChild && loadGroup && !GetIsAttemptingToNavigate()) {
-          RefPtr<Document> parentDoc = parentDS->GetDocument();
-          parentDoc->BlockOnload();
-          RefPtr<BrowsingContext> browsingContext = mBrowsingContext;
-          Maybe<uint64_t> currentLoadIdentifier =
-              mBrowsingContext->GetCurrentLoadIdentifier();
-          RefPtr<nsDocShellLoadState> loadState = aLoadState;
-          bool isNavigating = mIsNavigating;
-          RefPtr stopDetector = MakeRefPtr<StopDetector>();
-          loadGroup->AddRequest(stopDetector, nullptr);
-          
-          
-          mCheckingSessionHistory = true;
+  
+  
+  if (!aContinueHandlingSubframeHistory &&
+      nsDocShell::Cast(parentDS.get())->IsLoadingFromSessionHistory() &&
+      !GetCreatedDynamically() && aLoadState->OriginalFrameSrc()) {
+    if (XRE_IsContentProcess()) {
+      dom::ContentChild* contentChild = dom::ContentChild::GetSingleton();
+      nsCOMPtr<nsILoadGroup> loadGroup;
+      GetLoadGroup(getter_AddRefs(loadGroup));
+      if (contentChild && loadGroup && !GetIsAttemptingToNavigate()) {
+        RefPtr<Document> parentDoc = parentDS->GetDocument();
+        parentDoc->BlockOnload();
+        RefPtr<BrowsingContext> browsingContext = mBrowsingContext;
+        Maybe<uint64_t> currentLoadIdentifier =
+            mBrowsingContext->GetCurrentLoadIdentifier();
+        RefPtr<nsDocShellLoadState> loadState = aLoadState;
+        bool isNavigating = mIsNavigating;
+        RefPtr stopDetector = MakeRefPtr<StopDetector>();
+        loadGroup->AddRequest(stopDetector, nullptr);
+        
+        
+        mCheckingSessionHistory = true;
 
-          auto resolve =
-              [currentLoadIdentifier, browsingContext, parentDoc, loadState,
-               isNavigating, loadGroup, stopDetector](
-                  mozilla::Maybe<LoadingSessionHistoryInfo>&& aResult)
-                  MOZ_CAN_RUN_SCRIPT {
-                    RefPtr<nsDocShell> docShell = static_cast<nsDocShell*>(
-                        browsingContext->GetDocShell());
-                    auto unblockParent = MakeScopeExit([loadGroup, stopDetector,
-                                                        parentDoc, docShell]() {
-                      if (docShell) {
-                        docShell->mCheckingSessionHistory = false;
-                      }
-                      loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
-                      parentDoc->UnblockOnload(false);
-                    });
+        auto resolve =
+            [currentLoadIdentifier, browsingContext, parentDoc, loadState,
+             isNavigating, loadGroup,
+             stopDetector](mozilla::Maybe<LoadingSessionHistoryInfo>&& aResult)
+                MOZ_CAN_RUN_SCRIPT {
+                  RefPtr<nsDocShell> docShell =
+                      static_cast<nsDocShell*>(browsingContext->GetDocShell());
+                  auto unblockParent = MakeScopeExit(
+                      [loadGroup, stopDetector, parentDoc, docShell]() {
+                        if (docShell) {
+                          docShell->mCheckingSessionHistory = false;
+                        }
+                        loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
+                        parentDoc->UnblockOnload(false);
+                      });
 
-                    if (!docShell || !docShell->mCheckingSessionHistory) {
-                      return;
-                    }
+                  if (!docShell || !docShell->mCheckingSessionHistory) {
+                    return;
+                  }
 
-                    if (stopDetector->Canceled()) {
-                      return;
-                    }
-                    if (currentLoadIdentifier ==
-                            browsingContext->GetCurrentLoadIdentifier() &&
-                        aResult.isSome()) {
-                      loadState->SetLoadingSessionHistoryInfo(aResult.value());
-                      
-                      
-                      loadState->SetLoadIsFromSessionHistory(0, false);
-                    }
-
+                  if (stopDetector->Canceled()) {
+                    return;
+                  }
+                  if (currentLoadIdentifier ==
+                          browsingContext->GetCurrentLoadIdentifier() &&
+                      aResult.isSome()) {
+                    loadState->SetLoadingSessionHistoryInfo(aResult.value());
                     
                     
-                    docShell->LoadURI(loadState, isNavigating, true);
-                  };
-          auto reject = [loadGroup, stopDetector, browsingContext,
-                         parentDoc](mozilla::ipc::ResponseRejectReason) {
-            RefPtr<nsDocShell> docShell =
-                static_cast<nsDocShell*>(browsingContext->GetDocShell());
-            if (docShell) {
-              docShell->mCheckingSessionHistory = false;
-            }
-            
-            loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
-            parentDoc->UnblockOnload(false);
-          };
-          contentChild->SendAdoptChildSHEntry(
-              mBrowsingContext, std::move(resolve), std::move(reject));
-          return true;
-        }
-      } else {
-        Maybe<LoadingSessionHistoryInfo> info;
-        mBrowsingContext->Canonical()->AdoptChildSHEntry(info);
-        if (info.isSome()) {
-          aLoadState->SetLoadingSessionHistoryInfo(info.value());
+                    loadState->SetLoadIsFromSessionHistory(0, false);
+                  }
+
+                  
+                  
+                  docShell->LoadURI(loadState, isNavigating, true);
+                };
+        auto reject = [loadGroup, stopDetector, browsingContext,
+                       parentDoc](mozilla::ipc::ResponseRejectReason) {
+          RefPtr<nsDocShell> docShell =
+              static_cast<nsDocShell*>(browsingContext->GetDocShell());
+          if (docShell) {
+            docShell->mCheckingSessionHistory = false;
+          }
           
-          
-          aLoadState->SetLoadIsFromSessionHistory(0, false);
-        }
+          loadGroup->RemoveRequest(stopDetector, nullptr, NS_OK);
+          parentDoc->UnblockOnload(false);
+        };
+        contentChild->SendAdoptChildSHEntry(
+            mBrowsingContext, std::move(resolve), std::move(reject));
+        return true;
+      }
+    } else {
+      Maybe<LoadingSessionHistoryInfo> info;
+      mBrowsingContext->Canonical()->AdoptChildSHEntry(info);
+      if (info.isSome()) {
+        aLoadState->SetLoadingSessionHistoryInfo(info.value());
+        
+        
+        aLoadState->SetLoadIsFromSessionHistory(0, false);
       }
     }
   }
@@ -12147,36 +12148,6 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
       mTriggeringPrincipal(aTriggeringPrincipal),
       mNoOpenerImplied(aNoOpenerImplied) {}
 
-Result<RefPtr<OnLinkClickEvent>, nsresult> nsDocShell::OnLinkClickWithLoadState(
-    nsIContent* aContent, nsDocShellLoadState* aLoadState,
-    bool aNoOpenerImplied, nsIPrincipal* aTriggeringPrincipal) {
-  if (StaticPrefs::dom_forms_submit_async_navigation()) {
-    
-    
-    
-    ComputeNamedTargetBrowsingContext(aLoadState);
-    if (aContent->IsHTMLElement(nsGkAtoms::form)) {
-      
-      
-      
-      
-      const MaybeDiscarded<BrowsingContext>& bc =
-          aLoadState->TargetBrowsingContext();
-      Document* formDocument = aContent->OwnerDoc();
-      if ((bc.IsNull() || bc == formDocument->GetBrowsingContext()) &&
-          !formDocument->IsCompletelyLoaded()) {
-        aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
-      }
-    }
-  }
-  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
-      this, aContent, aLoadState, aNoOpenerImplied, aTriggeringPrincipal);
-  RefPtr<nsIRunnable> runnable = ev;
-  nsresult rv = Dispatch(runnable.forget());
-  NS_ENSURE_SUCCESS(rv, Err(rv));
-  return ev;
-}
-
 nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
                                   nsDocShellLoadState* aLoadState) {
   
@@ -12187,15 +12158,29 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
     return OnLinkClickSync(aForm, aLoadState, false, aForm->NodePrincipal());
   }
 
-  auto result = OnLinkClickWithLoadState(aForm, aLoadState, false,
-                                         aForm->NodePrincipal());
-  if (result.isErr()) {
-    return result.unwrapErr();
+  
+  ComputeNamedTargetBrowsingContext(aLoadState);
+
+  
+  
+  
+  
+  const MaybeDiscarded<BrowsingContext>& targetBC =
+      aLoadState->TargetBrowsingContext();
+  Document* formDocument = aForm->OwnerDoc();
+  if ((targetBC.IsNull() || targetBC == formDocument->GetBrowsingContext()) &&
+      !formDocument->IsCompletelyLoaded()) {
+    aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
   }
+
+  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(this, aForm, aLoadState, false,
+                                           aForm->NodePrincipal());
+  RefPtr<nsIRunnable> runnable = ev;
+  nsresult rv = Dispatch(runnable.forget());
+  NS_ENSURE_SUCCESS(rv, rv);
+
   nsDocShell* targetDocShell = this;
   if (!aLoadState->Target().IsEmpty()) {
-    const MaybeDiscarded<BrowsingContext>& targetBC =
-        aLoadState->TargetBrowsingContext();
     targetDocShell =
         targetBC.IsNullOrDiscarded()
             ? nullptr
@@ -12206,7 +12191,7 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
     
     
     targetDocShell->StopPendingJavascriptURLNavigations();
-    targetDocShell->mPlannedFormNavigation = result.unwrap().get();
+    targetDocShell->mPlannedFormNavigation = ev.get();
   }
   return NS_OK;
 }
@@ -12325,9 +12310,12 @@ nsresult nsDocShell::OnLinkClick(
       ownerDoc->GetScriptTrackingFlags());
   loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
 
-  auto result = OnLinkClickWithLoadState(aContent, loadState, noOpenerImplied,
-                                         aTriggeringPrincipal);
-  return result.isErr() ? result.unwrapErr() : NS_OK;
+  ComputeNamedTargetBrowsingContext(loadState);
+
+  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
+      this, aContent, loadState, noOpenerImplied, aTriggeringPrincipal);
+  RefPtr<nsIRunnable> runnable = ev;
+  return Dispatch(runnable.forget());
 }
 
 bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
