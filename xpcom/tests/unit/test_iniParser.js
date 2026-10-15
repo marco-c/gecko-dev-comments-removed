@@ -1,13 +1,13 @@
 var testnum = 0;
 var factory;
 
-function parserForFile(filename) {
+function parserForFile(file, expectErrors) {
   let parser = null;
   try {
-    let file = do_get_file(filename);
-    Assert.ok(!!file);
-    parser = factory.createINIParser(file);
+    let containedErrors = { value: false };
+    parser = factory.createINIParser(file, containedErrors);
     Assert.ok(!!parser);
+    Assert.equal(expectErrors, containedErrors.value);
   } catch (e) {
     dump("INFO | caught error: " + e);
     
@@ -63,11 +63,11 @@ function run_test() {
     var testdata = [
       { filename: "data/iniparser01.ini", reference: {} },
       { filename: "data/iniparser02.ini", reference: {} },
-      { filename: "data/iniparser03.ini", reference: {} },
+      { filename: "data/iniparser03.ini", containsErrors: true, reference: {} },
       { filename: "data/iniparser04.ini", reference: {} },
-      { filename: "data/iniparser05.ini", reference: {} },
+      { filename: "data/iniparser05.ini", containsErrors: true, reference: {} },
       { filename: "data/iniparser06.ini", reference: {} },
-      { filename: "data/iniparser07.ini", reference: {} },
+      { filename: "data/iniparser07.ini", containsErrors: true, reference: {} },
       {
         filename: "data/iniparser08.ini",
         reference: { section1: { name1: "" } },
@@ -113,7 +113,11 @@ function run_test() {
           "☼": { "♣": "♠", "♦": "♥" },
         },
       },
-      { filename: "data/iniparser17.ini", reference: { section: { key: "" } } },
+      {
+        filename: "data/iniparser17.ini",
+        containsErrors: true,
+        reference: { section: { key: "" } },
+      },
     ];
 
     testdata.push({
@@ -126,6 +130,7 @@ function run_test() {
     });
     testdata.push({
       filename: "data/iniparser03-utf8BOM.ini",
+      containsErrors: true,
       reference: testdata[2].reference,
     });
     testdata.push({
@@ -134,6 +139,7 @@ function run_test() {
     });
     testdata.push({
       filename: "data/iniparser05-utf8BOM.ini",
+      containsErrors: true,
       reference: testdata[4].reference,
     });
     testdata.push({
@@ -142,6 +148,7 @@ function run_test() {
     });
     testdata.push({
       filename: "data/iniparser07-utf8BOM.ini",
+      containsErrors: true,
       reference: testdata[6].reference,
     });
     testdata.push({
@@ -195,6 +202,7 @@ function run_test() {
       });
       testdata.push({
         filename: "data/iniparser03-utf16leBOM.ini",
+        containsErrors: true,
         reference: testdata[2].reference,
       });
       testdata.push({
@@ -203,6 +211,7 @@ function run_test() {
       });
       testdata.push({
         filename: "data/iniparser05-utf16leBOM.ini",
+        containsErrors: true,
         reference: testdata[4].reference,
       });
       testdata.push({
@@ -211,6 +220,7 @@ function run_test() {
       });
       testdata.push({
         filename: "data/iniparser07-utf16leBOM.ini",
+        containsErrors: true,
         reference: testdata[6].reference,
       });
       testdata.push({
@@ -263,19 +273,22 @@ function run_test() {
       dump("\nINFO | test #" + ++testnum);
       let filename = testdata[testnum - 1].filename;
       dump(", filename " + filename + "\n");
-      let parser = parserForFile(filename);
+      let file = do_get_file(filename);
+      let parser = parserForFile(
+        file,
+        testdata[testnum - 1].containsErrors ?? false
+      );
       checkParserOutput(parser, testdata[testnum - 1].reference);
       if (!parser) {
         continue;
       }
       Assert.ok(parser instanceof Ci.nsIINIParserWriter);
       
-      let newfilename = filename + ".new";
-      let newfile = do_get_file(filename);
-      newfile.leafName += ".new";
+      let newfile = do_get_tempdir();
+      newfile.append(file.leafName + ".new");
       parser.writeFile(newfile);
       
-      parser = parserForFile(newfilename);
+      parser = parserForFile(newfile, false);
       checkParserOutput(parser, testdata[testnum - 1].reference);
       
       newfile.remove(false);
@@ -293,11 +306,8 @@ function run_test() {
     dump("INFO | test #" + ++testnum + "\n");
 
     
-    var newfile = do_get_file("data/");
+    var newfile = do_get_tempdir();
     newfile.append("nonexistent-file.ini");
-    if (newfile.exists()) {
-      newfile.remove(false);
-    }
     Assert.ok(!newfile.exists());
 
     try {
@@ -324,7 +334,7 @@ function run_test() {
     Assert.ok(newfile.exists());
     checkParserOutput(parser, { section: { key: "value", key2: "" } });
     
-    parser = parserForFile("data/nonexistent-file.ini");
+    parser = parserForFile(newfile, false);
     checkParserOutput(parser, { section: { key: "value", key2: "" } });
     
     newfile.remove(false);
@@ -332,7 +342,7 @@ function run_test() {
     dump("INFO | test #" + ++testnum + "\n");
 
     
-    parser = parserForFile("data/iniparser09.ini");
+    parser = parserForFile(do_get_file("data/iniparser09.ini"), false);
     checkParserOutput(parser, { section1: { name1: "value1" } });
 
     Assert.ok(parser instanceof Ci.nsIINIParserWriter);
