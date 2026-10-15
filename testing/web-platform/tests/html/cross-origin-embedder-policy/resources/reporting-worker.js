@@ -1,19 +1,32 @@
-function run({script, port}) {
+async function run({script, port, expected_count = 0}) {
   const reports = [];
+  let resolveEveryReport;
+  const receivedEveryReport = new Promise(r => resolveEveryReport = r);
   const observer = new ReportingObserver((rs) => {
     for (const r of rs) {
       reports.push(r.toJSON());
     }
+    if (expected_count > 0 && reports.length >= expected_count) {
+      resolveEveryReport();
+    }
   });
-  
-  setTimeout(() => {
-    observer.disconnect();
-    port.postMessage(reports);
-  }, 200);
   observer.observe();
 
   
-  eval(script);
+  await eval(script);
+
+  if (expected_count > 0) {
+    
+    
+    await receivedEveryReport;
+  } else {
+    
+    for (const r of observer.takeRecords()) {
+      reports.push(r.toJSON());
+    }
+  }
+  observer.disconnect();
+  port.postMessage(reports);
 }
 
 
