@@ -2382,8 +2382,12 @@ export class TopSitesFeed {
   /**
    * Pin a site at a specific position saving only the desired keys.
    *
-   * @param customScreenshotURL {string} User set URL of preview image for site
-   * @param label {string} User set string of custom site name
+   * @param {object} site
+   * @param {string} [site.customScreenshotURL] User set URL of preview image for site
+   * @param {string} [site.label] User set string of custom site name
+   * @param {string} site.url
+   * @param {boolean} [site.searchTopSite]
+   * @param {number} index
    */
   async _pinSiteAt({ customScreenshotURL, label, url, searchTopSite }, index) {
     if (this._groupedPinsEnabled) {
