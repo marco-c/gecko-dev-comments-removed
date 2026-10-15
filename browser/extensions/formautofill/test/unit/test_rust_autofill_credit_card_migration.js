@@ -60,20 +60,7 @@ const TEST_VERSION_PREF =
 const ATTEMPTS_PREF =
   "extensions.formautofill.creditCards.storage.rust.migrationAttempts";
 
-const CVV_SUPPORTED_PREF = "extensions.formautofill.creditCards.cvv.supported";
-const CVV_ENABLED_PREF = "extensions.formautofill.creditCards.cvv.enabled";
-
 const getBool = (pref, def = false) => Services.prefs.getBoolPref(pref, def);
-
-function setSecurityCodeEnabled(enabled) {
-  if (enabled) {
-    Services.prefs.setStringPref(CVV_SUPPORTED_PREF, "on");
-    Services.prefs.setBoolPref(CVV_ENABLED_PREF, true);
-  } else {
-    Services.prefs.clearUserPref(CVV_SUPPORTED_PREF);
-    Services.prefs.clearUserPref(CVV_ENABLED_PREF);
-  }
-}
 
 registerCleanupFunction(() => {
   for (const pref of [
@@ -82,8 +69,6 @@ registerCleanupFunction(() => {
     TEST_MODE_PREF,
     TEST_VERSION_PREF,
     ATTEMPTS_PREF,
-    CVV_SUPPORTED_PREF,
-    CVV_ENABLED_PREF,
   ]) {
     Services.prefs.clearUserPref(pref);
   }
@@ -556,62 +541,6 @@ add_task(async function test_what_each_store_derives_is_not_a_divergence() {
       `${saved["cc-name"]} kept the network it was detected as`
     );
   }
-
-  await s._finalize();
-});
-
-add_task(async function test_the_security_code_moves_into_rust_only() {
-  
-  
-  
-  
-  
-  
-  
-  
-  let { s, guids } = await setupStorageWithCards("cc-mig-csc.json", [
-    "Ann One",
-    "Bob Two",
-  ]);
-  s.creditCards._data[0]["cc-csc"] = "123";
-  s.creditCards._data[1]["cc-csc"] = "";
-
-  s = await enableRust(s);
-  Assert.ok(getBool(ACTIVE_PREF), "moved to Rust");
-  Assert.deepEqual(divergenceEvents(), [], "no record came back different");
-  Assert.equal(
-    (await s.creditCards.get(guids[0], { rawData: true }))["cc-csc"],
-    "123",
-    "the code came across"
-  );
-  Assert.equal(
-    (await s.creditCards.get(guids[0]))["cc-csc"],
-    undefined,
-    "a consumer read hides it while CVV is off"
-  );
-  Assert.equal(
-    (await s.creditCards.get(guids[1], { rawData: true }))["cc-csc"],
-    undefined,
-    "an empty code came across as none"
-  );
-
-  setSecurityCodeEnabled(true);
-  await s.creditCards.update(guids[1], { "cc-csc": "456" }, true);
-  setSecurityCodeEnabled(false);
-
-  s = await disableRust(s);
-  Assert.ok(!getBool(ACTIVE_PREF), "moved back to JSON");
-  Assert.deepEqual(divergenceEvents(), [], "no record came back different");
-  Assert.equal(
-    (await s.creditCards.get(guids[1], { rawData: true }))["cc-csc"],
-    undefined,
-    "a code saved in Rust is not copied back into the JSON store"
-  );
-  Assert.equal(
-    (await s.creditCards.get(guids[0], { rawData: true }))["cc-csc"],
-    "123",
-    "and an unedited card keeps what the JSON store held"
-  );
 
   await s._finalize();
 });

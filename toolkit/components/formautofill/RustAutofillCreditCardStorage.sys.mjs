@@ -23,6 +23,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   CREDIT_CARD_SCHEMA_VERSION:
     "resource://autofill/FormAutofillStorageBase.sys.mjs",
+  VALID_CREDIT_CARD_FIELDS:
+    "resource://autofill/FormAutofillStorageBase.sys.mjs",
   AutofillDataTypes: "resource://gre/modules/shared/AutofillDataTypes.sys.mjs",
   CreditCardRecord: "resource://gre/modules/shared/CreditCardRecord.sys.mjs",
   CreditCardBulkResultEntry:
@@ -63,25 +65,15 @@ const JS_TO_RUST_INTEGER_FIELD = {
   "cc-exp-year": "ccExpYear",
 };
 
-// cc-number and cc-csc are in neither map. cc-number is written in the clear
-// as ccNumber, which the store encrypts, and read back as a mask of
-// ccNumberLast4; it is still comparable, but not by string equality -- see
-// creditCardFieldDiffers. cc-csc is stored encrypted as ccCvv and read back in
-// the clear.
-
-// The canonical fields: the ones this store has a column for. Unlike
-// VALID_CREDIT_CARD_FIELDS this has cc-csc, which the JSON store keeps only as
-// an unknown field, and not billingAddressGUID, which this store has no column
-// for.
-const VALID_FIELDS = [
+// cc-number is in neither map: it is written in the clear as ccNumber, which
+// the store encrypts, and read back as a mask of ccNumberLast4.
+//
+// It is still comparable, but not by string equality -- see
+// creditCardFieldDiffers.
+const storedFields = new Set([
   ...Object.keys(JS_TO_RUST_STRING_FIELD),
   ...Object.keys(JS_TO_RUST_INTEGER_FIELD),
   "cc-number",
-  "cc-csc",
-];
-
-const storedFields = new Set([
-  ...VALID_FIELDS.filter(field => field != "cc-csc"),
   ...INTERNAL_FIELDS,
 ]);
 
@@ -103,9 +95,6 @@ const storedFields = new Set([
  *  - cc-type is re-detected from the number on every normalise, so a change to
  *    the detection table moves every stored card.
  * The name components and cc-exp are excluded for that reason.
- *
- * cc-csc is excluded too: the copy out of this store leaves it behind -- see
- * _recordForMigrationExport.
  *
  * cc-number is included, but does not compare as a string -- see
  * creditCardFieldDiffers.
@@ -207,7 +196,6 @@ function jsRecordToUpdatableCreditCardFields(record) {
     fields[rustKey] = Number(record[jsKey]) || 0;
   }
   fields.ccNumber = record["cc-number"] ?? "";
-  fields.ccCvv = record["cc-csc"] ? String(record["cc-csc"]) : null;
   return new lazy.UpdatableCreditCardFields(fields);
 }
 
@@ -241,10 +229,6 @@ function creditCardToJsRecord(creditCard) {
       MASK_CHARACTER.repeat(
         Math.max(0, MASKED_NUMBER_LENGTH - creditCard.ccNumberLast4.length)
       ) + creditCard.ccNumberLast4;
-  }
-
-  if (creditCard.ccCvv) {
-    record["cc-csc"] = creditCard.ccCvv;
   }
 
   record.timeCreated = creditCard.timeCreated;
@@ -288,21 +272,11 @@ export class RustAutofillCreditCardsAdapter extends RustAutofillAdapterBase {
   }
 
   get _validFields() {
-    return VALID_FIELDS;
+    return lazy.VALID_CREDIT_CARD_FIELDS;
   }
 
-  // The JSON store keeps cc-csc as an unknown field, which its update() never
-  // clears.
-  get _fieldsKeptWhenOmitted() {
-    return ["cc-csc"];
-  }
-
-  _recordFromRust(creditCard, { rawData = false } = {}) {
-    const record = creditCardToJsRecord(creditCard);
-    if (!rawData) {
-      lazy.CreditCardRecord.stripSecurityCodeWhenDisabled(record);
-    }
-    return record;
+  _recordFromRust(creditCard) {
+    return creditCardToJsRecord(creditCard);
   }
 
   _normalize(record, preserveEmptyFields = false) {
@@ -391,15 +365,14 @@ export class RustAutofillCreditCardsAdapter extends RustAutofillAdapterBase {
    *
    * @param {string} guid
    * @param {object} [options]
-   * @param {boolean} [options.rawData=false]
    * @param {boolean} [options.prompt=true] Whether the read may prompt. A read
    *   nobody asked for passes false, and rejects with NS_ERROR_ABORT while the
    *   token is locked.
    */
-  get(guid, { rawData = false, prompt = true } = {}) {
+  get(guid, { prompt = true } = {}) {
     return prompt
-      ? this._allowingPrompt(() => super.get(guid, { rawData }))
-      : super.get(guid, { rawData });
+      ? this._allowingPrompt(() => super.get(guid))
+      : super.get(guid);
   }
 
   /**
@@ -686,15 +659,11 @@ export class RustAutofillCreditCardsAdapter extends RustAutofillAdapterBase {
    * record whose number cannot be read throws rather than being copied without
    * it.
    *
-   * The security code is left behind: the JSON store would keep it in the
-   * clear.
-   *
    * @param {object} record
    * @returns {Promise<object>}
    */
   async _recordForMigrationExport(record) {
     const exported = { ...record };
-    delete exported["cc-csc"];
     // A record that never had a number has no mask either, and crosses
     // unchanged.
     if (!exported["cc-number"]) {

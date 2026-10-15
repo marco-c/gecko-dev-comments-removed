@@ -106,7 +106,6 @@ impl ProcessIncomingRecordImpl for IncomingCreditCardsImpl {
             m.payload as m_payload,
             l.cc_name,
             l.cc_number_enc,
-            l.cc_cvv_enc,
             l.cc_number_last_4,
             l.cc_exp_month,
             l.cc_exp_year,

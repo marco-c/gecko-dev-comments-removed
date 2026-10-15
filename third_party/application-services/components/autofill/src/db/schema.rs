@@ -47,7 +47,6 @@ pub const CREDIT_CARD_COMMON_COLS: &str = "
     cc_name,
     cc_number_enc,
     cc_number_last_4,
-    cc_cvv_enc,
     cc_exp_month,
     cc_exp_year,
     cc_type,
@@ -61,7 +60,6 @@ pub const CREDIT_CARD_COMMON_VALS: &str = "
     :cc_name,
     :cc_number_enc,
     :cc_number_last_4,
-    :cc_cvv_enc,
     :cc_exp_month,
     :cc_exp_year,
     :cc_type,
@@ -110,7 +108,7 @@ pub struct AutofillConnectionInitializer;
 
 impl ConnectionInitializer for AutofillConnectionInitializer {
     const NAME: &'static str = "autofill db";
-    const END_VERSION: u32 = 6;
+    const END_VERSION: u32 = 5;
 
     fn prepare(&self, conn: &Connection, _db_empty: bool) -> Result<()> {
         define_functions(conn)?;
@@ -141,7 +139,6 @@ impl ConnectionInitializer for AutofillConnectionInitializer {
             2 => upgrade_from_v2(db),
             3 => upgrade_from_v3(db),
             4 => upgrade_from_v4(db),
-            5 => upgrade_from_v5(db),
             _ => Err(Error::IncompatibleVersion(version)),
         }
     }
@@ -282,16 +279,6 @@ fn upgrade_from_v4(db: &Connection) -> Result<()> {
     Ok(())
 }
 
-fn upgrade_from_v5(db: &Connection) -> Result<()> {
-    
-    
-    db.execute_batch(
-        "ALTER TABLE credit_cards_data ADD COLUMN cc_cvv_enc TEXT NOT NULL DEFAULT ''
-            CHECK(length(cc_cvv_enc) > 20 OR cc_cvv_enc == '');",
-    )?;
-    Ok(())
-}
-
 pub fn create_empty_sync_temp_tables(db: &Connection) -> Result<()> {
     debug!("Initializing sync temp tables");
     db.execute_batch(CREATE_SYNC_TEMP_TABLES_SQL)?;
@@ -365,8 +352,6 @@ mod tests {
         assert_eq!(cc.guid, "A");
         assert_eq!(cc.cc_name, "Jane Doe");
         assert_eq!(cc.cc_number_enc, "012345678901234567890");
-        
-        assert_eq!(cc.cc_cvv_enc, "");
         assert_eq!(cc.cc_number_last_4, "1234");
         assert_eq!(cc.cc_exp_month, 1);
         assert_eq!(cc.cc_exp_year, 2020);
