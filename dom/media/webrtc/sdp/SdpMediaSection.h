@@ -5,10 +5,13 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SDPMEDIASECTION_H_
 #define DOM_MEDIA_WEBRTC_SDP_SDPMEDIASECTION_H_
 
+#include <algorithm>
+#include <cctype>
 #include <ostream>
 #include <string>
 #include <vector>
 
+#include "mozilla/Maybe.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"
 
@@ -20,9 +23,54 @@ class SdpConnection;
 
 class SdpMediaSection {
  public:
-  enum MediaType { kAudio, kVideo, kText, kApplication, kMessage };
   
-  static const size_t kMediaTypes = static_cast<size_t>(kMessage) + 1;
+  
+  enum MediaType { kAudio, kVideo, kText, kApplication, kMessage, kUnknown };
+
+  struct UnknownMediaTypeData {
+    std::string name;
+    std::string formatString;
+
+    
+    
+    bool operator==(const UnknownMediaTypeData& aOther) const = delete;
+  };
+
+  struct MediaTypeInfo {
+    MediaType type;
+    
+    Maybe<UnknownMediaTypeData> unknown = Nothing();
+
+    
+    
+    bool operator==(const MediaTypeInfo& aOther) const = delete;
+
+    
+    
+    bool MatchesTypeOf(const MediaTypeInfo& aOther) const {
+      
+      
+      const auto lowerCaseName = [](const UnknownMediaTypeData& aData) {
+        std::string name = aData.name;
+        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+        return name;
+      };
+      return type == aOther.type &&
+             unknown.map(lowerCaseName) == aOther.unknown.map(lowerCaseName);
+    }
+
+    
+    
+    
+    bool IdenticalTo(const MediaTypeInfo& aOther) const {
+      const auto formatString = [](const UnknownMediaTypeData& aData) {
+        return aData.formatString;
+      };
+      return MatchesTypeOf(aOther) &&
+             unknown.map(formatString) == aOther.unknown.map(formatString);
+    }
+  };
+  static const size_t kMediaTypes = static_cast<size_t>(kUnknown) + 1;
 
   enum Protocol {
     kRtpAvp,             
@@ -70,6 +118,7 @@ class SdpMediaSection {
   explicit SdpMediaSection(size_t level) : mLevel(level) {}
 
   virtual MediaType GetMediaType() const = 0;
+  virtual MediaTypeInfo GetMediaTypeInfo() const = 0;
   virtual unsigned int GetPort() const = 0;
   virtual void SetPort(unsigned int port) = 0;
   virtual unsigned int GetPortCount() const = 0;
@@ -161,8 +210,8 @@ inline std::ostream& operator<<(std::ostream& os, const SdpMediaSection& ms) {
 }
 
 inline std::ostream& operator<<(std::ostream& os,
-                                const SdpMediaSection::MediaType t) {
-  switch (t) {
+                                const SdpMediaSection::MediaTypeInfo t) {
+  switch (t.type) {
     case SdpMediaSection::kAudio:
       return os << "audio";
     case SdpMediaSection::kVideo:
@@ -173,6 +222,11 @@ inline std::ostream& operator<<(std::ostream& os,
       return os << "application";
     case SdpMediaSection::kMessage:
       return os << "message";
+    case SdpMediaSection::kUnknown: {
+      if (t.unknown) {
+        return os << t.unknown.value().name;
+      }
+    }
   }
   MOZ_ASSERT(false, "Unknown MediaType");
   return os << "?";

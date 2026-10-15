@@ -85,7 +85,8 @@ class JsepTrackNegotiatedDetails {
 
 class JsepTrack {
  public:
-  JsepTrack(mozilla::SdpMediaSection::MediaType type, sdp::Direction direction)
+  JsepTrack(mozilla::SdpMediaSection::MediaTypeInfo type,
+            sdp::Direction direction)
       : mType(type),
         mDirection(direction),
         mActive(false),
@@ -157,6 +158,10 @@ class JsepTrack {
   }
 
   virtual mozilla::SdpMediaSection::MediaType GetMediaType() const {
+    return mType.type;
+  }
+
+  virtual mozilla::SdpMediaSection::MediaTypeInfo GetMediaTypeInfo() const {
     return mType;
   }
 
@@ -308,7 +313,8 @@ class JsepTrack {
   bool IsRtxEnabled(
       const std::vector<UniquePtr<JsepCodecDescription>>& codecs) const;
 
-  mozilla::SdpMediaSection::MediaType mType;
+  
+  mozilla::SdpMediaSection::MediaTypeInfo mType;
   
   std::vector<std::string> mStreamIds;
   std::string mTrackId;

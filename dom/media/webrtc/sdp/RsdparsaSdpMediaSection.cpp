@@ -42,13 +42,13 @@ RsdparsaSdpMediaSection::RsdparsaSdpMediaSection(
       mSession(std::move(session)) {
   switch (sdp_rust_get_media_type(GetSection())) {
     case RustSdpMediaValue::Audio:
-      mMediaType = kAudio;
+      mMediaTypeInfo = {.type = kAudio};
       break;
     case RustSdpMediaValue::Video:
-      mMediaType = kVideo;
+      mMediaTypeInfo = {.type = kVideo};
       break;
     case RustSdpMediaValue::Application:
-      mMediaType = kApplication;
+      mMediaTypeInfo = {.type = kApplication};
       break;
   }
 

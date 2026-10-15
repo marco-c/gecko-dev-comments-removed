@@ -10,6 +10,7 @@
 #include "sdp/ParsingResultComparer.h"
 #include "sdp/RsdparsaSdpParser.h"
 #include "sdp/SdpAttribute.h"
+#include "sdp/SdpImpl.h"
 #include "sdp/SdpMediaSection.h"
 #include "sdp/SipccSdpParser.h"
 #include "ssl.h"
@@ -4183,9 +4184,10 @@ TEST_P(NewSdpTest, CheckAddMediaSection) {
   ASSERT_EQ(3U, Sdp()->GetMediaSectionCount())
       << "Wrong number of media sections";
 
-  Sdp()->AddMediaSection(
-      SdpMediaSection::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
-      58000, SdpMediaSection::kUdpDtlsSctp, sdp::kIPv4, "127.0.0.1");
+  Sdp()->AddMediaSection({.type = SdpMediaSection::kVideo},
+                         SdpDirectionAttribute::Direction::kSendrecv, 58000,
+                         SdpMediaSection::kUdpDtlsSctp, sdp::kIPv4,
+                         "127.0.0.1");
 
   ASSERT_EQ(4U, Sdp()->GetMediaSectionCount())
       << "Wrong number of media sections after adding media section";
@@ -4200,7 +4202,7 @@ TEST_P(NewSdpTest, CheckAddMediaSection) {
   ASSERT_EQ(sdp::kIPv4, newMediaSection.GetConnection().GetAddrType());
   ASSERT_EQ("127.0.0.1", newMediaSection.GetConnection().GetAddress());
 
-  Sdp()->AddMediaSection(SdpMediaSection::kAudio,
+  Sdp()->AddMediaSection({.type = SdpMediaSection::kAudio},
                          SdpDirectionAttribute::Direction::kSendonly, 14006,
                          SdpMediaSection::kTcpDtlsRtpSavpf, sdp::kIPv6,
                          "2607:f8b0:4004:801::2013");
@@ -4283,6 +4285,61 @@ TEST_P(NewSdpTest, CheckAddDataChannel) {
   ASSERT_TRUE(mediaSection.GetAttributeList().HasAttribute(
       SdpAttribute::kSctpPortAttribute));
   ASSERT_EQ(15000U, mediaSection.GetAttributeList().GetSctpPort());
+}
+
+
+
+
+
+TEST(NewSdpTestNoFixture, CheckUnknownMediaTypeSerialize)
+{
+  SdpImpl sdp(SdpOrigin("-", 4294967296, 2, sdp::kIPv4, "127.0.0.1"));
+
+  const SdpMediaSection& msection = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kUnknown,
+       .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+           .name = "sprinkles", .formatString = "8 16 foo"})},
+      SdpDirectionAttribute::kSendrecv, 9, SdpMediaSection::kUdpTlsRtpSavpf,
+      sdp::kIPv4, "0.0.0.0");
+
+  ASSERT_EQ(SdpMediaSection::kUnknown, msection.GetMediaType());
+  ASSERT_TRUE(msection.GetMediaTypeInfo().unknown.isSome());
+  ASSERT_EQ("sprinkles", msection.GetMediaTypeInfo().unknown->name);
+  ASSERT_EQ("8 16 foo", msection.GetMediaTypeInfo().unknown->formatString);
+  ASSERT_TRUE(msection.GetFormats().empty());
+
+  std::ostringstream os;
+  msection.Serialize(os);
+  ASSERT_EQ("m=sprinkles 9 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF
+            "c=IN IP4 0.0.0.0" CRLF "a=sendrecv" CRLF,
+            os.str());
+
+  std::ostringstream sdpOs;
+  sdp.Serialize(sdpOs);
+  ASSERT_EQ("v=0" CRLF "o=- 4294967296 2 IN IP4 127.0.0.1" CRLF "s=-" CRLF
+            "t=0 0" CRLF "m=sprinkles 9 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF
+            "c=IN IP4 0.0.0.0" CRLF "a=sendrecv" CRLF,
+            sdpOs.str());
+}
+
+
+
+TEST(NewSdpTestNoFixture, CheckUnknownMediaTypeNoFormatsSerialize)
+{
+  SdpImpl sdp(SdpOrigin("-", 4294967296, 2, sdp::kIPv4, "127.0.0.1"));
+
+  const SdpMediaSection& msection = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kUnknown,
+       .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+           .name = "clowncar", .formatString = ""})},
+      SdpDirectionAttribute::kInactive, 0, SdpMediaSection::kUdpTlsRtpSavpf,
+      sdp::kIPv4, "0.0.0.0");
+
+  std::ostringstream os;
+  msection.Serialize(os);
+  ASSERT_EQ("m=clowncar 0 UDP/TLS/RTP/SAVPF" CRLF "c=IN IP4 0.0.0.0" CRLF
+            "a=inactive" CRLF,
+            os.str());
 }
 
 TEST(NewSdpTestNoFixture, CheckParsingResultComparer)
@@ -6146,6 +6203,43 @@ TEST_P(NewSdpTest, CheckRtxAptRtxTime) {
                                format_params[0].parameters.get())
                                ->rtx_time);
   }
+}
+
+
+
+TEST(NewSdpTestNoFixture, CheckMediaTypeInfoComparison)
+{
+  const SdpMediaSection::MediaTypeInfo audio{.type = SdpMediaSection::kAudio};
+  const SdpMediaSection::MediaTypeInfo video{.type = SdpMediaSection::kVideo};
+
+  ASSERT_TRUE(audio.MatchesTypeOf(audio));
+  ASSERT_TRUE(audio.IdenticalTo(audio));
+  ASSERT_FALSE(audio.MatchesTypeOf(video));
+  ASSERT_FALSE(audio.IdenticalTo(video));
+
+  const auto unknown = [](const std::string& aName,
+                          const std::string& aFormatString) {
+    return SdpMediaSection::MediaTypeInfo{
+        .type = SdpMediaSection::kUnknown,
+        .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+            .name = aName, .formatString = aFormatString})};
+  };
+  const auto sprinkles = unknown("sprinkles", "8 16 foo");
+
+  
+  
+  ASSERT_TRUE(sprinkles.MatchesTypeOf(unknown("SPRINKLES", "8 16 foo")));
+  ASSERT_TRUE(sprinkles.MatchesTypeOf(unknown("SpRiNkLeS", "8 16 foo")));
+  ASSERT_TRUE(sprinkles.IdenticalTo(unknown("SPRINKLES", "8 16 foo")));
+
+  
+  ASSERT_TRUE(sprinkles.MatchesTypeOf(unknown("sprinkles", "0")));
+  ASSERT_FALSE(sprinkles.IdenticalTo(unknown("sprinkles", "0")));
+  ASSERT_FALSE(sprinkles.IdenticalTo(unknown("sprinkles", "8 16 FOO")));
+
+  ASSERT_FALSE(sprinkles.MatchesTypeOf(unknown("clowncar", "8 16 foo")));
+  ASSERT_FALSE(sprinkles.MatchesTypeOf(audio));
+  ASSERT_FALSE(audio.MatchesTypeOf(sprinkles));
 }
 
 }  
