@@ -385,16 +385,17 @@ addAccessibleTask(
     
     
     
-    
     const i4 = findAccessibleChildByID(docAcc, "i4");
-    let changed = waitForEvents([
-      [EVENT_TEXT_INSERTED, i2],
-      [EVENT_TEXT_INSERTED, i4],
-    ]);
-    await invokeContentTask(browser, [], () => {
-      content.document.getElementById("i1").remove();
-    });
-    await changed;
+    await contentSpawnMutation(
+      browser,
+      {
+        expected: [[EVENT_TEXT_INSERTED, i2]],
+        unexpected: [[EVENT_TEXT_INSERTED, i4]],
+      },
+      () => {
+        content.document.getElementById("i1").remove();
+      }
+    );
     
     testCharacterCount(i2, 5);
     testText(i2, 0, 5, "9. i2");
@@ -404,7 +405,7 @@ addAccessibleTask(
     testCharacterCount(i4, 4);
     testText(i4, 0, 4, "10. ");
     info("Removing i3");
-    changed = waitForEvent(EVENT_TEXT_INSERTED, i4);
+    const changed = waitForEvent(EVENT_TEXT_INSERTED, i4);
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("i3").remove();
     });

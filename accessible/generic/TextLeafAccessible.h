@@ -35,8 +35,14 @@ class TextLeafAccessible : public LinkableAccessible {
 
 
 
+
+
+
+
 inline TextLeafAccessible* LocalAccessible::AsTextLeaf() {
-  return IsTextLeaf() ? static_cast<TextLeafAccessible*>(this) : nullptr;
+  return IsTextLeaf() || IsHTMLListBullet()
+             ? static_cast<TextLeafAccessible*>(this)
+             : nullptr;
 }
 
 }  

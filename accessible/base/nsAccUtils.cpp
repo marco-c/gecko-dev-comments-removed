@@ -416,9 +416,6 @@ uint32_t nsAccUtils::TextLength(Accessible* aAccessible) {
   }
 
   
-  
-  
-  
   nsAutoString text;
   aAccessible->AppendTextTo(text);  
   return text.Length();

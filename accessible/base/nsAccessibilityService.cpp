@@ -1624,6 +1624,13 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     } else if (content->IsGeneratedContentContainerForMarker()) {
       if (aContext->IsHTMLListItem()) {
         newAcc = MakeRefPtr<HTMLListBulletAccessible>(content, document);
+        nsAutoString text;
+        HTMLListBulletAccessible::ComputeText(content, text);
+        
+        
+        
+        
+        newAcc->AsTextLeaf()->SetText(text);
       }
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;

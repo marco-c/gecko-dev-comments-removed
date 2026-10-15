@@ -73,26 +73,13 @@ LocalAccessible* HTMLLIAccessible::Bullet() const {
 
 
 
-HTMLListBulletAccessible::HTMLListBulletAccessible(nsIContent* aContent,
-                                                   DocAccessible* aDoc)
-    : LeafAccessible(aContent, aDoc) {
-  mGenericTypes |= eText;
-}
-
-
-
-
-ENameValueFlag HTMLListBulletAccessible::DirectName(nsString& aName) const {
-  nsLayoutUtils::GetMarkerSpokenText(mContent, aName);
-  return eNameOK;
-}
 
 role HTMLListBulletAccessible::NativeRole() const {
   return roles::LISTITEM_MARKER;
 }
 
 uint64_t HTMLListBulletAccessible::NativeState() const {
-  return LeafAccessible::NativeState() | states::READONLY;
+  return TextLeafAccessible::NativeState() | states::READONLY;
 }
 
 already_AddRefed<AccAttributes> HTMLListBulletAccessible::NativeAttributes() {
@@ -100,10 +87,8 @@ already_AddRefed<AccAttributes> HTMLListBulletAccessible::NativeAttributes() {
   return attributes.forget();
 }
 
-void HTMLListBulletAccessible::AppendTextTo(nsAString& aText,
-                                            uint32_t aStartOffset,
-                                            uint32_t aLength) {
-  nsAutoString bulletText;
-  Name(bulletText);
-  aText.Append(Substring(bulletText, aStartOffset, aLength));
+
+void HTMLListBulletAccessible::ComputeText(nsIContent* aMarker,
+                                          nsAString& aText) {
+  nsLayoutUtils::GetMarkerSpokenText(aMarker, aText);
 }
