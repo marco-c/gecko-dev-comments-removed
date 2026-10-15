@@ -2471,23 +2471,22 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
 
   if (!(aFlags & FindFamiliesFlags::eQuotedFamilyName)) {
     
-    bool isDeprecatedGeneric = false;
     if (familyName.EqualsLiteral("sans") ||
         familyName.EqualsLiteral("sans serif")) {
       familyName.AssignLiteral("sans-serif");
-      isDeprecatedGeneric = true;
     } else if (familyName.EqualsLiteral("mono")) {
       familyName.AssignLiteral("monospace");
-      isDeprecatedGeneric = true;
     }
 
     
-    if (isDeprecatedGeneric ||
-        mozilla::StyleSingleFontFamily::Parse(familyName).IsGeneric()) {
+    auto parsed = mozilla::StyleSingleFontFamily::Parse(familyName);
+    if (parsed.IsGeneric()) {
       PrefFontList* prefFonts =
           FindGenericFamilies(aFontVisibilityProvider, familyName, aLanguage);
       if (prefFonts && !prefFonts->IsEmpty()) {
-        aOutput->AppendElements(*prefFonts);
+        for (const auto& family : *prefFonts) {
+          aOutput->AppendElement(FamilyAndGeneric(family, parsed.AsGeneric()));
+        }
         return true;
       }
       return false;
