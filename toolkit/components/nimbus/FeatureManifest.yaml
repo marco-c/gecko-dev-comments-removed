@@ -6282,6 +6282,14 @@ autoTabGrouping:
       description: >-
         Minimum candidate tabs a window must have before grouping is attempted.
         Lower = grouping runs on smaller windows (more coverage).
+    maxCandidateTabs:
+      type: int
+      setPref:
+        branch: default
+        pref: browser.smartwindow.autoTabGrouping.maxCandidateTabs
+      description: >-
+        Maximum tabs clustered per run. Larger windows only group their most
+        recently used tabs, which bounds how long a run takes.
     minTabsPerGroup:
       type: int
       setPref:

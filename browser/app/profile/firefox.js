@@ -1191,6 +1191,8 @@ pref("browser.tabs.groups.alternateMenu", false);
 
 pref("browser.tabs.groups.onboardingCallouts.enabled", false);
 
+pref("browser.tabs.groups.saveHintShownCount", 0);
+
 pref("browser.tabs.groups.smart.enabled", true);
 
 pref("browser.tabs.notes.enabled", false);
@@ -2453,6 +2455,7 @@ pref("browser.smartwindow.autoTabGrouping.preloadModels", true);
 pref("browser.smartwindow.autoTabGrouping.maxGroups", 3);
 pref("browser.smartwindow.autoTabGrouping.minTabsPerGroup", 2);
 pref("browser.smartwindow.autoTabGrouping.minCandidateTabs", 2);
+pref("browser.smartwindow.autoTabGrouping.maxCandidateTabs", 200);
 pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
 pref("browser.smartwindow.autoTabGrouping.timeoutMs", 8000);
 pref("browser.smartwindow.autoTabGrouping.supportedLocales", "en,fr");
@@ -2622,7 +2625,7 @@ pref("media.gmp-gmpopenh264.enabled", true);
 
 pref("media.videocontrols.picture-in-picture.enabled", true);
 pref("media.videocontrols.picture-in-picture.audio-toggle.enabled", true);
-pref("media.videocontrols.picture-in-picture.playback-speed.enabled", false);
+pref("media.videocontrols.picture-in-picture.playback-speed.enabled", true);
 pref("media.videocontrols.picture-in-picture.video-toggle.enabled", true);
 pref("media.videocontrols.picture-in-picture.video-toggle.visibility-threshold", "1.0");
 pref("media.videocontrols.picture-in-picture.keyboard-controls.enabled", true);
@@ -3167,6 +3170,10 @@ pref("browser.toolbars.share-button.enabled", true);
 pref("browser.urlbar.share-button.enabled", false);
 
 pref("security.certerrors.felt-privacy-v1", true);
+
+#ifdef NIGHTLY_BUILD
+  pref("security.utility_pkcs11_module_process.enabled", true);
+#endif
 
 
 
