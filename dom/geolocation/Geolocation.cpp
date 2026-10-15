@@ -147,7 +147,6 @@ class nsGeolocationRequest final : public ContentPermissionRequestBase,
   nsCOMPtr<nsIEventTarget> mMainThreadSerialEventTarget;
 
   SystemGeolocationPermissionBehavior mBehavior;
-  UserActivation::State mState = UserActivation::State::None;
 };
 
 static UniquePtr<PositionOptions> CreatePositionOptionsCopy(
@@ -194,9 +193,17 @@ static nsPIDOMWindowInner* ConvertWeakReferenceToWindow(
   return raw;
 }
 
-static void RecordUserActivationOnRequest(UserActivation::State aState) {
+static void RecordUserActivationOnRequest(nsPIDOMWindowInner* aWindow) {
+  if (!aWindow) {
+    return;
+  }
+  WindowContext* context = aWindow->GetWindowContext();
+  if (!context) {
+    return;
+  }
+  UserActivation::State state = context->GetUserActivationState();
   auto label = glean::geolocation::RequestActivationLabel::eNone;
-  switch (aState) {
+  switch (state) {
     case UserActivation::State::FullActivated:
       label = glean::geolocation::RequestActivationLabel::eFullActivated;
       break;
@@ -211,8 +218,8 @@ static void RecordUserActivationOnRequest(UserActivation::State aState) {
       break;
   }
   MOZ_LOG(gGeolocationLog, LogLevel::Debug,
-          ("nsGeolocationRequest was allowed with user activation state %d",
-           static_cast<uint8_t>(aState)));
+          ("nsGeolocationRequest triggered with user activation state %d",
+           static_cast<uint8_t>(state)));
   glean::geolocation::request_activation.EnumGet(label).Add();
 }
 
@@ -235,11 +242,7 @@ nsGeolocationRequest::nsGeolocationRequest(
       mShutdown(false),
       mMainThreadSerialEventTarget(aMainThreadSerialEventTarget),
       mBehavior(SystemGeolocationPermissionBehavior::NoPrompt) {
-  if (mWindow) {
-    if (WindowContext* context = mWindow->GetWindowContext()) {
-      mState = context->GetUserActivationState();
-    }
-  }
+  RecordUserActivationOnRequest(mWindow);
 }
 
 nsGeolocationRequest::~nsGeolocationRequest() { StopTimeoutTimer(); }
@@ -444,10 +447,6 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     Geolocation::ReallowWithSystemPermissionOrCancel(browsingContext,
                                                      onSystemPermissionResult);
     return NS_OK;
-  }
-
-  if (XRE_IsContentProcess()) {
-    RecordUserActivationOnRequest(mState);
   }
 
   RefPtr<GeolocationService> gs =
