@@ -17,14 +17,10 @@
 
 
 
-
-
-#![allow(dead_code)]
-
 use crate::intern::ItemUid;
-use crate::internal_types::{FastHashMap, FastHashSet};
+use crate::internal_types::FastHashMap;
 use api::interning::{BuildId, BuilderId};
-use api::{FontRenderMode, IdNamespace, PipelineId};
+use api::{DocumentId, FontRenderMode, IdNamespace, PipelineId};
 use glyph_rasterizer::SharedFontResources;
 use std::marker::PhantomData;
 use std::{fmt, ops};
@@ -41,9 +37,11 @@ use std::{fmt, ops};
 macro_rules! enumerate_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            rectangles: api::interned_prims::RectangleKey => crate::prim_store::rectangle::RectangleTemplate, INTERNED_PRIMITIVES, prim,
         }
     }
 }
+
 
 
 
@@ -53,11 +51,14 @@ macro_rules! enumerate_dl_stores {
 macro_rules! enumerate_scene_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            rectangles: api::interned_prims::RectangleKey => crate::prim_store::PrimPlacement, prim,
         }
     }
 }
 
 
+
+#[allow(dead_code)]
 pub struct DlResolveContext<'a> {
     
     
@@ -225,7 +226,8 @@ pub struct DlBuilderMap {
     by_pipeline: FastHashMap<PipelineId, BuilderState>,
     free: Vec<DlNamespace>,
     
-    pending_removals: FastHashSet<PipelineId>,
+    
+    pending_removals: FastHashMap<PipelineId, Option<DocumentId>>,
     next: u32,
     
     
@@ -385,8 +387,35 @@ impl DlBuilderMap {
     
     
     
-    pub fn remove_pipeline(&mut self, pipeline_id: PipelineId) {
-        self.pending_removals.insert(pipeline_id);
+    
+    
+    
+    
+    
+    
+    
+    pub fn remove_pipeline(&mut self, pipeline_id: PipelineId, document_id: DocumentId) {
+        self.pending_removals.insert(pipeline_id, Some(document_id));
+    }
+
+    
+    
+    
+    
+    
+    pub fn remove_document(
+        &mut self,
+        document_id: DocumentId,
+        pipelines: impl Iterator<Item = PipelineId>,
+    ) {
+        for owner in self.pending_removals.values_mut() {
+            if *owner == Some(document_id) {
+                *owner = None;
+            }
+        }
+        for pipeline_id in pipelines {
+            self.pending_removals.insert(pipeline_id, None);
+        }
     }
 
     
@@ -396,10 +425,19 @@ impl DlBuilderMap {
     
     
     
-    pub fn take_removals(&mut self) -> Vec<DlNamespace> {
+    pub fn take_removals(&mut self, document_id: DocumentId) -> Vec<DlNamespace> {
         let mut namespaces = Vec::new();
 
-        for pipeline_id in self.pending_removals.drain() {
+        let mut released = Vec::new();
+        self.pending_removals.retain(|pipeline_id, owner| {
+            let release = owner.map_or(true, |owner| owner == document_id);
+            if release {
+                released.push(*pipeline_id);
+            }
+            !release
+        });
+
+        for pipeline_id in released {
             if let Some(state) = self.by_pipeline.remove(&pipeline_id) {
                 self.free.push(state.namespace);
                 namespaces.push(state.namespace);
@@ -732,6 +770,10 @@ mod tests {
         PipelineId(1, id)
     }
 
+    fn doc(id: u32) -> DocumentId {
+        DocumentId::new(IdNamespace(1), id)
+    }
+
     fn store() -> DlStore<Key, u32> {
         DlStore::default()
     }
@@ -782,8 +824,8 @@ mod tests {
         store.insert(kept, 0, 100);
         let handle = h(&store, kept, 0);
 
-        alloc.remove_pipeline(pipeline(1));
-        alloc.take_removals();
+        alloc.remove_pipeline(pipeline(1), doc(1));
+        alloc.take_removals(doc(1));
         let fresh = alloc.get_or_alloc(pipeline(3)).0;
         assert_eq!(fresh, stale, "expected the released namespace to be reused");
         let late = alloc.get_or_alloc(pipeline(4)).0;
@@ -820,9 +862,9 @@ mod tests {
         assert_ne!(a, b);
         assert!(a.0 < 2 && b.0 < 2, "namespaces are not dense: {:?} {:?}", a, b);
 
-        alloc.remove_pipeline(pipeline(1));
-        assert_eq!(alloc.take_removals(), vec![a]);
-        assert!(alloc.take_removals().is_empty(), "released twice");
+        alloc.remove_pipeline(pipeline(1), doc(1));
+        assert_eq!(alloc.take_removals(doc(1)), vec![a]);
+        assert!(alloc.take_removals(doc(1)).is_empty(), "released twice");
 
         let c = alloc.get_or_alloc(pipeline(3)).0;
         assert_eq!(c, a, "the released namespace was not reused");
@@ -833,7 +875,7 @@ mod tests {
         let mut alloc = DlBuilderMap::default();
 
         let a = alloc.get_or_alloc(pipeline(1)).0;
-        alloc.remove_pipeline(pipeline(1));
+        alloc.remove_pipeline(pipeline(1), doc(1));
 
         
         
@@ -841,7 +883,7 @@ mod tests {
         let b = alloc.get_or_alloc(pipeline(2)).0;
         assert_ne!(b, a, "a namespace was reused while a live scene referenced it");
 
-        assert_eq!(alloc.take_removals(), vec![a]);
+        assert_eq!(alloc.take_removals(doc(1)), vec![a]);
         let c = alloc.get_or_alloc(pipeline(3)).0;
         assert_eq!(c, a, "the released namespace was not reused");
     }
@@ -851,7 +893,7 @@ mod tests {
         let mut alloc = DlBuilderMap::default();
 
         let a = alloc.get_or_alloc(pipeline(1)).0;
-        alloc.remove_pipeline(pipeline(1));
+        alloc.remove_pipeline(pipeline(1), doc(1));
 
         
         
@@ -860,7 +902,34 @@ mod tests {
         assert_eq!(again, a);
         assert!(!allocated, "the namespace was reallocated rather than kept");
 
-        assert!(alloc.take_removals().is_empty(), "a live pipeline was released");
+        assert!(alloc.take_removals(doc(1)).is_empty(), "a live pipeline was released");
+    }
+
+    #[test]
+    fn only_the_removing_document_releases_a_pipeline() {
+        let mut alloc = DlBuilderMap::default();
+
+        let a = alloc.get_or_alloc(pipeline(1)).0;
+        alloc.remove_pipeline(pipeline(1), doc(1));
+
+        
+        
+        assert!(alloc.take_removals(doc(2)).is_empty(), "released by another document");
+        assert_eq!(alloc.take_removals(doc(1)), vec![a]);
+    }
+
+    #[test]
+    fn a_deleted_documents_removals_are_released_by_any_document() {
+        let mut alloc = DlBuilderMap::default();
+
+        let a = alloc.get_or_alloc(pipeline(1)).0;
+        let b = alloc.get_or_alloc(pipeline(2)).0;
+        alloc.remove_pipeline(pipeline(1), doc(1));
+        alloc.remove_document(doc(1), std::iter::once(pipeline(2)));
+
+        let mut released = alloc.take_removals(doc(2));
+        released.sort_by_key(|namespace| namespace.0);
+        assert_eq!(released, vec![a, b]);
     }
 
     fn builder(id: u64) -> BuilderId {
@@ -1030,8 +1099,8 @@ mod tests {
         store.insert(ns_a, 0, 100);
 
         
-        map.remove_pipeline(pipeline(1));
-        for namespace in map.take_removals() {
+        map.remove_pipeline(pipeline(1), doc(1));
+        for namespace in map.take_removals(doc(1)) {
             store.close(namespace);
         }
 
@@ -1065,8 +1134,8 @@ mod tests {
         store.open(ns_a);
         store.insert(ns_a, 0, 100);
 
-        map.remove_pipeline(pipeline(1));
-        for namespace in map.take_removals() {
+        map.remove_pipeline(pipeline(1), doc(1));
+        for namespace in map.take_removals(doc(1)) {
             store.close(namespace);
         }
 
