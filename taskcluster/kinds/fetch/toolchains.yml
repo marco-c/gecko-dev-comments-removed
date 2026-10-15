@@ -290,12 +290,12 @@ rust-size:
         revision: ab659d93b1faba95307df952aefe3fbed3583669
 
 rust-analyzer-linux64:
-    description: rust-analyzer 2026-08-10.1
+    description: rust-analyzer 2026-10-12
     fetch:
         type: static-url
-        url: https://github.com/rust-lang/rust-analyzer/releases/download/2026-08-10.1/rust-analyzer-x86_64-unknown-linux-gnu.gz
-        sha256: d42908a7dc7b89250ae881a0919e477296843665c98574ecc8fe16ba60cecefb
-        size: 14805784
+        url: https://github.com/rust-lang/rust-analyzer/releases/download/2026-10-12/rust-analyzer-x86_64-unknown-linux-gnu.gz
+        sha256: 040cab4e2abc490fadd95c3f6cbc60b941a78761dbc3acf0ec66fd7a97f31db3
+        size: 14939384
         artifact-name: rust-analyzer.gz
 
 gn:
@@ -870,12 +870,12 @@ treeherder-cli:
         add-prefix: treeherder-cli/
 
 webspec-index:
-    description: webspec-index 0.13.1 source code
+    description: webspec-index 0.14.0 source code
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/webspec-index/0.13.1/download
-        sha256: 81d89d3a2db260f224dd617c9b36ec804fa145c84a8cc9a23a42f05170219fc1
-        size: 206446
+        url: https://crates.io/api/v1/crates/webspec-index/0.14.0/download
+        sha256: fb284978424cd61eca5b3343056353d362354d0088c08dcaec2878028ab00555
+        size: 1249963
         artifact-name: webspec-index.tar.zst
         strip-components: 1
         add-prefix: webspec-index/
@@ -885,7 +885,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: 3f9a08b126dff1494286a500ec47cbc5496232c3
+        revision: d019001a67a2d34ca2276ece14e9a60a29e671ef
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 # We can't catch regressions from these updates in CI. Testing should focus on
