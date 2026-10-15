@@ -5,16 +5,10 @@
 #include "nsDeviceContextSpecProxy.h"
 
 #include "gfxASurface.h"
-#include "gfxPlatform.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/gfx/DrawEventRecorder.h"
-#include "mozilla/gfx/PrintTargetThebes.h"
+#include "mozilla/gfx/PrintTargetRecording.h"
 #include "mozilla/layout/RemotePrintJobChild.h"
-#include "nsAppDirectoryServiceDefs.h"
-#include "nsComponentManagerUtils.h"
-#include "nsDirectoryServiceUtils.h"
 #include "nsIPrintSettings.h"
-#include "private/pprio.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -54,36 +48,14 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecProxy::MakePrintTarget() {
   width /= TWIPS_PER_POINT_FLOAT;
   height /= TWIPS_PER_POINT_FLOAT;
 
-  RefPtr<gfxASurface> surface =
-      gfxPlatform::GetPlatform()->CreateOffscreenSurface(
-          mozilla::gfx::IntSize::Ceil(width, height),
-          mozilla::gfx::SurfaceFormat::A8R8G8B8_UINT32);
-  if (!surface) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<PrintTarget> target = PrintTargetThebes::CreateOrNull(surface);
-
-  return target.forget();
+  return PrintTargetRecording::CreateOrNull(IntSize::Ceil(width, height));
 }
 
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::GetDrawEventRecorder(
-    mozilla::gfx::DrawEventRecorder** aDrawEventRecorder) {
+    DrawEventRecorder** aDrawEventRecorder) {
   MOZ_ASSERT(aDrawEventRecorder);
-  RefPtr<mozilla::gfx::DrawEventRecorder> result = mRecorder;
+  RefPtr<DrawEventRecorder> result = mRecorder;
   result.forget(aDrawEventRecorder);
   return NS_OK;
 }
@@ -91,7 +63,7 @@ nsDeviceContextSpecProxy::GetDrawEventRecorder(
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
-                                        uint64_t aBrowsingContextId,
+                                        dom::WindowContext* aWindowContext,
                                         int32_t aStartPage, int32_t aEndPage) {
   if (!mRemotePrintJob || mRemotePrintJob->IsDestroyed()) {
     mRemotePrintJob = nullptr;
@@ -99,8 +71,9 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
   }
 
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
+  mRecorder->SetSupportsGlyphSourceText(true);
   nsresult rv = mRemotePrintJob->InitializePrint(
-      nsString(aTitle), aBrowsingContextId, aStartPage, aEndPage);
+      nsString(aTitle), aWindowContext, aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     
     
