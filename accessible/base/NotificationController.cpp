@@ -823,8 +823,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       
       if (LocalAccessible* bullet = mDocument->GetAccessible(containerNode)) {
         nsAutoString text;
-        HTMLListBulletAccessible::ComputeText(containerNode->AsContent(),
-                                              text);
+        HTMLListBulletAccessible::ComputeText(containerNode->AsContent(), text);
         TextUpdater::Run(mDocument, bullet->AsTextLeaf(), text);
       }
       continue;

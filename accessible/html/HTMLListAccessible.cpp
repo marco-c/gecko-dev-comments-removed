@@ -90,7 +90,7 @@ already_AddRefed<AccAttributes> HTMLListBulletAccessible::NativeAttributes() {
 
 
 void HTMLListBulletAccessible::ComputeText(nsIContent* aMarker,
-                                          nsAString& aText) {
+                                           nsAString& aText) {
   if (Maybe<nsString> cssAlt = nsCoreUtils::GetCssAltContent(aMarker)) {
     aText = *cssAlt;
     return;
