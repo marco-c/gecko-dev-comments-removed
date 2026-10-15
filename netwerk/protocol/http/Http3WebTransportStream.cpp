@@ -167,7 +167,6 @@ nsresult Http3WebTransportStream::TryActivating() {
 
 NS_IMETHODIMP Http3WebTransportStream::OnInputStreamReady(
     nsIAsyncInputStream* aStream) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG1(
       ("Http3WebTransportStream::OnInputStreamReady [this=%p stream=%p "
        "state=%d]",

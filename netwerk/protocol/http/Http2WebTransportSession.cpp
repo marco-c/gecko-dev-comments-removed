@@ -59,7 +59,6 @@ Http2WebTransportSessionImpl::~Http2WebTransportSessionImpl() {
 
 void Http2WebTransportSessionImpl::CloseSession(uint32_t aStatus,
                                                 const nsACString& aReason) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http2WebTransportSessionImpl::CloseSession %p aStatus=%x", this,
        aStatus));
 
@@ -111,7 +110,6 @@ void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
                                                 uint64_t aTrackingId,
                                                 uint64_t aSendGroupId,
                                                 int64_t aSendOrder) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http2WebTransportSessionImpl::SendDatagram %p, sendGroup=%" PRIu64
        ", sendOrder=%" PRId64,
        this, aSendGroupId, aSendOrder));
@@ -166,7 +164,6 @@ void Http2WebTransportSessionImpl::ProcessPendingStreamCallbacks(
 void Http2WebTransportSessionImpl::CreateOutgoingBidirectionalStream(
     std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&
         aCallback) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   auto id = mLocalStreamsFlowControl.TakeStreamId(WebTransportStreamType::BiDi);
   if (!id) {
     mBidiPendingStreamCallbacks.Push(
@@ -180,7 +177,6 @@ void Http2WebTransportSessionImpl::CreateOutgoingBidirectionalStream(
 void Http2WebTransportSessionImpl::CreateOutgoingUnidirectionalStream(
     std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&
         aCallback) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   auto id =
       mLocalStreamsFlowControl.TakeStreamId(WebTransportStreamType::UniDi);
   if (!id) {
@@ -305,7 +301,6 @@ void Http2WebTransportSessionImpl::OnStreamClosed(
 }
 
 bool Http2WebTransportSessionImpl::OnCapsule(Capsule&& aCapsule) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   switch (aCapsule.Type()) {
     case CapsuleType::CLOSE_WEBTRANSPORT_SESSION:
       LOG(("Handling CLOSE_WEBTRANSPORT_SESSION\n"));

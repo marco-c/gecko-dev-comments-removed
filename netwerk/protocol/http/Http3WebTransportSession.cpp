@@ -335,7 +335,6 @@ uint64_t Http3WebTransportSession::GetStreamId() const {
 }
 
 void Http3WebTransportSession::Close(nsresult aResult) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3WebTransportSession::Close %p", this));
   if (RefPtr<WebTransportSessionEventListener> listener = TakeListener()) {
     mozilla::dom::WebTransportStatsData emptyStats;
@@ -402,7 +401,6 @@ void Http3WebTransportSession::OnSessionDraining() {
 
 void Http3WebTransportSession::CloseSession(uint32_t aStatus,
                                             const nsACString& aReason) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if ((mRecvState != CLOSE_PENDING) && (mRecvState != RECV_DONE)) {
     mStatus = aStatus;
     mReason = aReason;
@@ -482,7 +480,6 @@ void Http3WebTransportSession::CreateStreamInternal(
     bool aBidi,
     std::function<void(Result<RefPtr<WebTransportStreamBase>, nsresult>&&)>&&
         aCallback) {
-  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3WebTransportSession::CreateStreamInternal this=%p aBidi=%d", this,
        aBidi));
   if (mRecvState != ACTIVE) {
