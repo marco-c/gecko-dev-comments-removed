@@ -66,7 +66,7 @@ add_task(async function test() {
   );
 
   
-  gBrowser.discardBrowser(tab1, true);
+  gBrowser.discardBrowser(tab1, { forceDiscard: true });
   ok(
     !tab1.linkedPanel,
     "force suspending a tab with beforeunload handler which would show a prompt"

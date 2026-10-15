@@ -62,7 +62,7 @@ add_task(async function test_pinned_horizontal_tabs() {
 
   
   
-  tabbrowser.discardBrowser(tabs[1], true);
+  tabbrowser.discardBrowser(tabs[1], { forceDiscard: true });
 
   var eh = new PinUnpinHandler(tabs[3], "TabPinned");
   tabbrowser.pinTab(tabs[3]);

@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { TabStateFlusher } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/sessionstore/TabStateFlusher.sys.mjs"
-);
-
 
 
 
@@ -24,7 +20,7 @@ add_task(async function test_discarded_tab_swapBrowsersAndCloseOther() {
 
   
   await gBrowser.prepareDiscardBrowser(discardedTab);
-  gBrowser.discardBrowser(discardedTab, true);
+  gBrowser.discardBrowser(discardedTab, { forceDiscard: true });
 
   ok(
     discardedTab.hasAttribute("discarded"),
@@ -78,7 +74,7 @@ add_task(async function test_discarded_tab_adoptTab() {
 
   
   await gBrowser.prepareDiscardBrowser(discardedTab);
-  gBrowser.discardBrowser(discardedTab, true);
+  gBrowser.discardBrowser(discardedTab, { forceDiscard: true });
 
   ok(
     discardedTab.hasAttribute("discarded"),
@@ -114,7 +110,7 @@ add_task(async function test_discarded_with_other_attributes() {
   await BrowserTestUtils.browserLoaded(multiAttrTab.linkedBrowser);
 
   await gBrowser.prepareDiscardBrowser(multiAttrTab);
-  gBrowser.discardBrowser(multiAttrTab, true); 
+  gBrowser.discardBrowser(multiAttrTab, { forceDiscard: true }); 
 
   
   
