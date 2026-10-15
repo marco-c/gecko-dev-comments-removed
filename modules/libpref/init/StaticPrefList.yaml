@@ -12035,7 +12035,7 @@
 # See bug 1934547.
 - name: layout.css.webkit-line-clamp.skip-paint
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # Whether we refer ::-webkit-scrollbar's width/height properties to disable
