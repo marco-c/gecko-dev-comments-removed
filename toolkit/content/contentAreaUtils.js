@@ -78,7 +78,8 @@ function saveURL(
   aSourceDocument,
   aIsContentWindowPrivate,
   aPrincipal,
-  aSaveCompleteCallback
+  aSaveCompleteCallback,
+  aPreferSourceDirectory
 ) {
   internalSave(
     aURL,
@@ -97,7 +98,8 @@ function saveURL(
     null,
     aIsContentWindowPrivate,
     aPrincipal,
-    aSaveCompleteCallback
+    aSaveCompleteCallback,
+    aPreferSourceDirectory
   );
 }
 
@@ -276,6 +278,10 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 
 
 
+
+
+
+
 function internalSave(
   aURL,
   aOriginalURL,
@@ -293,7 +299,8 @@ function internalSave(
   aCacheKey,
   aIsContentWindowPrivate,
   aPrincipal,
-  aSaveCompleteCallback
+  aSaveCompleteCallback,
+  aPreferSourceDirectory
 ) {
   if (aSkipPrompt == undefined) {
     aSkipPrompt = false;
@@ -352,7 +359,7 @@ function internalSave(
       fpParams,
       aSkipPrompt,
       relatedURI,
-      aOriginalURL || sourceURI
+      aPreferSourceDirectory ? aOriginalURL || sourceURI : null
     )
       .then(aDialogAccepted => {
         if (!aDialogAccepted) {
@@ -706,6 +713,8 @@ function initFileInfo(
 
 
 
+
+
 function promiseTargetFile(
   aFpP,
    aSkipPrompt,
@@ -769,8 +778,7 @@ function promiseTargetFile(
     
     
     
-    
-    let file = await getLocalSourceDirectory(aSourceURI);
+    let file = aSourceURI ? await getLocalSourceDirectory(aSourceURI) : null;
     
     if (!file && !useDownloadDir) {
       file = await downloadLastDir.getFileAsync(aRelatedURI);
@@ -903,7 +911,6 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
     let accepted = await promiseTargetFile(
       filepickerParams,
       true,
-      fileInfo.uri,
       fileInfo.uri
     );
     if (!accepted) {
