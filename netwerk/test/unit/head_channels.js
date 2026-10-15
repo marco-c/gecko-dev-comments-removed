@@ -417,6 +417,12 @@ async function asyncStartTLSTestServer(
     );
     return false;
   }
+  
+  
+  let certDirCopy = do_get_tempdir();
+  certDirCopy.append(certDir.leafName);
+  certDir.copyTo(certDirCopy.parent, null);
+  certDir = certDirCopy;
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(serverBin);
   
@@ -572,13 +578,13 @@ class SimpleChannelListener {
 
 
 
-function getTestServerCertificate() {
+async function getTestServerCertificate() {
   const certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
   const certFile = do_get_file("client-cert.p12");
   certDB.importPKCS12File(certFile, "password");
-  for (const cert of certDB.getCerts()) {
+  for (const cert of await certDB.getCerts()) {
     if (cert.commonName == "Test End-entity") {
       return cert;
     }

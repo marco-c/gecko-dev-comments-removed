@@ -311,13 +311,11 @@ add_task(async function test_preload_basic() {
   );
   
   
-  let certDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
-  certDir.append("test_intermediate_preloads");
-  Assert.ok(certDir.exists(), "test_intermediate_preloads should exist");
   let args = ["-D", "-n", "int"];
-  
-  
-  run_certutil_on_directory(certDir.path, args, false);
+  run_certutil_on_directory(
+    getCertDirCopy("test_intermediate_preloads").path,
+    args
+  );
 
   await checkCertErrorGeneric(
     certDB,
