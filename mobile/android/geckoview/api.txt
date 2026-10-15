@@ -2595,6 +2595,7 @@ package org.mozilla.geckoview {
   }
 
   public static class PictureInPictureController.SessionPictureInPicture {
+    method @NonNull @UiThread public GeckoResult<Void> exit();
     method @HandlerThread @NonNull public GeckoResult<Void> request();
   }
 

@@ -160,7 +160,8 @@ export const GeckoViewPictureInPictureController = {
   // Called when Gecko decided the picture-in-picture window should close, which reaches as a
   // "PictureInPicture:Close" message from the player actor. Toolkit's content-side player code
   // sends it when the cloned video ends, is removed from the page, or its tab is discarded. The
-  // embedder owns the window, so we ask it to tear it down.
+  // embedder owns the window, so we ask it to tear it down. This is the mirror of
+  // [forgetSession], where the embedder closed the window first and only tells us after.
   askEmbedderToClose(playerBrowser) {
     this.forgetPlayer(playerBrowser)?.sendRequest(
       "GeckoView:PictureInPicture:Close"
@@ -206,6 +207,19 @@ export const GeckoViewPictureInPictureController = {
     return pending;
   },
 
+  // Drops the state of the source session `sourceDispatcher` belongs to, because the embedder tore
+  // its window down itself, unlike [askEmbedderToClose] which asks it to.
+  forgetSession(sourceDispatcher, reason) {
+    if (gPiP?.sourceDispatcher !== sourceDispatcher) {
+      return;
+    }
+    if (gPiP.state === "pending") {
+      this._takePending()?.reject?.(new Error(reason));
+      return;
+    }
+    gPiP = null;
+  },
+
   async _setupPlayer(
     playerBrowser,
     { videoRef, sourceDispatcher, resolve, reject }
@@ -239,7 +253,10 @@ export const GeckoViewPictureInPictureController = {
 export class GeckoViewPictureInPicture extends GeckoViewModule {
   onInit() {
     debug`onInit`;
-    this.registerListener(["GeckoView:PictureInPicture:Request"]);
+    this.registerListener([
+      "GeckoView:PictureInPicture:Request",
+      "GeckoView:PictureInPicture:Exit",
+    ]);
 
     // A session opened against a placement is the player for the request that minted its token.
     if (this.settings.pictureInPictureToken) {
@@ -258,6 +275,13 @@ export class GeckoViewPictureInPicture extends GeckoViewModule {
           () => aCallback.onSuccess(null),
           e => aCallback.onError(e.message)
         );
+        break;
+      case "GeckoView:PictureInPicture:Exit":
+        GeckoViewPictureInPictureController.forgetSession(
+          this.eventDispatcher,
+          "Picture-in-picture closed before setup"
+        );
+        aCallback.onSuccess(null);
         break;
     }
   }
