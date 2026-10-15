@@ -2352,8 +2352,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
         glean::http::dnt_usage.AccumulateSingleSample(1);
       }
     }
-
-    mActivityDistributor = nullptr;
   } else if (!strcmp(topic, "net:clear-active-logins")) {
     mAuthCache->ClearAll();
     mPrivateAuthCache->ClearAll();
@@ -2461,9 +2459,7 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
   } else if (!strcmp(topic, "idle-daily")) {
     
     if (XRE_IsParentProcess()) {
-#if defined(EARLY_BETA_OR_EARLIER)  
       glean_pings::LocalNetworkAccess.Submit();
-#endif
     }
   }
   return NS_OK;
@@ -3028,6 +3024,7 @@ void nsHttpHandler::SetHttpHandlerInitArgs(const HttpHandlerInitArgs& aArgs) {
   mCompatFirefox = aArgs.mCompatFirefox();
   mCompatDevice = aArgs.mCompatDevice();
   mDeviceModelId = aArgs.mDeviceModelId();
+  mUserAgentIsDirty = true;
 }
 
 void nsHttpHandler::SetDeviceModelId(const nsACString& aModelId) {
