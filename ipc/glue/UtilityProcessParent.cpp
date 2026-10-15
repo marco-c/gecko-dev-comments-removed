@@ -197,7 +197,6 @@ void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
   }
 
   mHost->OnChannelClosed(aWhy);
-  mHost = nullptr;
 }
 
 

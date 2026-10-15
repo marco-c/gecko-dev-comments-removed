@@ -36,7 +36,7 @@ class IPDLUnitTestParent : public PIPDLUnitTestParent {
 
   
   nsCOMPtr<nsIThread> mOtherThread;
-  RefPtr<mozilla::ipc::GeckoChildProcessHost> mSubprocess = nullptr;
+  mozilla::ipc::GeckoChildProcessHost* mSubprocess = nullptr;
 
   
   bool mComplete = false;

@@ -1494,7 +1494,7 @@ class ContentParent final : public PContentParent,
   
   
 
-  RefPtr<GeckoChildProcessHost> mSubprocess;
+  GeckoChildProcessHost* mSubprocess;
   const TimeStamp mLaunchTS;  
   TimeStamp mLaunchYieldTS;   
 

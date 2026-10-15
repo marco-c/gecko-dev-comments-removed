@@ -23,7 +23,9 @@ bool RDDProcessHost::sLaunchWithMacSandbox = false;
 #endif
 
 RDDProcessHost::RDDProcessHost(Listener* aListener)
-    : GeckoChildProcessHost(GeckoProcessType_RDD), mListener(aListener) {
+    : GeckoChildProcessHost(GeckoProcessType_RDD),
+      mListener(aListener),
+      mLiveToken(new media::Refcountable<bool>(true)) {
   MOZ_COUNT_CTOR(RDDProcessHost);
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
@@ -67,15 +69,14 @@ bool RDDProcessHost::Launch(geckoargs::ChildProcessArgs aExtraOpts) {
     GetMainThreadSerialEventTarget()->DelayedDispatch(
         NS_NewRunnableFunction(
             "RDDProcessHost::Launchtimeout",
-            [weakSelf = ThreadSafeWeakPtr<RDDProcessHost>{this}]() {
-              RefPtr<RDDProcessHost> self(weakSelf);
-              if (!self || self->mShutdownRequested || self->mTimerChecked) {
+            [this, liveToken = mLiveToken]() {
+              if (!*liveToken || mTimerChecked) {
                 
                 
                 return;
               }
-              self->InitAfterConnect(false);
-              MOZ_ASSERT(self->mTimerChecked,
+              InitAfterConnect(false);
+              MOZ_ASSERT(mTimerChecked,
                          "InitAfterConnect must have acted on the promise");
             }),
         timeoutMs);
@@ -98,9 +99,9 @@ RefPtr<GenericNonExclusivePromise> RDDProcessHost::LaunchPromise() {
   mLaunchPromise = MakeRefPtr<GenericNonExclusivePromise::Private>(__func__);
   WhenProcessHandleReady()->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [this, self = RefPtr{this}](
+      [this, liveToken = mLiveToken](
           const ipc::ProcessHandlePromise::ResolveOrRejectValue& aResult) {
-        if (mShutdownRequested) {
+        if (!*liveToken) {
           
           
           return;
@@ -126,8 +127,8 @@ void RDDProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "RDDProcessHost::OnChannelConnected", [this, self = RefPtr{this}]() {
-        if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
+      "RDDProcessHost::OnChannelConnected", [this, liveToken = mLiveToken]() {
+        if (*liveToken && mLaunchPhase == LaunchPhase::Waiting) {
           InitAfterConnect(true);
         }
       }));
@@ -177,13 +178,15 @@ void RDDProcessHost::Shutdown() {
   MOZ_ASSERT(!mShutdownRequested);
 
   RejectPromise();
-  mShutdownRequested = true;
 
   if (mRDDChild) {
     
+    
+    mShutdownRequested = true;
+
+    
     if (!mChannelClosed) {
       mRDDChild->Close();
-      MOZ_ASSERT(!mRDDChild);
     }
 
 #ifndef NS_FREE_PERMANENT_DATA
@@ -191,7 +194,17 @@ void RDDProcessHost::Shutdown() {
     
     KillHard("NormalShutdown");
 #endif
+
+    
+    
+    
+    
+    
+    
+    return;
   }
+
+  DestroyProcess();
 }
 
 void RDDProcessHost::OnChannelClosed() {
@@ -203,6 +216,8 @@ void RDDProcessHost::OnChannelClosed() {
   if (!mShutdownRequested && mListener) {
     
     mListener->OnProcessUnexpectedShutdown(this);
+  } else {
+    DestroyProcess();
   }
 
   
@@ -223,6 +238,17 @@ void RDDProcessHost::KillHard(const char* aReason) {
 uint64_t RDDProcessHost::GetProcessToken() const {
   MOZ_ASSERT(NS_IsMainThread());
   return mProcessToken;
+}
+
+void RDDProcessHost::DestroyProcess() {
+  MOZ_ASSERT(NS_IsMainThread());
+  RejectPromise();
+
+  
+  *mLiveToken = false;
+
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("DestroyProcessRunnable", [this] { Destroy(); }));
 }
 
 void RDDProcessHost::ResolvePromise() {

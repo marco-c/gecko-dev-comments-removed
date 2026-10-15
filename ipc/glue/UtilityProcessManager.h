@@ -245,7 +245,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
     RefPtr<SharedLaunchPromise<Ok>> mLaunchPromise;
 
     
-    RefPtr<UtilityProcessHost> mProcess = nullptr;
+    UtilityProcessHost* mProcess = nullptr;
     RefPtr<UtilityProcessParent> mProcessParent = nullptr;
 
     
