@@ -1021,9 +1021,7 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
 
   appendSecurityCodeCheckbox() {
     const checkbox = this.doc.createElement("moz-checkbox");
-    checkbox.checked = Services.prefs.getBoolPref(
-      FormAutofill.ENABLED_AUTOFILL_CREDITCARDS_CVV_PREF
-    );
+    checkbox.checked = true;
     checkbox.setAttribute("support-page", "credit-card-autofill");
     this.doc.l10n.setAttributes(
       checkbox,
@@ -1076,9 +1074,7 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
 
     this.appendDescription();
 
-    // Offered whenever security codes are supported, so a user who turned
-    // saving them off can turn it back on from here.
-    if (FormAutofill.isAutofillCreditCardCVVSupported) {
+    if (FormAutofill.isAutofillCreditCardCVVEnabled) {
       this.appendSecurityCodeCheckbox();
     }
   }
