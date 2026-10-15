@@ -1284,9 +1284,8 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
     setPrefs(pref, { defaultBranchValue, userBranchValue });
 
     
-    let storePath;
-    {
-      const manager = NimbusTestUtils.stubs.manager();
+    const populateStore = async store => {
+      const manager = NimbusTestUtils.stubs.manager(store);
 
       await manager.store.init();
       await manager.onStartup();
@@ -1299,8 +1298,6 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
         });
       }
 
-      storePath = await NimbusTestUtils.saveStore(manager.store);
-
       removePrefObservers(manager);
       assertNoObservers(manager);
 
@@ -1309,20 +1306,20 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
       if (branch === "default") {
         Services.prefs.deleteBranch(pref);
       }
-    }
 
-    
-    setPrefs(pref, { defaultBranchValue });
-    
-    
-    
-    if (branch === "default") {
-      setPrefs(pref, { userBranchValue });
-    }
+      
+      setPrefs(pref, { defaultBranchValue });
+      
+      
+      
+      if (branch === "default") {
+        setPrefs(pref, { userBranchValue });
+      }
+    };
 
     const { sandbox, manager, cleanup } = await setupTest({
       init: false,
-      storePath,
+      populateStore,
       migrationState: NimbusTestUtils.migrationState.LATEST,
     });
     const setPrefSpy = sandbox.spy(PrefUtils, "setPref");
@@ -2842,9 +2839,8 @@ add_task(async function test_restorePrefs_manifestChanged() {
     let userPref = null;
 
     
-    let storePath;
-    {
-      const manager = NimbusTestUtils.stubs.manager();
+    const populateStore = async store => {
+      const manager = NimbusTestUtils.stubs.manager(store);
 
       await manager.store.init();
       await manager.onStartup();
@@ -2875,49 +2871,47 @@ add_task(async function test_restorePrefs_manifestChanged() {
         userPref = PrefUtils.getPref(pref, { branch });
       }
 
-      storePath = await NimbusTestUtils.saveStore(manager.store);
-
       removePrefObservers(manager);
       assertNoObservers(manager);
 
       Services.prefs.deleteBranch(pref);
-    }
 
-    
-    setPrefs(pref, {
-      defaultBranchValue,
-      userBranchValue: userPref ?? userBranchValue,
-    });
+      
+      setPrefs(pref, {
+        defaultBranchValue,
+        userBranchValue: userPref ?? userBranchValue,
+      });
 
-    
-    switch (operation) {
-      case REMOVE_FEATURE:
-        cleanupFeatures();
-        break;
+      
+      switch (operation) {
+        case REMOVE_FEATURE:
+          cleanupFeatures();
+          break;
 
-      case REMOVE_PREF_VARIABLE:
-        delete NimbusFeatures[featureId].manifest.variables.baz;
-        break;
+        case REMOVE_PREF_VARIABLE:
+          delete NimbusFeatures[featureId].manifest.variables.baz;
+          break;
 
-      case REMOVE_OTHER_VARIABLE:
-        delete NimbusFeatures[featureId].manifest.variables.qux;
-        break;
+        case REMOVE_OTHER_VARIABLE:
+          delete NimbusFeatures[featureId].manifest.variables.qux;
+          break;
 
-      case REMOVE_SETPREF:
-        delete NimbusFeatures[featureId].manifest.variables.baz.setPref;
-        break;
+        case REMOVE_SETPREF:
+          delete NimbusFeatures[featureId].manifest.variables.baz.setPref;
+          break;
 
-      case CHANGE_SETPREF:
-        NimbusFeatures[featureId].manifest.variables.baz.setPref.pref =
-          BOGUS_PREF;
-        break;
+        case CHANGE_SETPREF:
+          NimbusFeatures[featureId].manifest.variables.baz.setPref.pref =
+            BOGUS_PREF;
+          break;
 
-      default:
-        Assert.ok(false, "invalid operation");
-    }
+        default:
+          Assert.ok(false, "invalid operation");
+      }
+    };
 
     const { manager, cleanup } = await setupTest({
-      storePath,
+      populateStore,
       migrationState: NimbusTestUtils.migrationState.LATEST,
     });
 
@@ -3587,9 +3581,8 @@ add_task(async function test_setPref_types_restore() {
     quux: ["corge"],
   };
 
-  let storePath;
-  {
-    const manager = NimbusTestUtils.stubs.manager();
+  const populateStore = async store => {
+    const manager = NimbusTestUtils.stubs.manager(store);
 
     await manager.store.init();
     await manager.onStartup();
@@ -3611,18 +3604,16 @@ add_task(async function test_setPref_types_restore() {
       }
     );
 
-    storePath = await NimbusTestUtils.saveStore(manager.store);
-
     removePrefObservers(manager);
     assertNoObservers(manager);
 
     for (const varDef of Object.values(TYPED_FEATURE.manifest.variables)) {
       Services.prefs.deleteBranch(varDef.setPref.pref);
     }
-  }
+  };
 
   const { manager, cleanup } = await setupTest({
-    storePath,
+    populateStore,
     migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
