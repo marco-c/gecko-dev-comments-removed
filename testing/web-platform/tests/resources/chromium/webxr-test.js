@@ -414,6 +414,7 @@ class MockRuntime {
 
     this.world_ = null;
     this.worldDirty_ = false;
+    this.skipUpdatedPlanesData_ = false;
 
     this.anchor_controllers_ = new Map();
     
@@ -622,6 +623,11 @@ class MockRuntime {
   clearWorld() {
     this.world_ = null;
     this.worldDirty_ = true;
+  }
+
+  simulateIncompletePlaneDetectionData() {
+    
+    this.skipUpdatedPlanesData_ = true;
   }
 
   
@@ -1446,6 +1452,8 @@ class MockRuntime {
       allPlanesIds: [],
       updatedPlanesData: []
     };
+    const skipUpdatedPlanesData = this.skipUpdatedPlanesData_;
+    this.skipUpdatedPlanesData_ = false;
 
     if (!this.world_) {
       this.worldDirty_ = false;
@@ -1464,7 +1472,7 @@ class MockRuntime {
       frameData.detectedPlanesData.allPlanesIds.push(planeId);
 
       
-      if (this.worldDirty_) {
+      if (this.worldDirty_ && !skipUpdatedPlanesData) {
         const planeInfo = region.planeInfo;
         if (planeInfo) {
           let semanticLabel = null;
