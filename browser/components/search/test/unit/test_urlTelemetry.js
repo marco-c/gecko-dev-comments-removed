@@ -240,13 +240,9 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey, browser) {
   });
   
   
-  
-  
-  let wrapper = ChannelWrapper.get(channel);
-  Object.defineProperty(wrapper, "browserElement", {
-    get: () => browser,
-    configurable: true,
-  });
+  let getChannelBrowserStub = sinon
+    .stub(SearchSERPTelemetry._contentHandler, "_getChannelBrowser")
+    .returns(browser);
   SearchSERPTelemetry._contentHandler.observeActivity(
     channel,
     Ci.nsIHttpActivityObserver.ACTIVITY_TYPE_HTTP_TRANSACTION,
@@ -255,6 +251,7 @@ async function testAdUrlClicked(serpUrl, adUrl, expectedAdKey, browser) {
   
   
   await new Promise(resolve => Services.tm.dispatchToMainThread(resolve));
+  getChannelBrowserStub.restore();
 
   const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
   if (!expectedAdKey) {
