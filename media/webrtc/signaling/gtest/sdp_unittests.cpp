@@ -2153,11 +2153,6 @@ TEST_P(NewSdpTest, CheckAv1Fmtp) {
     ParseSdp(
         kVideoSdp + "a=rtpmap:99 AV1/90000\r\na=fmtp:99 " + outOfRange + "\r\n",
         false);
-    if (!ResultsAreFromSipcc()) {
-      ASSERT_FALSE(!!Sdp())
-      << "Expected a parse failure for " << outOfRange;
-      continue;
-    }
     ASSERT_TRUE(!!Sdp())
     << "Parse failed for " << outOfRange << ": " << SerializeParseErrors();
     const auto* ignored = Sdp()->GetMediaSection(0).FindFmtp("99");
@@ -4352,49 +4347,17 @@ TEST(NewSdpTestNoFixture, CheckUnknownMediaTypeParse)
       "m=sprinkles 9 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF
       "m=clowncar 0 UDP/TLS/RTP/SAVPF" CRLF;
 
+  
+  
+  
+  
+  
   RsdparsaSdpParser parser;
   const auto results = parser.Parse(kUnknownMediaTypeOffer);
-  ASSERT_TRUE(!!results->Sdp());
-  ASSERT_EQ(0U, results->Errors().size());
-  ASSERT_EQ(3U, results->Sdp()->GetMediaSectionCount());
-
-  const SdpMediaSection& audio = results->Sdp()->GetMediaSection(0);
-  ASSERT_EQ(SdpMediaSection::kAudio, audio.GetMediaType());
-  ASSERT_TRUE(audio.GetMediaTypeInfo().unknown.isNothing());
-
-  const SdpMediaSection& sprinkles = results->Sdp()->GetMediaSection(1);
-  ASSERT_EQ(SdpMediaSection::kUnknown, sprinkles.GetMediaType());
-  ASSERT_TRUE(sprinkles.GetMediaTypeInfo().unknown.isSome());
-  ASSERT_EQ("sprinkles", sprinkles.GetMediaTypeInfo().unknown->name);
-  ASSERT_EQ("8 16 foo", sprinkles.GetMediaTypeInfo().unknown->formatString);
-  
-  ASSERT_TRUE(sprinkles.GetFormats().empty());
-
-  const SdpMediaSection& clowncar = results->Sdp()->GetMediaSection(2);
-  ASSERT_EQ(SdpMediaSection::kUnknown, clowncar.GetMediaType());
-  ASSERT_TRUE(clowncar.GetMediaTypeInfo().unknown.isSome());
-  ASSERT_EQ("clowncar", clowncar.GetMediaTypeInfo().unknown->name);
-  ASSERT_EQ("", clowncar.GetMediaTypeInfo().unknown->formatString);
-
-  
-  
-  
-  std::ostringstream os;
-  results->Sdp()->Serialize(os);
-  ASSERT_NE(std::string::npos,
-            os.str().find("m=sprinkles 9 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF));
-  ASSERT_NE(std::string::npos,
-            os.str().find("m=clowncar 0 UDP/TLS/RTP/SAVPF" CRLF));
-
-  
-  
-  
-  
-  const auto reparsed = parser.Parse(os.str());
-  ASSERT_TRUE(!!reparsed->Sdp());
-  std::ostringstream reserialized;
-  reparsed->Sdp()->Serialize(reserialized);
-  ASSERT_EQ(os.str(), reserialized.str());
+  ASSERT_FALSE(!!results->Sdp());
+  ASSERT_EQ(2U, results->Errors().size());
+  ASSERT_EQ("unsupported media value: sprinkles", results->Errors()[0].second);
+  ASSERT_EQ("unsupported media value: clowncar", results->Errors()[1].second);
 }
 
 TEST(NewSdpTestNoFixture, CheckParsingResultComparer)
