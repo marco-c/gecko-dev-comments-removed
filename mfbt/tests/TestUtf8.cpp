@@ -55,7 +55,7 @@ struct ToUtf8Units {
 class AssertIfCalled {
  public:
   template <typename... Args>
-  void operator()(Args&&... ) {
+  void operator()(Args&&... aArgs) {
     MOZ_RELEASE_ASSERT(false, "AssertIfCalled instance was called");
   }
 };
@@ -98,7 +98,7 @@ enum class InvalidUtf8Reason {
 
 template <typename Char, size_t N>
 static void ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
-                                         InvalidUtf8Reason ,
+                                         InvalidUtf8Reason aExpectedReason,
                                          uint8_t aExpectedUnitsAvailable,
                                          uint8_t aExpectedUnitsNeeded,
                                          char32_t aExpectedBadCodePoint,

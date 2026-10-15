@@ -25,7 +25,7 @@ class InfallibleAllocPolicy {
   }
 
   template <typename T>
-  void free_(T* aPtr, size_t  = 0) {
+  void free_(T* aPtr, size_t aNumElems = 0) {
     free(aPtr);
   }
 

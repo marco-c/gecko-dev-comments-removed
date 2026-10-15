@@ -794,8 +794,8 @@ BaseProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
 
 void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
                                         BaseProfilerThreadId aThreadId,
-                                        const TimeStamp& ,
-                                        double ,
+                                        const TimeStamp& aProcessStartTime,
+                                        double aSinceTime,
                                         UniqueStacks& aUniqueStacks) const {
   mEntries.ReadEach([&](ProfileBufferEntryReader& aER) {
     auto type = static_cast<ProfileBufferEntry::Kind>(
@@ -827,7 +827,7 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
 }
 
 void ProfileBuffer::StreamProfilerOverheadToJSON(
-    SpliceableJSONWriter& aWriter, const TimeStamp& ,
+    SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,
     double aSinceTime) const {
   const char* recordOverheads = getenv("MOZ_PROFILER_RECORD_OVERHEADS");
   if (!recordOverheads || recordOverheads[0] == '\0') {
@@ -978,7 +978,7 @@ static auto& LookupOrAdd(HashM& aMap, Key&& aKey) {
 }
 
 void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
-                                         const TimeStamp& ,
+                                         const TimeStamp& aProcessStartTime,
                                          double aSinceTime) const {
   
   
@@ -1153,7 +1153,7 @@ static void AddPausedRange(SpliceableJSONWriter& aWriter, const char* aReason,
 }
 
 void ProfileBuffer::StreamPausedRangesToJSON(SpliceableJSONWriter& aWriter,
-                                             double ) const {
+                                             double aSinceTime) const {
   mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
     MOZ_ASSERT(aReader,
                "ProfileChunkedBuffer cannot be out-of-session when sampler is "

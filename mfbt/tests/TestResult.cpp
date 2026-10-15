@@ -39,11 +39,11 @@ struct UnusedZero<Failed> {
   static constexpr StorageType GetDefaultValue() { return 2; }
 
   static constexpr void AssertValid(StorageType aValue) {}
-  static constexpr Failed Inspect(const StorageType& ) {
+  static constexpr Failed Inspect(const StorageType& aValue) {
     return Failed{};
   }
-  static constexpr Failed Unwrap(StorageType ) { return Failed{}; }
-  static constexpr StorageType Store(Failed ) {
+  static constexpr Failed Unwrap(StorageType aValue) { return Failed{}; }
+  static constexpr StorageType Store(Failed aValue) {
     return GetDefaultValue();
   }
 };
@@ -338,7 +338,7 @@ static void MapTest() {
     MyError err(1);
     Result<char, MyError> res(err);
     MOZ_RELEASE_ASSERT(res.isErr());
-    Result<char, MyError> res2 = res.map([](int ) {
+    Result<char, MyError> res2 = res.map([](int x) {
       MOZ_RELEASE_ASSERT(false);
       return 'a';
     });
@@ -403,7 +403,7 @@ static void MapErrTest() {
   
   {
     Result<int, MyError> res(5);
-    auto res2 = res.mapErr([](const auto ) {
+    auto res2 = res.mapErr([](const auto err) {
       MOZ_RELEASE_ASSERT(false);
       return MyError(1);
     });
@@ -522,7 +522,7 @@ static void OrElseTest() {
   
   {
     Result<int, MyError> res(5);
-    auto res2 = res.orElse([](const auto ) -> Result<int, MyError> {
+    auto res2 = res.orElse([](const auto err) -> Result<int, MyError> {
       MOZ_RELEASE_ASSERT(false);
       return Err(MyError(1));
     });
@@ -560,7 +560,7 @@ static void AndThenTest() {
   
   {
     Result<int, const char*> r3("error");
-    Result<int, const char*> r4 = r3.andThen([](int ) {
+    Result<int, const char*> r4 = r3.andThen([](int x) {
       MOZ_RELEASE_ASSERT(false);
       return Result<int, const char*>(1);
     });
@@ -580,7 +580,7 @@ static void AndThenTest() {
   
   {
     constexpr Result<int, Failed> r4a =
-        Result<int, Failed>{Failed{}}.andThen([](int ) {
+        Result<int, Failed>{Failed{}}.andThen([](int x) {
           MOZ_RELEASE_ASSERT(false);
           return Result<int, Failed>(1);
         });

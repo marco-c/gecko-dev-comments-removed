@@ -3234,7 +3234,7 @@ static void TestChunkedBufferSingle() {
   VERIFY_PCB_START_END_PUSHED_CLEARED_FAILED(cbSingle, 1 + bufferBytes,
                                              1 + bufferBytes, 0, 0, 0);
   cbSingle.ReadEach(
-      [&](ProfileBufferEntryReader& ) { MOZ_RELEASE_ASSERT(false); });
+      [&](ProfileBufferEntryReader& aER) { MOZ_RELEASE_ASSERT(false); });
 
   
   
@@ -3305,7 +3305,7 @@ static void TestChunkedBufferSingle() {
   VERIFY_PCB_START_END_PUSHED_CLEARED_FAILED(cbSingle, 1 + bufferBytes * 2,
                                              1 + bufferBytes * 2, 0, 0, 0);
   cbSingle.ReadEach(
-      [&](ProfileBufferEntryReader& ) { MOZ_RELEASE_ASSERT(false); });
+      [&](ProfileBufferEntryReader& aER) { MOZ_RELEASE_ASSERT(false); });
 
   
   
@@ -4344,7 +4344,7 @@ void TestUniqueJSONStrings() {
 
   
   VerifyUniqueStringContents(
-      [](SCJW& aWriter, UJS& ) {
+      [](SCJW& aWriter, UJS& aUniqueStrings) {
         aWriter.StringElement("string");
       },
       R"("string")", "");
