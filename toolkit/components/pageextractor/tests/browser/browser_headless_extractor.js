@@ -114,16 +114,8 @@ add_task(async function test_headless_extraction_never_loads() {
 
 
 add_task(async function test_headless_extraction_cross_site_redirect() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
-  });
-
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline("https://w3c-test.org/", {
       urlString: `https://example.com${TEST_DIR}redirect_to.sjs?https://w3c-test.org/`,
       callback: () =>
         ok(false, "The callback must not run for a page redirected off-site."),
@@ -133,8 +125,6 @@ add_task(async function test_headless_extraction_cross_site_redirect() {
       /ended up at https:\/\/w3c-test\.org\//.test(error.message),
     "The cross-site redirect is reported as a block, not a timeout."
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -382,11 +372,8 @@ add_task(async function test_headless_extraction_loopback_port() {
   
   const requestedOrigin = `http://localhost:${requested.identity.primaryPort}`;
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
-  });
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(otherServiceUrl, {
       urlString: `${requestedOrigin}/to-another-port`,
       callback: () =>
         ok(false, "The callback must not run for a different local service."),
@@ -395,7 +382,6 @@ add_task(async function test_headless_extraction_loopback_port() {
       error.name === "BlockedError" && error.message.includes(otherServiceUrl),
     "A redirect to another port on the same loopback host is a block."
   );
-  await SpecialPowers.popPrefEnv();
 
   const result = await PageExtractorParent.getHeadlessExtractor({
     urlString: `${requestedOrigin}/to-another-path`,
@@ -513,17 +499,9 @@ add_task(async function test_headless_extraction_offsite_bounce() {
 
 
 add_task(async function test_headless_extraction_same_name_other_domain() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.pageExtractor.headlessTimeoutMs", 500]],
-  });
-
   const target = `https://example.org${TEST_DIR}redirect_target.html`;
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(target, {
       urlString: `https://example.com${TEST_DIR}redirect_to.sjs?${target}`,
       callback: () =>
         ok(false, "The callback must not run for another registrable domain."),
@@ -532,8 +510,6 @@ add_task(async function test_headless_extraction_same_name_other_domain() {
       error.name === "BlockedError" && error.message.includes("example.org"),
     "example.com to example.org is a block, not the same site."
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -542,22 +518,15 @@ add_task(async function test_headless_extraction_same_name_other_domain() {
 
 
 add_task(async function test_headless_extraction_intranet_name_collision() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.pageExtractor.headlessTimeoutMs", 500],
-      ["dom.security.https_first", false],
-    ],
+    set: [["dom.security.https_first", false]],
   });
 
   
   const target = `http://httpsfirst.com${TEST_DIR}redirect_target.html`;
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(target, {
       
       urlString: `http://httpsfirst.local${TEST_DIR}redirect_to.sjs?${target}`,
       callback: () =>
@@ -578,22 +547,15 @@ add_task(async function test_headless_extraction_intranet_name_collision() {
 
 
 add_task(async function test_headless_extraction_anonymous_http_downgrade() {
-  const { PageExtractorParent } = ChromeUtils.importESModule(
-    "resource://gre/actors/PageExtractorParent.sys.mjs"
-  );
-
   
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ml.pageExtractor.headlessTimeoutMs", 500],
-      ["dom.security.https_first", false],
-    ],
+    set: [["dom.security.https_first", false]],
   });
 
   
   const target = `http://www.example.com${TEST_DIR}redirect_target.html`;
   await Assert.rejects(
-    PageExtractorParent.getHeadlessExtractor({
+    readAtDeadline(target, {
       urlString: `https://example.com${TEST_DIR}redirect_to.sjs?${target}`,
       anonymousFetch: true,
       callback: () =>
