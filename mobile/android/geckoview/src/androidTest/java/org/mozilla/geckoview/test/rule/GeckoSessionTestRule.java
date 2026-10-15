@@ -24,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -69,6 +70,7 @@ import org.mozilla.geckoview.Autocomplete;
 import org.mozilla.geckoview.Autofill;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
+import org.mozilla.geckoview.ExperimentalGeckoViewApi;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoPreferenceController;
 import org.mozilla.geckoview.GeckoResult;
@@ -90,6 +92,7 @@ import org.mozilla.geckoview.GeckoSession.TextInputDelegate;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.MediaSession;
 import org.mozilla.geckoview.OrientationController;
+import org.mozilla.geckoview.PictureInPictureController;
 import org.mozilla.geckoview.SessionTextInput;
 import org.mozilla.geckoview.TranslationsController;
 import org.mozilla.geckoview.WebExtension;
@@ -108,6 +111,7 @@ import org.mozilla.geckoview.test.util.UiThreadUtils;
 
 
 
+@OptIn(markerClass = ExperimentalGeckoViewApi.class)
 public class GeckoSessionTestRule implements TestRule {
   private static final String LOGTAG = "GeckoSessionTestRule";
 
@@ -844,6 +848,7 @@ public class GeckoSessionTestRule implements TestRule {
     DEFAULT_DELEGATES.add(SelectionActionDelegate.class);
     DEFAULT_DELEGATES.add(TextInputDelegate.class);
     DEFAULT_DELEGATES.add(TranslationsController.SessionTranslation.Delegate.class);
+    DEFAULT_DELEGATES.add(PictureInPictureController.SessionPictureInPicture.Delegate.class);
   }
 
   private static final Set<Class<?>> DEFAULT_RUNTIME_DELEGATES = new HashSet<>();
@@ -877,6 +882,7 @@ public class GeckoSessionTestRule implements TestRule {
           SelectionActionDelegate,
           TextInputDelegate,
           TranslationsController.SessionTranslation.Delegate,
+          PictureInPictureController.SessionPictureInPicture.Delegate,
           
           ActivityDelegate,
           Autocomplete.StorageDelegate,
@@ -1085,6 +1091,9 @@ public class GeckoSessionTestRule implements TestRule {
     } else if (cls == TranslationsController.SessionTranslation.Delegate.class) {
       session.setTranslationsSessionDelegate(
           (TranslationsController.SessionTranslation.Delegate) delegate);
+    } else if (cls == PictureInPictureController.SessionPictureInPicture.Delegate.class) {
+      session.setPictureInPictureDelegate(
+          (PictureInPictureController.SessionPictureInPicture.Delegate) delegate);
     } else {
       GeckoSession.class.getMethod("set" + cls.getSimpleName(), cls).invoke(session, delegate);
     }
@@ -1159,6 +1168,9 @@ public class GeckoSessionTestRule implements TestRule {
     }
     if (cls == TranslationsController.SessionTranslation.Delegate.class) {
       return GeckoSession.class.getMethod("getTranslationsSessionDelegate").invoke(session);
+    }
+    if (cls == PictureInPictureController.SessionPictureInPicture.Delegate.class) {
+      return GeckoSession.class.getMethod("getPictureInPictureDelegate").invoke(session);
     }
     return GeckoSession.class.getMethod("get" + cls.getSimpleName()).invoke(session);
   }
