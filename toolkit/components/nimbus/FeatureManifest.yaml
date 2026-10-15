@@ -2473,6 +2473,13 @@ cfr:
     path: "browser/components/asrouter/content-src/schemas/MessagingExperiment.schema.json"
   variables: {}
 
+includeForWebPush:
+  description: "Marker feature with no configuration. Recipes that should be re-evaluated once the web push service starts include it alongside their real feature."
+  owner: omc-core@mozilla.com
+  hasExposure: false
+  allowCoenrollment: true
+  variables: {}
+
 infobar:
   description: "A Firefox Messaging system message for the infobar message channel"
   owner: omc-core@mozilla.com

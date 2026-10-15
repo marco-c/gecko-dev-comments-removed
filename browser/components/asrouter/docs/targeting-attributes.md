@@ -13,6 +13,25 @@ Please note that some targeting attributes require stricter controls on the tele
 :depth: 1
 ```
 
+### `activeWebPushSubscriptionCount`
+
+The number of unexpired web push subscriptions. System subscriptions, such as the one held by Firefox Accounts, are not counted.
+
+The value is 0 when push is disabled. Until the push service starts, the value is the count saved the last time this attribute was evaluated while push was running, which may be out of date, or 0 if no count has been saved yet.
+
+Nimbus recipes that target on this attribute should also include the `includeForWebPush` feature, so that they are re-evaluated with the current count once the push service starts.
+
+#### Examples
+* Does the user have any active web push subscription?
+```java
+activeWebPushSubscriptionCount > 0
+```
+
+#### Definition
+```ts
+declare const activeWebPushSubscriptionCount: number;
+```
+
 ### `addonsInfo`
 Provides information about the add-ons the user has installed.
 

@@ -49,6 +49,10 @@ const { FirefoxRelay, RELAY_PROFILE_CACHE_INTERVAL } =
 
 const lazy = {};
 
+const PUSH_SERVICE_SYS_MJS = "resource://gre/modules/PushService.sys.mjs";
+const WEB_PUSH_SUBSCRIPTION_COUNT_PREF =
+  "messaging-system.activeWebPushSubscriptionCount";
+
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTabResourceMapping:
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
@@ -78,6 +82,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   HomePage: "resource:///modules/HomePage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
+  PushService: PUSH_SERVICE_SYS_MJS,
   Region: "resource://gre/modules/Region.sys.mjs",
   ReinstallCheck: "moz-src:///browser/components/ReinstallCheck.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
@@ -1253,6 +1258,26 @@ const TargetingGetters = {
       .filter(perm => perm.capability === Services.perms.ALLOW_ACTION).length;
   },
 
+  get activeWebPushSubscriptionCount() {
+    return (async () => {
+      if (!Services.prefs.getBoolPref("dom.push.enabled", false)) {
+        return 0;
+      }
+      // Targeting may be evaluated during startup before the push service has
+      // started, so return the count saved during the last session until the
+      // push service is ready.
+      if (
+        !Cu.isESModuleLoaded(PUSH_SERVICE_SYS_MJS) ||
+        !lazy.PushService.isReady
+      ) {
+        return Services.prefs.getIntPref(WEB_PUSH_SUBSCRIPTION_COUNT_PREF, 0);
+      }
+      const count = (await lazy.PushService.getAllUnexpiredNonSystem()).length;
+      Services.prefs.setIntPref(WEB_PUSH_SUBSCRIPTION_COUNT_PREF, count);
+      return count;
+    })();
+  },
+
   get doesAppNeedPin() {
     return (async () => {
       return (
@@ -2120,5 +2145,26 @@ export const ASRouterTargeting = {
       }
     }
     return matching;
+  },
+};
+
+/**
+ * Re-evaluates the Nimbus recipes that include the `includeForWebPush` feature
+ * once the push service starts.
+ */
+export const WebPushTargeting = {
+  async init() {
+    if (!Services.prefs.getBoolPref("dom.push.enabled", false)) {
+      return;
+    }
+    try {
+      await lazy.PushService.ready();
+      await lazy.ExperimentAPI.updateRecipesForFeatures(
+        "push-service-activated",
+        ["includeForWebPush"]
+      );
+    } catch (e) {
+      console.error("Failed to re-evaluate web push recipes:", e);
+    }
   },
 };
