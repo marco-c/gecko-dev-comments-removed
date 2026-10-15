@@ -851,7 +851,8 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       
       
       if (text.mString.IsEmpty() ||
-          nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame)) {
+          (nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(textFrame) &&
+           !CssAltContent(textNode))) {
 #ifdef A11Y_LOG
         if (logging::IsEnabled(logging::eTree | logging::eText)) {
           logging::MsgBegin("TREE", "text node lost its content; doc: %p",
