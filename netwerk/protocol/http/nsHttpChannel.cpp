@@ -1689,6 +1689,9 @@ nsresult nsHttpChannel::DispatchTransaction(
 
   rv = mTransaction->AsyncRead(this, getter_AddRefs(mTransactionPump));
   if (NS_FAILED(rv)) {
+    
+    
+    (void)gHttpHandler->CancelTransaction(mTransaction, rv);
     return rv;
   }
 

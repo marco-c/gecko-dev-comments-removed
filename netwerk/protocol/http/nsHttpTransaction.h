@@ -460,7 +460,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   
   RefPtr<nsHttpConnectionInfo> mOrigConnInfo;
-  nsHttpRequestHead* mRequestHead{nullptr};    
+  
+  
+  
+  nsHttpRequestHead* mRequestHead{nullptr};
   nsHttpResponseHead* mResponseHead{nullptr};  
 
   nsAHttpSegmentReader* mReader{nullptr};
