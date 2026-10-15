@@ -1338,7 +1338,6 @@ export interface Modules {
   "resource://normandy/actions/schemas/index.sys.mjs": typeof import("resource://normandy/actions/schemas/index.sys.mjs"),
   "resource://normandy/lib/ActionsManager.sys.mjs": typeof import("resource://normandy/lib/ActionsManager.sys.mjs"),
   "resource://normandy/lib/CleanupManager.sys.mjs": typeof import("resource://normandy/lib/CleanupManager.sys.mjs"),
-  "resource://normandy/lib/ClientEnvironment.sys.mjs": typeof import("resource://normandy/lib/ClientEnvironment.sys.mjs"),
   "resource://normandy/lib/EventEmitter.sys.mjs": typeof import("resource://normandy/lib/EventEmitter.sys.mjs"),
   "resource://normandy/lib/Heartbeat.sys.mjs": typeof import("resource://normandy/lib/Heartbeat.sys.mjs"),
   "resource://normandy/lib/LegacyHeartbeat.sys.mjs": typeof import("resource://normandy/lib/LegacyHeartbeat.sys.mjs"),

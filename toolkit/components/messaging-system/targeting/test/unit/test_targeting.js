@@ -1,5 +1,5 @@
-const { ClientEnvironment } = ChromeUtils.importESModule(
-  "resource://normandy/lib/ClientEnvironment.sys.mjs"
+const { ClientEnvironmentBase } = ChromeUtils.importESModule(
+  "resource://gre/modules/components-utils/ClientEnvironment.sys.mjs"
 );
 const { TargetingContext } = ChromeUtils.importESModule(
   "resource://messaging-system/targeting/Targeting.sys.mjs"
@@ -215,7 +215,7 @@ add_task(async function test_telemetry_event_error() {
 
 
 add_task(async function test_live_telemetry() {
-  let ctx = { env: ClientEnvironment };
+  let ctx = { env: ClientEnvironmentBase };
   let targeting = new TargetingContext();
   
   await targeting.eval("env.liveTelemetry.main", ctx);

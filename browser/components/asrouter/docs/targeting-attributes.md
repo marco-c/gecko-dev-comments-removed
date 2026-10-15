@@ -1593,30 +1593,11 @@ Indicates whether a user has selected an encrypted or non-encrypted backup metho
 
 A boolean. `true` when a user downloads Firefox from a Smart Window marketing campaign (ie. `attributionData.campaign == "smart_window"`), `false` otherwise.
 
-### `isFirstRun`
-
-`true` on the first time Normandy runs on a new profile. Normandy sets the
-`app.normandy.first_run` pref to `false` after its first run, so this will be
-`true` exactly once per profile regardless of installation mechanism.
-
-> ⚠ **NOTE:** This targeting attribute is only available for the JEXL expressions
-> of experiments' advanced targeting configs, which are defined in the
-> [experimenter repository](https://experimenter.info). Targeting expressions for
-> messages do not have access to this attribute.
-
-#### Definition
-
-```ts
-declare const isFirstRun: boolean;
-```
-
-[Source](https://searchfox.org/mozilla-central/source/toolkit/components/normandy/lib/ClientEnvironment.sys.mjs#121)
-
 ### `isFirstStartup`
 
 `true` while Firefox is running through its first-startup sequence (i.e., when
-`FirstStartup` is in the `IN_PROGRESS` state). Unlike `isFirstRun`, which tracks
-the first Normandy run, this tracks the first startup of the browser itself.
+`FirstStartup` is in the `IN_PROGRESS` state). This tracks the first startup
+of the browser itself.
 
 > ⚠ **NOTE:** This targeting attribute is only available for the JEXL expressions
 > of experiments' advanced targeting configs, which are defined in the

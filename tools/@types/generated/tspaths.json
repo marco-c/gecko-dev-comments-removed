@@ -7132,9 +7132,6 @@
       "resource://normandy/lib/CleanupManager.sys.mjs": [
         "../../../toolkit/components/normandy/lib/CleanupManager.sys.mjs"
       ],
-      "resource://normandy/lib/ClientEnvironment.sys.mjs": [
-        "../../../toolkit/components/normandy/lib/ClientEnvironment.sys.mjs"
-      ],
       "resource://normandy/lib/EventEmitter.sys.mjs": [
         "../../../toolkit/components/normandy/lib/EventEmitter.sys.mjs"
       ],
