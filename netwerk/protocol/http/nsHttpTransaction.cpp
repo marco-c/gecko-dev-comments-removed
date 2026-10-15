@@ -517,10 +517,10 @@ void nsHttpTransaction::SetH2WSConnRefTaken() {
 
 UniquePtr<nsHttpResponseHead> nsHttpTransaction::TakeResponseHeadAndConnInfo(
     nsHttpConnectionInfo** aOut) {
-  MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
-
   
   MutexAutoLock lock(mLock);
+
+  MOZ_ASSERT(!mResponseHeadTaken, "TakeResponseHead called 2x");
 
   if (aOut) {
     RefPtr<nsHttpConnectionInfo> connInfo = mFinalizedConnInfo;
@@ -540,10 +540,10 @@ UniquePtr<nsHttpResponseHead> nsHttpTransaction::TakeResponseHeadAndConnInfo(
 }
 
 UniquePtr<nsHttpHeaderArray> nsHttpTransaction::TakeResponseTrailers() {
-  MOZ_ASSERT(!mResponseTrailersTaken, "TakeResponseTrailers called 2x");
-
   
   MutexAutoLock lock(mLock);
+
+  MOZ_ASSERT(!mResponseTrailersTaken, "TakeResponseTrailers called 2x");
 
   mResponseTrailersTaken = true;
   return std::move(mForTakeResponseTrailers);
@@ -3614,8 +3614,7 @@ void nsHttpTransaction::SetHttpTrailers(nsCString& aTrailers) {
   
   UniquePtr<nsHttpHeaderArray> httpTrailers =
       std::make_unique<nsHttpHeaderArray>();
-  
-  if (mForTakeResponseTrailers) {
+  {
     MutexAutoLock lock(mLock);
     if (mForTakeResponseTrailers) {
       

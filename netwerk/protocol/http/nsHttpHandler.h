@@ -317,6 +317,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
                                             SpeculativeTransaction* aTrans);
 
   
+  
   void UpdateAltServiceMapping(AltSvcMapping* map, nsProxyInfo* proxyInfo,
                                nsIInterfaceRequestor* callbacks, uint32_t caps,
                                const OriginAttributes& originAttributes) {
