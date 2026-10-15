@@ -6,6 +6,8 @@
 
 #include "mozilla/MathAlgorithms.h"
 
+#include <bit>
+
 #include "jit/arm/Assembler-arm.h"
 #include "jit/Lowering.h"
 #include "jit/MIR-wasm.h"
@@ -302,15 +304,13 @@ void LIRGeneratorARM::lowerDivI(MDiv* div) {
   
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
+
     
     
-    
-    
-    
-    int32_t shift = FloorLog2(uint32_t(rhs));
-    if (rhs > 0 && 1 << shift == rhs) {
-      LDivPowTwoI* lir =
-          new (alloc()) LDivPowTwoI(useRegisterAtStart(div->lhs()), shift);
+    if (std::has_single_bit(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+      LDivPowTwoI* lir = new (alloc())
+          LDivPowTwoI(useRegisterAtStart(div->lhs()), shift, rhs < 0);
       if (div->fallible()) {
         assignSnapshot(lir, div->bailoutKind());
       }
@@ -551,6 +551,22 @@ void LIRGeneratorARM::lowerBigIntPtrMod(MBigIntPtrMod* ins) {
 }
 
 void LIRGeneratorARM::lowerUDiv(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    
+    uint32_t rhs = div->rhs()->toConstant()->toInt32();
+
+    if (std::has_single_bit(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+      auto* lir = new (alloc())
+          LDivPowTwoI(useRegisterAtStart(div->lhs()), shift, false);
+      if (div->fallible()) {
+        assignSnapshot(lir, div->bailoutKind());
+      }
+      define(lir, div);
+      return;
+    }
+  }
+
   MDefinition* lhs = div->getOperand(0);
   MDefinition* rhs = div->getOperand(1);
 

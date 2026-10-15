@@ -554,9 +554,43 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   Register lhs = ToRegister(ins->numerator());
   Register output = ToRegister(ins->output());
   int32_t shift = ins->shift();
+  bool negativeDivisor = ins->negativeDivisor();
+
+  if (!mir->isTruncated() && negativeDivisor) {
+    
+    masm.as_cmp(lhs, Imm8(0));
+    bailoutIf(Assembler::Zero, ins->snapshot());
+  }
 
   if (shift == 0) {
-    masm.ma_mov(lhs, output);
+    if (negativeDivisor) {
+      
+      if (mir->trapOnError()) {
+        Label ok;
+        {
+          ScratchRegisterScope scratch(masm);
+          masm.ma_cmp(lhs, Imm32(INT32_MIN), scratch);
+        }
+        masm.ma_b(&ok, Assembler::NotEqual);
+        masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
+        masm.bind(&ok);
+      } else if (!mir->isTruncated()) {
+        {
+          ScratchRegisterScope scratch(masm);
+          masm.ma_cmp(lhs, Imm32(INT32_MIN), scratch);
+        }
+        bailoutIf(Assembler::Equal, ins->snapshot());
+      }
+      masm.ma_neg(lhs, output);
+    } else {
+      if (mir->isUnsigned() && !mir->isTruncated()) {
+        
+        
+        masm.as_cmp(lhs, Imm8(0));
+        bailoutIf(Assembler::LessThan, ins->snapshot());
+      }
+      masm.ma_mov(lhs, output);
+    }
     return;
   }
 
@@ -571,9 +605,9 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
     bailoutIf(Assembler::NonZero, ins->snapshot());
   }
 
-  if (!mir->canBeNegativeDividend()) {
+  if (mir->isUnsigned()) {
     
-    masm.as_mov(output, asr(lhs, shift));
+    masm.as_mov(output, lsr(lhs, shift));
     return;
   }
 
@@ -581,16 +615,24 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   
   
   ScratchRegisterScope scratch(masm);
+  Register adjusted = lhs;
 
-  if (shift > 1) {
-    masm.as_mov(scratch, asr(lhs, 31));
-    masm.as_add(scratch, lhs, lsr(scratch, 32 - shift));
-  } else {
-    masm.as_add(scratch, lhs, lsr(lhs, 32 - shift));
+  if (mir->canBeNegativeDividend() && mir->isTruncated()) {
+    if (shift > 1) {
+      masm.as_mov(scratch, asr(lhs, 31));
+      masm.as_add(scratch, lhs, lsr(scratch, 32 - shift));
+    } else {
+      masm.as_add(scratch, lhs, lsr(lhs, 32 - shift));
+    }
+    adjusted = scratch;
   }
 
   
-  masm.as_mov(output, asr(scratch, shift));
+  masm.as_mov(output, asr(adjusted, shift));
+
+  if (negativeDivisor) {
+    masm.ma_neg(output, output);
+  }
 }
 
 void CodeGeneratorARM::modICommon(MMod* mir, Register lhs, Register rhs,
