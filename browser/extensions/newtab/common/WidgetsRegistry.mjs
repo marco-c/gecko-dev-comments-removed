@@ -179,7 +179,7 @@ export const PREF_WIDGETS_SYSTEM_HOROSCOPES_ENABLED =
  * @typedef {object} WidgetRegistryEntry
  * @property {string} id - Unique key used in prefs and the order pref.
  * @property {string} telemetryName - Snake_case name sent in Glean events. May differ from id (e.g. "focus_timer" for id "focusTimer").
- * @property {string} [customizeL10nId] - Fluent id of the widget's customize panel toggle label. The message carries a .label attribute. Required unless the entry is retired.
+ * @property {string} [customizeL10nId] - Fluent id of the widget's customize panel toggle label. The message carries a .label attribute. Required unless the entry is retired or has an extensionID.
  * @property {string} [customizeEventSource] - Source sent with the PREF_CHANGED user event when the widget's customize panel toggle flips. Required unless the entry is retired.
  * @property {number} order - Default render position (0-indexed).
  * @property {string} enabledPref - User-facing pref that toggles this widget on/off.
@@ -197,7 +197,10 @@ export const PREF_WIDGETS_SYSTEM_HOROSCOPES_ENABLED =
  * @property {boolean} [requiresWidgetSearchSap] - When true, the widget is hidden entirely on hosts whose search code is too old to generate accurate partner codes. See isWidgetDataUnavailable.
  * @property {boolean} [retired] - When true the widget never renders and gets no settings or devtools toggle, whatever its prefs and trainhopConfig say.
  * @property {boolean} [skipNightlyDefault] - When true, the widget opts out of being on everywhere in Nightly. See skipsNightlyDefault in lib/ActivityStream.sys.mjs.
- * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. Picture of the Day, Crossword, Privacy, Recent Searches and Horoscopes use this today.
+ * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. All widgets define this today.
+ * @property {string} [src] - URL of the widget's document; a trainhop namespace `src` overrides it.
+ * @property {string} [extensionID] - ID of an extension that provides the widget's document.
+ * @property {string} [l10nId] - Fluent identifier for the widget's localized strings.
  */
 
 // If you add a widget market pref to firefox.js that older hosts don't have,
@@ -241,6 +244,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "clocksVisible",
     widgetsSettingsEnabledKey: "clocksEnabled",
+    trainhopNamespace: "widgetClocks",
   },
   {
     id: "lists",
@@ -259,6 +263,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "listsVisible",
     widgetsSettingsEnabledKey: "listsEnabled",
+    trainhopNamespace: "widgetLists",
   },
   {
     id: "focusTimer",
@@ -277,6 +282,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "focusTimerVisible",
     widgetsSettingsEnabledKey: "focusTimerEnabled",
+    trainhopNamespace: "widgetFocusTimer",
   },
   {
     id: "weather",
@@ -295,6 +301,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: "weatherSidebar",
     widgetsSettingsVisibleKey: "weatherVisible",
     widgetsSettingsEnabledKey: "weatherEnabled",
+    trainhopNamespace: "widgetWeather",
   },
   {
     id: "privacy",
@@ -352,6 +359,7 @@ export const WIDGET_REGISTRY = [
     trainhopSidebarKey: null,
     widgetsSettingsVisibleKey: "stocksVisible",
     widgetsSettingsEnabledKey: "stocksEnabled",
+    trainhopNamespace: "widgetStocks",
   },
   {
     id: "recentSearches",
@@ -459,6 +467,56 @@ export function isWidgetDataUnavailable(widget, prefs) {
 }
 
 /**
+ * Returns the document URL and name of the widget's extension, looked up by
+ * its extensionID in the ExtensionWidgets state, with the prefsL10nId and
+ * customizeL10nId of a widget with a Fluent id.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} extensionWidgets - the ExtensionWidgets state from the
+ *   Redux store, keyed by extension id
+ * @returns {{src: string, name: string, prefsL10nId?: string,
+ *   customizeL10nId?: string}|undefined} undefined for an entry without an
+ *   extensionID, or when its extension provides no widget
+ */
+export function getWidgetExtension(widget, extensionWidgets) {
+  return widget?.extensionID
+    ? extensionWidgets?.[widget.extensionID]
+    : undefined;
+}
+
+/**
+ * Returns the document URL a widget's card should load, in precedence order:
+ * the trainhop namespace src, the entry's static src.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string} document URL, "" when the widget has no document
+ */
+export function resolveWidgetSrc(widget, prefs) {
+  return (
+    (widget?.trainhopNamespace &&
+      prefs.trainhopConfig?.[widget.trainhopNamespace]?.src) ||
+    widget?.src ||
+    ""
+  );
+}
+
+/**
+ * Returns true if the widget's document cannot load because its extension has
+ * no entry in the ExtensionWidgets state.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} extensionWidgets - the ExtensionWidgets state from the
+ *   Redux store, keyed by extension id
+ * @returns {boolean}
+ */
+export function isWidgetExtensionUnavailable(widget, extensionWidgets) {
+  return Boolean(
+    widget.extensionID && !getWidgetExtension(widget, extensionWidgets)
+  );
+}
+
+/**
  * Returns true if the widget is available to the user, based on the
  * system pref, the trainhopConfig.widgets addable key, or a
  * widgetsSettings.*Visible override (revealing a toggle also makes the widget
@@ -512,8 +570,9 @@ export function isWidgetToggleVisible(widget, prefs) {
 }
 
 /**
- * Returns true if Weather may be shown at all: when system.showWeather or
- * trainhopConfig.weather.enabled is set, or when widgetsSettings.weatherVisible
+ * Returns true if Weather may be shown at all: when system.showWeather,
+ * trainhopConfig.widgetWeather.visible or trainhopConfig.weather.enabled is
+ * set, or when widgetsSettings.weatherVisible
  * overrides both. Base.jsx uses it for the customize menu's Weather row and
  * the page-level Weather styling; the widgets panel uses it for its Weather
  * toggle.
@@ -524,6 +583,7 @@ export function isWidgetToggleVisible(widget, prefs) {
 export function isWeatherAvailable(prefs) {
   return Boolean(
     prefs["system.showWeather"] ||
+    prefs.trainhopConfig?.widgetWeather?.visible ||
     prefs.trainhopConfig?.weather?.enabled ||
     prefs.trainhopConfig?.widgetsSettings?.weatherVisible
   );

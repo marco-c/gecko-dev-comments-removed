@@ -8,12 +8,14 @@ import {
   isWeatherAvailable,
   isWidgetAddable,
   isWidgetEnabled,
+  isWidgetExtensionUnavailable,
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
   resolveWidgetSize,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
   resolveCrosswordEndpoint,
+  resolveWidgetSrc,
   resolvePrivacyBlankChance,
   resolvePrivacyMaxCount,
   resolvePrivacyDisplayCount,
@@ -734,6 +736,50 @@ describe("resolveCrosswordEndpoint", () => {
   });
 });
 
+const testWidget = {
+  id: "testWidget",
+  src: "https://static.example.com/widget.html",
+  trainhopNamespace: "widgetTest",
+};
+
+describe("resolveWidgetSrc", () => {
+  it("prefers the trainhop namespace src over the static src", () => {
+    const trainhopSrc = "https://trainhop.example.com/widget.html";
+    expect(
+      resolveWidgetSrc(testWidget, {
+        trainhopConfig: { widgetTest: { src: trainhopSrc } },
+      })
+    ).toBe(trainhopSrc);
+  });
+
+  it("falls back to the static entry src", () => {
+    expect(resolveWidgetSrc(testWidget, {})).toBe(testWidget.src);
+  });
+});
+
+describe("isWidgetExtensionUnavailable", () => {
+  const extensionWidget = {
+    id: "extensionWidget",
+    extensionID: "test-widget@mozilla.org",
+  };
+
+  it("is true when the extension has no ExtensionWidgets entry", () => {
+    expect(isWidgetExtensionUnavailable(extensionWidget, {})).toBe(true);
+  });
+
+  it("is false when the extension has an ExtensionWidgets entry", () => {
+    expect(
+      isWidgetExtensionUnavailable(extensionWidget, {
+        [extensionWidget.extensionID]: { src: "moz-extension://test/w.html" },
+      })
+    ).toBe(false);
+  });
+
+  it("is false for an entry without an extensionID", () => {
+    expect(isWidgetExtensionUnavailable(listsWidget, {})).toBe(false);
+  });
+});
+
 describe("resolvePrivacyBlankChance", () => {
   it("parses the string pref as a 0-1 fraction", () => {
     expect(
@@ -1074,6 +1120,14 @@ describe("isWeatherAvailable", () => {
     expect(
       isWeatherAvailable({
         trainhopConfig: { weather: { enabled: true } },
+      })
+    ).toBe(true);
+  });
+
+  it("is true via trainhopConfig.widgetWeather.visible", () => {
+    expect(
+      isWeatherAvailable({
+        trainhopConfig: { widgetWeather: { visible: true } },
       })
     ).toBe(true);
   });
