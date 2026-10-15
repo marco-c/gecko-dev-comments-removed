@@ -4,11 +4,10 @@
 
 
 
-#include "mozilla/SegmentedVector.h"
-
 #include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedArithmetic.h"
+#include "mozilla/SegmentedVector.h"
 
 using mozilla::SegmentedVector;
 
@@ -30,7 +29,7 @@ class InfallibleAllocPolicy {
   }
 
   template <typename T>
-  void free_(T* aPtr, size_t aNumElems = 0) {
+  void free_(T* aPtr, size_t  = 0) {
     free(aPtr);
   }
 };
@@ -51,9 +50,6 @@ void CheckContents(Vector& vector, size_t expectedLength) {
 
 
 
-static int gDummy;
-
-
 void TestBasics() {
   
   typedef SegmentedVector<int, 1024, InfallibleAllocPolicy> MyVector;
@@ -65,7 +61,7 @@ void TestBasics() {
   
   i = 0;
   for (; i < 100; i++) {
-    gDummy = v.Append(std::move(i));
+    (void)v.Append(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
   CheckContents(v, 100);
@@ -163,7 +159,7 @@ static size_t gNumDtors;
 
 struct NonPOD {
   NonPOD() { gNumDefaultCtors++; }
-  explicit NonPOD(int x) { gNumExplicitCtors++; }
+  explicit NonPOD(int ) { gNumExplicitCtors++; }
   NonPOD(NonPOD&) { gNumCopyCtors++; }
   NonPOD(NonPOD&&) { gNumMoveCtors++; }
   ~NonPOD() { gNumDtors++; }
@@ -187,11 +183,11 @@ void TestConstructorsAndDestructors() {
     SegmentedVector<NonPOD, segmentSize, InfallibleAllocPolicy> v;
     
     MOZ_RELEASE_ASSERT(v.IsEmpty());
-    gDummy = v.Append(x);  
+    (void)v.Append(x);  
     copyCtorCalls++;
     NonPOD y(1);  
     explicitCtorCalls++;
-    gDummy = v.Append(std::move(y));  
+    (void)v.Append(std::move(y));  
     moveCtorCalls++;
     NonPOD z(1);  
     explicitCtorCalls++;
@@ -213,7 +209,7 @@ void TestConstructorsAndDestructors() {
 
     size_t nonFullLastSegmentSize = segmentSize - 1;
     for (size_t i = 0; i < nonFullLastSegmentSize; ++i) {
-      gDummy = v.Append(x);  
+      (void)v.Append(x);  
       copyCtorCalls++;
     }
     MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
@@ -245,7 +241,7 @@ void TestConstructorsAndDestructors() {
 
     size_t multipleSegmentsSize = (segmentSize * 3) / 2;
     for (size_t i = 0; i < multipleSegmentsSize; ++i) {
-      gDummy = v.Append(x);  
+      (void)v.Append(x);  
       copyCtorCalls++;
     }
     MOZ_RELEASE_ASSERT(gNumCopyCtors == copyCtorCalls);
@@ -322,7 +318,7 @@ void TestIterator() {
   MOZ_RELEASE_ASSERT(iter.Done());
   MOZ_RELEASE_ASSERT(iterFromLast.Done());
 
-  gDummy = v.Append(1);
+  (void)v.Append(1);
   iter = v.Iter();
   iterFromLast = v.IterFromLast();
   MOZ_RELEASE_ASSERT(!iter.Done());
@@ -344,10 +340,10 @@ void TestIterator() {
   MOZ_RELEASE_ASSERT(iterFromLast.Done());
 
   
-  gDummy = v.Append(1);
-  gDummy = v.Append(1);
-  gDummy = v.Append(1);
-  gDummy = v.Append(1);
+  (void)v.Append(1);
+  (void)v.Append(1);
+  (void)v.Append(1);
+  (void)v.Append(1);
 
   iter = v.Iter();
   iterFromLast = v.IterFromLast();
@@ -380,9 +376,9 @@ void TestIterator() {
 
   
   iterFromLast = v.IterFromLast();
-  gDummy = v.Append(2);
-  gDummy = v.Append(3);
-  gDummy = v.Append(4);
+  (void)v.Append(2);
+  (void)v.Append(3);
+  (void)v.Append(4);
   iterFromLast.Next();
   MOZ_RELEASE_ASSERT(!iterFromLast.Done());
   MOZ_RELEASE_ASSERT(iterFromLast.Get() == 2);

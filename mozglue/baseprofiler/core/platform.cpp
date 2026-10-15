@@ -288,12 +288,12 @@ class CorePS {
   ~CorePS() = default;
 
  public:
-  static void Create(PSLockRef aLock) {
+  static void Create(PSLockRef ) {
     MOZ_ASSERT(!sInstance);
     sInstance = new CorePS();
   }
 
-  static void Destroy(PSLockRef aLock) {
+  static void Destroy(PSLockRef ) {
     MOZ_ASSERT(sInstance);
     delete sInstance;
     sInstance = nullptr;
@@ -305,7 +305,7 @@ class CorePS {
   static bool Exists() { return !!sInstance; }
 
   static void AddSizeOf(PSLockRef, MallocSizeOf aMallocSizeOf,
-                        size_t& aProfSize, size_t& aLulSize) {
+                        size_t& aProfSize, size_t& ) {
     MOZ_ASSERT(sInstance);
 
     aProfSize += aMallocSizeOf(sInstance);
@@ -472,7 +472,8 @@ class ActivePS {
                              size_t(scMaximumChunkSize)));
   }
 
-  static uint32_t AdjustFeatures(uint32_t aFeatures, uint32_t aFilterCount) {
+  static uint32_t AdjustFeatures(uint32_t aFeatures,
+                                 uint32_t ) {
     
     aFeatures &= AvailableFeatures();
 
@@ -568,7 +569,7 @@ class ActivePS {
                              aFeatures, aFilters, aFilterCount, aDuration);
   }
 
-  [[nodiscard]] static SamplerThread* Destroy(PSLockRef aLock) {
+  [[nodiscard]] static SamplerThread* Destroy(PSLockRef ) {
     MOZ_ASSERT(sInstance);
     auto samplerThread = sInstance->mSamplerThread;
     delete sInstance;
@@ -622,7 +623,7 @@ class ActivePS {
     return std::move(sInstance->mProfileBufferChunkManager);
   }
 
-  static bool ShouldProfileThread(PSLockRef aLock, ThreadInfo* aInfo) {
+  static bool ShouldProfileThread(PSLockRef , ThreadInfo* aInfo) {
     MOZ_ASSERT(sInstance);
     return sInstance->ThreadSelected(aInfo->Name());
   }
@@ -1478,7 +1479,7 @@ static void DoSyncSample(PSLockRef aLock, RegisteredThread& aRegisteredThread,
 
 static void DoPeriodicSample(PSLockRef aLock,
                              RegisteredThread& aRegisteredThread,
-                             ProfiledThreadData& aProfiledThreadData,
+                             ProfiledThreadData& ,
                              const Registers& aRegs, uint64_t aSamplePos,
                              uint64_t aBufferRangeStart,
                              ProfileBuffer& aBuffer) {
@@ -2173,7 +2174,7 @@ void SamplerThread::Run() {
 
             mSampler.SuspendAndSampleAndResumeThread(
                 lock, *registeredThread, now,
-                [&](const Registers& aRegs, const TimeStamp& aNow) {
+                [&](const Registers& aRegs, const TimeStamp& ) {
                   DoPeriodicSample(lock, *registeredThread, *profiledThreadData,
                                    aRegs, samplePos, bufferRangeStart,
                                    localProfileBuffer);
@@ -3488,9 +3489,9 @@ void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText) {
 
 
 void profiler_suspend_and_sample_thread(BaseProfilerThreadId aThreadId,
-                                        uint32_t aFeatures,
+                                        uint32_t ,
                                         ProfilerStackCollector& aCollector,
-                                        bool aSampleNative ) {
+                                        bool  ) {
   const bool isSynchronous = [&aThreadId]() {
     const BaseProfilerThreadId currentThreadId = profiler_current_thread_id();
     if (!aThreadId.IsSpecified()) {
@@ -3517,7 +3518,8 @@ void profiler_suspend_and_sample_thread(BaseProfilerThreadId aThreadId,
       
       NativeStack nativeStack;
 
-      auto collectStack = [&](const Registers& aRegs, const TimeStamp& aNow) {
+      auto collectStack = [&](const Registers& aRegs,
+                              const TimeStamp& ) {
       
       
 #if defined(HAVE_FASTINIT_NATIVE_UNWIND)

@@ -2,12 +2,11 @@
 
 
 
-#include "gtest/gtest.h"
+#include <functional>
 
+#include "gtest/gtest.h"
 #include "mozilla/ResultExtensions.h"
 #include "nsLocalFile.h"
-
-#include <functional>
 
 using namespace mozilla;
 
@@ -20,13 +19,13 @@ class TestClass {
     *aOut = kTestValue;
     return NS_OK;
   }
-  nsresult NonOverloadedNoInputFails(int* aOut) { return NS_ERROR_FAILURE; }
+  nsresult NonOverloadedNoInputFails(int* ) { return NS_ERROR_FAILURE; }
 
   nsresult NonOverloadedNoInputConst(int* aOut) const {
     *aOut = kTestValue;
     return NS_OK;
   }
-  nsresult NonOverloadedNoInputFailsConst(int* aOut) const {
+  nsresult NonOverloadedNoInputFailsConst(int* ) const {
     return NS_ERROR_FAILURE;
   }
 
@@ -34,13 +33,15 @@ class TestClass {
     aOut = kTestValue;
     return NS_OK;
   }
-  nsresult NonOverloadedNoInputFailsRef(int& aOut) { return NS_ERROR_FAILURE; }
+  nsresult NonOverloadedNoInputFailsRef(int& ) {
+    return NS_ERROR_FAILURE;
+  }
 
   nsresult NonOverloadedNoInputComplex(std::pair<int, int>* aOut) {
     *aOut = std::pair{kTestValue, kTestValue};
     return NS_OK;
   }
-  nsresult NonOverloadedNoInputFailsComplex(std::pair<int, int>* aOut) {
+  nsresult NonOverloadedNoInputFailsComplex(std::pair<int, int>* ) {
     return NS_ERROR_FAILURE;
   }
 
@@ -48,18 +49,20 @@ class TestClass {
     *aOut = aIn;
     return NS_OK;
   }
-  nsresult NonOverloadedWithInputFails(int aIn, int* aOut) {
+  nsresult NonOverloadedWithInputFails(int , int* ) {
     return NS_ERROR_FAILURE;
   }
 
-  nsresult NonOverloadedNoOutput(int aIn) { return NS_OK; }
-  nsresult NonOverloadedNoOutputFails(int aIn) { return NS_ERROR_FAILURE; }
+  nsresult NonOverloadedNoOutput(int ) { return NS_OK; }
+  nsresult NonOverloadedNoOutputFails(int ) { return NS_ERROR_FAILURE; }
 
   nsresult PolymorphicNoInput(nsIFile** aOut) {
     *aOut = MakeAndAddRef<nsLocalFile>().take();
     return NS_OK;
   }
-  nsresult PolymorphicNoInputFails(nsIFile** aOut) { return NS_ERROR_FAILURE; }
+  nsresult PolymorphicNoInputFails(nsIFile** ) {
+    return NS_ERROR_FAILURE;
+  }
 };
 
 class RefCountedTestClass {
@@ -72,7 +75,7 @@ class RefCountedTestClass {
     *aOut = kTestValue;
     return NS_OK;
   }
-  nsresult NonOverloadedNoInputFails(int* aOut) { return NS_ERROR_FAILURE; }
+  nsresult NonOverloadedNoInputFails(int* ) { return NS_ERROR_FAILURE; }
 
  private:
   ~RefCountedTestClass() = default;

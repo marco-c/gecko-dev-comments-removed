@@ -4,12 +4,11 @@
 
 #define MOZ_PRETEND_NO_JSRUST 1
 
-#include "mozilla/Utf8.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Span.h"
+#include "mozilla/Utf8.h"
 
 using mozilla::AsChars;
 using mozilla::DecodeOneUtf8CodePoint;
@@ -56,7 +55,7 @@ struct ToUtf8Units {
 class AssertIfCalled {
  public:
   template <typename... Args>
-  void operator()(Args&&... aArgs) {
+  void operator()(Args&&... ) {
     MOZ_RELEASE_ASSERT(false, "AssertIfCalled instance was called");
   }
 };
@@ -99,7 +98,7 @@ enum class InvalidUtf8Reason {
 
 template <typename Char, size_t N>
 static void ExpectInvalidCodePointHelper(const Char (&aCharN)[N],
-                                         InvalidUtf8Reason aExpectedReason,
+                                         InvalidUtf8Reason ,
                                          uint8_t aExpectedUnitsAvailable,
                                          uint8_t aExpectedUnitsNeeded,
                                          char32_t aExpectedBadCodePoint,

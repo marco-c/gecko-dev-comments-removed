@@ -8,8 +8,8 @@ namespace mozilla {
 namespace hal_impl {
 
 UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
-    const nsTArray<PlatformThreadHandle>& aThreads,
-    mozilla::TimeDuration aTargetWorkDuration) {
+    const nsTArray<PlatformThreadHandle>& ,
+    mozilla::TimeDuration ) {
   return nullptr;
 }
 

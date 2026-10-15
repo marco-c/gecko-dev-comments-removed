@@ -2,16 +2,16 @@
 
 
 
-#include "mozilla/Assertions.h"
-
-#include <unistd.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
-void handler(int signum) { exit(gMozCrashReason == nullptr ? 1 : 0); }
+#include "mozilla/Assertions.h"
 
-int main(int argc, char** argv) {
+void handler(int ) { exit(gMozCrashReason == nullptr ? 1 : 0); }
+
+int main(int , char** argv) {
   
   if (gMozCrashReason) {
     fprintf(stderr, "gMozCrashReason unexpectedly starts set to %s.\n",

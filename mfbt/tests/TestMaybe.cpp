@@ -129,13 +129,14 @@ struct UncopyableValue {
 struct UnmovableValue {
   UnmovableValue() : mStatus(eWasDefaultConstructed) { ++sUndestroyedObjects; }
 
-  UnmovableValue(const UnmovableValue& aOther) : mStatus(eWasCopyConstructed) {
+  UnmovableValue(const UnmovableValue& )
+      : mStatus(eWasCopyConstructed) {
     ++sUndestroyedObjects;
   }
 
   ~UnmovableValue() { --sUndestroyedObjects; }
 
-  UnmovableValue& operator=(const UnmovableValue& aOther) {
+  UnmovableValue& operator=(const UnmovableValue& ) {
     mStatus = eWasCopyAssigned;
     return *this;
   }
@@ -846,7 +847,7 @@ static bool TestApply() {
   mayValue.apply([=](BasicValue& aVal) { aVal.SetTag(aVal.GetTag() * two); });
   MOZ_RELEASE_ASSERT(mayValue->GetTag() == 8);
   mayValueCRef.apply(
-      [&](const BasicValue& aVal) { gFunctionWasApplied = true; });
+      [&](const BasicValue& ) { gFunctionWasApplied = true; });
   MOZ_RELEASE_ASSERT(gFunctionWasApplied == true);
 
   
@@ -1551,7 +1552,7 @@ static bool TestAndThen() {
   MOZ_RELEASE_ASSERT(*otherValue == 4);
   otherValue = otherValue.andThen([](int aVal) { return Some(aVal * 2); });
   MOZ_RELEASE_ASSERT(*otherValue == 8);
-  otherValue = mayValueCRef.andThen([&](const BasicValue& aVal) {
+  otherValue = mayValueCRef.andThen([&](const BasicValue& ) {
     gFunctionWasApplied = true;
     return Some(42);
   });
