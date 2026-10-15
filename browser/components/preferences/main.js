@@ -41,6 +41,10 @@ const { Multilingual } = importIntoWindow(
   "chrome://browser/content/preferences/config/languages.mjs"
 );
 
+const { DefaultBrowserHelper } = importIntoWindow(
+  "chrome://browser/content/preferences/DefaultBrowserHelper.mjs"
+);
+
 ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   UpdateListener: "resource://gre/modules/UpdateListener.sys.mjs",
@@ -129,6 +133,12 @@ Preferences.addAll([
     type: "bool",
   },
 ]);
+
+if (AppConstants.HAVE_SHELL_SERVICE) {
+  Preferences.addAll([
+    { id: "browser.shell.checkDefaultBrowser", type: "bool" },
+  ]);
+}
 
 Preferences.addSetting({
   id: "privateBrowsingAutoStart",
@@ -355,6 +365,69 @@ Preferences.addSetting({
   },
 });
 
+Preferences.addSetting({
+  id: "alwaysCheckDefault",
+  pref: "browser.shell.checkDefaultBrowser",
+  setup: emitChange => {
+    if (!DefaultBrowserHelper.canCheck) {
+      return undefined;
+    }
+    return DefaultBrowserHelper.pollForDefaultChanges(emitChange);
+  },
+  
+
+
+
+  visible: () => DefaultBrowserHelper.canCheck,
+  disabled: (_, setting) =>
+    !DefaultBrowserHelper.canCheck ||
+    setting.locked ||
+    DefaultBrowserHelper.isBrowserDefault,
+});
+
+Preferences.addSetting({
+  id: "isDefaultPane",
+  deps: ["alwaysCheckDefault"],
+  visible: () =>
+    DefaultBrowserHelper.canCheck &&
+    DefaultBrowserHelper.isBrowserDefault &&
+    Services.policies.isAllowed("setDefaultBrowser") &&
+    !Services.prefs.prefIsLocked("pref.general.disable_button.default_browser"),
+});
+
+Preferences.addSetting({
+  id: "isNotDefaultPane",
+  deps: ["alwaysCheckDefault"],
+  visible: () =>
+    DefaultBrowserHelper.canCheck &&
+    !DefaultBrowserHelper.isBrowserDefault &&
+    Services.policies.isAllowed("setDefaultBrowser") &&
+    !Services.prefs.prefIsLocked("pref.general.disable_button.default_browser"),
+  onUserClick: (e, { alwaysCheckDefault }) => {
+    if (!DefaultBrowserHelper.canCheck) {
+      return;
+    }
+    const setDefaultButton =  (e.target);
+
+    if (!setDefaultButton) {
+      return;
+    }
+    if (setDefaultButton.disabled) {
+      return;
+    }
+
+    
+
+
+
+    setDefaultButton.disabled = true;
+    alwaysCheckDefault.value = true;
+    DefaultBrowserHelper.setDefaultBrowser().finally(() => {
+      setDefaultButton.disabled = false;
+    });
+  },
+});
+
 
 Preferences.addSetting({
   id: "aiControlDefault",
@@ -388,6 +461,56 @@ Preferences.addSetting({
   id: "chatbotProvider",
   pref: "browser.ml.chat.provider",
 });
+
+function createDefaultBrowserConfig({
+  includeIsDefaultPane = true,
+  inProgress = false,
+  hiddenFromSearch = false,
+} = {}) {
+  const isDefaultPane = {
+    id: "isDefaultPane",
+    l10nId: "is-default-browser-2",
+    control: "moz-promo",
+    controlAttrs: {
+      imagesrc: "chrome://global/skin/illustrations/kit-happy.svg",
+      imagedisplay: "cover",
+    },
+  };
+
+  const isNotDefaultPane = {
+    id: "isNotDefaultPane",
+    l10nId: "is-not-default-browser-2",
+    control: "moz-promo",
+    options: [
+      {
+        control: "moz-button",
+        l10nId: "set-as-my-default-browser-2",
+        id: "setDefaultButton",
+        slot: "actions",
+
+        controlAttrs: {
+          type: "primary",
+        },
+      },
+    ],
+    controlAttrs: {
+      imagesrc: "chrome://global/skin/illustrations/kit-concerned.svg",
+      imagedisplay: "cover",
+    },
+  };
+
+  const items = includeIsDefaultPane
+    ? [isDefaultPane, isNotDefaultPane]
+    : [isNotDefaultPane];
+
+  return {
+    l10nId: "home-default-browser-title",
+    headingLevel: 2,
+    items,
+    ...(inProgress && { inProgress }),
+    ...(hiddenFromSearch && { hiddenFromSearch }),
+  };
+}
 
 function createStartupConfig(hidden = false) {
   return {
@@ -450,6 +573,7 @@ function createStartupConfig(hidden = false) {
 }
 
 SettingGroupManager.registerGroups({
+  defaultBrowser: createDefaultBrowserConfig(),
   startup: createStartupConfig(
     Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
   ),
