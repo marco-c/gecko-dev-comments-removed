@@ -208,6 +208,9 @@ export const MonitorPanel = {
     contents.addEventListener("agent-monitor-item:draft-change", event => {
       contents.draft = event.detail.draft;
     });
+    contents.addEventListener("agent-monitor-item:resolve-titles", event =>
+      lazy.MonitorUIUtils.answerResolveTitles(event)
+    );
     contents.addEventListener("agent-monitor-panel:manage-tasks", () => {
       win.switchToTabHavingURI(TASKS_PAGE_URL, true);
       panel.hidePopup();
