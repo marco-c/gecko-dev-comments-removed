@@ -226,7 +226,10 @@ class ErrorSummaryFormatter(BaseFormatter):
                     data["group"] = self._clean_test_name(item["test"])
 
             
-            if (
+            
+            if item.get("quiet"):
+                pass
+            elif (
                 (
                     "expected" in item
                     and "status" in item
