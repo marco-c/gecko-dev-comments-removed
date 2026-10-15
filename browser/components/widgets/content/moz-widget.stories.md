@@ -34,6 +34,7 @@ The source for `moz-widget` can be found under [browser/components/widgets/conte
 
 `size` selects fixed dimensions based on the IAB Medium Rectangle (300x250) but the host surface can override them.
 A missing or unrecognized `size` uses the `large` dimensions.
+The widget sets `--widget-size` to `small`, `medium`, or `large` for its header and content to query with `@container style()`.
 
 <table>
   <thead>
@@ -109,6 +110,8 @@ The `leading` slot holds content before the heading, such as a back button or a 
 
 The `trailing` slot holds content at the end of the header.
 
+In a `small` widget, the header hides a `moz-badge` in the `leading` slot, and hides the `trailing` slot when the header shows a menu button.
+
 ```html
 <moz-widget widget-id="weather" title="Weather">
   <moz-widget-header slot="header" title="Weather">
@@ -129,6 +132,26 @@ The `trailing` slot holds content at the end of the header.
     ></moz-button>
   </moz-widget-header>
 </moz-widget>
+```
+
+When the `menu` slot holds a `panel-list`, the header shows a menu button that opens it. A `panel-list` without an `id` gets a generated one. An `id` set by the surface has to be unique to its document or shadow root. `menu-label` sets the button's accessible name, which defaults to "More options":
+
+```html
+<moz-widget widget-id="weather" title="Weather">
+  <moz-widget-header slot="header" data-l10n-id="weather-header">
+    <panel-list slot="menu" id="weather-menu">
+      <panel-item data-l10n-id="weather-refresh"></panel-item>
+      <hr />
+      <panel-item data-l10n-id="weather-remove"></panel-item>
+    </panel-list>
+  </moz-widget-header>
+</moz-widget>
+```
+
+```ftl
+weather-header =
+    .title = Weather
+    .menu-label = Weather options
 ```
 
 ### Setting `padded`

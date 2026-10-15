@@ -26,6 +26,26 @@ slot[name="trailing"] {
   }
 }
 
+#menu-button {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+}
+
+slot[name="trailing"]:has-slotted + #menu-button {
+  margin-inline-start: 0;
+}
+
+@container style(--widget-size: small) {
+  ::slotted(moz-badge[slot="leading"]),
+  slot[name="trailing"].with-menu {
+    display: none;
+  }
+
+  slot[name="trailing"]:has-slotted + #menu-button {
+    margin-inline-start: auto;
+  }
+}
+
 #heading {
   min-inline-size: var(--size-item-xlarge);
   margin: 0;
