@@ -2294,6 +2294,13 @@ class MWasmReplaceLaneSimd128 : public MBinaryInstruction,
            ins->toWasmReplaceLaneSimd128()->laneIndex() == laneIndex_;
   }
 
+#ifdef ENABLE_JIT_SIMD
+  MDefinition* foldsTo(TempAllocator& alloc) override;
+
+  
+  bool canMoveLane();
+#endif
+
   uint32_t laneIndex() const { return laneIndex_; }
   wasm::SimdOp simdOp() const { return simdOp_; }
 
