@@ -234,35 +234,34 @@ where
     }
 }
 
+#[inline]
+pub(crate) fn ivar_drop_flag_names<T: DefinedClass>() -> (Cow<'static, CStr>, Cow<'static, CStr>) {
+    if cfg!(feature = "gnustep-1-7") {
+        
+        
+        
+        (
+            CString::new(format!("{}_ivars", T::NAME)).unwrap().into(),
+            CString::new(format!("{}_drop_flag", T::NAME))
+                .unwrap()
+                .into(),
+        )
+    } else {
+        
+        
+        
+        unsafe {
+            (
+                CStr::from_bytes_with_nul_unchecked(b"ivars\0").into(),
+                CStr::from_bytes_with_nul_unchecked(b"drop_flag\0").into(),
+            )
+        }
+    }
+}
+
 
 #[inline]
-pub(crate) fn register_with_ivars<T: DefinedClass>(
-    mut builder: ClassBuilder,
-) -> (&'static AnyClass, isize, isize) {
-    let (ivar_name, drop_flag_name): (Cow<'static, CStr>, Cow<'static, CStr>) = {
-        if cfg!(feature = "gnustep-1-7") {
-            
-            
-            
-            (
-                CString::new(format!("{}_ivars", T::NAME)).unwrap().into(),
-                CString::new(format!("{}_drop_flag", T::NAME))
-                    .unwrap()
-                    .into(),
-            )
-        } else {
-            
-            
-            
-            unsafe {
-                (
-                    CStr::from_bytes_with_nul_unchecked(b"ivars\0").into(),
-                    CStr::from_bytes_with_nul_unchecked(b"drop_flag\0").into(),
-                )
-            }
-        }
-    };
-
+pub(crate) fn register_ivars<T: DefinedClass>(builder: &mut ClassBuilder, ivars_name: &CStr) {
     if T::HAS_IVARS {
         
         let ivar_encoding = Encoding::Array(
@@ -276,25 +275,33 @@ pub(crate) fn register_with_ivars<T: DefinedClass>(
                 alignment => panic!("unsupported alignment {alignment} for `{}::Ivars`", T::NAME),
             },
         );
-        unsafe { builder.add_ivar_inner::<T::Ivars>(&ivar_name, &ivar_encoding) };
+        unsafe { builder.add_ivar_inner::<T::Ivars>(ivars_name, &ivar_encoding) };
     }
+}
 
+
+#[inline]
+pub(crate) fn register_drop_flag<T: DefinedClass>(
+    builder: &mut ClassBuilder,
+    drop_flag_name: &CStr,
+) {
     if T::HAS_DROP_FLAG {
         
         
-        builder.add_ivar::<DropFlag>(&drop_flag_name);
+        builder.add_ivar::<DropFlag>(drop_flag_name);
     }
+}
 
-    let cls = builder.register();
-
-    let ivars_offset = if T::HAS_IVARS {
+#[inline]
+pub(crate) fn ivars_offset<T: DefinedClass>(cls: &AnyClass, ivars_name: &CStr) -> isize {
+    if T::HAS_IVARS {
         
         
         fn get_ivar_failed() -> ! {
             unreachable!("failed retrieving instance variable on newly defined class")
         }
 
-        cls.instance_variable(&ivar_name)
+        cls.instance_variable(ivars_name)
             .unwrap_or_else(|| get_ivar_failed())
             .offset()
     } else {
@@ -303,16 +310,19 @@ pub(crate) fn register_with_ivars<T: DefinedClass>(
         
         
         0
-    };
+    }
+}
 
-    let drop_flag_offset = if T::HAS_DROP_FLAG {
+#[inline]
+pub(crate) fn drop_flag_offset<T: DefinedClass>(cls: &AnyClass, drop_flag_name: &CStr) -> isize {
+    if T::HAS_DROP_FLAG {
         
         
         fn get_drop_flag_failed() -> ! {
             unreachable!("failed retrieving drop flag instance variable on newly defined class")
         }
 
-        cls.instance_variable(&drop_flag_name)
+        cls.instance_variable(drop_flag_name)
             .unwrap_or_else(|| get_drop_flag_failed())
             .offset()
     } else {
@@ -321,9 +331,7 @@ pub(crate) fn register_with_ivars<T: DefinedClass>(
         
         
         0
-    };
-
-    (cls, ivars_offset, drop_flag_offset)
+    }
 }
 
 

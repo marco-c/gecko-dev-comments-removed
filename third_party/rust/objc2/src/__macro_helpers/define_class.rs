@@ -1,6 +1,6 @@
-use alloc::ffi::CString;
 #[cfg(debug_assertions)]
 use alloc::vec::Vec;
+use core::ffi::CStr;
 use core::marker::PhantomData;
 use core::panic::{RefUnwindSafe, UnwindSafe};
 #[cfg(debug_assertions)]
@@ -15,7 +15,10 @@ use crate::runtime::{
 use crate::runtime::{AnyProtocol, MethodDescription};
 use crate::{AnyThread, ClassType, DefinedClass, Message, ProtocolType};
 
-use super::defined_ivars::{register_with_ivars, setup_dealloc};
+use super::defined_ivars::{
+    drop_flag_offset, ivar_drop_flag_names, ivars_offset, register_drop_flag, register_ivars,
+    setup_dealloc,
+};
 use super::{CopyFamily, InitFamily, MutableCopyFamily, NewFamily, NoneFamily};
 
 
@@ -184,42 +187,132 @@ impl<T: Message> MaybeOptionRetained for Option<Retained<T>> {
     }
 }
 
+
+#[track_caller]
+pub const fn class_c_name(name: &str) -> &CStr {
+    let bytes = name.as_bytes();
+    
+    let mut i = 0;
+    while i < bytes.len() - 1 {
+        if bytes[i] == 0 {
+            panic!("class name must not contain interior NUL bytes");
+        }
+        i += 1;
+    }
+    if let Ok(c_name) = CStr::from_bytes_until_nul(bytes) {
+        c_name
+    } else {
+        unreachable!()
+    }
+}
+
+
+#[track_caller]
+fn class_not_present(c_name: &CStr) -> ! {
+    panic!("could not create new class {c_name:?}, though there was no other class with that name")
+}
+
+#[track_caller]
+fn class_not_unique(c_name: &CStr) -> ! {
+    panic!("could not create new class {c_name:?}, perhaps a class with that name already exists?")
+}
+
+#[inline]
+#[track_caller]
+#[allow(clippy::new_without_default)]
+pub fn define_class<T: DefinedClass>(
+    c_name: &CStr,
+    name_is_auto_generated: bool,
+    register_impls: impl FnOnce(&mut ClassBuilderHelper<T>),
+) -> (&'static AnyClass, isize, isize)
+where
+    T::Super: ClassType,
+{
+    let (ivar_name, drop_flag_name) = ivar_drop_flag_names::<T>();
+
+    let superclass = <T::Super as ClassType>::class();
+    let cls = if let Some(builder) = ClassBuilder::new(c_name, superclass) {
+        let mut this = ClassBuilderHelper {
+            builder,
+            p: PhantomData,
+        };
+
+        setup_dealloc::<T>(&mut this.builder);
+
+        register_impls(&mut this);
+
+        register_ivars::<T>(&mut this.builder, &ivar_name);
+        register_drop_flag::<T>(&mut this.builder, &drop_flag_name);
+
+        this.builder.register()
+    } else {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let overridden = option_env!("UNSAFE_OBJC2_ALLOW_CLASS_OVERRIDE") == Some("1");
+        if name_is_auto_generated || overridden {
+            AnyClass::get(c_name).unwrap_or_else(|| class_not_present(c_name))
+        } else {
+            class_not_unique(c_name)
+        }
+    };
+
+    
+    
+    (
+        cls,
+        ivars_offset::<T>(cls, &ivar_name),
+        drop_flag_offset::<T>(cls, &drop_flag_name),
+    )
+}
+
 #[derive(Debug)]
 pub struct ClassBuilderHelper<T: ?Sized> {
     builder: ClassBuilder,
     p: PhantomData<T>,
 }
 
-
-#[track_caller]
-fn create_builder(name: &str, superclass: &AnyClass) -> ClassBuilder {
-    let c_name = CString::new(name).expect("class name must be UTF-8");
-    match ClassBuilder::new(&c_name, superclass) {
-        Some(builder) => builder,
-        None => panic!(
-            "could not create new class {name}. Perhaps a class with that name already exists?"
-        ),
-    }
-}
-
 impl<T: DefinedClass> ClassBuilderHelper<T> {
-    #[inline]
-    #[track_caller]
-    #[allow(clippy::new_without_default)]
-    pub fn new() -> Self
-    where
-        T::Super: ClassType,
-    {
-        let mut builder = create_builder(T::NAME, <T::Super as ClassType>::class());
-
-        setup_dealloc::<T>(&mut builder);
-
-        Self {
-            builder,
-            p: PhantomData,
-        }
-    }
-
     #[inline]
     pub fn add_protocol_methods<P>(&mut self) -> ClassProtocolMethodsBuilder<'_, T>
     where
@@ -278,11 +371,6 @@ impl<T: DefinedClass> ClassBuilderHelper<T> {
     {
         
         unsafe { self.builder.add_class_method(sel, func) }
-    }
-
-    #[inline]
-    pub fn register(self) -> (&'static AnyClass, isize, isize) {
-        register_with_ivars::<T>(self.builder)
     }
 }
 

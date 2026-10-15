@@ -207,6 +207,19 @@ macro_rules! __class_inner {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg_attr(not(feature = "unstable-static-sel"), doc = "```no_run")]
 #[cfg_attr(feature = "unstable-static-sel", doc = "```compile_fail")]
 
@@ -267,9 +280,9 @@ macro_rules! __sel_helper {
     
     {
         ($($parsed_sel:tt)*)
-    } => ({
+    } => {
         $crate::__sel_data!($($parsed_sel)*)
-    });
+    };
     
     {
         ()
@@ -309,7 +322,6 @@ macro_rules! __sel_data {
         $crate::__macro_helpers::concat!(
             $crate::__macro_helpers::stringify!($first),
             $(':', $($($crate::__macro_helpers::stringify!($rest),)? ':',)*)?
-            '\0',
         )
     };
 }
@@ -323,7 +335,7 @@ macro_rules! __sel_inner {
             $crate::__macro_helpers::CachedSel::new();
         #[allow(unused_unsafe)]
         unsafe {
-            CACHED_SEL.get($data)
+            CACHED_SEL.get($crate::__macro_helpers::concat!($data, '\0'))
         }
     }};
 }
@@ -405,7 +417,7 @@ macro_rules! __statics_sel {
         ($data:expr)
         ($hash:expr)
     } => {
-        const X: &[$crate::__macro_helpers::u8] = $data.as_bytes();
+        const X: &[$crate::__macro_helpers::u8] = $crate::__macro_helpers::concat!($data, '\0').as_bytes();
 
         /// Clang marks this with LLVM's `unnamed_addr`.
         
@@ -561,9 +573,24 @@ macro_rules! __statics_class {
 
 #[doc(hidden)]
 #[macro_export]
+#[cfg(all(feature = "unstable-static-sel", feature = "unstable-darwin-objc"))]
+macro_rules! __sel_inner {
+    ($data:expr, $_hash:expr) => {{
+        let ptr = $crate::__macro_helpers::core_darwin_objc::selector!($data);
+        let ptr = ptr.cast_const().cast::<$crate::__macro_helpers::u8>();
+        #[allow(unused_unsafe)]
+        unsafe {
+            $crate::runtime::Sel::__internal_from_ptr(ptr)
+        }
+    }};
+}
+
+#[doc(hidden)]
+#[macro_export]
 #[cfg(all(
     feature = "unstable-static-sel",
-    not(feature = "unstable-static-sel-inlined")
+    not(feature = "unstable-darwin-objc"),
+    not(feature = "unstable-static-sel-inlined"),
 ))]
 macro_rules! __sel_inner {
     ($data:expr, $hash:expr) => {{
@@ -595,7 +622,11 @@ macro_rules! __sel_inner {
 
 #[doc(hidden)]
 #[macro_export]
-#[cfg(feature = "unstable-static-sel-inlined")]
+#[cfg(all(
+    feature = "unstable-static-sel",
+    not(feature = "unstable-darwin-objc"),
+    feature = "unstable-static-sel-inlined",
+))]
 macro_rules! __sel_inner {
     ($data:expr, $hash:expr) => {{
         $crate::__statics_sel! {
@@ -615,6 +646,24 @@ macro_rules! __sel_inner {
 #[macro_export]
 #[cfg(all(
     feature = "unstable-static-class",
+    feature = "unstable-darwin-objc",
+    not(feature = "gnustep-1-7"),
+))]
+macro_rules! __class_inner {
+    ($name:expr, $_hash:expr) => {{
+        let ptr = $crate::__macro_helpers::core_darwin_objc::class!($name);
+        let ptr = ptr.cast_const().cast::<$crate::runtime::AnyClass>();
+        #[allow(unused_unsafe)]
+        let r: &'static $crate::runtime::AnyClass = unsafe { &*ptr };
+        r
+    }};
+}
+
+#[doc(hidden)]
+#[macro_export]
+#[cfg(all(
+    feature = "unstable-static-class",
+    not(feature = "unstable-darwin-objc"),
     not(feature = "gnustep-1-7"),
     not(feature = "unstable-static-class-inlined")
 ))]
@@ -639,6 +688,7 @@ macro_rules! __class_inner {
 #[macro_export]
 #[cfg(all(
     feature = "unstable-static-class",
+    not(feature = "unstable-darwin-objc"),
     not(feature = "gnustep-1-7"),
     feature = "unstable-static-class-inlined"
 ))]

@@ -452,14 +452,15 @@ impl<T: Message> Retained<T> {
     
     
     
+    
+    
+    
+    
+    
+    
     #[doc(alias = "objc_retainAutoreleasedReturnValue")]
-    #[inline]
+    #[inline(always)] 
     pub unsafe fn retain_autoreleased(ptr: *mut T) -> Option<Retained<T>> {
-        
-        
-        
-        
-        
         
         
         
@@ -508,14 +509,20 @@ impl<T: Message> Retained<T> {
                 
                 
                 
-            }
+                
+                
+                
+            };
 
             
             #[cfg(target_arch = "arm")]
             unsafe {
-                core::arch::asm!("mov r7, r7", options(nomem, preserves_flags, nostack))
+                core::arch::asm!("mov r7, r7", in("r0") ptr as usize, options(nomem, preserves_flags, nostack))
             };
 
+            
+            
+            
             
             
             
@@ -525,16 +532,39 @@ impl<T: Message> Retained<T> {
             #[cfg(all(target_arch = "aarch64", not(feature = "unstable-apple-new")))]
             unsafe {
                 
-                core::arch::asm!("mov fp, fp", options(nomem, preserves_flags, nostack))
+                core::arch::asm!("mov fp, fp", in("x0") ptr as usize, options(nomem, preserves_flags, nostack))
             };
 
             
             #[cfg(target_arch = "x86")]
             unsafe {
-                core::arch::asm!("mov ebp, ebp", options(nomem, preserves_flags, nostack))
+                core::arch::asm!("mov ebp, ebp", in("eax") ptr as usize, options(nomem, preserves_flags, nostack))
             };
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         let res: *mut T = unsafe { ffi::objc_retainAutoreleasedReturnValue(ptr.cast()) }.cast();
 
@@ -545,19 +575,25 @@ impl<T: Message> Retained<T> {
         
         
         
-        #[cfg(all(target_vendor = "apple", target_arch = "x86_64"))]
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[cfg(target_vendor = "apple")]
         {
             
             unsafe { core::arch::asm!("nop", options(nomem, preserves_flags, nostack)) };
-            
-            
-            
-            
-            
-            
-            
-            
-            
         }
 
         debug_assert_eq!(
@@ -1064,5 +1100,129 @@ mod tests {
         expected.release += 1;
         expected.drop += 1;
         expected.assert_current();
+    }
+
+    
+    #[test]
+    fn retain_autoreleased_not_tail_called() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[inline(never)]
+        fn retain_autoreleased(obj: &NSObject) -> Retained<NSObject> {
+            let obj: *const NSObject = obj;
+            let obj = unsafe { Retained::retain_autoreleased(obj.cast_mut()) };
+            unsafe { obj.unwrap_unchecked() }
+        }
+
+        #[inline(never)]
+        fn trigger(a: Retained<NSObject>, b: &NSObject) {
+            let _ = Retained::autorelease_ptr(a);
+            let b = retain_autoreleased(b);
+            
+            drop(b);
+        }
+
+        let a = NSObject::new();
+        let b = NSObject::new();
+
+        let a_clone = a.clone();
+        
+        let b_clone = ManuallyDrop::new(b.clone());
+
+        
+        assert_eq!(a.retainCount(), 2);
+        assert_eq!(b.retainCount(), 2);
+
+        autoreleasepool(|_| {
+            trigger(a_clone, &b);
+
+            
+            assert_eq!(a.retainCount(), 2);
+            
+            assert_eq!(b.retainCount(), 2);
+        });
+
+        
+        assert_eq!(a.retainCount(), 1);
+        assert_eq!(b.retainCount(), 2);
+
+        let _ = ManuallyDrop::into_inner(b_clone);
+    }
+
+    
+    
+    
+    
+    #[test]
+    fn retain_autoreleased_called_with_different_argument() {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[inline(never)]
+        fn trigger(a: Retained<NSObject>, b: &NSObject) {
+            let _ = Retained::autorelease_ptr(a);
+            let b = unsafe { Retained::retain_autoreleased(b as *const NSObject as *mut NSObject) };
+            let b = unsafe { b.unwrap_unchecked() };
+            drop(b);
+        }
+
+        let a = NSObject::new();
+        let b = NSObject::new();
+
+        let a_clone = a.clone();
+        
+        let b_clone = ManuallyDrop::new(b.clone());
+
+        
+        assert_eq!(a.retainCount(), 2);
+        assert_eq!(b.retainCount(), 2);
+
+        autoreleasepool(|_| {
+            trigger(a_clone, &b);
+
+            
+            assert_eq!(a.retainCount(), 2);
+            
+            assert_eq!(b.retainCount(), 2);
+        });
+
+        
+        assert_eq!(a.retainCount(), 1);
+        assert_eq!(b.retainCount(), 2);
+
+        let _ = ManuallyDrop::into_inner(b_clone);
     }
 }
