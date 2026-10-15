@@ -274,13 +274,6 @@ static TextureType ChooseTextureType(gfx::SurfaceFormat aFormat,
   }
 #endif
 
-#ifdef MOZ_WIDGET_ANDROID
-  if (StaticPrefs::gfx_use_surfacetexture_textures_AtStartup() &&
-      !aKnowsCompositor->UsingSoftwareWebRender()) {
-    return TextureType::AndroidNativeWindow;
-  }
-#endif
-
   return TextureType::Unknown;
 }
 
@@ -305,10 +298,6 @@ TextureData* TextureData::Create(TextureType aTextureType,
 #ifdef XP_MACOSX
     case TextureType::MacIOSurface:
       return MacIOSurfaceTextureData::Create(aSize, aFormat, aBackendType);
-#endif
-#ifdef MOZ_WIDGET_ANDROID
-    case TextureType::AndroidNativeWindow:
-      return AndroidNativeWindowTextureData::Create(aSize, aFormat);
 #endif
     default:
       return nullptr;

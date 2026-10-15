@@ -381,7 +381,6 @@ gfx::Matrix4x4 SurfaceTextureSource::GetTextureTransform() {
   
   
   
-  
   if (mTransformOverride) {
     ret = *mTransformOverride;
   } else {

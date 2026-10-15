@@ -8237,14 +8237,6 @@
   mirror: once
 #endif
 
-#ifdef MOZ_WIDGET_ANDROID
-# Use SurfaceTextures as preferred backend for TextureClient/Host.
-- name: gfx.use-surfacetexture-textures
-  type: bool
-  value: false
-  mirror: once
-#endif
-
 - name: gfx.vsync.compositor.unobserve-count
   type: int32_t
   value: 10
@@ -20627,11 +20619,6 @@
   mirror: always
 
 - name: webgl.enable-egl-image
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
-- name: webgl.enable-surface-texture
   type: RelaxedAtomicBool
   value: true
   mirror: always

@@ -306,7 +306,6 @@ gfx::Matrix4x4 RenderAndroidSurfaceTextureHost::GetTextureTransform() const {
   
   
   
-  
   if (mTransformOverride) {
     transform = *mTransformOverride;
   } else if (mSurfTex) {
