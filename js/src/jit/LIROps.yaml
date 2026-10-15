@@ -4030,6 +4030,22 @@
   call_instruction: true
   mir_op: Mod
 
+- name: DivConstantI
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int32_t
+  mir_op: Div
+
+- name: ModConstantI
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int32_t
+  mir_op: Mod
+
 - name: ModMaskI
   result_type: WordSized
   operands:

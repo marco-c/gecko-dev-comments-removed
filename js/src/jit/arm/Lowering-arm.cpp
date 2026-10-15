@@ -317,6 +317,16 @@ void LIRGeneratorARM::lowerDivI(MDiv* div) {
       define(lir, div);
       return;
     }
+
+    
+    
+    auto lhs = useRegister(div->lhs());
+    auto* lir = new (alloc()) LDivConstantI(lhs, rhs);
+    if (div->fallible()) {
+      assignSnapshot(lir, div->bailoutKind());
+    }
+    define(lir, div);
+    return;
   }
 
   if (ARMFlags::HasIDIV()) {
@@ -383,6 +393,16 @@ void LIRGeneratorARM::lowerModI(MMod* mod) {
       define(lir, mod);
       return;
     }
+
+    
+    
+    auto lhs = useRegister(mod->lhs());
+    auto* lir = new (alloc()) LModConstantI(lhs, rhs);
+    if (mod->fallible()) {
+      assignSnapshot(lir, mod->bailoutKind());
+    }
+    define(lir, mod);
+    return;
   }
 
   if (ARMFlags::HasIDIV()) {

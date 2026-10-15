@@ -17,6 +17,7 @@
 #include "jit/MIR-wasm.h"
 #include "jit/MIR.h"
 #include "jit/MIRGraph.h"
+#include "jit/ReciprocalMulConstants.h"
 #include "js/Conversions.h"
 #include "js/ScalarType.h"  
 #include "vm/JSContext.h"
@@ -35,6 +36,55 @@ using JS::ToInt32;
 using mozilla::DebugOnly;
 using mozilla::FloorLog2;
 using mozilla::NegativeInfinity;
+
+template <class LDivOrMod>
+static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int32_t d = ins->denominator();
+
+  ScratchRegisterScope scratch(masm);
+
+  
+  MOZ_ASSERT(!std::has_single_bit(mozilla::Abs(d)));
+
+  auto* mir = ins->mir();
+
+  
+  
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
+
+  
+  masm.ma_mov(Imm32(rmc.multiplier), scratch);
+  masm.as_smull(output, scratch, lhs, scratch);
+  if (rmc.multiplier > INT32_MAX) {
+    MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
+
+    
+    
+    
+    
+    masm.as_add(output, output, O2Reg(lhs));
+  }
+
+  
+  
+  
+  if (rmc.shiftAmount > 0) {
+    masm.as_mov(output, asr(output, rmc.shiftAmount));
+  }
+
+  
+  
+  if (mir->canBeNegativeDividend()) {
+    masm.as_sub(output, output, asr(lhs, 31));
+  }
+
+  
+  if (d < 0) {
+    masm.ma_neg(output, output);
+  }
+}
 
 
 CodeGeneratorARM::CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph,
@@ -823,6 +873,88 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
     }
   }
   masm.bind(&fin);
+}
+
+void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int32_t d = ins->denominator();
+
+  const MDiv* mir = ins->mir();
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->canTruncateInfinities()) {
+      masm.ma_mov(Imm32(0), output);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  
+  DivideWithConstant(masm, ins);
+
+  
+  
+  
+  if (!mir->isTruncated()) {
+    ScratchRegisterScope scratch(masm);
+    masm.ma_mul(output, Imm32(d), scratch, scratch);
+    masm.ma_cmp(lhs, scratch);
+    bailoutIf(Assembler::NotEqual, ins->snapshot());
+
+    
+    
+    if (d < 0) {
+      masm.as_cmp(lhs, Imm8(0));
+      bailoutIf(Assembler::Zero, ins->snapshot());
+    }
+  }
+}
+
+void CodeGenerator::visitModConstantI(LModConstantI* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  int32_t d = ins->denominator();
+
+  const MMod* mir = ins->mir();
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.ma_mov(Imm32(0), output);
+    } else {
+      MOZ_ASSERT(mir->fallible());
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  
+  DivideWithConstant(masm, ins);
+
+  
+  {
+    ScratchRegisterScope scratch(masm);
+    masm.ma_mov(Imm32(d), scratch);
+    masm.as_mls(output, lhs, output, scratch);
+  }
+
+  if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
+    MOZ_ASSERT(mir->fallible());
+
+    
+    Label done;
+    masm.as_cmp(output, Imm8(0));
+    masm.ma_b(&done, Assembler::NotEqual);
+    masm.as_cmp(lhs, Imm8(0));
+    bailoutIf(Assembler::LessThan, ins->snapshot());
+    masm.bind(&done);
+  }
 }
 
 void CodeGenerator::visitModMaskI(LModMaskI* ins) {
