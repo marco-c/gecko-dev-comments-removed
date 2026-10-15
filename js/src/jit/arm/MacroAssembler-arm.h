@@ -358,13 +358,6 @@ class MacroAssemblerARM : public Assembler {
                 Register destLow);
 
   
-  
-  
-  void ma_mod_mask(Register src, Register dest, Register hold, Register tmp,
-                   AutoRegisterScope& scratch, AutoRegisterScope& scratch2,
-                   int32_t shift);
-
-  
   void ma_smod(Register num, Register div, Register dest,
                AutoRegisterScope& scratch);
   void ma_umod(Register num, Register div, Register dest,
