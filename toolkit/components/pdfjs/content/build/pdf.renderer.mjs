@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.98
- * pdfjsBuild = e0b4f473c
+ * pdfjsVersion = 6.5.140
+ * pdfjsBuild = 288892aad
  */
 
 ;// ./src/shared/util.js
@@ -2604,34 +2604,37 @@ class TilingPattern {
     if (dependencyTracker) {
       owner.dependencyTracker = new CanvasNestedDependencyTracker(dependencyTracker, opIdx);
     }
-    owner.save();
-    if (useEOFill) {
-      owner.ctx.clip(path, "evenodd");
-    } else {
-      owner.ctx.clip(path);
-    }
-    owner.ctx.setTransform(...this.patternBaseMatrix);
-    owner.ctx.translate(n * this.xstep, m * this.ystep);
-    if (this.needsIsolation || owner.ctx.globalAlpha !== 1 || owner.ctx.globalCompositeOperation !== "source-over" || owner.inSMaskMode) {
-      const bboxWidth = x1 - x0;
-      const bboxHeight = y1 - y0;
-      const [combinedScaleX, combinedScaleY] = this._getCombinedScales();
-      const dimx = this.getSizeAndScale(bboxWidth, this.ctx.canvas.width, combinedScaleX);
-      const dimy = this.getSizeAndScale(bboxHeight, this.ctx.canvas.height, combinedScaleY);
-      const tmpCanvas = this._renderTileCanvas(owner, opIdx, dimx, dimy);
-      owner.ctx.drawImage(tmpCanvas.canvas, x0, y0, bboxWidth, bboxHeight);
-      owner.canvasFactory.destroy(tmpCanvas);
-    } else {
-      this.setFillAndStrokeStyleToContext(owner, this.paintType, this.color);
-      this.clipBbox(owner, x0, y0, x1, y1);
-      owner.baseTransformStack.push(owner.baseTransform);
-      owner.baseTransform = getCurrentTransform(owner.ctx);
-      owner.executeOperatorList(this.operatorList);
-      owner.baseTransform = owner.baseTransformStack.pop();
-    }
-    owner.restore();
-    if (dependencyTracker) {
-      owner.dependencyTracker = dependencyTracker;
+    try {
+      owner.save();
+      if (useEOFill) {
+        owner.ctx.clip(path, "evenodd");
+      } else {
+        owner.ctx.clip(path);
+      }
+      owner.ctx.setTransform(...this.patternBaseMatrix);
+      owner.ctx.translate(n * this.xstep, m * this.ystep);
+      if (this.needsIsolation || owner.ctx.globalAlpha !== 1 || owner.ctx.globalCompositeOperation !== "source-over" || owner.inSMaskMode) {
+        const bboxWidth = x1 - x0;
+        const bboxHeight = y1 - y0;
+        const [combinedScaleX, combinedScaleY] = this._getCombinedScales();
+        const dimx = this.getSizeAndScale(bboxWidth, this.ctx.canvas.width, combinedScaleX);
+        const dimy = this.getSizeAndScale(bboxHeight, this.ctx.canvas.height, combinedScaleY);
+        const tmpCanvas = this._renderTileCanvas(owner, opIdx, dimx, dimy);
+        owner.ctx.drawImage(tmpCanvas.canvas, x0, y0, bboxWidth, bboxHeight);
+        owner.canvasFactory.destroy(tmpCanvas);
+      } else {
+        this.setFillAndStrokeStyleToContext(owner, this.paintType, this.color);
+        this.clipBbox(owner, x0, y0, x1, y1);
+        owner.baseTransformStack.push(owner.baseTransform);
+        owner.baseTransform = getCurrentTransform(owner.ctx);
+        owner.executeOperatorList(this.operatorList);
+        owner.baseTransform = owner.baseTransformStack.pop();
+      }
+      owner.restore();
+    } finally {
+      if (dependencyTracker) {
+        owner.dependencyTracker = dependencyTracker;
+      }
     }
   }
   createPatternCanvas(owner, opIdx) {
@@ -3095,6 +3098,7 @@ const NORMAL_CLIP = {};
 const EO_CLIP = {};
 class CanvasGraphics {
   static #SCALE_MATRIX = null;
+  static #pathCaches = new WeakMap();
   #knockoutGroupLevel = 0;
   #knockoutElementDepth = 0;
   #knockoutTempCanvasEntry = null;
@@ -3191,7 +3195,7 @@ class CanvasGraphics {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
     const prevPathCache = this._pathCache;
-    this._pathCache = operatorList.pathCache ||= new Map();
+    this._pathCache = operatorList.pathCache ?? CanvasGraphics.#pathCaches.getOrInsertComputed(operatorList, makeMap);
     try {
       let i = executionStartIdx || 0;
       const argsArrayLen = argsArray.length;
@@ -4610,39 +4614,42 @@ class CanvasGraphics {
     ctx.scale(textHScale, fontDirection);
     const dependencyTracker = this.dependencyTracker;
     this.dependencyTracker = dependencyTracker ? new CanvasNestedDependencyTracker(dependencyTracker, opIdx) : null;
-    for (i = 0; i < glyphsLength; ++i) {
-      glyph = glyphs[i];
-      if (typeof glyph === "number") {
-        spacingLength = spacingDir * glyph * fontSize / 1000;
-        this.ctx.translate(spacingLength, 0);
-        current.x += spacingLength * textHScale;
-        continue;
-      }
-      const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
-      const operatorList = font.charProcOperatorList.get(glyph.operatorListId);
-      if (!operatorList) {
-        warn(`Type3 character "${glyph.operatorListId}" is not available.`);
-      } else if (this.contentVisible) {
-        this.save();
-        if (operatorList.fnArray[0] === OPS.setCharWidth) {
-          current.fillAlpha = current.strokeAlpha = 1;
-          ctx.globalAlpha = 1;
+    try {
+      for (i = 0; i < glyphsLength; ++i) {
+        glyph = glyphs[i];
+        if (typeof glyph === "number") {
+          spacingLength = spacingDir * glyph * fontSize / 1000;
+          this.ctx.translate(spacingLength, 0);
+          current.x += spacingLength * textHScale;
+          continue;
         }
-        ctx.scale(fontSize, fontSize);
-        ctx.transform(...fontMatrix);
-        this.executeOperatorList(operatorList);
-        this.restore();
+        const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
+        const operatorList = font.charProcOperatorList.get(glyph.operatorListId);
+        if (!operatorList) {
+          warn(`Type3 character "${glyph.operatorListId}" is not available.`);
+        } else if (this.contentVisible) {
+          this.save();
+          if (operatorList.fnArray[0] === OPS.setCharWidth) {
+            current.fillAlpha = current.strokeAlpha = 1;
+            ctx.globalAlpha = 1;
+          }
+          ctx.scale(fontSize, fontSize);
+          ctx.transform(...fontMatrix);
+          this.executeOperatorList(operatorList);
+          this.restore();
+        }
+        const p = [glyph.width, 0];
+        Util.applyTransform(p, fontMatrix);
+        width = p[0] * fontSize + spacing;
+        ctx.translate(width, 0);
+        current.x += width * textHScale;
       }
-      const p = [glyph.width, 0];
-      Util.applyTransform(p, fontMatrix);
-      width = p[0] * fontSize + spacing;
-      ctx.translate(width, 0);
-      current.x += width * textHScale;
+    } finally {
+      if (dependencyTracker) {
+        this.dependencyTracker = dependencyTracker;
+      }
     }
     ctx.restore();
-    if (dependencyTracker) {
-      this.dependencyTracker = dependencyTracker;
-    }
   }
   setCharWidth(opIdx, xWidth, yWidth) {}
   setCharWidthAndBounds(opIdx, xWidth, yWidth, llx, lly, urx, ury) {
@@ -5788,8 +5795,8 @@ function wrapReason(ex) {
   if (ex instanceof AbortException || ex instanceof InvalidPDFException || ex instanceof PasswordException || ex instanceof ResponseException || ex instanceof UnknownErrorException) {
     return ex;
   }
-  if (!(ex instanceof Error || typeof ex === "object" && ex !== null)) {
-    unreachable('wrapReason: Expected "reason" to be a (possibly cloned) Error.');
+  if (typeof ex !== "object" || ex === null) {
+    return new UnknownErrorException(String(ex), String(ex));
   }
   switch (ex.name) {
     case "AbortException":
@@ -6011,7 +6018,6 @@ class MessageHandler {
         streamSinks.delete(streamId);
       },
       error(reason) {
-        assert(reason instanceof Error, "error must have a valid reason");
         if (this.isCancelled) {
           return;
         }
@@ -7100,6 +7106,8 @@ class RendererMessageHandler {
   static #objsMap = new Map();
   static #operatorLists = new Map();
   static #renderTaskStates = new Map();
+  static #yieldChannel = null;
+  static #yieldResolvers = [];
   static {
     if (typeof window === "undefined" && !(/* inlined export .isNodeJS */false) && typeof self !== "undefined" && typeof self.postMessage === "function" && "onmessage" in self) {
       this.#initializeFromPort(self);
@@ -7135,8 +7143,12 @@ class RendererMessageHandler {
       canvas,
       renderTaskId
     } = renderTaskState;
-    let bitmap;
-    if (isFinal) {
+    let bitmap = null;
+    if (canvas.width === 0 || canvas.height === 0) {
+      if (!isFinal) {
+        return;
+      }
+    } else if (isFinal) {
       bitmap = canvas.transferToImageBitmap();
     } else {
       const {
@@ -7152,7 +7164,7 @@ class RendererMessageHandler {
         bitmap = await createImageBitmap(canvas);
       }
     }
-    const transfers = [bitmap];
+    const transfers = bitmap ? [bitmap] : [];
     const annotationBitmaps = isFinal ? this.#collectAnnotationBitmaps(renderTaskState, transfers) : null;
     handler.send("RenderFrame", {
       renderTaskId,
@@ -7164,7 +7176,11 @@ class RendererMessageHandler {
     if (!renderTaskState.partialFrames || renderTaskState.aborted || Date.now() - renderTaskState.lastFrameTime < PARTIAL_FRAME_TIME || renderTaskState.operatorListIdx === renderTaskState.lastFrameIdx) {
       return;
     }
-    await this.#sendFrame(handler, renderTaskState, false);
+    try {
+      await this.#sendFrame(handler, renderTaskState, false);
+    } catch (ex) {
+      warn(`Failed to send an interim frame: ${ex.message}`);
+    }
     renderTaskState.lastFrameTime = Date.now();
     renderTaskState.lastFrameIdx = renderTaskState.operatorListIdx;
   }
@@ -7208,7 +7224,7 @@ class RendererMessageHandler {
       }
     }
     operatorList.lastChunk = lastChunk;
-    renderTaskState.gfx.dependencyTracker?.growOperationsCount(operatorList.fnArray.length);
+    renderTaskState.dependencyTracker?.growOperationsCount(operatorList.fnArray.length);
   }
   static async #executeOperatorList(handler, renderTaskState) {
     const {
@@ -7233,11 +7249,24 @@ class RendererMessageHandler {
       if (renderTaskState.aborted) {
         break;
       }
-      await new Promise(resolveYield => {
-        setTimeout(resolveYield, 0);
-      });
+      await this.#yield();
     }
     return renderTaskState.operatorListIdx;
+  }
+  static #yield() {
+    if (!this.#yieldChannel) {
+      this.#yieldChannel = new MessageChannel();
+      this.#yieldChannel.port1.onmessage = () => {
+        this.#yieldResolvers.shift()();
+      };
+    }
+    const {
+      promise,
+      resolve
+    } = Promise.withResolvers();
+    this.#yieldResolvers.push(resolve);
+    this.#yieldChannel.port2.postMessage(null);
+    return promise;
   }
   static #setupObjectHandler(handler) {
     const objectHandler = new ObjectHandler({
@@ -7332,6 +7361,8 @@ class RendererMessageHandler {
         lastFrameTime: Date.now(),
         gfx: null,
         sharedOperatorList,
+        dependencyTracker: null,
+        imagesTracker: null,
         operatorList: {
           fnArray: [],
           argsArray: [],
@@ -7377,6 +7408,8 @@ class RendererMessageHandler {
           background
         });
         renderTaskState.gfx = gfx;
+        renderTaskState.dependencyTracker = dependencyTracker;
+        renderTaskState.imagesTracker = imagesTracker;
       } catch (ex) {
         this.#cleanupRenderTask(renderTaskId);
         throw ex;
@@ -7403,10 +7436,8 @@ class RendererMessageHandler {
       let recordedBBoxesBuffer = null;
       let imageCoordinates = null;
       if (renderTaskState.operatorList.lastChunk && currentOperatorListIdx === renderTaskState.operatorList.argsArray.length) {
-        const reader = renderTaskState.gfx.dependencyTracker?.take();
-        recordedBBoxesBuffer = reader?.buffer;
-        const images = renderTaskState.gfx.imagesTracker?.take();
-        imageCoordinates = images || null;
+        recordedBBoxesBuffer = renderTaskState.dependencyTracker?.take().buffer ?? null;
+        imageCoordinates = renderTaskState.imagesTracker?.take() ?? null;
         const aborted = renderTaskState.aborted;
         this.#cleanupRenderTask(renderTaskId);
         if (!aborted) {
@@ -7425,7 +7456,7 @@ class RendererMessageHandler {
   static #initializeFromPort(port) {
     const handler = new MessageHandler("renderer", "main", port);
     this.#setup(handler);
-    const workerVersion = "6.5.98";
+    const workerVersion = "6.5.140";
     const testObj = new Uint8Array();
     handler.send("ready", {
       testObj,
