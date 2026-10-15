@@ -295,7 +295,7 @@ ${
    * The search access point name of the SmartbarInput for use with telemetry or
    * logging, e.g. `urlbar`, `searchbar`.
    *
-   * @type {UrlbarSapName}
+   * @type {"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar"}
    */
   #sapName;
   #scrollAnimationId = null;
@@ -428,9 +428,10 @@ ${
    * Initialization that happens once on the first connect.
    */
   #initOnce() {
-    this.#sapName = /** @type {UrlbarSapName} */ (
-      this.getAttribute("sap-name")
-    );
+    this.#sapName =
+      /** @type {"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar"} */ (
+        this.getAttribute("sap-name")
+      );
     this.#isAddressbar = this.#sapName == "urlbar";
     this.#isSmartbarMode = this.#sapName == "smartbar";
 
@@ -3486,7 +3487,7 @@ ${
    *
    * @param {string} value
    * @param {object} options
-   * @param {PartialSearchEngine|SearchEngine} options.searchEngine
+   * @param {PartialSearchEngine} options.searchEngine
    * @param {Event} options.event
    * @param {string} options.where
    * @param {boolean} [options.inBackground]

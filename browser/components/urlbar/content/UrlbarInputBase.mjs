@@ -296,9 +296,9 @@ ${
   #navigationEnabled = false;
   /**
    * The search access point name of the UrlbarInput for use with telemetry or
-   * logging.
+   * logging, e.g. `urlbar`, `searchbar`.
    *
-   * @type {UrlbarSapName}
+   * @type {"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar"}
    */
   #sapName;
   _userTypedValue = "";
@@ -427,9 +427,10 @@ ${
    * Initialization that happens once on the first connect.
    */
   #init() {
-    this.#sapName = /** @type {UrlbarSapName} */ (
-      this.getAttribute("sap-name")
-    );
+    this.#sapName =
+      /** @type {"newtab_searchbar"|"searchbar"|"smartbar"|"urlbar"} */ (
+        this.getAttribute("sap-name")
+      );
     this.#isAddressbar = this.#sapName == "urlbar";
     this.#navigationEnabled = UrlbarShared.navigationEnabled(this.#sapName);
 
@@ -2810,7 +2811,7 @@ ${
    * @param {string} value
    *   The search term or empty string to open homepage.
    * @param {object} options
-   * @param {PartialSearchEngine|SearchEngine} options.searchEngine
+   * @param {PartialSearchEngine} options.searchEngine
    * @param {Event} options.event
    * @param {string} options.where
    * @param {boolean} [options.inBackground]

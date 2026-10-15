@@ -20,19 +20,6 @@ type UrlbarResult = import("../content/UrlbarResult.mjs").UrlbarResult;
 
 
 
-
-
-
-
-
-
-
-
-type UrlbarSapName = "newtab_searchbar" | "searchbar" | "smartbar" | "urlbar";
-
-
-
-
 type UrlbarResultCommand = {
   
 

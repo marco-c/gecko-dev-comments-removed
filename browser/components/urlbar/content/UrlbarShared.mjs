@@ -696,7 +696,7 @@ export const UrlbarShared = {
   /**
    * Whether a SAP is one of SEARCHBAR_SAPS.
    *
-   * @param {UrlbarSapName} sapName
+   * @param {string} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether the SAP is dedicated to search-engine queries.
@@ -710,7 +710,7 @@ export const UrlbarShared = {
    * disambiguates input in a bar that also takes an address, so a search bar
    * searches whatever the pref says.
    *
-   * @param {UrlbarSapName} sapName
+   * @param {string} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether a keyword search is enabled.
@@ -723,7 +723,7 @@ export const UrlbarShared = {
    * Whether a string that is a URL may be navigated to. The toolbar search bar
    * only searches; the address bar and New Tab's bar both navigate.
    *
-   * @param {UrlbarSapName} sapName
+   * @param {string} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether navigation is enabled.
@@ -737,7 +737,7 @@ export const UrlbarShared = {
    * mode, as it would be outside of search mode, rather than searched for. This
    * holds where the unified search button is always available.
    *
-   * @param {UrlbarSapName} sapName
+   * @param {string} sapName
    *   The SAP name to check.
    * @returns {boolean}
    *   Whether navigation is enabled in an engine search mode.

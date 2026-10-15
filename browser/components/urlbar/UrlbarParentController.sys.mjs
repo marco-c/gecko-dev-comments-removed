@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 /**
  * @import {BrowserSearchTelemetry} from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
@@ -17,7 +16,9 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
  * @import {UrlbarChildControllerProxy, UrlbarInputProxy, UrlbarViewProxy} from "moz-src:///browser/components/urlbar/actors/UrlbarParent.sys.mjs"
  */
 
-const lazy = XPCOMUtils.declareLazy({
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AppProvidedConfigEngine:
     "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
@@ -45,8 +46,11 @@ const lazy = XPCOMUtils.declareLazy({
   UrlbarTelemetryUtils:
     "chrome://browser/content/urlbar/UrlbarTelemetryUtils.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  logger: () => lazy.UrlbarShared.getLogger({ prefix: "Controller" }),
 });
+
+ChromeUtils.defineLazyGetter(lazy, "logger", () =>
+  lazy.UrlbarShared.getLogger({ prefix: "Controller" })
+);
 
 /**
  * Serializes a search engine into a plain SearchEngineInfo object.
@@ -126,8 +130,8 @@ export class UrlbarParentController {
    *
    * @param {object} options
    *   The initial options for UrlbarParentController.
-   * @param {UrlbarSapName} options.sapName
-   *   The search access point name.
+   * @param {string} options.sapName
+   *   The search access point name, e.g. `urlbar`, `searchbar`.
    * @param {boolean} [options.isPrivate]
    *   Whether the controller serves a private-browsing input.
    * @param {object} [options.actor]
@@ -594,7 +598,7 @@ export class UrlbarParentController {
    * @param {string} searchData.engineId
    *   The id of the engine handling the search.
    * @param {string} searchData.query
-   * @param {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} searchData.searchSource
+   * @param {string} searchData.searchSource
    *   Where the search originated from.
    * @param {object} searchData.details
    *   The search action details, per `BrowserSearchTelemetry.recordSearch()`.

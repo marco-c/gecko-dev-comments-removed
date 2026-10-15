@@ -6,9 +6,9 @@
  * @import {TabGroupColor} from "chrome://browser/content/tabbrowser/tabgroup.mjs"
  */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+const lazy = {};
 
-const lazy = XPCOMUtils.declareLazy({
+ChromeUtils.defineESModuleGetters(lazy, {
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
   tabManagementService:

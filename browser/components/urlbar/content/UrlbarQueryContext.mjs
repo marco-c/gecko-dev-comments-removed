@@ -32,8 +32,9 @@ export class UrlbarQueryContext {
    *
    * @param {object} options
    *   The initial options for UrlbarQueryContext.
-   * @param {UrlbarSapName} options.sapName
-   *   The search access point name of the UrlbarInput.
+   * @param {string} options.sapName
+   *   The search access point name of the UrlbarInput for use with telemetry or
+   *   logging, e.g. `urlbar`, `searchbar`.
    * @param {string} options.searchString
    *   The string the user entered in autocomplete. Could be the empty string
    *   in the case of the user opening the popup via the mouse.
@@ -241,8 +242,9 @@ export class UrlbarQueryContext {
   results;
 
   /**
-   * @type {UrlbarSapName}
-   *   The search access point name of the UrlbarInput.
+   * @type {string}
+   *   The search access point name of the UrlbarInput for use with telemetry or
+   *   logging, e.g. `urlbar`, `searchbar`.
    */
   sapName;
 
