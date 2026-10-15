@@ -799,12 +799,19 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   
   
 
+  if (mir->isUnsigned()) {
+    
+    ScratchRegisterScope scratch(masm);
+    masm.ma_and(Imm32(uint32_t((1U << ins->shift()) - 1)), in, out, scratch);
+    return;
+  }
+
   masm.ma_mov(in, out, SetCC);
   masm.ma_b(&fin, Assembler::Zero);
   masm.as_rsb(out, out, Imm8(0), LeaveCC, Assembler::Signed);
   {
     ScratchRegisterScope scratch(masm);
-    masm.ma_and(Imm32((1 << ins->shift()) - 1), out, scratch);
+    masm.ma_and(Imm32(uint32_t((1U << ins->shift()) - 1)), out, scratch);
   }
   masm.as_rsb(out, out, Imm8(0), SetCC, Assembler::Signed);
   if (mir->canBeNegativeDividend()) {
