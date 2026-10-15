@@ -147,7 +147,12 @@ export const NewTabGleanUtils = {
       let categoryName = this.dottedSnakeToCamel(category);
       let metricName = this.dottedSnakeToCamel(name);
 
-      if (categoryName in Glean && metricName in Glean[categoryName]) {
+      // An existing event is only in the payload when it gained extra_keys.
+      if (
+        categoryName in Glean &&
+        metricName in Glean[categoryName] &&
+        type !== "event"
+      ) {
         lazy.logConsole.warn(
           `Fail to register metric ${name} in category ${category} as it already exists`
         );
