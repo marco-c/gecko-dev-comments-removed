@@ -205,6 +205,18 @@ void XULPopupElement::ActivateItem(Element& aItemElement,
   MOZ_KnownLive(item)->ExecuteMenu(modifiers, aOptions.mButton, trusted);
 }
 
+void XULPopupElement::GetMenuItems(const GetMenuItemsOptions& aOptions,
+                                   nsTArray<RefPtr<Element>>& aItems) {
+  
+  
+  
+  OwnerDoc()->FlushPendingNotifications(FlushType::Frames);
+  for (auto* item = GetFirstMenuItem(aOptions); item;
+       item = GetNextMenuItemFrom(*item, aOptions)) {
+    aItems.AppendElement(item);
+  }
+}
+
 void XULPopupElement::MoveTo(int32_t aLeft, int32_t aTop) {
   if (nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame())) {
     menuPopupFrame->MoveTo(CSSIntPoint(aLeft, aTop), true);

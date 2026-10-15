@@ -173,7 +173,8 @@ void XULMenuParentElement::SetActiveMenuChild(XULButtonElement* aChild,
 }
 
 static bool IsValidMenuItem(const XULMenuParentElement& aMenuParent,
-                            const nsIContent& aContent) {
+                            const nsIContent& aContent,
+                            const GetMenuItemsOptions& aOptions) {
   const auto* button = XULButtonElement::FromNode(aContent);
   if (!button || !button->IsMenu()) {
     return false;
@@ -182,7 +183,7 @@ static bool IsValidMenuItem(const XULMenuParentElement& aMenuParent,
     
     return false;
   }
-  if (!button->IsDisabled()) {
+  if (!button->IsDisabled() || aOptions.mIncludeDisabled) {
     return true;
   }
   
@@ -197,19 +198,19 @@ enum class StartKind { Parent, Item };
 template <bool aForward>
 static XULButtonElement* DoGetNextMenuItem(
     const XULMenuParentElement& aMenuParent, const nsIContent& aStart,
-    StartKind aStartKind) {
+    StartKind aStartKind, const GetMenuItemsOptions& aOptions = {}) {
   nsIContent* start =
       aStartKind == StartKind::Item
           ? (aForward ? aStart.GetNextSibling() : aStart.GetPreviousSibling())
           : (aForward ? aStart.GetFirstChild() : aStart.GetLastChild());
   for (nsIContent* node = start; node;
        node = aForward ? node->GetNextSibling() : node->GetPreviousSibling()) {
-    if (IsValidMenuItem(aMenuParent, *node)) {
+    if (IsValidMenuItem(aMenuParent, *node, aOptions)) {
       return static_cast<XULButtonElement*>(node);
     }
     if (node->IsXULElement(nsGkAtoms::menugroup)) {
       if (XULButtonElement* child = DoGetNextMenuItem<aForward>(
-              aMenuParent, *node, StartKind::Parent)) {
+              aMenuParent, *node, StartKind::Parent, aOptions)) {
         return child;
       }
     }
@@ -219,13 +220,14 @@ static XULButtonElement* DoGetNextMenuItem(
     
     
     return DoGetNextMenuItem<aForward>(aMenuParent, *aStart.GetParent(),
-                                       StartKind::Item);
+                                       StartKind::Item, aOptions);
   }
   return nullptr;
 }
 
-XULButtonElement* XULMenuParentElement::GetFirstMenuItem() const {
-  return DoGetNextMenuItem<true>(*this, *this, StartKind::Parent);
+XULButtonElement* XULMenuParentElement::GetFirstMenuItem(
+    const GetMenuItemsOptions& aOptions) const {
+  return DoGetNextMenuItem<true>(*this, *this, StartKind::Parent, aOptions);
 }
 
 XULButtonElement* XULMenuParentElement::GetLastMenuItem() const {
@@ -233,8 +235,10 @@ XULButtonElement* XULMenuParentElement::GetLastMenuItem() const {
 }
 
 XULButtonElement* XULMenuParentElement::GetNextMenuItemFrom(
-    const XULButtonElement& aStartingItem) const {
-  return DoGetNextMenuItem<true>(*this, aStartingItem, StartKind::Item);
+    const XULButtonElement& aStartingItem,
+    const GetMenuItemsOptions& aOptions) const {
+  return DoGetNextMenuItem<true>(*this, aStartingItem, StartKind::Item,
+                                 aOptions);
 }
 
 XULButtonElement* XULMenuParentElement::GetPrevMenuItemFrom(

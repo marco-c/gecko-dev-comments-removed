@@ -61,15 +61,10 @@ export function assignAutoAccessKeys(popup) {
 
 function assign(popup) {
   let isPanelList = popup.localName == "panel-list";
-  let items = [
-    ...popup.querySelectorAll(
-      isPanelList
-        ? "panel-item"
-        : ":is(:scope, :scope > menugroup) > :is(menuitem, menu)"
-    ),
-  ];
+  let items = popup.getMenuItems({ includeDisabled: true });
   let otherItems = items.filter(
-    item => !item.matches("[auto-accesskey], [hidden], [role][disabled]")
+    item =>
+      !item.matches("[auto-accesskey], :is(menuitem, menu)[role][disabled]")
   );
   let othersHaveNoKeys =
     otherItems.length &&
@@ -93,8 +88,6 @@ function assign(popup) {
       item.setAttribute("accesskey", key);
       usedKeys.add(key);
     } else {
-      // An empty accesskey keeps a panel-list from matching the label's first
-      // letter.
       item.removeAttribute("accesskey");
       if (!othersHaveNoKeys && label?.trim()) {
         itemsWithoutKey.push(item);
@@ -111,4 +104,61 @@ function assign(popup) {
     }
     digit++;
   }
+}
+
+/**
+ * Finds the item of an open panel-list that pressing a key selects: an item
+ * with the key as its accesskey, or else an item without an accesskey with a
+ * label that starts with the key or has the key as its first typeable letter
+ * or digit, so that "w" reaches "🦊 Work".
+ *
+ * @param {Element[]} items
+ *   The items that the key can select, in order.
+ * @param {string} key
+ *   The typed character.
+ * @param {object} options
+ * @param {(item: Element) => string} options.getLabel
+ *   Returns an item's label.
+ * @param {Element} [options.current]
+ *   The highlighted or focused item. When several items match, the first match
+ *   after it is selected, wrapping around.
+ * @param {boolean} [options.matchLabels]
+ *   Whether an item can match by its label.
+ * @returns {{item: Element, activate: boolean} | null}
+ *   The item to select, and whether to activate it because it is the only
+ *   match.
+ */
+export function findItemForKey(
+  items,
+  key,
+  { getLabel, current, matchLabels = true }
+) {
+  let letter = key.toLowerCase();
+  let isMatch = item => item.getAttribute("accesskey")?.toLowerCase() == letter;
+  let matches = items.filter(isMatch);
+  if (!matches.length && matchLabels) {
+    isMatch = item => {
+      if (item.getAttribute("accesskey")) {
+        return false;
+      }
+      let label = getLabel(item).trim().toLowerCase();
+      return (
+        label.startsWith(letter) ||
+        label.match(TYPEABLE_CHARACTER)?.[0] == letter
+      );
+    };
+    matches = items.filter(isMatch);
+  }
+  if (!matches.length) {
+    return null;
+  }
+  if (matches.length == 1) {
+    return { item: matches[0], activate: true };
+  }
+  let after =
+    items.findIndex(item => item == current || item.contains(current)) + 1;
+  return {
+    item: items.slice(after).find(isMatch) ?? matches[0],
+    activate: false,
+  };
 }
