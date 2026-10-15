@@ -10,11 +10,4 @@ namespace pk {
 
 std::string detokenize(const std::vector<std::string>& pieces,
                        const std::vector<int32_t>& ids);
-
-
-
-
-
-std::vector<int32_t> strip_special_tokens(const std::vector<std::string>& pieces,
-                                          const std::vector<int32_t>& ids);
 } 

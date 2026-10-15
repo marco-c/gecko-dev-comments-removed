@@ -111,11 +111,6 @@ ggml_tensor* RelPosAttention::build_graph(ggml_context* ctx, ggml_tensor* xt,
     
     
     
-    
-    
-    
-    
-    
     const int chunk_size  = chunked_limited_ ? (att_right_ + 1) : 0;
     const int left_chunks = (chunked_limited_ && chunk_size > 0)
                             ? (att_left_ / chunk_size) : 0;
@@ -124,10 +119,6 @@ ggml_tensor* RelPosAttention::build_graph(ggml_context* ctx, ggml_tensor* xt,
         float* md = mask_host.data();
         const float ninf = -INFINITY;
         for (int qi = 0; qi < T; ++qi) {
-            if (qi >= valid_len) {  
-                for (int kj = 0; kj < T; ++kj) md[(size_t)qi * T + kj] = 0.0f;
-                continue;
-            }
             const int cq = chunked_limited_ ? (qi / chunk_size) : 0;
             for (int kj = 0; kj < T; ++kj) {
                 bool ok = (kj < valid_len);
@@ -265,13 +256,6 @@ ggml_tensor* RelPosAttention::build_graph_batched(
     
     
     
-    
-    
-    
-    
-    
-    
-    
     const int chunk_size  = chunked_limited_ ? (att_right_ + 1) : 0;
     const int left_chunks = (chunked_limited_ && chunk_size > 0)
                             ? (att_left_ / chunk_size) : 0;
@@ -282,11 +266,6 @@ ggml_tensor* RelPosAttention::build_graph_batched(
         for (int b = 0; b < B; ++b) {
             const int vl = valid_len[b];
             for (int qi = 0; qi < T; ++qi) {
-                if (qi >= vl) {  
-                    for (int kj = 0; kj < T; ++kj)
-                        md[(size_t)b * T * T + (size_t)qi * T + kj] = 0.0f;
-                    continue;
-                }
                 const int cq = chunked_limited_ ? (qi / chunk_size) : 0;
                 for (int kj = 0; kj < T; ++kj) {
                     bool ok = (kj < vl);
@@ -387,19 +366,14 @@ ggml_tensor* RelPosAttention::build_graph_batched_local(
     ggml_tensor* scores = ggml_add(ctx, ac, bd);   
 
     
-    
-    
     std::vector<float>& mh = pool.alloc_f32((size_t)B * T * P);
     for (int b = 0; b < B; ++b) {
         const int vl = valid_len[b];
-        for (int t = 0; t < T; ++t) {
-            const bool dead_row = (t - att_left >= vl);
+        for (int t = 0; t < T; ++t)
             for (int c = 0; c < P; ++c) {
                 const int key = t - att_left + c;
-                mh[(size_t)b * T * P + (size_t)t * P + c] =
-                    (dead_row || (key >= 0 && key < vl)) ? 0.0f : -INFINITY;
+                mh[(size_t)b * T * P + (size_t)t * P + c] = (key >= 0 && key < vl) ? 0.0f : -INFINITY;
             }
-        }
     }
     int64_t mne[4] = {P, T, 1, B};
     ggml_tensor* mask = pk::graph_input_tensor(ctx, GGML_TYPE_F32, 4, mne,
@@ -519,21 +493,12 @@ ggml_tensor* RelPosAttention::build_graph_local(ggml_context* ctx, ggml_tensor* 
 
         
         
-        
-        
-        
-        
-        
-        
         std::vector<float>& mh = pool.alloc_f32((size_t)P * T);
-        for (int t = 0; t < T; ++t) {
-            const bool dead_row = (t - att_left >= valid_len);
+        for (int t = 0; t < T; ++t)
             for (int c = 0; c < P; ++c) {
                 const int key = t - att_left + c;
-                mh[(size_t)t * P + c] =
-                    (dead_row || (key >= 0 && key < valid_len)) ? 0.0f : -INFINITY;
+                mh[(size_t)t * P + c] = (key >= 0 && key < valid_len) ? 0.0f : -INFINITY;
             }
-        }
         int64_t mne[2] = {P, T};
         ggml_tensor* mask = pk::graph_input_tensor(ctx, GGML_TYPE_F32, 2, mne,
                                 mh.data(), mh.size() * sizeof(float));
@@ -664,19 +629,12 @@ ggml_tensor* RelPosAttention::build_graph_local_chunked(
     ggml_tensor* scores = ggml_add(ctx, ac, bd);    
 
     
-    
-    
-    
-    
     std::vector<float>& mh = pool.alloc_f32((size_t)P * T);
-    for (int t = 0; t < T; ++t) {
-        const bool dead_row = (t - att_left >= valid_len);
+    for (int t = 0; t < T; ++t)
         for (int c = 0; c < P; ++c) {
             const int key = t - att_left + c;
-            mh[(size_t)t * P + c] =
-                (dead_row || (key >= 0 && key < valid_len)) ? 0.0f : -INFINITY;
+            mh[(size_t)t * P + c] = (key >= 0 && key < valid_len) ? 0.0f : -INFINITY;
         }
-    }
     int64_t mne[2] = {P, T};
     ggml_tensor* mask = pk::graph_input_tensor(ctx, GGML_TYPE_F32, 2, mne,
                             mh.data(), mh.size() * sizeof(float));

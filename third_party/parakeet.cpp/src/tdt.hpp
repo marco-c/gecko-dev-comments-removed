@@ -11,27 +11,6 @@ namespace pk {
 
 
 
-struct TdtBeamToken {
-    int32_t id;
-    int32_t frame;
-    int32_t duration;
-};
-
-
-
-
-
-
-struct TdtBeamHypothesis {
-    std::vector<TdtBeamToken> tokens;
-    float score = 0.0f;
-    float normalized_score = 0.0f;
-};
-
-
-
-
-
 
 
 
@@ -76,38 +55,5 @@ std::vector<int32_t> tdt_greedy(const PredictionNet& pred, const Joint& joint,
                                 const std::vector<int32_t>& durations,
                                 int blank_id, int max_symbols,
                                 std::vector<TokenInfo>* tokens = nullptr);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-std::vector<TdtBeamHypothesis> tdt_beam_search(
-    const PredictionNet& pred, const Joint& joint,
-    const std::vector<float>& enc, int T, int enc_hidden,
-    const std::vector<int32_t>& durations, int blank_id,
-    int beam_size, int nbest, bool score_norm = true);
-
-namespace detail {
-
-
-
-
-int best_positive_duration_index(
-    const std::vector<float>& scores,
-    const std::vector<int32_t>& durations);
-
-} 
 
 } 
