@@ -436,6 +436,8 @@ module.exports = {
         "layout/**",
         
         "testing/**",
+        "**/test/**",
+        "**/tests/**",
         
         "toolkit/themes/shared/colorpicker-common.css",
         "toolkit/themes/shared/colorpicker.css",
