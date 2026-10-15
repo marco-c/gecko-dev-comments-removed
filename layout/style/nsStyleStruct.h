@@ -1707,6 +1707,10 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   
   mozilla::NonNegativeLengthPercentage mShapeMargin;
 
+  
+  
+  mozilla::StyleFitTolerance mFitTolerance;
+
   mozilla::StyleShapeOutside mShapeOutside;
 
   
