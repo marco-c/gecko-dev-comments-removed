@@ -767,7 +767,6 @@ pref("dom.allow_scripts_to_close_windows",          false);
 
 pref("dom.popup_allowed_events", "change click dblclick auxclick mousedown mouseup pointerdown pointerup notificationclick reset submit touchend contextmenu");
 
-pref("dom.storage.shadow_writes", false);
 pref("dom.storage.snapshot_prefill", 16384);
 pref("dom.storage.snapshot_gradual_prefill", 4096);
 pref("dom.storage.snapshot_reusing", true);
@@ -4156,7 +4155,13 @@ pref("extensions.formautofill.creditCards.storage.rust.enabled", false);
 pref("extensions.formautofill.creditCards.storage.rust.active", false);
 
 
-pref("extensions.formautofill.creditCards.storage.rust.runMigrationTest", false);
+
+
+#ifdef NIGHTLY_BUILD
+  pref("extensions.formautofill.creditCards.storage.rust.runMigrationTest", true);
+#else
+  pref("extensions.formautofill.creditCards.storage.rust.runMigrationTest", false);
+#endif
 
 
 pref("extensions.formautofill.creditCards.storage.rust.migrationTestVersion", 0);
