@@ -10892,13 +10892,6 @@
   value: false
   mirror: always
 
-# Whether transitions override ua !important declarations.
-- name: layout.css.transitions-override-ua
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-  rust: true
-
 # Whether to enable CSS tree-counting functions (sibling-index(), sibling-count()).
 # https://drafts.csswg.org/css-values-5/#tree-counting
 - name: layout.css.tree-counting-functions.enabled
