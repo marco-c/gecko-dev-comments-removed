@@ -8,6 +8,7 @@
 #include "GLContext.h"
 #include "GLReadTexImageHelper.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/webrender/RenderThread.h"
 
 namespace mozilla {
@@ -25,6 +26,7 @@ RenderAndroidSurfaceTextureHost::RenderAndroidSurfaceTextureHost(
       mPrepareStatus(STATUS_NONE),
       mAttachedToGLContext(false),
       mIsRemoteTexture(aIsRemoteTexture) {
+  MOZ_ASSERT(!gfx::gfxVars::ForceAImageReaderAndroid());
   MOZ_COUNT_CTOR_INHERITED(RenderAndroidSurfaceTextureHost, RenderTextureHost);
 
   if (mSurfTex) {

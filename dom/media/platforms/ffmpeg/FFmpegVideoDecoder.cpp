@@ -3117,8 +3117,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   AVMediaCodecDeviceContext* mediacodecctx =
       (AVMediaCodecDeviceContext*)hwctx->hwctx;
 
-  if (XRE_IsGPUProcess() &&
-      gfx::gfxVars::UseAImageReaderVideoGpuProcessAndroid()) {
+  if (XRE_IsGPUProcess() && gfx::gfxVars::ForceAImageReaderAndroid()) {
     MOZ_ASSERT(!mAndroidImageReader);
     mAndroidImageReader = layers::AndroidImageReader::Create();
   }

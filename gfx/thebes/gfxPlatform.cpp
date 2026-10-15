@@ -147,7 +147,6 @@ static const uint32_t kDefaultGlyphCacheSize = -1;
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/GPUParent.h"
-#include "mozilla/gfx/SourceSurfaceCairo.h"
 #include "nsIGfxInfo.h"
 #include "nsIXULRuntime.h"
 #include "nscore.h"  
@@ -698,9 +697,10 @@ static void FinishAsyncMemoryReport() {
 
 
 
-#define REPORT_DL_STORE(id)                                             \
-  helper.Report(aReport.interning.dl_stores.id, "interning/" #id "/dl-" \
-                                                                 "stores");
+#define REPORT_DL_STORE(id)                                      \
+  helper.Report(aReport.interning.dl_stores.id, "interning/" #id \
+                                                "/dl-"           \
+                                                "stores");
 
 NS_IMPL_ISUPPORTS(WebRenderMemoryReporter, nsIMemoryReporter)
 
@@ -1464,184 +1464,6 @@ already_AddRefed<DrawTarget> gfxPlatform::CreateDrawTargetForSurface(
     return nullptr;
   }
   return drawTarget.forget();
-}
-
-cairo_user_data_key_t kSourceSurface;
-
-
-
-
-
-
-
-
-struct SourceSurfaceUserData {
-  RefPtr<SourceSurface> mSrcSurface;
-  BackendType mBackendType;
-};
-
-static void SourceBufferDestroy(void* srcSurfUD) {
-  delete static_cast<SourceSurfaceUserData*>(srcSurfUD);
-}
-
-UserDataKey kThebesSurface;
-
-struct DependentSourceSurfaceUserData {
-  RefPtr<gfxASurface> mSurface;
-};
-
-static void SourceSurfaceDestroyed(void* aData) {
-  delete static_cast<DependentSourceSurfaceUserData*>(aData);
-}
-
-void gfxPlatform::ClearSourceSurfaceForSurface(gfxASurface* aSurface) {
-  aSurface->SetData(&kSourceSurface, nullptr, nullptr);
-}
-
-
-already_AddRefed<SourceSurface> gfxPlatform::GetSourceSurfaceForSurface(
-    RefPtr<DrawTarget> aTarget, gfxASurface* aSurface, bool aIsPlugin) {
-  if (!aSurface->CairoSurface() || aSurface->CairoStatus()) {
-    return nullptr;
-  }
-
-  if (!aTarget) {
-    aTarget = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-  }
-
-  void* userData = aSurface->GetData(&kSourceSurface);
-
-  if (userData) {
-    SourceSurfaceUserData* surf = static_cast<SourceSurfaceUserData*>(userData);
-
-    if (surf->mSrcSurface->IsValid() &&
-        surf->mBackendType == aTarget->GetBackendType()) {
-      RefPtr<SourceSurface> srcSurface(surf->mSrcSurface);
-      return srcSurface.forget();
-    }
-    
-    
-  }
-
-  SurfaceFormat format = aSurface->GetSurfaceFormat();
-
-  if (aTarget->GetBackendType() == BackendType::CAIRO) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return Factory::CreateSourceSurfaceForCairoSurface(
-        aSurface->CairoSurface(), aSurface->GetSize(), format);
-  }
-
-  RefPtr<SourceSurface> srcBuffer;
-
-  
-  
-
-  if (!srcBuffer) {
-    
-    
-    RefPtr<DataSourceSurface> surf = GetWrappedDataSourceSurface(aSurface);
-    if (surf) {
-      srcBuffer = aIsPlugin
-                      ? aTarget->OptimizeSourceSurfaceForUnknownAlpha(surf)
-                      : aTarget->OptimizeSourceSurface(surf);
-
-      if (srcBuffer == surf) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return srcBuffer.forget();
-      }
-    }
-  }
-
-  if (!srcBuffer) {
-    MOZ_ASSERT(aTarget->GetBackendType() != BackendType::CAIRO,
-               "We already tried CreateSourceSurfaceFromNativeSurface with a "
-               "DrawTargetCairo above");
-    
-    
-    
-    
-    
-    
-    
-    srcBuffer = Factory::CreateSourceSurfaceForCairoSurface(
-        aSurface->CairoSurface(), aSurface->GetSize(), format);
-    if (srcBuffer) {
-      srcBuffer = aTarget->OptimizeSourceSurface(srcBuffer);
-    }
-  }
-
-  if (!srcBuffer) {
-    return nullptr;
-  }
-
-  if ((srcBuffer->GetType() == SurfaceType::CAIRO &&
-       static_cast<SourceSurfaceCairo*>(srcBuffer.get())->GetSurface() ==
-           aSurface->CairoSurface()) ||
-      (srcBuffer->GetType() == SurfaceType::CAIRO_IMAGE &&
-       static_cast<DataSourceSurfaceCairo*>(srcBuffer.get())->GetSurface() ==
-           aSurface->CairoSurface())) {
-    
-    return srcBuffer.forget();
-  }
-
-  
-  auto* srcSurfUD = new SourceSurfaceUserData;
-  srcSurfUD->mBackendType = aTarget->GetBackendType();
-  srcSurfUD->mSrcSurface = srcBuffer;
-  aSurface->SetData(&kSourceSurface, srcSurfUD, SourceBufferDestroy);
-
-  return srcBuffer.forget();
-}
-
-already_AddRefed<DataSourceSurface> gfxPlatform::GetWrappedDataSourceSurface(
-    gfxASurface* aSurface) {
-  RefPtr<gfxImageSurface> image = aSurface->GetAsImageSurface();
-  if (!image) {
-    return nullptr;
-  }
-  RefPtr<DataSourceSurface> result = Factory::CreateWrappingDataSourceSurface(
-      image->Data(), image->Stride(), image->GetSize(),
-      ImageFormatToSurfaceFormat(image->Format()));
-
-  if (!result) {
-    return nullptr;
-  }
-
-  
-  
-  auto* srcSurfUD = new DependentSourceSurfaceUserData;
-  srcSurfUD->mSurface = aSurface;
-  result->AddUserData(&kThebesSurface, srcSurfUD, SourceSurfaceDestroyed);
-
-  return result.forget();
 }
 
 void gfxPlatform::PopulateScreenInfo() {
@@ -2706,8 +2528,10 @@ void gfxPlatform::InitWebRenderConfig() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-  gfxVars::SetUseAImageReaderVideoGpuProcessAndroid(
-      StaticPrefs::gfx_video_aimage_reader_gpu_process_android_AtStartup());
+  bool forceAImageReader =
+      gfx::gfxVars::UseWebRenderANGLE() ||
+      StaticPrefs::gfx_video_force_aimage_reader_android_AtStartup();
+  gfxVars::SetForceAImageReaderAndroid(forceAImageReader);
 #endif
 
 #ifdef XP_WIN

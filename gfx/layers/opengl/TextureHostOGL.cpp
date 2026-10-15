@@ -63,6 +63,11 @@ already_AddRefed<TextureHost> CreateTextureHostOGL(
   switch (aDesc.type()) {
 #ifdef MOZ_WIDGET_ANDROID
     case SurfaceDescriptor::TSurfaceTextureDescriptor: {
+      if (gfx::gfxVars::ForceAImageReaderAndroid()) {
+        MOZ_ASSERT_UNREACHABLE("unexpected to be called");
+        gfxCriticalError() << "ForceAImageReader is enabled";
+        return nullptr;
+      }
       const SurfaceTextureDescriptor& desc =
           aDesc.get_SurfaceTextureDescriptor();
       java::GeckoSurfaceTexture::LocalRef surfaceTexture =
