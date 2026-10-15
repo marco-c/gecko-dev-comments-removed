@@ -210,13 +210,9 @@ impl GrayFormat for GrayAlpha {
 
 #[inline]
 fn clamp_u8(v: f32) -> u8 {
-    if v > 255. {
-        255
-    } else if v < 0. {
-        0
-    } else {
-        (v + 0.5).floor() as u8
-    }
+    
+    
+    (v + 0.5) as u8
 }
 
 
