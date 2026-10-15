@@ -202,7 +202,6 @@ ipprotection-button-connecting = Turning on…
 # This shows the default selection, "Recommended" which is the recommended location as determined by Firefox.
 ipprotection-recommended-location-button = Location: Recommended
 ipprotection-recommended-location-description = { -brand-product-name } finds the fastest location
-ipprotection-recommended-location-badge = NEW
 
 # Variables
 #   $country (string) - The country selected for the VPN server location
@@ -306,11 +305,14 @@ ip-protection-description-1 =
   .description = Get extra privacy by hiding your location while browsing.
 ip-protection-learn-more = Learn more
 
-# Variables
-#   $maxUsage (number) - The maximum amount of data a user can use in a month (in GB)
 ip-protection-not-opted-in-4 =
   .heading = Try { -brand-short-name }’s built-in VPN
   .message = Browse with extra protection by hiding your location.
+# Variables
+#   $maxUsage (number) - The maximum amount of data a user can use in a month (in GB)
+ip-protection-not-opted-in-inclusions-enabled =
+  .heading = Ready to try it?
+  .message = Get { $maxUsage } GB free each month and choose which sites use VPN.
 ip-protection-not-opted-in-button = Get started
 
 # Variables:
@@ -329,9 +331,9 @@ ip-protection-site-rules-button-1 =
   .label = Manage VPN rules
   .description = Set rules for sites that need extra privacy or VPN turned off.
 
-ip-protection-site-rules-list-section =
+ip-protection-site-rules-list-section-1 =
   .label = Website rules
-  .description = Choose how VPN works for sites that need extra privacy or VPN turned off.
+  .description = Set rules to turn VPN on or off automatically.
 
 ip-protection-site-rules-add-button =
   .label = Set rule
