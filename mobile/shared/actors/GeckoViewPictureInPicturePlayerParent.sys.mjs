@@ -5,6 +5,12 @@
 import { GeckoViewActorParent } from "resource://gre/modules/GeckoViewActorParent.sys.mjs";
 import { GeckoViewUtils } from "resource://gre/modules/GeckoViewUtils.sys.mjs";
 
+const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  GeckoViewPictureInPictureController:
+    "resource://gre/modules/GeckoViewPictureInPicture.sys.mjs",
+});
+
 const { debug } = GeckoViewUtils.initLogging(
   "GeckoViewPictureInPicturePlayer[P]"
 );
@@ -14,8 +20,17 @@ const { debug } = GeckoViewUtils.initLogging(
 // embedder owns the picture-in-picture surface, so those messages are dropped for now.
 export class GeckoViewPictureInPicturePlayerParent extends GeckoViewActorParent {
   receiveMessage(msg) {
-    debug`ignoring player message ${msg.name}`;
-    return null;
+    switch (msg.name) {
+      case "PictureInPicture:Close": {
+        return lazy.GeckoViewPictureInPictureController.askEmbedderToClose(
+          this.browser
+        );
+      }
+      default: {
+        debug`ignoring player message ${msg.name}`;
+        return null;
+      }
+    }
   }
 
   setupPlayer(videoRef) {
