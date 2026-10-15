@@ -1455,8 +1455,14 @@ public class GeckoSessionTestRule implements TestRule {
 
   
   public void performTestEndCheck() {
-    mWaitScopeDelegates.clearAndAssert();
-    mTestScopeDelegates.clearAndAssert();
+    final ErrorCollector errorCollector = mErrorCollector;
+    mErrorCollector = null;
+    try {
+      mWaitScopeDelegates.clearAndAssert();
+      mTestScopeDelegates.clearAndAssert();
+    } finally {
+      mErrorCollector = errorCollector;
+    }
   }
 
   protected void cleanupRuntime(final GeckoRuntime runtime) {
@@ -1645,10 +1651,11 @@ public class GeckoSessionTestRule implements TestRule {
     methodCalls.add(
         new MethodCall(session, sOnPageStop, new CallRequirement( true, count, null)));
 
-    waitUntilCalled(session, GeckoSession.ProgressDelegate.class, methodCalls, null);
+    waitUntilCalled(session, GeckoSession.ProgressDelegate.class, methodCalls, null, false);
   }
 
   
+
 
 
 
@@ -1661,6 +1668,7 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+
 
 
 
@@ -1682,11 +1690,13 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
+
   public void waitUntilCalled(final @NonNull Class<?> callback, final @Nullable String... methods) {
     waitUntilCalled( null, callback, methods);
   }
 
   
+
 
 
 
@@ -1728,10 +1738,15 @@ public class GeckoSessionTestRule implements TestRule {
         isSessionCallback,
         equalTo(true));
 
-    waitUntilCalled(session, callback, waitMethods, null);
+    waitUntilCalled(session, callback, waitMethods, null, true);
   }
 
   
+
+
+
+
+
 
 
 
@@ -1744,6 +1759,7 @@ public class GeckoSessionTestRule implements TestRule {
   }
 
   
+
 
 
 
@@ -1786,7 +1802,7 @@ public class GeckoSessionTestRule implements TestRule {
         isSessionCallback,
         equalTo(true));
 
-    waitUntilCalled(session, callback.getClass(), methodCalls, callback);
+    waitUntilCalled(session, callback.getClass(), methodCalls, callback, false);
   }
 
   
@@ -1808,7 +1824,8 @@ public class GeckoSessionTestRule implements TestRule {
       final @Nullable GeckoSession session,
       final @NonNull Class<?> delegate,
       final @NonNull List<MethodCall> methodCalls,
-      final @Nullable Object callback) {
+      final @Nullable Object callback,
+      final boolean anyOverload) {
     ThreadUtils.assertOnUiThread();
 
     if (session != null && !session.equals(mMainSession)) {
@@ -1917,6 +1934,10 @@ public class GeckoSessionTestRule implements TestRule {
 
       if (methodCall.allowUnlimitedCalls() || !methodCall.allowMoreCalls()) {
         pendingMethodCalls.remove(methodCall);
+        if (anyOverload) {
+          pendingMethodCalls.removeIf(
+              mc -> mc.method.getName().equals(methodCall.method.getName()));
+        }
       }
 
       if (isDelegate && callback != null) {
@@ -2549,6 +2570,20 @@ public class GeckoSessionTestRule implements TestRule {
   public int getSessionPid(final @NonNull GeckoSession session) {
     final Double dblPid = (Double) webExtensionApiCall(session, "GetPidForTab", null);
     return dblPid.intValue();
+  }
+
+  public long getSessionBrowsingContextGroupId(final @NonNull GeckoSession session) {
+    final Double dblId =
+        (Double) webExtensionApiCall(session, "GetBrowsingContextGroupIdForTab", null);
+    return dblId.longValue();
+  }
+
+  public String getSessionRemoteType(final @NonNull GeckoSession session) {
+    return (String) webExtensionApiCall(session, "GetRemoteTypeForTab", null);
+  }
+
+  public String mintPictureInPicturePlacementToken(final @NonNull GeckoSession session) {
+    return (String) webExtensionApiCall(session, "MintPictureInPicturePlacementToken", null);
   }
 
   public void waitForContentTransformsReceived(final @NonNull GeckoSession session) {

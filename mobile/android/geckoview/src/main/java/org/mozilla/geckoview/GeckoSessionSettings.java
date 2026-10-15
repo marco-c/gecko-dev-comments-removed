@@ -191,6 +191,19 @@ public final class GeckoSessionSettings implements Parcelable {
       mSettings.setViewportMode(mode);
       return this;
     }
+
+    
+
+
+
+
+
+
+    @ExperimentalGeckoViewApi
+    public @NonNull Builder pictureInPictureToken(final @NonNull String token) {
+      mSettings.setPictureInPictureToken(token);
+      return this;
+    }
   }
 
   private static final String LOGTAG = "GeckoSessionSettings";
@@ -354,6 +367,9 @@ public final class GeckoSessionSettings implements Parcelable {
   private static final Key<String> UNSAFE_CONTEXT_ID =
       new Key<String>("unsafeSessionContextId",  true,  null);
 
+  private static final Key<String> PICTURE_IN_PICTURE_TOKEN =
+      new Key<String>("pictureInPictureToken",  true,  null);
+
   private final GeckoSession mSession;
   private final GeckoBundle mBundle;
 
@@ -395,6 +411,7 @@ public final class GeckoSessionSettings implements Parcelable {
     mBundle.putInt(DISPLAY_MODE.name, DISPLAY_MODE_BROWSER);
     mBundle.putString(CONTEXT_ID.name, null);
     mBundle.putString(UNSAFE_CONTEXT_ID.name, null);
+    mBundle.putString(PICTURE_IN_PICTURE_TOKEN.name, null);
   }
 
   
@@ -637,6 +654,10 @@ public final class GeckoSessionSettings implements Parcelable {
   private void setContextId(final @Nullable String value) {
     setString(UNSAFE_CONTEXT_ID, value);
     setString(CONTEXT_ID, StorageController.createSafeSessionContextId(value));
+  }
+
+   void setPictureInPictureToken(final @NonNull String token) {
+    setString(PICTURE_IN_PICTURE_TOKEN, token);
   }
 
   private void setString(final Key<String> key, final String value) {
