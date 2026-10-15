@@ -8873,6 +8873,34 @@ OverflowAreas nsIFrame::GetOverflowAreasRelativeToParent() const {
 
 OverflowAreas nsIFrame::GetActualAndNormalOverflowAreasRelativeToParent()
     const {
+  if (MOZ_UNLIKELY(IsAbsolutelyPositioned())) {
+    const auto* referenceData = GetProperty(AnchorPosReferences());
+    if (!referenceData || !referenceData->mRememberedScrollOffset ||
+        referenceData->mDefaultScrollShift == nsPoint()) {
+      return GetOverflowAreasRelativeToParent();
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const nsPoint unshiftedPosition =
+        GetPosition() + referenceData->mDefaultScrollShift;
+    const OverflowAreas overflows = GetOverflowAreas();
+    OverflowAreas result(overflows.InkOverflow() + GetPosition(), nsRect());
+    result.UnionWith(overflows + unshiftedPosition);
+    return result;
+  }
+
   if (MOZ_LIKELY(!IsRelativelyOrStickyPositioned())) {
     return GetOverflowAreasRelativeToParent();
   }

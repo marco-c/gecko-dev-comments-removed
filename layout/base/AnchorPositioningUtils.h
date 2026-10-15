@@ -131,6 +131,8 @@ struct AnchorPosResolutionData {
 
 
 
+
+
 class AnchorPosReferenceData {
  private:
   using ResolutionMap =
@@ -181,7 +183,35 @@ class AnchorPosReferenceData {
 
   
   
-  nsPoint AppliedScrollShift() const { return mDefaultScrollShift; }
+  
+  
+  
+  
+  
+  
+  
+  struct RememberedScrollOffset {
+    
+    RefPtr<const nsAtom> mAnchorName;
+    StyleCascadeLevel mAnchorTreeScope = StyleCascadeLevel::Default();
+    nsPoint mOffset;
+  };
+
+  
+  
+  void RememberScrollOffset();
+
+  
+  void MaybeRememberScrollOffset();
+
+  void ForgetRememberedScrollOffsetIfDefaultAnchorChanged();
+
+  
+  
+  nsPoint AppliedScrollShift() const;
+
+  
+  void Reset();
 
   PositionTryBackup TryPositionWithSameDefaultAnchor() {
     auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
@@ -204,19 +234,29 @@ class AnchorPosReferenceData {
 
   
   DistanceToNearestScrollContainer mDistanceToDefaultScrollContainer;
+
+  
+  
+  Maybe<RememberedScrollOffset> mRememberedScrollOffset;
+
+  
+  
+  
   
   nsPoint mDefaultScrollShift;
+
   
   nsRect mOriginalContainingBlockRect;
+
   
   
   
   nsRect mAdjustedContainingBlock;
-  
-  
+
   
   
   RefPtr<const nsAtom> mDefaultAnchorName;
+
   
   
   
@@ -233,6 +273,7 @@ class AnchorPosReferenceData {
   
   
   SideBits mScrollCompensatedSides = SideBits::eNone;
+
   
   
   nsMargin mInsets;
