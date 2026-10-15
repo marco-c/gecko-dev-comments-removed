@@ -5,6 +5,7 @@
 /**
  * @import {OpenedConnection} from "resource://gre/modules/Sqlite.sys.mjs"
  * @import {Query} from "./UrlbarProvidersManager.sys.mjs"
+ * @import {UrlbarAutofillData} from "chrome://browser/content/urlbar/UrlbarResult.mjs"
  */
 
 /**
@@ -971,6 +972,7 @@ export class UrlbarProviderAutofill extends UrlbarProvider {
     // `finalCompleteValue` will include it to properly reflect the real URL.
     let finalCompleteValue;
 
+    /** @type {UrlbarAutofillData["type"]} */
     let autofilledType;
     let adaptiveHistoryInput;
 

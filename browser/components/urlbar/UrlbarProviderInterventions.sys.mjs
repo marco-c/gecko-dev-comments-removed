@@ -698,7 +698,10 @@ export class UrlbarProviderInterventions extends UrlbarProvider {
   static resetAppUpdater() {
     // Reset only if the object has already been initialized.
     if (!Object.getOwnPropertyDescriptor(lazy, "appUpdater").get) {
-      lazy.appUpdater = new lazy.AppUpdater();
+      // eslint-disable-next-line mozilla/valid-lazy
+      Object.defineProperty(lazy, "appUpdater", {
+        value: new lazy.AppUpdater(),
+      });
     }
   }
 }

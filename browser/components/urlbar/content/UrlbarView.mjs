@@ -12,14 +12,15 @@ import { UrlbarResult } from "chrome://browser/content/urlbar/UrlbarResult.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 import { L10nCache } from "chrome://browser/content/urlbar/L10nCache.mjs";
 
-const lazy = typeof ChromeUtils != "undefined" ? {} : null;
+const { XPCOMUtils } =
+  typeof ChromeUtils == "undefined"
+    ? { XPCOMUtils: null }
+    : ChromeUtils.importESModule("resource://gre/modules/XPCOMUtils.sys.mjs");
 
-if (lazy) {
-  ChromeUtils.defineESModuleGetters(lazy, {
-    UrlbarSearchOneOffs:
-      "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs",
-  });
-}
+const lazy = XPCOMUtils?.declareLazy({
+  UrlbarSearchOneOffs:
+    "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs",
+});
 
 // Query selector for selectable elements in results.
 const SELECTABLE_ELEMENT_SELECTOR = "[role=button], [selectable], a";
@@ -2458,6 +2459,10 @@ export class UrlbarView {
     return newResult.testForceNewContent;
   }
 
+  /**
+   * @param {ResultRow} item
+   * @param {UrlbarResult} result
+   */
   // eslint-disable-next-line complexity
   #updateRow(item, result) {
     let oldResult = item.result;
@@ -2468,8 +2473,8 @@ export class UrlbarView {
     if (this.#needsNewContent(item, oldResult, result)) {
       // Recreate the row content except the buttons, which we'll reuse below.
       let buttons = item._elements.get("buttons");
-      while (item.lastChild) {
-        item.lastChild.remove();
+      while (item.lastElementChild) {
+        item.lastElementChild.remove();
       }
       item._elements.clear();
 
@@ -2528,7 +2533,9 @@ export class UrlbarView {
       item.appendChild(this.#createSecondaryAction(secAction, isFirstChild));
     } else if (
       secAction &&
-      secAction.key != actionsContainer.firstChild.dataset.action
+      secAction.key !=
+        /** @type {HTMLElement} */ (actionsContainer.firstElementChild).dataset
+          .action
     ) {
       item.replaceChild(
         this.#createSecondaryAction(secAction, isFirstChild),
@@ -2605,7 +2612,9 @@ export class UrlbarView {
       );
     }
 
-    let favicon = item._elements.get("favicon");
+    let favicon = /** @type {HTMLImageElement} */ (
+      item._elements.get("favicon")
+    );
     favicon.src = this.#iconForResult(result);
 
     let title = item._elements.get("title");
@@ -2737,12 +2746,12 @@ export class UrlbarView {
         break;
       case UrlbarShared.RESULT_TYPE.URL:
         if (result.providerName == "UrlbarProviderClipboard") {
+          isVisitAction = true;
           actionSetter = () => {
             this.#l10nCache.setElementL10n(action, {
               id: "urlbar-result-action-visit-from-clipboard",
             });
           };
-          title.toggleAttribute("is-url", true);
 
           let label = { id: "urlbar-result-action-visit-from-clipboard" };
           this.#l10nCache.ensure(label).then(() => {
@@ -2827,7 +2836,7 @@ export class UrlbarView {
     this.#updateExplanation(item, result, setURL);
 
     title.toggleAttribute("is-url", isVisitAction);
-    if (isVisitAction) {
+    if (isVisitAction && !actionSetter) {
       actionSetter = () => {
         this.#l10nCache.setElementL10n(action, {
           id: "urlbar-result-action-visit",
@@ -2836,7 +2845,7 @@ export class UrlbarView {
     }
 
     if (this.#showsActionLabels) {
-      item.toggleAttribute("has-action", actionSetter);
+      item.toggleAttribute("has-action", !!actionSetter);
       if (actionSetter) {
         actionSetter();
         item._originalActionSetter = actionSetter;

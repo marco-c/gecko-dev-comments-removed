@@ -519,7 +519,11 @@ async function isDefaultEngineHomepage(urlStr) {
     return false;
   }
 
-  if (url.searchParams.has(homepageMatches.prohibitedSearchParams)) {
+  if (
+    homepageMatches.prohibitedSearchParams?.some(param =>
+      url.searchParams.has(param)
+    )
+  ) {
     return false;
   }
 

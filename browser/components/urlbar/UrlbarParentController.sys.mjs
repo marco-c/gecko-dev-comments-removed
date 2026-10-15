@@ -594,7 +594,7 @@ export class UrlbarParentController {
    * @param {string} searchData.engineId
    *   The id of the engine handling the search.
    * @param {string} searchData.query
-   * @param {string} searchData.searchSource
+   * @param {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} searchData.searchSource
    *   Where the search originated from.
    * @param {object} searchData.details
    *   The search action details, per `BrowserSearchTelemetry.recordSearch()`.

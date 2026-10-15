@@ -3487,7 +3487,7 @@ ${
    *
    * @param {string} value
    * @param {object} options
-   * @param {PartialSearchEngine} options.searchEngine
+   * @param {PartialSearchEngine|SearchEngine} options.searchEngine
    * @param {Event} options.event
    * @param {string} options.where
    * @param {boolean} [options.inBackground]

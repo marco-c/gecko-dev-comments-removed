@@ -485,7 +485,13 @@ export class ProvidersManager {
       queryContext.restrictToken = restrictToken;
       // If the restriction token has an equivalent source, then set it as
       // restrictSource.
-      if (lazy.UrlbarShared.SEARCH_MODE_RESTRICT.has(restrictToken.value)) {
+      if (
+        lazy.UrlbarShared.SEARCH_MODE_RESTRICT.has(
+          /** @type {Values<typeof lazy.UrlbarShared.RESTRICT_TOKENS>} */ (
+            restrictToken.value
+          )
+        )
+      ) {
         queryContext.restrictSource = queryContext.sources[0];
       }
     }
@@ -1075,13 +1081,15 @@ function updateSourcesIfEmpty(context) {
   if (context.sources && context.sources.length) {
     return undefined;
   }
+
+  /** @type {Values<typeof lazy.UrlbarShared.RESULT_SOURCE>[]} */
   let acceptedSources = [];
   // There can be only one restrict token per query.
   let restrictToken =
     context.sapName != "urlbar"
       ? undefined
       : context.tokens.find(t =>
-          [
+          /** @type {Values<typeof lazy.UrlbarShared.TOKEN_TYPE>[]} */ ([
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_HISTORY,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_BOOKMARK,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_TAG,
@@ -1090,7 +1098,7 @@ function updateSourcesIfEmpty(context) {
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_TITLE,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_URL,
             lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_ACTION,
-          ].includes(t.type)
+          ]).includes(t.type)
         );
 
   // RESTRICT_TITLE and RESTRICT_URL do not affect query sources.
