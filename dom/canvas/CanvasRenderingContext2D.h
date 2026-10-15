@@ -55,7 +55,6 @@ using CanvasImageSource =
     HTMLImageElementOrSVGImageElementOrHTMLCanvasElementOrHTMLVideoElementOrOffscreenCanvasOrImageBitmapOrVideoFrame;
 class ImageBitmap;
 class ImageData;
-struct ImageDataSettings;
 class UTF8StringOrCanvasGradientOrCanvasPattern;
 class OwningUTF8StringOrCanvasGradientOrCanvasPattern;
 class TextMetrics;
@@ -265,14 +264,12 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     DrawImage(aImage, aSx, aSy, aSw, aSh, aDx, aDy, aDw, aDh, 6, aError);
   }
 
-  already_AddRefed<ImageData> CreateImageData(
-      JSContext*, int32_t aSw, int32_t aSh, const ImageDataSettings& aSettings,
-      ErrorResult&);
+  already_AddRefed<ImageData> CreateImageData(JSContext*, int32_t aSw,
+                                              int32_t aSh, ErrorResult&);
   already_AddRefed<ImageData> CreateImageData(JSContext*, ImageData&,
                                               ErrorResult&);
   already_AddRefed<ImageData> GetImageData(JSContext*, int32_t aSx, int32_t aSy,
                                            int32_t aSw, int32_t aSh,
-                                           const ImageDataSettings& aSettings,
                                            nsIPrincipal& aSubjectPrincipal,
                                            ErrorResult&);
   void PutImageData(ImageData&, int32_t aDx, int32_t aDy, ErrorResult&);
@@ -499,8 +496,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   gfx::IntSize GetSize() const { return gfx::IntSize(mWidth, mHeight); }
   int32_t GetWidth() override { return GetSize().width; }
   int32_t GetHeight() override { return GetSize().height; }
-
-  PredefinedColorSpace GetColorSpace() const { return mColorSpace; }
 
   
   
@@ -872,9 +867,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
   
   int32_t mWidth, mHeight;
-
-  
-  PredefinedColorSpace mColorSpace;
 
   
   
