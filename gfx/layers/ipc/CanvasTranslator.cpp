@@ -660,6 +660,8 @@ void CanvasTranslator::BlockCanvas() {
 }
 
 void CanvasTranslator::CheckAndSignalWriter() {
+  uint32_t spinCount = mMaxSpinCount;
+  TimeStamp deadline;
   do {
     switch (mHeader->writerState) {
       case State::Processing:
@@ -672,6 +674,20 @@ void CanvasTranslator::CheckAndSignalWriter() {
         if (mIPDLClosed) {
           return;
         }
+        if (spinCount > 0) {
+          --spinCount;
+          continue;
+        }
+        
+        
+        if (deadline.IsNull()) {
+          deadline = TimeStamp::Now() + TimeDuration::FromSeconds(1);
+        } else if (TimeStamp::Now() > deadline) {
+          gfxCriticalNote << "CanvasTranslator writer stuck in AboutToWait";
+          Deactivate();
+          return;
+        }
+        PR_Sleep(PR_INTERVAL_NO_WAIT);
         continue;
       case State::Waiting:
         if (mHeader->processedCount >= mHeader->writerWaitCount) {
