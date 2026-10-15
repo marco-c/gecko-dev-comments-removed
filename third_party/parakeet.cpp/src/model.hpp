@@ -1,6 +1,7 @@
 #pragma once
 #include "parakeet.h"          
 #include "model_loader.hpp"
+#include "tdt.hpp"             
 #include "transcription.hpp"   
 
 #include <memory>
@@ -8,6 +9,14 @@
 #include <vector>
 
 namespace pk {
+
+
+struct NBestTranscription {
+    std::string text;
+    std::vector<TdtBeamToken> tokens;
+    float score = 0.0f;
+    float normalized_score = 0.0f;
+};
 
 
 
@@ -69,6 +78,19 @@ public:
     
     
     
+    
+    
+    
+    
+    void transcribe_pcm_ctc_logits(const std::vector<float>& pcm, int sample_rate,
+                                   std::vector<float>& logits, int& T,
+                                   int& vocab_plus_1,
+                                   const std::string& target_lang = "") const;
+
+    
+    
+    
+    
     Transcription transcribe_with_timestamps(
         const std::vector<float>& pcm, int sample_rate,
         Decoder decoder = Decoder::kDefault,
@@ -78,6 +100,19 @@ public:
     Transcription transcribe_path_with_timestamps(
         const std::string& wav_path,
         Decoder decoder = Decoder::kDefault,
+        const std::string& target_lang = "") const;
+
+    
+    
+    
+    std::vector<NBestTranscription> transcribe_pcm_nbest(
+        const std::vector<float>& pcm, int sample_rate,
+        int beam_size, int nbest, bool score_norm = true,
+        const std::string& target_lang = "") const;
+
+    std::vector<NBestTranscription> transcribe_path_nbest(
+        const std::string& wav_path,
+        int beam_size, int nbest, bool score_norm = true,
         const std::string& target_lang = "") const;
 
     
@@ -120,6 +155,18 @@ private:
     Transcription transcribe_16k_with_timestamps(
         const std::vector<float>& pcm16k, Decoder decoder,
         const std::string& target_lang = "") const;
+
+    std::vector<NBestTranscription> transcribe_16k_nbest(
+        const std::vector<float>& pcm16k, int beam_size, int nbest,
+        bool score_norm, const std::string& target_lang) const;
+
+    
+    
+    
+    void transcribe_16k_ctc_logits(const std::vector<float>& pcm16k,
+                                   std::vector<float>& logits, int& T,
+                                   int& vocab_plus_1,
+                                   const std::string& target_lang = "") const;
 
     ModelLoader loader_;
 };

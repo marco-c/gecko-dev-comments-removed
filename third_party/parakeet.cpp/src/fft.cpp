@@ -7,75 +7,120 @@
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-#include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace pk {
 
 
 
-static void fft_inplace(std::vector<double>& re, std::vector<double>& im) {
-    const int n = static_cast<int>(re.size());
-    assert(n > 0 && (n & (n - 1)) == 0); 
 
-    
-    for (int i = 1, j = 0; i < n; ++i) {
-        int bit = n >> 1;
-        for (; j & bit; bit >>= 1) j ^= bit;
-        j ^= bit;
-        if (i < j) {
-            std::swap(re[i], re[j]);
-            std::swap(im[i], im[j]);
+
+
+class FftPlan {
+public:
+    explicit FftPlan(int n) : n_(n) {
+        assert(n > 0 && (n & (n - 1)) == 0 && "n must be a power of 2");
+        
+        rev_.resize((size_t)n);
+        for (int i = 1, j = 0; i < n; ++i) {
+            int bit = n >> 1;
+            for (; j & bit; bit >>= 1) j ^= bit;
+            j ^= bit;
+            rev_[i] = j;
         }
-    }
-
-    
-    for (int len = 2; len <= n; len <<= 1) {
-        double ang = -2.0 * M_PI / len;
-        double wr = std::cos(ang);
-        double wi = std::sin(ang);
-        for (int i = 0; i < n; i += len) {
+        
+        
+        stage_off_.push_back(0);
+        for (int len = 2; len <= n; len <<= 1) {
+            double ang = -2.0 * M_PI / len;
+            double wr = std::cos(ang);
+            double wi = std::sin(ang);
             double cur_wr = 1.0, cur_wi = 0.0;
             for (int k = 0; k < len / 2; ++k) {
-                int u = i + k;
-                int v = i + k + len / 2;
-                double tr = cur_wr * re[v] - cur_wi * im[v];
-                double ti = cur_wr * im[v] + cur_wi * re[v];
-                re[v] = re[u] - tr;
-                im[v] = im[u] - ti;
-                re[u] = re[u] + tr;
-                im[u] = im[u] + ti;
-                
+                tw_r_.push_back(cur_wr);
+                tw_i_.push_back(cur_wi);
                 double new_wr = cur_wr * wr - cur_wi * wi;
                 double new_wi = cur_wr * wi + cur_wi * wr;
                 cur_wr = new_wr;
                 cur_wi = new_wi;
             }
+            stage_off_.push_back((int)tw_r_.size());
         }
     }
-}
+
+    
+    
+    
+    void apply(const float* in, std::vector<float>& re, std::vector<float>& im) const {
+        const int n = n_;
+        d_re_.resize((size_t)n);
+        d_im_.resize((size_t)n);
+        for (int i = 0; i < n; ++i) {
+            d_re_[(size_t)rev_[i]] = (double)in[i];
+            d_im_[(size_t)rev_[i]] = 0.0;
+        }
+        const double* tw_r = tw_r_.data();
+        const double* tw_i = tw_i_.data();
+        double* re0 = d_re_.data();
+        double* im0 = d_im_.data();
+        int st = 0;
+        for (int len = 2; len <= n; len <<= 1, ++st) {
+            const int half = len >> 1;
+            const double* wbase_r = tw_r + stage_off_[st];
+            const double* wbase_i = tw_i + stage_off_[st];
+            for (int i = 0; i < n; i += len) {
+                const double* wr = wbase_r;
+                const double* wi = wbase_i;
+                for (int k = 0; k < half; ++k) {
+                    const int u = i + k;
+                    const int v = u + half;
+                    const double tr = wr[k] * re0[v] - wi[k] * im0[v];
+                    const double ti = wr[k] * im0[v] + wi[k] * re0[v];
+                    re0[v] = re0[u] - tr;
+                    im0[v] = im0[u] - ti;
+                    re0[u] = re0[u] + tr;
+                    im0[u] = im0[u] + ti;
+                }
+            }
+        }
+        const int n_bins = n / 2 + 1;
+        re.resize((size_t)n_bins);
+        im.resize((size_t)n_bins);
+        for (int b = 0; b < n_bins; ++b) {
+            re[(size_t)b] = (float)d_re_[b];
+            im[(size_t)b] = (float)d_im_[b];
+        }
+    }
+
+    int n() const { return n_; }
+
+private:
+    int n_;
+    std::vector<int> rev_;
+    std::vector<double> tw_r_, tw_i_;
+    std::vector<int> stage_off_;
+    mutable std::vector<double> d_re_, d_im_;  
+};
 
 void rfft(const std::vector<float>& in, std::vector<float>& re, std::vector<float>& im) {
     const int n = static_cast<int>(in.size());
     assert(n > 0 && (n & (n - 1)) == 0);
 
     
-    std::vector<double> buf_re(n), buf_im(n);
-    for (int i = 0; i < n; ++i) {
-        buf_re[i] = static_cast<double>(in[i]);
-        buf_im[i] = 0.0;
-    }
-
-    fft_inplace(buf_re, buf_im);
-
     
-    const int n_bins = n / 2 + 1;
-    re.resize(n_bins);
-    im.resize(n_bins);
-    for (int k = 0; k < n_bins; ++k) {
-        re[k] = static_cast<float>(buf_re[k]);
-        im[k] = static_cast<float>(buf_im[k]);
+    
+    
+    
+    
+    
+    static thread_local int cached_n = 0;
+    static thread_local std::unique_ptr<FftPlan> cached;
+    if (cached_n != n) {
+        cached = std::make_unique<FftPlan>(n);
+        cached_n = n;
     }
+    cached->apply(in.data(), re, im);
 }
 
 } 

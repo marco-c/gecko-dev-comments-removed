@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -9,6 +10,8 @@ struct Audio {
 };
 
 bool load_audio_16k_mono(const std::string& path, Audio& out);
+
+bool load_audio_16k_mono_from_memory(const void* data, size_t size, Audio& out);
 
 std::vector<float> resample_linear(const std::vector<float>& in, int in_sr, int out_sr);
 }
