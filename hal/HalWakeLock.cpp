@@ -69,9 +69,8 @@ class ClearHashtableOnShutdown final : public nsIObserver {
 NS_IMPL_ISUPPORTS(ClearHashtableOnShutdown, nsIObserver)
 
 NS_IMETHODIMP
-ClearHashtableOnShutdown::Observe(nsISupports* ,
-                                  const char* ,
-                                  const char16_t* ) {
+ClearHashtableOnShutdown::Observe(nsISupports* aSubject, const char* aTopic,
+                                  const char16_t* data) {
   MOZ_ASSERT(!strcmp(aTopic, "xpcom-shutdown"));
 
   sIsShuttingDown = true;
@@ -91,8 +90,8 @@ class CleanupOnContentShutdown final : public nsIObserver {
 NS_IMPL_ISUPPORTS(CleanupOnContentShutdown, nsIObserver)
 
 NS_IMETHODIMP
-CleanupOnContentShutdown::Observe(nsISupports* aSubject, const char* ,
-                                  const char16_t* ) {
+CleanupOnContentShutdown::Observe(nsISupports* aSubject, const char* aTopic,
+                                  const char16_t* data) {
   MOZ_ASSERT(!strcmp(aTopic, "ipc:content-shutdown"));
 
   if (sIsShuttingDown) {

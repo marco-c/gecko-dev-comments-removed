@@ -293,8 +293,8 @@ void UPowerClient::UpdateTrackedDevices() {
 }
 
 
-void UPowerClient::DeviceChanged(GDBusProxy* , gchar* aSenderName,
-                                 gchar* aSignalName, GVariant* ,
+void UPowerClient::DeviceChanged(GDBusProxy* aProxy, gchar* aSenderName,
+                                 gchar* aSignalName, GVariant* aParameters,
                                  UPowerClient* aListener) {
   
   if (!g_strcmp0(aSignalName, "DeviceAdded")) {
@@ -310,10 +310,10 @@ void UPowerClient::DeviceChanged(GDBusProxy* , gchar* aSenderName,
 }
 
 
-void UPowerClient::DevicePropertiesChanged(GDBusProxy* ,
-                                           gchar* ,
-                                           gchar* ,
-                                           GVariant* ,
+void UPowerClient::DevicePropertiesChanged(GDBusProxy* aProxy,
+                                           gchar* aSenderName,
+                                           gchar* aSignalName,
+                                           GVariant* aParameters,
                                            UPowerClient* aListener) {
   if (aListener->GetBatteryInfo()) {
     hal::NotifyBatteryChange(hal::BatteryInformation(

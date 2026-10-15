@@ -9,9 +9,9 @@
 
 #include "mozilla/Assertions.h"
 
-void handler(int ) { exit(gMozCrashReason == nullptr ? 1 : 0); }
+void handler(int signum) { exit(gMozCrashReason == nullptr ? 1 : 0); }
 
-int main(int , char** argv) {
+int main(int argc, char** argv) {
   
   if (gMozCrashReason) {
     fprintf(stderr, "gMozCrashReason unexpectedly starts set to %s.\n",
