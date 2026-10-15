@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 
 #include "Blur.h"
 #include "DataSurfaceHelpers.h"
@@ -1340,14 +1341,48 @@ void DrawTargetSkia::DrawGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
   
   const uint32_t kMaxGlyphBatchSize = 8192;
 
+  const bool haveClusters =
+      mSupportsGlyphSourceText && aBuffer.mText && aBuffer.mClusters;
+
   for (uint32_t offset = 0; offset < aBuffer.mNumGlyphs;) {
     uint32_t batchSize =
         std::min(aBuffer.mNumGlyphs - offset, kMaxGlyphBatchSize);
+    if (haveClusters) {
+      
+      
+      const uint32_t* clusters = aBuffer.mClusters + offset;
+      while (offset + batchSize < aBuffer.mNumGlyphs && batchSize > 1 &&
+             clusters[batchSize] == clusters[batchSize - 1]) {
+        --batchSize;
+      }
+    }
+    uint32_t minByte = 0;
+    uint32_t textSize = 0;
+    if (haveClusters) {
+      
+      
+      
+      
+      
+      minByte = aBuffer.mClusters[offset];
+      const uint32_t maxByte = offset + batchSize < aBuffer.mNumGlyphs
+                                   ? aBuffer.mClusters[offset + batchSize]
+                                   : aBuffer.mTextLength;
+      textSize = maxByte - minByte;
+    }
     SkTextBlobBuilder builder;
-    auto runBuffer = builder.allocRunPos(font, batchSize);
+    auto runBuffer = haveClusters
+                         ? builder.allocRunTextPos(font, batchSize, textSize)
+                         : builder.allocRunPos(font, batchSize);
+    if (haveClusters) {
+      memcpy(runBuffer.utf8text, aBuffer.mText + minByte, textSize);
+    }
     for (uint32_t i = 0; i < batchSize; i++, offset++) {
       runBuffer.glyphs[i] = aBuffer.mGlyphs[offset].mIndex;
       runBuffer.points()[i] = PointToSkPoint(aBuffer.mGlyphs[offset].mPosition);
+      if (haveClusters) {
+        runBuffer.clusters[i] = aBuffer.mClusters[offset] - minByte;
+      }
     }
 
     sk_sp<SkTextBlob> text = builder.make();
@@ -1995,8 +2030,9 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   return true;
 }
 
-bool DrawTargetSkia::Init(SkCanvas* aCanvas) {
+bool DrawTargetSkia::Init(SkCanvas* aCanvas, bool aSupportsGlyphSourceText) {
   mCanvas = aCanvas;
+  mSupportsGlyphSourceText = aSupportsGlyphSourceText;
 
   SkImageInfo imageInfo = mCanvas->imageInfo();
 
@@ -2151,11 +2187,18 @@ void DrawTargetSkia::PushClipRect(const Rect& aRect) {
 }
 
 void DrawTargetSkia::PopClip() {
+  if (!mPushedLayers.empty() &&
+      mCanvas->getSaveCount() <= mPushedLayers.back().mSaveCount) {
+    return;
+  }
   mCanvas->restore();
   SetTransform(GetTransform());
 }
 
 bool DrawTargetSkia::RemoveAllClips() {
+  if (!mPushedLayers.empty()) {
+    return false;
+  }
   mCanvas->restoreToCount(1);
   SetTransform(GetTransform());
   return true;
@@ -2272,6 +2315,7 @@ void DrawTargetSkia::PushLayerWithBlend(bool aOpaque, Float aOpacity,
           (aCopyBackground ? SkCanvas::kInitWithPrevious_SaveLayerFlag : 0));
 
   mCanvas->saveLayer(saveRec);
+  mPushedLayers.back().mSaveCount = mCanvas->getSaveCount();
 
   SetPermitSubpixelAA(aOpaque);
 
@@ -2307,6 +2351,10 @@ void DrawTargetSkia::PopLayer() {
     }
   }
 
+  
+  if (mCanvas->getSaveCount() > layer.mSaveCount) {
+    mCanvas->restoreToCount(layer.mSaveCount);
+  }
   
   mCanvas->restore();
   if (layer.mMask) {
