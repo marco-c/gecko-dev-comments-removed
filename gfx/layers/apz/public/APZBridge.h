@@ -10,6 +10,7 @@
 #include "mozilla/layers/APZPublicUtils.h"  
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 
@@ -231,6 +232,8 @@ struct APZEventResult {
 
 
 class APZBridge {
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
  public:
   using InputBlockCallback = std::function<void(
       uint64_t aInputBlockId, const APZHandledResult& aHandledResult)>;

@@ -8,6 +8,7 @@
 #include <stdint.h>  
 
 #include "Units.h"                               
+#include "mozilla/RefPtr.h"                      
 #include "mozilla/layers/LayersTypes.h"          
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "mozilla/layers/ZoomConstraints.h"      
@@ -122,8 +123,7 @@ class IAPZCTreeManager {
 
 
 
-
-  virtual APZBridge* Bridge() = 0;
+  virtual RefPtr<APZBridge> Bridge() = 0;
 
  protected:
   
