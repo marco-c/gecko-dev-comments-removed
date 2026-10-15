@@ -247,6 +247,17 @@ export class TelemetryFeed {
   store = null;
 
   /**
+   * Lazy getters for the sponsored stories and top sites prefs replace these in
+   * the constructor.
+   *
+   * @type {boolean}
+   */
+  SHOW_SPONSORED_STORIES_ENABLED;
+
+  /** @type {boolean} */
+  SHOW_SPONSORED_TOPSITES_ENABLED;
+
+  /**
    * Queue for telemetry events when in NormalGleanSession mode.
    * Events are stored here and cleared at session end based on session type.
    */

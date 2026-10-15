@@ -12,7 +12,6 @@
     "lib/SmartShortcutsRanker/RankShortcuts.mjs",
     "lib/SmartShortcutsRanker/RankShortcuts.worker.mjs",
     "lib/SmartShortcutsRanker/RankShortcutsWorkerClass.mjs",
-    "lib/TelemetryFeed.sys.mjs",
     "lib/Wallpapers/WallpaperFeed.sys.mjs"
   ],
   "extends": "../../../tools/@types/tsconfig.json",
