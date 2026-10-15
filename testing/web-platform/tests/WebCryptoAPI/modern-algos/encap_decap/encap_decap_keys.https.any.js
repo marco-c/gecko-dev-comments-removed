@@ -1,8 +1,8 @@
-// META: title=WebCryptoAPI: KEM encapsulateKey() and decapsulateKey() tests
-// META: script=../util/helpers.js
-// META: script=ml_kem_vectors.js
-// META: script=hybrid_kem_vectors.js
-// META: timeout=long
+
+
+
+
+
 
 function define_key_tests() {
   var subtle = self.crypto.subtle;
@@ -15,7 +15,7 @@ function define_key_tests() {
     { name: 'MLKEM1024-P384', ciphertextLength: 1665 },
   ];
 
-  // Test various 256-bit shared key algorithms
+  
   var sharedKeyConfigs = [
     {
       algorithm: { name: 'AES-GCM', length: 256 },
@@ -49,15 +49,15 @@ function define_key_tests() {
 
     sharedKeyConfigs.forEach(function (config) {
       [true, false].forEach(function (extractable) {
-        // Test encapsulateKey operation
+        
         promise_test(async function (test) {
-          // Generate a key pair for testing
+          
           var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
             'encapsulateKey',
             'decapsulateKey',
           ]);
 
-          // Test encapsulateKey
+          
           var encapsulatedKey = await subtle.encapsulateKey(
             { name: algorithmName },
             keyPair.publicKey,
@@ -87,7 +87,7 @@ function define_key_tests() {
             'ciphertext should be ArrayBuffer'
           );
 
-          // Verify the shared key properties
+          
           assert_equals(
             encapsulatedKey.sharedKey.type,
             'secret',
@@ -109,7 +109,7 @@ function define_key_tests() {
             'Shared key should have correct usages'
           );
 
-          // Verify algorithm-specific properties
+          
           if (config.algorithm.length) {
             assert_equals(
               encapsulatedKey.sharedKey.algorithm.length,
@@ -135,15 +135,15 @@ function define_key_tests() {
           );
         }, `${algorithmName} encapsulateKey with ${config.description} (extractable=${extractable})`);
 
-        // Test decapsulateKey operation
+        
         promise_test(async function (test) {
-          // Generate a key pair for testing
+          
           var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
             'encapsulateKey',
             'decapsulateKey',
           ]);
 
-          // First encapsulate to get ciphertext
+          
           var encapsulatedKey = await subtle.encapsulateKey(
             { name: algorithmName },
             keyPair.publicKey,
@@ -152,7 +152,7 @@ function define_key_tests() {
             config.usages
           );
 
-          // Then decapsulate using the private key
+          
           var decapsulatedKey = await subtle.decapsulateKey(
             { name: algorithmName },
             keyPair.privateKey,
@@ -188,7 +188,7 @@ function define_key_tests() {
           );
 
           if (extractable) {
-            // Extract both keys and verify they are identical
+            
             var originalKeyMaterial = await subtle.exportKey(
               'raw',
               encapsulatedKey.sharedKey
@@ -203,7 +203,7 @@ function define_key_tests() {
               'Decapsulated key material should match original'
             );
 
-            // Verify the key material is 32 bytes (256 bits)
+            
             assert_equals(
               originalKeyMaterial.byteLength,
               32,
@@ -212,7 +212,7 @@ function define_key_tests() {
           }
         }, `${algorithmName} decapsulateKey with ${config.description} (extractable=${extractable})`);
 
-        // Test round-trip compatibility
+        
         promise_test(async function (test) {
           var keyPair = await subtle.generateKey({ name: algorithmName }, false, [
             'encapsulateKey',
@@ -237,7 +237,7 @@ function define_key_tests() {
           );
 
           if (extractable) {
-            // Verify keys have the same material
+            
             var originalKeyMaterial = await subtle.exportKey(
               'raw',
               encapsulatedKey.sharedKey
@@ -253,7 +253,7 @@ function define_key_tests() {
             );
           }
 
-          // Test that the derived keys can actually be used for their intended purpose
+          
           if (
             config.algorithm.name.startsWith('AES') &&
             config.usages.includes('encrypt')
@@ -268,11 +268,11 @@ function define_key_tests() {
           }
         }, `${algorithmName} encapsulateKey/decapsulateKey round-trip with ${config.description} (extractable=${extractable})`);
 
-        // Test vector-based decapsulation
+        
         promise_test(async function (test) {
           var vectors = ml_kem_vectors[algorithmName];
 
-          // Import the private key from the vector's privateSeed
+          
           var privateKey = await subtle.importKey(
             'raw-seed',
             vectors.privateSeed,
@@ -281,7 +281,7 @@ function define_key_tests() {
             ['decapsulateKey']
           );
 
-          // Decapsulate the sample ciphertext from the vectors to get a shared key
+          
           var decapsulatedKey = await subtle.decapsulateKey(
             { name: algorithmName },
             privateKey,
@@ -317,7 +317,7 @@ function define_key_tests() {
           );
 
           if (extractable) {
-            // Extract the key material and verify it matches the expected shared secret
+            
             var keyMaterial = await subtle.exportKey('raw', decapsulatedKey);
             assert_equals(
               keyMaterial.byteLength,
@@ -330,7 +330,7 @@ function define_key_tests() {
             );
           }
 
-          // Verify algorithm-specific properties
+          
           if (config.algorithm.length) {
             assert_equals(
               decapsulatedKey.algorithm.length,

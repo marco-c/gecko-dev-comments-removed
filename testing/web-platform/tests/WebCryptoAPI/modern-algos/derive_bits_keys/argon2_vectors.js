@@ -2,7 +2,6 @@ function getTestData() {
   
   
 
-  
   var testVectors = [
     
     {

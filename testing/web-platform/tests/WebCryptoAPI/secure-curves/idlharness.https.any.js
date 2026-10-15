@@ -1,0 +1,10 @@
+
+
+
+
+
+
+idl_test(
+  ['webcrypto-secure-curves'],
+  ['webcrypto']
+);
