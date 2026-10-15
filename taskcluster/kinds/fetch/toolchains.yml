@@ -632,13 +632,13 @@ nodejs-22-win-arm64:
         strip-components: 1
         add-prefix: node/
 
-nodejs-22-source:
-    description: nodejs 22 source
+nodejs-22-linux64:
+    description: nodejs 22 for x64 linux
     fetch:
         type: static-url
-        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0.tar.gz
-        sha256: 108f250ff79cc103b464b3ef41fa60f4866e4e6c962117171adaac7325ebdab2
-        size: 100514588
+        url: https://nodejs.org/dist/v22.16.0/node-v22.16.0-linux-x64.tar.xz
+        sha256: f4cb75bb036f0d0eddf6b79d9596df1aaab9ddccd6a20bf489be5abe9467e84e
+        size: 30425588
         artifact-name: nodejs.tar.zst
         strip-components: 1
         add-prefix: node/
