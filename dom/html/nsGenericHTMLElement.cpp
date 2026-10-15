@@ -999,7 +999,7 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
 }
 
 EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
-    nsAtom* aAttrName, bool* aDefer) {
+    nsAtom* aAttrName) {
   
   if ((mNodeInfo->Equals(nsGkAtoms::body) ||
        mNodeInfo->Equals(nsGkAtoms::frameset)) &&
@@ -1023,7 +1023,6 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
     
     Document* document = OwnerDoc();
 
-    *aDefer = false;
     if ((win = document->GetInnerWindow())) {
       nsCOMPtr<EventTarget> piTarget(do_QueryInterface(win));
 
@@ -1033,8 +1032,7 @@ EventListenerManager* nsGenericHTMLElement::GetEventListenerManagerForAttr(
     return nullptr;
   }
 
-  return nsGenericHTMLElementBase::GetEventListenerManagerForAttr(aAttrName,
-                                                                  aDefer);
+  return nsGenericHTMLElementBase::GetEventListenerManagerForAttr(aAttrName);
 }
 
 #define EVENT(name_, id_, type_, struct_)

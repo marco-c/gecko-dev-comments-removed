@@ -2088,9 +2088,7 @@ class Element : public FragmentOrElement {
 
 
 
-
-  void SetEventHandler(nsAtom* aEventName, const nsAString& aValue,
-                       bool aDefer = true);
+  void SetEventHandler(nsAtom* aEventName, const nsAString& aValue);
 
   
 
@@ -2555,7 +2553,7 @@ class Element : public FragmentOrElement {
 
 
   virtual EventListenerManager* GetEventListenerManagerForAttr(
-      nsAtom* aAttrName, bool* aDefer);
+      nsAtom* aAttrName);
 
   
 

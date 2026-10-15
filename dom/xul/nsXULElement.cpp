@@ -308,7 +308,7 @@ nsresult nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
 
 
 EventListenerManager* nsXULElement::GetEventListenerManagerForAttr(
-    nsAtom* aAttrName, bool* aDefer) {
+    nsAtom* aAttrName) {
   
   
   
@@ -319,11 +319,10 @@ EventListenerManager* nsXULElement::GetEventListenerManagerForAttr(
   if ((!root || root == this) && (window = doc->GetInnerWindow())) {
     nsCOMPtr<EventTarget> piTarget = do_QueryInterface(window);
 
-    *aDefer = false;
     return piTarget->GetOrCreateListenerManager();
   }
 
-  return nsStyledElement::GetEventListenerManagerForAttr(aAttrName, aDefer);
+  return nsStyledElement::GetEventListenerManagerForAttr(aAttrName);
 }
 
 
@@ -501,7 +500,7 @@ void nsXULElement::AddListenerForAttributeIfNeeded(nsAtom* aLocalName) {
   if (nsContentUtils::IsEventAttributeName(aLocalName, EventNameType_XUL)) {
     nsAutoString value;
     GetAttr(aLocalName, value);
-    SetEventHandler(aLocalName, value, true);
+    SetEventHandler(aLocalName, value);
   }
 }
 
@@ -884,8 +883,7 @@ nsresult nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor) {
 
 
 
-NS_IMETHODIMP_(bool)
-nsXULElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool nsXULElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   return false;
 }
 

@@ -419,12 +419,10 @@ class EventListenerManager final
 
 
 
-
   
   
   nsresult SetEventHandler(nsAtom* aName, const nsAString& aFunc,
-                           bool aDeferCompilation, bool aPermitUntrustedEvents,
-                           dom::Element* aElement);
+                           bool aPermitUntrustedEvents, dom::Element* aElement);
   
 
 
@@ -638,10 +636,7 @@ class EventListenerManager final
 
 
 
-
-  nsresult CompileEventHandlerInternal(Listener* aListener, nsAtom* aTypeAtom,
-                                       const nsAString* aBody,
-                                       dom::Element* aElement);
+  nsresult CompileEventHandlerInternal(Listener* aListener, nsAtom* aTypeAtom);
 
   
 

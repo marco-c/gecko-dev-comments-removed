@@ -792,7 +792,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   MOZ_CAN_RUN_SCRIPT void AfterSetPopoverAttr();
 
   mozilla::EventListenerManager* GetEventListenerManagerForAttr(
-      nsAtom* aAttrName, bool* aDefer) override;
+      nsAtom* aAttrName) override;
 
   
 

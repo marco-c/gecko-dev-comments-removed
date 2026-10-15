@@ -1009,7 +1009,6 @@ EventListenerManager::Listener* EventListenerManager::SetEventHandlerInternal(
 
 nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
                                                const nsAString& aBody,
-                                               bool aDeferCompilation,
                                                bool aPermitUntrustedEvents,
                                                Element* aElement) {
   auto removeEventHandler = MakeScopeExit([&] { RemoveEventHandler(aName); });
@@ -1080,23 +1079,15 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
   Listener* listener = SetEventHandlerInternal(aName, TypedEventHandler(),
                                                aPermitUntrustedEvents);
 
-  if (!aDeferCompilation) {
-    if (nsContentUtils::IsSafeToRunScript()) [[likely]] {
-      return CompileEventHandlerInternal(listener, aName, &aBody, aElement);
-    }
-    
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "EventListenerManager::DeferredCompileEventHandler",
-        [self = RefPtr{this}, typeAtom = RefPtr{aName}, body = nsString(aBody),
-         element = RefPtr{aElement}]() {
-          Listener* listener = self->FindEventHandler(typeAtom);
-          if (listener && listener->mHandlerIsString) {
-            self->CompileEventHandlerInternal(listener, typeAtom, &body,
-                                              element);
-          }
-        }));
+  
+  
+  
+  
+  if (!Element::FromEventTargetOrNull(mTarget)) {
+    MOZ_DIAGNOSTIC_ASSERT(aElement);
+    listener->GetJSEventHandler()->SetPendingSource(aBody,
+                                                    aElement->GetNameSpaceID());
   }
-
   return NS_OK;
 }
 
@@ -1139,9 +1130,8 @@ void EventListenerManager::RemoveEventHandler(nsAtom* aName) {
   }
 }
 
-nsresult EventListenerManager::CompileEventHandlerInternal(
-    Listener* aListener, nsAtom* aTypeAtom, const nsAString* aBody,
-    Element* aElement) {
+nsresult EventListenerManager::CompileEventHandlerInternal(Listener* aListener,
+                                                           nsAtom* aTypeAtom) {
   MOZ_ASSERT(aListener->GetJSEventHandler());
   MOZ_ASSERT(aListener->mHandlerIsString,
              "Why are we compiling a non-string JS listener?");
@@ -1154,6 +1144,7 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   nsCOMPtr<nsIScriptGlobalObject> global =
       GetScriptGlobalAndDocument(getter_AddRefs(doc));
   NS_ENSURE_STATE(global);
+  NS_ENSURE_STATE(doc);
 
   
   
@@ -1168,6 +1159,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   
   
   aListener->mHandlerIsString = false;
+  UniquePtr<JSEventHandler::PendingSource> pendingSource =
+      jsEventHandler->TakePendingSource();
 
   
   
@@ -1175,12 +1168,14 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   
   
   
-  
   RefPtr<Element> element = Element::FromEventTargetOrNull(mTarget);
-  MOZ_ASSERT(element || aBody, "Where will we get our body?");
-  nsAutoString handlerBody;
-  const nsAString* body = aBody;
-  if (!aBody) {
+  MOZ_ASSERT(element || pendingSource, "Where will we get our body?");
+  nsAutoString body;
+  int32_t nameSpaceID;
+  if (pendingSource) {
+    body.Assign(pendingSource->mBody);
+    nameSpaceID = pendingSource->mNameSpaceID;
+  } else {
     if (aTypeAtom == nsGkAtoms::onSVGLoad) {
       attrName = nsGkAtoms::onload;
     } else if (aTypeAtom == nsGkAtoms::onSVGScroll) {
@@ -1201,18 +1196,15 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
       attrName = nsGkAtoms::onwebkittransitionend;
     }
 
-    element->GetAttr(attrName, handlerBody);
-    body = &handlerBody;
-    aElement = element;
+    element->GetAttr(attrName, body);
+    nameSpaceID = element->GetNameSpaceID();
   }
   aListener = nullptr;
 
   nsAutoCString url("-moz-evil:lying-event-listener"_ns);
-  MOZ_ASSERT(body);
-  MOZ_ASSERT(aElement);
-  MOZ_ASSERT(!aElement->ChromeOnlyAccess(),
+  MOZ_ASSERT(!element || !element->ChromeOnlyAccess(),
              "Don't use inline handlers on NAC/UAWidget");
-  nsIURI* uri = aElement->OwnerDoc()->GetDocumentURI();
+  nsIURI* uri = doc->GetDocumentURI();
   if (uri) {
     uri->GetSpec(url);
   }
@@ -1221,8 +1213,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
       nsPIDOMWindowInner::FromEventTargetOrNull(mTarget);
   uint32_t argCount;
   const char** argNames;
-  nsContentUtils::GetEventArgNames(aElement->GetNameSpaceID(), aTypeAtom, win,
-                                   &argCount, &argNames);
+  nsContentUtils::GetEventArgNames(nameSpaceID, aTypeAtom, win, &argCount,
+                                   &argNames);
 
   
   
@@ -1247,7 +1239,6 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   
   
   
-  
   JS::EnvironmentChain envChain(cx, JS::SupportUnscopables::Yes);
   if (!nsJSUtils::GetEnvironmentChainForElement(cx, element, envChain)) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -1262,20 +1253,19 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   NS_ENSURE_TRUE(jsStr, NS_ERROR_OUT_OF_MEMORY);
 
   
-  if (NS_WARN_IF(!GetOrCreateDOMReflector(cx, aElement, &v))) {
+  if (element && NS_WARN_IF(!GetOrCreateDOMReflector(cx, element, &v))) {
     return NS_ERROR_FAILURE;
   }
 
   RefPtr<JS::loader::ScriptFetchOptions> fetchOptions =
       new JS::loader::ScriptFetchOptions(
           CORS_NONE,  u""_ns, RequestPriority::Auto,
-          JS::loader::ParserMetadata::NotParserInserted,
-          aElement->OwnerDoc()->NodePrincipal());
+          JS::loader::ParserMetadata::NotParserInserted, doc->NodePrincipal());
 
   RefPtr<JS::loader::ScriptFetchInfo> fetchInfo =
       new JS::loader::ScriptFetchInfo(JS::loader::ScriptKind::eEvent,
-                                      aElement->OwnerDoc()->GetReferrerPolicy(),
-                                      fetchOptions, uri);
+                                      doc->GetReferrerPolicy(), fetchOptions,
+                                      uri);
 
   JS::CompileOptions options(cx);
   
@@ -1286,7 +1276,7 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
   JS::Rooted<JSObject*> handler(cx);
   result = nsJSUtils::CompileFunction(jsapi, envChain, options,
                                       nsAtomCString(aTypeAtom), argCount,
-                                      argNames, *body, handler.address());
+                                      argNames, body, handler.address());
   NS_ENSURE_SUCCESS(result, result);
   NS_ENSURE_TRUE(handler, NS_ERROR_FAILURE);
 
@@ -1348,8 +1338,7 @@ bool EventListenerManager::HandleEventSingleListener(
   
   if ((aListener->mListenerType == Listener::eJSEventListener) &&
       aListener->mHandlerIsString) {
-    result =
-        CompileEventHandlerInternal(aListener, aTypeAtom, nullptr, nullptr);
+    result = CompileEventHandlerInternal(aListener, aTypeAtom);
     aListener = nullptr;
   }
 
@@ -1917,7 +1906,7 @@ nsresult EventListenerManager::GetListenerInfo(
       if (listener.mListenerType == Listener::eJSEventListener &&
           listener.mHandlerIsString) {
         CompileEventHandlerInternal(const_cast<Listener*>(&listener),
-                                    entry.mTypeAtom, nullptr, nullptr);
+                                    entry.mTypeAtom);
       }
       nsAutoString eventType;
       if (listener.mAllEvents) {
@@ -2110,8 +2099,7 @@ const TypedEventHandler* EventListenerManager::GetTypedEventHandler(
   Maybe<RefPtr<JSEventHandler>> pin;
   if (listener->mHandlerIsString) {
     pin.emplace(jsEventHandler);
-    if (NS_FAILED(CompileEventHandlerInternal(listener, aEventName, nullptr,
-                                              nullptr))) {
+    if (NS_FAILED(CompileEventHandlerInternal(listener, aEventName))) {
       listener = nullptr;
     }
   }

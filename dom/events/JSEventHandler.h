@@ -6,12 +6,14 @@
 #define mozilla_JSEventHandler_h_
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/EventHandlerBinding.h"
 #include "nsAtom.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIDOMEventListener.h"
 #include "nsIScriptContext.h"
+#include "nsString.h"
 
 namespace mozilla {
 namespace dom {
@@ -170,20 +172,43 @@ class JSEventHandler : public nsIDOMEventListener {
   
   void SetHandler(const TypedEventHandler& aTypedHandler) {
     mTypedHandler.SetHandler(aTypedHandler);
+    mPendingSource = nullptr;
   }
   void SetHandler(dom::EventHandlerNonNull* aHandler) {
     mTypedHandler.SetHandler(aHandler);
+    mPendingSource = nullptr;
   }
   void SetHandler(dom::OnBeforeUnloadEventHandlerNonNull* aHandler) {
     mTypedHandler.SetHandler(aHandler);
+    mPendingSource = nullptr;
   }
   void SetHandler(dom::OnErrorEventHandlerNonNull* aHandler) {
     mTypedHandler.SetHandler(aHandler);
+    mPendingSource = nullptr;
+  }
+
+  
+  
+  
+  struct PendingSource {
+    nsString mBody;
+    
+    
+    int32_t mNameSpaceID;
+  };
+
+  void SetPendingSource(const nsAString& aBody, int32_t aNameSpaceID) {
+    mPendingSource =
+        MakeUnique<PendingSource>(PendingSource{nsString(aBody), aNameSpaceID});
+  }
+  UniquePtr<PendingSource> TakePendingSource() {
+    return std::move(mPendingSource);
   }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return 0;
 
+    
     
     
     
@@ -207,6 +232,7 @@ class JSEventHandler : public nsIDOMEventListener {
   dom::EventTarget* mTarget;
   RefPtr<nsAtom> mEventName;
   TypedEventHandler mTypedHandler;
+  UniquePtr<PendingSource> mPendingSource;
 };
 
 }  
