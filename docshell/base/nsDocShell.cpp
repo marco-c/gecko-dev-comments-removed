@@ -7977,7 +7977,7 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
         NS_GetSecureUpgradedURI(aLoadState->URI(), getter_AddRefs(newURI));
     NS_ENSURE_SUCCESS(rv, false);
     MOZ_LOG(gSHLog, LogLevel::Debug,
-        ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
+            ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
   }
   RefPtr<Document> doc = GetExtantDocument();
   NS_ENSURE_TRUE(doc, false);
