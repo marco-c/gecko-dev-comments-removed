@@ -414,8 +414,10 @@ static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
     
     float beforeDist = max(0.0f, min_uv.x) - uv.x.x;
     if (beforeDist > 0) {
-      int before = clamp(int(ceil(beforeDist / uv_step.x)) * swgl_StepSize, 0,
-                         int(end - buf));
+      
+      int before = int(clamp(ceil(beforeDist / uv_step.x), 0.0f,
+                             float(span / swgl_StepSize))) *
+                   swgl_StepSize;
       buf = blendTextureLinearFallback<BLEND>(sampler, uv, before, uv_step,
                                               min_uv, max_uv, color, buf);
       uv.x += (before / swgl_StepSize) * uv_step.x;
@@ -440,7 +442,9 @@ static P* blendTextureLinearDispatch(S sampler, vec2 uv, int span,
           uv.x += (inside / swgl_StepSize) * uv_step.x;
         }
       } else if (filter == LINEAR_FILTER_UPSCALE) {
-        inside = min(int(insideDist / uv_step.x) * swgl_StepSize, inside);
+        inside =
+            int(min(insideDist / uv_step.x, float(inside / swgl_StepSize))) *
+            swgl_StepSize;
         if (inside > 0) {
           blendTextureLinearUpscale<BLEND>(sampler, uv, inside, uv_step, min_uv,
                                            max_uv, color, buf);
