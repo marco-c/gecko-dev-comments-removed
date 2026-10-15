@@ -3306,14 +3306,19 @@ void nsGenericHTMLElement::GetInnerText(mozilla::dom::DOMString& aValue,
 
   
   
-  bool dirty = frame && frame->PresShell()->FrameIsAncestorOfDirtyRoot(frame);
-
   
   
   
   
   
-  dirty |= frame && frame->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+  
+  bool dirty = false;
+  const PresShell* ps = frame ? frame->PresShell() : nullptr;
+  for (nsIFrame* f = frame; f && !dirty;
+       f = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(f)) {
+    dirty = ps->FrameIsAncestorOfDirtyRoot(f) ||
+            f->HasAnyStateBits(NS_FRAME_HAS_DIRTY_CHILDREN);
+  }
   while (!dirty && frame) {
     dirty |= frame->HasAnyStateBits(NS_FRAME_IS_DIRTY);
     frame = frame->GetInFlowParent();
