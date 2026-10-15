@@ -2656,13 +2656,13 @@ export class TelemetryFeed {
     if (session) {
       switch (action.type) {
         case "INLINE_SELECTION_CLICK": {
-          const { topic, section_position, position, is_followed } =
+          const { topic, section_position, topic_position, is_followed } =
             action.data;
           Glean.newtab.inlineSelectionClick.record({
             newtab_visit_id: session.session_id,
             topic,
             section_position,
-            position,
+            topic_position,
             is_followed,
           });
           break;
