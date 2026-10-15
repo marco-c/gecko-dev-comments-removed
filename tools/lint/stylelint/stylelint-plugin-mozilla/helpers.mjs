@@ -82,17 +82,30 @@ export const getLocalCustomProperties = root => {
 };
 
 /**
- * Return raw values of tokens for the given categories.
+ * Return raw values of tokens for the given categories, mapped to the token
+ * each one autofixes to. Only a category's own scale tokens (`--<category>`
+ * and `--<category>-*`) are included, so a component token that happens to
+ * share a value with the scale never becomes the fix.
  *
  * @param {string[]} tokenCategoriesArray
  * @returns {object}
  */
 export const createRawValuesObject = tokenCategoriesArray =>
   tokenCategoriesArray
-    .flatMap(category => tokensTable[category])
+    .flatMap(category =>
+      tokensTable[category].filter(
+        token =>
+          token.name === `--${category}` ||
+          token.name?.startsWith(`--${category}-`)
+      )
+    )
     .reduce((acc, token) => {
-      const val = String(token.value || "").trim();
-      if (token.name && !val.startsWith("var(")) {
+      // Tokens with per-theme or per-platform values have no single raw value.
+      if (typeof token.value !== "string") {
+        return acc;
+      }
+      const val = token.value.trim();
+      if (!val.startsWith("var(")) {
         // some tokens refer to tokens in the table,
         // let's move those out so our auto-fixes work
         return { ...acc, [val]: `var(${token.name})` };
