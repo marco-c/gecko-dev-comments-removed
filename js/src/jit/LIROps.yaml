@@ -4046,6 +4046,22 @@
     denominator: int32_t
   mir_op: Mod
 
+- name: UDivConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
+  mir_op: Div
+
+- name: UModConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
+  mir_op: Mod
+
 - name: ModMaskI
   result_type: WordSized
   operands:
