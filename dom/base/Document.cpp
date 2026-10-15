@@ -11521,6 +11521,18 @@ nsViewportInfo Document::GetViewportInfo(const ScreenIntSize& aDisplaySize) {
   CSSToScreenScale defaultScale =
       layoutDeviceScale * LayoutDeviceToScreenScale(1.0);
 
+  if (HasViewportSizeOverrideForMiniWindow()) {
+    
+    
+    CSSToScreenScale minZoom = layoutDeviceScale * ViewportMinScale();
+    CSSToScreenScale maxZoom = layoutDeviceScale * ViewportMaxScale();
+    return nsViewportInfo(
+        defaultScale, minZoom, maxZoom, mViewportSizeOverrideForMiniWindow,
+        nsViewportInfo::AutoSizeFlag::FixedSize,
+        nsViewportInfo::AutoScaleFlag::FixedScale,
+        nsViewportInfo::ZoomFlag::AllowZoom, ViewportFitType::Auto);
+  }
+
   auto* bc = GetBrowsingContext();
   const bool inRDM = bc && bc->InRDMPane();
   const bool ignoreMetaTag = [&] {
@@ -11902,6 +11914,24 @@ static InteractiveWidget ParseInteractiveWidget(
     return InteractiveWidget::OverlaysContent;
   }
   return InteractiveWidgetUtils::DefaultInteractiveWidgetMode();
+}
+
+void Document::SetViewportSizeOverrideForMiniWindow(float aWidth,
+                                                    float aHeight) {
+  MOZ_ASSERT(IsTopLevelContentDocument(),
+             "Restricted to top-level content documents");
+  CSSSize size(aWidth, aHeight);
+  if (size == mViewportSizeOverrideForMiniWindow) {
+    return;
+  }
+  mViewportSizeOverrideForMiniWindow = size;
+
+  
+  
+  if (RefPtr<PresShell> presShell = GetPresShell()) {
+    presShell->MaybeRecreateMobileViewportManager(
+        PresShell::MobileViewportManagerUpdate::LayoutViewportSizeMayChange);
+  }
 }
 
 void Document::SetMetaViewportData(UniquePtr<ViewportMetaData> aData) {
@@ -15214,12 +15244,9 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     float aX, float aY, const CaretPositionFromPointOptions& aOptions) {
   using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
 
-  nscoord x = nsPresContext::CSSPixelsToAppUnits(aX);
-  nscoord y = nsPresContext::CSSPixelsToAppUnits(aY);
-  nsPoint pt(x, y);
-
   FlushPendingNotifications(FlushType::Layout);
 
+  const nsPoint pt(CSSPixel::ToAppUnits(CSSPoint(aX, aY)));
   PresShell* presShell = GetPresShell();
   if (!presShell) {
     return nullptr;
@@ -15267,8 +15294,11 @@ already_AddRefed<nsDOMCaretPosition> Document::CaretPositionFromPoint(
     
     
     
+    
+    
     if (nsINode* firstChild = anonNode->GetFirstChild()) {
       anonNode = firstChild;
+      offset = offset == 0 ? 0 : firstChild->Length();
     }
     node = nonChrome;
   }
