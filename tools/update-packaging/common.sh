@@ -182,10 +182,11 @@ reorder_instructions() {
   {
     grep -E '^type '                 "$filev3"
     grep -E '"dependentlibs\.list"$' "$filev3"
-    grep -vE "^type |\"(dependentlibs\.list|browser/omni\.ja|omni\.ja|xul\.dll|${appname}\.exe)\"$" "$filev3"
+    grep -vE "^type |\"(dependentlibs\.list|browser/omni\.ja|omni\.ja|xul\.dll|mozglue\.dll|${appname}\.exe)\"$" "$filev3"
     grep -E '"xul\.dll"$'            "$filev3"
     grep -E '"browser/omni\.ja"$'    "$filev3"
     grep -E '"omni\.ja"$'            "$filev3"
+    grep -E '"mozglue\.dll"$'        "$filev3"
     grep -E "\"${appname}\.exe\"$"   "$filev3"
   } > "$filev3.reordered"
   mv -f "$filev3.reordered" "$filev3"
