@@ -26,6 +26,15 @@ struct MelKernel {
     bool per_feature_;
     std::vector<float> window_;  
     std::vector<float> fb_;      
+
+    
+    
+    
+    
+    
+    std::vector<int32_t> fb_nz_idx_;   
+    std::vector<float>   fb_nz_val_;   
+    std::vector<int32_t> fb_nz_off_;   
 };
 
 class MelFrontend {
