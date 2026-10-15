@@ -23,7 +23,6 @@ import {
 } from "resource://newtab/common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
-  getWidgets,
   isWidgetEnabled,
 } from "resource://newtab/common/WidgetsRegistry.mjs";
 import { resolvePageLayoutVariant } from "resource://newtab/common/PageLayoutVariants.mjs";
@@ -2193,9 +2192,6 @@ export class TelemetryFeed {
           this.recordEnabledWidgets();
         }
         break;
-      case at.WIDGETS_EXTENSIONS_UPDATE:
-        this.recordEnabledWidgets();
-        break;
     }
   }
 
@@ -2341,16 +2337,15 @@ export class TelemetryFeed {
   }
 
   recordEnabledWidgets() {
-    const state = this.store?.getState();
-    const prefs = state?.Prefs.values;
+    const prefs = this.store?.getState()?.Prefs.values;
     if (!prefs) {
       return;
     }
     const widgetsEnabled = prefs["widgets.enabled"];
     Glean.newtab.widgetsEnabledList.set(
-      getWidgets(WIDGET_REGISTRY, state.ExtensionWidgets)
-        .filter(w => isWidgetEnabled(w, prefs, widgetsEnabled))
-        .map(w => w.telemetryName)
+      WIDGET_REGISTRY.filter(w =>
+        isWidgetEnabled(w, prefs, widgetsEnabled)
+      ).map(w => w.telemetryName)
     );
   }
 

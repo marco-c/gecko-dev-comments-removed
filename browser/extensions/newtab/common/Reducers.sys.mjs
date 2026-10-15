@@ -255,7 +255,6 @@ export const INITIAL_STATE = {
   ExternalComponents: {
     components: [],
   },
-  ExtensionWidgets: {},
   PrivacyWidget: {
     initialized: false,
     // Count of trackers blocked today, fetched by PrivacyFeed.
@@ -1461,15 +1460,6 @@ function ExternalComponents(
   }
 }
 
-function ExtensionWidgets(prevState = INITIAL_STATE.ExtensionWidgets, action) {
-  switch (action.type) {
-    case at.WIDGETS_EXTENSIONS_UPDATE:
-      return action.data;
-    default:
-      return prevState;
-  }
-}
-
 export const reducers = {
   TopSites,
   App,
@@ -1491,7 +1481,6 @@ export const reducers = {
   Weather,
   Stocks,
   ExternalComponents,
-  ExtensionWidgets,
   PrivacyWidget,
   PictureOfTheDay,
   RecentSearches,

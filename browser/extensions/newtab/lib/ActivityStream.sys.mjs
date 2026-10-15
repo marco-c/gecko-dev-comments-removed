@@ -33,8 +33,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DEFAULT_SITES: "resource://newtab/lib/DefaultSites.sys.mjs",
   DefaultPrefs: "resource://newtab/lib/ActivityStreamPrefs.sys.mjs",
   DiscoveryStreamFeed: "resource://newtab/lib/DiscoveryStreamFeed.sys.mjs",
-  ExtensionWidgetsFeed:
-    "resource://newtab/lib/Widgets/ExtensionWidgetsFeed.sys.mjs",
   ExternalComponentsFeed:
     "resource://newtab/lib/ExternalComponentsFeed.sys.mjs",
   FaviconFeed: "resource://newtab/lib/FaviconFeed.sys.mjs",
@@ -2703,12 +2701,6 @@ const FEEDS_DATA = [
     name: "externalcomponentsfeed",
     factory: () => new lazy.ExternalComponentsFeed(),
     title: "Handles updating the registry of external components",
-    value: true,
-  },
-  {
-    name: "extensionwidgetsfeed",
-    factory: () => new lazy.ExtensionWidgetsFeed(),
-    title: "Handles the extensions that provide widgets",
     value: true,
   },
 ];
