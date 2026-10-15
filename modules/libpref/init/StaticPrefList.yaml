@@ -7534,6 +7534,12 @@
   value: false
   mirror: always
 
+# Support for partial colorspace handling in Canvas
+- name: gfx.canvas.colorspace.enabled
+  type: RelaxedAtomicBool
+  value: false
+  mirror: always
+
 - name: gfx.canvas.max-size
   type: RelaxedAtomicInt32
   value: 0xffff

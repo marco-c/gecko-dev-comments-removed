@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -14,10 +13,11 @@
  Serializable,  ProbablyShortLivingWrapper]
 interface ImageData {
  [Throws]
- constructor(unsigned long sw, unsigned long sh);
+ constructor(unsigned long sw, unsigned long sh, optional ImageDataSettings settings = {});
  [Throws]
  constructor(Uint8ClampedArray data, unsigned long sw,
-             optional unsigned long sh);
+             optional unsigned long sh,
+             optional ImageDataSettings settings = {});
 
  [Constant]
  readonly attribute unsigned long width;
@@ -25,4 +25,6 @@ interface ImageData {
  readonly attribute unsigned long height;
  [Constant, StoreInSlot]
  readonly attribute Uint8ClampedArray data;
+ [Pref="gfx.canvas.colorspace.enabled"]
+ readonly attribute PredefinedColorSpace colorSpace;
 };
