@@ -288,8 +288,9 @@ export class AdsFeed {
    */
   async fetchData(supportedAdTypes) {
     const state = this.store.getState();
-    const headers = new Headers();
-    headers.append("content-type", "application/json");
+    // A plain object, since ObliviousHTTP.ohttpRequest reads headers with
+    // Object.keys, which finds nothing on a Headers instance.
+    const headers = { "content-type": "application/json" };
 
     const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
     const marsOhttpEnabled = Services.prefs.getBoolPref(
@@ -375,6 +376,7 @@ export class AdsFeed {
     const controller = new AbortController();
     const { signal } = controller;
 
+    /** @type {RequestInit} */
     const options = {
       method: "POST",
       headers,
