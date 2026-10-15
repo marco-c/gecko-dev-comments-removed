@@ -19,4 +19,6 @@ prefs = [
 
 ["browser_outline.js"]
 
+["browser_sourceText.js"]
+
 ["browser_structTree.js"]

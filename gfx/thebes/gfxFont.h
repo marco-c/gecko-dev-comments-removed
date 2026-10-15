@@ -2498,12 +2498,24 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   const mozilla::gfx::StrokeOptions* strokeOpts = nullptr;
   const mozilla::gfx::DrawOptions* drawOpts = nullptr;
   nsAtom* fontPalette = nullptr;
+  
+  
+  
+  const nsACString* sourceText = nullptr;
+  
+  
+  
+  const uint32_t* sourceCharToByte = nullptr;
   DrawMode drawMode = DrawMode::GLYPH_FILL;
   bool isVerticalRun = false;
   bool isRTL = false;
   bool paintSVGGlyphs = true;
   bool allowGDI = true;
   bool hasTextShadow = false;
+  
+  
+  
+  bool needsSourceText = false;
 };
 
 struct MOZ_STACK_CLASS FontDrawParams {
