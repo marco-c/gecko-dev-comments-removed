@@ -909,7 +909,7 @@ export class TelemetryFeed {
    * The frontmost window, or null if Firefox is not the active application.
    * Separate from isDwellTargetInForeground so tests can stub it.
    *
-   * @returns {Window|null}
+   * @returns {mozIDOMWindowProxy|null}
    */
   getActiveChromeWindow() {
     return Services.focus.activeWindow;
@@ -933,7 +933,7 @@ export class TelemetryFeed {
    * a newtab session stops qualifying.
    *
    * @param  {object} target a newtab session or an entry of this.#openedPages
-   * @param  {Window|null} [activeWindow] the frontmost window, read if omitted
+   * @param  {mozIDOMWindowProxy|null} [activeWindow] the frontmost window, read if omitted
    * @returns {boolean}
    */
   isDwellTargetInForeground(
