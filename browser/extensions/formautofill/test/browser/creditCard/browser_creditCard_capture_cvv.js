@@ -16,6 +16,8 @@ const CC_VALUES = {
 add_setup(async function () {
   
   
+  
+  await switchCreditCardStore({ rust: true });
   await SpecialPowers.pushPrefEnv({ set: [[SUPPORTED_PREF, "on"]] });
 });
 
@@ -90,6 +92,18 @@ add_task(async function test_security_code_dropped_before_rollout() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_security_code_dropped_while_json_store_serves() {
+  await switchCreditCardStore({ rust: false });
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
+
+  const creditCard = await captureCard();
+  ok(!("cc-csc" in creditCard), "The JSON store does not save a security code");
+
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+  await switchCreditCardStore({ rust: true });
+});
+
 add_task(async function test_form_submitted_without_a_security_code() {
   await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
 
@@ -101,10 +115,6 @@ add_task(async function test_form_submitted_without_a_security_code() {
 });
 
 add_task(async function test_security_code_added_to_a_saved_card() {
-  if (!RUST_CREDIT_CARD_STORE) {
-    info("The JSON store matches cards without the code and cannot update it");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
   await setStorage({
     "cc-name": CC_VALUES["#cc-name"],

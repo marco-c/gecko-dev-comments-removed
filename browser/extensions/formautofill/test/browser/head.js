@@ -1035,21 +1035,72 @@ async function expectWarningText(browser, expectedText) {
   ok(true, `Got expected warning text: ${expectedText}`);
 }
 
-async function testDialog(url, testFn, arg = undefined) {
+
+
+
+
+const RUST_CREDIT_CARD_STORE = Services.prefs.getBoolPref(
+  "extensions.formautofill.creditCards.storage.rust.enabled",
+  false
+);
+
+let gCreditCardRustEnabledWas;
+
+
+
+
+
+
+
+
+
+
+
+async function switchCreditCardStore({ rust }) {
+  const enabledPref =
+    "extensions.formautofill.creditCards.storage.rust.enabled";
   
-  
-  if (
-    url == EDIT_CREDIT_CARD_DIALOG_URL &&
-    arg &&
-    arg.record &&
-    arg.record["cc-number-encrypted"]
-  ) {
-    arg.record = Object.assign({}, arg.record, {
-      "cc-number": await OSKeyStore.decrypt(
-        arg.record["cc-number-encrypted"],
-        "testing"
-      ),
+  await formAutofillStorage.initialize();
+  if (gCreditCardRustEnabledWas === undefined) {
+    gCreditCardRustEnabledWas = Services.prefs.getBoolPref(enabledPref, false);
+    registerCleanupFunction(async () => {
+      Services.prefs.setBoolPref(enabledPref, gCreditCardRustEnabledWas);
+      await formAutofillStorage._creditCardSwitch;
     });
+  }
+  Services.prefs.setBoolPref(enabledPref, rust);
+  await formAutofillStorage._creditCardSwitch;
+  is(
+    Services.prefs.getBoolPref(
+      "extensions.formautofill.creditCards.storage.rust.active",
+      false
+    ),
+    rust,
+    `credit cards are served by the ${rust ? "Rust" : "JSON"} store`
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+async function decryptCreditCardNumber(record) {
+  return formAutofillStorage.creditCards.decryptField(record, "cc-number");
+}
+
+async function testDialog(url, testFn, arg = undefined) {
+  if (url == EDIT_CREDIT_CARD_DIALOG_URL && arg?.record) {
+    
+    const number = await decryptCreditCardNumber(arg.record);
+    if (number) {
+      arg.record = Object.assign({}, arg.record, { "cc-number": number });
+    }
   }
   const win = window.openDialog(url, null, "width=600,height=600", {
     ...arg,
@@ -1868,6 +1919,30 @@ if (
         false
       ),
       "the Rust store served addresses, so this run exercised it"
+    );
+  });
+}
+
+
+
+
+
+
+
+
+if (
+  Services.prefs.getBoolPref(
+    "extensions.formautofill.creditCards.storage.rust.enabled",
+    false
+  )
+) {
+  registerCleanupFunction(function rust_served_the_credit_cards() {
+    Assert.ok(
+      Services.prefs.getBoolPref(
+        "extensions.formautofill.creditCards.storage.rust.active",
+        false
+      ),
+      "the Rust store served credit cards, so this run exercised it"
     );
   });
 }

@@ -27,6 +27,8 @@ async function getPaymentRow() {
 add_setup(async function () {
   
   
+  
+  await switchCreditCardStore({ rust: true });
   await SpecialPowers.pushPrefEnv({ set: [[SUPPORTED_PREF, "on"]] });
   await removeAllRecords();
 });

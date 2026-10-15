@@ -13,6 +13,8 @@ function getSecurityCodeField(win) {
 add_setup(async function () {
   
   
+  
+  await switchCreditCardStore({ rust: true });
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
   });
@@ -39,6 +41,22 @@ add_task(async function test_securityCodeAbsentWhenPrefDisabled() {
   });
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_securityCodeAbsentWhileJsonStoreServes() {
+  await switchCreditCardStore({ rust: false });
+  await SpecialPowers.pushPrefEnv({ set: [[CVV_PREF, true]] });
+
+  await testDialog(EDIT_CREDIT_CARD_DIALOG_URL, win => {
+    ok(
+      !getSecurityCodeField(win),
+      "The security code field is taken out of the form"
+    );
+    win.document.querySelector("#cancel").click();
+  });
+
+  await SpecialPowers.popPrefEnv();
+  await switchCreditCardStore({ rust: true });
 });
 
 add_task(async function test_securityCodeShownWhenPrefEnabled() {
