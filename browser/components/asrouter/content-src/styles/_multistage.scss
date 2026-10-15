@@ -109,6 +109,22 @@ html {
 }
 
 .onboardingContainer:has(.pinnable-sites-list) {
+  // Messages can layer their hero image over this gradient. Each stop resolves
+  // to the same flat color in dark mode (see the smart-window gradient above
+  // for the same per-stop light-dark() pattern).
+  --pinnable-sites-gradient: linear-gradient(
+    0deg,
+    light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%,
+    light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%,
+    light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%
+  );
+
+  // Colors aren't forced in the spotlight, so use the colors the hero text is
+  // designed to sit on.
+  @media (prefers-contrast) {
+    --pinnable-sites-gradient: var(--mr-screen-background-color);
+  }
+
   .screen[pos='split'] {
     .section-main {
       .main-content {
@@ -135,6 +151,12 @@ html {
       // Wide layout reserves space below the subtitle for the hero image.
       .hero-text h2 {
         margin-block-end: 370px;
+      }
+
+      @media (prefers-contrast) {
+        .hero-text h2 {
+          color: var(--mr-screen-heading-color);
+        }
       }
     }
 
@@ -163,16 +185,16 @@ html {
         }
       }
 
+      // The dismiss button sits over the secondary section.
+      @media (prefers-contrast) {
+        .dismiss-button {
+          color: var(--mr-screen-heading-color);
+        }
+      }
+
       .section-secondary {
-        // Swap the wide-layout hero image for the pink hero gradient. Each stop
-        // resolves to the same flat color in dark mode (see the smart-window
-        // gradient above for the same per-stop light-dark() pattern).
-        background: linear-gradient(
-          0deg,
-          light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%,
-          light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%,
-          light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%
-        );
+        // Swap the wide-layout hero image for the pink hero gradient.
+        background: var(--pinnable-sites-gradient);
         height: auto;
         min-height: $small-secondary-section-height;
 

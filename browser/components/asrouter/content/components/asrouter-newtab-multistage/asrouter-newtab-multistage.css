@@ -1310,6 +1310,19 @@ html {
   padding-bottom: var(--space-large);
 }
 
+.onboardingContainer:has(.pinnable-sites-list) {
+  --pinnable-sites-gradient: linear-gradient(
+    0deg,
+    light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%,
+    light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%,
+    light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%
+  );
+}
+@media (prefers-contrast) {
+  .onboardingContainer:has(.pinnable-sites-list) {
+    --pinnable-sites-gradient: var(--mr-screen-background-color);
+  }
+}
 .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content {
   padding-block: 40px 0;
 }
@@ -1329,6 +1342,11 @@ html {
 .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h2 {
   margin-block-end: 370px;
 }
+@media (prefers-contrast) {
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary .hero-text h2 {
+    color: var(--mr-screen-heading-color);
+  }
+}
 @media only screen and (width <= 800px) {
   .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .main-content-inner {
     align-items: stretch;
@@ -1347,8 +1365,15 @@ html {
   .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .tile-title {
     font-size: 13px;
   }
+}
+@media only screen and (width <= 800px) and (prefers-contrast) {
+  .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .dismiss-button {
+    color: var(--mr-screen-heading-color);
+  }
+}
+@media only screen and (width <= 800px) {
   .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary {
-    background: linear-gradient(0deg, light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%, light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%, light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%);
+    background: var(--pinnable-sites-gradient);
     height: auto;
     min-height: 100px;
   }
@@ -1382,8 +1407,13 @@ html {
 [narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-main .main-content .tile-title {
   font-size: 13px;
 }
+@media (prefers-contrast) {
+  [narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .dismiss-button {
+    color: var(--mr-screen-heading-color);
+  }
+}
 [narrow] .onboardingContainer:has(.pinnable-sites-list) .screen[pos=split] .section-secondary {
-  background: linear-gradient(0deg, light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%, light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%, light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%);
+  background: var(--pinnable-sites-gradient);
   height: auto;
   min-height: 100px;
 }

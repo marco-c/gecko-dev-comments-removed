@@ -3529,7 +3529,7 @@ const MESSAGES = () => [
               paddingInline: "40px",
             },
             background:
-              "center 80% / 70% no-repeat url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg'), linear-gradient(0deg, light-dark(rgb(252, 245, 240), var(--onboarding-dark-backdrop-color)) 0%, light-dark(rgb(250, 236, 241), var(--onboarding-dark-backdrop-color)) 57%, light-dark(rgb(245, 212, 245), var(--onboarding-dark-backdrop-color)) 100%)",
+              "center 80% / 70% no-repeat url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg'), var(--pinnable-sites-gradient)",
             hero_text: {
               title: {
                 raw: "Open your favorite sites like an app",
