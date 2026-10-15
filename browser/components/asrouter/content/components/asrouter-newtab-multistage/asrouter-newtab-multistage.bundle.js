@@ -5148,7 +5148,9 @@ class ProtonScreen extends (external_React_default()).PureComponent {
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), external_React_default().createElement("div", {
+    }, content.position === "card-stack" ? external_React_default().createElement("div", {
+      className: "card-stack-front"
+    }) : null, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), external_React_default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",

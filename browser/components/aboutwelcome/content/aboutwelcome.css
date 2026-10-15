@@ -2166,16 +2166,13 @@ html {
   --card-stack-duration: 400ms;
   --card-stack-fly-block: calc(2 * var(--translate));
   --card-stack-slot-shift: var(--card-stack-layer-1-offset);
-  background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
-  background-image: radial-gradient(circle 125px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
-  background-repeat: no-repeat;
-  border: var(--card-stack-border);
   border-radius: var(--border-radius-medium);
   box-sizing: border-box;
   height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   min-height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   position: relative;
   overflow: visible;
+  isolation: isolate;
 }
 .onboardingContainer .screen[pos=card-stack][data-theme="nova-sun@mozilla.org"] {
   --card-stack-color-1: light-dark(var(--color-yellow-0), var(--color-yellow-90));
@@ -2242,40 +2239,50 @@ html {
     --card-stack-slot-shift: 0px;
   }
 }
-.onboardingContainer .screen[pos=card-stack]:dir(rtl) {
-  background-image: radial-gradient(circle 125px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
-}
 @container card-stack (width <= 640px) {
   .onboardingContainer .screen[pos=card-stack] {
     --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 3) ;
   }
 }
+.onboardingContainer .screen[pos=card-stack] .card-stack-front, .onboardingContainer .screen[pos=card-stack]::before, .onboardingContainer .screen[pos=card-stack]::after {
+  position: absolute;
+  box-sizing: border-box;
+  border: var(--card-stack-border);
+  border-radius: var(--border-radius-medium);
+}
+.onboardingContainer .screen[pos=card-stack] .card-stack-front {
+  inset: 0;
+  background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
+  background-image: radial-gradient(circle 125px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: -1;
+}
+.onboardingContainer .screen[pos=card-stack] .card-stack-front:dir(rtl) {
+  background-image: radial-gradient(circle 125px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+}
 @container card-stack (width <= 520px) {
-  .onboardingContainer .screen[pos=card-stack] {
+  .onboardingContainer .screen[pos=card-stack] .card-stack-front {
     background-position-y: calc(var(--card-stack-secondary-height) / -2);
     background-image: radial-gradient(circle 100px at center, var(--card-stack-flare) 0%, transparent 100%);
   }
 }
 .onboardingContainer .screen[pos=card-stack]::before, .onboardingContainer .screen[pos=card-stack]::after {
   content: "";
-  position: absolute;
   inset-block-start: 0;
   block-size: 100%;
-  box-sizing: border-box;
-  border: var(--card-stack-border);
-  border-radius: var(--border-radius-medium);
-  z-index: -1;
 }
 .onboardingContainer .screen[pos=card-stack]::before {
   inset-inline: 18px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--card-stack-color-2);
   translate: 0 var(--card-stack-layer-1-offset);
+  z-index: -2;
 }
 .onboardingContainer .screen[pos=card-stack]::after {
   inset-inline: 42px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
   background-color: var(--card-stack-color-3);
   translate: 0 var(--card-stack-layer-2-offset);
-  z-index: -2;
+  z-index: -3;
 }
 @media (prefers-reduced-motion: no-preference) {
   .onboardingContainer .screen[pos=card-stack]::before, .onboardingContainer .screen[pos=card-stack]::after {
@@ -2413,6 +2420,8 @@ html {
 @container card-stack (width <= 520px) {
   .onboardingContainer .screen[pos=card-stack][layout=last-card] {
     height: 300px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+  }
+  .onboardingContainer .screen[pos=card-stack][layout=last-card] .card-stack-front {
     background-position-y: center;
   }
 }

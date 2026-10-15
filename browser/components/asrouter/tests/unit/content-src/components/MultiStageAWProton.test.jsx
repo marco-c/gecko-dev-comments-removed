@@ -224,6 +224,22 @@ describe("MultiStageAboutWelcomeProton module", () => {
       assert.ok(wrapper.find(".section-secondary").exists());
     });
 
+    it("should render the front card layer only for card-stack screens", () => {
+      const cardStack = mount(
+        <MultiStageProtonScreen
+          content={{ position: "card-stack", title: "test title" }}
+        />
+      );
+      assert.ok(cardStack.find("main > .card-stack-front").exists());
+
+      const split = mount(
+        <MultiStageProtonScreen
+          content={{ position: "split", title: "test title" }}
+        />
+      );
+      assert.notOk(split.find(".card-stack-front").exists());
+    });
+
     it("should set data-theme from activeThemeId for card-stack screens", () => {
       const wrapper = mount(
         <MultiStageProtonScreen

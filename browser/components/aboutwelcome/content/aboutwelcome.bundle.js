@@ -2160,7 +2160,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
         this.mainContentHeader = input;
       },
       "no-rdm": content.no_rdm ? "" : null
-    }, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }, content.position === "card-stack" ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      className: "card-stack-front"
+    }) : null, cornerImageAnchor === "screen" ? this.renderCornerImage("screen") : null, isCenterPosition ? null : this.renderSecondarySection(content), react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `section-main ${isEmbeddedMigration ? "embedded-migration" : ""}${isSystemPromptStyleSpotlight ? "system-prompt-spotlight" : ""}`,
       "hide-secondary-section": content.hide_secondary_section ? String(content.hide_secondary_section) : null,
       role: "document",

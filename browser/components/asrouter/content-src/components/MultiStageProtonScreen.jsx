@@ -1142,6 +1142,9 @@ export class ProtonScreen extends React.PureComponent {
         }}
         no-rdm={content.no_rdm ? "" : null}
       >
+        {content.position === "card-stack" ? (
+          <div className="card-stack-front" />
+        ) : null}
         {cornerImageAnchor === "screen"
           ? this.renderCornerImage("screen")
           : null}

@@ -1214,53 +1214,67 @@ html {
         --card-stack-slot-shift: 0px;
       }
 
-      background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
-      background-image: radial-gradient(circle 125px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
-      background-repeat: no-repeat;
-      border: var(--card-stack-border);
       border-radius: var(--border-radius-medium);
       box-sizing: border-box;
       height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       min-height: 204px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
       position: relative;
       overflow: visible;
-
-      &:dir(rtl) {
-        background-image: radial-gradient(circle 125px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
-      }
+      // The screen becomes a stacking context anyway in RTL (it's flipped with
+      // a transform) and while animating, so always isolate it and draw the
+      // front card on its own layer above the back cards.
+      isolation: isolate;
 
       @container card-stack (width <= #{$card-stack-narrow-width}) {
         --card-stack-flare-x: calc(var(--card-stack-secondary-width) / 3)
       }
 
-      @container card-stack (width <= #{$card-stack-stacked-width}) {
-        background-position-y: calc(var(--card-stack-secondary-height) / -2);
-        background-image: radial-gradient(circle 100px at center, var(--card-stack-flare) 0%, transparent 100%);
+      .card-stack-front,
+      &::before,
+      &::after {
+        position: absolute;
+        box-sizing: border-box;
+        border: var(--card-stack-border);
+        border-radius: var(--border-radius-medium);
+      }
+
+      .card-stack-front {
+        inset: 0;
+        background-color: color-mix(in srgb, var(--background-color-box) 40%, var(--card-stack-color-1));
+        background-image: radial-gradient(circle 125px at var(--card-stack-flare-x) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        background-repeat: no-repeat;
+        pointer-events: none;
+        z-index: -1;
+
+        &:dir(rtl) {
+          background-image: radial-gradient(circle 125px at calc(100% - var(--card-stack-flare-x)) center, var(--card-stack-flare) 0%, transparent 100%); /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
+        }
+
+        @container card-stack (width <= #{$card-stack-stacked-width}) {
+          background-position-y: calc(var(--card-stack-secondary-height) / -2);
+          background-image: radial-gradient(circle 100px at center, var(--card-stack-flare) 0%, transparent 100%);
+        }
       }
 
       &::before,
       &::after {
         content: '';
-        position: absolute;
         inset-block-start: 0;
         block-size: 100%;
-        box-sizing: border-box;
-        border: var(--card-stack-border);
-        border-radius: var(--border-radius-medium);
-        z-index: -1;
       }
 
       &::before {
         inset-inline: 18px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
         background-color: var(--card-stack-color-2);
         translate: 0 var(--card-stack-layer-1-offset);
+        z-index: -2;
       }
 
       &::after {
         inset-inline: 42px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
         background-color: var(--card-stack-color-3);
         translate: 0 var(--card-stack-layer-2-offset);
-        z-index: -2;
+        z-index: -3;
       }
 
       @media (prefers-reduced-motion: no-preference) {
@@ -1409,7 +1423,10 @@ html {
         // image sits above the stacked title and subtitle instead
         @container card-stack (width <= #{$card-stack-stacked-width}) {
           height: 300px; /* stylelint-disable-line stylelint-plugin-mozilla/use-design-tokens */
-          background-position-y: center;
+
+          .card-stack-front {
+            background-position-y: center;
+          }
         }
 
         .section-secondary {
