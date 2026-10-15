@@ -222,7 +222,7 @@ gfx::ContiguousBuffer& CanvasDrawEventRecorder::GetContiguousBuffer(
         mCurrentBuffer =
             CanvasBuffer(std::move(mRecycledBuffers.front().shmem));
         mRecycledBuffers.pop();
-        mDropBufferOnZero = 1;
+        mDropBufferOnZero = mDropBufferLimit;
       }
     } else {
       mDropBufferOnZero = mDropBufferLimit;
