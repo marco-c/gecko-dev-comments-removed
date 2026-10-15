@@ -40,6 +40,8 @@ skip-if = [
 
 ["browser_autocomplete_unrecognized_attribute.js"]
 
+["browser_autocomplete_unrecognized_attribute_dynamic.js"]
+
 ["browser_autofill_address_housenumber.js"]
 
 ["browser_autofill_address_level.js"]
@@ -75,6 +77,10 @@ skip-if = [
 ["browser_clearPopulatedForm.js"]
 
 ["browser_collectFormFields.js"]
+
+["browser_creditCard_migration.js"]
+
+["browser_creditCard_primaryPassword.js"]
 
 ["browser_dropdown_layout.js"]
 
@@ -158,5 +164,7 @@ skip-if = [
 ]
 
 ["browser_remoteiframe.js"]
+
+["browser_storage_rust_nimbus.js"]
 
 ["browser_submission_in_private_mode.js"]
