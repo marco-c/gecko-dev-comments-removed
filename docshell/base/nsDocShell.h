@@ -1038,8 +1038,7 @@ class nsDocShell final : public nsDocLoader,
   
   MOZ_CAN_RUN_SCRIPT
   nsresult HandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
-                                        SameDocumentNavigationState& aState,
-                                        bool& aSameDocument);
+                                        SameDocumentNavigationState& aState);
 
   uint32_t GetSameDocumentNavigationFlags(nsIURI* aNewURI);
 
