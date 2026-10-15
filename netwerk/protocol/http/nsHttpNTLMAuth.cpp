@@ -187,6 +187,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
                                   nsISupports** sessionState,
                                   nsISupports** continuationState,
                                   bool* identityInvalid) {
+  MOZ_ASSERT(NS_IsMainThread());
   LOG(("nsHttpNTLMAuth::ChallengeReceived [ss=%p cs=%p]\n", *sessionState,
        *continuationState));
 
@@ -493,6 +494,7 @@ nsHttpNTLMAuth::GenerateCredentials(
     nsISupports** continuationState, uint32_t* aFlags, nsACString& creds)
 
 {
+  MOZ_ASSERT(NS_IsMainThread());
   LOG(("nsHttpNTLMAuth::GenerateCredentials\n"));
 
   creds.Truncate();
