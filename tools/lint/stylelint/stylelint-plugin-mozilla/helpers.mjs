@@ -203,6 +203,7 @@ const BACKGROUND_PROPERTIES = new Set(["background", "background-color"]);
  */
 export const findColorDeclarations = block => {
   let background = null;
+  let backgroundImage = null;
   let text = null;
 
   for (let node of block.nodes) {
@@ -212,12 +213,14 @@ export const findColorDeclarations = block => {
     let property = node.prop.toLowerCase();
     if (BACKGROUND_PROPERTIES.has(property)) {
       background = node;
+    } else if (property == "background-image") {
+      backgroundImage = node;
     } else if (property == "color") {
       text = node;
     }
   }
 
-  return { background, text };
+  return { background: background ?? backgroundImage, text };
 };
 
 /**

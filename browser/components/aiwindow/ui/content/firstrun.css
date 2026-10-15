@@ -87,7 +87,7 @@
     @media not -moz-pref("browser.nova.enabled") {
       border: none;
       border-radius: var(--border-radius-medium);
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom gradient per Figma design */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, stylelint-plugin-mozilla/use-paired-color-tokens -- custom gradient per Figma design; the button's text color comes from its default styles */
       background-image: var(--button-background-color-primary);
     }
 
