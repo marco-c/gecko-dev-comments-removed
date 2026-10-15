@@ -7806,25 +7806,6 @@ struct SameDocumentNavigationState {
   bool mIdentical = false;
 };
 
-static bool IsSamePrincipalForDocumentURI(nsIPrincipal* aCurrentPrincipal,
-                                          nsIURI* aCurrentURI,
-                                          nsIURI* aNewURI) {
-  nsCOMPtr<nsIURI> principalURI = aCurrentPrincipal->GetURI();
-  if (aCurrentPrincipal->GetIsNullPrincipal()) {
-    if (nsCOMPtr<nsIPrincipal> precursor =
-            aCurrentPrincipal->GetPrecursorPrincipal()) {
-      principalURI = precursor->GetURI();
-    }
-  }
-
-  return !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                               aNewURI) &&
-         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
-                                                               aCurrentURI) &&
-         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(aCurrentURI,
-                                                               aNewURI);
-}
-
 bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
                                           SameDocumentNavigationState& aState) {
   MOZ_ASSERT(aLoadState);
@@ -7924,6 +7905,9 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
     aState.mHistoryNavBetweenSameDoc = mActiveEntry->SharesDocumentWith(
         aLoadState->GetLoadingSessionHistoryInfo()->mInfo);
   }
+  MOZ_LOG(gSHLog, LogLevel::Debug,
+          ("nsDocShell::IsSameDocumentNavigation %p NavBetweenSameDoc=%d", this,
+           aState.mHistoryNavBetweenSameDoc));
 
   
   
@@ -7945,56 +7929,52 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
   
   
   
-  if (aLoadState->LoadIsFromSessionHistory()) {
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell::IsSameDocumentNavigation history nav %p "
-             "NavBetweenSameDoc=%d",
-             this, aState.mHistoryNavBetweenSameDoc));
-    if (!aState.mHistoryNavBetweenSameDoc ||
-        aLoadState->GetLoadingSessionHistoryInfo()->mLoadingCurrentEntry) {
-      return false;
-    }
-  } else {
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell::IsSameDocumentNavigation new shentry %p "
-             "!PostDataStream: %s mSameExceptHashes: %s mNewURIHasRef: %s",
-             this, !aLoadState->PostDataStream() ? "true" : "false",
-             aState.mSameExceptHashes ? "true" : "false",
-             aState.mNewURIHasRef ? "true" : "false"));
-    if (aLoadState->PostDataStream() || !aState.mSameExceptHashes ||
-        !aState.mNewURIHasRef) {
-      return false;
+  if (aState.mHistoryNavBetweenSameDoc &&
+      !aLoadState->GetLoadingSessionHistoryInfo()->mLoadingCurrentEntry) {
+    return true;
+  }
+
+  MOZ_LOG(
+      gSHLog, LogLevel::Debug,
+      ("nsDocShell::IsSameDocumentNavigation %p !LoadIsFromSessionHistory=%s "
+       "!PostDataStream: %s mSameExceptHashes: %s mNewURIHasRef: %s",
+       this, !aLoadState->LoadIsFromSessionHistory() ? "true" : "false",
+       !aLoadState->PostDataStream() ? "true" : "false",
+       aState.mSameExceptHashes ? "true" : "false",
+       aState.mNewURIHasRef ? "true" : "false"));
+  return !aLoadState->LoadIsFromSessionHistory() &&
+         !aLoadState->PostDataStream() && aState.mSameExceptHashes &&
+         aState.mNewURIHasRef;
+}
+
+static bool IsSamePrincipalForDocumentURI(nsIPrincipal* aCurrentPrincipal,
+                                          nsIURI* aCurrentURI,
+                                          nsIURI* aNewURI) {
+  nsCOMPtr<nsIURI> principalURI = aCurrentPrincipal->GetURI();
+  if (aCurrentPrincipal->GetIsNullPrincipal()) {
+    if (nsCOMPtr<nsIPrincipal> precursor =
+            aCurrentPrincipal->GetPrecursorPrincipal()) {
+      principalURI = precursor->GetURI();
     }
   }
 
-  
-  
-  
-  nsCOMPtr<nsIURI> newURI = aLoadState->URI();
-  if (aState.mSecureUpgradeURI) {
-    
-    nsresult rv =
-        NS_GetSecureUpgradedURI(aLoadState->URI(), getter_AddRefs(newURI));
-    NS_ENSURE_SUCCESS(rv, false);
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
-  }
-  RefPtr<Document> doc = GetExtantDocument();
-  NS_ENSURE_TRUE(doc, false);
-  if (!IsSamePrincipalForDocumentURI(doc->NodePrincipal(), mCurrentURI,
-                                     newURI)) {
-    MOZ_LOG(gSHLog, LogLevel::Debug,
-            ("nsDocShell::IsSameDocumentNavigation %p false, possible "
-             "violation of the same origin policy",
-             this));
-    return false;
-  }
-
-  return true;
+  return !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                               aNewURI) &&
+         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(principalURI,
+                                                               aCurrentURI) &&
+         !nsScriptSecurityManager::IsHttpOrHttpsAndCrossOrigin(aCurrentURI,
+                                                               aNewURI);
 }
 
 nsresult nsDocShell::HandleSameDocumentNavigation(
-    nsDocShellLoadState* aLoadState, SameDocumentNavigationState& aState) {
+    nsDocShellLoadState* aLoadState, SameDocumentNavigationState& aState,
+    bool& aSameDocument) {
+  aSameDocument = true;
+#ifdef DEBUG
+  SameDocumentNavigationState state;
+  MOZ_ASSERT(IsSameDocumentNavigation(aLoadState, state));
+#endif
+
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("nsDocShell::HandleSameDocumentNavigation %p %s -> %s", this,
            mCurrentURI->GetSpecOrDefault().get(),
@@ -8009,6 +7989,20 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   nsCOMPtr<nsIURI> newURI = aLoadState->URI();
   if (aState.mSecureUpgradeURI) {
     MOZ_TRY(NS_GetSecureUpgradedURI(aLoadState->URI(), getter_AddRefs(newURI)));
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("Upgraded URI to %s", newURI->GetSpecOrDefault().get()));
+  }
+
+  
+  
+  if (!IsSamePrincipalForDocumentURI(doc->NodePrincipal(), mCurrentURI,
+                                     newURI)) {
+    aSameDocument = false;
+    MOZ_LOG(gSHLog, LogLevel::Debug,
+            ("nsDocShell[%p]: possible violation of the same origin policy "
+             "during same document navigation",
+             this));
+    return NS_OK;
   }
 
   
@@ -8730,20 +8724,22 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   if (sameDocument) {
-    nsresult rv =
-        HandleSameDocumentNavigation(aLoadState, sameDocumentNavigationState);
+    nsresult rv = HandleSameDocumentNavigation(
+        aLoadState, sameDocumentNavigationState, sameDocument);
     NS_ENSURE_SUCCESS(rv, rv);
     if (shouldTakeFocus) {
       mBrowsingContext->Focus(CallerType::System, IgnoreErrors());
     }
-    if (aLoadState->LoadIsFromSessionHistory() &&
-        (mLoadType & LOAD_CMD_HISTORY) &&
-        !aLoadState->IsResumingInterceptedNavigation()) {
-      
-      
-      SetOngoingNavigation(Nothing());
+    if (sameDocument) {
+      if (aLoadState->LoadIsFromSessionHistory() &&
+          (mLoadType & LOAD_CMD_HISTORY) &&
+          !aLoadState->IsResumingInterceptedNavigation()) {
+        
+        
+        SetOngoingNavigation(Nothing());
+      }
+      return rv;
     }
-    return rv;
   }
 
   
@@ -12152,6 +12148,36 @@ OnLinkClickEvent::OnLinkClickEvent(nsDocShell* aHandler, nsIContent* aContent,
       mTriggeringPrincipal(aTriggeringPrincipal),
       mNoOpenerImplied(aNoOpenerImplied) {}
 
+Result<RefPtr<OnLinkClickEvent>, nsresult> nsDocShell::OnLinkClickWithLoadState(
+    nsIContent* aContent, nsDocShellLoadState* aLoadState,
+    bool aNoOpenerImplied, nsIPrincipal* aTriggeringPrincipal) {
+  if (StaticPrefs::dom_forms_submit_async_navigation()) {
+    
+    
+    
+    ComputeNamedTargetBrowsingContext(aLoadState);
+    if (aContent->IsHTMLElement(nsGkAtoms::form)) {
+      
+      
+      
+      
+      const MaybeDiscarded<BrowsingContext>& bc =
+          aLoadState->TargetBrowsingContext();
+      Document* formDocument = aContent->OwnerDoc();
+      if ((bc.IsNull() || bc == formDocument->GetBrowsingContext()) &&
+          !formDocument->IsCompletelyLoaded()) {
+        aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
+      }
+    }
+  }
+  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
+      this, aContent, aLoadState, aNoOpenerImplied, aTriggeringPrincipal);
+  RefPtr<nsIRunnable> runnable = ev;
+  nsresult rv = Dispatch(runnable.forget());
+  NS_ENSURE_SUCCESS(rv, Err(rv));
+  return ev;
+}
+
 nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
                                   nsDocShellLoadState* aLoadState) {
   
@@ -12162,29 +12188,15 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
     return OnLinkClickSync(aForm, aLoadState, false, aForm->NodePrincipal());
   }
 
-  
-  ComputeNamedTargetBrowsingContext(aLoadState);
-
-  
-  
-  
-  
-  const MaybeDiscarded<BrowsingContext>& targetBC =
-      aLoadState->TargetBrowsingContext();
-  Document* formDocument = aForm->OwnerDoc();
-  if ((targetBC.IsNull() || targetBC == formDocument->GetBrowsingContext()) &&
-      !formDocument->IsCompletelyLoaded()) {
-    aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
+  auto result = OnLinkClickWithLoadState(aForm, aLoadState, false,
+                                         aForm->NodePrincipal());
+  if (result.isErr()) {
+    return result.unwrapErr();
   }
-
-  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(this, aForm, aLoadState, false,
-                                           aForm->NodePrincipal());
-  RefPtr<nsIRunnable> runnable = ev;
-  nsresult rv = Dispatch(runnable.forget());
-  NS_ENSURE_SUCCESS(rv, rv);
-
   nsDocShell* targetDocShell = this;
   if (!aLoadState->Target().IsEmpty()) {
+    const MaybeDiscarded<BrowsingContext>& targetBC =
+        aLoadState->TargetBrowsingContext();
     targetDocShell =
         targetBC.IsNullOrDiscarded()
             ? nullptr
@@ -12195,7 +12207,7 @@ nsresult nsDocShell::OnFormSubmit(HTMLFormElement* aForm,
     
     
     targetDocShell->StopPendingJavascriptURLNavigations();
-    targetDocShell->mPlannedFormNavigation = ev.get();
+    targetDocShell->mPlannedFormNavigation = result.unwrap().get();
   }
   return NS_OK;
 }
@@ -12314,25 +12326,9 @@ nsresult nsDocShell::OnLinkClick(
       ownerDoc->GetScriptTrackingFlags());
   loadState->SetHistoryBehavior(NavigationHistoryBehavior::Auto);
 
-  ComputeNamedTargetBrowsingContext(loadState);
-
-  RefPtr ev = MakeRefPtr<OnLinkClickEvent>(
-      this, aContent, loadState, noOpenerImplied, aTriggeringPrincipal);
-
-  
-  
-  if (StaticPrefs::dom_links_sync_fragment_navigation()) {
-    SameDocumentNavigationState state;
-    if ((loadState->Target().IsEmpty() ||
-         loadState->TargetBrowsingContext() == GetBrowsingContext()) &&
-        IsSameDocumentNavigation(loadState, state)) {
-      ev->Run();
-      return NS_OK;
-    }
-  }
-
-  RefPtr<nsIRunnable> runnable = ev;
-  return Dispatch(runnable.forget());
+  auto result = OnLinkClickWithLoadState(aContent, loadState, noOpenerImplied,
+                                         aTriggeringPrincipal);
+  return result.isErr() ? result.unwrapErr() : NS_OK;
 }
 
 bool nsDocShell::ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
@@ -12535,6 +12531,14 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
       
       
       loadType = GetLoadTypeForFormSubmission(GetBrowsingContext(), aLoadState);
+    }
+  } else {
+    
+    
+    bool inOnLoadHandler = false;
+    GetIsExecutingOnLoadHandler(&inOnLoadHandler);
+    if (inOnLoadHandler) {
+      loadType = LOAD_NORMAL_REPLACE;
     }
   }
 

@@ -9,6 +9,7 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
+#include "mozilla/Result.h"
 #include "mozilla/ScrollbarPreferences.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
@@ -594,6 +595,10 @@ class nsDocShell final : public nsDocLoader,
                            nsDocShellLoadState* aLoadState,
                            bool aNoOpenerImplied,
                            nsIPrincipal* aTriggeringPrincipal);
+  
+  mozilla::Result<RefPtr<OnLinkClickEvent>, nsresult> OnLinkClickWithLoadState(
+      nsIContent* aContent, nsDocShellLoadState* aLoadState,
+      bool aNoOpenerImplied, nsIPrincipal* aTriggeringPrincipal);
 
   
   
@@ -1038,7 +1043,8 @@ class nsDocShell final : public nsDocLoader,
   
   MOZ_CAN_RUN_SCRIPT
   nsresult HandleSameDocumentNavigation(nsDocShellLoadState* aLoadState,
-                                        SameDocumentNavigationState& aState);
+                                        SameDocumentNavigationState& aState,
+                                        bool& aSameDocument);
 
   uint32_t GetSameDocumentNavigationFlags(nsIURI* aNewURI);
 
