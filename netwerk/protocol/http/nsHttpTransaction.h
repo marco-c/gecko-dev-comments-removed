@@ -111,12 +111,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   void SetPendingTime(bool now = true) {
     mozilla::MutexAutoLock lock(mLock);
-    if (!now && !mTimings.transactionPending.IsNull()) {
-      
-      
-      
-      mPendingDurationTime = TimeStamp::Now() - mTimings.transactionPending;
-    }
     
     
     
@@ -574,16 +568,13 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mReportedResponseHeader{false};
 
   
-  bool mResponseHeadTaken{false};
-  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers;
-  bool mResponseTrailersTaken{false};
+  bool mResponseHeadTaken MOZ_GUARDED_BY(mLock){false};
+  UniquePtr<nsHttpHeaderArray> mForTakeResponseTrailers MOZ_GUARDED_BY(mLock);
+  bool mResponseTrailersTaken MOZ_GUARDED_BY(mLock){false};
 
   
   
   Atomic<bool> mRestarted{false};
-
-  
-  TimeDuration mPendingDurationTime;
 
   uint64_t mBrowserId{0};
 
