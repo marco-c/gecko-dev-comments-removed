@@ -201,6 +201,7 @@ var SidebarController = {
         iconUrl: "chrome://global/skin/icons/highlights.svg",
         gleanClickEvent: Glean.sidebar.chatbotIconClick,
         toolContextMenuId: "aichat",
+        hasCustomHeader: true,
         permissions: true,
         hideInAIWindow: true,
       }
