@@ -160,6 +160,7 @@ void Http2WebTransportStream::SetSendOrder(int64_t aSendOrder) {}
 
 NS_IMETHODIMP
 Http2WebTransportStream::OnInputStreamReady(nsIAsyncInputStream* aIn) {
+  MOZ_ASSERT(mOwnerThread->IsOnCurrentThread());
   LOG1(
       ("Http2WebTransportStream::OnInputStreamReady [this=%p stream=%p "
        "state=%d]",
@@ -176,6 +177,7 @@ Http2WebTransportStream::OnInputStreamReady(nsIAsyncInputStream* aIn) {
 
 NS_IMETHODIMP
 Http2WebTransportStream::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
+  MOZ_ASSERT(mOwnerThread->IsOnCurrentThread());
   if (!mCurrentOut) {
     if (mOutgoingQueue.IsEmpty()) {
       return NS_OK;
@@ -208,7 +210,7 @@ Http2WebTransportStream::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
          static_cast<uint32_t>(mSocketInCondition), this));
     if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
       mSocketInCondition =
-          mReceiveStreamPipeOut->AsyncWait(this, 0, 0, nullptr);
+          mReceiveStreamPipeOut->AsyncWait(this, 0, 0, mOwnerThread);
       return mSocketInCondition;
     }
 
