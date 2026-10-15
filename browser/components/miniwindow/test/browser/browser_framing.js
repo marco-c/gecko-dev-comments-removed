@@ -7,62 +7,77 @@
 
 
 
-add_task(async function test_whole_tab_transform_is_near_identity() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "https://example.com/"
-  );
 
-  let miniWin = await popTabForTest(tab); 
-  let popup = [...MiniWindowManager._miniwindows][0];
-  let t = popup.browser.style.transform;
 
-  Assert.ok(/scale\(/.test(t), `transform has a scale(), got "${t}"`);
-  Assert.ok(/translate\(/.test(t), `transform has a translate(), got "${t}"`);
+const CROP = { left: 100, top: 60, width: 300, height: 200 };
 
-  let translate = parseTranslate(t);
-  Assert.ok(translate, "translate values are parseable");
-  Assert.less(Math.abs(translate.x), 1, "whole-tab translateX is ~0");
-  Assert.less(Math.abs(translate.y), 1, "whole-tab translateY is ~0");
 
-  popup.close();
-  await BrowserTestUtils.domWindowClosed(miniWin);
-  assertNoMiniWindowsOpen();
-  removeTestTabs();
-});
 
-add_task(async function test_small_region_scales_up() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "https://example.com/"
-  );
-  let browser = tab.linkedBrowser;
-  
-  
-  
-  let cropInfo = {
-    left: 10,
-    top: 5,
-    width: 100,
-    height: 75,
+
+
+
+
+function cropInfoFor(browser, crop = CROP) {
+  return {
+    ...crop,
     viewportWidth: browser.clientWidth,
     viewportHeight: browser.clientHeight,
     fullZoom: 1,
   };
+}
 
-  let miniWin = await popTabForTest(tab, cropInfo);
-  let popup = [...MiniWindowManager._miniwindows][0];
-  let t = popup.browser.style.transform;
 
-  Assert.ok(
-    /scale\((?:1\.[1-9]|[2-9])/.test(t),
-    `small crop scales up, got "${t}"`
+
+
+
+
+
+
+function waitForFramed(browser, crop) {
+  return SpecialPowers.spawn(browser, [crop], async c => {
+    let vv = content.visualViewport;
+    await ContentTaskUtils.waitForCondition(
+      () =>
+        Math.abs(vv.pageLeft - c.left) < 2 &&
+        Math.abs(vv.pageTop - c.top) < 2 &&
+        vv.width >= c.width - 2 &&
+        vv.height >= c.height - 2 &&
+        Math.min(vv.width - c.width, vv.height - c.height) < 2,
+      "the visual viewport frames the crop"
+    );
+  });
+}
+
+
+
+
+
+
+function layoutWidth(browser) {
+  return SpecialPowers.spawn(
+    browser,
+    [],
+    () => content.document.documentElement.clientWidth
   );
+}
 
-  let translate = parseTranslate(t);
-  Assert.ok(translate, "translate values are parseable");
-  Assert.equal(translate.x, -10, "translateX is -crop.left");
-  Assert.equal(translate.y, -5, "translateY is -crop.top");
+add_task(async function test_crop_is_framed_without_reflow() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    CROP_TARGET_URL
+  );
+  let info = cropInfoFor(tab.linkedBrowser);
+  let originalLayoutWidth = await layoutWidth(tab.linkedBrowser);
+
+  let miniWin = await popTabForTest(tab, info);
+  let popup = [...MiniWindowManager._miniwindows][0];
+
+  await waitForFramed(popup.browser, CROP);
+  Assert.less(
+    Math.abs((await layoutWidth(popup.browser)) - originalLayoutWidth),
+    1,
+    "the page keeps the layout width it was cropped at"
+  );
 
   popup.close();
   await BrowserTestUtils.domWindowClosed(miniWin);
@@ -70,44 +85,68 @@ add_task(async function test_small_region_scales_up() {
   removeTestTabs();
 });
 
-add_task(async function test_crop_target_box_framed_exactly() {
+add_task(async function test_crop_at_page_edge_is_not_clamped() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     CROP_TARGET_URL
   );
   let browser = tab.linkedBrowser;
   
-  let cropInfo = {
-    left: 100,
-    top: 60,
-    width: 300,
-    height: 200,
-    viewportWidth: browser.clientWidth,
-    viewportHeight: browser.clientHeight,
-    fullZoom: 1,
+  
+  let crop = {
+    left: browser.clientWidth - 250,
+    top: 0,
+    width: 250,
+    height: 250,
   };
 
-  let miniWin = await popTabForTest(tab, cropInfo);
+  let miniWin = await popTabForTest(tab, cropInfoFor(browser, crop));
   let popup = [...MiniWindowManager._miniwindows][0];
 
-  let translate = parseTranslate(popup.browser.style.transform);
-  Assert.ok(translate, "translate values are parseable");
-  Assert.equal(translate.x, -100, "translateX frames the box's left edge");
-  Assert.equal(translate.y, -60, "translateY frames the box's top edge");
-
-  let scale = parseFloat(
-    /scale\(([\d.]+)\)/.exec(popup.browser.style.transform)?.[1]
-  );
-  Assert.less(
-    Math.abs(scale - miniWin.innerWidth / 300),
-    0.01,
-    "scale fills the window width with the box"
-  );
+  await waitForFramed(popup.browser, crop);
 
   popup.close();
   await BrowserTestUtils.domWindowClosed(miniWin);
   assertNoMiniWindowsOpen();
   removeTestTabs();
+});
+
+add_task(async function test_returning_restores_layout_and_zoom() {
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    CROP_TARGET_URL
+  );
+  let originalLayoutWidth = await layoutWidth(tab.linkedBrowser);
+
+  let miniWin = await popTabForTest(tab, cropInfoFor(tab.linkedBrowser));
+  let popup = [...MiniWindowManager._miniwindows][0];
+  await waitForFramed(popup.browser, CROP);
+
+  popup.returnToOriginWin(false);
+  await BrowserTestUtils.domWindowClosed(miniWin);
+
+  let movedTab = gBrowser.tabs.find(
+    t => t.linkedBrowser?.currentURI?.spec === CROP_TARGET_URL
+  );
+  Assert.ok(movedTab, "the tab returned to the origin window");
+  await SpecialPowers.spawn(
+    movedTab.linkedBrowser,
+    [originalLayoutWidth],
+    async width => {
+      await ContentTaskUtils.waitForCondition(
+        () => content.windowUtils.getResolution() === 1,
+        "the zoom is reset"
+      );
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          Math.abs(content.document.documentElement.clientWidth - width) < 1,
+        "the page is laid out at the browser's size again"
+      );
+    }
+  );
+
+  removeTestTabs();
+  assertNoMiniWindowsOpen();
 });
 
 add_task(async function test_full_tab_opens_at_default_size() {
