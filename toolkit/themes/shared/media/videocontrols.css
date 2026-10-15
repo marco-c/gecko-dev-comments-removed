@@ -63,7 +63,6 @@
   --scrubberStack-width: 64px;
   --muteButton-width: var(--button-size);
   --volumeStack-width: 48px;
-  --castingButton-width: var(--button-size);
   --closedCaptionButton-width: var(--button-size);
   --fullscreenButton-width: var(--button-size);
   --positionDurationBox-width: var(--timer-size);
@@ -219,14 +218,6 @@
   display: none;
 }
 
-.castingButton {
-  background-image: url(chrome://global/skin/media/castingButton-ready.svg);
-}
-
-.castingButton[enabled] {
-  background-image: url(chrome://global/skin/media/castingButton-active.svg);
-}
-
 .closedCaptionButton {
   background-image: url(chrome://global/skin/media/closedCaptionButton-cc-off.svg);
 }
@@ -250,7 +241,7 @@
   height: var(--thumb-size);
   width: var(--thumb-size);
   border: none;
-  border-radius: var(--border-radius-circle);
+  border-radius: 50%;
   /* this is a foreground element even though it is implemented as a background */
   background-color: currentColor;
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.65));
@@ -492,6 +483,12 @@
   fill: currentColor;
 }
 
+@media (-moz-platform: android) {
+  .statusIcon[type="pictureInPicture"] {
+    background-image: url(chrome://global/skin/media/picture-in-picture-open-android.svg);
+  }
+}
+
 .videocontrols[localedir="rtl"] .statusIcon[type="pictureInPicture"] {
   transform: scaleX(-1);
 }
@@ -506,7 +503,7 @@
   border: none;
   min-width: var(--clickToPlay-size);
   min-height: var(--clickToPlay-size);
-  border-radius: var(--border-radius-circle);
+  border-radius: 50%;
   background-image: url(chrome://global/skin/media/play-fill.svg);
   background-repeat: no-repeat;
   background-position: 54% 50%;

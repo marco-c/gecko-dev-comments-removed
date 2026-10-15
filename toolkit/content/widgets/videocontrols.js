@@ -49,10 +49,10 @@ this.VideoControlsWidget = class {
     let pageURI = this.document.documentURI;
     if (this.element.controls) {
       newImpl = VideoControlsImplWidget;
-    } else if (this.isMobile) {
-      newImpl = NoControlsMobileImplWidget;
     } else if (VideoControlsWidget.isPictureInPictureVideo(this.element)) {
       newImpl = NoControlsPictureInPictureImplWidget;
+    } else if (this.isMobile) {
+      newImpl = NoControlsMobileImplWidget;
     } else if (
       pageURI.startsWith("http://") ||
       pageURI.startsWith("https://")
@@ -2503,6 +2503,12 @@ this.VideoControlsImplWidget = class {
         let isMobile = this.window.navigator.appVersion.includes("Android");
         if (isMobile) {
           this.controlsContainer.classList.add("mobile");
+          this.shadowRoot
+            .getElementById("pictureInPicture")
+            .setAttribute(
+              "data-l10n-id",
+              "videocontrols-status-picture-in-picture-android"
+            );
         }
 
         
@@ -3106,6 +3112,15 @@ this.NoControlsPictureInPictureImplWidget = class {
       parserDoc.documentElement,
       true
     );
+    let isMobile = this.window.navigator.appVersion.includes("Android");
+    if (isMobile) {
+      this.shadowRoot
+        .getElementById("pictureInPicture")
+        .setAttribute(
+          "data-l10n-id",
+          "videocontrols-status-picture-in-picture-android"
+        );
+    }
     this.l10n = new this.window.DOMLocalization([
       "branding/brand.ftl",
       "toolkit/global/videocontrols.ftl",

@@ -26,6 +26,9 @@ const APIS = {
   IsVideoCloning({ tab, selector }) {
     return browser.test.isVideoCloning(tab.id, selector);
   },
+  GetVideoStatusMessage({ tab, selector }) {
+    return browser.test.getVideoStatusMessage(tab.id, selector);
+  },
   GetPidForTab({ tab }) {
     return browser.test.getPidForTab(tab.id);
   },

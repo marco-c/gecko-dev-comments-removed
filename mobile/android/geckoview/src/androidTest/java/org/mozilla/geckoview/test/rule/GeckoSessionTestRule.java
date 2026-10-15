@@ -2849,6 +2849,25 @@ public class GeckoSessionTestRule implements TestRule {
             });
   }
 
+  
+
+
+
+
+
+
+
+  public @Nullable String getVideoStatusMessage(final GeckoSession session, final String selector) {
+    final Object message =
+        webExtensionApiCall(
+            session,
+            "GetVideoStatusMessage",
+            args -> {
+              args.put("selector", selector);
+            });
+    return message instanceof String ? (String) message : null;
+  }
+
   public List<String> getRequestedLocales() {
     try {
       final JSONArray locales = (JSONArray) webExtensionApiCall("GetRequestedLocales", null);

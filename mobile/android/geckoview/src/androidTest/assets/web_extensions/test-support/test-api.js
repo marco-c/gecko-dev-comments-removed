@@ -113,6 +113,14 @@ this.test = class extends ExtensionAPI {
           );
         },
 
+        
+        async getVideoStatusMessage(tabId, selector) {
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "GetVideoStatusMessage",
+            { selector }
+          );
+        },
+
         async getRequestedLocales() {
           return Services.locale.requestedLocales;
         },

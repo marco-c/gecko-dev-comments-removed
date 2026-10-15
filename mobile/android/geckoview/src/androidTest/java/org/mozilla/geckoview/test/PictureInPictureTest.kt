@@ -7,6 +7,7 @@ import androidx.annotation.OptIn
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.equalTo
+import org.hamcrest.Matchers.nullValue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -220,6 +221,46 @@ class PictureInPictureTest : BaseSessionTest() {
             "onEnterPictureInPicture",
         )
         sessionRule.waitForResult(mainSession.sessionPictureInPicture.exit())
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun sourceVideoWithControlsShowsThePictureInPictureMessage() {
+        val delegate = registerDelegate()
+        val source = startPictureInPicture(delegate).source
+
+        assertThat(
+            "The source video must tell the user where its video went",
+            source.awaitVideoStatusMessage(),
+            equalTo(PICTURE_IN_PICTURE_MESSAGE),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun sourceVideoWithoutControlsShowsThePictureInPictureMessage() {
+        val delegate = registerDelegate()
+        val source = startPictureInPicture(delegate, controls = false).source
+
+        assertThat(
+            "A video with no controls must show the message rather than the mobile controls",
+            source.awaitVideoStatusMessage(),
+            equalTo(PICTURE_IN_PICTURE_MESSAGE),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun videoNotInPictureInPictureShowsNoMessage() {
+        mainSession.loadTestPath(VIDEO_WEBM_PATH)
+        mainSession.waitForPageStop()
+        mainSession.playVideo()
+
+        assertThat(
+            "A video playing in the page must not claim to be in picture-in-picture",
+            sessionRule.getVideoStatusMessage(mainSession, "video"),
+            nullValue(),
+        )
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -588,9 +629,13 @@ class PictureInPictureTest : BaseSessionTest() {
     private fun startPictureInPicture(
         delegate: CapturingDelegate,
         source: GeckoSession = mainSession,
+        controls: Boolean = true,
     ): PipSessions {
         source.loadTestPath(VIDEO_WEBM_PATH)
         source.waitForPageStop()
+        if (!controls) {
+            source.evaluateJS("document.querySelector('video').removeAttribute('controls')")
+        }
         source.playVideo()
 
         val entered = delegate.enterCount
@@ -614,6 +659,19 @@ class PictureInPictureTest : BaseSessionTest() {
         return sessionRule.createOpenSession(
             GeckoSessionSettings.Builder(source.settings).pictureInPictureToken(delegate.placementToken).build()
         )
+    }
+
+    /** The overlay message is localized asynchronously, so it is not there the instant it is set. */
+    private fun GeckoSession.awaitVideoStatusMessage(): String? {
+        var message: String? = null
+        UiThreadUtils.waitForCondition(
+            {
+                message = sessionRule.getVideoStatusMessage(this, "video")
+                !message.isNullOrEmpty()
+            },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+        return message
     }
 
     private fun GeckoSession.playVideoInSubframe() {
@@ -649,5 +707,9 @@ class PictureInPictureTest : BaseSessionTest() {
             )
         this.evaluateJS("document.querySelector('video').pause()")
         paused.value
+    }
+
+    companion object {
+        private const val PICTURE_IN_PICTURE_MESSAGE = "Video is playing in Picture-in-Picture"
     }
 }
