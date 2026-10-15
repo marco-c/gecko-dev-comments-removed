@@ -4309,6 +4309,7 @@ const ContentTiles = props => {
 
 
 const DEFAULT_AUTO_ADVANCE_MS = 20000;
+const MAX_TIMEOUT_MS = 2 ** 31 - 1;
 const CORNER_IMAGE_POSITIONS = new Set(["bottom-left", "bottom-right", "top-left", "top-right"]);
 const DEFAULT_CORNER_IMAGE_POSITION = "bottom-right";
 const CORNER_IMAGE_ENTRANCE_ANIMATIONS = new Set(["none", "fade", "slide-block", "slide-inline", "slide-corner", "zoom"]);
@@ -4341,6 +4342,38 @@ function resolveDirectionalImage(image) {
     ...image.rtl
   } : image;
 }
+
+
+
+
+
+
+
+function useAutoDismiss(autoDismiss, messageId) {
+  const after = autoDismiss?.after;
+  (0,external_React_namespaceObject.useEffect)(() => {
+    if (!Number.isFinite(after) || after < 0 || after > MAX_TIMEOUT_MS) {
+      return undefined;
+    }
+    let timer = null;
+    let dismissed = false;
+    const dismiss = () => {
+      dismissed = true;
+      MultiStageUtils.sendActionTelemetry(messageId, "auto_dismiss", "AUTO_DISMISS");
+      window.AWFinish();
+    };
+    const restartCountdown = () => {
+      clearTimeout(timer);
+      timer = !dismissed && document.visibilityState === "visible" ? setTimeout(dismiss, after) : null;
+    };
+    restartCountdown();
+    document.addEventListener("visibilitychange", restartCountdown);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", restartCountdown);
+    };
+  }, [after, messageId]);
+}
 const MultiStageProtonScreen = props => {
   const {
     autoAdvance,
@@ -4350,6 +4383,7 @@ const MultiStageProtonScreen = props => {
     navigate,
     order
   } = props;
+  useAutoDismiss(props.autoDismiss, messageId);
   (0,external_React_namespaceObject.useEffect)(() => {
     if (!autoAdvance && !advanceOnExperimentLoad) {
       return () => {};
@@ -6131,6 +6165,7 @@ const MultiStageAboutWelcome = props => {
       content: currentScreen.content,
       navigate: handleTransition,
       autoAdvance: currentScreen.auto_advance,
+      autoDismiss: currentScreen.auto_dismiss,
       advanceOnExperimentLoad: currentScreen.advance_on_experiment_load,
       messageId: `${props.message_id}_${order}_${currentScreen.id}`,
       UTMTerm: props.utm_term,
@@ -6685,6 +6720,7 @@ class WelcomeScreen extends (external_React_default()).PureComponent {
       isSingleScreen: this.props.isSingleScreen,
       startsWithCorner: this.props.startsWithCorner,
       autoAdvance: this.props.autoAdvance,
+      autoDismiss: this.props.autoDismiss,
       advanceOnExperimentLoad: this.props.advanceOnExperimentLoad,
       navigate: this.props.navigate,
       forceHideStepsIndicator: this.props.forceHideStepsIndicator,
