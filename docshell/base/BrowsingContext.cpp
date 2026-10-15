@@ -136,6 +136,11 @@ struct ParamTraits<mozilla::dom::PrefersReducedMotionOverride>
           mozilla::dom::PrefersReducedMotionOverride> {};
 
 template <>
+struct ParamTraits<mozilla::dom::PrefersContrastOverride>
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::PrefersContrastOverride> {};
+
+template <>
 struct ParamTraits<mozilla::dom::ExplicitActiveStatus>
     : public ContiguousEnumSerializer<
           mozilla::dom::ExplicitActiveStatus,
@@ -3207,8 +3212,8 @@ nsresult BrowsingContext::ResetGVAutoplayRequestStatus() {
 }
 
 template <typename Callback>
-void BrowsingContext::WalkPresContexts(Callback&& aCallback) {
-  PreOrderWalk([&](BrowsingContext* aContext) {
+static void WalkPresContexts(BrowsingContext* aTop, Callback&& aCallback) {
+  aTop->PreOrderWalk([&](BrowsingContext* aContext) {
     if (nsIDocShell* shell = aContext->GetDocShell()) {
       if (RefPtr pc = shell->GetPresContext()) {
         aCallback(pc.get());
@@ -3217,8 +3222,19 @@ void BrowsingContext::WalkPresContexts(Callback&& aCallback) {
   });
 }
 
+static void MediaFeatureValuesChanged(BrowsingContext* aTop,
+                                      MediaFeatureChangeReason aReason) {
+  WalkPresContexts(aTop, [aReason](nsPresContext* aPc) {
+    aPc->MediaFeatureValuesChanged(
+        {aReason},
+        
+        
+        MediaFeatureChangePropagation::JustThisDocument);
+  });
+}
+
 void BrowsingContext::PresContextAffectingFieldChanged() {
-  WalkPresContexts([&](nsPresContext* aPc) {
+  WalkPresContexts(this, [](nsPresContext* aPc) {
     aPc->RecomputeBrowsingContextDependentData();
   });
 }
@@ -3507,13 +3523,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_TouchEventsOverrideInternal>,
   if (GetTouchEventsOverrideInternal() == aOldValue) {
     return;
   }
-  WalkPresContexts([&](nsPresContext* aPc) {
-    aPc->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::SystemMetricsChange},
-        
-        
-        MediaFeatureChangePropagation::JustThisDocument);
-  });
+  MediaFeatureValuesChanged(this,
+                            MediaFeatureChangeReason::SystemMetricsChange);
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_EmbedderColorSchemes>,
@@ -3556,14 +3567,16 @@ void BrowsingContext::DidSet(FieldIndex<IDX_PrefersReducedMotionOverride>,
   if (PrefersReducedMotionOverride() == aOldValue) {
     return;
   }
+  MediaFeatureValuesChanged(this, MediaFeatureChangeReason::PreferenceChange);
+}
 
-  WalkPresContexts([&](nsPresContext* aPc) {
-    aPc->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::PreferenceChange},
-        
-        
-        MediaFeatureChangePropagation::JustThisDocument);
-  });
+void BrowsingContext::DidSet(FieldIndex<IDX_PrefersContrastOverride>,
+                             dom::PrefersContrastOverride aOldValue) {
+  MOZ_ASSERT(IsTop());
+  if (PrefersContrastOverride() == aOldValue) {
+    return;
+  }
+  MediaFeatureValuesChanged(this, MediaFeatureChangeReason::PreferenceChange);
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
@@ -3631,17 +3644,9 @@ void BrowsingContext::DidSet(FieldIndex<IDX_DisplayMode>,
   if (GetDisplayMode() == aOldValue) {
     return;
   }
-
-  WalkPresContexts([&](nsPresContext* aPc) {
-    aPc->MediaFeatureValuesChanged(
-        {MediaFeatureChangeReason::DisplayModeChange},
-        
-        
-        
-        
-        
-        MediaFeatureChangePropagation::JustThisDocument);
-  });
+  
+  
+  MediaFeatureValuesChanged(this, MediaFeatureChangeReason::DisplayModeChange);
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_Muted>) {
