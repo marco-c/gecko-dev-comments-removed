@@ -512,7 +512,7 @@ export class TelemetryFeed {
    *  decide which events a given session drains; it is never recorded, and in
    *  particular is kept out of eventData, which is the newtab-content payload
    *  and deliberately carries no visit id.
-   * @param {Function} callback - Function to record to non-private newtab ping
+   * @param {Function} [callback] - Function to record to non-private newtab ping
    *  Called immediately if in PrivateGleanSession, otherwise its added to eventBuffer
    *  and called when the eventBuffer is cleared. The return value is ignored.
    */
