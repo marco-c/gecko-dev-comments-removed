@@ -60,7 +60,20 @@ const TEST_VERSION_PREF =
 const ATTEMPTS_PREF =
   "extensions.formautofill.creditCards.storage.rust.migrationAttempts";
 
+const CVV_SUPPORTED_PREF = "extensions.formautofill.creditCards.cvv.supported";
+const CVV_ENABLED_PREF = "extensions.formautofill.creditCards.cvv.enabled";
+
 const getBool = (pref, def = false) => Services.prefs.getBoolPref(pref, def);
+
+function setSecurityCodeEnabled(enabled) {
+  if (enabled) {
+    Services.prefs.setStringPref(CVV_SUPPORTED_PREF, "on");
+    Services.prefs.setBoolPref(CVV_ENABLED_PREF, true);
+  } else {
+    Services.prefs.clearUserPref(CVV_SUPPORTED_PREF);
+    Services.prefs.clearUserPref(CVV_ENABLED_PREF);
+  }
+}
 
 registerCleanupFunction(() => {
   for (const pref of [
@@ -69,6 +82,8 @@ registerCleanupFunction(() => {
     TEST_MODE_PREF,
     TEST_VERSION_PREF,
     ATTEMPTS_PREF,
+    CVV_SUPPORTED_PREF,
+    CVV_ENABLED_PREF,
   ]) {
     Services.prefs.clearUserPref(pref);
   }
@@ -102,7 +117,7 @@ const rustNumber = async guid =>
 
 async function setupStorageWithCards(fileName, names) {
   Services.prefs.setBoolPref(ENABLED_PREF, false);
-  Services.prefs.clearUserPref(TEST_MODE_PREF);
+  Services.prefs.setBoolPref(TEST_MODE_PREF, false);
   Services.prefs.clearUserPref(ACTIVE_PREF);
   Services.prefs.clearUserPref(TEST_VERSION_PREF);
   Services.prefs.clearUserPref(ATTEMPTS_PREF);
@@ -240,13 +255,12 @@ add_task(async function test_a_decrypt_failure_refuses_rather_than_copies() {
   
   
   
-  
   const store = await rustStore();
   const realGet = store.getCreditCard.bind(store);
   let calls = 0;
   store.getCreditCard = async function (guid) {
     
-    if (++calls > 2) {
+    if (++calls > 1) {
       throw new CryptoError("decryption failed");
     }
     return realGet(guid);
@@ -277,7 +291,7 @@ add_task(async function test_a_decrypt_failure_refuses_rather_than_copies() {
   await s._finalize();
 });
 
-add_task(async function test_unreadable_numbers_defer_the_migration() {
+add_task(async function test_unreadable_numbers_fail_the_attempt() {
   let { s } = await setupStorageWithCards("cc-mig-locked.json", ["Ann One"]);
 
   
@@ -297,11 +311,13 @@ add_task(async function test_unreadable_numbers_defer_the_migration() {
   }
 
   Assert.ok(!getBool(ACTIVE_PREF), "the migration did not happen");
-  Assert.equal(migrationEvents().length, 0, "and nothing was reported");
+  const [event] = migrationEvents();
+  Assert.equal(event?.extra.result, "error", "and was reported as a failure");
+  Assert.equal(event.extra.failed, "1", "with the unreadable card failed");
   Assert.equal(
     Services.prefs.getIntPref(ATTEMPTS_PREF, 0),
-    0,
-    "a deferral is not a failed attempt"
+    1,
+    "spending an attempt"
   );
 
   
@@ -313,6 +329,10 @@ add_task(async function test_unreadable_numbers_defer_the_migration() {
 
 add_task(async function test_an_empty_profile_never_touches_the_key_store() {
   let { s } = await setupStorageWithCards("cc-mig-empty.json", []);
+  
+  
+  
+  OSKeyStore._isLocked = true;
 
   
   
@@ -336,6 +356,7 @@ add_task(async function test_an_empty_profile_never_touches_the_key_store() {
 
   Assert.equal(touched, 0, "the key store was not consulted");
   Assert.ok(getBool(ACTIVE_PREF), "and an empty profile still migrates");
+  Assert.ok(!observesUnlock(), "without waiting on an unlock");
 
   await s._finalize();
 });
@@ -401,6 +422,40 @@ add_task(async function test_flipping_the_pref_back_copies_to_json() {
   await s._finalize();
 });
 
+add_task(async function test_an_unreadable_store_starts_without_copying_back() {
+  let { s, guids } = await setupStorageWithCards("cc-mig-unreadable.json", [
+    "Ann One",
+  ]);
+  s = await enableRust(s);
+  const before = migrationEvents().length;
+
+  
+  const store = await rustStore();
+  store.getAllCreditCards = async () => {
+    throw new CryptoError("decryption failed");
+  };
+  try {
+    s = await disableRust(s);
+  } finally {
+    delete store.getAllCreditCards;
+  }
+
+  Assert.ok(getBool(ACTIVE_PREF), "the profile is left on the Rust store");
+  Assert.equal(migrationEvents().length, before, "and nothing was copied");
+  Assert.equal(
+    Services.prefs.getIntPref(ATTEMPTS_PREF, 0),
+    0,
+    "without spending an attempt"
+  );
+
+  
+  s = await restart(s);
+  Assert.ok(!getBool(ACTIVE_PREF), "and the next launch copies it back");
+  Assert.ok(await s.creditCards.get(guids[0]), "with the card");
+
+  await s._finalize();
+});
+
 add_task(async function test_no_migration_while_disabled() {
   const { s } = await setupStorageWithCards("cc-mig-none.json", ["Ann One"]);
 
@@ -432,6 +487,11 @@ add_task(async function test_dry_run_measures_and_then_undoes_itself() {
 
   await s._finalize();
 });
+
+
+
+const observesUnlock = () =>
+  !![...Services.obs.enumerateObservers(OSKeyStore.UNLOCKED_TOPIC)].length;
 
 add_task(async function test_a_changed_number_is_reported_as_divergence() {
   let { s } = await setupStorageWithCards("cc-mig-diverge.json", ["Ann One"]);
@@ -500,7 +560,60 @@ add_task(async function test_what_each_store_derives_is_not_a_divergence() {
   await s._finalize();
 });
 
-add_task(async function test_a_scrubbed_store_defers_the_copy_back() {
+add_task(async function test_the_security_code_moves_into_rust_only() {
+  
+  
+  
+  
+  
+  
+  let { s, guids } = await setupStorageWithCards("cc-mig-csc.json", []);
+  setSecurityCodeEnabled(true);
+  guids.push(await s.creditCards.add({ ...card("Ann One"), "cc-csc": "123" }));
+  guids.push(await s.creditCards.add({ ...card("Bob Two"), "cc-csc": "" }));
+  setSecurityCodeEnabled(false);
+
+  s = await enableRust(s);
+  Assert.ok(getBool(ACTIVE_PREF), "moved to Rust");
+  Assert.deepEqual(divergenceEvents(), [], "no record came back different");
+  Assert.equal(
+    (await s.creditCards.get(guids[0], { rawData: true }))["cc-csc"],
+    "123",
+    "the code came across"
+  );
+  Assert.equal(
+    (await s.creditCards.get(guids[0]))["cc-csc"],
+    undefined,
+    "a consumer read hides it while CVV is off"
+  );
+  Assert.equal(
+    (await s.creditCards.get(guids[1], { rawData: true }))["cc-csc"],
+    undefined,
+    "an empty code came across as none"
+  );
+
+  setSecurityCodeEnabled(true);
+  await s.creditCards.update(guids[1], { "cc-csc": "456" }, true);
+  setSecurityCodeEnabled(false);
+
+  s = await disableRust(s);
+  Assert.ok(!getBool(ACTIVE_PREF), "moved back to JSON");
+  Assert.deepEqual(divergenceEvents(), [], "no record came back different");
+  Assert.equal(
+    (await s.creditCards.get(guids[1], { rawData: true }))["cc-csc"],
+    undefined,
+    "a code saved in Rust is not copied back into the JSON store"
+  );
+  Assert.equal(
+    (await s.creditCards.get(guids[0], { rawData: true }))["cc-csc"],
+    "123",
+    "and an unedited card keeps what the JSON store held"
+  );
+
+  await s._finalize();
+});
+
+add_task(async function test_a_scrubbed_store_fails_the_copy_back() {
   let { s, guids } = await setupStorageWithCards("cc-mig-scrubbed.json", [
     "Ann One",
     "Bob Two",
@@ -518,15 +631,13 @@ add_task(async function test_a_scrubbed_store_defers_the_copy_back() {
   s = await disableRust(s);
 
   Assert.ok(getBool(ACTIVE_PREF), "the profile is left on the Rust store");
-  Assert.equal(
-    migrationEvents().length,
-    before,
-    "and the copy was deferred rather than run and reported"
-  );
+  const event = migrationEvents()[before];
+  Assert.equal(event?.extra.result, "error", "and the copy reported a failure");
+  Assert.equal(event.extra.failed, "2", "with both cards failed");
   Assert.equal(
     Services.prefs.getIntPref(ATTEMPTS_PREF, 0),
-    0,
-    "a deferral is not a failed attempt"
+    1,
+    "spending an attempt"
   );
 
   for (const guid of guids) {

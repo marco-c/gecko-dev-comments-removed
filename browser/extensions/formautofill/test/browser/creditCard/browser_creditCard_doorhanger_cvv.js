@@ -243,6 +243,9 @@ add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
     }
   );
 
+  
+  
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
   const creditCards = await getCreditCards();
   is(creditCards.length, 1, "The existing card is updated");
   is(creditCards[0]["cc-name"], "Mark Smith", "The card is updated");
@@ -252,6 +255,7 @@ add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
     "The stored security code is kept once the checkbox is unchecked"
   );
 
+  await SpecialPowers.popPrefEnv();
   await removeAllRecords();
   await SpecialPowers.popPrefEnv();
 });
