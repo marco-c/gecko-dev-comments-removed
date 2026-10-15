@@ -199,7 +199,7 @@ export const PREF_WIDGETS_SYSTEM_HOROSCOPES_ENABLED =
  * @property {boolean} [skipNightlyDefault] - When true, the widget opts out of being on everywhere in Nightly. See skipsNightlyDefault in lib/ActivityStream.sys.mjs.
  * @property {string|null} [trainhopNamespace] - When set, the widget ships its whole config in one dedicated object at trainhopConfig.<namespace>. Its `enabled` overrides the default value of enabledPref on the default branch (user toggle still wins, like widgetsSettings.*Enabled); `visible` reveals the widget (isWidgetAddable) without writing a pref; `size` is read by resolveWidgetSize. All widgets define this today.
  * @property {string} [src] - URL of the widget's document; a trainhop namespace `src` overrides it.
- * @property {string} [extensionID] - ID of an extension that provides the widget's document.
+ * @property {string} [extensionID] - ID of an extension that provides the widget's document. getWidgets keeps the entry only while the ExtensionWidgets state has this extension.
  * @property {string} [l10nId] - Fluent identifier for the widget's localized strings.
  */
 
@@ -467,21 +467,20 @@ export function isWidgetDataUnavailable(widget, prefs) {
 }
 
 /**
- * Returns the document URL and name of the widget's extension, looked up by
- * its extensionID in the ExtensionWidgets state, with the prefsL10nId and
- * customizeL10nId of a widget with a Fluent id.
+ * Returns the built-in registry entries and the extension entries present in
+ * extensionWidgets. Each extension entry is merged with its ExtensionWidget.
  *
- * @param {object} widget - a WIDGET_REGISTRY entry
- * @param {object} extensionWidgets - the ExtensionWidgets state from the
+ * @param {WidgetRegistryEntry[]} registry - WIDGET_REGISTRY
+ * @param {object} [extensionWidgets] - the ExtensionWidgets state from the
  *   Redux store, keyed by extension id
- * @returns {{src: string, name: string, prefsL10nId?: string,
- *   customizeL10nId?: string}|undefined} undefined for an entry without an
- *   extensionID, or when its extension provides no widget
+ * @returns {Array<WidgetRegistryEntry & {name?: string}>}
  */
-export function getWidgetExtension(widget, extensionWidgets) {
-  return widget?.extensionID
-    ? extensionWidgets?.[widget.extensionID]
-    : undefined;
+export function getWidgets(registry, extensionWidgets) {
+  return registry
+    .filter(w => !w.extensionID || extensionWidgets?.[w.extensionID])
+    .map(w =>
+      w.extensionID ? { ...extensionWidgets[w.extensionID], ...w } : w
+    );
 }
 
 /**
@@ -498,21 +497,6 @@ export function resolveWidgetSrc(widget, prefs) {
       prefs.trainhopConfig?.[widget.trainhopNamespace]?.src) ||
     widget?.src ||
     ""
-  );
-}
-
-/**
- * Returns true if the widget's document cannot load because its extension has
- * no entry in the ExtensionWidgets state.
- *
- * @param {object} widget - a WIDGET_REGISTRY entry
- * @param {object} extensionWidgets - the ExtensionWidgets state from the
- *   Redux store, keyed by extension id
- * @returns {boolean}
- */
-export function isWidgetExtensionUnavailable(widget, extensionWidgets) {
-  return Boolean(
-    widget.extensionID && !getWidgetExtension(widget, extensionWidgets)
   );
 }
 

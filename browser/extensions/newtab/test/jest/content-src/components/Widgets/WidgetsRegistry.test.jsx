@@ -5,10 +5,10 @@
 import {
   WIDGET_REGISTRY,
   getWidgetOrder,
+  getWidgets,
   isWeatherAvailable,
   isWidgetAddable,
   isWidgetEnabled,
-  isWidgetExtensionUnavailable,
   isWidgetToggleVisible,
   isWidgetsContainerVisible,
   resolveWidgetSize,
@@ -757,26 +757,37 @@ describe("resolveWidgetSrc", () => {
   });
 });
 
-describe("isWidgetExtensionUnavailable", () => {
+describe("getWidgets", () => {
   const extensionWidget = {
     id: "extensionWidget",
     extensionID: "test-widget@mozilla.org",
+    customizeL10nId: "registry-label",
   };
 
-  it("is true when the extension has no ExtensionWidgets entry", () => {
-    expect(isWidgetExtensionUnavailable(extensionWidget, {})).toBe(true);
+  it("keeps an entry without an extensionID", () => {
+    expect(getWidgets([listsWidget], {})).toEqual([listsWidget]);
   });
 
-  it("is false when the extension has an ExtensionWidgets entry", () => {
+  it("drops an extension entry the ExtensionWidgets state lacks", () => {
+    expect(getWidgets([extensionWidget], {})).toEqual([]);
+  });
+
+  it("merges the ExtensionWidgets entry under the registry fields", () => {
+    const src = "moz-extension://test/w.html";
     expect(
-      isWidgetExtensionUnavailable(extensionWidget, {
-        [extensionWidget.extensionID]: { src: "moz-extension://test/w.html" },
+      getWidgets([extensionWidget], {
+        [extensionWidget.extensionID]: {
+          src,
+          customizeL10nId: "extension-label",
+        },
       })
-    ).toBe(false);
+    ).toEqual([{ ...extensionWidget, src }]);
   });
 
-  it("is false for an entry without an extensionID", () => {
-    expect(isWidgetExtensionUnavailable(listsWidget, {})).toBe(false);
+  it("treats an undefined ExtensionWidgets state as empty", () => {
+    expect(getWidgets([listsWidget, extensionWidget], undefined)).toEqual([
+      listsWidget,
+    ]);
   });
 });
 

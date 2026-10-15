@@ -9,9 +9,8 @@ import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
-  getWidgetExtension,
+  getWidgets,
   isWeatherAvailable,
-  isWidgetExtensionUnavailable,
   isWidgetToggleVisible,
   resolveWidgetSize,
 } from "common/WidgetsRegistry.mjs";
@@ -26,15 +25,13 @@ function WidgetsManagementPanel({ togglePanel, showPanel, setPref }) {
   const panelRef = useRef(null);
   const dispatch = useDispatch();
 
-  const activeWidgets = WIDGET_REGISTRY.filter(w => !w.retired).map(w => ({
-    ...getWidgetExtension(w, extensionWidgets),
-    ...w,
-  }));
+  const activeWidgets = getWidgets(WIDGET_REGISTRY, extensionWidgets).filter(
+    w => !w.retired
+  );
   // Weather also needs the legacy showWeather prefs the widget itself checks.
   const visibleWidgets = activeWidgets.filter(
     widget =>
       isWidgetToggleVisible(widget, prefs) &&
-      !isWidgetExtensionUnavailable(widget, extensionWidgets) &&
       (widget.id !== "weather" || isWeatherAvailable(prefs))
   );
 
