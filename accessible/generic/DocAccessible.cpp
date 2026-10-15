@@ -761,7 +761,7 @@ nsresult DocAccessible::RemoveEventListeners() {
   return NS_OK;
 }
 
-void DocAccessible::ScrollTimerCallback(nsITimer* aTimer, void* aClosure) {
+void DocAccessible::ScrollTimerCallback(nsITimer* , void* aClosure) {
   DocAccessible* docAcc = reinterpret_cast<DocAccessible*>(aClosure);
 
   if (docAcc) {
@@ -868,7 +868,7 @@ std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
 static bool sIsAttrElementChanging = false;
 
 void DocAccessible::AttributeWillChange(dom::Element* aElement,
-                                        int32_t aNameSpaceID,
+                                        int32_t ,
                                         nsAtom* aAttribute,
                                         AttrModType aModType) {
   if (sIsAttrElementChanging) {
@@ -1102,7 +1102,7 @@ void DocAccessible::ARIAActiveDescendantChanged(LocalAccessible* aAccessible) {
   }
 }
 
-void DocAccessible::ElementStateChanged(dom::Document* aDocument,
+void DocAccessible::ElementStateChanged(dom::Document* ,
                                         dom::Element* aElement,
                                         dom::ElementState aStateMask) {
   const bool isEditable =
@@ -1380,7 +1380,7 @@ void DocAccessible::BindToDocument(LocalAccessible* aAccessible,
     }
   }
 
-  if (mIPCDoc && HasLoadState(eTreeConstructed)) {
+  if (HasLoadState(eTreeConstructed)) {
     
     
     
@@ -2627,6 +2627,15 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
                     aChild, nullptr);
 #endif
 
+  if (aChild->IsRelocated()) {
+    nsTArray<RefPtr<LocalAccessible>>* owned = mARIAOwnsHash.Get(parent);
+    MOZ_ASSERT(owned, "IsRelocated flag is out of sync with mARIAOwnsHash");
+    owned->RemoveElement(aChild);
+    if (owned->Length() == 0) {
+      mARIAOwnsHash.Remove(parent);
+    }
+  }
+
   
   RefPtr<LocalAccessible> kungFuDeathGripChild(aChild);
 
@@ -2639,17 +2648,7 @@ void DocAccessible::ContentRemoved(LocalAccessible* aChild) {
     return;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Alive but unparented #1");
-
-  if (aChild->IsRelocated()) {
-    nsTArray<RefPtr<LocalAccessible>>* owned = mARIAOwnsHash.Get(parent);
-    MOZ_ASSERT(owned, "IsRelocated flag is out of sync with mARIAOwnsHash");
-    owned->RemoveElement(aChild);
-    if (owned->Length() == 0) {
-      mARIAOwnsHash.Remove(parent);
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Unparented #2");
+  MOZ_DIAGNOSTIC_ASSERT(aChild->LocalParent(), "Alive but unparented");
   UncacheChildrenInSubtree(aChild);
   parent->RemoveChild(aChild);
 
@@ -2958,7 +2957,6 @@ void DocAccessible::PutChildrenBack(
 }
 
 void DocAccessible::TrackMovedAccessible(LocalAccessible* aAcc) {
-  MOZ_ASSERT(mIPCDoc);
   if (!HasLoadState(eTreeConstructed)) {
     
     
@@ -3018,9 +3016,7 @@ bool DocAccessible::MoveChild(LocalAccessible* aChild,
   if (curParent == aNewParent) {
     MOZ_ASSERT(aChild->IndexInParent() != aIdxInParent, "No move case");
     curParent->RelocateChild(aIdxInParent, aChild);
-    if (mIPCDoc) {
-      TrackMovedAccessible(aChild);
-    }
+    TrackMovedAccessible(aChild);
 
 #ifdef A11Y_LOG
     logging::TreeInfo("move child: parent tree after", logging::eVerbose,
@@ -3047,9 +3043,7 @@ bool DocAccessible::MoveChild(LocalAccessible* aChild,
 
   TreeMutation imut(aNewParent);
   aNewParent->InsertChildAt(aIdxInParent, aChild);
-  if (mIPCDoc) {
-    TrackMovedAccessible(aChild);
-  }
+  TrackMovedAccessible(aChild);
   imut.AfterInsertion(aChild);
   imut.Done();
 

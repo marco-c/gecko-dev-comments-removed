@@ -202,7 +202,7 @@ LocalAccessible* XULTreeAccessible::CurrentItem() const {
   return nullptr;
 }
 
-void XULTreeAccessible::SetCurrentItem(const LocalAccessible* aItem) {
+void XULTreeAccessible::SetCurrentItem(const LocalAccessible* ) {
   NS_ERROR("XULTreeAccessible::SetCurrentItem not implemented");
 }
 
@@ -951,8 +951,8 @@ role XULTreeItemAccessible::NativeRole() const {
 
 
 
-void XULTreeItemAccessible::RowInvalidated(int32_t aStartColIdx,
-                                           int32_t aEndColIdx) {
+void XULTreeItemAccessible::RowInvalidated(int32_t ,
+                                           int32_t ) {
   nsAutoString name;
   Name(name);
 

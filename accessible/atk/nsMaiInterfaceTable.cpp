@@ -158,7 +158,7 @@ static AtkObject* getRowHeaderCB(AtkTable* aTable, gint aRowIdx) {
   return header ? GetWrapperFor(header) : nullptr;
 }
 
-static AtkObject* getSummaryCB(AtkTable* aTable) {
+static AtkObject* getSummaryCB(AtkTable* ) {
   
   
   

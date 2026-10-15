@@ -1901,7 +1901,7 @@ double LocalAccessible::CurValue() const {
   return checkValue;
 }
 
-bool LocalAccessible::SetCurValue(double aValue) { return false; }
+bool LocalAccessible::SetCurValue(double ) { return false; }
 
 role LocalAccessible::NativeRole() const { return roles::NOTHING; }
 
@@ -2640,7 +2640,7 @@ void LocalAccessible::DoCommand(uint32_t aActionIndex) const {
       }));
 }
 
-void LocalAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
+void LocalAccessible::DispatchClickEvent(uint32_t ) const {
   if (IsDefunct()) return;
   MOZ_ASSERT(mContent);
 

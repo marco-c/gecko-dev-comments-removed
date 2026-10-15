@@ -21,22 +21,23 @@ LeafAccessible::LeafAccessible(nsIContent* aContent, DocAccessible* aDoc)
 
 
 LocalAccessible* LeafAccessible::LocalChildAtPoint(
-    int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
+    int32_t , int32_t , EWhichChildAtPoint ) {
   
   return this;
 }
 
-bool LeafAccessible::InsertChildAt(uint32_t aIndex, LocalAccessible* aChild) {
+bool LeafAccessible::InsertChildAt(uint32_t ,
+                                   LocalAccessible* ) {
   MOZ_ASSERT_UNREACHABLE("InsertChildAt called on leaf accessible!");
   return false;
 }
 
-bool LeafAccessible::RemoveChild(LocalAccessible* aChild) {
+bool LeafAccessible::RemoveChild(LocalAccessible* ) {
   MOZ_ASSERT_UNREACHABLE("RemoveChild called on leaf accessible!");
   return false;
 }
 
-bool LeafAccessible::IsAcceptableChild(nsIContent* aEl) const {
+bool LeafAccessible::IsAcceptableChild(nsIContent* ) const {
   
   return false;
 }

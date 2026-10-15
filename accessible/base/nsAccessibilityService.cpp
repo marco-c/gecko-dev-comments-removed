@@ -542,8 +542,8 @@ NS_IMPL_ISUPPORTS_INHERITED(nsAccessibilityService, DocManager, nsIObserver,
 
 
 NS_IMETHODIMP
-nsAccessibilityService::Observe(nsISupports* aSubject, const char* aTopic,
-                                const char16_t* aData) {
+nsAccessibilityService::Observe(nsISupports* , const char* aTopic,
+                                const char16_t* ) {
   if (!nsCRT::strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     Shutdown();
   }
@@ -2317,7 +2317,7 @@ EPlatformDisabledState ReadPlatformDisabledState() {
   return static_cast<EPlatformDisabledState>(sPlatformDisabledState);
 }
 
-void PrefChanged(const char* aPref, void* aClosure) {
+void PrefChanged(const char* , void* ) {
   EPlatformDisabledState disabledState = ReadPlatformDisabledState();
   if (disabledState == ePlatformIsDisabled) {
     

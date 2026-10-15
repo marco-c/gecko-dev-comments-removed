@@ -141,7 +141,7 @@ EDescriptionValueFlag HTMLAreaAccessible::Description(
 
 
 LocalAccessible* HTMLAreaAccessible::LocalChildAtPoint(
-    int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) {
+    int32_t , int32_t , EWhichChildAtPoint ) {
   
   return this;
 }

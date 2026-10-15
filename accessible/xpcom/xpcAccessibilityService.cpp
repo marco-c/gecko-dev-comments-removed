@@ -25,7 +25,7 @@ xpcAccessibilityService* xpcAccessibilityService::gXPCAccessibilityService =
 
 
 
-void xpcAccessibilityService::ShutdownCallback(nsITimer* aTimer,
+void xpcAccessibilityService::ShutdownCallback(nsITimer* ,
                                                void* aClosure) {
   MaybeShutdownAccService(nsAccessibilityService::eXPCOM);
   xpcAccessibilityService* xpcAccService =

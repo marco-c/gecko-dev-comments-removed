@@ -123,7 +123,7 @@ void OuterDocAccessible::Shutdown() {
   AccessibleWrap::Shutdown();
 }
 
-bool OuterDocAccessible::InsertChildAt(uint32_t aIdx,
+bool OuterDocAccessible::InsertChildAt(uint32_t ,
                                        LocalAccessible* aAccessible) {
   MOZ_RELEASE_ASSERT(aAccessible->IsDoc(),
                      "OuterDocAccessible can have a document child only!");
@@ -171,7 +171,7 @@ bool OuterDocAccessible::RemoveChild(LocalAccessible* aAccessible) {
   return wasRemoved;
 }
 
-bool OuterDocAccessible::IsAcceptableChild(nsIContent* aEl) const {
+bool OuterDocAccessible::IsAcceptableChild(nsIContent* ) const {
   
   
   return false;

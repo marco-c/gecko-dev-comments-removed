@@ -36,7 +36,7 @@ XULLabelAccessible::XULLabelAccessible(nsIContent* aContent,
   mType = eXULLabelType;
 }
 
-void XULLabelAccessible::DispatchClickEvent(uint32_t aActionIndex) const {
+void XULLabelAccessible::DispatchClickEvent(uint32_t ) const {
   
   
   RefPtr<nsXULElement> el = nsXULElement::FromNodeOrNull(mContent);

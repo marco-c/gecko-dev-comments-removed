@@ -2341,7 +2341,7 @@ LayoutDeviceIntRect TextLeafRange::Bounds() const {
   
   LayoutDeviceIntRect result;
   const bool succeeded = WalkLineRects(
-      [&result](TextLeafRange aLine, LayoutDeviceIntRect aLineRect) {
+      [&result](TextLeafRange , LayoutDeviceIntRect aLineRect) {
         result.UnionRect(result, aLineRect);
       });
 
@@ -2360,7 +2360,7 @@ nsTArray<LayoutDeviceIntRect> TextLeafRange::LineRects() const {
   }
 
   nsTArray<LayoutDeviceIntRect> lineRects;
-  WalkLineRects([&lineRects, &contentBounds](TextLeafRange aLine,
+  WalkLineRects([&lineRects, &contentBounds](TextLeafRange ,
                                              LayoutDeviceIntRect aLineRect) {
     
     bool boundsVisible = true;
