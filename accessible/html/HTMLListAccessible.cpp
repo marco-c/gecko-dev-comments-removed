@@ -8,6 +8,7 @@
 #include "States.h"
 #include "mozilla/a11y/Role.h"
 #include "nsAccessibilityService.h"
+#include "nsCoreUtils.h"
 #include "nsLayoutUtils.h"
 
 using namespace mozilla;
@@ -90,5 +91,9 @@ already_AddRefed<AccAttributes> HTMLListBulletAccessible::NativeAttributes() {
 
 void HTMLListBulletAccessible::ComputeText(nsIContent* aMarker,
                                           nsAString& aText) {
+  if (Maybe<nsString> cssAlt = nsCoreUtils::GetCssAltContent(aMarker)) {
+    aText = *cssAlt;
+    return;
+  }
   nsLayoutUtils::GetMarkerSpokenText(aMarker, aText);
 }

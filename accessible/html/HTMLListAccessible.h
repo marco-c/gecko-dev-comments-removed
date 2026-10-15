@@ -81,6 +81,7 @@ class HTMLListBulletAccessible : public TextLeafAccessible {
 
 
 
+
   static void ComputeText(nsIContent* aMarker, nsAString& aText);
 };
 

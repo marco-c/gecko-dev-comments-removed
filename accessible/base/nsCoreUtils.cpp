@@ -731,7 +731,10 @@ Maybe<nsString> nsCoreUtils::GetCssAltContent(nsIContent* aContent) {
   if (IsPseudoElement(aContent)) {
     
     
-    if (aContent->HasChildren()) {
+    
+    
+    if (aContent->HasChildren() &&
+        !aContent->IsGeneratedContentContainerForMarker()) {
       return Nothing();
     }
     

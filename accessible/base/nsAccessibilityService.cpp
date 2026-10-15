@@ -1622,10 +1622,14 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
         newAcc = MakeRefPtr<HyperTextAccessible>(content, document);
       }
     } else if (content->IsGeneratedContentContainerForMarker()) {
+      nsAutoString text;
       if (aContext->IsHTMLListItem()) {
-        newAcc = MakeRefPtr<HTMLListBulletAccessible>(content, document);
-        nsAutoString text;
         HTMLListBulletAccessible::ComputeText(content, text);
+      }
+      
+      
+      if (!text.IsEmpty()) {
+        newAcc = MakeRefPtr<HTMLListBulletAccessible>(content, document);
         
         
         
