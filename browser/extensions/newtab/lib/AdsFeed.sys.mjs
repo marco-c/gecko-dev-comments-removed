@@ -94,7 +94,6 @@ export class AdsFeed {
 
   async deleteUserAdsData() {
     const state = this.store.getState();
-    const headers = new Headers();
     const endpointBaseUrl = state.Prefs.values[PREF_UNIFIED_ADS_ENDPOINT];
 
     if (!endpointBaseUrl) {
@@ -106,11 +105,9 @@ export class AdsFeed {
       context_id: await lazy.ContextId.request(),
     };
 
-    headers.append("content-type", "application/json");
-
     await this.fetch(endpoint, {
       method: "DELETE",
-      headers,
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
     });
   }
