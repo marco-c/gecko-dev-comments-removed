@@ -765,7 +765,7 @@ export class PdfJsParent extends JSWindowActorParent {
           engineId: lazy.PdfJsGuessAltTextFeature.engineId,
           featureId: lazy.PdfJsGuessAltTextFeature.id,
           taskName,
-          backend: "onnx-native",
+          backend: "best-onnx",
         },
         aggregator?.aggregateCallback.bind(aggregator) || null
       );
