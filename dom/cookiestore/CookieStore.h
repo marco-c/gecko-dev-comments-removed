@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CookieStore_h
 #define mozilla_dom_CookieStore_h
 
@@ -34,6 +32,8 @@ class CookieStore final : public DOMEventTargetHelper {
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+
+  void DisconnectFromOwner() override;
 
   void FireDelayedDOMEvents();
 
