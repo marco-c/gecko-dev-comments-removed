@@ -30,26 +30,11 @@ import org.mozilla.geckoview.BuildConfig;
 
 @OptIn(markerClass = UnstableApi.class)
 public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
-  
-
-
-
-
-
-  private enum RECONFIGURATION_STATE {
-    NONE,
-    WRITE_PENDING,
-    QUEUE_PENDING
-  }
-
   @NonNull
   @Override
   public String getName() {
     return "GeckoHlsVideoRenderer";
   }
-
-  private boolean mRendererReconfigured;
-  private RECONFIGURATION_STATE mRendererReconfigurationState = RECONFIGURATION_STATE.NONE;
 
   
   private CodecMaxValues mCodecMaxValues;
@@ -57,7 +42,6 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
   private ConcurrentLinkedQueue<GeckoHLSSample> mDemuxedNoDurationSamples =
       new ConcurrentLinkedQueue<>();
 
-  
   
   
   private byte[] mCSDInfo = null;
@@ -125,9 +109,9 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
 
   @Override
   protected final void createInputBuffer() throws ExoPlaybackException {
-    assertTrue(mFormats.size() > 0);
     
-    final Format currentFormat = mFormats.get(mFormats.size() - 1);
+    final Format currentFormat = getCurrentFormat();
+    assertTrue(currentFormat != null);
     mCodecMaxValues = getCodecMaxValues(currentFormat, getStreamFormats());
     if (mCodecMaxValues.inputSize == Format.NO_VALUE) {
       mInputBuffer = null;
@@ -146,7 +130,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
           new Exception(e),
           getName(),
           getIndex(),
-          mFormats.isEmpty() ? null : getFormat(mFormats.size() - 1),
+          currentFormat,
           C.FORMAT_HANDLED,
           null,
           false,
@@ -160,8 +144,6 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
       Log.d(LOGTAG, "[resetRenderer] mInitialized = " + mInitialized);
     }
     if (mInitialized) {
-      mRendererReconfigured = false;
-      mRendererReconfigurationState = RECONFIGURATION_STATE.NONE;
       mInputBuffer = null;
       mCSDInfo = null;
       mInitialized = false;
@@ -169,57 +151,7 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
   }
 
   @Override
-  protected void handleReconfiguration(final DecoderInputBuffer bufferForRead) {
-    
-    
-    
-    assertTrue(mFormats.size() > 0);
-    if (mRendererReconfigurationState == RECONFIGURATION_STATE.WRITE_PENDING) {
-      if (bufferForRead.data == null) {
-        if (DEBUG) {
-          Log.d(LOGTAG, "[feedInput][WRITE_PENDING] bufferForRead.data is not initialized.");
-        }
-        return;
-      }
-      if (DEBUG) {
-        Log.d(LOGTAG, "[feedInput][WRITE_PENDING] put initialization data");
-      }
-      final Format currentFormat = mFormats.get(mFormats.size() - 1);
-      for (int i = 0; i < currentFormat.initializationData.size(); i++) {
-        final byte[] data = currentFormat.initializationData.get(i);
-        bufferForRead.data.put(data);
-      }
-      mRendererReconfigurationState = RECONFIGURATION_STATE.QUEUE_PENDING;
-    }
-  }
-
-  @Override
-  protected void handleFormatRead(final DecoderInputBuffer bufferForRead)
-      throws ExoPlaybackException {
-    if (mRendererReconfigurationState == RECONFIGURATION_STATE.QUEUE_PENDING) {
-      if (DEBUG) {
-        Log.d(LOGTAG, "[feedInput][QUEUE_PENDING] 2 formats in a row.");
-      }
-      
-      
-      bufferForRead.clear();
-      mRendererReconfigurationState = RECONFIGURATION_STATE.WRITE_PENDING;
-    }
-    onInputFormatChanged(mFormatHolder.format);
-  }
-
-  @Override
   protected void handleEndOfStream(final DecoderInputBuffer bufferForRead) {
-    if (mRendererReconfigurationState == RECONFIGURATION_STATE.QUEUE_PENDING) {
-      if (DEBUG) {
-        Log.d(LOGTAG, "[feedInput][QUEUE_PENDING] isEndOfStream.");
-      }
-      
-      
-      
-      bufferForRead.clear();
-      mRendererReconfigurationState = RECONFIGURATION_STATE.WRITE_PENDING;
-    }
     mInputStreamEnded = true;
     final GeckoHLSSample sample = GeckoHLSSample.EOS;
     calculatDuration(sample);
@@ -227,12 +159,20 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
 
   @Override
   protected void handleSamplePreparation(final DecoderInputBuffer bufferForRead) {
-    final int csdInfoSize = mCSDInfo != null ? mCSDInfo.length : 0;
+    final Format currentFormat = getCurrentFormat();
+    assertTrue(currentFormat != null);
+    final String sampleMimeType = currentFormat.sampleMimeType;
+    
+    
+    final boolean prependCsdInfo =
+        bufferForRead.isKeyFrame()
+            && (MimeTypes.VIDEO_H264.equals(sampleMimeType)
+                || MimeTypes.VIDEO_H265.equals(sampleMimeType));
+    final int csdInfoSize = prependCsdInfo && mCSDInfo != null ? mCSDInfo.length : 0;
     final int dataSize = bufferForRead.data.limit();
-    final int size = bufferForRead.isKeyFrame() ? csdInfoSize + dataSize : dataSize;
+    final int size = csdInfoSize + dataSize;
     final byte[] realData = new byte[size];
-    if (bufferForRead.isKeyFrame()) {
-      
+    if (csdInfoSize > 0) {
       System.arraycopy(mCSDInfo, 0, realData, 0, csdInfoSize);
       bufferForRead.data.get(realData, csdInfoSize, dataSize);
     } else {
@@ -251,7 +191,6 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
     flags |= bufferForRead.isEndOfStream() ? MediaCodec.BUFFER_FLAG_END_OF_STREAM : 0;
     bufferInfo.set(0, size, bufferForRead.timeUs, flags);
 
-    assertTrue(mFormats.size() > 0);
     
     
     final GeckoHLSSample sample =
@@ -260,22 +199,6 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
     
     
     calculatDuration(sample);
-    mRendererReconfigurationState = RECONFIGURATION_STATE.NONE;
-  }
-
-  @Override
-  protected void onPositionReset(
-      final long positionUs, final boolean joining, final boolean sampleStreamIsResetToKeyFrame) {
-    super.onPositionReset(positionUs, joining, sampleStreamIsResetToKeyFrame);
-    if (mInitialized && mRendererReconfigured && mFormats.size() != 0) {
-      if (DEBUG) {
-        Log.d(LOGTAG, "[onPositionReset] WRITE_PENDING");
-      }
-      
-      
-      
-      mRendererReconfigurationState = RECONFIGURATION_STATE.WRITE_PENDING;
-    }
   }
 
   @Override
@@ -299,15 +222,6 @@ public class GeckoHlsVideoRenderer extends GeckoHlsRendererBase {
       Log.d(LOGTAG, "[canReconfigure] : " + canReconfig);
     }
     return canReconfig;
-  }
-
-  @Override
-  protected void prepareReconfiguration() {
-    if (DEBUG) {
-      Log.d(LOGTAG, "[onInputFormatChanged] starting reconfiguration !");
-    }
-    mRendererReconfigured = true;
-    mRendererReconfigurationState = RECONFIGURATION_STATE.WRITE_PENDING;
   }
 
   @Override
