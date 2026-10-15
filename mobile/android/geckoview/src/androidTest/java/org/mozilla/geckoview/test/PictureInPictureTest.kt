@@ -53,6 +53,25 @@ class PictureInPictureTest : BaseSessionTest() {
 
     @WithDisplay(width = 100, height = 100)
     @Test
+    fun exitDropsTheStateHeldForTheWindow() {
+        val delegate = registerDelegate()
+        val source = startPictureInPicture(delegate).source
+
+        sessionRule.waitForResult(source.sessionPictureInPicture.exit())
+
+        source.loadTestPath(HELLO_HTML_PATH)
+        source.waitForPageStop()
+        source.waitForRoundTrip()
+
+        assertThat(
+            "A window the embedder already closed must not be closed again",
+            delegate.exitCount,
+            equalTo(0),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
     fun exitPictureInPictureWithoutWindowIsNoOp() {
         val delegate = registerDelegate()
 
@@ -302,6 +321,61 @@ class PictureInPictureTest : BaseSessionTest() {
 
     @WithDisplay(width = 100, height = 100)
     @Test
+    fun aRequestFromTheSameTabReplacesTheOpenWindow() {
+        val delegate = registerDelegate()
+        val first = startPictureInPicture(delegate)
+
+        first.source.pauseVideo()
+        first.source
+            .evaluatePromiseJS(
+                """new Promise(r => {
+                 const v = document.body.appendChild(document.createElement('video'));
+                 v.id = 'second';
+                 v.src = 'videos/gizmo.webm';
+                 v.loop = true;
+                 v.addEventListener('playing', r, { once: true });
+                 v.play();
+               })"""
+            )
+            .value
+
+        first.source.setFocused(true)
+        val cloned = first.source.sessionPictureInPicture.request()
+        UiThreadUtils.waitForCondition(
+            { delegate.enterCount > 1 },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+        assertThat(
+            "The window is reused for the new video, so the embedder must not be asked to close it",
+            delegate.exitCount,
+            equalTo(0),
+        )
+
+        first.player.close()
+        openPlayerSession(delegate)
+        sessionRule.waitForResult(cloned)
+        first.source.waitForRoundTrip()
+
+        assertThat(
+            "The second video must be cloned into the window",
+            sessionRule.isVideoCloning(first.source, "#second"),
+            equalTo(true),
+        )
+
+        first.source.loadTestPath(HELLO_HTML_PATH)
+        UiThreadUtils.waitForCondition(
+            { delegate.exitCount > 0 },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+        assertThat(
+            "Tearing the replaced player down must not drop the one replacing it",
+            delegate.exitCount,
+            equalTo(1),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
     fun aRequestForTheVideoAlreadyInTheWindowKeepsIt() {
         val delegate = registerDelegate()
         val source = startPictureInPicture(delegate).source
@@ -330,6 +404,42 @@ class PictureInPictureTest : BaseSessionTest() {
         )
 
         sessionRule.waitForResult(source.sessionPictureInPicture.exit())
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun aRequestFromAnotherTabReplacesTheOpenWindow() {
+        val delegate = registerDelegate()
+
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        val first = startPictureInPicture(delegate, sessionRule.createOpenSession())
+
+        val second = startPictureInPicture(delegate).source
+        sessionRule.waitForResult(first.source.sessionPictureInPicture.exit())
+        first.player.close()
+
+        assertThat(
+            "The window is reused for the new video, so the embedder must not be asked to close it",
+            delegate.exitCount,
+            equalTo(0),
+        )
+
+        first.source.close()
+        second.waitForRoundTrip()
+        assertThat(
+            "The replaced tab no longer has the window, so closing it must not close the window",
+            delegate.exitCount,
+            equalTo(0),
+        )
+        assertThat(
+            "The new tab's video must still be cloned into the window",
+            sessionRule.isVideoCloning(second, "video"),
+            equalTo(true),
+        )
+
+        sessionRule.waitForResult(second.sessionPictureInPicture.exit())
     }
 
     @WithDisplay(width = 100, height = 100)
@@ -383,6 +493,72 @@ class PictureInPictureTest : BaseSessionTest() {
         )
     }
 
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun navigatingTheSourceAwayClosesTheWindow() {
+        val delegate = registerDelegate()
+        val source = startPictureInPicture(delegate).source
+
+        source.loadTestPath(HELLO_HTML_PATH)
+
+        UiThreadUtils.waitForCondition(
+            { delegate.exitCount > 0 },
+            sessionRule.env.defaultTimeoutMillis,
+        )
+        assertThat(
+            "Embedder must be told to close the window once for the video that went away",
+            delegate.exitCount,
+            equalTo(1),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun closingASessionWithoutAWindowIsNoOp() {
+        val delegate = CapturingDelegate()
+        val other = sessionRule.createOpenSession()
+        sessionRule.delegateUntilTestEnd(other, delegate)
+
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        other.loadTestPath(VIDEO_WEBM_PATH)
+        other.waitForPageStop()
+        other.close()
+        mainSession.waitForRoundTrip()
+
+        assertThat(
+            "Closing a session with no window must not report one closing",
+            delegate.exitCount,
+            equalTo(0),
+        )
+    }
+
+    @WithDisplay(width = 100, height = 100)
+    @Test
+    fun closingTheSourceSessionDropsTheStateHeldForTheWindow() {
+        val delegate = registerDelegate()
+
+        mainSession.loadTestPath(HELLO_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        val first = startPictureInPicture(delegate, sessionRule.createOpenSession())
+        first.source.close()
+        first.player.close()
+
+        startPictureInPicture(delegate)
+        assertThat(
+            "A request made after the source closed must get its video cloned",
+            sessionRule.isVideoCloning(mainSession, "video"),
+            equalTo(true),
+        )
+        assertThat(
+            "The application closed the source itself, so it must not be asked to close the window",
+            delegate.exitCount,
+            equalTo(0),
+        )
+    }
+
     private class CapturingDelegate : PictureInPictureController.SessionPictureInPicture.Delegate {
         var enterCount = 0
         var exitCount = 0
@@ -409,28 +585,34 @@ class PictureInPictureTest : BaseSessionTest() {
         return delegate
     }
 
-    private fun startPictureInPicture(delegate: CapturingDelegate): PipSessions {
-        mainSession.loadTestPath(VIDEO_WEBM_PATH)
-        mainSession.waitForPageStop()
-        mainSession.playVideo()
+    private fun startPictureInPicture(
+        delegate: CapturingDelegate,
+        source: GeckoSession = mainSession,
+    ): PipSessions {
+        source.loadTestPath(VIDEO_WEBM_PATH)
+        source.waitForPageStop()
+        source.playVideo()
 
         val entered = delegate.enterCount
-        mainSession.setFocused(true)
-        val cloned = mainSession.sessionPictureInPicture.request()
+        source.setFocused(true)
+        val cloned = source.sessionPictureInPicture.request()
         UiThreadUtils.waitForCondition(
             { delegate.enterCount > entered },
             sessionRule.env.defaultTimeoutMillis,
         )
 
-        val player = openPlayerSession(delegate)
+        val player = openPlayerSession(delegate, source)
         sessionRule.waitForResult(cloned)
 
-        return PipSessions(mainSession, player)
+        return PipSessions(source, player)
     }
 
-    private fun openPlayerSession(delegate: CapturingDelegate): GeckoSession {
+    private fun openPlayerSession(
+        delegate: CapturingDelegate,
+        source: GeckoSession = mainSession,
+    ): GeckoSession {
         return sessionRule.createOpenSession(
-            GeckoSessionSettings.Builder(mainSession.settings).pictureInPictureToken(delegate.placementToken).build()
+            GeckoSessionSettings.Builder(source.settings).pictureInPictureToken(delegate.placementToken).build()
         )
     }
 

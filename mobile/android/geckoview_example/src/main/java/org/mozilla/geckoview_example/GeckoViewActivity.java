@@ -2368,12 +2368,14 @@ public class GeckoViewActivity extends AppCompatActivity
 
     @Override
     public void onCrash(GeckoSession session) {
+      PipSessionHolder.closeWindowFor(session);
       Log.e(LOGTAG, "Crashed, reopening session");
       session.open(sGeckoRuntime);
     }
 
     @Override
     public void onKill(GeckoSession session) {
+      PipSessionHolder.closeWindowFor(session);
       TabSession tabSession = mTabSessionManager.getSession(session);
       if (tabSession == null) {
         return;

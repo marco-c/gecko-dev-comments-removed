@@ -207,8 +207,10 @@ export const GeckoViewPictureInPictureController = {
     return pending;
   },
 
-  // Drops the state of the source session `sourceDispatcher` belongs to, because the embedder tore
-  // its window down itself, unlike [askEmbedderToClose] which asks it to.
+  // Drops the state of the source session `sourceDispatcher` belongs to, either because the
+  // embedder tore its window down itself, unlike [askEmbedderToClose] which asks it to, or because
+  // the session went away without its window being closed first. Without this a closed session
+  // keeps a browsing context group that a later session can be handed.
   forgetSession(sourceDispatcher, reason) {
     if (gPiP?.sourceDispatcher !== sourceDispatcher) {
       return;
@@ -262,6 +264,17 @@ export class GeckoViewPictureInPicture extends GeckoViewModule {
     if (this.settings.pictureInPictureToken) {
       GeckoViewPictureInPictureController.claimPlayerSession(this.browser);
     }
+  }
+
+  onDestroy() {
+    if (this.settings.pictureInPictureToken) {
+      GeckoViewPictureInPictureController.forgetPlayer(this.browser);
+      return;
+    }
+    GeckoViewPictureInPictureController.forgetSession(
+      this.eventDispatcher,
+      "Requesting session went away"
+    );
   }
 
   onEvent(aEvent, aData, aCallback) {
