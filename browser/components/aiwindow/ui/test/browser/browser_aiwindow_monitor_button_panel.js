@@ -19,6 +19,10 @@ const { MonitorAgent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/agents/MonitorAgent.sys.mjs"
 );
 
+const { MonitorPanel } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/MonitorPanel.sys.mjs"
+);
+
 const { SpecialMessageActions } = ChromeUtils.importESModule(
   "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
 );
@@ -141,6 +145,54 @@ add_task(async function test_monitor_panel_toggles() {
       "false",
       "Button reports the panel as collapsed again"
     );
+  } finally {
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+
+
+
+
+
+
+
+add_task(async function test_monitor_panel_click_while_opening() {
+  const win = await openAIWindow();
+  try {
+    await promiseNavigateAndLoad(
+      win.gBrowser.selectedBrowser,
+      "https://example.com/"
+    );
+    const monitorButton = getMonitorButton(win);
+
+    
+    
+    MonitorPanel.toggleMonitorPanel(win);
+    MonitorPanel.toggleMonitorPanel(win);
+
+    await TestUtils.waitForCondition(
+      () => !win.document.getElementById(PANEL_ID),
+      "Panel hidden before it was shown is still removed from the DOM"
+    );
+    Assert.equal(
+      monitorButton.getAttribute("aria-expanded"),
+      "false",
+      "Button reports the panel as collapsed"
+    );
+
+    
+    const shown = BrowserTestUtils.waitForEvent(
+      win.document.getElementById("mainPopupSet"),
+      "popupshown"
+    );
+    EventUtils.synthesizeMouseAtCenter(monitorButton, {}, win);
+    const panel = (await shown).target;
+    Assert.equal(panel.id, PANEL_ID, "The button still opens the panel");
+
+    const hidden = BrowserTestUtils.waitForEvent(panel, "popuphidden");
+    panel.hidePopup();
+    await hidden;
   } finally {
     await BrowserTestUtils.closeWindow(win);
   }
