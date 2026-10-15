@@ -32,6 +32,7 @@ module.exports = {
     "stylelint-use-logical",
   ],
   ignoreFiles,
+  reportUnscopedDisables: true,
   rules: {
     
     "color-no-invalid-hex": null,
@@ -425,6 +426,7 @@ module.exports = {
         "browser/fxr/**",
         
         "mobile/android/**",
+        "toolkit/themes/mobile/global/aboutLicense.css",
         
         "docs/**",
         
