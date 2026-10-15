@@ -14,6 +14,7 @@
 #include "mozilla/Utf16.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/KeyboardEvent.h"
+#include "mozilla/intl/UnicodeProperties.h"
 #include "nsDebug.h"
 #include "nsMenuPopupFrame.h"
 #include "nsString.h"
@@ -318,6 +319,48 @@ XULButtonElement* XULMenuParentElement::FindMenuWithShortcut(
   return foundMenu;
 }
 
+
+
+static bool IsTypeableCharacter(uint32_t aCh) {
+  if (aCh >= 0xFF00 && aCh <= 0xFFEF) {
+    return false;
+  }
+  switch (intl::UnicodeProperties::CharType(aCh)) {
+    case intl::GeneralCategory::Uppercase_Letter:
+    case intl::GeneralCategory::Lowercase_Letter:
+    case intl::GeneralCategory::Titlecase_Letter:
+    case intl::GeneralCategory::Other_Letter:
+    case intl::GeneralCategory::Decimal_Number:
+      break;
+    default:
+      return false;
+  }
+  switch (intl::UnicodeProperties::GetScriptCode(aCh)) {
+    case intl::Script::HAN:
+    case intl::Script::HIRAGANA:
+    case intl::Script::KATAKANA:
+    case intl::Script::HANGUL:
+    case intl::Script::BOPOMOFO:
+      return false;
+    default:
+      return true;
+  }
+}
+
+static bool FirstTypeableCharacterIs(const nsAString& aLabel,
+                                     const nsAString& aString) {
+  const char16_t* start = aLabel.BeginReading();
+  const char16_t* end = aLabel.EndReading();
+  while (start < end) {
+    const char16_t* charStart = start;
+    if (IsTypeableCharacter(DecodeOneUtf16CodePoint(&start, end))) {
+      return Substring(charStart, start)
+          .Equals(aString, nsCaseInsensitiveStringComparator);
+    }
+  }
+  return false;
+}
+
 XULButtonElement* XULMenuParentElement::FindMenuWithShortcut(
     const nsAString& aString, bool& aDoAction) const {
   aDoAction = false;
@@ -328,6 +371,7 @@ XULButtonElement* XULMenuParentElement::FindMenuWithShortcut(
   XULButtonElement* foundMenuBeforeCurrent = nullptr;
   XULButtonElement* foundMenuAfterCurrent = nullptr;
 
+  const bool isMenuList = IsInMenuList();
   bool foundActive = false;
   for (auto* item = GetFirstMenuItem(); item;
        item = GetNextMenuItemFrom(*item)) {
@@ -345,10 +389,14 @@ XULButtonElement* XULMenuParentElement::FindMenuWithShortcut(
     const bool isActive = item == GetActiveMenuChild();
     foundActive |= isActive;
 
+    
+    
     if (!StringBeginsWith(
             nsContentUtils::TrimWhitespace<
                 nsContentUtils::IsHTMLWhitespaceOrNBSP>(textKey, false),
-            aString, nsCaseInsensitiveStringComparator)) {
+            aString, nsCaseInsensitiveStringComparator) &&
+        (isAccessKey || isMenuList ||
+         !FirstTypeableCharacterIs(textKey, aString))) {
       continue;
     }
     
