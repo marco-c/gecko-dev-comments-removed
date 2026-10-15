@@ -2648,8 +2648,16 @@ bool IMContextWrapper::DispatchCompositionChangeEvent(
   const uint32_t caretOffsetInCompositionString =
       rangeArray->HasCaret() ? rangeArray->GetCaretPosition()
                              : mDispatchedCompositionString.Length();
-  mContentSelection->Collapse(mCompositionStart +
-                              caretOffsetInCompositionString);
+  if (mContentSelection) {
+    mContentSelection->Collapse(mCompositionStart +
+                                caretOffsetInCompositionString);
+  } else {
+    mContentSelection.emplace(ContentSelection(
+        mCompositionStart + caretOffsetInCompositionString,
+        
+        
+        WritingMode{}));
+  }
 
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
   nsEventStatus status;
