@@ -145,17 +145,9 @@ class TextureChild final : public PTextureChild {
 
   void ActorDestroy(ActorDestroyReason why) override;
 
-  void Lock() const {
-    if (mUsesImageBridge) {
-      mLock.Enter();
-    }
-  }
+  void Lock() const { mLock.Enter(); }
 
-  void Unlock() const {
-    if (mUsesImageBridge) {
-      mLock.Leave();
-    }
-  }
+  void Unlock() const { mLock.Leave(); }
 
  private:
   
@@ -493,7 +485,11 @@ void TextureClient::Destroy() {
   
   MOZ_RELEASE_ASSERT(mPaintThreadRefs == 0);
 
-  if (mActor && !mIsLocked) {
+  
+  
+  
+  
+  if (mActor && (!mIsLocked || !mActor->mUsesImageBridge)) {
     mActor->Lock();
   }
 
@@ -544,13 +540,13 @@ void TextureClient::Destroy() {
 }
 
 void TextureClient::LockActor() const {
-  if (mActor) {
+  if (mActor && mActor->mUsesImageBridge) {
     mActor->Lock();
   }
 }
 
 void TextureClient::UnlockActor() const {
-  if (mActor) {
+  if (mActor && mActor->mUsesImageBridge) {
     mActor->Unlock();
   }
 }
@@ -1032,7 +1028,10 @@ already_AddRefed<TextureClient> TextureClient::AsTextureClient(
     return nullptr;
   }
 
-  RefPtr<TextureClient> texture = tc->mTextureClient;
+  RefPtr<TextureClient> texture;
+  if (tc->mTextureClient) {
+    texture = tc->mTextureClient->TryAddRef();
+  }
   tc->Unlock();
 
   return texture.forget();
@@ -1197,6 +1196,7 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
   mActor = actor.forget().downcast<TextureChild>();
   mActor->mCompositableForwarder = aForwarder;
   mActor->mTextureForwarder = textureFwd;
+  mActor->mUsesImageBridge = textureFwd->UsesImageBridge();
   mActor->mTextureClient = this;
 
   
@@ -1265,6 +1265,7 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
 
   mActor = actor.forget().downcast<TextureChild>();
   mActor->mTextureForwarder = textureFwd;
+  mActor->mUsesImageBridge = textureFwd->UsesImageBridge();
   mActor->mTextureClient = this;
 
   
