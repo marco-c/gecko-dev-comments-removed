@@ -72,6 +72,11 @@ class MOZ_STACK_CLASS EnsureMTA final {
  private:
   static nsCOMPtr<nsIThread> GetPersistentMTAThread();
 
+  
+  
+  
+  static void ShutdownPersistentMTAThread();
+
   static void SyncDispatch(nsCOMPtr<nsIRunnable>&& aRunnable, Option aOpt);
   static void SyncDispatchToPersistentThread(nsIRunnable* aRunnable);
 

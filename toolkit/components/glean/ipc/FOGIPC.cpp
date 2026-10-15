@@ -39,9 +39,12 @@
 #include "GMPPlatform.h"
 #include "GMPServiceParent.h"
 #include "nsIClassifiedChannel.h"
+#include "nsIComponentManager.h"
 #include "nsIXULRuntime.h"
+#include "nsThreadManager.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "nsXPCOM.h"
 
 #if defined(__APPLE__) && defined(__aarch64__)
 #  define HAS_PROCESS_ENERGY
@@ -155,6 +158,16 @@ void RecordThreadCpuUse(const nsACString& aThreadName, uint64_t aCpuTimeMs,
   
   if (aThreadName.EqualsLiteral("glean.dispatcher") ||
       aThreadName.EqualsLiteral("glean.shutdown")) {
+    return;
+  }
+
+  
+  
+  
+  
+  nsCOMPtr<nsIComponentManager> compMgr;
+  if (!nsThreadManager::get().AllowNewXPCOMThreads() ||
+      NS_FAILED(NS_GetComponentManager(getter_AddRefs(compMgr)))) {
     return;
   }
 

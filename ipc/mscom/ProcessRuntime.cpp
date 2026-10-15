@@ -17,6 +17,9 @@
 
 #if defined(MOZILLA_INTERNAL_API)
 #  include "mozilla/mscom/EnsureMTA.h"
+#  include "nsCOMPtr.h"
+#  include "nsIComponentManager.h"
+#  include "nsXPCOM.h"
 #  if defined(MOZ_SANDBOX)
 #    include "mozilla/sandboxTarget.h"
 #  endif  
@@ -147,6 +150,16 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
 ProcessRuntime::~ProcessRuntime() {
   MOZ_DIAGNOSTIC_ASSERT(sInstance == this);
   sInstance = nullptr;
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIComponentManager> compMgr;
+  if (NS_FAILED(NS_GetComponentManager(getter_AddRefs(compMgr)))) {
+    EnsureMTA::ShutdownPersistentMTAThread();
+  }
 }
 
 void ProcessRuntime::InitUsingPersistentMTAThread(bool aNeedsSandboxedInit) {
