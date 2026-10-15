@@ -19,8 +19,8 @@ use crate::db::models::address::*;
 use crate::db::models::credit_card::*;
 use crate::db::models::passport::*;
 use crate::db::store::Store;
-pub use crate::sync::AddressesBridgedEngine;
-use db_crypto::{EncryptorDecryptor, KeyManager, ManagedEncryptorDecryptor, StaticKeyManager};
+pub use crate::sync::{AddressesBridgedEngine, CreditCardsBridgedEngine};
+use db_crypto::{EncryptorDecryptor, ManagedEncryptorDecryptor, StaticKeyManager};
 pub use error::{ApiResult, AutofillApiError, Error, Result};
 use error_support::handle_error;
 use std::sync::Arc;
@@ -33,20 +33,6 @@ pub use db_crypto::{NSSKeyManager, PrimaryPasswordAuthenticator};
 
 #[cfg(feature = "keydb")]
 static KEY_NAME: &str = "as-autofill-key";
-
-
-
-
-
-pub fn create_static_key_manager(key: String) -> Arc<StaticKeyManager> {
-    Arc::new(StaticKeyManager::new(key))
-}
-
-
-
-pub fn create_managed_encdec(key_manager: Arc<dyn KeyManager>) -> Arc<ManagedEncryptorDecryptor> {
-    Arc::new(ManagedEncryptorDecryptor::new(key_manager))
-}
 
 
 
