@@ -75,7 +75,8 @@ def repackage_mar(topsrcdir, package, mar, output, arch=None, mar_channel_id=Non
         if os.path.exists(xz_path):
             env["XZ"] = mozpath.normpath(xz_path)
 
-        cmd = [make_full_update, output, ffxdir]
+        app_name = get_application_ini_value(tmpdir, "App", "Name").lower()
+        cmd = [make_full_update, output, ffxdir, app_name]
         if sys.platform == "win32":
             
             
