@@ -43,16 +43,15 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.ClipboardHandler
 import mozilla.telemetry.glean.testing.GleanTestRule
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -79,8 +78,6 @@ import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.telemetryName
-import org.mozilla.fenix.nimbus.AddressbarFocusMode
-import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.search.SearchEngineSource.Bookmarks
 import org.mozilla.fenix.search.SearchEngineSource.Shortcut
 import org.mozilla.fenix.search.SearchFragmentAction.CopyCurrentWebsiteDetailsClicked
@@ -130,18 +127,6 @@ class FenixSearchMiddlewareTest {
     private val navController: NavController = mockk(relaxed = true)
     private val shareUseCases: ShareUseCases = mockk(relaxed = true)
     private val clipboardHandler: ClipboardHandler = mockk(relaxed = true)
-
-    @Before
-    fun setup() {
-        // This experiment is enabled by default in the developer channel.
-        // Opt out so that the other suggestions visibility criteria are what each test actually exercises.
-        FxNimbus.features.addressbarFocusMode.withCachedValue(AddressbarFocusMode(enabled = false))
-    }
-
-    @After
-    fun teardown() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(null)
-    }
 
     @Test
     fun `WHEN the store is created THEN update the search engines configuration`() {
@@ -297,7 +282,7 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `GIVEN addressbar focus mode is enabled and search started from a browser tab WHEN the query is empty THEN show search suggestions`() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(AddressbarFocusMode(enabled = true))
+        every { settings.showAddressBarInFocusMode } returns true
         val currentTab = createTab("https://mozilla.com")
         stubSearchSourceTab(currentTab.id)
         val (_, store) = buildMiddlewareAndAddToSearchStore(browserStore = buildBrowserStore(currentTab))
@@ -310,7 +295,7 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `GIVEN addressbar focus mode is enabled and search started from home WHEN the query is empty THEN don't show search suggestions`() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(AddressbarFocusMode(enabled = true))
+        every { settings.showAddressBarInFocusMode } returns true
         stubSearchSourceTab(null)
         val (_, store) = buildMiddlewareAndAddToSearchStore()
         every { settings.shouldShowSearchSuggestions } returns false
@@ -400,7 +385,7 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `GIVEN addressbar focus mode is enabled and no other suggestions are enabled WHEN search starts THEN show new search suggestions`() {
-        FxNimbus.features.addressbarFocusMode.withCachedValue(AddressbarFocusMode(enabled = true))
+        every { settings.showAddressBarInFocusMode } returns true
         val currentTab = createTab("https://mozilla.com")
         stubSearchSourceTab(currentTab.id)
         val (_, store) = buildMiddlewareAndAddToSearchStore(browserStore = buildBrowserStore(currentTab))
@@ -708,6 +693,47 @@ class FenixSearchMiddlewareTest {
     }
 
     @Test
+    fun `WHEN a search or clipboard suggestion is selected for edit THEN keep its text literal`() {
+        val text = "https://example.com/%D1%82%20file?q=%2520"
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
+
+        listOf(emptySet(), setOf(Suggestion.Flag.CLIPBOARD)).forEach { flags ->
+            store.dispatch(SuggestionSelected(Suggestion(provider = mockk(), editSuggestion = text, flags = flags)))
+        }
+
+        verify(exactly = 2) {
+            toolbarStore.dispatch(
+                BrowserEditToolbarAction.SearchQueryUpdated(
+                    query = BrowserToolbarQuery(text),
+                    isQueryPrefilled = true,
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN a suggestion holding a browser URL is selected for edit THEN make the URL readable`() {
+        val url = "https://example.com/%D1%82%D0%B5%D1%81%D1%82%20file?q=hello%20world"
+        val (_, store) = buildMiddlewareAndAddToSearchStore()
+
+        listOf(Suggestion.Flag.HISTORY, Suggestion.Flag.BOOKMARK, Suggestion.Flag.OPEN_TAB, Suggestion.Flag.SYNC_TAB)
+            .forEach { flag ->
+                store.dispatch(
+                    SuggestionSelected(Suggestion(provider = mockk(), editSuggestion = url, flags = setOf(flag)))
+                )
+            }
+
+        verify(exactly = 4) {
+            toolbarStore.dispatch(
+                BrowserEditToolbarAction.SearchQueryUpdated(
+                    query = BrowserToolbarQuery("https://example.com/тест file?q=hello world"),
+                    isQueryPrefilled = true,
+                )
+            )
+        }
+    }
+
+    @Test
     fun `WHEN choosing to share the current website details THEN share the details of the tab search started for`() {
         stubCurrentNavDestination()
         val currentTab = createTab(url = "https://mozilla.com", title = "Mozilla", private = false)
@@ -802,6 +828,35 @@ class FenixSearchMiddlewareTest {
         store.dispatch(CopyCurrentWebsiteDetailsClicked)
 
         verify(exactly = 0) { appStore.dispatch(URLCopiedToClipboard) }
+    }
+
+    @Test
+    fun `editing an encoded page prefills readable text and leaves copying canonical`() {
+        val url = "https://example.com/%D1%82%D0%B5%D1%81%D1%82%20file?q=hello%20world"
+        val tab = createTab(url = url)
+        stubSearchSourceTab(tab.id)
+        val (_, store) = buildMiddlewareAndAddToSearchStore(browserStore = buildBrowserStore(tab))
+        store.dispatch(EditCurrentWebsiteDetailsClicked)
+        verify {
+            toolbarStore.dispatch(
+                BrowserEditToolbarAction.SearchQueryUpdated(
+                    BrowserToolbarQuery("https://example.com/тест file?q=hello world"),
+                    true,
+                )
+            )
+        }
+        store.dispatch(CopyCurrentWebsiteDetailsClicked)
+        verify { clipboardHandler.text = url }
+    }
+
+    @Test
+    fun `readable current page prefill does not enable search suggestions`() {
+        val url = "https://example.com/a%20b?token=secret%20value"
+        val store =
+            buildStore(initialState = buildEmptySearchState().copy(currentTabData = CurrentTabData("", url, null)))
+        store.dispatch(SearchFragmentAction.UpdateQuery(URLStringUtils.toLosslessEditableUrl(url)))
+        assertFalse(store.state.shouldShowSearchSuggestions)
+        assertFalse(store.state.showSearchSuggestionsHint)
     }
 
     @Test
