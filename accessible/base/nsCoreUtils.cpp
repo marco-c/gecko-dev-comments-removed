@@ -33,10 +33,12 @@
 #include "nsIAccessibleTypes.h"
 #include "nsIContentInlines.h"
 #include "nsIDocShell.h"
+#include "nsIFrame.h"
 #include "nsIObserverService.h"
 #include "nsISelectionController.h"
 #include "nsISimpleEnumerator.h"
 #include "nsPresContext.h"
+#include "nsStyleStruct.h"
 #include "nsTreeColumns.h"
 #include "nsXULElement.h"
 
@@ -713,6 +715,67 @@ bool nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame) {
       0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
       nsIFrame::TrailingWhitespace::Trim);
   return text.mString.IsEmpty();
+}
+
+Maybe<nsString> nsCoreUtils::GetCssAltContent(nsIContent* aContent) {
+  if (!aContent) {
+    return Nothing();
+  }
+
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  if (!frame) {
+    return Nothing();
+  }
+  Element* pseudoElement = nullptr;
+  
+  if (IsPseudoElement(aContent)) {
+    
+    
+    if (aContent->HasChildren()) {
+      return Nothing();
+    }
+    
+    
+    
+    
+    pseudoElement = aContent->AsElement();
+  } else if (aContent->IsInNativeAnonymousSubtree()) {
+    if (!frame->IsReplaced()) {
+      return Nothing();
+    }
+    Element* parent = aContent->GetParentElement();
+    if (parent && IsPseudoElement(parent)) {
+      
+      pseudoElement = parent;
+      
+      frame = parent->GetPrimaryFrame();
+      if (!frame) {
+        return Nothing();
+      }
+    }
+  }
+  if (pseudoElement) {
+    if (!pseudoElement->GetParentElement()) {
+      return Nothing();
+    }
+  } else if (!aContent->IsElement() || !frame->IsReplaced()) {
+    
+    
+    return Nothing();
+  }
+  Span<const StyleContentItem> items = frame->StyleContent()->AltContentItems();
+  if (items.IsEmpty()) {
+    return Nothing();
+  }
+
+  nsString text;
+  
+  for (const auto& item : items) {
+    if (item.IsString()) {
+      AppendUTF8toUTF16(item.AsString().AsString(), text);
+    }
+  }
+  return Some(std::move(text));
 }
 
 const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(

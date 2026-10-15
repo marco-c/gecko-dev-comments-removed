@@ -4,7 +4,6 @@
 
 #include "NotificationController.h"
 
-#include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "DocAccessibleChild.h"
 #include "LocalAccessible-inl.h"
@@ -18,6 +17,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/glean/AccessibleMetrics.h"
 #include "nsAccessibilityService.h"
+#include "nsCoreUtils.h"
 #include "nsEventShell.h"
 #include "nsIContentInlines.h"
 
@@ -868,7 +868,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       }
 #endif
 
-      if (CssAltContent(textNode)) {
+      if (nsCoreUtils::GetCssAltContent(textNode)) {
         
         
         

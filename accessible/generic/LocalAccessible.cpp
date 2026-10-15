@@ -7,7 +7,6 @@
 #include "AccIterator.h"
 #include "ApplicationAccessible.h"
 #include "CachedTableAccessible.h"
-#include "CssAltContent.h"
 #include "DocAccessible-inl.h"
 #include "EmbeddedObjCollector.h"
 #include "EventTree.h"
@@ -60,6 +59,7 @@
 #include "nsAtom.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContainerFrame.h"
+#include "nsCoreUtils.h"
 #include "nsDisplayList.h"
 #include "nsEventShell.h"
 #include "nsFocusManager.h"
@@ -147,12 +147,12 @@ ENameValueFlag LocalAccessible::Name(nsString& aName) const {
     return eNameFromTooltip;
   }
 
-  if (auto cssAlt = CssAltContent(mContent)) {
+  if (Maybe<nsString> cssAlt = nsCoreUtils::GetCssAltContent(mContent)) {
     
     
     
     
-    cssAlt.AppendToString(aName);
+    aName.Append(*cssAlt);
     return eNameOK;
   }
 
@@ -3640,10 +3640,8 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       fields->SetAttribute(CacheKey::Tooltip, DeleteEntry());
     }
 
-    nsString cssAltContent;
-    if (auto cssAlt = CssAltContent(mContent)) {
-      cssAlt.AppendToString(cssAltContent);
-      fields->SetAttribute(CacheKey::CssAltContent, std::move(cssAltContent));
+    if (Maybe<nsString> cssAlt = nsCoreUtils::GetCssAltContent(mContent)) {
+      fields->SetAttribute(CacheKey::CssAltContent, std::move(*cssAlt));
     } else if (IsUpdatePush(CacheDomain::NameAndDescription)) {
       fields->SetAttribute(CacheKey::CssAltContent, DeleteEntry());
     }
