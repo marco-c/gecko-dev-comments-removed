@@ -29,7 +29,7 @@ class InfallibleAllocPolicy {
   }
 
   template <typename T>
-  void free_(T* aPtr, size_t aNumElems = 0) {
+  void free_(T* aPtr, size_t  = 0) {
     free(aPtr);
   }
 };
@@ -159,7 +159,7 @@ static size_t gNumDtors;
 
 struct NonPOD {
   NonPOD() { gNumDefaultCtors++; }
-  explicit NonPOD(int x) { gNumExplicitCtors++; }
+  explicit NonPOD(int ) { gNumExplicitCtors++; }
   NonPOD(NonPOD&) { gNumCopyCtors++; }
   NonPOD(NonPOD&&) { gNumMoveCtors++; }
   ~NonPOD() { gNumDtors++; }

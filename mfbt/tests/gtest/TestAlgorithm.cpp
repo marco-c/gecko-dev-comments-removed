@@ -62,7 +62,7 @@ TEST(MFBT_Algorithm_TransformAbortOnErr, ErrorOnFirst)
   std::vector<int64_t> out;
   auto res = TransformAbortOnErr(
       begin(arr1), end(arr1), std::back_inserter(out),
-      [](const int32_t value) -> Result<int64_t, TestError> {
+      [](const int32_t ) -> Result<int64_t, TestError> {
         return Err(TestError{});
       });
   ASSERT_TRUE(res.isErr());

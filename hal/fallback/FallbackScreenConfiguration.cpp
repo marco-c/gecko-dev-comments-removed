@@ -7,7 +7,7 @@
 namespace mozilla::hal_impl {
 
 RefPtr<GenericNonExclusivePromise> LockScreenOrientation(
-    const hal::ScreenOrientation& aOrientation) {
+    const hal::ScreenOrientation& ) {
   return GenericNonExclusivePromise::CreateAndReject(
       NS_ERROR_DOM_NOT_SUPPORTED_ERR, __func__);
 }

@@ -1239,7 +1239,7 @@ MFBT_API int MozFormatCodeAddressDetails(
 }
 
 MFBT_API int MozFormatCodeAddress(char* aBuffer, uint32_t aBufferSize,
-                                  uint32_t aFrameNumber, const void* aPC,
+                                  uint32_t aFrameNumber, const void* ,
                                   const char* aFunction, const char* aLibrary,
                                   ptrdiff_t aLOffset, const char* aFileName,
                                   uint32_t aLineNo) {
@@ -1287,7 +1287,7 @@ static void EnsureWrite(FILE* aStream, const char* aBuf, size_t aLen) {
 
 template <int N>
 static int PrintStackFrameBuf(char (&aBuf)[N], uint32_t aFrameNumber, void* aPC,
-                              void* aSP) {
+                              void* ) {
   MozCodeAddressDetails details;
   MozDescribeCodeAddress(aPC, &details);
   int len =
