@@ -8,51 +8,16 @@ const TEST_URI = TEST_DOMAIN + TEST_PATH + "file_stripping.html";
 const TEST_THIRD_PARTY_URI = TEST_DOMAIN_2 + TEST_PATH + "file_stripping.html";
 const TEST_REDIRECT_URI = TEST_DOMAIN + TEST_PATH + "redirect.sjs";
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
-const LABEL_NAVIGATION = 0;
-const LABEL_REDIRECT = 1;
-const LABEL_STRIP_FOR_NAVIGATION = 2;
-const LABEL_STRIP_FOR_REDIRECT = 3;
-
-const QUERY_STRIPPING_COUNT = "QUERY_STRIPPING_COUNT";
-const QUERY_STRIPPING_PARAM_COUNT = "QUERY_STRIPPING_PARAM_COUNT";
+const LABEL_NAVIGATION = "Navigation";
+const LABEL_REDIRECT = "Redirect";
+const LABEL_STRIP_FOR_NAVIGATION = "StripForNavigation";
+const LABEL_STRIP_FOR_REDIRECT = "StripForRedirect";
 
 async function clearTelemetry() {
   
   
-  
-  
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry.getHistogramById(QUERY_STRIPPING_COUNT).clear();
-  Services.telemetry.getHistogramById(QUERY_STRIPPING_PARAM_COUNT).clear();
-
-  let isCleared = () => {
-    let histograms = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false 
-    ).content;
-
-    return (
-      !histograms ||
-      (!histograms[QUERY_STRIPPING_COUNT] &&
-        !histograms[QUERY_STRIPPING_PARAM_COUNT])
-    );
-  };
-
-  
-  
-  
-  if (!isCleared()) {
-    await TestUtils.waitForCondition(
-      isCleared,
-      "waiting for query stripping probes to be cleared"
-    );
-  }
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
 
   ok(true, "Telemetry has been cleared.");
 }
@@ -66,33 +31,64 @@ async function verifyQueryString(browser, expected) {
   });
 }
 
-async function getTelemetryProbe(key, label, checkCntFn) {
-  let histogram;
 
-  
-  await TestUtils.waitForCondition(() => {
-    let histograms = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false 
-    ).parent;
-    histogram = histograms[key];
 
-    let checkRes = false;
 
-    if (histogram) {
-      checkRes = checkCntFn ? checkCntFn(histogram.values[label]) : true;
-    }
+async function getStripCount(label, checkCntFn) {
+  let cnt;
 
-    return checkRes;
-  }, `waiting for telemetry probe (key=${key}, label=${label}) to appear`);
+  await TestUtils.waitForCondition(async () => {
+    await Services.fog.testFlushAllChildren();
+    cnt = Glean.contentblocking.queryStrippingCount[label].testGetValue();
 
-  return histogram.values[label];
+    return checkCntFn ? checkCntFn(cnt) : cnt != null;
+  }, `waiting for queryStrippingCount label ${label} to appear`);
+
+  return cnt;
 }
 
-async function checkTelemetryProbe(key, expectedCnt, label) {
-  let cnt = await getTelemetryProbe(key, label, cnt => cnt == expectedCnt);
+async function checkStripCount(expectedCnt, label) {
+  let cnt = await getStripCount(label, cnt => cnt == expectedCnt);
 
   is(cnt, expectedCnt, "There should be expected count in telemetry.");
+}
+
+
+
+async function checkNoStripCount(label) {
+  await Services.fog.testFlushAllChildren();
+
+  is(
+    Glean.contentblocking.queryStrippingCount[label].testGetValue(),
+    null,
+    `There should be no count for ${label} in telemetry.`
+  );
+}
+
+
+
+
+async function checkParamCount(expectedSample, expectedCount) {
+  let distribution;
+
+  await TestUtils.waitForCondition(async () => {
+    await Services.fog.testFlushAllChildren();
+    distribution =
+      Glean.contentblocking.queryStrippingParamCount.testGetValue();
+
+    return distribution?.count == expectedCount;
+  }, "waiting for queryStrippingParamCount to appear");
+
+  is(
+    distribution.count,
+    expectedCount,
+    `There should be ${expectedCount} param count sample(s).`
+  );
+  is(
+    distribution.sum,
+    expectedSample * expectedCount,
+    `Each param count sample should be ${expectedSample}.`
+  );
 }
 
 add_setup(async function () {
@@ -120,21 +116,13 @@ add_task(async function testQueryStrippingNavigationInParent() {
   });
 
   
-  await checkTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    1,
-    LABEL_STRIP_FOR_NAVIGATION
-  );
-  await checkTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, 1, "1");
+  await checkStripCount(1, LABEL_STRIP_FOR_NAVIGATION);
+  await checkParamCount(1, 1);
 
   
   
   
-  let newNavigationCnt = await getTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    LABEL_NAVIGATION,
-    cnt => cnt > 0
-  );
+  let newNavigationCnt = await getStripCount(LABEL_NAVIGATION, cnt => cnt > 0);
   ok(newNavigationCnt > 0, "There is navigation count added.");
 
   await clearTelemetry();
@@ -162,19 +150,11 @@ add_task(async function testQueryStrippingNavigationInContent() {
   });
 
   
-  await checkTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    1,
-    LABEL_STRIP_FOR_NAVIGATION
-  );
-  await checkTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, 1, "1");
+  await checkStripCount(1, LABEL_STRIP_FOR_NAVIGATION);
+  await checkParamCount(1, 1);
 
   
-  let newNavigationCnt = await getTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    LABEL_NAVIGATION,
-    cnt => cnt > 0
-  );
+  let newNavigationCnt = await getStripCount(LABEL_NAVIGATION, cnt => cnt > 0);
   ok(newNavigationCnt > 0, "There is navigation count added.");
 
   await clearTelemetry();
@@ -204,25 +184,12 @@ add_task(async function testQueryStrippingNavigationInContentQueryCount() {
   });
 
   
-  await checkTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    1,
-    LABEL_STRIP_FOR_NAVIGATION
-  );
+  await checkStripCount(1, LABEL_STRIP_FOR_NAVIGATION);
 
-  await getTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, "0", cnt => !cnt);
-  await getTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, "1", cnt => !cnt);
-  await getTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, "2", cnt => !cnt);
-  await getTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, "3", cnt => !cnt);
-  await getTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, "4", cnt => cnt == 1);
-  await getTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, "5", cnt => !cnt);
+  await checkParamCount(4, 1);
 
   
-  let newNavigationCnt = await getTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    LABEL_NAVIGATION,
-    cnt => cnt > 0
-  );
+  let newNavigationCnt = await getStripCount(LABEL_NAVIGATION, cnt => cnt > 0);
   ok(newNavigationCnt > 0, "There is navigation count added.");
 
   await clearTelemetry();
@@ -251,9 +218,9 @@ add_task(async function testQueryStrippingRedirect() {
 
   
   
-  await checkTelemetryProbe(QUERY_STRIPPING_COUNT, 1, LABEL_STRIP_FOR_REDIRECT);
-  await checkTelemetryProbe(QUERY_STRIPPING_COUNT, 1, LABEL_REDIRECT);
-  await checkTelemetryProbe(QUERY_STRIPPING_PARAM_COUNT, 1, "1");
+  await checkStripCount(1, LABEL_STRIP_FOR_REDIRECT);
+  await checkStripCount(1, LABEL_REDIRECT);
+  await checkParamCount(1, 1);
 
   await clearTelemetry();
 });
@@ -273,17 +240,9 @@ add_task(async function testQueryStrippingDisabled() {
   });
 
   
-  await checkTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    undefined,
-    LABEL_STRIP_FOR_NAVIGATION
-  );
+  await checkNoStripCount(LABEL_STRIP_FOR_NAVIGATION);
   
-  let newNavigationCnt = await getTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    LABEL_NAVIGATION,
-    cnt => cnt > 0
-  );
+  let newNavigationCnt = await getStripCount(LABEL_NAVIGATION, cnt => cnt > 0);
   ok(newNavigationCnt > 0, "There is navigation count added.");
 
   
@@ -309,17 +268,9 @@ add_task(async function testQueryStrippingDisabled() {
 
   
   
-  await checkTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    undefined,
-    LABEL_STRIP_FOR_NAVIGATION
-  );
+  await checkNoStripCount(LABEL_STRIP_FOR_NAVIGATION);
   
-  newNavigationCnt = await getTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    LABEL_NAVIGATION,
-    cnt => cnt > 0
-  );
+  newNavigationCnt = await getStripCount(LABEL_NAVIGATION, cnt => cnt > 0);
   ok(newNavigationCnt > 0, "There is navigation count added.");
 
   
@@ -344,12 +295,8 @@ add_task(async function testQueryStrippingDisabled() {
   });
 
   
-  await checkTelemetryProbe(
-    QUERY_STRIPPING_COUNT,
-    undefined,
-    LABEL_STRIP_FOR_REDIRECT
-  );
-  await checkTelemetryProbe(QUERY_STRIPPING_COUNT, 1, LABEL_REDIRECT);
+  await checkNoStripCount(LABEL_STRIP_FOR_REDIRECT);
+  await checkStripCount(1, LABEL_REDIRECT);
 
   await clearTelemetry();
 });

@@ -2,45 +2,11 @@
 
 const TEST_URI = TEST_DOMAIN + TEST_PATH + "file_stripping.html";
 
-const QUERY_STRIPPING_COUNT = "QUERY_STRIPPING_COUNT";
-const QUERY_STRIPPING_PARAM_COUNT = "QUERY_STRIPPING_PARAM_COUNT";
-const QUERY_STRIPPING_COUNT_BY_PARAM = "QUERY_STRIPPING_COUNT_BY_PARAM";
-
-const histogramLabels =
-  Services.telemetry.getCategoricalLabels().QUERY_STRIPPING_COUNT_BY_PARAM;
-
 async function clearTelemetry() {
   
   
-  
-  
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  Services.telemetry.getSnapshotForHistograms("main", true );
-  Services.telemetry.getHistogramById(QUERY_STRIPPING_COUNT).clear();
-  Services.telemetry.getHistogramById(QUERY_STRIPPING_PARAM_COUNT).clear();
-  Services.telemetry.getHistogramById(QUERY_STRIPPING_COUNT_BY_PARAM).clear();
-
-  let isCleared = () => {
-    let histograms = Services.telemetry.getSnapshotForHistograms(
-      "main",
-      false 
-    ).content;
-
-    return (
-      !histograms ||
-      (!histograms[QUERY_STRIPPING_COUNT] &&
-        !histograms[QUERY_STRIPPING_PARAM_COUNT] &&
-        !histograms.QUERY_STRIPPING_COUNT_BY_PARAM)
-    );
-  };
-
-  
-  
-  
-  if (!isCleared()) {
-    await TestUtils.waitForCondition(isCleared);
-  }
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
 
   ok(true, "Telemetry has been cleared.");
 }
@@ -54,36 +20,28 @@ async function verifyQueryString(browser, expected) {
   });
 }
 
-function testTelemetry(queryParamToCount) {
-  const histogram = Services.telemetry.getHistogramById(
-    QUERY_STRIPPING_COUNT_BY_PARAM
-  );
-
-  let snapshot = histogram.snapshot();
-
-  let indexToCount = {};
+async function testTelemetry(queryParamToCount) {
+  let expected = {};
   Object.entries(queryParamToCount).forEach(([key, value]) => {
-    let index = histogramLabels.indexOf(`param_${key}`);
-
     
     
     
-    if (SpecialPowers.isDebugBuild) {
-      indexToCount[index] = value * 2;
-    } else {
-      indexToCount[index] = value;
-    }
+    expected[`param_${key}`] = SpecialPowers.isDebugBuild ? value * 2 : value;
   });
 
-  for (let [i, val] of Object.entries(snapshot.values)) {
-    let expectedCount = indexToCount[i] || 0;
+  await Services.fog.testFlushAllChildren();
+  let actual =
+    Glean.contentblocking.queryStrippingCountByParam.testGetValue() ?? {};
 
-    is(
-      val,
-      expectedCount,
-      `Histogram ${QUERY_STRIPPING_COUNT_BY_PARAM} should have expected value for label ${histogramLabels[i]}.`
-    );
-  }
+  
+  
+  delete actual.__other__;
+
+  Assert.deepEqual(
+    actual,
+    expected,
+    "queryStrippingCountByParam should have the expected count per label."
+  );
 }
 
 add_setup(async function () {
@@ -116,7 +74,7 @@ add_task(async function test_queryParamCountTelemetry() {
     await verifyQueryString(browser, "");
   });
 
-  testTelemetry({ mc_eid: 1 });
+  await testTelemetry({ mc_eid: 1 });
 
   
   
@@ -124,7 +82,7 @@ add_task(async function test_queryParamCountTelemetry() {
     await verifyQueryString(browser, "");
   });
 
-  testTelemetry({ mc_eid: 2 });
+  await testTelemetry({ mc_eid: 2 });
 
   url = new URL(TEST_URI);
   url.searchParams.set("fbclid", "myValue2");
@@ -135,7 +93,7 @@ add_task(async function test_queryParamCountTelemetry() {
   await BrowserTestUtils.withNewTab(url.href, async browser => {
     await verifyQueryString(browser, "bar=foo");
   });
-  testTelemetry({ mc_eid: 2, fbclid: 1, mkt_tok: 1 });
+  await testTelemetry({ mc_eid: 2, fbclid: 1, mkt_tok: 1 });
 
   info(
     "Test with query param on the strip-list, which should not be recoded in telemetry."
@@ -147,14 +105,14 @@ add_task(async function test_queryParamCountTelemetry() {
   await BrowserTestUtils.withNewTab(url.href, async browser => {
     await verifyQueryString(browser, "");
   });
-  testTelemetry({ mc_eid: 2, fbclid: 1, mkt_tok: 1, __s: 1, ysclid: 1 });
+  await testTelemetry({ mc_eid: 2, fbclid: 1, mkt_tok: 1, __s: 1, ysclid: 1 });
 
   url = new URL(TEST_URI);
   url.searchParams.set("foo", "bar");
   await BrowserTestUtils.withNewTab(url.href, async browser => {
     await verifyQueryString(browser, "");
   });
-  testTelemetry({ mc_eid: 2, fbclid: 1, mkt_tok: 1, __s: 1, ysclid: 1 });
+  await testTelemetry({ mc_eid: 2, fbclid: 1, mkt_tok: 1, __s: 1, ysclid: 1 });
 
   await clearTelemetry();
 });
