@@ -5,7 +5,6 @@
 #ifndef WEBGLCONTEXT_H_
 #define WEBGLCONTEXT_H_
 
-#include <array>
 #include <bitset>
 #include <memory>
 
@@ -1167,7 +1166,7 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
   GLuint mStencilValueMaskBack = 0;
   GLuint mStencilWriteMaskFront = 0;
   GLuint mStencilWriteMaskBack = 0;
-  std::array<uint8_t, webgl::kMaxDrawBuffers> mColorWriteMasks;  
+  uint8_t mColorWriteMask0 = 0xf;  
   mutable uint8_t mDriverColorMask0 = 0xf;
   bool mDepthWriteMask = true;
   GLfloat mColorClearValue[4] = {0, 0, 0, 0};

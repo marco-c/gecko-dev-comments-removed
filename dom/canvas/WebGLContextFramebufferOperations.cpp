@@ -134,10 +134,12 @@ void WebGLContext::ColorMask(const Maybe<GLuint> i, const uint8_t mask) {
                         "MAX_DRAW_BUFFERS", limit);
       return;
     }
-    mColorWriteMasks[*i] = mask;
+    if (*i == 0) {
+      mColorWriteMask0 = mask;
+    }
     mColorWriteMaskNonzero[*i] = bool(mask);
   } else {
-    mColorWriteMasks.fill(mask);
+    mColorWriteMask0 = mask;
     if (mask) {
       mColorWriteMaskNonzero.set();
     } else {
