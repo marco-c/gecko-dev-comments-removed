@@ -787,20 +787,12 @@ export class ContileIntegration {
               }
 
               // ObliviousHTTP.ohttpRequest only accepts a key/value object, and not
-              // a Headers instance. We normalize any headers to a key/value object.
-              //
-              // We use instanceof here since isInstance isn't available for
-              // Headers, it seems.
-              // eslint-disable-next-line mozilla/use-isInstance
-              if (options.headers && options.headers instanceof Headers) {
-                options.headers = Object.fromEntries(options.headers);
-              }
-
+              // a Headers instance.
               fetchPromise = lazy.ObliviousHTTP.ohttpRequest(
                 ohttpRelayURL,
                 config,
                 fetchUrl,
-                options
+                { ...options, headers: Object.fromEntries(headers) }
               );
             } else {
               fetchPromise = this._topSitesFeed.fetch(fetchUrl, options);
