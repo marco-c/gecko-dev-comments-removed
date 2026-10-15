@@ -1566,13 +1566,18 @@ already_AddRefed<Promise> Navigator::Share(const ShareData& aData,
       GetCurrentSerialEventTarget(), __func__,
       [self = RefPtr{this}](
           PWindowGlobalChild::SharePromise::ResolveOrRejectValue&& aResult) {
+        if (!self->mSharePromise) {
+          
+          return;
+        }
         if (aResult.IsResolve()) {
           if (NS_SUCCEEDED(aResult.ResolveValue())) {
             self->mSharePromise->MaybeResolveWithUndefined();
           } else {
             self->mSharePromise->MaybeReject(aResult.ResolveValue());
           }
-        } else if (self->mSharePromise) {
+        }
+        {
           
           self->mSharePromise->MaybeReject(NS_BINDING_ABORTED);
         }
