@@ -83,29 +83,8 @@ NS_IMETHODIMP
 nsMathMLmrootFrame::TransmitAutomaticData() {
   bool isRootWithIndex = GetContent()->IsMathMLElement(nsGkAtoms::mroot);
   if (isRootWithIndex) {
-    
-    
-    
-    
-    
-    if (!StaticPrefs::mathml_math_shift_enabled()) {
-      UpdatePresentationDataFromChildAt(1, 1,
-                                        MathMLPresentationFlag::Compressed,
-                                        MathMLPresentationFlag::Compressed);
-      UpdatePresentationDataFromChildAt(0, 0,
-                                        MathMLPresentationFlag::Compressed,
-                                        MathMLPresentationFlag::Compressed);
-    }
-
     PropagateFrameFlagFor(mFrames.LastChild(),
                           NS_FRAME_MATHML_SCRIPT_DESCENDANT);
-  } else {
-    
-    if (!StaticPrefs::mathml_math_shift_enabled()) {
-      UpdatePresentationDataFromChildAt(0, -1,
-                                        MathMLPresentationFlag::Compressed,
-                                        MathMLPresentationFlag::Compressed);
-    }
   }
 
   return NS_OK;
@@ -123,7 +102,7 @@ void nsMathMLmrootFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   
   
-  mSqrChar.Display(aBuilder, this, aLists, 0);
+  mSqrChar.Display(aBuilder, this, aLists, 0,  true);
 
   DisplayBar(aBuilder, this, mBarRect, aLists);
 }
@@ -253,8 +232,7 @@ void nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
   } else {
     mSqrChar.Stretch(this, aDrawTarget, fontSizeInflation,
                      StretchDirection::Vertical, contSize, radicalSize,
-                     MathMLStretchFlag::Larger,
-                     StyleVisibility()->mDirection == StyleDirection::Rtl);
+                     MathMLStretchFlag::Larger, GetWritingMode().IsBidiRTL());
     
     
     mSqrChar.GetBoundingMetrics(bmSqr);
@@ -343,7 +321,7 @@ void nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
 
   if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     nsPresContext* presContext = PresContext();
-    const bool isRTL = StyleVisibility()->mDirection == StyleDirection::Rtl;
+    const bool isRTL = GetWritingMode().IsBidiRTL();
     nscoord borderPaddingInlineStart =
         isRTL ? borderPadding.right : borderPadding.left;
     nscoord dx, dy;

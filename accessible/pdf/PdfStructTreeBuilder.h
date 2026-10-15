@@ -71,6 +71,10 @@ class PdfStructTreeBuilder {
     static constexpr uint64_t Nothing = 0;
     static constexpr uint64_t PageHeader = 1;
     static constexpr uint64_t PageFooter = 2;
+    
+    
+    
+    static constexpr uint64_t OtherArtifact = 3;
   };
 
   using ReadyPromise = MozPromise<Ok, Ok, true>;
