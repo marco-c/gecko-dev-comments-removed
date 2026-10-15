@@ -10,12 +10,16 @@
 
 
 
+
 var gSSService = Cc["@mozilla.org/ssservice;1"].getService(
   Ci.nsISiteSecurityService
 );
 
 const { FileUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/FileUtils.sys.mjs"
+);
+const { RemoteSecuritySettings } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs"
 );
 
 const SOURCE =
@@ -63,6 +67,37 @@ async function download() {
     throw new Error(`ERROR: could not parse data from '${SOURCE}': ${e}`);
   }
   return data;
+}
+
+async function loadPreloadedIntermediates() {
+  let profileDir = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+  profileDir.append("hsts-profile");
+  profileDir.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o700);
+  Services.dirsvc.QueryInterface(Ci.nsIDirectoryService).registerProvider({
+    getFile(prop, persistent) {
+      persistent.value = true;
+      return ["ProfD", "ProfLD", "ProfDS", "ProfLDS"].includes(prop)
+        ? profileDir.clone()
+        : null;
+    },
+    QueryInterface: ChromeUtils.generateQI(["nsIDirectoryServiceProvider"]),
+  });
+  Services.obs.notifyObservers(null, "profile-do-change");
+
+  let { IntermediatePreloadsClient } = RemoteSecuritySettings.init();
+  Services.prefs.setIntPref(
+    "security.remote_settings.intermediates.downloads_per_poll",
+    1000000
+  );
+  try {
+    await IntermediatePreloadsClient.client.sync();
+    await IntermediatePreloadsClient.updatePreloadedIntermediates();
+    let records = await IntermediatePreloadsClient.client.db.list();
+    let imported = records.filter(r => r.cert_import_complete).length;
+    dump(`Loaded ${imported} of ${records.length} preloaded intermediates\n`);
+  } catch (e) {
+    dump(`WARNING: loading the preloaded intermediates failed: ${e}\n`);
+  }
 }
 
 function getHosts(rawdata) {
@@ -552,6 +587,7 @@ async function main(args) {
     "network.stricttransportsecurity.preloadlist",
     false
   );
+  await loadPreloadedIntermediates();
   
   let rawdata = await download();
   
@@ -617,4 +653,8 @@ async function main(args) {
 }
 
 
-spinResolve(main(arguments));
+try {
+  spinResolve(main(arguments));
+} finally {
+  Services.obs.notifyObservers(null, "profile-before-change");
+}
