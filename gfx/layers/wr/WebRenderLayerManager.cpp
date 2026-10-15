@@ -653,11 +653,6 @@ void WebRenderLayerManager::ClearCachedResources() {
 }
 
 void WebRenderLayerManager::WrUpdated() {
-  
-  
-  
-  mDLBuilder = MakeUnique<wr::DisplayListBuilder>(
-      WrBridge()->GetPipeline(), WrBridge()->GetWebRenderBackend());
   ClearAsyncAnimations();
   mStateManager.mAsyncResourceUpdates.reset();
   mWebRenderCommandBuilder.ClearCachedResources();

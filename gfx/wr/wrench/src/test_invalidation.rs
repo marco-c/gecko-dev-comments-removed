@@ -28,7 +28,6 @@ struct InvalidationTest {
     
     
     
-    
     new_builder: bool,
 }
 
