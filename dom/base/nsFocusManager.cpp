@@ -3633,8 +3633,11 @@ void nsFocusManager::GetSequentialFocusNavigationStartingPoint(
   if (selectionStart) {
     
     
+    
+    
     if (!aFocusedContent ||
-        selectionStart->IsInclusiveFlatTreeDescendantOf(aFocusedContent)) {
+        (selectionStart->IsInclusiveFlatTreeDescendantOf(aFocusedContent) &&
+         !GetAssociatedPopoverFromInvoker(aFocusedContent))) {
       NS_ADDREF(*aStartContent = selectionStart);
       return;
     }
