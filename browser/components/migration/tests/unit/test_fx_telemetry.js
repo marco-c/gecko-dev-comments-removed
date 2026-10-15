@@ -434,3 +434,32 @@ user_pref("${PASSWORDS_PREF}", true);
     Assert.ok(writtenPrefsString.includes(EXPECTED), "Found persisted pref.");
   }
 });
+
+add_task(async function test_migrate_glean_client_id() {
+  let [srcDir, targetDir] = getTestDirs();
+
+  
+  const kClientIdContents = "<opaque value>";
+  let subDir = createSubDir(srcDir, "datareporting");
+  subDir = createSubDir(subDir, "glean");
+  writeToFile(subDir, "client_id.txt", kClientIdContents);
+
+  
+  let eventsDir = createSubDir(subDir, "events");
+  writeToFile(eventsDir, "events", "<another opaque value>");
+
+  
+  let ok = await promiseTelemetryMigrator(srcDir, targetDir);
+  Assert.ok(
+    ok,
+    "callback should have been true with important telemetry files copied"
+  );
+
+  checkDirectoryContains(targetDir, {
+    datareporting: {
+      glean: {
+        "client_id.txt": kClientIdContents,
+      },
+    },
+  });
+});
