@@ -2,8 +2,11 @@
 
 
 
+import json
+
 from copy import deepcopy
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.taskcluster import find_task_id
 
 transforms = TransformSequence()
 
@@ -47,7 +50,8 @@ def add_variants(config, jobs):
         attributes = job["attributes"]
 
         
-        if not any(attributes.get(attr) for attr in ("make", "asan", "fuzz", "tsan")):
+        
+        if not any(attributes.get(attr) for attr in ("make", "asan", "fuzz", "tsan", "cross")):
             nspr_job = deepcopy(job)
             nspr_job["name"] = f"{attributes['build_platform']}-nspr/{attributes['build_type']}"
             nspr_job["description"]+= " (NSPR only)"
@@ -112,7 +116,7 @@ def add_variants(config, jobs):
 def set_attributes_defaults(config, jobs):
     for job in jobs:
         attributes = job["attributes"]
-        for attr in ("make", "asan", "make-fips", "fuzz", "certs", "nspr", "cc", "dbm", "modular", "tlsfuzz", "tsan"):
+        for attr in ("make", "asan", "make-fips", "fuzz", "certs", "nspr", "cc", "dbm", "modular", "tlsfuzz", "tsan", "cross"):
             attributes.setdefault(attr, False)
         yield job
 
@@ -149,6 +153,12 @@ def set_gyp_command(config, jobs):
         command = script + " --python=python3"
         if "64" not in platform:
             command += " -t ia32"
+        elif platform.startswith("win") and "aarch64" in platform:
+            
+            
+            
+            
+            command += " -t arm64 -Dsign_libs=0"
         if attributes["build_type"] in ("opt", "opt-static"):
             command += " --opt"
         if "fips" in attributes["build_type"]:
@@ -175,6 +185,67 @@ def set_gyp_command(config, jobs):
                 command += "=tls"
         job["run"]["command"] = command
         yield job
+
+
+
+
+
+
+VS_TOOLCHAIN_INDEX = "gecko.cache.level-3.toolchains.v3.win64-vs2026.latest"
+VS_TOOLCHAIN_ARTIFACT = "project/gecko/vs/vs.tar.zst"
+
+
+@transforms.add
+def add_vs_toolchain_fetch(config, jobs):
+    """Have run-task fetch gecko's Visual Studio layout for win-aarch64.
+
+    run-task invokes fetch-content whenever MOZ_FETCHES is set, and
+    fetch-content already knows how to pull a non-public artifact through the
+    taskcluster proxy, check it against the producing task's chain of trust,
+    and unpack a .tar.zst.
+
+    taskgraph's own `fetches` stanza can't express this: it only resolves
+    `fetch`/`toolchain` tasks inside our own graph, and this artifact comes
+    from gecko's. So build the MOZ_FETCHES entry by hand, resolving the index
+    to a concrete task id at decision time -- which also pins the toolchain
+    for the whole push instead of re-resolving `.latest` per task. The lookup
+    is lazy so that generating a graph with no win-aarch64 task in it makes no
+    network request.
+    """
+    task_id = None
+    for job in jobs:
+        platform = job["attributes"]["build_platform"]
+        if not (platform.startswith("win") and "aarch64" in platform):
+            yield job
+            continue
+
+        if task_id is None:
+            task_id = find_task_id(VS_TOOLCHAIN_INDEX)
+
+        env = job.setdefault("worker", {}).setdefault("env", {})
+        env["MOZ_FETCHES"] = json.dumps(
+            [
+                {
+                    "artifact": VS_TOOLCHAIN_ARTIFACT,
+                    "task": task_id,
+                    "extract": True,
+                    "verify-hash": True,
+                }
+            ],
+            sort_keys=True,
+        )
+        env.setdefault("MOZ_FETCHES_DIR", "fetches")
+
+        
+        
+        job["worker"]["taskcluster-proxy"] = True
+        prefix = VS_TOOLCHAIN_ARTIFACT.rsplit("/", 1)[0]
+        scope = f"queue:get-artifact:{prefix}/*"
+        if scope not in job.get("scopes", []):
+            job["scopes"] = job.get("scopes", []) + [scope]
+
+        yield job
+
 
 @transforms.add
 def set_docker_image(config, jobs):

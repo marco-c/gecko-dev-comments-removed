@@ -2,6 +2,7 @@
 
 
 
+#include <algorithm>
 #include <memory>
 #include "nss.h"
 #include "pk11pub.h"
@@ -237,7 +238,7 @@ TEST_F(Pkcs11EcdsaSha256Test, ImportSpkiPointNotOnCurve) {
 class Pkcs11EcdsaWycheproofTest : public ::testing::Test {
  protected:
   void Run(const std::string& name) {
-    WycheproofHeader(name, "ECDSA", "ecdsa_verify_schema.json",
+    WycheproofHeader(name, "ECDSA", "ecdsa_verify_schema_v1.json",
                      [this](JsonReader& r) { RunGroup(r); });
   }
 
@@ -253,16 +254,25 @@ class Pkcs11EcdsaWycheproofTest : public ::testing::Test {
         break;
       }
 
-      if (n == "key" || n == "keyPem") {
+      if (n == "publicKey" || n == "publicKeyPem" || n == "source") {
         r.SkipValue();
-      } else if (n == "keyDer") {
+      } else if (n == "publicKeyDer") {
         public_key = r.ReadHex();
       } else if (n == "sha") {
         hash_oid = r.ReadHash();
       } else if (n == "type") {
         ASSERT_EQ("EcdsaVerify", r.ReadString());
       } else if (n == "tests") {
-        WycheproofReadTests(r, &tests, ReadTestAttr);
+        WycheproofReadTests(r, &tests, ReadTestAttr, true,
+                            [](EcdsaTestVector& t, const std::string&,
+                               const std::vector<std::string>& flags) {
+                              
+                              
+                              if (std::find(flags.begin(), flags.end(),
+                                            "MissingZero") != flags.end()) {
+                                t.valid = true;
+                              }
+                            });
       } else {
         FAIL() << "unknown label in group: " << n;
       }

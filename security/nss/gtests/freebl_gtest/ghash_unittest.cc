@@ -2,7 +2,8 @@
 
 
 
-#include "testvectors/gcm-vectors.h"
+#include "testvectors_base/test-structs.h"
+#include "testvectors_base/gcm-vectors_base.h"
 #include "gtest/gtest.h"
 #include "util.h"
 

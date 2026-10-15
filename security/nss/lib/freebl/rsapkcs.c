@@ -1213,6 +1213,15 @@ RSA_DecryptBlock(RSAPrivateKey *key,
     }
 
     
+
+
+    if (memcmp(input, key->modulus.data + (key->modulus.len - modulusLen),
+               modulusLen) >= 0) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
+    
     buffer = PORT_ZAlloc(modulusLen);
     if (!buffer) {
         goto loser;

@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 #ifndef ike_sha384_vectors_h__
 #define ike_sha384_vectors_h__
 

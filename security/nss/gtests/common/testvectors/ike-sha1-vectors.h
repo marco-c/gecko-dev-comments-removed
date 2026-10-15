@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 #ifndef ike_sha1_vectors_h__
 #define ike_sha1_vectors_h__
 

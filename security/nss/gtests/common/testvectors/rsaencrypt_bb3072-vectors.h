@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 #ifndef rsaencrypt_bb3072_vectors_h__
 #define rsaencrypt_bb3072_vectors_h__
 

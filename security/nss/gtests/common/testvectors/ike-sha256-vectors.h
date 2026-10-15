@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 #ifndef ike_sha256_vectors_h__
 #define ike_sha256_vectors_h__
 

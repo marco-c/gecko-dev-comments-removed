@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 #ifndef ike_aesxcbc_vectors_h__
 #define ike_aesxcbc_vectors_h__
 

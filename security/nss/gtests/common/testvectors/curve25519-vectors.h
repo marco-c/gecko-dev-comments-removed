@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 #ifndef curve25519_vectors_h__
 #define curve25519_vectors_h__
 

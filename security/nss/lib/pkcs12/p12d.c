@@ -55,6 +55,11 @@ struct sec_PKCS12SafeContentsContextStr {
 
     
     sec_PKCS12SafeContentsContext *nestedSafeContentsCtx;
+
+    
+
+
+    unsigned int nestingDepth;
 };
 
 
@@ -699,6 +704,14 @@ loser:
 
 
 
+
+
+
+#define SEC_PKCS12_MAX_NESTING_DEPTH 1
+
+
+
+
 static SECStatus
 sec_pkcs12_decoder_begin_nested_safe_contents(sec_PKCS12SafeContentsContext
                                                   *safeContentsCtx)
@@ -709,12 +722,22 @@ sec_pkcs12_decoder_begin_nested_safe_contents(sec_PKCS12SafeContentsContext
         return SECFailure;
     }
 
+    if (safeContentsCtx->nestingDepth >= SEC_PKCS12_MAX_NESTING_DEPTH) {
+        PORT_SetError(SEC_ERROR_PKCS12_CORRUPT_PFX_STRUCTURE);
+        safeContentsCtx->p12dcx->error = PR_TRUE;
+        safeContentsCtx->p12dcx->errorValue =
+            SEC_ERROR_PKCS12_CORRUPT_PFX_STRUCTURE;
+        return SECFailure;
+    }
+
     safeContentsCtx->nestedSafeContentsCtx =
         sec_pkcs12_decoder_safe_contents_init_decode(safeContentsCtx->p12dcx,
                                                      PR_TRUE);
     if (!safeContentsCtx->nestedSafeContentsCtx) {
         return SECFailure;
     }
+    safeContentsCtx->nestedSafeContentsCtx->nestingDepth =
+        safeContentsCtx->nestingDepth + 1;
 
     
     SEC_ASN1DecoderSetNotifyProc(

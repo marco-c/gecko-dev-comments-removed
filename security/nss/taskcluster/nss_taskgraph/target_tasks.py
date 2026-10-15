@@ -50,8 +50,9 @@ def filter_platform(platform, task):
     keep = task_platform == PLATFORM_ALIASES.get(platform, platform)
     
     
-    if platform in PLATFORM_ALIASES:
-        keep &= task.attributes[_VARIANT_ATTR[platform.rsplit("-", 1)[1]]]
+    
+    if keep and platform in PLATFORM_ALIASES:
+        keep = bool(task.attributes.get(_VARIANT_ATTR[platform.rsplit("-", 1)[1]]))
     return keep
 
 
