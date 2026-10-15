@@ -39,7 +39,7 @@ pub type SendOrder = i64;
 
 
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct SendGroupId(u64);
 
 impl SendGroupId {
@@ -57,6 +57,13 @@ impl SendGroupId {
         self.0
     }
 }
+
+
+
+
+
+
+pub(crate) const NULL_GROUP_ID: SendGroupId = SendGroupId::new(0);
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub struct StreamOrder {
@@ -122,6 +129,8 @@ impl Streams {
 
     pub fn zero_rtt_rejected(&mut self) {
         self.clear_streams();
+        
+        *self.sender_fc.borrow_mut() = SenderFlowControl::new((), 0);
         debug_assert_eq!(
             self.remote_stream_limits[StreamType::BiDi].max_active(),
             self.tps.borrow().local().get_integer(InitialMaxStreamsBidi)

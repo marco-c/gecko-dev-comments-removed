@@ -1552,7 +1552,7 @@ impl HttpServer for Http3ConnectProxyServer {
                         buf.resize(len, 0);
                         
                         
-                        socket
+                        let _ = socket
                             .session
                             .send_datagram(buf.as_slice(), None, Instant::now())
                             .unwrap();

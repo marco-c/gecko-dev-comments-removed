@@ -11,22 +11,26 @@
 
 
 
+use std::{
+    cmp::min,
+    collections::BTreeMap,
+    num::NonZeroUsize,
+    time::{Duration, Instant},
+};
 
-
-
-
-
-
-
-use std::{cmp::min, collections::VecDeque};
-
-use neqo_common::{Buffer, Encoder, qdebug, qtrace, to_u64};
+use neqo_common::{Buffer, Encoder, qdebug, to_u64};
 
 use crate::{
-    ConnectionEvents, Error, Res, Stats,
+    ConnectionEvents, Error, MAX_DATAGRAM_FRAME_SIZE, Res, Stats,
+    datagram_queue::{
+        DatagramId, DatagramQueue, DatagramQueueCapacity, DatagramQueueOutcome, QueuedDatagram,
+        default_max_age,
+    },
     events::OutgoingDatagramOutcome,
     frame::{FrameEncoder as _, FrameType},
     packet, recovery,
+    stream_id::StreamId,
+    streams::{SendGroupId, SendOrder},
 };
 
 
@@ -53,51 +57,41 @@ impl From<Option<u64>> for DatagramTracking {
     }
 }
 
-pub struct QuicDatagram {
-    data: Vec<u8>,
-    tracking: DatagramTracking,
-}
-
-impl QuicDatagram {
-    pub const MAX_SIZE: u64 = 65535;
-
-    const fn tracking(&self) -> &DatagramTracking {
-        &self.tracking
-    }
-}
-
-impl AsRef<[u8]> for QuicDatagram {
-    fn as_ref(&self) -> &[u8] {
-        &self.data[..]
-    }
-}
-
 pub struct QuicDatagrams {
     
     local_datagram_size: u64,
     
     remote_datagram_size: u64,
-    max_queued_outgoing_datagrams: usize,
     
     
-    blocked: bool,
     
-    datagrams: VecDeque<QuicDatagram>,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    queues: BTreeMap<StreamId, DatagramQueue>,
+    
+    
+    queue_rr_next: StreamId,
     conn_events: ConnectionEvents,
 }
 
 impl QuicDatagrams {
-    pub fn new(
-        local_datagram_size: u64,
-        max_queued_outgoing_datagrams: usize,
-        conn_events: ConnectionEvents,
-    ) -> Self {
+    pub const fn new(local_datagram_size: u64, conn_events: ConnectionEvents) -> Self {
         Self {
             local_datagram_size,
             remote_datagram_size: 0,
-            max_queued_outgoing_datagrams,
-            blocked: false,
-            datagrams: VecDeque::with_capacity(max_queued_outgoing_datagrams),
+            queues: BTreeMap::new(),
+            queue_rr_next: StreamId::new(0),
             conn_events,
         }
     }
@@ -107,9 +101,47 @@ impl QuicDatagrams {
     }
 
     pub fn set_remote_datagram_size(&mut self, v: u64) {
-        self.remote_datagram_size = min(v, QuicDatagram::MAX_SIZE);
+        self.remote_datagram_size = min(v, MAX_DATAGRAM_FRAME_SIZE);
     }
 
+    
+    
+    fn encode_datagram<B: Buffer>(
+        data: &[u8],
+        tracking: DatagramTracking,
+        frame_type: FrameType,
+        builder: &mut packet::Builder<B>,
+        tokens: &mut recovery::Tokens,
+        stats: &mut Stats,
+    ) {
+        if frame_type == FrameType::DatagramWithLen {
+            builder.encode_frame(frame_type, |b| {
+                b.encode_vvec(data);
+            });
+        } else {
+            builder.encode_frame(frame_type, |b| {
+                b.encode(data);
+            });
+            builder.mark_full();
+        }
+        debug_assert!(builder.len() <= builder.limit());
+        stats.frame_tx.datagram += 1;
+        tokens.push(recovery::Token::Datagram(tracking));
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -118,58 +150,158 @@ impl QuicDatagrams {
         builder: &mut packet::Builder<B>,
         tokens: &mut recovery::Tokens,
         stats: &mut Stats,
+        full_mtu: bool,
     ) {
-        while let Some(dgram) = self.datagrams.pop_front() {
-            let len = dgram.as_ref().len();
-            if len + DATAGRAM_FRAME_TYPE_VARINT_LEN <= builder.remaining() {
-                
-                let length_len = Encoder::varint_len(to_u64(len));
-                
-                if builder.remaining()
-                    >= DATAGRAM_FRAME_TYPE_VARINT_LEN
-                        + length_len
-                        + len
-                        + packet::Builder::MINIMUM_FRAME_SIZE
-                {
-                    builder.encode_frame(FrameType::DatagramWithLen, |b| {
-                        b.encode_vvec(dgram.as_ref());
-                    });
-                } else {
-                    builder.encode_frame(FrameType::Datagram, |b| {
-                        b.encode(dgram.as_ref());
-                    });
-                    builder.mark_full();
-                }
-                debug_assert!(builder.len() <= builder.limit());
-                stats.frame_tx.datagram += 1;
-                tokens.push(recovery::Token::Datagram(*dgram.tracking()));
-                qtrace!(
-                    "Sent QUIC datagram, {} remaining in queue.",
-                    self.datagrams.len()
-                );
-            } else if tokens.is_empty() {
+        loop {
+            let Some(session) = self.next_active_session_from(self.queue_rr_next) else {
+                return;
+            };
+            let queue = self
+                .queues
+                .get(&session)
+                .expect("next_active_session_from only returns known sessions");
+            let Some(len) = queue.peek_next_len() else {
+                unreachable!("next_active_session_from only returns non-empty sessions")
+            };
+            let frame_len = len + DATAGRAM_FRAME_TYPE_VARINT_LEN;
+
+            if frame_len > builder.remaining() && !(full_mtu && builder.packet_empty()) {
                 
                 
                 
+                
+                
+                
+                return;
+            }
+
+            if to_u64(frame_len) > min(to_u64(builder.remaining()), self.remote_datagram_size) {
+                let dgram = self
+                    .take_from_session_queue(session)
+                    .expect("just peeked Some above, with no intervening mutation");
                 qdebug!(
-                    "QUIC datagram ({}) does not fit MTU, dropping it, {} remaining in queue.",
+                    "QUIC datagram ({}) exceeds remote limit ({}) or does not fit MTU.",
                     dgram.data.len(),
-                    self.datagrams.len()
+                    self.remote_datagram_size
                 );
                 self.conn_events
-                    .datagram_outcome(dgram.tracking(), OutgoingDatagramOutcome::DroppedTooBig);
+                    .datagram_outcome(&dgram.id.into(), OutgoingDatagramOutcome::DroppedTooBig);
                 stats.datagram_tx.dropped_too_big += 1;
-            } else {
-                self.datagrams.push_front(dgram);
-                
-                
-                break;
+                continue;
             }
+
+            let dgram = self
+                .take_from_session_queue(session)
+                .expect("just peeked Some above, with no intervening mutation");
+
+            let frame_len_with_len = frame_len + Encoder::varint_len(to_u64(len));
+
+            
+            
+            
+            
+            let frame_type = if to_u64(frame_len_with_len) <= self.remote_datagram_size
+                && frame_len_with_len + packet::Builder::MINIMUM_FRAME_SIZE <= builder.remaining()
+            {
+                FrameType::DatagramWithLen
+            } else {
+                FrameType::Datagram
+            };
+
+            Self::encode_datagram(
+                &dgram.data,
+                dgram.id.into(),
+                frame_type,
+                builder,
+                tokens,
+                stats,
+            );
         }
-        
-        
-        if self.blocked && self.datagrams.len() < self.max_queued_outgoing_datagrams {
-            self.blocked = false;
+    }
+
+    
+    
+    
+    
+    
+    fn next_active_session_from(&self, start: StreamId) -> Option<StreamId> {
+        self.queues
+            .range(start..)
+            .chain(self.queues.range(..start))
+            .find(|(_, q)| !q.is_empty())
+            .map(|(id, _)| *id)
+    }
+
+    
+    
+    
+    
+    
+    #[expect(
+        clippy::unwrap_in_result,
+        reason = "the internal expect() below guards an invariant unrelated to this fn's own \
+                  None case: session is always in queues, since next_active_session_from only \
+                  ever returns sessions it found there"
+    )]
+    fn take_from_session_queue(&mut self, session: StreamId) -> Option<QueuedDatagram> {
+        let queue = self
+            .queues
+            .get_mut(&session)
+            .expect("next_active_session_from only returns known sessions");
+        let dgram = queue.take_next()?;
+        if queue.resume_if_unblocked() {
+            self.conn_events.datagram_space_available();
+        }
+        self.queue_rr_next = StreamId::new(session.as_u64().wrapping_add(1));
+        Some(dgram)
+    }
+
+    
+    fn queue_mut(&mut self, session: StreamId) -> &mut DatagramQueue {
+        self.queues.entry(session).or_default()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "Connection::enqueue_datagram's parameters plus the RTT the default max-age derives from"
+    )]
+    pub fn enqueue_datagram(
+        &mut self,
+        session: StreamId,
+        data: Vec<u8>,
+        id: Option<DatagramId>,
+        now: Instant,
+        send_group_id: SendGroupId,
+        send_order: SendOrder,
+        min_rtt: Duration,
+    ) -> Res<DatagramQueueOutcome> {
+        let frame_len = data.len().saturating_add(DATAGRAM_FRAME_TYPE_VARINT_LEN);
+        if to_u64(frame_len) > self.remote_datagram_size {
+            qdebug!(
+                "QUIC DATAGRAM frame exceeds remote limit, dropping it, frame size {frame_len}, remote DATAGRAM frame size limit {}.",
+                self.remote_datagram_size
+            );
+            return Err(Error::TooMuchData);
+        }
+        let queue = self.queues.entry(session).or_default();
+        Self::expire_queue(queue, &self.conn_events, now, default_max_age(min_rtt));
+        Ok(queue.enqueue(data, id, now, send_group_id, send_order))
+    }
+
+    
+    pub fn set_max_buffered_datagrams(&mut self, session: StreamId, mark: Option<NonZeroUsize>) {
+        let queue = self.queue_mut(session);
+        queue.set_max_buffered_datagrams(mark);
+        if queue.resume_if_unblocked() {
             self.conn_events.datagram_space_available();
         }
     }
@@ -177,41 +309,122 @@ impl QuicDatagrams {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn add_datagram(&mut self, data: Vec<u8>, tracking: DatagramTracking) -> Res<bool> {
-        if to_u64(data.len()) > self.remote_datagram_size {
-            qdebug!(
-                "QUIC datagram exceeds remote limit, dropping it, datagram size {}, remote datagram size limit {}.",
-                data.len(),
-                self.remote_datagram_size
-            );
-            return Err(Error::TooMuchData);
+    pub fn set_datagram_max_age(
+        &mut self,
+        session: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+        min_rtt: Duration,
+    ) {
+        let queue = self.queue_mut(session);
+        queue.set_max_age(max_age, now, default_max_age(min_rtt));
+        if queue.resume_if_unblocked() {
+            self.conn_events.datagram_space_available();
         }
-        self.datagrams.push_back(QuicDatagram { data, tracking });
-        if self.datagrams.len() < self.max_queued_outgoing_datagrams {
-            return Ok(true);
-        }
-        qdebug!(
-            "QUIC datagram queue full (len {} / max {}), applying backpressure.",
-            self.datagrams.len(),
-            self.max_queued_outgoing_datagrams
-        );
-        self.blocked = true;
-        Ok(false)
     }
 
-    pub fn handle_datagram(&self, data: &[u8]) -> Res<()> {
+    
+    #[must_use]
+    pub fn datagram_queue_capacity(&self, session: StreamId) -> DatagramQueueCapacity {
+        self.queues.get(&session).map_or_else(
+            || DatagramQueue::default().capacity(),
+            DatagramQueue::capacity,
+        )
+    }
+
+    
+    
+    pub fn drop_session_datagrams(&mut self, session: StreamId) -> usize {
+        self.queues
+            .remove(&session)
+            .map_or(0, |mut q| q.take_all().count())
+    }
+
+    
+    
+    #[must_use]
+    pub fn next_datagram_expiry(&self, min_rtt: Duration) -> Option<Instant> {
+        let default_max_age = default_max_age(min_rtt);
+        self.queues
+            .values()
+            .filter_map(|q| q.next_expiry(default_max_age))
+            .min()
+    }
+
+    
+    
+    
+    
+    
+    pub fn expire_datagrams(&mut self, now: Instant, min_rtt: Duration) {
+        let default_max_age = default_max_age(min_rtt);
+        for queue in self.queues.values_mut() {
+            Self::expire_queue(queue, &self.conn_events, now, default_max_age);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn expire_session_datagrams(
+        &mut self,
+        session: StreamId,
+        now: Instant,
+        min_rtt: Duration,
+    ) -> u64 {
+        self.queues.get_mut(&session).map_or(0, |queue| {
+            Self::expire_queue(queue, &self.conn_events, now, default_max_age(min_rtt));
+            queue.take_expired_count()
+        })
+    }
+
+    
+    
+    
+    pub fn take_session_expired_count(&mut self, session: StreamId) -> u64 {
+        self.queues
+            .get_mut(&session)
+            .map_or(0, DatagramQueue::take_expired_count)
+    }
+
+    
+    
+    
+    
+    #[must_use]
+    pub fn has_pending_counts(&self) -> bool {
+        self.queues.values().any(DatagramQueue::has_expired)
+    }
+
+    
+    
+    
+    
+    
+    
+    fn expire_queue(
+        queue: &mut DatagramQueue,
+        conn_events: &ConnectionEvents,
+        now: Instant,
+        default_max_age: Duration,
+    ) {
+        _ = queue.expire(now, default_max_age);
+        if queue.resume_if_unblocked() {
+            conn_events.datagram_space_available();
+        }
+    }
+
+    pub fn handle_datagram(&self, data: &[u8], len_field_len: Option<NonZeroUsize>) -> Res<()> {
+        let frame_len =
+            data.len() + DATAGRAM_FRAME_TYPE_VARINT_LEN + len_field_len.map_or(0, Into::into);
+
         
         
         
-        if self.local_datagram_size == 0 || self.local_datagram_size < to_u64(data.len()) {
+        if self.local_datagram_size < to_u64(frame_len) {
             return Err(Error::ProtocolViolation);
         }
         self.conn_events.add_datagram(data);

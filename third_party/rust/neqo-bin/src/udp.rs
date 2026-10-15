@@ -6,9 +6,9 @@
 
 #![expect(clippy::missing_errors_doc, reason = "Passing up tokio errors.")]
 
-use std::{io, net::SocketAddr};
+use std::{io, iter, net::SocketAddr};
 
-use neqo_common::{datagram, qdebug};
+use neqo_common::{datagram, qdebug, qwarn};
 use neqo_udp::{DatagramIter, RecvBuf};
 
 
@@ -60,9 +60,17 @@ impl Socket {
         if recv_buf_before < ONE_MB {
             
             
-            state.set_recv_buffer_size((&socket).into(), ONE_MB)?;
+            
+            for size in iter::successors(Some(ONE_MB), |size| Some(size / 2))
+                .take_while(|&s| s > recv_buf_before)
+            {
+                match state.set_recv_buffer_size((&socket).into(), size) {
+                    Ok(()) => break,
+                    Err(e) => qwarn!("Failed to set socket recv buffer size to {size}: {e}"),
+                }
+            }
             qdebug!(
-                "Increasing socket recv buffer size from {recv_buf_before} to {ONE_MB}, now: {:?}",
+                "Increasing socket recv buffer size from {recv_buf_before}, now: {:?}",
                 state.recv_buffer_size((&socket).into())
             );
         } else {

@@ -4,6 +4,8 @@
 
 
 
+#[cfg(test)]
+use std::num::NonZeroUsize;
 use std::{
     cell::RefCell,
     fmt::{self, Debug, Display, Formatter},
@@ -17,7 +19,8 @@ use neqo_common::{
 };
 use neqo_qpack as qpack;
 use neqo_transport::{
-    AppError, CloseReason, Connection, DatagramTracking, State, StreamId, StreamType, ZeroRttState,
+    AppError, CloseReason, Connection, DatagramQueueOutcome, DatagramTracking, State, StreamId,
+    StreamType, ZeroRttState,
     streams::{SendGroupId, SendOrder},
 };
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
@@ -654,6 +657,10 @@ impl Http3Connection {
             )));
             self.settings_state = Http3RemoteSettingsState::NotReceived;
             self.streams_with_pending_data.clear();
+            
+            
+            
+            
             
             self.send_streams.clear();
             self.recv_streams.clear();
@@ -1619,7 +1626,10 @@ impl Http3Connection {
         Ok(())
     }
 
-    
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "mirrors send_datagram's own params plus session_id/conn"
+    )]
     pub(crate) fn extended_connect_send_datagram<I: Into<DatagramTracking>>(
         &self,
         session_id: StreamId,
@@ -1627,10 +1637,44 @@ impl Http3Connection {
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<bool> {
+        send_group_id: SendGroupId,
+        send_order: SendOrder,
+    ) -> Res<DatagramQueueOutcome> {
         self.validate_extended_connect_session(session_id)?
             .borrow_mut()
-            .send_datagram(conn, buf, id, now)
+            .send_datagram(conn, buf, id, now, send_group_id, send_order)
+    }
+
+    
+    #[cfg(test)]
+    pub(crate) fn extended_connect_set_max_buffered_datagrams(
+        &self,
+        session_id: StreamId,
+        conn: &mut Connection,
+        mark: Option<NonZeroUsize>,
+    ) -> Res<()> {
+        self.validate_extended_connect_session(session_id)?
+            .borrow()
+            .set_max_buffered_datagrams(conn, mark);
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn expire_datagram_queues(&self, conn: &mut Connection, now: Instant) -> u64 {
+        self.recv_streams
+            .values()
+            .filter_map(|s| s.extended_connect_session())
+            .filter(|s| s.borrow().is_active())
+            .map(|s| s.borrow_mut().expire_datagrams(conn, now))
+            .sum()
     }
 
     

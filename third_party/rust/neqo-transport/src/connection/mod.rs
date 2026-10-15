@@ -43,16 +43,17 @@ use crate::{
         ConnectionIdRef, ConnectionIdStore,
     },
     crypto::{Crypto, CryptoDxState, Epoch},
+    datagram_queue::{DatagramId, DatagramQueueCapacity, DatagramQueueOutcome},
     ecn,
     events::{ConnectionEvent, ConnectionEvents, OutgoingDatagramOutcome},
     frame::{CloseError, Frame, FrameEncoder as _, FrameType},
     packet,
     path::{Path, PathRef, Paths},
     qlog,
-    quic_datagrams::{DATAGRAM_FRAME_TYPE_VARINT_LEN, DatagramTracking, QuicDatagrams},
+    quic_datagrams::{DATAGRAM_FRAME_TYPE_VARINT_LEN, QuicDatagrams},
     recovery::{self, SendProfile, sent},
     recv_stream,
-    rtt::{GRANULARITY, RttEstimate},
+    rtt::{DEFAULT_INITIAL_RTT, GRANULARITY, RttEstimate},
     saved::SavedDatagrams,
     send_stream::{self, SendStream},
     stateless_reset::Token as Srt,
@@ -442,11 +443,7 @@ impl Connection {
 
         let stats = StatsCell::default();
         let events = ConnectionEvents::default();
-        let quic_datagrams = QuicDatagrams::new(
-            conn_params.get_datagram_size(),
-            conn_params.get_outgoing_datagram_queue(),
-            events.clone(),
-        );
+        let quic_datagrams = QuicDatagrams::new(conn_params.get_datagram_size(), events.clone());
 
         let c = Self {
             role,
@@ -1083,6 +1080,12 @@ impl Connection {
 
         self.streams.cleanup_closed_streams();
 
+        
+        
+        
+        let min_rtt = self.min_rtt();
+        self.quic_datagrams.expire_datagrams(now, min_rtt);
+
         let res = self.crypto.states_mut().check_key_update(now);
         self.absorb_error(now, res);
 
@@ -1215,6 +1218,11 @@ impl Connection {
         if let Some(key_update_time) = self.crypto.states().update_time() {
             qtrace!("[{self}] Key update timer {key_update_time:?}");
             delays.push(key_update_time);
+        }
+
+        if let Some(dgram_time) = self.quic_datagrams.next_datagram_expiry(self.min_rtt()) {
+            qtrace!("[{self}] Datagram expiry timer {dgram_time:?}");
+            delays.push(dgram_time);
         }
 
         
@@ -2377,6 +2385,7 @@ impl Connection {
         builder: &mut packet::Builder<&mut Vec<u8>>,
         tokens: &mut recovery::Tokens,
         now: Instant,
+        full_mtu: bool,
     ) {
         let rtt = self.paths.primary().map_or_else(
             || RttEstimate::new(self.conn_params.get_initial_rtt()).estimate(),
@@ -2434,7 +2443,8 @@ impl Connection {
         }
 
         
-        self.quic_datagrams.write_frames(builder, tokens, stats);
+        self.quic_datagrams
+            .write_frames(builder, tokens, stats, full_mtu);
         if builder.is_full() {
             return;
         }
@@ -2575,7 +2585,7 @@ impl Connection {
                     );
                     ack_eliciting = true;
                 }
-                self.write_appdata_frames(builder, &mut tokens, now);
+                self.write_appdata_frames(builder, &mut tokens, now, full_mtu);
             } else {
                 let stats = &mut self.stats.borrow_mut().frame_tx;
                 self.crypto.write_frame(
@@ -3546,9 +3556,13 @@ impl Connection {
                 self.acks
                     .ack_freq(seqno, tolerance - 1, delay, ignore_order);
             }
-            Frame::Datagram { data, .. } => {
+            Frame::Datagram {
+                data,
+                len_field_len,
+                ..
+            } => {
                 self.stats.borrow_mut().frame_rx.datagram += 1;
-                self.quic_datagrams.handle_datagram(data)?;
+                self.quic_datagrams.handle_datagram(data, len_field_len)?;
             }
             _ => unreachable!("All other frames are for streams"),
         }
@@ -4056,8 +4070,8 @@ impl Connection {
     
     
     pub fn max_datagram_size(&self) -> Res<u64> {
-        let max_dgram_size = self.quic_datagrams.remote_datagram_size();
-        if max_dgram_size == 0 {
+        let max_dgram_frame_size = self.quic_datagrams.remote_datagram_size();
+        if max_dgram_frame_size == 0 {
             return Err(Error::NotAvailable);
         }
         let version = self.version();
@@ -4089,7 +4103,18 @@ impl Connection {
         let data_len_possible = to_u64(
             mtu.saturating_sub(tx.expansion() + builder.len() + DATAGRAM_FRAME_TYPE_VARINT_LEN),
         );
-        Ok(min(data_len_possible, max_dgram_size))
+        Ok(min(
+            data_len_possible,
+            max_dgram_frame_size.saturating_sub(to_u64(DATAGRAM_FRAME_TYPE_VARINT_LEN)),
+        ))
+    }
+
+    
+    
+    fn min_rtt(&self) -> Duration {
+        self.paths
+            .primary()
+            .map_or(DEFAULT_INITIAL_RTT, |p| p.borrow().rtt().minimum())
     }
 
     
@@ -4108,12 +4133,96 @@ impl Connection {
     
     
     
+    pub fn enqueue_datagram(
+        &mut self,
+        session: StreamId,
+        data: Vec<u8>,
+        id: Option<DatagramId>,
+        now: Instant,
+        send_group_id: SendGroupId,
+        send_order: SendOrder,
+    ) -> Res<DatagramQueueOutcome> {
+        let min_rtt = self.min_rtt();
+        self.quic_datagrams.enqueue_datagram(
+            session,
+            data,
+            id,
+            now,
+            send_group_id,
+            send_order,
+            min_rtt,
+        )
+    }
+
+    
+    pub fn set_max_buffered_datagrams(&mut self, session: StreamId, mark: Option<NonZeroUsize>) {
+        self.quic_datagrams
+            .set_max_buffered_datagrams(session, mark);
+    }
+
+    
+    
+    
+    pub fn set_datagram_max_age(
+        &mut self,
+        session: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+    ) {
+        let min_rtt = self.min_rtt();
+        self.quic_datagrams
+            .set_datagram_max_age(session, max_age, now, min_rtt);
+    }
+
+    
+    #[must_use]
+    pub fn datagram_queue_capacity(&self, session: StreamId) -> DatagramQueueCapacity {
+        self.quic_datagrams.datagram_queue_capacity(session)
+    }
+
     
     
     
     
-    pub fn send_datagram<I: Into<DatagramTracking>>(&mut self, buf: Vec<u8>, id: I) -> Res<bool> {
-        self.quic_datagrams.add_datagram(buf, id.into())
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn expire_session_datagrams(&mut self, session: StreamId, now: Instant) -> u64 {
+        let min_rtt = self.min_rtt();
+        self.quic_datagrams
+            .expire_session_datagrams(session, now, min_rtt)
+    }
+
+    
+    
+    pub fn take_session_expired_datagrams(&mut self, session: StreamId) -> u64 {
+        self.quic_datagrams.take_session_expired_count(session)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    pub fn has_pending_datagram_counts(&self) -> bool {
+        self.quic_datagrams.has_pending_counts()
+    }
+
+    
+    
+    pub fn drop_session_datagrams(&mut self, session: StreamId) -> usize {
+        self.quic_datagrams.drop_session_datagrams(session)
     }
 
     

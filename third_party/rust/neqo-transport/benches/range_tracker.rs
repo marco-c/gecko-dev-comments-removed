@@ -9,7 +9,7 @@
     reason = "Inherent in codspeed criterion_group! macro."
 )]
 
-use std::hint::black_box;
+use std::{hint::black_box, iter};
 
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use neqo_common::to_u64;
@@ -30,15 +30,27 @@ fn build_coalesce(count: usize) -> RangeTracker {
     used
 }
 
+
+
+
+const COALESCED_PER_ITER: usize = 1000;
+
 fn coalesce(c: &mut Criterion, count: usize) {
+    let trackers = COALESCED_PER_ITER.div_ceil(count);
     c.bench_function(&format!("coalesce_acked_from_zero {count} ranges"), |b| {
         b.iter_batched_ref(
-            || build_coalesce(count),
+            || {
+                iter::repeat_with(|| build_coalesce(count))
+                    .take(trackers)
+                    .collect::<Vec<_>>()
+            },
             
             
-            |used: &mut RangeTracker| {
-                used.mark_acked(to_u64(CHUNK), 2 * count * CHUNK);
-                black_box(used);
+            |trackers: &mut Vec<RangeTracker>| {
+                for used in trackers {
+                    used.mark_acked(to_u64(CHUNK), 2 * count * CHUNK);
+                    black_box(used);
+                }
             },
             BatchSize::SmallInput,
         );

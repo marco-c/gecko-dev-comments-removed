@@ -2679,15 +2679,13 @@ pub extern "C" fn neqo_http3conn_webtransport_send_datagram(
     } else {
         Some(tracking_id)
     };
-    
-    
-    
-    let _ = (send_group_id, send_order);
     match conn.conn.webtransport_send_datagram(
         StreamId::from(session_id),
         data,
         id,
         Instant::now(),
+        SendGroupId::new(send_group_id),
+        send_order,
     ) {
         Ok(_) => NS_OK,
         Err(Http3Error::Transport(TransportError::TooMuchData)) => NS_ERROR_NOT_AVAILABLE,

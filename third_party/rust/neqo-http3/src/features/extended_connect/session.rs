@@ -4,6 +4,8 @@
 
 
 
+#[cfg(test)]
+use std::num::NonZeroUsize;
 use std::{
     cell::RefCell,
     fmt::{self, Debug, Display, Formatter},
@@ -13,7 +15,10 @@ use std::{
 };
 
 use neqo_common::{Bytes, Encoder, Header, MessageType, Role, qdebug, qtrace};
-use neqo_transport::{AppError, Connection, DatagramTracking, StreamId, streams::SendGroupId};
+use neqo_transport::{
+    AppError, Connection, DatagramQueueOutcome, DatagramTracking, StreamId,
+    streams::{SendGroupId, SendOrder},
+};
 use rustc_hash::FxHashSet as HashSet;
 
 use crate::{
@@ -390,6 +395,7 @@ impl Session {
     ) -> Res<()> {
         qdebug!("[{self}]: close_session");
         self.state = State::Done;
+        conn.drop_session_datagrams(self.id);
 
         if let Some(close_frame) = self.protocol.close_frame(error, message) {
             self.control_stream_send
@@ -417,17 +423,26 @@ impl Session {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub(crate) fn send_datagram<I: Into<DatagramTracking>>(
         &mut self,
         conn: &mut Connection,
         buf: &[u8],
         id: I,
         now: Instant,
-    ) -> Res<bool> {
+        send_group_id: SendGroupId,
+        send_order: SendOrder,
+    ) -> Res<DatagramQueueOutcome> {
         qtrace!("[{self}] send_datagram state={:?}", self.state);
         if self.state != State::Active {
             qdebug!("[{self}]: cannot send datagram in {:?} state.", self.state);
-            debug_assert!(false);
             return Err(Error::Unavailable);
         }
 
@@ -442,18 +457,70 @@ impl Session {
             if matches!(res, Err(Error::FlowControlLimit)) {
                 self.datagram_capsule_blocked = true;
             }
+            res?;
             
-            return res.map(|()| true);
+            
+            return Ok(DatagramQueueOutcome::Ok);
         }
 
-        let mut dgram_data = Encoder::default();
-        dgram_data.encode_varint(self.id.as_u64() / 4);
-        self.protocol.write_datagram_prefix(&mut dgram_data);
+        if send_group_id != SendGroupId::new(0) && !self.validate_send_group(send_group_id) {
+            qdebug!("[{self}]: rejecting datagram with unregistered send group {send_group_id:?}");
+            return Err(Error::InvalidInput);
+        }
+
+        
+        
+        let quarter_stream_id = self.id.as_u64() / 4;
+        let prefix = self.protocol.datagram_prefix();
+        let mut dgram_data = Encoder::with_capacity(
+            Encoder::varint_len(quarter_stream_id)
+                + prefix.map_or(0, Encoder::varint_len)
+                + buf.len(),
+        );
+        dgram_data.encode_varint(quarter_stream_id);
+        if let Some(context_id) = prefix {
+            dgram_data.encode_varint(context_id);
+        }
         dgram_data.encode(buf);
 
-        let has_space = conn.send_datagram(dgram_data.into(), id)?;
-        qtrace!("[{self}] sent datagram via QUIC datagram, has_space={has_space}");
-        Ok(has_space)
+        let id = match id.into() {
+            DatagramTracking::None => None,
+            DatagramTracking::Id(v) => Some(v),
+        };
+        let outcome = conn.enqueue_datagram(
+            self.id,
+            dgram_data.into(),
+            id,
+            now,
+            send_group_id,
+            send_order,
+        )?;
+        qtrace!("[{self}] enqueued datagram: {outcome:?}");
+        Ok(outcome)
+    }
+
+    
+    #[cfg(test)]
+    pub(crate) fn set_max_buffered_datagrams(
+        &self,
+        conn: &mut Connection,
+        mark: Option<NonZeroUsize>,
+    ) {
+        conn.set_max_buffered_datagrams(self.id, mark);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn expire_datagrams(&mut self, conn: &mut Connection, now: Instant) -> u64 {
+        let expired = conn.expire_session_datagrams(self.id, now);
+        self.protocol.record_expired_outgoing_datagrams(expired);
+        expired
     }
 
     pub(crate) fn datagram(&self, datagram: Bytes) {
@@ -660,6 +727,10 @@ pub(crate) trait Protocol: Debug + Display {
         None
     }
 
+    
+    
+    fn record_expired_outgoing_datagrams(&mut self, _count: u64) {}
+
     fn protocol(&self) -> Option<&str> {
         None
     }
@@ -672,7 +743,9 @@ pub(crate) trait Protocol: Debug + Display {
         false
     }
 
-    fn write_datagram_prefix(&self, encoder: &mut Encoder);
+    
+    
+    fn datagram_prefix(&self) -> Option<u64>;
 
     fn dgram_context_id(&self, datagram: Bytes) -> Result<Bytes, DgramContextIdError>;
 

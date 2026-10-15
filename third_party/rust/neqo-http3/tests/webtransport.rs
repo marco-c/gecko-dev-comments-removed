@@ -14,7 +14,7 @@ use neqo_http3::{
     Http3ServerEvent, Http3State, SessionAcceptAction, WebTransportEvent,
     webtransport::{ClientSession as _, ServerEvent, ServerSession},
 };
-use neqo_transport::{ConnectionParameters, StreamId, StreamType};
+use neqo_transport::{ConnectionParameters, StreamId, StreamType, streams::SendGroupId};
 use nss::AuthenticationStatus;
 use test_fixture::{
     CountingConnectionIdGenerator, DEFAULT_ADDR, DEFAULT_ALPN_H3, DEFAULT_KEYS,
@@ -463,7 +463,9 @@ fn wt_session_ok_and_wt_datagram_in_same_udp_datagram() {
     wt_server_session
         .response(&SessionAcceptAction::Accept, now)
         .unwrap();
-    wt_server_session.send_datagram(b"PING", None, now).unwrap();
+    _ = wt_server_session
+        .send_datagram(b"PING", None, now, SendGroupId::new(0), 0)
+        .unwrap();
     let accept_and_wt_datagram = server
         .process_output(now)
         .dgram()
@@ -704,6 +706,48 @@ fn wt_export_keying_material_transport_error() {
             neqo_transport::Error::NotConnected
         ))
     ));
+}
+
+
+
+
+
+
+
+
+#[test]
+fn wt_stats_at_session_close() {
+    const DATAGRAM_DATA: &[u8] = &[1, 2, 3, 4, 5];
+
+    let (mut client, mut server) = connect();
+    let wt_session = create_wt_session(&mut client, &mut server);
+    let session_id = wt_session.stream_id();
+
+    _ = client
+        .webtransport_send_datagram(
+            session_id,
+            DATAGRAM_DATA,
+            None,
+            now(),
+            SendGroupId::new(0),
+            0,
+        )
+        .unwrap();
+    exchange_packets(&mut client, &mut server, false, None);
+
+    
+    let stats_before = client.webtransport_session_stats(session_id).unwrap();
+
+    
+    let close_stats = client
+        .webtransport_close_session(session_id, 0, "", now())
+        .unwrap();
+
+    
+    assert_eq!(
+        close_stats, stats_before,
+        "Close stats should match pre-close stats"
+    );
 }
 
 #[test]
