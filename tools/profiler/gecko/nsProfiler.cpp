@@ -1337,9 +1337,9 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
                 aEvent.append(Json::Value::UInt64(childPid));
                 aEvent.append(Json::Value::UInt64{profileShmem.Size<char>()});
               });
-              const size_t profileLength =
-                  profileShmem.Size<char>() > 0 ? profileShmem.Size<char>() - 1
-                                                : 0;
+              const size_t profileLength = profileShmem.Size<char>() > 0
+                                               ? profileShmem.Size<char>() - 1
+                                               : 0;
               const nsDependentCSubstring profileString(
                   profileShmem.get<char>(), profileLength);
               if (profileString.IsEmpty() || profileString[0] != '*') {
