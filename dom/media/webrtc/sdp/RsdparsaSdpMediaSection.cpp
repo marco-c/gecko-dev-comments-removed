@@ -50,6 +50,15 @@ RsdparsaSdpMediaSection::RsdparsaSdpMediaSection(
     case RustSdpMediaValue::Application:
       mMediaTypeInfo = {.type = kApplication};
       break;
+    case RustSdpMediaValue::Unknown:
+      mMediaTypeInfo = {
+          .type = kUnknown,
+          .unknown = Some(UnknownMediaTypeData{
+              .name = std::string(convertStringView(
+                  sdp_get_unknown_media_type_name(GetSection()))),
+              .formatString = std::string(convertStringView(
+                  sdp_get_unknown_format_string(GetSection())))})};
+      break;
   }
 
   LoadPort();
@@ -104,18 +113,31 @@ void RsdparsaSdpMediaSection::LoadProtocol() {
 }
 
 void RsdparsaSdpMediaSection::LoadFormats() {
-  RustSdpFormatType formatType = sdp_get_format_type(GetSection());
-  if (formatType == RustSdpFormatType::Integers) {
-    for (uint32_t val : convertRustSpan(sdp_get_format_u32_vec(GetSection()))) {
-      mFormats.push_back(std::to_string(val));
+  switch (sdp_get_format_type(GetSection())) {
+    case RustSdpFormatType::Integers:
+      for (uint32_t val :
+           convertRustSpan(sdp_get_format_u32_vec(GetSection()))) {
+        mFormats.push_back(std::to_string(val));
+      }
+      return;
+    case RustSdpFormatType::Strings: {
+      
+      
+      constexpr size_t kInitialFormatCapacity = 8;
+      AutoTArray<StringView, kInitialFormatCapacity> formats;
+      sdp_get_format_string_vec(GetSection(), &formats);
+      for (const auto& view : formats) {
+        mFormats.emplace_back(convertStringView(view));
+      }
+      return;
     }
-  } else {
-    AutoTArray<StringView, 8> formats;
-    sdp_get_format_string_vec(GetSection(), &formats);
-    for (const auto& view : formats) {
-      mFormats.emplace_back(convertStringView(view));
-    }
+    case RustSdpFormatType::Unknown:
+      
+      
+      
+      return;
   }
+  MOZ_CRASH("invalid format type");
 }
 
 UniquePtr<SdpConnection> convertRustConnection(const RustSdpConnection conn) {

@@ -31,6 +31,7 @@ pub enum RustSdpMediaValue {
     Audio,
     Video,
     Application,
+    Unknown,
 }
 
 impl<'a> From<&'a SdpMediaValue> for RustSdpMediaValue {
@@ -39,6 +40,7 @@ impl<'a> From<&'a SdpMediaValue> for RustSdpMediaValue {
             SdpMediaValue::Audio => RustSdpMediaValue::Audio,
             SdpMediaValue::Video => RustSdpMediaValue::Video,
             SdpMediaValue::Application => RustSdpMediaValue::Application,
+            SdpMediaValue::Unknown(_) => RustSdpMediaValue::Unknown,
         }
     }
 }
@@ -46,6 +48,16 @@ impl<'a> From<&'a SdpMediaValue> for RustSdpMediaValue {
 #[no_mangle]
 pub unsafe extern "C" fn sdp_rust_get_media_type(sdp_media: *const SdpMedia) -> RustSdpMediaValue {
     RustSdpMediaValue::from((*sdp_media).get_type())
+}
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn sdp_get_unknown_media_type_name(sdp_media: *const SdpMedia) -> StringView {
+    match (*sdp_media).get_type() {
+        SdpMediaValue::Unknown(name) => StringView::from(name.as_str()),
+        _ => StringView::empty(),
+    }
 }
 
 #[repr(C)]
@@ -94,6 +106,7 @@ pub unsafe extern "C" fn sdp_get_media_protocol(
 pub enum RustSdpFormatType {
     Integers,
     Strings,
+    Unknown,
 }
 
 #[no_mangle]
@@ -101,6 +114,18 @@ pub unsafe extern "C" fn sdp_get_format_type(sdp_media: *const SdpMedia) -> Rust
     match *(*sdp_media).get_formats() {
         SdpFormatList::Integers(_) => RustSdpFormatType::Integers,
         SdpFormatList::Strings(_) => RustSdpFormatType::Strings,
+        SdpFormatList::Unknown(_) => RustSdpFormatType::Unknown,
+    }
+}
+
+
+
+
+#[no_mangle]
+pub extern "C" fn sdp_get_unknown_format_string(sdp_media: &SdpMedia) -> StringView {
+    match *sdp_media.get_formats() {
+        SdpFormatList::Unknown(ref formats) => StringView::from(formats.as_str()),
+        _ => StringView::empty(),
     }
 }
 
