@@ -1654,6 +1654,36 @@ add_task(async function check_has_active_ai_window_true() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function check_is_auto_tab_grouping_available() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.ml.enable", true],
+      ["browser.ml.checkForMemory", false],
+      ["browser.smartwindow.autoTabGrouping.enabled", true],
+      ["browser.smartwindow.autoTabGrouping.supportedLocales", "en"],
+    ],
+  });
+  is(
+    await ASRouterTargeting.Environment.isAutoTabGroupingAvailable,
+    true,
+    "Organize Tabs is available in a supported locale"
+  );
+
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.autoTabGrouping.supportedLocales", "fr"]],
+  });
+  is(
+    await ASRouterTargeting.Environment.isAutoTabGroupingAvailable,
+    false,
+    "Organize Tabs is unavailable when the app locale is not supported"
+  );
+
+  await SpecialPowers.popPrefEnv();
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function check_tabsOpenInTopWindow() {
   const baseline = await ASRouterTargeting.Environment.tabsOpenInTopWindow;
 

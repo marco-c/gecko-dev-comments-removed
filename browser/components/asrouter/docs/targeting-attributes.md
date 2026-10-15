@@ -1187,25 +1187,25 @@ or equivalently
 (isAIWindow || !isAIWindow)
 ```
 
-### `isSmartTabGroupingAllowed`
+### `isAutoTabGroupingAvailable`
 
-Whether Smart Tab Grouping is available to this user, delegating to
-`SmartTabGroupingManager.isAllowed`. Smart Tab Grouping is currently gated on an
-English application locale, but that rule lives in the feature itself, so prefer
-this attribute over a hand-written locale check: messages that depend on the
-feature then stay in sync when the gate changes.
+Whether Smart Window's Organize Tabs (Auto Tab Grouping) can run for this user,
+delegating to `AutoTabGroupingSuggestions.isAvailable`: the feature is enabled
+(`browser.smartwindow.autoTabGrouping.enabled`), on-device ML is allowed, the app
+locale is listed in `browser.smartwindow.autoTabGrouping.supportedLocales`, and
+the machine has enough memory.
 
 #### Definition
 
 ```ts
-declare const isSmartTabGroupingAllowed: boolean;
+declare const isAutoTabGroupingAvailable: boolean;
 ```
 
 #### Examples
 
-* Only show a message when the feature can actually run:
+* Only show the Organize Tabs callout when the feature can run:
 ```javascript
-isSmartTabGroupingAllowed
+isAIWindow && isAutoTabGroupingAvailable
 ```
 
 ### `userId`

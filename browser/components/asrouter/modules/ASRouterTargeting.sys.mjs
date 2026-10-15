@@ -68,6 +68,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
+  AutoTabGroupingSuggestions:
+    "moz-src:///browser/components/aiwindow/ui/modules/AutoTabGroupingSuggestions.sys.mjs",
   BackupService: "moz-src:///browser/components/backup/BackupService.sys.mjs",
   BrowserInitState: "moz-src:///browser/components/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
@@ -94,8 +96,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/sessionstore/SessionStartup.sys.mjs",
   SessionStore:
     "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs",
-  SmartTabGroupingManager:
-    "moz-src:///browser/components/tabbrowser/SmartTabGrouping.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TaskbarTabs: "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs",
@@ -1080,8 +1080,8 @@ const TargetingGetters = {
   get hasActiveAIWindow() {
     return !!lazy.AIWindow?.hasActiveAIWindows?.();
   },
-  get isSmartTabGroupingAllowed() {
-    return !!lazy.SmartTabGroupingManager?.isAllowed;
+  get isAutoTabGroupingAvailable() {
+    return !!lazy.AutoTabGroupingSuggestions?.isAvailable;
   },
   get hasAccessedFxAPanel() {
     return lazy.hasAccessedFxAPanel;
