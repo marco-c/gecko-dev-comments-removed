@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.compareArray(
+  new Intl.Locale("abcdefgh").getCollations(),
+  ["emoji", "eor"],
+  `with locale "abcdefgh"`
+);
+
+
+assert.compareArray(
+  new Intl.Locale("abcdefgh-u-co-phonebk").getCollations(),
+  ["phonebk"],
+  `with locale "abcdefgh-u-co-phonebk"`
+);

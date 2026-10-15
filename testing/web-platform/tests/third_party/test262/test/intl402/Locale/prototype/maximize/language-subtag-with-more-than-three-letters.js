@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  new Intl.Locale("abcdefgh").maximize().script,
+  undefined,
+  `can't infer script for locale "abcdefgh" by adding likely subtags`
+);
