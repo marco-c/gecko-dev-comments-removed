@@ -4,12 +4,22 @@
 
 promise_setup(async () => {
   await GleanTest.testResetFOG();
-  await test_driver.set_permission({ name: "geolocation" }, "denied");
 });
 
 promise_test(async () => {
-  const { promise, resolve } = Promise.withResolvers();
-  navigator.geolocation.getCurrentPosition(resolve, resolve);
+  await test_driver.set_permission({ name: "geolocation" }, "denied");
+  const { promise, resolve, reject } = Promise.withResolvers();
+  navigator.geolocation.getCurrentPosition(reject, resolve);
+  await promise;
+  await GleanTest.flush();
+  const noneCount = await GleanTest.geolocation.requestActivation.none.testGetValue();
+  assert_equals(noneCount, null, "No activation telemetry is recorded when request failed");
+})
+
+promise_test(async () => {
+  await test_driver.set_permission({ name: "geolocation" }, "granted");
+  const { promise, resolve, reject } = Promise.withResolvers();
+  navigator.geolocation.getCurrentPosition(resolve, reject);
   await promise;
   await GleanTest.flush();
   const noneCount = await GleanTest.geolocation.requestActivation.none.testGetValue();
@@ -18,8 +28,8 @@ promise_test(async () => {
 
 promise_test(async () => {
   await test_driver.bless("request notification permission", async () => {
-    const { promise, resolve } = Promise.withResolvers();
-    navigator.geolocation.getCurrentPosition(resolve, resolve);
+    const { promise, resolve, reject } = Promise.withResolvers();
+    navigator.geolocation.getCurrentPosition(resolve, reject);
     await promise;
   });
   await GleanTest.flush();
@@ -29,8 +39,8 @@ promise_test(async () => {
 
 promise_test(async () => {
   SpecialPowers.wrap(document).consumeTransientUserGestureActivation();
-  const { promise, resolve } = Promise.withResolvers();
-  navigator.geolocation.getCurrentPosition(resolve, resolve);
+  const { promise, resolve, reject } = Promise.withResolvers();
+  navigator.geolocation.getCurrentPosition(resolve, reject);
   await promise;
   await GleanTest.flush();
   const hasBeenCount = await GleanTest.geolocation.requestActivation.has_been_activated.testGetValue();
