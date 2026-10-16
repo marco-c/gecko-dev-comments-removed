@@ -20,7 +20,21 @@ i18n
   An abbreviation for Internationalization.
 
 l10n
-  An abbreviation for Localization.
+  *Numeronym* for {term}`Localization`: *l*, 10 chars, *n*.
+
+l10n-merge
+  Nickname for the process of merging `en-US` and a particular
+  localization into one joint artifact without any missing strings, and
+  without technical errors, as far as possible.
+
+Localizability
+  Enabling a piece of software to be localized. This is mostly
+  externalizing English strings, and writing build support to
+  pick up localized search engines etc.
+
+Localization
+  The process of creating content in a native language, including
+  translation, but also customizations like Search.
 
 XUL
   A Mozilla-specific XML UI definition language that we are slowly phasing out
