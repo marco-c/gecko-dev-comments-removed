@@ -35,6 +35,7 @@ const lazy = XPCOMUtils.declareLazy({
     pref: "places.frecency.decayRate",
     default: "0.975",
     onUpdate: () => (gUrlUseCountThreshold = null),
+    /** @param {number|string} val */
     transform: val => {
       let rate = typeof val == "string" ? parseFloat(val) : val;
       return rate > 0 && rate < 1 ? rate : 0.975;
