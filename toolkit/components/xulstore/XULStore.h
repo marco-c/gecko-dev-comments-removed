@@ -53,4 +53,14 @@ nsresult Shutdown();
 };  
 };  
 
+namespace std {
+
+
+template <>
+struct default_delete<mozilla::XULStoreIterator> {
+  default_delete() = delete;
+};
+
+}  
+
 #endif  
