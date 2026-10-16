@@ -6,9 +6,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { UrlbarProvider } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AppUpdater: "resource://gre/modules/AppUpdater.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   NLP: "resource://gre/modules/NLP.sys.mjs",
@@ -19,9 +17,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  appUpdater: () => new lazy.AppUpdater(),
 });
-
-ChromeUtils.defineLazyGetter(lazy, "appUpdater", () => new lazy.AppUpdater());
 
 const EN_LOCALE_MATCH = /^en(-.*)$/;
 
