@@ -280,6 +280,10 @@ Further Reading/Useful links:
 
 ## Definitions
 
+(amo)=
+
+**amo** - code name for Addons.Mozilla.Org.
+
 (approval-flag)=
 
 **Approval Flag** - A flag that represents a security approval or uplift
@@ -288,7 +292,7 @@ request on a patch.
 (bugzilla)=
 
 **Bugzilla** - Web-based general purpose bug tracking system and testing
-tool.
+tool. Also known as BMO for Bugzilla.Mozilla.Org.
 
 (channel)=
 
@@ -472,4 +476,5 @@ automatically. Unthrottle is removing the release rollout restriction.
 
 **Uplift** - the action of taking parts from a newer version of a
 software system (firefox-main or firefox-beta) and porting them to an
-older version of the same software (firefox-beta, firefox-release or ESR)
+older version of the same software (firefox-beta, firefox-release or ESR).
+Can be called cherry-pick in other projects.
