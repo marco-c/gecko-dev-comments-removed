@@ -1,27 +1,28 @@
 # A Glossary of Common Terms
 
-:::{topic} Content
-Usually refers to webpages being rendered, may also be seen as "running in
-content" in which case it can include UI privileged code running in a process
-that is rendering webpages.
-:::
+:::{glossary}
+:sorted: true
 
-:::{topic} Chrome
-Usually the parts of the application UI outside of the rendered webpage
-:::
+a11y
+  An abbreviation for Accessibility.
 
-:::{topic} XUL
-A proprietary UI definition language that we are slowly phasing out and replacing with standard HTML.
-:::
+Chrome
+  Usually the parts of the application UI outside of the rendered webpage.
+  Code is also said to be "chrome-privileged" when it runs with the system
+  principal, as opposed to web content.
 
-:::{topic} l10n
-An abbreviation for Localization.
-:::
+Content
+  Usually refers to webpages being rendered, may also be seen as "running in
+  content" in which case it can include UI privileged code running in a process
+  that is rendering webpages.
 
-:::{topic} i18n
-An abbreviation for Internationalisation
-:::
+i18n
+  An abbreviation for Internationalization.
 
-:::{topic} a11y
-An abbreviation for Accessibility
+l10n
+  An abbreviation for Localization.
+
+XUL
+  A Mozilla-specific XML UI definition language that we are slowly phasing out
+  and replacing with standard HTML.
 :::
