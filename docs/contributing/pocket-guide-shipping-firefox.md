@@ -289,6 +289,19 @@ Further Reading/Useful links:
 **Approval Flag** - A flag that represents a security approval or uplift
 request on a patch.
 
+(backfill)=
+
+**Backfill** - Running a task on earlier pushes where it was skipped, typically
+from Treeherder, to find which push introduced a failure or a performance
+regression.
+
+(backstop)=
+
+**Backstop** - A push on an integration branch (such as autoland) where all
+builds and tests run, regardless of optimizations. One happens every 20 pushes
+or every 4 hours, so that regressions missed by the reduced scheduling of other
+pushes are caught.
+
 (bugzilla)=
 
 **Bugzilla** - Web-based general purpose bug tracking system and testing
