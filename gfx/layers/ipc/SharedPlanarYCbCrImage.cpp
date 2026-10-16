@@ -152,8 +152,9 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   
   
   
+  
   if (!mTextureClient->Lock(OpenMode::OPEN_READ) ||
-      !mTextureClient->BorrowMappedYCbCrData(mapped)) {
+      !mTextureClient->BorrowMappedYCbCrData(mapped, mShmemHolder)) {
     MOZ_CRASH("GFX: Cannot lock or borrow mapped YCbCr");
   }
 

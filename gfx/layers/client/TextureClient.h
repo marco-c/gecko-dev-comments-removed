@@ -56,6 +56,7 @@ class Image;
 class PTextureChild;
 class TextureChild;
 class TextureData;
+class ShmemHolder;
 class GPUVideoTextureData;
 class TextureClient;
 class ITextureClientRecycleAllocator;
@@ -477,6 +478,11 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   bool BorrowMappedData(MappedTextureData&);
   bool BorrowMappedYCbCrData(MappedYCbCrTextureData&);
+
+  
+  
+  bool BorrowMappedYCbCrData(MappedYCbCrTextureData& aMap,
+                             RefPtr<ShmemHolder>& aShmemHolder);
 
   
 

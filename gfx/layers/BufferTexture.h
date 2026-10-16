@@ -8,9 +8,32 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/layers/TextureClient.h"
+#include "nsCOMPtr.h"
+#include "nsISerialEventTarget.h"
 
 namespace mozilla {
 namespace layers {
+
+
+class ShmemHolder final {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ShmemHolder)
+
+  ShmemHolder(LayersIPCChannel* aAllocator, ipc::Shmem aShmem);
+  ipc::Shmem& GetShmem() { return mShmem; }
+  void SetDeallocShmem() { mDeallocShmem = true; }
+
+  const RefPtr<LayersIPCChannel> mAllocator;
+
+ private:
+  ~ShmemHolder();
+
+  
+  
+  const nsCOMPtr<nsISerialEventTarget> mDeallocationTarget;
+  ipc::Shmem mShmem;
+  Atomic<bool> mDeallocShmem{false};
+};
 
 class BufferTextureData : public TextureData {
  public:
@@ -82,6 +105,8 @@ class BufferTextureData : public TextureData {
   gfx::SurfaceFormat GetFormat() const;
 
   virtual size_t GetBufferSize() = 0;
+
+  virtual ShmemHolder* GetShmemHolder() { return nullptr; }
 
   virtual void OnBorrowDrawTarget(gfx::DrawTarget* aDrawTarget) {}
 
