@@ -44,6 +44,17 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
     return true;
   }
   virtual void FlushItem(IntRect) {}
+
+  
+
+
+
+
+  bool SupportsGlyphSourceText() const { return mSupportsGlyphSourceText; }
+  void SetSupportsGlyphSourceText(bool aSupports) {
+    mSupportsGlyphSourceText = aSupports;
+  }
+
   virtual void DetachResources() {
     NS_ASSERT_OWNINGTHREAD(DrawEventRecorderPrivate);
 
@@ -280,6 +291,7 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   ExternalSurfacesHolder mExternalSurfaces;
   ExternalImagesHolder mExternalImages;
   bool mExternalFonts;
+  bool mSupportsGlyphSourceText = false;
 };
 
 typedef std::function<void(MemStream& aStream,

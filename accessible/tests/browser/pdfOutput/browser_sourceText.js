@@ -27,9 +27,7 @@ function addSourceTextTest(testName, markup, expected) {
         SimpleTest.isDeeply(texts, expected, "PDF text correct");
       }
     },
-    
-    
-    { chrome: true, topLevel: false }
+    { chrome: true, topLevel: true, remoteIframe: true }
   );
 }
 
