@@ -525,14 +525,13 @@ var FullScreen = {
     shiftSize = shiftSize.toFixed(2);
     let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
     gNavToolbox.classList.toggle("fullscreen-floating-toolbox", shiftSize > 0);
-    gNavToolbox.style.translate = translate;
-    
-    
-    document.documentElement.style.setProperty(
-      "--fullscreen-menubar-shift",
-      shiftSize > 0 ? `${shiftSize}px` : ""
-    );
-
+    let elementsToTranslate = [
+      gNavToolbox,
+      document.getElementById("vertical-tabs"),
+    ];
+    for (let element of elementsToTranslate) {
+      element.style.translate = translate;
+    }
     this._currentToolbarShift = shiftSize;
   },
 
