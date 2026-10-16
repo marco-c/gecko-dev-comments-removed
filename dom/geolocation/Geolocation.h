@@ -159,7 +159,7 @@ class Geolocation final : public nsIGeolocationUpdate,
   bool IsFullyActiveOrChrome();
 
   
-  static void RequestIfPermitted(nsGeolocationRequest* request);
+  void RequestIfPermitted(nsGeolocationRequest* request);
 
   
   void SetService(GeolocationService* aService);

@@ -471,8 +471,7 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
   }
 
   
-  
-  if (!canUseCache && gs != GeolocationService::sService.get()) {
+  if (!canUseCache && gs->IsOverride()) {
     canUseCache = true;
   }
 
@@ -1208,6 +1207,15 @@ Geolocation::GetLocationOSPermission() {
 }
 
 void Geolocation::RequestIfPermitted(nsGeolocationRequest* request) {
+  
+  
+  RefPtr<GeolocationService> gs =
+      GeolocationService::GetGeolocationService(mBrowsingContext);
+  if (gs && gs->IsOverride()) {
+    RegisterRequestWithPrompt(request);
+    return;
+  }
+
   auto getPermission = [request = RefPtr{request}](auto aPermission) {
     switch (aPermission) {
       case geolocation::SystemGeolocationPermissionBehavior::

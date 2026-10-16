@@ -42,7 +42,11 @@ class GeolocationService final : public nsIGeolocationService,
 
   GeolocationService() = default;
 
-  nsresult Init();
+  nsresult Init(bool aIsOverride = false);
+
+  
+  
+  bool IsOverride() const { return mIsOverride; }
 
   
   void AddLocator(mozilla::dom::Geolocation* aLocator);
@@ -93,6 +97,8 @@ class GeolocationService final : public nsIGeolocationService,
   
   
   mozilla::Maybe<bool> mStarting;
+
+  bool mIsOverride = false;
 };
 
 }  
