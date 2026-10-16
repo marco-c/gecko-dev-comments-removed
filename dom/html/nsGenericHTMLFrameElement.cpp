@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "nsGenericHTMLFrameElement.h"
 
 #include "mozilla/ErrorResult.h"
@@ -112,7 +110,8 @@ Nullable<WindowProxyHolder> nsGenericHTMLFrameElement::GetContentWindow() {
 }
 
 void nsGenericHTMLFrameElement::EnsureFrameLoader() {
-  if (!IsInComposedDoc() || mFrameLoader || OwnerDoc()->IsStaticDocument()) {
+  if (!IsInComposedDoc() || mFrameLoader || OwnerDoc()->IsStaticDocument() ||
+      IsInSVGUseShadowTree()) {
     
     return;
   }
