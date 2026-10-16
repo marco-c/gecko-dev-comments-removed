@@ -66,6 +66,57 @@ async function writeAltDataTask(url, altType, altContent) {
 
 
 
+
+
+async function writeForgedAltDataTask(url, altType, altContent, forgedOrigin) {
+  const { NetUtil } = ChromeUtils.importESModule(
+    "resource://gre/modules/NetUtil.sys.mjs"
+  );
+  const forged =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      forgedOrigin
+    );
+
+  const chan = NetUtil.newChannel({
+    uri: url,
+    loadingPrincipal: forged,
+    triggeringPrincipal: forged,
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT,
+    contentPolicyType: Ci.nsIContentPolicy.TYPE_SCRIPT,
+  });
+  chan.loadInfo.cookieJarSettings = content.document.cookieJarSettings;
+
+  const handle = await new Promise(resolve => {
+    chan.asyncOpen({
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIStreamListener",
+        "nsIRequestObserver",
+      ]),
+      onStartRequest() {},
+      onDataAvailable(request, stream, offset, count) {
+        const s = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
+          Ci.nsIScriptableInputStream
+        );
+        s.init(stream);
+        s.read(count);
+      },
+      onStopRequest(request) {
+        resolve(
+          request
+            .QueryInterface(Ci.nsICacheInfoChannel)
+            .getCacheEntryWriteHandle()
+        );
+      },
+    });
+  });
+
+  const os = handle.openAlternativeOutputStream(altType, altContent.length);
+  os.write(altContent, altContent.length);
+  os.close();
+}
+
+
+
 async function readAltDataTask(url, altType) {
   const { NetUtil } = ChromeUtils.importESModule(
     "resource://gre/modules/NetUtil.sys.mjs"
@@ -169,5 +220,44 @@ add_task(async function test_cross_origin_alt_data_is_rejected() {
       ORIGINAL,
       "cross-origin read gets the original script instead of the alt-data"
     );
+  });
+});
+
+
+
+add_task(async function test_forged_principal_alt_data_is_rejected() {
+  const url = RESOURCE_URL + "?forged";
+  await BrowserTestUtils.withNewTab(PAGE_A, async browser => {
+    await SpecialPowers.spawn(
+      browser,
+      [url, ALT_TYPE, ALT_CONTENT, new URL(IFRAME_B).origin],
+      writeForgedAltDataTask
+    );
+
+    await SpecialPowers.spawn(browser, [IFRAME_B], async iframeUrl => {
+      const iframe = content.document.createElement("iframe");
+      const loaded = new Promise(resolve =>
+        iframe.addEventListener("load", resolve, { once: true })
+      );
+      iframe.src = iframeUrl;
+      content.document.body.appendChild(iframe);
+      await loaded;
+    });
+
+    const res = await SpecialPowers.spawn(
+      browser.browsingContext.children[0],
+      [url, ALT_TYPE],
+      readAltDataTask
+    );
+    ok(
+      Components.isSuccessCode(res.status),
+      "the read is a cache hit (LOAD_ONLY_FROM_CACHE)"
+    );
+    is(
+      res.altType,
+      "",
+      "alt-data written under a forged principal must NOT be served"
+    );
+    is(res.buffer, ORIGINAL, "the read gets the original script instead");
   });
 });
