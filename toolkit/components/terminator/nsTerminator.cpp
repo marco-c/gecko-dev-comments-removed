@@ -162,7 +162,7 @@ Atomic<bool, Relaxed> gCrashRequestedByTest(false);
 
 
 
-void MaybeSaveShutdownHangProfile() {
+void MaybeSaveShutdownHangProfile(mozilla::ShutdownPhase aPhase) {
   if (!profiler_is_active() || gCrashRequestedByTest) {
     return;
   }
@@ -179,6 +179,8 @@ void MaybeSaveShutdownHangProfile() {
     return;
   }
 
+  
+  
   
   
   
@@ -204,8 +206,8 @@ void MaybeSaveShutdownHangProfile() {
 
   profiler_save_profile_to_file(path.get());
   printf_stderr(
-      "TEST-UNEXPECTED-FAIL | shutdown hang | profile uploaded in %s\n",
-      filename.get());
+      "TEST-UNEXPECTED-FAIL | %s | shutdown hang, profile uploaded in %s\n",
+      mozilla::AppShutdown::GetShutdownPhaseName(aPhase), filename.get());
 }
 
 
@@ -284,7 +286,7 @@ void RunWatchdog(void*) {
 
     CollectShutdownHangAnnotations();
 
-    MaybeSaveShutdownHangProfile();
+    MaybeSaveShutdownHangProfile(lastPhase);
 
     MOZ_ASSERT(lastPhase != mozilla::ShutdownPhase::NotInShutdown);
 
