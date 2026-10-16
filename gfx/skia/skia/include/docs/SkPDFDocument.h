@@ -76,10 +76,6 @@ struct StructureElementNode {
     AttributeList fAttributes;
     SkString fAlt;
     SkString fLang;
-    
-
-
-    bool fExposeAlt = true;
 };
 
 struct DateTime {
