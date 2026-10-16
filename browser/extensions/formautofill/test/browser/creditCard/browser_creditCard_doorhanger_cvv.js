@@ -218,10 +218,6 @@ add_task(async function test_save_doorhanger_unchecked_drops_security_code() {
 });
 
 add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({
     set: [
       [SUPPORTED_PREF, "on"],
@@ -247,6 +243,9 @@ add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
     }
   );
 
+  
+  
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
   const creditCards = await getCreditCards();
   is(creditCards.length, 1, "The existing card is updated");
   is(creditCards[0]["cc-name"], "Mark Smith", "The card is updated");
@@ -256,6 +255,7 @@ add_task(async function test_update_doorhanger_unchecked_keeps_security_code() {
     "The stored security code is kept once the checkbox is unchecked"
   );
 
+  await SpecialPowers.popPrefEnv();
   await removeAllRecords();
   await SpecialPowers.popPrefEnv();
 });

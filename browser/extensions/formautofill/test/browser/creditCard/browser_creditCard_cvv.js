@@ -25,13 +25,6 @@ add_setup(async function () {
   
   
   
-  
-  if (RUST_CREDIT_CARD_STORE) {
-    return;
-  }
-  
-  
-  
   sinon.restore();
   const oldOSAuth = FormAutofillUtils.getOSAuthEnabled();
   FormAutofillUtils.setOSAuthEnabled(false);
@@ -42,7 +35,10 @@ add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["extensions.formautofill.creditCards.cvv.supported", "on"]],
+    set: [
+      ["extensions.formautofill.creditCards.cvv.supported", "on"],
+      ["extensions.formautofill.creditCards.cvv.enabled", true],
+    ],
   });
 
   await removeAllRecords();
@@ -50,28 +46,23 @@ add_setup(async function () {
 });
 
 add_task(async function test_csc_round_trips_through_storage() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   const cards = await getCreditCards();
   is(cards.length, 1, "One credit card is saved");
   is(cards[0]["cc-csc"], "123", "cc-csc survives the storage round trip");
 
-  const savedFieldNames = Services.ppmm.sharedData.get(
-    "FormAutofill:savedFieldNames"
-  );
-  ok(
-    savedFieldNames.has("cc-csc"),
+  
+  
+  await TestUtils.waitForCondition(
+    () =>
+      Services.ppmm.sharedData
+        .get("FormAutofill:savedFieldNames")
+        ?.has("cc-csc"),
     "A stored cc-csc reaches savedFieldNames with no special casing"
   );
+  ok(true, "A stored cc-csc reaches savedFieldNames with no special casing");
 });
 
 add_task(async function test_no_cvv_when_pref_disabled() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.formautofill.creditCards.cvv.enabled", false]],
   });
@@ -120,10 +111,6 @@ add_task(async function test_no_cvv_when_pref_disabled() {
 });
 
 add_task(async function test_cvv_autofills_when_pref_enabled() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.formautofill.creditCards.cvv.enabled", true]],
   });
@@ -166,10 +153,6 @@ add_task(async function test_cvv_autofills_when_pref_enabled() {
 });
 
 add_task(async function test_cvv_entry_is_named_after_the_field() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.formautofill.creditCards.cvv.enabled", true]],
   });
@@ -193,4 +176,26 @@ add_task(async function test_cvv_entry_is_named_after_the_field() {
   );
 
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_saved_field_names_follow_turning_cvv_on() {
+  const { FormAutofillStatus } = ChromeUtils.importESModule(
+    "resource://autofill/FormAutofillParent.sys.mjs"
+  );
+  const savedFieldNames = () =>
+    Services.ppmm.sharedData.get("FormAutofill:savedFieldNames");
+
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.formautofill.creditCards.cvv.enabled", false]],
+  });
+  await FormAutofillStatus.updateSavedFieldNames();
+  await SpecialPowers.popPrefEnv();
+
+  await TestUtils.waitForCondition(
+    () => savedFieldNames()?.has("cc-csc"),
+    "Turning CVV on offers the stored security code"
+  );
+  ok(true, "Turning CVV on offers the stored security code");
 });

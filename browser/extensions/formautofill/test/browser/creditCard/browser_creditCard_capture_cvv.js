@@ -49,10 +49,6 @@ async function captureCard(securityCode = "123") {
 }
 
 add_task(async function test_security_code_saved_with_the_card() {
-  if (RUST_CREDIT_CARD_STORE) {
-    info("The Rust store does not hold a security code");
-    return;
-  }
   await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
 
   const creditCard = await captureCard();
@@ -99,6 +95,44 @@ add_task(async function test_form_submitted_without_a_security_code() {
 
   const creditCard = await captureCard("");
   ok(!creditCard["cc-csc"], "No security code is saved for the card");
+
+  await removeAllRecords();
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_security_code_added_to_a_saved_card() {
+  if (!RUST_CREDIT_CARD_STORE) {
+    info("The JSON store matches cards without the code and cannot update it");
+    return;
+  }
+  await SpecialPowers.pushPrefEnv({ set: [[ENABLED_PREF, true]] });
+  await setStorage({
+    "cc-name": CC_VALUES["#cc-name"],
+    "cc-number": CC_VALUES["#cc-number"],
+    "cc-exp-month": 12,
+    "cc-exp-year": 2017,
+  });
+
+  
+  
+  const onChanged = waitForStorageChangedEvents("update");
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: CREDITCARD_FORM_URL },
+    async function (browser) {
+      const onPopupShown = waitForPopupShown();
+      await focusUpdateSubmitForm(browser, {
+        focusSelector: "#cc-name",
+        newValues: { ...CC_VALUES, "#cc-csc": "123" },
+      });
+      await onPopupShown;
+      await clickDoorhangerButton(MAIN_BUTTON);
+    }
+  );
+  await onChanged;
+
+  const creditCards = await getCreditCards();
+  is(creditCards.length, 1, "The saved card was updated, not duplicated");
+  is(creditCards[0]["cc-csc"], "123", "with the submitted security code");
 
   await removeAllRecords();
   await SpecialPowers.popPrefEnv();
