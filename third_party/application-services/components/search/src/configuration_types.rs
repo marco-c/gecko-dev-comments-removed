@@ -6,11 +6,41 @@
 
 
 use crate::{
-    SearchApplicationName, SearchDeviceType, SearchEngineClassification, SearchUpdateChannel,
-    SearchUrlParam,
+    SearchApplicationName, SearchApplicationNameV3, SearchDeviceType, SearchDeviceTypeV3,
+    SearchEngineClassification, SearchEngineClassificationV3, SearchEnginePartnerDetails,
+    SearchUpdateChannel, SearchUpdateChannelV3, SearchUrlParam,
 };
-use serde::Deserialize;
+use serde::{de::DeserializeOwned, Deserialize};
 use std::collections::HashMap;
+use std::fmt::Debug;
+
+
+
+pub(crate) trait ConfigVersion: Clone + Debug + Default {
+    type ApplicationName: DeserializeOwned + PartialEq + Clone + Debug + Default;
+    type UpdateChannel: DeserializeOwned + PartialEq + Clone + Debug + Default;
+    type DeviceType: DeserializeOwned + PartialEq + Clone + Debug + Default;
+}
+
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct V2;
+
+impl ConfigVersion for V2 {
+    type ApplicationName = SearchApplicationName;
+    type UpdateChannel = SearchUpdateChannel;
+    type DeviceType = SearchDeviceType;
+}
+
+
+#[derive(Clone, Debug, Default)]
+pub(crate) struct V3;
+
+impl ConfigVersion for V3 {
+    type ApplicationName = SearchApplicationNameV3;
+    type UpdateChannel = SearchUpdateChannelV3;
+    type DeviceType = SearchDeviceTypeV3;
+}
 
 
 #[derive(Debug, uniffi::Enum, PartialEq, Deserialize, Clone, Default)]
@@ -127,10 +157,44 @@ pub(crate) struct JSONEngineBase {
 }
 
 
+#[derive(Debug, Default, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct JSONEngineBaseV3 {
+    
+    pub aliases: Option<Vec<String>>,
+
+    
+    pub charset: Option<String>,
+
+    
+    #[serde(default)]
+    pub classification: SearchEngineClassificationV3,
+
+    
+    pub name: String,
+
+    
+    
+    
+    
+    pub partner: Option<HashMap<String, SearchEnginePartnerDetails>>,
+
+    
+    pub urls: JSONEngineUrls,
+
+    
+    
+    
+    
+    #[serde(default)]
+    pub deprecated: bool,
+}
+
+
 
 #[derive(Debug, Deserialize, Clone, Default)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct JSONVariantEnvironment {
+#[serde(rename_all = "camelCase", bound(deserialize = ""))]
+pub(crate) struct JSONVariantEnvironment<V: ConfigVersion> {
     
     
     #[serde(default)]
@@ -168,11 +232,11 @@ pub(crate) struct JSONVariantEnvironment {
 
     
     #[serde(default)]
-    pub applications: Vec<SearchApplicationName>,
+    pub applications: Vec<V::ApplicationName>,
 
     
     #[serde(default)]
-    pub channels: Vec<SearchUpdateChannel>,
+    pub channels: Vec<V::UpdateChannel>,
 
     
     #[serde(default)]
@@ -187,7 +251,7 @@ pub(crate) struct JSONVariantEnvironment {
     pub max_version: String,
 
     #[serde(default)]
-    pub device_type: Vec<SearchDeviceType>,
+    pub device_type: Vec<V::DeviceType>,
 }
 
 
@@ -195,7 +259,7 @@ pub(crate) struct JSONVariantEnvironment {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct JSONEngineVariant {
     
-    pub environment: JSONVariantEnvironment,
+    pub environment: JSONVariantEnvironment<V2>,
 
     
     
@@ -246,9 +310,61 @@ pub(crate) struct JSONEngineRecord {
     pub variants: Vec<JSONEngineVariant>,
 }
 
+
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct JSONSpecificDefaultRecord {
+pub(crate) struct JSONEngineVariantV3 {
+    
+    pub environment: JSONVariantEnvironment<V3>,
+
+    
+    
+    pub is_new_until: Option<String>,
+
+    
+    
+    #[serde(default)]
+    pub optional: bool,
+
+    
+    
+    
+    
+    pub partner: Option<HashMap<String, SearchEnginePartnerDetails>>,
+
+    
+    pub urls: Option<JSONEngineUrls>,
+
+    
+    
+    
+    
+    
+    
+    #[serde(default)]
+    pub sub_variants: Vec<JSONEngineVariantV3>,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct JSONEngineRecordV3 {
+    
+    pub identifier: String,
+
+    
+    
+    pub base: JSONEngineBaseV3,
+
+    
+    
+    
+    pub variants: Vec<JSONEngineVariantV3>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase", bound(deserialize = ""))]
+pub(crate) struct JSONSpecificDefaultRecord<V: ConfigVersion> {
     
     
     
@@ -262,13 +378,13 @@ pub(crate) struct JSONSpecificDefaultRecord {
     pub default_private: String,
 
     
-    pub environment: JSONVariantEnvironment,
+    pub environment: JSONVariantEnvironment<V>,
 }
 
 
 #[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct JSONDefaultEnginesRecord {
+#[serde(rename_all = "camelCase", bound(deserialize = ""))]
+pub(crate) struct JSONDefaultEnginesRecord<V: ConfigVersion> {
     
     
     pub global_default: String,
@@ -282,14 +398,14 @@ pub(crate) struct JSONDefaultEnginesRecord {
     
     
     #[serde(default)]
-    pub specific_defaults: Vec<JSONSpecificDefaultRecord>,
+    pub specific_defaults: Vec<JSONSpecificDefaultRecord<V>>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct JSONEngineOrder {
+#[serde(rename_all = "camelCase", bound(deserialize = ""))]
+pub(crate) struct JSONEngineOrder<V: ConfigVersion> {
     
-    pub environment: JSONVariantEnvironment,
+    pub environment: JSONVariantEnvironment<V>,
 
     
     
@@ -301,12 +417,12 @@ pub(crate) struct JSONEngineOrder {
 
 
 #[derive(Debug, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct JSONEngineOrdersRecord {
+#[serde(rename_all = "camelCase", bound(deserialize = ""))]
+pub(crate) struct JSONEngineOrdersRecord<V: ConfigVersion> {
     
     
     
-    pub orders: Vec<JSONEngineOrder>,
+    pub orders: Vec<JSONEngineOrder<V>>,
 }
 
 
@@ -321,9 +437,24 @@ pub(crate) struct JSONAvailableLocalesRecord {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "recordType", rename_all = "camelCase")]
 pub(crate) enum JSONSearchConfigurationRecords {
-    DefaultEngines(JSONDefaultEnginesRecord),
+    DefaultEngines(JSONDefaultEnginesRecord<V2>),
     Engine(Box<JSONEngineRecord>),
-    EngineOrders(JSONEngineOrdersRecord),
+    EngineOrders(JSONEngineOrdersRecord<V2>),
+    AvailableLocales(JSONAvailableLocalesRecord),
+    
+    
+    
+    #[serde(other)]
+    Unknown,
+}
+
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(tag = "recordType", rename_all = "camelCase")]
+pub(crate) enum JSONSearchConfigurationRecordsV3 {
+    DefaultEngines(JSONDefaultEnginesRecord<V3>),
+    Engine(Box<JSONEngineRecordV3>),
+    EngineOrders(JSONEngineOrdersRecord<V3>),
     AvailableLocales(JSONAvailableLocalesRecord),
     
     
@@ -336,4 +467,10 @@ pub(crate) enum JSONSearchConfigurationRecords {
 #[derive(Debug, Deserialize)]
 pub(crate) struct JSONSearchConfiguration {
     pub data: Vec<JSONSearchConfigurationRecords>,
+}
+
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct JSONSearchConfigurationV3 {
+    pub data: Vec<JSONSearchConfigurationRecordsV3>,
 }
