@@ -53,3 +53,13 @@ async function sendPasteShortcutKey() {
     .send();
 }
 
+async function sendCopyShortcutKey() {
+  const modifier = navigator.platform.includes("Mac") ? "\uE03d" 
+                                                      : "\uE009"; 
+  await new test_driver.Actions()
+    .keyDown(modifier)
+    .keyDown("c")
+    .keyUp("c")
+    .keyUp(modifier)
+    .send();
+}
