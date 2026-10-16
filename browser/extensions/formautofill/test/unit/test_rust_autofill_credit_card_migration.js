@@ -567,11 +567,14 @@ add_task(async function test_the_security_code_moves_into_rust_only() {
   
   
   
-  let { s, guids } = await setupStorageWithCards("cc-mig-csc.json", []);
-  setSecurityCodeEnabled(true);
-  guids.push(await s.creditCards.add({ ...card("Ann One"), "cc-csc": "123" }));
-  guids.push(await s.creditCards.add({ ...card("Bob Two"), "cc-csc": "" }));
-  setSecurityCodeEnabled(false);
+  
+  
+  let { s, guids } = await setupStorageWithCards("cc-mig-csc.json", [
+    "Ann One",
+    "Bob Two",
+  ]);
+  s.creditCards._data[0]["cc-csc"] = "123";
+  s.creditCards._data[1]["cc-csc"] = "";
 
   s = await enableRust(s);
   Assert.ok(getBool(ACTIVE_PREF), "moved to Rust");

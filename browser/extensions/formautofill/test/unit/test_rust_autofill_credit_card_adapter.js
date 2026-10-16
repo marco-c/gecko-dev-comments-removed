@@ -46,15 +46,21 @@ function maskFor(number) {
 
 const CVV_SUPPORTED_PREF = "extensions.formautofill.creditCards.cvv.supported";
 const CVV_ENABLED_PREF = "extensions.formautofill.creditCards.cvv.enabled";
+const RUST_ACTIVE_PREF =
+  "extensions.formautofill.creditCards.storage.rust.active";
 
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(CVV_SUPPORTED_PREF);
   Services.prefs.clearUserPref(CVV_ENABLED_PREF);
+  Services.prefs.clearUserPref(RUST_ACTIVE_PREF);
 });
+
+
 
 function enableSecurityCode() {
   Services.prefs.setStringPref(CVV_SUPPORTED_PREF, "on");
   Services.prefs.setBoolPref(CVV_ENABLED_PREF, true);
+  Services.prefs.setBoolPref(RUST_ACTIVE_PREF, true);
 }
 
 function waitForStorageChanged(expectedAction) {
