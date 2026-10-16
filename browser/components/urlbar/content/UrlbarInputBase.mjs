@@ -2811,7 +2811,7 @@ ${
    * @param {string} value
    *   The search term or empty string to open homepage.
    * @param {object} options
-   * @param {PartialSearchEngine} options.searchEngine
+   * @param {PartialSearchEngine|SearchEngine} options.searchEngine
    * @param {Event} options.event
    * @param {string} options.where
    * @param {boolean} [options.inBackground]

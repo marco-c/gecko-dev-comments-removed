@@ -15,10 +15,12 @@ const lazy = XPCOMUtils.declareLazy({
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
-  weaveXPCService: function () {
+  weaveXPCService() {
     try {
-      return Cc["@mozilla.org/weave/service;1"].getService(Ci.nsISupports)
-        .wrappedJSObject;
+      let service = Cc["@mozilla.org/weave/service;1"].getService(
+        Ci.nsISupports
+      );
+      return /** @type {any} */ (service).wrappedJSObject;
     } catch (ex) {
       // The app didn't build Sync.
     }
