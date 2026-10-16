@@ -576,7 +576,8 @@ WindowGlobalParent* DocumentLoadListener::GetParentWindowContext() const {
   return mParentWindowContext;
 }
 
-void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
+RefPtr<dom::PrefetchMatchPromise> DocumentLoadListener::TryActivateFromPrefetch(
+    nsIURI* aURI) {
   
   
   
@@ -592,25 +593,27 @@ void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
   
   auto* documentContext = GetDocumentBrowsingContext();
   if (!documentContext) {
-    return;
+    return nullptr;
   }
 
   
   
   auto* sourceWGP = documentContext->GetCurrentWindowGlobal();
   if (!sourceWGP) {
-    return;
+    return nullptr;
   }
 
-  dom::PrefetchRecordParent* rec = sourceWGP->FindMatchingPrefetchRecord(aURI);
-  if (!rec) {
-    return;
+  if (dom::PrefetchRecordParent* rec =
+          sourceWGP->FindMatchingPrefetchRecord(aURI)) {
+    ActivateFromPrefetch(rec);
+    return nullptr;
   }
+  return sourceWGP->WaitForMatchingPrefetchRecord(aURI);
+}
 
-  LOG_SPECRULES(
-      ("DocumentLoadListener::TryActivateFromPrefetch: [%p] found rec=%p "
-       "for url=%s",
-       this, rec, aURI->GetSpecOrDefault().get()));
+void DocumentLoadListener::ActivateFromPrefetch(
+    dom::PrefetchRecordParent* aRec) {
+  auto* sourceWGP = static_cast<WindowGlobalParent*>(aRec->Manager());
 
   
   
@@ -618,7 +621,7 @@ void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
   
   
   net::CopyPrefetchCookies(
-      rec->IsolatedPartitionKey(),
+      aRec->IsolatedPartitionKey(),
       sourceWGP->DocumentPrincipal()->OriginAttributesRef());
 
   if (mTiming) {
@@ -629,9 +632,48 @@ void DocumentLoadListener::TryActivateFromPrefetch(nsIURI* aURI) {
   loadInfo->SetActivatedFromNavigationalPrefetch(true);
 
   LOG_SPECRULES(
-      ("DocumentLoadListener::TryActivateFromPrefetch: [%p] activated from "
+      ("DocumentLoadListener::ActivateFromPrefetch: [%p] activated from "
        "prefetch cache for rec=%p",
-       this, rec));
+       this, aRec));
+}
+
+void DocumentLoadListener::AsyncOpenAfterPrefetchWait(
+    dom::PrefetchMatchPromise* aPromise, nsIStreamListener* aListener) {
+  LOG_SPECRULES(
+      ("DocumentLoadListener::AsyncOpenAfterPrefetchWait: [%p] delaying "
+       "AsyncOpen for an in-flight prefetch",
+       this));
+  RefPtr<DocumentLoadListener> self = this;
+  nsCOMPtr<nsIStreamListener> listener = aListener;
+  aPromise->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self, listener](
+          const dom::PrefetchMatchPromise::ResolveOrRejectValue& aValue) {
+        
+        
+        if (self->mOpenPromiseResolved) {
+          self->mParentChannelListener = nullptr;
+          return;
+        }
+        dom::PrefetchRecordParent* rec =
+            aValue.IsResolve() ? aValue.ResolveValue().get() : nullptr;
+        LOG_SPECRULES(
+            ("DocumentLoadListener::AsyncOpenAfterPrefetchWait: [%p] wait "
+             "over, rec=%p",
+             self.get(), rec));
+        if (rec) {
+          self->ActivateFromPrefetch(rec);
+        }
+        nsresult rv = self->mChannel->AsyncOpen(listener);
+        if (NS_FAILED(rv)) {
+          LOG(
+              ("DocumentLoadListener::AsyncOpenAfterPrefetchWait failed "
+               "AsyncOpen [this=%p rv=%" PRIx32 "]",
+               self.get(), static_cast<uint32_t>(rv)));
+          self->DisconnectListeners(rv, rv);
+          self->mParentChannelListener = nullptr;
+        }
+      });
 }
 
 bool CheckRecursiveLoad(CanonicalBrowsingContext* aLoadingContext,
@@ -1119,11 +1161,17 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   
   
   
-  if (mIsDocumentLoad) {
+  
+  RefPtr<dom::PrefetchMatchPromise> prefetchPromise;
+  if (mIsDocumentLoad && documentContext && documentContext->IsTop()) {
+    nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mChannel);
+    nsAutoCString method;
     nsCOMPtr<nsIURI> channelURI;
-    if (NS_SUCCEEDED(mChannel->GetURI(getter_AddRefs(channelURI))) &&
+    if (httpChannel && NS_SUCCEEDED(httpChannel->GetRequestMethod(method)) &&
+        method.EqualsLiteral("GET") &&
+        NS_SUCCEEDED(mChannel->GetURI(getter_AddRefs(channelURI))) &&
         channelURI) {
-      TryActivateFromPrefetch(channelURI);
+      prefetchPromise = TryActivateFromPrefetch(channelURI);
     }
   }
 
@@ -1158,6 +1206,8 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
             if (handled) {
               self->DisconnectListeners(NS_ERROR_ABORT, NS_ERROR_ABORT);
               self->mParentChannelListener = nullptr;
+            } else if (prefetchPromise) {
+              self->AsyncOpenAfterPrefetchWait(prefetchPromise, openInfo);
             } else {
               nsresult rv = self->mChannel->AsyncOpen(openInfo);
               if (NS_FAILED(rv)) {
@@ -1170,16 +1220,20 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   } else
 #endif 
   {
-    *aRv = mChannel->AsyncOpen(openInfo);
-    if (NS_FAILED(*aRv)) {
-      LOG(("DocumentLoadListener::Open failed AsyncOpen [this=%p rv=%" PRIx32
-           "]",
-           this, static_cast<uint32_t>(*aRv)));
-      if (documentContext) {
-        documentContext->EndDocumentLoad(false);
+    if (prefetchPromise) {
+      AsyncOpenAfterPrefetchWait(prefetchPromise, openInfo);
+    } else {
+      *aRv = mChannel->AsyncOpen(openInfo);
+      if (NS_FAILED(*aRv)) {
+        LOG(("DocumentLoadListener::Open failed AsyncOpen [this=%p rv=%" PRIx32
+             "]",
+             this, static_cast<uint32_t>(*aRv)));
+        if (documentContext) {
+          documentContext->EndDocumentLoad(false);
+        }
+        mParentChannelListener = nullptr;
+        return nullptr;
       }
-      mParentChannelListener = nullptr;
-      return nullptr;
     }
   }
 
@@ -2244,7 +2298,7 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
   
   if (currentRemoteType == options.mRemoteType &&
-      !options.mReplaceBrowsingContext && !switchToNewTab) {
+      !options.mReplaceBrowsingContext) {
     MOZ_LOG(gProcessIsolationLog, LogLevel::Info,
             ("Process Switch Abort: type (%s) is compatible",
              options.mRemoteType.Stringify().get()));

@@ -641,7 +641,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   }
 
   NavigationIsolationOptions options;
-  options.mReplaceBrowsingContext = aHasCOOPMismatch;
+  
+  options.mReplaceBrowsingContext = aHasCOOPMismatch || aForNewTab;
   options.mShouldCrossOriginIsolate =
       ShouldCrossOriginIsolate(aChannel, aParentWindow);
 
@@ -894,8 +895,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   
-  
-  if (!options.mReplaceBrowsingContext && !aForNewTab) {
+  if (!options.mReplaceBrowsingContext) {
     
     
     
