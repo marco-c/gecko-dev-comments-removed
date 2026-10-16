@@ -505,6 +505,7 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   
   
+  nsIPrincipal* GetAltDataBindingPrincipal();
   nsresult GetAltDataBindingOrigin(nsACString& aOrigin);
 
   static void PropagateReferenceIfNeeded(nsIURI* aURI,

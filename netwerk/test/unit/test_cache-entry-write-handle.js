@@ -20,6 +20,17 @@ async function testTask(port, path, responseContent, getHandleOnStopRequest) {
   );
 
   function makeChannel(url) {
+    
+    
+    if (globalThis.content) {
+      return NetUtil.newChannel({
+        uri: url,
+        loadingNode: globalThis.content.document,
+        securityFlags:
+          Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+        contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
+      });
+    }
     return NetUtil.newChannel({ uri: url, loadUsingSystemPrincipal: true });
   }
 
