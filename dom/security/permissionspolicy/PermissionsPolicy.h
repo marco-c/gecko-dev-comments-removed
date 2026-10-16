@@ -144,7 +144,7 @@ class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  nsINode* GetParentObject() const { return mPolicyOwnerNode; }
+  nsINode* GetParentObject() const { return mParentNode; }
 
   
 
@@ -188,9 +188,6 @@ class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
   bool AllowsFeatureInternal(const nsAString& aFeatureName,
                              nsIPrincipal* aOrigin) const;
 
-  bool GetFeatureValueForOrigin(const nsAString& aFeatureName,
-                                nsIPrincipal* aOrigin) const;
-
   
   void SetInheritedDeniedFeature(const nsAString& aFeatureName);
 
@@ -200,7 +197,7 @@ class PermissionsPolicy final : public nsISupports, public nsWrapperCache {
   
   bool HasDeclaredFeature(const nsAString& aFeatureName) const;
 
-  nsINode* mPolicyOwnerNode;
+  nsINode* mParentNode;
 
   
   

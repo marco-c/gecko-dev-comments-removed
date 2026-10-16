@@ -26,10 +26,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PermissionsPolicy)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-PermissionsPolicy::PermissionsPolicy(nsINode* aNode)
-    : mPolicyOwnerNode(aNode) {}
-
-
+PermissionsPolicy::PermissionsPolicy(nsINode* aNode) : mParentNode(aNode) {}
 
 void PermissionsPolicy::InheritPolicy(PermissionsPolicy* aParentPolicy) {
   MOZ_ASSERT(aParentPolicy);
@@ -55,57 +52,21 @@ void PermissionsPolicy::InheritPolicy(PermissionsPolicy* aParentPolicy) {
 
     
     
-    if (!src->mPolicyOwnerNode || !src->mPolicyOwnerNode->IsDocument()) {
-      
-      if (!src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
+    
+    if (dest->HasDeclaredFeature(featureName) &&
+        dest->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
+      if (!src->AllowsFeatureInternal(featureName, src->mDefaultOrigin) &&
+          !src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
         dest->SetInheritedDeniedFeature(featureName);
       }
       return;
     }
 
     
-    if (!src->GetFeatureValueForOrigin(featureName, src->mDefaultOrigin)) {
+    
+    if (!src->AllowsFeatureInternal(featureName, dest->mDefaultOrigin)) {
       dest->SetInheritedDeniedFeature(featureName);
-      return;
     }
-
-    
-    if (!src->GetFeatureValueForOrigin(featureName, dest->mDefaultOrigin)) {
-      dest->SetInheritedDeniedFeature(featureName);
-      return;
-    }
-
-    
-
-    
-    for (const Feature& feature : dest->mFeatures) {
-      if (feature.Name().Equals(featureName)) {
-        if (!feature.Allows(dest->mDefaultOrigin)) {
-          dest->SetInheritedDeniedFeature(featureName);
-        }
-        return;
-      }
-    }
-
-    const auto defaultAllowList =
-        PermissionsPolicyUtils::DefaultAllowListFeature(featureName);
-    
-    if (defaultAllowList ==
-        PermissionsPolicyUtils::PermissionsPolicyValue::eAll) {
-      return;
-    }
-
-    
-    bool isSameOrigin = false;
-    dest->mDefaultOrigin->Equals(src->mDefaultOrigin, &isSameOrigin);
-    if (defaultAllowList ==
-            PermissionsPolicyUtils::PermissionsPolicyValue::eSelf &&
-        isSameOrigin) {
-      return;
-    }
-
-    
-    dest->SetInheritedDeniedFeature(featureName);
   });
 }
 
@@ -134,27 +95,6 @@ void PermissionsPolicy::InheritPolicy(
   }
 
   InheritPolicy(permissionsPolicy);
-}
-
-
-bool PermissionsPolicy::GetFeatureValueForOrigin(const nsAString& aFeatureName,
-                                                 nsIPrincipal* aOrigin) const {
-  MOZ_ASSERT(aOrigin);
-
-  
-  
-  if (HasInheritedDeniedFeature(aFeatureName)) {
-    return false;
-  }
-
-  
-  
-  if (HasDeclaredFeature(aFeatureName)) {
-    return AllowsFeatureInternal(aFeatureName, aOrigin);
-  }
-
-  
-  return true;
 }
 
 void PermissionsPolicy::SetInheritedDeniedFeature(
