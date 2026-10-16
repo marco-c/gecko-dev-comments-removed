@@ -209,7 +209,7 @@ A Pref Rollout can also be used to mitigate an incident, see [Incident Response 
 
 Further Reading/Useful links:
 
-- [Mozilla preferences documentation](https://firefox-source-docs.mozilla.org/modules/libpref/index.html)
+- {doc}`Mozilla preferences documentation </modules/libpref/index>`
 - [Nimbus documentation](https://experimenter.info/)
 
 ### Release & Feature QA
@@ -276,7 +276,7 @@ The extensions that currently support train-hops are New Tab and Web Compatibili
 Further Reading/Useful links:
 
 - [Web Compatibility Release Process](https://wiki.mozilla.org/Compatibility/System_Addon/Release_Process#Shipping_interventions_with_an_out-of-band_System_Addon_Update)
-- [Train-hopping for New Tab](https://firefox-source-docs.mozilla.org/browser/extensions/newtab/docs/v2-system-addon/train_hopping.html)
+- {doc}`Train-hopping for New Tab </browser/extensions/newtab/docs/v2-system-addon/train_hopping>`
 
 ## Definitions
 
