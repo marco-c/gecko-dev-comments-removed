@@ -10,9 +10,7 @@
 
 #include "nsHTMLContentSerializer.h"
 
-#include "mozilla/DeclarationBlock.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsAttrName.h"
@@ -48,30 +46,6 @@ nsHTMLContentSerializer::AppendDocumentStart(Document* aDocument) {
   return NS_OK;
 }
 
-bool nsHTMLContentSerializer::SerializeInlineStyleAttribute(
-    const Element* aElement, nsAString& aOutStr) {
-  StyleLockedDeclarationBlock* raw = aElement->GetInlineStyleDeclaration();
-  if (!raw) {
-    return true;
-  }
-
-  RefPtr<DeclarationBlock> decl =
-      new DeclarationBlock(Servo_DeclarationBlock_Clone(raw).Consume());
-  
-  
-  
-  decl->RemovePropertyById(eCSSProperty_opacity);
-
-  nsAutoCString attrValueStr;
-  decl->ToString(attrValueStr);
-  if (attrValueStr.IsEmpty()) {
-    return true;
-  }
-
-  return SerializeAttr(u""_ns, u"style"_ns, NS_ConvertUTF8toUTF16(attrValueStr),
-                       aOutStr, false );
-}
-
 bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
                                                       nsAtom* aTagName,
                                                       int32_t aNamespace,
@@ -101,16 +75,6 @@ bool nsHTMLContentSerializer::SerializeHTMLAttributes(Element* aElement,
         aNamespace == kNameSpaceID_XHTML && attrName == nsGkAtoms::value &&
         attrNamespaceID == kNameSpaceID_None) {
       
-      continue;
-    }
-
-    if (mIsCopying && attrName == nsGkAtoms::style &&
-        attrNamespaceID == kNameSpaceID_None &&
-        mozilla::StaticPrefs::
-            dom_serializer_normalize_inline_style_when_copying_enabled()) {
-      if (!SerializeInlineStyleAttribute(aElement, aStr)) {
-        return false;
-      }
       continue;
     }
 

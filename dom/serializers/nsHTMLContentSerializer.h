@@ -31,9 +31,6 @@ class nsHTMLContentSerializer final : public nsXHTMLContentSerializer {
   NS_IMETHOD AppendDocumentStart(mozilla::dom::Document* aDocument) override;
 
  protected:
-  [[nodiscard]] bool SerializeInlineStyleAttribute(
-      const mozilla::dom::Element* aElement, nsAString& aOutStr);
-
   
 
 
