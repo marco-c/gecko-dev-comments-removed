@@ -1871,6 +1871,59 @@ class ProcessesController {
 const TAB_CPU_NEGLIGIBLE_THRESHOLD = 0.001;
 
 
+function sumTabCounters(tabCounters) {
+  let totalRamSize = 0;
+  let slopeCpuOfTotal = 0;
+  for (let tabData of tabCounters) {
+    totalRamSize += tabData.totalRamSize;
+    slopeCpuOfTotal += tabData.slopeCpuOfTotal;
+  }
+  return { totalRamSize, slopeCpuOfTotal };
+}
+
+
+
+function fillNoDataCell(cell, className) {
+  cell.className = className;
+  cell.removeAttribute("data-l10n-id");
+  cell.removeAttribute("data-l10n-args");
+  cell.textContent = "—";
+}
+
+function fillTabMemoryCell(cell, totalRamSize, hasUsageData = true) {
+  if (!hasUsageData) {
+    fillNoDataCell(cell, "memory");
+    return;
+  }
+  let formatted = formatMemory(totalRamSize);
+  fillCell(cell, {
+    classes: ["memory"],
+    fluentName: "about-processes-total-memory-size-no-change",
+    fluentArgs: {
+      total: formatted.amount,
+      totalUnit: gLocalizedUnits.memory[formatted.unit],
+    },
+  });
+}
+
+function fillTabCpuCell(cell, slopeCpuOfTotal, hasUsageData = true) {
+  if (!hasUsageData) {
+    fillNoDataCell(cell, "cpu");
+    return;
+  }
+  let fluentName = "about-processes-tab-cpu";
+  let fluentArgs = { percent: slopeCpuOfTotal };
+  if (slopeCpuOfTotal == 0) {
+    fluentName = "about-processes-tab-cpu-fully-idle";
+    fluentArgs = undefined;
+  } else if (slopeCpuOfTotal < TAB_CPU_NEGLIGIBLE_THRESHOLD) {
+    fluentName = "about-processes-tab-cpu-almost-idle";
+    fluentArgs = undefined;
+  }
+  fillCell(cell, { classes: ["cpu"], fluentName, fluentArgs });
+}
+
+
 
 
 
@@ -1886,6 +1939,19 @@ class ProcessesTabView extends RowSet {
     } else {
       this._discardOrder();
     }
+    this._updateTotals(tabCounters);
+  }
+
+  _updateTotals(tabCounters) {
+    let [countCell, memoryCell, cpuCell] = document.querySelector(
+      "#process-tfoot > tr"
+    ).children;
+    document.l10n.setAttributes(countCell, "about-processes-tab-count", {
+      count: tabCounters.length,
+    });
+    let { totalRamSize, slopeCpuOfTotal } = sumTabCounters(tabCounters);
+    fillTabMemoryCell(memoryCell, totalRamSize);
+    fillTabCpuCell(cpuCell, slopeCpuOfTotal);
   }
 
   
@@ -1954,46 +2020,8 @@ class ProcessesTabView extends RowSet {
     let image = tabData.tab.getAttribute("image");
     nameCell.style.backgroundImage = image ? `url('${image}')` : "";
 
-    if (tabData.hasUsageData) {
-      let formattedTotal = formatMemory(tabData.totalRamSize);
-      fillCell(memoryCell, {
-        classes: ["memory"],
-        fluentName: "about-processes-total-memory-size-no-change",
-        fluentArgs: {
-          total: formattedTotal.amount,
-          totalUnit: gLocalizedUnits.memory[formattedTotal.unit],
-        },
-      });
-      if (tabData.slopeCpuOfTotal == 0) {
-        fillCell(cpuCell, {
-          classes: ["cpu"],
-          fluentName: "about-processes-tab-cpu-fully-idle",
-        });
-      } else if (tabData.slopeCpuOfTotal < TAB_CPU_NEGLIGIBLE_THRESHOLD) {
-        fillCell(cpuCell, {
-          classes: ["cpu"],
-          fluentName: "about-processes-tab-cpu-almost-idle",
-        });
-      } else {
-        fillCell(cpuCell, {
-          classes: ["cpu"],
-          fluentName: "about-processes-tab-cpu",
-          fluentArgs: { percent: tabData.slopeCpuOfTotal },
-        });
-      }
-    } else {
-      
-      
-      
-      memoryCell.className = "memory";
-      memoryCell.removeAttribute("data-l10n-id");
-      memoryCell.removeAttribute("data-l10n-args");
-      memoryCell.textContent = "—";
-      cpuCell.className = "cpu";
-      cpuCell.removeAttribute("data-l10n-id");
-      cpuCell.removeAttribute("data-l10n-args");
-      cpuCell.textContent = "—";
-    }
+    fillTabMemoryCell(memoryCell, tabData.totalRamSize, tabData.hasUsageData);
+    fillTabCpuCell(cpuCell, tabData.slopeCpuOfTotal, tabData.hasUsageData);
   }
 }
 
@@ -2235,6 +2263,7 @@ var TabControl = new ProcessesTabController(TabView);
 window.onload = async function () {
   let groupBy = new URLSearchParams(location.search).get("groupby");
   if (groupBy == "tab") {
+    document.body.classList.add("tab-view");
     TabControl.init();
     await TabControl.update();
     window.setInterval(() => TabControl.update(), UPDATE_INTERVAL_MS);
