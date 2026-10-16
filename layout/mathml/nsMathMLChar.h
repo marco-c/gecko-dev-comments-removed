@@ -82,9 +82,13 @@ class nsMathMLChar {
   
   ~nsMathMLChar();
 
+  
+  
+  
+  
   void Display(mozilla::nsDisplayListBuilder* aBuilder, nsIFrame* aForFrame,
                const mozilla::nsDisplayListSet& aLists, uint32_t aIndex,
-               const nsRect* aSelectedRect = nullptr);
+               bool aIsArtifact, const nsRect* aSelectedRect = nullptr);
 
   void PaintForeground(nsIFrame* aForFrame, gfxContext& aRenderingContext,
                        imgDrawingParams& aImgParams, nsPoint aPt,

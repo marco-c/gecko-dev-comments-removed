@@ -370,6 +370,8 @@ addPdfStructTreeTest(
   `
 <p>a <math style="font-family: serif;">
   <mrow><mi>sin</mi><mo>+</mo><mfrac><mn>1</mn><mn>3</mn></mfrac></mrow>
+  <msqrt><mn>4</mn></msqrt>
+  <mo>-</mo>
   <msup><mn>5</mn><mn>6</mn></msup>
 </math> b</p>
   `,
@@ -410,6 +412,13 @@ addPdfStructTreeTest(
                             },
                           ],
                         },
+                        {
+                          role: "msqrt",
+                          children: [
+                            { role: "mn", children: [{ content: [" ", "4"] }] },
+                          ],
+                        },
+                        { role: "mo", children: [{ content: [" ", "−"] }] },
                         {
                           role: "msup",
                           children: [

@@ -9,6 +9,7 @@
 
 
 
+
 window.gDisableAccServiceInit = true;
 
 Services.scriptloader.loadSubScript(
@@ -31,6 +32,35 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
   "resource://pdf.js/build/pdf.worker.mjs";
 
 delete window.gDisableAccServiceInit;
+
+
+
+
+
+
+
+const PDF_TEST_FONT_STYLE = `<style>
+@font-face {
+  font-family: PdfTest;
+  src: url(${CURRENT_CONTENT_DIR}pdfOutput/pdfTest.ttf);
+}
+body, math, input {
+  font-family: PdfTest;
+}
+</style>`;
+
+
+
+
+
+
+async function assertPdfUsesTestFont(pdf) {
+  const data = new TextDecoder("latin1").decode(await pdf.getData());
+  ok(
+    /\/BaseFont\s*\/[A-Z]{6}\+PdfTest-Regular/.test(data),
+    "PDF uses pdfTest.ttf"
+  );
+}
 
 
 

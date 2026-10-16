@@ -88,7 +88,7 @@ void nsMathMLmoFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       selectedRect.Inflate(nsPresContext::CSSPixelsToAppUnits(1));
       isSelected = true;
     }
-    mMathMLChar.Display(aBuilder, this, aLists, 0,
+    mMathMLChar.Display(aBuilder, this, aLists, 0,  false,
                         isSelected ? &selectedRect : nullptr);
   }
 }
