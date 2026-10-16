@@ -126,8 +126,8 @@ export class UrlbarParentController {
    *
    * @param {object} options
    *   The initial options for UrlbarParentController.
-   * @param {string} options.sapName
-   *   The search access point name, e.g. `urlbar`, `searchbar`.
+   * @param {UrlbarSapName} options.sapName
+   *   The search access point name.
    * @param {boolean} [options.isPrivate]
    *   Whether the controller serves a private-browsing input.
    * @param {object} [options.actor]

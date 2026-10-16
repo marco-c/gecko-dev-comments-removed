@@ -251,8 +251,8 @@ export class ProvidersManager {
   static interruptLevel = 0;
 
   /**
-   * @param {string} sapName
-   *  The SAP name this manager is for, e.g. "urlbar", "searchbar", ...
+   * @param {UrlbarSapName} sapName
+   *  The SAP name this manager is for.
    * @param {object} muxerModules
    *   Object with symbol names as keys and module paths as values.
    *   Symbols should be UrlbarMuxer instances.
@@ -317,7 +317,7 @@ export class ProvidersManager {
   /**
    * Gets a cached ProvidersManager for the given SAP name, or creates a new one.
    *
-   * @param {string} sapName The SAP name.
+   * @param {UrlbarSapName} sapName The SAP name.
    * @returns {ProvidersManager} The ProvidersManager instance.
    */
   static getInstanceForSap(sapName) {
