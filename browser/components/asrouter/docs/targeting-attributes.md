@@ -1221,7 +1221,7 @@ declare const userId: string;
 ### `profileRestartCount`
 
 A session counter that shows how many times the browser was started.
-More info about the details in [the telemetry docs](https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/concepts/sessions.html).
+More info about the details in {doc}`the telemetry docs </toolkit/components/telemetry/concepts/sessions>`.
 
 #### Definition
 
