@@ -58,7 +58,8 @@ void FileSystemBackgroundRequestHandler::Shutdown() {
     
     
     
-    mCreateFileSystemManagerChildPromiseHolder.Steal().leak();
+    mCreateFileSystemManagerChildPromiseHolder.RejectIfExists(NS_ERROR_ABORT,
+                                                              __func__);
   }
 }
 
