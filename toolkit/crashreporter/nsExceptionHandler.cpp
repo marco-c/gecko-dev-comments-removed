@@ -257,6 +257,7 @@ static nsCString* notesField = nullptr;
 static bool isGarbageCollecting;
 static uint32_t eventloopNestingLevel = 0;
 static time_t inactiveStateStart = 0;
+static uint64_t inactiveStateDuration = 0;
 
 
 static Mutex* dumpSafetyLock;
@@ -1455,11 +1456,6 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
                  uuidString.Length());
   }
 
-  if (inactiveStateStart) {
-    writer.Write(Annotation::LastInteractionDuration,
-                 static_cast<uint64_t>(crashTime - inactiveStateStart));
-  }
-
   
   
   double uptimeTS =
@@ -1786,11 +1782,21 @@ static bool IsCrashingException(EXCEPTION_POINTERS* exinfo) {
 
 
 
+static void PrepareCrashTimeAnnotations() {
+  if (inactiveStateStart) {
+    inactiveStateDuration = GetCurrentTimeForCrashTime() - inactiveStateStart;
+  }
+}
+
+
+
+
 
 
 static void PrepareForMinidump(bool isChildProcess = true) {
   mozilla::IOInterposer::Disable();
   ReleaseResources();
+  PrepareCrashTimeAnnotations();
 
   if (isChildProcess) {
     crash_helper_wait_for_rendezvous();
@@ -1947,6 +1953,9 @@ static void RegisterAnnotations() {
   mozannotation_register_bytebuffer(
       static_cast<uint32_t>(Annotation::TextureUsage), &gTexturesSize,
       sizeof(size_t));
+  mozannotation_register_bytebuffer(
+      static_cast<uint32_t>(Annotation::LastInteractionDuration),
+      &inactiveStateDuration, sizeof(uint64_t));
 #if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)
   mozannotation_register_bytebuffer(
       static_cast<uint32_t>(Annotation::BlocklistInitFailed),
@@ -2592,16 +2601,6 @@ void MergeCrashAnnotations(AnnotationTable& aDst, const AnnotationTable& aSrc) {
 
 
 static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
-  const time_t crashTime = time(nullptr);
-
-  if (inactiveStateStart) {
-    nsAutoCString inactiveDuration;
-    inactiveDuration.AppendInt(
-        static_cast<uint64_t>(crashTime - inactiveStateStart));
-    aAnnotations[Annotation::LastInteractionDuration] =
-        std::move(inactiveDuration);
-  }
-
   
   
   double uptimeTS =
