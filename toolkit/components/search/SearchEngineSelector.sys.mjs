@@ -10,6 +10,7 @@
  * } from "../uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs";
  */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
@@ -23,6 +24,8 @@ const lazy = XPCOMUtils.declareLazy({
   SearchUserEnvironmentV3:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
   SearchApplicationName:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
+  SearchApplicationNameV3:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
   SearchUpdateChannel:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
@@ -187,6 +190,8 @@ export class SearchEngineSelector {
    *   The distribution ID of the application.
    * @param {string} [options.experiment]
    *   Any associated experiment id.
+   * @param {string} [options.platform]
+   *   The platform the application is running on.
    * @param {string} [options.appName]
    *   The name of the application.
    * @param {string} [options.version]
@@ -201,6 +206,7 @@ export class SearchEngineSelector {
     channel = "default",
     distroID,
     experiment,
+    platform = AppConstants.platform,
     appName = Services.appinfo.name ?? "",
     version = Services.appinfo.version ?? "",
   }) {
@@ -209,7 +215,7 @@ export class SearchEngineSelector {
     }
 
     lazy.logConsole.debug(
-      `fetchEngineConfiguration ${locale}:${region}:${channel}:${distroID}:${experiment}:${appName}:${version}`
+      `fetchEngineConfiguration ${locale}:${region}:${channel}:${distroID}:${experiment}:${platform}:${appName}:${version}`
     );
 
     /** @type {RefinedSearchConfig|RefinedSearchConfigV3} */
@@ -222,7 +228,7 @@ export class SearchEngineSelector {
           updateChannel: this.#convertUpdateChannel(channel),
           distributionId: distroID ?? "",
           experiment: experiment ?? "",
-          appName: this.#convertApplicationName(appName),
+          appName: this.#convertApplicationName(appName, platform),
           version,
           deviceType: lazy.SearchDeviceType.NONE,
         })
@@ -238,7 +244,7 @@ export class SearchEngineSelector {
           updateChannel: this.#convertUpdateChannel(channel),
           distributionId: distroID ?? "",
           experiment: experiment ?? "",
-          appName: this.#convertApplicationName(appName),
+          appName: this.#convertApplicationName(appName, platform),
           version,
           deviceType: lazy.SearchDeviceType.NONE,
         })
@@ -429,14 +435,25 @@ export class SearchEngineSelector {
    *
    * @param {string} appName
    *   The application name to convert.
+   * @param {string} platform
+   *   The name of the platform to use.
    * @returns {Values<typeof lazy.SearchApplicationName>}
    */
-  #convertApplicationName(appName) {
+  #convertApplicationName(appName, platform) {
     let uppercaseAppName = appName.toUpperCase().replace("-", "_");
 
-    if (uppercaseAppName in lazy.SearchApplicationName) {
-      return lazy.SearchApplicationName[uppercaseAppName];
+    if (!lazy.SearchUtils.configV3FeatureGate) {
+      if (uppercaseAppName in lazy.SearchApplicationName) {
+        return lazy.SearchApplicationName[uppercaseAppName];
+      }
+      return lazy.SearchApplicationName.FIREFOX;
     }
-    return lazy.SearchApplicationName.FIREFOX;
+
+    let fullAppName =
+      uppercaseAppName + "_" + platform.toUpperCase().replace("-", "_");
+    if (fullAppName in lazy.SearchApplicationNameV3) {
+      return lazy.SearchApplicationNameV3[fullAppName];
+    }
+    return lazy.SearchApplicationNameV3.FIREFOX_WIN;
   }
 }
