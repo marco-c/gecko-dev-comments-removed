@@ -213,6 +213,7 @@ class Inspector extends EventEmitter {
   #cssProperties;
   #destroyed;
   #pendingSelectionUnique;
+  #rootElementWaitController;
   #InspectorTabPanel;
   #InspectorSplitBox;
   #TabBar;
@@ -468,6 +469,7 @@ class Inspector extends EventEmitter {
     
     this.#newRootStart = this.panelWin.performance.now();
 
+    this.#stopWaitingForRootElement();
     this.selection.setNodeFront(null);
     this.#destroyMarkup();
 
@@ -730,6 +732,7 @@ class Inspector extends EventEmitter {
     }
     this.#destroyMarkup();
     this.#pendingSelectionUnique = null;
+    this.#stopWaitingForRootElement();
   };
 
   async #getCssProperties(targetFront) {
@@ -821,7 +824,39 @@ class Inspector extends EventEmitter {
       }
     }
 
+    
+    this.#waitForRootElement(rootNodeFront);
     return null;
+  }
+
+  
+
+
+
+
+
+
+  #waitForRootElement(rootNodeFront) {
+    this.#rootElementWaitController = new AbortController();
+    rootNodeFront.walkerFront.on(
+      "mutations",
+      mutations => {
+        if (
+          mutations.some(
+            ({ type, target }) =>
+              type === "childList" && target === rootNodeFront
+          )
+        ) {
+          this.onRootNodeAvailable(rootNodeFront);
+        }
+      },
+      { signal: this.#rootElementWaitController.signal }
+    );
+  }
+
+  #stopWaitingForRootElement() {
+    this.#rootElementWaitController?.abort();
+    this.#rootElementWaitController = null;
   }
 
   
@@ -2023,6 +2058,7 @@ class Inspector extends EventEmitter {
       return;
     }
     this.#destroyed = true;
+    this.#stopWaitingForRootElement();
 
     
     this.store.dispatch(START_IGNORE_ACTION);

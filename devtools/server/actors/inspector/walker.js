@@ -45,12 +45,10 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   [
-    "allAnonymousContentTreeWalkerFilter",
     "findGridParentContainerForNode",
     "isNodeDead",
-    "noAnonymousContentTreeWalkerFilter",
     "nodeDocument",
-    "standardTreeWalkerFilter",
+    "getTreeWalkerFilter",
   ],
   "resource://devtools/server/actors/inspector/utils.js",
   true
@@ -198,6 +196,7 @@ class WalkerActor extends Actor {
 
 
 
+
   constructor(conn, targetActor, options) {
     super(conn, walkerSpec);
     this.targetActor = targetActor;
@@ -220,10 +219,20 @@ class WalkerActor extends Actor {
     this.overflowCausingElementsMap = new Map();
 
     this.showAllAnonymousContent = options.showAllAnonymousContent;
-    
-    this.documentWalkerFilter = this.showAllAnonymousContent
-      ? allAnonymousContentTreeWalkerFilter
-      : standardTreeWalkerFilter;
+    this.showComments = options.showComments;
+    this.documentWalkerFilter = getTreeWalkerFilter({
+      
+      includeNativeAnonymousContent: this.showAllAnonymousContent,
+      includePseudoElements: true,
+      
+      includeComments: this.showComments,
+    });
+    this.noAnonymousContentDocumentWalkerFilter = getTreeWalkerFilter({
+      includeNativeAnonymousContent: false,
+      includePseudoElements: false,
+      
+      includeComments: this.showComments,
+    });
 
     this.walkerSearch = new WalkerSearch(this);
 
@@ -711,6 +720,9 @@ class WalkerActor extends Actor {
     const elt = isNodeDead(node)
       ? this.rootDoc.documentElement
       : nodeDocument(node.rawNode).documentElement;
+    if (!elt) {
+      return null;
+    }
     return this._getOrCreateNodeActor(elt);
   }
 
@@ -2117,7 +2129,7 @@ class WalkerActor extends Actor {
     const nextWalkerSibling = this._getNextTraversalSibling(targetNode);
 
     const walker = new DocumentWalker(targetNode, this.rootWin, {
-      filter: noAnonymousContentTreeWalkerFilter,
+      filter: this.noAnonymousContentDocumentWalkerFilter,
       skipTo: SKIP_TO_SIBLING,
     });
 
@@ -2128,7 +2140,7 @@ class WalkerActor extends Actor {
 
   _getNextTraversalSibling(targetNode) {
     const walker = new DocumentWalker(targetNode, this.rootWin, {
-      filter: noAnonymousContentTreeWalkerFilter,
+      filter: this.noAnonymousContentDocumentWalkerFilter,
       skipTo: SKIP_TO_SIBLING,
     });
 
