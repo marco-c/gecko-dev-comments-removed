@@ -2654,6 +2654,7 @@ void MediaFormatReader::Update(TrackType aTrack) {
     
     
     if (decoder.mError.ref() == NS_ERROR_DOM_MEDIA_DECODE_ERR &&
+        !decoder.mHardwareDecodingDisabled &&
         decoder.mDecoder->IsHardwareAccelerated(error)) {
       LOG("Error: {} decode error, disable HW acceleration",
           TrackTypeToStr(aTrack));
