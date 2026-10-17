@@ -36,7 +36,7 @@ describe("smartwindow history thumbnails", () => {
       
       
       
-      mockEngineMan.rejectAllRequests();
+      await mockEngineMan.rejectAllRequests();
       mockEngineMan.cleanupMocks();
     }
 

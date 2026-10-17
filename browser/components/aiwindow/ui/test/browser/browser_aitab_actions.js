@@ -423,7 +423,7 @@ add_task(async function test_a_non_web_link_is_refused() {
 });
 
 registerCleanupFunction(async () => {
-  gMockEngineManager.rejectAllRequests();
+  await gMockEngineManager.rejectAllRequests();
 
   
   

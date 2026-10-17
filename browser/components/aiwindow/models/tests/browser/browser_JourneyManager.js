@@ -1260,7 +1260,7 @@ add_task(async function test_resumeActivity_nonEnglishLocaleReturnsNoCards() {
       () => settled || mockEngineManager.engines.size,
       "the gated call to settle without requesting an inference engine"
     );
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
 
     Assert.deepEqual(
       await suggestionsPromise,

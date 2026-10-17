@@ -117,6 +117,37 @@ function assertUiChannelCarriesThumbnailFavicon(conversation, expectedUrls) {
 
 
 
+
+
+
+function assertUiChannelTitlesNotSpotlighted(conversation, expectedTitleByUrl) {
+  const byUrl = new Map(
+    conversation.getHistoryResultsSnapshot().map(r => [r.url, r])
+  );
+  for (const [url, expectedTitle] of expectedTitleByUrl) {
+    const record = byUrl.get(url);
+    Assert.ok(record, `UI history grid received a record for ${url}.`);
+    Assert.equal(
+      record.title,
+      expectedTitle,
+      `UI-channel title for ${url} is the unmodified page title.`
+    );
+    Assert.ok(
+      !record.title.includes("(Untrusted webpage data)"),
+      "UI-channel title carries no spotlighting tag."
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
 function assertModelHistoryPayloadSanitized(conversation) {
   const toolMessage = conversation
     .getMessagesInChatCompletionsFormat()
@@ -376,7 +407,17 @@ add_task(async function test_search_browsing_history_returns_sanitized_data() {
     noTitleUrl,
   ]);
 
-  mockEngineManager.rejectAllRequests();
+  assertUiChannelTitlesNotSpotlighted(
+    conversation,
+    new Map([
+      [shortUrl, shortTitle],
+      [longUrl, longTitle],
+      [trickyUrl, trickyTitle],
+      [noTitleUrl, noTitleUrl],
+    ])
+  );
+
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -474,7 +515,7 @@ add_task(
 
     assertModelHistoryPayloadSanitized(conversation);
 
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }
@@ -545,7 +586,7 @@ add_task(async function test_search_browsing_history_no_results_shape() {
     "untrustedInput stays false when there are no results."
   );
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -621,7 +662,7 @@ add_task(async function test_search_browsing_history_caps_results() {
   
   assertModelHistoryPayloadSanitized(conversation);
 
-  mockEngineManager.rejectAllRequests();
+  await mockEngineManager.rejectAllRequests();
   mockEngineManager.cleanupMocks();
   await BrowserTestUtils.closeWindow(win);
 });
@@ -691,7 +732,7 @@ add_task(
       );
     }
 
-    mockEngineManager.rejectAllRequests();
+    await mockEngineManager.rejectAllRequests();
     mockEngineManager.cleanupMocks();
     await BrowserTestUtils.closeWindow(win);
   }

@@ -175,7 +175,7 @@ describe("Create AI Tab menu triggers in a Smart Window", () => {
   afterEach(async () => {
     
     
-    gMockEngineManager.rejectAllRequests();
+    await gMockEngineManager.rejectAllRequests();
     gMockEngineManager.cleanupMocks();
     gRestoreSignIn();
     await BrowserTestUtils.closeWindow(gWin);
@@ -401,7 +401,7 @@ describe("Create AI Tab menu triggers in a Smart Window", () => {
         );
         await assertAITabConversation(
           aiTab,
-          [TEST_URL, TEST_URL2],
+          [TEST_URL2, TEST_URL],
           gMockEngineManager
         );
       });
