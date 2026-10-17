@@ -4730,6 +4730,7 @@ class _SessionStore {
       this.#removeClosedTabData(winData, closedGroup.tabs, 0);
     }
     winData.closedGroups.splice(closedGroupIndex, 1);
+    this.#forgetLastClosedTabGroup(winData, tabGroupId);
 
     // Notify of changes to closed objects.
     this.#notifyOfClosedObjectsChange();
@@ -4761,10 +4762,7 @@ class _SessionStore {
       ...Object.values(this.#windows),
       ...this.#closedWindows,
     ]) {
-      if (winData.lastClosedTabGroupId == savedTabGroupId) {
-        winData.lastClosedTabGroupId = null;
-        winData._lastClosedTabGroupCount = -1;
-      }
+      this.#forgetLastClosedTabGroup(winData, savedTabGroupId);
     }
     this.#notifyOfSavedTabGroupsChange();
 
@@ -9106,7 +9104,6 @@ class _SessionStore {
       targetWindow
     );
     this.forgetClosedTabGroup(source, tabGroupId);
-    sourceWinData.lastClosedTabGroupId = null;
 
     Glean.tabgroup.groupInteractions.open_recent.add(1);
 
@@ -9254,9 +9251,25 @@ class _SessionStore {
     }
     for (let index = winData.closedGroups.length - 1; index >= 0; index--) {
       if (winData.closedGroups[index].tabs.length === 0) {
-        winData.closedGroups.splice(index, 1);
+        let [closedGroup] = winData.closedGroups.splice(index, 1);
+        this.#forgetLastClosedTabGroup(winData, closedGroup.id);
         this.#closedObjectsChanged = true;
       }
+    }
+  }
+
+  /**
+   * Stops Reopen Closed Tab from offering a closed or saved tab group that no
+   * longer exists.
+   *
+   * @param {WindowStateData} winData
+   * @param {string} tabGroupId
+   *        The ID of the closed or saved tab group that was removed.
+   */
+  #forgetLastClosedTabGroup(winData, tabGroupId) {
+    if (winData.lastClosedTabGroupId == tabGroupId) {
+      winData.lastClosedTabGroupId = null;
+      winData._lastClosedTabGroupCount = -1;
     }
   }
 
