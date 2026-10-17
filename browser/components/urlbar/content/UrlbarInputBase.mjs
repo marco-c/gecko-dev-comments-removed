@@ -3529,12 +3529,8 @@ ${
       actionType = undefined,
     } = {}
   ) {
-    // Don't expose internal about:reader URLs to the user. `ReaderMode` is
-    // chrome-only, so a content realm shows such a URL as it is (bug 2064583).
-    let originalUrl = lazy?.ReaderMode.getOriginalUrlObjectForDisplay(val);
-    if (originalUrl) {
-      val = originalUrl.displaySpec;
-    }
+    // Don't expose internal about:reader URLs to the user.
+    val = UrlbarContentUtils.getReaderOriginalDisplaySpec(val) ?? val;
     this._untrimmedValue = untrimmedValue ?? val;
     this._protocolIsTrimmed = false;
     this._wwwIsTrimmed = false;
