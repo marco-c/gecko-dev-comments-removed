@@ -135,4 +135,5 @@ suites:
     browser/components/aiwindow/ui/test/browser_perf:
         description: "Performance tests for Smart Window on Firefox Desktop"
         tests:
+            "browser_smartwindow_intent_perf.js": ""
             "browser_smartwindow_perf.js": ""
