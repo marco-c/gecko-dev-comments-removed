@@ -55,6 +55,10 @@
 
 
 
+
+
+
+
   
 #undef  COVERAGE
 #define COVERAGE( name, NAME, description,             \
@@ -198,14 +202,34 @@
       count++;
 #endif
 
+      if ( style_class->coverage != AF_COVERAGE_DEFAULT )
+      {
+        
+        hb( ot_layout_lookup_collect_glyphs )( face,
+                                               HB_OT_TAG_GSUB,
+                                               idx,
+                                               NULL,
+                                               NULL,
+                                               NULL,
+                                               gsub_glyphs );
+      }
+    }
+
+    if ( style_class->coverage == AF_COVERAGE_DEFAULT )
+    {
+      FT_UInt  i;
+
+
       
-      hb( ot_layout_lookup_collect_glyphs )( face,
-                                             HB_OT_TAG_GSUB,
-                                             idx,
-                                             NULL,
-                                             NULL,
-                                             NULL,
-                                             gsub_glyphs );
+      
+      
+      for ( i = 0; i < globals->glyph_count; i++ )
+        if ( ( gstyles[i] & AF_STYLE_MASK ) == style_class->style )
+          hb( set_add )( gsub_glyphs, i );
+
+      hb( ot_layout_lookups_substitute_closure )( face,
+                                                  gsub_lookups,
+                                                  gsub_glyphs );
     }
 
 #ifdef FT_DEBUG_LEVEL_TRACE

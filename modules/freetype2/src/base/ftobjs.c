@@ -42,6 +42,10 @@
 #include <freetype/internal/services/svkern.h>
 #include <freetype/internal/services/svtteng.h>
 
+#ifdef TT_CONFIG_OPTION_VARC
+#include <freetype/internal/services/svvarc.h>
+#endif
+
 #include <freetype/ftdriver.h>
 
 #ifdef FT_CONFIG_OPTION_MAC_FONTS
@@ -503,8 +507,8 @@
                    pbox.xMin < -0x1000000 || pbox.xMax >= 0x1000000 ||
                    pbox.yMin < -0x1000000 || pbox.yMax >= 0x1000000 ||
              ( slot->face                                         &&
-               ( width  > 10 * slot->face->size->metrics.x_ppem ||
-                 height > 10 * slot->face->size->metrics.y_ppem ) ) );
+               ( width  > 16 * slot->face->size->metrics.x_ppem ||
+                 height > 16 * slot->face->size->metrics.y_ppem ) ) );
 
     if ( ret )
       FT_TRACE3(( "ft_glyphslot_preset_bitmap: [%ld %ld %ld %ld]\n",
@@ -788,7 +792,7 @@
 
     internal->transform_flags = 0;
 
-    if ( !matrix )
+    if ( !matrix || !FT_Matrix_Check( matrix ) )
     {
       internal->transform_matrix.xx = 0x10000L;
       internal->transform_matrix.xy = 0;
@@ -1016,6 +1020,22 @@
           autohint = TRUE;
       }
     }
+
+#ifdef TT_CONFIG_OPTION_VARC
+    
+    
+    
+    
+    if ( autohint && FT_IS_SFNT( face ) )
+    {
+      FT_Service_VARC  varc;
+
+
+      FT_FACE_FIND_SERVICE( face, varc, VARC );
+      if ( varc && varc->has_glyph( face, glyph_index ) )
+        autohint = FALSE;
+    }
+#endif
 
     if ( autohint )
     {
@@ -1441,8 +1461,14 @@
     {
       if ( cur[0]->encoding == FT_ENCODING_UNICODE )
       {
-        face->charmap = cur[0];
-        return FT_Err_Ok;
+        FT_Long  format = FT_Get_CMap_Format( cur[0] );
+
+
+        if ( format != 14 && format != 15 )
+        {
+          face->charmap = cur[0];
+          return FT_Err_Ok;
+        }
       }
     }
 
@@ -1480,9 +1506,14 @@
     for ( cur = first; cur < end; cur++ )
     {
       if ( cur[0]->platform_id == TT_PLATFORM_APPLE_UNICODE    &&
-           cur[0]->encoding_id == TT_APPLE_ID_VARIANT_SELECTOR &&
-           FT_Get_CMap_Format( cur[0] ) == 14                  )
-        return cur[0];
+           cur[0]->encoding_id == TT_APPLE_ID_VARIANT_SELECTOR )
+      {
+        FT_Long  format = FT_Get_CMap_Format( cur[0] );
+
+
+        if ( format == 14 || format == 15 )
+          return cur[0];
+      }
     }
 
     return NULL;
@@ -3771,11 +3802,16 @@
 
     for ( ; cur < limit; cur++ )
     {
-      if ( cur[0] == charmap                    &&
-           FT_Get_CMap_Format ( charmap ) != 14 )
+      if ( cur[0] == charmap )
       {
-        face->charmap = cur[0];
-        return FT_Err_Ok;
+        FT_Long  format = FT_Get_CMap_Format( charmap );
+
+
+        if ( format != 14 && format != 15 )
+        {
+          face->charmap = cur[0];
+          return FT_Err_Ok;
+        }
       }
     }
 
@@ -4737,120 +4773,113 @@
     FT_Error     error = FT_Err_Ok;
     FT_Face      face  = slot->face;
     FT_Renderer  renderer;
+    FT_ListNode  node  = NULL;
 
 
-    switch ( slot->format )
+    
+    if ( slot->internal->load_flags & FT_LOAD_COLOR &&
+         slot->format == FT_GLYPH_FORMAT_OUTLINE    )
     {
-    default:
-      if ( slot->internal->load_flags & FT_LOAD_COLOR )
+      FT_LayerIterator  iterator;
+
+      FT_UInt  base_glyph = slot->glyph_index;
+
+      FT_Bool  have_layers;
+      FT_UInt  glyph_index;
+      FT_UInt  color_index;
+
+
+      iterator.p  = NULL;
+      have_layers = FT_Get_Color_Glyph_Layer( face,
+                                              base_glyph,
+                                              &glyph_index,
+                                              &color_index,
+                                              &iterator );
+      if ( have_layers )
       {
-        FT_LayerIterator  iterator;
-
-        FT_UInt  base_glyph = slot->glyph_index;
-
-        FT_Bool  have_layers;
-        FT_UInt  glyph_index;
-        FT_UInt  color_index;
-
-
-        
-        iterator.p  = NULL;
-        have_layers = FT_Get_Color_Glyph_Layer( face,
-                                                base_glyph,
-                                                &glyph_index,
-                                                &color_index,
-                                                &iterator );
-        if ( have_layers )
+        error = FT_New_GlyphSlot( face, NULL );
+        if ( !error )
         {
-          error = FT_New_GlyphSlot( face, NULL );
-          if ( !error )
+          TT_Face       ttface = (TT_Face)face;
+          SFNT_Service  sfnt   = (SFNT_Service)ttface->sfnt;
+
+
+          do
           {
-            TT_Face       ttface = (TT_Face)face;
-            SFNT_Service  sfnt   = (SFNT_Service)ttface->sfnt;
+            FT_Int32  load_flags = slot->internal->load_flags;
 
-
-            do
-            {
-              FT_Int32  load_flags = slot->internal->load_flags;
-
-
-              
-              
-              load_flags &= ~FT_LOAD_COLOR;
-
-              
-              load_flags |= FT_LOAD_RENDER;
-
-              error = FT_Load_Glyph( face, glyph_index, load_flags );
-              if ( error )
-                break;
-
-              
-              
-              error = sfnt->colr_blend( ttface,
-                                        color_index,
-                                        slot,
-                                        face->glyph );
-              if ( error )
-                break;
-
-            } while ( FT_Get_Color_Glyph_Layer( face,
-                                                base_glyph,
-                                                &glyph_index,
-                                                &color_index,
-                                                &iterator ) );
-
-            if ( !error )
-              slot->format = FT_GLYPH_FORMAT_BITMAP;
 
             
-            FT_Done_GlyphSlot( face->glyph );
-          }
+            
+            load_flags &= ~FT_LOAD_COLOR;
+
+            
+            load_flags |= FT_LOAD_RENDER | FT_LOAD_NO_BITMAP;
+
+            error = FT_Load_Glyph( face, glyph_index, load_flags );
+            if ( error )
+              break;
+
+            
+            
+            error = sfnt->colr_blend( ttface,
+                                      color_index,
+                                      slot,
+                                      face->glyph );
+            if ( error )
+              break;
+
+          } while ( FT_Get_Color_Glyph_Layer( face,
+                                              base_glyph,
+                                              &glyph_index,
+                                              &color_index,
+                                              &iterator ) );
 
           if ( !error )
-            return error;
+            slot->format = FT_GLYPH_FORMAT_BITMAP;
 
           
-          slot->format = FT_GLYPH_FORMAT_OUTLINE;
+          FT_Done_GlyphSlot( face->glyph );
         }
-      }
 
-      {
-        FT_ListNode  node = NULL;
-
+        if ( !error )
+          return error;
 
         
-        if ( slot->format == FT_GLYPH_FORMAT_OUTLINE )
-        {
-          renderer = library->cur_renderer;
-          node     = library->renderers.head;
-        }
-        else
-          renderer = FT_Lookup_Renderer( library, slot->format, &node );
-
-        error = FT_ERR( Cannot_Render_Glyph );
-        while ( renderer )
-        {
-          error = renderer->render( renderer, slot, render_mode, NULL );
-          if ( !error                                   ||
-               FT_ERR_NEQ( error, Cannot_Render_Glyph ) )
-            break;
-
-          
-          
-          
-
-          
-          
-          renderer = FT_Lookup_Renderer( library, slot->format, &node );
-        }
-
-        
-        if ( FT_ERR_EQ( error, Cannot_Render_Glyph ) &&
-             slot->format == FT_GLYPH_FORMAT_BITMAP  )
-          error = FT_Err_Ok;
+        slot->format = FT_GLYPH_FORMAT_OUTLINE;
       }
     }
+
+    
+    if ( slot->format == FT_GLYPH_FORMAT_OUTLINE )
+    {
+      renderer = library->cur_renderer;
+      node     = library->renderers.head;
+    }
+    else
+      renderer = FT_Lookup_Renderer( library, slot->format, &node );
+
+    error = FT_ERR( Cannot_Render_Glyph );
+    while ( renderer )
+    {
+      error = renderer->render( renderer, slot, render_mode, NULL );
+      if ( !error                                   ||
+           FT_ERR_NEQ( error, Cannot_Render_Glyph ) )
+        break;
+
+      
+      
+      
+
+      
+      
+      renderer = FT_Lookup_Renderer( library, slot->format, &node );
+    }
+
+    
+    if ( FT_ERR_EQ( error, Cannot_Render_Glyph ) &&
+         slot->format == FT_GLYPH_FORMAT_BITMAP  )
+      error = FT_Err_Ok;
 
 #ifdef FT_DEBUG_LEVEL_TRACE
 
