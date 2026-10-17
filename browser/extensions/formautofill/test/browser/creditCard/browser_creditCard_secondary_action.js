@@ -172,11 +172,39 @@ add_task(async function test_delete_asks_for_device_sign_in_then_confirms() {
         }
       );
 
+      Services.fog.testResetFOG();
       await clickTrashButton(rowItem);
       await dialogClosed;
       await TestUtils.waitForCondition(
         () => browser.autoCompletePopup.popupOpen,
         "Wait for the dropdown to come back after the confirmation"
+      );
+
+      const events = Glean.autocomplete.recordDialogInteraction.testGetValue();
+      is(events?.length, 1, "One dialog interaction event is recorded");
+      is(
+        events[0].extra.interaction_type,
+        "cancel",
+        "Cancelling the dialog records a cancel interaction"
+      );
+      is(
+        events[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
+      );
+      is(events[0].extra.update_type, "delete", "The update type is delete");
+
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      is(clickEvents?.length, 1, "One interaction event is recorded");
+      is(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction"
+      );
+      is(
+        clickEvents[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
       );
 
       const { FormAutofill } = ChromeUtils.importESModule(
@@ -228,6 +256,7 @@ add_task(async function test_delete_skips_confirm_when_device_sign_in_fails() {
         verified: false,
       });
 
+      Services.fog.testResetFOG();
       await clickTrashButton(rowItem);
       await TestUtils.waitForCondition(
         () => verifyArgs.length,
@@ -238,6 +267,23 @@ add_task(async function test_delete_skips_confirm_when_device_sign_in_fails() {
       ok(
         !sawDialog,
         "No confirmation is shown when device sign in is declined"
+      );
+      is(
+        Glean.autocomplete.recordDialogInteraction.testGetValue(),
+        null,
+        "No dialog interaction is recorded when device sign in is declined"
+      );
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      is(clickEvents?.length, 1, "One interaction event is recorded");
+      is(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction before device sign in"
+      );
+      is(
+        clickEvents[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
       );
       is(
         (await getCreditCards()).length,
@@ -280,6 +326,24 @@ add_task(async function test_delete_removes_the_payment_method() {
         events[0].extra.record_type,
         "payment",
         "The event names the payment record type"
+      );
+      const dialogEvents =
+        Glean.autocomplete.recordDialogInteraction.testGetValue();
+      is(dialogEvents?.length, 1, "One dialog interaction event is recorded");
+      is(
+        dialogEvents[0].extra.interaction_type,
+        "confirm",
+        "Accepting the dialog records a confirm interaction"
+      );
+      is(
+        dialogEvents[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
+      );
+      is(
+        dialogEvents[0].extra.update_type,
+        "delete",
+        "The update type is delete"
       );
 
       const remaining = await getCreditCards();

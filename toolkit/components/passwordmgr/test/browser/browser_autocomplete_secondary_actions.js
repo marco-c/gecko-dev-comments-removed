@@ -755,6 +755,7 @@ add_task(async function test_delete_reauthenticates_then_confirms() {
         mi => mi.getAttribute("label") === deleteLabel
       );
 
+      Services.fog.testResetFOG();
       let dialogWin;
       const dialogClosed = BrowserTestUtils.promiseAlertDialog(
         null,
@@ -798,6 +799,41 @@ add_task(async function test_delete_reauthenticates_then_confirms() {
         "Reauthentication is recorded against the autocomplete delete"
       );
       Assert.ok(dialogWin, "The confirmation dialog was shown");
+
+      const events = Glean.autocomplete.recordDialogInteraction.testGetValue();
+      Assert.equal(
+        events?.length,
+        1,
+        "One dialog interaction event is recorded"
+      );
+      Assert.equal(
+        events[0].extra.interaction_type,
+        "cancel",
+        "Cancelling the dialog records a cancel interaction"
+      );
+      Assert.equal(
+        events[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      Assert.equal(
+        events[0].extra.update_type,
+        "delete",
+        "The update type is delete"
+      );
+
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(clickEvents?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The flyout delete item records a delete interaction"
+      );
+      Assert.equal(
+        clickEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       await TestUtils.waitForCondition(
         () => popup.state == "open",
@@ -847,6 +883,7 @@ add_task(async function test_delete_skips_confirm_when_reauth_fails() {
         mi => mi.getAttribute("label") === deleteLabel
       );
 
+      Services.fog.testResetFOG();
       menupopup.activateItem(menuitem);
       await TestUtils.waitForCondition(
         () => gReauthCalls.length,
@@ -855,6 +892,23 @@ add_task(async function test_delete_skips_confirm_when_reauth_fails() {
       await TestUtils.waitForTick();
 
       Assert.ok(!sawDialog, "No confirmation is shown when reauth is declined");
+      Assert.equal(
+        Glean.autocomplete.recordDialogInteraction.testGetValue(),
+        null,
+        "No dialog interaction is recorded when reauth is declined"
+      );
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(clickEvents?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The flyout delete item records a delete interaction before reauth"
+      );
+      Assert.equal(
+        clickEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       await TestUtils.waitForCondition(
         () => popup.state == "open",
@@ -917,6 +971,28 @@ add_task(async function test_delete_removes_the_login() {
         events[0].extra.record_type,
         "password",
         "The event names the password record type"
+      );
+      const dialogEvents =
+        Glean.autocomplete.recordDialogInteraction.testGetValue();
+      Assert.equal(
+        dialogEvents?.length,
+        1,
+        "One dialog interaction event is recorded"
+      );
+      Assert.equal(
+        dialogEvents[0].extra.interaction_type,
+        "confirm",
+        "Accepting the dialog records a confirm interaction"
+      );
+      Assert.equal(
+        dialogEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
+      Assert.equal(
+        dialogEvents[0].extra.update_type,
+        "delete",
+        "The update type is delete"
       );
 
       const remaining = await Services.logins.getAllLogins();

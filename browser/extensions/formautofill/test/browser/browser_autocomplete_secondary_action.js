@@ -153,12 +153,39 @@ add_task(async function test_delete_confirms_without_device_sign_in() {
         }
       );
 
+      Services.fog.testResetFOG();
       await clickTrashButton(rowItem);
+      const clickEvents = Glean.autocomplete.recordInteraction.testGetValue();
+      is(clickEvents?.length, 1, "One interaction event is recorded");
+      is(
+        clickEvents[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction"
+      );
+      is(
+        clickEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
       await dialogClosed;
       await TestUtils.waitForCondition(
         () => browser.autoCompletePopup.popupOpen,
         "Wait for the dropdown to come back after the confirmation"
       );
+
+      const events = Glean.autocomplete.recordDialogInteraction.testGetValue();
+      is(events?.length, 1, "One dialog interaction event is recorded");
+      is(
+        events[0].extra.interaction_type,
+        "cancel",
+        "Cancelling the dialog records a cancel interaction"
+      );
+      is(
+        events[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      is(events[0].extra.update_type, "delete", "The update type is delete");
 
       is(verifyCalls, 0, "Removing an address does not ask for device sign in");
       ok(sawDialog, "The confirmation dialog was shown");
@@ -204,6 +231,7 @@ add_task(async function test_delete_removes_the_address() {
       const rowCount = getDisplayedPopupItems(browser).length;
 
       Services.fog.testResetFOG();
+      
       await withStorageChange("remove", () => activateDelete(browser));
 
       const events = Glean.autocomplete.recordInteraction.testGetValue();
@@ -217,6 +245,24 @@ add_task(async function test_delete_removes_the_address() {
         events[0].extra.record_type,
         "address",
         "The event names the address record type"
+      );
+      const dialogEvents =
+        Glean.autocomplete.recordDialogInteraction.testGetValue();
+      is(dialogEvents?.length, 1, "One dialog interaction event is recorded");
+      is(
+        dialogEvents[0].extra.interaction_type,
+        "confirm",
+        "Accepting the dialog records a confirm interaction"
+      );
+      is(
+        dialogEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+      is(
+        dialogEvents[0].extra.update_type,
+        "delete",
+        "The update type is delete"
       );
 
       const remaining = await getAddresses();
