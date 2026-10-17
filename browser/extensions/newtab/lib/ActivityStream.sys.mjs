@@ -2508,12 +2508,13 @@ export const PREFS_CONFIG = new Map([
       value: 3000,
     },
   ],
-  // @experiment(remove) { bug 2078816 }
+  // @experiment(remove-conditional) { bug 2078816 }
+  // Keep for spaces-thematic-v1.
   [
     "pageLayouts.widgetFirstContentSlot.widget",
     {
       title:
-        "Id of the widget the widget-first-content-slot layout variant puts in the first card slot of Popular Today. Overridden by trainhopConfig.pageLayouts.widgetFirstContentSlot.widget.",
+        "Id of the widget the widget-first-content-slot and spaces-thematic-v1 layout variants put in the first card slot of Popular Today. spaces-thematic-v1 uses it only when no space in its config names a `firstSlotWidget`. Overridden by trainhopConfig.pageLayouts.widgetFirstContentSlot.widget.",
       value: "",
     },
   ],

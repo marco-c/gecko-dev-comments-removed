@@ -115,8 +115,9 @@
  * same position when re-enabled. See resolveWidgetOrder() below.
  */
 
-// @experiment(remove) { bug 2078816 }
-import { selectFirstSlotWidget } from "./PageLayoutVariants.mjs";
+// @experiment(remove-conditional) { bug 2078816 }
+// Keep for spaces-thematic-v1.
+import { selectFirstSlotWidgetIds } from "./PageLayoutVariants.mjs";
 
 export const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 export const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
@@ -644,9 +645,10 @@ export function isWidgetEnabled(widget, prefs, widgetsEnabled) {
  * @returns {string}
  */
 export function resolveWidgetSize(widget, prefs) {
-  // @experiment(remove) { bug 2078816 }
+  // @experiment(remove-conditional) { bug 2078816 }
+  // Keep for spaces-thematic-v1.
   // A large widget fits a medium card.
-  if (selectFirstSlotWidget(prefs) === widget.id) {
+  if (selectFirstSlotWidgetIds(prefs).has(widget.id)) {
     return "large";
   }
   const userPref = prefs[widget.sizePref];

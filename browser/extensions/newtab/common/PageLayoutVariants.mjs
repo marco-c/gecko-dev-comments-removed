@@ -324,11 +324,21 @@ export function normalizeSpacesConfig(raw) {
   }
 
   const spaces = {};
+  const slotted = new Set();
   const kept = order.filter(id => {
     const space = rawSpaces[id];
     // A tab with no label is unusable: nothing tells the user what is behind it.
     if (!space || typeof space.label !== "string" || !space.label) {
       return false;
+    }
+    // A widget is shown once, so the first space to name it keeps it.
+    const firstSlotWidget =
+      WIDGET_REGISTRY.some(w => w.id === space.firstSlotWidget) &&
+      !slotted.has(space.firstSlotWidget)
+        ? space.firstSlotWidget
+        : null;
+    if (firstSlotWidget) {
+      slotted.add(firstSlotWidget);
     }
     const icon = resolveThematicSpaceIcon(space.icon);
     spaces[id] = {
@@ -341,6 +351,8 @@ export function normalizeSpacesConfig(raw) {
       widgets: asStringArray(space.widgets),
       // Shows Recent activity.
       activity: space.activity === true,
+      // Shown in the first card of the space's first section.
+      firstSlotWidget,
     };
     return true;
   });
@@ -680,16 +692,40 @@ export function resolveFeedSectionKeys(discoveryStream) {
   return sections?.map(section => section.sectionKey).filter(Boolean) ?? [];
 }
 
-// @experiment(remove) { bug 2078816 }
+// @experiment(remove-conditional) { bug 2078816 }
+// Keep for spaces-thematic-v1, which falls back to it.
 export const PREF_WIDGET_FIRST_WIDGET =
   "pageLayouts.widgetFirstContentSlot.widget";
 
-// @experiment(remove) { bug 2078816 }
 /**
- * The id of the widget shown in the first card of the top stories section, or
- * null when there is none. The widget must already be enabled. The thematic
- * spaces variant honours the same setting, so removing the
- * widget-first-content-slot variant must keep this for it.
+ * Whether a widget can take a first story card: stories are on and the widget
+ * is enabled, counting the space overrides, which are false outside a spaces
+ * variant.
+ *
+ * @param {object|undefined} widget - a WIDGET_REGISTRY entry, if one matched
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function canShowFirstSlotWidget(widget, prefs) {
+  return Boolean(
+    widget &&
+    prefs["nova.enabled"] &&
+    hasStories(prefs) &&
+    isWidgetEnabled(
+      widget,
+      prefs,
+      prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs)
+    )
+  );
+}
+
+// @experiment(remove-conditional) { bug 2078816 }
+// Keep for spaces-thematic-v1, and drop the widget-first-content-slot check.
+/**
+ * The id of the widget the global setting puts in the first card of the top
+ * stories section, or null when there is none. The widget must already be
+ * enabled. Under the thematic spaces variant a space can name its own instead;
+ * see resolveFirstSlotWidgets.
  *
  * @param {object} prefs - current pref values from the Redux store
  * @returns {string|null} a widget registry id
@@ -705,21 +741,77 @@ export const selectFirstSlotWidget = prefs => {
   const id =
     prefs.trainhopConfig?.pageLayouts?.widgetFirstContentSlot?.widget ??
     prefs[PREF_WIDGET_FIRST_WIDGET];
-  const widget = WIDGET_REGISTRY.find(w => w.id === id);
-  // The space overrides, which are false outside a spaces variant.
-  return widget &&
-    prefs["nova.enabled"] &&
-    (prefs["feeds.section.topstories"] ||
-      isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
-    prefs["feeds.system.topstories"] &&
-    isWidgetEnabled(
-      widget,
-      prefs,
-      prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs)
-    )
+  return canShowFirstSlotWidget(
+    WIDGET_REGISTRY.find(w => w.id === id),
+    prefs
+  )
     ? id
     : null;
 };
+
+/**
+ * The widgets shown in a first story card, in config order. Under the thematic
+ * spaces variant each space can name its own `firstSlotWidget`. When none does,
+ * the global setting applies, to the feed's top section.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {Array<{spaceId: string|null, widgetId: string}>} spaceId is null
+ *   for the global setting
+ */
+export function resolveFirstSlotWidgets(prefs) {
+  const config = isSpacesThematicAssigned(prefs)
+    ? resolveThematicSpacesConfig(prefs)
+    : null;
+  const named =
+    config?.order.filter(id => config.spaces[id].firstSlotWidget) ?? [];
+  if (named.length) {
+    return named
+      .map(id => ({ spaceId: id, widgetId: config.spaces[id].firstSlotWidget }))
+      .filter(({ widgetId }) =>
+        canShowFirstSlotWidget(
+          WIDGET_REGISTRY.find(w => w.id === widgetId),
+          prefs
+        )
+      );
+  }
+  const widgetId = selectFirstSlotWidget(prefs);
+  return widgetId ? [{ spaceId: null, widgetId }] : [];
+}
+
+/**
+ * The ids of the widgets shown in a first story card, which no widgets column
+ * shows as well.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {Set<string>}
+ */
+export function selectFirstSlotWidgetIds(prefs) {
+  return new Set(resolveFirstSlotWidgets(prefs).map(slot => slot.widgetId));
+}
+
+/**
+ * Which section each first-slot widget leads, by sectionKey: the first of its
+ * space's sections, or the top section for the global setting. A widget whose
+ * space has no section in the feed is not shown.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @param {string[]} sectionKeys - sectionKeys in display order
+ * @returns {object} sectionKey to widget id
+ */
+export function resolveFirstSlotWidgetsBySection(prefs, sectionKeys) {
+  const config = resolveThematicSpacesConfig(prefs);
+  const bySection = {};
+  for (const { spaceId, widgetId } of resolveFirstSlotWidgets(prefs)) {
+    const sectionKey = spaceId
+      ? resolveThematicSpaceSections(config, spaceId, sectionKeys)[0]
+      : sectionKeys[0];
+    // Two spaces can list the same section; the first one keeps it.
+    if (sectionKey && !(sectionKey in bySection)) {
+      bySection[sectionKey] = widgetId;
+    }
+  }
+  return bySection;
+}
 
 /**
  * The widgets a space should show, in registry order, filtered to the ones
@@ -727,9 +819,9 @@ export const selectFirstSlotWidget = prefs => {
  * space names, so one is never invisible everywhere. Empty means the space shows
  * its feed alone, which is all of them while the widgets container is hidden.
  *
- * Two widgets are in no space: Weather at its small size, which renders in the
- * page's inline-end sidebar as it does in the side-by-side layouts, and the one
- * in the first card of Popular Today.
+ * Some widgets are in no space's column: Weather at its small size, which
+ * renders in the page's inline-end sidebar as it does in the side-by-side
+ * layouts, and those in the first card of a story section.
  *
  * @param {object} config - from resolveThematicSpacesConfig
  * @param {string} spaceId - a config space id
@@ -747,12 +839,12 @@ export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
   if (!isWidgetsContainerVisible(prefs)) {
     return [];
   }
-  const firstSlotWidget = selectFirstSlotWidget(prefs);
+  const firstSlotWidgets = selectFirstSlotWidgetIds(prefs);
 
   return WIDGET_REGISTRY.filter(
     w =>
       (assigned.has(w.id) || (isCatchAll && !claimed.has(w.id))) &&
-      w.id !== firstSlotWidget &&
+      !firstSlotWidgets.has(w.id) &&
       !isWidgetInSidebar(w, prefs) &&
       isWidgetEnabled(w, prefs, widgetsEnabled)
   ).map(w => w.id);
