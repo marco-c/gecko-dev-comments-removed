@@ -18,11 +18,26 @@ declare namespace BrowserWindow {
     import("moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs").Tabbrowser;
 
   var gBrowser: Tabbrowser;
+  var gInitialPages: string[];
   var gMultiProcessBrowser: boolean;
+  var gURLBar: import("chrome://browser/content/urlbar/UrlbarInput.mjs").UrlbarInput;
+  var delayedStartupPromise: Promise<void>;
   var RTL_UI: boolean;
 
   function isBlankPageURL(aURL: string): boolean;
+  function isInitialPage(url: string | nsIURI): boolean;
   function CreateContainerTabMenu(event: Event): void;
+  function UpdatePopupNotificationsVisibility(): void;
+  function openPreferences(
+    paneID?: string,
+    extraArgs?: { urlParams?: Record<string, string> }
+  ): Promise<void>;
+
+  
+  var gBrowserInit: {
+    readonly delayedStartupFinished: boolean;
+    readonly firstContentWindowPaintPromise: Promise<void>;
+  };
 
   
   var BrowserCommands: {
@@ -44,6 +59,10 @@ declare namespace BrowserWindow {
     nodeToTooltipMap: Record<string, string>;
     cache: Map<string, string>;
     getText(nodeId: string): string;
+  };
+
+  var gKeywordURIFixup: {
+    check(browser: MozBrowser, fixupInfo: nsIURIFixupInfo): void;
   };
 
   const gClickAndHoldListenersOnElement: {

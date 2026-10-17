@@ -24,15 +24,23 @@ declare var Tabbrowser: typeof import("moz-src:///browser/components/tabbrowser/
 type Tabbrowser = BrowserWindow.Tabbrowser;
 
 declare var gBrowser: BrowserWindow["gBrowser"];
+declare var gInitialPages: BrowserWindow["gInitialPages"];
 declare var gMultiProcessBrowser: BrowserWindow["gMultiProcessBrowser"];
+declare var gURLBar: BrowserWindow["gURLBar"];
+declare var delayedStartupPromise: BrowserWindow["delayedStartupPromise"];
 declare var RTL_UI: BrowserWindow["RTL_UI"];
 
 declare var isBlankPageURL: BrowserWindow["isBlankPageURL"];
+declare var isInitialPage: BrowserWindow["isInitialPage"];
 declare var CreateContainerTabMenu: BrowserWindow["CreateContainerTabMenu"];
+declare var UpdatePopupNotificationsVisibility: BrowserWindow["UpdatePopupNotificationsVisibility"];
+declare var openPreferences: BrowserWindow["openPreferences"];
 
+declare var gBrowserInit: BrowserWindow["gBrowserInit"];
 declare var BrowserCommands: BrowserWindow["BrowserCommands"];
 declare var CustomTitlebar: BrowserWindow["CustomTitlebar"];
 declare var gSharedTabWarning: BrowserWindow["gSharedTabWarning"];
+declare var gKeywordURIFixup: BrowserWindow["gKeywordURIFixup"];
 declare const DynamicShortcutTooltip: BrowserWindow["DynamicShortcutTooltip"];
 declare const gClickAndHoldListenersOnElement: BrowserWindow["gClickAndHoldListenersOnElement"];
 declare var FirefoxViewHandler: BrowserWindow["FirefoxViewHandler"];
