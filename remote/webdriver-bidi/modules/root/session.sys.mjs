@@ -160,7 +160,14 @@ class SessionModule extends RootBiDiModule {
       }
     } else if (inputUserContextIds.size !== 0) {
       for (const userContextId of inputUserContextIds) {
-        const internalId = this._getUserContextInternalId(userContextId);
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User context with id: ${userContextId} doesn't exist`
+          );
+        }
 
         lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
           item => subscriptionNavigables.add(item)

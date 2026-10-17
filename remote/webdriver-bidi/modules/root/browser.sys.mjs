@@ -370,7 +370,14 @@ class BrowserModule extends RootBiDiModule {
           lazy.pprint`Expected elements of "userContexts" to be strings, got ${userContextId}`
         );
 
-        const internalId = this._getUserContextInternalId(userContextId);
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User Context with id ${userContextId} was not found`
+          );
+        }
 
         userContexts.add(internalId);
       }
@@ -429,7 +436,13 @@ class BrowserModule extends RootBiDiModule {
       );
     }
 
-    const internalId = this._getUserContextInternalId(userContextId);
+    if (!lazy.UserContextManager.hasUserContextId(userContextId)) {
+      throw new lazy.error.NoSuchUserContextError(
+        `User Context with id ${userContextId} was not found`
+      );
+    }
+
+    const internalId = lazy.UserContextManager.getInternalIdById(userContextId);
 
     lazy.UserContextManager.removeUserContext(userContextId, {
       closeContextTabs: true,

@@ -46,15 +46,6 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.amIAddonManagerStartup
 );
 
-// Hidden pref, for tests only. Use the dedicated container for all sessions,
-// including the ones created for browser automation.
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "forceContainer",
-  "remote.experimental.dynamicstart.force-container",
-  false
-);
-
 // Global singleton that holds active WebDriver sessions
 const webDriverSessions = new Map();
 
@@ -281,10 +272,9 @@ export class WebDriverSession {
       throw new lazy.error.SessionNotCreatedError(e);
     }
 
-    this.#userContext =
-      useDedicatedContainer || lazy.forceContainer
-        ? getRemoteControlUserContextId()
-        : null;
+    this.#userContext = useDedicatedContainer
+      ? getRemoteControlUserContextId()
+      : null;
     if (this.#userContext !== null) {
       this.#capabilities.set("moz:userContext", this.#userContext);
       lazy.logger.debug(
@@ -477,8 +467,8 @@ export class WebDriverSession {
 
   /**
    * The user context id of the container created for this session.
-   * WebDriver BiDi commands and events are restricted to this user context
-   * when remote.experimental.dynamicstart.container-isolation-enabled is true.
+   * Bug 2072964 to start enforcing this restriction in commands and events.
+   * Used only in tests until then.
    *
    * @returns {string|null}
    *     The user context id, or null if no user context was created.

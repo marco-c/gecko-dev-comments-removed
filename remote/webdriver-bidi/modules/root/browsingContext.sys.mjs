@@ -686,9 +686,13 @@ class BrowsingContextModule extends RootBiDiModule {
         lazy.pprint`Expected "referenceContext" to be a string, got ${referenceContextId}`
       );
 
-      referenceContext = this._getNavigable(referenceContextId, {
-        skipPrivilegeCheck: true,
-      });
+      referenceContext =
+        lazy.NavigableManager.getBrowsingContextById(referenceContextId);
+      if (!referenceContext) {
+        throw new lazy.error.NoSuchFrameError(
+          `Browsing Context with id ${referenceContextId} not found`
+        );
+      }
 
       if (referenceContext.parent) {
         throw new lazy.error.InvalidArgumentError(
@@ -697,8 +701,7 @@ class BrowsingContextModule extends RootBiDiModule {
       }
     }
 
-    let userContext =
-      this._sessionUserContext ?? lazy.UserContextManager.defaultUserContextId;
+    let userContext = lazy.UserContextManager.defaultUserContextId;
     if (referenceContext !== null) {
       userContext =
         lazy.UserContextManager.getIdByBrowsingContext(referenceContext);
@@ -710,7 +713,11 @@ class BrowsingContextModule extends RootBiDiModule {
         lazy.pprint`Expected "userContext" to be a string, got ${userContextId}`
       );
 
-      this._assertUserContextId(userContextId);
+      if (!lazy.UserContextManager.hasUserContextId(userContextId)) {
+        throw new lazy.error.NoSuchUserContextError(
+          `User Context with id ${userContextId} was not found`
+        );
+      }
 
       userContext = userContextId;
 
@@ -995,9 +1002,9 @@ class BrowsingContextModule extends RootBiDiModule {
         }
         default: {
           // Return all top-level browsing contexts.
-          contexts = lazy.TabManager.getBrowsers({
-            userContext: this._sessionUserContext,
-          }).map(browser => browser.browsingContext);
+          contexts = lazy.TabManager.getBrowsers().map(
+            browser => browser.browsingContext
+          );
         }
       }
     }
@@ -1766,7 +1773,14 @@ class BrowsingContextModule extends RootBiDiModule {
           lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
         );
 
-        const internalId = this._getUserContextInternalId(userContextId);
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User context with id: ${userContextId} doesn't exist`
+          );
+        }
 
         userContexts.add(internalId);
       }
