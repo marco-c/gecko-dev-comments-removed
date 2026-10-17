@@ -4,7 +4,10 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const THREE_DAYS_MS = 3 * 24 * 60 * 1000;
+// StorageActivityService only keeps activity from the last TIME_MAX_SECS (a
+// day) and rejects queries reaching further back. It checks the range against
+// its own clock, read after our Date.now(), so stay just inside that limit.
+const STORAGE_ACTIVITY_LOOKBACK_MS = 23 * 60 * 60 * 1000;
 
 const lazy = {};
 
@@ -335,15 +338,14 @@ PurgeTrackerService.prototype = {
     //   * BEHAVIOR_REJECT_FOREIGN
     //   * BEHAVIOR_LIMIT_FOREIGN
     //   * BEHAVIOR_REJECT_TRACKER (ETP)
-    //   * BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN (dFPI)
+    //   * BEHAVIOR_PARTITION_FOREIGN (dFPI)
     let cookieBehavior = Services.cookies.getCookieBehavior(false);
 
     let activeWithCookieBehavior =
       cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN ||
       cookieBehavior == Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN ||
       cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER ||
-      cookieBehavior ==
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+      cookieBehavior == Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN;
 
     if (!activeWithCookieBehavior || !purgeEnabled) {
       lazy.logger.log(
@@ -454,7 +456,7 @@ PurgeTrackerService.prototype = {
     // We only consider recently active storage and don't batch it,
     // so only do this in the first iteration.
     if (this._firstIteration) {
-      let startDate = Date.now() - THREE_DAYS_MS;
+      let startDate = Date.now() - STORAGE_ACTIVITY_LOOKBACK_MS;
       let storagePrincipals = lazy.gStorageActivityService.getActiveOrigins(
         startDate * 1000,
         Date.now() * 1000
