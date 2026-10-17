@@ -93,6 +93,11 @@ bool ADTSTrackDemuxer::Init() {
   }
 
   
+  
+  
+  ScanForDuration();
+
+  
   FastSeek(TimeUnit::Zero());
 
   if (!mSamplesPerSecond) {
@@ -281,6 +286,7 @@ int64_t ADTSTrackDemuxer::GetResourceOffset() const {
 }
 
 media::TimeIntervals ADTSTrackDemuxer::GetBuffered() {
+  MaybeFinalizeDuration();
   auto duration = Duration();
 
   if (duration.IsInfinite()) {
@@ -294,22 +300,99 @@ media::TimeIntervals ADTSTrackDemuxer::GetBuffered() {
 int64_t ADTSTrackDemuxer::StreamLength() const { return mSource.GetLength(); }
 
 TimeUnit ADTSTrackDemuxer::Duration() const {
-  if (mMeanFrameLen.empty()) {
-    return TimeUnit::Invalid();
-  }
-
   const int64_t streamLen = StreamLength();
   if (streamLen < 0) {
     
     
     return TimeUnit::FromInfinity();
   }
+  if (mDurationTotalFrames >= 0) {
+    return Duration(mDurationTotalFrames);
+  }
+  
+  
+  
+  double avgLen =
+      mDurationAvgFrameLen > 0.0 ? mDurationAvgFrameLen : AverageFrameLength();
+  if (avgLen <= 0.0) {
+    return TimeUnit::Invalid();
+  }
   const int64_t firstFrameOffset =
       AssertedCast<int64_t>(mParser->FirstFrame().Offset());
-  int64_t numFrames =
-      AssertedCast<int64_t>(AssertedCast<double>(streamLen - firstFrameOffset) /
-                            AverageFrameLength());
+  int64_t numFrames = AssertedCast<int64_t>(
+      AssertedCast<double>(streamLen - firstFrameOffset) / avgLen);
   return Duration(numFrames);
+}
+
+bool ADTSTrackDemuxer::ScanForDuration() {
+  
+  
+  
+  
+  if (StreamLength() < 0) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  const uint64_t firstOffset = mParser->FirstFrame().Offset();
+  const int kMaxScanFrames = 20000;
+  int scanned = 0;
+  while (scanned < kMaxScanFrames) {
+    ADTS::Frame next = FindNextFrame();
+    if (!next.IsValid()) {
+      break;
+    }
+    
+    
+    if (!SkipNextFrame(next)) {
+      break;
+    }
+    ++scanned;
+  }
+  
+  
+  if (!mParser->FirstFrame().IsValid()) {
+    mOffset = firstOffset;
+    mParser->EndFrameSession();
+    FindNextFrame(true);
+  }
+  const int64_t streamLen = StreamLength();
+  if (streamLen > 0 && mOffset >= static_cast<uint64_t>(streamLen)) {
+    mDurationTotalFrames = mFrameIndex;
+  }
+  mDurationAvgFrameLen = AverageFrameLength();
+  ADTSLOG(
+      "ScanForDuration scanned={} totalFrames={} avgFrameLen={:f} "
+      "estDuration={:f}s",
+      scanned, mDurationTotalFrames, mDurationAvgFrameLen,
+      Duration().IsValid() ? Duration().ToSeconds() : -1.0);
+  return mDurationTotalFrames >= 0;
+}
+
+void ADTSTrackDemuxer::MaybeFinalizeDuration() {
+  if (mDurationTotalFrames >= 0 || !mSamplesPerSecond) {
+    return;
+  }
+  AutoPinned<MediaResource> stream(mSource.GetResource());
+  if (!stream || !stream->IsDataCachedToEndOfResource(0)) {
+    return;
+  }
+  
+  
+  
+  const uint64_t savedOffset = mOffset;
+  const int64_t savedFrameIndex = mFrameIndex;
+  mOffset = mParser->FirstFrame().Offset();
+  mFrameIndex = 0;
+  mParser->EndFrameSession();
+  ScanForDuration();
+  mOffset = savedOffset;
+  mFrameIndex = savedFrameIndex;
+  mParser->EndFrameSession();
 }
 
 TimeUnit ADTSTrackDemuxer::Duration(int64_t aNumFrames) const {

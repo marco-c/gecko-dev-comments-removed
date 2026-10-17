@@ -105,6 +105,14 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
   double AverageFrameLength() const;
 
   
+  
+  
+  bool ScanForDuration();
+
+  
+  void MaybeFinalizeDuration();
+
+  
   MediaResourceIndex mSource;
 
   
@@ -118,6 +126,16 @@ class ADTSTrackDemuxer : public MediaTrackDemuxer,
 
   
   mozilla::CumulativeAverage<double> mMeanFrameLen;
+
+  
+  
+  
+  int64_t mDurationTotalFrames = -1;
+
+  
+  
+  
+  double mDurationAvgFrameLen = 0.0;
 
   
   uint32_t mSamplesPerFrame;
