@@ -15,10 +15,10 @@
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
-#include "nsStringFwd.h"
 
 class nsIThread;
 class nsIThreadPool;
+class nsIURI;
 
 namespace mozilla {
 namespace image {
@@ -66,7 +66,7 @@ class DecodePool final : public nsIObserver {
 
 
 
-  bool SyncRunIfPreferred(IDecodingTask* aTask, const nsCString& aURI);
+  bool SyncRunIfPreferred(IDecodingTask* aTask, nsIURI* aURI);
 
   
 
@@ -74,7 +74,7 @@ class DecodePool final : public nsIObserver {
 
 
 
-  void SyncRunIfPossible(IDecodingTask* aTask, const nsCString& aURI);
+  void SyncRunIfPossible(IDecodingTask* aTask, nsIURI* aURI);
 
   
 
