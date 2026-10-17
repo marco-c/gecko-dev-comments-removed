@@ -20,6 +20,7 @@ use crate::render_task_graph::{RenderTaskGraph, RenderTaskId};
 pub struct GpuBufferBuilder {
     pub i32: GpuBufferBuilderI,
     pub f32: GpuBufferBuilderF,
+    pub edges: PathEdgeBufferBuilder,
 }
 
 pub type GpuBufferF = GpuBuffer<GpuBufferBlockF>;
@@ -757,7 +758,6 @@ unsafe impl Texel for GpuBufferBlockEdge {
     fn image_format() -> ImageFormat { ImageFormat::RGBA8 }
 }
 
-#[allow(dead_code)]
 pub type GpuBufferEdges = GpuBuffer<GpuBufferBlockEdge>;
 
 
@@ -765,12 +765,10 @@ pub type GpuBufferEdges = GpuBuffer<GpuBufferBlockEdge>;
 
 
 
-#[allow(dead_code)]
 pub struct PathEdgeBufferBuilder {
     data: FrameVec<GpuBufferBlockEdge>,
 }
 
-#[allow(dead_code)]
 impl PathEdgeBufferBuilder {
     pub fn new(memory: &FrameMemory, capacity: usize) -> Self {
         PathEdgeBufferBuilder {
