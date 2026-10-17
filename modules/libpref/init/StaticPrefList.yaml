@@ -12030,12 +12030,6 @@
   mirror: always
   rust: true
 
-# Is support for -webkit-line-clamp on regular blocks enabled?
-- name: layout.css.webkit-line-clamp.block.enabled
-  type: bool
-  value: false
-  mirror: always
-
 # TODO(Bug 1540681): Merge with the prefixed version.
 # Is support for the unprefixed 'line-clamp' property enabled?
 - name: layout.css.line-clamp.enabled

@@ -1131,25 +1131,39 @@ inline bool HasLineClampAuto(const StyleLineClamp& aLineClamp) {
          !aLineClamp.webkit_legacy;
 }
 
-static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
-  if (!GetLineClampMaxLines(aFrame->StyleDisplay()->mWebkitLineClamp) &&
-      !HasLineClampAuto(aFrame->StyleDisplay()->mWebkitLineClamp)) {
-    return false;
+enum class SetsLineClamp {
+  No,
+  Yes,
+  YesLegacy,
+};
+
+
+static SetsLineClamp IsLineClampStyle(const nsStyleDisplay* aStyleDisplay) {
+  if (!GetLineClampMaxLines(aStyleDisplay->mWebkitLineClamp) &&
+      !HasLineClampAuto(aStyleDisplay->mWebkitLineClamp)) {
+    return SetsLineClamp::No;
   }
 
+  if (!aStyleDisplay->mWebkitLineClamp.webkit_legacy) {
+    return SetsLineClamp::Yes;
+  }
+
+  return SetsLineClamp::YesLegacy;
+}
+
+static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
   if (!aFrame->HasAnyStateBits(NS_BLOCK_BFC)) {
     return false;
   }
+  const auto setsLineClamp = IsLineClampStyle(aFrame->StyleDisplay());
+  if (setsLineClamp != SetsLineClamp::YesLegacy) {
+    return setsLineClamp == SetsLineClamp::Yes;
+  }
 
-  if (!aFrame->StyleDisplay()->mWebkitLineClamp.webkit_legacy ||
-      StaticPrefs::layout_css_webkit_line_clamp_block_enabled() ||
-      aFrame->PresContext()->Document()->ChromeRulesEnabled()) {
+  if (aFrame->PresContext()->Document()->ChromeRulesEnabled()) {
     return true;
   }
 
-  
-  
-  
   
   auto origDisplay = [&] {
     if (aFrame->Style()->GetPseudoType() ==
@@ -7430,8 +7444,9 @@ void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
     return;
   }
 
+  const bool wasBFC = HasAnyStateBits(NS_BLOCK_BFC);
   const bool isBFC = EstablishesBFC(this);
-  if (HasAnyStateBits(NS_BLOCK_BFC) != isBFC) {
+  if (wasBFC != isBFC) {
     if (HasAnyFloats()) {
       
       
@@ -7439,10 +7454,16 @@ void nsBlockFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
       RemoveStateBits(NS_BLOCK_BFC);
       MarkSameFloatManagerLinesDirty(this);
     }
-    if (isBFC && !IsLineClampRoot(this)) {
+    AddOrRemoveStateBits(NS_BLOCK_BFC, isBFC);
+    const bool wasLineClampRoot =
+        wasBFC &&
+        IsLineClampStyle(aOldStyle->StyleDisplay()) != SetsLineClamp::No;
+    
+    
+    const bool isLineClampRoot = isBFC && IsLineClampRoot(this);
+    if (wasLineClampRoot != isLineClampRoot) {
       ClearLineClampEllipsis();
     }
-    AddOrRemoveStateBits(NS_BLOCK_BFC, isBFC);
   }
 }
 
