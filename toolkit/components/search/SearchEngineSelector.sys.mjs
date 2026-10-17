@@ -81,10 +81,10 @@ export class SearchEngineSelector {
   /**
    * Handles getting the configuration from remote settings.
    *
-   * @param {boolean} skipSetSearchConfigForSchemaTests
+   * @param {boolean} [skipSetSearchConfigForSchemaTests]
    *   For tests only. Skips setting the search configuration on the Rust
-   *   search engine selector. Useful for testing schemas without Rust also
-   *   testing.
+   *   search engine selector. Useful for testing schemas without the Rust
+   *   validation getting in the way.
    * @returns {Promise<object>}
    *   The configuration data.
    */

@@ -539,11 +539,25 @@ class SearchConfigTest {
 
   _assertCorrectUrlCode(location, engine, rule) {
     if (rule.searchUrlCode) {
-      const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
-      this.assertOk(
-        submission.uri.query.split("&").includes(rule.searchUrlCode),
-        `Expected "${rule.searchUrlCode}" in search url "${submission.uri.spec}"`
-      );
+      if (rule.searchUrlCode instanceof Map) {
+        for (let [key, expectedCode] of rule.searchUrlCode) {
+          const submission = engine.getSubmission(
+            "test",
+            URLTYPE_SEARCH_HTML,
+            key
+          );
+          this.assertOk(
+            submission.uri.query.split("&").includes(expectedCode),
+            `Expected "${expectedCode}" in search url "${submission.uri.spec}"`
+          );
+        }
+      } else {
+        const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
+        this.assertOk(
+          submission.uri.query.split("&").includes(rule.searchUrlCode),
+          `Expected "${rule.searchUrlCode}" in search url "${submission.uri.spec}"`
+        );
+      }
     }
     if (rule.searchUrlParamNotInQuery) {
       const submission = engine.getSubmission("test", URLTYPE_SEARCH_HTML);
