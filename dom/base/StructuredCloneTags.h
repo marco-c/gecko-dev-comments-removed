@@ -97,7 +97,7 @@ enum StructuredCloneTags : uint32_t {
 
   
   
-  SCTAG_DOM_QUOTAEXCEEDEDERROR,
+  EMPTY_SLOT_9,
 
   
   

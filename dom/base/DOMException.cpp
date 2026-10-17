@@ -8,11 +8,9 @@
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/HoldDropJSObjects.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Exceptions.h"
-#include "mozilla/dom/QuotaExceededError.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsIException.h"
@@ -78,7 +76,7 @@ enum DOM4ErrorTypeCodeMap {
 };
 
 #define DOM4_MSG_DEF(name, message, nsresult) \
-  {(nsresult), DOM4ErrorTypeCodeMap::name, #name, message},
+  {(nsresult), name, #name, message},
 #define DOM_MSG_DEF(val, message) \
   {(val), NS_ERROR_GET_CODE(val), #val, message},
 
@@ -378,25 +376,14 @@ JSObject* DOMException::WrapObject(JSContext* aCx,
   return DOMException_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-static already_AddRefed<DOMException> CreateDOMExceptionForCode(
-    nsresult aRv, const nsACString& aMessage, const nsACString& aName,
-    uint16_t aCode) {
-  if (aCode == DOMException_Binding::QUOTA_EXCEEDED_ERR &&
-      StaticPrefs::dom_quota_exceeded_error_enabled()) {
-    return do_AddRef(new QuotaExceededError(aRv, aMessage));
-  }
-
-  RefPtr<DOMException> inst = new DOMException(aRv, aMessage, aName, aCode);
-  return inst.forget();
-}
-
 
 already_AddRefed<DOMException> DOMException::Create(nsresult aRv) {
   nsCString name;
   nsCString message;
   uint16_t code;
   NSResultToNameAndMessage(aRv, name, message, &code);
-  return CreateDOMExceptionForCode(aRv, message, name, code);
+  RefPtr<DOMException> inst = new DOMException(aRv, message, name, code);
+  return inst.forget();
 }
 
 
@@ -406,7 +393,8 @@ already_AddRefed<DOMException> DOMException::Create(
   nsCString message;
   uint16_t code;
   NSResultToNameAndMessage(aRv, name, message, &code);
-  return CreateDOMExceptionForCode(aRv, aMessage, name, code);
+  RefPtr<DOMException> inst = new DOMException(aRv, aMessage, name, code);
+  return inst.forget();
 }
 
 static bool ReadAsCString(JSContext* aCx, JSStructuredCloneReader* aReader,
