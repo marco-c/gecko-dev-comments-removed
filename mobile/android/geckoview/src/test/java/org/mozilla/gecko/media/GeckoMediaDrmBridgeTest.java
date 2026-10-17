@@ -5,15 +5,19 @@ package org.mozilla.gecko.media;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNull;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
@@ -21,10 +25,12 @@ import static org.robolectric.Shadows.shadowOf;
 import android.media.MediaCrypto;
 import android.media.MediaDrm;
 import android.media.NotProvisionedException;
-import android.os.Looper;
 import java.net.HttpURLConnection;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
@@ -56,10 +62,20 @@ public class GeckoMediaDrmBridgeTest {
   private MediaDrm mDrm;
   private GeckoMediaDrm.Callbacks mCallbacks;
   private GeckoMediaDrmBridge mBridge;
+  private volatile int mResponseCode;
+  private final CountDownLatch mSendResponse = new CountDownLatch(1);
 
   @Before
   public void setUp() throws Exception {
     mServer = new MockWebServer();
+    mServer.setDispatcher(
+        new Dispatcher() {
+          @Override
+          public MockResponse dispatch(final RecordedRequest request) throws InterruptedException {
+            mSendResponse.await();
+            return new MockResponse.Builder().code(mResponseCode).body(PROVISION_RESPONSE).build();
+          }
+        });
     mServer.start();
 
     final MediaDrm.ProvisionRequest request =
@@ -86,11 +102,12 @@ public class GeckoMediaDrmBridgeTest {
     if (mBridge != null) {
       mBridge.release();
     }
+    mSendResponse.countDown();
     mServer.close();
   }
 
   private void createBridge(final int responseCode) throws Exception {
-    mServer.enqueue(new MockResponse.Builder().code(responseCode).body(PROVISION_RESPONSE).build());
+    mResponseCode = responseCode;
     final MediaDrm drm = mDrm;
     mBridge =
         new GeckoMediaDrmBridge("com.widevine.alpha") {
@@ -102,14 +119,9 @@ public class GeckoMediaDrmBridgeTest {
     mBridge.setCallbacks(mCallbacks);
   }
 
-  private static void awaitProvisionResponsePosted() throws InterruptedException {
-    final long deadline = System.nanoTime() + 10_000_000_000L;
-    while (shadowOf(Looper.getMainLooper()).isIdle()) {
-      if (System.nanoTime() > deadline) {
-        fail("The provisioning response was never posted to the main thread");
-      }
-      Thread.sleep(10);
-    }
+  private void respondAndIdle() {
+    mSendResponse.countDown();
+    shadowOf(mBridge.getPendingOpsLooper()).idle();
   }
 
   @Test
@@ -117,8 +129,7 @@ public class GeckoMediaDrmBridgeTest {
     createBridge(HttpURLConnection.HTTP_OK);
     mBridge.createSession(1, 2, "cenc", new byte[] {0});
 
-    awaitProvisionResponsePosted();
-    shadowOf(Looper.getMainLooper()).idle();
+    respondAndIdle();
 
     final RecordedRequest request = mServer.takeRequest(10, TimeUnit.SECONDS);
     assertNotNull("The provisioning request was never sent", request);
@@ -126,9 +137,6 @@ public class GeckoMediaDrmBridgeTest {
     assertEquals(PROVISION_REQUEST, request.getUrl().queryParameter("signedRequest"));
     assertEquals("Widevine CDM v1.0", request.getHeaders().get("User-Agent"));
     verify(mDrm).provideProvisionResponse(PROVISION_RESPONSE.getBytes(UTF_8));
-    final Looper pendingOps = mBridge.getPendingOpsLooper();
-    assertNotNull("Pending operations were never resumed after provisioning", pendingOps);
-    shadowOf(pendingOps).idle();
     verify(mCallbacks).onSessionCreated(eq(1), eq(2), any(), any());
     verify(mCallbacks)
         .onSessionMessage(
@@ -140,15 +148,22 @@ public class GeckoMediaDrmBridgeTest {
   }
 
   @Test
-  public void releaseBeforeResponseIsHandledDropsIt() throws Exception {
+  public void releaseWhileProvisioningDropsTheResponse() throws Exception {
     createBridge(HttpURLConnection.HTTP_OK);
     mBridge.createSession(1, 2, "cenc", new byte[] {0});
+    assertNotNull(
+        "The provisioning request was never sent", mServer.takeRequest(10, TimeUnit.SECONDS));
+    final Thread provisioning = mBridge.getPendingOpsLooper().getThread();
+    final AtomicReference<Throwable> uncaught = new AtomicReference<>();
+    provisioning.setUncaughtExceptionHandler((thread, e) -> uncaught.set(e));
 
-    awaitProvisionResponsePosted();
     mBridge.release();
     mBridge = null;
-    shadowOf(Looper.getMainLooper()).idle();
+    mSendResponse.countDown();
+    provisioning.join(10_000);
 
+    assertFalse("The provisioning thread outlived release()", provisioning.isAlive());
+    assertNull("The dropped response threw on the provisioning thread", uncaught.get());
     verify(mCallbacks).onRejectPromise(eq(GeckoMediaDrmBridge.MAX_PROMISE_ID), anyString());
     verify(mCallbacks).onRejectPromise(eq(2), anyString());
     verify(mDrm, never()).provideProvisionResponse(any());
@@ -158,10 +173,26 @@ public class GeckoMediaDrmBridgeTest {
   public void serverErrorRejectsProvisioning() throws Exception {
     createBridge(HttpURLConnection.HTTP_INTERNAL_ERROR);
 
-    awaitProvisionResponsePosted();
-    shadowOf(Looper.getMainLooper()).idle();
+    respondAndIdle();
 
     verify(mCallbacks).onRejectPromise(eq(GeckoMediaDrmBridge.MAX_PROMISE_ID), anyString());
     verify(mDrm, never()).provideProvisionResponse(any());
+  }
+
+  @Test
+  public void reprovisioningWhileResumingCreatesTheSession() throws Exception {
+    doThrow(new NotProvisionedException("not provisioned"))
+        .doThrow(new NotProvisionedException("still not provisioned"))
+        .doReturn(new byte[] {4, 5, 6}, new byte[] {1, 2, 3})
+        .when(mDrm)
+        .openSession();
+    createBridge(HttpURLConnection.HTTP_OK);
+    mBridge.createSession(1, 2, "cenc", new byte[] {0});
+
+    mSendResponse.countDown();
+
+    verify(mCallbacks, timeout(10_000)).onSessionCreated(eq(1), eq(2), any(), any());
+    verify(mDrm, times(2)).provideProvisionResponse(PROVISION_RESPONSE.getBytes(UTF_8));
+    verify(mCallbacks, never()).onRejectPromise(anyInt(), anyString());
   }
 }

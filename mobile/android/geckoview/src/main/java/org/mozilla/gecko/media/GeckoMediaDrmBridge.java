@@ -8,7 +8,6 @@ import android.media.DeniedByServerException;
 import android.media.MediaCrypto;
 import android.media.MediaDrm;
 import android.media.NotProvisionedException;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -272,7 +271,7 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
   public void release() {
     if (DEBUG) Log.d(LOGTAG, "release()");
     if (mProvisionTask != null) {
-      mProvisionTask.cancel(true);
+      mProvisionTask.mCancelled = true;
       mProvisionTask = null;
     }
     if (mProvisioningPromiseId > 0) {
@@ -538,13 +537,14 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
     return !session.equals(mCryptoSessionId) && mSessionIds.contains(session);
   }
 
-  private class PostRequestTask extends AsyncTask<Void, Void, Void> {
+  private class PostRequestTask implements Runnable {
     private static final String LOGTAG = "PostRequestTask";
 
     private int mPromiseId;
     private String mURL;
     private byte[] mDrmRequest;
     private byte[] mResponseBody;
+    private volatile boolean mCancelled;
 
     PostRequestTask(final int promiseId, final String url, final byte[] drmRequest) {
       this.mPromiseId = promiseId;
@@ -553,7 +553,10 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
     }
 
     @Override
-    protected Void doInBackground(final Void... params) {
+    public void run() {
+      if (mCancelled) {
+        return;
+      }
       HttpURLConnection urlConnection = null;
       BufferedReader in = null;
       try {
@@ -603,12 +606,9 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
           Log.e(LOGTAG, "Exception during closing in ...", e);
         }
       }
-      return null;
-    }
-
-    @Override
-    protected void onPostExecute(final Void v) {
-      onProvisionResponse(mPromiseId, mResponseBody);
+      if (!mCancelled) {
+        onProvisionResponse(mPromiseId, mResponseBody);
+      }
     }
   }
 
@@ -641,7 +641,7 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
 
     assertTrue(mProvisioningPromiseId == 0);
     try {
-      while (!mPendingCreateSessionDataQueue.isEmpty()) {
+      while (mProvisioningPromiseId == 0 && !mPendingCreateSessionDataQueue.isEmpty()) {
         final PendingCreateSessionData pendingData = mPendingCreateSessionDataQueue.poll();
         if (pendingData == null) {
           return;
@@ -662,42 +662,42 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
 
   @VisibleForTesting
   Looper getPendingOpsLooper() {
-    return mHandlerThread == null ? null : mHandlerThread.getLooper();
+    return mHandlerThread.getLooper();
+  }
+
+  private Handler getHandler() {
+    if (mHandler == null) {
+      mHandlerThread = new HandlerThread("PendingSessionOpsThread");
+      mHandlerThread.start();
+      mHandler = new Handler(mHandlerThread.getLooper());
+    }
+    return mHandler;
   }
 
   private void resumePendingOperations() {
-    if (mHandlerThread == null) {
-      mHandlerThread = new HandlerThread("PendingSessionOpsThread");
-      mHandlerThread.start();
+    getHandler().post(this::runPendingOperations);
+  }
+
+  private void runPendingOperations() {
+    if (mPendingKeyRequest != null) {
+      MediaDrm.KeyRequest request = null;
+      try {
+        request =
+            getKeyRequest(
+                mPendingKeyRequest.mSession,
+                mPendingKeyRequest.mData,
+                mPendingKeyRequest.mMimeType);
+      } catch (final NotProvisionedException e) {
+        Log.e(LOGTAG, "Cannot get key request after provisioning!");
+        mPendingKeyRequest = null;
+        return;
+      }
+      final byte[] sessionArray = mPendingKeyRequest.mSession.array();
+      mPendingKeyRequest = null;
+      requestLicense(sessionArray, request);
+    } else {
+      processPendingCreateSessionData();
     }
-    if (mHandler == null) {
-      mHandler = new Handler(mHandlerThread.getLooper());
-    }
-    mHandler.post(
-        new Runnable() {
-          @Override
-          public void run() {
-            if (mPendingKeyRequest != null) {
-              MediaDrm.KeyRequest request = null;
-              try {
-                request =
-                    getKeyRequest(
-                        mPendingKeyRequest.mSession,
-                        mPendingKeyRequest.mData,
-                        mPendingKeyRequest.mMimeType);
-              } catch (final NotProvisionedException e) {
-                Log.e(LOGTAG, "Cannot get key request after provisioning!");
-                mPendingKeyRequest = null;
-                return;
-              }
-              final byte[] sessionArray = mPendingKeyRequest.mSession.array();
-              mPendingKeyRequest = null;
-              requestLicense(sessionArray, request);
-            } else {
-              processPendingCreateSessionData();
-            }
-          }
-        });
   }
 
   private void requestLicense(final byte[] session, final MediaDrm.KeyRequest request) {
@@ -723,7 +723,7 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
       mProvisioningPromiseId = promiseId;
       final MediaDrm.ProvisionRequest request = mDrm.getProvisionRequest();
       mProvisionTask = new PostRequestTask(promiseId, request.getDefaultUrl(), request.getData());
-      mProvisionTask.execute();
+      getHandler().post(mProvisionTask);
     } catch (final Exception e) {
       onRejectPromise(promiseId, "Exception happened in startProvisioning !");
       mProvisioningPromiseId = 0;
