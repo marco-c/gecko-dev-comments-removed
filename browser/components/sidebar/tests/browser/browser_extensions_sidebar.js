@@ -13,10 +13,7 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 
 add_setup(() =>
   SpecialPowers.pushPrefEnv({
-    set: [
-      ["layout.css.devPixelsPerPx", 1],
-      ["sidebar.visibility", "hide-on-close"],
-    ],
+    set: [["layout.css.devPixelsPerPx", 1]],
   })
 );
 
@@ -29,11 +26,11 @@ async function sendMessage(extension, msg, data) {
 
 add_task(async function test_extension_sidebar_actions() {
   const sidebar = document.querySelector("sidebar-main");
+  ok(sidebar, "Sidebar is shown.");
 
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();
   await extension.awaitMessage("sidebar");
-  await SidebarTestUtils.ensureLauncherVisible(window);
   is(sidebar.extensionButtons.length, 1, "Extension is shown in the sidebar.");
 
   
@@ -98,7 +95,8 @@ add_task(async function test_open_new_window_after_install() {
   await extension.awaitMessage("sidebar");
 
   const sidebar = document.querySelector("sidebar-main");
-  await SidebarTestUtils.ensureLauncherVisible(window);
+  ok(sidebar, "Sidebar is shown.");
+
   is(
     sidebar.extensionButtons.length,
     1,
@@ -148,12 +146,12 @@ add_task(async function test_open_new_private_window_after_install() {
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();
   await extension.awaitMessage("sidebar");
-  await SidebarTestUtils.ensureLauncherVisible(window);
 
   const privateWin = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });
   let sidebar = privateWin.document.querySelector("sidebar-main");
+  ok(sidebar, "Sidebar is shown.");
 
   info("Waiting for extension buttons to update");
   await BrowserTestUtils.waitForMutationCondition(
@@ -210,12 +208,12 @@ add_task(async function test_open_new_private_window_after_install() {
 
 add_task(async function test_customize_sidebar_extensions() {
   const sidebar = document.querySelector("sidebar-main");
+  ok(sidebar, "Sidebar is shown.");
   await sidebar.updateComplete;
 
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();
   await extension.awaitMessage("sidebar");
-  await SidebarTestUtils.ensureLauncherVisible(window);
   let extensionButtonCount = sidebar.extensionButtons.length;
   is(extensionButtonCount, 1, "Extension is shown in the sidebar.");
 
@@ -294,12 +292,10 @@ add_task(async function test_extensions_keyboard_navigation() {
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();
   await extension.awaitMessage("sidebar");
-  await SidebarTestUtils.ensureLauncherVisible(window);
   is(sidebar.extensionButtons.length, 1, "Extension is shown in the sidebar.");
   const extension2 = ExtensionTestUtils.loadExtension({ ...extData2 });
   await extension2.startup();
   await extension2.awaitMessage("sidebar");
-  await SidebarTestUtils.ensureLauncherVisible(window);
   is(
     sidebar.extensionButtons.length,
     2,
@@ -362,11 +358,11 @@ add_task(async function test_extension_sidebar_hidpi_icon() {
   });
 
   const sidebar = document.querySelector("sidebar-main");
+  ok(sidebar, "Sidebar is shown.");
 
   const extension = ExtensionTestUtils.loadExtension({ ...extData });
   await extension.startup();
   await extension.awaitMessage("sidebar");
-  await SidebarTestUtils.ensureLauncherVisible(window);
 
   const { iconSrc } = sidebar.extensionButtons[0];
   is(
@@ -424,7 +420,6 @@ add_task(async function test_extension_panel_load() {
   const commandID = `${ExtensionCommon.makeWidgetId(extension.id)}-sidebar-action`;
 
   await extensionPanelInitialReady;
-  await SidebarTestUtils.ensureLauncherVisible(window);
   is(launcher.extensionButtons.length, 1, "Extension is shown in the sidebar.");
 
   ok(SidebarController.isOpen, "The sidebar panel opened on install");
@@ -451,7 +446,7 @@ add_task(async function test_extension_panel_load() {
   );
   document.getElementById("sidebar-button").click();
   await panelHiddenPromise;
-  info("sidebar is closed again");
+
   const extensionPanelReopenReady = waitForPanelReady();
   document.getElementById("sidebar-button").click();
 

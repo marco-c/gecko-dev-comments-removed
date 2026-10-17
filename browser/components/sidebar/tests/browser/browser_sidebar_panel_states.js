@@ -25,32 +25,27 @@ add_task(async function test_enable_revamp_with_open_sidebar() {
   Assert.ok(!sidebarHeader.hidden, "The sidebar header is visible");
 
   
-  info("Waiting for the legacy sidebar header to be hidden");
-  let headerHidden = BrowserTestUtils.waitForMutationCondition(
-    sidebarHeader,
-    { attributes: true, attributeFilter: ["hidden"] },
-    () => sidebarHeader.hidden
-  );
+  
+  info("Waiting for sidebar main to be visible and header hidden");
+  let sidebarVisibilitiesChanged = Promise.all([
+    BrowserTestUtils.waitForMutationCondition(
+      sidebarContainer,
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => !sidebarContainer.hidden
+    ),
+    BrowserTestUtils.waitForMutationCondition(
+      sidebarHeader,
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => sidebarHeader.hidden
+    ),
+  ]);
 
   
   await SpecialPowers.popPrefEnv();
-  await headerHidden;
-  await SidebarController.waitUntilStable();
+  await sidebarVisibilitiesChanged;
 
-  Assert.ok(SidebarController.isOpen, "The panel is still open");
-  Assert.equal(
-    SidebarController.currentID,
-    "viewHistorySidebar",
-    "The open panel carried over to the revamped sidebar"
-  );
+  Assert.ok(!sidebarContainer.hidden, "The sidebar launcher is visible");
   Assert.ok(sidebarHeader.hidden, "The sidebar header is hidden");
-  
-  
-  Assert.ok(sidebarContainer.hidden, "The sidebar launcher stays hidden");
-  await SidebarTestUtils.ensureLauncherVisible(
-    newWin,
-    "The launcher can still be revealed with the toolbar button"
-  );
 
   await BrowserTestUtils.closeWindow(newWin);
 });

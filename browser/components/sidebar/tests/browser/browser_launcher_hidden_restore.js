@@ -5,58 +5,38 @@
 
 let sidebarLauncher;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function pushVisibility(visibility, verticalTabs = true) {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [VERTICAL_TABS_PREF, verticalTabs],
-      [SIDEBAR_VISIBILITY_PREF, visibility],
-    ],
-  });
-  await SidebarTestUtils.waitForTabstripOrientation(
-    window,
-    verticalTabs ? "vertical" : "horizontal"
-  );
-  await SidebarController.waitUntilStable();
-  Assert.equal(
-    SidebarController.sidebarRevampVisibility,
-    visibility,
-    `Visibility is ${visibility} for this task`
-  );
-}
-
 add_setup(async () => {
   await SidebarController.waitUntilStable();
   await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.animation.enabled", false]],
+    set: [
+      ["sidebar.animation.enabled", false],
+      
+      
+      
+      
+      
+      
+      
+      
+      [VERTICAL_TABS_PREF, true],
+      [SIDEBAR_VISIBILITY_PREF, "hide-sidebar"],
+    ],
   });
+  await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
+  await SidebarController.waitUntilStable();
   sidebarLauncher = SidebarController.sidebarContainer;
 });
 
-add_task(async function test_launcher_stays_hidden_while_panel_open() {
+add_task(async function test_launcher_hidden_restored_after_panel_close() {
   
   
-  await pushVisibility("hide-sidebar");
   await SidebarTestUtils.ensureLauncherHidden(window);
 
   await SidebarController.show("viewHistorySidebar");
   await SidebarController.waitUntilStable();
-  Assert.ok(SidebarController.isOpen, "Panel is open");
   Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher stays hidden while panel is open"
+    !SidebarController.sidebarContainer.hidden,
+    "Launcher is visible while panel is open"
   );
 
   
@@ -64,25 +44,18 @@ add_task(async function test_launcher_stays_hidden_while_panel_open() {
   await waitForElementHidden(sidebarLauncher);
   Assert.ok(
     sidebarLauncher.hidden,
-    "Launcher is still hidden after panel close"
+    "Launcher is hidden again after panel close"
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(
   async function test_launcher_visible_stays_visible_after_panel_close() {
     
     
-    await pushVisibility("hide-sidebar");
     await SidebarTestUtils.ensureLauncherVisible(window);
 
     await SidebarController.show("viewHistorySidebar");
     await SidebarController.waitUntilStable();
-    Assert.ok(
-      !sidebarLauncher.hidden,
-      "Launcher stays visible while panel is open"
-    );
 
     SidebarController.hide();
     await SidebarController.waitUntilStable();
@@ -90,8 +63,6 @@ add_task(
       !sidebarLauncher.hidden,
       "Launcher stays visible after panel close when it was visible before"
     );
-
-    await SpecialPowers.popPrefEnv();
   }
 );
 
@@ -107,7 +78,11 @@ add_task(async function test_restored_launcher_visibility_wins() {
   
   
   
-  await pushVisibility("hide-sidebar");
+  Assert.equal(
+    SidebarController.sidebarRevampVisibility,
+    "hide-sidebar",
+    "These cases only make sense in hide-sidebar mode"
+  );
   await SidebarTestUtils.ensureLauncherHidden(window);
 
   
@@ -147,81 +122,73 @@ add_task(async function test_restored_launcher_visibility_wins() {
     sidebarLauncher.hidden,
     "Launcher falls back to hidden when nothing was restored"
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
-add_task(async function test_launcher_hidden_across_panel_switch_and_close() {
+add_task(
+  async function test_launcher_hidden_restored_after_panel_switch_and_close() {
+    
+    
+    await SidebarTestUtils.ensureLauncherHidden(window);
+
+    await SidebarController.show("viewHistorySidebar");
+    await SidebarController.waitUntilStable();
+
+    await SidebarController.show("viewBookmarksSidebar");
+    await SidebarController.waitUntilStable();
+
+    SidebarController.hide();
+    await waitForElementHidden(sidebarLauncher);
+    Assert.ok(
+      sidebarLauncher.hidden,
+      "Launcher is hidden again after switching panels and closing"
+    );
+  }
+);
+
+add_task(async function test_launcher_hidden_restored_via_toggle() {
   
   
-  await pushVisibility("hide-sidebar");
   await SidebarTestUtils.ensureLauncherHidden(window);
 
   await SidebarController.show("viewHistorySidebar");
   await SidebarController.waitUntilStable();
 
-  await SidebarController.show("viewBookmarksSidebar");
-  await SidebarController.waitUntilStable();
-  Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher stays hidden after switching panels"
-  );
-
-  SidebarController.hide();
-  await waitForElementHidden(sidebarLauncher);
-  Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher is still hidden after switching panels and closing"
-  );
-
-  await SpecialPowers.popPrefEnv();
-});
-
-add_task(async function test_launcher_hidden_across_toggle() {
-  
-  
-  await pushVisibility("hide-sidebar");
-  await SidebarTestUtils.ensureLauncherHidden(window);
-
-  await SidebarController.toggle("viewHistorySidebar");
-  await SidebarController.waitUntilStable();
-  Assert.ok(SidebarController.isOpen, "Panel is open");
-  Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher stays hidden when a panel is toggled open"
-  );
-
   SidebarController.toggle("viewHistorySidebar");
   await waitForElementHidden(sidebarLauncher);
   Assert.ok(
     sidebarLauncher.hidden,
-    "Launcher is still hidden after toggling panel off"
+    "Launcher is hidden again after toggling panel off"
   );
-
-  await SpecialPowers.popPrefEnv();
 });
 
 add_task(
-  async function test_horizontal_hide_on_close_launcher_hidden_with_panel() {
+  async function test_horizontal_hide_on_close_launcher_restored_after_panel_close() {
     
     
     
-    await pushVisibility("hide-on-close", false);
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [VERTICAL_TABS_PREF, false],
+        [SIDEBAR_VISIBILITY_PREF, "hide-on-close"],
+      ],
+    });
+    await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
+    await SidebarController.waitUntilStable();
 
     await SidebarTestUtils.ensureLauncherHidden(window);
 
     await SidebarTestUtils.showPanel(window, "viewHistorySidebar");
     await SidebarController.waitUntilStable();
     Assert.ok(
-      sidebarLauncher.hidden,
-      "Launcher stays hidden while panel is open in hide-on-close mode"
+      !SidebarController.sidebarContainer.hidden,
+      "Launcher is visible while panel is open"
     );
 
     SidebarTestUtils.closePanel(window);
-    await waitForElementHidden(sidebarLauncher);
+    await waitForElementHidden(SidebarController.sidebarContainer);
     Assert.ok(
-      sidebarLauncher.hidden,
-      "Launcher is still hidden after panel close in hide-on-close mode"
+      SidebarController.sidebarContainer.hidden,
+      "Launcher is hidden again after panel close in hide-on-close mode"
     );
 
     await SpecialPowers.popPrefEnv();
@@ -232,13 +199,15 @@ add_task(
 add_task(async function test_visibility_mode_change_while_panel_open() {
   
   
-  await pushVisibility("hide-sidebar");
   await SidebarTestUtils.ensureLauncherHidden(window);
 
   await SidebarController.show("viewHistorySidebar");
   await SidebarController.waitUntilStable();
 
-  await pushVisibility("always-show");
+  await SpecialPowers.pushPrefEnv({
+    set: [[SIDEBAR_VISIBILITY_PREF, "always-show"]],
+  });
+  await SidebarController.waitUntilStable();
 
   SidebarController.hide();
   await SidebarController.waitUntilStable();
@@ -247,50 +216,5 @@ add_task(async function test_visibility_mode_change_while_panel_open() {
     "Launcher stays visible when visibility changed to always-show while panel was open"
   );
 
-  await SpecialPowers.popPrefEnv();
-  await SpecialPowers.popPrefEnv();
-});
-
-add_task(async function test_mode_switch_to_hide_sidebar_while_panel_open() {
-  
-  
-  
-  
-  
-  await pushVisibility("always-show");
-  await SidebarTestUtils.ensureLauncherVisible(window);
-
-  await SidebarController.show("viewHistorySidebar");
-  await SidebarController.waitUntilStable();
-
-  await pushVisibility("hide-sidebar");
-  await waitForElementHidden(sidebarLauncher);
-  Assert.ok(
-    SidebarController.isOpen,
-    "Panel stays open across the mode switch"
-  );
-  Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher hides when the mode changes to hide-sidebar"
-  );
-
-  SidebarController.hide();
-  await SidebarController.waitUntilStable();
-  Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher is still hidden after closing the panel that was open"
-  );
-
-  await SidebarController.toggle("viewBookmarksSidebar");
-  await SidebarController.waitUntilStable();
-  Assert.ok(SidebarController.isOpen, "A later panel opens");
-  Assert.ok(
-    sidebarLauncher.hidden,
-    "Launcher is still hidden when a later panel is opened"
-  );
-
-  SidebarTestUtils.closePanel(window);
-  await SidebarController.waitUntilStable();
-  await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
 });
