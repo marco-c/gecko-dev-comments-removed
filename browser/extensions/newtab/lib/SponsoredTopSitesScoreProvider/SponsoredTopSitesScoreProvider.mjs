@@ -74,6 +74,7 @@ export class _SponsoredTopSitesScoreProvider {
    *  selecting a configuration record through remote settings.
    */
   init(getFlags) {
+    lazy.logConsole.debug("Initializing");
     this._getFlags = getFlags;
     if (!this._cache) {
       this._cache = new lazy.PersistentCache(CACHE_KEY, false);
@@ -96,6 +97,7 @@ export class _SponsoredTopSitesScoreProvider {
    * Invoke this when scoring is disabled or the consumer is uninitializing.
    */
   uninit() {
+    lazy.logConsole.debug("Uninitializing");
     if (this._placesListener) {
       lazy.PlacesUtils.observers.removeListener(
         PLACES_EVENTS,
@@ -117,6 +119,7 @@ export class _SponsoredTopSitesScoreProvider {
     // Return early if a full release interval has not elapsed.
     const now = Math.round(Date.now() / 1000);
     if (now - this._getLastReleaseTime() < RELEASE_INTERVAL_MS / 1000) {
+      lazy.logConsole.debug("Refresh skipped until the next release interval");
       return;
     }
 
@@ -169,14 +172,17 @@ export class _SponsoredTopSitesScoreProvider {
   async _loadConfig() {
     const recordId = this._getRecordId();
     if (!recordId) {
+      lazy.logConsole.debug("No config record is enabled");
       return null;
     }
 
     const records = await this._rs?.get();
     const record = records?.find(r => r.id === recordId);
     if (!record || !this._isValidConfig(record)) {
+      lazy.logConsole.debug(`No valid config found for ${recordId}`);
       return null;
     }
+    lazy.logConsole.debug(`Loaded config ${recordId}`);
 
     return {
       ...record,
@@ -279,6 +285,7 @@ export class _SponsoredTopSitesScoreProvider {
         return;
       }
 
+      lazy.logConsole.debug("Clearing scores and score history");
       this._setLastReleaseTime(Math.round(Date.now() / 1000));
       await this._cache.set(SCORES_CACHE_KEY, {});
       await this._cache.set(HISTORY_CACHE_KEY, []);
