@@ -1455,14 +1455,23 @@ public class GeckoSession {
       int width;
       int height;
       float devicePixelRatio;
+      float scrollX;
+      float scrollY;
 
        ContentMetrics() {}
 
       @WrapForJNI
-       void set(final int width, final int height, final float devicePixelRatio) {
+       void set(
+          final int width,
+          final int height,
+          final float devicePixelRatio,
+          final float scrollX,
+          final float scrollY) {
         this.width = width;
         this.height = height;
         this.devicePixelRatio = devicePixelRatio;
+        this.scrollX = scrollX;
+        this.scrollY = scrollY;
       }
     }
 
