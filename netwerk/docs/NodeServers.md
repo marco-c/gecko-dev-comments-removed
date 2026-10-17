@@ -665,6 +665,9 @@ rather than served can hold that side itself:
 ```javascript
 await server.startWithNoResponseUdpPort();
 let port = server.port(); // TCP served, UDP never answers
+
+// A server that needs a different start step passes it in:
+await proxy.startWithNoResponseUdpPort(() => proxy.startWithoutProxyFilter());
 ```
 
 ### Scope Issues in Handlers

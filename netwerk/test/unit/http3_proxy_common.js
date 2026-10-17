@@ -43,7 +43,6 @@ function channelOpenPromise(chan, flags) {
 let pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService();
 let proxyHost;
 let proxyPort;
-let noResponsePort;
 let proxyAuth;
 let proxyFilter;
 
@@ -63,8 +62,7 @@ async function setup_http3_proxy() {
   addCertFromFile(certdb, "proxy-ca.pem", "CTu,u,u");
 
   proxyHost = "foo.example.com";
-  ({ masqueProxyPort: proxyPort, noResponsePort } =
-    await create_masque_proxy_server());
+  ({ masqueProxyPort: proxyPort } = await create_masque_proxy_server());
   proxyAuth = "";
 
   Assert.notEqual(proxyPort, null);
@@ -359,10 +357,8 @@ async function test_http_connect_fallback() {
     ""
   );
 
-  let proxyPort = noResponsePort;
   let proxy = new NodeHTTP2ProxyServer();
-  await proxy.startWithoutProxyFilter(proxyPort);
-  Assert.equal(proxyPort, proxy.port());
+  await proxy.startWithNoResponseUdpPort(() => proxy.startWithoutProxyFilter());
   dump(`proxy port=${proxy.port()}\n`);
 
   let server = new NodeHTTP2Server();

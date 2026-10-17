@@ -498,9 +498,12 @@ export class BaseNodeServer {
 
   /// Starts the server on a port free for TCP and UDP alike, holding the UDP
   /// side bound but never answering, so that nothing else can claim it.
-  async startWithNoResponseUdpPort(maxRetries = 10) {
+  async startWithNoResponseUdpPort(
+    start = () => this.start(),
+    maxRetries = 20
+  ) {
     for (let retry = 0; retry < maxRetries; retry++) {
-      await this.start();
+      await start();
       try {
         await this.execute(NodeNoResponseUdpCode);
         return await this.execute(`NodeNoResponseUdpCode.bind(${this.port()})`);
