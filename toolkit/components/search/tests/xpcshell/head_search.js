@@ -257,34 +257,6 @@ function useHttpServer() {
 }
 
 
-const TELEMETRY_RESULT_ENUM = {
-  SUCCESS: 0,
-  SUCCESS_WITHOUT_DATA: 1,
-  TIMEOUT: 2,
-  ERROR: 3,
-};
-
-
-
-
-
-
-
-
-
-function checkCountryResultTelemetry(aExpectedValue) {
-  let histogram = Services.telemetry.getHistogramById(
-    "SEARCH_SERVICE_COUNTRY_FETCH_RESULT"
-  );
-  let snapshot = histogram.snapshot();
-  if (aExpectedValue != null) {
-    equal(snapshot.values[aExpectedValue], 1);
-  } else {
-    deepEqual(snapshot.values, {});
-  }
-}
-
-
 
 
 
@@ -680,13 +652,18 @@ async function assertSelectorEnginesEqualsExpected(
         aliases: [],
         charset: "UTF-8",
         optional: false,
-        partnerCode: "",
-        telemetrySuffix: "",
         orderHint: null,
-        clickUrl: null,
         isNewUntil: null,
         ...expectedEngines[i],
       };
+      if (SearchUtils.configV3FeatureGate) {
+        expectedEngines[i].partner ||= null;
+        expectedEngines[i].deprecated ??= false;
+      } else {
+        expectedEngines[i].partnerCode ||= "";
+        expectedEngines[i].telemetrySuffix ||= "";
+        expectedEngines[i].clickUrl ||= null;
+      }
       expectedEngines[i].classification =
         expectedEngines[i].classification == "general"
           ? SearchEngineClassification.GENERAL
