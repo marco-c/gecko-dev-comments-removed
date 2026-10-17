@@ -29,6 +29,7 @@
 #include "js/Value.h"
 #include "util/StringBuilder.h"
 #include "vm/BooleanObject.h"       
+#include "vm/Caches.h"              
 #include "vm/EqualityOperations.h"  
 #include "vm/Interpreter.h"
 #include "vm/Iteration.h"
@@ -1116,19 +1117,39 @@ static bool PreprocessFastValue(JSContext* cx, Value* vp, StringifyContext* scx,
   }
 
   
+  
+  
   NativeObject* obj = &vp->toObject().as<NativeObject>();
-  PropertyResult toJSON;
-  NativeObject* holder;
   PropertyKey id = NameToId(cx->names().toJSON);
-  if (!NativeLookupPropertyInline<NoGC, LookupResolveMode::CheckMayResolve>(
-          cx, obj, id, &holder, &toJSON)) {
-    
-    *whySlow = BailReason::IMPURE_LOOKUP;
-    return true;
+  MegamorphicCache& cache = cx->caches().megamorphicCache;
+  MegamorphicCacheEntry* entry;
+  Shape* receiverShape = obj->shape();
+  bool definitelyMissing = false;
+  if (cache.lookup(receiverShape, id, &entry)) {
+    if (entry->isMissingProperty()) {
+      definitelyMissing = true;
+    } else if (entry->isDataProperty() || entry->isAccessorProperty()) {
+      
+      *whySlow = BailReason::HAVE_TOJSON;
+      return true;
+    } else {
+      MOZ_ASSERT(entry->isMissingOwnProperty());
+    }
   }
-  if (toJSON.isFound()) {
-    *whySlow = BailReason::HAVE_TOJSON;
-    return true;
+  if (!definitelyMissing) {
+    PropertyResult toJSON;
+    NativeObject* holder;
+    if (!NativeLookupPropertyInline<NoGC, LookupResolveMode::CheckMayResolve>(
+            cx, obj, id, &holder, &toJSON)) {
+      
+      *whySlow = BailReason::IMPURE_LOOKUP;
+      return true;
+    }
+    if (toJSON.isFound()) {
+      *whySlow = BailReason::HAVE_TOJSON;
+      return true;
+    }
+    cache.initEntryForMissingProperty(entry, receiverShape, id);
   }
 
   
