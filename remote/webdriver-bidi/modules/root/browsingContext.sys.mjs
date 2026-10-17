@@ -686,13 +686,9 @@ class BrowsingContextModule extends RootBiDiModule {
         lazy.pprint`Expected "referenceContext" to be a string, got ${referenceContextId}`
       );
 
-      referenceContext =
-        lazy.NavigableManager.getBrowsingContextById(referenceContextId);
-      if (!referenceContext) {
-        throw new lazy.error.NoSuchFrameError(
-          `Browsing Context with id ${referenceContextId} not found`
-        );
-      }
+      referenceContext = this._getNavigable(referenceContextId, {
+        skipPrivilegeCheck: true,
+      });
 
       if (referenceContext.parent) {
         throw new lazy.error.InvalidArgumentError(
@@ -701,7 +697,8 @@ class BrowsingContextModule extends RootBiDiModule {
       }
     }
 
-    let userContext = lazy.UserContextManager.defaultUserContextId;
+    let userContext =
+      this._sessionUserContext ?? lazy.UserContextManager.defaultUserContextId;
     if (referenceContext !== null) {
       userContext =
         lazy.UserContextManager.getIdByBrowsingContext(referenceContext);
@@ -998,9 +995,9 @@ class BrowsingContextModule extends RootBiDiModule {
         }
         default: {
           // Return all top-level browsing contexts.
-          contexts = lazy.TabManager.getBrowsers().map(
-            browser => browser.browsingContext
-          );
+          contexts = lazy.TabManager.getBrowsers({
+            userContext: this._sessionUserContext,
+          }).map(browser => browser.browsingContext);
         }
       }
     }
