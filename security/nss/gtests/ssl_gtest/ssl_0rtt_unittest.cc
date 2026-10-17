@@ -46,6 +46,63 @@ TEST_P(TlsConnectTls13, ZeroRttServerRejectByOption) {
   SendReceive();
 }
 
+
+
+static void ZeroRttWriteBlocked(const std::shared_ptr<TlsAgent>& client,
+                                const std::vector<uint8_t>& data) {
+  client->adapter()->SetWriteError(PR_WOULD_BLOCK_ERROR);
+  EXPECT_EQ(static_cast<PRInt32>(data.size() - 1),
+            PR_Write(client->ssl_fd(), data.data(), data.size()));
+  client->adapter()->SetWriteError(0);
+}
+
+
+
+
+TEST_F(TlsConnectStreamTls13, ZeroRttRejectAfterBlockedWrite) {
+  SetupForZeroRtt();
+  client_->Set0RttEnabled(true);
+  ExpectResumption(RESUME_TICKET);
+  client_->Handshake();  
+  ZeroRttWriteBlocked(client_, {1, 2, 3});
+  Handshake();
+  ExpectEarlyDataAccepted(false);
+  CheckConnected();
+  SendReceive();
+}
+
+
+
+TEST_F(TlsConnectStreamTls13, ZeroRttRejectAfterBlockedWriteSameByte) {
+  SetupForZeroRtt();
+  client_->Set0RttEnabled(true);
+  ExpectResumption(RESUME_TICKET);
+  client_->Handshake();  
+  
+  ZeroRttWriteBlocked(client_, {1, 2, 0});
+  Handshake();
+  ExpectEarlyDataAccepted(false);
+  CheckConnected();
+  SendReceive();
+}
+
+
+TEST_F(TlsConnectStreamTls13, ZeroRttHrrAfterBlockedWrite) {
+  SetupForZeroRtt();
+  static const std::vector<SSLNamedGroup> groups = {ssl_grp_ec_secp384r1,
+                                                    ssl_grp_ec_secp521r1};
+  server_->ConfigNamedGroups(groups);
+  client_->Set0RttEnabled(true);
+  server_->Set0RttEnabled(true);
+  ExpectResumption(RESUME_TICKET);
+  client_->Handshake();  
+  ZeroRttWriteBlocked(client_, {1, 2, 3});
+  Handshake();
+  ExpectEarlyDataAccepted(false);
+  CheckConnected();
+  SendReceive();
+}
+
 TEST_P(TlsConnectTls13, ZeroRttApplicationReject) {
   SetupForZeroRtt();
   client_->Set0RttEnabled(true);
@@ -198,7 +255,7 @@ TEST_P(TlsConnectTls13, ZeroRttOptionsSetLate) {
   ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
   Connect();
   SendReceive();  
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
   Reset();
   StartConnect();
   

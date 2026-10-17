@@ -80,7 +80,7 @@ static const PKIX_UInt32 httpprotocolLen = 5;
 
 
 
-static PKIX_Error *
+PKIX_Error *
 pkix_pl_HttpDefaultClient_HdrCheckComplete(
         PKIX_PL_HttpDefaultClient *client,
         PKIX_UInt32 bytesRead,
@@ -356,7 +356,7 @@ cleanup:
 
 
 
-static PKIX_Error *
+PKIX_Error *
 pkix_pl_HttpDefaultClient_Create(
         const char *host,
         PRUint16 portnum,

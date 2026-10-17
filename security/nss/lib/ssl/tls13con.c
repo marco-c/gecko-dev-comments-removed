@@ -1162,7 +1162,10 @@ tls13_UpdateTrafficKeys(sslSocket *ss, SSLSecretDirection direction)
 
     if (epoch == PR_UINT16_MAX) {
         
-        FATAL_ERROR(ss, SSL_ERROR_TOO_MANY_KEY_UPDATES, internal_error);
+        SSL_TRC(3, ("%d: TLS13[%d]: %s epoch exhausted by too many key updates",
+                    SSL_GETPID(), ss->fd, SSL_ROLE(ss)));
+        (void)SSL3_SendAlert(ss, alert_fatal, internal_error);
+        PORT_SetError(SSL_ERROR_TOO_MANY_KEY_UPDATES);
         return SECFailure;
     }
     ++epoch;
@@ -3160,6 +3163,19 @@ ssl_ListCount(PRCList *list)
 
 
 
+static void
+tls13_ClientEarlyDataRejected(sslSocket *ss)
+{
+    ssl_GetXmitBufLock(ss);
+    ss->appDataBuffered = 0;
+    ssl_ReleaseXmitBufLock(ss);
+}
+
+
+
+
+
+
 
 
 
@@ -3188,6 +3204,7 @@ tls13_HandleHelloRetryRequest(sslSocket *ss, const PRUint8 *savedMsg,
 
     if (ss->ssl3.hs.zeroRttState == ssl_0rtt_sent) {
         ss->ssl3.hs.zeroRttState = ssl_0rtt_ignored;
+        tls13_ClientEarlyDataRejected(ss);
         
         ssl_GetSpecWriteLock(ss);
         ssl_CipherSpecRelease(ss->ssl3.cwSpec);
@@ -5339,6 +5356,7 @@ tls13_HandleEncryptedExtensions(sslSocket *ss, PRUint8 *b, PRUint32 length)
 
         ss->ssl3.hs.zeroRttState = ssl_0rtt_ignored;
         ss->ssl3.hs.zeroRttIgnore = ssl_0rtt_ignore_trial;
+        tls13_ClientEarlyDataRejected(ss);
     } else {
         PORT_Assert(ss->ssl3.hs.zeroRttState == ssl_0rtt_none ||
                     (ss->ssl3.hs.helloRetry &&
