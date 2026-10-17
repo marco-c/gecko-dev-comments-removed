@@ -8,6 +8,7 @@
 
 #include "IPv4Parser.h"
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ScopeExit.h"
@@ -568,12 +569,12 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   
   
 
-  uint32_t approxLen = 0;
+  CheckedInt<uint32_t> approxLen = 0;
 
   
   if (mScheme.mLen > 0) {
-    approxLen +=
-        mScheme.mLen + 3;  
+    approxLen += int32_t(mScheme.mLen) +
+                 3;  
   }
 
   
@@ -680,7 +681,8 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
 
   
   
-  if (approxLen + 1 > StaticPrefs::network_standard_url_max_length()) {
+  if (!(approxLen + 1).isValid() ||
+      approxLen.value() + 1 > StaticPrefs::network_standard_url_max_length()) {
     return NS_ERROR_MALFORMED_URI;
   }
 
@@ -688,7 +690,7 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   
   
   
-  if (!mSpec.SetLength(approxLen + 1,
+  if (!mSpec.SetLength(approxLen.value() + 1,
                        fallible)) {  
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -874,11 +876,11 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
   mSpec.SetLength(mPath.mPos + mPath.mLen);
   ResetSpecHash();
 
-  if (MOZ_UNLIKELY(mSpec.Length() > approxLen)) {
+  if (MOZ_UNLIKELY(mSpec.Length() > approxLen.value())) {
     nsPrintfCString msg(
         "approxLen:%X, mSpecLen:%zX, scheme (%X,%X), host (%X,%X), path "
         "(%X,%X)",
-        approxLen, mSpec.Length(), (uint32_t)mScheme.mPos,
+        approxLen.value(), mSpec.Length(), (uint32_t)mScheme.mPos,
         (int32_t)mScheme.mLen, (uint32_t)mHost.mPos, (int32_t)mHost.mLen,
         (uint32_t)mPath.mPos, (int32_t)mPath.mLen);
     CrashReporter::RecordAnnotationNSCString(
