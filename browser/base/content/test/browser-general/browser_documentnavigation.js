@@ -288,15 +288,9 @@ add_task(async function () {
   );
 
   let expectedSidebarFocusElement;
-  
-  
   if (isUpdatedBookmarks) {
     expectedSidebarFocusElement =
-      bookmarksComponent.panelHeader.closeButton.buttonEl;
-  } else if (Services.prefs.getBoolPref("sidebar.revamp")) {
-    expectedSidebarFocusElement = sidebar.contentDocument
-      .getElementById("sidebar-panel-close")
-      .shadowRoot.querySelector("#main-button");
+      bookmarksComponent.searchInput.shadowRoot.getElementById("input");
   } else {
     expectedSidebarFocusElement = sidebar.contentDocument
       .getElementById("search-box")
