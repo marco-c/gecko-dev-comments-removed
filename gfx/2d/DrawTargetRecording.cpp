@@ -412,14 +412,13 @@ void DrawTargetRecording::DrawGlyphs(ScaledFont* aFont,
     userData->recorder->AddScaledFont(aFont);
   }
 
-  MOZ_ASSERT(!aBuffer.mText || mRecorder->SupportsGlyphSourceText(),
-             "Glyph source text provided to a recorder which doesn't support "
-             "it");
   if (aStrokeOptions) {
     RecordEventSelf(RecordedStrokeGlyphs(aFont, aPattern, *aStrokeOptions,
-                                         aOptions, aBuffer));
+                                         aOptions, aBuffer.mGlyphs,
+                                         aBuffer.mNumGlyphs));
   } else {
-    RecordEventSelf(RecordedFillGlyphs(aFont, aPattern, aOptions, aBuffer));
+    RecordEventSelf(RecordedFillGlyphs(aFont, aPattern, aOptions,
+                                       aBuffer.mGlyphs, aBuffer.mNumGlyphs));
   }
 }
 

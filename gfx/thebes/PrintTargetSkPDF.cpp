@@ -296,8 +296,7 @@ already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
   if (!mState->mCanvas) {
     return nullptr;
   }
-  mPageDT = Factory::CreateDrawTargetWithSkCanvas(
-      mState->mCanvas,  true);
+  mPageDT = Factory::CreateDrawTargetWithSkCanvas(mState->mCanvas);
   if (!mPageDT) {
     mState->mCanvas = nullptr;
     return nullptr;

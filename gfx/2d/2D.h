@@ -1213,19 +1213,6 @@ struct GlyphBuffer {
   const Glyph*
       mGlyphs;  
   uint32_t mNumGlyphs;  
-
-  
-  
-  
-  
-  
-  const char* mText = nullptr;  
-  uint32_t mTextLength = 0;     
-  
-  
-  
-  
-  const uint32_t* mClusters = nullptr;
 };
 
 #ifdef MOZ_ENABLE_FREETYPE
@@ -1537,16 +1524,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
   virtual void AccessibleId(uint64_t aInnerWindowId, uint64_t aAccId) {}
-
-  
-
-
-
-
-
-
-
-  virtual bool SupportsGlyphSourceText() const { return false; }
 
   
 
@@ -2427,12 +2404,8 @@ class GFX2D_API Factory {
   static SubpixelOrder mSubpixelOrder;
 
  public:
-  
-
-
-
   static already_AddRefed<DrawTarget> CreateDrawTargetWithSkCanvas(
-      SkCanvas* aCanvas, bool aSupportsGlyphSourceText = false);
+      SkCanvas* aCanvas);
 
 #ifdef MOZ_ENABLE_FREETYPE
   static void SetFTLibrary(FT_Library aFTLibrary);

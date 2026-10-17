@@ -703,9 +703,9 @@ already_AddRefed<ScaledFont> Factory::CreateScaledFontForDWriteFont(
 #endif  
 
 already_AddRefed<DrawTarget> Factory::CreateDrawTargetWithSkCanvas(
-    SkCanvas* aCanvas, bool aSupportsGlyphSourceText) {
+    SkCanvas* aCanvas) {
   RefPtr newTarget = MakeRefPtr<DrawTargetSkia>();
-  if (!newTarget->Init(aCanvas, aSupportsGlyphSourceText)) {
+  if (!newTarget->Init(aCanvas)) {
     return nullptr;
   }
   return newTarget.forget();

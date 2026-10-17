@@ -17,13 +17,9 @@
 
 
 
-
-async function getPdfArtifactItems(ctx, markup, { testFont = false } = {}) {
-  await loadPdfTestDoc(ctx, testFont ? PDF_TEST_FONT_STYLE + markup : markup);
+async function getPdfArtifactItems(ctx, markup) {
+  await loadPdfTestDoc(ctx, markup);
   const pdf = await exportPdf(ctx);
-  if (testFont) {
-    await assertPdfUsesTestFont(pdf);
-  }
   const page = await pdf.getPage(1);
   return (await page.getTextContent({ includeMarkedContent: true })).items;
 }
@@ -90,26 +86,4 @@ addPdfTabTask(async function testHeaderFooter(ctx) {
   const items = await getPdfArtifactItems(ctx, `<h1>content</h1>`);
   assertArtifactContains(items, HEADER_TEXT);
   assertArtifactContains(items, FOOTER_TEXT);
-});
-
-
-
-addPdfTabTask(async function testMsqrt(ctx) {
-  const items = await getPdfArtifactItems(
-    ctx,
-    `<math><msqrt><mn>4</mn></msqrt></math>`,
-    { testFont: true }
-  );
-  assertArtifactContains(items, "√");
-});
-
-
-
-addPdfTabTask(async function testMencloseLongdiv(ctx) {
-  const items = await getPdfArtifactItems(
-    ctx,
-    `<math><menclose notation="longdiv"><mn>4</mn></menclose></math>`,
-    { testFont: true }
-  );
-  assertArtifactContains(items, ")");
 });

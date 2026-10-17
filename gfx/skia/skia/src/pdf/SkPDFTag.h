@@ -85,11 +85,6 @@ public:
 
     
     
-    
-    SkPDFIndirectReference namespaceRef(const SkString& namespaceURI, SkPDFDocument* doc) const;
-
-    
-    
     struct IDTreeEntry {
         int elemId;
         SkPDFIndirectReference structElemRef;
@@ -99,7 +94,6 @@ private:
 
     SkArenaAlloc fArena;
     skia_private::THashMap<int, SkPDFStructElem*> fStructElemForElemId;
-    mutable skia_private::THashMap<SkString, SkPDFIndirectReference> fNamespaceRefForURI;
     SkPDFStructElem* fRoot = nullptr;
     SkPDF::Metadata::Outline fOutline = SkPDF::Metadata::Outline::None;
 

@@ -106,8 +106,6 @@ int PdfStructTreeBuilder::GetPdfId(uint64_t aInnerWindowId, uint64_t aAccId) {
         return SkPDF::NodeID::PaginationHeaderArtifact;
       case SpecialId::PageFooter:
         return SkPDF::NodeID::PaginationFooterArtifact;
-      case SpecialId::OtherArtifact:
-        return SkPDF::NodeID::OtherArtifact;
       default:
         MOZ_ASSERT_UNREACHABLE("Invalid special acc id");
     }
@@ -133,15 +131,6 @@ PdfStructTreeBuilder::GlobalAccessibleId PdfStructTreeBuilder::GetAccId(
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return {};
-  }
-  if (content->IsText()) {
-    nsINode* parent = content->GetParent();
-    if (parent->IsMathMLElement()) {
-      
-      
-      
-      content = parent->AsContent();
-    }
   }
   dom::Document* doc = content->OwnerDoc();
   
@@ -242,22 +231,10 @@ int PdfStructTreeBuilder::GeneratePdfId(Accessible* aAcc) {
   return entry->value();
 }
 
-void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
-                                              SkPDF::StructureElementNode& aPdf,
-                                              bool aInMath) {
-  role accRole = aAcc->Role();
-  if (!aInMath && accRole == roles::MATHML_MATH) {
-    
-    
-    aPdf.fNodeId = ++mLastPdfId;
-    aPdf.fTypeString = "Formula";
-    aPdf.fChildVector.resize(1);
-    aPdf.fChildVector[0] = std::make_unique<SkPDF::StructureElementNode>();
-    BuildStructSubtree(aAcc, *aPdf.fChildVector[0], true);
-    return;
-  }
+void PdfStructTreeBuilder::BuildStructSubtree(
+    Accessible* aAcc, SkPDF::StructureElementNode& aPdf) {
   aPdf.fNodeId = GeneratePdfId(aAcc);
-  switch (accRole) {
+  switch (aAcc->Role()) {
     case roles::ARTICLE:
       aPdf.fTypeString = "Art";
       break;
@@ -322,10 +299,8 @@ void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
       
       
       
-      nsAutoString name;
-      if (aAcc->Name(name) != eNameFromSubtree && !name.IsEmpty()) {
-        aPdf.fAlt = SkString(NS_ConvertUTF16toUTF8(name).get());
-      }
+      AccNameToPdfAlt(aAcc, aPdf);
+      aPdf.fExposeAlt = false;
       int32_t level = aAcc->GroupPosition().level;
       
       if (1 <= level && level <= 6) {
@@ -354,123 +329,6 @@ void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
       break;
     case roles::LISTITEM_MARKER:
       aPdf.fTypeString = "Lbl";
-      break;
-    case roles::MATHML_CELL:
-      aPdf.fTypeString = "mtd";
-      break;
-    case roles::MATHML_EMPTY_GROUP:
-    case roles::MATHML_ROW:
-    case roles::MATHML_TEXT: {
-      
-      
-      nsAutoString tagName;
-      aAcc->TagName()->ToString(tagName);
-      aPdf.fTypeString = SkString(NS_ConvertUTF16toUTF8(tagName).get());
-      break;
-    }
-    case roles::MATHML_ENCLOSED:
-      aPdf.fTypeString = "menclose";
-      
-      break;
-    case roles::MATHML_ERROR:
-      aPdf.fTypeString = "merror";
-      break;
-    case roles::MATHML_FRACTION:
-      aPdf.fTypeString = "mfrac";
-      
-      break;
-    case roles::MATHML_GLYPH:
-      aPdf.fTypeString = "mglyph";
-      break;
-    case roles::MATHML_IDENTIFIER:
-      aPdf.fTypeString = "mi";
-      break;
-    case roles::MATHML_LABELED_ROW:
-      aPdf.fTypeString = "mlabeledtr";
-      break;
-    case roles::MATHML_LINK:
-      aPdf.fTypeString = "a";
-      break;
-    case roles::MATHML_LONG_DIVISION:
-      aPdf.fTypeString = "mlongdiv";
-      
-      break;
-    case roles::MATHML_MATH:
-      aPdf.fTypeString = "math";
-      
-      
-      aPdf.fNamespace = "http://www.w3.org/1998/Math/MathML";
-      break;
-    case roles::MATHML_MULTISCRIPTS:
-      aPdf.fTypeString = "mmultiscripts";
-      break;
-    case roles::MATHML_NUMBER:
-      aPdf.fTypeString = "mn";
-      break;
-    case roles::MATHML_OPERATOR:
-      aPdf.fTypeString = "mo";
-      
-      break;
-    case roles::MATHML_OVER:
-      aPdf.fTypeString = "mover";
-      
-      break;
-    case roles::MATHML_ROOT:
-      aPdf.fTypeString = "mroot";
-      break;
-    case roles::MATHML_SQUARE_ROOT:
-      aPdf.fTypeString = "msqrt";
-      break;
-    case roles::MATHML_STACK:
-      aPdf.fTypeString = "mstack";
-      
-      break;
-    case roles::MATHML_STACK_CARRIES:
-      aPdf.fTypeString = "mscarries";
-      
-      break;
-    case roles::MATHML_STACK_CARRY:
-      aPdf.fTypeString = "mscarry";
-      
-      break;
-    case roles::MATHML_STACK_GROUP:
-      aPdf.fTypeString = "msgroup";
-      
-      break;
-    case roles::MATHML_STACK_LINE:
-      aPdf.fTypeString = "msline";
-      
-      break;
-    case roles::MATHML_STACK_ROW:
-      aPdf.fTypeString = "msrow";
-      
-      break;
-    case roles::MATHML_STYLE:
-      aPdf.fTypeString = "mstyle";
-      break;
-    case roles::MATHML_SUB:
-      aPdf.fTypeString = "msub";
-      break;
-    case roles::MATHML_SUB_SUP:
-      aPdf.fTypeString = "msubsup";
-      break;
-    case roles::MATHML_SUP:
-      aPdf.fTypeString = "msup";
-      break;
-    case roles::MATHML_TABLE:
-      aPdf.fTypeString = "mtable";
-      
-      break;
-    case roles::MATHML_TABLE_ROW:
-      aPdf.fTypeString = "mtr";
-      break;
-    case roles::MATHML_UNDER:
-      aPdf.fTypeString = "munder";
-      
-      break;
-    case roles::MATHML_UNDER_OVER:
-      aPdf.fTypeString = "munderover";
-      
       break;
     case roles::PARAGRAPH:
       aPdf.fTypeString = "P";
@@ -503,13 +361,7 @@ void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
   aPdf.fChildVector.resize(count);
   for (uint32_t c = 0; c < count; ++c) {
     aPdf.fChildVector[c] = std::make_unique<SkPDF::StructureElementNode>();
-    Accessible* child = aAcc->ChildAt(c);
-    if (aInMath && child->IsTextLeaf()) {
-      
-      
-      continue;
-    }
-    BuildStructSubtree(child, *aPdf.fChildVector[c], aInMath);
+    BuildStructSubtree(aAcc->ChildAt(c), *aPdf.fChildVector[c]);
   }
 }
 

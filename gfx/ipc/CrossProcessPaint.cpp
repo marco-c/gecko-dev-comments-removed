@@ -110,11 +110,6 @@ PaintFragment PaintFragment::Record(dom::BrowsingContext* aBc,
   
   RefPtr<DrawEventRecorderMemory> recorder =
       MakeAndAddRef<DrawEventRecorderMemory>(nullptr);
-  
-  
-  if (aFlags & CrossProcessPaintFlags::ForPrinting) {
-    recorder->SetSupportsGlyphSourceText(true);
-  }
   RefPtr<DrawTarget> dt = Factory::CreateRecordingDrawTarget(
       recorder, referenceDt,
       IntRect(IntPoint(0, 0), surfaceSize.ToUnknownSize()));
