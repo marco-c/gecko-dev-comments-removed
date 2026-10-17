@@ -26,14 +26,13 @@ import { SLOTS } from "../DiscoveryStreamComponents/FeatureHighlight/OMCHighligh
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   WIDGET_REGISTRY,
+  getWidgets,
   isWidgetAddable,
   isWidgetEnabled,
-  isWidgetExtensionUnavailable,
   resolveWidgetSize,
   resolveWidgetOrder,
   resolveWidgetHasSidebar,
   resolveWidgetSrc,
-  getWidgetExtension,
   getHideAllTargets,
 } from "common/WidgetsRegistry.mjs";
 import {
@@ -145,6 +144,7 @@ function renderWeather({
 function Widgets({ widgetIds }) {
   const prefs = useSelector(state => state.Prefs.values);
   const extensionWidgets = useSelector(state => state.ExtensionWidgets);
+  const widgets = getWidgets(WIDGET_REGISTRY, extensionWidgets);
   const weatherData = useSelector(state => state.Weather);
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
@@ -266,10 +266,12 @@ function Widgets({ widgetIds }) {
   const weatherGoesToSidebar =
     resolveWidgetHasSidebar(weatherWidget, prefs) && weatherSize === "small";
   const widgetEnabledMap = {};
-  for (const widget of WIDGET_REGISTRY) {
-    widgetEnabledMap[widget.id] =
-      isWidgetEnabled(widget, prefs, widgetsEnabled) &&
-      !isWidgetExtensionUnavailable(widget, extensionWidgets);
+  for (const widget of widgets) {
+    widgetEnabledMap[widget.id] = isWidgetEnabled(
+      widget,
+      prefs,
+      widgetsEnabled
+    );
   }
   widgetEnabledMap.weather = weatherEnabled && !weatherGoesToSidebar;
 
@@ -308,11 +310,9 @@ function Widgets({ widgetIds }) {
     WIDGET_REGISTRY.some(w => widgetEnabledMap[w.id]) ||
     (!novaEnabled && weatherForecastEnabled);
 
-  const allWidgetsAdded = WIDGET_REGISTRY.filter(
-    w =>
-      isWidgetAddable(w, prefs) &&
-      !isWidgetExtensionUnavailable(w, extensionWidgets)
-  ).every(w => prefs[w.enabledPref]);
+  const allWidgetsAdded = widgets
+    .filter(w => isWidgetAddable(w, prefs))
+    .every(w => prefs[w.enabledPref]);
 
   const renderedWidgetSizes = WIDGET_REGISTRY.filter(
     w => widgetEnabledMap[w.id]
@@ -888,7 +888,7 @@ function Widgets({ widgetIds }) {
             effectiveOrder.map(id => {
               if (novaEnabled) {
                 const Component = WIDGET_ROW_COMPONENTS[id];
-                const entry = WIDGET_REGISTRY.find(w => w.id === id);
+                const entry = widgets.find(w => w.id === id);
                 if (!widgetEnabledMap[id]) {
                   return null;
                 }
@@ -941,11 +941,7 @@ function Widgets({ widgetIds }) {
                           widget-id={id}
                           size={size}
                           padded={true}
-                          src={
-                            entry.extensionID
-                              ? getWidgetExtension(entry, extensionWidgets).src
-                              : resolveWidgetSrc(entry, prefs)
-                          }
+                          src={resolveWidgetSrc(entry, prefs)}
                         />
                       )}
                     </ErrorBoundary>
