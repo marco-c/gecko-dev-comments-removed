@@ -1116,6 +1116,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
           mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
           mIsText(false),
           mIsGeneratedContent(false),
+          mIsSharedGeneratedContent(false),
           mIsAllInline(false),
           mIsBlock(false),
           mIsRenderedLegend(false) {
@@ -1144,7 +1145,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     void Delete(nsCSSFrameConstructor* aFCtor) {
       mChildItems.Destroy(aFCtor);
       if (mIsGeneratedContent) {
-        mContent->UnbindFromTree();
+        if (!mIsSharedGeneratedContent) {
+          mContent->UnbindFromTree();
+        }
         NS_RELEASE(mContent);
       }
       this->~FrameConstructionItem();
@@ -1189,6 +1192,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     
     
     bool mIsGeneratedContent : 1;
+    
+    
+    
+    bool mIsSharedGeneratedContent : 1;
     
     
     
