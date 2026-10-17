@@ -59,6 +59,7 @@ class LogModule {
   
 
 
+
   static void SetLogFile(const char* aFilename);
 
   

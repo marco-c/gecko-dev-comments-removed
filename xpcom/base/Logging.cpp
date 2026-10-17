@@ -538,17 +538,20 @@ class LogModuleManager {
       return;
     }
 
-    const char* filename = aFilename ? aFilename : "";
-    char buf[2048];
-    filename = detail::ExpandLogFileName(filename, buf);
-
     
     MOZ_ASSERT(mRotate == 0,
                "We don't allow rotate for runtime logfile changes");
-    mOutFilePath.reset(strdup(filename));
+
+    detail::LogFile* newFile = nullptr;
+    if (aFilename) {
+      char buf[2048];
+      mOutFilePath.reset(strdup(detail::ExpandLogFileName(aFilename, buf)));
+      newFile = OpenFile(false, 0);
+    } else {
+      mOutFilePath.reset(strdup(""));
+    }
 
     
-    detail::LogFile* newFile = OpenFile(false, 0);
     detail::LogFile* oldFile = mOutFile.exchange(newFile);
 
     
