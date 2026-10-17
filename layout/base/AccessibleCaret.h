@@ -116,7 +116,11 @@ class AccessibleCaret {
   
   
   enum class TouchArea {
-    Full,  
+    
+    
+    
+    
+    Full,
     CaretImage
   };
   bool Contains(const nsPoint& aPoint, TouchArea aTouchArea) const;
