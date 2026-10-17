@@ -3007,11 +3007,11 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
 
 
 
-[[nodiscard]] static bool RequiresDeferredPromiseResolution(
-    JSContext* cx, HandleValue value, bool* needsDeferral) {
+static void RequiresDeferredPromiseResolution(HandleValue value, JSContext* cx,
+                                              bool* needsDeferral) {
   *needsDeferral = false;
   if (!value.isObject()) {
-    return true;
+    return;
   }
 
   
@@ -3022,11 +3022,11 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     
     
     *needsDeferral = true;
-    return true;
+    return;
   }
 
   if (prop.isNotFound()) {
-    return true;
+    return;
   }
 
   MOZ_ASSERT(prop.isNativeProperty());
@@ -3035,7 +3035,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
   if (propInfo.isAccessorProperty()) {
     
     *needsDeferral = holder->hasGetter(propInfo);
-    return true;
+    return;
   }
 
   MOZ_ASSERT(propInfo.isDataProperty());
@@ -3047,7 +3047,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
                                   NameToId(cx->names().then), &thenVal));
 
   *needsDeferral = IsCallable(thenVal);
-  return true;
+  return;
 }
 
 
@@ -3171,9 +3171,7 @@ bool js::SafeResolvePromise(JSContext* cx, Handle<PromiseObject*> promise,
   }
 
   bool needsDeferral = false;
-  if (!RequiresDeferredPromiseResolution(cx, resolution, &needsDeferral)) {
-    return false;
-  }
+  RequiresDeferredPromiseResolution(resolution, cx, &needsDeferral);
 
   if (!needsDeferral) {
     return PromiseObject::resolve(cx, promise, resolution);
