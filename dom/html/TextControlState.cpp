@@ -743,6 +743,8 @@ void TextInputListener::OnSelectionChange(Selection& aSelection,
     return;
   }
 
+  RefPtr<TextControlElement> txtCtrlElement = mTxtCtrlElement;
+
   
   
   
@@ -765,12 +767,13 @@ void TextInputListener::OnSelectionChange(Selection& aSelection,
   if (!collapsed && (aReason & (nsISelectionListener::MOUSEUP_REASON |
                                 nsISelectionListener::KEYPRESS_REASON |
                                 nsISelectionListener::SELECTALL_REASON))) {
-    if (nsCOMPtr<nsIContent> content = mTxtCtrlElement) {
-      if (auto* frame = content->GetPrimaryFrame()) {
+    if (txtCtrlElement) {
+      if (auto* frame = txtCtrlElement->GetPrimaryFrame()) {
         RefPtr<PresShell> presShell = frame->PresShell();
         nsEventStatus status = nsEventStatus_eIgnore;
         WidgetEvent event(true, eFormSelect);
-        presShell->HandleEventWithTarget(&event, frame, content, &status);
+        presShell->HandleEventWithTarget(&event, frame, txtCtrlElement,
+                                         &status);
       }
     }
   }
@@ -782,7 +785,7 @@ void TextInputListener::OnSelectionChange(Selection& aSelection,
 
   mSelectionWasCollapsed = collapsed;
 
-  if (nsFocusManager::GetFocusedElementStatic() != mTxtCtrlElement) {
+  if (nsFocusManager::GetFocusedElementStatic() != txtCtrlElement) {
     return;
   }
 
@@ -965,6 +968,10 @@ TextInputListener::HandleEvent(Event* aEvent) {
 }
 
 nsresult TextInputListener::OnEditActionHandled(TextEditor& aTextEditor) {
+  
+  const RefPtr<TextControlElement> kungFuDeathGrip(mTxtCtrlElement);
+  (void)kungFuDeathGrip;
+
   
   
   size_t numUndoItems = aTextEditor.NumberOfUndoItems();
