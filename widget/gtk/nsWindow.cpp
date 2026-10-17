@@ -5098,15 +5098,16 @@ void nsWindow::UpdateOpaqueRegionInternal() {
       LOG("nsWindow::UpdateOpaqueRegionInternal() window is transparent");
     }
     gdk_window_set_opaque_region(window, region);
-    if (region) {
-      cairo_region_destroy(region);
-    }
 
 #ifdef MOZ_WAYLAND
     if (GdkIsWaylandDisplay()) {
+      AsWayland()->SetToplevelOpaqueRegion(region);
       mSurface->SetOpaqueRegion(mOpaqueRegion.ToUnknownRegion());
     }
 #endif
+    if (region) {
+      cairo_region_destroy(region);
+    }
   }
 }
 
