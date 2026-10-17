@@ -206,9 +206,9 @@
       // width. The largest whole card count the frame fits, because the feed's
       // auto-fill grid collapses to one card without a definite width -- which
       // is why this cannot be folded into the stretch below. A space with no
-      // feed gives it to its widgets the same way.
-      .layout-content-column.has-feed,
-      .space:not(:has(.layout-content-column)) .widgets-section-container {
+      // feed gives it to its widgets and Recent activity the same way.
+      /* stylelint-disable-next-line max-line-length */
+      .layout-content-column.has-feed, .space:not(:has(.layout-content-column)) :is(.widgets-section-container, .layout-highlights-column) {
         inline-size: --col-span(12);
       }
 
@@ -248,8 +248,8 @@
         inline-size: --col-span(17);
       }
 
-      .layout-content-column.has-feed,
-      .space:not(:has(.layout-content-column)) .widgets-section-container {
+      /* stylelint-disable-next-line max-line-length */
+      .layout-content-column.has-feed, .space:not(:has(.layout-content-column)) :is(.widgets-section-container, .layout-highlights-column) {
         inline-size: --col-span(16);
       }
 
