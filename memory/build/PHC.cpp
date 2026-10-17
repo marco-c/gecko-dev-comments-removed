@@ -601,7 +601,7 @@ class PHC : public BaseAllocClass {
     
     
 
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
     const size_t array_size = 16 * 1024 * 1024;
 #else
     

@@ -14566,7 +14566,7 @@
 # metadata. PHC allocations are "oversized" to the system page size.
 - name: memory.phc.size_kb
   type: uint32_t
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
   value: 16 * 1024
 #else
 # Before Bug 1867191 PHC used aproximately 1.1MB since it was set to a round
