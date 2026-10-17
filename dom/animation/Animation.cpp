@@ -1233,6 +1233,12 @@ static void RangeBoundaryToTimelineRangeValue(
 
   
   
+  if (!StaticPrefs::layout_css_typed_om_enabled()) {
+    return;
+  }
+
+  
+  
   
   
   nsAutoCString offsetCss;
