@@ -496,7 +496,8 @@ void JitRuntime::generateBaselineDebugModeOSRHandler(MacroAssembler& masm) {
 #else
   constexpr Register resumeAddress = ABINonArgReturnVolatileReg;
 #endif
-  static_assert(resumeAddress != ReturnReg && resumeAddress != JSReturnReg_Type &&
+  static_assert(resumeAddress != ReturnReg &&
+                resumeAddress != JSReturnReg_Type &&
                 resumeAddress != JSReturnReg_Data);
   masm.pop(resumeAddress);
   masm.jump(resumeAddress);
