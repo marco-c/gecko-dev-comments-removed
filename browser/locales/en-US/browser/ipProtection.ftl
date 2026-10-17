@@ -418,6 +418,12 @@ ip-protection-delete-site-rule-confirm =
 ip-protection-delete-all-site-rules-message = Delete all website rules?
 ip-protection-delete-all-site-rules-confirm =
   .label = Delete all rules
+# Shown in place of the delete confirmation when deleting a rule fails.
+ip-protection-delete-site-rule-error = Couldn’t delete rule
+# Shown in place of the delete confirmation when deleting all rules fails.
+ip-protection-delete-all-site-rules-error = Couldn’t delete rules
+ip-protection-delete-site-rule-retry =
+  .label = Try again
 
 ## IP Protection Bandwidth
 
