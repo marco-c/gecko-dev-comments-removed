@@ -511,8 +511,15 @@ void WritableStreamDefaultControllerError(
   
   aController->ClearAlgorithms();
 
+  JS::Rooted<JS::Value> error(aCx, aError);
+  if (!JS_WrapValue(aCx, &error)) {
+    aRv.MightThrowJSException();
+    aRv.StealExceptionFromJSContext(aCx);
+    return;
+  }
+
   
-  stream->StartErroring(aCx, aError, aRv);
+  stream->StartErroring(aCx, error, aRv);
 }
 
 
