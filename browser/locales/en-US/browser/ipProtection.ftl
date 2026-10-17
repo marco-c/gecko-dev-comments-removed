@@ -143,6 +143,13 @@ ipprotection-site-inclusions-callout-primary-button = Set rules
 ipprotection-site-inclusions-callout-secondary-button-existing-users = Not now
 ipprotection-site-inclusions-callout-secondary-button-lapsed-users = Dismiss
 
+## Holiday Promotion Callout
+
+ipprotection-holiday-promo-title = Get unlimited VPN until January 30
+ipprotection-holiday-promo-description = Make your browsing private and harder to trace with built-in VPN.
+ipprotection-holiday-promo-primary-button = Open VPN
+ipprotection-holiday-promo-secondary-button = Dismiss
+
 ## Panel
 
 # Also used for the callout shown in private browsing
