@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 import { Module } from "chrome://remote/content/shared/messagehandler/Module.sys.mjs";
 
 const lazy = {};
@@ -9,6 +11,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
+  getWebDriverSessionByInternalSessionId:
+    "chrome://remote/content/shared/webdriver/Session.sys.mjs",
   isPrivilegedContext:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
@@ -18,18 +22,53 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
 });
 
+// Hidden pref, until the restriction is tested enough to always enable it.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "containerIsolationEnabled",
+  "remote.experimental.dynamicstart.container-isolation-enabled",
+  false
+);
+
 export class RootBiDiModule extends Module {
   /**
-   * Asserts that a user context id refers to an existing user context.
+   * The user context id the WebDriver session is restricted to.
+   *
+   * @returns {string|null}
+   *     The user context id, or null if the session is not restricted.
+   */
+  get _sessionUserContext() {
+    if (!lazy.containerIsolationEnabled) {
+      return null;
+    }
+
+    return (
+      lazy.getWebDriverSessionByInternalSessionId(
+        this.messageHandler.internalSessionId
+      )?.userContext ?? null
+    );
+  }
+
+  /**
+   * Asserts that a user context id refers to an existing user context, which
+   * can be used by the WebDriver session.
    *
    * @param {string} userContextId
    *     The user context id.
    *
    * @throws {NoSuchUserContextError}
-   *     If the user context cannot be found.
+   *     If the user context cannot be found, or if the session is restricted
+   *     to another user context.
    */
   _assertUserContextId(userContextId) {
-    if (!lazy.UserContextManager.hasUserContextId(userContextId)) {
+    const sessionUserContext = this._sessionUserContext;
+
+    // User contexts other than the session's user context are handled as if
+    // they did not exist.
+    if (
+      !lazy.UserContextManager.hasUserContextId(userContextId) ||
+      (sessionUserContext !== null && userContextId !== sessionUserContext)
+    ) {
       throw new lazy.error.NoSuchUserContextError(
         `User Context with id ${userContextId} was not found`
       );
@@ -114,8 +153,22 @@ export class RootBiDiModule extends Module {
     }
 
     const context = lazy.NavigableManager.getBrowsingContextById(navigableId);
+    const sessionUserContext = this._sessionUserContext;
 
-    if (!skipPrivilegeCheck && context && lazy.isPrivilegedContext(context)) {
+    // Browsing contexts outside of the session's user context are handled as
+    // if they did not exist.
+    if (
+      context === null ||
+      (sessionUserContext !== null &&
+        lazy.UserContextManager.getIdByBrowsingContext(context) !==
+          sessionUserContext)
+    ) {
+      throw new lazy.error.NoSuchFrameError(
+        `Browsing Context with id ${navigableId} not found`
+      );
+    }
+
+    if (!skipPrivilegeCheck && lazy.isPrivilegedContext(context)) {
       lazy.assert.hasSystemAccess();
 
       if (!supportsPrivilegedScope) {
@@ -123,12 +176,6 @@ export class RootBiDiModule extends Module {
           "The command does not support browsing contexts in privileged scope"
         );
       }
-    }
-
-    if (context === null) {
-      throw new lazy.error.NoSuchFrameError(
-        `Browsing Context with id ${navigableId} not found`
-      );
     }
 
     return context;
