@@ -7,11 +7,14 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
+  GeolocationUtils:
+    "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
 });
 
 import { FeatureModel } from "resource://newtab/lib/InferredModel/FeatureModel.sys.mjs";
+import { LocationInterestGrid } from "resource://newtab/lib/InferredModel/LocationInterestGrid.sys.mjs";
 
 import {
   FORMAT,
@@ -129,6 +132,7 @@ export class InferredPersonalizationFeed {
   constructor() {
     this.loaded = false;
     this.cache = this.PersistentCache(CACHE_KEY, true);
+    this.locationInterestGrid = new LocationInterestGrid();
   }
 
   async reset() {
@@ -312,7 +316,7 @@ export class InferredPersonalizationFeed {
     return !(hasContentClicks && hasTopicInterest);
   }
 
-  updateLocationInterestVectors({
+  async updateLocationInterestVectors({
     model,
     modelId,
     clickDataPerInterval,
@@ -349,8 +353,28 @@ export class InferredPersonalizationFeed {
       return;
     }
 
-    // ping merino for location and calcuate the location based interests
-    this.locationInterestVector = model.computeLocationInterestVector();
+    // lookup up the location in our topic grid
+    const locationTopics = await this.getLocationInterestTopics(
+      // the location ping to merino
+      await lazy.GeolocationUtils.geolocation().catch(error => {
+        console.error("Unable to retrieve geolocation", error);
+        return null;
+      })
+    );
+    if (!locationTopics) {
+      return;
+    }
+
+    // transform interests to the current model's format
+    this.locationInterestVector = model.transformLocationTopicsToInterestVector(
+      locationTopics,
+      coarseInferredInterests
+    );
+    if (!this.locationInterestVector) {
+      this.shouldUseLocationVector = false;
+      return;
+    }
+
     // privatize the interest vector for DiffPriv
     this.locationPrivateInferredInterests =
       model.supportsCoarsePrivateInterests()
@@ -363,6 +387,23 @@ export class InferredPersonalizationFeed {
             model_id: modelId,
           }
         : null;
+  }
+
+  async getLocationInterestTopics(geolocation) {
+    try {
+      if (!geolocation?.location) {
+        return null;
+      }
+      const { latitude, longitude, radius } = geolocation.location;
+      return await this.locationInterestGrid.lookup({
+        latitude,
+        longitude,
+        radius,
+      });
+    } catch (error) {
+      console.error("Unable to load location interest vector", error);
+      return null;
+    }
   }
 
   /**
@@ -443,7 +484,7 @@ export class InferredPersonalizationFeed {
       result = {};
     }
 
-    this.updateLocationInterestVectors({
+    await this.updateLocationInterestVectors({
       model,
       modelId,
       clickDataPerInterval: aggClickPerInterval,
