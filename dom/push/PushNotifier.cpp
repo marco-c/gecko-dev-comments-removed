@@ -46,14 +46,24 @@ PushNotifier::NotifyPushWithData(const nsACString& aScope,
   RefPtr<Promise> promise = Promise::CreateInfallible(global);
 
   
-  
-  if (StaticPrefs::dom_push_declarative_enabled() &&
-      ParseDeclarativePushAndShowNotification(Span(aData), aPrincipal,
-                                              aScope)) {
-    promise->MaybeResolveWithUndefined();
-    NotifyPushMessageHandled(aMessageId);
-    promise.forget(aResult);
-    return NS_OK;
+  if (StaticPrefs::dom_push_declarative_enabled()) {
+    RefPtr declarativePushPromise = ParseDeclarativePushAndShowNotification(
+        Span(aData), aPrincipal, aScope);
+    if (declarativePushPromise) {
+      declarativePushPromise->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [messageId = nsString(aMessageId),
+           promise](DeclarativePushPromise::ResolveOrRejectValue&& aResult) {
+            if (aResult.IsReject()) {
+              promise->MaybeReject(aResult.RejectValue());
+            } else {
+              promise->MaybeResolveWithUndefined();
+            }
+            NotifyPushMessageHandled(messageId);
+          });
+      promise.forget(aResult);
+      return NS_OK;
+    }
   }
 
   
@@ -355,8 +365,21 @@ nsresult PushSubscriptionChangeDispatcher::NotifyWorkers() {
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  return swm->SendPushSubscriptionChangeEvent(originSuffix, mScope,
-                                              mOldSubscription);
+  rv = swm->SendPushSubscriptionChangeEvent(originSuffix, mScope,
+                                            mOldSubscription);
+  if (rv == NS_ERROR_NOT_AVAILABLE &&
+      StaticPrefs::dom_push_window_pushmanager_enabled()) {
+    
+    
+    nsCOMPtr<nsIURI> uri;
+    MOZ_TRY(NS_NewURI(getter_AddRefs(uri), mScope));
+    nsAutoCString path;
+    uri->GetFilePath(path);
+    if (path.EqualsLiteral("/")) {
+      return NS_OK;
+    }
+  }
+  return rv;
 }
 
 PushSubscriptionModifiedDispatcher::PushSubscriptionModifiedDispatcher(

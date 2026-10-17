@@ -11,6 +11,11 @@ promise_setup(async () => {
 });
 
 promise_test(async (t) => {
+  
+  
+  const windowSubscription = await pushManager.subscribe();
+  t.add_cleanup(() => windowSubscription.unsubscribe());
+
   const promise = new Promise(r => {
     navigator.serviceWorker.addEventListener("message", r, { once: true })
   });
