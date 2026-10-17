@@ -231,7 +231,7 @@ class nsStandardURL : public nsIFileURL,
   
   
   
-  virtual nsresult EnsureFile();
+  virtual nsresult ResolveFile(nsIFile** aResult);
 
   virtual nsresult Clone(nsIURI** aURI);
   virtual nsresult SetSpecInternal(const nsACString& input);
@@ -408,10 +408,8 @@ class nsStandardURL : public nsIFileURL,
   RefPtr<nsBaseURLParser> mParser;
 
   
- protected:
-  nsCOMPtr<nsIFile> mFile;  
+  nsCOMPtr<nsIFile> mFile;
 
- private:
   
   nsCString mDisplayHost;
 

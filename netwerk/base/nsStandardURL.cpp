@@ -2283,8 +2283,9 @@ nsresult nsStandardURL::EqualsInternal(
     
     *result = false;
 
-    rv = EnsureFile();
-    nsresult rv2 = other->EnsureFile();
+    nsCOMPtr<nsIFile> file, otherFile;
+    rv = ResolveFile(getter_AddRefs(file));
+    nsresult rv2 = other->ResolveFile(getter_AddRefs(otherFile));
 
     
     
@@ -2299,7 +2300,6 @@ nsresult nsStandardURL::EqualsInternal(
            this, mSpec.get()));
       return rv;
     }
-    NS_ASSERTION(mFile, "EnsureFile() lied!");
 
     rv = rv2;
     if (NS_FAILED(rv)) {
@@ -2309,8 +2309,7 @@ nsresult nsStandardURL::EqualsInternal(
            other.get(), other->mSpec.get()));
       return rv;
     }
-    NS_ASSERTION(other->mFile, "EnsureFile() lied!");
-    return mFile->Equals(other->mFile, result);
+    return file->Equals(otherFile, result);
   }
 
   
@@ -3223,13 +3222,12 @@ nsresult nsStandardURL::SetFileExtensionInternal(const nsACString& input) {
 
 
 
-nsresult nsStandardURL::EnsureFile() {
+nsresult nsStandardURL::ResolveFile(nsIFile** aResult) {
   MOZ_ASSERT(mSupportsFileURL,
-             "EnsureFile() called on a URL that doesn't support files!");
+             "ResolveFile() called on a URL that doesn't support files!");
 
   if (mFile) {
-    
-    return NS_OK;
+    return mFile->Clone(aResult);
   }
 
   
@@ -3243,7 +3241,7 @@ nsresult nsStandardURL::EnsureFile() {
     return NS_ERROR_FAILURE;
   }
 
-  return net_GetFileFromURLSpec(mSpec, getter_AddRefs(mFile));
+  return net_GetFileFromURLSpec(mSpec, aResult);
 }
 
 NS_IMETHODIMP
@@ -3251,23 +3249,19 @@ nsStandardURL::GetFile(nsIFile** result) {
   MOZ_ASSERT(mSupportsFileURL,
              "GetFile() called on a URL that doesn't support files!");
 
-  nsresult rv = EnsureFile();
+  nsCOMPtr<nsIFile> file;
+  nsresult rv = ResolveFile(getter_AddRefs(file));
   if (NS_FAILED(rv)) {
     return rv;
   }
 
   if (LOG_ENABLED()) {
     LOG(("nsStandardURL::GetFile [this=%p spec=%s resulting_path=%s]\n", this,
-         mSpec.get(), mFile->HumanReadablePath().get()));
+         mSpec.get(), file->HumanReadablePath().get()));
   }
 
-  
-  
-  
-  
-  
-  
-  return mFile->Clone(result);
+  file.forget(result);
+  return NS_OK;
 }
 
 nsresult nsStandardURL::SetFile(nsIFile* file) {
