@@ -671,7 +671,7 @@ export class FfiConverterTypeTimestamp extends FfiConverter {
 /**
  * WindowType
  */
-export const WindowType = Object.freeze({
+export const WindowType = Object.freeze(/** @lends WindowType */ {
     /**
      * NORMAL
      */

@@ -3021,7 +3021,7 @@ export class FfiConverterTypeTwoTestInterfaces extends FfiConverterArrayBuffer {
 /**
  * EnumNoData
  */
-export const EnumNoData = Object.freeze({
+export const EnumNoData = Object.freeze(/** @lends EnumNoData */ {
     /**
      * A
      */
@@ -3319,7 +3319,7 @@ export class FfiConverterTypeComplexEnum extends FfiConverterArrayBuffer {
 /**
  * ExplicitValuedEnum
  */
-export const ExplicitValuedEnum = Object.freeze({
+export const ExplicitValuedEnum = Object.freeze(/** @lends ExplicitValuedEnum */ {
     /**
      * FIRST
      */
@@ -3414,7 +3414,7 @@ export class FfiConverterTypeExplicitValuedEnum extends FfiConverterArrayBuffer 
 /**
  * GappedEnum
  */
-export const GappedEnum = Object.freeze({
+export const GappedEnum = Object.freeze(/** @lends GappedEnum */ {
     /**
      * ONE
      */

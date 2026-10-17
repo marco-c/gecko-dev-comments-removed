@@ -1044,7 +1044,7 @@ export class FfiConverterTypeGeonameAlternates extends FfiConverterArrayBuffer {
 /**
  * GeonameMatchType
  */
-export const GeonameMatchType = Object.freeze({
+export const GeonameMatchType = Object.freeze(/** @lends GeonameMatchType */ {
     /**
      * ABBREVIATION
      */
@@ -1440,7 +1440,7 @@ export class FfiConverterOptionalTypeFtsMatchInfo extends FfiConverterArrayBuffe
 /**
  * Subject type for Yelp suggestion.
  */
-export const YelpSubjectType = Object.freeze({
+export const YelpSubjectType = Object.freeze(/** @lends YelpSubjectType */ {
     /**
      * SERVICE
      */
@@ -2532,7 +2532,7 @@ export class FfiConverterTypeSuggestGlobalConfig extends FfiConverterArrayBuffer
  * Please preserve the integer values after removing or adding providers.
  * Provider configs are associated with integer keys stored in the database.
  */
-export const SuggestionProvider = Object.freeze({
+export const SuggestionProvider = Object.freeze(/** @lends SuggestionProvider */ {
     /**
      * AMP
      */
@@ -2795,7 +2795,7 @@ export class FfiConverterOptionalSequenceString extends FfiConverterArrayBuffer 
 /**
  * AmpMatchingStrategy
  */
-export const AmpMatchingStrategy = Object.freeze({
+export const AmpMatchingStrategy = Object.freeze(/** @lends AmpMatchingStrategy */ {
     /**
      * Disable keywords added via keyword expansion.
      * This eliminates keywords that for terms related to the "real" keywords, for example
@@ -3419,7 +3419,7 @@ export class FfiConverterTypeSuggestionQuery extends FfiConverterArrayBuffer {
 /**
  * What should be interrupted when [SuggestStore::interrupt] is called?
  */
-export const InterruptKind = Object.freeze({
+export const InterruptKind = Object.freeze(/** @lends InterruptKind */ {
     /**
      * Interrupt read operations like [SuggestStore::query]
      */

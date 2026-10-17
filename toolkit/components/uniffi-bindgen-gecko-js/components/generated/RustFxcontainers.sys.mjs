@@ -332,7 +332,7 @@ return handleRustResult(
  * Firefox can carry an icon this crate does not know, which reads back as
  * `None` and is left in the document untouched.
  */
-export const ContainerIcon = Object.freeze({
+export const ContainerIcon = Object.freeze(/** @lends ContainerIcon */ {
     /**
      * FINGERPRINT
      */
@@ -537,7 +537,7 @@ export class FfiConverterOptionalTypeContainerIcon extends FfiConverterArrayBuff
  * [`ContainerIcon`] apply. Legacy names are not variants: they are resolved to
  * their canonical replacement by [`resolve_color`].
  */
-export const ContainerColor = Object.freeze({
+export const ContainerColor = Object.freeze(/** @lends ContainerColor */ {
     /**
      * GRAY
      */

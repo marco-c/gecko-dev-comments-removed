@@ -417,7 +417,7 @@ export class FfiConverterTypeSyncedExtensionChange extends FfiConverterArrayBuff
 /**
  * QuotaReason
  */
-export const QuotaReason = Object.freeze({
+export const QuotaReason = Object.freeze(/** @lends QuotaReason */ {
     /**
      * TOTAL_BYTES
      */

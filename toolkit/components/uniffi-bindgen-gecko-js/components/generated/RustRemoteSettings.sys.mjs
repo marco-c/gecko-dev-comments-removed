@@ -1521,7 +1521,7 @@ export class FfiConverterTypeRemoteSettingsError extends FfiConverterArrayBuffer
 /**
  * Remote Settings sync status.
  */
-export const SyncStatus = Object.freeze({
+export const SyncStatus = Object.freeze(/** @lends SyncStatus */ {
     /**
      * Sync completed and new data was stored.
      */

@@ -5,7 +5,6 @@
     "jsdoc-plugins/skip-private-members.mjs"
   ],
   "source": {
-    "includePattern": ".+\\.m?jsm?$",
-    "excludePattern": "RustSearch\\.sys\\.mjs$"
+    "includePattern": ".+\\.m?jsm?$"
   }
 }

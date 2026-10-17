@@ -944,7 +944,7 @@ export class FfiConverterTypeInterestVector extends FfiConverterArrayBuffer {
  * interests.  `Inconclusive` is used for domains in the user's top sites that we can't classify
  * because there's no corresponding entry in the interest database.
  */
-export const Interest = Object.freeze({
+export const Interest = Object.freeze(/** @lends Interest */ {
     /**
      * INCONCLUSIVE
      */

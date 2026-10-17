@@ -494,7 +494,7 @@ export class FfiConverterTypeOhttpConfig extends FfiConverterArrayBuffer {
  * 
  * The supported methods are the limited to what's supported by android-components.
  */
-export const Method = Object.freeze({
+export const Method = Object.freeze(/** @lends Method */ {
     /**
      * GET
      */

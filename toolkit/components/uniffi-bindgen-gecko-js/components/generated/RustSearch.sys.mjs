@@ -76,7 +76,7 @@ export class FfiConverterOptionalString extends FfiConverterArrayBuffer {
 /**
  * The list of possible submission methods for search engine urls.
  */
-export const JsonEngineMethod = Object.freeze({
+export const JsonEngineMethod = Object.freeze(/** @lends JsonEngineMethod */ {
     /**
      * POST
      */
@@ -1049,7 +1049,7 @@ export class FfiConverterTypeJSONEngineUrls extends FfiConverterArrayBuffer {
 /**
  * The list of acceptable classifications for a search engine.
  */
-export const SearchEngineClassification = Object.freeze({
+export const SearchEngineClassification = Object.freeze(/** @lends SearchEngineClassification */ {
     /**
      * GENERAL
      */
@@ -2177,7 +2177,7 @@ export class FfiConverterTypeRefinedSearchConfig extends FfiConverterArrayBuffer
  * The list of acceptable classifications for a search engine in
  * search-config-v3.
  */
-export const SearchEngineClassificationV3 = Object.freeze({
+export const SearchEngineClassificationV3 = Object.freeze(/** @lends SearchEngineClassificationV3 */ {
     /**
      * AI
      */
@@ -2956,7 +2956,7 @@ export class FfiConverterTypeRefinedSearchConfigV3 extends FfiConverterArrayBuff
  * The list of possible update channels for a user's build.
  * Use `default` for a self-build or an unknown channel.
  */
-export const SearchUpdateChannel = Object.freeze({
+export const SearchUpdateChannel = Object.freeze(/** @lends SearchUpdateChannel */ {
     /**
      * NIGHTLY
      */
@@ -3051,7 +3051,7 @@ export class FfiConverterTypeSearchUpdateChannel extends FfiConverterArrayBuffer
 /**
  * The list of possible application names that are currently supported.
  */
-export const SearchApplicationName = Object.freeze({
+export const SearchApplicationName = Object.freeze(/** @lends SearchApplicationName */ {
     /**
      * FIREFOX_ANDROID
      */
@@ -3136,7 +3136,7 @@ export class FfiConverterTypeSearchApplicationName extends FfiConverterArrayBuff
 /**
  * SearchDeviceType
  */
-export const SearchDeviceType = Object.freeze({
+export const SearchDeviceType = Object.freeze(/** @lends SearchDeviceType */ {
     /**
      * SMARTPHONE
      */
@@ -3459,7 +3459,7 @@ export class FfiConverterTypeSearchUserEnvironment extends FfiConverterArrayBuff
  * The list of possible update channels for a user's build, for
  * search-config-v3. Use `default` for a self-build or an unknown channel.
  */
-export const SearchUpdateChannelV3 = Object.freeze({
+export const SearchUpdateChannelV3 = Object.freeze(/** @lends SearchUpdateChannelV3 */ {
     /**
      * NIGHTLY
      */
@@ -3555,7 +3555,7 @@ export class FfiConverterTypeSearchUpdateChannelV3 extends FfiConverterArrayBuff
  * The list of possible application names that are supported by
  * search-config-v3.
  */
-export const SearchApplicationNameV3 = Object.freeze({
+export const SearchApplicationNameV3 = Object.freeze(/** @lends SearchApplicationNameV3 */ {
     /**
      * FIREFOX_ANDROID
      */
@@ -3670,7 +3670,7 @@ export class FfiConverterTypeSearchApplicationNameV3 extends FfiConverterArrayBu
 /**
  * The list of possible device types for search-config-v3.
  */
-export const SearchDeviceTypeV3 = Object.freeze({
+export const SearchDeviceTypeV3 = Object.freeze(/** @lends SearchDeviceTypeV3 */ {
     /**
      * SMARTPHONE
      */

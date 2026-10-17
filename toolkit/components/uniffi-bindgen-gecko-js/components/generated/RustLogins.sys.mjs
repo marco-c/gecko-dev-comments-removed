@@ -1626,7 +1626,7 @@ export class FfiConverterTypeBulkResultEntry extends FfiConverterArrayBuffer {
 /**
  * LoginOrErrorMessage
  */
-export const LoginOrErrorMessage = Object.freeze({
+export const LoginOrErrorMessage = Object.freeze(/** @lends LoginOrErrorMessage */ {
     /**
      * LOGIN
      */
