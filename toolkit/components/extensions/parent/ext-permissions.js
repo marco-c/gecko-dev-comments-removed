@@ -105,8 +105,6 @@ this.permissions = class extends ExtensionAPIPersistent {
     return {
       permissions: {
         async request(perms) {
-          let browser =
-            context.callContextData?.pendingEventBrowser || context.xulBrowser;
           let { permissions, origins, data_collection } = perms;
 
           let { optionalPermissions } = context.extension;
@@ -188,6 +186,7 @@ this.permissions = class extends ExtensionAPIPersistent {
               return true;
             }
 
+            let browser = context.pendingEventBrowser || context.xulBrowser;
             let allowPromise = new Promise(resolve => {
               let subject = {
                 wrappedJSObject: {

@@ -10,23 +10,20 @@ ChromeUtils.defineESModuleGetters(this, {
 
 this.commands = class extends ExtensionAPIPersistent {
   PERSISTENT_EVENTS = {
-    onCommand({ context, fire }) {
+    onCommand({ fire }) {
       const { extension } = this;
       const { tabManager } = extension;
 
       let listener = (eventName, commandName) => {
         let nativeTab = tabTracker.activeTab;
         tabManager.addActiveTabPermission(nativeTab);
-        context?.withPendingBrowser(nativeTab.linkedBrowser, () =>
-          fire.async(commandName, tabManager.convert(nativeTab))
-        );
+        fire.async(commandName, tabManager.convert(nativeTab));
       };
       this.on("command", listener);
       return {
         unregister: () => this.off("command", listener),
-        convert(_fire, _context) {
+        convert(_fire) {
           fire = _fire;
-          context = _context;
         },
       };
     },
