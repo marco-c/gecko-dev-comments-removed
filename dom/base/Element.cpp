@@ -1344,7 +1344,9 @@ void Element::AddToIdTable(nsAtom* aId) {
   NS_ASSERTION(HasID(), "Node doesn't have an ID?");
   if (IsInShadowTree()) {
     ShadowRoot* containingShadow = GetContainingShadow();
-    containingShadow->AddToIdTable(this, aId);
+    if (nsContentUtils::IsInSameAnonymousTree(this, containingShadow)) {
+      containingShadow->AddToIdTable(this, aId);
+    }
   } else {
     Document* doc = GetUncomposedDoc();
     if (doc && !IsInNativeAnonymousSubtree()) {
@@ -1363,7 +1365,10 @@ void Element::RemoveFromIdTable() {
     ShadowRoot* containingShadow = GetContainingShadow();
     
     
-    if (containingShadow) {
+    
+    if (containingShadow &&
+        IsInNativeAnonymousSubtree() ==
+            containingShadow->IsInNativeAnonymousSubtree()) {
       containingShadow->RemoveFromIdTable(this, id);
     }
   } else {
