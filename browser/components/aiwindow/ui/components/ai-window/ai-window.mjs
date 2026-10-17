@@ -1692,6 +1692,23 @@ export class AIWindow extends MozLitElement {
   };
 
   /**
+   * Returns the shared values the resume section records with its Glean
+   * events. Resume cards only show on the fullpage new tab before a chat
+   * starts, thus location === "fullpage" and message_seq === 0.
+   * They're still read here so an unexpected value shows up as a bug.
+   *
+   * Passing a function instead of an object keeps the section from
+   * re-rendering on every ai-window render.
+   *
+   * @returns {{chat_id: string, location: string, message_seq: number}}
+   */
+  #getResumeTelemetryContext = () => ({
+    chat_id: this.conversationId,
+    location: this.mode,
+    message_seq: this.#conversation?.messageCount ?? 0,
+  });
+
+  /**
    * Hides the resume section for the rest of the browser session.
    *
    * @private
@@ -1711,7 +1728,7 @@ export class AIWindow extends MozLitElement {
   #handleResumeCardMenuItemSelected = event => {
     const { journeyId, itemId } = event.detail;
     switch (itemId) {
-      case "open-tabs":
+      case "open_tabs":
         this.#handleResumeCardOpenTabs(journeyId).catch(e =>
           lazy.log.error("[ResumeCard] Failed to open tabs:", e)
         );
@@ -3989,6 +4006,7 @@ export class AIWindow extends MozLitElement {
                     .cards=${this.resumeCards}
                     .emptyReason=${this.resumeCardsEmptyReason}
                     .loading=${this.resumeCardsLoading}
+                    .getTelemetryContext=${this.#getResumeTelemetryContext}
                     @smartwindow-resume-card:resume=${this
                       .#handleResumeCardResume}
                     @smartwindow-resume-card:menu-item-selected=${this
