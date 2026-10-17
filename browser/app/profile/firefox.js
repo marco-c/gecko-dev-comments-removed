@@ -3728,6 +3728,15 @@ pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
 
 
 
+
+pref("browser.fireButton.enabled", false);
+
+
+
+pref("browser.fireButton.flow", "panel");
+
+
+
 pref("browser.mailto.dualPrompt", false);
 
 
