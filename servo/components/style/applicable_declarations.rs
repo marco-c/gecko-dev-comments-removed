@@ -5,7 +5,7 @@
 
 
 use crate::derives::*;
-use crate::rule_tree::{CascadeLevel, RuleCascadeFlags, StyleSourceBorrow};
+use crate::rule_tree::{CascadeLevel, CascadeOrigin, RuleCascadeFlags, StyleSourceBorrow};
 use crate::stylesheets::layer_rule::LayerOrder;
 use smallvec::SmallVec;
 
@@ -94,7 +94,14 @@ pub enum RevertKind {
 
 impl CascadePriority {
     
-    pub fn new(
+    pub const TRANSITIONS: Self = Self::new(
+        CascadeLevel::new(CascadeOrigin::Transitions),
+        LayerOrder::root(),
+        RuleCascadeFlags::empty(),
+    );
+
+    
+    pub const fn new(
         cascade_level: CascadeLevel,
         layer_order: LayerOrder,
         flags: RuleCascadeFlags,
