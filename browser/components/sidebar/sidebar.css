@@ -66,7 +66,11 @@ moz-card {
     border: none;
 
     &::part(moz-card-heading-wrapper) {
-      padding-inline: 8px;
+      padding-inline: var(--space-small);
+    }
+    .notabs {
+      padding-inline: var(--space-small);
+      color: var(--text-color-deemphasized);
     }
   }
 

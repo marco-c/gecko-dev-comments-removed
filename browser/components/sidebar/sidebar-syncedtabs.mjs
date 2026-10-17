@@ -330,9 +330,13 @@ class SyncedTabsInSidebar extends SidebarPage {
     return html`<moz-card
       .heading=${deviceName}
       .iconSrc=${this.getDeviceIconSrc(deviceType)}
+      type="accordion"
+      expanded
+      @keydown=${this.keydownHandler}
+      @toggle=${this.#onCardToggle}
       class=${deviceType}
-      data-l10n-id="firefoxview-syncedtabs-device-notabs"
     >
+      <p data-l10n-id="firefoxview-syncedtabs-device-notabs" class="notabs"></p>
     </moz-card>`;
   }
 
@@ -349,11 +353,14 @@ class SyncedTabsInSidebar extends SidebarPage {
       .heading=${deviceName}
       .iconSrc=${this.getDeviceIconSrc(deviceType)}
       class=${deviceType}
-      data-l10n-id="firefoxview-search-results-empty"
-      data-l10n-args=${JSON.stringify({
-        query: escapeHtmlEntities(this.controller.searchQuery),
-      })}
     >
+      <p
+        data-l10n-id="firefoxview-search-results-empty"
+        data-l10n-args=${JSON.stringify({
+          query: escapeHtmlEntities(this.controller.searchQuery),
+        })}
+        class="notabs"
+      ></p>
     </moz-card>`;
   }
 
