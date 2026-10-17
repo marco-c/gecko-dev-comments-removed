@@ -4,7 +4,11 @@ prefs = [
 ]
 support-files = ["GentiumPlus-R.woff"]
 
+["test_CSSRule_supportsDeclarations.html"]
+
 ["test_CSSStyleDeclaration_hasLonghandProperty.html"]
+
+["test_CSSStyleProperties_hasLonghandProperty.html"]
 
 ["test_CSSStyleRule_getScopeRootFor.html"]
 
