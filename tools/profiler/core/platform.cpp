@@ -2844,23 +2844,6 @@ static void DoEHABIBacktrace(
 
 #ifdef USE_LUL_STACKWALK
 
-
-#  if defined(MOZ_HAVE_ASAN_IGNORE)
-MOZ_ASAN_IGNORE static void ASAN_memcpy(void* aDst, const void* aSrc,
-                                        size_t aLen) {
-  
-  
-  
-  
-  char* dst = static_cast<char*>(aDst);
-  const char* src = static_cast<const char*>(aSrc);
-
-  for (size_t i = 0; i < aLen; i++) {
-    dst[i] = src[i];
-  }
-}
-#  endif
-
 static void DoLULBacktrace(
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
     const Registers& aRegs, NativeStack& aNativeStack,
@@ -2935,25 +2918,6 @@ static void DoLULBacktrace(
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   lul::StackImage stackImg;
 
@@ -2992,9 +2956,6 @@ static void DoLULBacktrace(
     if (start < end) {
       nToCopy = end - start;
       if (nToCopy >= 1024u * 1024u) {
-        
-        
-        
         nToCopy = 0;
       } else if (nToCopy > lul::N_STACK_BYTES) {
         nToCopy = lul::N_STACK_BYTES;
@@ -3003,23 +2964,7 @@ static void DoLULBacktrace(
     MOZ_ASSERT(nToCopy <= lul::N_STACK_BYTES);
     stackImg.mLen = nToCopy;
     stackImg.mStartAvma = start;
-    if (nToCopy > 0) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-#  if defined(MOZ_HAVE_ASAN_IGNORE)
-      ASAN_memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
-#  else
-      memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
-#  endif
-      (void)VALGRIND_MAKE_MEM_DEFINED(&stackImg.mContents[0], nToCopy);
-    }
+    stackImg.mContents = reinterpret_cast<uint8_t*>(start);
   }
 
   size_t framePointerFramesAcquired = 0;
