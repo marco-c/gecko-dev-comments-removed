@@ -203,7 +203,21 @@ add_task(async function test_delete_removes_the_address() {
       await openPopupOn(browser, "#organization");
       const rowCount = getDisplayedPopupItems(browser).length;
 
+      Services.fog.testResetFOG();
       await withStorageChange("remove", () => activateDelete(browser));
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      is(events?.length, 1, "One interaction event is recorded");
+      is(
+        events[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction"
+      );
+      is(
+        events[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
 
       const remaining = await getAddresses();
       is(remaining.length, 1, "Confirming the removal deleted one address");

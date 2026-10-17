@@ -417,6 +417,7 @@ add_task(async function test_flyout_edit_opens_about_logins() {
         return originalAddTrustedTab.call(gBrowser, url, ...rest);
       };
 
+      Services.fog.testResetFOG();
       let tab;
       try {
         menupopup.activateItem(editItem);
@@ -424,6 +425,19 @@ add_task(async function test_flyout_edit_opens_about_logins() {
       } finally {
         gBrowser.addTrustedTab = originalAddTrustedTab;
       }
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(events?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        events[0].extra.interaction_type,
+        "edit",
+        "The flyout edit item records an edit interaction"
+      );
+      Assert.equal(
+        events[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       Assert.equal(
         openedURL,
@@ -882,6 +896,7 @@ add_task(async function test_delete_removes_the_login() {
         mi => mi.getAttribute("label") === DELETE_LABEL
       );
 
+      Services.fog.testResetFOG();
       const dialogClosed = BrowserTestUtils.promiseAlertDialog("accept");
       menupopup.activateItem(menuitem);
       await dialogClosed;
@@ -890,6 +905,19 @@ add_task(async function test_delete_removes_the_login() {
         const logins = await Services.logins.getAllLogins();
         return logins.length == before.length - 1;
       }, "Wait for the confirmed removal to reach storage");
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      Assert.equal(events?.length, 1, "One interaction event is recorded");
+      Assert.equal(
+        events[0].extra.interaction_type,
+        "delete",
+        "The flyout delete item records a delete interaction"
+      );
+      Assert.equal(
+        events[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       const remaining = await Services.logins.getAllLogins();
       const removed = before.find(

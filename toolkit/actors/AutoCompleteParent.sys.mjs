@@ -180,6 +180,28 @@ var AutoCompleteResultView = {
   },
 };
 
+/**
+ * The type of saved record an autocomplete result represents, as reported in
+ * telemetry, or null when the result isn't a saved record.
+ *
+ * @param {string} style The result's style
+ * @param {object} comment The result's parsed comment
+ * @returns {?string} "formhistory", "address", "payment" or "password"
+ */
+function getSavedRecordType(style, comment) {
+  switch (style) {
+    case "fromhistory":
+      return "formhistory";
+    case "loginWithOrigin":
+      return "password";
+    case "autofill":
+      return ["address", "payment"].includes(comment.type)
+        ? comment.type
+        : null;
+  }
+  return null;
+}
+
 export class AutoCompleteParent extends JSWindowActorParent {
   #reportedTelemetryInputs = new Set();
 
@@ -774,6 +796,9 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * selects which of its `actions` to dispatch. An action that declares no
    * `fillMessageName` dispatches nothing.
    *
+   * A secondary action on a saved record is recorded in telemetry, with the
+   * record type inferred from the result and the action's `type`.
+   *
    * @param {boolean} secondary Whether to dispatch the entry's secondary action.
    * @param {number} [actionIndex] Which secondary menu action to dispatch;
    *   omitted for a single (non-menu) secondary action.
@@ -795,6 +820,14 @@ export class AutoCompleteParent extends JSWindowActorParent {
         entry = secondaryAction;
       } else {
         entry = secondaryAction.actions?.[actionIndex] ?? {};
+      }
+
+      const recordType = getSavedRecordType(result.style, parsedComment);
+      if (recordType && entry.type) {
+        Glean.autocomplete.recordInteraction.record({
+          record_type: recordType,
+          interaction_type: entry.type,
+        });
       }
     }
 

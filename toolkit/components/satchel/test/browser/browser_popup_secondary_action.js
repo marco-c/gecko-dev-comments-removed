@@ -200,6 +200,7 @@ add_task(async function test_trash_button_removes_the_entry() {
   await withFormHistoryPopup(async (browser, autoCompletePopup, itemsBox) => {
     const button = await selectRowAndGetTrashButton(browser, itemsBox, 0);
 
+    Services.fog.testResetFOG();
     EventUtils.synthesizeMouseAtCenter(button, {});
 
     await TestUtils.waitForCondition(
@@ -214,6 +215,18 @@ add_task(async function test_trash_button_removes_the_entry() {
       await countEntries("value1"),
       0,
       "The clicked entry is removed from form history"
+    );
+    const events = Glean.autocomplete.recordInteraction.testGetValue();
+    Assert.equal(events?.length, 1, "One interaction event is recorded");
+    Assert.equal(
+      events[0].extra.interaction_type,
+      "delete",
+      "The trash button records a delete interaction"
+    );
+    Assert.equal(
+      events[0].extra.record_type,
+      "formhistory",
+      "The event names the formhistory record type"
     );
     Assert.equal(
       await countEntries("value2"),
@@ -295,6 +308,7 @@ add_task(async function test_delete_key_still_removes_with_pref_disabled() {
       "the first row is selected"
     );
 
+    Services.fog.testResetFOG();
     
     
     if (AppConstants.platform == "macosx") {
@@ -319,6 +333,11 @@ add_task(async function test_delete_key_still_removes_with_pref_disabled() {
       await countEntries("value1"),
       0,
       "The keyboard shortcut still removes the entry without the pref"
+    );
+    Assert.equal(
+      Glean.autocomplete.recordInteraction.testGetValue(),
+      null,
+      "The keyboard shortcut does not record a secondary action interaction"
     );
   });
   await SpecialPowers.popPrefEnv();

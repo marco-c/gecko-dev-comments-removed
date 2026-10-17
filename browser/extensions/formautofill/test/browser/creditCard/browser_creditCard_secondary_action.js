@@ -265,8 +265,22 @@ add_task(async function test_delete_removes_the_payment_method() {
       const { rowItem, restore } = await openDeleteTarget(browser);
       const rowCount = getDisplayedPopupItems(browser).length;
 
+      Services.fog.testResetFOG();
       await acceptRemoval(rowItem);
       restore();
+
+      const events = Glean.autocomplete.recordInteraction.testGetValue();
+      is(events?.length, 1, "One interaction event is recorded");
+      is(
+        events[0].extra.interaction_type,
+        "delete",
+        "The trash button records a delete interaction"
+      );
+      is(
+        events[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
+      );
 
       const remaining = await getCreditCards();
       is(
