@@ -824,8 +824,8 @@ export class MiniWindow {
         width: cropInfo.width,
         height: cropInfo.height,
       },
-      layoutWidth: cropInfo.innerWidth || cropInfo.viewportWidth,
-      layoutHeight: cropInfo.innerHeight || cropInfo.viewportHeight,
+      layoutWidth: cropInfo.viewportWidth,
+      layoutHeight: cropInfo.viewportHeight,
     };
   }
 

@@ -54,17 +54,11 @@ toolbar-button-mini-window =
 # Opens up the Mini Window section selector tool.
 main-context-menu-use-mini-window =
     .label = Move Section to Mini Window
-    .accesskey = w
+    .accesskey = M
 
-# Moves full tabs to Mini Windows, one window per tab.
-# Variables
-#  $tabCount (Number): The number of tabs that will be moved.
+# Moves full-tab to a Mini Window.
 move-to-mini-window =
-    .label =
-        { $tabCount ->
-            [1] Move to Mini Window
-           *[other] Move to Mini Windows
-        }
+    .label = Move to Mini Window
     .accesskey = M
 
 ## These strings label the Screenshots overlay while it is being used to pick

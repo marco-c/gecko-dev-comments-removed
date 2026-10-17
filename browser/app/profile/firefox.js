@@ -3082,7 +3082,7 @@ pref("browser.screenshots.folderList", 4);
 pref("browser.screenshots.dir", "");
 
 
-pref("browser.mini-window.enabled", true);
+pref("browser.mini-window.enabled", false);
 pref("browser.mini-window.log", false);
 
 pref("browser.mini-window.toolbar.hide-delay-ms", 2000);
