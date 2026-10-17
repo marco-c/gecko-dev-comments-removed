@@ -4304,7 +4304,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   }
 
   bool isGLVisualSet = false;
-  mIsAccelerated = ComputeShouldAccelerate();
+  mIsAccelerated = WidgetTypeSupportsAcceleration() && ComputeShouldAccelerate();
+  LOG("  accelerated [%d]", mIsAccelerated);
 #ifdef MOZ_X11
   isGLVisualSet = mIsAccelerated && AsX11() && AsX11()->ConfigureX11GLVisual();
 #endif
