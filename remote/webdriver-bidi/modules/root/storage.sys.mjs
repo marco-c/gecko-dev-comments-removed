@@ -534,11 +534,7 @@ class StorageModule extends RootBiDiModule {
             lazy.pprint`Expected partition "userContext" to be a string, got ${userContext}`
           );
 
-          if (!lazy.UserContextManager.hasUserContextId(userContext)) {
-            throw new lazy.error.NoSuchUserContextError(
-              `User Context with id ${userContext} was not found`
-            );
-          }
+          this._assertUserContextId(userContext);
         }
         break;
       }
@@ -952,8 +948,7 @@ class StorageModule extends RootBiDiModule {
 
     if (
       cookieBehavior === Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN ||
-      cookieBehavior ===
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+      cookieBehavior === Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN
     ) {
       return false;
     }
@@ -965,8 +960,7 @@ class StorageModule extends RootBiDiModule {
     const cookieBehavior = Services.prefs.getIntPref(PREF_COOKIE_BEHAVIOR);
 
     return (
-      cookieBehavior ===
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+      cookieBehavior === Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN &&
       lazy.cookieCHIPSEnabled
     );
   }

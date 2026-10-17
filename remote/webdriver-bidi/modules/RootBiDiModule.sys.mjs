@@ -12,11 +12,30 @@ ChromeUtils.defineESModuleGetters(lazy, {
   isPrivilegedContext:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
+  UserContextManager:
+    "chrome://remote/content/shared/UserContextManager.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
 });
 
 export class RootBiDiModule extends Module {
+  /**
+   * Asserts that a user context id refers to an existing user context.
+   *
+   * @param {string} userContextId
+   *     The user context id.
+   *
+   * @throws {NoSuchUserContextError}
+   *     If the user context cannot be found.
+   */
+  _assertUserContextId(userContextId) {
+    if (!lazy.UserContextManager.hasUserContextId(userContextId)) {
+      throw new lazy.error.NoSuchUserContextError(
+        `User Context with id ${userContextId} was not found`
+      );
+    }
+  }
+
   /**
    * Emits an event for a specific browsing context.
    *
@@ -113,6 +132,23 @@ export class RootBiDiModule extends Module {
     }
 
     return context;
+  }
+
+  /**
+   * Retrieves the internal id of a user context based on its user context id.
+   *
+   * @param {string} userContextId
+   *     The user context id.
+   *
+   * @returns {number}
+   *     The internal user context id.
+   *
+   * @throws {NoSuchUserContextError}
+   *     If the user context cannot be found.
+   */
+  _getUserContextInternalId(userContextId) {
+    this._assertUserContextId(userContextId);
+    return lazy.UserContextManager.getInternalIdById(userContextId);
   }
 
   /**
