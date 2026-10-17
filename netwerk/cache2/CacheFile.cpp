@@ -2191,16 +2191,12 @@ void CacheFile::RemoveOutput(CacheFileOutputStream* aOutput, nsresult aStatus) {
 
   mOutput = nullptr;  
 
-  
-  NotifyListenersAboutOutputRemoval();
-
-  if (!mMemoryOnly) WriteMetadataIfNeededLocked();
+  bool failed = NS_FAILED(aStatus) && aStatus != NS_BASE_STREAM_CLOSED;
 
   
   
   
-  if (NS_SUCCEEDED(mStatus) && NS_FAILED(aStatus) &&
-      aStatus != NS_BASE_STREAM_CLOSED) {
+  if (NS_SUCCEEDED(mStatus) && failed) {
     if (aOutput->IsAlternativeData()) {
       MOZ_ASSERT(mAltDataOffset != -1);
       
@@ -2231,6 +2227,25 @@ void CacheFile::RemoveOutput(CacheFileOutputStream* aOutput, nsresult aStatus) {
     } else {
       SetError(aStatus);
     }
+  }
+
+  
+  if (failed && aOutput->IsAlternativeData() && NS_FAILED(mStatus)) {
+    for (CacheFileInputStream* input : mInputs) {
+      if (input->IsAlternativeData()) {
+        
+        
+        ReleaseOutsideLock(RefPtr<nsIInputStream>(input));
+        input->CloseWithStatusLocked(mStatus);
+      }
+    }
+  }
+
+  
+  NotifyListenersAboutOutputRemoval();
+
+  if (!mMemoryOnly) {
+    WriteMetadataIfNeededLocked();
   }
 
   
