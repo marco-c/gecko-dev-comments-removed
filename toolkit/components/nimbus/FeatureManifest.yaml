@@ -5892,9 +5892,9 @@ fireButton:
   owner: hthai@mozilla.com
   hasExposure: true
   exposureDescription: >-
-    Recorded once per process, the first time the user activates the fire
-    button. That is the point where the flow variable changes what happens, so
-    clients who never press the button are not counted as exposed.
+    Recorded at the first startup after enrollment, in every branch, and once
+    per startup after that. That is when the enabled variable first decides
+    whether the button is in the toolbar.
   variables:
     enabled:
       type: boolean
