@@ -169,20 +169,6 @@ function getPopupNotificationNode() {
   return popupNotifications[0];
 }
 
-
-
-
-
-
-async function disableNonReleaseActions() {
-  if (!["release", "esr"].includes(AppConstants.MOZ_UPDATE_CHANNEL)) {
-    SpecialPowers.Services.prefs.setBoolPref(
-      "extensions.webcompat-reporter.enabled",
-      false
-    );
-  }
-}
-
 function assertActivatedPageActionPanelHidden() {
   Assert.ok(
     !document.getElementById(BrowserPageActions._activatedActionPanelID)

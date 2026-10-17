@@ -3139,17 +3139,6 @@ pref("extensions.recommendations.privacyPolicyUrl", "");
 pref("extensions.recommendations.themeRecommendationUrl", "");
 
 
-
-
-
-pref("extensions.webcompat-reporter.newIssueEndpoint", "https://webcompat.com/issues/new");
-#if MOZ_UPDATE_CHANNEL != release && MOZ_UPDATE_CHANNEL != esr
-  pref("extensions.webcompat-reporter.enabled", true);
-#else
-  pref("extensions.webcompat-reporter.enabled", false);
-#endif
-
-
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* http://localhost:* http://127.0.0.1:* moz-extension: blob: filesystem: 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline';");
 pref("extensions.webextensions.base-content-security-policy.v3", "script-src 'self' 'wasm-unsafe-eval';");
 pref("extensions.webextensions.base-content-security-policy.v3-with-localhost", "script-src 'self' 'wasm-unsafe-eval' http://localhost:* http://127.0.0.1:*;");
