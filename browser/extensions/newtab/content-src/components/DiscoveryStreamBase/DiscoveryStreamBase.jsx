@@ -25,6 +25,8 @@ import {
   isSpacesActive,
   hasSpacesArrows,
   isSpacesArrowsAssigned,
+  isSpacesPreviewEnabled,
+  resolveFeatureSpacePreviewImages,
   resolvePopulatedSpaces,
   resolveThematicSpaces,
   SPACE_IDS,
@@ -438,10 +440,33 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             [SPACE_IDS.WIDGETS]: widgetsGroup,
             [SPACE_IDS.ACTIVITY]: highlightsGroup,
           };
+      // Whether each space's content has settled, so the tab preview does not
+      // pick its first item from placeholders and then change it. A thematic
+      // space leads with its feed, as V1 stories is its feed. Sponsored stories
+      // arrive separately and can take the first slot, so the feed waits for
+      // them too; their update is sent even with them off. V1 widgets render
+      // from prefs alone.
+      const feedsLoaded = !!(
+        DiscoveryStream.feeds?.loaded && DiscoveryStream.spocs?.loaded
+      );
+      const spaceReady = thematicSpaces
+        ? {}
+        : {
+            [SPACE_IDS.WIDGETS]: true,
+            [SPACE_IDS.ACTIVITY]: !!this.props.Sections?.find(
+              s => s.id === "highlights"
+            )?.initialized,
+          };
+      // Thematic spaces carry their own, from their config.
+      const featureImages = thematicSpaces
+        ? {}
+        : resolveFeatureSpacePreviewImages(this.props.Prefs.values);
       spaceEntries = populated
         .map(id => ({
           id,
           content: spaceContent[id],
+          ready: spaceReady[id] ?? feedsLoaded,
+          previewImage: featureImages[id],
           ...(thematicSpaces?.spaces[id] ?? {}),
         }))
         .filter(space => space.content);
@@ -498,6 +523,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             defaultId={defaultSpaceId}
             arrows={hasSpacesArrows(this.props.Prefs.values)}
             tablist={!isSpacesArrowsAssigned(this.props.Prefs.values)}
+            preview={isSpacesPreviewEnabled(this.props.Prefs.values)}
             dispatch={this.props.dispatch}
           />
         ) : (

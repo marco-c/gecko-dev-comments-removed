@@ -29,6 +29,9 @@ export const PAGE_LAYOUT_VARIANTS = {
   SPACES_BUTTONS_BOTTOM: "spaces-buttons-bottom",
   SPACES_THEMATIC_V1: "spaces-thematic-v1",
   SPACES_FLOATING_ARROWS: "spaces-floating-arrows",
+  SPACES_PREVIEW_KIT: "spaces-preview-kit",
+  SPACES_PREVIEW_ILLUSTRATED: "spaces-preview-illustrated",
+  SPACES_PREVIEW_CARDS: "spaces-preview-cards",
   // @experiment(remove) { bug 2066527 }
   AUTO_MINIMIZE_WIDGETS: "auto-minimize-widgets",
   // @experiment(remove) { bug 2069496 }
@@ -165,6 +168,20 @@ const SPACES_CLASSES = {
     "spaces",
     "spaces-floating-arrows",
   ],
+  // The buttons-bottom control, whose tabs preview their space with an image,
+  // or with its first card in spaces-preview-cards.
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_KIT]: [
+    "spaces",
+    "spaces-buttons-bottom",
+  ],
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_ILLUSTRATED]: [
+    "spaces",
+    "spaces-buttons-bottom",
+  ],
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_CARDS]: [
+    "spaces",
+    "spaces-buttons-bottom",
+  ],
 };
 
 export const SPACES_PAGE_LAYOUTS = Object.keys(SPACES_CLASSES);
@@ -179,6 +196,35 @@ export const SPACE_IDS = {
 
 export const PREF_SPACES_CONFIG = "pageLayouts.spacesConfig";
 export const PREF_SPACES_ORDER = "pageLayouts.spacesOrder";
+const PREVIEW_ASSETS_PATH = "chrome://newtab/content/data/content/assets/";
+
+// Each preview variant's image set, as a filename prefix. Each image is 2x and
+// centred on its illustration, so anything that breaks out of it, like Kit,
+// overhangs evenly into the preview's padding.
+const SPACES_PREVIEW_IMAGE_SETS = {
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_KIT]: "spaces-preview-kit-",
+  [PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_ILLUSTRATED]: "spaces-preview-",
+};
+
+/**
+ * The preview images for the assigned preview variant, by space id, or empty
+ * outside those variants.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {object} space id to chrome:// URL
+ */
+export function resolveFeatureSpacePreviewImages(prefs) {
+  const prefix = SPACES_PREVIEW_IMAGE_SETS[resolvePageLayoutVariant(prefs)];
+  if (!prefix) {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.values(SPACE_IDS).map(id => [
+      id,
+      `${PREVIEW_ASSETS_PATH}${prefix}${id}.png`,
+    ])
+  );
+}
 
 /**
  * The V1 spaces' order: trainhopConfig as an array of ids, else the pref as
@@ -267,8 +313,8 @@ function rejectSpacesConfig(raw) {
  * spaces, or nothing left after dropping kills the layout.
  *
  * @param {object} raw - a spaces config from trainhopConfig or the pref
- * @returns {object|null} { order, default, widgetCatchAll, arrows, spaces } or
- *   null
+ * @returns {object|null} { order, default, widgetCatchAll, arrows, preview,
+ *   spaces } or null
  */
 export function normalizeSpacesConfig(raw) {
   const order = asStringArray(raw?.order);
@@ -289,6 +335,8 @@ export function normalizeSpacesConfig(raw) {
       label: space.label,
       icon,
       iconFamily: resolveThematicIconFamily(icon),
+      // Chrome-only for the same reason as the icon.
+      previewImage: resolveThematicSpaceIcon(space.previewImage),
       sections: asStringArray(space.sections),
       widgets: asStringArray(space.widgets),
       // Shows Recent activity.
@@ -313,6 +361,7 @@ export function normalizeSpacesConfig(raw) {
       : defaultId,
     // Edge arrows alongside the tablist.
     arrows: raw.arrows === true,
+    preview: raw.preview === true,
     spaces,
   };
 }
@@ -526,6 +575,26 @@ export function resolveThematicSpacesConfig(prefs) {
   const value = resolveSpacesConfigFrom(prefs?.trainhopConfig, pref);
   lastResolved = { trainhop, pref, value };
   return value;
+}
+
+const SPACES_PREVIEW_PAGE_LAYOUTS = [
+  PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_KIT,
+  PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_ILLUSTRATED,
+  PAGE_LAYOUT_VARIANTS.SPACES_PREVIEW_CARDS,
+];
+
+/**
+ * Whether the tabs preview the space they lead to: always in the preview
+ * variants, and in thematic spaces when their config's `preview` flag is set.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isSpacesPreviewEnabled(prefs) {
+  if (isSpacesThematicAssigned(prefs)) {
+    return Boolean(resolveThematicSpacesConfig(prefs)?.preview);
+  }
+  return SPACES_PREVIEW_PAGE_LAYOUTS.includes(resolvePageLayoutVariant(prefs));
 }
 
 /**
@@ -790,8 +859,9 @@ export function resolvePopulatedSpaces(prefs = {}, sectionKeys = null) {
  *
  * @param {object} prefs - current pref values from the Redux store
  * @param {object} discoveryStream - state.DiscoveryStream
- * @returns {object|null} { order, defaultId, activityId, spaces } where each
- *   space carries its label, icon, iconFamily, sectionKeys and widgetIds
+ * @returns {object|null} { order, defaultId, activityId, preview, spaces }
+ *   where each space carries its label, icon, iconFamily, previewImage,
+ *   sectionKeys and widgetIds
  */
 export function resolveThematicSpaces(prefs, discoveryStream) {
   if (!isSpacesThematicAssigned(prefs)) {
@@ -807,6 +877,7 @@ export function resolveThematicSpaces(prefs, discoveryStream) {
     order,
     defaultId: resolveThematicDefaultSpace(config, order),
     activityId: resolveThematicActivitySpace(config),
+    preview: config.preview,
     spaces: Object.fromEntries(
       order.map(id => [
         id,
