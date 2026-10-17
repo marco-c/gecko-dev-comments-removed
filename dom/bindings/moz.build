@@ -34,6 +34,8 @@ EXPORTS.mozilla.dom += [
     "DOMJSClass.h",
     "DOMJSProxyHandler.h",
     "DOMString.h",
+    "ECMACollectionIterator.h",
+    "ECMACollectionMixin.h",
     "ECMACollections.h",
     "Errors.msg",
     "Exceptions.h",

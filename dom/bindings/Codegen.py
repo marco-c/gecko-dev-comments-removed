@@ -901,7 +901,12 @@ def InterfacePrototypeObjectProtoGetter(descriptor):
         if descriptor.interface.getExtendedAttribute("ExceptionClass"):
             protoGetter = "JS::GetRealmErrorPrototype"
         elif descriptor.interface.isIteratorInterface():
-            protoGetter = "JS::GetRealmIteratorPrototype"
+            if descriptor.interface.iterableInterface.isSetlike():
+                protoGetter = "JS::GetRealmSetIteratorPrototype"
+            elif descriptor.interface.iterableInterface.isMaplike():
+                protoGetter = "JS::GetRealmMapIteratorPrototype"
+            else:
+                protoGetter = "JS::GetRealmIteratorPrototype"
         elif descriptor.interface.isAsyncIteratorInterface():
             protoGetter = "JS::GetRealmAsyncIteratorPrototype"
         else:
@@ -8754,6 +8759,57 @@ def callerTypeGetterForDescriptor(descriptor):
     return "%s(cx) ? CallerType::System : CallerType::NonSystem" % systemCallerGetter
 
 
+def getCallArgument(a, name):
+    """
+    The expression that hands the converted value |name| of the IDL argument
+    |a| to a native method.
+    """
+    arg = CGGeneric(name)
+
+    
+    def needsConst(a):
+        if a.type.isDictionary():
+            return True
+        if a.type.isSequence():
+            return True
+        if a.type.isRecord():
+            return True
+        
+        
+        
+        
+        
+        if a.type.nullable() and not a.type.isObject():
+            return True
+        if a.type.isString():
+            return True
+        if a.canHaveMissingValue():
+            
+            
+            return True
+        if a.type.isUnion():
+            return True
+        if a.type.isSpiderMonkeyInterface():
+            return True
+        return False
+
+    if needsConst(a):
+        arg = CGWrapper(arg, pre="Constify(", post=")")
+    
+    if (
+        (a.type.isGeckoInterface() or a.type.isCallback() or a.type.isPromise())
+        and not a.type.nullable()
+    ) or a.type.isDOMString():
+        arg = CGWrapper(arg, pre="NonNullHelper(", post=")")
+
+    
+    
+    if a.type.isGeckoInterface() or a.type.isCallback():
+        arg = CGWrapper(arg, pre="MOZ_KnownLive(", post=")")
+
+    return arg
+
+
 class CGCallGenerator(CGThing):
     """
     A class to generate an actual call to a C++ object.  Assumes that the C++
@@ -8802,50 +8858,7 @@ class CGCallGenerator(CGThing):
 
         args = CGList([CGGeneric(arg) for arg in argsPre], ", ")
         for a, name in arguments:
-            arg = CGGeneric(name)
-
-            
-            def needsConst(a):
-                if a.type.isDictionary():
-                    return True
-                if a.type.isSequence():
-                    return True
-                if a.type.isRecord():
-                    return True
-                
-                
-                
-                
-                
-                if a.type.nullable() and not a.type.isObject():
-                    return True
-                if a.type.isString():
-                    return True
-                if a.canHaveMissingValue():
-                    
-                    
-                    return True
-                if a.type.isUnion():
-                    return True
-                if a.type.isSpiderMonkeyInterface():
-                    return True
-                return False
-
-            if needsConst(a):
-                arg = CGWrapper(arg, pre="Constify(", post=")")
-            
-            if (
-                (a.type.isGeckoInterface() or a.type.isCallback() or a.type.isPromise())
-                and not a.type.nullable()
-            ) or a.type.isDOMString():
-                arg = CGWrapper(arg, pre="NonNullHelper(", post=")")
-
-            
-            
-            if a.type.isGeckoInterface() or a.type.isCallback():
-                arg = CGWrapper(arg, pre="MOZ_KnownLive(", post=")")
-
-            args.append(arg)
+            args.append(getCallArgument(a, name))
 
         needResultDecl = False
 
@@ -9503,14 +9516,20 @@ class CGPerSignatureCall(CGThing):
         
         
         if idlNode.isMethod() and idlNode.isMaplikeOrSetlikeOrIterableMethod():
-            if (
-                idlNode.maplikeOrSetlikeOrIterable.isMaplike()
-                or idlNode.maplikeOrSetlikeOrIterable.isSetlike()
-            ):
+            collection = idlNode.maplikeOrSetlikeOrIterable
+            if collection.isMaplikeOrSetlike() and collection.domBackedStorage:
+                cgThings.append(
+                    CGDOMBackedStorageMethodGenerator(
+                        descriptor,
+                        idlNode,
+                        self.getArguments(),
+                    )
+                )
+            elif collection.isMaplikeOrSetlike():
                 cgThings.append(
                     CGMaplikeOrSetlikeMethodGenerator(
                         descriptor,
-                        idlNode.maplikeOrSetlikeOrIterable,
+                        collection,
                         idlNode.identifier.name,
                     )
                 )
@@ -11280,8 +11299,12 @@ class CGSpecializedGetterCommon(CGAbstractStaticMethod):
             nativeType=self.descriptor.nativeType,
         )
 
-        if self.attr.isMaplikeOrSetlikeAttr():
+        if (
+            self.attr.isMaplikeOrSetlikeAttr()
+            and not self.attr.maplikeOrSetlike.domBackedStorage
+        ):
             assert not self.attr.getExtendedAttribute("CrossOriginReadable")
+            
             
             
             
@@ -17180,9 +17203,16 @@ class CGDescriptor(CGThing):
 
         iteratorCGThings = None
         if (
-            descriptor.interface.isIterable()
-            and descriptor.interface.maplikeOrSetlikeOrIterable.isPairIterator()
-        ) or descriptor.interface.isAsyncIterable():
+            (
+                descriptor.interface.isIterable()
+                and descriptor.interface.maplikeOrSetlikeOrIterable.isPairIterator()
+            )
+            or descriptor.interface.isAsyncIterable()
+            or (
+                (descriptor.interface.isMaplike() or descriptor.interface.isSetlike())
+                and descriptor.interface.maplikeOrSetlikeOrIterable.iteratorType
+            )
+        ):
             
             iteratorCGThings = []
             itr_iface = (
@@ -17277,7 +17307,7 @@ class CGDescriptor(CGThing):
                             needCrossOriginPropertyArrays = True
             
             
-            elif m.isMaplikeOrSetlike():
+            elif m.isMaplikeOrSetlike() and not m.domBackedStorage:
                 cgThings.append(CGMaplikeOrSetlikeHelperGenerator(descriptor, m))
             elif m.isAttr():
                 if m.type.isObservableArray():
@@ -19349,11 +19379,17 @@ class CGBindingRoot(CGThing):
         bindingHeaders["mozilla/dom/IterableIterator.h"] = any(
             (
                 d.interface.isIteratorInterface()
+                and d.interface.maplikeOrSetlikeOrIterable
                 and d.interface.maplikeOrSetlikeOrIterable.isPairIterator()
             )
             or d.interface.isAsyncIteratorInterface()
             or d.interface.isIterable()
             or d.interface.isAsyncIterable()
+            for d in descriptors
+        )
+        bindingHeaders["mozilla/dom/ECMACollectionIterator.h"] = any(
+            (d.interface.isMaplike() or d.interface.isSetlike())
+            and d.interface.maplikeOrSetlikeOrIterable.domBackedStorage
             for d in descriptors
         )
 
@@ -22648,6 +22684,9 @@ class CGMaplikeOrSetlikeMethodGenerator(CGThing):
             
             
             impl_method_name = impl_method_name[2:]
+
+        assert not maplikeOrSetlike.domBackedStorage
+
         self.cgRoot.append(
             CGGeneric(
                 getMaplikeOrSetlikeBackingObject(
@@ -23254,6 +23293,37 @@ class CGMaplikeOrSetlikeHelperGenerator(CGNamespace):
         CGNamespace.__init__(self, self.namespace, CGList(self.helpers))
 
 
+def getForEachBody(preamble, loopHead, setCallArgs):
+    """
+    Body of the generated forEach() of an iterable or [DOMBackedStorage]
+    setlike/maplike interface. Both walk their entries and hand each one to the
+    callback along with the interface object; they differ only in how they get
+    from a position to the value and the key, which setCallArgs does.
+    """
+    return fill(
+        """
+        if (!JS::IsCallable(arg0)) {
+          cx.ThrowErrorMessage<MSG_NOT_CALLABLE>("Argument 1");
+          return false;
+        }
+        JS::RootedValueArray<3> callArgs(cx);
+        callArgs[2].setObject(*obj);
+        JS::Rooted<JS::Value> ignoredReturnVal(cx);
+        $*{preamble}
+        ${loopHead} {
+          $*{setCallArgs}
+          if (!JS::Call(cx, arg1, arg0, JS::HandleValueArray(callArgs),
+                        &ignoredReturnVal)) {
+            return false;
+          }
+        }
+        """,
+        preamble=preamble,
+        loopHead=loopHead,
+        setCallArgs=setCallArgs,
+    )
+
+
 class CGIterableMethodGenerator(CGGeneric):
     """
     Creates methods for iterable interfaces. Unwrapping/wrapping
@@ -23268,34 +23338,27 @@ class CGIterableMethodGenerator(CGGeneric):
 
             CGGeneric.__init__(
                 self,
-                fill(
-                    """
-                if (!JS::IsCallable(arg0)) {
-                  cx.ThrowErrorMessage<MSG_NOT_CALLABLE>("Argument 1");
-                  return false;
-                }
-                JS::RootedValueArray<3> callArgs(cx);
-                callArgs[2].setObject(*obj);
-                JS::Rooted<JS::Value> ignoredReturnVal(cx);
-                auto GetKeyAtIndex = &${selfType}::GetKeyAtIndex;
-                auto GetValueAtIndex = &${selfType}::GetValueAtIndex;
-                for (size_t i = 0; i < self->GetIterableLength(); ++i) {
-                  if (!CallIterableGetter(cx, GetValueAtIndex, self, i,
-                                          callArgs[0])) {
-                    return false;
-                  }
-                  if (!CallIterableGetter(cx, GetKeyAtIndex, self, i,
-                                          callArgs[1])) {
-                    return false;
-                  }
-                  if (!JS::Call(cx, arg1, arg0, JS::HandleValueArray(callArgs),
-                                &ignoredReturnVal)) {
-                    return false;
-                  }
-                }
-                """,
-                    ifaceName=descriptor.interface.identifier.name,
-                    selfType=descriptor.nativeType,
+                getForEachBody(
+                    preamble=fill(
+                        """
+                        auto GetKeyAtIndex = &${selfType}::GetKeyAtIndex;
+                        auto GetValueAtIndex = &${selfType}::GetValueAtIndex;
+                        """,
+                        selfType=descriptor.nativeType,
+                    ),
+                    loopHead="for (size_t i = 0; i < self->GetIterableLength(); ++i)",
+                    setCallArgs=dedent(
+                        """
+                        if (!CallIterableGetter(cx, GetValueAtIndex, self, i,
+                                                callArgs[0])) {
+                          return false;
+                        }
+                        if (!CallIterableGetter(cx, GetKeyAtIndex, self, i,
+                                                callArgs[1])) {
+                          return false;
+                        }
+                        """
+                    ),
                 ),
             )
             return
@@ -23346,6 +23409,141 @@ class CGIterableMethodGenerator(CGGeneric):
             )
 
         CGGeneric.__init__(self, createIterator)
+
+
+class CGDOMBackedStorageMethodGenerator(CGGeneric):
+    """
+    Creates methods for [DOMBackedStorage] setlike/maplike interfaces. They call
+    into the SetlikeMixin or MaplikeMixin of the implementation, except for
+    forEach and the iterators, which walk its ECMASet or ECMAMap. Unwrapping/
+    wrapping will be taken care of by the usual method generation machinery in
+    CGMethodCall/CGPerSignatureCall.
+    """
+
+    def __init__(self, descriptor, method, arguments):
+        self.descriptor = descriptor
+        self.method = method
+        self.collection = method.maplikeOrSetlikeOrIterable
+        assert self.collection.isMaplikeOrSetlike()
+        assert self.collection.domBackedStorage
+        self.args = ", ".join(
+            getCallArgument(a, name).define() for a, name in arguments
+        )
+        CGGeneric.__init__(self, getattr(self, method.identifier.name)())
+
+    def storageAccessor(self):
+        return "Setlike" if self.collection.isSetlike() else "Maplike"
+
+    def has(self):
+        return f"bool result(MOZ_KnownLive(self)->Has({self.args}));\n"
+
+    def delete(self):
+        return f"bool result(MOZ_KnownLive(self)->Delete({self.args}));\n"
+
+    def clear(self):
+        return "MOZ_KnownLive(self)->Clear();\n"
+
+    def get(self):
+        return fill(
+            """
+            JS::Rooted<JS::Value> result(cx);
+            if (auto* value = MOZ_KnownLive(self)->Get(${args})) {
+              if (!ToJSValue(cx, *value, &result)) {
+                return false;
+              }
+            }
+            """,
+            args=self.args,
+        )
+
+    def callReturningSelf(self, nativeMethod):
+        """
+        add() and set(), which return the interface object. Implementations can
+        reject the entry, which they report through the ErrorResult.
+        """
+        return fill(
+            """
+            FastErrorResult rv;
+            MOZ_KnownLive(self)->${nativeMethod}(${args}, rv);
+            if (rv.MaybeSetPendingException(cx, "${label}")) [[unlikely]] {
+              return false;
+            }
+            JS::Rooted<JSObject*> result(cx, obj);
+            """,
+            nativeMethod=nativeMethod,
+            args=self.args,
+            label=GetLabelForErrorReporting(self.descriptor, self.method, False),
+        )
+
+    def add(self):
+        return self.callReturningSelf("Add")
+
+    def set(self):
+        return self.callReturningSelf("Set")
+
+    def forEach(self):
+        if self.collection.isSetlike():
+            
+            
+            setCallArgs = fill(
+                """
+                if (!binding_detail::ECMAKeyToJSValue<${nativeType}>(
+                        cx, entry->mValue, callArgs[0])) {
+                  return false;
+                }
+                callArgs[1].set(callArgs[0]);
+                """,
+                nativeType=self.descriptor.nativeType,
+            )
+        else:
+            setCallArgs = fill(
+                """
+                if (!ToJSValue(cx, entry->mValue, callArgs[0])) {
+                  return false;
+                }
+                if (!binding_detail::ECMAKeyToJSValue<${nativeType}>(
+                        cx, entry->mKey, callArgs[1])) {
+                  return false;
+                }
+                """,
+                nativeType=self.descriptor.nativeType,
+            )
+        
+        
+        
+        return getForEachBody(
+            preamble=f"auto cursor = self->{self.storageAccessor()}().CreateCursor();\n",
+            loopHead="while (const auto* entry = cursor.Next())",
+            setCallArgs=setCallArgs,
+        )
+
+    def createIterator(self):
+        iterTemplate = (
+            "WrappableECMASetIterator"
+            if self.collection.isSetlike()
+            else "WrappableECMAMapIterator"
+        )
+        wrap = f"{self.descriptor.interface.identifier.name}Iterator_Binding::Wrap"
+        return fill(
+            """
+            typedef mozilla::dom::binding_detail::${iterTemplate}<${nativeType}, &${wrap}> itrType;
+            RefPtr<itrType> result(new itrType(self,
+                                               itrType::IteratorType::${itrMethod}));
+            """,
+            iterTemplate=iterTemplate,
+            nativeType=self.descriptor.nativeType,
+            wrap=wrap,
+            itrMethod=self.method.identifier.name.title(),
+        )
+
+    def keys(self):
+        return self.createIterator()
+
+    def values(self):
+        return self.createIterator()
+
+    def entries(self):
+        return self.createIterator()
 
 
 def getObservableArrayBackingObject(

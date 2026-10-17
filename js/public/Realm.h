@@ -5,10 +5,9 @@
 #ifndef js_Realm_h
 #define js_Realm_h
 
-#include "js/shadow/Realm.h"  
-
 #include "js/GCPolicyAPI.h"
-#include "js/TypeDecls.h"  
+#include "js/shadow/Realm.h"  
+#include "js/TypeDecls.h"     
 
 
 
@@ -114,6 +113,10 @@ extern JS_PUBLIC_API JSObject* GetRealmArrayPrototype(JSContext* cx);
 extern JS_PUBLIC_API JSObject* GetRealmErrorPrototype(JSContext* cx);
 
 extern JS_PUBLIC_API JSObject* GetRealmIteratorPrototype(JSContext* cx);
+
+extern JS_PUBLIC_API JSObject* GetRealmMapIteratorPrototype(JSContext* cx);
+
+extern JS_PUBLIC_API JSObject* GetRealmSetIteratorPrototype(JSContext* cx);
 
 extern JS_PUBLIC_API JSObject* GetRealmAsyncIteratorPrototype(JSContext* cx);
 

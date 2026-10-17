@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -10,7 +9,7 @@ interface TestInterfaceMaplike {
   [Throws]
   constructor();
 
-  maplike<DOMString, long>;
+  [DOMBackedStorage] maplike<DOMString, long>;
   undefined setInternal(DOMString aKey, long aValue);
   undefined clearInternal();
   boolean deleteInternal(DOMString aKey);
@@ -25,7 +24,7 @@ interface TestInterfaceMaplikeObject {
   [Throws]
   constructor();
 
-  readonly maplike<DOMString, TestInterfaceMaplike>;
+  [DOMBackedStorage] readonly maplike<DOMString, TestInterfaceMaplike>;
   undefined setInternal(DOMString aKey);
   undefined clearInternal();
   boolean deleteInternal(DOMString aKey);
@@ -55,7 +54,7 @@ interface TestInterfaceSetlike {
   [Throws]
   constructor();
 
-  setlike<DOMString>;
+  [DOMBackedStorage] setlike<DOMString>;
 };
 
 [Pref="dom.expose_test_interfaces",
@@ -64,7 +63,7 @@ interface TestInterfaceSetlikeNode {
   [Throws]
   constructor();
 
-  setlike<Node>;
+  [DOMBackedStorage] setlike<Node>;
 };
 
 [Pref="dom.expose_test_interfaces",

@@ -1141,6 +1141,18 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
             and self.maplikeOrSetlikeOrIterable.isAsyncIterable()
         )
 
+    def isMaplike(self):
+        return (
+            self.maplikeOrSetlikeOrIterable
+            and self.maplikeOrSetlikeOrIterable.isMaplike()
+        )
+
+    def isSetlike(self):
+        return (
+            self.maplikeOrSetlikeOrIterable
+            and self.maplikeOrSetlikeOrIterable.isSetlike()
+        )
+
     def isIteratorInterface(self):
         return self.iterableInterface is not None
 
@@ -4971,6 +4983,7 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
         affectsNothing=False,
         newObject=False,
         isIteratorAlias=False,
+        throws=True,
     ):
         """
         Create an IDLMethod based on the parameters passed in.
@@ -4990,6 +5003,9 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
           affects JIT optimization behavior
 
         - newObject means the method creates and returns a new object.
+
+        - throws is False for the methods whose implementation cannot fail, so
+          that they are not handed an ErrorResult they would never touch.
 
         """
         
@@ -5017,8 +5033,10 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
             args,
             maplikeOrSetlikeOrIterable=self,
         )
-        
-        method.addExtendedAttributes([IDLExtendedAttribute(self.location, ("Throws",))])
+        if throws:
+            method.addExtendedAttributes([
+                IDLExtendedAttribute(self.location, ("Throws",))
+            ])
         if chromeOnly:
             method.addExtendedAttributes([
                 IDLExtendedAttribute(self.location, ("ChromeOnly",))
@@ -5076,6 +5094,15 @@ class IDLMaplikeOrSetlikeOrIterableBase(IDLInterfaceMember):
         IDLInterfaceMember.validate(self)
 
     def handleExtendedAttribute(self, attr):
+        identifier = attr.identifier()
+        
+        
+        if identifier not in ("SecureContext", "Exposed"):
+            raise WebIDLError(
+                "Unknown extended attribute %s on %s declaration"
+                % (identifier, self.maplikeOrSetlikeOrIterableType),
+                [attr.location],
+            )
         IDLInterfaceMember.handleExtendedAttribute(self, attr)
 
     def _getDependentObjects(self):
@@ -5209,6 +5236,16 @@ class IDLAsyncIterable(IDLMaplikeOrSetlikeOrIterableBase):
         self.iteratorType = None
         self.argList = argList
 
+    def handleExtendedAttribute(self, attr):
+        if attr.identifier() == "GenerateReturnMethod":
+            if not attr.noArguments():
+                raise WebIDLError(
+                    "[GenerateReturnMethod] takes no arguments",
+                    [attr.location],
+                )
+        else:
+            IDLMaplikeOrSetlikeOrIterableBase.handleExtendedAttribute(self, attr)
+
     def __str__(self):
         return "declared async_iterable with key '%s' and value '%s'" % (
             self.keyType,
@@ -5272,7 +5309,7 @@ class IDLAsyncIterable(IDLMaplikeOrSetlikeOrIterableBase):
 
 
 class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
-    __slots__ = "readonly", "slotIndices", "prefix"
+    __slots__ = "readonly", "slotIndices", "prefix", "iteratorType", "domBackedStorage"
 
     def __init__(
         self, location, identifier, maplikeOrSetlikeType, readonly, keyType, valueType
@@ -5288,6 +5325,8 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
         )
         self.readonly = readonly
         self.slotIndices = None
+        self.iteratorType = None
+        self.domBackedStorage = False
 
         
         
@@ -5295,6 +5334,53 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
             self.prefix = "Map"
         elif self.isSetlike():
             self.prefix = "Set"
+
+    def handleExtendedAttribute(self, attr):
+        identifier = attr.identifier()
+        if identifier == "DOMBackedStorage":
+            if attr.hasValue() or attr.hasArgs():
+                raise WebIDLError(
+                    "[DOMBackedStorage] takes no arguments",
+                    [attr.location],
+                )
+            self.domBackedStorage = True
+        else:
+            IDLMaplikeOrSetlikeOrIterableBase.handleExtendedAttribute(self, attr)
+
+    def validate(self):
+        IDLMaplikeOrSetlikeOrIterableBase.validate(self)
+        
+        
+        
+        if self.domBackedStorage and (
+            self.keyType.nullable()
+            or (self.valueType is not None and self.valueType.nullable())
+        ):
+            raise WebIDLError(
+                "[DOMBackedStorage] does not support nullable types",
+                [self.location],
+            )
+
+        
+        
+        
+        
+        def isSupportedType(t):
+            return (
+                t.isInteger()
+                or (t.isString() and not t.isJSString())
+                or (t.isGeckoInterface() and t.isNonCallbackInterface())
+            )
+
+        if self.domBackedStorage and not (
+            isSupportedType(self.keyType)
+            and (self.valueType is None or isSupportedType(self.valueType))
+        ):
+            raise WebIDLError(
+                "[DOMBackedStorage] only supports integer, string and "
+                "non-callback interface types",
+                [self.location],
+            )
 
     def __str__(self):
         return "declared '%s' with key '%s'" % (
@@ -5324,30 +5410,57 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
         self.disallowedMemberNames.append("size")
 
         
+        
+        
+        
+        
+        
+        
+        
+        
+        jsBacked = not self.domBackedStorage
+
+        
+        
+        
+        
+        if self.domBackedStorage:
+            assert self.iteratorType
+            iteratorReturnType = self.iteratorType
+        else:
+            iteratorReturnType = BuiltinTypes[IDLBuiltinType.Types.object]
+
+        
         self.addMethod(
             "entries",
             members,
             False,
-            BuiltinTypes[IDLBuiltinType.Types.object],
+            iteratorReturnType,
             affectsNothing=True,
+            newObject=self.domBackedStorage,
             isIteratorAlias=self.isMaplike(),
+            throws=jsBacked,
         )
         
         self.addMethod(
             "keys",
             members,
             False,
-            BuiltinTypes[IDLBuiltinType.Types.object],
+            iteratorReturnType,
             affectsNothing=True,
+            newObject=self.domBackedStorage,
+            throws=jsBacked,
         )
         
         self.addMethod(
             "values",
             members,
             False,
-            BuiltinTypes[IDLBuiltinType.Types.object],
+            iteratorReturnType,
             affectsNothing=True,
+            newObject=self.domBackedStorage,
             isIteratorAlias=self.isSetlike(),
+            throws=jsBacked,
         )
 
         
@@ -5357,6 +5470,7 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
             False,
             BuiltinTypes[IDLBuiltinType.Types.undefined],
             self.getForEachArguments(),
+            throws=jsBacked,
         )
 
         def getKeyArg():
@@ -5373,13 +5487,19 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
             False,
             BuiltinTypes[IDLBuiltinType.Types.boolean],
             [getKeyArg()],
-            isPure=True,
+            isPure=jsBacked,
+            throws=jsBacked,
         )
 
         if not self.readonly:
             
             self.addMethod(
-                "clear", members, True, BuiltinTypes[IDLBuiltinType.Types.undefined], []
+                "clear",
+                members,
+                True,
+                BuiltinTypes[IDLBuiltinType.Types.undefined],
+                [],
+                throws=jsBacked,
             )
             
             self.addMethod(
@@ -5388,6 +5508,7 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
                 True,
                 BuiltinTypes[IDLBuiltinType.Types.boolean],
                 [getKeyArg()],
+                throws=jsBacked,
             )
 
         if self.isSetlike():
@@ -5420,7 +5541,8 @@ class IDLMaplikeOrSetlike(IDLMaplikeOrSetlikeOrIterableBase):
             False,
             BuiltinTypes[IDLBuiltinType.Types.any],
             [getKeyArg()],
-            isPure=True,
+            isPure=jsBacked,
+            throws=jsBacked,
         )
 
         def getValueArg():
@@ -7584,6 +7706,52 @@ class Parser(Tokenizer):
     def globalScope(self):
         return self._globalScope
 
+    def _createIteratorInterface(
+        self,
+        iface,
+        location,
+        suffix,
+        extraMethods=None,
+        nextReturnType=None,
+        classNameOverride=None,
+    ):
+        """Create an iterator interface for an iterable/maplike/setlike declaration."""
+
+        def simpleExtendedAttr(name):
+            return IDLExtendedAttribute(iface.location, (name,))
+
+        if nextReturnType is None:
+            nextReturnType = BuiltinTypes[IDLBuiltinType.Types.object]
+        nextMethod = IDLMethod(
+            location,
+            IDLUnresolvedIdentifier(location, "next"),
+            nextReturnType,
+            [],
+        )
+        nextMethod.addExtendedAttributes([simpleExtendedAttr("Throws")])
+
+        methods = [nextMethod]
+        if extraMethods:
+            methods.extend(extraMethods)
+
+        itr_ident = IDLUnresolvedIdentifier(
+            iface.location, iface.identifier.name + suffix
+        )
+        if classNameOverride is None:
+            classNameOverride = iface.identifier.name + " " + suffix
+        itr_iface = IDLInterface(
+            iface.location,
+            self.globalScope(),
+            itr_ident,
+            None,
+            methods,
+            isKnownNonPartial=True,
+            classNameOverride=classNameOverride,
+        )
+        itr_iface.addExtendedAttributes([simpleExtendedAttr("LegacyNoInterfaceObject")])
+        itr_iface._exposureGlobalNames = set(iface._exposureGlobalNames)
+        return itr_iface
+
     
     
     def p_Definitions(self, p):
@@ -9454,25 +9622,18 @@ class Parser(Tokenizer):
                 def simpleExtendedAttr(str):
                     return IDLExtendedAttribute(iface.location, (str,))
 
-                if isinstance(iterable, IDLAsyncIterable):
+                if iterable.isIterable():
+                    itr_suffix = "Iterator"
+                    nextReturnType = BuiltinTypes[IDLBuiltinType.Types.object]
+                else:
+                    itr_suffix = "AsyncIterator"
                     nextReturnType = IDLPromiseType(
                         iterable.location, BuiltinTypes[IDLBuiltinType.Types.any]
                     )
-                else:
-                    nextReturnType = BuiltinTypes[IDLBuiltinType.Types.object]
-                nextMethod = IDLMethod(
-                    iterable.location,
-                    IDLUnresolvedIdentifier(iterable.location, "next"),
-                    nextReturnType,
-                    [],
-                )
-                nextMethod.addExtendedAttributes([simpleExtendedAttr("Throws")])
 
-                methods = [nextMethod]
-
+                extraMethods = []
                 if iterable.getExtendedAttribute("GenerateReturnMethod"):
                     assert isinstance(iterable, IDLAsyncIterable)
-
                     returnMethod = IDLMethod(
                         iterable.location,
                         IDLUnresolvedIdentifier(iterable.location, "return"),
@@ -9492,36 +9653,15 @@ class Parser(Tokenizer):
                         ],
                     )
                     returnMethod.addExtendedAttributes([simpleExtendedAttr("Throws")])
-                    methods.append(returnMethod)
+                    extraMethods.append(returnMethod)
 
-                if iterable.isIterable():
-                    itr_suffix = "Iterator"
-                else:
-                    itr_suffix = "AsyncIterator"
-                itr_ident = IDLUnresolvedIdentifier(
-                    iface.location, iface.identifier.name + itr_suffix
+                itr_iface = self._createIteratorInterface(
+                    iface,
+                    iterable.location,
+                    itr_suffix,
+                    extraMethods=extraMethods or None,
+                    nextReturnType=nextReturnType,
                 )
-                if iterable.isIterable():
-                    classNameOverride = iface.identifier.name + " Iterator"
-                elif iterable.isAsyncIterable():
-                    classNameOverride = iface.identifier.name + " AsyncIterator"
-                itr_iface = IDLInterface(
-                    iface.location,
-                    self.globalScope(),
-                    itr_ident,
-                    None,
-                    methods,
-                    isKnownNonPartial=True,
-                    classNameOverride=classNameOverride,
-                )
-                itr_iface.addExtendedAttributes([
-                    simpleExtendedAttr("LegacyNoInterfaceObject")
-                ])
-                
-                
-                
-                
-                itr_iface._exposureGlobalNames = set(iface._exposureGlobalNames)
                 
                 
                 
@@ -9531,6 +9671,28 @@ class Parser(Tokenizer):
                     itr_iface.asyncIterableInterface = iface
                 self._productions.append(itr_iface)
                 iterable.iteratorType = IDLWrapperType(iface.location, itr_iface)
+
+        
+        
+        for iface in interfaceStatements:
+            maplikeOrSetlike = None
+            for m in iface.members:
+                if isinstance(m, IDLMaplikeOrSetlike):
+                    maplikeOrSetlike = m
+                    break
+
+            if maplikeOrSetlike and maplikeOrSetlike.domBackedStorage:
+                itr_iface = self._createIteratorInterface(
+                    iface,
+                    maplikeOrSetlike.location,
+                    "Iterator",
+                    classNameOverride=maplikeOrSetlike.prefix + " Iterator",
+                )
+                itr_iface.iterableInterface = iface
+                self._productions.append(itr_iface)
+                maplikeOrSetlike.iteratorType = IDLWrapperType(
+                    iface.location, itr_iface
+                )
 
         
         
