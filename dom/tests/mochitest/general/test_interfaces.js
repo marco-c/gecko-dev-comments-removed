@@ -1251,6 +1251,8 @@ let interfaceNamesInGlobalScope = [
   
   "PushSubscriptionOptions",
   
+  { name: "QuotaExceededError", insecureContext: true, nightly: true },
+  
   { name: "RTCCertificate", insecureContext: true },
   
   { name: "RTCDTMFSender", insecureContext: true },

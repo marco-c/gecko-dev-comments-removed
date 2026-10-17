@@ -535,6 +535,8 @@ let interfaceNamesInGlobalScope = [
   
   "PushSubscriptionOptions",
   
+  { name: "QuotaExceededError", nightly: true },
+  
   "ReadableByteStreamController",
   
   "ReadableStream",

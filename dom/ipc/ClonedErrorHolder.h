@@ -10,6 +10,7 @@
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/NonRefcountedDOMObject.h"
+#include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "nsISupportsImpl.h"
 
@@ -36,6 +37,7 @@ class ClonedErrorHolder final : public NonRefcountedDOMObject {
     JSError,
     Exception,
     DOMException,
+    QuotaExceededError,
     Max_,
   };
 
@@ -89,6 +91,9 @@ class ClonedErrorHolder final : public NonRefcountedDOMObject {
   uint16_t mCode = 0;                 
   JSExnType mExnType = JSExnType(0);  
   nsresult mResult = NS_OK;           
+
+  Nullable<double> mQuota;      
+  Nullable<double> mRequested;  
 
   
   Holder mStack{Holder::CloningSupported, Holder::TransferringNotSupported,
