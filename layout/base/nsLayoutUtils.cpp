@@ -2744,10 +2744,20 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
   } else {
     compBoundsScale = cumulativeResolution * layerToParentLayerScale;
   }
-  metrics.SetCompositionBounds(
-      LayoutDeviceRect::FromAppUnits(nsRect(nsPoint(0, 0), compositionSize),
-                                     presContext->AppUnitsPerDevPixel()) *
-      compBoundsScale);
+  const int32_t auPerDevPixel = presContext->AppUnitsPerDevPixel();
+  ParentLayerRect compositionBounds =
+      LayoutDeviceRect::FromAppUnits(nsRect(nsPoint(), compositionSize),
+                                     auPerDevPixel) *
+      compBoundsScale;
+  
+  
+  nsMargin sizes =
+      ScrollbarAreaToExcludeFromCompositionBoundsFor(aScrollContainerFrame);
+  ParentLayerMargin boundMargins =
+      LayoutDeviceMargin::FromAppUnits(sizes, auPerDevPixel) *
+      LayoutDeviceToParentLayerScale(1.0f);
+  compositionBounds.Deflate(boundMargins);
+  metrics.SetCompositionBounds(compositionBounds);
 
   metrics.SetBoundingCompositionSize(
       nsLayoutUtils::CalculateBoundingCompositionSize(aScrollContainerFrame,
@@ -8434,8 +8444,7 @@ nsMargin nsLayoutUtils::ScrollbarAreaToExcludeFromCompositionBoundsFor(
 
 
 nsSize nsLayoutUtils::CalculateCompositionSizeForFrame(
-    nsIFrame* aFrame, bool aSubtractScrollbars,
-    const nsSize* aOverrideScrollPortSize,
+    nsIFrame* aFrame, const nsSize* aOverrideScrollPortSize,
     IncludeDynamicToolbar aIncludeDynamicToolbar) {
   
   
@@ -8460,12 +8469,6 @@ nsSize nsLayoutUtils::CalculateCompositionSizeForFrame(
       size = nsSize(compBounds.width * auPerDevPixel,
                     compBounds.height * auPerDevPixel);
     }
-  }
-
-  if (aSubtractScrollbars) {
-    nsMargin margins = ScrollbarAreaToExcludeFromCompositionBoundsFor(aFrame);
-    size.width -= margins.LeftRight();
-    size.height -= margins.TopBottom();
   }
 
   return size;
@@ -8522,20 +8525,6 @@ CSSSize nsLayoutUtils::CalculateBoundingCompositionSize(
         widgetBounds.Size(),
         PixelCastJustification::LayoutDeviceIsScreenForBounds));
   }
-
-  
-  nsIFrame* rootRootScrollContainerFrame =
-      rootPresShell && !isPopupRoot
-          ? rootPresShell->GetRootScrollContainerFrame()
-          : nullptr;
-  nsMargin scrollbarMargins = ScrollbarAreaToExcludeFromCompositionBoundsFor(
-      rootRootScrollContainerFrame);
-  LayoutDeviceMargin margins = LayoutDeviceMargin::FromAppUnits(
-      scrollbarMargins, rootPresContext->AppUnitsPerDevPixel());
-  
-  
-  rootCompositionSize.width -= margins.LeftRight();
-  rootCompositionSize.height -= margins.TopBottom();
 
   CSSSize result =
       rootCompositionSize / aMetrics.DisplayportPixelsPerCSSPixel();
@@ -8594,6 +8583,11 @@ nsRect nsLayoutUtils::CalculateExpandedScrollableRect(nsIFrame* aFrame) {
   nsRect scrollableRect = CalculateScrollableRectForFrame(
       aFrame->GetScrollTargetFrame(), aFrame->PresShell()->GetRootFrame());
   nsSize compSize = CalculateCompositionSizeForFrame(aFrame);
+
+  
+  nsMargin scrollbars = ScrollbarAreaToExcludeFromCompositionBoundsFor(aFrame);
+  compSize.width -= scrollbars.LeftRight();
+  compSize.height -= scrollbars.TopBottom();
 
   if (aFrame == aFrame->PresShell()->GetRootScrollContainerFrame()) {
     
