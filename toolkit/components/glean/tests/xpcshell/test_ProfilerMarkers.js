@@ -9,10 +9,6 @@ const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
-const { ProfilerTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/ProfilerTestUtils.sys.mjs"
-);
-
 const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
@@ -33,87 +29,6 @@ add_setup(
     Services.fog.initializeFOG();
   }
 );
-
-
-
-
-
-
-
-
-
-
-async function runWithProfilerAndGetMarkers(type, func) {
-  await ProfilerTestUtils.startProfiler({
-    entries: 10000,
-    interval: 10,
-    features: ["nostacksampling"],
-    threads: ["GeckoMain"],
-  });
-
-  Assert.ok(Services.profiler.IsActive());
-
-  await func();
-
-  let profile = await ProfilerTestUtils.stopNowAndGetProfile();
-
-  
-  Assert.equal(
-    profile.threads.length,
-    1,
-    "We should only be profiling one thread"
-  );
-
-  let markers = ProfilerTestUtils.getPayloadsOfType(profile.threads[0], type);
-  let stringTable = profile.threads[0].stringTable;
-
-  
-  
-  
-  for (let marker of markers) {
-    marker.id = stringTable[marker.id];
-    if (marker.cat != undefined) {
-      marker.cat = stringTable[marker.cat];
-    }
-    if (marker.label != undefined) {
-      marker.label = stringTable[marker.label];
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  markers = markers.filter(marker => {
-    
-    
-    let name =
-      marker.id.startsWith("testOnly") ||
-      marker.id.startsWith("test_only") ||
-      marker.id.startsWith("jog_");
-    
-    let cat = false;
-    if (marker.cat != undefined) {
-      cat = marker.cat.startsWith("test") || marker.cat.startsWith("jog_");
-    }
-    
-    let ping = ["test-ping", "one-ping-only", "ride-along-ping"].includes(
-      marker.id
-    );
-    return name || cat || ping;
-  });
-
-  
-  return markers;
-}
 
 add_task(async function test_fog_counter_markers() {
   let markers = await runWithProfilerAndGetMarkers("IntLikeMetric", () => {
