@@ -641,6 +641,9 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   }
   
   void OnPendingQueueInserted(const nsACString& aConnectionHashKey);
+  
+  
+  void MaybeStartHttp3BackupTimer();
 
  private:
   TransactionObserverFunc mTransactionObserver;

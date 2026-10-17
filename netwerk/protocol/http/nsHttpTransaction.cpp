@@ -461,6 +461,12 @@ void nsHttpTransaction::OnPendingQueueInserted(
     mHashKeyOfConnectionEntry.Assign(aConnectionHashKey);
   }
 
+  MaybeStartHttp3BackupTimer();
+}
+
+void nsHttpTransaction::MaybeStartHttp3BackupTimer() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
   
   
   if ((mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection()) &&

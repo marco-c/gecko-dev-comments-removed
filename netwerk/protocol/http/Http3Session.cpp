@@ -1488,6 +1488,16 @@ bool Http3Session::AddStream(nsAHttpTransaction* aHttpTransaction,
 
   mStreamTransactionHash.InsertOrUpdate(aHttpTransaction, RefPtr{stream});
 
+  
+  
+  
+  
+  if (!IsConnected()) {
+    if (nsHttpTransaction* trans = aHttpTransaction->QueryHttpTransaction()) {
+      trans->MaybeStartHttp3BackupTimer();
+    }
+  }
+
   if (mState == ZERORTT) {
     if (!stream->Do0RTT()) {
       LOG(("Http3Session %p will not get early data from Http3Stream %p", this,
