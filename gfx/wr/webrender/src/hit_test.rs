@@ -58,10 +58,6 @@ struct HitTestSpatialNode {
 
     
     world_content_transform: LayoutToWorldFastTransform,
-
-    
-    world_viewport_transform: LayoutToWorldFastTransform,
-
 }
 
 #[derive(MallocSizeOf)]
@@ -99,6 +95,9 @@ impl HitTestClipNode {
                 } else {
                     HitTestRegion::Rectangle(clip_rect, ClipMode::Clip)
                 }
+            }
+            ClipItemKeyKind::Path(..) => {
+                unimplemented!(); 
             }
         };
 
@@ -325,9 +324,6 @@ impl HitTester {
                 pipeline_id: node.pipeline_id,
                 world_content_transform: spatial_tree
                     .get_world_transform(index)
-                    .into_fast_transform(),
-                world_viewport_transform: spatial_tree
-                    .get_world_viewport_transform(index)
                     .into_fast_transform(),
             });
         });

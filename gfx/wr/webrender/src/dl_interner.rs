@@ -17,9 +17,6 @@
 
 
 
-
-#![allow(dead_code)]
-
 use crate::intern::ItemUid;
 use crate::internal_types::{FastHashMap, FastHashSet};
 use api::interning::{BuildId, BuilderId};
@@ -59,6 +56,8 @@ macro_rules! enumerate_scene_dl_stores {
 }
 
 
+
+#[allow(dead_code)]
 pub struct DlResolveContext<'a> {
     
     

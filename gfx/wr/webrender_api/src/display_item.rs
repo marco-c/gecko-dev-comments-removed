@@ -12,6 +12,8 @@ use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
 use crate::image::{ColorDepth, ImageKey};
 use crate::key_types::{EdgeMask, StretchSizeKey};
+use crate::interning;
+use crate::path::Path;
 use crate::units::*;
 use std::hash::{Hash, Hasher};
 
@@ -162,6 +164,7 @@ pub enum DisplayItem {
     RectClip(RectClipDisplayItem),
     RoundedRectClip(RoundedRectClipDisplayItem),
     ImageMaskClip(ImageMaskClipDisplayItem),
+    PathClip(PathClipDisplayItem),
     ClipChain(ClipChainItem),
 
     
@@ -204,6 +207,7 @@ pub enum DebugDisplayItem {
     BackdropFilter(BackdropFilterDisplayItem),
 
     ImageMaskClip(ImageMaskClipDisplayItem),
+    PathClip(PathClipDisplayItem),
     RoundedRectClip(RoundedRectClipDisplayItem),
     RectClip(RectClipDisplayItem),
     ClipChain(ClipChainItem, Vec<ClipId>),
@@ -230,6 +234,20 @@ pub struct ImageMaskClipDisplayItem {
     pub image_mask: ImageMask,
     pub fill_rule: FillRule,
 } 
+
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub struct PathClipDisplayItem {
+    pub id: ClipId,
+    pub spatial_id: SpatialId,
+    
+    pub path: interning::Handle<Path>,
+    
+    
+    
+    pub rect: LayoutRect,
+    pub fill_rule: FillRule,
+}
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RectClipDisplayItem {
@@ -2429,6 +2447,7 @@ impl DisplayItem {
             DisplayItem::RectClip(..) => "rect_clip",
             DisplayItem::RoundedRectClip(..) => "rounded_rect_clip",
             DisplayItem::ImageMaskClip(..) => "image_mask_clip",
+            DisplayItem::PathClip(..) => "path_clip",
             DisplayItem::ClipChain(..) => "clip_chain",
             DisplayItem::ConicGradient(..) => "conic_gradient",
             DisplayItem::Gradient(..) => "gradient",
