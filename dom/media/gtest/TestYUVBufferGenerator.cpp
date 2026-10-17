@@ -43,7 +43,10 @@ TEST(YUVBufferGenerator, I420ChromaPlanesAreFullyInitialised)
     ASSERT_TRUE(!!data)
     << size.width << "x" << size.height << ": no data";
 
-    const IntSize chromaSize = data->CbCrDataSize();
+    const auto sizes = data->GetPlaneSizes();
+    ASSERT_TRUE(sizes)
+    << size.width << "x" << size.height << ": invalid plane sizes";
+    const IntSize chromaSize = sizes->mCbCr;
     ASSERT_GT(chromaSize.width, 0);
     ASSERT_GT(chromaSize.height, 0);
 
@@ -142,8 +145,10 @@ TEST(YUVBufferGenerator, OwnsOddCroppedImageData)
   EXPECT_EQ(i420->GetOrigin(), pictureRect.TopLeft());
   const PlanarYCbCrData* i420Data = i420->AsPlanarYCbCrImage()->GetData();
   ASSERT_NE(i420Data, nullptr);
-  EXPECT_EQ(i420Data->YDataSize(), yDataSize);
-  EXPECT_EQ(i420Data->CbCrDataSize(), chromaSize);
+  const auto i420Sizes = i420Data->GetPlaneSizes();
+  ASSERT_TRUE(i420Sizes);
+  EXPECT_EQ(i420Sizes->mY, yDataSize);
+  EXPECT_EQ(i420Sizes->mCbCr, chromaSize);
   EXPECT_EQ(i420Data->mYStride, yDataSize.width);
   EXPECT_EQ(i420Data->mCbCrStride, chromaSize.width);
   ExpectPlaneValues(i420Data->mYChannel, i420Data->mYStride, i420Data->mYSkip,
@@ -158,8 +163,10 @@ TEST(YUVBufferGenerator, OwnsOddCroppedImageData)
     EXPECT_EQ(image->GetSize(), pictureRect.Size());
     const PlanarYCbCrData* data = image->AsNVImage()->GetData();
     ASSERT_NE(data, nullptr);
-    EXPECT_EQ(data->YDataSize(), yDataSize);
-    EXPECT_EQ(data->CbCrDataSize(), chromaSize);
+    const auto sizes = data->GetPlaneSizes();
+    ASSERT_TRUE(sizes);
+    EXPECT_EQ(sizes->mY, yDataSize);
+    EXPECT_EQ(sizes->mCbCr, chromaSize);
     EXPECT_EQ(data->mYStride, yDataSize.width);
     EXPECT_EQ(data->mCbCrStride, 2 * chromaSize.width);
     ExpectPlaneValues(data->mYChannel, data->mYStride, data->mYSkip, yDataSize,

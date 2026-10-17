@@ -80,8 +80,8 @@ SharedPlanarYCbCrImage::GetAsSourceSurface() {
 }
 
 nsresult SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData) {
-  const Maybe<gfx::IntSize> checkedYSize = aData.GetCheckedYDataSize();
-  if (checkedYSize.isNothing()) {
+  const auto sizes = aData.GetPlaneSizes();
+  if (!sizes) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -89,11 +89,7 @@ nsresult SharedPlanarYCbCrImage::CopyData(const PlanarYCbCrData& aData) {
   
   
   if (!mTextureClient) {
-    const gfx::IntSize ySize = checkedYSize.value();
-    const gfx::IntSize cbcrSize =
-        aData.mCbCrStride > 0 ? gfx::ChromaSize(ySize, aData.mChromaSubsampling)
-                              : gfx::IntSize(0, 0);
-    nsresult r = CreateEmptyBuffer(aData, ySize, cbcrSize);
+    nsresult r = CreateEmptyBuffer(aData, sizes->mY, sizes->mCbCr);
     if (NS_FAILED(r)) {
       return r;
     }

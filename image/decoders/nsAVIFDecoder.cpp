@@ -1655,9 +1655,13 @@ nsAVIFDecoder::DecodeResult nsAVIFDecoder::DoDecodeInternal(
           ("[this=%p] decodedData.mColorRange: %hhd", this,
            static_cast<uint8_t>(decodedData->mColorRange)));
 
+  const auto sizes = decodedData->GetPlaneSizes();
+  if (!sizes) {
+    return AsVariant(NonDecoderResult::SizeOverflow);
+  }
+
   
-  if (decodedData->mAlpha &&
-      decodedData->mAlpha->mSize != decodedData->YDataSize()) {
+  if (decodedData->mAlpha && decodedData->mAlpha->mSize != sizes->mY) {
     return AsVariant(NonDecoderResult::AlphaYSizeMismatch);
   }
 

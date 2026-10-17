@@ -4,6 +4,8 @@
 
 #include "YCbCrUtils.h"
 
+#include <bit>
+
 #include "gfx2DGlue.h"
 #include "libyuv.h"
 #include "mozilla/EndianUtils.h"
@@ -107,6 +109,11 @@ ConvertYCbCr16to8Line(uint8_t* aDst,
 
 struct YUV8BitData {
   nsresult Init(const layers::PlanarYCbCrData& aData) {
+    const auto sizes = aData.GetPlaneSizes();
+    if (!sizes) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
     if (aData.mColorDepth == ColorDepth::COLOR_8) {
       mData = aData;
       return NS_OK;
@@ -116,8 +123,8 @@ struct YUV8BitData {
 
     
     
-    auto ySize = aData.YDataSize();
-    auto cbcrSize = aData.CbCrDataSize();
+    const auto& ySize = sizes->mY;
+    const auto& cbcrSize = sizes->mCbCr;
     mData.mYStride = (ySize.width + 31) & ~31;
     mData.mCbCrStride = (cbcrSize.width + 31) & ~31;
     mData.mYUVColorSpace = aData.mYUVColorSpace;
@@ -314,16 +321,16 @@ nsresult ConvertYCbCrToRGB(const layers::PlanarYCbCrData& aData,
     return result;
   }
 
-#if MOZ_BIG_ENDIAN()
-  
-  if (aDestFormat != SurfaceFormat::R5G6B5_UINT16) {
-    if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
-                          aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
-                          aDestSize)) {
-      return NS_ERROR_UNEXPECTED;
+  if constexpr (std::endian::native == std::endian::big) {
+    
+    if (aDestFormat != SurfaceFormat::R5G6B5_UINT16) {
+      if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
+                            aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
+                            aDestSize)) {
+        return NS_ERROR_UNEXPECTED;
+      }
     }
   }
-#endif
   return NS_OK;
 }
 
@@ -398,15 +405,15 @@ nsresult ConvertYCbCrToRGB32(const layers::PlanarYCbCrData& aData,
     }
   }
 
-#if MOZ_BIG_ENDIAN()
-  
-  
-  if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
-                        aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
-                        aData.mPictureRect.Size())) {
-    return NS_ERROR_UNEXPECTED;
+  if constexpr (std::endian::native == std::endian::big) {
+    
+    
+    if (!gfx::SwizzleData(aDestBuffer, aStride, gfx::SurfaceFormat::X8R8G8B8,
+                          aDestBuffer, aStride, gfx::SurfaceFormat::B8G8R8X8,
+                          aData.mPictureRect.Size())) {
+      return NS_ERROR_UNEXPECTED;
+    }
   }
-#endif
   return NS_OK;
 }
 
@@ -421,14 +428,14 @@ nsresult ConvertI420AlphaToARGB(const uint8_t* aSrcY, const uint8_t* aSrcU,
   if (NS_FAILED(result)) {
     return result;
   }
-#if MOZ_BIG_ENDIAN()
-  
-  if (!gfx::SwizzleData(aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::A8R8G8B8,
-                        aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::B8G8R8A8,
-                        IntSize(aWidth, aHeight))) {
-    return NS_ERROR_UNEXPECTED;
+  if constexpr (std::endian::native == std::endian::big) {
+    
+    if (!gfx::SwizzleData(aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::A8R8G8B8,
+                          aDstARGB, aDstStrideARGB, gfx::SurfaceFormat::B8G8R8A8,
+                          IntSize(aWidth, aHeight))) {
+      return NS_ERROR_UNEXPECTED;
+    }
   }
-#endif
   return NS_OK;
 }
 

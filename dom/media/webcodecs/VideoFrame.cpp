@@ -2910,8 +2910,13 @@ bool VideoFrame::Resource::CopyPlaneInto(const Format::Plane& aPlane,
 
   if (mImage->GetFormat() == ImageFormat::PLANAR_YCBCR) {
     const auto* data = mImage->AsPlanarYCbCrImage()->GetData();
-    const gfx::IntSize ySize = data->YDataSize();
-    const gfx::IntSize cbcrSize = data->CbCrDataSize();
+    const auto sizes = data->GetPlaneSizes();
+    if (!sizes) {
+      LOGE("Failed to get plane sizes from PlanarYCbCrImage data");
+      return false;
+    }
+    const auto& ySize = sizes->mY;
+    const auto& cbcrSize = sizes->mCbCr;
     switch (aPlane) {
       case Format::Plane::Y:
         return CopyPlaneRegion(
@@ -2949,8 +2954,13 @@ bool VideoFrame::Resource::CopyPlaneInto(const Format::Plane& aPlane,
 
   if (mImage->GetFormat() == ImageFormat::NV_IMAGE) {
     const auto* data = mImage->AsNVImage()->GetData();
-    const gfx::IntSize ySize = data->YDataSize();
-    const gfx::IntSize cbcrSize = data->CbCrDataSize();
+    const auto sizes = data->GetPlaneSizes();
+    if (!sizes) {
+      LOGE("Failed to get plane sizes from NVImage data");
+      return false;
+    }
+    const auto& ySize = sizes->mY;
+    const auto& cbcrSize = sizes->mCbCr;
     switch (aPlane) {
       case Format::Plane::Y:
         return CopyPlaneRegion(

@@ -835,23 +835,16 @@ struct PlanarYCbCrData {
                            : gfx::IntSize(0, 0);
   }
 
-  
-  
-  Maybe<gfx::IntSize> GetCheckedYDataSize() const;
+  struct PlaneSizes {
+    gfx::IntSize mY;
+    gfx::IntSize mCbCr;
+  };
 
   
   
   
-  gfx::IntSize YDataSize() const {
-    return GetCheckedYDataSize().valueOr(
-        gfx::IntSize(mPictureRect.XMost(), mPictureRect.YMost()));
-  }
-
   
-  gfx::IntSize CbCrDataSize() const {
-    return mCbCrStride > 0 ? gfx::ChromaSize(YDataSize(), mChromaSubsampling)
-                           : gfx::IntSize(0, 0);
-  }
+  Maybe<PlaneSizes> GetPlaneSizes() const;
 
   static Maybe<PlanarYCbCrData> From(const SurfaceDescriptorBuffer&);
   static Maybe<PlanarYCbCrData> From(const VideoData::YCbCrBuffer&);
