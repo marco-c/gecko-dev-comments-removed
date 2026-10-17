@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -12,20 +10,23 @@ ChromeUtils.defineESModuleGetters(this, {
 
 this.commands = class extends ExtensionAPIPersistent {
   PERSISTENT_EVENTS = {
-    onCommand({ fire }) {
+    onCommand({ context, fire }) {
       const { extension } = this;
       const { tabManager } = extension;
 
       let listener = (eventName, commandName) => {
         let nativeTab = tabTracker.activeTab;
         tabManager.addActiveTabPermission(nativeTab);
-        fire.async(commandName, tabManager.convert(nativeTab));
+        context?.withPendingBrowser(nativeTab.linkedBrowser, () =>
+          fire.async(commandName, tabManager.convert(nativeTab))
+        );
       };
       this.on("command", listener);
       return {
         unregister: () => this.off("command", listener),
-        convert(_fire) {
+        convert(_fire, _context) {
           fire = _fire;
+          context = _context;
         },
       };
     },

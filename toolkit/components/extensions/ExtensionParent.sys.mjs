@@ -720,11 +720,12 @@ class ProxyContextParent extends BaseContext {
    *
    * @param {object} callContextData
    * @param {boolean} callContextData.isHandlingUserInput
+   * @param {MozBrowser|null} callContextData.pendingEventBrowser
    * @param {Function} callable
    *
    * @returns {any} Returns the value returned by calling the `callable` method.
    */
-  withCallContextData({ isHandlingUserInput }, callable) {
+  withCallContextData({ isHandlingUserInput, pendingEventBrowser }, callable) {
     if (this.callContextData) {
       Cu.reportError(
         `Unexpected pre-existing callContextData on "${this.extension?.policy.debugName}" contextId ${this.contextId}`
@@ -734,6 +735,8 @@ class ProxyContextParent extends BaseContext {
     try {
       this.callContextData = {
         isHandlingUserInput,
+        // WARNING: browser might be invalid/closed when you use this.
+        pendingEventBrowser,
       };
       return callable();
     } finally {
@@ -742,6 +745,7 @@ class ProxyContextParent extends BaseContext {
   }
 
   async withPendingBrowser(browser, callable) {
+    // For use with permissions.request(), see bug 1868551
     let savedBrowser = this.pendingEventBrowser;
     this.pendingEventBrowser = browser;
     try {
@@ -1299,13 +1303,12 @@ ParentAPIManager = {
 
       let args = data.args;
       let { isHandlingUserInput = false } = data.options || {};
-      let pendingBrowser = context.pendingEventBrowser;
-      let fun = await context.apiCan.asyncFindAPIPath(data.path);
+      let pendingEventBrowser = context.pendingEventBrowser;
+      let func = await context.apiCan.asyncFindAPIPath(data.path);
       let result = this.callAndLog(context, data, () => {
-        return context.withPendingBrowser(pendingBrowser, () =>
-          context.withCallContextData({ isHandlingUserInput }, () =>
-            fun(...args)
-          )
+        return context.withCallContextData(
+          { isHandlingUserInput, pendingEventBrowser },
+          () => func(...args)
         );
       });
 
