@@ -107,6 +107,16 @@ async function waitForNoMiniWindowsOpen() {
 
 
 
+async function closeAllMiniWindows() {
+  for (let mini of [...MiniWindowManager._miniwindows]) {
+    mini.close();
+  }
+  await waitForNoMiniWindowsOpen();
+}
+
+
+
+
 
 
 

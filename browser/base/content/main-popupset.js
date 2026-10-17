@@ -27,6 +27,18 @@ document.addEventListener(
         ?.closest("panel:not([keepopenongroupdelete])")
         ?.hidePopup();
     
+    
+    let getGroupsListSource = popup => {
+      switch (popup.triggerNode?.closest("panelview")?.id) {
+        case "appMenu-tabGroupsListView":
+          return lazy.TabMetrics.METRIC_SOURCE.APP_MENU_GROUP_LIST;
+        case "allTabsMenu-allTabsView":
+          return lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU;
+        default:
+          return lazy.TabMetrics.METRIC_SOURCE.UNKNOWN;
+      }
+    };
+    
     mainPopupSet.addEventListener("command", event => {
       switch (event.target.id) {
         
@@ -163,8 +175,8 @@ document.addEventListener(
           });
           break;
         case "context_openTabInMiniWindow":
-          lazy.MiniWindowManager.popTab(
-            TabContextMenu.contextTab,
+          lazy.MiniWindowManager.popTabs(
+            TabContextMenu.contextTabs,
             "tab_context_menu"
           );
           break;
@@ -215,14 +227,13 @@ document.addEventListener(
         
         case "open-tab-group-context-menu_moveToNewWindow":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let popup = event.target.parentElement;
+            let tabGroupId = getContextTabGroupId(popup);
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
-            tabGroup.documentGlobal.gBrowser.replaceGroupWithWindow(
-              tabGroup,
-              lazy.TabMetrics.userTriggeredContext(
-                lazy.TabMetrics.METRIC_SOURCE.TAB_GROUP_MENU
-              )
-            );
+            let source = getGroupsListSource(popup);
+            tabGroup.documentGlobal.gBrowser.replaceGroupWithWindow(tabGroup, {
+              metricsContext: lazy.TabMetrics.userTriggeredContext(source),
+            });
           }
           break;
         case "open-tab-group-context-menu_moveToThisWindow":
@@ -251,15 +262,14 @@ document.addEventListener(
             let popup = event.target.parentElement;
             let tabGroupId = getContextTabGroupId(popup);
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
+            let source = getGroupsListSource(popup);
             
             
             dismissTabGroupPanel(popup);
             
             
             tabGroup.documentGlobal.gBrowser.removeTabGroup(tabGroup, {
-              metricsContext: lazy.TabMetrics.userTriggeredContext(
-                lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
-              ),
+              metricsContext: lazy.TabMetrics.userTriggeredContext(source),
             });
           }
           break;
@@ -267,25 +277,26 @@ document.addEventListener(
         
         case "saved-tab-group-context-menu_openInThisWindow":
           {
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let popup = event.target.parentElement;
+            let tabGroupId = getContextTabGroupId(popup);
+            let source = getGroupsListSource(popup);
             SessionStore.openSavedTabGroup(tabGroupId, window, {
-              source: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
+              source,
             });
           }
           break;
         case "saved-tab-group-context-menu_openInNewWindow":
           {
             
-            let tabGroupId = getContextTabGroupId(event.target.parentElement);
+            let popup = event.target.parentElement;
+            let tabGroupId = getContextTabGroupId(popup);
+            let source = getGroupsListSource(popup);
             let tabGroup = SessionStore.openSavedTabGroup(tabGroupId, window, {
-              source: lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU,
+              source,
             });
-            gBrowser.replaceGroupWithWindow(
-              tabGroup,
-              lazy.TabMetrics.userTriggeredContext(
-                lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
-              )
-            );
+            gBrowser.replaceGroupWithWindow(tabGroup, {
+              metricsContext: lazy.TabMetrics.userTriggeredContext(source),
+            });
           }
           break;
         case "saved-tab-group-context-menu_delete":
