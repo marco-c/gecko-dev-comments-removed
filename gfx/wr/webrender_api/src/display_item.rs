@@ -695,6 +695,16 @@ pub enum ExtendMode {
     Repeat,
 }
 
+
+
+
+#[repr(u8)]
+#[derive(Debug, Copy, Clone, Hash, Eq, MallocSizeOf, PartialEq, Serialize, Deserialize, PeekPoke)]
+pub enum AlphaMode {
+    Premultiplied,
+    Unpremultiplied,
+}
+
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct Gradient {
     
@@ -702,6 +712,7 @@ pub struct Gradient {
     
     pub end: LayoutVector2D,
     pub extend_mode: ExtendMode,
+    pub alpha_mode: AlphaMode,
 } 
 
 impl Gradient {
@@ -744,6 +755,7 @@ pub struct RadialGradient {
     pub start_offset: f32,
     pub end_offset: f32,
     pub extend_mode: ExtendMode,
+    pub alpha_mode: AlphaMode,
 } 
 
 impl RadialGradient {
@@ -763,6 +775,7 @@ pub struct ConicGradient {
     pub start_offset: f32,
     pub end_offset: f32,
     pub extend_mode: ExtendMode,
+    pub alpha_mode: AlphaMode,
 } 
 
 impl ConicGradient {
@@ -2476,6 +2489,7 @@ impl_default_for_enums! {
     BorderStyle => None,
     BoxShadowClipMode => Outset,
     ExtendMode => Clamp,
+    AlphaMode => Premultiplied,
     FilterOp => Identity,
     ComponentTransferFuncType => Identity,
     ClipMode => Clip,
