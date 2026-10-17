@@ -538,14 +538,18 @@ function settingsRedesignHistoryEnabled() {
 
 
 
+
+
 function ClearHistoryDialogHelper({
   mode = "browser",
   checkingDataSizes = false,
+  showUIOptions,
 } = {}) {
   this._browserWin = window;
   this.win = null;
   this._mode = mode;
   this._checkingDataSizes = checkingDataSizes;
+  this._showUIOptions = showUIOptions;
   this.promiseClosed = new Promise(resolve => {
     this._resolveClosed = resolve;
   });
@@ -701,7 +705,7 @@ ClearHistoryDialogHelper.prototype = {
     
     else {
       executeSoon(() => {
-        Sanitizer.showUI(this._browserWin, this._mode);
+        Sanitizer.showUI(this._browserWin, this._mode, this._showUIOptions);
       });
     }
 
