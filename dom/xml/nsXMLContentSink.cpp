@@ -518,7 +518,7 @@ nsresult nsXMLContentSink::CreateElement(
       HasCustomElementRegistryAttr(aAtts);
 
   
-  CustomElementDefinition* customElementDefinition = nullptr;
+  RefPtr<CustomElementDefinition> customElementDefinition;
   nsAtom* nameAtom = ni->NameAtom();
   if (!hasCustomElementRegistryAttr && mDocument &&
       !mDocument->IsLoadedAsData() && isXHTMLOrXUL &&

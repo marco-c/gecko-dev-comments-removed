@@ -716,7 +716,7 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
   
   
   const bool isCustomElement = aCreator == NS_NewCustomElement || isAtom;
-  CustomElementDefinition* customElementDefinition = nullptr;
+  RefPtr<CustomElementDefinition> customElementDefinition;
 
   
   
