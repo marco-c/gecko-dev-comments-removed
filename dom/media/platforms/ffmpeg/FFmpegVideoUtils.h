@@ -8,6 +8,13 @@
 #include "MediaData.h"
 #include "libavcodec/version.h"
 #include "libavutil/pixfmt.h"
+#include "mozilla/CheckedInt.h"
+
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+extern "C" {
+#  include "libavutil/frame.h"
+}
+#endif
 
 #if LIBAVCODEC_VERSION_MAJOR < 54
 #  ifndef AV_PIX_FMT_YUV420P10LE
@@ -39,9 +46,10 @@ namespace mozilla {
 
 
 
-inline void SetChromaPlaneGeometryFromAVFormat(VideoData::YCbCrBuffer& aBuffer,
-                                               int aFormat, int aWidth,
-                                               int aHeight) {
+
+
+static inline void SetChromaPlaneGeometryFromAVFormat(
+    VideoData::YCbCrBuffer& aBuffer, int aFormat, int aWidth, int aHeight) {
   if (aFormat == AV_PIX_FMT_YUV444P || aFormat == AV_PIX_FMT_YUV444P10LE ||
       aFormat == AV_PIX_FMT_GBRP || aFormat == AV_PIX_FMT_GBRP10LE
 #if LIBAVCODEC_VERSION_MAJOR >= 57
@@ -89,6 +97,51 @@ inline void SetChromaPlaneGeometryFromAVFormat(VideoData::YCbCrBuffer& aBuffer,
 #endif
   }
 }
+
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+
+static inline size_t FrameBufferSize(const AVFrame* aFrame, size_t aIndex) {
+  if (aIndex < AV_NUM_DATA_POINTERS && aFrame->buf[aIndex]) {
+    return static_cast<size_t>(aFrame->buf[aIndex]->size);
+  }
+  return 0;
+}
+
+
+
+static inline bool PlaneFitsBackingBuffer(
+    const AVFrame* aFrame, const VideoData::YCbCrBuffer::Plane& aPlane) {
+  const CheckedInt<size_t> needed =
+      CheckedInt<size_t>(aPlane.mHeight) * aPlane.mStride;
+  if (!needed.isValid()) {
+    return false;
+  }
+  const uintptr_t plane = reinterpret_cast<uintptr_t>(aPlane.mData);
+  for (const AVBufferRef* buf : aFrame->buf) {
+    if (!buf || !buf->data) {
+      continue;
+    }
+    const uintptr_t start = reinterpret_cast<uintptr_t>(buf->data);
+    const uintptr_t end = start + static_cast<size_t>(buf->size);
+    if (plane >= start && plane < end) {
+      return needed.value() <= end - plane;
+    }
+  }
+  return false;
+}
+
+
+
+static inline bool FramePlanesFitBackingBuffers(
+    const AVFrame* aFrame, const VideoData::YCbCrBuffer& aBuffer) {
+  for (const auto& plane : aBuffer.mPlanes) {
+    if (!PlaneFitsBackingBuffer(aFrame, plane)) {
+      return false;
+    }
+  }
+  return true;
+}
+#endif
 
 }  
 
