@@ -73,16 +73,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
 
     // Trim only the start of the search string because a trailing space can
     // affect the suggestions.
-    let trimmedSearchString = queryContext.searchString.trimStart();
-
-    // Per product requirements, at least two characters must be typed to
-    // trigger a Suggest suggestion. Suggestion keywords should always be at
-    // least two characters long, but we check here anyway to be safe. Note we
-    // called `trimStart()` above, so we only call `trimEnd()` here.
-    if (trimmedSearchString.trimEnd().length < 2) {
-      return false;
-    }
-    this._trimmedSearchString = trimmedSearchString;
+    this._trimmedSearchString = queryContext.searchString.trimStart();
     return true;
   }
 

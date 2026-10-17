@@ -368,6 +368,32 @@ add_task(async function searchString() {
 
 
 
+add_task(async function searchStringLengthThreshold() {
+  let searchStrings = [];
+  gMakeSuggestionsStub.callsFake(str => {
+    searchStrings.push(str);
+    return null;
+  });
+
+  let controller = UrlbarTestUtils.mockChildController();
+  for (let searchString of ["", " ", "x", " X ", "xx"]) {
+    await controller.startQuery(
+      createContext(searchString, {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      })
+    );
+  }
+
+  Assert.deepEqual(
+    searchStrings,
+    ["x", "x", "xx"],
+    "MLSuggest should be called only for non-empty search strings"
+  );
+});
+
+
+
 add_task(async function cache_fromRust() {
   await doCacheTest({
     expectedScore: REMOTE_SETTINGS_RECORDS[0].attachment.score,

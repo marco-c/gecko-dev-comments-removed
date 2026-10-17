@@ -95,6 +95,46 @@ const REMOTE_SETTINGS_RECORDS = [
     ],
   },
 
+  
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "eee",
+    score: 0.9,
+    attachment: [
+      {
+        keywords: [""],
+        data: {
+          result: {
+            payload: {
+              title: "eee title",
+              url: "https://example.com/eee",
+            },
+          },
+        },
+      },
+    ],
+  },
+
+  
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "fff",
+    score: 0.9,
+    attachment: [
+      {
+        keywords: ["f"],
+        data: {
+          result: {
+            payload: {
+              title: "fff title",
+              url: "https://example.com/fff",
+            },
+          },
+        },
+      },
+    ],
+  },
+
   {
     type: QuickSuggestTestUtils.RS_TYPE.WIKIPEDIA,
     attachment: [QuickSuggestTestUtils.wikipediaRemoteSettings()],
@@ -135,11 +175,25 @@ const EXPECTED_DDD_RESULT = makeExpectedResult({
   suggestionType: "ddd",
 });
 
+const EXPECTED_EEE_RESULT = makeExpectedResult({
+  title: "eee title",
+  url: "https://example.com/eee",
+  telemetryType: "eee",
+  suggestionType: "eee",
+});
+
+const EXPECTED_FFF_RESULT = makeExpectedResult({
+  title: "fff title",
+  url: "https://example.com/fff",
+  telemetryType: "fff",
+  suggestionType: "fff",
+});
+
 add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: REMOTE_SETTINGS_RECORDS,
     prefs: [
-      ["quicksuggest.dynamicSuggestionTypes", "aaa,bbb,ccc,ddd"],
+      ["quicksuggest.dynamicSuggestionTypes", "aaa,bbb,ccc,ddd,eee,fff"],
       ["suggest.quicksuggest.all", true],
       ["suggest.quicksuggest.sponsored", true],
       ["quicksuggest.ampTopPickCharThreshold", 0],
@@ -213,6 +267,34 @@ add_task(async function basic() {
   ];
 
   await doQueries(queries);
+});
+
+
+
+
+add_task(async function shortSearchStrings() {
+  await doQueries([
+    {
+      query: "",
+      expected: [EXPECTED_EEE_RESULT],
+    },
+    {
+      query: " ",
+      expected: [EXPECTED_EEE_RESULT],
+    },
+    {
+      query: "f",
+      expected: [EXPECTED_FFF_RESULT],
+    },
+    {
+      query: " f",
+      expected: [EXPECTED_FFF_RESULT],
+    },
+    {
+      query: "x",
+      expected: [],
+    },
+  ]);
 });
 
 
