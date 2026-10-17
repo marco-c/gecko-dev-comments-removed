@@ -427,7 +427,7 @@ function toggleRowChecked(aIx) {
 function restoreSingleTab(aIx, aShifted) {
   gSingleTabsRestored++;
   var tabbrowser = getBrowserWindow().gBrowser;
-  var newTab = tabbrowser.addWebTab();
+  var newTab = tabbrowser.addWebTab("about:blank");
   var item = gTreeData[aIx];
 
   var tabState =
