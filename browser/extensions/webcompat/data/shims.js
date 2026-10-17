@@ -156,7 +156,12 @@ const AVAILABLE_SHIMS = [
     name: "Amazon Ad System",
     bug: "1977375",
     file: "empty-shim.txt",
-    matches: ["*://aax.amazon-adsystem.com/e/dtb/bid/*/prebid*"],
+    matches: [
+      {
+        patterns: ["*://aax.amazon-adsystem.com/e/dtb/bid/*/prebid*"],
+        types: ["script", "xmlhttprequest"],
+      },
+    ],
     onlyIfBlockedByETP: true,
   },
   {
