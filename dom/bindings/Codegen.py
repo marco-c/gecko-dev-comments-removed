@@ -24510,12 +24510,11 @@ class GlobalGenRoots:
             "mozilla/dom/WebIDLSerializable.h",
             "mozilla/PerfectHash.h",
         ])
-        names = list()
-        for d in config.getDescriptors(isSerializable=True):
-            names.append(d.name)
+        descriptors = config.getDescriptors(isSerializable=True)
+        for d in descriptors:
             defineIncludes.add(CGHeaders.getDeclarationFilename(d.interface))
 
-        if len(names) == 0:
+        if len(descriptors) == 0:
             
             
             
@@ -24537,16 +24536,17 @@ class GlobalGenRoots:
         
         
         
-        if len(names) > 20:
+        if len(descriptors) > 20:
             raise TypeError(
                 "We now have %s serializable interfaces.  "
                 "Double-check that the compiler is still "
-                "generating a jump table." % len(names)
+                "generating a jump table." % len(descriptors)
             )
 
         entries = list()
         
-        for name in sorted(names):
+        for d in sorted(descriptors, key=lambda descriptor: descriptor.name):
+            name = d.name
             exposedGlobals = computeGlobalNamesFromExposureSet(d.interface.exposureSet)
             
             entries.append(
