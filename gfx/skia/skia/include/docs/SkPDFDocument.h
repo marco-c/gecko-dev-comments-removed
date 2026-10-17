@@ -66,6 +66,11 @@ private:
 
 struct StructureElementNode {
     SkString fTypeString;
+    
+
+
+
+    SkString fNamespace;
     std::vector<std::unique_ptr<StructureElementNode>> fChildVector;
     int fNodeId = 0;
     AttributeList fAttributes;
