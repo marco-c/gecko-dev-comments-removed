@@ -1601,10 +1601,6 @@ class RecursiveMakeBackend(MakeBackend):
         
         target_dir = mozpath.normpath(backend_file.environment.topobjdir)
         backend_file.write("CARGO_TARGET_DIR := %s\n" % target_dir)
-        if libdef.cargo_profile_suffix:
-            backend_file.write(
-                f"RUST_LIBRARY_CARGO_PROFILE_SUFFIX := {libdef.cargo_profile_suffix}\n"
-            )
         if libdef.output_category:
             self._process_non_default_target(libdef, rust_lib, backend_file)
 

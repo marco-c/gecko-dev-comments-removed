@@ -16,10 +16,34 @@ from mozshellutil import quote as shell_quote
 
 from mozbuild.rust_commands import (
     CargoInvocation,
+    cargo_profile_dir,
     compose_cargo_build_edge_argv,
     compose_env,
     load_cargo_spec,
 )
+
+
+def stage_test_libs(command, substs, topobjdir):
+    
+    
+    
+    
+    
+    
+    
+    if command.kind != "test" or substs.get("OS_ARCH") == "Darwin":
+        return
+    
+    bindir = Path(
+        topobjdir,
+        substs.get("RUST_TARGET"),
+        cargo_profile_dir(command, substs),
+        "deps",
+    )
+    bindir.mkdir(parents=True, exist_ok=True)
+    pattern = f"{substs.get('DLL_PREFIX')}*{substs.get('DLL_SUFFIX')}"
+    for lib in sorted(Path(topobjdir, "dist", "bin").glob(pattern)):
+        shutil.copy(lib, bindir)
 
 
 def copy_program_pdbs(command, topobjdir):
@@ -62,6 +86,8 @@ def main(argv):
     command, substs, topsrcdir, topobjdir = load_cargo_spec(
         json.loads(args.spec.read_text(encoding="utf-8"))
     )
+
+    stage_test_libs(command, substs, topobjdir)
 
     invocation = CargoInvocation.from_environ(os.environ)
     env = compose_env(command, substs, os.environ, invocation, topsrcdir, topobjdir)
