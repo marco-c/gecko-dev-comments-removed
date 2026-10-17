@@ -345,7 +345,9 @@ class RecursiveMakeBackend(MakeBackend):
     TARGETS = {
         "analysis-prereqs": ["pre-export", "export", "pre-compile"],
         "gtest": ["recurse_gtest"],
+        "rust-prereqs": ["pre-export", "export"],
         "syms": ["recurse_syms"],
+        "uniffi-target": ["recurse_uniffi-target"],
     }
 
     @classmethod
