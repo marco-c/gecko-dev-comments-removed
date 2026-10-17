@@ -355,7 +355,10 @@ NTSTATUS NTAPI patched_NtCreateSection(PHANDLE aSectionHandle,
 
   
   nt::AutoHandle stale(TakePendingFileHandle());
-  sPendingFileHandle.set(duplicate);
+  if (!sPendingFileHandle.set(duplicate)) {
+    
+    ::NtClose(duplicate);
+  }
   return stubStatus;
 }
 

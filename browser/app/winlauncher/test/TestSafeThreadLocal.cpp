@@ -2,8 +2,6 @@
 
 
 
-
-
 #define MOZ_USE_LAUNCHER_ERROR
 
 #include "freestanding/SafeThreadLocal.h"
@@ -29,7 +27,7 @@ static mozilla::freestanding::SafeThreadLocal<int*> gTheStorage;
 
 
 MOZ_NEVER_INLINE int* getTheStorage() { return gTheStorage.get(); }
-MOZ_NEVER_INLINE void setTheStorage(int* p) { gTheStorage.set(p); }
+MOZ_NEVER_INLINE bool setTheStorage(int* p) { return gTheStorage.set(p); }
 
 static unsigned int __stdcall TestNonMainThread(void* aArg) {
   for (int i = 0; i < 100; ++i) {
@@ -44,6 +42,57 @@ static unsigned int __stdcall TestNonMainThread(void* aArg) {
   return 0;
 }
 
+
+
+
+
+
+static unsigned int __stdcall TestThreadWithoutTls(void* aArg) {
+  int local = 0;
+  auto origHead = SwapThreadLocalStoragePointer(nullptr);
+  bool stored = setTheStorage(&local);
+  int* value = getTheStorage();
+  SwapThreadLocalStoragePointer(origHead);
+
+  if (stored || value) {
+    printf(
+        "TEST-FAILED | TestSafeThreadLocal | "
+        "A thread without TLS must not store or read a value.\n");
+    return 1;
+  }
+  return 0;
+}
+
+
+
+static unsigned int __stdcall TestThreadReadsNothing(void* aArg) {
+  if (getTheStorage()) {
+    printf(
+        "TEST-FAILED | TestSafeThreadLocal | "
+        "A thread read the main thread's value.\n");
+    return 1;
+  }
+  return 0;
+}
+
+static bool RunThread(unsigned int(__stdcall* aRoutine)(void*)) {
+  nsAutoHandle handle(reinterpret_cast<HANDLE>(
+      ::_beginthreadex(nullptr, 0, aRoutine, nullptr, 0, nullptr)));
+  if (!handle) {
+    return false;
+  }
+  ::WaitForSingleObject(handle, INFINITE);
+
+#if defined(MOZ_ASAN)
+  
+  
+  return true;
+#else
+  DWORD exitCode;
+  return ::GetExitCodeThread(handle, &exitCode) && !exitCode;
+#endif  
+}
+
 extern "C" int wmain(int argc, wchar_t* argv[]) {
   int dummy = 0x1234;
 
@@ -51,6 +100,13 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
   
   setTheStorage(&dummy);
   SwapThreadLocalStoragePointer(origHead);
+
+  
+  
+  if (!RunThread(TestThreadWithoutTls) || !RunThread(TestThreadReadsNothing) ||
+      getTheStorage() != &dummy) {
+    return 1;
+  }
 
   nsAutoHandle handles[8];
   for (auto& handle : handles) {
@@ -78,6 +134,12 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
       return 1;
     }
 #endif  
+  }
+
+  
+  
+  if (!RunThread(TestThreadWithoutTls) || getTheStorage() != &dummy) {
+    return 1;
   }
 
   return 0;
