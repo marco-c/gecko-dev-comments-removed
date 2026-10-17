@@ -171,7 +171,10 @@ add_task(test_mode_2);
 
 add_task(test_excluded_domains);
 
-add_task(test_captiveportal_canonicalURL);
+add_task(
+  { skip_if: () => mozinfo.os == "android" },
+  test_captiveportal_canonicalURL
+);
 
 add_task(test_parentalcontrols);
 
@@ -180,7 +183,7 @@ add_task(test_builtin_excluded_domains);
 
 add_task(test_excluded_domains_mode3);
 
-add_task(test25e);
+add_task({ skip_if: () => mozinfo.os == "android" }, test25e);
 
 add_task(test_parentalcontrols_mode3);
 
@@ -210,6 +213,13 @@ add_task(async function test_clearCacheOnURIChange() {
 
 add_task(async function test_dnsSuffix() {
   info("Checking that domains matching dns suffix list use Do53");
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "network.trr.exclude_dns_suffix_in_mode_trronly",
+    true
+  );
   async function checkDnsSuffixInMode(mode) {
     Services.dns.clearCache(true);
     setModeAndURI(mode, "doh?responseIP=1.2.3.4");
@@ -247,6 +257,109 @@ add_task(async function test_dnsSuffix() {
   
   await checkDnsSuffixInMode(2);
   await checkDnsSuffixInMode(3);
+  Services.prefs.clearUserPref("network.trr.split_horizon_mitigations");
+  Services.prefs.clearUserPref("network.trr.bootstrapAddr");
+  Services.prefs.clearUserPref(
+    "network.trr.exclude_dns_suffix_in_mode_trronly"
+  );
+});
+
+add_task(async function test_dnsSuffix_mode3_pref() {
+  info(
+    "In TRR-only mode the DNS suffix list should be ignored when " +
+      "network.trr.exclude_dns_suffix_in_mode_trronly is false (default)."
+  );
+  Services.prefs.setBoolPref("network.trr.split_horizon_mitigations", true);
+  Services.prefs.setCharPref("network.trr.bootstrapAddr", "127.0.0.1");
+
+  let networkLinkService = {
+    dnsSuffixList: ["example.org"],
+    QueryInterface: ChromeUtils.generateQI(["nsINetworkLinkService"]),
+  };
+
+  async function checkMode3(prefValue, expectedIP) {
+    Services.prefs.setBoolPref(
+      "network.trr.exclude_dns_suffix_in_mode_trronly",
+      prefValue
+    );
+    Services.dns.clearCache(true);
+    setModeAndURI(3, "doh?responseIP=1.2.3.4");
+    Services.obs.notifyObservers(
+      networkLinkService,
+      "network:dns-suffix-list-updated"
+    );
+    await new TRRDNSListener("example.org", expectedIP);
+  }
+
+  
+  
+  await checkMode3(false, "1.2.3.4");
+  
+  
+  await checkMode3(true, "127.0.0.1");
+
+  networkLinkService.dnsSuffixList = [];
+  Services.obs.notifyObservers(
+    networkLinkService,
+    "network:dns-suffix-list-updated"
+  );
+  Services.prefs.clearUserPref(
+    "network.trr.exclude_dns_suffix_in_mode_trronly"
+  );
+  Services.prefs.clearUserPref("network.trr.split_horizon_mitigations");
+  Services.prefs.clearUserPref("network.trr.bootstrapAddr");
+});
+
+add_task(async function test_dnsSuffix_request_mode_trronly() {
+  info(
+    "A per-request TRR mode of TRR_ONLY_MODE should also cause the DNS " +
+      "suffix list to be ignored by default, even when the global mode is " +
+      "TRR-first."
+  );
+  Services.prefs.setBoolPref("network.trr.split_horizon_mitigations", true);
+  Services.prefs.setCharPref("network.trr.bootstrapAddr", "127.0.0.1");
+
+  let networkLinkService = {
+    dnsSuffixList: ["example.org"],
+    QueryInterface: ChromeUtils.generateQI(["nsINetworkLinkService"]),
+  };
+
+  
+  
+  
+  const TRR_ONLY_FLAGS = 3 << 11;
+
+  async function checkRequestModeTRROnly(prefValue, expectedIP) {
+    Services.prefs.setBoolPref(
+      "network.trr.exclude_dns_suffix_in_mode_trronly",
+      prefValue
+    );
+    Services.dns.clearCache(true);
+    
+    setModeAndURI(2, "doh?responseIP=1.2.3.4");
+    Services.obs.notifyObservers(
+      networkLinkService,
+      "network:dns-suffix-list-updated"
+    );
+    await new TRRDNSListener("example.org", {
+      expectedAnswer: expectedIP,
+      flags: TRR_ONLY_FLAGS,
+    });
+  }
+
+  
+  await checkRequestModeTRROnly(false, "1.2.3.4");
+  
+  await checkRequestModeTRROnly(true, "127.0.0.1");
+
+  networkLinkService.dnsSuffixList = [];
+  Services.obs.notifyObservers(
+    networkLinkService,
+    "network:dns-suffix-list-updated"
+  );
+  Services.prefs.clearUserPref(
+    "network.trr.exclude_dns_suffix_in_mode_trronly"
+  );
   Services.prefs.clearUserPref("network.trr.split_horizon_mitigations");
   Services.prefs.clearUserPref("network.trr.bootstrapAddr");
 });
