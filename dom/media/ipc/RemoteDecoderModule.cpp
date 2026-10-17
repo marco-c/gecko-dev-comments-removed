@@ -88,6 +88,14 @@ RefPtr<RemoteDecoderModule::SupportsDecoderPromise>
 RemoteDecoderModule::SupportsAsync(const SupportDecoderParams& aParams) const {
   
   
+  if (mLocation == RemoteMediaIn::UtilityProcess_MFMediaEngineCDM &&
+      !aParams.mMediaEngineId) {
+    return SupportsDecoderPromise::CreateAndResolve(media::DecodeSupportSet{},
+                                                    __func__);
+  }
+
+  
+  
   UniquePtr<TrackInfo> config = aParams.mConfig.Clone();
   const media::VideoFrameRate rate = aParams.mRate;
   const Maybe<uint64_t> mediaEngineId = aParams.mMediaEngineId;
