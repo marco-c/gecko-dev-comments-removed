@@ -3333,7 +3333,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
 
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
-    } else if bounds.min != LayoutPoint::zero() {
+    } else if bounds.min != LayoutPoint::zero() || params.should_snap {
         
         
         
@@ -3344,7 +3344,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
             PropertyBinding::Value(LayoutTransform::identity()),
             ReferenceFrameKind::Transform {
                 is_2d_scale_translation: true,
-                should_snap: false,
+                should_snap: params.should_snap,
                 paired_with_perspective: false,
             },
         );
@@ -3430,25 +3430,75 @@ pub extern "C" fn wr_dp_define_rounded_rect_clip(
     state: &mut WrState,
     space: WrSpatialId,
     complex: ComplexClipRegion,
+    anti_aliased: bool,
 ) -> WrClipId {
     debug_assert!(unsafe { is_in_main_thread() });
 
-    let clip_id = state
-        .frame_builder
-        .dl_builder
-        .define_clip_rounded_rect(space.to_webrender(state.pipeline_id), complex);
+    let space = space.to_webrender(state.pipeline_id);
+    let dl_builder = &mut state.frame_builder.dl_builder;
+    let clip_id = if anti_aliased {
+        dl_builder.define_anti_aliased_clip_rounded_rect(space, complex)
+    } else {
+        dl_builder.define_clip_rounded_rect(space, complex)
+    };
     WrClipId::from_webrender(clip_id)
 }
 
 #[no_mangle]
-pub extern "C" fn wr_dp_define_rect_clip(state: &mut WrState, space: WrSpatialId, clip_rect: LayoutRect) -> WrClipId {
+pub extern "C" fn wr_dp_define_rect_clip(
+    state: &mut WrState,
+    space: WrSpatialId,
+    clip_rect: LayoutRect,
+    anti_aliased: bool,
+) -> WrClipId {
     debug_assert!(unsafe { is_in_main_thread() });
 
-    let clip_id = state
-        .frame_builder
-        .dl_builder
-        .define_clip_rect(space.to_webrender(state.pipeline_id), clip_rect);
+    let space = space.to_webrender(state.pipeline_id);
+    let dl_builder = &mut state.frame_builder.dl_builder;
+    let clip_id = if anti_aliased {
+        dl_builder.define_anti_aliased_clip_rect(space, clip_rect)
+    } else {
+        dl_builder.define_clip_rect(space, clip_rect)
+    };
     WrClipId::from_webrender(clip_id)
+}
+
+
+
+
+#[no_mangle]
+pub extern "C" fn wr_dp_define_path_clip(
+    state: &mut WrState,
+    space: WrSpatialId,
+    commands: *const PathCommand,
+    command_count: usize,
+    points: *const LayoutPoint,
+    point_count: usize,
+    aabb: LayoutRect,
+    rect: LayoutRect,
+    fill_rule: FillRule,
+) -> WrClipId {
+    debug_assert!(unsafe { is_in_main_thread() });
+
+    let commands = unsafe { make_slice(commands, command_count) };
+    let points = unsafe { make_slice(points, point_count) };
+    let space = space.to_webrender(state.pipeline_id);
+
+    let clip_id = state.frame_builder.dl_builder.define_clip_path(
+        space,
+        &Path::from_slices(commands, points, aabb),
+        rect,
+        fill_rule,
+    );
+    WrClipId::from_webrender(clip_id)
+}
+
+#[no_mangle]
+pub extern "C" fn wr_dp_get_accumulated_scroll_offset(state: &mut WrState, space: WrSpatialId) -> LayoutVector2D {
+    debug_assert!(unsafe { is_in_main_thread() });
+
+    let space = space.to_webrender(state.pipeline_id);
+    state.frame_builder.dl_builder.accumulated_scroll_offset_px(space)
 }
 
 #[no_mangle]
@@ -4175,6 +4225,7 @@ pub extern "C" fn wr_dp_push_border(
     rect: LayoutRect,
     clip: LayoutRect,
     is_backface_visible: bool,
+    force_antialiasing: bool,
     parent: &WrSpaceAndClipChain,
     do_aa: AntialiasBorder,
     widths: LayoutSideOffsets,
@@ -4199,12 +4250,15 @@ pub extern "C" fn wr_dp_push_border(
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
-    let prim_info = CommonItemProperties {
+    let mut prim_info = CommonItemProperties {
         clip_rect: clip,
         clip_chain_id: space_and_clip.clip_chain_id,
         spatial_id: space_and_clip.spatial_id,
         flags: prim_flags(is_backface_visible,  false),
     };
+    if force_antialiasing {
+        prim_info.flags |= PrimitiveFlags::ANTIALISED;
+    }
 
     state
         .frame_builder
@@ -4435,6 +4489,7 @@ pub extern "C" fn wr_dp_push_linear_gradient(
     rect: LayoutRect,
     clip: LayoutRect,
     is_backface_visible: bool,
+    force_antialiasing: bool,
     parent: &WrSpaceAndClipChain,
     start: LayoutVector2D,
     end: LayoutVector2D,
@@ -4457,12 +4512,15 @@ pub extern "C" fn wr_dp_push_linear_gradient(
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
-    let prim_info = CommonItemProperties {
+    let mut prim_info = CommonItemProperties {
         clip_rect: clip,
         clip_chain_id: space_and_clip.clip_chain_id,
         spatial_id: space_and_clip.spatial_id,
         flags: prim_flags(is_backface_visible,  false),
     };
+    if force_antialiasing {
+        prim_info.flags |= PrimitiveFlags::ANTIALISED;
+    }
 
     state
         .frame_builder
@@ -4476,6 +4534,7 @@ pub extern "C" fn wr_dp_push_radial_gradient(
     rect: LayoutRect,
     clip: LayoutRect,
     is_backface_visible: bool,
+    force_antialiasing: bool,
     parent: &WrSpaceAndClipChain,
     center: LayoutVector2D,
     radius: LayoutSize,
@@ -4498,12 +4557,15 @@ pub extern "C" fn wr_dp_push_radial_gradient(
 
     let space_and_clip = parent.to_webrender(state.pipeline_id);
 
-    let prim_info = CommonItemProperties {
+    let mut prim_info = CommonItemProperties {
         clip_rect: clip,
         clip_chain_id: space_and_clip.clip_chain_id,
         spatial_id: space_and_clip.spatial_id,
         flags: prim_flags(is_backface_visible,  false),
     };
+    if force_antialiasing {
+        prim_info.flags |= PrimitiveFlags::ANTIALISED;
+    }
 
     state.frame_builder.dl_builder.push_radial_gradient(
         &prim_info,

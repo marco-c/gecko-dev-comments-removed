@@ -1346,29 +1346,29 @@ wr::WrClipId DisplayListBuilder::DefineImageMaskClip(
 }
 
 wr::WrClipId DisplayListBuilder::DefineRoundedRectClip(
-    Maybe<wr::WrSpatialId> aSpace, const wr::ComplexClipRegion& aComplex) {
-  WrClipId clipId;
-  if (aSpace) {
-    clipId = wr_dp_define_rounded_rect_clip(mWrState, *aSpace, aComplex);
-  } else {
-    clipId = wr_dp_define_rounded_rect_clip(
-        mWrState, mCurrentSpaceAndClipChain.space, aComplex);
-  }
+    Maybe<wr::WrSpatialId> aSpace, const wr::ComplexClipRegion& aComplex,
+    bool aAntiAliased) {
+  return wr_dp_define_rounded_rect_clip(
+      mWrState, aSpace.valueOr(mCurrentSpaceAndClipChain.space), aComplex,
+      aAntiAliased);
+}
 
-  return clipId;
+wr::WrClipId DisplayListBuilder::DefinePathClip(
+    Span<const wr::PathCommand> aCommands, Span<const wr::LayoutPoint> aPoints,
+    const wr::LayoutRect& aAabb, const wr::LayoutRect& aRect,
+    wr::FillRule aFillRule) {
+  return wr_dp_define_path_clip(mWrState, mCurrentSpaceAndClipChain.space,
+                                aCommands.Elements(), aCommands.Length(),
+                                aPoints.Elements(), aPoints.Length(), aAabb,
+                                aRect, aFillRule);
 }
 
 wr::WrClipId DisplayListBuilder::DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
-                                                wr::LayoutRect aClipRect) {
-  WrClipId clipId;
-  if (aSpace) {
-    clipId = wr_dp_define_rect_clip(mWrState, *aSpace, aClipRect);
-  } else {
-    clipId = wr_dp_define_rect_clip(mWrState, mCurrentSpaceAndClipChain.space,
-                                    aClipRect);
-  }
-
-  return clipId;
+                                                wr::LayoutRect aClipRect,
+                                                bool aAntiAliased) {
+  return wr_dp_define_rect_clip(mWrState,
+                                aSpace.valueOr(mCurrentSpaceAndClipChain.space),
+                                aClipRect, aAntiAliased);
 }
 
 wr::WrSpatialId DisplayListBuilder::DefineStickyFrame(
@@ -1398,6 +1398,11 @@ wr::WrSpatialId DisplayListBuilder::DefineStickyFrame(
            ToString(aAppliedOffset).c_str());
 
   return spatialId;
+}
+
+wr::LayoutVector2D DisplayListBuilder::CurrentAccumulatedScrollOffset() {
+  return wr_dp_get_accumulated_scroll_offset(mWrState,
+                                             mCurrentSpaceAndClipChain.space);
 }
 
 Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedLayer(
@@ -1458,13 +1463,23 @@ void DisplayListBuilder::PushRect(const wr::LayoutRect& aBounds,
                   &mCurrentSpaceAndClipChain, aColor);
 }
 
+void DisplayListBuilder::PushEllipse(const wr::LayoutRect& aBounds,
+                                     const wr::LayoutRect& aClip,
+                                     bool aIsBackfaceVisible,
+                                     const wr::ColorF& aColor) {
+  PushRoundedRect(aBounds, aClip, aIsBackfaceVisible,
+                  wr::LayoutSize{aBounds.width() / 2, aBounds.height() / 2},
+                  aColor);
+}
+
 void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
                                          const wr::LayoutRect& aClip,
                                          bool aIsBackfaceVisible,
+                                         const wr::LayoutSize& aRadii,
                                          const wr::ColorF& aColor) {
-  WRDL_LOG("PushRoundedRect b=%s cl=%s c=%s\n", mWrState,
+  WRDL_LOG("PushRoundedRect b=%s cl=%s r=%s c=%s\n", mWrState,
            ToString(aBounds).c_str(), ToString(aClip).c_str(),
-           ToString(aColor).c_str());
+           ToString(aRadii).c_str(), ToString(aColor).c_str());
 
   
   
@@ -1478,12 +1493,13 @@ void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
   float h = aBounds.width() * 0.6f;
   float v = aBounds.height() * 0.6f;
   wr::LayoutSideOffsets widths = {v, h, v, h};
-  wr::BorderRadius radii = {{h, v}, {h, v}, {h, v}, {h, v},
+  wr::BorderRadius radii = {aRadii, aRadii, aRadii, aRadii,
                             1.0f,   1.0f,   1.0f,   1.0f};
   wr::LayoutSideOffsets inset = EmptyLayoutSideOffsets();
 
   
   wr_dp_push_border(mWrState, aBounds, aClip, aIsBackfaceVisible,
+                     false,
                     &mCurrentSpaceAndClipChain, wr::AntialiasBorder::Yes,
                     widths, side, side, side, side, radii, inset);
 }
@@ -1544,11 +1560,12 @@ void DisplayListBuilder::PushLinearGradient(
     bool aIsBackfaceVisible, const wr::LayoutVector2D& aStartPoint,
     const wr::LayoutVector2D& aEndPoint,
     const nsTArray<wr::GradientStop>& aStops, wr::ExtendMode aExtendMode,
-    const wr::LayoutSize aTileSize, const wr::LayoutSize aTileSpacing) {
-  wr_dp_push_linear_gradient(mWrState, aBounds, aClip, aIsBackfaceVisible,
-                             &mCurrentSpaceAndClipChain, aStartPoint, aEndPoint,
-                             aStops.Elements(), aStops.Length(), aExtendMode,
-                             aTileSize, aTileSpacing);
+    const wr::LayoutSize aTileSize, const wr::LayoutSize aTileSpacing,
+    bool aForceAntiAliasing) {
+  wr_dp_push_linear_gradient(
+      mWrState, aBounds, aClip, aIsBackfaceVisible, aForceAntiAliasing,
+      &mCurrentSpaceAndClipChain, aStartPoint, aEndPoint, aStops.Elements(),
+      aStops.Length(), aExtendMode, aTileSize, aTileSpacing);
 }
 
 void DisplayListBuilder::PushRadialGradient(
@@ -1556,11 +1573,11 @@ void DisplayListBuilder::PushRadialGradient(
     bool aIsBackfaceVisible, const wr::LayoutVector2D& aCenter,
     const wr::LayoutSize& aRadius, const nsTArray<wr::GradientStop>& aStops,
     wr::ExtendMode aExtendMode, const wr::LayoutSize aTileSize,
-    const wr::LayoutSize aTileSpacing) {
-  wr_dp_push_radial_gradient(mWrState, aBounds, aClip, aIsBackfaceVisible,
-                             &mCurrentSpaceAndClipChain, aCenter, aRadius,
-                             aStops.Elements(), aStops.Length(), aExtendMode,
-                             aTileSize, aTileSpacing);
+    const wr::LayoutSize aTileSpacing, bool aForceAntiAliasing) {
+  wr_dp_push_radial_gradient(
+      mWrState, aBounds, aClip, aIsBackfaceVisible, aForceAntiAliasing,
+      &mCurrentSpaceAndClipChain, aCenter, aRadius, aStops.Elements(),
+      aStops.Length(), aExtendMode, aTileSize, aTileSpacing);
 }
 
 void DisplayListBuilder::PushConicGradient(
@@ -1707,14 +1724,16 @@ void DisplayListBuilder::PushBorder(
     const wr::LayoutRect& aBounds, const wr::LayoutRect& aClip,
     bool aIsBackfaceVisible, const wr::LayoutSideOffsets& aWidths,
     const Range<const wr::BorderSide>& aSides, const wr::BorderRadius& aRadius,
-    const wr::LayoutSideOffsets& aInset, wr::AntialiasBorder aAntialias) {
+    const wr::LayoutSideOffsets& aInset, wr::AntialiasBorder aAntialias,
+    bool aForceAntiAliasing) {
   MOZ_ASSERT(aSides.length() == 4);
   if (aSides.length() != 4) {
     return;
   }
   wr_dp_push_border(mWrState, aBounds, aClip, aIsBackfaceVisible,
-                    &mCurrentSpaceAndClipChain, aAntialias, aWidths, aSides[0],
-                    aSides[1], aSides[2], aSides[3], aRadius, aInset);
+                    aForceAntiAliasing, &mCurrentSpaceAndClipChain, aAntialias,
+                    aWidths, aSides[0], aSides[1], aSides[2], aSides[3],
+                    aRadius, aInset);
 }
 
 void DisplayListBuilder::PushBorderImage(const wr::LayoutRect& aBounds,

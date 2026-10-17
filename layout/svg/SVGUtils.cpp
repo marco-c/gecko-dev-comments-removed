@@ -33,6 +33,7 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGTextFrame.h"
+#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_svg.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/SVGClipPathElement.h"
@@ -406,6 +407,19 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
       if (clipPathFrame) {
         if (clipPathFrame->IsTrivial()) {
           usage.mShouldApplyClipPath = true;
+          
+          
+          
+          const bool fragmented =
+              firstFrame != aFrame ||
+              nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame);
+          if (StaticPrefs::gfx_webrender_svg_simple_clips() &&
+              !usage.mShouldGenerateMaskLayer && !fragmented) {
+            CSSRect rect;
+            CSSSize radii;
+            usage.mIsSimpleClipShape = clipPathFrame->GetSimpleClipShape(
+                const_cast<nsIFrame*>(aFrame), &rect, &radii);
+          }
         } else {
           usage.mShouldGenerateClipMaskLayer = true;
         }
@@ -414,9 +428,11 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
     case ClipPathType::Shape: {
       usage.mShouldApplyBasicShapeOrPath = true;
       const auto& shape = svgReset->mClipPath.AsShape()._0;
+      
       usage.mIsSimpleClipShape =
           !usage.mShouldGenerateMaskLayer &&
-          (shape->IsRect() || shape->IsCircle() || shape->IsEllipse());
+          (shape->IsRect() || shape->IsCircle() || shape->IsEllipse() ||
+           (shape->IsPathOrShape() && StaticPrefs::gfx_webrender_paths()));
       break;
     }
     case ClipPathType::Box:
@@ -1565,8 +1581,7 @@ gfxMatrix SVGUtils::GetTransformMatrixInUserSpace(const nsIFrame* aFrame) {
     trans = nsStyleTransformMatrix::ReadTransforms(
         properties.mTranslate, properties.mRotate, properties.mScale,
         properties.mMotion.ptrOr(nullptr), properties.mTransform, refBox,
-        AppUnitsPerCSSPixel(), aFrame->Style()->EffectiveZoom(),
-        nsStyleTransformMatrix::Zoomed::Yes);
+        AppUnitsPerCSSPixel(), nsStyleTransformMatrix::Zoomed::Yes);
   }
 
   trans.ChangeBasis(svgTransformOrigin);
