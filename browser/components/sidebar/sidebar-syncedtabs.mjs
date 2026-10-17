@@ -443,13 +443,17 @@ class SyncedTabsInSidebar extends SidebarPage {
     return html`
       ${this.stylesheet()}
       <div class="sidebar-panel">
-        <div class="options-container">
+        <sidebar-panel-header
+          data-l10n-id="sidebar-menu-syncedtabs-header"
+          data-l10n-attrs="heading"
+          view="viewTabsSidebar"
+        >
           <moz-input-search
             data-l10n-id="firefoxview-search-text-box-tabs"
             data-l10n-attrs="placeholder"
             @MozInputSearch:search=${this.onSearchQuery}
           ></moz-input-search>
-        </div>
+        </sidebar-panel-header>
         <div class="sidebar-panel-scrollable-content" tabindex="-1">
           ${when(
             messageCard,

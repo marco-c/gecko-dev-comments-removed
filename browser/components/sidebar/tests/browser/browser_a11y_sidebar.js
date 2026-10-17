@@ -169,7 +169,9 @@ add_task(async function test_keyboard_navigation() {
   let customizeDocument = SidebarController.browser.contentDocument;
   const customizeComponent =
     customizeDocument.querySelector("sidebar-customize");
-  const sidebarPanelHeader = SidebarController.panelHeader;
+  const sidebarPanelHeader = customizeComponent.shadowRoot.querySelector(
+    "sidebar-panel-header"
+  );
   let closeButton = sidebarPanelHeader.closeButton;
   info("Press Tab key.");
   EventUtils.synthesizeKey("KEY_Tab", {});
