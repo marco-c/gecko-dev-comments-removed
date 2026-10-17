@@ -500,6 +500,16 @@ aitab-page-delete-dialog-confirm =
 # Credit at the bottom of a generated page.
 aitab-page-made-with = Made with <span data-l10n-name="brand">{ -smart-window-brand-name }</span>
 
+smartwindow-aitab-creating = Creating a page…
+# "Open here" opens aitab url in the current tab
+smartwindow-aitab-open-current =
+    .label = Open here
+# "Open in new tab" opens a new browser tab with the AITab url in it
+smartwindow-aitab-open-new =
+    .label = Open in new tab
+smartwindow-aitab-created-an-aitab = Created a Smart Page
+smartwindow-aitab-empty-chat-message = Want to make changes to your Smart Page? Ask in the chat to add or remove content.
+
 ## "Pick up where you left off" cards for resuming browsing or chat journeys.
 ## A "journey" is a past browsing or chat session the user was in the middle
 ## of - for example, a set of tabs open toward some task, or an ongoing
@@ -549,12 +559,3 @@ aiwindow-resume-section-empty-no-suggestions-description = When there’s someth
 aiwindow-resume-section-empty-all-dismissed-heading = All caught up
 aiwindow-resume-section-empty-all-dismissed-description = That’s all the suggestions for now. Check back later for more.
 aiwindow-resume-section-hide = Hide for now
-
-smartwindow-aitab-creating = Creating a page…
-# "Open here" opens aitab url in the current tab
-smartwindow-aitab-open-current =
-    .label = Open here
-# "Open in new tab" opens a new browser tab with the AITab url in it
-smartwindow-aitab-open-new =
-    .label = Open in new tab
-smartwindow-aitab-created-an-aitab = Created a Smart Page

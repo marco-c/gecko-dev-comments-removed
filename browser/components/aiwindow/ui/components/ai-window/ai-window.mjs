@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { installClientErrorListeners } from "chrome://browser/content/aiwindow/modules/ClientErrorTelemetry.mjs";
+import { isSmartPageURL } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -61,10 +62,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   generateConversationStartersSidebar:
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
-  generateResumeActivityConversationStarters:
-    "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
-  constructConversationToResumeActivity:
-    "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
+  JourneyManager:
+    "moz-src:///browser/components/aiwindow/models/memories/journeys/JourneyManager.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   getAllModelsData:
@@ -1342,6 +1341,12 @@ export class AIWindow extends MozLitElement {
     // (preventing the pending inference promise chain from keeping the
     // window alive).
     this.#starterPromptsAbortController?.abort();
+    if (this.#isSmartPageSidebar) {
+      this.#conversation.transientStarters = [];
+      this.#renderStarterPrompts([]);
+      return;
+    }
+
     const abortController = new AbortController();
     this.#starterPromptsAbortController = abortController;
 
@@ -1416,8 +1421,7 @@ export class AIWindow extends MozLitElement {
         await this.#refreshHasMemories();
 
         if (this.#resumeActivityMemoriesEnabled) {
-          resumeStartersPromise =
-            lazy.generateResumeActivityConversationStarters();
+          resumeStartersPromise = lazy.JourneyManager.suggestJourneysToResume();
 
           if (this.resumeCardsPref) {
             this.resumeCardsLoading = true;
@@ -1558,6 +1562,17 @@ export class AIWindow extends MozLitElement {
     }));
   }
 
+  get #isSmartPageSidebar() {
+    if (this.mode !== MODE.SIDEBAR) {
+      return false;
+    }
+
+    const currentURL = URL.parse(
+      this.#getCurrentTab()?.linkedBrowser.currentURI.spec ?? ""
+    );
+    return isSmartPageURL(currentURL);
+  }
+
   /**
    * Renders conversation starter prompts in the UI.
    * Sets the starters data and shows the prompts element.
@@ -1577,7 +1592,9 @@ export class AIWindow extends MozLitElement {
       return;
     }
 
-    this.#starters = this.#conversation?.messages?.length ? [] : starters;
+    const skipConvoStarters =
+      this.#conversation?.messages?.length || this.#isSmartPageSidebar;
+    this.#starters = skipConvoStarters ? [] : starters;
     this.showStarters = !!this.#starters.length;
 
     // Gate Top Sites on starter resolution so the prompts row and Top Sites
@@ -2419,13 +2436,14 @@ export class AIWindow extends MozLitElement {
     try {
       if (this.#resumeActivityMemoriesEnabled) {
         try {
-          conversation = await lazy.constructConversationToResumeActivity(
-            {
-              memory: resumePrompt.memory,
-              content: resumePrompt.content,
-            },
-            conversationAtClick?.id
-          );
+          conversation =
+            await lazy.JourneyManager.constructConversationToResumeJourney(
+              {
+                memory: resumePrompt.memory,
+                content: resumePrompt.content,
+              },
+              conversationAtClick?.id
+            );
           hasBespokeSystemPrompt = !!conversation;
         } catch (e) {
           lazy.log.error(
@@ -3314,6 +3332,7 @@ export class AIWindow extends MozLitElement {
   #swapConversation(conversation) {
     this.#removeConversationListeners();
     this.#conversation = conversation;
+    this.requestUpdate();
     this.#attachConversationListeners();
     this.syncSmartbarMemoriesStateFromConversation();
     this.#kitMention?.reset();
@@ -3912,6 +3931,19 @@ export class AIWindow extends MozLitElement {
           `
         : ""}
       <div id="browser-container"></div>
+      ${this.#isSmartPageSidebar &&
+      !this.isGenerating &&
+      !this.#conversation?.messageCount
+        ? html`
+            <div class="smartpage-chat-message">
+              <img
+                src="chrome://browser/content/aiwindow/assets/smart-window.svg"
+                alt=""
+              />
+              <p data-l10n-id="smartwindow-aitab-empty-chat-message"></p>
+            </div>
+          `
+        : nothing}
       ${this.mode === MODE.SIDEBAR
         ? html`
             ${this.showStarters
