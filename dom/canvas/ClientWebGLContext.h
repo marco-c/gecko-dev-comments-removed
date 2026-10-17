@@ -751,6 +751,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   JSObject* WrapObject(JSContext* cx,
                        JS::Handle<JSObject*> givenProto) override {
+    const RefPtr<ClientWebGLContext> kungFuDeathGrip(this);
     if (mIsWebGL2) {
       return dom::WebGL2RenderingContext_Binding::Wrap(cx, this, givenProto);
     }

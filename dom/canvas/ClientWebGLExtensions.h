@@ -367,11 +367,12 @@ class ClientWebGLExtensionDisjointTimerQuery : public ClientWebGLExtensionBase {
   }
   void GetQueryEXT(JSContext* cx, GLenum target, GLenum pname,
                    JS::MutableHandle<JS::Value> retval) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("getQueryEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->GetQuery(cx, target, pname, retval);
+    context->GetQuery(cx, target, pname, retval);
   }
   void GetQueryObjectEXT(JSContext* cx, WebGLQueryJS& query, GLenum pname,
                          JS::MutableHandle<JS::Value> retval) const {
@@ -409,11 +410,12 @@ class ClientWebGLExtensionMOZDebug : public ClientWebGLExtensionBase {
   void GetParameter(JSContext* cx, GLenum pname,
                     JS::MutableHandle<JS::Value> retval,
                     ErrorResult& er) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("getParameter: Extension is `invalidated`.");
       return;
     }
-    mContext->MOZDebugGetParameter(cx, pname, retval, er);
+    context->MOZDebugGetParameter(cx, pname, retval, er);
   }
 };
 
