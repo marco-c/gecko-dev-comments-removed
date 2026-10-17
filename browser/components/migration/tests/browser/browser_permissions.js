@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { ChromeProfileMigrator } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/migration/ChromeProfileMigrator.sys.mjs"
+);
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.migrate.chrome.get_permissions.enabled", true]],
@@ -163,4 +167,87 @@ add_task(async function test_permissions() {
       object: "wizard",
     }
   );
+
+  sandbox.restore();
+});
+
+
+
+
+
+
+add_task(async function test_selection_kept_after_permissions() {
+  let sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => {
+    sandbox.restore();
+  });
+
+  sandbox.stub(MigrationUtils, "availableMigratorKeys").get(() => {
+    return [InternalTestingProfileMigrator.key, ChromeProfileMigrator.key];
+  });
+
+  
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "getSourceProfiles")
+    .resolves([{ id: "chrome-test", name: "Chrome test profile" }]);
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "hasPermissions")
+    .resolves(true);
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "getResources")
+    .resolves([
+      { type: MigrationUtils.resourceTypes.BOOKMARKS, migrate: () => {} },
+    ]);
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "getLastUsedDate")
+    .resolves(new Date());
+
+  sandbox
+    .stub(InternalTestingProfileMigrator.prototype, "canGetPermissions")
+    .resolves("/some/path");
+  let hasPermissionsStub = sandbox
+    .stub(InternalTestingProfileMigrator.prototype, "hasPermissions")
+    .resolves(false);
+  let testingMigrator = await MigrationUtils.getMigrator(
+    InternalTestingProfileMigrator.key
+  );
+  sandbox.stub(testingMigrator, "getPermissions").callsFake(async () => {
+    testingMigrator.flushResourceCache();
+    hasPermissionsStub.resolves(true);
+    return true;
+  });
+  let getResourcesStub = sandbox
+    .stub(testingMigrator, "getResources")
+    .resolves([]);
+
+  await withMigrationWizardDialog(async prefsWin => {
+    let wizard = prefsWin.document.body.querySelector("migration-wizard");
+    let shadow = wizard.openOrClosedShadowRoot;
+    let selector = shadow.querySelector("#browser-profile-selector");
+    Assert.equal(
+      selector.selectedPanelItem.getAttribute("key"),
+      ChromeProfileMigrator.key,
+      "Chrome is selected first."
+    );
+
+    shadow
+      .querySelector(`panel-item[key="${InternalTestingProfileMigrator.key}"]`)
+      .click();
+
+    getResourcesStub.restore();
+    let refreshDone = BrowserTestUtils.waitForEvent(
+      wizard,
+      "MigrationWizard:Ready"
+    );
+    shadow.querySelector("#get-permissions").click();
+    await refreshDone;
+
+    Assert.equal(
+      selector.selectedPanelItem.getAttribute("key"),
+      InternalTestingProfileMigrator.key,
+      "The browser that permission was granted for is still selected."
+    );
+  });
+
+  sandbox.restore();
 });
