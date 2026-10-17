@@ -330,6 +330,21 @@ class NodeNoResponseUdpCode {
   }
 }
 
+/// Runs start(), then claim() on the port start() got; if claim() fails,
+/// runs stop() and retries, so both end up on one port free for each.
+export async function startOnSharedPort(start, claim, stop, maxRetries = 20) {
+  for (let retry = 0; retry < maxRetries; retry++) {
+    await start();
+    try {
+      return await claim();
+    } catch (e) {
+      console.log(`Port is taken (${e}), retrying`);
+      await stop();
+    }
+  }
+  throw new Error("No port was free for both servers");
+}
+
 export class BaseNodeServer {
   protocol() {
     return this._protocol;
@@ -498,21 +513,15 @@ export class BaseNodeServer {
 
   /// Starts the server on a port free for TCP and UDP alike, holding the UDP
   /// side bound but never answering, so that nothing else can claim it.
-  async startWithNoResponseUdpPort(
-    start = () => this.start(),
-    maxRetries = 20
-  ) {
-    for (let retry = 0; retry < maxRetries; retry++) {
-      await start();
-      try {
+  async startWithNoResponseUdpPort(start = () => this.start()) {
+    return startOnSharedPort(
+      start,
+      async () => {
         await this.execute(NodeNoResponseUdpCode);
-        return await this.execute(`NodeNoResponseUdpCode.bind(${this.port()})`);
-      } catch (e) {
-        console.log(`UDP port ${this.port()} is taken (${e}), retrying`);
-        await this.stop();
-      }
-    }
-    throw new Error("No port was free for both TCP and UDP");
+        return this.execute(`NodeNoResponseUdpCode.bind(${this.port()})`);
+      },
+      () => this.stop()
+    );
   }
 
   /// Stops the server

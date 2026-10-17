@@ -670,6 +670,11 @@ let port = server.port(); // TCP served, UDP never answers
 await proxy.startWithNoResponseUdpPort(() => proxy.startWithoutProxyFilter());
 ```
 
+To put two servers on one port number, use `startOnSharedPort(start, claim, stop)`.
+It runs `start()`, then `claim()` on the port that `start()` got, and on failure
+runs `stop()` and retries. `create_masque_proxy_server()` in `head_http3.js` uses it
+to start an HTTP/2 proxy on the MASQUE proxy's port.
+
 ### Scope Issues in Handlers
 
 Remember that handlers run in the Node.js context, not the test context:
