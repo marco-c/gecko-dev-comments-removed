@@ -122,18 +122,17 @@ class Frame extends Component {
 
   componentDidMount() {
     if (this.props.sourceMapURLService) {
-      const location = savedFrameToDebuggerLocation(this.props.frame);
+      const { line, column } = this.props.frame;
 
       
       
       
       
-      if (
-        location.line === 0 &&
-        (location.column === 0 || location.column === 1)
-      ) {
+      if (line === 0 && (column === 0 || column === 1)) {
         return;
       }
+
+      const location = savedFrameToDebuggerLocation(this.props.frame);
 
       
       
