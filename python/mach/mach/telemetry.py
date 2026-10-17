@@ -52,7 +52,9 @@ def create_telemetry_from_environment(settings):
 
 
 def report_invocation_metrics(telemetry, command):
+    from mozboot.mozconfig import MozconfigFindException
     from mozbuild.base import BuildEnvironmentNotFoundException, MozbuildObject
+    from mozbuild.mozconfig import MozconfigLoadException
     from mozbuild.telemetry import filter_args
 
     metrics = telemetry.metrics(MACH_METRICS_PATH)
@@ -60,16 +62,20 @@ def report_invocation_metrics(telemetry, command):
 
     try:
         instance = MozbuildObject.from_environment()
-    except BuildEnvironmentNotFoundException:
+        topobjdir = instance.topobjdir
+    except (
+        BuildEnvironmentNotFoundException,
+        MozconfigFindException,
+        MozconfigLoadException,
+    ):
+        
         
         
         
         
         
         return
-    metrics.mach.argv.set(
-        filter_args(command, sys.argv, instance.topsrcdir, instance.topobjdir)
-    )
+    metrics.mach.argv.set(filter_args(command, sys.argv, instance.topsrcdir, topobjdir))
 
 
 def is_applicable_telemetry_environment():
