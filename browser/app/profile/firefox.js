@@ -556,6 +556,13 @@ pref("browser.urlbar.suggest.weather", true);
 pref("browser.urlbar.suggest.trending", true);
 
 
+pref("browser.urlbar.temporal.featureGate", false);
+
+
+
+pref("browser.urlbar.suggest.temporal", true);
+
+
 
 
 

@@ -1,9 +1,41 @@
 (urlbar-preferences)=
 
-# Address Bar Preferences
+# Preferences
 
-This document describes Preferences affecting the Firefox's address bar.
-Preferences that are generated and updated by code won't be described here.
+This document describes preferences affecting the address bar and the search
+bars. Preferences that are generated and updated by code won't be described
+here.
+
+## Search Bars
+
+A search bar reads an address bar preference wherever it runs the same code.
+Which preferences apply depends on the results each bar shows. The toolbar
+search bar shows search suggestions, search history and a few built-in results
+such as the calculator. The New Tab search bar adds URL navigation,
+autofill and Firefox Suggest, and the smartbar shows most address bar results.
+
+These preferences affect only the address bar:
+
+- `browser.urlbar.shortcuts.bookmarks`, `browser.urlbar.shortcuts.tabs` and
+  `browser.urlbar.shortcuts.history`
+- `browser.urlbar.showSearchTerms.enabled`
+- `browser.urlbar.accessibility.tabToSearch.announceResults`
+- `browser.urlbar.dnsResolveSingleWordsAfterSearch`
+- `browser.urlbar.formatting.enabled`
+- `browser.urlbar.searchTips.test.ignoreShowLimits`
+- `browser.urlbar.sponsoredTopSites`
+
+Some search bars read a different preference, or ignore one:
+
+- The toolbar search bar reads `browser.search.openintab` instead of
+  `browser.urlbar.openintab`.
+- The smartbar reads `browser.urlbar.smartbar.maxResults` and
+  `browser.urlbar.smartbar.showSearchSuggestionsFirst` instead of
+  `browser.urlbar.maxRichResults` and
+  `browser.urlbar.showSearchSuggestionsFirst`.
+- The toolbar and New Tab search bars ignore `keyword.enabled` and
+  `browser.urlbar.unifiedSearchButton.always`, and show recent searches
+  regardless of `browser.urlbar.suggest.recentsearches`.
 
 ## User Exposed
 
@@ -167,11 +199,6 @@ browser.urlbar.dnsResolveSingleWordsAfterSearch (number, default: 0)
   "Did you mean to go to 'host'" prompt.
   Set to 0. 0: Never resolve, 1: Use heuristics, 2. Always resolve.
 
-browser.urlbar.extension.timeout (integer, default: 400)
-
-: When sending events to extensions, they have this amount of time in
-  milliseconds to respond before timing out. This affects the omnibox API.
-
 browser.urlbar.filter.javascript (boolean, default: true)
 
 : When true, `javascript:` URLs are not included in search results for safety
@@ -275,6 +302,19 @@ browser.urlbar.switchTabs.adoptIntoActiveWindow (boolean, default: false)
 
 : When using switch to tabs, if set to true this will move the tab into the
   active window, instead of just switching to it.
+
+browser.urlbar.suggest.temporal (boolean, default: true)
+
+: If `browser.urlbar.temporal.featureGate` is true, this controls whether
+  temporal search suggestions are shown in the zero prefix view.
+
+browser.urlbar.temporal.featureGate (boolean, default: false)
+
+: Feature gate pref for temporal search suggestions in the zero prefix view.
+
+browser.urlbar.temporal.rowCount (integer, default: 3)
+
+: The maximum number of temporal search suggestions to show.
 
 browser.urlbar.trimURLs (boolean, default: true)
 
