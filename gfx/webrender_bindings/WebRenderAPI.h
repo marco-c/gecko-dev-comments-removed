@@ -631,15 +631,6 @@ class DisplayListBuilder final {
   wr::WrClipId DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
                               wr::LayoutRect aClipRect,
                               bool aAntiAliased = false);
-  
-  
-  
-  
-  wr::WrClipId DefinePathClip(Span<const wr::PathCommand> aCommands,
-                              Span<const wr::LayoutPoint> aPoints,
-                              const wr::LayoutRect& aAabb,
-                              const wr::LayoutRect& aRect,
-                              wr::FillRule aFillRule);
 
   wr::WrSpatialId DefineStickyFrame(const ActiveScrolledRoot* aStickyAsr,
                                     Maybe<wr::WrSpatialId> aParentSpatialId,

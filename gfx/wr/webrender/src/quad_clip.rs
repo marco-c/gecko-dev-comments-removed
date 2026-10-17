@@ -15,14 +15,14 @@
 
 
 
-use api::{BorderRadius, ClipMode, Path, FillRule, units::*};
+use api::{BorderRadius, ClipMode, units::*};
 
 use crate::render_task_graph::RenderTaskId;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::MaxRect;
 
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub enum QuadClipShape {
     Rectangle {
         mode: ClipMode,
@@ -38,17 +38,10 @@ pub enum QuadClipShape {
         first_tile: u32,
         tile_count: u32,
     },
-    Path {
-        path: Path,
-        fill_rule: FillRule,
-        
-        
-        origin: LayoutPoint,
-    },
 }
 
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct QuadClip {
     pub shape: QuadClipShape,
     
@@ -178,23 +171,6 @@ impl QuadClipStack {
     ) {
         self.clips.push(QuadClip {
             shape: QuadClipShape::Rectangle { mode },
-            rect,
-            spatial_node,
-            uid,
-        });
-    }
-
-    pub fn push_path(
-        &mut self,
-        rect: LayoutRect,
-        path: Path,
-        fill_rule: FillRule,
-        origin: LayoutPoint,
-        spatial_node: SpatialNodeIndex,
-        uid: u64,
-    ) {
-        self.clips.push(QuadClip {
-            shape: QuadClipShape::Path { path, fill_rule, origin },
             rect,
             spatial_node,
             uid,

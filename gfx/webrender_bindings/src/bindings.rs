@@ -3463,38 +3463,11 @@ pub extern "C" fn wr_dp_define_rect_clip(
     WrClipId::from_webrender(clip_id)
 }
 
-
-
-
 #[no_mangle]
-pub extern "C" fn wr_dp_define_path_clip(
+pub extern "C" fn wr_dp_get_accumulated_scroll_offset(
     state: &mut WrState,
     space: WrSpatialId,
-    commands: *const PathCommand,
-    command_count: usize,
-    points: *const LayoutPoint,
-    point_count: usize,
-    aabb: LayoutRect,
-    rect: LayoutRect,
-    fill_rule: FillRule,
-) -> WrClipId {
-    debug_assert!(unsafe { is_in_main_thread() });
-
-    let commands = unsafe { make_slice(commands, command_count) };
-    let points = unsafe { make_slice(points, point_count) };
-    let space = space.to_webrender(state.pipeline_id);
-
-    let clip_id = state.frame_builder.dl_builder.define_clip_path(
-        space,
-        &Path::from_slices(commands, points, aabb),
-        rect,
-        fill_rule,
-    );
-    WrClipId::from_webrender(clip_id)
-}
-
-#[no_mangle]
-pub extern "C" fn wr_dp_get_accumulated_scroll_offset(state: &mut WrState, space: WrSpatialId) -> LayoutVector2D {
+) -> LayoutVector2D {
     debug_assert!(unsafe { is_in_main_thread() });
 
     let space = space.to_webrender(state.pipeline_id);

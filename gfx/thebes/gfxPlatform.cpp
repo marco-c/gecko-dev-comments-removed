@@ -589,12 +589,6 @@ static void WebRenderUploadThresholdPrefChangeCallback(const char* aPrefName,
   gfxVars::SetWebRenderBatchedUploadThreshold(value);
 }
 
-static void WebRenderPathAaSamplesPrefChangeCallback(const char* aPrefName,
-                                                     void*) {
-  gfxVars::SetWebRenderPathAaSamples(
-      StaticPrefs::gfx_webrender_path_aa_samples());
-}
-
 static uint32_t GetSkiaGlyphCacheSize() {
   
 #if !defined(MOZ_WIDGET_ANDROID)
@@ -2519,11 +2513,6 @@ void gfxPlatform::InitWebRenderConfig() {
       WebRenderUploadThresholdPrefChangeCallback,
       nsDependentCString(
           StaticPrefs::GetPrefName_gfx_webrender_batched_upload_threshold()));
-
-  Preferences::RegisterCallbackAndCall(
-      WebRenderPathAaSamplesPrefChangeCallback,
-      nsDependentCString(
-          StaticPrefs::GetPrefName_gfx_webrender_path_aa_samples()));
 
   if (WebRenderResourcePathOverride()) {
     CrashReporter::RecordAnnotationBool(

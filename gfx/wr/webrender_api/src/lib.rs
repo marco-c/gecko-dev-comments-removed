@@ -51,7 +51,6 @@ mod display_list;
 mod font;
 mod gradient_builder;
 mod image;
-pub mod path;
 
 
 #[doc(hidden)]
@@ -80,7 +79,6 @@ pub use crate::gradient_builder::*;
 pub use crate::image::*;
 pub use crate::tile_pool::*;
 pub use crate::fast_transform::*;
-pub use crate::path::*;
 
 use crate::units::*;
 use crate::channel::Receiver;
@@ -642,10 +640,6 @@ pub enum BoolParameter {
 #[repr(u32)]
 pub enum IntParameter {
     BatchedUploadThreshold = 0,
-    
-    
-    
-    PathAaSamples = 1,
 }
 
 

@@ -440,11 +440,12 @@ pub trait DlInterned: Clone + Eq + Hash + MallocSizeOf + Sized {
 
 
 
+
+
 #[macro_export]
 macro_rules! enumerate_dl_interned_types {
     ($macro_name: ident) => {
         $macro_name! {
-            path: $crate::path::Path,
         }
     }
 }
