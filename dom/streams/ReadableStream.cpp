@@ -1403,7 +1403,7 @@ void ReadableStream::ErrorNative(JSContext* aCx, JS::Handle<JS::Value> aError,
   
   
   if (mController->IsByte()) {
-    ReadableByteStreamControllerError(mController->AsByte(), aError, aRv);
+    ReadableByteStreamControllerError(aCx, mController->AsByte(), aError, aRv);
     return;
   }
   

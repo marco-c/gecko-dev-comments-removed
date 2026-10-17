@@ -350,8 +350,8 @@ void ReadableByteStreamControllerClearAlgorithms(
 
 
 void ReadableByteStreamControllerError(
-    ReadableByteStreamController* aController, JS::Handle<JS::Value> aValue,
-    ErrorResult& aRv) {
+    JSContext* aCx, ReadableByteStreamController* aController,
+    JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
   
   ReadableStream* stream = aController->Stream();
 
@@ -371,11 +371,7 @@ void ReadableByteStreamControllerError(
   ReadableByteStreamControllerClearAlgorithms(aController);
 
   
-  AutoJSAPI jsapi;
-  if (!jsapi.Init(aController->GetParentObject())) {
-    return;
-  }
-  ReadableStreamError(jsapi.cx(), stream, aValue, aRv);
+  ReadableStreamError(aCx, stream, aValue, aRv);
 }
 
 
@@ -417,7 +413,7 @@ void ReadableByteStreamControllerClose(
       MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &exception));
 
       
-      ReadableByteStreamControllerError(aController, exception, aRv);
+      ReadableByteStreamControllerError(aCx, aController, exception, aRv);
       if (aRv.Failed()) {
         return;
       }
@@ -495,7 +491,7 @@ void ReadableByteStreamControllerEnqueueClonedChunkToQueue(
 
     
     
-    ReadableByteStreamControllerError(aController, exception, aRv);
+    ReadableByteStreamControllerError(aCx, aController, exception, aRv);
     if (aRv.Failed()) {
       return;
     }
@@ -654,7 +650,7 @@ void ReadableByteStreamControllerCallPullIfNeeded(
       [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
          ReadableByteStreamController* aController) {
         
-        ReadableByteStreamControllerError(aController, aValue, aRv);
+        ReadableByteStreamControllerError(aCx, aController, aValue, aRv);
       },
       RefPtr(aController));
 }
@@ -1116,7 +1112,7 @@ void ReadableByteStreamController::Error(JSContext* aCx,
                                          JS::Handle<JS::Value> aErrorValue,
                                          ErrorResult& aRv) {
   
-  ReadableByteStreamControllerError(this, aErrorValue, aRv);
+  ReadableByteStreamControllerError(aCx, this, aErrorValue, aRv);
 }
 
 
@@ -2100,7 +2096,7 @@ void ReadableByteStreamControllerPullInto(
       MOZ_RELEASE_ASSERT(ToJSValue(aCx, std::move(typeError), &e));
 
       
-      ReadableByteStreamControllerError(aController, e, aRv);
+      ReadableByteStreamControllerError(aCx, aController, e, aRv);
       if (aRv.Failed()) {
         return;
       }
@@ -2208,7 +2204,7 @@ void SetUpReadableByteStreamController(
       [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
          ReadableByteStreamController* aController) {
         
-        ReadableByteStreamControllerError(aController, aValue, aRv);
+        ReadableByteStreamControllerError(aCx, aController, aValue, aRv);
       },
       RefPtr(aController));
 }
