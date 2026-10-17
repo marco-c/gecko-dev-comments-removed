@@ -492,7 +492,8 @@ bool FinalizationObservers::shouldQueueFinalizationRegistryForCleanup(
   return !zone->wasGCStarted() || zone->gcState() >= Zone::Sweep;
 }
 
-static void ExposeObjectToActiveJSDuringCollection(GCRuntime* gc, JSObject* object) {
+static void ExposeObjectToActiveJSDuringCollection(GCRuntime* gc,
+                                                   JSObject* object) {
   
   
 
