@@ -7,6 +7,8 @@ with Files("**"):
 
 JAR_MANIFESTS += ["jar.mn"]
 
+SPHINX_TREES["docs"] = "docs"
+
 MOZ_SRC_FILES += [
     "MiniWindow.sys.mjs",
     "MiniWindowChild.sys.mjs",

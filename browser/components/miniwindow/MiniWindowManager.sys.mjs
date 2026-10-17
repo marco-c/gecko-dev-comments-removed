@@ -21,16 +21,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Cross-window manager for Mini Windows. Owns the registry of
  * open mini windows, the per-origin lifecycle observers, and SessionStore integration.
  */
-export const MiniWindowManager = new (class {
-  /** @type {Set<object>} live MiniWindow instances. */
+class MiniWindowManagerClass {
+  /**
+   * Live MiniWindow instances.
+   *
+   * @type {Set<object>}
+   */
   _miniwindows = new Set();
 
-  /** @type {WeakMap<Window, Set<object>>} originWin -> its live mini windows. */
+  /**
+   * Each origin window's live mini windows.
+   *
+   * @type {WeakMap<Window, Set<object>>}
+   */
   #originWinToMinis = new WeakMap();
 
   /**
-   * @type {WeakMap<Window, AbortController>} origin windows with lifecycle
-   * hooks installed, mapped to the controller that removes them.
+   * Origin windows with lifecycle hooks installed, mapped to the controller
+   * that removes them.
+   *
+   * @type {WeakMap<Window, AbortController>}
    */
   #originWinHooks = new WeakMap();
 
@@ -317,4 +327,6 @@ export const MiniWindowManager = new (class {
     let minis = this.#originWinToMinis.get(originWin);
     return minis ? [...minis] : [];
   }
-})();
+}
+
+export const MiniWindowManager = new MiniWindowManagerClass();
