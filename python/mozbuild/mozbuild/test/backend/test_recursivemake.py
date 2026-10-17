@@ -12,6 +12,7 @@ from mozpack.copier import FileRegistry
 from mozpack.manifests import InstallManifest
 from mozunit import main
 
+from mozbuild.backend import get_backend_class
 from mozbuild.backend.recursivemake import RecursiveMakeBackend, RecursiveMakeTraversal
 from mozbuild.backend.test_manifest import TestManifestBackend
 from mozbuild.frontend.emitter import TreeMetadataEmitter
@@ -531,6 +532,26 @@ class TestRecursiveMakeBackend(BackendTester):
         root_deps_path = mozpath.join(env.topobjdir, "root-deps.mk")
         lines = [l.strip() for l in open(root_deps_path).readlines()]
         self.assertIn("consumer/pre-compile: producer/pre-compile", lines)
+
+    def test_resolve_targets(self):
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets([
+                "gtest",
+                "recurse_gtest",
+                "binaries",
+            ]),
+            ["recurse_gtest", "recurse_gtest", "binaries"],
+        )
+        self.assertEqual(
+            RecursiveMakeBackend.resolve_targets(["syms"]), ["recurse_syms"]
+        )
+
+        hybrid = get_backend_class("FasterMake+RecursiveMake")
+        self.assertEqual(hybrid.resolve_targets(["gtest"]), ["recurse_gtest"])
+
+    def test_resolve_targets_sorted(self):
+        targets = RecursiveMakeBackend.TARGETS
+        self.assertEqual(list(targets), sorted(targets))
 
     def test_generated_files_force(self):
         """Ensure GENERATED_FILES with .force is handled properly."""

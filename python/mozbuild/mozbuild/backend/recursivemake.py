@@ -342,6 +342,14 @@ class RecursiveMakeBackend(MakeBackend):
     """
 
     BUILT_INSTALL_MANIFESTS = "_build_manifests/built"
+    TARGETS = {
+        "gtest": ["recurse_gtest"],
+        "syms": ["recurse_syms"],
+    }
+
+    @classmethod
+    def resolve_targets(cls, what):
+        return [t for name in what for t in cls.TARGETS.get(name, [name])]
 
     def _init(self):
         MakeBackend._init(self)
