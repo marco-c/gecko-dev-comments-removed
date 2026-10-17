@@ -5,6 +5,7 @@
 import {
   hasContentAreaWidgets,
   isWidgetEnabled,
+  isWidgetInSidebar,
   isWidgetsContainerVisible,
   WIDGET_REGISTRY,
 } from "./WidgetsRegistry.mjs";
@@ -266,7 +267,8 @@ function rejectSpacesConfig(raw) {
  * spaces, or nothing left after dropping kills the layout.
  *
  * @param {object} raw - a spaces config from trainhopConfig or the pref
- * @returns {object|null} { order, default, arrows, spaces } or null
+ * @returns {object|null} { order, default, widgetCatchAll, arrows, spaces } or
+ *   null
  */
 export function normalizeSpacesConfig(raw) {
   const order = asStringArray(raw?.order);
@@ -299,11 +301,16 @@ export function normalizeSpacesConfig(raw) {
     return rejectSpacesConfig(raw);
   }
 
+  // The named default has to have survived; otherwise the leftmost space takes
+  // both roles, including the sections catch-all.
+  const defaultId = kept.includes(raw.default) ? raw.default : kept[0];
   return {
     order: kept,
-    // The named default has to have survived; otherwise the leftmost space
-    // takes both roles, including the catch-all.
-    default: kept.includes(raw.default) ? raw.default : kept[0],
+    default: defaultId,
+    // Takes the widgets no space names. The default space unless one is named.
+    widgetCatchAll: kept.includes(raw.widgetCatchAll)
+      ? raw.widgetCatchAll
+      : defaultId,
     // Edge arrows alongside the tablist.
     arrows: raw.arrows === true,
     spaces,
@@ -604,14 +611,56 @@ export function resolveFeedSectionKeys(discoveryStream) {
   return sections?.map(section => section.sectionKey).filter(Boolean) ?? [];
 }
 
+// @experiment(remove) { bug 2078816 }
+export const PREF_WIDGET_FIRST_WIDGET =
+  "pageLayouts.widgetFirstContentSlot.widget";
+
+// @experiment(remove) { bug 2078816 }
+/**
+ * The id of the widget shown in the first card of the top stories section, or
+ * null when there is none. The widget must already be enabled. The thematic
+ * spaces variant honours the same setting, so removing the
+ * widget-first-content-slot variant must keep this for it.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string|null} a widget registry id
+ */
+export const selectFirstSlotWidget = prefs => {
+  const variant = resolvePageLayoutVariant(prefs);
+  if (
+    variant !== PAGE_LAYOUT_VARIANTS.WIDGET_FIRST_CONTENT_SLOT &&
+    variant !== PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1
+  ) {
+    return null;
+  }
+  const id =
+    prefs.trainhopConfig?.pageLayouts?.widgetFirstContentSlot?.widget ??
+    prefs[PREF_WIDGET_FIRST_WIDGET];
+  const widget = WIDGET_REGISTRY.find(w => w.id === id);
+  // The space overrides, which are false outside a spaces variant.
+  return widget &&
+    prefs["nova.enabled"] &&
+    (prefs["feeds.section.topstories"] ||
+      isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
+    prefs["feeds.system.topstories"] &&
+    isWidgetEnabled(
+      widget,
+      prefs,
+      prefs["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs)
+    )
+    ? id
+    : null;
+};
+
 /**
  * The widgets a space should show, in registry order, filtered to the ones
- * actually enabled. The default space is the catch-all here too, so a widget no
- * space names is never invisible everywhere. Empty means the space shows its
- * feed alone, which is all of them while the widgets container is hidden.
+ * actually enabled. The config's widgetCatchAll space also takes every widget no
+ * space names, so one is never invisible everywhere. Empty means the space shows
+ * its feed alone, which is all of them while the widgets container is hidden.
  *
- * Weather is never named: at its small size it renders in the page's inline-end
- * sidebar, outside every space, as it does in the side-by-side layouts.
+ * Two widgets are in no space: Weather at its small size, which renders in the
+ * page's inline-end sidebar as it does in the side-by-side layouts, and the one
+ * in the first card of Popular Today.
  *
  * @param {object} config - from resolveThematicSpacesConfig
  * @param {string} spaceId - a config space id
@@ -620,7 +669,7 @@ export function resolveFeedSectionKeys(discoveryStream) {
  */
 export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
   const assigned = new Set(config?.spaces?.[spaceId]?.widgets ?? []);
-  const isCatchAll = spaceId === config?.default;
+  const isCatchAll = spaceId === (config?.widgetCatchAll ?? config?.default);
   const claimed = new Set(
     Object.values(config?.spaces ?? {}).flatMap(space => space.widgets)
   );
@@ -629,10 +678,13 @@ export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
   if (!isWidgetsContainerVisible(prefs)) {
     return [];
   }
+  const firstSlotWidget = selectFirstSlotWidget(prefs);
 
   return WIDGET_REGISTRY.filter(
     w =>
       (assigned.has(w.id) || (isCatchAll && !claimed.has(w.id))) &&
+      w.id !== firstSlotWidget &&
+      !isWidgetInSidebar(w, prefs) &&
       isWidgetEnabled(w, prefs, widgetsEnabled)
   ).map(w => w.id);
 }
@@ -848,36 +900,4 @@ export const selectWidgetsRowAd = (prefs, spocs) => {
   );
   const blocked = spocs?.blocked ?? [];
   return first && !blocked.includes(first.url) ? first : null;
-};
-
-// @experiment(remove) { bug 2078816 }
-export const PREF_WIDGET_FIRST_WIDGET =
-  "pageLayouts.widgetFirstContentSlot.widget";
-
-// @experiment(remove) { bug 2078816 }
-/**
- * The id of the widget shown in the first card of the top stories section, or
- * null when there is none. The widget must already be enabled.
- *
- * @param {object} prefs - current pref values from the Redux store
- * @returns {string|null} a widget registry id
- */
-export const selectFirstSlotWidget = prefs => {
-  if (
-    resolvePageLayoutVariant(prefs) !==
-    PAGE_LAYOUT_VARIANTS.WIDGET_FIRST_CONTENT_SLOT
-  ) {
-    return null;
-  }
-  const id =
-    prefs.trainhopConfig?.pageLayouts?.widgetFirstContentSlot?.widget ??
-    prefs[PREF_WIDGET_FIRST_WIDGET];
-  const widget = WIDGET_REGISTRY.find(w => w.id === id);
-  return widget &&
-    prefs["nova.enabled"] &&
-    prefs["feeds.section.topstories"] &&
-    prefs["feeds.system.topstories"] &&
-    isWidgetEnabled(widget, prefs, prefs["widgets.enabled"])
-    ? id
-    : null;
 };
