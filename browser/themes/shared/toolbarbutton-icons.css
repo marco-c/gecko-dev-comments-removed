@@ -205,7 +205,8 @@
   list-style-image: url("chrome://mozapps/skin/extensions/extension.svg");
 }
 
-#reset-pbm-toolbar-button {
+#reset-pbm-toolbar-button,
+#fire-button {
   list-style-image: url("chrome://browser/skin/flame.svg");
 }
 

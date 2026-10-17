@@ -30,6 +30,12 @@ const sidebarRevampEnabled = Services.prefs.getBoolPref(
 );
 
 
+const fireButtonEnabled = Services.prefs.getBoolPref(
+  "browser.fireButton.enabled",
+  false
+);
+
+
 function resetToolbarWithoutDevEditionButtons() {
   CustomizableUI.reset();
   CustomizableUI.removeWidgetFromArea("developer-button");
@@ -56,22 +62,18 @@ function AddOldMenuSideButtons() {
   );
   document.documentElement.setAttribute("fxastatus", "signed_in");
   
-  CustomizableUI.addWidgetToArea(
-    "library-button",
-    "nav-bar",
-    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 3
-  );
+  
+  
+  const beforeFxa = () =>
+    CustomizableUI.getPlacementOfWidget(afterUrlBarButton).position;
+  CustomizableUI.addWidgetToArea("library-button", "nav-bar", beforeFxa());
   if (!sidebarRevampEnabled) {
-    CustomizableUI.addWidgetToArea(
-      "sidebar-button",
-      "nav-bar",
-      CustomizableUI.getWidgetIdsInArea("nav-bar").length - 3
-    );
+    CustomizableUI.addWidgetToArea("sidebar-button", "nav-bar", beforeFxa());
   }
   CustomizableUI.addWidgetToArea(
     "unified-extensions-button",
     "nav-bar",
-    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 3
+    beforeFxa()
   );
 }
 
@@ -431,6 +433,9 @@ add_task(async function testArrowsToolbarbuttons() {
     }
     await expectFocusAfterKey("ArrowRight", "unified-extensions-button");
     await expectFocusAfterKey("ArrowRight", "fxa-toolbar-menu-button");
+    if (fireButtonEnabled) {
+      await expectFocusAfterKey("ArrowRight", "fire-button");
+    }
     
     
     await expectFocusAfterKey("ArrowRight", "PanelUI-menu-button");
@@ -440,6 +445,9 @@ add_task(async function testArrowsToolbarbuttons() {
       "PanelUI-menu-button",
       "ArrowRight at end of button group does nothing"
     );
+    if (fireButtonEnabled) {
+      await expectFocusAfterKey("ArrowLeft", "fire-button");
+    }
     await expectFocusAfterKey("ArrowLeft", "fxa-toolbar-menu-button");
     await expectFocusAfterKey("ArrowLeft", "unified-extensions-button");
     if (!sidebarRevampEnabled) {
@@ -535,6 +543,9 @@ add_task(async function testArrowsOverflowButton() {
     }
     await expectFocusAfterKey("ArrowRight", "unified-extensions-button");
     await expectFocusAfterKey("ArrowRight", "fxa-toolbar-menu-button");
+    if (fireButtonEnabled) {
+      await expectFocusAfterKey("ArrowRight", "fire-button");
+    }
     await expectFocusAfterKey("ArrowRight", "nav-bar-overflow-button");
     
     await expectFocusAfterKey("ArrowRight", "PanelUI-menu-button");
@@ -544,6 +555,9 @@ add_task(async function testArrowsOverflowButton() {
     
     
     await expectFocusAfterKey("ArrowLeft", "unified-extensions-button");
+    if (fireButtonEnabled) {
+      await expectFocusAfterKey("ArrowLeft", "fire-button");
+    }
     await expectFocusAfterKey("ArrowLeft", "fxa-toolbar-menu-button");
   });
   RemoveOldMenuSideButtons();
