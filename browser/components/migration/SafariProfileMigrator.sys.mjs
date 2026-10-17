@@ -657,7 +657,7 @@ export class SafariProfileMigrator extends MigratorBase {
       // The title (second arg) is not displayed on macOS, so leave it blank.
       fp.init(win?.browsingContext, "", Ci.nsIFilePicker.modeGetFolder);
       fp.filterIndex = 1;
-      fp.displayDirectory = FileUtils.getDir("ULibDir", [""]);
+      fp.displayDirectory = FileUtils.getDir("ULibDir", ["Safari"]);
       // Now wait for the filepicker to open and close. If the user picks
       // the Safari folder, macOS will grant us read access to everything
       // inside, so we don't need to check or do anything else with what's

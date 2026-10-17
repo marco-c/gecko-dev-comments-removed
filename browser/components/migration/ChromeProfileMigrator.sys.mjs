@@ -17,6 +17,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ChromeMigrationUtils:
     "moz-src:///browser/components/migration/ChromeMigrationUtils.sys.mjs",
+  FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
@@ -162,6 +163,11 @@ export class ChromeProfileMigrator extends MigratorBase {
       let fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
       fp.init(win?.browsingContext, "", Ci.nsIFilePicker.modeGetFolder);
       fp.filterIndex = 1;
+      // Folders such as ~/Library are hidden in the file picker, so open it
+      // in the folder that the user needs to select.
+      if (originalDataPath) {
+        fp.displayDirectory = new lazy.FileUtils.File(originalDataPath);
+      }
       // Now wait for the filepicker to open and close. If the user picks
       // the local state folder, the OS should grant us read access to everything
       // inside, so we don't need to check or do anything else with what's
