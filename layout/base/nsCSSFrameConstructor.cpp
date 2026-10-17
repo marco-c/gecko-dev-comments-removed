@@ -7620,6 +7620,18 @@ static nsIFrame* FindPreviousNonWhitespaceSibling(nsIFrame* aFrame) {
   return f;
 }
 
+
+
+
+static bool IsInFragmentedTable(nsIFrame* aFrame) {
+  for (nsIFrame* f = aFrame->GetParent(); f; f = f->GetParent()) {
+    if (f->IsTableFrame() && (f->GetPrevInFlow() || f->GetNextInFlow())) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static nsIFrame* CheckRubyContainers(nsIFrame* aFrame, nsIFrame* aParent) {
   auto* ancestor = aParent;
   auto* ancestorChild = aFrame;
@@ -7708,6 +7720,19 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
                                InsertionKind::Async);
       return true;
     }
+  }
+
+  if (aFrame->PresContext()->IsPaginated() &&
+      aFrame->GetContent() != mDocument->GetRootElement() &&
+      (IsInFragmentedTable(inFlowFrame) ||
+       aFrame->IsInReplicatedFixedPosTree())) {
+    
+    
+    
+    
+    TRACE("Paginated fragmented content");
+    RecreateFramesForContent(mDocument->GetRootElement(), InsertionKind::Async);
+    return true;
   }
 
   if (IsFramePartOfIBSplit(aFrame)) {

@@ -9501,6 +9501,23 @@ void nsIFrame::DumpFrameTreeLimitedInCSSPixels() const {
 
 #endif
 
+
+
+
+bool nsIFrame::IsInReplicatedFixedPosTree() const {
+  if (!PresContext()->IsPaginated()) {
+    return false;
+  }
+  for (const nsIFrame* f = this; f; f = f->GetParent()) {
+    if (f->StyleDisplay()->mPosition == StylePositionProperty::Fixed &&
+        nsLayoutUtils::IsReallyFixedPos(f)) {
+      const nsIFrame* pageContent = f->GetParent();
+      return pageContent->GetPrevInFlow() || pageContent->GetNextInFlow();
+    }
+  }
+  return false;
+}
+
 bool nsIFrame::IsVisibleForPainting() const {
   return StyleVisibility()->IsVisible();
 }

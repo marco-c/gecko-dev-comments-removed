@@ -2687,6 +2687,13 @@ class nsIFrame : public nsQueryFrame {
 
   bool IsPrimaryFrame() const { return mIsPrimaryFrame; }
 
+  
+
+
+
+
+  bool IsInReplicatedFixedPosTree() const;
+
   void SetIsPrimaryFrame(bool aIsPrimary) {
     if (mIsPrimaryFrame == aIsPrimary) {
       return;
