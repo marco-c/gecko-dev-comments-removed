@@ -107,6 +107,8 @@ enum BrowserPromptType<'a> {
         result: BioEnrollmentResult,
     },
     UnknownError,
+    
+    NoDevicesFound,
 }
 
 #[derive(Debug)]
@@ -610,6 +612,18 @@ fn status_callback(
                     origin,
                     browsing_context_id,
                 )?;
+            }
+            Ok(StatusUpdate::NoDevicesFound) => {
+                debug!("STATUS: No devices found.");
+                send_prompt(
+                    BrowserPromptType::NoDevicesFound,
+                    tid,
+                    origin,
+                    browsing_context_id,
+                )?;
+            }
+            Ok(StatusUpdate::RequestLogging(_, _)) => {
+                
             }
             Err(RecvError) => {
                 debug!("STATUS: end");
