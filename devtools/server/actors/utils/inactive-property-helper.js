@@ -253,6 +253,8 @@ class InactivePropertyHelper {
             "inline-flex",
             "grid",
             "inline-grid",
+            "grid-lanes",
+            "inline-grid-lanes",
             "block",
             "inline-block",
             
@@ -1098,8 +1100,14 @@ class InactivePropertyHelper {
 
 
 
+
   get gridContainer() {
-    return this.checkComputedStyle("display", ["grid", "inline-grid"]);
+    return this.checkComputedStyle("display", [
+      "grid",
+      "inline-grid",
+      "grid-lanes",
+      "inline-grid-lanes",
+    ]);
   }
 
   

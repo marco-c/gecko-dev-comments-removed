@@ -26,7 +26,7 @@ const TEST_URI = `
       grid-column-end: 3;
       grid-row-start: 1;
       grid-row-end: auto;
-      flex-direction: row
+      flex-direction: row;
     }
 
     #abspos {
@@ -36,6 +36,13 @@ const TEST_URI = `
 
     #self-aligned {
       align-self: stretch;
+    }
+
+    #lanes {
+      display: grid-lanes;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 10px;
+      row-gap: 10px;
     }
   </style>
 </head>
@@ -50,6 +57,7 @@ const TEST_URI = `
         <div id="abspos">AbsPos item</div>
       </div>
     </div>
+    <div id="lanes"></div>
     <div id="self-aligned"></div>
 </body>`;
 
@@ -206,6 +214,8 @@ add_task(async function () {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
 
+  
+  info("Running inactive CSS tests for display: grid");
   await runInactiveCSSTests(view, inspector, BEFORE);
 
   
@@ -221,6 +231,24 @@ add_task(async function () {
     display: "grid",
   });
   await runAbsPosGridElementTests(view, inspector);
+
+  info("Checking inactive CSS on a grid-lanes container.");
+  await runInactiveCSSTests(view, inspector, [
+    {
+      selector: "#lanes",
+      activeDeclarations: [
+        {
+          declarations: {
+            display: "grid-lanes",
+            "grid-template-columns": "1fr 1fr",
+            "column-gap": "10px",
+            "row-gap": "10px",
+          },
+          ruleIndex: 1,
+        },
+      ],
+    },
+  ]);
 });
 
 
