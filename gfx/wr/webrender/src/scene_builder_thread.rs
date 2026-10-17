@@ -982,6 +982,10 @@ impl SceneBuilderThread {
 
                     
                     
+                    rebuild_scene = true;
+
+                    
+                    
                     
                     self.dl_builders.remove_pipeline(pipeline_id);
                 }

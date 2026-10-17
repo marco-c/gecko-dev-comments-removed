@@ -142,7 +142,10 @@ bool WebRenderBridgeChild::EndTransaction(
   
   
   
-  ProcessWebRenderParentCommands();
+  
+  if (!aRenderOffscreen) {
+    ProcessWebRenderParentCommands();
+  }
   mDestroyedActors.Clear();
   mIsInTransaction = false;
 
