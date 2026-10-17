@@ -2936,6 +2936,16 @@
   value: false
   mirror: always
 
+- name: dom.template-for.enabled
+  type: RelaxedAtomicBool
+#ifdef FUZZING
+  value: true
+#else
+  value: false
+#endif
+  mirror: always
+
+
 # Whether the commandfor "toggle" and "open" details commands are enabled
 - name: dom.element.commandfor.on_details.enabled
   type: bool
