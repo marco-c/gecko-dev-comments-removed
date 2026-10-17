@@ -3,6 +3,16 @@
 
 "use strict";
 
+add_setup(() => {
+  
+  
+  let reduceMotionOverride = gReduceMotionOverride;
+  gReduceMotionOverride = true;
+  registerCleanupFunction(() => {
+    gReduceMotionOverride = reduceMotionOverride;
+  });
+});
+
 const moveOverThresholdPercent = Math.min(
   1.0,
   Math.max(
