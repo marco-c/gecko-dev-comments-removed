@@ -44,6 +44,13 @@
 
 
 
+
+
+
+#define LONG_MATCH_LEN 65536
+
+
+
 static unsigned int
 crc32(const unsigned char *buf, unsigned int len)
 {
@@ -304,7 +311,7 @@ int main(int argc,char *argv[])
 				oldscore++;
 
 			if(((len==oldscore) && (len!=0)) || 
-				(len>oldscore+10)) break;
+				(len>oldscore+10) || (len>=LONG_MATCH_LEN)) break;
 
 			if((scan+lastoffset<oldsize) &&
 				(old[scan+lastoffset] == newbuf[scan]))
