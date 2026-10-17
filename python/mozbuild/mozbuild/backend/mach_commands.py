@@ -64,7 +64,7 @@ def run(command_context, ide, no_interactive, args):
         
         
         result = subprocess.run(
-            [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"],
+            [sys.executable, "mach", "build", "analysis-prereqs"],
             check=False,
             cwd=command_context.topsrcdir,
         )

@@ -343,6 +343,7 @@ class RecursiveMakeBackend(MakeBackend):
 
     BUILT_INSTALL_MANIFESTS = "_build_manifests/built"
     TARGETS = {
+        "analysis-prereqs": ["pre-export", "export", "pre-compile"],
         "gtest": ["recurse_gtest"],
         "syms": ["recurse_syms"],
     }
