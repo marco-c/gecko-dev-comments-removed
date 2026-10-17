@@ -244,6 +244,7 @@ impl<'a> ParserContext<'a> {
     }
 
     
+    #[inline]
     pub fn rule_types(&self) -> CssRuleTypes {
         self.nesting_context.rule_types
     }

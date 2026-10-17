@@ -641,6 +641,15 @@ impl CssRuleTypes {
         Self(CssRuleType::PositionTry.bit() | CssRuleType::Keyframe.bit());
 
     
+    pub const DECLARATION_ALLOWED_TYPES: Self = Self(
+        CssRuleType::Keyframe.bit()
+            | CssRuleType::Page.bit()
+            | CssRuleType::Style.bit()
+            | CssRuleType::Scope.bit()
+            | CssRuleType::PositionTry.bit(),
+    );
+
+    
     pub const WITHOUT_ELEMENT_CONTEXT: Self = Self(
         CssRuleType::CounterStyle.bit()
             | CssRuleType::FontFace.bit()
@@ -657,13 +666,19 @@ impl CssRuleTypes {
 
     
     #[inline]
+    pub fn contains_all(self, other: Self) -> bool {
+        (self.0 & other.0) == other.0
+    }
+
+    
+    #[inline]
     pub fn bits(self) -> u32 {
         self.0
     }
 
     
     #[inline]
-    pub fn from_bits(bits: u32) -> Self {
+    pub const fn from_bits(bits: u32) -> Self {
         Self(bits)
     }
 
@@ -682,17 +697,18 @@ impl CssRuleTypes {
     
     #[inline]
     pub fn intersects(self, other: Self) -> bool {
-        self.0 & other.0 != 0
+        !self.intersection(other).is_empty()
+    }
+
+    
+    #[inline]
+    pub fn intersection(self, other: Self) -> Self {
+        Self(self.0 & other.0)
     }
 
     
     pub fn allows_declarations(self) -> bool {
-        self.contains(CssRuleType::Keyframe)
-            || self.contains(CssRuleType::NestedDeclarations)
-            || self.contains(CssRuleType::Page)
-            || self.contains(CssRuleType::PositionTry)
-            || self.contains(CssRuleType::Scope)
-            || self.contains(CssRuleType::Style)
+        self.intersects(Self::DECLARATION_ALLOWED_TYPES)
     }
 }
 
