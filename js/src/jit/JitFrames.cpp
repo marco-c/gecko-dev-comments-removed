@@ -610,6 +610,7 @@ static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
     
     
     MOZ_ASSERT(pc == frame.baselineFrame()->script()->code());
+    MOZ_ASSERT(!frame.baselineFrame()->hasPendingDebugModeOSRReturn());
     EnsureUnwoundJitExitFrame(cx->activation()->asJit(),
                               frame.baselineFrame()->framePrefix());
     return;
@@ -622,16 +623,25 @@ static void HandleExceptionBaseline(JSContext* cx, JSJitFrameIter& frame,
   
   
   
-  if (!frame.baselineFrame()->runningInInterpreter()) {
+  BaselineFrame* baselineFrame = frame.baselineFrame();
+  if (!baselineFrame->runningInInterpreter() ||
+      baselineFrame->hasPendingDebugModeOSRReturn()) {
     const BaselineInterpreter& interp =
         cx->runtime()->jitRuntime()->baselineInterpreter();
     uint8_t* retAddr = interp.codeRaw();
-    BaselineFrame* baselineFrame = frame.baselineFrame();
-
     
     
     AutoSuppressProfilerSampling suppressProfilerSampling(cx);
-    baselineFrame->switchFromJitToInterpreterForExceptionHandler(cx, pc);
+    if (!baselineFrame->runningInInterpreter()) {
+      baselineFrame->switchFromJitToInterpreterForExceptionHandler(cx, pc);
+    }
+    if (baselineFrame->hasPendingDebugModeOSRReturn()) {
+      auto* site = cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+          prevFrame->returnAddress());
+      MOZ_RELEASE_ASSERT(site);
+      baselineFrame->clearPendingDebugModeOSRReturn();
+      cx->runtime()->jitRuntime()->releaseDebugModeOSRReturnSite(site);
+    }
     prevFrame->setReturnAddress(retAddr);
 
     

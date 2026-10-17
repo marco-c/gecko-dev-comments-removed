@@ -6,7 +6,9 @@
 
 #include "mozilla/Maybe.h"
 
+#include "gc/Cell.h"
 #include "gc/Tracer.h"
+#include "jit/AutoWritableJitCode.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
@@ -236,7 +238,8 @@ static void SpewPatchBaselineFrame(const uint8_t* oldReturnAddress,
                                    RetAddrEntry::Kind frameKind,
                                    const jsbytecode* pc) {
   JitSpew(JitSpew_BaselineDebugModeOSR,
-          "Patch return %p -> %p on BaselineJS frame (%s:%u:%u) from %s at %s",
+          "Redirect return %p -> %p on BaselineJS frame (%s:%u:%u) from %s "
+          "at %s",
           oldReturnAddress, newReturnAddress, script->filename(),
           script->lineno(), script->column().oneOriginValue(),
           RetAddrEntryKindToString(frameKind), CodeName(JSOp(*pc)));
@@ -246,6 +249,35 @@ static void PatchBaselineFramesForDebugMode(
     JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
     const ActivationIterator& activation, DebugModeOSREntryVector& entries,
     size_t* start) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -298,6 +330,7 @@ static void PatchBaselineFramesForDebugMode(
 
         BaselineFrame* baselineFrame = frame.baselineFrame();
         if (baselineFrame->runningInInterpreter()) {
+          
           
           
           entryIndex++;
@@ -400,11 +433,30 @@ static void PatchBaselineFramesForDebugMode(
             prev->returnAddress());
         MOZ_RELEASE_ASSERT(site);
         site->setResumeAddr(retAddr);
-        prev->setReturnAddress(retAddr);
-        
-        
-        baselineFrame->clearPendingDebugModeOSRReturn();
-        cx->runtime()->jitRuntime()->releaseDebugModeOSRReturnSite(site);
+
+        if (entry.needsNewReturnSite()) {
+          MOZ_ASSERT(entry.baselineFrame == baselineFrame);
+          MOZ_ASSERT(entry.oldBaselineScript->containsCodeAddress(
+              prev->returnAddress()));
+
+          JitCode* code = entry.oldBaselineScript->method();
+          if (!code->invalidated()) {
+            
+            
+            
+            gc::PreWriteBarrier(
+                script->zone(), code,
+                [](JSTracer* trc, JitCode* code) { code->traceChildren(trc); });
+            code->setInvalidated();
+          }
+
+          AutoWritableJitCode awjc(code);
+          Assembler::PatchWrite_NearCall(
+              CodeLocationLabel(prev->returnAddress()),
+              CodeLocationLabel(
+                  entry.oldBaselineScript->debugModeOSREpilogueAddr()));
+        }
+
         entryIndex++;
         break;
       }
@@ -613,13 +665,6 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
     }
   }
 
-  for (UniqueScriptOSREntryIter iter(entries); !iter.done(); ++iter) {
-    const DebugModeOSREntry& entry = iter.entry();
-    if (entry.recompiled()) {
-      BaselineScript::Destroy(cx->gcContext(), entry.oldBaselineScript);
-    }
-  }
-
   size_t processed = 0;
   for (ActivationIterator iter(cx); !iter.done(); ++iter) {
     if (iter->isJit()) {
@@ -629,6 +674,13 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
     }
   }
   MOZ_ASSERT(processed == entries.length());
+
+  for (UniqueScriptOSREntryIter iter(entries); !iter.done(); ++iter) {
+    const DebugModeOSREntry& entry = iter.entry();
+    if (entry.recompiled()) {
+      BaselineScript::Destroy(cx->gcContext(), entry.oldBaselineScript);
+    }
+  }
 
   return true;
 }
