@@ -28,6 +28,16 @@
 #include "js/Utility.h"
 #include "js/Vector.h"
 
+
+
+
+
+
+
+#ifdef JS_64BIT
+#  define JS_CONTIGUOUS_NURSERY 1
+#endif
+
 #define FOR_EACH_NURSERY_PROFILE_TIME(_)
  \
   _(Total, "total")                           \
