@@ -128,10 +128,10 @@ inline void GCRuntime::maybeMarkWeaklyHeldAtom(T* atom) {
   
   
   
-  (void)atom->asTenured().markIfUnmarked(MarkColor::Black);
+  (void)atom->asTenured().markIfUnmarkedThreadSafe(MarkColor::Black);
   if constexpr (std::is_same_v<T, JS::Symbol>) {
     if (JSAtom* description = atom->description()) {
-      (void)description->asTenured().markIfUnmarked(MarkColor::Black);
+      (void)description->asTenured().markIfUnmarkedThreadSafe(MarkColor::Black);
     }
   }
 }
