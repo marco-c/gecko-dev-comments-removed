@@ -48,8 +48,8 @@ const lazy = XPCOMUtils.declareLazy({
         "browser.newtabpage.activity-stream.remote-renderer.log",
         false
       )
-        ? "debug"
-        : "warn",
+        ? "Debug"
+        : "Warn",
     }),
 });
 

@@ -25,8 +25,8 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
       "browser.smartwindow.log",
       false
     )
-      ? "debug"
-      : "warn",
+      ? "Debug"
+      : "Warn",
   });
 });
 

@@ -1130,7 +1130,7 @@ ConnectionData.prototype = Object.freeze({
 
     // Don't incur overhead for serializing params unless the messages go
     // somewhere.
-    if (this._logger.shouldLog("trace")) {
+    if (this._logger.shouldLog("Trace")) {
       let msg = "Stmt #" + index + " " + sql;
 
       if (params) {

@@ -23,8 +23,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.places.interactions.log",
       false
     )
-      ? "debug"
-      : "warn",
+      ? "Debug"
+      : "Warn",
   });
 });
 

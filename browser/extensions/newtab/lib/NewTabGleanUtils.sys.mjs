@@ -11,8 +11,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.newtabpage.glean-utils.log",
       false
     )
-      ? "debug"
-      : "warn",
+      ? "Debug"
+      : "Warn",
   });
 });
 

@@ -134,9 +134,9 @@ interface ConsoleInstance {
 callback ConsoleInstanceDumpCallback = undefined (DOMString message);
 
 enum ConsoleLogLevel {
-  "all", "debug", "log", "info", "clear", "trace", "timeLog", "timeEnd", "time",
-  "group", "groupEnd", "profile", "profileEnd", "dir", "dirxml", "warn", "error",
-  "off"
+  "All", "Debug", "Log", "Info", "Clear", "Trace", "TimeLog", "TimeEnd", "Time",
+  "Group", "GroupEnd", "Profile", "ProfileEnd", "Dir", "Dirxml", "Warn", "Error",
+  "Off"
 };
 
 dictionary ConsoleInstanceOptions {

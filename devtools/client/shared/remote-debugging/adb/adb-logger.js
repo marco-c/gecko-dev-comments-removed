@@ -9,5 +9,5 @@
 
 exports.logger = console.createInstance({
   prefix: "devtools_adb",
-  maxLogLevel: "warn",
+  maxLogLevel: "Warn",
 });

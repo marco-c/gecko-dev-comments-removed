@@ -84,7 +84,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 const log = console.createInstance({
   prefix: "Region.sys.mjs",
-  maxLogLevel: lazy.loggingEnabled ? "all" : "warn",
+  maxLogLevel: lazy.loggingEnabled ? "All" : "Warn",
 });
 
 const REGION_PREF = "browser.search.region";

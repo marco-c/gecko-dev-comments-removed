@@ -22,7 +22,7 @@ loader.lazyGetter(this, "ScriptableInputStream", () => {
 
 const logger = console.createInstance({
   prefix: "devtools_rdp",
-  maxLogLevel: "warn",
+  maxLogLevel: "Warn",
 });
 
 const PACKET_HEADER_MAX = 200;
@@ -474,7 +474,7 @@ class DebuggerTransport {
       return;
     }
     
-    if (logger.shouldLog("debug")) {
+    if (logger.shouldLog("Debug")) {
       logger.debug("Got: ", this._incoming);
     }
     this._destroyIncoming();

@@ -5139,7 +5139,7 @@ class TranslationScheduler {
     this.#actorRequestNewPort = actorRequestNewPort;
     this.#schedulerLabel = "___";
 
-    if (lazy.console.shouldLog("debug")) {
+    if (lazy.console.shouldLog("Debug")) {
       this.#schedulerLabel = TranslationScheduler.#createSchedulerLabel(
         isTopLevelDocument,
         subFrameSchedulerId
@@ -5668,7 +5668,7 @@ class TranslationScheduler {
     let stackSizesAtStart = null;
     const activeRequestsAtStart = this.#activeRequests.size;
     const unscheduledRequestsAtStart = this.#unscheduledRequestPriorities.size;
-    if (Services.profiler.IsActive() || lazy.console.shouldLog("debug")) {
+    if (Services.profiler.IsActive() || lazy.console.shouldLog("Debug")) {
       // We need to preserve the sizes prior to scheduling only if we are adding profiler markers,
       // or if we are logging to console debug. Otherwise we shouldn't bother with these computations.
       stackSizesAtStart = this.#priorityStacks.map(stack => stack.size);
@@ -5793,7 +5793,7 @@ class TranslationScheduler {
     activeRequestsAtStart,
     unscheduledRequestsAtStart
   ) {
-    if (!stackSizesAtStart || !lazy.console.shouldLog("debug")) {
+    if (!stackSizesAtStart || !lazy.console.shouldLog("Debug")) {
       return;
     }
 

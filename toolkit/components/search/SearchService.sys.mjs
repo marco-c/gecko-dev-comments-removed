@@ -40,7 +40,7 @@ const lazy = XPCOMUtils.declareLazy({
   logConsole: () =>
     console.createInstance({
       prefix: "SearchService",
-      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "debug" : "warn",
+      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
     }),
   timerManager: {
     service: "@mozilla.org/updates/timer-manager;1",

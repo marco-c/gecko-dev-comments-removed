@@ -4,7 +4,7 @@
 
 const logger = console.createInstance({
   prefix: "devtools_worker",
-  maxLogLevel: "warn",
+  maxLogLevel: "Warn",
 });
 
 let MESSAGE_COUNTER = 0;
@@ -51,7 +51,7 @@ DevToolsWorker.prototype.performTask = function (task, data, transfer) {
   const id = ++MESSAGE_COUNTER;
   const payload = { task, id, data };
 
-  if (logger.shouldLog("log")) {
+  if (logger.shouldLog("Log")) {
     logger.log(
       "Sending message to worker" +
         (this._name ? " (" + this._name + ")" : "") +
@@ -63,7 +63,7 @@ DevToolsWorker.prototype.performTask = function (task, data, transfer) {
 
   return new Promise((resolve, reject) => {
     const listener = ({ data: result }) => {
-      if (logger.shouldLog("log")) {
+      if (logger.shouldLog("Log")) {
         logger.log(
           "Received message from worker" +
             (this._name ? " (" + this._name + ")" : "") +

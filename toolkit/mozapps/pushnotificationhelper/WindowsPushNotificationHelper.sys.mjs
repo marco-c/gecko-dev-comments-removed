@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "log", () =>
   console.createInstance({
-    maxLogLevel: "error",
+    maxLogLevel: "Error",
     maxLogLevelPref: "app.backgroundNotifications.helper.loglevel",
     prefix: "PushNotificationHelper",
   })

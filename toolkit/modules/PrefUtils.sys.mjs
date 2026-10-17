@@ -132,7 +132,7 @@ export var PrefUtils = {
     } else if (branch === "default") {
       const log = console.createInstance({
         prefix: "Toolkit.PrefUtils",
-        maxLogLevel: "warn",
+        maxLogLevel: "Warn",
       });
       log.warn(
         `Cannot reset pref ${pref} on the default branch. Pref will be cleared at next restart.`

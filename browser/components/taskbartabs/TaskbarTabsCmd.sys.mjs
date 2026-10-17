@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
   return console.createInstance({
     prefix: "TaskbarTabs",
-    maxLogLevel: "warn",
+    maxLogLevel: "Warn",
   });
 });
 

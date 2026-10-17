@@ -29,8 +29,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
     prefix: "IPP_EnterpriseAuthProvider",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
-      ? "debug"
-      : "warn",
+      ? "Debug"
+      : "Warn",
   })
 );
 

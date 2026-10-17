@@ -147,7 +147,7 @@ export class TranslationsTelemetry {
     const sampleRate = sampleRates[channel];
     let randomRoll;
 
-    if (lazy.console?.shouldLog("debug")) {
+    if (lazy.console?.shouldLog("Debug")) {
       randomRoll =
         flowContext?.randomRoll ?? TranslationsTelemetry.randomRoll();
 

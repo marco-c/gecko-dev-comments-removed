@@ -12,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 ChromeUtils.defineLazyGetter(lazy, "log", () =>
   console.createInstance({
-    maxLogLevel: "error",
+    maxLogLevel: "Error",
     maxLogLevelPref: "app.defaultagent.loglevel",
     prefix: "DefaultAgentScheduler",
   })

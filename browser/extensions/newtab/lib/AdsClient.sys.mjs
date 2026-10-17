@@ -49,8 +49,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "AdsClient",
     maxLogLevel: Services.prefs.getBoolPref(PREF_ADSCLIENT_LOG, false)
-      ? "debug"
-      : "warn",
+      ? "Debug"
+      : "Warn",
   });
 });
 

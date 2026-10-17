@@ -4876,8 +4876,8 @@ export class EnvironmentAddonBuilder {
     this._log = console.createInstance({
       prefix: "EnvironmentAddonBuilder",
       maxLogLevel: Services.prefs.getBoolPref(PREF_LOGGING_ENABLED, false)
-        ? "debug"
-        : "warn",
+        ? "Debug"
+        : "Warn",
     });
   }
 

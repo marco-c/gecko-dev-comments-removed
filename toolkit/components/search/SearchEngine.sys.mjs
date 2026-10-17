@@ -18,7 +18,7 @@ const lazy = XPCOMUtils.declareLazy({
   logConsole: () =>
     console.createInstance({
       prefix: "SearchEngine",
-      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "debug" : "warn",
+      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
     }),
   settingsRedesignEnabled: {
     pref: "browser.settings-redesign.enabled",

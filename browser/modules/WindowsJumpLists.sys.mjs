@@ -40,8 +40,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "WindowsJumpLists",
     maxLogLevel: Services.prefs.getBoolPref("browser.taskbar.log", false)
-      ? "debug"
-      : "warn",
+      ? "Debug"
+      : "Warn",
   });
 });
 

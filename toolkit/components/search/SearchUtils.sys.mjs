@@ -16,7 +16,7 @@ const lazy = XPCOMUtils.declareLazy({
   logConsole: () =>
     console.createInstance({
       prefix: "SearchUtils",
-      maxLogLevel: SearchUtils.loggingEnabled ? "debug" : "warn",
+      maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
     }),
   configV3FeatureGate: {
     pref: "browser.search.configV3.featureGate",

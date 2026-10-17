@@ -19,11 +19,11 @@ export async function runBackgroundTask(_commandLine) {
   const prefixed = console.createInstance({
     prefix: "my-prefix",
     // Test setting a more restrictive level from MOZ_LOG
-    maxLogLevel: "info",
+    maxLogLevel: "Info",
   });
   prefixed.error({
-    shouldLogError: prefixed.shouldLog("error"),
-    shouldLogLog: prefixed.shouldLog("log"),
+    shouldLogError: prefixed.shouldLog("Error"),
+    shouldLogLog: prefixed.shouldLog("Log"),
   });
   prefixed.warn("warning");
   prefixed.log("not-logged");
@@ -32,7 +32,7 @@ export async function runBackgroundTask(_commandLine) {
   const limitedLevel = console.createInstance({
     prefix: "limited-level",
     // Test setting a more permissive level from MOZ_LOG
-    maxLogLevel: "error",
+    maxLogLevel: "Error",
   });
   limitedLevel.error("log-unless-disabled-by-mozlog");
   limitedLevel.log("may-be-logged-via-mozlog");
@@ -40,7 +40,7 @@ export async function runBackgroundTask(_commandLine) {
 
   const errorOnly = console.createInstance({
     prefix: "error-only",
-    maxLogLevel: "error",
+    maxLogLevel: "Error",
   });
   errorOnly.log("error-only-log");
   errorOnly.error("error-only-error");
