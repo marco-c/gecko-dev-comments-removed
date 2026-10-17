@@ -59,13 +59,14 @@ void XULButtonAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
 role XULButtonAccessible::NativeRole() const {
   
   
-  nsCOMPtr<nsIDOMXULButtonElement> xulButtonElement = Elm()->AsXULButton();
-  if (xulButtonElement) {
-    nsAutoString type;
-    xulButtonElement->GetType(type);
-    if (type.EqualsLiteral("checkbox") || type.EqualsLiteral("radio")) {
-      return roles::TOGGLE_BUTTON;
-    }
+  
+  
+  
+  static dom::Element::AttrValuesArray strings[] = {nsGkAtoms::checkbox,
+                                                    nsGkAtoms::radio, nullptr};
+  if (Elm()->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::type, strings,
+                             eCaseMatters) >= 0) {
+    return roles::TOGGLE_BUTTON;
   }
   return roles::PUSHBUTTON;
 }
@@ -96,6 +97,19 @@ uint64_t XULButtonAccessible::NativeState() const {
   return state;
 }
 
+ENameValueFlag XULButtonAccessible::NativeName(nsString& aName) const {
+  
+  
+  
+  if (HasVisibleLabel()) {
+    NameFromAssociatedXULLabel(mDoc, mContent, aName);
+    return aName.IsEmpty() ? eNameFromSubtree : eNameOK;
+  }
+  
+  
+  return AccessibleWrap::NativeName(aName);
+}
+
 bool XULButtonAccessible::AttributeChangesState(nsAtom* aAttribute) {
   if (aAttribute == nsGkAtoms::checked) {
     return true;
@@ -108,9 +122,11 @@ void XULButtonAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                               AttrModType aModType,
                                               const nsAttrValue* aOldValue,
                                               uint64_t aOldState) {
+  
+  
   AccessibleWrap::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
                                       aOldValue, aOldState);
-  if (aAttribute == nsGkAtoms::label) {
+  if (aAttribute == nsGkAtoms::label && !HasVisibleLabel()) {
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, this);
   }
 }
@@ -136,19 +152,47 @@ bool XULButtonAccessible::AreItemsOperable() const {
 }
 
 bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
+  if (
+      
+      
+      aEl->IsXULElement(nsGkAtoms::menupopup)) {
+    return true;
+  }
+  if (aEl->IsXULElement(nsGkAtoms::label)) {
+    
+    
+    
+    return aEl->HasChildren() ||
+           !aEl->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value,
+                                          nsGkAtoms::_empty, eCaseMatters);
+  }
+  if (!aEl->IsText()) {
+    return false;
+  }
   
-  return
-      
-      
-      aEl->IsXULElement(nsGkAtoms::menupopup) ||
-      
-      
-      
-      (aEl->IsText() && aEl->GetParent() == mContent);
+  
+  
+  nsIContent* parent = aEl->GetParent();
+  if (parent == mContent) {
+    return true;
+  }
+  return parent &&
+         (parent->IsGeneratedContentContainerForBefore() ||
+          parent->IsGeneratedContentContainerForAfter()) &&
+         parent->GetParent() == mContent;
 }
 
 
 
+
+bool XULButtonAccessible::HasVisibleLabel() const {
+  for (LocalAccessible* child : mChildren) {
+    if (child->IsXULLabel()) {
+      return true;
+    }
+  }
+  return false;
+}
 
 bool XULButtonAccessible::ContainsMenu() const {
   return mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
@@ -404,18 +448,6 @@ bool XULToolbarButtonAccessible::IsSeparator(LocalAccessible* aAccessible) {
   return content && content->IsAnyOfXULElements(nsGkAtoms::toolbarseparator,
                                                 nsGkAtoms::toolbarspacer,
                                                 nsGkAtoms::toolbarspring);
-}
-
-
-
-
-bool XULToolbarButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
-  return XULButtonAccessible::IsAcceptableChild(aEl) ||
-         
-         
-         
-         (aEl->IsXULElement(nsGkAtoms::label) &&
-          !mContent->AsElement()->HasAttr(nsGkAtoms::label));
 }
 
 

@@ -281,6 +281,11 @@ nsresult nsTextEquivUtils::AppendFromAccessibleChildren(
     if (GetReferencedAccs().Contains(child)) {
       continue;
     }
+    
+    
+    if (child->IsMenuPopup()) {
+      continue;
+    }
     rv = AppendFromAccessible(child, aString);
     NS_ENSURE_SUCCESS(rv, rv);
   }
