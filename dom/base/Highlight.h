@@ -9,8 +9,8 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/ECMACollectionMixin.h"
 #include "mozilla/dom/HighlightBinding.h"
-#include "nsAtomHashKeys.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
@@ -18,9 +18,6 @@
 
 class nsFrameSelection;
 class nsPIDOMWindowInner;
-namespace mozilla {
-class ErrorResult;
-}
 
 namespace mozilla::dom {
 class AbstractRange;
@@ -73,15 +70,19 @@ struct HighlightSelectionData {
 
 
 
-class Highlight final : public nsISupports, public nsWrapperCache {
+class Highlight final : public nsISupports,
+                        public nsWrapperCache,
+                        public SetlikeMixin<RefPtr<AbstractRange>> {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Highlight)
 
+  template <typename T, typename... Args>
+  friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
+
  protected:
-  MOZ_CAN_RUN_SCRIPT Highlight(
-      const Sequence<OwningNonNull<AbstractRange>>& aInitialRanges,
-      nsPIDOMWindowInner* aWindow, ErrorResult& aRv);
+  Highlight(const Sequence<OwningNonNull<AbstractRange>>& aInitialRanges,
+            nsPIDOMWindowInner* aWindow);
   ~Highlight() = default;
 
  public:
@@ -109,7 +110,7 @@ class Highlight final : public nsISupports, public nsWrapperCache {
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  static MOZ_CAN_RUN_SCRIPT_BOUNDARY already_AddRefed<Highlight> Constructor(
+  static already_AddRefed<Highlight> Constructor(
       const GlobalObject& aGlobal,
       const Sequence<OwningNonNull<AbstractRange>>& aInitialRanges,
       ErrorResult& aRv);
@@ -143,22 +144,13 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
 
-  uint32_t Size() const { return mRanges.Length(); }
-
-  
-
-
-  const nsTArray<RefPtr<AbstractRange>>& Ranges() const { return mRanges; }
+  MOZ_CAN_RUN_SCRIPT void Add(AbstractRange& aRange, ErrorResult& aRv) override;
 
   
 
 
 
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT Highlight* Add(AbstractRange& aRange, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Clear() override;
 
   
 
@@ -166,21 +158,7 @@ class Highlight final : public nsISupports, public nsWrapperCache {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT void Clear(ErrorResult& aRv);
-
-  
-
-
-
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT bool Delete(AbstractRange& aRange, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT bool Delete(AbstractRange& aRange) override;
 
   
 
@@ -205,11 +183,6 @@ class Highlight final : public nsISupports, public nsWrapperCache {
   void Repaint();
 
   RefPtr<nsPIDOMWindowInner> mWindow;
-
-  
-
-
-  nsTArray<RefPtr<AbstractRange>> mRanges;
 
   
 

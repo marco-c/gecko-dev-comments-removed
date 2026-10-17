@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -31,19 +30,7 @@ interface Highlight {
 
   [Throws]
   constructor(AbstractRange... initialRanges);
-  setlike<AbstractRange>;
+  [DOMBackedStorage] setlike<AbstractRange>;
   attribute long priority;
   attribute HighlightType type;
-};
-
-partial interface Highlight {
-  // Setlike methods need to be overridden.
-  // Iterating a setlike is not possible from C++ yet.
-  // Therefore a separate data structure must be held and kept in sync.
-  [Throws]
-  Highlight add(AbstractRange range);
-  [Throws]
-  undefined clear();
-  [Throws]
-  boolean delete(AbstractRange range);
 };

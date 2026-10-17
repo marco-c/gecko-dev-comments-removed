@@ -21,7 +21,7 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Highlight, mRanges, mWindow)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Highlight, mSetData, mWindow)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Highlight)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Highlight)
@@ -33,13 +33,12 @@ NS_INTERFACE_MAP_END
 
 Highlight::Highlight(
     const Sequence<OwningNonNull<AbstractRange>>& aInitialRanges,
-    nsPIDOMWindowInner* aWindow, ErrorResult& aRv)
+    nsPIDOMWindowInner* aWindow)
     : mWindow(aWindow) {
-  for (RefPtr<AbstractRange> range : aInitialRanges) {
-    Add(*range, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
+  
+  
+  for (const auto& range : aInitialRanges) {
+    Setlike().Add(RefPtr<AbstractRange>(range));
   }
 }
 
@@ -57,8 +56,7 @@ already_AddRefed<Highlight> Highlight::Constructor(
     return nullptr;
   }
 
-  RefPtr<Highlight> highlight = new Highlight(aInitialRanges, window, aRv);
-  return aRv.Failed() ? nullptr : highlight.forget();
+  return MakeAndAddRef<Highlight>(aInitialRanges, window);
 }
 
 void Highlight::AddToHighlightRegistry(HighlightRegistry& aHighlightRegistry,
@@ -101,26 +99,10 @@ void Highlight::SetType(HighlightType aHighlightType) {
   Repaint();
 }
 
-Highlight* Highlight::Add(AbstractRange& aRange, ErrorResult& aRv) {
-  
-  
-  
-  
-  
-  
-  if (Highlight_Binding::SetlikeHelpers::Has(this, aRange, aRv) ||
-      aRv.Failed()) {
-    return this;
+void Highlight::Add(AbstractRange& aRange, ErrorResult& aRv) {
+  if (!Setlike().Add(&aRange)) {
+    return;
   }
-  Highlight_Binding::SetlikeHelpers::Add(this, aRange, aRv);
-  if (aRv.Failed()) {
-    return this;
-  }
-
-  MOZ_ASSERT(!mRanges.Contains(&aRange),
-             "setlike and DOM mirror are not in sync");
-
-  mRanges.AppendElement(&aRange);
   AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
                                              mHighlightRegistries.Count());
   for (const RefPtr<HighlightRegistry>& registry :
@@ -130,37 +112,27 @@ Highlight* Highlight::Add(AbstractRange& aRange, ErrorResult& aRv) {
     
     
     MOZ_KnownLive(registry)->MaybeAddRangeToHighlightSelection(aRange, *this);
-    if (aRv.Failed()) {
-      return this;
-    }
-  }
-  return this;
-}
-
-void Highlight::Clear(ErrorResult& aRv) {
-  Highlight_Binding::SetlikeHelpers::Clear(this, aRv);
-  if (!aRv.Failed()) {
-    mRanges.Clear();
-    AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
-                                               mHighlightRegistries.Count());
-
-    for (const RefPtr<HighlightRegistry>& registry :
-         mHighlightRegistries.Keys()) {
-      auto frameSelection = registry->GetFrameSelection();
-      selectionBatcher.AddFrameSelection(frameSelection);
-      
-      
-      MOZ_KnownLive(registry)->RemoveHighlightSelection(*this);
-    }
   }
 }
 
-bool Highlight::Delete(AbstractRange& aRange, ErrorResult& aRv) {
-  if (Highlight_Binding::SetlikeHelpers::Delete(this, aRange, aRv)) {
-    mRanges.RemoveElement(&aRange);
+void Highlight::Clear() {
+  SetlikeMixin::Clear();
+  AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
+                                             mHighlightRegistries.Count());
+  for (const RefPtr<HighlightRegistry>& registry :
+       mHighlightRegistries.Keys()) {
+    auto frameSelection = registry->GetFrameSelection();
+    selectionBatcher.AddFrameSelection(frameSelection);
+    
+    
+    MOZ_KnownLive(registry)->RemoveHighlightSelection(*this);
+  }
+}
+
+bool Highlight::Delete(AbstractRange& aRange) {
+  if (SetlikeMixin::Delete(aRange)) {
     AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__,
                                                mHighlightRegistries.Count());
-
     for (const RefPtr<HighlightRegistry>& registry :
          mHighlightRegistries.Keys()) {
       auto frameSelection = registry->GetFrameSelection();
@@ -215,7 +187,7 @@ nsTArray<RefPtr<AbstractRange>> Highlight::RangesAtPoint(
                ? closestShadowRootInFlattenedTree
                : nullptr;
   }();
-  for (const auto& range : mRanges) {
+  for (const auto& range : Setlike()) {
     
     if (range->IsStaticRange() && !range->AsStaticRange()->IsValid()) {
       continue;
