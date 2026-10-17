@@ -28,8 +28,8 @@ namespace detail {
         RLBOX_CUSTOM_ABORT(msg);
       #else
         fprintf(stderr, "%s\n", msg);
-        std::abort();
       #endif
+      std::abort();
     #endif
   }
     
@@ -212,6 +212,31 @@ namespace detail {
                                                                                \
   template<typename U1, typename U2>                                           \
   friend class app_pointer;
+
+  template<typename T>
+  T checked_add(T aLhs, T aRhs, const char* aErrorMsg)
+  {
+    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
+
+    T ret = aLhs + aRhs;
+    bool has_overflow = ret < aLhs;
+    detail::dynamic_check(!has_overflow, aErrorMsg);
+
+    return ret;
+  }
+
+  template<typename T>
+  T checked_multiply(T aLhs, T aRhs, const char* aErrorMsg)
+  {
+    static_assert(std::is_unsigned_v<T>, "Expected unsigned type");
+
+    bool has_overflow =
+      (aLhs != 0) && (aRhs > (std::numeric_limits<T>::max() / aLhs));
+    detail::dynamic_check(!has_overflow, aErrorMsg);
+
+    T ret = aLhs * aRhs;
+    return ret;
+  }
 }
 
 }
