@@ -29,22 +29,11 @@ struct nsRadioGroupStruct {
 
 RadioGroupContainer::RadioGroupContainer() = default;
 
-RadioGroupContainer::~RadioGroupContainer() {
-  for (const auto& group : mRadioGroups) {
-    for (const auto& button : group.GetData()->mRadioButtons.AsSpan()) {
-      
-      
-      
-      
-      
-      button->DisconnectRadioGroupContainer();
-    }
-  }
-}
+RadioGroupContainer::~RadioGroupContainer() = default;
 
+NS_IMPL_CYCLE_COLLECTION_CLASS(RadioGroupContainer)
 
-void RadioGroupContainer::Traverse(RadioGroupContainer* tmp,
-                                   nsCycleCollectionTraversalCallback& cb) {
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(RadioGroupContainer)
   for (const auto& entry : tmp->mRadioGroups) {
     nsRadioGroupStruct* radioGroup = entry.GetWeak();
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(
@@ -57,7 +46,20 @@ void RadioGroupContainer::Traverse(RadioGroupContainer* tmp,
       cb.NoteXPCOMChild(ToSupports(button));
     }
   }
-}
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(RadioGroupContainer)
+  for (const auto& group : tmp->mRadioGroups) {
+    for (const auto& button : group.GetData()->mRadioButtons.AsSpan()) {
+      
+      
+      
+      
+      button->DisconnectRadioGroupContainer();
+    }
+  }
+  tmp->mRadioGroups.Clear();
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 size_t RadioGroupContainer::SizeOfIncludingThis(
     MallocSizeOf aMallocSizeOf) const {

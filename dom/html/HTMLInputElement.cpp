@@ -1160,8 +1160,7 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<dom::NodeInfo> aNodeInfo,
       mHasBeenTypePassword(false),
       mHasPatternAttribute(false),
       mUserChangedSinceFocus(false),
-      mIsUserInteracting(false),
-      mRadioGroupContainer(nullptr) {
+      mIsUserInteracting(false) {
   
   
   static_assert(sizeof(HTMLInputElement) <= 512,
@@ -1214,7 +1213,15 @@ void HTMLInputElement::FreeData(TextControlStateDisposition aStateDisposition) {
 void HTMLInputElement::EnsureEditorState() {
   MOZ_ASSERT(IsSingleLineTextControl(false));
   if (!mInputData.mState) {
-    mInputData.mState = TextControlState::Construct(this);
+    nsAutoString value;
+    GetAttr(nsGkAtoms::value, value);
+    
+    
+    
+    if (mDoneCreating) {
+      SanitizeValue(value, SanitizationKind::ForValueGetter);
+    }
+    mInputData.mState = TextControlState::Construct(this, value);
   }
 }
 
@@ -1242,6 +1249,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(HTMLInputElement,
                                                   TextControlElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mValidity)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mControllers)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRadioGroupContainer)
   if (tmp->IsSingleLineTextControl(false) && tmp->mInputData.mState) {
     tmp->mInputData.mState->Traverse(cb);
   }
@@ -1255,6 +1263,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(HTMLInputElement,
                                                 TextControlElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mValidity)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mControllers)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRadioGroupContainer)
   if (tmp->IsSingleLineTextControl(false) && tmp->mInputData.mState) {
     tmp->mInputData.mState->Unlink();
   }
@@ -1375,7 +1384,9 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       
       
       if (!mValueChanged && GetValueMode() == VALUE_MODE_VALUE) {
-        SetDefaultValueAsValue();
+        if (mDoneCreating) {
+          SetDefaultValueAsValue();
+        }
       } else if (GetValueMode() == VALUE_MODE_DEFAULT) {
         ResetDirFormAssociatedElement(this, aNotify, HasDirAuto());
       }
@@ -1765,8 +1776,10 @@ void HTMLInputElement::GetNonFileValueInternal(nsAString& aValue) const {
         if (mInputData.mState) {
           mInputData.mState->GetValue(aValue,  false);
         } else {
-          
-          aValue.Truncate();
+          GetAttr(nsGkAtoms::value, aValue);
+          if (mDoneCreating) {
+            SanitizeValue(aValue, SanitizationKind::ForValueGetter);
+          }
         }
       } else if (!aValue.Assign(mInputData.mValue, fallible)) {
         aValue.Truncate();
@@ -6395,16 +6408,26 @@ void HTMLInputElement::DoneCreatingElement() {
   
   if (GetValueMode() == VALUE_MODE_VALUE) {
     nsAutoString value;
-    GetValue(value, CallerType::System);
-    
-    
-    
-    SetValueInternal(value, ValueSetterOption::ByInternalAPI);
+    if (mValueChanged) {
+      GetValue(value, CallerType::System);
+      SetValueInternal(value, ValueSetterOption::ByInternalAPI);
+    } else {
+      GetDefaultValue(value);
+      if (mType == FormControlType::InputText && !mInputData.mState) {
+        SanitizeValue(value, SanitizationKind::ForValueSetter);
+        OnValueChanged(ValueChangeKind::Internal, value.IsEmpty(), &value);
+      } else {
+        
+        
+        
+        SetValueInternal(value, ValueSetterOption::ByInternalAPI);
+      }
+    }
 
     if (CreatesDateTimeWidget()) {
       
       
-      mFocusedValue = value;
+      GetValue(mFocusedValue, CallerType::System);
     }
   }
 

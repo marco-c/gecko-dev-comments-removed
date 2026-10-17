@@ -96,7 +96,7 @@ class FragmentOrElement : public nsIContent {
   RadioGroupContainer& OwnedRadioGroupContainer() {
     auto* slots = ExtendedDOMSlots();
     if (!slots->mRadioGroupContainer) {
-      slots->mRadioGroupContainer = MakeUnique<RadioGroupContainer>();
+      slots->mRadioGroupContainer = MakeRefPtr<RadioGroupContainer>();
     }
     return *slots->mRadioGroupContainer;
   }
@@ -203,7 +203,7 @@ class FragmentOrElement : public nsIContent {
 
 
 
-    UniquePtr<RadioGroupContainer> mRadioGroupContainer;
+    RefPtr<RadioGroupContainer> mRadioGroupContainer;
 
     
 

@@ -2744,9 +2744,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
     cb.NoteXPCOMChild(registry);
   }
 
-  if (tmp->mRadioGroupContainer) {
-    RadioGroupContainer::Traverse(tmp->mRadioGroupContainer.get(), cb);
-  }
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRadioGroupContainer)
 
   for (auto& sheets : tmp->mAdditionalSheets) {
     tmp->TraverseStyleSheets(sheets, "mAdditionalSheets[<origin>][i]", cb);
@@ -2958,7 +2956,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   DocumentOrShadowRoot::Unlink(tmp);
   CustomElementRegistry::RemoveScopedRegistry(*tmp);
 
-  tmp->mRadioGroupContainer = nullptr;
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRadioGroupContainer)
 
   
   
@@ -21449,7 +21447,7 @@ FragmentDirective* Document::FragmentDirective() {
 
 RadioGroupContainer& Document::OwnedRadioGroupContainer() {
   if (!mRadioGroupContainer) {
-    mRadioGroupContainer = MakeUnique<RadioGroupContainer>();
+    mRadioGroupContainer = MakeRefPtr<RadioGroupContainer>();
   }
   return *mRadioGroupContainer;
 }
