@@ -47,6 +47,10 @@ class CredentialsContainer final : public nsISupports, public nsWrapperCache {
   void EnsureWebAuthnHandler();
   void EnsureDigitalCredentialHandler();
 
+  
+  
+  bool CheckState(Promise& aPromise);
+
   nsCOMPtr<nsPIDOMWindowInner> mParent;
   RefPtr<WebAuthnHandler> mWebAuthnHandler;
   RefPtr<DigitalCredentialHandler> mDigitalCredentialHandler;
