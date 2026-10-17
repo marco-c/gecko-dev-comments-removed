@@ -289,6 +289,8 @@ export function normalizeSpacesConfig(raw) {
       iconFamily: resolveThematicIconFamily(icon),
       sections: asStringArray(space.sections),
       widgets: asStringArray(space.widgets),
+      // Shows Recent activity.
+      activity: space.activity === true,
     };
     return true;
   });
@@ -546,6 +548,19 @@ export function spacesBandClasses(prefs) {
 }
 
 /**
+ * The space Recent activity renders in: the first one the config marks for it,
+ * otherwise the default space, where it rendered before spaces could be marked.
+ *
+ * @param {object} config - from resolveThematicSpacesConfig
+ * @returns {string|undefined}
+ */
+export function resolveThematicActivitySpace(config) {
+  return (
+    config?.order.find(id => config.spaces[id].activity) ?? config?.default
+  );
+}
+
+/**
  * Which of the delivered sectionKeys belong to a space, in delivery order. The
  * default space is the catch-all, so it also takes every key no other space
  * claims and an unrecognised section still renders somewhere.
@@ -624,7 +639,8 @@ export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
 
 /**
  * The thematic spaces that have something to show, in the config's order: a
- * section in the feed or an enabled widget. A space with neither is dropped
+ * section in the feed, an enabled widget, or Recent activity. A space with none
+ * is dropped
  * rather than rendered empty -- the next refresh can bring it back. Widgets
  * being off only empties the spaces that relied on them; stories being off
  * turns the layout off, as the page is built around them.
@@ -646,10 +662,13 @@ function resolvePopulatedThematicSpaces(prefs, sectionKeys) {
   if (!sectionKeys) {
     return config.order;
   }
+  const activityId = resolveThematicActivitySpace(config);
+  const activityEnabled = isSpaceEnabled(SPACE_IDS.ACTIVITY, prefs);
   return config.order.filter(
     id =>
       resolveThematicSpaceSections(config, id, sectionKeys).length ||
-      resolveThematicSpaceWidgets(config, id, prefs).length
+      resolveThematicSpaceWidgets(config, id, prefs).length ||
+      (id === activityId && activityEnabled)
   );
 }
 
@@ -719,8 +738,8 @@ export function resolvePopulatedSpaces(prefs = {}, sectionKeys = null) {
  *
  * @param {object} prefs - current pref values from the Redux store
  * @param {object} discoveryStream - state.DiscoveryStream
- * @returns {object|null} { order, defaultId, spaces } where each space carries
- *   its label, icon, iconFamily, sectionKeys and widgetIds
+ * @returns {object|null} { order, defaultId, activityId, spaces } where each
+ *   space carries its label, icon, iconFamily, sectionKeys and widgetIds
  */
 export function resolveThematicSpaces(prefs, discoveryStream) {
   if (!isSpacesThematicAssigned(prefs)) {
@@ -735,6 +754,7 @@ export function resolveThematicSpaces(prefs, discoveryStream) {
   return {
     order,
     defaultId: resolveThematicDefaultSpace(config, order),
+    activityId: resolveThematicActivitySpace(config),
     spaces: Object.fromEntries(
       order.map(id => [
         id,

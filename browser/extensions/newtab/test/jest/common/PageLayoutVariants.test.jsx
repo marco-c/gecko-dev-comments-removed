@@ -18,6 +18,7 @@ import {
   resolvePageLayoutVariant,
   resolvePopulatedSpaces,
   selectFirstSlotWidget,
+  resolveThematicActivitySpace,
   resolveThematicDefaultSpace,
   resolveThematicSpaceSections,
   normalizeSpacesConfig,
@@ -762,6 +763,20 @@ describe("the thematic spaces variant", () => {
       expect(config.spaces.a.sections).toEqual(["food"]);
     });
 
+    it("marks a space for Recent activity only for a literal true", () => {
+      const config = normalizeSpacesConfig({
+        order: ["a", "b", "c"],
+        spaces: {
+          a: { label: "A", activity: true },
+          b: { label: "B", activity: "true" },
+          c: { label: "C" },
+        },
+      });
+      expect(config.spaces.a.activity).toBe(true);
+      expect(config.spaces.b.activity).toBe(false);
+      expect(config.spaces.c.activity).toBe(false);
+    });
+
     it("turns the arrows on only for a literal true", () => {
       expect(normalizeSpacesConfig(VALID).arrows).toBe(false);
       expect(normalizeSpacesConfig({ ...VALID, arrows: true }).arrows).toBe(
@@ -1004,6 +1019,59 @@ describe("the thematic spaces variant", () => {
         "home",
         "living",
       ]);
+    });
+  });
+
+  describe("Recent activity", () => {
+    const RAW_WITH_ACTIVITY = {
+      ...RAW_CONFIG,
+      order: [...RAW_CONFIG.order, "mystuff"],
+      spaces: {
+        ...RAW_CONFIG.spaces,
+        mystuff: { label: "My Stuff", activity: true },
+      },
+    };
+    const withActivity = {
+      ...thematic,
+      "feeds.section.highlights": true,
+      trainhopConfig: { spaces: RAW_WITH_ACTIVITY },
+    };
+
+    it("goes to the space the config marks for it", () => {
+      expect(
+        resolveThematicActivitySpace(normalizeSpacesConfig(RAW_WITH_ACTIVITY))
+      ).toBe("mystuff");
+    });
+
+    it("goes to the default space when none is marked", () => {
+      expect(resolveThematicActivitySpace(CONFIG)).toBe("home");
+    });
+
+    it("keeps a space that has only Recent activity while it is on", () => {
+      expect(
+        resolvePopulatedSpaces(withActivity, ["top_stories_section"])
+      ).toEqual(["home", "living", "mystuff"]);
+      expect(
+        resolvePopulatedSpaces(
+          { ...withActivity, "feeds.section.highlights": false },
+          ["top_stories_section"]
+        )
+      ).toEqual(["home", "living"]);
+    });
+
+    // The experiment revives Recent activity for a profile that had it off.
+    it("keeps it for a profile the experiment turns Recent activity back on for", () => {
+      const overridden = {
+        ...withActivity,
+        "feeds.section.highlights": false,
+        trainhopConfig: {
+          ...withActivity.trainhopConfig,
+          highlights: { enabled: true },
+        },
+      };
+      expect(
+        resolvePopulatedSpaces(overridden, ["top_stories_section"])
+      ).toContain("mystuff");
     });
   });
 

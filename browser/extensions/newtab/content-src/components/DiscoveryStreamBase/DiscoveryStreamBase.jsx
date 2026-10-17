@@ -426,10 +426,10 @@ export class _DiscoveryStreamBase extends React.PureComponent {
                       sectionType: "widgets",
                     },
                   ])}
-                {/* Recent activity is not a spaces concept: it keeps showing
-                for a user who has it on, in the space the page opens on, the
-                same as it did before this layout existed. */}
-                {id === defaultSpaceId && highlightsGroup}
+                {/* Recent activity keeps showing for a user who has it on, in
+                the space the config marks for it or else the one the page
+                opens on. */}
+                {id === thematicSpaces.activityId && highlightsGroup}
               </React.Fragment>,
             ])
           )

@@ -532,7 +532,7 @@ describe("<DiscoveryStreamBase> ASRouterNewTabMessage positions", () => {
       "widgets.lists.enabled": true,
     };
 
-    function mountThematic(spacesConfig) {
+    function mountThematic(spacesConfig, prefOverrides = {}) {
       return render(
         <DiscoveryStreamBase
           locale="en-US"
@@ -552,12 +552,16 @@ describe("<DiscoveryStreamBase> ASRouterNewTabMessage positions", () => {
           Prefs={{
             values: {
               ...THEMATIC_PREFS,
+              ...prefOverrides,
               trainhopConfig: { spaces: spacesConfig },
             },
           }}
           App={{ locale: "en-US" }}
           document={{ documentElement: { lang: "en-US" } }}
-          Sections={[{ id: "topstories", learnMore: { link: {} }, pref: {} }]}
+          Sections={[
+            { id: "topstories", learnMore: { link: {} }, pref: {} },
+            { id: "highlights", enabled: true },
+          ]}
           dispatch={jest.fn()}
         />
       );
@@ -588,6 +592,35 @@ describe("<DiscoveryStreamBase> ASRouterNewTabMessage positions", () => {
 
       expect(container.querySelectorAll(".spaces-arrow-rail")).toHaveLength(2);
       expect(container.querySelector('[role="tablist"]')).not.toBeNull();
+    });
+
+    it("renders Recent activity in the default space when none is marked", () => {
+      const { container } = mountThematic(CONFIG);
+
+      expect(
+        container.querySelector("#spaces-panel-home .layout-highlights-column")
+      ).not.toBeNull();
+    });
+
+    it("renders Recent activity only in the space marked for it", () => {
+      const { container } = mountThematic(
+        {
+          ...CONFIG,
+          order: ["mystuff", ...CONFIG.order],
+          spaces: {
+            ...CONFIG.spaces,
+            mystuff: { label: "My Stuff", activity: true },
+          },
+        },
+        { "feeds.section.highlights": true }
+      );
+      const mystuff = container.querySelector("#spaces-panel-mystuff");
+
+      expect(mystuff.querySelector(".layout-highlights-column")).not.toBeNull();
+      expect(mystuff.querySelector(".layout-content-column")).toBeNull();
+      expect(
+        container.querySelectorAll(".layout-highlights-column")
+      ).toHaveLength(1);
     });
 
     it("shows only the tablist otherwise", () => {
