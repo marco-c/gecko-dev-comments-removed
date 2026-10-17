@@ -73,20 +73,29 @@ class NextPartObserver : public IProgressObserver {
   }
 
   void BlockUntilDecodedAndFinishObserving() {
-    
-    
-    
-    mImage->RequestDecodeForSize(gfx::IntSize(0, 0),
-                                 imgIContainer::FLAG_SYNC_DECODE);
-
-    
-    
-    FinishPotentialVectorImage(mImage);
+    MOZ_ASSERT(mImage);
+    if (!mImage) {
+      return;
+    }
 
     
     
     
-    if (mImage) {
+    RefPtr<Image> image = mImage;
+    image->RequestDecodeForSize(gfx::IntSize(0, 0),
+                                imgIContainer::FLAG_SYNC_DECODE);
+    if (mImage != image) {
+      return;
+    }
+
+    
+    
+    FinishPotentialVectorImage(image);
+
+    
+    
+    
+    if (mImage == image) {
       FinishObserving();
     }
   }
@@ -133,9 +142,13 @@ class NextPartObserver : public IProgressObserver {
     mImage->GetHeight(&height);
 
     
-    mImage->RequestDecodeForSize(IntSize(width, height),
-                                 imgIContainer::DECODE_FLAGS_DEFAULT |
-                                     imgIContainer::FLAG_HIGH_QUALITY_SCALING);
+    RefPtr<Image> image = mImage;
+    image->RequestDecodeForSize(IntSize(width, height),
+                                imgIContainer::DECODE_FLAGS_DEFAULT |
+                                    imgIContainer::FLAG_HIGH_QUALITY_SCALING);
+    if (mImage != image) {
+      return;
+    }
 
     
     
@@ -166,11 +179,12 @@ class NextPartObserver : public IProgressObserver {
   void FinishObserving() {
     MOZ_ASSERT(mImage);
 
-    RefPtr<ProgressTracker> tracker = mImage->GetProgressTracker();
+    RefPtr<Image> image = std::move(mImage);
+    RefPtr<ProgressTracker> tracker = image->GetProgressTracker();
     tracker->RemoveObserver(this);
-    mImage = nullptr;
 
-    mOwner->FinishTransition();
+    RefPtr<MultipartImage> owner = mOwner;
+    owner->FinishTransition();
   }
 
   MultipartImage* mOwner;
@@ -207,6 +221,7 @@ void MultipartImage::BeginTransitionToPart(Image* aNextPart) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aNextPart);
 
+  RefPtr<MultipartImage> kungFuDeathGrip(this);
   if (mNextPart) {
     
     mNextPartObserver->BlockUntilDecodedAndFinishObserving();
@@ -233,16 +248,18 @@ void MultipartImage::FinishTransition() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mNextPart, "Should have a next part here");
 
-  RefPtr<ProgressTracker> newCurrentPartTracker =
-      mNextPart->GetProgressTracker();
-  if (newCurrentPartTracker->GetProgress() & FLAG_HAS_ERROR) {
-    
-    mNextPart = nullptr;
+  
+  
+  RefPtr<Image> nextPart = std::move(mNextPart);
+  RefPtr<Image> outgoingPart = InnerImage();
 
+  RefPtr<ProgressTracker> newCurrentPartTracker =
+      nextPart->GetProgressTracker();
+  if (newCurrentPartTracker->GetProgress() & FLAG_HAS_ERROR) {
     
     mTracker->ResetForNewRequest();
     RefPtr<ProgressTracker> currentPartTracker =
-        InnerImage()->GetProgressTracker();
+        outgoingPart->GetProgressTracker();
     mTracker->SyncNotifyProgress(
         FilterProgress(currentPartTracker->GetProgress()));
 
@@ -253,19 +270,23 @@ void MultipartImage::FinishTransition() {
   
   
   
-  FinishPotentialVectorImage(InnerImage());
+  FinishPotentialVectorImage(outgoingPart);
 
   
   {
     RefPtr<ProgressTracker> currentPartTracker =
-        InnerImage()->GetProgressTracker();
+        outgoingPart->GetProgressTracker();
     currentPartTracker->RemoveObserver(this);
   }
 
   
+  if (InnerImage() != outgoingPart) {
+    return;
+  }
+
+  
   mTracker->ResetForNewRequest();
-  SetInnerImage(mNextPart);
-  mNextPart = nullptr;
+  SetInnerImage(nextPart);
   newCurrentPartTracker->AddObserver(this);
 
   
