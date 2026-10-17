@@ -534,6 +534,7 @@ tasks:
                 - --exclude-tag=webcodecs
                 - --exclude-tag=webrtc
                 - --timeout-multiplier=5.0
+                - --skip-upstream-tests-extraction
         worker-type:
             by-test-platform:
                 .*windows.*: win11-64-25h2-webgpu
@@ -561,6 +562,7 @@ tasks:
                 - --skip-implementation-status=backlog
                 - --skip-implementation-status=not-implementing
                 - --timeout-multiplier=5.0
+                - --skip-upstream-tests-extraction
         worker-type:
             by-test-platform:
                 .*windows.*: win11-64-25h2-webgpu
@@ -604,6 +606,7 @@ tasks:
                 - --skip-implementation-status=not-implementing
                 - --backlog
                 - --timeout-multiplier=5.0
+                - --skip-upstream-tests-extraction
         worker-type:
             by-test-platform:
                 .*windows.*: win11-64-25h2-webgpu
@@ -633,6 +636,7 @@ tasks:
                 - --skip-implementation-status=not-implementing
                 - --backlog
                 - --timeout-multiplier=5.0
+                - --skip-upstream-tests-extraction
         worker-type:
             by-test-platform:
                 .*windows.*: win11-64-25h2-webgpu

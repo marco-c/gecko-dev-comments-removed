@@ -28,6 +28,18 @@ from mozharness.mozilla.testing.errors import WptHarnessErrorList
 from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_options
 
 
+def _is_harness_or_mozilla_entry(name):
+    
+    
+    
+    parts = name.split("/")
+    if len(parts) < 4 or parts[0] != "web-platform":
+        return True
+    if parts[1] == "meta":
+        return False
+    return parts[1] != "tests" or parts[2] in ("tools", "resources", "common")
+
+
 class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidMixin):
     config_options = (
         [
@@ -108,6 +120,16 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                     "dest": "headless_height",
                     "default": "1200",
                     "help": "Specify headless virtual screen height (default: 1200).",
+                },
+            ],
+            [
+                ["--skip-upstream-tests-extraction"],
+                {
+                    "action": "store_true",
+                    "dest": "skip_upstream_tests_extraction",
+                    "default": False,
+                    "help": "Only extract the harness and the /_mozilla/ tests from the "
+                    "web-platform tests archive, for jobs that run no upstream tests.",
                 },
             ],
             [
@@ -574,6 +596,16 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
             cmd.extend(test_paths)
 
         return cmd
+
+    def download_unpack(
+        self, url, extract_to=".", extract_dirs="*", verbose=False, member_filter=None
+    ):
+        if (
+            self.config.get("skip_upstream_tests_extraction")
+            and "web-platform" in (url.split("/")[-1])
+        ):
+            member_filter = _is_harness_or_mozilla_entry
+        super().download_unpack(url, extract_to, extract_dirs, verbose, member_filter)
 
     def download_and_extract(self):
         super().download_and_extract(
