@@ -23,6 +23,7 @@ import { Widgets } from "content-src/components/Widgets/Widgets";
 import { Spaces } from "content-src/components/Spaces/Spaces";
 import {
   isSpacesActive,
+  hasSpacesArrows,
   isSpacesArrowsAssigned,
   resolvePopulatedSpaces,
   resolveThematicSpaces,
@@ -403,10 +404,14 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             populated.map(id => [
               id,
               <React.Fragment key={id}>
-                {contentGroupFor(
-                  thematicSpaces.spaces[id].sectionKeys,
-                  id === defaultSpaceId
-                )}
+                {/* A widgets-only space has no feed column. The lead space
+                keeps it for the message and privacy link. */}
+                {(!!thematicSpaces.spaces[id].sectionKeys.length ||
+                  id === defaultSpaceId) &&
+                  contentGroupFor(
+                    thematicSpaces.spaces[id].sectionKeys,
+                    id === defaultSpaceId
+                  )}
                 {widgets &&
                   !!thematicSpaces.spaces[id].widgetIds.length &&
                   this.renderLayout([
@@ -491,7 +496,8 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           <Spaces
             spaces={spaceEntries}
             defaultId={defaultSpaceId}
-            arrows={isSpacesArrowsAssigned(this.props.Prefs.values)}
+            arrows={hasSpacesArrows(this.props.Prefs.values)}
+            tablist={!isSpacesArrowsAssigned(this.props.Prefs.values)}
             dispatch={this.props.dispatch}
           />
         ) : (

@@ -7,6 +7,7 @@ import {
   PAGE_LAYOUT_VARIANTS,
   SIDE_BY_SIDE_PAGE_LAYOUTS,
   SPACES_PAGE_LAYOUTS,
+  hasSpacesArrows,
   isSideBySideActive,
   isSideBySideAssigned,
   isSpacesActive,
@@ -332,6 +333,14 @@ describe("spacesBandClasses", () => {
     ).toEqual(["spaces", "spaces-buttons-bottom"]);
   });
 
+  it("adds the arrows class to the floating arrows variant", () => {
+    expect(
+      spacesBandClasses({
+        "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_FLOATING_ARROWS,
+      })
+    ).toEqual(["spaces", "spaces-floating-arrows", "spaces-arrows"]);
+  });
+
   it("returns nothing for the other layouts", () => {
     expect(spacesBandClasses({})).toEqual([]);
     expect(
@@ -592,16 +601,64 @@ describe("the thematic spaces variant", () => {
     ).toBe(true);
   });
 
-  it("populates none of them without the side-by-side pair", () => {
-    // Stories but no widget to sit beside them, so there is no pair to put in a
-    // space and nothing to navigate between.
+  // Turning widgets off empties the spaces that relied on them, and no more.
+  it("keeps the spaces that have sections with every widget off", () => {
     const noWidgets = {
-      "nova.enabled": true,
-      "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1,
-      ...STORIES_ON,
+      ...thematic,
+      "widgets.enabled": false,
+      "widgets.system.enabled": false,
     };
-    expect(resolvePopulatedSpaces(noWidgets)).toEqual([]);
-    expect(isSpacesActive(noWidgets)).toBe(false);
+    expect(resolvePopulatedSpaces(noWidgets)).toEqual([
+      "games",
+      "home",
+      "living",
+    ]);
+    expect(
+      isSpacesActive(noWidgets, feedState("top_stories_section", "food"))
+    ).toBe(true);
+  });
+
+  it("populates none of them without stories", () => {
+    const noStories = { ...thematic, "feeds.section.topstories": false };
+    expect(resolvePopulatedSpaces(noStories)).toEqual([]);
+    expect(
+      isSpacesActive(noStories, feedState("top_stories_section", "food"))
+    ).toBe(false);
+  });
+
+  describe("arrows", () => {
+    const withArrows = {
+      ...thematic,
+      trainhopConfig: { spaces: { ...RAW_CONFIG, arrows: true } },
+    };
+
+    it("shows them when the config asks", () => {
+      expect(hasSpacesArrows(withArrows)).toBe(true);
+      expect(spacesBandClasses(withArrows)).toEqual([
+        "spaces",
+        "spaces-buttons-bottom",
+        "spaces-thematic",
+        "spaces-arrows",
+      ]);
+    });
+
+    it("leaves them off otherwise", () => {
+      expect(hasSpacesArrows(thematic)).toBe(false);
+      expect(
+        hasSpacesArrows({
+          ...thematic,
+          trainhopConfig: { spaces: { ...RAW_CONFIG, arrows: "yes" } },
+        })
+      ).toBe(false);
+    });
+
+    it("are always on for the floating arrows variant", () => {
+      expect(
+        hasSpacesArrows({
+          "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_FLOATING_ARROWS,
+        })
+      ).toBe(true);
+    });
   });
 
   it("leaves the side-by-side variants alone", () => {
@@ -645,7 +702,7 @@ describe("the thematic spaces variant", () => {
       ).toBe(false);
     });
 
-    it("renders for a profile that had the widgets container off", () => {
+    it("gives widgets back to a profile that had the widgets container off", () => {
       const widgetsOff = {
         ...thematic,
         "widgets.enabled": false,
@@ -654,18 +711,18 @@ describe("the thematic spaces variant", () => {
           widgets: { enabled: true },
         },
       };
+      // Only living has a widget that is on, and none of its sections arrived.
+      const sectionKeys = ["top_stories_section"];
+      expect(resolvePopulatedSpaces(widgetsOff, sectionKeys)).toEqual([
+        "home",
+        "living",
+      ]);
       expect(
-        isSpacesActive(
-          widgetsOff,
-          feedState("top_stories_section", "arts", "food")
-        )
-      ).toBe(true);
-      expect(
-        isSpacesActive(
+        resolvePopulatedSpaces(
           { ...widgetsOff, "spaces.widgetsOptOut": true },
-          feedState("top_stories_section", "arts", "food")
+          sectionKeys
         )
-      ).toBe(false);
+      ).toEqual(["home"]);
     });
 
     // The overrides are scoped to a spaces variant, so these layouts are
@@ -703,6 +760,16 @@ describe("the thematic spaces variant", () => {
       expect(config.order).toEqual(["a", "b"]);
       expect(config.default).toBe("b");
       expect(config.spaces.a.sections).toEqual(["food"]);
+    });
+
+    it("turns the arrows on only for a literal true", () => {
+      expect(normalizeSpacesConfig(VALID).arrows).toBe(false);
+      expect(normalizeSpacesConfig({ ...VALID, arrows: true }).arrows).toBe(
+        true
+      );
+      expect(normalizeSpacesConfig({ ...VALID, arrows: "true" }).arrows).toBe(
+        false
+      );
     });
 
     // about:newtab makes no third-party requests, so an https icon is dropped.
@@ -896,18 +963,29 @@ describe("the thematic spaces variant", () => {
   });
 
   describe("resolvePopulatedSpaces with the feed's sections", () => {
-    it("drops a space that has no sections of its own", () => {
+    // games names only crossword, which is off.
+    it("drops a space that has no sections and no widgets", () => {
       expect(
         resolvePopulatedSpaces(thematic, ["top_stories_section", "food"])
       ).toEqual(["home", "living"]);
     });
 
-    // Below two spaces there is nowhere to navigate, so the band falls back.
-    it("turns spaces off when only Home has sections", () => {
+    it("keeps a space that has widgets but no sections", () => {
       expect(resolvePopulatedSpaces(thematic, ["top_stories_section"])).toEqual(
-        ["home"]
+        ["home", "living"]
       );
       expect(isSpacesActive(thematic, feedState("top_stories_section"))).toBe(
+        true
+      );
+    });
+
+    // Below two spaces there is nowhere to navigate, so the band falls back.
+    it("turns spaces off when only Home has something to show", () => {
+      const noWidgets = { ...thematic, "widgets.enabled": false };
+      expect(
+        resolvePopulatedSpaces(noWidgets, ["top_stories_section"])
+      ).toEqual(["home"]);
+      expect(isSpacesActive(noWidgets, feedState("top_stories_section"))).toBe(
         false
       );
     });
@@ -932,6 +1010,7 @@ describe("the thematic spaces variant", () => {
   describe("resolveThematicSpaceWidgets", () => {
     // Every widget the assignment names, plus two it does not.
     const ALL_ON = {
+      "widgets.system.enabled": true,
       "widgets.enabled": true,
       "widgets.system.pictureOfTheDay.enabled": true,
       "widgets.pictureOfTheDay.enabled": true,
@@ -979,6 +1058,13 @@ describe("the thematic spaces variant", () => {
       const off = { ...ALL_ON, "widgets.enabled": false };
       for (const id of ["home", "games", "living"]) {
         expect(resolveThematicSpaceWidgets(CONFIG, id, off)).toEqual([]);
+      }
+    });
+
+    it("is empty for every space when the widgets container is hidden", () => {
+      const hidden = { ...ALL_ON, "widgets.system.enabled": false };
+      for (const id of ["home", "games", "living"]) {
+        expect(resolveThematicSpaceWidgets(CONFIG, id, hidden)).toEqual([]);
       }
     });
   });

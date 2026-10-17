@@ -185,8 +185,9 @@
       justify-content: center;
     }
 
-    // No room for widgets plus two cards, so the feed takes the whole panel.
-    .widgets-section-container {
+    // No room for widgets plus two cards, so the feed takes the whole panel. A
+    // widgets-only space has no feed to make room for.
+    .space:has(.layout-content-column) .widgets-section-container {
       display: none;
     }
 
@@ -196,7 +197,7 @@
         inline-size: --col-span(13);
       }
 
-      .widgets-section-container {
+      .space:has(.layout-content-column) .widgets-section-container {
         display: grid;
       }
 
@@ -204,13 +205,15 @@
       // the same card count the flat band would rather than holding the paired
       // width. The largest whole card count the frame fits, because the feed's
       // auto-fill grid collapses to one card without a definite width -- which
-      // is why this cannot be folded into the stretch below.
-      .layout-content-column.has-feed {
+      // is why this cannot be folded into the stretch below. A space with no
+      // feed gives it to its widgets the same way.
+      .layout-content-column.has-feed,
+      .space:not(:has(.layout-content-column)) .widgets-section-container {
         inline-size: --col-span(12);
       }
 
-      // Only a space that has widgets is a pair; the rest keep one column.
-      .space:has(.widgets-section-container) {
+      // Only a space that has both is a pair; the rest keep one column.
+      .space:has(.widgets-section-container):has(.layout-content-column) {
         grid-template-columns: --col-span(8) --col-span(4);
 
         // Here the grid tracks govern the widths instead.
@@ -245,11 +248,12 @@
         inline-size: --col-span(17);
       }
 
-      .layout-content-column.has-feed {
+      .layout-content-column.has-feed,
+      .space:not(:has(.layout-content-column)) .widgets-section-container {
         inline-size: --col-span(16);
       }
 
-      .space:has(.widgets-section-container) {
+      .space:has(.widgets-section-container):has(.layout-content-column) {
         grid-template-columns: --col-span(12) --col-span(4);
       }
     }
@@ -339,9 +343,23 @@
     }
   }
 
-  // Floating arrows: an arrow at each edge that has a space beyond it, in place
-  // of the tablist.
+  // Floating arrows: the panel runs to the bottom of the page, and the arrows
+  // replace the tablist.
   &.spaces-floating-arrows {
+    // The panel moves to the container, below.
+    .spaces-frame::before {
+      content: none;
+    }
+
+    // Faster than the other spaces variants.
+    .spaces-track.animate .space {
+      transition-duration: 150ms;
+    }
+  }
+
+  // An arrow at each window edge. The floating arrows variant always has them,
+  // the thematic one when its config asks.
+  &.spaces-arrows {
     // Full-bleed: the band extends over the container's padding and takes one
     // full-width track, so the panel and arrows reach the window edges.
     max-inline-size: none;
@@ -355,20 +373,10 @@
       container: content-grid / inline-size;
     }
 
-    // The panel moves to the container, below.
-    .spaces-frame::before {
-      content: none;
-    }
-
     // Anchors the .spaces-panel-backdrop.
     .spaces-container {
       position: relative;
       anchor-name: --spaces-panel;
-    }
-
-    // Faster than the other spaces variants.
-    .spaces-track.animate .space {
-      transition-duration: 150ms;
     }
 
     // Spans the band's height, so the sticky arrow never rises above it into
@@ -397,6 +405,14 @@
       position: sticky;
       inset-block-start: 40vh;
       pointer-events: auto;
+    }
+
+    // With no panel behind them, the arrows sit directly on the wallpaper, and
+    // have no band to line up with, so they ride in the window's lower third.
+    &:not(.spaces-floating-arrows) .spaces-arrow {
+      @include wallpaper-contrast-fix;
+
+      inset-block-start: calc(70vh - var(--button-min-height) / 2);
     }
 
     .spaces-arrow::part(button) {

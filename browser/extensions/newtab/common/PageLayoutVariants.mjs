@@ -266,7 +266,7 @@ function rejectSpacesConfig(raw) {
  * spaces, or nothing left after dropping kills the layout.
  *
  * @param {object} raw - a spaces config from trainhopConfig or the pref
- * @returns {object|null} { order, default, spaces } or null
+ * @returns {object|null} { order, default, arrows, spaces } or null
  */
 export function normalizeSpacesConfig(raw) {
   const order = asStringArray(raw?.order);
@@ -302,6 +302,8 @@ export function normalizeSpacesConfig(raw) {
     // The named default has to have survived; otherwise the leftmost space
     // takes both roles, including the catch-all.
     default: kept.includes(raw.default) ? raw.default : kept[0],
+    // Edge arrows alongside the tablist.
+    arrows: raw.arrows === true,
     spaces,
   };
 }
@@ -331,16 +333,6 @@ export const SPACE_CONFIG = {
 };
 
 /**
- * Band classes for the assigned variant, empty outside the experiment.
- *
- * @param {object} prefs - current pref values from the Redux store
- * @returns {string[]}
- */
-export function spacesBandClasses(prefs) {
-  return SPACES_CLASSES[resolvePageLayoutVariant(prefs)] ?? [];
-}
-
-/**
  * Whether a spaces variant is assigned, populated or not.
  *
  * @param {object} prefs - current pref values from the Redux store
@@ -365,7 +357,8 @@ export function isSpacesThematicAssigned(prefs) {
 }
 
 /**
- * Whether the floating arrows variant is assigned, populated or not.
+ * Whether the floating arrows variant is assigned, populated or not. That
+ * variant's arrows replace the tablist.
  *
  * @param {object} prefs - current pref values from the Redux store
  * @returns {boolean}
@@ -401,23 +394,34 @@ export function isSpaceOverridden(id, prefs) {
 }
 
 /**
+ * Whether the page has stories, ignoring which variant is assigned.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+function hasStories(prefs) {
+  return Boolean(
+    // The override, like Base.jsx does for V1: the experiment turns stories back
+    // on for a profile that had them off, unless it has since opted out.
+    // isSpaceOverridden is false outside a spaces variant, so the side-by-side
+    // layouts read the plain pref. feeds.system.topstories stays raw -- region
+    // and locale are not a user choice.
+    (prefs?.["feeds.section.topstories"] ||
+      isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
+    prefs?.["feeds.system.topstories"]
+  );
+}
+
+/**
  * Whether the page has both halves of the side-by-side pair, ignoring which
- * variant is assigned. The thematic spaces variant puts the pair inside each
- * space rather than on the band, so it needs this without the variant test.
+ * variant is assigned.
  *
  * @param {object} prefs - current pref values from the Redux store
  * @returns {boolean}
  */
 function hasSideBySidePair(prefs) {
   return Boolean(
-    // The overrides, like Base.jsx does for V1: the experiment turns stories and
-    // the widgets container back on for a profile that had them off, unless it
-    // has since opted out. isSpaceOverridden is false outside a spaces variant,
-    // so the side-by-side layouts read the plain prefs. feeds.system.topstories
-    // stays raw -- region and locale are not a user choice.
-    (prefs?.["feeds.section.topstories"] ||
-      isSpaceOverridden(SPACE_IDS.STORIES, prefs)) &&
-    prefs?.["feeds.system.topstories"] &&
+    hasStories(prefs) &&
     isWidgetsContainerVisible(prefs) &&
     hasContentAreaWidgets(
       prefs,
@@ -516,6 +520,32 @@ export function resolveThematicSpacesConfig(prefs) {
 }
 
 /**
+ * Whether spaces navigate with edge arrows: always for the floating arrows
+ * variant, and for the thematic one when its config asks for them.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function hasSpacesArrows(prefs) {
+  return (
+    isSpacesArrowsAssigned(prefs) ||
+    (isSpacesThematicAssigned(prefs) &&
+      !!resolveThematicSpacesConfig(prefs)?.arrows)
+  );
+}
+
+/**
+ * Band classes for the assigned variant, empty outside the experiment.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {string[]}
+ */
+export function spacesBandClasses(prefs) {
+  const classes = SPACES_CLASSES[resolvePageLayoutVariant(prefs)] ?? [];
+  return hasSpacesArrows(prefs) ? [...classes, "spaces-arrows"] : classes;
+}
+
+/**
  * Which of the delivered sectionKeys belong to a space, in delivery order. The
  * default space is the catch-all, so it also takes every key no other space
  * claims and an unrecognised section still renders somewhere.
@@ -563,7 +593,7 @@ export function resolveFeedSectionKeys(discoveryStream) {
  * The widgets a space should show, in registry order, filtered to the ones
  * actually enabled. The default space is the catch-all here too, so a widget no
  * space names is never invisible everywhere. Empty means the space shows its
- * feed alone.
+ * feed alone, which is all of them while the widgets container is hidden.
  *
  * Weather is never named: at its small size it renders in the page's inline-end
  * sidebar, outside every space, as it does in the side-by-side layouts.
@@ -581,6 +611,9 @@ export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
   );
   const widgetsEnabled =
     prefs?.["widgets.enabled"] || isSpaceOverridden(SPACE_IDS.WIDGETS, prefs);
+  if (!isWidgetsContainerVisible(prefs)) {
+    return [];
+  }
 
   return WIDGET_REGISTRY.filter(
     w =>
@@ -590,10 +623,15 @@ export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
 }
 
 /**
- * The thematic spaces that have something to show, in the config's order.
- * Without the side-by-side pair there is nothing to put in a space at all, and
- * a space with none of its sections in the feed is dropped rather than rendered
- * empty -- the next refresh can bring it back.
+ * The thematic spaces that have something to show, in the config's order: a
+ * section in the feed or an enabled widget. A space with neither is dropped
+ * rather than rendered empty -- the next refresh can bring it back. Widgets
+ * being off only empties the spaces that relied on them; stories being off
+ * turns the layout off, as the page is built around them.
+ *
+ * Nothing renders before the feed arrives either. The default space takes every
+ * section no other space claims, so until then it would be dropped and the page
+ * would open on whichever space happened to have widgets.
  *
  * @param {object} prefs - current pref values from the Redux store
  * @param {string[]|null} sectionKeys - sectionKeys the feed delivered, or null
@@ -602,13 +640,16 @@ export function resolveThematicSpaceWidgets(config, spaceId, prefs) {
  */
 function resolvePopulatedThematicSpaces(prefs, sectionKeys) {
   const config = resolveThematicSpacesConfig(prefs);
-  if (!config || !hasSideBySidePair(prefs)) {
+  if (!config || !hasStories(prefs) || sectionKeys?.length === 0) {
     return [];
+  }
+  if (!sectionKeys) {
+    return config.order;
   }
   return config.order.filter(
     id =>
-      !sectionKeys ||
-      resolveThematicSpaceSections(config, id, sectionKeys).length
+      resolveThematicSpaceSections(config, id, sectionKeys).length ||
+      resolveThematicSpaceWidgets(config, id, prefs).length
   );
 }
 
