@@ -844,6 +844,18 @@ if (Services.prefs.getBoolPref("browser.fireButton.enabled", false)) {
      */
     _panelsAwaitingChoice: new WeakSet(),
 
+    onCreated(aNode) {
+      let doc = aNode.ownerDocument;
+      let box = doc.createXULElement("box");
+      box.className = "toolbarbutton-animatable-box";
+      for (let layer of ["rest", "flare", "settled"]) {
+        let flame = doc.createXULElement("box");
+        flame.className = `fire-button-flame fire-button-flame-${layer}`;
+        box.appendChild(flame);
+      }
+      aNode.appendChild(box);
+    },
+
     handleEvent(aEvent) {
       let panelview = aEvent.target.closest("panelview");
       // The footer buttons are moz-buttons, which fire click. The "Choose…"
