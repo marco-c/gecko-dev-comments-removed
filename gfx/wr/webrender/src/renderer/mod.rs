@@ -2614,6 +2614,7 @@ impl Renderer {
     fn handle_clips(
         &mut self,
         draw_target: &DrawTarget,
+        target_kind: RenderTargetKind,
         masks: &ClipMaskInstanceList,
         projection: &default::Transform3D<f32>,
         stats: &mut RendererStats,
@@ -2793,6 +2794,33 @@ impl Renderer {
                 }
 
                 self.device.set_scissor(None);
+            }
+
+            
+            
+            
+            
+            
+            if !masks.path_tiles.is_empty() {
+                if target_kind == RenderTargetKind::Color {
+                    self.set_blend_mode(BlendMode::PremultipliedDestOut, FramebufferKind::Other);
+                }
+
+                self.shaders.borrow_mut().cs_path_tile().bind(
+                    &mut self.device,
+                    projection,
+                    None,
+                    &mut self.renderer_errors,
+                    &mut self.profile,
+                    &mut self.command_log,
+                );
+
+                self.draw_instanced_batch(
+                    &masks.path_tiles,
+                    VertexArrayKind::PathTile,
+                    &BatchTextures::empty(),
+                    stats,
+                );
             }
         }
     }
@@ -3776,6 +3804,7 @@ impl Renderer {
 
             self.handle_clips(
                 &draw_target,
+                target.target_kind,
                 &target.clip_masks,
                 &projection,
                 stats,
