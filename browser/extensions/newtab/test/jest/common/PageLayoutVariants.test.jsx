@@ -777,6 +777,17 @@ describe("the thematic spaces variant", () => {
       expect(config.spaces.c.activity).toBe(false);
     });
 
+    it("takes a named widget catch-all, else the default space", () => {
+      expect(
+        normalizeSpacesConfig({ ...VALID, widgetCatchAll: "a" }).widgetCatchAll
+      ).toBe("a");
+      expect(normalizeSpacesConfig(VALID).widgetCatchAll).toBe("b");
+      expect(
+        normalizeSpacesConfig({ ...VALID, widgetCatchAll: "nope" })
+          .widgetCatchAll
+      ).toBe("b");
+    });
+
     it("turns the arrows on only for a literal true", () => {
       expect(normalizeSpacesConfig(VALID).arrows).toBe(false);
       expect(normalizeSpacesConfig({ ...VALID, arrows: true }).arrows).toBe(
@@ -1129,6 +1140,57 @@ describe("the thematic spaces variant", () => {
       }
     });
 
+    it("adds the unassigned widgets to the named catch-all instead", () => {
+      const config = normalizeSpacesConfig({
+        ...RAW_CONFIG,
+        widgetCatchAll: "living",
+      });
+      expect(resolveThematicSpaceWidgets(config, "home", ALL_ON)).toEqual([
+        "pictureOfTheDay",
+      ]);
+      expect(resolveThematicSpaceWidgets(config, "living", ALL_ON)).toEqual([
+        "clocks",
+        "lists",
+        "focusTimer",
+        "stocks",
+      ]);
+    });
+
+    // It is in the first card of Popular Today, so nowhere else.
+    it("leaves out the first-slot widget, even where it is named", () => {
+      const firstSlot = {
+        ...ALL_ON,
+        "nova.enabled": true,
+        "feeds.section.topstories": true,
+        "feeds.system.topstories": true,
+        "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1,
+        "pageLayouts.widgetFirstContentSlot.widget": "pictureOfTheDay",
+      };
+      for (const id of ["home", "games", "living"]) {
+        expect(
+          resolveThematicSpaceWidgets(CONFIG, id, firstSlot)
+        ).not.toContain("pictureOfTheDay");
+      }
+    });
+
+    // At its small size it renders in the sidebar, outside every space.
+    it("leaves out Weather while it is in the sidebar", () => {
+      const weather = {
+        ...ALL_ON,
+        "widgets.system.weather.enabled": true,
+        "widgets.weather.enabled": true,
+        "system.showWeather": true,
+        showWeather: true,
+      };
+      const ids = size =>
+        resolveThematicSpaceWidgets(CONFIG, "home", {
+          ...weather,
+          "widgets.weather.size": size,
+        });
+      expect(ids("small")).not.toContain("weather");
+      expect(ids("medium")).toContain("weather");
+    });
+
     it("is empty for every space when the widgets container is hidden", () => {
       const hidden = { ...ALL_ON, "widgets.system.enabled": false };
       for (const id of ["home", "games", "living"]) {
@@ -1263,5 +1325,38 @@ describe("selectFirstSlotWidget", () => {
     ],
   ])("returns null %s", (_, overrides) => {
     expect(selectFirstSlotWidget({ ...assigned, ...overrides })).toBe(null);
+  });
+
+  describe("under the thematic spaces variant", () => {
+    const thematic = {
+      ...assigned,
+      "pageLayouts.variant": PAGE_LAYOUT_VARIANTS.SPACES_THEMATIC_V1,
+    };
+
+    it("honours the same setting", () => {
+      expect(selectFirstSlotWidget(thematic)).toBe("crossword");
+      expect(
+        selectFirstSlotWidget({
+          ...thematic,
+          "pageLayouts.widgetFirstContentSlot.widget": "",
+        })
+      ).toBe(null);
+    });
+
+    // The experiment turns stories and widgets back on for a profile that had
+    // them off, so the first card has to follow.
+    it("follows the space overrides", () => {
+      expect(
+        selectFirstSlotWidget({
+          ...thematic,
+          "feeds.section.topstories": false,
+          "widgets.enabled": false,
+          trainhopConfig: {
+            stories: { enabled: true },
+            widgets: { enabled: true },
+          },
+        })
+      ).toBe("crossword");
+    });
   });
 });
