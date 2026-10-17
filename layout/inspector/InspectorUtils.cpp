@@ -1219,11 +1219,10 @@ void InspectorUtils::GetRegisteredCssHighlights(GlobalObject& aGlobalObject,
                                                 Document& aDocument,
                                                 bool aActiveOnly,
                                                 nsTArray<nsString>& aResult) {
-  for (auto const& iter : aDocument.HighlightRegistry().HighlightsOrdered()) {
-    const RefPtr<nsAtom>& highlightName = iter.first();
-    const RefPtr<Highlight>& highlight = iter.second();
+  for (const auto& [name, highlight] :
+       aDocument.HighlightRegistry().Maplike()) {
     if (!aActiveOnly || highlight->Size() > 0) {
-      aResult.AppendElement(highlightName->GetUTF16String());
+      aResult.AppendElement(nsDependentAtomString(name));
     }
   }
 }

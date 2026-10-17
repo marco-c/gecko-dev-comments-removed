@@ -6,19 +6,13 @@
 #define mozilla_dom_HighlightRegistry_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/CompactPair.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/ECMACollectionMixin.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsHashKeys.h"
-#include "nsHashtablesFwd.h"
-#include "nsTHashMap.h"
 #include "nsWrapperCache.h"
 
 class nsFrameSelection;
 
-namespace mozilla {
-class ErrorResult;
-}
 namespace mozilla::dom {
 
 class AbstractRange;
@@ -40,8 +34,11 @@ struct HighlightsFromPointOptions;
 
 
 
-
-class HighlightRegistry final : public nsISupports, public nsWrapperCache {
+class HighlightRegistry final
+    : public nsISupports,
+      public nsWrapperCache,
+      public MaplikeMixin<RefPtr<nsAtom>, RefPtr<Highlight>,
+                          AtomStringConverter> {
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(HighlightRegistry)
@@ -118,16 +115,17 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT HighlightRegistry* Set(const nsAString& aKey,
-                                            Highlight& aValue,
-                                            ErrorResult& aRv);
+  using MaplikeMixin::Delete;
+  using MaplikeMixin::Set;
+  MOZ_CAN_RUN_SCRIPT void Set(nsAtom& aKey, Highlight& aValue,
+                              ErrorResult& aRv) override;
 
   
 
 
 
 
-  MOZ_CAN_RUN_SCRIPT void Clear(ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT void Clear() override;
 
   
 
@@ -137,7 +135,7 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
 
 
-  MOZ_CAN_RUN_SCRIPT bool Delete(const nsAString& aKey, ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT bool Delete(nsAtom& aKey) override;
 
   
 
@@ -156,31 +154,11 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
   RefPtr<nsFrameSelection> GetFrameSelection();
 
-  
-
-
-  nsTArray<CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>> const&
-  HighlightsOrdered() {
-    return mHighlightsOrdered;
-  }
-
  private:
   
 
 
   RefPtr<Document> mDocument;
-
-  
-
-
-
-
-
-
-
-
-
-  nsTArray<CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>> mHighlightsOrdered;
 };
 
 }  
