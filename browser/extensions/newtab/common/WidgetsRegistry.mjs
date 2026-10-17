@@ -682,25 +682,9 @@ export function resolveWidgetHasSidebar(widget, prefs) {
 }
 
 /**
- * Returns true if the widget renders in the inline-end sidebar rather than the
- * content area. Weather is the only widget that can move there, and only at its
- * small size.
- *
- * @param {object} widget - a WIDGET_REGISTRY entry
- * @param {object} prefs - current pref values from the Redux store
- * @returns {boolean}
- */
-export function isWidgetInSidebar(widget, prefs) {
-  return (
-    widget.id === "weather" &&
-    resolveWidgetHasSidebar(widget, prefs) &&
-    resolveWidgetSize(widget, prefs) === "small"
-  );
-}
-
-/**
  * Returns true if at least one enabled widget renders in the content area rather
- * than the inline-end sidebar.
+ * than the inline-end sidebar. Weather is the only widget that can move to the
+ * sidebar, and only at its small size.
  *
  * Layout code needs this rather than isWidgetsContainerVisible, which is true
  * even when the user has hidden every widget.
@@ -714,9 +698,15 @@ export function hasContentAreaWidgets(
   prefs,
   widgetsEnabled = prefs["widgets.enabled"]
 ) {
+  const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+  const weatherGoesToSidebar =
+    resolveWidgetHasSidebar(weatherWidget, prefs) &&
+    resolveWidgetSize(weatherWidget, prefs) === "small";
+
   return WIDGET_REGISTRY.some(
     w =>
-      isWidgetEnabled(w, prefs, widgetsEnabled) && !isWidgetInSidebar(w, prefs)
+      isWidgetEnabled(w, prefs, widgetsEnabled) &&
+      !(w.id === "weather" && weatherGoesToSidebar)
   );
 }
 

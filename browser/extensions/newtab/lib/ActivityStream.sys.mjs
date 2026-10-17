@@ -2487,7 +2487,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.spacesConfig",
     {
       title:
-        "JSON config for the spaces-thematic-v1 layout variant: an `order` array of space ids, a `default` id that the page opens on and that also takes any section or widget no other space claims, a `preview` boolean that turns on the tab preview, and a `spaces` object mapping each id to a `label`, an `icon` chrome:// URL, an optional `previewImage` chrome:// URL that the preview shows instead of the space's first item, and `sections` and `widgets` arrays. Defaults to the config this build ships; clearing the user value returns to it. A config that cannot render turns the layout off rather than partly applying; nothing is merged with the default. Overridden by trainhopConfig.spaces.",
+        "JSON config for the spaces-thematic-v1 layout variant: an `order` array of space ids, a `default` id that the page opens on and that also takes any section or widget no other space claims, and a `spaces` object mapping each id to a `label`, an `icon` chrome:// URL, and `sections` and `widgets` arrays. Defaults to the config this build ships; clearing the user value returns to it. A config that cannot render turns the layout off rather than partly applying; nothing is merged with the default. Overridden by trainhopConfig.spaces.",
       value: JSON.stringify(DEFAULT_SPACES_CONFIG),
     },
   ],
@@ -2495,7 +2495,7 @@ export const PREFS_CONFIG = new Map([
     "pageLayouts.spacesOrder",
     {
       title:
-        "Comma-separated order of the spaces in the spaces-buttons-top, spaces-buttons-bottom, spaces-floating-arrows, spaces-preview-kit, spaces-preview-illustrated and spaces-preview-cards layout variants, from stories, widgets and activity. A space left out is not shown; empty means stories,widgets,activity.",
+        "Comma-separated order of the spaces in the spaces-buttons-top, spaces-buttons-bottom and spaces-floating-arrows layout variants, from stories, widgets and activity. A space left out is not shown; empty means stories,widgets,activity.",
       value: "",
     },
   ],

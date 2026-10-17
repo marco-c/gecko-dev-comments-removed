@@ -866,7 +866,7 @@ describe("selectLayoutRender", () => {
       "widgets.crossword.enabled": true,
     };
 
-    const renderSections = (prefs = WIDGET_FIRST_PREFS) => {
+    const renderSections = () => {
       const layout = {
         responsiveLayouts: [
           {
@@ -924,7 +924,7 @@ describe("selectLayoutRender", () => {
       });
       const { layoutRender } = selectLayoutRender({
         state: store.getState().DiscoveryStream,
-        prefs,
+        prefs: WIDGET_FIRST_PREFS,
       });
       return layoutRender[0].components[0].data.sections;
     };
@@ -947,16 +947,6 @@ describe("selectLayoutRender", () => {
         "ad2",
       ]);
       expect([first.data[1].pos, first.data[5].pos]).toEqual([1, 5]);
-    });
-
-    it("puts the widget first under the thematic spaces variant too", () => {
-      const [first] = renderSections({
-        ...WIDGET_FIRST_PREFS,
-        "pageLayouts.variant": "spaces-thematic-v1",
-      });
-      expect(first.data[0]).toEqual(
-        expect.objectContaining({ type: "widget", widgetId: "crossword" })
-      );
     });
   });
 });
