@@ -193,8 +193,11 @@
 
     /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
     @include at-band-fits-pair(2) {
+      // Exactly the pair: its two tracks plus the 3 * --space-medium gap. Any
+      // wider and the frame overflows the band just past the breakpoint, which
+      // only admitted the pair.
       .spaces-frame {
-        inline-size: --col-span(13);
+        inline-size: calc(#{--col-span(12)} + 2 * var(--space-medium));
       }
 
       .space:has(.layout-content-column) .widgets-section-container {
@@ -245,7 +248,7 @@
 
     @include at-band-fits-pair(3) {
       .spaces-frame {
-        inline-size: --col-span(17);
+        inline-size: calc(#{--col-span(16)} + 2 * var(--space-medium));
       }
 
       /* stylelint-disable-next-line max-line-length */
