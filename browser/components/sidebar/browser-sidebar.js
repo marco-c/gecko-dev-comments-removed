@@ -480,6 +480,18 @@ var SidebarController = {
     return this._launcherSplitter;
   },
 
+  
+
+
+
+
+
+  get panelHeader() {
+    return (this._panelHeader ??= document.getElementById(
+      "sidebar-panel-header"
+    ));
+  },
+
   init() {
     
     this.SidebarManager;
@@ -561,6 +573,12 @@ var SidebarController = {
       if (!customElements.get("sidebar-main")) {
         ChromeUtils.importESModule(
           "chrome://browser/content/sidebar/sidebar-main.mjs",
+          { global: "current" }
+        );
+      }
+      if (!customElements.get("sidebar-panel-header")) {
+        ChromeUtils.importESModule(
+          "chrome://browser/content/sidebar/sidebar-panel-header.mjs",
           { global: "current" }
         );
       }
@@ -701,6 +719,8 @@ var SidebarController = {
       
       
       this.sidebarMain.remove();
+      this.panelHeader.remove();
+      this._panelHeader = null;
     }
     this._splitter.removeEventListener("command", this._browserResizeObserver);
     this._splitterAriaUpdateTask.finalize();
@@ -2135,6 +2155,7 @@ var SidebarController = {
         this._box.dispatchEvent(
           new CustomEvent("sidebar-show", { detail: { viewId: commandID } })
         );
+        this.panelHeader.setView(commandID);
       } else {
         this.hideSwitcherPanel();
       }
