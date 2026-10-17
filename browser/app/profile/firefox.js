@@ -3831,6 +3831,8 @@ pref("browser.ipProtection.features.siteExceptions", true);
 
 pref("browser.ipProtection.features.siteInclusions", false);
 
+pref("browser.ipProtection.siteInclusionPromptShown", false);
+
 pref("browser.ipProtection.siteExceptionsHintsEnabled", true);
 pref("browser.ipProtection.log", false);
 pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
