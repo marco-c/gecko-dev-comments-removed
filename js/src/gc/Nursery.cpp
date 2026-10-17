@@ -2162,8 +2162,7 @@ void js::Nursery::Space::clear(Nursery* nursery) {
     NurseryChunk* chunk = this->chunk(i);
     size_t start = i == startChunk_ ? startPosition_ - uintptr_t(chunk)
                                     : NurseryChunkHeaderSize;
-    size_t end =
-        i == currentChunk() ? position_ - uintptr_t(chunk) : ChunkSize;
+    size_t end = i == currentChunk() ? position_ - uintptr_t(chunk) : ChunkSize;
     chunk->poisonRange(start, end, JS_SWEPT_NURSERY_PATTERN,
                        MemCheckKind::MakeNoAccess);
   }
