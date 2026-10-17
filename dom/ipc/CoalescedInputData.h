@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CoalescedInputData_h
 #define mozilla_dom_CoalescedInputData_h
 
@@ -90,6 +88,8 @@ class CoalescedInputFlusher : public nsARefreshObserver {
  protected:
   virtual ~CoalescedInputFlusher();
 
+  
+  
   BrowserChild* mBrowserChild;
   
   RefPtr<nsRefreshDriver> mRefreshDriver;
