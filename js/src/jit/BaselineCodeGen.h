@@ -144,6 +144,8 @@ class BaselineCodeGen {
 
   void prepareVMCall();
 
+  void ensureDebugModeOSRPointSpace();
+
   void storeFrameSizeAndPushDescriptor(uint32_t argSize, Register scratch);
 
   enum class CallVMPhase { BeforePushingLocals, AfterPushingLocals };
@@ -319,6 +321,7 @@ class BaselineCompilerHandler {
 #endif
   FixedList<Label> labels_;
   RetAddrEntryVector retAddrEntries_;
+  mozilla::Maybe<uint32_t> lastDebugModeOSRPointOffset_;
   AllocSiteIndexVector allocSiteIndices_;
 
   
@@ -415,6 +418,10 @@ class BaselineCompilerHandler {
 
   RetAddrEntryVector& retAddrEntries() { return retAddrEntries_; }
   OSREntryVector& osrEntries() { return osrEntries_; }
+
+  const mozilla::Maybe<uint32_t>& lastDebugModeOSRPointOffset() const {
+    return lastDebugModeOSRPointOffset_;
+  }
 
   [[nodiscard]] bool recordCallRetAddr(RetAddrEntry::Kind kind,
                                        uint32_t retOffset);

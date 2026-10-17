@@ -111,7 +111,7 @@ static bool CollectJitStackScripts(JSContext* cx,
           
           
           
-          if (!entries.append(DebugModeOSREntry(script))) {
+          if (!entries.emplaceBack(script)) {
             return false;
           }
         } else {
@@ -119,7 +119,8 @@ static bool CollectJitStackScripts(JSContext* cx,
           uint8_t* retAddr = frame.resumePCinCurrentFrame();
           const RetAddrEntry& retAddrEntry =
               script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
-          if (!entries.append(DebugModeOSREntry(script, retAddrEntry))) {
+          MOZ_ASSERT(CanTriggerBaselineDebugModeOSR(retAddrEntry.kind()));
+          if (!entries.emplaceBack(script, retAddrEntry)) {
             return false;
           }
         }
@@ -134,7 +135,7 @@ static bool CollectJitStackScripts(JSContext* cx,
         InlineFrameIterator inlineIter(cx, &frame);
         while (true) {
           if (obs.shouldRecompileOrInvalidate(inlineIter.script())) {
-            if (!entries.append(DebugModeOSREntry(inlineIter.script()))) {
+            if (!entries.emplaceBack(inlineIter.script())) {
               return false;
             }
           }
@@ -163,7 +164,7 @@ static bool CollectInterpreterStackScripts(
   for (InterpreterFrameIterator iter(act); !iter.done(); ++iter) {
     JSScript* script = iter.frame()->script();
     if (obs.shouldRecompileOrInvalidate(script)) {
-      if (!entries.append(DebugModeOSREntry(iter.frame()->script()))) {
+      if (!entries.emplaceBack(iter.frame()->script())) {
         return false;
       }
     }
@@ -180,6 +181,8 @@ static const char* RetAddrEntryKindToString(RetAddrEntry::Kind kind) {
       return "callVM";
     case RetAddrEntry::Kind::StackCheck:
       return "stack check";
+    case RetAddrEntry::Kind::ResumeStackCheck:
+      return "resume stack check";
     case RetAddrEntry::Kind::InterruptCheck:
       return "interrupt check";
     case RetAddrEntry::Kind::DebugTrap:
@@ -349,6 +352,10 @@ static void PatchBaselineFramesForDebugMode(
                                    pc);
             break;
           }
+          case RetAddrEntry::Kind::ResumeStackCheck:
+            
+            
+            MOZ_CRASH("Unexpected ResumeStackCheck");
           case RetAddrEntry::Kind::NonOpCallVM:
           case RetAddrEntry::Kind::Invalid:
             

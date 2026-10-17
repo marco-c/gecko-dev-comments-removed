@@ -187,8 +187,45 @@ bool BaselineCompilerHandler::recordCallRetAddr(RetAddrEntry::Kind kind,
     return false;
   }
 
+  if (CanTriggerBaselineDebugModeOSR(kind)) {
+    MOZ_ASSERT_IF(lastDebugModeOSRPointOffset_ && !masm_.oom(),
+                  retOffset - *lastDebugModeOSRPointOffset_ >=
+                      Assembler::PatchWrite_NearCallSize());
+    lastDebugModeOSRPointOffset_ = mozilla::Some(retOffset);
+  }
+
   return true;
 }
+
+template <>
+void BaselineCompilerCodeGen::ensureDebugModeOSRPointSpace() {
+  const mozilla::Maybe<uint32_t>& lastOffset =
+      handler.lastDebugModeOSRPointOffset();
+  if (!lastOffset) {
+    return;
+  }
+
+  
+  
+  if (masm.currentOffset() - *lastOffset <
+      Assembler::PatchWrite_NearCallSize()) {
+    int32_t paddingSize = Assembler::PatchWrite_NearCallSize();
+    paddingSize -= masm.currentOffset() - *lastOffset;
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+    masm.nop(paddingSize);
+#else
+    for (int32_t i = 0; i < paddingSize; i += Assembler::NopSize()) {
+      masm.nop();
+    }
+#endif
+  }
+
+  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - *lastOffset >=
+                                 Assembler::PatchWrite_NearCallSize());
+}
+
+template <>
+void BaselineInterpreterCodeGen::ensureDebugModeOSRPointSpace() {}
 
 bool BaselineInterpreterHandler::recordCallRetAddr(RetAddrEntry::Kind kind,
                                                    uint32_t retOffset) {
@@ -311,6 +348,10 @@ bool BaselineCompiler::compileImpl() {
   if (!emitEpilogue()) {
     return false;
   }
+
+  
+  
+  ensureDebugModeOSRPointSpace();
 
   perfSpewer_.recordOffset(masm, "OOLPostBarrierSlot");
   emitOutOfLinePostBarrierSlot();
@@ -762,15 +803,13 @@ bool BaselineCompilerCodeGen::emitNextIC() {
   size_t firstStubOffset = ICScript::offsetOfFirstStub(entryIndex);
   masm.loadPtr(Address(ICStubReg, firstStubOffset), ICStubReg);
 
+  RetAddrEntry::Kind kind = RetAddrEntry::Kind::IC;
+  ensureDebugModeOSRPointSpace();
+
   CodeOffset returnOffset;
   EmitCallIC(masm, &returnOffset);
 
-  RetAddrEntry::Kind kind = RetAddrEntry::Kind::IC;
-  if (!handler.retAddrEntries().emplaceBack(pcOffset, kind, returnOffset)) {
-    return false;
-  }
-
-  return true;
+  return handler.recordCallRetAddr(kind, returnOffset.offset());
 }
 
 template <>
@@ -879,6 +918,11 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
 #endif
     masm.push(FrameDescriptor(FrameType::BaselineJS));
   }
+
+  if (CanTriggerBaselineDebugModeOSR(kind)) {
+    ensureDebugModeOSRPointSpace();
+  }
+
   
   uint32_t callOffset = masm.callJit(code);
 
@@ -1995,6 +2039,8 @@ bool BaselineCompiler::emitDebugTrap() {
   JSScript* script = handler.script();
   bool enabled = DebugAPI::stepModeEnabled(script) ||
                  DebugAPI::hasBreakpointsAt(script, handler.pc());
+
+  ensureDebugModeOSRPointSpace();
 
   
   JitCode* handlerCode =
@@ -6708,6 +6754,8 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   
   masm.storeValue(Int32Value(AbstractGeneratorObject::RESUME_INDEX_RUNNING),
                   resumeIndexSlot);
+
+  ensureDebugModeOSRPointSpace();
 
   
   
