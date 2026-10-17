@@ -13,23 +13,25 @@ transforms:
 
 kind-dependencies:
     - fetch
+    - toolchain
 
 task-defaults:
     run-on-repo-type: [hg]
 
 tasks:
-    dxc-symbols-upload:
-        description: Upload symbols for `DirectXShaderCompiler`.
+    symbols-upload:
+        description: Upload symbols for a library built by a toolchain task.
+        # Without kinds, adding a kind-dependency can silently match nothing.
         from-deps:
+            kinds: [toolchain]
             with-attributes:
-                dxc-crash-symbols: [true]
                 enable-full-crashsymbols: [true]
         worker-type: b-linux-docker-amd
         worker:
             docker-image: {in-tree: "lint"}
             max-run-time: 1800
             env:
-                # NOTE: This is necesary to access `zstandard` via Python.
+                # NOTE: This is necessary to access `zstandard` via Python.
                 MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
                 # NOTE: `{level}` gets replaced in the `upload_symbols` transform.
                 SYMBOL_SECRET: "project/releng/gecko/build/level-{level}/gecko-symbol-upload"

@@ -165,10 +165,12 @@ Toolchain builds create the compiler toolchains used to build Firefox. These
 will eventually be dependencies of the builds themselves, but for the moment
 are run manually via try pushes and the results uploaded to tooltool.
 
-## toolchain-dxc-upload
+## toolchain-symbols-upload
 
-Upload Windows symbols for `DirectXShaderCompiler` to tecken, based on builds in `toolchain-dxc`.
-Maintained by Firefox's WebGPU team.
+Upload symbols to tecken for the libraries built by `toolchain` tasks, which the
+Gecko build copies into `dist/bin` rather than building itself and so never dumps
+symbols for. Pairs with each toolchain task setting `enable-full-crashsymbols`:
+currently `dxcompiler.dll` and `onnxruntime`.
 
 ## spidermonkey
 
