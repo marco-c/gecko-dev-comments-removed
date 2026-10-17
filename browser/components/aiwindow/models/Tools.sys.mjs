@@ -1537,9 +1537,10 @@ export async function addMemory(
 }
 
 /**
- * Stores a generated page. A new page gets a slug of its own; a modification
- * is written as the next version of the slug it revised, and the versions it
- * replaces are dropped: only one is kept for now.
+ * Stores a generated page. A new page gets a slug of its own and belongs to
+ * `conversation`; a modification is written as the next version of the slug it
+ * revised, keeps the chat that owns it, and the versions it replaces are
+ * dropped: only one is kept for now.
  *
  * @param {AITabResult} result - From AITab.generateAITab.
  * @param {ChatConversation} conversation - The chat that asked for the page.
@@ -1556,9 +1557,9 @@ async function persistAITabPage(
   conversation,
   isModification
 ) {
-  const { context, toolConvId, ...pageMetadata } = metadata;
+  const { context, convId, toolConvId, ...pageMetadata } = metadata;
   const page = {
-    convId: conversation.id,
+    convId: convId ?? conversation.id,
     toolConvId,
     slug: metadata.id,
     title: metadata.title,
