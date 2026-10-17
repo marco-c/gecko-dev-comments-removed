@@ -3,8 +3,8 @@
 
 
 #include "nsMacPreferencesReader.h"
-#include "MacStringHelpers.h"
 #include "CFTypeRefPtr.h"
+#include "MacStringHelpers.h"
 #include "nsString.h"
 
 #include <sys/stat.h>
