@@ -4,27 +4,19 @@
 
 :host {
   display: block;
-
-  --aitab-highlights-gap: 48px;
-  --aitab-highlights-item-gap: 32px;
-  --aitab-highlights-item-spacing: 24px;
-  --aitab-highlights-padding-block: 80px;
-  --aitab-highlights-padding-inline: 118px;
 }
 
 .aitab-highlights {
   display: flex;
   flex-direction: column;
+  gap: var(--space-xxlarge);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  gap: var(--aitab-highlights-gap);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding-block: var(--aitab-highlights-padding-block);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding-inline: var(--aitab-highlights-padding-inline);
+  padding: 60px 118px;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--aitab-hero-radius);
   border: var(--border-width) solid var(--border-color-transparent);
   color: var(--text-color);
+  container-type: inline-size;
 
   @media not (forced-colors) {
     --background-color-box: light-dark(var(--color-violet-desaturated-0, var(--color-violet-0)), color-mix(in srgb, var(--color-violet-30) 12%, transparent));
@@ -41,8 +33,7 @@
 .aitab-highlights-list {
   display: flex;
   flex-direction: column;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  gap: var(--aitab-highlights-gap);
+  gap: var(--space-xlarge);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -50,22 +41,21 @@
 
 .aitab-highlight {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  gap: var(--aitab-highlights-item-gap);
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--space-large) var(--space-xxlarge);
   align-items: start;
 
   & + & {
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    border-block-start: var(--border-width) solid var(--smartwindow-border-color);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    padding-block-start: var(--aitab-highlights-item-spacing);
+    border-block-start: var(--border-width) solid var(--border-color-deemphasized);
+    padding-block-start: var(--space-xlarge);
   }
 
-  @media (width > 900px) {
-    &:not(:only-child) {
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    }
+  &:only-child {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @container (max-width: 560px) {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -77,18 +67,12 @@
 }
 
 .aitab-highlight-evidence {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  gap: var(--aitab-highlights-item-spacing);
+  gap: var(--space-large);
 }
 
 .aitab-highlight-title,
 .aitab-highlight-body {
   overflow-wrap: anywhere;
-}
-
-.aitab-highlight-body {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  line-height: 28px;
 }
 
 .aitab-highlight-sources {
