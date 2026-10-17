@@ -834,6 +834,10 @@ bool RTCRtpReceiver::CanReceiveEarlyMedia() {
     
     return false;
   }
+  if (!GetJsepTransceiver().mRecvTrack.HasEarlyRecvCodecs()) {
+    
+    return false;
+  }
   if (mPc->GetSignalingState() != RTCSignalingState::Have_local_offer) {
     
     return false;

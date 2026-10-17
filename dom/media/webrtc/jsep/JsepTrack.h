@@ -206,6 +206,8 @@ class JsepTrack {
     std::for_each(mEarlyRecvCodecs.begin(), mEarlyRecvCodecs.end(), func);
   }
 
+  bool HasEarlyRecvCodecs() const { return !mEarlyRecvCodecs.empty(); }
+
   
   
   
