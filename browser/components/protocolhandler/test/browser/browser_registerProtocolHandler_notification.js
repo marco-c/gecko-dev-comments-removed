@@ -58,7 +58,7 @@ add_task(async function () {
   let buttons = notification.buttonContainer.getElementsByClassName(
     "notification-button"
   );
-  is(buttons.length, 1, "We expect see one button.");
+  is(buttons.length, 2, "We expect to see two buttons.");
 
   let button = buttons[0];
   isnot(button.label, null, "We expect the add button to have a label.");
@@ -80,7 +80,7 @@ add_task(async function () {
     "Clicking the button should close the notification box and register the protocol."
   );
 
-  await EventUtils.synthesizeMouseAtCenter(button, {}, window);
+  EventUtils.synthesizeMouseAtCenter(button, {}, window);
 
   await TestUtils.waitForCondition(
     () => notificationBox.currentNotification == null,
@@ -97,6 +97,16 @@ add_task(async function () {
   is(1, handlers.length, "only one handler registered for web+testprotocol");
   let handler = handlers.queryElementAt(0, Ci.nsIHandlerApp);
   ok(handler instanceof Ci.nsIWebHandlerApp, "the handler is a web handler");
+
+  info("check that clicking Add is a one-off and stores no permission.");
+  is(
+    SitePermissions.getForPrincipal(
+      window.gBrowser.contentPrincipal,
+      "register-protocol-handler"
+    ).state,
+    SitePermissions.UNKNOWN,
+    "Clicking Add does not persist a register-protocol-handler permission"
+  );
 
   
   const handlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
