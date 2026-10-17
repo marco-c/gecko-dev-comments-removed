@@ -14,6 +14,7 @@
  * @import { AITabContext, AITabResult } from "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs"
  */
 
+import { isSmartPageURL } from "chrome://browser/content/aiwindow/modules/TrustedInternalURLs.mjs";
 import { getSkillPrompt } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
 import {
@@ -1148,6 +1149,9 @@ export class GetPageContent {
     // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
     // have been added by the user so they should be allowed. SERP urls came from a
     // trusted search provider's SERP and are eligible for an anonymous fetch.
+    // AITab URLs are an exception, reading the contents of an open
+    // about:smartpage tab extracts content locally and the content for the
+    // AITab is also stored locally, so there is no risk of data exfiltration.
     // All other URLs are restricted when both private and untrusted data has been seen.
     //
     // │ Flags               │ tab urls │ mention urls │ serp urls          │ any urls │
@@ -1162,7 +1166,7 @@ export class GetPageContent {
 
     const results = await Promise.all(
       url_list.map(async (url, index) => {
-        if (!isAllowedURLProtocol(url)) {
+        if (!isAllowedURLProtocol(url) && !isSmartPageURL(URL.parse(url))) {
           return { url, ok: false, content: "This URL is not allowed: " + url };
         }
         const startTime = ChromeUtils.now();
