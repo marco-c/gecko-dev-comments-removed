@@ -2118,7 +2118,7 @@
 # request. Read from C++ on the load and history paths, so it is static.
 - name: browser.smartwindow.aitab.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 # Whether to show an about:blank window as early as possible for quick startup feedback.
