@@ -138,6 +138,11 @@ class TransactionBuilder final {
 
   
   
+  void SetEmbedPolicy(PipelineId aPipelineId,
+                      const Maybe<nsTArray<uint32_t>>& aNamespaces);
+
+  
+  
   
   void SetDisplayList(Epoch aEpoch, wr::IdNamespace aIdNamespace,
                       wr::WrPipelineId pipeline_id,

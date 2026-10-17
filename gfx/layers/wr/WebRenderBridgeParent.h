@@ -320,6 +320,10 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   void RemoveEpochDataPriorTo(const wr::Epoch& aRenderedEpoch);
 
   bool IsRootWebRenderBridgeParent() const;
+
+  
+  
+  void RefreshEmbedPolicy();
   LayersId GetLayersId() const;
 
   void BeginRecording(const TimeStamp& aRecordingStart);
@@ -363,6 +367,11 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                               const VsyncId& aVsyncId);
 
   void SanitizeScrollData(WebRenderScrollData& aScrollData);
+
+  
+  
+  
+  Maybe<nsTArray<uint32_t>> ComputeEmbedPolicy() const;
 
   bool SetDisplayList(const LayoutDeviceRect& aRect, ipc::ByteBuf&& aDLItems,
                       ipc::ByteBuf&& aSpatialTreeDL,

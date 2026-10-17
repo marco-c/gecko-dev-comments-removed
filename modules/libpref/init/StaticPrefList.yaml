@@ -9059,6 +9059,14 @@
   value: true
   mirror: once
 
+# Whether WebRender only lets a pipeline embed the pipelines that the GPU
+# process allows it to embed.
+- name: gfx.webrender.enforce-embed-policy
+  type: bool
+  rust: true
+  value: true
+  mirror: once
+
 - name: gfx.webrender.shared-instance-buffer
   type: bool
   rust: true

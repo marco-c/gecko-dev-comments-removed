@@ -378,7 +378,13 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
   void ForceIsFirstPaint();
 
-  void NotifyChildCreated(LayersId aChild, LayersId aEmbedderId);
+  
+  LayersId NotifyChildCreated(LayersId aChild, LayersId aEmbedderId);
+
+  
+  
+  static void RefreshEmbedPolicies(LayersId aNewEmbedder,
+                                   LayersId aOldEmbedder);
 
   void AsyncRender();
 
@@ -490,6 +496,10 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   
   static void EraseLayerTreeStateUnderLock(
       LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  
+  static void CollectEmbeddedChildNamespaces(LayersId aEmbedder,
+                                             nsTArray<uint32_t>& aOut);
 
   
 
