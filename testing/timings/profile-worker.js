@@ -588,17 +588,41 @@ async function fetchResourceProfile(taskId, retryId = 0) {
 
   const url = `${workerData.taskclusterBaseUrl}/api/queue/v1/task/${taskId}/runs/${retryId}/artifacts/public/test_info/profile_resource-usage.json`;
 
-  let response;
-  try {
-    response = await fetch(url);
-  } catch (error) {
-    
-    let message = error.message;
-    if (error.cause) {
-      message += ` (${error.cause.code || error.cause.message})`;
+  let response, profile;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(60 * 1000) });
+      if (response.ok) {
+        profile = await response.json();
+      }
+      break;
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        console.error(
+          formatTaskMessage(taskId, `JSON parse error - ${error.message}`)
+        );
+        return { error: "parse_error" };
+      }
+      
+      let message = error.message;
+      if (error.cause) {
+        message += ` (${error.cause.code || error.cause.message})`;
+      }
+      
+      const willRetry = attempt < 10;
+      console.error(
+        formatTaskMessage(
+          taskId,
+          `Network error - ${message}, ${willRetry ? "will retry" : "giving up"}`
+        )
+      );
+      if (!willRetry) {
+        return { error: "network_error" };
+      }
+      
+      const delay = Math.min(5000 * 2 ** (attempt - 1), 120 * 1000);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
-    console.error(formatTaskMessage(taskId, `Network error - ${message}`));
-    return { error: "network_error" };
   }
 
   if (!response.ok) {
@@ -610,16 +634,6 @@ async function fetchResourceProfile(taskId, retryId = 0) {
       )
     );
     return { error: errorType };
-  }
-
-  let profile;
-  try {
-    profile = await response.json();
-  } catch (error) {
-    console.error(
-      formatTaskMessage(taskId, `JSON parse error - ${error.message}`)
-    );
-    return { error: "parse_error" };
   }
 
   
