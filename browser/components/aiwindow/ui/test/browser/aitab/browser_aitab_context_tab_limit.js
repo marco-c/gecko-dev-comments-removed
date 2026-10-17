@@ -7,11 +7,15 @@ const { AITab, MAX_AITAB_CONTEXT_TABS } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/aitab/AITab.sys.mjs"
 );
 
-const { createAITab } = ChromeUtils.importESModule(
+const { Chat } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs"
+);
+
+const { GENERATE_AITAB } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
-const { MockEngineManager, newConversation } = ChromeUtils.importESModule(
+const { MockEngineManager, newChatConversation } = ChromeUtils.importESModule(
   "resource://testing-common/AIWindowTestUtils.sys.mjs"
 );
 
@@ -147,16 +151,19 @@ describe("when selecting URLs to build an AITab", () => {
   it("should pass generateAITab the selected context URLs", async () => {
     const generate = gSandbox.spy(AITab, "generateAITab");
 
-    const toolResult = createAITab(
-      { url_list: [CHAT_URL, ...gUrlsOldestFirst] },
-      newConversation()
-    );
-    const { respond } = await gMockEngineManager.captureRequest({
-      purpose: MODEL_FEATURES.AITAB,
+    const conversation = await newChatConversation();
+    conversation.addUserMessage("Make a page from these tabs");
+    conversation.addAssistantMessage("text", "");
+    Chat.fetchWithHistory({ conversation });
+    await gMockEngineManager.respondToWithToolCall({
+      toolName: GENERATE_AITAB,
+      toolParams: { url_list: [CHAT_URL, ...gUrlsOldestFirst] },
     });
     
-    respond("invalid JSON");
-    await toolResult;
+    
+    await gMockEngineManager.captureRequest({
+      purpose: MODEL_FEATURES.AITAB,
+    });
 
     Assert.deepEqual(
       generate.firstCall.args[0].urlList,
