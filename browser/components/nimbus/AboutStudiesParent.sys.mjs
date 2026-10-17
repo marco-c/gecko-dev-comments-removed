@@ -5,12 +5,12 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AboutPages: "resource://normandy-content/AboutPages.sys.mjs",
+  AboutStudies: "moz-src:///browser/components/nimbus/AboutStudies.sys.mjs",
 });
 
-export class ShieldFrameParent extends JSWindowActorParent {
+export class AboutStudiesParent extends JSWindowActorParent {
   async receiveMessage(msg) {
-    let { aboutStudies } = lazy.AboutPages;
+    let { aboutStudies } = lazy.AboutStudies;
     switch (msg.name) {
       case "Shield:AddToWeakSet":
         aboutStudies.addToWeakSet(this.browsingContext);

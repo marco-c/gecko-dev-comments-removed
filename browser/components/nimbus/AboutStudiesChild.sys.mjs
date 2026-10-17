@@ -12,7 +12,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  AboutPages: "resource://normandy-content/AboutPages.sys.mjs",
+  AboutStudies: "moz-src:///browser/components/nimbus/AboutStudies.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "gBrandBundle", function () {
@@ -33,7 +33,7 @@ ChromeUtils.defineLazyGetter(lazy, "gStringBundle", function () {
  * content process can't handle (such as reading IndexedDB), we send a message
  * to the parent process and handle it there.
  */
-export class ShieldFrameChild extends JSWindowActorChild {
+export class AboutStudiesChild extends JSWindowActorChild {
   async handleEvent(event) {
     // On page show or page hide,
     // add this child to the WeakSet in AboutStudies.
@@ -77,7 +77,7 @@ export class ShieldFrameChild extends JSWindowActorChild {
       case "GetRemoteValue:ShieldLearnMoreHref":
         this.triggerPageCallback(
           "ReceiveRemoteValue:ShieldLearnMoreHref",
-          lazy.AboutPages.aboutStudies.getShieldLearnMoreHref()
+          lazy.AboutStudies.aboutStudies.getShieldLearnMoreHref()
         );
         break;
       case "GetRemoteValue:ShieldTranslations": {

@@ -23,7 +23,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 /**
  * The module exported by this file.
  */
-export let AboutPages = {};
+export let AboutStudies = {};
 
 /**
  * The weak set that keeps track of which browsing contexts
@@ -38,7 +38,7 @@ let BrowsingContexts = new WeakSet();
  */
 
 ChromeUtils.defineLazyGetter(
-  AboutPages,
+  AboutStudies,
   "aboutStudies",
   () =>
     new (class {
@@ -97,7 +97,7 @@ ChromeUtils.defineLazyGetter(
         ChromeUtils.nondeterministicGetWeakSetKeys(BrowsingContexts).forEach(
           browser =>
             browser.currentWindowGlobal
-              .getActor("ShieldFrame")
+              .getActor("AboutStudies")
               .sendAsyncMessage(message, data)
         );
       }

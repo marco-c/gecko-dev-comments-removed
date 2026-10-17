@@ -53,7 +53,7 @@ decorate_task(
     const location = browser.currentURI.spec;
     is(
       location,
-      AboutPages.aboutStudies.getShieldLearnMoreHref(),
+      AboutStudies.aboutStudies.getShieldLearnMoreHref(),
       "Clicking Learn More opens the correct page on SUMO."
     );
     ok(!location.includes("%OS%"), "The Learn More URL is formatted.");
