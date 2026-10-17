@@ -120,6 +120,9 @@ class WebRenderLayerManager;
 namespace widget {
 enum class TransparencyMode : uint8_t;
 }
+namespace wr {
+class DisplayListBuilder;
+}  
 }  
 
 
@@ -2193,6 +2196,7 @@ class nsLayoutUtils {
   static mozilla::gfx::IntSize ComputeImageContainerDrawingParameters(
       imgIContainer* aImage, nsIFrame* aForFrame,
       const LayoutDeviceRect& aDestRect, const LayoutDeviceRect& aFillRect,
+      mozilla::wr::DisplayListBuilder& aBuilder,
       const StackingContextHelper& aSc, uint32_t aFlags,
       mozilla::SVGImageContext& aSVGContext,
       mozilla::Maybe<mozilla::image::ImageIntRegion>& aRegion,
@@ -2859,8 +2863,7 @@ class nsLayoutUtils {
 
 
   static nsSize CalculateCompositionSizeForFrame(
-      nsIFrame* aFrame, bool aSubtractScrollbars = true,
-      const nsSize* aOverrideScrollPortSize = nullptr,
+      nsIFrame* aFrame, const nsSize* aOverrideScrollPortSize = nullptr,
       IncludeDynamicToolbar aIncludeDynamicToolbar =
           IncludeDynamicToolbar::Auto);
 
