@@ -548,8 +548,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     Redraw(ToRect(aR));
     return NS_OK;
   }
-  NS_IMETHOD SetContextOptions(JSContext* aCx, JS::Handle<JS::Value> aOptions,
-                               ErrorResult& aRvForDictionaryInit) override;
+  NS_IMETHOD SetContextOptions(
+      const CanvasRenderingContextOptions& aOptions) override;
 
   
 

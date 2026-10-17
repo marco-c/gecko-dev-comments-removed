@@ -57,6 +57,7 @@
 #include "mozilla/dom/CanvasPath.h"
 #include "mozilla/dom/CanvasPattern.h"
 #include "mozilla/dom/CanvasRenderingContext2DBinding.h"
+#include "mozilla/dom/CanvasRenderingContextHelper.h"
 #include "mozilla/dom/DOMMatrix.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FontFaceSet.h"
@@ -2263,22 +2264,16 @@ void CanvasRenderingContext2D::UpdateIsOpaque() {
 }
 
 NS_IMETHODIMP
-CanvasRenderingContext2D::SetContextOptions(JSContext* aCx,
-                                            JS::Handle<JS::Value> aOptions,
-                                            ErrorResult& aRvForDictionaryInit) {
-  if (aOptions.isNullOrUndefined()) {
-    return NS_OK;
-  }
-
+CanvasRenderingContext2D::SetContextOptions(
+    const CanvasRenderingContextOptions& aOptions) {
   
   
   MOZ_ASSERT(!mTarget);
 
-  CanvasRenderingContext2DSettings attributes;
-  if (!attributes.Init(aCx, aOptions)) {
-    aRvForDictionaryInit.Throw(NS_ERROR_UNEXPECTED);
+  if (!aOptions.is<CanvasRenderingContext2DSettings>()) {
     return NS_ERROR_UNEXPECTED;
   }
+  const auto& attributes = aOptions.as<CanvasRenderingContext2DSettings>();
 
   mWillReadFrequently = attributes.mWillReadFrequently;
   mForceSoftwareRendering = attributes.mForceSoftwareRendering;

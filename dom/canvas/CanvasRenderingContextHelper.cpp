@@ -159,113 +159,127 @@ CanvasRenderingContextHelper::CreateContextHelper(
   return ret.forget();
 }
 
-already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
-    JSContext* aCx, const nsAString& aContextId,
-    JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv) {
-  CanvasContextType contextType;
-  if (!CanvasUtils::GetCanvasContextType(aContextId, &contextType))
-    return nullptr;
-
-  return GetOrCreateContext(aCx, contextType, aContextOptions, aRv);
+bool CanvasRenderingContextOptions::Init(JSContext* aCx,
+                                         CanvasContextType aContextType,
+                                         JS::Handle<JS::Value> aContextOptions,
+                                         ErrorResult& aRv) {
+  
+  
+  JS::Rooted<JS::Value> options(RootingCx(), aContextOptions);
+  if (!options.isObject()) {
+    options.setNull();
+  }
+  switch (aContextType) {
+    case CanvasContextType::Canvas2D:
+    case CanvasContextType::OffscreenCanvas2D: {
+      CanvasRenderingContext2DSettings attributes;
+      if (!attributes.Init(aCx, options)) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return false;
+      }
+      mVariant = AsVariant(std::move(attributes));
+      return true;
+    }
+    case CanvasContextType::WebGL1:
+    case CanvasContextType::WebGL2: {
+      WebGLContextAttributes attributes;
+      if (!attributes.Init(aCx, options)) {
+        aRv.Throw(NS_ERROR_UNEXPECTED);
+        return false;
+      }
+      mVariant = AsVariant(std::move(attributes));
+      return true;
+    }
+    default:
+      return true;
+  }
 }
 
-already_AddRefed<nsISupports> CanvasRenderingContextHelper::GetOrCreateContext(
-    JSContext* aCx, CanvasContextType aContextType,
-    JS::Handle<JS::Value> aContextOptions, ErrorResult& aRv) {
-  if (!mCurrentContext) {
+bool CanvasRenderingContextHelper::GetOrCreateContext(
+    CanvasContextType aContextType,
+    const CanvasRenderingContextOptions& aOptions, ErrorResult& aRv) {
+  if (mCurrentContext) {
     
-    RefPtr<nsICanvasRenderingContextInternal> context;
-    context = CreateContext(aContextType);
-    if (!context) {
-      aRv.ThrowUnknownError("Failed to create context");
-      return nullptr;
-    }
+    return aContextType == mCurrentContextType;
+  }
 
-    
-    
-    nsXPCOMCycleCollectionParticipant* cp = nullptr;
-    CallQueryInterface(context, &cp);
-    if (!cp) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
+  
+  RefPtr<nsICanvasRenderingContextInternal> context =
+      CreateContext(aContextType);
+  if (!context) {
+    aRv.ThrowUnknownError("Failed to create context");
+    return false;
+  }
 
-    mCurrentContext = std::move(context);
-    mCurrentContextType = aContextType;
+  
+  
+  nsXPCOMCycleCollectionParticipant* cp = nullptr;
+  CallQueryInterface(context, &cp);
+  if (!cp) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return false;
+  }
 
+  mCurrentContext = std::move(context);
+  mCurrentContextType = aContextType;
+
+  if (!UpdateContext(&aOptions)) {
     
     
-    JS::Rooted<JS::Value> options(RootingCx(), aContextOptions);
-    if (!options.isObject()) {
-      options.setNull();
-    }
-
-    nsresult rv = UpdateContext(aCx, options, aRv);
-    if (NS_FAILED(rv)) {
-      
-      
-      
-      if (aContextType == CanvasContextType::WebGL1) {
-        glean::canvas::webgl_success
-            .EnumGet(glean::canvas::WebglSuccessLabel::eFalse)
-            .Add();
-      } else if (aContextType == CanvasContextType::WebGL2) {
-        glean::canvas::webgl2_success
-            .EnumGet(glean::canvas::Webgl2SuccessLabel::eFalse)
-            .Add();
-      } else if (aContextType == CanvasContextType::WebGPU) {
-        
-      }
-      return nullptr;
-    }
+    
     if (aContextType == CanvasContextType::WebGL1) {
       glean::canvas::webgl_success
-          .EnumGet(glean::canvas::WebglSuccessLabel::eTrue)
+          .EnumGet(glean::canvas::WebglSuccessLabel::eFalse)
           .Add();
     } else if (aContextType == CanvasContextType::WebGL2) {
       glean::canvas::webgl2_success
-          .EnumGet(glean::canvas::Webgl2SuccessLabel::eTrue)
+          .EnumGet(glean::canvas::Webgl2SuccessLabel::eFalse)
           .Add();
     } else if (aContextType == CanvasContextType::WebGPU) {
       
     }
-  } else if (!CanCreateContext()) {
-    
-    aRv.ThrowInvalidStateError("Cannot create context for detached canvas.");
-    return nullptr;
-  } else {
-    
-    if (aContextType != mCurrentContextType) return nullptr;
+    return false;
   }
 
-  nsCOMPtr<nsICanvasRenderingContextInternal> context = mCurrentContext;
-  return context.forget();
+  if (aContextType == CanvasContextType::WebGL1) {
+    glean::canvas::webgl_success
+        .EnumGet(glean::canvas::WebglSuccessLabel::eTrue)
+        .Add();
+  } else if (aContextType == CanvasContextType::WebGL2) {
+    glean::canvas::webgl2_success
+        .EnumGet(glean::canvas::Webgl2SuccessLabel::eTrue)
+        .Add();
+  } else if (aContextType == CanvasContextType::WebGPU) {
+    
+  }
+  return true;
 }
 
-nsresult CanvasRenderingContextHelper::UpdateContext(
-    JSContext* aCx, JS::Handle<JS::Value> aNewContextOptions,
-    ErrorResult& aRvForDictionaryInit) {
-  if (!mCurrentContext) return NS_OK;
+bool CanvasRenderingContextHelper::UpdateContext(
+    const CanvasRenderingContextOptions* aOptions) {
+  if (!mCurrentContext) {
+    return true;
+  }
 
   CSSIntSize sz = GetWidthHeight();
 
-  nsCOMPtr<nsICanvasRenderingContextInternal> currentContext = mCurrentContext;
+  mCurrentContext->SetOpaqueValueFromOpaqueAttr(GetOpaqueAttr());
 
-  currentContext->SetOpaqueValueFromOpaqueAttr(GetOpaqueAttr());
-
-  nsresult rv = currentContext->SetContextOptions(aCx, aNewContextOptions,
-                                                  aRvForDictionaryInit);
+  
+  nsresult rv =
+      aOptions ? mCurrentContext->SetContextOptions(*aOptions) : NS_OK;
   if (NS_FAILED(rv)) {
     mCurrentContext = nullptr;
-    return rv;
+    return false;
   }
 
-  rv = currentContext->SetDimensions(sz.width, sz.height);
+  rv = mCurrentContext->SetDimensions(sz.width, sz.height);
   if (NS_FAILED(rv)) {
     mCurrentContext = nullptr;
+    return false;
   }
 
-  return rv;
+  return true;
 }
 
 nsresult CanvasRenderingContextHelper::ParseParams(

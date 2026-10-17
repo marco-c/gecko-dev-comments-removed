@@ -121,9 +121,19 @@ bool OffscreenCanvasDisplayHelper::MayUpdateContext(WorkerPrivate* aWorker,
                                                     ErrorResult& aRv) {
   MutexAutoLock lock(mMutex);
   if (!mOffscreenCanvas) {
-    return true;
-  }
-  if (aWorker) {
+    
+    
+    if (mCreatedOnMainThread) {
+      
+      if (!aWorker) {
+        return true;
+      }
+    } else if (!mCreatedOnWorker) {
+      
+      
+      return true;
+    }
+  } else if (aWorker) {
     if (mWorkerRef && mWorkerRef->Private() == aWorker) {
       return true;
     }
@@ -153,6 +163,14 @@ void OffscreenCanvasDisplayHelper::UpdateContext(
   mType = aType;
   mContextChildId = aChildId;
 
+  if (mOffscreenCanvas) {
+    if (mWorkerRef) {
+      mCreatedOnWorker = true;
+    } else {
+      mCreatedOnMainThread = true;
+    }
+  }
+
   if (aChildId) {
     mContextManagerId = Some(gfx::CanvasManagerChild::Get()->Id());
   } else {
@@ -160,6 +178,16 @@ void OffscreenCanvasDisplayHelper::UpdateContext(
   }
 
   MaybeQueueInvalidateElement();
+}
+
+already_AddRefed<OffscreenCanvas>
+OffscreenCanvasDisplayHelper::GetCanvasForWorker(WorkerPrivate* aWorker) {
+  MutexAutoLock lock(mMutex);
+  
+  if (NS_WARN_IF(!mWorkerRef) || NS_WARN_IF(mWorkerRef->Private() != aWorker)) {
+    return nullptr;
+  }
+  return do_AddRef(mOffscreenCanvas);
 }
 
 void OffscreenCanvasDisplayHelper::FlushForDisplay() {
@@ -189,17 +217,14 @@ void OffscreenCanvasDisplayHelper::FlushForDisplay() {
         : MainThreadWorkerRunnable("FlushWorkerRunnable"),
           mDisplayHelper(aDisplayHelper) {}
 
-    bool WorkerRun(JSContext*, WorkerPrivate*) override {
+    bool WorkerRun(JSContext*, WorkerPrivate* aWorkerPrivate) override {
       
       
       
       
       
-      RefPtr<OffscreenCanvas> canvas;
-      {
-        MutexAutoLock lock(mDisplayHelper->mMutex);
-        canvas = mDisplayHelper->mOffscreenCanvas;
-      }
+      RefPtr<OffscreenCanvas> canvas =
+          mDisplayHelper->GetCanvasForWorker(aWorkerPrivate);
 
       if (canvas) {
         canvas->CommitFrameToCompositor();
@@ -513,17 +538,14 @@ OffscreenCanvasDisplayHelper::GetSurfaceSnapshot() {
           mMonitor("SnapshotWorkerRunnable::mMonitor"),
           mDisplayHelper(aDisplayHelper) {}
 
-    bool WorkerRun(JSContext*, WorkerPrivate*) override {
+    bool WorkerRun(JSContext*, WorkerPrivate* aWorkerPrivate) override {
       
       
       
       
       
-      RefPtr<OffscreenCanvas> canvas;
-      {
-        MutexAutoLock lock(mDisplayHelper->mMutex);
-        canvas = mDisplayHelper->mOffscreenCanvas;
-      }
+      RefPtr<OffscreenCanvas> canvas =
+          mDisplayHelper->GetCanvasForWorker(aWorkerPrivate);
 
       
       
