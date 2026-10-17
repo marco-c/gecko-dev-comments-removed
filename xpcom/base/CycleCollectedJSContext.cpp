@@ -1395,8 +1395,10 @@ NS_IMETHODIMP CycleCollectedJSContext::NotifyUnhandledRejections::Run() {
     
     
     if (!defaultPrevented && !suppressReporting) {
-      JSAutoRealm ar(cccx->Context(), promiseObj);
-      Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
+      AutoJSAPI jsapi;
+      jsapi.Init();
+      JSAutoRealm ar(jsapi.cx(), promiseObj);
+      Promise::ReportRejectedPromise(jsapi.cx(), promiseObj);
     }
 
     
@@ -1434,8 +1436,10 @@ nsresult CycleCollectedJSContext::NotifyUnhandledRejections::Cancel() {
       }
 
       if (!suppressReporting) {
-        JSAutoRealm ar(cccx->Context(), promiseObj);
-        Promise::ReportRejectedPromise(cccx->Context(), promiseObj);
+        AutoJSAPI jsapi;
+        jsapi.Init();
+        JSAutoRealm ar(jsapi.cx(), promiseObj);
+        Promise::ReportRejectedPromise(jsapi.cx(), promiseObj);
       }
     }
 
