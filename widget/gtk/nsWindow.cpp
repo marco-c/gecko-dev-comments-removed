@@ -4304,9 +4304,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   }
 
   bool isGLVisualSet = false;
-  mIsAccelerated =
-      WidgetTypeSupportsAcceleration() && ComputeShouldAccelerate();
-  LOG("  accelerated [%d]", mIsAccelerated);
+  mIsAccelerated = ComputeShouldAccelerate();
 #ifdef MOZ_X11
   isGLVisualSet = mIsAccelerated && AsX11() && AsX11()->ConfigureX11GLVisual();
 #endif
@@ -7475,9 +7473,7 @@ void nsWindow::OnUnmap() {
   
   
   
-  
-  if (!mIsAccelerated && mWindowType == WindowType::Popup &&
-      !mPopupTemporaryHidden) {
+  if (mWindowType == WindowType::Popup && !mPopupTemporaryHidden) {
     DestroyLayerManager();
   }
 }
