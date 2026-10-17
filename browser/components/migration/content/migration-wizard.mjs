@@ -73,7 +73,7 @@ export class MigrationWizard extends HTMLElement {
               </p>
               <ol>
                 <li data-l10n-id="migration-no-permissions-instructions-step1"></li>
-                <li class="migration-no-permissions-instructions-step2" data-l10n-id="migration-no-permissions-instructions-step2" data-l10n-args='{"permissionsPath": "" }'>
+                <li class="migration-no-permissions-instructions-step2" data-l10n-id="migration-no-permissions-instructions-step2-2" data-l10n-args='{"permissionsPath": "" }'>
                   <code></code>
                 </li>
               </ol>
