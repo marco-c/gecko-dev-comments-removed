@@ -118,7 +118,6 @@ static LazyLogModule sLog("nsWindowsShellService");
 
 static bool PollAppsFolderForShortcut(const nsAString& aAppUserModelId,
                                       const TimeDuration aTimeout);
-static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage);
 
 static nsresult OpenKeyForReading(HKEY aKeyRoot, const nsAString& aKeyName,
                                   HKEY* aKey) {
@@ -713,215 +712,61 @@ nsWindowsShellService::SetDefaultBrowser(bool aForAllUsers) {
   return rv;
 }
 
-static nsresult WriteBitmap(nsIFile* aFile, imgIContainer* aImage) {
-  nsresult rv;
-
-  RefPtr<gfx::SourceSurface> surface = aImage->GetFrame(
-      imgIContainer::FRAME_FIRST,
-      imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY);
-  NS_ENSURE_TRUE(surface, NS_ERROR_FAILURE);
-
-  
-  
-  
-  
-  MOZ_ASSERT(surface->GetFormat() == gfx::SurfaceFormat::B8G8R8A8 ||
-             surface->GetFormat() == gfx::SurfaceFormat::B8G8R8X8);
-
-  RefPtr<gfx::DataSourceSurface> dataSurface = surface->GetDataSurface();
-  NS_ENSURE_TRUE(dataSurface, NS_ERROR_FAILURE);
-
-  int32_t width = dataSurface->GetSize().width;
-  int32_t height = dataSurface->GetSize().height;
-  int32_t bytesPerPixel = 4 * sizeof(uint8_t);
-  uint32_t bytesPerRow = bytesPerPixel * width;
-
-  
-  
-  BITMAPINFOHEADER bmi;
-  bmi.biSize = sizeof(BITMAPINFOHEADER);
-  bmi.biWidth = width;
-  bmi.biHeight = height;
-  bmi.biPlanes = 1;
-  bmi.biBitCount = (WORD)bytesPerPixel * 8;
-  bmi.biCompression = BI_RGB;
-  bmi.biSizeImage = bytesPerRow * height;
-  bmi.biXPelsPerMeter = 0;
-  bmi.biYPelsPerMeter = 0;
-  bmi.biClrUsed = 0;
-  bmi.biClrImportant = 0;
-
-  BITMAPFILEHEADER bf;
-  bf.bfType = 0x4D42;  
-  bf.bfReserved1 = 0;
-  bf.bfReserved2 = 0;
-  bf.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-  bf.bfSize = bf.bfOffBits + bmi.biSizeImage;
-
-  
-  nsCOMPtr<nsIOutputStream> stream;
-  rv = NS_NewLocalFileOutputStream(getter_AddRefs(stream), aFile);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (NS_WARN_IF(!stream)) {
-    MOZ_ASSERT(stream, "rv should have failed when stream is not initialized.");
-    return NS_ERROR_FAILURE;
-  }
-
-  gfx::DataSourceSurface::MappedSurface map;
-  if (!dataSurface->Map(gfx::DataSourceSurface::MapType::READ, &map)) {
-    
-    rv = NS_ERROR_FAILURE;
-  }
-
-  
-  if (NS_SUCCEEDED(rv)) {
-    
-    uint32_t written;
-    rv = stream->Write((const char*)&bf, sizeof(BITMAPFILEHEADER), &written);
-    if (NS_SUCCEEDED(rv)) {
-      rv = stream->Write((const char*)&bmi, sizeof(BITMAPINFOHEADER), &written);
-      if (NS_SUCCEEDED(rv)) {
-        
-        
-        uint32_t i = map.mStride * height;
-        do {
-          i -= map.mStride;
-          rv = stream->Write(((const char*)map.mData) + i, bytesPerRow,
-                             &written);
-          if (NS_FAILED(rv)) {
-            break;
-          }
-        } while (i != 0);
-      }
-    }
-
-    dataSurface->Unmap();
-  }
-
-  stream->Close();
-
-  
-  
-  
-  if (NS_FAILED(rv)) {
-    if (NS_WARN_IF(NS_FAILED(aFile->Remove(PR_FALSE)))) {
-      MOZ_LOG(sLog, LogLevel::Warning,
-              ("Failed to remove empty bitmap file : %s",
-               aFile->HumanReadablePath().get()));
-    }
-  }
-
-  return rv;
-}
-
 NS_IMETHODIMP
-nsWindowsShellService::SetDesktopBackground(dom::Element* aElement,
-                                            int32_t aPosition,
-                                            const nsACString& aImageName) {
-  if (!aElement || !aElement->IsHTMLElement(nsGkAtoms::img)) {
-    
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  nsresult rv;
-  nsCOMPtr<nsIImageLoadingContent> imageContent =
-      do_QueryInterface(aElement, &rv);
-  if (!imageContent) return rv;
-
-  
-  nsCOMPtr<imgIRequest> request;
-  rv = imageContent->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                                getter_AddRefs(request));
-  if (!request) return rv;
-
-  nsCOMPtr<imgIContainer> container;
-  rv = request->GetImage(getter_AddRefs(container));
-  if (!container) return NS_ERROR_FAILURE;
-
-  
-  
-  nsTArray<nsCString> resIds = {
-      "browser/setDesktopBackground.ftl"_ns,
-  };
-  RefPtr<Localization> l10n = Localization::Create(resIds, true);
-  nsAutoCString fileLeafNameUtf8;
-  IgnoredErrorResult locRv;
-  l10n->FormatValueSync("set-desktop-background-filename"_ns, {},
-                        fileLeafNameUtf8, locRv);
-  nsAutoString fileLeafName = NS_ConvertUTF8toUTF16(fileLeafNameUtf8);
-  fileLeafName.AppendLiteral(".bmp");
-
-  
-  nsCOMPtr<nsIFile> file;
-  rv = NS_GetSpecialDirectory(NS_APP_APPLICATION_REGISTRY_DIR,
-                              getter_AddRefs(file));
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  rv = file->Append(fileLeafName);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+nsWindowsShellService::SetDesktopBackgroundFile(nsIFile* aFile,
+                                                int32_t aPosition) {
   nsAutoString path;
-  rv = file->GetPath(path);
+  nsresult rv = aFile->GetPath(path);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  rv = WriteBitmap(file, container);
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  if (NS_SUCCEEDED(rv)) {
-    nsCOMPtr<nsIWindowsRegKey> regKey =
-        do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+  rv = regKey->Create(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+                      u"Control Panel\\Desktop"_ns,
+                      nsIWindowsRegKey::ACCESS_SET_VALUE);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = regKey->Create(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
-                        u"Control Panel\\Desktop"_ns,
-                        nsIWindowsRegKey::ACCESS_SET_VALUE);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsAutoString tile;
-    nsAutoString style;
-    switch (aPosition) {
-      case BACKGROUND_TILE:
-        style.Assign('0');
-        tile.Assign('1');
-        break;
-      case BACKGROUND_CENTER:
-        style.Assign('0');
-        tile.Assign('0');
-        break;
-      case BACKGROUND_STRETCH:
-        style.Assign('2');
-        tile.Assign('0');
-        break;
-      case BACKGROUND_FILL:
-        style.AssignLiteral("10");
-        tile.Assign('0');
-        break;
-      case BACKGROUND_FIT:
-        style.Assign('6');
-        tile.Assign('0');
-        break;
-      case BACKGROUND_SPAN:
-        style.AssignLiteral("22");
-        tile.Assign('0');
-        break;
-    }
-
-    rv = regKey->WriteStringValue(u"TileWallpaper"_ns, tile);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = regKey->WriteStringValue(u"WallpaperStyle"_ns, style);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = regKey->Close();
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    ::SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, (PVOID)path.get(),
-                            SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+  nsAutoString tile;
+  nsAutoString style;
+  switch (aPosition) {
+    case BACKGROUND_TILE:
+      style.Assign('0');
+      tile.Assign('1');
+      break;
+    case BACKGROUND_CENTER:
+      style.Assign('0');
+      tile.Assign('0');
+      break;
+    case BACKGROUND_STRETCH:
+      style.Assign('2');
+      tile.Assign('0');
+      break;
+    case BACKGROUND_FILL:
+      style.AssignLiteral("10");
+      tile.Assign('0');
+      break;
+    case BACKGROUND_FIT:
+      style.Assign('6');
+      tile.Assign('0');
+      break;
+    case BACKGROUND_SPAN:
+      style.AssignLiteral("22");
+      tile.Assign('0');
+      break;
   }
-  return rv;
+
+  rv = regKey->WriteStringValue(u"TileWallpaper"_ns, tile);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = regKey->WriteStringValue(u"WallpaperStyle"_ns, style);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = regKey->Close();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  ::SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, (PVOID)path.get(),
+                          SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+  return NS_OK;
 }
 
 NS_IMETHODIMP

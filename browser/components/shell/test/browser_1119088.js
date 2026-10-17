@@ -1,7 +1,4 @@
 
-const NS_OSX_PICTURE_DOCUMENTS_DIR = "Pct";
-
-
 
 
 
@@ -18,6 +15,9 @@ const kDefaultBackgroundImage =
 
 ChromeUtils.defineESModuleGetters(this, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+  FileTestUtils: "resource://testing-common/FileTestUtils.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 function getPythonExecutableFile() {
@@ -95,20 +95,17 @@ function restoreDefaultBackground() {
 
 
 add_task(async function () {
+  let sandbox = sinon.createSandbox();
+  sandbox
+    .stub(ShellService, "_getDesktopBackgroundFile")
+    .resolves(FileTestUtils.getTempFile("wallpaper.png"));
+
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
       url: getRootDirectory(gTestPath) + "large.png",
     },
     async () => {
-      let dirSvc = Cc["@mozilla.org/file/directory_service;1"].getService(
-        Ci.nsIDirectoryServiceProvider
-      );
-      let uuidGenerator = Services.uuid;
-      let shellSvc = Cc["@mozilla.org/browser/shell-service;1"].getService(
-        Ci.nsIShellService
-      );
-
       
       
       
@@ -118,15 +115,7 @@ add_task(async function () {
       
       
       
-      
-      let uuid = uuidGenerator.generateUUID().toString().replace(/\W/g, "");
-
-      
-      
-      
-      
-      let backgroundImage = dirSvc.getFile(NS_OSX_PICTURE_DOCUMENTS_DIR, {});
-      backgroundImage.append(uuid + ".png");
+      let backgroundImage = await ShellService._getDesktopBackgroundFile();
       if (backgroundImage.exists()) {
         backgroundImage.remove(false);
       }
@@ -141,16 +130,15 @@ add_task(async function () {
       let image = gBrowser.selectedBrowser.contentDocument.images[0];
 
       info(`Setting/saving desktop background to ${backgroundImage.path}`);
-
-      
-      shellSvc.setDesktopBackground(image, 0, backgroundImage.leafName);
-
-      await TestUtils.waitForCondition(() => backgroundImage.exists());
-      info(`${backgroundImage.path} downloaded`);
-      Assert.ok(
-        FileUtils.File(backgroundImage.path).exists(),
-        `${backgroundImage.path} exists`
+      await ShellService.setDesktopBackground(
+        image,
+        image.naturalWidth,
+        image.naturalHeight,
+        0
       );
+
+      info(`${backgroundImage.path} downloaded`);
+      Assert.ok(backgroundImage.exists(), `${backgroundImage.path} exists`);
 
       
       let exitCode = checkDesktopBackgroundCLI(backgroundImage.path);
@@ -158,9 +146,8 @@ add_task(async function () {
 
       
       restoreDefaultBackground();
-
-      
-      backgroundImage.remove(false);
     }
   );
+
+  sandbox.restore();
 });

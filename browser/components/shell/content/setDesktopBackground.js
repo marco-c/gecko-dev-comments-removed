@@ -14,9 +14,9 @@ var gSetBackground = {
   _imageName: null,
 
   get _shell() {
-    return Cc["@mozilla.org/browser/shell-service;1"].getService(
-      Ci.nsIShellService
-    );
+    return ChromeUtils.importESModule(
+      "moz-src:///browser/components/shell/ShellService.sys.mjs"
+    ).ShellService;
   },
 
   load() {
@@ -143,6 +143,8 @@ var gSetBackground = {
     }
     this._shell.setDesktopBackground(
       this._image,
+      this._image.naturalWidth,
+      this._image.naturalHeight,
       Ci.nsIShellService["BACKGROUND_" + this._position],
       this._imageName
     );
