@@ -1909,6 +1909,20 @@ class TestRecursiveMakeBackend(BackendTester):
                 ][0]
                 self.assertEqual(program, expected_program)
 
+    def test_host_cpp_prog_link(self):
+        env = self._consume("host-cpp-link", RecursiveMakeBackend)
+
+        with open(os.path.join(env.topobjdir, "cpp", "backend.mk")) as fh:
+            self.assertIn("HOST_CPP_PROG_LINK := 1\n", fh.readlines())
+        with open(os.path.join(env.topobjdir, "conly", "backend.mk")) as fh:
+            self.assertNotIn("HOST_CPP_PROG_LINK := 1\n", fh.readlines())
+        with open(os.path.join(env.topobjdir, "conly-cpplib", "backend.mk")) as fh:
+            self.assertIn("HOST_CPP_PROG_LINK := 1\n", fh.readlines())
+        with open(os.path.join(env.topobjdir, "simple", "backend.mk")) as fh:
+            lines = fh.readlines()
+        self.assertIn("HOST_SIMPLE_PROGRAMS += host_asimple\n", lines)
+        self.assertIn("HOST_CPP_PROG_LINK := 1\n", lines)
+
     def test_extra_link_deps(self):
         """Test that EXTRA_LINK_DEPS is handled properly."""
         env = self._consume("extra-link-deps", RecursiveMakeBackend)
