@@ -36,6 +36,13 @@ PrintTargetWindows::PrintTargetWindows(
       mDC(aDC),
       mDocument(std::move(aDocument)),
       mRecorder(MakeRefPtr<DrawEventRecorderMemory>()) {
+  
+  
+  
+  
+  
+  
+  mRecorder->SetSupportsGlyphSourceText(true);
   RefPtr<DrawTarget> refDT = GetReferenceDrawTarget();
   mTranslator = MakeUnique<InlineTranslator>(refDT);
 }
