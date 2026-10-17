@@ -634,6 +634,9 @@ function accessibleTask(doc, task, options = {}) {
         
         
         docAccessible.QueryInterface(nsIAccessibleDocument);
+        if (browser.isRemoteBrowser && cacheDomains & CacheDomain.Bounds) {
+          await untilDocumentHasBrowserSize(browser, docAccessible);
+        }
         let iframeDocAccessible;
         if (gIsIframe) {
           if (!options.skipFissionDocLoad) {
@@ -1044,6 +1047,27 @@ function untilCacheOk(conditionFunc, message) {
     (v, _unusedMessage) => v,
     () => [conditionFunc(), message]
   ).then(([v, msg]) => ok(v, msg));
+}
+
+
+
+
+
+
+async function untilDocumentHasBrowserSize(browser, docAcc) {
+  
+  
+  const rect = browser.getBoundingClientRect();
+  const dpr = window.devicePixelRatio;
+  const width = rect.width * dpr;
+  const height = rect.height * dpr;
+  const w = {};
+  const h = {};
+  await untilCacheOk(() => {
+    docAcc.getBounds({}, {}, w, h);
+    return Math.abs(w.value - width) <= 1 && Math.abs(h.value - height) <= 1;
+  }, `Document bounds match the ${width}x${height} browser`);
+  info(`Document bounds: ${w.value}x${h.value}`);
 }
 
 function untilCacheIs(retrievalFunc, expected, message) {
