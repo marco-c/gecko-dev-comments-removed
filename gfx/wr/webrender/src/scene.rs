@@ -331,6 +331,9 @@ pub struct BuiltScene {
     pub prim_instances: Vec<PrimitiveInstance>,
     pub surfaces: Vec<SurfaceInfo>,
     pub clip_tree: ClipTree,
+    
+    
+    pub embed_policy_violations: Vec<(PipelineId, PipelineId)>,
 
     
     
@@ -356,6 +359,7 @@ impl BuiltScene {
             prim_instances: Vec::new(),
             surfaces: Vec::new(),
             clip_tree: ClipTree::new(),
+            embed_policy_violations: Vec::new(),
             recycler_tx: None,
             config: FrameBuilderConfig {
                 default_font_render_mode: FontRenderMode::Mono,

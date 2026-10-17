@@ -4,7 +4,7 @@
 
 use api::{BlobImageHandler, ColorF, CrashAnnotator, DocumentId, IdNamespace};
 use api::{RenderBackendId, VoidPtrToSizeFn, FontRenderMode, ImageFormat};
-use api::{RenderNotifier, ImageBufferKind};
+use api::{RenderNotifier, ImageBufferKind, PipelineId};
 use api::units::*;
 use api::channel::unbounded_channel;
 pub use api::DebugFlags;
@@ -101,6 +101,9 @@ pub trait SceneBuilderHooks {
     
     
     fn deregister(&self);
+    
+    
+    fn embed_policy_violation(&self, _document_id: DocumentId, _embedder: PipelineId, _child: PipelineId) {}
 }
 
 

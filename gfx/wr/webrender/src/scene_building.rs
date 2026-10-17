@@ -505,6 +505,10 @@ pub struct SceneBuilder<'a> {
 
     
     
+    embed_policy_violations: Vec<(PipelineId, PipelineId)>,
+
+    
+    
     debug_flags: DebugFlags,
 }
 
@@ -561,6 +565,7 @@ impl<'a> SceneBuilder<'a> {
             surfaces: mem::take(&mut recycler.surfaces),
             clip_tree_builder: recycler.clip_tree_builder.take().unwrap_or_else(|| ClipTreeBuilder::new()),
             extra_stacking_context_stack: Vec::new(),
+            embed_policy_violations: Vec::new(),
             debug_flags,
         };
 
@@ -642,6 +647,7 @@ impl<'a> SceneBuilder<'a> {
             prim_instances: builder.prim_instances,
             surfaces: builder.surfaces,
             clip_tree,
+            embed_policy_violations: builder.embed_policy_violations,
             recycler_tx: Some(recycler.tx.clone()),
         }
     }
@@ -992,6 +998,7 @@ impl<'a> SceneBuilder<'a> {
                         }
 
                         if !self.scene.may_embed(bc.pipeline_id, info.pipeline_id) {
+                            self.embed_policy_violations.push((bc.pipeline_id, info.pipeline_id));
                             continue;
                         }
 

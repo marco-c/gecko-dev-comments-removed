@@ -1104,6 +1104,15 @@ impl SceneBuilderHooks for APZCallbacks {
     fn deregister(&self) {
         unsafe { apz_deregister_updater(self.window_id) }
     }
+
+    fn embed_policy_violation(&self, _document_id: DocumentId, embedder: PipelineId, child: PipelineId) {
+        let msg = CString::new(format!(
+            "WebRender ignored an iframe of pipeline {:?} in pipeline {:?}",
+            child, embedder
+        ))
+        .unwrap();
+        unsafe { gfx_critical_note(msg.as_ptr()) };
+    }
 }
 
 struct RenderBackendCallbacks;
