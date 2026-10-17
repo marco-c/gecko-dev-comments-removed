@@ -1375,6 +1375,8 @@ export class ScreenshotsOverlay {
       region: this.selectionRegion.dimensions,
       viewportWidth: this.windowDimensions.clientWidth,
       viewportHeight: this.windowDimensions.clientHeight,
+      innerWidth: this.window.innerWidth,
+      innerHeight: this.window.innerHeight,
     });
   }
 
