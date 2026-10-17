@@ -106,7 +106,7 @@ const statsExpectedByType = {
       "retransmittedBytesSent",
       "transportId",
     ],
-    optional: ["nackCount", "qpSum", "rid", "rtxSsrc"],
+    optional: ["nackCount", "qpSum", "rid", "rtxSsrc", "targetBitrate"],
     localAudioOnly: [],
     localVideoOnly: [
       "framesEncoded",
@@ -119,9 +119,8 @@ const statsExpectedByType = {
       "framesSent",
       "hugeFramesSent",
       "totalEncodeTime",
-      "totalEncodedBytesTarget",
     ],
-    unimplemented: ["mediaTrackId", "sliCount", "targetBitrate"],
+    unimplemented: ["mediaTrackId", "sliCount"],
     deprecated: ["isRemote"],
   },
   "remote-inbound-rtp": {
@@ -1156,6 +1155,16 @@ function pedanticChecks(report) {
 
       
       
+      if (stat.targetBitrate !== undefined) {
+        ok(
+          stat.targetBitrate > 0,
+          `${stat.type}.targetBitrate is a sane number for a short ` +
+            `${stat.kind} test. value=${stat.targetBitrate}`
+        );
+      }
+
+      
+      
       
       const mimeType = report.get(stat.codecId).mimeType;
       if (mimeType.includes("VP") || mimeType.includes("AV1")) {
@@ -1263,13 +1272,6 @@ function pedanticChecks(report) {
           stat.totalEncodeTime >= 0,
           `${stat.type}.totalEncodeTime is a sane number for a short ` +
             `${stat.kind} test. value=${stat.totalEncodeTime}`
-        );
-
-        
-        ok(
-          stat.totalEncodedBytesTarget > 1000,
-          `${stat.type}.totalEncodedBytesTarget is a sane number for a short ` +
-            `${stat.kind} test. value=${stat.totalEncodedBytesTarget}`
         );
       }
     } else if (stat.type == "remote-outbound-rtp") {
