@@ -2,8 +2,6 @@
 
 
 
-#include "builtin/Array-inl.h"
-
 #include "mozilla/CheckedInt.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/MathAlgorithms.h"
@@ -47,6 +45,7 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/WrapperObject.h"
 
+#include "builtin/Array-inl.h"
 #include "builtin/Sorting-inl.h"
 #include "vm/ArgumentsObject-inl.h"
 #include "vm/ArrayObject-inl.h"
@@ -910,6 +909,12 @@ bool js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
 
   
   
+  
+  arr->setDenseInitializedLengthMaybeNonExtensible(
+      cx, std::min(arr->getDenseInitializedLength(), newLen));
+
+  
+  
   arr->setLength(cx, newLen);
 
   
@@ -926,16 +931,6 @@ bool js::ArraySetLength(JSContext* cx, Handle<ArrayObject*> arr, HandleId id,
 
   
   
-
-  
-  
-  
-  ObjectElements* header = arr->getElementsHeader();
-  header->initializedLength = std::min(header->initializedLength.get(), newLen);
-
-  if (!arr->isExtensible()) {
-    arr->shrinkCapacityToInitializedLength(cx);
-  }
 
   if (desc.hasWritable() && !desc.writable()) {
     arr->setNonWritableLength(cx);
@@ -1137,7 +1132,7 @@ static bool ArraySpeciesCreate(JSContext* cx, HandleObject origArray,
   FixedInvokeArgs<2> args(cx);
 
   args[0].setObject(*origArray);
-  args[1].set(NumberValue(length));
+  args[1].setNumber(length);
 
   RootedValue rval(cx);
   if (!CallSelfHostedFunction(cx, cx->names().ArraySpeciesCreate,
