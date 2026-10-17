@@ -322,8 +322,10 @@ void PdfStructTreeBuilder::BuildStructSubtree(Accessible* aAcc,
       
       
       
-      AccNameToPdfAlt(aAcc, aPdf);
-      aPdf.fExposeAlt = false;
+      nsAutoString name;
+      if (aAcc->Name(name) != eNameFromSubtree && !name.IsEmpty()) {
+        aPdf.fAlt = SkString(NS_ConvertUTF16toUTF8(name).get());
+      }
       int32_t level = aAcc->GroupPosition().level;
       
       if (1 <= level && level <= 6) {
