@@ -3042,9 +3042,7 @@ static void RequiresDeferredPromiseResolution(HandleValue value, JSContext* cx,
 
   
   
-  Value thenVal;
-  MOZ_ALWAYS_TRUE(GetPropertyPure(cx, &value.toObject(),
-                                  NameToId(cx->names().then), &thenVal));
+  Value thenVal = holder->getSlot(propInfo.slot());
 
   *needsDeferral = IsCallable(thenVal);
   return;
