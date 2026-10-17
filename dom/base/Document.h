@@ -4949,7 +4949,7 @@ class Document : public nsINode,
   
   enum class Flush : bool { No, Yes };
   Element* GetScrollingElementImpl(Flush);
-  bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody, Flush);
+  bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody);
 
   void MaybeStoreUserInteractionAsPermission();
 

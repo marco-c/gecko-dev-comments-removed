@@ -15372,12 +15372,7 @@ already_AddRefed<Range> Document::CaretRangeFromPoint(int32_t aX, int32_t aY) {
   return range.forget();
 }
 
-bool Document::IsPotentiallyScrollableImpl(HTMLBodyElement* aBody,
-                                           Flush aFlush) {
-  if (aFlush == Flush::Yes) {
-    FlushPendingNotifications(FlushType::Frames);
-  }
-
+bool Document::IsPotentiallyScrollableImpl(HTMLBodyElement* aBody) {
   
   
 
@@ -15406,15 +15401,21 @@ Element* Document::GetScrollingElementImpl(Flush aFlush) {
   if (GetCompatibilityMode() != eCompatibility_NavQuirks) {
     return GetRootElement();
   }
+
+  if (aFlush == Flush::Yes) {
+    FlushPendingNotifications(FlushType::Frames);
+  }
+  
   RefPtr<HTMLBodyElement> body = GetBodyElement();
-  if (body && !IsPotentiallyScrollableImpl(body, aFlush)) {
+  if (body && !IsPotentiallyScrollableImpl(body)) {
     return body;
   }
   return nullptr;
 }
 
 bool Document::IsPotentiallyScrollable(HTMLBodyElement* aBody) {
-  return IsPotentiallyScrollableImpl(aBody, Flush::Yes);
+  FlushPendingNotifications(FlushType::Frames);
+  return IsPotentiallyScrollableImpl(aBody);
 }
 
 Element* Document::GetScrollingElement() {
