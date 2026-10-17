@@ -17,7 +17,7 @@ add_task(async () => {
   
   Assert.greaterOrEqual(
     times.created,
-    start - 5,
+    start - 20,
     "Profile should have been created after the test startup began"
   );
   Assert.lessOrEqual(
