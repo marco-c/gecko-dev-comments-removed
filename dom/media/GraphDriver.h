@@ -116,7 +116,8 @@ struct GraphInterface : public nsISupports {
         mSwitchedRunnable = nullptr;
       }
     };
-    Variant<Undefined, StillProcessing, Stop, SwitchDriver> mResult;
+    Variant<Undefined, StillProcessing, Stop, SwitchDriver> mResult{
+        Undefined()};
 
     explicit IterationResult(StillProcessing&& aArg)
         : mResult(std::move(aArg)) {}
@@ -124,7 +125,7 @@ struct GraphInterface : public nsISupports {
     explicit IterationResult(SwitchDriver&& aArg) : mResult(std::move(aArg)) {}
 
    public:
-    IterationResult() : mResult(Undefined()) {}
+    IterationResult() = default;
     IterationResult(const IterationResult&) = delete;
     IterationResult(IterationResult&&) = default;
 
@@ -393,7 +394,7 @@ class MediaTrackGraphInitThreadRunnable;
 
 class ThreadedDriver : public GraphDriver {
   class IterationWaitHelper {
-    Monitor mMonitor MOZ_UNANNOTATED;
+    Monitor mMonitor MOZ_UNANNOTATED{"IterationWaitHelper::mMonitor"};
     
 
     
@@ -404,7 +405,7 @@ class ThreadedDriver : public GraphDriver {
     TimeStamp mWakeTime;
 
    public:
-    IterationWaitHelper() : mMonitor("IterationWaitHelper::mMonitor") {}
+    IterationWaitHelper() = default;
 
     
 
@@ -499,6 +500,7 @@ class SystemClockDriver final : public ThreadedDriver {
   SystemClockDriver(GraphInterface* aGraphInterface,
                     GraphDriver* aPreviousDriver, uint32_t aSampleRate);
   virtual ~SystemClockDriver();
+  void RunThread() override;
   SystemClockDriver* AsSystemClockDriver() override { return this; }
   const SystemClockDriver* AsSystemClockDriver() const override { return this; }
   const TimeStamp& IterationTimeStamp() const {
