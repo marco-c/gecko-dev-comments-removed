@@ -3,12 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 EXPORTS.mozilla = [
+    "AntiTrackingOpenerHeuristics.h",
     "AntiTrackingRedirectHeuristic.h",
     "DynamicFpiNavigationHeuristic.h",
     "DynamicFpiRedirectHeuristic.h",
 ]
 
 UNIFIED_SOURCES += [
+    "AntiTrackingOpenerHeuristics.cpp",
     "AntiTrackingRedirectHeuristic.cpp",
     "DynamicFpiNavigationHeuristic.cpp",
     "DynamicFpiRedirectHeuristic.cpp",

@@ -43,6 +43,7 @@
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
 #include "mozIThirdPartyUtil.h"
+#include "mozilla/AntiTrackingOpenerHeuristics.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/AsyncEventDispatcher.h"
@@ -19199,7 +19200,7 @@ void Document::SetUserHasInteracted() {
     wgc->SendUpdateDocumentHasUserInteracted(true);
   }
 
-  MaybeAllowStorageForOpenerAfterUserInteraction(hadPriorUserInteraction);
+  MaybeAllowStorageForOpenerAfterUserInteraction(this, hadPriorUserInteraction);
 }
 
 BrowsingContext* Document::GetBrowsingContext() const {
@@ -19374,104 +19375,6 @@ void Document::SetDocTreeHadMedia() {
   if (topWc && !topWc->IsDiscarded() && !topWc->GetDocTreeHadMedia()) {
     MOZ_ALWAYS_SUCCEEDS(topWc->SetDocTreeHadMedia(true));
   }
-}
-
-void Document::MaybeAllowStorageForOpenerAfterUserInteraction(
-    bool aHadPriorUserInteraction) {
-  if (!CookieJarSettings()->GetRejectThirdPartyContexts()) {
-    return;
-  }
-
-  
-  
-  
-  nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (NS_WARN_IF(!inner)) {
-    return;
-  }
-
-  
-  
-  if (StaticPrefs::
-          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers() &&
-      nsContentUtils::IsFirstPartyTrackingResourceWindow(inner)) {
-    return;
-  }
-
-  auto* outer = nsGlobalWindowOuter::Cast(inner->GetOuterWindow());
-  if (NS_WARN_IF(!outer)) {
-    return;
-  }
-
-  RefPtr<BrowsingContext> openerBC = outer->GetOpenerBrowsingContext();
-  if (!openerBC) {
-    
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (openerBC->IsInProcess()) {
-    nsCOMPtr<nsPIDOMWindowOuter> outerOpener = openerBC->GetDOMWindow();
-    if (NS_WARN_IF(!outerOpener)) {
-      return;
-    }
-
-    nsCOMPtr<nsPIDOMWindowInner> openerInner =
-        outerOpener->GetCurrentInnerWindow();
-    if (NS_WARN_IF(!openerInner)) {
-      return;
-    }
-
-    RefPtr<Document> openerDocument = openerInner->GetExtantDoc();
-    if (NS_WARN_IF(!openerDocument)) {
-      return;
-    }
-
-    nsCOMPtr<nsIURI> openerURI = openerDocument->GetDocumentURI();
-    if (NS_WARN_IF(!openerURI)) {
-      return;
-    }
-
-    
-    
-    if (!AntiTrackingUtils::IsThirdPartyWindow(inner, openerURI) &&
-        !AntiTrackingUtils::IsThirdPartyWindow(openerInner, nullptr)) {
-      return;
-    }
-  }
-
-  RefPtr<Document> self(this);
-  WebIdentityHandler* identityHandler = inner->GetOrCreateWebIdentityHandler();
-  MOZ_ASSERT(identityHandler);
-  identityHandler->IsContinuationWindow()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self, openerBC, aHadPriorUserInteraction](
-          const MozPromise<bool, nsresult, true>::ResolveOrRejectValue&
-              result) {
-        if (!result.IsResolve() || !result.ResolveValue()) {
-          if (XRE_IsParentProcess()) {
-            (void)StorageAccessAPIHelper::AllowAccessForOnParentProcess(
-                self->NodePrincipal(), openerBC,
-                ContentBlockingNotifier::eOpenerAfterUserInteraction, nullptr,
-                Some(aHadPriorUserInteraction));
-          } else {
-            (void)StorageAccessAPIHelper::AllowAccessForOnChildProcess(
-                self->NodePrincipal(), openerBC,
-                ContentBlockingNotifier::eOpenerAfterUserInteraction, nullptr,
-                Some(aHadPriorUserInteraction));
-          }
-        }
-      });
 }
 
 namespace {

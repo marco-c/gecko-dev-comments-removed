@@ -1,0 +1,23 @@
+
+
+
+
+#ifndef mozilla_antitrackingopenerheuristics_h
+#define mozilla_antitrackingopenerheuristics_h
+
+namespace mozilla {
+
+namespace dom {
+class Document;
+}  
+
+
+
+
+
+void MaybeAllowStorageForOpenerAfterUserInteraction(
+    dom::Document* aDocument, bool aHadPriorUserInteraction);
+
+}  
+
+#endif  

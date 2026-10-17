@@ -4951,9 +4951,6 @@ class Document : public nsINode,
   Element* GetScrollingElementImpl(Flush);
   bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody, Flush);
 
-  void MaybeAllowStorageForOpenerAfterUserInteraction(
-      bool aHadPriorUserInteraction);
-
   void MaybeStoreUserInteractionAsPermission();
 
   
