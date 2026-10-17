@@ -80,7 +80,8 @@ const embedHelperLib = (() => {
 
 
   async function createShimPlaceholders(embedContainers, SHIM_INFO) {
-    const { shimId, embedSelector, embedLogoURL, isTestShim } = SHIM_INFO;
+    const { shimId, embedSelector, embedLogoURL, isTestShim, fillContainer } =
+      SHIM_INFO;
 
     
     
@@ -193,6 +194,20 @@ const embedHelperLib = (() => {
         descriptionString;
       shadowRoot.getElementById("smartblock-placeholder-button").textContent =
         buttonString;
+
+      if (fillContainer) {
+        
+        
+        placeholderDiv.style.height = "100%";
+        const wrapperStyle = shadowRoot.getElementById(
+          "smartblock-placeholder-wrapper"
+        ).style;
+        wrapperStyle.boxSizing = "border-box";
+        wrapperStyle.width = "100%";
+        wrapperStyle.height = "100%";
+        wrapperStyle.maxWidth = "none";
+        wrapperStyle.maxHeight = "none";
+      }
 
       
       shadowRoot
@@ -342,23 +357,33 @@ const embedHelperLib = (() => {
         });
 
         
-        const explanationDiv = document.createElement("div");
-        explanationDiv.textContent = contentHeaderString;
-        explanationDiv.style.cssText = `
-          font-size: 12px;
-          font-weight: 600;
-          color: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
-          margin-bottom: 8px;
-        `;
-        safeContentContainer.appendChild(explanationDiv);
-        safeContentContainer.appendChild(contentDiv);
+        let hasSanitizedContent = !!contentDiv.textContent.trim().length;
+        if (!hasSanitizedContent) {
+          hasSanitizedContent = contentDiv.querySelector("a[href]") !== null;
+        }
 
-        
-        const wrapperDiv = document.createElement("div");
-        wrapperDiv.appendChild(placeholderDiv);
-        wrapperDiv.appendChild(safeContentContainer);
+        if (hasSanitizedContent) {
+          
+          const explanationDiv = document.createElement("div");
+          explanationDiv.textContent = contentHeaderString;
+          explanationDiv.style.cssText = `
+            font-size: 12px;
+            font-weight: 600;
+            color: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
+            margin-bottom: 8px;
+          `;
+          safeContentContainer.appendChild(explanationDiv);
+          safeContentContainer.appendChild(contentDiv);
 
-        replacementElement = wrapperDiv;
+          
+          const wrapperDiv = document.createElement("div");
+          wrapperDiv.appendChild(placeholderDiv);
+          wrapperDiv.appendChild(safeContentContainer);
+
+          replacementElement = wrapperDiv;
+        } else {
+          replacementElement = placeholderDiv;
+        }
       } else {
         
         replacementElement = placeholderDiv;
