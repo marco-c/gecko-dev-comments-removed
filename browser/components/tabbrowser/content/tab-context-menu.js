@@ -533,6 +533,14 @@ var TabContextMenu = {
     );
 
     this.addBadge(miniWindowItem, this.BADGE_TYPE.BETA);
+    if (!miniWindowItem.hidden) {
+      miniWindowItem.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({
+          tabCount: this.MiniWindowManager.tabsToPop(this.contextTabs).length,
+        })
+      );
+    }
 
     let disabled = gBrowser.tabs.length == 1;
     let tabCountInfo = JSON.stringify({
@@ -1514,6 +1522,8 @@ ChromeUtils.defineESModuleGetters(TabContextMenu, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   GenAI: "moz-src:///browser/components/genai/GenAI.sys.mjs",
   MenuSectionLayout: "resource:///modules/MenuSectionLayout.sys.mjs",
+  MiniWindowManager:
+    "moz-src:///browser/components/miniwindow/MiniWindowManager.sys.mjs",
   Tabbrowser: "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs",
   TabNotes: "moz-src:///browser/components/tabnotes/TabNotes.sys.mjs",
   TabStateFlusher:
