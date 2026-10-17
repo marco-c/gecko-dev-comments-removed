@@ -6,6 +6,13 @@ var TabContextMenu = {
   contextTab: null,
 
   
+  
+  BADGE_TYPE: {
+    NEW: "new",
+    BETA: "beta",
+  },
+
+  
 
 
 
@@ -519,8 +526,13 @@ var TabContextMenu = {
       }
     }
 
-    document.getElementById("context_openTabInMiniWindow").hidden =
-      !Services.prefs.getBoolPref("browser.mini-window.enabled", false);
+    let miniWindowItem = document.getElementById("context_openTabInMiniWindow");
+    miniWindowItem.hidden = !Services.prefs.getBoolPref(
+      "browser.mini-window.enabled",
+      false
+    );
+
+    this.addBadge(miniWindowItem, this.BADGE_TYPE.BETA);
 
     let disabled = gBrowser.tabs.length == 1;
     let tabCountInfo = JSON.stringify({
@@ -743,11 +755,11 @@ var TabContextMenu = {
         multiselectingDiverseUrls || !this.TabNotes.isEligible(this.contextTab);
       contextEditNote.disabled = multiselectingDiverseUrls;
 
-      this.removeNewBadge(contextAddNote);
+      this.removeBadge(contextAddNote);
       if (
         Services.prefs.getBoolPref("browser.tabs.notes.newBadge.enabled", true)
       ) {
-        this.addNewBadge(contextAddNote);
+        this.addBadge(contextAddNote, this.BADGE_TYPE.NEW);
       }
 
       this.TabNotes.has(this.contextTab).then(hasNote => {
@@ -1038,7 +1050,7 @@ var TabContextMenu = {
     document.getElementById("context_shareSelectedTabsSeparator").hidden =
       hideContentSharing;
     if (!contentSharingShareTabs.hidden) {
-      this.addNewBadge(contentSharingShareTabs);
+      this.addBadge(contentSharingShareTabs, this.BADGE_TYPE.NEW);
     }
 
     let toggleMute = document.getElementById("context_toggleMuteTab");
@@ -1444,18 +1456,33 @@ var TabContextMenu = {
   
 
 
-  addNewBadge(menuItem) {
+
+
+
+
+  addBadge(menuItem, type) {
+    let l10nId;
+    switch (type) {
+      case this.BADGE_TYPE.NEW:
+        l10nId = "tab-context-badge-new";
+        break;
+      case this.BADGE_TYPE.BETA:
+        l10nId = "tab-context-badge-beta";
+        break;
+      default:
+        throw new Error(`Unknown badge type: ${type}`);
+    }
     menuItem.setAttribute(
       "badge",
-      gBrowser.tabLocalization.formatValueSync("tab-context-badge-new")
+      gBrowser.tabLocalization.formatValueSync(l10nId)
     );
-    menuItem.classList.add("badge-new");
+    menuItem.classList.toggle("badge-new", type === this.BADGE_TYPE.NEW);
   },
 
   
 
 
-  removeNewBadge(menuItem) {
+  removeBadge(menuItem) {
     menuItem.removeAttribute("badge");
     menuItem.classList.remove("badge-new");
   },

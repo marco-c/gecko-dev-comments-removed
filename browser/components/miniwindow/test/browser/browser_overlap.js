@@ -113,7 +113,8 @@ add_task(async function test_many_windows_fill_corners_without_overlapping() {
       gBrowser,
       `https://example.com/?fill=${i}`
     );
-    wins.push(await popTabForTest(tab, smallCropInfo(tab.linkedBrowser)));
+    let win = await popTabForTest(tab, smallCropInfo(tab.linkedBrowser));
+    wins.push(win);
   }
 
   let rects = wins.map(outerRect);
