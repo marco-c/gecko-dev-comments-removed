@@ -97,8 +97,6 @@ void GPUProcessManager::Shutdown() {
 GPUProcessManager::GPUProcessManager()
     : mTaskFactory(this),
       mNextNamespace(0),
-      mIdNamespace(0),
-      mResourceId(0),
       mUnstableProcessAttempts(0),
       mTotalProcessAttempts(0),
       mDeviceResetCount(0),
@@ -107,8 +105,6 @@ GPUProcessManager::GPUProcessManager()
       mProcessToken(0),
       mGPUChild(nullptr) {
   MOZ_COUNT_CTOR(GPUProcessManager);
-
-  mIdNamespace = AllocateNamespace();
 
   mDeviceResetLastTime = TimeStamp::Now();
 
@@ -1649,24 +1645,10 @@ LayersId GPUProcessManager::AllocateLayerTreeId() {
   
   
   
+  
   MOZ_ASSERT(NS_IsMainThread());
-  
-  
-  
-  
-  
-  
-  
-  
-  mResourceId += 2;
-  if (mResourceId >= UINT32_MAX - 1) {
-    
-    mIdNamespace = AllocateNamespace();
-    mResourceId = 2;
-  }
-
-  uint64_t layerTreeId = mIdNamespace;
-  layerTreeId = (layerTreeId << 32) | mResourceId;
+  uint64_t layerTreeId = AllocateNamespace();
+  layerTreeId <<= 32;
   return LayersId{layerTreeId};
 }
 
@@ -1674,9 +1656,7 @@ LayersId GPUProcessManager::AllocateLayerTreeId() {
 
 
 wr::PipelineId GetTemporaryWebRenderPipelineId(wr::PipelineId aMainPipeline) {
-  
-  
-  MOZ_ASSERT(aMainPipeline.mHandle % 2 == 0);
+  MOZ_ASSERT(aMainPipeline.mHandle == 0);
   auto id = aMainPipeline;
   id.mHandle += 1;
   return id;
