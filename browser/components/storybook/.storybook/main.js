@@ -51,6 +51,8 @@ module.exports = {
     
     `${projectRoot}/browser/components/controlcenter/content/components/**/*.stories.mjs`,
     
+    `${projectRoot}/browser/components/widgets/content/**/*.stories.@(mjs|md)`,
+    
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     
     `${projectRoot}/toolkit/themes/shared/design-system/**/*.stories.@(js|jsx|mjs|ts|tsx|md)`,
