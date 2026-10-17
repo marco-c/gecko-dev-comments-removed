@@ -18,7 +18,9 @@ declare namespace BrowserWindow {
     import("moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs").Tabbrowser;
 
   var gBrowser: Tabbrowser;
+  var gCustomizeMode: import("moz-src:///browser/components/customizableui/CustomizeMode.sys.mjs").CustomizeMode;
   var gMultiProcessBrowser: boolean;
+  var gURLBar: import("chrome://browser/content/urlbar/UrlbarInput.mjs").UrlbarInput;
   var RTL_UI: boolean;
 
   function isBlankPageURL(aURL: string): boolean;
@@ -26,12 +28,23 @@ declare namespace BrowserWindow {
 
   
   var BrowserCommands: {
+    home(aEvent?: Event): void;
     openTab(options?: { event?: Event; url?: string }): void;
   };
 
   
   var CustomTitlebar: {
     readonly enabled: boolean;
+  };
+
+  
+  type SidebarStateProps =
+    import("moz-src:///browser/components/sidebar/SidebarState.sys.mjs").SidebarStateProps;
+
+  var SidebarController: {
+    getUIState(): SidebarStateProps;
+    markSessionRestoreStateReceived(): void;
+    updateUIState(state?: SidebarStateProps): Promise<void>;
   };
 
   
