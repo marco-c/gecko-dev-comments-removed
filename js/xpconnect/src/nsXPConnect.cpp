@@ -97,15 +97,9 @@ static void InitJSEngine() {
   JS::SetAVXEnabled(mozilla::StaticPrefs::javascript_options_wasm_simd_avx());
 #endif
 
-  if (XRE_IsParentProcess()) {
-    if (mozilla::StaticPrefs::javascript_options_main_process_disable_jit()) {
-      JS::DisableJitBackend();
-    }
-  } else {
-    if (mozilla::StaticPrefs::
-            javascript_options_other_processes_disable_jit()) {
-      JS::DisableJitBackend();
-    }
+  if (XRE_IsParentProcess() &&
+      mozilla::StaticPrefs::javascript_options_main_process_disable_jit()) {
+    JS::DisableJitBackend();
   }
 #ifdef XP_IOS
   else if (IsLockdownModeEnabled()) {
