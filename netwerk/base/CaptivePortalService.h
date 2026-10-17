@@ -46,6 +46,8 @@ class CaptivePortalService : public nsICaptivePortalService,
 
   CaptivePortalService();
   virtual ~CaptivePortalService();
+  
+  bool IsActive() const;
   nsresult PerformCheck();
   nsresult RearmTimer();
   void NotifyConnectivityAvailable(bool aCaptive);
