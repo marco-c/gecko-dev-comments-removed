@@ -757,8 +757,8 @@ bool ScrollContainerFrame::TryLayout(ScrollReflowInput& aState,
   
   
   if (mIsRoot && presShell->GetMobileViewportManager()) {
-    visualViewportSize =
-        nsLayoutUtils::CalculateCompositionSizeForFrame(this, &layoutSize);
+    visualViewportSize = nsLayoutUtils::CalculateCompositionSizeForFrame(
+        this, false, &layoutSize);
     visualViewportSize =
         Max(nsSize(0, 0), visualViewportSize - scrollbarGutterSize);
 
@@ -4067,33 +4067,26 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   
   nsRectCornerRadii radii;
   const bool haveRadii = GetPaddingBoxBorderRadii(radii);
-  if (isRootContent) {
-    const nsSize compositionSize =
-        nsLayoutUtils::CalculateCompositionSizeForFrame(
-            this, nullptr ,
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            nsLayoutUtils::IncludeDynamicToolbar::Force);
-    
-    
-    
-    
-    clipRect = nsRect(aBuilder->ToReferenceFrame(this), compositionSize);
-    clipRect = clipRect.Intersect(
-        ViewportUtils::LayoutToVisual(scrollPortClip, PresShell()));
+  if (mIsRoot) {
+    clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(
+        this, true ,
+        nullptr ,
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        nsLayoutUtils::IncludeDynamicToolbar::Force));
 
     
     
     
-    if (aBuilder->IsRelativeToLayoutViewport()) {
+    if (aBuilder->IsRelativeToLayoutViewport() && isRootContent) {
       clipRect = ViewportUtils::VisualToLayout(clipRect, PresShell());
     }
   }
@@ -6793,8 +6786,8 @@ void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
 
   nsSize compositionSize = mScrollPort.Size();
   if (overlayScrollBarsOnRoot) {
-    compositionSize =
-        nsLayoutUtils::CalculateCompositionSizeForFrame(this, &compositionSize);
+    compositionSize = nsLayoutUtils::CalculateCompositionSizeForFrame(
+        this, false, &compositionSize);
   }
 
   nsPresContext* presContext = mScrolledFrame->PresContext();

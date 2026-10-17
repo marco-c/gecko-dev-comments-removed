@@ -2863,7 +2863,8 @@ class nsLayoutUtils {
 
 
   static nsSize CalculateCompositionSizeForFrame(
-      nsIFrame* aFrame, const nsSize* aOverrideScrollPortSize = nullptr,
+      nsIFrame* aFrame, bool aSubtractScrollbars = true,
+      const nsSize* aOverrideScrollPortSize = nullptr,
       IncludeDynamicToolbar aIncludeDynamicToolbar =
           IncludeDynamicToolbar::Auto);
 
