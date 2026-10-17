@@ -95,6 +95,7 @@ JitRuntime::~JitRuntime() {
   MOZ_ASSERT(ionLazyLinkList_.ref().isEmpty());
 
   MOZ_ASSERT(ionFreeTaskBatch_.ref().empty());
+  MOZ_ASSERT(debugModeOSRReturnSites_.ref().empty());
 
   
   MOZ_ASSERT_IF(jitcodeGlobalTable_, jitcodeGlobalTable_->empty());

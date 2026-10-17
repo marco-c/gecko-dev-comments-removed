@@ -56,6 +56,10 @@ class BaselineFrame {
     
     
     REALM_INDEPENDENT = 1 << 7,
+
+    
+    
+    HAS_PENDING_DEBUG_MODE_OSR_RETURN = 1 << 8,
   };
 
  protected:  
@@ -114,7 +118,7 @@ class BaselineFrame {
     return CalleeTokenIsConstructing(calleeToken());
   }
   bool isResumingGenerator() const {
-    return framePrefix()->descriptor().isResumingGenerator();
+    return framePrefix()->isResumingGenerator();
   }
   JSScript* script() const {
     return MaybeForwardedScriptFromCalleeToken(calleeToken());
@@ -143,14 +147,7 @@ class BaselineFrame {
     return UndefinedValue();
   }
 
-  Value* resumeArgs() {
-    MOZ_ASSERT(isResumingGenerator());
-    if (isFunctionFrame()) {
-      return argv() + numFormalArgs();
-    }
-    MOZ_ASSERT(isModuleFrame());
-    return framePrefix()->moduleResumeSlots();
-  }
+  Value* resumeArgs() { return framePrefix()->resumeArgs(); }
 
 #ifdef DEBUG
   size_t debugNumValueSlots() const { return numValueSlots(debugFrameSize()); }
@@ -321,6 +318,18 @@ class BaselineFrame {
 
   void setFlag(uint32_t flag) { flags_ |= flag; }
   void setFlags(uint32_t flags) { flags_ = flags; }
+
+  bool hasPendingDebugModeOSRReturn() const {
+    return flags_ & HAS_PENDING_DEBUG_MODE_OSR_RETURN;
+  }
+  void setPendingDebugModeOSRReturn() {
+    MOZ_ASSERT(!hasPendingDebugModeOSRReturn());
+    flags_ |= HAS_PENDING_DEBUG_MODE_OSR_RETURN;
+  }
+  void clearPendingDebugModeOSRReturn() {
+    MOZ_ASSERT(hasPendingDebugModeOSRReturn());
+    flags_ &= ~HAS_PENDING_DEBUG_MODE_OSR_RETURN;
+  }
 
   [[nodiscard]] inline bool pushLexicalEnvironment(JSContext* cx,
                                                    Handle<LexicalScope*> scope);

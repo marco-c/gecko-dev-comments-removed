@@ -4,6 +4,9 @@
 
 #include "jit/BaselineDebugModeOSR.h"
 
+#include "mozilla/Maybe.h"
+
+#include "gc/Tracer.h"
 #include "jit/BaselineFrame.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
@@ -12,6 +15,8 @@
 #include "jit/JitFrames.h"
 #include "jit/JitRuntime.h"
 #include "jit/JSJitFrameIter.h"
+#include "vm/JitActivation.h"
+#include "vm/JSContext.h"
 
 #include "jit/JitScript-inl.h"
 #include "jit/JSJitFrameIter-inl.h"
@@ -24,34 +29,39 @@ using namespace js::jit;
 struct DebugModeOSREntry {
   JSScript* script;
   BaselineScript* oldBaselineScript;
-  uint32_t pcOffset;
-  RetAddrEntry::Kind frameKind;
+  
+  BaselineFrame* baselineFrame;
+  
+  
+  mozilla::Maybe<RetAddrEntry> retAddrEntry;
 
   explicit DebugModeOSREntry(JSScript* script)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        pcOffset(uint32_t(-1)),
-        frameKind(RetAddrEntry::Kind::Invalid) {}
+        baselineFrame(nullptr),
+        retAddrEntry(mozilla::Nothing()) {}
 
-  DebugModeOSREntry(JSScript* script, const RetAddrEntry& retAddrEntry)
+  DebugModeOSREntry(JSScript* script, BaselineFrame* baselineFrame,
+                    const RetAddrEntry& retAddrEntry)
       : script(script),
         oldBaselineScript(script->baselineScript()),
-        pcOffset(retAddrEntry.pcOffset()),
-        frameKind(retAddrEntry.kind()) {
-#ifdef DEBUG
-    MOZ_ASSERT(pcOffset == retAddrEntry.pcOffset());
-    MOZ_ASSERT(frameKind == retAddrEntry.kind());
-#endif
-  }
+        baselineFrame(baselineFrame),
+        retAddrEntry(mozilla::Some(retAddrEntry)) {}
 
   DebugModeOSREntry(DebugModeOSREntry&& other)
       : script(other.script),
         oldBaselineScript(other.oldBaselineScript),
-        pcOffset(other.pcOffset),
-        frameKind(other.frameKind) {}
+        baselineFrame(other.baselineFrame),
+        retAddrEntry(other.retAddrEntry) {}
 
   bool recompiled() const {
     return oldBaselineScript != script->baselineScript();
+  }
+
+  
+  bool needsNewReturnSite() const {
+    MOZ_ASSERT_IF(baselineFrame, retAddrEntry.isSome());
+    return baselineFrame != nullptr;
   }
 };
 
@@ -117,10 +127,31 @@ static bool CollectJitStackScripts(JSContext* cx,
         } else {
           
           uint8_t* retAddr = frame.resumePCinCurrentFrame();
-          const RetAddrEntry& retAddrEntry =
-              script->baselineScript()->retAddrEntryFromReturnAddress(retAddr);
-          MOZ_ASSERT(CanTriggerBaselineDebugModeOSR(retAddrEntry.kind()));
-          if (!entries.emplaceBack(script, retAddrEntry)) {
+
+          
+          
+          
+          BaselineScript* baselineScript = script->baselineScript();
+          const RetAddrEntry* retAddrEntry = nullptr;
+          BaselineFrame* pendingReturnSiteFrame = nullptr;
+          if (!baselineFrame->hasPendingDebugModeOSRReturn()) {
+            
+            
+            MOZ_ASSERT(baselineScript->containsCodeAddress(retAddr));
+            retAddrEntry =
+                &baselineScript->retAddrEntryFromReturnAddress(retAddr);
+            pendingReturnSiteFrame = baselineFrame;
+          } else {
+            
+            auto* site =
+                cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+                    retAddr);
+            MOZ_RELEASE_ASSERT(site);
+            retAddrEntry = &site->retAddrEntry();
+          }
+          MOZ_ASSERT(CanTriggerBaselineDebugModeOSR(retAddrEntry->kind()));
+          if (!entries.emplaceBack(script, pendingReturnSiteFrame,
+                                   *retAddrEntry)) {
             return false;
           }
         }
@@ -273,15 +304,18 @@ static void PatchBaselineFramesForDebugMode(
           break;
         }
 
+        MOZ_ASSERT(baselineFrame->hasPendingDebugModeOSRReturn());
         JSScript* script = entry.script;
-        uint32_t pcOffset = entry.pcOffset;
+        MOZ_ASSERT(entry.retAddrEntry.isSome());
+        const RetAddrEntry& oldRetAddrEntry = *entry.retAddrEntry;
+        uint32_t pcOffset = oldRetAddrEntry.pcOffset();
         jsbytecode* pc = script->offsetToPC(pcOffset);
 
         MOZ_ASSERT(script == frame.script());
         MOZ_ASSERT(pcOffset < script->length());
 
         BaselineScript* bl = script->baselineScript();
-        RetAddrEntry::Kind kind = entry.frameKind;
+        RetAddrEntry::Kind kind = oldRetAddrEntry.kind();
         uint8_t* retAddr = nullptr;
         switch (kind) {
           case RetAddrEntry::Kind::IC:
@@ -362,7 +396,15 @@ static void PatchBaselineFramesForDebugMode(
             MOZ_CRASH("Unexpected RetAddrEntry Kind");
         }
 
+        auto* site = cx->runtime()->jitRuntime()->lookupDebugModeOSRReturnSite(
+            prev->returnAddress());
+        MOZ_RELEASE_ASSERT(site);
+        site->setResumeAddr(retAddr);
         prev->setReturnAddress(retAddr);
+        
+        
+        baselineFrame->clearPendingDebugModeOSRReturn();
+        cx->runtime()->jitRuntime()->releaseDebugModeOSRReturnSite(site);
         entryIndex++;
         break;
       }
@@ -516,6 +558,20 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
 
   
   
+  size_t returnSiteCount = 0;
+  for (const DebugModeOSREntry& entry : entries) {
+    if (entry.needsNewReturnSite()) {
+      returnSiteCount++;
+    }
+  }
+  if (returnSiteCount &&
+      !cx->runtime()->jitRuntime()->reserveDebugModeOSRReturnSites(
+          cx, returnSiteCount)) {
+    return false;
+  }
+
+  
+  
   MOZ_ASSERT(!cx->isProfilerSamplingEnabled());
 
   
@@ -548,6 +604,15 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
   
   
 
+  for (size_t i = entries.length(); i > 0; --i) {
+    const DebugModeOSREntry& entry = entries[i - 1];
+    if (entry.recompiled() && entry.needsNewReturnSite()) {
+      cx->runtime()->jitRuntime()->addDebugModeOSRReturnSite(
+          entry.oldBaselineScript, *entry.retAddrEntry);
+      entry.baselineFrame->setPendingDebugModeOSRReturn();
+    }
+  }
+
   for (UniqueScriptOSREntryIter iter(entries); !iter.done(); ++iter) {
     const DebugModeOSREntry& entry = iter.entry();
     if (entry.recompiled()) {
@@ -566,4 +631,54 @@ bool jit::RecompileOnStackBaselineScriptsForDebugMode(
   MOZ_ASSERT(processed == entries.length());
 
   return true;
+}
+
+void DebugModeOSRReturnSite::trace(JSTracer* trc) {
+  TraceRoot<JitCode*>(trc, &code_, "DebugModeOSRReturnSite::code_");
+}
+
+bool JitRuntime::reserveDebugModeOSRReturnSites(JSContext* cx, size_t count) {
+  auto& sites = debugModeOSRReturnSites_.ref();
+  if (!sites.reserve(sites.length() + count)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  return true;
+}
+
+void JitRuntime::addDebugModeOSRReturnSite(BaselineScript* baselineScript,
+                                           const RetAddrEntry& retAddrEntry) {
+  const uint8_t* returnAddress =
+      baselineScript->method()->raw() + retAddrEntry.returnOffset().offset();
+  if (auto* site = lookupDebugModeOSRReturnSite(returnAddress)) {
+    site->incrementRefCount();
+    return;
+  }
+  debugModeOSRReturnSites_.ref().infallibleEmplaceBack(baselineScript,
+                                                       retAddrEntry);
+}
+
+void JitRuntime::releaseDebugModeOSRReturnSite(DebugModeOSRReturnSite* site) {
+  if (site->decrementRefCount() == 0) {
+    debugModeOSRReturnSites_.ref().erase(site);
+  }
+}
+
+DebugModeOSRReturnSite* JitRuntime::lookupDebugModeOSRReturnSite(
+    const uint8_t* returnAddress) {
+  auto& sites = debugModeOSRReturnSites_.ref();
+  for (size_t i = sites.length(); i > 0; --i) {
+    auto& site = sites[i - 1];
+    if (site.matchesAddress(returnAddress)) {
+      return &site;
+    }
+  }
+  return nullptr;
+}
+
+void JitRuntime::TraceDebugModeOSRReturnSites(JSTracer* trc) {
+  JSRuntime* rt = trc->runtime();
+  if (rt->hasJitRuntime()) {
+    rt->jitRuntime()->debugModeOSRReturnSites_.ref().trace(trc);
+  }
 }

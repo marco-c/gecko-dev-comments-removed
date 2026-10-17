@@ -26,6 +26,7 @@
 #include "jit/shared/Assembler-shared.h"
 #include "jit/TrampolineNatives.h"
 #include "js/AllocPolicy.h"
+#include "js/GCVector.h"
 #include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
@@ -180,6 +181,11 @@ class JitRuntime {
   mozilla::EnumeratedArray<DebugTrapHandlerKind, WriteOnceData<JitCode*>,
                            size_t(DebugTrapHandlerKind::Count)>
       debugTrapHandlers_;
+
+  
+  
+  MainThreadData<JS::GCVector<DebugModeOSRReturnSite, 0, SystemAllocPolicy>>
+      debugModeOSRReturnSites_;
 
   
   BaselineInterpreter baselineInterpreter_;
@@ -525,6 +531,16 @@ class JitRuntime {
   void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonCompileTask* task);
 
   void handleGrowSlotsForPureCall(JSContext* cx);
+
+  [[nodiscard]] bool reserveDebugModeOSRReturnSites(JSContext* cx,
+                                                    size_t count);
+  void addDebugModeOSRReturnSite(BaselineScript* baselineScript,
+                                 const RetAddrEntry& retAddrEntry);
+  void releaseDebugModeOSRReturnSite(DebugModeOSRReturnSite* site);
+  DebugModeOSRReturnSite* lookupDebugModeOSRReturnSite(
+      const uint8_t* returnAddress);
+
+  static void TraceDebugModeOSRReturnSites(JSTracer* trc);
 };
 
 }  

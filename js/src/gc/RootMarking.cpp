@@ -357,6 +357,10 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     
     rt->traceSelfHostingStencil(trc);
 
+    
+    
+    jit::JitRuntime::TraceDebugModeOSRReturnSites(trc);
+
     for (ZonesIter zone(this, ZoneSelector::SkipAtoms); !zone.done();
          zone.next()) {
       zone->traceRootsInMajorGC(trc);
