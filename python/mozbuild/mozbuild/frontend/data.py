@@ -1590,6 +1590,7 @@ class GeneratedFile(ContextDerived):
                 ".asm",
                 ".c",
                 ".cpp",
+                ".dat",  
                 ".inc",
                 ".m",
                 ".mm",
