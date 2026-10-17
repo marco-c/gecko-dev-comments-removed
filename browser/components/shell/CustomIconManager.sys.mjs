@@ -161,8 +161,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.shell.customIcon.log",
       false
     )
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

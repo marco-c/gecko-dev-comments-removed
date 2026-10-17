@@ -15,8 +15,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
     prefix: "IPP_Serverlist",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   })
 );
 

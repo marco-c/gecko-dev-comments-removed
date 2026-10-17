@@ -20,8 +20,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.newtabpage.sponsor-protection.debug",
       false
     )
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

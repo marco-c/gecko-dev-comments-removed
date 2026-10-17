@@ -18,8 +18,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
     prefix: "IPP_SiteRuleManager",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   })
 );
 
@@ -106,6 +106,19 @@ export class SiteRuleManager extends EventTarget {
     } catch (_) {
       return IPPPrincipalRules.EXCLUDED;
     }
+  }
+
+  /**
+   * Whether any provider holds at least one site with the rule.
+   *
+   * @param {?string} rule
+   * @returns {boolean}
+   */
+  hasRule(rule) {
+    if (!this.#inited) {
+      this.init();
+    }
+    return this.#providers.some(provider => provider.count(rule) > 0);
   }
 
   /**

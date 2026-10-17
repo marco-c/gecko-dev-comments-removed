@@ -106,7 +106,7 @@ export var E10SUtils = {
     if (!this._log) {
       this._log = console.createInstance({
         prefix: "ProcessSwitch",
-        maxLogLevel: "Error", // Change to "Debug" the process switching code
+        maxLogLevel: "error", // Change to "Debug" the process switching code
       });
 
       this._log.debug("Setup logger");

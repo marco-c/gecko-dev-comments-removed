@@ -36,7 +36,7 @@ const lazy = XPCOMUtils.declareLazy({
   logConsole: () =>
     console.createInstance({
       prefix: "SearchEngine",
-      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
+      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "debug" : "warn",
     }),
 });
 

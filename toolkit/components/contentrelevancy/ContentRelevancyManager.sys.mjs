@@ -60,8 +60,8 @@ function setupLogging() {
     return console.createInstance({
       prefix: "ContentRelevancyManager",
       maxLogLevel: Services.prefs.getBoolPref(PREF_LOG_ENABLED, false)
-        ? "Debug"
-        : "Error",
+        ? "debug"
+        : "error",
     });
   });
 }

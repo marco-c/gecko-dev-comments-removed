@@ -13,8 +13,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
     prefix: "IPP_SiteRuleProviders",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   })
 );
 
@@ -88,6 +88,16 @@ export class SiteRuleProvider extends EventTarget {
    */
   setRule(_principal, _rule) {
     throw new Error("setRule() must be implemented by writable subclasses");
+  }
+
+  /**
+   * How many sites this provider holds with the given rule.
+   *
+   * @param {?string} _rule
+   * @returns {number}
+   */
+  count(_rule) {
+    return 0;
   }
 
   /**
@@ -275,6 +285,10 @@ export class MatchPatternPrefRule extends SiteRuleProvider {
     return null;
   }
 
+  count(rule) {
+    return rule === this.#rule ? this.#patterns.patterns.length : 0;
+  }
+
   #rebuild() {
     try {
       let arr = JSON.parse(Services.prefs.getStringPref(this.#pref, "[]"));
@@ -388,12 +402,6 @@ export class IPPPermissionRuleProvider extends SiteRuleProvider {
     );
   }
 
-  /**
-   * How many sites are stored with the given rule.
-   *
-   * @param {?string} rule
-   * @returns {number}
-   */
   count(rule) {
     let count = 0;
     for (let perm of Services.perms.getAllByTypes([

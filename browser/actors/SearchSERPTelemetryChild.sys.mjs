@@ -29,7 +29,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
   return console.createInstance({
     prefix: "SearchTelemetry",
-    maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
+    maxLogLevel: lazy.SearchUtils.loggingEnabled ? "debug" : "warn",
   });
 });
 

@@ -14,8 +14,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "BackupUIParent",
     maxLogLevel: Services.prefs.getBoolPref("browser.backup.log", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

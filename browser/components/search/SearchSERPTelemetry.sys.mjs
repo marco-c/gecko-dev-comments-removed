@@ -20,7 +20,7 @@ const lazy = XPCOMUtils.declareLazy({
   logConsole: () => {
     return console.createInstance({
       prefix: "SearchTelemetry",
-      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "Debug" : "Warn",
+      maxLogLevel: lazy.SearchUtils.loggingEnabled ? "debug" : "warn",
     });
   },
 });

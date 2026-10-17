@@ -15,8 +15,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.newtabpage.activity-stream.externalComponents.log",
       false
     )
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

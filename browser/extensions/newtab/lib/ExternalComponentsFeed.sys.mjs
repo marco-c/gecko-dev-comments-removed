@@ -21,8 +21,8 @@ const lazy = XPCOMUtils.declareLazy({
         "browser.newtabpage.activity-stream.externalComponents.log",
         false
       )
-        ? "Debug"
-        : "Warn",
+        ? "debug"
+        : "warn",
     }),
 });
 

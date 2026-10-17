@@ -16,8 +16,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
     prefix: "IPP_GuardianTypes",
     maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   })
 );
 
@@ -193,6 +193,20 @@ export class ProxyPass extends EventTarget {
     };
   }
 }
+
+/**
+ * A short lived bearer token used to authenticate against Guardian, as returned
+ * by an auth provider's `getToken()`.
+ *
+ * A handle is built for a single Guardian request. Providers whose tokens are
+ * owned outside of Gecko omit `onTokenRejected`.
+ *
+ * @typedef {object} TokenHandle
+ * @property {string} token - The bearer token to authenticate with.
+ * @property {() => void|Promise<void>} [onTokenRejected] - Invalidates the
+ *   token after Guardian refused it, so that the caller can retry with a fresh
+ *   one.
+ */
 
 /**
  * Represents a user's Entitlement for the Proxy Service of Guardian.

@@ -121,8 +121,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.newtabpage.activity-stream.activationWindow.log",
       false
     )
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

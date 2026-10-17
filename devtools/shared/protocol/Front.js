@@ -15,7 +15,7 @@ var {
 
 const logger = console.createInstance({
   prefix: "devtools_rdp",
-  maxLogLevel: "Warn",
+  maxLogLevel: "warn",
 });
 
 

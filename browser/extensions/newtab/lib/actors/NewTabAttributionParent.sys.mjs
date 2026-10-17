@@ -12,7 +12,7 @@ const lazy = {};
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "NewTabAttributionParent",
-    maxLogLevel: "Warn",
+    maxLogLevel: "warn",
   });
 });
 

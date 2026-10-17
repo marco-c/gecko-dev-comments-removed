@@ -798,7 +798,7 @@ export var UnsubmittedCrashHandler = {
 
     this.log = console.createInstance({
       prefix: "UnsubmittedCrashHandler",
-      maxLogLevel: this.prefs.getStringPref("loglevel", "Error"),
+      maxLogLevel: this.prefs.getStringPref("loglevel", "error"),
     });
 
     lazy.RemoteSettingsCrashPull.start(
@@ -1286,7 +1286,7 @@ ChromeUtils.defineLazyGetter(lazy, "cleanerPrefs", () =>
 ChromeUtils.defineLazyGetter(lazy, "cleanerLog", () =>
   console.createInstance({
     prefix: "CrashFileCleaner",
-    maxLogLevel: lazy.cleanerPrefs.getStringPref("loglevel", "Error"),
+    maxLogLevel: lazy.cleanerPrefs.getStringPref("loglevel", "error"),
   })
 );
 /**

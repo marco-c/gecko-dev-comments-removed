@@ -16,8 +16,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "TabNotesController",
     maxLogLevel: Services.prefs.getBoolPref("browser.tabs.notes.debug", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

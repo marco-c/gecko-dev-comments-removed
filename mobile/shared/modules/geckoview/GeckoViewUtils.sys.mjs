@@ -377,7 +377,7 @@ export var GeckoViewUtils = {
     // gated on the MOZ_LOG module instead.
     const instance = console.createInstance({
       prefix: tag,
-      maxLogLevel: "Warn",
+      maxLogLevel: "warn",
     });
 
     for (const level of ["debug", "warn"]) {

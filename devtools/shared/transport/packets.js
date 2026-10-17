@@ -38,7 +38,7 @@ DevToolsUtils.defineLazyGetter(this, "unicodeConverter", () => {
 
 const logger = console.createInstance({
   prefix: "devtools_rdp",
-  maxLogLevel: "Warn",
+  maxLogLevel: "warn",
 });
 
 
@@ -188,7 +188,7 @@ class JSONPacket extends Packet {
   }
 
   _readData(stream, scriptableStream) {
-    if (logger.shouldLog("Debug")) {
+    if (logger.shouldLog("debug")) {
       logger.debug(
         "Reading JSON data: _l: " +
           this.length +

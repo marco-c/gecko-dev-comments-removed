@@ -1151,6 +1151,6 @@ AboutNewTabResourceMapping.logger = console.createInstance({
     "browser.newtabpage.resource-mapping.log",
     false
   )
-    ? "Debug"
-    : "Warn",
+    ? "debug"
+    : "warn",
 });

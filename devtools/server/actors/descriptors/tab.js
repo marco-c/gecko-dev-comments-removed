@@ -7,7 +7,7 @@
 loader.lazyGetter(this, "logger", function () {
   return console.createInstance({
     prefix: "devtools_tabdescriptor",
-    maxLogLevel: "Warn",
+    maxLogLevel: "warn",
   });
 });
 
@@ -281,7 +281,7 @@ class TabDescriptorActor extends Actor {
     const listener = {
       onStateChange(webProgress, request, stateFlags, status) {
         
-        if (logger.shouldLog("Debug")) {
+        if (logger.shouldLog("debug")) {
           logger.debug(
             `navigateTo onStateChange ` +
               `isStart=${!!(stateFlags & Ci.nsIWebProgressListener.STATE_START)} ` +

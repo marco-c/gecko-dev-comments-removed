@@ -12,8 +12,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
       "browser.contextual-password-manager.log",
       false
     )
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

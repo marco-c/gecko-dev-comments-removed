@@ -42,8 +42,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
   console.createInstance({
     prefix: "MiniWindow",
     maxLogLevel: Services.prefs.getBoolPref("browser.mini-window.log", false)
-      ? "Debug"
-      : "Error",
+      ? "debug"
+      : "error",
   })
 );
 

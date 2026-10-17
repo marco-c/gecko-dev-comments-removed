@@ -121,8 +121,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
       "media.videocontrols.picture-in-picture.log",
       false
     )
-      ? "Debug"
-      : "Error",
+      ? "debug"
+      : "error",
   });
 });
 

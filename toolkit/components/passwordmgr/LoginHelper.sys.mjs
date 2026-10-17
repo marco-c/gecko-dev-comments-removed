@@ -545,7 +545,7 @@ export const LoginHelper = {
 
   createLogger(aLogPrefix) {
     let getMaxLogLevel = () => {
-      return this.debug ? "Debug" : "Warn";
+      return this.debug ? "debug" : "warn";
     };
 
     // Create a new instance of the ConsoleAPI so we can control the maxLogLevel with a pref.

@@ -244,7 +244,7 @@ pref("extensions.update.interval", 86400);
 
 
 pref("browser.uitour.enabled", true);
-pref("browser.uitour.loglevel", "Error");
+pref("browser.uitour.loglevel", "error");
 pref("browser.uitour.url", "https://www.mozilla.org/%LOCALE%/firefox/%VERSION%/tour/");
 
 pref("browser.uitour.surveyDuration", 7200);
@@ -337,7 +337,7 @@ pref("browser.shell.setDefaultPDFHandler.attemptWaitTimeMs", 30000);
 pref("browser.startup.page",                1);
 pref("browser.startup.homepage",            "about:home");
 pref("browser.startup.homepage.abouthome_cache.enabled", true);
-pref("browser.startup.homepage.abouthome_cache.loglevel", "Warn");
+pref("browser.startup.homepage.abouthome_cache.loglevel", "warn");
 
 
 pref("browser.startup.firstrunSkipsHomepage", true);
@@ -472,7 +472,7 @@ pref("browser.urlbar.newtab.variantB", false);
 
 
 
-pref("browser.urlbar.loglevel", "Error");
+pref("browser.urlbar.loglevel", "error");
 
 
 pref("browser.urlbar.mentions.maxResults", 5);
@@ -1213,7 +1213,7 @@ pref("browser.tabs.dragDrop.selectTab.delayMS", 350);
 pref("browser.tabs.dragDrop.pinInteractionCue.delayMS", 500);
 pref("browser.tabs.dragDrop.moveOverThresholdPercent", 80);
 
-pref("browser.tabs.firefox-view.logLevel", "Warn");
+pref("browser.tabs.firefox-view.logLevel", "warn");
 
 
 pref("browser.tabs.groups.smart.searchTopicEnabled", true);
@@ -1582,10 +1582,10 @@ pref("browser.sessionstore.log.appender.file.level", "Trace");
 pref("browser.sessionstore.log.appender.file.logOnError", true);
 
 
-pref("browser.sessionstore.loglevel", "Warn");
+pref("browser.sessionstore.loglevel", "warn");
 
 #ifdef NIGHTLY_BUILD
-  pref("browser.sessionstore.loglevel", "Debug");
+  pref("browser.sessionstore.loglevel", "debug");
   pref("browser.sessionstore.log.appender.file.logOnSuccess", true);
 #else
   pref("browser.sessionstore.log.appender.file.logOnSuccess", false);
@@ -1646,7 +1646,7 @@ pref("accessibility.blockautorefresh", false);
 pref("places.history.enabled", true);
 
 
-pref("places.loglevel", "Error");
+pref("places.loglevel", "error");
 
 
 pref("places.search.matchDiacritics", false);
@@ -2427,7 +2427,7 @@ pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.freetls.fas
 pref("browser.smartwindow.memories.generateFromHistory", true);
 pref("browser.smartwindow.memories.generateFromConversation", true);
 pref("browser.smartwindow.memories.hasSeenMemories", false);
-pref("browser.smartwindow.memoriesLogLevel", "Warn");
+pref("browser.smartwindow.memoriesLogLevel", "warn");
 
 pref("browser.smartwindow.resumeActivity.enabled", true);
 
@@ -2456,7 +2456,7 @@ pref("browser.smartwindow.autoTabGrouping.minCohesion", "0.15");
 pref("browser.smartwindow.autoTabGrouping.timeoutMs", 8000);
 pref("browser.smartwindow.autoTabGrouping.supportedLocales", "en,fr");
 pref("browser.smartwindow.autoTabGrouping.nonEnglishThresholdInt", 550);
-pref("browser.smartwindow.autoTabGrouping.loglevel", "Warn");
+pref("browser.smartwindow.autoTabGrouping.loglevel", "warn");
 
 
 pref("browser.smartwindow.smartformfill.enabled", true);
@@ -2505,15 +2505,15 @@ pref("browser.smartwindow.location.data", "");
 pref("browser.smartwindow.location.lastCheckSeconds", 0);
 
 
-pref("browser.smartwindow.aiTabHistory.logLevel", "Error");
-pref("browser.smartwindow.aiTabStore.logLevel", "Error");
-pref("browser.smartwindow.chatHistory.loglevel", "Error");
-pref("browser.smartwindow.chatStore.loglevel", "Error");
-pref("browser.smartwindow.conversation.logLevel", "Error");
-pref("browser.smartwindow.conversationHistory.logLevel", "Error");
-pref("browser.smartwindow.conversationStore.logLevel", "Error");
-pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
-pref("browser.smartwindow.telemetryLogLevel", "Error");
+pref("browser.smartwindow.aiTabHistory.logLevel", "error");
+pref("browser.smartwindow.aiTabStore.logLevel", "error");
+pref("browser.smartwindow.chatHistory.loglevel", "error");
+pref("browser.smartwindow.chatStore.loglevel", "error");
+pref("browser.smartwindow.conversation.logLevel", "error");
+pref("browser.smartwindow.conversationHistory.logLevel", "error");
+pref("browser.smartwindow.conversationStore.logLevel", "error");
+pref("browser.smartwindow.smartbarMentions.loglevel", "error");
+pref("browser.smartwindow.telemetryLogLevel", "error");
 
 
 pref("security.mixed_content.block_active_content", true);
@@ -2949,7 +2949,7 @@ pref("view_source.tab", true);
 pref("toolkit.pageThumbs.minWidth", 280);
 pref("toolkit.pageThumbs.minHeight", 190);
 
-pref("browser.esedbreader.loglevel", "Error");
+pref("browser.esedbreader.loglevel", "error");
 
 pref("browser.laterrun.enabled", false);
 
@@ -3635,7 +3635,7 @@ pref("first-startup.category-tasks-enabled", true);
   
   pref("app.backgroundNotifications.helper.available", false);
   pref("app.backgroundNotifications.helper.enabled", false);
-  pref("app.backgroundNotifications.helper.loglevel", "Error");
+  pref("app.backgroundNotifications.helper.loglevel", "error");
 #endif
 
 

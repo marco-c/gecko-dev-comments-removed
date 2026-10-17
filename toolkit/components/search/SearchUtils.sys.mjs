@@ -16,7 +16,7 @@ const lazy = XPCOMUtils.declareLazy({
   logConsole: () =>
     console.createInstance({
       prefix: "SearchUtils",
-      maxLogLevel: SearchUtils.loggingEnabled ? "Debug" : "Warn",
+      maxLogLevel: SearchUtils.loggingEnabled ? "debug" : "warn",
     }),
   configV3FeatureGate: {
     pref: "browser.search.configV3.featureGate",
@@ -182,14 +182,6 @@ export var SearchUtils = {
   get SETTINGS_KEY() {
     return lazy.configV3FeatureGate ? "search-config-v3" : "search-config-v2";
   },
-
-  /**
-   * This is the Remote Settings key that we use to get the search engine
-   * configuration overrides.
-   *
-   * @readonly
-   */
-  SETTINGS_OVERRIDES_KEY: "search-config-overrides-v2",
 
   /**
    * Topic used for observer events involving the service itself.

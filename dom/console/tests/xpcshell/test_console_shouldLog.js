@@ -2,50 +2,50 @@
 
 
 add_task(async function test_shouldLog_maxLogLevel() {
-  let ci = console.createInstance({ maxLogLevel: "Warn" });
+  let ci = console.createInstance({ maxLogLevel: "warn" });
 
   Assert.ok(
-    ci.shouldLog("Error"),
+    ci.shouldLog("error"),
     "Should return true for logging a higher level"
   );
   Assert.ok(
-    ci.shouldLog("Warn"),
+    ci.shouldLog("warn"),
     "Should return true for logging the same level"
   );
   Assert.ok(
-    !ci.shouldLog("Debug"),
+    !ci.shouldLog("debug"),
     "Should return false for logging a lower level;"
   );
 });
 
 add_task(async function test_shouldLog_maxLogLevelPref() {
-  Services.prefs.setStringPref("test.log", "Warn");
+  Services.prefs.setStringPref("test.log", "warn");
   let ci = console.createInstance({ maxLogLevelPref: "test.log" });
 
   Assert.ok(
-    !ci.shouldLog("Debug"),
+    !ci.shouldLog("debug"),
     "Should return false for logging a lower level;"
   );
 
-  Services.prefs.setStringPref("test.log", "Debug");
+  Services.prefs.setStringPref("test.log", "debug");
   Assert.ok(
-    ci.shouldLog("Debug"),
+    ci.shouldLog("debug"),
     "Should return true for logging a lower level after pref update"
   );
 });
 
 add_task(async function test_shouldLog_maxLogLevelPref_case_match() {
-  Services.prefs.setStringPref("test.log.case", "Warn");
+  Services.prefs.setStringPref("test.log.case", "warn");
   let ci = console.createInstance({ maxLogLevelPref: "test.log.case" });
 
-  Assert.ok(ci.shouldLog("Warn"), "Should log at the exact pref level");
-  Assert.ok(ci.shouldLog("Error"), "Should log above the pref level");
-  Assert.ok(!ci.shouldLog("Info"), "Should not log below the pref level");
+  Assert.ok(ci.shouldLog("warn"), "Should log at the exact pref level");
+  Assert.ok(ci.shouldLog("error"), "Should log above the pref level");
+  Assert.ok(!ci.shouldLog("info"), "Should not log below the pref level");
 
-  Services.prefs.setStringPref("test.log.case", "Error");
-  Assert.ok(ci.shouldLog("Error"), "Should log at the updated pref level");
+  Services.prefs.setStringPref("test.log.case", "error");
+  Assert.ok(ci.shouldLog("error"), "Should log at the updated pref level");
   Assert.ok(
-    !ci.shouldLog("Warn"),
+    !ci.shouldLog("warn"),
     "Should not log below the updated pref level"
   );
 });
@@ -56,15 +56,15 @@ add_task(async function test_shouldLog_maxLogLevelPref_case_insensitive() {
   for (const prefValue of ["warn", "WARN", "wArN"]) {
     Services.prefs.setStringPref("test.log.icase", prefValue);
     Assert.ok(
-      ci.shouldLog("Warn"),
+      ci.shouldLog("warn"),
       `Should log at the Warn level when pref is "${prefValue}"`
     );
     Assert.ok(
-      ci.shouldLog("Error"),
+      ci.shouldLog("error"),
       `Should log above Warn when pref is "${prefValue}"`
     );
     Assert.ok(
-      !ci.shouldLog("Info"),
+      !ci.shouldLog("info"),
       `Should not log below Warn when pref is "${prefValue}"`
     );
   }
@@ -87,52 +87,52 @@ add_task(async function test_shouldLog_env() {
   const tests = [
     {
       mozLogLevel: 0,
-      maxLogLevel: "Off",
+      maxLogLevel: "off",
       shouldLog: [],
-      shouldNotLog: ["Error", "Warn", "Info", "Debug", "Trace"],
+      shouldNotLog: ["error", "warn", "info", "debug", "trace"],
     },
     {
       mozLogLevel: 1,
-      maxLogLevel: "Off",
-      shouldLog: ["Error"],
-      shouldNotLog: ["Warn", "Info", "Debug", "Trace"],
+      maxLogLevel: "off",
+      shouldLog: ["error"],
+      shouldNotLog: ["warn", "info", "debug", "trace"],
     },
     {
       mozLogLevel: 2,
-      maxLogLevel: "Off",
-      shouldLog: ["Error", "Warn"],
-      shouldNotLog: ["Info", "Debug", "Trace"],
+      maxLogLevel: "off",
+      shouldLog: ["error", "warn"],
+      shouldNotLog: ["info", "debug", "trace"],
     },
     {
       mozLogLevel: 3,
-      maxLogLevel: "Off",
-      shouldLog: ["Error", "Warn", "Info"],
-      shouldNotLog: ["Debug", "Trace"],
+      maxLogLevel: "off",
+      shouldLog: ["error", "warn", "info"],
+      shouldNotLog: ["debug", "trace"],
     },
     {
       mozLogLevel: 4,
-      maxLogLevel: "Off",
-      shouldLog: ["Error", "Warn", "Info", "Debug"],
-      shouldNotLog: ["Trace"],
+      maxLogLevel: "off",
+      shouldLog: ["error", "warn", "info", "debug"],
+      shouldNotLog: ["trace"],
     },
     {
       mozLogLevel: 5,
-      maxLogLevel: "Off",
-      shouldLog: ["Error", "Warn", "Info", "Debug", "Trace"],
+      maxLogLevel: "off",
+      shouldLog: ["error", "warn", "info", "debug", "trace"],
       shouldNotLog: [],
     },
     
     {
       mozLogLevel: 0,
-      maxLogLevel: "All",
-      shouldLog: ["Error", "Warn", "Info", "Debug", "Trace"],
+      maxLogLevel: "all",
+      shouldLog: ["error", "warn", "info", "debug", "trace"],
       shouldNotLog: [],
     },
     {
       mozLogLevel: 0,
-      maxLogLevel: "Warn",
-      shouldLog: ["Error", "Warn"],
-      shouldNotLog: ["Info", "Debug", "Trace"],
+      maxLogLevel: "warn",
+      shouldLog: ["error", "warn"],
+      shouldNotLog: ["info", "debug", "trace"],
     },
   ];
 

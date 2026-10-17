@@ -21,7 +21,7 @@ DevToolsUtils.defineLazyGetter(this, "ScriptableInputStream", () => {
 
 const logger = console.createInstance({
   prefix: "devtools_rdp",
-  maxLogLevel: "Warn",
+  maxLogLevel: "warn",
 });
 
 const BUFFER_SIZE = 0x8000;

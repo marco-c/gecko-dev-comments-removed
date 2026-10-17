@@ -8,8 +8,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "BackupService::ArchiveEncryption",
     maxLogLevel: Services.prefs.getBoolPref("browser.backup.log", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 

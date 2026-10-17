@@ -8,8 +8,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
     prefix: "CanonicalURL",
     maxLogLevel: Services.prefs.getBoolPref("browser.tabs.notes.debug", false)
-      ? "Debug"
-      : "Warn",
+      ? "debug"
+      : "warn",
   });
 });
 
