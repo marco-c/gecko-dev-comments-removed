@@ -16352,7 +16352,13 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   
   
   for (Element* e : Reversed(exitElements)) {
-    DispatchFullscreenChange(*e->OwnerDoc(), e);
+    Document* exitDoc = e->OwnerDoc();
+    DispatchFullscreenChange(*exitDoc, e);
+    if (!exitDoc->Fullscreen()) {
+      
+      
+      exitDoc->EnumerateSubDocuments(ResetFullscreen);
+    }
   }
   aExit->MayResolvePromise();
 
