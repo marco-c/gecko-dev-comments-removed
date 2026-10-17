@@ -50,8 +50,6 @@
 
 
 
-
-
 #ifdef MESSAGE_TO_EVENT
 #  ifdef EVENT
 #    error "Don't define EVENT"
@@ -362,9 +360,6 @@ DOCUMENT_ONLY_EVENT(visibilitychange, eVisibilityChange, EventNameType_XUL,
                     eBasicEventClass)
 
 NON_IDL_EVENT(MozMouseHittest, eMouseHitTest, EventNameType_None,
-              eMouseEventClass)
-
-NON_IDL_EVENT(MozMouseExploreByTouch, eMouseExploreByTouch, EventNameType_None,
               eMouseEventClass)
 
 NON_IDL_EVENT(DOMActivate, eLegacyDOMActivate, EventNameType_HTMLXUL,
