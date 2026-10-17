@@ -3,5 +3,3 @@ subsuite = "integration"
 tags = "local os_integration"
 
 ["test_no_errors_clean_profile.py"]
-
-["test_private_window_cli_startup.py"]

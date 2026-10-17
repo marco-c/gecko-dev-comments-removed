@@ -66,7 +66,6 @@ BROWSER_CHROME_MANIFESTS += [
     "content/test/browser-tabcrashed/browser_aboutRestartRequired_noForkServer.toml",
     "content/test/browser-tabdialogs/browser.toml",
     "content/test/browser-tabPrompts/browser.toml",
-    "content/test/browser-tabs/browser.toml",
     "content/test/browser-touch/browser.toml",
     "content/test/browser-utilityOverlay/browser.toml",
     "content/test/browser-webextensions/browser.toml",

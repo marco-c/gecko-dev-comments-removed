@@ -307,13 +307,9 @@ function openBrowserWindow(
   if (!urlOrUrlList) {
     // Just pass in the defaultArgs directly. We'll use system principal on the other end.
     if (isStartup) {
-      args = [gBrowserContentHandler.getFirstWindowArgs(forcePrivate)];
+      args = [gBrowserContentHandler.getFirstWindowArgs()];
     } else {
-      args = [gBrowserContentHandler.getNewWindowArgs(false, forcePrivate)];
-    }
-    if (!lazy.PrivateBrowsingUtils.enabled && forcePrivate) {
-      // Cannot open a private window, open error window in normal mode instead
-      forcePrivate = false;
+      args = [gBrowserContentHandler.getNewWindowArgs()];
     }
   } else if (Array.isArray(urlOrUrlList)) {
     // There isn't an explicit way to pass a principal here, so we load multiple URLs
@@ -665,7 +661,13 @@ nsBrowserContentHandler.prototype = {
       }
       // NS_ERROR_INVALID_ARG is thrown when flag exists, but has no param.
       if (cmdLine.handleFlag("private-window", false)) {
-        openBrowserWindow(cmdLine, lazy.gSystemPrincipal, null, null, true);
+        openBrowserWindow(
+          cmdLine,
+          lazy.gSystemPrincipal,
+          "about:privatebrowsing",
+          null,
+          lazy.PrivateBrowsingUtils.enabled
+        );
         cmdLine.preventDefault = true;
       }
     }
@@ -768,33 +770,12 @@ nsBrowserContentHandler.prototype = {
     return this.getNewWindowArgs();
   },
 
-  /**
-   * This function is expected to be called in non-startup cases,
-   * a WNP will not be retrieved within this function, but it will retrieve
-   * any new profile override page(s) or regular startup page(s).
-   * For the startup version of this function, please use getFirstWindowArgs().
-   * See Bug 1642039 for more information.
-   *
-   * @param {boolean} skipStartPage
-   *   If true, the startup page will not be included in the returned URL(s).
-   * @param {boolean} forcePrivate
-   *   If true, the startup page will be about:privatebrowsing, unless in
-   *   permanent private browsing mode.
-   * @returns {string}
-   *   The URL(s) to load, multiple URLs being separated by "|".
-   */
-  getNewWindowArgs(skipStartPage = false, forcePrivate = false) {
-    if (forcePrivate) {
-      if (!lazy.PrivateBrowsingUtils.enabled) {
-        // Load about:privatebrowsing in a normal tab, which will display an error indicating
-        // access to private browsing has been disabled.
-        return "about:privatebrowsing";
-      }
-      if (!lazy.PrivateBrowsingUtils.permanentPrivateBrowsing) {
-        return "about:privatebrowsing";
-      }
-    }
-
+  // This function is expected to be called in non-startup cases,
+  // a WNP will not be retrieved within this function, but it will retrieve
+  // any new profile override page(s) or regular startup page(s).
+  // For the startup version of this function, please use getFirstWindowArgs().
+  // See Bug 1642039 for more information.
+  getNewWindowArgs(skipStartPage = false) {
     var page = lazy.LaterRun.getURL();
     if (page == "about:blank") {
       page = "";
@@ -838,32 +819,12 @@ nsBrowserContentHandler.prototype = {
     return page || "about:blank";
   },
 
-  /**
-   * This function is expected to be called very early during Firefox startup,
-   * It will retrieve a WNP if avaliable, before calling getNewWindowsArg()
-   * to retrieve any other startup pages that needs to be displayed.
-   * See Bug 1642039 for more information.
-   *
-   * @param {boolean} forcePrivate
-   *   If true, the startup page will be about:privatebrowsing, unless in
-   *   permanent private browsing mode.
-   * @returns {string}
-   *   The URL(s) to load, multiple URLs being separated by "|".
-   */
-  getFirstWindowArgs(forcePrivate = false) {
+  // This function is expected to be called very early during Firefox startup,
+  // It will retrieve a WNP if avaliable, before calling getNewWindowsArg()
+  // to retrieve any other startup pages that needs to be displayed.
+  // See Bug 1642039 for more information.
+  getFirstWindowArgs() {
     var prefb = Services.prefs;
-
-    if (forcePrivate) {
-      if (!lazy.PrivateBrowsingUtils.enabled) {
-        // Load about:privatebrowsing in a normal tab, which will display an error indicating
-        // access to private browsing has been disabled.
-        return "about:privatebrowsing";
-      }
-
-      if (!lazy.PrivateBrowsingUtils.permanentPrivateBrowsing) {
-        return "about:privatebrowsing";
-      }
-    }
 
     if (!gFirstWindow) {
       gFirstWindow = true;
