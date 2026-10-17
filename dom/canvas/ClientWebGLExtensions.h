@@ -59,11 +59,12 @@ class ClientWebGLExtensionClipControl : public ClientWebGLExtensionBase {
   explicit ClientWebGLExtensionClipControl(ClientWebGLContext&);
 
   void ClipControlEXT(GLenum origin, GLenum depth) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("clipControlEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->ClipControlEXT(origin, depth);
+    context->ClipControlEXT(origin, depth);
   }
 };
 
@@ -75,11 +76,12 @@ class ClientWebGLExtensionPolygonOffsetClamp : public ClientWebGLExtensionBase {
 
   void PolygonOffsetClampEXT(GLfloat factor, GLfloat units,
                              GLfloat clamp) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("polygonOffsetClampEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->PolygonOffsetClampEXT(factor, units, clamp);
+    context->PolygonOffsetClampEXT(factor, units, clamp);
   }
 };
 
@@ -91,11 +93,12 @@ class ClientWebGLExtensionCompressedTextureASTC
   explicit ClientWebGLExtensionCompressedTextureASTC(ClientWebGLContext&);
 
   void GetSupportedProfiles(dom::Nullable<nsTArray<nsString>>& retval) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("getSupportedProfiles: Extension is `invalidated`.");
       return;
     }
-    mContext->GetSupportedProfilesASTC(retval);
+    context->GetSupportedProfilesASTC(retval);
   }
 };
 
@@ -127,11 +130,12 @@ class ClientWebGLExtensionDebugShaders : public ClientWebGLExtensionBase {
 
   void GetTranslatedShaderSource(const WebGLShaderJS& shader,
                                  nsAString& retval) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("getTranslatedShaderSource: Extension is `invalidated`.");
       return;
     }
-    mContext->GetTranslatedShaderSource(shader, retval);
+    context->GetTranslatedShaderSource(shader, retval);
   }
 };
 
@@ -176,11 +180,12 @@ class ClientWebGLExtensionProvokingVertex : public ClientWebGLExtensionBase {
   explicit ClientWebGLExtensionProvokingVertex(ClientWebGLContext&);
 
   void ProvokingVertexWEBGL(const GLenum mode) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("provokingVertexWEBGL: Extension is `invalidated`.");
       return;
     }
-    mContext->ProvokingVertex(mode);
+    context->ProvokingVertex(mode);
   }
 };
 
@@ -215,11 +220,12 @@ class ClientWebGLExtensionDrawBuffers : public ClientWebGLExtensionBase {
   explicit ClientWebGLExtensionDrawBuffers(ClientWebGLContext&);
 
   void DrawBuffersWEBGL(const dom::Sequence<GLenum>& buffers) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("drawBuffersWEBGL: Extension is `invalidated`.");
       return;
     }
-    mContext->DrawBuffers(buffers);
+    context->DrawBuffers(buffers);
   }
 };
 
@@ -231,34 +237,38 @@ class ClientWebGLExtensionVertexArray : public ClientWebGLExtensionBase {
 
   already_AddRefed<WebGLVertexArrayJS> CreateVertexArrayOES() {
     RefPtr<WebGLVertexArrayJS> ret;
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("createVertexArrayOES: Extension is `invalidated`.");
       ret = new WebGLVertexArrayJS(nullptr);
     } else {
-      ret = mContext->CreateVertexArray();
+      ret = context->CreateVertexArray();
     }
     return ret.forget();
   }
   void DeleteVertexArrayOES(WebGLVertexArrayJS* array) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("deleteVertexArrayOES: Extension is `invalidated`.");
       return;
     }
-    mContext->DeleteVertexArray(array);
+    context->DeleteVertexArray(array);
   }
   bool IsVertexArrayOES(const WebGLVertexArrayJS* array) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("isVertexArrayOES: Extension is `invalidated`.");
       return false;
     }
-    return mContext->IsVertexArray(array);
+    return context->IsVertexArray(array);
   }
   void BindVertexArrayOES(WebGLVertexArrayJS* array) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("bindVertexArrayOES: Extension is `invalidated`.");
       return;
     }
-    mContext->BindVertexArray(array);
+    context->BindVertexArray(array);
   }
 };
 
@@ -270,26 +280,29 @@ class ClientWebGLExtensionInstancedArrays : public ClientWebGLExtensionBase {
 
   void DrawArraysInstancedANGLE(GLenum mode, GLint first, GLsizei count,
                                 GLsizei primcount) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("drawArraysInstancedANGLE: Extension is `invalidated`.");
       return;
     }
-    mContext->DrawArraysInstanced(mode, first, count, primcount);
+    context->DrawArraysInstanced(mode, first, count, primcount);
   }
   void DrawElementsInstancedANGLE(GLenum mode, GLsizei count, GLenum type,
                                   WebGLintptr offset, GLsizei primcount) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("drawElementsInstancedANGLE: Extension is `invalidated`.");
       return;
     }
-    mContext->DrawElementsInstanced(mode, count, type, offset, primcount);
+    context->DrawElementsInstanced(mode, count, type, offset, primcount);
   }
   void VertexAttribDivisorANGLE(GLuint index, GLuint divisor) {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("vertexAttribDivisorANGLE: Extension is `invalidated`.");
       return;
     }
-    mContext->VertexAttribDivisor(index, divisor);
+    context->VertexAttribDivisor(index, divisor);
   }
 };
 
@@ -303,48 +316,54 @@ class ClientWebGLExtensionDisjointTimerQuery : public ClientWebGLExtensionBase {
 
   already_AddRefed<WebGLQueryJS> CreateQueryEXT() const {
     RefPtr<WebGLQueryJS> ret;
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("createQueryEXT: Extension is `invalidated`.");
       ret = new WebGLQueryJS(nullptr);
     } else {
-      ret = mContext->CreateQuery();
+      ret = context->CreateQuery();
     }
     return ret.forget();
   }
   void DeleteQueryEXT(WebGLQueryJS* query) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("deleteQueryEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->DeleteQuery(query);
+    context->DeleteQuery(query);
   }
   bool IsQueryEXT(const WebGLQueryJS* query) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("isQueryEXT: Extension is `invalidated`.");
       return false;
     }
-    return mContext->IsQuery(query);
+    return context->IsQuery(query);
   }
   void BeginQueryEXT(GLenum target, WebGLQueryJS& query) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("beginQueryEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->BeginQuery(target, query);
+    context->BeginQuery(target, query);
   }
   void EndQueryEXT(GLenum target) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("endQueryEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->EndQuery(target);
+    context->EndQuery(target);
   }
   void QueryCounterEXT(WebGLQueryJS& query, GLenum target) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("queryCounterEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->QueryCounter(query, target);
+    context->QueryCounter(query, target);
   }
   void GetQueryEXT(JSContext* cx, GLenum target, GLenum pname,
                    JS::MutableHandle<JS::Value> retval) const {
@@ -356,11 +375,12 @@ class ClientWebGLExtensionDisjointTimerQuery : public ClientWebGLExtensionBase {
   }
   void GetQueryObjectEXT(JSContext* cx, WebGLQueryJS& query, GLenum pname,
                          JS::MutableHandle<JS::Value> retval) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("getQueryObjectEXT: Extension is `invalidated`.");
       return;
     }
-    mContext->GetQueryParameter(cx, query, pname, retval);
+    context->GetQueryParameter(cx, query, pname, retval);
   }
 };
 
@@ -371,11 +391,12 @@ class ClientWebGLExtensionExplicitPresent : public ClientWebGLExtensionBase {
   explicit ClientWebGLExtensionExplicitPresent(ClientWebGLContext&);
 
   void Present() const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("present: Extension is `invalidated`.");
       return;
     }
-    mContext->OnBeforePaintTransaction();
+    context->OnBeforePaintTransaction();
   }
 };
 
@@ -408,13 +429,14 @@ class ClientWebGLExtensionMultiview : public ClientWebGLExtensionBase {
                                       const GLint level,
                                       const GLint baseViewIndex,
                                       const GLsizei numViews) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning(
           "framebufferTextureMultiviewOVR: Extension is `invalidated`.");
       return;
     }
-    mContext->FramebufferTextureMultiview(target, attachment, texture, level,
-                                          baseViewIndex, numViews);
+    context->FramebufferTextureMultiview(target, attachment, texture, level,
+                                         baseViewIndex, numViews);
   }
 };
 
@@ -425,19 +447,21 @@ class ClientWebGLExtensionDrawBuffersIndexed : public ClientWebGLExtensionBase {
   explicit ClientWebGLExtensionDrawBuffersIndexed(ClientWebGLContext&);
 
   void EnableiOES(const GLenum target, const GLuint buf) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("enableiOES: Extension is `invalidated`.");
       return;
     }
-    mContext->SetEnabledI(target, Some(buf), true);
+    context->SetEnabledI(target, Some(buf), true);
   }
 
   void DisableiOES(const GLenum target, const GLuint buf) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("disableiOES: Extension is `invalidated`.");
       return;
     }
-    mContext->SetEnabledI(target, Some(buf), false);
+    context->SetEnabledI(target, Some(buf), false);
   }
 
   void BlendEquationiOES(const GLuint buf, const GLenum mode) const {
@@ -446,11 +470,12 @@ class ClientWebGLExtensionDrawBuffersIndexed : public ClientWebGLExtensionBase {
 
   void BlendEquationSeparateiOES(const GLuint buf, const GLenum modeRgb,
                                  const GLenum modeAlpha) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("blendEquationSeparateiOES: Extension is `invalidated`.");
       return;
     }
-    mContext->BlendEquationSeparateI(Some(buf), modeRgb, modeAlpha);
+    context->BlendEquationSeparateI(Some(buf), modeRgb, modeAlpha);
   }
 
   void BlendFunciOES(const GLuint buf, const GLenum src,
@@ -461,20 +486,22 @@ class ClientWebGLExtensionDrawBuffersIndexed : public ClientWebGLExtensionBase {
   void BlendFuncSeparateiOES(const GLuint buf, const GLenum srcRgb,
                              const GLenum dstRgb, const GLenum srcAlpha,
                              const GLenum dstAlpha) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("blendFuncSeparateiOES: Extension is `invalidated`.");
       return;
     }
-    mContext->BlendFuncSeparateI(Some(buf), srcRgb, dstRgb, srcAlpha, dstAlpha);
+    context->BlendFuncSeparateI(Some(buf), srcRgb, dstRgb, srcAlpha, dstAlpha);
   }
 
   void ColorMaskiOES(const GLuint buf, const bool r, const bool g, const bool b,
                      const bool a) const {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("colorMaskiOES: Extension is `invalidated`.");
       return;
     }
-    mContext->ColorMaskI(Some(buf), r, g, b, a);
+    context->ColorMaskI(Some(buf), r, g, b, a);
   }
 };
 
