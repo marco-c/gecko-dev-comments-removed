@@ -1717,8 +1717,17 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetGridTemplateColumnsRows(
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateColumns() {
+  AutoWeakFrame weakFrameRef(mInnerFrame);
+
   nsGridContainerFrame* gridFrame =
       nsGridContainerFrame::GetGridFrameWithComputedInfo(mInnerFrame);
+
+  if (mInnerFrame && !weakFrameRef.IsAlive()) {
+    
+    
+    return nullptr;
+  }
+
   if (!gridFrame) {
     
     
@@ -1737,8 +1746,17 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateColumns() {
 }
 
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetGridTemplateRows() {
+  AutoWeakFrame weakFrameRef(mInnerFrame);
+
   nsGridContainerFrame* gridFrame =
       nsGridContainerFrame::GetGridFrameWithComputedInfo(mInnerFrame);
+
+  if (mInnerFrame && !weakFrameRef.IsAlive()) {
+    
+    
+    return nullptr;
+  }
+
   if (!gridFrame) {
     
     
@@ -2374,7 +2392,6 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetTransformValue(
   nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame, nsRect());
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
       aTransform, refBox, float(mozilla::AppUnitsPerCSSPixel()),
-      mInnerFrame ? mInnerFrame->Style()->EffectiveZoom() : StyleZoom::ONE,
       nsStyleTransformMatrix::Zoomed::
           No);  
 
