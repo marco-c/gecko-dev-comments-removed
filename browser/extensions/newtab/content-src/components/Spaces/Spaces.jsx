@@ -49,11 +49,18 @@ function isRtl() {
  *   and absent for the V1 ones.
  * @param {string} [props.defaultId] - space to open on, when that is not the
  *   leftmost one. Defaults to the leftmost.
- * @param {boolean} [props.arrows] - navigate with an arrow at each edge that
- *   has a space beyond it, instead of the tablist
+ * @param {boolean} [props.arrows] - navigate with an arrow at each edge
+ * @param {boolean} [props.tablist] - navigate with the tablist. Defaults to on
+ *   unless arrows are
  * @param {Function} props.dispatch - Redux dispatch, for switch telemetry
  */
-export function Spaces({ spaces, defaultId, arrows, dispatch }) {
+export function Spaces({
+  spaces,
+  defaultId,
+  arrows,
+  tablist = !arrows,
+  dispatch,
+}) {
   // By id, not index: turning a space off shifts the indices after it.
   const [activeId, setActiveId] = useState(defaultId ?? spaces[0]?.id);
   // Falls back to the leftmost space when the active one is turned off.
@@ -243,7 +250,7 @@ export function Spaces({ spaces, defaultId, arrows, dispatch }) {
       )}
       <div className="spaces-frame">
         {/* A real tablist, so arrow-key traversal comes with the pattern. */}
-        {!arrows && (
+        {tablist && (
           <div className="spaces-tablist-slot">
             <div
               className="spaces-tablist"
@@ -297,9 +304,9 @@ export function Spaces({ spaces, defaultId, arrows, dispatch }) {
                 id={`spaces-panel-${space.id}`}
                 className={`space${isActive ? " active" : ""}`}
                 style={{ "--space-offset": index - activeIndex }}
-                // The arrows variant has no tabs to label the panels.
-                role={arrows ? undefined : "tabpanel"}
-                aria-labelledby={arrows ? undefined : `spaces-tab-${space.id}`}
+                // Without the tablist there are no tabs to label the panels.
+                role={tablist ? "tabpanel" : undefined}
+                aria-labelledby={tablist ? `spaces-tab-${space.id}` : undefined}
                 aria-hidden={isActive ? undefined : "true"}
                 inert={!isActive}
               >
