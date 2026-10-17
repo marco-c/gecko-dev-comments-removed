@@ -46,11 +46,6 @@ const MONITOR_API_ENDPOINT = Services.urlFormatter.formatURLPref(
   "browser.contentblocking.report.endpoint_url"
 );
 
-const SCOPE_MONITOR = [
-  "profile:uid",
-  "https://identity.mozilla.com/apps/monitor",
-];
-
 // The ID of the vpn subscription, if we see this ID attached to a user's account then they have subscribed to vpn.
 const VPN_SUB_ID = Services.prefs.getStringPref(
   "browser.contentblocking.report.vpn_sub_id"
@@ -280,7 +275,7 @@ export class AboutProtectionsParent extends JSWindowActorParent {
     let token = null;
 
     try {
-      token = await lazy.fxAccounts.getOAuthToken({ scope: SCOPE_MONITOR });
+      token = await lazy.fxAccounts.getOAuthToken({ service: "monitor" });
     } catch (e) {
       console.error(
         "There was an error fetching the user's token: ",
