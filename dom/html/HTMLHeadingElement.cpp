@@ -136,7 +136,7 @@ uint32_t HTMLHeadingElement::GetComputedHeadingOffset(uint32_t aMax) const {
 
     
     
-    inclusiveAncestor = inclusiveAncestor->GetFlattenedTreeParentElement();
+    inclusiveAncestor = inclusiveAncestor->GetParentElementCrossingShadowRoot();
   }
 
   
@@ -163,8 +163,8 @@ void HTMLHeadingElement::MapAttributesIntoRule(
   nsGenericHTMLElement::MapCommonAttributesInto(aBuilder);
 }
 
-NS_IMETHODIMP_(bool)
-HTMLHeadingElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLHeadingElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry* const map[] = {sDivAlignAttributeMap,
                                                     sCommonAttributeMap};
 

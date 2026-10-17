@@ -620,7 +620,6 @@ class nsIContent : public nsINode {
 
 
 
-
   void UpdateHeadingElementsOffsetChange();
 
   bool IsPurple() const { return mRefCnt.IsPurple(); }
