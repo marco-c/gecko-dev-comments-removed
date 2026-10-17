@@ -166,7 +166,11 @@ function test_notify_killed() {
     },
   });
 
-  process.kill();
+  
+  do_timeout(500, () => {
+    Assert.ok(process.isRunning, "TestBlockingProcess should block");
+    process.kill();
+  });
 }
 
 function run_test() {

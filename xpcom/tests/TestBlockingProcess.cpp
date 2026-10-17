@@ -1,7 +1,18 @@
-#include <stdio.h>
+#ifdef XP_WIN
+#  include <windows.h>
+#else
+#  include <unistd.h>
+#endif
 
 int main() {
-  char tmp;
-  [[maybe_unused]] size_t _ = fread(&tmp, sizeof(tmp), 1, stdin);
+  
+  
+  for (int i = 0; i < 60; ++i) {
+#ifdef XP_WIN
+    Sleep(10000);
+#else
+    sleep(10);
+#endif
+  }
   return 0;
 }
