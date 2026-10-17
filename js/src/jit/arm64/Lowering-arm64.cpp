@@ -1331,8 +1331,16 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
 
 void LIRGenerator::visitWasmMoveLaneSimd128(MWasmMoveLaneSimd128* ins) {
 #ifdef ENABLE_JIT_SIMD
-  auto* lir = new (alloc()) LWasmMoveLaneSimd128(
-      useRegisterAtStart(ins->lhs()), useRegisterAtStart(ins->rhs()));
+  
+  
+  
+  MDefinition* lhs = ins->lhs();
+  MDefinition* rhs = ins->rhs();
+  LAllocation rhsAlloc = willHaveDifferentLIRNodes(lhs, rhs)
+                             ? useRegister(rhs)
+                             : useRegisterAtStart(rhs);
+  auto* lir =
+      new (alloc()) LWasmMoveLaneSimd128(useRegisterAtStart(lhs), rhsAlloc);
   defineReuseInput(lir, ins, 0);
 #else
   MOZ_CRASH("No SIMD");

@@ -68,6 +68,13 @@ for (const [extract, srcSize, signed] of extracts) {
             (local.tee $l (${extract} ${s} (v128.load (i32.const 16)))))
           (local.get $l)))
       (i32.store (i32.const 48) (local.get $l)))`);
+        funcs.push(`
+    (func (export "h${s}_${d}") (local $v v128)
+      (local.set $v (v128.load (i32.const 0)))
+      (v128.store (i32.const 32)
+        (${replace} ${d} (local.get $v)
+          (${extract} ${s} (v128.load (i32.const 16)))))
+      (v128.store (i32.const 48) (local.get $v)))`);
       }
     }
     const ins = wasmEvalText(`(module (memory (export "mem") 1) ${funcs.join("")})`);
@@ -92,6 +99,13 @@ for (const [extract, srcSize, signed] of extracts) {
                    expected(expected(dst, dstSize, d, value), dstSize, d2,
                             value));
         assertEq(view.getInt32(48, true), value | 0);
+
+        mem.set(dst, 0);
+        mem.set(src, 16);
+        ins.exports[`h${s}_${d}`]();
+        assertSame(Array.from(mem.subarray(32, 48)),
+                   expected(dst, dstSize, d, value));
+        assertSame(Array.from(mem.subarray(48, 64)), dst);
       }
     }
   }
