@@ -8443,6 +8443,7 @@ nsresult nsHttpChannel::BeginConnect() {
   
   if (mLoadFlags & LOAD_FRESH_CONNECTION) {
     
+    
     if (mLoadFlags & LOAD_INITIAL_DOCUMENT_URI) {
       gHttpHandler->AltServiceCache()->ClearAltServiceMappings();
       rv = gHttpHandler->DoShiftReloadConnectionCleanupWithConnInfo(

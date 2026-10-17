@@ -72,6 +72,7 @@ class HttpConnectionMgrShell : public nsISupports {
 
   
   
+  
   [[nodiscard]] virtual nsresult DoShiftReloadConnectionCleanupWithConnInfo(
       nsHttpConnectionInfo*) = 0;
 
