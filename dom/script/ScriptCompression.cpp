@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ScriptLoadRequest.h"
 #include "ScriptLoader.h"
 #include "mozilla/PerfStats.h"
@@ -137,6 +135,13 @@ bool ScriptBytecodeDecompress(Vector<uint8_t>& aCompressedBytecodeBuf,
   PerfStats::AutoMetricRecording<PerfStats::Metric::JSBC_Decompression>
       autoRecording;
 
+  if (aBytecodeOffset > aCompressedBytecodeBuf.length() ||
+      aCompressedBytecodeBuf.length() - aBytecodeOffset <
+          sizeof(ScriptBytecodeCompressedDataLayout::UncompressedLengthType)) {
+    LOG(("ScriptLoadRequest: compressed buffer is corrupted and too short"));
+    return false;
+  }
+
   ScriptBytecodeDataLayout uncompressedLayout(aBytecodeBufOut, aBytecodeOffset);
   ScriptBytecodeCompressedDataLayout compressedLayout(
       aCompressedBytecodeBuf, uncompressedLayout.preludeLength());
@@ -161,8 +166,11 @@ bool ScriptBytecodeDecompress(Vector<uint8_t>& aCompressedBytecodeBuf,
   }
   auto autoDestroy = MakeScopeExit([&]() { inflateEnd(&zstream); });
 
-  int ret = inflate(&zstream, Z_NO_FLUSH);
-  bool ok = (ret == Z_OK || ret == Z_STREAM_END) && zstream.avail_in == 0;
+  
+  
+  int ret = inflate(&zstream, Z_FINISH);
+  bool ok =
+      ret == Z_STREAM_END && zstream.avail_in == 0 && zstream.avail_out == 0;
   if (!ok) {
     LOG(("ScriptLoadReques: inflate FAILED (%s)", zstream.msg));
     return false;
