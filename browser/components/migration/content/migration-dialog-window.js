@@ -51,11 +51,7 @@ const MigrationDialog = {
     }
 
     let observer = new ResizeObserver(() => {
-      if (window.resizeDialog) {
-        window.resizeDialog();
-      } else {
-        window.sizeToContent();
-      }
+      window.sizeToContent();
     });
     observer.observe(this._wiz);
 

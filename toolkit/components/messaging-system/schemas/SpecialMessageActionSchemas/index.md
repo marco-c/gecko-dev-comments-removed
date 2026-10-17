@@ -175,9 +175,7 @@ window or tab closed before sign-in could be completed.
 
 ### `SHOW_MIGRATION_WIZARD`
 
-* args:
-  * `source` (optional): key of the browser to pre-select, e.g. `"chrome"`
-  * `tabModal` (optional): `true` to open the wizard as a dialog over the current tab instead of in about:preferences
+* args: (none)
 
 Opens import wizard to bring in settings and data from another browser.
 

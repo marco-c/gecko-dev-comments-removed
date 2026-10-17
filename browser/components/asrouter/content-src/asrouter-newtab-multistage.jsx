@@ -48,8 +48,6 @@ window.mountMultistageMessage = function mountMultistageMessage(
       }
     },
     AWGetInstalledAddons: () => Promise.resolve(),
-    AWWaitForMigrationClose: () =>
-      window.ASRouterMessage({ type: "AW_WAIT_FOR_MIGRATION_CLOSE" }),
   };
 
   for (const [handlerName, fn] of Object.entries(awHandlers)) {
