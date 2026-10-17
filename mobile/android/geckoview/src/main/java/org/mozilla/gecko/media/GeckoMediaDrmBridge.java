@@ -89,13 +89,6 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
     }
   }
 
-  public boolean isSecureDecoderComponentRequired(final String mimeType) {
-    if (mCrypto != null) {
-      return mCrypto.requiresSecureDecoderComponent(mimeType);
-    }
-    return false;
-  }
-
   private static void assertTrue(final boolean condition) {
     if (DEBUG && !condition) {
       throw new AssertionError("Expected condition to be true");
@@ -152,13 +145,13 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
   }
 
   @Override
-  public void setCallbacks(final GeckoMediaDrm.Callbacks callbacks) {
+  public synchronized void setCallbacks(final GeckoMediaDrm.Callbacks callbacks) {
     assertTrue(callbacks != null);
     mCallbacks = callbacks;
   }
 
   @Override
-  public void createSession(
+  public synchronized void createSession(
       final int createSessionToken,
       final int promiseId,
       final String initDataType,
@@ -220,7 +213,8 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
   }
 
   @Override
-  public void updateSession(final int promiseId, final String sessionId, final byte[] response) {
+  public synchronized void updateSession(
+      final int promiseId, final String sessionId, final byte[] response) {
     if (DEBUG) Log.d(LOGTAG, "updateSession(), sessionId = " + sessionId);
     if (mDrm == null) {
       onRejectPromise(promiseId, "MediaDrm instance doesn't exist !!");
@@ -254,7 +248,7 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
   }
 
   @Override
-  public void closeSession(final int promiseId, final String sessionId) {
+  public synchronized void closeSession(final int promiseId, final String sessionId) {
     if (DEBUG) Log.d(LOGTAG, "closeSession()");
     if (mDrm == null) {
       onRejectPromise(promiseId, "MediaDrm instance doesn't exist !!");
@@ -268,34 +262,24 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
   }
 
   @Override
-  public void release() {
+  public synchronized void release() {
     if (DEBUG) Log.d(LOGTAG, "release()");
+    if (mDrm == null) {
+      return;
+    }
     if (mProvisionTask != null) {
       mProvisionTask.mCancelled = true;
       mProvisionTask = null;
     }
-    if (mProvisioningPromiseId > 0) {
-      onRejectPromise(mProvisioningPromiseId, "Releasing ... reject provisioning session.");
-      mProvisioningPromiseId = 0;
-    }
-    if (mPendingKeyRequest != null) {
-      mPendingKeyRequest = null;
-    }
-    while (!mPendingCreateSessionDataQueue.isEmpty()) {
-      final PendingCreateSessionData pendingData = mPendingCreateSessionDataQueue.poll();
-      if (pendingData != null) {
-        onRejectPromise(pendingData.mPromiseId, "Releasing ... reject all pending sessions.");
-      }
-    }
+    rejectPendingOperations(mProvisioningPromiseId, "Releasing ... reject pending operations.");
+    mProvisioningPromiseId = 0;
     mPendingCreateSessionDataQueue = null;
 
-    if (mDrm != null) {
-      for (final ByteBuffer session : mSessionIds) {
-        mDrm.closeSession(session.array());
-      }
-      mDrm.release();
-      mDrm = null;
+    for (final ByteBuffer session : mSessionIds) {
+      mDrm.closeSession(session.array());
     }
+    mDrm.release();
+    mDrm = null;
     mSessionIds.clear();
     mSessionIds = null;
     mSessionMIMETypes.clear();
@@ -313,14 +297,13 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
     mHandler = null;
   }
 
-  @Override
-  public MediaCrypto getMediaCrypto() {
+  public synchronized MediaCrypto getMediaCrypto() {
     if (DEBUG) Log.d(LOGTAG, "getMediaCrypto()");
     return mCrypto;
   }
 
   @Override
-  public void setServerCertificate(final byte[] cert) {
+  public synchronized void setServerCertificate(final byte[] cert) {
     if (DEBUG) Log.d(LOGTAG, "setServerCertificate()");
     if (mDrm == null) {
       throw new IllegalStateException("MediaDrm instance doesn't exist !!");
@@ -330,7 +313,7 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
   }
 
   @Override
-  public void setOriginID(final String originID) {
+  public synchronized void setOriginID(final String originID) {
     if (DEBUG) Log.d(LOGTAG, "setOriginID()");
     if (mDrm == null) {
       throw new IllegalStateException("MediaDrm instance doesn't exist !!");
@@ -424,60 +407,62 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
         final int extra,
         final byte[] data) {
       if (DEBUG) Log.d(LOGTAG, "MediaDrmListener.onEvent()");
-      if (sessionArray == null) {
-        if (DEBUG) Log.d(LOGTAG, "MediaDrmListener: Null session.");
-        return;
-      }
-      final ByteBuffer session = ByteBuffer.wrap(sessionArray);
-      if (!sessionExists(session)) {
-        if (DEBUG) Log.d(LOGTAG, "MediaDrmListener: Invalid session.");
-        return;
-      }
-      
-      
-      switch (event) {
-        case MediaDrm.EVENT_PROVISION_REQUIRED:
-          if (DEBUG) Log.d(LOGTAG, "MediaDrm.EVENT_PROVISION_REQUIRED");
-          break;
-        case MediaDrm.EVENT_KEY_REQUIRED:
-          if (DEBUG)
-            Log.d(
-                LOGTAG,
-                "MediaDrm.EVENT_KEY_REQUIRED, sessionId=" + new String(session.array(), UTF_8));
-          final String mimeType = mSessionMIMETypes.get(session);
-          MediaDrm.KeyRequest request = null;
-          try {
-            request = getKeyRequest(session, data, mimeType);
-          } catch (final android.media.NotProvisionedException e) {
-            Log.w(LOGTAG, "MediaDrm.EVENT_KEY_REQUIRED, Device not provisioned.", e);
-            startProvisioning(MAX_PROMISE_ID);
-            mPendingKeyRequest = new PendingKeyRequest(session, data, mimeType);
-            return;
-          }
-          requestLicense(sessionArray, request);
-          break;
-        case MediaDrm.EVENT_KEY_EXPIRED:
-          if (DEBUG)
-            Log.d(
-                LOGTAG,
-                "MediaDrm.EVENT_KEY_EXPIRED, sessionId=" + new String(session.array(), UTF_8));
-          break;
-        case MediaDrm.EVENT_VENDOR_DEFINED:
-          if (DEBUG)
-            Log.d(
-                LOGTAG,
-                "MediaDrm.EVENT_VENDOR_DEFINED, sessionId=" + new String(session.array(), UTF_8));
-          break;
-        case MediaDrm.EVENT_SESSION_RECLAIMED:
-          if (DEBUG)
-            Log.d(
-                LOGTAG,
-                "MediaDrm.EVENT_SESSION_RECLAIMED, sessionId="
-                    + new String(session.array(), UTF_8));
-          break;
-        default:
-          if (DEBUG) Log.d(LOGTAG, "Invalid DRM event " + event);
+      synchronized (GeckoMediaDrmBridge.this) {
+        if (sessionArray == null) {
+          if (DEBUG) Log.d(LOGTAG, "MediaDrmListener: Null session.");
           return;
+        }
+        final ByteBuffer session = ByteBuffer.wrap(sessionArray);
+        if (!sessionExists(session)) {
+          if (DEBUG) Log.d(LOGTAG, "MediaDrmListener: Invalid session.");
+          return;
+        }
+        
+        
+        switch (event) {
+          case MediaDrm.EVENT_PROVISION_REQUIRED:
+            if (DEBUG) Log.d(LOGTAG, "MediaDrm.EVENT_PROVISION_REQUIRED");
+            break;
+          case MediaDrm.EVENT_KEY_REQUIRED:
+            if (DEBUG)
+              Log.d(
+                  LOGTAG,
+                  "MediaDrm.EVENT_KEY_REQUIRED, sessionId=" + new String(session.array(), UTF_8));
+            final String mimeType = mSessionMIMETypes.get(session);
+            MediaDrm.KeyRequest request = null;
+            try {
+              request = getKeyRequest(session, data, mimeType);
+            } catch (final android.media.NotProvisionedException e) {
+              Log.w(LOGTAG, "MediaDrm.EVENT_KEY_REQUIRED, Device not provisioned.", e);
+              startProvisioning(MAX_PROMISE_ID);
+              mPendingKeyRequest = new PendingKeyRequest(session, data, mimeType);
+              return;
+            }
+            requestLicense(sessionArray, request);
+            break;
+          case MediaDrm.EVENT_KEY_EXPIRED:
+            if (DEBUG)
+              Log.d(
+                  LOGTAG,
+                  "MediaDrm.EVENT_KEY_EXPIRED, sessionId=" + new String(session.array(), UTF_8));
+            break;
+          case MediaDrm.EVENT_VENDOR_DEFINED:
+            if (DEBUG)
+              Log.d(
+                  LOGTAG,
+                  "MediaDrm.EVENT_VENDOR_DEFINED, sessionId=" + new String(session.array(), UTF_8));
+            break;
+          case MediaDrm.EVENT_SESSION_RECLAIMED:
+            if (DEBUG)
+              Log.d(
+                  LOGTAG,
+                  "MediaDrm.EVENT_SESSION_RECLAIMED, sessionId="
+                      + new String(session.array(), UTF_8));
+            break;
+          default:
+            if (DEBUG) Log.d(LOGTAG, "Invalid DRM event " + event);
+            return;
+        }
       }
     }
   }
@@ -498,7 +483,12 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
         final MediaDrm.KeyStatus keyStatus = keyInformation.get(i);
         keyInfos[i] = new SessionKeyInfo(keyStatus.getKeyId(), keyStatus.getStatusCode());
       }
-      onSessionBatchedKeyChanged(sessionId, keyInfos);
+      synchronized (GeckoMediaDrmBridge.this) {
+        if (mDrm == null) {
+          return;
+        }
+        onSessionBatchedKeyChanged(sessionId, keyInfos);
+      }
       if (DEBUG) Log.d(LOGTAG, "Key successfully added for session " + new String(sessionId));
     }
   }
@@ -606,8 +596,10 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
           Log.e(LOGTAG, "Exception during closing in ...", e);
         }
       }
-      if (!mCancelled) {
-        onProvisionResponse(mPromiseId, mResponseBody);
+      synchronized (GeckoMediaDrmBridge.this) {
+        if (!mCancelled) {
+          onProvisionResponse(mPromiseId, mResponseBody);
+        }
       }
     }
   }
@@ -678,7 +670,10 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
     getHandler().post(this::runPendingOperations);
   }
 
-  private void runPendingOperations() {
+  private synchronized void runPendingOperations() {
+    if (mDrm == null) {
+      return;
+    }
     if (mPendingKeyRequest != null) {
       MediaDrm.KeyRequest request = null;
       try {
@@ -740,7 +735,20 @@ public class GeckoMediaDrmBridge implements GeckoMediaDrm {
       
       resumePendingOperations();
     } else {
-      onRejectPromise(promiseId, "Failed to provide provision response.");
+      rejectPendingOperations(promiseId, "Failed to provide provision response.");
+    }
+  }
+
+  private void rejectPendingOperations(final int provisioningPromiseId, final String message) {
+    if (provisioningPromiseId > 0) {
+      onRejectPromise(provisioningPromiseId, message);
+    }
+    mPendingKeyRequest = null;
+    PendingCreateSessionData pendingData;
+    while ((pendingData = mPendingCreateSessionDataQueue.poll()) != null) {
+      if (pendingData.mPromiseId != provisioningPromiseId) {
+        onRejectPromise(pendingData.mPromiseId, message);
+      }
     }
   }
 

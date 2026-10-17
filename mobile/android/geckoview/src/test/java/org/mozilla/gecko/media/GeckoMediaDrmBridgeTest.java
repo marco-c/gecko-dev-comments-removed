@@ -8,11 +8,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -26,9 +29,13 @@ import android.media.MediaCrypto;
 import android.media.MediaDrm;
 import android.media.NotProvisionedException;
 import java.net.HttpURLConnection;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
@@ -38,6 +45,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
@@ -98,12 +106,17 @@ public class GeckoMediaDrmBridgeTest {
   }
 
   @After
-  public void tearDown() {
-    if (mBridge != null) {
-      mBridge.release();
+  public void tearDown() throws Exception {
+    try {
+      if (mBridge != null) {
+        final FutureTask<Void> release = new FutureTask<>(mBridge::release, null);
+        new Thread(release).start();
+        release.get(10, TimeUnit.SECONDS);
+      }
+    } finally {
+      mSendResponse.countDown();
+      mServer.close();
     }
-    mSendResponse.countDown();
-    mServer.close();
   }
 
   private void createBridge(final int responseCode) throws Exception {
@@ -158,7 +171,6 @@ public class GeckoMediaDrmBridgeTest {
     provisioning.setUncaughtExceptionHandler((thread, e) -> uncaught.set(e));
 
     mBridge.release();
-    mBridge = null;
     mSendResponse.countDown();
     provisioning.join(10_000);
 
@@ -172,11 +184,27 @@ public class GeckoMediaDrmBridgeTest {
   @Test
   public void serverErrorRejectsProvisioning() throws Exception {
     createBridge(HttpURLConnection.HTTP_INTERNAL_ERROR);
+    mBridge.createSession(1, 2, "cenc", new byte[] {0});
 
     respondAndIdle();
 
     verify(mCallbacks).onRejectPromise(eq(GeckoMediaDrmBridge.MAX_PROMISE_ID), anyString());
+    verify(mCallbacks).onRejectPromise(eq(2), anyString());
     verify(mDrm, never()).provideProvisionResponse(any());
+  }
+
+  @Test
+  public void failedProvisioningForASessionRejectsItOnce() throws Exception {
+    doReturn(new byte[] {4, 5, 6})
+        .doThrow(new NotProvisionedException("not provisioned"))
+        .when(mDrm)
+        .openSession();
+    createBridge(HttpURLConnection.HTTP_INTERNAL_ERROR);
+    mBridge.createSession(1, 2, "cenc", new byte[] {0});
+
+    respondAndIdle();
+
+    verify(mCallbacks).onRejectPromise(eq(2), anyString());
   }
 
   @Test
@@ -194,5 +222,49 @@ public class GeckoMediaDrmBridgeTest {
     verify(mCallbacks, timeout(10_000)).onSessionCreated(eq(1), eq(2), any(), any());
     verify(mDrm, times(2)).provideProvisionResponse(PROVISION_RESPONSE.getBytes(UTF_8));
     verify(mCallbacks, never()).onRejectPromise(anyInt(), anyString());
+  }
+
+  @Test
+  public void releaseWaitsForTheProvisioningResponseToBeDelivered() throws Exception {
+    createBridge(HttpURLConnection.HTTP_OK);
+    final Thread release = new Thread(mBridge::release);
+    final AtomicBoolean releaseWaited = new AtomicBoolean();
+    doAnswer(
+            invocation -> {
+              release.start();
+              release.join(500);
+              releaseWaited.set(release.isAlive());
+              return null;
+            })
+        .when(mDrm)
+        .provideProvisionResponse(any());
+    final Thread provisioning = mBridge.getPendingOpsLooper().getThread();
+
+    mSendResponse.countDown();
+    provisioning.join(10_000);
+
+    assertTrue("release() ran during the provisioning response", releaseWaited.get());
+    assertFalse("The provisioning thread outlived release()", provisioning.isAlive());
+  }
+
+  @Test
+  public void keyStatusChangesAfterReleaseAreDropped() throws Exception {
+    createBridge(HttpURLConnection.HTTP_OK);
+    final ArgumentCaptor<MediaDrm.OnKeyStatusChangeListener> listener =
+        ArgumentCaptor.forClass(MediaDrm.OnKeyStatusChangeListener.class);
+    verify(mDrm).setOnKeyStatusChangeListener(listener.capture(), any());
+    final List<MediaDrm.KeyStatus> keys =
+        Collections.singletonList(
+            ReflectionHelpers.callConstructor(
+                MediaDrm.KeyStatus.class,
+                ReflectionHelpers.ClassParameter.from(byte[].class, new byte[] {1}),
+                ReflectionHelpers.ClassParameter.from(
+                    int.class, MediaDrm.KeyStatus.STATUS_USABLE)));
+
+    listener.getValue().onKeyStatusChange(mDrm, new byte[] {1, 2, 3}, keys, true);
+    mBridge.release();
+    listener.getValue().onKeyStatusChange(mDrm, new byte[] {1, 2, 3}, keys, true);
+
+    verify(mCallbacks).onSessionBatchedKeyChanged(any(), any());
   }
 }

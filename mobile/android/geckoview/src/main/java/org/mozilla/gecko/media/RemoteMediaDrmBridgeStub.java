@@ -17,7 +17,7 @@ final class RemoteMediaDrmBridgeStub extends IMediaDrmBridge.Stub
   private volatile IMediaDrmBridgeCallbacks mCallbacks = null;
 
   
-  private GeckoMediaDrm mBridge = null;
+  private GeckoMediaDrmBridge mBridge = null;
 
   
   
@@ -142,9 +142,11 @@ final class RemoteMediaDrmBridgeStub extends IMediaDrmBridge.Stub
 
   RemoteMediaDrmBridgeStub(final String keySystem, final String stubId) throws RemoteException {
     try {
-      mBridge = new GeckoMediaDrmBridgeV23(keySystem);
+      mBridge = new GeckoMediaDrmBridge(keySystem);
       mStubId = stubId;
-      mBridgeStubs.add(this);
+      synchronized (RemoteMediaDrmBridgeStub.class) {
+        mBridgeStubs.add(this);
+      }
     } catch (final Exception e) {
       throw new RemoteException("RemoteMediaDrmBridgeStub cannot create bridge implementation.");
     }
@@ -221,7 +223,9 @@ final class RemoteMediaDrmBridgeStub extends IMediaDrmBridge.Stub
   @Override
   public synchronized void release() {
     if (DEBUG) Log.d(LOGTAG, "release()");
-    mBridgeStubs.remove(this);
+    synchronized (RemoteMediaDrmBridgeStub.class) {
+      mBridgeStubs.remove(this);
+    }
     if (mBridge != null) {
       mBridge.release();
       mBridge = null;
