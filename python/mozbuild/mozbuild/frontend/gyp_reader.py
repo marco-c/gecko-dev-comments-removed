@@ -10,7 +10,6 @@ from collections.abc import Iterable
 import gyp
 import gyp.msvs_emulation
 import mozpack.path as mozpath
-import mozshellutil
 from mozpack.files import FileFinder
 
 from mozbuild.util import expand_variables
@@ -463,12 +462,6 @@ class GypProcessor:
             "build_files": [path],
             "root_targets": None,
         }
-        
-        
-        os.environ.update(
-            CC=mozshellutil.quote(*config.substs["CC"]),
-            CFLAGS=mozshellutil.quote(*config.substs["CC_BASE_FLAGS"]),
-        )
 
         if gyp_dir_attrs.no_chromium:
             includes = []
