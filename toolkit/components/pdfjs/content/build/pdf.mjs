@@ -20,8 +20,8 @@
  */
 
 /**
- * pdfjsVersion = 6.5.152
- * pdfjsBuild = 0252c1f6c
+ * pdfjsVersion = 6.5.180
+ * pdfjsBuild = dda8b7280
  */
 
 ;// ./src/shared/util.js
@@ -2045,7 +2045,7 @@ class FloatingToolbar {
 }
 
 ;// ./src/shared/internal_evt.js
-const INTERNAL_EVT = "2075895e-d8cb-4663-ad4a-10173966f21f";
+const INTERNAL_EVT = "3b63b5b3-fe0b-4094-88df-9c3d7ed55797";
 const internalOpt = Object.freeze({
   internal: INTERNAL_EVT
 });
@@ -14481,7 +14481,7 @@ class RendererWorker {
           terminateEarly("TypedArray transfer test failed.");
           return;
         }
-        const apiVersion = "6.5.152";
+        const apiVersion = "6.5.180";
         if (apiVersion !== data.workerVersion) {
           terminateEarly(`The API version "${apiVersion}" does not match the Worker version "${data.workerVersion}".`);
           return;
@@ -15070,7 +15070,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "6.5.152",
+    apiVersion: "6.5.180",
     data,
     password,
     disableAutoFetch,
@@ -16739,8 +16739,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "6.5.152";
-const build = "0252c1f6c";
+const version = "6.5.180";
+const build = "dda8b7280";
 
 ;// ./src/display/editor/color_picker.js
 
