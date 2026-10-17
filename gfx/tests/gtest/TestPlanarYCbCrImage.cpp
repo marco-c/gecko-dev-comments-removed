@@ -394,3 +394,38 @@ TEST(SharedPlanarYCbCrImage, ValidPictureRectReachesBackend)
   EXPECT_EQ(image->CopyData(buffer.I420Data()), NS_ERROR_NOT_IMPLEMENTED);
   EXPECT_TRUE(image->CreateEmptyBufferCalled());
 }
+
+TEST(SharedPlanarYCbCrImage, CreateEmptyBufferRejectsMalformedPictureRects)
+{
+  for (const auto& pictureRect : kPlanarYCbCrMalformedPictureRects) {
+    SCOPED_TRACE(testing::Message()
+                 << pictureRect.X() << "," << pictureRect.Y() << " "
+                 << pictureRect.Width() << "x" << pictureRect.Height());
+    PlanarYCbCrBuffer buffer(kYDataSize, pictureRect);
+    RefPtr image = MakeRefPtr<SharedPlanarYCbCrImage>(
+        static_cast<TextureClientRecycleAllocator*>(nullptr));
+    EXPECT_EQ(
+        image->CreateEmptyBuffer(buffer.I420Data(), kYDataSize, IntSize(1, 1)),
+        NS_ERROR_INVALID_ARG);
+    EXPECT_FALSE(image->IsValid());
+    EXPECT_EQ(image->GetData()->mPictureRect, IntRect());
+    EXPECT_EQ(image->GetSize(), IntSize());
+    EXPECT_EQ(image->GetOrigin(), IntPoint());
+    EXPECT_EQ(image->GetDataSize(), 0u);
+  }
+}
+
+TEST(SharedPlanarYCbCrImage, CreateEmptyBufferRejectsUndersizedAllocation)
+{
+  PlanarYCbCrBuffer buffer(kYDataSize, IntRect(0, 0, 2, 2));
+  RefPtr image = MakeRefPtr<SharedPlanarYCbCrImage>(
+      static_cast<TextureClientRecycleAllocator*>(nullptr));
+  EXPECT_EQ(
+      image->CreateEmptyBuffer(buffer.I420Data(), IntSize(1, 1), IntSize(1, 1)),
+      NS_ERROR_INVALID_ARG);
+  EXPECT_FALSE(image->IsValid());
+  EXPECT_EQ(image->GetData()->mPictureRect, IntRect());
+  EXPECT_EQ(image->GetSize(), IntSize());
+  EXPECT_EQ(image->GetOrigin(), IntPoint());
+  EXPECT_EQ(image->GetDataSize(), 0u);
+}

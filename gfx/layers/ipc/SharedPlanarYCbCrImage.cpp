@@ -123,6 +123,16 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
     const gfx::IntSize& aCbCrSize) {
   MOZ_ASSERT(!mTextureClient, "This image already has allocated data");
 
+  if (!aData.GetPlaneSizes()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  const auto bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
+      aData.mPictureRect, aYSize, aData.mYStride, aCbCrSize, aData.mCbCrStride,
+      aData.mColorDepth, aData.mChromaSubsampling);
+  if (!bufferSize) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
   TextureFlags flags =
       mCompositable ? mCompositable->GetTextureFlags() : TextureFlags::DEFAULT;
   {
@@ -178,18 +188,13 @@ nsresult SharedPlanarYCbCrImage::CreateEmptyBuffer(
   
   
   
-  Maybe<uint32_t> bufferSize = ImageDataSerializer::ComputeYCbCrBufferSize(
-      mData.mPictureRect, aYSize, mData.mYStride, aCbCrSize, mData.mCbCrStride,
-      mData.mColorDepth, mData.mChromaSubsampling);
-  mBufferSize = bufferSize.valueOr(0);
+  mBufferSize = *bufferSize;
   mSize = mData.mPictureRect.Size();
   mOrigin = mData.mPictureRect.TopLeft();
 
   mTextureClient->Unlock();
 
-  
-  
-  return bufferSize.isSome() ? NS_OK : NS_ERROR_INVALID_ARG;
+  return NS_OK;
 }
 
 void SharedPlanarYCbCrImage::SetIsDRM(bool aIsDRM) {
