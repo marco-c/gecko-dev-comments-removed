@@ -2125,7 +2125,11 @@ void BrowserParent::SendRealKeyEvent(WidgetKeyboardEvent& aEvent) {
   NS_WARNING_ASSERTION(ok, "PBrowserParent::SendRealKeyEvent() failed");
   MOZ_ASSERT(!ok || aEvent.HasBeenPostedToRemoteProcess());
   if (ok && aEvent.IsWaitingReplyFromRemoteProcess()) {
-    mWaitingReplyKeyboardEvents.AppendElement(sendKeyEventData);
+    
+    
+    
+    sendKeyEventData.mAlternativeCharCodes = aEvent.mAlternativeCharCodes;
+    mWaitingReplyKeyboardEvents.AppendElement(std::move(sendKeyEventData));
   }
 }
 
@@ -2789,7 +2793,11 @@ mozilla::ipc::IPCResult BrowserParent::RecvReplyKeyEvent(
             NS_WARN_IF(data.mModifiers != aEvent.mModifiers) ||
             
             
-            NS_WARN_IF(aEvent.HasEditCommands())) {
+            NS_WARN_IF(aEvent.HasEditCommands()) ||
+            
+            
+            NS_WARN_IF(data.mAlternativeCharCodes !=
+                       aEvent.mAlternativeCharCodes)) {
           
           
           return Nothing();
