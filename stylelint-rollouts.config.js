@@ -273,7 +273,6 @@ module.exports = [
       "toolkit/content/aboutUrlClassifier.css",
       "toolkit/content/aboutwebrtc/aboutWebrtc.css",
       "toolkit/content/resetProfile.css",
-      "toolkit/content/widgets/infobar.css",
       "toolkit/content/xul.css",
       "toolkit/crashreporter/content/crashes.css",
       "toolkit/mozapps/extensions/content/aboutaddons.css",
