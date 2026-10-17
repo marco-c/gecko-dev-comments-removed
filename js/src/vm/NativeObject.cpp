@@ -1454,35 +1454,11 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   MOZ_ASSERT(slot < obj->slotSpan());
 
   
-  
   if (id.isInt()) {
-    uint32_t index = id.toInt();
     if constexpr (AddOrChange == IsAddOrChange::Add) {
-      MOZ_ASSERT(!obj->containsDenseElement(index));
+      MOZ_ASSERT(!obj->containsDenseElement(id.toInt()));
     } else {
-      obj->removeDenseElementForSparseIndex(index);
-    }
-    
-    
-    
-    
-    
-    
-    if (slot == obj->slotSpan() - 1) {
-      DenseElementResult edResult =
-          NativeObject::maybeDensifySparseElements(cx, obj);
-      if (edResult == DenseElementResult::Failure) {
-        return false;
-      }
-      if (edResult == DenseElementResult::Success) {
-        MOZ_ASSERT(!desc.isAccessorDescriptor());
-        if constexpr (AddOrChange == IsAddOrChange::Add) {
-          if (!CallAddPropertyHookDense(cx, obj, index, desc.value())) {
-            return false;
-          }
-        }
-        return true;
-      }
+      obj->removeDenseElementForSparseIndex(id.toInt());
     }
   }
 
@@ -1496,6 +1472,25 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
         return false;
       }
     }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (id.isInt() && slot == obj->slotSpan() - 1) {
+    DenseElementResult edResult =
+        NativeObject::maybeDensifySparseElements(cx, obj);
+    if (edResult == DenseElementResult::Failure) {
+      return false;
+    }
+    MOZ_ASSERT_IF(edResult == DenseElementResult::Success,
+                  !desc.isAccessorDescriptor());
   }
 
   return true;
