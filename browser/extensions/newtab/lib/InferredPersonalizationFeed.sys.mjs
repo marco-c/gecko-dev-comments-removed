@@ -15,6 +15,8 @@ import { FeatureModel } from "resource://newtab/lib/InferredModel/FeatureModel.s
 
 import {
   FORMAT,
+  CLICK_FEATURE,
+  SPECIAL_FEATURE_CLICK,
   AggregateResultKeys,
   DEFAULT_INFERRED_MODEL_DATA,
   DEFAULT_USER_CTR,
@@ -117,6 +119,12 @@ export function computeAverageCTRFromTopics(
 export class InferredPersonalizationFeed {
   /** @type {Store} */
   store = null;
+
+  locationInterestVector = null;
+
+  locationPrivateInferredInterests = null;
+
+  shouldUseLocationVector = false;
 
   constructor() {
     this.loaded = false;
@@ -289,6 +297,74 @@ export class InferredPersonalizationFeed {
     return features;
   }
 
+  computeShouldUseLocationVector(
+    hasContentClicks,
+    coarseInferredInterests = {}
+  ) {
+    const hasTopicInterest = Object.entries(coarseInferredInterests).some(
+      ([name, value]) =>
+        name !== SPECIAL_FEATURE_CLICK &&
+        name !== "timeZoneOffset" &&
+        name !== "model_id" &&
+        Number.isFinite(value) &&
+        value > 0
+    );
+    return !(hasContentClicks && hasTopicInterest);
+  }
+
+  updateLocationInterestVectors({
+    model,
+    modelId,
+    clickDataPerInterval,
+    indexSchema,
+    coarseInferredInterests,
+  }) {
+    this.locationInterestVector = null;
+    this.locationPrivateInferredInterests = null;
+    this.shouldUseLocationVector = false;
+    // experiment gate, we only ping for location if in experiment
+    if (
+      !this.store.getState().Prefs.values?.trainhopConfig?.locationInitInferred
+        ?.enabled
+    ) {
+      return;
+    }
+
+    // check if we are going to use the location vector before computing
+    // first check if they have ever clicked, then check if they have a non-zero coarse interest
+    // do not use location vector if at least 1 click and 1 nonzero topic value in interests
+    const hasContentClicks = clickDataPerInterval.some(interval =>
+      interval.some(
+        row =>
+          row[indexSchema[AggregateResultKeys.FEATURE]] === CLICK_FEATURE &&
+          row[indexSchema[AggregateResultKeys.VALUE]] > 0
+      )
+    );
+    this.shouldUseLocationVector = this.computeShouldUseLocationVector(
+      hasContentClicks,
+      coarseInferredInterests
+    );
+    if (!this.shouldUseLocationVector) {
+      // early return if we aren't going to use the vector anyway
+      return;
+    }
+
+    // ping merino for location and calcuate the location based interests
+    this.locationInterestVector = model.computeLocationInterestVector();
+    // privatize the interest vector for DiffPriv
+    this.locationPrivateInferredInterests =
+      model.supportsCoarsePrivateInterests()
+        ? {
+            values: Object.values(
+              model.computePrivateLocationInterestVector(
+                this.locationInterestVector
+              )
+            ),
+            model_id: modelId,
+          }
+        : null;
+  }
+
   /**
    * The model computes interest vectors based on aggregated click and impression data over specific time intervals. The feed queries the database for this aggregated data, which is grouped by feature and card format, for each time interval defined by the model. The schema object defines how to interpret the columns of the aggregated data results when computing the interest vectors.
    *
@@ -320,10 +396,7 @@ export class InferredPersonalizationFeed {
       applyPostProcessing: isClickModel,
     });
 
-    if (isClickModel) {
-      return interests;
-    }
-
+    let result = interests;
     if (
       model.modelType === MODEL_TYPE.CLICK_IMP_PAIR ||
       model.modelType === MODEL_TYPE.CTR
@@ -349,7 +422,7 @@ export class InferredPersonalizationFeed {
               schema
             )
           : null;
-        const inferredInterests = model.computeCTRInterestVectors({
+        result = model.computeCTRInterestVectors({
           clicks: clickTotals,
           impressions: ivImpressions,
           model_id,
@@ -357,18 +430,33 @@ export class InferredPersonalizationFeed {
           debugOverrideCoarseValueDictionary,
           averageCtr,
         });
-        return inferredInterests;
+      } else {
+        const res = {
+          c: interests.inferredInterests,
+          i: ivImpressions,
+          model_id,
+        };
+        result = { inferredInterests: res };
       }
-      const res = {
-        c: interests.inferredInterests,
-        i: ivImpressions,
-        model_id,
-      };
-      return { inferredInterests: res };
+    } else if (!isClickModel) {
+      // unsupported modelType
+      result = {};
     }
 
-    // unsupported modelType
-    return {};
+    this.updateLocationInterestVectors({
+      model,
+      modelId,
+      clickDataPerInterval: aggClickPerInterval,
+      indexSchema: schema,
+      coarseInferredInterests: result.coarseInferredInterests,
+    });
+    // location interests do not override actual interests so the location
+    // interests are never sent to BQ and only sent to merino
+    result.locationPrivateInferredInterests =
+      this.locationPrivateInferredInterests;
+    // boolean saying if this vector should be sent to merino
+    result.shouldUseLocationVector = this.shouldUseLocationVector;
+    return result;
   }
 
   async loadInterestVector(isStartup = false) {
@@ -429,6 +517,10 @@ export class InferredPersonalizationFeed {
         coarseInferredInterests: interest_vector.data.coarseInferredInterests,
         coarsePrivateInferredInterests:
           interest_vector.data.coarsePrivateInferredInterests,
+        locationPrivateInferredInterests:
+          interest_vector.data.locationPrivateInferredInterests ?? null,
+        shouldUseLocationVector:
+          interest_vector.data.shouldUseLocationVector ?? false,
         inferredTelemetrySettingsOverrides,
       },
       meta: {

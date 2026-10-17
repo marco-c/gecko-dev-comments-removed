@@ -344,6 +344,38 @@ export class FeatureModel {
   }
 
   /**
+   * Place holder function for computing location inferred interests, returns 0 for each topic
+   */
+  computeLocationInterestVector() {
+    return Object.fromEntries(
+      Object.entries(this.interestVectorModel)
+        // we keep the user's measured timezoneoffset instead of replacing
+        .filter(([name]) => name !== "timeZoneOffset")
+        .map(([name, feature]) => [
+          name,
+          // we assume the max discrete value of clicks so location vector gets full confidence
+          // the uncertainty of the location based features are baked into the grid and priors
+          name === SPECIAL_FEATURE_CLICK
+            ? (feature.thresholds?.length ?? 0)
+            : 0,
+        ])
+    );
+  }
+
+  computePrivateLocationInterestVector(locationInterestVector) {
+    return Object.fromEntries(
+      Object.entries(locationInterestVector)
+        .filter(([name]) =>
+          this.privateFeatures ? this.privateFeatures.includes(name) : true
+        )
+        .map(([name, value]) => [
+          name,
+          this.interestVectorModel[name].applyDifferentialPrivacy(value),
+        ])
+    );
+  }
+
+  /**
    * Computes an interest vector or aggregate based on the model and raw sql inout.
    *
    * @param {object} config
