@@ -152,18 +152,20 @@ class ClientWebGLExtensionLoseContext : public ClientWebGLExtensionBase {
   explicit ClientWebGLExtensionLoseContext(ClientWebGLContext&);
 
   void LoseContext() {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("loseContext: Extension is `invalidated`.");
       return;
     }
-    mContext->EmulateLoseContext();
+    context->EmulateLoseContext();
   }
   void RestoreContext() {
-    if (!mContext) [[unlikely]] {
+    const RefPtr<ClientWebGLContext> context = mContext.get();
+    if (!context) [[unlikely]] {
       AutoJsWarning("restoreContext: Extension is `invalidated`.");
       return;
     }
-    mContext->RestoreContext(webgl::LossStatus::LostManually);
+    context->RestoreContext(webgl::LossStatus::LostManually);
   }
 };
 
