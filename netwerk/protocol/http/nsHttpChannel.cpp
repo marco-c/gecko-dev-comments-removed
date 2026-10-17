@@ -4416,6 +4416,9 @@ nsresult nsHttpChannel::OpenRedirectChannel(nsresult rv) {
 
   notifier.RedirectSucceeded();
 
+  
+  MaybeReportTimingDataForRedirect(mRedirectChannel);
+
   ReleaseListeners();
 
   return NS_OK;

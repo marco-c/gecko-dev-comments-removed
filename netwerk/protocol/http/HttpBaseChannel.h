@@ -644,6 +644,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
   virtual void DoAsyncAbort(nsresult aStatus) = 0;
 
   void MaybeReportTimingData();
+  
+  
+  void MaybeReportTimingDataForRedirect(nsISupports* aNewChannel);
   nsIURI* GetReferringPage();
   nsPIDOMWindowInner* GetInnerDOMWindow();
 

@@ -6175,6 +6175,14 @@ IMPL_TIMING_ATTR(TransactionPending)
 
 #undef IMPL_TIMING_ATTR
 
+void HttpBaseChannel::MaybeReportTimingDataForRedirect(
+    nsISupports* aNewChannel) {
+  nsCOMPtr<nsITimedChannel> newTimedChannel = do_QueryInterface(aNewChannel);
+  if (!newTimedChannel) {
+    MaybeReportTimingData();
+  }
+}
+
 void HttpBaseChannel::MaybeReportTimingData() {
   
   
