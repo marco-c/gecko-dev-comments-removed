@@ -407,12 +407,23 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
         
         
         
+        
+        
         is_parallel_capable_mac = (
             sys.platform.startswith("darwin")
-            and mozinfo.info.get("arch") == "aarch64"
-            and not mozinfo.info.get("macos_vm")
             and list(test_types) == ["testharness"]
-            and not c["tag"]
+            and (
+                (
+                    mozinfo.info.get("arch") == "aarch64"
+                    and not mozinfo.info.get("macos_vm")
+                    and not c["tag"]
+                )
+                or (
+                    mozinfo.info.get("arch") == "x86_64"
+                    and any(tag in ("webgpu", "webgpu-long") for tag in c["tag"])
+                    and not c["backlog"]
+                )
+            )
         )
         if (
             self.is_android
@@ -424,6 +435,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
         ):
             processes = 1
         elif is_parallel_capable_mac:
+            
             
             
             processes = 3
