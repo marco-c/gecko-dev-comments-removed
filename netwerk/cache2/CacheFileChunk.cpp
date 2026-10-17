@@ -498,8 +498,7 @@ void CacheFileChunk::CancelWait(CacheFileChunkListener* aCallback) {
 
   LOG(("CacheFileChunk::CancelWait() [this=%p, listener=%p]", this, aCallback));
 
-  
-  MOZ_ASSERT(mState == READY || mState == WRITING);
+  MOZ_ASSERT(IsReady());
 
   uint32_t i;
   for (i = 0; i < mUpdateListeners.Length(); i++) {

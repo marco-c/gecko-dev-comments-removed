@@ -44,8 +44,6 @@ class CacheFileInputStream : public nsIAsyncInputStream,
   };
 
  private:
-  friend class CacheFile;
-
   virtual ~CacheFileInputStream();
 
   void CloseWithStatusLocked(nsresult aStatus);
