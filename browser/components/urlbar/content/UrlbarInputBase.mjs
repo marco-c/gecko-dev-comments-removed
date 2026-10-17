@@ -5848,7 +5848,8 @@ ${
       options.searchMode = this.searchMode;
       if (
         this.searchMode.source &&
-        !UrlbarPrefs.get("unifiedSearchButton.historyInSearchMode")
+        (!this.searchMode.engineName ||
+          !UrlbarPrefs.get("unifiedSearchButton.historyInSearchMode"))
       ) {
         options.sources = [this.searchMode.source];
       }
