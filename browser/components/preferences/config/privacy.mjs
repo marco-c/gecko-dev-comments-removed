@@ -2317,6 +2317,7 @@ Preferences.addSetting({
     settingsRedesignEnabled.value,
   onUserClick(e) {
     e.preventDefault();
+    Glean.ipprotection.rulesPageOpened.record({ entrypoint: "settings" });
     gotoPref("vpnSiteRules");
   },
 });

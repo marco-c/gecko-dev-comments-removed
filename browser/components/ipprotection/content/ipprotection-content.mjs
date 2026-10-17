@@ -209,6 +209,7 @@ export default class IPProtectionContentElement extends MozLitElement {
   handleClickSiteRulesLink(event) {
     event.preventDefault();
     const win = event.target.documentGlobal;
+    Glean.ipprotection.rulesPageOpened.record({ entrypoint: "panel" });
     win.openPreferences(SITE_RULES_SETTINGS_PANE);
     this.dispatchEvent(
       new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })

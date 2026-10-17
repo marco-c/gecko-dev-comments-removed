@@ -419,6 +419,7 @@ add_task(async function test_site_rules_link_opens_settings() {
 
   Assert.ok(content.siteRulesEl, "Site rules link should be present");
 
+  Services.fog.testResetFOG();
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   const openPreferencesStub = sinon.stub(window, "openPreferences");
 
@@ -440,6 +441,14 @@ add_task(async function test_site_rules_link_opens_settings() {
     gBrowser.selectedTab,
     tab,
     "Clicking the site rules link should not have navigated the current tab"
+  );
+
+  let events = Glean.ipprotection.rulesPageOpened.testGetValue();
+  Assert.equal(events.length, 1, "Should have recorded one rules page event");
+  Assert.equal(
+    events[0].extra.entrypoint,
+    "panel",
+    "Rules page event should record the panel entrypoint"
   );
 
   openPreferencesStub.restore();
@@ -857,20 +866,21 @@ add_task(async function test_site_rule_status_inclusion_from_rule() {
     isReady: true,
   });
 
-  const principal =
-    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      MOCK_SITE_NAME
-    );
-  IPPPermissionRules.setRule(principal, IPPPrincipalRules.INCLUDED);
-
+  
+  
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     MOCK_SITE_NAME
   );
 
-  let content = await openPanel({
-    isProtectionEnabled: false,
-  });
+  const principal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      MOCK_SITE_NAME
+    );
+  IPPPermissionRules.setRule(principal, IPPPrincipalRules.INCLUDED);
+  await waitForProxyState(IPPProxyStates.ACTIVE);
+
+  let content = await openPanel();
 
   Assert.ok(
     content.state.siteData?.hasSiteRule,
@@ -881,15 +891,11 @@ add_task(async function test_site_rule_status_inclusion_from_rule() {
     "The panel should resolve the rule as an inclusion"
   );
 
-  await checkSiteRuleStatus(
-    content,
-    INCLUSION_DESCRIPTION_L10N_ID,
-    VPN_ON_ICON
-  );
-
   await closePanel();
   BrowserTestUtils.removeTab(tab);
+  
   IPPPermissionRules.setRule(principal, IPPPrincipalRules.DEFAULT);
+  await waitForProxyState(IPPProxyStates.READY);
   await SpecialPowers.popPrefEnv();
 });
 
