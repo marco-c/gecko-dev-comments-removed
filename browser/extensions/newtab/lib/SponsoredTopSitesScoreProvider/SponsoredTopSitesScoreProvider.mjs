@@ -50,6 +50,9 @@ const PREF_LAST_RELEASE_TIME =
 // Places events that indicate browsing history was removed.
 const PLACES_EVENTS = ["history-cleared", "page-removed"];
 
+// Held while the scores are refreshed or cleared, so the two never interleave.
+const SCORES_LOCK = "newtab-sponsored-topsites-scoring";
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "LAST_RELEASE_TIME_PREF_VALUE",
@@ -106,7 +109,7 @@ export class _SponsoredTopSitesScoreProvider {
 
   /**
    * Load any active config and update the cached scores. Clears existing
-   * scores when no config exists.
+   * scores when no config exists. Callers must hold SCORES_LOCK.
    *
    * @returns {Promise<void>} Resolves once the cached scores are updated.
    */
@@ -244,7 +247,9 @@ export class _SponsoredTopSitesScoreProvider {
   async getScores() {
     const scores = (await this._cache?.get(SCORES_CACHE_KEY)) ?? {};
     if (this._rs && !this._refreshPromise) {
-      this._refreshPromise = this._refreshScores()
+      // @ts-expect-error The locks global is not declared in tools/@types yet.
+      this._refreshPromise = locks
+        .request(SCORES_LOCK, () => this._refreshScores())
         .catch(e => lazy.logConsole.debug("Refresh failed", e))
         .finally(() => {
           this._refreshPromise = null;
@@ -264,20 +269,20 @@ export class _SponsoredTopSitesScoreProvider {
     if (!this._cache) {
       return;
     }
-    // Let a running refresh finish first so that it cannot write its scores
-    // back after they are cleared.
-    await this._refreshPromise;
-    const data = await this._cache.get();
-    const hasData =
-      Object.keys(data[SCORES_CACHE_KEY] ?? {}).length ||
-      data[HISTORY_CACHE_KEY]?.length;
-    if (!hasData && !this._getLastReleaseTime()) {
-      return;
-    }
+    // @ts-expect-error The locks global is not declared in tools/@types yet.
+    await locks.request(SCORES_LOCK, async () => {
+      const data = await this._cache.get();
+      const hasData =
+        Object.keys(data[SCORES_CACHE_KEY] ?? {}).length ||
+        data[HISTORY_CACHE_KEY]?.length;
+      if (!hasData && !this._getLastReleaseTime()) {
+        return;
+      }
 
-    this._setLastReleaseTime(Math.round(Date.now() / 1000));
-    await this._cache.set(SCORES_CACHE_KEY, {});
-    await this._cache.set(HISTORY_CACHE_KEY, []);
+      this._setLastReleaseTime(Math.round(Date.now() / 1000));
+      await this._cache.set(SCORES_CACHE_KEY, {});
+      await this._cache.set(HISTORY_CACHE_KEY, []);
+    });
   }
 
   /**
