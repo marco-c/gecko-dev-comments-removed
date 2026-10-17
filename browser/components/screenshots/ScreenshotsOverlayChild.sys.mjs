@@ -52,7 +52,7 @@ const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "overlayLocalization", () => {
   return new Localization(
-    ["browser/screenshots.ftl", "preview/miniWindow.ftl"],
+    ["browser/screenshots.ftl", "browser/miniWindow.ftl"],
     true
   );
 });
