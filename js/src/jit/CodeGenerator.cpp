@@ -6769,8 +6769,6 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
     masm.branchTestNull(Assembler::Equal, thisAddr, &vmCall);
   }
 
-  masm.switchToObjectRealm(calleeReg, scratch);
-
   
   masm.branchIfFunctionHasNoJitEntry(calleeReg, &noJitEntry);
 
@@ -6780,6 +6778,7 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
 
   generateIonGenericHandleUnderflow(masm, isConstructing, &vmCall);
 
+  masm.switchToObjectRealm(calleeReg, scratch);
   masm.loadJitCodeRaw(calleeReg, scratch2);
 
   
@@ -7058,6 +7057,9 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
   masm.push(calleeReg);
 
   
+  masm.switchToObjectRealm(calleeReg, scratch);
+
+  
 #ifdef JS_SIMULATOR
   masm.movePtr(ImmPtr(RedirectedCallAnyNative()), calleeReg);
 #else
@@ -7116,6 +7118,12 @@ void JitRuntime::generateIonGenericCallFunCall(MacroAssembler& masm,
   masm.branchPtr(Assembler::NotEqual,
                  Address(calleeReg, JSFunction::offsetOfNativeOrEnv()),
                  ImmPtr(js::fun_call), &notFunCall);
+
+  
+  
+  
+  
+  masm.guardObjectHasSameRealm(calleeReg, scratch, vmCall);
 
   
   
@@ -7262,6 +7270,12 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
 
   
   masm.unboxObject(targetSlot, calleeReg);
+
+  
+  
+  const void* limitAddr = masm.runtime()->addressOfJitStackLimit();
+  masm.branchStackPtrRhs(Assembler::AboveOrEqual, AbsoluteAddress(limitAddr),
+                         vmCall);
 
   
   
@@ -17358,12 +17372,11 @@ bool CodeGenerator::generateWasm(wasm::CallIndirectId callIndirectId,
 
       auto* ool = new (alloc()) LambdaOutOfLineCode(
           [this, stackMaps, functionEntryStackMap](OutOfLineCode& ool) {
-            masm.wasmTrap(wasm::Trap::CheckInterrupt, wasm::TrapSiteDesc());
-            CodeOffset trapInsnOffset = CodeOffset(masm.currentOffset());
+            FaultingCodeRange fcr =
+                masm.wasmTrap(wasm::Trap::CheckInterrupt, wasm::TrapSiteDesc());
 
-            if (functionEntryStackMap &&
-                !stackMaps->add(trapInsnOffset.offset(),
-                                functionEntryStackMap)) {
+            if (functionEntryStackMap && fcr.isValid() &&
+                !stackMaps->add(fcr.resumeOffset(), functionEntryStackMap)) {
               masm.setOOM();
             }
             masm.jump(ool.rejoin());
@@ -21535,9 +21548,12 @@ void CodeGenerator::visitWasmHeapReg(LWasmHeapReg* ins) {
 void CodeGenerator::emitResumableWasmTrapOOL(
     LInstruction* lir, size_t framePushed,
     const wasm::TrapSiteDesc& trapSiteDesc, wasm::Trap trap) {
-  masm.wasmTrap(trap, trapSiteDesc);
+  FaultingCodeRange fcr = masm.wasmTrap(trap, trapSiteDesc);
+  if (!fcr.isValid()) {
+    return;
+  }
 
-  markSafepointAt(masm.currentOffset(), lir);
+  markSafepointAt(fcr.resumeOffset(), lir);
 
   
   
