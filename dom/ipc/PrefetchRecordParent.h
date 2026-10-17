@@ -20,6 +20,7 @@
 #include "nsIReferrerInfo.h"
 #include "nsIRequestObserver.h"
 #include "nsIStreamListener.h"
+#include "nsITimer.h"
 #include "nsIURI.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -107,6 +108,7 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   void FillResponseOnLastEntry(nsIChannel* aChannel);
   nsString ComputePartitionKeyForChannel(nsIChannel* aChannel) const;
   bool IsReferrerPolicySufficientlyStrict() const;
+  void ReleaseCacheToken();
 
   
   
@@ -118,6 +120,11 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   PrefetchSource mSource = PrefetchSource::SpeculationRules;
   PrefetchState mState = PrefetchState::Ongoing;
   nsCOMPtr<nsIChannel> mChannel;
+  
+  
+  nsCOMPtr<nsISupports> mCacheToken;
+  
+  nsCOMPtr<nsITimer> mExpiryTimer;
   nsTArray<ExchangeRecord> mRedirectChain;
   TimeStamp mStartTime;
   TimeStamp mExpiryTime;
