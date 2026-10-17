@@ -8,6 +8,7 @@
 #include "RemoteCDMParent.h"
 #include "RemoteMediaManagerChild.h"
 #include "RemoteMediaManagerParent.h"
+#include "mozilla/PRemoteCDMChild.h"
 #include "mozilla/StaticPrefs_media.h"
 
 namespace mozilla {
@@ -68,6 +69,13 @@ MediaResult RemoteAudioDecoderChild::InitIPDL(
       return MediaResult(
           NS_ERROR_DOM_MEDIA_FATAL_ERR,
           RESULT_DETAIL("PRemoteCDMActor is not PRemoteCDMChild."));
+    }
+
+    
+    
+    if (!cdm->CanSend() || cdm->Manager() != manager) {
+      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                         RESULT_DETAIL("PRemoteCDMChild is in stale process."));
     }
   }
 
