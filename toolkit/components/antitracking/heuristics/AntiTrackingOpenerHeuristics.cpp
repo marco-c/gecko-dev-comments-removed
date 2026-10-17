@@ -7,6 +7,7 @@
 #include "ContentBlockingNotifier.h"
 #include "StorageAccessAPIHelper.h"
 
+#include "mozilla/BasePrincipal.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -17,6 +18,7 @@
 #include "nsICookieJarSettings.h"
 #include "nsIURI.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -120,6 +122,47 @@ void MaybeAllowStorageForOpenerAfterUserInteraction(
           }
         }
       });
+}
+
+void MaybeAllowStorageForOpenedWindow(nsPIDOMWindowOuter* aOpener,
+                                      nsIURI* aURI) {
+  MOZ_ASSERT(aOpener);
+
+  nsPIDOMWindowInner* inner = aOpener->GetCurrentInnerWindow();
+  if (NS_WARN_IF(!inner)) {
+    return;
+  }
+
+  
+  if (StaticPrefs::
+          privacy_restrict3rdpartystorage_heuristic_exclude_third_party_trackers() &&
+      nsContentUtils::IsThirdPartyTrackingResourceWindow(inner)) {
+    return;
+  }
+
+  
+  if (!AntiTrackingUtils::IsThirdPartyWindow(inner, aURI)) {
+    return;
+  }
+
+  dom::Document* doc = inner->GetDoc();
+  if (!doc) {
+    return;
+  }
+  nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
+      aURI, doc->NodePrincipal()->OriginAttributesRef());
+
+  
+  
+  if (XRE_IsParentProcess()) {
+    (void)StorageAccessAPIHelper::AllowAccessForOnParentProcess(
+        principal, aOpener->GetBrowsingContext(),
+        ContentBlockingNotifier::eOpener);
+  } else {
+    (void)StorageAccessAPIHelper::AllowAccessForOnChildProcess(
+        principal, aOpener->GetBrowsingContext(),
+        ContentBlockingNotifier::eOpener);
+  }
 }
 
 }  
