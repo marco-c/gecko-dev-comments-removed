@@ -83,6 +83,24 @@ add_task(async function test_trash_button_when_pref_enabled() {
         "The secondary action shows the trash icon"
       );
       await closePopup(browser);
+      const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+      is(closedEvents?.length, 1, "One dropdown closed event is recorded");
+      is(
+        closedEvents[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
+      );
+      is(
+        closedEvents[0].extra.close_reason,
+        "dismissed",
+        "Blurring the field records a dismissed close"
+      );
+      ok(closedEvents[0].extra.flow_id, "The event carries a flow id");
+      is(
+        closedEvents[0].extra.flow_id,
+        shownEvents[0].extra.flow_id,
+        "The closed event's flow id matches the shown event for the same dropdown"
+      );
     }
   );
   await SpecialPowers.popPrefEnv();

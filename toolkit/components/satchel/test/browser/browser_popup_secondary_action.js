@@ -177,6 +177,7 @@ add_task(async function test_trash_button_shows_no_confirmation() {
 
 add_task(async function test_escape_leaves_secondary_action_before_closing() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  Services.fog.testResetFOG();
   await withFormHistoryPopup(async (browser, autoCompletePopup, itemsBox) => {
     const rowItem = getRowItem(itemsBox, 0);
 
@@ -204,8 +205,69 @@ add_task(async function test_escape_leaves_secondary_action_before_closing() {
       () => !autoCompletePopup.popupOpen,
       "A second Escape closes the popup"
     );
+
+    const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+    const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+    Assert.equal(
+      shownEvents?.length,
+      1,
+      "One dropdown shown event is recorded"
+    );
+    Assert.equal(
+      closedEvents?.length,
+      1,
+      "One dropdown closed event is recorded"
+    );
+    Assert.equal(
+      closedEvents[0].extra.record_type,
+      "formhistory",
+      "The event names the formhistory record type"
+    );
+    Assert.equal(
+      closedEvents[0].extra.close_reason,
+      "dismissed",
+      "Escape records a dismissed close"
+    );
+    Assert.ok(closedEvents[0].extra.flow_id, "The event carries a flow id");
+    Assert.equal(
+      closedEvents[0].extra.flow_id,
+      shownEvents[0].extra.flow_id,
+      "The closed event's flow id matches the shown event for the same dropdown"
+    );
   });
   await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_selecting_an_entry_records_dropdown_closed() {
+  await withFormHistoryPopup(async (browser, autoCompletePopup, itemsBox) => {
+    const rowItem = getRowItem(itemsBox, 0);
+    await BrowserTestUtils.synthesizeKey("VK_DOWN", {}, browser);
+    await TestUtils.waitForCondition(() => rowItem.selected);
+
+    Services.fog.testResetFOG();
+    await BrowserTestUtils.synthesizeKey("VK_RETURN", {}, browser);
+    await TestUtils.waitForCondition(
+      () => !autoCompletePopup.popupOpen,
+      "Selecting an entry closes the popup"
+    );
+
+    const closedEvents = Glean.autocomplete.dropdownClosed.testGetValue();
+    Assert.equal(
+      closedEvents?.length,
+      1,
+      "One dropdown closed event is recorded"
+    );
+    Assert.equal(
+      closedEvents[0].extra.record_type,
+      "formhistory",
+      "The event names the formhistory record type"
+    );
+    Assert.equal(
+      closedEvents[0].extra.close_reason,
+      "selected",
+      "Picking an entry records a selected close"
+    );
+  });
 });
 
 add_task(async function test_trash_button_removes_the_entry() {

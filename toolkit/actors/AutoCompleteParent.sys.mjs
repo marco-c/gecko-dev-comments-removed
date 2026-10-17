@@ -211,8 +211,21 @@ export class AutoCompleteParent extends JSWindowActorParent {
    *
    * @type {?string}
    */
-  // eslint-disable-next-line no-unused-private-class-members -- Read by the dropdown closed probe, see bug 2081366.
   #dropdownFlowId = null;
+
+  /**
+   * The saved record type shown in the current dropdown, if any.
+   *
+   * @type {?string}
+   */
+  #dropdownRecordType = null;
+
+  /**
+   * Why the current dropdown is closing; null means it was dismissed.
+   *
+   * @type {?string}
+   */
+  #dropdownCloseReason = null;
 
   /**
    * The entry whose provider was last asked for a preview, so that the
@@ -228,6 +241,13 @@ export class AutoCompleteParent extends JSWindowActorParent {
 
   didDestroy() {
     if (this.openedPopup) {
+      // Only reached on platforms (GeckoView) where the actor is torn down
+      // while the popup is still open. On desktop, nsFormFillController's
+      // own pagehide handling closes the popup via the generic path first,
+      // so this never marks a desktop tab-close/navigation close as
+      // "left_page" -- see the dropdown_closed close_reason doc in
+      // metrics.yaml.
+      this.#dropdownCloseReason = "left_page";
       this.openedPopup.closePopup();
     }
   }
@@ -281,6 +301,18 @@ export class AutoCompleteParent extends JSWindowActorParent {
         // we don't have a big shrink effect if we closed with a
         // large list, and then open on a small one.
         this.openedPopup.adjustHeight();
+
+        if (this.#dropdownRecordType) {
+          Glean.autocomplete.dropdownClosed.record({
+            record_type: this.#dropdownRecordType,
+            close_reason: this.#dropdownCloseReason ?? "dismissed",
+            flow_id: this.#dropdownFlowId ?? "",
+          });
+        }
+        this.#dropdownRecordType = null;
+        this.#dropdownCloseReason = null;
+        this.#dropdownFlowId = null;
+
         this.openedPopup = null;
         currentActor = null;
         evt.target.removeEventListener("popuphidden", this);
@@ -376,6 +408,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * @param {object[]} results - Non-empty array of autocomplete results.
    */
   #recordDropdownShown(results) {
+    this.#dropdownCloseReason = null;
     this.#dropdownFlowId = Services.uuid.generateUUID().toString();
 
     let recordType = null;
@@ -394,6 +427,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
         break;
       }
     }
+    this.#dropdownRecordType = recordType;
     if (recordType) {
       Glean.autocomplete.dropdownShown.record({
         record_type: recordType,
@@ -484,6 +518,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
     }
 
     if (!results.length) {
+      // Only set the fallback reason if a secondary action (handled in
+      // selectAutoCompleteEntry) hasn't already explained this close, e.g.
+      // deleting the last entry empties the dropdown via this same path.
+      if (!this.#dropdownCloseReason) {
+        this.#dropdownCloseReason = "typed_through";
+      }
       this.closePopup();
     } else {
       AutoCompleteResultView.setResults(this, results);
@@ -848,6 +888,15 @@ export class AutoCompleteParent extends JSWindowActorParent {
     const result = AutoCompleteResultView.results[selectedIndex];
     if (!result) {
       return;
+    }
+    if (secondary) {
+      // A secondary action (e.g. deleting the last entry) can empty the
+      // dropdown and close it via invalidate(), which would otherwise
+      // default that close to "typed_through". Mark it dismissed instead,
+      // since the user didn't pick a suggestion or keep typing.
+      this.#dropdownCloseReason = "dismissed";
+    } else {
+      this.#dropdownCloseReason = "selected";
     }
 
     const parsedComment = JSON.parse(result.comment || "{}");
