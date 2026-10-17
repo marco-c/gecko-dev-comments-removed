@@ -991,13 +991,11 @@ impl<'a> SceneBuilder<'a> {
                             continue;
                         }
 
+                        if !self.scene.may_embed(bc.pipeline_id, info.pipeline_id) {
+                            continue;
+                        }
+
                         let space = self.get_space(info.space_and_clip.spatial_id);
-                        
-                        
-                        
-                        
-                        
-                        
                         let (namespace, subtraversal) = match self.push_iframe(info, space) {
                             Some(pair) => pair,
                             None => continue,

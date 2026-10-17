@@ -38,6 +38,8 @@ pub struct DisplayList {
     
     
     pub render_offscreen: bool,
+    
+    pub embed_policy: Option<EmbedPolicy>,
 }
 
 
@@ -740,11 +742,19 @@ impl Wrench {
         display_lists: Vec<DisplayList>,
         scroll_offsets: &HashMap<ExternalScrollId, Vec<SampledScrollOffset>>,
         transform_properties: &[PropertyValue<LayoutTransform>],
+        enforce_embed_policy: bool,
     ) {
         let mut txn = Transaction::new();
+        
+        
+        txn.set_embed_policy_enforcement(enforce_embed_policy);
         let mut present = false;
         for display_list in display_lists {
             present |= display_list.present;
+
+            let embed_policy = display_list.embed_policy
+                .unwrap_or_else(|| EmbedPolicy::Restricted(Vec::new()));
+            txn.set_embed_policy(display_list.pipeline, embed_policy);
 
             txn.set_display_list(
                 Epoch(*frame_number),

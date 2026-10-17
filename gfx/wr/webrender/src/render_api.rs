@@ -15,7 +15,7 @@ use crate::api::{BuiltDisplayList, IdNamespace, ExternalScrollId, Parameter, Boo
 use crate::api::{FontKey, FontInstanceKey, NativeFontHandle};
 use crate::api::{BlobImageData, BlobImageKey, ImageData, ImageDescriptor, ImageKey, Epoch, QualitySettings};
 use crate::api::{BlobImageParams, BlobImageRequest, BlobImageResult, AsyncBlobImageRasterizer, BlobImageHandler};
-use crate::api::{DocumentId, PipelineId, PropertyBindingId, PropertyBindingKey, ExternalEvent};
+use crate::api::{DocumentId, EmbedPolicy, PipelineId, PropertyBindingId, PropertyBindingKey, ExternalEvent};
 use crate::api::{HitTestResult, HitTesterRequest, ApiHitTester, PropertyValue, DynamicProperties};
 use crate::api::{SampledScrollOffset, TileSize, NotificationRequest, DebugFlags};
 use crate::api::{GlyphDimensionRequest, GlyphIndexRequest, GlyphIndex, GlyphDimensions};
@@ -302,6 +302,21 @@ impl Transaction {
     
     pub fn remove_pipeline(&mut self, pipeline_id: PipelineId) {
         self.scene_ops.push(SceneMsg::RemovePipeline(pipeline_id));
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_embed_policy(&mut self, pipeline_id: PipelineId, policy: EmbedPolicy) {
+        self.scene_ops.push(SceneMsg::SetEmbedPolicy { pipeline_id, policy });
+    }
+
+    
+    
+    pub fn set_embed_policy_enforcement(&mut self, enabled: bool) {
+        self.scene_ops.push(SceneMsg::SetEmbedPolicyEnforcement(enabled));
     }
 
     
@@ -860,6 +875,15 @@ pub enum SceneMsg {
         namespace: IdNamespace,
     },
     
+    SetEmbedPolicy {
+        
+        pipeline_id: PipelineId,
+        
+        policy: EmbedPolicy,
+    },
+    
+    SetEmbedPolicyEnforcement(bool),
+    
     
     
     
@@ -906,6 +930,8 @@ impl fmt::Debug for SceneMsg {
             SceneMsg::RemovePipeline(..) => "SceneMsg::RemovePipeline",
             SceneMsg::SetDocumentView { .. } => "SceneMsg::SetDocumentView",
             SceneMsg::SetRootPipeline(..) => "SceneMsg::SetRootPipeline",
+            SceneMsg::SetEmbedPolicy { .. } => "SceneMsg::SetEmbedPolicy",
+            SceneMsg::SetEmbedPolicyEnforcement(..) => "SceneMsg::SetEmbedPolicyEnforcement",
             SceneMsg::SetQualitySettings { .. } => "SceneMsg::SetQualitySettings",
             SceneMsg::RenderOffscreen(..) => "SceneMsg::BuildOffscreen",
         })

@@ -205,6 +205,28 @@ impl PipelineId {
     pub const INVALID: Self = PipelineId(!0, !0);
 }
 
+
+
+
+
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum EmbedPolicy {
+    
+    Unrestricted,
+    
+    Restricted(Vec<PipelineSourceId>),
+}
+
+impl EmbedPolicy {
+    pub fn allows(&self, pipeline_id: PipelineId) -> bool {
+        match *self {
+            EmbedPolicy::Unrestricted => true,
+            EmbedPolicy::Restricted(ref namespaces) => namespaces.contains(&pipeline_id.0),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct FramePublishId(pub u64);
