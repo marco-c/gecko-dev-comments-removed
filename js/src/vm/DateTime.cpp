@@ -32,7 +32,6 @@
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/ExclusiveData.h"
-
 #include "util/Text.h"
 #include "vm/MutexIDs.h"
 #include "vm/Realm.h"
@@ -541,6 +540,51 @@ bool js::DateTimeInfo::internalTimeZoneId(TimeZoneIdentifierVector& result) {
   return result.append(timeZoneId_.get(), js_strlen(timeZoneId_.get()));
 }
 
+
+
+
+
+
+
+
+
+
+
+static mozilla::UniquePtr<mozilla::intl::TimeZone> AliasLegacyPOSIXTimeZone(
+    mozilla::UniquePtr<mozilla::intl::TimeZone> timeZone) {
+  js::intl::FormatBuffer<char16_t,
+                         mozilla::intl::TimeZone::TimeZoneIdentifierLength,
+                         js::SystemAllocPolicy>
+      buffer;
+  if (timeZone->GetId(buffer).isErr()) {
+    return timeZone;
+  }
+
+  struct Alias {
+    std::u16string_view legacy;
+    std::string_view city;
+  };
+  static constexpr Alias aliases[] = {
+      {u"CST6CDT", "America/Chicago"},
+      {u"EST5EDT", "America/New_York"},
+      {u"MST7MDT", "America/Denver"},
+      {u"PST8PDT", "America/Los_Angeles"},
+  };
+
+  std::u16string_view id{buffer.data(), buffer.length()};
+  for (const auto& alias : aliases) {
+    if (id == alias.legacy) {
+      auto result = mozilla::intl::TimeZone::TryCreate(
+          mozilla::Some(mozilla::Span(alias.city.data(), alias.city.length())));
+      if (result.isOk()) {
+        return result.unwrap();
+      }
+      break;
+    }
+  }
+  return timeZone;
+}
+
 mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
   if (!timeZone_) {
     mozilla::Maybe<mozilla::Span<const char>> timeZoneOverride;
@@ -563,8 +607,8 @@ mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
     
     MOZ_RELEASE_ASSERT(timeZone.isOk());
 
-    timeZone_ = timeZone.unwrap();
-    MOZ_ASSERT(timeZone_);
+    timeZone_ = AliasLegacyPOSIXTimeZone(timeZone.unwrap());
+    MOZ_RELEASE_ASSERT(timeZone_);
   }
 
   return timeZone_.get();
