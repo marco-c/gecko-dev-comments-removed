@@ -18,6 +18,8 @@ moz-widget-back-button =
   .aria-label = Back
 moz-widget-units-button =
   .label = Units
+moz-widget-menu-refresh = Refresh
+moz-widget-menu-remove = Remove widget
     `,
   },
   argTypes: {
@@ -46,9 +48,20 @@ const WIDGET_DOCUMENT = `data:text/html,${encodeURIComponent(`
   </body>
 `)}`;
 
-const headerTemplate = ({ headerTitle, badge, backButton, trailingButton }) =>
-  headerTitle || badge || backButton || trailingButton
-    ? html`<moz-widget-header slot="header" title=${ifDefined(headerTitle)}>
+const headerTemplate = ({
+  headerTitle,
+  badge,
+  backButton,
+  trailingButton,
+  menu,
+  menuLabel,
+}) =>
+  headerTitle || badge || backButton || trailingButton || menu
+    ? html`<moz-widget-header
+        slot="header"
+        title=${ifDefined(headerTitle)}
+        menu-label=${ifDefined(menuLabel)}
+      >
         ${backButton
           ? html`<moz-button
               slot="leading"
@@ -69,6 +82,13 @@ const headerTemplate = ({ headerTitle, badge, backButton, trailingButton }) =>
               iconposition="end"
               data-l10n-id="moz-widget-units-button"
             ></moz-button>`
+          : ""}
+        ${menu
+          ? html`<panel-list slot="menu" id="moz-widget-menu">
+              <panel-item data-l10n-id="moz-widget-menu-refresh"></panel-item>
+              <hr />
+              <panel-item data-l10n-id="moz-widget-menu-remove"></panel-item>
+            </panel-list>`
           : ""}
       </moz-widget-header>`
     : "";
@@ -118,6 +138,8 @@ Default.args = {
   badge: undefined,
   backButton: false,
   trailingButton: false,
+  menu: false,
+  menuLabel: "Widget options",
   padded: false,
 };
 
@@ -141,4 +163,5 @@ HeaderActions.args = {
   badge: "new",
   backButton: true,
   trailingButton: true,
+  menu: true,
 };

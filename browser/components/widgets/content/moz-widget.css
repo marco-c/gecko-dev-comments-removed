@@ -13,6 +13,7 @@
   box-sizing: border-box;
   inline-size: var(--size-layout-medium);
   aspect-ratio: 6 / 5;
+  --widget-size: large;
 }
 
 :host(:hover) {
@@ -28,11 +29,13 @@
 :host([size="medium"]) {
   inline-size: var(--size-layout-medium);
   aspect-ratio: 12 / 5;
+  --widget-size: medium;
 }
 
 :host([size="small"]) {
   inline-size: calc(var(--size-layout-medium) / 2);
   aspect-ratio: 6 / 5;
+  --widget-size: small;
 }
 
 .widget {

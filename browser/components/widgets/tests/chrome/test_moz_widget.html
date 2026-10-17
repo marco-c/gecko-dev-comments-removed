@@ -47,19 +47,26 @@
 
       add_task(async function test_widget_sizes() {
         const expected = {
-          small: [IAB_WIDTH / 2, IAB_HEIGHT / 2],
-          medium: [IAB_WIDTH, IAB_HEIGHT / 2],
-          large: [IAB_WIDTH, IAB_HEIGHT],
-          unknown: [IAB_WIDTH, IAB_HEIGHT],
+          small: [IAB_WIDTH / 2, IAB_HEIGHT / 2, "small"],
+          medium: [IAB_WIDTH, IAB_HEIGHT / 2, "medium"],
+          large: [IAB_WIDTH, IAB_HEIGHT, "large"],
+          unknown: [IAB_WIDTH, IAB_HEIGHT, "large"],
         };
 
-        for (const [size, [width, height]] of Object.entries(expected)) {
+        for (const [size, [width, height, sizeName]] of Object.entries(
+          expected
+        )) {
           const widget = createWidget({ size });
           await widget.updateComplete;
 
           const rect = widget.getBoundingClientRect();
           is(rect.width, width, `${size} width`);
           is(rect.height, height, `${size} height`);
+          is(
+            getComputedStyle(widget).getPropertyValue("--widget-size"),
+            sizeName,
+            `${size} --widget-size`
+          );
           widget.remove();
         }
       });
