@@ -95,6 +95,22 @@ export class ChromeProfileMigrator extends MigratorBase {
    */
   #dataPathRemappings = new Map();
 
+  /**
+   * True once the user has selected a folder in the file picker opened by
+   * getPermissions. Reset if that folder did not give access and the user
+   * then cancels the file picker.
+   *
+   * @type {boolean}
+   */
+  #hasUserSelectedDataFolder = false;
+
+  #shouldAvoidReadingData() {
+    return (
+      !this.#hasUserSelectedDataFolder &&
+      MigratorBase.needsFolderSelectionToReadData()
+    );
+  }
+
   static get key() {
     return "chrome";
   }
@@ -115,6 +131,10 @@ export class ChromeProfileMigrator extends MigratorBase {
     let dataPath = await this._getChromeUserDataPathIfExists();
     if (!dataPath) {
       return true;
+    }
+
+    if (this.#shouldAvoidReadingData()) {
+      return false;
     }
 
     let localStatePath = PathUtils.join(dataPath, "Local State");
@@ -149,9 +169,13 @@ export class ChromeProfileMigrator extends MigratorBase {
       let result = await new Promise(resolve => fp.open(resolve));
       // Bail if the user cancels the dialog:
       if (result == Ci.nsIFilePicker.returnCancel) {
+        this.#hasUserSelectedDataFolder = false;
         return false;
       }
 
+      this.#hasUserSelectedDataFolder = true;
+      // Resources looked up before the folder was selected may be empty.
+      this._resourcesByProfile = null;
       let file = fp.file;
       if (file && file.path != originalDataPath) {
         this.#dataPathRemappings.set(originalDataPath, file.path);
@@ -307,7 +331,7 @@ export class ChromeProfileMigrator extends MigratorBase {
     }
 
     let chromeUserDataPath = await this._getChromeUserDataPathIfExists();
-    if (!chromeUserDataPath) {
+    if (!chromeUserDataPath || this.#shouldAvoidReadingData()) {
       return [];
     }
 

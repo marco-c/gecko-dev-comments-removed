@@ -40,6 +40,12 @@ updateAppInfo();
 
 
 
+ChromeUtils.importESModule(
+  "moz-src:///browser/components/migration/MigratorBase.sys.mjs"
+).MigratorBase.needsFolderSelectionToReadData = () => false;
+
+
+
 
 
 
