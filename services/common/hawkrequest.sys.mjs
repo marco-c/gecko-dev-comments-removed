@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { Log } from "resource://gre/modules/Log.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 import { RESTRequest } from "resource://services-common/rest.sys.mjs";
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
@@ -14,6 +15,24 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CryptoUtils: "moz-src:///services/crypto/modules/utils.sys.mjs",
 });
 
+// When enabled, FxA token-authenticated requests use the auth-server's typed
+// Bearer scheme (`Bearer <prefix>_<tokenId>`) instead of Hawk. Remotely
+// flippable so it can be disabled without a client release.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "useBearerAuth",
+  "identity.fxaccounts.auth.useBearer",
+  true
+);
+
+// FxA token kind -> auth-server Bearer prefix (KIND_PREFIXES in the
+// auth-server's bearer-fxa-token scheme). Kinds absent here keep using Hawk.
+// See https://mozilla.github.io/ecosystem-platform/reference/tokens
+const BEARER_TOKEN_PREFIXES = {
+  sessionToken: "fxs",
+  keyFetchToken: "fxk",
+};
+
 /**
  * Single-use HAWK-authenticated HTTP requests to RESTish resources.
  *
@@ -22,7 +41,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  *
  * @param credentials
  *        (Object) Optional credentials for computing HAWK authentication
- *        header.
+ *        header, or `{ accessToken }` to send an OAuth access token as Bearer.
  *
  * @param payloadObj
  *        (Object) Optional object to be converted to JSON payload
@@ -68,19 +87,34 @@ HAWKAuthenticatedRESTRequest.prototype = {
       contentType = "application/json";
     }
     if (this.credentials) {
-      let options = {
-        now: this.now,
-        localtimeOffsetMsec: this.localtimeOffsetMsec,
-        credentials: this.credentials,
-        payload: (data && JSON.stringify(data)) || "",
-        contentType,
-      };
-      let header = await lazy.CryptoUtils.computeHAWK(
-        this.uri,
-        method,
-        options
-      );
-      this.setHeader("Authorization", header.field);
+      if (this.credentials.accessToken) {
+        // OAuth routes only accept Bearer, so this ignores useBearerAuth.
+        this.setHeader(
+          "Authorization",
+          `Bearer ${this.credentials.accessToken}`
+        );
+      } else if (lazy.useBearerAuth && this.credentials.bearerPrefix) {
+        // Typed Bearer: the token id is the same value Hawk used as `id=`.
+        // No MAC, nonce, or payload hash.
+        this.setHeader(
+          "Authorization",
+          `Bearer ${this.credentials.bearerPrefix}_${this.credentials.id}`
+        );
+      } else {
+        let options = {
+          now: this.now,
+          localtimeOffsetMsec: this.localtimeOffsetMsec,
+          credentials: this.credentials,
+          payload: (data && JSON.stringify(data)) || "",
+          contentType,
+        };
+        let header = await lazy.CryptoUtils.computeHAWK(
+          this.uri,
+          method,
+          options
+        );
+        this.setHeader("Authorization", header.field);
+      }
     }
 
     for (let header in this.extraHeaders) {
@@ -120,6 +154,8 @@ Object.setPrototypeOf(
  *          id: the Hawk id (from the first 32 bytes derived)
  *          key: the Hawk key (from bytes 32 to 64)
  *          extra: size - 64 extra bytes (if size > 64)
+ *          bearerPrefix: typed-Bearer prefix for this token kind
+ *                        (only for sessionToken/keyFetchToken)
  *        }
  */
 export async function deriveHawkCredentials(tokenHex, context, size = 96) {
@@ -137,6 +173,12 @@ export async function deriveHawkCredentials(tokenHex, context, size = 96) {
   };
   if (size > 64) {
     result.extra = out.slice(64);
+  }
+  // Tag the credentials with their Bearer prefix so the request layer can emit
+  // the typed-Bearer header. The id above is exactly the Bearer token id.
+  let bearerPrefix = BEARER_TOKEN_PREFIXES[context];
+  if (bearerPrefix) {
+    result.bearerPrefix = bearerPrefix;
   }
 
   return result;

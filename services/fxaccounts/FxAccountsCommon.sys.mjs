@@ -100,6 +100,8 @@ export let SCOPE_PROFILE = "profile";
 export let SCOPE_PROFILE_WRITE = "profile:write";
 export let SCOPE_PROFILE_UID = "profile:uid";
 export let SCOPE_SMART_WINDOW = "https://identity.mozilla.com/apps/smartwindow";
+export let SCOPE_SUBSCRIPTIONS =
+  "profile https://identity.mozilla.com/account/subscriptions";
 
 // Sync scope in Firefox.
 export let SCOPE_OLD_SYNC = "https://identity.mozilla.com/apps/oldsync";
