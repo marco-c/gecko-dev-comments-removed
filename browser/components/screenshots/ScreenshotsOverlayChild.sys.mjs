@@ -2003,6 +2003,11 @@ export class ScreenshotsOverlay {
    * @param {number} pageY The y position relative to the page
    */
   scrollIfByEdge(pageX, pageY) {
+    // Mini-window crops must fit in the visible viewport.
+    if (this.mode === SELECTION_MODES.MINI_WINDOW) {
+      return;
+    }
+
     let { scrollX, scrollY, clientWidth, clientHeight } =
       this.windowDimensions.dimensions;
 
