@@ -11,7 +11,6 @@ var gSetBackground = {
   _screenHeight: 0,
   _image: null,
   _canvas: null,
-  _imageName: null,
 
   get _shell() {
     return ChromeUtils.importESModule(
@@ -86,9 +85,8 @@ var gSetBackground = {
     );
   },
 
-  init(aImage, aImageName) {
+  init(aImage) {
     this._image = aImage;
-    this._imageName = aImageName;
 
     
     this._canvas.width = this._canvas.clientWidth;
@@ -145,8 +143,7 @@ var gSetBackground = {
       this._image,
       this._image.naturalWidth,
       this._image.naturalHeight,
-      Ci.nsIShellService["BACKGROUND_" + this._position],
-      this._imageName
+      Ci.nsIShellService["BACKGROUND_" + this._position]
     );
   },
 

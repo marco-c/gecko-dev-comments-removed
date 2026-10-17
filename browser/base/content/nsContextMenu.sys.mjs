@@ -1912,7 +1912,7 @@ export class nsContextMenu {
 
     this.actor
       .setAsDesktopBackground(this.targetIdentifier)
-      .then(({ failed, dataURL, imageName }) => {
+      .then(({ failed, dataURL }) => {
         if (failed) {
           return;
         }
@@ -1934,15 +1934,14 @@ export class nsContextMenu {
             "Shell:SetDesktopBackground"
           );
           if (dbWin) {
-            dbWin.gSetBackground.init(image, imageName);
+            dbWin.gSetBackground.init(image);
             dbWin.focus();
           } else {
             this.window.openDialog(
               kDesktopBackgroundURL,
               "",
               "centerscreen,chrome,dialog=no,dependent,resizable=no",
-              image,
-              imageName
+              image
             );
           }
         } else {
@@ -1951,8 +1950,7 @@ export class nsContextMenu {
             kDesktopBackgroundURL,
             "",
             "centerscreen,chrome,dialog,modal,dependent",
-            image,
-            imageName
+            image
           );
         }
       });
