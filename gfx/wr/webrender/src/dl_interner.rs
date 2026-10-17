@@ -18,7 +18,6 @@
 
 
 
-
 #![allow(dead_code)]
 
 use crate::intern::ItemUid;
@@ -41,6 +40,7 @@ use std::{fmt, ops};
 macro_rules! enumerate_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            path: api::Path => api::Path, INTERNED_PATHS, path,
         }
     }
 }
@@ -53,6 +53,7 @@ macro_rules! enumerate_dl_stores {
 macro_rules! enumerate_scene_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            path: api::Path => api::Path, path,
         }
     }
 }
@@ -70,6 +71,12 @@ pub struct DlResolveContext<'a> {
 
 pub trait DlResolve<K>: Sized {
     fn resolve(key: &K, ctx: &DlResolveContext) -> Self;
+}
+
+impl DlResolve<api::Path> for api::Path {
+    fn resolve(key: &api::Path, _ctx: &DlResolveContext) -> Self {
+        key.clone()
+    }
 }
 
 
