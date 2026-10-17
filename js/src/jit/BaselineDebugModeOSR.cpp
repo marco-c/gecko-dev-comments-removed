@@ -682,3 +682,16 @@ void JitRuntime::TraceDebugModeOSRReturnSites(JSTracer* trc) {
     rt->jitRuntime()->debugModeOSRReturnSites_.ref().trace(trc);
   }
 }
+
+uint8_t* js::jit::BaselineDebugModeOSRResumeAddr(BaselineFrame* frame,
+                                                 const uint8_t* returnAddress) {
+  AutoUnsafeCallWithABI unsafe;
+  auto* jitRuntime = TlsContext.get()->runtime()->jitRuntime();
+  MOZ_ASSERT(frame->hasPendingDebugModeOSRReturn());
+  auto* site = jitRuntime->lookupDebugModeOSRReturnSite(returnAddress);
+  MOZ_RELEASE_ASSERT(site);
+  uint8_t* resumeAddr = site->resumeAddr();
+  frame->clearPendingDebugModeOSRReturn();
+  jitRuntime->releaseDebugModeOSRReturnSite(site);
+  return resumeAddr;
+}

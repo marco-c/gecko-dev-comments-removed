@@ -353,6 +353,9 @@ bool BaselineCompiler::compileImpl() {
   
   ensureDebugModeOSRPointSpace();
 
+  perfSpewer_.recordOffset(masm, "DebugModeOSREpilogue");
+  emitDebugModeOSREpilogue();
+
   perfSpewer_.recordOffset(masm, "OOLPostBarrierSlot");
   emitOutOfLinePostBarrierSlot();
 
@@ -390,8 +393,9 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
         cx, warmUpCheckPrologueOffset_.offset(),
         profilerEnterFrameToggleOffset_.offset(),
         profilerExitFrameToggleOffset_.offset(),
-        handler.retAddrEntries().length(), handler.osrEntries().length(),
-        debugTrapEntries_.length(), script->resumeOffsets().size()));
+        debugModeOSREpilogueOffset_.offset(), handler.retAddrEntries().length(),
+        handler.osrEntries().length(), debugTrapEntries_.length(),
+        script->resumeOffsets().size()));
     if (!baselineScript) {
       return false;
     }
@@ -2055,6 +2059,16 @@ bool BaselineCompiler::emitDebugTrap() {
   
   return handler.recordCallRetAddr(RetAddrEntry::Kind::DebugTrap,
                                    masm.currentOffset());
+}
+
+void BaselineCompiler::emitDebugModeOSREpilogue() {
+  AutoCreatedBy acb(masm, "BaselineCompiler::emitDebugModeOSREpilogue");
+
+  debugModeOSREpilogueOffset_ = CodeOffset(masm.currentOffset());
+#ifdef JS_USE_LINK_REGISTER
+  masm.pushReturnAddress();
+#endif
+  masm.jump(runtime->jitRuntime()->getBaselineDebugModeOSRHandler());
 }
 
 template <typename Handler>

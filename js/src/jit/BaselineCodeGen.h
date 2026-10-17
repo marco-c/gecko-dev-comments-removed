@@ -479,6 +479,8 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
 
   CodeOffset profilerPushToggleOffset_;
 
+  CodeOffset debugModeOSREpilogueOffset_;
+
   BaselinePerfSpewer perfSpewer_;
 
  public:
@@ -504,6 +506,7 @@ class BaselineCompiler final : private BaselineCompilerCodeGen {
   bool emitBody();
 
   [[nodiscard]] bool emitDebugTrap();
+  void emitDebugModeOSREpilogue();
 };
 
 

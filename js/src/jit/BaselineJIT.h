@@ -223,6 +223,9 @@ class alignas(uintptr_t) BaselineScript final
   uint32_t profilerEnterToggleOffset_ = 0;
   uint32_t profilerExitToggleOffset_ = 0;
 
+  
+  uint32_t debugModeOSREpilogueOffset_ = 0;
+
  private:
   
   
@@ -271,10 +274,12 @@ class alignas(uintptr_t) BaselineScript final
   
   BaselineScript(uint32_t warmUpCheckPrologueOffset,
                  uint32_t profilerEnterToggleOffset,
-                 uint32_t profilerExitToggleOffset)
+                 uint32_t profilerExitToggleOffset,
+                 uint32_t debugModeOSREpilogueOffset)
       : warmUpCheckPrologueOffset_(warmUpCheckPrologueOffset),
         profilerEnterToggleOffset_(profilerEnterToggleOffset),
-        profilerExitToggleOffset_(profilerExitToggleOffset) {}
+        profilerExitToggleOffset_(profilerExitToggleOffset),
+        debugModeOSREpilogueOffset_(debugModeOSREpilogueOffset) {}
 
   template <typename T>
   mozilla::Span<T> makeSpan(Offset start, Offset end) {
@@ -302,6 +307,7 @@ class alignas(uintptr_t) BaselineScript final
   static BaselineScript* New(JSContext* cx, uint32_t warmUpCheckPrologueOffset,
                              uint32_t profilerEnterToggleOffset,
                              uint32_t profilerExitToggleOffset,
+                             uint32_t debugModeOSREpilogueOffset,
                              size_t retAddrEntries, size_t osrEntries,
                              size_t debugTrapEntries, size_t resumeEntries);
 
@@ -330,6 +336,10 @@ class alignas(uintptr_t) BaselineScript final
 
   uint8_t* warmUpCheckPrologueAddr() const {
     return method_->raw() + warmUpCheckPrologueOffset_;
+  }
+
+  uint8_t* debugModeOSREpilogueAddr() const {
+    return method_->raw() + debugModeOSREpilogueOffset_;
   }
 
   JitCode* method() const { return method_; }

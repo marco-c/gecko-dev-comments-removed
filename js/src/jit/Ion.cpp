@@ -169,6 +169,10 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   generateInvalidator(masm, &bailoutTail);
   rangeRecorder.recordOffset("Trampoline: Invalidator");
 
+  JitSpew(JitSpew_Codegen, "# Emitting BaselineDebugModeOSR handler");
+  generateBaselineDebugModeOSRHandler(masm);
+  rangeRecorder.recordOffset("Trampoline: BaselineDebugModeOSR");
+
   JitSpew(JitSpew_Codegen, "# Emitting EnterJIT [Normal] trampoline");
   generateEnterJIT(cx, masm, EnterJitMode::Normal);
   rangeRecorder.recordOffset("Trampoline: EnterJIT [Normal]");

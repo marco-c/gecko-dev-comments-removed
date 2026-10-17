@@ -5,6 +5,8 @@
 #ifndef jit_BaselineDebugModeOSR_h
 #define jit_BaselineDebugModeOSR_h
 
+#include <stdint.h>
+
 #include "jstypes.h"
 
 #include "debugger/DebugAPI.h"
@@ -14,9 +16,14 @@ struct JS_PUBLIC_API JSContext;
 namespace js {
 namespace jit {
 
+class BaselineFrame;
 
 
 
+
+
+uint8_t* BaselineDebugModeOSRResumeAddr(BaselineFrame* frame,
+                                        const uint8_t* returnAddress);
 
 [[nodiscard]] bool RecompileOnStackBaselineScriptsForDebugMode(
     JSContext* cx, const DebugAPI::ExecutionObservableSet& obs,
