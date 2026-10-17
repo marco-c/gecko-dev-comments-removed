@@ -1295,12 +1295,10 @@ JSString* js::gc::TenuringTracer::promoteString(JSString* src) {
 
     
     
-    bool promotedToNurseryPrev = promotedToNursery;
     JSString* promotedBase =
         InCollectedNurseryRegion(base) ? promoteOrForward(base) : base;
-    promotedToNursery = promotedToNurseryPrev;
-
     MOZ_ASSERT(!promotedBase->isDependent());
+
     dst->asDependent().setBase(&promotedBase->asLinear());
     if (base != promotedBase) {
       dst->asDependent().updateToPromotedBase(base);
