@@ -63,6 +63,8 @@ class MiniWindowManagerClass {
    * @returns {Promise<object|null>} the MiniWindow, or null.
    */
   async popRegion(tab, cropInfo, entryPoint) {
+    tab.splitview?.unsplitTabs("mini_window");
+
     return this.#pop(tab, cropInfo, entryPoint);
   }
 
