@@ -17173,6 +17173,10 @@ class CGDescriptor(CGThing):
 
         self.name = descriptor.interface.getClassName()
         self._deps = descriptor.interface.getDeps()
+        self._isIteratorInterface = (
+            descriptor.interface.isIteratorInterface()
+            or descriptor.interface.isAsyncIteratorInterface()
+        )
 
         iteratorCGThings = None
         if (
@@ -17203,11 +17207,7 @@ class CGDescriptor(CGThing):
 
         cgThings = []
 
-        isIteratorInterface = (
-            descriptor.interface.isIteratorInterface()
-            or descriptor.interface.isAsyncIteratorInterface()
-        )
-        if not isIteratorInterface:
+        if not self._isIteratorInterface:
             cgThings.append(
                 CGGeneric(declare="typedef %s NativeType;\n" % descriptor.nativeType)
             )
@@ -17465,7 +17465,7 @@ class CGDescriptor(CGThing):
         
         
         protoObjectHandleGetterIsStatic = descriptor.concrete and (
-            isIteratorInterface
+            self._isIteratorInterface
             or (
                 descriptor.interface.hasInterfacePrototypeObject()
                 and not descriptor.interface.hasChildInterfaces()
@@ -17501,7 +17501,9 @@ class CGDescriptor(CGThing):
                 cgThings.append(CGWrapMethod(descriptor))
             else:
                 cgThings.append(
-                    CGWrapNonWrapperCacheMethod(descriptor, static=isIteratorInterface)
+                    CGWrapNonWrapperCacheMethod(
+                        descriptor, static=self._isIteratorInterface
+                    )
                 )
 
         
@@ -17566,7 +17568,7 @@ class CGDescriptor(CGThing):
                     properties,
                     haveUnscopables,
                     haveLegacyWindowAliases,
-                    static=isIteratorInterface,
+                    static=self._isIteratorInterface,
                 )
             )
 
@@ -17579,7 +17581,7 @@ class CGDescriptor(CGThing):
                     )
                 )
                 if descriptor.interface.hasChildInterfaces():
-                    assert not isIteratorInterface
+                    assert not self._isIteratorInterface
                     cgThings.append(CGGetProtoObjectMethod(descriptor))
             if descriptor.interface.hasInterfaceObject():
                 cgThings.append(CGGetConstructorObjectHandleMethod(descriptor))
@@ -17607,6 +17609,10 @@ class CGDescriptor(CGThing):
         return self.cgRoot.define()
 
     def forward_declare(self):
+        
+        
+        if self._isIteratorInterface:
+            return ""
         return f"class {self.name};"
 
     def deps(self):
@@ -24504,12 +24510,11 @@ class GlobalGenRoots:
             "mozilla/dom/WebIDLSerializable.h",
             "mozilla/PerfectHash.h",
         ])
-        names = list()
-        for d in config.getDescriptors(isSerializable=True):
-            names.append(d.name)
+        descriptors = config.getDescriptors(isSerializable=True)
+        for d in descriptors:
             defineIncludes.add(CGHeaders.getDeclarationFilename(d.interface))
 
-        if len(names) == 0:
+        if len(descriptors) == 0:
             
             
             
@@ -24531,16 +24536,17 @@ class GlobalGenRoots:
         
         
         
-        if len(names) > 20:
+        if len(descriptors) > 20:
             raise TypeError(
                 "We now have %s serializable interfaces.  "
                 "Double-check that the compiler is still "
-                "generating a jump table." % len(names)
+                "generating a jump table." % len(descriptors)
             )
 
         entries = list()
         
-        for name in sorted(names):
+        for d in sorted(descriptors, key=lambda descriptor: descriptor.name):
+            name = d.name
             exposedGlobals = computeGlobalNamesFromExposureSet(d.interface.exposureSet)
             
             entries.append(
