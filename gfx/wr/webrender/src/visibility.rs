@@ -326,9 +326,14 @@ pub fn update_prim_visibility(
                 );
             }
 
-            let surface_local_rect = frame_state.surfaces[raster_config.surface_index.0]
-                .unclipped_local_rect
-                .cast_unit();
+            
+            
+            
+            let surface = &frame_state.surfaces[raster_config.surface_index.0];
+            let surface_local_rect = raster_config.composite_mode.get_coverage(
+                surface,
+                Some(surface.unclipped_local_rect.cast_unit()),
+            );
 
             
             
