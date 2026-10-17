@@ -217,6 +217,7 @@ export const INITIAL_STATE = {
     author: "",
     licenseLabel: "",
     licenseUrl: "",
+    previous: null,
     error: null,
   },
   ListsWidget: {
@@ -1258,6 +1259,7 @@ const PictureOfTheDay = (prevState = INITIAL_STATE.PictureOfTheDay, action) => {
         author: action.data.author ?? "",
         licenseLabel: action.data.licenseLabel ?? "",
         licenseUrl: action.data.licenseUrl ?? "",
+        previous: action.data.previous ?? null,
         lastUpdated: action.data.lastUpdated ?? null,
         error: action.data.error ?? null,
         initialized: true,

@@ -1679,13 +1679,6 @@ newtab-picture-widget-open-menu-button =
     .title = Open picture of the day menu
     .aria-label = Open picture of the day menu
 
-# Button that sets the current picture as the New Tab background wallpaper. The
-# button collapses to an icon when not hovered/focused, so .title is its tooltip.
-newtab-picture-set-wallpaper =
-    .label = Set wallpaper
-    .title = Set wallpaper
-    .aria-label = Set today’s picture as your wallpaper
-
 # Button that sets the picture shown in the widget, which may be today’s or the
 # previous day’s, as the New Tab background wallpaper. The button collapses to an
 # icon when not hovered/focused, so .title is its tooltip.
@@ -1697,13 +1690,6 @@ newtab-picture-set-wallpaper2 =
 # Context menu item that opens the New Tab customization panel.
 newtab-picture-menu-manage-wallpaper = Manage wallpaper
 
-# Context menu item that hides today’s picture, replacing it with an existing
-# wallpaper.
-newtab-picture-menu-hide-photo = Hide today’s picture
-
-# Context menu item that restores today’s picture after it has been hidden.
-newtab-picture-menu-show-photo = Show today’s picture
-
 # Context menu item that hides the picture shown in the widget.
 newtab-picture-menu-hide-photo2 = Hide this picture
 
@@ -1712,11 +1698,6 @@ newtab-picture-menu-show-photo2 = Show picture
 
 # Context menu item linking to more information about the widget.
 newtab-picture-menu-learn-more = Learn more
-
-# Icon button shown on the widget once the picture is hidden; restores it.
-newtab-picture-show-button =
-    .title = Show today’s picture
-    .aria-label = Show today’s picture
 
 # Icon button shown on the widget once the picture is hidden; restores it.
 newtab-picture-show-button2 =
