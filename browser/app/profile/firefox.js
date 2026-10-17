@@ -2286,6 +2286,19 @@ pref("nimbus.firstUpdateComplete", false);
 
 
 
+pref("nimbus.profilesdatastoreservice.enabled", true);
+
+
+
+pref("nimbus.profilesdatastoreservice.read.enabled", true);
+
+
+
+pref("nimbus.profilesdatastoreservice.sync.enabled", true);
+
+
+
+
 
 #if defined(MOZ_ARTIFACT_BUILDS)
   pref("nimbus.telemetry.targetingContextEnabled", false);
