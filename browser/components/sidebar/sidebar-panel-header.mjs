@@ -54,6 +54,10 @@ export class SidebarPanelHeader extends MozLitElement {
       this.heading = "";
       console.error(`Could not find a label for view: ${view}`);
     }
+    this.toggleAttribute(
+      "panel-has-custom-header",
+      !!panelInfo?.hasCustomHeader
+    );
   }
 
   /**
