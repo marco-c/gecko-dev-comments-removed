@@ -3,7 +3,9 @@
 
 
 
+#ifdef MOZ_WEBSPEECH
 include protocol PSpeechRecognition;
+#endif
 include protocol PTextGeneration;
 include protocol PUtilityProcess;
 
@@ -75,8 +77,10 @@ protocol PHWInference
                        nsCString id) returns (GetModelFileResult result);
 
   child:
+#ifdef MOZ_WEBSPEECH
     async NewContentSpeechRecognition(Endpoint<PSpeechRecognitionParent> endpoint,
                                       ContentParentId contentId);
+#endif
 
     
     

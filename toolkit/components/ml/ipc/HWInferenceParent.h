@@ -50,10 +50,12 @@ class HWInferenceParent final : public PHWInferenceParent {
   
   RefPtr<GenericNonExclusivePromise> WhenReady() { return mReadyPromise; }
 
+#ifdef MOZ_WEBSPEECH
   
   void StartContentSpeechRecognition(
       Endpoint<PSpeechRecognitionParent>&& aEndpoint,
       dom::ContentParentId aChildId);
+#endif
 
   
   void StartTextGeneration(Endpoint<PTextGenerationChild>&& aEndpoint,

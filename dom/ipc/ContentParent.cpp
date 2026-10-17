@@ -154,7 +154,9 @@
 #ifndef ANDROID
 #  include "mozilla/hwinference/HWInferenceParent.h"
 #  include "mozilla/hwinference/HWInferenceProcess.h"
-#  include "mozilla/hwinference/PSpeechRecognitionChild.h"
+#  ifdef MOZ_WEBSPEECH
+#    include "mozilla/hwinference/PSpeechRecognitionChild.h"
+#  endif
 #endif  
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
@@ -5208,6 +5210,7 @@ mozilla::ipc::IPCResult ContentParent::RecvAcquireHWInferenceProcess() {
   return IPC_OK();
 }
 
+#  ifdef MOZ_WEBSPEECH
 mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
     Endpoint<hwinference::PSpeechRecognitionParent>&& aEndpoint) {
   if (!mHWInferenceConnections) {
@@ -5227,6 +5230,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateSpeechRecognition(
       ->StartContentSpeechRecognition(std::move(aEndpoint), mChildID);
   return IPC_OK();
 }
+#  endif  
 
 mozilla::ipc::IPCResult ContentParent::RecvReleaseHWInferenceConnection() {
   if (mHWInferenceConnections == 0) {
