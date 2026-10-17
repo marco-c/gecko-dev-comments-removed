@@ -16286,7 +16286,7 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   }
 
   nsCOMPtr<Document> fullScreenDoc = GetFullscreenLeaf(this);
-  AutoTArray<Element*, 8> exitElements;
+  AutoTArray<RefPtr<Element>, 8> exitElements;
 
   Document* doc = fullScreenDoc;
   
@@ -16330,8 +16330,6 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
   }
 
   
-  PointerLockManager::Unlock("Document::RestorePreviousFullscreenState");
-  
   
   for (auto i : IntegerRange(exitElements.Length() - 1)) {
     exitElements[i]->OwnerDoc()->CleanupFullscreenState();
@@ -16374,6 +16372,9 @@ void Document::RestorePreviousFullscreenState(UniquePtr<FullscreenExit> aExit) {
     
     DispatchFullscreenNewOriginEvent(newFullscreenDoc);
   }
+
+  
+  PointerLockManager::Unlock("Document::RestorePreviousFullscreenState");
 }
 
 static void UpdateViewportScrollbarOverrideForFullscreen(Document* aDoc) {
