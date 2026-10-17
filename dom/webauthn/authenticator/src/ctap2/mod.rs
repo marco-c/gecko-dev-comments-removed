@@ -417,6 +417,35 @@ fn determine_puap_if_needed<Dev: FidoDevice, T: PinUvAuthCommand + RequestCtap2>
     Err(AuthenticatorError::CancelledByUser)
 }
 
+
+
+
+
+
+pub(crate) fn check_ctap1_register_compatibility(args: &RegisterArgs) -> crate::Result<()> {
+    if args.resident_key_req == ResidentKeyRequirement::Required {
+        return Err(AuthenticatorError::UnsupportedOption(
+            UnsupportedOption::ResidentKey,
+        ));
+    }
+    if args.user_verification_req == UserVerificationRequirement::Required {
+        return Err(AuthenticatorError::UnsupportedOption(
+            UnsupportedOption::UserVerification,
+        ));
+    }
+    if !args
+        .pub_cred_params
+        .iter()
+        .any(|x| x.alg == COSEAlgorithm::ES256)
+    {
+        return Err(AuthenticatorError::UnsupportedOption(
+            UnsupportedOption::PubCredParams,
+        ));
+    }
+
+    Ok(())
+}
+
 pub fn register<Dev: FidoDevice>(
     dev: &mut Dev,
     args: RegisterArgs,
@@ -426,50 +455,33 @@ pub fn register<Dev: FidoDevice>(
 ) -> bool {
     let mut options = MakeCredentialsOptions::default();
 
-    if dev.get_protocol() == FidoProtocol::CTAP2 {
-        let info = match dev.get_authenticator_info() {
-            Some(info) => info,
-            None => {
-                callback.call(Err(HIDError::DeviceNotInitialized.into()));
+    match dev.get_protocol() {
+        FidoProtocol::CTAP2 => {
+            let info = match dev.get_authenticator_info() {
+                Some(info) => info,
+                None => {
+                    callback.call(Err(HIDError::DeviceNotInitialized.into()));
+                    return false;
+                }
+            };
+
+            
+            
+            options.resident_key = match args.resident_key_req {
+                ResidentKeyRequirement::Required => Some(true),
+                ResidentKeyRequirement::Preferred => {
+                    
+                    Some(info.options.resident_key)
+                }
+                ResidentKeyRequirement::Discouraged => Some(false),
+            };
+        }
+
+        FidoProtocol::CTAP1 => {
+            if let Err(e) = check_ctap1_register_compatibility(&args) {
+                callback.call(Err(e));
                 return false;
             }
-        };
-
-        
-        
-        options.resident_key = match args.resident_key_req {
-            ResidentKeyRequirement::Required => Some(true),
-            ResidentKeyRequirement::Preferred => {
-                
-                Some(info.options.resident_key)
-            }
-            ResidentKeyRequirement::Discouraged => Some(false),
-        }
-    } else {
-        
-        
-        
-        if args.resident_key_req == ResidentKeyRequirement::Required {
-            callback.call(Err(AuthenticatorError::UnsupportedOption(
-                UnsupportedOption::ResidentKey,
-            )));
-            return false;
-        }
-        if args.user_verification_req == UserVerificationRequirement::Required {
-            callback.call(Err(AuthenticatorError::UnsupportedOption(
-                UnsupportedOption::UserVerification,
-            )));
-            return false;
-        }
-        if !args
-            .pub_cred_params
-            .iter()
-            .any(|x| x.alg == COSEAlgorithm::ES256)
-        {
-            callback.call(Err(AuthenticatorError::UnsupportedOption(
-                UnsupportedOption::PubCredParams,
-            )));
-            return false;
         }
     }
 
@@ -594,6 +606,26 @@ pub fn register<Dev: FidoDevice>(
     false
 }
 
+
+
+
+
+
+pub(crate) fn check_ctap1_sign_compatibility(args: &SignArgs) -> crate::Result<()> {
+    if args.user_verification_req == UserVerificationRequirement::Required {
+        return Err(AuthenticatorError::UnsupportedOption(
+            UnsupportedOption::UserVerification,
+        ));
+    }
+    if args.allow_list.is_empty() {
+        return Err(AuthenticatorError::UnsupportedOption(
+            UnsupportedOption::EmptyAllowList,
+        ));
+    }
+
+    Ok(())
+}
+
 pub fn sign<Dev: FidoDevice>(
     dev: &mut Dev,
     args: SignArgs,
@@ -602,19 +634,8 @@ pub fn sign<Dev: FidoDevice>(
     alive: &dyn Fn() -> bool,
 ) -> bool {
     if dev.get_protocol() == FidoProtocol::CTAP1 {
-        
-        
-        
-        if args.user_verification_req == UserVerificationRequirement::Required {
-            callback.call(Err(AuthenticatorError::UnsupportedOption(
-                UnsupportedOption::UserVerification,
-            )));
-            return false;
-        }
-        if args.allow_list.is_empty() {
-            callback.call(Err(AuthenticatorError::UnsupportedOption(
-                UnsupportedOption::EmptyAllowList,
-            )));
+        if let Err(e) = check_ctap1_sign_compatibility(&args) {
+            callback.call(Err(e));
             return false;
         }
     }

@@ -85,6 +85,18 @@ pub enum FidoProtocol {
     CTAP2,
 }
 
+pub trait CtapVersionSupport {
+    
+    
+    
+    fn supports_ctap1(&self) -> bool;
+
+    
+    
+    
+    fn supports_ctap2(&self) -> bool;
+}
+
 pub trait FidoDeviceIO {
     fn send_msg<Out, Req: RequestCtap1<Output = Out> + RequestCtap2<Output = Out>>(
         &mut self,
@@ -147,7 +159,7 @@ pub trait TestDevice {
     ) -> Result<Req::Output, HIDError>;
 }
 
-pub trait FidoDevice: FidoDeviceIO
+pub trait FidoDevice: FidoDeviceIO + CtapVersionSupport
 where
     Self: Sized,
     Self: fmt::Debug,
@@ -157,7 +169,12 @@ where
 
     
     fn is_u2f(&mut self) -> bool;
-    fn should_try_ctap2(&self) -> bool;
+
+    #[deprecated = "use CtapVersionSupport::supports_ctap2"]
+    fn should_try_ctap2(&self) -> bool {
+        self.supports_ctap2()
+    }
+
     fn get_authenticator_info(&self) -> Option<&AuthenticatorInfo>;
     fn set_authenticator_info(&mut self, authenticator_info: AuthenticatorInfo);
     fn refresh_authenticator_info(&mut self) -> Option<&AuthenticatorInfo> {
@@ -177,7 +194,11 @@ where
 
     
     
-    fn downgrade_to_ctap1(&mut self);
+    
+    
+    
+    
+    fn downgrade_to_ctap1(&mut self) -> Result<(), HIDError>;
 
     fn get_shared_secret(&self) -> Option<&SharedSecret>;
     fn set_shared_secret(&mut self, secret: SharedSecret);
@@ -185,19 +206,20 @@ where
     fn init(&mut self) -> Result<(), HIDError> {
         self.pre_init()?;
 
-        if self.should_try_ctap2() {
+        if self.supports_ctap2() {
             let command = GetInfo::default();
             if let Ok(info) = self.send_cbor(&command, None) {
                 debug!("{:?}", info);
                 if info.max_supported_version() == AuthenticatorVersion::U2F_V2 {
-                    self.downgrade_to_ctap1();
+                    self.downgrade_to_ctap1()?;
                 }
                 self.set_authenticator_info(info);
                 return Ok(());
             }
         }
 
-        self.downgrade_to_ctap1();
+        
+        self.downgrade_to_ctap1()?;
         
         
         let command = GetVersion::default();

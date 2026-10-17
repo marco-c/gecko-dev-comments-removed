@@ -26,6 +26,15 @@ pub struct RegisterArgs {
     pub resident_key_req: ResidentKeyRequirement,
     pub extensions: AuthenticationExtensionsClientInputs,
     pub pin: Option<Pin>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub use_ctap1_fallback: bool,
 }
 
@@ -39,6 +48,15 @@ pub struct SignArgs {
     pub user_presence_req: bool,
     pub extensions: AuthenticationExtensionsClientInputs,
     pub pin: Option<Pin>,
+
+    
+    
+    
+    
+    
+    
+    
+    
     pub use_ctap1_fallback: bool,
 }
 
