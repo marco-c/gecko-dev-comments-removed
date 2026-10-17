@@ -30,6 +30,8 @@ let detectedFields = [
   "other",
   "tel",
   "given-name",
+  
+  "given-name",
 ];
 
 let expectedDetectFieldsResult;
@@ -252,6 +254,39 @@ add_heuristic_tests([
           { fieldName: "email", reason: "regex-heuristic" },
           
           { fieldName: "given-name", reason: "ml" },
+        ],
+      },
+    ],
+  },
+  
+  {
+    fixtureData: `
+      <label for="firstName">First:</label>
+      <input id="firstName" name="firstName">
+      <label for="lastName">Last:</label>
+      <input id="lastName" name="lastName">`,
+    expectedResult: [
+      {
+        invalid: true,
+        fields: [
+          { fieldName: "given-name", reason: "regex-heuristic" },
+          { fieldName: "family-name", reason: "regex-heuristic" },
+        ],
+      },
+    ],
+  },
+  
+  {
+    fixtureData: `
+      <label for="firstName">First:</label>
+      <input id="firstName" name="firstName">
+      <label for="lastName">Last:</label>
+      <input id="lastName" name="lastName" autocomplete="family-name">`,
+    expectedResult: [
+      {
+        fields: [
+          { fieldName: "given-name", reason: "ml" },
+          { fieldName: "family-name", reason: "autocomplete" },
         ],
       },
     ],
