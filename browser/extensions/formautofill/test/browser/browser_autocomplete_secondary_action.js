@@ -40,7 +40,16 @@ add_task(async function test_trash_button_when_pref_enabled() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: FORM_URL },
     async browser => {
+      Services.fog.testResetFOG();
       await openPopupOn(browser, "#organization");
+      const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+      is(shownEvents?.length, 1, "One dropdown shown event is recorded");
+      is(
+        shownEvents[0].extra.record_type,
+        "address",
+        "The event names the address record type"
+      );
+
       const items = getDisplayedPopupItems(browser);
 
       const rowItem = items[0].querySelector("autocomplete-row-item");

@@ -45,7 +45,16 @@ add_task(async function test_trash_button_when_pref_enabled() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: CC_URL },
     async browser => {
+      Services.fog.testResetFOG();
       await openPopupOn(browser, "#cc-number");
+      const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+      is(shownEvents?.length, 1, "One dropdown shown event is recorded");
+      is(
+        shownEvents[0].extra.record_type,
+        "payment",
+        "The event names the payment record type"
+      );
+
       const rowItem = getDisplayedPopupItems(browser)[0].querySelector(
         "autocomplete-row-item"
       );

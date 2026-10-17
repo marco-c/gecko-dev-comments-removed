@@ -94,7 +94,20 @@ add_task(async function test_no_secondary_action_when_pref_disabled() {
 
 add_task(async function test_trash_button_when_pref_enabled() {
   await SpecialPowers.pushPrefEnv({ set: [[PREF, true]] });
+  Services.fog.testResetFOG();
   await withFormHistoryPopup(async (browser, autoCompletePopup, itemsBox) => {
+    const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+    Assert.equal(
+      shownEvents?.length,
+      1,
+      "One dropdown shown event is recorded"
+    );
+    Assert.equal(
+      shownEvents[0].extra.record_type,
+      "formhistory",
+      "The event names the formhistory record type"
+    );
+
     const rowItem = getRowItem(itemsBox, 0);
     Assert.equal(
       rowItem.actions.secondary.type,

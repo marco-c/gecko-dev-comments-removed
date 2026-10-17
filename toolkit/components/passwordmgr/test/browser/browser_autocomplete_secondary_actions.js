@@ -162,7 +162,19 @@ add_task(async function test_flyout_when_pref_enabled() {
     { gBrowser, url: TEST_URL_PATH },
     async function (browser) {
       const popup = document.getElementById("PopupAutoComplete");
+      Services.fog.testResetFOG();
       await openACPopup(popup, browser, "#form-basic-username");
+      const shownEvents = Glean.autocomplete.dropdownShown.testGetValue();
+      Assert.equal(
+        shownEvents?.length,
+        1,
+        "One dropdown shown event is recorded"
+      );
+      Assert.equal(
+        shownEvents[0].extra.record_type,
+        "password",
+        "The event names the password record type"
+      );
 
       const { item, rowItem, button } = getSecondaryAction(popup, 0);
 

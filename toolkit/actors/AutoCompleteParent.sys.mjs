@@ -206,6 +206,15 @@ export class AutoCompleteParent extends JSWindowActorParent {
   #reportedTelemetryInputs = new Set();
 
   /**
+   * Identifies the current dropdown open, so that its close can be correlated
+   * with it in telemetry.
+   *
+   * @type {?string}
+   */
+  // eslint-disable-next-line no-unused-private-class-members -- Read by the dropdown closed probe, see bug 2081366.
+  #dropdownFlowId = null;
+
+  /**
    * The entry whose provider was last asked for a preview, so that the
    * provider can be told to drop it once the preview moves elsewhere.
    *
@@ -349,6 +358,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     this.openedPopup.invalidate();
     this.openedPopup.selectedIndex = selectedIndex;
     this._maybeRecordTelemetryEvents(results, inputElementIdentifier);
+    this.#recordDropdownShown(results);
 
     // This is a temporary solution. We should replace it with
     // proper meta information about the popup once such field
@@ -359,6 +369,36 @@ export class AutoCompleteParent extends JSWindowActorParent {
 
     if (isCreditCard) {
       this.delayPopupInput();
+    }
+  }
+
+  /**
+   * @param {object[]} results - Non-empty array of autocomplete results.
+   */
+  #recordDropdownShown(results) {
+    this.#dropdownFlowId = Services.uuid.generateUUID().toString();
+
+    let recordType = null;
+    for (const result of results) {
+      try {
+        recordType = getSavedRecordType(
+          result.style,
+          JSON.parse(result.comment || "{}")
+        );
+      } catch (ex) {
+        // Non-saved-record results (e.g. plain history suggestions) can
+        // have a non-JSON comment; they're never a saved record type.
+        continue;
+      }
+      if (recordType) {
+        break;
+      }
+    }
+    if (recordType) {
+      Glean.autocomplete.dropdownShown.record({
+        record_type: recordType,
+        flow_id: this.#dropdownFlowId,
+      });
     }
   }
 
