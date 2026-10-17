@@ -19,7 +19,6 @@ import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
  * @import { BrowserSearchTelemetry } from "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs"
  * @import { UrlbarLoadRequest, LoadURLParams } from "chrome://browser/content/urlbar/UrlbarShared.mjs"
  * @import { UrlbarAutofillData } from "chrome://browser/content/urlbar/UrlbarResult.mjs"
- * @import { Tabbrowser } from "moz-src:///browser/components/tabbrowser/Tabbrowser.sys.mjs"
  */
 
 /**
@@ -340,10 +339,6 @@ ${
   _untrimmedValue = "";
   _wwwIsTrimmed = false;
   _enableAutofillPlaceholder = true;
-
-  /**
-   * @typedef {ChromeWindow & {gBrowser: Tabbrowser}} BrowserWindow
-   */
 
   /**
    * The browser window or null in a child process.

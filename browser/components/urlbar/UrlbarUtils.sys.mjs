@@ -397,7 +397,7 @@ export var UrlbarUtils = {
    *
    * @param {SearchEngine|nsIURI|URL|string} urlOrEngine
    *   The entity to initiate a speculative connection for.
-   * @param {window} window
+   * @param {BrowserWindow} window
    *   The window from where the connection is initialized.
    */
   setupSpeculativeConnection(urlOrEngine, window) {
@@ -1292,7 +1292,7 @@ export var UrlbarUtils = {
    * Returns window.gURLBar for regular browser windows, or the smartbar
    * for AI windows in immersive view.
    *
-   * @param {Window} window
+   * @param {BrowserWindow} window
    *   The window to get the URL bar for.
    * @returns {UrlbarInput | SmartbarInput }
    *   The URL bar element that should be focused.

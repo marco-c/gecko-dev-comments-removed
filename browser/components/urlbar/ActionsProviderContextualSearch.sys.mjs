@@ -91,7 +91,7 @@ class ProviderContextualSearch extends ActionsProvider {
     return null;
   }
 
-  onSearchSessionEnd() {
+  onSearchSessionEnd(_queryContext, _controller, _details) {
     // We cache the results for a host while the user is typing, clear
     // when the search session ends as the results for the host may
     // change by the next search session.
@@ -133,8 +133,9 @@ class ProviderContextualSearch extends ActionsProvider {
       ? lazy.SearchService.defaultPrivateEngine
       : lazy.SearchService.defaultEngine;
 
-    let browser =
-      lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser;
+    let browser = /** @type {BrowserWindow} */ (
+      lazy.BrowserWindowTracker.getTopWindow()
+    )?.gBrowser.selectedBrowser;
     if (!browser) {
       return null;
     }
@@ -198,7 +199,7 @@ class ProviderContextualSearch extends ActionsProvider {
    * the cache for `visitedEngineDomains` so we can avoid expensive places
    * queries.
    *
-   * @param {window} window
+   * @param {BrowserWindow} window
    *  The browser window where the location change happened.
    * @param {nsIURI} uri
    *  The URI being navigated to.

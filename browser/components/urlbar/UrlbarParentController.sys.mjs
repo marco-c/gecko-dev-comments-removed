@@ -33,6 +33,7 @@ const lazy = XPCOMUtils.declareLazy({
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderOpenTabs:
@@ -182,7 +183,7 @@ export class UrlbarParentController {
    * Parent-side providers read this (icons, speculative connect, opening help
    * links), so it can't come from the content-side child.
    *
-   * @type {ChromeWindow}
+   * @type {BrowserWindow}
    */
   get browserWindow() {
     return this.#actor?.browsingContext?.topChromeWindow;
@@ -325,7 +326,7 @@ export class UrlbarParentController {
         sapName: this.sapName,
         maxResults: 1,
         searchString,
-        userContextId: parseInt(browser.getAttribute("usercontextid") || 0),
+        userContextId: parseInt(browser.getAttribute("usercontextid") || "0"),
         tabGroup: gBrowser.getTabForBrowser(browser)?.group?.id ?? null,
         prohibitRemoteResults: true,
         providers: [
@@ -1262,9 +1263,7 @@ export class UrlbarParentController {
         browser.currentURI &&
         url === browser.currentURI.spec
       ) {
-        this.browserWindow.SitePermissions.clearTemporaryBlockPermissions(
-          browser
-        );
+        lazy.SitePermissions.clearTemporaryBlockPermissions(browser);
       }
     }
   }
