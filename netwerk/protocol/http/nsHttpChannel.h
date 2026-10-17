@@ -319,6 +319,10 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
+  bool IsForcedOffline() const;
+
+  
+  
   nsIHttpChannelInternal::ProxyDNSStrategy ComputeProxyDNSStrategy();
 
  public:
