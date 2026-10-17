@@ -230,9 +230,7 @@ class ElementInternals final : public nsIFormControl,
   RefPtr<HTMLElement> mTarget;
 
   
-  
-  
-  HTMLFormElement* mForm;
+  RefPtr<HTMLFormElement> mForm;
 
   
   
