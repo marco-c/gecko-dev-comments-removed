@@ -25,7 +25,7 @@ class BaseNodeHTTPServerCode {
   }
 }
 
-class ADB {
+export class ADB {
   static async stopForwarding(port) {
     return this.forwardPort(port, true);
   }
@@ -72,14 +72,41 @@ class ADB {
     return true;
   }
 
-  static async listenAndForwardPort(server, port) {
+  // Binds both loopback addresses; a wildcard can share its port on macOS and Windows.
+  static async listenOnLoopback(server, port) {
+    const net = require("net");
     const { once } = require("events");
+    server.listen(port, "127.0.0.1"); // Not awaitable; once() rejects on `error`.
+    await once(server, "listening");
+    const ipv6 = net.createServer(socket => server.emit("connection", socket));
+    ipv6.listen(server.address().port, "::1");
+    try {
+      await once(ipv6, "listening");
+    } catch (e) {
+      if (e.code === "EADDRNOTAVAIL" || e.code === "EAFNOSUPPORT") {
+        return; // No IPv6 loopback.
+      }
+      await new Promise(resolve => server.close(resolve));
+      throw e;
+    }
+    server.once("close", () => ipv6.close());
+  }
+
+  static async listenAndForwardPort(server, port) {
     let retryCount = 0;
     const maxRetries = 10;
 
     while (retryCount < maxRetries) {
-      server.listen(port); // Not awaitable; once() rejects on `error`.
-      await once(server, "listening");
+      try {
+        await ADB.listenOnLoopback(server, port);
+      } catch (e) {
+        if (port || e.code !== "EADDRINUSE") {
+          throw e;
+        }
+        retryCount++;
+        console.log(`Port is taken on ::1 (${e}), retrying`);
+        continue;
+      }
       let serverPort = server.address().port;
       let res = await ADB.forwardPort(serverPort);
 
