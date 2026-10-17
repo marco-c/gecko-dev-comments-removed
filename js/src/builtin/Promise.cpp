@@ -3014,12 +3014,37 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
     return true;
   }
 
-  RootedValue thenVal(cx);
-  if (!GetPropertyPure(cx, &value.toObject(), NameToId(cx->names().then),
-                       thenVal.address())) {
+  
+  NativeObject* holder;
+  PropertyResult prop;
+  if (!LookupPropertyPure(cx, &value.toObject(), NameToId(cx->names().then),
+                          &holder, &prop)) {
+    
+    
     *needsDeferral = true;
     return true;
   }
+
+  if (prop.isNotFound()) {
+    return true;
+  }
+
+  MOZ_ASSERT(prop.isNativeProperty());
+
+  PropertyInfo propInfo = prop.propertyInfo();
+  if (propInfo.isAccessorProperty()) {
+    
+    *needsDeferral = holder->hasGetter(propInfo);
+    return true;
+  }
+
+  MOZ_ASSERT(propInfo.isDataProperty());
+
+  
+  
+  Value thenVal;
+  MOZ_ALWAYS_TRUE(GetPropertyPure(cx, &value.toObject(),
+                                  NameToId(cx->names().then), &thenVal));
 
   *needsDeferral = IsCallable(thenVal);
   return true;
