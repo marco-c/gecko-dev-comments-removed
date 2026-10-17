@@ -77,7 +77,7 @@ body {
 
 Here, we've defined one set of color variables on `:root` and subsequently overridden them in a `forced-colors` block. We don't need to re-write the styling for `body` within our media query because the vars it references will correctly adapt when `forced-colors` is active.
 
-Though `forced-colors` overriding doesn't happen in Firefox chrome style sheets, our style system _does_ force all instances of `transparent` to the [default color](https://searchfox.org/mozilla-central/rev/655f49c541108e3d0a232aa7173fbcb9af88d80b/servo/components/style/properties/cascade.rs#468-481) for a color attribute (usually `CanvasText`). This allows us to specify styles that appear only in forced-colors mode without an additional CSS keyword. It is also sometimes beneficial to define vars at the `:root` level with an initial value (eg. `transparent`, `0px`, `none`) so the vars exist for HCM overriding later (see: `--dialog-border-width`).
+In content under `forced-colors: active`, a `transparent` border, outline or text-decoration color reverts to its UA value, usually `currentColor`, while a transparent background or text color is kept. This allows us to specify borders that appear only in forced-colors mode without an additional CSS keyword. Chrome documents on Windows run under `forced-colors: requested`, where the cascade filters no colors, so a `transparent` border stays transparent there and needs an explicit system color (see [High contrast mode](/code-quality/coding-style/css_guidelines.md#high-contrast-mode) in the CSS guidelines). It is also sometimes beneficial to define vars at the `:root` level with an initial value (eg. `transparent`, `0px`, `none`) so the vars exist for HCM overriding later (see: `--dialog-border-width`).
 
 ```text
 :root {
