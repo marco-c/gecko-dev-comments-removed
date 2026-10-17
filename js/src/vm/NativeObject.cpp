@@ -646,15 +646,7 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
     }
   }
 
-  obj->ensureDenseInitializedLength(newInitializedLength, 0);
-
-  if (obj->compartment()->objectMaybeInIteration(obj)) {
-    
-    
-    obj->markDenseElementsMaybeInIteration();
-  }
-
-  if (!NativeObject::densifySparseElements(cx, obj)) {
+  if (!NativeObject::densifySparseElements(cx, obj, newInitializedLength)) {
     return DenseElementResult::Failure;
   }
 

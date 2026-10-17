@@ -989,14 +989,24 @@ bool NativeObject::removeProperty(JSContext* cx, Handle<NativeObject*> obj,
 
 
 bool NativeObject::densifySparseElements(JSContext* cx,
-                                         Handle<NativeObject*> obj) {
+                                         Handle<NativeObject*> obj,
+                                         uint32_t newInitializedLength) {
   AutoCheckShapeConsistency check(obj);
   MOZ_ASSERT(obj->inDictionaryMode());
+  MOZ_ASSERT(newInitializedLength <= obj->getDenseCapacity());
 
   
   
   if (!NativeObject::generateNewDictionaryShape(cx, obj)) {
     return false;
+  }
+
+  obj->ensureDenseInitializedLength(newInitializedLength, 0);
+
+  if (obj->compartment()->objectMaybeInIteration(obj)) {
+    
+    
+    obj->markDenseElementsMaybeInIteration();
   }
 
   Rooted<DictionaryPropMap*> map(cx, obj->shape()->propMap()->asDictionary());
