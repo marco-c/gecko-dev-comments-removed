@@ -1436,6 +1436,10 @@ A string of the name of the container where the Firefox View button is shown, nu
 
 A string of the name of the container where the Tab Overflow button (or All Tabs button) is shown, null if the button has been removed.
 
+### `forgetButtonAreaType`
+
+A string of the name of the container where the Forget button is shown, null if the button is not in the toolbar or overflow menu (it is in the customization palette by default).
+
 ### `hasMigratedBookmarks`
 
 A boolean. `true` if the user ever used the Migration Wizard to migrate bookmarks since Firefox 113 released. Available in Firefox 113+; will not be true if the user had only ever migrated bookmarks prior to Firefox 113 being released.
