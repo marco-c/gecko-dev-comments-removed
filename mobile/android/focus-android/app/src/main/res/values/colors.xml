@@ -36,8 +36,6 @@
 
     <color name="colorErase">@color/photonMagenta70</color>
 
-    <color name="colorCrashAccent">@color/photonBlue40</color>
-
     <!-- Toolbar -->
 
     <color name="images_removal_warning_background_color">#353852</color>
@@ -114,7 +112,4 @@
     <color name="promote_search_widget_dialog_background">#FFFFFF</color>
     <color name="promote_search_widget_dialog_close_button_background">#F2F2F7</color>
     <color name="promote_search_widget_dialog_add_widget_button_background">#312A64</color>
-
-    <!---Cookie banner details panel colors-->
-    <color name="cookie_banner_details_panel_report_a_site_text_color">@color/photonViolet70</color>
 </resources>
