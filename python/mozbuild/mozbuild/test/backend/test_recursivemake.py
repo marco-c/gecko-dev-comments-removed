@@ -1978,6 +1978,22 @@ class TestRecursiveMakeBackend(BackendTester):
         self.assertIn("HOST_SIMPLE_PROGRAMS += host_asimple\n", lines)
         self.assertIn("HOST_CPP_PROG_LINK := 1\n", lines)
 
+    def test_per_source_object_deps(self):
+        env = self._consume("per-source-object-deps", RecursiveMakeBackend)
+
+        with open(mozpath.join(env.topobjdir, "backend.mk")) as fh:
+            lines = fh.readlines()
+
+        self.assertIn("ASFILES += gen.s\n", lines)
+        self.assertIn(
+            "gen.$(OBJ_SUFFIX): gen.s include.S $(srcdir)/included.inc\n", lines
+        )
+        self.assertIn("ASFILES += $(srcdir)/static.s\n", lines)
+        self.assertIn(
+            "static.$(OBJ_SUFFIX): $(srcdir)/static.s $(srcdir)/included.inc\n", lines
+        )
+        self.assertEqual([l for l in lines if l.startswith("plain.$(OBJ_SUFFIX)")], [])
+
     def test_extra_link_deps(self):
         """Test that EXTRA_LINK_DEPS is handled properly."""
         env = self._consume("extra-link-deps", RecursiveMakeBackend)
