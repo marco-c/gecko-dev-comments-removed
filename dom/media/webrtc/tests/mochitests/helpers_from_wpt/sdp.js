@@ -859,6 +859,26 @@ SDPUtils.parseMLine = function(mediaSection) {
   };
 };
 
+
+SDPUtils.getPayloadTypes = function(mediaSection) {
+  return SDPUtils.parseMLine(mediaSection).fmt.split(" ");
+};
+
+
+SDPUtils.getFmtpPayloadTypes = function(mediaSection) {
+  return SDPUtils.matchPrefixAndTrim(mediaSection, "a=fmtp:").map(
+    l => l.split(" ")[0]
+  );
+};
+
+
+
+SDPUtils.getRtcpFbPayloadTypes = function(mediaSection) {
+  return SDPUtils.matchPrefixAndTrim(mediaSection, "a=rtcp-fb:").map(
+    l => l.split(" ")[0]
+  );
+};
+
 SDPUtils.parseOLine = function(mediaSection) {
   var line = SDPUtils.matchPrefix(mediaSection, "o=")[0];
   var parts = line.substr(2).split(" ");

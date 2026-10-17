@@ -328,6 +328,14 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
   transceiver.mSendTrack.AddToOffer(mSsrcGenerator, msection);
   transceiver.mRecvTrack.AddToOffer(mSsrcGenerator, msection);
 
+  
+  
+  
+  
+  if (msection->GetMediaType() != SdpMediaSection::kApplication) {
+    msection->RemoveUnlistedPayloadTypeAttributes();
+  }
+
   AddExtmap(msection);
 
   std::string mid;

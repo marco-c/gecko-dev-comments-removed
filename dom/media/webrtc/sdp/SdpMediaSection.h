@@ -184,6 +184,8 @@ class SdpMediaSection {
   const SdpFmtpAttributeList::Parameters* FindFmtp(const std::string& pt) const;
   void SetFmtp(const SdpFmtpAttributeList::Fmtp& fmtp);
   void RemoveFmtp(const std::string& pt);
+  
+  void RemoveUnlistedPayloadTypeAttributes();
   const SdpRtpmapAttributeList::Rtpmap* FindRtpmap(const std::string& pt) const;
   const SdpSctpmapAttributeList::Sctpmap* GetSctpmap() const;
   uint32_t GetSctpPort() const;
