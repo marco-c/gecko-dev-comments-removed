@@ -132,6 +132,7 @@ pub use gpu_buffer::{GpuBuffer, GpuBufferF, GpuBufferBuilderF, GpuBufferI, GpuBu
 pub use gpu_buffer::{GpuBufferHandle, GpuBufferAddress, GpuBufferBuilder, GpuBufferWriterF};
 pub use gpu_buffer::{GpuBufferDataF, GpuBufferDataI, GpuBufferWriterI};
 use gpu_buffer::{GpuBufferBlockF, GpuBufferBlockI};
+pub use gpu_buffer::{GpuBufferBlockEdge, PathEdgeBufferBuilder};
 
 
 

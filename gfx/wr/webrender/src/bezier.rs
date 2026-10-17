@@ -2,9 +2,6 @@
 
 
 
-
-#![allow(dead_code)]
-
 pub type Point<U> = crate::euclid::Point2D<f32, U>;
 type Vector<U> = crate::euclid::Vector2D<f32, U>;
 
