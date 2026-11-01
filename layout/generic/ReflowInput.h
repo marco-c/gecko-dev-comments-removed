@@ -727,8 +727,6 @@ struct ReflowInput : public SizeComputationInput {
                                          nsPresContext* aPresContext,
                                          WritingMode aWM);
 
-  static constexpr float kNormalLineHeightFactor = 1.2f;
-
   
 
 
