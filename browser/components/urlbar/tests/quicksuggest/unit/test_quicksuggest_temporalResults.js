@@ -273,6 +273,24 @@ add_task(async function nimbus() {
 });
 
 
+
+add_task(async function suggestAllDisabled() {
+  gFeature._reset();
+  await checkQuery(["q1", "q2", "q3", "q4", "q5"]);
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", false);
+  Assert.ok(!gFeature.isEnabled, "Feature is disabled");
+  gFeature._reset();
+  await checkQuery([]);
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
+  await QuickSuggestTestUtils.forceSync();
+  Assert.ok(gFeature.isEnabled, "Feature is enabled again");
+  gFeature._reset();
+  await checkQuery(["q1", "q2", "q3", "q4", "q5"]);
+});
+
+
 function makeResultForContext(context) {
   return gFeature.makeResult(context, {
     engine: gEngine.name,
