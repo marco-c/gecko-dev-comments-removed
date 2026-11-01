@@ -24,6 +24,7 @@
 #include "modules/portal/pipewire_utils.h"
 #include "modules/portal/portal_guard.h"
 #include "modules/portal/portal_request_response.h"
+#include "modules/portal/screencast_persist_mode.h"
 #include "modules/portal/xdg_session_details.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -57,20 +58,7 @@ class RTC_EXPORT ScreenCastPortal
     kMetadata = 0b100
   };
 
-  
-  
-  
-  enum class PersistMode : uint32_t {
-    
-    kDoNotPersist = 0b00,
-    
-    
-    
-    kTransient = 0b01,
-    
-    
-    kPersistent = 0b10
-  };
+  using PersistMode = xdg_portal::ScreenCastPersistMode;
 
   
   class PortalNotifier {
@@ -125,6 +113,7 @@ class RTC_EXPORT ScreenCastPortal
 
   
   void SetPersistMode(ScreenCastPortal::PersistMode mode);
+  ScreenCastPortal::PersistMode persist_mode() const { return persist_mode_; }
   void SetRestoreToken(const std::string& token);
   std::string RestoreToken() const;
 

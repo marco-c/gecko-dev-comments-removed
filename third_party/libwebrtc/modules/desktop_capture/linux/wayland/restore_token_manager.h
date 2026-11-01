@@ -15,20 +15,40 @@
 #include <unordered_map>
 
 #include "modules/desktop_capture/desktop_capturer.h"
+#include "modules/portal/screencast_persist_mode.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
-class RestoreTokenManager {
+
+
+
+
+
+
+class RTC_EXPORT RestoreTokenManager {
  public:
+  struct Entry {
+    std::string token;
+    xdg_portal::ScreenCastPersistMode persist_mode =
+        xdg_portal::ScreenCastPersistMode::kTransient;
+  };
+
   RestoreTokenManager(const RestoreTokenManager& manager) = delete;
   RestoreTokenManager& operator=(const RestoreTokenManager& manager) = delete;
 
   static RestoreTokenManager& GetInstance();
 
-  void AddToken(DesktopCapturer::SourceId id, const std::string& token);
-  std::string GetToken(DesktopCapturer::SourceId id);
+  
+  
+  
+  void AddToken(DesktopCapturer::SourceId id,
+                const std::string& token,
+                xdg_portal::ScreenCastPersistMode persist_mode =
+                    xdg_portal::ScreenCastPersistMode::kTransient);
+  Entry GetEntry(DesktopCapturer::SourceId id);
 
   
   DesktopCapturer::SourceId GetUnusedId();
@@ -40,7 +60,7 @@ class RestoreTokenManager {
   Mutex mutex_;
   DesktopCapturer::SourceId last_source_id_ RTC_GUARDED_BY(mutex_) = 0;
 
-  std::unordered_map<DesktopCapturer::SourceId, std::string> restore_tokens_
+  std::unordered_map<DesktopCapturer::SourceId, Entry> restore_tokens_
       RTC_GUARDED_BY(mutex_);
 };
 
