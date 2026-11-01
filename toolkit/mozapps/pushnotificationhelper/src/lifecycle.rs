@@ -215,40 +215,56 @@ impl StopEvent {
     }
 }
 
+pub struct StopSignal {
+    handle: OwnedHandle,
+}
+
+impl StopSignal {
+    pub fn open(profile: Option<&Path>) -> Result<Option<Self>, String> {
+        let scope = match profile {
+            Some(profile) => Scope::InstallProfile(profile),
+            None => Scope::Install,
+        };
+        let name = wide(&object_name("stop", scope)?);
+
+        
+        let handle = unsafe { OpenEventW(EVENT_MODIFY_STATE, 0, name.as_ptr()) };
+        if handle.is_null() {
+            
+            
+            
+            return match last_error() {
+                ERROR_FILE_NOT_FOUND => Ok(None),
+                error => Err(format!("OpenEventW failed: {error}")),
+            };
+        }
+
+        
+        let handle = OwnedHandle::new(handle)
+            .ok_or_else(|| format!("OpenEventW failed: {}", last_error()))?;
+
+        Ok(Some(StopSignal { handle }))
+    }
+
+    pub fn send(&self) -> Result<(), String> {
+        
+        
+        if unsafe { SetEvent(self.handle.get()) } == 0 {
+            return Err(format!("SetEvent failed: {}", last_error()));
+        }
+
+        Ok(())
+    }
+}
+
 
 
 
 pub fn send_stop_signal(profile: Option<&Path>) -> Result<(), String> {
-    let scope = match profile {
-        Some(profile) => Scope::InstallProfile(profile),
-        None => Scope::Install,
-    };
-    let name = wide(&object_name("stop", scope)?);
-
-    
-    let handle = unsafe { OpenEventW(EVENT_MODIFY_STATE, 0, name.as_ptr()) };
-    if handle.is_null() {
-        
-        
-        
-        return match last_error() {
-            ERROR_FILE_NOT_FOUND => Ok(()),
-            error => Err(format!("OpenEventW failed: {error}")),
-        };
+    match StopSignal::open(profile)? {
+        Some(signal) => signal.send(),
+        None => Ok(()),
     }
-
-    
-    let handle =
-        OwnedHandle::new(handle).ok_or_else(|| format!("OpenEventW failed: {}", last_error()))?;
-
-    
-    
-    
-    if unsafe { SetEvent(handle.get()) } == 0 {
-        return Err(format!("SetEvent failed: {}", last_error()));
-    }
-
-    Ok(())
 }
 
 
