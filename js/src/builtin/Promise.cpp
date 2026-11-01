@@ -723,7 +723,7 @@ static bool AbruptRejectPromise(JSContext* cx, CallArgs& args,
 }
 
 class PromiseJobObject : public NativeObject {
- protected:
+ public:
   enum Slots {
     
     Promise = 0,                    
@@ -735,7 +735,6 @@ class PromiseJobObject : public NativeObject {
     SlotCount,
   };
 
- public:
   JSObject* promise() const {
     return getFixedSlot(Slots::Promise).toObjectOrNull();
   }
@@ -776,57 +775,7 @@ class PromiseJobObject : public NativeObject {
 
 
 
-
-
-
-class PromiseReactionRecord : public PromiseJobObject {
-  
-  
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_RESOLVED = 0x1;
-
-  
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_FULFILLED = 0x2;
-
-  
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_DEFAULT_RESOLVING_HANDLER = 0x4;
-
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_ASYNC_FUNCTION = 0x8;
-
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_ASYNC_GENERATOR = 0x10;
-
-  
-  
-  static constexpr uint32_t REACTION_FLAG_DEBUGGER_DUMMY = 0x20;
-
-  
-  
-  
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_IGNORE_UNHANDLED_REJECTION = 0x40;
-
-  
-  
-  
-  
-  static constexpr uint32_t REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR = 0x80;
-
+class PromiseReactionObjectStorage : public PromiseJobObject {
  public:
   enum Slots {
     
@@ -870,9 +819,7 @@ class PromiseReactionRecord : public PromiseJobObject {
     IncumbentGlobalRepresentative =
         PromiseJobObject::Slots::IncumbentGlobalRepresentative,
     OptionalHostDefinedData = PromiseJobObject::Slots::OptionalHostDefinedData,
-
-    
-    
+    AllocationStack = PromiseJobObject::Slots::AllocationStack,
 
     
     
@@ -927,34 +874,135 @@ class PromiseReactionRecord : public PromiseJobObject {
     SlotCount,
   };
 
- private:
-  template <typename KnownF, typename UnknownF>
-  static void forEachReactionFlag(uint32_t flags, KnownF known,
-                                  UnknownF unknown);
+  int32_t flags() const { return getFixedSlot(Slots::Flags).toInt32(); }
+  void setFlags(int32_t flags) {
+    setFixedSlot(Slots::Flags, Int32Value(flags));
+  }
 
+  Value onFulfilled() const { return getFixedSlot(Slots::OnFulfilled); }
+  Value onRejected() const { return getFixedSlot(Slots::OnRejected); }
+  Value onFulfilledArg() const { return getFixedSlot(Slots::OnFulfilledArg); }
+  Value onRejectedArg() const { return getFixedSlot(Slots::OnRejectedArg); }
+  void setOnFulfilledArg(const Value& arg) {
+    setFixedSlot(Slots::OnFulfilledArg, arg);
+  }
+  void setOnRejectedArg(const Value& arg) {
+    setFixedSlot(Slots::OnRejectedArg, arg);
+  }
+
+  JSObject* resolve() const {
+    return getFixedSlot(Slots::Resolve).toObjectOrNull();
+  }
+  JSObject* reject() const {
+    return getFixedSlot(Slots::Reject).toObjectOrNull();
+  }
+
+  Value reactionTarget() const {
+    return getFixedSlot(
+        Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
+  }
+  void setReactionTarget(const Value& target) {
+    setFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+                 target);
+  }
+
+  JSObject* enqueueGlobalRepresentative() const {
+    return getFixedSlot(Slots::EnqueueGlobalRepresentative).toObjectOrNull();
+  }
+  void setEnqueueGlobalRepresentative(JSObject* obj) {
+    setFixedSlot(Slots::EnqueueGlobalRepresentative, ObjectOrNullValue(obj));
+  }
+
+  
+  
+  void initReaction(JSObject* promise, const Value& onFulfilled,
+                    const Value& onRejected, JSObject* resolve,
+                    JSObject* reject,
+                    const Value& incumbentGlobalRepresentative,
+                    const Value& optionalHostDefinedData) {
+    initPromise(promise);
+    initFixedSlot(Slots::Flags, Int32Value(0));
+    initFixedSlot(Slots::OnFulfilled, onFulfilled);
+    initFixedSlot(Slots::OnRejected, onRejected);
+    initFixedSlot(Slots::Resolve, ObjectOrNullValue(resolve));
+    initFixedSlot(Slots::Reject, ObjectOrNullValue(reject));
+    initIncumbentGlobalRepresentative(incumbentGlobalRepresentative);
+    initOptionalHostDefinedData(optionalHostDefinedData);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+template <typename Base>
+class PromiseReaction : public Base {
+ protected:
+  
+  
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_RESOLVED = 0x1;
+
+  
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_FULFILLED = 0x2;
+
+  
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_DEFAULT_RESOLVING_HANDLER = 0x4;
+
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_ASYNC_FUNCTION = 0x8;
+
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_ASYNC_GENERATOR = 0x10;
+
+  
+  
+  static constexpr uint32_t REACTION_FLAG_DEBUGGER_DUMMY = 0x20;
+
+  
+  
+  
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_IGNORE_UNHANDLED_REJECTION = 0x40;
+
+  
+  
+  
+  
+  static constexpr uint32_t REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR = 0x80;
+
+ public:
+  using Base::Base;
+
+ protected:
   void setFlagOnInitialState(uint32_t flag) {
     int32_t flags = this->flags();
     MOZ_ASSERT(flags == 0, "Can't modify with non-default flags");
     flags |= flag;
-    setFixedSlot(Slots::Flags, Int32Value(flags));
-  }
-
-  uint32_t handlerSlot() {
-    MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
-    return targetState() == JS::PromiseState::Fulfilled ? Slots::OnFulfilled
-                                                        : Slots::OnRejected;
-  }
-
-  uint32_t handlerArgSlot() {
-    MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
-    return targetState() == JS::PromiseState::Fulfilled ? Slots::OnFulfilledArg
-                                                        : Slots::OnRejectedArg;
+    this->setFlags(flags);
   }
 
  public:
-  static const JSClass class_;
-
-  int32_t flags() const { return getFixedSlot(Slots::Flags).toInt32(); }
   JS::PromiseState targetState() const {
     int32_t flags = this->flags();
     if (!(flags & REACTION_FLAG_RESOLVED)) {
@@ -974,8 +1022,12 @@ class PromiseReactionRecord : public PromiseJobObject {
       flags |= REACTION_FLAG_FULFILLED;
     }
 
-    setFixedSlot(Slots::Flags, Int32Value(flags));
-    setFixedSlot(handlerArgSlot(), arg);
+    this->setFlags(flags);
+    if (state == JS::PromiseState::Fulfilled) {
+      this->setOnFulfilledArg(arg);
+    } else {
+      this->setOnRejectedArg(arg);
+    }
   }
 
   void setShouldIgnoreUnhandledRejection() {
@@ -990,8 +1042,7 @@ class PromiseReactionRecord : public PromiseJobObject {
 
   void setIsDefaultResolvingHandler(PromiseObject* promiseToResolve) {
     setFlagOnInitialState(REACTION_FLAG_DEFAULT_RESOLVING_HANDLER);
-    setFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
-                 ObjectValue(*promiseToResolve));
+    this->setReactionTarget(ObjectValue(*promiseToResolve));
   }
   bool isDefaultResolvingHandler() const {
     int32_t flags = this->flags();
@@ -999,16 +1050,13 @@ class PromiseReactionRecord : public PromiseJobObject {
   }
   PromiseObject* defaultResolvingPromise() {
     MOZ_ASSERT(isDefaultResolvingHandler());
-    const Value& promiseToResolve =
-        getFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
-    return &promiseToResolve.toObject().as<PromiseObject>();
+    return &this->reactionTarget().toObject().template as<PromiseObject>();
   }
 
   void setIsAsyncFunction(AsyncFunctionGeneratorObject* genObj) {
-    MOZ_ASSERT(realm() == genObj->nonCCWRealm());
+    MOZ_ASSERT(this->realm() == genObj->nonCCWRealm());
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FUNCTION);
-    setFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
-                 ObjectValue(*genObj));
+    this->setReactionTarget(ObjectValue(*genObj));
   }
   bool isAsyncFunction() const {
     int32_t flags = this->flags();
@@ -1016,18 +1064,17 @@ class PromiseReactionRecord : public PromiseJobObject {
   }
   AsyncFunctionGeneratorObject* asyncFunctionGenerator() {
     MOZ_ASSERT(isAsyncFunction());
-    const Value& generator =
-        getFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
     AsyncFunctionGeneratorObject* res =
-        &generator.toObject().as<AsyncFunctionGeneratorObject>();
-    MOZ_RELEASE_ASSERT(realm() == res->realm());
+        &this->reactionTarget()
+             .toObject()
+             .template as<AsyncFunctionGeneratorObject>();
+    MOZ_RELEASE_ASSERT(this->realm() == res->realm());
     return res;
   }
 
   void setIsAsyncGenerator(AsyncGeneratorObject* generator) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_GENERATOR);
-    setFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
-                 ObjectValue(*generator));
+    this->setReactionTarget(ObjectValue(*generator));
   }
   bool isAsyncGenerator() const {
     int32_t flags = this->flags();
@@ -1035,15 +1082,14 @@ class PromiseReactionRecord : public PromiseJobObject {
   }
   AsyncGeneratorObject* asyncGenerator() {
     MOZ_ASSERT(isAsyncGenerator());
-    const Value& generator =
-        getFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
-    return &generator.toObject().as<AsyncGeneratorObject>();
+    return &this->reactionTarget()
+                .toObject()
+                .template as<AsyncGeneratorObject>();
   }
 
   void setIsAsyncFromSyncIterator(AsyncFromSyncIteratorObject* iterator) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR);
-    setFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
-                 ObjectValue(*iterator));
+    this->setReactionTarget(ObjectValue(*iterator));
   }
   bool isAsyncFromSyncIterator() const {
     int32_t flags = this->flags();
@@ -1051,9 +1097,9 @@ class PromiseReactionRecord : public PromiseJobObject {
   }
   AsyncFromSyncIteratorObject* asyncFromSyncIterator() {
     MOZ_ASSERT(isAsyncFromSyncIterator());
-    const Value& iterator =
-        getFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
-    return &iterator.toObject().as<AsyncFromSyncIteratorObject>();
+    return &this->reactionTarget()
+                .toObject()
+                .template as<AsyncFromSyncIteratorObject>();
   }
 
   void setIsDebuggerDummy() {
@@ -1066,7 +1112,8 @@ class PromiseReactionRecord : public PromiseJobObject {
 
   Value handler() {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
-    return getFixedSlot(handlerSlot());
+    return targetState() == JS::PromiseState::Fulfilled ? this->onFulfilled()
+                                                        : this->onRejected();
   }
 
   
@@ -1075,21 +1122,25 @@ class PromiseReactionRecord : public PromiseJobObject {
     MOZ_ASSERT(this->targetState() == JS::PromiseState::Pending);
     MOZ_ASSERT(targetState != JS::PromiseState::Pending);
 
-    return getFixedSlot(targetState == JS::PromiseState::Fulfilled
-                            ? Slots::OnFulfilled
-                            : Slots::OnRejected);
+    return targetState == JS::PromiseState::Fulfilled ? this->onFulfilled()
+                                                      : this->onRejected();
   }
   Value handlerArg() {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
-    return getFixedSlot(handlerArgSlot());
+    return targetState() == JS::PromiseState::Fulfilled ? this->onFulfilledArg()
+                                                        : this->onRejectedArg();
   }
+};
 
-  JSObject* enqueueGlobalRepresentative() const {
-    return getFixedSlot(Slots::EnqueueGlobalRepresentative).toObjectOrNull();
-  }
-  void setEnqueueGlobalRepresentative(JSObject* obj) {
-    setFixedSlot(Slots::EnqueueGlobalRepresentative, ObjectOrNullValue(obj));
-  }
+
+class PromiseReactionRecord
+    : public PromiseReaction<PromiseReactionObjectStorage> {
+  template <typename KnownF, typename UnknownF>
+  static void forEachReactionFlag(uint32_t flags, KnownF known,
+                                  UnknownF unknown);
+
+ public:
+  static const JSClass class_;
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dumpOwnFields(js::JSONPrinter& json) const;
@@ -2524,14 +2575,12 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
   RootedField<JSObject*, 4> promiseObj(roots, reaction->promise());
   RootedField<JSObject*, 5> callee(roots);
   if (resolutionMode == ResolveMode) {
-    callee =
-        reaction->getFixedSlot(PromiseReactionRecord::Resolve).toObjectOrNull();
+    callee = reaction->resolve();
 
     return CallPromiseResolveFunction(cx, callee, handlerResult, promiseObj);
   }
 
-  callee =
-      reaction->getFixedSlot(PromiseReactionRecord::Reject).toObjectOrNull();
+  callee = reaction->reject();
 
   return CallPromiseRejectFunction(cx, callee, handlerResult, promiseObj,
                                    unwrappedRejectionStack,
@@ -2731,14 +2780,12 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   RootedField<JSObject*, 8> promiseObj(roots, reaction->promise());
   RootedField<JSObject*, 7> callee(roots);
   if (resolutionMode == ResolveMode) {
-    callee =
-        reaction->getFixedSlot(PromiseReactionRecord::Resolve).toObjectOrNull();
+    callee = reaction->resolve();
 
     return CallPromiseResolveFunction(cx, callee, handlerResult, promiseObj);
   }
 
-  callee =
-      reaction->getFixedSlot(PromiseReactionRecord::Reject).toObjectOrNull();
+  callee = reaction->reject();
 
   return CallPromiseRejectFunction(cx, callee, handlerResult, promiseObj,
                                    unwrappedRejectionStack,
@@ -6526,21 +6573,10 @@ static PromiseReactionRecord* NewReactionRecord(
 
   
   
-  reaction->initFixedSlot(PromiseReactionRecord::Promise,
-                          ObjectOrNullValue(resultCapability.promise()));
-  
-  
-  reaction->initFixedSlot(PromiseReactionRecord::Flags, Int32Value(0));
-  reaction->initFixedSlot(PromiseReactionRecord::OnFulfilled, onFulfilled);
-  reaction->initFixedSlot(PromiseReactionRecord::OnRejected, onRejected);
-  reaction->initFixedSlot(PromiseReactionRecord::Resolve,
-                          ObjectOrNullValue(resultCapability.resolve()));
-  reaction->initFixedSlot(PromiseReactionRecord::Reject,
-                          ObjectOrNullValue(resultCapability.reject()));
-  reaction->initFixedSlot(PromiseReactionRecord::IncumbentGlobalRepresentative,
-                          ObjectOrNullValue(incumbentGlobalRepresentative));
-  reaction->initFixedSlot(PromiseReactionRecord::OptionalHostDefinedData,
-                          ObjectOrNullValue(optionalHostDefinedData));
+  reaction->initReaction(resultCapability.promise(), onFulfilled, onRejected,
+                         resultCapability.resolve(), resultCapability.reject(),
+                         ObjectOrNullValue(incumbentGlobalRepresentative),
+                         ObjectOrNullValue(optionalHostDefinedData));
 
   return reaction;
 }
