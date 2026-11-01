@@ -3940,12 +3940,10 @@ pref("devtools.policy.disabled", false);
 
 pref("devtools.errorconsole.deprecation_warnings", true);
 
-#ifdef NIGHTLY_BUILD
-  
-  pref("devtools.debugger.prompt-connection", false, sticky);
-#else
-  pref("devtools.debugger.prompt-connection", true, sticky);
-#endif
+
+
+
+pref("devtools.debugger.prompt-connection", true, sticky);
 
 #ifdef MOZILLA_OFFICIAL
   
