@@ -260,9 +260,11 @@ class RtpSenderTest : public ::testing::Test {
 
   
   
+  
   void EnableMidSending(absl::string_view mid) {
+    config_.mid = std::string(mid);
+    RecreateSender();
     rtp_sender_->RegisterRtpHeaderExtension(RtpMid::Uri(), kMidExtensionId);
-    rtp_sender_->SetMid(mid);
   }
 
   
@@ -961,7 +963,7 @@ TEST_F(RtpSenderTest, CountMidOnlyUntilAcked) {
 
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
-  rtp_sender_->SetMid("foo");
+  EnableMidSending("foo");
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 36u);
   rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(), kRidExtensionId);
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 52u);
@@ -983,7 +985,7 @@ TEST_F(RtpSenderTest, CountMidRidRridUntilAcked) {
 
   
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 14u);
-  rtp_sender_->SetMid("foo");
+  EnableMidSending("foo");
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 38u);
 
   rtp_sender_->RegisterRtpHeaderExtension(RtpStreamId::Uri(), kRidExtensionId);

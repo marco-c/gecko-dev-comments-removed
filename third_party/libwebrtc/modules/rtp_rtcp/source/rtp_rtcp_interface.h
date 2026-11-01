@@ -157,6 +157,11 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     
+    std::string mid;
+
+    
+    
+    
     
     std::string rid;
 
@@ -260,11 +265,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   virtual uint32_t SSRC() const = 0;
-
-  
-  
-  
-  virtual void SetMid(absl::string_view mid) = 0;
 
   
   
