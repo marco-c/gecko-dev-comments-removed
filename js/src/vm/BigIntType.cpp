@@ -506,6 +506,20 @@ void BigInt::multiplyAccumulate(const BigInt* multiplicand, Digit multiplier,
   }
 }
 
+inline int8_t BigInt::absoluteCompare(ConstDigits x, ConstDigits y) {
+  MOZ_RELEASE_ASSERT(x.size() == y.size());
+  int i = x.size() - 1;
+  while (i >= 0 && x[i] == y[i]) {
+    i--;
+  }
+
+  if (i < 0) {
+    return 0;
+  }
+
+  return x[i] > y[i] ? 1 : -1;
+}
+
 inline int8_t BigInt::absoluteCompare(const BigInt* x, const BigInt* y) {
   MOZ_ASSERT(!HasLeadingZeroes(x));
   MOZ_ASSERT(!HasLeadingZeroes(y));
@@ -519,18 +533,7 @@ inline int8_t BigInt::absoluteCompare(const BigInt* x, const BigInt* y) {
     return diff < 0 ? -1 : 1;
   }
 
-  auto xDigits = x->digits();
-  auto yDigits = y->digits();
-  int i = xDigits.size() - 1;
-  while (i >= 0 && xDigits[i] == yDigits[i]) {
-    i--;
-  }
-
-  if (i < 0) {
-    return 0;
-  }
-
-  return xDigits[i] > yDigits[i] ? 1 : -1;
+  return absoluteCompare(x->unguardedDigits(), y->unguardedDigits());
 }
 
 BigInt* BigInt::absoluteAdd(JSContext* cx, HandleBigInt x, HandleBigInt y,
@@ -724,48 +727,6 @@ bool BigInt::absoluteDivWithDigitDivisor(
 }
 
 
-
-BigInt::Digit BigInt::absoluteInplaceAdd(const BigInt* summand,
-                                         unsigned startIndex) {
-  Digit carry = 0;
-  unsigned n = summand->digitLength();
-  MOZ_ASSERT(digitLength() > startIndex,
-             "must start adding at an in-range digit");
-  MOZ_ASSERT(digitLength() - startIndex >= n,
-             "digits being added to must not extend above the digits in "
-             "this (except for the returned carry digit)");
-  auto thisDigits = digits();
-  auto summandDigits = summand->digits();
-  for (unsigned i = 0; i < n; i++) {
-    thisDigits[startIndex + i] =
-        digitAdd3(thisDigits[startIndex + i], summandDigits[i], carry, &carry);
-  }
-
-  return carry;
-}
-
-
-
-BigInt::Digit BigInt::absoluteInplaceSub(const BigInt* subtrahend,
-                                         unsigned startIndex) {
-  Digit borrow = 0;
-  unsigned n = subtrahend->digitLength();
-  MOZ_ASSERT(digitLength() > startIndex,
-             "must start subtracting from an in-range digit");
-  MOZ_ASSERT(digitLength() - startIndex >= n,
-             "digits being subtracted from must not extend above the "
-             "digits in this (except for the returned borrow digit)");
-  auto thisDigits = digits();
-  auto subtrahendDigits = subtrahend->digits();
-  for (unsigned i = 0; i < n; i++) {
-    thisDigits[startIndex + i] = digitSub3(
-        thisDigits[startIndex + i], subtrahendDigits[i], borrow, &borrow);
-  }
-
-  return borrow;
-}
-
-
 inline bool BigInt::productGreaterThan(Digit factor1, Digit factor2, Digit high,
                                        Digit low) {
   Digit resultHigh;
@@ -911,7 +872,139 @@ BigInt::Digit BigInt::digitDivByMultiplication(Digit high, Digit low,
   return q1;
 }
 
+void BigInt::multiplyAccumulateDigits(ConstDigits multiplicand,
+                                      Digit multiplier, Digits acc) {
+  if (!multiplier) {
+    return;
+  }
 
+  size_t n = std::min(multiplicand.size(), acc.size());
+  Digit carry = 0;
+  Digit high = 0;
+  size_t i = 0;
+  for (; i < n; i++) {
+    Digit sum = digitAdd3(acc[i], high, carry, &carry);
+    Digit low = digitMul(multiplier, multiplicand[i], &high);
+    Digit lowCarry;
+    acc[i] = digitAdd(sum, low, &lowCarry);
+    carry += lowCarry;
+  }
+
+  for (; (carry || high) && i < acc.size(); i++) {
+    acc[i] = digitAdd3(acc[i], high, carry, &carry);
+    high = 0;
+  }
+}
+
+
+
+BigInt::Digit BigInt::inplaceSubDigits(Digits x, ConstDigits y) {
+  Digits xs = x.First(y.size());
+  Digit borrow = 0;
+  for (size_t i = 0; i < y.size(); i++) {
+    xs[i] = digitSub3(xs[i], y[i], borrow, &borrow);
+  }
+  return borrow;
+}
+
+BigInt::Digit BigInt::inplaceAddDigits(Digits x, ConstDigits y) {
+  Digits xs = x.First(y.size());
+  Digit carry = 0;
+  for (size_t i = 0; i < y.size(); i++) {
+    xs[i] = digitAdd3(xs[i], y[i], carry, &carry);
+  }
+  return carry;
+}
+
+
+
+
+
+
+void BigInt::divideDigitsInPlace(Digits u, ConstDigits v, Digits q,
+                                 Digits qhatv) {
+  
+  
+  
+  
+
+  
+  
+  const size_t n = v.size();
+  
+  MOZ_RELEASE_ASSERT(n >= 2);
+  MOZ_ASSERT(v[n - 1] >> (DigitBits - 1));
+
+  
+  
+  MOZ_RELEASE_ASSERT(u.size() > n);
+  MOZ_ASSERT(absoluteCompare(u.From(u.size() - n), v) < 0);
+  
+  
+  MOZ_RELEASE_ASSERT(q.empty() || q.size() == u.size() - n);
+  
+  MOZ_RELEASE_ASSERT(qhatv.size() == n + 1);
+  const size_t m = u.size() - n - 1;
+
+  
+  
+  
+  Digit vn1 = v[n - 1];
+  Digit vn2 = v[n - 2];
+  Digit vn1Inverse = normalizedDigitInverse(vn1);
+  for (size_t j = m + 1; j-- > 0;) {
+    
+    Digits uj = u.From(j).First(n + 1);
+
+    
+    
+    
+    Digit qhat = std::numeric_limits<Digit>::max();
+
+    
+    Digit ujn = uj[n];
+    if (ujn != vn1) {
+      
+      Digit rhat = 0;
+      
+      
+      
+      qhat = digitDivByMultiplication(ujn, uj[n - 1], vn1, vn1Inverse, &rhat);
+
+      
+      
+      
+      Digit ujn2 = uj[n - 2];
+      while (productGreaterThan(qhat, vn2, rhat, ujn2)) {
+        qhat--;
+        Digit prevRhat = rhat;
+        rhat += vn1;
+        
+        if (rhat < prevRhat) {
+          break;
+        }
+      }
+    }
+
+    
+    
+    
+    
+    
+    std::fill_n(qhatv.data(), qhatv.size(), 0);
+    multiplyAccumulateDigits(v, qhat, qhatv);
+    Digit c = inplaceSubDigits(uj, qhatv);
+    if (c) {
+      c = inplaceAddDigits(uj, v);
+      uj[n] = uj[n] + c;
+      qhat--;
+    }
+
+    if (!q.empty()) {
+      q[j] = qhat;
+    }
+  }
+}
 
 
 
@@ -932,10 +1025,6 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   MOZ_ASSERT(!quotient || !quotient.value());
   MOZ_ASSERT(!remainder || !remainder.value());
 
-  
-  
-  
-  
   const unsigned n = divisor->digitLength();
   const unsigned m = dividend->digitLength() - n;
 
@@ -986,69 +1075,9 @@ bool BigInt::absoluteDivWithBigIntDivisor(
     return false;
   }
 
-  {
-    auto shiftedDivisorDigits = shiftedDivisor->digits();
-    auto uDigits = u->digits();
-    auto qDigits =
-        quotient ? q->digits() : BigInt::DigitsGuard(Digits(), nullptr);
-
-    
-    
-    
-    Digit vn1 = shiftedDivisorDigits[n - 1];
-    Digit vn1Inverse = normalizedDigitInverse(vn1);
-    for (int j = m; j >= 0; j--) {
-      
-      
-      
-      
-      Digit qhat = std::numeric_limits<Digit>::max();
-
-      
-      Digit ujn = uDigits[j + n];
-      if (ujn != vn1) {
-        
-        Digit rhat = 0;
-        
-        
-        
-        qhat = digitDivByMultiplication(ujn, uDigits[j + n - 1], vn1,
-                                        vn1Inverse, &rhat);
-
-        
-        
-        
-        Digit vn2 = shiftedDivisorDigits[n - 2];
-        Digit ujn2 = uDigits[j + n - 2];
-        while (productGreaterThan(qhat, vn2, rhat, ujn2)) {
-          qhat--;
-          Digit prevRhat = rhat;
-          rhat += vn1;
-          
-          if (rhat < prevRhat) {
-            break;
-          }
-        }
-      }
-
-      
-      
-      
-      
-      
-      internalMultiplyAdd(shiftedDivisor, qhat, 0, n, qhatv);
-      Digit c = u->absoluteInplaceSub(qhatv, j);
-      if (c) {
-        c = u->absoluteInplaceAdd(shiftedDivisor, j);
-        uDigits[j + n] = uDigits[j + n] + c;
-        qhat--;
-      }
-
-      if (quotient) {
-        qDigits[j] = qhat;
-      }
-    }
-  }
+  divideDigitsInPlace(
+      u->unguardedDigits(), shiftedDivisor->unguardedDigits().First(n),
+      quotient ? q->unguardedDigits() : Digits(), qhatv->unguardedDigits());
 
   if (quotient) {
     BigInt* bi = destructivelyTrimHighZeroDigits(cx, q);
