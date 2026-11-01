@@ -480,6 +480,7 @@ impl<'a> DlDocumentBuilders<'a> {
 
 
 
+#[derive(Clone)]
 pub enum DlOp<T> {
     Open(DlNamespace),
     Insert {
@@ -560,12 +561,26 @@ pub struct DlStore<K, T> {
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
+#[derive(MallocSizeOf, Clone)]
 struct Entry<T> {
     
     
     uid: ItemUid,
     value: T,
+}
+
+
+
+impl<K, T: Clone> Clone for DlStore<K, T> {
+    fn clone(&self) -> Self {
+        DlStore {
+            namespaces: self.namespaces.clone(),
+            #[cfg(debug_assertions)]
+            generations: self.generations.clone(),
+            next_uid: self.next_uid,
+            _marker: PhantomData,
+        }
+    }
 }
 
 impl<K, T> Default for DlStore<K, T> {
