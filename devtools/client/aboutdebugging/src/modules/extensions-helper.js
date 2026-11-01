@@ -59,7 +59,10 @@ exports.openTemporaryExtension = function (win, message) {
         PREFERENCES.TEMPORARY_EXTENSION_PATH,
         ""
       );
-      const lastDir = new lazy.FileUtils.File(lastDirPath);
+      let lastDir = new lazy.FileUtils.File(lastDirPath);
+      if (lastDir.exists() && !lastDir.isDirectory()) {
+        lastDir = lastDir.parent;
+      }
       fp.displayDirectory = lastDir;
     } catch (e) {
       
@@ -81,9 +84,11 @@ exports.openTemporaryExtension = function (win, message) {
       }
 
       
+      
+      const dir = file.isDirectory() ? file : file.parent;
       Services.prefs.setCharPref(
         PREFERENCES.TEMPORARY_EXTENSION_PATH,
-        file.path
+        dir.path
       );
 
       resolve(file);
