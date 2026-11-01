@@ -171,34 +171,75 @@ void blit_bitmap(HDC dc, const SkBitmap& bm, const SkIRect& dst, bool smooth = t
     SetStretchBltMode(dc, oldMode);
 }
 
+using DrawPageFn = std::function<void(SkCanvas*, SkIPoint)>;
 
 
-bool rasterize(const SkIRect& area, SkScalar scale,
-               const std::function<void(SkCanvas*)>& draw, SkBitmap* bm) {
-    int64_t w = SkScalarCeilToInt(area.width() * scale);
-    int64_t h = SkScalarCeilToInt(area.height() * scale);
-    if (w <= 0 || h <= 0) {
-        return false;
-    }
-    if (w * h > kMaxRasterPixels) {
-        SkScalar shrink = SkScalarSqrt(SkScalar(kMaxRasterPixels) / SkScalar(w * h));
-        w = std::max<int64_t>(1, SkScalarFloorToInt(w * shrink));
-        h = std::max<int64_t>(1, SkScalarFloorToInt(h * shrink));
-    }
-    if (!bm->tryAllocPixels(SkImageInfo::Make(w, h, kBGRA_8888_SkColorType,
+
+bool draw_on_white(int width, int height, const SkMatrix& matrix, SkIPoint origin,
+                   const DrawPageFn& draw, SkBitmap* bm) {
+    if (!bm->tryAllocPixels(SkImageInfo::Make(width, height, kBGRA_8888_SkColorType,
                                               kPremul_SkAlphaType))) {
         return false;
     }
     SkCanvas canvas(*bm);
     canvas.clear(SK_ColorWHITE);
-    canvas.scale(SkScalar(w) / area.width(), SkScalar(h) / area.height());
-    canvas.translate(-area.x(), -area.y());
-    canvas.clipRect(SkRect::Make(area));
-    draw(&canvas);
+    canvas.concat(matrix);
+    draw(&canvas, origin);
     
     
+    canvas.restoreToCount(1);
     canvas.drawColor(SK_ColorWHITE, SkBlendMode::kDstOver);
     return true;
+}
+
+
+
+
+
+
+
+bool rasterize(const SkIRect& area, SkScalar scale, bool canvasMayBeScaled,
+               const DrawPageFn& draw, SkBitmap* bm) {
+    int w = std::max(1, SkScalarCeilToInt(area.width() * scale));
+    int h = std::max(1, SkScalarCeilToInt(area.height() * scale));
+    if (scale >= 1 || canvasMayBeScaled) {
+        SkMatrix matrix = SkMatrix::Scale(SkScalar(w) / area.width(), SkScalar(h) / area.height());
+        return draw_on_white(w, h, matrix, area.topLeft(), draw, bm);
+    }
+    SkBitmap full;
+    if (!draw_on_white(area.width(), area.height(), SkMatrix::I(), area.topLeft(), draw, &full) ||
+        !bm->tryAllocPixels(full.info().makeWH(w, h))) {
+        return false;
+    }
+    sk_sp<SkImage> image = full.asImage()->withDefaultMipmaps();
+    if (!image) {
+        return false;
+    }
+    SkCanvas canvas(*bm);
+    canvas.drawImageRect(image, SkRect::MakeIWH(w, h),
+                         SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear));
+    return true;
+}
+
+
+void rasterize_region(HDC dc, const SkRegion& region, SkScalar scale, bool canvasMayBeScaled,
+                      const DrawPageFn& draw) {
+    if (region.isEmpty()) {
+        return;
+    }
+    const SkIRect& area = region.getBounds();
+    int stripHeight = std::max<int>(1, kMaxRasterPixels / area.width());
+    for (int y = area.fTop; y < area.fBottom; y += stripHeight) {
+        SkRegion strip(SkIRect::MakeLTRB(area.fLeft, y, area.fRight,
+                                         std::min(y + stripHeight, area.fBottom)));
+        if (!strip.op(region, SkRegion::kIntersect_Op)) {
+            continue;
+        }
+        SkBitmap bm;
+        if (rasterize(strip.getBounds(), scale, canvasMayBeScaled, draw, &bm)) {
+            blit_bitmap(dc, bm, strip.getBounds());
+        }
+    }
 }
 
 COLORREF to_colorref(SkColor4f c, bool flattenOnWhite) {
@@ -878,26 +919,21 @@ private:
             return;
         }
         const SkMatrix ctm = this->globalCTM();
-        SkBitmap bm;
-        bool ok = rasterize(area, fPage->fRasterScale,
-                            [&](SkCanvas* canvas) {
-                                canvas->concat(ctm);
-                                SkPaint fill(paint);
-                                fill.setStyle(SkPaint::kFill_Style);
-                                fill.setPathEffect(nullptr);
-                                canvas->drawPaint(fill);
-                            },
-                            &bm);
-        if (!ok) {
-            return;
-        }
         SaveDC(dc);
         BeginPath(dc);
         emit_path(dc, geometry.fPath);
         EndPath(dc);
         SetPolyFillMode(dc, fill_mode(geometry.fPath));
         SelectClipPath(dc, RGN_AND);
-        blit_bitmap(dc, bm, area);
+        rasterize_region(dc, SkRegion(area), fPage->fRasterScale,  true,
+                         [&](SkCanvas* canvas, SkIPoint origin) {
+                             canvas->translate(-origin.x(), -origin.y());
+                             canvas->concat(ctm);
+                             SkPaint fill(paint);
+                             fill.setStyle(SkPaint::kFill_Style);
+                             fill.setPathEffect(nullptr);
+                             canvas->drawPaint(fill);
+                         });
         RestoreDC(dc, -1);
     }
 
@@ -1082,7 +1118,7 @@ class GDIDocument final : public SkGDI::Document {
 public:
     GDIDocument(HDC dc, const SkGDI::Options& options) : fDC(dc), fOptions(options) {}
 
-    void drawPage(SkISize size, const std::function<void(SkCanvas*)>& draw) override {
+    void drawPage(SkISize size, const DrawPageFn& draw) override {
         if (size.isEmpty()) {
             return;
         }
@@ -1111,38 +1147,22 @@ public:
     }
 
 private:
-    static void Playback(const std::function<void(SkCanvas*)>& draw, PageState* state) {
+    static void Playback(const DrawPageFn& draw, PageState* state) {
         SkCanvas canvas(sk_make_sp<SkGDIDevice>(state, state->fBounds.size(),
                                                 SkGDIDevice::Kind::kDirect, nullptr));
-        draw(&canvas);
+        draw(&canvas, {0, 0});
     }
 
-    
-    
-    void rasterizeFallback(const std::function<void(SkCanvas*)>& draw, const SkRegion& fallback,
-                           SkScalar scale) {
+    void rasterizeFallback(const DrawPageFn& draw, const SkRegion& fallback, SkScalar scale) {
         if (fallback.isEmpty()) {
             return;
         }
         if (!fallback.isRect() && !clip_to_region(fDC, fallback)) {
             return;
         }
-        const SkIRect& area = fallback.getBounds();
         
-        int64_t rowPixels = std::max<int64_t>(1, SkScalarCeilToInt(area.width() * scale));
-        int stripHeight = std::max<int>(
-                1, SkScalarFloorToInt((kMaxRasterPixels / 4 / rowPixels) / scale));
-        for (int y = area.fTop; y < area.fBottom; y += stripHeight) {
-            SkRegion strip(SkIRect::MakeLTRB(area.fLeft, y, area.fRight,
-                                             std::min(y + stripHeight, area.fBottom)));
-            if (!strip.op(fallback, SkRegion::kIntersect_Op)) {
-                continue;
-            }
-            SkBitmap bm;
-            if (rasterize(strip.getBounds(), scale, draw, &bm)) {
-                blit_bitmap(fDC, bm, strip.getBounds());
-            }
-        }
+        
+        rasterize_region(fDC, fallback, scale,  false, draw);
     }
 
     HDC fDC;

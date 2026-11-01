@@ -5,6 +5,7 @@
 #ifndef SkGDIDocument_DEFINED
 #define SkGDIDocument_DEFINED
 
+#include "include/core/SkPoint.h"
 #include "include/core/SkScalar.h"
 #include "include/core/SkSize.h"
 #include "include/core/SkTypes.h"
@@ -39,7 +40,11 @@ public:
 
 
 
-    virtual void drawPage(SkISize size, const std::function<void(SkCanvas*)>& draw) = 0;
+
+
+
+    virtual void drawPage(SkISize size,
+                          const std::function<void(SkCanvas*, SkIPoint origin)>& draw) = 0;
 };
 
 SK_API std::unique_ptr<Document> MakeDocument(HDC dc, const Options& options = Options());

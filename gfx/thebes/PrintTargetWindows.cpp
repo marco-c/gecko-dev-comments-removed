@@ -203,8 +203,12 @@ nsresult PrintTargetWindows::EndPage() {
     mTranslator->SaveState(pageStart);
     MemStream& recording = mRecorder->mOutputStream;
     bool firstPass = true;
-    mDocument->drawPage(size, [&](SkCanvas* aCanvas) {
+    mDocument->drawPage(size, [&](SkCanvas* aCanvas, SkIPoint aOrigin) {
       RefPtr<DrawTarget> dt = Factory::CreateDrawTargetWithSkCanvas(aCanvas);
+      if (dt && (aOrigin.x() || aOrigin.y())) {
+        dt = Factory::CreateOffsetDrawTarget(
+            dt, IntPoint(aOrigin.x(), aOrigin.y()));
+      }
       if (!dt || !recording.mValid) {
         failure = true;
         return;
