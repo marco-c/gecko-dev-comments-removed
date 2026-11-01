@@ -11688,9 +11688,19 @@ static bool StartSerializingShadowDOM(
   }
 
   
-  
   if (shadow->Clonable()) {
     aBuilder.Append(u" shadowrootclonable=\"\"");
+  }
+
+  
+  
+  
+  
+  if (StaticPrefs::dom_shadowdom_referenceTarget_enabled() &&
+      shadow->HasReferenceTarget()) {
+    aBuilder.Append(u" shadowrootreferencetarget=\"");
+    aBuilder.Append(shadow->ReferenceTarget());
+    aBuilder.Append(u"\"");
   }
 
   auto isGlobalCustomElementRegistry = [](CustomElementRegistry* registry) {
