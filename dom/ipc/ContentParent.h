@@ -73,6 +73,9 @@ class CrashReporterInitArgs;
 
 namespace mozilla {
 class PClipboardWriteRequestParent;
+#ifdef MOZ_WIDGET_ANDROID
+class ProcInfoParent;
+#endif
 class PRemoteSpellcheckEngineParent;
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
@@ -1595,6 +1598,10 @@ class ContentParent final : public PContentParent,
   
   
   UniqueFileHandle mChildXSocketFdDup;
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID
+  RefPtr<ProcInfoParent> mProcInfoParent;
 #endif
 
   RefPtr<PProcessHangMonitorParent> mHangMonitorActor;
