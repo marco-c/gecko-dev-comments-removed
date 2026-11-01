@@ -764,23 +764,10 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
     return;
   }
 
-  double dpiScale = GetDefaultScale().scale;
+  const DesktopIntRect screenBounds = GetScreenBoundsUnscaled();
+  nsCOMPtr<nsIScreen> screen =
+      ScreenManager::GetSingleton().ScreenForRect(screenBounds);
 
-  
-  auto bounds = GetScreenBounds();
-  int32_t logWidth = std::max(NSToIntRound(bounds.width / dpiScale), 1);
-  int32_t logHeight = std::max(NSToIntRound(bounds.height / dpiScale), 1);
-
-  
-
-  nsCOMPtr<nsIScreenManager> screenmgr =
-      do_GetService("@mozilla.org/gfx/screenmanager;1");
-  if (!screenmgr) {
-    return;
-  }
-  nsCOMPtr<nsIScreen> screen;
-  screenmgr->ScreenForRect(aPoint.x, aPoint.y, logWidth, logHeight,
-                           getter_AddRefs(screen));
   
   if (!screen) {
     return;
@@ -796,8 +783,7 @@ void nsWindow::ConstrainPosition(DesktopIntPoint& aPoint) {
   auto slop =
       DesktopIntPoint::Round(GetScreenEdgeSlop() / GetDesktopToDeviceScale());
   screenRect.Inflate(slop.x, slop.y);
-
-  aPoint = ConstrainPositionToBounds(aPoint, {logWidth, logHeight}, screenRect);
+  aPoint = ConstrainPositionToBounds(aPoint, screenBounds.Size(), screenRect);
 }
 
 bool nsWindow::ConstrainSizeWithScale(int* aWidth, int* aHeight,
