@@ -37,6 +37,7 @@ class WebTransportParent : public PWebTransportParent,
               const bool& aRequireUnreliable,
               const uint32_t& aCongestionControl,
               nsTArray<nsString>&& aProtocols,
+              nsTArray<WebTransportHeader>&& aHeaders,
               nsTArray<WebTransportHash>&& aServerCertHashes,
               Endpoint<PWebTransportParent>&& aParentEndpoint,
               std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&

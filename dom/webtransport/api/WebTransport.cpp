@@ -11,6 +11,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
@@ -311,6 +312,56 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<mozilla::ipc::WebTransportHeader> requestHeaderList;
+  if (aOptions.mHeaders.WasPassed()) {
+    const auto& init = aOptions.mHeaders.Value();
+    RefPtr<InternalHeaders> headers = new InternalHeaders();
+    if (init.IsByteStringSequenceSequence()) {
+      headers->Fill(init.GetAsByteStringSequenceSequence(), aError);
+    } else if (init.IsByteStringByteStringRecord()) {
+      headers->Fill(init.GetAsByteStringByteStringRecord(), aError);
+    }
+    if (aError.Failed()) {
+      return;
+    }
+    nsTArray<InternalHeaders::Entry> entries;
+    headers->GetEntries(entries);
+    RefPtr<InternalHeaders> requestHeaders =
+        new InternalHeaders(HeadersGuardEnum::Request);
+    for (const auto& entry : entries) {
+      if (entry.mName.LowerCaseEqualsLiteral("wt-available-protocols")) {
+        aError.ThrowTypeError(
+            "wt-available-protocols is not allowed in headers");
+        return;
+      }
+      requestHeaders->Append(entry.mName, entry.mValue, aError);
+      if (aError.Failed()) {
+        return;
+      }
+    }
+    nsTArray<InternalHeaders::Entry> requestEntries;
+    requestHeaders->GetEntries(requestEntries);
+    for (const auto& entry : requestEntries) {
+      requestHeaderList.AppendElement(
+          mozilla::ipc::WebTransportHeader(entry.mName, entry.mValue));
+    }
+  }
+
+  
+  
+  
+  
+  
+  
   mDatagrams = new WebTransportDatagramDuplexStream(mGlobal, this);
   mDatagrams->Init(aError);
   if (aError.Failed()) {
@@ -434,7 +485,8 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
       ->SendCreateWebTransportParent(
           aURL, principal, mBrowsingContextID, ipcClientInfo, dedicated,
           requireUnreliable, (uint32_t)congestionControl, protocols,
-          std::move(aServerCertHashes), std::move(parentEndpoint))
+          requestHeaderList, std::move(aServerCertHashes),
+          std::move(parentEndpoint))
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}](
                  PBackgroundChild::CreateWebTransportParentPromise::

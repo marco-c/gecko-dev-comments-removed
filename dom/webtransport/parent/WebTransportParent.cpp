@@ -5,9 +5,11 @@
 #include "WebTransportParent.h"
 
 #include "Http3WebTransportSession.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/ClientInfo.h"
+#include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/WebTransportBinding.h"
 #include "mozilla/dom/WebTransportLog.h"
 #include "mozilla/ipc/BackgroundParent.h"
@@ -37,6 +39,7 @@ void WebTransportParent::Create(
     const uint64_t& aBrowsingContextID, const IPCClientInfo& aClientInfo,
     const bool& aDedicated, const bool& aRequireUnreliable,
     const uint32_t& aCongestionControl, nsTArray<nsString>&& aProtocols,
+    nsTArray<WebTransportHeader>&& aHeaders,
     nsTArray<WebTransportHash>&& aServerCertHashes,
     Endpoint<PWebTransportParent>&& aParentEndpoint,
     std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&
@@ -87,6 +90,33 @@ void WebTransportParent::Create(
         new net::WebTransportHash(alg, hash.value()));
   }
 
+  
+  
+  nsTArray<nsCString> headerNames;
+  nsTArray<nsCString> headerValues;
+  RefPtr<InternalHeaders> requestHeaders =
+      new InternalHeaders(HeadersGuardEnum::Request);
+  for (const auto& header : aHeaders) {
+    IgnoredErrorResult erv;
+    if (header.name().LowerCaseEqualsLiteral("wt-available-protocols")) {
+      erv.ThrowTypeError("wt-available-protocols is reserved");
+    } else {
+      requestHeaders->Append(header.name(), header.value(), erv);
+    }
+    if (erv.Failed()) {
+      aResolver(ResolveType(
+          NS_ERROR_INVALID_ARG,
+          static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
+      return;
+    }
+  }
+  nsTArray<InternalHeaders::Entry> headerEntries;
+  requestHeaders->GetEntries(headerEntries);
+  for (const auto& entry : headerEntries) {
+    headerNames.AppendElement(entry.mName);
+    headerValues.AppendElement(entry.mValue);
+  }
+
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "WebTransport AsyncConnect",
       [self = RefPtr{this}, uri = std::move(uri),
@@ -94,13 +124,14 @@ void WebTransportParent::Create(
        nsServerCertHashes = std::move(nsServerCertHashes),
        principal = RefPtr{aPrincipal}, browsingContextID = aBrowsingContextID,
        flags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-       clientInfo = ClientInfo{aClientInfo},
-       protocols = std::move(aProtocols)] {
+       clientInfo = ClientInfo{aClientInfo}, protocols = std::move(aProtocols),
+       headerNames = std::move(headerNames),
+       headerValues = std::move(headerValues)] {
         LOG(("WebTransport %p AsyncConnect", self.get()));
         if (NS_FAILED(self->mWebTransport->AsyncConnectWithClient(
                 uri, dedicated, std::move(nsServerCertHashes), principal,
                 browsingContextID, flags, self, Some(clientInfo), protocols,
-                nsIWebTransport::HTTPVersion::h3))) {
+                headerNames, headerValues, nsIWebTransport::HTTPVersion::h3))) {
           LOG(("AsyncConnect failure; we should get OnSessionClosed"));
         }
       });

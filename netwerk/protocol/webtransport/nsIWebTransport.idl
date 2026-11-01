@@ -52,6 +52,9 @@ interface nsIWebTransport : nsISupports {
                     in WebTransportSessionEventListener aListener,
                     [optional] in nsIWebTransport_HTTPVersion aVersion);
 
+  // aHeaderNames and aHeaderValues are parallel arrays of extra request
+  // headers; the caller has already applied the Fetch request-header
+  // restrictions.
   [noscript]
   void asyncConnectWithClient(in nsIURI aURI,
                     in boolean aDedicated,
@@ -62,6 +65,8 @@ interface nsIWebTransport : nsISupports {
                     in WebTransportSessionEventListener aListener,
                     in const_MaybeClientInfoRef aClientInfo,
                     in Array<AString> aProtocols,
+                    in Array<ACString> aHeaderNames,
+                    in Array<ACString> aHeaderValues,
                     in nsIWebTransport_HTTPVersion aVersion);
 
   // Asynchronously get stats. On success (NS_OK), results in exactly one

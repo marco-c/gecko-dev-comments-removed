@@ -75,10 +75,11 @@ nsresult WebTransportSessionProxy::AsyncConnect(
     WebTransportSessionEventListener* aListener,
     nsIWebTransport::HTTPVersion aVersion) {
   nsTArray<nsString> emptyProtocols;
+  nsTArray<nsCString> emptyHeaders;
   return AsyncConnectWithClient(aURI, aDedicated, std::move(aServerCertHashes),
                                 aPrincipal, 0, aSecurityFlags, aListener,
                                 Maybe<dom::ClientInfo>(), emptyProtocols,
-                                aVersion);
+                                emptyHeaders, emptyHeaders, aVersion);
 }
 
 nsresult WebTransportSessionProxy::AsyncConnectWithClient(
@@ -88,8 +89,11 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
     uint32_t aSecurityFlags, WebTransportSessionEventListener* aListener,
     const Maybe<dom::ClientInfo>& aClientInfo,
     const nsTArray<nsString>& aProtocols,
+    const nsTArray<nsCString>& aHeaderNames,
+    const nsTArray<nsCString>& aHeaderValues,
     nsIWebTransport::HTTPVersion aVersion) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aHeaderNames.Length() == aHeaderValues.Length());
 
   if (aVersion == nsIWebTransport::HTTPVersion::h2) {
     mHTTPVersion = nsIWebTransport::HTTPVersion::h2;
@@ -177,6 +181,13 @@ nsresult WebTransportSessionProxy::AsyncConnectWithClient(
   rv = httpChannel->SetRequestHeader("Origin"_ns, serializedOrigin, false);
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  for (size_t i = 0; i < aHeaderNames.Length(); i++) {
+    rv = httpChannel->SetRequestHeader(aHeaderNames[i], aHeaderValues[i], true);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
   }
 
   
