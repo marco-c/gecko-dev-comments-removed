@@ -17,14 +17,10 @@
 
 
 
-
-
-#![allow(dead_code)]
-
 use crate::intern::ItemUid;
-use crate::internal_types::{FastHashMap, FastHashSet};
+use crate::internal_types::FastHashMap;
 use api::interning::{BuildId, BuilderId};
-use api::{FontRenderMode, IdNamespace, PipelineId};
+use api::{DocumentId, FontRenderMode, IdNamespace, PipelineId};
 use glyph_rasterizer::SharedFontResources;
 use std::marker::PhantomData;
 use std::{fmt, ops};
@@ -41,9 +37,11 @@ use std::{fmt, ops};
 macro_rules! enumerate_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            rectangles: api::interned_prims::RectangleKey => crate::prim_store::rectangle::RectangleTemplate, INTERNED_PRIMITIVES, prim,
         }
     }
 }
+
 
 
 
@@ -53,11 +51,14 @@ macro_rules! enumerate_dl_stores {
 macro_rules! enumerate_scene_dl_stores {
     ($macro_name: ident) => {
         $macro_name! {
+            rectangles: api::interned_prims::RectangleKey => crate::prim_store::PrimPlacement, prim,
         }
     }
 }
 
 
+
+#[allow(dead_code)]
 pub struct DlResolveContext<'a> {
     
     
@@ -218,14 +219,24 @@ pub enum DeltaAction {
 
 
 
+
+
+pub type DlPipelineKey = (DocumentId, PipelineId);
+
+
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(Default)]
 pub struct DlBuilderMap {
-    by_pipeline: FastHashMap<PipelineId, BuilderState>,
+    by_pipeline: FastHashMap<DlPipelineKey, BuilderState>,
     free: Vec<DlNamespace>,
     
-    pending_removals: FastHashSet<PipelineId>,
+    
+    
+    pending_removals: FastHashMap<DlPipelineKey, bool>,
     next: u32,
     
     
@@ -234,19 +245,13 @@ pub struct DlBuilderMap {
 }
 
 impl DlBuilderMap {
-    pub fn get(&self, pipeline_id: PipelineId) -> Option<DlNamespace> {
-        self.by_pipeline.get(&pipeline_id).map(|state| state.namespace)
+    pub fn get(&self, document_id: DocumentId, pipeline_id: PipelineId) -> Option<DlNamespace> {
+        self.by_pipeline.get(&(document_id, pipeline_id)).map(|state| state.namespace)
     }
 
     
-    
-    
-    
-    pub fn expect(&self, pipeline_id: PipelineId) -> (DlNamespace, u32) {
-        let namespace = self
-            .get(pipeline_id)
-            .unwrap_or_else(|| panic!("no namespace for {:?}", pipeline_id));
-        (namespace, self.generations[namespace.0 as usize])
+    pub fn document(&self, document_id: DocumentId) -> DlDocumentBuilders {
+        DlDocumentBuilders { map: self, document_id }
     }
 
     
@@ -269,11 +274,17 @@ impl DlBuilderMap {
     
     
     
-    pub fn get_or_alloc(&mut self, pipeline_id: PipelineId) -> (DlNamespace, bool) {
-        
-        self.pending_removals.remove(&pipeline_id);
+    pub fn get_or_alloc(
+        &mut self,
+        document_id: DocumentId,
+        pipeline_id: PipelineId,
+    ) -> (DlNamespace, bool) {
+        let key = (document_id, pipeline_id);
 
-        if let Some(state) = self.by_pipeline.get(&pipeline_id) {
+        
+        self.pending_removals.remove(&key);
+
+        if let Some(state) = self.by_pipeline.get(&key) {
             return (state.namespace, false);
         }
 
@@ -284,7 +295,7 @@ impl DlBuilderMap {
         });
 
         self.by_pipeline.insert(
-            pipeline_id,
+            key,
             BuilderState {
                 namespace,
                 builder: None,
@@ -311,6 +322,7 @@ impl DlBuilderMap {
     
     pub fn check_delta(
         &mut self,
+        document_id: DocumentId,
         pipeline_id: PipelineId,
         builder: BuilderId,
         build: BuildId,
@@ -318,7 +330,7 @@ impl DlBuilderMap {
     ) -> DeltaAction {
         let state = self
             .by_pipeline
-            .get_mut(&pipeline_id)
+            .get_mut(&(document_id, pipeline_id))
             .expect("delta for a pipeline with no namespace");
 
         
@@ -385,8 +397,28 @@ impl DlBuilderMap {
     
     
     
-    pub fn remove_pipeline(&mut self, pipeline_id: PipelineId) {
-        self.pending_removals.insert(pipeline_id);
+    
+    
+    
+    
+    
+    
+    
+    pub fn remove_pipeline(&mut self, document_id: DocumentId, pipeline_id: PipelineId) {
+        self.pending_removals.insert((document_id, pipeline_id), false);
+    }
+
+    
+    
+    
+    
+    
+    pub fn remove_document(&mut self, document_id: DocumentId) {
+        for key in self.by_pipeline.keys() {
+            if key.0 == document_id {
+                self.pending_removals.insert(*key, true);
+            }
+        }
     }
 
     
@@ -396,17 +428,48 @@ impl DlBuilderMap {
     
     
     
-    pub fn take_removals(&mut self) -> Vec<DlNamespace> {
+    pub fn take_removals(&mut self, document_id: DocumentId) -> Vec<DlNamespace> {
         let mut namespaces = Vec::new();
 
-        for pipeline_id in self.pending_removals.drain() {
-            if let Some(state) = self.by_pipeline.remove(&pipeline_id) {
+        let mut released = Vec::new();
+        self.pending_removals.retain(|key, orphaned| {
+            let release = *orphaned || key.0 == document_id;
+            if release {
+                released.push(*key);
+            }
+            !release
+        });
+
+        for key in released {
+            if let Some(state) = self.by_pipeline.remove(&key) {
                 self.free.push(state.namespace);
                 namespaces.push(state.namespace);
             }
         }
 
         namespaces
+    }
+}
+
+
+
+#[derive(Copy, Clone)]
+pub struct DlDocumentBuilders<'a> {
+    map: &'a DlBuilderMap,
+    document_id: DocumentId,
+}
+
+impl<'a> DlDocumentBuilders<'a> {
+    
+    
+    
+    
+    pub fn expect(&self, pipeline_id: PipelineId) -> (DlNamespace, u32) {
+        let namespace = self
+            .map
+            .get(self.document_id, pipeline_id)
+            .unwrap_or_else(|| panic!("no namespace for {:?} in {:?}", pipeline_id, self.document_id));
+        (namespace, self.map.generations[namespace.0 as usize])
     }
 }
 
@@ -732,6 +795,10 @@ mod tests {
         PipelineId(1, id)
     }
 
+    fn doc(id: u32) -> DocumentId {
+        DocumentId::new(IdNamespace(1), id)
+    }
+
     fn store() -> DlStore<Key, u32> {
         DlStore::default()
     }
@@ -773,8 +840,8 @@ mod tests {
         
         
         let mut alloc = DlBuilderMap::default();
-        let stale = alloc.get_or_alloc(pipeline(1)).0;
-        let kept = alloc.get_or_alloc(pipeline(2)).0;
+        let stale = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        let kept = alloc.get_or_alloc(doc(1), pipeline(2)).0;
 
         let mut store = store();
         store.open(stale);
@@ -782,11 +849,11 @@ mod tests {
         store.insert(kept, 0, 100);
         let handle = h(&store, kept, 0);
 
-        alloc.remove_pipeline(pipeline(1));
-        alloc.take_removals();
-        let fresh = alloc.get_or_alloc(pipeline(3)).0;
+        alloc.remove_pipeline(doc(1), pipeline(1));
+        alloc.take_removals(doc(1));
+        let fresh = alloc.get_or_alloc(doc(1), pipeline(3)).0;
         assert_eq!(fresh, stale, "expected the released namespace to be reused");
-        let late = alloc.get_or_alloc(pipeline(4)).0;
+        let late = alloc.get_or_alloc(doc(1), pipeline(4)).0;
 
         store.reconcile(&alloc);
 
@@ -804,9 +871,9 @@ mod tests {
     fn a_pipeline_keeps_its_namespace_across_display_lists() {
         let mut alloc = DlBuilderMap::default();
 
-        let (first, allocated) = alloc.get_or_alloc(pipeline(1));
+        let (first, allocated) = alloc.get_or_alloc(doc(1), pipeline(1));
         assert!(allocated);
-        let (second, allocated) = alloc.get_or_alloc(pipeline(1));
+        let (second, allocated) = alloc.get_or_alloc(doc(1), pipeline(1));
         assert!(!allocated, "the second display list reallocated the namespace");
         assert_eq!(first, second);
     }
@@ -815,16 +882,16 @@ mod tests {
     fn namespaces_are_dense_and_recycled() {
         let mut alloc = DlBuilderMap::default();
 
-        let a = alloc.get_or_alloc(pipeline(1)).0;
-        let b = alloc.get_or_alloc(pipeline(2)).0;
+        let a = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        let b = alloc.get_or_alloc(doc(1), pipeline(2)).0;
         assert_ne!(a, b);
         assert!(a.0 < 2 && b.0 < 2, "namespaces are not dense: {:?} {:?}", a, b);
 
-        alloc.remove_pipeline(pipeline(1));
-        assert_eq!(alloc.take_removals(), vec![a]);
-        assert!(alloc.take_removals().is_empty(), "released twice");
+        alloc.remove_pipeline(doc(1), pipeline(1));
+        assert_eq!(alloc.take_removals(doc(1)), vec![a]);
+        assert!(alloc.take_removals(doc(1)).is_empty(), "released twice");
 
-        let c = alloc.get_or_alloc(pipeline(3)).0;
+        let c = alloc.get_or_alloc(doc(1), pipeline(3)).0;
         assert_eq!(c, a, "the released namespace was not reused");
     }
 
@@ -832,17 +899,17 @@ mod tests {
     fn a_removed_pipeline_holds_its_namespace_until_a_scene_is_built() {
         let mut alloc = DlBuilderMap::default();
 
-        let a = alloc.get_or_alloc(pipeline(1)).0;
-        alloc.remove_pipeline(pipeline(1));
+        let a = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        alloc.remove_pipeline(doc(1), pipeline(1));
 
         
         
         
-        let b = alloc.get_or_alloc(pipeline(2)).0;
+        let b = alloc.get_or_alloc(doc(1), pipeline(2)).0;
         assert_ne!(b, a, "a namespace was reused while a live scene referenced it");
 
-        assert_eq!(alloc.take_removals(), vec![a]);
-        let c = alloc.get_or_alloc(pipeline(3)).0;
+        assert_eq!(alloc.take_removals(doc(1)), vec![a]);
+        let c = alloc.get_or_alloc(doc(1), pipeline(3)).0;
         assert_eq!(c, a, "the released namespace was not reused");
     }
 
@@ -850,17 +917,78 @@ mod tests {
     fn a_pipeline_that_comes_back_keeps_its_namespace() {
         let mut alloc = DlBuilderMap::default();
 
-        let a = alloc.get_or_alloc(pipeline(1)).0;
-        alloc.remove_pipeline(pipeline(1));
+        let a = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        alloc.remove_pipeline(doc(1), pipeline(1));
 
         
         
         
-        let (again, allocated) = alloc.get_or_alloc(pipeline(1));
+        let (again, allocated) = alloc.get_or_alloc(doc(1), pipeline(1));
         assert_eq!(again, a);
         assert!(!allocated, "the namespace was reallocated rather than kept");
 
-        assert!(alloc.take_removals().is_empty(), "a live pipeline was released");
+        assert!(alloc.take_removals(doc(1)).is_empty(), "a live pipeline was released");
+    }
+
+    #[test]
+    fn only_the_removing_document_releases_a_pipeline() {
+        let mut alloc = DlBuilderMap::default();
+
+        let a = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        alloc.remove_pipeline(doc(1), pipeline(1));
+
+        
+        
+        assert!(alloc.take_removals(doc(2)).is_empty(), "released by another document");
+        assert_eq!(alloc.take_removals(doc(1)), vec![a]);
+    }
+
+    #[test]
+    fn a_deleted_documents_removals_are_released_by_any_document() {
+        let mut alloc = DlBuilderMap::default();
+
+        let a = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        let b = alloc.get_or_alloc(doc(1), pipeline(2)).0;
+        alloc.remove_pipeline(doc(1), pipeline(1));
+        alloc.remove_document(doc(1));
+
+        let mut released = alloc.take_removals(doc(2));
+        released.sort_by_key(|namespace| namespace.0);
+        assert_eq!(released, vec![a, b]);
+    }
+
+    #[test]
+    fn a_pipeline_moved_to_another_document_gets_its_own_namespace() {
+        let mut alloc = DlBuilderMap::default();
+
+        let old = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+
+        
+        
+        
+        
+        let (new, allocated) = alloc.get_or_alloc(doc(2), pipeline(1));
+        assert!(allocated);
+        assert_ne!(new, old, "two documents share a namespace");
+
+        alloc.remove_pipeline(doc(1), pipeline(1));
+        assert_eq!(alloc.take_removals(doc(1)), vec![old]);
+        assert_eq!(alloc.document(doc(2)).expect(pipeline(1)).0, new);
+        assert!(alloc.take_removals(doc(2)).is_empty(), "the moved pipeline was released");
+    }
+
+    #[test]
+    fn a_deleted_document_releases_pipelines_outside_its_scene() {
+        let mut alloc = DlBuilderMap::default();
+
+        
+        
+        let a = alloc.get_or_alloc(doc(1), pipeline(1)).0;
+        let b = alloc.get_or_alloc(doc(2), pipeline(1)).0;
+        alloc.remove_document(doc(1));
+
+        assert_eq!(alloc.take_removals(doc(3)), vec![a]);
+        assert_eq!(alloc.document(doc(2)).expect(pipeline(1)).0, b);
     }
 
     fn builder(id: u64) -> BuilderId {
@@ -870,8 +998,8 @@ mod tests {
     
     fn tracking(build: u32) -> DlBuilderMap {
         let mut map = DlBuilderMap::default();
-        map.get_or_alloc(pipeline(1));
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(build), false), DeltaAction::Apply);
+        map.get_or_alloc(doc(1), pipeline(1));
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(build), false), DeltaAction::Apply);
         map
     }
 
@@ -881,10 +1009,10 @@ mod tests {
 
         
         
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(1), true), DeltaAction::Apply);
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(2), false), DeltaAction::Apply);
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(3), true), DeltaAction::Apply);
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(4), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(1), true), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(2), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(3), true), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(4), false), DeltaAction::Apply);
     }
 
     #[test]
@@ -892,22 +1020,22 @@ mod tests {
         
         
         let mut map = tracking(9);
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(10), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(10), false), DeltaAction::Apply);
     }
 
     #[test]
     #[should_panic(expected = "out of sequence")]
     fn a_dropped_delta_panics() {
         let mut map = tracking(0);
-        map.check_delta(pipeline(1), builder(7), BuildId(2), false);
+        map.check_delta(doc(1), pipeline(1), builder(7), BuildId(2), false);
     }
 
     #[test]
     #[should_panic(expected = "out of sequence")]
     fn a_repeated_delta_panics() {
         let mut map = tracking(0);
-        map.check_delta(pipeline(1), builder(7), BuildId(1), false);
-        map.check_delta(pipeline(1), builder(7), BuildId(1), false);
+        map.check_delta(doc(1), pipeline(1), builder(7), BuildId(1), false);
+        map.check_delta(doc(1), pipeline(1), builder(7), BuildId(1), false);
     }
 
     #[test]
@@ -918,11 +1046,11 @@ mod tests {
         
         
         assert_eq!(
-            map.check_delta(pipeline(1), builder(8), BuildId(0), false),
+            map.check_delta(doc(1), pipeline(1), builder(8), BuildId(0), false),
             DeltaAction::Reset,
         );
         assert_eq!(
-            map.check_delta(pipeline(1), builder(8), BuildId(1), false),
+            map.check_delta(doc(1), pipeline(1), builder(8), BuildId(1), false),
             DeltaAction::Apply,
         );
     }
@@ -935,8 +1063,8 @@ mod tests {
         
         
         
-        map.check_delta(pipeline(1), builder(8), BuildId(0), false);
-        map.check_delta(pipeline(1), builder(7), BuildId(1), false);
+        map.check_delta(doc(1), pipeline(1), builder(8), BuildId(0), false);
+        map.check_delta(doc(1), pipeline(1), builder(7), BuildId(1), false);
     }
 
     #[test]
@@ -946,23 +1074,23 @@ mod tests {
         
         
         assert_eq!(
-            map.check_delta(pipeline(1), builder(8), BuildId(0), true),
+            map.check_delta(doc(1), pipeline(1), builder(8), BuildId(0), true),
             DeltaAction::Ignore,
         );
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(1), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(1), false), DeltaAction::Apply);
     }
 
     #[test]
     fn streams_are_tracked_per_pipeline() {
         let mut map = DlBuilderMap::default();
-        map.get_or_alloc(pipeline(1));
-        map.get_or_alloc(pipeline(2));
+        map.get_or_alloc(doc(1), pipeline(1));
+        map.get_or_alloc(doc(1), pipeline(2));
 
         
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(4), false), DeltaAction::Apply);
-        assert_eq!(map.check_delta(pipeline(2), builder(8), BuildId(0), false), DeltaAction::Apply);
-        assert_eq!(map.check_delta(pipeline(1), builder(7), BuildId(5), false), DeltaAction::Apply);
-        assert_eq!(map.check_delta(pipeline(2), builder(8), BuildId(1), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(4), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(2), builder(8), BuildId(0), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(1), builder(7), BuildId(5), false), DeltaAction::Apply);
+        assert_eq!(map.check_delta(doc(1), pipeline(2), builder(8), BuildId(1), false), DeltaAction::Apply);
     }
 
     #[test]
@@ -1024,18 +1152,18 @@ mod tests {
         let mut map = DlBuilderMap::default();
         let mut store = store();
 
-        let (ns_a, allocated) = map.get_or_alloc(pipeline(1));
+        let (ns_a, allocated) = map.get_or_alloc(doc(1), pipeline(1));
         assert!(allocated);
         store.open(ns_a);
         store.insert(ns_a, 0, 100);
 
         
-        map.remove_pipeline(pipeline(1));
-        for namespace in map.take_removals() {
+        map.remove_pipeline(doc(1), pipeline(1));
+        for namespace in map.take_removals(doc(1)) {
             store.close(namespace);
         }
 
-        let (ns_b, allocated) = map.get_or_alloc(pipeline(2));
+        let (ns_b, allocated) = map.get_or_alloc(doc(1), pipeline(2));
         assert_eq!(ns_b, ns_a, "the index was not recycled");
         assert!(allocated, "a recycled namespace must still be opened");
         store.open(ns_b);
@@ -1050,7 +1178,7 @@ mod tests {
 
         
         
-        let (_, generation) = map.expect(pipeline(2));
+        let (_, generation) = map.document(doc(1)).expect(pipeline(2));
         assert_eq!(store[DlHandle::new(namespace, generation, 0)], 200);
     }
 
@@ -1060,17 +1188,17 @@ mod tests {
         let mut map = DlBuilderMap::default();
         let mut store = store();
 
-        let (ns_a, _) = map.get_or_alloc(pipeline(1));
-        let stale = DlHandle::new(ns_a, map.expect(pipeline(1)).1, 0);
+        let (ns_a, _) = map.get_or_alloc(doc(1), pipeline(1));
+        let stale = DlHandle::new(ns_a, map.document(doc(1)).expect(pipeline(1)).1, 0);
         store.open(ns_a);
         store.insert(ns_a, 0, 100);
 
-        map.remove_pipeline(pipeline(1));
-        for namespace in map.take_removals() {
+        map.remove_pipeline(doc(1), pipeline(1));
+        for namespace in map.take_removals(doc(1)) {
             store.close(namespace);
         }
 
-        let (ns_b, _) = map.get_or_alloc(pipeline(2));
+        let (ns_b, _) = map.get_or_alloc(doc(1), pipeline(2));
         store.open(ns_b);
         store.insert(ns_b, 0, 200);
 
