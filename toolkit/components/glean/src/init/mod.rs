@@ -372,7 +372,7 @@ fn fog_test_reset_internal(
     glean::test_reset_glean(conf, client_info, true);
 
     
-    pings::register_pings(None);
+    firefox_on_glean::factory::test_with_preserved_ping_state(|| pings::register_pings(None));
 
     Ok(())
 }
