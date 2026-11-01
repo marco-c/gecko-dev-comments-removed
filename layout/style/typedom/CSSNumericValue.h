@@ -88,6 +88,7 @@ class CSSNumericValue : public CSSStyleValue {
   already_AddRefed<CSSNumericValue> Div(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
+  
   already_AddRefed<CSSNumericValue> Min(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 

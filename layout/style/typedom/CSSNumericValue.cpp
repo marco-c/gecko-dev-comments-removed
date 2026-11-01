@@ -305,10 +305,44 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Div(
   return Mul(std::move(values), aRv);
 }
 
+
 already_AddRefed<CSSNumericValue> CSSNumericValue::Min(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  
+  for (const OwningCSSNumberish& numberish : aValues) {
+    values.AppendElement(CSSNumericValue::Create(mParent, numberish));
+  }
+
+  
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathMin()) {
+    values.InsertElementsAt(
+        0, GetAsCSSMathValue().GetAsCSSMathMin().Values()->GetValues());
+  } else {
+    values.InsertElementAt(0, this);
+  }
+
+  SameUnitValueComputation computation(
+      values, [](double a, double b) { return std::min(a, b); });
+
+  
+  if (computation.AllHaveSameUnit()) {
+    return MakeCSSUnitValue(mParent, computation.CommonNumericType(),
+                            computation.ComputedValue(),
+                            computation.CommonUnit());
+  }
+
+  
+  auto numericType = AddTypes(values, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  RefPtr<CSSMathMin> mathMin =
+      CSSMathMin::Create(mParent, std::move(numericType), std::move(values));
+  return mathMin.forget();
 }
 
 already_AddRefed<CSSNumericValue> CSSNumericValue::Max(
