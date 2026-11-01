@@ -413,7 +413,7 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
                    const StrokeOptions* aStrokeOptions,
                    AAStrokeMode aStrokeMode, const Matrix& aTransform,
                    const IntRect& aBounds, const Point& aOrigin,
-                   HashNumber aHash, float aSigma);
+                   const Point& aPatternOffset, HashNumber aHash, float aSigma);
 
   static HashNumber HashPath(const QuantizedPath& aPath,
                              const Pattern* aPattern, const Matrix& aTransform,
@@ -436,11 +436,30 @@ class PathCacheEntry : public CacheEntryImpl<PathCacheEntry> {
     mSecondaryHandle = std::move(aHandle);
   }
 
+  
+  
+  
+  void Link(const RefPtr<TextureHandle>& aHandle, const Point& aPatternOffset) {
+    CacheEntry::Link(aHandle);
+    mPatternOffset = aPatternOffset;
+  }
+
+  
+  
+  bool HasBakedTexture() const {
+    return (mHandle && mHandle->IsValid()) ||
+           (mSecondaryHandle && mSecondaryHandle->IsValid());
+  }
+
  private:
   
   QuantizedPath mPath;
   
   Point mOrigin;
+  
+  
+  
+  Point mPatternOffset;
   
   UniquePtr<Pattern> mPattern;
   
@@ -463,13 +482,14 @@ class PathCache : public CacheImpl<PathCacheEntry, true> {
       QuantizedPath aPath, const Pattern* aPattern,
       const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
       const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
-      float aSigma = -1.0f);
+      const Point& aPatternOffset, float aSigma = -1.0f);
 
   already_AddRefed<PathCacheEntry> FindEntry(
       const QuantizedPath& aPath, const Pattern* aPattern,
       const StrokeOptions* aStrokeOptions, AAStrokeMode aStrokeMode,
       const Matrix& aTransform, const IntRect& aBounds, const Point& aOrigin,
-      float aSigma = -1.0f, bool aHasSecondaryHandle = false);
+      const Point& aPatternOffset, float aSigma = -1.0f,
+      bool aHasSecondaryHandle = false);
 
   void ClearVertexRanges();
 };

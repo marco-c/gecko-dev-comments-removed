@@ -434,11 +434,15 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
 
   already_AddRefed<TextureHandle> DrawStrokeMask(
       const PathVertexRange& aVertexRange, const IntSize& aSize);
+  
+  
+  
   bool DrawWGRPath(const Path* aPath, const IntRect& aIntBounds,
                    const Rect& aQuantBounds, const Matrix& aPathXform,
                    RefPtr<PathCacheEntry>& aEntry, const DrawOptions& aOptions,
                    const StrokeOptions* aStrokeOptions,
                    AAStrokeMode aAAStrokeMode, const Pattern& aPattern,
+                   const Point& aPatternOffset,
                    const Maybe<DeviceColor>& aColor);
   bool DrawPathAccel(const Path* aPath, const Pattern& aPattern,
                      const DrawOptions& aOptions,
