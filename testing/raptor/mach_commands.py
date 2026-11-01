@@ -72,6 +72,9 @@ class RaptorRunner(MozbuildObject):
 
         if Conditions.is_android(self) or kwargs["app"] in ANDROID_BROWSERS:
             self.binary_path = None
+        elif kwargs["app"] != "firefox":
+            
+            self.binary_path = kwargs.get("binary")
         else:
             self.binary_path = kwargs.get("binary") or self.get_binary_path()
 
