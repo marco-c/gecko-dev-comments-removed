@@ -34,6 +34,18 @@ void BoundStorageKeyChild::ClearListener() {
 void BoundStorageKeyChild::StartDestroyFromListener() {
   NS_ASSERT_OWNINGTHREAD(BoundStorageKeyChild);
 
+  
+  
+  
+  
+  
+  BoundStorageKeyChildListener* listener = mListener;
+  if (listener) {
+    listener->OnActorDestroy(this);
+    
+    MOZ_DIAGNOSTIC_ASSERT(!mListener);
+  }
+
   StartDestroy();
 }
 
