@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui.efficiency.selectors
 
 import mozilla.components.compose.menu.R as MozacMenuR
-import mozilla.components.feature.summarize.R as summarizeR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -14,7 +13,6 @@ import org.mozilla.fenix.ui.efficiency.helpers.PageReadinessProfiles
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorContainer
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorGroup
-import org.mozilla.fenix.ui.efficiency.helpers.SelectorLifecycle
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 import org.mozilla.fenix.ui.efficiency.helpers.SwipeDirection
 
@@ -30,7 +28,6 @@ object MainMenuSelectors : SelectorContainer {
         HOME_BANNER,
         MORE_MAIN_MENU_ITEMS,
         MORE_MENU_ITEMS,
-        SIGN_IN_TO_SUMMARIZE_BOTTOM_SHEET,
     }
 
     val MAIN_MENU_ANCHOR =
@@ -39,15 +36,6 @@ object MainMenuSelectors : SelectorContainer {
             value = MenuDialogTestTag.EXTENSIONS,
             description = "Main menu Extensions item anchor",
             readiness = PageReadinessProfiles.IDENTITY_ANCHOR,
-        )
-
-    val NEW_PRIVATE_TAB_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
-            value = getStringResource(R.string.browser_menu_new_private_tab),
-            description = "Main menu New private tab button",
-            // Removed in https://bugzilla.mozilla.org/show_bug.cgi?id=1966222 as part of the menu redesign effort
-            lifecycle = SelectorLifecycle.RemovedIn(141),
         )
 
     val EXTENSIONS_BUTTON =
@@ -395,43 +383,6 @@ object MainMenuSelectors : SelectorContainer {
             value = getStringResource(R.string.browser_menu_summarize_page),
             description = "Main menu Summarize page button",
             groups = setOf(Group.MORE_MAIN_MENU_SUB_LIST),
-        )
-
-    // The "Sign in to summarize" bottom sheet shown when an unauthenticated user taps Summarize page.
-    val SIGN_IN_TO_SUMMARIZE_TITLE =
-        Selector(
-            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
-            value = getStringResource(summarizeR.string.mozac_summarize_fxa_sign_in_title),
-            description = "Sign in to summarize bottom sheet title",
-            groups = setOf(Group.SIGN_IN_TO_SUMMARIZE_BOTTOM_SHEET),
-        )
-
-    // The message and its inline "Learn more" link render as a single text node, so match them joined.
-    val SIGN_IN_TO_SUMMARIZE_MESSAGE =
-        Selector(
-            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
-            value =
-                getStringResource(summarizeR.string.mozac_summarize_fxa_sign_in_message) +
-                    " " +
-                    getStringResource(summarizeR.string.mozac_summarize_learn_more_link),
-            description = "Sign in to summarize bottom sheet message",
-            groups = setOf(Group.SIGN_IN_TO_SUMMARIZE_BOTTOM_SHEET),
-        )
-
-    val SIGN_IN_TO_SUMMARIZE_SIGN_IN_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
-            value = getStringResource(summarizeR.string.mozac_summarize_fxa_sign_in_button_positive),
-            description = "Sign in to summarize bottom sheet Sign in button",
-            groups = setOf(Group.SIGN_IN_TO_SUMMARIZE_BOTTOM_SHEET),
-        )
-
-    val SIGN_IN_TO_SUMMARIZE_DISMISS_BUTTON =
-        Selector(
-            strategy = SelectorStrategy.COMPOSE_BY_TEXT,
-            value = getStringResource(summarizeR.string.mozac_summarize_error_dissmiss),
-            description = "Sign in to summarize bottom sheet Dismiss button",
-            groups = setOf(Group.SIGN_IN_TO_SUMMARIZE_BOTTOM_SHEET),
         )
 
     val PRINT_BUTTON =
