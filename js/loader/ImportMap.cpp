@@ -918,7 +918,13 @@ ResolveResult ImportMap::ResolveModuleSpecifier(ImportMap* aImportMap,
   }
 
   
-  nsCString serializedBaseURL = baseURL->GetSpecOrDefault();
+  
+  
+  
+  nsCString serializedBaseURL;
+  if (baseURL) {
+    serializedBaseURL = baseURL->GetSpecOrDefault();
+  }
 
   LOG(("ResolveModuleSpecifier baseURL:%s, specifier: %s",
        serializedBaseURL.get(), NS_ConvertUTF16toUTF8(aSpecifier).get()));

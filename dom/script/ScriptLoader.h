@@ -478,6 +478,18 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   static JS::loader::ScriptFetchInfo* GetActiveScriptFetchInfo(JSContext* aCx);
 
+  
+
+
+
+
+
+
+
+
+  static void AssociateFetchInfoWithSystemClassicScript(
+      JS::Handle<JSScript*> aScript, nsIURI* aURI);
+
   Document* GetDocument() const { return mDocument; }
 
   nsIURI* GetBaseURI() const override;
