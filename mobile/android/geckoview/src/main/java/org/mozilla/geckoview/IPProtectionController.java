@@ -36,7 +36,6 @@ public class IPProtectionController {
     SERVICE_STATE_UNINITIALIZED,
     SERVICE_STATE_UNAVAILABLE,
     SERVICE_STATE_UNAUTHENTICATED,
-    SERVICE_STATE_OPTED_OUT,
     SERVICE_STATE_READY
   })
   public @interface ServiceState {}
@@ -51,9 +50,6 @@ public class IPProtectionController {
   public static final int SERVICE_STATE_UNAUTHENTICATED = 2;
 
   
-  public static final int SERVICE_STATE_OPTED_OUT = 3;
-
-  
   public static final int SERVICE_STATE_READY = 4;
 
   private static @ServiceState int parseServiceState(final @Nullable String state) {
@@ -64,8 +60,6 @@ public class IPProtectionController {
         return SERVICE_STATE_UNAVAILABLE;
       case "unauthenticated":
         return SERVICE_STATE_UNAUTHENTICATED;
-      case "optedout":
-        return SERVICE_STATE_OPTED_OUT;
       case "ready":
         return SERVICE_STATE_READY;
       default:
