@@ -3223,6 +3223,21 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
   
   
   
+  RefPtr<WorkerPrivate> worker;
+  auto releaseLoadInfoOnFailure = MakeScopeExit([&] {
+    if (!parent) {
+      return;
+    }
+    if (worker) {
+      worker->ProxyReleaseMainThreadObjects();
+    } else if (stackLoadInfo) {
+      MOZ_ALWAYS_TRUE(stackLoadInfo->ProxyReleaseMainThreadObjects(parent));
+    }
+  });
+
+  
+  
+  
   RuntimeService* runtimeService;
 
   if (!parent) {
@@ -3246,7 +3261,7 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
   AgentClusterIdAndCoop idAndCoop = ComputeAgentClusterIdAndCoop(
       parent, aWorkerKind, aLoadInfo, aIsChromeWorker);
 
-  RefPtr<WorkerPrivate> worker = new WorkerPrivate(
+  worker = new WorkerPrivate(
       parent, aScriptURL, aIsChromeWorker, aWorkerKind, aRequestCredentials,
       aWorkerType, aWorkerName, aServiceWorkerScope, *aLoadInfo, std::move(aId),
       idAndCoop.mId, idAndCoop.mCoop, std::move(aCancellationCallback),
@@ -3278,6 +3293,7 @@ already_AddRefed<WorkerPrivate> WorkerPrivate::Constructor(
   
   worker->mSelfRef = worker;
   worker->mParentRef = MakeRefPtr<WorkerParentRef>(worker);
+  releaseLoadInfoOnFailure.release();
 
   
   
