@@ -94,6 +94,7 @@ struct WeakMapTracer {
   
   
   
+  
   virtual void trace(JSObject* m, JS::GCCellPtr key, JS::GCCellPtr value) = 0;
 };
 
