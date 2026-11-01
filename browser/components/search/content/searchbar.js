@@ -406,12 +406,13 @@
         );
       }
 
-      let submission = engine.getSubmission(aData, null);
+      let submission = engine.getSubmission(aData, null, "searchbar");
 
       
       const details = {
         isOneOff,
         isSuggestion: !isOneOff && this.telemetrySelectedIndex != -1,
+        submission,
       };
 
       this.telemetrySelectedIndex = -1;
