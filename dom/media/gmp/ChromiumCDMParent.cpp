@@ -1136,9 +1136,12 @@ void ChromiumCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
                 fmt::ptr(this), static_cast<int>(aWhy));
   MOZ_ASSERT(!mActorDestroyed);
   mActorDestroyed = true;
+  mAbnormalShutdown = (aWhy == AbnormalShutdown);
   
   
-  auto callback = mCDMCallback;
+  if (mAbnormalShutdown && mCDMCallback) {
+    mCDMCallback->Terminated();
+  }
   if (!mIsShutdown) {
     
     MOZ_ASSERT(aWhy == AbnormalShutdown);
@@ -1149,10 +1152,6 @@ void ChromiumCDMParent::ActorDestroy(ActorDestroyReason aWhy) {
   if (mContentParent) {
     mContentParent->ChromiumCDMDestroyed(this);
     mContentParent = nullptr;
-  }
-  mAbnormalShutdown = (aWhy == AbnormalShutdown);
-  if (mAbnormalShutdown && callback) {
-    callback->Terminated();
   }
   MaybeDisconnect(mAbnormalShutdown);
 }
