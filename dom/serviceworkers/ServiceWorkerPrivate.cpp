@@ -460,11 +460,7 @@ nsresult MaybeStoreStreamForBackgroundThread(nsIInterceptedChannel* aChannel,
       
       
       
-      
-      nsCOMPtr<nsIUploadChannel> uploadChannel1 = do_QueryInterface(channel);
-      if (uploadChannel1) {
-        MOZ_TRY(uploadChannel1->GetUploadStream(getter_AddRefs(uploadStream)));
-      }
+      uploadStream = httpBase->TakeUploadStream();
       
       aIPCRequest.bodySize() = -1;
       aIPCRequest.hasStreamBody() = !!uploadStream;

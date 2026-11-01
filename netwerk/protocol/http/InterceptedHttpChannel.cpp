@@ -230,6 +230,12 @@ nsresult InterceptedHttpChannel::FollowSyntheticRedirect() {
   bool rewriteToGET = ShouldRewriteRedirectToGET(mResponseHead->Status(),
                                                  mRequestHead.ParsedMethod());
 
+  
+  
+  if (!rewriteToGET && LoadUploadStreamIsStreaming()) {
+    return NS_ERROR_NET_BODY_NOT_REPLAYABLE;
+  }
+
   nsCOMPtr<nsIChannel> newChannel;
   nsCOMPtr<nsILoadInfo> redirectLoadInfo =
       CloneLoadInfoForRedirect(redirectURI, redirectFlags);
@@ -738,6 +744,11 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
                    this, aBypass ? "true" : "false"));
   if (mCanceled) {
     return mStatus;
+  }
+
+  
+  if (LoadUploadStreamIsStreaming() && !mUploadStream) {
+    return NS_ERROR_NET_BODY_NOT_REPLAYABLE;
   }
 
   mInterceptionReset = true;
