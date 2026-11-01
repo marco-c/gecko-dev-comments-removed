@@ -427,6 +427,12 @@ nsChangeHint nsStyleMargin::CalcDifference(
             nsChangeHint_ClearAncestorIntrinsics;
   }
 
+  if (mMarginTrim != aNewData.mMarginTrim) {
+    
+    
+    hint |= NS_STYLE_HINT_REFLOW;
+  }
+
   if (mScrollMargin != aNewData.mScrollMargin) {
     
     hint |= nsChangeHint_NeutralChange;

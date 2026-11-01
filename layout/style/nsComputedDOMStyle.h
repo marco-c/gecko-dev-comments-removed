@@ -197,6 +197,19 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   already_AddRefed<CSSValue> GetMarginFor(mozilla::Side aSide);
 
+  
+
+
+
+
+
+
+
+
+
+
+  static bool MarginMayBeTrimmed(const nsIFrame* aFrame, mozilla::Side aSide);
+
   already_AddRefed<CSSValue> GetTransformValue(const mozilla::StyleTransform&);
 
   already_AddRefed<nsROCSSPrimitiveValue> GetGridTrackSize(
