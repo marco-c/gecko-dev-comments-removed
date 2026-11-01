@@ -13,4 +13,7 @@
 
 const short kEventSubtypeNone = 0;
 
+
+const short kEventSubtypeNativeTest = 1;
+
 #endif 
