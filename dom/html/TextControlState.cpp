@@ -1469,7 +1469,6 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
 
   
   mSelCon = new TextInputSelectionController(aPresShell, *editorRoot);
-  EnsureTextInputListener();
 
   
   mSelCon->SetDisplaySelection(nsISelectionController::SELECTION_HIDDEN);
@@ -1484,7 +1483,6 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
     if (caret) {
       selection->AddSelectionListener(caret);
     }
-    mTextInputListener->StartToListenToSelectionChange();
   }
 
   
@@ -1538,7 +1536,6 @@ void TextControlState::EnsureTextInputListener() {
       mTextEditor->SetTextInputListener(mTextInputListener);
     }
   }
-  mTextInputListener->StartToHandleShortcutKeys();
 }
 
 bool TextControlState::IsPreparingEditor() const {
@@ -1761,7 +1758,14 @@ nsresult TextControlState::PrepareEditor() {
   NS_WARNING_ASSERTION(enabledUndoRedo,
                        "Failed to enable undo/redo transaction");
 
+  
+  
+  
+  
+  
   EnsureTextInputListener();
+  mTextInputListener->StartToListenToSelectionChange();
+  mTextInputListener->StartToHandleShortcutKeys();
 
   if (!mEditorInitialized) {
     newTextEditor->PostCreate();
