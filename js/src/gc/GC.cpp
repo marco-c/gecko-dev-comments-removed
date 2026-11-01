@@ -4153,7 +4153,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 
       
       
-      setGrayBitsInvalid();
+      setGrayBitsInvalidForReset();
 
       checkGCStateNotInUse();
       break;
@@ -4212,7 +4212,7 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       
       
       
-      setGrayBitsInvalid();
+      setGrayBitsInvalidForReset();
 
 #ifdef DEBUG
       for (auto& marker : markers) {
@@ -4260,6 +4260,13 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
   }
 
   return IncrementalResult::Reset;
+}
+
+void GCRuntime::setGrayBitsInvalidForReset() {
+  MOZ_ASSERT(state() < State::MarkRoots || state() > State::Sweep);
+  
+  
+  grayBitsInvalid = GrayBitsInvalid;
 }
 
 void GCRuntime::setGrayBitsInvalid() {
