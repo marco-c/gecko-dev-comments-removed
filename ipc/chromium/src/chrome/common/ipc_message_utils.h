@@ -1529,7 +1529,7 @@ struct ParamTraits<mozilla::Nothing> {
   
 
   typedef mozilla::Nothing paramType;
-  static void Write(MessageWriter* writer, const paramType& ) {
+  static void Write(MessageWriter* writer, const paramType& aParam) {
     bool isSome = false;
     WriteParam(writer, isSome);
   }

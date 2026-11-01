@@ -76,9 +76,8 @@ IPCResult IPCResult::FailImpl(NotNull<IProtocol*> actor, const char* where,
 }
 
 
-IPCResult IPCResult::FailForTesting(NotNull<IProtocol*> ,
-                                    const char* ,
-                                    const char* ) {
+IPCResult IPCResult::FailForTesting(NotNull<IProtocol*> actor,
+                                    const char* where, const char* why) {
   return IPCResult(false);
 }
 

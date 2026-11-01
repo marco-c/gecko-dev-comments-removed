@@ -164,8 +164,8 @@ void CGSShutdownServerConnections();
 
 mozilla::ipc::IPCResult UtilityProcessChild::RecvInit(
     const Maybe<FileDescriptor>& aBrokerFd,
-    const bool& ,
-    const bool& ) {
+    const bool& aCanRecordReleaseTelemetry,
+    const bool& aIsReadyForBackgroundProcessing) {
   
   
   mozilla::ipc::SetThisProcessName("Utility Process");

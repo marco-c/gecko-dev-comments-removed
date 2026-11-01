@@ -63,7 +63,7 @@ class TestDestroyNestedChild : public PTestDestroyNestedChild {
   ~TestDestroyNestedChild() = default;
 };
 
-void TestDestroyNestedSubParent::ActorDestroy(ActorDestroyReason ) {
+void TestDestroyNestedSubParent::ActorDestroy(ActorDestroyReason aReason) {
   
   
   EXPECT_FALSE(mActorDestroyCalled) << "re-entered ActorDestroy()";
@@ -84,7 +84,7 @@ void TestDestroyNestedSubParent::ActorDestroy(ActorDestroyReason ) {
   NS_ProcessPendingEvents(nullptr);
 }
 
-void TestDestroyNestedParent::ActorDestroy(ActorDestroyReason ) {
+void TestDestroyNestedParent::ActorDestroy(ActorDestroyReason aReason) {
   
   
   EXPECT_FALSE(mActorDestroyCalled) << "re-entered ActorDestroy()";

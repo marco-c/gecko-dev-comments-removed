@@ -25,7 +25,7 @@ mozilla::ipc::IPCResult TestShellChild::RecvExecuteCommand(
 }
 
 PTestShellCommandChild* TestShellChild::AllocPTestShellCommandChild(
-    const nsAString& ) {
+    const nsAString& aCommand) {
   return new PTestShellCommandChild();
 }
 

@@ -77,7 +77,7 @@ RefPtr<IdleSchedulerChild::MayGCPromise> IdleSchedulerChild::MayGCNow() {
   mIsRequestingGC = true;
   return SendRequestGC()->Then(
       GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr(this)](bool ) {
+      [self = RefPtr(this)](bool aIgnored) {
         
         MOZ_ASSERT(!(self->mIsRequestingGC && self->mIsDoingGC));
 
