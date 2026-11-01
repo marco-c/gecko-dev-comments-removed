@@ -2148,8 +2148,11 @@ nsresult PermissionManager::AddInternal(
 
       
       
-      if (entry->GetPermissions()[index].mExpireType == EXPIRE_POLICY) {
-        NS_WARNING("Attempting to remove EXPIRE_POLICY permission");
+      if (entry->GetPermissions()[index].mExpireType == EXPIRE_POLICY &&
+          aExpireType != EXPIRE_POLICY) {
+        NS_WARNING(
+            "Ignoring removal of EXPIRE_POLICY permission by a caller that "
+            "did not pass EXPIRE_POLICY");
         break;
       }
 
