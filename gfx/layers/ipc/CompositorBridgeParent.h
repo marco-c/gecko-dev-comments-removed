@@ -464,14 +464,6 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
 
 
 
-
-  static Maybe<TextureFactoryIdentifier> GetTextureFactoryIdentifierForContent(
-      const dom::ContentParentId& aContentId);
-
-  
-
-
-
   static bool HasLayerTreeState(LayersId aId);
 
   

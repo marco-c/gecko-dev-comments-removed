@@ -214,15 +214,14 @@ void RemoteVideoDecoderParent::RequestTextureFactoryIdentifier(
 
   
   
-  
-  videoBridge->SendGetTextureFactoryIdentifier(mParent->GetContentId())
+  videoBridge->SendGetTextureFactoryIdentifier()
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [self = RefPtr{this}, resolver = std::move(aResolver)](
                  layers::VideoBridgeChild::GetTextureFactoryIdentifierPromise::
                      ResolveOrRejectValue&& aValue) mutable {
                self->mIdentifierRequest.Complete();
                self->CreateDecoder(
-                   aValue.IsResolve() ? aValue.ResolveValue() : Nothing(),
+                   aValue.IsResolve() ? Some(aValue.ResolveValue()) : Nothing(),
                    std::move(resolver));
              })
       ->Track(mIdentifierRequest);
