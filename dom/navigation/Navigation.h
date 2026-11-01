@@ -29,6 +29,7 @@ struct NavigationUpdateCurrentEntryOptions;
 struct NavigationReloadOptions;
 struct NavigationResult;
 class PreviousSessionHistoryInfo;
+class ViewTransition;
 
 class SessionHistoryInfo;
 
@@ -205,6 +206,13 @@ class Navigation final : public DOMEventTargetHelper {
   void CreateNavigationActivationFrom(
       const Maybe<PreviousSessionHistoryInfo>& aPreviousEntryForActivation,
       Maybe<NavigationType> aNavigationType);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT void FirePageSwapEvent(
+      const SessionHistoryInfo* aTargetSHInfo, NavigationType aType,
+      bool aCanHaveActivation, ViewTransition* aViewTransition);
 
   void SetSerializedStateIntoOngoingAPIMethodTracker(
       nsIStructuredCloneContainer* aSerializedState);

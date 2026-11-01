@@ -1192,7 +1192,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   bool IsInBFCache() const;
   bool IsEnteringBFCache() const { return mIsEnteringBFCache; }
-  void DeactivateDocuments();
+  
+  void DeactivateDocuments(const SessionHistoryInfo* aPageSwapTargetInfo,
+                           NavigationType aNavigationType,
+                           bool aForUnload = false);
 
   MOZ_CAN_RUN_SCRIPT
   void ReactivateDocuments(

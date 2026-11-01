@@ -18,6 +18,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -31,6 +32,7 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/PrefetchLog.h"
 #include "mozilla/dom/ProcessIsolation.h"
@@ -1256,6 +1258,7 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   mLoadStateExternalLoadFlags = aLoadState->LoadFlags();
   mLoadStateInternalLoadFlags = aLoadState->InternalLoadFlags();
   mLoadStateLoadType = aLoadState->LoadType();
+  mLoadStatePageSwapFired = aLoadState->PageSwapFired();
   mSrcdocData = aLoadState->SrcdocData();
   mBaseURI = aLoadState->BaseURI();
   mOriginalUriString = aLoadState->GetOriginalURIString();
@@ -3205,11 +3208,108 @@ nsresult DocumentLoadListener::DoOnStartRequest(nsIRequest* aRequest) {
     }
   }
 
+  if (!silentErrorLoad &&
+      StaticPrefs::dom_viewTransitions_cross_document_enabled() &&
+      MaybeBeginOutboundViewTransition()) {
+    return NS_OK;
+  }
+  return ContinueDoOnStartRequestCommit(silentErrorLoad);
+}
+
+bool DocumentLoadListener::MaybeBeginOutboundViewTransition() {
+  if (mLoadStatePageSwapFired) {
+    return false;
+  }
+  auto* browsingContext = GetDocumentBrowsingContext();
+  if (!browsingContext) {
+    return false;
+  }
+  RefPtr<WindowGlobalParent> wgp = browsingContext->GetCurrentWindowGlobal();
+  if (!wgp) {
+    return false;
+  }
+
+  
+  RefPtr<ContentParent> contentParent = browsingContext->GetContentParent();
+  if (!contentParent) {
+    return false;
+  }
+  Maybe<NavigationType> navigationType =
+      NavigationUtils::NavigationTypeFromLoadType(mLoadStateLoadType);
+  if (!navigationType) {
+    return false;
+  }
+
+  nsCOMPtr<nsIPrincipal> resultPrincipal;
+  MOZ_ALWAYS_SUCCEEDS(
+      nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+          mChannel, getter_AddRefs(resultPrincipal)));
+  const bool sameOrigin =
+      resultPrincipal && wgp->DocumentPrincipal()->Equals(resultPrincipal);
+
+  
+  if (!wgp->MayHaveViewTransitionOptIn() ||
+      !NavigationUtils::CanInitiateOutboundCrossDocumentViewTransition(
+          mLoadStateLoadType, sameOrigin, mChannel)) {
+    
+    
+    
+    
+    Maybe<SessionHistoryInfo> targetInfo;
+    if (mLoadingSessionHistoryInfo && sameOrigin &&
+        !NavigationUtils::HasCrossOriginRedirect(mChannel)) {
+      targetInfo.emplace(mLoadingSessionHistoryInfo->mInfo);
+    }
+    (void)contentParent->SendFirePageSwap(browsingContext, targetInfo,
+                                          *navigationType);
+    return false;
+  }
+
+  Maybe<SessionHistoryInfo> targetInfo;
+  if (mLoadingSessionHistoryInfo) {
+    targetInfo.emplace(mLoadingSessionHistoryInfo->mInfo);
+  }
+  RefPtr<DocumentLoadListener> self = this;
+  contentParent
+      ->SendBeginOutboundCrossDocumentViewTransition(
+          browsingContext, targetInfo, *navigationType)
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [self](const ContentParent::
+                        BeginOutboundCrossDocumentViewTransitionPromise::
+                            ResolveOrRejectValue&) {
+               self->ContinueDoOnStartRequestCommit(false);
+             });
+  return true;
+}
+
+nsresult DocumentLoadListener::ContinueDoOnStartRequestCommit(
+    bool aSilentErrorLoad) {
+  
+  
+  
+  
+  if (!mChannel) {
+    return NS_OK;
+  }
+  if (mOpenPromiseResolved) {
+    mChannel->Resume();
+    return NS_OK;
+  }
+
+  
+  auto* loadingContext = GetLoadingBrowsingContext();
+  if (!loadingContext || loadingContext->IsDiscarded()) {
+    Cancel(NS_ERROR_UNEXPECTED, "No valid LoadingBrowsingContext."_ns);
+    mChannel->Resume();
+    return NS_ERROR_UNEXPECTED;
+  }
+  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(mChannel);
+
   
   
   
   bool willBeRemote = false;
-  if (silentErrorLoad || !MaybeTriggerProcessSwitch(&willBeRemote)) {
+  if (aSilentErrorLoad || !MaybeTriggerProcessSwitch(&willBeRemote)) {
     
     
     nsTArray<StreamFilterRequest> streamFilterRequests =

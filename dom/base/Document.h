@@ -4327,7 +4327,38 @@ class Document : public nsINode,
 
   
   
+  
+  static void StashCrossDocViewTransitionParams(
+      uint64_t aBrowserId, UniquePtr<ViewTransitionParams> aParams);
+  static UniquePtr<ViewTransitionParams> TakeCrossDocViewTransitionParams(
+      uint64_t aBrowserId);
+  
+  
+  
+  static void ClearCrossDocViewTransitionParams(
+      uint64_t aBrowserId,
+      Maybe<uint64_t> aProducerBrowsingContextId = Nothing());
+
+  
+  
   Maybe<RefPtr<ViewTransition>> ResolveInboundCrossDocumentViewTransition();
+
+  
+  already_AddRefed<ViewTransition> SetupOutboundCrossDocumentViewTransition();
+
+  
+  
+  void UpdateOutboundViewTransitionOptIn();
+  
+  
+  
+  void MaybeUpdateOutboundViewTransitionOptIn();
+  
+  
+  
+  void OutboundViewTransitionRulesChanged();
+  
+  void StylistUpdated();
 
   
   PermissionDelegateHandler* GetPermissionDelegateHandler();
@@ -5474,6 +5505,13 @@ class Document : public nsINode,
 
   
   bool mHasBeenRevealed : 1;
+
+  
+  
+  bool mSentMayHaveViewTransitionOptIn : 1;
+  
+  
+  bool mOutboundViewTransitionOptInDirty : 1;
 
   
   const bool mAutoSizesEnabled : 1;

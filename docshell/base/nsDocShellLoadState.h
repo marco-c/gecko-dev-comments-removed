@@ -157,6 +157,15 @@ class nsDocShellLoadState final {
 
   void SetNotifiedBeforeUnloadListeners(bool aNotifiedBeforeUnloadListeners);
 
+  
+  
+  
+  bool PageSwapFired() const { return mPageSwapFired; }
+
+  void SetPageSwapFired(bool aPageSwapFired) {
+    mPageSwapFired = aPageSwapFired;
+  }
+
   bool ForceAllowDataURI() const;
 
   void SetForceAllowDataURI(bool aForceAllowDataURI);
@@ -596,6 +605,8 @@ class nsDocShellLoadState final {
   
   
   bool mNotifiedBeforeUnloadListeners;
+
+  bool mPageSwapFired = false;
 
   
   

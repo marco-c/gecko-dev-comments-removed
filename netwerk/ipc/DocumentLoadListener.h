@@ -9,6 +9,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Variant.h"
 #include "mozilla/WeakPtr.h"
+#include "mozilla/dom/PrefetchMatchWaiter.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -369,6 +370,18 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  nsresult ContinueDoOnStartRequestCommit(bool aSilentErrorLoad);
+
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  bool MaybeBeginOutboundViewTransition();
+
+  
+  
   
   
   
@@ -417,7 +430,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  void TryActivateFromPrefetch(nsIURI* aURI);
+  RefPtr<dom::PrefetchMatchPromise> TryActivateFromPrefetch(nsIURI* aURI);
+  
+  
+  void ActivateFromPrefetch(dom::PrefetchRecordParent* aRec);
+  
+  
+  
+  void AsyncOpenAfterPrefetchWait(dom::PrefetchMatchPromise* aPromise,
+                                  nsIStreamListener* aListener);
 
   void AddURIVisit(nsIChannel* aChannel, uint32_t aLoadFlags);
   bool HasCrossOriginOpenerPolicyMismatch() const;
@@ -562,6 +583,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   uint32_t mLoadStateExternalLoadFlags = 0;
   uint32_t mLoadStateInternalLoadFlags = 0;
   uint32_t mLoadStateLoadType = 0;
+
+  
+  bool mLoadStatePageSwapFired = false;
 
   
   bool mIsDownload = false;

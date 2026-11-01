@@ -137,7 +137,9 @@ struct OldSnapshotData {
   void EnsureKey(layers::RenderRootStateManager* aManager,
                  wr::IpcResourceUpdateQueue& aResources) {
     if (mImageKey != kNoKey) {
-      MOZ_ASSERT(mManager == aManager, "Stale manager?");
+      
+      
+      
       return;
     }
     mManager = aManager;
@@ -295,12 +297,81 @@ already_AddRefed<ViewTransition> ViewTransition::CreateCrossDocument(
       aInboundParams->initialSnapshotContainingBlockSize;
 
   
-  vt->mUpdateCallbackDonePromise->MaybeResolveWithUndefined();
+  if (Promise* ucd = vt->GetUpdateCallbackDone(IgnoreErrors())) {
+    ucd->MaybeResolveWithUndefined();
+  }
 
   
   vt->mPhase = Phase::UpdateCallbackCalled;
 
   return vt.forget();
+}
+
+
+already_AddRefed<ViewTransition> ViewTransition::CreateOutboundCrossDocument(
+    Document& aDocument, TypeList&& aActiveTypes) {
+  
+  
+  RefPtr<ViewTransition> vt =
+      new ViewTransition(aDocument, nullptr, std::move(aActiveTypes));
+  vt->mIsOutboundCrossDocument = true;
+  
+  
+  if (Promise* ucd = vt->GetUpdateCallbackDone(IgnoreErrors())) {
+    ucd->MaybeResolveWithUndefined();
+  }
+  return vt.forget();
+}
+
+UniquePtr<ViewTransitionParams>
+ViewTransition::CaptureOldStateForCrossDocument() {
+  
+  MOZ_ASSERT(mIsOutboundCrossDocument);
+  MOZ_ASSERT(mPhase == Phase::PendingCapture);
+
+  mDocument->SetRenderingSuppressedForViewTransitions(true);
+  Maybe<SkipTransitionReason> skipReason = CaptureOldState();
+  mDocument->SetRenderingSuppressedForViewTransitions(false);
+  if (skipReason) {
+    ClearNamedElements();
+    SkipTransition(*skipReason);
+    return nullptr;
+  }
+
+  
+  
+  
+  auto params = MakeUnique<ViewTransitionParams>();
+  params->namedElements = std::move(mNamedElements);
+  params->names = std::move(mNames);
+  params->initialSnapshotContainingBlockSize =
+      mInitialSnapshotContainingBlockSize;
+  params->producerPrincipal = mDocument->NodePrincipal();
+  if (BrowsingContext* bc = mDocument->GetBrowsingContext()) {
+    params->producerBrowsingContextId = bc->Id();
+  }
+  return params;
+}
+
+void ViewTransition::BeginDeferredOutboundCapture(
+    std::function<void(UniquePtr<ViewTransitionParams>&&)>&& aProceed) {
+  MOZ_ASSERT(mIsOutboundCrossDocument);
+  MOZ_ASSERT(mPhase == Phase::PendingCapture);
+  MOZ_ASSERT(aProceed);
+  mOutboundCaptureProceed = std::move(aProceed);
+  
+  
+  MOZ_ASSERT(!mTimeoutTimer);
+  ClearTimeoutTimer();
+  mTimeoutTimer = NS_NewTimer();
+  mTimeoutTimer->InitWithNamedFuncCallback(
+      TimeoutCallback, this, StaticPrefs::dom_viewTransitions_timeout_ms(),
+      nsITimer::TYPE_ONE_SHOT, "ViewTransition::TimeoutCallback"_ns);
+  
+  
+  if (mDocument) {
+    mDocument->EnsureViewTransitionOperationsHappen();
+  }
 }
 
 Element* ViewTransition::GetViewTransitionTreeRoot() const {
@@ -396,6 +467,11 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
   MOZ_ASSERT(aFrame);
   MOZ_ASSERT(aFrame->HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION));
 
+  
+  if (!aManager->WrBridge()) {
+    return nullptr;
+  }
+
   nsAtom* name = aFrame->GetProperty(ViewTransitionCaptureName());
   if (NS_WARN_IF(!name)) {
     return nullptr;
@@ -418,9 +494,6 @@ const wr::ImageKey* ViewTransition::GetImageKeyForCapturedFrame(
     return nullptr;
   }
   if (wr::AsImageKey(el->mNewSnapshotKey) == kNoKey) {
-    MOZ_ASSERT(!el->mOldState.mSnapshot.mManager ||
-                   el->mOldState.mSnapshot.mManager == aManager,
-               "Stale manager?");
     el->mNewSnapshotKey = {aManager->WrBridge()->GetNextImageKey()};
     el->mOldState.mSnapshot.mManager = aManager;
     aResources.AddSnapshotImage(el->mNewSnapshotKey);
@@ -609,8 +682,17 @@ void ViewTransition::TimeoutCallback(nsITimer* aTimer, void* aClosure) {
   vt->Timeout();
 }
 
+void ViewTransition::ReleaseDeferredOutboundCapture() {
+  if (mOutboundCaptureProceed) {
+    ClearTimeoutTimer();
+    auto proceed = std::move(mOutboundCaptureProceed);
+    proceed(nullptr);
+  }
+}
+
 void ViewTransition::Timeout() {
   ClearTimeoutTimer();
+  ReleaseDeferredOutboundCapture();
   if (mPhase != Phase::Done && mDocument) {
     SkipTransition(SkipTransitionReason::Timeout);
   }
@@ -1136,6 +1218,33 @@ void ViewTransition::PerformPendingOperations() {
   AUTO_PROFILER_FLOW_MARKER("ViewTransition::PerformPendingOperations", LAYOUT,
                             Flow::FromPointer(this));
 
+  if (mIsOutboundCrossDocument) {
+    
+    
+    
+    
+    if (mOutboundCaptureProceed && mPhase == Phase::PendingCapture) {
+      auto proceed = std::move(mOutboundCaptureProceed);
+      
+      ClearTimeoutTimer();
+      
+      UniquePtr<ViewTransitionParams> params =
+          CaptureOldStateForCrossDocument();
+      
+      proceed(std::move(params));
+      if (mPhase != Phase::Done) {
+        
+        
+        
+        mTimeoutTimer = NS_NewTimer();
+        mTimeoutTimer->InitWithNamedFuncCallback(
+            TimeoutCallback, this, StaticPrefs::dom_viewTransitions_timeout_ms(),
+            nsITimer::TYPE_ONE_SHOT, "ViewTransition::TimeoutCallback"_ns);
+      }
+    }
+    return;
+  }
+
   
   
   
@@ -1425,15 +1534,21 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     AutoRestore guard{mOldCaptureElements};
     mOldCaptureElements = &captureElements;
     
+    
+    
+    nsIFrame* localRoot = mDocument->GetPresShell()
+                              ? mDocument->GetPresShell()->GetRootFrame()
+                              : nullptr;
+    nsIFrame* displayRoot =
+        localRoot ? nsLayoutUtils::GetDisplayRootFrame(localRoot) : nullptr;
     if (RefPtr<PresShell> ps =
-            nsContentUtils::GetInProcessSubtreeRootDocument(mDocument)
-                ->GetPresShell()) {
+            displayRoot ? displayRoot->PresShell() : nullptr) {
       
       
       if (RefPtr widget = ps->GetRootWidget()) {
         VT_LOG("ViewTransitions::CaptureOldState(), requesting composite");
         RefPtr<WindowRenderer> renderer = widget->GetWindowRenderer();
-        ps->PaintAndRequestComposite(ps->GetRootFrame(), renderer,
+        ps->PaintAndRequestComposite(displayRoot, renderer,
                                      PaintFlags::PaintCompositeOffscreen);
         VT_LOG("ViewTransitions::CaptureOldState(), requesting composite end");
       }
@@ -1774,6 +1889,11 @@ void ViewTransition::SkipTransition(
   }
   
   
+  ReleaseDeferredOutboundCapture();
+  
+  ClearTimeoutTimer();
+  
+  
   if (UnderlyingValue(mPhase) < UnderlyingValue(Phase::UpdateCallbackCalled)) {
     mDocument->ScheduleViewTransitionUpdateCallback(this);
   }
@@ -1833,6 +1953,10 @@ void ViewTransition::SkipTransition(
       case SkipTransitionReason::PseudoUpdateFailure:
         readyPromise->MaybeRejectWithInvalidStateError(
             "Skipped view transition due to hidden new element");
+        break;
+      case SkipTransitionReason::NavigationAborted:
+        readyPromise->MaybeRejectWithAbortError(
+            "Skipped view transition due to the navigation being aborted");
         break;
       case SkipTransitionReason::ResetRendering:
         readyPromise->MaybeRejectWithInvalidStateError(
@@ -2114,6 +2238,22 @@ ViewTransitionTypeSet* ViewTransition::Types() {
     }
   }
   return mTypes;
+}
+
+void ViewTransition::NotifyTypesChanged() {
+  
+  
+  if (!mDocument || mDocument->GetActiveViewTransition() != this) {
+    return;
+  }
+  
+  
+  
+  if (Element* root = mDocument->GetRootElement();
+      root && root->State().HasState(ElementState::ACTIVE_VIEW_TRANSITION)) {
+    nsAutoScriptBlocker scriptBlocker;
+    mDocument->ElementStateChanged(root, ElementState::ACTIVE_VIEW_TRANSITION);
+  }
 }
 
 };  

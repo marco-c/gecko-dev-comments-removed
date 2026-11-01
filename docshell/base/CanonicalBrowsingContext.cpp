@@ -2930,24 +2930,38 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
   shistory->NotifyOnHistoryCommit();
 }
 
-void CanonicalBrowsingContext::DeactivateDocuments() {
+void CanonicalBrowsingContext::DeactivateDocuments(
+    const SessionHistoryInfo* aPageSwapTargetInfo,
+    NavigationType aNavigationType, bool aForUnload) {
   MOZ_DIAGNOSTIC_ASSERT(IsTop() && mozilla::BFCacheInParent() &&
-                        GetContentParent());
+                        (IsInProcess() || GetContentParent()));
   if (IsInProcess()) {
-    BrowsingContext::DeactivateDocuments();
+    BrowsingContext::DeactivateDocuments(aPageSwapTargetInfo, aNavigationType,
+                                         aForUnload);
   } else {
-    Group()->EachParent([&](ContentParent* aContentParent) {
-      (void)aContentParent->SendDeactivateDocuments(this);
+    Maybe<SessionHistoryInfo> targetInfo =
+        aPageSwapTargetInfo ? Some(*aPageSwapTargetInfo) : Nothing();
+    Group()->EachParent([this, &targetInfo, aNavigationType,
+                         aForUnload](ContentParent* aContentParent) {
+      (void)aContentParent->SendDeactivateDocuments(
+          this, targetInfo, aNavigationType, aForUnload);
     });
 
-    PreOrderWalk([&](BrowsingContext* aContext) {
-      aContext->Canonical()->SetIsInBFCache( true);
-      aContext->Canonical()->SetIsEnteringBFCache(
-           true);
-    });
+    
+    
+    if (!aForUnload) {
+      PreOrderWalk([&](BrowsingContext* aContext) {
+        aContext->Canonical()->SetIsInBFCache( true);
+        aContext->Canonical()->SetIsEnteringBFCache(
+             true);
+      });
+    }
   }
 
-  if (GetCurrentWindowGlobal() && GetCurrentWindowGlobal()->Fullscreen()) {
+  
+  
+  if (!aForUnload && GetCurrentWindowGlobal() &&
+      GetCurrentWindowGlobal()->Fullscreen()) {
     GetCurrentWindowGlobal()->ExitTopChromeDocumentFullscreen();
   }
 }

@@ -120,6 +120,7 @@
 #include "nsIDocShellTreeOwner.h"
 #include "nsIDocumentViewer.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "nsHTMLDocument.h"
 #include "nsIDocumentLoaderFactory.h"
 #include "nsIDOMWindow.h"
@@ -361,6 +362,7 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mWindowDraggingAllowed(false),
       mInFrameSwap(false),
       mFiredUnloadEvent(false),
+      mFiredCrossDocPageSwap(false),
       mEODForCurrentDocument(false),
       mURIResultedInDocument(false),
       mIsBeingDestroyed(false),
@@ -821,7 +823,8 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
                             aLoadState->LoadType(),
                             aLoadState->HasValidUserGestureActivation(),
                             aLoadState->NotifiedBeforeUnloadListeners(),
-                            aLoadState->IsResumingInterceptedNavigation());
+                            aLoadState->IsResumingInterceptedNavigation(),
+                            aLoadState->PageSwapFired());
   }
 
   
@@ -1292,7 +1295,135 @@ void nsDocShell::ThawFreezeNonRecursive(bool aThaw) {
   }
 }
 
-void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
+
+static Navigation* NavigationOfDocument(Document* aDocument) {
+  nsPIDOMWindowInner* inner = aDocument ? aDocument->GetInnerWindow() : nullptr;
+  return inner ? inner->Navigation() : nullptr;
+}
+
+void nsDocShell::FirePageSwapWithoutTransition(
+    const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+    NavigationType aNavigationType) {
+  
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled() ||
+      !mDocumentViewer || mFiredCrossDocPageSwap) {
+    return;
+  }
+  RefPtr<Navigation> navigation =
+      NavigationOfDocument(mDocumentViewer->GetDocument());
+  if (!navigation) {
+    return;
+  }
+  
+  mFiredCrossDocPageSwap = true;
+  navigation->FirePageSwapEvent(
+      aPageSwapTargetInfo, aNavigationType,
+       aPageSwapTargetInfo != nullptr, nullptr);
+}
+
+void nsDocShell::MaybeFirePageSwapOnDeactivate(
+    const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+    NavigationType aNavigationType) {
+  
+  if (mFiredCrossDocPageSwap) {
+    mFiredCrossDocPageSwap = false;
+    return;
+  }
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled() ||
+      !mBrowsingContext || !mBrowsingContext->IsTop() || !mDocumentViewer) {
+    return;
+  }
+  
+  Document::ClearCrossDocViewTransitionParams(mBrowsingContext->BrowserId());
+  RefPtr<Navigation> navigation =
+      NavigationOfDocument(mDocumentViewer->GetDocument());
+  if (!navigation) {
+    return;
+  }
+  navigation->FirePageSwapEvent(
+      aPageSwapTargetInfo, aNavigationType,
+       aPageSwapTargetInfo != nullptr, nullptr);
+}
+
+void nsDocShell::BeginDeferredOutboundCrossDocumentViewTransition(
+    const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+    mozilla::dom::NavigationType aNavigationType,
+    std::function<void()>&& aProceed) {
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled() ||
+      !mBrowsingContext || !mDocumentViewer) {
+    aProceed();
+    return;
+  }
+  RefPtr<Document> oldDoc = mDocumentViewer->GetDocument();
+  RefPtr<Navigation> navigation = NavigationOfDocument(oldDoc);
+  if (!navigation) {
+    aProceed();
+    return;
+  }
+
+  
+  
+  
+  RefPtr<ViewTransition> outboundVT =
+      oldDoc->Hidden() ? nullptr
+                       : oldDoc->SetupOutboundCrossDocumentViewTransition();
+  const TimeStamp pageSwapStart = TimeStamp::Now();
+  navigation->FirePageSwapEvent(
+      aPageSwapTargetInfo, aNavigationType,
+       aPageSwapTargetInfo != nullptr, outboundVT);
+  mFiredCrossDocPageSwap = true;
+
+  
+  
+  const bool timedOut =
+      (TimeStamp::Now() - pageSwapStart).ToMilliseconds() >
+      StaticPrefs::dom_viewTransitions_cross_document_pageswap_timeout_ms();
+
+  if (timedOut || !outboundVT ||
+      oldDoc->GetActiveViewTransition() != outboundVT) {
+    
+    
+    if (timedOut && outboundVT &&
+        oldDoc->GetActiveViewTransition() == outboundVT) {
+      outboundVT->SkipTransition(SkipTransitionReason::Timeout);
+    }
+    
+    if (mBrowsingContext->IsTop()) {
+      Document::ClearCrossDocViewTransitionParams(
+          mBrowsingContext->BrowserId());
+    }
+    aProceed();
+    return;
+  }
+
+  
+  
+  const bool isTop = mBrowsingContext->IsTop();
+  const uint64_t browserId = mBrowsingContext->BrowserId();
+  RefPtr<nsDocShell> self = this;
+  outboundVT->BeginDeferredOutboundCapture(
+      [proceed = std::move(aProceed), isTop, browserId,
+       self](UniquePtr<ViewTransitionParams>&& aParams) {
+        if (aParams) {
+          if (isTop) {
+            
+            
+            Document::StashCrossDocViewTransitionParams(browserId,
+                                                        std::move(aParams));
+          } else {
+            
+            
+            
+            self->mPendingInboundViewTransitionParams = std::move(aParams);
+          }
+        }
+        proceed();
+      });
+}
+
+void nsDocShell::FirePageHideShowNonRecursive(
+    bool aShow, const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+    NavigationType aNavigationType) {
   MOZ_ASSERT(mozilla::BFCacheInParent());
 
   if (!mDocumentViewer) {
@@ -1375,6 +1506,9 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
     }
 
     mFiredUnloadEvent = true;
+
+    MaybeFirePageSwapOnDeactivate(aPageSwapTargetInfo, aNavigationType);
+
     viewer->PageHide(false);
 
     RefPtr<PresShell> presShell = GetPresShell();
@@ -4218,6 +4352,27 @@ nsDocShell::Stop(uint32_t aStopFlags) {
 nsresult nsDocShell::StopInternal(
     uint32_t aStopFlags, UnsetOngoingNavigation aUnsetOngoingNavigation) {
   RefPtr kungFuDeathGrip = this;
+
+  
+  mFiredCrossDocPageSwap = false;
+  mPendingInboundViewTransitionParams = nullptr;
+  
+  
+  if (!mIsBeingDestroyed) {
+    
+    
+    
+    if (mBrowsingContext && mBrowsingContext->IsTop()) {
+      Document::ClearCrossDocViewTransitionParams(mBrowsingContext->BrowserId(),
+                                                  Some(mBrowsingContext->Id()));
+    }
+    if (RefPtr<Document> doc = GetExtantDocument()) {
+      if (RefPtr<ViewTransition> vt = doc->GetActiveViewTransition();
+          vt && vt->IsOutboundCrossDocument()) {
+        vt->SkipTransition(SkipTransitionReason::NavigationAborted);
+      }
+    }
+  }
   if (RefPtr<Document> doc = GetExtantDocument();
       aUnsetOngoingNavigation == UnsetOngoingNavigation::Yes && doc &&
       !doc->ShouldIgnoreOpens() &&
@@ -4390,6 +4545,11 @@ Maybe<uint32_t> nsDocShell::GetCacheKeyFromCurrentEntry() const {
   }
 
   return Nothing();
+}
+
+UniquePtr<ViewTransitionParams>
+nsDocShell::TakePendingInboundViewTransitionParams() {
+  return std::move(mPendingInboundViewTransitionParams);
 }
 
 bool nsDocShell::FillLoadStateFromCurrentEntry(
@@ -6554,6 +6714,11 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
   nsCOMPtr<nsIDocumentViewer> viewer;
   nsresult rv = NS_ERROR_FAILURE;
 
+  
+  
+  
+  mFiredCrossDocPageSwap = false;
+
   PROFILER_MARKER_UNTYPED("CreateAboutBlankDocumentViewer", DOM,
                           MarkerStack::Capture());
 
@@ -6983,6 +7148,39 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   
   
   nsCOMPtr<nsIURI> previousURI = mCurrentURI;
+
+  
+  
+  
+  const bool alreadyFiredCrossDocPageSwap = mFiredCrossDocPageSwap;
+  mFiredCrossDocPageSwap = false;
+  if (!alreadyFiredCrossDocPageSwap &&
+      StaticPrefs::dom_viewTransitions_cross_document_enabled() &&
+      mLoadingEntry) {
+    if (Maybe<NavigationType> navType =
+            NavigationUtils::NavigationTypeFromLoadType(mLoadType)) {
+      RefPtr<Document> oldDoc =
+          mDocumentViewer ? mDocumentViewer->GetDocument() : nullptr;
+      if (RefPtr<Navigation> navigation = NavigationOfDocument(oldDoc)) {
+        nsCOMPtr<nsIURI> oldURI = oldDoc->GetDocumentURI();
+        bool sameOrigin =
+            oldURI && mLoadingURI &&
+            NS_SUCCEEDED(
+                nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+                    oldURI, mLoadingURI, false, false));
+
+        
+        
+        
+        const bool hasCrossOriginRedirect =
+            NavigationUtils::HasCrossOriginRedirect(aOpenedChannel);
+        const bool canHaveActivation = sameOrigin && !hasCrossOriginRedirect;
+
+        navigation->FirePageSwapEvent(&mLoadingEntry->mInfo, *navType,
+                                      canHaveActivation, nullptr);
+      }
+    }
+  }
 
   FirePageHideNotification();
   if (mIsBeingDestroyed) {
@@ -8970,6 +9168,12 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
   }
 
+  
+  
+  if (aLoadState->PageSwapFired()) {
+    mFiredCrossDocPageSwap = true;
+  }
+
   mLoadType = aLoadState->LoadType();
 
   if (aLoadState->LoadIsFromSessionHistory() &&
@@ -10099,6 +10303,12 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
 
   nsCOMPtr<nsIChannel> channel;
   if (DocumentChannel::CanUseDocumentChannel(uri)) {
+    
+    
+    
+    if (RefPtr<Document> doc = GetExtantDocument()) {
+      doc->MaybeUpdateOutboundViewTransitionOptIn();
+    }
     channel = DocumentChannel::CreateForDocument(
         aLoadState, loadInfo, loadFlags, this, cacheKey, uriModified,
         isEmbeddingBlockedError);
@@ -11346,7 +11556,8 @@ void nsDocShell::UpdateActiveEntry(
 nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
                                       uint32_t aLoadType, bool aUserActivation,
                                       bool aNotifiedBeforeUnloadListeners,
-                                      bool aIsResumingInterceptedNavigation) {
+                                      bool aIsResumingInterceptedNavigation,
+                                      bool aPageSwapFired) {
   RefPtr<nsDocShellLoadState> loadState = aEntry.CreateLoadInfo();
   loadState->SetHasValidUserGestureActivation(
       loadState->HasValidUserGestureActivation() || aUserActivation);
@@ -11358,6 +11569,8 @@ nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
 
   loadState->SetIsResumingInterceptedNavigation(
       aIsResumingInterceptedNavigation);
+
+  loadState->SetPageSwapFired(aPageSwapFired);
 
   return LoadHistoryEntry(loadState, aLoadType, aEntry.mLoadingCurrentEntry);
 }

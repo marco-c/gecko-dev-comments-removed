@@ -2,13 +2,17 @@
 
 
 
-
-
 #include "mozilla/dom/NavigationUtils.h"
 
 #include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "nsContentUtils.h"
 #include "nsDocShellLoadTypes.h"
+#include "nsIChannel.h"
+#include "nsILoadInfo.h"
+#include "nsIPrincipal.h"
+#include "nsIRedirectHistoryEntry.h"
+#include "nsIScriptSecurityManager.h"
 
 namespace mozilla::dom {
 
@@ -79,6 +83,67 @@ Maybe<NavigationType> NavigationUtils::NavigationTypeFromLoadType(
       
       return {};
   }
+}
+
+ bool NavigationUtils::HasCrossOriginRedirect(
+    nsIChannel* aChannel) {
+  if (!aChannel) {
+    return false;
+  }
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  if (!loadInfo || loadInfo->RedirectChain().IsEmpty()) {
+    return false;
+  }
+  nsCOMPtr<nsIPrincipal> resultPrincipal;
+  if (NS_FAILED(nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+          aChannel, getter_AddRefs(resultPrincipal))) ||
+      !resultPrincipal) {
+    return false;
+  }
+  for (const nsCOMPtr<nsIRedirectHistoryEntry>& entry :
+       loadInfo->RedirectChain()) {
+    nsCOMPtr<nsIPrincipal> entryPrincipal;
+    entry->GetPrincipal(getter_AddRefs(entryPrincipal));
+    bool sameOrigin = false;
+    if (entryPrincipal &&
+        NS_SUCCEEDED(entryPrincipal->Equals(resultPrincipal, &sameOrigin)) &&
+        !sameOrigin) {
+      return true;
+    }
+  }
+  return false;
+}
+
+ bool
+NavigationUtils::CanInitiateOutboundCrossDocumentViewTransition(
+    uint32_t aLoadType, bool aSameOrigin, nsIChannel* aChannel) {
+  
+  
+  Maybe<NavigationType> navType = NavigationTypeFromLoadType(aLoadType);
+  
+  if (navType.isNothing() || *navType == NavigationType::Reload) {
+    return false;
+  }
+  
+  if (!aSameOrigin) {
+    return false;
+  }
+  
+  if (HasCrossOriginRedirect(aChannel)) {
+    return false;
+  }
+  
+  if (*navType == NavigationType::Traverse) {
+    return true;
+  }
+  
+  UserNavigationInvolvement involvement = UserNavigationInvolvement::None;
+  if (aChannel) {
+    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+    involvement = loadInfo->GetUserNavigationInvolvement();
+  }
+  
+  return involvement != UserNavigationInvolvement::BrowserUI;
 }
 
 }  

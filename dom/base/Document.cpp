@@ -1587,6 +1587,8 @@ Document::Document(const char* aContentType,
       mHasPolicyWithRequireTrustedTypesForDirective(false),
       mClipboardCopyTriggered(false),
       mHasBeenRevealed(false),
+      mSentMayHaveViewTransitionOptIn(false),
+      mOutboundViewTransitionOptInDirty(false),
       mAutoSizesEnabled(StaticPrefs::dom_image_sizes_auto_enabled()),
       mWasFocusedElementRemoved(false),
       mHasScopedCustomElementRegistry(false),
@@ -8232,6 +8234,8 @@ void Document::ApplicableStylesChanged(bool aKnownInShadowTree) {
     pc->MarkCounterStylesDirty();
     pc->MarkFontFeatureValuesDirty();
     pc->MarkFontPaletteValuesDirty();
+    
+    OutboundViewTransitionRulesChanged();
   }
   pc->RestyleManager()->NextRestyleIsForCSSRuleChanges();
 }
@@ -13179,6 +13183,10 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
   }
 
   if (!inFrameLoaderSwap) {
+    
+    
+    
+    MaybeSkipActiveViewTransition(SkipTransitionReason::DocumentHidden);
     UpdateVisibilityState();
 
     
@@ -17787,6 +17795,25 @@ void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
         NewRunnableMethod("MaybeSkipTransitionAfterVisibilityChange", this,
                           &Document::MaybeSkipTransitionAfterVisibilityChange));
   }
+  
+  
+  
+  
+  
+  if (!visible) {
+    mInboundViewTransitionParams = nullptr;
+    
+    
+    if (!mHasBeenRevealed && !IsInitialDocument() &&
+        StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+      if (nsDocShell* ds = nsDocShell::Cast(GetDocShell())) {
+        ds->TakePendingInboundViewTransitionParams();
+      }
+      if (BrowsingContext* bc = GetBrowsingContext(); bc && bc->IsTop()) {
+        ClearCrossDocViewTransitionParams(bc->BrowserId());
+      }
+    }
+  }
 
   NotifyActivityChanged();
   if (visible) {
@@ -17846,6 +17873,8 @@ void Document::Reveal() {
   
   mHasBeenRevealed = true;
 
+  UpdateOutboundViewTransitionOptIn();
+
   if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
     return;
   }
@@ -17853,6 +17882,32 @@ void Document::Reveal() {
   RefPtr<nsGlobalWindowInner> win = nsGlobalWindowInner::Cast(GetInnerWindow());
   if (!win) {
     return;
+  }
+
+  
+  if (!mInboundViewTransitionParams) {
+    if (nsDocShell* ds = nsDocShell::Cast(GetDocShell())) {
+      mInboundViewTransitionParams =
+          ds->TakePendingInboundViewTransitionParams();
+    }
+  }
+
+  
+  
+  if (!mInboundViewTransitionParams) {
+    if (BrowsingContext* bc = GetBrowsingContext(); bc && bc->IsTop()) {
+      mInboundViewTransitionParams =
+          TakeCrossDocViewTransitionParams(bc->BrowserId());
+    }
+  }
+
+  
+  
+  if (mInboundViewTransitionParams &&
+      (!mInboundViewTransitionParams->producerPrincipal ||
+       !NodePrincipal()->Equals(
+           mInboundViewTransitionParams->producerPrincipal))) {
+    mInboundViewTransitionParams = nullptr;
   }
 
   
@@ -17871,6 +17926,7 @@ void Document::Reveal() {
 
   
   if (vt.isSome()) {
+    FlushPendingNotifications(FlushType::Layout);
     nsAutoMicroTask mt;
     vt.ref()->Activate();
   }
@@ -20010,12 +20066,58 @@ Maybe<nsTArray<RefPtr<nsAtom>>> Document::ResolveViewTransitionRule() {
   return Some(std::move(types));
 }
 
+void Document::UpdateOutboundViewTransitionOptIn() {
+  
+  
+  if (!mHasBeenRevealed ||
+      !StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    return;
+  }
+  mOutboundViewTransitionOptInDirty = false;
+  RefPtr<StyleViewTransitionRule> rule =
+      EnsureStyleSet().GetLastViewTransitionRule();
+  const bool mayHave = rule && Servo_ViewTransitionRule_GetNavigationDescriptor(
+                                   rule) == StyleNavigationType::Auto;
+  if (mayHave == mSentMayHaveViewTransitionOptIn) {
+    return;
+  }
+  mSentMayHaveViewTransitionOptIn = mayHave;
+  if (WindowGlobalChild* wgc = GetWindowGlobalChild()) {
+    wgc->SendSetMayHaveViewTransitionOptIn(mayHave);
+  }
+}
+
+void Document::MaybeUpdateOutboundViewTransitionOptIn() {
+  if (mOutboundViewTransitionOptInDirty) {
+    UpdateOutboundViewTransitionOptIn();
+  }
+}
+
+void Document::OutboundViewTransitionRulesChanged() {
+  if (mHasBeenRevealed &&
+      StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    mOutboundViewTransitionOptInDirty = true;
+  }
+}
+
+void Document::StylistUpdated() {
+  
+  MaybeUpdateOutboundViewTransitionOptIn();
+}
+
 Maybe<RefPtr<ViewTransition>>
 Document::ResolveInboundCrossDocumentViewTransition() {
   
-  MOZ_ASSERT(IsFullyActive());
+  
+  
+  if (!IsFullyActive()) {
+    
+    mInboundViewTransitionParams = nullptr;
+    return Nothing();
+  }
   MOZ_ASSERT(mHasBeenRevealed);
 
+  
   
   
 
@@ -20047,12 +20149,101 @@ Document::ResolveInboundCrossDocumentViewTransition() {
       *this, std::move(inboundParams), resolvedRule.extract());
 
   
+  
+  if (auto* root = GetRootElement()) {
+    root->AddStates(ElementState::ACTIVE_VIEW_TRANSITION);
+  }
+
+  
   return Some(mActiveViewTransition);
 }
 
 void Document::SetInboundViewTransitionParams(
     UniquePtr<ViewTransitionParams> aParams) {
   mInboundViewTransitionParams = std::move(aParams);
+}
+
+
+using CrossDocVTParamsMap =
+    nsTHashMap<uint64_t, UniquePtr<ViewTransitionParams>>;
+static StaticAutoPtr<CrossDocVTParamsMap> sCrossDocVTParams;
+
+void Document::StashCrossDocViewTransitionParams(
+    uint64_t aBrowserId, UniquePtr<ViewTransitionParams> aParams) {
+  if (!aParams) {
+    return;
+  }
+  if (!sCrossDocVTParams) {
+    sCrossDocVTParams = new CrossDocVTParamsMap();
+    ClearOnShutdown(&sCrossDocVTParams);
+  }
+  sCrossDocVTParams->InsertOrUpdate(aBrowserId, std::move(aParams));
+}
+
+UniquePtr<ViewTransitionParams> Document::TakeCrossDocViewTransitionParams(
+    uint64_t aBrowserId) {
+  if (!sCrossDocVTParams) {
+    return nullptr;
+  }
+  Maybe<UniquePtr<ViewTransitionParams>> extracted =
+      sCrossDocVTParams->Extract(aBrowserId);
+  return extracted ? std::move(*extracted) : nullptr;
+}
+
+void Document::ClearCrossDocViewTransitionParams(
+    uint64_t aBrowserId, Maybe<uint64_t> aProducerBrowsingContextId) {
+  if (!sCrossDocVTParams) {
+    return;
+  }
+  if (aProducerBrowsingContextId) {
+    auto entry = sCrossDocVTParams->Lookup(aBrowserId);
+    if (!entry ||
+        (*entry)->producerBrowsingContextId != *aProducerBrowsingContextId) {
+      return;
+    }
+  }
+  sCrossDocVTParams->Remove(aBrowserId);
+}
+
+already_AddRefed<ViewTransition>
+Document::SetupOutboundCrossDocumentViewTransition() {
+  
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    return nullptr;
+  }
+
+  
+  
+  if (!mHasBeenRevealed) {
+    return nullptr;
+  }
+
+  
+  
+  auto resolvedRule = ResolveViewTransitionRule();
+  if (resolvedRule.isNothing()) {
+    return nullptr;
+  }
+
+  
+  if (mActiveViewTransition) {
+    RefPtr<ViewTransition> active = mActiveViewTransition;
+    active->SkipTransition(SkipTransitionReason::ClobberedActiveTransition);
+  }
+
+  
+  
+  RefPtr<ViewTransition> vt = ViewTransition::CreateOutboundCrossDocument(
+      *this, resolvedRule.extract());
+  mActiveViewTransition = vt;
+
+  
+  
+  if (auto* root = GetRootElement()) {
+    root->AddStates(ElementState::ACTIVE_VIEW_TRANSITION);
+  }
+
+  return vt.forget();
 }
 
 

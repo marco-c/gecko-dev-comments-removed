@@ -5,16 +5,20 @@
 #ifndef mozilla_dom_ViewTransition_h
 #define mozilla_dom_ViewTransition_h
 
+#include <functional>
+
 #include "mozilla/Attributes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layers/IpcResourceUpdateQueue.h"
 #include "nsAtomHashKeys.h"
+#include "nsCOMPtr.h"
 #include "nsClassHashtable.h"
 #include "nsRect.h"
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
+class nsIPrincipal;
 class nsITimer;
 
 namespace mozilla {
@@ -68,6 +72,9 @@ enum class SkipTransitionReason : uint8_t {
   
   
   ResetRendering,
+  
+  
+  NavigationAborted,
 };
 
 
@@ -90,6 +97,11 @@ struct ViewTransitionParams {
   ViewTransitionNamedElements namedElements;
   AutoTArray<RefPtr<nsAtom>, 8> names;
   nsSize initialSnapshotContainingBlockSize;
+  
+  
+  nsCOMPtr<nsIPrincipal> producerPrincipal;
+  
+  uint64_t producerBrowsingContextId = 0;
 
   ~ViewTransitionParams();
 };
@@ -107,12 +119,30 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   static already_AddRefed<ViewTransition> CreateCrossDocument(
       Document&, UniquePtr<ViewTransitionParams>, TypeList&&);
 
+  static already_AddRefed<ViewTransition> CreateOutboundCrossDocument(
+      Document&, TypeList&&);
+
+  bool IsOutboundCrossDocument() const { return mIsOutboundCrossDocument; }
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT UniquePtr<ViewTransitionParams>
+  CaptureOldStateForCrossDocument();
+
+  
+  
+  
+  void BeginDeferredOutboundCapture(
+      std::function<void(UniquePtr<ViewTransitionParams>&&)>&& aProceed);
+
   Promise* GetUpdateCallbackDone(ErrorResult&);
   Promise* GetReady(ErrorResult&);
   Promise* GetFinished(ErrorResult&);
   ViewTransitionTypeSet* Types();
   const TypeList& GetTypeList() const { return mTypeList; }
   TypeList& GetTypeList() { return mTypeList; }
+
+  
+  
+  void NotifyTypesChanged();
 
   void SkipTransition(SkipTransitionReason = SkipTransitionReason::JS);
   MOZ_CAN_RUN_SCRIPT void PerformPendingOperations();
@@ -186,6 +216,9 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
 
   void ClearActiveTransition(bool aIsDocumentHidden);
   void Timeout();
+  
+  
+  void ReleaseDeferredOutboundCapture();
   MOZ_CAN_RUN_SCRIPT void Setup();
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Maybe<SkipTransitionReason>
   CaptureOldState();
@@ -247,6 +280,13 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   RefPtr<nsITimer> mTimeoutTimer;
 
   Phase mPhase = Phase::PendingCapture;
+  
+  
+  bool mIsOutboundCrossDocument = false;
+  
+  
+  std::function<void(UniquePtr<ViewTransitionParams>&&)>
+      mOutboundCaptureProceed;
   
   
   

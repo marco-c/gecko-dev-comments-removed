@@ -2,12 +2,12 @@
 
 
 
-
-
 #ifndef mozilla_dom_NavigationUtils_h_
 #define mozilla_dom_NavigationUtils_h_
 
 #include "mozilla/Maybe.h"
+
+class nsIChannel;
 
 namespace mozilla::dom {
 enum class NavigationType : uint8_t;
@@ -23,6 +23,16 @@ class NavigationUtils {
       enum NavigationHistoryBehavior aBehavior);
 
   static Maybe<NavigationType> NavigationTypeFromLoadType(uint32_t aLoadType);
+
+  
+  
+  static bool HasCrossOriginRedirect(nsIChannel* aChannel);
+
+  
+  
+  
+  static bool CanInitiateOutboundCrossDocumentViewTransition(
+      uint32_t aLoadType, bool aSameOrigin, nsIChannel* aChannel);
 };
 
 }  

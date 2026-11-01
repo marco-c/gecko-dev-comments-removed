@@ -5,6 +5,8 @@
 #ifndef nsDocShell_h_
 #define nsDocShell_h_
 
+#include <functional>
+
 #include "Units.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Maybe.h"
@@ -55,6 +57,7 @@ enum class NavigationHistoryBehavior : uint8_t;
 struct NavigationAPIMethodTracker;
 class SessionHistoryInfo;
 struct LoadingSessionHistoryInfo;
+struct ViewTransitionParams;
 struct Wireframe;
 }  
 namespace net {
@@ -481,6 +484,11 @@ class nsDocShell final : public nsDocLoader,
 
   already_AddRefed<nsIInputStream> GetPostDataFromCurrentEntry() const;
   mozilla::Maybe<uint32_t> GetCacheKeyFromCurrentEntry() const;
+
+  
+  
+  mozilla::UniquePtr<mozilla::dom::ViewTransitionParams>
+  TakePendingInboundViewTransitionParams();
 
   
   
@@ -931,7 +939,36 @@ class nsDocShell final : public nsDocLoader,
 
   void ThawFreezeNonRecursive(bool aThaw);
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(bool aShow);
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(
+      bool aShow,
+      const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo = nullptr,
+      mozilla::dom::NavigationType aNavigationType =
+          mozilla::dom::NavigationType::Push);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageSwapWithoutTransition(
+      const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+      mozilla::dom::NavigationType aNavigationType);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void MaybeFirePageSwapOnDeactivate(
+      const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+      mozilla::dom::NavigationType aNavigationType);
+
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void
+  BeginDeferredOutboundCrossDocumentViewTransition(
+      const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
+      mozilla::dom::NavigationType aNavigationType,
+      std::function<void()>&& aProceed);
 
   nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
@@ -978,7 +1015,7 @@ class nsDocShell final : public nsDocLoader,
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
       bool aUserActivation, bool aNotifiedBeforeUnloadListeners,
-      bool aIsResumingInterceptedNavigation);
+      bool aIsResumingInterceptedNavigation, bool aPageSwapFired);
   MOZ_CAN_RUN_SCRIPT
   nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState, uint32_t aLoadType,
                             bool aLoadingCurrentEntry);
@@ -1248,6 +1285,11 @@ class nsDocShell final : public nsDocLoader,
   mozilla::UniquePtr<mozilla::dom::LoadingSessionHistoryInfo> mLoadingEntry;
 
   
+  
+  mozilla::UniquePtr<mozilla::dom::ViewTransitionParams>
+      mPendingInboundViewTransitionParams;
+
+  
   mozilla::UniquePtr<nsDocShellEditorData> mEditorData;
 
   
@@ -1341,6 +1383,10 @@ class nsDocShell final : public nsDocLoader,
   
   
   bool mFiredUnloadEvent : 1;
+
+  
+  
+  bool mFiredCrossDocPageSwap : 1;
 
   
   

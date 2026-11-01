@@ -2074,8 +2074,13 @@ bool nsPresContext::FlushPendingMediaFeatureValuesChanged() {
 
   
   if (mPresShell) {
-    change.mRestyleHint |=
+    const RestyleHint rulesHint =
         mPresShell->StyleSet()->MediumFeaturesChanged(change.mReason);
+    change.mRestyleHint |= rulesHint;
+    
+    if (rulesHint) {
+      mDocument->OutboundViewTransitionRulesChanged();
+    }
   }
 
   const bool changedStyle = change.mRestyleHint || change.mChangeHint;

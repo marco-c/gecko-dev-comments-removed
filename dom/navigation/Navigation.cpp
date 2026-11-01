@@ -24,11 +24,13 @@
 #include "mozilla/dom/NavigationTransition.h"
 #include "mozilla/dom/NavigationUtils.h"
 #include "mozilla/dom/PContent.h"
+#include "mozilla/dom/PageSwapEvent.h"
 #include "mozilla/dom/PermissionsPolicy.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "nsContentUtils.h"
@@ -2224,6 +2226,67 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
 
   
   return methodTracker;
+}
+
+
+void Navigation::FirePageSwapEvent(const SessionHistoryInfo* aTargetSHInfo,
+                                   NavigationType aType,
+                                   bool aCanHaveActivation,
+                                   ViewTransition* aViewTransition) {
+  
+  
+  if (!StaticPrefs::dom_viewTransitions_cross_document_enabled()) {
+    return;
+  }
+
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
+  nsPIDOMWindowInner* inner = global ? global->GetAsInnerWindow() : nullptr;
+  if (!inner) {
+    return;
+  }
+
+  
+  
+  RefPtr<NavigationActivation> activation;
+  if (aCanHaveActivation) {
+    
+    RefPtr<NavigationHistoryEntry> oldEntry = GetCurrentEntry();
+    RefPtr<NavigationHistoryEntry> newEntry;
+    switch (aType) {
+      case NavigationType::Reload:
+        newEntry = oldEntry;
+        break;
+      case NavigationType::Traverse:
+        newEntry = aTargetSHInfo ? FindNavigationHistoryEntry(*aTargetSHInfo)
+                                 : nullptr;
+        break;
+      case NavigationType::Push:
+      case NavigationType::Replace:
+        if (aTargetSHInfo) {
+          newEntry =
+              MakeRefPtr<NavigationHistoryEntry>(global, aTargetSHInfo, -1);
+        }
+        break;
+    }
+    
+    
+    
+    
+    if (newEntry) {
+      activation =
+          MakeRefPtr<NavigationActivation>(global, newEntry, oldEntry, aType);
+    }
+  }
+
+  
+  RefPtr<nsGlobalWindowInner> window = nsGlobalWindowInner::Cast(inner);
+  PageSwapEventInit init;
+  init.mActivation = activation;
+  init.mViewTransition = aViewTransition;
+  RefPtr<PageSwapEvent> event =
+      PageSwapEvent::Constructor(window, u"pageswap"_ns, init);
+  event->SetTrusted(true);
+  window->DispatchEvent(*event);
 }
 
 
