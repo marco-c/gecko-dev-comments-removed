@@ -28,6 +28,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"  
 
 #include <limits>    
 #include <stdint.h>  
@@ -80,8 +81,6 @@ struct ColumnNumberOffset {
 
   bool operator==(const ColumnNumberOffset& rhs) const = default;
 
-  bool operator!=(const ColumnNumberOffset& rhs) const = default;
-
   int32_t value() const { return value_; }
 };
 
@@ -113,8 +112,6 @@ struct ColumnNumberUnsignedOffset {
   }
 
   bool operator==(const ColumnNumberUnsignedOffset& rhs) const = default;
-
-  bool operator!=(const ColumnNumberUnsignedOffset& rhs) const = default;
 
   uint32_t value() const { return value_; }
 
@@ -149,9 +146,6 @@ struct MaybeLimitedColumnNumber {
   }
 
   bool operator==(const MaybeLimitedColumnNumber<LimitValue>& rhs) const =
-      default;
-
-  bool operator!=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const =
       default;
 
   MaybeLimitedColumnNumber<LimitValue> operator+(
@@ -365,13 +359,25 @@ struct TaggedColumnNumberOneOrigin {
     return TaggedColumnNumberOneOrigin(value);
   }
 
+  static mozilla::Maybe<TaggedColumnNumberOneOrigin> fromRawChecked(
+      uint32_t value) {
+    if (value & WasmFunctionTag) {
+      if ((value & ~WasmFunctionTag) > WasmFunctionIndex::Limit) {
+        return mozilla::Nothing();
+      }
+    } else {
+      if (value == 0 || value > LimitedColumnNumberOneOrigin::Limit) {
+        return mozilla::Nothing();
+      }
+    }
+    return mozilla::Some(TaggedColumnNumberOneOrigin(value));
+  }
+
   static TaggedColumnNumberOneOrigin forDifferentialTesting() {
     return TaggedColumnNumberOneOrigin(LimitedColumnNumberOneOrigin());
   }
 
   bool operator==(const TaggedColumnNumberOneOrigin& rhs) const = default;
-
-  bool operator!=(const TaggedColumnNumberOneOrigin& rhs) const = default;
 
   bool isLimitedColumnNumber() const { return !isWasmFunctionIndex(); }
 
@@ -394,8 +400,6 @@ struct TaggedColumnNumberOneOrigin {
   }
 
   uint32_t rawValue() const { return value_; }
-
-  uint32_t* addressOfValueForTranscode() { return &value_; }
 };
 
 }  

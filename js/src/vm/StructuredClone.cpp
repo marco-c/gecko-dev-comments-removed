@@ -1915,7 +1915,7 @@ bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
     return false;
   }
 
-  val = Int32Value(*savedFrame->getColumn().addressOfValueForTranscode());
+  val = Int32Value(savedFrame->getColumn().rawValue());
   if (!writePrimitive(val)) {
     return false;
   }
@@ -3229,7 +3229,9 @@ bool JSStructuredCloneReader::startReadUnchecked(
     }
 
     case SCTAG_REGEXP_OBJECT: {
-      if ((data & RegExpFlag::AllFlags) != data) {
+      
+      if ((data & RegExpFlag::AllFlags) != data ||
+          ((data & RegExpFlag::Unicode) && (data & RegExpFlag::UnicodeSets))) {
         JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                                   JSMSG_SC_BAD_SERIALIZED_DATA, "regexp");
         return false;
@@ -3790,11 +3792,18 @@ JSObject* JSStructuredCloneReader::readSavedFrameHeader(
   }
   savedFrame->initLine(line);
 
-  JS::TaggedColumnNumberOneOrigin column;
-  if (!readUint32(column.addressOfValueForTranscode())) {
+  uint32_t rawColumn;
+  if (!readUint32(&rawColumn)) {
     return nullptr;
   }
-  savedFrame->initColumn(column);
+  auto column = JS::TaggedColumnNumberOneOrigin::fromRawChecked(rawColumn);
+  if (column.isNothing()) {
+    JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
+                              JSMSG_SC_BAD_SERIALIZED_DATA,
+                              "invalid saved frame column");
+    return nullptr;
+  }
+  savedFrame->initColumn(*column);
 
   
   
@@ -4327,6 +4336,7 @@ void JSAutoStructuredCloneBuffer::clear() {
   data_.discardTransferables();
   data_.ownTransferables_ = OwnTransferablePolicy::NoTransferables;
   data_.refsHeld_.releaseAll();
+  MOZ_ASSERT(data_.stringBufferRefsHeld_.isStorageConsistent());
   data_.stringBufferRefsHeld_.clear();
   data_.Clear();
   version_ = 0;
