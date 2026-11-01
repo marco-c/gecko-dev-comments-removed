@@ -10,10 +10,9 @@
 
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <list>
 #include <memory>
 #include <utility>
@@ -295,9 +294,13 @@ int ForwardErrorCorrection::InsertZerosInPacketMasks(
   size_t old_bit_index = 1;
   
   while (media_packets_it != media_packets.end()) {
-    if (new_bit_index == max_media_packets) {
+    if (new_bit_index >= max_media_packets) {
       
-      break;
+      
+      
+      
+      
+      return -1;
     }
     uint16_t seq_num = ParseSequenceNumber((*media_packets_it)->data.data());
     const int num_zeros_to_insert =
@@ -306,8 +309,11 @@ int ForwardErrorCorrection::InsertZerosInPacketMasks(
       internal::InsertZeroColumns(num_zeros_to_insert, tmp_packet_masks_,
                                   tmp_packet_mask_size, num_fec_packets,
                                   new_bit_index);
+      new_bit_index += num_zeros_to_insert;
+      if (new_bit_index >= max_media_packets) {
+        return -1;
+      }
     }
-    new_bit_index += num_zeros_to_insert;
     internal::CopyColumn(tmp_packet_masks_, tmp_packet_mask_size, packet_masks_,
                          packet_mask_size_, num_fec_packets, new_bit_index,
                          old_bit_index);
