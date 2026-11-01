@@ -3001,12 +3001,16 @@ pref("signon.signupDetection.confidenceThreshold",     "0.75");
 
 pref("signon.storage.rust.restoreEnabled", true);
 
+
+pref("signon.storage.rust.maxPrimaryPasswordDeferrals", 3);
+
 pref("signon.storage.rust.active", false);
 pref("signon.storage.rust.migrationAttempts", 0);
 pref("signon.storage.rust.restoreAttempts", 0);
 pref("signon.storage.rust.restoreAttemptsVersion", 0);
 pref("signon.storage.rust.restoreVersion", 0);
 pref("signon.storage.rust.restoreTargetVersion", 1);
+pref("signon.storage.rust.primaryPasswordDeferrals", 0);
 
 
 pref("browser.formfill.debug",            false);
