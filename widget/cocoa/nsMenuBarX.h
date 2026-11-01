@@ -45,7 +45,6 @@ class Element;
 
 
 
-
 @interface GeckoNSMenuItem : NSMenuItem {
 }
 - (id)target;
@@ -122,6 +121,16 @@ class nsMenuBarX : public nsMenuParentX,
   void ApplicationMenuOpened();
   bool PerformKeyEquivalent(NSEvent* aEvent);
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
+
+  
+  
+  
+  static void HighlightNativeMenuItem(NSMenuItem* aItem);
+
+  
+  
+  static NSMenuItem* ApplicationMenuItemForKeyElement(
+      mozilla::dom::Element* aKeyElement);
 
   
   void MenuChildChangedVisibility(const MenuChild& aChild,

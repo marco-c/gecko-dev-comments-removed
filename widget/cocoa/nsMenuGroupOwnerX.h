@@ -10,6 +10,7 @@
 #include "mozilla/WeakPtr.h"
 
 #include "nsHashKeys.h"
+#include "nsIDOMEventListener.h"
 #include "nsIObserver.h"
 #include "nsMenuBarX.h"
 #include "nsString.h"
@@ -43,7 +44,9 @@ enum {
 
 
 
-class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
+class nsMenuGroupOwnerX : public nsMultiMutationObserver,
+                          public nsIObserver,
+                          public nsIDOMEventListener {
  public:
   
   nsMenuGroupOwnerX(mozilla::dom::Element* aElement,
@@ -61,6 +64,18 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
 
   
   
+  void RegisterForKeyCommands();
+  void UnregisterForKeyCommands();
+
+  
+  
+  void RegisterKeyElement(mozilla::dom::Element* aKeyElement,
+                          nsMenuItemX* aMenuItem);
+  void UnregisterKeyElement(mozilla::dom::Element* aKeyElement,
+                            nsMenuItemX* aMenuItem);
+
+  
+  
   MOZMenuItemRepresentedObject* GetRepresentedObject() {
     return mRepresentedObject;
   }
@@ -72,6 +87,7 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIMUTATIONOBSERVER
+  NS_DECL_NSIDOMEVENTLISTENER
 
  protected:
   virtual ~nsMenuGroupOwnerX();
@@ -91,6 +107,10 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
 
   
   nsTHashMap<nsUint32HashKey, nsMenuItemX*> mCommandToMenuObjectTable;
+
+  
+  nsTHashMap<nsRefPtrHashKey<mozilla::dom::Element>, nsMenuItemX*>
+      mKeyElementToMenuItemTable;
 
   MOZMenuItemRepresentedObject* mRepresentedObject = nil;  
   mozilla::WeakPtr<nsMenuBarX> mMenuBar;

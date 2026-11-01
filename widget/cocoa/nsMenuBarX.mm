@@ -125,6 +125,7 @@ nsMenuBarX::nsMenuBarX(mozilla::dom::Element* aElement)
 
   mMenuGroupOwner = new nsMenuGroupOwnerX(aElement, this);
   mMenuGroupOwner->RegisterForLocaleChanges();
+  mMenuGroupOwner->RegisterForKeyCommands();
   mNativeMenu = [[GeckoNSMenu alloc] initWithTitle:@"MainMenuBar"];
 
   mContent = aElement;
@@ -163,6 +164,7 @@ nsMenuBarX::~nsMenuBarX() {
   }
 
   mMenuGroupOwner->UnregisterForLocaleChanges();
+  mMenuGroupOwner->UnregisterForKeyCommands();
 
   
   if (mContent) {
@@ -650,6 +652,63 @@ bool nsMenuBarX::PerformKeyEquivalent(NSEvent* aEvent) {
   return [mNativeMenu performSuperKeyEquivalent:aEvent];
 }
 
+
+void nsMenuBarX::HighlightNativeMenuItem(NSMenuItem* aItem) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  NSMenu* menu = aItem.menu;
+  if (!menu || aItem.hidden || !aItem.enabled) {
+    return;
+  }
+  NSMenu* root = menu;
+  while (root.supermenu) {
+    root = root.supermenu;
+  }
+  if (root != NSApp.mainMenu) {
+    return;
+  }
+
+  
+  
+  gMenuItemsExecuteCommands = NO;
+  [menu performActionForItemAtIndex:[menu indexOfItem:aItem]];
+  gMenuItemsExecuteCommands = YES;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+
+NSMenuItem* nsMenuBarX::ApplicationMenuItemForKeyElement(
+    dom::Element* aKeyElement) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  dom::Document* document = aKeyElement->GetUncomposedDoc();
+  if (!sApplicationMenu || !document) {
+    return nil;
+  }
+  nsAutoString keyElementId;
+  aKeyElement->GetAttr(nsGkAtoms::id, keyElementId);
+  if (keyElementId.IsEmpty()) {
+    return nil;
+  }
+  for (NSMenuItem* item in sApplicationMenu.itemArray) {
+    if (!item.identifier) {
+      continue;
+    }
+    nsAutoString nodeID;
+    nsCocoaUtils::GetStringForNSString(item.identifier, nodeID);
+    dom::Element* menuItemElement = document->GetElementById(nodeID);
+    if (menuItemElement &&
+        menuItemElement->AttrValueIs(kNameSpaceID_None, nsGkAtoms::key,
+                                     keyElementId, eCaseMatters)) {
+      return item;
+    }
+  }
+  return nil;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(nil);
+}
+
 void nsMenuBarX::MenuChildChangedVisibility(const MenuChild& aChild,
                                             bool aIsVisible) {
   MOZ_RELEASE_ASSERT(aChild.is<RefPtr<nsMenuX>>(),
@@ -832,6 +891,9 @@ NSMenuItem* nsMenuBarX::CreateNativeAppMenuItem(nsMenuX* aMenu,
   newMenuItem.target = aTarget;
   newMenuItem.keyEquivalentModifierMask = macKeyModifiers;
   newMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
+  
+  
+  newMenuItem.identifier = nsCocoaUtils::ToNSString(aNodeID);
 
   
   
@@ -1100,6 +1162,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 
+
 @implementation GeckoNSMenuItem
 
 - (id)target {
@@ -1127,8 +1190,8 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 
-
 @implementation GeckoNSMenu
+
 
 
 
@@ -1145,44 +1208,25 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
     return NO;
   }
 
+  
+  
   NSWindow* keyWindow = NSApp.keyWindow;
-
-  
-  
-  
   if (!keyWindow) {
     return [super performKeyEquivalent:aEvent];
   }
 
-  
-  
-  
-  
-  
-  
-  if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
-    return NO;
+  if (![keyWindow isKindOfClass:[BaseWindow class]]) {
+    
+    
+    
+    
+    if (!(aEvent.modifierFlags & NSEventModifierFlagCommand)) {
+      return NO;
+    }
+    return [super performKeyEquivalent:aEvent];
   }
 
-  NSResponder* firstResponder = keyWindow.firstResponder;
-
-  if ([keyWindow isKindOfClass:[BaseWindow class]]) {
-    gMenuItemsExecuteCommands = NO;
-  }
-
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK
-  [super performKeyEquivalent:aEvent];
-  NS_OBJC_END_TRY_IGNORE_BLOCK
-
-  gMenuItemsExecuteCommands = YES;  
-
   
-  
-  
-  if (!NSApp.keyWindow || NSApp.keyWindow.firstResponder != firstResponder) {
-    return YES;
-  }
-
   
   return NO;
 }
