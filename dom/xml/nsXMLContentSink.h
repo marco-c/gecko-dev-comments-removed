@@ -141,16 +141,11 @@ class nsXMLContentSink : public nsContentSink,
       const nsAString& aFetchPriority) override;
 
   
-  
-  
-  
-  
-  
   virtual nsresult MaybeProcessXSLTLink(
       mozilla::dom::ProcessingInstruction* aProcessingInstruction,
       const nsAString& aHref, bool aAlternate, const nsAString& aTitle,
       const nsAString& aType, const nsAString& aMedia,
-      const nsAString& aReferrerPolicy, bool* aWasXSLT = nullptr);
+      const nsAString& aReferrerPolicy);
 
   nsresult LoadXSLStyleSheet(nsIURI* aUrl);
 
