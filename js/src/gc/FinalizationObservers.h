@@ -223,6 +223,7 @@ class FinalizationObservers {
                            Handle<WeakRefObject*> weakRef);
 
   
+  void noteWeakRefTargets(JS::NoteWeakRefTargetCallback callback, void* data);
   void maybeClearWeakRefTargets(JS::ShouldClearWeakRefTargetCallback callback,
                                 void* data);
 

@@ -1766,6 +1766,23 @@ nsresult CycleCollectedJSRuntime::TraverseRoots(
   NoteWeakMapsTracer trc(mJSRuntime, aCb);
   js::TraceWeakMaps(&trc);
 
+  
+  
+  
+  
+  
+  
+  
+  JS::NoteWeakRefTargets(
+      mJSRuntime,
+      [](JS::GCCellPtr aTarget, void* aData) {
+        auto& cb = *static_cast<nsCycleCollectionNoteRootCallback*>(aData);
+        if (aTarget.is<JSObject>() && JS::GCThingIsMarkedGrayInCC(aTarget)) {
+          cb.NoteJSRoot(&aTarget.as<JSObject>());
+        }
+      },
+      &aCb);
+
   return NS_OK;
 }
 
