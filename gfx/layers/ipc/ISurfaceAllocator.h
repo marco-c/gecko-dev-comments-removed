@@ -199,7 +199,7 @@ class GfxMemoryImageReporter final : public nsIMemoryReporter {
     
     
     static bool hasRun = false;
-    MOZ_ASSERT(!hasRun);
+    MOZ_RELEASE_ASSERT(!hasRun);
     hasRun = true;
 #endif
   }
