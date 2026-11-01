@@ -431,7 +431,7 @@ add_task(async function test_highlights_source_chips() {
       await highlights.updateComplete;
 
       const chips = [...highlights.shadowRoot.querySelectorAll("li")].map(row =>
-        [...row.querySelectorAll("ai-website-chip")].map(chip => ({
+        [...row.querySelectorAll("smartwindow-chip")].map(chip => ({
           label: chip.label,
           href: chip.href,
           icon: chip.iconSrc,
