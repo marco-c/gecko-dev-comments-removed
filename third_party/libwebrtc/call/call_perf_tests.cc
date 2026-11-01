@@ -382,15 +382,10 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     sender_call_->DestroyAudioSendStream(audio_send_stream);
     receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
 
-    DestroyCalls();
-    
-    
-    
-    
-    
     video_send_transport.reset();
     audio_send_transport.reset();
     receive_transport.reset();
+    DestroyCalls();
   });
 
   observer->PrintResults();
@@ -403,8 +398,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 #endif
   }
 
-  task_queue()->PostTask(
-      [to_delete = observer.release()]() { delete to_delete; });
+  task_queue()->PostTask([to_delete = std::move(observer)]() {});
 }
 
 TEST_F(CallPerfTest, Synchronization_PlaysOutAudioAndVideoWithoutClockDrift) {
