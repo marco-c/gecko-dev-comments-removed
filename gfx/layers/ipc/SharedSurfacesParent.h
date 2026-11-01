@@ -7,6 +7,8 @@
 
 #include <stdint.h>  
 
+#include <unordered_map>
+
 #include "mozilla/Attributes.h"             
 #include "mozilla/RefPtr.h"                 
 #include "mozilla/StaticMutex.h"            
@@ -36,6 +38,9 @@ class SharedSurfacesParent final {
   static void Shutdown();
 
   
+  
+  
+  
   static already_AddRefed<gfx::DataSourceSurface> Get(
       const wr::ExternalImageId& aId);
 
@@ -51,6 +56,26 @@ class SharedSurfacesParent final {
   static void Remove(const wr::ExternalImageId& aId);
 
   static void RemoveAll(uint32_t aNamespace);
+
+  
+  
+  
+  
+  
+  
+  static void AddIdNamespace(const wr::IdNamespace& aIdNamespace,
+                             uint32_t aNamespace);
+
+  
+  
+  
+  
+  static void RemoveIdNamespace(const wr::IdNamespace& aIdNamespace);
+
+  
+  
+  static already_AddRefed<gfx::DataSourceSurface> GetForIdNamespace(
+      const wr::IdNamespace& aIdNamespace, const wr::ExternalImageId& aId);
 
   static void AccumulateMemoryReport(uint32_t aNamespace,
                                      SharedSurfacesMemoryReport& aReport);
@@ -92,6 +117,11 @@ class SharedSurfacesParent final {
   static StaticMutex sMutex MOZ_UNANNOTATED;
 
   static StaticAutoPtr<SharedSurfacesParent> sInstance;
+
+  static StaticMutex sIdNamespaceMutex MOZ_UNANNOTATED;
+
+  
+  static std::unordered_map<uint32_t, uint32_t> sIdNamespaces;
 
   nsRefPtrHashtable<nsUint64HashKey, gfx::SourceSurfaceSharedDataWrapper>
       mSurfaces;

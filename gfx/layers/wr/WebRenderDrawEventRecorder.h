@@ -38,12 +38,20 @@ class WebRenderDrawEventRecorder final : public gfx::DrawEventRecorderMemory {
 
 class WebRenderTranslator final : public gfx::InlineTranslator {
  public:
+  
+  
+  
+  
   explicit WebRenderTranslator(gfx::DrawTarget* aDT,
+                               const wr::IdNamespace& aIdNamespace,
                                void* aFontContext = nullptr)
-      : InlineTranslator(aDT, aFontContext) {}
+      : InlineTranslator(aDT, aFontContext), mIdNamespace(aIdNamespace) {}
 
   already_AddRefed<gfx::SourceSurface> LookupExternalSurface(
       uint64_t aKey) final;
+
+ private:
+  wr::IdNamespace mIdNamespace;
 };
 
 }  

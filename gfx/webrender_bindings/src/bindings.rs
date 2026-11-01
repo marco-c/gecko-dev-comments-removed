@@ -4776,6 +4776,7 @@ extern "C" {
     
     pub fn wr_moz2d_render_cb(
         blob: ByteSlice,
+        id_namespace: WrIdNamespace,
         format: ImageFormat,
         render_rect: &LayoutIntRect,
         visible_rect: &DeviceIntRect,
