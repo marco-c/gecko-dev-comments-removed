@@ -228,7 +228,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   nsTArray<mozilla::ipc::WebTransportHash> aServerCertHashes;
   if (aOptions.mServerCertificateHashes.WasPassed()) {
-    if (!dedicated) {
+    if (!dedicated && !aOptions.mServerCertificateHashes.Value().IsEmpty()) {
       aError.ThrowNotSupportedError(
           "serverCertificateHashes not supported for non-dedicated "
           "connections");
