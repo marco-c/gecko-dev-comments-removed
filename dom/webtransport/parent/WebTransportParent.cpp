@@ -391,24 +391,28 @@ NS_IMETHODIMP BidiReceiveStream::OnBidirectionalStreamReady(
   LOG(("Returning BidirectionalStream pipe to content"));
   mResolver(BidirectionalStream(id, inputreceiver, outputsender));
 
-  auto onResetOrStopSending =
-      [inputCopyContext(inputCopyContext), outputCopyContext(outputCopyContext),
-       inputsender(inputsender),
-       outputreceiver(outputreceiver)](nsresult aError) {
-        LOG(("onResetOrStopSending err=%x", static_cast<uint32_t>(aError)));
-        NS_CancelAsyncCopy(inputCopyContext, aError);
-        inputsender->CloseWithStatus(aError);
-        NS_CancelAsyncCopy(outputCopyContext, aError);
-        outputreceiver->CloseWithStatus(aError);
-      };
+  auto onResetOrStopSending = [inputCopyContext(inputCopyContext),
+                               inputsender(inputsender)](nsresult aError) {
+    LOG(("onReset err=%x", static_cast<uint32_t>(aError)));
+    NS_CancelAsyncCopy(inputCopyContext, aError);
+    inputsender->CloseWithStatus(aError);
+  };
+
+  auto onStopSending = [outputCopyContext(outputCopyContext),
+                        outputreceiver(outputreceiver)](nsresult aError) {
+    LOG(("onStopSending err=%x", static_cast<uint32_t>(aError)));
+    NS_CancelAsyncCopy(outputCopyContext, aError);
+    outputreceiver->CloseWithStatus(aError);
+  };
 
   
   
   
-  mStreamCallback(id,
-                  WebTransportParent::OnResetOrStopSendingCallback(
-                      std::move(onResetOrStopSending)),
-                  aStream);
+  mStreamCallback(
+      id,
+      WebTransportParent::OnResetOrStopSendingCallback(
+          std::move(onResetOrStopSending), std::move(onStopSending)),
+      aStream);
   return NS_OK;
 }
 
@@ -863,11 +867,14 @@ NS_IMETHODIMP WebTransportParent::OnStopSending(uint64_t aStreamId,
     (void)SendOnStreamResetOrStopSending(aStreamId, error);
   }
   if (auto entry = mUniStreamCallbackMap.Lookup(aStreamId)) {
-    entry->mCallback.OnResetOrStopSending(NS_ERROR_ABORT);
+    entry->mCallback.OnStopSending(NS_ERROR_ABORT);
     mUniStreamCallbackMap.Remove(aStreamId);
   } else if (auto entry = mBidiStreamCallbackMap.Lookup(aStreamId)) {
-    entry->mCallback.OnResetOrStopSending(NS_ERROR_ABORT);
-    mBidiStreamCallbackMap.Remove(aStreamId);
+    entry->mCallback.OnStopSending(NS_ERROR_ABORT);
+    entry->mStopSendingReceived = true;
+    if (entry->mResetReceived) {
+      mBidiStreamCallbackMap.Remove(aStreamId);
+    }
   }
   return NS_OK;
 }
@@ -888,7 +895,10 @@ NS_IMETHODIMP WebTransportParent::OnResetReceived(uint64_t aStreamId,
     mUniStreamCallbackMap.Remove(aStreamId);
   } else if (auto entry = mBidiStreamCallbackMap.Lookup(aStreamId)) {
     entry->mCallback.OnResetOrStopSending(NS_ERROR_ABORT);
-    mBidiStreamCallbackMap.Remove(aStreamId);
+    entry->mResetReceived = true;
+    if (entry->mStopSendingReceived) {
+      mBidiStreamCallbackMap.Remove(aStreamId);
+    }
   } else if (auto entry = mIncomingUniStreamCallbackMap.Lookup(aStreamId)) {
     entry->mCallback.OnResetOrStopSending(NS_ERROR_ABORT);
     mIncomingUniStreamCallbackMap.Remove(aStreamId);

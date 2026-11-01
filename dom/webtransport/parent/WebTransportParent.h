@@ -85,15 +85,23 @@ class WebTransportParent : public PWebTransportParent,
 
   class OnResetOrStopSendingCallback final {
    public:
+    
+    
     explicit OnResetOrStopSendingCallback(
-        std::function<void(nsresult)>&& aCallback)
-        : mCallback(std::move(aCallback)) {}
+        std::function<void(nsresult)>&& aCallback,
+        std::function<void(nsresult)>&& aStopSending = nullptr)
+        : mCallback(std::move(aCallback)),
+          mStopSending(std::move(aStopSending)) {}
     ~OnResetOrStopSendingCallback() = default;
 
     void OnResetOrStopSending(nsresult aError) { mCallback(aError); }
+    void OnStopSending(nsresult aError) {
+      (mStopSending ? mStopSending : mCallback)(aError);
+    }
 
    private:
     std::function<void(nsresult)> mCallback;
+    std::function<void(nsresult)> mStopSending;
   };
 
  protected:
@@ -148,6 +156,9 @@ class WebTransportParent : public PWebTransportParent,
   struct StreamHash {
     OnResetOrStopSendingCallback mCallback;
     nsCOMPtr<T> mStream;
+    
+    bool mResetReceived = false;
+    bool mStopSendingReceived = false;
   };
   nsTHashMap<NoMemMoveKey<nsUint64HashKey>,
              StreamHash<nsIWebTransportBidirectionalStream>>

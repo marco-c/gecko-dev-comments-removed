@@ -548,6 +548,30 @@ void Http3WebTransportStream::Close(nsresult aResult) {
   mSession = nullptr;
 }
 
+void Http3WebTransportStream::CloseReceiveSide(nsresult aResult) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  LOG(("Http3WebTransportStream::CloseReceiveSide [this=%p]", this));
+  if (mReceiveStreamPipeOut) {
+    mReceiveStreamPipeOut->AsyncWait(nullptr, 0, 0, nullptr);
+    mReceiveStreamPipeOut->CloseWithStatus(aResult);
+  }
+  mRecvState = RECV_DONE;
+}
+
+void Http3WebTransportStream::CloseSendSide(nsresult aResult) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  LOG(("Http3WebTransportStream::CloseSendSide [this=%p]", this));
+  if (mSendStreamPipeIn) {
+    mSendStreamPipeIn->AsyncWait(nullptr, 0, 0, nullptr);
+    mSendStreamPipeIn->CloseWithStatus(aResult);
+  }
+  
+  
+  mSendFin = true;
+  mSendState = SEND_DONE;
+  mPendingTasks.Clear();
+}
+
 void Http3WebTransportStream::SendFin() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3WebTransportStream::SendFin [this=%p mSendState=%d]", this,

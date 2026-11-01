@@ -82,6 +82,12 @@ class Http3WebTransportStream final : public WebTransportStreamBase,
 
   bool SentReset() const { return mResetError.isSome(); }
 
+  
+  
+  
+  void CloseReceiveSide(nsresult aResult);
+  void CloseSendSide(nsresult aResult);
+
  private:
   friend class Http3WebTransportSession;
   virtual ~Http3WebTransportStream();
