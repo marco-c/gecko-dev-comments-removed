@@ -99,10 +99,6 @@ static mozilla::Atomic<int, mozilla::Relaxed> growthDirection(1);
 static mozilla::Atomic<int, mozilla::Relaxed> growthDirection(0);
 #endif
 
-#ifdef XP_LINUX
-static bool preciseCommitEnabled = true;
-#endif
-
 
 
 
@@ -146,14 +142,6 @@ static size_t maxValidAddress = 0;
 
 
 static size_t hugeSplit = 0;
-#endif
-
-
-
-
-
-#if defined(XP_LINUX) && !defined(MADV_POPULATE_WRITE)
-#  define MADV_POPULATE_WRITE 23
 #endif
 
 
@@ -452,17 +440,6 @@ void InitMemorySubsystem() {
     
     
     decommitEnabled = pageSize == PageSize && !disableDecommitRequested;
-
-#ifdef XP_LINUX
-    
-    
-    if (syscall(SYS_madvise, 0, 0, MADV_POPULATE_WRITE) == 0) {
-      
-      
-      
-      preciseCommitEnabled = true;
-    }
-#endif
 
 #ifdef JS_64BIT
 #  ifdef XP_WIN
@@ -1087,11 +1064,6 @@ bool MarkPagesInUseHard(void* region, size_t length) {
 #if defined(XP_WIN)
   return VirtualAlloc(region, length, MEM_COMMIT,
                       DWORD(PageAccess::ReadWrite)) == region;
-#elif defined(XP_LINUX)
-  if (!preciseCommitEnabled) {
-    return true;
-  }
-  return madvise(region, length, MADV_POPULATE_WRITE) == 0;
 #else
   return true;
 #endif
