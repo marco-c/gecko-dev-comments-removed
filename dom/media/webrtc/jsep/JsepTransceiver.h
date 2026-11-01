@@ -46,8 +46,7 @@ class JsepTransceiver {
   ~JsepTransceiver() = default;
 
   void Rollback(JsepTransceiver& oldTransceiver, bool aRemote) {
-    MOZ_ASSERT(
-        oldTransceiver.GetMediaTypeInfo().MatchesTypeOf(GetMediaTypeInfo()));
+    MOZ_ASSERT(oldTransceiver.GetMediaType() == GetMediaType());
     MOZ_ASSERT(!oldTransceiver.IsNegotiated() || !oldTransceiver.HasLevel() ||
                !HasLevel() || oldTransceiver.GetLevel() == GetLevel());
     mTransport = oldTransceiver.mTransport;
@@ -185,15 +184,13 @@ class JsepTransceiver {
 
   
   SdpMediaSection::MediaType GetMediaType() const {
-    MOZ_ASSERT(mRecvTrack.GetMediaTypeInfo().MatchesTypeOf(
-        mSendTrack.GetMediaTypeInfo()));
+    MOZ_ASSERT(mRecvTrack.GetMediaType() == mSendTrack.GetMediaType());
     return mRecvTrack.GetMediaType();
   }
 
   
   SdpMediaSection::MediaTypeInfo GetMediaTypeInfo() const {
-    MOZ_ASSERT(mRecvTrack.GetMediaTypeInfo().MatchesTypeOf(
-        mSendTrack.GetMediaTypeInfo()));
+    MOZ_ASSERT(mRecvTrack.GetMediaType() == mSendTrack.GetMediaType());
     return mRecvTrack.GetMediaTypeInfo();
   }
 

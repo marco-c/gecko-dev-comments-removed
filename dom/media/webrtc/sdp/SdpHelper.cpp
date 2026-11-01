@@ -205,15 +205,6 @@ void SdpHelper::DisableMsection(Sdp* sdp, SdpMediaSection* msection) {
     case SdpMediaSection::kApplication:
       msection->AddDataChannel("webrtc-datachannel", 0, 0, 0);
       break;
-    case SdpMediaSection::kUnknown:
-      
-      
-      
-      
-      if (msection->GetMediaTypeInfo().unknown->formatString.empty()) {
-        msection->SetUnknownFormatString("19");
-      }
-      break;
     default:
       
       
