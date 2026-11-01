@@ -153,18 +153,6 @@ var gMoreFromMozillaPane = {
     }
 
     products.push({
-      id: "solo-ai",
-      title_string_id: "more-from-moz-solo-title-2",
-      description_string_id: "more-from-moz-solo-description",
-      region: "global",
-      button: {
-        id: "soloAI",
-        label_string_id: "more-from-moz-solo-button",
-        actionURL: "https://soloist.ai/?utm_type=more_from_mozilla",
-      },
-    });
-
-    products.push({
       id: "mdn",
       title_string_id: "more-from-moz-mdn-title2",
       description_string_id: "more-from-moz-mdn-description",
@@ -232,7 +220,7 @@ var gMoreFromMozillaPane = {
 
       if (product.qrcode) {
         let qrcode = template.querySelector(".qr-code-box");
-        qrcode.setAttribute("hidden", "false");
+        qrcode.hidden = false;
 
         let qrcode_title = template.querySelector(".qr-code-box-title");
         document.l10n.setAttributes(
