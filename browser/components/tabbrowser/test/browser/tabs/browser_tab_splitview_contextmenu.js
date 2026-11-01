@@ -9,6 +9,18 @@ add_setup(async function () {
 });
 
 registerCleanupFunction(async function () {
+  
+  
+  const previewPanel = document.getElementById("tab-preview-panel");
+  let previewHidden;
+  if (previewPanel.state != "closed") {
+    previewHidden = BrowserTestUtils.waitForPopupEvent(previewPanel, "hidden");
+  }
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("nav-bar"), {
+    type: "mousemove",
+  });
+  await previewHidden;
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["sidebar.verticalTabs", false],
