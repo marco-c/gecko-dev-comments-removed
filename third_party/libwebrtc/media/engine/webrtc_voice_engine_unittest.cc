@@ -945,6 +945,15 @@ TEST_P(WebRtcVoiceEngineTestFake, CreateSendStream) {
 }
 
 
+
+TEST_P(WebRtcVoiceEngineTestFake, CreateSendStreamWithMid) {
+  EXPECT_TRUE(SetupChannel());
+  send_channel_->SetMid("audio");
+  EXPECT_TRUE(send_channel_->AddSendStream(StreamParams::CreateLegacy(kSsrcX)));
+  EXPECT_EQ(GetSendStreamConfig(kSsrcX).rtp.mid, "audio");
+}
+
+
 TEST_P(WebRtcVoiceEngineTestFake, CreateRecvStream) {
   EXPECT_TRUE(SetupChannel());
   EXPECT_TRUE(AddRecvStream(kSsrcX));

@@ -938,6 +938,10 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
   virtual bool SetSenderParameters(const AudioSenderParameter& params) = 0;
 
   
+  
+  virtual void SetMid(absl::string_view mid) = 0;
+
+  
   virtual bool SetAudioSend(uint32_t ssrc,
                             bool enable,
                             const AudioOptions* options,

@@ -705,6 +705,11 @@ RTCError BaseChannel::SetLocalContent_w(const MediaContentDescription* content,
       last_send_params_ = std::move(send_params);
     }
   } else {
+    
+    
+    
+    voice_media_send_channel()->SetMid(mid());
+
     AudioReceiverParameters recv_params =
         std::get<AudioReceiverParameters>(last_recv_params_);
     MediaChannelParametersFromMediaDescription(
