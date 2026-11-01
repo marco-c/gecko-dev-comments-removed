@@ -11,7 +11,8 @@ use crate::gpu_types::QuadSegment;
 use crate::prim_store::storage;
 use crate::segment::EdgeMask;
 use crate::transform::GpuTransformId;
-use crate::visibility::PrimitiveDrawHeader;
+use crate::prim_store::PrimitiveInstanceIndex;
+use crate::visibility::{BackdropCaptureIndex, PrimitiveDrawHeader};
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -492,6 +493,29 @@ pub enum CommandBufferBuilderKind {
     Invalid,
 }
 
+
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct OpenBackdropCapture {
+    pub index: BackdropCaptureIndex,
+    
+    pub region: PictureRect,
+    
+    
+    pub capture_instance_index: PrimitiveInstanceIndex,
+    
+    pub cmd_buffer_index: CommandBufferIndex,
+    
+    
+    pub dependencies: Vec<RenderTaskId>,
+    
+    
+    
+    pub drawn_into: bool,
+}
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CommandBufferBuilder {
@@ -508,7 +532,18 @@ pub struct CommandBufferBuilder {
     pub resolve_source: Option<RenderTaskId>,
 
     
+    
+    
+    
+    
+    
+    pub collected_backdrop: bool,
+
+    
     pub extra_dependencies: Vec<RenderTaskId>,
+
+    
+    pub backdrop_captures: Vec<OpenBackdropCapture>,
 }
 
 impl CommandBufferBuilder {
@@ -517,7 +552,9 @@ impl CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Invalid,
             establishes_sub_graph: false,
             resolve_source: None,
+            collected_backdrop: false,
             extra_dependencies: Vec::new(),
+            backdrop_captures: Vec::new(),
         }
     }
 
@@ -531,7 +568,9 @@ impl CommandBufferBuilder {
             },
             establishes_sub_graph: false,
             resolve_source: None,
+            collected_backdrop: false,
             extra_dependencies: Vec::new(),
+            backdrop_captures: Vec::new(),
         }
     }
 
@@ -550,7 +589,9 @@ impl CommandBufferBuilder {
             },
             establishes_sub_graph,
             resolve_source: None,
+            collected_backdrop: false,
             extra_dependencies: Vec::new(),
+            backdrop_captures: Vec::new(),
         }
     }
 }

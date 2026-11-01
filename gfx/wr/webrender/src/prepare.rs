@@ -1059,7 +1059,7 @@ fn prepare_prim_for_render(
         PrimitiveKind::BackdropCapture { .. } => {
             
             
-            frame_state.surface_builder.register_resolve_source();
+            frame_state.surface_builder.register_collected_backdrop();
 
             if frame_context.debug_flags.contains(DebugFlags::HIGHLIGHT_BACKDROP_FILTERS) {
                 if let Some(device_rect) = pic_state.map_pic_to_device.map(&prim_info.clip_chain.pic_coverage_rect) {

@@ -7,7 +7,7 @@
 
 
 use api::units::*;
-use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex};
+use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferList, CommandBufferBuilder, CommandBufferIndex, OpenBackdropCapture};
 use crate::internal_types::{FastHashMap, FastHashSet};
 use crate::picture_composite_mode::PictureCompositeMode;
 use crate::tile_cache::{TileKey, SubSliceIndex, MAX_COMPOSITOR_SURFACES};
@@ -18,7 +18,7 @@ use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
 use crate::space::SpaceMapper;
 use crate::spatial_tree::{CoordinateSpaceMapping, CoordinateSystemId, SpatialTree, SpatialNodeIndex};
 use crate::util::{MaxRect, ScaleOffset};
-use crate::visibility::{DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
+use crate::visibility::{BackdropCaptureIndex, DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
 pub use crate::picture_composite_mode::get_surface_rects;
 
 
@@ -335,6 +335,9 @@ pub struct SurfaceInfo {
     
     
     pub svgfe_source_map: ScaleOffset,
+    
+    
+    pub in_backdrop_chain: bool,
 }
 
 impl SurfaceInfo {
@@ -458,6 +461,7 @@ impl SurfaceInfo {
             allow_snapping,
             force_scissor_rect,
             svgfe_source_map: ScaleOffset::identity(),
+            in_backdrop_chain: false,
             culling_rect,
             culling_rect_projection_failed,
         }
@@ -685,6 +689,15 @@ pub struct SurfaceDescriptor {
 
 impl SurfaceDescriptor {
     
+    pub fn content_task_id(&self) -> RenderTaskId {
+        match self.kind {
+            SurfaceDescriptorKind::Tiled { .. } => panic!("bug: tiled surfaces have no single content task"),
+            SurfaceDescriptorKind::Simple { render_task_id, .. } |
+            SurfaceDescriptorKind::Chained { render_task_id, .. } => render_task_id,
+        }
+    }
+
+    
     pub fn new_tiled(
         tiles: FastHashMap<TileKey, SurfaceTileDescriptor>,
     ) -> Self {
@@ -816,6 +829,34 @@ impl SurfaceBuilder {
 
     
     
+    
+    pub fn open_backdrop_capture(&mut self, capture: OpenBackdropCapture) {
+        self.builder_stack.last_mut().unwrap().backdrop_captures.push(capture);
+    }
+
+    
+    
+    pub fn close_backdrop_capture(&mut self, index: BackdropCaptureIndex) -> Option<OpenBackdropCapture> {
+        for builder in self.builder_stack.iter_mut().rev() {
+            if let Some(position) = builder.backdrop_captures.iter().position(|capture| capture.index == index) {
+                return Some(builder.backdrop_captures.swap_remove(position));
+            }
+        }
+        None
+    }
+
+    
+    
+    fn add_backdrop_capture_dependency(&mut self, task_id: RenderTaskId) {
+        if let Some(builder) = self.builder_stack.last_mut() {
+            for capture in builder.backdrop_captures.iter_mut().filter(|capture| capture.drawn_into) {
+                capture.dependencies.push(task_id);
+            }
+        }
+    }
+
+    
+    
     pub fn register_resolve_source(
         &mut self,
     ) {
@@ -835,6 +876,21 @@ impl SurfaceBuilder {
         }
 
         unreachable!("bug: resolve source with no sub-graph");
+    }
+
+    
+    
+    
+    pub fn register_collected_backdrop(&mut self) {
+        for builder in self.builder_stack.iter_mut().rev() {
+            if builder.establishes_sub_graph {
+                assert_eq!(builder.resolve_source, None);
+                builder.collected_backdrop = true;
+                return;
+            }
+        }
+
+        unreachable!("bug: collected backdrop with no sub-graph");
     }
 
     pub fn push_surface(
@@ -888,6 +944,8 @@ impl SurfaceBuilder {
         child_task_id: RenderTaskId,
         rg_builder: &mut RenderTaskGraphBuilder,
     ) {
+        self.add_backdrop_capture_dependency(child_task_id);
+
         let builder = self.builder_stack.last().unwrap();
 
         match builder.kind {
@@ -916,6 +974,7 @@ impl SurfaceBuilder {
         &mut self,
         child_task_id: RenderTaskId,
     ) {
+        self.add_backdrop_capture_dependency(child_task_id);
         self.builder_stack
             .last_mut()
             .unwrap()
@@ -932,7 +991,7 @@ impl SurfaceBuilder {
     ) -> bool {
         targets.clear();
 
-        match vis.state {
+        let has_targets = match vis.state {
             DrawState::Unset => {
                 panic!("bug: invalid vis state");
             }
@@ -949,7 +1008,23 @@ impl SurfaceBuilder {
             DrawState::PassThrough => {
                 true
             }
+        };
+
+        
+        
+        if let Some(builder) = self.builder_stack.last_mut() {
+            let is_drawn = !targets.is_empty();
+            for capture in &mut builder.backdrop_captures {
+                capture.drawn_into = is_drawn &&
+                    vis.prim_instance_index.0 < capture.capture_instance_index.0 &&
+                    capture.region.intersects(&vis.clip_chain.pic_coverage_rect);
+                if capture.drawn_into {
+                    targets.push(capture.cmd_buffer_index);
+                }
+            }
         }
+
+        has_targets
     }
 
     pub fn pop_empty_surface(&mut self) {
@@ -974,6 +1049,19 @@ impl SurfaceBuilder {
                     unreachable!("bug: sub-graphs can only be simple surfaces");
                 }
                 CommandBufferBuilderKind::Simple { render_task_id: child_render_task_id, root_task_id: child_root_task_id, .. } => {
+                    
+                    
+                    
+                    
+                    
+                    if builder.collected_backdrop {
+                        let _old = self.sub_graph_output_map.insert(
+                            pic_index,
+                            child_root_task_id.unwrap_or(child_render_task_id),
+                        );
+                        debug_assert!(_old.is_none());
+                    }
+
                     
                     if let Some(resolve_task_id) = builder.resolve_source {
                         let mut src_task_ids = Vec::new();
@@ -1213,6 +1301,8 @@ impl SurfaceBuilder {
                     }
                 }
                 CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
+                    self.add_backdrop_capture_dependency(child_root_task_id.unwrap_or(child_task_id));
+
                     match self.builder_stack.last().unwrap().kind {
                         CommandBufferBuilderKind::Tiled { ref tiles } => {
                             
