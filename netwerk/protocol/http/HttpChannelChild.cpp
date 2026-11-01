@@ -759,8 +759,6 @@ void HttpChannelChild::OnTransportAndData(const nsresult& aChannelStatus,
   DoOnDataAvailable(this, stringStream, aOffset, aData.Length());
   stringStream->Close();
 
-  
-  
   if (NeedToReportBytesRead()) {
     mUnreportBytesRead += aData.Length();
     if (mUnreportBytesRead >= gHttpHandler->SendWindowSize() >> 2) {

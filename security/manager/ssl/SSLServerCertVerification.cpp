@@ -495,7 +495,6 @@ void GatherCertificateTransparencyTelemetry(
 
 
 
-
 static void CollectCertTelemetry(
     mozilla::pkix::Result aCertVerificationResult, EVStatus aEVStatus,
     CertVerifier::OCSPStaplingStatus aOcspStaplingStatus,

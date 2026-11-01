@@ -203,7 +203,6 @@ IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
 
         
         
-        
         nsresult channelStatus;
         self->mChannelChild->GetStatus(&channelStatus);
         if (NS_FAILED(channelStatus)) {
@@ -215,7 +214,6 @@ IPCResult HttpBackgroundChannelChild::RecvOnTransportAndData(
             aOnDataAvailableStart);
       };
 
-  
   if (IsWaitingOnStartRequest()) {
     LOG(("  > pending until OnStartRequest [offset=%" PRIu64 " count=%zu]\n",
          aOffset, aData.Length()));

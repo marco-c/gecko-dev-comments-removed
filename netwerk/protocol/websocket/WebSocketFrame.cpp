@@ -32,8 +32,6 @@ WebSocketFrame::WebSocketFrame(bool aFinBit, bool aRsvBit1, bool aRsvBit2,
                                uint32_t aMask, const nsCString& aPayload)
     : mData(PR_Now(), aFinBit, aRsvBit1, aRsvBit2, aRsvBit3, aOpCode, aMaskBit,
             aMask, aPayload) {
-  
-  
   mData.mTimeStamp = PR_Now();
 }
 

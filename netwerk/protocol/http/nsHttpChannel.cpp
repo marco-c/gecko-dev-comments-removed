@@ -2396,7 +2396,6 @@ nsresult nsHttpChannel::CallOnStartRequest() {
   
   
   
-  
   if (NS_FAILED(rv)) {
     mStatus = rv;
     return mStatus;
@@ -9095,8 +9094,6 @@ void nsHttpChannel::RecordOnStartTelemetry(nsresult aStatus,
   };
 
   if (TRRService::Get() && TRRService::Get()->IsConfirmed()) {
-    
-    
     HttpOnStartState state = HttpOnStartState::Others;
     if (NS_SUCCEEDED(aStatus)) {
       state = HttpOnStartState::Success;

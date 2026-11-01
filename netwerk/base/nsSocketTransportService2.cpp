@@ -844,9 +844,6 @@ nsSocketTransportService::Init() {
   UpdatePrefs();
 
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
-  
-  
-  
   if (obsSvc) {
     MOZ_ALWAYS_SUCCEEDS(
         obsSvc->AddObserver(this, "last-pb-context-exited", false));

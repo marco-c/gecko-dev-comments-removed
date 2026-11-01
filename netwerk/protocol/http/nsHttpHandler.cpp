@@ -2299,8 +2299,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
     
     mSessionStartTime = NowInSeconds();
 
-    
-    
     if (XRE_IsParentProcess()) {
       if (!StaticPrefs::privacy_donottrackheader_enabled()) {
         glean::http::dnt_usage.AccumulateSingleSample(2);
