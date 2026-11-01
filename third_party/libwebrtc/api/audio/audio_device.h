@@ -65,6 +65,15 @@ class AudioDeviceModule : public RefCountInterface {
     uint64_t total_capture_samples_count = 0;
   };
 
+  
+  
+  
+  struct ProcessingTimeStats {
+    int32_t min_processing_time_ns = 0;
+    int32_t avg_processing_time_ns = 0;
+    int32_t max_processing_time_ns = 0;
+  };
+
  public:
   
   virtual int32_t ActiveAudioLayer(AudioLayer* audioLayer) const = 0;
@@ -167,6 +176,14 @@ class AudioDeviceModule : public RefCountInterface {
   
   
   virtual std::optional<Stats> GetStats() const { return std::nullopt; }
+
+  
+  
+  
+  virtual std::optional<ProcessingTimeStats>
+  GetAndResetCaptureProcessingTimeStats() const {
+    return std::nullopt;
+  }
 
 
 #if defined(WEBRTC_IOS)
