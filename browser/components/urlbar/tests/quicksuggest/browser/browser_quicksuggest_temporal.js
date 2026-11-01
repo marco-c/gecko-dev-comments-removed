@@ -167,6 +167,43 @@ add_task(async function rowsBelowTopSites() {
 });
 
 
+add_task(async function actionOnlyWhenSelected() {
+  gFeature._reset();
+  await openZeroPrefix();
+  let rows = await getTemporalRows();
+  Assert.equal(rows.length, 5, "Five temporal rows");
+  for (let row of rows) {
+    let { row: rowElement, action } = row.element;
+    Assert.equal(
+      rowElement.getAttribute("type"),
+      "search",
+      "Temporal rows have the search type"
+    );
+    Assert.ok(
+      rowElement.hasAttribute("has-action"),
+      "Temporal rows have an action"
+    );
+    Assert.equal(
+      row.displayed.action,
+      `Search with ${gEngine.name}`,
+      "Temporal rows have the search action text"
+    );
+    Assert.ok(
+      !BrowserTestUtils.isVisible(action),
+      "The action is hidden when the row isn't selected"
+    );
+
+    UrlbarTestUtils.setSelectedRowIndex(window, row.index);
+    Assert.ok(
+      BrowserTestUtils.isVisible(action),
+      "The action is visible when the row is selected"
+    );
+    UrlbarTestUtils.setSelectedRowIndex(window, -1);
+  }
+  await closeView();
+});
+
+
 add_task(async function label() {
   gFeature._reset();
   await openZeroPrefix();
