@@ -99,9 +99,10 @@ class WaylandBufferHolder final {
   wl_buffer* GetWLBuffer() { return mWLBuffer; }
 
   WaylandBufferHolder(BufferSurface* aSurface, wl_buffer* aWLBuffer);
-  ~WaylandBufferHolder() = default;
+  ~WaylandBufferHolder();
 
  private:
+  
   wl_buffer* mWLBuffer = nullptr;
   uint32_t mUID = 0;
   uint32_t mPID = 0;
