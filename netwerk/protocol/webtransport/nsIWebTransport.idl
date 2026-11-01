@@ -102,6 +102,11 @@ interface nsIWebTransport : nsISupports {
   // Returns empty string if no protocol was negotiated.
   ACString getNegotiatedProtocol();
 
+  // Get the HTTP response headers from the session establishment.
+  // Returns empty arrays if no headers were received.
+  [noscript] void getResponseHeaders(out Array<ACString> aNames,
+                                     out Array<ACString> aValues);
+
   // Register a send group with a caller-provided ID.
   void registerSendGroup(in uint64_t groupId);
 

@@ -422,6 +422,16 @@ WebTransportSessionProxy::GetNegotiatedProtocol(nsACString& aProtocol) {
   aProtocol = mProtocol;
   return NS_OK;
 }
+
+NS_IMETHODIMP
+WebTransportSessionProxy::GetResponseHeaders(nsTArray<nsCString>& aNames,
+                                             nsTArray<nsCString>& aValues) {
+  MutexAutoLock lock(mMutex);
+  aNames = mResponseHeaderNames.Clone();
+  aValues = mResponseHeaderValues.Clone();
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 WebTransportSessionProxy::RegisterSendGroup(uint64_t aGroupId) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -1111,6 +1121,7 @@ WebTransportSessionProxy::OnSessionReadyInternal(
       mWebTransportSession = aSession;
       mSessionId = aSession->GetStreamId();
       aSession->GetNegotiatedProtocol(mProtocol);
+      aSession->GetResponseHeaders(mResponseHeaderNames, mResponseHeaderValues);
       
       
       

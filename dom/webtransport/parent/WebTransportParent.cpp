@@ -697,7 +697,14 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
           self->mWebTransport->GetNegotiatedProtocol(subprotocol);
           LOG(("Negotiated protocol: %s", subprotocol.get()));
           if (self->CanSend()) {
-            (void)self->SendNegotiatedProtocol(subprotocol);
+            nsTArray<nsCString> names;
+            nsTArray<nsCString> values;
+            self->mWebTransport->GetResponseHeaders(names, values);
+            nsTArray<WebTransportHeader> headers(names.Length());
+            for (size_t i = 0; i < names.Length() && i < values.Length(); ++i) {
+              headers.AppendElement(WebTransportHeader(names[i], values[i]));
+            }
+            (void)self->SendNegotiatedProtocolAndHeaders(subprotocol, headers);
           }
 
           

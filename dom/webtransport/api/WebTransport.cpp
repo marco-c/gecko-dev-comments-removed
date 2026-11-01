@@ -965,6 +965,10 @@ void WebTransport::SetNegotiatedProtocol(const nsACString& aProtocol) {
   CopyUTF8toUTF16(aProtocol, mProtocol);
 }
 
+void WebTransport::SetResponseHeaders(nsTArray<WebTransportHeader>&& aHeaders) {
+  mResponseHeaders = std::move(aHeaders);
+}
+
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,
                                 const nsACString& aReason,
                                 const Maybe<WebTransportStatsData>& aStats) {

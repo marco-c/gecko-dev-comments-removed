@@ -148,9 +148,10 @@ async protocol PWebTransport
   async IncomingDatagram(uint8_t[] data, TimeStamp receivedTime);
 
   /**
-  * Notify child of the negotiated protocol
+  * Notify child of the negotiated protocol and HTTP response headers
   */
-  async NegotiatedProtocol(nsCString subprotocol);
+  async NegotiatedProtocolAndHeaders(nsCString subprotocol,
+                                     WebTransportHeader[] headers);
 
   async Draining();
 
