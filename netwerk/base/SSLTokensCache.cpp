@@ -26,8 +26,6 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/glean/NetwerkMetrics.h"
-#include "mozilla/net/SocketProcessChild.h"
-#include "mozilla/net/SocketProcessParent.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsIEventTarget.h"
@@ -391,17 +389,6 @@ void SSLTokensCache::ClearCacheLocked() {
   mCacheSize = 0;
 }
 
-
-nsTArray<SSLTokensCacheRecordInfo> SSLTokensCache::SerializeForIPC() {
-  StaticMutexAutoLock lock(sLock);
-  nsTArray<SSLTokensCacheRecordInfo> records;
-  if (gInstance) {
-    gInstance->CollectRecordInfosLocked(records,
-                                         true);
-  }
-  return records;
-}
-
 void SSLTokensCache::CollectRecordInfosLocked(
     nsTArray<SSLTokensCacheRecordInfo>& aOut,
     bool aFilterForPersistence) const {
@@ -433,22 +420,6 @@ void SSLTokensCache::GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut) {
 }
 
 
-void SSLTokensCache::ReplaceAllRecords(
-    nsTArray<SSLTokensCacheRecordInfo>&& aRecords) {
-  StaticMutexAutoLock lock(sLock);
-  if (!gInstance) {
-    return;
-  }
-  gInstance->ClearCacheLocked();
-  for (auto& info : aRecords) {
-    auto rec = MakeRecord(info.key, static_cast<PRTime>(info.expirationTime),
-                          info.overridableError, info.restored,
-                          std::move(info.compressedPayload));
-    gInstance->InsertRecordLocked(std::move(rec));
-  }
-}
-
-
 bool SSLTokensCache::DecodeCompressedPayload(Span<const uint8_t> aCompressed,
                                              nsTArray<uint8_t>& aToken,
                                              SessionCacheInfo& aInfo,
@@ -461,30 +432,6 @@ bool SSLTokensCache::DecodeCompressedPayload(Span<const uint8_t> aCompressed,
     *aDecompressedLength = payload.Length();
   }
   return DeserializeRecord(payload, aToken, aInfo);
-}
-
-
-void SSLTokensCache::DeserializeFromIPC(
-    nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored) {
-  if (aRecords.IsEmpty()) {
-    return;
-  }
-  uint32_t loadGen = 0;
-  {
-    StaticMutexAutoLock lock(sLock);
-    if (!gInstance) {
-      return;
-    }
-    gInstance->ClearCacheLocked();
-    loadGen = gInstance->mLoadGeneration;
-  }
-  PRTime now = PR_Now();
-  for (const auto& rec : aRecords) {
-    if (rec.expirationTime <= now) {
-      continue;
-    }
-    PutFromPersisted(rec, loadGen, aRestored);
-  }
 }
 
 
@@ -578,9 +525,7 @@ nsresult SSLTokensCache::Init() {
 
   StaticMutexAutoLock lock(sLock);
 
-  
-  
-  if (!(XRE_IsSocketProcess() || XRE_IsParentProcess())) {
+  if (!XRE_IsParentProcess()) {
     return NS_OK;
   }
 
@@ -591,7 +536,7 @@ nsresult SSLTokensCache::Init() {
   RegisterWeakMemoryReporter(gInstance);
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-  if (obs && XRE_IsParentProcess()) {
+  if (obs) {
     obs->AddObserver(gInstance, "profile-after-change", false);
     obs->AddObserver(gInstance, "last-pb-context-exited", false);
   }
@@ -1251,26 +1196,6 @@ void SSLTokensCache::DoWrite(bool aSynchronous) {
   }
 
   if (!queue) {
-    if (XRE_IsSocketProcess()) {
-      nsTArray<SSLTokensCacheRecordInfo> snapshot;
-      {
-        StaticMutexAutoLock lock(sLock);
-        if (gInstance) {
-          gInstance->CollectRecordInfosLocked(snapshot,
-                                               true);
-        }
-      }
-      if (!snapshot.IsEmpty()) {
-        NS_DispatchToMainThread(NS_NewRunnableFunction(
-            "SSLTokensCache::SendToParent",
-            [records = std::move(snapshot)]() mutable {
-              auto* child = SocketProcessChild::GetSingleton();
-              if (child && child->CanSend()) {
-                (void)child->SendSSLTokensCacheData(std::move(records));
-              }
-            }));
-      }
-    }
     return;
   }
 
@@ -1874,40 +1799,15 @@ SSLTokensCache::BlockShutdown(nsIAsyncShutdownClient* ) {
   
   
   RefPtr<SSLTokensCache> self = this;
-  auto writeAndRelease = [queue,
-                          self](nsTArray<SSLTokensCacheRecordInfo> aRecords) {
-    InvokeAsync(queue.get(), __func__,
-                [records = std::move(aRecords)]() mutable {
-                  if (!records.IsEmpty()) {
-                    SSLTokensCache::DeserializeFromIPC(std::move(records),
-                                                        false);
-                  }
-                  CollectAndWriteSnapshotIfLoaded();
-                  return GenericPromise::CreateAndResolve(true, __func__);
-                })
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [self](bool) { self->RemoveShutdownBlocker(); },
-            [self](nsresult) { self->RemoveShutdownBlocker(); });
-  };
-
-  
-  
-  RefPtr<SocketProcessParent> socketParent =
-      SocketProcessParent::GetSingleton();
-  if (!socketParent || !socketParent->CanSend()) {
-    writeAndRelease({});
-    return NS_OK;
-  }
-
-  socketParent->SendFlushSSLTokensCache()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [writeAndRelease](nsTArray<SSLTokensCacheRecordInfo>&& aRecords) {
-        writeAndRelease(std::move(aRecords));
-      },
-      [writeAndRelease](mozilla::ipc::ResponseRejectReason) {
-        writeAndRelease({});
-      });
+  InvokeAsync(queue.get(), __func__,
+              [] {
+                CollectAndWriteSnapshotIfLoaded();
+                return GenericPromise::CreateAndResolve(true, __func__);
+              })
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [self](bool) { self->RemoveShutdownBlocker(); },
+          [self](nsresult) { self->RemoveShutdownBlocker(); });
   return NS_OK;
 }
 
@@ -1984,7 +1884,6 @@ NS_IMPL_ISUPPORTS(SSLTokensCacheService, nsISSLTokensCache,
 #else
 NS_IMPL_ISUPPORTS(SSLTokensCacheService, nsISSLTokensCache)
 #endif
-
 
 
 static nsresult EnsureParentProcess() {

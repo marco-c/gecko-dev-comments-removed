@@ -110,12 +110,4 @@ struct SSLTokensCacheRecordInfo {
 }  
 }  
 
-namespace IPC {
-
-DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::net::SSLTokensCacheRecordInfo, key,
-                                  expirationTime, overridableError, restored,
-                                  id, compressedPayload);
-
-}  
-
 #endif  

@@ -96,20 +96,7 @@ class SSLTokensCache : public nsIMemoryReporter,
       MOZ_EXCLUDES(sLock);
 
   
-  static nsTArray<SSLTokensCacheRecordInfo> SerializeForIPC();
-
-  
-  static void DeserializeFromIPC(nsTArray<SSLTokensCacheRecordInfo>&& aRecords,
-                                 bool aRestored);
-
-  
   static void GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut);
-
-  
-  
-  
-  
-  static void ReplaceAllRecords(nsTArray<SSLTokensCacheRecordInfo>&& aRecords);
 
   
   
