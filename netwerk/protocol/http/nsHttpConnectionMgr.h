@@ -71,9 +71,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
-  
-  
-  bool MoveToWildCardConnEntry(nsHttpConnectionInfo* specificCI,
+  void MoveToWildCardConnEntry(nsHttpConnectionInfo* specificCI,
                                nsHttpConnectionInfo* wildcardCI,
                                HttpConnectionBase* conn);
 
@@ -99,13 +97,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  
-  
-  
-  
   void ReportSpdyConnection(nsHttpConnection*, bool usingSpdy,
-                            bool disallowHttp3,
-                            ConnectionEntry* entry = nullptr);
+                            bool disallowHttp3);
 
   
   

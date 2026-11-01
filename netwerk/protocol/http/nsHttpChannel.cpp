@@ -1210,17 +1210,7 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     
     
     
-    
-    
-    
-    
-    bool masqueProxy =
-        mProxyInfo &&
-        static_cast<nsProxyInfo*>(mProxyInfo.get())->IsHttp3Proxy() &&
-        StaticPrefs::network_http_happy_eyeballs_proxy_enabled();
-    if (!masqueProxy) {
-      mCaps |= NS_HTTP_DISALLOW_HTTP3;
-    }
+    mCaps |= NS_HTTP_DISALLOW_HTTP3;
     
     
     
@@ -8363,8 +8353,7 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    if (mProxyInfo &&
-        !StaticPrefs::network_http_happy_eyeballs_proxy_enabled()) {
+    if (mProxyInfo) {
       return false;
     }
 
@@ -8374,6 +8363,8 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
+    
+    
     
     
     if (mCaps & NS_HTTP_CONNECT_ONLY) {

@@ -202,12 +202,9 @@ NS_IMPL_ISUPPORTS(ConnectionEstablisher, nsITransportEventSink,
                   nsIInterfaceRequestor)
 
 ConnectionEstablisher::ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo,
-                                             const EndpointTarget& aTarget,
+                                             const NetAddr& aAddr,
                                              uint32_t aCaps, bool aAllow1918)
-    : mConnInfo(aConnInfo),
-      mTarget(aTarget),
-      mCaps(aCaps),
-      mAllow1918(aAllow1918) {
+    : mConnInfo(aConnInfo), mAddr(aAddr), mCaps(aCaps), mAllow1918(aAllow1918) {
   LOG(("ConnectionEstablisher ctor:%p", this));
 }
 
@@ -256,18 +253,6 @@ nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
   mHasConnected = true;
   mResultConn = aConn;
   mHandle = new ConnectionHandle(aConn);
-
-  
-  
-  if (mConnInfo->UsingConnect() && !mConnInfo->UsingHttpsProxy()) {
-    LOG(
-        ("  plain-HTTP CONNECT proxy: handing over the bare connection without "
-         "activating the speculative transaction"));
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "ConnectionEstablisher::ActivateCallbackNoTunnel",
-        [onActivated = std::move(aOnActivated)]() { onActivated(NS_OK); }));
-    return NS_OK;
-  }
 
   MOZ_ASSERT(mTransaction,
              "HappyEyeballsConnectionAttempt must hand us a transaction "
@@ -358,6 +343,13 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
       cb(Err(NS_FAILED(aResult) ? aResult : NS_ERROR_ABORT));
     }
   }
+
+  mAddrRecord = nullptr;
+}
+
+already_AddRefed<nsIDNSAddrRecord> ConnectionEstablisher::AddrRecord() const {
+  nsCOMPtr<nsIDNSAddrRecord> record = mAddrRecord;
+  return record.forget();
 }
 
 NS_IMETHODIMP
@@ -395,9 +387,9 @@ NS_IMPL_ISUPPORTS_INHERITED(TCPConnectionEstablisher, ConnectionEstablisher,
                             nsIOutputStreamCallback)
 
 TCPConnectionEstablisher::TCPConnectionEstablisher(
-    nsHttpConnectionInfo* aConnInfo, const EndpointTarget& aTarget,
-    uint32_t aCaps, bool aSpeculative, bool aAllow1918)
-    : ConnectionEstablisher(aConnInfo, aTarget, aCaps, aAllow1918),
+    nsHttpConnectionInfo* aConnInfo, NetAddr aAddr, uint32_t aCaps,
+    bool aSpeculative, bool aAllow1918)
+    : ConnectionEstablisher(aConnInfo, aAddr, aCaps, aAllow1918),
       mSpeculative(aSpeculative) {}
 
 TCPConnectionEstablisher::~TCPConnectionEstablisher() {
@@ -414,19 +406,13 @@ TCPConnectionEstablisher::~TCPConnectionEstablisher() {
 }
 
 bool ConnectionEstablisher::RefuseIfLocalAddress() {
-  
-  
-  if (!mTarget.is<NetAddr>()) {
-    return false;
-  }
-  const NetAddr& addr = mTarget.as<NetAddr>();
-  if (mAllow1918 || !addr.IsIPAddrLocal()) {
+  if (mAllow1918 || !mAddr.IsIPAddrLocal()) {
     return false;
   }
   LOG(
       ("ConnectionEstablisher::RefuseIfLocalAddress %p refusing speculative "
        "connection to local address [%s]",
-       this, addr.ToString().get()));
+       this, mAddr.ToString().get()));
   mRefusedForLocalAddress = true;
   return true;
 }
@@ -436,6 +422,8 @@ bool TCPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   if (RefuseIfLocalAddress()) {
     return false;
   }
+  mAddrRecord = new SingleDNSAddrRecord(mAddr, mDnsMetadata);
+
   nsresult rv = CreateAndConfigureSocketTransport();
   if (NS_FAILED(rv)) {
     return false;
@@ -502,6 +490,9 @@ void TCPConnectionEstablisher::Close(nsresult aReason) {
     mStreamIn = nullptr;
   }
 
+  
+  mAddrRecord = nullptr;
+
   mConnectedOK = false;
   Finish(aReason);
 }
@@ -533,34 +524,14 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
        mConnInfo->OriginPort(), mConnInfo->RoutedHost(),
        mConnInfo->RoutedPort()));
 
-  
-  
-  
-  nsCOMPtr<nsIDNSAddrRecord> addrRecord;
-  if (mTarget.is<NetAddr>()) {
-    addrRecord = new SingleDNSAddrRecord(mTarget.as<NetAddr>(), mDnsMetadata);
-  }
-
-  
-  
-  
-  const nsCString& routedHost = mTarget.is<ByNameTarget>()
-                                    ? mTarget.as<ByNameTarget>().mHost
-                                    : mConnInfo->GetRoutedHost();
-  
-  
-  const int32_t routedPort = mConnInfo->GetRoutedHost().IsEmpty()
-                                 ? mConnInfo->OriginPort()
-                                 : mConnInfo->RoutedPort();
-
   nsCOMPtr<nsIRoutedSocketTransportService> routedSTS(do_QueryInterface(sts));
   if (routedSTS) {
     rv = routedSTS->CreateRoutedTransport(
         socketTypes, mConnInfo->GetOrigin(), mConnInfo->OriginPort(),
-        routedHost, routedPort, mConnInfo->ProxyInfo(), addrRecord,
-        getter_AddRefs(socketTransport));
+        mConnInfo->GetRoutedHost(), mConnInfo->RoutedPort(),
+        mConnInfo->ProxyInfo(), mAddrRecord, getter_AddRefs(socketTransport));
   } else {
-    if (!routedHost.IsEmpty()) {
+    if (!mConnInfo->GetRoutedHost().IsEmpty()) {
       
       
       
@@ -568,12 +539,12 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
       LOG(
           ("%p using legacy nsISocketTransportService "
            "means explicit route %s:%d will be ignored.\n",
-           this, routedHost.get(), routedPort));
+           this, mConnInfo->RoutedHost(), mConnInfo->RoutedPort()));
     }
 
     rv = sts->CreateTransport(socketTypes, mConnInfo->GetOrigin(),
                               mConnInfo->OriginPort(), mConnInfo->ProxyInfo(),
-                              addrRecord, getter_AddRefs(socketTransport));
+                              mAddrRecord, getter_AddRefs(socketTransport));
   }
 
   if (NS_FAILED(rv)) {
@@ -696,37 +667,11 @@ TCPConnectionEstablisher::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
   }
 
   
-  
-  
-  if (mTarget.is<NetAddr>() && mLnaCheckCallback && mSocketTransport) {
+  if (mLnaCheckCallback && mSocketTransport) {
     nsresult rv = mLnaCheckCallback(mSocketTransport);
     if (NS_FAILED(rv)) {
       mSocketTransport->Close(rv);
       Finish(rv);
-      return NS_OK;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (mConnInfo->UsingConnect() && !mConnInfo->UsingHttpsProxy() &&
-      !mConnectedOK && mStreamOut) {
-    uint32_t count = 0;
-    nsresult probe = mStreamOut->Write("", 0, &count);
-    if (NS_FAILED(probe) && probe != NS_BASE_STREAM_WOULD_BLOCK) {
-      LOG(
-          ("TCPConnectionEstablisher::OnOutputStreamReady %p bare-handover "
-           "socket failed to connect [rv=%" PRIx32 "]",
-           this, static_cast<uint32_t>(probe)));
-      if (mSocketTransport) {
-        mSocketTransport->Close(probe);
-      }
-      Finish(probe);
       return NS_OK;
     }
   }
@@ -766,9 +711,9 @@ TCPConnectionEstablisher::OnOutputStreamReady(nsIAsyncOutputStream* aOut) {
 
 
 UDPConnectionEstablisher::UDPConnectionEstablisher(
-    nsHttpConnectionInfo* aConnInfo, const EndpointTarget& aTarget,
-    uint32_t aCaps, bool , bool aAllow1918)
-    : ConnectionEstablisher(aConnInfo, aTarget, aCaps, aAllow1918) {
+    nsHttpConnectionInfo* aConnInfo, NetAddr aAddr, uint32_t aCaps,
+    bool , bool aAllow1918)
+    : ConnectionEstablisher(aConnInfo, aAddr, aCaps, aAllow1918) {
   LOG(("UDPConnectionEstablisher ctor:%p", this));
 }
 
@@ -782,6 +727,8 @@ bool UDPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   if (RefuseIfLocalAddress()) {
     return false;
   }
+  mAddrRecord = new SingleDNSAddrRecord(mAddr, mDnsMetadata);
+
   nsresult rv = CreateAndConfigureUDPConn();
   if (NS_FAILED(rv)) {
     return false;
@@ -816,6 +763,7 @@ void UDPConnectionEstablisher::Close(nsresult aReason) {
   }
 
   
+  mAddrRecord = nullptr;
 
   Finish(aReason);
 }
@@ -826,17 +774,10 @@ nsresult UDPConnectionEstablisher::CreateAndConfigureUDPConn() {
        "info=%s]",
        this, mConnInfo->HashKey().get()));
 
-  MOZ_ASSERT(mTarget.is<NetAddr>(), "by-name target on the UDP path");
-  if (!mTarget.is<NetAddr>()) {
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-  nsCOMPtr<nsIDNSAddrRecord> addrRecord =
-      new SingleDNSAddrRecord(mTarget.as<NetAddr>(), mDnsMetadata);
-
   RefPtr<HttpConnectionUDP> connUDP = new HttpConnectionUDP();
   connUDP->SetTransactionCaps(mCaps);
 
-  nsresult rv = connUDP->Init(mConnInfo, addrRecord, NS_OK, this, mCaps);
+  nsresult rv = connUDP->Init(mConnInfo, mAddrRecord, NS_OK, this, mCaps);
   if (NS_FAILED(rv)) {
     return rv;
   }

@@ -121,10 +121,7 @@ nsresult Http3Session::Init(nsHttpConnectionInfo* aConnInfo,
   bool isOuterConnection = false;
   if (!aIsTunnel) {
     if (auto* proxyInfo = aConnInfo->ProxyInfo()) {
-      
-      isOuterConnection =
-          proxyInfo->IsHttp3Proxy() ||
-          (aConnInfo->UsingHttpsProxy() && aConnInfo->UsingConnect());
+      isOuterConnection = proxyInfo->IsHttp3Proxy();
     }
   }
 
@@ -135,16 +132,8 @@ nsresult Http3Session::Init(nsHttpConnectionInfo* aConnInfo,
       isOuterConnection ? aConnInfo->ProxyInfo()->Port()
                         : aConnInfo->OriginPort(),
       aProviderFlags, aConnInfo->GetOriginAttributes(), this);
-  
-  nsAutoCString alpn;
-  if (isOuterConnection) {
-    alpn = aConnInfo->GetProxyNPNToken();
-    if (alpn.IsEmpty()) {
-      alpn.AssignLiteral("h3");
-    }
-  } else {
-    alpn = aConnInfo->GetNPNToken();
-  }
+  const nsCString& alpn = isOuterConnection ? aConnInfo->GetProxyNPNToken()
+                                            : aConnInfo->GetNPNToken();
 
   NetAddr selfAddr;
   MOZ_ALWAYS_SUCCEEDS(aSelfAddr->GetNetAddr(&selfAddr));

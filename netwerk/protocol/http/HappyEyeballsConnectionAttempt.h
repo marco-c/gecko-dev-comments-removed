@@ -259,26 +259,10 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   
   
-  
-  void MakeConnEntryWildCard(HttpConnectionBase* aConn);
-
-  
-  
-  
-  
-  bool MaybeDispatchOuterProxyConn(HttpConnectionBase* aConn,
-                                   ConnectionEntry* aEntry);
-
-  
-  
   void OnClientAuthCertificateRequested(uint64_t aEstablisherId);
   void OnClientAuthCertificateSelected(uint64_t aEstablisherId);
 
-  nsresult FixupProxyDnsError(nsresult aStatus) const;
-
-  
-  
-  nsresult EstablishTCPConnection(const EndpointTarget& aTarget, uint16_t aPort,
+  nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
                                   bool aIsEchRetry);
   
@@ -357,10 +341,6 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   
   
-  
-  
-  
-  bool mProxyNotTransparent = false;
   RefPtr<ZeroRttHandle> mZeroRttHandle;
 
   
