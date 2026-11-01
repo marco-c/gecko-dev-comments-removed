@@ -1806,6 +1806,21 @@ bool ModuleObject::createSyntheticEnvironment(JSContext* cx,
 }
 
 
+void ModuleObject::initWasmExportBindings(JSContext* cx,
+                                          Handle<ModuleObject*> self,
+                                          JS::HandleVector<Value> values) {
+  Rooted<ModuleEnvironmentObject*> env(cx, &self->initialEnvironment());
+
+  
+  MOZ_ASSERT(env->slotSpan() ==
+             env->firstSyntheticValueSlot() + values.length());
+
+  for (uint32_t i = 0; i < values.length(); i++) {
+    env->setAliasedBinding(env->firstSyntheticValueSlot() + i, values[i]);
+  }
+}
+
+
 bool ModuleObject::createWasmEnvironment(JSContext* cx,
                                          Handle<ModuleObject*> self,
                                          Handle<ExportNameVector> exportNames) {
@@ -1814,6 +1829,14 @@ bool ModuleObject::createWasmEnvironment(JSContext* cx,
   if (!env) {
     return false;
   }
+
+  
+  
+  for (uint32_t slot = env->firstSyntheticValueSlot(); slot < env->slotSpan();
+       slot++) {
+    env->setAliasedBinding(slot, MagicValue(JS_UNINITIALIZED_LEXICAL));
+  }
+
   self->setInitialEnvironment(env);
   return true;
 }
