@@ -4151,7 +4151,10 @@ mozilla::ipc::IPCResult BrowserParent::RecvVisitURI(
   }
   nsCOMPtr<IHistory> history = components::History::Service();
   if (history) {
-    (void)history->VisitURI(widget, aURI, aLastVisitedURI, aFlags, aBrowserId);
+    
+    (void)history->VisitURI(
+        widget, aURI, aLastVisitedURI, aFlags, aBrowserId,
+        mBrowsingContext->OriginAttributesRef().mUserContextId);
   }
   return IPC_OK();
 }
