@@ -383,7 +383,6 @@ class ServoStyleSet {
   bool GetKeyframesForName(const dom::Element&, const ComputedStyle&,
                            nsAtom* aName,
                            const StyleComputedTimingFunction& aTimingFunction,
-                           const StyleAnimationComposition aComposition,
                            nsTArray<Keyframe>& aKeyframes);
 
   nsTArray<ComputedKeyframeValues> GetComputedKeyframeValuesFor(
@@ -726,6 +725,9 @@ class ServoStyleSet {
   EnumeratedArray<NonInheritingAnonBox, RefPtr<ComputedStyle>,
                   size_t(NonInheritingAnonBox::_Count)>
       mNonInheritingComputedStyles;
+
+  
+  RefPtr<ComputedStyle> mDefaultPageStyleCache;
 
  public:
   void PutCachedAnonymousContentStyles(

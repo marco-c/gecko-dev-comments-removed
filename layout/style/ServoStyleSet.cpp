@@ -551,8 +551,6 @@ ServoStyleSet::ResolveInheritingAnonymousBoxStyle(PseudoStyleType aType,
 
 already_AddRefed<ComputedStyle>
 ServoStyleSet::ResolveNonInheritingAnonymousBoxStyle(PseudoStyleType aType) {
-  MOZ_ASSERT(aType != PseudoStyleType::MozPageContent,
-             "Use ResolvePageContentStyle for page content");
   MOZ_ASSERT(PseudoStyle::IsNonInheritingAnonBox(aType));
 
   auto type = static_cast<NonInheritingAnonBox>(aType);
@@ -583,23 +581,28 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePageContentStyle(
   }
   
   
-  const bool useCache = !aPageName && !aPseudo;
-  RefPtr<ComputedStyle>& cache =
-      mNonInheritingComputedStyles[NonInheritingAnonBox::MozPageContent];
-  if (useCache && cache) {
-    RefPtr<ComputedStyle> retval = cache;
-    return retval.forget();
+  RefPtr<const ComputedStyle> parentStyle;
+  if (Element* root = mDocument->GetRootElement()) {
+    parentStyle = Servo_Element_GetMaybeOutOfDateStyle(root);
+  }
+
+  
+  
+  const bool useCache = !aPageName && !aPseudo && parentStyle;
+  if (useCache && mDefaultPageStyleCache) {
+    return do_AddRef(mDefaultPageStyleCache);
   }
 
   UpdateStylistIfNeeded();
 
   RefPtr<ComputedStyle> computedValues =
-      Servo_ComputedValues_GetForPageContent(mRawData.get(), aPageName, aPseudo)
+      Servo_ComputedValues_GetForPageContent(mRawData.get(), parentStyle,
+                                             aPageName, aPseudo)
           .Consume();
   MOZ_ASSERT(computedValues);
 
   if (useCache) {
-    cache = computedValues;
+    mDefaultPageStyleCache = computedValues;
   }
   return computedValues.forget();
 }
