@@ -564,6 +564,10 @@ pref("browser.urlbar.suggest.temporal", true);
 
 
 
+pref("browser.urlbar.suggest.temporal.seasonal", true);
+
+
+
 
 
 
