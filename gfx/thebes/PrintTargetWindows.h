@@ -41,6 +41,7 @@ class PrintTargetWindows final : public PrintTarget {
   nsresult AbortPrinting() override;
   nsresult BeginPage(const IntSize& aSizeInPoints) override;
   nsresult EndPage() override;
+  void Finish() override;
 
   already_AddRefed<DrawTarget> MakeDrawTarget(
       const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) final;
@@ -52,6 +53,10 @@ class PrintTargetWindows final : public PrintTarget {
   ~PrintTargetWindows() override;
 
   HDC mDC;
+
+  
+  cairo_surface_t* mCairoSurface = nullptr;
+  bool mIsFinished = false;
 
   
   

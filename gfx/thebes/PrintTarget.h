@@ -19,10 +19,6 @@ class DrawEventRecorder;
 
 
 
-
-
-
-
 class PrintTarget {
  public:
   NS_INLINE_DECL_REFCOUNTING(PrintTarget);
@@ -67,7 +63,7 @@ class PrintTarget {
 
 
 
-  virtual void Finish();
+  virtual void Finish() {}
 
   
 
@@ -99,14 +95,14 @@ class PrintTarget {
 
 
   virtual already_AddRefed<DrawTarget> MakeDrawTarget(
-      const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr);
+      const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) = 0;
 
   
 
 
 
 
-  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget();
+  virtual already_AddRefed<DrawTarget> GetReferenceDrawTarget() = 0;
 
   static void AdjustPrintJobNameForIPP(const nsAString& aJobName,
                                        nsCString& aAdjustedJobName);
@@ -115,18 +111,16 @@ class PrintTarget {
 
  protected:
   
-  explicit PrintTarget(cairo_surface_t* aCairoSurface);
+  PrintTarget() = default;
 
   
-  virtual ~PrintTarget();
+  virtual ~PrintTarget() = default;
 
   static already_AddRefed<DrawTarget> CreateRecordingDrawTarget(
       DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget);
 
-  cairo_surface_t* mCairoSurface;
   RefPtr<DrawTarget> mRefDT;  
 
-  bool mIsFinished = false;
 #ifdef DEBUG
   bool mHasActivePage = false;
 #endif
