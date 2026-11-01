@@ -248,6 +248,13 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
 
   void ExpungePrivateFiles();
 
+  
+
+
+
+
+  void OnPrivateBrowsingSessionEnd();
+
   bool GetFileNameFromChannel(nsIChannel* aChannel, nsAString& aFileName,
                               nsIURI** aURI);
 
