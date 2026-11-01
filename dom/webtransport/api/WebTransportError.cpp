@@ -15,14 +15,23 @@ JSObject* WebTransportError::WrapObject(JSContext* aCx,
 
 
 already_AddRefed<WebTransportError> WebTransportError::Constructor(
-    const GlobalObject& aGlobal, const nsAString& aMessage,
+    const GlobalObject& aGlobal, const StringOrWebTransportErrorInit& aMessage,
     const WebTransportErrorOptions& aOptions) {
   
+
+  if (aMessage.IsWebTransportErrorInit()) {
+    const WebTransportErrorInit& init = aMessage.GetAsWebTransportErrorInit();
+    return do_AddRef(new WebTransportError(
+        NS_ConvertUTF16toUTF8(init.mMessage), WebTransportErrorSource::Stream,
+        init.mStreamErrorCode.WasPassed()
+            ? Nullable<uint32_t>(init.mStreamErrorCode.Value())
+            : Nullable<uint32_t>()));
+  }
 
   
   
   nsCString message;
-  CopyUTF16toUTF8(aMessage, message);
+  CopyUTF16toUTF8(aMessage.GetAsString(), message);
 
   
   
