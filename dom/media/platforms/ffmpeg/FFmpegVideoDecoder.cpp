@@ -471,8 +471,16 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
     AVVulkanFramesContext* hwfc = (AVVulkanFramesContext*)frames_ctx->hwctx;
     
     
+    
+    
+    
+    
+    
+    
     const bool outputIsDpb =
-        hwfc->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR;
+        (mLib->avcodec_version() >= AV_VERSION_INT(63, 8, 101))
+            ? (hwfc->usage & VK_IMAGE_USAGE_VIDEO_DECODE_DPB_BIT_KHR)
+            : !mVulkanDecoder.mDriverDistinctDpb;
 
     VkImageUsageFlags imageUsages =
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
