@@ -551,8 +551,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
   
   virtual media::TimeUnit CurrentPosition() { return mCurrentPosition.Ref(); }
 
-  already_AddRefed<layers::KnowsCompositor> GetCompositor();
-
   
   
   
@@ -579,9 +577,6 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
       media::TimeUnit::FromMicroseconds(250000);
 
  private:
-  
-  void NotifyCompositor();
-
   void OnMetadataLoaded(UniquePtr<MediaInfo> aInfo,
                         UniquePtr<MetadataTags> aTags,
                         MediaDecoderEventVisibility aEventVisibility);

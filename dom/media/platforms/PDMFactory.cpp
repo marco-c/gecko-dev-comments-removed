@@ -30,6 +30,7 @@
 #include "mozilla/TaskQueue.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/UtilityMediaServiceParent.h"
+#include "mozilla/layers/ImageBridgeChild.h"
 #include "nsIXULRuntime.h"  
 #include "nsPrintfCString.h"
 
@@ -454,6 +455,24 @@ PDMFactory::CreateDecoderWithPDM(PlatformDecoderModule* aPDM,
       !aParams.mUseNullDecoder.mUse &&
       aParams.mWrappers.contains(media::Wrapper::MediaChangeMonitor)) {
     return MediaChangeMonitor::Create(this, aParams);
+  }
+
+  
+  
+  
+  
+  if (!aParams.mKnowsCompositor &&
+      (XRE_IsContentProcess() || XRE_IsParentProcess())) {
+    RefPtr<layers::KnowsCompositor> knowsCompositor =
+        layers::ImageBridgeChild::GetSingleton();
+    
+    
+    if (knowsCompositor && knowsCompositor->GetCompositorBackendType() !=
+                               layers::LayersBackend::LAYERS_NONE) {
+      CreateDecoderParams params(aParams);
+      params.mKnowsCompositor = knowsCompositor;
+      return aPDM->AsyncCreateDecoder(params);
+    }
   }
   return aPDM->AsyncCreateDecoder(aParams);
 }

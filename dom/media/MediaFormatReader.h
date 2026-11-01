@@ -62,7 +62,6 @@ struct MOZ_STACK_CLASS MediaFormatReaderInit {
   MediaResource* mResource = nullptr;
   VideoFrameContainer* mVideoFrameContainer = nullptr;
   FrameStatistics* mFrameStats = nullptr;
-  already_AddRefed<layers::KnowsCompositor> mKnowsCompositor;
   already_AddRefed<GMPCrashHelper> mCrashHelper;
   
   MediaDecoderOwnerID mMediaDecoderOwnerID = nullptr;
@@ -204,8 +203,6 @@ class MediaFormatReader final
   
   
   void SetVideoNullDecode(bool aIsNullDecode);
-
-  void UpdateCompositor(already_AddRefed<layers::KnowsCompositor>);
 
   void UpdateDuration(const media::TimeUnit& aDuration) {
     MOZ_ASSERT(OnTaskQueue());
@@ -826,8 +823,6 @@ class MediaFormatReader final
   int64_t mPreviousDecodedKeyframeTime_us;
   
   static const int64_t sNoPreviousDecodedKeyframe = INT64_MAX;
-
-  RefPtr<layers::KnowsCompositor> mKnowsCompositor;
 
   
   
