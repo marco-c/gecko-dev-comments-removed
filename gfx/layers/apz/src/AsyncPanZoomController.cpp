@@ -577,8 +577,8 @@ UniquePtr<VelocityTracker> PlatformSpecificStateBase::CreateVelocityTracker(
 
 
 
-class MOZ_STACK_CLASS
-AsyncPanZoomController::AutoRecordCompositorScrollUpdate final {
+class MOZ_STACK_CLASS AsyncPanZoomController::AutoRecordCompositorScrollUpdate
+    final {
  public:
   AutoRecordCompositorScrollUpdate(
       AsyncPanZoomController* aApzc, CompositorScrollUpdate::Source aSource,
@@ -827,7 +827,7 @@ void AsyncPanZoomController::InitializeGlobalState() {
   if (sInitialized) return;
   sInitialized = true;
 
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   gZoomAnimationFunction = new StyleComputedTimingFunction(
       StyleComputedTimingFunction::Keyword(StyleTimingKeyword::Ease));
@@ -4873,7 +4873,7 @@ void AsyncPanZoomController::RequestContentRepaint(
     return;
   }
 
-  MOZ_ASSERT(controller->IsRepaintThread());
+  MOZ_RELEASE_ASSERT(controller->IsRepaintThread());
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   ParentLayerPoint velocity = GetVelocityVector();
@@ -4910,7 +4910,7 @@ void AsyncPanZoomController::RequestContentRepaint(
   if (!controller) {
     return;
   }
-  MOZ_ASSERT(controller->IsRepaintThread());
+  MOZ_RELEASE_ASSERT(controller->IsRepaintThread());
 
   APZScrollAnimationType animationType = APZScrollAnimationType::No;
   if (mAnimation) {
