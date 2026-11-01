@@ -248,3 +248,29 @@ add_task(async function test_nimbus_ignored_sites() {
     "The ignored sites go back too"
   );
 });
+
+
+
+
+
+add_task(async function test_nimbus_detect_page_menus() {
+  const pref = "browser.highlightToSearch.detectPageMenus";
+  const original = Services.prefs.getBoolPref(pref);
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "search",
+    value: { highlightToSearchDetectPageMenus: !original },
+  });
+  Assert.equal(
+    Services.prefs.getBoolPref(pref),
+    !original,
+    "Enrolling sets the detection pref"
+  );
+
+  await cleanup();
+  Assert.equal(
+    Services.prefs.getBoolPref(pref),
+    original,
+    "The pref goes back when the enrollment ends"
+  );
+});
