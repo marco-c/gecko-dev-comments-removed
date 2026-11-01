@@ -3379,9 +3379,33 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
                                uint8_t* nextPC,
                                uintptr_t highestByteVisitedInPrevFrame) {
   const StackMap* map = code().lookupStackMap(nextPC);
+#ifdef DEBUG
+  if (maybeDebug_) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const CodeRange* range = code().lookupFuncRange(nextPC);
+    CallSite site;
+    bool atReturnStub = code().lookupCallSite(nextPC, &site) &&
+                        site.kind() == CallSiteKind::ReturnStub;
+    MOZ_ASSERT_IF(
+        range && !codeMeta().funcIsImport(range->funcIndex()) && !atReturnStub,
+        map);
+  }
+#endif
   if (!map) {
     return 0;
   }
+
   Frame* frame = wfi.frame();
   uintptr_t* stackWords =
       GetFrameScanStartForStackMap(frame, map, &highestByteVisitedInPrevFrame);
