@@ -159,7 +159,18 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   
   
   
+  
+  
+  
+  
   void Cleanup();
+
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT void CloseOrErrorWritables(
+      JSContext* aCx, bool aClean, JS::Handle<JS::Value> aErrorValue);
 
   void NewDatagramReceived(nsTArray<uint8_t>&& aData,
                            const mozilla::TimeStamp& aTimeStamp);
@@ -209,6 +220,10 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
  private:
   ~WebTransportDatagramDuplexStream() = default;
+
+  MOZ_CAN_RUN_SCRIPT static void CloseOrErrorWritable(
+      JSContext* aCx, WritableStream* aWritable, bool aClean,
+      JS::Handle<JS::Value> aErrorValue);
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   RefPtr<WebTransport> mWebTransport;

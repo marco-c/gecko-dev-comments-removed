@@ -1549,8 +1549,11 @@ void WebTransport::Cleanup(WebTransportError* aError,
   
   
   
-  if (mDatagrams) {
-    mDatagrams->Cleanup();
+  
+  
+  if (RefPtr<WebTransportDatagramDuplexStream> datagrams = mDatagrams) {
+    datagrams->Cleanup();
+    datagrams->CloseOrErrorWritables(cx, !!aCloseInfo, errorValue);
   }
 
   
