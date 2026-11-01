@@ -185,11 +185,16 @@ add_task(async function process_switching_through_navigation_features() {
         gBrowser,
         TEST_HTTP
       );
+      
+      let promisePageShow = BrowserTestUtils.waitForContentEvent(
+        browser,
+        "pageshow"
+      );
       browser.goForward();
       await promiseLocation;
       
       
-      await BrowserTestUtils.browserLoaded(browser);
+      await promisePageShow;
       checkBrowserRemoteType(
         browser,
         E10SUtils.WEB_REMOTE_TYPE,
