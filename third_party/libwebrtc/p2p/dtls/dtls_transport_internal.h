@@ -101,6 +101,9 @@ class DtlsTransportInternal : public PacketTransportInternal {
   }
 
   
+  virtual void MaybeStartDtlsInStun() = 0;
+
+  
   virtual RTCError SetRemoteParameters(absl::string_view digest_alg,
                                        const uint8_t* digest,
                                        size_t digest_len,

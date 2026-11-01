@@ -159,7 +159,6 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
       SSLProtocolVersion max_version = SSL_PROTOCOL_DTLS_12,
       SslStreamFactory ssl_stream_factory = nullptr);
 
-
   ~DtlsTransportInternalImpl() override;
 
   DtlsTransportInternalImpl(const DtlsTransportInternalImpl&) = delete;
@@ -231,6 +230,8 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
       ZeroOnFreeBuffer<uint8_t>& keying_material) override;
   bool AppendSrtpKeyingMaterial(
       ZeroOnFreeBuffer<uint8_t>& keying_material) override;
+
+  void MaybeStartDtlsInStun() override;
 
   IceTransportInternal* ice_transport() override;
 
@@ -345,9 +346,9 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
   bool ice_has_been_writable_ = false;
 
   
+  bool dtls_in_stun_configured_ = false;
   
-  
-  bool dtls_in_stun_ = false;
+  bool dtls_in_stun_negotiated_ = false;
   
   
   bool dtls_in_stun_complete_ = false;
@@ -365,6 +366,5 @@ class DtlsTransportInternalImpl : public DtlsTransportInternal {
 };
 
 }  
-
 
 #endif  
