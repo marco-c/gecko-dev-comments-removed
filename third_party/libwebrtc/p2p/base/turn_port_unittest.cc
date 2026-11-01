@@ -574,27 +574,24 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
   
   
   
-  
-  void TestTurnAlternateServerLoopback(ProtocolType protocol_type, bool ipv6) {
+  void TestTurnAlternateServerBlocked(ProtocolType protocol_type,
+                                      bool ipv6,
+                                      const SocketAddress& redirect_address) {
     const SocketAddress& local_address = ipv6 ? kLocalIPv6Addr : kLocalAddr1;
     const SocketAddress& server_address =
         ipv6 ? kTurnIPv6IntAddr : kTurnIntAddr;
 
     std::vector<SocketAddress> redirect_addresses;
-    
-    
-    SocketAddress loopback_address(ipv6 ? "::1" : "127.1.2.3",
-                                   TURN_SERVER_PORT);
-    redirect_addresses.push_back(loopback_address);
+    redirect_addresses.push_back(redirect_address);
 
     
     
-    std::unique_ptr<Socket> loopback_socket(ss_->CreateSocket(
+    std::unique_ptr<Socket> redirect_socket(ss_->CreateSocket(
         AF_INET, protocol_type == PROTO_UDP ? SOCK_DGRAM : SOCK_STREAM));
-    ASSERT_NE(nullptr, loopback_socket.get());
-    ASSERT_EQ(0, loopback_socket->Bind(loopback_address));
-    if (protocol_type == PROTO_TCP) {
-      ASSERT_EQ(0, loopback_socket->Listen(1));
+    ASSERT_NE(nullptr, redirect_socket.get());
+    ASSERT_EQ(0, redirect_socket->Bind(redirect_address));
+    if (protocol_type != PROTO_UDP) {
+      ASSERT_EQ(0, redirect_socket->Listen(1));
     }
 
     TestTurnRedirector redirector(redirect_addresses);
@@ -608,6 +605,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     EXPECT_TRUE(WaitUntil([&] { return turn_error_; },
                           {.timeout = TimeToGetTurnCandidate(protocol_type),
                            .clock = &time_controller_}));
+    EXPECT_EQ(server_address, turn_port_->server_address().address);
 
     
     
@@ -615,11 +613,34 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     time_controller_.AdvanceTime(kSimulatedRtt);
     if (protocol_type == PROTO_UDP) {
       char buf[1];
-      EXPECT_EQ(-1, loopback_socket->Recv(&buf, 1, nullptr));
+      EXPECT_EQ(-1, redirect_socket->Recv(&buf, 1, nullptr));
     } else {
-      std::unique_ptr<Socket> accepted_socket(loopback_socket->Accept(nullptr));
+      std::unique_ptr<Socket> accepted_socket(redirect_socket->Accept(nullptr));
       EXPECT_EQ(nullptr, accepted_socket.get());
     }
+  }
+
+  
+  
+  
+  
+  void TestTurnAlternateServerLoopback(ProtocolType protocol_type, bool ipv6) {
+    
+    
+    TestTurnAlternateServerBlocked(
+        protocol_type, ipv6,
+        SocketAddress(ipv6 ? "::1" : "127.1.2.3", TURN_SERVER_PORT));
+  }
+
+  
+  
+  
+  
+  void TestTurnAlternateServerAnyAddress(ProtocolType protocol_type,
+                                         bool ipv6) {
+    TestTurnAlternateServerBlocked(
+        protocol_type, ipv6,
+        SocketAddress(ipv6 ? "::" : "0.0.0.0", TURN_SERVER_PORT));
   }
 
   void TestTurnConnection(ProtocolType protocol_type) {
@@ -1628,6 +1649,45 @@ TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTlsIpv4) {
 
 TEST_F(TurnPortTest, TestTurnAlternateServerLoopbackTlsIpv6) {
   TestTurnAlternateServerLoopback(PROTO_TLS, true);
+}
+
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressUdpIpv4) {
+  TestTurnAlternateServerAnyAddress(PROTO_UDP, false);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressUdpIpv6) {
+  TestTurnAlternateServerAnyAddress(PROTO_UDP, true);
+}
+
+
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressUdpIpv4Mapped) {
+  TestTurnAlternateServerBlocked(
+      PROTO_UDP, true,
+      SocketAddress("::ffff:0.0.0.0", TURN_SERVER_PORT));
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTcpIpv4) {
+  TestTurnAlternateServerAnyAddress(PROTO_TCP, false);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTcpIpv6) {
+  TestTurnAlternateServerAnyAddress(PROTO_TCP, true);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTcpIpv4Mapped) {
+  TestTurnAlternateServerBlocked(
+      PROTO_TCP, true,
+      SocketAddress("::ffff:0.0.0.0", TURN_SERVER_PORT));
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTlsIpv4) {
+  TestTurnAlternateServerAnyAddress(PROTO_TLS, false);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTlsIpv6) {
+  TestTurnAlternateServerAnyAddress(PROTO_TLS, true);
 }
 
 

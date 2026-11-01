@@ -861,6 +861,16 @@ bool TurnPort::SetAlternateServer(const SocketAddress& address) {
     return false;
   }
 
+  
+  
+  
+  if (address.IsAnyIP()) {
+    RTC_LOG(LS_WARNING)
+        << ToString()
+        << ": Blocking attempted redirect to unspecified address.";
+    return false;
+  }
+
   RTC_LOG(LS_INFO) << ToString() << ": Redirecting from TURN server ["
                    << server_address_.address.ToSensitiveNameAndAddressString()
                    << "] to TURN server ["
