@@ -411,11 +411,21 @@ Context::QuotaInitRunnable::Run() {
                       quotaManager->GetOrCreateTemporaryOriginDirectory(
                           *mDirectoryMetadata));
 
+        
+        
+        
+        
+        
+        
+        mDirectoryMetadata->mIsEncrypted =
+            quotaManager->IsOriginEncrypted(*mDirectoryMetadata);
+
         auto* cacheQuotaClient = CacheQuotaClient::Get();
         MOZ_DIAGNOSTIC_ASSERT(cacheQuotaClient);
 
-        mCipherKeyManager =
-            cacheQuotaClient->GetOrCreateCipherKeyManager(*mDirectoryMetadata);
+        QM_TRY_UNWRAP(
+            mCipherKeyManager,
+            cacheQuotaClient->GetOrCreateCipherKeyManager(*mDirectoryMetadata));
 
         SleepIfEnabled(
             StaticPrefs::dom_cache_databaseInitialization_pauseOnIOThreadMs());

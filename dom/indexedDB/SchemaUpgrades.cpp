@@ -2866,7 +2866,8 @@ nsresult UpgradeFileIdsFunction::Init(nsIFile* aFMDirectory,
       PERSISTENCE_TYPE_INVALID, quota::OriginMetadata{},
        u""_ns,  ""_ns,
        u""_ns,  false,
-       false);
+       false,
+       nullptr);
 
   nsresult rv =
       fileManager->Init(aFMDirectory,  0, aConnection);
