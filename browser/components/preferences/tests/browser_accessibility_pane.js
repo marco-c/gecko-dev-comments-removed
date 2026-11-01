@@ -3,19 +3,17 @@
 
 "use strict";
 
-add_task(
-  async function test_accessibility_sidebar_visible_when_redesign_enabled() {
-    let tab = await openPrefsTab("accessibility");
-    let doc = tab.linkedBrowser.contentDocument;
+add_task(async function test_accessibility_sidebar_visible() {
+  let tab = await openPrefsTab("accessibility");
+  let doc = tab.linkedBrowser.contentDocument;
 
-    is_element_visible(
-      doc.getElementById("category-accessibility"),
-      "Accessibility category is visible when settings redesign is enabled"
-    );
+  is_element_visible(
+    doc.getElementById("category-accessibility"),
+    "Accessibility category is visible"
+  );
 
-    await BrowserTestUtils.removeTab(tab);
-  }
-);
+  await BrowserTestUtils.removeTab(tab);
+});
 
 add_task(async function test_accessibility_pane_loads_setting_groups() {
   let tab = await openPrefsTab("accessibility");
@@ -38,6 +36,22 @@ add_task(async function test_accessibility_pane_loads_setting_groups() {
     ok(group, `${groupId} setting-group exists`);
     is_element_visible(group, `${groupId} setting-group is visible`);
   }
+
+  info("Check keyboardCustomkeysLink is rendered as expected");
+  const keyboardGroup = doc.querySelector(
+    `setting-group[groupid="keyboardAndScrolling"]`
+  );
+  const customkeysLink = keyboardGroup.querySelector("#keyboardCustomkeysLink");
+  ok(BrowserTestUtils.isVisible(customkeysLink), "Customkeys link is visible");
+  ok(
+    customkeysLink,
+    "Customkeys link is included in the Keyboard and Scrolling group"
+  );
+  is(
+    customkeysLink.href,
+    "about:keyboard",
+    "Customkeys moz-box-link's href attribute is set to about:keyboard"
+  );
 
   await BrowserTestUtils.removeTab(tab);
 });

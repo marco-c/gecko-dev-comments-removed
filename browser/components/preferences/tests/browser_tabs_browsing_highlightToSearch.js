@@ -17,11 +17,8 @@ const PROVIDER_PREF = "browser.ml.chat.provider";
 
 
 
-
 async function openPaneWithSetting() {
-  let pane = Services.prefs.getBoolPref("browser.settings-redesign.enabled")
-    ? "tabsBrowsing"
-    : "general";
+  let pane = "tabsBrowsing";
   let tab = await openPrefsTab(pane);
   let doc = tab.linkedBrowser.contentDocument;
   await TestUtils.waitForCondition(

@@ -3,19 +3,17 @@
 
 "use strict";
 
-add_task(
-  async function test_appearance_sidebar_visible_when_redesign_enabled() {
-    let tab = await openPrefsTab("appearance");
-    let doc = tab.linkedBrowser.contentDocument;
+add_task(async function test_appearance_sidebar_visible() {
+  let tab = await openPrefsTab("appearance");
+  let doc = tab.linkedBrowser.contentDocument;
 
-    is_element_visible(
-      doc.getElementById("category-appearance"),
-      "Appearance category is visible when settings redesign is enabled"
-    );
+  is_element_visible(
+    doc.getElementById("category-appearance"),
+    "Appearance category is visible"
+  );
 
-    await BrowserTestUtils.removeTab(tab);
-  }
-);
+  await BrowserTestUtils.removeTab(tab);
+});
 
 add_task(async function test_appearance_pane_loads_setting_groups() {
   let tab = await openPrefsTab("appearance");
@@ -98,9 +96,6 @@ add_task(async function test_related_settings_home_link_navigates() {
 });
 
 add_task(async function test_related_settings_tabs_browsing_link_navigates() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
   await openPreferencesViaOpenPreferencesAPI("appearance", {
     leaveOpen: true,
   });
@@ -122,6 +117,9 @@ add_task(async function test_related_settings_tabs_browsing_link_navigates() {
 
 
 
+
+
+
 function autoTouchModeAvailable() {
   if (AppConstants.MOZ_WIDGET_GTK) {
     return true;
@@ -129,10 +127,8 @@ function autoTouchModeAvailable() {
   if (AppConstants.platform != "win") {
     return false;
   }
-  const { WindowsVersionInfo } = ChromeUtils.importESModule(
-    "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs"
-  );
-  return WindowsVersionInfo.get({ throwOnError: false }).buildNumber < 22000;
+  return Cc["@mozilla.org/windows-ui-utils;1"].getService(Ci.nsIWindowsUIUtils)
+    .isTabletCapable;
 }
 
 async function withWindowDensityPane(callback) {
@@ -142,6 +138,7 @@ async function withWindowDensityPane(callback) {
   
   
   
+  Services.prefs.clearUserPref("browser.uidensity");
   registerCleanupFunction(() =>
     Services.prefs.clearUserPref("browser.uidensity")
   );
@@ -219,9 +216,6 @@ add_task(async function test_window_density_radio_reflects_pref() {
       { pref: 2, expected: "touch", desc: "touch density maps to touch" },
     ];
 
-    
-    
-    
     for (let { pref, expected, desc } of cases) {
       if (pref === null) {
         Services.prefs.clearUserPref("browser.uidensity");
@@ -229,6 +223,10 @@ add_task(async function test_window_density_radio_reflects_pref() {
         Services.prefs.setIntPref("browser.uidensity", pref);
       }
       is(control.setting.value, expected, desc);
+      await TestUtils.waitForCondition(
+        () => control.controlEl.value === expected,
+        `radio group renders "${expected}": ${desc}`
+      );
     }
   });
 });
@@ -330,67 +328,96 @@ add_task(
 
 
 
-
-
+async function assertAutoTouchCheckboxVisibility(win, expectVisible, desc) {
+  let checkbox = getSettingControl("uiDensityAutoTouchMode", win);
+  ok(checkbox, `auto-touch checkbox setting-control exists (${desc})`);
+  await TestUtils.waitForCondition(
+    () => checkbox.hidden === !expectVisible,
+    `auto-touch checkbox ${expectVisible ? "shown" : "hidden"}: ${desc}`
+  );
+  if (expectVisible) {
+    is_element_visible(checkbox, desc);
+  } else {
+    is_element_hidden(checkbox, desc);
+  }
+}
 
 
 
 add_task(async function test_window_density_auto_touch_checkbox_visibility() {
+  if (!autoTouchModeAvailable()) {
+    info(
+      "Auto-touch mode is unavailable on this device, so the checkbox is " +
+        "always hidden and there is nothing to assert. Note that this leaves " +
+        "the shown path uncovered here; Linux (GTK) is where it runs."
+    );
+    return;
+  }
   await withWindowDensityPane(async ({ win }) => {
     let control = getSettingControl("uiDensity", win);
     await control.updateComplete;
 
-    let available = autoTouchModeAvailable();
     let selectOption = value => selectDensityOption(control, value);
-
-    async function assertCheckboxVisibility(standardSelected, desc) {
-      let checkbox = getSettingControl("uiDensityAutoTouchMode", win);
-      ok(checkbox, `auto-touch checkbox setting-control exists (${desc})`);
-      
-      
-      let expectVisible = standardSelected && available;
-      await TestUtils.waitForCondition(
-        () => checkbox.hidden === !expectVisible,
-        `auto-touch checkbox ${expectVisible ? "shown" : "hidden"}: ${desc}`
-      );
-      if (expectVisible) {
-        is_element_visible(checkbox, desc);
-      } else {
-        is_element_hidden(checkbox, desc);
-      }
-    }
+    let assertVisibility = (standardSelected, desc) =>
+      assertAutoTouchCheckboxVisibility(win, standardSelected, desc);
 
     
-    await selectOption("compact");
-    await assertCheckboxVisibility(false, "compact hides the checkbox");
+    await assertVisibility(false, "automatic hides the checkbox on load");
 
     
     
     await selectOption("standard");
-    await assertCheckboxVisibility(true, "standard shows the checkbox");
+    await assertVisibility(true, "standard shows the checkbox");
 
-    
     
     await selectOption("auto");
-    await assertCheckboxVisibility(false, "automatic hides the checkbox");
+    await assertVisibility(false, "automatic hides the checkbox");
 
-    
-    
+    await selectOption("compact");
+    await assertVisibility(false, "compact hides the checkbox");
+
     await selectOption("standard");
-    await assertCheckboxVisibility(
-      true,
-      "standard shows the checkbox across the auto boundary"
-    );
+    await assertVisibility(true, "standard shows the checkbox again");
 
     await selectOption("touch");
-    await assertCheckboxVisibility(false, "touch hides the checkbox");
+    await assertVisibility(false, "touch hides the checkbox");
   });
 });
 
+
+
+add_task(
+  async function test_window_density_auto_touch_checkbox_follows_pref_changes() {
+    if (!autoTouchModeAvailable()) {
+      info(
+        "Auto-touch mode is unavailable on this device, so the checkbox is " +
+          "always hidden and there is nothing to assert. Note that this " +
+          "leaves the shown path uncovered here; Linux (GTK) is where it runs."
+      );
+      return;
+    }
+    await withWindowDensityPane(async ({ win }) => {
+      let control = getSettingControl("uiDensity", win);
+      await control.updateComplete;
+      let assertVisibility = (standardSelected, desc) =>
+        assertAutoTouchCheckboxVisibility(win, standardSelected, desc);
+
+      Services.prefs.setIntPref("browser.uidensity", 0);
+      await assertVisibility(true, "explicit standard shows the checkbox");
+
+      Services.prefs.clearUserPref("browser.uidensity");
+      await assertVisibility(false, "cleared pref hides the checkbox");
+
+      Services.prefs.setIntPref("browser.uidensity", 2);
+      await assertVisibility(false, "touch hides the checkbox");
+
+      Services.prefs.setIntPref("browser.uidensity", 0);
+      await assertVisibility(true, "standard shows the checkbox");
+    });
+  }
+);
+
 add_task(async function test_browser_layout_group_in_tabs_browsing_pane() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
   await openPreferencesViaOpenPreferencesAPI("tabsBrowsing", {
     leaveOpen: true,
   });
