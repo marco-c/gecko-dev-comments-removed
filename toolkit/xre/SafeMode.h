@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_SafeMode_h
 #define mozilla_SafeMode_h
 
@@ -15,6 +13,10 @@
 #if defined(XP_WIN)
 #  include "mozilla/PolicyChecks.h"
 #  include <windows.h>
+#endif  
+
+#if defined(XP_MACOSX)
+#  include <Carbon/Carbon.h>
 #endif  
 
 
