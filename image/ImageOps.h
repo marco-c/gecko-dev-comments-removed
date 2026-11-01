@@ -131,6 +131,11 @@ class ImageOps {
                                  ImageMetadata& aMetadata);
 
   
+  static nsresult DecodeMetadata(SourceBuffer* aSourceBuffer,
+                                 image::DecoderType aDecoderType,
+                                 ImageMetadata& aMetadata);
+
+  
 
 
 

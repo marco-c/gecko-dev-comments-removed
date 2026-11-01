@@ -20,6 +20,10 @@
 namespace mozilla::image {
 
 
+
+enum class EmbeddableJPEGColorSpace : uint8_t { Grayscale, YCbCr };
+
+
 class ImageMetadata {
  public:
   ImageMetadata() = default;
@@ -84,6 +88,13 @@ class ImageMetadata {
   void SetHasAnimation() { mHasAnimation = true; }
   bool HasAnimation() const { return mHasAnimation; }
 
+  void SetEmbeddableJPEGColorSpace(EmbeddableJPEGColorSpace aColorSpace) {
+    mEmbeddableJPEGColorSpace = Some(aColorSpace);
+  }
+  Maybe<EmbeddableJPEGColorSpace> GetEmbeddableJPEGColorSpace() const {
+    return mEmbeddableJPEGColorSpace;
+  }
+
  private:
   
   Maybe<gfx::IntPoint> mHotspot;
@@ -112,6 +123,9 @@ class ImageMetadata {
 
   
   CopyableTArray<OrientedIntSize> mNativeSizes;
+
+  
+  Maybe<EmbeddableJPEGColorSpace> mEmbeddableJPEGColorSpace;
 
   bool mHasAnimation = false;
 };

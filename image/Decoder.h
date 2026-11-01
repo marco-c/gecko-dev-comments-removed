@@ -514,6 +514,10 @@ class Decoder {
 
   
   
+  void PostEmbeddableJPEGColorSpace(EmbeddableJPEGColorSpace aColorSpace);
+
+  
+  
   
   
   
