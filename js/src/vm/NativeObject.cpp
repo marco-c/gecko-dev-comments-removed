@@ -580,15 +580,15 @@ bool NativeObject::willBeSparseElements(uint32_t requiredCapacity,
 }
 
 
-DenseElementResult NativeObject::maybeDensifySparseElements(
-    JSContext* cx, Handle<NativeObject*> obj) {
+bool NativeObject::maybeDensifySparseElements(JSContext* cx,
+                                              Handle<NativeObject*> obj) {
   
 
 
 
 
   if (!obj->inDictionaryMode()) {
-    return DenseElementResult::Incomplete;
+    return true;
   }
 
   
@@ -597,12 +597,12 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
 
   uint32_t slotSpan = obj->slotSpan();
   if (slotSpan != RoundUpPow2(slotSpan)) {
-    return DenseElementResult::Incomplete;
+    return true;
   }
 
   
   if (!obj->isExtensible()) {
-    return DenseElementResult::Incomplete;
+    return true;
   }
 
   
@@ -620,7 +620,7 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
     if (iter->flags() != PropertyFlags::defaultDataPropFlags) {
       
       
-      return DenseElementResult::Incomplete;
+      return true;
     }
     MOZ_ASSERT(iter->isDataProperty());
     numDenseElements++;
@@ -628,11 +628,11 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
   }
 
   if (numDenseElements * SPARSE_DENSITY_RATIO < newInitializedLength) {
-    return DenseElementResult::Incomplete;
+    return true;
   }
 
   if (newInitializedLength > MAX_DENSE_ELEMENTS_COUNT) {
-    return DenseElementResult::Incomplete;
+    return true;
   }
 
   
@@ -642,15 +642,11 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
 
   if (newInitializedLength > obj->getDenseCapacity()) {
     if (!obj->growElements(cx, newInitializedLength)) {
-      return DenseElementResult::Failure;
+      return false;
     }
   }
 
-  if (!NativeObject::densifySparseElements(cx, obj, newInitializedLength)) {
-    return DenseElementResult::Failure;
-  }
-
-  return DenseElementResult::Success;
+  return NativeObject::densifySparseElements(cx, obj, newInitializedLength);
 }
 
 void NativeObject::moveShiftedElements() {
@@ -1484,13 +1480,9 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   
   
   if (id.isInt() && slot == obj->slotSpan() - 1) {
-    DenseElementResult edResult =
-        NativeObject::maybeDensifySparseElements(cx, obj);
-    if (edResult == DenseElementResult::Failure) {
+    if (!NativeObject::maybeDensifySparseElements(cx, obj)) {
       return false;
     }
-    MOZ_ASSERT_IF(edResult == DenseElementResult::Success,
-                  !desc.isAccessorDescriptor());
   }
 
   return true;
