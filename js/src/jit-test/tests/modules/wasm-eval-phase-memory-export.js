@@ -1,0 +1,11 @@
+
+
+
+
+
+import { mem, store } from "exports-memory.wasm";
+
+assertEq(mem instanceof WebAssembly.Memory, true);
+
+store(0, 0x12345678);
+assertEq(new Int32Array(mem.buffer)[0], 0x12345678);

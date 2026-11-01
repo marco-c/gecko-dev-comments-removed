@@ -1,0 +1,13 @@
+
+
+
+
+
+
+import { store } from "exports-memory.wasm";
+import { constantLength, load } from "imports-memory-and-js-string.wasm";
+
+assertEq(constantLength(), 5);
+
+store(0, 0x12345678);
+assertEq(load(0), 0x12345678);

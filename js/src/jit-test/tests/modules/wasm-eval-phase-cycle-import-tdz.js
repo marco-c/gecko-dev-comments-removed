@@ -1,0 +1,14 @@
+
+
+
+
+
+
+let error = null;
+try {
+  await import("cycle-tdz-js.js");
+} catch (e) {
+  error = e;
+}
+assertEq(error instanceof ReferenceError, true);
+assertEq(error.message.includes("fn"), true);
