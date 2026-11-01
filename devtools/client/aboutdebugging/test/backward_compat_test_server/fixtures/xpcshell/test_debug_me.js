@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+
+
+
+
+
+add_task(function test_debug_me() {
+  let counter = 0; 
+  counter++; 
+  Assert.equal(counter, 1, "The test ran to completion");
+});

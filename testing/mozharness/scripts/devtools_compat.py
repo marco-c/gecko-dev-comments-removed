@@ -58,6 +58,17 @@ class DevToolsCompatTest(DesktopUnittest):
         self.abs_dirs = abs_dirs
         return self.abs_dirs
 
+    def download_and_extract(self):
+        
+        
+        super(DesktopUnittest, self).download_and_extract(
+            suite_categories=["mochitest", "xpcshell"]
+        )
+
+    def stage_files(self):
+        super().stage_files()
+        self._stage_xpcshell([])
+
     def _import_session(self):
         """Import the provisioning code from the tests archive."""
         dirs = self.query_abs_dirs()
@@ -79,12 +90,22 @@ class DevToolsCompatTest(DesktopUnittest):
         server = self.config["compat_server"]
         self.info(f"Provisioning the '{server}' DevTools server")
 
+        xpcshell_harness = session.XpcshellHarness(
+            script=os.path.join(dirs["abs_xpcshell_dir"], "runxpcshelltests.py"),
+            binary=os.path.join(self.query_abs_app_dir(), self.config["xpcshell_name"]),
+        )
+        
+        
+        if self.config["nodejs_path"]:
+            os.environ["MOZ_NODE_PATH"] = self.config["nodejs_path"]
+
         with session.provisioned_server(
             binary=self.binary_path,
             cache_dir=dirs["abs_devtools_compat_cache_dir"],
             log_dir=dirs["abs_blob_upload_dir"],
             server=server,
             headless=True,
+            xpcshell_harness=xpcshell_harness,
         ) as compat_server_env:
             self.log(f"Server environment: {compat_server_env}", level=INFO)
             
