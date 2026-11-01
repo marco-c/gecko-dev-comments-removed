@@ -104,12 +104,7 @@ bool js::PrototypeMayHaveIndexedProperties(NativeObject* obj) {
   } while (true);
 }
 
-
-
-
-
-
-bool js::ObjectMayHaveExtraIndexedProperties(JSObject* obj) {
+bool js::ObjectMayHaveExtraIndexedPropertiesSlow(JSObject* obj) {
   MOZ_ASSERT_IF(obj->hasDynamicPrototype(), !obj->is<NativeObject>());
 
   if (ObjectMayHaveExtraIndexedOwnProperties(obj)) {
