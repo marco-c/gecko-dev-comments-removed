@@ -1570,70 +1570,60 @@ let interfaceNamesInGlobalScope = [
   {
     name: "SpeechGrammar",
     insecureContext: true,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechGrammarList",
     insecureContext: true,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognition",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionAlternative",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionErrorEvent",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionErrorEvent",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionEvent",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionPhrase",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionResult",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
   {
     name: "SpeechRecognitionResultList",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
@@ -2349,21 +2339,18 @@ let interfaceNamesInGlobalScope = [
   {
     name: "webkitSpeechGrammar",
     insecureContext: true,
-    nightly: true,
     android: false,
   },
   
   {
     name: "webkitSpeechGrammarList",
     insecureContext: true,
-    nightly: true,
     android: false,
   },
   
   {
     name: "webkitSpeechRecognition",
     insecureContext: false,
-    nightly: true,
     android: false,
   },
   
