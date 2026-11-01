@@ -819,6 +819,12 @@ class WebGLContext : public VRefCounted, public SupportsWeakPtr {
 
   
   
+  
+  
+  void HintTexRenderTarget(GLenum texTarget) const;
+
+  
+  
  protected:
   bool ValidateTexImageSpecification(uint8_t funcDims, GLenum texImageTarget,
                                      GLint level, GLsizei width, GLsizei height,
