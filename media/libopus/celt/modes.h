@@ -78,6 +78,11 @@ struct OpusCustomMode {
 
 #ifdef ENABLE_QEXT
 #define QEXT_PACKET_SIZE_CAP 3825
+
+
+
+
+#define QEXT_PAYLOAD_SIZE_CAP 12000
 #define NB_QEXT_BANDS 14
 void compute_qext_mode(CELTMode *qext, const CELTMode *m);
 #endif

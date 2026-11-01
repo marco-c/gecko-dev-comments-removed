@@ -46,6 +46,14 @@
 #define OVERRIDE_comb_filter
 #endif
 
+
+
+
+#ifdef ENABLE_QEXT
+#undef OVERRIDE_COMB_FILTER_CONST
+#undef OVERRIDE_comb_filter
+#endif
+
 #include "os_support.h"
 #include "mdct.h"
 #include <math.h>

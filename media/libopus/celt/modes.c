@@ -273,7 +273,11 @@ CELTMode *opus_custom_mode_create(opus_int32 Fs, int frame_size, int *error)
       return NULL;
    }
 #ifdef ENABLE_QEXT
-   if (frame_size < 40 || frame_size > 2048 || frame_size%2!=0)
+   
+
+
+   if (frame_size < 40 || frame_size%2!=0 ||
+       (frame_size > 1024 && !(Fs == 96000 && (frame_size == 1920 || frame_size == 1440))))
 #else
    if (frame_size < 40 || frame_size > 1024 || frame_size%2!=0)
 #endif
