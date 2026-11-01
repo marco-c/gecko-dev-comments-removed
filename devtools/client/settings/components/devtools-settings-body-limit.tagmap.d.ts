@@ -1,0 +1,11 @@
+
+
+
+
+import type { DevToolsSettingsBodyLimit } from "./devtools-settings-body-limit.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "devtools-settings-body-limit": DevToolsSettingsBodyLimit;
+  }
+}
