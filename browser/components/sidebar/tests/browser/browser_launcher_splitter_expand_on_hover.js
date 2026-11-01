@@ -10,7 +10,6 @@
 
 
 const HOVER_DELAY_PREF = "sidebar.animation.expand-on-hover.delay-duration-ms";
-const NOVA_PREF = "browser.nova.enabled";
 const UIDENSITY_PREF = "browser.uidensity";
 
 const MODE_NORMAL = 0;
@@ -59,9 +58,8 @@ function resetLauncherWidth(win) {
 
 
 
-
 async function withExpandOnHoverWindow(
-  { nova = true, density = MODE_NORMAL, rtl = false, positionEnd = false },
+  { density = MODE_NORMAL, rtl = false, positionEnd = false },
   taskFn
 ) {
   if (rtl) {
@@ -69,7 +67,6 @@ async function withExpandOnHoverWindow(
   }
   await SpecialPowers.pushPrefEnv({
     set: [
-      [NOVA_PREF, nova],
       ["sidebar.revamp", true],
       [VERTICAL_TABS_PREF, true],
       [SIDEBAR_VISIBILITY_PREF, "expand-on-hover"],
@@ -294,12 +291,5 @@ add_task(async function test_sidebar_position_end() {
 add_task(async function test_rtl_position_end() {
   await withExpandOnHoverWindow({ rtl: true, positionEnd: true }, win =>
     assertLauncherIsResizable(win, "RTL, sidebar position end")
-  );
-});
-
-
-add_task(async function test_without_nova() {
-  await withExpandOnHoverWindow({ nova: false }, win =>
-    assertLauncherIsResizable(win, "nova disabled")
   );
 });
