@@ -23,6 +23,7 @@ use crate::stylesheets::container_rule::AttrReferenceSet;
 use crate::stylesheets::{CssRuleType, CustomMediaEvaluator, Origin, UrlExtraData};
 use crate::stylist::Stylist;
 use crate::substitution;
+use crate::substitution::AttrTaint;
 use crate::values::{AtomString, DashedIdent, computed};
 use crate::{error_reporting::ContextualParseError, parser::Parse, parser::ParserContext};
 use cssparser::{
@@ -30,6 +31,7 @@ use cssparser::{
 };
 use selectors::kleene_value::KleeneValue;
 use servo_arc::Arc;
+use std::borrow::Cow;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss};
 
@@ -406,11 +408,7 @@ impl StyleFeaturePlain {
             if let Ok(keyword) = input.try_parse(|i| CSSWideKeyword::parse(i)) {
                 StyleFeatureValue::Keyword(keyword)
             } else {
-                let value = custom_properties::SpecifiedValue::parse(
-                    input,
-                    Some(&context.namespaces.prefixes),
-                    context.url_data,
-                )?;
+                let value = custom_properties::SpecifiedValue::parse(context, input)?;
                 
                 let _ = input.try_parse(parse_important);
                 StyleFeatureValue::Value(Some(Arc::new(value)))
@@ -456,7 +454,6 @@ impl StyleFeaturePlain {
         let computed = SpecifiedRegisteredValue::compute(
             &mut parser,
             registration,
-            None,
             &value.url_data,
             ctx,
             AllowComputationallyDependent::Yes,
@@ -873,10 +870,23 @@ impl QueryCondition {
             .expect("container query should provide a Stylist");
 
         
-        let value = match custom_properties::SpecifiedValue::parse(
-            &mut Parser::new(css_text),
-            None, 
+        
+        let mut parser_context = ParserContext::new(
+            Origin::Author,
             url_data,
+            Some(CssRuleType::Container),
+            ParsingMode::DEFAULT,
+            QuirksMode::NoQuirks,
+             Default::default(),
+             None,
+             None,
+            AttrTaint::default(),
+        );
+
+        
+        let value = match custom_properties::SpecifiedValue::parse(
+            &parser_context,
+            &mut Parser::new(css_text),
         ) {
             Ok(val) => val,
             Err(_) => return KleeneValue::Unknown,
@@ -903,20 +913,9 @@ impl QueryCondition {
             Ok(sub) => sub,
             Err(_) => return KleeneValue::Unknown,
         };
+        parser_context.attr_tainted_regions = Cow::Owned(attr_taint);
 
         
-        let parser_context = ParserContext::new(
-            Origin::Author,
-            url_data,
-            Some(CssRuleType::Container),
-            ParsingMode::DEFAULT,
-            QuirksMode::NoQuirks,
-             Default::default(),
-             None,
-             None,
-            attr_taint,
-        );
-
         match Self::parse(
             &parser_context,
             &mut Parser::new(&css),
