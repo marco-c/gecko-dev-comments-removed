@@ -71,8 +71,10 @@ class Element;
 @end
 
 
+
 @interface NativeMenuItemTarget : NSObject {
 }
+- (void)menuDidChangeItem:(NSNotification*)aNotification;
 - (IBAction)menuItemHit:(id)aSender;
 @end
 
@@ -133,6 +135,10 @@ class nsMenuBarX : public nsMenuParentX,
       mozilla::dom::Element* aKeyElement);
 
   
+  
+  static void CopyUserKeyEquivalentOfItemToKeyElements(NSMenuItem* aItem);
+
+  
   void MenuChildChangedVisibility(const MenuChild& aChild,
                                   bool aIsVisible) override;
   size_t NestingDepth() override { return 0; }
@@ -151,6 +157,10 @@ class nsMenuBarX : public nsMenuParentX,
                                       SEL aAction, int aTag,
                                       NativeMenuItemTarget* aTarget);
   void CreateApplicationMenu(nsMenuX* aMenu);
+  void CopyAllUserKeyEquivalentsToKeyElements();
+  
+  
+  void CopyAppMenuUserKeyEquivalentsToKeyElements();
 
   
   

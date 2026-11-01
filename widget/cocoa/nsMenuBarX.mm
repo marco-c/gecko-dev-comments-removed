@@ -6,6 +6,7 @@
 
 #include <memory>
 
+#include "TextInputHandler.h"
 #include "nsChangeObserver.h"
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
@@ -22,6 +23,7 @@
 #include "nsObjCExceptions.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
+#include "nsUnicharUtils.h"
 
 #include "mozilla/dom/Document.h"
 #include "nsIAppStartup.h"
@@ -134,6 +136,7 @@ nsMenuBarX::nsMenuBarX(mozilla::dom::Element* aElement)
     AquifyMenuBar();
     mMenuGroupOwner->RegisterForContentChanges(mContent, this);
     ConstructNativeMenus();
+    CopyAppMenuUserKeyEquivalentsToKeyElements();
   } else {
     ConstructFallbackNativeMenus();
   }
@@ -565,6 +568,10 @@ nsresult nsMenuBarX::Paint() {
 
   gSomeMenuBarPainted = YES;
 
+  
+  
+  CopyAllUserKeyEquivalentsToKeyElements();
+
   return NS_OK;
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
@@ -673,6 +680,73 @@ void nsMenuBarX::HighlightNativeMenuItem(NSMenuItem* aItem) {
   gMenuItemsExecuteCommands = NO;
   [menu performActionForItemAtIndex:[menu indexOfItem:aItem]];
   gMenuItemsExecuteCommands = YES;
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuBarX::CopyAllUserKeyEquivalentsToKeyElements() {
+  for (nsMenuX* menu : mMenuArray) {
+    menu->CopyAllUserKeyEquivalentsToKeyElements();
+  }
+  CopyAppMenuUserKeyEquivalentsToKeyElements();
+}
+
+void nsMenuBarX::CopyAppMenuUserKeyEquivalentsToKeyElements() {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (!sApplicationMenu || !mContent) {
+    return;
+  }
+  RefPtr<dom::Document> document = mContent->GetUncomposedDoc();
+  if (!document) {
+    return;
+  }
+  for (NSMenuItem* item in sApplicationMenu.itemArray) {
+    if (!item.identifier) {
+      continue;
+    }
+    nsAutoString nodeID;
+    nsCocoaUtils::GetStringForNSString(item.identifier, nodeID);
+    RefPtr<dom::Element> menuItemElement = document->GetElementById(nodeID);
+    nsMenuGroupOwnerX::CopyUserKeyEquivalentToKeyElement(item, menuItemElement);
+  }
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+
+void nsMenuBarX::CopyUserKeyEquivalentOfItemToKeyElements(NSMenuItem* aItem) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (aItem.menu == sApplicationMenu) {
+    if (!aItem.identifier) {
+      return;
+    }
+    for (NSWindow* window in NSApp.windows) {
+      if (![window.delegate isKindOfClass:[WindowDelegate class]]) {
+        continue;
+      }
+      nsCocoaWindow* widget = [(WindowDelegate*)window.delegate geckoWidget];
+      RefPtr<nsMenuBarX> menuBar = widget ? widget->GetMenuBar() : nullptr;
+      if (menuBar) {
+        menuBar->CopyAppMenuUserKeyEquivalentsToKeyElements();
+      }
+    }
+    return;
+  }
+
+  MOZMenuItemRepresentedObject* representedObject = aItem.representedObject;
+  if (![representedObject isKindOfClass:[MOZMenuItemRepresentedObject class]]) {
+    return;
+  }
+  nsMenuGroupOwnerX* menuGroupOwner = representedObject.menuGroupOwner;
+  if (!menuGroupOwner) {
+    return;
+  }
+  if (RefPtr<nsMenuItemX> menuItem = menuGroupOwner->GetMenuItemForCommandID(
+          static_cast<uint32_t>(aItem.tag))) {
+    menuItem->CopyUserKeyEquivalentToKeyElement();
+  }
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
@@ -1190,7 +1264,76 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 
+
+
+static bool EventMatchesKeyEquivalent(NSEvent* aEvent, NSMenuItem* aItem) {
+  NSString* keyEquivalent = aItem.keyEquivalent;
+  if (keyEquivalent.length != 1) {
+    return false;
+  }
+  uint32_t key = [keyEquivalent characterAtIndex:0];
+  uint32_t lowercaseKey = ToLowerCase(key);
+
+  const NSEventModifierFlags relevantFlags =
+      NSEventModifierFlagCommand | NSEventModifierFlagOption |
+      NSEventModifierFlagControl | NSEventModifierFlagShift;
+  NSEventModifierFlags eventFlags = aEvent.modifierFlags & relevantFlags;
+  NSEventModifierFlags requiredFlags =
+      aItem.keyEquivalentModifierMask & relevantFlags;
+  if (lowercaseKey != key) {
+    
+    requiredFlags |= NSEventModifierFlagShift;
+  }
+
+  mozilla::widget::TISInputSourceWrapper& inputSource =
+      mozilla::widget::TISInputSourceWrapper::CurrentInputSource();
+  uint32_t unshifted = inputSource.CharForKeyCode(aEvent.keyCode, 0);
+  uint32_t shifted = inputSource.CharForKeyCode(aEvent.keyCode, shiftKey);
+  if (!unshifted && !shifted) {
+    
+    
+    NSString* characters = aEvent.charactersIgnoringModifiers;
+    return characters.length == 1 && [characters characterAtIndex:0] == key &&
+           eventFlags == requiredFlags;
+  }
+  if (unshifted && ToLowerCase(unshifted) == lowercaseKey) {
+    return eventFlags == requiredFlags;
+  }
+  if (shifted && shifted == key) {
+    return eventFlags == (requiredFlags | NSEventModifierFlagShift);
+  }
+  return false;
+}
+
+
+
+static NSMenuItem* UserAssignedItemMatchingEvent(NSMenu* aMenu,
+                                                 NSEvent* aEvent) {
+  for (NSMenuItem* item in aMenu.itemArray) {
+    if (item.hidden) {
+      continue;
+    }
+    if (item.submenu) {
+      if (NSMenuItem* match =
+              UserAssignedItemMatchingEvent(item.submenu, aEvent)) {
+        return match;
+      }
+    } else if (item.userKeyEquivalent.length > 0 &&
+               EventMatchesKeyEquivalent(aEvent, item)) {
+      return item;
+    }
+  }
+  return nil;
+}
+
+
+
+
+
 @implementation GeckoNSMenu
+
+
+
 
 
 
@@ -1224,6 +1367,16 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       return NO;
     }
     return [super performKeyEquivalent:aEvent];
+  }
+
+  if (NSMenuItem* item = UserAssignedItemMatchingEvent(self, aEvent)) {
+    
+    
+    if (item.enabled) {
+      nsAutoRetainCocoaObject kungFuDeathGrip(self);
+      [item.menu performActionForItemAtIndex:[item.menu indexOfItem:item]];
+    }
+    return YES;
   }
 
   
@@ -1282,6 +1435,34 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 @implementation NativeMenuItemTarget
+
+- (id)init {
+  if ((self = [super init])) {
+    
+    
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(menuDidChangeItem:)
+               name:NSMenuDidChangeItemNotification
+             object:nil];
+  }
+  return self;
+}
+
+- (void)menuDidChangeItem:(NSNotification*)aNotification {
+  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+
+  NSMenu* menu = aNotification.object;
+  NSNumber* index = aNotification.userInfo[@"NSMenuItemIndex"];
+  if (![menu isKindOfClass:[NSMenu class]] || !index ||
+      index.integerValue < 0 || index.integerValue >= menu.numberOfItems) {
+    return;
+  }
+  nsMenuBarX::CopyUserKeyEquivalentOfItemToKeyElements(
+      [menu itemAtIndex:index.integerValue]);
+
+  NS_OBJC_END_TRY_IGNORE_BLOCK;
+}
 
 
 - (IBAction)menuItemHit:(id)aSender {

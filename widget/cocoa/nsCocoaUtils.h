@@ -421,6 +421,15 @@ class nsCocoaUtils {
 
 
 
+
+
+  static bool GetGeckoKeyCodeNameForMacCharCode(uint32_t aCharCode,
+                                                nsAString& aKeyCodeName);
+
+  
+
+
+
   static NSEventModifierFlags ConvertWidgetModifiersToMacModifierFlags(
       nsIWidget::NativeModifiers aNativeModifiers);
 

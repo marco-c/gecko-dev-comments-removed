@@ -79,6 +79,11 @@ class nsMenuItemX final : public nsChangeObserver,
   nsIContent* Content() { return mContent; }
   NSMenuItem* NativeNSMenuItem() { return mNativeMenuItem; }
 
+  
+  
+  
+  void CopyUserKeyEquivalentToKeyElement();
+
   void Dump(uint32_t aIndent) const;
 
  protected:

@@ -52,6 +52,14 @@ enum {
 class TISInputSourceWrapper {
  public:
   static TISInputSourceWrapper& CurrentInputSource();
+
+  
+
+
+
+  uint32_t CharForKeyCode(UInt32 aKeyCode, UInt32 aModifiers) {
+    return TranslateToChar(aKeyCode, aModifiers, GetKbdType());
+  }
   
 
 

@@ -7,6 +7,7 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
 
 #include "nsHashKeys.h"
@@ -83,6 +84,31 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver,
   
   
   nsMenuBarX* GetMenuBar() { return mMenuBar.get(); }
+
+  
+  struct KeyElementAttributes {
+    mozilla::Maybe<nsString> mKey;
+    mozilla::Maybe<nsString> mKeyCode;
+    mozilla::Maybe<nsString> mModifiers;
+    mozilla::Maybe<nsString> mL10nId;
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static void CopyUserKeyEquivalentToKeyElement(
+      NSMenuItem* aNativeMenuItem, mozilla::dom::Element* aMenuItemElement);
+
+  
+  
+  
+  static KeyElementAttributes BuiltInKeyElementAttributes(
+      mozilla::dom::Element* aKeyElement);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
