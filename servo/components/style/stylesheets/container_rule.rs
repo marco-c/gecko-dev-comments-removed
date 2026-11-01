@@ -87,23 +87,7 @@ pub struct ContainerConditions(#[css(iterable)] pub ArcSlice<ContainerCondition>
 
 
 
-#[derive(Clone, Debug, ToShmem)]
-pub struct AttrReferenceSet {
-    
-    pub names: PrecomputedHashSet<LocalName>,
-    
-    
-    pub is_fully_parsed: bool,
-}
-
-impl Default for AttrReferenceSet {
-    fn default() -> Self {
-        Self {
-            names: Default::default(),
-            is_fully_parsed: true,
-        }
-    }
-}
+pub type AttrReferenceSet = PrecomputedHashSet<LocalName>;
 
 
 
@@ -408,19 +392,17 @@ impl ContainerCondition {
 
     
     
-    
-    
     pub fn insert_attribute_references_in_dependency_map(
         &self,
         kind_map: &mut PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
-        attribute_dependencies: &mut PrecomputedHashSet<LocalName>,
-    ) -> ContainerAttributeDependencyKind {
+        attribute_dependencies: &mut AttrReferenceSet,
+    ) {
         let name_kind = if self.name.is_none() {
             ContainerAttributeDependencyKind::UnnamedContainer
         } else {
             ContainerAttributeDependencyKind::NamedContainer
         };
-        for attr in &self.get_attributes_referenced().names {
+        for attr in self.get_attributes_referenced() {
             kind_map
                 .entry_ref(attr)
                 .and_modify(|v| {
@@ -430,11 +412,6 @@ impl ContainerCondition {
                 })
                 .or_insert(name_kind);
             attribute_dependencies.get_or_insert_with(attr, Clone::clone);
-        }
-        if self.attributes_referenced.is_fully_parsed {
-            ContainerAttributeDependencyKind::None
-        } else {
-            name_kind
         }
     }
 }

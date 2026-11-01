@@ -29,7 +29,6 @@ use crate::invalidation::media_queries::{
     EffectiveMediaQueryResults, MediaListKey, ToMediaListKey,
 };
 use crate::invalidation::stylesheets::{RuleChangeKind, StylesheetInvalidationSet};
-use crate::parser::ParserContext;
 #[cfg(feature = "gecko")]
 use crate::properties::StyleBuilder;
 use crate::properties::{
@@ -73,7 +72,6 @@ use crate::stylesheets::{
     ViewTransitionRule,
 };
 use crate::stylesheets::{CustomMediaEvaluator, CustomMediaMap};
-use crate::substitution::AttrTaint;
 #[cfg(feature = "gecko")]
 use crate::values::specified::position::PositionTryFallbacksItem;
 use crate::values::specified::position::PositionTryFallbacksTryTactic;
@@ -101,7 +99,6 @@ use std::cmp::Ordering;
 use std::hash::{Hash, Hasher};
 use std::mem;
 use std::sync::{LazyLock, Mutex};
-use style_traits::ParsingMode;
 
 
 #[cfg(feature = "servo")]
@@ -2158,21 +2155,10 @@ impl Stylist {
 
         let initial_value = match initial_value {
             Some(value) => {
-                let parser_context = ParserContext::new(
-                    Origin::Author,
-                    url_data,
-                    None,
-                    ParsingMode::DISALLOW_COMPUTATIONALLY_DEPENDENT,
-                    self.quirks_mode,
-                     Default::default(),
-                    None,
-                    None,
-                    AttrTaint::default(),
-                );
                 let parsed = Parser::new(value)
                     .parse_entirely(|input| {
                         input.skip_whitespace();
-                        SpecifiedValue::parse(&parser_context, input).map(Arc::new)
+                        SpecifiedValue::parse(input, None, url_data).map(Arc::new)
                     })
                     .ok();
                 if parsed.is_none() {
@@ -3470,13 +3456,7 @@ pub struct CascadeData {
     
     
     
-    container_attr_function_dependencies:
-        PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
-
-    
-    
-    
-    container_unparsed_attr_function_dependency: ContainerAttributeDependencyKind,
+    attr_function_dependencies: PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
 
     
     scope_conditions: SmallVec<[ScopeConditionReference; 1]>,
@@ -3554,8 +3534,7 @@ impl CascadeData {
             custom_media: Default::default(),
             layers: CascadeLayers::default(),
             container_conditions: smallvec::smallvec![ContainerConditionReference::none()],
-            container_attr_function_dependencies: PrecomputedHashMap::default(),
-            container_unparsed_attr_function_dependency: ContainerAttributeDependencyKind::None,
+            attr_function_dependencies: PrecomputedHashMap::default(),
             scope_conditions: smallvec::smallvec![ScopeConditionReference::none()],
             scope_subject_map: Default::default(),
             extra_data: ExtraStyleData::default(),
@@ -3677,13 +3656,7 @@ impl CascadeData {
     
     #[inline]
     pub fn might_have_attribute_dependency(&self, local_name: &LocalName) -> bool {
-        
-        
-        
-        
-        
-        self.container_unparsed_attr_function_dependency != ContainerAttributeDependencyKind::None
-            || self.attribute_dependencies.contains(local_name)
+        self.attribute_dependencies.contains(local_name)
     }
 
     
@@ -3703,11 +3676,10 @@ impl CascadeData {
         &self,
         local_name: &LocalName,
     ) -> ContainerAttributeDependencyKind {
-        self.container_attr_function_dependencies
+        self.attr_function_dependencies
             .get(local_name)
             .copied()
             .unwrap_or(ContainerAttributeDependencyKind::None)
-            .max(self.container_unparsed_attr_function_dependency)
     }
 
     
@@ -4439,14 +4411,10 @@ impl CascadeData {
 
                     if rebuild_kind.should_rebuild_invalidation() {
                         for condition in rule.conditions.0.iter() {
-                            let unparsed_dependency_kind = condition
-                                .insert_attribute_references_in_dependency_map(
-                                    &mut self.container_attr_function_dependencies,
-                                    &mut self.attribute_dependencies,
-                                );
-                            self.container_unparsed_attr_function_dependency = self
-                                .container_unparsed_attr_function_dependency
-                                .max(unparsed_dependency_kind);
+                            condition.insert_attribute_references_in_dependency_map(
+                                &mut self.attr_function_dependencies,
+                                &mut self.attribute_dependencies,
+                            );
                         }
                     }
                 },
@@ -4851,8 +4819,7 @@ impl CascadeData {
         self.relative_selector_invalidation_map.clear();
         self.additional_relative_selector_invalidation_map.clear();
         self.attribute_dependencies.clear();
-        self.container_attr_function_dependencies.clear();
-        self.container_unparsed_attr_function_dependency = ContainerAttributeDependencyKind::None;
+        self.attr_function_dependencies.clear();
         self.nth_of_attribute_dependencies.clear();
         self.nth_of_custom_state_dependencies.clear();
         self.nth_of_class_dependencies.clear();
