@@ -6,12 +6,10 @@
 
 #include "BindContext.h"
 #include "HTMLOptGroupElement.h"
-#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/HTMLOptionElementBinding.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFormControl.h"
-#include "nsStyleConsts.h"
 
 
 #include "mozilla/dom/Document.h"
@@ -25,13 +23,14 @@
 
 
 
-NS_IMPL_NS_NEW_HTML_ELEMENT(Option)
+NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Option)
 
 namespace mozilla::dom {
 
 HTMLOptionElement::HTMLOptionElement(
-    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo)) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
+    : nsGenericHTMLElement(std::move(aNodeInfo)),
+      mIsDoneAddingChildren(!aFromParser) {
   
   AddStatesSilently(ElementState::ENABLED);
 }
@@ -257,8 +256,7 @@ void HTMLOptionElement::SetText(const nsAString& aText, ErrorResult& aRv) {
 
 nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
                                        nsINode& aParent) {
-  nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(nsGenericHTMLElement::BindToTree(aContext, aParent));
 
   
   UpdateDisabledState(false);
@@ -273,15 +271,31 @@ nsresult HTMLOptionElement::BindToTree(BindContext& aContext,
   
   
   
-
   
   
-  if (aContext.InComposedDoc() && mCachedNearestAncestorSelect && Selected()) {
+  
+  if (aContext.InComposedDoc() && mCachedNearestAncestorSelect &&
+      mIsDoneAddingChildren && Selected()) {
     mCachedNearestAncestorSelect->ScheduleSelectedContentUpdate(
         SelectedContentUpdateMode::ScriptRunner);
   }
 
   return NS_OK;
+}
+
+void HTMLOptionElement::DoneAddingChildren(bool) {
+  MOZ_ASSERT(!mIsDoneAddingChildren);
+  mIsDoneAddingChildren = true;
+
+  
+  
+  
+  
+  
+  if (mCachedNearestAncestorSelect && Selected() && IsInComposedDoc()) {
+    mCachedNearestAncestorSelect->ScheduleSelectedContentUpdate(
+        SelectedContentUpdateMode::ScriptRunner);
+  }
 }
 
 void HTMLOptionElement::UnbindFromTree(UnbindContext& aContext) {

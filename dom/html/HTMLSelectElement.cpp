@@ -2884,7 +2884,15 @@ void HTMLSelectElement::UpdateSelectedContentElement(
       selectedIndex >= 0 ? Item(static_cast<uint32_t>(selectedIndex)) : nullptr;
 
   
-  if (!option) {
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!option || !option->IsDoneAddingChildren()) {
     aSelectedContent->ClearContent();
     return;
   }
