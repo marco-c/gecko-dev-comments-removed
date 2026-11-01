@@ -279,19 +279,14 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
     
     
     
-    rv = mWorkerRef->Private()->SetPrincipalsAndPolicyContainerFromChannel(
-        channel);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(mWorkerRef->Private()->SetPrincipalsAndPolicyContainerFromChannel(
+        channel));
 
-    nsCOMPtr<nsIContentSecurityPolicy> csp = mWorkerRef->Private()->GetCsp();
     
     
-    if (!csp) {
-      rv = mWorkerRef->Private()->SetCSPFromHeaderValues(tCspHeaderValue,
-                                                         tCspROHeaderValue);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      csp->EnsureEventTarget(mWorkerRef->Private()->MainThreadEventTarget());
+    if (!CSP_ShouldResponseInheritCSP(channel)) {
+      MOZ_TRY(mWorkerRef->Private()->SetCSPFromHeaderValues(tCspHeaderValue,
+                                                            tCspROHeaderValue));
     }
 
     mWorkerRef->Private()->UpdateReferrerInfoFromHeader(tRPHeaderCValue);

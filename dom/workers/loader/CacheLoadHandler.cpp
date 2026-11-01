@@ -665,7 +665,8 @@ nsresult CacheLoadHandler::DataReceived() {
       mWorkerRef->Private()->SetXHRParamsAllowed(parent->XHRParamsAllowed());
 
       
-      nsresult rv = mWorkerRef->Private()->SetCsp(parent->GetCsp());
+      nsresult rv = mWorkerRef->Private()->SetPolicyContainerOnMainThread(
+          parent->GetPolicyContainer());
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
