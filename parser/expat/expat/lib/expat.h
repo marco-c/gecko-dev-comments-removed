@@ -44,6 +44,7 @@
 
 
 
+
 #ifndef Expat_INCLUDED
 #  define Expat_INCLUDED 1
 
@@ -922,6 +923,8 @@ XML_SetParamEntityParsing(XML_Parser parser,
 
 
 
+
+XML_ATTR_DEPRECATED("please use XML_SetHashSalt16Bytes instead")
 XMLPARSEAPI(int)
 XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt);
 
@@ -1040,8 +1043,11 @@ enum XML_FeatureEnum {
   XML_FEATURE_MIN_SIZE,
   XML_FEATURE_SIZEOF_XML_CHAR,
   XML_FEATURE_SIZEOF_XML_LCHAR,
+  
   XML_FEATURE_NS,
+  
   XML_FEATURE_LARGE_SIZE,
+  
   XML_FEATURE_ATTR_INFO,
   
   XML_FEATURE_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT,
@@ -1096,7 +1102,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 
 #  define XML_MAJOR_VERSION 2
 #  define XML_MINOR_VERSION 8
-#  define XML_MICRO_VERSION 4
+#  define XML_MICRO_VERSION 5
 
 #  ifdef __cplusplus
 }

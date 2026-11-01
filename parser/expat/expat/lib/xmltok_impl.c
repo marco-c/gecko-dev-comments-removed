@@ -42,11 +42,8 @@
 
 
 
-#ifdef XML_TOK_IMPL_C
 
-#  ifndef IS_INVALID_CHAR 
-#    define IS_INVALID_CHAR(enc, ptr, n) (0)
-#  endif
+#ifdef XML_TOK_IMPL_C
 
 #  define INVALID_LEAD_CASE(n, ptr, nextTokPtr)                                \
   case BT_LEAD##n:                                                             \
@@ -144,7 +141,7 @@
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanComment)(const ENCODING *enc, const char *ptr, const char *end,
                     const char **nextTokPtr) {
   if (HAS_CHAR(enc, ptr, end)) {
@@ -181,7 +178,7 @@ PREFIX(scanComment)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanDecl)(const ENCODING *enc, const char *ptr, const char *end,
                  const char **nextTokPtr) {
   REQUIRE_CHAR(enc, ptr, end);
@@ -230,7 +227,7 @@ PREFIX(scanDecl)(const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_PARTIAL;
 }
 
-static int PTRCALL
+static int
 PREFIX(checkPiTarget)(const ENCODING *enc, const char *ptr, const char *end,
                       int *tokPtr) {
   int upper = 0;
@@ -275,7 +272,7 @@ PREFIX(checkPiTarget)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanPi)(const ENCODING *enc, const char *ptr, const char *end,
                const char **nextTokPtr) {
   int tok;
@@ -335,7 +332,7 @@ PREFIX(scanPi)(const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_PARTIAL;
 }
 
-static int PTRCALL
+static int
 PREFIX(scanCdataSection)(const ENCODING *enc, const char *ptr, const char *end,
                          const char **nextTokPtr) {
   static const char CDATA_LSQB[]
@@ -354,7 +351,7 @@ PREFIX(scanCdataSection)(const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_CDATA_SECT_OPEN;
 }
 
-static int PTRCALL
+static int
 PREFIX(cdataSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
                         const char **nextTokPtr) {
   if (ptr >= end)
@@ -430,7 +427,7 @@ PREFIX(cdataSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanEndTag)(const ENCODING *enc, const char *ptr, const char *end,
                    const char **nextTokPtr) {
   REQUIRE_CHAR(enc, ptr, end);
@@ -481,7 +478,7 @@ PREFIX(scanEndTag)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanHexCharRef)(const ENCODING *enc, const char *ptr, const char *end,
                        const char **nextTokPtr) {
   if (HAS_CHAR(enc, ptr, end)) {
@@ -512,7 +509,7 @@ PREFIX(scanHexCharRef)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanCharRef)(const ENCODING *enc, const char *ptr, const char *end,
                     const char **nextTokPtr) {
   if (HAS_CHAR(enc, ptr, end)) {
@@ -543,7 +540,7 @@ PREFIX(scanCharRef)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanRef)(const ENCODING *enc, const char *ptr, const char *end,
                 const char **nextTokPtr) {
   REQUIRE_CHAR(enc, ptr, end);
@@ -571,7 +568,7 @@ PREFIX(scanRef)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanAtts)(const ENCODING *enc, const char *ptr, const char *end,
                  const char **nextTokPtr) {
 #  ifdef XML_NS
@@ -724,7 +721,7 @@ PREFIX(scanAtts)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanLt)(const ENCODING *enc, const char *ptr, const char *end,
                const char **nextTokPtr) {
 #  ifdef XML_NS
@@ -822,7 +819,7 @@ PREFIX(scanLt)(const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_PARTIAL;
 }
 
-static int PTRCALL
+static int
 PREFIX(contentTok)(const ENCODING *enc, const char *ptr, const char *end,
                    const char **nextTokPtr) {
   if (ptr >= end)
@@ -922,7 +919,7 @@ PREFIX(contentTok)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(scanPercent)(const ENCODING *enc, const char *ptr, const char *end,
                     const char **nextTokPtr) {
   REQUIRE_CHAR(enc, ptr, end);
@@ -952,7 +949,7 @@ PREFIX(scanPercent)(const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_PARTIAL;
 }
 
-static int PTRCALL
+static int
 PREFIX(scanPoundName)(const ENCODING *enc, const char *ptr, const char *end,
                       const char **nextTokPtr) {
   REQUIRE_CHAR(enc, ptr, end);
@@ -982,7 +979,7 @@ PREFIX(scanPoundName)(const ENCODING *enc, const char *ptr, const char *end,
   return -XML_TOK_POUND_NAME;
 }
 
-static int PTRCALL
+static int
 PREFIX(scanLit)(int open, const ENCODING *enc, const char *ptr, const char *end,
                 const char **nextTokPtr) {
   while (HAS_CHAR(enc, ptr, end)) {
@@ -1016,7 +1013,7 @@ PREFIX(scanLit)(int open, const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_PARTIAL;
 }
 
-static int PTRCALL
+static int
 PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
                   const char **nextTokPtr) {
   int tok;
@@ -1260,7 +1257,7 @@ PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
   return -tok;
 }
 
-static int PTRCALL
+static int
 PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr, const char *end,
                           const char **nextTokPtr) {
   const char *start;
@@ -1329,7 +1326,7 @@ PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr, const char *end,
   return XML_TOK_DATA_CHARS;
 }
 
-static int PTRCALL
+static int
 PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr, const char *end,
                        const char **nextTokPtr) {
   const char *start;
@@ -1396,7 +1393,7 @@ PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr, const char *end,
 
 #  ifdef XML_DTD
 
-static int PTRCALL
+static int
 PREFIX(ignoreSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
                          const char **nextTokPtr) {
   int level = 0;
@@ -1448,7 +1445,7 @@ PREFIX(ignoreSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
 
 #  endif 
 
-static int PTRCALL
+static int
 PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
                    const char **badPtr) {
   ptr += MINBPC(enc);
@@ -1508,7 +1505,7 @@ PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
 
 
 
-static int PTRCALL
+static int
 PREFIX(getAtts)(const ENCODING *enc, const char *ptr, int attsMax,
                 ATTRIBUTE *atts) {
   enum { other, inName, inValue } state = inName;
@@ -1601,7 +1598,7 @@ PREFIX(getAtts)(const ENCODING *enc, const char *ptr, int attsMax,
   
 }
 
-static int PTRFASTCALL
+static int
 PREFIX(charRefNumber)(const ENCODING *enc, const char *ptr) {
   int result = 0;
   
@@ -1659,7 +1656,7 @@ PREFIX(charRefNumber)(const ENCODING *enc, const char *ptr) {
   return checkCharRefNumber(result);
 }
 
-static int PTRCALL
+static int
 PREFIX(predefinedEntityName)(const ENCODING *enc, const char *ptr,
                              const char *end) {
   UNUSED_P(enc);
@@ -1713,7 +1710,7 @@ PREFIX(predefinedEntityName)(const ENCODING *enc, const char *ptr,
   return 0;
 }
 
-static int PTRCALL
+static int
 PREFIX(nameMatchesAscii)(const ENCODING *enc, const char *ptr1,
                          const char *end1, const char *ptr2) {
   UNUSED_P(enc);
@@ -1732,7 +1729,7 @@ PREFIX(nameMatchesAscii)(const ENCODING *enc, const char *ptr1,
   return ptr1 == end1;
 }
 
-static int PTRFASTCALL
+static int
 PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
   const char *start = ptr;
   for (;;) {
@@ -1762,7 +1759,7 @@ PREFIX(nameLength)(const ENCODING *enc, const char *ptr) {
   }
 }
 
-static const char *PTRFASTCALL
+static const char *
 PREFIX(skipS)(const ENCODING *enc, const char *ptr) {
   for (;;) {
     switch (BYTE_TYPE(enc, ptr)) {
@@ -1777,7 +1774,7 @@ PREFIX(skipS)(const ENCODING *enc, const char *ptr) {
   }
 }
 
-static void PTRCALL
+static void
 PREFIX(updatePosition)(const ENCODING *enc, const char *ptr, const char *end,
                        POSITION *pos) {
   while (HAS_CHAR(enc, ptr, end)) {

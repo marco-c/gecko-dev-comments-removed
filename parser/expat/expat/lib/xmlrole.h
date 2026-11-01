@@ -40,10 +40,6 @@
 
 #  include "xmltok.h"
 
-#  ifdef __cplusplus
-extern "C" {
-#  endif
-
 enum {
   XML_ROLE_ERROR = -1,
   XML_ROLE_NONE = 0,
@@ -112,8 +108,8 @@ enum {
 };
 
 typedef struct prolog_state {
-  int(PTRCALL *handler)(struct prolog_state *state, int tok, const char *ptr,
-                        const char *end, const ENCODING *enc);
+  int (*handler)(struct prolog_state *state, int tok, const char *ptr,
+                 const char *end, const ENCODING *enc);
   unsigned level;
   int role_none;
 #  ifdef XML_DTD
@@ -130,9 +126,5 @@ void XmlPrologStateInitExternalEntity(PROLOG_STATE *state);
 
 #  define XmlTokenRole(state, tok, ptr, end, enc)                              \
     (((state)->handler)(state, tok, ptr, end, enc))
-
-#  ifdef __cplusplus
-}
-#  endif
 
 #endif 

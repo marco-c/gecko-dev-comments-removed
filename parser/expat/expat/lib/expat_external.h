@@ -40,6 +40,7 @@
 
 
 
+
 #ifndef Expat_External_INCLUDED
 #  define Expat_External_INCLUDED 1
 
@@ -123,6 +124,17 @@
 #    define XML_ATTR_ALLOC_SIZE(x) __attribute__((__alloc_size__(x)))
 #  else
 #    define XML_ATTR_ALLOC_SIZE(x)
+#  endif
+
+
+
+#  if defined(__clang__) || defined(__GNUC__)
+#    define XML_ATTR_DEPRECATED(message)                                       \
+      __attribute__((__deprecated__(message)))
+#  elif defined(_MSC_VER)
+#    define XML_ATTR_DEPRECATED(message) __declspec(deprecated(message))
+#  else
+#    define XML_ATTR_DEPRECATED(message)
 #  endif
 
 #  define XMLPARSEAPI(type) XMLIMPORT type XMLCALL

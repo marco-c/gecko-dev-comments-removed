@@ -53,137 +53,104 @@
 
 
 
+#if ! defined(INTERNAL_H)
+#  define INTERNAL_H 1
 
+#  ifndef XML_MIN_SIZE
+#    if ! defined(inline)
+#      ifdef __GNUC__
+#        define inline __inline
+#      endif 
+#    endif
+#  endif 
 
-
-
-
-#if defined(__GNUC__) && defined(__i386__) && ! defined(__MINGW32__)
-
-
-
-
-
-
-
-
-
-#  define FASTCALL __attribute__((regparm(3)))
-#  define PTRFASTCALL __attribute__((regparm(3)))
-#endif
-
-
-
-
-
-
-
-
-
-
-
-#ifndef FASTCALL
-#  define FASTCALL
-#endif
-
-#ifndef PTRCALL
-#  define PTRCALL
-#endif
-
-#ifndef PTRFASTCALL
-#  define PTRFASTCALL
-#endif
-
-#ifndef XML_MIN_SIZE
-#  if ! defined(__cplusplus) && ! defined(inline)
-#    ifdef __GNUC__
-#      define inline __inline
-#    endif 
-#  endif
-#endif 
-
-#ifdef __cplusplus
-#  define inline inline
-#else
 #  ifndef inline
 #    define inline
 #  endif
-#endif
 
-#include <limits.h> 
-#include <stddef.h> 
-
-#if defined(_WIN32)                                                            \
-    && (! defined(__USE_MINGW_ANSI_STDIO)                                      \
-        || (1 - __USE_MINGW_ANSI_STDIO - 1 == 0))
-#  define EXPAT_FMT_LLX(midpart) "%" midpart "I64x"
-#  define EXPAT_FMT_ULL(midpart) "%" midpart "I64u"
-#  if defined(_WIN64) 
-#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "I64d"
-#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "I64u"
-#  else
-#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "d"
-#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
+#  if ! defined(XML_NONTESTING_STATIC)
+#    if defined(XML_TESTING)
+#      define XML_NONTESTING_STATIC
+#    else
+#      define XML_NONTESTING_STATIC static
+#    endif
 #  endif
-#else
-#  include <inttypes.h> 
-#  define EXPAT_FMT_LLX(midpart) "%" midpart "llx"
-#  define EXPAT_FMT_ULL(midpart) "%" midpart "llu"
-#  define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart PRIdPTR
-#  define EXPAT_FMT_SIZE_T(midpart) "%" midpart PRIuPTR
-#endif
 
-#ifndef UNUSED_P
-#  define UNUSED_P(p) (void)p
-#endif
+#  include <limits.h> 
+#  include <stddef.h> 
 
+#  if defined(_WIN32)                                                          \
+      && (! defined(__USE_MINGW_ANSI_STDIO)                                    \
+          || (1 - __USE_MINGW_ANSI_STDIO - 1 == 0))
+#    define EXPAT_FMT_LLX(midpart) "%" midpart "I64x"
+#    define EXPAT_FMT_ULL(midpart) "%" midpart "I64u"
+#    if defined(_WIN64) 
+#      define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "I64d"
+#      define EXPAT_FMT_SIZE_T(midpart) "%" midpart "I64u"
+#    else
+#      define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "d"
+#      define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"
+#    endif
+#  else
+#    include <inttypes.h> 
+#    define EXPAT_FMT_LLX(midpart) "%" midpart "llx"
+#    define EXPAT_FMT_ULL(midpart) "%" midpart "llu"
+#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart PRIdPTR
+#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart PRIuPTR
+#  endif
 
-
-
-
-#define EXPAT_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT   \
-  100.0f
-#define EXPAT_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT    \
-  8388608 // 8 MiB, 2^23
-
-#define EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT 100.0f
-#define EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT                       \
-  67108864 // 64 MiB, 2^26
-
-
-
-#define EXPAT_MALLOC_ALIGNMENT sizeof(long long) // largest parser (sub)member
-#define EXPAT_MALLOC_PADDING ((EXPAT_MALLOC_ALIGNMENT) - sizeof(size_t))
+#  ifndef UNUSED_P
+#    define UNUSED_P(p) (void)p
+#  endif
 
 
 
-#include "expat.h" 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+
+#  define EXPAT_BILLION_LAUGHS_ATTACK_PROTECTION_MAXIMUM_AMPLIFICATION_DEFAULT \
+    100.0f
+#  define EXPAT_BILLION_LAUGHS_ATTACK_PROTECTION_ACTIVATION_THRESHOLD_DEFAULT  \
+    8388608 // 8 MiB, 2^23
+
+#  define EXPAT_ALLOC_TRACKER_MAXIMUM_AMPLIFICATION_DEFAULT 100.0f
+#  define EXPAT_ALLOC_TRACKER_ACTIVATION_THRESHOLD_DEFAULT                     \
+    67108864 // 64 MiB, 2^26
+
+
+
+union expat_align {
+  long long l;
+  void *p;
+};
+#  define EXPAT_MALLOC_ALIGNMENT sizeof(union expat_align)
+#  define EXPAT_MALLOC_PADDING ((EXPAT_MALLOC_ALIGNMENT) - sizeof(size_t))
+
+
+
+#  include "expat.h" 
 
 void _INTERNAL_trim_to_complete_utf8_characters(const char *from,
                                                 const char **fromLimRef);
 
-#if defined(XML_GE) && XML_GE == 1
+#  if defined(XML_GE) && XML_GE == 1
 unsigned long long testingAccountingGetCountBytesDirect(XML_Parser parser);
 unsigned long long testingAccountingGetCountBytesIndirect(XML_Parser parser);
 const char *unsignedCharToPrintable(unsigned char c);
-#endif
+#  endif
 
 extern
-#if ! defined(XML_TESTING)
+#  if ! defined(XML_TESTING)
     const
-#endif
+#  endif
     XML_Bool g_reparseDeferralEnabledDefault; 
-#if defined(XML_TESTING)
+#  if defined(XML_TESTING)
+
+int xmlSetHashSalt(XML_Parser parser, unsigned long hash_salt);
+
 void *expat_malloc(XML_Parser parser, size_t size, int sourceLine);
 void expat_free(XML_Parser parser, void *ptr, int sourceLine);
 void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine);
 extern unsigned int g_bytesScanned; 
-#endif
+#  endif
 
-#ifdef __cplusplus
-}
-#endif
+#endif 
