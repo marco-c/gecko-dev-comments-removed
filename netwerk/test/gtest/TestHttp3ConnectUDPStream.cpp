@@ -119,7 +119,7 @@ class Http3SessionStub final : public Http3SessionBase {
                                uint64_t aErrorCode) override {}
 
   void StreamStopSending(Http3WebTransportStream* aStream,
-                         uint8_t aErrorCode) override {}
+                         uint64_t aErrorCode) override {}
 
   void SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) override {}
 

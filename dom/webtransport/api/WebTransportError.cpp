@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "WebTransportError.h"
 
 namespace mozilla::dom {
@@ -15,23 +13,19 @@ JSObject* WebTransportError::WrapObject(JSContext* aCx,
 
 
 already_AddRefed<WebTransportError> WebTransportError::Constructor(
-    const GlobalObject& aGlobal, const WebTransportErrorInit& aInit) {
+    const GlobalObject& aGlobal, const nsAString& aMessage,
+    const WebTransportErrorOptions& aOptions) {
   
 
   
-  nsCString message(""_ns);
-  if (aInit.mMessage.WasPassed()) {
-    CopyUTF16toUTF8(aInit.mMessage.Value(), message);
-  }
+  
+  nsCString message;
+  CopyUTF16toUTF8(aMessage, message);
 
   
   
-  RefPtr<WebTransportError> error(new WebTransportError(message));
-
-  
-  if (aInit.mStreamErrorCode.WasPassed()) {
-    error->mStreamErrorCode = Nullable(aInit.mStreamErrorCode.Value());
-  }
+  RefPtr<WebTransportError> error(new WebTransportError(
+      message, aOptions.mSource, aOptions.mStreamErrorCode));
   return error.forget();
 }
 

@@ -200,18 +200,18 @@ class MockWebTransportSessionEventListener
   }
   nsTArray<uint8_t> mReceivedDatagrams;
 
-  Maybe<std::pair<uint64_t, nsresult>> TakeStopSending() {
+  Maybe<std::pair<uint64_t, uint64_t>> TakeStopSending() {
     return std::move(mStopSending);
   }
 
-  Maybe<std::pair<uint64_t, nsresult>> TakeReset() { return std::move(mReset); }
+  Maybe<std::pair<uint64_t, uint64_t>> TakeReset() { return std::move(mReset); }
 
  private:
   virtual ~MockWebTransportSessionEventListener() = default;
 
   nsTArray<RefPtr<WebTransportStreamBase>> mIncomingStreams;
-  Maybe<std::pair<uint64_t, nsresult>> mStopSending;
-  Maybe<std::pair<uint64_t, nsresult>> mReset;
+  Maybe<std::pair<uint64_t, uint64_t>> mStopSending;
+  Maybe<std::pair<uint64_t, uint64_t>> mReset;
 };
 
 NS_IMPL_ISUPPORTS(MockWebTransportSessionEventListener,
@@ -281,14 +281,14 @@ MockWebTransportSessionEventListener::OnOutgoingDatagramOutCome(
 }
 
 NS_IMETHODIMP MockWebTransportSessionEventListener::OnStopSending(
-    uint64_t aStreamId, nsresult aError) {
-  mStopSending = Some(std::pair<uint64_t, nsresult>(aStreamId, aError));
+    uint64_t aStreamId, uint64_t aErrorCode) {
+  mStopSending = Some(std::pair<uint64_t, uint64_t>(aStreamId, aErrorCode));
   return NS_OK;
 }
 
 NS_IMETHODIMP MockWebTransportSessionEventListener::OnResetReceived(
-    uint64_t aStreamId, nsresult aError) {
-  mReset = Some(std::pair<uint64_t, nsresult>(aStreamId, aError));
+    uint64_t aStreamId, uint64_t aErrorCode) {
+  mReset = Some(std::pair<uint64_t, uint64_t>(aStreamId, aErrorCode));
   return NS_OK;
 }
 
@@ -963,14 +963,16 @@ TEST(TestHttp2WebTransport, StreamOnStopSending)
 
   ServerProcessCapsules(server, client);
 
-  server->SendWebTransportStopSendingCapsule(0,
+  
+  const uint64_t kErrorCode = 0x12345;
+  server->SendWebTransportStopSendingCapsule(kErrorCode,
                                              uniStream->WebTransportStreamId());
   ClientProcessCapsules(server, client);
 
   auto stopSending = listener->TakeStopSending();
   ASSERT_TRUE(stopSending);
   ASSERT_EQ(stopSending->first, uniStream->WebTransportStreamId());
-  ASSERT_EQ(stopSending->second, NS_ERROR_WEBTRANSPORT_CODE_BASE);
+  ASSERT_EQ(stopSending->second, kErrorCode);
 
   client->Done();
   server->Done();
@@ -1051,14 +1053,15 @@ TEST(TestHttp2WebTransport, StreamResetReliableSize)
   server->SendWebTransportStreamDataCapsule(stream->WebTransportStreamId(),
                                             false, std::move(inputData));
 
-  server->SendWebTransportResetStreamCapsule(0, TOTAL_SIZE / 2,
+  const uint64_t kErrorCode = 0x12345;
+  server->SendWebTransportResetStreamCapsule(kErrorCode, TOTAL_SIZE / 2,
                                              stream->WebTransportStreamId());
   ClientProcessCapsules(server, client);
 
   auto reset = listener->TakeReset();
   ASSERT_TRUE(reset);
   ASSERT_EQ(reset->first, stream->WebTransportStreamId());
-  ASSERT_EQ(reset->second, NS_ERROR_WEBTRANSPORT_CODE_BASE);
+  ASSERT_EQ(reset->second, kErrorCode);
 
   client->Done();
   server->Done();

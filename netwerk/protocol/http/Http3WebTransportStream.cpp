@@ -4,6 +4,8 @@
 
 #include "Http3WebTransportStream.h"
 
+#include <limits>
+
 #include "Http3Session.h"
 #include "Http3WebTransportSession.h"
 #include "HttpLog.h"
@@ -621,10 +623,12 @@ void Http3WebTransportStream::Reset(uint64_t aErrorCode) {
   }
 }
 
-void Http3WebTransportStream::SendStopSending(uint8_t aErrorCode) {
+void Http3WebTransportStream::SendStopSending(uint64_t aErrorCode) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("Http3WebTransportStream::SendStopSending [this=%p, mSendState=%d]",
-       this, mSendState));
+  LOG(
+      ("Http3WebTransportStream::SendStopSending [this=%p, mSendState=%d, "
+       "errorCode=%" PRIu64 "]",
+       this, mSendState, aErrorCode));
 
   if (mSendState == WAITING_TO_ACTIVATE) {
     return;
@@ -634,7 +638,13 @@ void Http3WebTransportStream::SendStopSending(uint8_t aErrorCode) {
     return;
   }
 
-  mStopSendingError = Some(aErrorCode);
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(aErrorCode <= std::numeric_limits<uint32_t>::max());
+  mStopSendingError =
+      Some(WebTransportErrorToHttp3Error(static_cast<uint32_t>(aErrorCode)));
 
   mSession->StreamStopSending(this, *mStopSendingError);
   

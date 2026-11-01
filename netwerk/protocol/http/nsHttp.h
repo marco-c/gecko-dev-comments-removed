@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "NSSErrorsService.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -513,13 +514,19 @@ void CreatePushHashKey(const nsCString& scheme, const nsCString& hostHeader,
                        uint64_t serial, const nsACString& pathInfo,
                        nsCString& outOrigin, nsCString& outKey);
 
+
+
+
+
+
 nsresult GetNSResultFromWebTransportError(uint8_t aErrorCode);
 
 uint8_t GetWebTransportErrorFromNSResult(nsresult aResult);
 
-uint64_t WebTransportErrorToHttp3Error(uint8_t aErrorCode);
+uint64_t WebTransportErrorToHttp3Error(uint32_t aErrorCode);
 
-uint8_t Http3ErrorToWebTransportError(uint64_t aErrorCode);
+
+mozilla::Maybe<uint32_t> Http3ErrorToWebTransportError(uint64_t aErrorCode);
 
 bool PossibleZeroRTTRetryError(nsresult aReason);
 

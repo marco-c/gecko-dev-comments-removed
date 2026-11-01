@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTERROR_H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTERROR_H_
 
@@ -16,7 +14,7 @@ class WebTransportError final : public DOMException {
   explicit WebTransportError(
       const nsACString& aMessage,
       WebTransportErrorSource aSource = WebTransportErrorSource::Stream,
-      Nullable<uint8_t> aCode = Nullable<uint8_t>())
+      Nullable<uint32_t> aCode = Nullable<uint32_t>())
       : DOMException(NS_OK, aMessage, "WebTransportError"_ns, 0),
         mStreamErrorCode(aCode),
         mSource(aSource) {}
@@ -25,13 +23,14 @@ class WebTransportError final : public DOMException {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<WebTransportError> Constructor(
-      const GlobalObject& aGlobal, const WebTransportErrorInit& aInit);
+      const GlobalObject& aGlobal, const nsAString& aMessage,
+      const WebTransportErrorOptions& aOptions);
 
   WebTransportErrorSource Source() { return mSource; }
-  Nullable<uint8_t> GetStreamErrorCode() const { return mStreamErrorCode; }
+  Nullable<uint32_t> GetStreamErrorCode() const { return mStreamErrorCode; }
 
  private:
-  Nullable<uint8_t> mStreamErrorCode;
+  Nullable<uint32_t> mStreamErrorCode;
   const WebTransportErrorSource mSource;
 };
 

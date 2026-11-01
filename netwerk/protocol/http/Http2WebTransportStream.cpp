@@ -11,6 +11,7 @@
 #include "CapsuleEncoder.h"
 #include "Http2WebTransportSession.h"
 #include "HttpLog.h"
+#include "nsHttp.h"
 #include "nsIOService.h"
 
 namespace mozilla::net {
@@ -111,7 +112,7 @@ class StreamId Http2WebTransportStream::WebTransportStreamId() const {
 
 uint64_t Http2WebTransportStream::GetStreamId() const { return mStreamId; }
 
-void Http2WebTransportStream::SendStopSending(uint8_t aErrorCode) {
+void Http2WebTransportStream::SendStopSending(uint64_t aErrorCode) {
   if (mSentStopSending || !mWebTransportSession) {
     
     
@@ -170,8 +171,22 @@ Http2WebTransportStream::OnInputStreamReady(nsIAsyncInputStream* aIn) {
   }
 
   uint32_t sendBytes = 0;
-  return mSendStreamPipeIn->ReadSegments(
+  nsresult rv = mSendStreamPipeIn->ReadSegments(
       ReadRequestSegment, this, nsIOService::gDefaultSegmentSize, &sendBytes);
+
+  if (rv >= NS_ERROR_WEBTRANSPORT_CODE_BASE &&
+      rv <= NS_ERROR_WEBTRANSPORT_CODE_END) {
+    
+    
+    
+    
+    
+    uint8_t errorCode = GetWebTransportErrorFromNSResult(rv);
+    Reset(errorCode);
+    return NS_OK;
+  }
+
+  return rv;
 }
 
 NS_IMETHODIMP

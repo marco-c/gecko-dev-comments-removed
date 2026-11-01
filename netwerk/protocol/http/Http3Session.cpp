@@ -1866,8 +1866,14 @@ void Http3Session::ResetOrStopSendingRecvd(uint64_t aStreamId, uint64_t aError,
 
   uint64_t sessionId = 0;
   if (mWebTransportStreamToSessionMap.Get(aStreamId, &sessionId)) {
-    uint8_t wtError = Http3ErrorToWebTransportError(aError);
-    nsresult rv = GetNSResultFromWebTransportError(wtError);
+    Maybe<uint32_t> appError = Http3ErrorToWebTransportError(aError);
+    
+    nsresult rv = GetNSResultFromWebTransportError(
+        appError && *appError <= UINT8_MAX ? static_cast<uint8_t>(*appError)
+                                           : 0);
+    
+    
+    uint64_t wtError = appError ? *appError : UINT64_MAX;
 
     RefPtr<Http3StreamBase> stream = mStreamIdHash.Get(aStreamId);
     if (stream) {
@@ -1888,9 +1894,9 @@ void Http3Session::ResetOrStopSendingRecvd(uint64_t aStreamId, uint64_t aError,
       MOZ_ASSERT(wtSession);
       if (wtSession) {
         if (aType == RESET) {
-          wtSession->OnStreamReset(aStreamId, rv);
+          wtSession->OnStreamReset(aStreamId, wtError);
         } else {
-          wtSession->OnStreamStopSending(aStreamId, rv);
+          wtSession->OnStreamStopSending(aStreamId, wtError);
         }
       }
     }
@@ -2447,10 +2453,10 @@ void Http3Session::ResetWebTransportStream(Http3WebTransportStream* aStream,
 }
 
 void Http3Session::StreamStopSending(Http3WebTransportStream* aStream,
-                                     uint8_t aErrorCode) {
+                                     uint64_t aErrorCode) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  LOG(("Http3Session::StreamStopSending %p %p 0x%" PRIx32, this, aStream,
-       static_cast<uint32_t>(aErrorCode)));
+  LOG(("Http3Session::StreamStopSending %p %p 0x%" PRIx64, this, aStream,
+       aErrorCode));
   mHttp3Connection->StreamStopSending(aStream->StreamId(), aErrorCode);
 }
 
@@ -2553,11 +2559,14 @@ nsresult Http3Session::ReadResponseData(uint64_t aStreamId, char* aBuf,
 
   
   
-  MOZ_ASSERT(rv != NS_ERROR_INVALID_ARG);
+  
+  MOZ_ASSERT_IF(!mWebTransportStreamToSessionMap.Contains(aStreamId),
+                rv != NS_ERROR_INVALID_ARG);
   if (NS_FAILED(rv)) {
     LOG3(("Http3Session::ReadResponseData return an error %" PRIx32
           " [this=%p]",
           static_cast<uint32_t>(rv), this));
+    
     
     
     *aCountWritten = 0;

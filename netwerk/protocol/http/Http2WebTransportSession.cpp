@@ -5,6 +5,8 @@
 
 #include "Http2WebTransportSession.h"
 
+#include <limits>
+
 #include "Capsule.h"
 #include "CapsuleEncoder.h"
 #include "Http2Session.h"
@@ -456,6 +458,15 @@ bool Http2WebTransportSessionImpl::HandleMaxStreamDataCapsule(
 
 bool Http2WebTransportSessionImpl::HandleStreamStopSendingCapsule(
     StreamId aId, Capsule&& aCapsule) {
+  WebTransportStopSendingCapsule& stopSending =
+      aCapsule.GetWebTransportStopSendingCapsule();
+
+  
+  
+  if (stopSending.mErrorCode > std::numeric_limits<uint32_t>::max()) {
+    return false;
+  }
+
   RefPtr<Http2WebTransportStream> stream = GetStream(aId);
   if (!stream) {
     return false;
@@ -463,40 +474,39 @@ bool Http2WebTransportSessionImpl::HandleStreamStopSendingCapsule(
 
   stream->OnStopSending();
 
-  WebTransportStopSendingCapsule& stopSending =
-      aCapsule.GetWebTransportStopSendingCapsule();
-
   LOG(
       ("Http2WebTransportSessionImpl::HandleStreamStopSendingCapsule %p "
        "aID=%" PRIu64 " error=%" PRIu64,
        this, (uint64_t)aId, stopSending.mErrorCode));
 
-  uint8_t wtError = Http3ErrorToWebTransportError(stopSending.mErrorCode);
-  nsresult rv = GetNSResultFromWebTransportError(wtError);
   if (RefPtr<WebTransportSessionEventListener> listener = GetListener()) {
-    listener->OnStopSending(aId, rv);
+    listener->OnStopSending(aId, stopSending.mErrorCode);
   }
   return true;
 }
 
 bool Http2WebTransportSessionImpl::HandleStreamResetCapsule(
     StreamId aId, Capsule&& aCapsule) {
+  WebTransportResetStreamCapsule& reset =
+      aCapsule.GetWebTransportResetStreamCapsule();
+
+  
+  
+  if (reset.mErrorCode > std::numeric_limits<uint32_t>::max()) {
+    return false;
+  }
+
   RefPtr<Http2WebTransportStream> stream = GetStream(aId);
   if (!stream) {
     return false;
   }
 
-  WebTransportResetStreamCapsule& reset =
-      aCapsule.GetWebTransportResetStreamCapsule();
-
   if (NS_FAILED(stream->OnReset(reset.mReliableSize))) {
     return false;
   }
 
-  uint8_t wtError = Http3ErrorToWebTransportError(reset.mErrorCode);
-  nsresult rv = GetNSResultFromWebTransportError(wtError);
   if (RefPtr<WebTransportSessionEventListener> listener = GetListener()) {
-    listener->OnResetReceived(aId, rv);
+    listener->OnResetReceived(aId, reset.mErrorCode);
   }
 
   return true;

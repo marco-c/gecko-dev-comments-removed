@@ -1687,7 +1687,7 @@ WebTransportSessionProxy::OnOutgoingDatagramOutCome(
 }
 
 void WebTransportSessionProxy::OnStopSendingInternal(uint64_t aStreamId,
-                                                     nsresult aError) {
+                                                     uint64_t aErrorCode) {
   nsCOMPtr<WebTransportSessionEventListener> listener;
   {
     MutexAutoLock lock(mMutex);
@@ -1696,8 +1696,8 @@ void WebTransportSessionProxy::OnStopSendingInternal(uint64_t aStreamId,
       
       mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportSessionProxy::OnStopSendingInternal",
-          [self = RefPtr{this}, aStreamId, aError] {
-            self->OnStopSendingInternal(aStreamId, aError);
+          [self = RefPtr{this}, aStreamId, aErrorCode] {
+            self->OnStopSendingInternal(aStreamId, aErrorCode);
           }));
       return;
     }
@@ -1707,11 +1707,11 @@ void WebTransportSessionProxy::OnStopSendingInternal(uint64_t aStreamId,
     listener = mListener;
   }
 
-  listener->OnStopSending(aStreamId, aError);
+  listener->OnStopSending(aStreamId, aErrorCode);
 }
 
 NS_IMETHODIMP WebTransportSessionProxy::OnStopSending(uint64_t aStreamId,
-                                                      nsresult aError) {
+                                                      uint64_t aErrorCode) {
   MOZ_ASSERT(OnSocketThread());
 
   {
@@ -1719,18 +1719,18 @@ NS_IMETHODIMP WebTransportSessionProxy::OnStopSending(uint64_t aStreamId,
     if (!mTarget->IsOnCurrentThread()) {
       return mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportSessionProxy::OnStopSending",
-          [self = RefPtr{this}, aStreamId, aError] {
-            self->OnStopSendingInternal(aStreamId, aError);
+          [self = RefPtr{this}, aStreamId, aErrorCode] {
+            self->OnStopSendingInternal(aStreamId, aErrorCode);
           }));
     }
   }
 
-  OnStopSendingInternal(aStreamId, aError);
+  OnStopSendingInternal(aStreamId, aErrorCode);
   return NS_OK;
 }
 
 void WebTransportSessionProxy::OnResetReceivedInternal(uint64_t aStreamId,
-                                                       nsresult aError) {
+                                                       uint64_t aErrorCode) {
   nsCOMPtr<WebTransportSessionEventListener> listener;
   {
     MutexAutoLock lock(mMutex);
@@ -1739,8 +1739,8 @@ void WebTransportSessionProxy::OnResetReceivedInternal(uint64_t aStreamId,
       
       mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportSessionProxy::OnResetReceivedInternal",
-          [self = RefPtr{this}, aStreamId, aError] {
-            self->OnResetReceivedInternal(aStreamId, aError);
+          [self = RefPtr{this}, aStreamId, aErrorCode] {
+            self->OnResetReceivedInternal(aStreamId, aErrorCode);
           }));
       return;
     }
@@ -1750,11 +1750,11 @@ void WebTransportSessionProxy::OnResetReceivedInternal(uint64_t aStreamId,
     listener = mListener;
   }
 
-  listener->OnResetReceived(aStreamId, aError);
+  listener->OnResetReceived(aStreamId, aErrorCode);
 }
 
 NS_IMETHODIMP WebTransportSessionProxy::OnResetReceived(uint64_t aStreamId,
-                                                        nsresult aError) {
+                                                        uint64_t aErrorCode) {
   MOZ_ASSERT(OnSocketThread());
 
   {
@@ -1762,13 +1762,13 @@ NS_IMETHODIMP WebTransportSessionProxy::OnResetReceived(uint64_t aStreamId,
     if (!mTarget->IsOnCurrentThread()) {
       return mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportSessionProxy::OnResetReceived",
-          [self = RefPtr{this}, aStreamId, aError] {
-            self->OnResetReceivedInternal(aStreamId, aError);
+          [self = RefPtr{this}, aStreamId, aErrorCode] {
+            self->OnResetReceivedInternal(aStreamId, aErrorCode);
           }));
     }
   }
 
-  OnResetReceivedInternal(aStreamId, aError);
+  OnResetReceivedInternal(aStreamId, aErrorCode);
   return NS_OK;
 }
 

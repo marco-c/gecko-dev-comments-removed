@@ -134,8 +134,8 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   void OnOutgoingDatagramOutCome(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
 
-  void OnStreamStopSending(uint64_t aId, nsresult aError);
-  void OnStreamReset(uint64_t aId, nsresult aError);
+  void OnStreamStopSending(uint64_t aId, uint64_t aErrorCode);
+  void OnStreamReset(uint64_t aId, uint64_t aErrorCode);
 
  private:
   virtual ~Http3WebTransportSession();

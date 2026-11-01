@@ -37,7 +37,10 @@ extern const char kProxyType_SOCKS[];
 
 
 constexpr uint64_t kWebTransportErrorCodeStart = 0x52e4a40fa8db;
-constexpr uint64_t kWebTransportErrorCodeEnd = 0x52e4a40fa9e2;
+
+
+
+constexpr uint64_t kWebTransportErrorCodeEnd = 0x52e5ac983162;
 
 
 #define HTTP_ATOM(_name, _value) Unused_##_name,
@@ -1078,25 +1081,22 @@ uint8_t GetWebTransportErrorFromNSResult(nsresult aResult) {
                               (uint32_t)NS_ERROR_WEBTRANSPORT_CODE_BASE);
 }
 
-uint64_t WebTransportErrorToHttp3Error(uint8_t aErrorCode) {
-  return kWebTransportErrorCodeStart + aErrorCode + aErrorCode / 0x1e;
+uint64_t WebTransportErrorToHttp3Error(uint32_t aErrorCode) {
+  return kWebTransportErrorCodeStart + aErrorCode +
+         static_cast<uint64_t>(aErrorCode) / 0x1e;
 }
 
-uint8_t Http3ErrorToWebTransportError(uint64_t aErrorCode) {
+Maybe<uint32_t> Http3ErrorToWebTransportError(uint64_t aErrorCode) {
+  
   
   if (aErrorCode < kWebTransportErrorCodeStart ||
-      aErrorCode > kWebTransportErrorCodeEnd) {
-    return 0;
+      aErrorCode > kWebTransportErrorCodeEnd ||
+      (aErrorCode - 0x21) % 0x1f == 0) {
+    return Nothing();
   }
 
   uint64_t shifted = aErrorCode - kWebTransportErrorCodeStart;
-  uint64_t result = shifted - shifted / 0x1f;
-
-  if (result <= std::numeric_limits<uint8_t>::max()) {
-    return (uint8_t)result;
-  }
-
-  return 0;
+  return Some(static_cast<uint32_t>(shifted - shifted / 0x1f));
 }
 
 ConnectionCloseReason ToCloseReason(nsresult aErrorCode) {

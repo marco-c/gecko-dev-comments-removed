@@ -1032,6 +1032,14 @@ void WebTransport::PropagateError(Stream* aStream, WebTransportError* aError) {
   aStream->ErrorNative(cx, errorValue, IgnoreErrors());
 }
 
+static Nullable<uint32_t> ToNullableErrorCode(const Maybe<uint32_t>& aCode) {
+  Nullable<uint32_t> code;
+  if (aCode) {
+    code.SetValue(*aCode);
+  }
+  return code;
+}
+
 void WebTransport::OnStreamResetOrStopSending(
     uint64_t aStreamId, const StreamResetOrStopSendingError& aError) {
   LOG(("WebTransport::OnStreamResetOrStopSending %p id=%" PRIx64, this,
@@ -1041,11 +1049,9 @@ void WebTransport::OnStreamResetOrStopSending(
     if (!stream) {
       return;
     }
-    uint8_t errorCode = net::GetWebTransportErrorFromNSResult(
-        aError.get_StopSendingError().error());
     RefPtr<WebTransportError> error = new WebTransportError(
         "WebTransportStream StopSending"_ns, WebTransportErrorSource::Stream,
-        Nullable<uint8_t>(errorCode));
+        ToNullableErrorCode(aError.get_StopSendingError().errorCode()));
     PropagateError(stream.get(), error);
   } else if (aError.type() == StreamResetOrStopSendingError::TResetError) {
     RefPtr<WebTransportReceiveStream> stream = mReceiveStreams.Get(aStreamId);
@@ -1054,11 +1060,9 @@ void WebTransport::OnStreamResetOrStopSending(
     if (!stream) {
       return;
     }
-    uint8_t errorCode =
-        net::GetWebTransportErrorFromNSResult(aError.get_ResetError().error());
     RefPtr<WebTransportError> error = new WebTransportError(
         "WebTransportStream Reset"_ns, WebTransportErrorSource::Stream,
-        Nullable<uint8_t>(errorCode));
+        ToNullableErrorCode(aError.get_ResetError().errorCode()));
     PropagateError(stream.get(), error);
   }
 }
@@ -1124,8 +1128,7 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
   
   RefPtr<WebTransport> self = this;
   RefPtr<WebTransportError> error =
-      new WebTransportError("close()"_ns, WebTransportErrorSource::Session,
-                            DOMException_Binding::ABORT_ERR);
+      new WebTransportError("close()"_ns, WebTransportErrorSource::Session);
   WebTransportCloseInfo closeInfo;
   closeInfo.mCloseCode = aOptions.mCloseCode;
   closeInfo.mReason = aOptions.mReason;

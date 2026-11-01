@@ -667,24 +667,26 @@ void Http3WebTransportSession::OnOutgoingDatagramOutCome(
 }
 
 void Http3WebTransportSession::OnStreamStopSending(uint64_t aId,
-                                                   nsresult aError) {
-  LOG(("OnStreamStopSending id:%" PRId64, aId));
+                                                   uint64_t aErrorCode) {
+  LOG(("OnStreamStopSending id:%" PRId64 " errorCode:%" PRIu64, aId,
+       aErrorCode));
   RefPtr<WebTransportSessionEventListener> listener = GetListener();
   if (!listener) {
     return;
   }
 
-  listener->OnStopSending(aId, aError);
+  listener->OnStopSending(aId, aErrorCode);
 }
 
-void Http3WebTransportSession::OnStreamReset(uint64_t aId, nsresult aError) {
-  LOG(("OnStreamReset id:%" PRId64, aId));
+void Http3WebTransportSession::OnStreamReset(uint64_t aId,
+                                             uint64_t aErrorCode) {
+  LOG(("OnStreamReset id:%" PRId64 " errorCode:%" PRIu64, aId, aErrorCode));
   RefPtr<WebTransportSessionEventListener> listener = GetListener();
   if (!listener) {
     return;
   }
 
-  listener->OnResetReceived(aId, aError);
+  listener->OnResetReceived(aId, aErrorCode);
 }
 
 }  

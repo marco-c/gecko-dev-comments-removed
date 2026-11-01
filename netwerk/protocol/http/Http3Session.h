@@ -171,7 +171,7 @@ class Http3SessionBase {
   virtual void ResetWebTransportStream(Http3WebTransportStream* aStream,
                                        uint64_t aErrorCode) = 0;
   virtual void StreamStopSending(Http3WebTransportStream* aStream,
-                                 uint8_t aErrorCode) = 0;
+                                 uint64_t aErrorCode) = 0;
   virtual void SetSendOrder(Http3StreamBase* aStream, int64_t aSendOrder) = 0;
   virtual void SetSendGroup(Http3StreamBase* aStream,
                             uint64_t aSendGroupId) = 0;
@@ -302,7 +302,7 @@ class Http3Session final : public Http3SessionBase,
   void ResetWebTransportStream(Http3WebTransportStream* aStream,
                                uint64_t aErrorCode) override;
   void StreamStopSending(Http3WebTransportStream* aStream,
-                         uint8_t aErrorCode) override;
+                         uint64_t aErrorCode) override;
 
   void SendDatagram(Http3WebTransportSession* aSession,
                     nsTArray<uint8_t>& aData, uint64_t aTrackingId,

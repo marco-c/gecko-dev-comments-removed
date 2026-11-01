@@ -135,8 +135,10 @@ interface WebTransportSessionEventListener : nsISupports {
   void onIncomingBidirectionalStreamAvailable(in nsIWebTransportBidirectionalStream aStream);
   void onIncomingUnidirectionalStreamAvailable(in nsIWebTransportReceiveStream aStream);
 
-  void onStopSending(in uint64_t aStreamId, in nsresult aError);
-  void onResetReceived(in uint64_t aStreamId, in nsresult aError);
+  // aErrorCode is the application error code.  A value above 0xffffffff means
+  // the peer sent no code that maps to one.
+  void onStopSending(in uint64_t aStreamId, in uint64_t aErrorCode);
+  void onResetReceived(in uint64_t aStreamId, in uint64_t aErrorCode);
 
   // When a new datagram has been received.
   void onDatagramReceived(in Array<uint8_t> aData);

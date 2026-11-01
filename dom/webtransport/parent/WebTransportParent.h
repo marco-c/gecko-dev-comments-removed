@@ -76,6 +76,10 @@ class WebTransportParent : public PWebTransportParent,
   ::mozilla::ipc::IPCResult RecvGetHttpChannelID(
       GetHttpChannelIDResolver&& aResolver);
 
+  
+  
+  void RemoveFinishedIncomingStream(uint64_t aStreamId);
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   class OnResetOrStopSendingCallback final {
@@ -136,6 +140,13 @@ class WebTransportParent : public PWebTransportParent,
   nsTHashMap<NoMemMoveKey<nsUint64HashKey>,
              StreamHash<nsIWebTransportSendStream>>
       mUniStreamCallbackMap;
+  
+  
+  
+  
+  nsTHashMap<NoMemMoveKey<nsUint64HashKey>,
+             StreamHash<nsIWebTransportReceiveStream>>
+      mIncomingUniStreamCallbackMap;
 };
 
 }  

@@ -187,8 +187,8 @@ class WebTransportSessionProxy final
       const Maybe<mozilla::dom::WebTransportStatsData>& aStats);
   void OnOutgoingDatagramOutComeInternal(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
-  void OnStopSendingInternal(uint64_t aStreamId, nsresult aError);
-  void OnResetReceivedInternal(uint64_t aStreamId, nsresult aError);
+  void OnStopSendingInternal(uint64_t aStreamId, uint64_t aErrorCode);
+  void OnResetReceivedInternal(uint64_t aStreamId, uint64_t aErrorCode);
 
   nsCOMPtr<nsIChannel> mChannel;
   uint64_t mHttpChannelID = 0;
