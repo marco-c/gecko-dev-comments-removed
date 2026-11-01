@@ -56,7 +56,7 @@ impl UI {
             if let Some(c) = &window.element_type.close {
                 c.subscribe(cc! { (interface, windows) move |&()| {
                     let old = windows
-                        .fetch_update(Relaxed, Relaxed, |x| Some(x & !(1u8 << index)))
+                        .try_update(Relaxed, Relaxed, |x| Some(x & !(1u8 << index)))
                         .unwrap();
                     if old == 1u8 << index {
                         interface.work.send(Command::Finish).unwrap();
@@ -66,7 +66,7 @@ impl UI {
                 
                 
                 windows
-                    .fetch_update(Relaxed, Relaxed, |x| Some(x & !(1u8 << index)))
+                    .try_update(Relaxed, Relaxed, |x| Some(x & !(1u8 << index)))
                     .unwrap();
             }
         }
