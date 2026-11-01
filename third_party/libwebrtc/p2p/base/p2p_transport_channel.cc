@@ -28,7 +28,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
-#include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "api/async_dns_resolver.h"
 #include "api/candidate.h"
@@ -2337,7 +2336,7 @@ Candidate P2PTransportChannel::SanitizeRemoteCandidate(
   RTC_DCHECK_RUN_ON(&network_thread_);
   
   
-  bool use_hostname_address = absl::EndsWith(c.address().hostname(), LOCAL_TLD);
+  bool use_hostname_address = IsMdnsHostname(c.address().hostname());
   
   
   use_hostname_address |= c.is_prflx();

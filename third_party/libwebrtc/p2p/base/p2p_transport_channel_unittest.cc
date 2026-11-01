@@ -5912,7 +5912,6 @@ TEST_F(P2PTransportChannelTest,
   EXPECT_EQ(1u, ep1_ch1()->ports().size());
   
   
-  
   Candidate host_candidate = CreateUdpCandidate(
       IceCandidateType::kHost, "1.1.1.1", 1 , 0 );
   ep1_ch1()->AddRemoteCandidate(host_candidate);
@@ -5929,6 +5928,17 @@ TEST_F(P2PTransportChannelTest,
                                                0 ));
   
   
+  mdns_candidates.push_back(CreateUdpCandidate(IceCandidateType::kHost,
+                                               "example.local.", 5 ,
+                                               0 ));
+  mdns_candidates.push_back(CreateUdpCandidate(IceCandidateType::kHost,
+                                               "EXAMPLE.LOCAL", 6 ,
+                                               0 ));
+  mdns_candidates.push_back(CreateUdpCandidate(IceCandidateType::kHost,
+                                               "Example.Local.", 7 ,
+                                               0 ));
+  
+  
   
   for (auto& mdns_candidate : mdns_candidates) {
     SocketAddress resolved_address(mdns_candidate.address());
@@ -5939,7 +5949,7 @@ TEST_F(P2PTransportChannelTest,
   }
 
   
-  EXPECT_EQ(4u, ep1_ch1()->remote_candidates().size());
+  EXPECT_EQ(1u + mdns_candidates.size(), ep1_ch1()->remote_candidates().size());
 
   
   ASSERT_EQ(1u, ep1_ch1()->connections().size());
@@ -5947,6 +5957,44 @@ TEST_F(P2PTransportChannelTest,
   EXPECT_EQ(
       "1.1.1.1:1",
       ep1_ch1()->connections()[0]->remote_candidate().address().ToString());
+  DestroyChannels();
+}
+
+
+
+
+
+TEST_F(P2PTransportChannelTest, RemoteMdnsCandidatesSanitizedInStats) {
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+  GetEndpoint(0)->cd1().set_ch(CreateChannel(0, ICE_CANDIDATE_COMPONENT_DEFAULT,
+                                             kIceParams[0], kIceParams[1]));
+  ep1_ch1()->MaybeStartGathering();
+  ASSERT_THAT(MediumWait().Until([&] { return ep1_ch1()->gathering_state(); },
+                                 Eq(IceGatheringState::kIceGatheringComplete)),
+              IsRtcOk());
+  ASSERT_EQ(1u, ep1_ch1()->ports().size());
+
+  const std::vector<absl::string_view> mdns_names = {
+      "example.local", "example.local.", "EXAMPLE.LOCAL", "Example.Local."};
+  int port = 1;
+  for (absl::string_view mdns_name : mdns_names) {
+    Candidate candidate = CreateUdpCandidate(IceCandidateType::kHost, mdns_name,
+                                             port++, 0 );
+    
+    
+    SocketAddress resolved_address(candidate.address());
+    resolved_address.SetResolvedIP(0x1111);  
+    candidate.set_address(resolved_address);
+    ep1_ch1()->AddRemoteCandidate(candidate);
+  }
+
+  IceTransportStats ice_transport_stats;
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  ASSERT_EQ(mdns_names.size(), ice_transport_stats.connection_infos.size());
+  for (const auto& connection_info : ice_transport_stats.connection_infos) {
+    const SocketAddress& address = connection_info.remote_candidate.address();
+    EXPECT_TRUE(address.IsUnresolvedIP()) << address.hostname();
+  }
   DestroyChannels();
 }
 

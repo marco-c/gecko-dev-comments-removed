@@ -11,8 +11,10 @@
 #include "p2p/base/p2p_constants.h"
 
 #include <cstddef>
-#include <cstdint>
 
+#include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -48,7 +50,19 @@ const char CONNECTIONROLE_PASSIVE_STR[] = "passive";
 const char CONNECTIONROLE_ACTPASS_STR[] = "actpass";
 const char CONNECTIONROLE_HOLDCONN_STR[] = "holdconn";
 
-const char LOCAL_TLD[] = ".local";
+namespace {
+
+
+constexpr absl::string_view kLocalTld = ".local";
+
+}  
+
+bool IsMdnsHostname(absl::string_view hostname) {
+  
+  
+  absl::ConsumeSuffix(&hostname, ".");
+  return absl::EndsWithIgnoreCase(hostname, kLocalTld);
+}
 
 
 

@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "absl/strings/string_view.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/system/rtc_export.h"
@@ -51,7 +52,10 @@ extern const char CONNECTIONROLE_ACTPASS_STR[];
 extern const char CONNECTIONROLE_HOLDCONN_STR[];
 
 
-extern const char LOCAL_TLD[];
+
+
+
+bool IsMdnsHostname(absl::string_view hostname);
 
 
 
