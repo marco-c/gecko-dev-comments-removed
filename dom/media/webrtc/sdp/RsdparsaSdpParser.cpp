@@ -56,29 +56,8 @@ UniquePtr<SdpParser::Results> RsdparsaSdpParser::Parse(
                    rustOrigin.session_id, rustOrigin.session_version,
                    address.first, address.second);
 
-  auto sdp = std::make_unique<RsdparsaSdp>(std::move(uniqueResult), origin);
-
-  
-  
-  
-  
-  const auto levels = sdp->GetMediaSectionCount();
-  bool found = false;
-  for (size_t level = 0; level < levels; level++) {
-    const auto& info = sdp->GetMediaSection(level).GetMediaTypeInfo();
-    if (info.type == SdpMediaSection::kUnknown) {
-      ffi::StringView view{reinterpret_cast<const uint8_t*>(aText.data()),
-                           aText.length()};
-      const auto line = sdp_get_media_section_line_number(view, level);
-      results->AddParseError(line,
-                             "unsupported media value: " + info.unknown->name);
-      found = true;
-    }
-  }
-  if (!found) {
-    results->SetSdp(std::move(sdp));
-  }
-
+  results->SetSdp(
+      std::make_unique<RsdparsaSdp>(std::move(uniqueResult), origin));
   return results;
 }
 
