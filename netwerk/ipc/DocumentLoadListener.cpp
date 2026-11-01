@@ -60,6 +60,7 @@
 #include "nsDocShellLoadTypes.h"
 #include "nsExternalHelperAppService.h"
 #include "nsHttpChannel.h"
+#include "nsHttpHandler.h"
 #include "nsIBrowser.h"
 #include "nsIBrowserDOMWindow.h"
 #include "nsICachingChannel.h"
@@ -1084,10 +1085,23 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   }
 
   nsCOMPtr<nsIIdentChannel> identChannel = do_QueryInterface(mChannel);
-  if (identChannel && aChannelId) {
-    (void)identChannel->SetChannelId(*aChannelId);
+  if (aChannelId) {
+    if (identChannel) {
+      (void)identChannel->SetChannelId(*aChannelId);
+    }
+    mDocumentChannelId = aChannelId;
+  } else {
+    
+    
+    
+    
+    
+    uint64_t channelId = identChannel ? identChannel->ChannelId() : 0;
+    if (!channelId) {
+      channelId = RefPtr{nsHttpHandler::GetInstance()}->NewChannelId();
+    }
+    mDocumentChannelId = Some(channelId);
   }
-  mDocumentChannelId = aChannelId;
 
   RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(mChannel);
   if (httpChannelImpl) {
@@ -1422,11 +1436,6 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
 
   
   
-  
-  Maybe<uint64_t> channelId = Nothing();
-
-  
-  
   Maybe<dom::ClientInfo> initialClientInfo;
 
   mSupportsRedirectToRealChannel = aSupportsRedirectToRealChannel;
@@ -1442,7 +1451,7 @@ auto DocumentLoadListener::OpenInParent(nsDocShellLoadState* aLoadState,
       Nothing());
 
   nsresult rv;
-  return Open(loadState, loadInfo, loadFlags, cacheKey, channelId,
+  return Open(loadState, loadInfo, loadFlags, cacheKey, Nothing(),
               TimeStamp::Now(), timing, std::move(initialClientInfo), false,
               browsingContext->GetContentParent(), &rv);
 }
@@ -1557,7 +1566,6 @@ bool DocumentLoadListener::SpeculativeLoadInParent(
 
 void DocumentLoadListener::CleanupParentLoadAttempt() {
   LOG(("DocumentLoadListener CleanupParentLoadAttempt [this=%p]", this));
-  MOZ_ASSERT(mDocumentChannelId.isNothing());
 
   
   
@@ -1573,11 +1581,7 @@ void DocumentLoadListener::CleanupParentLoadAttempt() {
          "DocumentLoadListener::CleanupParentLoadAttempt"_ns);
 }
 
-auto DocumentLoadListener::ClaimParentLoad(Maybe<uint64_t> aChannelId)
-    -> RefPtr<OpenPromise> {
-  MOZ_ASSERT(mDocumentChannelId.isNothing() && aChannelId.isSome());
-  mDocumentChannelId = aChannelId;
-
+auto DocumentLoadListener::ClaimParentLoad() -> RefPtr<OpenPromise> {
   MOZ_DIAGNOSTIC_ASSERT(mOpenPromise);
   return mOpenPromise;
 }

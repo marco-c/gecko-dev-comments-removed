@@ -372,6 +372,9 @@ class nsDocShellLoadState final {
   void SetSpeculativeListener(mozilla::net::DocumentLoadListener* aListener);
   already_AddRefed<mozilla::net::DocumentLoadListener>
   TakeSpeculativeListener();
+  const mozilla::Maybe<uint64_t>& GetSpeculativeChannelId() const {
+    return mSpeculativeChannelId;
+  }
 
   void SetIsMetaRefresh(bool aMetaRefresh) { mIsMetaRefresh = aMetaRefresh; }
 
@@ -761,7 +764,7 @@ class nsDocShellLoadState final {
 
   
   
-  bool mHasSpeculativeListener = false;
+  mozilla::Maybe<uint64_t> mSpeculativeChannelId;
 
   
   bool mIsMetaRefresh;

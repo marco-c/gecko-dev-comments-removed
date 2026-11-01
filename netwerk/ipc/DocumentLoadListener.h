@@ -196,7 +196,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   
   
-  RefPtr<OpenPromise> ClaimParentLoad(Maybe<uint64_t> aChannelId);
+  RefPtr<OpenPromise> ClaimParentLoad();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
@@ -225,6 +225,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   nsIChannel* GetChannel() const { return mChannel; }
 
   uint32_t GetRedirectChannelId() const { return mRedirectChannelId; }
+
+  const Maybe<uint64_t>& GetDocumentChannelId() const {
+    return mDocumentChannelId;
+  }
 
   nsresult ReportSecurityMessage(const nsAString& aMessageTag,
                                  const nsAString& aMessageCategory) override {
