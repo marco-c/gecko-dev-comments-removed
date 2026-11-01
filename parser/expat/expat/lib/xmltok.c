@@ -1220,10 +1220,6 @@ checkXmlDeclVersionNum(const ENCODING *enc, const char *val,
   return true;
 }
 
-
-static const char KW_XML_1_0[] = {ASCII_1, ASCII_PERIOD, ASCII_0, '\0'};
-
-
 static int
 doParseXmlDecl(const ENCODING *(*encodingFinder)(const ENCODING *, const char *,
                                                  const char *),
@@ -1267,13 +1263,6 @@ doParseXmlDecl(const ENCODING *(*encodingFinder)(const ENCODING *, const char *,
       *badPtr = val;
       return 0;
     }
-
-     
-     if (!XmlNameMatchesAscii(enc, val, ptr - enc->minBytesPerChar, KW_XML_1_0)) {
-       *badPtr = val;
-       return 0;
-     }
-
     if (! parsePseudoAttribute(enc, ptr, end, &name, &nameEnd, &val, &ptr)) {
       *badPtr = ptr;
       return 0;
