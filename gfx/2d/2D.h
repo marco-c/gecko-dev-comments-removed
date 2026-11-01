@@ -2011,6 +2011,13 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
 
+  virtual RefPtr<DrawTarget> CreateClippedDrawTargetForRect(
+      const IntRect& aRect, SurfaceFormat aFormat);
+
+  
+
+
+
 
 
   virtual RefPtr<DrawTarget> CreateSimilarRasterTarget(
