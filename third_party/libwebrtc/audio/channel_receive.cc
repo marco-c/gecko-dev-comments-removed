@@ -450,12 +450,15 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
     last_playout_time_ = now;
   }
 
-  resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
-
+  
+  
+  
   {
     MutexLock lock(&call_stats_mutex_);
     call_stats_.DecodedByNetEq(audio_frame->speech_type_, audio_frame->muted());
   }
+
+  resampler_helper_.MaybeResample(sample_rate_hz, audio_frame);
 
   bool has_capture_time = false;
   for (const auto& packet_info : audio_frame->packet_infos_) {

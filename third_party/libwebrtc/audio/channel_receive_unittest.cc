@@ -421,6 +421,40 @@ TEST_F(ChannelReceiveTest, AudioSinkReceivesPacketInfos) {
               ::testing::ElementsAre(1111, 2222));
 }
 
+
+
+class ChannelReceiveOutputRateTest : public ChannelReceiveTest,
+                                     public ::testing::WithParamInterface<int> {
+};
+
+TEST_P(ChannelReceiveOutputRateTest, ReportsMutedNetEqOutputAsMuted) {
+  const int mixer_sample_rate_hz = GetParam();
+  auto channel = CreateTestChannelReceive();
+  channel->StartPlayout();
+  channel->OnRtpPacket(CreateRtpPacket());
+
+  
+  
+  AudioFrame audio_frame;
+  bool muted = false;
+  for (int i = 0; i < 500 && !muted; ++i) {
+    muted =
+        channel->GetAudioFrameWithInfo(mixer_sample_rate_hz, &audio_frame) ==
+        AudioMixer::Source::AudioFrameInfo::kMuted;
+  }
+  EXPECT_TRUE(muted);
+  
+  
+  
+  const bool resampling = mixer_sample_rate_hz != kSampleRateHz;
+  EXPECT_EQ(channel->GetDecodingCallStatistics().decoded_muted_output,
+            resampling ? 2 : 1);
+}
+
+INSTANTIATE_TEST_SUITE_P(All,
+                         ChannelReceiveOutputRateTest,
+                         ::testing::Values(kSampleRateHz, 48000));
+
 }  
 }  
 }  

@@ -30,11 +30,18 @@ class ResamplerHelper {
   ResamplerHelper();
 
   
+  
+  
+  
+  
   bool MaybeResample(int desired_sample_rate_hz, AudioFrame* audio_frame);
 
  private:
   PushResampler<int16_t> resampler_;
   bool resampled_last_output_frame_ = true;
+  
+  
+  bool last_frame_muted_ = true;
   std::array<int16_t, AudioFrame::kMaxDataSizeSamples> last_audio_buffer_;
 };
 

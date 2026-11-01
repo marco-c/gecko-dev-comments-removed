@@ -57,8 +57,28 @@ bool ResamplerHelper::MaybeResample(int desired_sample_rate_hz,
     }
   }
 
+  
+  
+  
+  const bool previous_frame_muted = last_frame_muted_;
+  last_frame_muted_ = audio_frame->muted();
+  const bool silent = audio_frame->muted() && previous_frame_muted;
+
+  if (need_resampling && silent) {
+    
+    
+    
+    audio_frame->SetSampleRateAndChannelSize(desired_sample_rate_hz);
+    return true;
+  }
+
   if (need_resampling && !resampled_last_output_frame_) {
     
+    if (previous_frame_muted) {
+      
+      
+      absl::c_fill(last_audio_buffer_, 0);
+    }
     InterleavedView<const int16_t> src(last_audio_buffer_.data(),
                                        audio_frame->samples_per_channel(),
                                        audio_frame->num_channels());
@@ -78,7 +98,6 @@ bool ResamplerHelper::MaybeResample(int desired_sample_rate_hz,
     audio_frame->SetSampleRateAndChannelSize(desired_sample_rate_hz);
     InterleavedView<int16_t> dst = audio_frame->mutable_data(
         audio_frame->samples_per_channel(), audio_frame->num_channels());
-    
     resampler_.Resample(src, dst);
     resampled_last_output_frame_ = true;
   } else {
