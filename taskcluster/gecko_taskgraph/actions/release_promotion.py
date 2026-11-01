@@ -344,6 +344,9 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
     
     
     parameters["optimize_target_tasks"] = True
+    
+    
+    parameters["shipping"] = True
 
     if release_promotion_flavor == "promote_firefox_partner_repack":
         release_enable_partner_repack = True
