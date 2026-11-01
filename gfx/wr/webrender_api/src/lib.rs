@@ -664,6 +664,10 @@ pub enum BoolParameter {
 #[repr(u32)]
 pub enum IntParameter {
     BatchedUploadThreshold = 0,
+    
+    
+    
+    PathAaSamples = 1,
 }
 
 
