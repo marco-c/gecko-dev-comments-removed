@@ -668,14 +668,7 @@ bool nsWindow::WidgetTypeSupportsNativeCompositing() {
   if (IsDragPopup()) {
     return false;
   }
-#if defined(NIGHTLY_BUILD)
-  
-  
-  
-  return true;
-#else
   return WidgetTypeSupportsAcceleration();
-#endif
 }
 
 static bool IsPenEvent(GdkEvent* aEvent, bool* isEraser) {
