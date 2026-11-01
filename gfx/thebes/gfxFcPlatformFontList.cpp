@@ -7,6 +7,7 @@
 #include "SharedFontList-impl.h"
 #include "gfxFT2Utils.h"
 #include "gfxFont.h"
+#include "gfxOTSUtils.h"
 #include "gfxPlatform.h"
 #include "mozilla/Components.h"
 #include "mozilla/FileUtils.h"
@@ -491,18 +492,15 @@ gfxFontconfigFontEntry::AutoHBFace gfxFontconfigFontEntry::GetHBFace() {
       face = hb_face_create_from_file_or_fail((const char*)filename, index);
     } else {
       
-      
-      if (mFTFaceInitialized) {
-        if (const auto* ufd = GetUserFontData()) {
-          hb_blob_t* blob =
-              hb_blob_create((const char*)ufd->Data(), ufd->Length(),
-                             HB_MEMORY_MODE_READONLY, nullptr, nullptr);
-          
-          
-          face = hb_face_create(blob, 0);
-          
-          hb_blob_destroy(blob);
-        }
+      if (const auto* ufd = GetUserFontData()) {
+        hb_blob_t* blob =
+            hb_blob_create((const char*)ufd->Data(), ufd->Length(),
+                           HB_MEMORY_MODE_READONLY, nullptr, nullptr);
+        
+        
+        face = hb_face_create(blob, 0);
+        
+        hb_blob_destroy(blob);
       }
     }
     if (!face) {
@@ -1146,8 +1144,8 @@ SharedFTFace* gfxFontconfigFontEntry::GetFTFace() {
 }
 
 FontData* gfxFontconfigFontEntry::GetUserFontData() {
-  if (auto* face = GetFTFace()) {
-    return face->GetFontData();
+  if (mUserFontData) {
+    return mUserFontData->mFontData;
   }
   return nullptr;
 }
@@ -2434,7 +2432,18 @@ already_AddRefed<gfxFontEntry> gfxFcPlatformFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     WidthRange aWidthForEntry, SlantStyleRange aStyleForEntry,
     FontData* aFontData) {
-  RefPtr<SharedFTFace> face = Factory::NewSharedFTFaceFromData(aFontData, 0);
+  
+  
+  
+  gfxOTSExpandingMemoryStream<> output(aFontData->Length());
+  gfxOTSContext otsContext( true);
+  if (!otsContext.Process(&output, aFontData->Data(), aFontData->Length())) {
+    return nullptr;
+  }
+  uint32_t length = output.Tell();
+  RefPtr ftFontData = MakeRefPtr<FontData>(
+      static_cast<const uint8_t*>(output.forget()), length);
+  RefPtr<SharedFTFace> face = Factory::NewSharedFTFaceFromData(ftFontData, 0);
   if (!face) {
     return nullptr;
   }
