@@ -10,11 +10,22 @@ const { IPPPermissionRuleProvider } = ChromeUtils.importESModule(
 
 const PERM_NAME = "ipp-vpn";
 
+const SITE_INCLUSIONS_PREF = "browser.ipProtection.features.siteInclusions";
+const NORMALIZED_PREF = "browser.ipProtection.siteRulesNormalized";
+
 const makePrincipal = origin =>
   Services.scriptSecurityManager.createContentPrincipalFromOrigin(origin);
 
+const storedOrigins = () =>
+  Services.perms
+    .getAllByTypes([PERM_NAME])
+    .map(p => p.principal.origin)
+    .sort();
+
 registerCleanupFunction(() => {
   Services.perms.removeByType(PERM_NAME);
+  Services.prefs.clearUserPref(SITE_INCLUSIONS_PREF);
+  Services.prefs.clearUserPref(NORMALIZED_PREF);
 });
 
 
@@ -23,8 +34,28 @@ registerCleanupFunction(() => {
 
 
 
-async function withProvider(body) {
+
+
+
+
+
+
+
+async function withProvider(
+  body,
+  { siteInclusions = true, normalized = false, stored = [] } = {}
+) {
   Services.perms.removeByType(PERM_NAME);
+  Services.prefs.setBoolPref(SITE_INCLUSIONS_PREF, siteInclusions);
+  Services.prefs.setBoolPref(NORMALIZED_PREF, normalized);
+  for (const [origin, capability, time] of stored) {
+    Services.perms.testAddFromPrincipalByTime(
+      makePrincipal(origin),
+      PERM_NAME,
+      capability,
+      time
+    );
+  }
   const provider = new IPPPermissionRuleProvider();
   provider.init();
   try {
@@ -94,7 +125,7 @@ add_task(async function test_rules_map_to_permission_capabilities() {
 add_task(async function test_rules_are_scoped_to_the_exact_host() {
   await withProvider(provider => {
     const bare = makePrincipal("https://example.com");
-    const www = makePrincipal("https://www.example.com");
+    const sub = makePrincipal("https://sub.example.com");
 
     provider.setRule(bare, IPPPrincipalRules.EXCLUDED);
 
@@ -104,11 +135,177 @@ add_task(async function test_rules_are_scoped_to_the_exact_host() {
       "example.com is excluded"
     );
     Assert.equal(
-      provider.getRule(www),
+      provider.getRule(sub),
       IPPPrincipalRules.DEFAULT,
-      "www.example.com is untouched"
+      "sub.example.com is untouched"
     );
   });
+});
+
+
+
+
+
+add_task(async function test_rules_are_stored_normalized() {
+  await withProvider(provider => {
+    provider.setRule(
+      
+      makePrincipal("http://www.example.com"),
+      IPPPrincipalRules.EXCLUDED
+    );
+
+    Assert.deepEqual(
+      Services.perms.getAllByTypes([PERM_NAME]).map(p => p.principal.origin),
+      ["https://example.com"],
+      "the rule is stored on https://example.com"
+    );
+    for (const origin of [
+      "https://example.com",
+      "https://www.example.com",
+      
+      "http://example.com",
+    ]) {
+      Assert.equal(
+        provider.getRule(makePrincipal(origin)),
+        IPPPrincipalRules.EXCLUDED,
+        `${origin} shares the rule`
+      );
+    }
+  });
+});
+
+
+
+
+add_task(async function test_www_is_kept_when_nothing_or_a_suffix_remains() {
+  await withProvider(provider => {
+    for (const origin of ["https://www.co.uk", "https://www."]) {
+      provider.setRule(makePrincipal(origin), IPPPrincipalRules.EXCLUDED);
+
+      Assert.deepEqual(
+        Services.perms.getAllByTypes([PERM_NAME]).map(p => p.principal.origin),
+        [origin],
+        `the rule is stored on ${origin}`
+      );
+      Services.perms.removeByType(PERM_NAME);
+    }
+  });
+});
+
+
+
+
+
+add_task(async function test_rules_are_exact_without_site_inclusions() {
+  await withProvider(
+    provider => {
+      
+      const insecureWww = makePrincipal("http://www.example.com");
+      provider.setRule(insecureWww, IPPPrincipalRules.EXCLUDED);
+
+      
+      Assert.deepEqual(storedOrigins(), ["http://www.example.com"]);
+      Assert.equal(
+        provider.getRule(makePrincipal("https://example.com")),
+        IPPPrincipalRules.DEFAULT,
+        "https://example.com does not share the rule"
+      );
+    },
+    { siteInclusions: false }
+  );
+});
+
+
+
+
+
+add_task(async function test_stored_entries_are_normalized_on_init() {
+  const { ALLOW_ACTION, DENY_ACTION } = Ci.nsIPermissionManager;
+  await withProvider(
+    provider => {
+      Assert.deepEqual(
+        storedOrigins(),
+        ["https://example.com", "https://other.example.org"],
+        "the variants collapse onto one normalized entry"
+      );
+      Assert.equal(
+        provider.getRule(makePrincipal("https://www.example.com")),
+        IPPPrincipalRules.INCLUDED,
+        "the most recent entry wins"
+      );
+      Assert.equal(
+        provider.getRule(makePrincipal("https://other.example.org")),
+        IPPPrincipalRules.EXCLUDED,
+        "a normalized entry is kept"
+      );
+      Assert.ok(
+        Services.prefs.getBoolPref(NORMALIZED_PREF),
+        "the store is marked as normalized"
+      );
+    },
+    {
+      stored: [
+        
+        ["http://www.example.com", DENY_ACTION, 1000],
+        ["https://www.example.com", ALLOW_ACTION, 3000],
+        ["https://example.com", DENY_ACTION, 2000],
+        ["https://other.example.org", DENY_ACTION, 1000],
+      ],
+    }
+  );
+});
+
+
+
+
+add_task(async function test_normalization_runs_once() {
+  await withProvider(
+    () => {
+      Assert.deepEqual(
+        storedOrigins(),
+        ["https://www.example.com"],
+        "the stored entry is not rewritten"
+      );
+    },
+    {
+      normalized: true,
+      stored: [
+        ["https://www.example.com", Ci.nsIPermissionManager.DENY_ACTION, 1000],
+      ],
+    }
+  );
+});
+
+
+
+
+
+
+add_task(async function test_stored_entries_are_normalized_on_enable() {
+  await withProvider(
+    provider => {
+      provider.setRule(
+        makePrincipal("https://www.example.com"),
+        IPPPrincipalRules.EXCLUDED
+      );
+      Assert.deepEqual(storedOrigins(), ["https://www.example.com"]);
+      Assert.ok(
+        !Services.prefs.prefHasUserValue(NORMALIZED_PREF),
+        "the marker is cleared while the feature is off"
+      );
+
+      Services.prefs.setBoolPref(SITE_INCLUSIONS_PREF, true);
+
+      Assert.deepEqual(storedOrigins(), ["https://example.com"]);
+      Assert.equal(
+        
+        provider.getRule(makePrincipal("http://example.com")),
+        IPPPrincipalRules.EXCLUDED,
+        "the normalized rule applies to every variant"
+      );
+    },
+    { siteInclusions: false, normalized: true }
+  );
 });
 
 
