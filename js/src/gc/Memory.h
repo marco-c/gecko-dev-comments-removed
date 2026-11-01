@@ -47,8 +47,18 @@ enum class StallAndRetry : bool {
 
 
 
+
+
+enum class Commit : bool {
+  No = false,
+  Yes = true,
+};
+
+
+
 void* MapAlignedPages(size_t length, size_t alignment,
-                      StallAndRetry stallAndRetry = StallAndRetry::No);
+                      StallAndRetry stallAndRetry = StallAndRetry::No,
+                      Commit commit = Commit::Yes);
 void UnmapPages(void* region, size_t length);
 
 

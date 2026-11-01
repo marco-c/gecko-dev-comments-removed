@@ -162,11 +162,6 @@ bool UsingScattershotAllocator() {
 #endif
 }
 
-enum class Commit : bool {
-  No = false,
-  Yes = true,
-};
-
 #ifdef XP_WIN
 enum class PageAccess : DWORD {
   None = PAGE_NOACCESS,
@@ -198,20 +193,24 @@ enum class PageAccess : int {
 
 template <bool AlwaysGetNew = true>
 static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
-                            size_t length, size_t alignment);
+                            size_t length, size_t alignment, Commit commit);
 
 #ifndef __wasi__
-static void* MapAlignedPagesSlow(size_t length, size_t alignment);
+static void* MapAlignedPagesSlow(size_t length, size_t alignment,
+                                 Commit commit);
 #endif  
 static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
-                                      StallAndRetry stallAndRetry);
+                                      StallAndRetry stallAndRetry,
+                                      Commit commit);
 
 #ifdef JS_64BIT
-static void* MapAlignedPagesRandom(size_t length, size_t alignment);
+static void* MapAlignedPagesRandom(size_t length, size_t alignment,
+                                   Commit commit);
 #endif
 
 void* TestMapAlignedPagesLastDitch(size_t length, size_t alignment) {
-  void* region = MapAlignedPagesLastDitch(length, alignment, StallAndRetry::No);
+  void* region = MapAlignedPagesLastDitch(length, alignment, StallAndRetry::No,
+                                          Commit::Yes);
   if (region) {
     RecordMemoryAlloc(length);
   }
@@ -232,8 +231,8 @@ static inline size_t OffsetFromAligned(void* region, size_t alignment) {
   return uintptr_t(region) % alignment;
 }
 
-template <Commit commit, StallAndRetry retry = StallAndRetry::No>
-static inline void* MapInternal(void* desired, size_t length) {
+template <StallAndRetry retry = StallAndRetry::No>
+static inline void* MapInternal(void* desired, size_t length, Commit commit) {
   void* region = nullptr;
 #ifdef XP_WIN
   DWORD flags =
@@ -278,11 +277,11 @@ static inline void UnmapInternal(void* region, size_t length) {
 #endif
 }
 
-template <Commit commit = Commit::Yes, StallAndRetry retry = StallAndRetry::No>
-static inline void* MapMemory(size_t length) {
+template <StallAndRetry retry = StallAndRetry::No>
+static inline void* MapMemory(size_t length, Commit commit) {
   MOZ_ASSERT(length > 0);
 
-  return MapInternal<commit, retry>(nullptr, length);
+  return MapInternal<retry>(nullptr, length, commit);
 }
 
 #ifdef JS_64BIT
@@ -290,14 +289,14 @@ static inline void* MapMemory(size_t length) {
 
 
 
-template <Commit commit = Commit::Yes>
-static inline void* MapMemoryAtFuzzy(void* desired, size_t length) {
+static inline void* MapMemoryAtFuzzy(void* desired, size_t length,
+                                     Commit commit) {
   MOZ_ASSERT(desired && OffsetFromAligned(desired, allocGranularity) == 0);
   MOZ_ASSERT(length > 0);
 
   
   
-  return MapInternal<commit>(desired, length);
+  return MapInternal(desired, length, commit);
 }
 #endif
 
@@ -305,12 +304,11 @@ static inline void* MapMemoryAtFuzzy(void* desired, size_t length) {
 
 
 
-template <Commit commit = Commit::Yes>
-static inline void* MapMemoryAt(void* desired, size_t length) {
+static inline void* MapMemoryAt(void* desired, size_t length, Commit commit) {
   MOZ_ASSERT(desired && OffsetFromAligned(desired, allocGranularity) == 0);
   MOZ_ASSERT(length > 0);
 
-  void* region = MapInternal<commit>(desired, length);
+  void* region = MapInternal(desired, length, commit);
   if (!region) {
     return nullptr;
   }
@@ -408,7 +406,8 @@ static inline uint64_t FindAddressLimitInner(size_t highBit, size_t tries) {
   uint64_t end = (endRaw - (length - 1)) / length;
   for (size_t i = 0; i < tries; ++i) {
     uint64_t desired = length * GetNumberInRange(start, end);
-    void* address = MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length);
+    void* address =
+        MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length, Commit::No);
     uint64_t actual = uint64_t(address);
     if (address) {
       UnmapInternal(address, length);
@@ -571,7 +570,7 @@ static inline bool IsInvalidRegion(void* region, size_t length) {
 #endif
 
 void* MapAlignedPages(size_t length, size_t alignment,
-                      StallAndRetry stallAndRetry) {
+                      StallAndRetry stallAndRetry, Commit commit) {
   MOZ_RELEASE_ASSERT(length > 0 && alignment > 0);
   MOZ_RELEASE_ASSERT(length % pageSize == 0);
   MOZ_RELEASE_ASSERT(std::max(alignment, allocGranularity) %
@@ -598,7 +597,7 @@ void* MapAlignedPages(size_t length, size_t alignment,
 #  ifdef JS_64BIT
   
   if (UsingScattershotAllocator()) {
-    void* region = MapAlignedPagesRandom(length, alignment);
+    void* region = MapAlignedPagesRandom(length, alignment, commit);
     if (region) {
       MOZ_RELEASE_ASSERT(!IsInvalidRegion(region, length));
       MOZ_ASSERT(OffsetFromAligned(region, alignment) == 0);
@@ -609,7 +608,7 @@ void* MapAlignedPages(size_t length, size_t alignment,
 #  endif
 
   
-  void* region = MapMemory(length);
+  void* region = MapMemory(length, commit);
   if (!region) {
     return nullptr;
   }
@@ -623,7 +622,7 @@ void* MapAlignedPages(size_t length, size_t alignment,
   
   
   void* retainedRegion;
-  if (TryToAlignChunk(&region, &retainedRegion, length, alignment)) {
+  if (TryToAlignChunk(&region, &retainedRegion, length, alignment, commit)) {
     MOZ_ASSERT(region && OffsetFromAligned(region, alignment) == 0);
     MOZ_ASSERT(!retainedRegion);
     RecordMemoryAlloc(length);
@@ -645,11 +644,11 @@ void* MapAlignedPages(size_t length, size_t alignment,
 
   
   
-  region = MapAlignedPagesSlow(length, alignment);
+  region = MapAlignedPagesSlow(length, alignment, commit);
   if (!region) {
     
     
-    region = MapAlignedPagesLastDitch(length, alignment, stallAndRetry);
+    region = MapAlignedPagesLastDitch(length, alignment, stallAndRetry, commit);
     if (!region) {
       return nullptr;
     }
@@ -685,7 +684,8 @@ void* MapAlignedPages(size_t length, size_t alignment,
 
 
 
-static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
+static void* MapAlignedPagesRandom(size_t length, size_t alignment,
+                                   Commit commit) {
   MOZ_ASSERT(length != 0);
   if (length - 1 > maxValidAddress) {
     return nullptr;
@@ -718,15 +718,15 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
                                       int(PageAccess::ReadWrite), flags, -1, 0,
                                       "js-gc-heap");
 #  else
-      region = MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length);
-
+      region =
+          MapMemoryAtFuzzy(reinterpret_cast<void*>(desired), length, commit);
 #  endif
       if (!region) {
         continue;
       }
     } else {
       
-      region = MapMemory(length);
+      region = MapMemory(length, commit);
       if (!region) {
         return nullptr;
       }
@@ -739,7 +739,8 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
       return region;
     }
     void* retainedRegion = nullptr;
-    if (TryToAlignChunk<false>(&region, &retainedRegion, length, alignment)) {
+    if (TryToAlignChunk<false>(&region, &retainedRegion, length, alignment,
+                               commit)) {
       MOZ_ASSERT(region && OffsetFromAligned(region, alignment) == 0);
       MOZ_ASSERT(!retainedRegion);
       return region;
@@ -751,7 +752,7 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
   if (numAddressBits < 48) {
     
     
-    region = MapAlignedPagesSlow(length, alignment);
+    region = MapAlignedPagesSlow(length, alignment, commit);
     if (region) {
       return region;
     }
@@ -766,16 +767,12 @@ static void* MapAlignedPagesRandom(size_t length, size_t alignment) {
 #endif  
 
 #ifndef __wasi__
-static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
+static void* MapAlignedPagesSlow(size_t length, size_t alignment,
+                                 Commit commit) {
   void* alignedRegion = nullptr;
   do {
     size_t reserveLength = length + alignment - pageSize;
-#  ifdef XP_WIN
-    
-    void* region = MapMemory<Commit::No>(reserveLength);
-#  else
-    void* region = MapMemory(reserveLength);
-#  endif
+    void* region = MapMemory(reserveLength, Commit::No);
     if (!region) {
       return nullptr;
     }
@@ -785,7 +782,7 @@ static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
     
     
     UnmapInternal(region, reserveLength);
-    alignedRegion = MapMemoryAt(alignedRegion, length);
+    alignedRegion = MapMemoryAt(alignedRegion, length, commit);
 #  else
     
     if (alignedRegion != region) {
@@ -802,6 +799,12 @@ static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
     
   } while (!alignedRegion);
 
+  if (commit == Commit::Yes && !MarkPagesInUseHard(alignedRegion, length)) {
+    
+    UnmapInternal(alignedRegion, length);
+    return nullptr;
+  }
+
   return alignedRegion;
 }
 #endif  
@@ -815,22 +818,24 @@ static void* MapAlignedPagesSlow(size_t length, size_t alignment) {
 
 
 static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
-                                      StallAndRetry stallAndRetry) {
+                                      StallAndRetry stallAndRetry,
+                                      Commit commit) {
   void* tempMaps[MaxLastDitchAttempts];
   int attempt = 0;
   void* region;
 
   if (stallAndRetry == StallAndRetry::Yes) {
-    region = MapMemory<Commit::Yes, StallAndRetry::Yes>(length);
+    region = MapMemory<StallAndRetry::Yes>(length, commit);
   } else {
-    region = MapMemory<Commit::Yes, StallAndRetry::No>(length);
+    region = MapMemory<StallAndRetry::No>(length, commit);
   }
 
   if (OffsetFromAligned(region, alignment) == 0) {
     return region;
   }
   for (; attempt < MaxLastDitchAttempts; ++attempt) {
-    if (TryToAlignChunk(&region, tempMaps + attempt, length, alignment)) {
+    if (TryToAlignChunk(&region, tempMaps + attempt, length, alignment,
+                        commit)) {
       MOZ_ASSERT(region && OffsetFromAligned(region, alignment) == 0);
       MOZ_ASSERT(!tempMaps[attempt]);
       break;  
@@ -858,7 +863,7 @@ static void* MapAlignedPagesLastDitch(size_t length, size_t alignment,
 
 template <bool>
 static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
-                            size_t length, size_t alignment) {
+                            size_t length, size_t alignment, Commit commit) {
   void* region = *aRegion;
   MOZ_ASSERT(region && OffsetFromAligned(region, alignment) != 0);
 
@@ -872,8 +877,8 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
     }
     UnmapInternal(region, length);
     retainedLength = alignment - offset;
-    retainedRegion = MapMemoryAt<Commit::No>(region, retainedLength);
-    region = MapMemory(length);
+    retainedRegion = MapMemoryAt(region, retainedLength, Commit::No);
+    region = MapMemory(length, commit);
 
     
   } while (!retainedRegion);
@@ -899,7 +904,7 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
 
 template <bool AlwaysGetNew>
 static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
-                            size_t length, size_t alignment) {
+                            size_t length, size_t alignment, Commit commit) {
   void* regionStart = *aRegion;
   MOZ_ASSERT(regionStart && OffsetFromAligned(regionStart, alignment) != 0);
 
@@ -913,7 +918,7 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
           reinterpret_cast<void*>(uintptr_t(regionStart) + offsetUpper);
       void* regionEnd =
           reinterpret_cast<void*>(uintptr_t(regionStart) + length);
-      if (MapMemoryAt(regionEnd, offsetUpper)) {
+      if (MapMemoryAt(regionEnd, offsetUpper, commit)) {
         UnmapInternal(regionStart, offsetUpper);
         if (directionUncertain) {
           ++growthDirection;
@@ -925,7 +930,7 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
       auto* lowerStart =
           reinterpret_cast<void*>(uintptr_t(regionStart) - offsetLower);
       auto* lowerEnd = reinterpret_cast<void*>(uintptr_t(lowerStart) + length);
-      if (lowerStart && MapMemoryAt(lowerStart, offsetLower)) {
+      if (lowerStart && MapMemoryAt(lowerStart, offsetLower, commit)) {
         UnmapInternal(lowerEnd, offsetLower);
         if (directionUncertain) {
           --growthDirection;
@@ -946,7 +951,7 @@ static bool TryToAlignChunk(void** aRegion, void** aRetainedRegion,
   if (AlwaysGetNew && !result) {
     
     retainedRegion = regionStart;
-    regionStart = MapMemory(length);
+    regionStart = MapMemory(length, commit);
     
     result = OffsetFromAligned(regionStart, alignment) == 0;
     if (result) {
