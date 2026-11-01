@@ -962,7 +962,8 @@ void wasm::GenerateMinimalEpilogue(MacroAssembler& masm, uint32_t* ret) {
 void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
                                     const CallIndirectId& callIndirectId,
                                     const Maybe<uint32_t>& tier1FuncIndex,
-                                    FuncOffsets* offsets) {
+                                    FuncOffsets* offsets,
+                                    FaultingCodeRange* badSigTrap) {
   AutoCreatedBy acb(masm, "wasm::GenerateFunctionPrologue");
 
   
@@ -1070,7 +1071,11 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
         
         
         masm.bind(&fail);
-        masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        FaultingCodeRange fcr =
+            masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        if (badSigTrap) {
+          *badSigTrap = fcr;
+        }
         break;
       }
       case CallIndirectIdKind::Immediate: {
@@ -1084,7 +1089,11 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
         
         
         masm.bind(&fail);
-        masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        FaultingCodeRange fcr =
+            masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
+        if (badSigTrap) {
+          *badSigTrap = fcr;
+        }
         break;
       }
       case CallIndirectIdKind::None:

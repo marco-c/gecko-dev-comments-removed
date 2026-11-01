@@ -535,6 +535,47 @@ bool BaseCompiler::beginFunction() {
   }
 
   
+  
+  const size_t frameWords = sizeof(Frame) / sizeof(void*);
+  if (!stackMapGenerator_.machineStackTracker.pushNonGCPointers(frameWords)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  CallIndirectId callIndirectId =
+      CallIndirectId::forFunc(codeMeta_, func_.index);
+  StackMap* badSigStackMap = nullptr;
+  if (compilerEnv_.debugEnabled() &&
+      callIndirectId.kind() != CallIndirectIdKind::None) {
+    ExitStubMapVector badSigExtras;
+    if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args,
+                                                               &badSigExtras)) {
+      return false;
+    }
+    
+    
+    for (bool& b : badSigExtras) {
+      b = false;
+    }
+    
+    
+    
+    const Trap trapKind = Trap::IndirectCallBadSig;
+    MOZ_ASSERT(!wasm::TrapMightResume(trapKind));
+    if (!stackMapGenerator_.createStackMap(Some(trapKind), badSigExtras,
+                                           HasDebugFrameWithLiveRefs::No, stk_,
+                                           &badSigStackMap)) {
+      return false;
+    }
+  }
+
+  
   for (ABIArgIter i(args, ABIKind::Wasm); !i.done(); i++) {
     ABIArg argLoc = *i;
     if (argLoc.kind() == ABIArg::Stack &&
@@ -542,23 +583,21 @@ bool BaseCompiler::beginFunction() {
       uint32_t offset = argLoc.offsetFromArgBase();
       MOZ_ASSERT(offset < inboundStackArgBytes);
       MOZ_ASSERT(offset % sizeof(void*) == 0);
-      stackMapGenerator_.machineStackTracker.setGCPointer(offset /
-                                                          sizeof(void*));
+      stackMapGenerator_.machineStackTracker.setGCPointer(
+          offset / sizeof(void*) + frameWords);
     }
   }
 
   perfSpewer_.startRecording();
   perfSpewer_.markStartOffset(masm.currentOffset());
   perfSpewer_.recordOffset(masm, "Prologue");
+  FaultingCodeRange badSigTrap;
   GenerateFunctionPrologue(
-      masm, CallIndirectId::forFunc(codeMeta_, func_.index),
+      masm, callIndirectId,
       compilerEnv_.mode() != CompileMode::Once ? Some(func_.index) : Nothing(),
-      &offsets_);
-
-  
-  
-  if (!stackMapGenerator_.machineStackTracker.pushNonGCPointers(
-          sizeof(Frame) / sizeof(void*))) {
+      &offsets_, &badSigTrap);
+  if (badSigStackMap && badSigTrap.isValid() &&
+      !stackMaps_->add(badSigTrap.resumeOffset(), badSigStackMap)) {
     return false;
   }
 
@@ -13179,7 +13218,7 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
     
     auto checkThisTrapKind_debugMode = [](Trap t) -> bool {
       
-      return t != Trap::IndirectCallBadSig;
+      return true;
     };
     auto checkThisTrapKind_normalMode = [](Trap t) -> bool {
       
