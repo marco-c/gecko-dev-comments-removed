@@ -10,7 +10,6 @@
 #include "nsToolkitCompsCID.h"
 #include "nsCategoryCache.h"
 #include "nsTHashtable.h"
-#include "mozilla/Attributes.h"
 #include "prtime.h"
 
 class nsNavBookmarks;
@@ -45,11 +44,6 @@ struct ItemVisitData {
   int64_t visitId;
   uint32_t transitionType;
   PRTime time;
-};
-
-struct TombstoneData {
-  nsCString guid;
-  PRTime dateRemoved;
 };
 
 typedef void (nsNavBookmarks::*ItemVisitMethod)(const ItemVisitData&);
@@ -178,10 +172,6 @@ class nsNavBookmarks final : public nsINavBookmarksService,
   nsresult InsertTombstone(const BookmarkData& aBookmark);
 
   
-  nsresult InsertTombstones(
-      const nsTArray<mozilla::places::TombstoneData>& aTombstones);
-
-  
   nsresult RemoveTombstone(const nsACString& aGUID);
 
   nsresult SetItemTitleInternal(BookmarkData& aBookmark,
@@ -196,15 +186,6 @@ class nsNavBookmarks final : public nsINavBookmarksService,
   nsresult SetItemDateInternal(enum mozilla::places::BookmarkDate aDateType,
                                int64_t aSyncChangeDelta, int64_t aItemId,
                                PRTime aValue);
-
-  MOZ_CAN_RUN_SCRIPT
-  nsresult RemoveFolderChildren(int64_t aFolderId, uint16_t aSource);
-
-  
-  nsresult GetDescendantChildren(int64_t aFolderId,
-                                 const nsACString& aFolderGuid,
-                                 int64_t aGrandParentId,
-                                 nsTArray<BookmarkData>& aFolderChildrenArray);
 
   enum ItemType {
     BOOKMARK = TYPE_BOOKMARK,
