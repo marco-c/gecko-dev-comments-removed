@@ -15,6 +15,7 @@
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/CSSUnitValueBindingFwd.h"
 #include "nsStringFwd.h"
+#include "nsTArrayForwardDeclare.h"
 
 template <class T>
 struct already_AddRefed;
@@ -71,6 +72,7 @@ class CSSNumericValue : public CSSStyleValue {
 
   
 
+  
   already_AddRefed<CSSNumericValue> Add(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
@@ -167,6 +169,11 @@ class CSSNumericValue : public CSSStyleValue {
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              const SerializationContext& aContext,
                              nsACString& aDest) const;
+
+  
+  
+  already_AddRefed<CSSNumericValue> Add(
+      nsTArray<RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv);
 
   StyleNumericValue ToStyleNumericValue() const;
 
