@@ -7,7 +7,6 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "nsAtom.h"
-#include "nsCCUncollectableMarker.h"
 #include "nsCOMPtr.h"
 #include "nsCRT.h"
 #include "nsContentUtils.h"
@@ -1211,12 +1210,6 @@ void nsJSContext::BeginCycleCollectionCallback(CCReason aReason) {
 void nsJSContext::EndCycleCollectionCallback(
     const CycleCollectorResults& aResults) {
   MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  if (!nsCCUncollectableMarker::sGeneration) {
-    Element::ClearContentUnbinder();
-  }
 
   sScheduler->KillCCRunner();
 
