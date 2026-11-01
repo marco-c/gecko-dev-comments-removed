@@ -21,6 +21,34 @@
 
 NS_IMPL_ISUPPORTS(nsMacDockSupport, nsIMacDockSupport, nsITaskbarProgress)
 
+@interface MOZDockTileView : NSImageView
+@end
+
+@implementation MOZDockTileView
+
+- (instancetype)initWithFrame:(NSRect)aFrame {
+  self = [super initWithFrame:aFrame];
+  if (self) {
+    self.imageScaling = NSImageScaleAxesIndependently;
+    self.image = [NSWorkspace.sharedWorkspace
+        iconForFile:NSBundle.mainBundle.bundlePath];
+  }
+  return self;
+}
+
+- (void)setNeedsDisplay:(BOOL)aNeedsDisplay {
+  [super setNeedsDisplay:aNeedsDisplay];
+  if (aNeedsDisplay && NSApp.dockTile.contentView == self) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if (NSApp.dockTile.contentView == self) {
+        [NSApp.dockTile display];
+      }
+    });
+  }
+}
+
+@end
+
 
 
 
@@ -219,20 +247,11 @@ void nsMacDockSupport::BuildDockTile() {
     
     
     
-    
 
     mDockTileWrapperView =
-        [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 32, 32)];
+        [[MOZDockTileView alloc] initWithFrame:NSMakeRect(0, 0, 32, 32)];
     mDockTileWrapperView.autoresizingMask =
         NSViewWidthSizable | NSViewHeightSizable;
-
-    NSImageView* imageView =
-        [[NSImageView alloc] initWithFrame:[mDockTileWrapperView bounds]];
-    imageView.image = [NSImage imageNamed:@"NSApplicationIcon"];
-    imageView.imageScaling = NSImageScaleAxesIndependently;
-    imageView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    [mDockTileWrapperView addSubview:imageView];
-    [imageView release];
 
     mDockBadgeView =
         [[NSImageView alloc] initWithFrame:NSMakeRect(19.5, 19.5, 12, 12)];
