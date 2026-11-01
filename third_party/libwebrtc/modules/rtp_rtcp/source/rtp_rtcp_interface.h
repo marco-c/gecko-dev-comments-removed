@@ -36,6 +36,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
+#include "rtc_base/containers/flat_map.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -129,6 +130,14 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     uint32_t local_media_ssrc = 0;
     std::optional<uint32_t> rtx_send_ssrc;
     std::optional<uint32_t> remote_ssrc;
+
+    
+    
+    
+    
+    
+    int rtx_mode = kRtxOff;
+    flat_map<int, int> rtx_payload_types;
 
     
     
@@ -232,7 +241,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual bool SupportsPadding() const = 0;
   
   
-  
   virtual bool SupportsRtxPayloadPadding() const = 0;
 
   
@@ -260,19 +268,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
-  virtual void SetRtxSendStatus(int modes) = 0;
-
-  
-  
   virtual int RtxSendStatus() const = 0;
 
   
   virtual std::optional<uint32_t> RtxSsrc() const = 0;
-
-  
-  
-  virtual void SetRtxSendPayloadType(int payload_type,
-                                     int associated_payload_type) = 0;
 
   
   virtual std::optional<uint32_t> FlexfecSsrc() const = 0;
