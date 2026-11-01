@@ -87,6 +87,9 @@ class nsAppShell : public nsBaseAppShell {
   bool mSkippedNativeCallback;
   bool mRunningCocoaEmbedded;
 
+  
+  uint32_t mNativeWakeups = 0;
+
   int32_t mNativeEventCallbackDepth;
   
   int32_t mNativeEventScheduledDepth;

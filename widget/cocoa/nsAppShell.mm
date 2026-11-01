@@ -589,6 +589,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
 
   if (self->mRunningEventLoop) {
     self->mRunningEventLoop = false;
+    ++self->mNativeWakeups;
 
     
     
@@ -789,6 +790,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   }
 
   bool wasRunningEventLoop = mRunningEventLoop;
+  uint32_t wakeupsAtEntry = mNativeWakeups;
   mRunningEventLoop = aMayWait;
   NSDate* waitUntil = nil;
   if (aMayWait) waitUntil = [NSDate distantFuture];
@@ -897,7 +899,9 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
     moreEvents = !!nextEvent;
   }
 
-  mRunningEventLoop = wasRunningEventLoop;
+  
+  
+  mRunningEventLoop = wasRunningEventLoop && mNativeWakeups == wakeupsAtEntry;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 
