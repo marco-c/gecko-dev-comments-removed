@@ -29,22 +29,12 @@ function resolveColor(className, spec) {
   return a == 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
-
-
-
-
 add_task(async function container_color_codes_match_css() {
-  const novaEnabled = Services.prefs.getBoolPref("browser.nova.enabled", false);
-  
-  
-  const cssVar = novaEnabled
-    ? "--identity-stroke-color"
-    : "--identity-icon-color";
   for (const color of ContextualIdentityService.containerColors) {
-    if (color === "gray" && !novaEnabled) {
-      continue;
-    }
-    let cssColor = resolveColor(`identity-color-${color}`, `var(${cssVar})`);
+    let cssColor = resolveColor(
+      `identity-color-${color}`,
+      "var(--identity-stroke-color)"
+    );
     let apiColor = resolveColor(
       null,
       ContextualIdentityService.getContainerColorCode(color)
