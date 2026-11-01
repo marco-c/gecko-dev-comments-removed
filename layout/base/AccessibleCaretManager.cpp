@@ -1260,71 +1260,43 @@ bool AccessibleCaretManager::RestrictCaretDraggingOffsets(
     return false;
   }
 
-  
-  
-  PeekOffsetStruct limit(
-      eSelectCluster, dir,
-      static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent), nsPoint(0, 0),
-      {PeekOffsetOption::JumpLines, PeekOffsetOption::StopAtScroller});
-  nsresult rv = frameAndOffset->PeekOffset(&limit);
-  if (NS_FAILED(rv)) {
-    limit.mResultContent = content;
-    limit.mContentOffset = offsetInContent;
-  }
-
-  
-  NS_ASSERTION(limit.mContentOffset >= 0,
-               "limit.mContentOffset should not be negative");
-  const Maybe<int32_t> cmpToLimit =
-      nsContentUtils::ComparePoints_AllowNegativeOffsets<
-          TreeKind::ShadowIncludingDOM>(
-          aOffsets.content, aOffsets.StartOffset(), limit.mResultContent,
-          limit.mContentOffset);
-  if (NS_WARN_IF(!cmpToLimit)) {
-    
-    
-    
-    return false;
-  }
-
-  auto SetOffsetsToLimit = [&aOffsets, &limit]() {
-    aOffsets.content = limit.mResultContent;
-    aOffsets.offset = limit.mContentOffset;
-    aOffsets.secondaryOffset = limit.mContentOffset;
-  };
-
-  if (!StaticPrefs::
-          layout_accessiblecaret_allow_dragging_across_other_caret()) {
-    if ((mActiveCaret == mCarets.GetFirst() && *cmpToLimit == 1) ||
-        (mActiveCaret == mCarets.GetSecond() && *cmpToLimit == -1)) {
+  switch (*cmpToInactiveCaretPos) {
+    case 0: {
       
       
       
-      SetOffsetsToLimit();
+      
+      PeekOffsetStruct limit(
+          eSelectCluster, dir,
+          static_cast<int32_t>(frameAndOffset.mOffsetInFrameContent),
+          nsPoint(0, 0),
+          {PeekOffsetOption::JumpLines, PeekOffsetOption::StopAtScroller});
+      nsresult rv = frameAndOffset->PeekOffset(&limit);
+      if (NS_FAILED(rv)) {
+        limit.mResultContent = content;
+        limit.mContentOffset = offsetInContent;
+      }
+      NS_ASSERTION(limit.mContentOffset >= 0,
+                   "limit.mContentOffset should not be negative");
+      aOffsets.content = limit.mResultContent;
+      aOffsets.offset = limit.mContentOffset;
+      aOffsets.secondaryOffset = limit.mContentOffset;
+      break;
     }
-  } else {
-    switch (*cmpToInactiveCaretPos) {
-      case 0:
+    case 1:
+      if (mActiveCaret == mCarets.GetFirst()) {
         
         
+        mActiveCaret = mCarets.GetSecond();
+      }
+      break;
+    case -1:
+      if (mActiveCaret == mCarets.GetSecond()) {
         
-        SetOffsetsToLimit();
-        break;
-      case 1:
-        if (mActiveCaret == mCarets.GetFirst()) {
-          
-          
-          mActiveCaret = mCarets.GetSecond();
-        }
-        break;
-      case -1:
-        if (mActiveCaret == mCarets.GetSecond()) {
-          
-          
-          mActiveCaret = mCarets.GetFirst();
-        }
-        break;
-    }
+        
+        mActiveCaret = mCarets.GetFirst();
+      }
+      break;
   }
 
   return true;
@@ -1477,30 +1449,6 @@ nsPoint AccessibleCaretManager::AdjustDragBoundary(
       boundary.Deflate(kBoundaryAppUnits);
 
       adjustedPoint = boundary.ClampPoint(adjustedPoint);
-    }
-  }
-
-  if (GetCaretMode() == CaretMode::Selection &&
-      !StaticPrefs::
-          layout_accessiblecaret_allow_dragging_across_other_caret()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mActiveCaret == mCarets.GetFirst()) {
-      nscoord dragDownBoundaryY = mCarets.GetSecond()->LogicalPosition().y;
-      if (dragDownBoundaryY > 0 && adjustedPoint.y > dragDownBoundaryY) {
-        adjustedPoint.y = dragDownBoundaryY;
-      }
-    } else {
-      nscoord dragUpBoundaryY = mCarets.GetFirst()->LogicalPosition().y;
-      if (adjustedPoint.y < dragUpBoundaryY) {
-        adjustedPoint.y = dragUpBoundaryY;
-      }
     }
   }
 

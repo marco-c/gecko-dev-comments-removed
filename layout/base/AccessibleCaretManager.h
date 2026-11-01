@@ -318,9 +318,6 @@ class AccessibleCaretManager {
   
   
   
-  
-  
-  
   bool RestrictCaretDraggingOffsets(nsIFrame::ContentOffsets& aOffsets);
 
   
