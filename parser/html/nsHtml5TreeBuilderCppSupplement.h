@@ -1730,6 +1730,29 @@ void nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsAtom* aName,
                "Element isn't HTML, SVG or MathML!");
   NS_ASSERTION(aName, "Element doesn't have local name!");
   NS_ASSERTION(aElement, "No element!");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mBuilder && mozilla::StaticPrefs::dom_element_blocking_enabled() &&
+      !nsIContent::RequiresDoneAddingChildren(aNamespace, aName)) {
+    nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement(mozilla::fallible);
+    if (MOZ_UNLIKELY(!treeOp)) {
+      MarkAsBrokenAndRequestSuspensionWithoutBuilder(NS_ERROR_OUT_OF_MEMORY);
+      return;
+    }
+    opDoneAddingChildren operation(aElement);
+    treeOp->Init(mozilla::AsVariant(operation));
+  }
+
   if (aNamespace == kNameSpaceID_MathML) {
     return;
   }

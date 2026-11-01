@@ -166,6 +166,20 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   nsDOMTokenList* Blocking();
   bool IsPotentiallyRenderBlocking() override;
 
+  
+  
+  bool RelContainsExpect() const;
+  
+  
+  
+  void ProcessInternalResourceLink();
+
+  
+  
+  
+  void UpdateExpectBlockingFragment(nsAtom* aFragment,
+                                    nsAtom* aDecodedFragment = nullptr);
+
   void NodeInfoChanged(Document* aOldDoc) final {
     mCachedURI = nullptr;
     nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
@@ -216,6 +230,13 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
   
   
   bool mExplicitlyEnabled = false;
+
+  
+  
+  
+  RefPtr<nsAtom> mBlockingExpectFragment;
+  
+  RefPtr<nsAtom> mBlockingExpectDecodedFragment;
 };
 
 }  

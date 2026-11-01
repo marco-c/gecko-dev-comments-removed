@@ -50,6 +50,7 @@
 #include "mozilla/AttributeStyles.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/BloomFilter.h"
 #include "mozilla/BounceTrackingProtection.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/Components.h"
@@ -13489,6 +13490,14 @@ void Document::SetReadyStateInternal(ReadyState aReadyState,
     RecordNavigationTiming(aReadyState);
   }
 
+  if (aReadyState != READYSTATE_LOADING) {
+    
+    
+    
+    
+    ProcessInternalResourceLinks();
+  }
+
   AsyncEventDispatcher::RunDOMEventWhenSafe(
       *this, u"readystatechange"_ns, CanBubble::eNo, ChromeOnlyDispatch::eNo);
 }
@@ -20095,15 +20104,16 @@ void Document::EnsureRenderBlockingTimeoutTimer() {
 }
 
 
-void Document::BlockRendering(Element& aElement) {
+bool Document::BlockRendering(Element& aElement) {
   if (!StaticPrefs::dom_element_blocking_enabled()) {
-    return;
+    return false;
   }
 
   if (AllowsAddingRenderBlockingElements()) {
     mRenderBlockingElementSet.Insert(&aElement);
     EnsureRenderBlockingTimeoutTimer();
   }
+  return mRenderBlockingElementSet.Contains(&aElement);
 }
 
 void Document::MaybeBlockRendering(Element& aElement) {
@@ -20122,6 +20132,9 @@ void Document::UnblockRendering(Element& aElement) {
   if (!mRenderBlockingElementSet.EnsureRemoved(&aElement)) {
     return;
   }
+  if (auto* link = HTMLLinkElement::FromNode(aElement)) {
+    link->UpdateExpectBlockingFragment(nullptr);
+  }
 
   if (mRenderBlockingElementSet.IsEmpty()) {
     StartLayoutAfterUnblocking();
@@ -20134,6 +20147,11 @@ void Document::StopRenderBlocking() {
   }
   const bool wasRenderBlocked = IsRenderBlocked();
   mRenderBlockingStopped = true;
+  for (Element* element : mRenderBlockingElementSet) {
+    if (auto* link = HTMLLinkElement::FromNode(element)) {
+      link->UpdateExpectBlockingFragment(nullptr);
+    }
+  }
   mRenderBlockingElementSet.Clear();
   if (mRenderBlockingTimer) {
     mRenderBlockingTimer->Cancel();
@@ -20143,6 +20161,92 @@ void Document::StopRenderBlocking() {
     
     
     StartLayoutAfterUnblocking();
+  }
+}
+
+
+void Document::ProcessInternalResourceLinks() {
+  if (!StaticPrefs::dom_element_blocking_enabled() ||
+      mRenderBlockingElementSet.IsEmpty()) {
+    return;
+  }
+
+  
+  
+  AutoTArray<RefPtr<HTMLLinkElement>, 4> expectLinks;
+  for (Element* element : mRenderBlockingElementSet) {
+    if (auto* link = HTMLLinkElement::FromNodeOrNull(element);
+        link && link->RelContainsExpect()) {
+      expectLinks.AppendElement(link);
+    }
+  }
+  for (HTMLLinkElement* link : expectLinks) {
+    link->ProcessInternalResourceLink();
+  }
+}
+
+void Document::ProcessInternalResourceLinksWhenSafe() {
+  if (mProcessInternalResourceLinksPending) {
+    return;
+  }
+  mProcessInternalResourceLinksPending = true;
+  nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+      "Document::ProcessInternalResourceLinksWhenSafe",
+      [self = RefPtr{this}] {
+        self->mProcessInternalResourceLinksPending = false;
+        self->ProcessInternalResourceLinks();
+      }));
+}
+
+void Document::MaybeProcessInternalResourceLinksForElement(Element& aElement) {
+  
+  if (mExpectedInternalResourceTargets.IsEmpty()) {
+    return;
+  }
+  nsAtom* id = aElement.GetID();
+  nsAtom* name = nullptr;
+  
+  if (aElement.HasName() && aElement.IsHTMLElement(nsGkAtoms::a)) {
+    if (const nsAttrValue* n = aElement.GetParsedAttr(nsGkAtoms::name)) {
+      name = n->GetAtomValue();
+    }
+  }
+  
+  MOZ_ASSERT(mExpectedInternalResourceTargetsBloom);
+  const auto& bloom = *mExpectedInternalResourceTargetsBloom;
+  if (!((id && bloom.mightContain(id->hash())) ||
+        (name && bloom.mightContain(name->hash())))) {
+    return;
+  }
+  if ((id && mExpectedInternalResourceTargets.Contains(id)) ||
+      (name && mExpectedInternalResourceTargets.Contains(name))) {
+    ProcessInternalResourceLinksWhenSafe();
+  }
+}
+
+void Document::AddExpectedInternalResourceTarget(nsAtom* aFragment) {
+  if (!aFragment) {
+    return;
+  }
+  mExpectedInternalResourceTargets.LookupOrInsert(aFragment, 0) += 1;
+  if (!mExpectedInternalResourceTargetsBloom) {
+    mExpectedInternalResourceTargetsBloom =
+        MakeUnique<mozilla::CountingBloomFilter<8, nsAtom>>();
+  }
+  mExpectedInternalResourceTargetsBloom->add(aFragment->hash());
+}
+
+void Document::RemoveExpectedInternalResourceTarget(nsAtom* aFragment) {
+  if (!aFragment) {
+    return;
+  }
+  if (auto entry = mExpectedInternalResourceTargets.Lookup(aFragment)) {
+    if (--entry.Data() == 0) {
+      entry.Remove();
+    }
+  }
+  if (mExpectedInternalResourceTargetsBloom) {
+    mExpectedInternalResourceTargetsBloom->remove(aFragment->hash());
   }
 }
 

@@ -3099,6 +3099,15 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     HandleShadowDOMRelatedInsertionSteps(hadParent);
   }
 
+  
+  
+  
+  if ((HasID() || HasName()) && !HasFlag(ELEMENT_ON_PARSER_STACK) &&
+      !aContext.IsMove() && aContext.InUncomposedDoc() &&
+      StaticPrefs::dom_element_blocking_enabled()) {
+    aContext.OwnerDoc().MaybeProcessInternalResourceLinksForElement(*this);
+  }
+
   if (MayHaveStyle()) {
     
     static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(
@@ -4357,6 +4366,13 @@ void Element::PostIdMaybeChange(const nsAttrValue* aValue) {
     AddToIdTable(aValue->GetAtomValue());
   } else {
     ClearHasID();
+  }
+
+  
+  
+  
+  if (IsInUncomposedDoc() && StaticPrefs::dom_element_blocking_enabled()) {
+    OwnerDoc()->ProcessInternalResourceLinks();
   }
 }
 

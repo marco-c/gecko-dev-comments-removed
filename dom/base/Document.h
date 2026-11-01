@@ -129,6 +129,11 @@ class ElementCreationOptionsOrString;
 }  
 #endif  
 
+namespace mozilla {
+template <unsigned KeySize, class T>
+class CountingBloomFilter;
+}  
+
 class InfallibleAllocPolicy;
 class JSObject;
 class JSTracer;
@@ -1773,13 +1778,31 @@ class Document : public nsINode,
   
   bool AllowsAddingRenderBlockingElements() const;
   bool IsRenderBlocked() const;
-  void BlockRendering(Element& aElement);
+  
+  bool BlockRendering(Element& aElement);
   void UnblockRendering(Element& aElement);
   
   void MaybeBlockRendering(Element& aElement);
   
   
   void StopRenderBlocking();
+
+  
+  
+  void ProcessInternalResourceLinks();
+  
+  
+  
+  void ProcessInternalResourceLinksWhenSafe();
+
+  
+  
+  
+  void MaybeProcessInternalResourceLinksForElement(Element& aElement);
+
+  
+  void AddExpectedInternalResourceTarget(nsAtom* aFragment);
+  void RemoveExpectedInternalResourceTarget(nsAtom* aFragment);
 
  private:
   void StartLayoutAfterUnblocking();
@@ -6053,6 +6076,15 @@ class Document : public nsINode,
   nsTHashSet<RefPtr<Element>> mRenderBlockingElementSet;
   nsCOMPtr<nsITimer> mRenderBlockingTimer;
   bool mRenderBlockingStopped = false;
+
+  
+  
+  nsTHashMap<RefPtr<nsAtom>, uint32_t> mExpectedInternalResourceTargets;
+  
+  
+  UniquePtr<mozilla::CountingBloomFilter<8, nsAtom>>
+      mExpectedInternalResourceTargetsBloom;
+  bool mProcessInternalResourceLinksPending = false;
 
  public:
   

@@ -1114,6 +1114,23 @@ void nsHtml5TreeOperation::PreventScriptExecution(nsIContent* aNode) {
 
 void nsHtml5TreeOperation::DoneAddingChildren(nsIContent* aNode) {
   aNode->DoneAddingChildren(aNode->HasParserNotified());
+
+  
+  
+  aNode->UnsetFlags(ELEMENT_ON_PARSER_STACK);
+  
+  if (!StaticPrefs::dom_element_blocking_enabled() ||
+      (!aNode->HasID() && !aNode->HasName())) {
+    return;
+  }
+  
+  
+  Document* doc = aNode->OwnerDoc();
+  if (doc->IsLoadedAsData() ||
+      doc->GetReadyStateEnum() > Document::READYSTATE_LOADING) {
+    return;
+  }
+  doc->MaybeProcessInternalResourceLinksForElement(*aNode->AsElement());
 }
 
 void nsHtml5TreeOperation::DoneCreatingElement(nsIContent* aNode) {
@@ -1132,6 +1149,14 @@ void nsHtml5TreeOperation::MarkMalformedIfScript(nsIContent* aNode) {
   if (sele) {
     
     sele->SetIsMalformed();
+  }
+}
+
+
+
+static void MarkOnParserStack(nsIContent* aElement) {
+  if (aElement && StaticPrefs::dom_element_blocking_enabled()) {
+    aElement->SetFlags(ELEMENT_ON_PARSER_STACK);
   }
 }
 
@@ -1209,6 +1234,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       *target = CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
                                   nodeInfoManager, mBuilder, creator,
                                   intendedParent, mozilla::Nothing());
+      MarkOnParserStack(*target);
       return NS_OK;
     }
 
@@ -1228,6 +1254,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
 
       *target = CreateSVGElement(name, attributes, aOperation.mFromNetwork,
                                  nodeInfoManager, mBuilder, creator);
+      MarkOnParserStack(*target);
       return NS_OK;
     }
 
@@ -1246,6 +1273,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
 
       *target =
           CreateMathMLElement(name, attributes, nodeInfoManager, mBuilder);
+      MarkOnParserStack(*target);
       return NS_OK;
     }
 
@@ -1389,8 +1417,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
     }
 
     nsresult operator()(const opDoneAddingChildren& aOperation) {
-      nsIContent* node = *(aOperation.mElement);
-      node->DoneAddingChildren(node->HasParserNotified());
+      DoneAddingChildren(*(aOperation.mElement));
       return NS_OK;
     }
 
