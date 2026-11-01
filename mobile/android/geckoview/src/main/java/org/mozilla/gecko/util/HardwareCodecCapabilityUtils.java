@@ -159,12 +159,10 @@ public final class HardwareCodecCapabilityUtils {
   
   
   @WrapForJNI
-  public static String[] getSupportedMimeTypesWithAccelInfo(final boolean aIncludeEncoders) {
+  public static String[] getSupportedMimeTypesWithAccelInfo() {
     final Set<String> mimeTypes = new HashSet<>();
     addSupportedMimeTypesWithAccelInfo(mimeTypes, getDecoderInfos(), false);
-    if (aIncludeEncoders) {
-      addSupportedMimeTypesWithAccelInfo(mimeTypes, getEncoderInfos(), true);
-    }
+    addSupportedMimeTypesWithAccelInfo(mimeTypes, getEncoderInfos(), true);
     for (final String typeit : mimeTypes) {
       Log.d(LOGTAG, "MIME support: " + typeit);
     }
@@ -374,26 +372,6 @@ public final class HardwareCodecCapabilityUtils {
   public static boolean hasHWH264() {
     return getHWCodecCapability(H264_MIME_TYPE, true)
         && getHWCodecCapability(H264_MIME_TYPE, false);
-  }
-
-  @WrapForJNI
-  public static boolean decodes10Bit(final String aMimeType) {
-    final MediaCodecList codecs = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-    for (final MediaCodecInfo info : codecs.getCodecInfos()) {
-      if (info.isEncoder()) {
-        continue;
-      }
-      try {
-        if (supports10BitProfile(aMimeType, info.getCapabilitiesForType(aMimeType))) {
-          return true;
-        }
-      } catch (final IllegalArgumentException e) {
-        
-        continue;
-      }
-    }
-
-    return false;
   }
 
   private static boolean supports10BitProfile(
