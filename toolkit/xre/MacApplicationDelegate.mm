@@ -75,6 +75,7 @@ enum class LaunchStatus {
 };
 
 static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
+static bool sHasFinishedLaunching = false;
 
 #ifdef EARLY_BETA_OR_EARLIER
 static mozilla::TimeStamp sStartupRunLoopStart;
@@ -215,14 +216,19 @@ void InitializeMacApp() {
     
     
     CFRunLoopObserverRef observer = CFRunLoopObserverCreate(
-        kCFAllocatorDefault, kCFRunLoopBeforeWaiting,  false,
+        kCFAllocatorDefault, kCFRunLoopBeforeWaiting,  true,
          0,
         [](CFRunLoopObserverRef aObserver, CFRunLoopActivity, void*) {
-          CFRunLoopObserverInvalidate(aObserver);
-          CFRelease(aObserver);
-
           LOG_STARTUP_RUN_LOOP_EVENT("obs:n%u,r%d", EventloopNestingLevel(),
                                      [NSApp isRunning] ? 1 : 0);
+
+          
+          if (!sHasFinishedLaunching) {
+            return;
+          }
+
+          CFRunLoopObserverInvalidate(aObserver);
+          CFRelease(aObserver);
 
           
           
@@ -404,11 +410,10 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-#ifdef EARLY_BETA_OR_EARLIER
 - (void)applicationDidFinishLaunching:(NSNotification*)notification {
+  sHasFinishedLaunching = true;
   LOG_STARTUP_RUN_LOOP_EVENT("didfinish");
 }
-#endif
 
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
   LOG_STARTUP_RUN_LOOP_EVENT("willfinish");
