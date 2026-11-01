@@ -2513,6 +2513,13 @@ class Document : public nsINode,
           aCustomElementRegistry = mozilla::Nothing());
 
   
+
+
+  CustomElementRegistry* GetGlobalCustomElementRegistry() const {
+    return mGlobalCustomElementRegistry;
+  }
+
+  
   mozilla::dom::CustomElementRegistry* GetEffectiveGlobalCustomElementRegistry()
       const;
 
@@ -5603,6 +5610,8 @@ class Document : public nsINode,
   
   
   nsCOMPtr<nsIScriptGlobalObject> mScriptGlobalObject;
+
+  RefPtr<CustomElementRegistry> mGlobalCustomElementRegistry;
 
   
   
