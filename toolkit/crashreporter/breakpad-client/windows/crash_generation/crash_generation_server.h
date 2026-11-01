@@ -82,12 +82,7 @@ class CrashGenerationServer {
   
   
   
-  
-  
-  
-  
-  CrashGenerationServer(const std::wstring& pipe_name,
-                        SECURITY_ATTRIBUTES* pipe_sec_attrs,
+  CrashGenerationServer(HANDLE pipe,
                         OnClientConnectedCallback connect_callback,
                         void* connect_context,
                         OnClientDumpRequestCallback dump_callback,
@@ -113,6 +108,12 @@ class CrashGenerationServer {
 
   
   std::wstring GetPath();
+
+  
+  
+  
+  
+  static HANDLE CreateReportPipe(const wchar_t* pipe_name);
 
   void pre_fetch_custom_info(bool do_pre_fetch) {
     pre_fetch_custom_info_ = do_pre_fetch;
@@ -239,12 +240,6 @@ class CrashGenerationServer {
 
   
   std::list<ClientInfo*> clients_;
-
-  
-  std::wstring pipe_name_;
-
-  
-  SECURITY_ATTRIBUTES* pipe_sec_attrs_;
 
   
   HANDLE pipe_;

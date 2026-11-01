@@ -95,8 +95,7 @@ static bool CheckForIOIncomplete(bool success) {
 #endif
 
 CrashGenerationServer::CrashGenerationServer(
-    const std::wstring& pipe_name,
-    SECURITY_ATTRIBUTES* pipe_sec_attrs,
+    HANDLE pipe,
     OnClientConnectedCallback connect_callback,
     void* connect_context,
     OnClientDumpRequestCallback dump_callback,
@@ -108,9 +107,7 @@ CrashGenerationServer::CrashGenerationServer(
     void* upload_context,
     bool generate_dumps,
     const std::wstring* dump_path)
-    : pipe_name_(pipe_name),
-      pipe_sec_attrs_(pipe_sec_attrs),
-      pipe_(NULL),
+    : pipe_(pipe),
       pipe_wait_handle_(NULL),
       server_alive_handle_(NULL),
       connect_callback_(connect_callback),
@@ -242,14 +239,6 @@ bool CrashGenerationServer::Start() {
     return false;
   }
 
-  pipe_ = CreateNamedPipe(pipe_name_.c_str(),
-                          kPipeAttr,
-                          kPipeMode,
-                          1,
-                          kOutBufferSize,
-                          kInBufferSize,
-                          0,
-                          pipe_sec_attrs_);
   if (pipe_ == INVALID_HANDLE_VALUE) {
     return false;
   }
@@ -274,6 +263,24 @@ void CrashGenerationServer::SetPath(const wchar_t* dump_path) {
 std::wstring CrashGenerationServer::GetPath() {
   AutoCriticalSection lock(&sync_);
   return dump_path_;
+}
+
+
+HANDLE CrashGenerationServer::CreateReportPipe(const wchar_t *pipe_name) {
+  SECURITY_ATTRIBUTES security_attributes = {
+    .nLength = (DWORD)sizeof(SECURITY_ATTRIBUTES),
+    .lpSecurityDescriptor = nullptr,
+    .bInheritHandle = TRUE,
+  };
+
+  return CreateNamedPipe(pipe_name,
+                         kPipeAttr,
+                         kPipeMode,
+                          1,
+                         kOutBufferSize,
+                         kInBufferSize,
+                          0,
+                         &security_attributes);
 }
 
 
@@ -920,6 +927,59 @@ void CrashGenerationServer::set_include_context_heap(bool enabled) {
   include_context_heap_ = enabled;
 }
 
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class AutoSuspendProcess {
+ public:
+  explicit AutoSuspendProcess(HANDLE process)
+      : process_(process), resume_(GetNtProcessProc("NtResumeProcess")) {
+    
+    
+    NtProcessProc suspend = GetNtProcessProc("NtSuspendProcess");
+    if (process_ && resume_ && suspend) {
+      suspended_ = suspend(process_) >= 0;
+    }
+  }
+
+  ~AutoSuspendProcess() {
+    if (suspended_) {
+      resume_(process_);
+    }
+  }
+
+  AutoSuspendProcess(const AutoSuspendProcess&) = delete;
+  AutoSuspendProcess& operator=(const AutoSuspendProcess&) = delete;
+
+ private:
+  typedef LONG(NTAPI* NtProcessProc)(HANDLE);
+
+  static NtProcessProc GetNtProcessProc(const char* name) {
+    HMODULE ntdll = GetModuleHandleW(L"ntdll.dll");
+    return ntdll ? reinterpret_cast<NtProcessProc>(GetProcAddress(ntdll, name))
+                 : nullptr;
+  }
+
+  HANDLE process_;
+  NtProcessProc resume_;
+  bool suspended_ = false;
+};
+
+}  
+
 bool CrashGenerationServer::GenerateDump(const ClientInfo& client,
                                          std::wstring* dump_path) {
   assert(client.pid() != 0);
@@ -938,6 +998,9 @@ bool CrashGenerationServer::GenerateDump(const ClientInfo& client,
   if (!client.GetClientExceptionInfo(&client_ex_info)) {
     return false;
   }
+
+  
+  AutoSuspendProcess suspend_client(client.process_handle());
 
   if (include_context_heap_) {
     CONTEXT context_content;
