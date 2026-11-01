@@ -123,7 +123,16 @@ class nsGridContainerFrame final : public nsContainerFrame,
         HasAnyStateBits(NS_STATE_GRID_SYNTHESIZE_BASELINE)) {
       return Nothing{};
     }
-    return mozilla::Some(GetBBaseline(aBaselineGroup));
+    const nscoord baseline = GetBBaseline(aBaselineGroup);
+    if (baseline == NS_INTRINSIC_ISIZE_UNKNOWN) [[unlikely]] {
+      
+      
+      
+      
+      
+      return Nothing{};
+    }
+    return mozilla::Some(baseline);
   }
 
 #ifdef DEBUG_FRAME_DUMP
