@@ -44,6 +44,7 @@
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
+#include "nsStreamUtils.h"
 #include "nsString.h"
 #include "nsStringStream.h"
 #include "secerr.h"
@@ -476,18 +477,38 @@ void TCPSocket::ActivateTLS() {
 
   if (alreadyOnSTST) {
     ActivateTLSHelper();
-    return;
+  } else {
+    
+    
+    auto CallActivateTLS = [&self = *this]() mutable {
+      self.ActivateTLSHelper();
+    };
+    mozilla::SyncRunnable::DispatchToThread(
+        socketThread,
+        NS_NewRunnableFunction("TCPSocket::UpgradeToSecure->ActivateTLSHelper",
+                               CallActivateTLS));
   }
 
   
   
-  auto CallActivateTLS = [&self = *this]() mutable {
-    self.ActivateTLSHelper();
-  };
-  mozilla::SyncRunnable::DispatchToThread(
-      socketThread,
-      NS_NewRunnableFunction("TCPSocket::UpgradeToSecure->ActivateTLSHelper",
-                             CallActivateTLS));
+  DiscardPendingInput();
+}
+
+void TCPSocket::DiscardPendingInput() {
+  if (!mSocketInputStream) {
+    return;
+  }
+  uint64_t available = 0;
+  while (NS_SUCCEEDED(mSocketInputStream->Available(&available)) &&
+         available > 0) {
+    uint32_t read = 0;
+    nsresult rv = mSocketInputStream->ReadSegments(
+        NS_DiscardSegment, nullptr,
+        uint32_t(std::min<uint64_t>(available, UINT32_MAX)), &read);
+    if (NS_FAILED(rv) || !read) {
+      break;
+    }
+  }
 }
 
 void TCPSocket::ActivateTLSHelper() {
@@ -1050,6 +1071,12 @@ TCPSocket::OnStartRequest(nsIRequest* aRequest) { return NS_OK; }
 NS_IMETHODIMP
 TCPSocket::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
                            uint64_t aOffset, uint32_t aCount) {
+  if (mWaitingForStartTLS) {
+    
+    uint32_t read;
+    return aStream->ReadSegments(NS_DiscardSegment, nullptr, aCount, &read);
+  }
+
   if (mUseArrayBuffers) {
     nsTArray<uint8_t> buffer;
     buffer.SetCapacity(aCount);

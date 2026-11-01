@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_TCPSocket_h
 #define mozilla_dom_TCPSocket_h
 
@@ -75,7 +73,7 @@ class TCPSocket final : public DOMEventTargetHelper,
                         public nsIProtocolProxyCallback {
  public:
   TCPSocket(nsIGlobalObject* aGlobal, const nsAString& aHost, uint16_t aPort,
-            bool aSsl, bool aUseArrayBuffers);
+            bool aSsl, bool aUseArrayBuffers, uint32_t aConnectionFlags = 0);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(TCPSocket,
@@ -171,6 +169,8 @@ class TCPSocket final : public DOMEventTargetHelper,
   
   void ActivateTLS();
   
+  void DiscardPendingInput();
+  
   nsresult MaybeReportErrorAndCloseIfOpen(nsresult status);
 
   
@@ -188,6 +188,8 @@ class TCPSocket final : public DOMEventTargetHelper,
   uint16_t mPort;
   
   bool mSsl;
+  
+  uint32_t mConnectionFlags;
 
   
   RefPtr<TCPSocketChild> mSocketBridgeChild;
