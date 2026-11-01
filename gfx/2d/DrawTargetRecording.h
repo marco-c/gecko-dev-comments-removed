@@ -36,13 +36,9 @@ class DrawTargetRecording final : public DrawTarget {
 
   ~DrawTargetRecording();
 
-  virtual DrawTargetType GetType() const override {
-    return mFinalDT->GetType();
-  }
-  virtual BackendType GetBackendType() const override {
-    return BackendType::RECORDING;
-  }
-  virtual bool IsRecording() const override { return true; }
+  DrawTargetType GetType() const override { return mFinalDT->GetType(); }
+  BackendType GetBackendType() const override { return BackendType::RECORDING; }
+  bool IsRecording() const override { return true; }
 
   
   
@@ -50,25 +46,24 @@ class DrawTargetRecording final : public DrawTarget {
     return mRecorder->SupportsGlyphSourceText();
   }
 
-  virtual void Link(const char* aLocalDest, const char* aURI,
-                    const Rect& aRect) override;
-  virtual void Destination(const char* aDestination,
-                           const Point& aPoint) override;
+  void Link(const char* aLocalDest, const char* aURI,
+            const Rect& aRect) override;
+  void Destination(const char* aDestination, const Point& aPoint) override;
 
-  virtual void AccessibleId(uint64_t aInnerWindowId, uint64_t aAccId) final;
+  void AccessibleId(uint64_t aInnerWindowId, uint64_t aAccId) final;
 
-  virtual already_AddRefed<SourceSurface> Snapshot() override;
-  virtual already_AddRefed<SourceSurface> IntoLuminanceSource(
+  already_AddRefed<SourceSurface> Snapshot() override;
+  already_AddRefed<SourceSurface> IntoLuminanceSource(
       LuminanceType aLuminanceType, float aOpacity) override;
 
-  virtual void DetachAllSnapshots() override;
+  void DetachAllSnapshots() override;
 
-  virtual IntSize GetSize() const override { return mRect.Size(); }
-  virtual IntRect GetRect() const override { return mRect; }
+  IntSize GetSize() const override { return mRect.Size(); }
+  IntRect GetRect() const override { return mRect; }
 
-  virtual void Flush() override;
+  void Flush() override;
 
-  virtual void FlushItem(const IntRect& aBounds) override;
+  void FlushItem(const IntRect& aBounds) override;
 
   
 
@@ -81,33 +76,31 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void DrawSurface(
+  void DrawSurface(
       SourceSurface* aSurface, const Rect& aDest, const Rect& aSource,
       const DrawSurfaceOptions& aSurfOptions = DrawSurfaceOptions(),
       const DrawOptions& aOptions = DrawOptions()) override;
 
-  virtual void DrawSurfaceDescriptor(
+  void DrawSurfaceDescriptor(
       const layers::SurfaceDescriptor& aDesc,
       const RefPtr<layers::Image>& aImageOfSurfaceDescriptor, const Rect& aDest,
       const Rect& aSource,
       const DrawSurfaceOptions& aSurfOptions = DrawSurfaceOptions(),
       const DrawOptions& aOptions = DrawOptions()) override;
 
-  virtual void DrawDependentSurface(uint64_t aId, const Rect& aDest) override;
+  void DrawDependentSurface(uint64_t aId, const Rect& aDest) override;
 
-  virtual void DrawFilter(FilterNode* aNode, const Rect& aSourceRect,
-                          const Point& aDestPoint,
-                          const DrawOptions& aOptions = DrawOptions()) override;
+  void DrawFilter(FilterNode* aNode, const Rect& aSourceRect,
+                  const Point& aDestPoint,
+                  const DrawOptions& aOptions = DrawOptions()) override;
 
-  virtual void DrawSurfaceWithShadow(SourceSurface* aSurface,
-                                     const Point& aDest,
-                                     const ShadowOptions& aShadow,
-                                     CompositionOp aOperator) override;
+  void DrawSurfaceWithShadow(SourceSurface* aSurface, const Point& aDest,
+                             const ShadowOptions& aShadow,
+                             CompositionOp aOperator) override;
 
-  virtual void DrawShadow(const Path* aPath, const Pattern& aPattern,
-                          const ShadowOptions& aShadow,
-                          const DrawOptions& aOptions,
-                          const StrokeOptions* aStrokeOptions) override;
+  void DrawShadow(const Path* aPath, const Pattern& aPattern,
+                  const ShadowOptions& aShadow, const DrawOptions& aOptions,
+                  const StrokeOptions* aStrokeOptions) override;
 
   
 
@@ -115,40 +108,7 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void ClearRect(const Rect& aRect) override;
-
-  
-
-
-
-
-
-
-
-
-  virtual void CopySurface(SourceSurface* aSurface, const IntRect& aSourceRect,
-                           const IntPoint& aDestination) override;
-
-  
-
-
-
-
-
-
-  virtual void FillRect(const Rect& aRect, const Pattern& aPattern,
-                        const DrawOptions& aOptions = DrawOptions()) override;
-
-  
-
-
-
-
-
-
-  virtual void StrokeRect(const Rect& aRect, const Pattern& aPattern,
-                          const StrokeOptions& aStrokeOptions = StrokeOptions(),
-                          const DrawOptions& aOptions = DrawOptions()) override;
+  void ClearRect(const Rect& aRect) override;
 
   
 
@@ -158,10 +118,30 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void StrokeLine(const Point& aStart, const Point& aEnd,
-                          const Pattern& aPattern,
-                          const StrokeOptions& aStrokeOptions = StrokeOptions(),
-                          const DrawOptions& aOptions = DrawOptions()) override;
+
+  void CopySurface(SourceSurface* aSurface, const IntRect& aSourceRect,
+                   const IntPoint& aDestination) override;
+
+  
+
+
+
+
+
+
+  void FillRect(const Rect& aRect, const Pattern& aPattern,
+                const DrawOptions& aOptions = DrawOptions()) override;
+
+  
+
+
+
+
+
+
+  void StrokeRect(const Rect& aRect, const Pattern& aPattern,
+                  const StrokeOptions& aStrokeOptions = StrokeOptions(),
+                  const DrawOptions& aOptions = DrawOptions()) override;
 
   
 
@@ -171,10 +151,10 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void StrokeCircle(
-      const Point& aOrigin, float aRadius, const Pattern& aPattern,
-      const StrokeOptions& aStrokeOptions = StrokeOptions(),
-      const DrawOptions& aOptions = DrawOptions()) override;
+  void StrokeLine(const Point& aStart, const Point& aEnd,
+                  const Pattern& aPattern,
+                  const StrokeOptions& aStrokeOptions = StrokeOptions(),
+                  const DrawOptions& aOptions = DrawOptions()) override;
 
   
 
@@ -184,39 +164,11 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void Stroke(const Path* aPath, const Pattern& aPattern,
-                      const StrokeOptions& aStrokeOptions = StrokeOptions(),
-                      const DrawOptions& aOptions = DrawOptions()) override;
-
-  
-
-
-
-
-
-
-  virtual void Fill(const Path* aPath, const Pattern& aPattern,
+  void StrokeCircle(const Point& aOrigin, float aRadius,
+                    const Pattern& aPattern,
+                    const StrokeOptions& aStrokeOptions = StrokeOptions(),
                     const DrawOptions& aOptions = DrawOptions()) override;
 
-  virtual void FillCircle(const Point& aOrigin, float aRadius,
-                          const Pattern& aPattern,
-                          const DrawOptions& aOptions = DrawOptions()) override;
-
-  
-
-
-  virtual void FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
-                          const Pattern& aPattern,
-                          const DrawOptions& aOptions = DrawOptions()) override;
-
-  
-
-
-  virtual void StrokeGlyphs(
-      ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
-      const StrokeOptions& aStrokeOptions = StrokeOptions(),
-      const DrawOptions& aOptions = DrawOptions()) override;
-
   
 
 
@@ -225,37 +177,38 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
+  void Stroke(const Path* aPath, const Pattern& aPattern,
+              const StrokeOptions& aStrokeOptions = StrokeOptions(),
+              const DrawOptions& aOptions = DrawOptions()) override;
 
-  virtual void Mask(const Pattern& aSource, const Pattern& aMask,
+  
+
+
+
+
+
+
+  void Fill(const Path* aPath, const Pattern& aPattern,
+            const DrawOptions& aOptions = DrawOptions()) override;
+
+  void FillCircle(const Point& aOrigin, float aRadius, const Pattern& aPattern,
+                  const DrawOptions& aOptions = DrawOptions()) override;
+
+  
+
+
+  void FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
+                  const Pattern& aPattern,
+                  const DrawOptions& aOptions = DrawOptions()) override;
+
+  
+
+
+  void StrokeGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
+                    const Pattern& aPattern,
+                    const StrokeOptions& aStrokeOptions = StrokeOptions(),
                     const DrawOptions& aOptions = DrawOptions()) override;
 
-  virtual void MaskSurface(
-      const Pattern& aSource, SourceSurface* aMask, Point aOffset,
-      const DrawOptions& aOptions = DrawOptions()) override;
-
-  
-
-
-
-
-  virtual void PushClip(const Path* aPath) override;
-
-  
-
-
-
-
-
-  virtual void PushClipRect(const Rect& aRect) override;
-
-  
-
-
-  virtual void PopClip() override;
-
-  
-  virtual bool RemoveAllClips() override;
-
   
 
 
@@ -265,17 +218,34 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
+  void Mask(const Pattern& aSource, const Pattern& aMask,
+            const DrawOptions& aOptions = DrawOptions()) override;
+
+  void MaskSurface(const Pattern& aSource, SourceSurface* aMask, Point aOffset,
+                   const DrawOptions& aOptions = DrawOptions()) override;
+
+  
+
+
+
+
+  void PushClip(const Path* aPath) override;
+
+  
 
 
 
 
 
+  void PushClipRect(const Rect& aRect) override;
+
+  
 
 
-  virtual void PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
-                         const Matrix& aMaskTransform,
-                         const IntRect& aBounds = IntRect(),
-                         bool aCopyBackground = false) override;
+  void PopClip() override;
+
+  
+  bool RemoveAllClips() override;
 
   
 
@@ -293,9 +263,30 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
+  void PushLayer(bool aOpaque, Float aOpacity, SourceSurface* aMask,
+                 const Matrix& aMaskTransform,
+                 const IntRect& aBounds = IntRect(),
+                 bool aCopyBackground = false) override;
+
+  
 
 
-  virtual void PushLayerWithBlend(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void PushLayerWithBlend(
       bool aOpaque, Float aOpacity, SourceSurface* aMask,
       const Matrix& aMaskTransform, const IntRect& aBounds = IntRect(),
       bool aCopyBackground = false,
@@ -306,7 +297,7 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void PopLayer() override;
+  void PopLayer() override;
 
   
 
@@ -315,7 +306,7 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(
+  already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(
       unsigned char* aData, const IntSize& aSize, int32_t aStride,
       SurfaceFormat aFormat) const override;
 
@@ -324,7 +315,7 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual already_AddRefed<SourceSurface> OptimizeSourceSurface(
+  already_AddRefed<SourceSurface> OptimizeSourceSurface(
       SourceSurface* aSurface) const override;
 
   
@@ -332,21 +323,21 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromNativeSurface(
+  already_AddRefed<SourceSurface> CreateSourceSurfaceFromNativeSurface(
       const NativeSurface& aSurface) const override;
 
   
 
 
 
-  virtual already_AddRefed<DrawTarget> CreateSimilarDrawTarget(
+  already_AddRefed<DrawTarget> CreateSimilarDrawTarget(
       const IntSize& aSize, SurfaceFormat aFormat) const override;
 
   
 
 
 
-  virtual already_AddRefed<DrawTarget> CreateSimilarDrawTargetWithBacking(
+  already_AddRefed<DrawTarget> CreateSimilarDrawTargetWithBacking(
       const IntSize& aSize, SurfaceFormat aFormat) const override;
 
   bool CanCreateSimilarDrawTarget(const IntSize& aSize,
@@ -355,13 +346,13 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual RefPtr<DrawTarget> CreateClippedDrawTarget(
-      const Rect& aBounds, SurfaceFormat aFormat) override;
+  RefPtr<DrawTarget> CreateClippedDrawTarget(const Rect& aBounds,
+                                             SurfaceFormat aFormat) override;
 
-  virtual RefPtr<DrawTarget> CreateClippedDrawTargetForRect(
+  RefPtr<DrawTarget> CreateClippedDrawTargetForRect(
       const IntRect& aRect, SurfaceFormat aFormat) override;
 
-  virtual already_AddRefed<DrawTarget> CreateSimilarDrawTargetForFilter(
+  already_AddRefed<DrawTarget> CreateSimilarDrawTargetForFilter(
       const IntSize& aSize, SurfaceFormat aFormat, FilterNode* aFilter,
       FilterNode* aSource, const Rect& aSourceRect,
       const Point& aDestPoint) override;
@@ -372,7 +363,7 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual already_AddRefed<PathBuilder> CreatePathBuilder(
+  already_AddRefed<PathBuilder> CreatePathBuilder(
       FillRule aFillRule = FillRule::FILL_WINDING) const override;
 
   
@@ -385,13 +376,13 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual already_AddRefed<GradientStops> CreateGradientStops(
+  already_AddRefed<GradientStops> CreateGradientStops(
       GradientStop* aStops, uint32_t aNumStops,
       ExtendMode aExtendMode = ExtendMode::CLAMP) const override;
 
-  virtual already_AddRefed<FilterNode> CreateFilter(FilterType aType) override;
+  already_AddRefed<FilterNode> CreateFilter(FilterType aType) override;
 
-  virtual already_AddRefed<FilterNode> DeferFilterInput(
+  already_AddRefed<FilterNode> DeferFilterInput(
       const Path* aPath, const Pattern& aPattern, const IntRect& aSourceRect,
       const IntPoint& aDestOffset, const DrawOptions& aOptions = DrawOptions(),
       const StrokeOptions* aStrokeOptions = nullptr) override;
@@ -400,18 +391,18 @@ class DrawTargetRecording final : public DrawTarget {
 
 
 
-  virtual void SetTransform(const Matrix& aTransform) override;
+  void SetTransform(const Matrix& aTransform) override;
 
-  virtual void SetPermitSubpixelAA(bool aPermitSubpixelAA) override;
+  void SetPermitSubpixelAA(bool aPermitSubpixelAA) override;
 
   
 
 
-  virtual void* GetNativeSurface(NativeSurfaceType aType) override {
+  void* GetNativeSurface(NativeSurfaceType aType) override {
     return mFinalDT->GetNativeSurface(aType);
   }
 
-  virtual bool IsCurrentGroupOpaque() override {
+  bool IsCurrentGroupOpaque() override {
     return mFinalDT->IsCurrentGroupOpaque();
   }
 
