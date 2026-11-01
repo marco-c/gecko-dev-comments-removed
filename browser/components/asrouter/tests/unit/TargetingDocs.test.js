@@ -5,7 +5,11 @@ import docs from "docs/targeting-attributes.md";
 
 const SKIP_DOCS = [];
 
-const MESSAGE_CONTEXT_ATTRIBUTES = ["previousSessionEnd"];
+
+
+
+
+const MESSAGE_CONTEXT_ATTRIBUTES = [];
 
 function getHeadingsFromDocs() {
   const re = /### `(\w+)`/g;
@@ -47,8 +51,6 @@ describe("ASRTargeting docs", () => {
     
     
     const allow = [
-      "messageImpressions",
-      "screenImpressions",
       "browserIsSelected",
       "isAIWindow",
       "isFirstStartup",
