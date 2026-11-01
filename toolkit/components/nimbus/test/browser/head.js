@@ -61,18 +61,12 @@ add_setup(async function () {
   
   registerCleanupFunction(() => {
     registerCleanupFunction(async () => {
-      await NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
+      await NimbusTestUtils.assert.storeIsEmpty();
       await resetRemoteSettingsCollections();
       sandbox.restore();
     });
   });
 });
-
-async function setupTest() {
-  return async function cleanup() {
-    await NimbusTestUtils.removeStore(ExperimentAPI.manager.store);
-  };
-}
 
 
 

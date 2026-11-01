@@ -32,11 +32,6 @@ add_setup(async function () {
   do_get_profile();
 
   await initSelectableProfileService();
-
-  
-  registerCleanupFunction(
-    NimbusTestUtils.enableNimbusEnrollments({ read: true })
-  );
 });
 
 

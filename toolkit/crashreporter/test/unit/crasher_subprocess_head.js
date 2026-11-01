@@ -15,6 +15,10 @@ Services.appinfo.UpdateCrashEventsDir();
 var processType = Services.appinfo.processType;
 if (processType == Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
   Services.appinfo.minidumpPath = _tmpd;
+
+  
+  
+  Services.prefs.setBoolPref("nimbus.persistence.enabled", false);
 }
 
 var protocolHandler = Services.io
