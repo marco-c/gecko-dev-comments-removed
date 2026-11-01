@@ -24,11 +24,14 @@ class RtpDependencyDescriptorWriter {
  public:
   
   
+  
+  
   RtpDependencyDescriptorWriter(std::span<uint8_t> data,
                                 const FrameDependencyStructure& structure,
                                 std::bitset<32> active_chains,
                                 const DependencyDescriptor& descriptor);
 
+  
   
   
   bool Write();
@@ -51,6 +54,9 @@ class RtpDependencyDescriptorWriter {
   };
   int StructureSizeBits() const;
   TemplateMatch CalculateMatch(TemplateIterator frame_template) const;
+  
+  
+  bool HasSerializableDiffs() const;
   void FindBestTemplate();
   bool ShouldWriteActiveDecodeTargetsBitmask() const;
   bool HasExtendedFields() const;

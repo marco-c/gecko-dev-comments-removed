@@ -10,6 +10,8 @@
 
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 
+#include <bitset>
+#include <cstddef>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -21,6 +23,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/memory/memory.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/field_trials_view.h"
@@ -75,6 +78,11 @@ using PacketizationFormat = RtpPacketizer::PacketizationFormat;
 constexpr size_t kRedForFecHeaderLength = 1;
 constexpr TimeDelta kMaxUnretransmittableFrameInterval =
     TimeDelta::Millis(33 * 4);
+
+constexpr TimeDelta kWarningLogInterval = TimeDelta::Seconds(10);
+
+
+constexpr int kMaxChainDiff = (1 << 8) - 1;
 
 void BuildRedPayload(const RtpPacketToSend& media_packet,
                      RtpPacketToSend* red_packet) {
@@ -522,6 +530,39 @@ void RTPSenderVideo::AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
   }
 }
 
+bool RTPSenderVideo::HandleMissingDependencyDescriptor(
+    const RTPVideoHeader& video_header,
+    const RtpPacketToSend& packet) {
+  if (video_structure_ == nullptr ||
+      !packet.IsRegistered<RtpDependencyDescriptorExtension>()) {
+    
+    return true;
+  }
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
+    
+    
+    
+    
+    
+    RTC_LOG(LS_WARNING) << "Disable dependency descriptor because failed to "
+                           "attach it to a key frame.";
+    video_structure_ = nullptr;
+    return true;
+  }
+  
+  
+  
+  
+  
+  Timestamp now = clock_->CurrentTime();
+  if (now >= last_undescribable_frame_log_ + kWarningLogInterval) {
+    RTC_LOG(LS_WARNING) << "Failed to describe frame dependencies. Frame is "
+                           "dropped.";
+    last_undescribable_frame_log_ = now;
+  }
+  return false;
+}
+
 bool RTPSenderVideo::SendVideo(int payload_type,
                                VideoCodecType codec_type,
                                uint32_t rtp_timestamp,
@@ -595,6 +636,31 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
         video_header.generic->active_decode_targets,
         video_header.frame_type == VideoFrameType::kVideoFrameKey,
         video_header.generic->frame_id, video_header.generic->chain_diffs);
+    
+    
+    const std::bitset<32> active_chains =
+        active_decode_targets_tracker_.ActiveChainsBitmask();
+    absl::InlinedVector<int, 4>& chain_diffs =
+        video_header.generic->chain_diffs;
+    for (size_t i = 0; i < chain_diffs.size() && i < active_chains.size();
+         ++i) {
+      int& chain_diff = chain_diffs[i];
+      if (!active_chains[i] || chain_diff <= kMaxChainDiff) {
+        continue;
+      }
+      
+      
+      
+      
+      Timestamp now = clock_->CurrentTime();
+      if (now >= last_chain_diff_log_ + kWarningLogInterval) {
+        RTC_LOG(LS_WARNING) << "Chain diff " << chain_diff
+                            << " is too large for the dependency descriptor. "
+                               "Sending 0 instead.";
+        last_chain_diff_log_ = now;
+      }
+      chain_diff = 0;
+    }
   }
 
   
@@ -647,18 +713,9 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
   AddRtpHeaderExtensions(video_header,
                          true, true,
                          single_packet.get());
-  if (video_structure_ != nullptr &&
-      single_packet->IsRegistered<RtpDependencyDescriptorExtension>() &&
-      !single_packet->HasExtension<RtpDependencyDescriptorExtension>()) {
-    RTC_DCHECK_EQ(video_header.frame_type, VideoFrameType::kVideoFrameKey);
-    
-    
-    
-    
-    
-    RTC_LOG(LS_WARNING) << "Disable dependency descriptor because failed to "
-                           "attach it to a key frame.";
-    video_structure_ = nullptr;
+  if (!single_packet->HasExtension<RtpDependencyDescriptorExtension>() &&
+      !HandleMissingDependencyDescriptor(video_header, *single_packet)) {
+    return false;
   }
 
   AddRtpHeaderExtensions(video_header,
@@ -743,7 +800,7 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
 
   if (num_packets == 0) {
     Timestamp now = clock_->CurrentTime();
-    if (now >= last_fail_packetize_log_ + TimeDelta::Seconds(10)) {
+    if (now >= last_fail_packetize_log_ + kWarningLogInterval) {
       RTC_LOG(LS_WARNING) << "Failed to packetize " << codec_type
                           << " video frame of size " << payload.size()
                           << ". Frame is dropped.";

@@ -27,6 +27,21 @@
 namespace webrtc {
 namespace {
 
+
+
+
+
+
+
+
+
+
+
+constexpr int kMaxFrameDiff = 1 << 12;
+
+
+constexpr int kMaxChainDiff = (1 << 8) - 1;
+
 enum class NextLayerIdc : uint64_t {
   kSameLayer = 0,
   kNextTemporal = 1,
@@ -72,6 +87,10 @@ RtpDependencyDescriptorWriter::RtpDependencyDescriptorWriter(
   }
   if (SafeNe(descriptor.frame_dependencies.decode_target_indications.size(),
              structure_.num_decode_targets)) {
+    build_failed_ = true;
+    return;
+  }
+  if (!HasSerializableDiffs()) {
     build_failed_ = true;
     return;
   }
@@ -173,6 +192,23 @@ RtpDependencyDescriptorWriter::CalculateMatch(
   if (result.need_custom_chains)
     result.extra_size_bits += 8 * structure_.num_chains;
   return result;
+}
+
+bool RtpDependencyDescriptorWriter::HasSerializableDiffs() const {
+  for (int fdiff : descriptor_.frame_dependencies.frame_diffs) {
+    if (fdiff <= 0 || fdiff > kMaxFrameDiff) {
+      return false;
+    }
+  }
+  for (int i = 0; i < structure_.num_chains; ++i) {
+    
+    
+    int chain_diff = descriptor_.frame_dependencies.chain_diffs[i];
+    if (active_chains_[i] && (chain_diff < 0 || chain_diff > kMaxChainDiff)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 void RtpDependencyDescriptorWriter::FindBestTemplate() {
@@ -376,7 +412,7 @@ void RtpDependencyDescriptorWriter::WriteFrameDtis() {
 void RtpDependencyDescriptorWriter::WriteFrameFdiffs() {
   for (int fdiff : descriptor_.frame_dependencies.frame_diffs) {
     RTC_DCHECK_GT(fdiff, 0);
-    RTC_DCHECK_LE(fdiff, 1 << 12);
+    RTC_DCHECK_LE(fdiff, kMaxFrameDiff);
     if (fdiff <= (1 << 4))
       WriteBits((1u << 4) | (fdiff - 1), 2 + 4);
     else if (fdiff <= (1 << 8))
@@ -395,7 +431,7 @@ void RtpDependencyDescriptorWriter::WriteFrameChains() {
     int chain_diff =
         active_chains_[i] ? descriptor_.frame_dependencies.chain_diffs[i] : 0;
     RTC_DCHECK_GE(chain_diff, 0);
-    RTC_DCHECK_LT(chain_diff, 1 << 8);
+    RTC_DCHECK_LE(chain_diff, kMaxChainDiff);
     WriteBits(chain_diff, 8);
   }
 }
