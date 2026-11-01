@@ -245,11 +245,11 @@ const JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSampler(
     return nullptr;
   }
 
-  entry->setSamplePositionInBuffer(samplePosInBuffer);
+  entry->recordSampleAtPosition(samplePosInBuffer);
 
   
   if (entry->isIonIC()) {
-    entry->asIonIC().ionEntry().setSamplePositionInBuffer(samplePosInBuffer);
+    entry->asIonIC().ionEntry().recordSampleAtPosition(samplePosInBuffer);
   }
 
   
@@ -272,6 +272,44 @@ JitcodeGlobalEntry* JitcodeGlobalTable::lookupInternal(void* ptr) {
   return nullptr;
 }
 
+JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSamplePosition(
+    void* ptr, uint64_t samplePosInBuffer, uint64_t* lastSamplePos) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  *lastSamplePos = UINT64_MAX;
+  JitcodeGlobalEntry* treeEntry = lookupInternal(ptr);
+  if (treeEntry &&
+      treeEntry->firstSamplePositionInBuffer() <= samplePosInBuffer) {
+    return treeEntry;
+  }
+
+  JitcodeGlobalEntry* result = nullptr;
+  for (JitcodeGlobalEntry* entry : displacedEntries_) {
+    if (!entry->containsPointer(ptr) || !entry->hasSampleInBuffer()) {
+      continue;
+    }
+    uint64_t entryLastSamplePos = entry->lastSamplePositionInBuffer();
+    if (samplePosInBuffer <= entryLastSamplePos &&
+        entryLastSamplePos < *lastSamplePos) {
+      result = entry;
+      *lastSamplePos = entryLastSamplePos;
+    }
+  }
+
+  return result ? result : treeEntry;
+}
+
 bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
   MOZ_ASSERT(entry->isIon() || entry->isIonIC() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy() ||
@@ -286,9 +324,13 @@ bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
   
   
   
+  
   while (JitCodeRange** existing = tree_.maybeLookup(entry.get())) {
     auto* oldEntry = static_cast<JitcodeGlobalEntry*>(*existing);
     MOZ_ASSERT(!oldEntry->hasJitcode());
+    if (!displacedEntries_.append(oldEntry)) {
+      return false;
+    }
     tree_.remove(oldEntry);
     oldEntry->setInTree(false);
   }
@@ -319,6 +361,13 @@ void JitcodeGlobalTable::traceWeak(JSRuntime* rt, JSTracer* trc) {
   
   
   Maybe<uint64_t> rangeStart = rt->profilerSampleBufferRangeStart();
+
+  
+  
+  displacedEntries_.eraseIf([&](JitcodeGlobalEntry* entry) {
+    MOZ_ASSERT(!entry->hasJitcode() && !entry->isInTree());
+    return !entry->isReferencedByProfiler(rangeStart);
+  });
 
   entries_.eraseIf([&](auto& entry) {
     
@@ -1025,8 +1074,8 @@ JS_PUBLIC_API uint64_t JS::ProfiledFrameHandle::realmID() const {
   return entry_.realmID(rt_);
 }
 
-JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,
-                                                           void* addr) {
+JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(
+    JSContext* cx, void* addr, uint64_t samplePositionInBuffer) {
   
   
   static_assert(ProfiledFrameRange::MaxInliningDepth ==
@@ -1037,9 +1086,11 @@ JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,
   JSRuntime* rt = cx->runtime();
   js::jit::JitcodeGlobalTable* table =
       rt->jitRuntime()->getJitcodeGlobalTable();
-  js::jit::JitcodeGlobalEntry* entry = table->lookup(addr);
+  uint64_t lastSamplePos;
+  js::jit::JitcodeGlobalEntry* entry = table->lookupForSamplePosition(
+      addr, samplePositionInBuffer, &lastSamplePos);
 
-  ProfiledFrameRange result(rt, addr, entry);
+  ProfiledFrameRange result(rt, addr, entry, lastSamplePos);
 
   if (entry) {
     result.depth_ = entry->callStackAtAddr(rt, addr, result.frames_,
