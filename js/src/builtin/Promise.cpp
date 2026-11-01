@@ -1986,6 +1986,19 @@ static uint64_t MarkEnqueueJobFlow(JSContext* cx) {
   return flowId;
 }
 
+template <typename MakeTask>
+static bool EnqueueJob(JSContext* cx, MakeTask&& makeTask) {
+  
+  
+  bool useDebugQueue = !cx->runtime()->isMainRuntime() &&
+                       cx->jobQueue->useDebugQueue(cx->global());
+  JS::MicroTask task = makeTask();
+  if (MOZ_UNLIKELY(useDebugQueue)) {
+    return cx->microTaskQueues->enqueueDebugMicroTask(cx, task);
+  }
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx, task);
+}
+
 static bool EnqueueJob(JSContext* cx, MicroTaskQueueElement::Kind kind,
                        JSObject* job) {
   MOZ_ASSERT(cx->realm());
@@ -2007,13 +2020,9 @@ static bool EnqueueJob(JSContext* cx, MicroTaskQueueElement::Kind kind,
 
   
   RootedObject rootedJob(cx, job);
-  if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(cx, kind,
-                                                      ObjectValue(*rootedJob));
-  }
-
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx, kind,
-                                                      ObjectValue(*rootedJob));
+  return EnqueueJob(cx, [&] {
+    return MicroTaskQueueElement::MakeMicroTask(kind, ObjectValue(*rootedJob));
+  });
 }
 
 
@@ -2352,17 +2361,8 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   uint64_t flowId = MarkEnqueueJobFlow(cx);
 
   
-  
-  bool useDebugQueue = !cx->runtime()->isMainRuntime() &&
-                       cx->jobQueue->useDebugQueue(cx->global());
-
-  JS::MicroTask task = reaction->toInlineMicroTask(cx, flowId);
-
-  
-  if (MOZ_UNLIKELY(useDebugQueue)) {
-    return cx->microTaskQueues->enqueueDebugMicroTask(cx, task);
-  }
-  return cx->microTaskQueues->enqueueRegularMicroTask(cx, task);
+  return EnqueueJob(cx,
+                    [&] { return reaction->toInlineMicroTask(cx, flowId); });
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
