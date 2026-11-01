@@ -3670,7 +3670,8 @@ void gfxPlatform::GetCMSSupportInfo(mozilla::widget::InfoObject& aObj) {
   
   const size_t kMaxProfileSize = 8192;
   if (outputProfileData.Length() >= kMaxProfileSize) {
-    nsPrintfCString msg("%zu bytes, too large", outputProfileData.Length());
+    nsPrintfCString msg("%zu bytes, too large to display base64 encoded here",
+                        outputProfileData.Length());
     aObj.DefineProperty("CMSOutputProfile", msg.get());
     return;
   }
