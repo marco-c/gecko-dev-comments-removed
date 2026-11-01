@@ -366,6 +366,13 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
 
   
   
+  
+  void UpdateNewestMediaSeqNumAndTimestamp(int64_t unwrapped_seq_num,
+                                           uint32_t rtp_timestamp)
+      RTC_RUN_ON(worker_queue_);
+
+  
+  
   void ReceivePacket(const RtpPacketReceived& rtp_packet)
       RTC_RUN_ON(worker_queue_);
 

@@ -660,11 +660,8 @@ std::optional<int64_t> RtpVideoStreamReceiver2::UnwrapSequenceNumberOrRecover(
                                   video_header->codec == kVideoCodecH265)) {
     const int64_t unwrapped_seq_num =
         rtp_seq_num_unwrapper_.Unwrap(rtp_packet.SequenceNumber());
-    if (!newest_media_seq_num_.has_value() ||
-        unwrapped_seq_num > *newest_media_seq_num_) {
-      newest_media_seq_num_ = unwrapped_seq_num;
-      newest_media_rtp_timestamp_ = rtp_packet.Timestamp();
-    }
+    UpdateNewestMediaSeqNumAndTimestamp(unwrapped_seq_num,
+                                        rtp_packet.Timestamp());
     return unwrapped_seq_num;
   }
 
@@ -675,6 +672,7 @@ std::optional<int64_t> RtpVideoStreamReceiver2::UnwrapSequenceNumberOrRecover(
   const bool is_keyframe =
       is_media && video_header->frame_type == VideoFrameType::kVideoFrameKey;
 
+  
   
   
   
@@ -750,12 +748,25 @@ std::optional<int64_t> RtpVideoStreamReceiver2::UnwrapSequenceNumberOrRecover(
 
   unwrapped_seq_num =
       rtp_seq_num_unwrapper_.Unwrap(rtp_packet.SequenceNumber());
-  if (is_media && (!newest_media_seq_num_.has_value() ||
-                   unwrapped_seq_num > *newest_media_seq_num_)) {
-    newest_media_seq_num_ = unwrapped_seq_num;
-    newest_media_rtp_timestamp_ = rtp_packet.Timestamp();
+  if (is_media) {
+    UpdateNewestMediaSeqNumAndTimestamp(unwrapped_seq_num,
+                                        rtp_packet.Timestamp());
   }
   return unwrapped_seq_num;
+}
+
+void RtpVideoStreamReceiver2::UpdateNewestMediaSeqNumAndTimestamp(
+    int64_t unwrapped_seq_num,
+    uint32_t rtp_timestamp) {
+  RTC_DCHECK_RUN_ON(worker_queue_);
+  if (!newest_media_seq_num_.has_value() ||
+      unwrapped_seq_num > *newest_media_seq_num_) {
+    newest_media_seq_num_ = unwrapped_seq_num;
+  }
+  if (!newest_media_rtp_timestamp_.has_value() ||
+      AheadOf(rtp_timestamp, *newest_media_rtp_timestamp_)) {
+    newest_media_rtp_timestamp_ = rtp_timestamp;
+  }
 }
 
 RtpVideoStreamReceiver2::StashResult

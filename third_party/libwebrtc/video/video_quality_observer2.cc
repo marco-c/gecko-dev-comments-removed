@@ -252,8 +252,6 @@ void VideoQualityObserver::OnDecodedFrame(uint32_t rtp_frame_timestamp,
       qp_blocky_threshold = std::nullopt;
   }
 
-  RTC_DCHECK(blocky_frames_.find(rtp_frame_timestamp) == blocky_frames_.end());
-
   if (qp_blocky_threshold && *qp > *qp_blocky_threshold) {
     
     if (blocky_frames_.size() > kMaxNumCachedBlockyFrames) {
@@ -263,6 +261,8 @@ void VideoQualityObserver::OnDecodedFrame(uint32_t rtp_frame_timestamp,
           std::next(blocky_frames_.begin(), kMaxNumCachedBlockyFrames / 2));
     }
 
+    
+    
     blocky_frames_.insert(rtp_frame_timestamp);
   }
 }
