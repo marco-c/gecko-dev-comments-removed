@@ -11,6 +11,7 @@
 #include "mozilla/dom/PWebTransport.h"
 #include "nsISupportsImpl.h"
 #include "nsIWebTransport.h"
+#include "nsString.h"
 #include "nsTArray.h"
 
 class WebTransportSessionEventListener;
@@ -53,6 +54,8 @@ class WebTransportSessionBase {
   virtual uint64_t GetStreamId() const = 0;
   virtual void CloseSession(uint32_t aStatus, const nsACString& aReason) = 0;
   virtual void GetMaxDatagramSize() = 0;
+  virtual void GetResponseHeaders(nsTArray<nsCString>& aNames,
+                                  nsTArray<nsCString>& aValues) {}
   virtual nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                         const nsTArray<uint8_t>& aContext,
                                         nsTArray<uint8_t>& aKeyingMaterial) = 0;

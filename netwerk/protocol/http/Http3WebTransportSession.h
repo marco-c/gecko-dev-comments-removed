@@ -15,6 +15,17 @@ namespace mozilla::net {
 
 class Http3Session;
 
+
+
+
+
+
+
+
+void ParseFlatWebTransportResponseHeaders(const nsTArray<uint8_t>& aFlatHeaders,
+                                          nsTArray<nsCString>& aNames,
+                                          nsTArray<nsCString>& aValues);
+
 class Http3TunnelStreamBase : public Http3StreamBase,
                               public nsAHttpSegmentWriter,
                               public nsAHttpSegmentReader {
@@ -64,6 +75,7 @@ class Http3TunnelStreamBase : public Http3StreamBase,
 
   nsCString mFlatHttpRequestHeaders;
   nsTArray<uint8_t> mFlatResponseHeaders;
+  nsTArray<uint8_t> mSavedFlatResponseHeaders;
 
   nsresult mSocketInCondition = NS_ERROR_NOT_INITIALIZED;
   nsresult mSocketOutCondition = NS_ERROR_NOT_INITIALIZED;
@@ -131,6 +143,9 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
   nsresult RegisterSendGroup(uint64_t aGroupId) override;
 
   void GetNegotiatedProtocol(nsACString& aProtocol) override;
+  void GetResponseHeaders(nsTArray<nsCString>& aNames,
+                          nsTArray<nsCString>& aValues) override;
+
   void OnOutgoingDatagramOutCome(
       uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome);
 
