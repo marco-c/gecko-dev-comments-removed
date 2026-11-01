@@ -4,6 +4,63 @@
 
 "use strict";
 
+
+
+
+
+
+
+async function getScreenPos(browser, id) {
+  if (!gIsIframe) {
+    return getContentBoundsForDOMElm(browser, id);
+  }
+  const [frameX, frameY] = await SpecialPowers.spawn(
+    browser,
+    [DEFAULT_IFRAME_ID],
+    frameId => {
+      const frame = content.document.getElementById(frameId);
+      const rect = frame.getBoundingClientRect();
+      const dpr = content.devicePixelRatio;
+      return [
+        (content.mozInnerScreenX + rect.left + frame.clientLeft) * dpr,
+        (content.mozInnerScreenY + rect.top + frame.clientTop) * dpr,
+      ];
+    }
+  );
+  const [x, y] = await invokeContentTask(browser, [id], contentId => {
+    const rect = content.document
+      .getElementById(contentId)
+      .getBoundingClientRect();
+    const dpr = content.devicePixelRatio;
+    return [rect.left * dpr, rect.top * dpr];
+  });
+  return [Math.round(frameX + x), Math.round(frameY + y)];
+}
+
+
+
+
+
+
+async function hitTestZoomed(browser, container, child, grandChild) {
+  const [childX, childY] = await getScreenPos(
+    browser,
+    getAccessibleDOMNodeID(child)
+  );
+  const x = childX + 1;
+  const y = childY + 1;
+  await untilCacheIs(
+    () => getChildAtPoint(container, x, y, false),
+    child,
+    `Wrong direct child accessible at the point (${x}, ${y})`
+  );
+  await untilCacheIs(
+    () => getChildAtPoint(container, x, y, true),
+    grandChild,
+    `Wrong deepest child accessible at the point (${x}, ${y})`
+  );
+}
+
 async function runTests(browser, accDoc) {
   if (Services.appinfo.OS !== "Darwin") {
     const p1 = findAccessibleChildByID(accDoc, "p1");
@@ -20,8 +77,8 @@ async function runTests(browser, accDoc) {
       content.document.body.offsetTop; 
     });
 
-    await hitTest(browser, accDoc, p1, p1.firstChild);
-    await hitTest(browser, accDoc, p2, p2.firstChild);
+    await hitTestZoomed(browser, accDoc, p1, p1.firstChild);
+    await hitTestZoomed(browser, accDoc, p2, p2.firstChild);
   } else {
     todo(
       false,
