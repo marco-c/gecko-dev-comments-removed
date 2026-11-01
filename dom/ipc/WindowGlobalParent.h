@@ -309,6 +309,10 @@ class WindowGlobalParent final : public WindowContext,
   
   already_AddRefed<nsIChannel> GetFailedChannel();
 
+  
+  
+  uint64_t DocumentHistoryLoadId() const { return mDocumentHistoryLoadId; }
+
   dom::NoCorsMediaRequestState NoCorsMediaRequestState(nsIURI* aURI);
 
   void RecordSubsequentNoCorsRequestState(nsIURI* aURI);
@@ -568,6 +572,8 @@ class WindowGlobalParent final : public WindowContext,
   
   
   nsCOMPtr<nsIChannel> mFailedChannel;
+
+  uint64_t mDocumentHistoryLoadId = 0;
 
   uint32_t mSandboxFlags;
 

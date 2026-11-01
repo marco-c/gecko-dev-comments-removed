@@ -185,13 +185,49 @@ class CanonicalBrowsingContext final : public BrowsingContext {
       Maybe<bool>& aReloadActiveEntry);
 
   
+  
+  
   void SetActiveSessionHistoryEntry(const Maybe<nsPoint>& aPreviousScrollPos,
                                     SessionHistoryInfo* aInfo,
                                     uint32_t aLoadType,
                                     uint32_t aUpdatedCacheKey,
-                                    const nsID& aChangeID);
+                                    const nsID& aChangeID,
+                                    bool aKeepSharedState = false);
 
   void ReplaceActiveSessionHistoryEntry(SessionHistoryInfo* aInfo);
+
+  
+  
+  
+  
+  
+  bool CreateSharedState(SessionHistoryInfo* aInfo,
+                         const NewSessionHistorySharedState& aNewState,
+                         bool* aWasCreated = nullptr);
+
+  
+  
+  
+  bool ValidateSessionHistoryInfo(SessionHistoryInfo* aInfo) const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void InheritDocumentPrincipalIfNeeded();
+
+  
+  
+  
+  
+  void MaybeRebindActiveEntry(WindowGlobalParent* aPrevious,
+                              WindowGlobalParent* aCurrent);
 
   void RemoveDynEntriesFromActiveSessionHistoryEntry();
 

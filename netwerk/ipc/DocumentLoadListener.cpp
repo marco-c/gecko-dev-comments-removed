@@ -2835,8 +2835,9 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
         .mParentWindowId = GetParentWindowContext()->InnerWindowId()});
   }
 
-  mParentProcessChannelHandle =
-      MakeRefPtr<ParentProcessChannelHandle>(expectedContext, mChannel);
+  mParentProcessChannelHandle = MakeRefPtr<ParentProcessChannelHandle>(
+      expectedContext, mChannel,
+      mLoadingSessionHistoryInfo ? mLoadingSessionHistoryInfo->mLoadId : 0);
 
   
   

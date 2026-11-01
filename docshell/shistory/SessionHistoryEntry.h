@@ -38,6 +38,16 @@ class SHEntrySharedParentState;
 
 
 
+struct NewSessionHistorySharedState {
+  
+  
+  uint64_t mId = 0;
+  nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
+  nsCString mContentType;
+};
+
+
+
 class SessionHistoryInfo {
  public:
   SessionHistoryInfo() = default;
@@ -130,6 +140,13 @@ class SessionHistoryInfo {
   bool GetHasUserInteraction() const { return mHasUserInteraction; }
 
   uint64_t SharedId() const;
+
+  
+  
+  Maybe<NewSessionHistorySharedState> NewSharedStateRequest() const;
+
+  
+  void SetSharedState(SHEntrySharedParentState* aState);
 
   nsILayoutHistoryState* GetLayoutHistoryState();
   void SetLayoutHistoryState(nsILayoutHistoryState* aState);
@@ -543,6 +560,16 @@ struct ParamTraits<mozilla::dom::PreviousSessionHistoryInfo> {
                     const mozilla::dom::PreviousSessionHistoryInfo& aParam);
   static bool Read(IPC::MessageReader* aReader,
                    mozilla::dom::PreviousSessionHistoryInfo* aResult);
+};
+
+
+template <>
+struct ParamTraits<mozilla::dom::NewSessionHistorySharedState> {
+  typedef mozilla::dom::NewSessionHistorySharedState paramType;
+  static void Write(IPC::MessageWriter* aWriter,
+                    const mozilla::dom::NewSessionHistorySharedState& aParam);
+  static bool Read(IPC::MessageReader* aReader,
+                   mozilla::dom::NewSessionHistorySharedState* aResult);
 };
 
 

@@ -45,8 +45,10 @@ class ParentProcessChannelHandle {
 
   using ExpectedContext = Variant<ExpectLoadedWithin, ExpectChildOf>;
 
+  
+  
   ParentProcessChannelHandle(const ExpectedContext& aExpectedContext,
-                             nsIChannel* aChannel);
+                             nsIChannel* aChannel, uint64_t aHistoryLoadId);
 
   
   
@@ -56,6 +58,9 @@ class ParentProcessChannelHandle {
   Result<nsCOMPtr<nsIChannel>, StaticString> GetChannel(
       CanonicalBrowsingContext* aBrowsingContext,
       WindowGlobalParent* aStaticCloneOf = nullptr) const;
+
+  
+  uint64_t HistoryLoadId() const;
 
  private:
   friend struct IPC::ParamTraits<ParentProcessChannelHandle*>;
@@ -74,6 +79,9 @@ class ParentProcessChannelHandle {
 
     
     const nsCOMPtr<nsIChannel> mChannel;
+
+    
+    const uint64_t mHistoryLoadId;
   };
 
   const Variant<nsID, Record> mUuidOrRecord;

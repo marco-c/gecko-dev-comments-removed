@@ -59,7 +59,9 @@
 #include "nsIContentAnalysis.h"
 #include "nsIWebBrowserChrome.h"
 #include "nsIXULRuntime.h"
+#include "nsAboutProtocolUtils.h"
 #include "nsNetUtil.h"
+#include "nsDocShellLoadState.h"
 #include "nsSHistory.h"
 #include "nsSecureBrowserUI.h"
 #include "nsQueryObject.h"
@@ -1230,6 +1232,16 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
       }
 
       RefPtr<SessionHistoryEntry> newActiveEntry = mLoadingEntries[i].mEntry;
+
+      uint64_t innerWindowId = 0;
+      if (WindowGlobalParent* wgp = GetCurrentWindowGlobal();
+          wgp && (newActiveEntry->SharedInfo()->InnerWindowId() ==
+                      wgp->InnerWindowId() ||
+                  wgp->DocumentHistoryLoadId() == aLoadId)) {
+        innerWindowId = wgp->InnerWindowId();
+      }
+      newActiveEntry->SharedInfo()->SetInnerWindowId(innerWindowId);
+
       if (aCacheKey != 0) {
         newActiveEntry->SetCacheKey(aCacheKey);
       }
@@ -1459,9 +1471,192 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
   
 }
 
+
+static bool IsAboutBlankOrSrcdoc(nsIURI* aURI) {
+  nsAutoCString name;
+  return aURI->SchemeIs("about") &&
+         NS_SUCCEEDED(NS_GetAboutModuleName(aURI, name)) &&
+         (name.EqualsLiteral("blank") || name.EqualsLiteral("srcdoc"));
+}
+
+
+
+static already_AddRefed<nsIPrincipal> GetPrincipalOrPrecursor(
+    nsIPrincipal* aPrincipal) {
+  if (aPrincipal->GetIsContentPrincipal()) {
+    return do_AddRef(aPrincipal);
+  }
+  if (aPrincipal->GetIsNullPrincipal()) {
+    return aPrincipal->GetPrecursorPrincipal();
+  }
+  return nullptr;
+}
+
+
+
+
+
+static bool ReloadWouldInheritDocumentPrincipal(
+    WindowGlobalParent* aWgp, const SessionHistoryInfo* aInfo) {
+  nsIURI* uri = aInfo->GetURI();
+  if (!IsAboutBlankOrSrcdoc(uri) && !uri->SchemeIs("data")) {
+    return true;
+  }
+
+  nsIPrincipal* inherited = aInfo->GetPrincipalToInherit();
+  if (!inherited) {
+    inherited = aInfo->GetTriggeringPrincipal();
+  }
+  if (!inherited) {
+    return false;
+  }
+
+  nsCOMPtr<nsIPrincipal> entryPrincipal = GetPrincipalOrPrecursor(inherited);
+  nsCOMPtr<nsIPrincipal> documentPrincipal =
+      GetPrincipalOrPrecursor(aWgp->DocumentPrincipal());
+  if (!entryPrincipal) {
+    return !documentPrincipal;
+  }
+  return entryPrincipal->Equals(documentPrincipal);
+}
+
+bool CanonicalBrowsingContext::CreateSharedState(
+    SessionHistoryInfo* aInfo, const NewSessionHistorySharedState& aNewState,
+    bool* aWasCreated) {
+  if (aWasCreated) {
+    *aWasCreated = false;
+  }
+  WindowGlobalParent* wgp = GetCurrentWindowGlobal();
+  if (!wgp) {
+    return false;
+  }
+
+  
+  if (SHEntrySharedParentState::Lookup(aNewState.mId)) {
+    return aInfo->SharedId() == aNewState.mId;
+  }
+
+  
+  
+  
+  if (!nsContentUtils::IsProcessSpecificIdFrom(
+          aNewState.mId, wgp->GetContentParent()->ChildID())) {
+    return false;
+  }
+
+  RefPtr<SHEntrySharedParentState> sharedState = new SHEntrySharedParentState(
+      wgp->DocumentPrincipal(), wgp->DocumentPrincipal(),
+      wgp->DocumentPartitionedPrincipal(), aNewState.mPolicyContainer,
+      aNewState.mContentType);
+  sharedState->ChangeId(aNewState.mId);
+  sharedState->SetInnerWindowId(wgp->InnerWindowId());
+  aInfo->SetSharedState(sharedState);
+  if (aWasCreated) {
+    *aWasCreated = true;
+  }
+  return true;
+}
+
+bool CanonicalBrowsingContext::ValidateSessionHistoryInfo(
+    SessionHistoryInfo* aInfo) const {
+  WindowGlobalParent* wgp = GetCurrentWindowGlobal();
+  if (!wgp || !wgp->DocumentPrincipal()) {
+    return false;
+  }
+
+  
+  
+  
+  SHEntrySharedParentState* sharedState =
+      SHEntrySharedParentState::Lookup(aInfo->SharedId());
+  if (!sharedState || sharedState->InnerWindowId() != wgp->InnerWindowId()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  ContentParent* contentParent = wgp->GetContentParent();
+  if (!aInfo->GetURI() || !contentParent ||
+      !ContentTriggeredURILoadIsAllowed(aInfo->GetURI(),
+                                        contentParent->GetRemoteType())) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> innermostURI = NS_GetInnermostURI(aInfo->GetURI());
+  if (innermostURI && net::SchemeIsHttpOrHttps(innermostURI)) {
+    nsCOMPtr<nsIPrincipal> uriPrincipal = BasePrincipal::CreateContentPrincipal(
+        innermostURI, wgp->DocumentPrincipal()->OriginAttributesRef());
+    if (!uriPrincipal ||
+        !contentParent->LoadedOrigins()->Has(
+            uriPrincipal, LoadedOriginSet::Level::PrecursorOnly,
+            OriginAttributes::STRIP_ALL)) {
+      return false;
+    }
+  }
+
+  
+  
+  if (aInfo->GetSrcdocData().isSome() &&
+      (!NS_IsAboutSrcdoc(aInfo->GetURI()) || IsTopContent())) {
+    return false;
+  }
+
+  return true;
+}
+
+void CanonicalBrowsingContext::InheritDocumentPrincipalIfNeeded() {
+  WindowGlobalParent* wgp = GetCurrentWindowGlobal();
+  if (!wgp || !mActiveEntry) {
+    return;
+  }
+
+  SHEntrySharedParentState* sharedState = mActiveEntry->SharedInfo();
+  if (sharedState->InnerWindowId() != wgp->InnerWindowId() ||
+      ReloadWouldInheritDocumentPrincipal(wgp, &mActiveEntry->Info())) {
+    return;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  sharedState->mPrincipalToInherit = wgp->DocumentPrincipal();
+  sharedState->mPartitionedPrincipalToInherit =
+      wgp->DocumentPartitionedPrincipal();
+}
+
+void CanonicalBrowsingContext::MaybeRebindActiveEntry(
+    WindowGlobalParent* aPrevious, WindowGlobalParent* aCurrent) {
+  const uint64_t loadId = aCurrent->DocumentHistoryLoadId();
+  if (!mActiveEntry || loadId == 0 ||
+      loadId != aPrevious->DocumentHistoryLoadId() ||
+      mActiveEntry->SharedInfo()->InnerWindowId() !=
+          aPrevious->InnerWindowId() ||
+      !aPrevious->DocumentPrincipal()->Equals(aCurrent->DocumentPrincipal())) {
+    return;
+  }
+  mActiveEntry->SharedInfo()->SetInnerWindowId(aCurrent->InnerWindowId());
+}
+
 void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     const Maybe<nsPoint>& aPreviousScrollPos, SessionHistoryInfo* aInfo,
-    uint32_t aLoadType, uint32_t aUpdatedCacheKey, const nsID& aChangeID) {
+    uint32_t aLoadType, uint32_t aUpdatedCacheKey, const nsID& aChangeID,
+    bool aKeepSharedState) {
   nsISHistory* shistory = GetSessionHistory();
   if (!shistory) {
     return;
@@ -1475,7 +1670,12 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
   }
   mActiveEntry = MakeRefPtr<SessionHistoryEntry>(aInfo);
   mActiveEntry->SetDocshellID(GetHistoryID());
-  if (oldActiveEntry) {
+  
+  
+  
+  if (oldActiveEntry && !aKeepSharedState &&
+      oldActiveEntry->SharedInfo()->InnerWindowId() ==
+          mActiveEntry->SharedInfo()->InnerWindowId()) {
     mActiveEntry->AdoptBFCacheEntry(oldActiveEntry);
   }
   if (aUpdatedCacheKey != 0) {
