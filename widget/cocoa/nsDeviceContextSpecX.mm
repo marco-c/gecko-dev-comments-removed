@@ -79,8 +79,8 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
   if (!settings) {
     return NS_ERROR_NO_INTERFACE;
   }
-  
-  
+
+  mPrintSettings = aPS;
 
   NSPrintInfo* printInfo = settings->CreateOrCopyPrintInfo();
   if (!printInfo) {
