@@ -465,8 +465,17 @@ bool NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj) {
 
   
   
+  
+  
   uint32_t oldCapacity = obj->getDenseCapacity();
-  if (MOZ_UNLIKELY(!obj->growElements(cx, oldCapacity + 1))) {
+  if (MOZ_UNLIKELY(oldCapacity == 0 &&
+                   Watchtower::watchesFirstDenseElementAdd(obj))) {
+    return false;
+  }
+
+  
+  
+  if (MOZ_UNLIKELY(!obj->growElementsNoWatchtowerCheck(cx, oldCapacity + 1))) {
     cx->recoverFromOutOfMemory();
     return false;
   }
@@ -883,6 +892,14 @@ bool NativeObject::goodElementsAllocationAmount(JSContext* cx,
 }
 
 bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
+  if (getDenseCapacity() == 0) {
+    Watchtower::watchFirstDenseElementAdd(cx, this);
+  }
+  return growElementsNoWatchtowerCheck(cx, reqCapacity);
+}
+
+bool NativeObject::growElementsNoWatchtowerCheck(JSContext* cx,
+                                                 uint32_t reqCapacity) {
   MOZ_ASSERT(isExtensible());
   MOZ_ASSERT(canHaveNonEmptyElements());
 

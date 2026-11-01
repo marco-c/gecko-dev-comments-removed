@@ -5,11 +5,14 @@
 #ifndef vm_RealmFuses_h
 #define vm_RealmFuses_h
 
+#include "mozilla/Maybe.h"
+
 #include "vm/GuardFuse.h"
 #include "vm/InvalidatingFuse.h"
 
 namespace js {
 
+class GlobalObject;
 class NativeObject;
 struct RealmFuses;
 
@@ -322,6 +325,32 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
   virtual bool checkInvariant(JSContext* cx) override;
 };
 
+
+
+
+
+
+
+struct ObjectProtoHasNoIndexedPropsFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override {
+    return "ObjectProtoHasNoIndexedPropsFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+  virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
+};
+
+
+
+
+
+
+struct ArrayProtoHasNoIndexedPropsFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override {
+    return "ArrayProtoHasNoIndexedPropsFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
+};
+
 #define FOR_EACH_REALM_FUSE(FUSE)                                              \
   FUSE(OptimizeGetIteratorFuse, optimizeGetIteratorFuse)                       \
   FUSE(OptimizeGetIteratorBytecodeFuse, optimizeGetIteratorBytecodeFuse)       \
@@ -348,7 +377,9 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
   FUSE(OptimizeMapPrototypeSetFuse, optimizeMapPrototypeSetFuse)               \
   FUSE(OptimizeSetPrototypeAddFuse, optimizeSetPrototypeAddFuse)               \
   FUSE(OptimizeWeakMapPrototypeSetFuse, optimizeWeakMapPrototypeSetFuse)       \
-  FUSE(OptimizeWeakSetPrototypeAddFuse, optimizeWeakSetPrototypeAddFuse)
+  FUSE(OptimizeWeakSetPrototypeAddFuse, optimizeWeakSetPrototypeAddFuse)       \
+  FUSE(ObjectProtoHasNoIndexedPropsFuse, objectProtoHasNoIndexedPropsFuse)     \
+  FUSE(ArrayProtoHasNoIndexedPropsFuse, arrayProtoHasNoIndexedPropsFuse)
 
 struct RealmFuses {
   RealmFuses() = default;
@@ -410,6 +441,15 @@ struct RealmFuses {
     MOZ_CRASH("Fuse Not Found");
   }
 };
+
+
+
+mozilla::Maybe<RealmFuses::FuseIndex> MaybeGetHasNoIndexedPropsFuseIndex(
+    GlobalObject* global, JSObject* proto);
+
+
+
+InvalidatingRealmFuse* MaybeGetHasNoIndexedPropsFuse(NativeObject* proto);
 
 }  
 

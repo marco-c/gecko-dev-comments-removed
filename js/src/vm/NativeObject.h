@@ -1731,6 +1731,9 @@ class NativeObject : public JSObject {
 
  private:
   
+  bool growElementsNoWatchtowerCheck(JSContext* cx, uint32_t newcap);
+
+  
   
   inline void elementsRangePostWriteBarrier(uint32_t start, uint32_t count);
 

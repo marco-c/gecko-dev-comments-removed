@@ -1158,17 +1158,15 @@ bool js::CopyDataProperties(JSContext* cx, HandleObject target,
 
   
   Rooted<NativeObject*> nativeTarget(cx);
-  
-  
-  
-  
-  
-  
-  bool targetMayCollide = false;
   if (target->is<PlainObject>() && target->as<PlainObject>().isExtensible()) {
     nativeTarget = &target->as<PlainObject>();
-    targetMayCollide = !nativeTarget->empty();
   }
+
+  
+  
+  
+  bool keysMayCollide =
+      !from->is<NativeObject>() || !nativeTarget || !nativeTarget->empty();
 
   RootedId nextKey(cx);
   RootedValue propValue(cx);
@@ -1226,7 +1224,7 @@ bool js::CopyDataProperties(JSContext* cx, HandleObject target,
 
     
     if (nativeTarget && !nextKey.isInt() &&
-        (!targetMayCollide || !nativeTarget->contains(cx, nextKey))) {
+        (!keysMayCollide || !nativeTarget->contains(cx, nextKey))) {
       if (!AddDataPropertyToNativeObjectNoHooks(cx, nativeTarget, nextKey,
                                                 propValue)) {
         return false;
@@ -2384,6 +2382,10 @@ static JSObject* CreateObjectPrototype(JSContext* cx, JSProtoKey key) {
   MOZ_ASSERT(succeeded,
              "should have been able to make a fresh Object.prototype's "
              "[[Prototype]] immutable");
+
+  if (!JSObject::setHasRealmFuseProperty(cx, objectProto)) {
+    return nullptr;
+  }
 
   return objectProto;
 }
