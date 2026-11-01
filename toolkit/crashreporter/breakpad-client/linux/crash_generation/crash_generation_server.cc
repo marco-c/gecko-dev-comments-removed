@@ -42,6 +42,7 @@
 #include <vector>
 
 #include "linux/crash_generation/crash_generation_server.h"
+#include "linux/crash_generation/crash_generation.h"
 #include "linux/crash_generation/client_info.h"
 #include "linux/handler/exception_handler.h"
 #include "linux/handler/guid_generator.h"
@@ -56,6 +57,8 @@
 static const char kCommandQuit = 'x';
 
 namespace google_breakpad {
+
+using CrashReporter::UniqueFd;
 
 CrashGenerationServer::CrashGenerationServer(
   const int listen_fd,
@@ -242,7 +245,7 @@ CrashGenerationServer::ClientEvent(short revents)
 
   
   pid_t crashing_pid = -1;
-  int signal_fd = -1;
+  UniqueFd server_endpoint;
   for (struct cmsghdr *hdr = CMSG_FIRSTHDR(&msg); hdr;
        hdr = CMSG_NXTHDR(&msg, hdr)) {
     if (hdr->cmsg_level != SOL_SOCKET)
@@ -259,7 +262,7 @@ CrashGenerationServer::ClientEvent(short revents)
           close(reinterpret_cast<int*>(CMSG_DATA(hdr))[i]);
         return true;
       } else {
-        signal_fd = reinterpret_cast<int*>(CMSG_DATA(hdr))[0];
+        server_endpoint.reset(*reinterpret_cast<int*>(CMSG_DATA(hdr)));
       }
     } else if (hdr->cmsg_type == SCM_CREDENTIALS) {
       const struct ucred *cred =
@@ -268,9 +271,7 @@ CrashGenerationServer::ClientEvent(short revents)
     }
   }
 
-  if (crashing_pid == -1 || signal_fd == -1) {
-    if (signal_fd != -1)
-      close(signal_fd);
+  if (crashing_pid == -1 || !server_endpoint) {
     return true;
   }
 
@@ -281,12 +282,14 @@ CrashGenerationServer::ClientEvent(short revents)
 #if defined(MOZ_OXIDIZED_BREAKPAD)
   ExceptionHandler::CrashContext* breakpad_cc =
       reinterpret_cast<ExceptionHandler::CrashContext*>(crash_context);
-  char* error_msg = nullptr;
+  ExtraCrashData* extra_data = nullptr;
   siginfo_t& si = breakpad_cc->siginfo;
   signalfd_siginfo signalfd_si = {};
   signalfd_si.ssi_signo = si.si_signo;
   signalfd_si.ssi_errno = si.si_errno;
   signalfd_si.ssi_code = si.si_code;
+  signalfd_si.ssi_pid = si.si_pid;
+  signalfd_si.ssi_uid = si.si_uid;
 
   switch (si.si_signo) {
     case SIGILL:
@@ -304,7 +307,7 @@ CrashGenerationServer::ClientEvent(short revents)
     minidump_filename.c_str(),
     crashing_pid,
     breakpad_cc->tid,
-    &error_msg
+    &extra_data
   );
   DirectAuxvDumpInfo auxvInfo = {};
   if (writer && get_auxv_info_ && get_auxv_info_(crashing_pid, &auxvInfo)) {
@@ -319,35 +322,25 @@ CrashGenerationServer::ClientEvent(short revents)
 
     minidump_writer_set_crash_context(writer, &breakpad_cc->context, float_state, &signalfd_si);
 
-    res = minidump_writer_dump(writer, &error_msg);
+    res = minidump_writer_dump(writer, extra_data);
   }
 #else
   if (!google_breakpad::WriteMinidump(minidump_filename.c_str(),
                                       crashing_pid, crash_context,
                                       kCrashContextSize)) {
-    close(signal_fd);
     return true;
   }
 #endif
 
-  ClientInfo info(crashing_pid, this);
-#if defined(MOZ_OXIDIZED_BREAKPAD)
-  if (!res) {
-    info.set_error_msg(error_msg);
-  }
-#endif
+  ClientInfo info(crashing_pid, this, extra_data);
+  extra_data = nullptr; 
+
   if (dump_callback_) {
     dump_callback_(dump_context_, info, minidump_filename);
   }
 
   
-  
-  close(signal_fd);
-
-  info.set_error_msg(nullptr);
-  if (error_msg) {
-    free_minidump_error_msg(error_msg);
-  }
+  server_endpoint.reset();
 
   return true;
 }
