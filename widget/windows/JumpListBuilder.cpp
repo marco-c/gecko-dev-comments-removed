@@ -20,8 +20,10 @@
 #include "mozilla/dom/WindowsJumpListShortcutDescriptionBinding.h"
 #include "mozilla/glean/WidgetWindowsMetrics.h"
 #include "mozilla/mscom/Utils.h"
+#include "nsExceptionHandler.h"
 #include "nsIFile.h"
 #include "nsIObserverService.h"
+#include "nsPrintfCString.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 
@@ -42,10 +44,25 @@ const char kPrefTaskbarEnabled[] = "browser.taskbar.lists.enabled";
 using ShellCallOp = glean::widget::JumpListShellCallLabel;
 
 
+
+
+
+
+
+
 class MOZ_RAII AutoShellCall {
  public:
   explicit AutoShellCall(ShellCallOp aOp)
-      : mTimer(glean::widget::jump_list_shell_call.EnumGet(aOp).Measure()) {}
+      : mTimer(glean::widget::jump_list_shell_call.EnumGet(aOp).Measure()) {
+    
+    CrashReporter::RecordAnnotationNSCString(
+        CrashReporter::Annotation::JumpListShellCallStart,
+        nsPrintfCString("%lld", static_cast<long long>(time(nullptr))));
+  }
+  ~AutoShellCall() {
+    CrashReporter::UnrecordAnnotation(
+        CrashReporter::Annotation::JumpListShellCallStart);
+  }
 
  private:
   glean::impl::TimingDistributionMetric::AutoTimer mTimer;
