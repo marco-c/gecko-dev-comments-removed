@@ -988,6 +988,21 @@ void LibaomAv1EncoderV2::Encode(
     aom_svc_ref_frame_config_t ref_config =
         GetSvcRefFrameConfig(settings, reference_buffer_tracker_);
     SET_OR_RETURN(AV1E_SET_SVC_REF_FRAME_CONFIG, &ref_config);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    aom_svc_ref_frame_comp_pred_t comp_pred = {};
+    if (settings.reference_buffers().size() >= 2) {
+      comp_pred.use_comp_pred[0] = 1;
+      comp_pred.use_comp_pred[2] = 1;
+    }
+    SET_OR_RETURN(AV1E_SET_SVC_REF_FRAME_COMP_PRED, &comp_pred);
 
     if (layer_enabled && settings.effort_level() != effort_level_) {
       
