@@ -3,7 +3,7 @@
 
 
 #ifndef GMPProcessParent_h
-#define GMPProcessParent_h 1
+#define GMPProcessParent_h
 
 #include "base/basictypes.h"
 #include "base/file_path.h"

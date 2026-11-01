@@ -2,10 +2,8 @@
 
 
 
-
-
 #ifndef dom_tabs_ContentThread_h
-#define dom_tabs_ContentThread_h 1
+#define dom_tabs_ContentThread_h
 
 #include "ContentChild.h"
 #include "mozilla/ipc/ProcessChild.h"

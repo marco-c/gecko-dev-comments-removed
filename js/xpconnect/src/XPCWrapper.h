@@ -3,7 +3,7 @@
 
 
 #ifndef XPC_WRAPPER_H
-#define XPC_WRAPPER_H 1
+#define XPC_WRAPPER_H
 
 #include "js/TypeDecls.h"
 
