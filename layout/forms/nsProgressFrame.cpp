@@ -161,12 +161,6 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
 
   
   
-  const bool startAtBottom =
-      vertical &&
-      (!wm.IsVertical() || wm.PhysicalSide(LogicalSide::IStart) == eSideBottom);
-
-  
-  
   
   
   
@@ -174,9 +168,8 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
   
   if (position != -1 || ShouldUseNativeStyle()) {
     if (vertical) {
-      if (startAtBottom) {
-        yoffset += parentPhysicalSize.Height() - size;
-      }
+      
+      yoffset += parentPhysicalSize.Height() - size;
       size -= reflowInput.ComputedPhysicalMargin().TopBottom() +
               reflowInput.ComputedPhysicalBorderPadding().TopBottom();
       size = std::max(size, 0);
@@ -187,7 +180,7 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
       size = std::max(size, 0);
       reflowInput.SetComputedWidth(size);
     }
-  } else if (startAtBottom) {
+  } else if (vertical) {
     
     
     
