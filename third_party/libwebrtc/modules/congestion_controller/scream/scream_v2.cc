@@ -125,7 +125,18 @@ double ScreamV2::ScaleBackoff(const ScreamFeedback& parsed, double backoff) {
     return backoff / std::max(1.0, delay_based_congestion_control_.rtt() /
                                        ReactionInterval());
   }
-  if (last_backoff_rtt_start_time_.IsFinite() &&
+  
+  
+  
+  
+  const double ref_window_share =
+      parsed.data_in_flight >
+              ref_window_ * params_.bytes_in_flight_head_room.Get()
+          ? ref_window_ / parsed.data_in_flight
+          : 1.0;
+
+  if (parsed.feedback_time - last_ref_window_decrease_time_ <
+          delay_based_congestion_control_.rtt() &&
       parsed.data_in_flight > ref_window_) {
     
     
@@ -141,9 +152,10 @@ double ScreamV2::ScaleBackoff(const ScreamFeedback& parsed, double backoff) {
     
     
     
+    
     last_backoff_rtt_start_time_ = parsed.feedback_time;
     last_backoff_ = backoff;
-    return backoff;
+    return backoff * ref_window_share;
   }
   if (backoff > last_backoff_ && last_backoff_ < 1.0) {
     
@@ -151,7 +163,8 @@ double ScreamV2::ScaleBackoff(const ScreamFeedback& parsed, double backoff) {
     
     
     
-    double delta_backoff = (backoff - last_backoff_) / (1.0 - last_backoff_);
+    double delta_backoff =
+        ref_window_share * (backoff - last_backoff_) / (1.0 - last_backoff_);
     last_backoff_ = backoff;
     return delta_backoff;
   }
@@ -207,37 +220,24 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
           std::min(delay_based_congestion_control_.rtt(), reaction_interval)) {
     last_reaction_to_congestion_time_ = parsed.feedback_time;
     double backoff = 0.0;
-    if (allow_initial_ref_window_clamping_ && received_rate_.IsFinite()) {
-      
-      
-      DataSize clamped_ref_window =
-          std::clamp(received_rate_ * (delay_based_congestion_control_.rtt() +
-                                       feedback_hold_time_),
-                     params_.min_ref_window.Get(), ref_window_);
-      backoff = 1.0 - (clamped_ref_window / ref_window_);
-      allow_initial_ref_window_clamping_ = false;
-    }
-
     if (is_loss) {  
-      backoff = std::max(backoff, 1.0 - params_.beta_loss.Get());
+      backoff = 1.0 - params_.beta_loss.Get();
     } else if (is_ce) {  
-      double ce_backoff =
-          ScaleBackoff(parsed, std::max(backoff, l4s_alpha_ / 2.0));
+      backoff = ScaleBackoff(parsed, l4s_alpha_ / 2.0);
 
       if (!delay_based_congestion_control_.IsQueueDelayDetected()) {
         
         
         
-        ce_backoff *=
+        backoff *=
             std::max(0.25, ref_window_scale_factor_close_to_ref_window_i());
         
         
         
-        ce_backoff *=
+        backoff *=
             std::max(0.1, delay_based_congestion_control_
                               .ref_window_scale_factor_due_to_avg_min_delay());
       }
-      backoff = std::max(backoff, ce_backoff);
 
       if (time_since_last_reaction.IsFinite() &&
           time_since_last_reaction >
@@ -260,9 +260,21 @@ void ScreamV2::UpdateRefWindow(const ScreamFeedback& parsed) {
       }
     } else if (is_virtual_ce) {  
       backoff = ScaleBackoff(
-          parsed,
-          std::max(backoff,
-                   delay_based_congestion_control_.l4s_alpha_v() / 2.0));
+          parsed, delay_based_congestion_control_.l4s_alpha_v() / 2.0);
+    }
+    if (allow_initial_ref_window_clamping_ && received_rate_.IsFinite()) {
+      
+      
+      DataSize clamped_ref_window =
+          std::clamp(received_rate_ * (delay_based_congestion_control_.rtt() +
+                                       feedback_hold_time_),
+                     params_.min_ref_window.Get(), ref_window_);
+      double initial_backoff = 1.0 - (clamped_ref_window / ref_window_);
+      if (initial_backoff > backoff) {
+        backoff = initial_backoff;
+        last_backoff_ = std::max(last_backoff_, initial_backoff);
+      }
+      allow_initial_ref_window_clamping_ = false;
     }
     ref_window_ = (1.0 - backoff) * ref_window_;
   }
