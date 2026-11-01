@@ -16,6 +16,13 @@ const { MODEL_FEATURES } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
+
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.resumeCards.enabled", false]],
+  });
+});
+
 async function dispatchSmartbarCommit(browser, value, action) {
   await SpecialPowers.spawn(browser, [value, action], async (val, act) => {
     const aiWindow = await ContentTaskUtils.waitForCondition(

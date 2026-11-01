@@ -28,11 +28,13 @@ const PROMPTS_PAGE =
   "chrome://mochitests/content/browser/browser/components/aiwindow/ui/test/browser/test_smartwindow_prompts_page.html";
 
 
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.memories.generateFromConversation", false],
       ["browser.smartwindow.memories.generateFromHistory", false],
+      ["browser.smartwindow.resumeCards.enabled", false],
     ],
   });
 });
