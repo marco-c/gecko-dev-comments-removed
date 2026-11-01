@@ -1,6 +1,9 @@
 
 
 
+const { GenAI } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/genai/GenAI.sys.mjs"
+);
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
 );
@@ -208,4 +211,40 @@ add_task(async function test_nimbus_minimum_version() {
   await cleanup();
   Services.prefs.clearUserPref(nimbus);
   Services.prefs.clearUserPref(foo);
+});
+
+
+
+
+
+add_task(async function test_nimbus_ignored_sites() {
+  const pref = "browser.highlightToSearch.ignoredSites";
+  const original = Services.prefs.getStringPref(pref);
+
+  const cleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "search",
+    value: { highlightToSearchIgnoredSites: "example.com" },
+  });
+  Assert.equal(
+    Services.prefs.getStringPref(pref),
+    "example.com",
+    "Enrolling sets the ignored sites pref"
+  );
+  Assert.deepEqual(
+    GenAI.ignoredSites,
+    ["example.com"],
+    "The ignored sites follow the pref"
+  );
+
+  await cleanup();
+  Assert.equal(
+    Services.prefs.getStringPref(pref),
+    original,
+    "The pref goes back when the enrollment ends"
+  );
+  Assert.deepEqual(
+    GenAI.ignoredSites,
+    original.split(","),
+    "The ignored sites go back too"
+  );
 });

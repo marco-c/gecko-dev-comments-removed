@@ -1018,6 +1018,13 @@ pref("browser.highlightToSearch.search.enabled", true);
 pref("browser.highlightToSearch.copy.enabled", true);
 
 
+
+pref(
+  "browser.highlightToSearch.ignoredSites",
+  "atlassian.net,docs.google.com,read.amazon.com,read.readwise.io,hypothes.is,chatgpt.com,github.com,notion.so,notion.site,office.com,sharepoint.com,canva.com,figma.com"
+);
+
+
 pref("browser.spin_cursor_while_busy", false);
 
 
