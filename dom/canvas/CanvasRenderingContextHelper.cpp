@@ -204,7 +204,7 @@ bool CanvasRenderingContextHelper::GetOrCreateContext(
   }
 
   
-  RefPtr<nsICanvasRenderingContextInternal> context =
+  nsCOMPtr<nsICanvasRenderingContextInternal> context =
       CreateContext(aContextType);
   if (!context) {
     aRv.ThrowUnknownError("Failed to create context");
@@ -220,10 +220,14 @@ bool CanvasRenderingContextHelper::GetOrCreateContext(
     return false;
   }
 
-  mCurrentContext = std::move(context);
+  mCurrentContext = context;
   mCurrentContextType = aContextType;
 
-  if (!UpdateContext(&aOptions)) {
+  if (!InitOrUpdateContext(context, &aOptions)) {
+    
+    
+    mCurrentContext = nullptr;
+
     
     
     
@@ -238,6 +242,8 @@ bool CanvasRenderingContextHelper::GetOrCreateContext(
     } else if (aContextType == CanvasContextType::WebGPU) {
       
     }
+
+    context->MaybeThrowContextCreationError();
     return false;
   }
 
@@ -252,35 +258,43 @@ bool CanvasRenderingContextHelper::GetOrCreateContext(
   } else if (aContextType == CanvasContextType::WebGPU) {
     
   }
+
+  AfterUpdateContext();
   return true;
 }
 
-bool CanvasRenderingContextHelper::UpdateContext(
+bool CanvasRenderingContextHelper::InitOrUpdateContext(
+    const nsCOMPtr<nsICanvasRenderingContextInternal>& aContext,
     const CanvasRenderingContextOptions* aOptions) {
-  if (!mCurrentContext) {
-    return true;
-  }
+  
+  
+  MOZ_ASSERT(&aContext != &mCurrentContext);
 
   CSSIntSize sz = GetWidthHeight();
 
-  nsCOMPtr<nsICanvasRenderingContextInternal> currentContext = mCurrentContext;
-
-  currentContext->SetOpaqueValueFromOpaqueAttr(GetOpaqueAttr());
+  aContext->SetOpaqueValueFromOpaqueAttr(GetOpaqueAttr());
 
   
-  nsresult rv = aOptions ? currentContext->SetContextOptions(*aOptions) : NS_OK;
+  nsresult rv = aOptions ? aContext->SetContextOptions(*aOptions) : NS_OK;
   if (NS_FAILED(rv)) {
-    mCurrentContext = nullptr;
     return false;
   }
 
-  rv = currentContext->SetDimensions(sz.width, sz.height);
+  rv = aContext->SetDimensions(sz.width, sz.height);
   if (NS_FAILED(rv)) {
-    mCurrentContext = nullptr;
     return false;
   }
-
   return true;
+}
+
+void CanvasRenderingContextHelper::UpdateContext() {
+  nsCOMPtr<nsICanvasRenderingContextInternal> context = mCurrentContext;
+  if (!context || InitOrUpdateContext(context, nullptr)) {
+    AfterUpdateContext();
+  } else {
+    mCurrentContext = nullptr;
+    context->MaybeThrowContextCreationError();
+  }
 }
 
 nsresult CanvasRenderingContextHelper::ParseParams(

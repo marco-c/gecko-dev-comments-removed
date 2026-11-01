@@ -102,6 +102,8 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   
   
   NS_IMETHOD SetDimensions(int32_t width, int32_t height) = 0;
+  
+  NS_IMETHOD MaybeThrowContextCreationError() { return NS_OK; }
 
   
   virtual nsresult Initialize() { return NS_OK; }

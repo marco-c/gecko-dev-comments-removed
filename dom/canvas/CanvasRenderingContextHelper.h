@@ -82,8 +82,13 @@ class CanvasRenderingContextHelper {
   virtual bool GetOpaqueAttr() = 0;
 
  protected:
-  virtual bool UpdateContext(
-      const CanvasRenderingContextOptions* aOptions = nullptr);
+  bool InitOrUpdateContext(
+      const nsCOMPtr<nsICanvasRenderingContextInternal>& aContext,
+      const CanvasRenderingContextOptions* aOptions);
+  void UpdateContext();
+
+  
+  virtual void AfterUpdateContext() {}
 
   virtual nsresult ParseParams(JSContext* aCx, const nsAString& aType,
                                const JS::Value& aEncoderOptions,
