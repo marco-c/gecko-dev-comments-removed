@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Name of the "notification channel" used for displaying download notification. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_downloads_notification_channel">Stiahnuté súbory</string>
@@ -72,7 +79,7 @@
   <!-- Message that appears when trying to download with an external app fails. %1$s will be replaced with the name the external app. -->
   <string name="mozac_feature_downloads_unable_to_open_third_party_app">Nepodarilo sa otvoriť %1$s</string>
   <!-- Text for the info dialog when write to storage permissions have been denied but user tries to download a file. -->
-  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">Na stiahnutie súborov je potrebné povolenie prístupu k súborom a médiám. Ak ho chcete povoliť, prejdite do sekcie Povolenia v nastaveniach systému Android.</string>
+  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">Na sťahovanie súborov je potrebný prístup k súborom a médiám. Prejdite do nastavení systému Android, ťuknite na Povolenia a potom na možnosť Povoliť.</string>
   <!-- Alert dialog confirmation before cancelling downloads, this is the title -->
   <string name="mozac_feature_downloads_cancel_active_downloads_warning_content_title">Zrušiť súkromné sťahovanie?</string>
   <!-- Alert dialog confirmation before cancelling private downloads, this is the body. %1$s will be replaced with the name of the file. -->
