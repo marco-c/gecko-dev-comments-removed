@@ -955,24 +955,20 @@ struct BaseCompiler final {
   
 
   
-  [[nodiscard]] bool createStackMap(Maybe<Trap> reason);
-
-  
-  [[nodiscard]] bool createStackMap(Maybe<Trap> reason,
-                                    CodeOffset assemblerOffset);
-
-  
-  
-  [[nodiscard]] bool createStackMap(
-      Maybe<Trap> reason, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
-
-  
-  
   
   
   [[nodiscard]] bool createStackMap(
       Maybe<Trap> reason, FaultingCodeRange insnRange,
-      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs =
+          HasDebugFrameWithLiveRefs::No);
+
+  
+  
+  
+  [[nodiscard]] bool createStackMap(
+      Maybe<Trap> reason, CodeOffset resumeOffset,
+      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs =
+          HasDebugFrameWithLiveRefs::No);
 
   
   
@@ -996,7 +992,8 @@ struct BaseCompiler final {
 
   
   
-  void insertBreakablePoint(CallSiteKind kind);
+  
+  [[nodiscard]] CodeOffset insertBreakablePoint(CallSiteKind kind);
 
   
   void insertPerFunctionDebugStub();
@@ -1151,10 +1148,6 @@ struct BaseCompiler final {
 
   
   void tableSwitch(Label* theTable, RegI32 switchValue, Label* dispatchCode);
-
-  
-  inline void cmp64Set(Assembler::Condition cond, RegI64 lhs, RegI64 rhs,
-                       RegI32 dest);
 
   
   [[nodiscard]] inline bool supportsRoundInstruction(RoundingMode mode);
@@ -1400,10 +1393,11 @@ struct BaseCompiler final {
   inline TrapSiteDesc trapSiteDesc() const;
 
   
-  inline void trap(Trap t);
+  inline FaultingCodeRange trap(Trap t);
 
   
-  inline void trap(Trap t, const TrapSiteDesc& trapSite, StackMap* stackMap);
+  inline FaultingCodeRange trap(Trap t, const TrapSiteDesc& trapSite,
+                                StackMap* stackMap);
 
   
   

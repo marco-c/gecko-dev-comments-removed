@@ -755,9 +755,10 @@ bool BaseCompiler::beginFunction() {
   fr.storeInstancePtr(InstanceReg);
 
   if (compilerEnv_.debugEnabled()) {
-    insertBreakablePoint(CallSiteKind::EnterFrame);
+    CodeOffset resumeOffset = insertBreakablePoint(CallSiteKind::EnterFrame);
     
-    if (!createStackMap(Nothing() )) {
+    if (!createStackMap(Nothing() ,
+                        resumeOffset)) {
       return false;
     }
   }
@@ -817,17 +818,17 @@ bool BaseCompiler::endFunction() {
     
     
     saveRegisterReturnValues(resultType);
-    insertBreakablePoint(CallSiteKind::Breakpoint);
+    CodeOffset resumeOffset = insertBreakablePoint(CallSiteKind::Breakpoint);
     
     if (!createStackMap(Nothing() ,
-                        HasDebugFrameWithLiveRefs::Maybe)) {
+                        resumeOffset, HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
 
-    insertBreakablePoint(CallSiteKind::LeaveFrame);
+    resumeOffset = insertBreakablePoint(CallSiteKind::LeaveFrame);
     
     if (!createStackMap(Nothing() ,
-                        HasDebugFrameWithLiveRefs::Maybe)) {
+                        resumeOffset, HasDebugFrameWithLiveRefs::Maybe)) {
       return false;
     }
 
@@ -905,7 +906,7 @@ bool BaseCompiler::endFunction() {
 
 
 
-void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
+CodeOffset BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   MOZ_ASSERT(!deadCode_);
 
   
@@ -935,6 +936,9 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   
   
   
+
+  CodeOffset resumeOffset;
+
 #if defined(JS_CODEGEN_X64)
   
   static_assert(Instance::offsetOfDebugStub() < 128);
@@ -947,9 +951,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   masm.j(Assembler::Zero, &L);
 
   
-  masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
 
   
   MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() == uint32_t(L.offset()));
@@ -965,9 +968,8 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
   masm.j(Assembler::Zero, &L);
 
   
-  masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
 
   
   MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() == uint32_t(L.offset()));
@@ -979,28 +981,30 @@ void BaseCompiler::insertBreakablePoint(CallSiteKind kind) {
            MemOperand(Address(InstanceReg, Instance::offsetOfDebugStub())));
   masm.Cbz(tmp, &L);
   masm.Bl(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = CodeOffset(masm.currentOffset());
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
   masm.bind(&L);
 #elif defined(JS_CODEGEN_ARM)
   ScratchPtr scratch(*this);
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.ma_orr(scratch, scratch, SetCC);
   masm.ma_bl(&perFunctionDebugStub_, Assembler::NonZero);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
-              CodeOffset(masm.currentOffset()));
+  resumeOffset = CodeOffset(masm.currentOffset());
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
 #elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_MIPS64) || \
     defined(JS_CODEGEN_RISCV64)
   ScratchPtr scratch(*this);
   Label L;
   masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugStub()), scratch);
   masm.branchPtr(Assembler::Equal, scratch, ImmWord(0), &L);
-  const CodeOffset retAddr = masm.call(&perFunctionDebugStub_);
-  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), retAddr);
+  resumeOffset = masm.call(&perFunctionDebugStub_);
+  masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind), resumeOffset);
   masm.bind(&L);
 #else
   MOZ_CRASH("BaseCompiler platform hook: insertBreakablePoint");
 #endif
+
+  return resumeOffset;
 }
 
 void BaseCompiler::insertPerFunctionDebugStub() {
@@ -1747,10 +1751,10 @@ bool BaseCompiler::insertDebugCollapseFrame() {
     return true;
   }
 
-  insertBreakablePoint(CallSiteKind::CollapseFrame);
+  CodeOffset resumeOffset = insertBreakablePoint(CallSiteKind::CollapseFrame);
   
   return createStackMap(Nothing() ,
-                        HasDebugFrameWithLiveRefs::Maybe);
+                        resumeOffset, HasDebugFrameWithLiveRefs::Maybe);
 }
 
 
@@ -11145,9 +11149,11 @@ bool BaseCompiler::emitBody() {
           
           sync();
 
-          insertBreakablePoint(CallSiteKind::Breakpoint);
+          CodeOffset resumeOffset =
+              insertBreakablePoint(CallSiteKind::Breakpoint);
           
-          if (!createStackMap(Nothing() )) {
+          if (!createStackMap(Nothing() ,
+                              resumeOffset)) {
             return false;
           }
           previousBreakablePoint_ = masm.currentOffset();
