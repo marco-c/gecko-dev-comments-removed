@@ -361,6 +361,17 @@ Compiler::CompilationResult Compiler::Assemble(
     
     macro_assembler_->PushBacktrack(&fail);
   }
+  const bool may_step_back =
+      !one_byte() && ShouldOptionallyStepBackToLeadSurrogate(flags());
+  NonAssertingLabel check_lead_surrogate(this);
+  Label not_in_surrogate_pair;
+  if (may_step_back) {
+    
+    macro_assembler_->LoadCurrentCharacter(0, &not_in_surrogate_pair);
+    macro_assembler_->CheckCharacterInRange(
+        kTrailSurrogateStart, kTrailSurrogateEnd, &check_lead_surrogate);
+    macro_assembler_->Bind(&not_in_surrogate_pair);
+  }
   Trace new_trace;
   if (start->Emit(this, &new_trace).IsError()) {
     work_list_ = nullptr;
@@ -368,6 +379,14 @@ Compiler::CompilationResult Compiler::Assemble(
   }
   macro_assembler_->BindJumpTarget(&fail);
   macro_assembler_->Fail();
+  if (may_step_back) {
+    macro_assembler_->Bind(&check_lead_surrogate);
+    macro_assembler_->LoadCurrentCharacter(-1, &not_in_surrogate_pair);
+    macro_assembler_->CheckCharacterNotInRange(
+        kLeadSurrogateStart, kLeadSurrogateEnd, &not_in_surrogate_pair);
+    macro_assembler_->AdvanceCurrentPosition(-1);
+    macro_assembler_->GoTo(&not_in_surrogate_pair);
+  }
   while (!work_list.empty()) {
     WorkItem item = work_list.back();
     Node* node = item.node;
@@ -381,10 +400,8 @@ Compiler::CompilationResult Compiler::Assemble(
       }
     }
   }
-  if (IsRegExpTooBig()) {
-    work_list_ = nullptr;
-    return ReportError();
-  }
+  
+  CHECK(!IsRegExpTooBig());
 
   DirectHandle<HeapObject> code = macro_assembler_->GetCode(re_data, flags_);
   work_list_ = nullptr;
@@ -454,6 +471,19 @@ class DynamicBitSet : public ZoneObject {
   uint32_t first_ = 0;
   ZoneList<unsigned>* remaining_ = nullptr;
 };
+
+void Trace::add_action(ActionNode* new_action) {
+  DCHECK(action_ == nullptr);  
+  action_ = new_action;
+  flags_ = HasAnyActionsField::update(flags_, true);
+  
+  
+  
+  
+  if (new_action->stores_backreferenced_capture()) {
+    reset_parked_grant();
+  }
+}
 
 int Trace::FindAffectedRegisters(DynamicBitSet* affected_registers,
                                  Zone* zone) {
@@ -921,9 +951,17 @@ ActionNode* ActionNode::IncrementRegister(int reg, Node* on_success,
                                              flags, reg);
 }
 
-ActionNode* ActionNode::StorePosition(int reg, Node* on_success, Flags flags) {
-  return on_success->zone()->New<ActionNode>(STORE_POSITION, on_success, flags,
-                                             reg);
+ActionNode* ActionNode::StorePosition(int reg, Node* on_success, Flags flags,
+                                      const Capture* capture) {
+  ActionNode* node = on_success->zone()->New<ActionNode>(
+      STORE_POSITION, on_success, flags, reg);
+  node->data_.u_simple.capture = capture;
+  return node;
+}
+
+bool ActionNode::stores_backreferenced_capture() const {
+  return action_type() == STORE_POSITION && data_.u_simple.capture != nullptr &&
+         data_.u_simple.capture->is_backreferenced();
 }
 
 ActionNode* ActionNode::RestorePosition(int reg, Node* on_success,
@@ -1546,27 +1584,10 @@ int TextNode::GetCaseIndependentLetters(Compiler* compiler,
   }
 #ifdef V8_INTL_SUPPORT
 
-  if (!unicode && CaseFolding::IgnoreSet().contains(character)) {
-    if (one_byte_subject && character > String::kMaxOneByteCharCode) {
-      
-      
-      return 0;
-    }
-    letters[0] = character;
-    DCHECK(ContainsOnlyUtf16CodeUnits(letters, 1));
-    return 1;
-  }
-  bool in_special_add_set = CaseFolding::SpecialAddSet().contains(character);
-
   icu::UnicodeSet set;
   set.add(character);
-  set = set.closeOver(unicode ? USET_SIMPLE_CASE_INSENSITIVE
-                              : USET_CASE_INSENSITIVE);
-
-  UChar32 canon = 0;
-  if (in_special_add_set && !unicode) {
-    canon = CaseFolding::Canonicalize(character);
-  }
+  CaseFolding::CloseOver(set, unicode ? CaseFolding::Mode::kUnicode
+                                      : CaseFolding::Mode::kNonUnicode);
 
   int32_t range_count = set.getRangeCount();
   int items = 0;
@@ -1576,10 +1597,6 @@ int TextNode::GetCaseIndependentLetters(Compiler* compiler,
     CHECK(end - start + items <= letter_length);
     for (UChar32 cu = start; cu <= end; cu++) {
       if (one_byte_subject && cu > String::kMaxOneByteCharCode) continue;
-      if (!unicode && in_special_add_set &&
-          CaseFolding::Canonicalize(cu) != canon) {
-        continue;
-      }
       letters[items++] = static_cast<unibrow::uchar>(cu);
     }
   }
@@ -1738,9 +1755,9 @@ Node::LimitResult Node::LimitVersions(Compiler* compiler, Trace* trace) {
   TRACE("* Limit Versions: Switch to generic version");
   bool was_limiting = compiler->limiting_recursion();
   compiler->set_limiting_recursion(true);
-  trace->Flush(compiler, this);
+  EmitResult result = trace->Flush(compiler, this);
   compiler->set_limiting_recursion(was_limiting);
-  return DONE;
+  return result.IsError() ? FAILED : DONE;
 }
 
 bool Node::KeepRecursing(Compiler* compiler) {
@@ -2786,6 +2803,7 @@ EmitResult TextNode::Emit(Compiler* compiler, Trace* trace) {
   TRACE_EMIT("TextNode");
   LimitResult limit_result = LimitVersions(compiler, trace);
   if (limit_result == DONE) return EmitResult::Success();
+  if (limit_result == FAILED) return EmitResult::Error();
   DCHECK(limit_result == CONTINUE);
 
   const int max_offset = read_backward() ? trace->cp_offset() - Length()
@@ -3554,6 +3572,7 @@ AtomicLoopKind ClassifyAtomicLoop(LoopChoiceNode* loop) {
 }
 
 AtomicLoopKind LoopChoiceNode::atomic_loop_kind() {
+  if (!v8_flags.regexp_atomic_loop) return AtomicLoopKind::kNone;
   if (!atomic_loop_kind_valid_) {
     atomic_loop_kind_ = ClassifyAtomicLoop(this);
     atomic_loop_kind_valid_ = true;
@@ -3968,7 +3987,7 @@ bool BoyerMooreLookahead::EmitSkipInstructions(RegExpMacroAssembler* masm) {
     if (map->map_count() == 0) {
       
       
-      masm->Fail();
+      masm->Backtrack();
       return true;
     }
 
@@ -4214,6 +4233,7 @@ EmitResult ChoiceNode::Emit(Compiler* compiler, Trace* trace) {
 
   LimitResult limit_result = LimitVersions(compiler, trace);
   if (limit_result == DONE) return EmitResult::Success();
+  if (limit_result == FAILED) return EmitResult::Error();
   DCHECK(limit_result == CONTINUE);
 
   
@@ -4511,6 +4531,29 @@ bool AlternativeMatchesOnlyAtStart(Node* node) {
   }
   return false;
 }
+
+
+
+
+
+struct FloatingAlternatives {
+  FloatingAlternatives(ZoneList<GuardedAlternative>* alternatives,
+                       bool has_parked_grant) {
+    if (!has_parked_grant) return;
+    for (int i = 0; i < alternatives->length(); i++) {
+      if (AlternativeMatchesOnlyAtStart(alternatives->at(i).node())) continue;
+      count++;
+      last = i;
+    }
+  }
+
+  bool HasSibling(int i) const {
+    return count > 1 || (count == 1 && last != i);
+  }
+
+  int count = 0;
+  int last = -1;
+};
 
 }  
 
@@ -5442,6 +5485,9 @@ std::optional<EmitResult> ChoiceNode::TryEmitMaskedValueDispatch(
 
   TRACE("* Emit masked-value dispatch");
 
+  FloatingAlternatives floating(alternatives_,
+                                trace->parked_grant() != ParkedGrant::kNone);
+
   
   
   if (trace->characters_preloaded() != preload_characters) {
@@ -5600,6 +5646,7 @@ std::optional<EmitResult> ChoiceNode::TryEmitMaskedValueDispatch(
     for (int i = 0; i < choice_count; i++) {
       if (group_of_alt[i] != g) continue;
       Trace new_trace(*trace);
+      if (floating.HasSibling(i)) new_trace.reset_parked_grant();
       new_trace.set_characters_preloaded(preload_characters);
       new_trace.set_bound_checked_up_to(preload_characters);
       
@@ -5668,21 +5715,8 @@ EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
   
   NonAssertingLabel parked_reentry(compiler);
 
-  
-  
-  
-  
-  
-  
-  int floating_alternatives = 0;
-  int last_floating = -1;
-  if (trace->parked_grant() != ParkedGrant::kNone) {
-    for (int i = 0; i < choice_count; i++) {
-      if (AlternativeMatchesOnlyAtStart(alternatives_->at(i).node())) continue;
-      floating_alternatives++;
-      last_floating = i;
-    }
-  }
+  FloatingAlternatives floating(alternatives_,
+                                trace->parked_grant() != ParkedGrant::kNone);
 
   for (int i = first_choice; i < choice_count; i++) {
     bool is_last = i == choice_count - 1;
@@ -5693,10 +5727,7 @@ EmitResult ChoiceNode::EmitChoices(Compiler* compiler,
     const ZoneList<Guard*>* guards = alternative.guards();
     int guard_count = (guards == nullptr) ? 0 : guards->length();
     Trace new_trace(*trace);
-    const bool siblings_all_anchored =
-        floating_alternatives == 0 ||
-        (floating_alternatives == 1 && last_floating == i);
-    if (!siblings_all_anchored) new_trace.reset_parked_grant();
+    if (floating.HasSibling(i)) new_trace.reset_parked_grant();
     new_trace.set_characters_preloaded(
         preload->preload_is_current_ ? preload->preload_characters_ : 0);
     if (preload->preload_has_checked_bounds_) {
@@ -5863,6 +5894,7 @@ EmitResult ActionNode::Emit(Compiler* compiler, Trace* trace) {
   RegExpMacroAssembler* assembler = compiler->macro_assembler();
   LimitResult limit_result = LimitVersions(compiler, trace);
   if (limit_result == DONE) return EmitResult::Success();
+  if (limit_result == FAILED) return EmitResult::Error();
   DCHECK(limit_result == CONTINUE);
 
   RecursionCheck rc(compiler);
@@ -5891,7 +5923,7 @@ EmitResult ActionNode::Emit(Compiler* compiler, Trace* trace) {
         
         
         
-        trace->Flush(compiler, this);
+        return trace->Flush(compiler, this);
       } else {
         assembler->WriteCurrentPositionToRegister(
             data_.u_submatch.current_position_register, 0);
@@ -5915,7 +5947,7 @@ EmitResult ActionNode::Emit(Compiler* compiler, Trace* trace) {
         
         RETURN_IF_ERROR(on_success()->Emit(compiler, trace));
       } else if (!trace->is_trivial()) {
-        trace->Flush(compiler, this);
+        return trace->Flush(compiler, this);
       } else {
         Label skip_empty_check;
         
@@ -6004,6 +6036,7 @@ EmitResult BackReferenceNode::Emit(Compiler* compiler, Trace* trace) {
 
   LimitResult limit_result = LimitVersions(compiler, trace);
   if (limit_result == DONE) return EmitResult::Success();
+  if (limit_result == FAILED) return EmitResult::Error();
   DCHECK(limit_result == CONTINUE);
 
   RecursionCheck rc(compiler);
@@ -6425,35 +6458,6 @@ void TextNode::FillInBMInfo(Isolate* isolate, int initial_offset, int budget,
   if (initial_offset == 0) set_bm_info(not_at_start, bm);
 }
 
-Node* Compiler::OptionallyStepBackToLeadSurrogate(Node* on_success) {
-  TRACE_COMPILER(this, "* Optionally step back to lead surrogate");
-  DCHECK(!read_backward());
-  ZoneList<CharacterRange>* lead_surrogates = CharacterRange::List(
-      zone(), CharacterRange::Range(kLeadSurrogateStart, kLeadSurrogateEnd));
-  ZoneList<CharacterRange>* trail_surrogates = CharacterRange::List(
-      zone(), CharacterRange::Range(kTrailSurrogateStart, kTrailSurrogateEnd));
-
-  ChoiceNode* optional_step_back = zone()->New<ChoiceNode>(2, flags(), zone());
-
-  int stack_register = UnicodeLookaroundStackRegister();
-  int position_register = UnicodeLookaroundPositionRegister();
-  Node* step_back = TextNode::CreateForCharacterRanges(
-      zone(), lead_surrogates, true, on_success, flags());
-  Lookaround::Builder builder(true, step_back, this, stack_register,
-                              position_register);
-  REGISTER_NODE(step_back);
-  Node* match_trail = TextNode::CreateForCharacterRanges(
-      zone(), trail_surrogates, false, builder.on_match_success(), flags());
-  REGISTER_NODE(match_trail);
-
-  optional_step_back->AddAlternative(
-      GuardedAlternative(builder.ForMatch(this, match_trail)));
-  optional_step_back->AddAlternative(GuardedAlternative(on_success));
-
-  REGISTER_NODE(optional_step_back);
-  return optional_step_back;
-}
-
 Node* Compiler::PreprocessRegExp(CompileData* data, bool is_one_byte) {
 #ifdef V8_ENABLE_REGEXP_DIAGNOSTICS
   TraceTreeScope trace_tree_scope(diagnostics());
@@ -6461,7 +6465,7 @@ Node* Compiler::PreprocessRegExp(CompileData* data, bool is_one_byte) {
   TRACE_GRAPH_WITH_NODE("* Preprocess RegExp ", data->tree);
   REGISTER_NODE(accept());
   
-  Node* captured_body = Capture::ToNode(data->tree, 0, this, accept());
+  Node* captured_body = Capture::ToNode(data->tree, this, accept(), nullptr);
   Node* node = captured_body;
   if (!data->tree->IsCertainlyAnchoredAtStart(Node::kRecursionBudget) &&
       !IsSticky(flags())) {
@@ -6480,20 +6484,18 @@ Node* Compiler::PreprocessRegExp(CompileData* data, bool is_one_byte) {
       TRACE_GRAPH("* Unroll loop once");
       ChoiceNode* first_step_node = zone()->New<ChoiceNode>(2, flags(), zone());
       first_step_node->AddAlternative(GuardedAlternative(captured_body));
-      first_step_node->AddAlternative(GuardedAlternative(zone()->New<TextNode>(
-          zone()->New<ClassRanges>(StandardCharacterSet::kEverything), false,
-          loop_node, flags())));
+      
+      
+      Node* step = zone()
+                       ->New<ClassRanges>(StandardCharacterSet::kEverything)
+                       ->ToNode(this, loop_node);
+      first_step_node->AddAlternative(GuardedAlternative(step));
       REGISTER_NODE(first_step_node);
       node = first_step_node;
     } else {
       node = loop_node;
     }
   }
-  if (!is_one_byte && IsEitherUnicode(flags()) &&
-      (IsGlobal(flags()) || IsSticky(flags()))) {
-    node = OptionallyStepBackToLeadSurrogate(node);
-  }
-
   
   
   if (reg_exp_too_big_) {

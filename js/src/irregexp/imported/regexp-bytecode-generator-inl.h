@@ -8,6 +8,8 @@
 #include "irregexp/imported/regexp-bytecode-generator.h"
 
 
+#include <bit>
+
 #include "irregexp/imported/regexp-bytecodes-inl.h"
 
 namespace v8 {
@@ -56,7 +58,7 @@ void BytecodeWriter::EnsureCapacity(size_t size_delta) {
     size = kInitialBufferSizeInBytes;
   } else if (required_size <= kMaxBufferGrowthInBytes) {
     
-    size = base::bits::RoundUpToPowerOfTwo(required_size);
+    size = std::bit_ceil(required_size);
   } else {
     
     size = RoundUp<kMaxBufferGrowthInBytes>(required_size);

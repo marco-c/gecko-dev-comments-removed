@@ -522,7 +522,7 @@ void CharacterRange::AddUnicodeCaseEquivalents(ZoneList<CharacterRange>* ranges,
   }
   
   ranges->Rewind(0);
-  set.closeOver(USET_SIMPLE_CASE_INSENSITIVE);
+  CaseFolding::CloseOver(set, CaseFolding::Mode::kUnicode);
   for (int i = 0; i < set.getRangeCount(); i++) {
     ranges->Add(Range(set.getRangeStart(i), set.getRangeEnd(i)), zone);
   }
@@ -811,27 +811,37 @@ int CompareFirstChar(Tree* const* a, Tree* const* b) {
 
 #ifdef V8_INTL_SUPPORT
 
-int CompareCaseInsensitive(const icu::UnicodeString& a,
-                           const icu::UnicodeString& b) {
-  return a.caseCompare(b, U_FOLD_CASE_DEFAULT);
+CaseFolding::Mode CaseFoldingMode(Flags flags) {
+  return IsEitherUnicode(flags) ? CaseFolding::Mode::kUnicode
+                                : CaseFolding::Mode::kNonUnicode;
 }
 
-int CompareFirstCharCaseInsensitive(Tree* const* a, Tree* const* b) {
+
+
+
+int CompareCaseInsensitive(CaseFolding::Mode mode, base::uc16 a, base::uc16 b) {
+  if (a == b) return 0;
+  return CaseFolding::EquivalenceKey(a, mode) -
+         CaseFolding::EquivalenceKey(b, mode);
+}
+
+int CompareFirstCharCaseInsensitive(CaseFolding::Mode mode, Tree* const* a,
+                                    Tree* const* b) {
   Atom* atom1 = FirstAtom(*a);
   Atom* atom2 = FirstAtom(*b);
-  return CompareCaseInsensitive(icu::UnicodeString{atom1->data().at(0)},
-                                icu::UnicodeString{atom2->data().at(0)});
+  return CompareCaseInsensitive(mode, atom1->data().at(0), atom2->data().at(0));
 }
 
-bool Equals(bool ignore_case, const icu::UnicodeString& a,
-            const icu::UnicodeString& b) {
+bool Equals(bool ignore_case, CaseFolding::Mode mode, base::uc16 a,
+            base::uc16 b) {
   if (a == b) return true;
-  if (ignore_case) return CompareCaseInsensitive(a, b) == 0;
+  if (ignore_case) return CompareCaseInsensitive(mode, a, b) == 0;
   return false;  
 }
 
-bool CharAtEquals(bool ignore_case, int index, const Atom* a, const Atom* b) {
-  return Equals(ignore_case, a->data().at(index), b->data().at(index));
+bool CharAtEquals(bool ignore_case, CaseFolding::Mode mode, int index,
+                  const Atom* a, const Atom* b) {
+  return Equals(ignore_case, mode, a->data().at(index), b->data().at(index));
 }
 
 #else
@@ -913,16 +923,16 @@ bool Disjunction::SortConsecutiveAtoms(Compiler* compiler) {
     
     
     
-    
-    
-    
     DCHECK_LT(first_atom, alternatives->length());
     DCHECK_LE(i, alternatives->length());
     DCHECK_LE(first_atom, i);
     if (IsIgnoreCase(compiler->flags())) {
 #ifdef V8_INTL_SUPPORT
-      alternatives->StableSort(CompareFirstCharCaseInsensitive, first_atom,
-                               i - first_atom);
+      const CaseFolding::Mode mode = CaseFoldingMode(compiler->flags());
+      auto compare_closure = [mode](Tree* const* a, Tree* const* b) {
+        return CompareFirstCharCaseInsensitive(mode, a, b);
+      };
+      alternatives->StableSort(compare_closure, first_atom, i - first_atom);
 #else
       unibrow::Mapping<unibrow::Ecma262Canonicalize>* canonicalize =
           compiler->isolate()->regexp_macro_assembler_canonicalize();
@@ -945,6 +955,9 @@ void Disjunction::RationalizeConsecutiveAtoms(Compiler* compiler) {
   ZoneList<Tree*>* alternatives = this->alternatives();
   int length = alternatives->length();
   const bool ignore_case = IsIgnoreCase(compiler->flags());
+#ifdef V8_INTL_SUPPORT
+  const CaseFolding::Mode mode = CaseFoldingMode(compiler->flags());
+#endif  
 
   int write_posn = 0;
   int i = 0;
@@ -958,7 +971,7 @@ void Disjunction::RationalizeConsecutiveAtoms(Compiler* compiler) {
     Atom* const atom = FirstAtom(alternative);
 
 #ifdef V8_INTL_SUPPORT
-    icu::UnicodeString common_prefix(atom->data().at(0));
+    base::uc16 common_prefix = atom->data().at(0);
 #else
     unibrow::Mapping<unibrow::Ecma262Canonicalize>* const canonicalize =
         compiler->isolate()->regexp_macro_assembler_canonicalize();
@@ -975,8 +988,8 @@ void Disjunction::RationalizeConsecutiveAtoms(Compiler* compiler) {
       if (!StartsWithAtom(alternative)) break;
       Atom* const alt_atom = FirstAtom(alternative);
 #ifdef V8_INTL_SUPPORT
-      icu::UnicodeString new_prefix(alt_atom->data().at(0));
-      if (!Equals(ignore_case, new_prefix, common_prefix)) break;
+      base::uc16 new_prefix = alt_atom->data().at(0);
+      if (!Equals(ignore_case, mode, new_prefix, common_prefix)) break;
 #else
       unibrow::uchar new_prefix = alt_atom->data().at(0);
       if (!Equals(ignore_case, canonicalize, new_prefix, common_prefix)) break;
@@ -997,7 +1010,7 @@ void Disjunction::RationalizeConsecutiveAtoms(Compiler* compiler) {
         Atom* old_atom = FirstAtom(alternatives->at(j + first_with_prefix));
         for (int k = 1; k < prefix_length; k++) {
 #ifdef V8_INTL_SUPPORT
-          if (!CharAtEquals(ignore_case, k, alt_atom, old_atom)) {
+          if (!CharAtEquals(ignore_case, mode, k, alt_atom, old_atom)) {
 #else
           if (!CharAtEquals(ignore_case, canonicalize, k, alt_atom, old_atom)) {
 #endif
@@ -1127,9 +1140,17 @@ Node* Disjunction::ToNodeImpl(Compiler* compiler, Node* on_success) {
   ZoneList<Tree*>* alternatives = this->alternatives();
 
   if (alternatives->length() > 2) {
-    bool found_consecutive_atoms = SortConsecutiveAtoms(compiler);
-    if (found_consecutive_atoms) RationalizeConsecutiveAtoms(compiler);
-    TRACE_WITH_NODE("* After rationalizing consecutive atoms: ", this);
+    if (!compiler->read_backward() && v8_flags.regexp_optimization) {
+      
+      
+      
+      
+      
+      
+      bool found_consecutive_atoms = SortConsecutiveAtoms(compiler);
+      if (found_consecutive_atoms) RationalizeConsecutiveAtoms(compiler);
+      TRACE_WITH_NODE("* After rationalizing consecutive atoms: ", this);
+    }
     FixSingleCharacterDisjunctions(compiler);
     TRACE_WITH_NODE("* After fixing single character disjunctions: ", this);
     if (alternatives->length() == 1) {
@@ -1348,6 +1369,7 @@ Node* BackReference::ToNodeImpl(Compiler* compiler, Node* on_success) {
   
   
   for (auto capture : *captures()) {
+    capture->set_is_backreferenced();
     backref_node = compiler->zone()->New<BackReferenceNode>(
         Capture::StartRegister(capture->index()),
         Capture::EndRegister(capture->index()), compiler->read_backward(),
@@ -1457,23 +1479,24 @@ Node* Lookaround::ToNodeImpl(Compiler* compiler, Node* on_success) {
 }
 
 Node* Capture::ToNodeImpl(Compiler* compiler, Node* on_success) {
-  return ToNode(body(), index(), compiler, on_success);
+  return ToNode(body(), compiler, on_success, this);
 }
 
 
-Node* Capture::ToNode(Tree* body, int index, Compiler* compiler,
-                      Node* on_success) {
+Node* Capture::ToNode(Tree* body, Compiler* compiler, Node* on_success,
+                      const Capture* capture) {
   DCHECK_NOT_NULL(body);
+  int index = capture == nullptr ? 0 : capture->index();
   int start_reg = Capture::StartRegister(index);
   int end_reg = Capture::EndRegister(index);
   if (compiler->read_backward()) std::swap(start_reg, end_reg);
-  Node* store_end =
-      ActionNode::StorePosition(end_reg, on_success, compiler->flags());
+  Node* store_end = ActionNode::StorePosition(end_reg, on_success,
+                                              compiler->flags(), capture);
   REGISTER_NODE(store_end);
   Node* body_node = body->ToNode(compiler, store_end);
   if (body_node->IsBacktrack()) return body_node;
-  Node* node =
-      ActionNode::StorePosition(start_reg, body_node, compiler->flags());
+  Node* node = ActionNode::StorePosition(start_reg, body_node,
+                                         compiler->flags(), capture);
   REGISTER_NODE(node);
   return node;
 }
@@ -1731,22 +1754,8 @@ void CharacterRange::AddCaseEquivalents(Isolate* isolate, Zone* zone,
     others.add(from, to);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   icu::UnicodeSet already_added(others);
-  others.removeAll(CaseFolding::IgnoreSet());
-  others.closeOver(USET_CASE_INSENSITIVE);
-  others.removeAll(CaseFolding::IgnoreSet());
+  CaseFolding::CloseOver(others, CaseFolding::Mode::kNonUnicode);
   others.removeAll(already_added);
 
   

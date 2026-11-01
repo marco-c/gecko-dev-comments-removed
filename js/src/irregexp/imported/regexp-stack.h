@@ -11,6 +11,15 @@ namespace v8 {
 namespace internal {
 namespace regexp {
 
+class RegExpMacroAssemblerARM;
+class RegExpMacroAssemblerARM64;
+class RegExpMacroAssemblerIA32;
+class RegExpMacroAssemblerLOONG64;
+class RegExpMacroAssemblerMIPS;
+class RegExpMacroAssemblerPPC;
+class RegExpMacroAssemblerRISCV;
+class RegExpMacroAssemblerS390;
+class RegExpMacroAssemblerX64;
 class Stack;
 
 
@@ -73,13 +82,6 @@ class Stack final {
 
   
   
-  
-  
-  
-  Address* limit_address_address() { return &thread_local_.limit_; }
-
-  
-  
   V8_EXPORT_PRIVATE Address EnsureCapacity(size_t size);
 
   
@@ -93,10 +95,12 @@ class Stack final {
   
   static constexpr size_t kMaximumStackSize = 64 * MB;
 
+ private:
+  
+  
   Stack();
   ~Stack();
 
- private:
   
   static const Address kMemoryTop =
       static_cast<Address>(static_cast<uintptr_t>(-1));
@@ -154,12 +158,19 @@ class Stack final {
   };
   static constexpr size_t kThreadLocalSize = sizeof(ThreadLocal);
 
-  Address memory_top_address_address() {
-    return reinterpret_cast<Address>(&thread_local_.memory_top_);
-  }
+  
+  
+  static constexpr int kMemoryTopOffset = offsetof(ThreadLocal, memory_top_);
+  static constexpr int kStackPointerOffset =
+      offsetof(ThreadLocal, stack_pointer_);
+  
+  
+  
+  
+  static constexpr int kLimitOffset = offsetof(ThreadLocal, limit_);
 
-  Address stack_pointer_address() {
-    return reinterpret_cast<Address>(&thread_local_.stack_pointer_);
+  Address thread_local_address() {
+    return reinterpret_cast<Address>(&thread_local_);
   }
 
   
@@ -182,6 +193,16 @@ class Stack final {
 
   friend class internal::ExternalReference;
   friend class StackScope;
+  
+  friend class RegExpMacroAssemblerARM;
+  friend class RegExpMacroAssemblerARM64;
+  friend class RegExpMacroAssemblerIA32;
+  friend class RegExpMacroAssemblerLOONG64;
+  friend class RegExpMacroAssemblerMIPS;
+  friend class RegExpMacroAssemblerPPC;
+  friend class RegExpMacroAssemblerRISCV;
+  friend class RegExpMacroAssemblerS390;
+  friend class RegExpMacroAssemblerX64;
 };
 
 }  

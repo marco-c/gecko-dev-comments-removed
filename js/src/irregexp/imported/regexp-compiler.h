@@ -401,11 +401,7 @@ class Trace {
   bool GetStoredPosition(int reg, int* cp_offset) const;
   
   
-  void add_action(ActionNode* new_action) {
-    DCHECK(action_ == nullptr);  
-    action_ = new_action;
-    flags_ = HasAnyActionsField::update(flags_, true);
-  }
+  void add_action(ActionNode* new_action);
   
   
   void reset_parked_grant() {
@@ -639,12 +635,7 @@ class V8_EXPORT_PRIVATE Compiler {
   
   
   
-  
   Node* PreprocessRegExp(CompileData* data, bool is_one_byte);
-
-  
-  
-  Node* OptionallyStepBackToLeadSurrogate(Node* on_success);
 
   struct WorkItem {
     Node* node;

@@ -6,11 +6,9 @@
 #define V8_REGEXP_SPECIAL_CASE_H_
 
 #ifdef V8_INTL_SUPPORT
-#include "irregexp/RegExpShim.h"
-
 #include "unicode/uchar.h"
 #include "unicode/uniset.h"
-#include "unicode/unistr.h"
+#include "irregexp/RegExpShim.h"
 
 namespace v8 {
 namespace internal {
@@ -60,53 +58,56 @@ namespace regexp {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-class CaseFolding final : public AllStatic {
+class V8_EXPORT_PRIVATE CaseFolding final : public AllStatic {
  public:
+  enum class Mode { kNonUnicode, kUnicode };
+
+  
+  
+  
+  static UChar32 EquivalenceKey(UChar32 c, Mode mode) {
+    DCHECK_GE(c, 0);
+    DCHECK_LE(c, mode == Mode::kNonUnicode ? 0xffff : 0x10ffff);
+    if (mode == Mode::kNonUnicode && IgnoreSet().contains(c)) return c;
+    return u_foldCase(c, U_FOLD_CASE_DEFAULT);
+  }
+
+  
+  
+  static void CloseOver(icu::UnicodeSet& set, Mode mode) {
+    if (mode == Mode::kUnicode) {
+      set.closeOver(USET_SIMPLE_CASE_INSENSITIVE);
+      return;
+    }
+    DCHECK(!set.containsSome(0x10000, 0x10ffff));
+    if (IgnoreSet().containsNone(set)) {
+      CloseOverNonUnicode(set);
+      return;
+    }
+    if (IgnoreSet().containsAll(set)) return;
+    
+    
+    icu::UnicodeSet ignored(set);
+    ignored.retainAll(IgnoreSet());
+    set.removeAll(IgnoreSet());
+    CloseOverNonUnicode(set);
+    set.addAll(ignored);
+  }
+
+  
+  static bool HasSupplementaryEquivalents(base::uc16 c) {
+    return SupplementaryEquivalentsSet().contains(c);
+  }
+
+ private:
   static const icu::UnicodeSet& IgnoreSet();
-  static const icu::UnicodeSet& SpecialAddSet();
+  static const icu::UnicodeSet& SupplementaryEquivalentsSet();
 
   
-  
-  
-  static UChar32 Canonicalize(UChar32 ch) {
-    
-    CHECK_LE(ch, 0xffff);
-
-    
-    icu::UnicodeString s(ch);
-
-    
-    
-    
-    icu::UnicodeString& u = s.toUpper();
-
-    
-    if (u.length() != 1) {
-      return ch;
-    }
-
-    
-    UChar32 cu = u.char32At(0);
-
-    
-    if (ch >= 128 && cu < 128) {
-      return ch;
-    }
-
-    
-    return cu;
+  static void CloseOverNonUnicode(icu::UnicodeSet& set) {
+    set.closeOver(USET_SIMPLE_CASE_INSENSITIVE);
+    set.removeAll(IgnoreSet());
+    set.remove(0x10000, 0x10ffff);
   }
 };
 
