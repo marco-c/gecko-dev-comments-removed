@@ -566,13 +566,6 @@ static Result<RemoteType, nsresult> SpecialBehaviorRemoteType(
   }
 }
 
-
-
-
-static bool IsRemoteTypeImplicitCOOP(const RemoteType& aRemoteType) {
-  return aRemoteType.IsNotRemote() || aRemoteType.IsPrivilegedAbout();
-}
-
 }  
 
 already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI) {
@@ -891,29 +884,9 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
         behavior, aCurrentRemoteType, aParentWindow, originAttributes));
 
     if (options.mRemoteType != aCurrentRemoteType &&
-        (IsRemoteTypeImplicitCOOP(options.mRemoteType) ||
-         IsRemoteTypeImplicitCOOP(aCurrentRemoteType))) {
-      if (!aParentWindow) {
-        MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-                ("Replacing context due to ImplicitCOOP remote type: %s -> %s",
-                 aCurrentRemoteType.Stringify().get(),
-                 options.mRemoteType.Stringify().get()));
-        options.mReplaceBrowsingContext = true;
-      } else {
-        
-        
-        
-        
-        
-        if (!IsRemoteTypeImplicitCOOP(aParentWindow->GetRemoteType())) {
-          MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-                  ("Blocking framing of ImplicitCOOP remote type (%s) by "
-                   "non-ImplicitCOOP remote type (%s)",
-                   options.mRemoteType.Stringify().get(),
-                   aParentWindow->GetRemoteType().Stringify().get()));
-          return Err(NS_ERROR_DOM_SECURITY_ERR);
-        }
-      }
+        (options.mRemoteType.IsNotRemote() ||
+         aCurrentRemoteType.IsNotRemote())) {
+      options.mReplaceBrowsingContext = true;
     }
 
     MOZ_LOG(
@@ -928,10 +901,8 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   
   
-  if (!aParentWindow && IsRemoteTypeImplicitCOOP(aCurrentRemoteType)) {
-    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-            ("Replacing context due to ImplicitCOOP remote type: %s",
-             aCurrentRemoteType.Stringify().get()));
+  if (aCurrentRemoteType.IsNotRemote()) {
+    MOZ_ASSERT(!aParentWindow);
     options.mReplaceBrowsingContext = true;
   }
 
