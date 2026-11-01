@@ -22,6 +22,7 @@
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Result.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Tokenizer.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/intl/Localization.h"
@@ -39,6 +40,7 @@
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
 #include "nsProxyRelease.h"
+#include "nsWindow.h"
 #include "nsXREDirProvider.h"
 
 namespace mozilla {
@@ -252,6 +254,24 @@ Result<nsString, nsresult> ToastNotificationHandler::GetLaunchArgument() {
   }
 
   return launchArg;
+}
+
+static nsIAlertCallbacks::ApplicationState GetApplicationState() {
+  HWND foreground = ::GetForegroundWindow();
+  if (foreground && ::IsWindowVisible(foreground) &&
+      WinUtils::IsOurProcessWindow(foreground)) {
+    return nsIAlertCallbacks::ApplicationState::FOREGROUND;
+  }
+
+  
+  
+  
+  TimeStamp lastDeactivation = nsWindow::GetLastAppDeactivationTime();
+  if (!lastDeactivation.IsNull() &&
+      TimeStamp::Now() - lastDeactivation <= TimeDuration::FromSeconds(1)) {
+    return nsIAlertCallbacks::ApplicationState::FOREGROUND;
+  }
+  return nsIAlertCallbacks::ApplicationState::BACKGROUND_WINDOWS;
 }
 
 static ComPtr<IToastNotificationManagerStatics>
@@ -889,6 +909,8 @@ ToastNotificationHandler::OnActivate(
     } else if (actionValue && *actionValue == kAlertActionDisable) {
       mAlertCallbacks->OnAlertDisable();
     } else if (mClickable) {
+      nsIAlertCallbacks::ApplicationState state = GetApplicationState();
+
       
       
       nsCOMPtr<nsIWindowMediator> winMediator(
@@ -914,7 +936,7 @@ ToastNotificationHandler::OnActivate(
 
       
       
-      mAlertCallbacks->OnAlertClick(alertAction);
+      mAlertCallbacks->OnAlertClick(alertAction, state);
     }
   }
   HandleCloseFromSystem();

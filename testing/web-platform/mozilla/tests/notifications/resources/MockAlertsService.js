@@ -119,11 +119,14 @@ function mockServicesChromeScript() {
     mockAlertsService
   );
 
-  function clickNotifications(doClose) {
+  function clickNotifications({ doClose, appState }) {
     
     for (let [name, notification] of Object.entries(activeNotifications)) {
       let { callbacks } = notification;
-      callbacks.onAlertClick();
+      callbacks.onAlertClick(
+        null,
+        Ci.nsIAlertCallbacks[appState] ?? Ci.nsIAlertCallbacks.UNKNOWN
+      );
       if (doClose) {
         mockAlertsService.closeAlert(name);
       }
@@ -234,18 +237,18 @@ const MockAlertsService = {
         this._chromeScript = null;
       });
   },
-  async clickNotifications() {
+  async clickNotifications(appState) {
     
     await this._chromeScript.sendQuery(
       "mock-alert-service:click-notifications",
-      true
+      { doClose: true, appState }
     );
   },
-  async clickNotificationsWithoutClose() {
+  async clickNotificationsWithoutClose(appState) {
     
     await this._chromeScript.sendQuery(
       "mock-alert-service:click-notifications",
-      false
+      { doClose: false, appState }
     );
   },
   async closeNotifications() {

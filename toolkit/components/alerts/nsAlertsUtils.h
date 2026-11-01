@@ -29,5 +29,10 @@ class nsAlertsUtils final {
 
 
   static nsresult GetOrigin(nsIPrincipal* aPrincipal, nsACString& aOrigin);
+
+  
+
+
+  static bool HasOpenBrowserWindows();
 };
 #endif 

@@ -247,6 +247,7 @@ nsWindow* nsWindow::sCurrentWindow = nullptr;
 bool nsWindow::sJustGotDeactivate = false;
 bool nsWindow::sJustGotActivate = false;
 bool nsWindow::sIsInMouseCapture = false;
+TimeStamp nsWindow::sLastAppDeactivationTime;
 
 
 
@@ -5763,6 +5764,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
     } break;
 
     case WM_ACTIVATEAPP: {
+      if (!wParam) {
+        sLastAppDeactivationTime = TimeStamp::Now();
+      }
       
       
       
