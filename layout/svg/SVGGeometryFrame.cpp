@@ -694,13 +694,21 @@ bool SVGGeometryFrame::IsInvisible() const {
   return true;
 }
 
+
+static bool HasSkew(const Matrix& aMatrix) {
+  
+  double x1 = aMatrix._11, y1 = aMatrix._12, x2 = aMatrix._21, y2 = aMatrix._22;
+  double dot = x1 * x2 + y1 * y2;
+  return dot * dot > 1e-8 * (x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2);
+}
+
 WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
     mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGGeometry* aItem,
-    bool aDryRun) {
+    bool aDryRun, const Matrix& aTransform) {
   MOZ_ASSERT(StyleVisibility()->IsVisible());
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
@@ -715,8 +723,14 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
   
   
   
-  const bool axisAligned =
-      !aSc.GetInheritedTransform().HasNonAxisAlignedTransform();
+  const Matrix transform = aTransform * aSc.GetInheritedTransform();
+  const bool axisAligned = !transform.HasNonAxisAlignedTransform();
+
+  
+  
+  if (!axisAligned && HasSkew(transform)) {
+    return Err("shape under a skew");
+  }
 
   if (!shape.IsRect()) {
     if (!StaticPrefs::gfx_webrender_svg_shapes_ellipses()) {
