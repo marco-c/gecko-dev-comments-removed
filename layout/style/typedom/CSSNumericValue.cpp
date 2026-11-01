@@ -345,10 +345,44 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Min(
   return mathMin.forget();
 }
 
+
 already_AddRefed<CSSNumericValue> CSSNumericValue::Max(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  
+  for (const OwningCSSNumberish& numberish : aValues) {
+    values.AppendElement(CSSNumericValue::Create(mParent, numberish));
+  }
+
+  
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathMax()) {
+    values.InsertElementsAt(
+        0, GetAsCSSMathValue().GetAsCSSMathMax().Values()->GetValues());
+  } else {
+    values.InsertElementAt(0, this);
+  }
+
+  SameUnitValueComputation computation(
+      values, [](double a, double b) { return std::max(a, b); });
+
+  
+  if (computation.AllHaveSameUnit()) {
+    return MakeCSSUnitValue(mParent, computation.CommonNumericType(),
+                            computation.ComputedValue(),
+                            computation.CommonUnit());
+  }
+
+  
+  auto numericType = AddTypes(values, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  RefPtr<CSSMathMax> mathMax =
+      CSSMathMax::Create(mParent, std::move(numericType), std::move(values));
+  return mathMax.forget();
 }
 
 
