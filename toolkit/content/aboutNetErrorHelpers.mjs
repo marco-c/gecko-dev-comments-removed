@@ -13,6 +13,7 @@ import {
 //   d - error description
 //   captive - "true" to indicate we're behind a captive portal.
 //             Any other value is ignored.
+//   captivePortalState - the captive portal service state string
 
 // Note that this file uses document.documentURI to get
 // the URL (with the format from above). This is because
@@ -53,6 +54,34 @@ export function getCSSClass() {
 
 export function getHostName() {
   return RPMGetHostForDisplay(document);
+}
+
+/**
+ * If the page that failed to load is on a loopback address (localhost,
+ * *.localhost, 127.0.0.0/8 or [::1]), returns its port as a string and whether
+ * the host is an IP literal. Otherwise returns null.
+ *
+ * Used to give developer-relevant hints when a connection to the local
+ * machine is refused, since in that case the usual network, firewall and
+ * proxy advice doesn't apply: nothing is listening on that port.
+ *
+ * @returns {{ port: string, isIPLiteral: boolean } | null}
+ */
+export function getLoopbackInfo() {
+  let { protocol, host, port } = document.location;
+  if (protocol != "http:" && protocol != "https:") {
+    return null;
+  }
+  host = host.toLowerCase();
+  const isIPLiteral =
+    host == "[::1]" || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+  if (!isIPLiteral && host != "localhost" && !host.endsWith(".localhost")) {
+    return null;
+  }
+  return {
+    port: port || (protocol == "https:" ? "443" : "80"),
+    isIPLiteral,
+  };
 }
 
 export function getFilePath() {
@@ -188,6 +217,12 @@ export async function recordSecurityUITelemetry(category, name, errorInfo) {
         console.error("error parsing issuer certificate:", e);
       }
     }
+  }
+  if (category == "securityUiNeterror" && name == "loadAboutneterror") {
+    extraKeys.no_connectivity = gNoConnectivity;
+    extraKeys.trr_only = gErrorCode == "dnsNotFound" && RPMIsTRROnlyFailure();
+    extraKeys.captive_portal_state =
+      searchParams.get("captivePortalState") ?? "";
   }
   RPMRecordGleanEvent(category, name, extraKeys);
 }
