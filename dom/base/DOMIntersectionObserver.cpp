@@ -534,6 +534,11 @@ static Maybe<nsRect> ComputeTheIntersection(
     }
     
     
+    if (containerFrame->IsMenuPopupFrame()) {
+      break;
+    }
+    
+    
     
     containerFrame =
         nsLayoutUtils::GetCrossDocParentFrameInProcess(containerFrame);
