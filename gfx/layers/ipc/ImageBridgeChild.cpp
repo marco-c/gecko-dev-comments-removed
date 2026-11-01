@@ -921,7 +921,11 @@ void ImageBridgeChild::RemoveTextureFromCompositable(
 
 void ImageBridgeChild::ClearImagesFromCompositable(
     CompositableClient* aCompositable, ClearImagesType aType) {
-  MOZ_RELEASE_ASSERT(CanSend());
+  
+  
+  if (!CanSend()) {
+    return;
+  }
   MOZ_ASSERT(aCompositable->IsConnected());
   if (!aCompositable->IsConnected()) {
     return;
