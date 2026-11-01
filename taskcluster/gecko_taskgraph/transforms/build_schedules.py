@@ -40,7 +40,7 @@ def set_build_schedules_optimization(config, tasks):
             family = platform_family(task["attributes"]["build_platform"])
             schedules = [family]
 
-            if "android" not in family:
+            if family not in ("android", "ios"):
                 
                 schedules.append("firefox")
 
