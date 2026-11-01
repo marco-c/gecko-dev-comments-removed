@@ -959,6 +959,11 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             
             if "windows11" in platform and "bing-search" in try_name:
                 return False
+            
+            if "macosx1470" in platform and (
+                "jetstream3" in try_name or "speedometer3" in try_name
+            ):
+                return False
             if "browsertime" in try_name:
                 if "chrome" in try_name or "custom-car" in try_name:
                     
