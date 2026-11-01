@@ -1111,6 +1111,7 @@ bool ChannelIsPost(nsIChannel* aChannel);
 
 
 bool SchemeIsHttpOrHttps(nsIURI* aURI);
+bool SchemeIsHttpOrHttps(nsIPrincipal* aPrincipal);
 
 
 

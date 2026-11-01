@@ -837,14 +837,10 @@ nsresult FetchDriver::HttpFetch(
 
       
       
-      if (mRequest->HasStreamBody()) {
-        bool isHttps = false;
-        rv = uri->SchemeIs("https", &isHttps);
-        if (NS_SUCCEEDED(rv) && !isHttps) {
-          
-          FailWithNetworkError(NS_ERROR_DOM_NETWORK_ERR);
-          return NS_ERROR_DOM_NETWORK_ERR;
-        }
+      if (mRequest->HasStreamBody() && !uri->SchemeIs("https")) {
+        
+        FailWithNetworkError(NS_ERROR_DOM_NETWORK_ERR);
+        return NS_ERROR_DOM_NETWORK_ERR;
       }
 
       

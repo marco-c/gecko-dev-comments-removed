@@ -846,7 +846,7 @@ static Maybe<uint32_t> SelectContainerForNavigation(
 
   
   
-  if (!aURI || (!aURI->SchemeIs("http") && !aURI->SchemeIs("https"))) {
+  if (!aURI || !net::SchemeIsHttpOrHttps(aURI)) {
     return Nothing();
   }
 

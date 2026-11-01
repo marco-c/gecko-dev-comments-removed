@@ -3154,10 +3154,8 @@ nsresult NS_ShouldSecureUpgrade(
   
   
   
-  bool isHttps = aURI->SchemeIs("https");
-
-  
-  if (isHttps) {
+  if (aURI->SchemeIs("https")) {
+    
     aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::ALREADY_HTTPS);
     aShouldUpgrade = false;
     return NS_OK;
@@ -3521,6 +3519,11 @@ bool ChannelIsPost(nsIChannel* aChannel) {
 bool SchemeIsHttpOrHttps(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
   return aURI->SchemeIs("http") || aURI->SchemeIs("https");
+}
+
+bool SchemeIsHttpOrHttps(nsIPrincipal* aPrincipal) {
+  MOZ_ASSERT(aPrincipal);
+  return aPrincipal->SchemeIs("http") || aPrincipal->SchemeIs("https");
 }
 
 bool SchemeIsSpecial(const nsACString& aScheme) {

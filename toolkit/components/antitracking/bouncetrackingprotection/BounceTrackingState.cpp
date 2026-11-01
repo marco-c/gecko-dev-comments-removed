@@ -329,7 +329,7 @@ bool BounceTrackingState::ShouldTrackPrincipal(nsIPrincipal* aPrincipal) {
   }
 
   
-  if (!aPrincipal->SchemeIs("http") && !aPrincipal->SchemeIs("https")) {
+  if (!net::SchemeIsHttpOrHttps(aPrincipal)) {
     return false;
   }
 

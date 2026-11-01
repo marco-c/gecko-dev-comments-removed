@@ -593,8 +593,7 @@ already_AddRefed<nsIURI> GetAboutReaderURL(nsIURI* aURI) {
     if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(readerUri), readerSpec)) &&
         
         
-        (readerUri->SchemeIs("http") || readerUri->SchemeIs("https") ||
-         readerUri->SchemeIs("file"))) {
+        (net::SchemeIsHttpOrHttps(readerUri) || readerUri->SchemeIs("file"))) {
       return readerUri.forget();
     }
   }
