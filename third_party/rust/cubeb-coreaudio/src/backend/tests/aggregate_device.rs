@@ -477,6 +477,7 @@ fn test_panic_aggregate_activate_clock_drift_compensation_for_a_blank_aggregate_
         assert!(onwed_devices.is_empty());
 
         
+        
         assert!(AggregateDevice::activate_clock_drift_compensation(device).is_err());
 
         assert!(AggregateDevice::destroy_device(plugin, device).is_ok());

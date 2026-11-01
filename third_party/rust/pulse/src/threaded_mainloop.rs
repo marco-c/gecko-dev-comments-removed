@@ -11,6 +11,37 @@ use mainloop_api::MainloopApi;
 #[derive(Debug)]
 pub struct ThreadedMainloop(*mut ffi::pa_threaded_mainloop);
 
+#[derive(Debug)]
+#[must_use = "the mainloop guard unlocks on drop"]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct MainloopLockGuard<'a> {
+    mainloop: &'a ThreadedMainloop,
+    locked: bool,
+}
+
+impl Drop for MainloopLockGuard<'_> {
+    fn drop(&mut self) {
+        if self.locked {
+            self.mainloop.unlock();
+        }
+    }
+}
+
 impl ThreadedMainloop {
     
     #[allow(clippy::missing_safety_doc)]
@@ -45,15 +76,34 @@ impl ThreadedMainloop {
         }
     }
 
-    pub fn lock(&self) {
+    fn lock(&self) {
         unsafe {
             ffi::pa_threaded_mainloop_lock(self.raw_mut());
         }
     }
 
-    pub fn unlock(&self) {
+    fn unlock(&self) {
         unsafe {
             ffi::pa_threaded_mainloop_unlock(self.raw_mut());
+        }
+    }
+
+    pub fn lock_guard(&self) -> MainloopLockGuard<'_> {
+        self.lock();
+        MainloopLockGuard {
+            mainloop: self,
+            locked: true,
+        }
+    }
+
+    pub fn lock_guard_if_needed(&self) -> MainloopLockGuard<'_> {
+        let locked = !self.in_thread();
+        if locked {
+            self.lock();
+        }
+        MainloopLockGuard {
+            mainloop: self,
+            locked,
         }
     }
 
@@ -73,7 +123,7 @@ impl ThreadedMainloop {
         unsafe { mainloop_api::from_raw_ptr(ffi::pa_threaded_mainloop_get_api(self.raw_mut())) }
     }
 
-    pub fn in_thread(&self) -> bool {
+    fn in_thread(&self) -> bool {
         unsafe { ffi::pa_threaded_mainloop_in_thread(self.raw_mut()) != 0 }
     }
 }

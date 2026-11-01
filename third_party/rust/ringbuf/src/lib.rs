@@ -34,6 +34,116 @@
 
 
 
+#![cfg_attr(
+    feature = "alloc",
+    doc = r##"
+## Simple
+
+```rust
+use ringbuf::{traits::*, HeapRb};
+
+# fn main() {
+let rb = HeapRb::<i32>::new(2);
+let (mut prod, mut cons) = rb.split();
+
+prod.try_push(0).unwrap();
+prod.try_push(1).unwrap();
+assert_eq!(prod.try_push(2), Err(2));
+
+assert_eq!(cons.try_pop(), Some(0));
+
+prod.try_push(2).unwrap();
+
+assert_eq!(cons.try_pop(), Some(1));
+assert_eq!(cons.try_pop(), Some(2));
+assert_eq!(cons.try_pop(), None);
+# }
+```
+"##
+)]
+#![doc = r##"
+## No heap
+
+```rust
+use ringbuf::{traits::*, StaticRb};
+
+# fn main() {
+const RB_SIZE: usize = 1;
+let mut rb = StaticRb::<i32, RB_SIZE>::default();
+let (mut prod, mut cons) = rb.split_ref();
+
+assert_eq!(prod.try_push(123), Ok(()));
+assert_eq!(prod.try_push(321), Err(321));
+
+assert_eq!(cons.try_pop(), Some(123));
+assert_eq!(cons.try_pop(), None);
+# }
+```
+"##]
+#![cfg_attr(
+    feature = "std",
+    doc = r##"
+## Overwrite
+
+Ring buffer can be used in overwriting mode when insertion overwrites the oldest element if the buffer is full.
+
+```rust
+use ringbuf::{traits::*, HeapRb};
+
+# fn main() {
+let mut rb = HeapRb::<i32>::new(2);
+
+assert_eq!(rb.push_overwrite(0), None);
+assert_eq!(rb.push_overwrite(1), None);
+assert_eq!(rb.push_overwrite(2), Some(0));
+
+assert_eq!(rb.try_pop(), Some(1));
+assert_eq!(rb.try_pop(), Some(2));
+assert_eq!(rb.try_pop(), None);
+# }
+```
+
+Note that [`push_overwrite`](`traits::RingBuffer::push_overwrite`) requires exclusive access to the ring buffer
+so to perform it concurrently you need to guard the ring buffer with mutex or some other lock.
+"##
+)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -43,25 +153,39 @@
 
 
 #![no_std]
-#![cfg_attr(feature = "benchmark", feature(test))]
+#![allow(clippy::type_complexity)]
+#![cfg_attr(feature = "bench", feature(test))]
 
+#[cfg(feature = "alloc")]
 extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-#[cfg(feature = "benchmark")]
-extern crate test;
 
-#[cfg(feature = "benchmark")]
-mod benchmark;
+mod alias;
+
+pub mod rb;
+
+pub mod storage;
+
+pub mod traits;
+
+mod transfer;
+
+mod utils;
+
+pub mod wrap;
 
 #[cfg(test)]
 mod tests;
 
-mod consumer;
-mod producer;
-mod ring_buffer;
+pub use alias::*;
+pub use rb::{LocalRb, SharedRb};
+pub use traits::{consumer, producer};
+pub use transfer::transfer;
+pub use wrap::{CachingCons, CachingProd, Cons, Obs, Prod};
 
-pub use consumer::*;
-pub use producer::*;
-pub use ring_buffer::*;
+#[cfg(feature = "bench")]
+extern crate test;
+#[cfg(feature = "bench")]
+mod benchmarks;
