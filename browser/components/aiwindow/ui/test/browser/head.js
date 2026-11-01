@@ -51,14 +51,8 @@ const { _setRemoteClientForTesting, _clearRemoteClientForTesting } =
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
   );
 
-
-const {
-  _setLoadPromptForTesting: _setConversationSuggestionsLoadPromptForTesting,
-  _setBuildConversationForTesting,
-  _setGetConversationsByIdForTesting,
-  _clearResumeActivityCacheForTesting,
-} = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs"
+const { JourneyManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/memories/journeys/JourneyManager.sys.mjs"
 );
 
 const {
@@ -112,7 +106,7 @@ let gIntentEngineStub;
 const MOCK_RS_RECORDS = [
   ["chat", 12],
   ["title-generation", 1],
-  ["tab-group-naming", 1],
+  ["tab-group-naming", 2],
   ["conversation-starters-sidebar-system", 1],
   ["conversation-suggestions-sidebar-starter", 3],
   ["conversation-suggestions-followup", 1],
@@ -309,10 +303,10 @@ const MOCK_RS_RECORDS = [
       purpose: "auto-tab-grouping",
       parameters: {},
       modules: [
-        { name: "system-instructions", version: "v1.0" },
-        { name: "user-data", version: "v1.0" },
+        { name: "system-instructions", version: "v2.0" },
+        { name: "user-data", version: "v2.0" },
       ],
-      version: "v1.0",
+      version: "v2.0",
       is_default: true,
     },
     {
@@ -320,8 +314,8 @@ const MOCK_RS_RECORDS = [
       feature: "tab-group-naming",
       module: "system-instructions",
       model: "test-model",
-      prompts: "Name this group of tabs.",
-      version: "v1.0",
+      prompts: "Name this group of tabs in {locale}.",
+      version: "v2.0",
     },
     {
       kind: "module",
@@ -329,7 +323,7 @@ const MOCK_RS_RECORDS = [
       module: "user-data",
       model: "test-model",
       prompts: "Tabs:\n{titles}",
-      version: "v1.0",
+      version: "v2.0",
     },
     {
       kind: "module",
@@ -567,13 +561,13 @@ async function _stubResumeActivityGenerationCore(
   
   sb.stub(MemoriesManager, "getAllMemories").resolves(memories);
   
-  _clearResumeActivityCacheForTesting();
+  JourneyManager._clearResumeActivityCacheForTesting();
   _clearDismissedResumeMemoriesForTesting();
-  _setGetConversationsByIdForTesting(async () => []);
-  _setConversationSuggestionsLoadPromptForTesting(async () => ({
+  JourneyManager._setGetConversationsByIdForTesting(async () => []);
+  JourneyManager._setLoadPromptForTesting(async () => ({
     prompt: "Test prompt",
   }));
-  _setBuildConversationForTesting(async () => ({
+  JourneyManager._setBuildConversationForTesting(async () => ({
     setSystemMessage() {},
     addUserMessage() {},
     securityProperties: {
@@ -594,10 +588,10 @@ async function _stubResumeActivityGenerationCore(
     getMemoriesStub,
     memories,
     async cleanup() {
-      _setGetConversationsByIdForTesting(null);
-      _setConversationSuggestionsLoadPromptForTesting(null);
-      _setBuildConversationForTesting(null);
-      _clearResumeActivityCacheForTesting();
+      JourneyManager._setGetConversationsByIdForTesting(null);
+      JourneyManager._setLoadPromptForTesting(null);
+      JourneyManager._setBuildConversationForTesting(null);
+      JourneyManager._clearResumeActivityCacheForTesting();
       _clearDismissedResumeMemoriesForTesting();
       for (const { url } of urls) {
         await PlacesUtils.history.remove(url);
