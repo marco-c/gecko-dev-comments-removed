@@ -4,30 +4,38 @@
 
 #include "FontPaletteCache.h"
 
-#include "COLRFonts.h"
 #include "gfxFontEntry.h"
 
 using namespace mozilla;
 
-void gfx::PaletteCache::SetPaletteValueSet(
-    const gfx::FontPaletteValueSet* aSet) {
-  mPaletteValueSet = aSet;
-  Clear();
+
+already_AddRefed<gfx::FontPalette> gfx::PaletteCache::GetCachedPalette(
+    gfx::FontPaletteValueSet* aPaletteValueSet, nsAtom* aPaletteName) {
+  if (aPaletteValueSet != mPaletteValueSet) {
+    return nullptr;
+  }
+
+  auto entry = Lookup(aPaletteName);
+  if (entry) {
+    RefPtr result = entry.Data().mPalette;
+    return result.forget();
+  }
+
+  return nullptr;
 }
 
-already_AddRefed<gfx::FontPalette> gfx::PaletteCache::GetPaletteFor(
-    gfxFontEntry* aFontEntry, nsAtom* aPaletteName) {
-  auto entry = Lookup(std::pair(aFontEntry, aPaletteName));
-  if (!entry) {
-    CacheData newData;
-    newData.mKey = std::pair(aFontEntry, aPaletteName);
 
-    gfxFontEntry::AutoHBFace face = aFontEntry->GetHBFace();
-    newData.mPalette = new FontPalette(gfx::COLRFonts::CreateColorPalette(
-        face, mPaletteValueSet, aPaletteName, aFontEntry->FamilyName()));
-
-    entry.Set(std::move(newData));
+void gfx::PaletteCache::AddPalette(gfx::FontPaletteValueSet* aPaletteValueSet,
+                                   nsAtom* aPaletteName,
+                                   gfx::FontPalette* aPalette) {
+  if (aPaletteValueSet != mPaletteValueSet) {
+    
+    Clear();
+    mPaletteValueSet = aPaletteValueSet;
   }
-  RefPtr result = entry.Data().mPalette;
-  return result.forget();
+
+  CacheData newData;
+  newData.mKey = aPaletteName;
+  newData.mPalette = aPalette;
+  Put(aPaletteName, std::move(newData));
 }

@@ -7,7 +7,6 @@
 
 #include <utility>
 
-#include "gfxFontEntry.h"
 #include "harfbuzz/hb.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MruCache.h"
@@ -15,6 +14,8 @@
 #include "mozilla/gfx/Types.h"
 #include "nsAtom.h"
 #include "nsTArray.h"
+
+class gfxFontEntry;
 
 namespace mozilla::gfx {
 
@@ -39,33 +40,37 @@ class FontPalette {
 
 
 
-using CacheKey = std::pair<RefPtr<gfxFontEntry>, RefPtr<nsAtom>>;
+using CacheKey = RefPtr<nsAtom>;
 struct CacheData {
   CacheKey mKey;
   RefPtr<FontPalette> mPalette;
 };
 
+
+
 class PaletteCache
-    : public mozilla::MruCache<CacheKey, CacheData, PaletteCache> {
+    : public mozilla::MruCache<CacheKey, CacheData, PaletteCache, 8> {
  public:
-  explicit PaletteCache(const FontPaletteValueSet* aPaletteValueSet = nullptr)
-      : mPaletteValueSet(aPaletteValueSet) {}
+  PaletteCache() = default;
 
-  void SetPaletteValueSet(const FontPaletteValueSet* aSet);
+  
+  already_AddRefed<FontPalette> GetCachedPalette(
+      mozilla::gfx::FontPaletteValueSet* aPaletteValueSet,
+      nsAtom* aPaletteName);
 
-  already_AddRefed<FontPalette> GetPaletteFor(gfxFontEntry* aFontEntry,
-                                              nsAtom* aPaletteName);
+  
+  void AddPalette(mozilla::gfx::FontPaletteValueSet* aPaletteValueSet,
+                  nsAtom* aPaletteName, mozilla::gfx::FontPalette* aPalette);
 
-  static bool IsEmpty(const CacheData& aVal) { return !aVal.mKey.first; }
-  static mozilla::HashNumber Hash(const CacheKey& aKey) {
-    return mozilla::HashGeneric(aKey.first.get(), aKey.second.get());
-  }
+  static bool IsEmpty(const CacheData& aVal) { return !aVal.mKey; }
+  static mozilla::HashNumber Hash(const CacheKey& aKey) { return aKey->hash(); }
   static bool Match(const CacheKey& aKey, const CacheData& aVal) {
     return aVal.mKey == aKey;
   }
 
  protected:
-  const FontPaletteValueSet* mPaletteValueSet = nullptr;
+  
+  RefPtr<FontPaletteValueSet> mPaletteValueSet;
 };
 
 }  

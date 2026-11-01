@@ -130,7 +130,7 @@ nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
       mTextRunRTL(false),
       mVertical(false),
       mTextOrientation(mozilla::StyleTextOrientation::Mixed) {
-  gfxFontStyle style(aFont.style, aFont.weight, aFont.stretch,
+  gfxFontStyle style(aFont.style, aFont.weight, aFont.width,
                      gfxFloat(aFont.size.ToAppUnits()) / mP2A, aFont.sizeAdjust,
                      aFont.family.is_system_font,
                      aContext->DeviceContext()->IsPrinterContext(),
@@ -402,8 +402,7 @@ void nsFontMetrics::DrawString(const char* aString, uint32_t aLength,
       pt.x += textRun->GetAdvanceWidth(range, &provider);
     }
   }
-  mozilla::gfx::PaletteCache paletteCache;
-  gfxTextRun::DrawParams params(aContext, paletteCache);
+  gfxTextRun::DrawParams params(aContext,  nullptr);
   params.provider = &provider;
   mozilla::image::imgDrawingParams dummy;
   textRun->Draw(range, pt, params, dummy);
@@ -429,8 +428,7 @@ void nsFontMetrics::DrawString(
       pt.x += textRun->GetAdvanceWidth(range, &provider);
     }
   }
-  mozilla::gfx::PaletteCache paletteCache;
-  gfxTextRun::DrawParams params(aContext, paletteCache);
+  gfxTextRun::DrawParams params(aContext,  nullptr);
   params.provider = &provider;
   mozilla::image::imgDrawingParams dummy;
   textRun->Draw(range, pt, params, dummy);
