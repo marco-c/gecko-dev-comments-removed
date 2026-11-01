@@ -171,11 +171,15 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   double mIncomingMaxAge = INFINITY;
   double mOutgoingMaxAge = INFINITY;
   
-  double mIncomingHighWaterMark = 1.0;
+  double mIncomingHighWaterMark = 5.0;
   double mOutgoingHighWaterMark = 5.0;
   uint64_t mOutgoingMaxDataSize = 1024;  
 
   mozilla::Queue<UniquePtr<DatagramEntry>, 32> mIncomingDatagramsQueue;
+  uint64_t mDroppedIncoming = 0;
+
+ public:
+  uint64_t GetDroppedIncoming() const { return mDroppedIncoming; }
 };
 
 }  
