@@ -47,9 +47,9 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   explicit AndroidDecoderModule(CDMProxy* aProxy = nullptr);
   virtual ~AndroidDecoderModule() = default;
 
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+  RefPtr<CreateDecoderPromise> CreateVideoDecoder(
       const CreateDecoderParams& aParams);
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> CreateAudioDecoder(
       const CreateDecoderParams& aParams);
 
   RefPtr<MediaDrmCDMProxy> mProxy;

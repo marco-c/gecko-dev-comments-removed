@@ -207,28 +207,31 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
 
 RefPtr<PlatformDecoderModule::CreateDecoderPromise>
 AndroidDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
-  RefPtr<MediaDataDecoder> decoder;
+  RefPtr<CreateDecoderPromise> p;
   if (aParams.IsAudio()) {
-    decoder = CreateAudioDecoder(aParams);
+    p = CreateAudioDecoder(aParams);
   } else if (aParams.IsVideo()) {
-    decoder = CreateVideoDecoder(aParams);
+    p = CreateVideoDecoder(aParams);
   }
-  return CreateDecoderPromiseFrom(decoder.forget(), aParams);
+  if (!p) {
+    p = CreateDecoderPromiseFrom(nullptr, aParams);
+  }
+  return p;
 }
 
-already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
-    const CreateDecoderParams& aParams) {
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AndroidDecoderModule::CreateVideoDecoder(const CreateDecoderParams& aParams) {
   
   
   
   
   if (aParams.VideoConfig().HasAlpha()) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
 
   if (AOMDecoder::IsAV1(aParams.mConfig.mMimeType) &&
       !AOMDecoder::IsMainProfile(aParams.VideoConfig().mExtraData)) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
 
   
@@ -238,7 +241,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
   if (VPXDecoder::IsVPX(aParams.VideoConfig().mMimeType) &&
       !SupportsMimeType(aParams.VideoConfig().mMimeType)
            .contains(DecodeSupport::HardwareDecode)) {
-    return nullptr;
+    return CreateDecoderPromiseFrom(nullptr, aParams);
   }
 
   nsString drmStubId;
@@ -246,9 +249,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
     drmStubId = mProxy->GetMediaDrmStubId();
   }
 
-  RefPtr<MediaDataDecoder> decoder =
-      RemoteDataDecoder::CreateVideoDecoder(aParams, drmStubId, mProxy);
-  return decoder.forget();
+  return RemoteDataDecoder::CreateVideoDecoder(aParams, drmStubId, mProxy);
 }
 
 
@@ -257,8 +258,8 @@ bool AndroidDecoderModule::IsJavaDecoderModuleAllowed() {
          !java::GeckoAppShell::IsIsolatedProcess();
 }
 
-already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateAudioDecoder(
-    const CreateDecoderParams& aParams) {
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AndroidDecoderModule::CreateAudioDecoder(const CreateDecoderParams& aParams) {
   const AudioInfo& config = aParams.AudioConfig();
   LOG("CreateAudioFormat with mimeType={}, mRate={}, channels={}",
       config.mMimeType.get(), config.mRate, config.mChannels);
@@ -267,9 +268,7 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateAudioDecoder(
   if (mProxy) {
     drmStubId = mProxy->GetMediaDrmStubId();
   }
-  RefPtr<MediaDataDecoder> decoder =
-      RemoteDataDecoder::CreateAudioDecoder(aParams, drmStubId, mProxy);
-  return decoder.forget();
+  return RemoteDataDecoder::CreateAudioDecoder(aParams, drmStubId, mProxy);
 }
 
 

@@ -10,6 +10,7 @@
 #include "TimeUnits.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/java/CodecProxyWrappers.h"
 
 namespace mozilla {
@@ -19,13 +20,14 @@ DDLoggedTypeDeclNameAndBase(RemoteDataDecoder, MediaDataDecoder);
 class RemoteDataDecoder : public MediaDataDecoder,
                           public DecoderDoctorLifeLogger<RemoteDataDecoder> {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteDataDecoder, final);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_EVENT_TARGET(
+      RemoteDataDecoder, mTaskQueue, final);
 
-  static already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateAudioDecoder(
       const CreateDecoderParams& aParams, const nsString& aDrmStubId,
       CDMProxy* aProxy);
 
-  static already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+  static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
       const CreateDecoderParams& aParams, const nsString& aDrmStubId,
       CDMProxy* aProxy);
 
@@ -34,6 +36,7 @@ class RemoteDataDecoder : public MediaDataDecoder,
   static nsTArray<RefPtr<MediaByteBuffer>> GetAudioCodecSpecificData(
       const AudioInfo& aConfig);
 
+  RefPtr<InitPromise> Init() override;
   RefPtr<DecodePromise> Decode(MediaRawData* aSample) override;
   RefPtr<DecodePromise> Drain() override;
   RefPtr<FlushPromise> Flush() override;
@@ -43,26 +46,41 @@ class RemoteDataDecoder : public MediaDataDecoder,
   }
 
  protected:
-  virtual ~RemoteDataDecoder() = default;
+  class CallbacksSupportBase;
+
+  virtual ~RemoteDataDecoder();
   RemoteDataDecoder(MediaData::Type aType, const nsACString& aMimeType,
                     java::sdk::MediaFormat::Param aFormat,
                     const nsString& aDrmStubId);
 
   
+  RefPtr<InitPromise> Construct();
+
+  
+  virtual MediaResult ProcessConstruct() = 0;
+  virtual MediaResult ProcessInit();
+  virtual RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample);
+  virtual RefPtr<FlushPromise> ProcessFlush();
+  RefPtr<DecodePromise> ProcessDrain();
+  void ProcessShutdown();
   void UpdateInputStatus(int64_t aTimestamp, bool aProcessed);
   void UpdateOutputStatus(RefPtr<MediaData>&& aSample);
   void ReturnDecodedData();
   void DrainComplete();
   void Error(const MediaResult& aError);
-  void AssertOnThread() const {
-    
-    MOZ_ASSERT(!mThread || mThread->IsOnCurrentThread());
+  void AssertOnTaskQueue() const {
+    MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
+  }
+
+  TrackInfo::TrackType GetTrackType() const {
+    return mType == MediaData::Type::AUDIO_DATA ? TrackInfo::kAudioTrack
+                                                : TrackInfo::kVideoTrack;
   }
 
   enum class State { DRAINED, DRAINABLE, DRAINING, SHUTDOWN };
   void SetState(State aState);
   State GetState() const {
-    AssertOnThread();
+    AssertOnTaskQueue();
     return mState;
   }
 
@@ -78,7 +96,7 @@ class RemoteDataDecoder : public MediaDataDecoder,
   java::CodecProxy::NativeCallbacks::GlobalRef mJavaCallbacks;
   nsString mDrmStubId;
 
-  nsCOMPtr<nsISerialEventTarget> mThread;
+  const RefPtr<TaskQueue> mTaskQueue;
 
   
   
@@ -92,7 +110,7 @@ class RemoteDataDecoder : public MediaDataDecoder,
   enum class PendingOp { INCREASE, DECREASE, CLEAR };
   void UpdatePendingInputStatus(PendingOp aOp);
   size_t HasPendingInputs() {
-    AssertOnThread();
+    AssertOnTaskQueue();
     return mNumPendingInputs > 0;
   }
 
