@@ -155,7 +155,10 @@ static void RemoveCorrespondingAnimation(
     if (foundIt != l.cend()) {
       l.RemoveElementAt(foundIt);
     }
-    result.Remove();
+    
+    if (l.IsEmpty()) {
+      result.Remove();
+    }
   }
 #ifdef DEBUG
   
