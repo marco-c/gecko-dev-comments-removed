@@ -14,15 +14,11 @@
 
 
 
-const NOVA_ENABLED = Services.prefs.getBoolPref("browser.nova.enabled", false);
-
-
 const EDGE_TOLERANCE = 1;
 
 function getCustomPropertyPx(win, el, name) {
   return parseFloat(win.getComputedStyle(el).getPropertyValue(name)) || 0;
 }
-
 
 
 
@@ -128,8 +124,7 @@ function assertEdgeBordersRemoved(win, blocks, label) {
 
 
 
-
-function assertCornerRadii(win, blocks, { nova, requireInnerRounded }, label) {
+function assertCornerRadii(win, blocks, { requireInnerRounded }, label) {
   for (let block of blocks) {
     let style = win.getComputedStyle(block);
     let { atLeft, atRight, atTop, atBottom } = getWindowEdges(win, block);
@@ -176,7 +171,6 @@ function assertCornerRadii(win, blocks, { nova, requireInnerRounded }, label) {
     
     
     if (
-      nova &&
       requireInnerRounded &&
       getContentCornerRadius(win) > 0 &&
       block.classList.contains("browserContainer")
@@ -301,14 +295,13 @@ function assertSplitViewPanels(win, label) {
 
 
 
-
 function assertDecoration(
   win,
   blocks,
   label,
   { requireInnerRounded = false, checkSeparator = false } = {}
 ) {
-  if (NOVA_ENABLED && requireInnerRounded && !getContentCornerRadius(win)) {
+  if (requireInnerRounded && !getContentCornerRadius(win)) {
     info(
       `${label}: --border-radius-medium is 0 on this platform; ` +
         `skipping the inner-corner-rounded assertions.`
@@ -316,13 +309,8 @@ function assertDecoration(
   }
   assertFlushToWindowEdges(win, blocks, label);
   assertEdgeBordersRemoved(win, blocks, label);
-  assertCornerRadii(
-    win,
-    blocks,
-    { nova: NOVA_ENABLED, requireInnerRounded },
-    label
-  );
-  if (NOVA_ENABLED && checkSeparator) {
+  assertCornerRadii(win, blocks, { requireInnerRounded }, label);
+  if (checkSeparator) {
     assertSeparators(win, blocks, label);
   }
 }
