@@ -21,7 +21,7 @@ class nsDisplayList;
 
 
 struct RetainedDisplayListData {
-  enum class FrameFlag : uint8_t { Modified, HasProps, HadWillChange };
+  enum class FrameFlag : uint8_t { Modified, HasProps };
   using FrameFlags = mozilla::EnumSet<FrameFlag, uint8_t>;
 
   RetainedDisplayListData();
@@ -161,7 +161,7 @@ class RetainedDisplayListBuilder {
  public:
   RetainedDisplayListBuilder(nsIFrame* aReferenceFrame,
                              nsDisplayListBuilderMode aMode, bool aBuildCaret)
-      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true), mList(&mBuilder) {}
+      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true) {}
   ~RetainedDisplayListBuilder() {
     mBuilder.SetIsDestroying();
     mList.DeleteAll(&mBuilder);
