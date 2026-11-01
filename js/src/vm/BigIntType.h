@@ -482,16 +482,25 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   static inline Digit digitAdd(Digit a, Digit b, Digit* carry) {
     Digit result = a + b;
-    *carry += static_cast<Digit>(result < a);
+    *carry = static_cast<Digit>(result < a);
     return result;
   }
 
   
+  
+  static Digit digitAdd3(Digit a, Digit b, Digit c, Digit* carry);
+
+  
+  
   static inline Digit digitSub(Digit left, Digit right, Digit* borrow) {
     Digit result = left - right;
-    *borrow += static_cast<Digit>(result > left);
+    *borrow = static_cast<Digit>(result > left);
     return result;
   }
+
+  
+  
+  static Digit digitSub3(Digit a, Digit b, Digit c, Digit* borrow);
 
   
   
