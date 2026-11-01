@@ -287,8 +287,12 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
 
   
   if (lastAnswerMsection) {
-    MOZ_ASSERT(lastAnswerMsection->GetMediaType() ==
-               transceiver.GetMediaType());
+    
+    
+    
+    MOZ_ASSERT(!transceiver.IsAssociated() ||
+               lastAnswerMsection->GetMediaType() ==
+                   transceiver.GetMediaType());
     nsresult rv = mSdpHelper.CopyStickyParams(*lastAnswerMsection, msection);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -1744,11 +1748,13 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForMid(
 Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForLocal(size_t level) {
   if (Maybe<JsepTransceiver> transceiver = GetTransceiverForLevel(level)) {
     if (transceiver->CanRecycleMyMsection() &&
-        transceiver->GetMediaType() != SdpMediaSection::kApplication) {
+        !transceiver->GetMediaTypeInfo().IsDataChannel()) {
+      
+      
       
       transceiver->Disassociate();
       Maybe<JsepTransceiver> newTransceiver =
-          FindUnassociatedRtpTransceiver(transceiver->GetMediaType(), false);
+          FindUnassociatedNonAppTransceiver(Nothing(), false);
       if (newTransceiver) {
         newTransceiver->SetLevel(level);
         transceiver->ClearLevel();
@@ -1815,18 +1821,21 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForRemote(
   }
 
   
-  if (msection.GetMediaType() == SdpMediaSection::kApplication) {
-    
-    
-    for (auto& tx : mTransceivers) {
-      if (tx.GetMediaType() == SdpMediaSection::kApplication) {
-        tx.RestartDatachannelTransceiver();
-        transceiver = Some(tx);
-        break;
+  if (!msection.GetMediaTypeInfo().IsUnknown()) {
+    if (msection.GetMediaTypeInfo().IsDataChannel()) {
+      
+      
+      for (auto& tx : mTransceivers) {
+        if (tx.GetMediaTypeInfo().IsDataChannel()) {
+          tx.RestartDatachannelTransceiver();
+          transceiver = Some(tx);
+          break;
+        }
       }
+    } else if (msection.IsReceiving()) {
+      transceiver = FindUnassociatedNonAppTransceiver(
+          Some(msection.GetMediaType()), true);
     }
-  } else if (msection.IsReceiving()) {
-    transceiver = FindUnassociatedRtpTransceiver(msection.GetMediaType(), true);
   }
 
   
@@ -1925,18 +1934,21 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
   return NS_OK;
 }
 
-Maybe<JsepTransceiver> JsepSessionImpl::FindUnassociatedRtpTransceiver(
-    SdpMediaSection::MediaType type, bool magic) {
-  if (type == SdpMediaSection::kApplication) {
+Maybe<JsepTransceiver> JsepSessionImpl::FindUnassociatedNonAppTransceiver(
+    Maybe<SdpMediaSection::MediaType> type, bool magic) {
+  if (type.isSome() && *type == SdpMediaSection::kApplication) {
     MOZ_ASSERT(false);
     return Nothing();
   }
 
   
   for (auto& transceiver : mTransceivers) {
+    if (transceiver.GetMediaType() == SdpMediaSection::kApplication) {
+      continue;
+    }
     if (transceiver.IsFreeToUse() &&
         (!magic || transceiver.HasAddTrackMagic()) &&
-        (transceiver.GetMediaType() == type)) {
+        (type.isNothing() || transceiver.GetMediaType() == *type)) {
       return Some(transceiver);
     }
   }
@@ -2139,7 +2151,22 @@ JsepSession::Result JsepSessionImpl::ValidateRemoteDescription(
     const SdpMediaSection& oldMsection =
         mCurrentRemoteDescription->GetMediaSection(i);
 
-    if (mSdpHelper.MsectionIsDisabled(oldMsection)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mSdpHelper.MsectionIsDisabled(oldMsection) ||
+        mSdpHelper.MsectionIsDisabled(
+            mCurrentLocalDescription->GetMediaSection(i))) {
       bool oldIsApp =
           oldMsection.GetMediaType() == SdpMediaSection::kApplication;
       bool newIsApp =
