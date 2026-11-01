@@ -388,6 +388,9 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     
     ScrollContainerFrame* sf =
         nsLayoutUtils::FindScrollContainerFrameFor(aRequest.GetScrollId());
+    if (!sf) {
+      return;
+    }
     CSSPoint currentScrollPosition =
         CSSPoint::FromAppUnits(sf->GetScrollPosition());
     ScrollSnapTargetIds snapTargetIds = aRequest.GetLastSnapTargetIds();
