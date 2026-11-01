@@ -1690,6 +1690,26 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   
+  
+  
+  
+  
+  
+  void cmpTagUpperWord(const Address& address, JSValueTag tag) {
+    vixl::UseScratchRegisterScope temps(this);
+    const ARMRegister scratch32 = temps.AcquireW();
+    MOZ_ASSERT(scratch32.asUnsized() != address.base);
+    static_assert(JSVAL_TAG_SHIFT >= 32);
+    uint32_t upperWord = uint32_t(uint64_t(tag) << (JSVAL_TAG_SHIFT - 32));
+    uint32_t negUpperWord = uint32_t(0) - upperWord;
+    MOZ_ASSERT(vixl::Assembler::IsImmAddSub(negUpperWord));
+    Address upperWordAddress(address.base,
+                             address.offset + int32_t(sizeof(uint32_t)));
+    Ldr(scratch32, toMemOperand(upperWordAddress));
+    Cmn(scratch32, Operand(negUpperWord));
+  }
+
+  
   Condition testUndefined(Condition cond, Register tag) {
     MOZ_ASSERT(cond == Equal || cond == NotEqual);
     cmpTag(tag, ImmTag(JSVAL_TAG_UNDEFINED));
@@ -1861,54 +1881,44 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   
+  
+  
   Condition testGCThing(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testGCThing(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    cmpTagUpperWord(address, JS::detail::ValueLowerInclGCThingTag);
+    return (cond == Equal) ? AboveOrEqual : Below;
   }
   Condition testMagic(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testMagic(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    cmpTagUpperWord(address, JSVAL_TAG_MAGIC);
+    return cond;
   }
   Condition testInt32(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testInt32(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    cmpTagUpperWord(address, JSVAL_TAG_INT32);
+    return cond;
   }
   Condition testDouble(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testDouble(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    
+    
+    cmpTagUpperWord(address, JSValueTag(JSVAL_TAG_MAX_DOUBLE + 1));
+    return (cond == Equal) ? Below : AboveOrEqual;
   }
   Condition testBoolean(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testBoolean(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    cmpTagUpperWord(address, JSVAL_TAG_BOOLEAN);
+    return cond;
   }
   Condition testNull(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testNull(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    cmpTagUpperWord(address, JSVAL_TAG_NULL);
+    return cond;
   }
   Condition testUndefined(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testUndefined(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    cmpTagUpperWord(address, JSVAL_TAG_UNDEFINED);
+    return cond;
   }
   Condition testString(Condition cond, const Address& address) {
     vixl::UseScratchRegisterScope temps(this);
@@ -1939,11 +1949,11 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     return testObject(cond, scratch);
   }
   Condition testNumber(Condition cond, const Address& address) {
-    vixl::UseScratchRegisterScope temps(this);
-    const Register scratch = temps.AcquireX().asUnsized();
-    MOZ_ASSERT(address.base != scratch);
-    splitSignExtTag(address, scratch);
-    return testNumber(cond, scratch);
+    MOZ_ASSERT(cond == Equal || cond == NotEqual);
+    
+    
+    cmpTagUpperWord(address, JS::detail::ValueUpperInclNumberTag);
+    return (cond == Equal) ? BelowOrEqual : Above;
   }
 
   
