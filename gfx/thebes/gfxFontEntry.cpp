@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "COLRFonts.h"
+#include "FontPaletteCache.h"
 #include "ThebesRLBox.h"
 #include "gfxContext.h"
 #include "gfxGraphiteShaper.h"
@@ -73,6 +74,8 @@ gfxFontEntry::~gfxFontEntry() {
 
   hb_blob_destroy(mCOLR.exchange(nullptr));
   hb_blob_destroy(mCPAL.exchange(nullptr));
+
+  delete mPaletteCache.exchange(nullptr);
 
   if (TrakTableInitialized()) {
     
@@ -441,6 +444,46 @@ bool gfxFontEntry::TryGetColorGlyphs() {
 
   mCheckedForColorGlyph = true;
   return mCOLR && mCPAL;
+}
+
+already_AddRefed<gfx::FontPalette> gfxFontEntry::GetPalette(
+    nsAtom* aPaletteName, gfx::FontPaletteValueSet* aPaletteValueSet) {
+  
+  
+  
+  
+  gfx::PaletteCache* cache = mPaletteCache;
+  if (!cache) {
+    cache = new gfx::PaletteCache();
+    if (!mPaletteCache.compareExchange(nullptr, cache)) {
+      delete cache;  
+      cache = mPaletteCache;
+    }
+  }
+
+  
+  {
+    
+    AutoReadLock lock(mLock);
+    RefPtr palette = cache->GetCachedPalette(aPaletteValueSet, aPaletteName);
+    if (palette) {
+      return palette.forget();
+    }
+  }
+
+  
+  gfxFontEntry::AutoHBFace face = GetHBFace();
+  RefPtr palette = MakeRefPtr<FontPalette>(gfx::COLRFonts::CreateColorPalette(
+      face, aPaletteValueSet, aPaletteName, FamilyName()));
+
+  
+  
+  
+  
+  AutoWriteLock lock(mLock);
+  cache->AddPalette(aPaletteValueSet, aPaletteName, palette);
+
+  return palette.forget();
 }
 
 already_AddRefed<gfxCharacterMap> gfxFontEntry::GetCMAPFromFontInfo(
