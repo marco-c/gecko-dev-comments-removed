@@ -35,6 +35,14 @@ let goButton;
 let engine;
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.settings-redesign.enabled", false],
+    ],
+  });
+
   searchbar = await gCUITestUtils.addSearchBar();
   textbox = searchbar.textbox;
   searchIcon = searchbar.querySelector(".searchbar-search-button");
@@ -247,7 +255,7 @@ add_task(async function open_empty_hiddenOneOffs() {
     e.hideOneOffButton = false;
   });
   textbox.value = "";
-}).skip();
+});
 
 
 add_no_popup_task(async function right_click_doesnt_open_popup() {

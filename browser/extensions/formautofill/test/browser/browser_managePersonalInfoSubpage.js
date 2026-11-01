@@ -33,6 +33,7 @@ const TEST_PASSPORT_2 = {
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["browser.settings-redesign.enabled", true],
       ["extensions.formautofill.passports.supported", "on"],
       
       

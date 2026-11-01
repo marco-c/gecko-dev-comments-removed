@@ -511,6 +511,15 @@ function promiseSanitizationComplete() {
   return TestUtils.topicObserved("sanitizer-sanitization-complete");
 }
 
+function settingsRedesignHistoryEnabled() {
+  return (
+    Services.prefs.getBoolPref(
+      "browser.settings-redesign.history2.enabled",
+      false
+    ) || Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
+  );
+}
+
 
 
 
@@ -667,7 +676,7 @@ ClearHistoryDialogHelper.prototype = {
     
     
     if (this._mode != "browser") {
-      if (this._mode == "clearOnShutdown") {
+      if (this._mode == "clearOnShutdown" && settingsRedesignHistoryEnabled()) {
         await openPreferencesViaOpenPreferencesAPI("history", {
           leaveOpen: true,
         });

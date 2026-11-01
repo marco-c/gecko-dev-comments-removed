@@ -36,6 +36,9 @@ add_setup(async function () {
       ["browser.newtab.preload", false],
       ["browser.search.separatePrivateDefault.featureGate", true],
       ["browser.search.separatePrivateDefault.enabled", true],
+      
+      
+      ["browser.settings-redesign.enabled", false],
     ],
   });
 
@@ -172,7 +175,7 @@ add_task(async function test_hideEngine() {
     type: "CurrentState",
     data: await currentStateObj(),
   });
-}).skip();
+});
 
 add_task(async function search() {
   let { browser } = await addTab();
