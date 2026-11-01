@@ -1795,7 +1795,10 @@ bool Navigation::InnerFireNavigateEvent(
       HasUAVisualTransition(ToMaybeRef(GetAssociatedDocument()));
 
   
-  init.mSourceElement = aSourceElement;
+  if (aSourceElement &&
+      aSourceElement->NodePrincipal()->Equals(document->NodePrincipal())) {
+    init.mSourceElement = aSourceElement;
+  }
 
   
   RefPtr<AbortController> abortController = new AbortController(globalObject);
