@@ -6,12 +6,14 @@ import { GeckoViewModule } from "resource://gre/modules/GeckoViewModule.sys.mjs"
 
 export class GeckoViewContent extends GeckoViewModule {
   onInit() {
+    // Tracks whether the embedder has focused this session (GeckoView:SetFocused).
+    // Kept separate from the "primary" attribute, which tracks activeness.
+    this._focused = false;
     this.registerListener([
       "GeckoViewContent:ExitFullScreen",
       "GeckoView:ClearMatches",
       "GeckoView:DisplayMatches",
       "GeckoView:FindInPage",
-      "GeckoView:HasCookieBannerRuleForBrowsingContextTree",
       "GeckoView:RestoreState",
       "GeckoView:ContainsFormData",
       "GeckoView:ProcessBackPressed",
@@ -54,9 +56,6 @@ export class GeckoViewContent extends GeckoViewModule {
     this.window.addEventListener("pagetitlechanged", this);
     this.window.addEventListener("pageinfo", this);
 
-    this.window.addEventListener("cookiebannerdetected", this);
-    this.window.addEventListener("cookiebannerhandled", this);
-
     Services.obs.addObserver(this, "oop-frameloader-crashed");
     Services.obs.addObserver(this, "ipc:content-shutdown");
   }
@@ -81,9 +80,6 @@ export class GeckoViewContent extends GeckoViewModule {
     this.window.removeEventListener("DOMWindowClose", this);
     this.window.removeEventListener("pagetitlechanged", this);
     this.window.removeEventListener("pageinfo", this);
-
-    this.window.removeEventListener("cookiebannerdetected", this);
-    this.window.removeEventListener("cookiebannerhandled", this);
 
     Services.obs.removeObserver(this, "oop-frameloader-crashed");
     Services.obs.removeObserver(this, "ipc:content-shutdown");
@@ -257,13 +253,24 @@ export class GeckoViewContent extends GeckoViewModule {
         break;
       case "GeckoView:SetActive":
         this.browser.docShellIsActive = !!aData.active;
+        // Toggle "primary" to re-register this browser as the primary tab. The
+        // registration (RemoteTabRemoved/RemoteTabAdded via
+        // nsFrameLoader::AttributeChanged) only re-runs on an actual mutation,
+        // and setAttribute with an unchanged value fires no notification, so the
+        // attribute must be removed first. Do not simplify the removal away.
+        // The tree owner tracks the primary tab per AppWindow and each GeckoView
+        // session has its own window, so this only re-registers this browser in
+        // its own window; it does not affect another session's primary tab.
+        this.browser.removeAttribute("primary");
+        if (aData.active) {
+          this.browser.setAttribute("primary", "true");
+        }
         break;
       case "GeckoView:SetFocused":
+        this._focused = !!aData.focused;
         if (aData.focused) {
           this.browser.focus();
-          this.browser.setAttribute("primary", "true");
         } else {
-          this.browser.removeAttribute("primary");
           this.browser.blur();
         }
         break;
@@ -296,9 +303,6 @@ export class GeckoViewContent extends GeckoViewModule {
       case "GeckoView:IsPdfJs":
         aCallback.onSuccess(this.isPdfJs);
         break;
-      case "GeckoView:HasCookieBannerRuleForBrowsingContextTree":
-        this._hasCookieBannerRuleForBrowsingContextTree(aCallback);
-        break;
       case "GeckoView:ProcessBackPressed":
         this._processBackPressed(aCallback);
         break;
@@ -314,7 +318,7 @@ export class GeckoViewContent extends GeckoViewModule {
         if (this.browser != aEvent.target) {
           return;
         }
-        if (this.browser.hasAttribute("primary")) {
+        if (this._focused) {
           return;
         }
         this.eventDispatcher.sendRequest("GeckoView:FocusRequest");
@@ -356,14 +360,6 @@ export class GeckoViewContent extends GeckoViewModule {
             previewImageUrl: aEvent.detail.previewImageURL,
           });
         }
-        break;
-      case "cookiebannerdetected":
-        this.eventDispatcher.sendRequest(
-          "GeckoView:CookieBannerEvent:Detected"
-        );
-        break;
-      case "cookiebannerhandled":
-        this.eventDispatcher.sendRequest("GeckoView:CookieBannerEvent:Handled");
         break;
     }
   }
@@ -507,13 +503,6 @@ export class GeckoViewContent extends GeckoViewModule {
 
   async _containsFormData(aCallback) {
     aCallback.onSuccess(await this.actor.containsFormData());
-  }
-
-  async _hasCookieBannerRuleForBrowsingContextTree(aCallback) {
-    const { browsingContext } = this.actor;
-    aCallback.onSuccess(
-      Services.cookieBanners.hasRuleForBrowsingContextTree(browsingContext)
-    );
   }
 
   _findInPage(aData, aCallback) {
