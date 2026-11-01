@@ -50,7 +50,6 @@ CertVerifier::CertificateTransparencyMode GetCertificateTransparencyMode();
 bool EnsureNSSInitializedChromeOrContent();
 bool HandleTLSPrefChange(const nsCString& aPref);
 void SetValidationOptionsCommon();
-void PrepareForShutdownInSocketProcess();
 
 
 
