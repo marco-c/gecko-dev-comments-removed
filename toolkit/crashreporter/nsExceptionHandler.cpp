@@ -101,6 +101,10 @@
 #  error "Not yet implemented for this platform"
 #endif  
 
+#ifndef XP_WIN
+#  include <cxxabi.h>
+#  include <typeinfo>
+#endif
 #include <fmt/format.h>
 #include <fstream>
 #include <optional>
@@ -1902,7 +1906,20 @@ static bool ShouldReport() {
   return true;
 }
 
-static void TerminateHandler() { MOZ_CRASH("Unhandled exception"); }
+static void TerminateHandler() {
+#ifndef XP_WIN
+  
+  
+  
+  
+  if (const std::type_info* type = abi::__cxa_current_exception_type()) {
+    
+    
+    MOZ_CRASH_UNSAFE_PRINTF("Unhandled exception of type %s", type->name());
+  }
+#endif
+  MOZ_CRASH("Unhandled exception");
+}
 
 #if !defined(MOZ_WIDGET_ANDROID)
 
