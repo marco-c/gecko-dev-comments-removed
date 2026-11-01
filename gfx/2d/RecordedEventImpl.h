@@ -2464,7 +2464,8 @@ inline bool RecordedCreateClippedDrawTarget::PlayEvent(
     if (dt == aTranslator->GetReferenceDrawTarget()) {
       Matrix toRecording = aTranslator->GetReferenceDrawTargetTransform();
       if (toRecording.Invert()) {
-        rect = rect.Intersect(RoundedOut(toRecording.TransformBounds(Rect(dt->GetRect()))));
+        rect = rect.Intersect(
+            RoundedOut(toRecording.TransformBounds(Rect(dt->GetRect()))));
       }
     } else {
       rect = rect.Intersect(dt->GetRect());
