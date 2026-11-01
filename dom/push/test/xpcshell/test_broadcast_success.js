@@ -7,7 +7,7 @@
 
 do_get_profile();
 const { BroadcastService } = ChromeUtils.importESModule(
-  "resource://gre/modules/PushBroadcastService.sys.mjs"
+  "moz-src:///dom/push/PushBroadcastService.sys.mjs"
 );
 const { JSONFile } = ChromeUtils.importESModule(
   "resource://gre/modules/JSONFile.sys.mjs"
