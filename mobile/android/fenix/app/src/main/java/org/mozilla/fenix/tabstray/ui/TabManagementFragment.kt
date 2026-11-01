@@ -30,6 +30,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -53,6 +54,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.scene.DialogSceneStrategy
 import androidx.navigation3.ui.NavDisplay
+import com.google.android.material.R as materialR
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -272,6 +274,12 @@ class TabManagementFragment : Fragment() {
             val state by tabsTrayStore.stateFlow.collectAsState()
             val appState by requireComponents.appStore.stateFlow.collectAsState()
             snackbarHostState = remember { SnackbarHostState() }
+            SideEffect(Unit) {
+                requireComponents.appStore.state.wasLastTabClosedPrivate?.let { isPrivate ->
+                    showUndoSnackbarForTab(isPrivate)
+                    requireComponents.appStore.dispatch(AppAction.TabStripAction.UpdateLastTabClosed(null))
+                }
+            }
             val trackersBlockedCount =
                 when (showPrivacyReport) {
                     true -> appState.blockedTrackersState.trackersBlockedCount
@@ -990,12 +998,12 @@ class TabManagementFragment : Fragment() {
                         shouldWidthMatchParent = true,
                         positiveButtonBackgroundColor =
                             ThemeManager.resolveAttribute(
-                                R.attr.accent,
+                                materialR.attr.colorTertiary,
                                 requireContext(),
                             ),
                         positiveButtonTextColor =
                             ThemeManager.resolveAttribute(
-                                R.attr.textOnColorPrimary,
+                                materialR.attr.colorOnTertiary,
                                 requireContext(),
                             ),
                         positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
