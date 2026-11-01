@@ -4,6 +4,12 @@
 
 "use strict";
 
+add_setup(function () {
+  
+  
+  NimbusTestUtils.enableNimbusEnrollments({ read: true, sync: true });
+});
+
 add_task(async function test() {
   const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest();
 
