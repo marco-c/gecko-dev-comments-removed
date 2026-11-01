@@ -46,6 +46,45 @@ function afterSessionStartupInitialization(cb) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+async function promiseStartupWith({ session, checkpoints }) {
+  Services.fog.initializeFOG();
+  await IOUtils.writeJSON(
+    PathUtils.join(PathUtils.profileDir, "sessionstore.jsonlz4"),
+    session,
+    { compress: true }
+  );
+  if (checkpoints) {
+    await IOUtils.writeJSON(
+      PathUtils.join(PathUtils.profileDir, "sessionCheckpoints.json"),
+      checkpoints
+    );
+  }
+  await new Promise(resolve => afterSessionStartupInitialization(resolve));
+}
+
+function shutdownSuccessEvents() {
+  let events =
+    Glean.sessionRestore.shutdownSuccessSessionStartup.testGetValue() ?? [];
+  return events.map(event => event.extra);
+}
+
+function shutdownOkCounts() {
+  return {
+    clean: Glean.sessionRestore.shutdownOk.true.testGetValue(),
+    unclean: Glean.sessionRestore.shutdownOk.false.testGetValue(),
+  };
+}
+
 async function writeCompressedFile(source, destination) {
   let s = await IOUtils.read(source);
   await IOUtils.write(destination, s, { compress: true });
