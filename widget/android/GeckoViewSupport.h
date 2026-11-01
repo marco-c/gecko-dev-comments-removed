@@ -32,13 +32,13 @@ class GeckoViewSupport final
 
   template <typename Functor>
   static void OnNativeCall(Functor&& aCall) {
-    NS_DispatchToMainThread(new WindowEvent<Functor>(std::move(aCall)));
+    NS_DispatchToMainThread(
+        new WindowEvent<Functor>(std::forward<Functor>(aCall)));
   }
 
   GeckoViewSupport(nsWindow* aWindow,
                    const java::GeckoSession::Window::LocalRef& aInstance,
-                   nsPIDOMWindowOuter* aDOMWindow)
-      : mWindow(aWindow), mGeckoViewWindow(aInstance), mDOMWindow(aDOMWindow) {}
+                   nsPIDOMWindowOuter* aDOMWindow);
 
   ~GeckoViewSupport();
 
@@ -120,6 +120,14 @@ class GeckoViewSupport final
                              jni::Object::Param aTarget, int32_t aX, int32_t aY,
                              int32_t aWidth, int32_t aHeight,
                              float aRenderingScale);
+
+  
+  
+  void RequestRegionToSurface(const java::GeckoSession::Window::LocalRef& inst,
+                              jni::Object::Param aResult,
+                              jni::Object::Param aSurface, int32_t aX,
+                              int32_t aY, int32_t aWidth, int32_t aHeight,
+                              float aScale);
 
   
   
