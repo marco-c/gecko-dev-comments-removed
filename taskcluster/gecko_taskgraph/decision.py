@@ -2,6 +2,7 @@
 
 
 
+import gc
 import logging
 import os
 import shutil
@@ -272,7 +273,12 @@ def taskgraph_decision(options, parameters):
         )
 
         
-        full_task_json = tgg.full_task_graph.to_json()
+        full_task_graph = tgg.full_task_graph
+        
+        
+        
+        gc.freeze()
+        full_task_json = full_task_graph.to_json()
         write_artifact("full-task-graph.json", full_task_json)
 
         
