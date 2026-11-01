@@ -163,9 +163,30 @@ pub fn transition(
         }
         (S::Connected, E::CheckAuthorizationStatus) => {
             
+            #[cfg(not(target_os = "ios"))]
+            let active = match account.check_authorization_status() {
+                Ok(active) => active,
+                
+                
+                Err(Error::NoRefreshToken) | Err(Error::NoSessionToken) => false,
+                
+                
+                Err(e) => {
+                    return Err(StateMachineErr::Handled {
+                        cause: Box::new(e),
+                        target: S::Connected,
+                    })
+                }
+            };
+
+            
+            
+            
+            #[cfg(target_os = "ios")]
             let active = account
                 .check_authorization_status()
-                .to_state_machine_err(|| S::Connected)?;
+                .to_state_machine_err(|| S::AuthIssues)?;
+
             if active {
                 Ok(S::Connected)
             } else {
