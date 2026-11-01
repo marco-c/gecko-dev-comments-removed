@@ -31,7 +31,8 @@ function testAtomRef(tenured) {
     finishBackgroundFree();
     
     
-    if (representation(s2).flags.includes("ATOM_REF_BIT")) {
+    var flags = representation(s2).flags;
+    if (flags.includes("ATOM_REF_BIT") || flags.includes("ATOM_BIT")) {
         assertEq(representation(s).bufferRefCount, 1);
     } else {
         assertEq(representation(s).bufferRefCount, 2);
