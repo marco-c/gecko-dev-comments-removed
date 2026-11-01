@@ -904,6 +904,18 @@ license file's hash.
         
         
         
+        dirs = [vendor_dir]
+        while dirs:
+            for entry in os.scandir(dirs.pop()):
+                if entry.is_dir(follow_symlinks=False):
+                    dirs.append(entry.path)
+                elif entry.is_file(follow_symlinks=False):
+                    os.utime(entry.path)
+
+        
+        
+        
+        
         config = "\n".join(
             dropwhile(lambda l: not l.startswith("["), output.splitlines())
         )
