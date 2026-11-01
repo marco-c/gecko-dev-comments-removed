@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_PolicyChecks_h
 #define mozilla_PolicyChecks_h
 
@@ -11,6 +9,11 @@
 
 #  include <windows.h>
 #  include "mozilla/Maybe.h"
+
+
+#  ifndef MOZ_APP_BASENAME
+#    error "MOZ_APP_BASENAME must be defined in moz.build to use this header"
+#  endif
 
 #  define POLICY_REGKEY_NAME L"SOFTWARE\\Policies\\Mozilla\\" MOZ_APP_BASENAME
 
