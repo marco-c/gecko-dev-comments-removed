@@ -2812,6 +2812,42 @@ TEST_F(WebRtcVideoChannelBaseTest, SendCodecIsMovedToFrontInRtpParameters) {
   EXPECT_THAT("VP8", send_codecs[0].name);
 }
 
+TEST_F(WebRtcVideoChannelBaseTest,
+       SetRtpSendParametersAfterRequestEncoderSwitch) {
+  VideoSenderParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP9"));
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  EXPECT_TRUE(send_channel_->SetSenderParameters(parameters));
+
+  std::optional<Codec> codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP9", codec->name);
+
+  
+  SendImpl()->RequestEncoderSwitch(std::nullopt, true);
+  time_controller_.AdvanceTime(kFrameDuration);
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP8", codec->name);
+
+  
+  
+  RtpParameters rtp_parameters = send_channel_->GetRtpSendParameters(kSsrc);
+  ASSERT_EQ(rtp_parameters.encodings.size(), 1u);
+  rtp_parameters.encodings[0].codec = GetEngineCodec("VP9").ToCodecParameters();
+  EXPECT_TRUE(send_channel_->SetRtpSendParameters(kSsrc, rtp_parameters).ok());
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP9", codec->name);
+
+  
+  SendImpl()->RequestEncoderSwitch(std::nullopt, true);
+  time_controller_.AdvanceTime(kFrameDuration);
+  codec = send_channel_->GetSendCodec();
+  ASSERT_TRUE(codec);
+  EXPECT_EQ("VP8", codec->name);
+}
+
 #endif  
 
 class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
