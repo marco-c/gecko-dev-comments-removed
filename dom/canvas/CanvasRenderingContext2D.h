@@ -610,11 +610,13 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
       mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
       int32_t* out_format, gfx::IntSize* out_imageSize) override;
 
-  void OnShutdown();
+  void OnShutdown() override;
 
   bool IsContextLost() const { return mIsContextLost; }
-  void OnRemoteCanvasLost();
-  void OnRemoteCanvasRestored();
+  void OnRemoteCanvasLost() override;
+  void OnRemoteCanvasRestored() override;
+  void OnRemoteCanvasReset(
+      const nsTArray<layers::RemoteTextureOwnerId>& aOwnerIds) override;
 
   
 
@@ -931,8 +933,6 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   
   CanvasContextProperties mContextProperties = CanvasContextProperties::None;
 
-  bool AddShutdownObserver();
-  void RemoveShutdownObserver();
   bool AlreadyShutDown() const { return mHasShutdown; }
 
   

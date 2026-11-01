@@ -216,6 +216,14 @@ class nsICanvasRenderingContextInternal : public nsISupports,
 
   virtual void OnWindowDestroy() {}
 
+  
+  
+  virtual void OnShutdown() {}
+  virtual void OnRemoteCanvasLost() {}
+  virtual void OnRemoteCanvasRestored() {}
+  virtual void OnRemoteCanvasReset(
+      const nsTArray<mozilla::layers::RemoteTextureOwnerId>& aOwnerIds) {}
+
   virtual mozilla::layers::PersistentBufferProvider* GetBufferProvider() {
     return nullptr;
   }
@@ -249,6 +257,12 @@ class nsICanvasRenderingContextInternal : public nsISupports,
                          mozilla::CSSIntSize size) const;
 
  protected:
+  
+  
+  
+  bool AddShutdownObserver();
+  void RemoveShutdownObserver();
+
   RefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
   RefPtr<mozilla::dom::OffscreenCanvas> mOffscreenCanvas;
   RefPtr<nsRefreshDriver> mRefreshDriver;
