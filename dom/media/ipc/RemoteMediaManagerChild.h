@@ -174,6 +174,12 @@ class RemoteMediaManagerChild final
   static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
 
   
+  
+  
+  
+  static RefPtr<GenericNonExclusivePromise> EnsureGPUProcessReady();
+
+  
   const RemoteMediaIn mLocation;
 };
 
