@@ -683,21 +683,15 @@ pub const MAX_BLUR_RADIUS: f32 = 300.;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct BoxShadowDisplayItem {
-    pub common: CommonItemProperties,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
     
-    pub bounds: LayoutRect,
-    pub offset: LayoutVector2D,
-    pub color: ColorF,
-    
-    pub blur_radius: f32,
     
     
-    pub spread_amount: f32,
-    pub border_radius: BorderRadius,
-    pub shadow_radius: BorderRadius,
-    pub clip_mode: BoxShadowClipMode,
+    
+    pub box_shadow: crate::interning::Handle<crate::interned_prims::BoxShadowKey>,
 }
 
 #[repr(C)]
