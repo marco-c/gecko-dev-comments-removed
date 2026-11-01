@@ -4779,6 +4779,21 @@ void nsIFrame::MarkAbsoluteFramesForDisplayList(
   }
 }
 
+const nsIFrame* nsIFrame::GetGeneratedRootFrame() const {
+  if (!IsGeneratedContentFrame()) {
+    return nullptr;
+  }
+  const nsIFrame* generatedRoot = this;
+  while (true) {
+    auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(generatedRoot);
+    if (!parent || !parent->IsGeneratedContentFrame()) {
+      break;
+    }
+    generatedRoot = parent;
+  }
+  return generatedRoot;
+}
+
 nsIContent* nsIFrame::GetExplicitEventTargetContent(
     const WidgetEvent* aEvent ) const {
   
@@ -4788,14 +4803,8 @@ nsIContent* nsIFrame::GetExplicitEventTargetContent(
   
   
   
-  const nsIFrame* generatedRoot = this;
-  while (true) {
-    auto* parent = nsLayoutUtils::GetParentOrPlaceholderFor(generatedRoot);
-    if (!parent || !parent->IsGeneratedContentFrame()) {
-      break;
-    }
-    generatedRoot = parent;
-  }
+  const nsIFrame* generatedRoot = GetGeneratedRootFrame();
+  MOZ_ASSERT(generatedRoot);
   
   return generatedRoot->GetContent()->GetParent();
 }

@@ -4583,6 +4583,21 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  const nsIFrame* GetGeneratedRootFrame() const;
+
+  
+
+
+
+  nsIFrame* GetGeneratedRootFrame() {
+    return const_cast<nsIFrame*>(
+        const_cast<const nsIFrame*>(this)->GetGeneratedRootFrame());
+  }
+
+  
+
+
+
 
 
 

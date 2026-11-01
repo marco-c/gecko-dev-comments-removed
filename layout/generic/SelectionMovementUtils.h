@@ -38,6 +38,16 @@ struct MOZ_STACK_CLASS FrameAndOffset {
     return mFrame;
   }
 
+  
+
+
+
+
+
+
+
+  FrameAndOffset GetNonGeneratedFrameAndOffset() const;
+
   nsIFrame* mFrame = nullptr;
   
   uint32_t mOffsetInFrameContent = 0;
