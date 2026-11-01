@@ -379,6 +379,10 @@ class LIRGeneratorShared {
     return false;
   }
 
+  
+  
+  bool canStoreConstantWithoutRegister(MDefinition* value) { return false; }
+
   bool canSpecializeWasmCompareAndSelect(MCompare::CompareType compTy,
                                          MIRType insTy);
   void lowerWasmCompareAndSelect(MWasmSelect* ins, MDefinition* lhs,

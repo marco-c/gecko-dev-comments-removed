@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_x86_Lowering_x86_h
 #define jit_x86_Lowering_x86_h
 
@@ -34,6 +32,10 @@ class LIRGeneratorX86 : public LIRGeneratorX86Shared {
   inline LDefinition tempToUnbox() { return LDefinition::BogusTemp(); }
 
   bool needTempForPostBarrier() { return true; }
+
+  bool canStoreConstantWithoutRegister(MDefinition* value) {
+    return value->isConstant() && value->type() == MIRType::Int32;
+  }
 
   void lowerUntypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block,
                             size_t lirIndex);
