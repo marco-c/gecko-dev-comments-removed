@@ -116,6 +116,11 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void KillProcess(bool aGenerateMinidump);
 
   
+  
+  void KillProcessForTesting();
+  bool WasKilledForTesting() const { return mKilledForTesting; }
+
+  
   void CrashProcess();
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -169,6 +174,7 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool mShutdownRequested;
   bool mChannelClosed;
+  bool mKilledForTesting = false;
   bool mLaunchOomError MOZ_GUARDED_BY(mMonitor) = false;
 
   TimeStamp mLaunchTime;

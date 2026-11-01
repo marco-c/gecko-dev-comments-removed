@@ -204,6 +204,11 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   
   
+  
+  void KillProcessForTesting();
+
+  
+  
   void StopBatteryObserving();
 
   
