@@ -18,6 +18,7 @@
 
 #ifdef NIGHTLY_BUILD
   pref("pdfjs.annotationEditorMode", 0);
+  pref("pdfjs.enableSignatureEditor", true);
 #else
   pref("pdfjs.annotationEditorMode", -1);
 #endif
