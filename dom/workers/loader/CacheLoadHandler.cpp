@@ -634,8 +634,8 @@ nsresult CacheLoadHandler::DataReceivedFromCache(
     
     
     
-    rv = mWorkerRef->Private()->SetPrincipalsAndCSPOnMainThread(
-        responsePrincipal, responsePrincipal, loadGroup, nullptr);
+    rv = mWorkerRef->Private()->SetPrincipalsOnMainThread(
+        responsePrincipal, responsePrincipal, loadGroup);
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
 
     rv = mWorkerRef->Private()->SetCSPFromHeaderValues(
