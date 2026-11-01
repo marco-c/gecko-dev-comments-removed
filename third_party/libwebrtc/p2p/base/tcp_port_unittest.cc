@@ -21,6 +21,7 @@
 #include "api/environment/environment.h"
 #include "api/test/rtc_error_matchers.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/p2p_constants.h"
@@ -34,11 +35,12 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/run_loop.h"
+#include "test/time_controller/simulated_time_controller.h"
 #include "test/wait_until.h"
 
 namespace webrtc {
@@ -46,6 +48,7 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::IsTrue;
+using ::testing::NotNull;
 
 int kTimeout = 1000;
 const SocketAddress kLocalAddr("11.11.11.11", 0);
@@ -83,7 +86,9 @@ class TCPPortTest : public ::testing::Test {
  public:
   TCPPortTest()
       : ss_(new VirtualSocketServer()),
-        main_(ss_.get()),
+        time_controller_(Timestamp::Millis(1000), ss_.get()),
+        main_(time_controller_.GetMainThread()),
+        env_(CreateTestEnvironment({.time = &time_controller_})),
         socket_factory_(ss_.get()),
         username_(CreateRandomString(ICE_UFRAG_LENGTH)),
         password_(CreateRandomString(ICE_PWD_LENGTH)) {}
@@ -99,7 +104,7 @@ class TCPPortTest : public ::testing::Test {
                                          int port_number = 0) {
     return std::unique_ptr<TCPPort>(
         TCPPort::Create({.env = env_,
-                         .network_thread = main_.task_queue(),
+                         .network_thread = main_,
                          .socket_factory = &socket_factory_,
                          .network = MakeNetwork(addr),
                          .ice_username_fragment = username_,
@@ -111,7 +116,7 @@ class TCPPortTest : public ::testing::Test {
   std::unique_ptr<TCPPort> CreateTCPPort(const Network* network) {
     return std::unique_ptr<TCPPort>(
         TCPPort::Create({.env = env_,
-                         .network_thread = main_.task_queue(),
+                         .network_thread = main_,
                          .socket_factory = &socket_factory_,
                          .network = network,
                          .ice_username_fragment = username_,
@@ -121,13 +126,14 @@ class TCPPortTest : public ::testing::Test {
   }
 
  protected:
-  const Environment env_ = CreateTestEnvironment();
   
   
   
   std::list<Network> networks_;
   std::unique_ptr<VirtualSocketServer> ss_;
-  test::RunLoop main_;
+  GlobalSimulatedTimeController time_controller_;
+  Thread* main_;
+  const Environment env_;
   BasicPacketSocketFactory socket_factory_;
   std::string username_;
   std::string password_;
@@ -144,8 +150,9 @@ TEST_F(TCPPortTest, TestTCPPortWithLocalhostAddress) {
   remote_port->PrepareAddress();
   Connection* conn = local_port->CreateConnection(remote_port->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
-  EXPECT_TRUE(WaitUntil([&] { return conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  EXPECT_TRUE(WaitUntil(
+      [&] { return conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
   
   
   ASSERT_EQ(local_address.ipaddr(),
@@ -174,8 +181,9 @@ TEST_F(TCPPortTest, TCPPortDiscardedIfBoundAddressDoesNotMatchNetwork) {
   Connection* conn = local_port->CreateConnection(remote_port->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
   ConnectionObserver observer(conn);
-  EXPECT_TRUE(WaitUntil([&] { return observer.connection_destroyed(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  EXPECT_TRUE(WaitUntil(
+      [&] { return observer.connection_destroyed(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 }
 
 
@@ -200,8 +208,9 @@ TEST_F(TCPPortTest, TCPPortNotDiscardedIfNotBoundToBestIP) {
   
   Connection* conn = local_port->CreateConnection(remote_port->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
-  EXPECT_TRUE(WaitUntil([&] { return conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  EXPECT_TRUE(WaitUntil(
+      [&] { return conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   
   
@@ -225,8 +234,9 @@ TEST_F(TCPPortTest, TCPPortNotDiscardedIfBoundToTemporaryIP) {
   Connection* conn = local_port->CreateConnection(remote_port->Candidates()[0],
                                                   Port::ORIGIN_MESSAGE);
   ASSERT_NE(nullptr, conn);
-  EXPECT_TRUE(WaitUntil([&] { return conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  EXPECT_TRUE(WaitUntil(
+      [&] { return conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 }
 
 class SentPacketCounter {
@@ -257,8 +267,9 @@ TEST_F(TCPPortTest, SignalSentPacket) {
   Connection* client_conn =
       client->CreateConnection(server->Candidates()[0], Port::ORIGIN_MESSAGE);
   ASSERT_NE(nullptr, client_conn);
-  ASSERT_TRUE(WaitUntil([&] { return client_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return client_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   
   Candidate client_candidate = client->Candidates()[0];
@@ -267,15 +278,18 @@ TEST_F(TCPPortTest, SignalSentPacket) {
   Connection* server_conn =
       server->CreateConnection(client_candidate, Port::ORIGIN_THIS_PORT);
   ASSERT_NE(nullptr, server_conn);
-  ASSERT_TRUE(WaitUntil([&] { return server_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return server_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   client_conn->Ping(env_.clock().CurrentTime());
   server_conn->Ping(env_.clock().CurrentTime());
-  ASSERT_TRUE(WaitUntil([&] { return client_conn->writable(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
-  ASSERT_TRUE(WaitUntil([&] { return server_conn->writable(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return client_conn->writable(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return server_conn->writable(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   SentPacketCounter client_counter(client.get());
   SentPacketCounter server_counter(server.get());
@@ -285,10 +299,12 @@ TEST_F(TCPPortTest, SignalSentPacket) {
     server_conn->Send(kData, AsyncSocketPacketOptions());
   }
   EXPECT_THAT(WaitUntil([&] { return client_counter.sent_packets(); }, Eq(10),
-                        {.timeout = TimeDelta::Millis(kTimeout)}),
+                        {.timeout = TimeDelta::Millis(kTimeout),
+                         .clock = &time_controller_}),
               IsRtcOk());
   EXPECT_THAT(WaitUntil([&] { return server_counter.sent_packets(); }, Eq(10),
-                        {.timeout = TimeDelta::Millis(kTimeout)}),
+                        {.timeout = TimeDelta::Millis(kTimeout),
+                         .clock = &time_controller_}),
               IsRtcOk());
 }
 
@@ -308,8 +324,9 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   Connection* client_conn =
       client->CreateConnection(server->Candidates()[0], Port::ORIGIN_MESSAGE);
   ASSERT_NE(nullptr, client_conn);
-  ASSERT_TRUE(WaitUntil([&] { return client_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return client_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   
   Candidate client_candidate = client->Candidates()[0];
@@ -318,12 +335,14 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   client_candidate.set_tcptype("");
   Connection* server_conn =
       server->CreateConnection(client_candidate, Port::ORIGIN_THIS_PORT);
-  ASSERT_TRUE(WaitUntil([&] { return server_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return server_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
   EXPECT_FALSE(client_conn->writable());
   client_conn->Ping(env_.clock().CurrentTime());
-  ASSERT_TRUE(WaitUntil([&] { return client_conn->writable(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return client_conn->writable(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   SentPacketCounter client_counter(client.get());
   static constexpr uint8_t kData[] = {'h', 'e', 'l', 'l', 'o', '\0'};
@@ -333,8 +352,9 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   
   server = nullptr;
   server_conn = nullptr;
-  ASSERT_TRUE(WaitUntil([&] { return !client_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return !client_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
 
   
   server = CreateTCPPort(kRemoteAddr, true, kServerPort);
@@ -345,8 +365,9 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   
   result = client_conn->Send(kData, AsyncSocketPacketOptions());
   EXPECT_EQ(result, SOCKET_ERROR);
-  ASSERT_TRUE(WaitUntil([&] { return client_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return client_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
   
   EXPECT_TRUE(client_conn->writable());
   for (int i = 0; i < 10; ++i) {
@@ -356,7 +377,8 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   }
   
   EXPECT_THAT(WaitUntil([&] { return client_counter.sent_packets(); }, Eq(1),
-                        {.timeout = TimeDelta::Millis(kTimeout)}),
+                        {.timeout = TimeDelta::Millis(kTimeout),
+                         .clock = &time_controller_}),
               IsRtcOk());
 
   
@@ -368,29 +390,64 @@ TEST_F(TCPPortTest, SignalSentPacketAfterReconnect) {
   client_candidate.set_tcptype("");
   server_conn =
       server->CreateConnection(client_candidate, Port::ORIGIN_THIS_PORT);
-  ASSERT_TRUE(WaitUntil([&] { return server_conn->connected(); },
-                        {.timeout = TimeDelta::Millis(kTimeout)}));
+  ASSERT_TRUE(WaitUntil(
+      [&] { return server_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
   EXPECT_THAT(WaitUntil([&] { return client_counter.sent_packets(); }, Eq(1),
-                        {.timeout = TimeDelta::Millis(kTimeout)}),
+                        {.timeout = TimeDelta::Millis(kTimeout),
+                         .clock = &time_controller_}),
               IsRtcOk());
 
   
   client_conn->Ping(env_.clock().CurrentTime());
   
   EXPECT_THAT(WaitUntil([&] { return client_counter.sent_packets(); }, Eq(2),
-                        {.timeout = TimeDelta::Millis(kTimeout)}),
+                        {.timeout = TimeDelta::Millis(kTimeout),
+                         .clock = &time_controller_}),
               IsRtcOk());
   
-  main_.RunFor(TimeDelta::Millis(100));
+  time_controller_.AdvanceTime(TimeDelta::Millis(100));
 
   
   
   for (int i = 0; i < 5; ++i) {
     EXPECT_EQ(client_conn->Send(kData, AsyncSocketPacketOptions()), 6);
   }
-  EXPECT_THAT(WaitUntil([&] { return client_counter.sent_packets(); },
-                        Eq(2 + 5), {.timeout = TimeDelta::Millis(kTimeout)}),
-              IsRtcOk());
+  EXPECT_THAT(
+      WaitUntil(
+          [&] { return client_counter.sent_packets(); }, Eq(2 + 5),
+          {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}),
+      IsRtcOk());
+}
+
+TEST_F(TCPPortTest, ReconnectTimeoutAfterShutdownDoesNotDestroy) {
+  std::unique_ptr<TCPPort> client =
+      CreateTCPPort(kLocalAddr, false);
+  std::unique_ptr<TCPPort> server = CreateTCPPort(kRemoteAddr);
+  client->SetIceRole(ICEROLE_CONTROLLING);
+  server->SetIceRole(ICEROLE_CONTROLLED);
+  client->PrepareAddress();
+  server->PrepareAddress();
+
+  TCPConnection* client_conn = static_cast<TCPConnection*>(
+      client->CreateConnection(server->Candidates()[0], Port::ORIGIN_MESSAGE));
+  ASSERT_THAT(client_conn, NotNull());
+  ASSERT_TRUE(WaitUntil(
+      [&] { return client_conn->connected(); },
+      {.timeout = TimeDelta::Millis(kTimeout), .clock = &time_controller_}));
+
+  ConnectionObserver observer(client_conn);
+
+  client_conn->socket()->NotifyClosedForTest(0);
+  ASSERT_FALSE(client_conn->connected());
+
+  
+  main_->PostTask(
+      [&client, client_conn] { client->DestroyConnectionAsync(client_conn); });
+  time_controller_.SkipForwardBy(kConnectionWriteConnectTimeout);
+  time_controller_.AdvanceTime(TimeDelta::Zero());
+
+  EXPECT_TRUE(observer.connection_destroyed());
 }
 
 }  
