@@ -1758,16 +1758,10 @@ void MacroAssemblerLOONG64::ma_store(Imm32 imm, const BaseIndex& dest,
 }
 
 
-
 void MacroAssemblerLOONG64::ma_b(Register lhs, Register rhs, Label* label,
                                  Condition c, JumpKind jumpKind,
                                  Register scratch) {
   switch (c) {
-    case Equal:
-    case NotEqual:
-      asMasm().branchWithCode(getBranchCode(lhs, rhs, c), label, jumpKind,
-                              scratch);
-      break;
     case Always:
       ma_b(label, jumpKind);
       break;
@@ -1778,14 +1772,10 @@ void MacroAssemblerLOONG64::ma_b(Register lhs, Register rhs, Label* label,
       MOZ_ASSERT(lhs == rhs);
       asMasm().branchWithCode(getBranchCode(lhs, c), label, jumpKind, scratch);
       break;
-    default: {
-      UseScratchRegisterScope temps(*this);
-      Register scratch = temps.Acquire();
-      Condition cond = ma_cmp(scratch, lhs, rhs, c);
-      asMasm().branchWithCode(getBranchCode(scratch, cond), label, jumpKind,
+    default:
+      asMasm().branchWithCode(getBranchCode(lhs, rhs, c), label, jumpKind,
                               scratch);
       break;
-    }
   }
 }
 
