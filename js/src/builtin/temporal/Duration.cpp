@@ -1690,19 +1690,13 @@ static bool GetTemporalRelativeToOption(
 
     
     if (auto* zonedDateTime = obj->maybeUnwrapIf<ZonedDateTimeObject>()) {
-      auto epochNs = zonedDateTime->epochNanoseconds();
-      Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
-      Rooted<CalendarValue> calendar(cx, zonedDateTime->calendar());
-
-      if (!timeZone.wrap(cx)) {
-        return false;
-      }
-      if (!calendar.wrap(cx)) {
-        return false;
-      }
-
       
-      zonedRelativeTo.set(ZonedDateTime{epochNs, timeZone, calendar});
+      zonedRelativeTo.set(ZonedDateTime{zonedDateTime});
+
+      if (!zonedRelativeTo.wrap(cx)) {
+        return false;
+      }
+
       return true;
     }
 

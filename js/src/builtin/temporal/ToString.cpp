@@ -546,8 +546,15 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
 
   
   int64_t offsetNanoseconds;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, epochNs, &offsetNanoseconds)) {
-    return nullptr;
+  
+  if (epochNs == zonedDateTime.epochNanoseconds()) {
+    if (!GetOffsetNanosecondsFor(cx, zonedDateTime, &offsetNanoseconds)) {
+      return nullptr;
+    }
+  } else {
+    if (!GetOffsetNanosecondsFor(cx, timeZone, epochNs, &offsetNanoseconds)) {
+      return nullptr;
+    }
   }
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
