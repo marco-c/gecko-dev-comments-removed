@@ -2843,21 +2843,23 @@ bool Element::HasVisibleScrollbars() {
 
 
 void Element::PropagateBloomFilterToParents() {
-  Element* toUpdate = this;
   Element* parent = GetParentElement();
+  if (!parent) {
+    return;
+  }
+  uint64_t childBloom = mAttrs.GetSubtreeBloomFilter();
 
-  while (parent) {
-    uint64_t childBloom = toUpdate->mAttrs.GetSubtreeBloomFilter();
+  do {
     uint64_t parentBloom = parent->mAttrs.GetSubtreeBloomFilter();
 
     
     if ((parentBloom & childBloom) == childBloom) {
       break;
     }
-    parent->mAttrs.SetSubtreeBloomFilter(parentBloom | childBloom);
-    toUpdate = parent;
-    parent = toUpdate->GetParentElement();
-  }
+    childBloom |= parentBloom;
+    parent->mAttrs.SetSubtreeBloomFilter(childBloom);
+    parent = parent->GetParentElement();
+  } while (parent);
 }
 
 
@@ -3779,11 +3781,19 @@ nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                                  bool* aHadValue, IsKnownNewAttr aIsKnownNew) {
   MOZ_TRY(mAttrs.SetAndSwapAttr(aLocalName, aValue, aHadValue, aIsKnownNew));
 
+  if (*aHadValue && aLocalName != nsGkAtoms::_class) {
+    return NS_OK;
+  }
+  const uint64_t oldBloom = mAttrs.GetSubtreeBloomFilter();
   if (aLocalName == nsGkAtoms::_class) {
     UpdateSubtreeBloomFilterForClass(GetClasses());
   }
-  UpdateSubtreeBloomFilterForAttribute(aLocalName);
-  PropagateBloomFilterToParents();
+  if (!*aHadValue) {
+    UpdateSubtreeBloomFilterForAttribute(aLocalName);
+  }
+  if (oldBloom != mAttrs.GetSubtreeBloomFilter()) {
+    PropagateBloomFilterToParents();
+  }
 
   return NS_OK;
 }
@@ -3791,20 +3801,12 @@ nsresult Element::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
 nsresult Element::SetAndSwapAttr(mozilla::dom::NodeInfo* aName,
                                  nsAttrValue& aValue, bool* aHadValue,
                                  IsKnownNewAttr aIsKnownNew) {
-  MOZ_TRY(mAttrs.SetAndSwapAttr(aName, aValue, aHadValue, aIsKnownNew));
-
   
   
   if (aName->NamespaceEquals(kNameSpaceID_None)) {
-    nsAtom* localName = aName->NameAtom();
-    if (localName == nsGkAtoms::_class) {
-      UpdateSubtreeBloomFilterForClass(GetClasses());
-    }
-    UpdateSubtreeBloomFilterForAttribute(localName);
-    PropagateBloomFilterToParents();
+    return SetAndSwapAttr(aName->NameAtom(), aValue, aHadValue, aIsKnownNew);
   }
-
-  return NS_OK;
+  return mAttrs.SetAndSwapAttr(aName, aValue, aHadValue, aIsKnownNew);
 }
 
 nsresult Element::SetAttr(int32_t aNamespaceID, nsAtom* aName, nsAtom* aPrefix,
