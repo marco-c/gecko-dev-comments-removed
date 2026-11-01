@@ -895,6 +895,12 @@ impl PropertyDeclaration {
 
     
     
+    pub fn is_unparsed(&self) -> bool {
+        matches!(*self, PropertyDeclaration::WithVariables(..))
+    }
+
+    
+    
     
     
     

@@ -51,6 +51,12 @@ enum class CSSPropFlags : uint16_t {
   AffectsLayout = 1 << 7,
   AffectsOverflow = 1 << 8,
   AffectsPaint = 1 << 9,
+
+  
+  
+  IsCommaSeparated = 1 << 10,
+  IsSpaceSeparated = 1 << 11,
+  IsListValued = IsCommaSeparated | IsSpaceSeparated,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSPropFlags)
