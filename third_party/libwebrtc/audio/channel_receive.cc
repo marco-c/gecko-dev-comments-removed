@@ -700,6 +700,9 @@ std::optional<std::pair<int, SdpAudioFormat>> ChannelReceive::GetReceiveCodec()
 void ChannelReceive::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  
+  
+  payload_type_frequencies_.clear();
   for (const auto& kv : codecs) {
     RTC_DCHECK_GE(kv.second.clockrate_hz, 1000);
     payload_type_frequencies_[kv.first] = kv.second.clockrate_hz;
