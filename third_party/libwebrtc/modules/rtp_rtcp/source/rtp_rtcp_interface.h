@@ -130,6 +130,15 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     std::optional<uint32_t> rtx_send_ssrc;
     std::optional<uint32_t> remote_ssrc;
 
+    
+    
+    
+    
+    
+    
+    std::optional<RtpState> rtp_state;
+    std::optional<RtpState> rtx_rtp_state;
+
     bool need_rtp_packet_infos = false;
 
     
@@ -230,17 +239,11 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   virtual uint32_t StartTimestamp() const = 0;
 
   
-  
-  virtual void SetStartTimestamp(uint32_t timestamp) = 0;
-
-  
   virtual uint16_t SequenceNumber() const = 0;
 
   
   virtual void SetSequenceNumber(uint16_t seq) = 0;
 
-  virtual void SetRtpState(const RtpState& rtp_state) = 0;
-  virtual void SetRtxState(const RtpState& rtp_state) = 0;
   virtual RtpState GetRtpState() const = 0;
   virtual RtpState GetRtxState() const = 0;
 
