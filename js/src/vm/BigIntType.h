@@ -517,6 +517,9 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   
   static Digit digitMul(Digit a, Digit b, Digit* high);
+  
+  
+  static Digit digitMulAdd(Digit a, Digit b, Digit c, Digit d, Digit* high);
 
   
   
