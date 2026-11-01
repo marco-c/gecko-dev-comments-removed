@@ -23,7 +23,9 @@ use crate::gradient_builder::GradientBuilder;
 use crate::color::{ColorF, ColorU};
 use crate::font::{FontInstanceKey, GlyphInstance, GlyphOptions};
 use crate::image::{ColorDepth, ImageKey};
-use crate::interned_prims::{BoxShadow, BoxShadowKey, RectangleKey, RectanglePrim};
+use crate::interned_prims::{
+    BoxShadow, BoxShadowKey, LineDecoration, LineDecorationKey, RectangleKey, RectanglePrim,
+};
 use crate::interning::{self, DlDelta};
 use crate::path::Path;
 use crate::key_types::{EdgeMask, GradientStopKey, PrimKeyCommonData, StretchSizeKey};
@@ -1240,6 +1242,7 @@ struct CapturedPrim {
 
 enum CapturedKey {
     Rectangle { transformed_aa_edges: EdgeMask },
+    Line(LineDecoration),
 }
 
 #[repr(C)]
@@ -1656,23 +1659,49 @@ impl DisplayListBuilder {
         style: di::LineStyle,
     ) {
         
-        if !color_is_visible(*color) && self.pending_shadows.is_empty() {
+        
+        
+        let visible = color_is_visible(*color);
+        if !visible && self.pending_shadows.is_empty() {
             return;
         }
 
         let (common, offset) = self.normalize_common(common);
         let area = self.shift_rect(*area, offset);
 
-        let item = di::DisplayItem::Line(di::LineDisplayItem {
-            common,
-            area,
-            wavy_line_thickness,
-            orientation,
-            color: *color,
+        let decoration = LineDecoration {
             style,
-        });
+            orientation,
+            wavy_line_thickness: Au::from_f32_px(wavy_line_thickness),
+            color: (*color).into(),
+        };
+        let line = if visible {
+            self.intern_line(&decoration, area, &common)
+        } else {
+            interning::Handle::INVALID
+        };
 
-        self.push_item(&item);
+        self.capture_prim(&common, area, CapturedKey::Line(decoration));
+
+        self.push_item(&di::DisplayItem::Line(di::LineDisplayItem {
+            spatial_id: common.spatial_id,
+            clip_chain_id: common.clip_chain_id,
+            line,
+        }));
+    }
+
+    fn intern_line(
+        &mut self,
+        kind: &LineDecoration,
+        area: LayoutRect,
+        common: &di::CommonItemProperties,
+    ) -> interning::Handle<LineDecorationKey> {
+        let key = LineDecorationKey::new(
+            prim_key_common(common, area, EdgeMask::all()),
+            kind.clone(),
+        );
+
+        self.interners.intern(&key)
     }
 
     pub fn push_image(
@@ -3055,8 +3084,8 @@ impl DisplayListBuilder {
                         
                         
                         key: match draw {
-                            di::DisplayItem::Rectangle(..) => Some(
-                                captured_keys.next().expect("rectangle item without its captured key"),
+                            di::DisplayItem::Rectangle(..) | di::DisplayItem::Line(..) => Some(
+                                captured_keys.next().expect("primitive item without its captured key"),
                             ),
                             _ => None,
                         },
@@ -3168,7 +3197,7 @@ impl DisplayListBuilder {
                 let visible = match entry.item {
                     di::DisplayItem::Text(ref info) => color_is_visible(info.color),
                     di::DisplayItem::Rectangle(ref info) => info.rect != interning::Handle::INVALID,
-                    di::DisplayItem::Line(ref info) => color_is_visible(info.color),
+                    di::DisplayItem::Line(ref info) => info.line != interning::Handle::INVALID,
                     _ => true,
                 };
                 if !visible {
@@ -3214,6 +3243,18 @@ impl DisplayListBuilder {
                     rect,
                 })
             }
+            CapturedKey::Line(ref decoration) => {
+                let line = self.intern_line(
+                    &LineDecoration { color: color.into(), ..decoration.clone() },
+                    bounds,
+                    &common,
+                );
+                di::DisplayItem::Line(di::LineDisplayItem {
+                    spatial_id: common.spatial_id,
+                    clip_chain_id: common.clip_chain_id,
+                    line,
+                })
+            }
         }
     }
 
@@ -3242,7 +3283,7 @@ impl DisplayListBuilder {
 
         Some(match item {
             
-            Rectangle(..) => unreachable!("rectangle shadow copies are interned from their captured key"),
+            Rectangle(..) | Line(..) => unreachable!("shadow copy of a primitive with a captured key"),
             Text(info) => Text(di::TextDisplayItem {
                 common: shift(info.common),
                 bounds: info.bounds.translate(offset),
@@ -3253,12 +3294,6 @@ impl DisplayListBuilder {
             Image(info) => Image(di::ImageDisplayItem {
                 common: shift(info.common),
                 bounds: info.bounds.translate(offset),
-                color,
-                ..*info
-            }),
-            Line(info) => Line(di::LineDisplayItem {
-                common: shift(info.common),
-                area: info.area.translate(offset),
                 color,
                 ..*info
             }),
@@ -3777,6 +3812,142 @@ mod box_shadow_interning_tests {
         assert_eq!(first.delta().builder, second.delta().builder);
         assert_eq!(first.delta().build.0 + 1, second.delta().build.0);
         assert!(first.delta().rectangles.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod line_decoration_interning_tests {
+    use super::*;
+
+    const AREA: LayoutRect = LayoutRect {
+        min: LayoutPoint::new(0.0, 90.0),
+        max: LayoutPoint::new(200.0, 92.0),
+    };
+
+    fn common() -> di::CommonItemProperties {
+        let pipeline_id = PipelineId::dummy();
+        di::CommonItemProperties {
+            clip_rect: LayoutRect::from_size(LayoutSize::new(1000.0, 1000.0)),
+            clip_chain_id: di::ClipChainId::INVALID,
+            spatial_id: di::SpatialId::root_scroll_node(pipeline_id),
+            flags: di::PrimitiveFlags::default(),
+        }
+    }
+
+    fn push(builder: &mut DisplayListBuilder, color: ColorF, style: di::LineStyle) {
+        builder.push_line(
+            &common(),
+            &AREA,
+            1.0,
+            di::LineOrientation::Horizontal,
+            &color,
+            style,
+        );
+    }
+
+    fn line_items(dl: &BuiltDisplayList) -> Vec<di::LineDisplayItem> {
+        let mut items = Vec::new();
+        let mut iter = dl.iter();
+        while let Some(item) = iter.next() {
+            if let di::DisplayItem::Line(info) = item.item() {
+                items.push(*info);
+            }
+        }
+        items
+    }
+
+    #[test]
+    fn identical_lines_intern_once() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        push(&mut builder, ColorF::BLACK, di::LineStyle::Solid);
+        push(&mut builder, ColorF::BLACK, di::LineStyle::Solid);
+        push(&mut builder, ColorF::BLACK, di::LineStyle::Dotted);
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().line_decorations.adds.len(), 2, "style is part of the key");
+        let items = line_items(&dl);
+        assert_eq!(items.len(), 3);
+        assert_eq!(items[0].line, items[1].line);
+        assert_ne!(items[0].line, items[2].line);
+    }
+
+    #[test]
+    fn a_transparent_line_is_dropped_at_record_time() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        push(&mut builder, ColorF::TRANSPARENT, di::LineStyle::Solid);
+
+        let (_, dl) = builder.end();
+        assert!(dl.delta().line_decorations.is_empty());
+        assert!(line_items(&dl).is_empty());
+    }
+
+    #[test]
+    fn a_transparent_line_still_casts_a_shadow() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        let red = ColorF::new(1.0, 0.0, 0.0, 1.0);
+        builder.push_shadow(
+            &di::SpaceAndClipInfo {
+                spatial_id: di::SpatialId::root_scroll_node(PipelineId::dummy()),
+                clip_chain_id: di::ClipChainId::INVALID,
+            },
+            di::Shadow {
+                offset: LayoutVector2D::new(0.0, 2.0),
+                color: red,
+                blur_radius: 0.0,
+            },
+            true,
+        );
+        push(&mut builder, ColorF::TRANSPARENT, di::LineStyle::Wavy);
+        builder.pop_all_shadows();
+
+        
+        
+        let (_, dl) = builder.end();
+        let adds = &dl.delta().line_decorations.adds;
+        assert_eq!(adds.len(), 1);
+        assert_eq!(adds[0].key.kind.color, red.into());
+        assert_eq!(adds[0].key.kind.style, di::LineStyle::Wavy);
+        
+        
+        let offset = LayoutVector2D::new(0.0, 2.0);
+        assert_eq!(adds[0].key.common.prim_rect, AREA.translate(offset).into());
+        assert_eq!(adds[0].key.common.local_clip_rect, common().clip_rect.translate(offset).into());
+        let items = line_items(&dl);
+        assert_eq!(items.len(), 1);
+        assert_ne!(items[0].line, interning::Handle::INVALID);
+    }
+
+    #[test]
+    fn a_shadowed_line_interns_its_copy_separately() {
+        let mut builder = DisplayListBuilder::new(PipelineId::dummy());
+        builder.begin(60.0);
+
+        builder.push_shadow(
+            &di::SpaceAndClipInfo {
+                spatial_id: di::SpatialId::root_scroll_node(PipelineId::dummy()),
+                clip_chain_id: di::ClipChainId::INVALID,
+            },
+            di::Shadow {
+                offset: LayoutVector2D::new(0.0, 2.0),
+                color: ColorF::new(1.0, 0.0, 0.0, 1.0),
+                blur_radius: 0.0,
+            },
+            true,
+        );
+        push(&mut builder, ColorF::BLACK, di::LineStyle::Dashed);
+        builder.pop_all_shadows();
+
+        let (_, dl) = builder.end();
+        assert_eq!(dl.delta().line_decorations.adds.len(), 2);
+        let items = line_items(&dl);
+        assert_eq!(items.len(), 2);
+        assert_ne!(items[0].line, items[1].line);
     }
 }
 

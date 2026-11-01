@@ -40,7 +40,7 @@ use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle};
 use borders::{ImageBorderDataHandle, NormalBorderDataHandle};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, YuvImageDataHandle};
-use line_dec::LineDecorationDataHandle;
+use line_dec::LineDecorationKey;
 use picture::PictureDataHandle;
 use rectangle::RectangleKey;
 use crate::dl_interner::DlHandle;
@@ -241,7 +241,8 @@ pub enum PrimitiveKind {
     
     LineDecoration {
         
-        data_handle: LineDecorationDataHandle,
+        
+        handle: DlHandle<LineDecorationKey>,
     },
     NormalBorder {
         
@@ -414,8 +415,8 @@ impl PrimitiveInstance {
             return SnapPolicy { rect: SnapRounding::RoundOut, clip: ClipSnap::Exact };
         }
         let rect = match self.kind {
-            PrimitiveKind::LineDecoration { data_handle, .. } => SnapRounding::Line {
-                horizontal: data_stores.line_decoration[data_handle].kind.orientation
+            PrimitiveKind::LineDecoration { handle } => SnapRounding::Line {
+                horizontal: dl_stores.line_decorations[handle].kind.orientation
                     == LineOrientation::Horizontal,
             },
             PrimitiveKind::NormalBorder { data_handle, .. } => SnapRounding::BorderInner {
@@ -437,8 +438,8 @@ impl PrimitiveInstance {
             PrimitiveKind::ImageBorder { data_handle, .. } => {
                 data_handle.uid()
             }
-            PrimitiveKind::LineDecoration { data_handle, .. } => {
-                data_handle.uid()
+            PrimitiveKind::LineDecoration { handle } => {
+                dl_stores.line_decorations.uid(*handle)
             }
             PrimitiveKind::LinearGradient { data_handle, .. } => {
                 data_handle.uid()

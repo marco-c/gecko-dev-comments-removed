@@ -375,23 +375,16 @@ pub struct HitTestDisplayItem {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct LineDisplayItem {
-    pub common: CommonItemProperties,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
     
     
     
-    pub area: LayoutRect,
-    
-    pub orientation: LineOrientation,
     
     
-    
-    
-    
-    pub wavy_line_thickness: f32,
-    pub color: ColorF,
-    pub style: LineStyle,
+    pub line: crate::interning::Handle<crate::interned_prims::LineDecorationKey>,
 }
 
 #[repr(u8)]
