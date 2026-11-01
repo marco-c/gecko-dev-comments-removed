@@ -2399,9 +2399,8 @@ nsresult nsExternalAppHandler::CreateTransfer() {
   
   
   mDialog = nullptr;
-  if (!mDialogProgressListener) {
-    NS_WARNING("The dialog should nullify the dialog progress listener");
-  }
+  MOZ_ASSERT(!mDialogProgressListener,
+             "The dialog should nullify the dialog progress listener");
   
   
   if (mDownloadClassification != nsITransfer::DOWNLOAD_ACCEPTABLE) {
