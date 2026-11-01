@@ -458,6 +458,12 @@ struct GlobalType {
 
   GlobalType() = default;
   GlobalType(ValType type, bool isMutable) : type(type), isMutable(isMutable) {}
+
+  
+  
+  
+  
+  static bool matches(GlobalType src, GlobalType dst);
 };
 
 
@@ -550,15 +556,10 @@ class GlobalDesc {
   bool isIndirect() const { return isMutable() && (isImport() || isExport()); }
 
   ValType type() const { return initial_.type(); }
+  GlobalType globalType() const { return GlobalType(type(), isMutable()); }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   WASM_DECLARE_FRIEND_SERIALIZE(GlobalDesc);
-
-  
-  
-  
-  
-  static bool matches(const GlobalDesc& src, const GlobalDesc& dst);
 };
 
 using GlobalDescVector = Vector<GlobalDesc, 0, SystemAllocPolicy>;
@@ -900,6 +901,8 @@ struct Limits {
   
   
   
+  
+  
   static bool matches(Limits src, Limits dst);
 };
 
@@ -953,10 +956,6 @@ struct MemoryDesc {
   MemoryDesc() = default;
   explicit MemoryDesc(Limits limits)
       : limits(limits), importIndex(mozilla::Nothing()) {}
-
-  
-  
-  static bool matches(const MemoryDesc& src, const MemoryDesc& dst);
 };
 
 WASM_DECLARE_CACHEABLE_POD(MemoryDesc);
