@@ -109,6 +109,7 @@ def register(graph_config):
     from gecko_taskgraph.util import (
         dependencies,  
     )
+    from gecko_taskgraph.kind import ProfiledKind
     from gecko_taskgraph.util.verify import verifications
 
     register_mozilla_taskgraph(graph_config)
@@ -117,5 +118,9 @@ def register(graph_config):
     
     
     generator.verifications = verifications
+
+    
+    
+    generator.Kind = ProfiledKind
 
     register_parameters()
