@@ -181,7 +181,6 @@ bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
                                       nsILoadInfo* aLoadInfo) const {
   
   
-  
 
   nsCOMPtr<nsIURI> uri = aURI;
 
@@ -276,8 +275,20 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
     }
 
     
+    Resource resource{aURI};
+    if (!nsContentUtils::IsPreloadType(
+            aLoadInfo->InternalContentPolicyType())) {
+      ReportToConsole(resource, aLoadInfo->GetInnerWindowID(), *allowlist);
+    }
+
     
-    ReportViolation(AsVariant(aURI), aLoadInfo, *allowlist);
+    
+    
+    
+    nsCOMPtr<nsPIDOMWindowInner> window =
+        nsGlobalWindowInner::GetInnerWindowWithId(
+            aLoadInfo->GetInnerWindowID());
+    ReportViolation(resource, window, *allowlist);
 
     
     if (allowlist->mDisposition == Disposition::Enforce) {
@@ -291,25 +302,54 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
 }
 
 
-
-void ConnectionAllowlists::ReportViolation(
-    const Variant<nsIURI*, nsCString>& aResource, nsILoadInfo* aLoadInfo,
-    const Allowlist& aAllowlist) {
+bool ConnectionAllowlists::ShouldBlockWebRTC(
+    nsPIDOMWindowInner* aWindow) const {
   
-  ReportToConsole(aResource, aLoadInfo, aAllowlist);
+  
+  
+  for (const Maybe<Allowlist>& allowlist :
+       {std::cref(mEnforcement), std::cref(mReportOnly)}) {
+    if (allowlist.isNothing()) {
+      continue;
+    }
 
+    
+    if (allowlist->mWebRTC == WebRTC::Allow) {
+      continue;
+    }
+
+    
+    Resource resource{nsCString("webrtc"_ns)};
+    ReportToConsole(resource, aWindow->WindowID(), *allowlist);
+
+    
+    
+    ReportViolation(resource, aWindow, *allowlist);
+
+    
+    if (allowlist->mDisposition == Disposition::Enforce) {
+      LOG("Blocking WebRTC");
+      return true;
+    }
+  }
+
+  
+  return false;
+}
+
+
+
+void ConnectionAllowlists::ReportViolation(const Resource& aResource,
+                                           nsPIDOMWindowInner* aWindow,
+                                           const Allowlist& aAllowlist) {
   
   if (aAllowlist.mReportingEndpoint.IsEmpty()) {
     return;
   }
 
-  
-  
-  
-  RefPtr<nsGlobalWindowInner> window =
-      nsGlobalWindowInner::GetInnerWindowWithId(aLoadInfo->GetInnerWindowID());
+  nsCOMPtr<nsPIDOMWindowInner> window = aWindow;
   if (!window) {
-    LOG("Not reporting a violation, no global for the load.");
+    LOG("Not reporting a violation, no global for the environment.");
     return;
   }
 
@@ -343,9 +383,10 @@ void ConnectionAllowlists::ReportViolation(
   
   
   
+  nsIGlobalObject* global = window->AsGlobal();
   RefPtr<ConnectionAllowlistViolationReportBody> violation =
       new ConnectionAllowlistViolationReportBody(
-          window, url, connection, aAllowlist.mSerializedPatterns.Clone(),
+          global, url, connection, aAllowlist.mSerializedPatterns.Clone(),
           aAllowlist.mDisposition == Disposition::Enforce
               ? ConnectionAllowlistDisposition::Enforce
               : ConnectionAllowlistDisposition::Report);
@@ -353,18 +394,14 @@ void ConnectionAllowlists::ReportViolation(
   
   
   
-  ReportingUtils::Report(window, nsGkAtoms::connection_allowlist,
+  ReportingUtils::Report(global, nsGkAtoms::connection_allowlist,
                          aAllowlist.mReportingEndpoint, url, violation);
 }
 
 
-void ConnectionAllowlists::ReportToConsole(
-    const Variant<nsIURI*, nsCString>& aResource, nsILoadInfo* aLoadInfo,
-    const Allowlist& aAllowlist) {
-  if (nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType())) {
-    return;  
-  }
-
+void ConnectionAllowlists::ReportToConsole(const Resource& aResource,
+                                           uint64_t aInnerWindowID,
+                                           const Allowlist& aAllowlist) {
   const bool enforce = aAllowlist.mDisposition == Disposition::Enforce;
   const char* messageKey = enforce ? "ConnectionAllowlistBlocked"
                                    : "ConnectionAllowlistReportOnlyBlocked";
@@ -380,12 +417,10 @@ void ConnectionAllowlists::ReportToConsole(
       PropertiesFile::SECURITY_PROPERTIES, messageKey, params, localizedMsg);
   NS_ENSURE_SUCCESS_VOID(rv);
 
-  uint64_t windowID = aLoadInfo->GetInnerWindowID();
-
   nsContentUtils::ReportToConsoleByWindowID(
       localizedMsg,
       enforce ? nsIScriptError::errorFlag : nsIScriptError::warningFlag,
-      "Security"_ns, windowID);
+      "Security"_ns, aInnerWindowID);
 }
 
 void ConnectionAllowlists::Allowlist::ToEntryArgs(
