@@ -4,15 +4,14 @@
 "use strict";
 
 
-
-add_task(async function test_siteDataSize_srd() {
+add_task(async function test_siteDataSize() {
   let updatedPromise = promiseSiteDataManagerSitesUpdated();
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   await updatedPromise;
 
   let doc = gBrowser.selectedBrowser.contentDocument;
   let siteDataSize = doc.getElementById("siteDataSize");
-  isnot(siteDataSize, null, "siteDataSize element should exist in SRD pane");
+  isnot(siteDataSize, null, "siteDataSize element should exist in pane");
 
   let cacheSize = await SiteDataManager.getCacheSize();
   let totalUsage = await SiteDataManager.getTotalUsage();
