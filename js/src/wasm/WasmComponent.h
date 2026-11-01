@@ -686,17 +686,6 @@ class ComponentItem {
     return whatAndWhere_ & AliasInstanceMask;
   }
 
-  
-  
-  bool isOuterAlias() const {
-    return kind() == ItemKind::Alias &&
-           aliasKind() == ComponentAliasKind::Outer;
-  }
-  ComponentSortIndex outerAliasSortIndex() const {
-    MOZ_RELEASE_ASSERT(isOuterAlias());
-    return ComponentSortIndex(sort(), itemIndex());
-  }
-
   bool operator==(const ComponentItem& other) const = default;
 };
 
@@ -767,6 +756,8 @@ class ComponentInlineExports {
   bool addExport(Builder* builder, CacheableName&& name,
                  ComponentSortIndex exported);
 
+  const ExportMap& exports() const { return exports_; }
+
   
   
   
@@ -775,11 +766,6 @@ class ComponentInlineExports {
   
   
   ComponentSortIndex resolveOriginal(ComponentSortIndex expFromThis) const;
-
-  
-  
-  ComponentSortIndex mustResolveExportToOriginal(
-      const CacheableName& name) const;
 };
 
 
@@ -1149,17 +1135,28 @@ class ComponentInstance {
   
   const SharedComponent component_;
 
-  using CoreInstanceVector =
-      GCVector<HeapPtr<WasmInstanceObject*>, 0, SystemAllocPolicy>;
+  using CoreInstanceExportsVector =
+      GCVector<HeapPtr<JSObject*>, 0, SystemAllocPolicy>;
   
   
   
-  
-  CoreInstanceVector coreInstances_;
+  CoreInstanceExportsVector coreInstanceExports_;
 
   
   friend class js::WasmComponentInstanceObject;
   void tracePrivate(JSTracer* trc);
+
+  
+  
+  [[nodiscard]] bool getCoreItemJSValue(JSContext* cx,
+                                        ComponentSortIndex sortIndex,
+                                        MutableHandleValue val) const;
+  [[nodiscard]] bool instantiateCoreModule(
+      JSContext* cx, const CoreInstanceDescFromModule& desc,
+      MutableHandleObject exportsObj) const;
+  [[nodiscard]] bool instantiateInlineExports(
+      JSContext* cx, const ComponentInlineExports& inlineExports,
+      MutableHandleObject exportsObj) const;
 
  public:
   ComponentInstance(JSContext* cx, Handle<WasmComponentInstanceObject*> object,
@@ -1175,12 +1172,11 @@ class ComponentInstance {
 
   
   
-  
-  WasmInstanceObject* coreInstance(uint32_t index) const {
-    if (coreInstances_.length() <= index) {
+  JSObject* coreInstanceExports(uint32_t index) const {
+    if (coreInstanceExports_.length() <= index) {
       return nullptr;
     }
-    return coreInstances_[index];
+    return coreInstanceExports_[index];
   }
 };
 

@@ -6178,35 +6178,8 @@ enum class AliasKindRaw : uint8_t {
       }
       ComponentSortIndex exp = *maybeExp;
 
-      ComponentItem newAlias = instance.desc().match(
-          [&](const CoreInstanceDescFromModule&) {
-            return ComponentItem::alias(ComponentAliasKind::CoreExport, sort,
-                                        instanceIndex, exp.index);
-          },
-          [&](const ComponentInlineExports& inlineExports) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            ComponentSortIndex original = inlineExports.resolveOriginal(exp);
-            ComponentItem originalItem = c->resolveSortIndex(original);
-            if (originalItem.isOuterAlias()) {
-              
-              
-              MOZ_ASSERT(
-                  !c->resolveSortIndex(originalItem.outerAliasSortIndex())
-                       .isOuterAlias());
-              return originalItem;
-            } else {
-              return ComponentItem::alias(ComponentAliasKind::Outer,
-                                          original.sort, 0, original.index);
-            }
-          });
+      ComponentItem newAlias = ComponentItem::alias(
+          ComponentAliasKind::CoreExport, sort, instanceIndex, exp.index);
 
       ComponentSortIndex newAliasSortIndex;
       switch (sort) {
@@ -6291,8 +6264,7 @@ enum class AliasKindRaw : uint8_t {
           return d.failf("invalid alias sort 0x%02x", uint8_t(sort));
       }
 
-      if (newAlias.aliasKind() == ComponentAliasKind::CoreExport &&
-          !c->saveExportNameForAlias(newAliasSortIndex,
+      if (!c->saveExportNameForAlias(newAliasSortIndex,
                                      std::move(exportName))) {
         return false;
       }
