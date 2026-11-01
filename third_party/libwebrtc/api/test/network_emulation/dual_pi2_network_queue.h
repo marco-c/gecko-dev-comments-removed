@@ -19,8 +19,6 @@
 #include "api/sequence_checker.h"
 #include "api/test/network_emulation/network_queue.h"
 #include "api/test/simulated_network.h"
-#include "api/units/data_rate.h"
-#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/random.h"
@@ -41,14 +39,13 @@ class DualPi2NetworkQueue : public NetworkQueue {
  public:
   struct Config {
     
-    
     TimeDelta target_delay = TimeDelta::Micros(500);
     
     
+    TimeDelta step_threshold = TimeDelta::PlusInfinity();
     
     
-    
-    DataRate link_rate = DataRate::PlusInfinity();
+    size_t min_backlog_packets = 2;
 
     
     
@@ -90,12 +87,11 @@ class DualPi2NetworkQueue : public NetworkQueue {
 
  private:
   void UpdateBaseMarkingProbability(Timestamp time_now, TimeDelta sojourn_time);
-  bool ShouldTakeAction(double marking_probability);
+  bool HasStandingQueueBacklog() const;
 
   SequenceChecker sequence_checker_;
 
   const Config config_;
-  const DataSize step_threshold_;
 
   std::queue<PacketInFlightInfo> l4s_queue_;
   std::queue<PacketInFlightInfo> classic_queue_;
@@ -103,7 +99,6 @@ class DualPi2NetworkQueue : public NetworkQueue {
   Random random_;
 
   std::optional<size_t> max_packet_capacity_;
-  DataSize total_queued_size_;
   double base_marking_probability_ = 0;
   Timestamp last_probability_update_time_ = Timestamp::MinusInfinity();
   
