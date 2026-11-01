@@ -97,6 +97,7 @@ enum class PrefersColorSchemeOverride : uint8_t;
 }  
 namespace gfx {
 class FontPaletteValueSet;
+class PaletteCache;
 }  
 }  
 
@@ -944,6 +945,8 @@ class nsPresContext : public nsISupports,
   void FlushFontPaletteValues();
   void MarkFontPaletteValuesDirty() { mFontPaletteValuesDirty = true; }
 
+  mozilla::gfx::PaletteCache& FontPaletteCache();
+
   
   
   
@@ -1236,6 +1239,8 @@ class nsPresContext : public nsISupports,
   const nsStaticAtom* mMedium;
   RefPtr<gfxFontFeatureValueSet> mFontFeatureValuesLookup;
   RefPtr<mozilla::gfx::FontPaletteValueSet> mFontPaletteValueSet;
+
+  mozilla::UniquePtr<mozilla::gfx::PaletteCache> mFontPaletteCache;
 
   
   

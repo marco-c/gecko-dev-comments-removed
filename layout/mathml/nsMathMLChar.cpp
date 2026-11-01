@@ -1723,11 +1723,12 @@ void nsMathMLChar::PaintForeground(nsIFrame* aForFrame,
       
       
       if (mGlyphs[0]) {
-        mGlyphs[0]->Draw(
-            Range(mGlyphs[0].get()), gfx::Point(0.0, mUnscaledAscent),
-            gfxTextRun::DrawParams(&aRenderingContext,
-                                   presContext->GetFontPaletteValueSet()),
-            aImgParams);
+        mGlyphs[0]->Draw(Range(mGlyphs[0].get()),
+                         gfx::Point(0.0, mUnscaledAscent),
+                         gfxTextRun::DrawParams(
+                             &aRenderingContext,
+                             aForFrame->PresContext()->FontPaletteCache()),
+                         aImgParams);
       }
       break;
     case DrawingMethod::Parts: {
@@ -1852,7 +1853,7 @@ nsresult nsMathMLChar::PaintVertically(nsPresContext* aPresContext,
   unionRect.Inflate(oneDevPixel);
 
   gfxTextRun::DrawParams params(aThebesContext,
-                                aPresContext->GetFontPaletteValueSet());
+                                aPresContext->FontPaletteCache());
 
   
   
@@ -2020,7 +2021,7 @@ nsresult nsMathMLChar::PaintHorizontally(nsPresContext* aPresContext,
   unionRect.Inflate(oneDevPixel);
 
   gfxTextRun::DrawParams params(aThebesContext,
-                                aPresContext->GetFontPaletteValueSet());
+                                aPresContext->FontPaletteCache());
 
   
   

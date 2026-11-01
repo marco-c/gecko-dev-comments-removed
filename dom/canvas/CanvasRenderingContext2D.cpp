@@ -4809,8 +4809,8 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     : public nsBidiPresUtils::BidiProcessor {
   using Style = CanvasRenderingContext2D::Style;
 
-  explicit CanvasBidiProcessor(gfx::FontPaletteValueSet* aPaletteValueSet)
-      : mPaletteValueSet(aPaletteValueSet) {
+  explicit CanvasBidiProcessor(mozilla::gfx::PaletteCache& aPaletteCache)
+      : mPaletteCache(aPaletteCache) {
     if (StaticPrefs::gfx_missing_fonts_notify()) {
       mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
     }
@@ -5060,7 +5060,7 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
     }
 
     gfxContext thebes(target,  true);
-    gfxTextRun::DrawParams params(&thebes, mPaletteValueSet);
+    gfxTextRun::DrawParams params(&thebes, mPaletteCache);
 
     params.allowGDI = false;
 
@@ -5126,13 +5126,13 @@ struct MOZ_STACK_CLASS CanvasBidiProcessor final
   CanvasRenderingContext2D* mCtx = nullptr;
 
   
-  gfx::FontPaletteValueSet* mPaletteValueSet = nullptr;
-
-  
   gfx::Point mPt;
 
   
   gfxFontGroup* mFontgrp = nullptr;
+
+  
+  mozilla::gfx::PaletteCache& mPaletteCache;
 
   
   gfx::Float mLetterSpacing = 0.0f;
@@ -5256,9 +5256,7 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
     return nullptr;
   }
 
-  auto* paletteValueSet =
-      presContext ? presContext->GetFontPaletteValueSet() : nullptr;
-  CanvasBidiProcessor processor(paletteValueSet);
+  CanvasBidiProcessor processor(mPaletteCache);
 
   
   
