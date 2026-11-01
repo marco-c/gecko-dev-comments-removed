@@ -1083,6 +1083,9 @@ dom::MediaList* StyleSheet::Media() {
 
 JSObject* StyleSheet::WrapObject(JSContext* aCx,
                                  JS::Handle<JSObject*> aGivenProto) {
+  
+  
+  RefPtr kungFuDeathGrip{this};
   return dom::CSSStyleSheet_Binding::Wrap(aCx, this, aGivenProto);
 }
 
