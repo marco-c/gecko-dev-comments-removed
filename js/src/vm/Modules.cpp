@@ -783,6 +783,12 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
                                          Handle<JSAtom*> exportName,
                                          MutableHandle<Value> result,
                                          ModuleErrorInfo* errorInfoOut);
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                    Handle<JSAtom*> exportName,
+                                    MutableHandle<Value> result,
+                                    ModuleErrorInfo* errorInfoOut);
+#endif
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports,
@@ -1091,6 +1097,13 @@ static bool ModuleResolveExportWithResolveSet(
                                         errorInfoOut);
   }
 
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    return WasmModuleResolveExport(cx, module, exportName, result,
+                                   errorInfoOut);
+  }
+#endif
+
   
   
   MOZ_ASSERT(module->status() != ModuleStatus::New);
@@ -1381,6 +1394,28 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
   
   return CreateResolvedBindingObject(cx, module, exportName, result);
 }
+
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                    Handle<JSAtom*> exportName,
+                                    MutableHandle<Value> result,
+                                    ModuleErrorInfo* errorInfoOut) {
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!WasmModuleGetExportedNames(cx, module, &exportNames)) {
+    return false;
+  }
+
+  if (!ContainsElement(exportNames.get(), exportName)) {
+    result.setNull();
+    if (errorInfoOut) {
+      errorInfoOut->setImportedModule(module);
+    }
+    return true;
+  }
+
+  return CreateResolvedBindingObject(cx, module, exportName, result);
+}
+#endif
 
 
 
