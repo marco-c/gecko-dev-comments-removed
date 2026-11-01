@@ -26,6 +26,7 @@
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_packet_sender.h"
+#include "api/sequence_checker.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
@@ -42,6 +43,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/random.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/synchronization/mutex.h"
 
@@ -166,7 +168,6 @@ RTPSender::RTPSender(const Environment& env,
                      RtpPacketHistory* packet_history,
                      RtpPacketSender* packet_sender)
     : clock_(&env.clock()),
-      random_(clock_->TimeInMicroseconds()),
       audio_configured_(config.audio),
       ssrc_(config.local_media_ssrc),
       rtx_ssrc_(config.rtx_send_ssrc),
@@ -178,6 +179,9 @@ RTPSender::RTPSender(const Environment& env,
       max_packet_size_(IP_PACKET_SIZE - 28),  
       rtp_header_extension_map_(config.extmap_allow_mixed),
       
+      
+      
+      timestamp_offset_(Random(clock_->TimeInMicroseconds()).Rand<uint32_t>()),
       rid_(config.rid),
       always_send_mid_and_rid_(config.always_send_mid_and_rid),
       ssrc_has_acked_(false),
@@ -185,9 +189,6 @@ RTPSender::RTPSender(const Environment& env,
       rtx_(kRtxOff),
       supports_bwe_extension_(false),
       retransmission_rate_limiter_(config.retransmission_rate_limiter) {
-  
-  timestamp_offset_ = random_.Rand<uint32_t>();
-
   RTC_DCHECK(paced_sender_);
   RTC_DCHECK(packet_history_);
   RTC_DCHECK_LE(rid_.size(), RtpStreamId::kMaxValueSizeBytes);
@@ -195,17 +196,7 @@ RTPSender::RTPSender(const Environment& env,
   UpdateHeaderSizes();
 }
 
-RTPSender::~RTPSender() {
-  
-  
-  
-  
-
-  
-  
-  
-  
-}
+RTPSender::~RTPSender() = default;
 
 std::span<const RtpExtensionSize> RTPSender::FecExtensionSizes() {
   return kFecOrPaddingExtensionSizes;
@@ -226,6 +217,7 @@ void RTPSender::SetExtmapAllowMixed(bool extmap_allow_mixed) {
 
 bool RTPSender::RegisterRtpHeaderExtension(absl::string_view uri,
                                            RtpHeaderExtensionId id) {
+  RTC_DCHECK_RUN_ON(&worker_checker_);
   MutexLock lock(&send_mutex_);
   bool registered = rtp_header_extension_map_.RegisterByUri(id, uri);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
@@ -233,12 +225,8 @@ bool RTPSender::RegisterRtpHeaderExtension(absl::string_view uri,
   return registered;
 }
 
-bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) const {
-  MutexLock lock(&send_mutex_);
-  return rtp_header_extension_map_.IsRegistered(type);
-}
-
 void RTPSender::DeregisterRtpHeaderExtension(absl::string_view uri) {
+  RTC_DCHECK_RUN_ON(&worker_checker_);
   MutexLock lock(&send_mutex_);
   rtp_header_extension_map_.Deregister(uri);
   supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
@@ -370,11 +358,13 @@ void RTPSender::OnReceivedNack(
 }
 
 bool RTPSender::SupportsPadding() const {
-  MutexLock lock(&send_mutex_);
-  return sending_media_ && supports_bwe_extension_;
+  RTC_DCHECK_RUN_ON(&worker_checker_);
+  
+  return supports_bwe_extension_ && SendingMedia();
 }
 
 bool RTPSender::SupportsRtxPayloadPadding() const {
+  RTC_DCHECK_RUN_ON(&worker_checker_);
   MutexLock lock(&send_mutex_);
   return sending_media_ && supports_bwe_extension_ &&
          (rtx_ & kRtxRedundantPayloads);
@@ -384,8 +374,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
     size_t target_size_bytes,
     bool media_has_been_sent,
     bool can_send_padding_on_media_ssrc) {
-  
-  
+  RTC_DCHECK_RUN_ON(&worker_checker_);
   
   
 
@@ -606,10 +595,6 @@ void RTPSender::SetSendingMediaStatus(bool enabled) {
 bool RTPSender::SendingMedia() const {
   MutexLock lock(&send_mutex_);
   return sending_media_;
-}
-
-bool RTPSender::IsAudioConfigured() const {
-  return audio_configured_;
 }
 
 void RTPSender::SetTimestampOffset(uint32_t timestamp) {

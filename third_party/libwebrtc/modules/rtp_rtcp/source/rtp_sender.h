@@ -13,7 +13,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <map>
 #include <memory>
 #include <optional>
 #include <span>
@@ -24,24 +23,43 @@
 #include "api/environment/environment.h"
 #include "api/rtp_header_extension_id.h"
 #include "api/rtp_packet_sender.h"
+#include "api/sequence_checker.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extension_size.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_interface.h"
-#include "rtc_base/random.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
-class FrameEncryptorInterface;
 class RateLimiter;
 class RtpPacketToSend;
 
 
 constexpr size_t kMaxPaddingLength = 255;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class RTPSender {
  public:
@@ -57,15 +75,12 @@ class RTPSender {
 
   void SetSendingMediaStatus(bool enabled) RTC_LOCKS_EXCLUDED(send_mutex_);
   bool SendingMedia() const RTC_LOCKS_EXCLUDED(send_mutex_);
-  bool IsAudioConfigured() const RTC_LOCKS_EXCLUDED(send_mutex_);
+  bool IsAudioConfigured() const { return audio_configured_; }
 
   uint32_t TimestampOffset() const RTC_LOCKS_EXCLUDED(send_mutex_);
   void SetTimestampOffset(uint32_t timestamp) RTC_LOCKS_EXCLUDED(send_mutex_);
 
   void SetMid(absl::string_view mid) RTC_LOCKS_EXCLUDED(send_mutex_);
-
-  uint16_t SequenceNumber() const RTC_LOCKS_EXCLUDED(send_mutex_);
-  void SetSequenceNumber(uint16_t seq) RTC_LOCKS_EXCLUDED(send_mutex_);
 
   void SetMaxRtpPacketSize(size_t max_packet_size)
       RTC_LOCKS_EXCLUDED(send_mutex_);
@@ -76,8 +91,6 @@ class RTPSender {
   
   bool RegisterRtpHeaderExtension(absl::string_view uri,
                                   RtpHeaderExtensionId id)
-      RTC_LOCKS_EXCLUDED(send_mutex_);
-  bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const
       RTC_LOCKS_EXCLUDED(send_mutex_);
   void DeregisterRtpHeaderExtension(absl::string_view uri)
       RTC_LOCKS_EXCLUDED(send_mutex_);
@@ -105,27 +118,22 @@ class RTPSender {
   
   void SetRtxStatus(int mode) RTC_LOCKS_EXCLUDED(send_mutex_);
   int RtxStatus() const RTC_LOCKS_EXCLUDED(send_mutex_);
-  std::optional<uint32_t> RtxSsrc() const RTC_LOCKS_EXCLUDED(send_mutex_) {
-    return rtx_ssrc_;
-  }
+  std::optional<uint32_t> RtxSsrc() const { return rtx_ssrc_; }
   
   
-  size_t RtxPacketOverhead() const;
+  size_t RtxPacketOverhead() const RTC_LOCKS_EXCLUDED(send_mutex_);
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type)
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
   
-  static std::span<const RtpExtensionSize> FecExtensionSizes()
-      RTC_LOCKS_EXCLUDED(send_mutex_);
+  static std::span<const RtpExtensionSize> FecExtensionSizes();
 
   
-  static std::span<const RtpExtensionSize> VideoExtensionSizes()
-      RTC_LOCKS_EXCLUDED(send_mutex_);
+  static std::span<const RtpExtensionSize> VideoExtensionSizes();
 
   
-  static std::span<const RtpExtensionSize> AudioExtensionSizes()
-      RTC_LOCKS_EXCLUDED(send_mutex_);
+  static std::span<const RtpExtensionSize> AudioExtensionSizes();
 
   
   
@@ -140,13 +148,11 @@ class RTPSender {
   
   size_t MaxRtpPacketSize() const RTC_LOCKS_EXCLUDED(send_mutex_);
 
-  uint32_t SSRC() const RTC_LOCKS_EXCLUDED(send_mutex_) { return ssrc_; }
+  uint32_t SSRC() const { return ssrc_; }
 
-  std::string Rid() const RTC_LOCKS_EXCLUDED(send_mutex_) { return rid_; }
+  std::string Rid() const { return rid_; }
 
-  std::optional<uint32_t> FlexfecSsrc() const RTC_LOCKS_EXCLUDED(send_mutex_) {
-    return flexfec_ssrc_;
-  }
+  std::optional<uint32_t> FlexfecSsrc() const { return flexfec_ssrc_; }
 
   
   
@@ -163,15 +169,9 @@ class RTPSender {
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
       const RtpPacketToSend& packet);
 
-  bool IsFecPacket(const RtpPacketToSend& packet) const;
-
   void UpdateHeaderSizes() RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
 
-  void UpdateLastPacketState(const RtpPacketToSend& packet)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
-
   Clock* const clock_;
-  Random random_ RTC_GUARDED_BY(send_mutex_);
 
   const bool audio_configured_;
 
@@ -182,6 +182,7 @@ class RTPSender {
   RtpPacketHistory* const packet_history_;
   RtpPacketSender* const paced_sender_;
 
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_checker_;
   mutable Mutex send_mutex_;
 
   bool sending_media_ RTC_GUARDED_BY(send_mutex_);
@@ -207,8 +208,8 @@ class RTPSender {
   size_t max_num_csrcs_ RTC_GUARDED_BY(send_mutex_) = 0;
   int rtx_ RTC_GUARDED_BY(send_mutex_);
   
-  std::map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_mutex_);
-  bool supports_bwe_extension_ RTC_GUARDED_BY(send_mutex_);
+  flat_map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_mutex_);
+  bool supports_bwe_extension_ RTC_GUARDED_BY(worker_checker_);
 
   RateLimiter* const retransmission_rate_limiter_;
 };
