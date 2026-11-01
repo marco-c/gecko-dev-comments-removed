@@ -35,13 +35,13 @@ tasks.matching { it.name.startsWith("explodeAssetSource") }.configureEach { t ->
 }
 
 dependencies {
+    api project(':components:service-merino-manifest')
     api project(':components:support-images')
 
     implementation project(':components:browser-state')
     implementation project(':components:concept-base')
     implementation project(':components:concept-engine')
     implementation project(':components:concept-fetch')
-    implementation project(':components:service-merino-manifest')
     implementation project(':components:support-ktx')
     implementation project(':components:support-utils')
 
@@ -50,7 +50,7 @@ dependencies {
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.ui
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.androidx.palette
     implementation libs.kotlinx.coroutines
 
