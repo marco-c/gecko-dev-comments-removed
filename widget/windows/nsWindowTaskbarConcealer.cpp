@@ -182,6 +182,7 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
     HWND hwnd;
     HMONITOR monitor;
     bool isGkFullscreen;
+    bool isAlwaysOnTop;
   };
   const nsTArray<Item> windows = [&] {
     nsTArray<Item> windows;
@@ -212,9 +213,12 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
       }
       const WindowState& state = *maybeState;
 
-      windows.AppendElement(Item{.hwnd = hwnd,
-                                 .monitor = state.monitor,
-                                 .isGkFullscreen = state.isGkFullscreen});
+      windows.AppendElement(
+          Item{.hwnd = hwnd,
+               .monitor = state.monitor,
+               .isGkFullscreen = state.isGkFullscreen,
+               .isAlwaysOnTop =
+                   !!(::GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST)});
     });
 
     return windows;
@@ -242,25 +246,27 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
   
   
   
-  
-  
   const auto FindUppermostWindowOn = [&windows](HMONITOR aMonitor) -> HWND {
-    HWND topmost;
     for (const Item& item : windows) {
-      if (item.monitor == aMonitor && (!topmost || item.isGkFullscreen)) {
-        MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
-                ("on monitor %p, uppermost relevant HWND is %p", aMonitor,
-                 item.hwnd));
-        topmost = item.hwnd;
+      if (item.monitor != aMonitor) {
+        continue;
       }
-    }
-    if (topmost) {
-      return topmost;
+      if (item.isAlwaysOnTop && !item.isGkFullscreen) {
+        MOZ_LOG(sTaskbarConcealerLog, LogLevel::Debug,
+                ("on monitor %p, skipping always-on-top HWND %p", aMonitor,
+                 item.hwnd));
+        continue;
+      }
+      MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+              ("on monitor %p, uppermost relevant HWND is %p", aMonitor,
+               item.hwnd));
+      return item.hwnd;
     }
 
     
     
-    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Warning,
+    
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
             ("on monitor %p, no relevant windows were found", aMonitor));
     return nullptr;
   };
