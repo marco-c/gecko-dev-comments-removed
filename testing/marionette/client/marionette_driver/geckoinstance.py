@@ -665,10 +665,6 @@ class DesktopInstance(GeckoInstance):
         
         "browser.backup.enabled": False,
         
-        
-        
-        "browser.contentblocking.introCount": 99,
-        
         "browser.dom.window.dump.enabled": True,
         "devtools.console.stdout.chrome": True,
         
