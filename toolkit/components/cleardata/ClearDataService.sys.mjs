@@ -52,19 +52,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   Ci.nsIBounceTrackingProtection.MODE_DISABLED
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "permissionManagerIsolateByPrivateBrowsing",
-  "permissions.isolateBy.privateBrowsing",
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "permissionManagerIsolateByUserContext",
-  "permissions.isolateBy.userContext",
-  false
-);
-
 /**
  * Implements nsIPBMCleanupCollector. Passed as the subject of
  * "last-pb-context-exited" when initiated by clearPrivateBrowsingData().
@@ -329,160 +316,6 @@ const CookieCleaner = {
       Services.cache2.clearAllOriginDictionaries();
       aResolve();
     });
-  },
-};
-
-// A cleaner for clearing cookie banner handling exceptions.
-const CookieBannerExceptionCleaner = {
-  async deleteAll() {
-    try {
-      Services.cookieBanners.removeAllDomainPrefs(false);
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-
-  async deleteByPrincipal(aPrincipal) {
-    try {
-      Services.cookieBanners.removeDomainPref(aPrincipal.URI, false);
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-
-  async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
-    let { privateBrowsingId } = aOriginAttributesPattern;
-
-    try {
-      let uri = Services.io.newURI("https://" + aSchemelessSite);
-
-      // privateBrowsingId unset clears both normal and private browsing.
-      // Otherwise only clear either normal or private browsing depending on the
-      // value.
-      if (
-        privateBrowsingId == null ||
-        privateBrowsingId ===
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
-      ) {
-        Services.cookieBanners.removeDomainPref(uri, false);
-      }
-      if (
-        privateBrowsingId == null ||
-        privateBrowsingId !==
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
-      ) {
-        Services.cookieBanners.removeDomainPref(uri, true);
-      }
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-
-  async deleteByHost(aHost, aOriginAttributes) {
-    try {
-      let isPrivate =
-        !!aOriginAttributes.privateBrowsingId &&
-        aOriginAttributes.privateBrowsingId !==
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID;
-
-      Services.cookieBanners.removeDomainPref(
-        Services.io.newURI("https://" + aHost),
-        isPrivate
-      );
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-};
-
-// A cleaner for cleaning cookie banner handling executed records.
-const CookieBannerExecutedRecordCleaner = {
-  async deleteAll() {
-    try {
-      Services.cookieBanners.removeAllExecutedRecords(false);
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-
-  async deleteByPrincipal(aPrincipal) {
-    try {
-      Services.cookieBanners.removeExecutedRecordForSite(
-        aPrincipal.baseDomain,
-        false
-      );
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-
-  async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
-    let { privateBrowsingId } = aOriginAttributesPattern;
-
-    try {
-      // privateBrowsingId unset clears both normal and private browsing.
-      // Otherwise only clear either normal or private browsing depending on the
-      // value
-      if (
-        privateBrowsingId == null ||
-        privateBrowsingId ===
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
-      ) {
-        Services.cookieBanners.removeExecutedRecordForSite(
-          aSchemelessSite,
-          false
-        );
-      }
-      if (
-        privateBrowsingId == null ||
-        privateBrowsingId !==
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID
-      ) {
-        Services.cookieBanners.removeExecutedRecordForSite(
-          aSchemelessSite,
-          true
-        );
-      }
-    } catch (e) {
-      // Don't throw an error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
-  },
-
-  async deleteByHost(aHost, aOriginAttributes) {
-    try {
-      let isPrivate =
-        !!aOriginAttributes.privateBrowsingId &&
-        aOriginAttributes.privateBrowsingId !==
-          Services.scriptSecurityManager.DEFAULT_PRIVATE_BROWSING_ID;
-
-      Services.cookieBanners.removeExecutedRecordForSite(aHost, isPrivate);
-    } catch (e) {
-      // Don't throw error if the cookie banner handling is disabled.
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        throw e;
-      }
-    }
   },
 };
 
@@ -1283,9 +1116,12 @@ const StorageAccessCleaner = {
     return Services.perms.removeFromPrincipal(aPrincipal, "storageAccessAPI");
   },
 
-  _deleteInternal(filter) {
-    Services.perms.all
-      .filter(({ type }) => type == "storageAccessAPI")
+  _deleteInternal(filter, aOriginAttributesPattern = {}) {
+    Services.perms
+      .getAllForOriginAttributesPattern(
+        JSON.stringify(aOriginAttributesPattern),
+        ["storageAccessAPI"]
+      )
       .filter(filter)
       .forEach(perm => {
         try {
@@ -1308,18 +1144,9 @@ const StorageAccessCleaner = {
   },
 
   async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
-    // If we don't isolate by private browsing / user context we need to clear
-    // the pattern field. Otherwise permissions returned by the permission
-    // manager will never match. The permission manager strips these fields when
-    // their prefs are set to `false`.
-    if (!lazy.permissionManagerIsolateByPrivateBrowsing) {
-      delete aOriginAttributesPattern.privateBrowsingId;
-    }
-    if (!lazy.permissionManagerIsolateByUserContext) {
-      delete aOriginAttributesPattern.userContextId;
-    }
-    this._deleteInternal(({ principal }) =>
-      hasSite({ principal }, aSchemelessSite, aOriginAttributesPattern)
+    this._deleteInternal(
+      ({ principal }) => hasSite({ principal }, aSchemelessSite),
+      aOriginAttributesPattern
     );
   },
 
@@ -1464,9 +1291,12 @@ const AuthCacheCleaner = {
 const SHUTDOWN_EXCEPTION_PERMISSION = "persist-data-on-shutdown";
 
 const ShutdownExceptionsCleaner = {
-  async _deleteInternal(filter) {
-    Services.perms.all
-      .filter(({ type }) => type == SHUTDOWN_EXCEPTION_PERMISSION)
+  async _deleteInternal(filter, aOriginAttributesPattern = {}) {
+    Services.perms
+      .getAllForOriginAttributesPattern(
+        JSON.stringify(aOriginAttributesPattern),
+        [SHUTDOWN_EXCEPTION_PERMISSION]
+      )
       .filter(filter)
       .forEach(perm => {
         try {
@@ -1495,19 +1325,9 @@ const ShutdownExceptionsCleaner = {
   },
 
   async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
-    // If we don't isolate by private browsing / user context we need to clear
-    // the pattern field. Otherwise permissions returned by the permission
-    // manager will never match. The permission manager strips these fields when
-    // their prefs are set to `false`.
-    if (!lazy.permissionManagerIsolateByPrivateBrowsing) {
-      delete aOriginAttributesPattern.privateBrowsingId;
-    }
-    if (!lazy.permissionManagerIsolateByUserContext) {
-      delete aOriginAttributesPattern.userContextId;
-    }
-
-    this._deleteInternal(({ principal }) =>
-      hasSite({ principal }, aSchemelessSite, aOriginAttributesPattern)
+    this._deleteInternal(
+      ({ principal }) => hasSite({ principal }, aSchemelessSite),
+      aOriginAttributesPattern
     );
   },
 
@@ -1532,8 +1352,12 @@ const ShutdownExceptionsCleaner = {
 };
 
 const PermissionsCleaner = {
-  async _deleteInternal(filter) {
-    Services.perms.all
+  async _deleteInternal(filter, aOriginAttributesPattern = {}) {
+    Services.perms
+      .getAllForOriginAttributesPattern(
+        JSON.stringify(aOriginAttributesPattern),
+        []
+      )
       // Skip persist-data-on-shutdown because it is handled by
       // ShutdownExceptionsCleaner.
       .filter(({ type }) => type != SHUTDOWN_EXCEPTION_PERMISSION)
@@ -1602,21 +1426,11 @@ const PermissionsCleaner = {
   },
 
   async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
-    // If we don't isolate by private browsing / user context we need to clear
-    // the pattern field. Otherwise permissions returned by the permission
-    // manager will never match. The permission manager strips these fields when
-    // their prefs are set to `false`.
-    if (!lazy.permissionManagerIsolateByPrivateBrowsing) {
-      delete aOriginAttributesPattern.privateBrowsingId;
-    }
-    if (!lazy.permissionManagerIsolateByUserContext) {
-      delete aOriginAttributesPattern.userContextId;
-    }
-
     await this._deleteInternal(
       ({ principal, type }) =>
-        hasSite({ principal }, aSchemelessSite, aOriginAttributesPattern) ||
-        this._thirdPartyStoragePermissionMatchesHost(type, aSchemelessSite)
+        hasSite({ principal }, aSchemelessSite) ||
+        this._thirdPartyStoragePermissionMatchesHost(type, aSchemelessSite),
+      aOriginAttributesPattern
     );
   },
 
@@ -2254,21 +2068,10 @@ const StoragePermissionsCleaner = {
   },
 
   async deleteBySite(aSchemelessSite, aOriginAttributesPattern) {
-    // If we don't isolate by private browsing / user context we need to clear
-    // the pattern field. Otherwise permissions returned by the permission
-    // manager will never match. The permission manager strips these fields when
-    // their prefs are set to `false`.
-    if (!lazy.permissionManagerIsolateByPrivateBrowsing) {
-      delete aOriginAttributesPattern.privateBrowsingId;
-    }
-    if (!lazy.permissionManagerIsolateByUserContext) {
-      delete aOriginAttributesPattern.userContextId;
-    }
-
-    let permissions = this._getStoragePermissions();
+    let permissions = this._getStoragePermissions(aOriginAttributesPattern);
     for (let perm of permissions) {
       let { principal } = perm;
-      if (hasSite({ principal }, aSchemelessSite, aOriginAttributesPattern)) {
+      if (hasSite({ principal }, aSchemelessSite)) {
         Services.perms.removePermission(perm);
       }
     }
@@ -2305,11 +2108,11 @@ const StoragePermissionsCleaner = {
     await Services.perms.removeOrphanedInteractionRecords();
   },
 
-  _getStoragePermissions() {
-    let storagePermissions = Services.perms.getAllByTypes([
-      "storage-access",
-      "persistent-storage",
-    ]);
+  _getStoragePermissions(aOriginAttributesPattern = {}) {
+    let storagePermissions = Services.perms.getAllForOriginAttributesPattern(
+      JSON.stringify(aOriginAttributesPattern),
+      ["storage-access", "persistent-storage"]
+    );
 
     return storagePermissions.filter(
       permission =>
@@ -2459,16 +2262,6 @@ const FLAGS_MAP = [
   {
     flag: Ci.nsIClearDataService.CLEAR_CREDENTIAL_MANAGER_STATE,
     cleaners: [IdentityCredentialStorageCleaner],
-  },
-
-  {
-    flag: Ci.nsIClearDataService.CLEAR_COOKIE_BANNER_EXCEPTION,
-    cleaners: [CookieBannerExceptionCleaner],
-  },
-
-  {
-    flag: Ci.nsIClearDataService.CLEAR_COOKIE_BANNER_EXECUTED_RECORD,
-    cleaners: [CookieBannerExecutedRecordCleaner],
   },
 
   {
