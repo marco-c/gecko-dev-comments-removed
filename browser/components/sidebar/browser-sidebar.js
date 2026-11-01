@@ -2425,7 +2425,9 @@ var SidebarController = {
 
 
 
-  async _maybeAnimate(callback) {
+
+
+  async _maybeAnimate(callback, types = []) {
     if (
       !this.sidebarRevampEnabled ||
       !this._animationEnabled ||
@@ -2436,7 +2438,7 @@ var SidebarController = {
     }
     
     
-    let promise = this._startViewTransition(callback);
+    let promise = this._startViewTransition(callback, types);
     this._viewTransitionPromise = promise;
     try {
       return await promise;
@@ -2453,61 +2455,66 @@ var SidebarController = {
 
 
 
-  async _startViewTransition(callback) {
+
+
+  async _startViewTransition(callback, types) {
     await this.sidebarMain.updateComplete;
     let wasOpen = this.isOpen;
     let previousID = this.currentID;
     let wasLauncherVisible = this._state.launcherVisible;
     let wasLauncherExpanded = this._state.launcherExpanded;
     let wasContentCornerRounded = this._isContentCornerRounded();
-    let transition = document.startViewTransition(async () => {
-      this._inViewTransitionUpdate = true;
-      try {
-        await callback();
-      } finally {
-        this._inViewTransitionUpdate = false;
-      }
-      let { launcherVisible, launcherExpanded } = this._state;
-      if (launcherExpanded != wasLauncherExpanded) {
-        transition.types.add(launcherExpanded ? "expand" : "collapse");
-      }
-      if (launcherVisible != wasLauncherVisible) {
-        transition.types.add(
-          launcherVisible ? "launcher-enter" : "launcher-exit"
-        );
-        transition.types.add(
-          launcherVisible ? "launcher-show" : "launcher-hide"
-        );
-      } else if (launcherVisible && launcherExpanded != wasLauncherExpanded) {
-        transition.types.add(
-          launcherExpanded ? "launcher-enter" : "launcher-exit"
-        );
-      }
-      if (this.isOpen != wasOpen) {
-        transition.types.add(this.isOpen ? "panel-open" : "panel-close");
-      } else if (this.isOpen && this.currentID != previousID) {
-        transition.types.add("panel-switch");
-      }
-      let contentCornerRounded = this._isContentCornerRounded();
-      if (contentCornerRounded != wasContentCornerRounded) {
-        transition.types.add(
-          contentCornerRounded
-            ? "content-corner-round"
-            : "content-corner-square"
-        );
-        if (this._isOppositeContentCornerRounded()) {
-          transition.types.add("content-corner-opposite-round");
+    let transition = document.startViewTransition({
+      types,
+      update: async () => {
+        this._inViewTransitionUpdate = true;
+        try {
+          await callback();
+        } finally {
+          this._inViewTransitionUpdate = false;
         }
-        
-        
-        document.documentElement.style.setProperty(
-          "--sidebar-content-separator-color",
-          getComputedStyle(this.contentArea).getPropertyValue(
-            "--chrome-content-separator-color"
-          )
-        );
-      }
-      await this.sidebarMain.updateComplete;
+        let { launcherVisible, launcherExpanded } = this._state;
+        if (launcherExpanded != wasLauncherExpanded) {
+          transition.types.add(launcherExpanded ? "expand" : "collapse");
+        }
+        if (launcherVisible != wasLauncherVisible) {
+          transition.types.add(
+            launcherVisible ? "launcher-enter" : "launcher-exit"
+          );
+          transition.types.add(
+            launcherVisible ? "launcher-show" : "launcher-hide"
+          );
+        } else if (launcherVisible && launcherExpanded != wasLauncherExpanded) {
+          transition.types.add(
+            launcherExpanded ? "launcher-enter" : "launcher-exit"
+          );
+        }
+        if (this.isOpen != wasOpen) {
+          transition.types.add(this.isOpen ? "panel-open" : "panel-close");
+        } else if (this.isOpen && this.currentID != previousID) {
+          transition.types.add("panel-switch");
+        }
+        let contentCornerRounded = this._isContentCornerRounded();
+        if (contentCornerRounded != wasContentCornerRounded) {
+          transition.types.add(
+            contentCornerRounded
+              ? "content-corner-round"
+              : "content-corner-square"
+          );
+          if (this._isOppositeContentCornerRounded()) {
+            transition.types.add("content-corner-opposite-round");
+          }
+          
+          
+          document.documentElement.style.setProperty(
+            "--sidebar-content-separator-color",
+            getComputedStyle(this.contentArea).getPropertyValue(
+              "--chrome-content-separator-color"
+            )
+          );
+        }
+        await this.sidebarMain.updateComplete;
+      },
     });
     this._activeViewTransition = transition;
     
@@ -2563,7 +2570,7 @@ var SidebarController = {
     this._maybeAnimate(() => {
       this._state.launcherHoverActive = true;
       this._state.launcherExpanded = true;
-    });
+    }, ["expand-on-hover"]);
     this._mouseEnterDeferred.resolve();
   },
 
@@ -2576,7 +2583,7 @@ var SidebarController = {
     this._maybeAnimate(() => {
       this._state.launcherHoverActive = false;
       this._state.launcherExpanded = false;
-    });
+    }, ["expand-on-hover"]);
   },
 
   collapseOnEscape() {
