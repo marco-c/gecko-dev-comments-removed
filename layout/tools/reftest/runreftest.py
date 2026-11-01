@@ -971,7 +971,6 @@ class RefTest:
         )
 
         if crashed:
-            
             if not self.outputHandler.results:
                 
                 self.outputHandler.results = {
@@ -989,7 +988,11 @@ class RefTest:
                     "Skip": 0,
                     "Slow": 0,
                 }
-            self.log.suite_end(extra={"results": self.outputHandler.results})
+            
+            
+            if not self.run_by_manifest:
+                
+                self.log.suite_end(extra={"results": self.outputHandler.results})
 
         if not status and crashed:
             status = 1
