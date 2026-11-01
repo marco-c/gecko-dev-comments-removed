@@ -9,9 +9,6 @@ PARAMS = {
     "head_repository": "https://hg.mozilla.org/integration/autoland",
     "project": "autoland",
     
-    
-    
-    "pushdate": 1593029536,
     "pushlog_id": "2",
 }
 

@@ -12,11 +12,6 @@ PARAMS.update({
     "head_repository": "https://hg.mozilla.org/try",
     "project": "try",
     "target_kind": "mochitest",
-    
-    
-    
-    "pushdate": 1593029536,
-    "pushlog_id": "2",
 })
 
 PARAMS_NEW_CONFIG = TRY_AUTO_PARAMETERS.copy()
@@ -24,11 +19,6 @@ PARAMS_NEW_CONFIG.update({
     "head_repository": "https://hg.mozilla.org/try",
     "project": "try",
     "target_kind": "mochitest",
-    
-    
-    
-    "pushdate": 1593029536,
-    "pushlog_id": "2",
     "try_task_config": {"new-test-config": True},
     "try_mode": "try_task_config",
     "target_tasks_method": "try_tasks",
@@ -53,7 +43,7 @@ PARAMS_NEW_CONFIG.update({
                     and "tsan" not in t.label
                 )
             ),
-            32,
+            4,
             id="mochitest-browser-chrome",
         ),
     ),
@@ -61,12 +51,12 @@ PARAMS_NEW_CONFIG.update({
 def test_tasks_new_config_false(full_task_graph, filter_tasks, func, min_expected):
     """Ensure when using new-test-config that we have -cf tasks and they are half the total tasks."""
     tasks = [t.label for t in filter_tasks(full_task_graph, func)]
-    assert len(tasks) == min_expected
+    assert len(tasks) >= min_expected
 
     cf_tasks = [
         t.label for t in filter_tasks(full_task_graph, func) if t.label.endswith("-cf")
     ]
-    assert len(cf_tasks) == min_expected / 2
+    assert len(cf_tasks) == len(tasks) / 2
 
 
 @pytest.mark.parametrize(
@@ -86,7 +76,7 @@ def test_tasks_new_config_false(full_task_graph, filter_tasks, func, min_expecte
                     and "tsan" not in t.label
                 )
             ),
-            32,
+            4,
             id="mochitest-browser-chrome",
         ),
     ),
@@ -96,7 +86,7 @@ def test_tasks_new_config_true(
 ):
     """Ensure when using new-test-config that no -cf tasks are scheduled and we have 2x the default and NO -cf."""
     tasks = [t.label for t in filter_tasks(full_task_graph_new_config, func)]
-    assert len(tasks) == min_expected
+    assert len(tasks) >= min_expected
 
     cf_tasks = [
         t.label

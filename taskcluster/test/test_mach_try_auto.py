@@ -19,9 +19,7 @@ PARAMS.update({
     "target_kind": "mochitest",
     
     
-    
-    "pushdate": 1593029536,
-    "pushlog_id": "2",
+    "pushlog_id": "10",
 })
 
 
@@ -95,6 +93,13 @@ def test_tasks_are_scheduled(optimized_task_graph, filter_tasks, func, min_expec
         pytest.param(
             lambda t: t.kind == "upload-symbols",
             id="no upload-symbols",
+        ),
+        pytest.param(
+            lambda t: (
+                {"perf-cadence-backstop", "perf-cadence-expanded"}
+                & set(t.optimization or {})
+            ),
+            id="no backstop or expanded perf tasks",
         ),
     ),
 )
