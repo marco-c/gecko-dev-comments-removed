@@ -84,6 +84,7 @@ class CSSNumericValue : public CSSStyleValue {
   already_AddRefed<CSSNumericValue> Mul(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
+  
   already_AddRefed<CSSNumericValue> Div(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
@@ -184,6 +185,9 @@ class CSSNumericValue : public CSSStyleValue {
   
   already_AddRefed<CSSNumericValue> Mul(
       nsTArray<RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv);
+
+  
+  already_AddRefed<CSSNumericValue> Invert(ErrorResult& aRv);
 
   StyleNumericValue ToStyleNumericValue() const;
 

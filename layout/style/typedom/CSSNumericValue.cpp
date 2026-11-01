@@ -284,10 +284,25 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Mul(
   return Mul(std::move(values), aRv);
 }
 
+
 already_AddRefed<CSSNumericValue> CSSNumericValue::Div(
     const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  
+  for (const OwningCSSNumberish& numberish : aValues) {
+    RefPtr<CSSNumericValue> value = CSSNumericValue::Create(mParent, numberish);
+
+    RefPtr<CSSNumericValue> inverted = value->Invert(aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
+
+    values.AppendElement(std::move(inverted));
+  }
+
+  
+  return Mul(std::move(values), aRv);
 }
 
 already_AddRefed<CSSNumericValue> CSSNumericValue::Min(
@@ -574,6 +589,38 @@ already_AddRefed<CSSNumericValue> CSSNumericValue::Mul(
   RefPtr<CSSMathProduct> mathProduct = CSSMathProduct::Create(
       mParent, std::move(numericType), std::move(aValues));
   return mathProduct.forget();
+}
+
+
+already_AddRefed<CSSNumericValue> CSSNumericValue::Invert(ErrorResult& aRv) {
+  
+  if (IsCSSMathValue() && GetAsCSSMathValue().IsCSSMathInvert()) {
+    RefPtr<CSSNumericValue> value =
+        GetAsCSSMathValue().GetAsCSSMathInvert().Value();
+    return value.forget();
+  }
+
+  
+  if (IsCSSUnitValue() && GetAsCSSUnitValue().Unit().EqualsLiteral("number")) {
+    const auto& unitValue = GetAsCSSUnitValue();
+
+    
+    if (unitValue.Value() == 0.0) {
+      aRv.ThrowRangeError("Cannot divide by zero");
+      return nullptr;
+    }
+
+    
+    return MakeCSSUnitValue(mParent, 1.0 / unitValue.Value());
+  }
+
+  
+  auto numericType = MakeUnique<StyleNumericType>(GetNumericType());
+  Servo_NumericType_Invert(numericType.get());
+
+  RefPtr<CSSMathInvert> mathInvert =
+      CSSMathInvert::Create(mParent, std::move(numericType), this);
+  return mathInvert.forget();
 }
 
 StyleNumericValue CSSNumericValue::ToStyleNumericValue() const {
