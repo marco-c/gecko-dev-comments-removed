@@ -394,6 +394,14 @@ bool FFmpegVideoEncoder<LIBAV_VER>::ShouldTryHardware() const {
 #ifdef MOZ_WIDGET_ANDROID
   
   
+  
+  if (SvcEnabled()) {
+    FFMPEGV_LOG("MediaCodec encoders do not support SVC");
+    return false;
+  }
+
+  
+  
   if (mCodecID == AV_CODEC_ID_H264 || mCodecID == AV_CODEC_ID_HEVC) {
     return StaticPrefs::media_ffvpx_hw_enabled();
   }

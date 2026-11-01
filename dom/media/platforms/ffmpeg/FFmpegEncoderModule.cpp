@@ -126,6 +126,14 @@ EncodeSupportSet FFmpegEncoderModule<V>::Supports(
     }
   }
   auto support = SupportsCodec(aConfig.mCodec);
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  if (aConfig.mScalabilityMode != ScalabilityMode::None) {
+    support -= EncodeSupport::HardwareEncode;
+  }
+#endif
   if (aConfig.mHardwarePreference == HardwarePreference::RequireHardware &&
       !support.contains(EncodeSupport::HardwareEncode)) {
     return {};
