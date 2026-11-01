@@ -80,6 +80,8 @@ class Http3WebTransportStream final : public WebTransportStreamBase,
   
   bool RecvDone() const override { return mRecvState == RECV_DONE; }
 
+  bool SentReset() const { return mResetError.isSome(); }
+
  private:
   friend class Http3WebTransportSession;
   virtual ~Http3WebTransportStream();

@@ -2435,7 +2435,7 @@ void Http3Session::CloseWebTransportStream(Http3WebTransportStream* aStream,
   LOG3(("Http3Session::CloseWebTransportStream %p %p 0x%" PRIx32, this, aStream,
         static_cast<uint32_t>(aResult)));
   if (aStream && !aStream->RecvdFin() && !aStream->RecvdReset() &&
-      (aStream->HasStreamId())) {
+      !aStream->SentReset() && (aStream->HasStreamId())) {
     mHttp3Connection->ResetStream(aStream->StreamId(),
                                   HTTP3_APP_ERROR_REQUEST_CANCELLED);
   }
