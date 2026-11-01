@@ -72,7 +72,16 @@ class APZCAxisLockTester : public APZCTreeManagerTester {
     UpdateHitTestingTree();
   }
 
+  
+  
+  void ExpirePanGestureEventBuffer() {
+    mcc->AdvanceByMillis(
+        StaticPrefs::apz_pan_gesture_buffer_max_age_AtStartup() + 1);
+  }
+
   void BreakStickyAxisLockTestGesture(const ScrollDirections& aDirections) {
+    ExpirePanGestureEventBuffer();
+
     float panX = 0;
     float panY = 0;
 
@@ -429,6 +438,7 @@ TEST_F(APZCAxisLockTester, BreakAxisLockByLockAngle) {
 
   
   
+  ExpirePanGestureEventBuffer();
   QueueMockHitResult(START_SCROLL_ID);
   PanGesture(PanGestureInput::PANGESTURE_PAN, manager, ScreenIntPoint(50, 50),
              ScreenIntPoint(12, 10), mcc->Time());
@@ -442,6 +452,53 @@ TEST_F(APZCAxisLockTester, BreakAxisLockByLockAngle) {
   PanGesture(PanGestureInput::PANGESTURE_END, manager, ScreenIntPoint(50, 50),
              ScreenPoint(0, 0), mcc->Time());
   apzc->AdvanceAnimations(mcc->GetSampleTime());
+}
+
+TEST_F(APZCAxisLockTester, BreakStickyAxisLockWithSmallPanDeltas) {
+  SCOPED_GFX_PREF_INT("apz.axis_lock.mode", 2);
+  SCOPED_GFX_PREF_FLOAT("apz.axis_lock.lock_angle", M_PI / 6.0f);
+  SCOPED_GFX_PREF_FLOAT("apz.axis_lock.breakout_angle", M_PI / 8.0f);
+  
+  SCOPED_GFX_PREF_FLOAT("apz.axis_lock.breakout_threshold", 1.0f / 32.0f);
+
+  SetupBasicTest();
+
+  apzc = ApzcOf(root);
+
+  
+  QueueMockHitResult(START_SCROLL_ID);
+  PanGesture(PanGestureInput::PANGESTURE_START, manager, ScreenIntPoint(50, 50),
+             ScreenPoint(10, 1), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+
+  apzc->AssertStateIsPanningLockedX();
+  ParentLayerPoint lockedOffset = apzc->GetCurrentAsyncScrollOffset(
+      AsyncTransformConsumer::eForEventHandling);
+  EXPECT_GT(lockedOffset.x, 0);
+  EXPECT_EQ(lockedOffset.y, 0);
+
+  
+  
+  
+  
+  for (int i = 0; i < 10; ++i) {
+    QueueMockHitResult(START_SCROLL_ID);
+    PanGesture(PanGestureInput::PANGESTURE_PAN, manager, ScreenIntPoint(50, 50),
+               ScreenPoint(1, 4), mcc->Time());
+    mcc->AdvanceByMillis(5);
+    apzc->AdvanceAnimations(mcc->GetSampleTime());
+  }
+
+  
+  ParentLayerPoint currentOffset = apzc->GetCurrentAsyncScrollOffset(
+      AsyncTransformConsumer::eForEventHandling);
+  EXPECT_GT(currentOffset.y, lockedOffset.y);
+
+  QueueMockHitResult(START_SCROLL_ID);
+  PanGesture(PanGestureInput::PANGESTURE_END, manager, ScreenIntPoint(50, 50),
+             ScreenPoint(0, 0), mcc->Time());
+  apzc->AdvanceAnimationsUntilEnd();
 }
 
 TEST_F(APZCAxisLockTester, TestCanBreakBreakableAxisLock) {

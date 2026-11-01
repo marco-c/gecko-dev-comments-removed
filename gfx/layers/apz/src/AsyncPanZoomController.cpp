@@ -502,6 +502,13 @@ typedef PlatformSpecificStateBase
 
 
 
+
+
+
+
+
+
+
 StaticAutoPtr<StyleComputedTimingFunction> gZoomAnimationFunction;
 
 
@@ -866,6 +873,8 @@ AsyncPanZoomController::AsyncPanZoomController(
           TimeDuration::FromMilliseconds(
               StaticPrefs::apz_touch_scroll_buffer_max_age_AtStartup()),
           2),
+      mPanGestureEventBuffer(TimeDuration::FromMilliseconds(
+          StaticPrefs::apz_pan_gesture_buffer_max_age_AtStartup())),
       mZoomConstraints(false, false,
                        mScrollMetadata.GetMetrics().GetDevPixelsPerCSSPixel() *
                            ViewportMinScale() / ParentLayerToScreenScale(1),
@@ -2847,6 +2856,7 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
       ExcludeOverscroll);
 
   StartTouch(aEvent.mLocalPanStartPoint, aEvent.mTimeStamp);
+  mPanGestureEventBuffer.clear();
 
   if (!UsingStatefulAxisLock()) {
     SetState(PANNING);
@@ -3050,7 +3060,12 @@ nsEventStatus AsyncPanZoomController::OnPan(
     }
   }
 
-  HandlePanningUpdate(physicalPanDisplacement);
+  mPanGestureEventBuffer.push({aEvent.mTimeStamp, physicalPanDisplacement});
+  ScreenPoint recentPanDisplacement;
+  for (const PanGestureDisplacement& entry : mPanGestureEventBuffer) {
+    recentPanDisplacement += entry.mDisplacement;
+  }
+  HandlePanningUpdate(recentPanDisplacement);
 
   MOZ_ASSERT(GetCurrentPanGestureBlock());
   ScreenPoint panDistance(fabs(physicalPanDisplacement.x),
@@ -3139,6 +3154,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
     
     OnPan(aEvent, FingersOnTouchpad::Yes);
   }
+  mPanGestureEventBuffer.clear();
 
   
   

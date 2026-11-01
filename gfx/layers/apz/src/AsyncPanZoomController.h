@@ -1162,6 +1162,17 @@ class AsyncPanZoomController {
   
   RecentEventsBuffer<MultiTouchInput> mTouchScrollEventBuffer;
 
+  struct PanGestureDisplacement {
+    TimeStamp mTimeStamp;
+    ScreenPoint mDisplacement;
+  };
+
+  
+  
+  
+  
+  RecentEventsBuffer<PanGestureDisplacement> mPanGestureEventBuffer;
+
   
   
   
