@@ -636,8 +636,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   uint32_t key_frames_encoded = 0;
   
   uint64_t total_encode_time_ms = 0;
-  
-  uint64_t total_encoded_bytes_target = 0;
   bool has_entered_low_resolution = false;
   
   std::optional<uint64_t> qp_sum;

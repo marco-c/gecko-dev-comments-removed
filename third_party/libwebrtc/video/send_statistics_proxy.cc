@@ -1090,18 +1090,6 @@ void SendStatisticsProxy::OnSendEncodedImage(
   MutexLock lock(&mutex_);
   Timestamp now = env_.clock().CurrentTime();
   ++stats_.frames_encoded;
-  
-  double encode_frame_rate = encoded_frame_rate_tracker_.Rate(now);
-  
-  
-  
-  if (encode_frame_rate < 1.0)
-    encode_frame_rate = 1.0;
-  double target_frame_size_bytes =
-      stats_.target_media_bitrate_bps / (8.0 * encode_frame_rate);
-  
-  
-  stats_.total_encoded_bytes_target += round(target_frame_size_bytes);
   if (codec_info) {
     UpdateEncoderFallbackStats(
         codec_info, encoded_image._encodedWidth * encoded_image._encodedHeight,
