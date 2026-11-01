@@ -512,7 +512,7 @@ GCRuntime::GCRuntime(JSRuntime* rt)
       incrementalGCEnabled(TuningDefaults::IncrementalGCEnabled),
       perZoneGCEnabled(TuningDefaults::PerZoneGCEnabled),
       numActiveZoneIters(0),
-      grayBitsValid(true),
+      grayBitsInvalid(0),
       majorGCTriggerReason(JS::GCReason::NO_REASON),
       minorGCNumber(0),
       majorGCNumber(0),
@@ -3916,6 +3916,7 @@ void GCRuntime::checkGCStateNotInUse() {
   MOZ_ASSERT(!hasDelayedMarking());
   MOZ_ASSERT(!hasAnyDeferredWeakMaps());
   MOZ_ASSERT(!didYieldAtEndOfMarkPhase);
+  MOZ_ASSERT(!(grayBitsInvalid & GrayBitsInvalidatedInCurrentGC));
 
   MOZ_ASSERT(!disableBarriersForSweeping);
   MOZ_ASSERT(foregroundFinalizedArenas.ref().isNothing());
@@ -4148,11 +4149,12 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
         zone->arenas.mergeArenasFromCollectingLists();
       }
 
+      incrementalState = State::NotActive;
+
       
       
       setGrayBitsInvalid();
 
-      incrementalState = State::NotActive;
       checkGCStateNotInUse();
       break;
 
@@ -4178,11 +4180,6 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
       for (GCCompartmentsIter c(rt); !c.done(); c.next()) {
         resetGrayList(c);
       }
-
-      
-      
-      
-      setGrayBitsInvalid();
 
       
       nursery().joinSweepTask();
@@ -4211,6 +4208,11 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 
       didYieldAtEndOfMarkPhase = false;
       incrementalState = State::Finish;
+
+      
+      
+      
+      setGrayBitsInvalid();
 
 #ifdef DEBUG
       for (auto& marker : markers) {
@@ -4261,8 +4263,12 @@ GCRuntime::IncrementalResult GCRuntime::resetIncrementalGC(
 }
 
 void GCRuntime::setGrayBitsInvalid() {
-  waitBackgroundSweepEnd();
-  grayBitsValid = false;
+  uint32_t bitsToSet = GrayBitsInvalid;
+  if (state() >= State::MarkRoots && state() <= State::Sweep) {
+    
+    bitsToSet |= GrayBitsInvalidatedInCurrentGC;
+  }
+  grayBitsInvalid |= bitsToSet;
 }
 
 void GCRuntime::disableIncrementalBarriers() {
