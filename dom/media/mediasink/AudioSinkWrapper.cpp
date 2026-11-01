@@ -722,8 +722,11 @@ void AudioSinkWrapper::Stop(StopReason aReason) {
   mAudioEnded = true;
   mClockPausedDuringSeek = false;
   if (mAudioSink) {
+    
+    
     if (aReason == StopReason::Seeking && mReuseStreamOnSeek &&
-        !mAudioSink->IsErrored() && !mAudioSink->IsStreamDrained()) {
+        mAudioSink->IsCubebStarted() && !mAudioSink->IsErrored() &&
+        !mAudioSink->IsStreamDrained()) {
       
       
       

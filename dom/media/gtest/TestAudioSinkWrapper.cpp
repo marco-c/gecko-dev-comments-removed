@@ -1023,37 +1023,6 @@ TEST_F(AudioSinkWrapperReuseTest, ConsecutiveSeeksReuseStream) {
 
 
 
-TEST_F(AudioSinkWrapperReuseTest, PauseAfterPausedSeekReuse) {
-  CreateWrapper();
-  Start(media::TimeUnit::Zero());
-  EXPECT_EQ(mInits, 1);
-
-  
-  mWrapper->SetPlaying(false);
-  SeekStop();
-  EXPECT_EQ(mDestroys, 0) << "stream should be stashed, not destroyed";
-
-  
-  Start(media::TimeUnit::FromSeconds(10));
-  EXPECT_EQ(mInits, 1) << "stream should be reused, not recreated";
-
-  
-  
-  
-  mWrapper->SetPlaying(false);
-  mWrapper->SetPlaying(true);
-  mWrapper->SetPlaying(false);
-  ProcessPending();
-}
-
-
-
-
-
-
-
-
-
 void AudioSinkWrapperReuseTest::RunSeekResumeClockFollowsAudible(
     ReuseStream aReuse) {
   
@@ -1077,35 +1046,34 @@ TEST_F(AudioSinkWrapperReuseTest, SeekResumeClockFollowsAudibleReusedStream) {
   RunSeekResumeClockFollowsAudible(ReuseStream::Enabled);
 }
 
-
-
-
-TEST_F(AudioSinkWrapperReuseTest, SeekResumeAfterPauseIgnoresDiscardedAudio) {
+TEST_F(AudioSinkWrapperReuseTest, SeekResumeAfterPauseRecreatesStream) {
   CreateWrapper(ReuseStream::Enabled, MockCubeb::RunningMode::Manual);
   mCubeb->SetDefaultOutputLatencyFrames(OutputLatencyFrames());
   const media::TimeUnit target = media::TimeUnit::FromSeconds(10);
 
   ASSERT_NO_FATAL_FAILURE(PlayFromZeroToSteadyState());
-
-  
-  
   mWrapper->SetPlaying(false);
   SeekAndResumeAt(target);
+  ASSERT_EQ(mDestroys, 1) << "a stream stopped by a pause must not be reused";
 
-  EXPECT_EQ(mInits, 1) << "the stream must be reused, not recreated";
-  EXPECT_EQ(mDestroys, 0) << "the stream must be reused, not recreated";
+  ExpectClockHoldsAtTargetWhileSilent(target, ReuseStream::Disabled);
+  ASSERT_NO_FATAL_FAILURE(ExpectClockFollowsAudioOncePlaying(target));
+}
 
-  ASSERT_EQ(DriveCallback(kCallbackFrames),
-            MockCubebStream::KeepProcessing::Yes);
-  const media::TimeUnit expected =
-      target +
-      media::TimeUnit(CheckedInt64(kCallbackFrames), mInfo.mAudio.mRate);
-  
-  
-  EXPECT_NEAR(mWrapper->GetPosition().ToMicroseconds(),
-              expected.ToMicroseconds(), 1)
-      << "the clock advances by exactly the post-seek callback rather than "
-         "waiting out audio the backend had already discarded";
+TEST_F(AudioSinkWrapperReuseTest, SeekAfterPauseAndResumeReusesStream) {
+  CreateWrapper();
+  Start(media::TimeUnit::Zero());
+  mWrapper->SetPlaying(false);
+  mWrapper->SetPlaying(true);
+  ProcessPending();
+
+  SeekStop();
+  EXPECT_EQ(mDestroys, 0)
+      << "a resumed stream should be stashed, not destroyed";
+
+  Start(media::TimeUnit::FromSeconds(10));
+  EXPECT_EQ(mInits, 1) << "a resumed stream should be reused, not recreated";
+  EXPECT_EQ(mDestroys, 0);
 }
 
 

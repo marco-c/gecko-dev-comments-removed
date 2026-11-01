@@ -357,8 +357,6 @@ RefPtr<MediaSink::EndedPromise> AudioSink::ResetForReuse(
   mLastProcessedPacket = Nothing();
   mConverter = nullptr;
 
-  
-  
   mAudioStream->Resume();
 
   

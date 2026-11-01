@@ -341,6 +341,8 @@ class AudioStream final {
   
   void SetKeepRunningMode(bool aKeepRunning);
 
+  bool IsCubebStarted() const { return mCubebStarted; }
+
   
   
   void RebaseLive();
