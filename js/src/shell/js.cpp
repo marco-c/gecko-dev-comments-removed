@@ -12155,7 +12155,9 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     if (!JS_InitReflectParse(cx, glob)) {
       return nullptr;
     }
-    if (!JS_DefineDebuggerObject(cx, glob)) {
+    
+    
+    if (!fuzzingSafe && !JS_DefineDebuggerObject(cx, glob)) {
       return nullptr;
     }
     if (!JS_DefineFunctionsWithHelp(cx, glob, shell_functions) ||
