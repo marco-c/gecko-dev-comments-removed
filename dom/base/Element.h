@@ -2158,6 +2158,13 @@ class Element : public FragmentOrElement {
 
 
 
+  uintptr_t GetRandomSeed() const;
+
+  
+
+
+
+
 
   bool IsRendered() const { return GetPrimaryFrame() || IsDisplayContents(); }
 

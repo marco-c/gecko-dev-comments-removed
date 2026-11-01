@@ -614,6 +614,13 @@ pub trait TElement:
 
     
     
+    fn random_seed(&self) -> u64 {
+        
+        self.opaque().to_ptr().as_ptr() as u64
+    }
+
+    
+    
     fn has_current_styles(&self, data: &ElementData) -> bool {
         if self.has_snapshot() && !self.handled_snapshot() {
             return false;
@@ -993,6 +1000,10 @@ pub trait ElementContext {
     fn opaque_parent(&self) -> Option<OpaqueNode>;
 
     
+    
+    fn random_seed(&self) -> Option<u64>;
+
+    
     fn get_attr(&self, attr: &LocalName, namespace: &Namespace) -> Option<String>;
 
     
@@ -1008,6 +1019,10 @@ impl<T: TElement> ElementContext for T {
 
     fn opaque_parent(&self) -> Option<OpaqueNode> {
         self.as_node().parent_node().map(|n| n.opaque())
+    }
+
+    fn random_seed(&self) -> Option<u64> {
+        Some(TElement::random_seed(self))
     }
 
     fn get_attr(&self, attr: &LocalName, namespace: &Namespace) -> Option<String> {
@@ -1082,6 +1097,10 @@ impl ElementContext for DummyElementContext {
     }
 
     fn opaque_parent(&self) -> Option<OpaqueNode> {
+        None
+    }
+
+    fn random_seed(&self) -> Option<u64> {
         None
     }
 

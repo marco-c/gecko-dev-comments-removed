@@ -14847,6 +14847,15 @@ void Document::UnlinkOriginalDocumentIfStatic() {
   MOZ_ASSERT(!mOriginalDocument);
 }
 
+uintptr_t Document::GetRandomSeed() const {
+  
+  
+  if (const Document* original = GetOriginalDocument()) {
+    return reinterpret_cast<uintptr_t>(original);
+  }
+  return reinterpret_cast<uintptr_t>(this);
+}
+
 nsresult Document::ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                                 uint32_t* aHandle) {
   const bool wasEmpty = mFrameRequestManager.IsEmpty();

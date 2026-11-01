@@ -5018,9 +5018,28 @@ void Element::GetLinkTarget(nsAString& aTarget) {
 
 void Element::GetLinkTargetImpl(nsAString& aTarget) { aTarget.Truncate(); }
 
+uintptr_t Element::GetRandomSeed() const {
+  
+  
+  
+  
+  if (HasProperties() && OwnerDoc()->IsStaticDocument()) {
+    if (void* seed = GetProperty(nsGkAtoms::staticclonecssrandomseed)) {
+      return reinterpret_cast<uintptr_t>(seed);
+    }
+  }
+  return reinterpret_cast<uintptr_t>(this);
+}
+
 
 
 nsresult Element::CopyInnerTo(Element* aDst) {
+  
+  if (aDst->OwnerDoc()->IsStaticDocument()) {
+    aDst->SetProperty(nsGkAtoms::staticclonecssrandomseed,
+                      reinterpret_cast<void*>(GetRandomSeed()));
+  }
+
   MOZ_TRY(aDst->mAttrs.EnsureCapacityToClone(mAttrs));
 
   

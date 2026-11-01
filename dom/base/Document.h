@@ -3262,6 +3262,13 @@ class Document : public nsINode,
 
 
 
+  uintptr_t GetRandomSeed() const;
+
+  
+
+
+
+
 
 
 
