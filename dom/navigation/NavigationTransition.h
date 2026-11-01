@@ -15,6 +15,7 @@ class nsIGlobalObject;
 
 namespace mozilla::dom {
 
+class NavigationDestination;
 class NavigationHistoryEntry;
 enum class NavigationType : uint8_t;
 class Promise;
@@ -27,11 +28,13 @@ class NavigationTransition final : public nsISupports, public nsWrapperCache {
 
   NavigationTransition(nsIGlobalObject* aGlobalObject,
                        NavigationType aNavigationType,
-                       NavigationHistoryEntry* aFrom, Promise* aCommitted,
+                       NavigationHistoryEntry* aFrom,
+                       NavigationDestination* aDestination, Promise* aCommitted,
                        Promise* aFinished);
 
   enum NavigationType NavigationType() const;
   NavigationHistoryEntry* From() const;
+  NavigationDestination* To() const;
 
   Promise* Committed() const;
 
@@ -51,6 +54,9 @@ class NavigationTransition final : public nsISupports, public nsWrapperCache {
 
   
   RefPtr<NavigationHistoryEntry> mFrom;
+
+  
+  RefPtr<NavigationDestination> mDestination;
 
   
   RefPtr<Promise> mCommitted;

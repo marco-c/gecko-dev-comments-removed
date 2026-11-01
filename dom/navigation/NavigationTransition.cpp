@@ -2,11 +2,10 @@
 
 
 
-
-
 #include "mozilla/dom/NavigationTransition.h"
 
 #include "mozilla/dom/NavigationBinding.h"
+#include "mozilla/dom/NavigationDestination.h"
 #include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/NavigationTransitionBinding.h"
 #include "mozilla/dom/Promise.h"
@@ -15,7 +14,8 @@
 namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(NavigationTransition, mGlobalObject,
-                                      mFrom, mCommitted, mFinished)
+                                      mFrom, mDestination, mCommitted,
+                                      mFinished)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationTransition)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationTransition)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationTransition)
@@ -26,10 +26,13 @@ NS_INTERFACE_MAP_END
 NavigationTransition::NavigationTransition(nsIGlobalObject* aGlobalObject,
                                            enum NavigationType aNavigationType,
                                            NavigationHistoryEntry* aFrom,
+                                           NavigationDestination* aDestination,
                                            Promise* aCommitted,
                                            Promise* aFinished)
-    : mNavigationType(aNavigationType),
+    : mGlobalObject(aGlobalObject),
+      mNavigationType(aNavigationType),
       mFrom(aFrom),
+      mDestination(aDestination),
       mCommitted(aCommitted),
       mFinished(aFinished) {}
 
@@ -40,6 +43,9 @@ enum NavigationType NavigationTransition::NavigationType() const {
 
 
 NavigationHistoryEntry* NavigationTransition::From() const { return mFrom; }
+
+
+NavigationDestination* NavigationTransition::To() const { return mDestination; }
 
 
 Promise* NavigationTransition::Committed() const { return mCommitted; }
