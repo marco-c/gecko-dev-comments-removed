@@ -1021,6 +1021,13 @@ nsresult NrIceCtx::StartGathering(bool default_route_only,
   if (r && r != R_WOULDBLOCK) {
     MOZ_MTLOG(ML_ERROR, "ICE FAILED: Couldn't gather ICE candidates for '"
                             << name_ << "', error=" << r);
+    
+    
+    
+    for (auto& [id, stream] : streams_) {
+      (void)id;
+      stream->GatheringFailed();
+    }
     SignalAllStreamsFailed();
     return NS_ERROR_FAILURE;
   }

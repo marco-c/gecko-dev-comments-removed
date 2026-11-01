@@ -221,6 +221,8 @@ class NrIceMediaStream {
 
   void OnGatheringStarted(nr_ice_media_stream* stream);
   void OnGatheringComplete(nr_ice_media_stream* stream);
+  
+  void GatheringFailed();
 
   
   
