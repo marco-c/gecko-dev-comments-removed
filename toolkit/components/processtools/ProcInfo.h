@@ -243,7 +243,13 @@ struct ProcInfoRequest {
 
 
 
+
+
+
 RefPtr<ProcInfoPromise> GetProcInfo(nsTArray<ProcInfoRequest>&& aRequests);
+
+
+
 
 
 

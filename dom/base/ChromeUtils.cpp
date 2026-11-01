@@ -2027,9 +2027,9 @@ already_AddRefed<Promise> ChromeUtils::RequestProcInfo(GlobalObject& aGlobal,
                                                      
                                                      
          std::move(utilityActors),
-         0  
+         geckoProcess->GetChildID()
 #ifdef XP_MACOSX
-        ,
+            ,
          geckoProcess->GetChildTask()
 #endif  
     );
