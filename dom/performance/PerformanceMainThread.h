@@ -207,6 +207,12 @@ class PerformanceMainThread final : public Performance,
 
   void FinalizeLCPEntriesForText();
 
+  void SetPendingLCPCandidate(LargestContentfulPaint* aEntry) {
+    mPendingLCPCandidate = aEntry;
+  }
+
+  void QueuePendingLCPCandidate();
+
   void ClearGeneratedTempDataForLCP();
 
   void ClearContainerTimingData();
@@ -266,6 +272,10 @@ class PerformanceMainThread final : public Performance,
   
   
   double mLargestContentfulPaintSize = 0.0;
+
+  
+  
+  RefPtr<LargestContentfulPaint> mPendingLCPCandidate;
 
   
   
