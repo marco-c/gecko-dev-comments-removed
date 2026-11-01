@@ -416,6 +416,7 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(regexp_quick_check, true);
   SET_DEFAULT(regexp_unroll, true);
+  SET_DEFAULT(regexp_atomic_loop, true);
   
   SET_DEFAULT(regexp_bytecode_analysis, false);
   SET_DEFAULT(trace_regexp_bytecode_analysis, false);
