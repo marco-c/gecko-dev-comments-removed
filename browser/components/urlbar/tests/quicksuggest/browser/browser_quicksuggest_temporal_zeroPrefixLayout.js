@@ -90,16 +90,48 @@ add_setup(async function () {
   });
 });
 
-async function addRecentSearches(count) {
+
+
+
+
+
+
+async function addRecentSearches(searches) {
+  let values = Array.isArray(searches)
+    ? searches
+    : Array.from({ length: searches }, (_, i) => `search ${i}`);
   await UrlbarTestUtils.formHistory.clear();
   let now = Date.now();
   await UrlbarTestUtils.formHistory.add(
-    Array.from({ length: count }, (_, i) => ({
-      value: `search ${i}`,
+    values.map((value, i) => ({
+      value,
       source: gEngine.name,
-      lastUsed: (now - (count - i) * 1000) * 1000,
+      lastUsed: (now - (values.length - i) * 1000) * 1000,
     }))
   );
+}
+
+
+
+
+
+
+async function getZeroPrefixResults() {
+  gFeature._reset();
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+    fireInputEvent: true,
+  });
+
+  let results = [];
+  let count = UrlbarTestUtils.getResultCount(window);
+  for (let i = 0; i < count; i++) {
+    let { result } = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    results.push(result);
+  }
+  await UrlbarTestUtils.promisePopupClose(window);
+  return results;
 }
 
 
@@ -110,17 +142,8 @@ async function addRecentSearches(count) {
 
 
 async function getZeroPrefixLayout() {
-  gFeature._reset();
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "",
-    fireInputEvent: true,
-  });
-
   let layout = [];
-  let count = UrlbarTestUtils.getResultCount(window);
-  for (let i = 0; i < count; i++) {
-    let { result } = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+  for (let result of await getZeroPrefixResults()) {
     let type = UrlbarShared.searchEngagementTelemetryType(result);
     if (layout.at(-1)?.[0] == type) {
       layout.at(-1)[1]++;
@@ -128,7 +151,6 @@ async function getZeroPrefixLayout() {
       layout.push([type, 1]);
     }
   }
-  await UrlbarTestUtils.promisePopupClose(window);
   info(`Layout: ${JSON.stringify(layout)}`);
   return layout;
 }
@@ -339,4 +361,39 @@ add_task(async function fewTopSites() {
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
   await updateTopSites(sites => sites?.length >= NUM_TOP_SITES);
+});
+
+
+add_task(async function dedupeRecentSearch() {
+  let [dupe] = QUERIES;
+  await addRecentSearches([dupe]);
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      ["browser.urlbar.suggest.topsites", false],
+      
+      
+      ["browser.urlbar.temporal.rowCount", QUERIES.length],
+    ],
+  });
+
+  let rows = (await getZeroPrefixResults()).map(result => ({
+    type: UrlbarShared.searchEngagementTelemetryType(result),
+    suggestion: result.payload.suggestion,
+  }));
+  info(`Rows: ${JSON.stringify(rows)}`);
+
+  Assert.deepEqual(
+    rows.filter(r => r.suggestion == dupe),
+    [{ type: "recent_search", suggestion: dupe }],
+    "The query is shown once, as a recent search"
+  );
+  Assert.equal(
+    rows.filter(r => r.type == "rust_temporal").length,
+    QUERIES.length - 1,
+    "Every other temporal query is shown"
+  );
+
+  await SpecialPowers.popPrefEnv();
+  await UrlbarTestUtils.formHistory.clear();
 });
