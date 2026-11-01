@@ -67,14 +67,6 @@ async function captureAndSaveScreenshot(targetFront, window, args = {}) {
 
 
 async function captureScreenshot(targetFront, args) {
-  
-  
-  const supportsContentScreenshot = targetFront.hasActor("screenshotContent");
-  if (!supportsContentScreenshot) {
-    const screenshotFront = await targetFront.getFront("screenshot");
-    return screenshotFront.capture(args);
-  }
-
   if (args.delay > 0) {
     await new Promise(res => setTimeout(res, args.delay * 1000));
   }

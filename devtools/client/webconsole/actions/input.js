@@ -257,33 +257,18 @@ function handleHelperResult(response) {
           );
           break;
         case "screenshotOutput": {
-          const { args, value } = helperResult;
+          const { args } = helperResult;
           const targetFront =
             getSelectedTarget(hud.commands.targetCommand.store.getState()) ||
             hud.currentTarget;
-          let screenshotMessages;
 
-          
-          
-          
-          
-          
-          
-          if (targetFront.hasActor("screenshotContent")) {
-            screenshotMessages = await captureAndSaveScreenshot(
-              targetFront,
-              webConsoleUI.getPanelWindow(),
-              args
-            );
-          } else {
-            screenshotMessages = await saveScreenshot(
-              webConsoleUI.getPanelWindow(),
-              args,
-              value
-            );
-          }
+          const screenshotMessages = await captureAndSaveScreenshot(
+            targetFront,
+            webConsoleUI.getPanelWindow(),
+            args
+          );
 
-          if (screenshotMessages && screenshotMessages.length) {
+          if (screenshotMessages?.length) {
             dispatch(
               messagesActions.messagesAdd(
                 screenshotMessages.map(message => ({

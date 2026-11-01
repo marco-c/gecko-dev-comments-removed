@@ -216,29 +216,23 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
   async pickColorFromPage(options) {
     let screenshot = null;
 
-    
-    
-    
-    
-    if (this.targetFront.hasActor("screenshotContent")) {
-      try {
-        
-        
-        const { data } = await captureScreenshot(this.targetFront, {
-          browsingContextID: this.targetFront.browsingContextID,
-          disableFlash: true,
-          ignoreDprForFileScale: true,
-        });
-        screenshot = data;
-      } catch (e) {
-        
-        
-        
-        console.error(
-          "Error occured when taking a screenshot for the eyedropper",
-          e
-        );
-      }
+    try {
+      
+      
+      const { data } = await captureScreenshot(this.targetFront, {
+        browsingContextID: this.targetFront.browsingContextID,
+        disableFlash: true,
+        ignoreDprForFileScale: true,
+      });
+      screenshot = data;
+    } catch (e) {
+      
+      
+      
+      console.error(
+        "Error occured when taking a screenshot for the eyedropper",
+        e
+      );
     }
 
     await super.pickColorFromPage({
