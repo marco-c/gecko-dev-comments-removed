@@ -32,6 +32,8 @@ import mozilla.components.browser.state.state.content.ShareResourceState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
+import mozilla.components.concept.fetch.MutableHeaders
+import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -179,6 +181,45 @@ class PdfToolsIntegrationTest {
     }
 
     @Test
+    fun `WHEN add is activated again before or after the engine responds THEN the signature is handed over once`() {
+        val engineSession = mockk<EngineSession>()
+        val onResult = slot<() -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
+        val integration = integration(store = storeOf(pdfTabWith(engineSession)))
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Test User")
+
+        integration.handleSignAddClick()
+        integration.handleSignAddClick()
+        onResult.captured()
+        integration.handleSignAddClick()
+
+        verify(exactly = 1) { engineSession.addSignatureToPdf(any(), any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN a signature is being added WHEN the dialog is closed and reopened THEN the signature is kept until the engine responds`() {
+        val engineSession = mockk<EngineSession>()
+        val onResult = slot<() -> Unit>()
+        every { engineSession.addSignatureToPdf(any(), capture(onResult), any()) } returns Unit
+        val integration = integration(store = storeOf(pdfTabWith(engineSession)))
+        integration.handleSignClick()
+        integration.signatureState.signature.setTextAndPlaceCursorAtEnd("Test User")
+        integration.handleSignAddClick()
+
+        integration.handleSignCloseClick()
+        integration.handleSignClick()
+
+        assertTrue(integration.signatureState.isAddingSignature)
+        assertEquals("Test User", integration.signatureState.signature.text.toString())
+
+        onResult.captured()
+
+        assertFalse(integration.signatureState.isSigning)
+        assertEquals("", integration.signatureState.signature.text.toString())
+    }
+
+    @Test
     fun `WHEN download is activated THEN the selected tab is saved as a PDF`() {
         integration().handleDownloadClick()
 
@@ -198,17 +239,33 @@ class PdfToolsIntegrationTest {
 
     @Test
     fun `WHEN share is activated THEN the selected tab's PDF is shared`() {
-        integration().handleShareClick()
+        val response =
+            Response(
+                url = pdfTab.content.url,
+                status = 200,
+                headers = MutableHeaders(),
+                body = Response.Body.empty(),
+            )
+        val engineSession = mockk<EngineSession>()
+        every { engineSession.requestPdfToShare(any(), any()) } answers
+            {
+                firstArg<(Response) -> Unit>().invoke(response)
+            }
+
+        integration(store = storeOf(pdfTabWith(engineSession))).handleShareClick()
 
         captureActionsMiddleware.assertFirstAction(ShareResourceAction.AddShareAction::class) {
             assertEquals(tabId, it.tabId)
-            assertIs<ShareResourceState.InternetResource>(it.resource)
+            assertIs<ShareResourceState.DirectResource>(it.resource)
         }
     }
 
     @Test
     fun `GIVEN a PDF opened from a local file WHEN share is activated THEN the local file is shared`() {
-        val localTab = createTab(url = "content://downloads/document.pdf", id = tabId)
+        val localTab =
+            createTab(url = "content://downloads/document.pdf", id = tabId).let {
+                it.copy(content = it.content.copy(isPdf = true))
+            }
 
         integration(store = storeOf(localTab)).handleShareClick()
 
