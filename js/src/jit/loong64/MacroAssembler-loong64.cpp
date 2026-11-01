@@ -1096,19 +1096,15 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
   if (label->bound()) {
     int32_t offset = label->offset() - m_buffer.nextOffset().getOffset();
 
-    if (BOffImm16::IsInRange(offset)) {
+    if (code.isShortJumpInRange(offset)) {
       jumpKind = ShortJump;
     }
 
     
     if (jumpKind == ShortJump) {
-      MOZ_ASSERT(BOffImm16::IsInRange(offset));
+      MOZ_ASSERT(code.isShortJumpInRange(offset));
 
-      if (code.extractBitField(31, 26) == ((uint32_t)op_bcz >> 26)) {
-        code.setImm21(offset);
-      } else {
-        code.setBOffImm16(BOffImm16(offset));
-      }
+      code.setShortJumpOffset(offset);
       emit(code.encode(), target);
       return;
     }
@@ -1125,7 +1121,7 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
     
     
     
-    emit(invertBranch(code, BOffImm16(3 * sizeof(uint32_t))).encode());
+    emit(invertBranch(code, 3 * sizeof(uint32_t)).encode());
     UseScratchRegisterScope temps(asMasm());
     ma_jump36(label->offset() - nextOffset().getOffset(),
               scratch != Register::Invalid() ? scratch : temps.Acquire());
@@ -1143,7 +1139,7 @@ void MacroAssemblerLOONG64::branchWithCode(InstImm code, Label* label,
     m_buffer.ensureSpace(2 * sizeof(uint32_t));
 
     
-    code.setBOffImm16(BOffImm16(4));
+    code.setShortJumpOffset(4);
     BufferOffset bo = emit(code.encode(), target);
     writeInst(nextInChain);
     if (!oom()) {
