@@ -264,6 +264,8 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
     return true;
   }
 
+  MOZ_RELEASE_ASSERT(!shape->isDictionary());
+
   
   
   

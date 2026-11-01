@@ -294,7 +294,14 @@ RRotate::RRotate(CompactBufferReader& reader) {
 }
 
 bool RRotate::recover(JSContext* cx, SnapshotIterator& iter) const {
-  uint32_t input = uint32_t(iter.read().toInt32());
+  RootedValue operand(cx, iter.read());
+
+  
+  
+  
+  int32_t inputInt32;
+  MOZ_ALWAYS_TRUE(JS::ToInt32(cx, operand, &inputInt32));
+  uint32_t input = uint32_t(inputInt32);
   int32_t c = iter.read().toInt32();
   MOZ_ASSERT(c >= 1 && c <= 31);
 
@@ -1919,7 +1926,7 @@ RTypeOfName::RTypeOfName(CompactBufferReader& reader) {}
 bool RTypeOfName::recover(JSContext* cx, SnapshotIterator& iter) const {
   
   int32_t type = iter.readInt32();
-  MOZ_ASSERT(JSTYPE_UNDEFINED <= type && type < JSTYPE_LIMIT);
+  MOZ_RELEASE_ASSERT(JSTYPE_UNDEFINED <= type && type < JSTYPE_LIMIT);
 
   JSString* name = TypeName(JSType(type), *cx->runtime()->commonNames);
   iter.storeInstructionResult(StringValue(name));
@@ -2385,8 +2392,9 @@ RObjectState::RObjectState(CompactBufferReader& reader) {
 bool RObjectState::recover(JSContext* cx, SnapshotIterator& iter) const {
   JSObject* object = iter.readObject();
   NativeObject* nativeObject = &object->as<NativeObject>();
-  MOZ_ASSERT(!Watchtower::watchesPropertyValueChange(nativeObject));
-  MOZ_ASSERT(nativeObject->slotSpan() == numSlots());
+  MOZ_RELEASE_ASSERT(!Watchtower::watchesPropertyValueChange(nativeObject));
+  MOZ_RELEASE_ASSERT(!nativeObject->inDictionaryMode());
+  MOZ_RELEASE_ASSERT(nativeObject->slotSpan() == numSlots());
 
   for (size_t i = 0; i < numSlots(); i++) {
     Value val = iter.read();
@@ -2414,8 +2422,9 @@ bool RArrayState::recover(JSContext* cx, SnapshotIterator& iter) const {
   
   uint32_t initLength = iter.readInt32();
 
-  MOZ_ASSERT(object->getDenseInitializedLength() == 0,
-             "initDenseElement call below relies on this");
+  MOZ_RELEASE_ASSERT(object->getDenseInitializedLength() == 0,
+                     "initDenseElement call below relies on this");
+  MOZ_RELEASE_ASSERT(initLength <= object->getDenseCapacity());
   object->setDenseInitializedLength(initLength);
 
   for (size_t index = 0; index < numElements(); index++) {
@@ -2505,6 +2514,10 @@ bool RSubstr::recover(JSContext* cx, SnapshotIterator& iter) const {
   
   
   int32_t length = mozilla::ReleaseAssertedCast<int32_t>(iter.readNumber());
+
+  MOZ_RELEASE_ASSERT(0 <= begin && uint32_t(begin) <= str->length());
+  MOZ_RELEASE_ASSERT(0 <= length &&
+                     uint32_t(length) <= str->length() - uint32_t(begin));
 
   JSString* result = SubstringKernel(cx, str, begin, length);
   if (!result) {
@@ -2650,6 +2663,8 @@ bool RCreateInlinedArgumentsObject::recover(JSContext* cx,
   RootedObject callObject(cx, iter.readObject());
   RootedFunction callee(cx, &iter.readObject()->as<JSFunction>());
 
+  MOZ_RELEASE_ASSERT(numActuals_ <= ArgumentsObject::MaxInlinedArgs);
+
   JS::RootedValueArray<ArgumentsObject::MaxInlinedArgs> argsArray(cx);
   for (uint32_t i = 0; i < numActuals_; i++) {
     argsArray[i].set(iter.read());
@@ -2681,7 +2696,7 @@ bool RRest::recover(JSContext* cx, SnapshotIterator& iter) const {
 
   
   uint32_t numActuals = iter.readInt32();
-  MOZ_ASSERT(numActuals == frame->numActualArgs());
+  MOZ_RELEASE_ASSERT(numActuals == frame->numActualArgs());
 
   uint32_t numFormals = numFormals_;
 
