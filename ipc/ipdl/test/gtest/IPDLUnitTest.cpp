@@ -186,7 +186,7 @@ ipc::IPCResult IPDLUnitTestChild::RecvStart(const nsCString& aName,
   return IPC_OK();
 }
 
-void IPDLUnitTestChild::ActorDestroy(ActorDestroyReason aWhy) {
+void IPDLUnitTestChild::ActorDestroy(ActorDestroyReason ) {
   if (!XRE_IsParentProcess()) {
     XRE_ShutdownChildProcess();
   }
