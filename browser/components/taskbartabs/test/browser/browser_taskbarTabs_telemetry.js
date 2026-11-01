@@ -228,7 +228,7 @@ add_task(async function testMoveToTaskbarHighLevelMetric() {
   
   
   const sandbox = sinon.createSandbox();
-  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab");
+  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab").resolves({});
   sandbox.stub(TaskbarTabsPin, "unpinTaskbarTab");
   const { TaskbarTabs } = ChromeUtils.importESModule(
     "moz-src:///browser/components/taskbartabs/TaskbarTabs.sys.mjs"
