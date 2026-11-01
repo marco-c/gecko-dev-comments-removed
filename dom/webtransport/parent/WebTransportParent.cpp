@@ -184,6 +184,17 @@ void WebTransportParent::ActorDestroy(ActorDestroyReason aWhy) {
   LOG(("ActorDestroy WebTransportParent %d", aWhy));
   
   
+  
+  
+  
+  
+  
+  
+  if (CanSend()) {
+    (void)SendCloseAll();
+  }
+  
+  
   if (mRetargeted) {
     CloseSessionForDestroyedActor();
   }

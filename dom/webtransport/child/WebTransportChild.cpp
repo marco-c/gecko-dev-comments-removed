@@ -18,7 +18,10 @@ void WebTransportChild::Shutdown(bool aClose) {
 }
 
 void WebTransportChild::CloseAll() {
-  
+  if (mTransport) {
+    RefPtr<WebTransport> self(mTransport);
+    self->RemoteClosed(false, 0, EmptyCString(), Nothing());
+  }
 }
 
 ::mozilla::ipc::IPCResult WebTransportChild::RecvCloseAll(
