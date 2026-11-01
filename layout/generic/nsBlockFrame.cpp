@@ -1211,6 +1211,10 @@ bool nsBlockFrame::HasAnyFloats() const {
   return HasFloats() || HasPushedFloats() || HasOverflowFloats();
 }
 
+static bool LineClampIsAuto(const StyleLineClamp& aLineClamp) {
+  return aLineClamp.max_lines.kw == StyleMaxLinesKeyword::Auto;
+}
+
 
 
 
@@ -1219,20 +1223,32 @@ class MOZ_RAII LineClampLineIterator {
  public:
   LineClampLineIterator(nsBlockFrame* aFrame,
                         const nsBlockFrame* aLastFrameToExit)
-      : mCur(aFrame->LinesBegin()),
-        mEnd(aFrame->LinesEnd()),
-        mCurrentFrame(mCur == mEnd ? nullptr : aFrame),
+      : mEnd(aFrame->LinesEnd()),
         mLastFrameToExit(aLastFrameToExit),
-        mEnteredLastFrameToExit(aFrame == aLastFrameToExit) {
-    if (mCur != mEnd && !mCur->IsInline()) {
+        mWm(aLastFrameToExit->GetWritingMode()),
+        mEnteredLastFrameToExit(aFrame == aLastFrameToExit),
+        mCurrentFrameOffset{aFrame->LinesBegin() == mEnd ? nullptr : aFrame,
+                            aFrame->LinesBegin(), 0, 0, CollapsingMargin()} {
+    if (mCurrentFrameOffset.mCurrentLine != mEnd &&
+        !mCurrentFrameOffset.mCurrentLine->IsInline()) {
       Advance();
     }
   }
 
-  nsLineBox* GetCurrentLine() { return mCurrentFrame ? mCur.get() : nullptr; }
-  nsBlockFrame* GetCurrentFrame() { return mCurrentFrame; }
+  nsLineBox* GetCurrentLine() {
+    return mCurrentFrameOffset.mFrame ? mCurrentFrameOffset.mCurrentLine.get()
+                                      : nullptr;
+  }
+  nsBlockFrame* GetCurrentFrame() { return mCurrentFrameOffset.mFrame; }
   nscoord GetCurrentFrameBOffset() {
-    return mCurrentBlockBStartEdge + mAccumulatedBEndBP;
+    return mCurrentFrameOffset.mConsumedBSize;
+  }
+  nscoord GetBEndMargins() {
+    return mCurrentFrameOffset.mCollapsedMargins +
+           mCurrentFrameOffset.mCurrentCollapsingMargin.Get();
+  }
+  nscoord GetDescendantBEndMargins() {
+    return GetBEndMargins() - mMarginsUntilLastFrame;
   }
 
   
@@ -1240,103 +1256,138 @@ class MOZ_RAII LineClampLineIterator {
   
   
   void Next() {
-    MOZ_ASSERT(mCur != mEnd && mCurrentFrame,
-               "Don't call Next() when the iterator is at the end");
-    ++mCur;
+    MOZ_ASSERT(
+        mCurrentFrameOffset.mCurrentLine != mEnd && mCurrentFrameOffset.mFrame,
+        "Don't call Next() when the iterator is at the end");
+    ++mCurrentFrameOffset.mCurrentLine;
     Advance();
   }
 
   bool IsLastFrameOrDescendant() { return mEnteredLastFrameToExit; }
 
  private:
+  static bool IsBEndMarginRoot(nsBlockFrame* frame) {
+    bool unused, isMarginRoot;
+    frame->IsMarginRoot(&unused, &isMarginRoot);
+    return isMarginRoot ||
+           frame->GetLogicalUsedBorderAndPadding(frame->GetWritingMode())
+               .BEnd(frame->GetWritingMode());
+  }
+  struct FrameOffsetData {
+    
+    nsBlockFrame* mFrame;
+
+    
+    nsBlockFrame::LineIterator mCurrentLine;
+
+    
+    
+    
+    
+    
+    nscoord mConsumedBSize;
+
+    
+    
+    nscoord mCollapsedMargins;
+
+    
+    
+    CollapsingMargin mCurrentCollapsingMargin;
+  };
+  
+  
+  
+  
   void Advance() {
     for (;;) {
-      if (mCur == mEnd) {
+      if (mCurrentFrameOffset.mCurrentLine == mEnd) {
         
         
         if (mStack.IsEmpty()) {
-          mCurrentFrame = nullptr;
+          mCurrentFrameOffset.mFrame = nullptr;
           break;
         }
-        if (mCurrentFrame == mLastFrameToExit) {
+        if (mCurrentFrameOffset.mFrame == mLastFrameToExit) {
           mStack.Clear();
-          mCurrentFrame = nullptr;
+          mCurrentFrameOffset.mFrame = nullptr;
           break;
         }
 
-        std::tie(mCurrentFrame, mCur, mCurrentBlockBStartEdge,
-                 mAccumulatedBEndBP) = mStack.PopLastElement();
-        mEnd = mCurrentFrame->LinesEnd();
-      } else if (mCur->IsBlock()) {
-        if (nsBlockFrame* child = GetAsLineClampDescendant(mCur->mFirstChild)) {
+        mCurrentFrameOffset = mStack.PopLastElement();
+        mEnd = mCurrentFrameOffset.mFrame->LinesEnd();
+      } else if (mCurrentFrameOffset.mCurrentLine->IsBlock()) {
+        if (nsBlockFrame* child = GetAsLineClampDescendant(
+                mCurrentFrameOffset.mCurrentLine->mFirstChild)) {
+          bool justEnteredLastFrame = false;
           if (child == mLastFrameToExit) {
+            justEnteredLastFrame = true;
             mEnteredLastFrameToExit = true;
           }
-          nsBlockFrame::LineIterator next = mCur;
+          nsBlockFrame::LineIterator next = mCurrentFrameOffset.mCurrentLine;
           ++next;
-          mStack.AppendElement(std::tuple(mCurrentFrame, next,
-                                          mCurrentBlockBStartEdge,
-                                          mAccumulatedBEndBP));
-          if (mCurrentFrame == mLastFrameToExit || mAtLastFrame) {
-            
-            
-            
-            
-            mAccumulatedBEndBP +=
-                child->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
-            mAtLastFrame = true;
-            if (mCur.get()) {
-              mCurrentBlockBStartEdge += mCur.get()->BStart();
-            }
+          FrameOffsetData thisFrameNextLine = mCurrentFrameOffset;
+          thisFrameNextLine.mCurrentLine = next;
+          mStack.AppendElement(thisFrameNextLine);
+
+          
+          
+          mCurrentFrameOffset.mConsumedBSize +=
+              child->BStart(mCurrentFrameOffset.mFrame->GetSize()) +
+              child->GetLogicalUsedBorderAndPadding(mWm).BEnd(mWm);
+
+          mCurrentFrameOffset.mCurrentCollapsingMargin.Include(
+              child->GetLogicalUsedMargin(mWm).BEnd(mWm));
+          if (IsBEndMarginRoot(child)) {
+            mCurrentFrameOffset.mCollapsedMargins +=
+                mCurrentFrameOffset.mCurrentCollapsingMargin.Get();
+            mCurrentFrameOffset.mCurrentCollapsingMargin = CollapsingMargin();
           }
-          mCur = child->LinesBegin();
+
+          if (justEnteredLastFrame) {
+            mMarginsUntilLastFrame =
+                mCurrentFrameOffset.mCollapsedMargins +
+                mCurrentFrameOffset.mCurrentCollapsingMargin.Get();
+          }
+
+          mCurrentFrameOffset.mCurrentLine = child->LinesBegin();
           mEnd = child->LinesEnd();
-          mCurrentFrame = child;
+          mCurrentFrameOffset.mFrame = child;
         } else {
           
-          ++mCur;
+          ++mCurrentFrameOffset.mCurrentLine;
         }
       } else {
-        MOZ_ASSERT(mCur->IsInline());
+        MOZ_ASSERT(mCurrentFrameOffset.mCurrentLine->IsInline());
         break;
       }
     }
   }
 
-  bool mAtLastFrame = false;
-
-  
-  
-  
-  
-  nsBlockFrame::LineIterator mCur;
-
   
   nsBlockFrame::LineIterator mEnd;
-
-  
-  nsBlockFrame* mCurrentFrame;
 
   
   const nsBlockFrame* mLastFrameToExit;
 
   
-  nscoord mCurrentBlockBStartEdge = 0;
-
   
-  nscoord mAccumulatedBEndBP = 0;
-
-  WritingMode mWm = mLastFrameToExit->GetWritingMode();
+  WritingMode mWm;
 
   
   bool mEnteredLastFrameToExit;
 
   
   
-  AutoTArray<
-      std::tuple<nsBlockFrame*, nsBlockFrame::LineIterator, nscoord, nscoord>,
-      8>
-      mStack;
+  nscoord mMarginsUntilLastFrame = 0;
+
+  
+  
+  FrameOffsetData mCurrentFrameOffset;
+
+  
+  
+  AutoTArray<FrameOffsetData, 8> mStack;
 };
 
 bool nsBlockFrame::ClearLineClampEllipsis() {
@@ -1825,6 +1876,17 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     reflowStatus =
         TrialReflow(aPresContext, aMetrics, aReflowInput, trialState);
 
+    if (LineClampIsAuto(StyleDisplay()->mWebkitLineClamp) &&
+        !trialState.mLineClamping) {
+      
+      
+      
+      trialState.mLineClamping = true;
+      aReflowInput.mFloatManager->PopState(&floatManagerState);
+      MarkAllDescendantLinesDirty(this);
+      continue;
+    }
+
     
     if (tryBalance) {
       tryBalance = false;
@@ -2170,6 +2232,13 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
                          aTrialState.mInset);
 
   
+  
+  
+  state.mFlags.mShouldApplyLineClampAuto =
+      aTrialState.mLineClamping ||
+      aReflowInput.mFlags.mDimensionsReadyForLineClampAuto;
+
+  
   nsReflowStatus ocStatus;
   if (GetPrevInFlow()) {
     ReflowOverflowContainerChildren(
@@ -2342,35 +2411,33 @@ bool nsBlockFrame::CheckForCollapsedBEndMarginFromClearanceLine() {
 }
 
 Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
-    nscoord aContentBlockEndEdge, const ReflowInput& aReflowInput,
-    nscoord aCollapsingBEndMargin, nsBlockFrame* aLineClampRoot) {
+    const ReflowInput& aReflowInput, nsBlockFrame* aLineClampRoot) {
   if (!aLineClampRoot) {
     return Nothing();
   }
   auto& lineClamp = aLineClampRoot->StyleDisplay()->mWebkitLineClamp;
-  if (lineClamp.max_lines.kw != mozilla::StyleMaxLinesKeyword::Auto ||
-      lineClamp.webkit_legacy) {
+  if (!LineClampIsAuto(lineClamp)) {
     
     return Nothing();
   }
 
   const WritingMode wm = aLineClampRoot->GetWritingMode();
 
-  
-  
-  
-  
-  
-  
-  
   MOZ_ASSERT(aLineClampRoot->GetLineClampRootMaxHeight());
-  nscoord rootMaxBSize = aLineClampRoot->GetLineClampRootMaxHeight().value() -
-                         aReflowInput.mBOffsetToLineClampRoot -
-                         GetLogicalUsedBorderAndPadding(wm).BEnd(wm) -
-                         aCollapsingBEndMargin;
+  nscoord rootMaxBSize =
+      aLineClampRoot->GetLineClampRootMaxHeight().value() -
+      aLineClampRoot->GetLogicalUsedBorderAndPadding(wm).BEnd(wm);
 
   nscoord thisMinBSize = aReflowInput.ComputedMinBSize();
 
+  nscoord bOffsetToRoot = 0;
+  for (nsBlockFrame* f = this; f != aLineClampRoot;
+       f = do_QueryFrame(f->GetParent())) {
+    bOffsetToRoot += f->BStart(f->GetParent()->GetSize()) +
+                     f->GetLogicalUsedBorderAndPadding(wm).BEnd(wm);
+  }
+
+  nscoord prevDescendantBEndMargins = 0;
   nsLineBox* prevLine = nullptr;
   nsBlockFrame* prevFrame = nullptr;
   nscoord prevBEdge = 0;
@@ -2392,14 +2459,17 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
              ->MinBSize(wm, AnchorPosResolutionParams::From(frame))
              ->IsAuto();
 
+    nscoord frameBStart = frame->BStart(frame->GetParent()->GetSize());
+
     if (isNewFrame && bSizeIsConstrained) {
       const nscoord sizeToCheck = frame == this ? thisMinBSize : frame->BSize();
-      if (sizeToCheck + prevBEdge > rootMaxBSize) {
+      if (sizeToCheck + frameBStart + iter.GetBEndMargins() > rootMaxBSize) {
         
         if (iter.IsLastFrameOrDescendant() && frame != this) {
           
-          return Some(
-              nsBlockFrame::LineClampTarget{prevFrame, prevLine, prevBEdge});
+          return Some(nsBlockFrame::LineClampTarget{
+              prevFrame, prevLine,
+              prevBEdge - bOffsetToRoot + prevDescendantBEndMargins});
         }
         
         
@@ -2421,9 +2491,10 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
       }
 
       
-      if (frame->BSize() + prevBEdge > rootMaxBSize) {
-        return Some(
-            nsBlockFrame::LineClampTarget{prevFrame, prevLine, prevBEdge});
+      if (frame->BSize() + frameBStart + iter.GetBEndMargins() > rootMaxBSize) {
+        return Some(nsBlockFrame::LineClampTarget{
+            prevFrame, prevLine,
+            prevBEdge - bOffsetToRoot + prevDescendantBEndMargins});
       }
 
       
@@ -2454,6 +2525,7 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
       prevLine = nextLine;
       prevFrame = nextFrame;
       prevBEdge = frame->BSize() + prevBEdge;
+      prevDescendantBEndMargins = iter.GetDescendantBEndMargins();
       continue;
     }
 
@@ -2465,22 +2537,26 @@ Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampAutoTarget(
     nscoord edge = line->BEnd() + iter.GetCurrentFrameBOffset();
 
     
-    if (edge > rootMaxBSize) {
-      return Some(nsBlockFrame::LineClampTarget{
-          prevFrame, prevLine, prevBEdge + aCollapsingBEndMargin});
+    if (edge + iter.GetBEndMargins() > rootMaxBSize) {
+      
+      return prevBEdge - bOffsetToRoot + prevDescendantBEndMargins >= 0
+                 ? Some(nsBlockFrame::LineClampTarget{
+                       prevFrame, prevLine,
+                       prevBEdge - bOffsetToRoot + prevDescendantBEndMargins})
+                 : Nothing();
     }
 
     prevLine = line;
     prevFrame = frame;
     prevBEdge = edge;
+    prevDescendantBEndMargins = iter.GetDescendantBEndMargins();
   }
 
   
   return Nothing();
 }
 Maybe<nsBlockFrame::LineClampTarget> nsBlockFrame::FindLineClampNumberedTarget(
-    nscoord aContentBlockEndEdge, nscoord aCollapsingBEndMargin,
-    nsBlockFrame* aLineClampRoot) const {
+    nscoord aCollapsingBEndMargin, nsBlockFrame* aLineClampRoot) const {
   if (!aLineClampRoot) {
     return Nothing();
   }
@@ -2696,15 +2772,21 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     
     
     
+    
+    
     nsBlockFrame* lineClampRoot = GetLineClampRoot();
-    const auto numberedLineClampTarget =
-        FindLineClampNumberedTarget(contentBSizeWithBStartBP, 0, lineClampRoot);
+    if (lineClampRoot &&
+        (!LineClampIsAuto(lineClampRoot->StyleDisplay()->mWebkitLineClamp) ||
+         aState.mFlags.mShouldApplyLineClampAuto)) {
+      const auto numberedLineClampTarget =
+          FindLineClampNumberedTarget(0, lineClampRoot);
 
-    const auto autoLineClampTarget = FindLineClampAutoTarget(
-        contentBSizeWithBStartBP, aReflowInput, 0, lineClampRoot);
+      const auto autoLineClampTarget =
+          FindLineClampAutoTarget(aReflowInput, lineClampRoot);
 
-    ApplySmallestLineClamp(autoLineClampTarget, numberedLineClampTarget,
-                           lineClampRoot);
+      ApplySmallestLineClamp(autoLineClampTarget, numberedLineClampTarget,
+                             lineClampRoot);
+    }
 
     finalSize.BSize(wm) = ComputeFinalBSize(aState, contentBSizeWithBStartBP);
 
@@ -2752,26 +2834,24 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
   } else if (aState.mReflowStatus.IsComplete()) {
     const nscoord bpBStart = borderPadding.BStart(wm);
     const nscoord contentBSize = blockEndEdgeOfChildren - bpBStart;
-
-    nsBlockFrame* lineClampRoot = GetLineClampRoot();
-    const auto numberedLineClampTarget = FindLineClampNumberedTarget(
-        blockEndEdgeOfChildren, aState.mPrevBEndMargin.Get(), lineClampRoot);
-
-    const nscoord autoBSizeNoClamp =
+    nscoord autoBSize =
         aReflowInput.ApplyMinMaxBSize(contentBSize, aState.mConsumedBSize);
+    nsBlockFrame* lineClampRoot = GetLineClampRoot();
+    if (lineClampRoot &&
+        (!LineClampIsAuto(lineClampRoot->StyleDisplay()->mWebkitLineClamp) ||
+         aState.mFlags.mShouldApplyLineClampAuto)) {
+      const auto numberedLineClampTarget = FindLineClampNumberedTarget(
+          aState.mPrevBEndMargin.Get(), lineClampRoot);
 
-    const auto autoLineClampTarget =
-        FindLineClampAutoTarget(blockEndEdgeOfChildren, aReflowInput,
-                                aState.mPrevBEndMargin.Get(), lineClampRoot);
+      const auto autoLineClampTarget =
+          FindLineClampAutoTarget(aReflowInput, lineClampRoot);
 
-    nscoord autoBSize;
-    Maybe<nscoord> clampedSize = ApplySmallestLineClamp(
-        autoLineClampTarget, numberedLineClampTarget, lineClampRoot);
-    if (clampedSize) {
-      autoBSize = aReflowInput.ApplyMinMaxBSize(clampedSize.ref() - bpBStart,
-                                                aState.mConsumedBSize);
-    } else {
-      autoBSize = autoBSizeNoClamp;
+      Maybe<nscoord> clampedSize = ApplySmallestLineClamp(
+          autoLineClampTarget, numberedLineClampTarget, lineClampRoot);
+      if (clampedSize) {
+        autoBSize = aReflowInput.ApplyMinMaxBSize(clampedSize.ref() - bpBStart,
+                                                  aState.mConsumedBSize);
+      }
     }
 
     if (autoBSize != contentBSize) {
@@ -5041,9 +5121,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       childReflowInput->mFlags.mMovedBlockFragments = true;
     }
 
-    childReflowInput->mFlags.mIsInLineClampContainer =
-        IsLineClampRoot(this) ||
-        childReflowInput->mParentReflowInput->mFlags.mIsInLineClampContainer;
+    childReflowInput->mFlags.mDimensionsReadyForLineClampAuto =
+        aState.mFlags.mShouldApplyLineClampAuto;
 
     nsFloatManager::SavedState floatManagerState;
     nsReflowStatus frameReflowStatus;

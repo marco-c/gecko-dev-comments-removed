@@ -602,6 +602,9 @@ class nsBlockFrame : public nsContainerFrame {
     bool mUsedOverflowWrap = false;
     
     bool mBalancing = false;
+    
+    
+    bool mLineClamping = false;
     nscoord mInset = 0;
     
     
@@ -763,11 +766,9 @@ class nsBlockFrame : public nsContainerFrame {
   };
   nsBlockFrame* GetLineClampRoot() const;
   Maybe<LineClampTarget> FindLineClampAutoTarget(
-      nscoord aContentBlockEndEdge, const ReflowInput& aReflowInput,
-      nscoord aCollapsingBEndMargin, nsBlockFrame* aLineClampRoot);
+      const ReflowInput& aReflowInput, nsBlockFrame* aLineClampRoot);
   Maybe<LineClampTarget> FindLineClampNumberedTarget(
-      nscoord aContentBlockEndEdge, nscoord aCollapsingBEndMargin,
-      nsBlockFrame* aLineClampRoot) const;
+      nscoord aCollapsingBEndMargin, nsBlockFrame* aLineClampRoot) const;
   void ApplyLineClamp(LineClampTarget aLineClampTarget,
                       nsBlockFrame* aLineClampRoot);
   

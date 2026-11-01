@@ -38,7 +38,8 @@ class BlockReflowState {
           mCanHaveOverflowMarkers(false),
           mShouldApplyTextBoxTrimStart(false),
           mShouldApplyTextBoxTrimAtBlockEnd(false),
-          mShouldApplyTextBoxTrimAtFragmentEnd(false) {}
+          mShouldApplyTextBoxTrimAtFragmentEnd(false),
+          mShouldApplyLineClampAuto(false) {}
 
     
     
@@ -96,6 +97,11 @@ class BlockReflowState {
     bool mShouldApplyTextBoxTrimStart : 1;
     bool mShouldApplyTextBoxTrimAtBlockEnd : 1;
     bool mShouldApplyTextBoxTrimAtFragmentEnd : 1;
+
+    
+    
+    
+    bool mShouldApplyLineClampAuto : 1;
   };
 
  public:
