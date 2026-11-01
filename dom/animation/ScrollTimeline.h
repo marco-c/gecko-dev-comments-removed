@@ -322,6 +322,19 @@ class ScrollTimeline : public AnimationTimeline,
     nscoord mPosition = 0;
     nscoord mStart = 0;
     nscoord mEnd = 0;
+
+    Maybe<double> CalculateProgress() const {
+      
+      
+      
+      
+      
+      
+      return mStart == mEnd
+                 ? Nothing()
+                 : Some(static_cast<double>(std::abs(mPosition) - mStart) /
+                        static_cast<double>(mEnd - mStart));
+    }
   };
   virtual Maybe<ComputedTimelineData> ComputeTimelineData() const;
 
