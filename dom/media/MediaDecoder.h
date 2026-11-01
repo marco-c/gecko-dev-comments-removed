@@ -260,6 +260,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
 
   
   
+  bool IsLiveStream() const;
+
+  
+  
   bool IsSeeking() const;
 
   
@@ -577,6 +581,10 @@ class MediaDecoder : public DecoderDoctorLifeLogger<MediaDecoder> {
  private:
   
   void NotifyCompositor();
+
+  void OnMetadataLoaded(UniquePtr<MediaInfo> aInfo,
+                        UniquePtr<MetadataTags> aTags,
+                        MediaDecoderEventVisibility aEventVisibility);
 
   void OnPlaybackErrorEvent(const MediaResult& aError);
 
