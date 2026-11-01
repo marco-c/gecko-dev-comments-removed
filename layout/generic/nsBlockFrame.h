@@ -339,7 +339,7 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
-  void IsMarginRoot(bool* aBStartMarginRoot, bool* aBEndMarginRoot) const;
+  void IsMarginRoot(bool* aBStartMarginRoot, bool* aBEndMarginRoot);
 
   static bool BlockNeedsFloatManager(nsIFrame* aBlock);
 
@@ -493,7 +493,6 @@ class nsBlockFrame : public nsContainerFrame {
                     nscoord aBEndEdgeOfChildren);
   
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(AlignContentShift, nscoord)
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(InheritedBEndMarginTrim, bool)
 
   
 
@@ -594,10 +593,6 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
-
-
-
-
   struct TrialReflowState {
     
     const nscoord mConsumedBSize;
@@ -607,7 +602,6 @@ class nsBlockFrame : public nsContainerFrame {
     bool mUsedOverflowWrap = false;
     
     bool mBalancing = false;
-    bool mShouldTrimInheritedBEndMargins = false;
     nscoord mInset = 0;
     
     
@@ -1000,16 +994,6 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   bool IsLastFormattedLine(LineIterator aLine);
-
-  
-
-
-
-
-
-
-  bool IsLineAdjacentToBStart(BlockReflowState& aState);
-  bool IsLineAdjacentToBEnd(LineIterator aLine);
 
   void DeleteLine(BlockReflowState& aState, nsLineList::iterator aLine,
                   nsLineList::iterator aLineEnd);
