@@ -48,7 +48,7 @@ AudioSink::AudioSink(AbstractThread* aThread,
   InitPlaybackState();
   
   if (!aInfo.IsValid()) {
-    mProcessedSPSCQueue = MakeUnique<SPSCQueue<AudioDataValue>>(0);
+    mProcessedSPSCQueue = std::make_unique<SPSCQueue<AudioDataValue>>(0);
     return;
   }
   
@@ -58,7 +58,8 @@ AudioSink::AudioSink(AbstractThread* aThread,
       std::clamp(capacitySeconds * mOutputChannels * mOutputRate, 0.,
                  std::numeric_limits<int>::max() - 1.));
   elementCount -= elementCount % mOutputChannels;
-  mProcessedSPSCQueue = MakeUnique<SPSCQueue<AudioDataValue>>(elementCount);
+  mProcessedSPSCQueue =
+      std::make_unique<SPSCQueue<AudioDataValue>>(elementCount);
   SINK_LOG("Ringbuffer has space for {} elements ({} seconds)",
            mProcessedSPSCQueue->Capacity(),
            static_cast<float>(elementCount) / mOutputChannels / mOutputRate);
@@ -593,7 +594,7 @@ void AudioSink::NotifyAudioNeeded() {
         mErrored = true;
         return;
       }
-      mConverter = MakeUnique<AudioConverter>(inConfig, outConfig);
+      mConverter = std::make_unique<AudioConverter>(inConfig, outConfig);
     }
 
     

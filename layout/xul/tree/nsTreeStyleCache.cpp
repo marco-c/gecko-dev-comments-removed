@@ -33,7 +33,7 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(nsPresContext* aPresContext,
   
   if (!mTransitionTable) {
     
-    mTransitionTable = MakeUnique<TransitionTable>();
+    mTransitionTable = std::make_unique<TransitionTable>();
   }
 
   
@@ -80,7 +80,7 @@ ComputedStyle* nsTreeStyleCache::GetComputedStyle(nsPresContext* aPresContext,
     
     
     if (!mCache) {
-      mCache = MakeUnique<ComputedStyleCache>();
+      mCache = std::make_unique<ComputedStyleCache>();
     }
     result = newResult.get();
     mCache->InsertOrUpdate(currState, std::move(newResult));

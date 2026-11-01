@@ -17,7 +17,6 @@
 #include "txXSLTPatterns.h"
 
 using mozilla::LogLevel;
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 using mozilla::WrapUnique;
 
@@ -28,7 +27,7 @@ nsresult txStylesheet::init() {
 
   
   
-  mContainerTemplate = MakeUnique<txPushParams>();
+  mContainerTemplate = std::make_unique<txPushParams>();
 
   UniquePtr<txNodeTest> nt(new txNodeTypeTest(txNodeTypeTest::NODE_TYPE));
   UniquePtr<Expr> nodeExpr(
@@ -49,18 +48,18 @@ nsresult txStylesheet::init() {
   loopNodeSet->mNext = WrapUnique(popParams);
   pushContext->mBailTarget = loopNodeSet->mNext.get();
 
-  popParams->mNext = MakeUnique<txReturn>();
+  popParams->mNext = std::make_unique<txReturn>();
 
   
-  nt = MakeUnique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
-  nodeExpr = MakeUnique<LocationStep>(nt.get(), LocationStep::SELF_AXIS);
+  nt = std::make_unique<txNodeTypeTest>(txNodeTypeTest::NODE_TYPE);
+  nodeExpr = std::make_unique<LocationStep>(nt.get(), LocationStep::SELF_AXIS);
   (void)nt.release();
 
-  mCharactersTemplate = MakeUnique<txValueOf>(std::move(nodeExpr), false);
-  mCharactersTemplate->mNext = MakeUnique<txReturn>();
+  mCharactersTemplate = std::make_unique<txValueOf>(std::move(nodeExpr), false);
+  mCharactersTemplate->mNext = std::make_unique<txReturn>();
 
   
-  mEmptyTemplate = MakeUnique<txReturn>();
+  mEmptyTemplate = std::make_unique<txReturn>();
 
   return NS_OK;
 }

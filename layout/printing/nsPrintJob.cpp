@@ -207,7 +207,8 @@ void nsPrintJob::BuildNestedPrintObjects(
 
     
     
-    auto childPO = MakeUnique<nsPrintObject>(*docShell, *doc, aParentPO.get());
+    auto childPO =
+        std::make_unique<nsPrintObject>(*docShell, *doc, aParentPO.get());
 
     mPrintDocList.AppendElement(childPO.get());
     BuildNestedPrintObjects(childPO);
@@ -392,7 +393,7 @@ nsresult nsPrintJob::DoCommonPrint(bool aIsPrintPreview,
     nsAutoScriptBlocker scriptBlocker;
     
     
-    mPrintObject = MakeUnique<nsPrintObject>(*docShell, aDoc);
+    mPrintObject = std::make_unique<nsPrintObject>(*docShell, aDoc);
     mPrintDocList.AppendElement(mPrintObject.get());
 
     BuildNestedPrintObjects(mPrintObject);

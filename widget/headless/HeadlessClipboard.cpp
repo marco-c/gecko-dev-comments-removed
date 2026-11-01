@@ -23,7 +23,7 @@ HeadlessClipboard::HeadlessClipboard()
           true ,
           true )) {
   for (auto& clipboard : mClipboards) {
-    clipboard = MakeUnique<HeadlessClipboardData>();
+    clipboard = std::make_unique<HeadlessClipboardData>();
   }
 }
 

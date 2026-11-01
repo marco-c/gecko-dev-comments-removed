@@ -212,7 +212,7 @@ void LoadedScript::SetSRIMetadata(
     return;
   }
 
-  mSRIMetadata = mozilla::MakeUnique<mozilla::dom::SRIMetadata>(aSRIMetadata);
+  mSRIMetadata = std::make_unique<mozilla::dom::SRIMetadata>(aSRIMetadata);
 }
 
 bool LoadedScript::IsSRIMetadataReusableBy(
@@ -376,7 +376,7 @@ void ModuleScript::SetHadImportMap(bool aValue) { mHadImportMap = aValue; }
 
 ResolvedModuleSet* ModuleScript::GetPreloadedResolvedSet() {
   if (!mPreloadedResolvedSet) {
-    mPreloadedResolvedSet = mozilla::MakeUnique<ResolvedModuleSet>();
+    mPreloadedResolvedSet = std::make_unique<ResolvedModuleSet>();
   }
 
   return mPreloadedResolvedSet.get();

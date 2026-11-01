@@ -5303,7 +5303,7 @@ bool SharedContextWebgl::DrawPathAccel(
   RefPtr<TextureHandle> handle;
   if (aCacheable) {
     if (!mPathCache) {
-      mPathCache = MakeUnique<PathCache>();
+      mPathCache = std::make_unique<PathCache>();
     }
     
     

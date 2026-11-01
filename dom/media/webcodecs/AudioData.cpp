@@ -755,7 +755,7 @@ UniquePtr<AudioData::TransferredData> AudioData::Transfer() {
   }
 
   
-  auto serialized = MakeUnique<AudioDataSerializedData>(*this);
+  auto serialized = std::make_unique<AudioDataSerializedData>(*this);
   
   
   Close();

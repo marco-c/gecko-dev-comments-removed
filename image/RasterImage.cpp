@@ -722,7 +722,8 @@ bool RasterImage::SetMetadata(const ImageMetadata& aMetadata,
   if (LoadHasSize() && aMetadata.HasAnimation() && !mAnimationState) {
     
     mAnimationState.emplace(mAnimationMode);
-    mFrameAnimator = MakeUnique<FrameAnimator>(this, mSize.ToUnknownSize());
+    mFrameAnimator =
+        std::make_unique<FrameAnimator>(this, mSize.ToUnknownSize());
 
     if (!StaticPrefs::image_mem_animated_discardable_AtStartup()) {
       

@@ -71,7 +71,7 @@ UniquePtr<PerformanceTimingData> PerformanceTimingData::Create(
   
   
   
-  return MakeUnique<PerformanceTimingData>(aTimedChannel, aChannel, 0);
+  return std::make_unique<PerformanceTimingData>(aTimedChannel, aChannel, 0);
 }
 
 

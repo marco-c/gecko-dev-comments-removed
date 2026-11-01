@@ -401,7 +401,7 @@ class RAPL {
 PowerCounters::PowerCounters() {
   
   if (XRE_IsParentProcess()) {
-    mRapl = mozilla::MakeUnique<RAPL>(mCounters);
+    mRapl = std::make_unique<RAPL>(mCounters);
   }
 }
 

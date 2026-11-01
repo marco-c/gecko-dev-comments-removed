@@ -264,7 +264,7 @@ nsSHistory::nsSHistory(BrowsingContext* aRootBC)
 
   
   
-  mHistoryTracker = mozilla::MakeUnique<HistoryTracker>(
+  mHistoryTracker = std::make_unique<HistoryTracker>(
       this,
       mozilla::Preferences::GetUint(CONTENT_VIEWER_TIMEOUT_SECONDS,
                                     CONTENT_VIEWER_TIMEOUT_SECONDS_DEFAULT),

@@ -119,7 +119,7 @@ class nsAppShell : public nsBaseAppShell {
       return;
     }
     sAppShell->mEventQueue.Post(
-        mozilla::MakeUnique<LambdaEvent<T>>(std::move(lambda)));
+        std::make_unique<LambdaEvent<T>>(std::move(lambda)));
   }
 
   
@@ -157,7 +157,7 @@ class nsAppShell : public nsBaseAppShell {
   };
 
   void ScheduleNativeEventCallback() override {
-    mEventQueue.Post(mozilla::MakeUnique<NativeCallbackEvent>(this));
+    mEventQueue.Post(std::make_unique<NativeCallbackEvent>(this));
   }
 
   class Queue {

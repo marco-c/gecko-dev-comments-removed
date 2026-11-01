@@ -546,7 +546,7 @@ class MediaCacheStream : public DecoderDoctorLifeLogger<MediaCacheStream> {
   
   
   const UniquePtr<uint8_t[]> mPartialBlockBuffer =
-      MakeUnique<uint8_t[]>(BLOCK_SIZE);
+      std::make_unique<uint8_t[]>(BLOCK_SIZE);
 
   
   const bool mIsPrivateBrowsing;

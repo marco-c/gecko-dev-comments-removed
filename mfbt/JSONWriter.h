@@ -211,7 +211,7 @@ class JSONWriter {
       }
 
       
-      mOwnedStr = MakeUnique<char[]>(mStringSpan.Length() + nExtra);
+      mOwnedStr = std::make_unique<char[]>(mStringSpan.Length() + nExtra);
 
       size_t i = 0;
       for (const char c : mStringSpan) {

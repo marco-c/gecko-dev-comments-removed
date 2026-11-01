@@ -395,12 +395,12 @@ nsEventStatus TextEventDispatcher::DispatchEvent(
     switch (aEvent.mClass) {
       case eCompositionEventClass:
         MOZ_ASSERT(aEvent.AsCompositionEvent());
-        mPendingEvents.AppendElement(MakeUnique<WidgetCompositionEvent>(
+        mPendingEvents.AppendElement(std::make_unique<WidgetCompositionEvent>(
             static_cast<WidgetCompositionEvent&>(aEvent)));
         return nsEventStatus_eIgnore;
       case eSelectionEventClass:
         MOZ_ASSERT(aEvent.AsSelectionEvent());
-        mPendingEvents.AppendElement(MakeUnique<WidgetSelectionEvent>(
+        mPendingEvents.AppendElement(std::make_unique<WidgetSelectionEvent>(
             static_cast<WidgetSelectionEvent&>(aEvent)));
         return nsEventStatus_eIgnore;
       case eContentCommandEventClass: {
@@ -419,7 +419,7 @@ nsEventStatus TextEventDispatcher::DispatchEvent(
         }
         
         mPendingEvents.AppendElement(
-            MakeUnique<WidgetContentCommandEvent>(contentCommandEvent));
+            std::make_unique<WidgetContentCommandEvent>(contentCommandEvent));
         
         
         
@@ -479,8 +479,8 @@ nsEventStatus TextEventDispatcher::DispatchInputEvent(
     WidgetKeyboardEvent* const pendingKeyboardEvent =
         static_cast<WidgetKeyboardEvent*>(
             mPendingEvents
-                .AppendElement(
-                    MakeUnique<WidgetKeyboardEvent>(*aEvent.AsKeyboardEvent()))
+                .AppendElement(std::make_unique<WidgetKeyboardEvent>(
+                    *aEvent.AsKeyboardEvent()))
                 ->get());
     
     

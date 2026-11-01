@@ -57,6 +57,7 @@ typename detail::UniqueSelector<T>::KnownBound MakeUniqueFallible(
 
 
 
+
 template <typename T, typename... Args>
 typename detail::UniqueSelector<T>::SingleObject MakeUniqueForOverwrite() {
   return UniquePtr<T>(new T);
