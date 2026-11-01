@@ -2777,6 +2777,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElementsObservedForLastRememberedSize)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRenderBlockingElementSet)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRenderBlockedSink)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMImplementation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mImageMaps)
@@ -2904,6 +2905,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRenderBlockingElementSet);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRenderBlockedSink);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviouslyFocusedContent)
@@ -9074,7 +9076,11 @@ void Document::EndLoad(bool aFireDOMContentLoadedSync) {
   
   
   if (mParser) {
-    mWeakSink = do_GetWeakReference(mParser->GetContentSink());
+    nsIContentSink* sink = mParser->GetContentSink();
+    mWeakSink = do_GetWeakReference(sink);
+    if (IsRenderBlocked()) {
+      mRenderBlockedSink = sink;
+    }
     mParser = nullptr;
   }
 
@@ -12749,6 +12755,7 @@ void Document::Destroy() {
   SetDevToolsWatchingDOMMutations(false);
 
   mIsGoingAway = true;
+  mRenderBlockedSink = nullptr;
 
   if (mScriptLoader) {
     mScriptLoader->Destroy();
@@ -20367,6 +20374,7 @@ void Document::StopRenderBlocking() {
     
     StartLayoutAfterUnblocking();
   }
+  mRenderBlockedSink = nullptr;
 }
 
 
@@ -20464,6 +20472,8 @@ void Document::StartLayoutAfterUnblocking() {
   nsCOMPtr<nsIContentSink> sink;
   if (mParser) {
     sink = mParser->GetContentSink();
+  } else if (mRenderBlockedSink) {
+    sink = mRenderBlockedSink.forget();
   } else {
     sink = do_QueryReferent(mWeakSink);
   }

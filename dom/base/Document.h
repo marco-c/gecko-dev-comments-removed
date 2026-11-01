@@ -5780,6 +5780,8 @@ class Document : public nsINode,
   
   
   nsWeakPtr mWeakSink;
+  
+  nsCOMPtr<nsIContentSink> mRenderBlockedSink;
 
   
   uint32_t mUpdateNestLevel;
