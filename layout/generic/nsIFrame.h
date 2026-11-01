@@ -2693,6 +2693,11 @@ class nsIFrame : public nsQueryFrame {
 
 
   bool IsInReplicatedFixedPosTree() const;
+  
+
+
+
+  bool ContainsReplicatedFixedPosPlaceholders() const;
 
   void SetIsPrimaryFrame(bool aIsPrimary) {
     if (mIsPrimaryFrame == aIsPrimary) {
