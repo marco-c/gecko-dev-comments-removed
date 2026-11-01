@@ -432,11 +432,11 @@ double DistanceAntiAlias(double signedDistance) {
 }
 
 void RasterizeRoundedRectTopAndBottom(const DrawRect& rect) {
-  if (rect.height <= 2 * rect.borderRadius) {
+  if (rect.height < 2 * rect.borderRadius) {
     MOZ_ASSERT(false, "Skeleton UI rect height too small for border radius.");
     return;
   }
-  if (rect.width <= 2 * rect.borderRadius) {
+  if (rect.width < 2 * rect.borderRadius) {
     MOZ_ASSERT(false, "Skeleton UI rect width too small for border radius.");
     return;
   }
@@ -739,23 +739,23 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
   
   int tabBarHeight =
       verticalTabs ? 0 : CSSToDevPixels(44, sCSSToDevPixelScaling);
-  int selectedTabBorderWidth = CSSToDevPixels(2, sCSSToDevPixelScaling);
+  int selectedTabBorderWidth = CSSToDevPixels(1, sCSSToDevPixelScaling);
   
-  int titlebarSpacerWidth = horizontalOffset +
-                            CSSToDevPixels(2, sCSSToDevPixelScaling) -
-                            selectedTabBorderWidth;
+  int titlebarSpacerWidth =
+      horizontalOffset + CSSToDevPixels(2, sCSSToDevPixelScaling);
   if (!sMaximized && !menubarShown) {
     
     titlebarSpacerWidth += CSSToDevPixels(40, sCSSToDevPixelScaling);
   }
   
-  int selectedTabMarginTop =
-      CSSToDevPixels(4, sCSSToDevPixelScaling) - selectedTabBorderWidth;
-  int selectedTabMarginBottom =
-      CSSToDevPixels(4, sCSSToDevPixelScaling) - selectedTabBorderWidth;
-  int selectedTabBorderRadius = CSSToDevPixels(4, sCSSToDevPixelScaling);
-  int selectedTabWidth =
-      CSSToDevPixels(221, sCSSToDevPixelScaling) + 2 * selectedTabBorderWidth;
+  int selectedTabMarginTop = CSSToDevPixels(6, sCSSToDevPixelScaling);
+  
+  int selectedTabHeight = CSSToDevPixels(32, sCSSToDevPixelScaling);
+  
+  int selectedTabBorderRadius = selectedTabHeight / 2;
+  
+  
+  int selectedTabWidth = CSSToDevPixels(221, sCSSToDevPixelScaling);
   int toolbarHeight = CSSToDevPixels(40, sCSSToDevPixelScaling);
   
   int bookmarkToolbarHeight = CSSToDevPixels(28, sCSSToDevPixelScaling);
@@ -768,9 +768,10 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
   
   int chromeContentDividerHeight = CSSToDevPixels(1, sCSSToDevPixelScaling);
 
-  int tabPlaceholderBarMarginTop = CSSToDevPixels(14, sCSSToDevPixelScaling);
   int tabPlaceholderBarMarginLeft = CSSToDevPixels(10, sCSSToDevPixelScaling);
   int tabPlaceholderBarHeight = CSSToDevPixels(10, sCSSToDevPixelScaling);
+  int tabPlaceholderBarMarginTop =
+      (selectedTabHeight - tabPlaceholderBarHeight) / 2;
   int tabPlaceholderBarWidth = CSSToDevPixels(120, sCSSToDevPixelScaling);
 
   int toolbarPlaceholderHeight = CSSToDevPixels(10, sCSSToDevPixelScaling);
@@ -789,14 +790,14 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
   int urlbarMargin =
       CSSToDevPixels(5, sCSSToDevPixelScaling) + horizontalOffset;
 
-  int urlbarTextPlaceholderMarginTop =
-      CSSToDevPixels(12, sCSSToDevPixelScaling);
   int urlbarTextPlaceholderMarginLeft =
       CSSToDevPixels(12, sCSSToDevPixelScaling);
   int urlbarTextPlaceHolderWidth = CSSToDevPixels(
       std::clamp(urlbarCSSSpan.end - urlbarCSSSpan.start - 10.0, 0.0, 260.0),
       sCSSToDevPixelScaling);
   int urlbarTextPlaceholderHeight = CSSToDevPixels(10, sCSSToDevPixelScaling);
+  int urlbarTextPlaceholderMarginTop =
+      (urlbarHeight - urlbarTextPlaceholderHeight) / 2;
 
   int searchbarTextPlaceholderWidth = CSSToDevPixels(62, sCSSToDevPixelScaling);
 
@@ -818,9 +819,9 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
     return Err(PreXULSkeletonUIError::OOM);
   }
 
-  int placeholderBorderRadius = CSSToDevPixels(4, sCSSToDevPixelScaling);
   
-  int urlbarBorderRadius = CSSToDevPixels(8, sCSSToDevPixelScaling);
+  int placeholderBorderRadius = toolbarPlaceholderHeight / 2;
+  int urlbarBorderRadius = urlbarHeight / 2;
 
   
   ColorRect tabBar = {};
@@ -841,8 +842,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
     selectedTab.x = titlebarSpacerWidth;
     selectedTab.y = menubar.y + menubar.height + selectedTabMarginTop;
     selectedTab.width = selectedTabWidth;
-    selectedTab.height =
-        tabBar.y + tabBar.height - selectedTab.y - selectedTabMarginBottom;
+    selectedTab.height = selectedTabHeight;
     selectedTab.borderColor = currentTheme.tabOutlineColor;
     selectedTab.borderWidth = selectedTabBorderWidth;
     selectedTab.borderRadius = selectedTabBorderRadius;
@@ -968,6 +968,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
         searchbarRect.y + urlbarTextPlaceholderMarginTop;
     searchbarTextPlaceholder.width = searchbarTextPlaceholderWidth;
     searchbarTextPlaceholder.height = urlbarTextPlaceholderHeight;
+    searchbarTextPlaceholder.borderRadius = placeholderBorderRadius;
     searchbarTextPlaceholder.flipIfRTL = false;
     if (!rects.append(searchbarTextPlaceholder) ||
         !sAnimatedRects->append(searchbarTextPlaceholder)) {
