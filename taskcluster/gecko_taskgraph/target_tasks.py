@@ -68,6 +68,7 @@ UNCOMMON_TRY_TASK_LABELS = [
     
     r"notarization",
     
+    r"^beetmover-integration-",
     "upload-symbols",
 ]
 
