@@ -26,10 +26,6 @@ const { getInferenceProcessInfo } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
-const { splitContext } = ChromeUtils.importESModule(
-  "resource://gre/modules/shared/FormAutofillML.sys.mjs"
-);
-
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
@@ -982,10 +978,14 @@ function readRequestBody(request) {
 
 
 
+
+
+
 function startMockOpenAI({
   echo = "This gets echoed.",
   onRequest = null,
   holdStreamOpenAfterFinish = false,
+  errorResponse = null,
 } = {}) {
   const server = new HttpServer();
 
@@ -998,6 +998,18 @@ function startMockOpenAI({
     
     if (onRequest) {
       onRequest(request);
+    }
+
+    if (errorResponse) {
+      info("[openai] Answering with error status " + errorResponse.status);
+      response.setStatusLine(request.httpVersion, errorResponse.status, "");
+      response.setHeader(
+        "Content-Type",
+        "application/json; charset=utf-8",
+        false
+      );
+      response.write(JSON.stringify(errorResponse.body));
+      return;
     }
 
     let bodyText = "";
