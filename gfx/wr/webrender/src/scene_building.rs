@@ -1933,6 +1933,21 @@ impl<'a> SceneBuilder<'a> {
         flags
     }
 
+    fn make_current_slice_atomic_if_required(&mut self) {
+        let has_non_wrapping_sc = self.sc_stack
+            .iter()
+            .position(|sc| {
+                !sc.flags.contains(StackingContextFlags::WRAPS_BACKDROP_FILTER)
+            })
+            .is_some();
+
+        if has_non_wrapping_sc {
+            return;
+        }
+
+        self.tile_cache_builder.make_current_slice_atomic();
+    }
+
     
     
     fn add_tile_cache_barrier_if_needed(
@@ -3134,6 +3149,8 @@ impl<'a> SceneBuilder<'a> {
         
         
         let filter_spatial_node_index = SpatialNodeIndex::UNKNOWN;
+
+        self.make_current_slice_atomic_if_required();
 
         
         
