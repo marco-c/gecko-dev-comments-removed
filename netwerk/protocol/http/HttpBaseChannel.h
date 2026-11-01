@@ -287,7 +287,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD GetEffectiveTRRMode(
       nsIRequest::TRRMode* aEffectiveTRRMode) override;
   NS_IMETHOD GetTrrSkipReason(nsITRRSkipReason::value* aTrrSkipReason) override;
-  NS_IMETHOD GetIsLoadedBySocketProcess(bool* aResult) override;
   NS_IMETHOD GetIsOCSP(bool* value) override;
   NS_IMETHOD SetIsOCSP(bool value) override;
   NS_IMETHOD GetTlsFlags(uint32_t* aTlsFlags) override;
@@ -1022,10 +1021,6 @@ class HttpBaseChannel : public nsHashPropertyBag,
     
     
     (uint32_t, BypassProxy, 1),
-
-    
-    
-    (uint32_t, LoadedBySocketProcess, 1),
 
     
     
