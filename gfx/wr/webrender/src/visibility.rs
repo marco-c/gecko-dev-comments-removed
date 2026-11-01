@@ -468,8 +468,10 @@ pub fn build_backdrop_capture_regions(
         let mut chain: SmallVec<[PictureIndex; 4]> = SmallVec::new();
         let mut pic_index = chain_pic_index;
         loop {
+            
+            
             let pic = &pictures[pic_index.0 as usize];
-            if pic.raster_config.is_none() {
+            if picture_graph.surface_index(pic_index).is_none() || pic.raster_config.is_none() {
                 continue 'chains;
             }
             chain.push(pic_index);
