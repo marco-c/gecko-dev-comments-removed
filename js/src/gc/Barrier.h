@@ -1047,6 +1047,7 @@ class HeapSlot : public BarrieredBase<Value>,
 
   
   const Value& get() const { return this->unbarrieredGet(); }
+  using Base::unbarrieredGet;
 
 #if JS_BITS_PER_WORD == 64
   using Base::unbarrieredAtomicGet;
