@@ -123,17 +123,6 @@ void nsProgressFrame::Reflow(nsPresContext* aPresContext,
   aStatus.Reset();  
 }
 
-LogicalSide nsProgressFrame::LogicalStartSide(bool aIsVertical,
-                                              WritingMode aWM) {
-  
-  
-  
-  if (aIsVertical == aWM.IsVertical()) {
-    return LogicalSide::IStart;
-  }
-  return aWM.IsVertical() ? LogicalSide::BStart : LogicalSide::BEnd;
-}
-
 void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
                                        nsPresContext* aPresContext,
                                        const ReflowInput& aReflowInput,
@@ -141,22 +130,19 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
                                        nsReflowStatus& aStatus) {
   MOZ_ASSERT(aChild == mBarDiv->GetPrimaryFrame() ||
              aChild->IsPlaceholderFrame());
-  
-  
-  const WritingMode parentWM = aReflowInput.GetWritingMode();
+  bool vertical = ResolvedOrientationIsVertical();
   const WritingMode wm = aChild->GetWritingMode();
-  const LogicalSize parentSize = aParentContentBoxSize.ConvertTo(wm, parentWM);
-  const nsSize containerSize =
-      (aParentContentBoxSize +
-       aReflowInput.ComputedLogicalBorderPadding(parentWM).Size(parentWM))
-          .GetPhysicalSize(parentWM);
-  const LogicalSize availSize(wm, parentSize.ISize(wm), NS_UNCONSTRAINEDSIZE);
+  const LogicalSize parentSizeInChildWM =
+      aParentContentBoxSize.ConvertTo(wm, aReflowInput.GetWritingMode());
+  const nsSize parentPhysicalSize = parentSizeInChildWM.GetPhysicalSize(wm);
+  LogicalSize availSize = parentSizeInChildWM;
+  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput reflowInput(aPresContext, aReflowInput, aChild, availSize,
-                          Some(parentSize));
-
-  const LogicalSide startSide =
-      LogicalStartSide(ResolvedOrientationIsVertical(), wm);
-  const bool inlineAxis = IsInline(startSide);
+                          Some(parentSizeInChildWM));
+  nscoord size =
+      vertical ? parentPhysicalSize.Height() : parentPhysicalSize.Width();
+  nscoord xoffset = aReflowInput.ComputedPhysicalBorderPadding().left;
+  nscoord yoffset = aReflowInput.ComputedPhysicalBorderPadding().top;
 
   double position =
       mType == Type::Progress
@@ -165,47 +151,59 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
 
   
   
-  
-  
-  
-  
-  
-  Maybe<nscoord> fixedSize;
-  if (position != -1 || ShouldUseNativeStyle()) {
-    nscoord size = inlineAxis ? parentSize.ISize(wm) : parentSize.BSize(wm);
-    
-    
-    if (position >= 0.0 || mType == Type::Meter) {
-      size = NSToCoordRound(size * position);
-    }
-    fixedSize.emplace(size);
-    const LogicalMargin mbp = reflowInput.ComputedLogicalMargin(wm) +
-                              reflowInput.ComputedLogicalBorderPadding(wm);
-    if (inlineAxis) {
-      size -= mbp.IStartEnd(wm);
-      reflowInput.SetComputedISize(std::max(size, 0));
-    } else {
-      size -= mbp.BStartEnd(wm);
-      reflowInput.SetComputedBSize(std::max(size, 0));
-    }
+  if (position >= 0.0 || mType == Type::Meter) {
+    size = NSToCoordRound(size * position);
+  }
+
+  if (!vertical && wm.IsPhysicalRTL()) {
+    xoffset += parentPhysicalSize.Width() - size;
   }
 
   
-  const LogicalMargin parentBP = aReflowInput.ComputedLogicalBorderPadding(wm);
-  const LogicalMargin margin = reflowInput.ComputedLogicalMargin(wm);
-  LogicalPoint pos(wm, parentBP.IStart(wm) + margin.IStart(wm),
-                   parentBP.BStart(wm) + margin.BStart(wm));
+  
+  const bool startAtBottom =
+      vertical &&
+      (!wm.IsVertical() || wm.PhysicalSide(LogicalSide::IStart) == eSideBottom);
+
+  
+  
+  
+  
+  
+  
+  
+  if (position != -1 || ShouldUseNativeStyle()) {
+    if (vertical) {
+      if (startAtBottom) {
+        yoffset += parentPhysicalSize.Height() - size;
+      }
+      size -= reflowInput.ComputedPhysicalMargin().TopBottom() +
+              reflowInput.ComputedPhysicalBorderPadding().TopBottom();
+      size = std::max(size, 0);
+      reflowInput.SetComputedHeight(size);
+    } else {
+      size -= reflowInput.ComputedPhysicalMargin().LeftRight() +
+              reflowInput.ComputedPhysicalBorderPadding().LeftRight();
+      size = std::max(size, 0);
+      reflowInput.SetComputedWidth(size);
+    }
+  } else if (startAtBottom) {
+    
+    
+    
+    
+    
+    yoffset += parentPhysicalSize.Height() - reflowInput.ComputedHeight();
+  }
+
+  xoffset += reflowInput.ComputedPhysicalMargin().left;
+  yoffset += reflowInput.ComputedPhysicalMargin().top;
 
   ReflowOutput barDesiredSize(aReflowInput);
-  ReflowChild(aChild, aPresContext, barDesiredSize, reflowInput, wm, pos,
-              containerSize, ReflowChildFlags::Default, aStatus);
-  if (startSide == LogicalSide::BEnd) {
-    pos.B(wm) +=
-        parentSize.BSize(wm) -
-        fixedSize.valueOr(barDesiredSize.BSize(wm) + margin.BStartEnd(wm));
-  }
-  FinishReflowChild(aChild, aPresContext, barDesiredSize, &reflowInput, wm, pos,
-                    containerSize, ReflowChildFlags::Default);
+  ReflowChild(aChild, aPresContext, barDesiredSize, reflowInput, xoffset,
+              yoffset, ReflowChildFlags::Default, aStatus);
+  FinishReflowChild(aChild, aPresContext, barDesiredSize, &reflowInput, xoffset,
+                    yoffset, ReflowChildFlags::Default);
 }
 
 nsresult nsProgressFrame::AttributeChanged(int32_t aNameSpaceID,

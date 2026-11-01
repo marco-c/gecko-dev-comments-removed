@@ -53,15 +53,6 @@ class nsProgressFrame final : public nsContainerFrame,
 
   bool ShouldUseNativeStyle() const;
 
-  
-  
-  static mozilla::LogicalSide LogicalStartSide(bool aIsVertical,
-                                               mozilla::WritingMode aWM);
-  static mozilla::Side PhysicalStartSide(bool aIsVertical,
-                                         mozilla::WritingMode aWM) {
-    return aWM.PhysicalSide(LogicalStartSide(aIsVertical, aWM));
-  }
-
  protected:
   mozilla::LogicalSize DefaultSize() const;
   
