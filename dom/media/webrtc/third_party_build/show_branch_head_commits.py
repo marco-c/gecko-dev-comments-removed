@@ -12,27 +12,35 @@
 
 
 import argparse
-import os
+import json
 import sys
+import urllib.error
+import urllib.request
 
-from fetch_github_repo import fetch_repo
 from lookup_branch_head import get_branch_head
-from run_operations import run_git
 
-default_state_dir = ".moz-fast-forward"
-default_repo_dir = ".moz-fast-forward/moz-libwebrtc"
-default_tar_name = "moz-libwebrtc.tar.gz"
+upstream_url = "https://webrtc.googlesource.com/src"
 
 
-def get_branch_head_commits(repo_path, milestone):
-    if not os.path.exists(repo_path):
-        print(f"repo not found at {repo_path}, fetching...")
-        fetch_repo(
-            repo_path,
-            False,
-            os.path.join(default_state_dir, default_tar_name),
-        )
+def fetch_upstream_log(revision_range):
+    
+    
+    
+    
+    url = f"{upstream_url}/+log/{revision_range}?format=JSON&n=1000"
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            text = response.read().decode("utf-8")
+    except (urllib.error.URLError, TimeoutError) as e:
+        sys.exit(f"error: unable to fetch {url}: {e}")
+    
+    log = json.loads(text[text.index("\n") + 1 :])
+    if "next" in log:
+        sys.exit(f"error: more than 1000 commits found for {revision_range}")
+    return log["log"]
 
+
+def get_branch_head_commits(milestone):
     branch_head_num = get_branch_head(milestone)
     if branch_head_num is None:
         sys.exit(
@@ -41,18 +49,16 @@ def get_branch_head_commits(repo_path, milestone):
 
     branch_head = f"branch-heads/{branch_head_num}"
 
-    merge_base_lines = run_git(f"git merge-base master {branch_head}", repo_path)
-    if len(merge_base_lines) != 1:
-        sys.exit(f"error: unable to find merge-base for {branch_head}")
-    merge_base = merge_base_lines[0]
+    try:
+        commits = fetch_upstream_log(f"refs/heads/main..refs/{branch_head}")
+    except Exception as e:
+        sys.exit(f"error: unable to fetch commits for {branch_head}: {e}")
 
-    full_shas = run_git(f"git log --format=%H {merge_base}..{branch_head}", repo_path)
-    oneline_commits = run_git(
-        f"git log --oneline {merge_base}..{branch_head}", repo_path
-    )
-    upstream_subjects = run_git(
-        f"git log --format=%s {merge_base}..{branch_head}", repo_path
-    )
+    full_shas = [c["commit"] for c in commits]
+    upstream_subjects = [c["message"].split("\n", 1)[0] for c in commits]
+    oneline_commits = [
+        f"{sha[:10]} {subject}" for sha, subject in zip(full_shas, upstream_subjects)
+    ]
 
     return branch_head, full_shas, oneline_commits, upstream_subjects
 
@@ -64,15 +70,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "milestone", type=int, help="integer chromium milestone (example: 106)"
     )
-    parser.add_argument(
-        "--repo-path",
-        default=default_repo_dir,
-        help=f"path to moz-libwebrtc repo (defaults to {default_repo_dir})",
-    )
     args = parser.parse_args()
 
     branch_head, full_shas, oneline_commits, upstream_subjects = (
-        get_branch_head_commits(args.repo_path, args.milestone)
+        get_branch_head_commits(args.milestone)
     )
 
     print(f"chromium milestone {args.milestone} uses {branch_head}")
