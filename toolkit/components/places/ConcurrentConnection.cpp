@@ -248,9 +248,10 @@ ConcurrentConnection::BlockShutdown(nsIAsyncShutdownClient* aBarrierClient) {
   if (mConn) {
     (void)mConn->Interrupt();
     CloseConnection();
-  } else {
+  } else if (!mIsOpening && !mIsClosing) {
     Shutdown();
   }
+  
   return NS_OK;
 }
 
@@ -271,12 +272,14 @@ ConcurrentConnection::Complete(nsresult aRv, nsISupports* aData) {
 
   
   
-  if (mIsShuttingDown && aData) {
-    nsCOMPtr<mozIStorageAsyncConnection> conn = do_QueryInterface(aData);
-    if (conn) {
-      (void)conn->AsyncClose(nullptr);
-    }
+  if (mIsShuttingDown) {
     mIsOpening = false;
+    mConn = do_QueryInterface(aData);
+    if (mConn) {
+      CloseConnection();
+    } else {
+      Shutdown();
+    }
     return NS_OK;
   }
 
@@ -384,6 +387,11 @@ void ConcurrentConnection::CloseConnection() {
     mIsConnectionReady = false;
     conn = mConn.forget();
   }
+  
+  
+  if (!conn) {
+    return;
+  }
 
   if (mAsyncStatements) {
     mAsyncStatements->FinalizeStatements();
@@ -401,13 +409,16 @@ void ConcurrentConnection::CloseConnection() {
   nsCOMPtr<mozIStorageCompletionCallback> cb =
       MakeAndAddRef<CallbackOnComplete>(
           this, &ConcurrentConnection::CloseConnectionComplete);
+  mIsClosing = true;
   if (NS_FAILED(conn->AsyncClose(cb))) {
+    mIsClosing = false;
     Shutdown();
   }
 }
 
 void ConcurrentConnection::CloseConnectionComplete(nsresult rv) {
   AssertIsOnMainThread();
+  mIsClosing = false;
   if (mIsShuttingDown || NS_FAILED(rv)) {
     Shutdown();
     return;
@@ -602,7 +613,10 @@ void ConcurrentConnection::TryToOpenConnection() {
   mConnectionReadyMutex.NoteOnMainThread();
   
   
-  if (mIsShuttingDown || mIsOpening || mConn) {
+  
+  
+  if (mIsShuttingDown || mIsOpening || mConn ||
+      AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
     return;
   }
 
@@ -646,6 +660,9 @@ void ConcurrentConnection::PlacesInitFallbackTimerCallback(nsITimer*,
 }
 
 void ConcurrentConnection::Shutdown() {
+  if (mState == CLOSED) {
+    return;
+  }
   
   
 #ifdef DEBUG
