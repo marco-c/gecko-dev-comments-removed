@@ -1709,15 +1709,15 @@ static bool BaseURIsArePathCompatible(nsIURI* aA, nsIURI* aB) {
 static bool CanReuseInlineSheet(SharedStyleSheetCache::InlineSheetEntry& aEntry,
                                 nsIURI* aNewBaseURI, bool aIsImage) {
   auto dependency = aEntry.mSheet->OriginalContentsUriDependency();
-  if (dependency == StyleNonLocalUriDependency::No) {
-    
-    return true;
-  }
   if (aIsImage != aEntry.mWasLoadedAsImage) {
     
     
     
     return false;
+  }
+  if (dependency == StyleNonLocalUriDependency::No) {
+    
+    return true;
   }
   if (dependency == StyleNonLocalUriDependency::Absolute) {
     
