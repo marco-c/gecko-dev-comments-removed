@@ -156,6 +156,18 @@ struct ScreamV2Parameters {
 
   
   
+  FieldTrialParameter<double> feedback_interval_avg_g;
+
+  
+  
+  FieldTrialParameter<bool> use_feedback_interval_for_virtual_rtt;
+
+  
+  
+  FieldTrialParameter<bool> allow_initial_ref_window_clamping;
+
+  
+  
   
   FieldTrialParameter<TimeDelta>
       allow_large_pacing_bursts_after_congestion_time;
