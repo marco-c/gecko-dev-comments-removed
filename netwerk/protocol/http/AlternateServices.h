@@ -219,29 +219,10 @@ class AltSvcCache {
 
 
 
-class AltSvcMappingValidator final {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AltSvcMappingValidator)
-
-  explicit AltSvcMappingValidator(AltSvcMapping* aMap);
-
-  void OnTransactionDestroy(bool aValidateResult);
-
-  void OnTransactionClose(bool aValidateResult);
-
- protected:
-  virtual ~AltSvcMappingValidator() = default;
-
-  RefPtr<AltSvcMapping> mMapping;
-};
-
-
-
-template <class Validator>
 class AltSvcTransaction final : public SpeculativeTransaction {
  public:
   AltSvcTransaction(nsHttpConnectionInfo* ci, nsIInterfaceRequestor* callbacks,
-                    uint32_t caps, Validator* aValidator, bool aIsHttp3);
+                    uint32_t caps, AltSvcMapping* aMap);
 
   ~AltSvcTransaction() override;
 
@@ -260,9 +241,8 @@ class AltSvcTransaction final : public SpeculativeTransaction {
                         uint32_t* countRead) override;
 
  private:
-  RefPtr<Validator> mValidator;
+  RefPtr<AltSvcMapping> mMapping;
   uint32_t mIsHttp3 : 1;
-  uint32_t mRunning : 1;
   uint32_t mTriedToValidate : 1;
   uint32_t mTriedToWrite : 1;
   uint32_t mValidatedResult : 1;
