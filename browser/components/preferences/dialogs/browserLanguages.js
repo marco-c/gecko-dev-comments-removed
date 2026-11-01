@@ -27,7 +27,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 
 
-async function installFromUrl(url, hash, callback) {
+async function installFromUrl(url, hash) {
   let telemetryInfo = {
     source: "about:preferences",
   };
@@ -35,9 +35,6 @@ async function installFromUrl(url, hash, callback) {
     hash,
     telemetryInfo,
   });
-  if (callback) {
-    callback(install.installId.toString());
-  }
   await install.install();
   return install.addon;
 }
@@ -53,20 +50,12 @@ async function dictionaryIdsForLocale(locale) {
 }
 
 class OrderedListBox {
-  constructor({
-    richlistbox,
-    upButton,
-    downButton,
-    removeButton,
-    onRemove,
-    onReorder,
-  }) {
+  constructor({ richlistbox, upButton, downButton, removeButton, onRemove }) {
     this.richlistbox = richlistbox;
     this.upButton = upButton;
     this.downButton = downButton;
     this.removeButton = removeButton;
     this.onRemove = onRemove;
-    this.onReorder = onReorder;
 
     this.items = [];
 
@@ -103,8 +92,6 @@ class OrderedListBox {
     this.richlistbox.insertBefore(selectedEl, prevEl);
     this.richlistbox.ensureElementIsVisible(selectedEl);
     this.setButtonState();
-
-    this.onReorder();
   }
 
   moveDown() {
@@ -122,8 +109,6 @@ class OrderedListBox {
     this.richlistbox.insertBefore(nextEl, selectedEl);
     this.richlistbox.ensureElementIsVisible(selectedEl);
     this.setButtonState();
-
-    this.onReorder();
   }
 
   removeItem() {
@@ -388,12 +373,6 @@ var gBrowserLanguagesDialog = {
   
 
 
-
-  _telemetryId: null,
-
-  
-
-
   _availableLocalesUI: null,
 
   
@@ -406,11 +385,6 @@ var gBrowserLanguagesDialog = {
     return Services.prefs.getBoolPref("intl.multilingual.downloadEnabled");
   },
 
-  recordTelemetry(method, extra = {}) {
-    extra.value = this._telemetryId;
-    Glean.intlUiBrowserLanguage[method + "Dialog"].record(extra);
-  },
-
   async onLoad() {
     
 
@@ -421,12 +395,8 @@ var gBrowserLanguagesDialog = {
 
 
 
-
     
-    let { telemetryId, selectedLocalesForRestart, search } =
-      window.arguments[0];
-
-    this._telemetryId = telemetryId;
+    let { selectedLocalesForRestart, search } = window.arguments[0];
 
     
     
@@ -469,7 +439,6 @@ var gBrowserLanguagesDialog = {
       downButton: document.getElementById("down"),
       removeButton: document.getElementById("remove"),
       onRemove: item => this.selectedLocaleRemoved(item),
-      onReorder: () => this.recordTelemetry("reorder"),
     });
     this._selectedLocalesUI.setItems(
       await getLocaleDisplayInfo(selectedLocales)
@@ -490,9 +459,6 @@ var gBrowserLanguagesDialog = {
       onChange: item => {
         this.hideError();
         if (item.value == "search") {
-          
-          
-          this.recordTelemetry("search");
           this.loadLocalesFromAMO();
         }
       },
@@ -590,7 +556,6 @@ var gBrowserLanguagesDialog = {
 
   async availableLanguageSelected(item) {
     if ((await LangPackMatcher.getAvailableLocales()).includes(item.value)) {
-      this.recordTelemetry("add");
       await this.requestLocalLanguage(item);
     } else if (this.availableLangpacks.has(item.value)) {
       
@@ -630,9 +595,7 @@ var gBrowserLanguagesDialog = {
     let addon;
 
     try {
-      addon = await installFromUrl(url, hash, installId =>
-        this.recordTelemetry("add", { installId })
-      );
+      addon = await installFromUrl(url, hash);
     } catch (e) {
       this.showError();
       return;
@@ -694,8 +657,6 @@ var gBrowserLanguagesDialog = {
 
 
   async selectedLocaleRemoved(item) {
-    this.recordTelemetry("remove");
-
     this._availableLocalesUI.addItem(item);
 
     

@@ -300,14 +300,7 @@ add_task(async function testDisabledBrowserLanguages() {
   await Promise.all(addons.map(addon => addon.uninstall()));
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  assertTelemetryRecorded([
-    ["manage", "main", dialogId],
-    ["search", "dialog", dialogId],
-    ["add", "dialog", dialogId, { installId }],
-
-    
-    ["cancel", "dialog", dialogId],
-  ]);
+  assertTelemetryRecorded([["manage", "main", dialogId]]);
 });
 
 add_task(async function testReorderingBrowserLanguages() {
@@ -427,16 +420,8 @@ add_task(async function testReorderingBrowserLanguages() {
 
   assertTelemetryRecorded([
     ["manage", "main", firstDialogId],
-    ["reorder", "dialog", firstDialogId],
-    ["accept", "dialog", firstDialogId],
-    ["set_fallback", "dialog", firstDialogId],
     ["manage", "main", secondDialogId],
-    ["reorder", "dialog", secondDialogId],
-    ["accept", "dialog", secondDialogId],
     ["manage", "main", thirdDialogId],
-    ["reorder", "dialog", thirdDialogId],
-    ["reorder", "dialog", thirdDialogId],
-    ["accept", "dialog", thirdDialogId],
   ]);
 });
 
@@ -545,19 +530,7 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
   await Promise.all(addons.map(addon => addon.uninstall()));
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-  assertTelemetryRecorded([
-    ["manage", "main", dialogId],
-
-    
-    ["add", "dialog", dialogId],
-    ["add", "dialog", dialogId],
-
-    ["remove", "dialog", dialogId],
-    ["remove", "dialog", dialogId],
-
-    ["add", "dialog", dialogId],
-    ["accept", "dialog", dialogId],
-  ]);
+  assertTelemetryRecorded([["manage", "main", dialogId]]);
 });
 
 add_task(async function testInstallFromAMO() {
@@ -715,14 +688,7 @@ add_task(async function testInstallFromAMO() {
     
     ["search", "main", firstDialogId],
     
-    ["add", "dialog", firstDialogId, { installId }],
-    
-    ["reorder", "dialog", firstDialogId],
-    ["accept", "dialog", firstDialogId],
-
-    
     ["search", "main", secondDialogId],
-    ["cancel", "dialog", secondDialogId],
   ]);
 });
 

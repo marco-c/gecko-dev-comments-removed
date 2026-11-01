@@ -1421,25 +1421,9 @@ var gMainPane = {
     
     let { selected } = this.gBrowserLanguagesDialog;
 
-    this.gBrowserLanguagesDialog.recordTelemetry(
-      selected ? "accept" : "cancel"
-    );
-
     if (!selected) {
       
       return;
-    }
-
-    
-    
-    const prevLocales = Services.locale.requestedLocales.filter(
-      lc => selected.indexOf(lc) > 0
-    );
-    const newLocales = selected.filter(
-      (lc, i) => i > 0 && prevLocales.includes(lc)
-    );
-    if (prevLocales.some((lc, i) => newLocales[i] != lc)) {
-      this.gBrowserLanguagesDialog.recordTelemetry("setFallback");
     }
 
     switch (Multilingual.getTransitionType(selected)) {
