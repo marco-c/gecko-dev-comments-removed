@@ -519,6 +519,8 @@ pref("browser.urlbar.trustPanel.breachAlerts", true);
 
 pref("browser.urlbar.unifiedSearchButton.always", false);
 
+pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", false);
+
 
 pref("browser.urlbar.trending.featureGate", true);
 pref("browser.urlbar.trending.requireSearchMode", false);

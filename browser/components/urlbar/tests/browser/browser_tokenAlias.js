@@ -834,6 +834,10 @@ add_task(async function multipleMatchingEngines() {
 
 
 add_task(async function doNotShowInSearchMode() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.unifiedSearchButton.historyInSearchMode", false]],
+  });
+
   
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -889,6 +893,7 @@ add_task(async function doNotShowInSearchMode() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
+  await SpecialPowers.popPrefEnv();
 });
 
 

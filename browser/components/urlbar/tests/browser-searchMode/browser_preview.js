@@ -10,6 +10,12 @@
 const TEST_ENGINE_NAME = "Test";
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.unifiedSearchButton.always", false],
+      ["browser.urlbar.unifiedSearchButton.historyInSearchMode", false],
+    ],
+  });
   
   
   await SearchTestUtils.updateRemoteSettingsConfig([
