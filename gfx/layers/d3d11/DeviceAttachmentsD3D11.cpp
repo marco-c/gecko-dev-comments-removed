@@ -6,6 +6,7 @@
 
 #include "CompositorD3D11Shaders.h"
 #include "ShaderDefinitionsD3D11.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/layers/Compositor.h"
 
@@ -14,19 +15,21 @@ namespace layers {
 
 using namespace gfx;
 
-DeviceAttachmentsD3D11::DeviceAttachmentsD3D11(ID3D11Device* device)
-    : mDevice(device),
+DeviceAttachmentsD3D11::DeviceAttachmentsD3D11(ID3D11Device* aDevice,
+                                               SyncObjectHost* aSyncObject)
+    : mSyncObject(aSyncObject),
+      mDevice(aDevice),
       mContinueInit(true),
       mInitialized(false),
       mDeviceReset(false) {}
 
 
 RefPtr<DeviceAttachmentsD3D11> DeviceAttachmentsD3D11::Create(
-    ID3D11Device* aDevice) {
+    ID3D11Device* aDevice, SyncObjectHost* aSyncObject) {
   
   
   RefPtr<DeviceAttachmentsD3D11> attachments =
-      new DeviceAttachmentsD3D11(aDevice);
+      new DeviceAttachmentsD3D11(aDevice, aSyncObject);
   attachments->Initialize();
   return attachments.forget();
 }
@@ -173,28 +176,15 @@ bool DeviceAttachmentsD3D11::Initialize() {
     return false;
   }
 
-  if (!InitSyncObject()) {
+  
+  
+  if (!mSyncObject && !DeviceManagerDx::Get()->IsWARP()) {
     mInitFailureId = "FEATURE_FAILURE_D3D11_OBJ_SYNC";
     return false;
   }
 
   mInitialized = true;
   return true;
-}
-
-bool DeviceAttachmentsD3D11::InitSyncObject() {
-  
-  if (DeviceManagerDx::Get()->IsWARP()) {
-    return true;
-  }
-
-  MOZ_ASSERT(!mSyncObject);
-  MOZ_ASSERT(mDevice);
-
-  mSyncObject = SyncObjectHost::CreateSyncObjectHost(mDevice);
-  MOZ_ASSERT(mSyncObject);
-
-  return mSyncObject->Init();
 }
 
 bool DeviceAttachmentsD3D11::CreateShaders() {

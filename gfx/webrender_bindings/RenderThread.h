@@ -36,6 +36,7 @@ class CompositorBridgeParent;
 class Fence;
 class ShaderProgramOGLsHolder;
 class SurfacePool;
+class SyncObjectHost;
 }  
 namespace wr {
 
@@ -329,6 +330,11 @@ class RenderThread final {
   gl::GLContext* SingletonGL();
   gl::GLContext* SingletonGLForCompositorOGL();
   void ClearSingletonGL();
+  
+  layers::SyncObjectHost* SingletonGLSyncObject() const {
+    MOZ_ASSERT(IsInRenderThread());
+    return mSingletonGLSyncObject;
+  }
   RefPtr<layers::SurfacePool> SharedSurfacePool();
   void ClearSharedSurfacePool();
 
@@ -497,6 +503,11 @@ class RenderThread final {
 
   ~RenderThread();
 
+  
+  
+  
+  void DestroyRenderBackendPool();
+
   RefPtr<nsIThread> const mThread;
 
   WebRenderThreadPool mThreadPool;
@@ -512,6 +523,7 @@ class RenderThread final {
   
   
   RefPtr<gl::GLContext> mSingletonGL;
+  RefPtr<layers::SyncObjectHost> mSingletonGLSyncObject;
   bool mSingletonGLIsForHardwareWebRender;
 
   RefPtr<layers::SurfacePool> mSurfacePool;
