@@ -724,7 +724,7 @@ ExternalTextureSourceHost::CreateFromDXGITextureHost(
       .view_formats = {},
   };
   {
-    ffi::wgpu_server_device_import_texture_from_shared_handle(
+    ffi::wgpu_server_device_import_texture_from_d3d11_resource(
         aParent->GetContext(), aDeviceId, usedTextureIds[0], &textureDesc,
         handle->GetHandle());
     
@@ -799,7 +799,7 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrTextureHost(
           .usage = WGPUTextureUsages_TEXTURE_BINDING,
           .view_formats = {},
       };
-      ffi::wgpu_server_device_import_texture_from_shared_handle(
+      ffi::wgpu_server_device_import_texture_from_d3d11_resource(
           aParent->GetContext(), aDeviceId, aDesc.mTextureIds[i], &textureDesc,
           aTextureHost->mHandles[i]->GetHandle());
       
