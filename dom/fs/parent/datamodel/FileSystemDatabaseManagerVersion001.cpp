@@ -815,8 +815,18 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectoryImpl(
 
   TryRemoveDuringIdleMaintenance(failedRemovals);
 
+  auto isInFailedRemovals = [&failedRemovals](const auto& aFileId) {
+    return failedRemovals.cend() !=
+           std::find_if(failedRemovals.cbegin(), failedRemovals.cend(),
+                        [&aFileId](const auto& aFailedRemoval) {
+                          return aFileId == aFailedRemoval;
+                        });
+  };
+
   for (const auto& fileId : descendants) {
-    QM_WARNONLY_TRY(QM_TO_RESULT(RemoveFileId(fileId)));
+    if (!isInFailedRemovals(fileId)) {
+      QM_WARNONLY_TRY(QM_TO_RESULT(RemoveFileId(fileId)));
+    }
   }
 
   if (usage > 0) {  
@@ -917,8 +927,18 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveFile(
 
   TryRemoveDuringIdleMaintenance(failedRemovals);
 
+  auto isInFailedRemovals = [&failedRemovals](const auto& aFileId) {
+    return failedRemovals.cend() !=
+           std::find_if(failedRemovals.cbegin(), failedRemovals.cend(),
+                        [&aFileId](const auto& aFailedRemoval) {
+                          return aFileId == aFailedRemoval;
+                        });
+  };
+
   for (const auto& fileId : diskItems) {
-    QM_WARNONLY_TRY(QM_TO_RESULT(RemoveFileId(fileId)));
+    if (!isInFailedRemovals(fileId)) {
+      QM_WARNONLY_TRY(QM_TO_RESULT(RemoveFileId(fileId)));
+    }
   }
 
   if (usage > 0) {  
@@ -1080,11 +1100,6 @@ nsresult FileSystemDatabaseManagerVersion001::MergeFileId(
     bool ) {
   
   return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-nsresult FileSystemDatabaseManagerVersion001::RemoveFileIdsWithoutMainFile() {
-  
-  return NS_OK;
 }
 
 void FileSystemDatabaseManagerVersion001::Close() { mConnection->Close(); }
