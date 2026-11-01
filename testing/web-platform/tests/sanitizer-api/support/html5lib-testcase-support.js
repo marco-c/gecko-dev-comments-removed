@@ -85,6 +85,8 @@ function parse_html5lib_testcases(content) {
       
     }
   }
+  
+  add_html5lib_testcase(testcases, current);
   return testcases;
 }
 
