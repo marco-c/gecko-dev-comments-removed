@@ -7516,48 +7516,63 @@ void nsCocoaWindow::SetWindowTransform(const gfx::Matrix& aTransform) {
     return;
   }
 
-  gfx::Matrix transform = aTransform;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!transform.Invert()) {
-    
-    transform = gfx::Matrix();
-  }
-
-  bool isIdentity = transform.IsIdentity();
+  bool isIdentity = aTransform.IsIdentity();
   if (isIdentity && mWindowTransformIsIdentity) {
     return;
   }
 
-  transform.PreTranslate(-mBounds.x, -mBounds.y);
-
   
   
-  if (!transform.HasNonTranslation() && transform.HasNonIntegerTranslation()) {
-    auto snappedTranslation = gfx::IntPoint::Round(transform.GetTranslation());
-    transform =
-        gfx::Matrix::Translation(snappedTranslation.x, snappedTranslation.y);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const DesktopToLayoutDeviceScale scale = GetDesktopToDeviceScale();
+  CGAffineTransform cgTransform;
+  if (!aTransform.HasNonAxisAlignedTransform() && aTransform._11 > 0 &&
+      aTransform._22 > 0 && !mBounds.IsEmpty()) {
+    
+    
+    
+    const DesktopRect snapped = [&] {
+      const LayoutDeviceRect bounds(mBounds);
+      const auto transformed =
+          LayoutDeviceRect::FromUnknownRect(aTransform.TransformBounds(
+              gfx::Rect(gfx::Point(), bounds.Size().ToUnknownSize()))) +
+          bounds.TopLeft();
+      DesktopRect result = transformed / scale;
+      result.Round();
+      result.width = std::max(result.width, 1.0f);
+      result.height = std::max(result.height, 1.0f);
+      return result;
+    }();
+    const DesktopSize untransformedSize = mBounds.Size() / scale;
+    const auto scaleX = CGFloat(untransformedSize.width) / snapped.width;
+    const auto scaleY = CGFloat(untransformedSize.height) / snapped.height;
+    cgTransform = CGAffineTransformMake(
+        scaleX, 0, 0, scaleY, -snapped.x * scaleX, -snapped.y * scaleY);
+  } else {
+    gfx::Matrix transform = aTransform;
+    if (!transform.Invert()) {
+      
+      transform = gfx::Matrix();
+    }
+    transform.PreTranslate(-mBounds.x, -mBounds.y);
+    transform.PreScale(scale.scale, scale.scale);
+    transform.PostScale(1 / scale.scale, 1 / scale.scale);
+    cgTransform = GfxMatrixToCGAffineTransform(transform);
   }
 
-  
-  
-  
-  CGFloat backingScale = BackingScaleFactor();
-  transform.PreScale(backingScale, backingScale);
-  transform.PostScale(1 / backingScale, 1 / backingScale);
-
   CGSConnection cid = _CGSDefaultConnection();
-  CGSSetWindowTransform(cid, [mWindow windowNumber],
-                        GfxMatrixToCGAffineTransform(transform));
+  CGSSetWindowTransform(cid, [mWindow windowNumber], cgTransform);
 
   mWindowTransformIsIdentity = isIdentity;
 
