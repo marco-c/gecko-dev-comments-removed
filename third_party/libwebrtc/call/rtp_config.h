@@ -109,6 +109,10 @@ struct RtpConfig {
   std::string mid;
 
   
+  
+  std::vector<uint32_t> csrcs;
+
+  
   RtcpMode rtcp_mode = RtcpMode::kCompound;
 
   
