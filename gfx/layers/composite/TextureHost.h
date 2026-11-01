@@ -184,7 +184,7 @@ class TextureSource : public RefCounted<TextureSource> {
 
   void ReleaseCompositableRef() {
     --mCompositableCount;
-    MOZ_ASSERT(mCompositableCount >= 0);
+    MOZ_RELEASE_ASSERT(mCompositableCount >= 0);
   }
 
   
@@ -594,7 +594,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
 
   void ReleaseCompositableRef() {
     --mCompositableCount;
-    MOZ_ASSERT(mCompositableCount >= 0);
+    MOZ_RELEASE_ASSERT(mCompositableCount >= 0);
     if (mCompositableCount == 0) {
       UnbindTextureSource();
       
@@ -744,7 +744,7 @@ class TextureHost : public AtomicRefCountedWithFinalize<TextureHost> {
   }
 
   void SetDestroyedCallback(std::function<void()>&& aDestroyedCallback) {
-    MOZ_ASSERT(!mDestroyedCallback);
+    MOZ_RELEASE_ASSERT(!mDestroyedCallback);
     mDestroyedCallback = std::move(aDestroyedCallback);
   }
 
@@ -838,6 +838,10 @@ class BufferTextureHost : public TextureHost {
   already_AddRefed<gfx::DataSourceSurface> GetAsSurface(
       gfx::DataSourceSurface* aSurface) override;
 
+  bool NeedsDeferredDeletion() const override {
+    return TextureHost::NeedsDeferredDeletion() || UseExternalTextures();
+  }
+
   BufferTextureHost* AsBufferTextureHost() override { return this; }
 
   const BufferDescriptor& GetBufferDescriptor() const { return mDescriptor; }
@@ -870,11 +874,14 @@ class BufferTextureHost : public TextureHost {
   int32_t GetCbCrStride() const;
 
  protected:
+  bool UseExternalTextures() const { return mUseExternalTextures; }
+
   BufferDescriptor mDescriptor;
   RefPtr<Compositor> mCompositor;
   gfx::IntSize mSize;
   gfx::SurfaceFormat mFormat;
   bool mLocked;
+  bool mUseExternalTextures;
 
   class DataTextureSourceYCbCrBasic;
 };
@@ -1032,7 +1039,7 @@ class CompositingRenderTarget : public TextureSource {
   }
   void GetProjection(gfx::Matrix4x4& aMatrix, bool& aEnableDepth, float& aZNear,
                      float& aZFar) {
-    MOZ_ASSERT(mHasComplexProjection);
+    MOZ_RELEASE_ASSERT(mHasComplexProjection);
     aMatrix = mProjectionMatrix;
     aEnableDepth = mEnableDepthBuffer;
     aZNear = mZNear;
