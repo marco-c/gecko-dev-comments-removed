@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NSDOMMEDIASTREAM_H_
 #define NSDOMMEDIASTREAM_H_
 
@@ -13,6 +12,7 @@
 #include "mozilla/WeakPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIPrincipal.h"
+#include "nsTObserverArray.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
@@ -235,7 +235,7 @@ class DOMMediaStream : public DOMEventTargetHelper,
   nsTArray<nsCOMPtr<nsISupports>> mConsumersToKeepAlive;
 
   
-  nsTArray<RefPtr<TrackListener>> mTrackListeners;
+  nsTObserverArray<RefPtr<TrackListener>> mTrackListeners;
 
   
   bool mActive = false;
