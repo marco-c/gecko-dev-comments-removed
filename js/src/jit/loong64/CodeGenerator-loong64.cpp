@@ -1651,7 +1651,7 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
     
     if (!mir->isTruncated()) {
       MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, out, zero, ins->snapshot());
+      bailoutCmp32(Assembler::Zero, out, out, ins->snapshot());
     }
     masm.bind(&done);
   }
