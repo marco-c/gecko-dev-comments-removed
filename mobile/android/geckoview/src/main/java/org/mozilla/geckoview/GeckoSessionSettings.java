@@ -211,7 +211,6 @@ public final class GeckoSessionSettings implements Parcelable {
 
   
   @Retention(RetentionPolicy.SOURCE)
-  
   @IntDef({
     DISPLAY_MODE_BROWSER,
     DISPLAY_MODE_MINIMAL_UI,

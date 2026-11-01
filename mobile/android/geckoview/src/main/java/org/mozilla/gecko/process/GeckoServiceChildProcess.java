@@ -188,7 +188,7 @@ public class GeckoServiceChildProcess extends Service {
     return new ChildProcessBinder();
   }
 
-  private final Binder mBinder = createBinder();
+  private Binder mBinder;
 
   @Override
   public void onDestroy() {
@@ -202,6 +202,9 @@ public class GeckoServiceChildProcess extends Service {
     
     stopSelf();
     sState = ProcessState.BOUND;
+    if (mBinder == null) {
+      mBinder = createBinder();
+    }
     return mBinder;
   }
 

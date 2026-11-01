@@ -49,8 +49,7 @@ public enum GeckoProcessType {
 
 
 
-  
-  static GeckoProcessType determineContentProcessType() {
+   static GeckoProcessType determineContentProcessType() {
     final GeckoProcessManager pm = GeckoProcessManager.getInstance();
     if (pm.isAppZygoteEnabled() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       return GeckoProcessType.CONTENT_ISOLATED_WITH_ZYGOTE;

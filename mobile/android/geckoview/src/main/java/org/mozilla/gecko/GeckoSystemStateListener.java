@@ -158,12 +158,12 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
     mBroadcastReceiver = null;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   
 
 
 
 
+  @WrapForJNI(calledFrom = "gecko")
   private static boolean prefersReducedMotion() {
     final ContentResolver contentResolver = sApplicationContext.getContentResolver();
 
@@ -171,13 +171,13 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
         == 0.0f;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   
 
 
 
 
 
+  @WrapForJNI(calledFrom = "gecko")
   private static boolean isInvertedColors() {
     final ContentResolver contentResolver = sApplicationContext.getContentResolver();
 
@@ -186,13 +186,13 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
         == 1;
   }
 
-  @WrapForJNI(calledFrom = "gecko")
   
 
 
 
 
 
+  @WrapForJNI(calledFrom = "gecko")
   private static boolean prefersContrast() {
     final ContentResolver contentResolver = sApplicationContext.getContentResolver();
 

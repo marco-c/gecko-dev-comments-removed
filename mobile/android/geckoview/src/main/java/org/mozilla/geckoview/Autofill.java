@@ -672,11 +672,6 @@ public class Autofill {
 
 
 
-    
-
-
-
-
     @AnyThread
     @NonNull
     Rect getDimensions() {
@@ -693,11 +688,6 @@ public class Autofill {
     public @NonNull Rect getScreenRect() {
       return mScreenRect;
     }
-
-    
-
-
-
 
     
 

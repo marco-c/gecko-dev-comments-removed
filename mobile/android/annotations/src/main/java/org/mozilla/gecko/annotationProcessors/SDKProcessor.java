@@ -4,56 +4,6 @@
 
 package org.mozilla.gecko.annotationProcessors;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.checks.ApiLookup;
 import com.android.tools.lint.client.api.LintClient;
@@ -78,6 +28,55 @@ import java.util.Locale;
 import org.mozilla.gecko.annotationProcessors.classloader.AnnotatableEntity;
 import org.mozilla.gecko.annotationProcessors.classloader.ClassWithOptions;
 import org.mozilla.gecko.annotationProcessors.utils.Utils;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 public class SDKProcessor {

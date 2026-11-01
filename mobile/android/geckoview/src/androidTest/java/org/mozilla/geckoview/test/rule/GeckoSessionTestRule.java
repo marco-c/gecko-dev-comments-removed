@@ -2271,7 +2271,7 @@ public class GeckoSessionTestRule implements TestRule {
 
 
 
-  public class MockLocationProvider {
+  public final class MockLocationProvider {
 
     private final LocationManager locationManager;
     private final String mockProviderName;

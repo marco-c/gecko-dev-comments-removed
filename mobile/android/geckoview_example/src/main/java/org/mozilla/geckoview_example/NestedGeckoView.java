@@ -21,7 +21,7 @@ import org.mozilla.geckoview.PanZoomController;
 
 
 
-public class NestedGeckoView extends GeckoView implements NestedScrollingChild {
+public final class NestedGeckoView extends GeckoView implements NestedScrollingChild {
 
   private int mLastY;
   private final int[] mScrollOffset = new int[2];

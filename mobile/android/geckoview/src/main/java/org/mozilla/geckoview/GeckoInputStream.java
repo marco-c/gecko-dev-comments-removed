@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 package org.mozilla.geckoview;
 
@@ -14,13 +14,13 @@ import java.util.LinkedList;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.JNIObject;
 
-/**
- * This class provides an {@link InputStream} wrapper for a Gecko nsIChannel (or really,
- * nsIRequest).
- */
+
+
+
+
 @WrapForJNI
 @AnyThread
-/* package */ class GeckoInputStream extends InputStream {
+ class GeckoInputStream extends InputStream {
   private static final String LOGTAG = "GeckoInputStream";
 
   private LinkedList<ByteBuffer> mBuffers = new LinkedList<>();
@@ -31,13 +31,13 @@ import org.mozilla.gecko.mozglue.JNIObject;
   private boolean mResumed;
   private Support mSupport;
 
-  /**
-   * This is only called via JNI. The support instance provides callbacks for the native
-   * counterpart.
-   *
-   * @param support An instance of {@link Support}, used for native callbacks.
-   */
-  /* package */ GeckoInputStream(final @Nullable Support support) {
+  
+
+
+
+
+
+   GeckoInputStream(final @Nullable Support support) {
     mSupport = support;
   }
 
@@ -81,7 +81,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
 
     int count = 0;
     while (count < expect) {
-      final long bytesRead = read(bytes, count, expect - count);
+      final int bytesRead = read(bytes, count, expect - count);
       if (bytesRead < 0) {
         return -1;
       }
@@ -109,8 +109,8 @@ import org.mozilla.gecko.mozglue.JNIObject;
         throw new IOException("Timed out");
       }
 
-      // The underlying channel is suspended, so resume that before
-      // waiting for a buffer.
+      
+      
       if (!mResumed) {
         if (mSupport != null) {
           mSupport.resume();
@@ -129,7 +129,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
         throw new IOException("Unknown error");
       }
 
-      // We have no data and we're not expecting more.
+      
       return -1;
     }
 
@@ -138,14 +138,14 @@ import org.mozilla.gecko.mozglue.JNIObject;
     buf.get(dest, offset, readCount);
 
     if (buf.remaining() == 0) {
-      // We're done with this buffer, advance the queue.
+      
       mBuffers.removeFirst();
     }
 
     return readCount;
   }
 
-  /** Called by native code to indicate that no more data will be sent via {@link #appendBuffer}. */
+  
   @WrapForJNI(calledFrom = "gecko")
   public synchronized void sendEof() {
     if (mEOF) {
@@ -156,7 +156,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
     notifyAll();
   }
 
-  /** Called by native code to indicate that there was an error while reading the stream. */
+  
   @WrapForJNI(calledFrom = "gecko")
   public synchronized void sendError() {
     if (mEOF) {
@@ -168,35 +168,35 @@ import org.mozilla.gecko.mozglue.JNIObject;
     notifyAll();
   }
 
-  /**
-   * Called by native code to indicate that there was an issue during appending data to the stream.
-   * The writing stream should still report EoF. Setting this error during writing will cause an
-   * IOException if readers try to read from the stream.
-   */
+  
+
+
+
+
   @WrapForJNI(calledFrom = "gecko")
   public synchronized void writeError() {
     mHaveError = true;
     notifyAll();
   }
 
-  /**
-   * Called by native code to check if the stream is open.
-   *
-   * @return true if the stream is closed
-   */
+  
+
+
+
+
   @WrapForJNI(calledFrom = "gecko")
-  /* package */ synchronized boolean isStreamClosed() {
+   synchronized boolean isStreamClosed() {
     return mClosed || mEOF;
   }
 
-  /**
-   * Called by native code to provide data for this stream.
-   *
-   * @param buf the bytes
-   * @throws IOException
-   */
+  
+
+
+
+
+
   @WrapForJNI(exceptionMode = "nsresult", calledFrom = "gecko")
-  /* package */ synchronized void appendBuffer(final byte[] buf) throws IOException {
+   synchronized void appendBuffer(final byte[] buf) throws IOException {
 
     if (mClosed) {
       throw new IllegalStateException("Stream is closed");
@@ -218,7 +218,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
     @WrapForJNI(dispatchTo = "gecko")
     private native void close();
 
-    @Override // JNIObject
+    @Override 
     protected void disposeNative() {
       throw new UnsupportedOperationException();
     }

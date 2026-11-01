@@ -26,7 +26,6 @@ import org.mozilla.gecko.util.XPCOMError;
 public class WebRequestError extends Exception {
   
   @Retention(RetentionPolicy.SOURCE)
-  
   @IntDef({
     ERROR_CATEGORY_UNKNOWN,
     ERROR_CATEGORY_SECURITY,
@@ -70,7 +69,8 @@ public class WebRequestError extends Exception {
     ERROR_CORRUPTED_CONTENT,
     ERROR_DATA_URI_TOO_LONG,
     ERROR_HTTPS_ONLY,
-    ERROR_BAD_HSTS_CERT
+    ERROR_BAD_HSTS_CERT,
+    ERROR_LOCAL_NETWORK_ACCESS_DENIED
   })
   public @interface Error {}
 
@@ -132,6 +132,9 @@ public class WebRequestError extends Exception {
 
   
   public static final int ERROR_NET_RESET = 0x93;
+
+  
+  public static final int ERROR_LOCAL_NETWORK_ACCESS_DENIED = 0xC3;
 
   
 
@@ -348,6 +351,9 @@ public class WebRequestError extends Exception {
     }
     if (geckoError == XPCOMError.NS_ERROR_BAD_HSTS_CERT) {
       return ERROR_BAD_HSTS_CERT;
+    }
+    if (geckoError == XPCOMError.NS_ERROR_OS_LOCAL_NETWORK_ACCESS_DENIED) {
+      return ERROR_LOCAL_NETWORK_ACCESS_DENIED;
     }
     if (geckoError == XPCOMError.NS_ERROR_OFFLINE) {
       return ERROR_OFFLINE;
