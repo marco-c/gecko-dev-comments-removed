@@ -760,15 +760,8 @@ bool nsXULElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
   if (aNamespaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::tabindex) {
     return aResult.ParseIntValue(aValue);
   }
-
-  
-  if (!nsStyledElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
-                                       aMaybeScriptedPrincipal, aResult)) {
-    
-    aResult.ParseStringOrAtom(aValue);
-  }
-
-  return true;
+  return nsStyledElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                         aMaybeScriptedPrincipal, aResult);
 }
 
 void nsXULElement::DestroyContent() {
