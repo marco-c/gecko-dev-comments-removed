@@ -479,8 +479,9 @@ struct alignas(alignof(AbstractBindingName<frontend::TaggedParserAtomIndex>))
 
 static_assert(alignof(BindingName) <= ScopeDataAlignBytes);
 template <typename SlotInfo>
-struct alignas(ScopeDataAlignBytes) RuntimeScopeData
-    : public AbstractBaseScopeData<JSAtom> {
+struct MOZ_EMPTY_BASES alignas(ScopeDataAlignBytes) RuntimeScopeData
+    : public AbstractBaseScopeData<JSAtom>,
+      public gc::Buffer {
   SlotInfo slotInfo;
 
   explicit RuntimeScopeData(size_t length) { PoisonNames(this, length); }
@@ -712,8 +713,9 @@ class FunctionScope : public Scope {
     void setHasParameterExprs() { flags |= HasParameterExprsFlag; }
   };
 
-  struct alignas(ScopeDataAlignBytes) RuntimeData
-      : public AbstractBaseScopeData<JSAtom> {
+  struct MOZ_EMPTY_BASES alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom>,
+        public gc::Buffer {
     SlotInfo slotInfo;
     
     
@@ -1006,8 +1008,9 @@ class ModuleScope : public Scope {
     uint32_t usingStart = 0;
   };
 
-  struct alignas(ScopeDataAlignBytes) RuntimeData
-      : public AbstractBaseScopeData<JSAtom> {
+  struct MOZ_EMPTY_BASES alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom>,
+        public gc::Buffer {
     SlotInfo slotInfo;
     
     GCPtr<ModuleObject*> module = {};
@@ -1068,8 +1071,9 @@ class WasmInstanceScope : public Scope {
     uint32_t globalsStart = 0;
   };
 
-  struct alignas(ScopeDataAlignBytes) RuntimeData
-      : public AbstractBaseScopeData<JSAtom> {
+  struct MOZ_EMPTY_BASES alignas(ScopeDataAlignBytes) RuntimeData
+      : public AbstractBaseScopeData<JSAtom>,
+        public gc::Buffer {
     SlotInfo slotInfo;
     
     GCPtr<WasmInstanceObject*> instance = {};

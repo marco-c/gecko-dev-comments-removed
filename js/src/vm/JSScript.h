@@ -23,6 +23,7 @@
 #include "jstypes.h"
 
 #include "frontend/ScriptIndex.h"  
+#include "gc/Allocator.h"
 #include "gc/Barrier.h"
 #include "js/ColumnNumber.h"  
 #include "js/CompileOptions.h"
@@ -1582,8 +1583,9 @@ static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
 
 
 
-class alignas(uintptr_t) PrivateScriptData final
-    : public TrailingArray<PrivateScriptData> {
+class MOZ_EMPTY_BASES alignas(uintptr_t) PrivateScriptData final
+    : public TrailingArray<PrivateScriptData>,
+      public gc::Buffer {
   uint32_t ngcthings = 0;
 
   

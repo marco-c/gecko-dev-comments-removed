@@ -13,6 +13,7 @@
 
 #include "jsfriendapi.h"
 #include "jstypes.h"
+
 #include "gc/Allocator.h"
 #include "gc/Cell.h"
 #include "gc/Scheduling.h"
@@ -396,14 +397,6 @@ class BufferAllocPolicy : public AllocPolicyBase {
 
   void reportAllocOverflow() const;
 };
-
-namespace gc {
-template <typename T, typename... Args>
-T* NewBuffer(Cell* owner, Args&&... args) {
-  return NewSizedBuffer<T>(owner->zone(), sizeof(T), IsInsideNursery(owner),
-                           std::forward<Args>(args)...);
-}
-}  
 
 
 
