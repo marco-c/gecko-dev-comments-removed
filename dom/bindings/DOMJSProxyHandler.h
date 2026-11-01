@@ -125,6 +125,12 @@ class DOMProxyHandler : public BaseDOMProxyHandler {
   static JSObject* EnsureExpandoObject(JSContext* cx,
                                        JS::Handle<JSObject*> obj);
 
+  
+
+
+
+  static void ClearExpandoOnWrapFailure(JSObject* obj);
+
   static const char family;
 };
 
