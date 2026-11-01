@@ -319,7 +319,7 @@ class CompositeMediaEngine : public MediaEngineInterface {
 };
 
 RtpParameters CreateRtpParametersWithOneEncoding();
-RtpParameters CreateRtpParametersWithEncodings(StreamParams sp);
+RtpParameters CreateRtpParametersWithEncodings(const StreamParams& sp);
 
 
 
