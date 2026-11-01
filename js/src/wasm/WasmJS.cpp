@@ -47,7 +47,8 @@
 #include "vm/GlobalObject.h"       
 #include "vm/HelperThreadState.h"  
 #include "vm/Interpreter.h"
-#include "vm/JSContext.h"  
+#include "vm/JSAtomUtils.h"  
+#include "vm/JSContext.h"    
 #include "vm/JSFunction.h"
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
@@ -820,6 +821,47 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
   }
 
   moduleObj.set(wasmModuleObject);
+  return true;
+}
+
+bool wasm::GetModuleImports(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<std::pair<JSString*, JSString*>>> imports) {
+  MOZ_ASSERT(imports.empty());
+
+  const Module& module = wasmModuleObject->as<WasmModuleObject>().module();
+
+  ImportPtrVector externalImports;
+  if (!GetExternalImports(cx, module, &externalImports)) {
+    return false;
+  }
+
+  if (!imports.reserve(externalImports.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  Rooted<JSString*> moduleSpecifier(cx);
+  Rooted<JSString*> fieldName(cx);
+  for (const Import* imp : externalImports) {
+    Span<const char> moduleName = imp->module.utf8Bytes();
+    Span<const char> field = imp->field.utf8Bytes();
+
+    moduleSpecifier =
+        AtomizeUTF8Chars(cx, moduleName.data(), moduleName.size());
+    if (!moduleSpecifier) {
+      return false;
+    }
+
+    fieldName = AtomizeUTF8Chars(cx, field.data(), field.size());
+    if (!fieldName) {
+      return false;
+    }
+
+    imports.infallibleAppend(
+        std::make_pair(moduleSpecifier.get(), fieldName.get()));
+  }
+
   return true;
 }
 
