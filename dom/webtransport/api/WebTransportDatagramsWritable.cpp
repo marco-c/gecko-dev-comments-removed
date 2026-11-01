@@ -43,7 +43,7 @@ WebTransportDatagramsWritable::~WebTransportDatagramsWritable() {
 already_AddRefed<WebTransportDatagramsWritable>
 WebTransportDatagramsWritable::Create(
     JSContext* aCx, nsIGlobalObject* aGlobal, WebTransport* aTransport,
-    WebTransportDatagramDuplexStream* aDatagrams, double aHighWaterMark,
+    WebTransportDatagramDuplexStream* aDatagrams,
     WebTransportSendGroup* aSendGroup, int64_t aSendOrder, ErrorResult& aRv) {
   
   
@@ -70,8 +70,7 @@ WebTransportDatagramsWritable::Create(
   datagramsWritable->mAlgorithms = algorithms;
 
   
-  datagramsWritable->SetUpNative(aCx, *algorithms, Some(aHighWaterMark),
-                                 nullptr, aRv);
+  datagramsWritable->SetUpNative(aCx, *algorithms, Nothing(), nullptr, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }

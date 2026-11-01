@@ -166,9 +166,9 @@ WebTransportDatagramDuplexStream::CreateWritable(
   AutoEntryScript aes(mGlobal, "WebTransportCreateWritable");
   JSContext* cx = aes.cx();
   RefPtr<WebTransportDatagramsWritable> writableStream =
-      WebTransportDatagramsWritable::Create(
-          cx, mGlobal, mWebTransport, this, mOutgoingHighWaterMark,
-          aOptions.mSendGroup, sendOrder, aRv);
+      WebTransportDatagramsWritable::Create(cx, mGlobal, mWebTransport, this,
+                                            aOptions.mSendGroup, sendOrder,
+                                            aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
