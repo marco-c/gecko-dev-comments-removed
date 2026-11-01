@@ -7,6 +7,7 @@
 #define LibSecret_h
 
 #include "OSKeyStore.h"
+#include "mozilla/GRefPtr.h"
 #include "nsString.h"
 
 nsresult MaybeLoadLibSecret();
@@ -22,6 +23,16 @@ class LibSecret final : public AbstractOSKeyStore {
   virtual nsresult DeleteSecret(const nsACString& label) override;
 
   virtual ~LibSecret();
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<GCancellable> mCancellable;
 };
 
 #endif  
