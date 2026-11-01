@@ -10,6 +10,7 @@
 #include <limits>
 #include <utility>
 
+#include "MainThreadUtils.h"
 #include "ThebesRLBoxTypes.h"
 #include "gfxFontFeatures.h"
 #include "gfxFontUtils.h"
@@ -619,8 +620,13 @@ class gfxFontEntry {
 
   mozilla::UniquePtr<gfxUserFontData> mUserFontData;
 
-  mozilla::Atomic<gfxSVGGlyphs*> mSVGGlyphs;
-  gfxSVGGlyphs* GetSVGGlyphs() const { return mSVGGlyphs; }
+  
+  mozilla::UniquePtr<gfxSVGGlyphs> mSVGGlyphs
+      MOZ_GUARDED_BY(mozilla::sMainThreadCapability);
+  gfxSVGGlyphs* GetSVGGlyphs() const {
+    mozilla::AssertIsOnMainThread();
+    return mSVGGlyphs.get();
+  }
 
   
   nsTArray<const gfxFont*> mFontsUsingSVGGlyphs MOZ_GUARDED_BY(mLock);
