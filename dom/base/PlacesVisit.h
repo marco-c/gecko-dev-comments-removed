@@ -40,7 +40,6 @@ class PlacesVisit final : public PlacesEvent {
   void GetLastKnownTitle(nsString& aLastKnownTitle) {
     aLastKnownTitle = mLastKnownTitle;
   }
-  uint32_t UserContextId() { return mUserContextId; }
 
   
   
@@ -56,7 +55,6 @@ class PlacesVisit final : public PlacesEvent {
   uint32_t mVisitCount;
   uint32_t mTypedCount;
   nsString mLastKnownTitle;
-  uint32_t mUserContextId = 0;
 
  private:
   ~PlacesVisit() = default;

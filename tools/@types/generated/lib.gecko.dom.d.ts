@@ -28098,8 +28098,6 @@ interface PlacesVisit extends PlacesEvent {
     
     readonly url: string;
     
-    readonly userContextId: number;
-    
     readonly visitCount: number;
     
     readonly visitId: number;
