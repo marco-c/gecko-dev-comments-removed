@@ -944,6 +944,9 @@ private:
     
     
     bool emitStroke(const SkPath& path, const SkPaint& paint, bool flatten) {
+        
+        
+        
         if (paint.getStyle() == SkPaint::kFill_Style || paint.getStrokeWidth() <= 0 ||
             paint.getShader() || paint.getPathEffect() || path.isInverseFillType()) {
             return false;
