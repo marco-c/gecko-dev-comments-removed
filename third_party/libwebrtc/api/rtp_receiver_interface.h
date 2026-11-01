@@ -148,7 +148,8 @@ class RTC_EXPORT RtpReceiverInterface : public RefCountInterface,
   
   
   virtual RTCErrorOr<scoped_refptr<SframeDecryptorInterface>>
-  CreateSframeDecryptorOrError(SframeCipherSuite cipher_suite) {
+  CreateSframeDecryptorOrError(SframeCipherSuite cipher_suite,
+                               SframeDecryptErrorCallback error_callback) {
     RTC_DCHECK_NOTREACHED();
     return RTCError();
   }
