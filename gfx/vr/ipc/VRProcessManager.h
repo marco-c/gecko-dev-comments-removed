@@ -78,7 +78,7 @@ class VRProcessManager final : public VRProcessParent::Listener {
   friend class Observer;
 
   RefPtr<Observer> mObserver;
-  VRProcessParent* mProcess;
+  RefPtr<VRProcessParent> mProcess;
   VRChild* mVRChild;
   
   

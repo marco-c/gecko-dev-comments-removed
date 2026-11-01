@@ -46,7 +46,6 @@ bool SocketProcessHost::sLaunchWithMacSandbox = false;
 SocketProcessHost::SocketProcessHost(Listener* aListener)
     : GeckoChildProcessHost(GeckoProcessType_Socket),
       mListener(aListener),
-      mTaskFactory(Some(this)),
       mLaunchPhase(LaunchPhase::Unlaunched),
       mShutdownRequested(false),
       mChannelClosed(false) {
@@ -88,43 +87,20 @@ bool SocketProcessHost::Launch() {
   return true;
 }
 
-static void HandleErrorAfterDestroy(
-    RefPtr<SocketProcessHost::Listener>&& aListener) {
-  if (!aListener) {
-    return;
-  }
-
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "HandleErrorAfterDestroy", [listener = std::move(aListener)]() {
-        listener->OnProcessLaunchComplete(nullptr, false);
-      }));
-}
-
 void SocketProcessHost::OnChannelConnected(base::ProcessId peer_pid) {
   MOZ_ASSERT(!NS_IsMainThread());
 
   GeckoChildProcessHost::OnChannelConnected(peer_pid);
 
-  
-  
-  RefPtr<Runnable> runnable;
-  {
-    MonitorAutoLock lock(mMonitor);
-    if (!mTaskFactory) {
-      HandleErrorAfterDestroy(std::move(mListener));
-      return;
-    }
-    runnable =
-        (*mTaskFactory)
-            .NewRunnableMethod(&SocketProcessHost::OnChannelConnectedTask);
-  }
-  NS_DispatchToMainThread(runnable);
+  NS_DispatchToMainThread(
+      NewRunnableMethod("SocketProcessHost::OnChannelConnectedTask", this,
+                        &SocketProcessHost::OnChannelConnectedTask));
 }
 
 void SocketProcessHost::OnChannelConnectedTask() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (mLaunchPhase == LaunchPhase::Waiting) {
+  if (!mShutdownRequested && mLaunchPhase == LaunchPhase::Waiting) {
     InitAfterConnect(true);
   }
 }
@@ -199,21 +175,15 @@ void SocketProcessHost::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   mListener = nullptr;
+  mShutdownRequested = true;
 
   if (mSocketProcessParent) {
     
-    
-    mShutdownRequested = true;
-
-    
     if (!mChannelClosed) {
       mSocketProcessParent->Close();
+      MOZ_ASSERT(!mSocketProcessParent);
     }
-
-    return;
   }
-
-  DestroyProcess();
 }
 
 void SocketProcessHost::OnChannelClosed() {
@@ -230,23 +200,11 @@ void SocketProcessHost::OnChannelClosed() {
   if (!mShutdownRequested && mListener) {
     
     mListener->OnProcessUnexpectedShutdown(this);
-  } else {
-    DestroyProcess();
   }
 
   
   SocketProcessParent::Destroy(std::move(mSocketProcessParent));
   MOZ_ASSERT(!mSocketProcessParent);
-}
-
-void SocketProcessHost::DestroyProcess() {
-  {
-    MonitorAutoLock lock(mMonitor);
-    mTaskFactory.reset();
-  }
-
-  GetCurrentSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
-      "DestroySocketProcessRunnable", [this] { Destroy(); }));
 }
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
