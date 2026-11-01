@@ -9,6 +9,7 @@ Module to handle Gecko profiling.
 import os
 import tempfile
 import zipfile
+from pathlib import Path
 
 import mozfile
 from logger.logger import RaptorLogger
@@ -130,7 +131,7 @@ class GeckoProfile(RaptorProfiling):
                 
                 
                 
-                sym_path = os.path.join(sym_dir, f"{index}.json")
+                sym_path = os.path.join(sym_dir, f"{index}.jslb.gz")
                 archived_path = (
                     sym_path
                     if self._symbolicate_profile(profile_path, sym_path)
@@ -151,7 +152,7 @@ class GeckoProfile(RaptorProfiling):
                 self.test_config,
                 [profile_info for profile_info, _ in symbolicated],
                 [
-                    ".json.gz" if archived_path.endswith(".gz") else ".json"
+                    "".join(Path(archived_path).suffixes)
                     for _, archived_path in symbolicated
                 ],
             )
