@@ -82,11 +82,13 @@
 #include "mozilla/PublicSSL.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BrowserChild.h"
+#include "mozilla/dom/ConnectionAllowlists.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Location.h"
 #include "mozilla/dom/PeerConnectionImplBinding.h"
 #include "mozilla/dom/PluginCrashedEvent.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RTCCertificate.h"
 #include "mozilla/dom/RTCDataChannelBinding.h"
@@ -177,9 +179,10 @@ class JSErrorResult : public binding_danger::TErrorResult<
 
 class WrappableJSErrorResult {
  public:
-  WrappableJSErrorResult() : mRv(MakeUnique<JSErrorResult>()), isCopy(false) {}
+  WrappableJSErrorResult()
+      : mRv(std::make_unique<JSErrorResult>()), isCopy(false) {}
   WrappableJSErrorResult(const WrappableJSErrorResult& other)
-      : mRv(MakeUnique<JSErrorResult>()), isCopy(true) {}
+      : mRv(std::make_unique<JSErrorResult>()), isCopy(true) {}
   ~WrappableJSErrorResult() {
     if (isCopy) {
       MOZ_ASSERT(NS_IsMainThread());
@@ -382,7 +385,7 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mSTSThread(nullptr),
       mForceIceTcp(false),
       mTransportHandler(nullptr),
-      mUuidGen(MakeUnique<PCUuidGenerator>()),
+      mUuidGen(std::make_unique<PCUuidGenerator>()),
       mIceRestartCount(0),
       mIceRollbackCount(0),
       mTrickle(true)  
@@ -491,6 +494,12 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mWindow = aWindow;
   NS_ENSURE_STATE(mWindow);
 
+  if (dom::ConnectionAllowlists* allowlists =
+          PolicyContainer::GetConnectionAllowlists(
+              aWindow->GetPolicyContainer())) {
+    mBlockedByConnectionAllowlists = allowlists->ShouldBlockWebRTC(mWindow);
+  }
+
   
   nsCOMPtr<nsIScriptGlobalObject> sgo = do_QueryInterface(mWindow);
   NS_ENSURE_STATE(sgo);
@@ -534,8 +543,8 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mTransportHandler = std::move(transportHandler);
   mTransportHandler->CreateIceCtx("PC:" + GetName());
 
-  mJsepSession =
-      MakeUnique<JsepSessionImpl>(mName, MakeUnique<PCUuidGenerator>());
+  mJsepSession = std::make_unique<JsepSessionImpl>(
+      mName, std::make_unique<PCUuidGenerator>());
   mJsepSession->SetRtxIsAllowed(mRtxIsAllowed);
 
   res = mJsepSession->Init();
@@ -565,7 +574,7 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
                                   header.direction);
   }
 
-  if (XRE_IsContentProcess()) {
+  if (XRE_IsContentProcess() && !mBlockedByConnectionAllowlists) {
     mStunAddrsRequest =
         net::StunAddrsRequestChild::Create(new StunAddrsHandler(this));
   }
@@ -2611,8 +2620,14 @@ void PeerConnectionImpl::SetConfiguration(
 
 nsresult PeerConnectionImpl::SetConfiguration(
     const RTCConfiguration& aConfiguration) {
-  nsresult rv = mTransportHandler->SetIceConfig(
-      aConfiguration.mIceServers, aConfiguration.mIceTransportPolicy);
+  
+  
+  nsresult rv =
+      mBlockedByConnectionAllowlists
+          ? mTransportHandler->SetIceConfig(nsTArray<dom::RTCIceServer>(),
+                                            aConfiguration.mIceTransportPolicy)
+          : mTransportHandler->SetIceConfig(aConfiguration.mIceServers,
+                                            aConfiguration.mIceTransportPolicy);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -3827,7 +3842,7 @@ RefPtr<dom::RTCStatsPromise> PeerConnectionImpl::GetDataChannelStats(
         ->Then(GetMainThreadSerialEventTarget(), __func__,
                [](DataChannelConnection::StatsPromise::ResolveOrRejectValue&&
                       aResult) {
-                 auto report = MakeUnique<dom::RTCStatsCollection>();
+                 auto report = std::make_unique<dom::RTCStatsCollection>();
                  if (aResult.IsResolve()) {
                    if (!report->mDataChannelStats.AppendElements(
                            aResult.ResolveValue(), fallible)) {
@@ -3985,7 +4000,7 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
         GetMainThreadSerialEventTarget(), __func__,
         [this, self = RefPtr<PeerConnectionImpl>(this)]() {
           UniquePtr<dom::RTCStatsReportInternal> finalStats =
-              MakeUnique<dom::RTCStatsReportInternal>();
+              std::make_unique<dom::RTCStatsReportInternal>();
           
           if (mFinalStats) {
             *finalStats = *mFinalStats;
@@ -4053,7 +4068,7 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     promises.AppendElement(GetDataChannelStats(now));
   }
 
-  auto pcStatsCollection = MakeUnique<dom::RTCStatsCollection>();
+  auto pcStatsCollection = std::make_unique<dom::RTCStatsCollection>();
   RTCPeerConnectionStats pcStats;
   pcStats.mTimestamp.Construct(now);
   pcStats.mType.Construct(RTCStatsType::Peer_connection);
@@ -4069,7 +4084,7 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
 
   
   
-  auto report = MakeUnique<dom::RTCStatsReportInternal>();
+  auto report = std::make_unique<dom::RTCStatsReportInternal>();
   report->mPcid = NS_ConvertASCIItoUTF16(mName.c_str());
   if (mWindow && mWindow->GetBrowsingContext()) {
     report->mBrowserId = mWindow->GetBrowsingContext()->BrowserId();
@@ -4624,6 +4639,13 @@ void PeerConnectionImpl::AddIceCandidate(const std::string& aCandidate,
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!aTransportId.empty());
 
+  
+  
+  
+  if (mBlockedByConnectionAllowlists && !aCandidate.empty()) {
+    return;
+  }
+
   bool obfuscate_host_addresses = Preferences::GetBool(
       "media.peerconnection.ice.obfuscate_host_addresses", false);
 
@@ -4779,6 +4801,11 @@ nsresult PeerConnectionImpl::SetTargetForDefaultLocalAddressLookup() {
 
 void PeerConnectionImpl::EnsureIceGathering(bool aDefaultRouteOnly,
                                             bool aObfuscateHostAddresses) {
+  
+  if (mBlockedByConnectionAllowlists) {
+    return;
+  }
+
   if (!mTargetForDefaultLocalAddressLookupIsSet) {
     nsresult rv = SetTargetForDefaultLocalAddressLookup();
     if (NS_FAILED(rv)) {
