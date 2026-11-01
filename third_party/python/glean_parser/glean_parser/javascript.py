@@ -206,17 +206,23 @@ def output(
         filename = util.camelize(category_key) + extension
         filepath = output_dir / filename
 
-        types = set(
-            [
-                
-                
-                
-                
-                
-                
-                obj.type if not obj.type.startswith("labeled_") else obj.type[8:]
-                for obj in category_val.values()
-            ]
+        types = sorted(
+            list(
+                set(
+                    [
+                        
+                        
+                        
+                        
+                        
+                        
+                        obj.type
+                        if not obj.type.startswith("labeled_")
+                        else obj.type[8:]
+                        for obj in category_val.values()
+                    ]
+                )
+            )
         )
         has_labeled_metrics = any(
             getattr(metric, "labeled", False) for metric in category_val.values()

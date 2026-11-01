@@ -42,6 +42,10 @@ from . import util
 SUPPORTED_METRIC_TYPES = ["string", "event"]
 
 
+
+KNOWN_SERVER_PINGS = {"events", "server-deletion-request"}
+
+
 def event_class_name(
     ping_name: str, metrics_by_type: Dict[str, List[metrics.Metric]]
 ) -> str:
@@ -164,23 +168,23 @@ def output(
         + " parser doesn't generate individual metric files. Make sure to pass all"
         + " your ping and metric definitions in a single invocation of the parser."
     )
-    if "pings" not in objs:
-        
-        
-        
-        if event_metric_exists:
-            if "events" not in ping_to_metrics:
-                
-                
-                print(
-                    "❌ "
-                    + PING_METRIC_ERROR_MSG
-                    + "\n You need to either send your event metrics in standard"
-                    + " `events` ping or define a custom one."
-                )
-                return
-        else:
+    
+    
+    
+    
+    if "pings" not in objs and not all(
+        p in KNOWN_SERVER_PINGS for p in ping_to_metrics
+    ):
+        if not event_metric_exists:
             print("❌ No ping definition found." + PING_METRIC_ERROR_MSG)
+            return
+        if "events" not in ping_to_metrics:
+            print(
+                "❌ "
+                + PING_METRIC_ERROR_MSG
+                + "\n You need to either send your event metrics in standard"
+                + " `events` ping or define a custom one."
+            )
             return
 
     if not ping_to_metrics:
