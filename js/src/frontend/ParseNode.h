@@ -696,7 +696,7 @@ static inline bool IsMethodDefinitionKind(FunctionSyntaxKind kind) {
 
 
 
-#if defined(EARLY_BETA_OR_EARLIER)
+#if defined(NIGHTLY_BUILD)
 #  define JS_PARSE_NODE_ASSERT MOZ_RELEASE_ASSERT
 #else
 #  define JS_PARSE_NODE_ASSERT MOZ_ASSERT
