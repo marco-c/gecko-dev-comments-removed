@@ -4,6 +4,9 @@
 
 "use strict";
 
+
+
+
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const {
   TYPES: { DOCUMENT_EVENT, NETWORK_EVENT_STACKTRACE, CONSOLE_MESSAGE },
@@ -14,8 +17,90 @@ const {
   ObjectActorPool,
 } = require("resource://devtools/server/actors/object/ObjectActorPool.js");
 
-const { throttle } = require("resource://devtools/shared/throttle.js");
+const RESOURCES_BOUNCING_DELAY = 10;
 const RESOURCES_THROTTLING_DELAY = 100;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function bounceWithLimit(fun, bounceDelay, throttleDelay) {
+  let firstCallTime = null;
+  let calledDuringBounceDelay = false;
+  let timeoutId = null;
+  function call() {
+    firstCallTime = null;
+    calledDuringBounceDelay = false;
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = null;
+    }
+
+    fun();
+  }
+
+  function checkOnBounceTimer() {
+    
+    
+    if (!calledDuringBounceDelay) {
+      call();
+      return;
+    }
+
+    
+    
+    const timeSinceFirstCall = ChromeUtils.dateNow() - firstCallTime;
+    if (timeSinceFirstCall >= throttleDelay) {
+      call();
+      return;
+    }
+
+    
+    
+    calledDuringBounceDelay = false;
+    if (isWorker) {
+      setImmediate(checkOnBounceTimer);
+    } else {
+      timeoutId = setTimeout(checkOnBounceTimer, bounceDelay);
+    }
+  }
+
+  return function bounced() {
+    if (!firstCallTime) {
+      firstCallTime = ChromeUtils.dateNow();
+      calledDuringBounceDelay = false;
+      if (isWorker) {
+        setImmediate(checkOnBounceTimer);
+      } else {
+        timeoutId = setTimeout(checkOnBounceTimer, bounceDelay);
+      }
+    } else {
+      const timeSinceFirstCall = ChromeUtils.dateNow() - firstCallTime;
+      if (timeSinceFirstCall >= throttleDelay) {
+        call();
+        return;
+      }
+      calledDuringBounceDelay = true;
+    }
+  };
+}
 
 loader.lazyRequireGetter(
   this,
@@ -43,8 +128,9 @@ class BaseTargetActor extends Actor {
       destroyed: [],
     };
 
-    this.#throttledEmitResources = throttle(
+    this.#throttledEmitResources = bounceWithLimit(
       this.emitResources.bind(this),
+      RESOURCES_BOUNCING_DELAY,
       RESOURCES_THROTTLING_DELAY
     );
   }
