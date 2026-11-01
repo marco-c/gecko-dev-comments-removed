@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef Telemetry_h_
 #define Telemetry_h_
 
@@ -87,16 +86,6 @@ bool CanRecordPrereleaseData();
 
 
 
-
-void RecordSlowSQLStatement(const nsACString& statement,
-                            const nsACString& dbName, uint32_t delay);
-
-
-
-
-
-
-
 void InitIOReporting(nsIFile* aXreDir);
 
 
@@ -115,12 +104,6 @@ void LeavingStartupStage();
 
 
 void EnteringShutdownStage();
-
-
-
-
-const uint32_t kSlowSQLThresholdForMainThread = 50;
-const uint32_t kSlowSQLThresholdForHelperThreads = 100;
 
 
 

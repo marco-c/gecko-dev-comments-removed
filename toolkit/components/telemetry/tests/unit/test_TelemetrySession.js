@@ -403,10 +403,6 @@ function checkPayload(payload, reason, successfulPings) {
   Assert.notEqual(Glean.memory.total.testGetValue(), null); 
   Assert.notEqual(Glean.memory.jsCompartmentsSystem.testGetValue(), null); 
 
-  Assert.ok(
-    "mainThread" in payload.slowSQL && "otherThreads" in payload.slowSQL
-  );
-
   
 
   Assert.ok("keyedHistograms" in payload);
@@ -2098,12 +2094,7 @@ add_task(async function test_schedulerNothingDue() {
 });
 
 add_task(async function test_pingExtendedStats() {
-  const EXTENDED_PAYLOAD_FIELDS = [
-    "log",
-    "slowSQL",
-    "fileIOReports",
-    "addonDetails",
-  ];
+  const EXTENDED_PAYLOAD_FIELDS = ["log", "fileIOReports", "addonDetails"];
 
   
   await TelemetryStorage.testClearPendingPings();
@@ -2124,13 +2115,6 @@ add_task(async function test_pingExtendedStats() {
         " must not be in the payload if the extended set is off."
     );
   }
-
-  
-  
-  Assert.ok(
-    !("slowSQLStartup" in ping.payload),
-    "slowSQLStartup must not be sent if the extended set is off"
-  );
 
   Assert.ok(
     !("addonManager" in ping.payload.simpleMeasurements),

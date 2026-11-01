@@ -522,9 +522,6 @@ pref("toolkit.telemetry.server", "https://incoming.telemetry.mozilla.org");
 
 pref("toolkit.telemetry.server_owner", "Mozilla");
 
-
-pref("toolkit.telemetry.debugSlowSql", false);
-
 pref("toolkit.telemetry.unified", true);
 
 

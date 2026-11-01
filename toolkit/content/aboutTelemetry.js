@@ -34,7 +34,6 @@ const MAX_BAR_HEIGHT = 8;
 const MAX_BAR_CHARS = 25;
 const PREF_TELEMETRY_SERVER_OWNER = "toolkit.telemetry.server_owner";
 const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
-const PREF_DEBUG_SLOW_SQL = "toolkit.telemetry.debugSlowSql";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 
 
@@ -640,139 +639,6 @@ var EnvironmentData = {
     let colTextElement = document.createTextNode(aColText);
     colElement.appendChild(colTextElement);
     aRowElement.appendChild(colElement);
-  },
-};
-
-var SlowSQL = {
-  
-
-
-  render: function SlowSQL_render(aPing) {
-    
-    
-    
-    
-    
-
-    let debugSlowSql =
-      PingPicker.viewCurrentPingData &&
-      Services.prefs.getBoolPref(PREF_DEBUG_SLOW_SQL, false);
-    let slowSql = debugSlowSql ? Telemetry.debugSlowSQL : aPing.payload.slowSQL;
-    if (!slowSql) {
-      setHasData("slow-sql-section", false);
-      return;
-    }
-
-    let { mainThread, otherThreads } = debugSlowSql
-      ? Telemetry.debugSlowSQL
-      : aPing.payload.slowSQL;
-
-    let mainThreadCount = Object.keys(mainThread).length;
-    let otherThreadCount = Object.keys(otherThreads).length;
-    if (mainThreadCount == 0 && otherThreadCount == 0) {
-      setHasData("slow-sql-section", false);
-      return;
-    }
-
-    setHasData("slow-sql-section", true);
-    if (debugSlowSql) {
-      document.getElementById("sql-warning").hidden = false;
-    }
-
-    let slowSqlDiv = document.getElementById("slow-sql-tables");
-    removeAllChildNodes(slowSqlDiv);
-
-    
-    if (mainThreadCount > 0) {
-      let table = document.createElement("table");
-      this.renderTableHeader(table, "main");
-      this.renderTable(table, mainThread);
-      slowSqlDiv.appendChild(table);
-    }
-
-    
-    if (otherThreadCount > 0) {
-      let table = document.createElement("table");
-      this.renderTableHeader(table, "other");
-      this.renderTable(table, otherThreads);
-      slowSqlDiv.appendChild(table);
-    }
-  },
-
-  
-
-
-
-
-
-
-  renderTableHeader: function SlowSQL_renderTableHeader(aTable, threadType) {
-    let caption = document.createElement("caption");
-    if (threadType == "main") {
-      document.l10n.setAttributes(caption, "about-telemetry-slow-sql-main");
-    }
-
-    if (threadType == "other") {
-      document.l10n.setAttributes(caption, "about-telemetry-slow-sql-other");
-    }
-    aTable.appendChild(caption);
-
-    let headings = document.createElement("tr");
-    document.l10n.setAttributes(
-      this.appendColumn(headings, "th"),
-      "about-telemetry-slow-sql-hits"
-    );
-    document.l10n.setAttributes(
-      this.appendColumn(headings, "th"),
-      "about-telemetry-slow-sql-average"
-    );
-    document.l10n.setAttributes(
-      this.appendColumn(headings, "th"),
-      "about-telemetry-slow-sql-statement"
-    );
-    aTable.appendChild(headings);
-  },
-
-  
-
-
-
-
-
-
-  renderTable: function SlowSQL_renderTable(aTable, aSql) {
-    for (let [sql, [hitCount, totalTime]] of Object.entries(aSql)) {
-      let averageTime = totalTime / hitCount;
-
-      let sqlRow = document.createElement("tr");
-
-      this.appendColumn(sqlRow, "td", hitCount + "\t");
-      this.appendColumn(sqlRow, "td", averageTime.toFixed(0) + "\t");
-      this.appendColumn(sqlRow, "td", sql + "\n");
-
-      aTable.appendChild(sqlRow);
-    }
-  },
-
-  
-
-
-
-
-
-
-  appendColumn: function SlowSQL_appendColumn(
-    aRowElement,
-    aColType,
-    aColText = ""
-  ) {
-    let colElement = document.createElement(aColType);
-    if (aColText) {
-      let colTextElement = document.createTextNode(aColText);
-      colElement.appendChild(colTextElement);
-    }
-    aRowElement.appendChild(colElement);
-    return colElement;
   },
 };
 
@@ -2379,9 +2245,6 @@ function displayRichPingData(ping, updatePayloadList) {
   if (!isMainPing) {
     return;
   }
-
-  
-  SlowSQL.render(ping);
 
   
   AddonDetails.render(ping);
