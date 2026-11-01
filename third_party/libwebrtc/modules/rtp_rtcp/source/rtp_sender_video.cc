@@ -210,8 +210,8 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       post_encode_overhead_bitrate_(TimeDelta::Seconds(1)),
       frame_encryptor_(config.frame_encryptor),
       require_frame_encryption_(config.require_frame_encryption),
-      sframe_required_(config.sframe_required),
-      sframe_encryptor_(config.sframe_encryptor),
+      sframe_required_by_negotiation_(config.sframe_required_by_negotiation),
+      sframe_encryption_config_(config.sframe_encryption_config),
       generic_descriptor_auth_experiment_(
           !config.field_trials->IsDisabled("WebRTC-GenericDescriptorAuth")),
       raw_packetization_(config.raw_packetization),
@@ -918,7 +918,7 @@ bool RTPSenderVideo::SendEncodedImage(int payload_type,
                                       RTPVideoHeader video_header,
                                       TimeDelta expected_retransmission_time,
                                       const std::vector<uint32_t>& csrcs) {
-  if (sframe_required_ ) {
+  if (sframe_required_by_negotiation_) {
     
     
     

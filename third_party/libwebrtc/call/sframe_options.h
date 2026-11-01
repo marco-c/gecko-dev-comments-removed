@@ -11,8 +11,9 @@
 #ifndef CALL_SFRAME_OPTIONS_H_
 #define CALL_SFRAME_OPTIONS_H_
 
-#include "api/scoped_refptr.h"
-#include "modules/sframe/sframe_media_encryptor_interface.h"
+#include <optional>
+
+#include "modules/sframe/sframe_encryption_config.h"
 
 namespace webrtc {
 
@@ -22,7 +23,7 @@ struct SframeSendOptions {
   bool required = false;
   
   
-  scoped_refptr<SframeMediaEncryptorInterface> encryptor;
+  std::optional<SframeEncryptionConfig> encryption_config;
 };
 
 

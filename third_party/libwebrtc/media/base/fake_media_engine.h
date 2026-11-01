@@ -74,7 +74,7 @@
 #include "media/base/rtp_utils.h"
 #include "media/base/stream_params.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "modules/sframe/sframe_media_encryptor_interface.h"
+#include "modules/sframe/sframe_encryption_config.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/containers/flat_set.h"
@@ -443,8 +443,8 @@ class RtpSendChannelHelper : public Base, public MediaChannelUtil {
   void SetFrameEncryptor(uint32_t ,
                          scoped_refptr<FrameEncryptorInterface>
                          ) override {}
-  void SetSframeEncryptor(scoped_refptr<SframeMediaEncryptorInterface>
-                          ) override {}
+  void SetSframeEncryptionConfig(
+      SframeEncryptionConfig ) override {}
   void SetEncoderToPacketizerFrameTransformer(
       uint32_t ,
       scoped_refptr<FrameTransformerInterface> )
