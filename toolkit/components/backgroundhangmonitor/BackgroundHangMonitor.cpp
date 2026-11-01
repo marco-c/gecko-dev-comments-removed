@@ -433,25 +433,24 @@ void BackgroundHangThread::ReportHang(TimeDuration aHangTime,
       dom::RemoteType::NotRemote().Stringify(), mThreadName, mRunnableName,
       std::move(mHangStack), std::move(mAnnotations));
 
-  PersistedToDisk persistedToDisk = aPersistedToDisk;
-  if (aPersistedToDisk == PersistedToDisk::Yes && XRE_IsParentProcess() &&
-      mManager->mPermahangFile) {
-    auto res = WriteHangDetailsToFile(hangDetails, mManager->mPermahangFile);
-    persistedToDisk = res.isOk() ? PersistedToDisk::Yes : PersistedToDisk::No;
-  }
-
+  
   
   
   
   if (mManager->mHangProcessingThread) {
+    nsCOMPtr<nsIFile> permahangFile =
+        aPersistedToDisk == PersistedToDisk::Yes && XRE_IsParentProcess()
+            ? mManager->mPermahangFile
+            : nullptr;
     nsCOMPtr<nsIRunnable> processHangStackRunnable =
-        new ProcessHangStackRunnable(std::move(hangDetails), persistedToDisk);
+        new ProcessHangStackRunnable(std::move(hangDetails),
+                                     std::move(permahangFile));
     mManager->mHangProcessingThread->Dispatch(
         processHangStackRunnable.forget());
   } else {
     NS_WARNING("Unable to report native stack without a BHR processing thread");
     RefPtr<nsHangDetails> hd =
-        new nsHangDetails(std::move(hangDetails), persistedToDisk);
+        new nsHangDetails(std::move(hangDetails), PersistedToDisk::No);
     hd->Submit();
   }
 
