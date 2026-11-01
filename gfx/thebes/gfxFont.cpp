@@ -102,7 +102,7 @@ NS_IMPL_ISUPPORTS(gfxFontCache::MemoryReporter, nsIMemoryReporter)
 
 gfxTextRunFactory::~gfxTextRunFactory() {
   
-  MOZ_ASSERT(!Servo_IsWorkerThread());
+  MOZ_RELEASE_ASSERT(!Servo_IsWorkerThread());
 }
 
 NS_IMETHODIMP

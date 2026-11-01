@@ -1473,7 +1473,7 @@ bool gfxFontconfigFontFamily::SupportsLangGroup(nsAtom* aLangGroup) const {
 
 gfxFontconfigFontFamily::~gfxFontconfigFontFamily() {
   
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 }
 
 template <typename Func>
@@ -2924,7 +2924,7 @@ bool gfxFcPlatformFontList::PrefFontListsUseOnlyGenerics() {
 void gfxFcPlatformFontList::CheckFontUpdates(nsITimer* aTimer, void* aThis) {
   
   
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   
   FcInitBringUptoDate();

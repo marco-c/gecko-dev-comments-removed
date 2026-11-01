@@ -589,7 +589,7 @@ void gfxPlatformFontList::GetMissingFonts(nsCString& aMissingFonts) {
 
 void gfxPlatformFontList::FontWhitelistPrefChanged(const char* aPref,
                                                    void* aClosure) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   auto* pfl = gfxPlatformFontList::PlatformFontList();
   pfl->UpdateFontList(true);
   dom::ContentParent::NotifyUpdatedFonts(true);
@@ -733,7 +733,7 @@ bool gfxPlatformFontList::InitFontList() {
     
     
     
-    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
     
     gfxFontCache* fontCache = gfxFontCache::GetCache();
@@ -1154,7 +1154,7 @@ void gfxPlatformFontList::LoadBadUnderlineList() {
 }
 
 void gfxPlatformFontList::UpdateFontList(bool aFullRebuild) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (aFullRebuild) {
     InitFontList();
     AutoLock lock(mLock);
@@ -3234,7 +3234,7 @@ void gfxPlatformFontList::SetCharacterMap(uint32_t aGeneration,
                                           uint32_t aFamilyIndex, bool aAlias,
                                           uint32_t aFaceIndex,
                                           const gfxSparseBitSet& aMap) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   auto list = SharedFontList();
   MOZ_ASSERT(list);
   if (!list) {
@@ -3275,7 +3275,7 @@ void gfxPlatformFontList::SetCharacterMap(uint32_t aGeneration,
 
 void gfxPlatformFontList::SetupFamilyCharMap(uint32_t aGeneration,
                                              uint32_t aIndex, bool aAlias) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   auto list = SharedFontList();
   MOZ_ASSERT(list);
   if (!list) {
@@ -3323,7 +3323,7 @@ bool gfxPlatformFontList::InitOtherFamilyNames(uint32_t aGeneration,
 gfxPlatformFontList::FontPrefs::FontPrefs() {
   
   
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   Init();
 }
 

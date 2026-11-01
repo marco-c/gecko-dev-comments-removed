@@ -21,7 +21,7 @@ namespace mozilla {
 namespace fontlist {
 
 static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
-  double stretchDist = StretchDistance(aFace->mStretch, aStyle.stretch);
+  double widthDist = WidthDistance(aFace->mWidth, aStyle.width);
   double styleDist = StyleDistance(
       aFace->mStyle, aStyle.style,
       aStyle.synthesisStyle != StyleFontSynthesisStyle::ObliqueOnly);
@@ -29,14 +29,14 @@ static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
 
   
   
-  MOZ_ASSERT(stretchDist >= 0.0 && stretchDist <= 2000.0);
+  MOZ_ASSERT(widthDist >= 0.0 && widthDist <= 2000.0);
   MOZ_ASSERT(styleDist >= 0.0 && styleDist <= 900.0);
   MOZ_ASSERT(weightDist >= 0.0 && weightDist <= 1600.0);
 
   
   
   
-  return stretchDist * kStretchFactor + styleDist * kStyleFactor +
+  return widthDist * kWidthFactor + styleDist * kStyleFactor +
          weightDist * kWeightFactor;
 }
 
@@ -201,7 +201,7 @@ void Face::SetCharacterMap(FontList* aList, gfxCharacterMap* aCharMap,
 }
 
 void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   if (mFaceCount > 0) {
     
     return;
@@ -218,12 +218,12 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
     
     isSimple = true;
     for (const auto& f : aFaces) {
-      if (!f.mWeight.IsSingle() || !f.mStretch.IsSingle() ||
+      if (!f.mWeight.IsSingle() || !f.mWidth.IsSingle() ||
           !f.mStyle.IsSingle()) {
         isSimple = false;
         break;
       }
-      if (!f.mStretch.Min().IsNormal()) {
+      if (!f.mWidth.Min().IsNormal()) {
         isSimple = false;
         break;
       }
@@ -275,15 +275,15 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
   if (LOG_FONTLIST_ENABLED()) {
     const nsCString& fam = DisplayName().AsString(aList);
     for (unsigned j = 0; j < aFaces.Length(); j++) {
-      nsAutoCString weight, style, stretch;
+      nsAutoCString weight, style, width;
       aFaces[j].mWeight.ToString(weight);
       aFaces[j].mStyle.ToString(style);
-      aFaces[j].mStretch.ToString(stretch);
+      aFaces[j].mWidth.ToString(width);
       LOG_FONTLIST(
           ("(shared-fontlist) family (%s) added face (%s) index %u, weight "
-           "%s, style %s, stretch %s",
+           "%s, style %s, width %s",
            fam.get(), aFaces[j].mDescriptor.get(), aFaces[j].mIndex,
-           weight.get(), style.get(), stretch.get()));
+           weight.get(), style.get(), width.get()));
     }
   }
 }
@@ -592,11 +592,11 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
     for (const Pointer& fp : aFaces) {
       auto* f = fp.ToPtr<const Face>(aList);
       if (!f->mWeight.IsSingle() || !f->mStyle.IsSingle() ||
-          !f->mStretch.IsSingle()) {
+          !f->mWidth.IsSingle()) {
         isSimple = false;
         break;
       }
-      if (!f->mStretch.Min().IsNormal()) {
+      if (!f->mWidth.Min().IsNormal()) {
         isSimple = false;
         break;
       }
@@ -796,7 +796,7 @@ FontList::Header& FontList::GetHeader() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
 }
 
 bool FontList::AppendShmBlock(uint32_t aSizeNeeded) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   
   
@@ -851,7 +851,7 @@ bool FontList::AppendShmBlock(uint32_t aSizeNeeded) {
 
 void FontList::ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
                              ipc::ReadOnlySharedMemoryHandle aHandle) {
-  MOZ_ASSERT(!XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
   MOZ_ASSERT(mBlocks.Length() > 0);
 
   if (!aHandle) {
@@ -887,7 +887,7 @@ void FontList::DetachShmBlocks() {
 }
 
 FontList::ShmBlock* FontList::GetBlockFromParent(uint32_t aIndex) {
-  MOZ_ASSERT(!XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
   
   
   uint32_t generation = aIndex == 0 ? 0 : GetGeneration();
@@ -914,7 +914,7 @@ FontList::ShmBlock* FontList::GetBlockFromParent(uint32_t aIndex) {
 
 
 bool FontList::UpdateShmBlocks(bool aMustLock) MOZ_NO_THREAD_SAFETY_ANALYSIS {
-  MOZ_ASSERT(!XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
   if (aMustLock) {
     gfxPlatformFontList::PlatformFontList()->Lock();
   }
@@ -961,7 +961,7 @@ ipc::ReadOnlySharedMemoryHandle FontList::ShareBlockToProcess(
 
 Pointer FontList::Alloc(uint32_t aSize) {
   
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   
   
@@ -1003,7 +1003,7 @@ Pointer FontList::Alloc(uint32_t aSize) {
 
 void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
   
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   Header& header = GetHeader();
   MOZ_ASSERT(!header.mFamilyCount);
@@ -1056,7 +1056,7 @@ void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
 
 void FontList::SetAliases(
     nsClassHashtable<nsCStringHashKey, AliasData>& aAliasTable) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
 
   Header& header = GetHeader();
 
@@ -1097,15 +1097,14 @@ void FontList::SetAliases(
       for (unsigned j = 0; j < faces.Length(); j++) {
         auto* face = faces[j].ToPtr<const Face>(this);
         const nsCString& desc = face->mDescriptor.AsString(this);
-        nsAutoCString weight, style, stretch;
+        nsAutoCString weight, style, width;
         face->mWeight.ToString(weight);
         face->mStyle.ToString(style);
-        face->mStretch.ToString(stretch);
+        face->mWidth.ToString(width);
         LOG_FONTLIST(
             ("(shared-fontlist) face (%s) index %u, weight %s, style %s, "
-             "stretch %s",
-             desc.get(), face->mIndex, weight.get(), style.get(),
-             stretch.get()));
+             "width %s",
+             desc.get(), face->mIndex, weight.get(), style.get(), width.get()));
       }
     }
   }
@@ -1118,7 +1117,7 @@ void FontList::SetAliases(
 
 void FontList::SetLocalNames(
     nsTHashMap<nsCStringHashKey, LocalFaceRec::InitData>& aLocalNameTable) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   Header& header = GetHeader();
   if (header.mLocalFaceCount > 0) {
     return;  
