@@ -4,6 +4,8 @@
 #ifndef mozilla_BounceTrackingProtectionStorage_h_
 #define mozilla_BounceTrackingProtectionStorage_h_
 
+#include <functional>
+
 #include "mozIStorageFunction.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
@@ -16,6 +18,7 @@
 #include "nsIObserver.h"
 #include "nsISupports.h"
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "mozIStorageConnection.h"
 #include "mozilla/OriginAttributesHashKey.h"
 
@@ -217,6 +220,31 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   
   
   StateGlobalMap mStateGlobal;
+
+  
+  
+  bool mMemoryStateLoaded = false;
+
+  
+  
+  
+  nsTArray<std::function<bool(const ImportEntry&)>> mDeletionsBeforeLoad;
+  
+  
+  
+  nsTHashMap<OriginAttributesHashKey, nsTHashSet<nsCString>>
+      mSitesWrittenBeforeLoad;
+
+  void NoteSiteWrittenBeforeLoad(const OriginAttributes& aOriginAttributes,
+                                 const nsACString& aSiteHost);
+  void NoteDeletionBeforeLoad(
+      std::function<bool(const ImportEntry&)>&& aMatches);
+  bool IsDeletedBeforeLoad(const ImportEntry& aEntry) const;
+  bool IsSiteWrittenBeforeLoad(const ImportEntry& aEntry);
+
+  
+  [[nodiscard]] nsresult PersistMemoryState(
+      BounceTrackingStateGlobal* aStateGlobal, const nsACString& aSiteHost);
 
   
   
