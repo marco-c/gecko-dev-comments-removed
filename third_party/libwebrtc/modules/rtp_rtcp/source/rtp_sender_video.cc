@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 
+#include <algorithm>
 #include <bitset>
 #include <cstddef>
 #include <cstdint>
@@ -667,9 +668,15 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
   const bool use_fec = fec_type_.has_value() &&
                        (temporal_id == 0 || temporal_id == kNoTemporalIdx);
 
+  std::unique_ptr<RtpPacketToSend> single_packet =
+      rtp_sender_->AllocatePacket(csrcs);
+
   
   
-  int packet_capacity = rtp_sender_->MaxRtpPacketSize();
+  
+  
+  int packet_capacity =
+      std::min(single_packet->capacity(), rtp_sender_->MaxRtpPacketSize());
   if (use_fec) {
     packet_capacity -= FecPacketOverhead();
   }
@@ -677,9 +684,6 @@ bool RTPSenderVideo::SendVideoFrame(int payload_type,
     packet_capacity -= rtp_sender_->RtxPacketOverhead();
   }
 
-  std::unique_ptr<RtpPacketToSend> single_packet =
-      rtp_sender_->AllocatePacket(csrcs);
-  RTC_DCHECK_LE(packet_capacity, single_packet->capacity());
   single_packet->SetPayloadType(payload_type);
   single_packet->SetTimestamp(rtp_timestamp);
   if (capture_time.IsFinite())
