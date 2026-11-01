@@ -269,12 +269,36 @@ static bool PiPPlayerHandlesAccessibilityFrontmost() {
   if (expiration) {
     mozilla::BackgroundHangMonitor().NotifyWait();
   }
-  NSEvent* nextEvent = [super nextEventMatchingMask:mask
-                                          untilDate:expiration
-                                             inMode:mode
-                                            dequeue:flag];
-  if (expiration) {
-    mozilla::BackgroundHangMonitor().NotifyActivity();
+  NSEvent* nextEvent = nil;
+  @try {
+    nextEvent = [super nextEventMatchingMask:mask
+                                   untilDate:expiration
+                                      inMode:mode
+                                     dequeue:flag];
+  } @catch (NSException* exception) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsObjCExceptionLog(exception);
+    if (!ShouldIgnoreObjCException(exception)) {
+      @throw;
+    }
+    
+  } @finally {
+    if (expiration) {
+      mozilla::BackgroundHangMonitor().NotifyActivity();
+    }
   }
   return nextEvent;
 }
