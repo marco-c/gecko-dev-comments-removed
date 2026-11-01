@@ -49,17 +49,15 @@ LockedOutstandingContexts::~LockedOutstandingContexts() {
 
 
 std::unique_ptr<HostWebGLContext> HostWebGLContext::Create(
-    const OwnerData& ownerData, const webgl::InitContextDesc& desc,
+    dom::WebGLParent* owner, const webgl::InitContextDesc& desc,
     webgl::InitContextResult* const out) {
-  auto host =
-      std::unique_ptr<HostWebGLContext>(new HostWebGLContext(ownerData));
+  auto host = std::unique_ptr<HostWebGLContext>(new HostWebGLContext(owner));
   auto webgl = WebGLContext::Create(host.get(), desc, out);
   if (!webgl) return nullptr;
   return host;
 }
 
-HostWebGLContext::HostWebGLContext(const OwnerData& ownerData)
-    : mOwnerData(ownerData) {
+HostWebGLContext::HostWebGLContext(dom::WebGLParent* owner) : mOwner(owner) {
   StaticMutexAutoLock lock(sContextSetLock);
   auto& contexts = DeferredStaticContextSet();
   (void)contexts.insert(this);
@@ -74,19 +72,11 @@ HostWebGLContext::~HostWebGLContext() {
 
 
 void HostWebGLContext::OnContextLoss(const webgl::ContextLossReason reason) {
-  if (mOwnerData.inProcess) {
-    mOwnerData.inProcess->OnContextLoss(reason);
-  } else {
-    (void)mOwnerData.outOfProcess->SendOnContextLoss(reason);
-  }
+  (void)mOwner->SendOnContextLoss(reason);
 }
 
 void HostWebGLContext::JsWarning(const std::string& text) const {
-  if (mOwnerData.inProcess) {
-    mOwnerData.inProcess->JsWarning(text);
-    return;
-  }
-  (void)mOwnerData.outOfProcess->SendJsWarning(text);
+  (void)mOwner->SendJsWarning(text);
 }
 
 Maybe<layers::SurfaceDescriptor> HostWebGLContext::GetFrontBuffer(
@@ -98,124 +88,155 @@ Maybe<layers::SurfaceDescriptor> HostWebGLContext::GetFrontBuffer(
 
 
 void HostWebGLContext::CreateBuffer(const ObjectId id) {
-  auto& slot = mBufferMap[id];
-  if (slot) {
+  if (mBufferMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateBuffer();
+  auto buffer = mContext->CreateBuffer();
+  if (!buffer) {
+    return;
+  }
+  mBufferMap.emplace(id, WrapNotNull(std::move(buffer)));
 }
 
 void HostWebGLContext::CreateFramebuffer(const ObjectId id) {
-  auto& slot = mFramebufferMap[id];
-  if (slot) {
+  if (mFramebufferMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateFramebuffer();
+  auto framebuffer = mContext->CreateFramebuffer();
+  if (!framebuffer) {
+    return;
+  }
+  mFramebufferMap.emplace(id, WrapNotNull(std::move(framebuffer)));
 }
 
 bool HostWebGLContext::CreateOpaqueFramebuffer(
     const ObjectId id, const webgl::OpaqueFramebufferOptions& options) {
-  auto& slot = mFramebufferMap[id];
-  if (slot) {
+  if (mFramebufferMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return false;
   }
-  slot = mContext->CreateOpaqueFramebuffer(options);
-  return slot;
+  auto framebuffer = mContext->CreateOpaqueFramebuffer(options);
+  if (!framebuffer) {
+    return false;
+  }
+  mFramebufferMap.emplace(id, WrapNotNull(std::move(framebuffer)));
+  return true;
 }
 
 void HostWebGLContext::CreateProgram(const ObjectId id) {
-  auto& slot = mProgramMap[id];
-  if (slot) {
+  if (mProgramMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateProgram();
+  auto program = mContext->CreateProgram();
+  if (!program) {
+    return;
+  }
+  mProgramMap.emplace(id, WrapNotNull(std::move(program)));
 }
 
 void HostWebGLContext::CreateQuery(const ObjectId id) {
-  auto& slot = mQueryMap[id];
-  if (slot) {
+  if (mQueryMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateQuery();
+  auto query = mContext->CreateQuery();
+  if (!query) {
+    return;
+  }
+  mQueryMap.emplace(id, WrapNotNull(std::move(query)));
 }
 
 void HostWebGLContext::CreateRenderbuffer(const ObjectId id) {
-  auto& slot = mRenderbufferMap[id];
-  if (slot) {
+  if (mRenderbufferMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateRenderbuffer();
+  auto renderbuffer = mContext->CreateRenderbuffer();
+  if (!renderbuffer) {
+    return;
+  }
+  mRenderbufferMap.emplace(id, WrapNotNull(std::move(renderbuffer)));
 }
 
 void HostWebGLContext::CreateSampler(const ObjectId id) {
-  auto& slot = mSamplerMap[id];
-  if (slot) {
+  if (mSamplerMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = GetWebGL2Context()->CreateSampler();
+  auto sampler = GetWebGL2Context()->CreateSampler();
+  if (!sampler) {
+    return;
+  }
+  mSamplerMap.emplace(id, WrapNotNull(std::move(sampler)));
 }
 
 void HostWebGLContext::CreateShader(const ObjectId id, GLenum type) {
-  auto& slot = mShaderMap[id];
-  if (slot) {
+  if (mShaderMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateShader(type);
+  auto shader = mContext->CreateShader(type);
+  if (!shader) {
+    return;
+  }
+  mShaderMap.emplace(id, WrapNotNull(std::move(shader)));
 }
 
 void HostWebGLContext::CreateSync(const ObjectId id) {
-  auto& slot = mSyncMap[id];
-  if (slot) {
+  if (mSyncMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = GetWebGL2Context()->FenceSync(LOCAL_GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+  auto sync =
+      GetWebGL2Context()->FenceSync(LOCAL_GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+  if (!sync) {
+    return;
+  }
+  mSyncMap.emplace(id, WrapNotNull(sync));
 
-  if (!slot) return;
-
-  slot->OnCompleteTaskAdd([host = WeakPtr{this}, id]() {
+  sync->OnCompleteTaskAdd([host = WeakPtr{this}, id]() {
     if (!host) return;
-    if (host->mOwnerData.inProcess) {
-      host->mOwnerData.inProcess->OnSyncComplete(id);
-    } else if (host->mOwnerData.outOfProcess) {
-      (void)host->mOwnerData.outOfProcess->SendOnSyncComplete(id);
-    }
+    (void)host->mOwner->SendOnSyncComplete(id);
   });
 }
 
 void HostWebGLContext::CreateTexture(const ObjectId id) {
-  auto& slot = mTextureMap[id];
-  if (slot) {
+  if (mTextureMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateTexture();
+  auto texture = mContext->CreateTexture();
+  if (!texture) {
+    return;
+  }
+  mTextureMap.emplace(id, WrapNotNull(std::move(texture)));
 }
 
 void HostWebGLContext::CreateTransformFeedback(const ObjectId id) {
-  auto& slot = mTransformFeedbackMap[id];
-  if (slot) {
+  if (mTransformFeedbackMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = GetWebGL2Context()->CreateTransformFeedback();
+  auto transformFeedback = GetWebGL2Context()->CreateTransformFeedback();
+  if (!transformFeedback) {
+    return;
+  }
+  mTransformFeedbackMap.emplace(id, WrapNotNull(std::move(transformFeedback)));
 }
 
 void HostWebGLContext::CreateVertexArray(const ObjectId id) {
-  auto& slot = mVertexArrayMap[id];
-  if (slot) {
+  if (mVertexArrayMap.contains(id)) {
     MOZ_ASSERT(false, "duplicate ID");
     return;
   }
-  slot = mContext->CreateVertexArray();
+  auto vertexArray = mContext->CreateVertexArray();
+  if (!vertexArray) {
+    return;
+  }
+  mVertexArrayMap.emplace(id, WrapNotNull(std::move(vertexArray)));
 }
 
 
