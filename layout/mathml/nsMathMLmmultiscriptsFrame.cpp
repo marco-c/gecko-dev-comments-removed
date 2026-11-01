@@ -27,8 +27,7 @@ using namespace mozilla;
 
 nsIFrame* NS_NewMathMLmmultiscriptsFrame(PresShell* aPresShell,
                                          ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsMathMLmmultiscriptsFrame(aStyle, aPresShell->GetPresContext());
+  return new nsMathMLmmultiscriptsFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmmultiscriptsFrame)
@@ -55,14 +54,9 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
   mPresentationData.baseFrame = mFrames.FirstChild();
   GetEmbellishDataFrom(mPresentationData.baseFrame, mEmbellishData);
 
-  
-  
-  
-
   int32_t count = 0;
   bool isSubScript = !mContent->IsMathMLElement(nsGkAtoms::msup);
 
-  AutoTArray<nsIFrame*, 8> subScriptFrames;
   nsIFrame* childFrame = mFrames.FirstChild();
   while (childFrame) {
     if (childFrame->GetContent()->IsMathMLElement(nsGkAtoms::mprescripts)) {
@@ -71,25 +65,11 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
       
     } else {
       
-      if (isSubScript) {
-        
-        subScriptFrames.AppendElement(childFrame);
-      } else {
-        
-      }
       PropagateFrameFlagFor(childFrame, NS_FRAME_MATHML_SCRIPT_DESCENDANT);
       isSubScript = !isSubScript;
     }
     count++;
     childFrame = childFrame->GetNextSibling();
-  }
-  if (!StaticPrefs::mathml_math_shift_enabled()) {
-    for (int32_t i = subScriptFrames.Length() - 1; i >= 0; i--) {
-      childFrame = subScriptFrames[i];
-      PropagatePresentationDataFor(childFrame,
-                                   MathMLPresentationFlag::Compressed,
-                                   MathMLPresentationFlag::Compressed);
-    }
   }
 
   return NS_OK;
@@ -214,10 +194,7 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   nscoord supScriptShift;
   nsPresentationData presentationData;
   aFrame->GetPresentationData(presentationData);
-  bool compressed =
-      StaticPrefs::mathml_math_shift_enabled()
-          ? font->mMathShift == StyleMathShift::Compact
-          : presentationData.flags.contains(MathMLPresentationFlag::Compressed);
+  bool compressed = font->mMathShift == StyleMathShift::Compact;
   if (mathFont) {
     
     
@@ -606,8 +583,7 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   
 
   if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
-    const bool isRTL =
-        aFrame->StyleVisibility()->mDirection == StyleDirection::Rtl;
+    const bool isRTL = aFrame->GetWritingMode().IsBidiRTL();
     nscoord dx = isRTL ? borderPadding.right : borderPadding.left;
     nscoord dy = 0;
 

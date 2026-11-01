@@ -29,14 +29,13 @@ class PresShell;
 
 
 
-nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell, nsIFrame* aFrame,
-                         bool aIsBlock);
+nsLineBox* NS_NewLineBox(nsIFrame* aFrame, bool aIsBlock);
 
 
 
 
-nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell, nsLineBox* aFromLine,
-                         nsIFrame* aFrame, int32_t aCount);
+nsLineBox* NS_NewLineBox(nsLineBox* aFromLine, nsIFrame* aFrame,
+                         int32_t aCount);
 
 
 
@@ -68,17 +67,15 @@ class nsLineBox final : public nsLineLink {
 
   
   
-  void* operator new(size_t sz, mozilla::PresShell* aPresShell);
+  void* operator new(size_t sz);
 
  public:
   void operator delete(void* aPtr, size_t sz) = delete;
   
-  friend nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell,
-                                  nsIFrame* aFrame, bool aIsBlock);
-  friend nsLineBox* NS_NewLineBox(mozilla::PresShell* aPresShell,
-                                  nsLineBox* aFromLine, nsIFrame* aFrame,
+  friend nsLineBox* NS_NewLineBox(nsIFrame* aFrame, bool aIsBlock);
+  friend nsLineBox* NS_NewLineBox(nsLineBox* aFromLine, nsIFrame* aFrame,
                                   int32_t aCount);
-  void Destroy(mozilla::PresShell* aPresShell);
+  void Destroy();
 
   
   bool IsBlock() const { return mFlags.mBlock; }

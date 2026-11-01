@@ -6,11 +6,8 @@
 
 
 
-
-
-
 #define FRAME_ID(classname, ...) PRES_ARENA_OBJECT(classname)
-#define ABSTRACT_FRAME_ID(classname) PRES_ARENA_OBJECT(classname)
+#define ABSTRACT_FRAME_ID(classname)
 #include "mozilla/FrameIdList.h"
 #undef FRAME_ID
 #undef ABSTRACT_FRAME_ID

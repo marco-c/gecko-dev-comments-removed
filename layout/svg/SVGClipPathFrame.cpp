@@ -8,6 +8,7 @@
 
 #include "AutoReferenceChainGuard.h"
 #include "ImgDrawResult.h"
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGGeometryFrame.h"
@@ -26,8 +27,7 @@ using namespace mozilla::image;
 
 nsIFrame* NS_NewSVGClipPathFrame(mozilla::PresShell* aPresShell,
                                  mozilla::ComputedStyle* aStyle) {
-  return new (aPresShell)
-      mozilla::SVGClipPathFrame(aStyle, aPresShell->GetPresContext());
+  return new mozilla::SVGClipPathFrame(aStyle, aPresShell->GetPresContext());
 }
 
 namespace mozilla {
@@ -314,6 +314,13 @@ bool SVGClipPathFrame::IsTrivial(nsIFrame** aSingleChild) {
     }
     
     
+    
+    if (!svgChild->IsDisplayContainer() &&
+        !kid->StyleVisibility()->IsVisible()) {
+      continue;
+    }
+    
+    
     if (foundChild || svgChild->IsDisplayContainer()) {
       return false;
     }
@@ -384,6 +391,48 @@ void SVGClipPathFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 #endif
 
 gfxMatrix SVGClipPathFrame::GetCanvasTM() { return mMatrixForChildren; }
+
+bool SVGClipPathFrame::GetSimpleClipShape(nsIFrame* aClippedFrame,
+                                          CSSRect* aRect, CSSSize* aRadii) {
+  nsIFrame* singleClipPathChild = nullptr;
+  if (!IsTrivial(&singleClipPathChild)) {
+    return false;
+  }
+  if (!singleClipPathChild) {
+    
+    
+    *aRect = CSSRect();
+    *aRadii = CSSSize();
+    return true;
+  }
+  SVGGeometryFrame* pathFrame = do_QueryFrame(singleClipPathChild);
+  if (!pathFrame) {
+    return false;
+  }
+
+  auto* element = static_cast<SVGGeometryElement*>(pathFrame->GetContent());
+  SVGGeometryElement::SimpleShape shape;
+  element->GetAsSimpleShape(&shape);
+  if (!shape.IsRoundedRect()) {
+    return false;
+  }
+
+  gfxMatrix toClippedUserSpace =
+      SVGUtils::GetTransformMatrixInUserSpace(pathFrame) *
+      GetClipPathTransform(aClippedFrame);
+  if (toClippedUserSpace.IsSingular() ||
+      toClippedUserSpace.HasNonAxisAlignedTransform() ||
+      toClippedUserSpace._11 < 0 || toClippedUserSpace._22 < 0) {
+    return false;
+  }
+
+  gfxRect rect = toClippedUserSpace.TransformBounds(
+      ThebesRect(shape.AsRect().ToUnknownRect()));
+  *aRect = CSSRect::FromUnknownRect(ToRect(rect));
+  *aRadii = CSSSize(float(shape.Radii().width * toClippedUserSpace._11),
+                    float(shape.Radii().height * toClippedUserSpace._22));
+  return true;
+}
 
 gfxMatrix SVGClipPathFrame::GetClipPathTransform(nsIFrame* aClippedFrame) {
   gfxMatrix tm = SVGUtils::GetTransformMatrixInUserSpace(this);

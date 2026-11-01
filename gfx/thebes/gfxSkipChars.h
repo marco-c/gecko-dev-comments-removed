@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef GFX_SKIP_CHARS_H
 #define GFX_SKIP_CHARS_H
 
@@ -123,7 +122,7 @@ class gfxSkipChars {
 
 
 
-class MOZ_STACK_CLASS gfxSkipCharsIterator {
+class gfxSkipCharsIterator {
  public:
   
 

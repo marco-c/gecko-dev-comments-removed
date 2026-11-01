@@ -14,7 +14,6 @@
 #include "TouchManager.h"
 #include "Units.h"
 #include "Visibility.h"
-#include "mozilla/ArenaObjectID.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/Logging.h"
@@ -35,7 +34,6 @@
 #include "nsIContent.h"
 #include "nsIObserver.h"
 #include "nsISelectionController.h"
-#include "nsPresArena.h"
 #include "nsPresContext.h"
 #include "nsQueryFrame.h"
 #include "nsRect.h"
@@ -267,45 +265,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   [[nodiscard]] bool IsRoot() const {
     return mPresContext && mPresContext->IsRoot();
-  }
-
-  
-
-
-
-
-
-
-  void* AllocateFrame(nsQueryFrame::FrameIID aID, size_t aSize) {
-#define FRAME_ID(classname, ...)                                  \
-  static_assert(size_t(nsQueryFrame::FrameIID::classname##_id) == \
-                    size_t(eArenaObjectID_##classname),           \
-                "");
-#define ABSTRACT_FRAME_ID(classname)                              \
-  static_assert(size_t(nsQueryFrame::FrameIID::classname##_id) == \
-                    size_t(eArenaObjectID_##classname),           \
-                "");
-#include "mozilla/FrameIdList.h"
-#undef FRAME_ID
-#undef ABSTRACT_FRAME_ID
-    return AllocateByObjectID(ArenaObjectID(size_t(aID)), aSize);
-  }
-
-  void FreeFrame(nsQueryFrame::FrameIID aID, void* aPtr) {
-    return FreeByObjectID(ArenaObjectID(size_t(aID)), aPtr);
-  }
-
-  void* AllocateByObjectID(ArenaObjectID aID, size_t aSize) {
-    void* result = mFrameArena.Allocate(aID, aSize);
-    RecordAlloc(result);
-    return result;
-  }
-
-  void FreeByObjectID(ArenaObjectID aID, void* aPtr) {
-    RecordFree(aPtr);
-    if (!mIsDestroying) {
-      mFrameArena.Free(aID, aPtr);
-    }
   }
 
   Document* GetDocument() const { return mDocument; }
@@ -1998,32 +1957,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool DetermineFontSizeInflationState();
 
-  void RecordAlloc(void* aPtr) {
-#ifdef DEBUG
-    if (!mAllocatedPointers) {
-      return;  
-    }
-    MOZ_ASSERT(!mAllocatedPointers->Contains(aPtr));
-    if (!mAllocatedPointers->Insert(aPtr, fallible)) {
-      
-      
-      
-      
-      mAllocatedPointers = nullptr;
-    }
-#endif
-  }
-
-  void RecordFree(void* aPtr) {
-#ifdef DEBUG
-    if (!mAllocatedPointers) {
-      return;  
-    }
-    MOZ_ASSERT(mAllocatedPointers->Contains(aPtr));
-    mAllocatedPointers->Remove(aPtr);
-#endif
-  }
-
   struct EventTargetInfo {
     EventTargetInfo() = default;
     EventTargetInfo(EventMessage aEventMessage, nsIFrame* aFrame,
@@ -3307,18 +3240,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   DOMHighResTimeStamp mLastReflowStart{0.0};
 
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  
-  
-  UniquePtr<nsTHashSet<void*>> mAllocatedPointers{
-      MakeUnique<nsTHashSet<void*>>()};
-#endif
-
   
   
   AutoWeakFrame* mAutoWeakFrames = nullptr;
@@ -3436,9 +3357,6 @@ class PresShell final : public nsStubDocumentObserver,
 
   
   Maybe<nsSize> mPendingLayoutViewportSize;
-
-  using Arena = nsPresArena<8192, ArenaObjectID, eArenaObjectID_COUNT>;
-  Arena mFrameArena;
 
   Maybe<nsPoint> mVisualViewportOffset;
 

@@ -38,7 +38,7 @@ class CharacterDataBuffer;
 
 
 
-class MOZ_STACK_CLASS TextAutospace final {
+class TextAutospace final {
  public:
   enum class CharClass : uint8_t {
     Other,

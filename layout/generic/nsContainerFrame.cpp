@@ -181,7 +181,7 @@ void nsContainerFrame::SafelyDestroyFrameListProp(
       frame->Destroy(aContext);
     } else {
       (void)TakeProperty(aProp);
-      frameList->Delete(aPresShell);
+      frameList->Delete();
       return;
     }
   }
@@ -1037,7 +1037,7 @@ bool nsContainerFrame::TryRemoveFrame(FrameListPropertyDescriptor aProp,
     
     if (list->IsEmpty()) {
       (void)TakeProperty(aProp);
-      list->Delete(PresShell());
+      list->Delete();
     }
     return true;
   }
@@ -1368,7 +1368,7 @@ void nsContainerFrame::NormalizeChildLists() {
   auto* prevInFlow = static_cast<nsContainerFrame*>(GetPrevInFlow());
   
   if (prevInFlow) {
-    AutoFrameListPtr overflow(PresContext(), prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr overflow(prevInFlow->StealOverflowFrames());
     if (overflow) {
       ReparentFrames(*overflow, prevInFlow, this);
       MergeSortedFrameLists(mFrames, *overflow, GetContent());
@@ -1583,8 +1583,7 @@ bool nsContainerFrame::MoveOverflowToChildList() {
   
   nsContainerFrame* prevInFlow = (nsContainerFrame*)GetPrevInFlow();
   if (nullptr != prevInFlow) {
-    AutoFrameListPtr prevOverflowFrames(PresContext(),
-                                        prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr prevOverflowFrames(prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
       
       
@@ -1730,8 +1729,7 @@ bool nsContainerFrame::MoveInlineOverflowToChildList(nsIFrame* aLineContainer) {
 
   
   if (auto prevInFlow = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
-    AutoFrameListPtr prevOverflowFrames(PresContext(),
-                                        prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr prevOverflowFrames(prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
       
       
@@ -1750,7 +1748,7 @@ bool nsContainerFrame::MoveInlineOverflowToChildList(nsIFrame* aLineContainer) {
 }
 
 bool nsContainerFrame::DrainSelfOverflowList() {
-  AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
+  AutoFrameListPtr overflowFrames(StealOverflowFrames());
   if (overflowFrames) {
     mFrames.AppendFrames(nullptr, std::move(*overflowFrames));
     return true;
@@ -1767,7 +1765,7 @@ bool nsContainerFrame::DrainAndMergeSelfOverflowList() {
   
   
   
-  AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
+  AutoFrameListPtr overflowFrames(StealOverflowFrames());
   if (overflowFrames) {
     MergeSortedFrameLists(mFrames, *overflowFrames, GetContent());
     
@@ -1786,8 +1784,7 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
 
   
   if (auto* prev = static_cast<nsContainerFrame*>(GetPrevInFlow())) {
-    AutoFrameListPtr excessFrames(PresContext(),
-                                  prev->StealExcessOverflowContainers());
+    AutoFrameListPtr excessFrames(prev->StealExcessOverflowContainers());
     if (excessFrames) {
       excessFrames->ApplySetParent(this);
       if (overflowContainers) {
@@ -1805,8 +1802,7 @@ nsFrameList* nsContainerFrame::DrainExcessOverflowContainersList(
   
   
   
-  AutoFrameListPtr selfExcessOCFrames(PresContext(),
-                                      StealExcessOverflowContainers());
+  AutoFrameListPtr selfExcessOCFrames(StealExcessOverflowContainers());
   if (selfExcessOCFrames) {
     nsFrameList toMove;
     auto child = selfExcessOCFrames->FirstChild();
@@ -2616,7 +2612,6 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
 
   nsresult rv = NS_OK;
   bool reparented = false;
-  nsPresContext* presContext = aOverflowCont->PresContext();
   bool addToList = !mSentry || aOverflowCont != mSentry->GetNextInFlow();
 
   
@@ -2645,7 +2640,7 @@ nsresult nsOverflowContinuationTracker::Insert(nsIFrame* aOverflowCont,
       
       
       
-      mOverflowContList = new (presContext->PresShell()) nsFrameList();
+      mOverflowContList = new nsFrameList();
       mParent->SetProperty(nsContainerFrame::ExcessOverflowContainersProperty(),
                            mOverflowContList);
       SetUpListWalker();

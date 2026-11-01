@@ -209,7 +209,10 @@ void nsTableCellFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     uint32_t rowIndex = RowIndex();
     
     
-    TableArea damageArea(colIndex, rowIndex, GetColSpan(),
+    
+    TableArea damageArea(colIndex, rowIndex,
+                         std::min(static_cast<uint32_t>(GetColSpan()),
+                                  tableFrame->GetColCount() - colIndex),
                          std::min(static_cast<uint32_t>(GetRowSpan()),
                                   tableFrame->GetRowCount() - rowIndex));
     tableFrame->AddBCDamageArea(damageArea);
@@ -939,9 +942,9 @@ nsTableCellFrame* NS_NewTableCellFrame(PresShell* aPresShell,
                                        ComputedStyle* aStyle,
                                        nsTableFrame* aTableFrame) {
   if (aTableFrame->IsBorderCollapse()) {
-    return new (aPresShell) nsBCTableCellFrame(aStyle, aTableFrame);
+    return new nsBCTableCellFrame(aStyle, aTableFrame);
   }
-  return new (aPresShell) nsTableCellFrame(aStyle, aTableFrame);
+  return new nsTableCellFrame(aStyle, aTableFrame);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsBCTableCellFrame)

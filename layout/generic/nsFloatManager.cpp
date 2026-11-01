@@ -30,14 +30,13 @@ void* nsFloatManager::sCachedFloatManagers[NS_FLOAT_MANAGER_CACHE_SIZE];
 
 
 
-nsFloatManager::nsFloatManager(PresShell* aPresShell, WritingMode aWM)
+nsFloatManager::nsFloatManager(WritingMode aWM)
     :
 #ifdef DEBUG
       mWritingMode(aWM),
 #endif
       mLineLeft(0),
       mBlockStart(0),
-      mFloatDamage(aPresShell),
       mPushedLeftFloatPastBreak(false),
       mPushedRightFloatPastBreak(false),
       mSplitLeftFloatAcrossBreak(false),
@@ -2998,8 +2997,7 @@ void nsAutoFloatManager::CreateFloatManager(nsPresContext* aPresContext) {
   
   
   
-  mNew = MakeUnique<nsFloatManager>(aPresContext->PresShell(),
-                                    mReflowInput.GetWritingMode());
+  mNew = MakeUnique<nsFloatManager>(mReflowInput.GetWritingMode());
 
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyFloatManager) {

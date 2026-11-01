@@ -119,13 +119,13 @@ class nsFrameList {
   
 
 
-  void* operator new(size_t sz, mozilla::PresShell* aPresShell);
+  void* operator new(size_t sz);
 
   
 
 
 
-  void Delete(mozilla::PresShell* aPresShell);
+  void Delete();
 
   
 
@@ -466,14 +466,12 @@ class FrameChildList {
 
 class MOZ_RAII AutoFrameListPtr final {
  public:
-  AutoFrameListPtr(nsPresContext* aPresContext, nsFrameList* aFrameList)
-      : mPresContext(aPresContext), mFrameList(aFrameList) {}
+  explicit AutoFrameListPtr(nsFrameList* aFrameList) : mFrameList(aFrameList) {}
   ~AutoFrameListPtr();
   operator nsFrameList*() const { return mFrameList; }
   nsFrameList* operator->() const { return mFrameList; }
 
  private:
-  nsPresContext* mPresContext;
   nsFrameList* mFrameList;
 };
 

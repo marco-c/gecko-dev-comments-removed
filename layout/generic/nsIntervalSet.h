@@ -9,10 +9,6 @@
 
 #include "nsCoord.h"
 
-namespace mozilla {
-class PresShell;
-}  
-
 
 
 
@@ -21,7 +17,7 @@ class nsIntervalSet {
  public:
   typedef nscoord coord_type;
 
-  explicit nsIntervalSet(mozilla::PresShell* aPresShell);
+  nsIntervalSet();
   ~nsIntervalSet();
 
   
@@ -64,7 +60,6 @@ class nsIntervalSet {
   void FreeInterval(Interval* aInterval);
 
   Interval* mList;
-  mozilla::PresShell* mPresShell;
 };
 
 #endif  

@@ -8,21 +8,27 @@
 #ifndef nsPresArena_h_
 #define nsPresArena_h_
 
+#include <memory>
+
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"
-#include "mozilla/MemoryChecking.h"  
+#include "mozilla/DisplayListArenaObjectId.h"
 #include "mozilla/MemoryReporting.h"
-#include "nsHashKeys.h"
+#include "nsDisplayItemTypes.h"
+#include "nsQueryFrame.h"
 #include "nsTArray.h"
-#include "nsTHashtable.h"
-#include "nscore.h"
+#include "nsTHashSet.h"
 
-class nsWindowSizes;
+struct nsArenaSizes;
+namespace mozilla {
+class SizeOfState;
+enum class PresArenaKind { Frames, DisplayList };
+}  
 
 template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
 class nsPresArena {
  public:
-  nsPresArena() = default;
+  constexpr nsPresArena() = default;
   ~nsPresArena();
 
   
@@ -32,24 +38,30 @@ class nsPresArena {
   void* Allocate(ObjectId aCode, size_t aSize);
   void Free(ObjectId aCode, void* aPtr);
 
-  enum class ArenaKind { PresShell, DisplayList };
   
 
 
 
 
-  void AddSizeOfExcludingThis(nsWindowSizes&, ArenaKind) const;
+  void AddSizeOfExcludingThis(mozilla::SizeOfState&, nsArenaSizes&,
+                              mozilla::PresArenaKind) const;
 
   void Check() { mPool.Check(); }
+
+  
+
+
+
+  void AssertNoLiveAllocations();
 
  private:
   class FreeList {
    public:
     nsTArray<void*> mEntries;
-    size_t mEntrySize;
-    size_t mEntriesEverAllocated;
+    size_t mEntrySize = 0;
+    size_t mEntriesEverAllocated = 0;
 
-    FreeList() : mEntrySize(0), mEntriesEverAllocated(0) {}
+    constexpr FreeList() = default;
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
       return mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
@@ -58,6 +70,116 @@ class nsPresArena {
 
   FreeList mFreeLists[ObjectIdCount];
   mozilla::ArenaAllocator<ArenaSize, 8> mPool;
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<nsTHashSet<void*>> mAllocatedPointers;
+  bool mAllocatedPointersInitialized = false;
+#endif
 };
+
+extern template class nsPresArena<8192, mozilla::ArenaObjectID,
+                                  mozilla::eArenaObjectID_COUNT>;
+extern template class nsPresArena<
+    32768, mozilla::DisplayListArenaObjectId,
+    size_t(mozilla::DisplayListArenaObjectId::COUNT)>;
+
+namespace mozilla {
+
+
+
+
+template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
+class StaticPresArena {
+ public:
+  using Arena = nsPresArena<ArenaSize, ObjectId, ObjectIdCount>;
+
+  static void* Allocate(ObjectId aId, size_t aSize) {
+    return sInstance.Allocate(aId, aSize);
+  }
+  static void Free(ObjectId aId, void* aPtr) { sInstance.Free(aId, aPtr); }
+  static void Check() { sInstance.Check(); }
+  static void AddSizeOf(SizeOfState& aState, nsArenaSizes& aSizes,
+                        PresArenaKind aKind) {
+    sInstance.AddSizeOfExcludingThis(aState, aSizes, aKind);
+  }
+  static void AssertNoLiveAllocations() { sInstance.AssertNoLiveAllocations(); }
+
+ private:
+  static Arena sInstance;
+};
+
+extern template class StaticPresArena<8192, ArenaObjectID,
+                                      eArenaObjectID_COUNT>;
+extern template class StaticPresArena<32768, DisplayListArenaObjectId,
+                                      size_t(DisplayListArenaObjectId::COUNT)>;
+
+
+
+
+
+
+
+
+class FrameArena final
+    : public StaticPresArena<8192, ArenaObjectID, eArenaObjectID_COUNT> {
+ public:
+  using StaticPresArena::Allocate;
+  using StaticPresArena::Free;
+
+  static void* Allocate(nsQueryFrame::FrameIID aID, size_t aSize) {
+#define FRAME_ID(classname, ...)                                  \
+  static_assert(size_t(nsQueryFrame::FrameIID::classname##_id) == \
+                    size_t(eArenaObjectID_##classname),           \
+                "");
+#define ABSTRACT_FRAME_ID(classname)
+#include "mozilla/FrameIdList.h"
+#undef FRAME_ID
+#undef ABSTRACT_FRAME_ID
+    return Allocate(ArenaObjectID(size_t(aID)), aSize);
+  }
+
+  static void Free(nsQueryFrame::FrameIID aID, void* aPtr) {
+    return Free(ArenaObjectID(size_t(aID)), aPtr);
+  }
+};
+
+
+
+
+
+class DisplayListArena final
+    : public StaticPresArena<32768, DisplayListArenaObjectId,
+                             size_t(DisplayListArenaObjectId::COUNT)> {
+ public:
+  using StaticPresArena::Allocate;
+  using StaticPresArena::Free;
+
+  static void* Allocate(DisplayItemType aType, size_t aSize) {
+#define DECLARE_DISPLAY_ITEM_TYPE(name_, ...)                \
+  static_assert(size_t(DisplayItemType::TYPE_##name_) ==     \
+                    size_t(DisplayListArenaObjectId::name_), \
+                "");
+#include "nsDisplayItemTypesList.inc"
+#undef DECLARE_DISPLAY_ITEM_TYPE
+    static_assert(size_t(DisplayItemType::TYPE_MAX) ==
+                      size_t(DisplayListArenaObjectId::CLIPCHAIN),
+                  "");
+    return Allocate(DisplayListArenaObjectId(size_t(aType)), aSize);
+  }
+
+  static void Free(DisplayItemType aType, void* aPtr) {
+    return Free(DisplayListArenaObjectId(size_t(aType)), aPtr);
+  }
+};
+
+void InitPresArenas();
+void ShutdownPresArenas();
+
+}  
 
 #endif

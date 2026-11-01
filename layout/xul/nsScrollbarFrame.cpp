@@ -38,8 +38,7 @@ static mozilla::LazyLogModule sScrollBarLog("apz.scrollbar");
 
 
 nsIFrame* NS_NewScrollbarFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsScrollbarFrame(aStyle, aPresShell->GetPresContext());
+  return new nsScrollbarFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsScrollbarFrame)

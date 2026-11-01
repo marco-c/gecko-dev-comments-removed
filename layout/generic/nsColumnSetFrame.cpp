@@ -111,7 +111,7 @@ nsContainerFrame* NS_NewColumnSetFrame(PresShell* aPresShell,
                                        ComputedStyle* aStyle,
                                        nsFrameState aStateFlags) {
   nsColumnSetFrame* it =
-      new (aPresShell) nsColumnSetFrame(aStyle, aPresShell->GetPresContext());
+      new nsColumnSetFrame(aStyle, aPresShell->GetPresContext());
   it->AddStateBits(aStateFlags);
   return it;
 }
@@ -954,10 +954,9 @@ nsColumnSetFrame::ColumnBalanceData nsColumnSetFrame::ReflowColumns(
 void nsColumnSetFrame::DrainOverflowColumns() {
   
   
-  nsPresContext* presContext = PresContext();
   nsColumnSetFrame* prev = static_cast<nsColumnSetFrame*>(GetPrevInFlow());
   if (prev) {
-    AutoFrameListPtr overflows(presContext, prev->StealOverflowFrames());
+    AutoFrameListPtr overflows(prev->StealOverflowFrames());
     if (overflows) {
       mFrames.InsertFrames(this, nullptr, std::move(*overflows));
     }
@@ -965,7 +964,7 @@ void nsColumnSetFrame::DrainOverflowColumns() {
 
   
   
-  AutoFrameListPtr overflows(presContext, StealOverflowFrames());
+  AutoFrameListPtr overflows(StealOverflowFrames());
   if (overflows) {
     
     

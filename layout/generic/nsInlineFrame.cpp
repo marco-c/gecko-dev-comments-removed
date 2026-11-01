@@ -35,7 +35,7 @@ using namespace mozilla::layout;
 
 
 nsInlineFrame* NS_NewInlineFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
-  return new (aPresShell) nsInlineFrame(aStyle, aPresShell->GetPresContext());
+  return new nsInlineFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsInlineFrame)
@@ -317,8 +317,7 @@ void nsInlineFrame::Reflow(nsPresContext* aPresContext,
   
   nsInlineFrame* prevInFlow = (nsInlineFrame*)GetPrevInFlow();
   if (prevInFlow) {
-    AutoFrameListPtr prevOverflowFrames(aPresContext,
-                                        prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr prevOverflowFrames(prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
       
       
@@ -431,7 +430,7 @@ nsresult nsInlineFrame::AttributeChanged(int32_t aNameSpaceID,
 }
 
 bool nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine) {
-  AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
+  AutoFrameListPtr overflowFrames(StealOverflowFrames());
   if (!overflowFrames || overflowFrames->IsEmpty()) {
     return false;
   }
@@ -477,9 +476,7 @@ bool nsInlineFrame::CanContinueTextRun() const {
 void nsInlineFrame::PullOverflowsFromPrevInFlow() {
   nsInlineFrame* prevInFlow = static_cast<nsInlineFrame*>(GetPrevInFlow());
   if (prevInFlow) {
-    nsPresContext* presContext = PresContext();
-    AutoFrameListPtr prevOverflowFrames(presContext,
-                                        prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr prevOverflowFrames(prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
       mFrames.InsertFrames(this, nullptr, std::move(*prevOverflowFrames));
     }
@@ -980,8 +977,7 @@ void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
 
 nsFirstLineFrame* NS_NewFirstLineFrame(PresShell* aPresShell,
                                        ComputedStyle* aStyle) {
-  return new (aPresShell)
-      nsFirstLineFrame(aStyle, aPresShell->GetPresContext());
+  return new nsFirstLineFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFirstLineFrame)
@@ -1047,8 +1043,7 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   
   nsFirstLineFrame* prevInFlow = (nsFirstLineFrame*)GetPrevInFlow();
   if (prevInFlow) {
-    AutoFrameListPtr prevOverflowFrames(aPresContext,
-                                        prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr prevOverflowFrames(prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
       
       const nsFrameList::Slice& newFrames =
@@ -1109,8 +1104,7 @@ void nsFirstLineFrame::PullOverflowsFromPrevInFlow() {
       static_cast<nsFirstLineFrame*>(GetPrevInFlow());
   if (prevInFlow) {
     nsPresContext* presContext = PresContext();
-    AutoFrameListPtr prevOverflowFrames(presContext,
-                                        prevInFlow->StealOverflowFrames());
+    AutoFrameListPtr prevOverflowFrames(prevInFlow->StealOverflowFrames());
     if (prevOverflowFrames) {
       
       const nsFrameList::Slice& newFrames =
@@ -1122,7 +1116,7 @@ void nsFirstLineFrame::PullOverflowsFromPrevInFlow() {
 
 
 bool nsFirstLineFrame::DrainSelfOverflowList() {
-  AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
+  AutoFrameListPtr overflowFrames(StealOverflowFrames());
   if (overflowFrames) {
     bool result = !overflowFrames->IsEmpty();
     const nsFrameList::Slice& newFrames =

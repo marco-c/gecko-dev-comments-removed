@@ -21,9 +21,9 @@ using namespace mozilla::image;
 
 nsIFrame* NS_NewSVGContainerFrame(mozilla::PresShell* aPresShell,
                                   mozilla::ComputedStyle* aStyle) {
-  nsIFrame* frame = new (aPresShell)
-      mozilla::SVGContainerFrame(aStyle, aPresShell->GetPresContext(),
-                                 mozilla::SVGContainerFrame::kClassID);
+  nsIFrame* frame =
+      new mozilla::SVGContainerFrame(aStyle, aPresShell->GetPresContext(),
+                                     mozilla::SVGContainerFrame::kClassID);
   
   
   
