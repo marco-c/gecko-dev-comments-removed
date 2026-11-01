@@ -16911,7 +16911,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
   
   
   if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
-                                           nullptr, aRv)) {
+                                           this, aRv)) {
     return;
   }
 
@@ -16937,10 +16937,6 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
       if (!nestedHide) {
         popoverData->SetIsPopoverHiding(false);
       }
-      
-      
-      
-      popoverData->DestroyCloseWatcher();
     }
     
     DecrementHidingPopoverNestingCount();
@@ -16985,7 +16981,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     
     
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
-                                             nullptr, aRv)) {
+                                             this, aRv)) {
       
       
       
@@ -17006,8 +17002,9 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
     
     
+    
     if (!popoverHTMLEl->CheckPopoverValidity(PopoverVisibilityState::Showing,
-                                             nullptr, aRv)) {
+                                             this, aRv)) {
       
       return;
     }
@@ -17021,6 +17018,7 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
 
   
   
+  MOZ_DIAGNOSTIC_ASSERT(popoverHTMLEl->OwnerDoc() == this);
   RemovePopoverFromTopLayer(aPopover);
 
   if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
@@ -17065,6 +17063,13 @@ void Document::HidePopover(Element& aPopover, bool aFocusPreviousElement,
     popoverHTMLEl->FocusPreviousElementAfterHidingPopover();
   } else {
     popoverHTMLEl->ForgetPreviouslyFocusedElementAfterHidingPopover();
+  }
+
+  
+  
+  
+  if (PopoverData* popoverData = popoverHTMLEl->GetPopoverData()) {
+    popoverData->DestroyCloseWatcher();
   }
 
   
