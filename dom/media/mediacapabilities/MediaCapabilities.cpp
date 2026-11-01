@@ -1365,10 +1365,16 @@ MediaCapabilities::CheckVideoDecodingInfo(
                 TrackingId trackingId(TrackingId::Source::MediaCapabilities,
                                       sTrackingIdCounter++,
                                       TrackingId::TrackAcrossProcesses::Yes);
+                const CreateDecoderParams::OptionSet options{
+                    CreateDecoderParams::Option::Default,
+                    CreateDecoderParams::Option::AssertCanInstantiate};
                 CreateDecoderParams params{
-                    *config, compositor,
+                    *config,
+                    compositor,
                     CreateDecoderParams::VideoFrameRate(frameRate),
-                    TrackInfo::kVideoTrack, Some(std::move(trackingId))};
+                    TrackInfo::kVideoTrack,
+                    Some(std::move(trackingId)),
+                    options};
                 
                 
                 

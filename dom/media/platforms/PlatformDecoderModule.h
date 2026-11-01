@@ -73,6 +73,9 @@ MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING(
                             
                             
 
+     AssertCanInstantiate,  
+                            
+
      SENTINEL  
      ));
 
