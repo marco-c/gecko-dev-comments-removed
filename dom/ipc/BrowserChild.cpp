@@ -1498,10 +1498,10 @@ void BrowserChild::ProcessPendingCoalescedTouchData() {
 
   UniquePtr<WidgetTouchEvent> touchMoveEvent =
       mCoalescedTouchData.TakeCoalescedEvent();
-  (void)RecvRealTouchEvent(*touchMoveEvent,
-                           mCoalescedTouchData.GetScrollableLayerGuid(),
-                           mCoalescedTouchData.GetInputBlockId(),
-                           mCoalescedTouchData.GetApzResponse());
+  HandleRealTouchEvent(*touchMoveEvent,
+                       mCoalescedTouchData.GetScrollableLayerGuid(),
+                       mCoalescedTouchData.GetInputBlockId(),
+                       mCoalescedTouchData.GetApzResponse());
 }
 
 void BrowserChild::ProcessPendingCoalescedMouseDataAndDispatchEvents() {
@@ -1938,6 +1938,14 @@ mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityMouseWheelEvent(
 mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
     const WidgetTouchEvent& aEvent, const ScrollableLayerGuid& aGuid,
     const uint64_t& aInputBlockId, const nsEventStatus& aApzResponse) {
+  HandleRealTouchEvent(aEvent, aGuid, aInputBlockId, aApzResponse);
+  return IPC_OK();
+}
+
+void BrowserChild::HandleRealTouchEvent(const WidgetTouchEvent& aEvent,
+                                        const ScrollableLayerGuid& aGuid,
+                                        const uint64_t& aInputBlockId,
+                                        const nsEventStatus& aApzResponse) {
   MOZ_LOG(sApzChildLog, LogLevel::Debug,
           ("Receiving touch event of type %d\n", aEvent.mMessage));
 
@@ -1987,7 +1995,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
     
     
     MOZ_ASSERT(false);
-    return IPC_OK();
+    return;
   }
 
   if (mAPZEventState) {
@@ -1995,7 +2003,6 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchEvent(
                                       aApzResponse, status,
                                       std::move(allowedTouchBehaviors));
   }
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityRealTouchEvent(
@@ -2024,9 +2031,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
       
       if (aEvent.mFlags.mIsSynthesizedForTests) {
         ProcessPendingCoalescedTouchData();
-        if (!RecvRealTouchEvent(aEvent, aGuid, aInputBlockId, aApzResponse)) {
-          return IPC_FAIL_NO_REASON(this);
-        }
+        HandleRealTouchEvent(aEvent, aGuid, aInputBlockId, aApzResponse);
         return IPC_OK();
       }
       if (mCoalescedTouchData.IsEmpty() ||
@@ -2080,12 +2085,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
         
         MOZ_ASSERT(!touchMoveEvent->CanConvertToPointerRawUpdate());
         const uint32_t generation = mCoalescedTouchData.Generation();
-        if (!RecvRealTouchEvent(*touchMoveEvent,
-                                mCoalescedTouchData.GetScrollableLayerGuid(),
-                                mCoalescedTouchData.GetInputBlockId(),
-                                mCoalescedTouchData.GetApzResponse())) {
-          return IPC_FAIL_NO_REASON(this);
-        }
+        HandleRealTouchEvent(*touchMoveEvent,
+                             mCoalescedTouchData.GetScrollableLayerGuid(),
+                             mCoalescedTouchData.GetInputBlockId(),
+                             mCoalescedTouchData.GetApzResponse());
         
         
         if (PostponeDispatchingTouchMove()) {
@@ -2109,9 +2112,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealTouchMoveEvent(
     }
   }
 
-  if (!RecvRealTouchEvent(aEvent, aGuid, aInputBlockId, aApzResponse)) {
-    return IPC_FAIL_NO_REASON(this);
-  }
+  HandleRealTouchEvent(aEvent, aGuid, aInputBlockId, aApzResponse);
   return IPC_OK();
 }
 
@@ -2136,7 +2137,7 @@ void BrowserChild::HandleTouchRawUpdateEvent(
     
     touch->convertToPointerRawUpdate = true;
   }
-  RecvRealTouchEvent(touchRawUpdateEvent, aGuid, aInputBlockId, aApzResponse);
+  HandleRealTouchEvent(touchRawUpdateEvent, aGuid, aInputBlockId, aApzResponse);
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityRealTouchMoveEvent(
