@@ -543,7 +543,7 @@ class TreeItem {
 
     if (sorted) {
       
-      const nextSibling = [...this.items.values()].find(child => {
+      const nextSibling = this.items.values().find(child => {
         return child.label.textContent >= label;
       });
 

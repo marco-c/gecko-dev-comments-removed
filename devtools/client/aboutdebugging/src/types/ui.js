@@ -34,11 +34,11 @@ function makeCollapsibilitiesType(isRequired) {
     }
 
     
-    const areKeysValid = [...map.keys()].every(x =>
-      Object.values(DEBUG_TARGET_PANE).includes(x)
-    );
+    const areKeysValid = map
+      .keys()
+      .every(x => Object.values(DEBUG_TARGET_PANE).includes(x));
     
-    const areValuesValid = [...map.values()].every(x => typeof x === "boolean");
+    const areValuesValid = map.values().every(x => typeof x === "boolean");
     
     if (!areKeysValid || !areValuesValid) {
       return error;

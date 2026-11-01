@@ -4966,7 +4966,7 @@ class Toolbox extends EventEmitter {
     
     
     
-    return Array.from(this.#webExtensions).map(([uuid, { name, pref }]) => {
+    return this.#webExtensions.entries().map(([uuid, { name, pref }]) => {
       return { uuid, name, pref };
     });
   }

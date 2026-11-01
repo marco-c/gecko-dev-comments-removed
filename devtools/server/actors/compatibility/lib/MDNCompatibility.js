@@ -64,18 +64,13 @@ class MDNCompatibility {
     }
 
     
-    const { aliasSummaries, normalSummaries } =
-      this._classifyCSSCompatSummaries(summaries, browsers);
-
-    
-    return this._toCSSIssues(normalSummaries.concat(aliasSummaries));
+    return this._toCSSIssues(
+      
+      this._classifyCSSCompatSummaries(summaries, browsers)
+    );
   }
 
   
-
-
-
-
 
 
 
@@ -137,12 +132,12 @@ class MDNCompatibility {
       return false;
     });
 
-    const aliasSummaries = [...aliasSummariesMap.values()].map(s => {
+    const aliasSummaries = aliasSummariesMap.values().map(s => {
       s.prefixNeeded = s.prefixNeededBrowsers.length !== 0;
       return s;
     });
 
-    return { aliasSummaries, normalSummaries };
+    return Iterator.concat(normalSummaries, aliasSummaries);
   }
 
   _getAlias(compatNode, terms) {

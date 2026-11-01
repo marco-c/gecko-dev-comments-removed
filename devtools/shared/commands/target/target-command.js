@@ -402,9 +402,9 @@ class TargetCommand extends EventEmitter {
         
         
         if (this.descriptorFront.isWebExtensionDescriptor) {
-          const backgroundPageTargetFront = [...this._targets].find(
-            target => !target.isFallbackExtensionDocument
-          );
+          const backgroundPageTargetFront = this._targets
+            .values()
+            .find(target => !target.isFallbackExtensionDocument);
           if (backgroundPageTargetFront) {
             fallbackTarget = backgroundPageTargetFront;
           }
@@ -812,9 +812,10 @@ class TargetCommand extends EventEmitter {
     }
 
     
-    const targetFronts = [...this._targets].filter(targetFront =>
-      types.includes(targetFront.targetType)
-    );
+    const targetFronts = this._targets
+      .values()
+      .filter(targetFront => types.includes(targetFront.targetType))
+      .toArray();
     this._pendingWatchTargetInitialization.set(
       onAvailable,
       new Set(targetFronts)
@@ -951,8 +952,12 @@ class TargetCommand extends EventEmitter {
       throw new Error("getAllTargets expects a non-empty array of types");
     }
 
-    const targets = [...this._targets].filter(target =>
-      types.some(type => this._matchTargetType(type, target))
+    const targets = Array.from(
+      this._targets
+        .values()
+        .filter(target =>
+          types.some(type => this._matchTargetType(type, target))
+        )
     );
 
     return targets;

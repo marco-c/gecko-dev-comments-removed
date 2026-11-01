@@ -2223,8 +2223,8 @@ class ThreadActor extends Actor {
 
       
       const scriptTagMatches = content.matchAll(/<script[^>]*>/gi);
-      const scriptStartOffsets = [...scriptTagMatches].map(
-        rv => rv.index + rv[0].length
+      const scriptStartOffsets = Array.from(
+        scriptTagMatches.map(rv => rv.index + rv[0].length)
       );
 
       
