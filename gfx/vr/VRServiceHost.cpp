@@ -18,7 +18,7 @@ static StaticRefPtr<VRServiceHost> sVRServiceHostSingleton;
 
 
 void VRServiceHost::Init(bool aEnableVRProcess) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
   if (sVRServiceHostSingleton == nullptr) {
     sVRServiceHostSingleton = new VRServiceHost(aEnableVRProcess);
@@ -28,7 +28,7 @@ void VRServiceHost::Init(bool aEnableVRProcess) {
 
 
 VRServiceHost* VRServiceHost::Get() {
-  MOZ_RELEASE_ASSERT(sVRServiceHostSingleton != nullptr);
+  MOZ_ASSERT(sVRServiceHostSingleton != nullptr);
   return sVRServiceHostSingleton;
 }
 
@@ -44,7 +44,7 @@ VRServiceHost::VRServiceHost(bool aEnableVRProcess)
 }
 
 VRServiceHost::~VRServiceHost() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_COUNT_DTOR(VRServiceHost);
 }
 
@@ -85,7 +85,7 @@ void VRServiceHost::Refresh() {
 }
 
 void VRServiceHost::CreateService(volatile VRExternalShmem* aShmem) {
-  MOZ_RELEASE_ASSERT(!mVRProcessEnabled);
+  MOZ_ASSERT(!mVRProcessEnabled);
   mVRService = VRService::Create(aShmem);
 }
 
@@ -130,13 +130,13 @@ void VRServiceHost::CreateVRProcess() {
   
   
   gfx::GPUParent* gpu = GPUParent::GetSingleton();
-  MOZ_RELEASE_ASSERT(gpu);
+  MOZ_ASSERT(gpu);
   (void)gpu->SendCreateVRProcess();
 }
 
 void VRServiceHost::NotifyVRProcessStarted() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(mVRProcessEnabled);
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mVRProcessEnabled);
   if (!mVRProcessStarted) {
     
     
@@ -191,7 +191,7 @@ void VRServiceHost::ShutdownVRProcess() {
   
   
   gfx::GPUParent* gpu = GPUParent::GetSingleton();
-  MOZ_RELEASE_ASSERT(gpu);
+  MOZ_ASSERT(gpu);
   (void)gpu->SendShutdownVRProcess();
   mVRProcessStarted = false;
   mVRServiceReadyInVRProcess = false;

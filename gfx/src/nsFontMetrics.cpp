@@ -156,7 +156,7 @@ nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
 
 nsFontMetrics::~nsFontMetrics() {
   
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
   if (mPresContext) {
     mPresContext->FontMetricsDeleted(this);
   }

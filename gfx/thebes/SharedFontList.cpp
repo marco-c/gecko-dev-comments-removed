@@ -201,7 +201,7 @@ void Face::SetCharacterMap(FontList* aList, gfxCharacterMap* aCharMap,
 }
 
 void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
   if (mFaceCount > 0) {
     
     return;
@@ -796,7 +796,7 @@ FontList::Header& FontList::GetHeader() const MOZ_NO_THREAD_SAFETY_ANALYSIS {
 }
 
 bool FontList::AppendShmBlock(uint32_t aSizeNeeded) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   
   
@@ -851,7 +851,7 @@ bool FontList::AppendShmBlock(uint32_t aSizeNeeded) {
 
 void FontList::ShmBlockAdded(uint32_t aGeneration, uint32_t aIndex,
                              ipc::ReadOnlySharedMemoryHandle aHandle) {
-  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
+  MOZ_ASSERT(!XRE_IsParentProcess());
   MOZ_ASSERT(mBlocks.Length() > 0);
 
   if (!aHandle) {
@@ -887,7 +887,7 @@ void FontList::DetachShmBlocks() {
 }
 
 FontList::ShmBlock* FontList::GetBlockFromParent(uint32_t aIndex) {
-  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
+  MOZ_ASSERT(!XRE_IsParentProcess());
   
   
   uint32_t generation = aIndex == 0 ? 0 : GetGeneration();
@@ -914,7 +914,7 @@ FontList::ShmBlock* FontList::GetBlockFromParent(uint32_t aIndex) {
 
 
 bool FontList::UpdateShmBlocks(bool aMustLock) MOZ_NO_THREAD_SAFETY_ANALYSIS {
-  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
+  MOZ_ASSERT(!XRE_IsParentProcess());
   if (aMustLock) {
     gfxPlatformFontList::PlatformFontList()->Lock();
   }
@@ -961,7 +961,7 @@ ipc::ReadOnlySharedMemoryHandle FontList::ShareBlockToProcess(
 
 Pointer FontList::Alloc(uint32_t aSize) {
   
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   
   
@@ -1003,7 +1003,7 @@ Pointer FontList::Alloc(uint32_t aSize) {
 
 void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
   
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   Header& header = GetHeader();
   MOZ_ASSERT(!header.mFamilyCount);
@@ -1056,7 +1056,7 @@ void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
 
 void FontList::SetAliases(
     nsClassHashtable<nsCStringHashKey, AliasData>& aAliasTable) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   Header& header = GetHeader();
 
@@ -1117,7 +1117,7 @@ void FontList::SetAliases(
 
 void FontList::SetLocalNames(
     nsTHashMap<nsCStringHashKey, LocalFaceRec::InitData>& aLocalNameTable) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
   Header& header = GetHeader();
   if (header.mLocalFaceCount > 0) {
     return;  

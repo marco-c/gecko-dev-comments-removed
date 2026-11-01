@@ -315,13 +315,13 @@ class RenderThread final {
   
   
   WebRenderProgramCache* GetProgramCache() {
-    MOZ_RELEASE_ASSERT(IsInRenderThread());
+    MOZ_ASSERT(IsInRenderThread());
     return mProgramCache.get();
   }
 
   
   WebRenderShaders* GetShaders() {
-    MOZ_RELEASE_ASSERT(IsInRenderThread());
+    MOZ_ASSERT(IsInRenderThread());
     return mShaders.get();
   }
 

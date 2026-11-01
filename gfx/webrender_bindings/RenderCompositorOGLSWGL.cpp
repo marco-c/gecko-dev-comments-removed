@@ -507,7 +507,7 @@ bool RenderCompositorOGLSWGL::TileOGL::Map(wr::DeviceIntRect aDirtyRect,
       return false;
     }
     
-    MOZ_RELEASE_ASSERT(map.mData != nullptr);
+    MOZ_ASSERT(map.mData != nullptr);
     
     
     

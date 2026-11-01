@@ -237,7 +237,7 @@ class gfxVars final {
 
     
     bool Set(const T& aValue) {
-      MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+      MOZ_ASSERT(XRE_IsParentProcess());
       if (mValue == aValue) {
         return false;
       }

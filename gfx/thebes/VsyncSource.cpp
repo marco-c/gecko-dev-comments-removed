@@ -18,10 +18,10 @@ namespace mozilla {
 namespace gfx {
 
 VsyncSource::VsyncSource() : mState("VsyncSource::State") {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 }
 
-VsyncSource::~VsyncSource() { MOZ_RELEASE_ASSERT(NS_IsMainThread()); }
+VsyncSource::~VsyncSource() { MOZ_ASSERT(NS_IsMainThread()); }
 
 
 void VsyncSource::NotifyVsync(const TimeStamp& aVsyncTimestamp,
@@ -106,7 +106,7 @@ void VsyncSource::UpdateVsyncStatus() {
     return;
   }
 
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
   
   
   

@@ -1949,7 +1949,7 @@ gfxFontGroup::gfxFontGroup(FontVisibilityProvider* aFontVisibilityProvider,
 
 gfxFontGroup::~gfxFontGroup() {
   
-  MOZ_RELEASE_ASSERT(!Servo_IsWorkerThread());
+  MOZ_ASSERT(!Servo_IsWorkerThread());
 }
 
 static StyleGenericFontFamily GetDefaultGeneric(nsAtom* aLanguage) {

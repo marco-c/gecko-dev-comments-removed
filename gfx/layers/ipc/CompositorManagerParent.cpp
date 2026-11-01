@@ -28,8 +28,8 @@ MOZ_RUNINIT CompositorManagerParent::ManagerMap
 
 already_AddRefed<CompositorManagerParent>
 CompositorManagerParent::CreateSameProcess(uint32_t aNamespace) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
   StaticMonitorAutoLock lock(sMonitor);
 
   
@@ -54,11 +54,11 @@ bool CompositorManagerParent::Create(
     Endpoint<PCompositorManagerParent>&& aEndpoint,
     dom::ContentParentId aChildId, uint32_t aNamespace,
     uint32_t aContentBridgeNamespace, bool aIsRoot) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   
-  MOZ_RELEASE_ASSERT(aEndpoint.OtherPid() != base::GetCurrentProcId());
+  MOZ_ASSERT(aEndpoint.OtherPid() != base::GetCurrentProcId());
 
   if (!CompositorThreadHolder::IsActive()) {
     return false;
@@ -81,8 +81,8 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
     CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
     bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
     uint64_t aInnerWindowId) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   
@@ -128,7 +128,7 @@ CompositorManagerParent::~CompositorManagerParent() = default;
 
 void CompositorManagerParent::Bind(
     Endpoint<PCompositorManagerParent>&& aEndpoint, bool aIsRoot) {
-  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   if (NS_WARN_IF(!aEndpoint.Bind(this))) {
     return;
   }
@@ -137,15 +137,15 @@ void CompositorManagerParent::Bind(
 }
 
 void CompositorManagerParent::BindComplete(bool aIsRoot) {
-  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread() ||
-                     NS_IsMainThread());
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread() ||
+             NS_IsMainThread());
 
   LAYERTREE_LOG("Compositor manager bound, namespace {}, content {}, root {}",
                 mNamespace, mContentId, aIsRoot);
 
   StaticMonitorAutoLock lock(sMonitor);
   if (aIsRoot) {
-    MOZ_RELEASE_ASSERT(!sInstance);
+    MOZ_ASSERT(!sInstance);
     sInstance = this;
   }
 
@@ -197,7 +197,7 @@ void CompositorManagerParent::ShutdownInternal() {
 
 
 void CompositorManagerParent::Shutdown() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
   CompositorThread()->Dispatch(NS_NewRunnableFunction(
       "layers::CompositorManagerParent::Shutdown",
@@ -296,7 +296,7 @@ CompositorManagerParent::AllocPCompositorBridgeParent(
 
  void CompositorManagerParent::AddSharedSurface(
     const wr::ExternalImageId& aId, gfx::SourceSurfaceSharedData* aSurface) {
-  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   StaticMonitorAutoLock lock(sMonitor);
   if (NS_WARN_IF(!sInstance)) {
@@ -363,7 +363,7 @@ mozilla::ipc::IPCResult CompositorManagerParent::RecvNotifyMemoryPressure() {
 
 mozilla::ipc::IPCResult CompositorManagerParent::RecvReportMemory(
     ReportMemoryResolver&& aResolver) {
-  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MemoryReport aggregate;
   PodZero(&aggregate);
 
@@ -402,7 +402,7 @@ mozilla::ipc::IPCResult CompositorManagerParent::RecvInitCanvasManager(
 
 
 void CompositorManagerParent::NotifyWebRenderError(wr::WebRenderError aError) {
-  MOZ_RELEASE_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
 
   StaticMonitorAutoLock lock(sMonitor);
   if (NS_WARN_IF(!sInstance)) {

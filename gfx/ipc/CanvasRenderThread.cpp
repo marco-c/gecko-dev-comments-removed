@@ -38,7 +38,7 @@ CanvasRenderThread::~CanvasRenderThread() = default;
 
 
 void CanvasRenderThread::Start() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!sCanvasRenderThread);
 
 #ifdef DEBUG
@@ -110,12 +110,12 @@ void CanvasRenderThread::Start() {
 
 
 void CanvasRenderThread::Shutdown() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
   
   
   if (!sCanvasRenderThread) {
-    MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+    MOZ_ASSERT(XRE_IsParentProcess());
     return;
   }
 

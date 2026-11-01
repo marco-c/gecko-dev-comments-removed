@@ -28,7 +28,7 @@ bool VRPuppetCommandBuffer::IsCreated() {
 VRPuppetCommandBuffer::VRPuppetCommandBuffer()
     : mMutex("VRPuppetCommandBuffer::mMutex") {
   MOZ_COUNT_CTOR(VRPuppetCommandBuffer);
-  MOZ_RELEASE_ASSERT(sVRPuppetCommandBufferSingleton == nullptr);
+  MOZ_ASSERT(sVRPuppetCommandBufferSingleton == nullptr);
   Reset();
 }
 
@@ -435,7 +435,7 @@ void VRPuppetCommandBuffer::EncodeStruct(nsTArray<uint64_t>& aBuffer,
   auto purgeBuffer = [&]() {
     
     if (bufLen > 0) {
-      MOZ_RELEASE_ASSERT(bufLen <= 7);
+      MOZ_ASSERT(bufLen <= 7);
       uint64_t command = (uint64_t)VRPuppet_Command::VRPuppet_Data1;
       command += ((uint64_t)VRPuppet_Command::VRPuppet_Data2 -
                   (uint64_t)VRPuppet_Command::VRPuppet_Data1) *
@@ -480,7 +480,7 @@ void VRPuppetCommandBuffer::EncodeStruct(nsTArray<uint64_t>& aBuffer,
         bufData = (bufData << 8) | *src;
         bufLen++;
       } else {
-        MOZ_RELEASE_ASSERT(bufLen == 7);
+        MOZ_ASSERT(bufLen == 7);
         
         
         
