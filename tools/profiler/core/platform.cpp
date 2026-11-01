@@ -3083,7 +3083,7 @@ void DoNativeBacktraceDirect(const void* stackTop, NativeStack& aNativeStack,
 
 
 
-static inline bool DoSharedSample(
+static inline void DoSharedSample(
     bool aIsSynchronous, uint32_t aFeatures,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
     JsFrame* aJsFrames, const Registers& aRegs, uint64_t aSamplePos,
@@ -3129,8 +3129,6 @@ static inline bool DoSharedSample(
       aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr((void*)aRegs.mPC));
     }
   }
-
-  return collector.HasCollectedJitReturnAddr();
 }
 
 
@@ -3176,8 +3174,7 @@ static void DoSyncSample(
 
 
 
-
-static inline bool DoPeriodicSample(
+static inline void DoPeriodicSample(
     PSLockRef aLock,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
     const Registers& aRegs, uint64_t aSamplePos, uint64_t aBufferRangeStart,
@@ -3187,9 +3184,9 @@ static inline bool DoPeriodicSample(
   MOZ_RELEASE_ASSERT(ActivePS::Exists(aLock));
 
   JsFrameBuffer& jsFrames = CorePS::JsFrames(aLock);
-  return DoSharedSample( false, ActivePS::Features(aLock),
-                        aThreadData, jsFrames, aRegs, aSamplePos,
-                        aBufferRangeStart, aBuffer);
+  DoSharedSample( false, ActivePS::Features(aLock),
+                 aThreadData, jsFrames, aRegs, aSamplePos, aBufferRangeStart,
+                 aBuffer);
 }
 
 #undef UNWINDING_REGS_HAVE_ECX_EDX
@@ -5015,9 +5012,7 @@ void SamplerThread::Run() {
                  runningTimesDiff.GetThreadCPUDelta() == Some(uint64_t(0)))) {
               const bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
                   threadId, threadSampleDeltaMs,
-                  profiledThreadData->LastSample(),
-                  profiledThreadData->LastSampleHasJitReturnAddrs(),
-                  runningTimesDiff);
+                  profiledThreadData->LastSample(), runningTimesDiff);
               if (dup_ok) {
                 continue;
               }
@@ -5034,7 +5029,6 @@ void SamplerThread::Run() {
             
             const uint64_t samplePos = buffer.AddThreadIdEntry(threadId);
             profiledThreadData->LastSample() = Some(samplePos);
-            profiledThreadData->LastSampleHasJitReturnAddrs() = false;
 
             
             
@@ -5059,10 +5053,9 @@ void SamplerThread::Run() {
               mSampler.SuspendAndSampleAndResumeThread(
                   lock, lockedThreadData.DataCRef(), now,
                   [&](const Registers& aRegs, const TimeStamp& aNow) {
-                    profiledThreadData->LastSampleHasJitReturnAddrs() =
-                        DoPeriodicSample(lock, lockedThreadData.DataCRef(),
-                                         aRegs, samplePos, bufferRangeStart,
-                                         localProfileBuffer);
+                    DoPeriodicSample(lock, lockedThreadData.DataCRef(), aRegs,
+                                     samplePos, bufferRangeStart,
+                                     localProfileBuffer);
 
                     
                     

@@ -57,7 +57,6 @@ class ProfiledThreadData final {
 
   void NotifyUnregistered(uint64_t aBufferPosition) {
     mLastSample = mozilla::Nothing();
-    mLastSampleHasJitReturnAddrs = false;
     MOZ_ASSERT(!mBufferPositionWhenReceivedJSContext,
                "JSContext should have been cleared before the thread was "
                "unregistered");
@@ -70,7 +69,6 @@ class ProfiledThreadData final {
   }
 
   mozilla::Maybe<uint64_t>& LastSample() { return mLastSample; }
-  bool& LastSampleHasJitReturnAddrs() { return mLastSampleHasJitReturnAddrs; }
 
   mozilla::NotNull<mozilla::UniquePtr<UniqueStacks>> PrepareUniqueStacks(
       const ProfileBuffer& aBuffer, JSContext* aCx,
@@ -135,9 +133,6 @@ class ProfiledThreadData final {
   
   
   mozilla::Maybe<uint64_t> mLastSample;
-
-  
-  bool mLastSampleHasJitReturnAddrs = false;
 
   
   mozilla::Maybe<uint64_t> mBufferPositionWhenReceivedJSContext;

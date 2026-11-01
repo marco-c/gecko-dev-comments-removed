@@ -113,10 +113,8 @@ class JitcodeGlobalEntry : public JitCodeRange {
   
   
   
-  
   static const uint64_t kNoSampleInBuffer = UINT64_MAX;
-  uint64_t firstSamplePositionInBuffer_ = kNoSampleInBuffer;
-  uint64_t lastSamplePositionInBuffer_ = kNoSampleInBuffer;
+  uint64_t samplePositionInBuffer_ = kNoSampleInBuffer;
 
  public:
   enum class Kind : uint8_t {
@@ -146,28 +144,15 @@ class JitcodeGlobalEntry : public JitCodeRange {
     void operator()(JitcodeGlobalEntry* entry);
   };
 
-  void recordSampleAtPosition(uint64_t bufferWritePos) {
-    if (firstSamplePositionInBuffer_ == kNoSampleInBuffer) {
-      firstSamplePositionInBuffer_ = bufferWritePos;
-    }
-    lastSamplePositionInBuffer_ = bufferWritePos;
+  void setSamplePositionInBuffer(uint64_t bufferWritePos) {
+    samplePositionInBuffer_ = bufferWritePos;
   }
-  void setAsExpired() {
-    firstSamplePositionInBuffer_ = kNoSampleInBuffer;
-    lastSamplePositionInBuffer_ = kNoSampleInBuffer;
-  }
-  bool hasSampleInBuffer() const {
-    return lastSamplePositionInBuffer_ != kNoSampleInBuffer;
-  }
-  uint64_t firstSamplePositionInBuffer() const {
-    return firstSamplePositionInBuffer_;
-  }
-  uint64_t lastSamplePositionInBuffer() const {
-    return lastSamplePositionInBuffer_;
-  }
+  void setAsExpired() { samplePositionInBuffer_ = kNoSampleInBuffer; }
   bool isSampled(uint64_t bufferRangeStart) {
-    return hasSampleInBuffer() &&
-           bufferRangeStart <= lastSamplePositionInBuffer_;
+    if (samplePositionInBuffer_ == kNoSampleInBuffer) {
+      return false;
+    }
+    return bufferRangeStart <= samplePositionInBuffer_;
   }
   bool isReferencedByProfiler(const mozilla::Maybe<uint64_t>& rangeStart) {
     return rangeStart && isSampled(*rangeStart);
@@ -567,12 +552,6 @@ class JitcodeGlobalTable {
   LifoAlloc alloc_;
   EntryTree tree_;
 
-  
-  
-  
-  
-  Vector<JitcodeGlobalEntry*, 0, SystemAllocPolicy> displacedEntries_;
-
  public:
   JitcodeGlobalTable()
       : alloc_(LIFO_CHUNK_SIZE, js::BackgroundMallocArena), tree_(&alloc_) {}
@@ -586,15 +565,6 @@ class JitcodeGlobalTable {
 
   const JitcodeGlobalEntry* lookupForSampler(void* ptr,
                                              uint64_t samplePosInBuffer);
-
-  
-  
-  
-  
-  
-  JitcodeGlobalEntry* lookupForSamplePosition(void* ptr,
-                                              uint64_t samplePosInBuffer,
-                                              uint64_t* lastSamplePos);
 
   [[nodiscard]] bool addEntry(UniqueJitcodeGlobalEntry entry);
 

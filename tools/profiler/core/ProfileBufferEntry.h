@@ -101,8 +101,6 @@ static_assert(sizeof(ProfileBufferEntry) == 9, "bad ProfileBufferEntry size");
 
 
 
-
-
 struct JITFrameInfoForBufferRange final {
   JITFrameInfoForBufferRange Clone() const;
 
@@ -116,9 +114,6 @@ struct JITFrameInfoForBufferRange final {
     uint32_t mDepth;
     uint32_t mLine;
     uint32_t mColumn;
-    
-    
-    uint64_t mLastSamplePos;
   };
   struct JITFrameKeyHasher {
     using Lookup = JITFrameKey;
@@ -129,7 +124,6 @@ struct JITFrameInfoForBufferRange final {
       hash = mozilla::AddToHash(hash, aLookup.mDepth);
       hash = mozilla::AddToHash(hash, aLookup.mLine);
       hash = mozilla::AddToHash(hash, aLookup.mColumn);
-      hash = mozilla::AddToHash(hash, aLookup.mLastSamplePos);
       return hash;
     }
 
@@ -142,17 +136,8 @@ struct JITFrameInfoForBufferRange final {
     }
   };
 
-  
-  
-  struct JITFramesUntilSamplePos {
-    uint64_t mLastSamplePos;
-    mozilla::Vector<JITFrameKey> mFrameKeys;
-  };
-
-  
-  
   using JITAddressToJITFramesMap =
-      mozilla::HashMap<void*, mozilla::Vector<JITFramesUntilSamplePos>>;
+      mozilla::HashMap<void*, mozilla::Vector<JITFrameKey>>;
   JITAddressToJITFramesMap mJITAddressToJITFramesMap;
   using JITFrameToFrameJSONMap =
       mozilla::HashMap<JITFrameKey, nsCString, JITFrameKeyHasher>;
@@ -183,10 +168,9 @@ class JITFrameInfo final {
   
   
   
-  
   void AddInfoForRange(
       uint64_t aRangeStart, uint64_t aRangeEnd, JSContext* aCx,
-      const std::function<void(const std::function<void(void*, uint64_t)>&)>&
+      const std::function<void(const std::function<void(void*)>&)>&
           aJITAddressProvider,
       const nsTHashMap<SourceId, IndexIntoSourceTable>* aSourceIdToIndexMap =
           nullptr);
@@ -247,9 +231,9 @@ class UniqueStacks final : public mozilla::FailureLatch {
                                 aCategoryPair}) {}
 
     FrameKey(void* aJITAddress, uint32_t aJITDepth, uint32_t aRangeIndex,
-             uint32_t aLine, uint32_t aColumn, uint64_t aLastSamplePos)
+             uint32_t aLine, uint32_t aColumn)
         : mData(JITFrameData{aJITAddress, aJITDepth, aRangeIndex, aLine,
-                             aColumn, aLastSamplePos}) {}
+                             aColumn}) {}
 
     FrameKey(const FrameKey& aToCopy) = default;
 
@@ -293,7 +277,6 @@ class UniqueStacks final : public mozilla::FailureLatch {
       uint32_t mRangeIndex;
       uint32_t mLine;
       uint32_t mColumn;
-      uint64_t mLastSamplePos;
     };
     mozilla::Variant<NormalFrameData, JITFrameData> mData;
   };
@@ -331,7 +314,6 @@ class UniqueStacks final : public mozilla::FailureLatch {
         hash = mozilla::AddToHash(hash, data.mRangeIndex);
         hash = mozilla::AddToHash(hash, data.mLine);
         hash = mozilla::AddToHash(hash, data.mColumn);
-        hash = mozilla::AddToHash(hash, data.mLastSamplePos);
       }
       return hash;
     }
@@ -403,11 +385,9 @@ class UniqueStacks final : public mozilla::FailureLatch {
   
   
   
-  
   [[nodiscard]] mozilla::Maybe<mozilla::Vector<UniqueStacks::FrameKey>>
   LookupFramesForJITAddressFromBufferPos(void* aJITAddress,
-                                         uint64_t aBufferPosition,
-                                         uint64_t aSamplePosition);
+                                         uint64_t aBufferPosition);
 
   [[nodiscard]] mozilla::Maybe<uint32_t> GetOrAddFrameIndex(
       const FrameKey& aFrame);
