@@ -197,8 +197,7 @@ nsMapRuleToAttributesFunc HTMLBodyElement::GetAttributeMappingFunction() const {
   return &MapAttributesIntoRule;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLBodyElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLBodyElement::IsNoNamespaceAttrMapped(const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {
       {nsGkAtoms::link},
       {nsGkAtoms::vlink},
@@ -232,12 +231,7 @@ nsresult HTMLBodyElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 
 void HTMLBodyElement::FrameMarginsChanged() {
   MOZ_ASSERT(IsInComposedDoc());
-  if (IsPendingMappedAttributeEvaluation()) {
-    return;
-  }
-  if (mAttrs.MarkAsPendingPresAttributeEvaluation()) {
-    OwnerDoc()->ScheduleForPresAttrEvaluation(this);
-  }
+  ScheduleForPresAttrEvaluationIfNeeded();
 }
 
 #define EVENT(name_, id_, type_, \

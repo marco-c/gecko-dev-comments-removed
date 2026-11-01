@@ -550,12 +550,7 @@ void SVGSVGElement::SetCurrentView(const nsAString& aCurrentViewID) {
   if (mSVGView) {
     
     
-    if (!IsPendingMappedAttributeEvaluation() &&
-        mAttrs.MarkAsPendingPresAttributeEvaluation()) {
-      if (Document* doc = GetComposedDoc()) {
-        doc->ScheduleForPresAttrEvaluation(this);
-      }
-    }
+    ScheduleForPresAttrEvaluationIfNeeded();
   }
 
   mCurrentViewID = aCurrentViewID;
@@ -571,12 +566,7 @@ void SVGSVGElement::SetViewSpec(std::unique_ptr<SVGView> aSVGView) {
 
   
   
-  if (!IsPendingMappedAttributeEvaluation() &&
-      mAttrs.MarkAsPendingPresAttributeEvaluation()) {
-    if (Document* doc = GetComposedDoc()) {
-      doc->ScheduleForPresAttrEvaluation(this);
-    }
-  }
+  ScheduleForPresAttrEvaluationIfNeeded();
 
   mSVGView = std::move(aSVGView);
   mCurrentViewID = VoidString();
