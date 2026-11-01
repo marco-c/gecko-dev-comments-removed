@@ -199,6 +199,13 @@ class TrustPanel {
   #sameTabNavigation = false;
   
   #trackerCountTabSwitchAnimation = null;
+  
+
+
+
+
+
+  #siteTrackerLogs = new WeakMap();
 
   
 
@@ -441,7 +448,9 @@ class TrustPanel {
     const [hasMonitorAccountOrStoredPasswords, blockedTrackersCount] =
       await Promise.all([
         this.#hasMonitorAccountOrStoredPasswords(),
-        this.#computeTrackerCount(),
+        this.#computeTrackerCount(
+          JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog())
+        ),
       ]);
     Glean.trustpanel.opened.record({
       breach_status: getBreachedStatus({
@@ -486,14 +495,22 @@ class TrustPanel {
 
 
   #isSameSite(a, b) {
+    const siteA = this.#siteKey(a);
+    return !!siteA && siteA === this.#siteKey(b);
+  }
+
+  
+
+
+
+
+
+
+  #siteKey(uri) {
     try {
-      return (
-        !!a &&
-        !!b &&
-        Services.eTLD.getBaseDomain(a) === Services.eTLD.getBaseDomain(b)
-      );
+      return uri?.host ? SiteDataManager.getBaseDomainFromHost(uri.host) : null;
     } catch (ex) {
-      return false;
+      return null;
     }
   }
 
@@ -506,15 +523,18 @@ class TrustPanel {
     if (!this.#enabled) {
       return;
     }
-    let sameSite = this.#isSameSite(targetURI, this.#uri);
+    
+    
+    this.#recordCurrentPageLog(gBrowser.selectedBrowser);
+    const isSameSite = this.#isSameSite(targetURI, this.#uri);
     
     
     if (targetURI) {
-      this.#sameSiteNavigation = sameSite;
+      this.#sameSiteNavigation = isSameSite;
     }
     
     
-    if (sameSite) {
+    if (isSameSite) {
       return;
     }
     this.#blockersChecked = false;
@@ -581,6 +601,11 @@ class TrustPanel {
       
       
       this.#sameTabNavigation && this.#isSameSite(uri, this.#uri);
+    if (!this.#sameTabNavigation) {
+      
+      
+      this.#recordCurrentPageLog(this.#lastBrowser);
+    }
     this.#lastBrowser = browser;
 
     this.#state = state;
@@ -672,7 +697,7 @@ class TrustPanel {
       targetClasses.add("entry-page");
     }
     
-    if (this.#trackerCountEnabled && this.#computeTrackerCount() > 0) {
+    if (this.#trackerCountEnabled && this.#getCumulativeTrackerCount() > 0) {
       targetClasses.add("has-blocked-trackers");
     }
 
@@ -868,9 +893,7 @@ class TrustPanel {
     this.#updateBlockerView();
   }
 
-  #computeTrackerCount() {
-    const log = JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog());
-
+  #computeTrackerCount(log) {
     const logEntriesToCount = Object.values(log).filter(
       entry =>
         typeof privacyMetricsStatsCategories[identifyType(entry)] !==
@@ -883,7 +906,7 @@ class TrustPanel {
     if (!this.#trackerCountEnabled) {
       return;
     }
-    let count = this.#computeTrackerCount();
+    let count = this.#getCumulativeTrackerCount();
 
     
     if (count > 0) {
@@ -1005,7 +1028,7 @@ class TrustPanel {
       }
     }
 
-    const count = this.#computeTrackerCount();
+    const count = this.#getCumulativeTrackerCount();
 
     this.#addButtons("trustpanel-blocked", blocked, true);
     this.#addButtons("trustpanel-detected", detected, false);
@@ -1120,8 +1143,9 @@ class TrustPanel {
     Glean.trustpanel.trackerListOpened.record();
   }
 
-  async #openBlockerDetailsSubview(event, blocker, blocking) {
-    let count = await blocker.getBlockerCount();
+  #openBlockerDetailsSubview(event, blocker, blocking) {
+    const logs = this.#getTrackerLogs();
+    let count = blocker.getBlockerCount(logs);
     let blockingKey = blocking ? "blocking" : "not-blocking";
     
     
@@ -1156,7 +1180,7 @@ class TrustPanel {
       listHeaderId
     );
 
-    let { items } = await blocker._generateSubViewListItems();
+    let { items } = blocker._generateSubViewListItems(logs);
     document.getElementById("trustpanel-blocker-items").replaceChildren(items);
     document
       .getElementById("trustpanel-popup-multiView")
@@ -1180,7 +1204,7 @@ class TrustPanel {
     Glean.trustpanel.clearCookiesOpened.record();
   }
 
-  async #addButtons(section, blockers, blocking) {
+  #addButtons(section, blockers, blocking) {
     let sectionElement = document.getElementById(section);
 
     if (!blockers.length) {
@@ -1188,7 +1212,8 @@ class TrustPanel {
       return;
     }
 
-    let children = blockers.map(async blocker => {
+    const logs = this.#getTrackerLogs();
+    let children = blockers.map(blocker => {
       let button = document.createElement("moz-button");
       button.classList.add("moz-button-subviewbutton-nav");
       button.setAttribute("iconsrc", blocker.iconSrc);
@@ -1196,7 +1221,7 @@ class TrustPanel {
       document.l10n.setAttributes(
         button,
         `trustpanel-list-label-${blocker.l10nKeys.general}`,
-        { count: await blocker.getBlockerCount() }
+        { count: blocker.getBlockerCount(logs) }
       );
       button.addEventListener("click", event =>
         this.#openBlockerDetailsSubview(event, blocker, blocking)
@@ -1207,7 +1232,7 @@ class TrustPanel {
     sectionElement.hidden = false;
     sectionElement
       .querySelector(".trustpanel-blocker-buttons")
-      .replaceChildren(...(await Promise.all(children)));
+      .replaceChildren(...children);
   }
 
   get #trackingProtectionEnabled() {
@@ -2285,6 +2310,69 @@ class TrustPanel {
     );
 
     return undismissedBreaches;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  #recordCurrentPageLog(browser) {
+    if (!this.#trackerCountEnabled) {
+      return;
+    }
+    const windowGlobal = browser?.browsingContext?.currentWindowGlobal;
+    const log = windowGlobal?.contentBlockingLog;
+    if (!log) {
+      return;
+    }
+    const site = this.#siteKey(windowGlobal.documentURI);
+    
+    
+    if (!site) {
+      return;
+    }
+    let siteLogs = this.#siteTrackerLogs.get(browser);
+    if (siteLogs?.site !== site) {
+      siteLogs = { site, logs: new Map() };
+      this.#siteTrackerLogs.set(browser, siteLogs);
+    }
+    siteLogs.logs.set(windowGlobal.innerWindowId, JSON.parse(log));
+  }
+
+  #getCumulativeTrackerCount() {
+    if (!this.#uriHasHost) {
+      return 0;
+    }
+    return this.#getTrackerLogs().reduce(
+      (total, log) => total + this.#computeTrackerCount(log),
+      0
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+  #getTrackerLogs() {
+    const browser = gBrowser.selectedBrowser;
+    if (!this.#trackerCountEnabled) {
+      const log = browser.getContentBlockingLog();
+      return log ? [JSON.parse(log)] : [];
+    }
+    this.#recordCurrentPageLog(browser);
+    return [...(this.#siteTrackerLogs.get(browser)?.logs.values() ?? [])];
   }
 
   async dismissBreachAlert(event) {

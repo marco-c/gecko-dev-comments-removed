@@ -170,8 +170,8 @@ class ProtectionCategory {
 
 
 
-  async updateSubView() {
-    let { items, anyShimAllowed } = await this._generateSubViewListItems();
+  updateSubView() {
+    let { items, anyShimAllowed } = this._generateSubViewListItems();
     this.subViewShimAllowHint.hidden = !anyShimAllowed;
 
     this.subViewList.textContent = "";
@@ -210,17 +210,15 @@ class ProtectionCategory {
 
 
 
-  async _generateSubViewListItems() {
-    let contentBlockingLog = gBrowser.selectedBrowser.getContentBlockingLog();
-    contentBlockingLog = JSON.parse(contentBlockingLog);
+
+
+  _generateSubViewListItems(logs) {
+    logs ??= [JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog())];
     let anyShimAllowed = false;
 
     let fragment = document.createDocumentFragment();
-    for (let [origin, actions] of Object.entries(contentBlockingLog)) {
-      let { item, shimAllowed } = await this._createListItem(origin, actions);
-      if (!item) {
-        continue;
-      }
+    for (let [origin, { actions, count }] of this._groupLogsByOrigin(logs)) {
+      let { item, shimAllowed } = this._createListItem(origin, actions, count);
       anyShimAllowed = anyShimAllowed || shimAllowed;
       fragment.appendChild(item);
     }
@@ -236,9 +234,61 @@ class ProtectionCategory {
 
 
 
-  async getBlockerCount() {
-    let { items } = await this._generateSubViewListItems();
-    return items?.childElementCount ?? 0;
+
+
+
+  _groupLogsByOrigin(logs) {
+    let grouped = new Map();
+    for (let log of logs) {
+      for (let [origin, actions] of Object.entries(log)) {
+        if (!this._isListed(actions)) {
+          continue;
+        }
+        let entry = grouped.get(origin);
+        if (entry) {
+          entry.actions.push(...actions);
+          entry.count++;
+        } else {
+          grouped.set(origin, { actions: [...actions], count: 1 });
+        }
+      }
+    }
+    return grouped;
+  }
+
+  
+
+
+
+
+
+
+  getBlockerCount(logs) {
+    logs ??= [JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog())];
+    let count = 0;
+    for (let log of logs) {
+      for (let actions of Object.values(log)) {
+        if (this._isListed(actions)) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+
+  
+
+
+
+
+
+
+  _isListed(actions) {
+    return (
+      actions.some(
+        ([state]) => this.isAllowing(state) && !this.isShimming(state)
+      ) || actions.some(([state]) => this.isBlocking(state))
+    );
   }
 
   
@@ -253,16 +303,11 @@ class ProtectionCategory {
 
 
 
-  _createListItem(origin, actions) {
+
+  _createListItem(origin, actions, count = 1) {
     let isAllowed = actions.some(
       ([state]) => this.isAllowing(state) && !this.isShimming(state)
     );
-    let isDetected =
-      isAllowed || actions.some(([state]) => this.isBlocking(state));
-
-    if (!isDetected) {
-      return {};
-    }
 
     
     
@@ -283,6 +328,11 @@ class ProtectionCategory {
     label.setAttribute("crop", "end");
     listItem.append(label);
 
+    if (count > 1) {
+      listItem.classList.add("protections-popup-list-item-with-count");
+      listItem.append(this._getCountLabel(count));
+    }
+
     
     let shimAllowed = actions.some(([flag]) => flag == this._flags.allow);
     if (shimAllowed) {
@@ -290,6 +340,21 @@ class ProtectionCategory {
     }
 
     return { item: listItem, shimAllowed };
+  }
+
+  
+
+
+
+
+
+  _getCountLabel(count) {
+    let label = document.createXULElement("label");
+    label.className = "protections-popup-list-count-label";
+    document.l10n.setAttributes(label, "content-blocking-tracker-count", {
+      count,
+    });
+    return label;
   }
 
   
@@ -619,11 +684,8 @@ let TrackingProtection =
       return this.isAllowingLevel1(state) || this.isAllowingLevel2(state);
     }
 
-    async updateSubView() {
-      let previousURI = gBrowser.currentURI.spec;
-      let previousWindow = gBrowser.selectedBrowser.innerWindowID;
-
-      let { items, anyShimAllowed } = await this._generateSubViewListItems();
+    updateSubView() {
+      let { items, anyShimAllowed } = this._generateSubViewListItems();
 
       // If we don't have trackers we would usually not show the menu item
       // allowing the user to show the sub-panel. However, in the edge case
@@ -651,39 +713,26 @@ let TrackingProtection =
         this.subViewList.classList.remove("empty");
       }
 
-      
-      if (
-        previousURI == gBrowser.currentURI.spec &&
-        previousWindow == gBrowser.selectedBrowser.innerWindowID
-      ) {
-        this.subViewShimAllowHint.hidden = !anyShimAllowed;
+      this.subViewShimAllowHint.hidden = !anyShimAllowed;
 
-        this.subViewList.textContent = "";
-        this.subViewList.append(items);
-        const l10nId =
-          this.enabled && !gProtectionsHandler.hasException
-            ? "protections-blocking-tracking-content"
-            : "protections-not-blocking-tracking-content";
-        document.l10n.setAttributes(this.subView, l10nId);
-      }
+      this.subViewList.textContent = "";
+      this.subViewList.append(items);
+      const l10nId =
+        this.enabled && !gProtectionsHandler.hasException
+          ? "protections-blocking-tracking-content"
+          : "protections-not-blocking-tracking-content";
+      document.l10n.setAttributes(this.subView, l10nId);
     }
 
-    async _createListItem(origin, actions) {
-      
-      let isAllowed = actions.some(
-        ([state]) => this.isAllowing(state) && !this.isShimming(state)
-      );
-      let isDetected =
-        isAllowed || actions.some(([state]) => this.isBlocking(state));
-
-      if (!isDetected) {
-        return {};
+    _isListed(actions) {
+      if (!super._isListed(actions)) {
+        return false;
       }
 
       
       
       
-      if (
+      return !(
         this.annotationsLevel2Enabled &&
         !this.trackingProtectionLevel2Enabled &&
         actions.some(
@@ -693,32 +742,7 @@ let TrackingProtection =
                 .STATE_LOADED_LEVEL_2_TRACKING_CONTENT) !=
             0
         )
-      ) {
-        return {};
-      }
-
-      let listItem = document.createElementNS(
-        "http://www.w3.org/1999/xhtml",
-        "div"
       );
-      listItem.className = "protections-popup-list-item";
-      listItem.classList.toggle("allowed", isAllowed);
-
-      let label = document.createXULElement("label");
-      
-      
-      label.tooltipText = origin;
-      label.value = origin;
-      label.className = "protections-popup-list-host-label";
-      label.setAttribute("crop", "end");
-      listItem.append(label);
-
-      let shimAllowed = actions.some(([flag]) => flag == this._flags.allow);
-      if (shimAllowed) {
-        listItem.append(this._getShimAllowIndicator());
-      }
-
-      return { item: listItem, shimAllowed };
     }
   })();
 
@@ -858,12 +882,47 @@ let ThirdPartyCookies =
       return this.prefEnabledValues.includes(this.behaviorPref);
     }
 
-    _generateSubViewListItems() {
+    _generateSubViewListItems(logs) {
+      logs ??= [JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog())];
       let fragment = document.createDocumentFragment();
-      let contentBlockingLog = gBrowser.selectedBrowser.getContentBlockingLog();
-      contentBlockingLog = JSON.parse(contentBlockingLog);
-      let categories = this._processContentBlockingLog(contentBlockingLog);
 
+      
+      
+      
+      let grouped = new Map();
+      for (let log of logs) {
+        let categories = this._processContentBlockingLog(log);
+        for (let category of this._categoryNames()) {
+          for (let info of categories[category]) {
+            let entry = grouped.get(info.origin);
+            if (entry) {
+              entry.count++;
+            } else {
+              grouped.set(info.origin, { info, count: 1 });
+            }
+          }
+        }
+      }
+
+      for (let { info, count } of grouped.values()) {
+        fragment.appendChild(this._createCookieListItem(info, count));
+      }
+      return { items: fragment };
+    }
+
+    getBlockerCount(logs) {
+      logs ??= [JSON.parse(gBrowser.selectedBrowser.getContentBlockingLog())];
+      let count = 0;
+      for (let log of logs) {
+        let categories = this._processContentBlockingLog(log);
+        for (let category of this._categoryNames()) {
+          count += categories[category].length;
+        }
+      }
+      return count;
+    }
+
+    _categoryNames() {
       let categoryNames = ["trackers"];
       switch (this.behaviorPref) {
         case Ci.nsICookieService.BEHAVIOR_REJECT:
@@ -872,18 +931,7 @@ let ThirdPartyCookies =
         case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
           categoryNames.push("thirdParty");
       }
-
-      for (let category of categoryNames) {
-        let itemsToShow = categories[category];
-
-        if (!itemsToShow.length) {
-          continue;
-        }
-        for (let info of itemsToShow) {
-          fragment.appendChild(this._createListItem(info));
-        }
-      }
-      return { items: fragment };
+      return categoryNames;
     }
 
     updateSubView() {
@@ -894,16 +942,7 @@ let ThirdPartyCookies =
 
       this.subViewList.textContent = "";
 
-      let categoryNames = ["trackers"];
-      switch (this.behaviorPref) {
-        case Ci.nsICookieService.BEHAVIOR_REJECT:
-          categoryNames.push("firstParty");
-        
-        case Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN:
-          categoryNames.push("thirdParty");
-      }
-
-      for (let category of categoryNames) {
+      for (let category of this._categoryNames()) {
         let itemsToShow = categories[category];
 
         if (!itemsToShow.length) {
@@ -932,7 +971,7 @@ let ThirdPartyCookies =
         box.appendChild(label);
 
         for (let info of itemsToShow) {
-          box.appendChild(this._createListItem(info));
+          box.appendChild(this._createCookieListItem(info));
         }
 
         this.subViewList.appendChild(box);
@@ -1135,7 +1174,7 @@ let ThirdPartyCookies =
       return newLog;
     }
 
-    _createListItem({ origin, isAllowed, exceptionState }) {
+    _createCookieListItem({ origin, isAllowed, exceptionState }, count = 1) {
       let listItem = document.createElementNS(
         "http://www.w3.org/1999/xhtml",
         "div"
@@ -1150,6 +1189,11 @@ let ThirdPartyCookies =
       label.className = "protections-popup-list-host-label";
       label.setAttribute("crop", "end");
       listItem.append(label);
+
+      if (count > 1) {
+        listItem.classList.add("protections-popup-list-item-with-count");
+        listItem.append(this._getCountLabel(count));
+      }
 
       if (
         (isAllowed && exceptionState == Services.perms.ALLOW_ACTION) ||
@@ -1683,36 +1727,36 @@ var gProtectionsHandler = {
     );
   },
 
-  async showTrackersSubview() {
-    await TrackingProtection.updateSubView();
+  showTrackersSubview() {
+    TrackingProtection.updateSubView();
     this._protectionsPopupMultiView.showSubView(
       "protections-popup-trackersView"
     );
   },
 
-  async showSocialblockerSubview() {
-    await SocialTracking.updateSubView();
+  showSocialblockerSubview() {
+    SocialTracking.updateSubView();
     this._protectionsPopupMultiView.showSubView(
       "protections-popup-socialblockView"
     );
   },
 
-  async showCookiesSubview() {
-    await ThirdPartyCookies.updateSubView();
+  showCookiesSubview() {
+    ThirdPartyCookies.updateSubView();
     this._protectionsPopupMultiView.showSubView(
       "protections-popup-cookiesView"
     );
   },
 
-  async showFingerprintersSubview() {
-    await Fingerprinting.updateSubView();
+  showFingerprintersSubview() {
+    Fingerprinting.updateSubView();
     this._protectionsPopupMultiView.showSubView(
       "protections-popup-fingerprintersView"
     );
   },
 
-  async showCryptominersSubview() {
-    await Cryptomining.updateSubView();
+  showCryptominersSubview() {
+    Cryptomining.updateSubView();
     this._protectionsPopupMultiView.showSubView(
       "protections-popup-cryptominersView"
     );
