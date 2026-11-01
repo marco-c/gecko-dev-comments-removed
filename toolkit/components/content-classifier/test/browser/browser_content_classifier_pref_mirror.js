@@ -36,6 +36,10 @@ const HAS_INTERACTED_PREF =
 
 
 
+const ALWAYS_ON_ANNOTATION = "cryptominers,fingerprinters,social-trackers";
+
+
+
 const ETP_OFF = {
   "privacy.trackingprotection.enabled": false,
   "privacy.trackingprotection.pbmode.enabled": false,
@@ -152,8 +156,8 @@ add_task(async function test_protection_per_feature_mapping() {
     );
     is(
       Services.prefs.getStringPref(ANNO_ENGINES),
-      "",
-      `${etpPref} leaves annotation empty`
+      ALWAYS_ON_ANNOTATION,
+      `${etpPref} leaves the annotation list at its always-on engines`
     );
   }
 });
@@ -220,19 +224,37 @@ add_task(async function test_modeless_features_apply_to_both_modes() {
 
 
 
+
 add_task(async function test_annotate_channels_drives_annotation_list() {
+  await enableMirror();
+  is(
+    Services.prefs.getStringPref(ANNO_ENGINES),
+    ALWAYS_ON_ANNOTATION,
+    "annotation list holds the always-on engines with every ETP pref off"
+  );
+  is(
+    Services.prefs.getStringPref(ANNO_ENGINES_PBM),
+    ALWAYS_ON_ANNOTATION,
+    "PBM annotation list holds the always-on engines too"
+  );
+  is(
+    Services.prefs.getBoolPref(ANNO_ENABLED),
+    true,
+    "annotation enabled by the always-on engines alone"
+  );
+
   await enableMirror({
     "privacy.trackingprotection.annotate_channels": true,
   });
   is(
     Services.prefs.getStringPref(ANNO_ENGINES),
-    "cryptominers,fingerprinters,social-trackers,trackers",
-    "annotate_channels maps to annotation engines"
+    `${ALWAYS_ON_ANNOTATION},trackers`,
+    "annotate_channels adds trackers to the annotation engines"
   );
   is(
     Services.prefs.getStringPref(ANNO_ENGINES_PBM),
-    "cryptominers,fingerprinters,social-trackers,trackers",
-    "annotate_channels gates PBM annotation too"
+    `${ALWAYS_ON_ANNOTATION},trackers`,
+    "annotate_channels adds trackers to PBM annotation too"
   );
   is(Services.prefs.getBoolPref(ANNO_ENABLED), true, "annotation enabled");
   is(
@@ -251,13 +273,13 @@ add_task(async function test_strict_list_drives_trackers_content_annotation() {
   });
   is(
     Services.prefs.getStringPref(ANNO_ENGINES),
-    "trackers-content",
+    `${ALWAYS_ON_ANNOTATION},trackers-content`,
     "strict_list.enabled adds trackers-content to normal annotation"
   );
   is(
     Services.prefs.getStringPref(ANNO_ENGINES_PBM),
-    "",
-    "No PBM annotation when the PBM pref is off"
+    ALWAYS_ON_ANNOTATION,
+    "No PBM trackers-content when the PBM pref is off"
   );
 
   await enableMirror({
@@ -265,12 +287,12 @@ add_task(async function test_strict_list_drives_trackers_content_annotation() {
   });
   is(
     Services.prefs.getStringPref(ANNO_ENGINES),
-    "",
-    "Switch normal strict-list off will clear the pref for normal annotation"
+    ALWAYS_ON_ANNOTATION,
+    "Switching the normal strict-list off drops trackers-content again"
   );
   is(
     Services.prefs.getStringPref(ANNO_ENGINES_PBM),
-    "trackers-content",
+    `${ALWAYS_ON_ANNOTATION},trackers-content`,
     "strict_list.pbmode.enabled adds trackers-content to PBM annotation"
   );
 });
@@ -289,7 +311,7 @@ add_task(async function test_baseline_appends_major_exceptions() {
   );
   is(
     Services.prefs.getStringPref(ANNO_ENGINES),
-    "",
+    ALWAYS_ON_ANNOTATION,
     "exception engines never reach the annotation list"
   );
 });

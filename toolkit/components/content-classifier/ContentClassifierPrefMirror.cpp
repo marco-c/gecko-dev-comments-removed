@@ -71,6 +71,7 @@ constexpr char kMinorExceptionsEngine[] = "minor-exceptions";
 
 
 
+
 struct EngineMapping {
   const char* mEngine;
   const char* mNormalPref;
@@ -103,12 +104,12 @@ constexpr EngineMapping kProtectionMappings[] = {
 
 
 constexpr EngineMapping kAnnotationMappings[] = {
-    {"cryptominers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"fingerprinters", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
-    {"social-trackers", "privacy.trackingprotection.annotate_channels",
-     "privacy.trackingprotection.annotate_channels"},
+    
+    
+    
+    {"cryptominers", nullptr, nullptr},
+    {"fingerprinters", nullptr, nullptr},
+    {"social-trackers", nullptr, nullptr},
     
     
     {"trackers", "privacy.trackingprotection.annotate_channels",
@@ -144,7 +145,7 @@ void BuildEngineList(Span<const EngineMapping> aMappings, bool aPrivateBrowsing,
   for (const auto& mapping : aMappings) {
     const char* gatingPref =
         aPrivateBrowsing ? mapping.mPBMPref : mapping.mNormalPref;
-    if (Preferences::GetBool(gatingPref, false)) {
+    if (!gatingPref || Preferences::GetBool(gatingPref, false)) {
       if (!aOut.IsEmpty()) {
         aOut.Append(',');
       }
