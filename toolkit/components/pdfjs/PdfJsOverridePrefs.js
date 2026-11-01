@@ -45,6 +45,10 @@
 
 pref("pdfjs.enableOptimizedPartialRendering", true);
 
+#ifdef EARLY_BETA_OR_EARLIER
+  pref("pdfjs.disableWorkerRendering", false);
+#endif
+
 
 
 
