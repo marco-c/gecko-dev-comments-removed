@@ -7,6 +7,9 @@
 
 #include <functional>
 
+#include "mozilla/Result.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsCOMPtr.h"
 #include "nsIProtocolHandler.h"
@@ -21,13 +24,13 @@ class nsIPrincipal;
 namespace mozilla {
 class BlobURLsReporter;
 class OriginAttributes;
-template <class T>
-class Maybe;
 
 namespace dom {
 
 class BlobImpl;
+class BlobURL;
 class BlobURLRegistrationData;
+class BlobURLPrincipalEntry;
 class ContentParent;
 class MediaSource;
 
@@ -48,16 +51,16 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
   
-  static void AddDataEntryParent(const nsACString& aURI,
-                                 nsIPrincipal* aPrincipal,
-                                 const nsCString& aPartitionKey,
-                                 BlobImpl* aBlobImpl,
-                                 const ContentParentId& aContentParentId);
+  static nsresult AddDataEntryParent(const nsACString& aURI,
+                                     nsIPrincipal* aPrincipal,
+                                     const nsCString& aPartitionKey,
+                                     BlobImpl* aBlobImpl,
+                                     const ContentParentId& aContentParentId);
 
   
-  static void AddDataEntryChild(const nsACString& aURI,
-                                nsIPrincipal* aPrincipal,
-                                const nsCString& aPartitionKey);
+  static nsresult AddDataEntryChild(const nsACString& aURI,
+                                    nsIPrincipal* aPrincipal,
+                                    const nsCString& aPartitionKey);
 
   
   
@@ -116,10 +119,34 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
 
   static bool IsBlobURLValid(nsIPrincipal* aPrincipal, const nsACString& aSpec);
 
+  static nsresult GetBlobURLProtocolState(
+      const nsACString& aSpecIgnoringRef, bool* aRevoked,
+      BlobURLPrincipalEntry** aPrincipalEntry);
+
  private:
   ~BlobURLProtocolHandler();
 
   static void Init();
+};
+
+
+class BlobURLPrincipalEntry final
+    : public SupportsThreadSafeWeakPtr<BlobURLPrincipalEntry> {
+ public:
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(BlobURLPrincipalEntry)
+
+  const nsCString mSpec;
+  const nsCOMPtr<nsIPrincipal> mPrincipal;
+
+  static Result<RefPtr<BlobURLPrincipalEntry>, nsresult> Intern(
+      const nsACString& aSpec, nsIPrincipal* aPrincipal);
+
+ private:
+  friend class SupportsThreadSafeWeakPtr<BlobURLPrincipalEntry>;
+
+  BlobURLPrincipalEntry(const nsACString& aSpec, nsIPrincipal* aPrincipal)
+      : mSpec(aSpec), mPrincipal(aPrincipal) {}
+  ~BlobURLPrincipalEntry();
 };
 
 bool IsBlobURI(nsIURI* aUri);

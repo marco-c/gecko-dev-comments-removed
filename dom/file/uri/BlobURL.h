@@ -20,11 +20,12 @@
 class NS_NO_VTABLE nsIBlobURLMutator : public nsISupports {
  public:
   NS_INLINE_DECL_STATIC_IID(NS_IBLOBURLMUTATOR_IID)
-  NS_IMETHOD SetRevoked(bool aRevoked) = 0;
-  NS_IMETHOD MaybeSetNullPrincipal(nsIPrincipal* aPrincipal) = 0;
+  NS_IMETHOD CacheProtocolState() = 0;
 };
 
 namespace mozilla::dom {
+
+class BlobURLPrincipalEntry;
 
 
 
@@ -44,12 +45,7 @@ class BlobURL final : public mozilla::net::nsSimpleURI {
   virtual void Serialize(mozilla::ipc::URIParams& aParams) override;
 
   
-  already_AddRefed<mozilla::net::nsSimpleURI> StartClone() override {
-    RefPtr<BlobURL> url = new BlobURL();
-    url->mRevoked = mRevoked;
-    url->mNullPrincipal = mNullPrincipal;
-    return url.forget();
-  }
+  already_AddRefed<mozilla::net::nsSimpleURI> StartClone() override;
 
   
   
@@ -64,21 +60,21 @@ class BlobURL final : public mozilla::net::nsSimpleURI {
   
   
   
-  nsIPrincipal* GetNullPrincipal() const { return mNullPrincipal; }
+  nsIPrincipal* GetNullPrincipal();
 
   bool Revoked() const { return mRevoked; }
 
   NS_IMETHOD Mutate(nsIURIMutator** _retval) override;
 
  private:
-  ~BlobURL() override = default;
+  ~BlobURL() override;
 
   nsresult SetScheme(const nsACString& aProtocol) override;
   bool Deserialize(const mozilla::ipc::URIParams&);
   nsresult ReadPrivate(nsIObjectInputStream* stream);
 
   bool mRevoked;
-  nsCOMPtr<nsIPrincipal> mNullPrincipal;
+  RefPtr<BlobURLPrincipalEntry> mPrincipalEntry;
 
  public:
   class Mutator final : public nsIURIMutator,
@@ -98,17 +94,9 @@ class BlobURL final : public mozilla::net::nsSimpleURI {
       return InitFromInputStream(aStream);
     }
 
-    NS_IMETHOD SetRevoked(bool aRevoked) override {
-      mURI->mRevoked = aRevoked;
-      return NS_OK;
-    }
-
-    NS_IMETHOD MaybeSetNullPrincipal(nsIPrincipal* aPrincipal) override {
-      
-      mURI->mNullPrincipal =
-          mURI->OriginPart() == "null"_ns ? aPrincipal : nullptr;
-      return NS_OK;
-    }
+    
+    
+    NS_IMETHOD CacheProtocolState() override;
 
     Mutator() = default;
 
