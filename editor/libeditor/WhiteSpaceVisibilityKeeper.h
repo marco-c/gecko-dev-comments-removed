@@ -242,15 +242,20 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+
+
   template <typename EditorDOMPointType>
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertText(HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
              const EditorDOMPointType& aPointToInsert,
+             const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
              InsertTextTo aInsertTextTo, const Element& aEditingHost) {
     return WhiteSpaceVisibilityKeeper::
         InsertTextOrInsertOrUpdateCompositionString(
             aHTMLEditor, aStringToInsert, EditorDOMRange(aPointToInsert),
-            aInsertTextTo, InsertTextFor::NormalText, aEditingHost);
+            aExtantUnnecessaryLineBreak, aInsertTextTo,
+            InsertTextFor::NormalText, aEditingHost);
   }
 
   
@@ -267,15 +272,19 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
-  InsertOrUpdateCompositionString(HTMLEditor& aHTMLEditor,
-                                  const nsAString& aCompositionString,
-                                  const EditorDOMRange& aCompositionStringRange,
-                                  InsertTextFor aPurpose,
-                                  const Element& aEditingHost) {
+  InsertOrUpdateCompositionString(
+      HTMLEditor& aHTMLEditor, const nsAString& aCompositionString,
+      const EditorDOMRange& aCompositionStringRange,
+      const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
+      InsertTextFor aPurpose, const Element& aEditingHost) {
     MOZ_ASSERT(EditorBase::InsertingTextForComposition(aPurpose));
     return InsertTextOrInsertOrUpdateCompositionString(
         aHTMLEditor, aCompositionString, aCompositionStringRange,
+        aExtantUnnecessaryLineBreak,
         HTMLEditor::InsertTextTo::ExistingTextNodeIfAvailable, aPurpose,
         aEditingHost);
   }
@@ -382,11 +391,16 @@ class WhiteSpaceVisibilityKeeper final {
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT static Result<InsertTextResult, nsresult>
   InsertTextOrInsertOrUpdateCompositionString(
       HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
-      const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-      InsertTextFor aPurpose, const Element& aEditingHost);
+      const EditorDOMRange& aRangeToBeReplaced,
+      const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
+      InsertTextTo aInsertTextTo, InsertTextFor aPurpose,
+      const Element& aEditingHost);
 };
 
 }  

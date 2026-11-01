@@ -1086,6 +1086,36 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
     return EditActionResult::HandledResult();
   }
 
+  const RefPtr<Element> editingHost =
+      ComputeEditingHost(LimitInBodyElement::No);
+  if (NS_WARN_IF(!editingHost)) {
+    return Err(NS_ERROR_FAILURE);
+  }
+
+  
+  
+  
+  
+  
+  const Maybe<EditorLineBreak> preservingUnnecessaryLineBreak =
+      [&]() MOZ_NEVER_INLINE_DEBUG -> Maybe<EditorLineBreak> {
+    const auto selectionRangeEnd =
+        EditorBase::GetFirstSelectionEndPoint<EditorRawDOMPoint>();
+    if (!selectionRangeEnd.IsSet()) [[unlikely]] {
+      return Nothing{};
+    }
+    const WSScanResult nextThing =
+        HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
+            selectionRangeEnd,
+            
+            
+            
+            
+            
+            TreatAsUnnecessaryLineBreak{}, *editingHost);
+    return nextThing.MaybeIgnoredLineBreak();
+  }();
+
   
   
   if (!SelectionRef().IsCollapsed() &&
@@ -1098,12 +1128,9 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
           "nsIEditor::eNoStrip) failed");
       return Err(rv);
     }
-  }
-
-  const RefPtr<Element> editingHost =
-      ComputeEditingHost(LimitInBodyElement::No);
-  if (NS_WARN_IF(!editingHost)) {
-    return Err(NS_ERROR_FAILURE);
+    if (NS_WARN_IF(editingHost != ComputeEditingHost(LimitInBodyElement::No))) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
   }
 
   nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
@@ -1200,17 +1227,21 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       
       
       insertEmptyTextResult.IgnoreCaretPointSuggestion();
-      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          insertEmptyTextResult.EndOfInsertedTextRef(),
-          
-          
-          
-          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Unnecessary,
-          *editingHost);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-        return Err(rv);
+      
+      
+      if (preservingUnnecessaryLineBreak.isNothing()) [[likely]] {
+        nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
+            insertEmptyTextResult.EndOfInsertedTextRef(),
+            
+            
+            
+            PreservePreformattedLineBreak::Yes,
+            PaddingForEmptyBlock::Unnecessary, *editingHost);
+        if (NS_FAILED(rv)) {
+          NS_WARNING(
+              "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
+          return Err(rv);
+        }
       }
       const EditorDOMPoint& endOfInsertedText =
           insertEmptyTextResult.EndOfInsertedTextRef();
@@ -1269,7 +1300,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
               compositionEndPoint.IsSet()
                   ? EditorDOMRange(pointToInsert, compositionEndPoint)
                   : EditorDOMRange(pointToInsert),
-              aPurpose, *editingHost);
+              preservingUnnecessaryLineBreak, aPurpose, *editingHost);
       if (MOZ_UNLIKELY(replaceTextResult.isErr())) {
         NS_WARNING("WhiteSpaceVisibilityKeeper::ReplaceText() failed");
         return replaceTextResult.propagateErr();
@@ -1393,40 +1424,39 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
         
         const WSScanResult nextThing = HTMLEditUtils::
             ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-                currentPoint, PaddingForEmptyBlock::Unnecessary, *editingHost);
+                currentPoint,
+                TreatAsUnnecessaryLineBreak{
+                    LineBreakFor::PaddingForEmptyBlock,
+                    LineBreakFor::EmptyLineBeforeBlockBoundary},
+                *editingHost);
         if (nextThing.MaybeIgnoredLineBreak().isSome() &&
+            
+            
+            nextThing.MaybeIgnoredLineBreak() !=
+                preservingUnnecessaryLineBreak &&
             !(IsPlaintextMailComposer() &&
               nextThing.IgnoredLineBreakIsRequiredInPlaintextMailComposer())) {
           const EditorLineBreak& lineBreak =
               nextThing.MaybeIgnoredLineBreak().ref();
-          
-          
-          
-          
-          
-          if (lineBreak.IsHTMLBRElement() ||
-              lineBreak.IsPaddingForEmptyBlock()) {
-            const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
-                lineBreak.ContentRef().IsInclusiveDescendantOf(
-                    currentPoint.GetContainer())
-                    ? currentPoint.GetContainerOrContainerParentElement()
-                    : editingHost.get();
-            {
-              AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
-                                                  &currentPoint);
-              Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
-                  DeleteLineBreakWithTransaction(
-                      lineBreak, nsIEditor::eStrip,
-                      *ancestorLimiterToDeleteEmptyInlines);
-              if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
-                NS_WARNING(
-                    "HTMLEditor::DeleteLineBreakWithTransaction() failed");
-                return deleteLineBreakResultOrError.propagateErr();
-              }
+          const RefPtr<Element> ancestorLimiterToDeleteEmptyInlines =
+              lineBreak.ContentRef().IsInclusiveDescendantOf(
+                  currentPoint.GetContainer())
+                  ? currentPoint.GetContainerOrContainerParentElement()
+                  : editingHost.get();
+          {
+            AutoTrackDOMPoint trackCurrentPoint(RangeUpdaterRef(),
+                                                &currentPoint);
+            Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+                DeleteLineBreakWithTransaction(
+                    lineBreak, nsIEditor::eStrip,
+                    *ancestorLimiterToDeleteEmptyInlines);
+            if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+              NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+              return deleteLineBreakResultOrError.propagateErr();
             }
-            if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
-              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-            }
+          }
+          if (NS_WARN_IF(!currentPoint.IsSetAndValidInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
           }
         }
       }
@@ -1545,7 +1575,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
                                                 lineStartOffset, lineLength);
             if (!lineText.Contains(u'\t')) {
               return WhiteSpaceVisibilityKeeper::InsertText(
-                  *this, lineText, currentPoint,
+                  *this, lineText, currentPoint, preservingUnnecessaryLineBreak,
                   GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
                   *editingHost);
             }
@@ -1553,6 +1583,7 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
             formattedLineText.ReplaceSubstring(u"\t"_ns, u"    "_ns);
             return WhiteSpaceVisibilityKeeper::InsertText(
                 *this, formattedLineText, currentPoint,
+                preservingUnnecessaryLineBreak,
                 GetInsertTextTo(inclusiveNextLinefeedOffset, lineStartOffset),
                 *editingHost);
           }();
@@ -1640,19 +1671,6 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
       }
       if (insertPaddingLineBreakResult.inspect().HasCaretPointSuggestion()) {
         currentPoint = insertPaddingLineBreakResult.unwrap().UnwrapCaretPoint();
-      }
-    } else {
-      nsresult rv = EnsureNoFollowingUnnecessaryLineBreak(
-          currentPoint,
-          
-          
-          
-          PreservePreformattedLineBreak::Yes, PaddingForEmptyBlock::Unnecessary,
-          *editingHost);
-      if (NS_FAILED(rv)) {
-        NS_WARNING(
-            "HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak() failed");
-        return Err(rv);
       }
     }
     currentPoint.SetInterlinePosition(InterlinePosition::EndOfLine);

@@ -2061,8 +2061,10 @@ WhiteSpaceVisibilityKeeper::EnsureNoInvisibleWhiteSpaces(
 Result<InsertTextResult, nsresult>
 WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
     HTMLEditor& aHTMLEditor, const nsAString& aStringToInsert,
-    const EditorDOMRange& aRangeToBeReplaced, InsertTextTo aInsertTextTo,
-    InsertTextFor aPurpose, const Element& aEditingHost) {
+    const EditorDOMRange& aRangeToBeReplaced,
+    const Maybe<EditorLineBreak>& aExtantUnnecessaryLineBreak,
+    InsertTextTo aInsertTextTo, InsertTextFor aPurpose,
+    const Element& aEditingHost) {
   MOZ_ASSERT(aRangeToBeReplaced.StartRef().IsInContentNode());
   MOZ_ASSERT_IF(!EditorBase::InsertingTextForExtantComposition(aPurpose),
                 aRangeToBeReplaced.Collapsed());
@@ -2192,42 +2194,43 @@ WhiteSpaceVisibilityKeeper::InsertTextOrInsertOrUpdateCompositionString(
       !EditorBase::InsertingTextForExtantComposition(aPurpose)) {
     const WSScanResult nextThing =
         HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-            pointToInsert, PaddingForEmptyBlock::Unnecessary, aEditingHost);
-    if (nextThing.MaybeIgnoredLineBreak().isSome()) {
+            pointToInsert,
+            TreatAsUnnecessaryLineBreak{
+                LineBreakFor::PaddingForEmptyBlock,
+                LineBreakFor::EmptyLineBeforeBlockBoundary},
+            aEditingHost);
+    
+    
+    if (nextThing.MaybeIgnoredLineBreak().isSome() &&
+        nextThing.MaybeIgnoredLineBreak() != aExtantUnnecessaryLineBreak) {
       const EditorLineBreak& lineBreak =
           nextThing.MaybeIgnoredLineBreak().ref();
+      const RefPtr<const Element> ancestorLimiterToDeleteEmptyInlines =
+          lineBreak.ContentRef().IsInclusiveDescendantOf(
+              pointToInsert.GetContainer())
+              ? pointToInsert.GetContainerOrContainerParentElement()
+              : &aEditingHost;
       
       
-      
-      
-      if (lineBreak.IsHTMLBRElement() || lineBreak.IsPaddingForEmptyBlock()) {
-        const RefPtr<const Element> ancestorLimiterToDeleteEmptyInlines =
-            lineBreak.ContentRef().IsInclusiveDescendantOf(
-                pointToInsert.GetContainer())
-                ? pointToInsert.GetContainerOrContainerParentElement()
-                : &aEditingHost;
-        
-        
-        const bool expectPointToInsertInText =
-            pointToInsert.GetContainer()->IsText() &&
-            insertTextData.ReplaceLength();
-        {
-          AutoTrackDOMPoint trackCurrentPoint(aHTMLEditor.RangeUpdaterRef(),
-                                              &pointToInsert);
-          Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
-              aHTMLEditor.DeleteLineBreakWithTransaction(
-                  nextThing.MaybeIgnoredLineBreak().ref(), nsIEditor::eStrip,
-                  *ancestorLimiterToDeleteEmptyInlines);
-          if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
-            NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
-            return deleteLineBreakResultOrError.propagateErr();
-          }
+      const bool expectPointToInsertInText =
+          pointToInsert.GetContainer()->IsText() &&
+          insertTextData.ReplaceLength();
+      {
+        AutoTrackDOMPoint trackCurrentPoint(aHTMLEditor.RangeUpdaterRef(),
+                                            &pointToInsert);
+        Result<EditorDOMPoint, nsresult> deleteLineBreakResultOrError =
+            aHTMLEditor.DeleteLineBreakWithTransaction(
+                nextThing.MaybeIgnoredLineBreak().ref(), nsIEditor::eStrip,
+                *ancestorLimiterToDeleteEmptyInlines);
+        if (deleteLineBreakResultOrError.isErr()) [[unlikely]] {
+          NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
+          return deleteLineBreakResultOrError.propagateErr();
         }
-        if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc()) ||
-            NS_WARN_IF(expectPointToInsertInText &&
-                       !pointToInsert.GetContainer()->IsText())) {
-          return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-        }
+      }
+      if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc()) ||
+          NS_WARN_IF(expectPointToInsertInText &&
+                     !pointToInsert.GetContainer()->IsText())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
       }
     }
   }
@@ -2462,7 +2465,7 @@ WhiteSpaceVisibilityKeeper::DeleteContentNodeAndJoinTextNodesAroundIt(
                 pointToPutCaret,
                 
                 
-                PaddingForEmptyBlock::Significant, aEditingHost);
+                TreatAsUnnecessaryLineBreak{}, aEditingHost);
         if (nextThingOfCaretPoint.ReachedBlockBoundary()) {
           const EditorDOMPoint atBlockBoundary =
               nextThingOfCaretPoint

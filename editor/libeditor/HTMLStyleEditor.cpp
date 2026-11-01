@@ -1960,7 +1960,8 @@ HTMLEditor::AutoInlineStyleSetter::ExtendOrShrinkRangeToApplyTheStyle(
             range.EndRef(),
             
             
-            PaddingForEmptyBlock::Unnecessary, aEditingHost);
+            TreatAsUnnecessaryLineBreak{LineBreakFor::PaddingForEmptyBlock},
+            aEditingHost);
     if (nextThing.MaybeIgnoredLineBreak().isSome() &&
         nextThing.MaybeIgnoredLineBreak()->IsInclusiveDescendantOf(
             aEditingHost) &&

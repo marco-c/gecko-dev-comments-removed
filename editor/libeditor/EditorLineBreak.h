@@ -45,6 +45,44 @@ inline std::ostream& operator<<(std::ostream& aStream,
   return aStream << format_as(aValue);
 }
 
+enum class LineBreakFor {
+  
+  PaddingForEmptyBlock,
+  
+  
+  
+  EmptyLineBeforeBlockBoundary,
+};
+
+inline std::string format_as(const LineBreakFor& aValue) {
+  return aValue == LineBreakFor::PaddingForEmptyBlock
+             ? "PaddingForEmptyBlock"
+             : "EmptyLineBeforeBlockBoundary";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                const LineBreakFor& aValue) {
+  return aStream << format_as(aValue);
+}
+
+using TreatAsUnnecessaryLineBreak = EnumSet<LineBreakFor>;
+
+inline std::string format_as(const TreatAsUnnecessaryLineBreak& aValues) {
+  std::string ret = "{";
+  for (const LineBreakFor value : aValues) {
+    if (ret != "{") {
+      ret += ", ";
+    }
+    ret += format_as(value);
+  }
+  return ret + "}";
+}
+
+inline std::ostream& operator<<(std::ostream& aStream,
+                                const TreatAsUnnecessaryLineBreak& aValues) {
+  return aStream << format_as(aValues);
+}
+
 
 
 
@@ -274,10 +312,10 @@ class EditorLineBreakBase {
   [[nodiscard]] bool IsPaddingForEmptyBlock(
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsUnnecessary(
-      PaddingForEmptyBlock aPaddingForEmptyBlock,
+      TreatAsUnnecessaryLineBreak,
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] bool IsSignificant(
-      PaddingForEmptyBlock aPaddingForEmptyBlock,
+      TreatAsUnnecessaryLineBreak,
       const dom::Element* aAncestorLimiter = nullptr) const;
 
   [[nodiscard]] dom::Element* GetBlockElementIfFollowedByBlockBoundary(
@@ -286,6 +324,21 @@ class EditorLineBreakBase {
       const dom::Element* aAncestorLimiter = nullptr) const;
   [[nodiscard]] dom::Element* GetBlockElementIfFollowedByOtherBlockBoundary(
       const dom::Element* aAncestorLimiter = nullptr) const;
+
+  template <typename CT>
+  bool operator==(const EditorLineBreakBase<CT>& aOther) const {
+    if (mContent != aOther.mContent) {
+      return false;
+    }
+    if (IsHTMLBRElement()) {
+      return true;
+    }
+    return mOffsetInText == mOffsetInText;
+  }
+  template <typename CT>
+  bool operator!=(const EditorLineBreakBase<CT>& aOther) const {
+    return !operator==(aOther);
+  }
 
   friend inline std::ostream& operator<<(
       std::ostream& aStream, const EditorLineBreakBase& aLineBreak) {

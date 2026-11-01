@@ -274,46 +274,46 @@ template bool HTMLEditUtils::IsPreformattedLineBreakFollowingLineBreak(
     const EditorRawDOMPointInText&, SkipWhiteSpaceStyleCheck, const Element*);
 
 template bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
-    const EditorDOMPoint&, PaddingForEmptyBlock, SkipWhiteSpaceStyleCheck,
-    const Element*, Element**);
+    const EditorDOMPoint&, TreatAsUnnecessaryLineBreak,
+    SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
-    const EditorRawDOMPoint&, PaddingForEmptyBlock, SkipWhiteSpaceStyleCheck,
-    const Element*, Element**);
+    const EditorRawDOMPoint&, TreatAsUnnecessaryLineBreak,
+    SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
-    const EditorDOMPointInText&, PaddingForEmptyBlock, SkipWhiteSpaceStyleCheck,
-    const Element*, Element**);
+    const EditorDOMPointInText&, TreatAsUnnecessaryLineBreak,
+    SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
-    const EditorRawDOMPointInText&, PaddingForEmptyBlock,
+    const EditorRawDOMPointInText&, TreatAsUnnecessaryLineBreak,
     SkipWhiteSpaceStyleCheck, const Element*, Element**);
 
 template bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
-    const EditorDOMPoint&, PaddingForEmptyBlock, SkipWhiteSpaceStyleCheck,
-    const Element*, Element**);
+    const EditorDOMPoint&, TreatAsUnnecessaryLineBreak,
+    SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
-    const EditorRawDOMPoint&, PaddingForEmptyBlock, SkipWhiteSpaceStyleCheck,
-    const Element*, Element**);
+    const EditorRawDOMPoint&, TreatAsUnnecessaryLineBreak,
+    SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
-    const EditorDOMPointInText&, PaddingForEmptyBlock, SkipWhiteSpaceStyleCheck,
-    const Element*, Element**);
+    const EditorDOMPointInText&, TreatAsUnnecessaryLineBreak,
+    SkipWhiteSpaceStyleCheck, const Element*, Element**);
 template bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
-    const EditorRawDOMPointInText&, PaddingForEmptyBlock,
+    const EditorRawDOMPointInText&, TreatAsUnnecessaryLineBreak,
     SkipWhiteSpaceStyleCheck, const Element*, Element**);
 
 template WSScanResult
 HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-    const EditorDOMPoint&, PaddingForEmptyBlock, const Element&,
+    const EditorDOMPoint&, TreatAsUnnecessaryLineBreak, const Element&,
     const Element*);
 template WSScanResult
 HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-    const EditorRawDOMPoint&, PaddingForEmptyBlock, const Element&,
+    const EditorRawDOMPoint&, TreatAsUnnecessaryLineBreak, const Element&,
     const Element*);
 template WSScanResult
 HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-    const EditorDOMPointInText&, PaddingForEmptyBlock, const Element&,
+    const EditorDOMPointInText&, TreatAsUnnecessaryLineBreak, const Element&,
     const Element*);
 template WSScanResult
 HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
-    const EditorRawDOMPointInText&, PaddingForEmptyBlock, const Element&,
+    const EditorRawDOMPointInText&, TreatAsUnnecessaryLineBreak, const Element&,
     const Element*);
 
 template Maybe<EditorLineBreak> HTMLEditUtils::GetPrecedingUnnecessaryLineBreak(
@@ -1335,7 +1335,7 @@ bool HTMLEditUtils::IsPreformattedLineBreakFollowingLineBreak(
 
 bool HTMLEditUtils::IsUnnecessaryBRElement(
     const dom::HTMLBRElement& aBRElement,
-    PaddingForEmptyBlock aPaddingForEmptyBlock,
+    TreatAsUnnecessaryLineBreak aTreatAsUnnecessaryLineBreak,
     const Element* aAncestorLimiter ,
     Element** aFollowingBlockBoundaryElement ) {
   if (aFollowingBlockBoundaryElement) {
@@ -1357,9 +1357,14 @@ bool HTMLEditUtils::IsUnnecessaryBRElement(
           aBRElement, aAncestorLimiter, &precedingBlockBoundaryElement)) {
     if (followingBlockBoundaryElement == precedingBlockBoundaryElement) {
       
-      return aPaddingForEmptyBlock == PaddingForEmptyBlock::Unnecessary;
+      return aTreatAsUnnecessaryLineBreak.contains(
+          LineBreakFor::PaddingForEmptyBlock);
     }
-    return false;
+    
+    
+    
+    return aTreatAsUnnecessaryLineBreak.contains(
+        LineBreakFor::EmptyLineBeforeBlockBoundary);
   }
   return true;
 }
@@ -1367,7 +1372,7 @@ bool HTMLEditUtils::IsUnnecessaryBRElement(
 template <typename EditorDOMPointType>
 bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
     const EditorDOMPointType& aPoint,
-    PaddingForEmptyBlock aPaddingForEmptyBlock,
+    TreatAsUnnecessaryLineBreak aTreatAsUnnecessaryLineBreak,
     SkipWhiteSpaceStyleCheck
         aSkipWhiteSpaceStyleCheck ,
     const Element* aAncestorLimiter ,
@@ -1401,15 +1406,24 @@ bool HTMLEditUtils::IsUnnecessaryPreformattedLineBreak(
   if (precedingThing.ReachedCurrentBlockBoundary() &&
       followingBlockBoundaryElement == precedingThing.ElementPtr()) {
     
-    return aPaddingForEmptyBlock == PaddingForEmptyBlock::Unnecessary;
+    
+    return aTreatAsUnnecessaryLineBreak.contains(
+        LineBreakFor::PaddingForEmptyBlock);
   }
-  return !precedingThing.ReachedLineBoundary();
+  if (precedingThing.ReachedLineBoundary()) {
+    
+    
+    
+    return aTreatAsUnnecessaryLineBreak.contains(
+        LineBreakFor::EmptyLineBeforeBlockBoundary);
+  }
+  return true;
 }
 
 template <typename EditorDOMPointType>
 bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
     const EditorDOMPointType& aPoint,
-    PaddingForEmptyBlock aPaddingForEmptyBlock,
+    TreatAsUnnecessaryLineBreak aTreatAsUnnecessaryLineBreak,
     SkipWhiteSpaceStyleCheck
         aSkipWhiteSpaceStyleCheck ,
     const Element* aAncestorLimiter ,
@@ -1457,17 +1471,25 @@ bool HTMLEditUtils::IsSignificantPreformattedLineBreak(
       precedingThing.ReachedCurrentBlockBoundary()) {
     
     
-    return aPaddingForEmptyBlock == PaddingForEmptyBlock::Significant;
+    return !aTreatAsUnnecessaryLineBreak.contains(
+        LineBreakFor::PaddingForEmptyBlock);
   }
-  return precedingThing.ReachedLineBoundary();
+  if (precedingThing.ReachedLineBoundary()) {
+    
+    
+    
+    return !aTreatAsUnnecessaryLineBreak.contains(
+        LineBreakFor::EmptyLineBeforeBlockBoundary);
+  }
+  return false;
 }
 
 template <typename EditorDOMPointType>
 WSScanResult
 HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
     const EditorDOMPointType& aPoint,
-    PaddingForEmptyBlock aPaddingForEmptyBlock, const Element& aEditingHost,
-    const Element* aAncestorLimiter) {
+    TreatAsUnnecessaryLineBreak aTreatAsUnnecessaryLineBreaks,
+    const Element& aEditingHost, const Element* aAncestorLimiter) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
   WSScanResult nextThing =
@@ -1490,7 +1512,7 @@ HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
   if (!nextThingOfLineBreak.ReachedBlockBoundary()) {
     MOZ_ASSERT(
         nextThing.CreateEditorLineBreak<EditorRawLineBreak>().IsSignificant(
-            aPaddingForEmptyBlock));
+            aTreatAsUnnecessaryLineBreaks));
     return nextThing;
   }
   const WSScanResult previousThingOfLineBreak =
@@ -1500,21 +1522,28 @@ HTMLEditUtils::ScanInclusiveNextThingWithIgnoringUnnecessaryLineBreak(
           
           {}, nextThing.PointAtReachedContent<EditorRawDOMPoint>(),
           aAncestorLimiter);
-  
-  
   if (previousThingOfLineBreak.ReachedLineBoundary()) {
-    if (aPaddingForEmptyBlock == PaddingForEmptyBlock::Significant ||
-        !nextThingOfLineBreak.ReachedCurrentBlockBoundary() ||
-        !previousThingOfLineBreak.ReachedCurrentBlockBoundary()) {
-      MOZ_ASSERT(
-          nextThing.CreateEditorLineBreak<EditorRawLineBreak>().IsSignificant(
-              aPaddingForEmptyBlock));
+    const bool lineBreakForPaddingForEmptyBlock =
+        previousThingOfLineBreak.ReachedCurrentBlockBoundary() &&
+        nextThingOfLineBreak.ReachedCurrentBlockBoundary();
+    if (lineBreakForPaddingForEmptyBlock) {
+      
+      
+      if (!aTreatAsUnnecessaryLineBreaks.contains(
+              LineBreakFor::PaddingForEmptyBlock)) {
+        return nextThing;
+      }
+    }
+    
+    
+    else if (!aTreatAsUnnecessaryLineBreaks.contains(
+                 LineBreakFor::EmptyLineBeforeBlockBoundary)) {
       return nextThing;
     }
   }
   EditorLineBreak unnecessaryLineBreak =
       nextThing.CreateEditorLineBreak<EditorLineBreak>();
-  MOZ_ASSERT(unnecessaryLineBreak.IsUnnecessary(aPaddingForEmptyBlock,
+  MOZ_ASSERT(unnecessaryLineBreak.IsUnnecessary(aTreatAsUnnecessaryLineBreaks,
                                                 aAncestorLimiter));
   return WSScanResult(std::move(nextThingOfLineBreak),
                       std::move(unnecessaryLineBreak), aEditingHost);
@@ -1535,7 +1564,7 @@ Maybe<EditorLineBreakType> HTMLEditUtils::GetPrecedingUnnecessaryLineBreak(
     return Nothing{};
   }
   auto lineBreak = previousThing.CreateEditorLineBreak<EditorLineBreakType>();
-  if (lineBreak.IsUnnecessary(PaddingForEmptyBlock::Significant)) {
+  if (lineBreak.IsUnnecessary(TreatAsUnnecessaryLineBreak{})) {
     return Some(lineBreak);
   }
   return Nothing{};
