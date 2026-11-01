@@ -97,6 +97,8 @@ async function read_numbers_byob(reader, controller, N) {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const writer = wt.datagrams.createWritable().getWriter();
@@ -120,6 +122,8 @@ promise_test(async t => {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'), { 'datagramsReadableType' : 'bytes' });
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const writer = wt.datagrams.createWritable().getWriter();
@@ -153,6 +157,8 @@ promise_test(async t => {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'), { 'datagramsReadableType' : 'bytes' });
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const writer = wt.datagrams.createWritable().getWriter();
@@ -177,6 +183,8 @@ promise_test(async t => {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo_datagram_length.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const writer = wt.datagrams.createWritable().getWriter();
@@ -198,7 +206,9 @@ promise_test(async t => {
 
 promise_test(async t => {
   
-  const wt = new WebTransport(webtransport_url('echo.py'));
+  const wt = new WebTransport(webtransport_url('echo_datagram_length.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const writer = wt.datagrams.createWritable().getWriter();
@@ -227,6 +237,8 @@ promise_test(async t => {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
 
   const writer = wt.datagrams.createWritable().getWriter();
   const reader = wt.datagrams.readable.getReader();
@@ -251,8 +263,9 @@ promise_test(async t => {
 }, 'Sending and receiving datagrams is ready to use before session is established');
 
 promise_test(async t => {
-  
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const N = 5;
@@ -262,42 +275,26 @@ promise_test(async t => {
   const encoder = new TextEncoder();
 
   
-  let counter;
-  for (counter = 0; counter < N-1; counter++) {
-    var datagram = counter.toString();
-    let resolved = false;
-    writer.write(encoder.encode(datagram));
-
-    
-    writer.ready.then(() => resolved = true);
-    
-    
-    
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-    assert_true(resolved);
+  for (let i = 0; i < N - 1; i++) {
+    writer.write(encoder.encode(i.toString()));
   }
+  assert_greater_than(writer.desiredSize, 0,
+                      'desiredSize should be positive after N-1 writes');
 
   
-  resolved = false;
-  const last_datagram = counter.toString();
-  writer.write(encoder.encode(last_datagram));
-
-  
-  writer.ready.then(() => resolved = true);
-  for (let i = 0; i < 10; i++) {
-    await Promise.resolve();
-  }
-  assert_false(resolved);
+  writer.write(encoder.encode((N - 1).toString()));
+  assert_less_than_equal(writer.desiredSize, 0,
+                         'desiredSize should be non-positive after N writes');
 
   
   await writer.ready;
-}, 'Datagram\'s outgoingMaxBufferedDatagrams correctly regulates written datagrams');
+}, "Datagram's outgoingMaxBufferedDatagrams correctly regulates written datagrams");
 
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const N = 5;
@@ -305,44 +302,49 @@ promise_test(async t => {
 
   const writer = wt.datagrams.createWritable().getWriter();
   const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
 
   
-  let counter;
-  for (counter = 0; counter < 10*N; counter++) {
-    var datagram = counter.toString();
-    writer.write(encoder.encode(datagram));
+  const totalDatagrams = 10 * N;
+  for (let counter = 0; counter < totalDatagrams; counter++) {
+    writer.write(encoder.encode(counter.toString()));
     await writer.ready;
   }
 
   
-  wait(500);
-
-  const reader = wt.datagrams.readable.getReader();
+  
+  await wait(2000);
 
   
-  let receivedDatagrams = 0;
+  
+  const reader = wt.datagrams.readable.getReader();
+  const receivedSequenceNumbers = [];
   while (true) {
-    let resolved = false;
-    reader.read().then(() => resolved = true);
-    
-    
-    for (let i = 0; i < 10; i++) {
-      await Promise.resolve();
-    }
-    if (!resolved) {
-      break;
-    }
-    receivedDatagrams++;
+    const result = await Promise.race([reader.read(), wait(100)]);
+    if (result === undefined) break;
+    receivedSequenceNumbers.push(parseInt(decoder.decode(result.value)));
   }
 
   
   
-  assert_less_than_equal(receivedDatagrams, N);
+  assert_less_than_equal(receivedSequenceNumbers.length, N);
+
+  
+  
+  
+  
+  
+  
+  const minReceivedSequence = Math.min(...receivedSequenceNumbers);
+  assert_greater_than_equal(minReceivedSequence, N-1,
+    'Dropped datagrams should be from the beginning of the sequence');
 }, 'Datagrams read is less than or equal to the incomingMaxBufferedDatagrams');
 
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   assert_equals(wt.datagrams.incomingMaxAge, null);
@@ -367,6 +369,8 @@ promise_test(async t => {
 promise_test(async t => {
   
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
 
   
