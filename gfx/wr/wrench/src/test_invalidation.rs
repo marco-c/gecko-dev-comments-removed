@@ -144,6 +144,7 @@ impl<'a> TestHarness<'a> {
         self.test_backdrop_scroll_under_clip();
         self.test_backdrop_cross_slice_scroll();
         self.test_backdrop_cross_slice_scroll_under_clip();
+        self.test_backdrop_cross_slice_rounded();
         self.test_backdrop_cross_slice_compositor_surfaces();
         self.test_backdrop_cross_slice_changes();
         self.test_backdrop_cross_slice_move_together();
@@ -522,6 +523,23 @@ impl<'a> TestHarness<'a> {
         );
     }
 
+    fn test_backdrop_cross_slice_rounded(&mut self) {
+        
+        
+        
+        
+        
+        for &probe in &[(44, 4), (200, 40)] {
+            let results = self.assert_probe_matches(
+                "invalidation/backdrop_cross_slice_rounded.yaml",
+                "invalidation/backdrop_cross_slice_rounded_ref.yaml",
+                probe,
+                "lower slice content under a backdrop is clipped like the slice",
+            );
+            assert!(results.pc_debug.slices.len() > 2, "Ensure the iframe content is in a slice of its own");
+        }
+    }
+
     fn test_backdrop_cross_slice_compositor_surfaces(&mut self) {
         
         
@@ -546,6 +564,7 @@ impl<'a> TestHarness<'a> {
         
         let cases = [
             ("clip_grow", (100, 40), "content revealed by a lower slice's wider clip shows through the backdrop"),
+            ("radius", (70, 20), "the backdrop is clipped like the lower slice after its rounded clip changes"),
             ("unsampled", (200, 40), "the backdrop stops showing a lower slice it no longer samples"),
         ];
         for (name, probe, what) in cases {
