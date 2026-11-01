@@ -157,7 +157,7 @@ class PeerConnectionFactoryTest : public ::testing::Test {
     
     
     factory_ = CreatePeerConnectionFactory(
-        Thread::Current(), Thread::Current(), Thread::Current(),
+        Thread::Current(), Thread::Current(),
         scoped_refptr<AudioDeviceModule>(FakeAudioCaptureModule::Create()),
         CreateBuiltinAudioEncoderFactory(), CreateBuiltinAudioDecoderFactory(),
         std::make_unique<VideoEncoderFactoryTemplate<
@@ -290,8 +290,7 @@ TEST(PeerConnectionFactoryTestInternal, DISABLED_CreatePCUsingInternalModules) {
   scoped_refptr<PeerConnectionFactoryInterface> factory(
       CreatePeerConnectionFactory(
           nullptr , nullptr ,
-          nullptr , nullptr ,
-          CreateBuiltinAudioEncoderFactory(),
+          nullptr , CreateBuiltinAudioEncoderFactory(),
           CreateBuiltinAudioDecoderFactory(),
           nullptr ,
           nullptr , nullptr ,

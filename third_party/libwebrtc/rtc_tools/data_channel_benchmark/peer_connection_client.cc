@@ -145,7 +145,7 @@ PeerConnectionClient::CreateDefaultFactory(
     Thread* signaling_thread,
     std::unique_ptr<FieldTrialsView> field_trials) {
   auto factory = CreatePeerConnectionFactory(
-      nullptr, nullptr,
+      nullptr,
        signaling_thread,
       nullptr, CreateBuiltinAudioEncoderFactory(),
       CreateBuiltinAudioDecoderFactory(),

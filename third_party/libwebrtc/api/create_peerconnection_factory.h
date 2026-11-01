@@ -51,6 +51,8 @@ CreatePeerConnectionFactory(
 
 
 
+[[deprecated(
+    "Use the CreatePeerConnectionFactory overload without worker_thread.")]]
 RTC_EXPORT scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     Thread* network_thread,
