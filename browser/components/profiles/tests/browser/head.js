@@ -178,3 +178,21 @@ const assertGlean = async (category, method, object, extra) => {
     object,
   });
 };
+
+
+
+const assertThemePickerThemeChange = async themeId => {
+  await Services.fog.testFlushAllChildren();
+  Assert.deepEqual(
+    Glean.themePicker.change.testGetValue()?.map(event => event.extra),
+    [
+      {
+        source: "profiles",
+        layout: "full",
+        property: "theme",
+        theme_id: themeId,
+      },
+    ],
+    "Should record one theme_picker.change event for the selected theme"
+  );
+};
