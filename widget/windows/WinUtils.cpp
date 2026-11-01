@@ -969,7 +969,7 @@ NS_IMETHODIMP AsyncDeleteAllFaviconsFromDisk::Run() {
 
 nsresult FaviconHelper::ObtainCachedIconFile(
     nsCOMPtr<nsIURI> aFaviconPageURI, nsString& aICOFilePath,
-    nsISerialEventTarget* aIOThread, bool aURLShortcut,
+    RefPtr<LazyIdleThread>& aIOThread, bool aURLShortcut,
     already_AddRefed<nsIRunnable> aRunnable) {
   nsCOMPtr<nsIRunnable> runnable = aRunnable;
   
@@ -1040,7 +1040,7 @@ nsresult FaviconHelper::ObtainCachedIconFile(
 
 
 auto FaviconHelper::ObtainCachedIconFileAsync(
-    nsCOMPtr<nsIURI> aFaviconPageURI, nsISerialEventTarget* aIOThread,
+    nsCOMPtr<nsIURI> aFaviconPageURI, RefPtr<LazyIdleThread>& aIOThread,
     FaviconHelper::IconCacheDir aCacheDir)
     -> RefPtr<ObtainCachedIconFileAsyncPromise> {
   bool useShortcutCacheDir =

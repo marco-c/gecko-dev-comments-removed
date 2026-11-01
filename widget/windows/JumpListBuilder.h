@@ -10,12 +10,9 @@
 #include <shobjidl.h>
 
 
-#include "MainThreadUtils.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/mscom/ApartmentRegion.h"
+#include "mozilla/LazyIdleThread.h"
 #include "nsIJumpListBuilder.h"
 #include "nsIObserver.h"
-#include "nsIThread.h"
 #include "nsProxyRelease.h"
 
 namespace mozilla {
@@ -63,18 +60,13 @@ class JumpListBuilder : public nsIJumpListBuilder, public nsIObserver {
   NS_DECL_NSIOBSERVER
 
   explicit JumpListBuilder(const nsAString& aAppUserModelId,
-                           bool aPrivateBrowsing = false,
                            RefPtr<JumpListBackend> aTestingBackend = nullptr);
 
  private:
-  void ShutdownIOThread() MOZ_REQUIRES(sMainThreadCapability);
-  void AssertIsOnIOThread() const;
-
   
-  void DoEnterApartment();
-  void DoTeardown();
   void DoSetupBackend();
   void DoSetupTestingBackend(RefPtr<JumpListBackend> aTestingBackend);
+  void DoShutdownBackend();
   void DoSetAppIDIfAvailable(nsString aAppUserModelID);
   void DoIsAvailable(const nsMainThreadPtrHandle<dom::Promise>& aPromiseHolder);
   void DoCheckForRemovals(
@@ -104,12 +96,7 @@ class JumpListBuilder : public nsIJumpListBuilder, public nsIObserver {
   RefPtr<JumpListBackend> mJumpListBackend;
 
   
-  
-  
-  UniquePtr<mscom::STARegion> mApartment;
-  nsCOMPtr<nsISerialEventTarget> mIOThreadForAssertions;
-
-  nsCOMPtr<nsIThread> mIOThread MOZ_GUARDED_BY(sMainThreadCapability);
+  RefPtr<LazyIdleThread> mIOThread;
 };
 
 }  
