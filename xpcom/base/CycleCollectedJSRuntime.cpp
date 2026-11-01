@@ -158,7 +158,7 @@ struct NoteWeakMapChildrenTracer
   bool mTracedAny;
   JSObject* mMap;
   JS::GCCellPtr mKey;
-  JSObject* mKeyDelegate;
+  JS::GCCellPtr mKeyDelegate;
 
  private:
   template <typename T>
@@ -193,13 +193,14 @@ bool NoteWeakMapChildrenTracer::onEdge(T** aThingPtr, const char* aName) {
 struct NoteWeakMapsTracer : public js::WeakMapTracer {
   NoteWeakMapsTracer(JSRuntime* aRt, nsCycleCollectionNoteRootCallback& aCccb)
       : js::WeakMapTracer(aRt), mCb(aCccb), mChildTracer(aRt, aCccb) {}
-  void trace(JSObject* aMap, JS::GCCellPtr aKey, JS::GCCellPtr aValue) override;
+  void trace(JSObject* aMap, JS::GCCellPtr aKey, JS::GCCellPtr aDelegate,
+             JS::GCCellPtr aValue) override;
   nsCycleCollectionNoteRootCallback& mCb;
   NoteWeakMapChildrenTracer mChildTracer;
 };
 
 void NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
-                               JS::GCCellPtr aValue) {
+                               JS::GCCellPtr aDelegate, JS::GCCellPtr aValue) {
   
   if ((!aKey || !JS::GCThingIsMarkedGrayInCC(aKey)) &&
       MOZ_LIKELY(!mCb.WantAllTraces())) {
@@ -209,7 +210,6 @@ void NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
     }
   }
 
-  
   
   
   
@@ -223,18 +223,13 @@ void NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
     aKey = nullptr;
   }
 
-  JSObject* kdelegate = nullptr;
-  if (aKey.is<JSObject>()) {
-    kdelegate = js::UncheckedUnwrapWithoutExpose(&aKey.as<JSObject>());
-  }
-
   if (JS::IsCCTraceKind(aValue.kind())) {
-    mCb.NoteWeakMapping(aMap, aKey, kdelegate, aValue);
+    mCb.NoteWeakMapping(aMap, aKey, aDelegate, aValue);
   } else {
     mChildTracer.mTracedAny = false;
     mChildTracer.mMap = aMap;
     mChildTracer.mKey = aKey;
-    mChildTracer.mKeyDelegate = kdelegate;
+    mChildTracer.mKeyDelegate = aDelegate;
 
     if (aValue && !aValue.is<JSString>()) {
       JS::TraceChildren(&mChildTracer, aValue);
@@ -243,8 +238,8 @@ void NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
     
     
     if (!mChildTracer.mTracedAny && aKey && JS::GCThingIsMarkedGrayInCC(aKey) &&
-        kdelegate) {
-      mCb.NoteWeakMapping(aMap, aKey, kdelegate, nullptr);
+        aDelegate) {
+      mCb.NoteWeakMapping(aMap, aKey, aDelegate, nullptr);
     }
   }
 }
@@ -252,6 +247,7 @@ void NoteWeakMapsTracer::trace(JSObject* aMap, JS::GCCellPtr aKey,
 
 
 static void ShouldWeakMappingEntryBeBlack(JSObject* aMap, JS::GCCellPtr aKey,
+                                          JS::GCCellPtr aDelegate,
                                           JS::GCCellPtr aValue,
                                           bool* aKeyShouldBeBlack,
                                           bool* aValueShouldBeBlack) {
@@ -270,10 +266,8 @@ static void ShouldWeakMappingEntryBeBlack(JSObject* aMap, JS::GCCellPtr aKey,
     aKey = nullptr;
   }
 
-  if (keyMightNeedMarking && aKey.is<JSObject>()) {
-    JSObject* kdelegate =
-        js::UncheckedUnwrapWithoutExpose(&aKey.as<JSObject>());
-    if (kdelegate && !JS::ObjectIsMarkedGray(kdelegate) &&
+  if (keyMightNeedMarking) {
+    if (aDelegate && !JS::GCThingIsMarkedGrayInCC(aDelegate) &&
         (!aMap || !JS::ObjectIsMarkedGray(aMap))) {
       *aKeyShouldBeBlack = true;
     }
@@ -298,12 +292,12 @@ struct FixWeakMappingGrayBitsTracer : public js::WeakMapTracer {
     } while (mAnyMarked);
   }
 
-  void trace(JSObject* aMap, JS::GCCellPtr aKey,
+  void trace(JSObject* aMap, JS::GCCellPtr aKey, JS::GCCellPtr aDelegate,
              JS::GCCellPtr aValue) override {
     bool keyShouldBeBlack;
     bool valueShouldBeBlack;
-    ShouldWeakMappingEntryBeBlack(aMap, aKey, aValue, &keyShouldBeBlack,
-                                  &valueShouldBeBlack);
+    ShouldWeakMappingEntryBeBlack(aMap, aKey, aDelegate, aValue,
+                                  &keyShouldBeBlack, &valueShouldBeBlack);
     if (keyShouldBeBlack && JS::UnmarkGrayGCThingRecursively(aKey)) {
       mAnyMarked = true;
     }
@@ -328,12 +322,12 @@ struct CheckWeakMappingGrayBitsTracer : public js::WeakMapTracer {
     return !tracer.mFailed;
   }
 
-  void trace(JSObject* aMap, JS::GCCellPtr aKey,
+  void trace(JSObject* aMap, JS::GCCellPtr aKey, JS::GCCellPtr aDelegate,
              JS::GCCellPtr aValue) override {
     bool keyShouldBeBlack;
     bool valueShouldBeBlack;
-    ShouldWeakMappingEntryBeBlack(aMap, aKey, aValue, &keyShouldBeBlack,
-                                  &valueShouldBeBlack);
+    ShouldWeakMappingEntryBeBlack(aMap, aKey, aDelegate, aValue,
+                                  &keyShouldBeBlack, &valueShouldBeBlack);
 
     if (keyShouldBeBlack) {
       fprintf(stderr, "Weak mapping key %p of map %p should be black\n",
