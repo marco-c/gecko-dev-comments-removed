@@ -1139,8 +1139,6 @@ add_task(
   {
     skip_if: () =>
       
-      !Services.prefs.getBoolPref("browser.nova.enabled", false) ||
-      
       
       Services.prefs.getBoolPref("browser.settings-redesign.enabled", false),
   },
