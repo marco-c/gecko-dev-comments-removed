@@ -16,8 +16,8 @@
 #ifndef SDK_MEDIA_CONSTRAINTS_H_
 #define SDK_MEDIA_CONSTRAINTS_H_
 
-#include <stddef.h>
-
+#include <cstddef>
+#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,8 +36,8 @@ class MediaConstraints {
  public:
   struct Constraint {
     Constraint() {}
-    Constraint(const std::string& key, const std::string value)
-        : key(key), value(value) {}
+    Constraint(std::string key, std::string value)
+        : key(std::move(key)), value(std::move(value)) {}
     std::string key;
     std::string value;
   };
