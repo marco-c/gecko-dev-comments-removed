@@ -5,12 +5,7 @@ var notificationURL =
 
 
 
-var expectedURL = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-)
-  ? "about:preferences#permissionsData"
-  : "about:preferences#privacy";
+var expectedURL = "about:preferences#permissionsData";
 
 add_task(async function test_settingsOpen_observer() {
   info(

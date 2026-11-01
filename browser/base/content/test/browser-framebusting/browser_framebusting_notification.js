@@ -174,16 +174,10 @@ async function checkToolbarAllowSite(tab) {
 async function checkToolbarManageSettings() {
   const blockedPopupOptions = document.getElementById("blockedPopupOptions");
   const manageSettingsItem = blockedPopupOptions.children[1];
-
-  
-  
-  const expectedUrl = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  )
-    ? "about:preferences#permissionsData"
-    : "about:preferences#privacy";
-  const promise = BrowserTestUtils.waitForLocationChange(gBrowser, expectedUrl);
+  const promise = BrowserTestUtils.waitForLocationChange(
+    gBrowser,
+    "about:preferences#permissionsData"
+  );
 
   info("Clicking manage settings item...");
   manageSettingsItem.click();

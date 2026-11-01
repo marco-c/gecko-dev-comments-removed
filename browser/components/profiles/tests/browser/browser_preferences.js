@@ -3,15 +3,8 @@
 
 "use strict";
 
-
-
-
-const SRD_ENABLED = Services.prefs.getBoolPref(
-  "browser.settings-redesign.enabled",
-  false
-);
-const PROFILES_PARENT_PANE = SRD_ENABLED ? "paneSync" : "paneGeneral";
-const PROFILES_PRIVACY_NOTE_PANE = SRD_ENABLED ? "permissionsData" : "privacy";
+const PROFILES_PARENT_PANE = "paneSync";
+const PROFILES_PRIVACY_NOTE_PANE = "permissionsData";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {

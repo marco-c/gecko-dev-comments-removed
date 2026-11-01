@@ -22,20 +22,11 @@ async function waitAndAssertPreferencesShown(_spotlight) {
     "Should open about:preferences."
   );
 
-  
-  
-  
   const srdSubcategoryMap = new Map([["trackingprotection", "etpStatus"]]);
-  const expectedSpotlight = Services.prefs.getBoolPref(
-    "browser.settings-redesign.enabled",
-    false
-  )
-    ? (srdSubcategoryMap.get(_spotlight) ?? _spotlight)
-    : _spotlight;
 
   await SpecialPowers.spawn(
     gBrowser.selectedBrowser,
-    [expectedSpotlight],
+    [srdSubcategoryMap.get(_spotlight) ?? _spotlight],
     async spotlight => {
       let doc = content.document;
       let section = await ContentTaskUtils.waitForCondition(
