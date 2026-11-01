@@ -399,7 +399,6 @@ CycleCollectedJSContext::saveJobQueue(JSContext* cx) {
   if (!saved) {
     
     
-    
     JS_ReportOutOfMemory(cx);
     return nullptr;
   }

@@ -1438,7 +1438,7 @@ void TestJSONTimeOutput() {
 #define TEST(in, out)                                     \
   do {                                                    \
     mozilla::baseprofiler::SpliceableJSONWriter writer(   \
-        std::make_unique<StringWriteFunc>(),              \
+        mozilla::MakeUnique<StringWriteFunc>(),           \
         FailureLatchInfallibleSource::Singleton());       \
     writer.Start();                                       \
     writer.TimeDoubleMsProperty("time_ms", (in));         \
@@ -1506,7 +1506,7 @@ void TestStreamPayloadHelperTimeDuration() {
 #define TEST(fmt, td, out)                                      \
   do {                                                          \
     mozilla::baseprofiler::SpliceableJSONWriter writer(         \
-        std::make_unique<StringWriteFunc>(),                    \
+        mozilla::MakeUnique<StringWriteFunc>(),                 \
         FailureLatchInfallibleSource::Singleton());             \
     writer.Start();                                             \
     StreamPayloadHelper<TimeDuration, MS::Format::fmt>::Stream( \
@@ -3117,7 +3117,7 @@ static void TestChunkedBufferSingle() {
   
   ProfileChunkedBuffer cbSingle(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex,
-      std::make_unique<ProfileBufferChunkManagerSingle>(chunkMinSize));
+      MakeUnique<ProfileBufferChunkManagerSingle>(chunkMinSize));
 
   MOZ_RELEASE_ASSERT(cbSingle.BufferLength().isSome());
   const ProfileChunkedBuffer::Length bufferBytes = *cbSingle.BufferLength();
@@ -3507,9 +3507,8 @@ void TestModuloBuffer() {
   TestModuloBuffer(mbByLength, MBSize);
 
   
-  auto uniqueBuffer = std::make_unique<uint8_t[]>(MBSize);
-  MB mbByUniquePtr(std::make_unique<uint8_t[]>(MBSize),
-                   MakePowerOfTwo32<MBSize>());
+  auto uniqueBuffer = MakeUnique<uint8_t[]>(MBSize);
+  MB mbByUniquePtr(MakeUnique<uint8_t[]>(MBSize), MakePowerOfTwo32<MBSize>());
   TestModuloBuffer(mbByUniquePtr, MBSize);
 
   
@@ -4485,7 +4484,8 @@ void StreamMarkers(const mozilla::ProfileChunkedBuffer& aBuffer,
 
 void PrintMarkers(const mozilla::ProfileChunkedBuffer& aBuffer) {
   mozilla::baseprofiler::SpliceableJSONWriter writer(
-      std::make_unique<mozilla::baseprofiler::OStreamJSONWriteFunc>(std::cout),
+      mozilla::MakeUnique<mozilla::baseprofiler::OStreamJSONWriteFunc>(
+          std::cout),
       FailureLatchInfallibleSource::Singleton());
   mozilla::baseprofiler::UniqueJSONStrings uniqueStrings{
       FailureLatchInfallibleSource::Singleton()};

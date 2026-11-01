@@ -179,7 +179,7 @@ MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(
           MakeAndAddRef<media::Refcountable<MediaTrackCapabilities>>()),
       mFirstFramePromise(mFirstFramePromiseHolder.Ensure(__func__)),
       mCalculation(kFitness),
-      mPrefs(std::make_unique<MediaEnginePrefs>()),
+      mPrefs(MakeUnique<MediaEnginePrefs>()),
       mMediaDevice(aMediaDevice),
       mDeviceUUID(NS_ConvertUTF16toUTF8(aMediaDevice->mRawID)) {
   LOG("{}", __PRETTY_FUNCTION__);
@@ -602,7 +602,7 @@ size_t MediaEngineRemoteVideoSource::NumCapabilities() const {
     
     
     
-    mCapabilities.AppendElement(std::make_unique<webrtc::CaptureCapability>());
+    mCapabilities.AppendElement(MakeUnique<webrtc::CaptureCapability>());
     mCapabilitiesAreHardcoded = true;
   }
 
@@ -614,7 +614,7 @@ webrtc::CaptureCapability& MediaEngineRemoteVideoSource::GetCapability(
   AssertIsOnOwningThread();
   MOZ_RELEASE_ASSERT(aIndex < mCapabilities.Length());
   if (!mCapabilities[aIndex]) {
-    mCapabilities[aIndex] = std::make_unique<webrtc::CaptureCapability>();
+    mCapabilities[aIndex] = MakeUnique<webrtc::CaptureCapability>();
     camera::GetChildAndCall(&camera::CamerasChild::GetCaptureCapability,
                             mCapEngine, mDeviceUUID.get(), aIndex,
                             mCapabilities[aIndex].get());

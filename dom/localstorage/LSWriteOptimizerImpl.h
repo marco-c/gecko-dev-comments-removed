@@ -25,12 +25,11 @@ void LSWriteOptimizer<T, U>::InsertItem(const nsAString& aKey, const T& aValue,
       
       
 
-      entry.Update(
-          std::make_unique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
-                                            true));
+      entry.Update(MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
+                                               true));
     } else {
       entry.InsertOrUpdate(
-          std::make_unique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
+          MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
     }
   });
 
@@ -45,11 +44,11 @@ void LSWriteOptimizer<T, U>::UpdateItem(const nsAString& aKey, const T& aValue,
   mWriteInfos.WithEntryHandle(aKey, [&](auto&& entry) {
     if (entry && entry.Data()->GetType() == WriteInfo::InsertItem) {
       entry.Update(
-          std::make_unique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
+          MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
     } else {
       entry.InsertOrUpdate(
-          std::make_unique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
-                                            false));
+          MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
+                                      false));
     }
   });
 

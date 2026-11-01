@@ -57,7 +57,7 @@ UniquePtr<SdpParser::Results> RsdparsaSdpParser::Parse(
                    rustOrigin.session_id, rustOrigin.session_version,
                    address.first, address.second);
 
-  auto sdp = std::make_unique<RsdparsaSdp>(std::move(uniqueResult), origin);
+  auto sdp = MakeUnique<RsdparsaSdp>(std::move(uniqueResult), origin);
 
   
   

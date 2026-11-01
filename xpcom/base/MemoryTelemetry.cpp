@@ -186,7 +186,7 @@ void MemoryTelemetry::Poke() {
   
   
   if (!mPokeWindow) {
-    mPokeWindow = std::make_unique<TimeStampWindow>();
+    mPokeWindow = MakeUnique<TimeStampWindow>();
   }
   mPokeWindow->push(now);
   if (mPokeWindow->numEvents() < kPokeWindowEvents) {

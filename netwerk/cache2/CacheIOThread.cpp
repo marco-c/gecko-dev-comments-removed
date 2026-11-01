@@ -139,7 +139,7 @@ nsresult CacheIOThread::Init() {
     MonitorAutoLock lock(mMonitor);
     
     
-    mNativeThreadHandle = std::make_unique<detail::NativeThreadHandle>();
+    mNativeThreadHandle = MakeUnique<detail::NativeThreadHandle>();
   }
 
   
@@ -330,7 +330,7 @@ void CacheIOThread::ThreadFunc() {
     mNativeThreadHandle->InitThread();
 
     auto queue =
-        MakeRefPtr<ThreadEventQueue>(std::make_unique<mozilla::EventQueue>());
+        MakeRefPtr<ThreadEventQueue>(MakeUnique<mozilla::EventQueue>());
     nsCOMPtr<nsIThread> xpcomThread =
         nsThreadManager::get().CreateCurrentThread(queue);
 

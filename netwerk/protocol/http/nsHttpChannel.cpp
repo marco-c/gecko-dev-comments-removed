@@ -1318,7 +1318,7 @@ NS_IMPL_QUERY_INTERFACE(AddResponseHeadersToResponseHead, nsIHttpHeaderVisitor)
 
 nsresult nsHttpChannel::HandleOverrideResponse() {
   
-  mResponseHead = std::make_unique<nsHttpResponseHead>();
+  mResponseHead = MakeUnique<nsHttpResponseHead>();
 
   
   uint32_t statusCode;
@@ -5350,7 +5350,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
       (gHttpHandler->SessionStartTime() > lastModifiedTime);
 
   
-  mCachedResponseHead = std::make_unique<nsHttpResponseHead>();
+  mCachedResponseHead = MakeUnique<nsHttpResponseHead>();
 
   rv = nsHttp::GetHttpResponseHeadFromCacheEntry(entry,
                                                  mCachedResponseHead.get());
@@ -5587,7 +5587,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     auto redirectedCachekeys = mRedirectedCachekeys.Lock();
     auto& ref = redirectedCachekeys.ref();
     if (!ref) {
-      ref = std::make_unique<nsTArray<nsCString>>();
+      ref = MakeUnique<nsTArray<nsCString>>();
     } else if (ref->Contains(cacheKey)) {
       doValidation = true;
     }

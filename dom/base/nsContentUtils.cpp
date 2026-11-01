@@ -12329,8 +12329,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       } else {
         NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
       }
-      (*aResult)->SetCustomElementData(
-          std::make_unique<CustomElementData>(typeAtom));
+      (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
       if (synchronousCustomElements) {
         
         
@@ -12428,7 +12427,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
     }
     (*aResult)->SetCustomElementData(
-        std::make_unique<CustomElementData>(definition->mType));
+        MakeUnique<CustomElementData>(definition->mType));
     
     
     nsContentUtils::EnqueueUpgradeReaction(*aResult, definition);
@@ -12460,8 +12459,7 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
   
   
   if (isCustomElement) {
-    (*aResult)->SetCustomElementData(
-        std::make_unique<CustomElementData>(typeAtom));
+    (*aResult)->SetCustomElementData(MakeUnique<CustomElementData>(typeAtom));
     if (aCustomElementRegistry.isSome()) {
       
       

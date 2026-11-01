@@ -269,8 +269,7 @@ ProcessOrDeferMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     case WM_DISPLAYCHANGE:
     case WM_SHOWWINDOW:  
     case WM_XP_THEMECHANGED: {
-      deferred =
-          std::make_unique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
+      deferred = MakeUnique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
       break;
     }
 
@@ -280,15 +279,13 @@ ProcessOrDeferMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     case WM_SETCURSOR: {
       
       res = TRUE;
-      deferred =
-          std::make_unique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
+      deferred = MakeUnique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
       break;
     }
 
     case WM_MOUSEACTIVATE: {
       res = MA_NOACTIVATE;
-      deferred =
-          std::make_unique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
+      deferred = MakeUnique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
       break;
     }
 
@@ -298,51 +295,49 @@ ProcessOrDeferMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     case WM_ERASEBKGND: {
       UINT flags = RDW_INVALIDATE | RDW_ERASE | RDW_NOINTERNALPAINT |
                    RDW_NOFRAME | RDW_NOCHILDREN | RDW_ERASENOW;
-      deferred = std::make_unique<DeferredRedrawMessage>(hwnd, flags);
+      deferred = MakeUnique<DeferredRedrawMessage>(hwnd, flags);
       break;
     }
 
     
     
     case WM_PAINT: {
-      deferred = std::make_unique<DeferredUpdateMessage>(hwnd);
+      deferred = MakeUnique<DeferredUpdateMessage>(hwnd);
       break;
     }
 
     
     case WM_SETTINGCHANGE: {
-      deferred = std::make_unique<DeferredSettingChangeMessage>(hwnd, uMsg,
-                                                                wParam, lParam);
+      deferred =
+          MakeUnique<DeferredSettingChangeMessage>(hwnd, uMsg, wParam, lParam);
       break;
     }
 
     
     case WM_WINDOWPOSCHANGED: {
-      deferred = std::make_unique<DeferredWindowPosMessage>(hwnd, lParam);
+      deferred = MakeUnique<DeferredWindowPosMessage>(hwnd, lParam);
       break;
     }
     case WM_NCCALCSIZE: {
-      deferred = std::make_unique<DeferredWindowPosMessage>(hwnd, lParam, true,
-                                                            wParam);
+      deferred =
+          MakeUnique<DeferredWindowPosMessage>(hwnd, lParam, true, wParam);
       break;
     }
 
     case WM_COPYDATA: {
       deferred =
-          std::make_unique<DeferredCopyDataMessage>(hwnd, uMsg, wParam, lParam);
+          MakeUnique<DeferredCopyDataMessage>(hwnd, uMsg, wParam, lParam);
       res = TRUE;
       break;
     }
 
     case WM_STYLECHANGED: {
-      deferred =
-          std::make_unique<DeferredStyleChangeMessage>(hwnd, wParam, lParam);
+      deferred = MakeUnique<DeferredStyleChangeMessage>(hwnd, wParam, lParam);
       break;
     }
 
     case WM_SETICON: {
-      deferred =
-          std::make_unique<DeferredSetIconMessage>(hwnd, uMsg, wParam, lParam);
+      deferred = MakeUnique<DeferredSetIconMessage>(hwnd, uMsg, wParam, lParam);
       break;
     }
 
@@ -390,8 +385,7 @@ ProcessOrDeferMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
       
       if (uMsg && uMsg == sAppShellGeckoMsgId) {
         
-        deferred =
-            std::make_unique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
+        deferred = MakeUnique<DeferredSendMessage>(hwnd, uMsg, wParam, lParam);
       }
     }
   }

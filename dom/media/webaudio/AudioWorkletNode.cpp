@@ -778,7 +778,7 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
   
   
   UniquePtr<StructuredCloneHolder> serializedOptions =
-      std::make_unique<StructuredCloneHolder>(
+      MakeUnique<StructuredCloneHolder>(
           StructuredCloneHolder::CloningSupported,
           StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcess);

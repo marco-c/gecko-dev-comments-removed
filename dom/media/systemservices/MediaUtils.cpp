@@ -161,7 +161,7 @@ class ShutdownBlockingTicketImpl : public ShutdownBlockingTicket {
     
     
     
-    return std::make_unique<ShutdownBlockingTicketImpl>(std::move(blocker));
+    return MakeUnique<ShutdownBlockingTicketImpl>(std::move(blocker));
   }
 
   ~ShutdownBlockingTicketImpl() {

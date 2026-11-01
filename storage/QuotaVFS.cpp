@@ -573,7 +573,7 @@ UniquePtr<sqlite3_vfs> ConstructVFS(const char* aBaseVFSName) {
     return nullptr;
   }
 
-  auto qvfs = std::make_unique<sqlite3_vfs>();
+  auto qvfs = MakeUnique<sqlite3_vfs>();
   memset(qvfs.get(), 0, sizeof(::sqlite3_vfs));
   
   

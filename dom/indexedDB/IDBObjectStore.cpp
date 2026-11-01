@@ -1940,7 +1940,7 @@ void IDBObjectStore::NoteDeletion() {
   }
 
   
-  mDeletedSpec = std::make_unique<ObjectStoreSpec>(*mSpec);
+  mDeletedSpec = MakeUnique<ObjectStoreSpec>(*mSpec);
   mDeletedSpec->indexes().Clear();
 
   mSpec = mDeletedSpec.get();

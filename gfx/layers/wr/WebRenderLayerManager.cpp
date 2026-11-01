@@ -127,7 +127,7 @@ bool WebRenderLayerManager::Initialize(
   WrBridge()->SetNamespace(idNamespace.ref());
   *aTextureFactoryIdentifier = textureFactoryIdentifier;
 
-  mDLBuilder = std::make_unique<wr::DisplayListBuilder>(
+  mDLBuilder = MakeUnique<wr::DisplayListBuilder>(
       WrBridge()->GetPipeline(), WrBridge()->GetWebRenderBackend());
 
   sHasInitialized = true;
@@ -346,7 +346,7 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   if (aRenderOffscreen) {
     wr::PipelineId mainId = WrBridge()->GetPipeline();
     wr::PipelineId tmpPipeline = gfx::GetTemporaryWebRenderPipelineId(mainId);
-    offscreenBuilder = std::make_unique<wr::DisplayListBuilder>(
+    offscreenBuilder = MakeUnique<wr::DisplayListBuilder>(
         tmpPipeline, WrBridge()->GetWebRenderBackend());
     diplayListBuilder = offscreenBuilder.get();
   }
@@ -656,7 +656,7 @@ void WebRenderLayerManager::WrUpdated() {
   
   
   
-  mDLBuilder = std::make_unique<wr::DisplayListBuilder>(
+  mDLBuilder = MakeUnique<wr::DisplayListBuilder>(
       WrBridge()->GetPipeline(), WrBridge()->GetWebRenderBackend());
   ClearAsyncAnimations();
   mStateManager.mAsyncResourceUpdates.reset();

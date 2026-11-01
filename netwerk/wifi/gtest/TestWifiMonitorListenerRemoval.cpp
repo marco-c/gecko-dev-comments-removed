@@ -102,8 +102,8 @@ class TestWifiMonitor {
   explicit TestWifiMonitor(bool aExpectOnChange) {
     
     
-    mWifiMonitor = MakeRefPtr<nsWifiMonitor>(
-        std::make_unique<MockWifiScanner>(aExpectOnChange));
+    mWifiMonitor =
+        MakeRefPtr<nsWifiMonitor>(MakeUnique<MockWifiScanner>(aExpectOnChange));
     mWifiMonitor->StartWatching(
         new MockWifiListener(mWifiMonitor, aExpectOnChange),
         false );

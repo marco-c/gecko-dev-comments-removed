@@ -111,7 +111,7 @@ class Buffer final {
 
 
   explicit Buffer(size_t aLength)
-      : mData(std::make_unique<T[]>(aLength)), mLength(aLength) {}
+      : mData(mozilla::MakeUnique<T[]>(aLength)), mLength(aLength) {}
 
   
 

@@ -577,7 +577,7 @@ class MediaPipelineTest : public ::testing::Test {
       
       
       if (!refinedFilter) {
-        refinedFilter = std::make_unique<MediaPipelineFilter>();
+        refinedFilter = MakeUnique<MediaPipelineFilter>();
         
         refinedFilter->AddRemoteSSRC(p1_.GetLocalSSRC());
       }
@@ -754,7 +754,7 @@ TEST_F(MediaPipelineTest, TestAudioSendMux) {
 }
 
 TEST_F(MediaPipelineTest, TestAudioSendBundle) {
-  auto filter = std::make_unique<MediaPipelineFilter>();
+  auto filter = MakeUnique<MediaPipelineFilter>();
   
   
   
@@ -773,15 +773,15 @@ TEST_F(MediaPipelineTest, TestAudioSendBundle) {
 }
 
 TEST_F(MediaPipelineTest, TestAudioSendEmptyBundleFilter) {
-  auto filter = std::make_unique<MediaPipelineFilter>();
-  auto bad_answer_filter = std::make_unique<MediaPipelineFilter>();
+  auto filter = MakeUnique<MediaPipelineFilter>();
+  auto bad_answer_filter = MakeUnique<MediaPipelineFilter>();
   TestAudioReceiverBundle(std::move(filter), std::move(bad_answer_filter));
   
   ASSERT_EQ(0, p2_.GetAudioRtpCountReceived());
 }
 
 TEST_F(MediaPipelineTest, TestAudioInactiveNoRecv) {
-  auto filter = std::make_unique<MediaPipelineFilter>();
+  auto filter = MakeUnique<MediaPipelineFilter>();
   TestAudioReceiverBundle(std::move(filter), nullptr,
                           {.activate_receive = false,
                            .ms_until_filter_update = 200,

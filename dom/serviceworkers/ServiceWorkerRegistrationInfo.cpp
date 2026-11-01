@@ -466,7 +466,7 @@ void ServiceWorkerRegistrationInfo::UpdateRegistrationState(
       }
     }
   }
-  mVersionList.AppendElement(std::make_unique<VersionEntry>(mDescriptor));
+  mVersionList.AppendElement(MakeUnique<VersionEntry>(mDescriptor));
 
   
   mDescriptor.SetVersion(GetNextVersion());

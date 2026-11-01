@@ -238,7 +238,7 @@ APZEventResult InputQueue::ReceiveTouchInput(
       result.SetStatusForTouchEvent(*block, aFlags, consumableFlags, target);
     }
   }
-  mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(aEvent, *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
 
   
@@ -328,7 +328,7 @@ APZEventResult InputQueue::ReceiveMouseInput(
 
   result.mInputBlockId = block->GetBlockId();
 
-  mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(aEvent, *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
 
   if (DragTracker::EndsDrag(aEvent)) {
@@ -377,7 +377,7 @@ APZEventResult InputQueue::ReceiveScrollWheelInput(
   
   
   
-  mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(aEvent, *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
 
   
   
@@ -415,7 +415,7 @@ APZEventResult InputQueue::ReceiveKeyboardInput(
 
   result.mInputBlockId = block->GetBlockId();
 
-  mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(aEvent, *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
 
   ProcessQueue();
 
@@ -450,8 +450,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
 
   if (aEvent.mType == PanGestureInput::PANGESTURE_INTERRUPTED) {
     if (RefPtr<PanGestureBlockState> block = mActivePanGestureBlock.get()) {
-      mQueuedInputs.AppendElement(
-          std::make_unique<QueuedInput>(aEvent, *block));
+      mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
       ProcessQueue();
     }
     result.SetStatusAsIgnore();
@@ -569,7 +568,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   
   
   
-  mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(event, *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(event, *block));
   if (terminateSynthesizedBlock) {
     
     
@@ -577,8 +576,7 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     terminator.mType = PanGestureInput::PANGESTURE_END;
     terminator.mPanDisplacement = ScreenPoint{};
     terminator.mLocalPanDisplacement = ParentLayerPoint{};
-    mQueuedInputs.AppendElement(
-        std::make_unique<QueuedInput>(terminator, *block));
+    mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(terminator, *block));
   }
   ProcessQueue();
 
@@ -627,7 +625,7 @@ APZEventResult InputQueue::ReceivePinchGestureInput(
   
   
   
-  mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(aEvent, *block));
+  mQueuedInputs.AppendElement(MakeUnique<QueuedInput>(aEvent, *block));
   ProcessQueue();
 
   return result;

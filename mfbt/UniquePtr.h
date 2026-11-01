@@ -14,7 +14,10 @@
 
 namespace mozilla {
 
-template <typename T, class D = std::default_delete<T>>
+template <typename T>
+using DefaultDelete = std::default_delete<T>;
+
+template <typename T, class D = DefaultDelete<T>>
 using UniquePtr = std::unique_ptr<T, D>;
 
 }  
@@ -39,6 +42,65 @@ struct UniqueSelector<T[N]> {
 };
 
 }  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename T, typename... Args>
+auto MakeUnique(Args&&... aArgs) {
+  return std::make_unique<T>(std::forward<Args>(aArgs)...);
+}
 
 
 

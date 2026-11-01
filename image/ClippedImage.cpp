@@ -274,7 +274,7 @@ std::pair<ImgDrawResult, RefPtr<SourceSurface>> ClippedImage::GetFrameInternal(
                                imgIContainer::FLAG_CLAMP);
 
     
-    mCachedSurface = std::make_unique<ClippedImageCachedSurface>(
+    mCachedSurface = MakeUnique<ClippedImageCachedSurface>(
         target->Snapshot(), aSize, aSVGContext, frameToDraw, aFlags,
         drawTileCallback->GetDrawResult());
   }

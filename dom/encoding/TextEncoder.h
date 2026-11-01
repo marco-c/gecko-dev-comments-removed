@@ -20,7 +20,7 @@ class TextEncoder final : public NonRefcountedDOMObject {
   
 
   static UniquePtr<TextEncoder> Constructor(const GlobalObject& aGlobal) {
-    return std::make_unique<TextEncoder>();
+    return MakeUnique<TextEncoder>();
   }
 
   TextEncoder() = default;

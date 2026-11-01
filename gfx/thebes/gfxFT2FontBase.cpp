@@ -130,7 +130,7 @@ uint32_t gfxFT2FontEntryBase::GetGlyph(uint32_t aCharCode,
   
   
   if (!mCmapCache) {
-    mCmapCache = std::make_unique<CmapCacheSlot[]>(kNumCmapCacheSlots);
+    mCmapCache = mozilla::MakeUnique<CmapCacheSlot[]>(kNumCmapCacheSlots);
 
     
     
@@ -809,7 +809,7 @@ gfxFT2FontBase::GlyphMetrics gfxFT2FontBase::GetCachedGlyphMetrics(
   AutoWriteLock lock(mLock);
   if (!mGlyphMetrics) {
     mGlyphMetrics =
-        std::make_unique<nsTHashMap<nsUint32HashKey, GlyphMetrics>>(128);
+        mozilla::MakeUnique<nsTHashMap<nsUint32HashKey, GlyphMetrics>>(128);
   }
 
   return mGlyphMetrics->LookupOrInsertWith(aGID, [&] {

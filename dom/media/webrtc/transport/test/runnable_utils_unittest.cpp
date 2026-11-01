@@ -320,7 +320,7 @@ TEST_F(DispatchTest, TestMove) {
 TEST_F(DispatchTest, TestUniquePtr) {
   
   int ran = 0;
-  auto cl = std::make_unique<TargetClass>(&ran);
+  auto cl = MakeUnique<TargetClass>(&ran);
 
   NS_DispatchAndSpinEventLoopUntilComplete(
       "DispatchTest::TestUniquePtr"_ns, target_,
@@ -330,7 +330,7 @@ TEST_F(DispatchTest, TestUniquePtr) {
   
   int destroyed = 0;
   {
-    auto state = std::make_unique<CtorDtorState>(&destroyed);
+    auto state = MakeUnique<CtorDtorState>(&destroyed);
 
     
     

@@ -770,7 +770,7 @@ NS_IMETHODIMP
 HttpBaseChannel::SetContentDispositionFilename(
     const nsAString& aContentDispositionFilename) {
   mContentDispositionFilename =
-      std::make_unique<nsString>(aContentDispositionFilename);
+      MakeUnique<nsString>(aContentDispositionFilename);
 
   
   
@@ -6782,7 +6782,7 @@ HttpBaseChannel::MaybeCloneResponseHeadForCachedResource() {
     return nullptr;
   }
 
-  return std::make_unique<nsHttpResponseHead>(*mResponseHead);
+  return MakeUnique<nsHttpResponseHead>(*mResponseHead);
 }
 
 void HttpBaseChannel::SetDummyChannelForCachedResource(
@@ -6791,9 +6791,9 @@ void HttpBaseChannel::SetDummyChannelForCachedResource(
   MOZ_ASSERT(!mResponseHead,
              "SetDummyChannelForCachedResource should only be called once");
   if (aMaybeResponseHead) {
-    mResponseHead = std::make_unique<nsHttpResponseHead>(*aMaybeResponseHead);
+    mResponseHead = MakeUnique<nsHttpResponseHead>(*aMaybeResponseHead);
   } else {
-    mResponseHead = std::make_unique<nsHttpResponseHead>();
+    mResponseHead = MakeUnique<nsHttpResponseHead>();
   }
 }
 

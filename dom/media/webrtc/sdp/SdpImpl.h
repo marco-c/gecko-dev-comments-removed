@@ -20,7 +20,7 @@ class SdpImpl : public Sdp {
  public:
   
   explicit SdpImpl(const SdpOrigin& origin)
-      : SdpImpl(origin, std::make_unique<SdpAttributeListImpl>(nullptr)) {}
+      : SdpImpl(origin, MakeUnique<SdpAttributeListImpl>(nullptr)) {}
 
   
   

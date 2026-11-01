@@ -133,7 +133,7 @@ struct UnwindInfo {
   
   UniquePtr<uint8_t[]> Copy() const {
     auto s = Size();
-    auto result = std::make_unique<uint8_t[]>(s);
+    auto result = MakeUnique<uint8_t[]>(s);
     std::memcpy(result.get(), reinterpret_cast<const void*>(this), s);
     return result;
   }

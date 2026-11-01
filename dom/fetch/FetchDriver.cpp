@@ -1390,7 +1390,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
     SRICheck::IntegrityMetadata(mRequest->GetIntegrity(), sourceUri, reporter,
                                 &mSRIMetadata);
     mSRIDataVerifier =
-        std::make_unique<SRICheckDataVerifier>(mSRIMetadata, channel, reporter);
+        MakeUnique<SRICheckDataVerifier>(mSRIMetadata, channel, reporter);
 
     
     return NS_OK;

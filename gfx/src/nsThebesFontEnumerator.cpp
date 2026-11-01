@@ -19,6 +19,7 @@
 #include "nsTArray.h"  
 #include "nscore.h"    
 
+using mozilla::MakeUnique;
 using mozilla::Runnable;
 using mozilla::UniquePtr;
 
@@ -153,7 +154,7 @@ nsThebesFontEnumerator::EnumerateFontsAsync(
     return errv.StealNSResult();
   }
 
-  auto enumerateFontsPromise = std::make_unique<EnumerateFontsPromise>(promise);
+  auto enumerateFontsPromise = MakeUnique<EnumerateFontsPromise>(promise);
 
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread("FontEnumThread", getter_AddRefs(thread));

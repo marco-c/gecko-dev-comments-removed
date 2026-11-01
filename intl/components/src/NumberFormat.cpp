@@ -14,7 +14,7 @@ namespace mozilla::intl {
 
  Result<UniquePtr<NumberFormat>, ICUError> NumberFormat::TryCreate(
     std::string_view aLocale, const NumberFormatOptions& aOptions) {
-  UniquePtr<NumberFormat> nf = std::make_unique<NumberFormat>();
+  UniquePtr<NumberFormat> nf = MakeUnique<NumberFormat>();
   Result<Ok, ICUError> result = nf->initialize(aLocale, aOptions);
   if (result.isOk()) {
     return nf;

@@ -158,8 +158,7 @@ class GradientCache final
         return nullptr;
       }
 
-      auto data =
-          std::make_unique<GradientCacheData>(stops, GradientCacheKey(&aKey));
+      auto data = MakeUnique<GradientCacheData>(stops, GradientCacheKey(&aKey));
       nsresult rv = sInstance->AddObjectLocked(data.get(), lock);
       if (NS_FAILED(rv)) {
         

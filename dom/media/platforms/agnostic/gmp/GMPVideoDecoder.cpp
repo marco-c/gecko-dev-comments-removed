@@ -422,7 +422,7 @@ RefPtr<MediaDataDecoder::DecodePromise> GMPVideoDecoder::Decode(
   
   
   mSamples.WithEntryHandle(frameTimestamp, [&](auto entryHandle) {
-    auto sampleData = std::make_unique<SampleMetadata>(sample);
+    auto sampleData = MakeUnique<SampleMetadata>(sample);
     entryHandle.InsertOrUpdate(std::move(sampleData));
   });
 

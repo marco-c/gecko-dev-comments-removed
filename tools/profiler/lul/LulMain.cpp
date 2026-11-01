@@ -933,7 +933,7 @@ void LUL::NotifyAfterMap(uintptr_t aRXavma, size_t aSize, const char* aFileName,
   if (aSize > 0) {
     
     mozilla::UniquePtr<SecMap> smap =
-        std::make_unique<SecMap>(aRXavma, (uint32_t)aSize, mLog);
+        mozilla::MakeUnique<SecMap>(aRXavma, (uint32_t)aSize, mLog);
 
     
     if (!aMappedImage) {

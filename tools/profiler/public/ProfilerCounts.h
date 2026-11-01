@@ -72,7 +72,6 @@ typedef mozilla::Atomic<uint64_t, mozilla::MemoryOrdering::Relaxed>
 
 
 
-
 class BaseProfilerCount {
  public:
   BaseProfilerCount(const char* aLabel, const char* aCategory,

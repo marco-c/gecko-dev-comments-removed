@@ -531,7 +531,7 @@ FFmpegAudioEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
   if (mPacketsDelivered++ == 0) {
     
     
-    data->mConfig = std::make_unique<EncoderConfig>(mConfig);
+    data->mConfig = MakeUnique<EncoderConfig>(mConfig);
   }
 
   if (data->mExtraData) {

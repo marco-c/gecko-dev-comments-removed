@@ -46,7 +46,7 @@ PrintTargetWindows::PrintTargetWindows(
   
   mRecorder->SetSupportsGlyphSourceText(true);
   RefPtr<DrawTarget> refDT = GetReferenceDrawTarget();
-  mTranslator = std::make_unique<InlineTranslator>(refDT);
+  mTranslator = MakeUnique<InlineTranslator>(refDT);
 }
 
 PrintTargetWindows::~PrintTargetWindows() = default;

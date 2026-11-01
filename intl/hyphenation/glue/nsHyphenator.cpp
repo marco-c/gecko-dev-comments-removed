@@ -168,7 +168,7 @@ static ipc::ReadOnlySharedMemoryHandle LoadFromURI(nsIURI* aURI,
 
   
   
-  auto buffer = std::make_unique<char[]>(available);
+  auto buffer = MakeUnique<char[]>(available);
   uint32_t bytesRead = 0;
   if (NS_FAILED(instream->Read(buffer.get(), available, &bytesRead)) ||
       bytesRead != available) {

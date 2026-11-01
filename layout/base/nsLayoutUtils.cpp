@@ -2908,7 +2908,7 @@ static void DumpBeforePaintDisplayList(UniquePtr<std::stringstream>& aStream,
     
     
     fprint_stderr(gfxUtils::sDumpPaintFile, *aStream);
-    aStream = std::make_unique<std::stringstream>();
+    aStream = MakeUnique<std::stringstream>();
   }
 }
 
@@ -3333,7 +3333,7 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
 
   UniquePtr<std::stringstream> ss;
   if (consoleNeedsDisplayList) {
-    ss = std::make_unique<std::stringstream>();
+    ss = MakeUnique<std::stringstream>();
     *ss << "Display list for " << uri << "\n";
     DumpBeforePaintDisplayList(ss, builder, list, visibleRect);
   }

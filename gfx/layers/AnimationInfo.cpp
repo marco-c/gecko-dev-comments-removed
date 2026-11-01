@@ -78,7 +78,7 @@ void AnimationInfo::ClearAnimations() {
 void AnimationInfo::ClearAnimationsForNextTransaction() {
   
   if (!mPendingAnimations) {
-    mPendingAnimations = std::make_unique<AnimationArray>();
+    mPendingAnimations = MakeUnique<AnimationArray>();
   }
 
   mPendingAnimations->Clear();

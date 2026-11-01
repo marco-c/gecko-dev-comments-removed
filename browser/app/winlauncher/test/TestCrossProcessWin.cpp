@@ -230,7 +230,7 @@ static DynamicBlockList ConvertStaticBlocklistToDynamic(
 
   
   UniquePtr<uint8_t[]> stringBuffer =
-      std::make_unique<uint8_t[]>(totalStringLen.value());
+      MakeUnique<uint8_t[]>(totalStringLen.value());
 
   
   const size_t stringBufferOffset = (originalLength + 1) * sizeof(DllBlockInfo);
@@ -238,7 +238,7 @@ static DynamicBlockList ConvertStaticBlocklistToDynamic(
   
   
   UniquePtr<DllBlockInfo[]> sortedBlockEntries =
-      std::make_unique<DllBlockInfo[]>(originalLength);
+      MakeUnique<DllBlockInfo[]>(originalLength);
   memcpy(sortedBlockEntries.get(), aBlockEntries,
          sizeof(DllBlockInfo) * originalLength);
   std::sort(sortedBlockEntries.get(), sortedBlockEntries.get() + originalLength,
@@ -307,7 +307,7 @@ static bool TestDependentModules() {
 
   constexpr size_t sizeInBytes =
       SharedSectionTestHelper::GetModulePathArraySize();
-  UniquePtr<uint8_t[]> bufferData = std::make_unique<uint8_t[]>(sizeInBytes);
+  UniquePtr<uint8_t[]> bufferData = MakeUnique<uint8_t[]>(sizeInBytes);
   Span<uint8_t> buffer(bufferData, sizeInBytes);
   memset(buffer.data(), 0x88, buffer.size());
 
