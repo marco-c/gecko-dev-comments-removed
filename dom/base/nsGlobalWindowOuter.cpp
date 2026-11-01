@@ -4094,13 +4094,11 @@ FullscreenTransitionTask::Run() {
     PROFILER_MARKER_UNTYPED("Fullscreen toggle start", DOM);
     mFullscreenChangeStartTime = TimeStamp::Now();
     
-    if (!mWindow->SetWidgetFullscreen(FullscreenReason::ForFullscreenAPI,
-                                      mFullscreen, mWidget)) {
-      
-      
-      const RefPtr<nsGlobalWindowOuter> win = mWindow;
-      win->FinishFullscreenChange(mFullscreen);
-    }
+    
+    
+    const RefPtr<nsGlobalWindowOuter> win = mWindow;
+    win->TryMakeWidgetFullscreen(FullscreenReason::ForFullscreenAPI,
+                                 mFullscreen, mWidget);
     
     nsCOMPtr<nsIObserver> observer = new Observer(this);
     nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -4183,8 +4181,10 @@ FullscreenTransitionTask::Observer::GetName(nsACString& aName) {
   return NS_OK;
 }
 
-static bool MakeWidgetFullscreen(nsGlobalWindowOuter* aWindow,
-                                 FullscreenReason aReason, bool aFullscreen) {
+
+
+MOZ_CAN_RUN_SCRIPT static bool MakeWidgetFullscreen(
+    nsGlobalWindowOuter* aWindow, FullscreenReason aReason, bool aFullscreen) {
   nsCOMPtr<nsIWidget> widget = aWindow->GetMainWidget();
   if (!widget) {
     return false;
@@ -4202,7 +4202,8 @@ static bool MakeWidgetFullscreen(nsGlobalWindowOuter* aWindow,
   }
 
   if (!performTransition) {
-    return aWindow->SetWidgetFullscreen(aReason, aFullscreen, widget);
+    aWindow->TryMakeWidgetFullscreen(aReason, aFullscreen, widget);
+    return true;
   }
 
   nsCOMPtr<nsIRunnable> task = new FullscreenTransitionTask(
@@ -4232,6 +4233,7 @@ nsresult nsGlobalWindowOuter::ProcessWidgetFullscreenRequest(
   if (!StaticPrefs::full_screen_api_ignore_widgets() &&
       !mForceFullScreenInWidget) {
     if (MakeWidgetFullscreen(this, aReason, aFullscreen)) {
+      
       
       
       
@@ -4379,9 +4381,9 @@ void nsGlobalWindowOuter::ForceFullScreenInWidget() {
   mForceFullScreenInWidget = true;
 }
 
-bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
-                                              bool aIsFullscreen,
-                                              nsIWidget* aWidget) {
+bool nsGlobalWindowOuter::TryMakeWidgetFullscreen(FullscreenReason aReason,
+                                                  bool aIsFullscreen,
+                                                  nsIWidget* aWidget) {
   MOZ_ASSERT(this == GetInProcessTopInternal(),
              "Only topmost window should call this");
   MOZ_ASSERT(!GetFrameElementInternal(), "Content window should not call this");
@@ -4405,7 +4407,20 @@ bool nsGlobalWindowOuter::SetWidgetFullscreen(FullscreenReason aReason,
                     
                     aWidget->MakeFullScreenWithNativeTransition(aIsFullscreen)
                     : aWidget->MakeFullScreen(aIsFullscreen);
-  return NS_SUCCEEDED(rv);
+  if (NS_FAILED(rv)) {
+    if (!NS_WARN_IF(!IsChromeWindow())) {
+      if (RefPtr<PresShell> presShell =
+              do_QueryReferent(mChromeFields.mFullscreenPresShell)) {
+        if (nsRefreshDriver* rd = presShell->GetRefreshDriver()) {
+          rd->Thaw();
+        }
+        mChromeFields.mFullscreenPresShell = nullptr;
+      }
+    }
+    FinishFullscreenChange(!aIsFullscreen);
+    return false;
+  }
+  return true;
 }
 
 
