@@ -25,16 +25,15 @@
 namespace mozilla {
 namespace gfx {
 
-PrintTargetWindows::PrintTargetWindows(cairo_surface_t* aCairoSurface,
-                                       const IntSize& aSize, HDC aDC)
-    : PrintTarget(aCairoSurface, aSize), mDC(aDC) {
+PrintTargetWindows::PrintTargetWindows(cairo_surface_t* aCairoSurface, HDC aDC)
+    : PrintTarget(aCairoSurface), mDC(aDC) {
   
   
 }
 
 PrintTargetWindows::PrintTargetWindows(
-    std::unique_ptr<SkGDI::Document> aDocument, const IntSize& aSize, HDC aDC)
-    : PrintTarget( nullptr, aSize),
+    std::unique_ptr<SkGDI::Document> aDocument, HDC aDC)
+    : PrintTarget( nullptr),
       mDC(aDC),
       mDocument(std::move(aDocument)),
       mRecorder(MakeRefPtr<DrawEventRecorderMemory>()) {
@@ -53,7 +52,6 @@ PrintTargetWindows::~PrintTargetWindows() = default;
 
 
 already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
-  
   
   
   
@@ -79,7 +77,7 @@ already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
     if (!doc) {
       return nullptr;
     }
-    return do_AddRef(new PrintTargetWindows(std::move(doc), size, aDC));
+    return do_AddRef(new PrintTargetWindows(std::move(doc), aDC));
   }
 
   cairo_surface_t* surface = cairo_win32_printing_surface_create(aDC);
@@ -89,8 +87,7 @@ already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
   }
 
   
-  RefPtr<PrintTargetWindows> target =
-      new PrintTargetWindows(surface, size, aDC);
+  RefPtr<PrintTargetWindows> target = new PrintTargetWindows(surface, aDC);
 
   return target.forget();
 }

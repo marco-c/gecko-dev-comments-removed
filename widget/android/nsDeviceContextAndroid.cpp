@@ -5,7 +5,7 @@
 #include "nsDeviceContextAndroid.h"
 
 #include "mozilla/RefPtr.h"
-#include "mozilla/gfx/PrintTargetPDF.h"
+#include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "nsAnonymousTemporaryFile.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -26,13 +26,6 @@ nsDeviceContextSpecAndroid::~nsDeviceContextSpecAndroid() {
 }
 
 already_AddRefed<PrintTarget> nsDeviceContextSpecAndroid::MakePrintTarget() {
-  double width, height;
-  mPrintSettings->GetEffectiveSheetSize(&width, &height);
-
-  
-  width /= TWIPS_PER_POINT_FLOAT;
-  height /= TWIPS_PER_POINT_FLOAT;
-
   auto stream = [&]() -> nsCOMPtr<nsIOutputStream> {
     if (mPrintSettings->GetOutputDestination() ==
         nsIPrintSettings::kOutputDestinationStream) {
@@ -53,7 +46,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecAndroid::MakePrintTarget() {
     return s;
   }();
 
-  return PrintTargetPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+  return PrintTargetSkPDF::CreateOrNull(stream);
 }
 
 NS_IMETHODIMP
@@ -65,7 +58,7 @@ nsDeviceContextSpecAndroid::Init(nsIPrintSettings* aPS, bool aIsPrintPreview) {
 NS_IMETHODIMP
 nsDeviceContextSpecAndroid::BeginDocument(const nsAString& aTitle,
                                           const nsAString& aPrintToFileName,
-                                          uint64_t aBrowsingContextId,
+                                          mozilla::dom::WindowContext*,
                                           int32_t aStartPage,
                                           int32_t aEndPage) {
   return NS_OK;

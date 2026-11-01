@@ -17,7 +17,7 @@
 #include "mozilla/StaticPrefs_print.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "mozilla/gfx/PrintPromise.h"
-#include "mozilla/gfx/PrintTargetPDF.h"
+#include "mozilla/gfx/PrintTargetSkPDF.h"
 #include "nsCUPSShim.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIFile.h"
@@ -40,7 +40,7 @@ using namespace mozilla;
 using mozilla::gfx::IntSize;
 using mozilla::gfx::PrintEndDocumentPromise;
 using mozilla::gfx::PrintTarget;
-using mozilla::gfx::PrintTargetPDF;
+using mozilla::gfx::PrintTargetSkPDF;
 
 nsDeviceContextSpecGTK::nsDeviceContextSpecGTK()
     : mGtkPrintSettings(nullptr), mGtkPageSetup(nullptr) {}
@@ -62,13 +62,6 @@ nsDeviceContextSpecGTK::~nsDeviceContextSpecGTK() {
 NS_IMPL_ISUPPORTS(nsDeviceContextSpecGTK, nsIDeviceContextSpec)
 
 already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
-  double width, height;
-  mPrintSettings->GetEffectiveSheetSize(&width, &height);
-
-  
-  width /= TWIPS_PER_POINT_FLOAT;
-  height /= TWIPS_PER_POINT_FLOAT;
-
   
   
   MOZ_ASSERT(!mSpoolFile);
@@ -105,7 +98,7 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
     return stream;
   }();
 
-  return PrintTargetPDF::CreateOrNull(stream, IntSize::Ceil(width, height));
+  return PrintTargetSkPDF::CreateOrNull(stream);
 }
 
 #define DECLARE_KNOWN_MONOCHROME_SETTING(key_, value_) {"cups-" key_, value_},
@@ -337,8 +330,8 @@ void nsDeviceContextSpecGTK::EnumeratePrinters() {
 NS_IMETHODIMP
 nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
                                       const nsAString& aPrintToFileName,
-                                      uint64_t aBrowsingContextId,
-                                      int32_t aStartPage, int32_t aEndPage) {
+                                      dom::WindowContext*, int32_t aStartPage,
+                                      int32_t aEndPage) {
   
   
   if (gtk_check_version(3, 18, 2) != nullptr) {

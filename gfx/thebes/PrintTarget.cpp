@@ -25,8 +25,8 @@
 
 namespace mozilla::gfx {
 
-PrintTarget::PrintTarget(cairo_surface_t* aCairoSurface, const IntSize& aSize)
-    : mCairoSurface(aCairoSurface), mSize(aSize) {
+PrintTarget::PrintTarget(cairo_surface_t* aCairoSurface)
+    : mCairoSurface(aCairoSurface) {
   
   
   
@@ -56,7 +56,6 @@ already_AddRefed<DrawTarget> PrintTarget::MakeDrawTarget(
     return nullptr;
   }
 
-  
   
   
   RefPtr<DrawTarget> dt =

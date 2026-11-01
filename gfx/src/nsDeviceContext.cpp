@@ -7,24 +7,24 @@
 #include <algorithm>  
 
 #include "gfxContext.h"
-#include "gfxPoint.h"    
-#include "gfxTextRun.h"  
+#include "gfxPoint.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_layout.h"
-#include "mozilla/Try.h"                
-#include "mozilla/dom/WindowContext.h"  
+#include "mozilla/Try.h"
+#include "mozilla/dom/WindowContext.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PrintTarget.h"
-#include "mozilla/widget/Screen.h"         
-#include "mozilla/widget/ScreenManager.h"  
-#include "nsDebug.h"                       
-#include "nsFontMetrics.h"                 
-#include "nsIDeviceContextSpec.h"          
-#include "nsIWidget.h"                     
-#include "nsRect.h"                        
-#include "nsTArray.h"                      
+#include "mozilla/widget/Screen.h"
+#include "mozilla/widget/ScreenManager.h"
+#include "nsDebug.h"
+#include "nsFontMetrics.h"
+#include "nsIDeviceContextSpec.h"
+#include "nsIPrintSettings.h"
+#include "nsIWidget.h"
+#include "nsRect.h"
+#include "nsTArray.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
@@ -369,7 +369,8 @@ already_AddRefed<widget::Screen> nsDeviceContext::FindScreen() {
 }
 
 bool nsDeviceContext::CalcPrintingSize() {
-  gfxSize size(mPrintTarget->GetSize());
+  const IntSize size =
+      mDeviceContextSpec->PrintSettings()->GetEffectiveSheetSizeInPoints();
   
   
   mWidth = NSToCoordRound(size.width * AppUnitsPerPhysicalInch() /

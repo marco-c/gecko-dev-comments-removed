@@ -46,6 +46,8 @@ class nsIDeviceContextSpec : public nsISupports {
 
   virtual already_AddRefed<PrintTarget> MakePrintTarget() = 0;
 
+  nsIPrintSettings* PrintSettings() const { return mPrintSettings; }
+
   
 
 

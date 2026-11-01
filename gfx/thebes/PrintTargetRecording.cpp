@@ -2,68 +2,18 @@
 
 
 
-
 #include "PrintTargetRecording.h"
 
 #include "cairo.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Logging.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
 
-PrintTargetRecording::PrintTargetRecording(cairo_surface_t* aCairoSurface,
-                                           const IntSize& aSize)
-    : PrintTarget(aCairoSurface, aSize) {}
+PrintTargetRecording::PrintTargetRecording() : PrintTarget(nullptr) {}
 
 
-already_AddRefed<PrintTargetRecording> PrintTargetRecording::CreateOrNull(
-    const IntSize& aSize) {
-  if (!Factory::CheckSurfaceSize(aSize)) {
-    return nullptr;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  cairo_surface_t* surface =
-      cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, nullptr);
-
-  if (cairo_surface_status(surface)) {
-    return nullptr;
-  }
-
-  
-  RefPtr<PrintTargetRecording> target =
-      new PrintTargetRecording(surface, aSize);
-
-  return target.forget();
+already_AddRefed<PrintTargetRecording> PrintTargetRecording::CreateOrNull() {
+  return do_AddRef(new PrintTargetRecording());
 }
 
 already_AddRefed<DrawTarget> PrintTargetRecording::MakeDrawTarget(
@@ -74,38 +24,17 @@ already_AddRefed<DrawTarget> PrintTargetRecording::MakeDrawTarget(
     return nullptr;
   }
 
-  RefPtr<DrawTarget> dt = PrintTarget::MakeDrawTarget(aSize, nullptr);
-  if (dt) {
-    dt = CreateRecordingDrawTarget(aRecorder, dt);
-    if (!dt || !dt->IsValid()) {
-      return nullptr;
-    }
-  }
-
-  return dt.forget();
+  RefPtr refDt = GetReferenceDrawTarget();
+  const IntRect rect(IntPoint(), aSize);
+  return gfx::Factory::CreateRecordingDrawTarget(aRecorder, refDt, rect);
 }
 
-already_AddRefed<DrawTarget> PrintTargetRecording::CreateRecordingDrawTarget(
-    DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget) {
-  MOZ_ASSERT(aRecorder);
-  MOZ_ASSERT(aDrawTarget);
-
-  RefPtr<DrawTarget> dt;
-
-  if (aRecorder) {
-    
-    dt = gfx::Factory::CreateRecordingDrawTarget(aRecorder, aDrawTarget,
-                                                 aDrawTarget->GetRect());
+already_AddRefed<DrawTarget> PrintTargetRecording::GetReferenceDrawTarget() {
+  if (!mRefDT) {
+    mRefDT = gfx::Factory::CreateDrawTarget(BackendType::SKIA, IntSize(1, 1),
+                                            SurfaceFormat::B8G8R8A8);
   }
-
-  if (!dt || !dt->IsValid()) {
-    gfxCriticalNote
-        << "Failed to create a recording DrawTarget for PrintTarget";
-    return nullptr;
-  }
-
-  return dt.forget();
+  return do_AddRef(mRefDT);
 }
 
-}  
 }  

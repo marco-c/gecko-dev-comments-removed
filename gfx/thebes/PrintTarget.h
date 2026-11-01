@@ -69,18 +69,7 @@ class PrintTarget {
 
   virtual void Finish();
 
-  const IntSize& GetSize() const { return mSize; }
-
   
-
-
-
-
-
-
-
-
-
 
 
 
@@ -126,7 +115,7 @@ class PrintTarget {
 
  protected:
   
-  explicit PrintTarget(cairo_surface_t* aCairoSurface, const IntSize& aSize);
+  explicit PrintTarget(cairo_surface_t* aCairoSurface);
 
   
   virtual ~PrintTarget();
@@ -137,7 +126,6 @@ class PrintTarget {
   cairo_surface_t* mCairoSurface;
   RefPtr<DrawTarget> mRefDT;  
 
-  IntSize mSize;
   bool mIsFinished = false;
 #ifdef DEBUG
   bool mHasActivePage = false;
