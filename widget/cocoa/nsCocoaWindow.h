@@ -670,6 +670,7 @@ class nsCocoaWindow final : public nsIWidget {
   
   
   bool mHasStartedNativeFullscreen;
+  bool mIsWaitingForFullscreenVisibility = false;
 
   bool mModal = false;
   bool mIsAnimationSuppressed = false;

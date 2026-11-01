@@ -5036,6 +5036,8 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   EndOurNativeTransition();
 
+  mIsWaitingForFullscreenVisibility = false;
+
   
   
   
@@ -6462,6 +6464,9 @@ void nsCocoaWindow::CocoaWindowWillEnterFullscreen(bool aFullscreen) {
 void nsCocoaWindow::CocoaWindowDidEnterFullscreen(bool aFullscreen) {
   EndOurNativeTransition();
   mHasStartedNativeFullscreen = false;
+  
+  mIsWaitingForFullscreenVisibility =
+      !([mWindow occlusionState] & NSWindowOcclusionStateVisible);
   DispatchOcclusionEvent();
 
   bool restoreKeyToPlayer = false;
@@ -7264,11 +7269,17 @@ void nsCocoaWindow::DispatchOcclusionEvent() {
       !mInFullScreenMode && !mHasStartedNativeFullscreen &&
       ([mWindow isKeyWindow] || [mWindow isMainWindow]);
 
+  bool isVisible = [mWindow occlusionState] & NSWindowOcclusionStateVisible;
+  if (mIsWaitingForFullscreenVisibility &&
+      (isVisible || ![NSApp isActive] || ![mWindow isKeyWindow])) {
+    mIsWaitingForFullscreenVisibility = false;
+  }
+
   
-  bool newOcclusionState =
-      !IsOcclusionTrackingDisabledByEnv() && !keyOrMainNonFullscreen &&
-      !(mHasStartedNativeFullscreen ||
-        ([mWindow occlusionState] & NSWindowOcclusionStateVisible));
+  bool newOcclusionState = !IsOcclusionTrackingDisabledByEnv() &&
+                           !keyOrMainNonFullscreen &&
+                           !(mHasStartedNativeFullscreen ||
+                             mIsWaitingForFullscreenVisibility || isVisible);
 
   
   
@@ -8126,6 +8137,10 @@ LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   RollUpPopups(nsIRollupListener::AllowAnimations::No);
+
+  if (mGeckoWindow) {
+    mGeckoWindow->DispatchOcclusionEvent();
+  }
 
   ChildViewMouseTracker::ReEvaluateMouseEnterState();
   TextInputHandler::EnsureSecureEventInputDisabled();

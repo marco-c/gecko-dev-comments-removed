@@ -4,35 +4,21 @@ const { AppMenuNotifications } = ChromeUtils.importESModule(
   "resource://gre/modules/AppMenuNotifications.sys.mjs"
 );
 
-function waitForDocshellActivated() {
-  return SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
-    
-    
-    
-    
-    await ContentTaskUtils.waitForEvent(
-      content.document,
-      "visibilitychange",
-      true ,
-      () => {
-        return content.browsingContext.isActive;
+async function waitForFullscreen() {
+  let browser = gBrowser.selectedBrowser;
+  await BrowserTestUtils.waitForEvent(window, "fullscreen");
+  if (Services.appinfo.OS === "Darwin") {
+    await SpecialPowers.spawn(browser, [], async () => {
+      if (!content.browsingContext.isActive) {
+        await ContentTaskUtils.waitForEvent(
+          content.document,
+          "visibilitychange",
+          true,
+          () => content.browsingContext.isActive
+        );
       }
-    );
-  });
-}
-
-function waitForFullscreen() {
-  return Promise.all([
-    BrowserTestUtils.waitForEvent(window, "fullscreen"),
-    
-    
-    
-    
-    
-    Services.appinfo.OS === "Darwin"
-      ? waitForDocshellActivated()
-      : Promise.resolve(),
-  ]);
+    });
+  }
 }
 
 add_task(async function testFullscreen() {
