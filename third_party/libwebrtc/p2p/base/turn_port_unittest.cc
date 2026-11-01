@@ -25,8 +25,10 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/environment/environment.h"
+#include "api/local_network_access_permission.h"
 #include "api/packet_socket_factory.h"
 #include "api/test/mock_async_dns_resolver.h"
+#include "api/test/mock_local_network_access_permission.h"
 #include "api/test/rtc_error_matchers.h"
 #include "api/transport/ecn_marking.h"
 #include "api/transport/stun.h"
@@ -78,6 +80,7 @@ using ::testing::_;
 using ::testing::Eq;
 using ::testing::IsTrue;
 using ::testing::Ne;
+using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::ReturnPointee;
 
@@ -291,6 +294,7 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
     args.config = &config;
     args.turn_customizer = turn_customizer_.get();
     args.ice_tiebreaker = kTiebreakerDefault;
+    args.lna_permission_factory = lna_permission_factory_.get();
 
     turn_port_ = TurnPort::Create(args, 0, 0);
     if (!turn_port_) {
@@ -643,6 +647,55 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
         SocketAddress(ipv6 ? "::" : "0.0.0.0", TURN_SERVER_PORT));
   }
 
+  
+  
+  
+  
+  
+  void TestTurnAlternateServerLocalNetworkAccess(
+      ProtocolType protocol_type,
+      LocalNetworkAccessPermissionStatus status) {
+    auto lna_permission_factory =
+        std::make_unique<MockLocalNetworkAccessPermissionFactory>();
+    EXPECT_CALL(*lna_permission_factory, Create()).WillRepeatedly([status] {
+      auto permission =
+          std::make_unique<NiceMock<MockLocalNetworkAccessPermission>>();
+      ON_CALL(*permission, ShouldRequestPermission(kTurnAlternateIntAddr))
+          .WillByDefault(Return(true));
+      ON_CALL(*permission, RequestPermission(_, _))
+          .WillByDefault(
+              [status](
+                  const SocketAddress& ,
+                  absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>
+                      callback) {
+                Thread::Current()->PostTask(
+                    [callback = std::move(callback), status]() mutable {
+                      std::move(callback)(status);
+                    });
+              });
+      return permission;
+    });
+    lna_permission_factory_ = std::move(lna_permission_factory);
+
+    std::vector<SocketAddress> redirect_addresses;
+    redirect_addresses.push_back(kTurnAlternateIntAddr);
+    TestTurnRedirector redirector(redirect_addresses);
+
+    turn_server_.AddInternalSocket(kTurnIntAddr, protocol_type);
+    turn_server_.AddInternalSocket(kTurnAlternateIntAddr, protocol_type);
+    turn_server_.set_redirect_hook(&redirector);
+    CreateTurnPort(kTurnUsername, kTurnPassword,
+                   ProtocolAddress(kTurnIntAddr, protocol_type));
+
+    turn_port_->PrepareAddress();
+    const bool granted = status == LocalNetworkAccessPermissionStatus::kGranted;
+    EXPECT_TRUE(
+        WaitUntil([&] { return granted ? turn_ready_ : turn_error_; },
+                  {.timeout = TimeToGetAlternateTurnCandidate(protocol_type),
+                   .clock = &time_controller_}));
+    EXPECT_EQ(granted ? 1U : 0U, turn_port_->Candidates().size());
+  }
+
   void TestTurnConnection(ProtocolType protocol_type) {
     
     PrepareTurnAndUdpPorts(protocol_type);
@@ -926,6 +979,9 @@ class TurnPortTest : public ::testing::Test, public TurnPort::CallbacksForTest {
   Thread* main_;
   std::unique_ptr<AsyncPacketSocket> socket_;
   TestTurnServer turn_server_;
+  
+  std::unique_ptr<LocalNetworkAccessPermissionFactoryInterface>
+      lna_permission_factory_;
   std::unique_ptr<TurnPort> turn_port_;
   std::unique_ptr<UDPPort> udp_port_;
   bool turn_ready_ = false;
@@ -1692,6 +1748,80 @@ TEST_F(TurnPortTest, TestTurnAlternateServerAnyAddressTlsIpv6) {
 
 
 
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessGrantedUDP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_UDP, LocalNetworkAccessPermissionStatus::kGranted);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessGrantedTCP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_TCP, LocalNetworkAccessPermissionStatus::kGranted);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessDeniedUDP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_UDP, LocalNetworkAccessPermissionStatus::kDenied);
+}
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessDeniedTCP) {
+  TestTurnAlternateServerLocalNetworkAccess(
+      PROTO_TCP, LocalNetworkAccessPermissionStatus::kDenied);
+}
+
+
+
+
+TEST_F(TurnPortTest, TestTurnAlternateServerLocalNetworkAccessSocketClosedUDP) {
+  absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>
+      permission_callback;
+  auto lna_permission_factory =
+      std::make_unique<MockLocalNetworkAccessPermissionFactory>();
+  EXPECT_CALL(*lna_permission_factory, Create())
+      .WillRepeatedly([&permission_callback] {
+        auto permission =
+            std::make_unique<NiceMock<MockLocalNetworkAccessPermission>>();
+        ON_CALL(*permission, ShouldRequestPermission(kTurnAlternateIntAddr))
+            .WillByDefault(Return(true));
+        
+        ON_CALL(*permission, RequestPermission(_, _))
+            .WillByDefault(
+                [&permission_callback](
+                    const SocketAddress& ,
+                    absl::AnyInvocable<void(LocalNetworkAccessPermissionStatus)>
+                        callback) {
+                  permission_callback = std::move(callback);
+                });
+        return permission;
+      });
+  lna_permission_factory_ = std::move(lna_permission_factory);
+
+  std::vector<SocketAddress> redirect_addresses;
+  redirect_addresses.push_back(kTurnAlternateIntAddr);
+  TestTurnRedirector redirector(redirect_addresses);
+
+  turn_server_.AddInternalSocket(kTurnIntAddr, PROTO_UDP);
+  turn_server_.AddInternalSocket(kTurnAlternateIntAddr, PROTO_UDP);
+  turn_server_.set_redirect_hook(&redirector);
+  CreateTurnPort(kTurnUsername, kTurnPassword,
+                 ProtocolAddress(kTurnIntAddr, PROTO_UDP));
+
+  turn_port_->PrepareAddress();
+  ASSERT_TRUE(WaitUntil([&] { return permission_callback != nullptr; },
+                        {.timeout = TimeToGetAlternateTurnCandidate(PROTO_UDP),
+                         .clock = &time_controller_}));
+
+  turn_port_->socket()->NotifyClosedForTest(1);
+  std::move(permission_callback)(LocalNetworkAccessPermissionStatus::kGranted);
+  EXPECT_FALSE(turn_port_->HasRequests());
+
+  time_controller_.AdvanceTime(TimeToGetTurnCandidate(PROTO_UDP));
+  EXPECT_TRUE(turn_error_);
+  EXPECT_FALSE(turn_ready_);
+  EXPECT_EQ(turn_port_->Candidates().size(), 0U);
+}
+
+
+
 
 
 TEST_F(TurnPortTest, TestTurnConnection) {
@@ -2255,6 +2385,12 @@ TEST_F(TurnPortTest, TestTurnDangerousAlternateServer) {
   
   EXPECT_FALSE(turn_ready_);
   ASSERT_EQ(0U, turn_port_->Candidates().size());
+}
+
+
+
+TEST_F(TurnPortTest, TestTurnDangerousAlternateServerUDP) {
+  TestTurnAlternateServerBlocked(PROTO_UDP, false, kTurnDangerousAddr);
 }
 
 class TurnPortWithMockDnsResolverTest : public TurnPortTest {

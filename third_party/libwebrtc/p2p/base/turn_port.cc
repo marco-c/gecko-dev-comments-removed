@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
@@ -392,9 +393,16 @@ void TurnPort::PrepareAddress() {
       static_cast<int>(server_address_.address.GetIPAddressType()),
       static_cast<int>(IPAddressType::kMaxValue));
 
+  MaybeRequestLocalNetworkAccessPermissionForServer(
+      [this] { OnLocalNetworkAccessPermissionGranted(); });
+}
+
+void TurnPort::MaybeRequestLocalNetworkAccessPermissionForServer(
+    absl::AnyInvocable<void() &&> on_granted) {
   MaybeRequestLocalNetworkAccessPermission(
       server_address_.address,
-      [this](LocalNetworkAccessPermissionStatus status) {
+      [this, on_granted = std::move(on_granted)](
+          LocalNetworkAccessPermissionStatus status) mutable {
         if (status != LocalNetworkAccessPermissionStatus::kGranted) {
           RTC_LOG(LS_ERROR)
               << ToString() << ": Permission denied to connect to TURN server "
@@ -405,7 +413,7 @@ void TurnPort::PrepareAddress() {
           return;
         }
 
-        OnLocalNetworkAccessPermissionGranted();
+        std::move(on_granted)();
       });
 }
 
@@ -871,6 +879,16 @@ bool TurnPort::SetAlternateServer(const SocketAddress& address) {
     return false;
   }
 
+  
+  
+  
+  if (!AllowedTurnPort(address.port())) {
+    RTC_LOG(LS_WARNING) << ToString()
+                        << ": Blocking attempted redirect to disallowed port# "
+                        << address.port();
+    return false;
+  }
+
   RTC_LOG(LS_INFO) << ToString() << ": Redirecting from TURN server ["
                    << server_address_.address.ToSensitiveNameAndAddressString()
                    << "] to TURN server ["
@@ -1047,7 +1065,16 @@ void TurnPort::TryAlternateServer() {
   if (server_address().proto == PROTO_UDP) {
     
     
-    SendRequest(new TurnAllocateRequest(this), 0);
+    
+    MaybeRequestLocalNetworkAccessPermissionForServer([this] {
+      
+      if (!connected()) {
+        return;
+      }
+      
+      
+      SendRequest(new TurnAllocateRequest(this), 0);
+    });
   } else {
     
     
