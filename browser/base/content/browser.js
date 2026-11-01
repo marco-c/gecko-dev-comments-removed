@@ -4527,6 +4527,8 @@ class TabDialogBox {
 
 
 
+
+
   open(
     aURL,
     {
@@ -4538,6 +4540,7 @@ class TabDialogBox {
       allowFocusCheckbox = false,
       hideContent = false,
       webProgress = undefined,
+      triggeringEvent,
     } = {},
     ...aParams
   ) {
@@ -4581,6 +4584,7 @@ class TabDialogBox {
         closingCallback,
         closedCallback: resolveClosed,
         hideContent,
+        triggeringEvent,
       },
       ...aParams
     );
@@ -4781,7 +4785,13 @@ var gDialogBox = {
     this._nextOpenJumpsQueue = true;
   },
 
-  async open(uri, args) {
+  
+
+
+
+
+
+  async open(uri, args, triggeringEvent) {
     
     const queueMethod = this._nextOpenJumpsQueue ? "unshift" : "push";
     this._nextOpenJumpsQueue = false;
@@ -4790,7 +4800,13 @@ var gDialogBox = {
     
     if (this.isOpen) {
       return new Promise((resolve, reject) => {
-        this._queued[queueMethod]({ resolve, reject, uri, args });
+        this._queued[queueMethod]({
+          resolve,
+          reject,
+          uri,
+          args,
+          triggeringEvent,
+        });
       });
     }
 
@@ -4819,7 +4835,7 @@ var gDialogBox = {
     }
 
     try {
-      await this._open(uri, args);
+      await this._open(uri, args, triggeringEvent);
     } catch (ex) {
       console.error(ex);
     } finally {
@@ -4850,8 +4866,9 @@ var gDialogBox = {
 
   _openNextDialog() {
     if (!this.isOpen) {
-      let { resolve, reject, uri, args } = this._queued.shift();
-      this.open(uri, args).then(resolve, reject);
+      let { resolve, reject, uri, args, triggeringEvent } =
+        this._queued.shift();
+      this.open(uri, args, triggeringEvent).then(resolve, reject);
     }
   },
 
@@ -4867,7 +4884,7 @@ var gDialogBox = {
     }
   },
 
-  _open(uri, args) {
+  _open(uri, args, triggeringEvent) {
     
     
     let offset = window.windowUtils.getBoundsWithoutFlushing(
@@ -4914,6 +4931,7 @@ var gDialogBox = {
         closedCallback: () => {
           this._closedCallback();
         },
+        triggeringEvent,
       },
       args
     );
