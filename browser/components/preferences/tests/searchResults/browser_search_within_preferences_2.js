@@ -8,85 +8,12 @@
 
 
 
-add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("paneSync", { leaveOpen: true });
-
-  let weavePrefsDeck =
-    gBrowser.contentDocument.getElementById("weavePrefsDeck");
-  is(
-    weavePrefsDeck.selectedIndex,
-    0,
-    "Should select the #noFxaAccount child node"
-  );
-
-  
-  let searchInput = gBrowser.contentDocument.getElementById("searchInput");
-
-  is(
-    searchInput,
-    gBrowser.contentDocument.activeElement.closest("#searchInput"),
-    "Search input should be focused when visiting preferences"
-  );
-
-  let query = "Sync";
-  let searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow,
-    "PreferencesSearchCompleted",
-    evt => evt.detail == query
-  );
-  EventUtils.sendString(query);
-  await searchCompletedPromise;
-
-  let mainPrefTag = gBrowser.contentDocument.getElementById("mainPrefPane");
-  for (let i = 0; i < mainPrefTag.childElementCount; i++) {
-    let child = mainPrefTag.children[i];
-    if (child.id == "header-searchResults" || child.id == "weavePrefsDeck") {
-      is_element_visible(child, "Should be in search results");
-    } else if (child.id) {
-      is_element_hidden(child, "Should not be in search results");
-    }
-  }
-
-  
-  let unlinkFxaAccount = weavePrefsDeck.children[1].querySelector(
-    "#unverifiedUnlinkFxaAccount"
-  );
-  is(
-    unlinkFxaAccount.label,
-    "Remove Account",
-    "The Remove Account button should exist"
-  );
-
-  
-  searchInput.focus();
-  query = "Remove Account";
-  searchCompletedPromise = BrowserTestUtils.waitForEvent(
-    gBrowser.contentWindow,
-    "PreferencesSearchCompleted",
-    evt => evt.detail == query
-  );
-  EventUtils.sendString(query);
-  await searchCompletedPromise;
-
-  let noResultsEl = gBrowser.contentDocument.querySelector(
-    "#no-results-message"
-  );
-  is_element_visible(noResultsEl, "Should be reporting no results");
-
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-});
-
-
-
-
-
-
 
 
 add_task(async function () {
-  let l10nId = "language-and-appearance-header";
+  let l10nId = "language-header";
 
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("about", {
     leaveOpen: true,
   });
 
@@ -126,7 +53,7 @@ add_task(async function () {
 
   
 
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("about", {
     leaveOpen: true,
   });
 
@@ -175,7 +102,7 @@ add_task(async function () {
 
 
 add_task(async function testSearchShadowDOM() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("about", {
     leaveOpen: true,
   });
 
@@ -213,7 +140,7 @@ add_task(async function testSearchShadowDOM() {
 
 
 add_task(async function testSearchLightDOM() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI("about", {
     leaveOpen: true,
   });
 
@@ -259,7 +186,7 @@ function createMozCustomElements(gBrowser, elements = MOZ_CUSTOM_ELEMENTS) {
     return el;
   });
   let [toggle, radioGroup, radioButton, ...rest] = mozElements;
-  let protectionsGroup = doc.getElementById("trackingGroup");
+  let importGroup = doc.querySelector("[groupid='importBrowserData']");
 
   if (toggle) {
     let link = doc.createElement("a");
@@ -267,15 +194,15 @@ function createMozCustomElements(gBrowser, elements = MOZ_CUSTOM_ELEMENTS) {
     link.textContent = LIGHT_DOM_TEXT;
     toggle.append(link);
     link.slot = "support-link";
-    protectionsGroup.append(toggle);
+    importGroup.append(toggle);
   }
 
   if (radioGroup && radioButton) {
     radioGroup.appendChild(radioButton);
-    protectionsGroup.append(radioGroup);
+    importGroup.append(radioGroup);
   }
 
-  protectionsGroup.append(...rest);
+  importGroup.append(...rest);
 
   return { SHADOW_DOM_TEXT, LIGHT_DOM_TEXT, mozElements };
 }
