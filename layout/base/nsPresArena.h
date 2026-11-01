@@ -54,6 +54,12 @@ class nsPresArena {
 
   void AssertNoLiveAllocations();
 
+  
+
+
+
+  void SortFreeLists();
+
  private:
   class FreeList {
    public:
@@ -108,6 +114,7 @@ class StaticPresArena {
     sInstance.AddSizeOfExcludingThis(aState, aSizes, aKind);
   }
   static void AssertNoLiveAllocations() { sInstance.AssertNoLiveAllocations(); }
+  static void SortFreeLists() { sInstance.SortFreeLists(); }
 
  private:
   static Arena sInstance;

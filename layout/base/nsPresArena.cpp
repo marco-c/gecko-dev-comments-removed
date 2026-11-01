@@ -9,6 +9,9 @@
 
 #include <inttypes.h>
 
+#include <algorithm>
+#include <functional>
+
 #include "js/MemoryMetrics.h"
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Poison.h"
@@ -120,6 +123,15 @@ void nsPresArena<ArenaSize, ObjectId,
   
   mAllocatedPointers = nullptr;
 #endif
+}
+
+template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
+void nsPresArena<ArenaSize, ObjectId, ObjectIdCount>::SortFreeLists() {
+  for (FreeList& list : mFreeLists) {
+    
+    std::sort(list.mEntries.begin(), list.mEntries.end(),
+              std::greater<void*>());
+  }
 }
 
 template <size_t ArenaSize, typename ObjectId, size_t ObjectIdCount>
