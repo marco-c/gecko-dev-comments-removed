@@ -46,10 +46,6 @@ nsresult XULStoreIterator::GetNext(nsAString* item) {
   return xulstore_iter_get_next(this, item);
 }
 
-void DefaultDelete<XULStoreIterator>::operator()(XULStoreIterator* ptr) const {
-  xulstore_iter_free(ptr);
-}
-
 namespace XULStore {
 already_AddRefed<nsIXULStore> GetService() {
   nsCOMPtr<nsIXULStore> xulStore;
@@ -81,7 +77,9 @@ nsresult RemoveValue(const nsAString& doc, const nsAString& id,
                      const nsAString& attr) {
   return xulstore_remove_value(&doc, &id, &attr);
 }
-nsresult GetIDs(const nsAString& doc, UniquePtr<XULStoreIterator>& iter) {
+nsresult GetIDs(
+    const nsAString& doc,
+    std::unique_ptr<XULStoreIterator, XULStoreIterator::Deleter>& iter) {
   
   
   
@@ -91,8 +89,9 @@ nsresult GetIDs(const nsAString& doc, UniquePtr<XULStoreIterator>& iter) {
   iter.reset(xulstore_get_ids(&doc, &result));
   return result;
 }
-nsresult GetAttrs(const nsAString& doc, const nsAString& id,
-                  UniquePtr<XULStoreIterator>& iter) {
+nsresult GetAttrs(
+    const nsAString& doc, const nsAString& id,
+    std::unique_ptr<XULStoreIterator, XULStoreIterator::Deleter>& iter) {
   
   
   
@@ -106,3 +105,8 @@ nsresult Shutdown() { return xulstore_shutdown(); }
 
 };  
 };  
+
+void std::default_delete<XULStoreIterator>::operator()(
+    mozilla::XULStoreIterator* ptr) const {
+  xulstore_iter_free(ptr);
+}

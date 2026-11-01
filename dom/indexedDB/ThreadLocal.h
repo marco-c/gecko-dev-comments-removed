@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_indexeddb_threadlocal_h_
 #define mozilla_dom_indexeddb_threadlocal_h_
 
@@ -18,7 +16,7 @@ class IDBFactory;
 namespace indexedDB {
 
 class ThreadLocal {
-  friend DefaultDelete<ThreadLocal>;
+  friend std::default_delete<ThreadLocal>;
   friend IDBFactory;
 
   LoggingInfo mLoggingInfo;
