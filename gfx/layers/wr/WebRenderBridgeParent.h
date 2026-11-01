@@ -264,6 +264,13 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
     return aFontKey.mNamespace == mLateInit->mIdNamespace;
   }
 
+  
+  
+  
+  
+  already_AddRefed<WebRenderBridgeParent> FindSnapshotSourceBridge(
+      const wr::IdNamespace& aNamespace);
+
   bool OwnsExternalImageId(const wr::ExternalImageId& aId) const {
     return static_cast<uint32_t>(wr::AsUint64(aId) >> 32) ==
            mLateInit->mIdNamespace.mHandle;
