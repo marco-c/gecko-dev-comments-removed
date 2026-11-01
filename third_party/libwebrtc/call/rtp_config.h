@@ -20,6 +20,7 @@
 
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
+#include "call/sframe_options.h"
 
 namespace webrtc {
 
@@ -137,6 +138,9 @@ struct RtpConfig {
   
   
   bool raw_payload = false;
+
+  
+  SframeSendOptions sframe_options;
 
   
   std::vector<RtpStreamConfig> stream_configs;

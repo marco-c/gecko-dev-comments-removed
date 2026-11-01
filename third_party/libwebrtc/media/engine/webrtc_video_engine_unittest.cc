@@ -3194,6 +3194,37 @@ TEST_F(WebRtcVideoChannelTest, SetsSyncGroupFromSyncLabel) {
       << "SyncGroup should be set based on sync_label";
 }
 
+
+TEST_F(WebRtcVideoChannelTest, SframeDisabledByDefault) {
+  FakeVideoSendStream* send_stream = AddSendStream();
+  EXPECT_FALSE(send_stream->GetConfig().rtp.sframe_options.required);
+}
+
+
+
+TEST_F(WebRtcVideoChannelTest, EnableSframePropagatesToSendStreamConfig) {
+  send_channel_->EnableSframe();
+  FakeVideoSendStream* stream = AddSendStream();
+  EXPECT_TRUE(stream->GetConfig().rtp.sframe_options.required);
+}
+
+
+
+TEST_F(WebRtcVideoChannelTest, EnableSframeOnExistingSendStreamIsIdempotent) {
+  AddSendStream();
+  ASSERT_EQ(fake_call_->GetNumCreatedSendStreams(), 1);
+
+  send_channel_->EnableSframe();
+  ASSERT_EQ(fake_call_->GetNumCreatedSendStreams(), 2);
+  EXPECT_TRUE(fake_call_->GetVideoSendStreams()[0]
+                  ->GetConfig()
+                  .rtp.sframe_options.required);
+
+  send_channel_->EnableSframe();
+  send_channel_->EnableSframe();
+  EXPECT_EQ(fake_call_->GetNumCreatedSendStreams(), 2);
+}
+
 TEST_F(WebRtcVideoChannelTest, RecvStreamWithSimAndRtx) {
   VideoSenderParameters parameters;
   parameters.codecs = engine_->LegacySendCodecs();

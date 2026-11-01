@@ -91,6 +91,8 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
     scoped_refptr<FrameTransformerInterface> frame_transformer;
     TaskQueueFactory* task_queue_factory = nullptr;
     bool raw_packetization = false;
+    
+    bool sframe_required = false;
   };
 
   explicit RTPSenderVideo(const Config& config);
@@ -272,6 +274,8 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
   
   
   const bool require_frame_encryption_;
+  
+  const bool sframe_required_;
   
   const bool generic_descriptor_auth_experiment_;
 
