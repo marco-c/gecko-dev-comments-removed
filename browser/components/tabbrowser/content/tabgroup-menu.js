@@ -20,6 +20,8 @@
   ChromeUtils.defineESModuleGetters(lazy, {
     AIWindow:
       "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+    AIWindowMenu:
+      "moz-src:///browser/components/aiwindow/ui/modules/AIWindowMenu.sys.mjs",
   });
 
   ChromeUtils.importESModule(
@@ -391,13 +393,6 @@
         "browser.ml.enable",
         true,
         this.#onSmartTabGroupsPrefChange.bind(this)
-      );
-
-      XPCOMUtils.defineLazyPreferenceGetter(
-        this,
-        "aitabEnabled",
-        "browser.smartwindow.aitab.enabled",
-        false
       );
     }
 
@@ -1035,13 +1030,11 @@
 
       this.#commandButtons.shareTabGroup.hidden =
         !ContentSharingUtils.isEnabled;
-      this.#commandButtons.createAITab.hidden = !(
-        this.aitabEnabled &&
-        lazy.AIWindow.isAIWindowActiveAndEnabled(window) &&
-        this.activeGroup?.tabs.some(tab =>
-          ["http", "https"].includes(tab.linkedBrowser.currentURI.scheme)
-        )
-      );
+      this.#commandButtons.createAITab.hidden =
+        !lazy.AIWindowMenu.canShowAITabMenu(
+          window,
+          this.activeGroup?.tabs.map(tab => tab.linkedBrowser.currentURI) ?? []
+        );
     }
 
     on_popuphidden() {
@@ -1077,7 +1070,7 @@
 
     on_keypress(event) {
       if (event.defaultPrevented) {
-        
+        // The event has already been consumed inside of the panel.
         return;
       }
 
@@ -1086,8 +1079,8 @@
           this.close(false);
           break;
         case KeyEvent.DOM_VK_RETURN:
-          
-          
+          // When focus is on a button, we need to let that handle the Enter key,
+          // which should ultimately close the panel as well.
           if (
             event.target.localName != "toolbarbutton" &&
             event.target.localName != "moz-button"
@@ -1215,31 +1208,31 @@
       this.#suggestionsOptin.headingIcon = "";
       this.#suggestionsOptin.isLoading = true;
 
-      // Init progress with value to show determiniate progress
+      
       this.#suggestionsOptin.progressStatus = 0;
       const runToken = Date.now();
       this.#suggestionsRunToken = runToken;
       await this.#smartTabGroupingManager.preloadAllModels(prog => {
         this.#suggestionsOptin.progressStatus = prog.percentage;
       });
-      // Clean up optin UI
+      
       this.#setFormToDisabled(false);
       this.#suggestionsOptin.isHidden = true;
       this.#suggestionsOptin.isLoading = false;
 
       if (runToken !== this.#suggestionsRunToken) {
-        // User has canceled
+        
         return;
       }
 
-      // Continue on with the suggest flow
+      
       this.#handleMLOptinTelemetry("step3-optin-completed");
       this.#initMlGroupLabel();
       this.#handleSmartSuggest();
     }
 
     async #handleSmartSuggest() {
-      // Loading
+      
       const runToken = Date.now();
       this.#suggestionsRunToken = runToken;
 
@@ -1249,17 +1242,17 @@
         gBrowser.tabs
       );
       if (this.#suggestionsRunToken != runToken) {
-        // User has canceled
+        
         return;
       }
       if (!tabs.length) {
-        // No un-grouped tabs found
+        
         this.suggestionState = this.#createMode
           ? MozTabbrowserTabGroupMenu.State.CREATE_AI_WITH_NO_SUGGESTIONS
           : MozTabbrowserTabGroupMenu.State.EDIT_AI_WITH_NO_SUGGESTIONS;
 
-        // there's no "save" button from the edit ai interaction with
-        // no tab suggestions, so we need to capture here
+        
+        
         if (!this.#createMode) {
           this.#hasSuggestedMlTabs = true;
           this.#handleMlTelemetry("save");
@@ -1280,11 +1273,11 @@
       this.#hasSuggestedMlTabs = true;
     }
 
-    /**
-     * Sends Glean metrics if smart tab grouping is enabled
-     *
-     * @param {string} action "save", "save-popup-hidden" or "cancel"
-     */
+    
+
+
+
+
     #handleMlTelemetry(action) {
       if (!this.smartTabGroupsEnabled || !this.smartTabGroupsOptin) {
         return;
