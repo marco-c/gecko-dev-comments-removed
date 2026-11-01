@@ -357,8 +357,13 @@ bool RenderCompositor::CaptureScreenPixelsFromGL(
   const bool needsYFlip = aFramebufferOrigin != gl::OriginPos::TopLeft;
   gl::ScopedBindFramebuffer scopedBind(aGL);
 
-  if (!aGL->IsSupported(gl::GLFeature::framebuffer_blit)) {
-    
+  const bool canBlit =
+      aGL->IsSupported(gl::GLFeature::framebuffer_blit) &&
+      aGL->IsExtensionSupported(gl::GLContext::OES_EGL_image) &&
+      egl->IsExtensionSupported(gl::EGLExtension::KHR_fence_sync) &&
+      egl->IsExtensionSupported(gl::EGLExtension::ANDROID_native_fence_sync);
+
+  if (!canBlit) {
     
     
     
