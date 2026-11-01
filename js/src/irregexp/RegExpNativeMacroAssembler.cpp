@@ -75,6 +75,10 @@ SMRegExpMacroAssembler::SMRegExpMacroAssembler(JSContext* cx,
     
     temp2_ = regs.takeAny();
   }
+  if (!regs.empty()) {
+    
+    backtrack_stack_limit_ = regs.takeAny();
+  }
   savedRegisters_ = js::jit::SavedNonVolatileRegisters(regs);
 
   masm_.jump(&entry_label_);  
@@ -1074,10 +1078,15 @@ void SMRegExpMacroAssembler::JumpOrBacktrack(Label* to) {
 
 void SMRegExpMacroAssembler::CheckBacktrackStackLimit() {
   js::jit::Label no_stack_overflow;
-  masm_.branchPtr(
-      Assembler::Below,
-      AbsoluteAddress(ExternalReference::RegexpStackLimit(isolate())),
-      backtrack_stack_pointer_, &no_stack_overflow);
+  if (backtrack_stack_limit_ != js::jit::InvalidReg) {
+    masm_.branchPtr(Assembler::Below, backtrack_stack_limit_,
+                    backtrack_stack_pointer_, &no_stack_overflow);
+  } else {
+    masm_.branchPtr(
+        Assembler::Below,
+        AbsoluteAddress(ExternalReference::RegexpStackLimit(isolate())),
+        backtrack_stack_pointer_, &no_stack_overflow);
+  }
 
   masm_.call(&stack_overflow_label_);
 
@@ -1322,9 +1331,7 @@ void SMRegExpMacroAssembler::initFrameAndRegs() {
   
   
   
-  masm_.loadPtr(
-      AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())),
-      backtrack_stack_pointer_);
+  LoadBacktrackStackRegsFromMemory();
   
   
   masm_.subPtr(backtrack_stack_pointer_, temp1_);
@@ -1583,9 +1590,18 @@ void SMRegExpMacroAssembler::LoadBacktrackStackFromMemory(
   masm_.loadPtr(AbsoluteAddress(ExternalReference::TopOfRegexpStack(isolate())),
                 backtrack_stack_pointer_);
   masm_.storePtr(backtrack_stack_pointer_, backtrackStackBaseAddr);
+  LoadBacktrackStackRegsFromMemory();
+}
+
+void SMRegExpMacroAssembler::LoadBacktrackStackRegsFromMemory() {
   masm_.loadPtr(
       AbsoluteAddress(ExternalReference::RegexpStackPointer(isolate())),
       backtrack_stack_pointer_);
+  if (backtrack_stack_limit_ != js::jit::InvalidReg) {
+    masm_.loadPtr(
+        AbsoluteAddress(ExternalReference::RegexpStackLimit(isolate())),
+        backtrack_stack_limit_);
+  }
 }
 
 

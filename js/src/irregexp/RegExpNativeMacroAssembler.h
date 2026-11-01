@@ -69,6 +69,11 @@
 
 
 
+
+
+
+
+
 namespace v8 {
 namespace internal {
 namespace regexp {
@@ -227,6 +232,7 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
   void StoreBacktrackStackToMemory();
   void LoadBacktrackStackFromMemory(js::jit::Address backtrackStackBaseAddr);
+  void LoadBacktrackStackRegsFromMemory();
 
  public:
   static bool GrowBacktrackStack(Stack* regexp_stack);
@@ -319,11 +325,14 @@ class SMRegExpMacroAssembler final : public NativeRegExpMacroAssembler {
 
 
 
+
+
   js::jit::Register current_character_;
   js::jit::Register current_position_;
   js::jit::Register input_end_pointer_;
   js::jit::Register backtrack_stack_pointer_;
   js::jit::Register temp0_, temp1_, temp2_;
+  js::jit::Register backtrack_stack_limit_;
 
   
   
