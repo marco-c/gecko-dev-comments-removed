@@ -30,11 +30,25 @@ add_task(async () => {
   while (true) {
     let request = await PingServer.promiseNextRequest();
     if (request.path.includes("test-ohttp-ping")) {
-      ping = decodeRequestPayload(request);
+      
+      
+      ok(
+        request instanceof Ci.nsIBinaryHttpRequest,
+        "OHTTP uses bhttp under the hood."
+      );
+      ping = await decodeRequestPayload(request);
       break;
     }
   }
 
+  
   ok(!("client_info" in ping), "No client_info allowed.");
   ok(!("ping_info" in ping), "No ping_info allowed.");
+
+  
+  deepEqual(
+    ping.metrics.string_list["glean.ping.uploader_capabilities"],
+    ["ohttp"],
+    "Must have required OHTTP uploader capability."
+  );
 });
