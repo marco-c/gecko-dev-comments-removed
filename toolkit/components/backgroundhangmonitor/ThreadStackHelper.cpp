@@ -16,6 +16,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ChromeScriptPath.h"
 #include "mozilla/HangTypes.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
@@ -220,35 +221,6 @@ bool IsChromeJSScript(JSScript* aScript) {
   return nsJSPrincipals::get(principals)->IsSystemPrincipal();
 }
 
-
-
-template <size_t LEN>
-const char* GetFullPathForScheme(const char* filename,
-                                 const char (&scheme)[LEN]) {
-  
-  if (!strncmp(filename, scheme, LEN - 1)) {
-    return filename + LEN - 1;
-  }
-  return nullptr;
-}
-
-
-
-template <size_t LEN>
-const char* GetPathAfterComponent(const char* filename,
-                                  const char (&component)[LEN]) {
-  const char* found = nullptr;
-  const char* next = strstr(filename, component);
-  while (next) {
-    
-    
-    found = next + LEN - 1;
-    
-    next = strstr(found - 1, component);
-  }
-  return found;
-}
-
 }  
 
 bool ThreadStackHelper::MaybeAppendDynamicStackFrame(Span<const char> aBuf) {
@@ -349,33 +321,7 @@ void ThreadStackHelper::CollectProfilingStackFrame(
 
   unsigned lineno = JS_PCToLineNumber(aFrame.script(), aFrame.pc());
 
-  
-  
-  const char* basename = GetPathAfterComponent(filename, " -> ");
-  if (basename) {
-    filename = basename;
-  }
-
-  
-  basename = GetFullPathForScheme(filename, "chrome://");
-  if (!basename) {
-    basename = GetFullPathForScheme(filename, "resource://");
-  }
-  if (!basename) {
-    
-    
-    basename = GetPathAfterComponent(filename, "/extensions/");
-  }
-  if (!basename) {
-    
-    basename = strrchr(filename, '/');
-    basename = basename ? basename + 1 : filename;
-    
-    filename = strrchr(basename, '\\');
-    if (filename) {
-      basename = filename + 1;
-    }
-  }
+  const char* basename = GetReportableChromeScriptPath(filename);
 
   len +=
       SprintfBuf(buffer + len, sizeof(buffer) - len, "%s:%u", basename, lineno);
