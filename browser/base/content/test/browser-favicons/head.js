@@ -21,7 +21,7 @@ function waitForFaviconMessage(isTabIcon = undefined, expectedURL = undefined) {
       }
 
       
-      if (isTabIcon != undefined && isTabIcon == data.isRichIcon) {
+      if (isTabIcon != undefined && isTabIcon != data.isTabIcon) {
         return;
       }
 
