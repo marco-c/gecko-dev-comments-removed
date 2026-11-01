@@ -3,6 +3,7 @@
 
 
 
+import gc
 import os
 import re
 import shutil
@@ -255,6 +256,11 @@ def generate_tasks(
         except ParameterMismatch as e:
             print(PARAMETER_MISMATCH.format(e.args[0]))
             sys.exit(1)
+
+        
+        
+        
+        gc.freeze()
 
         
         key = cache_key(
