@@ -1773,28 +1773,33 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  auto getClampPosition = [&](uint32_t aClampCount) -> BalanceTarget {
-    if (NS_WARN_IF(aClampCount >= mLines.size())) {
+  auto getClampPosition = [&]() -> BalanceTarget {
+    if ((!HasLineClampEllipsis() && !HasLineClampEllipsisDescendant()) ||
+        LineClampIsClampedToZero()) {
       return BalanceTarget{};
     }
-    auto iter = mLines.begin();
-    for (uint32_t i = 0; i < aClampCount; i++) {
-      ++iter;
+    for (LineClampLineIterator iter(this, this);
+         nsLineBox* line = iter.GetCurrentLine(); iter.Next()) {
+      
+      
+      
+      if (line->IsEmpty()) {
+        continue;
+      }
+      if (line->HasLineClampEllipsis()) {
+        
+        iter.Next();
+        line = iter.GetCurrentLine();
+
+        nsIFrame* firstChild = line->mFirstChild;
+        if (firstChild && firstChild->IsTextFrame()) {
+          auto* textFrame = static_cast<nsTextFrame*>(firstChild);
+          return BalanceTarget{textFrame->GetContent(),
+                               textFrame->GetContentOffset(), line->BStart()};
+        }
+      }
     }
-    nsIFrame* firstChild = iter->mFirstChild;
-    if (!firstChild) {
-      return BalanceTarget{};
-    }
-    nsIContent* content = firstChild->GetContent();
-    if (!content) {
-      return BalanceTarget{};
-    }
-    int32_t offset = 0;
-    if (firstChild->IsTextFrame()) {
-      auto* textFrame = static_cast<nsTextFrame*>(firstChild);
-      offset = textFrame->GetContentOffset();
-    }
-    return BalanceTarget{content, offset, iter.get()->BStart()};
+    return BalanceTarget{};
   };
 
   
@@ -1845,13 +1850,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       if (StaticPrefs::layout_css_text_wrap_balance_after_clamp_enabled() &&
           IsLineClampRoot(this)) {
-        uint32_t lineClampCount =
-            GetLineClampMaxLines(aReflowInput.mStyleDisplay->mWebkitLineClamp);
-        if (uint32_t(balanceTarget.mOffset) > lineClampCount) {
-          auto t = getClampPosition(lineClampCount);
-          if (t.mContent) {
-            balanceTarget = t;
-          }
+        BalanceTarget lineClampBalanceTarget = getClampPosition();
+        if (lineClampBalanceTarget != BalanceTarget{}) {
+          balanceTarget = lineClampBalanceTarget;
         }
       }
 
@@ -1867,8 +1868,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         return false;
       }
       if (balanceTarget.mContent) {
-        auto t = getClampPosition(
-            GetLineClampMaxLines(aReflowInput.mStyleDisplay->mWebkitLineClamp));
+        auto t = getClampPosition();
         return t == balanceTarget;
       }
       int32_t numLines =
