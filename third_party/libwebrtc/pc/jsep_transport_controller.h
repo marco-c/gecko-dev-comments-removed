@@ -162,6 +162,14 @@ class JsepTransportController final {
   
   
   
+  struct TransportStateSnapshot {
+    uint64_t version = 0;
+    flat_map<std::string, TransportState> states;
+  };
+
+  
+  
+  
   
   JsepTransportController(
       const Environment& env,
@@ -263,10 +271,11 @@ class JsepTransportController final {
   std::optional<SSLRole> GetDtlsRole(absl::string_view mid) const;
 
   
-  void SetTransportStates(flat_map<std::string, TransportState> states);
+  
+  void SetTransportStates(TransportStateSnapshot snapshot);
 
   
-  flat_map<std::string, TransportState> GetTransportStates_n();
+  TransportStateSnapshot GetTransportStates_n();
 
   bool GetStats(absl::string_view transport_name, TransportStats* stats) const;
 
@@ -473,8 +482,9 @@ class JsepTransportController final {
 
   BundleManager bundles_;
 
-  flat_map<std::string, TransportState> transport_states_
-      RTC_GUARDED_BY(signaling_thread_);
+  
+  uint64_t transport_states_version_n_ RTC_GUARDED_BY(network_thread_) = 0;
+  TransportStateSnapshot transport_states_ RTC_GUARDED_BY(signaling_thread_);
 
   scoped_refptr<PendingTaskSafetyFlag> role_update_safety_flag_s_
       RTC_GUARDED_BY(signaling_thread_);

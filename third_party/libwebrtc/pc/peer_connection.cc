@@ -1636,7 +1636,7 @@ RTCError PeerConnection::SetConfiguration(
   
   
   
-  flat_map<std::string, JsepTransportController::TransportState> new_states;
+  JsepTransportController::TransportStateSnapshot new_states;
   if (!network_thread()->BlockingCall([&] {
         RTC_DCHECK_RUN_ON(network_thread());
         
