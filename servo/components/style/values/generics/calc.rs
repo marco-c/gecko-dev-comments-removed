@@ -640,16 +640,7 @@ pub trait CalcNodeLeaf: Clone + Sized + PartialEq + ToCss + ToTyped + fmt::Debug
 
     
     fn sign_from(leaf: &impl CalcNodeLeaf) -> Result<Self, ()> {
-        
-        
-        if leaf
-            .as_percentage()
-            .is_some_and(|(_, hint)| hint != Optional::Some(NumericBaseType::Percent))
-        {
-            return Err(());
-        }
-
-        let Some(value) = leaf.unitless_value() else {
+        let Some(value) = leaf.canonical_value() else {
             return Err(());
         };
 
