@@ -26,7 +26,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -122,7 +121,7 @@ static bool IsResourceDocumentLoadingTrustedURI(ModuleLoadRequest* aRequest) {
 nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   if (aRequest->IsRetrievedFromMemoryCache()) {
     DisallowImportMapsForModuleFetch(aRequest);
-    GetScriptLoader()->EmulateNetworkEvents(aRequest, Nothing());
+    GetScriptLoader()->EmulateNetworkEvents(aRequest);
     SetModuleFetchStarted(aRequest);
     aRequest->OnFetchComplete(NS_OK);
     return NS_OK;
@@ -147,12 +146,7 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
 
   
-  
-  
-  
-  
-  nsresult rv = GetScriptLoader()->StartLoadInternal(
-      aRequest, securityFlags, Nothing() );
+  nsresult rv = GetScriptLoader()->StartLoadInternal(aRequest, securityFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
   DisallowImportMapsForModuleFetch(aRequest);
@@ -281,7 +275,7 @@ nsresult ModuleLoader::CompileWasmModuleBytes(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     WasmBytesBuffer& aBytes, JS::MutableHandle<JSObject*> aModuleOut) {
   JSObject* wasmModule;
-  if (aRequest->IsSourcePhaseRequest(aCx)) {
+  if (aRequest->IsSourcePhaseRequest()) {
     wasmModule = JS::CompileWasmModuleAsSource(aCx, aOptions, aBytes);
   } else {
     wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
@@ -339,7 +333,7 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     
     
     if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
-      MOZ_ASSERT(aRequest->IsSourcePhaseRequest(aCx));
+      MOZ_ASSERT(aRequest->IsSourcePhaseRequest());
       if (!aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(
               aCx, aModuleOut)) {
         return NS_ERROR_FAILURE;

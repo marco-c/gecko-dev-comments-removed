@@ -2422,7 +2422,7 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
 
     
     
-    if (!aRequest->AsModuleRequest()->IsSourcePhaseRequest(cx)) {
+    if (!aRequest->AsModuleRequest()->IsSourcePhaseRequest()) {
       TRACE_FOR_TEST(aRequest, "compile:main thread");
       return NS_OK;
     }

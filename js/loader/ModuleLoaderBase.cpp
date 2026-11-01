@@ -849,7 +849,14 @@ void ModuleLoaderBase::OnFetchSucceeded(ModuleLoadRequest* aRequest) {
   
   
   if (aRequest->IsTopLevel() || aRequest->IsDynamicImport()) {
-    StartFetchingModuleDependencies(aRequest);
+    if (aRequest->IsSourcePhaseRequest()) {
+      if (!aRequest->IsCanceled()) {
+        aRequest->SetReady();
+        aRequest->LoadFinished();
+      }
+    } else {
+      StartFetchingModuleDependencies(aRequest);
+    }
   } else {
     MOZ_ASSERT(!aRequest->IsDynamicImport());
     AutoJSAPI jsapi;
