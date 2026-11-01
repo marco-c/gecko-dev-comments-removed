@@ -12,6 +12,16 @@
 
 
 
+const PREF_FUNCTION_NAMES: &[&str] = &["user_pref", "pref", "sticky_pref", "lockPref"];
+
+
+
+
+
+
+
+
+
 
 
 
@@ -21,15 +31,32 @@ pub fn find_pref<'a>(prefs_content: &'a str, pref: &str) -> Option<&'a str> {
     let mut search_content = prefs_content;
     loop {
         let (before, s) = search_content.split_once(&format!("\"{pref}\""))?;
-        if !before.trim().ends_with("user_pref(") {
+        if !is_pref_prefix(before) {
             search_content = s;
             continue;
         }
         let s = s.trim_start_matches(|c: char| c.is_whitespace() || c == ',');
+        
+        
         let (content, _) = s.split_once(");")?;
         return Some(content.trim());
     }
 }
+
+fn is_pref_prefix(mut s: &str) -> bool {
+    s = s.trim();
+    let Some(s) = s.strip_suffix('(') else {
+        return false;
+    };
+    
+    let s = s
+        .rsplit_once(|c: char| !c.is_ascii_alphabetic())
+        .map(|parts| parts.1)
+        .unwrap_or(s);
+    PREF_FUNCTION_NAMES.contains(&s)
+}
+
+
 
 
 pub fn find_string_pref<'a>(prefs_content: &'a str, pref: &str) -> Option<&'a str> {
@@ -74,6 +101,15 @@ mod test {
     fn test_find_string_pref() {
         let input = r#"user_pref("FOOBAR", "baz");"#;
         assert_eq!(find_string_pref(input, "FOOBAR"), Some("baz"));
+    }
+
+    #[test]
+    fn pref_functions() {
+        assert_eq!(find_pref(r#"user_pref("A", true);"#, "A"), Some("true"));
+        assert_eq!(find_pref(r#"pref("A", true);"#, "A"), Some("true"));
+        assert_eq!(find_pref(r#"sticky_pref("A", true);"#, "A"), Some("true"));
+        assert_eq!(find_pref(r#"lockPref("A", true);"#, "A"), Some("true"));
+        assert_eq!(find_pref(r#"somepref("A", true);"#, "A"), None);
     }
 
     #[test]

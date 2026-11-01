@@ -174,6 +174,11 @@ impl Config {
     }
 
     
+    pub fn read_app_prefs(&mut self) {
+        self.prefs.update_from_app_dir(installation_path());
+    }
+
+    
     #[cfg_attr(mock, allow(unused))]
     pub fn read_from_environment(&mut self) {
         self.auto_submit = env_bool(ekey!("AUTO_SUBMIT"));
@@ -215,6 +220,8 @@ impl Config {
         }
 
         self.strings = Some(lang::load());
+
+        self.read_app_prefs();
     }
 
     
