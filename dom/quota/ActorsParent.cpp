@@ -2829,7 +2829,7 @@ void QuotaManager::InitQuotaForOrigin(
   
   
   
-  if (!cacheRowMatches &&
+  if (!aFullOriginMetadata.mIsPrivate && !cacheRowMatches &&
       (fullOriginMetadata.mDirty || !aCacheMap.IsActive()) &&
       aDirectoryExists && !mUsageModificationDisabled.load()) {
     originInfo->mMetadataDirty = true;
