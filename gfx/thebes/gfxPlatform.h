@@ -1003,6 +1003,9 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   };
   CMSOutputProfileStatus mCMSOutputProfileStatus =
       CMSOutputProfileStatus::Uninitialized;
+  
+  
+  nsCString mCMSOutputProfilePrefAtStartup;
 
   RefPtr<gfxASurface> mScreenReferenceSurface;
   RefPtr<mozilla::layers::MemoryPressureObserver> mMemoryPressureObserver;
