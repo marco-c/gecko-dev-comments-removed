@@ -6,11 +6,8 @@
 
 #include "SocketProcessLogging.h"
 #include "mozilla/AppShutdown.h"
-#include "mozilla/Components.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/ContentChild.h"
-#include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/net/NeckoChild.h"
 #include "nsIObserverService.h"
@@ -45,15 +42,7 @@ bool SocketProcessBridgeChild::Create(
     os->AddObserver(sSocketProcessBridgeChild, "content-child-shutdown", false);
   }
 
-  sSocketProcessBridgeChild->mSocketProcessPid = aEndpoint.OtherPid();
   return true;
-}
-
-
-already_AddRefed<SocketProcessBridgeChild>
-SocketProcessBridgeChild::GetSingleton() {
-  RefPtr<SocketProcessBridgeChild> child = sSocketProcessBridgeChild;
-  return child.forget();
 }
 
 
@@ -120,17 +109,12 @@ SocketProcessBridgeChild::GetSocketProcessBridge() {
       });
 }
 
-SocketProcessBridgeChild::SocketProcessBridgeChild() : mShuttingDown(false) {
+SocketProcessBridgeChild::SocketProcessBridgeChild() {
   LOG(("CONSTRUCT SocketProcessBridgeChild::SocketProcessBridgeChild\n"));
 }
 
 SocketProcessBridgeChild::~SocketProcessBridgeChild() {
   LOG(("DESTRUCT SocketProcessBridgeChild::SocketProcessBridgeChild\n"));
-}
-
-mozilla::ipc::IPCResult SocketProcessBridgeChild::RecvTest() {
-  LOG(("SocketProcessBridgeChild::RecvTest\n"));
-  return IPC_OK();
 }
 
 void SocketProcessBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
@@ -142,19 +126,6 @@ void SocketProcessBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
       
       gNeckoChild->SendResetSocketProcessBridge();
     }
-
-    nsresult res;
-    nsCOMPtr<nsISerialEventTarget> mSTSThread;
-    mSTSThread = mozilla::components::SocketTransport::Service(&res);
-    if (NS_SUCCEEDED(res) && mSTSThread) {
-      
-      
-      
-      
-      MOZ_ALWAYS_SUCCEEDS(mSTSThread->Dispatch(NS_NewRunnableFunction(
-          "net::SocketProcessBridgeChild::ActorDestroy",
-          []() { ipc::BackgroundChild::CloseForCurrentThread(); })));
-    }
   }
 
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
@@ -164,7 +135,6 @@ void SocketProcessBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
   GetCurrentSerialEventTarget()->Dispatch(
       NewRunnableMethod("net::SocketProcessBridgeChild::DeferredDestroy", this,
                         &SocketProcessBridgeChild::DeferredDestroy));
-  mShuttingDown = true;
 }
 
 NS_IMETHODIMP

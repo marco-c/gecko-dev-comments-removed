@@ -19,13 +19,6 @@ struct already_AddRefed;
 
 namespace mozilla {
 
-namespace net {
-
-class SocketProcessBridgeParent;
-class SocketProcessParent;
-
-}  
-
 namespace dom {
 
 class BlobImpl;
@@ -47,8 +40,6 @@ class Endpoint;
 class BackgroundParent final {
   friend class mozilla::ipc::BackgroundStarterParent;
   friend class mozilla::dom::ContentParent;
-  friend class mozilla::net::SocketProcessBridgeParent;
-  friend class mozilla::net::SocketProcessParent;
 
   using ProcessId = base::ProcessId;
   using BlobImpl = mozilla::dom::BlobImpl;
@@ -107,10 +98,6 @@ class BackgroundParent final {
   
   static bool AllocStarter(ContentParent* aContent,
                            Endpoint<PBackgroundStarterParent>&& aEndpoint);
-
-  
-  
-  static bool AllocStarter(Endpoint<PBackgroundStarterParent>&& aEndpoint);
 };
 
 
