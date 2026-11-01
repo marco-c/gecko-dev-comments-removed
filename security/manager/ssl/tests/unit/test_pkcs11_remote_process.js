@@ -2,6 +2,10 @@
 
 "use strict";
 
+const { setTimeout } = ChromeUtils.importESModule(
+  "resource://gre/modules/Timer.sys.mjs"
+);
+
 var gPrompt = {
   QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
 
@@ -211,6 +215,15 @@ add_task(async function test_pkcs11_remote_process() {
 
   
   {
+    Services.prefs.setIntPref(
+      "security.utility_pkcs11_module_process.scan_delay_ms",
+      0
+    );
+    
+    
+    
+    
+    await new Promise(resolve => setTimeout(resolve, 1));
     let testClientCertificate = await findCertByCommonName("client cert rsa");
     ok(
       testClientCertificate,
@@ -247,6 +260,9 @@ add_task(async function test_pkcs11_remote_process() {
     "should not be able to find test module after unloading it"
   );
 
+  
+  
+  await new Promise(resolve => setTimeout(resolve, 1));
   testClientCertificate = await findCertByCommonName("client cert rsa");
   ok(
     !testClientCertificate,

@@ -3189,6 +3189,10 @@ pref("browser.toolbars.tab-groups.enabled", false);
 
 pref("security.certerrors.felt-privacy-v1", true);
 
+#ifdef NIGHTLY_BUILD
+  pref("security.utility_pkcs11_module_process.enabled", true);
+#endif
+
 
 
 
