@@ -110,7 +110,7 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
       const mozilla::layers::StackingContextHelper& aSc,
       mozilla::layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGGeometry* aItem,
-      bool aDryRun, bool aAxisAligned = true);
+      bool aDryRun);
   
   bool HasCrispEdges() const;
   
@@ -145,14 +145,11 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
 
   
   
-  
-  
   bool ShouldBeActive(mozilla::wr::DisplayListBuilder& aBuilder,
                       mozilla::wr::IpcResourceUpdateQueue& aResources,
                       const mozilla::layers::StackingContextHelper& aSc,
                       mozilla::layers::RenderRootStateManager* aManager,
-                      nsDisplayListBuilder* aDisplayListBuilder,
-                      bool aAxisAligned) {
+                      nsDisplayListBuilder* aDisplayListBuilder) {
     
     
     
@@ -160,7 +157,7 @@ class DisplaySVGGeometry final : public DisplaySVGItem {
     return frame
         ->CreateWebRenderCommands(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder, this,
-                                  true, aAxisAligned)
+                                  true)
         .isOk();
   }
 

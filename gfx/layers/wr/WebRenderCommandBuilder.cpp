@@ -1128,14 +1128,14 @@ static ItemActivity IsItemProbablyActive(
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, bool aSiblingActive,
-    bool aAxisAligned);
+    bool aUniformlyScaled);
 
 static ItemActivity HasActiveChildren(
     const nsDisplayList& aList, mozilla::wr::DisplayListBuilder& aBuilder,
     mozilla::wr::IpcResourceUpdateQueue& aResources,
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
-    nsDisplayListBuilder* aDisplayListBuilder, bool aAxisAligned) {
+    nsDisplayListBuilder* aDisplayListBuilder, bool aUniformlyScaled) {
   ItemActivity activity = ItemActivity::No;
   for (nsDisplayItem* item : aList) {
     
@@ -1147,7 +1147,7 @@ static ItemActivity HasActiveChildren(
     
     auto childActivity =
         IsItemProbablyActive(item, aBuilder, aResources, aSc, aManager,
-                             aDisplayListBuilder, false, aAxisAligned);
+                             aDisplayListBuilder, false, aUniformlyScaled);
     activity = CombineActivity(activity, childActivity);
     if (activity == ItemActivity::Must) {
       return activity;
@@ -1206,7 +1206,7 @@ static ItemActivity IsItemProbablyActive(
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, bool aHasActivePrecedingSibling,
-    bool aAxisAligned) {
+    bool aUniformlyScaled) {
   switch (aItem->GetType()) {
     case DisplayItemType::TYPE_TRANSFORM: {
       nsDisplayTransform* transformItem =
@@ -1218,10 +1218,27 @@ static ItemActivity IsItemProbablyActive(
         return ItemActivity::Must;
       }
 
-      bool axisAligned = aAxisAligned && !t2d.HasNonAxisAlignedTransform();
-      auto activity =
-          HasActiveChildren(*transformItem->GetChildren(), aBuilder, aResources,
-                            aSc, aManager, aDisplayListBuilder, axisAligned);
+      
+      
+      
+      
+      
+      
+      bool axisAligned = !t2d.HasNonAxisAlignedTransform();
+      bool uniformlyScaled = aUniformlyScaled;
+      if (axisAligned) {
+        auto scales = t2d.ScaleFactors();
+        uniformlyScaled =
+            uniformlyScaled && fabs(scales.xScale - scales.yScale) <
+                                   0.1 * std::max(scales.xScale, scales.yScale);
+      }
+
+      auto activity = HasActiveChildren(
+          *transformItem->GetChildren(), aBuilder, aResources, aSc, aManager,
+          aDisplayListBuilder, axisAligned && uniformlyScaled);
+      if (!axisAligned && activity < ItemActivity::Must) {
+        activity = ItemActivity::No;
+      }
 
       if (transformItem->MayBeAnimated(aDisplayListBuilder)) {
         activity = CombineActivity(activity, ItemActivity::Should);
@@ -1236,16 +1253,16 @@ static ItemActivity IsItemProbablyActive(
       }
       return HasActiveChildren(*opacityItem->GetChildren(), aBuilder,
                                aResources, aSc, aManager, aDisplayListBuilder,
-                               aAxisAligned);
+                               aUniformlyScaled);
     }
     case DisplayItemType::TYPE_FOREIGN_OBJECT: {
       return ItemActivity::Must;
     }
     case DisplayItemType::TYPE_SVG_GEOMETRY: {
       auto* svgItem = static_cast<DisplaySVGGeometry*>(aItem);
-      if (StaticPrefs::gfx_webrender_svg_shapes() &&
+      if (StaticPrefs::gfx_webrender_svg_shapes() && aUniformlyScaled &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
-                                  aDisplayListBuilder, aAxisAligned)) {
+                                  aDisplayListBuilder)) {
         return AssessBounds(aSc, aDisplayListBuilder, aItem,
                             aHasActivePrecedingSibling);
       }
@@ -1254,7 +1271,11 @@ static ItemActivity IsItemProbablyActive(
     }
     case DisplayItemType::TYPE_SVG_IMAGE: {
       auto* svgItem = static_cast<DisplaySVGImage*>(aItem);
-      if (StaticPrefs::gfx_webrender_svg_images() &&
+      
+      
+      bool scaleOk = aUniformlyScaled ||
+                     StaticPrefs::gfx_webrender_svg_images_non_uniform_scale();
+      if (StaticPrefs::gfx_webrender_svg_images() && scaleOk &&
           svgItem->ShouldBeActive(aBuilder, aResources, aSc, aManager,
                                   aDisplayListBuilder)) {
         return AssessBounds(aSc, aDisplayListBuilder, aItem,
@@ -1283,13 +1304,13 @@ static ItemActivity IsItemProbablyActive(
       }
 
       return HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources, aSc,
-                               aManager, aDisplayListBuilder, aAxisAligned);
+                               aManager, aDisplayListBuilder, aUniformlyScaled);
     }
     case DisplayItemType::TYPE_MASK: {
       if (aItem->GetChildren()) {
         auto activity =
             HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources, aSc,
-                              aManager, aDisplayListBuilder, aAxisAligned);
+                              aManager, aDisplayListBuilder, aUniformlyScaled);
         
         
         if (StaticPrefs::gfx_webrender_svg_mask_propagates_activity() &&
@@ -1315,7 +1336,7 @@ static ItemActivity IsItemProbablyActive(
       if (aItem->GetChildren()) {
         return HasActiveChildren(*aItem->GetChildren(), aBuilder, aResources,
                                  aSc, aManager, aDisplayListBuilder,
-                                 aAxisAligned);
+                                 aUniformlyScaled);
       }
       return ItemActivity::No;
     }
@@ -1358,6 +1379,11 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
 
   
   
+  const bool uniformlyScaled =
+      fabs(aGroup->mScale.xScale - aGroup->mScale.yScale) < 0.1;
+
+  
+  
   
   
   
@@ -1376,7 +1402,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
       total++;
       if (IsItemProbablyActive(item, aBuilder, aResources, aSc, manager,
                                mDisplayListBuilder, false,
-                               true) >= ItemActivity::Could) {
+                               uniformlyScaled) >= ItemActivity::Could) {
         couldBeActive++;
       }
     }
@@ -1409,9 +1435,9 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
     ++next;
     bool isLast = next == aList->end();
 
-    auto activity =
-        IsItemProbablyActive(item, aBuilder, aResources, aSc, manager,
-                             mDisplayListBuilder, encounteredActiveItem, true);
+    auto activity = IsItemProbablyActive(
+        item, aBuilder, aResources, aSc, manager, mDisplayListBuilder,
+        encounteredActiveItem, uniformlyScaled);
     auto threshold = isFirst || isLast || lowerMiddleThreshold
                          ? ItemActivity::Could
                          : ItemActivity::Should;
