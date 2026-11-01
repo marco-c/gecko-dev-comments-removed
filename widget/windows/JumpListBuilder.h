@@ -44,7 +44,7 @@ class JumpListBackend {
   virtual HRESULT AppendKnownCategory(KNOWNDESTCATEGORY category) = 0;
 
  protected:
-  virtual ~JumpListBackend() {}
+  virtual ~JumpListBackend() = default;
 };
 
 
@@ -60,6 +60,7 @@ class JumpListBuilder : public nsIJumpListBuilder, public nsIObserver {
   NS_DECL_NSIOBSERVER
 
   explicit JumpListBuilder(const nsAString& aAppUserModelId,
+                           bool aPrivateBrowsing = false,
                            RefPtr<JumpListBackend> aTestingBackend = nullptr);
 
  private:

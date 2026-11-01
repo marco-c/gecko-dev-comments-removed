@@ -17,6 +17,7 @@ PSSTDAPI PropVariantToString(REFPROPVARIANT propvar, PWSTR psz, UINT cch);
 #include "JumpListBuilder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Promise.h"
@@ -113,7 +114,17 @@ MATCHER_P(ShellLinksEq, descs,
     }
 
     if (desc.mArguments.WasPassed()) {
-      if (!desc.mArguments.Value().Equals(argsBuf)) {
+      mozilla::CommandLineParserWin<char16_t> parser;
+      parser.HandleCommandLine(nsDependentString(argsBuf));
+
+      const mozilla::dom::Sequence<nsString>& args = desc.mArguments.Value();
+
+      bool same = std::equal(
+          parser.Argv(), parser.Argv() + parser.Argc(), args.cbegin(),
+          args.cend(), [](const char16_t* aParsed, const nsAString& aExpected) {
+            return aExpected == nsDependentString(aParsed);
+          });
+      if (!same) {
         return false;
       }
     } else {
@@ -310,8 +321,8 @@ void GenerateWindowsJumpListShortcutDescriptions(
     desc.mFallbackIconIndex = 0;
 
     if (!(i % 2)) {
-      nsAutoString arguments(u"-arg1 -arg2 -arg3");
-      desc.mArguments.Construct(arguments);
+      desc.mArguments.Construct(nsTArray<nsString>{
+          u"-arg1"_ns, u"argument with a space"_ns, u"-arg3"_ns});
       nsAutoString iconPath(u"C:\\Some\\icon.png");
       desc.mIconPath.Construct(iconPath);
     }
@@ -350,7 +361,7 @@ TEST(JumpListBuilder, Construction)
   });
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   
@@ -381,7 +392,7 @@ TEST(JumpListBuilder, CheckForRemovals)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   EXPECT_CALL(*testBackend, AbortList()).Times(2);
@@ -496,7 +507,7 @@ TEST(JumpListBuilder, CheckForRemovalsLongURL)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   EXPECT_CALL(*testBackend, AbortList()).Times(2);
@@ -606,7 +617,7 @@ TEST(JumpListBuilder, PopulateJumpListEmpty)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;
@@ -662,7 +673,7 @@ TEST(JumpListBuilder, PopulateJumpListOnlyTasks)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;
@@ -723,7 +734,7 @@ TEST(JumpListBuilder, PopulateJumpListOnlyCustomItems)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;
@@ -789,7 +800,7 @@ TEST(JumpListBuilder, PopulateJumpList)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;
@@ -858,7 +869,7 @@ TEST(JumpListBuilder, PopulateJumpListNoOpenedItems)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;
@@ -921,7 +932,7 @@ TEST(JumpListBuilder, ClearJumpList)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;
@@ -962,7 +973,7 @@ TEST(JumpListBuilder, TruncateDescription)
   EXPECT_CALL(*testBackend, SetAppID(_)).Times(1);
 
   nsCOMPtr<nsIJumpListBuilder> builder =
-      new JumpListBuilder(aumid, testBackend);
+      new JumpListBuilder(aumid,  false, testBackend);
   ASSERT_TRUE(builder);
 
   AutoJSAPI jsapi;

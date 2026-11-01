@@ -13,6 +13,7 @@
 
 
 #include "WinUtils.h"
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WindowsJumpListShortcutDescriptionBinding.h"
@@ -131,13 +132,14 @@ class NativeJumpListBackend : public JumpListBackend {
   }
 
  protected:
-  virtual ~NativeJumpListBackend() override {};
+  virtual ~NativeJumpListBackend() override = default;
 
  private:
   RefPtr<ICustomDestinationList> mWindowsDestList;
 };
 
 JumpListBuilder::JumpListBuilder(const nsAString& aAppUserModelId,
+                                 bool aPrivateBrowsing,
                                  RefPtr<JumpListBackend> aTestingBackend) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -876,10 +878,20 @@ nsresult JumpListBuilder::GetShellLinkFromDescription(
 
   hr = psl->SetDescription(descriptionCopy.get());
 
-  if (aDesc.mArguments.WasPassed() && !aDesc.mArguments.Value().IsEmpty()) {
-    hr = psl->SetArguments(aDesc.mArguments.Value().get());
-  } else {
-    hr = psl->SetArguments(L"");
+  if (aDesc.mArguments.WasPassed()) {
+    const mozilla::dom::Sequence<nsString>& arguments =
+        aDesc.mArguments.Value();
+
+    
+    
+    AutoTArray<const wchar_t*, 8> flatArgs;
+    for (const nsString& arg : arguments) {
+      flatArgs.AppendElement(arg.get());
+    }
+
+    UniquePtr<wchar_t[]> commandLine = mozilla::MakeCommandLine(
+        AssertedCast<int>(flatArgs.Length()), flatArgs.Elements());
+    hr = psl->SetArguments(commandLine.get());
   }
 
   

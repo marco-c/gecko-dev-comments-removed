@@ -114,7 +114,7 @@ nsresult SetWindowAppUserModelProp(mozIDOMWindow* aParent,
 
 
 class DefaultController final : public nsITaskbarPreviewController {
-  ~DefaultController() {}
+  ~DefaultController() = default;
   HWND mWnd;
 
  public:
@@ -211,8 +211,6 @@ bool WinTaskbar::Initialize() {
   }
   return true;
 }
-
-WinTaskbar::WinTaskbar() : mTaskbar(nullptr) {}
 
 WinTaskbar::~WinTaskbar() {
   if (mTaskbar) {  
@@ -430,7 +428,8 @@ WinTaskbar::CreateJumpListBuilder(bool aPrivateBrowsing,
   nsAutoString aumid;
   GenerateAppUserModelID(aumid, aPrivateBrowsing);
 
-  nsCOMPtr<nsIJumpListBuilder> builder = new JumpListBuilder(aumid);
+  nsCOMPtr<nsIJumpListBuilder> builder =
+      new JumpListBuilder(aumid, aPrivateBrowsing);
   if (!builder) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -528,6 +527,52 @@ WinTaskbar::SetAllWindowIcons(uint16_t aIconResourceId) {
         windowAumid.Equals(expectedAumid)) {
       win->SetIconFromExeResource(aIconResourceId);
     }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WinTaskbar::RefreshTaskbarButtons() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!Initialize()) {
+    return NS_OK;
+  }
+
+  nsAutoString expectedAumid;
+  if (!GetAppUserModelID(expectedAumid,  false)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  nsCOMPtr<nsIWindowMediator> wm = do_GetService(NS_WINDOWMEDIATOR_CONTRACTID);
+  if (!wm) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsCOMPtr<nsISimpleEnumerator> windows;
+  if (NS_FAILED(wm->GetEnumerator(nullptr, getter_AddRefs(windows)))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  AutoTArray<HWND, 8> hwnds;
+  for (const auto& outer : SimpleEnumerator<nsPIDOMWindowOuter>(windows)) {
+    HWND hwnd = GetHWNDFromDocShell(outer->GetDocShell());
+    if (!hwnd) {
+      continue;
+    }
+    nsAutoString windowAumid;
+    if (GetWindowAumid(hwnd, windowAumid) &&
+        windowAumid.Equals(expectedAumid)) {
+      hwnds.AppendElement(hwnd);
+    }
+  }
+
+  for (HWND hwnd : hwnds) {
+    mTaskbar->DeleteTab(hwnd);
+  }
+  for (HWND hwnd : hwnds) {
+    mTaskbar->AddTab(hwnd);
   }
 
   return NS_OK;
