@@ -6417,13 +6417,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
           entityTrackingOnOpen(parser, entity, __LINE__);
           beforeHandler(parser);
           const int status = parser->m_externalEntityRefHandler(
-
-#if 0
               parser->m_externalEntityRefHandlerArg, 0, entity->base,
-#else
-              parser->m_externalEntityRefHandlerArg, entity->name, entity->base,
-#endif
-
               entity->systemId, entity->publicId);
           afterHandler(parser);
           if (! status) {
