@@ -344,7 +344,7 @@ nscoord nsFontMetrics::SpaceWidth() const {
           .spaceWidth);
 }
 
-nscoord nsFontMetrics::InterScriptSpacingWidth(float aAutospaceSize) const {
+nscoord nsFontMetrics::InterScriptSpacingWidth() const {
   const auto& m = GetMetrics(this);
   
   
@@ -352,8 +352,9 @@ nscoord nsFontMetrics::InterScriptSpacingWidth(float aAutospaceSize) const {
       m.ideographicWidth >= 0.0 ? m.ideographicWidth : m.emHeight;
 
   
-  return LayoutDevicePixel::ToAppUnits(ic * aAutospaceSize,
-                                       AppUnitsPerDevPixel());
+  
+  constexpr double kFraction = 0.125;
+  return LayoutDevicePixel::ToAppUnits(ic * kFraction, AppUnitsPerDevPixel());
 }
 
 int32_t nsFontMetrics::GetMaxStringLength() const {

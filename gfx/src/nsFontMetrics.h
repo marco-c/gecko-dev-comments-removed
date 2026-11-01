@@ -238,7 +238,7 @@ class nsFontMetrics final {
   
 
 
-  nscoord InterScriptSpacingWidth(float aAutospaceSize) const;
+  nscoord InterScriptSpacingWidth() const;
 
   
 
