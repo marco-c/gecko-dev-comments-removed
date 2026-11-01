@@ -223,6 +223,10 @@ nsresult PrintTargetWindows::EndPage() {
         failure = true;
       }
     });
+    
+    
+    
+    mTranslator->ForgetDrawTargets();
     RefPtr<DrawTarget> refDT = GetReferenceDrawTarget();
     mTranslator->SetBaseDrawTarget(refDT);
     mRecorder->WipeRecording();
