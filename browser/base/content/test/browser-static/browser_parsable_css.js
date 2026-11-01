@@ -27,6 +27,13 @@ let ignoreList = [
   },
   
   {
+    sourceName: /\b(quirk)\.css$/i,
+    errorMessage:
+      /Error in parsing value for ‘color: -moz-inherit-from-body;’./i,
+    isFromDevTools: false,
+  },
+  
+  {
     sourceName: /\b(html)\.css$/i,
     errorMessage: /Error in parsing value for ‘content:/i,
     isFromDevTools: false,
