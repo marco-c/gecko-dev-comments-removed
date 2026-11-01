@@ -141,6 +141,8 @@ let interfaceNamesInGlobalScope = [
   
   "ByteLengthQueuingStrategy",
   
+  { name: "CSS", insecureContext: true, nightly: true },
+  
   { name: "CSSImageValue", insecureContext: true, nightly: true },
   
   { name: "CSSKeywordValue", insecureContext: true, nightly: true },
