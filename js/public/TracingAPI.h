@@ -204,7 +204,13 @@ class JS_PUBLIC_API JSTracer {
   
   
   
-  virtual bool onBufferEdge(void** bufferp, const char* name) { return true; }
+  struct TraceBufferResult {
+    bool liveOrNull;  
+    void* buffer;     
+  };
+  virtual TraceBufferResult onBufferEdge(void** bufferp, const char* name) {
+    return {true, *bufferp};
+  }
 
  protected:
   JSTracer(JSRuntime* rt, JS::TracerKind kind,
