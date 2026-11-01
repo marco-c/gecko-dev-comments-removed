@@ -471,6 +471,28 @@ JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
   }
   moduleObject->initScriptSourceObject(sso);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!GetWasmExportNameAtoms(cx, wasmModuleObject, &exportNames)) {
+    return nullptr;
+  }
+
+  if (!ModuleObject::createWasmEnvironment(cx, moduleObject, exportNames)) {
+    return nullptr;
+  }
+
   JS::RootedVector<std::pair<JSString*, JSString*>> wasmImports(cx);
   if (!wasm::GetModuleImports(cx, wasmModuleObject, &wasmImports)) {
     return nullptr;
@@ -512,15 +534,6 @@ JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
   Rooted<ExportEntryVector> exportEntries(cx);
   moduleObject->initImportExportData(&requestedModuleRecords, &importEntries,
                                      &exportEntries, 0, 0, 0);
-
-  Rooted<ExportNameVector> exportNames(cx);
-  if (!GetWasmExportNameAtoms(cx, wasmModuleObject, &exportNames)) {
-    return nullptr;
-  }
-
-  if (!ModuleObject::createWasmEnvironment(cx, moduleObject, exportNames)) {
-    return nullptr;
-  }
 
   if (!ModuleObject::Freeze(cx, moduleObject)) {
     return nullptr;
@@ -1866,6 +1879,42 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
   return ModuleObject::instantiateFunctionDeclarations(cx, module);
 }
 
+#ifdef NIGHTLY_BUILD
+
+static bool WasmModuleInitializeEnvironment(JSContext* cx,
+                                            Handle<ModuleObject*> module) {
+  MOZ_ASSERT(module->status() == ModuleStatus::Linking);
+
+  
+  
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  Rooted<ModuleObject*> importedModule(cx);
+  Rooted<JSAtom*> importName(cx);
+  Rooted<Value> resolution(cx);
+  for (const ImportEntry& in : module->importEntries()) {
+    moduleRequest = in.moduleRequest();
+    importedModule = GetImportedModule(cx, module, moduleRequest);
+    if (!importedModule) {
+      return false;
+    }
+
+    importName = in.importName();
+    ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
+    if (!ModuleResolveExport(cx, importedModule, importName, &resolution,
+                             &errorInfo)) {
+      return false;
+    }
+
+    if (!IsResolvedBinding(cx, resolution)) {
+      ThrowResolutionError(cx, module, resolution, importName, &errorInfo);
+      return false;
+    }
+  }
+
+  return true;
+}
+#endif
+
 
 
 
@@ -2285,9 +2334,21 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    if (!WasmModuleInitializeEnvironment(cx, module)) {
+      return false;
+    }
+  } else {
+    if (!ModuleInitializeEnvironment(cx, module)) {
+      return false;
+    }
+  }
+#else
   if (!ModuleInitializeEnvironment(cx, module)) {
     return false;
   }
+#endif
 
   
   MOZ_ASSERT(CountElements(stack, module) == 1);
