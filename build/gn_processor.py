@@ -35,6 +35,17 @@ generated_header = """
 RESPONSE_FILE_NAME_FLAG = "{{response_file_name}}"
 
 
+class FStringLiteral(str):
+    """A value which must be written as an f-string when serialized, so that it
+    can refer to variables available in the mozbuild sandbox, such as TOPSRCDIR.
+    Its contents will become the exact contents of the f-string, meaning any
+    literal braces must already be escaped."""
+
+    def __repr__(self):
+        
+        return "f" + json.dumps(self)
+
+
 class MozbuildWriter:
     def __init__(self, fh):
         self._fh = fh
@@ -51,10 +62,10 @@ class MozbuildWriter:
             if len(v) <= 1:
                 return repr(v)
             
-            raw = json.dumps(v, indent=self._indent_increment)
-            
-            return raw.replace("\n", "\n" + self.indent)
-        if isinstance(v, bool):
+            item_indent = self.indent + " " * self._indent_increment
+            items = (",\n" + item_indent).join(self.mb_serialize(i) for i in v)
+            return f"[\n{item_indent}{items}\n{self.indent}]"
+        if isinstance(v, (bool, FStringLiteral)):
             return repr(v)
         return json.dumps(v)
 
@@ -397,6 +408,34 @@ def process_gn_config(
     
     
     
+    
+    
+    
+    def maybe_encode_srcdir_path_arg(arg):
+        
+        
+        
+        
+        
+        idx = arg.find("../")
+        if idx == -1:
+            return arg
+        prefix, path = arg[:idx], arg[idx:]
+        path = mozpath.normpath(mozpath.join(str(gn_config_dir), path))
+        if not os.path.exists(path) or not mozpath.basedir(path, [str(topsrcdir)]):
+            return arg
+
+        def escape_braces(s):
+            return s.replace("{", "{{").replace("}", "}}")
+
+        relpath = mozpath.relpath(path, str(topsrcdir))
+        return FStringLiteral(
+            escape_braces(prefix) + "{TOPSRCDIR}/" + escape_braces(relpath)
+        )
+
+    
+    
+    
     def encode_response_file_content_path(path):
         path = mozpath.normpath(mozpath.join(str(gn_config_dir), path))
         if mozpath.basedir(path, [str(topsrcdir)]):
@@ -548,7 +587,7 @@ def process_gn_config(
                 args = [
                     f"{spec['outputs'][0]}.rsp"
                     if arg == RESPONSE_FILE_NAME_FLAG
-                    else arg
+                    else maybe_encode_srcdir_path_arg(arg)
                     for arg in spec.get("args", [])
                 ]
                 flags = [
@@ -567,7 +606,7 @@ def process_gn_config(
                 flags = [
                     resolve_path(spec["script"]),
                     resolve_path(""),
-                ] + spec.get("args", [])
+                ] + [maybe_encode_srcdir_path_arg(arg) for arg in spec.get("args", [])]
                 generated_file = {
                     "script": "/python/mozbuild/mozbuild/action/file_generate_wrapper.py",
                     "entry_point": "action",
