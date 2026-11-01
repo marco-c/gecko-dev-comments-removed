@@ -11097,10 +11097,9 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
     }
   }
 
-  if (memberInitializers.hasInlinedZeroFields) {
+  if (memberInitializers.hasInlinedFields) {
     MOZ_ASSERT(!isDerivedClassConstructor);
-    for (const InlinedZeroField& field :
-         sc->asFunctionBox()->inlinedZeroFields()) {
+    for (const InlinedField& field : sc->asFunctionBox()->inlinedFields()) {
       if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
         
         return false;
@@ -12502,7 +12501,7 @@ bool BytecodeEmitter::emitClass(
       }
 #endif
       
-      if (!ctor->funbox()->memberInitializers().hasInlinedZeroFields &&
+      if (!ctor->funbox()->memberInitializers().hasInlinedFields &&
           !emitCreateMemberInitializers(ce, classMembers,
                                         FieldPlacement::Instance
 #ifdef ENABLE_DECORATORS
