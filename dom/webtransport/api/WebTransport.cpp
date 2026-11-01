@@ -11,6 +11,8 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/Headers.h"
+#include "mozilla/dom/HeadersBinding.h"
 #include "mozilla/dom/InternalHeaders.h"
 #include "mozilla/dom/PWebTransport.h"
 #include "mozilla/dom/Promise-inl.h"
@@ -51,6 +53,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReady)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDraining)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mClosed)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mResponseHeaders)
   for (const auto& hashEntry : tmp->mSendStreams.Values()) {
     NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mSendStreams entry item");
     cb.NoteXPCOMChild(hashEntry);
@@ -80,6 +83,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebTransport)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReady)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDraining)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mClosed)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mResponseHeaders)
   if (tmp->mChild) {
     tmp->mChild->Shutdown(false);
     tmp->mChild = nullptr;
@@ -966,7 +970,17 @@ void WebTransport::SetNegotiatedProtocol(const nsACString& aProtocol) {
 }
 
 void WebTransport::SetResponseHeaders(nsTArray<WebTransportHeader>&& aHeaders) {
-  mResponseHeaders = std::move(aHeaders);
+  auto internalHeaders =
+      MakeRefPtr<InternalHeaders>(HeadersGuardEnum::Response);
+  for (const auto& header : aHeaders) {
+    internalHeaders->Append(header.name(), header.value(), IgnoreErrors());
+  }
+  
+  
+  
+  
+  internalHeaders->SetGuard(HeadersGuardEnum::Immutable, IgnoreErrors());
+  mResponseHeaders = new Headers(mGlobal, internalHeaders);
 }
 
 void WebTransport::RemoteClosed(bool aCleanly, const uint32_t& aCode,

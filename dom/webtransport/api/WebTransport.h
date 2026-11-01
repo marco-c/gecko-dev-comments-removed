@@ -25,6 +25,7 @@
 
 namespace mozilla::dom {
 
+class Headers;
 class WebTransportError;
 class WebTransportDatagramDuplexStream;
 class WebTransportIncomingStreamsAlgorithms;
@@ -98,6 +99,9 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   void SetNegotiatedProtocol(const nsACString& aProtocol);
   void SetResponseHeaders(
       nsTArray<mozilla::ipc::WebTransportHeader>&& aHeaders);
+
+  
+  Headers* GetResponseHeaders() { return mResponseHeaders; }
 
   void OnStreamResetOrStopSending(uint64_t aStreamId,
                                   const StreamResetOrStopSendingError& aError);
@@ -196,7 +200,7 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
       mIncomingUnidirectionalAlgorithm;
   WebTransportReliabilityMode mReliability;
   nsString mProtocol;
-  nsTArray<mozilla::ipc::WebTransportHeader> mResponseHeaders;
+  RefPtr<Headers> mResponseHeaders;
   
   
   
