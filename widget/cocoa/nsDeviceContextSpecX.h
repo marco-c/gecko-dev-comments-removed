@@ -30,11 +30,6 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
   void GetPaperRect(double* aTop, double* aLeft, double* aBottom,
                     double* aRight);
 
-  nsresult BeginPage(const IntSize&) final {
-    mCurrentPageCount++;
-    return NS_OK;
-  }
-
  protected:
   virtual ~nsDeviceContextSpecX();
 
@@ -44,12 +39,7 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
   PMPrintSettings mPMPrintSettings = nullptr;
   nsCOMPtr<nsIOutputStream> mOutputStream;  
   
-  
-  nsCOMPtr<nsIFile> mOutputFile;
-  
-  bool mOutputFileIsFinal = false;
-  
-  int32_t mCurrentPageCount = 0;
+  nsCOMPtr<nsIFile> mTempFile;
 
  private:
   nsresult DoEndDocument();
