@@ -802,18 +802,6 @@ var SidebarController = {
     if (!isValidSidebar) {
       state.command = "";
     }
-    
-    delete this._launcherStateAtOpen;
-
-    const hasOpenPanel =
-      state.panelOpen &&
-      state.command &&
-      this.sidebars.has(state.command) &&
-      this.currentID !== state.command;
-    if (hasOpenPanel) {
-      
-      delete state.hidden;
-    }
     await this.waitUntilStable(); 
     await this._state.loadCurrentState(state);
     await this.waitUntilStable(); 
@@ -1064,7 +1052,8 @@ var SidebarController = {
   
 
 
-  async toggleRevampSidebar() {
+  async toggleRevampSidebar(newValue) {
+    SidebarController._state.revampEnabled = newValue;
     await this.promiseInitialized;
     let wasOpen = this.isOpen;
     if (wasOpen) {
@@ -1082,7 +1071,8 @@ var SidebarController = {
       this.sidebars.set(extension.commandID, extension.sidebar);
     }
     if (!this.sidebarRevampEnabled) {
-      this._state.launcherVisible = false;
+      
+      this._state.applyLauncherVisibility();
       document.getElementById("sidebar-header").hidden = false;
 
       
@@ -1145,7 +1135,7 @@ var SidebarController = {
 
   async startDelayedLoad() {
     if (this.inSingleTabWindow) {
-      this._state.launcherVisible = false;
+      this._state.applyLauncherVisibility();
       this._initDeferred.resolve();
       return;
     }
@@ -1298,10 +1288,6 @@ var SidebarController = {
     return this._state?.launcherVisible;
   },
 
-  get launcherEverVisible() {
-    return this._state?.launcherEverVisible;
-  },
-
   get title() {
     return this._title.value;
   },
@@ -1417,11 +1403,7 @@ var SidebarController = {
 
     
     
-    
-    
-    const expandOnToggle =
-      this.sidebarVerticalTabsEnabled &&
-      ["always-show", "expand-on-hover"].includes(this.sidebarRevampVisibility);
+    const expandOnToggle = this._state.toolbarButtonTogglesExpanded;
 
     
     if (this.sidebarRevampVisibility === "expand-on-hover") {
@@ -1431,7 +1413,7 @@ var SidebarController = {
     const update = () => {
       if (expandOnToggle) {
         
-        this._state.updateVisibility(true, !initialExpandedValue);
+        this._state.launcherExpanded = !initialExpandedValue;
         this.updateToolbarButton();
         return;
       }
@@ -1455,15 +1437,17 @@ var SidebarController = {
 
       const shouldShowLauncher = !this._state.launcherVisible;
       
-      this._state.updateVisibility(shouldShowLauncher);
-      
-      if (shouldShowLauncher && this._state.command) {
+      this._state.userLauncherVisible = shouldShowLauncher;
+      if (this._state.launcherExpandable) {
+        this._state.launcherExpanded = shouldShowLauncher;
+      }
+      this.updateToolbarButton();
+      if (shouldShowLauncher && !this.isOpen && this._state.command) {
+        
+        
+        
         this.show(this._state.command);
       } else if (!shouldShowLauncher) {
-        
-        if (!this.isOpen) {
-          this.updateToolbarButton();
-        }
         
         this.hide({ dismissPanel: false });
       }
@@ -2097,11 +2081,6 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
-    
-    if (this._launcherStateAtOpen === undefined) {
-      this._launcherStateAtOpen = this._state.launcherVisible;
-    }
-
     return this._show(commandID).then(() => {
       this._loadSidebarExtension(commandID);
 
@@ -2271,20 +2250,6 @@ var SidebarController = {
       
       this._state.command = "";
       this.lastOpenedId = null;
-      if (this._launcherStateAtOpen !== undefined) {
-        
-        
-        
-        
-        if (
-          ["hide-sidebar", "hide-on-close"].includes(
-            this.sidebarRevampVisibility
-          )
-        ) {
-          this._state.launcherVisible = this._launcherStateAtOpen;
-        }
-        delete this._launcherStateAtOpen;
-      }
     }
 
     if (this.sidebarRevampEnabled) {
@@ -2858,8 +2823,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false,
   (_aPreference, _previousValue, newValue) => {
     if (!SidebarController.uninitializing) {
-      SidebarController.toggleRevampSidebar();
-      SidebarController._state.revampEnabled = newValue;
+      SidebarController.toggleRevampSidebar(newValue);
     }
   }
 );
@@ -2919,28 +2883,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
       SidebarController.toggleExpandOnHover(newValue === "expand-on-hover");
       SidebarController.recordVisibilitySetting(newValue);
       if (SidebarController._state) {
-        
-        
-        const isVerticalTabs = Services.prefs.getBoolPref(
-          "sidebar.verticalTabs"
-        );
-        SidebarController._state.revampVisibility = newValue;
-
-        
-        let forceExpand = false;
-        if (
-          isVerticalTabs &&
-          ["always-show", "hide-sidebar"].includes(newValue)
-        ) {
-          forceExpand = true;
-        }
-
-        
-        
-        let showLauncher = !["hide-sidebar", "hide-launcher"].includes(
-          newValue
-        );
-        SidebarController._state.updateVisibility(showLauncher, forceExpand);
+        SidebarController._state.enterVisibilityMode(newValue);
         SidebarController.updatePinnedTabsHeightAfterReflow();
       }
       SidebarController.updateToolbarButton();
@@ -2966,40 +2909,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
       }
       SidebarController._state.updatePinnedTabsHeight();
       SidebarController._state.updateToolsHeight();
-      if (SidebarController._state) {
-        
-        
-        
-        
-        
-        let visibility = Services.prefs.getStringPref(
-          "sidebar.visibility",
-          "always-show"
-        );
-        
-        
-        
-        
-        const verticalValues = [
-          "always-show",
-          "expand-on-hover",
-          "hide-sidebar",
-        ];
-        if (newValue && !verticalValues.includes(visibility)) {
-          visibility = "always-show";
-        } else if (!newValue && verticalValues.includes(visibility)) {
-          visibility = "hide-on-close";
-        }
-        const forceExpand =
-          newValue && ["always-show", "hide-sidebar"].includes(visibility);
-        SidebarController._state.updateVisibility(
-          !["hide-sidebar", "hide-launcher"].includes(visibility),
-          newValue ? forceExpand : false
-        );
-      }
-      
-      
-      
       SidebarController.updateToolbarButton();
     }
   }
