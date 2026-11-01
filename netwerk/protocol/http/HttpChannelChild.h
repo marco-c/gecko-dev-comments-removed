@@ -354,6 +354,18 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead{true};
   Atomic<uint32_t, mozilla::Relaxed> mOnProgressEventSent{false};
+  enum class AkamaiWafState : uint32_t {
+    
+    None,
+    
+    AkamaiResponse,
+    
+    MaybeBlocked,
+    
+    Blocked,
+  };
+  Atomic<AkamaiWafState, mozilla::Relaxed> mAkamaiWafState{
+      AkamaiWafState::None};
   
   
   
@@ -476,6 +488,14 @@ class HttpChannelChild final : public PHttpChannelChild,
 
   
   void CollectMixedContentTelemetry();
+
+  
+  void CollectAkamaiResponseTelemetry();
+  void MaybeCollectAkamaiWafBlockTelemetry();
+
+  
+  
+  class AkamaiWafBlockDetector;
 
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
