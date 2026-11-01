@@ -682,7 +682,7 @@ class VisualStudioBackend(CommonBackend):
 
         
         n = pg.appendChild(doc.createElement("AdditionalOptions"))
-        n.appendChild(doc.createTextNode("/std:c++17"))
+        n.appendChild(doc.createTextNode("/std:c++20"))
 
         i = project.appendChild(doc.createElement("Import"))
         i.setAttribute("Project", "$(VCTargetsPath)\\Microsoft.Cpp.props")
