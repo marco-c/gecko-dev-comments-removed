@@ -180,19 +180,6 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
 
   
-  
-  
-  
-  
-  if (moduleRequest->as<ModuleRequestObject>().phase() ==
-          ImportPhase::Evaluation &&
-      module->moduleSource()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
-    return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
-  }
-
-  
   Rooted<ModuleObject*> referrerModule(cx, ReferrerModuleOrNull(referrer));
   if (referrerModule) {
     
