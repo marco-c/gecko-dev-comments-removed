@@ -55,6 +55,12 @@ loader.lazyGetter(lazy, "AddonManager", () => {
     { global: "shared" }
   ).AddonManager;
 });
+loader.lazyGetter(lazy, "isBlockedSystemPrincipalDocument", () => {
+  return ChromeUtils.importESModule(
+    "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
+    { global: "contextual" }
+  ).isBlockedSystemPrincipalDocument;
+});
 
 
 
@@ -222,6 +228,7 @@ function BrowserTabList(connection) {
   this._testing = false;
 
   this._onPageTitleChangedEvent = this._onPageTitleChangedEvent.bind(this);
+  this._onDOMContentLoaded = this._onDOMContentLoaded.bind(this);
 }
 
 BrowserTabList.prototype.constructor = BrowserTabList;
@@ -349,6 +356,14 @@ BrowserTabList.prototype.getTab = function ({ browserId }) {
         message: `Unable to find tab with browserId '${browserId}' (no embedder element)`,
       });
     }
+    if (
+      lazy.isBlockedSystemPrincipalDocument(browsingContext.currentWindowGlobal)
+    ) {
+      return Promise.reject({
+        error: "chromeDebuggingDisabled",
+        message: `Unable to debug tab with browserId '${browserId}' while devtools.chrome.enabled is locked to false`,
+      });
+    }
     return this._getActorForBrowser(browser);
   }
 
@@ -451,6 +466,14 @@ BrowserTabList.prototype._checkListening = function () {
   );
 
   
+  this._listenForEventsIf(
+    this._actorByBrowser.size > 0,
+    "_listeningForDocumentLoad",
+    ["DOMContentLoaded"],
+    this._onDOMContentLoaded
+  );
+
+  
 
 
 
@@ -550,7 +573,12 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function (
         
         
         const { adoptedBy } = event.detail;
-        if (adoptedBy) {
+        if (
+          adoptedBy &&
+          !adoptedBy.documentGlobal.document.documentElement.hasAttribute(
+            "mini-window"
+          )
+        ) {
           actor.swapBrowser(adoptedBy.linkedBrowser);
           
           this._actorByBrowser.delete(browser);
@@ -581,6 +609,25 @@ BrowserTabList.prototype.handleEvent = DevToolsUtils.makeInfallible(function (
     }
   }
 }, "BrowserTabList.prototype.handleEvent");
+
+
+
+
+
+BrowserTabList.prototype._onDOMContentLoaded = function (event) {
+  const browsingContext = event.target.defaultView?.browsingContext;
+  if (!browsingContext || browsingContext.parent) {
+    return;
+  }
+  const browser = browsingContext.embedderElement;
+  const actor = this._actorByBrowser.get(browser);
+  if (
+    actor &&
+    lazy.isBlockedSystemPrincipalDocument(browsingContext.currentWindowGlobal)
+  ) {
+    this._handleActorClose(actor, browser);
+  }
+};
 
 
 
@@ -622,6 +669,9 @@ BrowserTabList.prototype.onOpenWindow = DevToolsUtils.makeInfallible(function (
     }
     if (this._listeningForTabClose) {
       window.addEventListener("TabClose", this);
+    }
+    if (this._listeningForDocumentLoad) {
+      window.addEventListener("DOMContentLoaded", this._onDOMContentLoaded);
     }
     if (this._listeningForTitleChange) {
       window.messageManager.addMessageListener("DOMTitleChanged", this);

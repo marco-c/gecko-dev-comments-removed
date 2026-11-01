@@ -320,7 +320,7 @@ class ToolboxHostManager {
     newIframe.docShellIsActive = true;
 
     if (destroyPreviousHost) {
-      this.destroyHost();
+      this.destroyHost({ newHostType: hostType });
     }
 
     if (
@@ -436,6 +436,15 @@ class ToolboxHostManager {
     }
 
     
+    
+    
+    if (
+      newTab.documentGlobal.document.documentElement.hasAttribute("mini-window")
+    ) {
+      return;
+    }
+
+    
     this.currentTab.removeEventListener("TabClose", this);
 
     
@@ -469,8 +478,10 @@ class ToolboxHostManager {
 
 
 
-  destroyHost() {
-    return this.host.destroy();
+
+
+  destroyHost(options = {}) {
+    return this.host.destroy({ newHostType: options.newHostType });
   }
 }
 
