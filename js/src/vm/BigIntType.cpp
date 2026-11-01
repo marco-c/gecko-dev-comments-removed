@@ -848,80 +848,6 @@ BigInt* BigInt::absoluteLeftShiftAlwaysCopy(JSContext* cx, HandleBigInt x,
 
 
 
-
-
-
-
-
-BigInt::Digit BigInt::normalizedDigitInverse(Digit divisor) {
-  MOZ_ASSERT(divisor & (Digit(1) << (DigitBits - 1)));
-  Digit high = ~divisor;
-  Digit low = Digit(-1);
-  Digit remainder;
-  return digitDiv(high, low, divisor, &remainder);
-}
-
-
-BigInt::Digit BigInt::digitDivByMultiplication(Digit high, Digit low,
-                                               Digit divisor, Digit inverse,
-                                               Digit* remainder) {
-  MOZ_ASSERT(divisor & (Digit(1) << (DigitBits - 1)));
-  MOZ_ASSERT(high < divisor);
-  MOZ_ASSERT(inverse == normalizedDigitInverse(divisor));
-  
-  
-  
-  
-  Digit q1;
-  Digit q0 = digitMul(high, inverse, &q1);
-  
-  Digit carry = 0;
-  q0 = digitAdd(q0, low, &carry);
-  q1 = digitAdd(q1, carry, &carry);
-  q1 = digitAdd(q1, high, &carry);
-  MOZ_ASSERT(carry == 0);
-  
-  q1++;
-  
-  Digit r = low - q1 * divisor;
-  
-  if (r > q0) {
-    
-    q1--;
-    
-    r += divisor;
-  }
-  
-  if (MOZ_UNLIKELY(r >= divisor)) {
-    
-    q1++;
-    
-    r -= divisor;
-  }
-  
-  *remainder = r;
-
-#ifdef DEBUG
-  {
-    Digit q, r;
-    q = digitDiv(high, low, divisor, &r);
-    MOZ_ASSERT(q == q1);
-    MOZ_ASSERT(r == *remainder);
-  }
-#endif
-
-  return q1;
-}
-
-
-
-
-
-
-
-
-
-
 bool BigInt::absoluteDivWithBigIntDivisor(
     JSContext* cx, HandleBigInt dividend, HandleBigInt divisor,
     const Maybe<MutableHandleBigInt>& quotient,
@@ -998,7 +924,6 @@ bool BigInt::absoluteDivWithBigIntDivisor(
     
     
     Digit vn1 = shiftedDivisorDigits[n - 1];
-    Digit vn1Inverse = normalizedDigitInverse(vn1);
     for (int j = m; j >= 0; j--) {
       
       
@@ -1014,8 +939,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
         
         
         
-        qhat = digitDivByMultiplication(ujn, uDigits[j + n - 1], vn1,
-                                        vn1Inverse, &rhat);
+        qhat = digitDiv(ujn, uDigits[j + n - 1], vn1, &rhat);
 
         
         
