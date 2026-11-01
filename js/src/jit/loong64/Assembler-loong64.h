@@ -2148,6 +2148,13 @@ class AssemblerLOONG64 : public AssemblerShared {
       const SimdConstant& rhs, Condition cond);
 
   
+  
+  
+  
+  template <uint32_t Scale>
+  static std::optional<int32_t> EncodeVldreplImmediate(int64_t offset);
+
+  
   void bind(Label* label, BufferOffset boff = BufferOffset());
   virtual void bind(InstImm* inst, uintptr_t branch, uintptr_t target) = 0;
   void bind(CodeLabel* label) { label->target()->bind(currentOffset()); }
