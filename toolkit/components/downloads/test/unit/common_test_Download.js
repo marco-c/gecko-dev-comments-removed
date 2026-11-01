@@ -15,6 +15,7 @@
 
 
 const kDeleteTempFileOnExit = "browser.helperApps.deleteTempFileOnExit";
+const kStartDownloadsInTmpDir = "browser.download.start_downloads_in_tmp_dir";
 
 
 const kDeletePrivateFileFeature = "browser.download.enableDeletePrivate";
@@ -239,49 +240,59 @@ add_task(async function test_unix_permissions() {
 
   let launcherPath = getTempFile("app-launcher").path;
 
-  for (let autoDelete of [false, true]) {
-    for (let isPrivate of [false, true]) {
-      for (let launchWhenSucceeded of [false, true]) {
-        info(
-          "Checking " +
-            JSON.stringify({ autoDelete, isPrivate, launchWhenSucceeded })
-        );
-
-        Services.prefs.setBoolPref(kDeleteTempFileOnExit, autoDelete);
-
-        let download;
-        if (!gUseLegacySaver) {
-          download = await Downloads.createDownload({
-            source: { url: httpUrl("source.txt"), isPrivate },
-            target: getTempFile(TEST_TARGET_FILE_NAME).path,
-            launchWhenSucceeded,
-            launcherPath,
-          });
-          await download.start();
-        } else {
-          download = await promiseStartLegacyDownload(httpUrl("source.txt"), {
-            isPrivate,
-            launchWhenSucceeded,
-            launcherPath: launchWhenSucceeded && launcherPath,
-          });
-          await promiseDownloadStopped(download);
-        }
-
-        let isTemporary = launchWhenSucceeded && isPrivate;
-        let stat = await IOUtils.stat(download.target.path);
-        if (Services.appinfo.OS == "WINNT") {
-          
-          
-          Assert.equal(stat.permissions, isTemporary ? 0o444 : 0o666);
-        } else {
-          
-          
-          
-          
-          Assert.equal(
-            stat.permissions,
-            isTemporary ? 0o400 : 0o666 & ~Services.sysinfo.getProperty("umask")
+  for (let startInTmpDir of [false, true]) {
+    for (let autoDelete of [false, true]) {
+      for (let isPrivate of [false, true]) {
+        for (let launchWhenSucceeded of [false, true]) {
+          info(
+            "Checking " +
+              JSON.stringify({
+                startInTmpDir,
+                autoDelete,
+                isPrivate,
+                launchWhenSucceeded,
+              })
           );
+
+          Services.prefs.setBoolPref(kStartDownloadsInTmpDir, startInTmpDir);
+          Services.prefs.setBoolPref(kDeleteTempFileOnExit, autoDelete);
+
+          let download;
+          if (!gUseLegacySaver) {
+            download = await Downloads.createDownload({
+              source: { url: httpUrl("source.txt"), isPrivate },
+              target: getTempFile(TEST_TARGET_FILE_NAME).path,
+              launchWhenSucceeded,
+              launcherPath,
+            });
+            await download.start();
+          } else {
+            download = await promiseStartLegacyDownload(httpUrl("source.txt"), {
+              isPrivate,
+              launchWhenSucceeded,
+              launcherPath: launchWhenSucceeded && launcherPath,
+            });
+            await promiseDownloadStopped(download);
+          }
+
+          let isTemporary = launchWhenSucceeded && isPrivate && startInTmpDir;
+          let stat = await IOUtils.stat(download.target.path);
+          if (Services.appinfo.OS == "WINNT") {
+            
+            
+            Assert.equal(stat.permissions, isTemporary ? 0o444 : 0o666);
+          } else {
+            
+            
+            
+            
+            Assert.equal(
+              stat.permissions,
+              isTemporary
+                ? 0o400
+                : 0o666 & ~Services.sysinfo.getProperty("umask")
+            );
+          }
         }
       }
     }
@@ -289,6 +300,7 @@ add_task(async function test_unix_permissions() {
 
   
   Services.prefs.clearUserPref(kDeleteTempFileOnExit);
+  Services.prefs.clearUserPref(kStartDownloadsInTmpDir);
 });
 
 
