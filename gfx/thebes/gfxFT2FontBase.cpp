@@ -247,65 +247,15 @@ static double FindClosestSize(FT_Face aFace, double aSize) {
   return aFace->available_sizes[bestSize].y_ppem / 64.0;
 }
 
-void gfxFT2FontBase::InitMetrics() {
-  mFUnitsConvFactor = 0.0;
-
+bool gfxFT2FontBase::InitMetricsFromPlatform() {
   if (MOZ_UNLIKELY(mStyle.AdjustedSizeMustBeZero())) {
     mSpaceGlyph = GetGlyph(' ');
-    mIsValid = true;
-    return;
-  }
-
-  if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
-          FontSizeAdjust::Tag::None &&
-      mStyle.sizeAdjust >= 0.0 && GetAdjustedSize() > 0.0 && mFTSize == 0.0) {
-    
-    
-    
-    
-    
-    mFTSize = 1.0;
-    InitMetrics();
-    
-    gfxFloat aspect;
-    switch (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis)) {
-      default:
-        MOZ_ASSERT_UNREACHABLE("unhandled sizeAdjustBasis?");
-        aspect = 0.0;
-        break;
-      case FontSizeAdjust::Tag::ExHeight:
-        aspect = mMetrics.xHeight / mAdjustedSize;
-        break;
-      case FontSizeAdjust::Tag::CapHeight:
-        aspect = mMetrics.capHeight / mAdjustedSize;
-        break;
-      case FontSizeAdjust::Tag::ChWidth:
-        aspect =
-            mMetrics.zeroWidth > 0.0 ? mMetrics.zeroWidth / mAdjustedSize : 0.5;
-        break;
-      case FontSizeAdjust::Tag::IcWidth:
-      case FontSizeAdjust::Tag::IcHeight: {
-        bool vertical = FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) ==
-                        FontSizeAdjust::Tag::IcHeight;
-        gfxFloat advance = GetCharAdvance(kWaterIdeograph, vertical);
-        aspect = advance > 0.0 ? advance / mAdjustedSize : 1.0;
-        break;
-      }
-    }
-    if (aspect > 0.0) {
-      
-      
-      delete mHarfBuzzShaper.exchange(nullptr);
-      mAdjustedSize = mStyle.GetAdjustedSize(aspect);
-      
-      
-      mFTFace->ForgetLockOwner(this);
-    }
+    return true;
   }
 
   
   
-  mAdjustedSize = GetAdjustedSize();
+  mGlyphMetrics.reset(nullptr);
 
   
   
@@ -313,12 +263,9 @@ void gfxFT2FontBase::InitMetrics() {
   
   mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
 
-#ifdef MOZ_FONTATIONS
-  if (InitMetricsFromSkrifa()) {
-    InitExtraMetrics(GetAdjustedSize(), 0);
-    return;
-  }
-#endif
+  
+  
+  mFTFace->ForgetLockOwner(this);
 
   
   
@@ -334,25 +281,19 @@ void gfxFT2FontBase::InitMetrics() {
     mMetrics.maxHeight = emHeight;
     mMetrics.internalLeading = 0.0;
     mMetrics.externalLeading = 0.2 * emHeight;
-    const gfxFloat spaceWidth = 0.5 * emHeight;
-    mMetrics.spaceWidth = spaceWidth;
-    mMetrics.maxAdvance = spaceWidth;
-    mMetrics.aveCharWidth = spaceWidth;
-    mMetrics.zeroWidth = spaceWidth;
+    mMetrics.spaceWidth = 0.5 * emHeight;
+    mMetrics.maxAdvance = mMetrics.spaceWidth;
+    mMetrics.aveCharWidth = mMetrics.spaceWidth;
+    mMetrics.zeroWidth = mMetrics.spaceWidth;
     mMetrics.ideographicWidth = emHeight;
-    const gfxFloat xHeight = 0.5 * emHeight;
-    mMetrics.xHeight = xHeight;
+    mMetrics.xHeight = 0.5 * emHeight;
     mMetrics.capHeight = mMetrics.maxAscent;
-    const gfxFloat underlineSize = emHeight / 14.0;
-    mMetrics.underlineSize = underlineSize;
-    mMetrics.underlineOffset = -underlineSize;
+    mMetrics.underlineSize = emHeight / 14.0;
+    mMetrics.underlineOffset = -mMetrics.underlineSize;
     mMetrics.strikeoutOffset = 0.25 * emHeight;
-    mMetrics.strikeoutSize = underlineSize;
-
-    SanitizeMetrics(false);
+    mMetrics.strikeoutSize = mMetrics.underlineSize;
     UnlockFTFace();
-    mIsValid = true;
-    return;
+    return true;
   }
 
   const FT_Size_Metrics& ftMetrics = face->size->metrics;
@@ -502,7 +443,8 @@ void gfxFT2FontBase::InitMetrics() {
   UnlockFTFace();
 
   InitExtraMetrics(emHeight, lineHeight);
-  mIsValid = true;
+
+  return true;
 }
 
 void gfxFT2FontBase::InitExtraMetrics(gfxFloat aEmHeight,
@@ -591,21 +533,13 @@ void gfxFT2FontBase::InitExtraMetrics(gfxFloat aEmHeight,
   mMetrics.emAscent =
       sum > 0.0 ? mMetrics.emAscent * mMetrics.emHeight / sum : 0.0;
   mMetrics.emDescent = mMetrics.emHeight - mMetrics.emAscent;
+}
 
-  SanitizeMetrics(false);
-
-#if 0
-    
-    
-
-    fprintf (stderr, "Font: %s\n", GetName().get());
-    fprintf (stderr, "    emHeight: %f emAscent: %f emDescent: %f\n", mMetrics.emHeight, mMetrics.emAscent, mMetrics.emDescent);
-    fprintf (stderr, "    maxAscent: %f maxDescent: %f\n", mMetrics.maxAscent, mMetrics.maxDescent);
-    fprintf (stderr, "    internalLeading: %f externalLeading: %f\n", mMetrics.externalLeading, mMetrics.internalLeading);
-    fprintf (stderr, "    spaceWidth: %f aveCharWidth: %f xHeight: %f\n", mMetrics.spaceWidth, mMetrics.aveCharWidth, mMetrics.xHeight);
-    fprintf (stderr, "    ideographicWidth: %f\n", mMetrics.ideographicWidth);
-    fprintf (stderr, "    uOff: %f uSize: %f stOff: %f stSize: %f\n", mMetrics.underlineOffset, mMetrics.underlineSize, mMetrics.strikeoutOffset, mMetrics.strikeoutSize);
-#endif
+void gfxFT2FontBase::FinishInitFontMetrics() {
+  
+  if (mFTSize == 0.0) {
+    mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
+  }
 }
 
 uint32_t gfxFT2FontBase::GetGlyph(uint32_t unicode,

@@ -99,7 +99,11 @@ class gfxFT2FontBase : public gfxFont {
 
  protected:
   ~gfxFT2FontBase() override;
-  void InitMetrics();
+
+  
+  bool InitMetricsFromPlatform() MOZ_NO_THREAD_SAFETY_ANALYSIS override;
+  void FinishInitFontMetrics() override;
+
   void InitExtraMetrics(gfxFloat aEmHeight, gfxFloat aLineHeight);
 
   FT_Vector GetEmboldenStrength(FT_Face aFace) const;

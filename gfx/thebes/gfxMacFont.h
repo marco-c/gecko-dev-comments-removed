@@ -61,16 +61,13 @@ class gfxMacFont final : public gfxFont {
                  Script aScript, nsAtom* aLanguage, bool aVertical,
                  RoundingFlags aRounding, gfxShapedText* aShapedText) override;
 
-  void InitMetrics();
-  void InitMetricsFromPlatform();
+  bool InitMetricsFromPlatform() override;
+  void FinishInitFontMetrics() override;
 
   
   
   gfxFloat GetCharWidth(CFDataRef aCmap, char16_t aUniChar, uint32_t* aGlyphID,
                         gfxFloat aConvFactor);
-
-  
-  void InitMetricsByGlyphMeasurement(CFDataRef aCmap, gfxFloat aConvFactor);
 
   
   CGFontRef mCGFont;

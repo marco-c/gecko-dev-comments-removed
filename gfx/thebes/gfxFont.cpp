@@ -28,6 +28,7 @@
 #include "mozilla/HashTable.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SVGContextPaint.h"
@@ -1030,10 +1031,6 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
   }
 
   mKerningSet = HasFeatureSet(HB_TAG('k', 'e', 'r', 'n'), mKerningEnabled);
-
-  
-  
-  (void)mFontEntry->UnitsPerEm();
 }
 
 gfxFont::~gfxFont() {
@@ -1057,6 +1054,118 @@ gfxFont::~gfxFont() {
       key->ForgetFont();
     }
   }
+}
+
+void gfxFont::InitMetrics() {
+  uint32_t upem = mFontEntry->UnitsPerEm();
+  if (upem < 16 || upem > 16384) {
+    
+#ifdef DEBUG
+    char warnBuf[1024];
+    SprintfLiteral(warnBuf,
+                   "Bad font metrics for: %s (invalid unitsPerEm value)",
+                   mFontEntry->Name().get());
+    NS_WARNING(warnBuf);
+#endif
+    return;
+  }
+
+  
+  
+  mAdjustedSize = GetAdjustedSize();
+  mFUnitsConvFactor = mAdjustedSize / upem;
+
+#if MOZ_FONTATIONS
+  if (InitMetricsFromSkrifa()) {
+    mIsValid = true;
+  }
+#endif
+
+  if (!mIsValid && InitMetricsFromPlatform()) {
+    mIsValid = true;
+  }
+
+  if (!mIsValid) {
+    return;
+  }
+
+  if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
+          FontSizeAdjust::Tag::None &&
+      mStyle.sizeAdjust >= 0.0 && GetAdjustedSize() > 0.0) {
+    
+    gfxFloat aspect;
+    switch (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis)) {
+      default:
+        MOZ_ASSERT_UNREACHABLE("unhandled sizeAdjustBasis?");
+        aspect = 0.0;
+        break;
+      case FontSizeAdjust::Tag::ExHeight:
+        aspect = mMetrics.xHeight / mAdjustedSize;
+        break;
+      case FontSizeAdjust::Tag::CapHeight:
+        aspect = mMetrics.capHeight / mAdjustedSize;
+        break;
+      case FontSizeAdjust::Tag::ChWidth:
+        aspect =
+            mMetrics.zeroWidth < 0.0 ? 0.5 : mMetrics.zeroWidth / mAdjustedSize;
+        break;
+      case FontSizeAdjust::Tag::IcWidth:
+      case FontSizeAdjust::Tag::IcHeight: {
+        bool vertical = FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) ==
+                        FontSizeAdjust::Tag::IcHeight;
+        gfxFloat advance = GetCharAdvance(kWaterIdeograph, vertical);
+        aspect = advance > 0.0 ? advance / mAdjustedSize : 1.0;
+        break;
+      }
+    }
+    if (aspect > 0.0) {
+      
+      
+      delete mHarfBuzzShaper.exchange(nullptr);
+      mAdjustedSize = mStyle.GetAdjustedSize(aspect);
+      mFUnitsConvFactor = mAdjustedSize / upem;
+      memset(&mMetrics, 0, sizeof(mMetrics));
+      mIsValid = false;
+#if MOZ_FONTATIONS
+      if (InitMetricsFromSkrifa()) {
+        mIsValid = true;
+      }
+#endif
+      if (!mIsValid && InitMetricsFromPlatform()) {
+        mIsValid = true;
+      }
+      if (!mIsValid) {
+        
+        
+        return;
+      }
+    }
+  }
+
+  
+  
+  
+
+  mMetrics.emHeight = mAdjustedSize;
+
+  CalculateDerivedMetrics();
+  SanitizeMetrics(mFontEntry->mIsBadUnderlineFont);
+
+  if (ApplySyntheticBold()) {
+    auto delta = GetSyntheticBoldOffset();
+    mMetrics.spaceWidth += delta;
+    mMetrics.aveCharWidth += delta;
+    mMetrics.maxAdvance += delta;
+    if (mMetrics.zeroWidth > 0) {
+      mMetrics.zeroWidth += delta;
+    }
+    if (mMetrics.ideographicWidth > 0) {
+      mMetrics.ideographicWidth += delta;
+    }
+  }
+
+  
+  FinishInitFontMetrics();
 }
 
 
@@ -4282,14 +4391,9 @@ void gfxFont::SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
 
 
 
-
-
-
 bool gfxFont::InitMetricsFromSfntTables() {
   const uint32_t kHheaTableTag = TRUETYPE_TAG('h', 'h', 'e', 'a');
   const uint32_t kOS_2TableTag = TRUETYPE_TAG('O', 'S', '/', '2');
-
-  uint32_t len;
 
   if (mFUnitsConvFactor < 0.0) {
     
@@ -4306,6 +4410,7 @@ bool gfxFont::InitMetricsFromSfntTables() {
   if (!hheaTable) {
     return false;  
   }
+  uint32_t len;
   const MetricsHeader* hhea =
       reinterpret_cast<const MetricsHeader*>(hb_blob_get_data(hheaTable, &len));
   if (len < sizeof(MetricsHeader)) {
@@ -4370,19 +4475,53 @@ bool gfxFont::InitMetricsFromSfntTables() {
 
   
   
+  
   if (hb_ot_metrics_get_position(hbFont, HB_OT_METRICS_TAG_X_HEIGHT,
                                  &position) &&
       position > 0) {
     mMetrics.xHeight = FixedToFloat(position);
+  } else {
+    hb_codepoint_t glyph;
+    if (hb_font_get_nominal_glyph(hbFont, 'x', &glyph)) {
+      hb_glyph_extents_t extents;
+      if (hb_font_get_glyph_extents(hbFont, glyph, &extents)) {
+        mMetrics.xHeight = FixedToFloat(extents.y_bearing);
+      }
+    }
   }
   if (hb_ot_metrics_get_position(hbFont, HB_OT_METRICS_TAG_CAP_HEIGHT,
                                  &position) &&
       position > 0) {
     mMetrics.capHeight = FixedToFloat(position);
+  } else {
+    hb_codepoint_t glyph;
+    if (hb_font_get_nominal_glyph(hbFont, 'H', &glyph)) {
+      hb_glyph_extents_t extents;
+      if (hb_font_get_glyph_extents(hbFont, glyph, &extents)) {
+        mMetrics.capHeight = FixedToFloat(extents.y_bearing);
+      }
+    }
   }
+
+  auto measureAdvance = [&](char16_t aChar) -> Maybe<gfxFloat> {
+    hb_codepoint_t glyph;
+    if (hb_font_get_nominal_glyph(hbFont, aChar, &glyph)) {
+      return Some(FixedToFloat(hb_font_get_glyph_h_advance(hbFont, glyph)));
+    }
+    return Nothing();
+  };
+
+  mMetrics.zeroWidth = measureAdvance('0').valueOr(-1.0);
+  mMetrics.ideographicWidth = measureAdvance(kWaterIdeograph).valueOr(-1.0);
+  mMetrics.spaceWidth = measureAdvance(' ').valueOr(mMetrics.aveCharWidth);
+
+  hb_codepoint_t glyph;
+  if (hb_font_get_nominal_glyph(hbFont, ' ', &glyph)) {
+    mSpaceGlyph = glyph;
+  }
+
   hb_font_destroy(hbFont);
 
-  mIsValid = true;
   return true;
 }
 
@@ -4432,26 +4571,37 @@ bool gfxFont::InitMetricsFromSkrifa() {
   }
 
   
-  auto measureHeight = [=](char16_t aCh) -> float {
+  auto measureHeight = [=](char16_t aCh) -> Maybe<float> {
     if (uint32_t gid = skrifa_font_map_char_to_glyph(skf, aCh)) {
       gfx::Rect bbox;
       if (skrifa_metrics_get_glyph_bounds(skmtx, gid, &bbox)) {
-        return bbox.YMost();
+        return Some(bbox.YMost());
       }
     }
-    return 0.0;
+    return Nothing();
   };
-  mMetrics.xHeight =
-      metrics.x_height > 0.0 ? metrics.x_height : measureHeight('x');
-  mMetrics.capHeight =
-      metrics.cap_height > 0.0 ? metrics.cap_height : measureHeight('H');
+  
+  
+  
+  bool preferGlyphMeasurements =
+      mFontEntry->HasVariations() &&
+      !mFontEntry->HasFontTable(TRUETYPE_TAG('M', 'V', 'A', 'R'));
+  if (preferGlyphMeasurements) {
+    mMetrics.xHeight = measureHeight('x').valueOr(metrics.x_height);
+    mMetrics.capHeight = measureHeight('H').valueOr(metrics.cap_height);
+  } else {
+    mMetrics.xHeight = metrics.x_height > 0.0 ? metrics.x_height
+                                              : measureHeight('x').valueOr(0.0);
+    mMetrics.capHeight = metrics.cap_height > 0.0
+                             ? metrics.cap_height
+                             : measureHeight('H').valueOr(0.0);
+  }
 
   skrifa_glyph_metrics_delete(skmtx);
   skrifa_location_delete(location);
 
   mSpaceGlyph = skrifa_font_map_char_to_glyph(skf, ' ');
 
-  mIsValid = true;
   return true;
 }
 #endif

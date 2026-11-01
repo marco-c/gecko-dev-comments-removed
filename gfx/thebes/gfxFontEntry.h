@@ -761,7 +761,7 @@ class gfxFontEntry {
   
   
   
-  const SkrifaFontRef* GetSkrifaFont() {
+  const SkrifaFontRef* GetSkrifaFont() MOZ_EXCLUDES(mLock) {
     if (const SkrifaFontRef* f = mSkrifaFontFace) {
       return f;
     }
@@ -787,19 +787,20 @@ class gfxFontEntry {
   
   virtual ~gfxFontEntry();
 
-  virtual gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) = 0;
+  virtual gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle)
+      MOZ_EXCLUDES(mLock) = 0;
 
-  inline bool CheckForGraphiteTables() {
+  inline bool CheckForGraphiteTables() MOZ_EXCLUDES(mLock) {
     return HasFontTable(TRUETYPE_TAG('S', 'i', 'l', 'f'));
   }
 
-  virtual bool HasVariationsInternal() { return false; };
+  virtual bool HasVariationsInternal() MOZ_EXCLUDES(mLock) { return false; };
 
   virtual void GetVariationAxesInternal(
-      nsTArray<gfxFontVariationAxis>& aVariationAxes) {};
+      nsTArray<gfxFontVariationAxis>& aVariationAxes) MOZ_EXCLUDES(mLock) {};
 
   virtual void GetVariationInstancesInternal(
-      nsTArray<gfxFontVariationInstance>& aInstances) {};
+      nsTArray<gfxFontVariationInstance>& aInstances) MOZ_EXCLUDES(mLock) {};
 
   
   
@@ -816,12 +817,12 @@ class gfxFontEntry {
   virtual hb_blob_t* GetFontTableInternal(uint32_t aTag) MOZ_EXCLUDES(mLock);
 
   
-  virtual bool HasFontTableInternal(uint32_t aTableTag);
+  virtual bool HasFontTableInternal(uint32_t aTableTag) MOZ_EXCLUDES(mLock);
 
   
   
-  virtual nsresult CopyFontTable(uint32_t aTableTag,
-                                 nsTArray<uint8_t>& aBuffer) {
+  virtual nsresult CopyFontTable(uint32_t aTableTag, nsTArray<uint8_t>& aBuffer)
+      MOZ_EXCLUDES(mLock) {
     MOZ_ASSERT_UNREACHABLE(
         "forgot to override either GetFontTable or "
         "CopyFontTable?");
@@ -856,15 +857,16 @@ class gfxFontEntry {
   
   
   bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont,
-                     mozilla::MemoryMappedFile&& aSkrifaFontFile);
+                     mozilla::MemoryMappedFile&& aSkrifaFontFile)
+      MOZ_REQUIRES(mLock);
 
   
   
-  bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont);
+  bool SetSkrifaFont(SkrifaFontRef* aSkrifaFont) MOZ_REQUIRES(mLock);
 
   
   
-  virtual void InitSkrifaFontFace() {}
+  virtual void InitSkrifaFontFace() MOZ_REQUIRES(mLock) {}
 
   mozilla::Atomic<SkrifaFontRef*> mSkrifaFontFace;
   mozilla::MemoryMappedFile mSkrifaFontFile;

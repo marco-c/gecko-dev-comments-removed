@@ -1518,6 +1518,10 @@ class gfxFont {
   int32_t GetRefCount() { return int32_t(mRefCnt); }
 
   
+  
+  void InitMetrics();
+
+  
   typedef enum : uint8_t {
     kAntialiasDefault,
     kAntialiasNone,
@@ -2399,6 +2403,12 @@ class gfxFont {
 
   
   
+  virtual bool InitMetricsFromPlatform() = 0;
+
+  
+  
+  virtual void FinishInitFontMetrics() {}
+
   
   
   
