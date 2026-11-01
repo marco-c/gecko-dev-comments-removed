@@ -111,8 +111,11 @@ class ProfileBuffer final {
   
   
   
+  
+  
   bool DuplicateLastSample(ProfilerThreadId aThreadId, double aSampleTimeMs,
                            mozilla::Maybe<uint64_t>& aLastSample,
+                           bool aLastSampleHasJitReturnAddrs,
                            const RunningTimes& aRunningTimes);
 
   void DiscardSamplesBeforeTime(double aTime);
@@ -275,10 +278,13 @@ class ProfileBufferCollector final : public ProfilerStackCollector {
   virtual void CollectProfilingStackFrame(
       const js::ProfilingStackFrame& aFrame) override;
 
+  bool HasCollectedJitReturnAddr() const { return mHasCollectedJitReturnAddr; }
+
  private:
   ProfileBuffer& mBuf;
   uint64_t mSamplePositionInBuffer;
   uint64_t mBufferRangeStart;
+  bool mHasCollectedJitReturnAddr = false;
 };
 
 #endif
