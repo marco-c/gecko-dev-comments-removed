@@ -203,9 +203,9 @@ void VRShMem::CreateShMem(bool aCreateOnSharedMemory) {
     return;
   }
 #elif defined(MOZ_WIDGET_ANDROID)
-  MOZ_ASSERT(false,
-             "CreateShMem should not be called for Android. Use "
-             "CreateShMemForAndroid instead");
+  MOZ_RELEASE_ASSERT(false,
+                     "CreateShMem should not be called for Android. Use "
+                     "CreateShMemForAndroid instead");
 #endif
 }
 
@@ -355,7 +355,7 @@ bool VRShMem::JoinShMem() {
   
   
   
-  MOZ_ASSERT(false, "JoinShMem not implemented");
+  MOZ_RELEASE_ASSERT(false, "JoinShMem not implemented");
 #endif
   return true;
 }
@@ -448,7 +448,7 @@ void VRShMem::PullBrowserState(mozilla::gfx::VRBrowserState& aState) {
 
 
 
-  MOZ_ASSERT(false, "PullBrowserState not implemented");
+  MOZ_RELEASE_ASSERT(false, "PullBrowserState not implemented");
 #else
   bool status = true;
 #  if defined(XP_WIN)
@@ -489,7 +489,7 @@ void VRShMem::PushSystemState(const mozilla::gfx::VRSystemState& aState) {
 #if defined(MOZ_WIDGET_ANDROID)
   
   
-  MOZ_ASSERT(false, "JoinShMem not implemented");
+  MOZ_RELEASE_ASSERT(false, "JoinShMem not implemented");
   
 
 
