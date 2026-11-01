@@ -123,9 +123,6 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
     
     chrome_options["args"].append("--auto-grant-email-verification-permission-for-testing")
     
-    
-    chrome_options["args"].append("--enable-features=FedCmWithoutWellKnownEnforcement")
-    
     chrome_options["args"].append("--short-reporting-delay")
     
     
@@ -197,8 +194,15 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data, subsuite
         chrome_options["args"].append(
             "--ip-address-space-overrides=" + address_space_overrides_arg)
 
-    
-    chrome_options["args"].append("--disable-features=ScrollbarAnimations")
+    chrome_options["args"].append("--disable-features=" + ",".join([
+        
+        "ScrollbarAnimations",
+        
+        
+        
+        
+        "CompressionDictionaryTransportRequireKnownRootCert",
+    ]))
 
     
     
@@ -342,7 +346,7 @@ class ChromeBrowser(WebDriverBrowser):
         self._is_extension_test = (
             (test.testdriver_features is not None and
              "extensions" in test.testdriver_features) or
-            (test.path is not None and "web-extensions/" in test.path))
+            (test.url is not None and "web-extensions/" in test.url))
         self._require_webdriver_bidi = (
             (test.testdriver_features is not None and
              ("bidi" in test.testdriver_features or
