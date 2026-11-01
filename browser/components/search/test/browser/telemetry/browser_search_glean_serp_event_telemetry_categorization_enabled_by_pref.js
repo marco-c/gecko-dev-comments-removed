@@ -66,6 +66,7 @@ const TEST_PROVIDER_INFO = [
 ];
 
 add_setup(async function () {
+  await SearchSERPTelemetry.init();
   SearchSERPTelemetry.overrideSearchTelemetryForTests(TEST_PROVIDER_INFO);
 
   
