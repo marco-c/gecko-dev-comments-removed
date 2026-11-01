@@ -597,10 +597,6 @@ var HandshakeTelemetryHelpers = {
 
 
   assertHistogramMap(snapshot, expectedEntries) {
-    Assert.ok(
-      !mozinfo.socketprocess_networking,
-      "Metrics don't populate on network process"
-    );
     let values = JSON.parse(JSON.stringify(snapshot));
     for (let [Tk, Tv] of expectedEntries.entries()) {
       let found = false;
@@ -652,10 +648,6 @@ var HandshakeTelemetryHelpers = {
 
 
   checkEntry(flavors, resultString, resultCount) {
-    Assert.ok(
-      !mozinfo.socketprocess_networking,
-      "Metrics don't populate on network process"
-    );
     for (let f of flavors) {
       let delta = this.resultDelta(f);
       info(

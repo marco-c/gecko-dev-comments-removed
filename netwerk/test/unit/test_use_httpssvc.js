@@ -9,9 +9,6 @@ let h2Port;
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
-);
 
 let trrServer;
 add_setup(async function setup() {
@@ -37,11 +34,6 @@ add_setup(async function setup() {
     );
     await trrServer.stop();
   });
-
-  if (mozinfo.socketprocess_networking) {
-    Services.dns; 
-    await TestUtils.waitForCondition(() => Services.io.socketProcessLaunched);
-  }
 
   Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRONLY);
 });
@@ -231,6 +223,65 @@ add_task(async function testFallback() {
   
   
   let chan = makeChan(`https://test.fallback.com:${h2Port}`);
+  let [req] = await channelOpenPromise(chan);
+  
+  Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");
+
+  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    false
+  );
+});
+
+
+
+
+
+add_task(async function testConnectToAliasTargetWithoutRecord() {
+  Services.prefs.setIntPref("network.trr.mode", Ci.nsIDNSService.MODE_TRRONLY);
+  Services.prefs.setCharPref(
+    "network.trr.uri",
+    `https://foo.example.com:${trrServer.port()}/dns-query`
+  );
+  Services.dns.clearCache(true);
+
+  
+  let originQuery = `_${h2Port}._https.alias-origin.com`;
+
+  
+  await trrServer.registerDoHAnswers(originQuery, "HTTPS", {
+    answers: [
+      {
+        name: originQuery,
+        ttl: 55,
+        type: "HTTPS",
+        flush: false,
+        data: { priority: 0, name: "alias-target.com", values: [] },
+      },
+    ],
+  });
+  
+  await trrServer.registerDoHAnswers("alias-target.com", "HTTPS", {
+    answers: [],
+  });
+  
+  
+  await trrServer.registerDoHAnswers("alias-target.com", "A", {
+    answers: [
+      {
+        name: "alias-target.com",
+        ttl: 55,
+        type: "A",
+        flush: false,
+        data: "127.0.0.1",
+      },
+    ],
+  });
+
+  certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
+    true
+  );
+
+  let chan = makeChan(`https://alias-origin.com:${h2Port}/`);
   let [req] = await channelOpenPromise(chan);
   
   Assert.equal(req.getResponseHeader("x-connection-http2"), "yes");

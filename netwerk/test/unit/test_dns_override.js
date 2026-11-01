@@ -355,10 +355,7 @@ function hexToUint8Array(hex) {
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_override() {
     let trrServer = new TRRServer();
@@ -548,10 +545,7 @@ add_task(
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_follow() {
     let trrServer = new TRRServer();
@@ -644,10 +638,7 @@ add_task(
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_chain_limit() {
     let trrServer = new TRRServer();
@@ -719,10 +710,7 @@ add_task(
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_cname_chain() {
     let trrServer = new TRRServer();
@@ -882,10 +870,7 @@ function buildAliasThenMalformedTargetPacket(origin, target) {
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_decode_error_not_masked() {
     let trrServer = new TRRServer();
@@ -1009,10 +994,7 @@ function buildValidThenMalformedPacket(host) {
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_partial_result_not_returned() {
     let partialRaw = buildValidThenMalformedPacket("partial-native.com");
@@ -1098,10 +1080,7 @@ function buildNoAnswerPacket(host) {
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_target_without_record() {
     let originRaw = buildAliasOnlyPacket("alias-noh.com", "target-noh.com");
@@ -1226,10 +1205,7 @@ function cnameAnswer(name, target) {
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_alias_chain_no_record() {
     let listener = await resolveHTTPSChain(
@@ -1262,10 +1238,7 @@ add_task(
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_alias_cname_chain_no_record() {
     let listener = await resolveHTTPSChain(
@@ -1298,10 +1271,7 @@ add_task(
 
 add_task(
   {
-    skip_if: () =>
-      mozinfo.os == "win" ||
-      mozinfo.os == "android" ||
-      mozinfo.socketprocess_networking,
+    skip_if: () => mozinfo.os == "win" || mozinfo.os == "android",
   },
   async function test_https_record_plain_cname_chain_no_record() {
     let listener = await resolveHTTPSChain(

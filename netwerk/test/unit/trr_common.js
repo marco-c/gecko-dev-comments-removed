@@ -350,23 +350,20 @@ async function test_strict_native_fallback() {
     `${inStatus} should be an error code`
   );
 
-  if (!mozinfo.socketprocess_networking) {
+  info("Now with confirmation failed - should fallback");
+  Services.dns.clearCache(true);
+  setModeAndURI(2, "doh?responseIP=2.2.2.2&corruptedAnswer=true");
+  Services.prefs.setCharPref("network.trr.confirmationNS", "example.com");
+  await TestUtils.waitForCondition(
     
-    info("Now with confirmation failed - should fallback");
-    Services.dns.clearCache(true);
-    setModeAndURI(2, "doh?responseIP=2.2.2.2&corruptedAnswer=true");
-    Services.prefs.setCharPref("network.trr.confirmationNS", "example.com");
-    await TestUtils.waitForCondition(
-      
-      () =>
-        Services.dns.currentTrrConfirmationState == 3 ||
-        Services.dns.currentTrrConfirmationState == 4,
-      `Timed out waiting for confirmation failure. Currently ${Services.dns.currentTrrConfirmationState}`,
-      1,
-      5000
-    );
-    await new TRRDNSListener("bar.example.com", "127.0.0.1"); 
-  }
+    () =>
+      Services.dns.currentTrrConfirmationState == 3 ||
+      Services.dns.currentTrrConfirmationState == 4,
+    `Timed out waiting for confirmation failure. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
+  await new TRRDNSListener("bar.example.com", "127.0.0.1"); 
 
   info("Now a successful case.");
   
@@ -375,17 +372,15 @@ async function test_strict_native_fallback() {
   await new Promise(resolve => do_timeout(500, resolve));
   Services.dns.clearCache(true);
   setModeAndURI(2, "doh?responseIP=2.2.2.2");
-  if (!mozinfo.socketprocess_networking) {
+  
+  Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
+  await TestUtils.waitForCondition(
     
-    Services.prefs.setCharPref("network.trr.confirmationNS", "skip");
-    await TestUtils.waitForCondition(
-      
-      () => Services.dns.currentTrrConfirmationState == 5,
-      `Timed out waiting for confirmation disabled. Currently ${Services.dns.currentTrrConfirmationState}`,
-      1,
-      5000
-    );
-  }
+    () => Services.dns.currentTrrConfirmationState == 5,
+    `Timed out waiting for confirmation disabled. Currently ${Services.dns.currentTrrConfirmationState}`,
+    1,
+    5000
+  );
   await new TRRDNSListener("bar.example.com", "2.2.2.2");
 
   info("Now without strict fallback mode, timeout case");

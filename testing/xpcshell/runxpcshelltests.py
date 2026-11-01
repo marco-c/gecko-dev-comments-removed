@@ -898,6 +898,7 @@ class XPCShellTestThread(Thread):
                     if line.get("action") == "test_status" and "expected" in line:
                         
                         line["expected"] = line.get("status")
+                        line.setdefault("extra", {})["will_retry"] = True
                     elif line.get("action") == "log" and line.get("level") == "ERROR":
                         
                         
@@ -1666,10 +1667,7 @@ class XPCShellTests:
         if os.getenv("MOZ_FETCHES_DIR", None):
             self.env["MOZ_FETCHES_DIR"] = os.getenv("MOZ_FETCHES_DIR", None)
 
-        if self.mozInfo.get("socketprocess_networking"):
-            self.env["MOZ_FORCE_USE_SOCKET_PROCESS"] = "1"
-        else:
-            self.env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
+        self.env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
 
         
         
@@ -1950,10 +1948,6 @@ class XPCShellTests:
         self.mozInfo["sessionHistoryInParent"] = True
 
         self.mozInfo["verify"] = options.get("verify", False)
-
-        self.mozInfo["socketprocess_networking"] = prefs.get(
-            "network.http.network_access_on_socket_process.enabled", False
-        )
 
         self.mozInfo["inc_origin_init"] = (
             os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1"
