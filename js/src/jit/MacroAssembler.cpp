@@ -281,9 +281,9 @@ void MacroAssembler::checkAllocatorState(Register temp, gc::AllocKind allocKind,
       realm()->zone()->hasRealmWithAllocMetadataBuilder()) {
     loadJSContext(temp);
     loadPtr(Address(temp, JSContext::offsetOfRealm()), temp);
-    branchPtr(Assembler::NotEqual,
-              Address(temp, Realm::offsetOfAllocationMetadataBuilder()),
-              ImmWord(0), fail);
+    branch32(Assembler::NotEqual,
+             Address(temp, Realm::offsetOfHasAllocationMetadataBuilder()),
+             Imm32(0), fail);
   }
 }
 
@@ -6321,6 +6321,16 @@ FaultingCodeRange MacroAssembler::wasmTrap(
   MOZ_ASSERT_IF(!oom(),
                 currentOffset() - fcr.get() == WasmTrapInstructionLength);
 
+#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
+  
+  
+  
+  
+  if (wasm::TrapMightResume(trap)) {
+    addToStackPtr(Imm32(sizeof(uintptr_t)));
+  }
+#endif
+
   appendAndVerify(trap, wasm::TrapMachineInsn::OfficialUD, fcr, trapSiteDesc);
   return fcr;
 }
@@ -6935,16 +6945,16 @@ CodeOffset MacroAssembler::wasmTrapOnFailedInstanceCall(
                 &noTrap);
       break;
   }
-  wasmTrap(failureTrap, trapSiteDesc);
+  FaultingCodeRange fcr = wasmTrap(failureTrap, trapSiteDesc);
   bind(&noTrap);
 
-  if (failureTrap != wasm::Trap::ThrowReported) {
+  if (failureTrap != wasm::Trap::ThrowReported || !fcr.isValid()) {
     return CodeOffset();
   }
 
   
   
-  return CodeOffset(currentOffset());
+  return CodeOffset(fcr.resumeOffset());
 }
 
 
@@ -8023,10 +8033,10 @@ void MacroAssembler::wasmNewStructObject(Register instance, Register result,
 
   
   
-  branchPtr(
+  branch32(
       Assembler::NotEqual,
-      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
-      ImmWord(0), fail);
+      Address(instance, wasm::Instance::offsetOfHasAllocationMetadataBuilder()),
+      Imm32(0), fail);
 
 #ifdef JS_GC_ZEAL
   
@@ -8079,10 +8089,10 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 
   
   
-  branchPtr(
+  branch32(
       Assembler::NotEqual,
-      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
-      ImmWord(0), fail);
+      Address(instance, wasm::Instance::offsetOfHasAllocationMetadataBuilder()),
+      Imm32(0), fail);
 
 #ifdef JS_GC_ZEAL
   
@@ -8238,10 +8248,10 @@ void MacroAssembler::wasmNewArrayObjectFixed(
 
   
   
-  branchPtr(
+  branch32(
       Assembler::NotEqual,
-      Address(instance, wasm::Instance::offsetOfAllocationMetadataBuilder()),
-      ImmWord(0), fail);
+      Address(instance, wasm::Instance::offsetOfHasAllocationMetadataBuilder()),
+      Imm32(0), fail);
 
 #ifdef JS_GC_ZEAL
   

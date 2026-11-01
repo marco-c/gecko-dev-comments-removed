@@ -510,34 +510,6 @@ extern JS_PUBLIC_API void PrepareScriptEnvironmentAndInvoke(
 JS_PUBLIC_API void SetScriptEnvironmentPreparer(
     JSContext* cx, ScriptEnvironmentPreparer* preparer);
 
-
-
-struct AllocationMetadataBuilder {
-  AllocationMetadataBuilder() = default;
-
-  
-  
-  
-  
-  
-  
-  virtual JSObject* build(JSContext* cx, JS::HandleObject obj,
-                          AutoEnterOOMUnsafeRegion& oomUnsafe) const {
-    return nullptr;
-  }
-};
-
-
-
-
-
-
-JS_PUBLIC_API void SetAllocationMetadataBuilder(
-    JSContext* cx, const AllocationMetadataBuilder* callback);
-
-
-JS_PUBLIC_API JSObject* GetAllocationMetadata(JSObject* obj);
-
 JS_PUBLIC_API bool GetElementsWithAdder(JSContext* cx, JS::HandleObject obj,
                                         JS::HandleObject receiver,
                                         uint32_t begin, uint32_t end,

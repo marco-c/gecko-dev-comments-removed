@@ -353,7 +353,6 @@ class JS::Realm : public JS::shadow::Realm {
   
   JS::RealmStats* realmStats_ = nullptr;
 
-  const js::AllocationMetadataBuilder* allocationMetadataBuilder_ = nullptr;
   void* realmPrivate_ = nullptr;
 
   
@@ -379,6 +378,10 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   unsigned enterRealmDepthIgnoringJit_ = 0;
+
+  
+  
+  uint32_t hasAllocationMetadataBuilder_ = false;
 
  public:
   
@@ -428,6 +431,9 @@ class JS::Realm : public JS::shadow::Realm {
   
   
   bool isTracingExecution_ = false;
+
+  
+  bool isDyingHint_ = false;
 
   js::UniquePtr<js::coverage::LCovRealm> lcovRealm_ = nullptr;
 
@@ -618,18 +624,13 @@ class JS::Realm : public JS::shadow::Realm {
   }
 
   bool hasAllocationMetadataBuilder() const {
-    return allocationMetadataBuilder_;
+    return hasAllocationMetadataBuilder_;
   }
-  const js::AllocationMetadataBuilder* getAllocationMetadataBuilder() const {
-    return allocationMetadataBuilder_;
+  const void* addressOfHasAllocationMetadataBuilder() const {
+    return &hasAllocationMetadataBuilder_;
   }
-  const void* addressOfMetadataBuilder() const {
-    return &allocationMetadataBuilder_;
-  }
-  bool isRecordingAllocations();
-  void setAllocationMetadataBuilder(
-      const js::AllocationMetadataBuilder* builder);
-  void forgetAllocationMetadataBuilder();
+  void enableAllocationMetadataBuilder();
+  void disableAllocationMetadataBuilder();
   void setNewObjectMetadata(JSContext* cx, JS::HandleObject obj);
 
   bool hasObjectPendingMetadata() const {
@@ -864,6 +865,9 @@ class JS::Realm : public JS::shadow::Realm {
 
   js::SavedStacks& savedStacks() { return savedStacks_; }
 
+  void setIsDyingHint() { isDyingHint_ = true; }
+  bool isDyingHint() const { return isDyingHint_; }
+
   
   
   
@@ -878,8 +882,8 @@ class JS::Realm : public JS::shadow::Realm {
   static constexpr size_t offsetOfCompartment() {
     return offsetof(JS::Realm, compartment_);
   }
-  static constexpr size_t offsetOfAllocationMetadataBuilder() {
-    return offsetof(JS::Realm, allocationMetadataBuilder_);
+  static constexpr size_t offsetOfHasAllocationMetadataBuilder() {
+    return offsetof(JS::Realm, hasAllocationMetadataBuilder_);
   }
   static constexpr size_t offsetOfDebugModeBits() {
     return offsetof(JS::Realm, debugModeBits_);
@@ -1042,6 +1046,9 @@ class MOZ_RAII AutoSetNewObjectMetadata {
   AutoSetNewObjectMetadata(const AutoSetNewObjectMetadata& aOther) = delete;
   void operator=(const AutoSetNewObjectMetadata& aOther) = delete;
 };
+
+
+JSObject* GetAllocationMetadata(JSObject* obj);
 
 } 
 

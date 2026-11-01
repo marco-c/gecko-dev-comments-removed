@@ -1978,9 +1978,8 @@ void SavedStacks::setSamplingProbability(double probability) {
   bernoulli.setProbability(probability);
 }
 
-JSObject* SavedStacks::MetadataBuilder::build(
-    JSContext* cx, HandleObject target,
-    AutoEnterOOMUnsafeRegion& oomUnsafe) const {
+JSObject* SavedStacks::buildAllocationMetadata(
+    JSContext* cx, HandleObject target, AutoEnterOOMUnsafeRegion& oomUnsafe) {
   RootedObject obj(cx, target);
 
   SavedStacks& stacks = cx->realm()->savedStacks();
@@ -1990,12 +1989,12 @@ JSObject* SavedStacks::MetadataBuilder::build(
 
   Rooted<SavedFrame*> frame(cx);
   if (!stacks.saveCurrentStack(cx, &frame)) {
-    oomUnsafe.crash("SavedStacksMetadataBuilder");
+    oomUnsafe.crash("SavedStacks::buildAllocationMetadata");
   }
 
   if (!DebugAPI::onLogAllocationSite(cx, obj, frame,
                                      mozilla::TimeStamp::Now())) {
-    oomUnsafe.crash("SavedStacksMetadataBuilder");
+    oomUnsafe.crash("SavedStacks::buildAllocationMetadata");
   }
 
   auto recordAllocationCallback =
@@ -2018,8 +2017,6 @@ JSObject* SavedStacks::MetadataBuilder::build(
   MOZ_ASSERT_IF(frame, !frame->is<WrapperObject>());
   return frame;
 }
-
-const SavedStacks::MetadataBuilder SavedStacks::metadataBuilder;
 
 
 constinit ReconstructedSavedFramePrincipals

@@ -189,13 +189,8 @@ class SavedStacks {
 
   
   
-  struct MetadataBuilder : public AllocationMetadataBuilder {
-    MetadataBuilder() = default;
-    virtual JSObject* build(JSContext* cx, HandleObject obj,
-                            AutoEnterOOMUnsafeRegion& oomUnsafe) const override;
-  };
-
-  static const MetadataBuilder metadataBuilder;
+  static JSObject* buildAllocationMetadata(JSContext* cx, HandleObject obj,
+                                           AutoEnterOOMUnsafeRegion& oomUnsafe);
 
  private:
   SavedFrame::Set frames;

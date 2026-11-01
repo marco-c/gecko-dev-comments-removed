@@ -70,8 +70,8 @@ Realm::~Realm() {
     runtime_->lcovOutput().writeLCovResult(*lcovRealm_);
   }
 
-  if (allocationMetadataBuilder_) {
-    forgetAllocationMetadataBuilder();
+  if (hasAllocationMetadataBuilder_) {
+    disableAllocationMetadataBuilder();
   }
 
   if (isTracingExecution_) {
@@ -383,32 +383,24 @@ void Realm::purge() {
   objects_.iteratorCache.clearAndCompact();
 }
 
-
-
-
-bool Realm::isRecordingAllocations() { return !!allocationMetadataBuilder_; }
-
-void Realm::setAllocationMetadataBuilder(
-    const js::AllocationMetadataBuilder* builder) {
-  
-  
-  if (bool(allocationMetadataBuilder_) != bool(builder)) {
-    ReleaseAllJITCode(runtime_->gcContext());
-    if (builder) {
-      zone()->incNumRealmsWithAllocMetadataBuilder();
-    } else {
-      zone()->decNumRealmsWithAllocMetadataBuilder();
-    }
+void Realm::enableAllocationMetadataBuilder() {
+  if (hasAllocationMetadataBuilder_) {
+    return;
   }
+
+  
+  
+  ReleaseAllJITCode(runtime_->gcContext());
+  zone()->incNumRealmsWithAllocMetadataBuilder();
 
   for (auto iter = wasm.instances().iter(); !iter.done(); iter.next()) {
-    iter.get()->setAllocationMetadataBuilder(builder);
+    iter.get()->setHasAllocationMetadataBuilder(true);
   }
-  allocationMetadataBuilder_ = builder;
+  hasAllocationMetadataBuilder_ = true;
 }
 
-void Realm::forgetAllocationMetadataBuilder() {
-  if (!allocationMetadataBuilder_) {
+void Realm::disableAllocationMetadataBuilder() {
+  if (!hasAllocationMetadataBuilder_) {
     return;
   }
 
@@ -422,9 +414,9 @@ void Realm::forgetAllocationMetadataBuilder() {
   zone()->decNumRealmsWithAllocMetadataBuilder();
 
   for (auto iter = wasm.instances().iter(); !iter.done(); iter.next()) {
-    iter.get()->setAllocationMetadataBuilder(nullptr);
+    iter.get()->setHasAllocationMetadataBuilder(false);
   }
-  allocationMetadataBuilder_ = nullptr;
+  hasAllocationMetadataBuilder_ = false;
 }
 
 void Realm::setNewObjectMetadata(JSContext* cx, HandleObject obj) {
@@ -433,7 +425,7 @@ void Realm::setNewObjectMetadata(JSContext* cx, HandleObject obj) {
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
   if (JSObject* metadata =
-          allocationMetadataBuilder_->build(cx, obj, oomUnsafe)) {
+          SavedStacks::buildAllocationMetadata(cx, obj, oomUnsafe)) {
     MOZ_ASSERT(metadata->maybeCCWRealm() == obj->maybeCCWRealm());
     cx->check(metadata);
 
@@ -451,6 +443,18 @@ void Realm::setNewObjectMetadata(JSContext* cx, HandleObject obj) {
       oomUnsafe.crash("setNewObjectMetadata");
     }
   }
+}
+
+JSObject* js::GetAllocationMetadata(JSObject* obj) {
+  ObjectRealm::ObjectMetadataTable* map =
+      ObjectRealm::get(obj).objectMetadataTable.get();
+  if (map) {
+    auto ptr = map->lookup(obj);
+    if (ptr) {
+      return ptr->value();
+    }
+  }
+  return nullptr;
 }
 
 void Realm::updateDebuggerObservesFlag(unsigned flag) {

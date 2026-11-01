@@ -706,21 +706,6 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  static bool cannotTrackAllocations(const GlobalObject& global);
-
-  
-
-
-
-  [[nodiscard]] static bool checkCanAddAllocationsTracking(
-      JSContext* cx, Handle<GlobalObject*> debuggee);
-
-  
-
-
-
-
-
   static void addAllocationsTracking(JSContext* cx,
                                      Handle<GlobalObject*> debuggee);
 
@@ -734,7 +719,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   
 
 
-  [[nodiscard]] bool addAllocationsTrackingForAllDebuggees(JSContext* cx);
+  void addAllocationsTrackingForAllDebuggees(JSContext* cx);
   void removeAllocationsTrackingForAllDebuggees();
 
   

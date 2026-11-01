@@ -843,7 +843,7 @@ void JSRuntime::startRecordingAllocations(
 
   
   for (RealmsIter realm(this); !realm.done(); realm.next()) {
-    realm->setAllocationMetadataBuilder(&SavedStacks::metadataBuilder);
+    realm->enableAllocationMetadataBuilder();
     realm->chooseAllocationSamplingProbability();
   }
 }
@@ -857,7 +857,7 @@ void JSRuntime::stopRecordingAllocations() {
         !DebugAPI::isObservedByDebuggerTrackingAllocations(*global)) {
       
       
-      realm->forgetAllocationMetadataBuilder();
+      realm->disableAllocationMetadataBuilder();
     }
   }
 }
@@ -867,11 +867,7 @@ void JSRuntime::stopRecordingAllocations() {
 void JSRuntime::ensureRealmIsRecordingAllocations(
     Handle<GlobalObject*> global) {
   if (recordAllocationCallback) {
-    if (!global->realm()->isRecordingAllocations()) {
-      
-      global->realm()->setAllocationMetadataBuilder(
-          &SavedStacks::metadataBuilder);
-    }
+    global->realm()->enableAllocationMetadataBuilder();
     
     
     global->realm()->chooseAllocationSamplingProbability();
