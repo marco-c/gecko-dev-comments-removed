@@ -504,6 +504,9 @@ async function testCustomizableSelect(inspector, view) {
 
   info("Test ::picker-icon for select element");
   await selectNode(selectNodeFront, inspector);
+  
+  
+  await waitFor(() => getRuleViewRule(view, "#customizable-select"));
   await checkRuleViewContent(view, [
     {
       header: "Pseudo-elements",
