@@ -2,6 +2,9 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
+
+const CONNECTION_SECURITY_PREF_PANE = "paneConnectionSecurity";
+const DOH_PREF_PANE = "paneDnsOverHttps";
