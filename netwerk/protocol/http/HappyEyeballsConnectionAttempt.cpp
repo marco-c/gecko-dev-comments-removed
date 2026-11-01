@@ -21,6 +21,7 @@
 #include "nsHttpTransaction.h"
 #include "nsIDNSAdditionalInfo.h"
 #include "nsIHttpActivityObserver.h"
+#include "nsProxyInfo.h"
 #include "nsQueryObject.h"
 #include "nsSocketTransport2.h"
 #include "nsSocketTransportService2.h"
@@ -82,10 +83,11 @@ class DefaultHappyEyeballsConnMgrDelegate final
     gHttpHandler->ConnMgr()->AddTransaction(aTrans, aPriority);
   }
   void ReportSpdyConnection(HttpConnectionBase* aConn, bool aUsingSpdy,
-                            bool aDisallowHttp3) override {
+                            bool aDisallowHttp3,
+                            ConnectionEntry* aEntry) override {
     if (RefPtr<nsHttpConnection> h1 = do_QueryObject(aConn)) {
       gHttpHandler->ConnMgr()->ReportSpdyConnection(h1, aUsingSpdy,
-                                                    aDisallowHttp3);
+                                                    aDisallowHttp3, aEntry);
     }
   }
   void ReportHttp3Connection(HttpConnectionBase* aConn,
@@ -154,6 +156,15 @@ HappyEyeballsConnectionAttempt::HappyEyeballsConnectionAttempt(
   
   mHost = mConnInfo->GetOrigin();
 
+  
+  
+  if (nsCOMPtr<nsProxyInfo> proxyInfo = mConnInfo->ProxyInfo()) {
+    if (!proxyInfo->IsSOCKS() && !proxyInfo->Host().IsEmpty()) {
+      mHost = proxyInfo->Host();
+      mProxyNotTransparent = true;
+    }
+  }
+
   NotifyConnectionActivity(
       mConnInfo, mSpeculative
                      ? NS_HTTP_ACTIVITY_SUBTYPE_SPECULATIVE_DNSANDSOCKET_CREATED
@@ -207,6 +218,29 @@ nsresult HappyEyeballsConnectionAttempt::CreateHappyEyeballs(
   };
 
   LOG(("CreateHappyEyeballs ipPref=%d", static_cast<uint32_t>(ipPref)));
+
+  
+  if (mConnInfo->IsHttp3ProxyConnection()) {
+    LOG(("HappyEyeballsConnectionAttempt for MASQUE proxy (HTTP/3)"));
+    uint16_t proxyPort = static_cast<uint16_t>(mConnInfo->ProxyInfo()->Port());
+    nsTArray<happy_eyeballs::AltSvc> altSvcArray;
+    happy_eyeballs::AltSvc altsvc{};
+    altsvc.http_version = happy_eyeballs::HttpVersion::H3;
+    altsvc.port = proxyPort;
+    altSvcArray.AppendElement(altsvc);
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost, proxyPort,
+                               &altSvcArray, ipPref, httpVersions);
+  }
+
+  
+  
+  if (mConnInfo->UsingConnect()) {
+    LOG(("HappyEyeballsConnectionAttempt for HTTPS CONNECT proxy"));
+    uint16_t proxyPort = static_cast<uint16_t>(mConnInfo->ProxyInfo()->Port());
+    nsTArray<happy_eyeballs::AltSvc> emptyAltSvc;
+    return HappyEyeballs::Init(getter_AddRefs(mHappyEyeballs), mHost, proxyPort,
+                               &emptyAltSvc, ipPref, httpVersions);
+  }
 
   
   
@@ -834,20 +868,32 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
         
         
         
+        const bool proxyRecord = mProxyNotTransparent;
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
         
         
         if (!mConnInfo->FirstHopSSL() ||
-            (!StaticPrefs::network_dns_force_use_https_rr() &&
+            (proxyRecord && !mConnInfo->UsingHttpsProxy()) ||
+            (!proxyRecord && !StaticPrefs::network_dns_force_use_https_rr() &&
              (mCaps & NS_HTTP_DISALLOW_HTTPS_RR))) {
           rv = NS_ERROR_NOT_AVAILABLE;
         } else {
           nsCOMPtr<nsIDNSAdditionalInfo> info;
-          if (mConnInfo->OriginPort() != NS_HTTPS_DEFAULT_PORT) {
-            dns->NewAdditionalInfo(""_ns, mConnInfo->OriginPort(),
-                                   getter_AddRefs(info));
+          uint16_t httpsRRPort =
+              proxyRecord ? mConnInfo->ProxyPort() : mConnInfo->OriginPort();
+          if (httpsRRPort != NS_HTTPS_DEFAULT_PORT) {
+            dns->NewAdditionalInfo(""_ns, httpsRRPort, getter_AddRefs(info));
           }
           rv = dns->AsyncResolveNative(
               aHostname, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
@@ -1047,6 +1093,71 @@ HappyEyeballsConnectionAttempt::CreateAttemptTransaction(
       },
       mZeroRttHandle);
   return trans.forget();
+}
+
+void HappyEyeballsConnectionAttempt::MakeConnEntryWildCard(
+    HttpConnectionBase* aConn) {
+  if (!mConnInfo->UsingHttpsProxy()) {
+    return;
+  }
+
+  RefPtr<nsHttpConnectionInfo> wildCardProxyCi;
+  if (NS_FAILED(mConnInfo->CreateWildCard(getter_AddRefs(wildCardProxyCi)))) {
+    return;
+  }
+
+  
+  
+  if (gHttpHandler->ConnMgr()->MoveToWildCardConnEntry(
+          mConnInfo, wildCardProxyCi, aConn)) {
+    aConn->SetWildCardConnInfo(wildCardProxyCi);
+  }
+}
+
+bool HappyEyeballsConnectionAttempt::MaybeDispatchOuterProxyConn(
+    HttpConnectionBase* aConn, ConnectionEntry* aEntry) {
+  
+  
+  
+  
+  if (!mConnInfo->UsingConnect()) {
+    return false;
+  }
+
+  aConn->SetIsRacing(false);
+
+  
+  
+  
+  
+  
+  
+  if (aConn->UsingHttp3()) {
+    MakeConnEntryWildCard(aConn);
+    mConnMgrDelegate->ReportHttp3Connection(aConn, nullptr);
+  } else {
+    
+    
+    
+    
+    
+    mConnMgrDelegate->ReportSpdyConnection(
+        aConn, true, mCaps & NS_HTTP_DISALLOW_HTTP3, aEntry);
+    MakeConnEntryWildCard(aConn);
+  }
+
+  if (mTransaction) {
+    RefPtr<PendingTransactionInfo> pendingTransInfo =
+        mConnMgrDelegate->FindTransaction(true, aEntry, mTransaction);
+    if (pendingTransInfo && pendingTransInfo->Transaction()) {
+      RefPtr<nsHttpTransaction> trans = pendingTransInfo->Transaction();
+      
+      mTransactionAdopted = true;
+      mConnMgrDelegate->AddTransaction(trans, trans->Priority());
+    }
+  }
+  mTransaction = nullptr;
+  return true;
 }
 
 nsresult HappyEyeballsConnectionAttempt::EstablishTCPConnection(
@@ -1356,6 +1467,14 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
 
   bool isHttp2 = connTCP->UsingSpdy();
 
+  
+  
+  
+  MOZ_ASSERT(!aTransactionAlreadyOnConn || !mConnInfo->UsingConnect());
+  if (isHttp2 && MaybeDispatchOuterProxyConn(connTCP, entry)) {
+    return;
+  }
+
   nsHttpTransaction* realTrans =
       mTransaction ? mTransaction->QueryHttpTransaction() : nullptr;
   
@@ -1419,7 +1538,7 @@ void HappyEyeballsConnectionAttempt::ProcessTCPConn(
 
   connTCP->SetIsRacing(false);
   mConnMgrDelegate->ReportSpdyConnection(
-      connTCP, isHttp2, isHttp2 && (mCaps & NS_HTTP_DISALLOW_HTTP3));
+      connTCP, isHttp2, isHttp2 && (mCaps & NS_HTTP_DISALLOW_HTTP3), entry);
 }
 
 void HappyEyeballsConnectionAttempt::ProcessUDPConn(
@@ -1434,6 +1553,14 @@ void HappyEyeballsConnectionAttempt::ProcessUDPConn(
        aTransactionAlreadyOnConn));
 
   mConnMgrDelegate->InsertIntoActiveConns(entry, aConn);
+
+  
+  
+  
+  MOZ_ASSERT(!aTransactionAlreadyOnConn || !mConnInfo->UsingConnect());
+  if (MaybeDispatchOuterProxyConn(aConn, entry)) {
+    return;
+  }
 
   if (!aTransactionAlreadyOnConn) {
     RefPtr<PendingTransactionInfo> pendingTransInfo =

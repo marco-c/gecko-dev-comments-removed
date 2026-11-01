@@ -259,6 +259,18 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   
   
+  
+  void MakeConnEntryWildCard(HttpConnectionBase* aConn);
+
+  
+  
+  
+  
+  bool MaybeDispatchOuterProxyConn(HttpConnectionBase* aConn,
+                                   ConnectionEntry* aEntry);
+
+  
+  
   void OnClientAuthCertificateRequested(uint64_t aEstablisherId);
   void OnClientAuthCertificateSelected(uint64_t aEstablisherId);
 
@@ -341,6 +353,9 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
 
   
   
+  
+  
+  bool mProxyNotTransparent = false;
   RefPtr<ZeroRttHandle> mZeroRttHandle;
 
   

@@ -633,6 +633,10 @@ nsresult nsHttpConnectionInfo::CreateWildCard(nsHttpConnectionInfo** outParam) {
   clone->SetAnonymous(GetAnonymous());
   clone->SetPrivate(GetPrivate());
   clone->SetFallbackConnection(GetFallbackConnection());
+  
+  
+  
+  clone->SetHappyEyeballsEnabled(GetHappyEyeballsEnabled());
   clone.forget(outParam);
   return NS_OK;
 }

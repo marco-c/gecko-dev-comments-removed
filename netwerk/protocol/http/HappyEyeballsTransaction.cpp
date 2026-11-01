@@ -11,6 +11,7 @@
 #include "HttpConnectionBase.h"
 #include "HttpLog.h"
 #include "nsHttpConnection.h"
+#include "nsHttpConnectionInfo.h"
 #include "nsHttpTransaction.h"
 #include "nsITLSSocketControl.h"
 #include "nsITransportSecurityInfo.h"
@@ -82,6 +83,17 @@ void HappyEyeballsTransaction::OnTransportStatus(nsITransport* aTransport,
 
 bool HappyEyeballsTransaction::Do0RTT(bool aCanSendEarlyData) {
   if (!mZeroRttHandle) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (nsHttpConnectionInfo* ci = ConnectionInfo(); ci && ci->UsingConnect()) {
     return false;
   }
 
