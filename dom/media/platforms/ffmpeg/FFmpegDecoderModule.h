@@ -255,9 +255,11 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 #endif
     }
 
-#ifdef XP_WIN
+#ifndef MOZ_WIDGET_ANDROID
     
-    MOZ_ASSERT_IF(XRE_IsGPUProcess() && IsVideoCodec(codecId),
+    
+    
+    MOZ_ASSERT_IF(XRE_IsGPUProcess(),
                   !supports.contains(media::DecodeSupport::SoftwareDecode));
 #endif
 
@@ -281,6 +283,7 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
   static media::DecodeSupportSet GetMediaCodecDecodeSupport(
       AVCodecID aCodec, const nsACString& aMimeType,
       gfx::ColorDepth aColorDepth, const gfx::IntSize& aSize) {
+    
     
     
     
@@ -313,12 +316,10 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
   bool IsSWDecodingSupported(const AVCodecID& aCodec,
                              const SupportDecoderParams& aParams) const {
-#ifdef XP_WIN
     
-    if (IsVideoCodec(aCodec) && XRE_IsGPUProcess()) {
+    if (XRE_IsGPUProcess()) {
       return false;
     }
-#endif
 #ifdef MOZ_WIDGET_ANDROID
     
     
@@ -360,24 +361,18 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
             CreateDecoderParams::Option::Output8BitPerChannel),
         aParams.mTrackingId, aParams.mCDM);
 
-#ifdef XP_WIN
     
     
     
     
     
-    if (XRE_IsGPUProcess()) {
-      AVCodecID videoCodec =
-          FFmpegVideoDecoder<V>::GetCodecId(aParams.mConfig.mMimeType);
-      if (IsHWDecodingSupported(videoCodec) &&
-          !decoder->IsHardwareAccelerated()) {
-        MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
-                    "FFmpeg video decoder can't perform hw decoding, abort!");
-        (void)decoder->Shutdown();
-        decoder = nullptr;
-      }
+    
+    if (XRE_IsGPUProcess() && !decoder->IsHardwareAccelerated()) {
+      MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+                  "FFmpeg video decoder can't perform hw decoding, abort!");
+      (void)decoder->Shutdown();
+      decoder = nullptr;
     }
-#endif
     return decoder.forget();
   }
 

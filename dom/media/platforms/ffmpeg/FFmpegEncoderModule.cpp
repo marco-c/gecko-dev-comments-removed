@@ -189,7 +189,11 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
           }
           break;
         default:
-          supports += EncodeSupport::HardwareEncode;
+          
+          
+          if (!StaticPrefs::media_ffvpx_hw_minimal()) {
+            supports += EncodeSupport::HardwareEncode;
+          }
           break;
       }
 #  else
@@ -198,12 +202,48 @@ EncodeSupportSet FFmpegEncoderModule<V>::SupportsCodec(CodecType aCodec) const {
     }
   }
 #endif
+  
   if ((XRE_IsParentProcess() || XRE_IsContentProcess() ||
-       StaticPrefs::media_use_remote_encoder_video_software()) &&
+       (!XRE_IsGPUProcess() &&
+        StaticPrefs::media_use_remote_encoder_video_software())) &&
       FFmpegDataEncoder<V>::FindSoftwareEncoder(mLib, id)) {
     supports += EncodeSupport::SoftwareEncode;
   }
   return supports;
+}
+
+template <int V>
+RefPtr<PlatformEncoderModule::CreateEncoderPromise>
+FFmpegEncoderModule<V>::AsyncCreateEncoder(
+    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) {
+  if (!XRE_IsGPUProcess() || !aConfig.IsVideo()) {
+    return PlatformEncoderModule::AsyncCreateEncoder(aConfig, aTaskQueue);
+  }
+
+  
+  
+  
+  
+  
+  RefPtr<MediaDataEncoder> encoder = CreateVideoEncoder(aConfig, aTaskQueue);
+  if (!encoder) {
+    return CreateEncoderPromise::CreateAndReject(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                    "Error creating FFmpeg video encoder"_ns),
+        __func__);
+  }
+
+  return encoder->Init()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [encoder](MediaDataEncoder::InitPromise::ResolveOrRejectValue&& aValue) {
+        if (aValue.IsReject()) {
+          FFMPEGV_LOG("FFmpeg video encoder can't perform hw encoding, abort!");
+          (void)encoder->Shutdown();
+          return CreateEncoderPromise::CreateAndReject(aValue.RejectValue(),
+                                                       __func__);
+        }
+        return CreateEncoderPromise::CreateAndResolve(encoder, __func__);
+      });
 }
 
 template <int V>

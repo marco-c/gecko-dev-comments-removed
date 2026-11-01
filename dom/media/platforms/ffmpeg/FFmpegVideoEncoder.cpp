@@ -29,6 +29,7 @@
 #  include "mozilla/gfx/gfxVars.h"
 #endif
 #include "nsStringFwd.h"
+#include "nsXULAppAPI.h"
 
 
 
@@ -361,6 +362,10 @@ FFmpegVideoEncoder<LIBAV_VER>::FFmpegVideoEncoder(
 RefPtr<MediaDataEncoder::InitPromise> FFmpegVideoEncoder<LIBAV_VER>::Init() {
   FFMPEGV_LOG("Init");
   return InvokeAsync(mTaskQueue, __func__, [self = RefPtr(this)]() {
+    
+    if (self->mCodecContext) {
+      return InitPromise::CreateAndResolve(true, __func__);
+    }
     MediaResult r = self->InitEncoder();
     if (NS_FAILED(r.Code())) {
       FFMPEGV_LOG("{}", r.Description().get());
@@ -428,7 +433,9 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoder() {
   }
   
   
-  if (NS_FAILED(result.Code())) {
+  
+  
+  if (NS_FAILED(result.Code()) && !XRE_IsGPUProcess()) {
     result = InitEncoderInternal( false);
   }
   return result;
