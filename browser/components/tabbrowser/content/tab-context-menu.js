@@ -134,10 +134,6 @@ var TabContextMenu = {
           open: true,
           items: [],
         },
-        {
-          name: "unused",
-          items: ["#context_addTabToGroup"],
-        },
       ],
       
 
@@ -147,14 +143,13 @@ var TabContextMenu = {
         {
           name: "positions",
           items: [
-            "#context_openTabInWindow",
-            "#context_openTabInMiniWindow",
             "#context_moveToStart",
             "#context_moveToEnd",
+            "#context_openTabInWindow",
+            "#context_openTabInMiniWindow",
             "#moveTabSeparator",
             "#context_moveTabToGroupSeparator",
             "#context_selectAllSeparator",
-            "#context_moveTabPositionsSeparator",
           ],
         },
       ],
@@ -176,7 +171,6 @@ var TabContextMenu = {
             "#context_closeTabsToTheStart",
             "#context_closeTabsToTheEnd",
             "#context_closeOtherTabs",
-            "#context_closeOtherTabsSeparator",
           ],
         },
       ],
@@ -215,7 +209,11 @@ var TabContextMenu = {
         {
           name: "spatial-items",
           items: [
-            "#context_addTabToGroup",
+            [
+              "#context_moveTabToSplitView",
+              "#context_separateSplitView",
+              "#context_reverseSplitView",
+            ],
             
 
 
@@ -229,11 +227,6 @@ var TabContextMenu = {
               "#context_moveTabToGroup",
               "#context_ungroupTab",
               "#context_ungroupSplitView",
-            ],
-            [
-              "#context_moveTabToSplitView",
-              "#context_separateSplitView",
-              "#context_reverseSplitView",
             ],
             "#context_reopenInContainer",
             
@@ -311,14 +304,22 @@ var TabContextMenu = {
 
       moveTabOptionsMenu: [
         {
+          name: "groups",
+          items: [
+            "#context_moveTabToGroupNewGroup",
+            "#open-tab-groups-separator-upper",
+            "#open-tab-groups-separator-lower",
+            "#context_moveTabToSavedGroup",
+            "#context_moveTabToGroupSeparator",
+          ],
+        },
+        {
           name: "positions",
           items: [
-            "#context_moveTabToGroupSeparator",
-            "#context_openTabInWindow",
-            "#context_openTabInMiniWindow",
-            "#context_moveTabPositionsSeparator",
             "#context_moveToStart",
             "#context_moveToEnd",
+            "#context_openTabInWindow",
+            "#context_openTabInMiniWindow",
             "#moveTabSeparator",
           ],
         },
@@ -328,27 +329,7 @@ var TabContextMenu = {
         },
       ],
       
-      context_moveTabToGroupPopupMenu: [
-        {
-          name: "groups",
-          items: [
-            "#context_moveTabToGroupNewGroup",
-            "#open-tab-groups-separator-upper",
-            "#open-tab-groups-separator-lower",
-            "#context_moveTabToSavedGroup",
-          ],
-        },
-      ],
-      context_addTabToGroupPopupMenu: [
-        {
-          name: "add-groups",
-          items: [
-            "#context_addTabToGroupNewGroup",
-            "#add-tab-to-group-separator",
-            "#context_addTabToSavedGroup",
-          ],
-        },
-      ],
+      context_moveTabToGroupPopupMenu: [],
       
 
 
@@ -359,7 +340,6 @@ var TabContextMenu = {
           items: [
             "#context_closeTabsToTheStart",
             "#context_closeTabsToTheEnd",
-            "#context_closeOtherTabsSeparator",
             "#context_closeOtherTabs",
             "#context_closeDuplicateTabs",
           ],
@@ -410,7 +390,6 @@ var TabContextMenu = {
       }).arrange(aPopupMenu);
       this._hideUnusedSectionItems(layout);
       this._updateL10nIds(aPopupMenu, this._altTabContextMenu);
-      this._updateSharePanelClasses(this._altTabContextMenu);
     } catch (ex) {
       console.error(ex);
     }
@@ -433,18 +412,6 @@ var TabContextMenu = {
       if (id) {
         item.setAttribute("data-l10n-id", id);
       }
-    }
-  },
-
-  _updateSharePanelClasses(altEnabled) {
-    const copyLinkButton = document.getElementById("share-panel-copy-link");
-    const createQRCodeButton = document.getElementById("share-panel-qr-code");
-    const iconClass = "subviewbutton-iconic";
-    if (copyLinkButton) {
-      copyLinkButton.classList.toggle(iconClass, !altEnabled);
-    }
-    if (createQRCodeButton) {
-      createQRCodeButton.classList.toggle(iconClass, !altEnabled);
     }
   },
 
@@ -475,14 +442,18 @@ var TabContextMenu = {
 
 
 
-  _updateMoveTabToFlattenedVisibility() {
+  _updateMoveTabToFlattenedVisibility(
+    groupsEnabled,
+    hasOpenGroups,
+    hasSavedGroups
+  ) {
     let byId = id => document.getElementById(id);
     let newGroup = byId("context_moveTabToGroupNewGroup");
     let upperSeparator = byId("open-tab-groups-separator-upper");
+    let lowerSeparator = byId("open-tab-groups-separator-lower");
     let savedGroups = byId("context_moveTabToSavedGroup");
     let groupSeparator = byId("context_moveTabToGroupSeparator");
     let selectAllSeparator = byId("context_selectAllSeparator");
-    let positionsSeparator = byId("context_moveTabPositionsSeparator");
 
     if (!this._altTabContextMenu) {
       
@@ -491,7 +462,6 @@ var TabContextMenu = {
       savedGroups.hidden = false;
       groupSeparator.hidden = true;
       selectAllSeparator.hidden = true;
-      positionsSeparator.hidden = true;
       return;
     }
 
@@ -499,13 +469,20 @@ var TabContextMenu = {
 
 
 
+
     byId("context_moveTabToGroup").hidden = true;
     byId("context_moveTabToNewGroup").hidden = true;
     byId("context_moveSplitViewToNewGroup").hidden = true;
 
-    groupSeparator.hidden = true;
+    newGroup.hidden = !groupsEnabled;
+    upperSeparator.hidden = !(
+      groupsEnabled &&
+      (hasOpenGroups || hasSavedGroups)
+    );
+    lowerSeparator.hidden = true;
+    savedGroups.hidden = !(groupsEnabled && hasSavedGroups);
+    groupSeparator.hidden = !groupsEnabled;
     selectAllSeparator.hidden = false;
-    positionsSeparator.hidden = false;
   },
 
   _updateToggleMuteMenuItems(aTab, aConditionFn) {
@@ -540,11 +517,8 @@ var TabContextMenu = {
     let splitViews = new Set();
     
     
-    let sessionStoreFlushes = [];
     for (let tab of this.contextTabs) {
-      sessionStoreFlushes.push(
-        TabContextMenu.TabStateFlusher.flush(tab.linkedBrowser)
-      );
+      TabContextMenu.TabStateFlusher.flush(tab.linkedBrowser);
 
       
       if (tab.splitview) {
@@ -608,7 +582,7 @@ var TabContextMenu = {
       .getElementById("History:UndoCloseTab")
       .toggleAttribute("disabled", closedCount == 0);
     document.l10n.setArgs(document.getElementById("context_undoCloseTab"), {
-      tabCount: Math.max(closedCount, 1),
+      tabCount: closedCount,
     });
 
     
@@ -623,7 +597,6 @@ var TabContextMenu = {
     let contextMoveTabToGroup = document.getElementById(
       "context_moveTabToGroup"
     );
-    let contextAddTabToGroup = document.getElementById("context_addTabToGroup");
     let contextUngroupTab = document.getElementById("context_ungroupTab");
     let contextMoveSplitViewToNewGroup = document.getElementById(
       "context_moveSplitViewToNewGroup"
@@ -658,26 +631,14 @@ var TabContextMenu = {
         }
       }
 
-      savedGroupsToMoveTo = this._getSavedGroupsToMoveTo();
-
       
-      contextAddTabToGroup.hidden = !this._altTabContextMenu;
-      if (this._altTabContextMenu) {
-        
-        if (isAllSplitViewTabs) {
-          contextAddTabToGroup.setAttribute(
-            "data-l10n-id",
-            "tab-context-add-split-view-to-group"
-          );
-          contextAddTabToGroup.removeAttribute("data-l10n-args");
-        } else {
-          contextAddTabToGroup.setAttribute(
-            "data-l10n-id",
-            "tab-context-add-tab-to-group"
-          );
-          contextAddTabToGroup.setAttribute("data-l10n-args", tabCountInfo);
-        }
-        this._populateAddToGroupMenu(openGroupsToMoveTo, savedGroupsToMoveTo);
+      
+      
+      if (
+        !PrivateBrowsingUtils.isWindowPrivate(window) &&
+        SessionStore.shouldSaveTabsToGroup(this.contextTabs)
+      ) {
+        savedGroupsToMoveTo = SessionStore.getSavedTabGroups();
       }
 
       if (!openGroupsToMoveTo.length && !savedGroupsToMoveTo.length) {
@@ -719,40 +680,46 @@ var TabContextMenu = {
           contextMoveTabToGroup.setAttribute("data-l10n-args", tabCountInfo);
         }
 
-        if (!this._altTabContextMenu) {
-          const upperSeparator = document.getElementById(
-            "open-tab-groups-separator-upper"
-          );
-          const lowerSeparator = document.getElementById(
-            "open-tab-groups-separator-lower"
-          );
-          const openGroupsMenu = upperSeparator.parentNode;
-          openGroupsMenu
-            .querySelectorAll("[tab-group-id]")
-            .forEach(el => el.remove());
+        
+        
+        
+        
+        const upperSeparator = document.getElementById(
+          "open-tab-groups-separator-upper"
+        );
+        const lowerSeparator = document.getElementById(
+          "open-tab-groups-separator-lower"
+        );
+        const openGroupsMenu = upperSeparator.parentNode;
+        openGroupsMenu
+          .querySelectorAll("[tab-group-id]")
+          .forEach(el => el.remove());
 
-          lowerSeparator.hidden = !openGroupsToMoveTo.length;
+        lowerSeparator.hidden = !openGroupsToMoveTo.length;
 
-          openGroupsToMoveTo.toReversed().forEach(group => {
-            let item = this._createTabGroupMenuItem(group, false);
-            upperSeparator.after(item);
-          });
-
-          this._populateSavedGroupsMenu(savedGroupsToMoveTo);
-        }
-      }
-
-      if (!savedGroupsToMoveTo.length) {
-        let contextTabs = this.contextTabs;
-        Promise.allSettled(sessionStoreFlushes).then(() => {
-          if (this.contextTabs !== contextTabs) {
-            return;
-          }
-          let savedGroups = this._getSavedGroupsToMoveTo();
-          if (savedGroups.length) {
-            this._populateSavedGroupsMenu(savedGroups);
-          }
+        openGroupsToMoveTo.toReversed().forEach(group => {
+          let item = this._createTabGroupMenuItem(group, false);
+          upperSeparator.after(item);
         });
+
+        const savedGroupsMenu = document.getElementById(
+          "context_moveTabToSavedGroup"
+        );
+        const savedGroupsMenuPopup = savedGroupsMenu.querySelector("menupopup");
+
+        savedGroupsMenuPopup
+          .querySelectorAll("[tab-group-id]")
+          .forEach(el => el.remove());
+        if (savedGroupsToMoveTo.length) {
+          savedGroupsMenu.disabled = false;
+
+          savedGroupsToMoveTo.forEach(group => {
+            let item = this._createTabGroupMenuItem(group, true);
+            savedGroupsMenuPopup.appendChild(item);
+          });
+        } else {
+          savedGroupsMenu.disabled = true;
+        }
       }
 
       let groupInfo = JSON.stringify({
@@ -768,7 +735,6 @@ var TabContextMenu = {
         contextUngroupTab.setAttribute("data-l10n-args", groupInfo);
       }
     } else {
-      contextAddTabToGroup.hidden = true;
       contextMoveTabToNewGroup.hidden = true;
       contextMoveTabToGroup.hidden = true;
       contextUngroupTab.hidden = true;
@@ -776,7 +742,11 @@ var TabContextMenu = {
       contextUngroupSplitView.hidden = true;
     }
 
-    this._updateMoveTabToFlattenedVisibility();
+    this._updateMoveTabToFlattenedVisibility(
+      TabContextMenu.Tabbrowser.prefs.tabGroupsEnabled,
+      !!openGroupsToMoveTo.length,
+      !!savedGroupsToMoveTo.length
+    );
 
     let contextAddNote = document.getElementById("context_addNote");
     let contextEditNote = document.getElementById("context_editNote");
@@ -944,8 +914,8 @@ var TabContextMenu = {
     let moveTabOptionsL10nId = "tab-context-move-tabs";
     if (this._altTabContextMenu) {
       moveTabOptionsL10nId = this.contextTab.splitview
-        ? "tab-context-move-split-view-alt"
-        : "tab-context-move-tabs3";
+        ? "tab-context-move-split-view"
+        : "tab-context-move-tabs2";
     }
     contextMoveTabOptions.setAttribute("data-l10n-id", moveTabOptionsL10nId);
     
@@ -1006,36 +976,24 @@ var TabContextMenu = {
     );
 
     
-    let startTabString;
-    if (this._altTabContextMenu) {
-      startTabString = "close-tabs-to-the-start-alt";
-      if (gBrowser.tabContainer?.verticalMode) {
-        startTabString = "close-tabs-to-the-start-vertical-alt";
-      }
-    } else if (gBrowser.tabContainer?.verticalMode) {
-      startTabString = "close-tabs-to-the-start-vertical";
-    } else {
-      startTabString = "close-tabs-to-the-start";
-    }
-    document.l10n.setAttributes(closeTabsToTheStartItem, startTabString);
+    document.l10n.setAttributes(
+      closeTabsToTheStartItem,
+      gBrowser.tabContainer?.verticalMode
+        ? "close-tabs-to-the-start-vertical"
+        : "close-tabs-to-the-start"
+    );
 
     let closeTabsToTheEndItem = document.getElementById(
       "context_closeTabsToTheEnd"
     );
 
     
-    let endTabString;
-    if (this._altTabContextMenu) {
-      endTabString = "close-tabs-to-the-end-alt";
-      if (gBrowser.tabContainer?.verticalMode) {
-        endTabString = "close-tabs-to-the-end-vertical-alt";
-      }
-    } else if (gBrowser.tabContainer?.verticalMode) {
-      endTabString = "close-tabs-to-the-end-vertical";
-    } else {
-      endTabString = "close-tabs-to-the-end";
-    }
-    document.l10n.setAttributes(closeTabsToTheEndItem, endTabString);
+    document.l10n.setAttributes(
+      closeTabsToTheEndItem,
+      gBrowser.tabContainer?.verticalMode
+        ? "close-tabs-to-the-end-vertical"
+        : "close-tabs-to-the-end"
+    );
 
     
     
@@ -1055,15 +1013,7 @@ var TabContextMenu = {
           t => t != this.contextTab && !t.pinned && !t.hidden
         ).length;
     let closeOtherTabsItem = document.getElementById("context_closeOtherTabs");
-    document.l10n.setAttributes(
-      closeOtherTabsItem,
-      this._altTabContextMenu ? "close-other-tabs-alt" : "close-other-tabs"
-    );
     closeOtherTabsItem.disabled = unpinnedTabsToClose < 1;
-
-    
-    document.getElementById("context_closeOtherTabsSeparator").hidden =
-      !this._altTabContextMenu;
 
     
     document
@@ -1179,41 +1129,6 @@ var TabContextMenu = {
           : "context_moveTabOptions"
       )
     );
-  },
-
-  _populateAddToGroupMenu(openGroups, savedGroups) {
-    let separator = document.getElementById("add-tab-to-group-separator");
-    separator.parentNode
-      .querySelectorAll(":scope > [tab-group-id]")
-      .forEach(el => el.remove());
-    openGroups.toReversed().forEach(group => {
-      separator.after(this._createTabGroupMenuItem(group, false));
-    });
-
-    this._populateSavedGroupsMenu(savedGroups);
-  },
-
-  _getSavedGroupsToMoveTo() {
-    if (
-      PrivateBrowsingUtils.isWindowPrivate(window) ||
-      !SessionStore.shouldSaveTabsToGroup(this.contextTabs)
-    ) {
-      return [];
-    }
-    return SessionStore.getSavedTabGroups();
-  },
-
-  _populateSavedGroupsMenu(savedGroups) {
-    const menuId = this._altTabContextMenu
-      ? "context_addTabToSavedGroup"
-      : "context_moveTabToSavedGroup";
-    let savedGroupsMenu = document.getElementById(menuId);
-    savedGroupsMenu
-      .querySelector("menupopup")
-      .replaceChildren(
-        ...savedGroups.map(group => this._createTabGroupMenuItem(group, true))
-      );
-    savedGroupsMenu.disabled = !savedGroups.length;
   },
 
   _createTabGroupMenuItem(group, isSaved) {
