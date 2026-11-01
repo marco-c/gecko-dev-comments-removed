@@ -492,6 +492,8 @@ bool WarpCacheIRTranspiler::emitGuardFuse(RealmFuses::FuseIndex fuseIndex) {
     case RealmFuses::FuseIndex::OptimizeArraySpeciesFuse:
     case RealmFuses::FuseIndex::OptimizeTypedArraySpeciesFuse:
     case RealmFuses::FuseIndex::OptimizeRegExpPrototypeFuse:
+    case RealmFuses::FuseIndex::ObjectProtoHasNoIndexedPropsFuse:
+    case RealmFuses::FuseIndex::ArrayProtoHasNoIndexedPropsFuse:
       
       MOZ_ASSERT(RealmFuses::isInvalidatingFuse(fuseIndex));
       return true;

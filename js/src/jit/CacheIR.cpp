@@ -788,28 +788,45 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   }
 }
 
-static void GeneratePrototypeHoleGuards(CacheIRWriter& writer,
+
+
+
+
+static void GuardProtoChainHasNoIndexedProps(JSContext* cx,
+                                             CacheIRWriter& writer,
+                                             NativeObject* obj,
+                                             ObjOperandId objId,
+                                             bool allowDenseElements) {
+  JSObject* pobj = obj->staticPrototype();
+  while (pobj) {
+    MOZ_ASSERT(pobj->is<NativeObject>());
+
+    auto fuseIndex = MaybeGetHasNoIndexedPropsFuseIndex(cx->global(), pobj);
+    if (fuseIndex.isSome() &&
+        cx->realm()->realmFuses.getFuseByIndex(*fuseIndex)->intact()) {
+      writer.guardFuse(*fuseIndex);
+      return;
+    }
+
+    ObjOperandId protoId = writer.loadProtoObject(pobj, objId);
+    writer.guardShape(protoId, pobj->shape());
+    if (!allowDenseElements) {
+      writer.guardNoDenseElements(protoId);
+    }
+
+    pobj = pobj->staticPrototype();
+  }
+}
+
+static void GeneratePrototypeHoleGuards(JSContext* cx, CacheIRWriter& writer,
                                         NativeObject* obj, ObjOperandId objId,
                                         bool alwaysGuardFirstProto) {
   if (alwaysGuardFirstProto) {
     GuardReceiverProto(writer, obj, objId);
   }
 
-  JSObject* pobj = obj->staticPrototype();
-  while (pobj) {
-    ObjOperandId protoId = writer.loadObject(pobj);
-
-    
-    
-    
-    MOZ_ASSERT(pobj->is<NativeObject>());
-    writer.guardShape(protoId, pobj->shape());
-
-    
-    writer.guardNoDenseElements(protoId);
-
-    pobj = pobj->staticPrototype();
-  }
+  GuardProtoChainHasNoIndexedProps(cx, writer, obj, objId,
+                                    false);
 }
 
 
@@ -2945,7 +2962,7 @@ AttachDecision GetPropIRGenerator::tryAttachArgumentsObjectArgHole(
     writer.guardClass(objId, GuardClassKind::UnmappedArguments);
   }
 
-  GeneratePrototypeHoleGuards(writer, args, objId,
+  GeneratePrototypeHoleGuards(cx_, writer, args, objId,
                                true);
 
   writer.loadArgumentsObjectArgHoleResult(objId, indexId);
@@ -3027,7 +3044,7 @@ AttachDecision GetPropIRGenerator::tryAttachDenseElementHole(
 
   
   TestMatchingNativeReceiver(writer, nobj, objId);
-  GeneratePrototypeHoleGuards(writer, nobj, objId,
+  GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                                false);
   writer.loadDenseElementHoleResult(objId, indexId);
 
@@ -3099,7 +3116,7 @@ AttachDecision GetPropIRGenerator::tryAttachSparseElement(
   
   
   
-  GeneratePrototypeHoleGuards(writer, nobj, objId,
+  GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                                true);
 
   
@@ -3875,7 +3892,7 @@ AttachDecision HasPropIRGenerator::tryAttachDenseHole(HandleObject obj,
   
   
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, nobj, objId,
+    GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                                  false);
   }
 
@@ -3909,7 +3926,7 @@ AttachDecision HasPropIRGenerator::tryAttachSparse(HandleObject obj,
   
   
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, nobj, objId,
+    GeneratePrototypeHoleGuards(cx_, writer, nobj, objId,
                                  true);
   }
 
@@ -3949,7 +3966,7 @@ AttachDecision HasPropIRGenerator::tryAttachArgumentsObjectArg(
   }
 
   if (!hasOwn) {
-    GeneratePrototypeHoleGuards(writer, args, objId,
+    GeneratePrototypeHoleGuards(cx_, writer, args, objId,
                                  true);
   }
 
