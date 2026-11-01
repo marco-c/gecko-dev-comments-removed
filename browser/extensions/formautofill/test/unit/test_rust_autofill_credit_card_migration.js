@@ -19,9 +19,8 @@
 
 
 
-const { FormAutofillStorage, formAutofillStorage } = ChromeUtils.importESModule(
-  "resource://autofill/FormAutofillStorage.sys.mjs"
-);
+const { FormAutofillStorage, formAutofillStorage, MIGRATION_SAFE_POINT_TOPIC } =
+  ChromeUtils.importESModule("resource://autofill/FormAutofillStorage.sys.mjs");
 const { RustAutofillCreditCardsAdapter } = ChromeUtils.importESModule(
   "resource://autofill/RustAutofillCreditCardStorage.sys.mjs"
 );
@@ -419,7 +418,7 @@ add_task(async function test_an_empty_profile_never_touches_the_key_store() {
 
   Assert.equal(touched, 0, "the key store was not consulted");
   Assert.ok(getBool(ACTIVE_PREF), "and an empty profile still migrates");
-  Assert.ok(!observesUnlock(), "without waiting on an unlock");
+  Assert.ok(!waitsForKeyStore(), "without waiting for the key store");
 
   await s._finalize();
 });
@@ -695,8 +694,8 @@ add_task(async function test_the_migration_gives_up_and_stays_on_json() {
 
 
 
-const observesUnlock = () =>
-  !![...Services.obs.enumerateObservers(OSKeyStore.UNLOCKED_TOPIC)].length;
+const waitsForKeyStore = () =>
+  !![...Services.obs.enumerateObservers(MIGRATION_SAFE_POINT_TOPIC)].length;
 
 add_task(async function test_a_changed_number_is_reported_as_divergence() {
   let { s } = await setupStorageWithCards("cc-mig-diverge.json", ["Ann One"]);
