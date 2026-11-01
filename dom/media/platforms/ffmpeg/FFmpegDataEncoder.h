@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGDATAENCODER_H_
 #define DOM_MEDIA_PLATFORMS_FFMPEG_FFMPEGDATAENCODER_H_
 
@@ -46,6 +44,7 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   
   RefPtr<InitPromise> Init() override = 0;  
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
       override;
@@ -62,7 +61,7 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
       AVPacket* aPacket);
 
   
-  RefPtr<EncodePromise> ProcessEncode(RefPtr<const MediaData> aSample);
+  RefPtr<EncodePromise> ProcessEncode(nsTArray<RefPtr<MediaData>>&& aSamples);
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
           aConfigurationChanges);
@@ -106,6 +105,9 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   AVCodecContext* mCodecContext;
   AVFrame* mFrame;
   DurationMap mDurationMap;
+#ifdef MOZ_WIDGET_ANDROID
+  bool mIsMediaCodec = false;
+#endif
 
   
   static StaticMutex sMutex;
