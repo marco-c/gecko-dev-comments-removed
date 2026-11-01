@@ -152,6 +152,8 @@ bool StructuredCloneBlob::Holder::ReadStructuredCloneInternal(
     JSContext* aCx, JSStructuredCloneReader* aReader,
     StructuredCloneHolder* aHolder) {
   uint32_t length;
+  
+  
   uint32_t version;
   if (!JS_ReadUint32Pair(aReader, &length, &version)) {
     return false;
@@ -186,7 +188,6 @@ bool StructuredCloneBlob::Holder::ReadStructuredCloneInternal(
   }
 
   mData.emplace(std::move(data));
-  mVersion = version;
   mData->setCallbacks(&StructuredCloneHolder::sCallbacks, nullptr,
                       OwnTransferablePolicy::OwnsTransferablesIfAny);
 

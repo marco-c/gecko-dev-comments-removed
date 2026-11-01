@@ -487,7 +487,7 @@ InstallLocation::InstallLocation(JSContext* cx, const JS::Value& value)
 
 nsresult AddonManagerStartup::ReadStartupData(
     JSContext* cx, JS::MutableHandle<JS::Value> locations) {
-  locations.set(JS::UndefinedValue());
+  locations.setUndefined();
 
   nsCOMPtr<nsIFile> file =
       CloneAndAppend(ProfileDir(), "addonStartup.json.lz4");
@@ -558,7 +558,7 @@ nsresult AddonManagerStartup::EncodeBlob(JS::Handle<JS::Value> value,
   JS::Rooted<JSObject*> obj(cx, dom::ArrayBuffer::Create(cx, lz4, rv));
   RETURN_NSRESULT_ON_FAILURE(rv);
 
-  result.set(JS::ObjectValue(*obj));
+  result.setObject(*obj);
   return NS_OK;
 }
 
@@ -589,13 +589,7 @@ nsresult AddonManagerStartup::DecodeBlob(JS::Handle<JS::Value> value,
   auto holder = MakeRefPtr<StructuredCloneData>(
       JS::StructuredCloneScope::DifferentProcess,
       dom::StructuredCloneHolder::TransferringNotSupported);
-  
-  
-  
-  
-  
-  bool ok = holder->CopyExternalData(data.get(), data.Length(),
-                                     JS_STRUCTURED_CLONE_VERSION);
+  bool ok = holder->CopyExternalData(data.get(), data.Length());
   NS_ENSURE_TRUE(ok, NS_ERROR_OUT_OF_MEMORY);
 
   ErrorResult rv;
