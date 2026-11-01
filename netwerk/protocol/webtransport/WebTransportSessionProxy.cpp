@@ -1318,6 +1318,16 @@ WebTransportSessionProxy::OnDraining() {
 
   {
     MutexAutoLock lock(mMutex);
+    
+    
+    
+    
+    if (!mStopRequestCalled) {
+      mPendingEvents.AppendElement(
+          [self = RefPtr{this}]() { (void)self->OnDraining(); });
+      return NS_OK;
+    }
+
     if (!mTarget->IsOnCurrentThread()) {
       return mTarget->Dispatch(NS_NewRunnableFunction(
           "WebTransportSessionProxy::OnDraining",

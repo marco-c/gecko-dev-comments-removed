@@ -768,11 +768,17 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
 }
 
 NS_IMETHODIMP WebTransportParent::OnDraining() {
-  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-
   LOG(("WebTransportParent::OnDraining %p", this));
 
-  (void)SendDraining();
+  
+  
+  
+  
+  
+  
+  mSocketThread->Dispatch(NS_NewRunnableFunction(
+      "WebTransportParent::OnDraining",
+      [self = RefPtr{this}] { (void)self->SendDraining(); }));
 
   return NS_OK;
 }
