@@ -3,6 +3,10 @@
 
 
 
+mod fields;
+mod moz_log;
+mod span_marker;
+
 pub fn initialize_tracing() {
     use tracing_subscriber::prelude::*;
     tracing_subscriber::registry()
@@ -10,7 +14,9 @@ pub fn initialize_tracing() {
         
         .with(tracing_support::simple_event_layer())
         
+        .with(moz_log::MozLogLayer.with_filter(moz_log::MozLogFilter))
         
+        .with(span_marker::SpanMarkerLayer.with_filter(span_marker::SpanMarkerFilter))
         
         .init();
 }
