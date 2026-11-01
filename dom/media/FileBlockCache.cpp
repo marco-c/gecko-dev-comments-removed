@@ -356,6 +356,7 @@ void FileBlockCache::PerformBlockIOs() {
     
     
     int32_t blockIndex = mChangeIndexList.front();
+    mChangeIndexList.pop_front();
     RefPtr<BlockChange> change = mBlockChanges[blockIndex];
     MOZ_ASSERT(change,
                "Change index list should only contain entries for blocks "
@@ -374,7 +375,6 @@ void FileBlockCache::PerformBlockIOs() {
         MoveBlockInFile(change->mSourceBlockIndex, blockIndex);
       }
     }
-    mChangeIndexList.pop_front();  
     
     
     
