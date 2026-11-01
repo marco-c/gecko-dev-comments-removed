@@ -1,0 +1,11 @@
+
+
+
+
+import type { DevToolsSettingsPref } from "./devtools-settings-pref.mjs";
+
+declare global {
+  interface HTMLElementTagNameMap {
+    "devtools-settings-pref": DevToolsSettingsPref;
+  }
+}
