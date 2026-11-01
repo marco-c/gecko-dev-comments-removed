@@ -184,6 +184,26 @@ void WebTransportParent::Create(
 
 void WebTransportParent::ActorDestroy(ActorDestroyReason aWhy) {
   LOG(("ActorDestroy WebTransportParent %d", aWhy));
+  
+  
+  if (mRetargeted) {
+    CloseSessionForDestroyedActor();
+  }
+}
+
+void WebTransportParent::CloseSessionForDestroyedActor() {
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(mRetargeted);
+  {
+    MutexAutoLock lock(mMutex);
+    if (mClosed) {
+      return;
+    }
+    mClosed.Flip();
+    mExecuteAfterResolverCallback = nullptr;
+  }
+  LOG(("Closing session %p for destroyed actor", this));
+  mWebTransport->CloseSession(0, ""_ns);
 }
 
 
@@ -656,6 +676,12 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 
   mSocketThread->Dispatch(NS_NewRunnableFunction(
       "WebTransportParent::QueryNegotiatedProtocol", [self = RefPtr{this}] {
+        self->mRetargeted = true;
+        if (!self->CanSend()) {
+          self->CloseSessionForDestroyedActor();
+          return;
+        }
+
         nsAutoCString subprotocol;
         if (self->mWebTransport) {
           self->mWebTransport->GetNegotiatedProtocol(subprotocol);
@@ -745,7 +771,7 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
   } else {
     {
       MutexAutoLock lock(mMutex);
-      if (mResolver) {
+      if (mResolver && !mClosed) {
         LOG(("[%p] NotifyRemoteClosed to be called later", this));
         
         mExecuteAfterResolverCallback = [self = RefPtr{this}, aCleanly,

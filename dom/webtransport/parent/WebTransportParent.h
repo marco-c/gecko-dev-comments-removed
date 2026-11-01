@@ -107,9 +107,16 @@ class WebTransportParent : public PWebTransportParent,
   
   void ResolvePendingGetStats(const Maybe<WebTransportStatsData>& aStats);
 
+  
+  
+  void CloseSessionForDestroyedActor();
+
   using ResolveType = std::tuple<const nsresult&, const uint8_t&>;
   nsCOMPtr<nsISerialEventTarget> mSocketThread;
   Atomic<bool> mSessionReady{false};
+  
+  
+  bool mRetargeted = false;
   uint64_t mSessionId{0};
 
   mozilla::Mutex mMutex{"WebTransportParent::mMutex"};
