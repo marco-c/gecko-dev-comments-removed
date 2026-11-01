@@ -39,7 +39,8 @@ class BlockReflowState {
           mShouldApplyTextBoxTrimStart(false),
           mShouldApplyTextBoxTrimAtBlockEnd(false),
           mShouldApplyTextBoxTrimAtFragmentEnd(false),
-          mIsCurrentLineAdjacentToBStart(false) {}
+          mIsCurrentLineAdjacentToBStart(false),
+          mShouldTrimInheritedBEndMargins(false) {}
 
     
     
@@ -102,6 +103,11 @@ class BlockReflowState {
     
     
     bool mIsCurrentLineAdjacentToBStart : 1;
+
+    
+    
+    
+    bool mShouldTrimInheritedBEndMargins : 1;
   };
 
  public:
@@ -131,6 +137,7 @@ class BlockReflowState {
       bool aIsAdjacentToBStart);
 
   bool ShouldTrimChildBStartMargins() const;
+  bool ShouldTrimChildBEndMargins() const;
 
   
 
