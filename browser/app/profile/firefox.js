@@ -1029,6 +1029,9 @@ pref(
 pref("browser.highlightToSearch.detectPageMenus", true);
 
 
+pref("browser.highlightToSearch.callout.seen", false);
+
+
 pref("browser.spin_cursor_while_busy", false);
 
 
