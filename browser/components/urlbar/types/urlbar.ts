@@ -66,3 +66,10 @@ type UrlbarResultCommand = {
 
   submenu?: boolean;
 };
+
+
+
+
+type VoidMethods<T extends Record<keyof T, (...args: any) => any>> = {
+  [F in keyof T]: (...args: Parameters<T[F]>) => void;
+};
