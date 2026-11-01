@@ -311,7 +311,7 @@ void WebTransportSessionProxy::GetStatsInternal(
 NS_IMETHODIMP
 WebTransportSessionProxy::ExportKeyingMaterial(
     const nsTArray<uint8_t>& aLabel, const nsTArray<uint8_t>& aContext,
-    nsTArray<uint8_t>& aKeyingMaterial) {
+    uint32_t aOutputLength, nsTArray<uint8_t>& aKeyingMaterial) {
   MOZ_ASSERT(OnSocketThread(),
              "ExportKeyingMaterial must be called on socket thread");
 
@@ -325,7 +325,8 @@ WebTransportSessionProxy::ExportKeyingMaterial(
     session = mWebTransportSession;
   }
 
-  return session->ExportKeyingMaterial(aLabel, aContext, aKeyingMaterial);
+  return session->ExportKeyingMaterial(aLabel, aContext, aOutputLength,
+                                       aKeyingMaterial);
 }
 
 bool WebTransportSessionProxy::CloseSessionAndGetStats(

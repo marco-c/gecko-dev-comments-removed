@@ -32,6 +32,7 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsIURL.h"
+#include "nsIWebTransport.h"
 #include "nsIWebTransportStream.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsTHashSet.h"
@@ -836,8 +837,8 @@ void WebTransport::SendGetStatsRequest(Promise* aPromise) {
 }
 
 already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
-    const BufferSource& aLabel, const Optional<BufferSource>& aContext,
-    ErrorResult& aError) {
+    const BufferSource& aLabel, const BufferSource& aContext,
+    uint32_t aOutputLength, ErrorResult& aError) {
   LOG(("ExportKeyingMaterial() called"));
 
   
@@ -856,22 +857,25 @@ already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
 
   
   
-  Maybe<nsTArray<uint8_t>> contextData;
-  if (aContext.WasPassed()) {
-    nsTArray<uint8_t> context;
-    ProcessTypedArraysFixed(
-        aContext.Value(), [&](const Span<const uint8_t>& aData) {
-          context.AppendElements(aData.Elements(), aData.Length());
-        });
+  nsTArray<uint8_t> contextData;
+  ProcessTypedArraysFixed(aContext, [&](const Span<const uint8_t>& aData) {
+    contextData.AppendElements(aData.Elements(), aData.Length());
+  });
 
-    
-    
-    if (context.Length() > 255) {
-      aError.ThrowRangeError("context must not exceed 255 bytes");
-      return nullptr;
-    }
+  
+  
+  if (contextData.Length() > 255) {
+    aError.ThrowRangeError("context must not exceed 255 bytes");
+    return nullptr;
+  }
 
-    contextData = Some(std::move(context));
+  
+  
+  
+  if (aOutputLength == 0 ||
+      aOutputLength > nsIWebTransport::MAX_KEYING_MATERIAL_LENGTH) {
+    aError.ThrowRangeError("outputLength must be between 1 and 4096 bytes");
+    return nullptr;
   }
 
   
@@ -886,7 +890,7 @@ already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
   }
 
   mChild->SendExportKeyingMaterial(
-      labelData, contextData,
+      labelData, contextData, aOutputLength,
       [self = RefPtr{this}, promise](
           nsTArray<uint8_t>&& aKeyingMaterial) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
         

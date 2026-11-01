@@ -3215,9 +3215,10 @@ uint64_t Http3Session::MaxDatagramSize(uint64_t aSessionId) {
 
 nsresult Http3Session::ExportWebTransportKeyingMaterial(
     uint64_t aSessionId, const nsTArray<uint8_t>& aLabel,
-    const nsTArray<uint8_t>& aContext, nsTArray<uint8_t>& aKeyingMaterial) {
+    const nsTArray<uint8_t>& aContext, uint32_t aOutputLength,
+    nsTArray<uint8_t>& aKeyingMaterial) {
   return mHttp3Connection->ExportWebTransportKeyingMaterial(
-      aSessionId, aLabel, aContext, aKeyingMaterial);
+      aSessionId, aLabel, aContext, aOutputLength, aKeyingMaterial);
 }
 
 bool Http3Session::GetWebTransportSessionStats(

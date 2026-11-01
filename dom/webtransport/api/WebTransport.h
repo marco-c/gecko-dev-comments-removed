@@ -117,9 +117,10 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
       const WebTransportOptions& aOptions, ErrorResult& aError);
 
   already_AddRefed<Promise> GetStats(ErrorResult& aError);
-  already_AddRefed<Promise> ExportKeyingMaterial(
-      const BufferSource& aLabel, const Optional<BufferSource>& aContext,
-      ErrorResult& aError);
+  already_AddRefed<Promise> ExportKeyingMaterial(const BufferSource& aLabel,
+                                                 const BufferSource& aContext,
+                                                 uint32_t aOutputLength,
+                                                 ErrorResult& aError);
 
   already_AddRefed<Promise> Ready() { return do_AddRef(mReady); }
   WebTransportReliabilityMode Reliability();

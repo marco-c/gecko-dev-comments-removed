@@ -522,24 +522,31 @@ IPCResult WebTransportParent::RecvSetSendGroup(uint64_t aStreamId,
 }
 
 IPCResult WebTransportParent::RecvExportKeyingMaterial(
-    nsTArray<uint8_t>&& aLabel, Maybe<nsTArray<uint8_t>>&& aContext,
-    ExportKeyingMaterialResolver&& aResolver) {
-  LOG(("ExportKeyingMaterial for %p, label length=%zu, has context=%d", this,
-       aLabel.Length(), aContext.isSome()));
+    nsTArray<uint8_t>&& aLabel, nsTArray<uint8_t>&& aContext,
+    uint32_t aOutputLength, ExportKeyingMaterialResolver&& aResolver) {
+  LOG(
+      ("ExportKeyingMaterial for %p, label length=%zu, context length=%zu, "
+       "outputLength=%u",
+       this, aLabel.Length(), aContext.Length(), aOutputLength));
+
+  
+  
+  
+  
+  if (aOutputLength == 0 ||
+      aOutputLength > nsIWebTransport::MAX_KEYING_MATERIAL_LENGTH) {
+    aResolver(nsTArray<uint8_t>());
+    return IPC_OK();
+  }
 
   if (!mWebTransport) {
     aResolver(nsTArray<uint8_t>());
     return IPC_OK();
   }
 
-  nsTArray<uint8_t> context;
-  if (aContext.isSome()) {
-    context = std::move(aContext.ref());
-  }
-
   nsTArray<uint8_t> keyingMaterial;
-  nsresult rv =
-      mWebTransport->ExportKeyingMaterial(aLabel, context, keyingMaterial);
+  nsresult rv = mWebTransport->ExportKeyingMaterial(
+      aLabel, aContext, aOutputLength, keyingMaterial);
 
   if (NS_FAILED(rv)) {
     LOG(("ExportKeyingMaterial failed with rv=0x%08x",

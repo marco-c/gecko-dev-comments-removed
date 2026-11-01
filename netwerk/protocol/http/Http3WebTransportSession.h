@@ -136,6 +136,7 @@ class Http3WebTransportSession final : public WebTransportSessionBase,
 
   nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                 const nsTArray<uint8_t>& aContext,
+                                uint32_t aOutputLength,
                                 nsTArray<uint8_t>& aKeyingMaterial) override;
 
   void GetStats() override;

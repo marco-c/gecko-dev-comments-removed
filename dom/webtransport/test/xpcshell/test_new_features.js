@@ -145,15 +145,19 @@ add_task(async function test_exportKeyingMaterial() {
 
   
   const label = new TextEncoder().encode("test-label");
-  const keyMaterial = await wt.exportKeyingMaterial(label);
+  const keyMaterial = await wt.exportKeyingMaterial(
+    label,
+    new Uint8Array(0),
+    32
+  );
   Assert.notEqual(keyMaterial, null);
-  Assert.equal(keyMaterial instanceof Uint8Array, true);
+  Assert.equal(ArrayBuffer.isView(keyMaterial), true);
 
   
   const context = new TextEncoder().encode("test-context");
-  const keyMaterial2 = await wt.exportKeyingMaterial(label, context);
+  const keyMaterial2 = await wt.exportKeyingMaterial(label, context, 32);
   Assert.notEqual(keyMaterial2, null);
-  Assert.equal(keyMaterial2 instanceof Uint8Array, true);
+  Assert.equal(ArrayBuffer.isView(keyMaterial2), true);
 
   wt.close();
   await wt.closed;
@@ -248,7 +252,11 @@ add_task(async function test_closed_state_errors() {
   await wt.closed;
 
   try {
-    await wt.exportKeyingMaterial(new Uint8Array([1, 2, 3]));
+    await wt.exportKeyingMaterial(
+      new Uint8Array([1, 2, 3]),
+      new Uint8Array(0),
+      32
+    );
     Assert.ok(false, "exportKeyingMaterial should have thrown");
   } catch (e) {
     Assert.equal(e.name, "InvalidStateError");

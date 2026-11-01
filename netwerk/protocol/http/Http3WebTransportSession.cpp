@@ -607,13 +607,13 @@ void Http3WebTransportSession::GetMaxDatagramSize() {
 
 nsresult Http3WebTransportSession::ExportKeyingMaterial(
     const nsTArray<uint8_t>& aLabel, const nsTArray<uint8_t>& aContext,
-    nsTArray<uint8_t>& aKeyingMaterial) {
+    uint32_t aOutputLength, nsTArray<uint8_t>& aKeyingMaterial) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (mRecvState != ACTIVE) {
     return NS_ERROR_NOT_CONNECTED;
   }
-  return mSession->ExportWebTransportKeyingMaterial(mStreamId, aLabel, aContext,
-                                                    aKeyingMaterial);
+  return mSession->ExportWebTransportKeyingMaterial(
+      mStreamId, aLabel, aContext, aOutputLength, aKeyingMaterial);
 }
 
 void Http3WebTransportSession::GetStats() {

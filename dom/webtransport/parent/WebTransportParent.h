@@ -53,7 +53,8 @@ class WebTransportParent : public PWebTransportParent,
   IPCResult RecvCreateSendGroup(uint64_t aGroupId);
 
   IPCResult RecvExportKeyingMaterial(nsTArray<uint8_t>&& aLabel,
-                                     Maybe<nsTArray<uint8_t>>&& aContext,
+                                     nsTArray<uint8_t>&& aContext,
+                                     uint32_t aOutputLength,
                                      ExportKeyingMaterialResolver&& aResolver);
 
   IPCResult RecvGetStats(GetStatsResolver&& aResolver);

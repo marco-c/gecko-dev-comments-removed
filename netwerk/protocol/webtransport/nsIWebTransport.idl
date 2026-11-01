@@ -77,10 +77,14 @@ interface nsIWebTransport : nsISupports {
   // null aStats.
   void getStats();
 
+  // Largest aOutputLength exportKeyingMaterial() accepts.
+  const unsigned long MAX_KEYING_MATERIAL_LENGTH = 4096;
+
   // Export keying material using TLS exporter (RFC 5705).
   // Returns the exported keying material in the output array.
   void exportKeyingMaterial(in Array<uint8_t> aLabel,
                            in Array<uint8_t> aContext,
+                           in uint32_t aOutputLength,
                            out Array<uint8_t> aKeyingMaterial);
 
   // Close the session.

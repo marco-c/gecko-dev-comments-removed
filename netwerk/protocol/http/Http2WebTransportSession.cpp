@@ -89,7 +89,7 @@ void Http2WebTransportSessionImpl::GetMaxDatagramSize() {
 
 nsresult Http2WebTransportSessionImpl::ExportKeyingMaterial(
     const nsTArray<uint8_t>& aLabel, const nsTArray<uint8_t>& aContext,
-    nsTArray<uint8_t>& aKeyingMaterial) {
+    uint32_t aOutputLength, nsTArray<uint8_t>& aKeyingMaterial) {
   
   
   

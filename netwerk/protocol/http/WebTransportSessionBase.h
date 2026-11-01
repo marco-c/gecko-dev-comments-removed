@@ -58,6 +58,7 @@ class WebTransportSessionBase {
                                   nsTArray<nsCString>& aValues) {}
   virtual nsresult ExportKeyingMaterial(const nsTArray<uint8_t>& aLabel,
                                         const nsTArray<uint8_t>& aContext,
+                                        uint32_t aOutputLength,
                                         nsTArray<uint8_t>& aKeyingMaterial) = 0;
   virtual void GetNegotiatedProtocol(nsACString& aProtocol) = 0;
   virtual void GetStats() = 0;
