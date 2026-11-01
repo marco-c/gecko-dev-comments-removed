@@ -1222,8 +1222,15 @@ gfxUserFontSet::UserFontCache::Flusher::Observe(nsISupports* aSubject,
       }
     }
   } else if (!strcmp(aTopic, "xpcom-shutdown")) {
+    
+    
+    AutoTArray<RefPtr<gfxFontEntry>, 32> entries;
+    entries.SetCapacity(sUserFonts->Count());
     for (auto i = sUserFonts->Iter(); !i.Done(); i.Next()) {
-      i.Get()->GetFontEntry()->DisconnectSVG();
+      entries.AppendElement(i.Get()->GetFontEntry());
+    }
+    for (auto& entry : entries) {
+      entry->DisconnectSVG();
     }
   } else {
     MOZ_ASSERT_UNREACHABLE("unexpected topic");

@@ -689,7 +689,7 @@ void gfxFontEntry::ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace) {
 
 void gfxFontEntry::DisconnectSVG() {
   if (mSVGInitialized && mSVGGlyphs) {
-    mSVGGlyphs = nullptr;
+    delete mSVGGlyphs.exchange(nullptr);
     mSVGInitialized = false;
   }
 }
