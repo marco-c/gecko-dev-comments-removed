@@ -6888,18 +6888,18 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
       
       
       
+      RefPtr policyContainerToInherit = MakeRefPtr<PolicyContainer>();
       if (aPolicyContainer) {
-        RefPtr policyContainerToInherit = MakeRefPtr<PolicyContainer>();
         policyContainerToInherit->InitFromOther(
             PolicyContainer::Cast(aPolicyContainer));
-        blankDoc->SetPolicyContainer(policyContainerToInherit);
-        if (!PolicyContainer::GetCSP(policyContainerToInherit)) {
-          RefPtr newCsp = MakeRefPtr<nsCSPContext>();
-          policyContainerToInherit->SetCSP(newCsp);
-          nsresult rv = newCsp->SetRequestContextWithDocument(blankDoc);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return rv;
-          }
+      }
+      blankDoc->SetPolicyContainer(policyContainerToInherit);
+      if (!PolicyContainer::GetCSP(policyContainerToInherit)) {
+        RefPtr newCsp = MakeRefPtr<nsCSPContext>();
+        policyContainerToInherit->SetCSP(newCsp);
+        nsresult rv = newCsp->SetRequestContextWithDocument(blankDoc);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
         }
       }
 

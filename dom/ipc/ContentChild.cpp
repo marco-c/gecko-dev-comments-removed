@@ -80,7 +80,6 @@
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/PSessionStorageObserverChild.h"
-#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/PostMessageEvent.h"
 #include "mozilla/dom/PushNotifier.h"
 #include "mozilla/dom/RemoteWorkerDebuggerManagerChild.h"
@@ -1942,10 +1941,6 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
 
   RefPtr<nsOpenWindowInfo> openWindowInfo = new nsOpenWindowInfo();
   openWindowInfo->mPrincipalToInheritForAboutBlank = aWindowInit.principal();
-  
-  
-  openWindowInfo->mPolicyContainerToInheritForAboutBlank =
-      new PolicyContainer();
 
   nsresult rv = browserChild->Init(
        nullptr, windowChild, openWindowInfo);
