@@ -2,11 +2,12 @@
 
 
 
+#include "fuzz-tests/tests.h"
+
 #include "mozilla/ScopeExit.h"
 
 #include "jsapi.h"
 
-#include "fuzz-tests/tests.h"
 #include "js/StructuredClone.h"
 #include "vm/Interpreter.h"
 
@@ -67,10 +68,9 @@ static int testStructuredCloneReaderFuzz(const uint8_t* buf, size_t size) {
 
 
 
-  mozilla::Maybe<JSAutoStructuredCloneBuffer> clonebufOut;
-
-  clonebufOut.emplace(scope, nullptr, nullptr);
-  if (!clonebufOut->write(gCx, deserialized, UndefinedHandleValue, policy)) {
+  JSStructuredCloneData dataOut(scope);
+  if (!JS_WriteStructuredClone(gCx, deserialized, &dataOut, scope, policy,
+                               nullptr, nullptr, UndefinedHandleValue)) {
     return 0;
   }
 
