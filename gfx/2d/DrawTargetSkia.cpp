@@ -885,14 +885,12 @@ void DrawTargetSkia::FillRect(const Rect& aRect, const Pattern& aPattern,
   
   
   
-  
   if (aPattern.GetType() == PatternType::SURFACE &&
       aOptions.mCompositionOp != CompositionOp::OP_SOURCE) {
-    const auto& pat = static_cast<const SurfacePattern&>(aPattern);
+    const SurfacePattern& pat = static_cast<const SurfacePattern&>(aPattern);
     
     if (pat.mSurface &&
-        (!IsBackedByPixels(mCanvas) ||
-         aOptions.mCompositionOp != CompositionOp::OP_OVER ||
+        (aOptions.mCompositionOp != CompositionOp::OP_OVER ||
          GfxFormatToSkiaAlphaType(pat.mSurface->GetFormat()) !=
              kOpaque_SkAlphaType) &&
         !pat.mMatrix.HasNonAxisAlignedTransform()) {
