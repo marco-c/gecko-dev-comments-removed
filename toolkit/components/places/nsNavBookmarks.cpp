@@ -363,24 +363,21 @@ nsNavBookmarks::InsertBookmark(int64_t aFolder, nsIURI* aURI, int32_t aIndex,
 
   if (!aGUID.IsEmpty() && !IsValidGUID(aGUID)) return NS_ERROR_INVALID_ARG;
 
-  mozStorageTransaction transaction(mDB->MainConn(), false);
-
   
-  (void)NS_WARN_IF(NS_FAILED(transaction.Start()));
+  int32_t index, folderCount;
+  int64_t grandParentId;
+  nsAutoCString folderGuid;
+  nsresult rv =
+      FetchFolderInfo(aFolder, &folderCount, folderGuid, &grandParentId);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   nsNavHistory* history = nsNavHistory::GetHistoryService();
   NS_ENSURE_TRUE(history, NS_ERROR_OUT_OF_MEMORY);
   int64_t placeId;
   nsAutoCString placeGuid;
-  nsresult rv = history->GetOrCreateIdForPage(aURI, &placeId, placeGuid);
+  rv = history->GetOrCreateIdForPage(aURI, &placeId, placeGuid);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  int32_t index, folderCount;
-  int64_t grandParentId;
-  nsAutoCString folderGuid;
-  rv = FetchFolderInfo(aFolder, &folderCount, folderGuid, &grandParentId);
-  NS_ENSURE_SUCCESS(rv, rv);
   if (aIndex == nsINavBookmarksService::DEFAULT_INDEX ||
       aIndex >= folderCount) {
     index = folderCount;
@@ -400,9 +397,6 @@ nsNavBookmarks::InsertBookmark(int64_t aFolder, nsIURI* aURI, int32_t aIndex,
   rv = InsertBookmarkInDB(placeId, BOOKMARK, aFolder, index, title, dateAdded,
                           0, folderGuid, grandParentId, aURI, aSource,
                           aNewBookmarkId, guid);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = transaction.Commit();
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (!mCanNotify) {
@@ -705,11 +699,6 @@ nsNavBookmarks::CreateFolder(int64_t aParent, const nsACString& aTitle,
       FetchFolderInfo(aParent, &folderCount, folderGuid, &grandParentId);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mozStorageTransaction transaction(mDB->MainConn(), false);
-
-  
-  (void)NS_WARN_IF(NS_FAILED(transaction.Start()));
-
   if (aIndex == nsINavBookmarksService::DEFAULT_INDEX ||
       aIndex >= folderCount) {
     index = folderCount;
@@ -728,9 +717,6 @@ nsNavBookmarks::CreateFolder(int64_t aParent, const nsACString& aTitle,
   rv = InsertBookmarkInDB(-1, FOLDER, aParent, index, title, dateAdded, 0,
                           folderGuid, grandParentId, nullptr, aSource,
                           aNewFolderId, guid);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  rv = transaction.Commit();
   NS_ENSURE_SUCCESS(rv, rv);
 
   int64_t tagsRootId = mDB->GetTagsFolderId();
@@ -1127,27 +1113,14 @@ nsNavBookmarks::SetItemLastModified(int64_t aItemId, PRTime aLastModified,
   
   bookmark.lastModified = RoundToMilliseconds(aLastModified);
 
+  rv = SetItemDateInternal(LAST_MODIFIED, syncChangeDelta, bookmark.id,
+                           bookmark.lastModified);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   if (isTagging) {
     
     
-    
-    mozStorageTransaction transaction(mDB->MainConn(), false);
-
-    
-    (void)NS_WARN_IF(NS_FAILED(transaction.Start()));
-
-    rv = SetItemDateInternal(LAST_MODIFIED, syncChangeDelta, bookmark.id,
-                             bookmark.lastModified);
-    NS_ENSURE_SUCCESS(rv, rv);
-
     rv = AddSyncChangesForBookmarksWithURL(bookmark.url, syncChangeDelta);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = transaction.Commit();
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    rv = SetItemDateInternal(LAST_MODIFIED, syncChangeDelta, bookmark.id,
-                             bookmark.lastModified);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -1346,25 +1319,13 @@ nsNavBookmarks::SetItemTitle(int64_t aItemId, const nsACString& aTitle,
   nsAutoCString title;
   TruncateTitle(aTitle, title);
 
+  rv = SetItemTitleInternal(bookmark, title, syncChangeDelta);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   if (isChangingTagFolder) {
     
     
-    
-    mozStorageTransaction transaction(mDB->MainConn(), false);
-
-    
-    (void)NS_WARN_IF(NS_FAILED(transaction.Start()));
-
-    rv = SetItemTitleInternal(bookmark, title, syncChangeDelta);
-    NS_ENSURE_SUCCESS(rv, rv);
-
     rv = AddSyncChangesForBookmarksInFolder(bookmark.id, syncChangeDelta);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = transaction.Commit();
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    rv = SetItemTitleInternal(bookmark, title, syncChangeDelta);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
