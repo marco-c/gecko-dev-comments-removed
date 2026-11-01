@@ -242,7 +242,7 @@ SVGDrawingCallback::~SVGDrawingCallback() = default;
 
 bool SVGDrawingCallback::operator()(gfxContext* aContext,
                                     const gfxRect& aFillRect,
-                                    const SamplingFilter aSamplingFilter,
+                                    const SamplingFilter ,
                                     const gfxMatrix& aTransform) {
   MOZ_ASSERT(mSVGDocumentWrapper, "need an SVGDocumentWrapper");
 
@@ -564,10 +564,9 @@ nsresult VectorImage::GetHotspotY(int32_t* aY) {
   return Image::GetHotspotY(aY);
 }
 
-nsIntSize VectorImage::OptimalImageSizeForDest(const gfxSize& aDest,
-                                               uint32_t aWhichFrame,
-                                               SamplingFilter aSamplingFilter,
-                                               uint32_t aFlags) {
+nsIntSize VectorImage::OptimalImageSizeForDest(
+    const gfxSize& aDest, uint32_t ,
+    SamplingFilter , uint32_t ) {
   MOZ_ASSERT(aDest.width >= 0 || ceil(aDest.width) <= INT32_MAX ||
                  aDest.height >= 0 || ceil(aDest.height) <= INT32_MAX,
              "Unexpected destination size");
@@ -705,7 +704,7 @@ bool VectorImage::HasDecodedPixels() {
 
 NS_IMETHODIMP_(bool)
 VectorImage::IsImageContainerAvailable(WindowRenderer* aRenderer,
-                                       uint32_t aFlags) {
+                                       uint32_t ) {
   if (mError || !mIsFullyLoaded ||
       aRenderer->GetBackendType() != LayersBackend::LAYERS_WR) {
     return false;
@@ -981,19 +980,19 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
 }
 
 NS_IMETHODIMP
-VectorImage::StartDecoding(uint32_t aFlags, uint32_t aWhichFrame) {
+VectorImage::StartDecoding(uint32_t , uint32_t ) {
   
   return NS_OK;
 }
 
-bool VectorImage::StartDecodingWithResult(uint32_t aFlags,
-                                          uint32_t aWhichFrame) {
+bool VectorImage::StartDecodingWithResult(uint32_t ,
+                                          uint32_t ) {
   
   return mIsFullyLoaded;
 }
 
 imgIContainer::DecodeResult VectorImage::RequestDecodeWithResult(
-    uint32_t aFlags, uint32_t aWhichFrame) {
+    uint32_t , uint32_t ) {
   
 
   if (mError) {
@@ -1008,8 +1007,9 @@ imgIContainer::DecodeResult VectorImage::RequestDecodeWithResult(
 }
 
 NS_IMETHODIMP
-VectorImage::RequestDecodeForSize(const nsIntSize& aSize, uint32_t aFlags,
-                                  uint32_t aWhichFrame) {
+VectorImage::RequestDecodeForSize(const nsIntSize& ,
+                                  uint32_t ,
+                                  uint32_t ) {
   if (mError) {
     return NS_ERROR_FAILURE;
   }
@@ -1195,7 +1195,7 @@ void VectorImage::MediaFeatureValuesChangedAllDocuments(
 }
 
 
-nsresult VectorImage::GetNativeSizes(nsTArray<IntSize>& aNativeSizes) {
+nsresult VectorImage::GetNativeSizes(nsTArray<IntSize>& ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -1430,7 +1430,7 @@ void VectorImage::RecoverFromLossOfSurfaces() {
   SurfaceCache::RemoveImage(ImageKey(this));
 }
 
-void VectorImage::OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) {
+void VectorImage::OnSurfaceDiscarded(const SurfaceKey& ) {
   MOZ_ASSERT(mProgressTracker);
 
   NS_DispatchToMainThread(NewRunnableMethod("ProgressTracker::OnDiscard",

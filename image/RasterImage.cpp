@@ -601,16 +601,16 @@ RasterImage::GetFrameAtSize(const IntSize& aSize, uint32_t aWhichFrame,
 }
 
 NS_IMETHODIMP_(bool)
-RasterImage::IsImageContainerAvailable(WindowRenderer* aRenderer,
-                                       uint32_t aFlags) {
+RasterImage::IsImageContainerAvailable(WindowRenderer* ,
+                                       uint32_t ) {
   return LoadHasSize();
 }
 
 NS_IMETHODIMP_(ImgDrawResult)
 RasterImage::GetImageProvider(WindowRenderer* aRenderer,
                               const gfx::IntSize& aSize,
-                              const SVGImageContext& aSVGContext,
-                              const Maybe<ImageIntRegion>& aRegion,
+                              const SVGImageContext& ,
+                              const Maybe<ImageIntRegion>& ,
                               uint32_t aFlags,
                               WebRenderImageProvider** aProvider) {
   MOZ_ASSERT(NS_IsMainThread());
@@ -1598,7 +1598,7 @@ void RasterImage::NotifyProgress(
     const OrientedIntRect& aInvalidRect ,
     const Maybe<uint32_t>& aFrameCount ,
     DecoderFlags aDecoderFlags ,
-    SurfaceFlags aSurfaceFlags ) {
+    SurfaceFlags  ) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -1772,7 +1772,7 @@ void RasterImage::PropagateUseCounters(dom::Document*) {
 }
 
 IntSize RasterImage::OptimalImageSizeForDest(const gfxSize& aDest,
-                                             uint32_t aWhichFrame,
+                                             uint32_t ,
                                              SamplingFilter aSamplingFilter,
                                              uint32_t aFlags) {
   MOZ_ASSERT(aDest.width >= 0 || ceil(aDest.width) <= INT32_MAX ||

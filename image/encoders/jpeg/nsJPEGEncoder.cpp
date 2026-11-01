@@ -101,12 +101,11 @@ nsJPEGEncoder::SetColorSpaceInfo(imgIEncoder::CICPColourPrimaries,
 
 
 NS_IMETHODIMP
-nsJPEGEncoder::InitFromData(const uint8_t* aData,
-                            uint32_t aLength,  
+nsJPEGEncoder::InitFromData(const uint8_t* aData, uint32_t ,
                             uint32_t aWidth, uint32_t aHeight, uint32_t aStride,
                             uint32_t aInputFormat,
                             const nsAString& aOutputOptions,
-                            const nsACString& aRandomizationKey) {
+                            const nsACString& ) {
   NS_ENSURE_ARG(aData);
 
   
@@ -245,9 +244,9 @@ nsJPEGEncoder::InitFromData(const uint8_t* aData,
 }
 
 NS_IMETHODIMP
-nsJPEGEncoder::StartImageEncode(uint32_t aWidth, uint32_t aHeight,
-                                uint32_t aInputFormat,
-                                const nsAString& aOutputOptions) {
+nsJPEGEncoder::StartImageEncode(uint32_t , uint32_t ,
+                                uint32_t ,
+                                const nsAString& ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -268,10 +267,10 @@ nsJPEGEncoder::GetImageBuffer(char** aOutputBuffer) {
 }
 
 NS_IMETHODIMP
-nsJPEGEncoder::AddImageFrame(const uint8_t* aData, uint32_t aLength,
-                             uint32_t aWidth, uint32_t aHeight,
-                             uint32_t aStride, uint32_t aFrameFormat,
-                             const nsAString& aFrameOptions) {
+nsJPEGEncoder::AddImageFrame(const uint8_t* , uint32_t ,
+                             uint32_t , uint32_t ,
+                             uint32_t , uint32_t ,
+                             const nsAString& ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -376,7 +375,7 @@ nsJPEGEncoder::AsyncWait(nsIInputStreamCallback* aCallback, uint32_t aFlags,
 }
 
 NS_IMETHODIMP
-nsJPEGEncoder::CloseWithStatus(nsresult aStatus) { return Close(); }
+nsJPEGEncoder::CloseWithStatus(nsresult ) { return Close(); }
 
 
 

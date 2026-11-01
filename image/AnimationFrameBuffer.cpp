@@ -93,7 +93,8 @@ void AnimationFrameRetainedBuffer::AdvanceInternal() {
   }
 }
 
-imgFrame* AnimationFrameRetainedBuffer::Get(size_t aFrame, bool aForDisplay) {
+imgFrame* AnimationFrameRetainedBuffer::Get(size_t aFrame,
+                                            bool ) {
   
   if (mFrames.IsEmpty()) {
     MOZ_ASSERT_UNREACHABLE("Calling Get() when we have no frames");

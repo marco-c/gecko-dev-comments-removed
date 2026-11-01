@@ -529,9 +529,10 @@ nsresult imgFrame::ImageUpdatedInternal(const nsIntRect& aUpdateRect) {
   return NS_OK;
 }
 
-void imgFrame::Finish(Opacity aFrameOpacity ,
-                      bool aFinalize ,
-                      bool aOrientationSwapsWidthAndHeight ) {
+void imgFrame::Finish(
+    Opacity  ,
+    bool aFinalize ,
+    bool aOrientationSwapsWidthAndHeight ) {
   MonitorAutoLock lock(mMonitor);
 
   IntRect frameRect(GetRect());

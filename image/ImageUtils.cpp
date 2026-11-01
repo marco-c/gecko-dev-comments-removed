@@ -116,8 +116,8 @@ class AnonymousDecoderTask : public IDecodingTask {
 
   
   
-  virtual bool OnFrameAvailable(RefPtr<imgFrame>&& aFrame,
-                                RefPtr<gfx::SourceSurface>&& aSurface) {
+  virtual bool OnFrameAvailable(RefPtr<imgFrame>&& ,
+                                RefPtr<gfx::SourceSurface>&& ) {
     MOZ_ASSERT_UNREACHABLE("Unhandled frame!");
     return true;
   }
@@ -174,7 +174,7 @@ class AnonymousFrameCountDecoderTask final : public AnonymousDecoderTask {
     UpdateFrameCount( false);
   }
 
-  void OnComplete(bool aSuccess) override MOZ_REQUIRES(mDecoderMutex) {
+  void OnComplete(bool ) override MOZ_REQUIRES(mDecoderMutex) {
     UpdateFrameCount( true);
   }
 };
@@ -207,7 +207,7 @@ class AnonymousFramesDecoderTask final : public AnonymousDecoderTask {
     return owner->OnFrameAvailable(std::move(aFrame), std::move(aSurface));
   }
 
-  void OnComplete(bool aSuccess) override MOZ_REQUIRES(mDecoderMutex) {
+  void OnComplete(bool ) override MOZ_REQUIRES(mDecoderMutex) {
     RefPtr<AnonymousDecoder> owner(mOwner);
     if (!owner) {
       return;

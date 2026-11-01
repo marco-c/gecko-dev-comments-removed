@@ -101,7 +101,7 @@ class NextPartObserver : public IProgressObserver {
   }
 
   virtual void Notify(int32_t aType,
-                      const nsIntRect* aRect = nullptr) override {
+                      const nsIntRect*  = nullptr) override {
     if (!mImage) {
       
       return;
@@ -129,7 +129,7 @@ class NextPartObserver : public IProgressObserver {
     FinishObserving();
   }
 
-  virtual void OnLoadComplete(bool aLastPart) override {
+  virtual void OnLoadComplete(bool ) override {
     if (!mImage) {
       
       return;

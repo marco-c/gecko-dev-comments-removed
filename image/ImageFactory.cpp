@@ -29,7 +29,7 @@ namespace image {
 
 void ImageFactory::Initialize() {}
 
-static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& aMimeType,
+static uint32_t ComputeImageFlags(nsIURI* uri, const nsCString& ,
                                   bool isMultiPart) {
   
   bool isDiscardable = StaticPrefs::image_mem_discardable();
@@ -128,7 +128,7 @@ already_AddRefed<Image> ImageFactory::CreateImage(
 
 
 template <typename T>
-static already_AddRefed<Image> BadImage(const char* aMessage,
+static already_AddRefed<Image> BadImage(const char* ,
                                         RefPtr<T>& aImage) {
   aImage->SetHasError();
   return aImage.forget();

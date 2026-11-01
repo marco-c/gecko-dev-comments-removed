@@ -268,8 +268,9 @@ SVGDocumentWrapper::OnStopRequest(nsIRequest* aRequest, nsresult status) {
 
 
 NS_IMETHODIMP
-SVGDocumentWrapper::Observe(nsISupports* aSubject, const char* aTopic,
-                            const char16_t* aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+SVGDocumentWrapper::Observe(nsISupports* , const char* aTopic,
+                            const char16_t* )
+    MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     
     SVGSVGElement* svgElem = GetSVGRootElement();

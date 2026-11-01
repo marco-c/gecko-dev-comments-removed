@@ -192,7 +192,7 @@ TEST(ImageCopyOnWrite, WriteRecursive)
 
             
             cow.Read(
-                [](const Value* aValue) {
+                [](const Value* ) {
                   
                   EXPECT_TRUE(false);
                 },
@@ -203,7 +203,7 @@ TEST(ImageCopyOnWrite, WriteRecursive)
 
             
             cow.Write(
-                [](Value* aValue) {
+                [](Value* ) {
                   
                   EXPECT_TRUE(false);
                 },

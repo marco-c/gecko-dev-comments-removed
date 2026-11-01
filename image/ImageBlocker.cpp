@@ -40,7 +40,8 @@ ImageBlocker::ShouldLoad(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
 }
 
 NS_IMETHODIMP
-ImageBlocker::ShouldProcess(nsIURI* aContentLocation, nsILoadInfo* aLoadInfo,
+ImageBlocker::ShouldProcess(nsIURI* ,
+                            nsILoadInfo* ,
                             int16_t* aShouldProcess) {
   
   *aShouldProcess = nsIContentPolicy::ACCEPT;
