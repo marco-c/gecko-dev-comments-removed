@@ -543,21 +543,12 @@ struct ComponentSortIndex {
   bool operator==(const ComponentSortIndex& other) const = default;
 };
 
-struct ComponentSortIndexHasher {
-  using Lookup = ComponentSortIndex;
-  static HashNumber hash(const Lookup& l) {
-    return mozilla::HashGeneric(l.sort, l.index);
-  }
-  static bool match(const ComponentSortIndex& k, const Lookup& l) {
-    return k == l;
-  }
-};
-
 enum class ComponentAliasKind : uint8_t {
   CoreExport,
   Export,
   Outer,
 };
+
 
 
 
@@ -723,49 +714,16 @@ struct CoreInstanceDescFromModule {
 class ComponentInlineExports {
   using ExportMap = mozilla::HashMap<CacheableName, ComponentSortIndex,
                                      CacheableNameHasher, SystemAllocPolicy>;
-  using OriginalIndexMap =
-      mozilla::HashMap<ComponentSortIndex, uint32_t, ComponentSortIndexHasher,
-                       SystemAllocPolicy>;
 
   
   
   ExportMap exports_;
 
-  
-  
-  OriginalIndexMap originalIndices_;
-
  public:
-  struct Builder {
-    uint32_t numFuncs = 0;
-    uint32_t numTypes = 0;
-    uint32_t numComponents = 0;
-    uint32_t numInstances = 0;
-    uint32_t numCoreFunctions = 0;
-    uint32_t numCoreTables = 0;
-    uint32_t numCoreMemories = 0;
-    uint32_t numCoreGlobals = 0;
-    uint32_t numCoreTags = 0;
-    uint32_t numCoreTypes = 0;
-    uint32_t numCoreModules = 0;
-    uint32_t numCoreInstances = 0;
-
-    uint32_t trackItemOfSort(ComponentSort sort);
-  };
-
-  bool addExport(Builder* builder, CacheableName&& name,
-                 ComponentSortIndex exported);
+  [[nodiscard]] bool addExport(CacheableName&& name,
+                               ComponentSortIndex exported);
 
   const ExportMap& exports() const { return exports_; }
-
-  
-  
-  
-  mozilla::Maybe<ComponentSortIndex> getExport(const CacheableName& name) const;
-
-  
-  
-  ComponentSortIndex resolveOriginal(ComponentSortIndex expFromThis) const;
 };
 
 
@@ -776,27 +734,16 @@ class CoreInstanceDesc {
   CoreInstanceVariant desc_;
   SharedCoreInstanceType type_;
 
-  
-  const Component* component_;
-
  public:
-  explicit CoreInstanceDesc(const Component* c,
-                            CoreInstanceDescFromModule&& fromModule,
+  explicit CoreInstanceDesc(CoreInstanceDescFromModule&& fromModule,
                             SharedCoreInstanceType type)
-      : desc_(std::move(fromModule)), type_(std::move(type)), component_(c) {}
-  explicit CoreInstanceDesc(const Component* c,
-                            ComponentInlineExports&& inlineExports,
+      : desc_(std::move(fromModule)), type_(std::move(type)) {}
+  explicit CoreInstanceDesc(ComponentInlineExports&& inlineExports,
                             SharedCoreInstanceType type)
-      : desc_(std::move(inlineExports)),
-        type_(std::move(type)),
-        component_(c) {}
+      : desc_(std::move(inlineExports)), type_(std::move(type)) {}
 
   const CoreInstanceVariant& desc() const { return desc_; }
   const CoreInstanceType& type() const { return *type_; }
-
-  
-  
-  mozilla::Maybe<ComponentSortIndex> getExport(const CacheableName& name) const;
 };
 
 
@@ -908,9 +855,6 @@ class Component : public JS::WasmComponent {
   using ImportVector = mozilla::Vector<ComponentImport, 0, SystemAllocPolicy>;
   using ExportVector = mozilla::Vector<ComponentExport, 0, SystemAllocPolicy>;
   using ItemVector = mozilla::Vector<ComponentItem, 0, SystemAllocPolicy>;
-  using AliasNameMap =
-      mozilla::HashMap<ComponentSortIndex, CacheableName,
-                       ComponentSortIndexHasher, SystemAllocPolicy>;
   using ImportExportMap = mozilla::HashMap<mozilla::Span<const char>, size_t,
                                            NameHasher, SystemAllocPolicy>;
 
@@ -949,15 +893,7 @@ class Component : public JS::WasmComponent {
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  AliasNameMap aliasNames_;
+  CacheableNameVector coreExportAliasNames_;
 
   template <typename T>
   bool addDefinedItem(
@@ -969,6 +905,10 @@ class Component : public JS::WasmComponent {
       return false;
     }
     return indexSpaceVector.append(ComponentItem::defined(sort, index));
+  }
+
+  ItemVector& mutableCoreIndexSpace(ComponentSort sort) {
+    return const_cast<ItemVector&>(std::as_const(*this).coreIndexSpace(sort));
   }
 
   
@@ -1028,31 +968,31 @@ class Component : public JS::WasmComponent {
   }
 
   const ItemVector& coreTables() const { return coreTables_; }
-  [[nodiscard]] bool addCoreTable(ComponentItem tableItem) {
-    MOZ_RELEASE_ASSERT(tableItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(tableItem.sort() == ComponentSort::CoreTable);
-    return coreTables_.append(tableItem);
-  }
-
   const ItemVector& coreMemories() const { return coreMemories_; }
-  [[nodiscard]] bool addCoreMemory(ComponentItem memoryItem) {
-    MOZ_RELEASE_ASSERT(memoryItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(memoryItem.sort() == ComponentSort::CoreMemory);
-    return coreMemories_.append(memoryItem);
-  }
-
   const ItemVector& coreGlobals() const { return coreGlobals_; }
-  [[nodiscard]] bool addCoreGlobal(ComponentItem globalItem) {
-    MOZ_RELEASE_ASSERT(globalItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(globalItem.sort() == ComponentSort::CoreGlobal);
-    return coreGlobals_.append(globalItem);
+  const ItemVector& coreTags() const { return coreTags_; }
+
+  
+  const ItemVector& coreIndexSpace(ComponentSort sort) const;
+
+  
+  
+  [[nodiscard]] bool addCoreExportAlias(ComponentSort sort,
+                                        uint32_t instanceIndex,
+                                        CacheableName&& name) {
+    
+    
+    ComponentItem item =
+        ComponentItem::alias(ComponentAliasKind::CoreExport, sort,
+                             instanceIndex, coreExportAliasNames_.length());
+    return coreExportAliasNames_.append(std::move(name)) &&
+           mutableCoreIndexSpace(sort).append(item);
   }
 
-  const ItemVector& coreTags() const { return coreTags_; }
-  bool addCoreTag(ComponentItem tagItem) {
-    MOZ_RELEASE_ASSERT(tagItem.kind() == ComponentItem::ItemKind::Alias);
-    MOZ_RELEASE_ASSERT(tagItem.sort() == ComponentSort::CoreTag);
-    return coreTags_.append(tagItem);
+  
+  const CacheableName& coreExportAliasName(ComponentItem alias) const {
+    MOZ_RELEASE_ASSERT(alias.aliasKind() == ComponentAliasKind::CoreExport);
+    return coreExportAliasNames_[alias.itemIndex()];
   }
 
   const ItemVector& coreModules() const { return coreModules_; }
@@ -1070,11 +1010,6 @@ class Component : public JS::WasmComponent {
   
   
   ComponentItem resolveSortIndex(ComponentSortIndex sortIndex) const;
-
-  [[nodiscard]] bool saveExportNameForAlias(ComponentSortIndex sortIndexOfAlias,
-                                            CacheableName&& name);
-  const CacheableName& getExportNameForAlias(
-      ComponentSortIndex sortIndexOfAlias) const;
 
   
   
