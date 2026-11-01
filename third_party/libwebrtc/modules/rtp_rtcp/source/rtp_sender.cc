@@ -154,6 +154,23 @@ bool IsNonVolatile(RTPExtensionType type) {
   RTC_CHECK_NOTREACHED();
 }
 
+
+
+size_t PaddingBytesInPacket(bool audio,
+                            size_t bytes_left,
+                            size_t max_payload_size) {
+  if (audio) {
+    
+    return SafeClamp<size_t>(bytes_left, kMinAudioPaddingLength,
+                             SafeMin(max_payload_size, kMaxPaddingLength));
+  }
+  
+  
+  
+  
+  return SafeMin(max_payload_size, kMaxPaddingLength);
+}
+
 bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
   return extensions_map.IsRegistered(kRtpExtensionTransportSequenceNumber) ||
          extensions_map.IsRegistered(kRtpExtensionTransportSequenceNumber02) ||
@@ -381,109 +398,94 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
   std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
   size_t bytes_left = target_size_bytes;
   if (SupportsRtxPayloadPadding()) {
-    while (bytes_left >= kMinPayloadPaddingBytes) {
-      std::unique_ptr<RtpPacketToSend> packet =
-          packet_history_->GetPayloadPaddingPacket(
-              [&](const RtpPacketToSend& packet)
-                  -> std::unique_ptr<RtpPacketToSend> {
-                
-                
-                const size_t max_overshoot_bytes = static_cast<size_t>(
-                    ((kMaxPaddingSizeFactor - 1.0) * target_size_bytes) + 0.5);
-                if (packet.payload_size() + kRtxHeaderSize >
-                    max_overshoot_bytes + bytes_left) {
-                  return nullptr;
-                }
-                return BuildRtxPacket(packet);
-              });
-      if (!packet) {
-        break;
-      }
-
-      bytes_left -= std::min(bytes_left, packet->payload_size());
-      packet->set_packet_type(RtpPacketMediaType::kPadding);
-      padding_packets.push_back(std::move(packet));
-    }
+    bytes_left = AppendPayloadPadding(target_size_bytes, padding_packets);
   }
 
   MutexLock lock(&send_mutex_);
   if (!sending_media_) {
     return {};
   }
-
-  size_t padding_bytes_in_packet;
+  const bool rtx = rtx_ != kRtxOff;
   const size_t max_payload_size =
       max_packet_size_ - max_padding_fec_packet_header_;
-  if (audio_configured_) {
-    
-    padding_bytes_in_packet =
-        SafeClamp<size_t>(bytes_left, kMinAudioPaddingLength,
-                          SafeMin(max_payload_size, kMaxPaddingLength));
-  } else {
+
+  if (rtx) {
     
     
     
-    
-    padding_bytes_in_packet = SafeMin(max_payload_size, kMaxPaddingLength);
+    if (!media_has_been_sent &&
+        !(rtp_header_extension_map_.IsRegistered(AbsoluteSendTime::kId) ||
+          rtp_header_extension_map_.IsRegistered(
+              TransportSequenceNumber::kId))) {
+      return padding_packets;
+    }
+  } else if (!can_send_padding_on_media_ssrc) {
+    return padding_packets;
   }
 
+  const size_t padding_bytes_in_packet =
+      PaddingBytesInPacket(audio_configured_, bytes_left, max_payload_size);
   while (bytes_left > 0) {
-    auto padding_packet =
-        std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_);
-    padding_packet->set_packet_type(RtpPacketMediaType::kPadding);
-    padding_packet->SetMarker(false);
-    if (rtx_ == kRtxOff) {
-      if (!can_send_padding_on_media_ssrc) {
-        break;
-      }
-      padding_packet->SetSsrc(ssrc_);
-
-      if (always_send_mid_and_rid_ || !ssrc_has_acked_) {
-        
-        
-        if (!mid_.empty()) {
-          padding_packet->SetExtension<RtpMid>(mid_);
-        }
-        if (!rid_.empty()) {
-          padding_packet->SetExtension<RtpStreamId>(rid_);
-        }
-      }
-    } else {
-      
-      
-      
-      if (!media_has_been_sent &&
-          !(rtp_header_extension_map_.IsRegistered(AbsoluteSendTime::kId) ||
-            rtp_header_extension_map_.IsRegistered(
-                TransportSequenceNumber::kId))) {
-        break;
-      }
-
-      RTC_DCHECK(rtx_ssrc_);
-      RTC_DCHECK(!rtx_payload_type_map_.empty());
-      padding_packet->SetSsrc(*rtx_ssrc_);
-      padding_packet->SetPayloadType(rtx_payload_type_map_.begin()->second);
-
-      if (always_send_mid_and_rid_ || !rtx_ssrc_has_acked_) {
-        if (!mid_.empty()) {
-          padding_packet->SetExtension<RtpMid>(mid_);
-        }
-        if (!rid_.empty()) {
-          padding_packet->SetExtension<RepairedRtpStreamId>(rid_);
-        }
-      }
-    }
-
-    padding_packet->ReserveExtension<TransportSequenceNumber>();
-    padding_packet->ReserveExtension<TransmissionOffset>();
-    padding_packet->ReserveExtension<AbsoluteSendTime>();
-
-    padding_packet->SetPadding(padding_bytes_in_packet);
+    padding_packets.push_back(BuildPaddingPacket(rtx, padding_bytes_in_packet));
     bytes_left -= std::min(bytes_left, padding_bytes_in_packet);
-    padding_packets.push_back(std::move(padding_packet));
   }
 
   return padding_packets;
+}
+
+size_t RTPSender::AppendPayloadPadding(
+    size_t target_size_bytes,
+    std::vector<std::unique_ptr<RtpPacketToSend>>& padding_packets) {
+  size_t bytes_left = target_size_bytes;
+  while (bytes_left >= kMinPayloadPaddingBytes) {
+    std::unique_ptr<RtpPacketToSend> packet =
+        packet_history_->GetPayloadPaddingPacket(
+            [&](const RtpPacketToSend& packet)
+                -> std::unique_ptr<RtpPacketToSend> {
+              
+              
+              const size_t max_overshoot_bytes = static_cast<size_t>(
+                  ((kMaxPaddingSizeFactor - 1.0) * target_size_bytes) + 0.5);
+              if (packet.payload_size() + kRtxHeaderSize >
+                  max_overshoot_bytes + bytes_left) {
+                return nullptr;
+              }
+              return BuildRtxPacket(packet);
+            });
+    if (!packet) {
+      break;
+    }
+
+    bytes_left -= std::min(bytes_left, packet->payload_size());
+    packet->set_packet_type(RtpPacketMediaType::kPadding);
+    padding_packets.push_back(std::move(packet));
+  }
+  return bytes_left;
+}
+
+std::unique_ptr<RtpPacketToSend> RTPSender::BuildPaddingPacket(
+    bool rtx,
+    size_t padding_size) const {
+  auto padding_packet =
+      std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_);
+  padding_packet->set_packet_type(RtpPacketMediaType::kPadding);
+  padding_packet->SetMarker(false);
+  if (rtx) {
+    RTC_DCHECK(rtx_ssrc_);
+    RTC_DCHECK(!rtx_payload_type_map_.empty());
+    padding_packet->SetSsrc(*rtx_ssrc_);
+    padding_packet->SetPayloadType(rtx_payload_type_map_.begin()->second);
+  } else {
+    padding_packet->SetSsrc(ssrc_);
+  }
+  AttachMidAndRid(rtx, *padding_packet);
+
+  padding_packet->ReserveExtension<TransportSequenceNumber>();
+  padding_packet->ReserveExtension<TransmissionOffset>();
+  padding_packet->ReserveExtension<AbsoluteSendTime>();
+
+  padding_packet->SetPadding(padding_size);
+  return padding_packet;
 }
 
 void RTPSender::EnqueuePackets(
@@ -515,11 +517,12 @@ size_t RTPSender::ExpectedPerPacketOverhead() const {
 std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket(
     std::span<const uint32_t> csrcs) {
   MutexLock lock(&send_mutex_);
-  RTC_DCHECK_LE(csrcs.size(), kRtpCsrcSize);
-  if (csrcs.size() > max_num_csrcs_) {
-    max_num_csrcs_ = csrcs.size();
-    UpdateHeaderSizes();
-  }
+  UpdateMaxNumCsrcs(csrcs.size());
+  return BuildMediaPacket(csrcs);
+}
+
+std::unique_ptr<RtpPacketToSend> RTPSender::BuildMediaPacket(
+    std::span<const uint32_t> csrcs) const {
   auto packet = std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_,
                                                   max_packet_size_);
   packet->SetSsrc(ssrc_);
@@ -530,27 +533,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket(
   packet->ReserveExtension<TransmissionOffset>();
   packet->ReserveExtension<TransportSequenceNumber>();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (always_send_mid_and_rid_ || !ssrc_has_acked_) {
-    
-    if (!mid_.empty()) {
-      packet->SetExtension<RtpMid>(mid_);
-    }
-    if (!rid_.empty()) {
-      packet->SetExtension<RtpStreamId>(rid_);
-    }
-  }
+  AttachMidAndRid(false, *packet);
   return packet;
 }
 
@@ -696,16 +679,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     
     
     
-    if (always_send_mid_and_rid_ || !rtx_ssrc_has_acked_) {
-      
-      
-      if (!mid_.empty()) {
-        rtx_packet->SetExtension<RtpMid>(mid_);
-      }
-      if (!rid_.empty()) {
-        rtx_packet->SetExtension<RepairedRtpStreamId>(rid_);
-      }
-    }
+    AttachMidAndRid(true, *rtx_packet);
   }
   RTC_DCHECK(rtx_packet);
 
@@ -812,6 +786,45 @@ void RTPSender::UpdateHeaderSizes() {
   
   if (rtx_ssrc_.has_value()) {
     max_media_packet_header_ += kRtxHeaderSize;
+  }
+}
+
+void RTPSender::UpdateMaxNumCsrcs(size_t num_csrcs) {
+  RTC_DCHECK_LE(num_csrcs, kRtpCsrcSize);
+  if (num_csrcs > max_num_csrcs_) {
+    max_num_csrcs_ = num_csrcs;
+    UpdateHeaderSizes();
+  }
+}
+
+void RTPSender::AttachMidAndRid(bool rtx, RtpPacketToSend& packet) const {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool has_acked = rtx ? rtx_ssrc_has_acked_ : ssrc_has_acked_;
+  const bool send_mid_and_rid = always_send_mid_and_rid_ || !has_acked;
+  if (!send_mid_and_rid) {
+    return;
+  }
+  
+  if (!mid_.empty()) {
+    packet.SetExtension<RtpMid>(mid_);
+  }
+  if (!rid_.empty()) {
+    if (rtx) {
+      packet.SetExtension<RepairedRtpStreamId>(rid_);
+    } else {
+      packet.SetExtension<RtpStreamId>(rid_);
+    }
   }
 }
 }  

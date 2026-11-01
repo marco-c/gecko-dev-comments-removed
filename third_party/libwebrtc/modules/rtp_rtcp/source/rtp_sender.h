@@ -166,10 +166,38 @@ class RTPSender {
   RtpState GetRtxRtpState() const RTC_LOCKS_EXCLUDED(send_mutex_);
 
  private:
+  
+  std::unique_ptr<RtpPacketToSend> BuildMediaPacket(
+      std::span<const uint32_t> csrcs) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
+
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
       const RtpPacketToSend& packet);
 
+  
+  
+  
+  size_t AppendPayloadPadding(
+      size_t target_size_bytes,
+      std::vector<std::unique_ptr<RtpPacketToSend>>& padding_packets)
+      RTC_LOCKS_EXCLUDED(send_mutex_);
+
+  
+  
+  std::unique_ptr<RtpPacketToSend> BuildPaddingPacket(bool rtx,
+                                                      size_t padding_size) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
+
+  
+  void AttachMidAndRid(bool rtx, RtpPacketToSend& packet) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
+
   void UpdateHeaderSizes() RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
+
+  
+  
+  void UpdateMaxNumCsrcs(size_t num_csrcs)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_mutex_);
 
   Clock* const clock_;
 
