@@ -66,6 +66,15 @@ async function cleanTheDOM() {
 
 add_setup(async function () {
   registerCleanupFunction(cleanTheDOM);
+
+  
+  
+  await Promise.all(
+    document
+      .getAnimations()
+      .filter(a => a.effect.getComputedTiming().endTime != Infinity)
+      .map(a => a.finished.catch(() => {}))
+  );
 });
 
 
