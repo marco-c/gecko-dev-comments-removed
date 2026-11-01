@@ -49,6 +49,11 @@ class GL_CONTEXT_PROVIDER_NAME {
 #if defined(MOZ_WIDGET_ANDROID) && defined(GL_CONTEXT_PROVIDER_EGL)
   
   
+  static already_AddRefed<GLContext> CreateForCompositorANGLE(
+      bool aHardwareWebRender, nsACString* const out_failureId);
+
+  
+  
   
   static already_AddRefed<GLContext> CreateHeadlessNative(
       const GLContextCreateDesc&, nsACString* const out_failureId);
