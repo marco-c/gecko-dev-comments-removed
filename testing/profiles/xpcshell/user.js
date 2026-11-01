@@ -35,6 +35,9 @@ user_pref("security.remote_settings.intermediates.enabled", false);
 
 user_pref("dom.ipc.processPriorityManager.enabled", false);
 
+
+user_pref("layers.gpu-process.enabled", false);
+
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 1);
 
