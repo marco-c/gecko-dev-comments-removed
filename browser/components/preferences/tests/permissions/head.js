@@ -2,7 +2,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
@@ -11,10 +11,6 @@ Services.scriptloader.loadSubScript(
 
 
 
-
 async function openPermissionsPane(options) {
-  return openPreferencesViaOpenPreferencesAPI(
-    SRD_PREF_VALUE ? "panePermissionsData" : "panePrivacy",
-    options
-  );
+  return openPreferencesViaOpenPreferencesAPI("panePermissionsData", options);
 }
