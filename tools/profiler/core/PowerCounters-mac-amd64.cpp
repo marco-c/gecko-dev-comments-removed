@@ -220,8 +220,10 @@ class RaplDomain final : public BaseProfilerCount {
 };
 
 class RAPL {
-  bool mIsGpuSupported;  
-  bool mIsRamSupported;  
+  
+  bool mIsGpuSupported = false;
+  
+  bool mIsRamSupported = false;
 
   
   
@@ -234,7 +236,7 @@ class RAPL {
   static constexpr double kQuirkyRamEnergyStatusUnits = 16;
 
   
-  pkg_energy_statistics_t* mPkes;
+  pkg_energy_statistics_t* mPkes = nullptr;
 
   RaplDomain* mPkg = nullptr;
   RaplDomain* mCores = nullptr;
