@@ -31,6 +31,14 @@ uint64_t ClampToZero(int64_t aValue,
 
 
 
+bool ThrottleCounter(uint32_t& aCounter);
+
+
+
+
+
+
+
 
 bool ShouldReportDiagnostic(const nsACString& aContext);
 

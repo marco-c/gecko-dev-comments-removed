@@ -7,6 +7,7 @@
 
 #include "Assertions.h"
 #include "ClientUsageArray.h"
+#include "mozilla/StaticString.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 
@@ -191,7 +192,14 @@ class OriginInfo final : public SupportsThreadSafeWeakPtr<OriginInfo> {
 
   void MakeDirty(DirtyTrackingAutoLock& aProofOfLock);
 
+  
+  void LockedMaybeRecordUsageUnderflow(Client::Type aClientType, int64_t aUsage,
+                                       StaticString aCallSite);
+
   ClientUsageArray mClientUsages;
+  
+  
+  Array<uint32_t, Client::TYPE_MAX> mUsageUnderflowCount{};
 
   
   

@@ -18,23 +18,24 @@ uint64_t ClampToZero(int64_t aValue, const nsACString& aContext) {
   return aValue < 0 ? 0 : static_cast<uint64_t>(aValue);
 }
 
+bool ThrottleCounter(uint32_t& aCounter) {
+  
+  
+  
+  const bool result = 0u == (aCounter & (1u + aCounter));
+  ++aCounter;
+  return result;
+}
+
 bool ShouldReportDiagnostic(const nsACString& aContext) {
   static StaticDataMutex<nsTHashMap<nsCStringHashKey, uint32_t>> sCounters(
       "ShouldReportDiagnostic::sCounters");
 
   auto counters = sCounters.Lock();
+  
+  
   uint32_t& counter = counters->LookupOrInsert(aContext, 0u);
-
-  
-  
-  
-  
-  
-  
-  
-  const bool result = 0u == (counter & (1u + counter));
-  ++counter;
-  return result;
+  return ThrottleCounter(counter);
 }
 
 bool IsOnIOThread() {
