@@ -4,11 +4,17 @@
 
 #include "mozilla/dom/WebTransportSendStream.h"
 
+#include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/dom/AbortFollower.h"
+#include "mozilla/dom/AbortSignal.h"
+#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/UnderlyingSinkCallbackHelpers.h"
 #include "mozilla/dom/WebTransport.h"
 #include "mozilla/dom/WebTransportSendGroup.h"
 #include "mozilla/dom/WebTransportSendReceiveStreamBinding.h"
 #include "mozilla/dom/WritableStream.h"
+#include "mozilla/dom/WritableStreamDefaultController.h"
 #include "mozilla/ipc/DataPipe.h"
 
 using namespace mozilla::ipc;
@@ -39,6 +45,172 @@ JSObject* WebTransportSendStream::WrapObject(
   return WebTransportSendStream_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+namespace {
+
+
+
+class WebTransportSendStreamSink final
+    : public WritableStreamToOutputAlgorithms {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WebTransportSendStreamSink,
+                                           WritableStreamToOutputAlgorithms)
+
+  WebTransportSendStreamSink(nsIGlobalObject* aParent,
+                             nsIAsyncOutputStream* aOutput)
+      : WritableStreamToOutputAlgorithms(aParent, aOutput) {}
+
+  
+  already_AddRefed<Promise> CloseCallbackImpl(JSContext* aCx,
+                                              ErrorResult& aRv) override;
+
+  
+  
+  void ReleaseObjects() override {
+    if (!mPendingClose) {
+      WritableStreamToOutputAlgorithms::ReleaseObjects();
+    }
+  }
+
+  void IssueDeferredClose();
+
+  
+  
+  void RunAbortSignalSteps(AbortSignalImpl* aSignal);
+
+ private:
+  ~WebTransportSendStreamSink() override = default;
+
+  
+  RefPtr<Promise> mPendingClose;
+};
+
+NS_IMPL_CYCLE_COLLECTION_INHERITED(WebTransportSendStreamSink,
+                                   WritableStreamToOutputAlgorithms,
+                                   mPendingClose)
+NS_IMPL_ADDREF_INHERITED(WebTransportSendStreamSink,
+                         WritableStreamToOutputAlgorithms)
+NS_IMPL_RELEASE_INHERITED(WebTransportSendStreamSink,
+                          WritableStreamToOutputAlgorithms)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebTransportSendStreamSink)
+NS_INTERFACE_MAP_END_INHERITING(WritableStreamToOutputAlgorithms)
+
+class DeferredCloseMicroTask final : public MicroTaskRunnable {
+ public:
+  explicit DeferredCloseMicroTask(WebTransportSendStreamSink* aSink)
+      : mSink(aSink) {}
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Run(AutoSlowOperation& aAso) override {
+    mSink->IssueDeferredClose();
+  }
+
+ private:
+  RefPtr<WebTransportSendStreamSink> mSink;
+};
+
+already_AddRefed<Promise> WebTransportSendStreamSink::CloseCallbackImpl(
+    JSContext* aCx, ErrorResult& aRv) {
+  
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetParent());
+
+  
+  
+
+  
+  mPendingClose = promise;
+
+  
+  
+  
+  
+  CycleCollectedJSContext::Get()->DispatchToMicroTask(
+      MakeAndAddRef<DeferredCloseMicroTask>(this));
+
+  
+  return promise.forget();
+}
+
+void WebTransportSendStreamSink::IssueDeferredClose() {
+  RefPtr<Promise> promise = std::move(mPendingClose);
+  if (!promise) {
+    
+    return;
+  }
+
+  
+  
+  CloseOutput();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  promise->MaybeResolveWithUndefined();
+}
+
+void WebTransportSendStreamSink::RunAbortSignalSteps(AbortSignalImpl* aSignal) {
+  
+  
+  
+  RefPtr<Promise> pendingOperation = std::move(mPendingClose);
+  if (!pendingOperation) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(GetParent())) {
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+
+  
+  JS::Rooted<JS::Value> reason(cx);
+  aSignal->GetReason(cx, &reason);
+
+  
+  
+  
+  Optional<JS::Handle<JS::Value>> optionalReason(cx, reason);
+  CloseOutputWithStatus(BuildErrorStatus(cx, optionalReason));
+
+  
+  
+  
+  pendingOperation->MaybeReject(reason);
+}
+
+class SendStreamAbortWatcher final : public AbortFollower {
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
+  NS_DECL_CYCLE_COLLECTION_CLASS(SendStreamAbortWatcher)
+
+  explicit SendStreamAbortWatcher(WebTransportSendStreamSink* aSink)
+      : mSink(aSink) {}
+
+  void RunAbortAlgorithm() override {
+    RefPtr<WebTransportSendStreamSink> sink = mSink;
+    sink->RunAbortSignalSteps(Signal());
+  }
+
+ private:
+  ~SendStreamAbortWatcher() = default;
+
+  RefPtr<WebTransportSendStreamSink> mSink;
+};
+
+NS_IMPL_CYCLE_COLLECTION(SendStreamAbortWatcher, mSink)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(SendStreamAbortWatcher)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(SendStreamAbortWatcher)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SendStreamAbortWatcher)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+}  
+
 
 
 already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
@@ -55,7 +227,7 @@ already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
   auto stream = MakeRefPtr<WebTransportSendStream>(aGlobal, aWebTransport);
 
   nsCOMPtr<nsIAsyncOutputStream> outputStream = aSender;
-  auto algorithms = MakeRefPtr<WritableStreamToOutputAlgorithms>(
+  auto algorithms = MakeRefPtr<WebTransportSendStreamSink>(
       stream->GetParentObject(), outputStream);
 
   stream->mStreamId = aStreamId;
@@ -72,10 +244,11 @@ already_AddRefed<WebTransportSendStream> WebTransportSendStream::Create(
   
   
   
-  
-  
-  
-  
+  if (WritableStreamDefaultController* controller = stream->Controller()) {
+    if (AbortSignal* signal = controller->Signal()) {
+      MakeRefPtr<SendStreamAbortWatcher>(algorithms)->Follow(signal);
+    }
+  }
 
   
   aWebTransport->mSendStreams.InsertOrUpdate(aStreamId, stream);
