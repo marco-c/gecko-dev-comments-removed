@@ -316,13 +316,14 @@ extern void wgpu_parent_swap_chain_drop(
 }
 
 #ifdef XP_WIN
-extern void wgpu_parent_get_compositor_device_luid(
+extern bool wgpu_parent_get_compositor_device_luid(
     struct WGPUFfiLUID* aOutLuid) {
   auto luid = WebGPUParent::GetCompositorDeviceLuid();
   if (luid.isSome()) {
     *aOutLuid = luid.extract();
+    return true;
   } else {
-    aOutLuid = nullptr;
+    return false;
   }
 }
 #endif
@@ -508,6 +509,11 @@ static const char* MapStatusString(ffi::WGPUBufferMapAsyncStatus status) {
   MOZ_CRASH("Bad ffi::WGPUBufferMapAsyncStatus");
 }
 
+Maybe<MappedRangeGuard> WebGPUParent::LockMappedRange(
+    ffi::WGPUBufferId aBufferId, uint64_t aStart, uint64_t aSize) {
+  return MappedRangeGuard::Create(mContext.get(), aBufferId, aStart, aSize);
+}
+
 void WebGPUParent::MapCallback(uint8_t* aUserData,
                                ffi::WGPUBufferMapAsyncStatus aStatus) {
   auto req =
@@ -544,22 +550,21 @@ void WebGPUParent::MapCallback(uint8_t* aUserData,
   auto size = req->mSize;
   auto offset = req->mOffset;
 
-  const auto src = ffi::wgpu_server_buffer_get_mapped_range(
-      req->mParent->GetContext(), req->mBufferId, offset, size);
+  Maybe<MappedRangeGuard> maybeSrc =
+      req->mParent->LockMappedRange(req->mBufferId, offset, size);
 
   
   
   
   
-  if (src.ptr == nullptr && src.length == 0) {
+  if (!maybeSrc) {
     auto error = nsCString("Mapping WebGPU buffer failed: Map aborted");
     ffi::wgpu_server_send_buffer_map_error(req->mParent, req->mBufferId,
                                            &error);
     return;
   }
 
-  MOZ_RELEASE_ASSERT(src.ptr != nullptr);
-  MOZ_RELEASE_ASSERT(src.length >= size);
+  const std::span<uint8_t> src = maybeSrc->AsSpan();
 
   if (req->mHostMap == ffi::WGPUHostMap_Read && size > 0) {
     auto shmSize = mapData->mShmem->Size();
@@ -567,8 +572,12 @@ void WebGPUParent::MapCallback(uint8_t* aUserData,
     MOZ_RELEASE_ASSERT(size <= shmSize - offset);
 
     auto dst = mapData->mShmem->DataAsSpan<uint8_t>().Subspan(offset, size);
-    memcpy(dst.data(), src.ptr, size);
+    memcpy(dst.data(), src.data(), size);
   }
+
+  
+  
+  maybeSrc.reset();
 
   mapData->mMappedOffset = offset;
   mapData->mMappedSize = size;
@@ -592,22 +601,21 @@ void WebGPUParent::BufferUnmap(RawId aDeviceId, RawId aBufferId, bool aFlush) {
     uint64_t offset = mapData->mMappedOffset;
     uint64_t size = mapData->mMappedSize;
 
-    const auto mapped = ffi::wgpu_server_buffer_get_mapped_range(
-        mContext.get(), aBufferId, offset, size);
+    
+    
+    const Maybe<MappedRangeGuard> mapped =
+        LockMappedRange(aBufferId, offset, size);
 
     
     
     
-    bool is_destroyed = mapped.ptr == nullptr && mapped.length == 0;
-    if (!is_destroyed) {
-      MOZ_RELEASE_ASSERT(mapped.ptr != nullptr);
-      MOZ_RELEASE_ASSERT(mapped.length >= size);
+    if (mapped) {
       auto shmSize = mapData->mShmem->Size();
       MOZ_RELEASE_ASSERT(offset <= shmSize);
       MOZ_RELEASE_ASSERT(size <= shmSize - offset);
 
       auto src = mapData->mShmem->DataAsSpan<uint8_t>().Subspan(offset, size);
-      memcpy(mapped.ptr, src.data(), size);
+      memcpy(mapped->AsSpan().data(), src.data(), size);
     }
   }
 
@@ -850,23 +858,19 @@ static void ReadbackPresentCallback(uint8_t* userdata,
   if (status == ffi::WGPUBufferMapAsyncStatus_Success) {
     const auto bufferSize = data->mBufferSize;
 
-    const auto mapped = ffi::wgpu_server_buffer_get_mapped_range(
-        req->mContext, bufferId, 0, bufferSize);
+    Maybe<MappedRangeGuard> mapped =
+        MappedRangeGuard::Create(req->mContext, bufferId, 0, bufferSize);
 
     
     
     
-    bool is_destroyed = mapped.ptr == nullptr && mapped.length == 0;
-    if (is_destroyed) {
+    if (!mapped) {
       MOZ_LOG(sLogger, LogLevel::Info,
               ("ReadbackPresentCallback for buffer %" PRIu64
                " skipped: the readback buffer is gone\n",
                bufferId));
       return;
     }
-
-    MOZ_RELEASE_ASSERT(mapped.ptr != nullptr);
-    MOZ_RELEASE_ASSERT(mapped.length >= bufferSize);
 
     const auto size = data->mDesc.size();
 
@@ -879,7 +883,7 @@ static void ReadbackPresentCallback(uint8_t* userdata,
     }
     layers::MappedTextureData mappedData;
     if (textureData && textureData->BorrowMappedData(mappedData)) {
-      uint8_t* src = mapped.ptr;
+      uint8_t* src = mapped->AsSpan().data();
       uint8_t* dst = mappedData.data;
 
       const size_t dst_stride = static_cast<size_t>(mappedData.stride);
@@ -908,6 +912,9 @@ static void ReadbackPresentCallback(uint8_t* userdata,
     } else {
       NS_WARNING("WebGPU present skipped: the swapchain is resized!");
     }
+
+    
+    mapped.reset();
 
     wgpu_server_buffer_unmap(req->mContext, bufferId);
   } else {
@@ -954,14 +961,13 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
   
   const auto bufferSize = data->mBufferSize;
 
-  const auto mapped = ffi::wgpu_server_buffer_get_mapped_range(
-      req->mContext, req->mBufferId, 0, bufferSize);
+  Maybe<MappedRangeGuard> mapped =
+      MappedRangeGuard::Create(req->mContext, req->mBufferId, 0, bufferSize);
 
   
   
   
-  bool is_destroyed = mapped.ptr == nullptr && mapped.length == 0;
-  if (is_destroyed) {
+  if (!mapped) {
     MOZ_LOG(sLogger, LogLevel::Info,
             ("ReadbackSnapshotCallback for buffer %" PRIu64
              " skipped: the readback buffer is gone\n",
@@ -969,10 +975,7 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
     return;
   }
 
-  MOZ_RELEASE_ASSERT(mapped.ptr != nullptr);
-  MOZ_RELEASE_ASSERT(mapped.length >= bufferSize);
-
-  uint8_t* src = mapped.ptr;
+  uint8_t* src = mapped->AsSpan().data();
   uint8_t* dst = req->mDestShmem.get<uint8_t>();
 
   const size_t src_stride = static_cast<size_t>(data->mBufferStride);
@@ -990,6 +993,9 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
     src += src_stride;
     dst += req->mDestStride;
   }
+
+  
+  mapped.reset();
 
   wgpu_server_buffer_unmap(req->mContext, req->mBufferId);
 }

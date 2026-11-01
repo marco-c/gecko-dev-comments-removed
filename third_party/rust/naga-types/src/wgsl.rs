@@ -98,16 +98,6 @@ pub mod language_extension {
         }
     }
 
-    #[test]
-    
-    
-    fn test_manual_variants_array_is_correct() {
-        assert_eq!(
-            <ImplementedLanguageExtension as strum::VariantArray>::VARIANTS,
-            ImplementedLanguageExtension::VARIANTS
-        );
-    }
-
     
     #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub enum UnimplementedLanguageExtension {
@@ -119,6 +109,20 @@ pub mod language_extension {
             match self {
                 Self::UnrestrictedPointerParameters => 5158,
             }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        #[test]
+        
+        
+        fn test_manual_variants_array_is_correct() {
+            assert_eq!(
+                <ImplementedLanguageExtension as strum::VariantArray>::VARIANTS,
+                ImplementedLanguageExtension::VARIANTS
+            );
         }
     }
 }

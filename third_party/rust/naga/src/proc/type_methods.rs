@@ -509,6 +509,17 @@ impl crate::TypeInner {
     }
 
     
+    pub const fn is_external_image(&self) -> bool {
+        matches!(
+            self,
+            crate::TypeInner::Image {
+                class: crate::ImageClass::External,
+                ..
+            }
+        )
+    }
+
+    
     
     
     

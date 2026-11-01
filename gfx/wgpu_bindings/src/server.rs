@@ -1127,9 +1127,25 @@ pub extern "C" fn wgpu_server_buffer_map_blocking(
     BufferMapAsyncStatus::from(status_result)
 }
 
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
-pub struct MappedBufferSlice {
+pub struct BufferMappingResult {
+    
+    pub core_mapping: *mut wgc::resource::BufferMapping,
+
+    
     pub ptr: *mut u8,
+
+    
     pub length: u64,
 }
 
@@ -1143,11 +1159,12 @@ pub unsafe extern "C" fn wgpu_server_buffer_get_mapped_range(
     buffer_id: id::BufferId,
     start: wgt::BufferAddress,
     size: wgt::BufferAddress,
-) -> MappedBufferSlice {
+) -> BufferMappingResult {
     match global.buffer_get_mapped_range(buffer_id, start, Some(size)) {
-        Ok((ptr, len)) => MappedBufferSlice {
-            ptr: ptr.as_ptr(),
-            length: len,
+        Ok(mapping) => BufferMappingResult {
+            ptr: mapping.ptr().as_ptr(),
+            length: mapping.len(),
+            core_mapping: Box::into_raw(Box::new(mapping)),
         },
         Err(error) => match error {
             
@@ -1155,7 +1172,8 @@ pub unsafe extern "C" fn wgpu_server_buffer_get_mapped_range(
             
             
             BufferAccessError::DestroyedResource(_) | BufferAccessError::NotMapped => {
-                MappedBufferSlice {
+                BufferMappingResult {
+                    core_mapping: core::ptr::null_mut(),
                     ptr: core::ptr::null_mut(),
                     length: 0,
                 }
@@ -1163,6 +1181,22 @@ pub unsafe extern "C" fn wgpu_server_buffer_get_mapped_range(
             _ => panic!("{error}"),
         },
     }
+}
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn wgpu_server_buffer_mapping_destroy(
+    mapping: *mut wgc::resource::BufferMapping,
+) {
+    assert!(!mapping.is_null());
+    
+    
+    drop(unsafe { Box::from_raw(mapping) });
 }
 
 #[no_mangle]

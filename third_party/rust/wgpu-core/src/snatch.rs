@@ -93,21 +93,25 @@ mod trace {
                 backtrace: Backtrace::capture(),
             };
 
-            if let Some(prev) = SNATCH_LOCK_TRACE.take() {
-                let current = thread::current();
-                let name = current.name().unwrap_or("<unnamed>");
-                panic!(
-                    "thread '{name}' attempted to acquire a snatch lock recursively.\n\
+            
+            
+            let _ = SNATCH_LOCK_TRACE.try_with(|trace| {
+                if let Some(prev) = trace.take() {
+                    let current = thread::current();
+                    let name = current.name().unwrap_or("<unnamed>");
+                    panic!(
+                        "thread '{name}' attempted to acquire a snatch lock recursively.\n\
                  - Currently trying to acquire {new}\n\
                  - Previously acquired {prev}",
-                );
-            } else {
-                SNATCH_LOCK_TRACE.set(Some(new));
-            }
+                    );
+                } else {
+                    trace.set(Some(new));
+                }
+            });
         }
 
         pub(super) fn exit() {
-            SNATCH_LOCK_TRACE.take();
+            let _ = SNATCH_LOCK_TRACE.try_with(|trace| trace.take());
         }
     }
 
@@ -198,5 +202,42 @@ impl Drop for SnatchGuard<'_> {
 impl Drop for ExclusiveSnatchGuard<'_> {
     fn drop(&mut self) {
         LockTrace::exit();
+    }
+}
+
+#[cfg(all(test, feature = "std"))]
+mod tests {
+    use super::SnatchLock;
+    use crate::lock::rank;
+    use core::cell::Cell;
+
+    
+    struct LockOnDrop(SnatchLock);
+    impl Drop for LockOnDrop {
+        fn drop(&mut self) {
+            drop(self.0.read());
+        }
+    }
+
+    std::thread_local! {
+        static HOLDER: Cell<Option<LockOnDrop>> = const { Cell::new(None) };
+    }
+
+    #[test]
+    fn read_during_tls_destruction() {
+        std::thread::spawn(|| {
+            
+            HOLDER.set(Some(LockOnDrop(unsafe {
+                SnatchLock::new(rank::DEVICE_SNATCHABLE_LOCK)
+            })));
+
+            
+            
+            let lock = unsafe { SnatchLock::new(rank::DEVICE_SNATCHABLE_LOCK) };
+            drop(lock.read());
+        })
+        .join()
+        .unwrap();
+        
     }
 }

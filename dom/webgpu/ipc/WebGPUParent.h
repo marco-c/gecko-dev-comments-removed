@@ -11,6 +11,7 @@
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/webgpu/ExternalTexture.h"
+#include "mozilla/webgpu/MappedRangeGuard.h"
 #include "mozilla/webgpu/PWebGPUParent.h"
 #include "mozilla/webgpu/ffi/wgpu.h"
 
@@ -167,6 +168,17 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
  private:
   virtual ~WebGPUParent();
   void MaintainDevices();
+
+  
+
+
+
+
+
+
+
+  Maybe<MappedRangeGuard> LockMappedRange(ffi::WGPUBufferId aBufferId,
+                                          uint64_t aStart, uint64_t aSize);
 
   UniquePtr<ffi::WGPUGlobal> mContext;
   base::RepeatingTimer<WebGPUParent> mTimer;

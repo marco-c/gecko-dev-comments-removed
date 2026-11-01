@@ -134,29 +134,32 @@ impl Drop for LockStateGuard {
 
 
 fn acquire(new_rank: LockRank, location: &'static Location<'static>) -> LockState {
-    let state = LOCK_STATE.get();
-    
-    
-    if let Some((ref last_rank, ref last_location)) = state.last_acquired {
-        assert!(
-            last_rank.followers.contains(new_rank.bit),
-            "Attempt to acquire nested mutexes in wrong order:\n\
-             last locked {:<35} at {}\n\
-             now locking {:<35} at {}\n\
-             Locking {} after locking {} is not permitted.",
-            last_rank.bit.member_name(),
-            last_location,
-            new_rank.bit.member_name(),
-            location,
-            new_rank.bit.member_name(),
-            last_rank.bit.member_name(),
-        );
-    }
-    LOCK_STATE.set(LockState {
-        last_acquired: Some((new_rank, location)),
-        depth: state.depth + 1,
+    let result = LOCK_STATE.try_with(|cell| {
+        let state = cell.get();
+        
+        
+        if let Some((ref last_rank, ref last_location)) = state.last_acquired {
+            assert!(
+                last_rank.followers.contains(new_rank.bit),
+                "Attempt to acquire nested mutexes in wrong order:\n\
+                 last locked {:<35} at {}\n\
+                 now locking {:<35} at {}\n\
+                 Locking {} after locking {} is not permitted.",
+                last_rank.bit.member_name(),
+                last_location,
+                new_rank.bit.member_name(),
+                location,
+                new_rank.bit.member_name(),
+                last_rank.bit.member_name(),
+            );
+        }
+        cell.set(LockState {
+            last_acquired: Some((new_rank, location)),
+            depth: state.depth + 1,
+        });
+        state
     });
-    state
+    result.unwrap_or(LockState::INITIAL)
 }
 
 
@@ -164,53 +167,55 @@ fn acquire(new_rank: LockRank, location: &'static Location<'static>) -> LockStat
 
 
 fn release(saved: LockState) {
-    let saved_info = saved.last_acquired;
+    let _ = LOCK_STATE.try_with(|cell| {
+        let saved_info = saved.last_acquired;
 
-    let prior = LOCK_STATE.replace(saved);
+        let prior = cell.replace(saved);
 
-    let (prior_rank, prior_location) = prior
-        .last_acquired
-        .expect("Releasing a lock, but no acquisition recorded");
+        let (prior_rank, prior_location) = prior
+            .last_acquired
+            .expect("Releasing a lock, but no acquisition recorded");
 
-    
-    
-    
-    
+        
+        
+        
+        
 
-    match (saved.depth, saved_info) {
-        (saved_depth @ 0, None) => {
-            assert_eq!(
-                prior.depth,
-                saved_depth + 1,
-                "Lock not released in stacking order\n\
+        match (saved.depth, saved_info) {
+            (saved_depth @ 0, None) => {
+                assert_eq!(
+                    prior.depth,
+                    saved_depth + 1,
+                    "Lock not released in stacking order\n\
                 released {:<35} locked at {:?}\n\
                 when not expecting any locks to be held\n",
-                prior_rank.bit.member_name(),
-                prior_location,
-            );
-        }
-        (0, Some(_)) => {
-            panic!("Found previous lock acquisition information, but saved.depth = 0");
-        }
-        (saved_depth, Some((saved_rank, saved_location))) => {
-            assert_eq!(
-                prior.depth,
-                saved_depth + 1,
-                "Lock not released in stacking order\n\
+                    prior_rank.bit.member_name(),
+                    prior_location,
+                );
+            }
+            (0, Some(_)) => {
+                panic!("Found previous lock acquisition information, but saved.depth = 0");
+            }
+            (saved_depth, Some((saved_rank, saved_location))) => {
+                assert_eq!(
+                    prior.depth,
+                    saved_depth + 1,
+                    "Lock not released in stacking order\n\
                 expecting release of {:<35} locked at {:?}\n\
                 but instead released {:<35} locked at {:?}\n",
-                saved_rank.bit.member_name(),
-                saved_location,
-                prior_rank.bit.member_name(),
-                prior_location,
-            );
-        }
-        (saved_depth, None) => {
-            panic!(
+                    saved_rank.bit.member_name(),
+                    saved_location,
+                    prior_rank.bit.member_name(),
+                    prior_location,
+                );
+            }
+            (saved_depth, None) => {
+                panic!(
                 "Found saved.depth = {saved_depth}, but no previous lock acquisition information"
             );
+            }
         }
-    }
+    });
 }
 
 impl<T> Mutex<T> {
@@ -228,10 +233,6 @@ impl<T> Mutex<T> {
             inner: self.inner.lock(),
             saved: LockStateGuard(saved),
         }
-    }
-
-    pub fn get_mut(&mut self) -> &mut T {
-        self.inner.get_mut()
     }
 
     pub fn into_inner(self) -> T {
@@ -327,6 +328,14 @@ impl<T> RwLock<T> {
         release(data);
         unsafe { self.inner.force_unlock_read() };
     }
+
+    
+    
+    
+    
+    pub unsafe fn underlying(&self) -> &wgpu_sync::RwLock<T> {
+        &self.inner
+    }
 }
 
 impl<'a, T> RwLockReadGuard<'a, T> {
@@ -373,80 +382,76 @@ impl<'a, T> ops::DerefMut for RwLockWriteGuard<'a, T> {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::Mutex;
+    use crate::lock::rank;
 
-#[test]
-fn permitted() {
-    use super::rank;
+    
+    #[test]
+    fn permitted() {
+        let lock1 = Mutex::new(rank::PAWN, ());
+        let lock2 = Mutex::new(rank::ROOK, ());
 
-    let lock1 = Mutex::new(rank::PAWN, ());
-    let lock2 = Mutex::new(rank::ROOK, ());
+        let _guard1 = lock1.lock();
+        let _guard2 = lock2.lock();
+    }
 
-    let _guard1 = lock1.lock();
-    let _guard2 = lock2.lock();
-}
+    
+    #[test]
+    #[should_panic(expected = "Locking pawn after locking rook")]
+    fn forbidden_unrelated() {
+        let lock1 = Mutex::new(rank::ROOK, ());
+        let lock2 = Mutex::new(rank::PAWN, ());
 
-
-#[test]
-#[should_panic(expected = "Locking pawn after locking rook")]
-fn forbidden_unrelated() {
-    use super::rank;
-
-    let lock1 = Mutex::new(rank::ROOK, ());
-    let lock2 = Mutex::new(rank::PAWN, ());
-
-    let _guard1 = lock1.lock();
-    let _guard2 = lock2.lock();
-}
-
-
-
-
-
-#[test]
-#[should_panic(expected = "Locking knight after locking pawn")]
-fn forbidden_skip() {
-    use super::rank;
-
-    let lock1 = Mutex::new(rank::PAWN, ());
-    let lock2 = Mutex::new(rank::KNIGHT, ());
-
-    let _guard1 = lock1.lock();
-    let _guard2 = lock2.lock();
-}
-
-
-#[test]
-fn stack_like() {
-    use super::rank;
-
-    let lock1 = Mutex::new(rank::PAWN, ());
-    let lock2 = Mutex::new(rank::ROOK, ());
-    let lock3 = Mutex::new(rank::BISHOP, ());
-
-    let guard1 = lock1.lock();
-    let guard2 = lock2.lock();
-    drop(guard2);
-
-    let guard3 = lock3.lock();
-    drop(guard3);
-    drop(guard1);
-}
-
-
-#[test]
-#[should_panic(expected = "Lock not released in stacking order")]
-fn non_stack_like() {
-    use super::rank;
-
-    let lock1 = Mutex::new(rank::PAWN, ());
-    let lock2 = Mutex::new(rank::ROOK, ());
-
-    let guard1 = lock1.lock();
-    let guard2 = lock2.lock();
+        let _guard1 = lock1.lock();
+        let _guard2 = lock2.lock();
+    }
 
     
     
-    core::mem::forget(guard2);
+    
+    
+    #[test]
+    #[should_panic(expected = "Locking knight after locking pawn")]
+    fn forbidden_skip() {
+        let lock1 = Mutex::new(rank::PAWN, ());
+        let lock2 = Mutex::new(rank::KNIGHT, ());
 
-    drop(guard1);
+        let _guard1 = lock1.lock();
+        let _guard2 = lock2.lock();
+    }
+
+    
+    #[test]
+    fn stack_like() {
+        let lock1 = Mutex::new(rank::PAWN, ());
+        let lock2 = Mutex::new(rank::ROOK, ());
+        let lock3 = Mutex::new(rank::BISHOP, ());
+
+        let guard1 = lock1.lock();
+        let guard2 = lock2.lock();
+        drop(guard2);
+
+        let guard3 = lock3.lock();
+        drop(guard3);
+        drop(guard1);
+    }
+
+    
+    #[test]
+    #[should_panic(expected = "Lock not released in stacking order")]
+    fn non_stack_like() {
+        let lock1 = Mutex::new(rank::PAWN, ());
+        let lock2 = Mutex::new(rank::ROOK, ());
+
+        let guard1 = lock1.lock();
+        let guard2 = lock2.lock();
+
+        
+        
+        core::mem::forget(guard2);
+
+        drop(guard1);
+    }
 }

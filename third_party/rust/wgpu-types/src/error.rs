@@ -55,7 +55,9 @@ impl<T> UncapturedErrorHandler for T where T: Fn(Error) + Send + Sync + 'static 
 
 
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum ErrorFilter {
     
     OutOfMemory,

@@ -234,14 +234,24 @@ where
 
     
     pub(crate) fn drain(&mut self, drain_range: Range<Idx>) -> InitTrackerDrain<'_, Idx> {
-        let index = self
-            .uninitialized_ranges
-            .partition_point(|r| r.end <= drain_range.start);
-        InitTrackerDrain {
-            drain_range,
-            uninitialized_ranges: &mut self.uninitialized_ranges,
-            first_index: index,
-            next_index: index,
+        if drain_range.is_empty() {
+            let len = self.uninitialized_ranges.len();
+            InitTrackerDrain {
+                drain_range,
+                uninitialized_ranges: &mut self.uninitialized_ranges,
+                first_index: len,
+                next_index: len,
+            }
+        } else {
+            let index = self
+                .uninitialized_ranges
+                .partition_point(|r| r.end <= drain_range.start);
+            InitTrackerDrain {
+                drain_range,
+                uninitialized_ranges: &mut self.uninitialized_ranges,
+                first_index: index,
+                next_index: index,
+            }
         }
     }
 }
@@ -269,7 +279,7 @@ impl InitTracker<u32> {
                     self.uninitialized_ranges[r_idx] = pos..r.end;
                 } else {
                     
-                    self.uninitialized_ranges.push(pos..(pos + 1));
+                    self.uninitialized_ranges.insert(r_idx, pos..(pos + 1));
                 }
             }
         } else {
@@ -378,6 +388,18 @@ mod test {
             tracker.drain(0..1337).collect::<Vec<Range<u32>>>(),
             vec![0..5, 1003..1337]
         );
+
+        
+        let mut tracker = Tracker::new(2);
+        assert_eq!(tracker.drain(1..1).count(), 0, "{tracker:?}");
+        assert_eq!(tracker.uninitialized_ranges.len(), 1, "{tracker:?}");
+        assert_eq!(tracker.uninitialized_ranges[0], 0..2, "{tracker:?}");
+
+        
+        
+        tracker.discard(1);
+        assert_eq!(tracker.uninitialized_ranges.len(), 1, "{tracker:?}");
+        assert_eq!(tracker.uninitialized_ranges[0], 0..2, "{tracker:?}");
     }
 
     #[test]
@@ -387,11 +409,22 @@ mod test {
         tracker.discard(0);
         tracker.discard(5);
         tracker.discard(9);
-        assert_eq!(tracker.check(0..1), Some(0..1));
-        assert_eq!(tracker.check(1..5), None);
-        assert_eq!(tracker.check(5..6), Some(5..6));
-        assert_eq!(tracker.check(6..9), None);
-        assert_eq!(tracker.check(9..10), Some(9..10));
+        assert_eq!(tracker.check(0..1), Some(0..1), "{tracker:?}");
+        assert_eq!(tracker.check(1..5), None, "{tracker:?}");
+        assert_eq!(tracker.check(5..6), Some(5..6), "{tracker:?}");
+        assert_eq!(tracker.check(6..9), None, "{tracker:?}");
+        assert_eq!(tracker.check(9..10), Some(9..10), "{tracker:?}");
+
+        let mut tracker = Tracker::new(10);
+        tracker.drain(0..10);
+        tracker.discard(9);
+        tracker.discard(5);
+        tracker.discard(0);
+        assert_eq!(tracker.check(0..1), Some(0..1), "{tracker:?}");
+        assert_eq!(tracker.check(1..5), None, "{tracker:?}");
+        assert_eq!(tracker.check(5..6), Some(5..6), "{tracker:?}");
+        assert_eq!(tracker.check(6..9), None, "{tracker:?}");
+        assert_eq!(tracker.check(9..10), Some(9..10), "{tracker:?}");
     }
 
     #[test]
@@ -422,5 +455,206 @@ mod test {
         tracker.discard(3);
         assert_eq!(tracker.uninitialized_ranges.len(), 1);
         assert_eq!(tracker.uninitialized_ranges[0], 0..10);
+    }
+}
+
+#[cfg(all(test, not(target_family = "wasm")))]
+mod proptest {
+    use alloc::{vec, vec::Vec};
+    use core::ops::Range;
+
+    use proptest::prelude::*;
+
+    type Tracker = super::InitTracker<u32>;
+
+    
+    
+    
+    #[derive(Debug, Clone)]
+    struct Model {
+        initialized: Vec<bool>,
+    }
+
+    impl Model {
+        fn new(size: u32) -> Self {
+            Model {
+                initialized: vec![false; size as usize],
+            }
+        }
+
+        fn drain(&mut self, range: Range<u32>) {
+            for i in range {
+                self.initialized[i as usize] = true;
+            }
+        }
+
+        fn discard(&mut self, pos: u32) {
+            self.initialized[pos as usize] = false;
+        }
+
+        fn size(&self) -> u32 {
+            self.initialized.len() as u32
+        }
+
+        
+        fn uninitialized_positions(&self, query: Range<u32>) -> Vec<u32> {
+            query.filter(|&i| !self.initialized[i as usize]).collect()
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    enum Op {
+        Drain(Range<u32>),
+        Discard(u32),
+    }
+
+    
+    fn range_strategy(size: u32) -> impl Strategy<Value = Range<u32>> {
+        (0..=size, 0..=size).prop_map(|(a, b)| if a <= b { a..b } else { b..a })
+    }
+
+    fn op_strategy(size: u32) -> impl Strategy<Value = Op> {
+        prop_oneof![
+            3 => range_strategy(size).prop_map(Op::Drain),
+            // `discard` operates on a single existing position, so it must be
+            // in bounds (`size` is always >= 1 here).
+            1 => (0..size).prop_map(Op::Discard),
+        ]
+    }
+
+    
+    
+    fn tracker_uninit(tracker: &Tracker, size: u32) -> Vec<bool> {
+        let mut set = vec![false; size as usize];
+        for r in tracker.uninitialized_ranges.iter() {
+            for i in r.clone() {
+                set[i as usize] = true;
+            }
+        }
+        set
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn assert_state_matches_model(tracker: &Tracker, model: &Model) {
+        let ranges = &tracker.uninitialized_ranges;
+        let mut prev_end = None;
+        for (i, r) in ranges.iter().enumerate() {
+            assert!(r.start < r.end, "empty range {r:?} at index {i}");
+            assert!(
+                r.end <= model.size(),
+                "out-of-bounds range {r:?} at index {i}"
+            );
+            if let Some(prev_end) = prev_end {
+                assert!(
+                    prev_end < r.start,
+                    "range {r:?} at index {i} is not strictly after the previous range \
+                     (previous end {prev_end}); the list must stay sorted by end and fully \
+                     merged (no overlapping or adjacent ranges)",
+                );
+            }
+            prev_end = Some(r.end);
+        }
+
+        let tracker_uninit = tracker_uninit(tracker, model.size());
+        let model_uninit: Vec<bool> = model.initialized.iter().map(|&i| !i).collect();
+        assert_eq!(
+            tracker_uninit, model_uninit,
+            "tracker's uninitialized set diverged from the model",
+        );
+    }
+
+    
+    fn assert_queries_match_model(tracker: &mut Tracker, model: &Model, query: Range<u32>) {
+        let uninit = model.uninitialized_positions(query.clone());
+
+        
+        
+        
+        
+        
+        match tracker.check(query.clone()) {
+            None => assert!(
+                uninit.is_empty(),
+                "check({query:?}) returned None but positions {uninit:?} are uninitialized",
+            ),
+            Some(r) => {
+                assert!(
+                    r.start >= query.start && r.end <= query.end,
+                    "check({query:?}) returned {r:?} outside the query range",
+                );
+                if let (Some(&first), Some(&last)) = (uninit.first(), uninit.last()) {
+                    assert!(
+                        r.start <= first && r.end > last,
+                        "check({query:?}) = {r:?} does not cover all uninitialized positions \
+                         (first {first}, last {last})",
+                    );
+                }
+            }
+        }
+
+        
+        
+        let iter_positions: Vec<u32> = tracker
+            .uninitialized(query.clone())
+            .inspect(|r| {
+                assert!(
+                    r.start >= query.start && r.end <= query.end,
+                    "uninitialized({query:?}) yielded out-of-range subrange {r:?}",
+                );
+            })
+            .flatten()
+            .collect();
+        assert_eq!(
+            iter_positions, uninit,
+            "uninitialized({query:?}) did not enumerate exactly the uninitialized positions",
+        );
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        proptest! {
+            #[test]
+            fn tracker_matches_model(
+                (size, ops, queries) in (1u32..=64).prop_flat_map(|size| {
+                    (
+                        Just(size),
+                        proptest::collection::vec(op_strategy(size), 0..64),
+                        proptest::collection::vec(range_strategy(size), 1..16),
+                    )
+                })
+            ) {
+                let mut tracker = Tracker::new(size);
+                let mut model = Model::new(size);
+                assert_state_matches_model(&tracker, &model);
+
+                for op in ops {
+                    match op {
+                        Op::Drain(range) => {
+                            // Fully consume the drain iterator, as callers do.
+                            tracker.drain(range.clone()).for_each(drop);
+                            model.drain(range);
+                        }
+                        Op::Discard(pos) => {
+                            tracker.discard(pos);
+                            model.discard(pos);
+                        }
+                    }
+                    assert_state_matches_model(&tracker, &model);
+                }
+
+                for query in queries {
+                    assert_queries_match_model(&mut tracker, &model, query);
+                }
+            }
+        }
     }
 }

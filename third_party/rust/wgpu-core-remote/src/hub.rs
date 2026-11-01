@@ -84,6 +84,7 @@
 
 
 use alloc::sync::Arc;
+use core::fmt;
 
 use crate::registry::Registry;
 use wgpu_core::{
@@ -138,6 +139,15 @@ pub struct Hub {
     pub(crate) render_passes: Registry<RenderPass>,
     pub(crate) compute_passes: Registry<ComputePass>,
     pub(crate) render_bundle_encoders: Registry<RenderBundleEncoder>,
+}
+
+impl fmt::Debug for Hub {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        
+        
+        f.debug_struct("Hub").finish_non_exhaustive()
+    }
 }
 
 impl Hub {

@@ -8,8 +8,6 @@
 
 #![no_std]
 
-#![recursion_limit = "256"]
-
 #![cfg_attr(
     all(
         not(all(feature = "vulkan", not(target_family = "wasm"))),

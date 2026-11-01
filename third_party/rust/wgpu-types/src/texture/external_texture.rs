@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(doc)]
 use crate::TextureFormat;
 
+pub use nt::ExternalTextureTransferFunction;
+
 
 
 #[repr(C)]
@@ -17,31 +19,6 @@ pub enum ExternalTextureFormat {
     Nv12,
     
     Yu12,
-}
-
-
-
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, bytemuck::Zeroable, bytemuck::Pod)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[allow(missing_docs)]
-pub struct ExternalTextureTransferFunction {
-    pub a: f32,
-    pub b: f32,
-    pub g: f32,
-    pub k: f32,
-}
-
-impl Default for ExternalTextureTransferFunction {
-    fn default() -> Self {
-        Self {
-            a: 1.0,
-            b: 1.0,
-            g: 1.0,
-            k: 1.0,
-        }
-    }
 }
 
 

@@ -53,6 +53,11 @@ pub mod db {
         /// cbindgen:ignore
         pub const VENDOR: u32 = 0x5143;
     }
+    pub mod verisilicon {
+        
+        /// cbindgen:ignore
+        pub const VENDOR: u32 = 0x10002;
+    }
 }
 
 

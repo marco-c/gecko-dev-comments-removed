@@ -6,7 +6,9 @@
 
 use alloc::{vec, vec::Vec};
 
-use crate::{link_to_wgpu_docs, link_to_wgpu_item, TextureFormat, TextureUsages};
+use macro_rules_attribute::derive;
+
+use crate::{link_to_wgpu_docs, link_to_wgpu_item, ConstDefault, TextureFormat, TextureUsages};
 
 #[cfg(any(feature = "serde", test))]
 use serde::{Deserialize, Serialize};
@@ -23,7 +25,7 @@ use serde::{Deserialize, Serialize};
 #[doc = link_to_wgpu_docs!(["presented"]: "struct.SurfaceTexture.html#method.present")]
 #[doc = link_to_wgpu_docs!(["`SurfaceTexture::present()`"]: "struct.SurfaceTexture.html#method.present")]
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, ConstDefault!, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PresentMode {
     
@@ -60,7 +62,7 @@ pub enum PresentMode {
     
     
     #[doc = link_to_wgpu_docs!(["`Surface::get_current_texture()`"]: "struct.Surface.html#method.get_current_texture")]
-    #[default]
+    #[custom(default)]
     Fifo = 2,
 
     
@@ -107,13 +109,13 @@ pub enum PresentMode {
 
 
 #[repr(C)]
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, ConstDefault!, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
 pub enum CompositeAlphaMode {
     
     
-    #[default]
+    #[custom(default)]
     Auto = 0,
     
     
@@ -237,7 +239,7 @@ pub enum CompositeAlphaMode {
 
 #[doc = link_to_wgpu_docs!(["color space and HDR primer"]: "index.html#surface-color-spaces-and-hdr-output")]
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, ConstDefault!, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum SurfaceColorSpace {
     
@@ -264,7 +266,7 @@ pub enum SurfaceColorSpace {
     
     
     
-    #[default]
+    #[custom(default)]
     Auto = 0,
 
     
@@ -582,7 +584,7 @@ impl Default for SurfaceCapabilities {
 
 
 #[doc = link_to_wgpu_item!(struct Surface)]
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, ConstDefault!, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DisplayHdrInfo {
     
@@ -618,7 +620,7 @@ pub struct DisplayHdrInfo {
 
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, ConstDefault!, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DisplayLuminance {
     
@@ -644,7 +646,7 @@ pub struct DisplayLuminance {
 
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, ConstDefault!, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DisplayHeadroom {
     
@@ -663,7 +665,7 @@ pub struct DisplayHeadroom {
 
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, ConstDefault!, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DisplayChromaticity {
     
@@ -680,7 +682,7 @@ pub struct DisplayChromaticity {
 
 
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, ConstDefault!, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DisplayCoarseRange {
     
@@ -754,6 +756,191 @@ impl DisplayHdrInfo {
             return Some(max / sdr);
         }
         None
+    }
+}
+
+
+
+#[doc = link_to_wgpu_item!(struct Surface)]
+#[repr(C)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SurfaceConfiguration<V> {
+    
+    pub usage: TextureUsages,
+    
+    
+    
+    pub format: TextureFormat,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub color_space: SurfaceColorSpace,
+    
+    
+    
+    
+    
+    
+    pub width: u32,
+    
+    
+    
+    
+    
+    
+    pub height: u32,
+    
+    
+    
+    
+    pub present_mode: PresentMode,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc = link_to_wgpu_docs!(["`Surface::get_current_texture`"]: "struct.Surface.html#method.get_current_texture")]
+    #[doc = link_to_wgpu_docs!(["`Surface::get_default_config`"]: "struct.Surface.html#method.get_default_config")]
+    
+    pub desired_maximum_frame_latency: u32,
+    
+    pub alpha_mode: CompositeAlphaMode,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub view_formats: V,
+}
+
+impl<V: Clone> SurfaceConfiguration<V> {
+    
+    pub fn map_view_formats<'a, M>(
+        &'a self,
+        fun: impl FnOnce(&'a V) -> M,
+    ) -> SurfaceConfiguration<M> {
+        SurfaceConfiguration {
+            usage: self.usage,
+            format: self.format,
+            color_space: self.color_space,
+            width: self.width,
+            height: self.height,
+            present_mode: self.present_mode,
+            desired_maximum_frame_latency: self.desired_maximum_frame_latency,
+            alpha_mode: self.alpha_mode,
+            view_formats: fun(&self.view_formats),
+        }
+    }
+}
+
+
+#[repr(C)]
+#[derive(Debug)]
+pub enum SurfaceStatus {
+    
+    Good,
+    
+    
+    Suboptimal,
+    
+    
+    
+    Timeout,
+    
+    
+    
+    Occluded,
+    
+    
+    
+    Outdated,
+    
+    Lost,
+    
+    
+    Validation,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct PresentationTimestamp(
+    
+    pub u128,
+);
+
+impl PresentationTimestamp {
+    
+    pub const INVALID_TIMESTAMP: Self = Self(u128::MAX);
+
+    
+    #[must_use]
+    pub fn is_invalid(self) -> bool {
+        self == Self::INVALID_TIMESTAMP
     }
 }
 
@@ -887,182 +1074,5 @@ mod display_hdr_info_tests {
             ..Default::default()
         };
         assert_eq!(info.tone_map_headroom(), Some(10.0));
-    }
-}
-
-
-
-#[doc = link_to_wgpu_item!(struct Surface)]
-#[repr(C)]
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct SurfaceConfiguration<V> {
-    
-    pub usage: TextureUsages,
-    
-    
-    pub format: TextureFormat,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub color_space: SurfaceColorSpace,
-    
-    
-    
-    
-    
-    
-    pub width: u32,
-    
-    
-    
-    
-    
-    
-    pub height: u32,
-    
-    
-    
-    
-    pub present_mode: PresentMode,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[doc = link_to_wgpu_docs!(["`Surface::get_current_texture`"]: "struct.Surface.html#method.get_current_texture")]
-    #[doc = link_to_wgpu_docs!(["`Surface::get_default_config`"]: "struct.Surface.html#method.get_default_config")]
-    
-    pub desired_maximum_frame_latency: u32,
-    
-    pub alpha_mode: CompositeAlphaMode,
-    
-    
-    
-    
-    
-    pub view_formats: V,
-}
-
-impl<V: Clone> SurfaceConfiguration<V> {
-    
-    pub fn map_view_formats<'a, M>(
-        &'a self,
-        fun: impl FnOnce(&'a V) -> M,
-    ) -> SurfaceConfiguration<M> {
-        SurfaceConfiguration {
-            usage: self.usage,
-            format: self.format,
-            color_space: self.color_space,
-            width: self.width,
-            height: self.height,
-            present_mode: self.present_mode,
-            desired_maximum_frame_latency: self.desired_maximum_frame_latency,
-            alpha_mode: self.alpha_mode,
-            view_formats: fun(&self.view_formats),
-        }
-    }
-}
-
-
-#[repr(C)]
-#[derive(Debug)]
-pub enum SurfaceStatus {
-    
-    Good,
-    
-    
-    Suboptimal,
-    
-    
-    
-    Timeout,
-    
-    
-    
-    Occluded,
-    
-    
-    
-    Outdated,
-    
-    Lost,
-    
-    
-    Validation,
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct PresentationTimestamp(
-    
-    pub u128,
-);
-
-impl PresentationTimestamp {
-    
-    pub const INVALID_TIMESTAMP: Self = Self(u128::MAX);
-
-    
-    #[must_use]
-    pub fn is_invalid(self) -> bool {
-        self == Self::INVALID_TIMESTAMP
     }
 }

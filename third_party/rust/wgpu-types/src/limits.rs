@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 #[cfg(doc)]
 use crate::{Features, TextureFormat};
 
+use crate::link_to_wgpu_item;
+
 
 
 
@@ -1305,12 +1307,26 @@ bitflags::bitflags! {
 
 impl DownlevelFlags {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[doc = link_to_wgpu_item!(struct Surface)]
     #[must_use]
     pub const fn compliant() -> Self {
         
 
         
-        Self::from_bits_truncate(Self::all().bits() & !Self::ANISOTROPIC_FILTERING.bits())
+        
+        Self::from_bits_truncate(
+            Self::all().bits()
+                & !(Self::ANISOTROPIC_FILTERING.bits() | Self::SURFACE_VIEW_FORMATS.bits()),
+        )
     }
 }
 

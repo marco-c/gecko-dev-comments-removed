@@ -6,6 +6,11 @@ use once_cell::race::OnceBox;
 use std::sync::LazyLock;
 
 #[cfg(std)]
+
+
+use once_cell as _;
+
+#[cfg(std)]
 type Inner<T> = LazyLock<T, fn() -> T>;
 #[cfg(no_std)]
 type Inner<T> = OnceBox<T>;

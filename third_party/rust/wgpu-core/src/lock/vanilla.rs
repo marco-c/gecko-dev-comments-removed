@@ -35,10 +35,6 @@ impl<T> Mutex<T> {
         MutexGuard(self.0.lock())
     }
 
-    pub fn get_mut(&mut self) -> &mut T {
-        self.0.get_mut()
-    }
-
     pub fn into_inner(self) -> T {
         self.0.into_inner()
     }
@@ -105,6 +101,14 @@ impl<T> RwLock<T> {
     
     pub unsafe fn force_unlock_read(&self, _data: RankData) {
         unsafe { self.0.force_unlock_read() };
+    }
+
+    
+    
+    
+    
+    pub unsafe fn underlying(&self) -> &wgpu_sync::RwLock<T> {
+        &self.0
     }
 }
 

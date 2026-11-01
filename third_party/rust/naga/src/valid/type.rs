@@ -970,13 +970,7 @@ impl super::Validator {
                         _ => return Err(TypeError::BindingArrayBaseTypeNotStruct(base)),
                     };
                 }
-                if matches!(
-                    gctx.types[base].inner,
-                    crate::TypeInner::Image {
-                        class: crate::ImageClass::External,
-                        ..
-                    }
-                ) {
+                if gctx.types[base].inner.is_external_image() {
                     
                     
                     
