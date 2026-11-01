@@ -183,6 +183,13 @@ class nsFontMetrics final {
   
 
 
+
+
+  nscoord CalcNormalLineHeight() const;
+
+  
+
+
   nscoord TrimmedAscent() const;
 
   
@@ -299,6 +306,8 @@ class nsFontMetrics final {
 #ifdef XP_WIN
   bool AllowForceGDIClassic() const { return mAllowForceGDIClassic; }
 #endif
+
+  static constexpr float kNormalLineHeightFactor = 1.2f;
 
  private:
   
