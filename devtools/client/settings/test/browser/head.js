@@ -9,6 +9,12 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+
+
+
+
+
+
 async function openSettings() {
   await pushPref("devtools.settings.redesign-enabled", true);
   const tab = await addTab("about:blank");
@@ -16,4 +22,42 @@ async function openSettings() {
   const root = toolbox.getCurrentPanel().element;
   await root.updateComplete;
   return { toolbox, root };
+}
+
+
+
+
+
+
+
+
+async function getSelect(root, selector) {
+  const select = root.shadowRoot.querySelector(selector);
+  await select.closest("devtools-settings-pref").updateComplete;
+  await select.updateComplete;
+  await waitFor(
+    () => select.inputEl.options.length,
+    "The select renders its options"
+  );
+  return select;
+}
+
+
+
+
+
+
+
+
+async function chooseOption(select, value) {
+  const index = [...select.inputEl.options].findIndex(
+    option => option.value === value
+  );
+  const popupShown = BrowserTestUtils.waitForSelectPopupShown(window);
+  select.focus();
+  EventUtils.synthesizeKey(" ", {}, select.ownerGlobal);
+  const popup = await popupShown;
+  const changed = BrowserTestUtils.waitForEvent(select, "change");
+  popup.activateItem(popup.querySelectorAll("menuitem")[index]);
+  await changed;
 }
