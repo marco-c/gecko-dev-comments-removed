@@ -185,6 +185,7 @@ enum class IsolationBehavior {
   Parent,
   
   
+  
   Anywhere,
   
   
@@ -639,6 +640,17 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     isNullPrincipalPrecursor = true;
   }
 
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+  
+  RemoteType triggeringRemoteType;
+  rv = loadInfo->GetTriggeringRemoteType(triggeringRemoteType);
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
+            ("failed to get channel triggering remote type"));
+    return Err(rv);
+  }
+
   NavigationIsolationOptions options;
   
   options.mReplaceBrowsingContext = aHasCOOPMismatch || aForNewTab;
@@ -654,6 +666,12 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     if (NS_WARN_IF(!resultPrincipal->GetIsNullPrincipal())) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
               ("invalid remote type override on non-null principal"));
+      return Err(NS_ERROR_DOM_SECURITY_ERR);
+    }
+
+    if (NS_WARN_IF(!triggeringRemoteType.IsNotRemote())) {
+      MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
+              ("invalid remote type override from non-parent process"));
       return Err(NS_ERROR_DOM_SECURITY_ERR);
     }
 
@@ -696,7 +714,6 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
   
   if (StaticPrefs::browser_tabs_remote_systemTriggeredAboutBlankAnywhere() &&
       NS_IsAboutBlank(aChannelCreationURI)) {
-    nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
     if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
         resultOrPrecursor->GetIsNullPrincipal()) {
       MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
@@ -753,6 +770,7 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
       
       bool isUIResource = false;
       if (aCurrentRemoteType.IsNotRemote() &&
+          triggeringRemoteType.IsNotRemote() &&
           (aChannelCreationURI->SchemeIs("about") ||
            (NS_SUCCEEDED(NS_URIChainHasFlags(
                 aChannelCreationURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
@@ -771,6 +789,19 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
                                           false,
                                           false);
     }
+  }
+
+  
+  
+  if (behavior == IsolationBehavior::Anywhere &&
+      !triggeringRemoteType.IsNotRemote() &&
+      triggeringRemoteType != aCurrentRemoteType) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Warning,
+            ("Unexpected Anywhere page load triggered by %s onto %s, forcing "
+             "web remote type",
+             triggeringRemoteType.Stringify().get(),
+             aCurrentRemoteType.Stringify().get()));
+    behavior = IsolationBehavior::ForceWebRemoteType;
   }
 
   
