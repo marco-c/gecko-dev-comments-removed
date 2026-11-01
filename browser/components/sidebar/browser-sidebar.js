@@ -1953,6 +1953,9 @@ var SidebarController = {
     if (switcherMenu) {
       updateAttributes(switcherMenu, sidebar);
     }
+    if (this.panelHeader) {
+      this.panelHeader.heading = label;
+    }
     if (this.initialized && this.currentID === commandID) {
       
       this.title = label;
