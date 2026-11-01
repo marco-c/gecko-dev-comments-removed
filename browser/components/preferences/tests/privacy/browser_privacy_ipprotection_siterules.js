@@ -3,8 +3,6 @@
 
 
 
-
-
 "use strict";
 
 const FEATURE_PREF = "browser.ipProtection.enabled";
