@@ -1592,11 +1592,6 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 
   
   
-  auto removeIonFrameRecovery = mozilla::MakeScopeExit(
-      [&] { activation->removeIonFrameRecovery(iter.jsFrame()); });
-
-  
-  
   
   
   

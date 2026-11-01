@@ -144,6 +144,7 @@ bool jit::Bailout(BailoutStack* sp, BaselineBailoutInfo** bailoutInfo) {
       BailoutIonToBaseline(cx, bailoutData.activation(), frame, bailoutInfo,
                            nullptr, BailoutReason::Normal);
   MOZ_ASSERT_IF(success, *bailoutInfo != nullptr);
+  bailoutData.activation()->removeIonFrameRecovery(currentFramePtr);
 
   if (!success) {
     MOZ_ASSERT(cx->isExceptionPending());
@@ -221,6 +222,7 @@ bool jit::InvalidationBailout(InvalidationBailoutStack* sp,
                                       bailoutInfo, nullptr,
                                       BailoutReason::Invalidate);
   MOZ_ASSERT_IF(success, *bailoutInfo != nullptr);
+  bailoutData.activation()->removeIonFrameRecovery(currentFramePtr);
 
   if (!success) {
     MOZ_ASSERT(cx->isExceptionPending());
@@ -296,6 +298,13 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
                                       BailoutReason::ExceptionHandler);
   if (success) {
     MOZ_ASSERT(bailoutInfo);
+
+    
+    
+    
+    
+    
+    act->removeIonFrameRecovery(currentFramePtr);
 
     
     

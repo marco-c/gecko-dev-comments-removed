@@ -49,6 +49,7 @@ js::jit::JitActivation::~JitActivation() {
   cx_->jitActivation = prevJitActivation_;
 
   
+  
   MOZ_ASSERT(ionRecovery_.empty());
 
   
