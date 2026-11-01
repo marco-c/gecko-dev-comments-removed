@@ -10,6 +10,7 @@
 #include "RenderThread.h"
 #include "gfxConfig.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/layers/Effects.h"
 #include "mozilla/layers/TextureD3D11.h"
 #include "mozilla/webrender/RenderD3D11TextureHost.h"
@@ -58,6 +59,17 @@ UniquePtr<RenderCompositor> RenderCompositorD3D11SWGL::Create(
   if (!compositor->Initialize(&log)) {
     gfxCriticalNote << "Failed to initialize CompositorD3D11 for SWGL: "
                     << log.get();
+    
+    
+    
+    gfx::DeviceResetReason reason;
+    if (gfx::DeviceManagerDx::Get()->HasDeviceReset(&reason)) {
+      RenderThread::Get()->HandleDeviceReset(
+          gfx::DeviceResetDetectPlace::WR_CREATE_COMPOSITOR, reason);
+    } else {
+      RenderThread::Get()->NotifyWebRenderError(WebRenderError::SOFTWARE_D3D11);
+    }
+    wr_swgl_destroy_context(ctx);
     return nullptr;
   }
   return MakeUnique<RenderCompositorD3D11SWGL>(compositor, aWidget, ctx);
