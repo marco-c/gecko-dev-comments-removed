@@ -92,7 +92,7 @@ class MozlintParser(ArgumentParser):
         [
             ["--include-third-party"],
             {
-                "dest": "include_third-party",
+                "dest": "include_third_party",
                 "default": False,
                 "action": "store_true",
                 "help": "Also run the linter(s) on third-party code",
@@ -459,18 +459,23 @@ def run(
             outgoing = True
             workdir = "all"
 
-        
-        ret = lint.setup(virtualenv_manager=virtualenv_manager)
-        if setup or not lint.linters:
-            return ret
+        if setup:
+            return lint.setup(virtualenv_manager=virtualenv_manager)
 
         if linters_info["linters_not_found"] != []:
             raise NoValidLinter
 
         
         result = lint.roll(
-            paths, outgoing=outgoing, workdir=workdir, rev=rev, num_procs=num_procs
+            paths,
+            outgoing=outgoing,
+            workdir=workdir,
+            rev=rev,
+            num_procs=num_procs,
+            virtualenv_manager=virtualenv_manager,
         )
+        if not lint.linters and not result.failed_setup:
+            return 1
     except NoValidLinter as e:
         result = lint.result
         print(str(e))
@@ -496,7 +501,9 @@ def run(
 
     if edit and result.issues:
         edit_issues(result)
+        failed_setup = set(result.failed_setup)
         result = lint.roll(result.issues.keys(), num_procs=num_procs)
+        result.failed_setup |= failed_setup
 
     for every in linters_info["linters_not_found"]:
         result.failed_setup.add(every)
@@ -517,20 +524,15 @@ def run(
             out = "{}"
 
         if out:
-            fh = open(path, "w") if path else sys.stdout
+            fh = open(path, "w", encoding="utf-8") if path else sys.stdout
 
-            if not path and fh.encoding in ("ascii", "iso8859-1"):
-                
-                
-                
-                
-                
-                
-                out += "\n"
-                fh.buffer.write(out.encode("utf-8", errors="replace"))
-                fh.buffer.flush()
-            else:
-                print(out, file=fh)
+            if not path:
+                import io
+
+                if isinstance(fh, io.TextIOWrapper):
+                    fh.reconfigure(encoding="utf-8", errors="replace")
+
+            print(out, file=fh)
 
             if path:
                 fh.close()
