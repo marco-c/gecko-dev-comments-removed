@@ -3456,7 +3456,13 @@ pub struct CascadeData {
     
     
     
-    attr_function_dependencies: PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
+    container_attr_function_dependencies:
+        PrecomputedHashMap<LocalName, ContainerAttributeDependencyKind>,
+
+    
+    
+    
+    container_unparsed_attr_function_dependency: ContainerAttributeDependencyKind,
 
     
     scope_conditions: SmallVec<[ScopeConditionReference; 1]>,
@@ -3534,7 +3540,8 @@ impl CascadeData {
             custom_media: Default::default(),
             layers: CascadeLayers::default(),
             container_conditions: smallvec::smallvec![ContainerConditionReference::none()],
-            attr_function_dependencies: PrecomputedHashMap::default(),
+            container_attr_function_dependencies: PrecomputedHashMap::default(),
+            container_unparsed_attr_function_dependency: ContainerAttributeDependencyKind::None,
             scope_conditions: smallvec::smallvec![ScopeConditionReference::none()],
             scope_subject_map: Default::default(),
             extra_data: ExtraStyleData::default(),
@@ -3656,7 +3663,13 @@ impl CascadeData {
     
     #[inline]
     pub fn might_have_attribute_dependency(&self, local_name: &LocalName) -> bool {
-        self.attribute_dependencies.contains(local_name)
+        
+        
+        
+        
+        
+        self.container_unparsed_attr_function_dependency != ContainerAttributeDependencyKind::None
+            || self.attribute_dependencies.contains(local_name)
     }
 
     
@@ -3676,10 +3689,11 @@ impl CascadeData {
         &self,
         local_name: &LocalName,
     ) -> ContainerAttributeDependencyKind {
-        self.attr_function_dependencies
+        self.container_attr_function_dependencies
             .get(local_name)
             .copied()
             .unwrap_or(ContainerAttributeDependencyKind::None)
+            .max(self.container_unparsed_attr_function_dependency)
     }
 
     
@@ -4411,10 +4425,14 @@ impl CascadeData {
 
                     if rebuild_kind.should_rebuild_invalidation() {
                         for condition in rule.conditions.0.iter() {
-                            condition.insert_attribute_references_in_dependency_map(
-                                &mut self.attr_function_dependencies,
-                                &mut self.attribute_dependencies,
-                            );
+                            let unparsed_dependency_kind = condition
+                                .insert_attribute_references_in_dependency_map(
+                                    &mut self.container_attr_function_dependencies,
+                                    &mut self.attribute_dependencies,
+                                );
+                            self.container_unparsed_attr_function_dependency = self
+                                .container_unparsed_attr_function_dependency
+                                .max(unparsed_dependency_kind);
                         }
                     }
                 },
@@ -4819,7 +4837,8 @@ impl CascadeData {
         self.relative_selector_invalidation_map.clear();
         self.additional_relative_selector_invalidation_map.clear();
         self.attribute_dependencies.clear();
-        self.attr_function_dependencies.clear();
+        self.container_attr_function_dependencies.clear();
+        self.container_unparsed_attr_function_dependency = ContainerAttributeDependencyKind::None;
         self.nth_of_attribute_dependencies.clear();
         self.nth_of_custom_state_dependencies.clear();
         self.nth_of_class_dependencies.clear();

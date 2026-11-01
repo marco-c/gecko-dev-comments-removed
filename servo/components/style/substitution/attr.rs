@@ -6,8 +6,8 @@
 
 
 use super::{
-    ArbitraryDeclarationValue, AttrTaint, Substitution, SubstitutionParserContext,
-    SubstitutionReplacementContext, parse_optional_fallback,
+    ArbitraryDeclarationValue, AttrTaint, ParsedArgument, Substitution, SubstitutionArgument,
+    SubstitutionParserContext, SubstitutionReplacementContext, parse_optional_fallback,
 };
 use crate::custom_properties::{ComputedValue, Name, VariableValue};
 use crate::dom::AttributeTracker;
@@ -21,8 +21,8 @@ use crate::properties_and_values::{
 use crate::stylesheets::UrlExtraData;
 use crate::values::generics::calc::SortKey as AttrUnit;
 use crate::values::specified::ParsedNamespace;
-use crate::{Atom, LocalName, Namespace, derives::*};
-use cssparser::{Parser, SourcePosition, Token, TokenSerializationType};
+use crate::{Atom, FxHashMap, LocalName, Namespace, Prefix, derives::*};
+use cssparser::{Delimiter, Parser, SourcePosition, Token, TokenSerializationType};
 use servo_arc::Arc;
 use std::borrow::Cow;
 use style_traits::{ParseError, StyleParseErrorKind};
@@ -54,31 +54,26 @@ impl From<Name> for LocalName {
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem, Parse)]
 enum AttributeType {
-    Invalid,
+    
     None,
+    
     RawString,
+    
     Type(SyntaxDescriptor),
+    
+    
     Unit(AttrUnit),
 }
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct AttrFunction {
+pub struct AttrName {
     
     pub name: Name,
-    kind: AttributeType,
     namespace: ParsedNamespace,
-    
-    pub fallback: Option<ArbitraryDeclarationValue>,
 }
 
-impl AttrFunction {
-    
-    #[inline]
-    pub fn has_type(&self) -> bool {
-        matches!(self.kind, AttributeType::Type(..))
-    }
-
+impl AttrName {
     
     
     pub fn value_for_cycle_resolution(
@@ -97,7 +92,37 @@ impl AttrFunction {
         let value = VariableValue::parse(&mut parser, None, url_data).map_err(|_| ())?;
         Ok(ComputedRegisteredValue::universal(Arc::new(value)))
     }
+}
 
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+pub struct AttrArgument {
+    
+    pub name: AttrName,
+    
+    ty: AttributeType,
+}
+
+impl AttrArgument {
+    
+    pub fn has_type(&self) -> bool {
+        matches!(self.ty, AttributeType::Type(..))
+    }
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+pub struct AttrFunction {
+    
+    pub arg: SubstitutionArgument<AttrArgument>,
+    
+    pub fallback: Option<ArbitraryDeclarationValue>,
+    
+    namespaces: Option<FxHashMap<Prefix, Namespace>>,
+}
+
+impl AttrFunction {
+    
     
     
     pub fn parse(
@@ -105,26 +130,18 @@ impl AttrFunction {
         context: &mut SubstitutionParserContext,
         input_end_position: &mut Option<SourcePosition>,
     ) -> Result<Self, ParseError> {
-        let mut namespace = ParsedNamespace::Known(Namespace::default());
-        if let Some(namespaces) = context.namespaces
-            && let Ok(ns) = input.try_parse(|input| ParsedNamespace::parse(namespaces, input))
-        {
-            namespace = ns;
-            let prev = input.state();
-            let next = match *input.next_including_whitespace()? {
-                Token::Ident(_) => Ok(()),
-                _ => Err(ParseError::unexpected_token()),
-            };
-            input.reset(&prev);
-            next?;
-        }
-        let name = Atom::from(input.expect_ident()?.as_ref());
-        let kind = parse_attr_type(input);
+        let arg =
+            SubstitutionArgument::try_parse(input, context, Delimiter::Comma, |input, context| {
+                parse_attr_argument(input, context.namespaces)
+            })?;
+        let namespaces = match arg {
+            SubstitutionArgument::Unparsed(..) => context.namespaces.cloned(),
+            SubstitutionArgument::Parsed(..) | SubstitutionArgument::Invalid => None,
+        };
         let fallback = parse_optional_fallback(input, context, input_end_position)?;
         Ok(Self {
-            name,
-            kind,
-            namespace,
+            arg,
+            namespaces,
             fallback,
         })
     }
@@ -133,32 +150,37 @@ impl AttrFunction {
     
     pub fn replace<'a>(
         &'a self,
-        css: &'a str,
-        url_data: &UrlExtraData,
+        source: &'a VariableValue,
         context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
     ) -> Result<Substitution<'a>, ()> {
-        let namespace = match self.namespace {
-            ParsedNamespace::Known(ref ns) => Some(ns),
-            ParsedNamespace::Unknown => None,
-        };
-        let substitution = namespace
-            .and_then(|namespace| {
-                LocalName::with_name(&self.name, |local_name| {
+        let arg = self.replace_arg(source, context);
+        let is_type_omitted = arg
+            .value
+            .as_ref()
+            .is_some_and(|arg| arg.ty == AttributeType::None);
+        let mut substitution = arg
+            .value
+            .and_then(|arg| {
+                let ParsedNamespace::Known(ref namespace) = arg.name.namespace else {
+                    return None;
+                };
+                let attr = LocalName::with_name(&arg.name.name, |local_name| {
                     context.attribute_tracker.query(local_name, namespace)
-                })
+                })?;
+                Some((arg, attr))
             })
             .map_or_else(
                 || {
                     
                     
-                    if self.fallback.is_none() && self.kind == AttributeType::None {
+                    if self.fallback.is_none() && is_type_omitted {
                         Some(simple_attr_substitution(""))
                     } else {
                         None
                     }
                 },
-                |attr| {
-                    let attr = if let AttributeType::Type(_) = &self.kind {
+                |(arg, attr)| {
+                    let attr = if let AttributeType::Type(_) = &arg.ty {
                         
                         
                         
@@ -170,7 +192,7 @@ impl AttrFunction {
                         } else {
                             context
                                 .substitution_functions
-                                .get_attr(&self.name)
+                                .get_attr(&arg.name.name)
                                 .map(|v| v.to_variable_value())?
                                 .css
                         }
@@ -178,7 +200,7 @@ impl AttrFunction {
                         attr
                     };
                     let mut parser = Parser::new(&attr);
-                    match &self.kind {
+                    match &arg.ty {
                         AttributeType::Unit(unit) => {
                             let css = {
                                 
@@ -192,8 +214,12 @@ impl AttrFunction {
                                 AttrUnit::Percentage => TokenSerializationType::Percentage,
                                 _ => TokenSerializationType::Dimension,
                             };
-                            let value =
-                                ComputedValue::new(css, url_data, serialization, serialization);
+                            let value = ComputedValue::new(
+                                css,
+                                &source.url_data,
+                                serialization,
+                                serialization,
+                            );
                             Some(Substitution::from_value(
                                 value,  true,
                             ))
@@ -202,7 +228,7 @@ impl AttrFunction {
                             let value = SpecifiedRegisteredValue::parse(
                                 &mut parser,
                                 syntax,
-                                url_data,
+                                &source.url_data,
                                 None,
                                 AllowComputationallyDependent::Yes,
                                 AttrTaint::default(),
@@ -217,17 +243,38 @@ impl AttrFunction {
                         AttributeType::RawString | AttributeType::None => {
                             Some(simple_attr_substitution(&attr))
                         },
-                        AttributeType::Invalid => None,
                     }
                 },
-            );
-        match substitution {
-            Some(substitution) => Ok(substitution),
-            None => context.substitute_declaration_value(
-                self.fallback.as_ref().ok_or(())?,
-                css,
-                url_data,
-            ),
+            )
+            .ok_or(())
+            .or_else(|_| {
+                context.substitute_declaration_value(self.fallback.as_ref().ok_or(())?, source)
+            })?;
+        substitution.attr_tainted |= arg.attr_tainted;
+        Ok(substitution)
+    }
+
+    
+    pub fn replace_arg<'a>(
+        &'a self,
+        source: &'a VariableValue,
+        context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
+    ) -> ParsedArgument<'a, AttrArgument> {
+        self.arg.substitute_and_parse(source, context, |input| {
+            parse_attr_argument(input, self.namespaces.as_ref())
+        })
+    }
+
+    
+    pub fn for_each_unparsed_value<F>(&self, mut f: F)
+    where
+        F: FnMut(&ArbitraryDeclarationValue),
+    {
+        if let SubstitutionArgument::Unparsed(ref arg) = self.arg {
+            f(arg);
+        }
+        if let Some(ref fallback) = self.fallback {
+            f(fallback);
         }
     }
 }
@@ -258,7 +305,7 @@ fn parse_attr_type(input: &mut Parser) -> AttributeType {
                     } else if let Ok(unit) = AttrUnit::from_ident(ident) {
                         AttributeType::Unit(unit)
                     } else {
-                        AttributeType::Invalid
+                        return Err(ParseError::custom(StyleParseErrorKind::UnexpectedIdent));
                     }
                 },
                 Token::Delim('%') => AttributeType::Unit(AttrUnit::Percentage),
@@ -266,4 +313,33 @@ fn parse_attr_type(input: &mut Parser) -> AttributeType {
             })
         })
         .unwrap_or(AttributeType::None)
+}
+
+fn parse_attr_name(
+    input: &mut Parser,
+    namespaces: Option<&FxHashMap<Prefix, Namespace>>,
+) -> Result<AttrName, ParseError> {
+    let mut namespace = ParsedNamespace::Known(Namespace::default());
+    if let Some(namespaces) = namespaces
+        && let Ok(ns) = input.try_parse(|input| ParsedNamespace::parse(namespaces, input))
+    {
+        namespace = ns;
+        let prev = input.state();
+        let is_ident = matches!(input.next_including_whitespace(), Ok(Token::Ident(_)));
+        input.reset(&prev);
+        if !is_ident {
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+        }
+    }
+    let name = Atom::from(input.expect_ident()?.as_ref());
+    Ok(AttrName { name, namespace })
+}
+
+fn parse_attr_argument(
+    input: &mut Parser,
+    namespaces: Option<&FxHashMap<Prefix, Namespace>>,
+) -> Result<AttrArgument, ParseError> {
+    let name = parse_attr_name(input, namespaces)?;
+    let ty = parse_attr_type(input);
+    Ok(AttrArgument { name, ty })
 }
