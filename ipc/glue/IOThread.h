@@ -8,6 +8,7 @@
 #include "base/thread.h"
 #include "chrome/common/ipc_channel.h"
 #include "mozilla/ipc/ScopedPort.h"
+#include "nsCOMPtr.h"
 
 namespace mozilla::ipc {
 
@@ -27,9 +28,7 @@ class IOThread : private base::Thread {
 
   
   
-  nsISerialEventTarget* GetEventTarget() {
-    return base::Thread::message_loop()->SerialEventTarget();
-  }
+  nsISerialEventTarget* GetEventTarget() { return mEventTarget; }
 
  protected:
   IOThread(const char* aName);
@@ -43,11 +42,12 @@ class IOThread : private base::Thread {
 
   
   
-  void Init() override = 0;
+  void Init() override;
   void CleanUp() override = 0;
 
  private:
   static IOThread* sSingleton;
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
 };
 
 
