@@ -1506,9 +1506,15 @@ static void FinishRestoreMaybeDeferred(
   RefPtr<nsDocShellLoadState> loadState = aLoadState;
   RefPtr<SessionHistoryEntry> entry = aEntry;
   RefPtr<nsFrameLoader> frameLoader = aFrameLoader;
+  
+  
+  BrowserParent* targetBrowser = aFrameLoader->GetBrowserParent();
+  const TabId snapshotTargetTab =
+      targetBrowser ? targetBrowser->GetTabId() : TabId(0);
   contentParent
       ->SendBeginOutboundCrossDocumentViewTransition(
-          aBrowsingContext, Some(*targetInfo), NavigationType::Traverse)
+          aBrowsingContext, Some(*targetInfo), NavigationType::Traverse,
+          snapshotTargetTab)
       ->Then(GetMainThreadSerialEventTarget(), __func__,
              [bc, loadState, entry, frameLoader,
               aCanSave](const ContentParent::

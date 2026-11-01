@@ -27,10 +27,11 @@ class ErrorResult;
 struct Keyframe;
 struct PseudoStyleRequest;
 struct StyleLockedDeclarationBlock;
+class WindowRenderer;
 
 namespace layers {
 class RenderRootStateManager;
-}
+}  
 
 namespace wr {
 struct ImageKey;
@@ -123,6 +124,11 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
       Document&, TypeList&&);
 
   bool IsOutboundCrossDocument() const { return mIsOutboundCrossDocument; }
+
+  
+  
+  static void AdoptOldSnapshots(WindowRenderer* aRenderer,
+                                ViewTransitionNamedElements& aNamedElements);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT UniquePtr<ViewTransitionParams>
   CaptureOldStateForCrossDocument();

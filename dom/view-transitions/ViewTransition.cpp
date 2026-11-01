@@ -126,6 +126,8 @@ struct OldSnapshotData {
   nsRect mSnapshotRect;
   RefPtr<layers::RenderRootStateManager> mManager;
   bool mUsed = false;
+  
+  bool mAdopted = false;
 
   OldSnapshotData() = default;
 
@@ -152,6 +154,13 @@ struct OldSnapshotData {
       wr::SnapshotImageKey key = {mImageKey};
       if (mUsed) {
         mManager->AddSnapshotImageKeyForDiscard(key);
+      } else if (mAdopted) {
+        
+        
+        
+        if (!mManager->IsDestroyed() && mManager->WrBridge()) {
+          mManager->AsyncResourceUpdates().DeleteSnapshotImage(key);
+        }
       } else {
         mManager->AddUnusedSnapshotImageKeyForDiscard(key);
       }
@@ -304,7 +313,52 @@ already_AddRefed<ViewTransition> ViewTransition::CreateCrossDocument(
   
   vt->mPhase = Phase::UpdateCallbackCalled;
 
+  
+  
+  
+  
+  if (PresShell* ps = aDocument.GetPresShell()) {
+    AdoptOldSnapshots(ps->GetWindowRenderer(), vt->mNamedElements);
+  }
+
   return vt.forget();
+}
+
+
+void ViewTransition::AdoptOldSnapshots(
+    WindowRenderer* aRenderer, ViewTransitionNamedElements& aNamedElements) {
+  layers::WebRenderLayerManager* wrManager =
+      aRenderer ? aRenderer->AsWebRender() : nullptr;
+  if (!wrManager) {
+    return;
+  }
+  
+  
+  layers::WebRenderBridgeChild* bridge = wrManager->WrBridge();
+  if (!bridge) {
+    return;
+  }
+  layers::RenderRootStateManager* manager =
+      wrManager->GetRenderRootStateManager();
+  wr::IpcResourceUpdateQueue resources(bridge);
+  for (auto& entry : aNamedElements) {
+    OldSnapshotData& snapshot = entry.GetData()->mOldState.mSnapshot;
+    if (snapshot.mImageKey == kNoKey ||
+        bridge->MatchesNamespace(snapshot.mImageKey)) {
+      continue;
+    }
+    wr::ImageKey newKey = bridge->GetNextImageKey();
+    VT_LOG("ViewTransition::AdoptOldSnapshots(%s): %s -> %s\n",
+           nsAtomCString(entry.GetKey()).get(),
+           ToString(snapshot.mImageKey).c_str(), ToString(newKey).c_str());
+    resources.AdoptSnapshotImage(wr::SnapshotImageKey{snapshot.mImageKey},
+                                 wr::SnapshotImageKey{newKey});
+    snapshot.mImageKey = newKey;
+    
+    snapshot.mManager = manager;
+    snapshot.mAdopted = true;
+  }
+  manager->UpdateResources(resources);
 }
 
 

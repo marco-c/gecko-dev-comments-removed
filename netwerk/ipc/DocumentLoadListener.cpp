@@ -3270,9 +3270,12 @@ bool DocumentLoadListener::MaybeBeginOutboundViewTransition() {
     targetInfo.emplace(mLoadingSessionHistoryInfo->mInfo);
   }
   RefPtr<DocumentLoadListener> self = this;
+  
+  
+  
   contentParent
       ->SendBeginOutboundCrossDocumentViewTransition(
-          browsingContext, targetInfo, *navigationType)
+          browsingContext, targetInfo, *navigationType, TabId(0))
       ->Then(GetMainThreadSerialEventTarget(), __func__,
              [self](const ContentParent::
                         BeginOutboundCrossDocumentViewTransitionPromise::
