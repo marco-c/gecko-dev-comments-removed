@@ -1481,6 +1481,9 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   
   
   
+  [[deprecated(
+      "A worker thread that is distinct from the network thread is no longer "
+      "supported. Stop setting worker_thread.")]]
   Thread* worker_thread = nullptr;
   Thread* signaling_thread = nullptr;
   SocketFactory* socket_factory = nullptr;
