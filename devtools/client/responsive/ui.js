@@ -1164,10 +1164,7 @@ class ResponsiveUI extends EventEmitter {
     
     
     
-    
-    
-    
-    this.emit("content-resize", {
+    this.emitForTests("content-resize", {
       width,
       height,
     });
