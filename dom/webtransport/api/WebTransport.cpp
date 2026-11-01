@@ -509,6 +509,14 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                } else {
                  
                  
+                 uint64_t maxDatagramSize = std::get<2>(aResult.ResolveValue());
+                 MOZ_ASSERT(self->mDatagrams);
+                 self->mDatagrams->SetMaxDatagramSize(maxDatagramSize);
+                 LOG(("max datagram size for the session is %" PRIu64,
+                      maxDatagramSize));
+
+                 
+                 
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
                          std::get<1>(aResult.ResolveValue())));
@@ -547,18 +555,9 @@ void WebTransport::ResolveWaitingConnection(
     }
   }
 
-  mChild->SendGetMaxDatagramSize()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr{this}](uint64_t&& aMaxDatagramSize) {
-        MOZ_ASSERT(self->mDatagrams);
-        self->mDatagrams->SetMaxDatagramSize(aMaxDatagramSize);
-        LOG(("max datagram size for the session is %" PRIu64,
-             aMaxDatagramSize));
-      },
-      [](const mozilla::ipc::ResponseRejectReason& aReason) {
-        LOG(("WebTransport fetching maxDatagramSize failed"));
-      });
-
+  
+  
+  
   
   mReady->MaybeResolveWithUndefined();
 
@@ -1479,7 +1478,11 @@ void WebTransport::Cleanup(WebTransportError* aError,
     LOG(("Resolving mClosed with closeinfo"));
     mClosed->MaybeResolve(*aCloseInfo);
     
-    MOZ_ASSERT(mReady->State() != Promise::PromiseState::Pending);
+    
+    
+    if (mReady->State() == Promise::PromiseState::Pending) {
+      mReady->MaybeResolveWithUndefined();
+    }
     
     
     RefPtr<ReadableStream> stream = mIncomingBidirectionalStreams;

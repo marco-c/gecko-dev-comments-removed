@@ -40,8 +40,8 @@ class WebTransportParent : public PWebTransportParent,
               nsTArray<WebTransportHeader>&& aHeaders,
               nsTArray<WebTransportHash>&& aServerCertHashes,
               Endpoint<PWebTransportParent>&& aParentEndpoint,
-              std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&
-                  aResolver);
+              std::function<void(std::tuple<const nsresult&, const uint8_t&,
+                                            const uint64_t&>)>&& aResolver);
 
   IPCResult RecvClose(const uint32_t& aCode, const nsACString& aReason,
                       CloseResolver&& aResolver);
@@ -111,7 +111,13 @@ class WebTransportParent : public PWebTransportParent,
   
   void CloseSessionForDestroyedActor();
 
-  using ResolveType = std::tuple<const nsresult&, const uint8_t&>;
+  using ResolveType =
+      std::tuple<const nsresult&, const uint8_t&, const uint64_t&>;
+
+  static void CallResolver(std::function<void(ResolveType)>& aFn, nsresult aRv,
+                           uint8_t aReliability, uint64_t aMaxDatagramSize) {
+    aFn(ResolveType(aRv, aReliability, aMaxDatagramSize));
+  }
   nsCOMPtr<nsISerialEventTarget> mSocketThread;
   Atomic<bool> mSessionReady{false};
   
@@ -126,6 +132,7 @@ class WebTransportParent : public PWebTransportParent,
   std::function<void()> mExecuteAfterResolverCallback MOZ_GUARDED_BY(mMutex);
   OutgoingDatagramResolver mOutgoingDatagramResolver;
   GetMaxDatagramSizeResolver mMaxDatagramSizeResolver;
+  uint64_t mMaxDatagramSizeValue{0};
   
   
   

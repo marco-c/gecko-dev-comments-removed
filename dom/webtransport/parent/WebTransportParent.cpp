@@ -42,8 +42,8 @@ void WebTransportParent::Create(
     nsTArray<WebTransportHeader>&& aHeaders,
     nsTArray<WebTransportHash>&& aServerCertHashes,
     Endpoint<PWebTransportParent>&& aParentEndpoint,
-    std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&
-        aResolver) {
+    std::function<void(std::tuple<const nsresult&, const uint8_t&,
+                                  const uint64_t&>)>&& aResolver) {
   LOG(("Created WebTransportParent %p %s %s %s congestion=%s", this,
        NS_ConvertUTF16toUTF8(aURL).get(),
        aDedicated ? "Dedicated" : "AllowPooling",
@@ -57,9 +57,8 @@ void WebTransportParent::Create(
                   : "Default")));
 
   if (!aParentEndpoint.IsValid()) {
-    aResolver(ResolveType(
-        NS_ERROR_INVALID_ARG,
-        static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
+    CallResolver(aResolver, NS_ERROR_INVALID_ARG,
+                 static_cast<uint8_t>(WebTransportReliabilityMode::Pending), 0);
     return;
   }
 
@@ -67,8 +66,8 @@ void WebTransportParent::Create(
   nsresult rv =
       mozilla::net::gIOService->NewWebTransport(getter_AddRefs(mWebTransport));
   if (NS_FAILED(rv)) {
-    aResolver(ResolveType(
-        rv, static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
+    CallResolver(aResolver, rv,
+                 static_cast<uint8_t>(WebTransportReliabilityMode::Pending), 0);
     return;
   }
 
@@ -77,9 +76,8 @@ void WebTransportParent::Create(
   nsCOMPtr<nsIURI> uri;
   rv = NS_NewURI(getter_AddRefs(uri), aURL);
   if (NS_FAILED(rv)) {
-    aResolver(ResolveType(
-        NS_ERROR_INVALID_ARG,
-        static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
+    CallResolver(aResolver, rv,
+                 static_cast<uint8_t>(WebTransportReliabilityMode::Pending), 0);
     return;
   }
 
@@ -104,9 +102,9 @@ void WebTransportParent::Create(
       requestHeaders->Append(header.name(), header.value(), erv);
     }
     if (erv.Failed()) {
-      aResolver(ResolveType(
-          NS_ERROR_INVALID_ARG,
-          static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
+      CallResolver(aResolver, NS_ERROR_INVALID_ARG,
+                   static_cast<uint8_t>(WebTransportReliabilityMode::Pending),
+                   0);
       return;
     }
   }
@@ -173,10 +171,10 @@ void WebTransportParent::Create(
                 resolver = std::move(p->mResolver);
               }
               if (resolver) {
-                resolver(
-                    ResolveType(aValue.RejectValue(),
-                                static_cast<uint8_t>(
-                                    WebTransportReliabilityMode::Pending)));
+                CallResolver(
+                    resolver, aValue.RejectValue(),
+                    static_cast<uint8_t>(WebTransportReliabilityMode::Pending),
+                    0);
               }
             }
           });
@@ -665,9 +663,10 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
         [self = RefPtr{this}, result = rv] {
           MutexAutoLock lock(self->mMutex);
           if (!self->mClosed && self->mResolver) {
-            self->mResolver(ResolveType(
-                result, static_cast<uint8_t>(
-                            WebTransportReliabilityMode::Supports_unreliable)));
+            CallResolver(self->mResolver, result,
+                         static_cast<uint8_t>(
+                             WebTransportReliabilityMode::Supports_unreliable),
+                         0);
             self->mResolver = nullptr;
           }
         }));
@@ -689,18 +688,26 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
           if (self->CanSend()) {
             (void)self->SendNegotiatedProtocol(subprotocol);
           }
+
+          
+          
+          
+          self->mWebTransport->GetMaxDatagramSize();
         }
 
         
         
+        
+        uint64_t maxDatagramSize = self->mMaxDatagramSizeValue;
         self->mOwningEventTarget->Dispatch(NS_NewRunnableFunction(
-            "WebTransportParent::OnSessionReady", [self]() {
+            "WebTransportParent::OnSessionReady", [self, maxDatagramSize]() {
               MutexAutoLock lock(self->mMutex);
               if (!self->mClosed && self->mResolver) {
-                self->mResolver(ResolveType(
-                    NS_OK,
+                CallResolver(
+                    self->mResolver, NS_OK,
                     static_cast<uint8_t>(
-                        WebTransportReliabilityMode::Supports_unreliable)));
+                        WebTransportReliabilityMode::Supports_unreliable),
+                    maxDatagramSize);
                 self->mResolver = nullptr;
                 if (self->mExecuteAfterResolverCallback) {
                   self->mExecuteAfterResolverCallback();
@@ -762,9 +769,10 @@ WebTransportParent::OnSessionClosed(const bool aCleanly,
         [self = RefPtr{this}, result = rv] {
           MutexAutoLock lock(self->mMutex);
           if (!self->mClosed && self->mResolver) {
-            self->mResolver(ResolveType(
-                result, static_cast<uint8_t>(
-                            WebTransportReliabilityMode::Supports_unreliable)));
+            CallResolver(self->mResolver, result,
+                         static_cast<uint8_t>(
+                             WebTransportReliabilityMode::Supports_unreliable),
+                         0);
             self->mResolver = nullptr;
           }
         }));
@@ -1136,11 +1144,14 @@ WebTransportParent::OnOutgoingDatagramOutCome(
 NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
   LOG(("Max datagram size is %" PRIu64, aSize));
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-  if (!mMaxDatagramSizeResolver) {
-    return NS_OK;
+  if (mMaxDatagramSizeResolver) {
+    
+    mMaxDatagramSizeResolver(aSize);
+    mMaxDatagramSizeResolver = nullptr;
+  } else {
+    
+    mMaxDatagramSizeValue = aSize;
   }
-  mMaxDatagramSizeResolver(aSize);
-  mMaxDatagramSizeResolver = nullptr;
   return NS_OK;
 }
 
