@@ -748,7 +748,6 @@ int NrSocket::sendto(const void* msg, size_t len, int flags,
   
   
   
-  
   if (IsForbiddenAddress(to)) {
     
     _status = 0;
@@ -1600,12 +1599,6 @@ int NrSocketBase::CreateSocket(
   if (XRE_IsParentProcess()) {
     
     *sock = new NrSocket();
-  } else if (XRE_IsSocketProcess()) {
-    if (addr->protocol == IPPROTO_TCP) {
-      *sock = new NrTcpSocket(config);
-    } else {
-      *sock = new NrSocket();
-    }
   } else {
     if (addr->protocol == IPPROTO_TCP) {
       *sock = new NrTcpSocket(config);

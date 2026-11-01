@@ -17,7 +17,6 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MessageEventBinding.h"
-#include "mozilla/dom/PMediaTransport.h"
 #include "mozilla/dom/RTCErrorEvent.h"
 #include "mozilla/dom/RTCErrorEventBinding.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
@@ -33,6 +32,7 @@
 #include "nsIScriptObjectPrincipal.h"
 #include "nsProxyRelease.h"
 #include "nsThreadManager.h"
+#include "transport/MediaTransportTypes.h"
 
 
 
@@ -575,8 +575,8 @@ void RTCDataChannel::AnnounceClosed(Maybe<RTCErrorParams> aError) {
   
   if (aError) {
     RTCErrorEventInit init;
-    init.mError = MakeRefPtr<RTCError>(std::move(aError->errorInit()),
-                                       nsCString(std::move(aError->message())));
+    init.mError = MakeRefPtr<RTCError>(std::move(aError->errorInit),
+                                       nsCString(std::move(aError->message)));
     RefPtr<RTCErrorEvent> event =
         RTCErrorEvent::Constructor(this, u"error"_ns, std::move(init));
     event->SetTrusted(true);

@@ -16,13 +16,13 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/dom/PMediaTransportChild.h"
 #include "mozilla/dom/RTCConfigurationBinding.h"
 #include "mozilla/dom/RTCErrorBinding.h"
 #include "mozilla/dom/RTCIceTransportBinding.h"  
 #include "mozilla/dom/RTCPeerConnectionBinding.h"
 #include "nsISupportsImpl.h"
 #include "nsString.h"
+#include "transport/MediaTransportTypes.h"
 #include "transport/dtlsidentity.h"  
 #include "transport/nr_socket_proxy_config.h"
 #include "transport/nricectx.h"        
@@ -105,7 +105,6 @@ class MediaTransportEvents final {
 
 class MediaTransportHandler {
  public:
-  
   
   static already_AddRefed<MediaTransportHandler> Create();
 

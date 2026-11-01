@@ -19,7 +19,6 @@
 #include "mozilla/StopGapEventTarget.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/Blob.h"
-#include "mozilla/dom/PMediaTransport.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"
 #include "mozilla/net/NeckoTargetHolder.h"
 #include "nsCOMPtr.h"
@@ -28,6 +27,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "transport/MediaTransportTypes.h"
 #include "transport/transportlayer.h"  
 
 namespace mozilla {
@@ -254,7 +254,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
    public:
     using ChannelArray = AutoTArray<RefPtr<DataChannel>, 16>;
 
-    Channels() : mMutex("DataChannelConnection::Channels::mMutex") {}
+    Channels() = default;
     Channels(const Channels&) = delete;
     Channels(Channels&&) = delete;
     Channels& operator=(const Channels&) = delete;
@@ -278,7 +278,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
       bool LessThan(const RefPtr<DataChannel>& a1,
                     const RefPtr<DataChannel>& a2) const;
     };
-    mutable Mutex mMutex;
+    mutable Mutex mMutex{"DataChannelConnection::Channels::mMutex"};
     ChannelArray mChannels MOZ_GUARDED_BY(mMutex);
   };
 

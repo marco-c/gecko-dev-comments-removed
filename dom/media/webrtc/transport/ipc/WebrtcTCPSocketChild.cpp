@@ -8,7 +8,6 @@
 #include "WebrtcTCPSocketCallback.h"
 #include "WebrtcTCPSocketLog.h"
 #include "mozilla/net/NeckoChild.h"
-#include "mozilla/net/SocketProcessChild.h"
 
 using namespace mozilla::ipc;
 
@@ -74,10 +73,6 @@ void WebrtcTCPSocketChild::AsyncOpen(
   if (IsNeckoChild()) {
     
     gNeckoChild->SendPWebrtcTCPSocketConstructor(this, tabId);
-  } else if (IsSocketProcessChild()) {
-    
-    SocketProcessChild::GetSingleton()->SendPWebrtcTCPSocketConstructor(this,
-                                                                        tabId);
   }
 
   SendAsyncOpen(aHost, aPort, aLocalAddress, aLocalPort, aUseTls, proxyConfig);

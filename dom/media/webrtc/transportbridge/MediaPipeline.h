@@ -55,7 +55,7 @@ namespace dom {
 class MediaStreamTrack;
 struct RTCRTPContributingSourceStats;
 class RTCStatsTimestampMaker;
-class RTCErrorParams;
+struct RTCErrorParams;
 }  
 
 struct MediaPipelineReceiveControlInterface {
