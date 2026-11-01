@@ -52,10 +52,10 @@ class DevToolsNodeTestRunner(MozbuildObject):
 
         
         if artifact:
-            cmd.append(f"--artifact={artifact}")
+            cmd.extend(["--artifact", artifact])
 
         
-        cmd.append(f"--suite={suite}")
+        cmd.extend(["--suite", suite])
 
         print(f"Running: {' '.join(cmd)}")
         print(f"Working directory: {devtools_bin_dir}")

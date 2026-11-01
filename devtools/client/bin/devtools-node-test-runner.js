@@ -19,6 +19,7 @@ const { writeFileSync } = require("fs");
 const { chdir } = require("process");
 const path = require("path");
 const os = require("os");
+const { parseArgs } = require("util");
 
 const REPOSITORY_ROOT = __dirname.replace("devtools/client/bin", "");
 
@@ -27,7 +28,7 @@ const isWin = os.platform() === "win32";
 
 
 
-const NPM_PROCESS = isWin ? "npm.cmd" : "npm";
+const MACH_PROCESS = path.join(REPOSITORY_ROOT, isWin ? "mach.cmd" : "mach");
 
 
 const TEST_TYPES = {
@@ -208,27 +209,18 @@ function getTypescriptErrors(out, err, testPath) {
 }
 
 function runTests() {
-  console.log("[devtools-node-test] Extract suite argument");
-  const suiteArg = process.argv.find(arg => arg.includes("suite="));
-  const suite = suiteArg.split("=")[1];
+  console.log("[devtools-node-test] Extract arguments");
+  const { values: args } = parseArgs({
+    options: {
+      suite: { type: "string" },
+      artifact: { type: "string" },
+    },
+  });
+  const { suite } = args;
   if (suite !== "all" && !SUITES[suite]) {
     throw new Error("Invalid suite argument to devtools-node-test: " + suite);
   }
-
-  console.log("[devtools-node-test] Check `npm` is available");
-  try {
-    
-    execFileSync(NPM_PROCESS, ["--version"], { shell: isWin });
-  } catch (e) {
-    console.log(
-      "[devtools-node-test] ERROR: `npm` is not installed. " +
-        "See https://nodejs.org/en/download "
-    );
-    return false;
-  }
-
-  const artifactArg = process.argv.find(arg => arg.includes("artifact="));
-  const artifactFilePath = artifactArg && artifactArg.split("=")[1];
+  const artifactFilePath = args.artifact;
   const artifactErrors = {};
 
   const failedSuites = [];
@@ -243,7 +235,7 @@ function runTests() {
         chdir(depPath);
 
         console.log("[devtools-node-test] Run `npm ci` in " + depPath);
-        execOut(NPM_PROCESS, ["ci"]);
+        execOut(MACH_PROCESS, ["npm", "ci"]);
       }
     }
 
@@ -251,12 +243,17 @@ function runTests() {
     chdir(testPath);
 
     console.log("[devtools-node-test] Run `npm ci` in test folder");
-    execOut(NPM_PROCESS, ["ci"]);
+    execOut(MACH_PROCESS, ["npm", "ci"]);
 
     console.log(`TEST START | ${suiteData.type} | ${suiteName}`);
 
     console.log("[devtools-node-test] Run `npm run test-ci` in test folder");
-    const { out, err } = execOut(NPM_PROCESS, ["run", "--silent", "test-ci"]);
+    const { out, err } = execOut(MACH_PROCESS, [
+      "npm",
+      "run",
+      "--silent",
+      "test-ci",
+    ]);
 
     if (err) {
       console.log("[devtools-node-test] Error log");
