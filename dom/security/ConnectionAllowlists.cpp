@@ -18,6 +18,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsIGlobalObject.h"
 #include "nsILoadInfo.h"
+#include "nsIURIMutator.h"
 #include "nsNetUtil.h"
 #include "nsScriptSecurityManager.h"
 #include "nsString.h"
@@ -182,6 +183,8 @@ bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
   
   
 
+  nsCOMPtr<nsIURI> uri = aURI;
+
   switch (aLoadInfo->GetExternalContentPolicyType()) {
     case ExtContentPolicyType::TYPE_DOCUMENT:
     case ExtContentPolicyType::TYPE_SUBDOCUMENT:
@@ -189,8 +192,22 @@ bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
       
       
       
-      if (aURI->SchemeIs("javascript")) {
+      if (uri->SchemeIs("javascript")) {
         return true;
+      }
+      break;
+
+    case ExtContentPolicyType::TYPE_WEBSOCKET:
+      
+      
+      
+      
+      MOZ_ASSERT(uri->SchemeIs("ws") || uri->SchemeIs("wss"));
+      if (NS_WARN_IF(NS_FAILED(
+              NS_MutateURI(uri)
+                  .SetScheme(uri->SchemeIs("wss") ? "https"_ns : "http"_ns)
+                  .Finalize(uri)))) {
+        return false;
       }
       break;
 
@@ -202,7 +219,7 @@ bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
       break;
   }
 
-  return !ShouldBlockURL(aURI, aLoadInfo);
+  return !ShouldBlockURL(uri, aLoadInfo);
 }
 
 
