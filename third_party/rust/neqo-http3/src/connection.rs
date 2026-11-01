@@ -4,14 +4,13 @@
 
 
 
-#[cfg(test)]
-use std::num::NonZeroUsize;
 use std::{
     cell::RefCell,
     fmt::{self, Debug, Display, Formatter},
     mem,
+    num::NonZeroUsize,
     rc::Rc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use neqo_common::{
@@ -19,8 +18,8 @@ use neqo_common::{
 };
 use neqo_qpack as qpack;
 use neqo_transport::{
-    AppError, CloseReason, Connection, DatagramQueueOutcome, DatagramTracking, State, StreamId,
-    StreamType, ZeroRttState,
+    AppError, CloseReason, Connection, DatagramQueueCapacity, DatagramQueueOutcome,
+    DatagramTracking, State, StreamId, StreamType, ZeroRttState,
     streams::{SendGroupId, SendOrder},
 };
 use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
@@ -51,6 +50,19 @@ use crate::{
     settings::{HSettingType, HSettings, HttpZeroRttChecker},
     stream_type_reader::NewStreamHeadReader,
 };
+
+
+
+
+pub const HTTP3_UNI_CONTROL_STREAMS: u64 = 3;
+
+
+
+
+
+
+
+pub const MAX_ANTICIPATED_INCOMING_STREAMS: u64 = 10_000;
 
 pub struct RequestDescription<'b, T: RequestTarget> {
     pub method: &'b str,
@@ -1438,6 +1450,55 @@ impl Http3Connection {
         Ok(stats)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn webtransport_set_anticipated_incoming_streams(
+        &self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        stream_type: StreamType,
+        value: u16,
+    ) -> Res<()> {
+        let session = self.webtransport_session(session_id)?;
+        if session.borrow().is_closing() {
+            return Err(Error::InvalidStreamId);
+        }
+        session
+            .borrow_mut()
+            .set_anticipated_incoming(stream_type, value);
+
+        let total: u64 = self
+            .recv_streams
+            .values()
+            .filter_map(|s| {
+                let session = s.extended_connect_session()?;
+                let session = session.borrow();
+                (!session.is_closing()
+                    && session.connect_type() == ExtendedConnectType::WebTransport)
+                    .then(|| u64::from(session.anticipated_incoming(stream_type)))
+            })
+            .sum::<u64>()
+            .min(MAX_ANTICIPATED_INCOMING_STREAMS);
+
+        let total_including_h3 = match stream_type {
+            
+            
+            StreamType::UniDi => total + HTTP3_UNI_CONTROL_STREAMS,
+            StreamType::BiDi => total,
+        };
+        qdebug!(
+            "[{self}] Session {session_id} anticipates {value} incoming {stream_type:?} streams, connection total {total_including_h3}"
+        );
+        conn.set_remote_max_streams(stream_type, total_including_h3);
+        Ok(())
+    }
+
     pub(crate) fn extended_connect_close_session(
         &mut self,
         conn: &mut Connection,
@@ -1446,13 +1507,9 @@ impl Http3Connection {
         error: u32,
         message: &str,
         now: Instant,
-    ) -> Res<()> {
-        if self
-            .get_extended_connect_session(session_id)?
-            .borrow()
-            .connect_type()
-            != connect_type
-        {
+    ) -> Res<Rc<RefCell<extended_connect::session::Session>>> {
+        let session = self.get_extended_connect_session(session_id)?;
+        if session.borrow().connect_type() != connect_type {
             return Err(Error::InvalidStreamId);
         }
         let send_stream = self
@@ -1467,7 +1524,7 @@ impl Http3Connection {
         } else if send_stream.has_data_to_send() {
             self.streams_with_pending_data.insert(session_id);
         }
-        Ok(())
+        Ok(session)
     }
 
     fn get_extended_connect_session(
@@ -1645,17 +1702,28 @@ impl Http3Connection {
             .send_datagram(conn, buf, id, now, send_group_id, send_order)
     }
 
-    
-    #[cfg(test)]
-    pub(crate) fn extended_connect_set_max_buffered_datagrams(
+    pub(crate) fn webtransport_session_set_max_buffered_datagrams(
         &self,
-        session_id: StreamId,
         conn: &mut Connection,
+        session_id: StreamId,
         mark: Option<NonZeroUsize>,
     ) -> Res<()> {
-        self.validate_extended_connect_session(session_id)?
+        self.webtransport_session(session_id)?
             .borrow()
             .set_max_buffered_datagrams(conn, mark);
+        Ok(())
+    }
+
+    pub(crate) fn webtransport_session_set_datagram_max_age(
+        &self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+    ) -> Res<()> {
+        self.webtransport_session(session_id)?
+            .borrow_mut()
+            .set_datagram_max_age(conn, max_age, now);
         Ok(())
     }
 
@@ -1664,8 +1732,17 @@ impl Http3Connection {
     
     
     
-    
-    
+    pub(crate) fn webtransport_datagram_queue_capacity(
+        &self,
+        conn: &Connection,
+        session_id: StreamId,
+    ) -> Res<DatagramQueueCapacity> {
+        Ok(self
+            .webtransport_session(session_id)?
+            .borrow()
+            .datagram_queue_capacity(conn))
+    }
+
     
     
     pub(crate) fn expire_datagram_queues(&self, conn: &mut Connection, now: Instant) -> u64 {
@@ -1673,7 +1750,11 @@ impl Http3Connection {
             .values()
             .filter_map(|s| s.extended_connect_session())
             .filter(|s| s.borrow().is_active())
-            .map(|s| s.borrow_mut().expire_datagrams(conn, now))
+            .map(|s| {
+                let mut s = s.borrow_mut();
+                s.report_sent_datagrams(conn);
+                s.expire_datagrams(conn, now)
+            })
             .sum()
     }
 
@@ -1860,6 +1941,8 @@ impl Http3Connection {
         wt: &Rc<RefCell<extended_connect::session::Session>>,
         conn: &mut Connection,
     ) {
+        wt.borrow_mut().drop_queued_datagrams(conn);
+
         let (recv, send) = wt.borrow_mut().take_sub_streams();
 
         #[expect(

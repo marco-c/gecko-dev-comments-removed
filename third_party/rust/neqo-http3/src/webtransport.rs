@@ -4,20 +4,19 @@
 
 
 
-#[cfg(test)]
-use std::num::NonZeroUsize;
 use std::{
     cell::RefCell,
     fmt::{self, Display, Formatter},
+    num::NonZeroUsize,
     ops::Deref,
     rc::Rc,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use neqo_common::{Bytes, Encoder, Header, qdebug, qinfo, qtrace, to_u64};
 use neqo_transport::{
-    Connection, DatagramQueueOutcome, DatagramTracking, StreamId, StreamType, recv_stream,
-    send_stream, server::ConnectionRef, streams::SendOrder,
+    Connection, DatagramQueueCapacity, DatagramQueueOutcome, DatagramTracking, StreamId,
+    StreamType, recv_stream, send_stream, server::ConnectionRef, streams::SendOrder,
 };
 
 use crate::{
@@ -63,6 +62,79 @@ pub trait ClientSession {
     
     
     fn webtransport_max_datagram_size(&self, session_id: StreamId) -> Res<u64>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn webtransport_set_max_buffered_datagrams(
+        &mut self,
+        session_id: StreamId,
+        max_buffered_datagrams: Option<NonZeroUsize>,
+    ) -> Res<()>;
+
+    
+    
+    
+    
+    
+    
+    fn webtransport_datagram_queue_capacity(
+        &self,
+        session_id: StreamId,
+    ) -> Res<DatagramQueueCapacity>;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn webtransport_set_anticipated_incoming_uni_streams(
+        &mut self,
+        session_id: StreamId,
+        value: u16,
+    ) -> Res<()>;
+
+    
+    
+    
+    
+    
+    
+    
+    fn webtransport_set_anticipated_incoming_bidi_streams(
+        &mut self,
+        session_id: StreamId,
+        value: u16,
+    ) -> Res<()>;
+
+    
+    
+    
+    
+    
+    
+    fn webtransport_set_datagram_max_age(
+        &mut self,
+        session_id: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+    ) -> Res<()>;
 
     
     
@@ -226,6 +298,65 @@ impl ClientSession for Http3Client {
             .connection()
             .max_datagram_size()?
             .saturating_sub(to_u64(qsid_len)))
+    }
+
+    fn webtransport_set_max_buffered_datagrams(
+        &mut self,
+        session_id: StreamId,
+        max_buffered_datagrams: Option<NonZeroUsize>,
+    ) -> Res<()> {
+        let (conn, handler) = self.connection_and_handler();
+        handler.webtransport_session_set_max_buffered_datagrams(
+            conn,
+            session_id,
+            max_buffered_datagrams,
+        )
+    }
+
+    fn webtransport_datagram_queue_capacity(
+        &self,
+        session_id: StreamId,
+    ) -> Res<DatagramQueueCapacity> {
+        self.handler()
+            .webtransport_datagram_queue_capacity(self.connection(), session_id)
+    }
+
+    fn webtransport_set_anticipated_incoming_uni_streams(
+        &mut self,
+        session_id: StreamId,
+        value: u16,
+    ) -> Res<()> {
+        let (conn, handler) = self.connection_and_handler();
+        handler.webtransport_set_anticipated_incoming_streams(
+            conn,
+            session_id,
+            StreamType::UniDi,
+            value,
+        )
+    }
+
+    fn webtransport_set_anticipated_incoming_bidi_streams(
+        &mut self,
+        session_id: StreamId,
+        value: u16,
+    ) -> Res<()> {
+        let (conn, handler) = self.connection_and_handler();
+        handler.webtransport_set_anticipated_incoming_streams(
+            conn,
+            session_id,
+            StreamType::BiDi,
+            value,
+        )
+    }
+
+    fn webtransport_set_datagram_max_age(
+        &mut self,
+        session_id: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+    ) -> Res<()> {
+        let (conn, handler) = self.connection_and_handler();
+        handler.webtransport_session_set_datagram_max_age(conn, session_id, max_age, now)
     }
 
     fn webtransport_set_sendorder(
@@ -502,14 +633,7 @@ impl Handler for Http3Connection {
     ) -> Res<extended_connect::stats::SessionStats> {
         qtrace!("Close WebTransport session {session_id:?}");
         
-        
-        
-        
-        
-        
-        
-        let stats = self.webtransport_session_stats(session_id)?;
-        self.extended_connect_close_session(
+        let session = self.extended_connect_close_session(
             conn,
             session_id,
             extended_connect::ExtendedConnectType::WebTransport,
@@ -517,7 +641,8 @@ impl Handler for Http3Connection {
             message,
             now,
         )?;
-        Ok(stats)
+        let stats = session.borrow().stats();
+        stats.ok_or(Error::InvalidStreamId)
     }
 
     fn webtransport_send_datagram<I: Into<DatagramTracking>>(
@@ -582,6 +707,31 @@ pub(crate) trait ServerHandler {
         send_group_id: SendGroupId,
         send_order: SendOrder,
     ) -> Res<DatagramQueueOutcome>;
+
+    
+    
+    
+    
+    
+    fn webtransport_set_max_buffered_datagrams(
+        &mut self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        max_buffered_datagrams: Option<NonZeroUsize>,
+    ) -> Res<()>;
+
+    
+    
+    
+    
+    
+    fn webtransport_set_datagram_max_age(
+        &mut self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+    ) -> Res<()>;
 }
 
 impl ServerHandler for Http3ServerHandler {
@@ -649,6 +799,31 @@ impl ServerHandler for Http3ServerHandler {
             send_group_id,
             send_order,
         )
+    }
+
+    fn webtransport_set_max_buffered_datagrams(
+        &mut self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        max_buffered_datagrams: Option<NonZeroUsize>,
+    ) -> Res<()> {
+        self.base_handler_mut()
+            .webtransport_session_set_max_buffered_datagrams(
+                conn,
+                session_id,
+                max_buffered_datagrams,
+            )
+    }
+
+    fn webtransport_set_datagram_max_age(
+        &mut self,
+        conn: &mut Connection,
+        session_id: StreamId,
+        max_age: Option<Duration>,
+        now: Instant,
+    ) -> Res<()> {
+        self.base_handler_mut()
+            .webtransport_session_set_datagram_max_age(conn, session_id, max_age, now)
     }
 }
 
@@ -797,19 +972,79 @@ impl ServerSession {
     
     
     
+    
+    
+    
+    
+    pub fn set_max_buffered_datagrams(
+        &self,
+        max_buffered_datagrams: Option<NonZeroUsize>,
+    ) -> Res<()> {
+        let session_id = self.stream_handler.stream_id();
+        self.stream_handler
+            .handler
+            .borrow_mut()
+            .webtransport_set_max_buffered_datagrams(
+                &mut self.stream_handler.conn.borrow_mut(),
+                session_id,
+                max_buffered_datagrams,
+            )
+    }
+
+    
+    
+    
+    
+    
+    pub fn set_datagram_max_age(&self, max_age: Option<Duration>, now: Instant) -> Res<()> {
+        let session_id = self.stream_handler.stream_id();
+        self.stream_handler
+            .handler
+            .borrow_mut()
+            .webtransport_set_datagram_max_age(
+                &mut self.stream_handler.conn.borrow_mut(),
+                session_id,
+                max_age,
+                now,
+            )
+    }
+
+    
     #[cfg(test)]
-    pub(crate) fn set_max_buffered_datagrams(&self, mark: Option<NonZeroUsize>) {
+    pub(crate) fn stats(&self) -> extended_connect::stats::SessionStats {
         let session_id = self.stream_handler.stream_id();
         self.stream_handler
             .handler
             .borrow_mut()
             .base_handler_mut()
-            .extended_connect_set_max_buffered_datagrams(
-                session_id,
-                &mut self.stream_handler.conn.borrow_mut(),
-                mark,
-            )
-            .expect("test session must exist");
+            .webtransport_session_stats(session_id)
+            .expect("test session must exist")
+    }
+
+    
+    
+    
+    
+    #[cfg(test)]
+    pub(crate) fn datagram_queue_capacity(&self) -> DatagramQueueCapacity {
+        let session_id = self.stream_handler.stream_id();
+        self.stream_handler
+            .handler
+            .borrow_mut()
+            .base_handler_mut()
+            .webtransport_datagram_queue_capacity(&self.stream_handler.conn.borrow(), session_id)
+            .expect("test session must exist")
+    }
+
+    
+    
+    #[cfg(test)]
+    pub(crate) fn transport_queued_datagrams(&self) -> usize {
+        self.stream_handler
+            .conn
+            .borrow()
+            .datagram_queue_capacity(self.stream_handler.stream_id())
+            .queued_datagrams
     }
 
     

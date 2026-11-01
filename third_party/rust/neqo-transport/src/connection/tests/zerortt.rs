@@ -132,18 +132,12 @@ fn zero_rtt_before_resumption_token() {
     assert!(client.stream_create(StreamType::BiDi).is_err());
 }
 
-#[test]
-fn zero_rtt_send_reject() {
-    for max_data in [2, 3, 6] {
-        for stream_type in [StreamType::UniDi, StreamType::BiDi] {
-            zero_rtt_send_reject_with_max_data(max_data, stream_type);
-        }
-    }
-}
 
-fn zero_rtt_send_reject_with_max_data(max_data: usize, stream_type: StreamType) {
+
+
+
+fn resumed_pair_that_rejects_0rtt(max_data: usize) -> (Connection, Connection) {
     const MESSAGE: &[u8] = &[1, 2, 3];
-
     let mut client = default_client();
     let mut server = new_server(ConnectionParameters::default().max_data(to_u64(MESSAGE.len())));
     connect(&mut client, &mut server);
@@ -169,6 +163,22 @@ fn zero_rtt_send_reject_with_max_data(max_data: usize, stream_type: StreamType) 
     server
         .server_enable_0rtt(&ar, AllowZeroRtt {})
         .expect("enable 0-RTT");
+    (client, server)
+}
+
+#[test]
+fn zero_rtt_send_reject() {
+    for max_data in [2, 3, 6] {
+        for stream_type in [StreamType::UniDi, StreamType::BiDi] {
+            zero_rtt_send_reject_with_max_data(max_data, stream_type);
+        }
+    }
+}
+
+fn zero_rtt_send_reject_with_max_data(max_data: usize, stream_type: StreamType) {
+    const MESSAGE: &[u8] = &[1, 2, 3];
+
+    let (mut client, mut server) = resumed_pair_that_rejects_0rtt(max_data);
 
     
     let stream_id = client.stream_create(stream_type).unwrap();
@@ -243,6 +253,47 @@ fn zero_rtt_send_reject_with_max_data(max_data: usize, stream_type: StreamType) 
         (message.len(), false)
     );
     assert_eq!(received, message);
+}
+
+
+#[test]
+fn zero_rtt_reject_after_set_remote_max_streams() {
+    let (mut client, mut server) = resumed_pair_that_rejects_0rtt(3);
+
+    client.set_remote_max_streams(StreamType::BiDi, 1000);
+    client.set_remote_max_streams(StreamType::UniDi, 1000);
+
+    let client_hs = client.process_output(now());
+    assert!(client_hs.as_dgram_ref().is_some());
+    let client_0rtt = client.process_output(now());
+    assert!(client_0rtt.as_dgram_ref().is_some());
+
+    let server_hs = server.process(client_hs.dgram(), now());
+    let server_hs2 = server.process(client_0rtt.dgram(), now());
+
+    _ = client.process(server_hs.dgram(), now());
+    let dgram = client.process(server_hs2.dgram(), now()).dgram();
+    let dgram = server.process(dgram, now()).dgram();
+
+    
+    let client_fin = client.process(dgram, now());
+    let recvd_0rtt_reject = |e| e == ConnectionEvent::ZeroRttRejected;
+    assert!(client.events().any(recvd_0rtt_reject));
+
+    
+    
+    let mut dgram = client_fin.dgram();
+    while let Some(d) = dgram {
+        dgram = server.process(Some(d), now()).dgram();
+        dgram = dgram.and_then(|d| client.process(Some(d), now()).dgram());
+    }
+    for st in [StreamType::BiDi, StreamType::UniDi] {
+        let opened = std::iter::repeat_with(|| server.stream_create(st))
+            .take_while(Result::is_ok)
+            .take(1001)
+            .count();
+        assert_eq!(opened, 1000, "{st:?}");
+    }
 }
 
 #[test]

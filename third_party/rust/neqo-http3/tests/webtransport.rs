@@ -713,8 +713,6 @@ fn wt_export_keying_material_transport_error() {
 
 
 
-
-
 #[test]
 fn wt_stats_at_session_close() {
     const DATAGRAM_DATA: &[u8] = &[1, 2, 3, 4, 5];

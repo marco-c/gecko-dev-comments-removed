@@ -141,9 +141,9 @@ fn zero_len_cid_client(local_addr: SocketAddr, remote_addr: SocketAddr) -> Conne
     .unwrap()
 }
 
-pub fn new_server(params: ConnectionParameters) -> Connection {
+fn new_server_with_qlog(params: ConnectionParameters) -> (Connection, test_fixture::SharedVec) {
     fixture_init();
-    let (log, _contents) = new_neqo_qlog();
+    let (log, contents) = new_neqo_qlog();
     let mut c = Connection::new_server(
         test_fixture::DEFAULT_KEYS,
         test_fixture::DEFAULT_ALPN,
@@ -154,7 +154,11 @@ pub fn new_server(params: ConnectionParameters) -> Connection {
     c.set_qlog(log);
     c.server_enable_0rtt(&test_fixture::anti_replay(), AllowZeroRtt {})
         .expect("enable 0-RTT");
-    c
+    (c, contents)
+}
+
+pub fn new_server(params: ConnectionParameters) -> Connection {
+    new_server_with_qlog(params).0
 }
 pub fn default_server() -> Connection {
     new_server(ConnectionParameters::default())
@@ -191,6 +195,47 @@ impl test_internal::FrameWriter for PingWriter {
     fn write_frames(&mut self, builder: &mut packet::Builder<&mut Vec<u8>>) {
         builder.encode_varint(FrameType::Ping);
     }
+}
+
+
+
+struct CryptoWriter {}
+
+impl test_internal::FrameWriter for CryptoWriter {
+    fn write_frames(&mut self, builder: &mut packet::Builder<&mut Vec<u8>>) {
+        builder.encode_varint(FrameType::Crypto);
+        builder.encode_varint(0_u64); 
+        builder.encode_varint(1_u64); 
+        builder.encode_byte(2); 
+    }
+}
+
+
+fn next_dgram(now: &mut Instant, mut send: impl FnMut(Instant) -> Output) -> Option<Datagram> {
+    loop {
+        match send(*now) {
+            Output::Datagram(d) => return Some(d),
+            Output::Callback(t) if t < DEFAULT_RTT => *now += t,
+            _ => return None, 
+        }
+    }
+}
+
+
+fn drain(c: &mut Connection, now: &mut Instant, mut deliver: impl FnMut(Datagram, Instant)) {
+    while let Some(d) = next_dgram(now, |t| c.process_output(t)) {
+        deliver(d, *now);
+    }
+}
+
+
+fn flush_to(from: &mut Connection, to: &mut Connection, now: &mut Instant) {
+    drain(from, now, |d, t| to.process_input(d, t));
+}
+
+
+fn drop_flight(c: &mut Connection, now: &mut Instant) {
+    drain(c, now, |_, _| {});
 }
 
 

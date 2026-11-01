@@ -162,7 +162,9 @@ impl Pmtud {
         
         
         builder.encode_frame(FrameType::Ping, |_| {});
-        tokens.push(recovery::Token::PmtudProbe);
+        tokens.push(recovery::Token::PmtudProbe(
+            self.search_table[self.probe_index],
+        ));
         stats.frame_tx.ping += 1;
         stats.pmtud_tx += 1;
         self.probe_count += 1;
@@ -195,13 +197,26 @@ impl Pmtud {
         now: Instant,
         stats: &mut Stats,
     ) {
-        let acked = Self::count_probes(acked_pkts);
-        if acked == 0 {
+        
+        if self.probe_state == Probe::NotNeeded {
             return;
         }
 
         
+        
+        
+        
+        let probe_mtu = self.search_table[self.probe_index];
+        let acked = acked_pkts
+            .iter()
+            .filter(|p| p.is_pmtud_probe_of(probe_mtu))
+            .count();
+        if acked == 0 {
+            return;
+        }
         stats.pmtud_ack += acked;
+
+        
         let confirmed_idx = self.probe_index;
         qdebug!(
             "PMTUD probe of size {} succeeded",
@@ -324,15 +339,19 @@ mod tests {
     };
 
     
-    fn make_pmtud_probe(pn: packet::Number, sent_time: Instant, len: usize) -> sent::Packet {
-        sent::Packet::new(
-            packet::Type::Short,
-            pn,
-            sent_time,
-            true,
-            vec![recovery::Token::PmtudProbe],
-            len,
-        )
+    fn send_probe_packet(
+        pmtud: &mut Pmtud,
+        stats: &mut Stats,
+        pn: packet::Number,
+        now: Instant,
+    ) -> sent::Packet {
+        assert!(pmtud.needs_probe());
+        let len = pmtud.probe_size();
+        let mut builder = packet::Builder::short(Encoder::default(), false, None::<&[u8]>, len);
+        builder.pn(pn, 4);
+        let mut tokens = recovery::Tokens::new();
+        pmtud.send_probe(&mut builder, &mut tokens, stats);
+        sent::Packet::new(packet::Type::Short, pn, now, true, tokens, len)
     }
 
     const V4: IpAddr = IpAddr::V4(Ipv4Addr::UNSPECIFIED);
@@ -383,14 +402,15 @@ mod tests {
         let pn = prot.next_pn();
         builder.pn(pn, 4);
         builder.enable_padding(true);
-        pmtud.send_probe(&mut builder, &mut Vec::new(), stats);
+        let mut tokens = recovery::Tokens::new();
+        pmtud.send_probe(&mut builder, &mut tokens, stats);
         builder.pad();
         let encoder = builder.build(prot).unwrap();
         assert_eq!(encoder.len(), pmtud.probe_size());
         assert!(!pmtud.needs_probe());
         assert_eq!(stats_before.pmtud_tx + 1, stats.pmtud_tx);
 
-        let packet = make_pmtud_probe(pn, now, encoder.len());
+        let packet = sent::Packet::new(packet::Type::Short, pn, now, true, tokens, encoder.len());
         if encoder.len() + Pmtud::header_size(addr) <= mtu {
             pmtud.on_packets_acked(&[packet], now, stats);
             assert_eq!(stats_before.pmtud_ack + 1, stats.pmtud_ack);
@@ -702,5 +722,139 @@ mod tests {
 
         
         assert_eq!(initial_ack, stats.pmtud_ack);
+    }
+
+    
+    
+    
+    #[test]
+    fn retried_probe_ack_does_not_confirm_next_size() {
+        let now = now();
+        let mut pmtud = Pmtud::new(V4, None);
+        let mut stats = Stats::default();
+        pmtud.next(now, &mut stats);
+        let first = pmtud.probe_size();
+
+        let original = send_probe_packet(&mut pmtud, &mut stats, 0, now);
+        pmtud.on_packets_lost(std::slice::from_ref(&original), &mut stats, now);
+        assert!(pmtud.needs_probe());
+        let retry = send_probe_packet(&mut pmtud, &mut stats, 1, now);
+
+        
+        pmtud.on_packets_acked(&[original], now, &mut stats);
+        assert_eq!(pmtud.plpmtu(), first);
+        assert!(pmtud.needs_probe());
+        let second = pmtud.probe_size();
+        assert!(second > first);
+
+        
+        pmtud.on_packets_acked(&[retry], now, &mut stats);
+        assert_eq!(pmtud.plpmtu(), first, "an untested size was confirmed");
+        assert!(pmtud.needs_probe());
+        assert_eq!(pmtud.probe_size(), second);
+        assert_eq!(stats.pmtud_ack, 1, "stale probe ACK must not be counted");
+    }
+
+    
+    
+    #[test]
+    fn stale_probe_ack_does_not_disturb_probe_in_flight() {
+        let now = now();
+        let mut pmtud = Pmtud::new(V4, None);
+        let mut stats = Stats::default();
+        pmtud.next(now, &mut stats);
+        let first = pmtud.probe_size();
+
+        let original = send_probe_packet(&mut pmtud, &mut stats, 0, now);
+        pmtud.on_packets_lost(std::slice::from_ref(&original), &mut stats, now);
+        let retry = send_probe_packet(&mut pmtud, &mut stats, 1, now);
+        pmtud.on_packets_acked(&[retry], now, &mut stats);
+        assert_eq!(pmtud.plpmtu(), first);
+
+        
+        let second = pmtud.probe_size();
+        assert!(second > first);
+        let next = send_probe_packet(&mut pmtud, &mut stats, 2, now);
+        assert_eq!(pmtud.probe_state, Probe::Sent);
+
+        
+        pmtud.on_packets_acked(&[original], now, &mut stats);
+        assert_eq!(pmtud.plpmtu(), first, "an untested size was confirmed");
+        assert_eq!(pmtud.probe_state, Probe::Sent, "probe in flight dropped");
+        assert_eq!(pmtud.probe_size(), second);
+        assert_eq!(stats.pmtud_ack, 1, "stale probe ACK must not be counted");
+
+        
+        pmtud.on_packets_acked(&[next], now, &mut stats);
+        assert_eq!(pmtud.plpmtu(), second);
+        assert_eq!(stats.pmtud_ack, 2);
+    }
+
+    
+    #[test]
+    fn mixed_probe_acks_only_count_current_size() {
+        let now = now();
+        let mut pmtud = Pmtud::new(V4, None);
+        let mut stats = Stats::default();
+        pmtud.next(now, &mut stats);
+        let original_size = pmtud.probe_size();
+
+        let original = send_probe_packet(&mut pmtud, &mut stats, 0, now);
+        pmtud.on_packets_lost(std::slice::from_ref(&original), &mut stats, now);
+        let stale = send_probe_packet(&mut pmtud, &mut stats, 1, now);
+        pmtud.on_packets_acked(&[original], now, &mut stats);
+        assert_eq!(stats.pmtud_ack, 1);
+
+        let size = pmtud.probe_size();
+        assert!(size > original_size);
+        let current = send_probe_packet(&mut pmtud, &mut stats, 2, now);
+        pmtud.on_packets_lost(std::slice::from_ref(&current), &mut stats, now);
+        let retry = send_probe_packet(&mut pmtud, &mut stats, 3, now);
+        let large_non_probe = sent::make_packet(4, now, size);
+        pmtud.on_packets_acked(&[stale, large_non_probe, current, retry], now, &mut stats);
+
+        assert_eq!(pmtud.plpmtu(), size);
+        assert!(pmtud.needs_probe());
+        assert!(pmtud.probe_size() > size);
+        assert_eq!(
+            stats.pmtud_ack, 3,
+            "only current probe ACKs must be counted"
+        );
+    }
+
+    
+    
+    #[test]
+    fn stale_probe_ack_after_search_stopped_ignored() {
+        let now = now();
+        let mut pmtud = Pmtud::new(V4, None);
+        let mut stats = Stats::default();
+        pmtud.next(now, &mut stats);
+        let first = pmtud.search_table[1];
+
+        
+        let original = send_probe_packet(&mut pmtud, &mut stats, 0, now);
+        pmtud.on_packets_lost(std::slice::from_ref(&original), &mut stats, now);
+        let retry = send_probe_packet(&mut pmtud, &mut stats, 1, now);
+        pmtud.on_packets_acked(&[original], now, &mut stats);
+        assert_eq!(pmtud.mtu, first);
+
+        
+        let mut pn = 2;
+        while pmtud.needs_probe() {
+            let probe = send_probe_packet(&mut pmtud, &mut stats, pn, now);
+            pmtud.on_packets_lost(&[probe], &mut stats, now);
+            pn += 1;
+        }
+        assert_mtu(&pmtud, first);
+        let raise_timer = pmtud.raise_timer;
+        assert!(raise_timer.is_some());
+
+        
+        pmtud.on_packets_acked(&[retry], now, &mut stats);
+        assert_mtu(&pmtud, first);
+        assert_eq!(pmtud.raise_timer, raise_timer);
+        assert!(!pmtud.needs_probe());
+        assert_eq!(stats.pmtud_ack, 1, "stale probe ACK must not be counted");
     }
 }

@@ -23,8 +23,8 @@ use neqo_common::{Buffer, Encoder, qdebug, to_u64};
 use crate::{
     ConnectionEvents, Error, MAX_DATAGRAM_FRAME_SIZE, Res, Stats,
     datagram_queue::{
-        DatagramId, DatagramQueue, DatagramQueueCapacity, DatagramQueueOutcome, QueuedDatagram,
-        default_max_age,
+        DatagramId, DatagramQueue, DatagramQueueCapacity, DatagramQueueOutcome, DroppedDatagrams,
+        QueuedDatagram, default_max_age,
     },
     events::OutgoingDatagramOutcome,
     frame::{FrameEncoder as _, FrameType},
@@ -55,6 +55,16 @@ impl From<Option<u64>> for DatagramTracking {
     fn from(v: Option<u64>) -> Self {
         v.map_or(Self::None, Self::Id)
     }
+}
+
+
+
+#[derive(Clone, Copy)]
+enum Disposition {
+    
+    Send,
+    
+    DropTooBig,
 }
 
 pub struct QuicDatagrams {
@@ -177,7 +187,7 @@ impl QuicDatagrams {
 
             if to_u64(frame_len) > min(to_u64(builder.remaining()), self.remote_datagram_size) {
                 let dgram = self
-                    .take_from_session_queue(session)
+                    .take_from_session_queue(session, Disposition::DropTooBig)
                     .expect("just peeked Some above, with no intervening mutation");
                 qdebug!(
                     "QUIC datagram ({}) exceeds remote limit ({}) or does not fit MTU.",
@@ -191,7 +201,7 @@ impl QuicDatagrams {
             }
 
             let dgram = self
-                .take_from_session_queue(session)
+                .take_from_session_queue(session, Disposition::Send)
                 .expect("just peeked Some above, with no intervening mutation");
 
             let frame_len_with_len = frame_len + Encoder::varint_len(to_u64(len));
@@ -237,18 +247,27 @@ impl QuicDatagrams {
     
     
     
+    
     #[expect(
         clippy::unwrap_in_result,
         reason = "the internal expect() below guards an invariant unrelated to this fn's own \
                   None case: session is always in queues, since next_active_session_from only \
                   ever returns sessions it found there"
     )]
-    fn take_from_session_queue(&mut self, session: StreamId) -> Option<QueuedDatagram> {
+    fn take_from_session_queue(
+        &mut self,
+        session: StreamId,
+        disposition: Disposition,
+    ) -> Option<QueuedDatagram> {
         let queue = self
             .queues
             .get_mut(&session)
             .expect("next_active_session_from only returns known sessions");
         let dgram = queue.take_next()?;
+        match disposition {
+            Disposition::Send => queue.record_sent(),
+            Disposition::DropTooBig => queue.record_too_big(),
+        }
         if queue.resume_if_unblocked() {
             self.conn_events.datagram_space_available();
         }
@@ -333,11 +352,31 @@ impl QuicDatagrams {
     }
 
     
+    pub fn take_session_sent_count(&mut self, session: StreamId) -> u64 {
+        self.queues
+            .get_mut(&session)
+            .map_or(0, DatagramQueue::take_sent_count)
+    }
+
     
-    pub fn drop_session_datagrams(&mut self, session: StreamId) -> usize {
+    pub fn take_session_too_big_count(&mut self, session: StreamId) -> u64 {
+        self.queues
+            .get_mut(&session)
+            .map_or(0, DatagramQueue::take_too_big_count)
+    }
+
+    
+    
+    
+    pub fn drop_session_datagrams(&mut self, session: StreamId) -> DroppedDatagrams {
         self.queues
             .remove(&session)
-            .map_or(0, |mut q| q.take_all().count())
+            .map_or_else(DroppedDatagrams::default, |mut q| DroppedDatagrams {
+                sent: q.take_sent_count(),
+                expired: q.take_expired_count(),
+                too_big: q.take_too_big_count(),
+                queued: to_u64(q.take_all().count()),
+            })
     }
 
     
@@ -388,15 +427,6 @@ impl QuicDatagrams {
         self.queues
             .get_mut(&session)
             .map_or(0, DatagramQueue::take_expired_count)
-    }
-
-    
-    
-    
-    
-    #[must_use]
-    pub fn has_pending_counts(&self) -> bool {
-        self.queues.values().any(DatagramQueue::has_expired)
     }
 
     

@@ -43,7 +43,7 @@ use crate::{
         ConnectionIdRef, ConnectionIdStore,
     },
     crypto::{Crypto, CryptoDxState, Epoch},
-    datagram_queue::{DatagramId, DatagramQueueCapacity, DatagramQueueOutcome},
+    datagram_queue::{DatagramId, DatagramQueueCapacity, DatagramQueueOutcome, DroppedDatagrams},
     ecn,
     events::{ConnectionEvent, ConnectionEvents, OutgoingDatagramOutcome},
     frame::{CloseError, Frame, FrameEncoder as _, FrameType},
@@ -58,7 +58,7 @@ use crate::{
     send_stream::{self, SendStream},
     stateless_reset::Token as Srt,
     stats::{Stats, StatsCell},
-    stream_id::StreamType,
+    stream_id::{MAX_STREAMS_LIMIT, StreamType},
     streams::{SendGroupId, SendOrder, Streams},
     tparams::{
         self,
@@ -1392,6 +1392,7 @@ impl Connection {
         let lost_packets = self.loss_recovery.retry(&path, now);
         self.handle_lost_packets(&lost_packets);
 
+        self.crypto.reset_early_resend();
         self.crypto.states_mut().init(
             self.conn_params.get_versions().compatible(),
             self.role,
@@ -1644,16 +1645,11 @@ impl Connection {
             (packet::Type::Handshake | packet::Type::Short, State::WaitInitial, Role::Client)
                 
                 
-                
-                
-                
-                
                 if dcid.is_none()
                     && self.cid_manager.is_valid(packet.dcid())
                     && !self.saved_datagrams.is_either_full()
                 => {
-                    qtrace!("Resending Initial in response to an undecryptable packet");
-                    self.crypto.resend_unacked(PacketNumberSpace::Initial);
+                    self.crypto.resend_unacked_early();
                     self.resend_0rtt(now);
                 }
             (
@@ -2522,6 +2518,23 @@ impl Connection {
     }
 
     
+    fn should_probe_pmtud(
+        &self,
+        path: &PathRef,
+        space: PacketNumberSpace,
+        profile: &SendProfile,
+        coalesced: bool,
+    ) -> bool {
+        let path = path.borrow();
+        space == PacketNumberSpace::ApplicationData
+            && self.state.connected()
+            && !coalesced 
+            && path.is_primary()
+            && !profile.ack_only() 
+            && path.can_probe_pmtud()
+    }
+
+    
     
     
     fn write_frames(
@@ -2530,9 +2543,9 @@ impl Connection {
         space: PacketNumberSpace,
         profile: &SendProfile,
         builder: &mut packet::Builder<&mut Vec<u8>>,
+        pmtud_probe: bool,
         now: Instant,
     ) -> (recovery::Tokens, bool, bool) {
-        let coalesced = builder.is_coalesced();
         let mut tokens = recovery::Tokens::new();
         let primary = path.borrow().is_primary();
         let mut ack_eliciting = false;
@@ -2552,7 +2565,11 @@ impl Connection {
 
         
         
-        let full_mtu = profile.limit() == path.borrow().plpmtu();
+        let full_mtu = profile.permits_full_mtu(path.borrow().plpmtu());
+        
+        debug_assert!(
+            !pmtud_probe || (primary && full_mtu && space == PacketNumberSpace::ApplicationData)
+        );
         if space == PacketNumberSpace::ApplicationData && self.state.connected() {
             
             
@@ -2573,11 +2590,7 @@ impl Connection {
 
         if primary {
             if space == PacketNumberSpace::ApplicationData {
-                if self.state.connected()
-                    && path.borrow().pmtud().needs_probe()
-                    && !coalesced 
-                    && full_mtu
-                {
+                if pmtud_probe {
                     path.borrow_mut().pmtud_mut().send_probe(
                         builder,
                         &mut tokens,
@@ -2678,7 +2691,7 @@ impl Connection {
             if max_datagrams.get() <= num_datagrams {
                 break;
             }
-            if path.borrow().pmtud().needs_probe() && num_datagrams != 0 {
+            if path.borrow().can_probe_pmtud() && num_datagrams != 0 {
                 
                 
                 
@@ -2778,6 +2791,9 @@ impl Connection {
         
         
         for space in PacketNumberSpace::iter() {
+            let coalesced = !encoder.is_empty();
+            let pmtud_probe = self.should_probe_pmtud(path, space, &profile, coalesced);
+
             
             let Some((epoch, tx)) = self.crypto.states_mut().select_tx_mut(self.version, space)
             else {
@@ -2788,7 +2804,7 @@ impl Connection {
             let header_start = encoder.len();
 
             
-            let limit = if path.borrow().pmtud().needs_probe() {
+            let limit = if pmtud_probe {
                 needs_padding = true;
                 debug_assert!(path.borrow().pmtud().probe_size() >= profile.limit());
                 path.borrow().pmtud().probe_size()
@@ -2837,7 +2853,7 @@ impl Connection {
                 self.write_closing_frames(close, &mut builder, space, now, path, &mut tokens);
             } else {
                 (tokens, ack_eliciting, padded) =
-                    self.write_frames(path, space, &profile, &mut builder, now);
+                    self.write_frames(path, space, &profile, &mut builder, pmtud_probe, now);
             }
             if builder.packet_empty() {
                 
@@ -3370,7 +3386,6 @@ impl Connection {
             }
             Frame::Ping => {
                 
-                
                 self.stats.borrow_mut().frame_rx.ping += 1;
                 self.crypto.resend_unacked(space);
                 
@@ -3401,7 +3416,8 @@ impl Connection {
                     d = HexSnipMiddle::new(data),
                 );
                 self.stats.borrow_mut().frame_rx.crypto += 1;
-                self.crypto
+                let duplicate = self
+                    .crypto
                     .streams_mut()
                     .inbound_frame(space, offset, data)?;
 
@@ -3421,14 +3437,9 @@ impl Connection {
                 {
                     self.handshake(now, packet_version, space, Some(&buf))?;
                     self.create_resumption_token(now);
-                } else {
-                    
-                    
-                    self.crypto.resend_unacked(space);
-                    if space == PacketNumberSpace::Initial {
-                        self.crypto.resend_unacked(PacketNumberSpace::Handshake);
-                        self.resend_0rtt(now);
-                    }
+                } else if duplicate && space == PacketNumberSpace::Initial {
+                    self.crypto.resend_unacked_early(); 
+                    self.resend_0rtt(now);
                 }
             }
             Frame::NewToken { token } => {
@@ -3602,7 +3613,7 @@ impl Connection {
                     }
                     recovery::Token::EcnEct0 => self.paths.lost_ecn(&mut self.stats.borrow_mut()),
                     
-                    recovery::Token::PmtudProbe => (),
+                    recovery::Token::PmtudProbe(_) => (),
                 }
             }
         }
@@ -3674,7 +3685,7 @@ impl Connection {
                         .datagram_outcome(dgram_tracker, OutgoingDatagramOutcome::Acked),
                     recovery::Token::EcnEct0 => self.paths.acked_ecn(),
                     
-                    recovery::Token::HandshakeDone | recovery::Token::PmtudProbe => (),
+                    recovery::Token::HandshakeDone | recovery::Token::PmtudProbe(_) => (),
                 }
             }
         }
@@ -3824,6 +3835,19 @@ impl Connection {
         }
 
         self.streams.stream_create(st)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn set_remote_max_streams(&mut self, stream_type: StreamType, max: u64) {
+        debug_assert!(max <= MAX_STREAMS_LIMIT, "max_streams is too large");
+        self.streams.set_remote_max_streams(stream_type, max);
     }
 
     
@@ -4207,22 +4231,25 @@ impl Connection {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    #[must_use]
-    pub fn has_pending_datagram_counts(&self) -> bool {
-        self.quic_datagrams.has_pending_counts()
+    pub fn drop_session_datagrams(&mut self, session: StreamId) -> DroppedDatagrams {
+        self.quic_datagrams.drop_session_datagrams(session)
     }
 
     
     
-    pub fn drop_session_datagrams(&mut self, session: StreamId) -> usize {
-        self.quic_datagrams.drop_session_datagrams(session)
+    
+    
+    
+    
+    pub fn take_session_sent_datagrams(&mut self, session: StreamId) -> u64 {
+        self.quic_datagrams.take_session_sent_count(session)
+    }
+
+    
+    
+    
+    pub fn take_session_too_big_datagrams(&mut self, session: StreamId) -> u64 {
+        self.quic_datagrams.take_session_too_big_count(session)
     }
 
     

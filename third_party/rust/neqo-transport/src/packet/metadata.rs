@@ -23,15 +23,19 @@ pub enum Direction {
     Rx,
 }
 
+
+type Cids<'a> = (Option<&'a [u8]>, Option<&'a [u8]>);
+
 pub struct MetaData<'a> {
     path: &'a PathRef,
-    direction: Direction,
     packet_type: packet::Type,
     packet_number: packet::Number,
     version: Version,
     tos: Tos,
     len: usize,
     payload: &'a [u8],
+    
+    rx_cids: Option<Cids<'a>>,
 }
 
 impl MetaData<'_> {
@@ -44,13 +48,13 @@ impl MetaData<'_> {
     ) -> MetaData<'a> {
         MetaData {
             path,
-            direction: Direction::Rx,
             packet_type: decrypted.packet_type(),
             packet_number: decrypted.pn(),
             version,
             tos,
             len,
             payload: decrypted,
+            rx_cids: Some((decrypted.scid.as_deref(), Some(&decrypted.dcid))),
         }
     }
 
@@ -65,19 +69,23 @@ impl MetaData<'_> {
     ) -> MetaData<'a> {
         MetaData {
             path,
-            direction: Direction::Tx,
             packet_type,
             packet_number,
             version,
             tos,
             len: length,
             payload,
+            rx_cids: None,
         }
     }
 
     #[must_use]
     pub const fn direction(&self) -> Direction {
-        self.direction
+        if self.rx_cids.is_some() {
+            Direction::Rx
+        } else {
+            Direction::Tx
+        }
     }
 
     #[must_use]
@@ -95,17 +103,12 @@ impl From<MetaData<'_>> for PacketHeader {
     fn from(val: MetaData<'_>) -> Self {
         let path = val.path.borrow();
         
-        
-        let (scid, dcid) = match val.direction {
-            Direction::Tx => (
+        let (scid, dcid) = val.rx_cids.unwrap_or_else(|| {
+            (
                 path.local_cid().map(AsRef::as_ref),
                 path.remote_cid().map(AsRef::as_ref),
-            ),
-            Direction::Rx => (
-                path.remote_cid().map(AsRef::as_ref),
-                path.local_cid().map(AsRef::as_ref),
-            ),
-        };
+            )
+        });
         Self::with_type(
             val.packet_type.into(),
             Some(val.packet_number),

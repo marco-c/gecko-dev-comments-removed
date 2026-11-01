@@ -13,6 +13,10 @@ use neqo_common::Role;
 
 
 
+pub const MAX_STREAMS_LIMIT: u64 = 1 << 60;
+
+
+
 #[derive(PartialEq, Debug, Copy, Clone, PartialOrd, Eq, Ord, Hash, Enum)]
 #[repr(u64)]
 pub enum StreamType {

@@ -99,13 +99,26 @@ impl Display for State {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Cubic {
     
     current: State,
     
     
     stored: Option<State>,
+    
+    
+    abe: bool,
+}
+
+impl Default for Cubic {
+    fn default() -> Self {
+        Self {
+            current: State::default(),
+            stored: None,
+            abe: true,
+        }
+    }
 }
 
 impl Display for Cubic {
@@ -185,6 +198,13 @@ impl Cubic {
     
     
     pub const BETA_USIZE_DIVIDEND_ECN: usize = 85;
+
+    
+    #[must_use]
+    pub const fn abe(mut self, abe: bool) -> Self {
+        self.abe = abe;
+        self
+    }
 
     
     
@@ -458,7 +478,7 @@ impl WindowAdjustment for Cubic {
 
         
         self.current.t_epoch = None;
-        let beta_dividend = if congestion_trigger == Ecn {
+        let beta_dividend = if self.abe && congestion_trigger == Ecn {
             Self::BETA_USIZE_DIVIDEND_ECN
         } else {
             Self::BETA_USIZE_DIVIDEND

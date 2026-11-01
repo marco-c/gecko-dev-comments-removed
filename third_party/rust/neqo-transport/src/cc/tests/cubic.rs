@@ -18,7 +18,7 @@ use std::{
 use neqo_common::to_u64;
 use test_fixture::now;
 
-use super::{RTT, make_cc_cubic};
+use super::{RTT, make_cc_cubic, make_cc_cubic_with};
 use crate::{
     cc::{
         ClassicSlowStart, CongestionController as _,
@@ -48,7 +48,18 @@ fn setup_congestion_avoidance(
     ClassicCongestionController<ClassicSlowStart, Cubic>,
     CongestionControlStats,
 ) {
-    let mut cc = make_cc_cubic();
+    setup_congestion_avoidance_with(Cubic::default(), fast_convergence)
+}
+
+
+fn setup_congestion_avoidance_with(
+    cubic: Cubic,
+    fast_convergence: bool,
+) -> (
+    ClassicCongestionController<ClassicSlowStart, Cubic>,
+    CongestionControlStats,
+) {
+    let mut cc = make_cc_cubic_with(cubic);
     let mut cc_stats = CongestionControlStats::default();
     
     cc.set_ssthresh(1);
@@ -336,7 +347,8 @@ fn congestion_event_congestion_avoidance() {
 }
 
 
-fn acked_bytes_reduced_on_congestion_event(
+fn cwnd_and_acked_bytes_reduced_on_congestion_event(
+    cubic: Cubic,
     trigger: impl FnOnce(
         &mut ClassicCongestionController<ClassicSlowStart, Cubic>,
         Instant,
@@ -344,7 +356,7 @@ fn acked_bytes_reduced_on_congestion_event(
     ),
     beta: usize,
 ) {
-    let (mut cubic, mut cc_stats) = setup_congestion_avoidance(false);
+    let (mut cubic, mut cc_stats) = setup_congestion_avoidance_with(cubic, false);
 
     
     let now = now() + RTT / 10;
@@ -361,23 +373,40 @@ fn acked_bytes_reduced_on_congestion_event(
     trigger(&mut cubic, now, &mut cc_stats);
 
     
-    let expected = acked_bytes_before * beta / Cubic::BETA_USIZE_DIVISOR;
-    assert_eq!(cubic.acked_bytes(), expected);
+    assert_eq!(
+        cubic.cwnd(),
+        cubic.cwnd_initial() * beta / Cubic::BETA_USIZE_DIVISOR
+    );
+    assert_eq!(
+        cubic.acked_bytes(),
+        acked_bytes_before * beta / Cubic::BETA_USIZE_DIVISOR
+    );
 }
 
 #[test]
-fn acked_bytes_reduced_on_loss() {
-    acked_bytes_reduced_on_congestion_event(
+fn cwnd_and_acked_bytes_reduced_on_loss() {
+    cwnd_and_acked_bytes_reduced_on_congestion_event(
+        Cubic::default(),
         |cc, _, stats| packet_lost(cc, 2, stats),
         Cubic::BETA_USIZE_DIVIDEND,
     );
 }
 
 #[test]
-fn acked_bytes_reduced_on_ecn_ce() {
-    acked_bytes_reduced_on_congestion_event(
+fn cwnd_and_acked_bytes_reduced_on_ecn_ce() {
+    cwnd_and_acked_bytes_reduced_on_congestion_event(
+        Cubic::default(),
         |cc, now, stats| ecn_ce(cc, 2, now, stats),
         Cubic::BETA_USIZE_DIVIDEND_ECN,
+    );
+}
+
+#[test]
+fn cwnd_and_acked_bytes_reduced_on_ecn_ce_without_abe() {
+    cwnd_and_acked_bytes_reduced_on_congestion_event(
+        Cubic::default().abe(false),
+        |cc, now, stats| ecn_ce(cc, 2, now, stats),
+        Cubic::BETA_USIZE_DIVIDEND,
     );
 }
 

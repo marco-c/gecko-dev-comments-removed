@@ -45,11 +45,33 @@ fn frame_decode(c: &mut Criterion, n: usize) {
     });
 }
 
+
+const PADDING_ALIGNMENTS: usize = 16;
+
+
+fn padding_decode(c: &mut Criterion, n: usize) {
+    let buf = vec![0; n + PADDING_ALIGNMENTS - 1];
+    c.bench_function(&format!("Frame::decode PADDING {n} bytes"), |b| {
+        b.iter(|| {
+            for offset in 0..PADDING_ALIGNMENTS {
+                let mut dec = Decoder::new(&buf[offset..offset + n]);
+                black_box(Frame::decode(&mut dec).expect("decode frame"));
+            }
+        });
+    });
+}
+
 fn benchmark(c: &mut Criterion) {
     frame_decode(c, 10);
     frame_decode(c, 100);
     frame_decode(c, 1_000);
+    padding_decode(c, 1_500);
+    padding_decode(c, 16_383);
 }
 
-criterion_group!(benches, benchmark);
+criterion_group! {
+    name = benches;
+    config = { neqo_common::log::init(None); Criterion::default() };
+    targets = benchmark
+}
 criterion_main!(benches);

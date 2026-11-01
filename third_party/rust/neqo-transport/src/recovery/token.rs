@@ -68,5 +68,5 @@ pub enum Token {
     
     EcnEct0,
     
-    PmtudProbe,
+    PmtudProbe(usize),
 }

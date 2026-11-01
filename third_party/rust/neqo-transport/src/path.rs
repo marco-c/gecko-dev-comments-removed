@@ -6,6 +6,7 @@
 
 use std::{
     cell::RefCell,
+    collections::VecDeque,
     fmt::{self, Display},
     net::SocketAddr,
     num::NonZeroUsize,
@@ -23,7 +24,7 @@ use crate::{
     ackrate::{AckRate, PeerAckDelay},
     cid::{ConnectionId, ConnectionIdRef, ConnectionIdStore, RemoteConnectionIdEntry},
     ecn,
-    frame::{FrameEncoder as _, FrameType},
+    frame::{FrameEncoder as _, FrameType, PATH_CHALLENGE_LEN},
     packet,
     pmtud::Pmtud,
     recovery::{self, sent},
@@ -329,7 +330,7 @@ impl Paths {
     #[must_use]
     pub fn path_response(
         &mut self,
-        response: [u8; 8],
+        response: [u8; PATH_CHALLENGE_LEN],
         now: Instant,
         stats: &mut Stats,
     ) -> Option<PathRef> {
@@ -499,7 +500,7 @@ enum ProbeState {
         
         probe_count: usize,
         
-        data: [u8; 8],
+        data: [u8; PATH_CHALLENGE_LEN],
         
         mtu: bool,
         
@@ -545,7 +546,8 @@ pub struct Path {
     
     validated: Option<Instant>,
     
-    challenge: Option<[u8; 8]>,
+    
+    challenges: VecDeque<[u8; PATH_CHALLENGE_LEN]>,
 
     
     rtt: RttEstimate,
@@ -572,6 +574,21 @@ impl Path {
     
     
     pub const MAX_PROBES: usize = 3;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const MAX_PENDING_CHALLENGES: usize = 4;
+
+    
+    
+    const PATH_FRAME_LEN: usize = 1 + PATH_CHALLENGE_LEN;
 
     
     
@@ -614,7 +631,7 @@ impl Path {
             primary: false,
             state: ProbeState::ProbeNeeded { probe_count: 0 },
             validated: None,
-            challenge: None,
+            challenges: VecDeque::new(),
             rtt: RttEstimate::new(conn_params.get_initial_rtt()),
             sender,
             received_bytes: 0,
@@ -796,7 +813,12 @@ impl Path {
     }
 
     
-    pub fn path_response(&mut self, response: [u8; 8], now: Instant, stats: &mut Stats) -> bool {
+    pub fn path_response(
+        &mut self,
+        response: [u8; PATH_CHALLENGE_LEN],
+        now: Instant,
+        stats: &mut Stats,
+    ) -> bool {
         if let ProbeState::Probing { data, mtu, .. } = &mut self.state {
             if response == *data {
                 let need_full_probe = !*mtu;
@@ -816,8 +838,11 @@ impl Path {
 
     
     
-    pub fn challenged(&mut self, challenge: [u8; 8]) {
-        self.challenge = Some(challenge.to_owned());
+    pub fn challenged(&mut self, challenge: [u8; PATH_CHALLENGE_LEN]) {
+        if self.challenges.len() >= Self::MAX_PENDING_CHALLENGES {
+            self.challenges.pop_front();
+        }
+        self.challenges.push_back(challenge);
     }
 
     
@@ -846,8 +871,8 @@ impl Path {
     }
 
     
-    pub const fn has_probe(&self) -> bool {
-        self.challenge.is_some() || self.state.probe_needed()
+    pub fn has_probe(&self) -> bool {
+        !self.challenges.is_empty() || self.state.probe_needed()
     }
 
     pub fn write_frames<B: Buffer>(
@@ -857,11 +882,15 @@ impl Path {
         mtu: bool, 
         now: Instant,
     ) -> bool {
-        if builder.remaining() < 9 {
+        if builder.remaining() < Self::PATH_FRAME_LEN {
             return false;
         }
         
-        let resp_sent = if let Some(challenge) = self.challenge.take() {
+        let mut resp_sent = false;
+        while builder.remaining() >= Self::PATH_FRAME_LEN {
+            let Some(challenge) = self.challenges.pop_front() else {
+                break;
+            };
             qtrace!(
                 "[{self}] Responding to path challenge {}",
                 Hex::new(challenge)
@@ -872,19 +901,16 @@ impl Path {
 
             
             stats.path_response += 1;
-
-            if builder.remaining() < 9 {
-                return true;
-            }
-            true
-        } else {
-            false
-        };
+            resp_sent = true;
+        }
+        if builder.remaining() < Self::PATH_FRAME_LEN {
+            return resp_sent;
+        }
 
         
         if let ProbeState::ProbeNeeded { probe_count } = self.state {
             qtrace!("[{self}] Initiating path challenge {probe_count}");
-            let data = random::<8>();
+            let data = random::<PATH_CHALLENGE_LEN>();
             builder.encode_frame(FrameType::PathChallenge, |b| {
                 b.encode(data);
             });
@@ -1155,6 +1181,16 @@ impl Path {
     }
 
     
+    pub fn send_budget(&self) -> usize {
+        self.sender().cwnd_avail().min(self.amplification_limit())
+    }
+
+    
+    pub fn can_probe_pmtud(&self) -> bool {
+        self.pmtud().needs_probe() && self.send_budget() >= self.pmtud().probe_size()
+    }
+
+    
     pub fn set_qlog(&mut self, qlog: Qlog) {
         self.sender.set_qlog(qlog.clone());
         self.qlog = qlog;
@@ -1175,5 +1211,58 @@ impl Display for Path {
         }
         write!(f, " {}->{}", self.local, self.remote)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
+mod tests {
+    use neqo_common::{Encoder, qlog::Qlog};
+    use test_fixture::{DEFAULT_ADDR, now};
+
+    use super::Path;
+    use crate::{
+        ConnectionParameters, Stats, frame::PATH_CHALLENGE_LEN, packet, stats::FrameStats,
+    };
+
+    fn path() -> Path {
+        Path::temporary(
+            DEFAULT_ADDR,
+            DEFAULT_ADDR,
+            &ConnectionParameters::default().pmtud_iface_mtu(false),
+            Qlog::disabled(),
+            now(),
+            &mut Stats::default(),
+        )
+    }
+
+    
+    #[test]
+    fn pending_challenges_are_bounded() {
+        let mut path = path();
+        for i in 0..=Path::MAX_PENDING_CHALLENGES {
+            path.challenged([u8::try_from(i).unwrap(); PATH_CHALLENGE_LEN]);
+        }
+        assert_eq!(path.challenges.len(), Path::MAX_PENDING_CHALLENGES);
+        assert_eq!(path.challenges.front(), Some(&[1; PATH_CHALLENGE_LEN]));
+    }
+
+    
+    #[test]
+    fn path_responses_that_do_not_fit_stay_pending() {
+        let mut path = path();
+        for i in 0..3 {
+            path.challenged([i; PATH_CHALLENGE_LEN]);
+        }
+        let mut builder =
+            packet::Builder::short(Encoder::default(), false, None::<&[u8]>, packet::LIMIT);
+        builder.pn(0, 1);
+        builder.set_limit(builder.len() + 2 * Path::PATH_FRAME_LEN);
+
+        let mut stats = FrameStats::default();
+        assert!(path.write_frames(&mut builder, &mut stats, false, now()));
+        assert_eq!(stats.path_response, 2);
+        assert_eq!(stats.path_challenge, 0);
+        assert_eq!(path.challenges, [[2; PATH_CHALLENGE_LEN]]);
     }
 }

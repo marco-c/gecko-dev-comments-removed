@@ -149,6 +149,21 @@ pub enum DatagramQueueOutcome {
 }
 
 
+#[derive(Debug, Default, PartialEq, Eq)]
+#[must_use]
+pub struct DroppedDatagrams {
+    
+    pub queued: u64,
+    
+    pub sent: u64,
+    
+    pub expired: u64,
+    
+    
+    pub too_big: u64,
+}
+
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
@@ -166,6 +181,9 @@ pub struct DatagramQueueCapacity {
     
     
     pub max_queued_bytes: usize,
+    
+    
+    pub per_datagram_overhead: usize,
 }
 
 #[derive(Debug)]
@@ -384,6 +402,13 @@ pub struct DatagramQueue {
     
     
     expired: u64,
+    
+    
+    sent: u64,
+    
+    
+    
+    too_big: u64,
 }
 
 impl DatagramQueue {
@@ -399,6 +424,28 @@ impl DatagramQueue {
     
     fn effective_max_age(&self, default_max_age: Duration) -> Duration {
         self.max_age.unwrap_or(default_max_age)
+    }
+
+    
+    pub const fn record_sent(&mut self) {
+        self.sent += 1;
+    }
+
+    
+    pub fn take_sent_count(&mut self) -> u64 {
+        std::mem::take(&mut self.sent)
+    }
+
+    
+    
+    pub const fn record_too_big(&mut self) {
+        self.too_big += 1;
+    }
+
+    
+    
+    pub fn take_too_big_count(&mut self) -> u64 {
+        std::mem::take(&mut self.too_big)
     }
 
     
@@ -476,13 +523,6 @@ impl DatagramQueue {
     
     pub fn take_expired_count(&mut self) -> u64 {
         std::mem::take(&mut self.expired)
-    }
-
-    
-    
-    #[must_use]
-    pub const fn has_expired(&self) -> bool {
-        self.expired > 0
     }
 
     
@@ -812,6 +852,7 @@ impl DatagramQueue {
             remaining_bytes: self.max_queued_bytes.saturating_sub(self.total_bytes),
             queued_datagrams: self.total_count,
             max_queued_bytes: self.max_queued_bytes,
+            per_datagram_overhead: PER_DATAGRAM_OVERHEAD,
         }
     }
 
@@ -839,6 +880,8 @@ impl Default for DatagramQueue {
             blocked: None,
             max_age: None,
             expired: 0,
+            sent: 0,
+            too_big: 0,
         }
     }
 }
@@ -903,6 +946,22 @@ mod tests {
     }
 
     #[test]
+    fn reported_overhead_matches_the_charge() {
+        let mut q = DatagramQueue::default();
+        let t = now();
+        let before = q.capacity();
+        let data = vec![0; 1200];
+        let allocated = data.capacity();
+
+        enq(&mut q, data, 1, t, 0, 0);
+
+        assert_eq!(
+            q.capacity().remaining_bytes,
+            before.remaining_bytes - (allocated + before.per_datagram_overhead)
+        );
+    }
+
+    #[test]
     fn capacity_tracks_bytes_and_count() {
         let mut q = DatagramQueue::default();
         q.set_max_queued_bytes(3 * charge(2)); 
@@ -914,6 +973,7 @@ mod tests {
                 remaining_bytes: 3 * charge(2),
                 queued_datagrams: 0,
                 max_queued_bytes: 3 * charge(2),
+                per_datagram_overhead: PER_DATAGRAM_OVERHEAD,
             }
         );
 
@@ -924,6 +984,7 @@ mod tests {
                 remaining_bytes: 2 * charge(2),
                 queued_datagrams: 1,
                 max_queued_bytes: 3 * charge(2),
+                per_datagram_overhead: PER_DATAGRAM_OVERHEAD,
             }
         );
 
@@ -935,6 +996,7 @@ mod tests {
                 remaining_bytes: 3 * charge(2),
                 queued_datagrams: 0,
                 max_queued_bytes: 3 * charge(2),
+                per_datagram_overhead: PER_DATAGRAM_OVERHEAD,
             }
         );
     }
@@ -1515,14 +1577,11 @@ mod tests {
         q.set_max_age(Some(Duration::from_millis(10)), t0, NO_DEFAULT);
         enq(&mut q, vec![1], 1, t0, 0, 0);
         enq(&mut q, vec![2], 2, t0 + Duration::from_millis(5), 0, 0);
-        assert!(!q.has_expired());
 
         assert_eq!(q.expire(t0 + Duration::from_millis(10), NO_DEFAULT), 1);
-        assert!(q.has_expired());
         assert_eq!(q.expire(t0 + Duration::from_millis(15), NO_DEFAULT), 1);
 
         assert_eq!(q.take_expired_count(), 2);
-        assert!(!q.has_expired());
         assert_eq!(q.take_expired_count(), 0);
     }
 
