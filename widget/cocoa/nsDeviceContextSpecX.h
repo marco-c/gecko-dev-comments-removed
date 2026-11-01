@@ -39,7 +39,10 @@ class nsDeviceContextSpecX : public nsIDeviceContextSpec {
   PMPrintSettings mPMPrintSettings = nullptr;
   nsCOMPtr<nsIOutputStream> mOutputStream;  
   
-  nsCOMPtr<nsIFile> mTempFile;
+  
+  nsCOMPtr<nsIFile> mOutputFile;
+  
+  bool mOutputFileIsFinal = false;
 
  private:
   nsresult DoEndDocument();
