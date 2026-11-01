@@ -38,7 +38,7 @@ void AnimationInfo::EnsureAnimationsId() {
 }
 
 Animation* AnimationInfo::AddAnimation() {
-  MOZ_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
   
   
   EnsureAnimationsId();
@@ -53,7 +53,7 @@ Animation* AnimationInfo::AddAnimation() {
 }
 
 Animation* AnimationInfo::AddAnimationForNextTransaction() {
-  MOZ_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
+  MOZ_RELEASE_ASSERT(!CompositorThreadHolder::IsInCompositorThread());
   MOZ_ASSERT(mPendingAnimations,
              "should have called ClearAnimationsForNextTransaction first");
 

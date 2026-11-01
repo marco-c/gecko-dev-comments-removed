@@ -20,13 +20,13 @@ StaticAutoPtr<CompositeProcessFencesHolderMap>
 
 
 void CompositeProcessFencesHolderMap::Init() {
-  MOZ_ASSERT(XRE_IsGPUProcess() || XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsGPUProcess() || XRE_IsParentProcess());
   sInstance = new CompositeProcessFencesHolderMap();
 }
 
 
 void CompositeProcessFencesHolderMap::Shutdown() {
-  MOZ_ASSERT(XRE_IsGPUProcess() || XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsGPUProcess() || XRE_IsParentProcess());
   sInstance = nullptr;
 }
 

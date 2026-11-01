@@ -270,7 +270,7 @@ static bool GetFontFileName(RefPtr<IDWriteFontFace> aFontFace,
 
 bool UnscaledFontDWrite::GetFontDescriptor(FontDescriptorOutput aCb,
                                            void* aBaton) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   
   if (mFontFileName.empty()) {

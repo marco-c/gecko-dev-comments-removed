@@ -93,7 +93,7 @@ void gfxVars::Shutdown() {
 
 void gfxVars::ApplyUpdate(const nsTArray<GfxVarUpdate>& aUpdate) {
   
-  MOZ_ASSERT(!XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(!XRE_IsParentProcess());
   MOZ_DIAGNOSTIC_ASSERT(sVarList || gGfxVarInitUpdates);
   if (sVarList) {
     for (auto& i : aUpdate) {
@@ -108,7 +108,7 @@ void gfxVars::ApplyUpdate(const nsTArray<GfxVarUpdate>& aUpdate) {
 
 
 void gfxVars::AddReceiver(gfxVarReceiver* aReceiver) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   
   
@@ -119,7 +119,7 @@ void gfxVars::AddReceiver(gfxVarReceiver* aReceiver) {
 
 
 void gfxVars::RemoveReceiver(gfxVarReceiver* aReceiver) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   if (sInstance) {
     sInstance->mReceivers.RemoveElement(aReceiver);
@@ -128,7 +128,7 @@ void gfxVars::RemoveReceiver(gfxVarReceiver* aReceiver) {
 
 
 nsTArray<GfxVarUpdate> gfxVars::FetchNonDefaultVars() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(sVarList);
 
   nsTArray<GfxVarUpdate> updates;
@@ -153,7 +153,7 @@ gfxVars::VarBase::VarBase() {
 }
 
 void gfxVars::NotifyReceivers(VarBase* aVar) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   GfxVarValue value;
   aVar->GetValue(&value);
