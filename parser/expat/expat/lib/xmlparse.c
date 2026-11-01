@@ -2370,6 +2370,8 @@ XML_SetParamEntityParsing(XML_Parser parser,
 }
 
 
+#if 0
+
 
 XML_NONTESTING_STATIC int
 xmlSetHashSalt(XML_Parser parser, unsigned long hash_salt) {
@@ -2403,6 +2405,8 @@ int XMLCALL
 XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt) {
   return xmlSetHashSalt(parser, hash_salt);
 }
+#endif
+
 
 XML_Bool XMLCALL
 XML_SetHashSalt16Bytes(XML_Parser parser, const uint8_t entropy[16]) {
