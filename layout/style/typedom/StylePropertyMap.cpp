@@ -102,11 +102,67 @@ JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
 
 
 
+
+
 void StylePropertyMap::Set(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
-  return SetOrAppend(aProperty, aValues, Mode::Set, aRv);
+  
+  auto propertyId = CSSPropertyId::Parse(aProperty);
+
+  if (!propertyId.IsValid()) {
+    aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
+    return;
+  }
+
+  if (aValues.Length() != 1) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  const auto& styleValueOrString = aValues[0];
+
+  RefPtr<CSSStyleValue> styleValue;
+
+  if (styleValueOrString.IsCSSStyleValue()) {
+    styleValue = styleValueOrString.GetAsCSSStyleValue();
+  } else {
+    RefPtr<URLExtraData> urlExtraData = mDeclarations.GetURLExtraData();
+    if (!urlExtraData) {
+      aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+      return;
+    }
+
+    styleValue = CSSStyleValue::ParseStyleValue(
+        mParent, aProperty, styleValueOrString.GetAsUTF8String(), urlExtraData,
+         nullptr, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+
+  
+
+  const auto* valuePropertyId = styleValue->GetPropertyId();
+
+  if (valuePropertyId && *valuePropertyId != propertyId) {
+    aRv.ThrowTypeError("Invalid type for property"_ns);
+    return;
+  }
+
+  nsAutoCString cssText;
+  styleValue->ToCssTextWithProperty(propertyId, cssText);
+  if (cssText.IsEmpty()) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  
+  Declarations& declarations = mDeclarations;
+
+  
+  declarations.Set(propertyId, cssText, aRv);
 }
 
 
@@ -114,20 +170,46 @@ void StylePropertyMap::Append(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
-  return SetOrAppend(aProperty, aValues, Mode::Append, aRv);
-}
+  if (!mParent) {
+    return aRv.Throw(NS_ERROR_UNEXPECTED);
+  }
 
-void StylePropertyMap::SetOrAppend(
-    const nsACString& aProperty,
-    const Sequence<OwningCSSStyleValueOrUTF8String>& aValues, Mode aMode,
-    ErrorResult& aRv) {
   
   auto propertyId = CSSPropertyId::Parse(aProperty);
   if (!propertyId.IsValid()) {
     return aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
   }
 
-  nsCString separator;
+  if (propertyId.IsCustom()) {
+    return aRv.ThrowTypeError("Cannot append to custom property: "_ns +
+                              aProperty);
+  }
+
+  
+  const CSSPropFlags flags = nsCSSProps::PropFlags(propertyId.mId);
+  if (!(flags & CSSPropFlags::IsListValued)) {
+    aRv.ThrowTypeError("Property is not list-valued: "_ns + aProperty);
+    return;
+  }
+
+  
+  
+  if (aValues.IsEmpty()) {
+    return;
+  }
+
+  const auto separator =
+      flags & CSSPropFlags::IsCommaSeparated ? ", "_ns : " "_ns;
+
+  
+  
+  
+  nsTArray<RefPtr<CSSStyleValue>> existingValues;
+  GetAll(propertyId, existingValues, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
   nsAutoCString cssText;
   auto appendValue = [&](const nsACString& aValue) {
     if (!cssText.IsEmpty()) {
@@ -136,54 +218,19 @@ void StylePropertyMap::SetOrAppend(
     cssText.Append(aValue);
   };
 
-  const bool requiresListValued = aMode == Mode::Append || aValues.Length() > 1;
-  if (requiresListValued) {
-    if (propertyId.IsCustom()) {
-      return aRv.ThrowTypeError("Custom properties are not list-valued: "_ns +
-                                aProperty);
+  
+  for (const auto& existingValue : existingValues) {
+    if (existingValue->IsCSSUnparsedValue()) {
+      return aRv.ThrowTypeError("Cannot append to value with var() references");
     }
-    const CSSPropFlags flags = nsCSSProps::PropFlags(propertyId.mId);
-    if (!(flags & CSSPropFlags::IsListValued)) {
-      return aRv.ThrowTypeError("Property is not list-valued: "_ns + aProperty);
-    }
-    separator = flags & CSSPropFlags::IsCommaSeparated ? ", "_ns : " "_ns;
-  }
-
-  if (aValues.IsEmpty()) {
-    if (aMode == Mode::Append) {
+    nsAutoCString text;
+    existingValue->ToCssTextWithProperty(propertyId, text);
+    if (text.IsEmpty()) {
       
       
-      return;
+      return aRv.ThrowTypeError("Cannot append to value with var() references");
     }
-    return mDeclarations.Delete(propertyId, aRv);
-  }
-
-  if (aMode == Mode::Append) {
-    
-    
-    
-    nsTArray<RefPtr<CSSStyleValue>> existingValues;
-    GetAll(propertyId, existingValues, aRv);
-    if (aRv.Failed()) {
-      return;
-    }
-
-    
-    for (const auto& existingValue : existingValues) {
-      if (existingValue->IsCSSUnparsedValue()) {
-        return aRv.ThrowTypeError(
-            "Cannot append to value with var() references");
-      }
-      nsAutoCString text;
-      existingValue->ToCssTextWithProperty(propertyId, text);
-      if (text.IsEmpty()) {
-        
-        
-        return aRv.ThrowTypeError(
-            "Cannot append to value with var() references");
-      }
-      appendValue(text);
-    }
+    appendValue(text);
   }
 
   auto* urlExtraData = mDeclarations.GetURLExtraData();
@@ -200,7 +247,7 @@ void StylePropertyMap::SetOrAppend(
       if (valuePropertyId && *valuePropertyId != propertyId) {
         return aRv.ThrowTypeError("Invalid type for property");
       }
-      if (requiresListValued && styleValue->IsCSSUnparsedValue()) {
+      if (styleValue->IsCSSUnparsedValue()) {
         return aRv.ThrowTypeError("Cannot append a CSSUnparsedValue");
       }
       styleValue->ToCssTextWithProperty(propertyId, text);
