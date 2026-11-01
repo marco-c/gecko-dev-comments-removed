@@ -2703,6 +2703,12 @@ void SdpOfferAnswerHandler::ApplyRemoteDescription(
   
   operation->SignalCompletion();
 
+  
+  
+  if (pc_->IsClosed()) {
+    return;
+  }
+
   SetRemoteDescriptionPostProcess(operation->type() == SdpType::kAnswer);
 }
 
@@ -3193,6 +3199,11 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
 
   TraceSetLocalDescriptionComplete(RTCError::OK());
   observer->OnSetLocalDescriptionComplete(RTCError::OK());
+  
+  
+  if (pc_->IsClosed()) {
+    return;
+  }
   pc_->NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED);
 
   
