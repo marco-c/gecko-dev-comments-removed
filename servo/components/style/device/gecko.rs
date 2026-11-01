@@ -30,6 +30,8 @@ use euclid::default::Size2D;
 use euclid::{Scale, SideOffsets2D};
 use parking_lot::RwLock;
 use servo_arc::Arc;
+use siphasher::sip::SipHasher13;
+use std::hash::Hasher;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::{cmp, fmt};
 use style_traits::{CSSPixel, DevicePixel};
@@ -187,9 +189,12 @@ impl Device {
 
     
     
+    
     #[inline]
-    pub fn document_random_seed(&self) -> u64 {
-        unsafe { bindings::Gecko_Document_GetRandomSeed(self.document()) }
+    pub fn document_random_hasher(&self) -> impl Hasher {
+        let (mut k0, mut k1) = (0, 0);
+        unsafe { bindings::Gecko_Document_GetRandomHasherKey(self.document(), &mut k0, &mut k1) };
+        SipHasher13::new_with_keys(k0, k1)
     }
 
     

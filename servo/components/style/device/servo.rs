@@ -33,6 +33,7 @@ use mime::Mime;
 use parking_lot::RwLock;
 use servo_arc::Arc;
 use std::fmt::Debug;
+use std::hash::{DefaultHasher, Hasher};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use style_traits::{CSSPixel, DevicePixel};
 
@@ -152,9 +153,9 @@ impl Device {
     
     
     #[inline]
-    pub fn document_random_seed(&self) -> u64 {
+    pub fn document_random_hasher(&self) -> impl Hasher {
         
-        0
+        DefaultHasher::new()
     }
 
     

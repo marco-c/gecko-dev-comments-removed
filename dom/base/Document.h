@@ -17,6 +17,7 @@
 #include "js/RootingAPI.h"
 #include "js/friend/DOMProxy.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Array.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BasicEvents.h"
@@ -3262,7 +3263,7 @@ class Document : public nsINode,
 
 
 
-  uintptr_t GetRandomSeed() const;
+  const Array<uint64_t, 2>& GetRandomHasherKey() const;
 
   
 
@@ -5606,6 +5607,11 @@ class Document : public nsINode,
   
   
   RefPtr<Document> mOriginalDocument;
+
+  
+  
+  
+  Array<uint64_t, 2> mRandomHasherKey;
 
   
   
