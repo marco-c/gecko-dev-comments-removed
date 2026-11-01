@@ -38,6 +38,19 @@ impl PictureGraph {
     }
 
     
+    
+    pub fn parent(&self, pic_index: PictureIndex) -> Option<PictureIndex> {
+        self.pic_info[pic_index.0 as usize].parent
+    }
+
+    
+    
+    
+    pub fn surface_index(&self, pic_index: PictureIndex) -> Option<SurfaceIndex> {
+        self.pic_info[pic_index.0 as usize].surface_index
+    }
+
+    
     pub fn add_root(
         &mut self,
         pic_index: PictureIndex,

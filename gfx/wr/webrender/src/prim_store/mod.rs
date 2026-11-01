@@ -21,7 +21,7 @@ use crate::render_task_graph::RenderTaskId;
 use crate::resource_cache::ImageProperties;
 use crate::util::Recycler;
 use crate::internal_types::{FastHashSet, LayoutPrimitiveInfo};
-use crate::visibility::{PrimitiveDrawHeader, PrimitiveDrawIndex};
+use crate::visibility::{BackdropCaptures, PrimitiveDrawHeader, PrimitiveDrawIndex};
 use std::ops;
 
 pub mod backdrop;
@@ -483,6 +483,9 @@ pub struct PrimitiveFrameScratch {
     pending_picture_draws: Vec<PrimitiveDrawIndex>,
 
     
+    pub backdrop_captures: BackdropCaptures,
+
+    
     
     
     
@@ -524,6 +527,7 @@ impl Default for PrimitiveFrameScratch {
             picture_draws: Vec::new(),
             picture_draw_ranges: Vec::new(),
             pending_picture_draws: Vec::new(),
+            backdrop_captures: BackdropCaptures::default(),
             pictures: storage::Storage::new(0),
             text_runs: storage::Storage::new(0),
             glyph_keys: GlyphKeyStorage::new(0),
@@ -623,6 +627,7 @@ impl PrimitiveFrameScratch {
         recycler.recycle_vec(&mut self.draws);
         recycler.recycle_vec(&mut self.picture_draws);
         recycler.recycle_vec(&mut self.picture_draw_ranges);
+        self.backdrop_captures.recycle(recycler);
         self.pictures.recycle(recycler);
         self.text_runs.recycle(recycler);
         self.glyph_keys.recycle(recycler);

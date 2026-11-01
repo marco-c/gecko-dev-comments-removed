@@ -39,12 +39,15 @@ use crate::renderer::GpuBufferBuilder;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::clip::{snap_local_clip_rect, ClipChainInstance, ClipTree, ClipNodeId};
 use crate::composite::CompositorSurfaceKind;
-use crate::frame_builder::FrameBuilderConfig;
+use crate::frame_builder::{FrameBuilderConfig, FrameBuildingContext};
 use crate::picture::ClusterFlags;
 use crate::picture_composite_mode::PictureCompositeMode;
 use crate::surface::SurfaceInfo;
 use crate::tile_cache::TileCacheInstance;
-use crate::picture::{PictureScratch, RasterConfig};
+use crate::picture::{PictureInstance, PictureScratch, RasterConfig};
+use crate::picture_graph::PictureGraph;
+use smallvec::SmallVec;
+use std::ops;
 use crate::surface::SurfaceIndex;
 use crate::tile_cache::SubSliceIndex;
 use crate::prim_store::{ClipTaskIndex, PictureIndex, PrimitiveKind};
@@ -54,8 +57,8 @@ use crate::prim_store::text_run::TextRunScratch;
 use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::ResourceCache;
-use crate::util::MaxRect;
-use crate::scene::SceneProperties;
+use crate::util::{MaxRect, Recycler};
+use crate::scene::{BackdropChain, SceneProperties};
 use crate::scene_debug::SceneDebugOverride;
 use crate::space::{SpaceMapper, SpaceSnapper};
 
@@ -282,6 +285,197 @@ impl PrimitiveDrawHeader {
         self.kind_scratch = KindScratchHandle::None;
         self.compositor_surface_kind = CompositorSurfaceKind::Blit;
     }
+}
+
+
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropCaptureRegion {
+    
+    
+    pub capture_pic_index: PictureIndex,
+    
+    pub root_pic_index: PictureIndex,
+    
+    
+    pub root_surface_index: SurfaceIndex,
+    
+    
+    pub capture_instance_index: PrimitiveInstanceIndex,
+    
+    
+    
+    pub region: PictureRect,
+}
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropCaptureIndex(pub u32);
+
+
+#[derive(Clone, Default)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+struct PictureBackdropCaptures {
+    
+    capture: Option<BackdropCaptureIndex>,
+}
+
+
+
+#[derive(Default)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct BackdropCaptures {
+    regions: Vec<BackdropCaptureRegion>,
+    
+    pictures: Vec<PictureBackdropCaptures>,
+}
+
+impl ops::Index<BackdropCaptureIndex> for BackdropCaptures {
+    type Output = BackdropCaptureRegion;
+
+    fn index(&self, index: BackdropCaptureIndex) -> &BackdropCaptureRegion {
+        &self.regions[index.0 as usize]
+    }
+}
+
+impl BackdropCaptures {
+    
+    
+    fn index_pictures(&mut self, picture_count: usize) {
+        self.pictures.clear();
+        if self.regions.is_empty() {
+            return;
+        }
+        self.pictures.resize(picture_count, PictureBackdropCaptures::default());
+
+        for (position, capture) in self.regions.iter().enumerate() {
+            let index = BackdropCaptureIndex(position as u32);
+            self.pictures[capture.capture_pic_index.0 as usize].capture = Some(index);
+        }
+    }
+
+    
+    pub fn for_picture(&self, pic_index: PictureIndex) -> Option<&BackdropCaptureRegion> {
+        let index = self.pictures.get(pic_index.0 as usize)?.capture?;
+        Some(&self[index])
+    }
+
+    pub fn recycle(&mut self, recycler: &mut Recycler) {
+        recycler.recycle_vec(&mut self.regions);
+    }
+}
+
+
+
+pub fn build_backdrop_capture_regions(
+    backdrop_chains: &[BackdropChain],
+    pictures: &[PictureInstance],
+    picture_graph: &PictureGraph,
+    surfaces: &[SurfaceInfo],
+    prim_instances: &[PrimitiveInstance],
+    frame_context: &FrameBuildingContext,
+    captures: &mut BackdropCaptures,
+) {
+    captures.regions.clear();
+
+    'chains: for chain_info in backdrop_chains {
+        let chain_pic_index = chain_info.output_pic_index;
+        let Some(root_pic_index) = picture_graph.parent(chain_pic_index) else {
+            continue;
+        };
+        let Some(root_surface_index) = picture_graph.surface_index(root_pic_index) else {
+            continue;
+        };
+
+        
+        
+        let mut chain: SmallVec<[PictureIndex; 4]> = SmallVec::new();
+        let mut pic_index = chain_pic_index;
+        loop {
+            let pic = &pictures[pic_index.0 as usize];
+            if pic.raster_config.is_none() {
+                continue 'chains;
+            }
+            chain.push(pic_index);
+
+            match pic.prim_list.child_pictures.first() {
+                Some(&child_pic_index) => pic_index = child_pic_index,
+                None => break,
+            }
+        }
+
+        let capture_instance_index = chain_info.capture_instance_index;
+        debug_assert!(matches!(
+            prim_instances[capture_instance_index.0 as usize].kind,
+            PrimitiveKind::BackdropCapture { .. }
+        ));
+
+        let capture_pic_index = pic_index;
+        let capture_surface = &surfaces[pictures[capture_pic_index.0 as usize]
+            .raster_config
+            .as_ref()
+            .unwrap()
+            .surface_index
+            .0];
+        let root_surface = &surfaces[root_surface_index.0];
+        debug_assert_eq!(
+            capture_surface.surface_spatial_node_index,
+            root_surface.surface_spatial_node_index,
+            "bug: backdrop chain is not in its root's space",
+        );
+
+        let root_is_tile_cache = matches!(
+            pictures[root_pic_index.0 as usize].raster_config,
+            Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { .. }, .. })
+        );
+
+        
+        
+        
+        
+        
+        
+        let mut region = capture_surface.unclipped_local_rect;
+        if root_is_tile_cache {
+            let map_pic_to_device: SpaceMapper<PicturePixel, DevicePixel> = SpaceMapper::new_with_target(
+                frame_context.spatial_tree.root_reference_frame_index(),
+                root_surface.surface_spatial_node_index,
+                frame_context.global_screen_device_rect,
+                frame_context.spatial_tree,
+            );
+            if let Some(screen_rect) = map_pic_to_device.unmap(&map_pic_to_device.bounds) {
+                region = region.intersection(&screen_rect).unwrap_or_else(PictureRect::zero);
+            }
+        }
+        for pic_index in &chain {
+            let raster_config = pictures[pic_index.0 as usize].raster_config.as_ref().unwrap();
+            let surface = &surfaces[raster_config.surface_index.0];
+
+            region = raster_config.composite_mode
+                .get_required_source_rect(surface, region.cast_unit())
+                .cast_unit();
+
+            
+            
+            if let PictureCompositeMode::SVGFEGraph(..) = raster_config.composite_mode {
+                region = region
+                    .intersection(&surface.unclipped_local_rect)
+                    .unwrap_or_else(PictureRect::zero);
+            }
+        }
+
+        captures.regions.push(BackdropCaptureRegion {
+            capture_pic_index,
+            root_pic_index,
+            root_surface_index,
+            capture_instance_index,
+            region,
+        });
+    }
+
+    captures.index_pictures(pictures.len());
 }
 
 pub fn update_prim_visibility(

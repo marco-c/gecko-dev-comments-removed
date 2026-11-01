@@ -1070,6 +1070,19 @@ fn prepare_prim_for_render(
                         ColorF::TRANSPARENT,
                     );
                 }
+
+                
+                
+                let region = scratch.frame.backdrop_captures.for_picture(pic_context.pic_index)
+                    .map(|capture| capture.region);
+                if let Some(device_rect) = region.and_then(|region| pic_state.map_pic_to_device.map(&region)) {
+                    scratch.push_debug_rect(
+                        device_rect,
+                        1,
+                        crate::debug_colors::YELLOW,
+                        ColorF::TRANSPARENT,
+                    );
+                }
             }
         }
         PrimitiveKind::BackdropRender { pic_index, data_handle, .. } => {
