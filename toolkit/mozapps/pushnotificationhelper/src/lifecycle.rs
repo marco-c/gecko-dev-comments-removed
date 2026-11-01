@@ -70,6 +70,7 @@ impl Drop for OwnedHandle {
 
 
 
+
 pub struct ProfileGuard {
     _handle: OwnedHandle,
 }
@@ -79,7 +80,7 @@ impl ProfileGuard {
     
     
     pub fn acquire(profile: &Path) -> Result<Option<Self>, String> {
-        let name = wide(&object_name("profile", Some(profile))?);
+        let name = wide(&object_name("profile", Scope::Profile(profile))?);
 
         
         
@@ -190,8 +191,8 @@ pub struct StopEvent {
 impl StopEvent {
     pub fn open(profile: &Path) -> Result<Self, String> {
         Ok(StopEvent {
-            profile: Event::create(&object_name("stop", Some(profile))?)?,
-            install: Event::create_shared(&object_name("stop", None)?)?,
+            profile: Event::create(&object_name("stop", Scope::InstallProfile(profile))?)?,
+            install: Event::create_shared(&object_name("stop", Scope::Install)?)?,
         })
     }
 
@@ -218,7 +219,11 @@ impl StopEvent {
 
 
 pub fn send_stop_signal(profile: Option<&Path>) -> Result<(), String> {
-    let name = wide(&object_name("stop", profile)?);
+    let scope = match profile {
+        Some(profile) => Scope::InstallProfile(profile),
+        None => Scope::Install,
+    };
+    let name = wide(&object_name("stop", scope)?);
 
     
     let handle = unsafe { OpenEventW(EVENT_MODIFY_STATE, 0, name.as_ptr()) };
@@ -247,33 +252,50 @@ pub fn send_stop_signal(profile: Option<&Path>) -> Result<(), String> {
 }
 
 
-
-
-
-fn object_name(kind: &str, profile: Option<&Path>) -> Result<String, String> {
+enum Scope<'a> {
     
-    const LOCAL_PREFIX: &str = "Local\\MozillaNotificationHelper";
-    const GLOBAL_PREFIX: &str = "Global\\MozillaNotificationHelper";
+    Install,
+    
+    InstallProfile(&'a Path),
+    
+    Profile(&'a Path),
+}
 
+
+
+fn object_name(kind: &str, scope: Scope) -> Result<String, String> {
     let exe = std::env::current_exe().map_err(|e| format!("cannot locate this binary: {e}"))?;
     let install = exe
         .parent()
         .ok_or_else(|| "this binary has no parent directory".to_string())?;
 
-    let mut hasher = FnvHasher::default();
-    hasher.write(path_key(install).as_bytes());
-    if let Some(profile) = profile {
-        hasher.write(&[0]);
-        hasher.write(path_key(profile).as_bytes());
-    }
+    Ok(object_name_for(install, kind, scope))
+}
 
-    let prefix = if profile.is_some() {
-        LOCAL_PREFIX
-    } else {
-        GLOBAL_PREFIX
+fn object_name_for(install: &Path, kind: &str, scope: Scope) -> String {
+    
+    const LOCAL_PREFIX: &str = "Local\\MozillaNotificationHelper";
+    const GLOBAL_PREFIX: &str = "Global\\MozillaNotificationHelper";
+
+    let mut hasher = FnvHasher::default();
+    let prefix = match scope {
+        Scope::Install => {
+            hasher.write(path_key(install).as_bytes());
+            GLOBAL_PREFIX
+        }
+        Scope::InstallProfile(profile) => {
+            hasher.write(path_key(install).as_bytes());
+            hasher.write(&[0]);
+            hasher.write(path_key(profile).as_bytes());
+            LOCAL_PREFIX
+        }
+        Scope::Profile(profile) => {
+            hasher.write(path_key(profile).as_bytes());
+            LOCAL_PREFIX
+        }
     };
 
-    Ok(format!("{prefix}-{kind}-{:016x}", hasher.finish()))
+    format!("{prefix}-{kind}-{:016x}", hasher.finish())
 }
 
 
@@ -315,16 +337,28 @@ mod tests {
     #[test]
     fn name_ignores_path_case() {
         assert_eq!(
-            object_name("stop", Some(Path::new(r"c:\profiles\someone"))).unwrap(),
-            object_name("stop", Some(Path::new(r"C:\Profiles\SomeOne"))).unwrap()
+            object_name(
+                "stop",
+                Scope::InstallProfile(Path::new(r"c:\profiles\someone"))
+            )
+            .unwrap(),
+            object_name(
+                "stop",
+                Scope::InstallProfile(Path::new(r"C:\Profiles\SomeOne"))
+            )
+            .unwrap()
         );
     }
 
     #[test]
     fn distinct_profiles_get_distinct_names() {
         assert_ne!(
-            object_name("stop", Some(Path::new(r"c:\profiles\a"))).unwrap(),
-            object_name("stop", Some(Path::new(r"c:\profiles\b"))).unwrap()
+            object_name("stop", Scope::InstallProfile(Path::new(r"c:\profiles\a"))).unwrap(),
+            object_name("stop", Scope::InstallProfile(Path::new(r"c:\profiles\b"))).unwrap()
+        );
+        assert_ne!(
+            object_name("profile", Scope::Profile(Path::new(r"c:\profiles\a"))).unwrap(),
+            object_name("profile", Scope::Profile(Path::new(r"c:\profiles\b"))).unwrap()
         );
     }
 
@@ -332,15 +366,15 @@ mod tests {
     
     #[test]
     fn the_broadcast_name_belongs_to_no_profile() {
-        let broadcast = object_name("stop", None).unwrap();
+        let broadcast = object_name("stop", Scope::Install).unwrap();
 
         assert_ne!(
             broadcast,
-            object_name("stop", Some(Path::new(r"c:\profiles\a"))).unwrap()
+            object_name("stop", Scope::InstallProfile(Path::new(r"c:\profiles\a"))).unwrap()
         );
         assert_ne!(
             broadcast,
-            object_name("stop", Some(Path::new(r"c:\profiles\b"))).unwrap()
+            object_name("stop", Scope::InstallProfile(Path::new(r"c:\profiles\b"))).unwrap()
         );
     }
 
@@ -351,8 +385,38 @@ mod tests {
         let profile = Path::new(r"c:\profiles\kinds");
 
         assert_ne!(
-            object_name("profile", Some(profile)).unwrap(),
-            object_name("stop", Some(profile)).unwrap()
+            object_name("profile", Scope::Profile(profile)).unwrap(),
+            object_name("stop", Scope::InstallProfile(profile)).unwrap()
+        );
+        assert_ne!(
+            object_name("profile", Scope::Profile(profile)).unwrap(),
+            object_name("stop", Scope::Profile(profile)).unwrap()
+        );
+    }
+
+    #[test]
+    fn the_guard_is_shared_by_every_install() {
+        let profile = Path::new(r"c:\profiles\shared");
+
+        assert_eq!(
+            object_name_for(Path::new(r"c:\release"), "profile", Scope::Profile(profile)),
+            object_name_for(Path::new(r"c:\nightly"), "profile", Scope::Profile(profile))
+        );
+    }
+
+    #[test]
+    fn stop_events_stay_per_install() {
+        let profile = Path::new(r"c:\profiles\shared");
+        let release = Path::new(r"c:\release");
+        let nightly = Path::new(r"c:\nightly");
+
+        assert_ne!(
+            object_name_for(release, "stop", Scope::InstallProfile(profile)),
+            object_name_for(nightly, "stop", Scope::InstallProfile(profile))
+        );
+        assert_ne!(
+            object_name_for(release, "stop", Scope::Install),
+            object_name_for(nightly, "stop", Scope::Install)
         );
     }
 
@@ -427,11 +491,13 @@ mod tests {
     fn only_the_broadcast_name_is_global() {
         let profile = Path::new(r"c:\profiles\a");
 
-        assert!(object_name("stop", None).unwrap().starts_with("Global\\"));
-        assert!(object_name("stop", Some(profile))
+        assert!(object_name("stop", Scope::Install)
+            .unwrap()
+            .starts_with("Global\\"));
+        assert!(object_name("stop", Scope::InstallProfile(profile))
             .unwrap()
             .starts_with("Local\\"));
-        assert!(object_name("profile", Some(profile))
+        assert!(object_name("profile", Scope::Profile(profile))
             .unwrap()
             .starts_with("Local\\"));
     }
@@ -442,7 +508,8 @@ mod tests {
 
         
         
-        let broadcast = Event::create_shared(&object_name("stop", None).unwrap()).unwrap();
+        let broadcast =
+            Event::create_shared(&object_name("stop", Scope::Install).unwrap()).unwrap();
 
         let one = StopEvent::open(Path::new(r"c:\profiles\broadcast-one")).unwrap();
         let two = StopEvent::open(Path::new(r"c:\profiles\broadcast-two")).unwrap();
