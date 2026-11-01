@@ -891,56 +891,69 @@ already_AddRefed<Promise> WebTransport::ExportKeyingMaterial(
 
   mChild->SendExportKeyingMaterial(
       labelData, contextData, aOutputLength,
-      [self = RefPtr{this}, promise](
-          nsTArray<uint8_t>&& aKeyingMaterial) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
-        
-        
-        if (self->mState == WebTransportState::CLOSED ||
-            self->mState == WebTransportState::FAILED) {
-          promise->MaybeRejectWithInvalidStateError(
-              "Transport closed or failed during export");
-          return;
-        }
+      [self = RefPtr{this}, promise](Maybe<nsTArray<uint8_t>>&& aKeyingMaterial)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+            
+            
+            if (self->mState == WebTransportState::CLOSED ||
+                self->mState == WebTransportState::FAILED) {
+              promise->MaybeRejectWithInvalidStateError(
+                  "Transport closed or failed during export");
+              return;
+            }
 
-        
-        AutoJSAPI jsapi;
-        if (!jsapi.Init(promise->GetGlobalObject())) {
-          promise->MaybeRejectWithTypeError("Failed to initialize JS API");
-          return;
-        }
-        JSContext* cx = jsapi.cx();
+            
+            
+            
+            
+            if (!aKeyingMaterial) {
+              promise->MaybeRejectWithInvalidStateError(
+                  "Failed to export keying material");
+              return;
+            }
+            const nsTArray<uint8_t>& keyingMaterial = *aKeyingMaterial;
 
-        UniquePtr<uint8_t[], JS::FreePolicy> data(
-            static_cast<uint8_t*>(JS_malloc(cx, aKeyingMaterial.Length())));
-        if (!data) {
-          promise->MaybeRejectWithTypeError("Out of memory");
-          return;
-        }
-        memcpy(data.get(), aKeyingMaterial.Elements(),
-               aKeyingMaterial.Length());
+            
+            AutoJSAPI jsapi;
+            if (!jsapi.Init(promise->GetGlobalObject())) {
+              promise->MaybeRejectWithTypeError("Failed to initialize JS API");
+              return;
+            }
+            JSContext* cx = jsapi.cx();
 
-        JS::Rooted<JSObject*> arrayBuffer(
-            cx, JS::NewArrayBufferWithContents(cx, aKeyingMaterial.Length(),
-                                               std::move(data)));
-        if (!arrayBuffer) {
-          promise->MaybeRejectWithTypeError("Failed to create ArrayBuffer");
-          return;
-        }
+            UniquePtr<uint8_t[], JS::FreePolicy> data(
+                static_cast<uint8_t*>(JS_malloc(cx, keyingMaterial.Length())));
+            if (!data) {
+              promise->MaybeRejectWithTypeError("Out of memory");
+              return;
+            }
+            memcpy(data.get(), keyingMaterial.Elements(),
+                   keyingMaterial.Length());
 
-        JSObject* uint8Array = JS_NewUint8ArrayWithBuffer(
-            cx, arrayBuffer, 0, static_cast<int64_t>(aKeyingMaterial.Length()));
-        if (!uint8Array) {
-          promise->MaybeRejectWithTypeError("Failed to create Uint8Array");
-          return;
-        }
+            JS::Rooted<JSObject*> arrayBuffer(
+                cx, JS::NewArrayBufferWithContents(cx, keyingMaterial.Length(),
+                                                   std::move(data)));
+            if (!arrayBuffer) {
+              promise->MaybeRejectWithTypeError("Failed to create ArrayBuffer");
+              return;
+            }
 
-        
-        
-        
-        
-        JS::Rooted<JS::Value> value(cx, JS::ObjectValue(*uint8Array));
-        promise->MaybeResolve(value);
-      },
+            JSObject* uint8Array = JS_NewUint8ArrayWithBuffer(
+                cx, arrayBuffer, 0,
+                static_cast<int64_t>(keyingMaterial.Length()));
+            if (!uint8Array) {
+              promise->MaybeRejectWithTypeError("Failed to create Uint8Array");
+              return;
+            }
+
+            
+            
+            
+            
+            
+            JS::Rooted<JS::Value> value(cx, JS::ObjectValue(*uint8Array));
+            promise->MaybeResolve(value);
+          },
       [promise](mozilla::ipc::ResponseRejectReason) {
         promise->MaybeRejectWithInvalidStateError(
             "Failed to export keying material");

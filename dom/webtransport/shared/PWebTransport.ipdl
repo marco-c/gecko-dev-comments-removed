@@ -128,7 +128,7 @@ async protocol PWebTransport
   */
   async ExportKeyingMaterial(uint8_t[] label, uint8_t[] context,
                              uint32_t outputLength)
-    returns(uint8_t[] keyingMaterial);
+    returns(uint8_t[]? keyingMaterial);
 
   /**
   * Get connection statistics
