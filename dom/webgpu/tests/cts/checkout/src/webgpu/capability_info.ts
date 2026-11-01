@@ -994,6 +994,7 @@ export const kKnownWGSLLanguageFeatures = [
   'immediate_address_space',
   'fragment_depth',
   'buffer_view',
+  'unrestricted_aliasing',
   
 ] as const;
 
