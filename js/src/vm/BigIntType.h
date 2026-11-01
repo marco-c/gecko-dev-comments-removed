@@ -503,6 +503,13 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   static Digit digitDiv(Digit high, Digit low, Digit divisor, Digit* remainder);
 
   
+  
+  static inline Digit normalizedDigitInverse(Digit divisor);
+  static inline Digit digitDivByMultiplication(Digit high, Digit low,
+                                               Digit divisor, Digit inverse,
+                                               Digit* remainder);
+
+  
   static BigInt* absoluteAdd(JSContext* cx, Handle<BigInt*> x,
                              Handle<BigInt*> y, bool resultNegative);
 
