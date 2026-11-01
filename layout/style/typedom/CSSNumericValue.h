@@ -76,6 +76,7 @@ class CSSNumericValue : public CSSStyleValue {
   already_AddRefed<CSSNumericValue> Add(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
+  
   already_AddRefed<CSSNumericValue> Sub(
       const Sequence<OwningCSSNumberish>& aValues, ErrorResult& aRv);
 
@@ -174,6 +175,9 @@ class CSSNumericValue : public CSSStyleValue {
   
   already_AddRefed<CSSNumericValue> Add(
       nsTArray<RefPtr<CSSNumericValue>> aValues, ErrorResult& aRv);
+
+  
+  already_AddRefed<CSSNumericValue> Negate();
 
   StyleNumericValue ToStyleNumericValue() const;
 
