@@ -275,6 +275,13 @@ class InputToReadableStreamAlgorithms
   
   
   
+  
+  virtual bool ShouldPropagateError(nsresult aError) { return true; }
+
+  
+  
+  
+  
   virtual void BuildErrorValue(JSContext* aCx, nsresult aError,
                                JS::MutableHandle<JS::Value> aErrorValue);
 
