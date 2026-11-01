@@ -90,8 +90,9 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
-  static bool ShouldCreateBounceTrackingStateForBC(
-      dom::CanonicalBrowsingContext* aBrowsingContext);
+  
+  
+  [[nodiscard]] nsresult OnBFCacheRestored();
 
   
   static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
