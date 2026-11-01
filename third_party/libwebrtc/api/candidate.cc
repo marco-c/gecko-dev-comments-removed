@@ -18,15 +18,18 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/no_destructor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "api/rtc_error.h"
 #include "p2p/base/p2p_constants.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/ip_address.h"
+#include "rtc_base/message_digest.h"
 #include "rtc_base/net_helper.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/socket_address.h"
@@ -343,6 +346,20 @@ RTCErrorOr<Candidate> ParseCandidate(absl::string_view message) {
   return candidate;
 }
 
+
+
+
+absl::string_view GetFoundationKey() {
+  static const absl::NoDestructor<std::string> key([] {
+    
+    constexpr size_t kKeySize = 32;
+    std::string random_key;
+    RTC_CHECK(CreateRandomData(kKeySize, &random_key));
+    return random_key;
+  }());
+  return *key;
+}
+
 }  
 
 absl::string_view IceCandidateTypeToString(IceCandidateType type) {
@@ -592,7 +609,19 @@ void Candidate::ComputeFoundation(const SocketAddress& base_address,
   
   
   sb << absl::StrCat(tie_breaker);
-  foundation_ = absl::StrCat(ComputeCrc32(sb.Release()));
+
+  
+  
+  
+  
+  const absl::string_view key = GetFoundationKey();
+  const std::string input = sb.Release();
+  uint8_t digest[MessageDigest::kMaxSize];
+  const size_t digest_size =
+      ComputeHmac(DIGEST_SHA_256, key.data(), key.size(), input.data(),
+                  input.size(), digest, sizeof(digest));
+  RTC_CHECK_GE(digest_size, sizeof(uint32_t));
+  foundation_ = absl::StrCat(GetBE32(digest));
 }
 
 void Candidate::ComputePrflxFoundation() {

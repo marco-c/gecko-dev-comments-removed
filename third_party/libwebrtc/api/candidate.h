@@ -269,6 +269,10 @@ class RTC_EXPORT Candidate {
   
   
   
+  
+  
+  
+  
   void ComputeFoundation(const SocketAddress& base_address,
                          uint64_t tie_breaker);
 
