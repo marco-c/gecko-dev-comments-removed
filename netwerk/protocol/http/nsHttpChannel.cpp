@@ -5298,6 +5298,9 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     return NS_OK;
   }
 
+  
+  DiscardCacheEntryCheckState();
+
   NoteCacheEntryKeyMatch(entry);
 
   nsAutoCString cacheControlRequestHeader;
