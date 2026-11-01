@@ -47,6 +47,33 @@ function enableMl(enable) {
 }
 
 
+
+add_task(async function suggestAllPref() {
+  enableMl(true);
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
+  await QuickSuggestTestUtils.forceSync();
+
+  Assert.ok(
+    QuickSuggest.getFeature("SuggestBackendMl").isEnabled,
+    "SuggestBackendMl should be enabled"
+  );
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", false);
+  await QuickSuggestTestUtils.forceSync();
+
+  Assert.ok(
+    !QuickSuggest.getFeature("SuggestBackendMl").isEnabled,
+    "SuggestBackendMl should be disabled after setting `suggest.quicksuggest.all` to false"
+  );
+
+  UrlbarPrefs.set("suggest.quicksuggest.all", true);
+  await QuickSuggestTestUtils.forceSync();
+
+  enableMl(false);
+});
+
+
 add_task(async function zeroDelay() {
   
   
