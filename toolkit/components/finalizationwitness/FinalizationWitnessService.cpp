@@ -90,7 +90,7 @@ already_AddRefed<FinalizationEvent> ExtractFinalizationEvent(
 
 
 
-void Finalize(JS::GCContext* gcx, JSObject* objSelf) {
+void Finalize(JS::GCContext* , JSObject* objSelf) {
   RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
   if (event == nullptr || gShuttingDown) {
     
@@ -195,8 +195,9 @@ FinalizationWitnessService::Make(const char* aTopic, const char16_t* aValue,
 }
 
 NS_IMETHODIMP
-FinalizationWitnessService::Observe(nsISupports* aSubject, const char* aTopic,
-                                    const char16_t* aValue) {
+FinalizationWitnessService::Observe(nsISupports* ,
+                                    const char* aTopic,
+                                    const char16_t* ) {
   MOZ_ASSERT(strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0);
   gShuttingDown = true;
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();

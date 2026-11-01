@@ -28,7 +28,7 @@ const char* BoolResultToString(BoolResult boolResult) {
 
 
 
-BoolResult isProcessElevated(const NS_tchar* cmd) {
+BoolResult isProcessElevated([[maybe_unused]] const NS_tchar* cmd) {
 #ifdef XP_WIN
   auto isAdmin = mozilla::UserHasAdminPrivileges();
   if (isAdmin.isErr()) {
@@ -83,7 +83,8 @@ const char* elevationTypeToString(ElevationType elevationType) {
   MOZ_CRASH("impossible value for ElevationType");
 }
 
-ElevationType getElevationType(int argc, NS_tchar** argv) {
+ElevationType getElevationType([[maybe_unused]] int argc,
+                               [[maybe_unused]] NS_tchar** argv) {
   
   const NS_tchar* cmd = nullptr;
 #ifdef XP_MACOSX

@@ -50,8 +50,8 @@ nsSystemAlertsService::~nsSystemAlertsService() = default;
 
 nsresult nsSystemAlertsService::Init() { return NS_OK; }
 
-NS_IMETHODIMP nsSystemAlertsService::ShowAlert(nsIAlertNotification* aAlert,
-                                               nsIObserver* aAlertListener) {
+NS_IMETHODIMP nsSystemAlertsService::ShowAlert(
+    nsIAlertNotification* , nsIObserver* ) {
   return NS_ERROR_NOT_IMPLEMENTED;  
 }
 
@@ -77,7 +77,7 @@ NS_IMETHODIMP nsSystemAlertsService::ShowAlertWithCallbacks(
 }
 
 NS_IMETHODIMP nsSystemAlertsService::CloseAlert(const nsAString& aAlertName,
-                                                bool aContextClosed) {
+                                                bool ) {
   RefPtr<nsAlertsIconListener> listener = mActiveListeners.Get(aAlertName);
   if (!listener) {
     return NS_OK;
@@ -86,7 +86,8 @@ NS_IMETHODIMP nsSystemAlertsService::CloseAlert(const nsAString& aAlertName,
   return listener->Close();
 }
 
-NS_IMETHODIMP nsSystemAlertsService::GetHistory(nsTArray<nsString>& aResult) {
+NS_IMETHODIMP nsSystemAlertsService::GetHistory(
+    nsTArray<nsString>& ) {
   
   
   
@@ -95,11 +96,12 @@ NS_IMETHODIMP nsSystemAlertsService::GetHistory(nsTArray<nsString>& aResult) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 
-NS_IMETHODIMP nsSystemAlertsService::GetManualDoNotDisturb(bool* aRetVal) {
+NS_IMETHODIMP nsSystemAlertsService::GetManualDoNotDisturb(bool* ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP nsSystemAlertsService::SetManualDoNotDisturb(bool aDoNotDisturb) {
+NS_IMETHODIMP nsSystemAlertsService::SetManualDoNotDisturb(
+    bool ) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

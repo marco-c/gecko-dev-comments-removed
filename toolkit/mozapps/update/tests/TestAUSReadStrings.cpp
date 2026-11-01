@@ -6,7 +6,6 @@
 
 
 
-
 #ifdef XP_WIN
 #  include <windows.h>
 #  define NS_main wmain
@@ -65,7 +64,7 @@ void fail(const char* msg, ...) {
   ++gFailCount;
 }
 
-int NS_main(int argc, NS_tchar** argv) {
+int NS_main(int , NS_tchar** argv) {
   printf("Running TestAUSReadStrings tests\n");
 
   int rv = 0;

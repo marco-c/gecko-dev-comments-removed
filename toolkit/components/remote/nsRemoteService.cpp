@@ -292,8 +292,8 @@ void nsRemoteService::ShutdownServer() { mRemoteServer = nullptr; }
 nsRemoteService::~nsRemoteService() { ShutdownServer(); }
 
 NS_IMETHODIMP
-nsRemoteService::Observe(nsISupports* aSubject, const char* aTopic,
-                         const char16_t* aData) {
+nsRemoteService::Observe(nsISupports* , const char* ,
+                         const char16_t* ) {
   
   
   ShutdownServer();

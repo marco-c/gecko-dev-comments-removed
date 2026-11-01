@@ -53,7 +53,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(nsBrowserStatusFilter)
 
 NS_IMETHODIMP
 nsBrowserStatusFilter::AddProgressListener(nsIWebProgressListener* aListener,
-                                           uint32_t aNotifyMask) {
+                                           uint32_t ) {
   mListener = aListener;
   return NS_OK;
 }
@@ -69,7 +69,7 @@ nsBrowserStatusFilter::RemoveProgressListener(
 
 NS_IMETHODIMP
 nsBrowserStatusFilter::GetBrowsingContextXPCOM(
-    mozilla::dom::BrowsingContext** aResult) {
+    mozilla::dom::BrowsingContext** ) {
   MOZ_ASSERT_UNREACHABLE("nsBrowserStatusFilter::GetBrowsingContextXPCOM");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -80,7 +80,7 @@ mozilla::dom::BrowsingContext* nsBrowserStatusFilter::GetBrowsingContext() {
 }
 
 NS_IMETHODIMP
-nsBrowserStatusFilter::GetDOMWindow(mozIDOMWindowProxy** aResult) {
+nsBrowserStatusFilter::GetDOMWindow(mozIDOMWindowProxy** ) {
   MOZ_ASSERT_UNREACHABLE("nsBrowserStatusFilter::GetDOMWindow");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -93,7 +93,7 @@ nsBrowserStatusFilter::GetIsTopLevel(bool* aIsTopLevel) {
 }
 
 NS_IMETHODIMP
-nsBrowserStatusFilter::GetIsLoadingDocument(bool* aIsLoadingDocument) {
+nsBrowserStatusFilter::GetIsLoadingDocument(bool* ) {
   MOZ_ASSERT_UNREACHABLE("nsBrowserStatusFilter::GetIsLoadingDocument");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -180,10 +180,10 @@ nsBrowserStatusFilter::OnStateChange(nsIWebProgress* aWebProgress,
 }
 
 NS_IMETHODIMP
-nsBrowserStatusFilter::OnProgressChange(nsIWebProgress* aWebProgress,
-                                        nsIRequest* aRequest,
-                                        int32_t aCurSelfProgress,
-                                        int32_t aMaxSelfProgress,
+nsBrowserStatusFilter::OnProgressChange(nsIWebProgress* ,
+                                        nsIRequest* ,
+                                        int32_t ,
+                                        int32_t ,
                                         int32_t aCurTotalProgress,
                                         int32_t aMaxTotalProgress) {
   if (!mListener) {
@@ -224,8 +224,9 @@ nsBrowserStatusFilter::OnLocationChange(nsIWebProgress* aWebProgress,
 }
 
 NS_IMETHODIMP
-nsBrowserStatusFilter::OnStatusChange(nsIWebProgress* aWebProgress,
-                                      nsIRequest* aRequest, nsresult aStatus,
+nsBrowserStatusFilter::OnStatusChange(nsIWebProgress* ,
+                                      nsIRequest* ,
+                                      nsresult ,
                                       const char16_t* aMessage) {
   if (!mListener) {
     return NS_OK;
@@ -375,7 +376,8 @@ void nsBrowserStatusFilter::CallDelayedProgressListeners() {
   }
 }
 
-void nsBrowserStatusFilter::TimeoutHandler(nsITimer* aTimer, void* aClosure) {
+void nsBrowserStatusFilter::TimeoutHandler(nsITimer* ,
+                                           void* aClosure) {
   RefPtr self = static_cast<nsBrowserStatusFilter*>(aClosure);
   if (!self) {
     NS_ERROR("no self");

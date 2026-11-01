@@ -34,9 +34,10 @@ nsDBusRemoteClient::~nsDBusRemoteClient() {
   LOG("nsDBusRemoteClient::~nsDBusRemoteClient");
 }
 
-nsresult nsDBusRemoteClient::SendCommandLine(const char* aProgram,
+nsresult nsDBusRemoteClient::SendCommandLine(const char* ,
                                              const char* aProfile, int32_t argc,
-                                             const char** argv, bool aRaise) {
+                                             const char** argv,
+                                             bool ) {
   
   NS_ENSURE_TRUE(aProfile, NS_ERROR_INVALID_ARG);
 
