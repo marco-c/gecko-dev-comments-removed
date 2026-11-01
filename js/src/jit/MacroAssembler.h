@@ -4038,38 +4038,42 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(riscv64);
 
   
-  void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
-                         Register memoryBase, Register ptr, Register ptrScratch,
-                         Register output, Register tmp) DEFINED_ON(mips64);
+  FaultingCodeRange wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
+                                      Register memoryBase, Register ptr,
+                                      Register ptrScratch, Register output,
+                                      Register tmp) DEFINED_ON(mips64);
 
   
-  void wasmUnalignedLoadFP(const wasm::MemoryAccessDesc& access,
-                           Register memoryBase, Register ptr,
-                           Register ptrScratch, FloatRegister output,
-                           Register tmp1) DEFINED_ON(mips64);
-
-  
-  void wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access,
-                            Register memoryBase, Register ptr,
-                            Register ptrScratch, Register64 output,
-                            Register tmp) DEFINED_ON(mips64);
-
-  
-  void wasmUnalignedStore(const wasm::MemoryAccessDesc& access, Register value,
-                          Register memoryBase, Register ptr,
-                          Register ptrScratch, Register tmp) DEFINED_ON(mips64);
-
-  
-  void wasmUnalignedStoreFP(const wasm::MemoryAccessDesc& access,
-                            FloatRegister floatValue, Register memoryBase,
-                            Register ptr, Register ptrScratch, Register tmp)
+  FaultingCodeRange wasmUnalignedLoadFP(const wasm::MemoryAccessDesc& access,
+                                        Register memoryBase, Register ptr,
+                                        Register ptrScratch,
+                                        FloatRegister output, Register tmp1)
       DEFINED_ON(mips64);
 
   
-  void wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access,
-                             Register64 value, Register memoryBase,
-                             Register ptr, Register ptrScratch, Register tmp)
+  FaultingCodeRange wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access,
+                                         Register memoryBase, Register ptr,
+                                         Register ptrScratch, Register64 output,
+                                         Register tmp) DEFINED_ON(mips64);
+
+  
+  FaultingCodeRange wasmUnalignedStore(const wasm::MemoryAccessDesc& access,
+                                       Register value, Register memoryBase,
+                                       Register ptr, Register ptrScratch,
+                                       Register tmp) DEFINED_ON(mips64);
+
+  
+  FaultingCodeRange wasmUnalignedStoreFP(const wasm::MemoryAccessDesc& access,
+                                         FloatRegister floatValue,
+                                         Register memoryBase, Register ptr,
+                                         Register ptrScratch, Register tmp)
       DEFINED_ON(mips64);
+
+  
+  FaultingCodeRange wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access,
+                                          Register64 value, Register memoryBase,
+                                          Register ptr, Register ptrScratch,
+                                          Register tmp) DEFINED_ON(mips64);
 
   
 
