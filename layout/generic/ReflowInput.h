@@ -166,11 +166,17 @@ struct SizeComputationInput {
                       LayoutFrameType aFrameType);
 
  protected:
+  
+
+
+
+
   void InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
                    LayoutFrameType aFrameType, ComputeSizeFlags aFlags,
                    const Maybe<LogicalMargin>& aBorder,
                    const Maybe<LogicalMargin>& aPadding,
-                   const nsStyleDisplay* aDisplay = nullptr);
+                   const nsStyleDisplay* aDisplay = nullptr,
+                   EnumSet<LogicalSide> aTrimmedMarginSides = {});
 
   
 
@@ -571,6 +577,15 @@ struct ReflowInput : public SizeComputationInput {
 
     
     bool mIsInLineClampContainer : 1;
+
+    
+    
+    
+    
+    
+    
+    bool mTrimBStartMargin : 1;
+    bool mTrimBEndMargin : 1;
   };
   Flags mFlags;
 
@@ -619,6 +634,12 @@ struct ReflowInput : public SizeComputationInput {
     
     
     StaticPosIsCBOrigin,
+
+    
+    
+    
+    TrimBStartMargin,
+    TrimBEndMargin,
   };
   using InitFlags = EnumSet<InitFlag>;
 
