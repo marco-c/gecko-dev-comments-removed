@@ -172,6 +172,7 @@ def build(
     show_all_warnings=None,
     allow_subdirectory_build=False,
     no_completion_messages=False,
+    append_env=None,
 ):
     """Build the source tree.
 
@@ -276,7 +277,6 @@ def build(
         
         
         keep_going = keep_going or bool(os.environ.get("MOZ_AUTOMATION"))
-        append_env = None
 
         
         
