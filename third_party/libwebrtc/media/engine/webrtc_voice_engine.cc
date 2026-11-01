@@ -1755,7 +1755,6 @@ void WebRtcVoiceSendChannel::EnableSframe() {
 }
 
 void WebRtcVoiceSendChannel::SetSframeEncryptor(
-    uint32_t ,
     scoped_refptr<SframeMediaEncryptorInterface> ) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   

@@ -40,6 +40,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video_frame_transformer_delegate.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
+#include "modules/sframe/sframe_media_encryptor_interface.h"
 #include "rtc_base/bitrate_tracker.h"
 #include "rtc_base/frequency_tracker.h"
 #include "rtc_base/one_time_event.h"
@@ -93,6 +94,7 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
     bool raw_packetization = false;
     
     bool sframe_required = false;
+    scoped_refptr<SframeMediaEncryptorInterface> sframe_encryptor;
   };
 
   explicit RTPSenderVideo(const Config& config);
@@ -276,6 +278,7 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
   const bool require_frame_encryption_;
   
   const bool sframe_required_;
+  const scoped_refptr<SframeMediaEncryptorInterface> sframe_encryptor_;
   
   const bool generic_descriptor_auth_experiment_;
 

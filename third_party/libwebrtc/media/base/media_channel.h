@@ -233,8 +233,9 @@ class MediaSendChannelInterface {
 
   
   
+  
+  
   virtual void SetSframeEncryptor(
-      uint32_t ssrc,
       scoped_refptr<SframeMediaEncryptorInterface> sframe_encryptor) = 0;
 
   virtual RTCError SetRtpSendParameters(

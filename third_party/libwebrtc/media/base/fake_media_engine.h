@@ -443,8 +443,7 @@ class RtpSendChannelHelper : public Base, public MediaChannelUtil {
   void SetFrameEncryptor(uint32_t ,
                          scoped_refptr<FrameEncryptorInterface>
                          ) override {}
-  void SetSframeEncryptor(uint32_t ,
-                          scoped_refptr<SframeMediaEncryptorInterface>
+  void SetSframeEncryptor(scoped_refptr<SframeMediaEncryptorInterface>
                           ) override {}
   void SetEncoderToPacketizerFrameTransformer(
       uint32_t ,

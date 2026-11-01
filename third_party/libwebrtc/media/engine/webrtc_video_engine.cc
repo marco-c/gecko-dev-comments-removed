@@ -1823,10 +1823,13 @@ void WebRtcVideoSendChannel::EnableSframe() {
 }
 
 void WebRtcVideoSendChannel::SetSframeEncryptor(
-    uint32_t ,
-    scoped_refptr<SframeMediaEncryptorInterface> ) {
+    scoped_refptr<SframeMediaEncryptorInterface> sframe_encryptor) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  
+  sframe_options_.encryptor = std::move(sframe_encryptor);
+
+  for (auto& [ssrc, stream] : send_streams_) {
+    stream->UpdateSframeOptions(sframe_options_);
+  }
 }
 
 void WebRtcVideoSendChannel::SetEncoderSelector(

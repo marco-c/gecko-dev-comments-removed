@@ -211,6 +211,7 @@ RTPSenderVideo::RTPSenderVideo(const Config& config)
       frame_encryptor_(config.frame_encryptor),
       require_frame_encryption_(config.require_frame_encryption),
       sframe_required_(config.sframe_required),
+      sframe_encryptor_(config.sframe_encryptor),
       generic_descriptor_auth_experiment_(
           !config.field_trials->IsDisabled("WebRTC-GenericDescriptorAuth")),
       raw_packetization_(config.raw_packetization),
@@ -918,6 +919,8 @@ bool RTPSenderVideo::SendEncodedImage(int payload_type,
                                       TimeDelta expected_retransmission_time,
                                       const std::vector<uint32_t>& csrcs) {
   if (sframe_required_ ) {
+    
+    
     
     RTC_LOG(LS_WARNING) << "Dropping video frame: Sframe is required but no "
                            "Sframe encryptor is set up for this stream.";
