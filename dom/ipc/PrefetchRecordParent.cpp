@@ -107,6 +107,8 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
     return;
   }
 
+  mIsEligibleForPrefetch = true;
+
   
   
   OriginAttributes isolatedAttrs = sourceAttrs;
@@ -114,6 +116,13 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
     PopulateIsolatedPartitionKey(isolatedAttrs);
   }
   mIsolatedPartitionKey = isolatedAttrs.mPartitionKey;
+
+  if (StaticPrefs::dom_speculation_rules_prefetch_dry_run()) {
+    LOG_SPECRULES(
+        ("PrefetchRecordParent::Init: this=%p dry run, not fetching", this));
+    mState = PrefetchState::DryRun;
+    return;
+  }
 
   
   
@@ -267,6 +276,17 @@ bool PrefetchRecordParent::MatchesURL(nsIURI* aURL) const {
   return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, data);
 }
 
+
+
+bool PrefetchRecordParent::MatchesNoVarySearchHint(nsIURI* aURL) const {
+  if (!mURL || mNoVarySearchHint.IsEmpty()) {
+    return false;
+  }
+  net::NoVarySearchData hint =
+      net::ParseNoVarySearchHeader(NS_ConvertUTF16toUTF8(mNoVarySearchHint));
+  return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, hint);
+}
+
 bool PrefetchRecordParent::IsExpectedToMatch(nsIURI* aURL) const {
   
   
@@ -277,17 +297,19 @@ bool PrefetchRecordParent::IsExpectedToMatch(nsIURI* aURL) const {
   }
 
   
-  
-  
-  if (mNoVarySearchHint.IsEmpty()) {
+  return MatchesNoVarySearchHint(aURL);
+}
+
+bool PrefetchRecordParent::MatchesCandidateURL(nsIURI* aURL) const {
+  if (!mURL) {
     return false;
   }
-  
-  net::NoVarySearchData hint =
-      net::ParseNoVarySearchHeader(NS_ConvertUTF16toUTF8(mNoVarySearchHint));
-  
-  
-  return net::URLsAreEquivalentModuloVariationConfig(mURL, aURL, hint);
+  bool eq = false;
+  mURL->Equals(aURL, &eq);
+  if (eq) {
+    return true;
+  }
+  return MatchesNoVarySearchHint(aURL);
 }
 
 nsString PrefetchRecordParent::ComputePartitionKeyForChannel(

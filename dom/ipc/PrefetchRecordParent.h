@@ -71,6 +71,7 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   bool HadConflictingCredentials() const { return mHadConflictingCredentials; }
   const nsTArray<Maybe<nsString>>& Tags() const { return mTags; }
   const nsString& NoVarySearchHint() const { return mNoVarySearchHint; }
+  bool IsEligibleForPrefetch() const { return mIsEligibleForPrefetch; }
 
   
   mozilla::ipc::IPCResult RecvCancel();
@@ -97,6 +98,11 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   
   bool IsExpectedToMatch(nsIURI* aURL) const;
 
+  
+  
+  
+  bool MatchesCandidateURL(nsIURI* aURL) const;
+
   void ActorDestroy(ActorDestroyReason aReason) override;
 
  private:
@@ -109,6 +115,7 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   nsString ComputePartitionKeyForChannel(nsIChannel* aChannel) const;
   bool IsReferrerPolicySufficientlyStrict() const;
   void ReleaseCacheToken();
+  bool MatchesNoVarySearchHint(nsIURI* aURL) const;
 
   
   
@@ -131,6 +138,7 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   nsString mSourcePartitionKey;
   nsString mIsolatedPartitionKey;
   bool mHadConflictingCredentials = false;
+  bool mIsEligibleForPrefetch = false;
 
   
   uint64_t mBytesReceived = 0;

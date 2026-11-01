@@ -603,6 +603,14 @@ RefPtr<dom::PrefetchMatchPromise> DocumentLoadListener::TryActivateFromPrefetch(
     return nullptr;
   }
 
+  
+  
+  
+  if (sourceWGP->HasMatchingPrefetchCandidate(aURI)) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    loadInfo->SetPrefetchCandidateMatched(true);
+  }
+
   if (dom::PrefetchRecordParent* rec =
           sourceWGP->FindMatchingPrefetchRecord(aURI)) {
     ActivateFromPrefetch(rec);

@@ -481,6 +481,11 @@ class WindowGlobalParent final : public WindowContext,
   
   bool HasPotentialPrefetchMatch(nsIURI* aURI);
 
+  
+  
+  
+  bool HasMatchingPrefetchCandidate(nsIURI* aURI);
+
   void RemoveWaiter(PrefetchMatchWaiter* aWaiter);
 
   void UpdateFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus);

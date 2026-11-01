@@ -2440,6 +2440,19 @@ bool WindowGlobalParent::HasPotentialPrefetchMatch(nsIURI* aURI) {
   return false;
 }
 
+bool WindowGlobalParent::HasMatchingPrefetchCandidate(nsIURI* aURI) {
+  nsTArray<PPrefetchRecordParent*> managed;
+  ManagedPPrefetchRecordParent(managed);
+  for (auto* p : managed) {
+    auto* rec = static_cast<PrefetchRecordParent*>(p);
+    
+    if (rec->IsEligibleForPrefetch() && rec->MatchesCandidateURL(aURI)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void WindowGlobalParent::RemoveWaiter(PrefetchMatchWaiter* aWaiter) {
   mPrefetchWaiters.RemoveElement(aWaiter);
   LOG_SPECRULES(

@@ -76,7 +76,13 @@ namespace mozilla::performance::pageload_event {
 
 enum UserFeature : uint32_t { USING_A11Y = 1 << 0 };
 
-enum DocumentFeature : uint32_t { FETCH_PRIORITY_IMAGES = 1 << 0 };
+enum DocumentFeature : uint32_t {
+  FETCH_PRIORITY_IMAGES = 1 << 0,
+  
+  NAVIGATIONAL_PREFETCH = 1 << 1,
+  
+  NAVIGATIONAL_PREFETCH_ELIGIBLE = 1 << 2,
+};
 
 enum AndroidIsolationCategory : uint32_t {
   OTHER = 0,
