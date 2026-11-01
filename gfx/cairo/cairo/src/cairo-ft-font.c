@@ -1034,12 +1034,13 @@ _compute_xrender_bitmap_size(FT_Bitmap      *target,
     
     ftbit = &slot->bitmap;
 
+    
+    if (ftbit->width > INT_MAX / 4 || ftbit->rows > INT_MAX) {
+      return -1;
+    }
+
     width = ftbit->width;
     height = ftbit->rows;
-
-    
-    if (width < 0 || width > INT_MAX / 4 || height < 0)
-	return -1;
 
     pitch = (width + 3) & ~3;
 
@@ -1093,10 +1094,11 @@ _compute_xrender_bitmap_size(FT_Bitmap      *target,
     target->buffer = NULL;
 
     
-    if ((cairo_int64_t) pitch * height > INT_MAX)
+    size_t result;
+    if (_cairo_mul_size_t_overflow(pitch, height, &result) || result > INT_MAX)
 	return -1;
 
-    return pitch * height;
+    return (int) result;
 }
 
 

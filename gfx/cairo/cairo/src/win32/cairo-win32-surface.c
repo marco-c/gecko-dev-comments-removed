@@ -310,6 +310,12 @@ _cairo_win32_surface_emit_glyphs (cairo_win32_surface_t *dst,
 
             dxy_buf[j] = _cairo_lround (next_logical_x - logical_x);
             
+
+
+
+
+
+
             dxy_buf[j+1] = _cairo_lround (logical_y - next_logical_y);
 
             logical_x = next_logical_x;

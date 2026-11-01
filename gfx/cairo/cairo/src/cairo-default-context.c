@@ -887,19 +887,24 @@ _cairo_default_context_rectangle (void *abstract_cr,
     cairo_default_context_t *cr = abstract_cr;
     cairo_status_t status;
 
+    
+
+
+
+
     status = _cairo_default_context_move_to (cr, x, y);
     if (unlikely (status))
 	return status;
 
-    status = _cairo_default_context_rel_line_to (cr, width, 0);
+    status = _cairo_default_context_line_to (cr, x + width, y);
     if (unlikely (status))
 	return status;
 
-    status = _cairo_default_context_rel_line_to (cr, 0, height);
+    status = _cairo_default_context_line_to (cr, x + width, y + height);
     if (unlikely (status))
 	return status;
 
-    status = _cairo_default_context_rel_line_to (cr, -width, 0);
+    status = _cairo_default_context_line_to (cr, x, y + height);
     if (unlikely (status))
 	return status;
 
