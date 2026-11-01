@@ -96,7 +96,7 @@ StyleSheet* CSSImportRule::GetStyleSheetForBindings() {
     
     
     
-    if (StyleSheet* parent = GetStyleSheet()) {
+    if (StyleSheet* parent = GetParentStyleSheet()) {
       parent->EnsureUniqueInner();
     }
   }
