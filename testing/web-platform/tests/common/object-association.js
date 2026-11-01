@@ -21,6 +21,25 @@ window.testIsPerDocument = propertyName => {
 function runTests(propertyName, equalityOrInequalityAsserter, mustOrMustNotReplace) {
   async_test(t => {
     const iframe = document.createElement("iframe");
+
+    iframe.onload = t.step_func_done(() => {
+      const after = frame[propertyName];
+      equalityOrInequalityAsserter(after, before);
+    });
+
+    iframe.src = "/common/blank.html";
+    document.body.appendChild(iframe);
+
+    const frame = iframe.contentWindow;
+    const before = frame[propertyName];
+    assert_implements(before, `window.${propertyName} must be implemented`);
+  }, `Navigating from the transient about:blank ${mustOrMustNotReplace} replace window.${propertyName}`);
+
+  
+  
+  
+  async_test(t => {
+    const iframe = document.createElement("iframe");
     document.body.appendChild(iframe);
     const frame = iframe.contentWindow;
 
