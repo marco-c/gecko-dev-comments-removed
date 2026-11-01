@@ -6,6 +6,8 @@
 interface CanonicalBrowsingContext extends LoadContextMixin {
   embedderElement: MozBrowser;
   currentWindowContext: WindowGlobalParent;
+  
+  nonWebControlledLoadingURI?: nsIURI;
   parent: CanonicalBrowsingContext;
   parentWindowContext: WindowGlobalParent;
   top: CanonicalBrowsingContext;
@@ -20,6 +22,9 @@ declare namespace ChromeUtils {
     aOptions?: ImportESModuleOptionsDictionary
   ): Modules[T];
 }
+
+
+declare var locks: LockManager;
 
 interface ChromeWindow extends Window {
   isChromeWindow: true;
