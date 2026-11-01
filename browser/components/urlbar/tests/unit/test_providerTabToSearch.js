@@ -12,9 +12,6 @@ let testEngine;
 
 add_setup(async () => {
   
-  
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
-  
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   
   Services.prefs.setBoolPref(

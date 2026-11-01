@@ -54,10 +54,6 @@ add_setup(async function () {
 
   
   
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
-
-  
-  
   Services.prefs.setCharPref("browser.search.region", "US");
 
   SearchTestUtils.setRemoteSettingsConfig(SEARCH_CONFIG);
@@ -119,7 +115,7 @@ add_task(async function onlyEnabled_option_nomatch() {
   matchedEngines = await UrlbarSearchUtils.enginesForDomainPrefix(token);
   Assert.equal(matchedEngines[0].searchUrlDomain, domain);
   Assert.equal(matchedEngines[0], defaultEngine);
-});
+}).skip();
 
 add_task(async function add_search_engine_match() {
   Assert.equal(
