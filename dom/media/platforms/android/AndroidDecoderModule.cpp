@@ -205,6 +205,17 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
              : media::DecodeSupportSet{};
 }
 
+RefPtr<PlatformDecoderModule::CreateDecoderPromise>
+AndroidDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
+  RefPtr<MediaDataDecoder> decoder;
+  if (aParams.IsAudio()) {
+    decoder = CreateAudioDecoder(aParams);
+  } else if (aParams.IsVideo()) {
+    decoder = CreateVideoDecoder(aParams);
+  }
+  return CreateDecoderPromiseFrom(decoder.forget(), aParams);
+}
+
 already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
     const CreateDecoderParams& aParams) {
   

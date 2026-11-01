@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(EMEDecoderModule_h_)
 #  define EMEDecoderModule_h_
 
@@ -24,18 +22,6 @@ class EMEDecoderModule : public PlatformDecoderModule {
  protected:
   RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
-
-  
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override {
-    MOZ_CRASH("Not used");
-  }
-
-  
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-      const CreateDecoderParams& aParams) override {
-    MOZ_CRASH("Not used");
-  }
 
   media::DecodeSupportSet SupportsMimeType(
       const nsACString& aMimeType,

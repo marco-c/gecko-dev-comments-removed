@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(AgnosticDecoderModule_h_)
 #  define AgnosticDecoderModule_h_
 
@@ -27,11 +25,7 @@ class AgnosticDecoderModule : public PlatformDecoderModule {
   AgnosticDecoderModule() = default;
   virtual ~AgnosticDecoderModule() = default;
   
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 };
 

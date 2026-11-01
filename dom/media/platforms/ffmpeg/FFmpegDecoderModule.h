@@ -156,53 +156,15 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
   explicit FFmpegDecoderModule(const FFmpegLibWrapper* aLib) : mLib(aLib) {}
   virtual ~FFmpegDecoderModule() = default;
 
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override {
-    if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
-      return nullptr;
+    RefPtr<MediaDataDecoder> decoder;
+    if (aParams.IsAudio()) {
+      decoder = CreateAudioDecoder(aParams);
+    } else if (aParams.IsVideo()) {
+      decoder = CreateVideoDecoder(aParams);
     }
-    auto decoder = MakeRefPtr<FFmpegVideoDecoder<V>>(
-        mLib, aParams.VideoConfig(), aParams.mKnowsCompositor,
-        aParams.mImageContainer,
-        aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency),
-        aParams.mOptions.contains(
-            CreateDecoderParams::Option::HardwareDecoderNotAllowed),
-        aParams.mOptions.contains(
-            CreateDecoderParams::Option::Output8BitPerChannel),
-        aParams.mTrackingId, aParams.mCDM);
-
-#ifdef XP_WIN
-    
-    
-    
-    
-    
-    if (XRE_IsGPUProcess()) {
-      AVCodecID videoCodec =
-          FFmpegVideoDecoder<V>::GetCodecId(aParams.mConfig.mMimeType);
-      if (IsHWDecodingSupported(videoCodec) &&
-          !decoder->IsHardwareAccelerated()) {
-        MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
-                    "FFmpeg video decoder can't perform hw decoding, abort!");
-        (void)decoder->Shutdown();
-        decoder = nullptr;
-      }
-    }
-#endif
-    return decoder.forget();
-  }
-
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-      const CreateDecoderParams& aParams) override {
-    if (XRE_IsGPUProcess()) {
-      
-      return nullptr;
-    }
-    if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
-      return nullptr;
-    }
-    RefPtr<MediaDataDecoder> decoder = new FFmpegAudioDecoder<V>(mLib, aParams);
-    return decoder.forget();
+    return CreateDecoderPromiseFrom(decoder.forget(), aParams);
   }
 
   media::DecodeSupportSet SupportsMimeType(
@@ -351,6 +313,55 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
   }
 
  private:
+  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
+      const CreateDecoderParams& aParams) {
+    if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
+      return nullptr;
+    }
+    auto decoder = MakeRefPtr<FFmpegVideoDecoder<V>>(
+        mLib, aParams.VideoConfig(), aParams.mKnowsCompositor,
+        aParams.mImageContainer,
+        aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency),
+        aParams.mOptions.contains(
+            CreateDecoderParams::Option::HardwareDecoderNotAllowed),
+        aParams.mOptions.contains(
+            CreateDecoderParams::Option::Output8BitPerChannel),
+        aParams.mTrackingId, aParams.mCDM);
+
+#ifdef XP_WIN
+    
+    
+    
+    
+    
+    if (XRE_IsGPUProcess()) {
+      AVCodecID videoCodec =
+          FFmpegVideoDecoder<V>::GetCodecId(aParams.mConfig.mMimeType);
+      if (IsHWDecodingSupported(videoCodec) &&
+          !decoder->IsHardwareAccelerated()) {
+        MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+                    "FFmpeg video decoder can't perform hw decoding, abort!");
+        (void)decoder->Shutdown();
+        decoder = nullptr;
+      }
+    }
+#endif
+    return decoder.forget();
+  }
+
+  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+      const CreateDecoderParams& aParams) {
+    if (XRE_IsGPUProcess()) {
+      
+      return nullptr;
+    }
+    if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
+      return nullptr;
+    }
+    RefPtr<MediaDataDecoder> decoder = new FFmpegAudioDecoder<V>(mLib, aParams);
+    return decoder.forget();
+  }
+
   const FFmpegLibWrapper* mLib;
   constinit static inline StaticDataMutex<nsTArray<AVCodecID>>
       sSupportedHWCodecs{"sSupportedHWCodecs"};

@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(OmxDecoderModule_h_)
 #  define OmxDecoderModule_h_
 
@@ -17,10 +15,7 @@ class OmxDecoderModule : public PlatformDecoderModule {
   static bool Init();
   static OmxDecoderModule* Create();
 
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 
   media::DecodeSupportSet SupportsMimeType(

@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(GMPDecoderModule_h_)
 #  define GMPDecoderModule_h_
 
@@ -34,11 +32,7 @@ class GMPDecoderModule : public PlatformDecoderModule {
   static already_AddRefed<PlatformDecoderModule> Create();
 
   
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 
   media::DecodeSupportSet SupportsMimeType(

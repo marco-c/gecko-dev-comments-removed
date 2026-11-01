@@ -22,10 +22,7 @@ class MFMediaEngineDecoderModule final : public PlatformDecoderModule {
   
   static bool SupportsConfig(const TrackInfo& aConfig);
 
-  already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) override;
-
-  already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
+  RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
       const CreateDecoderParams& aParams) override;
 
   media::DecodeSupportSet SupportsMimeType(

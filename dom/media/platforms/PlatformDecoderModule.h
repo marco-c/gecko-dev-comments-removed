@@ -210,8 +210,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
     nsPrintfCString str("CreateDecoderParams @ %p: ", this);
     str.AppendPrintf("mConfig = %s", mConfig.ToString().get());
     str.AppendPrintf(", mImageContainer = %p", mImageContainer);
-    str.AppendPrintf(", mError = %s",
-                     mError ? mError->Description().get() : "null");
     str.AppendPrintf(", mKnowsCompositor = %p", mKnowsCompositor);
     str.AppendPrintf(", mCrashHelper = %p", mCrashHelper);
     str.AppendPrintf(", mCDM = %p", mCDM);
@@ -239,7 +237,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   
   const TrackInfo& mConfig;
   layers::ImageContainer* mImageContainer = nullptr;
-  MediaResult* mError = nullptr;
   layers::KnowsCompositor* mKnowsCompositor = nullptr;
   GMPCrashHelper* mCrashHelper = nullptr;
   PRemoteCDMActor* mCDM = nullptr;
@@ -259,7 +256,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   void Set(layers::ImageContainer* aImageContainer) {
     mImageContainer = aImageContainer;
   }
-  void Set(MediaResult* aError) { mError = aError; }
   void Set(GMPCrashHelper* aCrashHelper) { mCrashHelper = aCrashHelper; }
   void Set(PRemoteCDMActor* aCDM) { mCDM = aCDM; }
   void Set(UseNullDecoder aUseNullDecoder) {
@@ -293,7 +289,6 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
   void Set(const CreateDecoderParams& aParams) {
     
     mImageContainer = aParams.mImageContainer;
-    mError = aParams.mError;
     mKnowsCompositor = aParams.mKnowsCompositor;
     mCrashHelper = aParams.mCrashHelper;
     mCDM = aParams.mCDM;
@@ -325,7 +320,6 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
 
   explicit SupportDecoderParams(const CreateDecoderParams& aParams)
       : mConfig(aParams.mConfig),
-        mError(aParams.mError),
         mKnowsCompositor(aParams.mKnowsCompositor),
         mCDM(aParams.mCDM),
         mUseNullDecoder(aParams.mUseNullDecoder),
@@ -344,7 +338,6 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
 
   const TrackInfo& mConfig;
   DecoderDoctorDiagnostics* mDiagnostics = nullptr;
-  MediaResult* mError = nullptr;
   RefPtr<layers::KnowsCompositor> mKnowsCompositor;
   PRemoteCDMActor* mCDM = nullptr;
   UseNullDecoder mUseNullDecoder;
@@ -357,7 +350,6 @@ struct MOZ_STACK_CLASS SupportDecoderParams final {
   void Set(DecoderDoctorDiagnostics* aDiagnostics) {
     mDiagnostics = aDiagnostics;
   }
-  void Set(MediaResult* aError) { mError = aError; }
   void Set(PRemoteCDMActor* aCDM) { mCDM = aCDM; }
   void Set(media::UseNullDecoder aUseNullDecoder) {
     mUseNullDecoder = aUseNullDecoder;
@@ -492,24 +484,16 @@ class PlatformDecoderModule {
   
   
   
-  virtual already_AddRefed<MediaDataDecoder> CreateVideoDecoder(
-      const CreateDecoderParams& aParams) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
-      const CreateDecoderParams& aParams) = 0;
-
-  
   virtual RefPtr<CreateDecoderPromise> AsyncCreateDecoder(
-      const CreateDecoderParams& aParams);
+      const CreateDecoderParams& aParams) = 0;
+
+ protected:
+  
+  
+  
+  static RefPtr<CreateDecoderPromise> CreateDecoderPromiseFrom(
+      already_AddRefed<MediaDataDecoder> aDecoder,
+      const CreateDecoderParams& aParams, const MediaResult& aError = NS_OK);
 };
 
 DDLoggedTypeDeclName(MediaDataDecoder);
