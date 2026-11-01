@@ -35,6 +35,9 @@ async function runTest() {
   const browser = tab.linkedBrowser;
 
   
+  await promiseApzFlushedRepaintsInPopup(browser);
+
+  
   
   const touchstartPromise = SpecialPowers.spawn(browser, [], () => {
     return new Promise(resolve => {
