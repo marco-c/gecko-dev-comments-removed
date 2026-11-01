@@ -154,7 +154,7 @@ class MicroTaskQueueElement {
     Embedder = JS::MicroTask::Kind::Embedder,
 
     
-    PromiseReaction = JS::MicroTask::Kind::FirstJSKind,
+    PromiseReactionObject = JS::MicroTask::Kind::FirstJSKind,
 
     
     ResolveThenable,
