@@ -32,6 +32,8 @@ class ApmDataDumper;
 
 
 
+
+
 class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
  public:
   static constexpr float kDefaultBackgroundSpeakerOffsetDbfs = 7.0f;
@@ -55,7 +57,11 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
   
   bool IsConfident() const override { return is_confident_; }
   
-  bool IsBackgroundSpeaker() const override { return is_background_speaker_; }
+  
+  
+  bool IsTargetSpeakerActive() const override {
+    return !is_background_speaker_ && !low_activity_segment_;
+  }
   
   float GetBackgroundSpeakerOffsetDbfs() const {
     return background_speaker_offset_dbfs_;
@@ -91,6 +97,7 @@ class SpeechLevelEstimatorExperimentalImpl : public SpeechLevelEstimator {
   float level_dbfs_;
   bool is_confident_;
   bool is_background_speaker_;
+  bool low_activity_segment_;
   int num_adjacent_speech_frames_;
   int num_frames_in_current_update_window_;
   float tracking_level_dbfs_;

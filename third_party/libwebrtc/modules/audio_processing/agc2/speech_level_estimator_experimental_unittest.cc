@@ -161,7 +161,7 @@ TEST(GainController2SpeechLevelEstimatorExperimental,
   RunOnConstantLevel(kFramesPerUpdate, level_estimator.level_rms_dbfs,
                      kMaxSpeechProbability, *level_estimator.estimator);
   ASSERT_TRUE(level_estimator.estimator->IsConfident());
-  EXPECT_FALSE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_TRUE(level_estimator.estimator->IsTargetSpeakerActive());
   const float confident_level_dbfs = level_estimator.estimator->GetLevelDbfs();
 
   
@@ -175,14 +175,14 @@ TEST(GainController2SpeechLevelEstimatorExperimental,
                      kMaxSpeechProbability, *level_estimator.estimator);
 
   
-  EXPECT_TRUE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_FALSE(level_estimator.estimator->IsTargetSpeakerActive());
   EXPECT_NEAR(level_estimator.estimator->GetLevelDbfs(), confident_level_dbfs,
               kLevelToleranceDbfs);
 
   
   RunOnConstantLevel(kFramesPerUpdate, level_estimator.level_rms_dbfs,
                      kMaxSpeechProbability, *level_estimator.estimator);
-  EXPECT_FALSE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_TRUE(level_estimator.estimator->IsTargetSpeakerActive());
   EXPECT_NEAR(level_estimator.estimator->GetLevelDbfs(), confident_level_dbfs,
               kLevelToleranceDbfs);
 }
@@ -234,14 +234,14 @@ TEST(GainController2SpeechLevelEstimatorExperimental,
   
   RunOnConstantLevel(kMaxFramesToUpdate, new_speaker_level_dbfs,
                      kNoSpeechProbability, *level_estimator.estimator);
-  EXPECT_TRUE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_FALSE(level_estimator.estimator->IsTargetSpeakerActive());
 
   
   
   
   RunOnConstantLevel(kFramesPerUpdate / 2, new_speaker_level_dbfs,
                      kMaxSpeechProbability, *level_estimator.estimator);
-  EXPECT_TRUE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_FALSE(level_estimator.estimator->IsTargetSpeakerActive());
   EXPECT_NEAR(level_estimator.estimator->GetLevelDbfs(), confident_level_dbfs,
               kLevelToleranceDbfs);
 
@@ -250,7 +250,7 @@ TEST(GainController2SpeechLevelEstimatorExperimental,
   
   RunOnConstantLevel(kFramesPerUpdate / 2, new_speaker_level_dbfs,
                      kMaxSpeechProbability, *level_estimator.estimator);
-  EXPECT_FALSE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_TRUE(level_estimator.estimator->IsTargetSpeakerActive());
   EXPECT_NEAR(level_estimator.estimator->GetLevelDbfs(), new_speaker_level_dbfs,
               kLevelToleranceDbfs);
 }
@@ -283,7 +283,7 @@ TEST(GainController2SpeechLevelEstimatorExperimental,
                        kNoSpeechProbability, *level_estimator.estimator);
   }
 
-  EXPECT_TRUE(level_estimator.estimator->IsBackgroundSpeaker());
+  EXPECT_FALSE(level_estimator.estimator->IsTargetSpeakerActive());
   EXPECT_NEAR(level_estimator.estimator->GetLevelDbfs(), confident_level_dbfs,
               kLevelToleranceDbfs);
 }

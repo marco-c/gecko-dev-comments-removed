@@ -36,7 +36,7 @@ class SpeechLevelEstimatorImpl : public SpeechLevelEstimator {
   bool IsConfident() const override { return is_confident_; }
   
   
-  bool IsBackgroundSpeaker() const override { return false; }
+  bool IsTargetSpeakerActive() const override { return true; }
 
   void Reset() override;
 
