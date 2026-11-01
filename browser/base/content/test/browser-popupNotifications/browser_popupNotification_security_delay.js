@@ -382,6 +382,7 @@ add_task(async function test_notificationDuringFullScreenTransition() {
         ["security.notification_enable_delay", 1],
         
         ["full-screen-api.transition-duration.leave", "1000 1000"],
+        ["ui.prefersReducedMotion", 0],
         
         
         
