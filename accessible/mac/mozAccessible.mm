@@ -425,14 +425,6 @@ static bool IsNonNativePopover(Accessible* aAccessible) {
     }
   }
 
-  if (mRole == roles::FORM) {
-    roleAtom = [self ARIARole];
-
-    if (roleAtom == nsGkAtoms::form) {
-      return @"AXLandmarkForm";
-    }
-  }
-
   
   
   

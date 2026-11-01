@@ -892,6 +892,12 @@ role Accessible::ARIATransformRole(role aRole) const {
       
       return FindNextValidARIARole({nsGkAtoms::region, nsGkAtoms::form});
     }
+
+    if (aRole == roles::FORM) {
+      
+      return roles::FORM_LANDMARK;
+    }
+
     return aRole;
   }
 

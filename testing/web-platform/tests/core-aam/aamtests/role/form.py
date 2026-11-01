@@ -1,6 +1,6 @@
 
 
-TEST_HTML = "<div role='form' id='test' aria-labelled='the name of the form'>content</div>"
+TEST_HTML = "<div role='form' id='test' aria-label='the name of the form'>content</div>"
 
 def test_atspi(atspi, session, inline):
     session.url = inline(TEST_HTML)
