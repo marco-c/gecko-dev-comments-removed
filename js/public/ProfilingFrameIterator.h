@@ -301,17 +301,28 @@ class ProfiledFrameRange {
   Iter begin() const { return Iter(*this, 0); }
   Iter end() const { return Iter(*this, depth_); }
 
+  
+  
+  
+  
+  uint64_t lastSamplePosition() const { return lastSamplePos_; }
+
  private:
-  friend JS_PUBLIC_API ProfiledFrameRange GetProfiledFrames(JSContext* cx,
-                                                            void* addr);
+  friend JS_PUBLIC_API ProfiledFrameRange
+  GetProfiledFrames(JSContext* cx, void* addr, uint64_t samplePositionInBuffer);
 
   ProfiledFrameRange(JSRuntime* rt, void* addr,
-                     js::jit::JitcodeGlobalEntry* entry)
-      : rt_(rt), addr_(addr), entry_(entry), depth_(0) {}
+                     js::jit::JitcodeGlobalEntry* entry, uint64_t lastSamplePos)
+      : rt_(rt),
+        addr_(addr),
+        entry_(entry),
+        lastSamplePos_(lastSamplePos),
+        depth_(0) {}
 
   JSRuntime* rt_;
   void* addr_;
   js::jit::JitcodeGlobalEntry* entry_;
+  uint64_t lastSamplePos_;
   
   
   
@@ -321,7 +332,12 @@ class ProfiledFrameRange {
 };
 
 
-JS_PUBLIC_API ProfiledFrameRange GetProfiledFrames(JSContext* cx, void* addr);
+
+
+
+
+JS_PUBLIC_API ProfiledFrameRange
+GetProfiledFrames(JSContext* cx, void* addr, uint64_t samplePositionInBuffer);
 
 }  
 
