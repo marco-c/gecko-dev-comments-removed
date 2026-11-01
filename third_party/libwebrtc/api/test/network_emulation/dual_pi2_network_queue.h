@@ -11,6 +11,7 @@
 #define API_TEST_NETWORK_EMULATION_DUAL_PI2_NETWORK_QUEUE_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <queue>
@@ -24,12 +25,6 @@
 #include "rtc_base/random.h"
 
 namespace webrtc {
-
-
-
-
-
-
 
 
 
@@ -54,6 +49,11 @@ class DualPi2NetworkQueue : public NetworkQueue {
     double beta = 3.2;
     
     int k = 2;
+
+    
+    
+    
+    int c_protection = 10;
 
     
     TimeDelta probability_update_interval = TimeDelta::Millis(16);
@@ -86,8 +86,12 @@ class DualPi2NetworkQueue : public NetworkQueue {
   }
 
  private:
-  void UpdateBaseMarkingProbability(Timestamp time_now, TimeDelta sojourn_time);
+  void UpdateBaseMarkingProbability(Timestamp time_now);
+  TimeDelta l4s_queue_delay(Timestamp time_now) const;
+  TimeDelta classic_queue_delay(Timestamp time_now) const;
   bool HasStandingQueueBacklog() const;
+  bool ShouldDequeueFromClassicQueue() const;
+  void ResetCProtectionCredit();
 
   SequenceChecker sequence_checker_;
 
@@ -99,6 +103,7 @@ class DualPi2NetworkQueue : public NetworkQueue {
   Random random_;
 
   std::optional<size_t> max_packet_capacity_;
+  int64_t c_protection_credit_ = 0;
   double base_marking_probability_ = 0;
   Timestamp last_probability_update_time_ = Timestamp::MinusInfinity();
   

@@ -221,9 +221,8 @@ TEST(DualPi2NetworkQueueTest, ClassicQueueDropPacketIfL4SDelayIsTooHigh) {
     std::optional<PacketInFlightInfo> dequeued_packet =
         queue.DequeuePacket(now);
     ASSERT_TRUE(dequeued_packet.has_value());
-    
     EXPECT_THAT(dequeued_packet->ecn,
-                AnyOf(EcnMarking::kEct1, EcnMarking::kCe));
+                AnyOf(EcnMarking::kEct0, EcnMarking::kEct1, EcnMarking::kCe));
   }
   EXPECT_TRUE(has_dropped_classic_packet);
 }
@@ -350,6 +349,43 @@ TEST(DualPi2NetworkQueueTest, DoesNotCeMarkOnEnqueue) {
               Optional(Field(&PacketInFlightInfo::ecn, EcnMarking::kCe)));
   EXPECT_THAT(queue.PeekNextPacket(),
               Optional(Field(&PacketInFlightInfo::ecn, EcnMarking::kEct1)));
+}
+
+TEST(DualPi2NetworkQueueTest, WrrPreventsClassicQueueStarvation) {
+  
+  DualPi2NetworkQueue queue;
+  Timestamp now = Timestamp::Seconds(123);
+
+  
+  constexpr DataSize kMtuSize = DataSize::Bytes(1500);
+  int packet_id = 0;
+  for (int i = 0; i < 100; ++i) {
+    ASSERT_TRUE(queue.EnqueuePacket(PacketInFlightInfo(
+        kMtuSize, now, packet_id++, EcnMarking::kEct1)));
+  }
+  for (int i = 0; i < 20; ++i) {
+    ASSERT_TRUE(queue.EnqueuePacket(PacketInFlightInfo(
+        kMtuSize, now, packet_id++, EcnMarking::kNotEct)));
+  }
+
+  int l4s_dequeued = 0;
+  int classic_dequeued = 0;
+  for (int i = 0; i < 100; ++i) {
+    std::optional<PacketInFlightInfo> peeked = queue.PeekNextPacket();
+    std::optional<PacketInFlightInfo> dequeued = queue.DequeuePacket(now);
+    ASSERT_TRUE(peeked.has_value());
+    ASSERT_TRUE(dequeued.has_value());
+    EXPECT_EQ(peeked->packet_id, dequeued->packet_id);
+    if (dequeued->ecn == EcnMarking::kNotEct) {
+      ++classic_dequeued;
+    } else {
+      ++l4s_dequeued;
+    }
+  }
+  
+  
+  EXPECT_EQ(classic_dequeued, 10);
+  EXPECT_EQ(l4s_dequeued, 90);
 }
 
 }  
