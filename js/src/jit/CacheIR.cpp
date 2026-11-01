@@ -4864,6 +4864,24 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElement(
   return AttachDecision::Attach;
 }
 
+
+
+static void GuardProtoChainForAddElement(JSContext* cx, CacheIRWriter& writer,
+                                         NativeObject* obj,
+                                         ObjOperandId objId) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  GuardProtoChainHasNoIndexedProps(cx, writer, obj, objId,
+                                    true);
+}
+
 static bool CanAttachAddElement(NativeObject* obj, bool isInit,
                                 AllowIndexedReceiver allowIndexedReceiver) {
   MOZ_ASSERT(!obj->is<TypedArrayObject>());
@@ -4989,7 +5007,7 @@ AttachDecision SetPropIRGenerator::tryAttachSetDenseElementHole(
 
   
   if (IsPropertySetOp(op)) {
-    ShapeGuardProtoChain(writer, nobj, objId);
+    GuardProtoChainForAddElement(cx_, writer, nobj, objId);
   }
 
   writer.storeDenseElementHole(objId, indexId, rhsId, isAdd);
@@ -5078,7 +5096,7 @@ AttachDecision SetPropIRGenerator::tryAttachAddOrUpdateSparseElement(
   
   
   if (IsPropertySetOp(op)) {
-    ShapeGuardProtoChain(writer, nobj, objId);
+    GuardProtoChainForAddElement(cx_, writer, nobj, objId);
   }
 
   
@@ -6715,7 +6733,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachArrayPush() {
   TestMatchingNativeReceiver(writer, thisarray, thisObjId);
 
   
-  ShapeGuardProtoChain(writer, thisarray, thisObjId);
+  GuardProtoChainForAddElement(cx_, writer, thisarray, thisObjId);
 
   
   ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
