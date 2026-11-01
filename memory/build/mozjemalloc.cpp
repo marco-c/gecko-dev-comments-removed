@@ -1138,36 +1138,54 @@ void arena_t::DemoteChunkToSpare(arena_chunk_t* aChunk) {
 }
 
 arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
-  arena_run_t* run;
-  arena_chunk_map_t* mapelm;
-
   MOZ_ASSERT(aSize <= gMaxLargeClass);
   MOZ_ASSERT((aSize & gPageSizeMask) == 0);
 
   
-  mapelm = mRunsAvail.SearchOrNext(aSize);
+  arena_chunk_map_t* mapelm = mRunsAvail.SearchOrNext(aSize);
   if (mapelm) {
     arena_chunk_t* chunk = GetChunkForPtr(mapelm);
     size_t pageind = (uintptr_t(mapelm) - uintptr_t(chunk->mPageMap)) /
                      sizeof(arena_chunk_map_t);
 
     MOZ_ASSERT((chunk->mPageMap[pageind].bits & CHUNK_MAP_BUSY) == 0);
-    run = (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
+    arena_run_t* run =
+        (arena_run_t*)(uintptr_t(chunk) + (pageind << gPageSize2Pow));
     mRunsAvail.Remove(mapelm);
+
+    
+    if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
+      mRunsAvail.Insert(mapelm);
+      return nullptr;
+    }
+    return run;
   } else if (!mSpares.isEmpty()) {
     arena_chunk_t* chunk = mSpares.popFront();
     MOZ_ASSERT(!chunk->mIsPurging);
 
+    arena_run_t* run = (arena_run_t*)(uintptr_t(chunk) +
+                                      (gChunkHeaderNumPages << gPageSize2Pow));
+    MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
+               0);
+
+    
+    
+    
+    
     if (chunk->mNumDirty) {
       MOZ_ASSERT(!mChunksDirty.ElementProbablyInList(chunk));
       mChunksDirty.pushFront(chunk);
     }
 
-    run = (arena_run_t*)(uintptr_t(chunk) +
-                         (gChunkHeaderNumPages << gPageSize2Pow));
-    MOZ_ASSERT((chunk->mPageMap[gChunkHeaderNumPages].bits & CHUNK_MAP_BUSY) ==
-               0);
-    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
+    if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
+      
+      
+      RemoveChunk(chunk);
+      arena_chunk_dealloc(mChunkAllocator, (void*)chunk, kChunkSize);
+      return nullptr;
+    }
+
+    return run;
   } else {
     
     
@@ -1178,16 +1196,15 @@ arena_run_t* arena_t::AllocRun(size_t aSize, bool aLarge, bool aZero) {
     }
 
     InitChunk(chunk, aSize >> gPageSize2Pow);
-    run = (arena_run_t*)(uintptr_t(chunk) +
-                         (gChunkHeaderNumPages << gPageSize2Pow));
-    mapelm = &chunk->mPageMap[gChunkHeaderNumPages];
+    arena_run_t* run = (arena_run_t*)(uintptr_t(chunk) +
+                                      (gChunkHeaderNumPages << gPageSize2Pow));
+
+    bool result = SplitAndAllocRun(run, aSize, aLarge, aZero);
+    MOZ_RELEASE_ASSERT(result,
+                       "SplitAndAllocRun() won't fail because InitChunk should "
+                       "have left enough pages committed");
+    return run;
   }
-  
-  if (!SplitAndAllocRun(run, aSize, aLarge, aZero)) {
-    mRunsAvail.Insert(mapelm);
-    return nullptr;
-  }
-  return run;
 }
 
 void arena_t::UpdateMaxDirty() {
