@@ -2043,17 +2043,23 @@ bool WindowGlobalParent::ShouldTrackSiteOriginTelemetry() {
   return DocumentPrincipal()->GetIsContentPrincipal();
 }
 
+mozilla::ipc::IPCResult WindowGlobalParent::RecvAddSecurityState(
+    uint32_t aStateFlags) {
+  if ((aStateFlags & kValidSecurityStateFlags) != aStateFlags) {
+    return IPC_FAIL(this, "Invalid security state flags");
+  }
+
+  if (TopWindowContext() != this) {
+    return IPC_FAIL(this, "AddSecurityState on non-top window context");
+  }
+
+  AddSecurityState(aStateFlags);
+  return IPC_OK();
+}
+
 void WindowGlobalParent::AddSecurityState(uint32_t aStateFlags) {
   MOZ_ASSERT(TopWindowContext() == this);
-  MOZ_ASSERT((aStateFlags &
-              (nsIWebProgressListener::STATE_LOADED_MIXED_DISPLAY_CONTENT |
-               nsIWebProgressListener::STATE_LOADED_MIXED_ACTIVE_CONTENT |
-               nsIWebProgressListener::STATE_BLOCKED_MIXED_DISPLAY_CONTENT |
-               nsIWebProgressListener::STATE_BLOCKED_MIXED_ACTIVE_CONTENT |
-               nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADED |
-               nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED |
-               nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADED_FIRST)) ==
-                 aStateFlags,
+  MOZ_ASSERT((aStateFlags & kValidSecurityStateFlags) == aStateFlags,
              "Invalid flags specified!");
 
   if ((mSecurityState & aStateFlags) == aStateFlags) {
@@ -2389,27 +2395,11 @@ WindowGlobalParent::AllocPPrefetchRecordParent(
 }
 
 RefPtr<PrefetchMatchPromise> WindowGlobalParent::WaitForMatchingPrefetchRecord(
-    nsIURI* aURI, TimeDuration aTimeout) {
+    nsIURI* aURI) {
   
   
   
   
-  
-  
-  
-  
-  
-
-  
-  
-  
-  if (PrefetchRecordParent* match = FindMatchingPrefetchRecord(aURI)) {
-    LOG_SPECRULES(
-        ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
-         "this=%p fast match rec=%p",
-         this, match));
-    return PrefetchMatchPromise::CreateAndResolve(RefPtr{match}, __func__);
-  }
 
   
   
@@ -2417,16 +2407,19 @@ RefPtr<PrefetchMatchPromise> WindowGlobalParent::WaitForMatchingPrefetchRecord(
   if (!HasPotentialPrefetchMatch(aURI)) {
     LOG_SPECRULES(
         ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
-         "this=%p no potential records, resolving nullptr",
+         "this=%p no potential records",
          this));
-    return PrefetchMatchPromise::CreateAndResolve(nullptr, __func__);
+    return nullptr;
   }
 
   
   
   
-  RefPtr<PrefetchMatchWaiter> waiter =
-      PrefetchMatchWaiter::Create(this, aURI, aTimeout);
+  
+  RefPtr<PrefetchMatchWaiter> waiter = PrefetchMatchWaiter::Create(
+      this, aURI,
+      TimeDuration::FromMilliseconds(
+          StaticPrefs::dom_speculation_rules_wait_timeout_ms()));
   mPrefetchWaiters.AppendElement(waiter);
   LOG_SPECRULES(
       ("WindowGlobalParent::WaitForMatchingPrefetchRecord: "
