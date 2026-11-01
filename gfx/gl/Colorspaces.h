@@ -836,6 +836,8 @@ inline float SampleOutByIn(const C& outByIn, const float in) {
       return outByIn.at(0);
   }
   MOZ_ASSERT(outByIn.size() >= 2);
+  
+  if (std::isnan(in)) return in;
 
   
   
