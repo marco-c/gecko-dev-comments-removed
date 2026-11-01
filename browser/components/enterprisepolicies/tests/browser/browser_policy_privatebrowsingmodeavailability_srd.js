@@ -4,9 +4,6 @@
 "use strict";
 
 add_task(async function test_privatebrowsing_disabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.history2.enabled", true]],
-  });
   await setupPolicyEngineWithJson({
     policies: {
       PrivateBrowsingModeAvailability: 1,
@@ -30,9 +27,11 @@ add_task(async function test_privatebrowsing_disabled() {
     "about:preferences#privacy",
     async browser => {
       ok(
-        browser.contentDocument
-          .getElementById("historyMode")
-          .querySelector("moz-option[value='dontremember']").disabled,
+        [
+          ...browser.contentDocument
+            .getElementById("historyMode")
+            .querySelectorAll("moz-radio"),
+        ].find(radio => radio.value == "dontremember").disabled,
         "Don't remember history should be disabled"
       );
     }
@@ -44,9 +43,6 @@ add_task(async function test_privatebrowsing_disabled() {
 });
 
 add_task(async function test_privatebrowsing_enabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.history2.enabled", true]],
-  });
   await setupPolicyEngineWithJson({
     policies: {
       PrivateBrowsingModeAvailability: 2,

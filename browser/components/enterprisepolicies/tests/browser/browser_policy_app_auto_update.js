@@ -35,7 +35,7 @@ async function test_app_update_auto(expectedEnabled, expectedLocked) {
     `Setting auto update ${expectedLocked ? "should" : "should not"} fail`
   );
 
-  await BrowserTestUtils.withNewTab("about:preferences", browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#about", browser => {
     let settingControl = browser.contentDocument.getElementById(
       "setting-control-installationFieldset"
     );
