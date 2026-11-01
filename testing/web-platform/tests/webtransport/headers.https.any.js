@@ -88,6 +88,12 @@ promise_test(async t => {
                 'other response headers are still exposed');
 }, 'Set-Cookie is stripped from responseHeaders');
 
+
+
+function header_values(headers, name) {
+  return [].concat(headers[name]).join(', ');
+}
+
 promise_test(async t => {
   const wt = new WebTransport(
       webtransport_url('echo-request-headers.py'),
@@ -112,28 +118,33 @@ promise_test(async t => {
   
   
   
-  const wt = new WebTransport(webtransport_url('echo-request-headers.py'), {
-    headers: {
-      'Cookie': 'probe=forbidden',
-      'Host': 'evil.example.com',
-      'Sec-Fetch-Mode': 'navigate',
-      'Referer': 'https://evil.example.com/'
-    }
-  });
+  
+  
+  const wt = new WebTransport(
+      webtransport_url('echo-request-headers.py?format=list'), {
+        headers: {
+          'Cookie': 'probe=forbidden',
+          'Host': 'evil.example.com',
+          'Sec-Fetch-Mode': 'navigate',
+          'Referer': 'https://evil.example.com/'
+        }
+      });
   t.add_cleanup(() => wt.close());
   await wt.ready;
 
   const request_headers = await read_first_incoming_stream_as_json(wt);
 
-  assert_equals(request_headers['cookie'], undefined,
-                'user-supplied Cookie must be silently dropped, not forwarded');
-  assert_equals(request_headers['host'], undefined,
-                'user-supplied Host must be silently dropped, not forwarded');
-  assert_equals(
-      request_headers['sec-fetch-mode'], undefined,
+  assert_false(
+      header_values(request_headers, 'cookie').includes('probe=forbidden'),
+      'user-supplied Cookie must be silently dropped, not forwarded');
+  assert_false(
+      header_values(request_headers, 'host').includes('evil.example.com'),
+      'user-supplied Host must be silently dropped, not forwarded');
+  assert_false(
+      header_values(request_headers, 'sec-fetch-mode').includes('navigate'),
       'user-supplied Sec-Fetch-Mode must be silently dropped, not forwarded');
-  assert_equals(
-      request_headers['referer'], undefined,
+  assert_false(
+      header_values(request_headers, 'referer').includes('evil.example.com'),
       'user-supplied Referer must be silently dropped, not forwarded');
 }, 'Forbidden request-header names are silently dropped from the headers option');
 
@@ -208,7 +219,7 @@ promise_test(async t => {
 
   const request_headers = await read_first_incoming_stream_as_json(wt);
 
-  assert_array_equals(request_headers['x-dup'], ['one', 'two']);
+  assert_equals(header_values(request_headers, 'x-dup'), 'one, two');
 }, 'Duplicate header names in sequence form are all sent, in order');
 
 promise_test(async t => {
@@ -220,7 +231,7 @@ promise_test(async t => {
 
   const request_headers = await read_first_incoming_stream_as_json(wt);
 
-  assert_array_equals(request_headers['foo'], ['bar', 'baz']);
+  assert_equals(header_values(request_headers, 'foo'), 'bar, baz');
   assert_equals(request_headers['Foo'], undefined);
 }, 'Header names differing only in case are lowercased and both sent');
 
