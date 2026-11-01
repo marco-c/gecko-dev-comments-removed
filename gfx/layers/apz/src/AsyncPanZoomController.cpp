@@ -577,8 +577,8 @@ UniquePtr<VelocityTracker> PlatformSpecificStateBase::CreateVelocityTracker(
 
 
 
-class MOZ_STACK_CLASS AsyncPanZoomController::AutoRecordCompositorScrollUpdate
-    final {
+class MOZ_STACK_CLASS
+AsyncPanZoomController::AutoRecordCompositorScrollUpdate final {
  public:
   AutoRecordCompositorScrollUpdate(
       AsyncPanZoomController* aApzc, CompositorScrollUpdate::Source aSource,
