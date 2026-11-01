@@ -1546,6 +1546,14 @@ void WebTransport::Cleanup(WebTransportError* aError,
   mIncomingUnidirectionalAlgorithm = nullptr;
 
   
+  
+  
+  
+  if (mDatagrams) {
+    mDatagrams->Cleanup();
+  }
+
+  
   NotifyToWindow(false);
 }
 

@@ -22,7 +22,9 @@ namespace mozilla::dom {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(WebTransportDatagramDuplexStream, mGlobal,
                                       mReadable, mWritable, mWebTransport,
-                                      mIncomingAlgorithms, mOutgoingAlgorithms)
+                                      mIncomingAlgorithms, mOutgoingAlgorithms,
+                                      mCreatedWritables, mAllWritables,
+                                      mWritableDatagramMap)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(WebTransportDatagramDuplexStream)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(WebTransportDatagramDuplexStream)
@@ -70,6 +72,14 @@ void WebTransportDatagramDuplexStream::Init(bool aUseByteStream,
     return;
   }
   LOG(("Created datagram streams"));
+}
+
+void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
+  mOutgoingAlgorithms->SetChild(aChild);
+  for (auto& writable : mCreatedWritables) {
+    writable->SetChild(aChild);
+  }
+  mCreatedWritables.Clear();
 }
 
 void WebTransportDatagramDuplexStream::SetIncomingMaxAge(double aMaxAge,
@@ -167,6 +177,13 @@ WebTransportDatagramDuplexStream::CreateWritable(
                                             aRv);
   if (aRv.Failed()) {
     return nullptr;
+  }
+
+  mAllWritables.AppendElement(writableStream);
+  
+  
+  if (!writableStream->IsConnected()) {
+    mCreatedWritables.AppendElement(writableStream);
   }
 
   return writableStream.forget();
@@ -354,10 +371,25 @@ void IncomingDatagramStreamAlgorithms::NotifyDatagramAvailable() {
   }
 }
 
+
+
+
+void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    OutgoingDatagramStreamAlgorithms::QueuedDatagram& aField, const char* aName,
+    uint32_t aFlags) {
+  ImplCycleCollectionTraverse(aCallback, aField.mPromise, aName, aFlags);
+}
+
+void ImplCycleCollectionUnlink(
+    OutgoingDatagramStreamAlgorithms::QueuedDatagram& aField) {
+  ImplCycleCollectionUnlink(aField.mPromise);
+}
+
 NS_IMPL_CYCLE_COLLECTION_INHERITED(OutgoingDatagramStreamAlgorithms,
                                    UnderlyingSinkAlgorithmsWrapper, mDatagrams,
-                                   mSendGroup, mWaitConnectPromise,
-                                   mPendingDatagramPromises)
+                                   mSendGroup, mOwnerWritable,
+                                   mWaitConnectQueue, mPendingDatagramPromises)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(OutgoingDatagramStreamAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSinkAlgorithmsWrapper)
@@ -400,13 +432,40 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
       Promise::CreateInfallible(mDatagrams->GetParentObject());
 
   
-  uint64_t datagramId = mNextDatagramId++;
-
-  
-  mPendingDatagramPromises.InsertOrUpdate(datagramId, promise);
+  uint64_t datagramId = mDatagrams->mNextDatagramId++;
 
   
   if (mChild) {
+    
+    
+    
+    
+    
+    mPendingDatagramPromises.InsertOrUpdate(datagramId, promise);
+    
+    
+    
+    
+    
+    
+    if (mPendingDatagramPromises.Count() <
+        mDatagrams->mOutgoingMaxBufferedDatagrams) {
+      
+      promise->MaybeResolveWithUndefined();
+    } else {
+      
+      
+      
+    }
+
+    
+    
+    
+    
+    
+    
+    mDatagrams->mWritableDatagramMap.InsertOrUpdate(datagramId, mOwnerWritable);
+
     
     
     
@@ -426,6 +485,8 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
          datagramId](mozilla::ipc::ResponseRejectReason&&) {
           LOG(("Datagram IPC failed for id=%" PRIu64, datagramId));
           
+          
+          self->mDatagrams->mWritableDatagramMap.Remove(datagramId);
           if (Maybe<RefPtr<Promise>> promise =
                   self->mPendingDatagramPromises.Extract(datagramId)) {
             (*promise)->MaybeResolveWithUndefined();
@@ -435,11 +496,9 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
     LOG(("Queuing datagram id=%" PRIu64 " for connect", datagramId));
     
     
-    
-    MOZ_ASSERT(mWaitConnect == nullptr);
-    mWaitConnect = std::make_unique<DatagramEntry>(std::move(data), now);
-    mWaitConnectPromise = promise;
-    mWaitConnectDatagramId = datagramId;
+    mWaitConnectQueue.AppendElement(QueuedDatagram(
+        datagramId, std::make_unique<DatagramEntry>(std::move(data), now),
+        promise));
   }
 
   
@@ -448,32 +507,62 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
 
 
 void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
-  LOG(("Setting child in datagrams"));
+  LOG(("Setting child in datagrams, %zu queued datagrams",
+       mWaitConnectQueue.Length()));
   mChild = aChild;
-  if (mWaitConnect) {
-    uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    LOG(("Sending queued datagram id=%" PRIu64 ", sendGroup = %" PRIu64
-         ", sendOrder = %" PRId64,
-         mWaitConnectDatagramId, sendGroupId, mSendOrder));
+  
+  for (auto& queued : mWaitConnectQueue) {
     
-    mPendingDatagramPromises.InsertOrUpdate(mWaitConnectDatagramId,
-                                            mWaitConnectPromise);
+    mPendingDatagramPromises.InsertOrUpdate(queued.mDatagramId,
+                                            queued.mPromise);
+
+    
+    mDatagrams->mWritableDatagramMap.InsertOrUpdate(queued.mDatagramId,
+                                                    mOwnerWritable);
+
+    uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
+    uint64_t datagramId = queued.mDatagramId;
     mChild->SendOutgoingDatagram(
-        mWaitConnectDatagramId, mWaitConnect->mBuffer, mWaitConnect->mTimeStamp,
+        datagramId, queued.mEntry->mBuffer, queued.mEntry->mTimeStamp,
         sendGroupId, mSendOrder,
         [](nsresult&&) { LOG_VERBOSE(("Early Datagram IPC succeeded")); },
         [self = RefPtr{this},
-         id = mWaitConnectDatagramId](mozilla::ipc::ResponseRejectReason&&) {
-          LOG(("Early Datagram IPC failed for id=%" PRIu64, id));
+         datagramId](mozilla::ipc::ResponseRejectReason&&) {
+          LOG(("Early Datagram IPC failed for id=%" PRIu64, datagramId));
           
+          self->mDatagrams->mWritableDatagramMap.Remove(datagramId);
           if (Maybe<RefPtr<Promise>> promise =
-                  self->mPendingDatagramPromises.Extract(id)) {
+                  self->mPendingDatagramPromises.Extract(datagramId)) {
             (*promise)->MaybeResolveWithUndefined();
           }
         });
-    mWaitConnectPromise = nullptr;
-    mWaitConnect.reset(nullptr);
-    mWaitConnectDatagramId = 0;
+  }
+  mWaitConnectQueue.Clear();
+}
+
+void WebTransportDatagramDuplexStream::OnDatagramReady(uint64_t aDatagramId) {
+  Maybe<RefPtr<WebTransportDatagramsWritable>> entry =
+      mWritableDatagramMap.Extract(aDatagramId);
+  if (!entry) {
+    
+    
+    
+    MOZ_ASSERT(
+        mCleanedUp,
+        "OnDatagramReady for unregistered/already-completed datagram id");
+    return;
+  }
+  RefPtr<WebTransportDatagramsWritable> writable = entry.extract();
+  if (writable) {
+    writable->OnDatagramReady(aDatagramId);
+  } else {
+    
+    
+    
+    
+    
+    
+    mOutgoingAlgorithms->OnDatagramReady(aDatagramId);
   }
 }
 
@@ -500,6 +589,26 @@ void OutgoingDatagramStreamAlgorithms::UpdateQueueParams(
   } else {
     LOG(("UpdateQueueParams called but child not set yet"));
   }
+}
+
+void OutgoingDatagramStreamAlgorithms::Cleanup() {
+  for (const auto& promise : mPendingDatagramPromises.Values()) {
+    promise->MaybeResolveWithUndefined();
+  }
+  mPendingDatagramPromises.Clear();
+  for (auto& queued : mWaitConnectQueue) {
+    queued.mPromise->MaybeResolveWithUndefined();
+  }
+  mWaitConnectQueue.Clear();
+}
+
+void WebTransportDatagramDuplexStream::Cleanup() {
+  mOutgoingAlgorithms->Cleanup();
+  for (const auto& writable : mAllWritables) {
+    writable->Cleanup();
+  }
+  mWritableDatagramMap.Clear();
+  mCleanedUp = true;
 }
 
 }  

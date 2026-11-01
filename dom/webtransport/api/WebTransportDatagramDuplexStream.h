@@ -78,6 +78,10 @@ class OutgoingDatagramStreamAlgorithms final
   }
   void SetSendOrder(int64_t aSendOrder) { mSendOrder = aSendOrder; }
 
+  void SetOwnerWritable(WebTransportDatagramsWritable* aWritable) {
+    mOwnerWritable = aWritable;
+  }
+
   
 
   already_AddRefed<Promise> WriteCallbackImpl(
@@ -91,23 +95,46 @@ class OutgoingDatagramStreamAlgorithms final
   
   void UpdateQueueParams(uint32_t aMaxBufferedDatagrams, double aMaxAge);
 
+  
+  
+  
+  void Cleanup();
+
  private:
   ~OutgoingDatagramStreamAlgorithms() override = default;
 
+  struct QueuedDatagram {
+    uint64_t mDatagramId;
+    UniquePtr<DatagramEntry> mEntry;
+    RefPtr<Promise> mPromise;
+
+    QueuedDatagram(uint64_t aId, UniquePtr<DatagramEntry>&& aEntry,
+                   RefPtr<Promise> aPromise)
+        : mDatagramId(aId),
+          mEntry(std::move(aEntry)),
+          mPromise(std::move(aPromise)) {}
+  };
+
+  
+  
+  
+  friend void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback&,
+                                          QueuedDatagram&, const char*,
+                                          uint32_t);
+  friend void ImplCycleCollectionUnlink(QueuedDatagram&);
+
   RefPtr<WebTransportDatagramDuplexStream> mDatagrams;
   RefPtr<WebTransportChild> mChild;
+  RefPtr<WebTransportDatagramsWritable> mOwnerWritable;
   
-  UniquePtr<DatagramEntry> mWaitConnect;
-  RefPtr<Promise> mWaitConnectPromise;
+  nsTArray<QueuedDatagram> mWaitConnectQueue;
 
   
   RefPtr<WebTransportSendGroup> mSendGroup;
   int64_t mSendOrder;
-  uint64_t mWaitConnectDatagramId = 0;
 
   
   nsTHashMap<nsUint64HashKey, RefPtr<Promise>> mPendingDatagramPromises;
-  uint64_t mNextDatagramId = 1;
 };
 
 class WebTransportDatagramDuplexStream final : public nsISupports,
@@ -125,17 +152,20 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WebTransportDatagramDuplexStream)
 
-  void SetChild(WebTransportChild* aChild) {
-    mOutgoingAlgorithms->SetChild(aChild);
-  }
+  void SetChild(WebTransportChild* aChild);
+
+  
+  
+  
+  
+  
+  void Cleanup();
 
   void NewDatagramReceived(nsTArray<uint8_t>&& aData,
                            const mozilla::TimeStamp& aTimeStamp);
 
   
-  void OnDatagramReady(uint64_t aDatagramId) {
-    mOutgoingAlgorithms->OnDatagramReady(aDatagramId);
-  }
+  void OnDatagramReady(uint64_t aDatagramId);
 
   
   nsIGlobalObject* GetParentObject() const;
@@ -182,6 +212,17 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   RefPtr<WritableStream> mWritable;
   RefPtr<IncomingDatagramStreamAlgorithms> mIncomingAlgorithms;
   RefPtr<OutgoingDatagramStreamAlgorithms> mOutgoingAlgorithms;
+  
+  
+  
+  nsTArray<RefPtr<WebTransportDatagramsWritable>> mCreatedWritables;
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<WebTransportDatagramsWritable>> mAllWritables;
 
   
   double mIncomingMaxAge = INFINITY;
@@ -193,6 +234,19 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
   mozilla::Queue<UniquePtr<DatagramEntry>, 32> mIncomingDatagramsQueue;
   uint64_t mDroppedIncoming = 0;
+
+  
+  
+  
+  uint64_t mNextDatagramId = 1;
+  
+  nsTHashMap<nsUint64HashKey, RefPtr<WebTransportDatagramsWritable>>
+      mWritableDatagramMap;
+  
+  
+  
+  
+  bool mCleanedUp = false;
 
  public:
   uint64_t GetDroppedIncoming() const { return mDroppedIncoming; }

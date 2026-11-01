@@ -12,6 +12,7 @@
 namespace mozilla::dom {
 
 class WebTransport;
+class WebTransportChild;
 class WebTransportSendGroup;
 class WebTransportDatagramDuplexStream;
 class OutgoingDatagramStreamAlgorithms;
@@ -40,6 +41,18 @@ class WebTransportDatagramsWritable final : public WritableStream {
 
   int64_t SendOrder() const { return mSendOrder; }
   void SetSendOrder(int64_t aSendOrder);
+
+  void OnDatagramReady(uint64_t aDatagramId);
+
+  
+  
+  bool IsConnected() const;
+
+  void SetChild(WebTransportChild* aChild);
+
+  
+  
+  void Cleanup();
 
  private:
   ~WebTransportDatagramsWritable() override;
