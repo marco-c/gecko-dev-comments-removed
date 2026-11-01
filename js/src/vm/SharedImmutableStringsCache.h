@@ -16,7 +16,6 @@
 #include "js/HashTable.h"
 #include "js/UniquePtr.h"
 #include "js/Utility.h"
-
 #include "threading/ExclusiveData.h"
 
 namespace js {
@@ -132,6 +131,12 @@ class SharedImmutableStringsCache {
   [[nodiscard]] SharedImmutableTwoByteString getOrCreate(const char16_t* chars,
                                                          size_t length);
 
+  size_t numEntriesForTesting() const {
+    MOZ_ASSERT(inner_);
+    auto locked = inner_->lock();
+    return locked->set.count();
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     MOZ_ASSERT(inner_);
     size_t n = mallocSizeOf(inner_);
@@ -144,9 +149,7 @@ class SharedImmutableStringsCache {
     
     for (auto iter = locked->set.iter(); !iter.done(); iter.next()) {
       n += mallocSizeOf(iter.get().get());
-      if (const char* chars = iter.get()->chars()) {
-        n += mallocSizeOf(chars);
-      }
+      n += mallocSizeOf(iter.get()->chars());
     }
 
     return n;
@@ -179,50 +182,39 @@ class SharedImmutableStringsCache {
   SharedImmutableStringsCache& operator=(const SharedImmutableStringsCache&) =
       delete;
 
-  
-
-
-  void purge() {
-    auto locked = inner_->lock();
-
-    for (auto iter = locked->set.modIter(); !iter.done(); iter.next()) {
-      if (iter.get()->refcount == 0) {
-        
-        MOZ_ASSERT(!iter.get()->chars());
-        iter.remove();
-      } else {
-        
-        MOZ_ASSERT(iter.get()->chars());
-      }
-    }
-  }
-
  private:
   struct Inner;
+
+  
+  
+  
+  
   class StringBox {
     friend class SharedImmutableString;
 
     OwnedChars chars_;
     size_t length_;
     const ExclusiveData<Inner>* cache_;
+    HashNumber hash_;
 
    public:
     mutable size_t refcount;
 
     using Ptr = js::UniquePtr<StringBox>;
 
-    StringBox(OwnedChars&& chars, size_t length,
+    StringBox(OwnedChars&& chars, size_t length, HashNumber hash,
               const ExclusiveData<Inner>* cache)
         : chars_(std::move(chars)),
           length_(length),
           cache_(cache),
+          hash_(hash),
           refcount(0) {
       MOZ_ASSERT(chars_);
     }
 
-    static Ptr Create(OwnedChars&& chars, size_t length,
+    static Ptr Create(OwnedChars&& chars, size_t length, HashNumber hash,
                       const ExclusiveData<Inner>* cache) {
-      return js::MakeUnique<StringBox>(std::move(chars), length, cache);
+      return js::MakeUnique<StringBox>(std::move(chars), length, hash, cache);
     }
 
     StringBox(const StringBox&) = delete;
@@ -238,6 +230,7 @@ class SharedImmutableStringsCache {
 
     const char* chars() const { return chars_.get(); }
     size_t length() const { return length_; }
+    HashNumber hash() const { return hash_; }
   };
 
   struct Hasher {
@@ -285,8 +278,9 @@ class SharedImmutableStringsCache {
 
     static bool match(const StringBox::Ptr& key, const Lookup& lookup) {
       MOZ_ASSERT(lookup.chars_);
+      MOZ_ASSERT(key->chars());
 
-      if (!key->chars() || key->length() != lookup.length_) {
+      if (key->length() != lookup.length_) {
         return false;
       }
 

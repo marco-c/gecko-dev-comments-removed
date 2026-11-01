@@ -2,11 +2,11 @@
 
 
 
-#include "vm/SharedImmutableStringsCache-inl.h"
-
 #include "util/Text.h"
 #include "vm/MutexIDs.h"  
 #include "vm/Runtime.h"   
+
+#include "vm/SharedImmutableStringsCache-inl.h"
 
 namespace js {
 
@@ -70,7 +70,11 @@ SharedImmutableString::~SharedImmutableString() {
 
   box_->refcount--;
   if (box_->refcount == 0) {
-    box_->chars_.reset(nullptr);
+    SharedImmutableStringsCache::Hasher::Lookup lookup(
+        box_->hash(), box_->chars(), box_->length());
+    auto ptr = locked->set.lookup(lookup);
+    MOZ_RELEASE_ASSERT(ptr && ptr->get() == box_);
+    locked->set.remove(ptr);
   }
 }
 
