@@ -39,12 +39,9 @@ class nsIProtocolProxyService2;
 class nsIProxyInfo;
 class nsPISocketTransportService;
 namespace mozilla {
-class MemoryReportingProcess;
 namespace net {
 class NeckoChild;
 class nsAsyncRedirectVerifyHelper;
-class SocketProcessHost;
-class SocketProcessMemoryReporter;
 union NetAddr;
 
 class nsIOService final : public nsIIOService,
@@ -102,30 +99,9 @@ class nsIOService final : public nsIIOService,
   
   nsresult RecheckCaptivePortal();
 
-  void OnProcessLaunchComplete(SocketProcessHost* aHost, bool aSucceeded);
-  void OnProcessUnexpectedShutdown(SocketProcessHost* aHost);
-  bool SocketProcessReady();
-  static void NotifySocketProcessPrefsChanged(const char* aName, void* aSelf);
-  void NotifySocketProcessPrefsChanged(const char* aName);
-
-  
-  
-  
-  void CallOrWaitForSocketProcess(const std::function<void()>& aFunc);
-
-  int32_t SocketProcessPid();
-  SocketProcessHost* SocketProcess() { return mSocketProcess; }
-
-  friend SocketProcessMemoryReporter;
-  RefPtr<MemoryReportingProcess> GetSocketProcessMemoryReporter();
-
   
   
   ProtocolHandlerInfo LookupProtocolHandler(const nsACString& aScheme);
-
-  static void OnTLSPrefChange(const char* aPref, void* aSelf);
-
-  nsresult LaunchSocketProcess();
 
 #ifdef MOZ_WIDGET_ANDROID
   static bool ShouldAddAdditionalSearchHeaders(nsIURI* aURI, bool* val);
@@ -191,9 +167,7 @@ class nsIOService final : public nsIIOService,
       Maybe<OriginAttributes>&& aOriginAttributes,
       nsIInterfaceRequestor* aCallbacks, bool aAnonymous);
 
-  void DestroySocketProcess();
-
-  nsresult SetOfflineInternal(bool offline, bool notifySocketProcess = true);
+  nsresult SetOfflineInternal(bool offline);
 
   bool UsesExternalProtocolHandler(const nsACString& aScheme)
       MOZ_REQUIRES_SHARED(mLock);
@@ -212,8 +186,6 @@ class nsIOService final : public nsIIOService,
   
   bool mSettingOffline{false};
   bool mSetOfflineValue{false};
-
-  bool mSocketProcessLaunchComplete{false};
 
   mozilla::Atomic<bool, mozilla::Relaxed> mShutdown{false};
   mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown{false};
@@ -251,13 +223,6 @@ class nsIOService final : public nsIIOService,
 
   
   mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted{0};
-
-  RefPtr<SocketProcessHost> mSocketProcess;
-
-  
-  
-  
-  nsTArray<std::function<void()>> mPendingEvents;
 
   nsCOMPtr<nsIObserverService> mObserverService;
 

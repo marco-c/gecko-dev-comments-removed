@@ -1667,8 +1667,6 @@ class XPCShellTests:
         if os.getenv("MOZ_FETCHES_DIR", None):
             self.env["MOZ_FETCHES_DIR"] = os.getenv("MOZ_FETCHES_DIR", None)
 
-        self.env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
-
         
         
         

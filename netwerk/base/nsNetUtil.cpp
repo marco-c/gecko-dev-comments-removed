@@ -1848,8 +1848,7 @@ nsresult NS_NewURI(nsIURI** aURI, const nsACString& aSpec,
                    nsIURI* aBaseURI ) {
   
   
-  MOZ_ASSERT(XRE_IsSocketProcess() || XRE_IsContentProcess() ||
-             XRE_IsParentProcess());
+  MOZ_ASSERT(XRE_IsContentProcess() || XRE_IsParentProcess());
   TlsAutoIncrement<decltype(gTlsURLRecursionCount)> inc(gTlsURLRecursionCount);
   if (inc.value() >= MAX_RECURSION_COUNT) {
     return NS_ERROR_MALFORMED_URI;

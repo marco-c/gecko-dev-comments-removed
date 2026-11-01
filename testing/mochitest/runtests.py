@@ -624,6 +624,8 @@ class MochitestServer:
         env["TSAN_OPTIONS"] = "report_bugs=0"
 
         
+        
+        
         env["MOZ_DISABLE_SOCKET_PROCESS"] = "1"
 
         if mozinfo.isWin:

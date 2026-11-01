@@ -135,9 +135,6 @@ fn register_process_shutdown(process_type: u32) {
         nsIXULRuntime::PROCESS_TYPE_RDD => {
             
         }
-        nsIXULRuntime::PROCESS_TYPE_SOCKET => {
-            
-        }
         nsIXULRuntime::PROCESS_TYPE_UTILITY => {
             
         }

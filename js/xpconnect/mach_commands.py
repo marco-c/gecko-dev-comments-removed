@@ -30,11 +30,6 @@ def xpcshell(command_context, args):
         str(browser_dir),
     ]
 
-    
-    env = {
-        "MOZ_DISABLE_SOCKET_PROCESS": "1",
-    }
-
     if args:
         command.extend(args)
 
@@ -42,5 +37,4 @@ def xpcshell(command_context, args):
         command,
         pass_thru=True,
         ensure_exit_code=False,
-        append_env=env,
     )
