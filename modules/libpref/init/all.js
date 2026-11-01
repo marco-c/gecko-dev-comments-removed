@@ -4108,10 +4108,17 @@ pref("extensions.formautofill.addresses.storage.rust.active", false);
 
 
 
+
+
 pref("extensions.formautofill.addresses.storage.rust.runMigrationTest", false);
 
 
 pref("extensions.formautofill.addresses.storage.rust.migrationTestVersion", 0);
+
+
+
+pref("extensions.formautofill.addresses.storage.rust.migrationTestAttempts", 0);
+
 
 
 pref("extensions.formautofill.addresses.storage.rust.migrationAttempts", 0);
@@ -4128,6 +4135,7 @@ pref("extensions.formautofill.creditCards.storage.rust.active", false);
 
 
 
+
 #ifdef NIGHTLY_BUILD
   pref("extensions.formautofill.creditCards.storage.rust.runMigrationTest", true);
 #else
@@ -4136,6 +4144,11 @@ pref("extensions.formautofill.creditCards.storage.rust.active", false);
 
 
 pref("extensions.formautofill.creditCards.storage.rust.migrationTestVersion", 0);
+
+
+
+pref("extensions.formautofill.creditCards.storage.rust.migrationTestAttempts", 0);
+
 
 
 pref("extensions.formautofill.creditCards.storage.rust.migrationAttempts", 0);
