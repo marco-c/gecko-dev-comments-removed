@@ -1133,17 +1133,23 @@ class JsepVideoCodecDescription final : public JsepCodecDescription {
         
         
         
+        
+        
         if (Maybe<H264MacroblockLimits> levelLimits =
                 H264MacroblockLimitsForLevel(SaneH264LevelToH264Level(
                     GetSaneH264Level(mProfileLevelId)))) {
-          if (!mConstraints.maxFs ||
-              mConstraints.maxFs > levelLimits->mMaxMacroblocksPerFrame) {
-            mConstraints.maxFs = levelLimits->mMaxMacroblocksPerFrame;
-          }
-          if (!mConstraints.maxMbps ||
-              mConstraints.maxMbps > levelLimits->mMaxMacroblocksPerSecond) {
-            mConstraints.maxMbps = levelLimits->mMaxMacroblocksPerSecond;
-          }
+          Maybe<H264MacroblockLimits> hardLimits =
+              H264MacroblockLimitsForLevel(H264_LEVEL::H264_LEVEL_5_2);
+          MOZ_ASSERT(hardLimits);
+          mConstraints.maxFs =
+              mConstraints.maxFs ? std::min(mConstraints.maxFs,
+                                            hardLimits->mMaxMacroblocksPerFrame)
+                                 : levelLimits->mMaxMacroblocksPerFrame;
+          mConstraints.maxMbps =
+              mConstraints.maxMbps
+                  ? std::min(mConstraints.maxMbps,
+                             hardLimits->mMaxMacroblocksPerSecond)
+                  : levelLimits->mMaxMacroblocksPerSecond;
         }
       } else {
         
