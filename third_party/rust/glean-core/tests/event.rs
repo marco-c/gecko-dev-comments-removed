@@ -1,6 +1,6 @@
-
-
-
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 mod common;
 use crate::common::*;
@@ -85,8 +85,8 @@ fn record_properly_records_with_optional_arguments() {
     }
 }
 
-
-
+// SKIPPED record() computes the correct time between events
+// Timing is now handled in the language-specific part.
 
 #[test]
 fn snapshot_returns_none_if_nothing_is_recorded_in_the_store() {
@@ -148,12 +148,12 @@ fn snapshot_correctly_clears_the_stores() {
     }
 }
 
-
-
-
-
-
-
+// SKIPPED: Events are serialized in the correct JSON format (no extra)
+// SKIPPED: Events are serialized in the correct JSON format (with extra)
+// This test won't work as-is since Rust doesn't maintain the insertion order in
+// a JSON object, therefore you can't check the JSON output directly against a
+// string.  This check is redundant with other tests, anyway, and checking against
+// the schema is much more useful.
 
 #[test]
 fn test_sending_of_event_ping_when_it_fills_up() {
@@ -181,8 +181,8 @@ fn test_sending_of_event_ping_when_it_fills_up() {
         vec!["test_event_number".into()],
     );
 
-    
-    
+    // We send 510 events. We expect to get the first 500 in the ping and 10
+    // remaining afterward
     for i in 0..510 {
         let mut extra = HashMap::new();
         extra.insert("test_event_number".to_string(), i.to_string());
@@ -231,7 +231,7 @@ fn test_server_knobs_config_changing_max_events() {
         );
     }
 
-    
+    // 1. Set up an event to record
     let click = EventMetric::new(
         CommonMetricData {
             name: "click".into(),
@@ -244,7 +244,7 @@ fn test_server_knobs_config_changing_max_events() {
         vec!["test_event_number".into()],
     );
 
-    
+    // 2. Set a Server Knobs configuration to disable the metrics
     let remote_settings_config = json!(
         {
             "event_threshold": 50
@@ -254,8 +254,8 @@ fn test_server_knobs_config_changing_max_events() {
     glean
         .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
-    
-    
+    // 3. Record 51 events. We expect to get the first 50 in the first ping and 1
+    // remaining afterward
     for i in 0..51 {
         let mut extra = HashMap::new();
         extra.insert("test_event_number".to_string(), i.to_string());
@@ -308,7 +308,7 @@ fn extra_keys_must_be_recorded_and_truncated_if_needed() {
 
     let test_value = "LeanGleanByFrank";
     let test_value_long = test_value.to_string().repeat(32);
-    
+    // max length for extra values.
     let test_value_cap = 500;
     assert!(
         test_value_long.len() > test_value_cap,
@@ -412,7 +412,7 @@ fn ensure_custom_ping_events_dont_overflow() {
     )
     .is_err());
 
-    
+    // That should top us right up to the limit. Now for going over.
     event.record_sync(&glean, 0, HashMap::new(), 0);
     assert!(
         test_get_num_recorded_errors(&glean, &event_meta.into(), ErrorType::InvalidOverflow)
@@ -421,11 +421,11 @@ fn ensure_custom_ping_events_dont_overflow() {
     assert_eq!(501, event.get_value(&glean, store_name).unwrap().len());
 }
 
-
-
-
-
-
+/// Ensure that events from multiple runs serialize properly.
+///
+/// Records an event once each in two separate sessions,
+/// ensuring they both show (and an inserted `glean.restarted` event)
+/// in the serialized result.
 #[test]
 fn ensure_custom_ping_events_from_multiple_runs_work() {
     let (mut tempdir, _) = tempdir();
@@ -444,7 +444,7 @@ fn ensure_custom_ping_events_from_multiple_runs_work() {
 
     {
         let (glean, dir) = new_glean(Some(tempdir));
-        
+        // We don't need a full init. Just to deal with on-disk events:
         assert!(!glean
             .event_storage()
             .flush_pending_events_on_startup(&glean, false));
@@ -455,13 +455,13 @@ fn ensure_custom_ping_events_from_multiple_runs_work() {
 
     {
         let (glean, _dir) = new_glean(Some(tempdir));
-        
+        // We don't need a full init. Just to deal with on-disk events:
         assert!(!glean
             .event_storage()
             .flush_pending_events_on_startup(&glean, false));
 
-        
-        
+        // Gotta use get_timestamp_ms or this event won't happen "after" the injected
+        // glean.restarted event from `flush_pending_events_on_startup`.
         event.record_sync(&glean, get_timestamp_ms(), HashMap::new(), 0);
 
         let json = glean
@@ -478,8 +478,8 @@ fn ensure_custom_ping_events_from_multiple_runs_work() {
     }
 }
 
-
-
+/// Ensure events in an unregistered, non-"events" (ie Custom) ping are trimmed on a subsequent init
+/// when we pass `true ` for `trim_data_to_registered_pings` in `on_ready_to_submit_pings`.
 #[test]
 fn event_storage_trimming() {
     let (mut tempdir, _) = tempdir();
@@ -498,12 +498,12 @@ fn event_storage_trimming() {
     );
 
     let new_ping = |glean: &mut Glean, ping: &str| {
-        
-        
+        // In Rust, pings are registered via construction.
+        // But that's done asynchronously, so we do it synchronously here:
         glean.register_ping_type(&PingBuilder::new(ping).build());
     };
 
-    
+    // First, register both pings, so that we can record the event in the two pings.
     {
         let (mut glean, dir) = new_glean(Some(tempdir));
         tempdir = dir;
@@ -516,9 +516,9 @@ fn event_storage_trimming() {
         assert_eq!(1, event.get_value(&glean, store_name).unwrap().len());
         assert_eq!(1, event.get_value(&glean, store_name_2).unwrap().len());
     }
-    
-    
-    
+    // Second, construct (but don't init) Glean again.
+    // Register exactly one of the two pings.
+    // Then process the part of init that does the trimming (`on_ready_to_submit_pings`).
     {
         let (mut glean, _dir) = new_glean(Some(tempdir));
         new_ping(&mut glean, store_name);
@@ -548,7 +548,7 @@ fn with_event_timestamps() {
         log_level: None,
         rate_limit: None,
         enable_event_timestamps: true,
-        experimentation_id: None, 
+        experimentation_id: None, // Enabling event timestamps
         enable_internal_pings: true,
         ping_schedule: Default::default(),
         ping_lifetime_threshold: 0,
@@ -602,7 +602,7 @@ fn doesnt_crash_on_inaccessible_event_store_file() {
 
     let (glean, t) = new_glean(None);
 
-    
+    // put a directory in the way of the event storage file
     let event_path = t.path().join("events").join("store1");
     fs::create_dir_all(&event_path).unwrap();
 
@@ -641,7 +641,7 @@ fn test_server_knobs_config_events_factor() {
             .build(),
     );
 
-    
+    // 1. Set up an event to record
     let click = EventMetric::new(
         CommonMetricData {
             name: "click".into(),
@@ -654,7 +654,7 @@ fn test_server_knobs_config_events_factor() {
         vec!["test_event_number".into()],
     );
 
-    
+    // 2. Set a Server Knobs configuration to accelerate the ping
     let remote_settings_config = json!(
         {
             "events_ping_acceleration_factor": 5
@@ -664,8 +664,8 @@ fn test_server_knobs_config_events_factor() {
     glean
         .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
-    
-    
+    // 3. Record 21 events. We expect to get the first 20 in the first ping and 1
+    // remaining afterward
     for i in 0..21 {
         let mut extra = HashMap::new();
         extra.insert("test_event_number".to_string(), i.to_string());
@@ -710,7 +710,7 @@ fn test_server_knobs_config_events_factor_decrease() {
             .build(),
     );
 
-    
+    // 1. Set up an event to record
     let click = EventMetric::new(
         CommonMetricData {
             name: "click".into(),
@@ -723,7 +723,7 @@ fn test_server_knobs_config_events_factor_decrease() {
         vec!["test_event_number".into()],
     );
 
-    
+    // 2. Record 21 events. We expect no "events" ping to yet be submitted (threshold's 500).
     for i in 0..21 {
         let mut extra = HashMap::new();
         extra.insert("test_event_number".to_string(), i.to_string());
@@ -732,7 +732,7 @@ fn test_server_knobs_config_events_factor_decrease() {
 
     assert_eq!(21, click.get_value(&glean, "events").unwrap().len());
 
-    
+    // 3. Set a Server Knobs configuration to accelerate the ping
     let remote_settings_config = json!(
         {
             "events_ping_acceleration_factor": 5
@@ -742,11 +742,11 @@ fn test_server_knobs_config_events_factor_decrease() {
     glean
         .apply_server_knobs_config(RemoteSettingsConfig::try_from(remote_settings_config).unwrap());
 
-    
-    
+    // 4. We expect the ping to still not have been sent, even though the threshold's now 20.
+    // (Maybe in the future this will change.)
     assert_eq!(21, click.get_value(&glean, "events").unwrap().len());
 
-    
+    // 5. We record one more event (total: 22). A ping is submitted. All events are on it.
     let mut extra = HashMap::new();
     extra.insert("test_event_number".to_string(), 21.to_string());
     click.record_sync(&glean, 21, extra, 0);
@@ -786,7 +786,7 @@ fn events_factor_discounts_startup_ping() {
 
     {
         let (glean, dir) = new_glean(Some(tempdir));
-        
+        // We don't need a full init. Just to deal with on-disk events:
         assert!(!glean
             .event_storage()
             .flush_pending_events_on_startup(&glean, false));
@@ -797,7 +797,7 @@ fn events_factor_discounts_startup_ping() {
 
     {
         let (glean, _dir) = new_glean(Some(tempdir));
-        
+        // Set a Server Knobs configuration to accelerate pings
         let remote_settings_config = json!(
             {
                 "events_ping_acceleration_factor": 5
@@ -808,12 +808,12 @@ fn events_factor_discounts_startup_ping() {
             RemoteSettingsConfig::try_from(remote_settings_config).unwrap(),
         );
 
-        
+        // Ensure we flush the last session's event.
         assert!(glean
             .event_storage()
             .flush_pending_events_on_startup(&glean, false));
 
-        
+        // Record 21 events. We expect an "events" ping to be submitted at 20, with 1 left over.
         for i in 0..21 {
             let mut extra = HashMap::new();
             extra.insert("test_event_number".to_string(), i.to_string());
@@ -873,4 +873,45 @@ fn events_factor_discounts_startup_ping() {
         let event = &snapshot.as_array().unwrap()[0];
         assert_eq!(20.to_string(), event["extra"]["test_event_number"]);
     }
+}
+
+#[test]
+fn storage_is_cleared_when_ping_is_disabled() {
+    let (mut glean, dir) = new_glean(None);
+
+    let ping_name = "custom-events";
+    let ping = new_test_ping(&mut glean, ping_name);
+    let event = EventMetric::new(
+        CommonMetricData {
+            name: "name".into(),
+            category: "category".into(),
+            send_in_pings: vec![ping_name.into()],
+            lifetime: Lifetime::Ping,
+            ..Default::default()
+        },
+        vec![],
+    );
+
+    event.record_sync(&glean, 10, HashMap::new(), 0);
+
+    // The event is stored on disk now
+    let event_store = dir.path().join("events").join(ping_name);
+    assert!(event_store.exists());
+
+    // After disabling the ping, the on-disk file is gone
+    glean.set_ping_enabled(&ping, false);
+    assert!(!event_store.exists());
+
+    assert_eq!(None, event.get_value(&glean, None));
+
+    // After re-enabling no data file created until recording
+    glean.set_ping_enabled(&ping, true);
+    assert!(!event_store.exists());
+
+    event.record_sync(&glean, 20, HashMap::new(), 0);
+    assert!(event_store.exists());
+
+    let records = event.get_value(&glean, None).unwrap();
+    assert_eq!(1, records.len());
+    assert_eq!(20, records[0].timestamp);
 }

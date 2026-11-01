@@ -10,7 +10,7 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use chrono::{DateTime, FixedOffset, SecondsFormat};
+use chrono::{DateTime, FixedOffset, SecondsFormat, Utc};
 use malloc_size_of_derive::MallocSizeOf;
 use once_cell::sync::OnceCell;
 use uuid::Uuid;
@@ -864,6 +864,10 @@ impl Glean {
                 _ = data.clear_lifetime_storage(Lifetime::User, ping.name());
                 _ = data.clear_lifetime_storage(Lifetime::Application, ping.name());
             }
+            if let Err(err) = self.event_storage().clear_for_ping(ping.name()) {
+                log::warn!("Error clearing event storage for ping: {}", err);
+            }
+
             let ping_maker = PingMaker::new();
             let disabled_pings = &[ping.name()][..];
             if let Err(err) = ping_maker.clear_pending_pings(self.get_data_path(), disabled_pings) {
@@ -1008,6 +1012,16 @@ impl Glean {
         if let Err(err) = self.event_data_store.clear_all() {
             log::warn!("Error clearing pending events: {}", err);
         }
+
+        
+        
+        
+        
+        self.session_manager = SessionManager::new(
+            self.session_manager.mode,
+            self.session_manager.configured_sample_rate,
+            self.session_manager.inactivity_timeout,
+        );
 
         
         
@@ -1548,13 +1562,10 @@ impl Glean {
     
     
     
-    fn maybe_inject_glean_timestamp(
-        &self,
-        extra: &mut std::collections::HashMap<String, String>,
-        timestamp_ms: u64,
-    ) {
+    fn maybe_inject_glean_timestamp(&self, extra: &mut std::collections::HashMap<String, String>) {
         if self.with_timestamps {
-            extra.insert("glean_timestamp".to_string(), timestamp_ms.to_string());
+            let precise_timestamp = Utc::now().timestamp_millis() as u64;
+            extra.insert("glean_timestamp".to_string(), precise_timestamp.to_string());
         }
     }
 
@@ -1582,7 +1593,7 @@ impl Glean {
             start_time.to_rfc3339_opts(SecondsFormat::Millis, true),
         );
         extra.insert("sampled_in".to_string(), sampled_in.to_string());
-        self.maybe_inject_glean_timestamp(&mut extra, timestamp);
+        self.maybe_inject_glean_timestamp(&mut extra);
         self.event_data_store.record(
             self,
             &meta.into(),
@@ -1608,7 +1619,7 @@ impl Glean {
         if let Some(r) = reason {
             extra.insert("reason".to_string(), r.to_string());
         }
-        self.maybe_inject_glean_timestamp(&mut extra, timestamp);
+        self.maybe_inject_glean_timestamp(&mut extra);
         self.event_data_store.record(
             self,
             &meta.into(),

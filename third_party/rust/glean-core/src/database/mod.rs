@@ -25,6 +25,11 @@ pub use sqlite::Database;
 pub use rkv::Database;
 
 
+
+
+pub(crate) const EMPTY_LABEL: &str = "\x7F";
+
+
 pub(crate) trait StoredSubmittedPingHandler {
     
     fn get_all_submitted_pings(&self) -> Vec<crate::SubmittedPing>;

@@ -1,10 +1,10 @@
-
-
-
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #![allow(non_upper_case_globals)]
 
-
+//! Storage snapshotting.
 
 use std::collections::HashMap;
 
@@ -14,24 +14,24 @@ use crate::database::Database;
 use crate::metrics::Metric;
 use crate::Lifetime;
 
-
+// An internal ping name, not to be touched by anything else
 pub(crate) const INTERNAL_STORAGE: &str = "glean_internal_info";
 
-
+/// Snapshot metrics from the underlying database.
 pub struct StorageManager;
 
-
-
-
-
-
+/// Labeled metrics are stored as `<metric id>/<label>`.
+/// They need to go into a nested object in the final snapshot.
+///
+/// We therefore extract the metric id and the label from the key and construct the new object or
+/// add to it.
 fn snapshot_labeled_metrics(
     snapshot: &mut HashMap<String, HashMap<String, JsonValue>>,
     metric_id: &str,
     label: &str,
     metric: &Metric,
 ) {
-    
+    // Explicit match for supported labeled metrics, avoiding the formatting string
     let ping_section = match metric.ping_section() {
         "boolean" => "labeled_boolean".to_string(),
         "counter" => "labeled_counter".to_string(),
@@ -39,22 +39,22 @@ fn snapshot_labeled_metrics(
         "memory_distribution" => "labeled_memory_distribution".to_string(),
         "custom_distribution" => "labeled_custom_distribution".to_string(),
         "quantity" => "labeled_quantity".to_string(),
-        
-        
+        // This should never happen, we covered all cases.
+        // Should we ever extend it this would however at least catch it and do the right thing.
         _ => format!("labeled_{}", metric.ping_section()),
     };
     let map = snapshot.entry(ping_section).or_default();
 
     let obj = map.entry(metric_id.into()).or_insert_with(|| json!({}));
-    let obj = obj.as_object_mut().unwrap(); 
+    let obj = obj.as_object_mut().unwrap(); // safe unwrap, we constructed the object above
     obj.insert(label.into(), metric.as_json());
 }
 
-
-
-
-
-
+/// Dual Labeled metrics are stored as `<metric id><\x1e><key><\x1e><category>`.
+/// They need to go into a nested object in the final snapshot.
+///
+/// We therefore extract the metric id and the label from the key and construct the new object or
+/// add to it.
 fn snapshot_dual_labeled_metrics(
     snapshot: &mut HashMap<String, HashMap<String, JsonValue>>,
     metric_id: &str,
@@ -69,25 +69,25 @@ fn snapshot_dual_labeled_metrics(
         .entry(metric_id.into())
         .or_insert_with(|| json!({}))
         .as_object_mut()
-        .unwrap(); 
+        .unwrap(); // safe unwrap, we constructed the object above
     let key_obj = obj.entry(key).or_insert_with(|| json!({}));
     let key_obj = key_obj.as_object_mut().unwrap();
     key_obj.insert(category.into(), metric.as_json());
 }
 
 impl StorageManager {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Snapshots the given store and optionally clear it.
+    ///
+    /// # Arguments
+    ///
+    /// * `storage` - the database to read from.
+    /// * `store_name` - the store to snapshot.
+    /// * `clear_store` - whether to clear the data after snapshotting.
+    ///
+    /// # Returns
+    ///
+    /// The stored data in a string encoded as JSON.
+    /// If no data for the store exists, `None` is returned.
     pub fn snapshot(
         &self,
         storage: &Database,
@@ -98,18 +98,18 @@ impl StorageManager {
             .map(|data| ::serde_json::to_string_pretty(&data).unwrap())
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Snapshots the given store and optionally clear it.
+    ///
+    /// # Arguments
+    ///
+    /// * `storage` - the database to read from.
+    /// * `store_name` - the store to snapshot.
+    /// * `clear_store` - whether to clear the data after snapshotting.
+    ///
+    /// # Returns
+    ///
+    /// A JSON representation of the stored data.
+    /// If no data for the store exists, `None` is returned.
     pub fn snapshot_as_json(
         &self,
         storage: &Database,
@@ -121,7 +121,7 @@ impl StorageManager {
         let mut snapshotter = |metric_id: &[u8], labels: &[&str], metric: &Metric| {
             let metric_id = String::from_utf8_lossy(metric_id).into_owned();
             match labels {
-                [] | [""] => {
+                [] => {
                     let map = snapshot.entry(metric.ping_section().into()).or_default();
                     map.insert(metric_id, metric.as_json());
                 }
@@ -149,7 +149,7 @@ impl StorageManager {
             log::debug!("could not snapshot user lifetime store: {e:?}");
         }
 
-        
+        // Add send in all pings client.annotations
         if store_name != "glean_client_info" {
             if let Err(e) = storage.iter_store(Lifetime::Application, "all-pings", snapshotter) {
                 log::debug!("could not snapshot metrics for 'all-pings': {e:?}");
@@ -177,17 +177,17 @@ impl StorageManager {
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Gets the current value of a single metric identified by name.
+    ///
+    /// # Arguments
+    ///
+    /// * `storage` - The database to get data from.
+    /// * `store_name` - The store name to look into.
+    /// * `metric_id` - The full metric identifier.
+    ///
+    /// # Returns
+    ///
+    /// The decoded metric or `None` if no data is found.
     pub fn _snapshot_metric(
         &self,
         storage: &Database,
@@ -210,18 +210,18 @@ impl StorageManager {
         snapshot
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    /// Gets the list of currently-stored labels for a single labeled metric.
+    ///
+    /// # Arguments
+    ///
+    /// * `storage` - The database to get data from.
+    /// * `store_name` - The store name to look into.
+    /// * `metric_id` - The full metric identifier.
+    /// * `metric_lifetime` - The metric's lifetime.
+    ///
+    /// # Returns
+    ///
+    /// The list of all labels with values in the db. Empty if none.
     pub fn snapshot_labels(
         &self,
         storage: &Database,
@@ -233,7 +233,7 @@ impl StorageManager {
 
         let mut snapshotter = |id: &[u8], found_labels: &[&str], _metric: &Metric| {
             let id = String::from_utf8_lossy(id);
-            
+            // Not doing this for dual-labeled metrics.
             if id == metric_id && found_labels.len() == 1 {
                 labels.push(found_labels[0].to_string());
             }
@@ -243,30 +243,30 @@ impl StorageManager {
         labels
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    ///  Snapshots the experiments.
+    ///
+    /// # Arguments
+    ///
+    /// * `storage` - The database to get data from.
+    /// * `store_name` - The store name to look into.
+    ///
+    /// # Returns
+    ///
+    /// A JSON representation of the experiment data, in the following format:
+    ///
+    /// ```json
+    /// {
+    ///  "experiment-id": {
+    ///    "branch": "branch-id",
+    ///    "extra": {
+    ///      "additional": "property",
+    ///      // ...
+    ///    }
+    ///  }
+    /// }
+    /// ```
+    ///
+    /// If no data for the store exists, `None` is returned.
     pub fn snapshot_experiments_as_json(
         &self,
         storage: &Database,
@@ -277,7 +277,7 @@ impl StorageManager {
         let mut snapshotter = |metric_id: &[u8], _labels: &[&str], metric: &Metric| {
             let metric_id = String::from_utf8_lossy(metric_id).into_owned();
             if metric_id.ends_with("#experiment") {
-                let (name, _) = metric_id.split_once('#').unwrap(); 
+                let (name, _) = metric_id.split_once('#').unwrap(); // safe unwrap, we ensured there's a `#` in the string
                 snapshot.insert(name.to_string(), metric.as_json());
             }
         };
@@ -300,8 +300,8 @@ mod test {
     use crate::metrics::ExperimentMetric;
     use crate::Glean;
 
-    
-    
+    // Experiment's API tests: the next test comes from glean-ac's
+    // ExperimentsStorageEngineTest.kt.
     #[test]
     fn test_experiments_json_serialization() {
         let t = tempfile::tempdir().unwrap();

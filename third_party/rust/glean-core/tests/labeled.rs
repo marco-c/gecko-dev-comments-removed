@@ -1,6 +1,6 @@
-
-
-
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 mod common;
 use crate::common::*;
@@ -316,7 +316,7 @@ fn can_record_error_for_submetric() {
     let metric = labeled.get("label1");
     metric.set_sync(&glean, "01234567890".repeat(26));
 
-    
+    // Make sure that the errors have been recorded
     assert_eq!(
         Ok(1),
         test_get_num_recorded_errors(&glean, metric.meta(), ErrorType::InvalidOverflow)
@@ -346,7 +346,7 @@ fn labels_are_checked_against_static_list() {
     let metric = labeled.get("label2");
     metric.add_sync(&glean, 2);
 
-    
+    // All non-registed labels get mapped to the `other` label
     let metric = labeled.get("label3");
     metric.add_sync(&glean, 3);
     let metric = labeled.get("label4");
@@ -483,9 +483,9 @@ fn seen_labels_get_reloaded_from_disk() {
         None,
     );
 
-    
+    // Store some data into labeled metrics
     {
-        
+        // Set the maximum number of labels
         for i in 1..=16 {
             let label = format!("label{i}");
             labeled.get(label).add_sync(&glean, i);
@@ -495,7 +495,7 @@ fn seen_labels_get_reloaded_from_disk() {
             .snapshot_as_json(glean.storage(), "store1", false)
             .unwrap();
 
-        
+        // Check that the data is there
         for i in 1..=16 {
             let label = format!("label{i}");
             assert_eq!(
@@ -507,18 +507,18 @@ fn seen_labels_get_reloaded_from_disk() {
         drop(glean);
     }
 
-    
+    // Force a reload
     {
         let (glean, _t) = new_glean(Some(tempdir));
 
-        
+        // Try to store another label
         labeled.get("new_label").add_sync(&glean, 40);
 
         let snapshot = StorageManager
             .snapshot_as_json(glean.storage(), "store1", false)
             .unwrap();
 
-        
+        // Check that the old data is still there
         for i in 1..=16 {
             let label = format!("label{i}");
             assert_eq!(
@@ -527,7 +527,7 @@ fn seen_labels_get_reloaded_from_disk() {
             );
         }
 
-        
+        // The new label lands in the __other__ bucket, due to too many labels
         assert_eq!(
             40,
             snapshot["labeled_counter"]["telemetry.labeled_metric"]["__other__"]
@@ -552,7 +552,7 @@ fn caching_metrics_with_dynamic_labels() {
         None,
     );
 
-    
+    // Create multiple metric instances and cache them for later use.
     let metrics = (1..=20)
         .map(|i| {
             let label = format!("label{i}");
@@ -560,13 +560,13 @@ fn caching_metrics_with_dynamic_labels() {
         })
         .collect::<Vec<_>>();
 
-    
+    // Only now use them.
     for metric in metrics {
         metric.add_sync(&glean, 1);
     }
 
-    
-    
+    // The maximum number of labels we store is 16.
+    // So we should have put 4 metrics in the __other__ bucket.
     let other = labeled.get("__other__");
     assert_eq!(Some(4), other.get_value(&glean, Some("store1")));
 }
@@ -588,7 +588,7 @@ fn caching_metrics_with_dynamic_labels_across_pings() {
         None,
     );
 
-    
+    // Create multiple metric instances and cache them for later use.
     let metrics = (1..=20)
         .map(|i| {
             let label = format!("label{i}");
@@ -596,31 +596,31 @@ fn caching_metrics_with_dynamic_labels_across_pings() {
         })
         .collect::<Vec<_>>();
 
-    
+    // Only now use them.
     for metric in &metrics {
         metric.add_sync(&glean, 1);
     }
 
-    
-    
+    // The maximum number of labels we store is 16.
+    // So we should have put 4 metrics in the __other__ bucket.
     let other = labeled.get("__other__");
     assert_eq!(Some(4), other.get_value(&glean, Some("store1")));
 
-    
-    
+    // Snapshot (so we can inspect the JSON)
+    // and clear out storage (the same way submitting a ping would)
     let snapshot = StorageManager
         .snapshot_as_json(glean.storage(), "store1", true)
         .unwrap();
 
-    
+    // We didn't send the 20th label
     assert_eq!(
         json!(null),
         snapshot["labeled_counter"]["telemetry.cached_labels2"]["label20"]
     );
 
-    
-    
-    
+    // We now set the ones that ended up in `__other__` before.
+    // Note: indexing is zero-based,
+    // but we later check the names, so let's offset it by 1.
     metrics[16].add_sync(&glean, 17);
     metrics[17].add_sync(&glean, 18);
     metrics[18].add_sync(&glean, 19);
@@ -689,4 +689,76 @@ fn overrun_the_label_count_with_a_single_label() {
     assert_eq!(json!(1), cached_labels["label-1"]);
     assert_eq!(json!(23), cached_labels["label-2"]);
     assert_eq!(json!(null), cached_labels["__other__"]);
+}
+
+#[test]
+fn empty_labels() {
+    let (glean, _t) = new_glean(None);
+
+    let labeled = LabeledCounter::new(
+        LabeledMetricData::Common {
+            cmd: CommonMetricData {
+                name: "empty_labels".into(),
+                category: "telemetry".into(),
+                send_in_pings: vec!["store1".into()],
+                disabled: false,
+                lifetime: Lifetime::Ping,
+                ..Default::default()
+            },
+        },
+        None,
+    );
+
+    let metric = labeled.get("");
+    metric.add_sync(&glean, 1);
+
+    let snapshot = StorageManager
+        .snapshot_as_json(glean.storage(), "store1", true)
+        .unwrap();
+
+    assert_eq!(
+        json!({
+            "labeled_counter": {
+                "telemetry.empty_labels": { "": 1 }
+            }
+        }),
+        snapshot
+    );
+}
+
+#[test]
+fn empty_label_marker_is_disallowed() {
+    let (glean, _t) = new_glean(None);
+
+    let labeled = LabeledCounter::new(
+        LabeledMetricData::Common {
+            cmd: CommonMetricData {
+                name: "empty_labels".into(),
+                category: "telemetry".into(),
+                send_in_pings: vec!["store1".into()],
+                disabled: false,
+                lifetime: Lifetime::Ping,
+                ..Default::default()
+            },
+        },
+        None,
+    );
+
+    labeled.get("\x7F").add_sync(&glean, 1);
+    labeled.get("\x7F\x7F").add_sync(&glean, 1);
+    labeled.get("left\x7Fright").add_sync(&glean, 1);
+
+    let snapshot = StorageManager
+        .snapshot_as_json(glean.storage(), "store1", true)
+        .unwrap();
+
+    assert_eq!(
+        json!({
+            "labeled_counter": {
+                "glean.error.invalid_label": { "telemetry.empty_labels": 3 },
+                "telemetry.empty_labels": { "__other__": 3 }
+            }
+        }),
+        snapshot
+    );
 }
