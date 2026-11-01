@@ -35,7 +35,9 @@ void VideoBridgeChild::StartupForGPUProcess() {
 
 void VideoBridgeChild::Open(Endpoint<PVideoBridgeChild>&& aEndpoint) {
   StaticMutexAutoLock lock(sVideoBridgeLock);
-  MOZ_RELEASE_ASSERT(!sVideoBridge || !sVideoBridge->CanSend());
+  
+  
+  
   RefPtr<VideoBridgeChild> oldBridge = sVideoBridge.get();
   sVideoBridge = new VideoBridgeChild();
 
