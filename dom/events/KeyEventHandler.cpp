@@ -90,9 +90,6 @@ KeyEventHandler::~KeyEventHandler() {
   } else if (mCommand) {
     free(mCommand);
   }
-
-  
-  NS_CONTENT_DELETE_LIST_MEMBER(KeyEventHandler, this, mNextHandler);
 }
 
 bool KeyEventHandler::IsCommand(const char* aCommandStr) const {

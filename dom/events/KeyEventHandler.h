@@ -13,6 +13,7 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIController.h"
+#include "nsISupportsImpl.h"
 #include "nsIWeakReference.h"
 #include "nsString.h"
 
@@ -43,6 +44,8 @@ enum ReservedKey : uint8_t {
 
 class KeyEventHandler final {
  public:
+  NS_INLINE_DECL_REFCOUNTING(KeyEventHandler)
+
   
   explicit KeyEventHandler(dom::Element* aHandlerElement,
                            ReservedKey aReserved);
@@ -50,8 +53,6 @@ class KeyEventHandler final {
   
   
   explicit KeyEventHandler(ShortcutKeyData* aKeyData);
-
-  ~KeyEventHandler();
 
   
 
@@ -102,6 +103,8 @@ class KeyEventHandler final {
   static uint32_t gRefCnt;
 
  protected:
+  ~KeyEventHandler();
+
   void Init() { ++gRefCnt; }
 
   already_AddRefed<nsIController> GetController(dom::EventTarget* aTarget);
@@ -167,7 +170,7 @@ class KeyEventHandler final {
                     
 
   
-  KeyEventHandler* mNextHandler;
+  RefPtr<KeyEventHandler> mNextHandler;
   RefPtr<nsAtom> mEventName;  
 };
 
