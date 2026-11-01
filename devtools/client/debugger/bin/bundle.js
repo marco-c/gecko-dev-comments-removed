@@ -12,6 +12,10 @@ const nodePolyfills = require("rollup-plugin-node-polyfills");
 const projectPath = path.resolve(__dirname, "..");
 const bundlePath = path.join(projectPath, "./dist");
 
+
+
+process.chdir(projectPath);
+
 process.env.NODE_ENV = "production";
 
 function getEntry(filename) {
