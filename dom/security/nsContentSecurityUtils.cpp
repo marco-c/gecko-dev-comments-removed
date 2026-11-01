@@ -1487,6 +1487,19 @@ static nsLiteralCString sFrameSrcHttpsHostAllowList[] = {
     "about:newtab"_ns,
 };
 
+
+
+
+
+static nsLiteralCString sFrameSrcWildcardHostAllowList[] = {
+    "about:home"_ns,
+    "about:newtab"_ns,
+};
+static nsLiteralString sFrameSrcWildcardHostSources[] = {
+    u"https://*.merino.nonprod.webservices.mozgcp.net"_ns,
+    u"https://*.merino.prod.webservices.mozgcp.net"_ns,
+};
+
 static nsLiteralCString sFrameSrcMozExtensionAllowList[] = {
     "about:home"_ns,
     "about:newtab"_ns,
@@ -1763,6 +1776,16 @@ class FrameSrcVisitor : public AllowBuiltinSrcVisitor {
   }
 
   bool visitHostSrc(const nsCSPHostSrc& src) override {
+    if (CheckAllowList(Span(sFrameSrcWildcardHostAllowList))) {
+      nsAutoString str;
+      src.toString(str);
+      for (const nsLiteralString& allowed : sFrameSrcWildcardHostSources) {
+        if (str.Equals(allowed)) {
+          return true;
+        }
+      }
+    }
+
     return VisitHostSrcWithWildcardAndHttpsHostAllowLists(
         src, nullptr, sFrameSrcHttpsHostAllowList);
   }
