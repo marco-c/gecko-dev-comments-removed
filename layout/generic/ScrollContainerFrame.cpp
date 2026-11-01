@@ -4829,8 +4829,8 @@ nsSize ScrollContainerFrame::GetVisualViewportSize() const {
 
 nsPoint ScrollContainerFrame::GetVisualViewportOffset() const {
   if (mIsRoot) {
-    auto* presShell = PresShell();
-    if (auto pendingUpdate = presShell->GetPendingVisualScrollUpdate()) {
+    auto* ps = PresShell();
+    if (auto pendingUpdate = ps->GetPendingVisualScrollUpdate()) {
       
       
       
@@ -4840,7 +4840,9 @@ nsPoint ScrollContainerFrame::GetVisualViewportOffset() const {
       return GetScrollRangeForUserInputEvents().ClampPoint(
           pendingUpdate->mVisualScrollOffset);
     }
-    return presShell->GetVisualViewportOffset();
+    if (ps->IsVisualViewportOffsetSet()) {
+      return ps->GetVisualViewportOffset();
+    }
   }
   return GetScrollPosition();
 }
