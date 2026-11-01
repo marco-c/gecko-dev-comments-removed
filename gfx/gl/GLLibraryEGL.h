@@ -78,6 +78,7 @@ enum class EGLLibExtension {
   ANGLE_platform_angle,
   ANGLE_platform_angle_d3d,
   ANGLE_platform_angle_metal,
+  ANGLE_platform_angle_opengl,
   ANGLE_platform_angle_device_id,
   EXT_device_enumeration,
   EXT_device_query,
@@ -155,12 +156,24 @@ class GLLibraryEGL final {
   bool mIsANGLE = false;
   bool mIsD3DANGLE = false;
   bool mIsMetalANGLE = false;
+  bool mIsGlANGLE = false;
   std::bitset<UnderlyingValue(EGLLibExtension::Max)> mAvailableExtensions;
   std::weak_ptr<EglDisplay> mDefaultDisplay;
   std::unordered_map<EGLDisplay, std::weak_ptr<EglDisplay>> mActiveDisplays;
 
  public:
+  
+  
   static RefPtr<GLLibraryEGL> Get(nsACString* const out_failureId);
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  static RefPtr<GLLibraryEGL> GetNative(nsACString* const out_failureId);
+  
+  
+  
+  static bool IsANGLEAvailable();
+#endif
   static void Shutdown();
 
  private:
@@ -168,9 +181,13 @@ class GLLibraryEGL final {
 
   static StaticMutex sMutex;
   static StaticRefPtr<GLLibraryEGL> sInstance MOZ_GUARDED_BY(sMutex);
+  static StaticRefPtr<GLLibraryEGL> sNativeInstance MOZ_GUARDED_BY(sMutex);
 
-  bool Init(nsACString* const out_failureId);
-  void InitLibExtensions();
+  enum class LibraryType { Default, Native, ANGLE };
+  static RefPtr<GLLibraryEGL> GetImpl(LibraryType,
+                                      nsACString* const out_failureId);
+  bool Init(LibraryType, nsACString* const out_failureId);
+  void InitLibExtensions(LibraryType);
 
   std::shared_ptr<EglDisplay> CreateDisplayLocked(
       const EGLCreateDisplayFlags& aFlags, nsACString* const out_failureId,
@@ -197,6 +214,7 @@ class GLLibraryEGL final {
   bool IsANGLE() const { return mIsANGLE; }
   bool IsD3DANGLE() const { return mIsD3DANGLE; }
   bool IsMetalANGLE() const { return mIsMetalANGLE; }
+  bool IsGlANGLE() const { return mIsGlANGLE; }
 
   
   

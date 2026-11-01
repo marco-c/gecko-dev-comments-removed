@@ -136,18 +136,16 @@ class GfxInfo::GLStrings {
     
     RefPtr<gl::GLContext> gl;
     nsCString discardFailureId;
-    gl = gl::GLContextProvider::CreateHeadless(
+    gl = gl::GLContextProviderEGL::CreateHeadlessNative(
         {gl::CreateContextFlags::REQUIRE_COMPAT_PROFILE}, &discardFailureId);
 
-    if (!gl) {
+    if (!gl || !gl->MakeCurrent()) {
       
       
       
       mReady = true;
       return;
     }
-
-    gl->MakeCurrent();
 
     if (mVendor.IsEmpty()) {
       mVendor.Assign(gl->VendorString());
