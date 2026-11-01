@@ -105,9 +105,6 @@ class nsCSSBorderRenderer final {
       mozilla::wr::IpcResourceUpdateQueue& aResources,
       const mozilla::layers::StackingContextHelper& aSc);
 
-  mozilla::wr::WrClipId CreateWebRenderClip(
-      mozilla::wr::DisplayListBuilder& aBuilder);
-
   
   static void ComputeInnerRadii(const RectCornerRadii& aRadii,
                                 const Margin& aBorderSizes,
