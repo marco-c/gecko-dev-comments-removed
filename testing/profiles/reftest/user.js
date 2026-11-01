@@ -28,6 +28,8 @@ user_pref("datareporting.healthreport.uploadEnabled", false);
 
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 
+user_pref("dom.ipc.validatePrincipal.testing.allowContentSystemDocuments", true);
+
 
 
 
