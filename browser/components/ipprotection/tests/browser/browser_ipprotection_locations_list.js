@@ -520,13 +520,14 @@ add_task(
 
 
 
-
 add_task(async function test_user_set_to_premium() {
-  let { locationsList } = await openLocationsList({
-    hasUpgraded: true,
-    bandwidthUsage: { used: 100, max: 1000 },
-    isDefaultBrowser: false,
-  });
+  let sandbox = sinon.createSandbox();
+  let isDefaultBrowserStub = sandbox
+    .stub(IPProtectionPanel.prototype, "isDefaultBrowser")
+    .resolves(false);
+
+  setupService({ isReady: true, hasUpgraded: true });
+  let { locationsList } = await openLocationsList({ hasUpgraded: true });
 
   Assert.ok(
     locationsList.premium,
@@ -536,25 +537,9 @@ add_task(async function test_user_set_to_premium() {
   await closePanel();
   cleanupService();
 
-  ({ locationsList } = await openLocationsList({
-    hasUpgraded: false,
-    bandwidthUsage: null,
-    isDefaultBrowser: false,
-  }));
-
-  Assert.ok(
-    locationsList.premium,
-    "user should be premium when bandwidthUsage is unset"
-  );
-
-  await closePanel();
-  cleanupService();
-
-  ({ locationsList } = await openLocationsList({
-    hasUpgraded: false,
-    bandwidthUsage: { used: 100, max: 1000 },
-    isDefaultBrowser: true,
-  }));
+  isDefaultBrowserStub.resolves(true);
+  setupService({ isReady: true, hasUpgraded: false });
+  ({ locationsList } = await openLocationsList({ hasUpgraded: false }));
 
   Assert.ok(
     locationsList.premium,
@@ -563,6 +548,7 @@ add_task(async function test_user_set_to_premium() {
 
   await closePanel();
   cleanupService();
+  sandbox.restore();
 });
 
 
