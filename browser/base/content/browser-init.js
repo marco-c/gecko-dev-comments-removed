@@ -977,7 +977,7 @@ var gBrowserInit = {
       {
         categoryName: "browser-window-idle-tasks",
         profilerMarker: "perWindowIdleTask",
-        idleDispatch: window,
+        idleDispatch: true,
         jsGlobal: globalThis,
       },
       window
@@ -988,7 +988,7 @@ var gBrowserInit = {
     
     
     
-    requestIdleCallback(() => {
+    ChromeUtils.idleDispatch(() => {
       if (window.closed) {
         return;
       }
