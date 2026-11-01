@@ -181,7 +181,7 @@ class AudioDeviceModule : public RefCountInterface {
   
   
   virtual std::optional<ProcessingTimeStats>
-  GetAndResetCaptureProcessingTimeStats() const {
+      GetAndResetCaptureProcessingTimeStats() {
     return std::nullopt;
   }
 
