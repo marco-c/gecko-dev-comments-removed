@@ -2,8 +2,8 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
-const PERF_PREF_PANE = SRD_PREF_VALUE ? "paneTabsBrowsing" : "paneGeneral";
+const PERF_PREF_PANE = "paneTabsBrowsing";
