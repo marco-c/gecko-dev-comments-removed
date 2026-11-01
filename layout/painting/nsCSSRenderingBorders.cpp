@@ -3309,6 +3309,19 @@ void nsCSSBorderRenderer::CreateWebRenderCommands(
                       wrsides, borderRadius, borderInset);
 }
 
+wr::WrClipId nsCSSBorderRenderer::CreateWebRenderClip(
+    wr::DisplayListBuilder& aBuilder) {
+  wr::BorderSide sides[4];
+  for (auto side : AllPhysicalSides()) {
+    sides[side] = wr::ToBorderSide(ToDeviceColor(NS_RGB(255, 255, 255)),
+                                   mBorderStyles[side]);
+  }
+  return aBuilder.DefineBorderClip(
+      wr::ToLayoutRect(LayoutDeviceRect::FromUnknownRect(mOuterRect)),
+      wr::ToBorderWidths(mBorderWidths), Range<const wr::BorderSide>(sides, 4),
+      wr::ToBorderRadius(mBorderRadii), wr::ToLayoutSideOffsets(mBorderInset));
+}
+
 
 Maybe<nsCSSBorderImageRenderer>
 nsCSSBorderImageRenderer::CreateBorderImageRenderer(
@@ -3571,8 +3584,8 @@ ImgDrawResult nsCSSBorderImageRenderer::CreateWebRenderCommands(
       Maybe<ImageIntRegion> region;
       gfx::IntSize decodeSize =
           nsLayoutUtils::ComputeImageContainerDrawingParameters(
-              img, aForFrame, imageRect, imageRect, aSc, flags, svgContext,
-              region);
+              img, aForFrame, imageRect, imageRect, aBuilder, aSc, flags,
+              svgContext, region);
 
       RefPtr<WebRenderImageProvider> provider;
       drawResult = img->GetImageProvider(aManager->LayerManager(), decodeSize,
