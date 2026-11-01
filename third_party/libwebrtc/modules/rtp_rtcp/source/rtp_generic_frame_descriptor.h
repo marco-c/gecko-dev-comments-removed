@@ -25,6 +25,8 @@ class RtpGenericFrameDescriptor {
   static constexpr int kMaxNumFrameDependencies = 8;
   static constexpr int kMaxTemporalLayers = 8;
   static constexpr int kMaxSpatialLayers = 8;
+  
+  static constexpr int kMaxFrameDependencyDiff = (1 << 14) - 1;
 
   RtpGenericFrameDescriptor();
   RtpGenericFrameDescriptor(const RtpGenericFrameDescriptor&);
@@ -56,7 +58,8 @@ class RtpGenericFrameDescriptor {
   std::span<const uint16_t> FrameDependenciesDiffs() const;
   void ClearFrameDependencies() { num_frame_deps_ = 0; }
   
-  bool AddFrameDependencyDiff(uint16_t fdiff);
+  
+  bool AddFrameDependencyDiff(int64_t fdiff);
 
  private:
   bool beginning_of_subframe_ = false;
