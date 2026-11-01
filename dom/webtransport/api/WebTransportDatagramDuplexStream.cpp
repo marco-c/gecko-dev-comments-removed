@@ -82,40 +82,47 @@ void WebTransportDatagramDuplexStream::SetChild(WebTransportChild* aChild) {
   mCreatedWritables.Clear();
 }
 
-void WebTransportDatagramDuplexStream::SetIncomingMaxAge(double aMaxAge,
-                                                         ErrorResult& aRv) {
+void WebTransportDatagramDuplexStream::SetIncomingMaxAge(
+    const Nullable<double>& aMaxAge, ErrorResult& aRv) {
   
-  
-  if (isnan(aMaxAge) || aMaxAge < 0.) {
-    aRv.ThrowRangeError("Invalid IncomingMaxAge");
-    return;
+  Nullable<double> value = aMaxAge;
+  if (!value.IsNull()) {
+    
+    if (isnan(value.Value()) || value.Value() < 0.) {
+      aRv.ThrowRangeError("Invalid IncomingMaxAge");
+      return;
+    }
+    
+    if (value.Value() == 0.) {
+      value.SetNull();
+    }
   }
   
-  if (aMaxAge == 0) {
-    aMaxAge = INFINITY;
-  }
-  
-  mIncomingMaxAge = aMaxAge;
+  mIncomingMaxAge = value;
 }
 
-void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(double aMaxAge,
-                                                         ErrorResult& aRv) {
+void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(
+    const Nullable<double>& aMaxAge, ErrorResult& aRv) {
   
-  
-  if (isnan(aMaxAge) || aMaxAge < 0.) {
-    aRv.ThrowRangeError("Invalid OutgoingMaxAge");
-    return;
+  Nullable<double> value = aMaxAge;
+  if (!value.IsNull()) {
+    
+    if (isnan(value.Value()) || value.Value() < 0.) {
+      aRv.ThrowRangeError("Invalid OutgoingMaxAge");
+      return;
+    }
+    
+    if (value.Value() == 0.) {
+      value.SetNull();
+    }
   }
   
-  if (aMaxAge == 0.) {
-    aMaxAge = INFINITY;
-  }
-  
-  mOutgoingMaxAge = aMaxAge;
+  mOutgoingMaxAge = value;
 
   
-  mOutgoingAlgorithms->UpdateQueueParams(mOutgoingMaxBufferedDatagrams,
-                                         mOutgoingMaxAge);
+  mOutgoingAlgorithms->UpdateQueueParams(
+      mOutgoingMaxBufferedDatagrams,
+      mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
 }
 
 void WebTransportDatagramDuplexStream::SetIncomingMaxBufferedDatagrams(
@@ -130,8 +137,9 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
   mOutgoingMaxBufferedDatagrams = std::max(aValue, 1u);
 
   
-  mOutgoingAlgorithms->UpdateQueueParams(mOutgoingMaxBufferedDatagrams,
-                                         mOutgoingMaxAge);
+  mOutgoingAlgorithms->UpdateQueueParams(
+      mOutgoingMaxBufferedDatagrams,
+      mOutgoingMaxAge.IsNull() ? INFINITY : mOutgoingMaxAge.Value());
 }
 
 already_AddRefed<WebTransportDatagramsWritable>
