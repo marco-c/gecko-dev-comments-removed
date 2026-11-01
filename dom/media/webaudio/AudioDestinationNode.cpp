@@ -456,6 +456,7 @@ const AudioNodeTrack::Flags kTrackFlags =
 
 AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
                                            bool aIsOffline,
+                                           bool aAllowedToStart,
                                            uint32_t aNumberOfChannels,
                                            uint32_t aLength)
     : AudioNode(aContext, aNumberOfChannels, ChannelCountMode::Explicit,
@@ -470,9 +471,17 @@ AudioDestinationNode::AudioDestinationNode(AudioContext* aContext,
 
   
   
+  
+  
+  
+  
+  
+  
   MediaTrackGraph* graph = MediaTrackGraph::GetInstance(
-      MediaTrackGraph::AUDIO_THREAD_DRIVER, aContext->GetOwnerWindow(),
-      aContext->SampleRate(), MediaTrackGraph::DEFAULT_OUTPUT_DEVICE);
+      aAllowedToStart ? MediaTrackGraph::AUDIO_THREAD_DRIVER
+                      : MediaTrackGraph::SYSTEM_THREAD_DRIVER,
+      aContext->GetOwnerWindow(), aContext->SampleRate(),
+      MediaTrackGraph::DEFAULT_OUTPUT_DEVICE);
   AudioNodeEngine* engine = new DestinationNodeEngine(this);
 
   mTrack = AudioNodeTrack::Create(aContext, engine, kTrackFlags, graph);

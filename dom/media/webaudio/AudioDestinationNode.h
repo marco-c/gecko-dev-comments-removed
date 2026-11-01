@@ -22,7 +22,8 @@ class AudioDestinationNode final : public AudioNode,
   
   
   AudioDestinationNode(AudioContext* aContext, bool aIsOffline,
-                       uint32_t aNumberOfChannels, uint32_t aLength);
+                       bool aAllowedToStart, uint32_t aNumberOfChannels,
+                       uint32_t aLength);
 
   void DestroyMediaTrack() override;
 
