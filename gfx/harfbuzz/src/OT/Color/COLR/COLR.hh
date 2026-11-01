@@ -37,6 +37,7 @@
 #include "../../../hb-paint-extents.hh"
 #include "../../../hb-depend-data.hh"
 
+#include "../../../hb-ot-dual.hh"
 #include "../CPAL/CPAL.hh"
 
 
@@ -997,8 +998,11 @@ struct PaintSweepGradient
 };
 
 
+template <typename Types>
 struct PaintGlyph
 {
+  using HBGlyphID = typename Types::HBGlyphID;
+
   HB_INTERNAL void dependv1 (hb_colrv1_depend_context_t* c) const;
   HB_INTERNAL void closurev1 (hb_colrv1_closure_context_t* c) const;
 
@@ -1026,9 +1030,9 @@ struct PaintGlyph
 
   HBUINT8		format; 
   Offset24To<Paint>	paint;  
-  HBUINT16		gid;
+  HBGlyphID		gid;
   public:
-  DEFINE_SIZE_STATIC (6);
+  DEFINE_SIZE_STATIC (4 + HBGlyphID::static_size);
 };
 
 struct PaintColrGlyph
@@ -1986,6 +1990,9 @@ struct Paint
     case 30: hb_barrier (); return_trace (c->dispatch (u.paintformat30, std::forward<Ts> (ds)...));
     case 31: hb_barrier (); return_trace (c->dispatch (u.paintformat31, std::forward<Ts> (ds)...));
     case 32: hb_barrier (); return_trace (c->dispatch (u.paintformat32, std::forward<Ts> (ds)...));
+#ifndef HB_NO_BEYOND_64K
+    case 33: hb_barrier (); return_trace (c->dispatch (u.paintformat33, std::forward<Ts> (ds)...));
+#endif
     default:return_trace (c->default_return_value ());
     }
   }
@@ -2012,7 +2019,7 @@ struct Paint
   Variable<PaintRadialGradient<Variable>>	paintformat7;
   NoVariable<PaintSweepGradient<NoVariable>>	paintformat8;
   Variable<PaintSweepGradient<Variable>>	paintformat9;
-  PaintGlyph					paintformat10;
+  PaintGlyph<Layout::SmallTypes>		paintformat10;
   PaintColrGlyph				paintformat11;
   PaintTransform<NoVariable>			paintformat12;
   PaintTransform<Variable>			paintformat13;
@@ -2035,6 +2042,9 @@ struct Paint
   NoVariable<PaintSkewAroundCenter>		paintformat30;
   Variable<PaintSkewAroundCenter>		paintformat31;
   PaintComposite				paintformat32;
+#ifndef HB_NO_BEYOND_64K
+  PaintGlyph<Layout::MediumTypes>		paintformat33;
+#endif
   } u;
   public:
   DEFINE_SIZE_MIN (2);
@@ -2949,7 +2959,8 @@ hb_paint_context_t::recurse (const Paint &paint)
   depth_left++;
 }
 
-void PaintGlyph::paint_glyph (hb_paint_context_t *c) const
+template <typename Types>
+void PaintGlyph<Types>::paint_glyph (hb_paint_context_t *c) const
 {
   TRACE_PAINT (this);
 

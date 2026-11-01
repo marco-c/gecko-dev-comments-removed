@@ -7,33 +7,28 @@ namespace OT {
 namespace Layout {
 namespace GPOS_impl {
 
-typedef AnchorMatrix Mark2Array;        
-
-
-
-
 template <typename Types>
 struct MarkMarkPosFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 mark1Coverage;          
 
 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 mark2Coverage;          
 
 
   HBUINT16      classCount;             
-  typename Types::template OffsetTo<MarkArray>
+  typename Types::template LOffsetTo<MarkArray<Types>>
                 mark1Array;             
 
-  typename Types::template OffsetTo<Mark2Array>
+  typename Types::template LOffsetTo<AnchorMatrix<Types, HBUINT16>>
                 mark2Array;             
 
   public:
-  DEFINE_SIZE_STATIC (4 + 4 * Types::size);
+  DEFINE_SIZE_STATIC (4 + 4 * Types::LOffset::static_size);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -59,7 +54,7 @@ struct MarkMarkPosFormat1_2
     + hb_zip (this+mark1Coverage, this+mark1Array)
     | hb_filter (c->glyph_set, hb_first)
     | hb_map (hb_second)
-    | hb_apply ([&] (const MarkRecord& record) { record.collect_variation_indices (c, &(this+mark1Array)); })
+    | hb_apply ([&] (const MarkRecord<Types>& record) { record.collect_variation_indices (c, &(this+mark1Array)); })
     ;
 
     hb_map_t klass_mapping;
@@ -228,7 +223,7 @@ struct MarkMarkPosFormat1_2
       return_trace (false);
 
     return_trace (out->mark2Array.serialize_subset (c, mark2Array, this,
-						    mark2_iter.len (),
+						    new_coverage.length,
 						    mark2_indexes.iter ()));
 
   }

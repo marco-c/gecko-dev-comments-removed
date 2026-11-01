@@ -13,14 +13,14 @@ struct LigatureSubstFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 coverage;               
 
-  Array16Of<typename Types::template OffsetTo<LigatureSet<Types>>>
+  typename Types::template ArrayOf<typename Types::template OffsetTo<LigatureSet<Types>>>
                 ligatureSet;            
 
   public:
-  DEFINE_SIZE_ARRAY (4 + Types::size, ligatureSet);
+  DEFINE_SIZE_ARRAY (2 + Types::LOffset::static_size + Types::HBUINT::static_size, ligatureSet);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -138,12 +138,13 @@ struct LigatureSubstFormat1_2
     return_trace (lig_set.apply (c, seconds));
   }
 
+  template <typename GlyphID>
   bool serialize (hb_serialize_context_t *c,
-                  hb_sorted_array_t<const HBGlyphID16> first_glyphs,
+                  hb_sorted_array_t<GlyphID> first_glyphs,
                   hb_array_t<const unsigned int> ligature_per_first_glyph_count_list,
-                  hb_array_t<const HBGlyphID16> ligatures_list,
+                  hb_array_t<GlyphID> ligatures_list,
                   hb_array_t<const unsigned int> component_count_list,
-                  hb_array_t<const HBGlyphID16> component_list )
+                  hb_array_t<GlyphID> component_list )
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!c->extend_min (this))) return_trace (false);

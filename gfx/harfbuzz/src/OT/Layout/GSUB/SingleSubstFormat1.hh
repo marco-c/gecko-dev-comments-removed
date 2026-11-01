@@ -12,7 +12,7 @@ struct SingleSubstFormat1_3
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 coverage;               
 
   typename Types::HBUINT
@@ -20,7 +20,7 @@ struct SingleSubstFormat1_3
 
 
   public:
-  DEFINE_SIZE_STATIC (2 + 2 * Types::size);
+  DEFINE_SIZE_STATIC (2 + Types::LOffset::static_size + Types::HBUINT::static_size);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

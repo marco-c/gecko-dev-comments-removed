@@ -43,10 +43,10 @@ struct CoverageFormat1_3
 
   public:
   HBUINT16      coverageFormat; 
-  SortedArray16Of<typename Types::HBGlyphID>
+  typename Types::template SortedArrayOf<typename Types::HBGlyphID>
                 glyphArray;     
 
-  DEFINE_SIZE_ARRAY (4, glyphArray);
+  DEFINE_SIZE_ARRAY (2 + Types::HBUINT::static_size, glyphArray);
 
   private:
   bool sanitize (hb_sanitize_context_t *c) const

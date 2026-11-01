@@ -13,6 +13,7 @@ namespace OT {
 
 
 #define HB_OT_TAG_loca HB_TAG('l','o','c','a')
+#define HB_OT_TAG_LOCA HB_TAG('L','O','C','A')
 
 struct loca
 {

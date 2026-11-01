@@ -46,7 +46,8 @@ HB_INTERNAL void PaintColrLayers::dependv1 (hb_colrv1_depend_context_t* c) const
   }
 }
 
-HB_INTERNAL void PaintGlyph::dependv1 (hb_colrv1_depend_context_t* c) const
+template <typename Types>
+HB_INTERNAL void PaintGlyph<Types>::dependv1 (hb_colrv1_depend_context_t* c) const
 {
   
   

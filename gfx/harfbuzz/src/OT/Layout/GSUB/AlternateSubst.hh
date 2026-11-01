@@ -36,10 +36,11 @@ struct AlternateSubst
 
   
 
+  template <typename GlyphID>
   bool serialize (hb_serialize_context_t *c,
-                  hb_sorted_array_t<const HBGlyphID16> glyphs,
+                  hb_sorted_array_t<GlyphID> glyphs,
                   hb_array_t<const unsigned int> alternate_len_list,
-                  hb_array_t<const HBGlyphID16> alternate_glyphs_list)
+                  hb_array_t<GlyphID> alternate_glyphs_list)
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!c->extend_min (u.format.v))) return_trace (false);

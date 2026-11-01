@@ -7,32 +7,27 @@ namespace OT {
 namespace Layout {
 namespace GPOS_impl {
 
-typedef AnchorMatrix BaseArray;         
-
-
-
-
 template <typename Types>
 struct MarkBasePosFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 markCoverage;           
 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 baseCoverage;           
 
   HBUINT16      classCount;             
-  typename Types::template OffsetTo<MarkArray>
+  typename Types::template LOffsetTo<MarkArray<Types>>
                 markArray;              
 
-  typename Types::template OffsetTo<BaseArray>
+  typename Types::template LOffsetTo<AnchorMatrix<Types>>
                 baseArray;              
 
 
   public:
-  DEFINE_SIZE_STATIC (4 + 4 * Types::size);
+  DEFINE_SIZE_STATIC (4 + 4 * Types::LOffset::static_size);
 
     bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -57,7 +52,7 @@ struct MarkBasePosFormat1_2
     + hb_zip (this+markCoverage, this+markArray)
     | hb_filter (c->glyph_set, hb_first)
     | hb_map (hb_second)
-    | hb_apply ([&] (const MarkRecord& record) { record.collect_variation_indices (c, &(this+markArray)); })
+    | hb_apply ([&] (const MarkRecord<Types>& record) { record.collect_variation_indices (c, &(this+markArray)); })
     ;
 
     hb_map_t klass_mapping;

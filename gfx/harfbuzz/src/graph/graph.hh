@@ -476,7 +476,8 @@ struct graph_t
       
 
       int64_t modified_distance =
-          hb_clamp (distance + distance_modifier (), (int64_t) 0, 0x7FFFFFFFFFF);
+          hb_clamp (distance + distance_modifier (), (int64_t) 0,
+                    hb_int_max (int64_t) >> 18);
       if (has_max_priority ()) {
         modified_distance = 0;
       }
@@ -828,7 +829,7 @@ public:
           
           continue;
 
-        if (l.width == 3)
+        if (l.width >= 3)
         {
           
           
@@ -938,6 +939,17 @@ public:
   {
     TRY (update_parents ());
 
+    for (auto& vertex : vertices_.writer ())
+    {
+      vertex.space = 0;
+      vertex.priority = 0;
+    }
+    num_roots_for_space_.resize (1);
+    TRY (graph_result_t<void>::from (num_roots_for_space_, ALLOCATION_FAILURE));
+    num_roots_for_space_[0] = 1;
+    distance_invalid = true;
+    positions_invalid = true;
+
     hb_set_t visited;
     hb_set_t roots;
     TRY (find_space_roots (visited, roots));
@@ -1008,6 +1020,9 @@ public:
       if (unlikely (root_idx >= vertices_.length))
         return Err(OUT_OF_BOUNDS);
       subgraph.set (root_idx, wide_parents (root_idx, parents));
+    }
+    for (unsigned root_idx : roots)
+    {
       TRY (find_subgraph (root_idx, subgraph));
     }
     TRY (graph_result_t<void>::from (subgraph, ALLOCATION_FAILURE));

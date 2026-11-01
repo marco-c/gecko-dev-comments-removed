@@ -13,22 +13,22 @@ struct MarkLigPosFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 markCoverage;           
 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 ligatureCoverage;       
 
 
   HBUINT16      classCount;             
-  typename Types::template OffsetTo<MarkArray>
+  typename Types::template LOffsetTo<MarkArray<Types>>
                 markArray;              
 
-  typename Types::template OffsetTo<LigatureArray>
+  typename Types::template LOffsetTo<LigatureArray<Types>>
                 ligatureArray;          
 
   public:
-  DEFINE_SIZE_STATIC (4 + 4 * Types::size);
+  DEFINE_SIZE_STATIC (4 + 4 * Types::LOffset::static_size);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {
@@ -53,7 +53,7 @@ struct MarkLigPosFormat1_2
     + hb_zip (this+markCoverage, this+markArray)
     | hb_filter (c->glyph_set, hb_first)
     | hb_map (hb_second)
-    | hb_apply ([&] (const MarkRecord& record) { record.collect_variation_indices (c, &(this+markArray)); })
+    | hb_apply ([&] (const MarkRecord<Types>& record) { record.collect_variation_indices (c, &(this+markArray)); })
     ;
 
     hb_map_t klass_mapping;
@@ -66,7 +66,7 @@ struct MarkLigPosFormat1_2
     | hb_map (hb_second)
     ;
 
-    const LigatureArray& lig_array = this+ligatureArray;
+    const LigatureArray<Types>& lig_array = this+ligatureArray;
     for (const unsigned i : lig_iter)
     {
       hb_sorted_vector_t<unsigned> lig_indexes;
@@ -159,8 +159,8 @@ struct MarkLigPosFormat1_2
       return_trace (false);
     }
 
-    const LigatureArray& lig_array = this+ligatureArray;
-    const LigatureAttach& lig_attach = lig_array[lig_index];
+    const LigatureArray<Types>& lig_array = this+ligatureArray;
+    const AnchorMatrix<Types, HBUINT16>& lig_attach = lig_array[lig_index];
 
     
     unsigned int comp_count = lig_attach.rows;

@@ -13,14 +13,14 @@ struct MultipleSubstFormat1_2
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 coverage;               
 
-  Array16Of<typename Types::template OffsetTo<Sequence<Types>>>
+  typename Types::template ArrayOf<typename Types::template OffsetTo<Sequence<Types>>>
                 sequence;               
 
   public:
-  DEFINE_SIZE_ARRAY (4 + Types::size, sequence);
+  DEFINE_SIZE_ARRAY (2 + Types::LOffset::static_size + Types::HBUINT::static_size, sequence);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

@@ -12,7 +12,7 @@ struct PairPosFormat2_4 : ValueBase
 {
   protected:
   HBUINT16      format;                 
-  typename Types::template OffsetTo<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 coverage;               
 
   ValueFormat   valueFormat1;           
@@ -21,11 +21,11 @@ struct PairPosFormat2_4 : ValueBase
   ValueFormat   valueFormat2;           
 
 
-  typename Types::template OffsetTo<ClassDef>
+  typename Types::template LOffsetTo<ClassDef>
                 classDef1;              
 
 
-  typename Types::template OffsetTo<ClassDef>
+  typename Types::template LOffsetTo<ClassDef>
                 classDef2;              
 
 
@@ -37,7 +37,7 @@ struct PairPosFormat2_4 : ValueBase
 
 
   public:
-  DEFINE_SIZE_ARRAY (10 + 3 * Types::size, values);
+  DEFINE_SIZE_ARRAY (10 + 3 * Types::LOffset::static_size, values);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

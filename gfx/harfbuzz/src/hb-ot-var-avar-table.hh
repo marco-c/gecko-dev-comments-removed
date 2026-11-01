@@ -104,6 +104,11 @@ struct AxisValueMap
     from_coord = renormalizeValue ((double) from_coord, unmapped_range, triple_distances);
     to_coord = renormalizeValue ((double) to_coord, axis_range, triple_distances);
 
+    
+
+    from_coord = hb_clamp (from_coord, -1.f, 1.f);
+    to_coord = hb_clamp (to_coord, -1.f, 1.f);
+
     coords[0].set_float (from_coord);
     coords[1].set_float (to_coord);
   }

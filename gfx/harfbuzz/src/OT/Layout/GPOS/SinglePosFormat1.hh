@@ -8,11 +8,12 @@ namespace OT {
 namespace Layout {
 namespace GPOS_impl {
 
-struct SinglePosFormat1 : ValueBase
+template <typename Types>
+struct SinglePosFormat1_3 : ValueBase
 {
   protected:
   HBUINT16      format;                 
-  Offset16To<Coverage>
+  typename Types::template LOffsetTo<Coverage>
                 coverage;               
 
   ValueFormat   valueFormat;            
@@ -21,7 +22,7 @@ struct SinglePosFormat1 : ValueBase
 
 
   public:
-  DEFINE_SIZE_ARRAY (6, values);
+  DEFINE_SIZE_ARRAY (2 + Types::LOffset::static_size + ValueFormat::static_size, values);
 
   bool sanitize (hb_sanitize_context_t *c) const
   {

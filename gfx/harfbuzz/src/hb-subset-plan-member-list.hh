@@ -102,6 +102,10 @@ HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, const OT::Feature*>), gsub_feat
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, const OT::Feature*>), gpos_feature_substitutes_map)
 
 
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb::shared_ptr<hb_set_t>>), gsub_lookup_variations)
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb::shared_ptr<hb_set_t>>), gpos_lookup_variations)
+
+
 HB_SUBSET_PLAN_MEMBER (hb_set_t, gsub_old_features)
 HB_SUBSET_PLAN_MEMBER (hb_set_t, gpos_old_features)
 
