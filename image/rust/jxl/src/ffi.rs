@@ -286,7 +286,7 @@ pub unsafe extern "C" fn jxl_decoder_has_more_frames(decoder: *const JxlApiDecod
     
     let decoder = unsafe { &*decoder };
 
-    decoder.inner.has_more_frames()
+    decoder.has_more_frames
 }
 
 #[no_mangle]
