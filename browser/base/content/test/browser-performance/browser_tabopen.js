@@ -84,14 +84,7 @@ add_task(async function () {
 
   const kTabCloseIconWidth = 13;
 
-  
-  
-  const kNewTabIconHeight = Services.prefs.getBoolPref(
-    "browser.nova.enabled",
-    false
-  )
-    ? 12
-    : 13;
+  const kNewTabIconHeight = 12;
 
   let isExpectedChange = function (r) {
     

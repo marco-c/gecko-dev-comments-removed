@@ -43,14 +43,7 @@ add_task(async function () {
     gBrowser.tabContainer.newTabButton.getBoundingClientRect();
   let inRange = (val, min, max) => min <= val && val <= max;
 
-  
-  
-  const kNewTabIconHeight = Services.prefs.getBoolPref(
-    "browser.nova.enabled",
-    false
-  )
-    ? 12
-    : 13;
+  const kNewTabIconHeight = 12;
 
   
   await withPerfObserver(
