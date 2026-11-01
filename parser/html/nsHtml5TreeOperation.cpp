@@ -737,9 +737,12 @@ nsIContent* nsHtml5TreeOperation::CreateHTMLElement(
     
     
     
-    if (!(customElementRegistry.isSome() && !customElementRegistry.value())) {
-      customElementDefinition = nsContentUtils::LookupCustomElementDefinition(
-          document, nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
+    RefPtr<CustomElementRegistry> registry =
+        customElementRegistry.isSome() ? customElementRegistry.value().get()
+                                       : document->GetCustomElementRegistry();
+    if (registry) {
+      customElementDefinition = registry->LookupCustomElementDefinition(
+          nodeInfo->NameAtom(), nodeInfo->NamespaceID(), typeAtom);
     }
   }
 
