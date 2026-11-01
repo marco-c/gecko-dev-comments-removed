@@ -121,6 +121,9 @@ private:
 
 #if defined(MOZ_OXIDIZED_BREAKPAD)
   std::function<GetAuxvInfoCallback> get_auxv_info_;
+  
+  
+  bool force_remote_executor_;
 #endif 
 
   std::function<OnClientDumpRequestCallback> dump_callback_;
