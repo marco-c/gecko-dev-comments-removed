@@ -2343,6 +2343,7 @@ void ProfileBuffer::StreamPausedRangesToJSON(
 bool ProfileBuffer::DuplicateLastSample(ProfilerThreadId aThreadId,
                                         double aSampleTimeMs,
                                         Maybe<uint64_t>& aLastSample,
+                                        bool aLastSampleHasJitReturnAddrs,
                                         const RunningTimes& aRunningTimes) {
   if (!aLastSample) {
     return false;
@@ -2392,6 +2393,15 @@ bool ProfileBuffer::DuplicateLastSample(ProfilerThreadId aThreadId,
     mEntries.PutObjects(ProfileBufferEntry::Kind::SameSample);
 
     return true;
+  }
+
+  
+  
+  
+  
+  
+  if (aLastSampleHasJitReturnAddrs) {
+    return false;
   }
 
   AUTO_PROFILER_STATS(DuplicateLastSample_copy);
