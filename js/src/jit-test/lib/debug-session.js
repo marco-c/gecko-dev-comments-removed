@@ -1,0 +1,10 @@
+
+
+
+function pausedEntries(log) {
+  return log.filter(e => e.type === "paused");
+}
+
+function evaluateResults(log) {
+  return log.filter(e => e.type === "evaluate").map(e => e.result);
+}

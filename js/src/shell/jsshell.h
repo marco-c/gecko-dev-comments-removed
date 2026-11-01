@@ -28,6 +28,9 @@
 #endif
 
 namespace js {
+
+class ArrayObject;
+
 namespace shell {
 
 
@@ -254,9 +257,29 @@ struct ShellContext {
 
   using ObjectVector = GCVector<JSObject*, 0, SystemAllocPolicy>;
   JS::PersistentRooted<ObjectVector> taskCallbacks;
+
+  
+  
+  JS::PersistentRootedObject debugSessionHost;
 };
 
 extern ShellContext* GetShellContext(JSContext* cx);
+
+struct ShellCompartmentPrivate {
+  HeapPtr<ArrayObject*> blackRoot;
+  HeapPtr<ArrayObject*> grayRoot;
+  bool isDebugSessionHost = false;
+
+  
+  
+  bool useSecurityWrappers = false;
+};
+
+extern ShellCompartmentPrivate* EnsureShellCompartmentPrivate(JSContext* cx);
+
+extern const JSClass ShellGlobalClass;
+
+extern void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options);
 
 [[nodiscard]] extern bool PrintStackTrace(JSContext* cx,
                                           JS::Handle<JSObject*> stackObj);

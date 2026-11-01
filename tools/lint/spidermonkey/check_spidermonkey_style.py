@@ -100,6 +100,8 @@ included_inclnames_to_ignore = set([
     "prthread.h",  
     "prtypes.h",  
     "selfhosted.out.h",  
+    "shell/DebugSessionHostSource.h",  
+    "shell/DebugSessionSource.h",  
     "shellmoduleloader.out.h",  
     "unicode/locid.h",  
     "unicode/uchar.h",  
