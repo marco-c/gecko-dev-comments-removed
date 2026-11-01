@@ -260,7 +260,7 @@ const size_t kMDGUIDSize = sizeof(MDGUID);
 
 class FileID {
  public:
-  explicit FileID(const char* path) : path_(path) {}
+  explicit FileID(const std::string& path) : path_(path) {}
   ~FileID() = default;
 
   
@@ -658,7 +658,7 @@ static std::string IDtoString(const std::vector<uint8_t>& aIdentifier) {
 
 
 static std::optional<std::vector<uint8_t>> getElfFileIdentifierFromFile(
-    const char* bin_name) {
+    const std::string& bin_name) {
   std::vector<uint8_t> identifier;
   identifier.reserve(kDefaultBuildIdSize);
 
@@ -691,19 +691,17 @@ static std::string getCodeId(
 }
 
 static SharedLibrary SharedLibraryAtPath(
-    const char* path, unsigned long libStart, unsigned long libEnd,
+    std::string pathStr, unsigned long libStart, unsigned long libEnd,
     unsigned long offset = 0,
     const std::optional<std::vector<uint8_t>>& elfFileIdentifier =
         std::nullopt) {
-  std::string pathStr = path;
-
   size_t pos = pathStr.rfind('/');
   std::string nameStr =
       (pos != std::string::npos) ? pathStr.substr(pos + 1) : pathStr;
 
   const auto identifier = elfFileIdentifier
                               ? elfFileIdentifier
-                              : getElfFileIdentifierFromFile(path);
+                              : getElfFileIdentifierFromFile(pathStr);
 
   return SharedLibrary(libStart, libEnd, offset, getBreakpadId(identifier),
                        getCodeId(identifier), nameStr, pathStr, nameStr,
@@ -716,7 +714,7 @@ class DLIterateState {
   SharedLibraryInfo& mInfo;
 #if defined(GP_OS_linux)
   bool mExeNameAssigned = false;
-  const char* mExeName;
+  std::string mExeName;
   const unsigned long mExeExeAddr;
 #endif
 
@@ -787,13 +785,13 @@ class DLIterateState {
             : std::nullopt;
     
     
-    const char* libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
+    std::string libName = dl_info->dlpi_name ? dl_info->dlpi_name : "";
 
 #if defined(GP_OS_linux)
     
     
     if (!mExeNameAssigned && firstMappingStart <= mExeExeAddr &&
-        mExeExeAddr <= lastMappingEnd && strlen(libName) == 0) {
+        mExeExeAddr <= lastMappingEnd && libName.empty()) {
       libName = mExeName;
       mExeNameAssigned = true;
     }
