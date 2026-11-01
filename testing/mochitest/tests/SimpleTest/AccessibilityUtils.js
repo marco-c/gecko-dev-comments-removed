@@ -837,8 +837,13 @@ this.AccessibilityUtils = (function () {
         (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
           node.getRootNode().host?.localName === "moz-visual-picker-item") ||
         
-        (role === Ci.nsIAccessibleRole.ROLE_SUMMARY &&
+        ((role === Ci.nsIAccessibleRole.ROLE_SUMMARY ||
+          role === Ci.nsIAccessibleRole.ROLE_OUTLINEITEM) &&
           node.getRootNode().host?.localName === "sidebar-bookmark-list") ||
+        (role === Ci.nsIAccessibleRole.ROLE_OUTLINEITEM &&
+          node.getRootNode().host?.localName === "moz-card" &&
+          node.getRootNode().host.getRootNode().host?.localName ===
+            "sidebar-history") ||
         shouldIgnoreTabIndex(node))
     );
   }
@@ -1319,7 +1324,13 @@ this.AccessibilityUtils = (function () {
       
       
       
-      const acc = findInteractiveAccessible(node);
+      let acc = findInteractiveAccessible(node);
+      if (!acc) {
+        
+        forceRefreshDriverTick(node);
+        acc = findInteractiveAccessible(node);
+      }
+
       if (!acc) {
         if (isAccessibleGridcell(node) || isInaccessibleXulTreecol(node)) {
           return;
