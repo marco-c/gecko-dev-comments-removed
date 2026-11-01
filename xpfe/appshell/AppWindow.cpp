@@ -1245,8 +1245,12 @@ void AppWindow::SetSpecifiedSize(const CSSIntSize& aSpecifiedSize) {
   auto cssToDev = UnscaledDevicePixelsPerCSSPixel();
   CSSIntSize size = aSpecifiedSize;
   if (auto screenSize = GetAvailScreenSize()) {
-    size.width = std::min(size.width, screenSize->width);
-    size.height = std::min(size.height, screenSize->height);
+    
+    
+    const CSSIntPoint slop =
+        RoundedToInt(mWindow->GetScreenEdgeSlop() / cssToDev);
+    size.width = std::min(size.width, screenSize->width + 2 * slop.x);
+    size.height = std::min(size.height, screenSize->height + 2 * slop.y);
   }
 
   mIntrinsicallySized = false;
