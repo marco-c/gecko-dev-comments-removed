@@ -42,6 +42,7 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
         win_register_restart=False,
         test_windows=DEFAULT_WINDOWS,
         taskbartabs_enable=False,
+        resume_from_crash=False,
     ):
         super().setUp()
         self.marionette.set_context("chrome")
@@ -69,6 +70,10 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
             
             
             "browser.sessionstore.restore_on_demand": restore_on_demand,
+            
+            
+            
+            "browser.sessionstore.resume_from_crash": resume_from_crash,
             
             
             
