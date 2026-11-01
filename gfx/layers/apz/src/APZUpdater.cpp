@@ -415,7 +415,7 @@ void APZUpdater::RunOnUpdaterThread(LayersId aLayersId,
           }
         }
       }
-      mUpdaterQueue.push_back(QueuedTask{aLayersId, task});
+      mUpdaterQueue.push_back(QueuedTask{aLayersId, task, aDuringShutdown});
     }
     if (sendWakeMessage) {
       RefPtr<wr::WebRenderAPI> api = mApz->GetWebRenderAPI();
@@ -529,7 +529,8 @@ void APZUpdater::ProcessQueue() {
     
 
     auto it = mEpochData.find(task.mLayersId);
-    if (it != mEpochData.end() && it->second.IsBlocked()) {
+    if (task.mDuringShutdown == DuringShutdown::No && it != mEpochData.end() &&
+        it->second.IsBlocked()) {
       
       
       blockedTasks.push_back(task);
@@ -540,6 +541,8 @@ void APZUpdater::ProcessQueue() {
   }
 
   if (mDestroyed) {
+    
+    
     
     
     

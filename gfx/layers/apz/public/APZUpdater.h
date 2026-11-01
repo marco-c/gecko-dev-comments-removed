@@ -129,6 +129,8 @@ class APZUpdater {
 
 
 
+
+
   void RunOnUpdaterThread(LayersId aLayersId, already_AddRefed<Runnable> aTask,
                           DuringShutdown aDuringShutdown = DuringShutdown::No);
 
@@ -236,6 +238,7 @@ class APZUpdater {
   struct QueuedTask {
     LayersId mLayersId;
     RefPtr<Runnable> mRunnable;
+    DuringShutdown mDuringShutdown = DuringShutdown::No;
   };
 
   
