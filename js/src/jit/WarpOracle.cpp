@@ -1220,6 +1220,19 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
           return abort(AbortReason::Error);
         }
         break;
+      case CacheOp::CallDOMGetterResult:
+      case CacheOp::CallDOMFunction:
+      case CacheOp::CallDOMFunctionWithAllocSite: {
+        
+        
+        
+        reader.skip(opInfo.argLength);
+        Handle<GlobalObject*> global = cx_->global();
+        if (!GlobalObject::ensureConstructor(cx_, global, JSProto_Array)) {
+          return abort(AbortReason::Error);
+        }
+        break;
+      }
       case CacheOp::GuardFuse: {
         auto [fuseIndex] = reader.argsForGuardFuse();
         if (!RealmFuses::isInvalidatingFuse(fuseIndex)) {
