@@ -5,7 +5,6 @@
 
 #include "GPUVideoImage.h"
 #include "ImageContainer.h"
-#include "MockGPUVideoSurfaceManager.h"
 #include "gtest/gtest.h"
 #include "mozilla/RemoteImageHolder.h"
 #include "mozilla/gfx/Types.h"
@@ -19,7 +18,7 @@ using namespace mozilla::gfx;
 using namespace mozilla::ipc;
 using namespace mozilla::layers;
 
-class TestGPUVideoSurfaceManager final : public MockGPUVideoSurfaceManager {
+class TestGPUVideoSurfaceManager final : public IGPUVideoSurfaceManager {
  public:
   struct ColorMetadata {
     ColorDepth mColorDepth;
@@ -28,6 +27,13 @@ class TestGPUVideoSurfaceManager final : public MockGPUVideoSurfaceManager {
     TransferFunction mTransferFunction;
     ColorRange mColorRange;
   };
+
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestGPUVideoSurfaceManager, override)
+
+  already_AddRefed<SourceSurface> Readback(
+      const SurfaceDescriptorGPUVideo&) override {
+    return nullptr;
+  }
 
   already_AddRefed<Image> TransferToImage(const SurfaceDescriptorGPUVideo&,
                                           const IntSize&,
@@ -41,6 +47,9 @@ class TestGPUVideoSurfaceManager final : public MockGPUVideoSurfaceManager {
                            aTransferFunction, aColorRange});
     return nullptr;
   }
+
+  void DeallocateSurfaceDescriptor(const SurfaceDescriptorGPUVideo&) override {}
+  void OnSetCurrent(const SurfaceDescriptorGPUVideo&) override {}
 
   Maybe<ColorMetadata> mColorMetadata;
 
