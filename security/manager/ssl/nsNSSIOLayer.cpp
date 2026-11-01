@@ -24,13 +24,13 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/net/SSLTokensCache.h"
-#include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/psm/EnabledSignatureSchemes.h"
-#include "mozilla/psm/IPCClientCertsChild.h"
-#include "mozilla/psm/PIPCClientCertsChild.h"
+#include "mozilla/psm/PSMIPCTypes.h"
+#include "mozilla/psm/PSMIPCUtils.h"
 #include "mozilla/psm/mozilla_abridged_certs_generated.h"
 #include "mozpkix/pkixnss.h"
 #include "mozpkix/pkixtypes.h"
@@ -41,6 +41,7 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "nsClientAuthRemember.h"
 #include "nsContentUtils.h"
+#include "nsIObserverService.h"
 #include "nsISocketProvider.h"
 #include "nsIWebProgressListener.h"
 #include "nsNSSComponent.h"
@@ -821,7 +822,9 @@ static int32_t PSMRecv(PRFileDesc* fd, void* buf, int32_t amount, int flags,
 static int32_t PSMSend(PRFileDesc* fd, const void* buf, int32_t amount,
                        int flags, PRIntervalTime timeout) {
   NSSSocketControl* socketInfo = getSocketInfoIfRunning(fd, writing);
-  if (!socketInfo) return -1;
+  if (!socketInfo) {
+    return -1;
+  }
 
   if (flags != 0) {
     PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
@@ -834,14 +837,12 @@ static int32_t PSMSend(PRFileDesc* fd, const void* buf, int32_t amount,
 
   if (socketInfo->IsShortWritePending() && amount > 0) {
     
-#ifdef DEBUG
-    socketInfo->CheckShortWrittenBuffer(static_cast<const unsigned char*>(buf),
-                                        amount);
-#endif
-
-    buf = socketInfo->GetShortWritePendingByteRef();
+    buf = socketInfo->CheckShortWriteBuffer(buf, amount);
+    if (!buf) {
+      PR_SetError(PR_INVALID_ARGUMENT_ERROR, 0);
+      return -1;
+    }
     amount = 1;
-
     MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
             ("[%p] pushing 1 byte after SSL short write", fd));
   }
@@ -862,6 +863,10 @@ static int32_t PSMSend(PRFileDesc* fd, const void* buf, int32_t amount,
   
   
   
+  
+  
+  
+  
 
   
   
@@ -869,12 +874,11 @@ static int32_t PSMSend(PRFileDesc* fd, const void* buf, int32_t amount,
   
   static const int32_t kShortWrite16k = 16383;
 
-  if ((amount > 1 && bytesWritten == (amount - 1)) ||
-      (amount > kShortWrite16k && bytesWritten == kShortWrite16k)) {
+  if (socketInfo->IsHandshakeCompleted() &&
+      ((amount > 1 && bytesWritten == (amount - 1)) ||
+       (amount > kShortWrite16k && bytesWritten == kShortWrite16k))) {
     
-    socketInfo->SetShortWritePending(
-        bytesWritten + 1,  
-        *(static_cast<const unsigned char*>(buf) + bytesWritten));
+    socketInfo->SetShortWritePending(buf, bytesWritten + 1);
 
     MOZ_LOG(
         gPIPNSSLog, LogLevel::Verbose,
@@ -883,24 +887,17 @@ static int32_t PSMSend(PRFileDesc* fd, const void* buf, int32_t amount,
 
     bytesWritten = -1;
     PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
-
-#ifdef DEBUG
-    socketInfo->RememberShortWrittenBuffer(
-        static_cast<const unsigned char*>(buf));
-#endif
-
   } else if (socketInfo->IsShortWritePending() && bytesWritten == 1) {
     
     
     
     MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
             ("[%p] finished SSL short write", fd));
-
     bytesWritten = socketInfo->ResetShortWritePending();
   }
 
   MOZ_LOG(gPIPNSSLog, LogLevel::Verbose,
-          ("[%p] wrote %d bytes\n", fd, bytesWritten));
+          ("[%p] wrote %d bytes", fd, bytesWritten));
 
   return checkHandshake(bytesWritten, false, fd, socketInfo);
 }
@@ -1893,88 +1890,19 @@ nsresult nsSSLIOLayerAddToSocket(int32_t family, const char* host, int32_t port,
 
 extern "C" {
 
+#if defined(MOZ_WIDGET_ANDROID) || \
+    (defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS))
 const uint8_t kIPCClientCertsObjectTypeCert = 1;
+#endif
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
 const uint8_t kIPCClientCertsObjectTypeRSAKey = 2;
 const uint8_t kIPCClientCertsObjectTypeECKey = 3;
+#endif  
 
 using FindObjectsCallback = void (*)(uint8_t type, size_t id_len,
                                      const uint8_t* id, size_t data_len,
                                      const uint8_t* data, void* ctx);
 using SignCallback = void (*)(size_t data_len, const uint8_t* data, void* ctx);
-
-
-
-
-void DoFindObjects(FindObjectsCallback cb, void* ctx) {
-  net::SocketProcessChild* socketChild =
-      net::SocketProcessChild::GetSingleton();
-  if (!socketChild) {
-    return;
-  }
-
-  RefPtr<IPCClientCertsChild> ipcClientCertsActor(
-      socketChild->GetIPCClientCertsActor());
-  if (!ipcClientCertsActor) {
-    return;
-  }
-  nsTArray<IPCClientCertObject> objects;
-  if (!ipcClientCertsActor->SendFindObjects(&objects)) {
-    return;
-  }
-  for (const auto& object : objects) {
-    switch (object.type()) {
-      case IPCClientCertObject::TECKey:
-        cb(kIPCClientCertsObjectTypeECKey, object.get_ECKey().params().Length(),
-           object.get_ECKey().params().Elements(),
-           object.get_ECKey().cert().Length(),
-           object.get_ECKey().cert().Elements(), ctx);
-        break;
-      case IPCClientCertObject::TRSAKey:
-        cb(kIPCClientCertsObjectTypeRSAKey,
-           object.get_RSAKey().modulus().Length(),
-           object.get_RSAKey().modulus().Elements(),
-           object.get_RSAKey().cert().Length(),
-           object.get_RSAKey().cert().Elements(), ctx);
-        break;
-      case IPCClientCertObject::TCertificate:
-        cb(kIPCClientCertsObjectTypeCert,
-           object.get_Certificate().der().Length(),
-           object.get_Certificate().der().Elements(), 0, nullptr, ctx);
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("unhandled IPCClientCertObject type");
-        break;
-    }
-  }
-}
-
-
-
-
-void DoSign(size_t cert_len, const uint8_t* cert, size_t data_len,
-            const uint8_t* data, size_t params_len, const uint8_t* params,
-            SignCallback cb, void* ctx) {
-  net::SocketProcessChild* socketChild =
-      net::SocketProcessChild::GetSingleton();
-  if (!socketChild) {
-    return;
-  }
-
-  RefPtr<IPCClientCertsChild> ipcClientCertsActor(
-      socketChild->GetIPCClientCertsActor());
-  if (!ipcClientCertsActor) {
-    return;
-  }
-  ByteArray certBytes(nsTArray<uint8_t>(cert, cert_len));
-  ByteArray dataBytes(nsTArray<uint8_t>(data, data_len));
-  ByteArray paramsBytes(nsTArray<uint8_t>(params, params_len));
-  ByteArray signature;
-  if (!ipcClientCertsActor->SendSign(certBytes, dataBytes, paramsBytes,
-                                     &signature)) {
-    return;
-  }
-  cb(signature.data().Length(), signature.data().Elements(), ctx);
-}
 
 #ifdef MOZ_WIDGET_ANDROID
 

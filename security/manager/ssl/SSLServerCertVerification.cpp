@@ -69,26 +69,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "SSLServerCertVerification.h"
 
 #include "CertVerifier.h"
@@ -99,7 +79,6 @@
 #include "RootCertificateTelemetryUtils.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
-#include "VerifySSLServerCertChild.h"
 #include "cert.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
@@ -734,8 +713,7 @@ SECStatus SSLServerCertVerificationJob::Dispatch(
     Maybe<nsTArray<uint8_t>>& stapledOCSPResponse,
     Maybe<nsTArray<uint8_t>>& sctsFromTLSExtension,
     Maybe<DelegatedCredentialInfo>& dcInfo, uint32_t providerFlags, Time time,
-    uint32_t certVerifierFlags,
-    BaseSSLServerCertVerificationResult* aResultTask) {
+    uint32_t certVerifierFlags, SSLServerCertVerificationResult* aResultTask) {
   
   if (!aResultTask || peerCertChain.IsEmpty()) {
     MOZ_ASSERT_UNREACHABLE(
@@ -897,14 +875,6 @@ SECStatus AuthCertificateHookInternal(
   uint64_t addr = reinterpret_cast<uintptr_t>(aPtrForLogging);
   RefPtr resultTask =
       MakeRefPtr<SSLServerCertVerificationResult>(socketControl);
-
-  if (XRE_IsSocketProcess()) {
-    return RemoteProcessCertVerification(
-        std::move(peerCertChain), hostName, socketControl->GetPort(),
-        socketControl->GetOriginAttributes(), stapledOCSPResponse,
-        sctsFromTLSExtension, dcInfo, providerFlags, certVerifierFlags,
-        resultTask);
-  }
 
   
   

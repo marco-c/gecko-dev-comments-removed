@@ -28,11 +28,10 @@ void DoSelectClientAuthCertificate(NSSSocketControl* info,
                                    nsTArray<nsTArray<uint8_t>>&& caNames);
 
 
-
-class ClientAuthCertificateSelectedBase : public mozilla::Runnable {
+class ClientAuthCertificateSelected : public mozilla::Runnable {
  public:
-  ClientAuthCertificateSelectedBase()
-      : Runnable("ClientAuthCertificateSelectedBase") {}
+  explicit ClientAuthCertificateSelected(NSSSocketControl* socketInfo)
+      : Runnable("ClientAuthCertificateSelected"), mSocketInfo(socketInfo) {}
 
   
   
@@ -40,23 +39,15 @@ class ClientAuthCertificateSelectedBase : public mozilla::Runnable {
       nsTArray<uint8_t>&& selectedCertBytes,
       nsTArray<nsTArray<uint8_t>>&& selectedCertChainBytes);
 
- protected:
+  NS_IMETHOD Run() override;
+
+ private:
+  RefPtr<NSSSocketControl> mSocketInfo;
   nsTArray<uint8_t> mSelectedCertBytes;
   
   
   
   nsTArray<nsTArray<uint8_t>> mSelectedCertChainBytes;
-};
-
-class ClientAuthCertificateSelected : public ClientAuthCertificateSelectedBase {
- public:
-  explicit ClientAuthCertificateSelected(NSSSocketControl* socketInfo)
-      : mSocketInfo(socketInfo) {}
-
-  NS_IMETHOD Run() override;
-
- private:
-  RefPtr<NSSSocketControl> mSocketInfo;
 };
 
 
@@ -97,7 +88,7 @@ class SelectClientAuthCertificate : public mozilla::Runnable {
       mozilla::UniqueCERTCertList&& potentialClientCertificates,
       nsTArray<nsTArray<nsTArray<uint8_t>>>&& potentialClientCertificateChains,
       nsTArray<nsTArray<uint8_t>>&& caNames,
-      ClientAuthCertificateSelectedBase* continuation, uint64_t browserId)
+      ClientAuthCertificateSelected* continuation, uint64_t browserId)
       : Runnable("SelectClientAuthCertificate"),
         mInfo(std::move(info)),
         mServerCert(std::move(serverCert)),
@@ -119,7 +110,7 @@ class SelectClientAuthCertificate : public mozilla::Runnable {
   mozilla::UniqueCERTCertList mPotentialClientCertificates;
   nsTArray<nsTArray<nsTArray<uint8_t>>> mPotentialClientCertificateChains;
   nsTArray<nsTArray<uint8_t>> mCANames;
-  RefPtr<ClientAuthCertificateSelectedBase> mContinuation;
+  RefPtr<ClientAuthCertificateSelected> mContinuation;
 
   uint64_t mBrowserId;
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;

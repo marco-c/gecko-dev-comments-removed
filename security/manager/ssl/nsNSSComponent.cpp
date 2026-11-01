@@ -125,14 +125,6 @@ void TruncateFromLastDirectorySeparator(nsCString& path) {
   path.Truncate(index);
 }
 
-bool LoadIPCClientCerts() {
-  if (!LoadIPCClientCertsModule()) {
-    MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("failed to load ipcclientcerts"));
-    return false;
-  }
-  return true;
-}
-
 
 
 bool EnsureNSSInitializedChromeOrContent() {
@@ -183,10 +175,6 @@ bool EnsureNSSInitializedChromeOrContent() {
     if (NS_FAILED(CommonInit())) {
       return false;
     }
-    
-    
-    
-    (void)NS_WARN_IF(!LoadIPCClientCerts());
     initialized = true;
     return true;
   }
@@ -499,8 +487,7 @@ LoadLoadableCertsTask::Run() {
   }
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-  if (StaticPrefs::security_utility_pkcs11_module_process_enabled() &&
-      !GetInSafeMode()) {
+  if (PKCS11ModuleDB::UtilityProcessEnabled() && !GetInSafeMode()) {
     bool success = LoadRemoteCertsModule();
     MOZ_LOG(
         gPIPNSSLog, LogLevel::Debug,
@@ -581,8 +568,7 @@ nsresult CheckForSmartCardChanges() {
 #  ifdef NIGHTLY_BUILD
   
   
-  if (XRE_IsParentProcess() &&
-      StaticPrefs::security_utility_pkcs11_module_process_enabled()) {
+  if (XRE_IsParentProcess() && PKCS11ModuleDB::UtilityProcessEnabled()) {
     return NS_OK;
   }
 #  endif
@@ -1565,9 +1551,6 @@ nsresult nsNSSComponent::InitializeNSS() {
   SetNSSDatabaseCacheModeAsAppropriate();
 #endif
 
-  
-  
-  
   bool nocertdb = StaticPrefs::security_nocertdb();
   bool inSafeMode = GetInSafeMode();
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("inSafeMode: %u\n", inSafeMode));

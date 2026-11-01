@@ -78,16 +78,6 @@ bool LoadOSClientCertsModule();
 
 bool LoadRemoteCertsModule();
 
-
-
-
-
-
-
-
-
-bool LoadIPCClientCertsModule();
-
 nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
                                        nsCString& nickname);
 
