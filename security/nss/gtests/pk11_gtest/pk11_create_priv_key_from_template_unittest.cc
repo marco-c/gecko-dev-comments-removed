@@ -24,6 +24,12 @@ namespace nss_test {
 
 class CreatePrivKeyFromTemplateTest : public ::testing::Test {
  protected:
+  void SetUp() override {
+    if (PK11_IsFIPS()) {
+      GTEST_SKIP() << "FIPS tokens take no raw private key templates";
+    }
+  }
+
   
   
   std::vector<uint8_t> ReadAttr(SECKEYPrivateKey* key, CK_ATTRIBUTE_TYPE type) {

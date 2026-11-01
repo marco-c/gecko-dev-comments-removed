@@ -111,6 +111,9 @@ class KeyLogFileTest : public KeyLogFileTestBase {
 
 
 TEST_P(KeyLogFileTest, KeyLogFile) {
+  if (PK11_IsFIPS()) {
+    GTEST_SKIP() << "FIPS tokens don't allow secrets to be logged";
+  }
   testing::GTEST_FLAG(death_test_style) = "threadsafe";
 
   ASSERT_EXIT(ConnectAndCheck(), ::testing::ExitedWithCode(0), "");

@@ -13,6 +13,7 @@
 #include "tls_connect.h"
 #include "util.h"
 #include "tls13ech.h"
+#include "pk11_import.h"
 
 namespace nss_test {
 
@@ -33,6 +34,13 @@ class TlsAgentEchTest : public TlsAgentStreamTestClient13 {
 #include "cpputil.h"  
 
 static std::string kPublicName("public.name");
+
+
+
+#define SKIP_ECH_HRR_IN_FIPS()                                  \
+  if (PK11_IsFIPS()) {                                          \
+    GTEST_SKIP() << "ECH server HRR doesn't work in FIPS mode"; \
+  }
 
 static const std::vector<HpkeSymmetricSuite> kDefaultSuites = {
     {HpkeKdfHkdfSha256, HpkeAeadChaCha20Poly1305},
@@ -152,7 +160,7 @@ class TlsConnectStreamTls13Ech : public TlsConnectTestBase {
                             static_cast<unsigned int>(pkcs8_r.size())};
 
     SECKEYPrivateKey* tmp_priv = nullptr;
-    ASSERT_EQ(SECSuccess, PK11_ImportDERPrivateKeyInfoAndReturnKey(
+    ASSERT_EQ(SECSuccess, nss_test::ImportDERPrivateKeyInfoAndReturnKey(
                               slot.get(), &pkcs8_r_item, nullptr, nullptr,
                               false, false, KU_ALL, &tmp_priv, nullptr));
     priv.reset(tmp_priv);
@@ -1301,6 +1309,7 @@ SSLHelloRetryRequestAction RetryEchHello(PRBool firstHello,
 
 
 TEST_F(TlsConnectStreamTls13, EchAcceptWithHrr) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;
@@ -1563,6 +1572,7 @@ TEST_F(TlsConnectStreamTls13Ech, EchRejectMisizedEchXtn) {
 }
 
 TEST_F(TlsConnectStreamTls13Ech, EchRejectDroppedEchXtn) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;
@@ -1602,6 +1612,7 @@ TEST_F(TlsConnectStreamTls13Ech, EchRejectDroppedEchXtn) {
 
 
 TEST_F(TlsConnectStreamTls13Ech, EchRejectMangledHrrXtn) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;
@@ -1696,6 +1707,7 @@ TEST_F(TlsConnectStreamTls13Ech, EchClientRejectSpuriousHrrXtn) {
 
 
 TEST_F(TlsConnectStreamTls13, EchFailDecryptCH2) {
+  SKIP_ECH_HRR_IN_FIPS();
   EnsureTlsSetup();
   SetupEch(client_, server_);
   size_t cb_called = 0;
@@ -1770,6 +1782,7 @@ TEST_F(TlsConnectStreamTls13, EchHrrChangeCh2OfferingNY) {
 
 
 TEST_F(TlsConnectStreamTls13, EchHrrChangeCipherSuite) {
+  SKIP_ECH_HRR_IN_FIPS();
   ConfigureSelfEncrypt();
   EnsureTlsSetup();
   SetupEch(client_, server_);
@@ -1798,6 +1811,7 @@ TEST_F(TlsConnectStreamTls13, EchHrrChangeCipherSuite) {
 
 
 TEST_F(TlsConnectStreamTls13, EchAcceptWithHrrAndPsk) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;
@@ -1825,9 +1839,9 @@ TEST_F(TlsConnectStreamTls13, EchAcceptWithHrrAndPsk) {
   const char* label = "foo";
   ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
   ASSERT_TRUE(!!slot);
-  ScopedPK11SymKey key(PK11_ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN,
-                                         PK11_OriginUnwrap, CKA_DERIVE,
-                                         &key_item, nullptr));
+  ScopedPK11SymKey key(nss_test::ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN,
+                                              PK11_OriginUnwrap, CKA_DERIVE,
+                                              &key_item, nullptr));
   ASSERT_TRUE(!!key);
   AddPsk(key, std::string(label), ssl_hash_sha256);
 
@@ -1889,6 +1903,7 @@ TEST_F(TlsConnectStreamTls13Ech, EchRejectWithHrr) {
 
 
 TEST_F(TlsConnectStreamTls13Ech, EchHrrServerYN) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;
@@ -2007,9 +2022,9 @@ TEST_F(TlsConnectStreamTls13, EchRejectWithHrrAndPsk) {
   const char* label = "foo";
   ScopedPK11SlotInfo slot(PK11_GetInternalSlot());
   ASSERT_TRUE(!!slot);
-  ScopedPK11SymKey key(PK11_ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN,
-                                         PK11_OriginUnwrap, CKA_DERIVE,
-                                         &key_item, nullptr));
+  ScopedPK11SymKey key(nss_test::ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN,
+                                              PK11_OriginUnwrap, CKA_DERIVE,
+                                              &key_item, nullptr));
   ASSERT_TRUE(!!key);
   AddPsk(key, std::string(label), ssl_hash_sha256);
   client_->ExpectPsk(ssl_psk_none);
@@ -3179,6 +3194,7 @@ TEST_F(TlsConnectDatagram13, EchNoSupportDTLS) {
 
 
 TEST_F(TlsConnectStreamTls13, EchAcceptWithHrrSameServer) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;
@@ -3215,6 +3231,7 @@ TEST_F(TlsConnectStreamTls13, EchAcceptWithHrrSameServer) {
 }
 
 TEST_F(TlsConnectStreamTls13, EchAcceptWithHrrSameServerUncompressed) {
+  SKIP_ECH_HRR_IN_FIPS();
   ScopedSECKEYPublicKey pub;
   ScopedSECKEYPrivateKey priv;
   DataBuffer echconfig;

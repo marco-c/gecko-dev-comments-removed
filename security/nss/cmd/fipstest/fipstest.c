@@ -6615,8 +6615,7 @@ loser:
 void
 tls(char *reqfn)
 {
-    char buf[256]; 
-
+    char buf[512]; 
 
 
     unsigned char *pms = NULL;
@@ -6776,6 +6775,10 @@ tls(char *reqfn)
             }
             if (strncmp(buf, "[key", 4) == 0) {
                 if (sscanf(buf, "[key block length = %d]", &key_block_len) != 1) {
+                    goto loser;
+                }
+                
+                if (key_block_len <= 0 || key_block_len / 4 >= sizeof(buf)) {
                     goto loser;
                 }
                 key_block_params.ulKeySizeInBits = 8;

@@ -492,7 +492,9 @@ pk11_ImportSymKeyWithTempl(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
         return symKey;
     }
     
-    if (!force) {
+
+
+    if (!force || key->len == 0) {
         PK11_FreeSymKey(symKey);
         return NULL;
     }
