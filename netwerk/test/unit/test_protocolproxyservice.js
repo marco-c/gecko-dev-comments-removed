@@ -1047,13 +1047,11 @@ function cleanUp() {
   prefs.clearUserPref("network.proxy.autoconfig_url");
   prefs.clearUserPref("network.proxy.proxy_over_tls");
   prefs.clearUserPref("network.proxy.no_proxies_on");
-  prefs.clearUserPref("network.proxy.parse_pac_on_socket_process");
 }
 
 function run_test() {
   register_test_protocol_handler();
 
-  prefs.setBoolPref("network.proxy.parse_pac_on_socket_process", false);
   
   run_filter_test();
   do_test_pending();
