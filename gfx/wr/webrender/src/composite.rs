@@ -338,7 +338,7 @@ pub enum CompositorConfig {
         
         
         
-        compositor: Box<dyn LayerCompositor>,
+        compositor: Box<dyn Compositor>,
     },
     
     
@@ -371,20 +371,6 @@ impl CompositorConfig {
             }
             CompositorConfig::Layer { .. } => {
                 None
-            }
-        }
-    }
-
-    pub fn layer_compositor(&mut self) -> Option<&mut Box<dyn LayerCompositor>> {
-        match self {
-            CompositorConfig::Native { .. } => {
-                None
-            }
-            CompositorConfig::Draw { .. } => {
-                None
-            }
-            CompositorConfig::Layer { ref mut compositor } => {
-                Some(compositor)
             }
         }
     }
@@ -1675,48 +1661,6 @@ pub struct CompositorInputLayer {
 pub struct CompositorInputConfig<'a> {
     pub enable_screenshot: bool,
     pub layers: &'a [CompositorInputLayer],
-}
-
-
-
-pub trait LayerCompositor {
-    
-    
-    fn begin_frame(
-        &mut self,
-        input: &CompositorInputConfig,
-    ) -> bool;
-
-    
-    
-    fn bind_layer(
-        &mut self,
-        index: usize,
-        dirty_rects: &[DeviceIntRect],
-    );
-
-    
-    fn present_layer(
-        &mut self,
-        index: usize,
-        dirty_rects: &[DeviceIntRect],
-    );
-
-    fn add_surface(
-        &mut self,
-        index: usize,
-        transform: CompositorSurfaceTransform,
-        clip_rect: DeviceIntRect,
-        image_rendering: ImageRendering,
-        rounded_clip_rect: DeviceIntRect,
-        rounded_clip_radii: ClipRadius,
-    );
-
-    
-    fn end_frame(&mut self);
-
-    
-    fn get_window_properties(&self) -> WindowProperties;
 }
 
 

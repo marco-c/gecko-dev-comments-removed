@@ -823,6 +823,8 @@ pub struct Renderer {
 
     
     compositor_config: CompositorConfig,
+    
+    layer_tree: layer_tree::LayerTree,
     current_compositor_kind: CompositorKind,
     
     limit_sdr_yuv_external_composites: bool,
@@ -1821,6 +1823,7 @@ impl Renderer {
             debug::bind_debug_overlay(
                 &mut self.device,
                 &mut self.compositor_config,
+                &mut self.layer_tree,
                 self.current_compositor_kind,
                 &self.debug_overlay_state,
                 device_size,
@@ -2027,6 +2030,7 @@ impl Renderer {
             
             debug::unbind_debug_overlay(
                 &mut self.compositor_config,
+                &mut self.layer_tree,
                 self.current_compositor_kind,
                 &self.debug_overlay_state,
             );
@@ -2038,8 +2042,7 @@ impl Renderer {
             
             match self.current_compositor_kind {
                 CompositorKind::Layer { .. } => {
-                    let compositor = self.compositor_config.layer_compositor().unwrap();
-                    compositor.end_frame();
+                    self.layer_tree.end_frame(&mut self.compositor_config);
                 }
                 CompositorKind::Native { .. } => {
                     tracy_rs::profile_scope!("compositor.end_frame");
@@ -4187,6 +4190,9 @@ impl Renderer {
     pub fn deinit(mut self) {
         
         self.device.begin_frame();
+        
+        
+        self.layer_tree.deinit(&mut self.compositor_config);
         
         
         if let CompositorConfig::Native { mut compositor, .. } = self.compositor_config {
