@@ -11,7 +11,6 @@ import errno
 import importlib.metadata
 import shlex
 import sys
-import types
 import uuid
 from collections.abc import Iterable
 from pathlib import Path
@@ -499,9 +498,7 @@ def load_commands_from_file(path: Union[str, Path], module_name=None):
     if module_name is None:
         
         
-        if "mach.commands" not in sys.modules:
-            mod = types.ModuleType("mach.commands")
-            sys.modules["mach.commands"] = mod
+        importlib.import_module("mach.commands")
 
         module_name = f"mach.commands.{uuid.uuid4().hex}"
 
