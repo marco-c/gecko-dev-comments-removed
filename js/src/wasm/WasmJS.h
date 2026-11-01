@@ -21,7 +21,6 @@
 #include "mozilla/Maybe.h"      
 
 #include <stdint.h>  
-#include <utility>   
 
 #include "gc/Barrier.h"         
 #include "gc/ZoneAllocator.h"   
@@ -85,16 +84,6 @@ struct ImportValues;
 
 [[nodiscard]] bool GetImports(JSContext* cx, const Module& module,
                               HandleObject importObj, ImportValues* imports);
-
-[[nodiscard]] bool GetModuleExportNames(
-    JSContext* cx, HandleObject wasmModuleObject,
-    MutableHandle<JS::StackGCVector<JSString*>> exportNames);
-
-
-
-[[nodiscard]] bool GetModuleImports(
-    JSContext* cx, HandleObject wasmModuleObject,
-    MutableHandle<JS::StackGCVector<std::pair<JSString*, JSString*>>> imports);
 
 
 
@@ -598,10 +587,6 @@ class WasmComponentInstanceObject : public NativeObject {
   wasm::ComponentInstance& instance() const;
 };
 #endif  
-
-#ifdef NIGHTLY_BUILD
-bool WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record);
-#endif
 
 }  
 

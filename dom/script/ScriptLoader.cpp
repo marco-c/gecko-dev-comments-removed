@@ -2419,6 +2419,13 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
       TRACE_FOR_TEST(aRequest, "compile:main thread");
       return NS_OK;
     }
+
+    
+    
+    if (!aRequest->AsModuleRequest()->IsSourcePhaseRequest(cx)) {
+      TRACE_FOR_TEST(aRequest, "compile:main thread");
+      return NS_OK;
+    }
   } else {
     MOZ_ASSERT(aRequest->IsRetrievedAsSerializedStencil());
 
@@ -2801,7 +2808,7 @@ bool WasmCompileTask::StealResult(JSContext* aCx,
     return false;
   }
 
-  aModuleOut.set(JS::CreateWasmModule(aCx, wasmModuleObject));
+  aModuleOut.set(JS::CreateWasmSourcePhaseModule(aCx, wasmModuleObject));
   return !!aModuleOut;
 }
 

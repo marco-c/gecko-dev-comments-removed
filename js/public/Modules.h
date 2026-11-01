@@ -234,8 +234,15 @@ extern JS_PUBLIC_API JSObject* CompileWasmModule(
 
 
 
+extern JS_PUBLIC_API JSObject* CompileWasmModuleAsSource(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
 
-extern JS_PUBLIC_API JSObject* CreateWasmModule(
+
+
+
+
+extern JS_PUBLIC_API JSObject* CreateWasmSourcePhaseModule(
     JSContext* cx, Handle<JSObject*> wasmModuleObject);
 
 
@@ -350,7 +357,7 @@ GetModuleRequestType(JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 extern JS_PUBLIC_API bool ModuleRequestIsSourcePhase(
-    JSObject* moduleRequestArg);
+    JSContext* cx, Handle<JSObject*> moduleRequestArg);
 
 
 

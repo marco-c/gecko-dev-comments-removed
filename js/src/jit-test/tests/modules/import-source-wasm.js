@@ -13,6 +13,17 @@ const instance = new WebAssembly.Instance(exportsFun);
 assertEq(typeof instance.exports.fun, "function");
 assertEq(instance.exports.fun(3, 4), 7);
 
+
+
+
+let error = null;
+try {
+  await import("empty.wasm");
+} catch (e) {
+  error = e;
+}
+assertEq(error instanceof SyntaxError, true);
+
 let compileError = null;
 try {
   await import.source("invalid.wasm");
