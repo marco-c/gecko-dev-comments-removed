@@ -374,6 +374,12 @@ nsresult WebMDemuxer::SetAudioCodecInfo(nestegg* aContext, int aTrackId,
   
   
   
+  
+  
+  if (headers.IsEmpty()) {
+    return NS_OK;
+  }
+
   RefPtr<MediaByteBuffer> audioCodecSpecificBlob =
       GetAudioCodecSpecificBlob(mInfo.mAudio.mCodecSpecificConfig);
   if (headers.Length() > 1) {
@@ -932,7 +938,7 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
       if (discardPadding < 0) {
         
         sample->mDuration = TimeUnit::Invalid();
-      } else {
+      } else if (mAudioCodec == NESTEGG_CODEC_OPUS) {
         TimeUnit padding = TimeUnit::FromNanoseconds(discardPadding);
         const int samples = opus_packet_get_nb_samples(
             sample->Data(), AssertedCast<int32_t>(sample->Size()),
@@ -959,6 +965,18 @@ nsresult WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
           } else {
             sample->mDuration = packetDuration - padding;
           }
+        }
+      } else if (mAudioCodec == NESTEGG_CODEC_MP3) {
+        TimeUnit padding = TimeUnit::FromNanoseconds(discardPadding);
+        if (padding > sample->mDuration || mProcessedDiscardPadding) {
+          WEBM_DEBUG(
+              "Padding larger than packet duration, flagging packet for "
+              "error (padding: {}, duration: {}, already processed: {})",
+              padding.ToString().get(), sample->mDuration.ToString().get(),
+              mProcessedDiscardPadding ? "true" : "false");
+          sample->mDuration = TimeUnit::Invalid();
+        } else {
+          sample->mDuration -= padding;
         }
       }
       mProcessedDiscardPadding = true;

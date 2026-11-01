@@ -542,6 +542,12 @@ var gMKVtests = [
     type: 'video/matroska; codecs="av1"',
     duration: 1.0,
   },
+  
+  {
+    name: "output_mp3.mkv",
+    type: 'audio/matroska; codecs="mp3"',
+    duration: 1.0,
+  },
 ];
 
 
@@ -615,12 +621,6 @@ var gUnsupportedMKVtests = [
   
   {
     name: "output_flac.mkv",
-    type: "audio/matroska",
-    duration: 1.0,
-  },
-  
-  {
-    name: "output_mp3.mkv",
     type: "audio/matroska",
     duration: 1.0,
   },
