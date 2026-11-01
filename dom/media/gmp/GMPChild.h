@@ -55,12 +55,6 @@ class GMPChild : public PGMPChild {
   mozilla::ipc::IPCResult RecvStartPlugin(const nsString& aAdapter);
   mozilla::ipc::IPCResult RecvPreloadLibs(const nsCString& aLibs);
 
-  PGMPTimerChild* AllocPGMPTimerChild();
-  bool DeallocPGMPTimerChild(PGMPTimerChild* aActor);
-
-  PGMPStorageChild* AllocPGMPStorageChild();
-  bool DeallocPGMPStorageChild(PGMPStorageChild* aActor);
-
   void GMPContentChildActorDestroy(GMPContentChild* aGMPContentChild);
 
   mozilla::ipc::IPCResult RecvCrashPluginNow();
@@ -76,6 +70,11 @@ class GMPChild : public PGMPChild {
 
   mozilla::ipc::IPCResult RecvInitProfiler(
       Endpoint<mozilla::PProfilerChild>&& aEndpoint);
+
+#ifdef MOZ_WIDGET_ANDROID
+  mozilla::ipc::IPCResult RecvInitProcInfo(
+      Endpoint<mozilla::PProcInfoChild>&& aEndpoint);
+#endif
 
   mozilla::ipc::IPCResult RecvPreferenceUpdate(const Pref& aPref);
 
