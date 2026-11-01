@@ -422,6 +422,9 @@ class BufferHolderObject : public NativeObject {
 
   void setBuffer(void* buffer, size_t index = 0) { buffers()[index] = buffer; }
 
+  void prepareForPostBarrier(JSContext* cx);
+  void postBarrier(JSContext* cx);
+
   using BufferVector = Vector<void*, 1, SystemAllocPolicy>;
   BufferVector& buffers() {
     return *reinterpret_cast<BufferVector*>(getFixedSlot(0).toPrivate());
@@ -459,6 +462,33 @@ BufferHolderObject* BufferHolderObject::create(JSContext* cx, size_t count) {
 
   obj->setFixedSlot(0, PrivateValue(buffers.release()));
   return &obj->as<BufferHolderObject>();
+}
+
+
+
+
+
+
+
+
+
+void BufferHolderObject::prepareForPostBarrier(JSContext* cx) {
+  Nursery& nursery = cx->runtime()->gc.nursery();
+  if (nursery.minorGCRequested()) {
+    cx->minorGC(JS::GCReason::API);
+  }
+  if (nursery.isEmpty()) {
+    MOZ_RELEASE_ASSERT(NewPlainObject(cx));
+  }
+  MOZ_RELEASE_ASSERT(!nursery.isEmpty());
+  MOZ_RELEASE_ASSERT(!nursery.minorGCRequested());
+}
+void BufferHolderObject::postBarrier(JSContext* cx) {
+  GCRuntime* gc = &cx->runtime()->gc;
+  MOZ_RELEASE_ASSERT(!gc->nursery().isEmpty());
+  if (isTenured()) {
+    gc->storeBuffer().putWholeCell(this);
+  }
 }
 
 
@@ -514,10 +544,13 @@ BEGIN_TEST(testBufferAllocator_API) {
     }
 
     for (bool nurseryOwned : {true, false}) {
+      if (nurseryOwned) {
+        holder->prepareForPostBarrier(cx);
+      }
       void* alloc = AllocBuffer(zone, requestSize, nurseryOwned);
       CHECK(alloc);
 
-      CHECK(IsBufferAlloc(alloc));
+      CHECK(IsGCPointerBufferAlloc(alloc));
       size_t actualSize = GetAllocSize(zone, alloc);
       CHECK(actualSize == GetGoodAllocSize(requestSize));
 
@@ -545,11 +578,7 @@ BEGIN_TEST(testBufferAllocator_API) {
 
       holder->setBuffer(alloc);
       if (nurseryOwned) {
-        
-        
-        NewPlainObject(cx);
-        
-        cx->runtime()->gc.storeBuffer().putWholeCell(holder);
+        holder->postBarrier(cx);
       }
       JS_GC(cx);
 
@@ -609,7 +638,7 @@ BEGIN_TEST(testBufferAllocator_realloc) {
       
       void* alloc = ReallocBuffer(zone, nullptr, requestSize, nurseryOwned);
       CHECK(alloc);
-      CHECK(IsBufferAlloc(alloc));
+      CHECK(IsGCPointerBufferAlloc(alloc));
       CHECK(IsNurseryOwned(zone, alloc) == nurseryOwned);
       size_t actualSize = GetAllocSize(zone, alloc);
       WriteAllocData(alloc, actualSize);
@@ -742,7 +771,7 @@ BEGIN_TEST(testBufferAllocator_alignedAlloc) {
     CHECK(alloc);
     CHECK((uintptr_t(alloc) % requestSize) == 0);
 
-    CHECK(IsBufferAlloc(alloc));
+    CHECK(IsGCPointerBufferAlloc(alloc));
     size_t actualSize = GetAllocSize(zone, alloc);
     CHECK(actualSize == requestSize);
 
@@ -811,16 +840,18 @@ BEGIN_TEST(testBufferAllocator_predicatesOnOtherAllocs) {
   CHECK(buffer);
   CHECK(!isMalloced);
   CHECK(cx->nursery().isInside(buffer));
-  CHECK(!IsBufferAlloc(buffer));
+  CHECK(!IsGCPointerBufferAlloc(buffer));
 
   RootedObject obj(cx, NewPlainObject(cx));
   CHECK(obj);
   CHECK(IsInsideNursery(obj));
-  CHECK(!IsBufferAlloc(obj));
+  CHECK(!IsGCPointerBufferAlloc(obj));
 
   JS_GC(cx);
   CHECK(!IsInsideNursery(obj));
-  CHECK(!IsBufferAlloc(obj));
+  CHECK(!IsGCPointerBufferAlloc(obj));
+
+  
 
   return true;
 }
@@ -852,9 +883,10 @@ BEGIN_TEST(testBufferAllocator_stress) {
 #endif
 
   BufferHolderObject::BufferVector& liveAllocs = holder->buffers();
-  StoreBuffer& storeBuffer = cx->runtime()->gc.storeBuffer();
 
   for (size_t i = 0; i < Iterations; i++) {
+    holder->prepareForPostBarrier(cx);
+
     size_t index = std::rand() % MaxLiveAllocs;
     size_t bytes = randomSize();
 
@@ -866,8 +898,8 @@ BEGIN_TEST(testBufferAllocator_stress) {
       } else {
         bool nurseryOwned = (std::rand() % 2) == 0;
         liveAllocs[index] = AllocBuffer(zone, bytes, nurseryOwned);
-        if (nurseryOwned && holder->isTenured()) {
-          storeBuffer.putWholeCell(holder);  
+        if (nurseryOwned) {
+          holder->postBarrier(cx);
         }
       }
     } else {
@@ -875,6 +907,9 @@ BEGIN_TEST(testBufferAllocator_stress) {
       void* ptr = ReallocBuffer(zone, liveAllocs[index], bytes, nurseryOwned);
       if (ptr) {
         liveAllocs[index] = ptr;
+        if (nurseryOwned) {
+          holder->postBarrier(cx);
+        }
       }
     }
 
@@ -969,12 +1004,12 @@ class VectorObject : public NativeObject {
     MOZ_RELEASE_ASSERT(IsInsideNursery(this) == expectNurseryOwned);
 
     VectorT* vector = getVector();
-    MOZ_RELEASE_ASSERT(IsBufferAlloc(vector));
+    MOZ_RELEASE_ASSERT(IsGCPointerBufferAlloc(vector));
     MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), vector) == expectNurseryOwned);
 
     if (!vector->empty()) {
       void* ptr = vector->begin();
-      MOZ_RELEASE_ASSERT(IsBufferAlloc(ptr));
+      MOZ_RELEASE_ASSERT(IsGCPointerBufferAlloc(ptr));
       MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), ptr) == expectNurseryOwned);
     }
   }
@@ -1120,7 +1155,7 @@ class HashSetObject : public NativeObject {
     MOZ_RELEASE_ASSERT(IsInsideNursery(this) == expectNurseryOwned);
 
     HashSetT* set = getSet();
-    MOZ_RELEASE_ASSERT(IsBufferAlloc(set));
+    MOZ_RELEASE_ASSERT(IsGCPointerBufferAlloc(set));
     MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), set) == expectNurseryOwned);
   }
 
@@ -1269,16 +1304,14 @@ BEGIN_TEST(testBufferAllocator_chunkKindSmallHeapSharing) {
       cx, BufferHolderObject::create(cx, BufferCount));
   CHECK(holder);
   size_t index = 0;
-  StoreBuffer& storeBuffer = cx->runtime()->gc.storeBuffer();
 
   
   
+  holder->prepareForPostBarrier(cx);
   void* nurseryAlloc = AllocBuffer(zone, ChunkSize / 2, true);
   CHECK(nurseryAlloc);
   holder->setBuffer(nurseryAlloc, index++);
-  if (holder->isTenured()) {
-    storeBuffer.putWholeCell(holder);  
-  }
+  holder->postBarrier(cx);
   CHECK(TestChunkHasNurseryOwnedAllocs(nurseryAlloc));
 
   

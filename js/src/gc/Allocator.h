@@ -124,11 +124,18 @@ void FreeBuffer(JS::Zone* zone, void* alloc);
 
 
 
-bool IsBufferAlloc(void* alloc);
+
+bool IsGCPointerBufferAlloc(void* alloc);
 
 #ifdef DEBUG
 
+inline void AssertIsBufferAlloc(void* alloc) {
+  MOZ_ASSERT(IsGCPointerBufferAlloc(alloc));  
+}
+
+
 bool IsBufferAllocInZone(void* alloc, JS::Zone* zone);
+
 #endif
 
 bool IsNurseryOwned(JS::Zone* zone, void* alloc);

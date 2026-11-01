@@ -859,7 +859,7 @@ void BufferAllocator::free(void* alloc) {
 }
 
 
-bool BufferAllocator::IsBufferAlloc(void* alloc) {
+bool BufferAllocator::IsGCPointerBufferAlloc(void* alloc) {
   
   
 
@@ -873,7 +873,7 @@ bool BufferAllocator::IsBufferAlloc(void* alloc) {
 
 #ifdef DEBUG
 bool BufferAllocator::hasAlloc(void* alloc) {
-  MOZ_ASSERT(IsBufferAlloc(alloc));
+  AssertIsBufferAlloc(alloc);
 
   if (IsLargeAlloc(alloc)) {
     MaybeLock lock;
@@ -1072,7 +1072,7 @@ bool BufferAllocator::MarkBuffer(JSTracer* trc, void** bufferp,
     return true;
   }
 
-  MOZ_ASSERT(IsBufferAlloc(buffer));
+  AssertIsBufferAlloc(buffer);
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
     LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
@@ -1121,7 +1121,7 @@ bool BufferAllocator::PromoteBuffer(JSTracer* trc, void** bufferp,
     return true;
   }
 
-  MOZ_ASSERT(IsBufferAlloc(buffer));
+  AssertIsBufferAlloc(buffer);
 
   if (MOZ_UNLIKELY(IsLargeAlloc(buffer))) {
     LargeBuffer* largeBuffer = LookupLargeBuffer(trc, buffer);
@@ -2188,7 +2188,7 @@ bool BufferAllocator::allocNewSmallRegion(bool nurseryOwned, bool inGC) {
 
 
 bool BufferAllocator::IsSmallAlloc(void* alloc) {
-  MOZ_ASSERT(IsBufferAlloc(alloc));
+  AssertIsBufferAlloc(alloc);
 
   
   
@@ -3509,7 +3509,7 @@ inline size_t BufferAllocator::SizeClassBytes(size_t sizeClass) {
 
 
 bool BufferAllocator::IsMediumAlloc(void* alloc) {
-  MOZ_ASSERT(IsBufferAlloc(alloc));
+  AssertIsBufferAlloc(alloc);
 
   
   
