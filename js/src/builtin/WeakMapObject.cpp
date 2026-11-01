@@ -2,7 +2,7 @@
 
 
 
-#include "builtin/WeakMapObject-inl.h"
+#include "js/WeakMap.h"
 
 #include "builtin/WeakSetObject.h"
 #include "gc/GC.h"
@@ -10,12 +10,12 @@
 #include "jit/InlinableNatives.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
-#include "js/WeakMap.h"
 #include "vm/Compartment.h"
 #include "vm/JSContext.h"
 #include "vm/SelfHosting.h"
 
 #include "builtin/MapObject-inl.h"
+#include "builtin/WeakMapObject-inl.h"
 #include "gc/GCContext-inl.h"
 #include "gc/WeakMap-inl.h"
 #include "vm/NativeObject-inl.h"
@@ -182,7 +182,7 @@ static bool GetOrAddWeakMapEntry(JSContext* cx, Handle<WeakMapObject*> mapObj,
     return false;
   }
 
-  WeakCollectionObject::Map* map = mapObj->getMap();
+  RootedBuffer<WeakCollectionObject::Map> map(cx, mapObj->getMap());
   auto addPtr = map->lookupForAdd(key);
   if (!addPtr) {
     PreserveReflectorAndAssertValidEntry(cx, mapObj, key, value);
