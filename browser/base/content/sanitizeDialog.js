@@ -87,8 +87,6 @@ var gSanitizePromptDialog = {
     this._inClearOnShutdownNewDialog = false;
     this._inClearSiteDataNewDialog = false;
     this._inBrowserWindow = !!arg.inBrowserWindow;
-    this._closeWindowsWithHistory = !!(arg.wrappedJSObject ?? arg)
-      .closeWindowsWithHistory;
     this._entryPoint =
       (arg.wrappedJSObject ?? arg).entryPoint ??
       Sanitizer.DIALOG_ENTRY_POINTS.OTHER;
@@ -351,14 +349,6 @@ var gSanitizePromptDialog = {
       };
 
       let itemsToClear = this.getItemsToClear();
-      
-      
-      if (
-        this._closeWindowsWithHistory &&
-        itemsToClear.includes("browsingHistoryAndDownloads")
-      ) {
-        itemsToClear.push("openWindows");
-      }
       Sanitizer.sanitize(itemsToClear, options)
         .catch(console.error)
         .then(() => {
