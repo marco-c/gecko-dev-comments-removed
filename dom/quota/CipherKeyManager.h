@@ -5,64 +5,202 @@
 #ifndef DOM_QUOTA_CIPHERKEYMANAGER_H_
 #define DOM_QUOTA_CIPHERKEYMANAGER_H_
 
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/DataMutex.h"
+#include "mozilla/Result.h"
 #include "mozilla/dom/FlippedOnce.h"
+#include "mozilla/dom/quota/CipherKeyStoreBackend.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
+#include "mozilla/dom/quota/RetryHelper.h"
 #include "nsTHashMap.h"
 
 namespace mozilla::dom::quota {
 
 using mozilla::FlippedOnce;
 
+
+template <typename CipherStrategy>
+class IKeyProvider {
+ public:
+  using CipherKey = typename CipherStrategy::KeyType;
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  virtual Result<Maybe<CipherKey>, nsresult> Get(const nsACString& aKeyId) = 0;
+
+ protected:
+  virtual ~IKeyProvider() = default;
+};
+
+
+template <typename CipherStrategy>
+class IKeyPersister {
+ public:
+  using CipherKey = typename CipherStrategy::KeyType;
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  virtual nsresult Put(const nsACString& aKeyId, const CipherKey& aKey) = 0;
+
+ protected:
+  virtual ~IKeyPersister() = default;
+};
+
+
+
+template <typename CipherStrategy>
+class InMemoryKeyProvider final : public IKeyProvider<CipherStrategy> {
+ public:
+  using CipherKey = typename CipherStrategy::KeyType;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InMemoryKeyProvider, override)
+
+  Result<Maybe<CipherKey>, nsresult> Get(const nsACString&) override {
+    return Maybe<CipherKey>(Nothing());
+  }
+
+ private:
+  ~InMemoryKeyProvider() = default;
+};
+
+
+template <typename CipherStrategy>
+class InMemoryKeyPersister final : public IKeyPersister<CipherStrategy> {
+ public:
+  using CipherKey = typename CipherStrategy::KeyType;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InMemoryKeyPersister, override)
+
+  nsresult Put(const nsACString&, const CipherKey&) override { return NS_OK; }
+
+ private:
+  ~InMemoryKeyPersister() = default;
+};
+
+
+
+
+template <typename CipherStrategy>
+class StoreBackedKeyProvider final : public IKeyProvider<CipherStrategy> {
+ public:
+  using CipherKey = typename CipherStrategy::KeyType;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(StoreBackedKeyProvider, override)
+
+  StoreBackedKeyProvider(RefPtr<CipherKeyStoreBackend> aStore,
+                         nsCString aOrigin, nsCString aClientType)
+      : mStore(std::move(aStore)),
+        mOrigin(std::move(aOrigin)),
+        mClientType(std::move(aClientType)) {}
+
+  Result<Maybe<CipherKey>, nsresult> Get(const nsACString& aKeyId) override {
+    return mStore->Get(mOrigin, mClientType, aKeyId);
+  }
+
+ private:
+  ~StoreBackedKeyProvider() = default;
+
+  const RefPtr<CipherKeyStoreBackend> mStore;
+  const nsCString mOrigin;
+  const nsCString mClientType;
+};
+
+
+template <typename CipherStrategy>
+class StoreBackedKeyPersister final : public IKeyPersister<CipherStrategy> {
+ public:
+  using CipherKey = typename CipherStrategy::KeyType;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(StoreBackedKeyPersister, override)
+
+  StoreBackedKeyPersister(RefPtr<CipherKeyStoreBackend> aStore,
+                          nsCString aOrigin, nsCString aClientType)
+      : mStore(std::move(aStore)),
+        mOrigin(std::move(aOrigin)),
+        mClientType(std::move(aClientType)) {}
+
+  nsresult Put(const nsACString& aKeyId, const CipherKey& aKey) override {
+    return mStore->Put(mOrigin, mClientType, aKeyId, aKey);
+  }
+
+ private:
+  ~StoreBackedKeyPersister() = default;
+
+  const RefPtr<CipherKeyStoreBackend> mStore;
+  const nsCString mOrigin;
+  const nsCString mClientType;
+};
+
+
+
+
+
+
+
+
 template <typename CipherStrategy>
 class CipherKeyManager {
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CipherKeyManager)
 
   using CipherKey = typename CipherStrategy::KeyType;
 
  public:
-  explicit CipherKeyManager(const char* aName) : mCipherKeys(aName) {};
-
-  Maybe<CipherKey> Get(const nsACString& aKeyId = "default"_ns) {
-    auto lockedCipherKeys = mCipherKeys.Lock();
-
-    MOZ_ASSERT(!mInvalidated);
-
-    return lockedCipherKeys->MaybeGet(aKeyId);
+  static already_AddRefed<CipherKeyManager> Create(
+      const char* aName, RefPtr<IKeyProvider<CipherStrategy>> aProvider,
+      RefPtr<IKeyPersister<CipherStrategy>> aPersister) {
+    RefPtr<CipherKeyManager> mgr = new CipherKeyManager(
+        aName, std::move(aProvider), std::move(aPersister));
+    return mgr.forget();
   }
 
-  CipherKey Ensure(const nsACString& aKeyId = "default"_ns) {
-    auto lockedCipherKeys = mCipherKeys.Lock();
+  static already_AddRefed<CipherKeyManager> CreateEphemeral(const char* aName) {
+    return Create(aName, MakeRefPtr<InMemoryKeyProvider<CipherStrategy>>(),
+                  MakeRefPtr<InMemoryKeyPersister<CipherStrategy>>());
+  }
 
+  static already_AddRefed<CipherKeyManager> CreatePersistent(
+      const char* aName, RefPtr<CipherKeyStoreBackend> aStore,
+      const nsACString& aOrigin, const nsACString& aClientType) {
+    
+    
+    auto provider = MakeRefPtr<StoreBackedKeyProvider<CipherStrategy>>(
+        aStore, nsCString(aOrigin), nsCString(aClientType));
+    auto persister = MakeRefPtr<StoreBackedKeyPersister<CipherStrategy>>(
+        std::move(aStore), nsCString(aOrigin), nsCString(aClientType));
+    return Create(aName, std::move(provider), std::move(persister));
+  }
+
+  Result<Maybe<CipherKey>, nsresult> Get(const nsACString& aKeyId) {
+    auto lockedCipherKeys = mCipherKeys.Lock();
     MOZ_ASSERT(!mInvalidated);
 
-    return lockedCipherKeys->LookupOrInsertWith(aKeyId, [] {
-      
-      
+    auto maybeKey = lockedCipherKeys->MaybeGet(aKeyId);
+    if (maybeKey) {
+      return maybeKey;
+    }
 
-      QM_TRY_RETURN(CipherStrategy::GenerateKey(), [](const auto&) {
-        
-        MOZ_RELEASE_ASSERT(false);
+    QM_TRY_UNWRAP(auto loaded, mProvider->Get(aKeyId));
+    if (loaded) {
+      lockedCipherKeys->InsertOrUpdate(aKeyId, *loaded);
+    }
+    return loaded;
+  }
 
-        return CipherKey{};
-      });
-    });
+  Result<CipherKey, nsresult> Ensure(const nsACString& aKeyId) {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+    MOZ_ASSERT(!mInvalidated);
+
+    auto maybeKey = lockedCipherKeys->MaybeGet(aKeyId);
+    if (maybeKey) {
+      return *maybeKey;
+    }
+
+    QM_TRY_UNWRAP(auto maybeLoaded, mProvider->Get(aKeyId));
+    CipherKey key;
+    if (maybeLoaded) {
+      key = *maybeLoaded;
+    } else {
+      QM_TRY_UNWRAP(key, CipherStrategy::GenerateKey());
+      MOZ_TRY(RetryOnTransientError(
+          [&]() { return mPersister->Put(aKeyId, key); }));
+    }
+
+    lockedCipherKeys->InsertOrUpdate(aKeyId, key);
+    return key;
   }
 
   void Remove(const nsACString& aKeyId) {
@@ -79,8 +217,6 @@ class CipherKeyManager {
     return mInvalidated;
   }
 
-  
-  
   void Invalidate() {
     auto lockedCipherKeys = mCipherKeys.Lock();
 
@@ -90,10 +226,19 @@ class CipherKeyManager {
   }
 
  private:
+  CipherKeyManager(const char* aName,
+                   RefPtr<IKeyProvider<CipherStrategy>> aProvider,
+                   RefPtr<IKeyPersister<CipherStrategy>> aPersister)
+      : mCipherKeys(aName),
+        mProvider(std::move(aProvider)),
+        mPersister(std::move(aPersister)) {};
+
   ~CipherKeyManager() = default;
-  
-  
+
   DataMutex<nsTHashMap<nsCStringHashKey, CipherKey>> mCipherKeys;
+
+  const RefPtr<IKeyProvider<CipherStrategy>> mProvider;
+  const RefPtr<IKeyPersister<CipherStrategy>> mPersister;
 
   FlippedOnce<false> mInvalidated;
 };

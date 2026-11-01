@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_INDEXEDDB_DATABASEFILEMANAGER_H_
 #define DOM_INDEXEDDB_DATABASEFILEMANAGER_H_
 
@@ -94,10 +92,20 @@ class DatabaseFileManager final
   void UpdateDatabaseVersion(uint64_t aDatabaseVersion);
 
   IndexedDBCipherKeyManager& MutableCipherKeyManagerRef() const {
-    MOZ_ASSERT(mIsInPrivateBrowsingMode);
+    
+    
     MOZ_ASSERT(mCipherKeyManager);
 
     return *mCipherKeyManager;
+  }
+
+  nsCString CipherKeyIdForDatabase() const { return mDatabaseID + ":db"_ns; }
+
+  nsCString CipherKeyIdForFile(int64_t aFileId) const {
+    nsCString keyId(mDatabaseID);
+    keyId.Append(':');
+    keyId.AppendInt(aFileId);
+    return keyId;
   }
 
   auto IsInPrivateBrowsingMode() const { return mIsInPrivateBrowsingMode; }
