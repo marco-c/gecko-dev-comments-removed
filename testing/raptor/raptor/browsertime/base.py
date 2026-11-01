@@ -267,6 +267,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         
         if self.benchmark:
             self.benchmark.stop_http_server()
+            self.benchmark = None
 
         if test.get("support_class", None):
             LOG.info("Test support class is cleaning up...")
