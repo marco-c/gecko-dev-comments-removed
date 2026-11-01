@@ -1,14 +1,6 @@
 "use strict";
 
 
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true 
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
-
 
 
 
@@ -50,7 +42,7 @@ add_task(async function testPopupBorderRadius() {
 
   let widget = getBrowserActionWidget(extension);
 
-  let defaultRadius = novaEnabled ? "24px" : "8px";
+  let defaultRadius = "24px";
 
   
   

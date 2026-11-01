@@ -10,17 +10,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Message manager disconnected/
 );
 
-
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true 
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
-const EXPECTED_DEFAULT_THEME_NAME = novaEnabled
-  ? "Default"
-  : "System theme — auto";
+const EXPECTED_DEFAULT_THEME_NAME = "Default";
 
 add_task(async function test_management_themes() {
   await BuiltInThemes.ensureBuiltInThemes();

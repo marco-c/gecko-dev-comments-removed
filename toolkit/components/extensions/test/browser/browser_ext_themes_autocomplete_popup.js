@@ -7,12 +7,6 @@ let scotchBonnet = Services.prefs.getBoolPref(
 );
 
 
-let novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true 
-);
-
-
 
 const POPUP_COLOR_DARK = "#00A400";
 const POPUP_COLOR_BRIGHT = "#85A4FF";
@@ -23,13 +17,11 @@ const POPUP_SELECTED_TEXT_COLOR = "#09b9a6";
 
 
 
-const POPUP_URL_COLOR_DARK = novaEnabled ? "LinkText" : "oklch(0.55 0.24 260)";
+const POPUP_URL_COLOR_DARK = "LinkText";
 const POPUP_ACTION_COLOR_DARK = scotchBonnet
   ? POPUP_TEXT_COLOR_DARK
   : "#5b5b66";
-const POPUP_URL_COLOR_BRIGHT = novaEnabled
-  ? "LinkText"
-  : "oklch(0.76 0.14 205)";
+const POPUP_URL_COLOR_BRIGHT = "LinkText";
 const POPUP_ACTION_COLOR_BRIGHT = scotchBonnet
   ? POPUP_TEXT_COLOR_BRIGHT
   : "#bfbfc9";
@@ -65,8 +57,6 @@ function getComputedColorValue(color, contextElement) {
 }
 
 add_setup(async function () {
-  info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
   await PlacesUtils.history.clear();
   const NUM_VISITS = 10;
   let visits = [];

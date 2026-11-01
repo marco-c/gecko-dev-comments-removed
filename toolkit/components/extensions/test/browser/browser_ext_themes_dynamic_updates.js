@@ -1,14 +1,6 @@
 "use strict";
 
 
-const novaEnabled = Services.prefs.getBoolPref(
-  "browser.nova.enabled",
-  true 
-);
-
-info(`Run with Nova browser styles ${novaEnabled ? "enabled" : "disabled"}`);
-
-
 const BACKGROUND_1 =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
 const ACCENT_COLOR_1 = "#a14040";
