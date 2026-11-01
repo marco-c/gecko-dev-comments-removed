@@ -66,6 +66,15 @@ class SMILTimedElement {
 
 
 
+
+
+
+  bool IsTimingSettled() const;
+
+  
+
+
+
   
 
 

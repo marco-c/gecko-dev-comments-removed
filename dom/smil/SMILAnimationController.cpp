@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "SMILCSSProperty.h"
 #include "SMILCompositor.h"
@@ -292,8 +293,18 @@ void SMILAnimationController::DoSample(bool aSkipUnchangedContainers) {
   nsTArray<RefPtr<SVGAnimationElement>> animElems;
 
   for (SVGAnimationElement* animElem : mAnimationElementTable.Keys()) {
+    const auto key = GetTargetIdentifierForAnimation(animElem);
+    
+    
+    
+    
+    
+    if (!key && animElem->TimedElement().IsTimingSettled()) {
+      continue;
+    }
     SampleTimedElement(animElem, &activeContainers);
-    if (AddAnimationToCompositorTable(animElem, currentCompositorTable.get())) {
+    if (key && AddAnimationToCompositorTable(animElem, *key,
+                                             currentCompositorTable.get())) {
       animElems.AppendElement(animElem);
     }
   }
@@ -490,14 +501,8 @@ void SMILAnimationController::SampleTimedElement(
 
 
 bool SMILAnimationController::AddAnimationToCompositorTable(
-    SVGAnimationElement* aElement, SMILCompositorTable* aCompositorTable) {
-  
-  SMILTargetIdentifier key;
-  if (!GetTargetIdentifierForAnimation(aElement, key)) {
-    
-    return false;
-  }
-
+    SVGAnimationElement* aElement, const SMILTargetIdentifier& aKey,
+    SMILCompositorTable* aCompositorTable) {
   SMILAnimationFunction& func = aElement->AnimationFunction();
 
   
@@ -506,7 +511,7 @@ bool SMILAnimationController::AddAnimationToCompositorTable(
   if (func.IsActiveOrFrozen()) {
     
     
-    SMILCompositor* result = aCompositorTable->PutEntry(key);
+    SMILCompositor* result = aCompositorTable->PutEntry(aKey);
     result->AddAnimationFunction(&func);
     return true;
   }
@@ -520,7 +525,7 @@ bool SMILAnimationController::AddAnimationToCompositorTable(
   
   
   
-  SMILCompositor* result = aCompositorTable->PutEntry(key);
+  SMILCompositor* result = aCompositorTable->PutEntry(aKey);
   result->ToggleForceCompositing();
 
   
@@ -546,13 +551,14 @@ static inline bool IsTransformAttribute(const Element* aElement,
 
 
 
-bool SMILAnimationController::GetTargetIdentifierForAnimation(
-    SVGAnimationElement* aAnimElem, SMILTargetIdentifier& aResult) {
+Maybe<SMILTargetIdentifier>
+SMILAnimationController::GetTargetIdentifierForAnimation(
+    SVGAnimationElement* aAnimElem) {
   
   Element* targetElem = aAnimElem->GetTargetElementContent();
   if (!targetElem)
     
-    return false;
+    return Nothing();
 
   
   
@@ -562,20 +568,21 @@ bool SMILAnimationController::GetTargetIdentifierForAnimation(
   if (!aAnimElem->GetTargetAttributeName(&attributeNamespaceID,
                                          getter_AddRefs(attributeName)))
     
-    return false;
+    return Nothing();
 
   
   
   if (IsTransformAttribute(targetElem, attributeNamespaceID, attributeName) !=
       aAnimElem->IsSVGElement(nsGkAtoms::animateTransform))
-    return false;
+    return Nothing();
 
   
-  aResult.mElement = targetElem;
-  aResult.mAttributeName = attributeName;
-  aResult.mAttributeNamespaceID = attributeNamespaceID;
+  SMILTargetIdentifier result;
+  result.mElement = targetElem;
+  result.mAttributeName = std::move(attributeName);
+  result.mAttributeNamespaceID = attributeNamespaceID;
 
-  return true;
+  return Some(std::move(result));
 }
 
 void SMILAnimationController::PreTraverse() { PreTraverseInSubtree(nullptr); }
@@ -593,8 +600,8 @@ void SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
   }
 
   for (SVGAnimationElement* animElement : mAnimationElementTable.Keys()) {
-    SMILTargetIdentifier key;
-    if (!GetTargetIdentifierForAnimation(animElement, key)) {
+    const auto key = GetTargetIdentifierForAnimation(animElement);
+    if (!key) {
       
       continue;
     }
@@ -602,12 +609,12 @@ void SMILAnimationController::PreTraverseInSubtree(Element* aRoot) {
     
     
     if (aRoot && !nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-                     key.mElement, aRoot)) {
+                     key->mElement, aRoot)) {
       continue;
     }
 
     context->RestyleManager()->PostRestyleEventForAnimations(
-        key.mElement, PseudoStyleRequest::NotPseudo(),
+        key->mElement, PseudoStyleRequest::NotPseudo(),
         RestyleHint::RESTYLE_SMIL);
   }
 
