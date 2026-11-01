@@ -66,7 +66,7 @@ WMFVideoMFTManager::WMFVideoMFTManager(
       mImageSize(aConfig.mImage),
       mStreamType(GetStreamTypeFromMimeType(aConfig.mMimeType)),
       mSoftwareImageSize(aConfig.mImage),
-      mSoftwarePictureSize(aConfig.mImage),
+      mPictureSize(aConfig.mImage),
       mVideoStride(0),
       mColorSpace(aConfig.mColorSpace),
       mColorRange(aConfig.mColorRange),
@@ -325,6 +325,10 @@ MediaResult WMFVideoMFTManager::InitInternal() {
         uint32_t(media::MediaDecoderBackend::WMFSoftware));
   }
 
+  
+  
+  
+  
   
   
   
@@ -680,8 +684,8 @@ WMFVideoMFTManager::CreateBasicVideoFrame(IMFSample* aSample,
   }
   TimeUnit duration = GetSampleDurationOrLastKnownDuration(aSample);
   NS_ENSURE_TRUE(duration.IsValid(), E_FAIL);
-  gfx::IntRect pictureRegion = mVideoInfo.ScaledImageRect(
-      mSoftwarePictureSize.width, mSoftwarePictureSize.height);
+  gfx::IntRect pictureRegion =
+      mVideoInfo.ScaledImageRect(mPictureSize.width, mPictureSize.height);
 
   if (colorDepth != gfx::ColorDepth::COLOR_8 || !mKnowsCompositor ||
       !mKnowsCompositor->SupportsD3D11() || !mIMFUsable) {
@@ -765,7 +769,7 @@ WMFVideoMFTManager::CreateD3DVideoFrame(IMFSample* aSample,
   HRESULT hr;
 
   gfx::IntRect pictureRegion =
-      mVideoInfo.ScaledImageRect(mImageSize.width, mImageSize.height);
+      mVideoInfo.ScaledImageRect(mPictureSize.width, mPictureSize.height);
   RefPtr<Image> image;
   if (mZeroCopyNV12Texture && mDXVA2Manager->SupportsZeroCopyNV12Texture()) {
     hr = mDXVA2Manager->WrapTextureWithImage(aSample, pictureRegion,
@@ -883,16 +887,25 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
       hr = mDecoder->GetOutputMediaType(outputType);
       NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
 
+      gfx::IntRect picture;
+      hr = GetPictureRegion(outputType, picture);
+      NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
+      MOZ_ASSERT(picture.width != 0 && picture.height != 0);
+      mPictureSize = gfx::IntSize(picture.width, picture.height);
+      LOG("Output stream change, picture=[{},{}]", mPictureSize.width,
+          mPictureSize.height);
+
       
       if (mUseHwAccel) {
+        const gfx::IntRect pictureRegion =
+            mVideoInfo.ScaledImageRect(mPictureSize.width, mPictureSize.height);
         hr = mDXVA2Manager->ConfigureForSize(
             outputType,
             mColorSpace.refOr(
                 DefaultColorSpace({mImageSize.width, mImageSize.height})),
             mColorRange, mColorDepth,
             mVideoInfo.mTransferFunction.refOr(gfx::TransferFunction::BT709),
-            mVideoInfo.mHDRMetadata, mVideoInfo.ImageRect().width,
-            mVideoInfo.ImageRect().height);
+            mVideoInfo.mHDRMetadata, pictureRegion.width, pictureRegion.height);
         NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
       } else {
         
@@ -906,15 +919,8 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
         NS_ENSURE_TRUE(width <= MAX_VIDEO_WIDTH, E_FAIL);
         NS_ENSURE_TRUE(height <= MAX_VIDEO_HEIGHT, E_FAIL);
         mSoftwareImageSize = gfx::IntSize(width, height);
-
-        gfx::IntRect picture;
-        hr = GetPictureRegion(outputType, picture);
-        NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
-        MOZ_ASSERT(picture.width != 0 && picture.height != 0);
-        mSoftwarePictureSize = gfx::IntSize(picture.width, picture.height);
-        LOG("Output stream change, image size=[{}x{}], picture=[{},{}]",
-            mSoftwareImageSize.width, mSoftwareImageSize.height,
-            mSoftwarePictureSize.width, mSoftwarePictureSize.height);
+        LOG("Output stream change, image size=[{}x{}]",
+            mSoftwareImageSize.width, mSoftwareImageSize.height);
       }
       
       

@@ -2,8 +2,6 @@
 
 
 
-
-
 #if !defined(WMFVideoMFTManager_h_)
 #  define WMFVideoMFTManager_h_
 
@@ -69,7 +67,7 @@ class WMFVideoMFTManager : public MFTManager {
   HRESULT CreateD3DVideoFrame(IMFSample* aSample, int64_t aStreamOffset,
                               VideoData** aOutVideoData);
 
-  HRESULT SetDecoderMediaTypes();
+  HRESULT SetDecoderMediaTypes(const GUID& aFallbackSubType);
 
   bool CanUseDXVA(IMFMediaType* aInputType, IMFMediaType* aOutputType);
 
@@ -86,6 +84,11 @@ class WMFVideoMFTManager : public MFTManager {
   media::TimeUnit GetSampleDurationOrLastKnownDuration(
       IMFSample* aSample) const;
 
+  bool IsHDR() const {
+    return gfx::IsHDRTransferFunction(
+        mVideoInfo.mTransferFunction.refOr(gfx::TransferFunction::BT709));
+  }
+
   
   const VideoInfo mVideoInfo;
   const gfx::IntSize mImageSize;
@@ -98,7 +101,8 @@ class WMFVideoMFTManager : public MFTManager {
   
   
   
-  gfx::IntSize mSoftwarePictureSize;
+  
+  gfx::IntSize mPictureSize;
 
   uint32_t mVideoStride;
   Maybe<gfx::YUVColorSpace> mColorSpace;
