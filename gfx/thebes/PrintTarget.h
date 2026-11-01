@@ -5,8 +5,6 @@
 #ifndef MOZILLA_GFX_PRINTTARGET_H
 #define MOZILLA_GFX_PRINTTARGET_H
 
-#include <functional>
-
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "nsISupportsImpl.h"
@@ -32,8 +30,8 @@ class PrintTarget {
   
   virtual nsresult BeginPrinting(const nsAString& aTitle,
                                  const nsAString& aPrintToFileName,
-                                 uint64_t aBrowsingContextId,
-                                 int32_t aStartPage, int32_t aEndPage) {
+                                 uint64_t aInnerWindowId, int32_t aStartPage,
+                                 int32_t aEndPage) {
     return NS_OK;
   }
   virtual nsresult EndPrinting() { return NS_OK; }
@@ -111,11 +109,6 @@ class PrintTarget {
 
 
 
-
-
-
-
-
   virtual already_AddRefed<DrawTarget> MakeDrawTarget(
       const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr);
 
@@ -145,9 +138,9 @@ class PrintTarget {
   RefPtr<DrawTarget> mRefDT;  
 
   IntSize mSize;
-  bool mIsFinished;
+  bool mIsFinished = false;
 #ifdef DEBUG
-  bool mHasActivePage;
+  bool mHasActivePage = false;
 #endif
 };
 

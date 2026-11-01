@@ -26,26 +26,9 @@
 namespace mozilla::gfx {
 
 PrintTarget::PrintTarget(cairo_surface_t* aCairoSurface, const IntSize& aSize)
-    : mCairoSurface(aCairoSurface),
-      mSize(aSize),
-      mIsFinished(false)
-#ifdef DEBUG
-      ,
-      mHasActivePage(false)
-#endif
-
-{
-#if 0
+    : mCairoSurface(aCairoSurface), mSize(aSize) {
   
   
-  MOZ_ASSERT(aCairoSurface && !cairo_surface_status(aCairoSurface),
-             "CreateOrNull factory methods should not call us without a "
-             "valid cairo_surface_t*");
-#endif
-
-  
-  
-
   
   if (mCairoSurface &&
       cairo_surface_get_content(mCairoSurface) != CAIRO_CONTENT_COLOR) {
