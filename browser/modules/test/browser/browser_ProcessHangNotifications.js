@@ -132,7 +132,6 @@ add_task(async function terminateScriptTest() {
     notification.currentNotification.buttonContainer.getElementsByTagName(
       "button"
     );
-  
   is(buttons.length, 1, "Only one button displayed");
 
   
@@ -164,7 +163,6 @@ add_task(async function waitForScriptTest() {
     notification.currentNotification.buttonContainer.getElementsByTagName(
       "button"
     );
-  
   is(buttons.length, 1, "Only one button displayed");
 
   await pushPrefs(["browser.hangNotification.waitPeriod", 1000]);

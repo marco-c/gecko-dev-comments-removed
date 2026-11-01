@@ -1,11 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
+// ParamTraits stuff for nsIRemoteTab::NavigationType
 include "mozilla/dom/TabMessageUtils.h";
 using nsIRemoteTab::NavigationType from "nsIRemoteTab.h";
 
@@ -34,9 +31,6 @@ child:
   async TerminateScript();
   async RequestContentJSInterrupt();
 
-  async BeginStartingDebugger();
-  async EndStartingDebugger();
-
   async PaintWhileInterruptingJS(TabId tabId);
   async UnloadLayersWhileInterruptingJS(TabId tabId);
 
@@ -44,9 +38,9 @@ child:
       TabId tabId, NavigationType aNavigationType,
       int32_t aNavigationIndex, nsCString? aNavigationURI, int32_t aEpoch);
 
- 
+ // For MacOS QoS use
  async SetMainThreadQoSPriority(QoSPriority qosPriority);
 
 };
 
-} 
+} // namespace mozilla
