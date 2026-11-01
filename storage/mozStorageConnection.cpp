@@ -11,6 +11,7 @@
 #include "nsThreadUtils.h"
 #include "nsIFile.h"
 #include "nsIFileURL.h"
+#include "nsIThreadShutdown.h"
 #include "nsIXPConnect.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/CheckedInt.h"
@@ -1692,8 +1693,25 @@ void Connection::shutdownAsyncThread() {
   }
 #endif
 
-  MOZ_ALWAYS_SUCCEEDS(mAsyncExecutionThread->Shutdown());
-  mAsyncExecutionThread = nullptr;
+  
+  
+  
+  
+  nsCOMPtr<nsIThreadShutdown> shutdown;
+  if (NS_SUCCEEDED(
+          mAsyncExecutionThread->BeginShutdown(getter_AddRefs(shutdown)))) {
+    
+    
+    
+    RefPtr event = NS_NewRunnableFunction(
+        "storage::Connection::asyncThreadShutdownComplete",
+        [self = RefPtr{this}] { self->mAsyncExecutionThread = nullptr; });
+    shutdown->OnCompletion(event);
+  } else {
+    
+    
+    mAsyncExecutionThread = nullptr;
+  }
 }
 
 nsresult Connection::internalClose(sqlite3* aNativeConnection) {
