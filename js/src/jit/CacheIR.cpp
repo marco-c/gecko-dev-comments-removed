@@ -2816,16 +2816,28 @@ AttachDecision GetPropIRGenerator::tryAttachStringChar(ValOperandId valId,
 
   
   
-  if (attach == AttachStringChar::OutOfBounds) {
+  
+  if (attach == AttachStringChar::OutOfBounds &&
+      (idVal_.toInt32() < 0 ||
+       !cx_->realm()->realmFuses.stringProtoHasNoIndexedPropsFuse.intact())) {
     return AttachDecision::NoAction;
   }
 
   StringOperandId strId = writer.guardToString(valId);
   Int32OperandId int32IndexId = EmitGuardToInt32Index(writer, idVal_, indexId);
-  if (attach == AttachStringChar::Linearize) {
+
+  if (attach == AttachStringChar::OutOfBounds) {
+    writer.guardInt32IsNonNegative(int32IndexId);
+    writer.guardFuse(RealmFuses::FuseIndex::StringProtoHasNoIndexedPropsFuse);
+    
     strId = writer.linearizeForCharAccess(strId, int32IndexId);
+    writer.loadStringAtResult(strId, int32IndexId,  true);
+  } else {
+    if (attach == AttachStringChar::Linearize) {
+      strId = writer.linearizeForCharAccess(strId, int32IndexId);
+    }
+    writer.loadStringCharResult(strId, int32IndexId,  false);
   }
-  writer.loadStringCharResult(strId, int32IndexId,  false);
 
   trackAttached("GetProp.StringChar");
   return AttachDecision::Attach;
