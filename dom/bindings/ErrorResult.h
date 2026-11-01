@@ -237,10 +237,7 @@ class TErrorResult {
     nsresult rv = ErrorCode();
     SuppressException();
     
-    if (rv == NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR ||
-        rv == NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR ||
-        rv == NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION ||
-        rv == NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION) {
+    if (NS_ERROR_GET_MODULE(rv) == NS_ERROR_MODULE_ERRORRESULT) {
       
       return NS_ERROR_DOM_INVALID_STATE_ERR;
     }
