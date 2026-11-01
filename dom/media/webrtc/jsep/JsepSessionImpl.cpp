@@ -1865,6 +1865,14 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
   for (size_t i = 0; i < remote.GetMediaSectionCount(); ++i) {
     const SdpMediaSection& msection = remote.GetMediaSection(i);
 
+    
+    
+    
+    
+    if (msection.GetAttributeList().HasAttribute(SdpAttribute::kMidAttribute)) {
+      mUsedMids.insert(msection.GetAttributeList().GetMid());
+    }
+
     Maybe<JsepTransceiver> transceiver(GetTransceiverForRemote(msection));
     if (!transceiver) {
       return NS_ERROR_FAILURE;
