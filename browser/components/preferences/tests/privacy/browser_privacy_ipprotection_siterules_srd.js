@@ -901,6 +901,23 @@ async function withDeleteRuleDialog(task) {
 }
 
 
+add_task(async function test_delete_rule_dialog_outside_click() {
+  await withDeleteRuleDialog(async (list, browser) => {
+    let dialog = list.deleteDialogEl;
+    let closed = BrowserTestUtils.waitForEvent(dialog, "close");
+    EventUtils.synthesizeMouse(dialog, -20, -20, {}, browser.contentWindow);
+    await closed;
+
+    ok(!dialog.open, "Dialog is closed");
+    Assert.deepEqual(
+      storedRules(),
+      ["https://gone.example.com", "https://kept.example.com"],
+      "Clicking outside keeps every rule"
+    );
+  });
+});
+
+
 
 
 
