@@ -1011,7 +1011,7 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
       mAdjustedSize(-1.0),       
       mFUnitsConvFactor(-1.0f),  
       mAntialiasOption(anAAOption),
-      mIsValid(true),
+      mIsValid(false),  
       mApplySyntheticBold(false),
       mKerningEnabled(false),
       mMathInitialized(false) {
@@ -4287,8 +4287,6 @@ void gfxFont::SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
 
 
 bool gfxFont::InitMetricsFromSfntTables() {
-  mIsValid = false;  
-
   const uint32_t kHheaTableTag = TRUETYPE_TAG('h', 'h', 'e', 'a');
   const uint32_t kOS_2TableTag = TRUETYPE_TAG('O', 'S', '/', '2');
 
@@ -4386,14 +4384,11 @@ bool gfxFont::InitMetricsFromSfntTables() {
   hb_font_destroy(hbFont);
 
   mIsValid = true;
-
   return true;
 }
 
 #if MOZ_FONTATIONS
 bool gfxFont::InitMetricsFromSkrifa() {
-  mIsValid = false;
-
   const auto* skf = mFontEntry->GetSkrifaFont();
   if (!skf) {
     return false;
