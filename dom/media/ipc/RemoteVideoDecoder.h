@@ -58,12 +58,16 @@ class RemoteVideoDecoderParent final : public RemoteDecoderParent {
       RemoteCDMParent* aCDM);
 
  protected:
+  void ActorDestroy(ActorDestroyReason aWhy) override;
+
   IPCResult RecvConstruct(ConstructResolver&& aResolver) override;
 
   MediaResult ProcessDecodedData(MediaDataDecoder::DecodedData&& aData,
                                  DecodedOutputIPDL& aDecodedData) override;
 
  private:
+  void CreateDecoder(ConstructResolver&& aResolver);
+
   
   
   
@@ -72,6 +76,7 @@ class RemoteVideoDecoderParent final : public RemoteDecoderParent {
   const VideoInfo mVideoInfo;
   const float mFramerate;
   RefPtr<KnowsCompositorVideo> mKnowsCompositor;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mVideoBridgeRequest;
 };
 
 }  

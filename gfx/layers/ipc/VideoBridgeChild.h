@@ -7,6 +7,7 @@
 
 #include "ISurfaceAllocator.h"
 #include "TextureForwarder.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/layers/PVideoBridgeChild.h"
 #include "mozilla/layers/VideoBridgeUtils.h"
 
@@ -24,6 +25,11 @@ class VideoBridgeChild final : public PVideoBridgeChild,
   static void Shutdown();
 
   static RefPtr<VideoBridgeChild> GetSingleton();
+
+  
+  
+  
+  static RefPtr<GenericNonExclusivePromise> WaitUntilReady();
 
   mozilla::ipc::IPCResult RecvPing(PingResolver&& aResolver);
 
@@ -71,6 +77,9 @@ class VideoBridgeChild final : public PVideoBridgeChild,
 
   nsCOMPtr<nsISerialEventTarget> mThread;
   bool mCanSend;
+  
+  
+  MozPromiseHolder<GenericNonExclusivePromise> mReplacedHolder;
 };
 
 }  
