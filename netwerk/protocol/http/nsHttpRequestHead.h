@@ -12,13 +12,6 @@
 
 class nsIHttpHeaderVisitor;
 
-
-
-namespace IPC {
-template <typename>
-struct ParamTraits;
-}  
-
 namespace mozilla {
 namespace net {
 
@@ -155,8 +148,6 @@ class nsHttpRequestHead {
   
   
   uint32_t mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){0};
-
-  friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };
 
 }  

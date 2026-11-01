@@ -318,8 +318,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   
   bool ShouldThrottle();
 
-  void NotifyTransactionObserver(nsresult reason);
-
   
   
   
@@ -646,7 +644,6 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void MaybeStartHttp3BackupTimer();
 
  private:
-  TransactionObserverFunc mTransactionObserver;
   NetAddr mSelfAddr;
   NetAddr mPeerAddr;
   nsILoadInfo::IPAddressSpace mTargetIpAddressSpace{

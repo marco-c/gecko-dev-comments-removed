@@ -36,9 +36,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   void OnChannelClosed();
 
   
-  bool ChannelClosed();
-
-  
   
   void OnStartRequestReceived(Maybe<uint32_t> aMultiPartID);
 

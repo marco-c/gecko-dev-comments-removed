@@ -36,7 +36,6 @@ class TRRServiceBase : public nsIProxyConfigChangedCallback {
   
   
   virtual void InitTRRConnectionInfo(bool aForceReinit = false);
-  bool TRRConnectionInfoInited() const { return mTRRConnectionInfoInited; }
 
   void SetHttp3FirstForServer(const nsACString& aServer, bool aEnabled);
   bool GetHttp3FirstForServer(const nsACString& aServer);
