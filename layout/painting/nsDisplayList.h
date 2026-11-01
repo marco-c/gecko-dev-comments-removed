@@ -1746,6 +1746,7 @@ class nsDisplayListBuilder {
       if (mBuilderToReset) {
         mBuilderToReset->mLinkURI.Truncate(0);
         mBuilderToReset->mLinkDest.Truncate(0);
+        mBuilderToReset->mLinkReferenceFrame = nullptr;
       }
     }
 
@@ -1872,6 +1873,11 @@ class nsDisplayListBuilder {
   const ActiveScrolledRoot* mFilterASR;
   nsCString mLinkURI;   
   nsCString mLinkDest;  
+  
+  
+  nsRect mLinkBounds;
+  
+  const nsIFrame* mLinkReferenceFrame = nullptr;
 
   
   LayoutDeviceIntRegion mWindowDraggingRegion;

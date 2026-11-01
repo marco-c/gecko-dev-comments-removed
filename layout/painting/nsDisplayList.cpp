@@ -833,6 +833,11 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  nsPoint offset;
+  aBuilder->mLinkReferenceFrame =
+      aBuilder->FindReferenceFrameFor(aFrame, &offset);
+  aBuilder->mLinkBounds = nsRect(offset, aFrame->GetSize());
+
   
   mBuilderToReset = aBuilder;
 }
@@ -842,12 +847,25 @@ void nsDisplayListBuilder::Linkifier::MaybeAppendLink(
   
   
   
-  if (!aBuilder->mLinkURI.IsEmpty() || !aBuilder->mLinkDest.IsEmpty()) {
-    auto* link = MakeDisplayItem<nsDisplayLink>(
-        aBuilder, aFrame, aBuilder->mLinkDest.get(), aBuilder->mLinkURI.get(),
-        aFrame->GetRect());
-    mList->AppendToTop(link);
+  if (aBuilder->mLinkURI.IsEmpty() && aBuilder->mLinkDest.IsEmpty()) {
+    return;
   }
+  if (!mBuilderToReset) {
+    
+    
+    
+    nsPoint offset;
+    const nsIFrame* referenceFrame =
+        aBuilder->FindReferenceFrameFor(aFrame, &offset);
+    if (referenceFrame == aBuilder->mLinkReferenceFrame &&
+        aBuilder->mLinkBounds.Contains(nsRect(offset, aFrame->GetSize()))) {
+      return;
+    }
+  }
+  auto* link = MakeDisplayItem<nsDisplayLink>(
+      aBuilder, aFrame, aBuilder->mLinkDest.get(), aBuilder->mLinkURI.get(),
+      aFrame->GetRect());
+  mList->AppendToTop(link);
 }
 
 uint32_t nsDisplayListBuilder::sPaintSequenceNumber(1);

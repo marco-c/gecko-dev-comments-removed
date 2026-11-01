@@ -4417,7 +4417,6 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
   
   
   
-  
   Maybe<nsDisplayListBuilder::Linkifier> linkifier;
   if (aBuilder->IsForPrinting()) {
 #ifdef ACCESSIBILITY
