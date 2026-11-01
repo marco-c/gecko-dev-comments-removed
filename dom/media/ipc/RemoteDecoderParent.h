@@ -57,6 +57,12 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
   virtual MediaResult ProcessDecodedData(MediaDataDecoder::DecodedData&& aData,
                                          DecodedOutputIPDL& aDecodedData) = 0;
 
+  
+  
+  virtual MediaResult AdjustDecodeError(const MediaResult& aError) {
+    return aError;
+  }
+
   const RefPtr<RemoteMediaManagerParent> mParent;
   const CreateDecoderParams::OptionSet mOptions;
   const RefPtr<TaskQueue> mDecodeTaskQueue;
@@ -67,6 +73,7 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
   
   const Maybe<uint64_t> mMediaEngineId;
 
+  bool mInitAttempted = false;
   bool mShutdown = false;
 
   
