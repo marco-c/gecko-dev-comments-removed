@@ -839,7 +839,10 @@ NS_IMETHODIMP AppWindow::GetNativeHandle(nsAString& aNativeHandle) {
 NS_IMETHODIMP AppWindow::GetVisibility(bool* aVisibility) {
   NS_ENSURE_ARG_POINTER(aVisibility);
 
-  *aVisibility = mWindow && mWindow->IsVisible();
+  
+  
+
+  *aVisibility = true;
 
   return NS_OK;
 }
@@ -883,8 +886,6 @@ NS_IMETHODIMP AppWindow::SetVisibility(bool aVisibility) {
       doc->SynchronouslyUpdateRemoteBrowserDimensions();
     }
   }
-
-  RecomputeBrowsingContextVisibility();
 
   nsCOMPtr<nsIWindowMediator> windowMediator(
       do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
