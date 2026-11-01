@@ -1920,6 +1920,10 @@ void ViewTransition::ClearActiveTransition(bool aIsDocumentHidden) {
       ClearViewTransitionsAnimationData(mDocument->GetRootElement());
     }
   }
+  
+  if (nsPresContext* pc = mDocument->GetPresContext()) {
+    pc->FlushDeferredReadyToReplaceRetainedPaint();
+  }
   mDocument->ClearActiveViewTransition();
 }
 

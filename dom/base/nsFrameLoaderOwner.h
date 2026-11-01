@@ -84,7 +84,9 @@ class nsFrameLoaderOwner : public nsISupports {
   
   
   
-  bool RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader);
+  
+  bool RestoreFrameLoaderFromBFCache(nsFrameLoader* aNewFrameLoader,
+                                     bool aRetainPaint);
 
   
   

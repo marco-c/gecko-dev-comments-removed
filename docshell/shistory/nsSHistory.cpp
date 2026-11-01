@@ -1343,7 +1343,8 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
                           nsDocShellLoadState* aLoadState,
                           SessionHistoryEntry* aEntry,
                           nsFrameLoader* aFrameLoader, bool aCanSave,
-                          bool aPageSwapFired = false) {
+                          bool aPageSwapFired = false,
+                          bool aViewTransitionCaptured = false) {
   MOZ_ASSERT(aEntry);
   MOZ_ASSERT(aFrameLoader);
 
@@ -1436,8 +1437,8 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     
 
-    bool layersChanged =
-        frameLoaderOwner->RestoreFrameLoaderFromBFCache(aFrameLoader);
+    bool layersChanged = frameLoaderOwner->RestoreFrameLoaderFromBFCache(
+        aFrameLoader, aViewTransitionCaptured);
     
     
     
@@ -1519,7 +1520,7 @@ static void FinishRestoreMaybeDeferred(
              [bc, loadState, entry, frameLoader,
               aCanSave](const ContentParent::
                             BeginOutboundCrossDocumentViewTransitionPromise::
-                                ResolveOrRejectValue&)
+                                ResolveOrRejectValue& aValue)
                  MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
                    
                    
@@ -1531,7 +1532,8 @@ static void FinishRestoreMaybeDeferred(
                    FinishRestore(
                        bc, loadState, entry, frameLoader,
                        aCanSave && bc->AllowedInBFCache(Nothing(), nullptr),
-                        true);
+                        true,
+                       aValue.IsResolve() && aValue.ResolveValue());
                  });
 }
 

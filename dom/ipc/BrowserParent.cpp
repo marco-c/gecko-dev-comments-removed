@@ -781,7 +781,7 @@ void BrowserParent::Destroy() {
   }
 }
 
-mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
+mozilla::ipc::IPCResult BrowserParent::RecvReadyToReplaceRetainedPaint() {
   if (!mFrameElement) {
     return IPC_OK();
   }
@@ -791,6 +791,24 @@ mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
     subdocFrame->ClearRetainedPaintData();
   }
   return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+BrowserParent::RecvReadyToReplaceRetainedPaintNormalPriority() {
+  
+  
+  
+  
+  
+  
+  if (mFrameElement) {
+    nsSubDocumentFrame* subdocFrame =
+        do_QueryFrame(mFrameElement->GetPrimaryFrame());
+    if (subdocFrame && subdocFrame->HasRetainedPaintData()) {
+      return IPC_OK();
+    }
+  }
+  return RecvReadyToReplaceRetainedPaint();
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvEnsureLayersConnected(

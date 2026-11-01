@@ -4345,6 +4345,8 @@ class Document : public nsINode,
   static void ClearCrossDocViewTransitionParams(
       uint64_t aBrowserId,
       Maybe<uint64_t> aProducerBrowsingContextId = Nothing());
+  
+  bool HasPendingInboundCrossDocumentViewTransition();
 
   
   
@@ -5512,6 +5514,9 @@ class Document : public nsINode,
 
   
   bool mHasBeenRevealed : 1;
+
+  
+  bool mRevealAfterBFCacheRestore : 1;
 
   
   

@@ -958,6 +958,18 @@ class nsPresContext : public nsISupports,
       TransactionId aTransactionId = TransactionId{0},
       const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());
   void NotifyRevokingDidPaint(TransactionId aTransactionId);
+
+  
+  
+  void SendReadyToReplaceRetainedPaint();
+  void DeferReadyToReplaceRetainedPaint() {
+    mReadyToReplaceRetainedPaintDeferred = true;
+  }
+  bool IsReadyToReplaceRetainedPaintDeferred() const {
+    return mReadyToReplaceRetainedPaintDeferred;
+  }
+  void SendReadyToReplaceRetainedPaintAfterNextComposite();
+  void FlushDeferredReadyToReplaceRetainedPaint();
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FireDOMPaintEvent(
       nsTArray<nsRect>* aList, TransactionId aTransactionId,
@@ -1310,6 +1322,11 @@ class nsPresContext : public nsISupports,
 
   Maybe<TransactionId> mFirstContentfulPaintTransactionId;
 
+  
+  
+  
+  Maybe<TransactionId> mReadyToReplaceRetainedPaintTransactionId;
+
   mozilla::UniquePtr<mozilla::MediaFeatureChange>
       mPendingMediaFeatureValuesChange;
 
@@ -1431,6 +1448,8 @@ class nsPresContext : public nsISupports,
 
   
   unsigned mHadContentfulPaintComposite : 1;
+  
+  unsigned mReadyToReplaceRetainedPaintDeferred : 1;
 
   
   unsigned mNeedsToUpdateHiddenByContentVisibilityForAnimations : 1;

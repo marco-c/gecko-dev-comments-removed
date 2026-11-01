@@ -1348,16 +1348,16 @@ void nsDocShell::MaybeFirePageSwapOnDeactivate(
 void nsDocShell::BeginDeferredOutboundCrossDocumentViewTransition(
     const mozilla::dom::SessionHistoryInfo* aPageSwapTargetInfo,
     mozilla::dom::NavigationType aNavigationType, uint64_t aSnapshotTargetTabId,
-    std::function<void()>&& aProceed) {
+    std::function<void(bool)>&& aProceed) {
   if (!StaticPrefs::dom_viewTransitions_cross_document_enabled() ||
       !mBrowsingContext || !mDocumentViewer) {
-    aProceed();
+    aProceed(false);
     return;
   }
   RefPtr<Document> oldDoc = mDocumentViewer->GetDocument();
   RefPtr<Navigation> navigation = NavigationOfDocument(oldDoc);
   if (!navigation) {
-    aProceed();
+    aProceed(false);
     return;
   }
 
@@ -1392,7 +1392,7 @@ void nsDocShell::BeginDeferredOutboundCrossDocumentViewTransition(
       Document::ClearCrossDocViewTransitionParams(
           mBrowsingContext->BrowserId());
     }
-    aProceed();
+    aProceed(false);
     return;
   }
 
@@ -1404,20 +1404,24 @@ void nsDocShell::BeginDeferredOutboundCrossDocumentViewTransition(
   outboundVT->BeginDeferredOutboundCapture(
       [proceed = std::move(aProceed), isTop, browserId, aSnapshotTargetTabId,
        self](UniquePtr<ViewTransitionParams>&& aParams) {
-        if (aParams) {
-          if (aSnapshotTargetTabId) {
-            
-            
-            
-            if (RefPtr<BrowserChild> target = BrowserChild::FindBrowserChild(
-                    TabId(aSnapshotTargetTabId))) {
-              widget::PuppetWidget* puppet = target->WebWidget();
-              if (puppet && puppet->HasWindowRenderer()) {
-                ViewTransition::AdoptOldSnapshots(puppet->GetWindowRenderer(),
-                                                  aParams->namedElements);
-              }
+        if (aParams && aSnapshotTargetTabId) {
+          
+          
+          
+          
+          if (RefPtr<BrowserChild> target =
+                  BrowserChild::FindBrowserChild(TabId(aSnapshotTargetTabId))) {
+            widget::PuppetWidget* puppet = target->WebWidget();
+            if (puppet && puppet->HasWindowRenderer()) {
+              ViewTransition::AdoptOldSnapshots(puppet->GetWindowRenderer(),
+                                                aParams->namedElements);
             }
+          } else {
+            aParams = nullptr;
           }
+        }
+        const bool captured = !!aParams;
+        if (aParams) {
           if (isTop) {
             
             
@@ -1430,7 +1434,7 @@ void nsDocShell::BeginDeferredOutboundCrossDocumentViewTransition(
             self->mPendingInboundViewTransitionParams = std::move(aParams);
           }
         }
-        proceed();
+        proceed(captured);
       });
 }
 
