@@ -2714,6 +2714,9 @@ pref("browser.contentblocking.cryptomining.preferences.ui.enabled", true);
 pref("browser.contentblocking.fingerprinting.preferences.ui.enabled", true);
 
 
+pref("browser.protectionsPanelRedesign.enabled", false);
+
+
 
 
 
