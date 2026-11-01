@@ -2507,6 +2507,10 @@ pref("browser.smartwindow.searchTheWebFast", true);
 pref("browser.smartwindow.searchTheWebAnswers", false);
 
 
+
+pref("browser.smartwindow.location.enabled", true);
+
+
 pref("browser.smartwindow.aiTabHistory.logLevel", "Error");
 pref("browser.smartwindow.aiTabStore.logLevel", "Error");
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
