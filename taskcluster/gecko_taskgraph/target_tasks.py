@@ -884,12 +884,6 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
         
         if accept_raptor_desktop_build(platform):
             if "browsertime" in try_name and "custom-car" in try_name:
-                
-                if "tp6" in try_name and "essential" not in try_name:
-                    return False
-                
-                if "tp6" in try_name and "linux" in platform:
-                    return False
                 return True
         elif accept_raptor_android_build(platform):
             if "browsertime" in try_name and "cstm-car-m" in try_name:
@@ -966,15 +960,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             ):
                 return False
             if "browsertime" in try_name:
-                if "chrome" in try_name or "custom-car" in try_name:
-                    
-                    
-                    if "linux2404" in platform and (
-                        "tp6" in try_name or "chrome-unity-webgl" in try_name
-                    ):
-                        return False
                 if "chrome" in try_name:
-                    if "tp6" in try_name and "essential" not in try_name:
+                    
+                    if "linux2404" in platform and "chrome-unity-webgl" in try_name:
                         return False
                     if "wasm-godot" in try_name:
                         return False
