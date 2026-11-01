@@ -362,6 +362,7 @@ class MessageLogger:
         """Transform a failure message so it doesn't fail the job."""
         if message.get("action") == "test_status" and "expected" in message:
             message["expected"] = message.get("status")
+            message.setdefault("extra", {})["will_retry"] = True
         elif message.get("action") == "log":
             if message.get("message", "").startswith("TEST-UNEXPECTED"):
                 message["message"] = message["message"].replace(
@@ -3813,7 +3814,6 @@ toolbar#nav-bar {
             "http3": options.useHttp3Server,
             "http2": options.useHttp2Server,
             "inc_origin_init": os.environ.get("MOZ_ENABLE_INC_ORIGIN_INIT") == "1",
-            "nova": self.extraPrefs.get("browser.nova.enabled", True),
             "sessionHistoryInParent": True,
             "socketprocess_e10s": self.extraPrefs.get("network.process.enabled", False),
             "socketprocess_networking": self.extraPrefs.get(
