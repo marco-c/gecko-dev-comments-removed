@@ -1,6 +1,9 @@
 #![allow(clippy::missing_safety_doc)]
 
-use std::{ptr::null_mut, slice};
+use std::{
+    ptr::{null, null_mut},
+    slice,
+};
 
 use libc::{fclose, fopen, fread, free, malloc, memset, FILE};
 
@@ -145,6 +148,23 @@ pub extern "C" fn qcms_profile_get_primaries(
             true
         }
         None => false,
+    }
+}
+
+
+
+
+#[no_mangle]
+pub extern "C" fn qcms_profile_get_description(profile: &Profile, len: &mut usize) -> *const u8 {
+    match profile.description() {
+        Some(description) => {
+            *len = description.len();
+            description.as_ptr()
+        }
+        None => {
+            *len = 0;
+            null()
+        }
     }
 }
 
