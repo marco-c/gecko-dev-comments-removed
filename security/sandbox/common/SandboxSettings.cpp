@@ -6,9 +6,7 @@
 
 #include "mozISandboxSettings.h"
 #include "mozilla/Components.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "nsAppRunner.h"
 #include "nsServiceManagerUtils.h"
@@ -154,15 +152,7 @@ int GetEffectiveContentSandboxLevel() {
 #if defined(XP_WIN)
   
   
-  if (level >= 8 &&
-      (!PDMFactory::AllDecodersAreRemote()
-#  if defined(MOZ_WEBRTC) && !defined(MOZ_THUNDERBIRD)
-       
-       
-       || !StaticPrefs::network_process_enabled() ||
-       !Preferences::GetBool("media.peerconnection.mtransport_process")
-#  endif
-           )) {
+  if (level >= 8 && !PDMFactory::AllDecodersAreRemote()) {
     level = 7;
   }
 #endif
@@ -172,9 +162,7 @@ int GetEffectiveContentSandboxLevel() {
 
 bool IsContentSandboxEnabled() { return GetEffectiveContentSandboxLevel() > 0; }
 
-bool IsGPUSandboxEnabled() {
-  return Preferences::GetInt("security.sandbox.gpu.level") > 0;
-}
+bool IsGPUSandboxEnabled() { return GetEffectiveGpuSandboxLevel() > 0; }
 
 int GetEffectiveSocketProcessSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS_SANDBOX")) {
@@ -195,6 +183,10 @@ int GetEffectiveSocketProcessSandboxLevel() {
 }
 
 int GetEffectiveGpuSandboxLevel() {
+  if (PR_GetEnv("MOZ_DISABLE_GPU_SANDBOX")) {
+    return 0;
+  }
+
   return StaticPrefs::security_sandbox_gpu_level();
 }
 

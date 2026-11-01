@@ -2900,9 +2900,6 @@ pref("privacy.exposeContentTitleInWindow", true);
 pref("privacy.exposeContentTitleInWindow.pbm", true);
 
 
-pref("media.peerconnection.mtransport_process", true);
-
-
 
 pref("browser.tabs.remote.warmup.enabled", true);
 
