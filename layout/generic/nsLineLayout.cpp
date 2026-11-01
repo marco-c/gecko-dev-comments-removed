@@ -994,9 +994,14 @@ void nsLineLayout::ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
             
             
             
+            nsIFrame* first =
+                AbsoluteContainingBlock::FirstInlineContinuationInFragmentainer(
+                    inlineFrame);
             if (AbsoluteContainingBlock* absCB =
-                    inlineFrame->GetAbsoluteContainingBlock()) {
-              absCB->PrepareAbsoluteFrames(inlineFrame);
+                    first->GetAbsoluteContainingBlock()) {
+              absCB->PrepareAbsoluteFrames(
+                  static_cast<nsInlineFrame*>(first),
+                  AbsoluteContainingBlock::PrepareReason::Destroy);
             }
           }
         }

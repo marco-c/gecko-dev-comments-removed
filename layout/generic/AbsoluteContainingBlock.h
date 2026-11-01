@@ -70,13 +70,25 @@ class AbsoluteContainingBlock {
   [[nodiscard]] nsFrameList StealPushedChildList();
 
   
+  enum class PrepareReason : uint8_t {
+    
+    
+    Reflow,
+
+    
+    
+    
+    Destroy,
+  };
+
+  
 
 
 
 
 
-
-  bool PrepareAbsoluteFrames(nsContainerFrame* aDelegatingFrame);
+  bool PrepareAbsoluteFrames(nsContainerFrame* aDelegatingFrame,
+                             PrepareReason aReason = PrepareReason::Reflow);
 
   
 
@@ -133,6 +145,13 @@ class AbsoluteContainingBlock {
     nsRect mLocal;
     nsRect mScrollable;
   };
+
+  
+
+
+
+  static nsIFrame* FirstInlineContinuationInFragmentainer(
+      nsIFrame* aInlineFrame);
 
  protected:
   

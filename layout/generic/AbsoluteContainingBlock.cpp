@@ -148,8 +148,7 @@ static LogicalSize* GetUnfragmentedSize(const ReflowInput& aCBReflowInput,
 
 
 
-
-static bool IsFirstInlineContinuationInFragmentainer(
+static nsIFrame* GetPrevInlineContinuationInFragmentainer(
     const nsIFrame* aInlineFrame) {
   MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
   const nsBlockFrame* myBlock =
@@ -161,9 +160,28 @@ static bool IsFirstInlineContinuationInFragmentainer(
       
       continue;
     }
-    return nsLayoutUtils::FindNearestBlockAncestor(prev) != myBlock;
+    return nsLayoutUtils::FindNearestBlockAncestor(prev) == myBlock ? prev
+                                                                    : nullptr;
   }
-  return true;
+  return nullptr;
+}
+
+
+
+
+static bool IsFirstInlineContinuationInFragmentainer(
+    const nsIFrame* aInlineFrame) {
+  return !GetPrevInlineContinuationInFragmentainer(aInlineFrame);
+}
+
+nsIFrame* AbsoluteContainingBlock::FirstInlineContinuationInFragmentainer(
+    nsIFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->IsInlineFrameOrSubclass());
+  nsIFrame* first = aInlineFrame;
+  while (nsIFrame* prev = GetPrevInlineContinuationInFragmentainer(first)) {
+    first = prev;
+  }
+  return first;
 }
 
 
@@ -325,7 +343,7 @@ void AbsoluteContainingBlock::PullAbsoluteFramesFrom(
 }
 
 bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
-    nsContainerFrame* aDelegatingFrame) {
+    nsContainerFrame* aDelegatingFrame, PrepareReason aReason) {
   if (const nsIFrame* prev =
           GetFirstContinuationInPrevFragmentainer(aDelegatingFrame)) {
     AbsoluteContainingBlock* prevAbsCB = prev->GetAbsoluteContainingBlock();
@@ -353,11 +371,16 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
   
   
   
+  
+  
+  
+  
   if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
       aDelegatingFrame->IsInlineFrameOrSubclass() &&
       IsFirstInlineContinuationInFragmentainer(aDelegatingFrame)) {
     const nsBlockFrame* myBlock =
         nsLayoutUtils::FindNearestBlockAncestor(aDelegatingFrame);
+    const bool stopAtFragmentainerBoundary = aReason == PrepareReason::Reflow;
     for (nsIFrame* next = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(
              aDelegatingFrame);
          next;
@@ -366,7 +389,8 @@ bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
         
         continue;
       }
-      if (nsLayoutUtils::FindNearestBlockAncestor(next) != myBlock) {
+      if (stopAtFragmentainerBoundary &&
+          nsLayoutUtils::FindNearestBlockAncestor(next) != myBlock) {
         
         break;
       }
