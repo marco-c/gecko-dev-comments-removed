@@ -193,12 +193,18 @@ class CommonBackend(BuildBackend):
     def _rust_tests_command(self, tests, profile_suffix=""):
         """Build a Cargo test command using the directory's Cargo profile."""
         rustflags = ()
+        substs = self.environment.substs
         
         
         
-        if self.environment.substs.get("OS_TARGET") != "WINNT":
+        if substs.get("OS_TARGET") != "WINNT":
             dist_bin = mozpath.join(self.environment.topobjdir, "dist", "bin")
             rustflags = ("-C", f"link-arg=-Wl,-rpath,{dist_bin}")
+        
+        
+        
+        elif substs.get("CC_TYPE") == "clang-cl":
+            rustflags = ("-C", "link-arg=-FORCE:UNRESOLVED")
         return CargoCommand(
             kind="test",
             manifest_path=mozpath.normsep(mozpath.join(tests.srcdir, "Cargo.toml")),
