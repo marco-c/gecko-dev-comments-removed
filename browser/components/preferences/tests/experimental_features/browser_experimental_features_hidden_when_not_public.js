@@ -54,9 +54,8 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   );
   const doc = gBrowser.contentDocument;
 
-  const expectedPane = SRD_PREF_VALUE ? "paneSync" : "paneGeneral";
+  const expectedPane = "paneSync";
 
-  
   
   
   await TestUtils.waitForCondition(

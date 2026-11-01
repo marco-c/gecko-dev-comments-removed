@@ -127,10 +127,13 @@ add_task(async function testFilterFeatures() {
 
   info(`Resetted the search`);
 
+  let experimentalCategory = doc.getElementById("category-experimental");
+  experimentalCategory.scrollIntoView();
+
   
   
   EventUtils.synthesizeMouseAtCenter(
-    doc.getElementById("category-experimental"),
+    experimentalCategory,
     {},
     gBrowser.contentWindow
   );
@@ -158,6 +161,8 @@ add_task(async function testFilterFeatures() {
       );
     }
 
+    let categoryElement = doc.getElementById(category);
+    categoryElement.scrollIntoView();
     
     
     EventUtils.synthesizeMouseAtCenter(
