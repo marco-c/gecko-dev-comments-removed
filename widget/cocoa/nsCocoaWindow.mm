@@ -7755,7 +7755,14 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChildWindow() {
   nsCocoaWindow* geckoWidget = [windowDelegate geckoWidget];
   NS_ASSERTION(geckoWidget, "Window delegate not returning a gecko widget!");
 
-  if (RefPtr<nsMenuBarX> geckoMenuBar = geckoWidget->GetMenuBar()) {
+  RefPtr<nsMenuBarX> geckoMenuBar = geckoWidget->GetMenuBar();
+  if (!geckoMenuBar && geckoWidget->IsMediaPiPWindow()) {
+    
+    
+    
+    geckoMenuBar = nsMenuUtilsX::GetHiddenWindowMenuBar();
+  }
+  if (geckoMenuBar) {
     
     
     geckoMenuBar->PaintAsyncIfNeeded();
