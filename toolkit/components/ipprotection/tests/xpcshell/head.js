@@ -83,6 +83,49 @@ function waitForProxyState(state) {
 }
 
 
+
+
+
+
+
+function makeDocumentChannel(url) {
+  const uri = Services.io.newURI(url);
+  return {
+    isDocument: true,
+    URI: uri,
+    loadInfo: {
+      loadingPrincipal: Services.scriptSecurityManager.createContentPrincipal(
+        uri,
+        {}
+      ),
+      triggeringPrincipal: { isSystemPrincipal: true },
+    },
+    cancelStatus: null,
+    cancel(status) {
+      this.cancelStatus = status;
+    },
+  };
+}
+
+
+
+
+
+
+
+
+
+function applyFilter(filter, channel) {
+  let result;
+  filter.applyFilter(channel, "default", {
+    onProxyFilterResult(info) {
+      result = info;
+    },
+  });
+  return result;
+}
+
+
 async function putServerInRemoteSettings(
   server = {
     hostname: "test1.example.com",
