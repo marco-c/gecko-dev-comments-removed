@@ -566,8 +566,9 @@ InstImm AssemblerLOONG64::getBranchCode(Register rj, Condition c) {
 }
 
 
-InstImm AssemblerLOONG64::getBranchCode(FPConditionBit cj) {
-  return InstImm(op_bcz, 0, cj, true);  
+InstImm AssemblerLOONG64::getBranchCode(FPConditionBit cj, Condition c) {
+  MOZ_ASSERT(c == Zero || c == NonZero);
+  return InstImm(op_bcz, 0, cj, c == NonZero);
 }
 
 
