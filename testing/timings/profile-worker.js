@@ -586,12 +586,22 @@ async function fetchResourceProfile(taskId, retryId = 0) {
     }
   }
 
-  const url = `${workerData.taskclusterBaseUrl}/api/queue/v1/task/${taskId}/runs/${retryId}/artifacts/public/test_info/profile_resource-usage.json`;
+  const artifactsUrl = `${workerData.taskclusterBaseUrl}/api/queue/v1/task/${taskId}/runs/${retryId}/artifacts/public`;
+  let url = `${artifactsUrl}/profile_run-task-resource-usage.json`;
+  
+  
+  
+  const fallbackUrl = `${artifactsUrl}/test_info/profile_resource-usage.json`;
 
   let response, profile;
   for (let attempt = 1; ; attempt++) {
     try {
       response = await fetch(url, { signal: AbortSignal.timeout(60 * 1000) });
+      if (response.status === 404 && url !== fallbackUrl) {
+        url = fallbackUrl;
+        attempt = 0;
+        continue;
+      }
       if (response.ok) {
         profile = await response.json();
       }
