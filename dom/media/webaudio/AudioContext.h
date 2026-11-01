@@ -181,6 +181,13 @@ class AudioContext final : public DOMEventTargetHelper,
   bool ShouldSuspendNewTrack() const {
     return mTracksAreSuspended || mCloseCalled;
   }
+  
+  
+  
+  bool IsRunningOrResuming() const {
+    return mWasAllowedToStart && !mSuspendedByContent &&
+           !mSuspendedByMediaControl && !mCloseCalled && !mIsShutDown;
+  }
   double CurrentTime();
 
   AudioListener* Listener();
@@ -231,7 +238,8 @@ class AudioContext final : public DOMEventTargetHelper,
   
   
   
-  void ResumeFromMediaControl();
+  
+  bool ResumeFromMediaControl();
   
   
   void TransferSuspendToContent();
