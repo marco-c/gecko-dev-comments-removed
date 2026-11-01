@@ -7023,6 +7023,15 @@ void nsDocShell::ReportBFCacheComboTelemetry(uint32_t aCombo) {
 
   
   
+  
+  if (aCombo & mozilla::dom::BFCacheStatus::PAGE_LOADING) {
+    glean::bfcache::combo.EnumGet(glean::bfcache::ComboLabel::ePageLoading)
+        .Add();
+    return;
+  }
+
+  
+  
   if (aCombo != mozilla::dom::BFCacheStatus::BEFOREUNLOAD_LISTENER) {
     aCombo &= ~mozilla::dom::BFCacheStatus::BEFOREUNLOAD_LISTENER;
   }
