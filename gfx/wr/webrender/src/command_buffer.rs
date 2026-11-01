@@ -529,10 +529,6 @@ pub struct CommandBufferBuilder {
 
     
     
-    pub resolve_source: Option<RenderTaskId>,
-
-    
-    
     
     
     
@@ -551,7 +547,6 @@ impl CommandBufferBuilder {
         CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Invalid,
             establishes_sub_graph: false,
-            resolve_source: None,
             collected_backdrop: false,
             extra_dependencies: Vec::new(),
             backdrop_captures: Vec::new(),
@@ -567,7 +562,6 @@ impl CommandBufferBuilder {
                 tiles,
             },
             establishes_sub_graph: false,
-            resolve_source: None,
             collected_backdrop: false,
             extra_dependencies: Vec::new(),
             backdrop_captures: Vec::new(),
@@ -588,7 +582,6 @@ impl CommandBufferBuilder {
                 dirty_rect,
             },
             establishes_sub_graph,
-            resolve_source: None,
             collected_backdrop: false,
             extra_dependencies: Vec::new(),
             backdrop_captures: Vec::new(),

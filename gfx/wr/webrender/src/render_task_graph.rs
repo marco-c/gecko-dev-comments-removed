@@ -502,8 +502,6 @@ impl RenderTaskGraphBuilder {
 
         
         
-        
-        
         for pass in passes {
             for task_id in pass {
                 assign_free_pass(
@@ -668,43 +666,6 @@ impl RenderTaskGraphBuilder {
                             rect: DeviceIntRect::from_origin_and_size(location.unwrap().1, size),
                         };
                     }
-                    RenderTaskLocation::Existing { parent_task_id, size: existing_size, .. } => {
-                        let parent_task_location = graph.tasks[parent_task_id.index as usize].location.clone();
-
-                        match parent_task_location {
-                            RenderTaskLocation::Unallocated { .. } |
-                            RenderTaskLocation::CacheRequest { .. } |
-                            RenderTaskLocation::Existing { .. } => {
-                                panic!("bug: reference to existing task must be allocated by now");
-                            }
-                            RenderTaskLocation::Dynamic { texture_id, rect, .. } => {
-                                assert_eq!(existing_size, rect.size());
-
-                                let surface = self.active_surfaces.get_mut(&texture_id).unwrap();
-                                surface.pending_frees += 1;
-
-                                let kind = graph.tasks[parent_task_id.index as usize].kind.target_kind();
-                                let mut task_ids = memory.new_vec();
-                                task_ids.push(*task_id);
-                                
-                                pass.sub_passes.push(SubPass {
-                                    surface: SubPassSurface::Dynamic {
-                                        texture_id,
-                                        target_kind: kind,
-                                        used_rect: rect,        
-                                    },
-                                    task_ids,
-                                    is_shared: false,
-                                });
-
-                                let task = &mut graph.tasks[task_id.index as usize];
-                                task.location = parent_task_location;
-                            }
-                            RenderTaskLocation::Static { .. } => {
-                                unreachable!("bug: not possible since we don't dup static locations");
-                            }
-                        }
-                    }
                     RenderTaskLocation::Static { ref surface, .. } => {
                         
                         
@@ -737,8 +698,7 @@ impl RenderTaskGraphBuilder {
                 for child_id in &task.children {
                     let child_task = &graph.tasks[child_id.index as usize];
                     match child_task.location {
-                        RenderTaskLocation::Unallocated { .. } |
-                        RenderTaskLocation::Existing { .. } => panic!("bug: must be allocated"),
+                        RenderTaskLocation::Unallocated { .. } => panic!("bug: must be allocated"),
                         RenderTaskLocation::Dynamic { texture_id, .. } => {
                             if child_task.free_after == PassId(pass_id) &&
                                self.freed_tasks.insert(*child_id)
@@ -1035,8 +995,7 @@ fn assign_free_pass(
             RenderTaskLocation::Dynamic { .. } => {
                 panic!("bug: should not be allocated yet");
             }
-            RenderTaskLocation::Unallocated { .. } |
-            RenderTaskLocation::Existing { .. } => {
+            RenderTaskLocation::Unallocated { .. } => {
                 let child_task = &mut graph.tasks[child_id.index as usize];
                 child_task.free_after = child_task.free_after.min(render_on);
             }
