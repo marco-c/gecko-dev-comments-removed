@@ -9,6 +9,10 @@
 
 requestLongerTimeout(2);
 
+const { HttpServer } = ChromeUtils.importESModule(
+  "resource://testing-common/httpd.sys.mjs"
+);
+
 const TEST_PATH_HTTP = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
   
@@ -104,4 +108,41 @@ add_task(async function wait_longer_for_hsts_page() {
     Ci.nsISiteSecurityService
   );
   sss.clearAll();
+});
+
+
+
+add_task(async function no_timeout_for_slow_localhost_subdomain() {
+  let requestCount = 0;
+  const server = new HttpServer();
+  server.registerPathHandler("/slow", (request, response) => {
+    requestCount++;
+    response.processAsync();
+    
+    
+    setTimeout(() => {
+      response.setHeader("Content-Type", "text/html", false);
+      response.write("<html><body>slow</body></html>");
+      response.finish();
+    }, 2500);
+  });
+  server.start(-1);
+  const port = server.identity.primaryPort;
+  server.identity.add("http", "foobar.localhost", port);
+
+  
+  const url = `http://foobar.localhost:${port}/slow`;
+  await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
+    const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
+    BrowserTestUtils.startLoadingURIString(browser, url);
+    await loaded;
+
+    await SpecialPowers.spawn(browser, [url], async function (aURL) {
+      is(content.document.documentURI, aURL, "Page was not upgraded");
+      is(content.document.body.textContent, "slow", "Page loaded");
+    });
+  });
+  is(requestCount, 1, "No HTTPS-Only background request was sent");
+
+  await new Promise(resolve => server.stop(resolve));
 });
