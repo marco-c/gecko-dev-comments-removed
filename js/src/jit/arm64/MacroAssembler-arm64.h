@@ -1679,18 +1679,14 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     
     
     
-    int32_t negTag = negatedSignExtTag(ref);
-    
-    MOZ_ASSERT((negTag & ~0xFFF) == 0);
-    cmn32(tag, Imm32(negTag));
-  }
-
-  static int32_t negatedSignExtTag(ImmTag ref) {
     uint32_t hiShift = JSVAL_TAG_SHIFT - 32;
     int32_t seTag = int32_t(ref.value);
     seTag = (seTag << hiShift) >> hiShift;
     MOZ_ASSERT(seTag < 0);
-    return -seTag;
+    int32_t negTag = -seTag;
+    
+    MOZ_ASSERT((negTag & ~0xFFF) == 0);
+    cmn32(tag, Imm32(negTag));
   }
 
   
@@ -1784,15 +1780,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
   Condition testError(Condition cond, Register tag) {
     return testMagic(cond, tag);
-  }
-  Condition testNullOrUndefined(Condition cond, Register tag) {
-    MOZ_ASSERT(cond == Equal || cond == NotEqual);
-    cmpTag(tag, ImmTag(JSVAL_TAG_NULL));
-    
-    int32_t negUndefined = negatedSignExtTag(ImmTag(JSVAL_TAG_UNDEFINED));
-    MOZ_ASSERT(vixl::Assembler::IsImmConditionalCompare(negUndefined));
-    Ccmn(ARMRegister(tag, 32), Operand(negUndefined), vixl::ZFlag, NotEqual);
-    return cond;
   }
 
   
@@ -1891,23 +1878,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
   Condition testError(Condition cond, const ValueOperand& value) {
     return testMagic(cond, value);
-  }
-  Condition testNullOrUndefined(Condition cond, const ValueOperand& value) {
-    MOZ_ASSERT(cond == Equal || cond == NotEqual);
-    vixl::UseScratchRegisterScope temps(this);
-    const ARMRegister scratch64 = temps.AcquireX();
-    MOZ_ASSERT(scratch64.asUnsized() != value.valueReg());
-    
-    
-    constexpr unsigned shift = JS::detail::ValueNullOrUndefinedShift;
-    constexpr uint32_t bits = JS::detail::ValueNullOrUndefinedBits;
-    static_assert(bits >> (64 - shift - 1) == 1,
-                  "the shared bits must sign-extend to a negative value");
-    constexpr int32_t negBits = int32_t((uint32_t(1) << (64 - shift)) - bits);
-    MOZ_ASSERT(vixl::Assembler::IsImmAddSub(negBits));
-    Asr(scratch64, ARMRegister(value.valueReg(), 64), shift);
-    Cmn(scratch64.W(), Operand(negBits));
-    return cond;
   }
 
   

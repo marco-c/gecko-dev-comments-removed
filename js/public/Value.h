@@ -151,8 +151,6 @@ class JS_PUBLIC_API Value;
 
 
 
-
-
 #define JSVAL_INT_BITS 32
 #define JSVAL_INT_MIN ((int32_t)0x80000000)
 #define JSVAL_INT_MAX ((int32_t)0x7fffffff)
@@ -334,26 +332,6 @@ constexpr uint64_t IsValidUserModePointer(uint64_t bits) {
 constexpr bool ValueTypeIsGCThing(JSValueType type) {
   return ValueTypeToTag(type) >= ValueLowerInclGCThingTag;
 }
-
-
-
-
-
-constexpr unsigned ValueNullOrUndefinedShift = JSVAL_TAG_SHIFT + 2;
-constexpr uint32_t ValueNullOrUndefinedBits = JSVAL_TAG_NULL >> 2;
-constexpr bool MatchWhenShifted(JSValueType type, JSValueType type2) {
-  return (ValueTypeToTag(type) >> 2) == (ValueTypeToTag(type2) >> 2);
-}
-static_assert(MatchWhenShifted(JSVAL_TYPE_UNDEFINED, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_DOUBLE, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_INT32, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_BOOLEAN, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_MAGIC, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_PRIVATE_GCTHING, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_OBJECT, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_BIGINT, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_STRING, JSVAL_TYPE_NULL));
-static_assert(!MatchWhenShifted(JSVAL_TYPE_SYMBOL, JSVAL_TYPE_NULL));
 
 }  
 }  
@@ -840,10 +818,7 @@ class Value {
 #endif
   }
 
-  bool isNullOrUndefined() const {
-    return (asBits_ >> detail::ValueNullOrUndefinedShift) ==
-           detail::ValueNullOrUndefinedBits;
-  }
+  bool isNullOrUndefined() const { return isNull() || isUndefined(); }
 
   bool isInt32() const { return toTag() == JSVAL_TAG_INT32; }
 
