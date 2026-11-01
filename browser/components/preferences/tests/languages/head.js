@@ -104,10 +104,9 @@ function installLangpacks(locales) {
 
 
 async function openLanguagesPrefs() {
-  await openPreferencesViaOpenPreferencesAPI(
-    SRD_PREF_VALUE ? "paneLanguages" : "paneGeneral",
-    { leaveOpen: true }
-  );
+  await openPreferencesViaOpenPreferencesAPI("paneLanguages", {
+    leaveOpen: true,
+  });
   return gBrowser.contentDocument;
 }
 
@@ -131,23 +130,10 @@ function createRemoteLangpack(locale) {
 
 
 
-
-
 async function waitForLanguageUI(doc) {
-  if (SRD_PREF_VALUE) {
-    let sc = getSettingControl("browserLanguagePreferred", doc.defaultView);
-    if (!sc?.controlEl?.children?.length) {
-      await waitForSettingControlChange(sc);
-    }
-    return;
-  }
-  let box = doc.getElementById("browserLanguagesBox");
-  if (box.hidden) {
-    await BrowserTestUtils.waitForMutationCondition(
-      box,
-      { attributes: true, attributeFilter: ["hidden"] },
-      () => !box.hidden
-    );
+  let sc = getSettingControl("browserLanguagePreferred", doc.defaultView);
+  if (!sc?.controlEl?.children?.length) {
+    await waitForSettingControlChange(sc);
   }
 }
 
@@ -178,14 +164,8 @@ async function waitForSettingVisible(settingId, win) {
 
 
 function getAvailableLocales(doc) {
-  if (SRD_PREF_VALUE) {
-    let sc = getSettingControl("browserLanguagePreferred", doc.defaultView);
-    return Array.from(sc.controlEl.children).map(opt => opt.value);
-  }
-  return Array.from(
-    doc.getElementById("primaryBrowserLocale").querySelector("menupopup")
-      .children
-  ).map(item => item.value);
+  let sc = getSettingControl("browserLanguagePreferred", doc.defaultView);
+  return Array.from(sc.controlEl.children).map(opt => opt.value);
 }
 
 
@@ -196,19 +176,8 @@ function getAvailableLocales(doc) {
 
 
 async function changeLocale(doc, locale) {
-  if (SRD_PREF_VALUE) {
-    let sc = getSettingControl("browserLanguagePreferred", doc.defaultView);
-    await changeMozSelectValue(sc.controlEl, locale);
-    return;
-  }
-  let menulist = doc.getElementById("primaryBrowserLocale");
-  let menupopup = menulist.querySelector("menupopup");
-  let item = menupopup.querySelector(`[value="${locale}"]`);
-  ok(item, `Found menuitem for locale "${locale}"`);
-  
-  
-  item.dispatchEvent(new Event("command", { bubbles: true }));
-  menupopup.dispatchEvent(new Event("popuphiding"));
+  let sc = getSettingControl("browserLanguagePreferred", doc.defaultView);
+  await changeMozSelectValue(sc.controlEl, locale);
 }
 
 
@@ -219,9 +188,7 @@ async function changeLocale(doc, locale) {
 
 
 async function waitForRestartMessage(doc) {
-  let target = SRD_PREF_VALUE
-    ? getSettingControl("browserLanguageMessage", doc.defaultView)
-    : doc.getElementById("confirmBrowserLanguage");
+  let target = getSettingControl("browserLanguageMessage", doc.defaultView);
   await BrowserTestUtils.waitForMutationCondition(
     target,
     { attributes: true, attributeFilter: ["hidden"] },
@@ -235,9 +202,7 @@ async function waitForRestartMessage(doc) {
 
 
 function assertRestartMessageHidden(doc) {
-  let target = SRD_PREF_VALUE
-    ? getSettingControl("browserLanguageMessage", doc.defaultView)
-    : doc.getElementById("confirmBrowserLanguage");
+  let target = getSettingControl("browserLanguageMessage", doc.defaultView);
   is(target.hidden, true, "Restart message is hidden");
 }
 

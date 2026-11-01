@@ -3,9 +3,6 @@
 
 
 
-
-
-
 AddonTestUtils.initMochitest(this);
 
 
@@ -55,16 +52,6 @@ add_task(async function testLanguageChangeShowsRestartConfirmation() {
 
   await changeLocale(doc, "fr");
   await waitForRestartMessage(doc);
-
-  if (!SRD_PREF_VALUE) {
-    let button = doc
-      .getElementById("confirmBrowserLanguage")
-      .querySelector("button");
-    ok(
-      button.getAttribute("locales").startsWith("fr"),
-      "Legacy restart button encodes the new locale"
-    );
-  }
 
   await addon.uninstall();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
