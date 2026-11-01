@@ -65,6 +65,10 @@ add_task(async function test_interrupt_and_resume() {
   info("play audible media so it becomes the selected audio session");
   await checkOrWaitUntilMediaStartedPlaying(tab, "autoplay");
   await checkOrWaitUntilControllerBecomeActive(tab);
+  
+  
+  
+  await waitForEffectiveAudioSessionType(controller, "playback");
   Assert.greaterOrEqual(
     Glean.mediaAudioSession.selectedChanged.testGetValue() ?? 0,
     1,
@@ -127,6 +131,11 @@ add_task(async function test_interrupt_outcome_is_per_suspended_session() {
     content.navigator.audioSession.type = "ambient";
   });
   await playMedia(tab, TOP_VIDEO_ID);
+  
+  await TestUtils.waitForCondition(
+    () => controller.isAudible,
+    "the main frame's media is audible"
+  );
 
   info("inject a cross-origin iframe and start its audible video");
   await SpecialPowers.spawn(tab.linkedBrowser, [IFRAME_URL], async url => {
@@ -183,6 +192,7 @@ add_task(async function test_resume_without_interruption_records_no_outcome() {
   const controller = tab.linkedBrowser.browsingContext.mediaController;
   await checkOrWaitUntilMediaStartedPlaying(tab, "autoplay");
   await checkOrWaitUntilControllerBecomeActive(tab);
+  await waitForEffectiveAudioSessionType(controller, "playback");
 
   info("resume without any preceding interruption");
   controller.resume();
