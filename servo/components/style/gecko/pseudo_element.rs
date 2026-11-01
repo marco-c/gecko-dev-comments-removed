@@ -217,6 +217,49 @@ impl ToCss for PtNameAndClassSelector {
     }
 }
 
+
+
+
+
+
+#[derive(Clone, Debug, Eq, Hash, MallocSizeOf, PartialEq, ToShmem)]
+pub enum HighlightNameSelector {
+    
+    Universal,
+    
+    Name(AtomIdent),
+}
+
+impl HighlightNameSelector {
+    
+    pub fn parse(input: &mut Parser, target: Target) -> Result<Self, ParseError> {
+        if matches!(target, Target::Selector) && input.try_parse(|i| i.expect_delim('*')).is_ok() {
+            return Ok(Self::Universal);
+        }
+        Ok(Self::Name(AtomIdent::from(input.expect_ident()?.as_ref())))
+    }
+
+    
+    pub fn name(&self) -> Option<&Atom> {
+        match *self {
+            Self::Universal => None,
+            Self::Name(ref name) => Some(&name.0),
+        }
+    }
+}
+
+impl ToCss for HighlightNameSelector {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        match *self {
+            Self::Universal => dest.write_char('*'),
+            Self::Name(ref name) => name.to_css(dest),
+        }
+    }
+}
+
 impl PseudoElementTrait for PseudoElement {
     
     
@@ -347,13 +390,12 @@ impl PseudoElement {
     }
 
     
-    
     #[inline]
-    pub fn animations_stored_in_parent(&self) -> bool {
+    pub fn animations_stored_in_originating_element(&self) -> bool {
         matches!(
             *self,
-            Self::Before | Self::After | Self::Marker | Self::Backdrop
-        )
+            Self::Before | Self::After | Self::Marker | Self::Backdrop | Self::ViewTransition
+        ) || self.is_named_view_transition()
     }
 
     
@@ -399,9 +441,9 @@ impl PseudoElement {
     }
 
     
-    pub fn highlight_name(&self) -> Option<&AtomIdent> {
+    pub fn highlight_name(&self) -> Option<&Atom> {
         match *self {
-            Self::Highlight(ref name) => Some(name),
+            Self::Highlight(ref selector) => selector.name(),
             _ => None,
         }
     }
@@ -439,6 +481,8 @@ impl PseudoElement {
     
     pub fn specificity_count(&self) -> u32 {
         match *self {
+            
+            Self::Highlight(HighlightNameSelector::Universal) => 0,
             Self::ViewTransitionGroup(ref name_and_class)
             | Self::ViewTransitionImagePair(ref name_and_class)
             | Self::ViewTransitionOld(ref name_and_class)
