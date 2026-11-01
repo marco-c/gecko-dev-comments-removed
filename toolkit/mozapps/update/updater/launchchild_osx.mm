@@ -233,6 +233,9 @@ void LaunchMacPostProcess(const char* aAppBundle) {
   
   
   
+  
+  
+  
   [task setEnvironment:@{}];
 
   [task launch];

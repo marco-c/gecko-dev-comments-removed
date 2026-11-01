@@ -2609,6 +2609,7 @@ void PatchIfFile::Finish(int status) {
 #  include "EnterprisePoliciesFlagFile.h"
 #  include "nsWindowsRestart.cpp"
 #  include "nsWindowsHelpers.h"
+#  include "PostUpdateEnvironment.h"
 #  include "uachelper.h"
 #  ifdef MOZ_MAINTENANCE_SERVICE
 #    include "pathhash.h"
@@ -2762,23 +2763,16 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
   si.lpDesktop = const_cast<LPWSTR>(L"");  
   PROCESS_INFORMATION pi = {0};
 
-  
-  
-  
-  
-  
-  
-  
-  
-  const WCHAR* emptyEnvironment = L"\0";
+  PostUpdateEnvironment postUpdateEnvironment{sElevationType};
 
   bool ok =
       CreateProcessW(exefullpath, cmdline,
                      nullptr,  
                      nullptr,  
                      false,    
-                     0,        
-                     (LPVOID)emptyEnvironment, workingDirectory, &si, &pi);
+                     CREATE_UNICODE_ENVIRONMENT, postUpdateEnvironment.get(),
+                     workingDirectory, &si, &pi);
+
   free(cmdline);
   if (ok) {
     LOG(("LaunchWinPostProcess - Waiting for process to complete"));
