@@ -1652,6 +1652,12 @@ pref("places.frecency.origins.alternative.featureGate", false);
 
 pref("browser.places.speculativeConnect.enabled", true);
 
+#ifdef XP_MACOSX
+
+
+pref("browser.places.nativeMenu.maxResults", 100);
+#endif
+
 
 pref("browser.zoom.full", true);
 
