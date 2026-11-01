@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/SMILInstanceTime.h"
 #include "mozilla/SMILInterval.h"
 #include "mozilla/SMILMilestone.h"
@@ -518,7 +519,7 @@ class SMILTimedElement {
   
   
   void RegisterMilestone(SMILTimeContainer* aContainer = nullptr);
-  bool GetNextMilestone(SMILMilestone& aNextMilestone) const;
+  Maybe<SMILMilestone> GetNextMilestone() const;
 
   
   

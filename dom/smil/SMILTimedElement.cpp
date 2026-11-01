@@ -1952,20 +1952,20 @@ void SMILTimedElement::RegisterMilestone(SMILTimeContainer* aContainer) {
   MOZ_ASSERT(mAnimationElement,
              "Got a time container without an owning animation element");
 
-  SMILMilestone nextMilestone;
-  if (!GetNextMilestone(nextMilestone)) return;
+  const auto nextMilestone = GetNextMilestone();
+  if (!nextMilestone) return;
 
   
   
   
   
-  if (nextMilestone >= mPrevRegisteredMilestone) return;
+  if (*nextMilestone >= mPrevRegisteredMilestone) return;
 
-  container->AddMilestone(nextMilestone, *mAnimationElement);
-  mPrevRegisteredMilestone = nextMilestone;
+  container->AddMilestone(*nextMilestone, *mAnimationElement);
+  mPrevRegisteredMilestone = *nextMilestone;
 }
 
-bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
+Maybe<SMILMilestone> SMILTimedElement::GetNextMilestone() const {
   
   
   
@@ -1985,16 +1985,13 @@ bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
     case SMILElementState::Startup:
       
       
-      aNextMilestone.mIsEnd = true;  
-      aNextMilestone.mTime = 0;
-      return true;
+      return Some(SMILMilestone(0, true));  
 
     case SMILElementState::Waiting:
       MOZ_ASSERT(mCurrentInterval,
                  "In waiting state but the current interval has not been set");
-      aNextMilestone.mIsEnd = false;
-      aNextMilestone.mTime = mCurrentInterval->Begin()->Time().GetMillis();
-      return true;
+      return Some(
+          SMILMilestone(mCurrentInterval->Begin()->Time().GetMillis(), false));
 
     case SMILElementState::Active: {
       
@@ -2014,23 +2011,20 @@ bool SMILTimedElement::GetNextMilestone(SMILMilestone& aNextMilestone) const {
       
       SMILInstanceTime* earlyEnd = CheckForEarlyEnd(nextMilestone);
       if (earlyEnd && earlyEnd->Time().IsDefinite()) {
-        aNextMilestone.mIsEnd = true;
-        aNextMilestone.mTime = earlyEnd->Time().GetMillis();
-        return true;
+        return Some(SMILMilestone(earlyEnd->Time().GetMillis(), true));
       }
 
       
       if (nextMilestone.IsDefinite()) {
-        aNextMilestone.mIsEnd = nextMilestone != nextRepeat;
-        aNextMilestone.mTime = nextMilestone.GetMillis();
-        return true;
+        return Some(SMILMilestone(nextMilestone.GetMillis(),
+                                  nextMilestone != nextRepeat));
       }
 
-      return false;
+      return Nothing();
     }
 
     case SMILElementState::PostActive:
-      return false;
+      return Nothing();
   }
   MOZ_CRASH("Invalid element state");
 }
