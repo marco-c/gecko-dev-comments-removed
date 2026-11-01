@@ -59,6 +59,10 @@ var SidebarController = {
 
     let switcherMenuitem;
     sidebar._updateMenus = () => {
+      
+      if (this.uninitializing) {
+        return;
+      }
       const { visible } = sidebar;
       
       
