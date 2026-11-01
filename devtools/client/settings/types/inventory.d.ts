@@ -3,9 +3,13 @@
 
 
 import { Toolbox } from "../../framework/toolbox.js";
+import { SettingChangedEvent } from "../events.mjs";
 import { callbacks } from "../inventory.mjs";
 
-export type SettingChangeHandler = (context: { toolbox: Toolbox }) => void;
+export type SettingChangeHandler = (context: {
+  toolbox: Toolbox;
+  event: SettingChangedEvent;
+}) => void;
 
 export interface BaseSetting {
   id: string;
@@ -19,3 +23,9 @@ export interface BooleanSetting extends BaseSetting {
 }
 
 export type Setting = BooleanSetting;
+
+export interface SettingSection {
+  id: string;
+  l10nId: string;
+  settings: ReadonlyArray<Setting>;
+}
