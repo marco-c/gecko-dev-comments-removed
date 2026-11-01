@@ -175,14 +175,22 @@ nsresult AccessibleCaretManager::OnSelectionChanged(Document* aDoc,
 }
 
 void AccessibleCaretManager::HideCaretsAndDispatchCaretStateChangedEvent() {
-  if (mCarets.HasLogicallyVisibleCaret()) {
+  if (!mCarets.HasLogicallyVisibleCaret()) {
+    return;
+  }
+
+  {
+    
+    
+    nsAutoScriptBlocker scriptBlocker;
     AC_LOG("%s", __FUNCTION__);
     mCarets.GetFirst()->SetAppearance(Appearance::None);
     mCarets.GetSecond()->SetAppearance(Appearance::None);
     mIsCaretPositionChanged = false;
     mDesiredAsyncPanZoomState.Update(*this);
-    DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
   }
+
+  DispatchCaretStateChangedEvent(CaretChangedReason::Visibilitychange);
 }
 
 auto AccessibleCaretManager::MaybeFlushLayout() -> Terminated {
@@ -212,6 +220,10 @@ void AccessibleCaretManager::UpdateCarets(const UpdateCaretsHintSet& aHint) {
     case CaretMode::Selection:
       UpdateCaretsForSelectionMode(aHint);
       break;
+  }
+
+  if (IsTerminated() == Terminated::Yes) {
+    return;
   }
 
   mDesiredAsyncPanZoomState.Update(*this);
@@ -253,45 +265,55 @@ void AccessibleCaretManager::UpdateCaretsForCursorMode(
     return;
   }
 
-  PositionChangedResult result = mCarets.GetFirst()->SetPosition(frame, offset);
+  auto result = PositionChangedResult::NotChanged;
+  {
+    
+    
+    nsAutoScriptBlocker scriptBlocker;
+    result = mCarets.GetFirst()->SetPosition(frame, offset);
 
-  switch (result) {
-    case PositionChangedResult::NotChanged:
-    case PositionChangedResult::Position:
-    case PositionChangedResult::Zoom:
-      if (!aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
-        if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
-          mCarets.GetFirst()->SetAppearance(Appearance::Normal);
-        } else if (
-            StaticPrefs::
-                layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
-          if (mCarets.GetFirst()->IsLogicallyVisible()) {
-            
-            
-            
+    switch (result) {
+      case PositionChangedResult::NotChanged:
+      case PositionChangedResult::Position:
+      case PositionChangedResult::Zoom:
+        if (!aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
+          if (HasNonEmptyTextContent(GetEditingHostForFrame(frame))) {
             mCarets.GetFirst()->SetAppearance(Appearance::Normal);
+          } else if (
+              StaticPrefs::
+                  layout_accessiblecaret_caret_shown_when_long_tapping_on_empty_content()) {
+            if (mCarets.GetFirst()->IsLogicallyVisible()) {
+              
+              
+              
+              mCarets.GetFirst()->SetAppearance(Appearance::Normal);
+            } else {
+              
+              
+              
+              
+              
+              
+              
+              
+            }
           } else {
-            
-            
-            
-            
-            
-            
-            
-            
+            mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
           }
-        } else {
-          mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
         }
-      }
-      break;
+        break;
 
-    case PositionChangedResult::Invisible:
-      mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
-      break;
+      case PositionChangedResult::Invisible:
+        mCarets.GetFirst()->SetAppearance(Appearance::NormalNotShown);
+        break;
+    }
+
+    mCarets.GetSecond()->SetAppearance(Appearance::None);
   }
 
-  mCarets.GetSecond()->SetAppearance(Appearance::None);
+  if (IsTerminated() == Terminated::Yes) {
+    return;
+  }
 
   mIsCaretPositionChanged = (result == PositionChangedResult::Position);
 
@@ -324,6 +346,9 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
                 *GetSelection()->GetLastRange(), getter_AddRefs(endContent))
           : FrameAndOffset{};
 
+  AutoWeakFrame weakStartFrame = startFrameAndOffset.mFrame;
+  AutoWeakFrame weakEndFrame = endFrameAndOffset.mFrame;
+
   if (!CompareTreePosition(
           startFrameAndOffset.mFrame,
           static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent),
@@ -334,7 +359,7 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     return;
   }
 
-  auto updateSingleCaret = [aHints](AccessibleCaret* aCaret, nsIFrame* aFrame,
+  auto UpdateSingleCaret = [aHints](AccessibleCaret* aCaret, nsIFrame* aFrame,
                                     int32_t aOffset) -> PositionChangedResult {
     PositionChangedResult result = aCaret->SetPosition(aFrame, aOffset);
 
@@ -354,22 +379,35 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
     return result;
   };
 
-  PositionChangedResult firstCaretResult = updateSingleCaret(
-      mCarets.GetFirst(), startFrameAndOffset.mFrame,
-      static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent));
-  
-  
-  
-  
-  
-  
-  const uint32_t offsetInEndFrameContent =
-      endFrameAndOffset.GetFrameContent() == endContent
-          ? endFrameAndOffset.mOffsetInFrameContent
-          : endFrameAndOffset.GetFrameContent()->Length() + 1;
-  PositionChangedResult secondCaretResult =
-      updateSingleCaret(mCarets.GetSecond(), endFrameAndOffset.mFrame,
-                        static_cast<int32_t>(offsetInEndFrameContent));
+  auto firstCaretResult = PositionChangedResult::NotChanged;
+  auto secondCaretResult = PositionChangedResult::NotChanged;
+  {
+    
+    
+    nsAutoScriptBlocker scriptBlocker;
+
+    firstCaretResult = UpdateSingleCaret(
+        mCarets.GetFirst(), startFrameAndOffset.mFrame,
+        static_cast<int32_t>(startFrameAndOffset.mOffsetInFrameContent));
+
+    
+    
+    
+    
+    
+    
+    const uint32_t offsetInEndFrameContent =
+        endFrameAndOffset.GetFrameContent() == endContent
+            ? endFrameAndOffset.mOffsetInFrameContent
+            : endFrameAndOffset.GetFrameContent()->Length() + 1;
+    secondCaretResult =
+        UpdateSingleCaret(mCarets.GetSecond(), endFrameAndOffset.mFrame,
+                          static_cast<int32_t>(offsetInEndFrameContent));
+  }
+
+  if (IsTerminated() == Terminated::Yes) {
+    return;
+  }
 
   mIsCaretPositionChanged =
       firstCaretResult == PositionChangedResult::Position ||
@@ -381,22 +419,23 @@ void AccessibleCaretManager::UpdateCaretsForSelectionMode(
       ProvideHapticFeedback(mozilla::HapticFeedbackType::TextHandleMove);
     }
 
-    AutoWeakFrame weakStartFrame = startFrameAndOffset.mFrame;
-    AutoWeakFrame weakEndFrame = endFrameAndOffset.mFrame;
-
     
     if (MaybeFlushLayout() == Terminated::Yes) {
       return;
     }
+  }
 
-    if ((startFrameAndOffset.mFrame && !weakStartFrame.IsAlive()) ||
-        (endFrameAndOffset.mFrame && !weakEndFrame.IsAlive())) {
-      HideCaretsAndDispatchCaretStateChangedEvent();
-      return;
-    }
+  
+  
+  if ((startFrameAndOffset.mFrame && !weakStartFrame.IsAlive()) ||
+      (endFrameAndOffset.mFrame && !weakEndFrame.IsAlive())) {
+    HideCaretsAndDispatchCaretStateChangedEvent();
+    return;
   }
 
   if (!aHints.contains(UpdateCaretsHint::RespectOldAppearance)) {
+    nsAutoScriptBlocker scriptBlocker;
+
     
     
     
