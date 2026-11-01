@@ -657,7 +657,12 @@ def ensure_android_packages(
     if os_name == "macosx" and os_arch == "arm64":
         
         args.append("--channel=3")
-    args.extend(packages)
+    if sys.platform.startswith("win"):
+        
+        
+        args.extend(package.replace(";", "/") for package in packages)
+    else:
+        args.extend(packages)
 
     
     ensure_java(os_name, os_arch)
