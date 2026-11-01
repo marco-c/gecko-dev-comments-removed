@@ -190,7 +190,13 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
     
     const auto& trackInfo = aParams.mConfig;
     if (XRE_IsGPUProcess() && !trackInfo.GetAsVideoInfo()) {
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+      if (!aParams.mCDM) {
+        return media::DecodeSupportSet{};
+      }
+#else
       return media::DecodeSupportSet{};
+#endif
     }
 
     
@@ -254,6 +260,40 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       supports += media::DecodeSupport::HardwareDecode;
 #endif
     }
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION) && \
+    defined(MOZ_USE_HWDECODE)
+    if (!supports.contains(media::DecodeSupport::HardwareDecode) &&
+        aParams.mCDM && audioCodec != AV_CODEC_ID_NONE &&
+        StaticPrefs::media_ffvpx_hw_enabled() &&
+        FFmpegDataDecoder<V>::FindHardwareAVCodec(mLib, audioCodec,
+                                                  AV_HWDEVICE_TYPE_NONE)) {
+      
+      
+      supports += media::DecodeSupport::HardwareDecode;
+    }
+
+    const auto* videoInfo = trackInfo.GetAsVideoInfo();
+    if (!supports.contains(media::DecodeSupport::SoftwareDecode) &&
+        aParams.mCDM && videoInfo && StaticPrefs::media_ffvpx_hw_enabled() &&
+        FFmpegDataDecoder<V>::FindHardwareAVCodec(
+            mLib, videoCodec, AV_HWDEVICE_TYPE_MEDIACODEC)) {
+      
+      
+      
+      const media::MediaCodec codec =
+          media::MCSInfo::GetMediaCodecFromMimeType(mimeType);
+      if (media::MCSInfo::SupportsSoftwareDecode(
+              gfx::gfxVars::PlatformMediaCodecsSupported(), codec)) {
+        supports += media::MCSInfo::GetMediaCodecDecodeSupportForSize(
+            codec,
+            media::MCSInfo::GetMediaCodecDecodeSupportForColorDepth(
+                codec, media::DecodeSupport::SoftwareDecode,
+                videoInfo->mColorDepth),
+            videoInfo->mImage);
+      }
+    }
+#endif
 
 #ifndef MOZ_WIDGET_ANDROID
     
@@ -378,10 +418,6 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
   already_AddRefed<MediaDataDecoder> CreateAudioDecoder(
       const CreateDecoderParams& aParams) {
-    if (XRE_IsGPUProcess()) {
-      
-      return nullptr;
-    }
     if (Supports(SupportDecoderParams(aParams), nullptr).isEmpty()) {
       return nullptr;
     }

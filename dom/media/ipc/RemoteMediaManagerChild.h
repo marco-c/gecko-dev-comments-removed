@@ -77,8 +77,7 @@ class RemoteMediaManagerChild final
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> CreateVideoDecoder(
       const CreateDecoderParams& aParams, RemoteMediaIn aLocation);
-  static RefPtr<RemoteCDMProxy> CreateCDM(RemoteMediaIn aLocation,
-                                          dom::MediaKeys* aKeys,
+  static RefPtr<RemoteCDMProxy> CreateCDM(dom::MediaKeys* aKeys,
                                           const nsAString& aKeySystem,
                                           bool aDistinctiveIdentifierRequired,
                                           bool aPersistentStateRequired);
@@ -129,6 +128,16 @@ class RemoteMediaManagerChild final
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
   
+  
+  
+  static bool IsGpuProcessDecodingAvailable();
+
+  
+  
+  
+  static bool IsGpuProcessEncodingAvailable();
+
+  
   static void InitForGPUProcess(
       Endpoint<PRemoteMediaManagerChild>&& aVideoManager);
   static void Shutdown();
@@ -156,6 +165,9 @@ class RemoteMediaManagerChild final
   static RefPtr<GenericNonExclusivePromise> LaunchUtilityProcessIfNeeded(
       RemoteMediaIn aLocation);
 
+  
+  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
+
  protected:
   void HandleFatalError(const char* aMsg) override;
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -169,9 +181,6 @@ class RemoteMediaManagerChild final
 
   static void OpenRemoteMediaManagerChildForProcess(
       Endpoint<PRemoteMediaManagerChild>&& aEndpoint, RemoteMediaIn aLocation);
-
-  
-  static RefPtr<GenericNonExclusivePromise> LaunchRDDProcessIfNeeded();
 
   
   
