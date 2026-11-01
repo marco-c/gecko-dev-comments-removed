@@ -644,9 +644,6 @@
     }
   }
 
-  MozXULElement.implementCustomInterface(MozTabpanels, [
-    Ci.nsIDOMXULRelatedElement,
-  ]);
   customElements.define("tabpanels", MozTabpanels);
 
   MozElements.MozTab = class MozTab extends MozElements.BaseText {
@@ -1307,7 +1304,6 @@
 
   MozXULElement.implementCustomInterface(TabsBase, [
     Ci.nsIDOMXULSelectControlElement,
-    Ci.nsIDOMXULRelatedElement,
   ]);
 
   MozElements.TabsBase = TabsBase;
