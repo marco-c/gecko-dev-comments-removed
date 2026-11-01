@@ -640,4 +640,13 @@ add_task(async function test_getThemePreviewLinkParameters() {
       );
     }
   }
+
+  
+  
+  Assert.ok(
+    manager
+      .getThemePreviewLinkParameters("nova-sun@mozilla.org")
+      .includes("linear-gradient(#270F00, #270F00)"),
+    "plain color picker variants are turned into gradients"
+  );
 });
