@@ -6,21 +6,21 @@
 
 
 use super::{
-    ArbitraryDeclarationValue, Substitution, SubstitutionParserContext,
-    SubstitutionReplacementContext, parse_optional_fallback,
+    ArbitraryDeclarationValue, ParsedArgument, Substitution, SubstitutionArgument,
+    SubstitutionParserContext, SubstitutionReplacementContext, parse_optional_fallback,
 };
 use crate::custom_properties::{Name, VariableValue};
 use crate::device::Device;
 use crate::stylesheets::UrlExtraData;
 use crate::{Atom, derives::*};
-use cssparser::{Parser, SourcePosition};
+use cssparser::{Delimiter, Parser, SourcePosition};
 use style_traits::ParseError;
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub struct EnvFunction {
     
-    pub name: Name,
+    pub name: SubstitutionArgument<Name>,
     
     pub fallback: Option<ArbitraryDeclarationValue>,
 }
@@ -30,14 +30,16 @@ impl EnvFunction {
     
     
     
+    
     pub fn parse(
         input: &mut Parser,
         context: &mut SubstitutionParserContext,
         input_end_position: &mut Option<SourcePosition>,
     ) -> Result<Self, ParseError> {
-        
-        
-        let name = Atom::from(input.expect_ident()?.as_ref());
+        let name =
+            SubstitutionArgument::try_parse(input, context, Delimiter::Comma, |input, _| {
+                parse_env_name(input)
+            })?;
         let fallback = parse_optional_fallback(input, context, input_end_position)?;
         Ok(Self { name, fallback })
     }
@@ -46,22 +48,47 @@ impl EnvFunction {
     
     pub fn replace<'a>(
         &'a self,
-        css: &'a str,
-        url_data: &UrlExtraData,
+        source: &'a VariableValue,
         context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
     ) -> Result<Substitution<'a>, ()> {
+        let name = self.replace_name(source, context);
         let device = context.stylist.device();
-        let substitution = device
-            .environment()
-            .get(&self.name, device, url_data)
-            .map(|v| Substitution::from_value(v,  false));
-        match substitution {
-            Some(substitution) => Ok(substitution),
-            None => context.substitute_declaration_value(
-                self.fallback.as_ref().ok_or(())?,
-                css,
-                url_data,
-            ),
+        let mut substitution = name
+            .value
+            .and_then(|name| {
+                device
+                    .environment()
+                    .get(&name, device, &source.url_data)
+                    .map(|v| Substitution::from_value(v,  false))
+            })
+            .ok_or(())
+            .or_else(|_| {
+                context.substitute_declaration_value(self.fallback.as_ref().ok_or(())?, source)
+            })?;
+        substitution.attr_tainted |= name.attr_tainted;
+        Ok(substitution)
+    }
+
+    
+    pub fn replace_name<'a>(
+        &'a self,
+        source: &'a VariableValue,
+        context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
+    ) -> ParsedArgument<'a, Name> {
+        self.name
+            .substitute_and_parse(source, context, parse_env_name)
+    }
+
+    
+    pub fn for_each_unparsed_value<F>(&self, mut f: F)
+    where
+        F: FnMut(&ArbitraryDeclarationValue),
+    {
+        if let SubstitutionArgument::Unparsed(ref arg) = self.name {
+            f(arg);
+        }
+        if let Some(ref fallback) = self.fallback {
+            f(fallback);
         }
     }
 }
@@ -260,4 +287,10 @@ impl CssEnvironment {
             .find(|var| var.name == *name)?;
         Some((var.evaluator)(device, url_data))
     }
+}
+
+fn parse_env_name(input: &mut Parser) -> Result<Name, ParseError> {
+    
+    
+    Ok(Atom::from(input.expect_ident()?.as_ref()))
 }

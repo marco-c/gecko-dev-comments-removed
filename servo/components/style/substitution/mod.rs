@@ -23,7 +23,9 @@ use crate::stylist::Stylist;
 use crate::values::computed;
 use crate::values::specified::NoCalcLength;
 use crate::{Namespace, Prefix, derives::*};
-use cssparser::{CowRcStr, Delimiter, Parser, SourcePosition, Token, TokenSerializationType};
+use cssparser::{
+    CowRcStr, Delimiter, Delimiters, Parser, SourcePosition, Token, TokenSerializationType,
+};
 use servo_arc::Arc;
 use smallvec::SmallVec;
 use std::borrow::Cow;
@@ -85,9 +87,10 @@ pub struct ArbitraryDeclarationValue {
 }
 
 impl ArbitraryDeclarationValue {
-    fn parse(
+    fn parse_internal(
         input: &mut Parser,
         context: &mut SubstitutionParserContext,
+        additional_delimiters: Delimiters,
     ) -> Result<Self, ParseError> {
         let start = num::NonZeroUsize::new(
             input.position().byte_index() - context.input_start.byte_index(),
@@ -97,7 +100,7 @@ impl ArbitraryDeclarationValue {
         
         
         let (first_token_type, last_token_type) =
-            parse_declaration_value(input, context, &mut references)?;
+            parse_declaration_value(input, context, &mut references, additional_delimiters)?;
         let end = num::NonZeroUsize::new(
             input.position().byte_index() - context.input_start.byte_index()
                 + context.missing_closing_characters.len(),
@@ -111,6 +114,50 @@ impl ArbitraryDeclarationValue {
             references,
         })
     }
+
+    
+    
+    
+    
+    
+    fn parse_free_form<'i>(
+        input: &mut Parser<'i>,
+        context: &mut SubstitutionParserContext,
+        additional_delimiters: Delimiters,
+        is_non_strict: bool,
+    ) -> Result<(Self, &'i str), ParseError> {
+        if input
+            .try_parse(|input| input.expect_curly_bracket_block())
+            .is_ok()
+        {
+            let mut inner_end_position = None;
+            let result = input.parse_nested_block(|input| {
+                input.skip_whitespace();
+                let start_position = input.position();
+                let value = Self::parse_internal(input, context, Delimiter::None)?;
+                let end_position = input.position();
+                inner_end_position = Some(end_position);
+                Ok((value, input.slice(start_position..end_position)))
+            })?;
+            if inner_end_position.unwrap() == input.position() {
+                context.missing_closing_characters.push('}');
+            }
+            return Ok(result);
+        }
+        input.skip_whitespace();
+        let start_position = input.position();
+        let delimiters = if is_non_strict {
+            additional_delimiters
+        } else {
+            additional_delimiters | Delimiter::Comma | Delimiter::CurlyBracketBlock
+        };
+        let value = Self::parse_internal(input, context, delimiters)?;
+        Ok((value, input.slice_from(start_position)))
+    }
+
+    fn is_empty(&self) -> bool {
+        self.first_token_type == TokenSerializationType::Nothing
+    }
 }
 
 fn parse_optional_fallback(
@@ -119,8 +166,13 @@ fn parse_optional_fallback(
     input_end_position: &mut Option<SourcePosition>,
 ) -> Result<Option<ArbitraryDeclarationValue>, ParseError> {
     if input.try_parse(|input| input.expect_comma()).is_ok() {
-        input.skip_whitespace();
-        let fallback = ArbitraryDeclarationValue::parse(input, context)?;
+        let (fallback, _) = ArbitraryDeclarationValue::parse_free_form(
+            input,
+            context,
+            Delimiter::None,
+             true,
+        )?;
+        input.expect_exhausted()?;
         *input_end_position = Some(input.position());
         Ok(Some(fallback))
     } else {
@@ -141,10 +193,12 @@ pub fn parse_declaration_value(
     input: &mut Parser,
     context: &mut SubstitutionParserContext,
     references: &mut References,
+    additional_delimiters: Delimiters,
 ) -> Result<(TokenSerializationType, TokenSerializationType), ParseError> {
-    input.parse_until_before(Delimiter::Bang | Delimiter::Semicolon, |input| {
-        parse_declaration_value_block(input, context, references)
-    })
+    input.parse_until_before(
+        Delimiter::Bang | Delimiter::Semicolon | additional_delimiters,
+        |input| parse_declaration_value_block(input, context, references),
+    )
 }
 
 
@@ -242,9 +296,9 @@ fn parse_declaration_value_block(
                     references.flags |= function.reference_flags();
                     
                     
-                    if let Some(fallback) = function.fallback() {
-                        references.flags |= fallback.references.flags;
-                    }
+                    function.for_each_unparsed_value(|value| {
+                        references.flags |= value.references.flags
+                    });
                     prev_reference_index = Some(references.refs.len());
                     references.refs.push(SubstitutionFunctionReference {
                         start,
@@ -304,6 +358,98 @@ fn parse_declaration_value_block(
 
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
+pub enum SubstitutionArgument<T> {
+    
+    Unparsed(ArbitraryDeclarationValue),
+    
+    Parsed(T),
+    
+    
+    Invalid,
+}
+
+impl<T> SubstitutionArgument<T> {
+    
+    
+    
+    pub fn try_parse<F>(
+        input: &mut Parser,
+        context: &mut SubstitutionParserContext,
+        delimiters: Delimiters,
+        f: F,
+    ) -> Result<Self, ParseError>
+    where
+        F: FnOnce(&mut Parser, &mut SubstitutionParserContext) -> Result<T, ParseError>,
+    {
+        let (value, css) = ArbitraryDeclarationValue::parse_free_form(
+            input, context, delimiters,  false,
+        )?;
+        if value.is_empty() {
+            return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError));
+        }
+        if !value.references.has_references() {
+            if let Ok(result) = Parser::new(css).parse_entirely(|input| f(input, context)) {
+                return Ok(Self::Parsed(result));
+            }
+            return Ok(Self::Invalid);
+        }
+        Ok(Self::Unparsed(value))
+    }
+}
+
+impl<T: Clone> SubstitutionArgument<T> {
+    
+    
+    pub fn substitute_and_parse<'a, F>(
+        &'a self,
+        source: &'a VariableValue,
+        context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
+        parse: F,
+    ) -> ParsedArgument<'a, T>
+    where
+        F: FnOnce(&mut Parser) -> Result<T, ParseError>,
+    {
+        let arg = match self {
+            Self::Unparsed(arg) => arg,
+            Self::Parsed(value) => {
+                return ParsedArgument {
+                    value: Some(Cow::Borrowed(value)),
+                    attr_tainted: false,
+                };
+            },
+            Self::Invalid => {
+                return ParsedArgument {
+                    value: None,
+                    attr_tainted: false,
+                };
+            },
+        };
+        let Ok(substitution) = context.substitute_declaration_value(arg, source) else {
+            return ParsedArgument {
+                value: None,
+                attr_tainted: false,
+            };
+        };
+        ParsedArgument {
+            value: Parser::new(&substitution.css)
+                .parse_entirely(parse)
+                .ok()
+                .map(Cow::Owned),
+            attr_tainted: substitution.attr_tainted,
+        }
+    }
+}
+
+
+pub struct ParsedArgument<'a, T: Clone> {
+    
+    pub value: Option<Cow<'a, T>>,
+    
+    pub attr_tainted: bool,
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
 pub enum SubstitutionFunction {
     
     Var(VarFunction),
@@ -347,24 +493,26 @@ impl SubstitutionFunction {
 
     fn replace<'a>(
         &'a self,
-        css: &'a str,
-        url_data: &UrlExtraData,
+        source: &'a VariableValue,
         context: &mut SubstitutionReplacementContext<'a, '_, '_, '_>,
     ) -> Result<Substitution<'a>, ()> {
         match self {
-            Self::Var(function) => function.replace(css, url_data, context),
-            Self::Env(function) => function.replace(css, url_data, context),
-            Self::Attr(function) => function.replace(css, url_data, context),
+            Self::Var(function) => function.replace(source, context),
+            Self::Env(function) => function.replace(source, context),
+            Self::Attr(function) => function.replace(source, context),
         }
     }
 
     
     #[inline]
-    pub fn fallback(&self) -> Option<&ArbitraryDeclarationValue> {
+    pub fn for_each_unparsed_value<F>(&self, f: F)
+    where
+        F: FnMut(&ArbitraryDeclarationValue),
+    {
         match self {
-            Self::Var(function) => function.fallback.as_ref(),
-            Self::Env(function) => function.fallback.as_ref(),
-            Self::Attr(function) => function.fallback.as_ref(),
+            Self::Var(function) => function.for_each_unparsed_value(f),
+            Self::Env(function) => function.for_each_unparsed_value(f),
+            Self::Attr(function) => function.for_each_unparsed_value(f),
         }
     }
 }
@@ -622,7 +770,7 @@ pub struct SubstitutionReplacementContext<'a, 'b, 'c, 't> {
     
     pub attribute_tracker: &'b mut AttributeTracker<'t>,
     
-    pub seen: SmallVec<[&'a Name; 8]>,
+    pub seen: SmallVec<[Name; 8]>,
 }
 
 impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
@@ -652,12 +800,11 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
         attr_taint: Option<&mut AttrTaint>,
     ) -> Result<Substitution<'a>, ()> {
         self.substitute_chunk(
-            &variable_value.css,
+            variable_value,
              0,
              variable_value.css.len(),
             variable_value.first_token_type,
             variable_value.last_token_type,
-            &variable_value.url_data,
             &variable_value.references.refs,
             attr_taint,
         )
@@ -667,16 +814,14 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
     pub fn substitute_declaration_value(
         &mut self,
         value: &'a ArbitraryDeclarationValue,
-        css: &'a str,
-        url_data: &UrlExtraData,
+        source: &'a VariableValue,
     ) -> Result<Substitution<'a>, ()> {
         self.substitute_chunk(
-            css,
+            source,
             value.start.get(),
             value.end.get(),
             value.first_token_type,
             value.last_token_type,
-            url_data,
             &value.references.refs,
              None,
         )
@@ -684,12 +829,11 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
 
     fn substitute_chunk(
         &mut self,
-        css: &'a str,
+        source: &'a VariableValue,
         start: usize,
         end: usize,
         first_token_type: TokenSerializationType,
         last_token_type: TokenSerializationType,
-        url_data: &UrlExtraData,
         references: &'a [SubstitutionFunctionReference],
         mut attr_taint: Option<&mut AttrTaint>,
     ) -> Result<Substitution<'a>, ()> {
@@ -697,6 +841,7 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
             
             return Ok(Substitution::default());
         }
+        let css = &source.css;
         
         if references.is_empty() {
             let result = &css[start..end];
@@ -708,7 +853,7 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
             ));
         }
 
-        let mut substituted = ComputedValue::empty(url_data);
+        let mut substituted = ComputedValue::empty(&source.url_data);
         let mut next_token_type = first_token_type;
         let mut cur_pos = start;
         let mut attr_tainted = false;
@@ -722,7 +867,7 @@ impl<'a, 'b, 'c, 't> SubstitutionReplacementContext<'a, 'b, 'c, 't> {
                 )?;
             }
 
-            let substitution = reference.function.replace(css, url_data, self)?;
+            let substitution = reference.function.replace(source, self)?;
 
             
             if reference.start == start && reference.end == end {

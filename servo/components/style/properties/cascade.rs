@@ -19,25 +19,25 @@ use crate::dom::{AttributeTracker, DummyElementContext, ElementContext, TElement
 use crate::font_metrics::FontMetricsOrientation;
 use crate::properties::{
     CASCADE_PROPERTY, CSSWideKeyword, ComputedValues, DeclarationImportanceIterator, LonghandId,
-    LonghandIdSet, PrioritaryPropertyId, PrioritaryPropertyIdSet, PropertyDeclaration,
-    PropertyDeclarationId, PropertyFlags, ShorthandsWithPropertyReferencesCache, StyleBuilder,
-    property_counts,
+    LonghandIdSet, NonCustomPropertyId, PrioritaryPropertyId, PrioritaryPropertyIdSet,
+    PropertyDeclaration, PropertyDeclarationId, PropertyFlags, PropertyIdRef,
+    ShorthandsWithPropertyReferencesCache, StyleBuilder, property_counts,
 };
 use crate::properties::{CustomDeclaration, CustomDeclarationValue, UnparsedValue};
 use crate::properties_and_values::rule::Descriptors as PropertyDescriptors;
 use crate::properties_and_values::value::ComputedValue as ComputedRegisteredValue;
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_tree::{CascadeLevel, CascadeOrigin, RuleCascadeFlags, StrongRuleNode};
-use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet};
+use crate::selector_map::PrecomputedHashMap;
 use crate::selector_parser::PseudoElement;
 use crate::shared_lock::StylesheetGuards;
 use crate::style_adjuster::StyleAdjuster;
-use crate::stylesheets::UrlExtraData;
 use crate::stylesheets::container_rule::ContainerSizeQuery;
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::Stylist;
 use crate::substitution::{
-    ReferenceFlags, References, SubstitutionFunction, SubstitutionFunctionKind,
+    ReferenceFlags, References, SubstitutionArgument, SubstitutionFunction,
+    SubstitutionFunctionKind, SubstitutionReplacementContext,
 };
 use crate::values::computed::ToComputedValue;
 #[cfg(feature = "gecko")]
@@ -254,7 +254,6 @@ fn iter_declarations<'c, 'decls: 'c>(
     iter: impl Iterator<Item = (&'decls PropertyDeclaration, CascadePriority)>,
     declarations: &mut Declarations<'decls>,
     mut custom: Option<(&mut Cascade<'c>, &mut computed::Context)>,
-    attribute_tracker: &mut AttributeTracker,
 ) {
     for (declaration, priority) in iter {
         if let PropertyDeclaration::Custom(ref declaration) = *declaration {
@@ -267,12 +266,7 @@ fn iter_declarations<'c, 'decls: 'c>(
             if Cascade::might_have_non_custom_or_attr_dependency(id, declaration)
                 && let Some((ref mut cascade, ref mut context)) = custom
             {
-                cascade.maybe_note_non_custom_dependency(
-                    context,
-                    id,
-                    declaration,
-                    attribute_tracker,
-                );
+                cascade.maybe_note_non_custom_dependency(context, id, declaration);
             }
         }
     }
@@ -368,18 +362,13 @@ where
                     .flags()
                     .intersects(ComputedValueFlags::USES_VISITED_DEPENDENT_PROPERTIES)
             {
-                iter_declarations(iter, &mut declarations, None, &mut attribute_tracker);
+                iter_declarations(iter, &mut declarations, None);
             }
             LonghandIdSet::visited_dependent()
         },
         CascadeMode::Unvisited { .. } => {
             cascade.init_custom_properties(&mut context);
-            iter_declarations(
-                iter,
-                &mut declarations,
-                Some((&mut cascade, &mut context)),
-                &mut attribute_tracker,
-            );
+            iter_declarations(iter, &mut declarations, Some((&mut cascade, &mut context)));
             
             
             
@@ -709,7 +698,8 @@ struct SeenSubstitutionFunctions<'a> {
     
     
     var: PrecomputedHashMap<&'a Name, bool>,
-    attr: PrecomputedHashSet<&'a Name>,
+    
+    attr: Vec<(LonghandId, Arc<UnparsedValue>)>,
 }
 
 #[derive(Default)]
@@ -1897,7 +1887,6 @@ impl<'a> Cascade<'a> {
         context: &mut computed::Context,
         id: LonghandId,
         decl: &'a PropertyDeclaration,
-        attribute_tracker: &mut AttributeTracker,
     ) {
         debug_assert!(Self::might_have_non_custom_or_attr_dependency(id, decl));
         let PropertyDeclaration::WithVariables(v) = decl else {
@@ -1916,10 +1905,8 @@ impl<'a> Cascade<'a> {
         
         
         if refs.flags.intersects(ReferenceFlags::ATTR) {
-            self.update_attributes_map(context, value, attribute_tracker);
-            if !refs.flags.intersects(ReferenceFlags::VAR) {
-                return;
-            }
+            self.may_have_custom_property_cycles = true;
+            self.seen.custom.attr.push((id, v.value.clone()));
         }
 
         
@@ -2047,37 +2034,6 @@ impl<'a> Cascade<'a> {
     }
 
     
-    pub fn update_attributes_map(
-        &mut self,
-        context: &mut computed::Context,
-        value: &'a VariableValue,
-        attribute_tracker: &mut AttributeTracker,
-    ) {
-        let refs = &value.references;
-        if !refs.flags.intersects(ReferenceFlags::ATTR) {
-            return;
-        }
-        self.may_have_custom_property_cycles = true;
-
-        for next in &refs.refs {
-            let SubstitutionFunction::Attr(attr) = &next.function else {
-                continue;
-            };
-            
-            
-            if !attr.has_type() || !self.seen.custom.attr.insert(&attr.name) {
-                continue;
-            }
-            if let Ok(v) = attr.value_for_cycle_resolution(&value.url_data, attribute_tracker) {
-                context
-                    .builder
-                    .substitution_functions
-                    .insert_attr(&attr.name, v);
-            }
-        }
-    }
-
-    
     
     pub fn finish_cascade_custom_properties(&mut self, context: &mut computed::Context) {
         context
@@ -2175,7 +2131,7 @@ fn substitute_all(
 
     
     
-    struct Context<'a, 'b: 'a, 'c, 'd> {
+    struct Context<'a, 'b: 'a, 'c, 'd, 'e> {
         
         
         count: usize,
@@ -2202,9 +2158,11 @@ fn substitute_all(
         decls: &'a Declarations<'d>,
         
         cache: &'a mut ShorthandsWithPropertyReferencesCache,
+        
+        attribute_tracker: &'a mut AttributeTracker<'e>,
     }
 
-    impl<'a, 'b: 'a, 'c, 'd> Context<'a, 'b, 'c, 'd> {
+    impl<'a, 'b: 'a, 'c, 'd, 'e> Context<'a, 'b, 'c, 'd, 'e> {
         fn reset(&mut self) {
             self.count = 0;
             self.index_map.clear();
@@ -2252,18 +2210,27 @@ fn substitute_all(
         
         
         
-        fn apply_prioritary_property(
-            &mut self,
-            id: PrioritaryPropertyId,
-            attr_tracker: &mut AttributeTracker,
-        ) {
+        fn apply_prioritary_property(&mut self, id: PrioritaryPropertyId) {
             self.cascade.ensure_prioritary_property(
                 self.computed_context,
                 self.decls,
                 self.cache,
-                attr_tracker,
+                self.attribute_tracker,
                 id,
             );
+        }
+
+        fn replacement_context<'s>(
+            &'s mut self,
+            property_id: PropertyIdRef<'s>,
+        ) -> SubstitutionReplacementContext<'s, 's, 'b, 'e> {
+            SubstitutionReplacementContext::new(
+                Some(property_id),
+                &self.computed_context.builder.substitution_functions,
+                self.stylist,
+                self.computed_context,
+                self.attribute_tracker,
+            )
         }
     }
 
@@ -2276,34 +2243,69 @@ fn substitute_all(
     
     
     
-    
-    fn visit_value_references<'a, 'b, 'c, 'd>(
-        var: &VarType,
+    fn visit_value_references<'a, 'b, 'c, 'd, 'e>(
+        var: Option<&VarType>,
         root: &References,
-        url_data: &UrlExtraData,
+        source: &VariableValue,
         index: usize,
+        property_id: PropertyIdRef,
         references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
-        context: &mut Context<'a, 'b, 'c, 'd>,
+        context: &mut Context<'a, 'b, 'c, 'd, 'e>,
         lowlink: &mut usize,
         self_ref: &mut bool,
-        attribute_tracker: &mut AttributeTracker,
         non_custom_references: &mut ReferenceFlags,
     ) {
+        macro_rules! check_declaration_value_cycle {
+            ($arg:expr) => {{
+                let mut arg_lowlink = usize::MAX;
+                let mut arg_self_ref = false;
+                visit_value_references(
+                    var,
+                    &$arg.references,
+                    source,
+                    index,
+                    property_id,
+                    references_from_non_custom_properties,
+                    context,
+                    &mut arg_lowlink,
+                    &mut arg_self_ref,
+                    non_custom_references,
+                );
+                *lowlink = cmp::min(*lowlink, arg_lowlink);
+                *self_ref |= arg_self_ref;
+                arg_lowlink != usize::MAX || arg_self_ref
+            }};
+        }
+
         
         let mut refs_stack = SmallVec::<[&References; 5]>::new();
         refs_stack.push(root);
         while let Some(refs) = refs_stack.pop() {
             *non_custom_references |= refs.flags;
             for next in &refs.refs {
-                let next_var = match next.function {
+                let (next_var, fallback) = match next.function {
                     SubstitutionFunction::Env(ref env_fn) => {
-                        
-                        
-                        
+                        let name = match &env_fn.name {
+                            SubstitutionArgument::Unparsed(arg) => {
+                                if check_declaration_value_cycle!(arg) {
+                                    continue;
+                                }
+                                let mut replacement_context =
+                                    context.replacement_context(property_id);
+                                env_fn
+                                    .replace_name(source, &mut replacement_context)
+                                    .value
+                                    .map(|name| Cow::Owned(name.into_owned()))
+                            },
+                            SubstitutionArgument::Parsed(name) => Some(Cow::Borrowed(name)),
+                            SubstitutionArgument::Invalid => None,
+                        };
+
                         let device = context.stylist.device();
-                        let present = device
-                            .environment()
-                            .get(&env_fn.name, device, url_data)
+                        let present = name
+                            .and_then(|name| {
+                                device.environment().get(&name, device, &source.url_data)
+                            })
                             .is_some();
                         if !present && let Some(ref fallback) = env_fn.fallback {
                             refs_stack.push(&fallback.references);
@@ -2311,46 +2313,92 @@ fn substitute_all(
                         continue;
                     },
                     SubstitutionFunction::Attr(ref attr_fn) => {
+                        let arg = match &attr_fn.arg {
+                            SubstitutionArgument::Unparsed(arg) => {
+                                if check_declaration_value_cycle!(arg) {
+                                    continue;
+                                }
+                                let mut replacement_context =
+                                    context.replacement_context(property_id);
+                                attr_fn
+                                    .replace_arg(source, &mut replacement_context)
+                                    .value
+                                    .map(|arg| Cow::Owned(arg.into_owned()))
+                            },
+                            SubstitutionArgument::Parsed(arg) => Some(Cow::Borrowed(arg)),
+                            SubstitutionArgument::Invalid => None,
+                        };
+                        let Some(arg) = arg else {
+                            if let Some(ref fallback) = attr_fn.fallback {
+                                refs_stack.push(&fallback.references);
+                            }
+                            continue;
+                        };
                         
                         
-                        let can_chain = attr_fn.has_type() || matches!(var, VarType::Attr(..));
+                        let can_chain = arg.has_type() || matches!(var, Some(VarType::Attr(..)));
                         if !can_chain {
                             continue;
                         }
-                        if context.map().get_attr(&attr_fn.name).is_none()
-                            && let Ok(val) =
-                                attr_fn.value_for_cycle_resolution(url_data, attribute_tracker)
+                        if context.map().get_attr(&arg.name.name).is_none()
+                            && let Ok(val) = arg.name.value_for_cycle_resolution(
+                                &source.url_data,
+                                context.attribute_tracker,
+                            )
                         {
-                            context.map_mut().insert_attr(&attr_fn.name, val);
+                            context.map_mut().insert_attr(&arg.name.name, val);
                         }
-                        VarType::Attr(attr_fn.name.clone())
+                        (
+                            VarType::Attr(arg.name.name.clone()),
+                            attr_fn.fallback.as_ref(),
+                        )
                     },
-                    SubstitutionFunction::Var(ref var_fn) => VarType::Custom(var_fn.name.clone()),
+                    SubstitutionFunction::Var(ref var_fn) => {
+                        let name = match &var_fn.name {
+                            SubstitutionArgument::Unparsed(arg) => {
+                                if check_declaration_value_cycle!(arg) {
+                                    continue;
+                                }
+                                let mut replacement_context =
+                                    context.replacement_context(property_id);
+                                var_fn
+                                    .replace_name(source, &mut replacement_context)
+                                    .value
+                                    .map(|name| Cow::Owned(name.into_owned()))
+                            },
+                            SubstitutionArgument::Parsed(name) => Some(Cow::Borrowed(name)),
+                            SubstitutionArgument::Invalid => None,
+                        };
+                        let Some(name) = name else {
+                            if let Some(ref fallback) = var_fn.fallback {
+                                refs_stack.push(&fallback.references);
+                            }
+                            continue;
+                        };
+                        (VarType::Custom(name.into_owned()), var_fn.fallback.as_ref())
+                    },
                 };
 
                 visit_link(
-                    next_var,
+                    next_var.clone(),
                     index,
                     references_from_non_custom_properties,
                     context,
                     lowlink,
                     self_ref,
-                    attribute_tracker,
                 );
 
                 
                 
-                let resolved = match next.function {
-                    SubstitutionFunction::Var(ref var_fn) => {
-                        let registration = context
-                            .stylist
-                            .get_custom_property_registration(&var_fn.name);
-                        context.map().get_var(registration, &var_fn.name)
+                let resolved = match next_var {
+                    VarType::Custom(ref name) => {
+                        let registration = context.stylist.get_custom_property_registration(name);
+                        context.map().get_var(registration, name)
                     },
-                    SubstitutionFunction::Attr(ref attr_fn) => {
-                        context.map().get_attr(&attr_fn.name)
+                    VarType::Attr(ref name) => context.map().get_attr(name),
+                    VarType::NonCustom(..) => {
+                        unreachable!("Handled above")
                     },
-                    SubstitutionFunction::Env(..) => unreachable!("Handled above"),
                 };
                 
                 
@@ -2365,7 +2413,7 @@ fn substitute_all(
                     }
                 }
 
-                if !primary_valid && let Some(fallback) = next.function.fallback() {
+                if !primary_valid && let Some(fallback) = fallback {
                     refs_stack.push(&fallback.references);
                 }
             }
@@ -2374,16 +2422,15 @@ fn substitute_all(
 
     
     
-    fn visit_link<'a, 'b, 'c, 'd>(
+    fn visit_link<'a, 'b, 'c, 'd, 'e>(
         var: VarType,
         index: usize,
         non_custom_references: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
-        context: &mut Context<'a, 'b, 'c, 'd>,
+        context: &mut Context<'a, 'b, 'c, 'd, 'e>,
         lowlink: &mut usize,
         self_ref: &mut bool,
-        attr_tracker: &mut AttributeTracker,
     ) {
-        let next_index = match traverse(var, non_custom_references, context, attr_tracker) {
+        let next_index = match traverse(var, non_custom_references, context) {
             Some(index) => index,
             
             
@@ -2422,11 +2469,10 @@ fn substitute_all(
     
     
     
-    fn traverse<'a, 'b, 'c, 'd>(
+    fn traverse<'a, 'b, 'c, 'd, 'e>(
         var: VarType,
         references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
-        context: &mut Context<'a, 'b, 'c, 'd>,
-        attribute_tracker: &mut AttributeTracker,
+        context: &mut Context<'a, 'b, 'c, 'd, 'e>,
     ) -> Option<usize> {
         
         
@@ -2477,7 +2523,7 @@ fn substitute_all(
                             &value,
                             context.stylist,
                             context.computed_context,
-                            attribute_tracker,
+                            context.attribute_tracker,
                         );
                     }
                     return None;
@@ -2499,7 +2545,7 @@ fn substitute_all(
                 }
                 
                 
-                Some(value.clone())
+                Some((name, value.clone()))
             },
             VarType::NonCustom(ref non_custom) => {
                 let entry = &mut context.non_custom_index_map[*non_custom];
@@ -2523,23 +2569,18 @@ fn substitute_all(
 
         let mut self_ref = false;
         let mut lowlink = index;
-        if let Some(v) = value.as_ref() {
-            debug_assert!(
-                matches!(var, VarType::Custom(_) | VarType::Attr(_)),
-                "Non-custom property has references?"
-            );
-
+        if let Some((name, v)) = value.as_ref() {
             
             visit_value_references(
-                &var,
+                Some(&var),
                 &v.references,
-                &v.url_data,
+                v,
                 index,
+                PropertyIdRef::from(*name),
                 references_from_non_custom_properties,
                 context,
                 &mut lowlink,
                 &mut self_ref,
-                attribute_tracker,
                 &mut value_non_custom_refs,
             );
 
@@ -2555,7 +2596,6 @@ fn substitute_all(
                         context,
                         &mut lowlink,
                         &mut self_ref,
-                        attribute_tracker,
                     );
                 });
             }
@@ -2577,7 +2617,6 @@ fn substitute_all(
                     context,
                     &mut lowlink,
                     &mut self_ref,
-                    attribute_tracker,
                 );
             }
             let entry = &references_from_non_custom_properties[non_custom];
@@ -2589,17 +2628,23 @@ fn substitute_all(
                     
                     
                     
+                    let property_id = PropertyIdRef::from(match value.from_shorthand {
+                        Some(shorthand_id) => NonCustomPropertyId::from(shorthand_id),
+                        None => {
+                            NonCustomPropertyId::from(non_custom.to_prioritary_id().to_longhand())
+                        },
+                    });
                     let value = &value.variable_value;
                     visit_value_references(
-                        &var,
+                        Some(&var),
                         &value.references,
-                        &value.url_data,
+                        value,
                         index,
+                        property_id,
                         references_from_non_custom_properties,
                         context,
                         &mut lowlink,
                         &mut self_ref,
-                        attribute_tracker,
                         &mut Default::default(),
                     );
                 }
@@ -2650,7 +2695,7 @@ fn substitute_all(
         
         match var {
             VarType::Custom(ref name) | VarType::Attr(ref name) => {
-                if let Some(ref v) = value {
+                if let Some((_, ref v)) = value {
                     let kind = if matches!(var, VarType::Custom(..)) {
                         SubstitutionFunctionKind::Var
                     } else {
@@ -2664,12 +2709,12 @@ fn substitute_all(
                         v,
                         context.stylist,
                         context.computed_context,
-                        attribute_tracker,
+                        context.attribute_tracker,
                     );
                 }
             },
             VarType::NonCustom(non_custom) => {
-                context.apply_prioritary_property(non_custom.to_prioritary_id(), attribute_tracker);
+                context.apply_prioritary_property(non_custom.to_prioritary_id());
             },
         }
         
@@ -2687,19 +2732,14 @@ fn substitute_all(
         cascade: &mut *cascade,
         decls,
         cache: &mut *shorthand_cache,
+        attribute_tracker: attr_tracker,
     };
     let mut first = true;
-    let mut run_one = |var: VarType| {
+    let mut reset = |context: &mut Context| {
         if !first {
             context.reset();
         }
         first = false;
-        traverse(
-            var,
-            references_from_non_custom_properties,
-            &mut context,
-            attr_tracker,
-        );
     };
     
     
@@ -2708,11 +2748,34 @@ fn substitute_all(
         if !has_refs {
             continue;
         }
-        run_one(VarType::Custom((*var).clone()));
+        reset(&mut context);
+        traverse(
+            VarType::Custom((*var).clone()),
+            references_from_non_custom_properties,
+            &mut context,
+        );
     }
     
-    
-    for attr in &seen.attr {
-        run_one(VarType::Attr((*attr).clone()));
+    for (longhand_id, unparsed_value) in &seen.attr {
+        reset(&mut context);
+        let property_id = PropertyIdRef::from(match unparsed_value.from_shorthand {
+            Some(shorthand_id) => NonCustomPropertyId::from(shorthand_id),
+            None => NonCustomPropertyId::from(*longhand_id),
+        });
+        let value = &unparsed_value.variable_value;
+        let mut lowlink = usize::MAX;
+        let mut self_ref = false;
+        visit_value_references(
+            None,
+            &value.references,
+            value,
+            usize::MAX,
+            property_id,
+            references_from_non_custom_properties,
+            &mut context,
+            &mut lowlink,
+            &mut self_ref,
+            &mut Default::default(),
+        );
     }
 }
