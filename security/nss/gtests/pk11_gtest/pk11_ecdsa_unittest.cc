@@ -191,12 +191,6 @@ TEST_F(Pkcs11EcdsaSha256Test, ImportPointNotOnCurve) {
   ASSERT_TRUE(privKey);
 
   ScopedSECKEYPublicKey pubKey(SECKEY_ConvertToPublicKey(privKey.get()));
-  
-  
-  if (PK11_IsFIPS()) {
-    EXPECT_FALSE(pubKey);
-    return;
-  }
   ASSERT_TRUE(pubKey);
 
   ScopedPK11SlotInfo slot(PK11_GetInternalSlot());

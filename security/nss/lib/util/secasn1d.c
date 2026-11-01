@@ -1995,10 +1995,38 @@ sec_asn1d_next_in_group(sec_asn1d_state *state)
     
 
 
-
-
     if (child->endofcontents) {
-        child->dest = NULL;
+        
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        if (child->dest && !state->subitems_head) {
+            sec_asn1d_add_to_subitems(state, child->dest, 0, PR_FALSE);
+            child->dest = NULL;
+        }
+
         child->place = notInUse;
         state->place = afterGroup;
         return;
@@ -2129,40 +2157,6 @@ sec_asn1d_next_in_sequence(sec_asn1d_state *state)
     
 
 
-
-
-
-
-
-
-
-
-    if (child_missing && child->endofcontents) {
-        PORT_Assert(state->indefinite);
-        PORT_Assert(child_consumed == 2);
-        if (!state->indefinite || child_consumed != 2) {
-            PORT_SetError(SEC_ERROR_BAD_DER);
-            state->top->status = decodeError;
-            return;
-        }
-        child->theTemplate++;
-        while (child->theTemplate->kind != 0) {
-            if ((child->theTemplate->kind & SEC_ASN1_OPTIONAL) == 0) {
-                PORT_SetError(SEC_ERROR_BAD_DER);
-                state->top->status = decodeError;
-                return;
-            }
-            child->theTemplate++;
-        }
-        state->consumed += child_consumed;
-        child->place = notInUse;
-        state->place = afterEndOfContents;
-        return;
-    }
-
-    
-
-
     child->theTemplate++;
     if (child->theTemplate->kind == 0) {
         
@@ -2182,8 +2176,21 @@ sec_asn1d_next_in_sequence(sec_asn1d_state *state)
 
 
 
-            PORT_SetError(SEC_ERROR_BAD_DER);
-            state->top->status = decodeError;
+
+
+            if (state->indefinite && child->endofcontents) {
+                PORT_Assert(child_consumed == 2);
+                if (child_consumed != 2) {
+                    PORT_SetError(SEC_ERROR_BAD_DER);
+                    state->top->status = decodeError;
+                } else {
+                    state->consumed += child_consumed;
+                    state->place = afterEndOfContents;
+                }
+            } else {
+                PORT_SetError(SEC_ERROR_BAD_DER);
+                state->top->status = decodeError;
+            }
         } else {
             
 
@@ -2413,21 +2420,11 @@ sec_asn1d_absorb_child(sec_asn1d_state *state)
 
 
 
-
-
-
-
-
-
-
-
-
-
     state->missing = state->child->missing;
-    state->endofcontents = state->child->endofcontents;
     if (state->missing) {
         state->found_tag_number = state->child->found_tag_number;
         state->found_tag_modifiers = state->child->found_tag_modifiers;
+        state->endofcontents = state->child->endofcontents;
     }
 
     
@@ -2461,21 +2458,6 @@ sec_asn1d_absorb_child(sec_asn1d_state *state)
 
 
     state->child->consumed = 0;
-
-    
-
-
-
-
-
-
-    if (state->indefinite && state->endofcontents) {
-        PORT_Assert(state->place == afterExplicit);
-        state->missing = PR_FALSE;
-        state->endofcontents = PR_FALSE;
-        state->place = afterEndOfContents;
-        return;
-    }
 
     
 
@@ -2539,19 +2521,7 @@ sec_asn1d_parse_end_of_contents(sec_asn1d_state *state,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-        if (state->indefinite) {
+        if (state->child && state->child->theTemplate->kind == 0) {
             state->endofcontents = PR_FALSE;
         } else {
             state->endofcontents = PR_TRUE;

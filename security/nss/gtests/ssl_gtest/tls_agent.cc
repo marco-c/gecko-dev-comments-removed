@@ -1039,7 +1039,7 @@ void TlsAgent::ValidateCipherSpecs() {
     
     if (expected_version_ >= SSL_LIBRARY_VERSION_TLS_1_3) {
       if (role_ == CLIENT) {
-        expected = 4;
+        expected = info_.earlyDataAccepted ? 5 : 4;
       } else {
         expected = 3;
       }
