@@ -72,7 +72,8 @@ internal fun PlayerCompact(
                     Modifier.weight(1f)
                         .heightIn(min = AcornTheme.layout.size.static600)
                         .clickable(role = Role.Button, onClick = onExpandClicked),
-                shouldScrollTitle = playbackUiState is PlaybackUiState.Playing,
+                shouldScrollTitle =
+                    playbackUiState is PlaybackUiState.Playing || playbackUiState is PlaybackUiState.Buffering,
                 playbackUiState = playbackUiState,
             )
 
@@ -99,6 +100,7 @@ internal fun AudioProgressBarCompact(progress: () -> Float, modifier: Modifier =
         progress = progress,
         modifier = modifier.padding(horizontal = AcornTheme.layout.space.static400),
         type = AudioProgressBarType.Mini,
+        onSeek = {}, // Compact bar does not support seeking
     )
 }
 
