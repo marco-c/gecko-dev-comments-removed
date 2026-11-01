@@ -1495,6 +1495,19 @@ impl TileCacheInstance {
                                     return Err(OverlayNeedsMask);
                                 }
 
+                                
+                                
+                                
+                                let map = ClipSpaceConversion::new(
+                                    frame_context.root_spatial_node_index,
+                                    clip_instance.spatial_node_index,
+                                    frame_context.root_spatial_node_index,
+                                    frame_context.spatial_tree,
+                                );
+                                if !matches!(map, ClipSpaceConversion::Local | ClipSpaceConversion::ScaleOffset(..)) {
+                                    return Err(OverlayNeedsMask);
+                                }
+
                                 let size = clip_instance.clip_rect.size();
                                 let radius = clamped_radius(radius, size);
                                 let max_corner_width = radius.top_left.width
