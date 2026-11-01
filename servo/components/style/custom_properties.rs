@@ -8,12 +8,10 @@
 
 use crate::FxHashMap;
 use crate::custom_properties_map::{CustomPropertiesMap, OwnMap};
-use crate::device::Device;
 use crate::dom::AttributeTracker;
 use crate::properties::{CSSWideKeyword, PrioritaryPropertyId, PropertyIdRef};
 use crate::properties_and_values::{
     rule::Descriptors as PropertyDescriptors,
-    syntax::Descriptor as SyntaxDescriptor,
     value::{
         AllowComputationallyDependent, ComputedValue as ComputedRegisteredValue,
         SpecifiedValue as SpecifiedRegisteredValue,
@@ -22,243 +20,27 @@ use crate::properties_and_values::{
 use crate::stylesheets::UrlExtraData;
 use crate::stylesheets::container_rule::AttrReferenceSet;
 use crate::stylist::Stylist;
+use crate::substitution::{
+    AttrTaint, ReferenceFlags, References, SubstitutionFunction, SubstitutionFunctionKind,
+    SubstitutionFunctionReference, SubstitutionParserContext, SubstitutionReplacementContext,
+    parse_declaration_value,
+};
 use crate::typed_om::{
     ToTyped, TypedValue, UnparsedSegment, UnparsedValue, VariableReferenceValue,
 };
 use crate::values::computed;
-use crate::values::generics::calc::SortKey as AttrUnit;
-use crate::values::specified::{NoCalcLength, ParsedNamespace};
-use crate::{Atom, LocalName, Namespace, Prefix, derives::*};
-use cssparser::{CowRcStr, Delimiter, Parser, SourcePosition, Token, TokenSerializationType};
-use selectors::parser::SelectorParseErrorKind;
+use crate::{Atom, Namespace, Prefix, derives::*};
+use cssparser::{CowRcStr, Parser, Token, TokenSerializationType};
 use servo_arc::Arc;
-use smallvec::SmallVec;
-use std::borrow::Cow;
 use std::fmt::{self, Write};
-use std::num;
 use std::ops::{Index, IndexMut};
-use style_traits::{CssString, CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssString, CssWriter, ParseError, ToCss};
 use thin_vec::ThinVec;
 
 
 
 
-
-#[derive(Debug, MallocSizeOf)]
-pub struct CssEnvironment;
-
-type EnvironmentEvaluator = fn(device: &Device, url_data: &UrlExtraData) -> VariableValue;
-
-struct EnvironmentVariable {
-    name: Atom,
-    evaluator: EnvironmentEvaluator,
-}
-
-macro_rules! make_variable {
-    ($name:expr, $evaluator:expr) => {{
-        EnvironmentVariable {
-            name: $name,
-            evaluator: $evaluator,
-        }
-    }};
-}
-
-fn get_safearea_inset_top(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    VariableValue::pixels(device.safe_area_insets().top, url_data)
-}
-
-fn get_safearea_inset_bottom(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    VariableValue::pixels(device.safe_area_insets().bottom, url_data)
-}
-
-fn get_safearea_inset_left(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    VariableValue::pixels(device.safe_area_insets().left, url_data)
-}
-
-fn get_safearea_inset_right(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    VariableValue::pixels(device.safe_area_insets().right, url_data)
-}
-
-#[cfg(feature = "gecko")]
-fn get_content_preferred_color_scheme(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    use crate::queries::values::PrefersColorScheme;
-    let prefers_color_scheme = unsafe {
-        crate::gecko_bindings::bindings::Gecko_MediaFeatures_PrefersColorScheme(
-            device.document(),
-             true,
-        )
-    };
-    VariableValue::ident(
-        match prefers_color_scheme {
-            PrefersColorScheme::Light => "light",
-            PrefersColorScheme::Dark => "dark",
-        },
-        url_data,
-    )
-}
-
-#[cfg(feature = "servo")]
-fn get_content_preferred_color_scheme(_device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    
-    VariableValue::ident("light", url_data)
-}
-
-fn get_scrollbar_inline_size(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    VariableValue::pixels(device.scrollbar_inline_size().px(), url_data)
-}
-
-fn get_hairline(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    VariableValue::pixels(
-        app_units::Au(device.app_units_per_device_pixel()).to_f32_px(),
-        url_data,
-    )
-}
-
-static ENVIRONMENT_VARIABLES: [EnvironmentVariable; 4] = [
-    make_variable!(atom!("safe-area-inset-top"), get_safearea_inset_top),
-    make_variable!(atom!("safe-area-inset-bottom"), get_safearea_inset_bottom),
-    make_variable!(atom!("safe-area-inset-left"), get_safearea_inset_left),
-    make_variable!(atom!("safe-area-inset-right"), get_safearea_inset_right),
-];
-
-#[cfg(feature = "gecko")]
-macro_rules! lnf_int {
-    ($id:ident) => {
-        unsafe {
-            crate::gecko_bindings::bindings::Gecko_GetLookAndFeelInt(
-                crate::gecko_bindings::bindings::LookAndFeel_IntID::$id as i32,
-            )
-        }
-    };
-}
-
-#[cfg(feature = "servo")]
-macro_rules! lnf_int {
-    ($id:ident) => {
-        // TODO: Add an implementation for Servo.
-        0
-    };
-}
-
-macro_rules! lnf_int_variable {
-    ($atom:expr, $id:ident, $ctor:ident) => {{
-        fn __eval(_: &Device, url_data: &UrlExtraData) -> VariableValue {
-            VariableValue::$ctor(lnf_int!($id), url_data)
-        }
-        make_variable!($atom, __eval)
-    }};
-}
-
-fn eval_gtk_csd_titlebar_radius(device: &Device, url_data: &UrlExtraData) -> VariableValue {
-    let int_pixels = lnf_int!(TitlebarRadius);
-    let unzoomed_scale =
-        device.device_pixel_ratio_ignoring_full_zoom().get() / device.device_pixel_ratio().get();
-    VariableValue::pixels(int_pixels as f32 * unzoomed_scale, url_data)
-}
-
-static CHROME_ENVIRONMENT_VARIABLES: [EnvironmentVariable; 9] = [
-    make_variable!(
-        atom!("-moz-gtk-csd-titlebar-radius"),
-        eval_gtk_csd_titlebar_radius
-    ),
-    lnf_int_variable!(
-        atom!("-moz-gtk-csd-tooltip-radius"),
-        TooltipRadius,
-        int_pixels
-    ),
-    lnf_int_variable!(
-        atom!("-moz-gtk-csd-close-button-position"),
-        GTKCSDCloseButtonPosition,
-        integer
-    ),
-    lnf_int_variable!(
-        atom!("-moz-gtk-csd-minimize-button-position"),
-        GTKCSDMinimizeButtonPosition,
-        integer
-    ),
-    lnf_int_variable!(
-        atom!("-moz-gtk-csd-maximize-button-position"),
-        GTKCSDMaximizeButtonPosition,
-        integer
-    ),
-    lnf_int_variable!(
-        atom!("-moz-overlay-scrollbar-fade-duration"),
-        ScrollbarFadeDuration,
-        int_ms
-    ),
-    make_variable!(
-        atom!("-moz-content-preferred-color-scheme"),
-        get_content_preferred_color_scheme
-    ),
-    make_variable!(atom!("scrollbar-inline-size"), get_scrollbar_inline_size),
-    make_variable!(atom!("hairline"), get_hairline),
-];
-
-impl CssEnvironment {
-    
-    #[inline]
-    pub fn get(
-        &self,
-        name: &Atom,
-        device: &Device,
-        url_data: &UrlExtraData,
-    ) -> Option<VariableValue> {
-        #[cfg(feature = "gecko")]
-        let is_link_parameter = name.as_slice().starts_with(&[b'-' as u16, b'-' as u16]);
-        #[cfg(feature = "servo")]
-        let is_link_parameter = name.starts_with("--");
-        if is_link_parameter {
-            let param = device
-                .link_parameters()?
-                .0
-                .iter()
-                .find(|p| p.name.0 == *name)?;
-            let mut parser = cssparser::Parser::new(param.value.0.as_ref());
-            
-            return VariableValue::parse(&mut parser, None, url_data).ok();
-        }
-
-        if let Some(var) = ENVIRONMENT_VARIABLES.iter().find(|var| var.name == *name) {
-            return Some((var.evaluator)(device, url_data));
-        }
-        if !url_data.chrome_rules_enabled() {
-            return None;
-        }
-        let var = CHROME_ENVIRONMENT_VARIABLES
-            .iter()
-            .find(|var| var.name == *name)?;
-        Some((var.evaluator)(device, url_data))
-    }
-}
-
-
-
-
 pub type Name = Atom;
-
-impl LocalName {
-    #[cfg(feature = "gecko")]
-    fn with_name<R>(name: &Name, callback: impl FnOnce(&Self) -> R) -> R {
-        callback(Self::cast(name))
-    }
-
-    #[cfg(feature = "servo")]
-    fn with_name<'a, R>(name: &'a Name, callback: impl FnOnce(&Self) -> R) -> R {
-        callback(&name.as_str().into())
-    }
-}
-
-impl From<Name> for LocalName {
-    #[cfg(feature = "gecko")]
-    fn from(name: Name) -> Self {
-        Self::new(name)
-    }
-
-    #[cfg(feature = "servo")]
-    fn from(name: Name) -> Self {
-        name.as_str().into()
-    }
-}
 
 
 
@@ -283,8 +65,10 @@ pub struct VariableValue {
     
     pub url_data: UrlExtraData,
 
-    first_token_type: TokenSerializationType,
-    last_token_type: TokenSerializationType,
+    
+    pub first_token_type: TokenSerializationType,
+    
+    pub last_token_type: TokenSerializationType,
 
     
     pub references: References,
@@ -393,12 +177,11 @@ fn reify_variable_value_range(
 
         *reference_index += 1;
 
-        if reference.substitution_kind != SubstitutionFunctionKind::Var {
+        let SubstitutionFunction::Var(var) = &reference.function else {
             return Err(());
-        }
-
-        let (fallback, has_fallback) = if let Some(fallback) = &reference.fallback {
-            debug_assert!(fallback.start.get() < reference.end);
+        };
+        let (fallback, has_fallback) = if let Some(fallback) = var.fallback.as_ref() {
+            debug_assert!(fallback.start <= fallback.end);
 
             (
                 reify_variable_value_range(
@@ -406,7 +189,7 @@ fn reify_variable_value_range(
                     references,
                     reference_index,
                     fallback.start.get(),
-                    reference.end - 1, 
+                    fallback.end.get(),
                 )?,
                 true,
             )
@@ -415,7 +198,7 @@ fn reify_variable_value_range(
         };
 
         values.push(UnparsedSegment::VariableReference(VariableReferenceValue {
-            variable: CssString::from(format!("--{}", reference.name)),
+            variable: CssString::from(format!("--{}", var.name)),
             fallback,
             has_fallback,
         }));
@@ -517,37 +300,6 @@ pub type SpecifiedValue = VariableValue;
 
 pub type ComputedValue = VariableValue;
 
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, MallocSizeOf, ToShmem)]
-pub struct ReferenceFlags(u8);
-
-bitflags! {
-    impl ReferenceFlags : u8 {
-        /// At least one custom property depends on font-relative units.
-        const FONT_UNITS = 1 << 0;
-        /// At least one custom property depends on root element's font-relative units.
-        const ROOT_FONT_UNITS = 1 << 1;
-        /// At least one custom property depends on line height units.
-        const LH_UNITS = 1 << 2;
-        /// At least one custom property depends on root element's line height units.
-        const ROOT_LH_UNITS = 1 << 3;
-        /// The value depends on the used color-scheme (e.g. a registered `<color>` property).
-        const COLOR_SCHEME = 1 << 4;
-        /// All dependencies not depending on the root element.
-        const NON_ROOT_DEPENDENCIES = Self::FONT_UNITS.0 | Self::LH_UNITS.0;
-        /// All dependencies depending on the root element.
-        const ROOT_DEPENDENCIES = Self::ROOT_FONT_UNITS.0 | Self::ROOT_LH_UNITS.0;
-        /// All non-custom dependencies
-        const NON_CUSTOM = Self::NON_ROOT_DEPENDENCIES.0 | Self::ROOT_DEPENDENCIES.0;
-        /// At least one attr() reference.
-        const ATTR = 1 << 5;
-        /// At least one env() reference.
-        const ENV = 1 << 6;
-        /// At least one var() reference.
-        const VAR = 1 << 7;
-    }
-}
-
 impl ReferenceFlags {
     
     pub fn for_each_non_custom<F>(mut self, is_root_element: bool, mut f: F)
@@ -580,36 +332,6 @@ impl ReferenceFlags {
             };
             f(single);
         }
-    }
-
-    fn from_unit(value: &CowRcStr) -> Self {
-        
-        
-        
-        
-        if value.eq_ignore_ascii_case(NoCalcLength::LH) {
-            return Self::FONT_UNITS | Self::LH_UNITS;
-        }
-        if value.eq_ignore_ascii_case(NoCalcLength::EM)
-            || value.eq_ignore_ascii_case(NoCalcLength::EX)
-            || value.eq_ignore_ascii_case(NoCalcLength::CAP)
-            || value.eq_ignore_ascii_case(NoCalcLength::CH)
-            || value.eq_ignore_ascii_case(NoCalcLength::IC)
-        {
-            return Self::FONT_UNITS;
-        }
-        if value.eq_ignore_ascii_case(NoCalcLength::RLH) {
-            return Self::ROOT_FONT_UNITS | Self::ROOT_LH_UNITS;
-        }
-        if value.eq_ignore_ascii_case(NoCalcLength::REM)
-            || value.eq_ignore_ascii_case(NoCalcLength::REX)
-            || value.eq_ignore_ascii_case(NoCalcLength::RCH)
-            || value.eq_ignore_ascii_case(NoCalcLength::RCAP)
-            || value.eq_ignore_ascii_case(NoCalcLength::RIC)
-        {
-            return Self::ROOT_FONT_UNITS;
-        }
-        Self::empty()
     }
 }
 
@@ -655,17 +377,6 @@ impl<T> IndexMut<SingleNonCustomReference> for NonCustomReferenceMap<T> {
     fn index_mut(&mut self, reference: SingleNonCustomReference) -> &mut Self::Output {
         &mut self.0[reference as usize]
     }
-}
-
-
-#[derive(Copy, Clone, Debug, MallocSizeOf, Hash, Eq, PartialEq, ToShmem, Parse)]
-pub enum SubstitutionFunctionKind {
-    
-    Var,
-    
-    Env,
-    
-    Attr,
 }
 
 
@@ -733,143 +444,9 @@ impl ComputedSubstitutionFunctions {
     }
 }
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem, Parse)]
-enum AttributeType {
-    Invalid,
-    None,
-    RawString,
-    Type(SyntaxDescriptor),
-    Unit(AttrUnit),
-}
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct AttributeData {
-    kind: AttributeType,
-    namespace: ParsedNamespace,
-}
-
-
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToShmem, ToComputedValue)]
-pub struct AttrTaintedRange {
-    
-    start: usize,
-    
-    end: usize,
-}
-
-impl AttrTaintedRange {
-    
-    #[inline(always)]
-    pub fn new(start: usize, end: usize) -> Self {
-        debug_assert!(start <= end);
-        Self { start, end }
-    }
-}
-
-
-
-
-
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToShmem)]
-pub struct AttrTaint(SmallVec<[AttrTaintedRange; 1]>);
-
-impl AttrTaint {
-    
-    
-    #[inline(always)]
-    pub fn should_disallow_urls_in_range(&self, range: &AttrTaintedRange) -> bool {
-        self.0
-            .iter()
-            .any(|r| r.start <= range.end && r.end >= range.start)
-    }
-
-    
-    #[inline(always)]
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    #[inline(always)]
-    fn new_fully_tainted(end: usize) -> Self {
-        let mut taint = Self::default();
-        taint.push(0, end);
-        taint
-    }
-
-    #[inline(always)]
-    fn push(&mut self, start: usize, end: usize) {
-        self.0.push(AttrTaintedRange::new(start, end));
-    }
-}
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct VariableFallback {
-    
-    
-    
-    start: num::NonZeroUsize,
-    first_token_type: TokenSerializationType,
-    last_token_type: TokenSerializationType,
-    
-    pub references: References,
-}
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem)]
-pub struct SubstitutionFunctionReference {
-    
-    pub name: Name,
-    start: usize,
-    end: usize,
-    
-    pub fallback: Option<VariableFallback>,
-    
-    pub attribute_data: AttributeData,
-    prev_token_type: TokenSerializationType,
-    next_token_type: TokenSerializationType,
-    
-    pub substitution_kind: SubstitutionFunctionKind,
-}
-
-impl SubstitutionFunctionReference {
-    
-    pub fn is_attr_with_type(&self) -> bool {
-        self.substitution_kind == SubstitutionFunctionKind::Attr
-            && matches!(self.attribute_data.kind, AttributeType::Type(..))
-    }
-}
-
-
-
-#[derive(Clone, Debug, Default, MallocSizeOf, PartialEq, ToShmem)]
-pub struct References {
-    
-    pub refs: Vec<SubstitutionFunctionReference>,
-    
-    
-    
-    
-    pub flags: ReferenceFlags,
-}
-
-impl References {
-    fn has_references(&self) -> bool {
-        !self.refs.is_empty()
-    }
-
-    pub(crate) fn non_custom_references(&self, is_root_element: bool) -> ReferenceFlags {
-        let mut mask = ReferenceFlags::NON_ROOT_DEPENDENCIES;
-        if is_root_element {
-            mask |= ReferenceFlags::ROOT_DEPENDENCIES
-        }
-        self.flags & mask
-    }
-}
-
 impl VariableValue {
-    fn empty(url_data: &UrlExtraData) -> Self {
+    
+    pub(crate) fn empty(url_data: &UrlExtraData) -> Self {
         Self {
             css: String::new(),
             last_token_type: Default::default(),
@@ -898,7 +475,8 @@ impl VariableValue {
         }
     }
 
-    fn push(
+    
+    pub(crate) fn push(
         &mut self,
         css: &str,
         css_first_token_type: TokenSerializationType,
@@ -952,27 +530,25 @@ impl VariableValue {
         url_data: &UrlExtraData,
     ) -> Result<Self, ParseError> {
         let mut references = References::default();
-        let mut missing_closing_characters = String::new();
         let start_position = input.position();
-        let (first_token_type, last_token_type) = parse_declaration_value(
-            input,
-            start_position,
-            namespaces,
-            &mut references,
-            &mut missing_closing_characters,
-        )?;
+        let mut context = SubstitutionParserContext::new(start_position, namespaces);
+        let (first_token_type, last_token_type) =
+            parse_declaration_value(input, &mut context, &mut references)?;
         let mut css = input
             .slice_from(start_position)
             .trim_ascii_start()
             .to_owned();
-        if !missing_closing_characters.is_empty() {
+        if !context.missing_closing_characters.is_empty() {
             
             if css.ends_with("\\")
-                && matches!(missing_closing_characters.as_bytes()[0], b'"' | b'\'')
+                && matches!(
+                    context.missing_closing_characters.as_bytes()[0],
+                    b'"' | b'\''
+                )
             {
                 css.pop();
             }
-            css.push_str(&missing_closing_characters);
+            css.push_str(&context.missing_closing_characters);
         }
 
         css.truncate(css.trim_ascii_end().len());
@@ -995,7 +571,7 @@ impl VariableValue {
     }
 
     
-    fn integer(number: i32, url_data: &UrlExtraData) -> Self {
+    pub(crate) fn integer(number: i32, url_data: &UrlExtraData) -> Self {
         Self::from_token(
             Token::Number {
                 has_sign: false,
@@ -1007,12 +583,12 @@ impl VariableValue {
     }
 
     
-    fn ident(ident: &'static str, url_data: &UrlExtraData) -> Self {
+    pub(crate) fn ident(ident: &'static str, url_data: &UrlExtraData) -> Self {
         Self::from_token(Token::Ident(ident.into()), url_data)
     }
 
     
-    fn pixels(number: f32, url_data: &UrlExtraData) -> Self {
+    pub(crate) fn pixels(number: f32, url_data: &UrlExtraData) -> Self {
         
         
         
@@ -1028,7 +604,7 @@ impl VariableValue {
     }
 
     
-    fn int_ms(number: i32, url_data: &UrlExtraData) -> Self {
+    pub(crate) fn int_ms(number: i32, url_data: &UrlExtraData) -> Self {
         Self::from_token(
             Token::Dimension {
                 has_sign: false,
@@ -1041,7 +617,7 @@ impl VariableValue {
     }
 
     
-    fn int_pixels(number: i32, url_data: &UrlExtraData) -> Self {
+    pub(crate) fn int_pixels(number: i32, url_data: &UrlExtraData) -> Self {
         Self::from_token(
             Token::Dimension {
                 has_sign: false,
@@ -1082,337 +658,20 @@ impl VariableValue {
     
     pub fn collect_attribute_references(&self, references: &mut AttrReferenceSet) {
         self.references.refs.iter().for_each(|r| {
-            if r.substitution_kind == SubstitutionFunctionKind::Attr {
+            if let SubstitutionFunction::Attr(attr) = &r.function {
                 
                 
                 
                 
                 
-                references.insert(r.name.clone().into());
-                let lowercase = r.name.to_ascii_lowercase();
-                if *lowercase != *r.name {
+                references.insert(attr.name.clone().into());
+                let lowercase = attr.name.to_ascii_lowercase();
+                if *lowercase != *attr.name {
                     references.insert(Atom::from(lowercase).into());
                 }
             }
         })
     }
-}
-
-
-fn parse_declaration_value(
-    input: &mut Parser,
-    input_start: SourcePosition,
-    namespaces: Option<&FxHashMap<Prefix, Namespace>>,
-    references: &mut References,
-    missing_closing_characters: &mut String,
-) -> Result<(TokenSerializationType, TokenSerializationType), ParseError> {
-    input.parse_until_before(Delimiter::Bang | Delimiter::Semicolon, |input| {
-        parse_declaration_value_block(
-            input,
-            input_start,
-            namespaces,
-            references,
-            missing_closing_characters,
-        )
-    })
-}
-
-
-fn parse_declaration_value_block(
-    input: &mut Parser,
-    input_start: SourcePosition,
-    namespaces: Option<&FxHashMap<Prefix, Namespace>>,
-    references: &mut References,
-    missing_closing_characters: &mut String,
-) -> Result<(TokenSerializationType, TokenSerializationType), ParseError> {
-    let mut is_first = true;
-    let mut first_token_type = TokenSerializationType::Nothing;
-    let mut last_token_type = TokenSerializationType::Nothing;
-    let mut prev_reference_index: Option<usize> = None;
-    loop {
-        let token_start = input.position();
-        let Ok(token) = input.next_including_whitespace_and_comments() else {
-            break;
-        };
-
-        let prev_token_type = last_token_type;
-        let serialization_type = token.serialization_type();
-        last_token_type = serialization_type;
-        if is_first {
-            first_token_type = last_token_type;
-            is_first = false;
-        }
-
-        macro_rules! nested {
-            ($closing:expr) => {{
-                let mut inner_end_position = None;
-                let result = input.parse_nested_block(|input| {
-                    let result = parse_declaration_value_block(
-                        input,
-                        input_start,
-                        namespaces,
-                        references,
-                        missing_closing_characters,
-                    )?;
-                    inner_end_position = Some(input.position());
-                    Ok(result)
-                })?;
-                if inner_end_position.unwrap() == input.position() {
-                    missing_closing_characters.push_str($closing);
-                }
-                result
-            }};
-        }
-        if let Some(index) = prev_reference_index.take() {
-            references.refs[index].next_token_type = serialization_type;
-        }
-        match *token {
-            Token::Comment(_) => {
-                let token_slice = input.slice_from(token_start);
-                if !token_slice.ends_with("*/") {
-                    missing_closing_characters.push_str(if token_slice.ends_with('*') {
-                        "/"
-                    } else {
-                        "*/"
-                    })
-                }
-            },
-            Token::BadUrl(..) => {
-                let e = StyleParseErrorKind::BadUrlInDeclarationValueBlock;
-                return Err(ParseError::custom(e));
-            },
-            Token::BadString(..) => {
-                let e = StyleParseErrorKind::BadStringInDeclarationValueBlock;
-                return Err(ParseError::custom(e));
-            },
-            Token::CloseParenthesis => {
-                let e = StyleParseErrorKind::UnbalancedCloseParenthesisInDeclarationValueBlock;
-                return Err(ParseError::custom(e));
-            },
-            Token::CloseSquareBracket => {
-                let e = StyleParseErrorKind::UnbalancedCloseSquareBracketInDeclarationValueBlock;
-                return Err(ParseError::custom(e));
-            },
-            Token::CloseCurlyBracket => {
-                let e = StyleParseErrorKind::UnbalancedCloseCurlyBracketInDeclarationValueBlock;
-                return Err(ParseError::custom(e));
-            },
-            Token::Function(ref name) => {
-                let substitution_kind = SubstitutionFunctionKind::from_ident(name).ok();
-                if let Some(substitution_kind) = substitution_kind {
-                    let our_ref_index = references.refs.len();
-                    let mut input_end_position = None;
-                    let fallback = input.parse_nested_block(|input| {
-                        let mut namespace = ParsedNamespace::Known(Namespace::default());
-                        if substitution_kind == SubstitutionFunctionKind::Attr
-                            && let Some(namespaces) = namespaces
-                            && let Ok(ns) =
-                                input.try_parse(|input| ParsedNamespace::parse(namespaces, input))
-                        {
-                            namespace = ns;
-                            let prev = input.state();
-                            let next = match *input.next_including_whitespace()? {
-                                Token::Ident(_) => Ok(()),
-                                _ => Err(ParseError::unexpected_token()),
-                            };
-                            input.reset(&prev);
-                            next?;
-                        }
-                        
-                        
-                        let name = input.expect_ident()?;
-                        let name =
-                            Atom::from(if substitution_kind == SubstitutionFunctionKind::Var {
-                                match parse_name(name.as_ref()) {
-                                    Ok(name) => name,
-                                    Err(()) => {
-                                        return Err(ParseError::custom(
-                                            SelectorParseErrorKind::UnexpectedIdent,
-                                        ));
-                                    },
-                                }
-                            } else {
-                                name.as_ref()
-                            });
-
-                        let attribute_kind = if substitution_kind == SubstitutionFunctionKind::Attr
-                        {
-                            parse_attr_type(input)
-                        } else {
-                            AttributeType::None
-                        };
-
-                        
-                        
-                        
-                        let start = token_start.byte_index() - input_start.byte_index();
-                        references.refs.push(SubstitutionFunctionReference {
-                            name,
-                            start,
-                            
-                            end: start,
-                            prev_token_type,
-                            
-                            next_token_type: TokenSerializationType::Nothing,
-                            
-                            fallback: None,
-                            attribute_data: AttributeData {
-                                kind: attribute_kind,
-                                namespace,
-                            },
-                            substitution_kind,
-                        });
-
-                        let mut fallback = None;
-                        if input.try_parse(|input| input.expect_comma()).is_ok() {
-                            input.skip_whitespace();
-                            let fallback_start = num::NonZeroUsize::new(
-                                input.position().byte_index() - input_start.byte_index(),
-                            )
-                            .unwrap();
-                            let mut references = References::default();
-                            
-                            
-                            let (first, last) = parse_declaration_value(
-                                input,
-                                input_start,
-                                namespaces,
-                                &mut references,
-                                missing_closing_characters,
-                            )?;
-                            fallback = Some(VariableFallback {
-                                start: fallback_start,
-                                first_token_type: first,
-                                last_token_type: last,
-                                references,
-                            });
-                            input_end_position = Some(input.position());
-                        } else {
-                            let state = input.state();
-                            
-                            
-                            
-                            parse_declaration_value_block(
-                                input,
-                                input_start,
-                                namespaces,
-                                references,
-                                missing_closing_characters,
-                            )?;
-                            input_end_position = Some(input.position());
-                            input.reset(&state);
-                        }
-                        Ok(fallback)
-                    })?;
-                    if input_end_position.unwrap() == input.position() {
-                        missing_closing_characters.push(')');
-                    }
-                    prev_reference_index = Some(our_ref_index);
-                    let reference = &mut references.refs[our_ref_index];
-                    reference.end = input.position().byte_index() - input_start.byte_index()
-                        + missing_closing_characters.len();
-                    reference.fallback = fallback;
-                    references.flags |= match substitution_kind {
-                        SubstitutionFunctionKind::Var => ReferenceFlags::VAR,
-                        SubstitutionFunctionKind::Env => ReferenceFlags::ENV,
-                        SubstitutionFunctionKind::Attr => ReferenceFlags::ATTR,
-                    };
-                    
-                    if let Some(ref fb) = reference.fallback {
-                        references.flags |= fb.references.flags;
-                    }
-                } else {
-                    nested!(")");
-                }
-            },
-            Token::ParenthesisBlock => {
-                nested!(")");
-            },
-            Token::CurlyBracketBlock => {
-                nested!("}");
-            },
-            Token::SquareBracketBlock => {
-                nested!("]");
-            },
-            Token::QuotedString(_) => {
-                let token_slice = input.slice_from(token_start);
-                let quote = &token_slice[..1];
-                debug_assert!(matches!(quote, "\"" | "'"));
-                if !(token_slice.ends_with(quote) && token_slice.len() > 1) {
-                    missing_closing_characters.push_str(quote)
-                }
-            },
-            Token::Ident(ref value)
-            | Token::AtKeyword(ref value)
-            | Token::Hash(ref value)
-            | Token::IDHash(ref value)
-            | Token::UnquotedUrl(ref value)
-            | Token::Dimension {
-                unit: ref value, ..
-            } => {
-                references.flags.insert(ReferenceFlags::from_unit(value));
-                let is_unquoted_url = matches!(token, Token::UnquotedUrl(_));
-                if value.ends_with("�") && input.slice_from(token_start).ends_with("\\") {
-                    
-                    
-                    
-                    
-                    missing_closing_characters.push('�')
-                }
-                if is_unquoted_url && !input.slice_from(token_start).ends_with(")") {
-                    missing_closing_characters.push(')');
-                }
-            },
-            _ => {},
-        };
-    }
-    Ok((first_token_type, last_token_type))
-}
-
-
-
-fn parse_attr_type(input: &mut Parser) -> AttributeType {
-    input
-        .try_parse(|input| {
-            Ok(match input.next()? {
-                Token::Function(name) if name.eq_ignore_ascii_case("type") => AttributeType::Type(
-                    input.parse_nested_block(SyntaxDescriptor::from_css_parser)?,
-                ),
-                Token::Ident(ident) => {
-                    if ident.eq_ignore_ascii_case("raw-string") {
-                        AttributeType::RawString
-                    } else if let Ok(unit) = AttrUnit::from_ident(ident) {
-                        AttributeType::Unit(unit)
-                    } else {
-                        AttributeType::Invalid
-                    }
-                },
-                Token::Delim('%') => AttributeType::Unit(AttrUnit::Percentage),
-                _ => return Err(ParseError::custom(StyleParseErrorKind::UnspecifiedError)),
-            })
-        })
-        .unwrap_or(AttributeType::None)
-}
-
-
-
-pub fn get_attr_value_for_cycle_resolution(
-    name: &Name,
-    attribute_data: &AttributeData,
-    url_data: &UrlExtraData,
-    attribute_tracker: &mut AttributeTracker,
-) -> Result<ComputedRegisteredValue, ()> {
-    let namespace = match attribute_data.namespace {
-        ParsedNamespace::Known(ref ns) => ns,
-        ParsedNamespace::Unknown => return Err(()),
-    };
-    let attr = LocalName::with_name(name, |local_name| {
-        attribute_tracker.query(local_name, namespace).ok_or(())
-    })?;
-    let mut parser = Parser::new(&attr);
-    
-    let value = VariableValue::parse(&mut parser, None, url_data).map_err(|_| ())?;
-    Ok(ComputedRegisteredValue::universal(Arc::new(value)))
 }
 
 
@@ -1480,16 +739,14 @@ pub fn substitute_references_if_needed_and_apply(
     }
 
     let url_data = &value.url_data;
-    let substitution = substitute_internal(
-        value,
+    let substitution = SubstitutionReplacementContext::new(
         Some(PropertyIdRef::from(name)),
         &context.builder.substitution_functions,
         stylist,
         context,
         attribute_tracker,
-        &mut SmallVec::new(),
-        None,
-    );
+    )
+    .substitute_variable_value(value, None);
 
     let Ok(substitution) = substitution else {
         if is_var {
@@ -1592,87 +849,8 @@ pub fn substitute_references_if_needed_and_apply(
     }
 }
 
-#[derive(Default, Debug)]
-struct Substitution<'a> {
-    css: Cow<'a, str>,
-    first_token_type: TokenSerializationType,
-    last_token_type: TokenSerializationType,
-    attr_tainted: bool,
-}
 
-impl<'a> Substitution<'a> {
-    fn from_value(v: VariableValue, attr_tainted: bool) -> Self {
-        Substitution {
-            css: v.css.into(),
-            first_token_type: v.first_token_type,
-            last_token_type: v.last_token_type,
-            attr_tainted,
-        }
-    }
-
-    fn into_value(
-        self,
-        url_data: &UrlExtraData,
-        registration: &PropertyDescriptors,
-        computed_context: &computed::Context,
-        property_id: Option<PropertyIdRef>,
-    ) -> Result<ComputedRegisteredValue, ()> {
-        if registration.is_universal() {
-            let mut value = ComputedRegisteredValue::universal(Arc::new(VariableValue::new(
-                self.css.into_owned(),
-                url_data,
-                self.first_token_type,
-                self.last_token_type,
-            )));
-            value.attr_tainted |= self.attr_tainted;
-            return Ok(value);
-        }
-        let taint = if self.attr_tainted {
-            
-            
-            
-            
-            AttrTaint::new_fully_tainted(self.css.len())
-        } else {
-            AttrTaint::default()
-        };
-        let mut v = compute_value(
-            &self.css,
-            url_data,
-            registration,
-            computed_context,
-            taint,
-            property_id,
-        )?;
-        v.attr_tainted |= self.attr_tainted;
-        Ok(v)
-    }
-
-    fn new(
-        css: Cow<'a, str>,
-        first_token_type: TokenSerializationType,
-        last_token_type: TokenSerializationType,
-        attr_tainted: bool,
-    ) -> Self {
-        Self {
-            css,
-            first_token_type,
-            last_token_type,
-            attr_tainted,
-        }
-    }
-}
-
-
-#[derive(Debug)]
-pub struct SubstitutionResult<'a> {
-    
-    pub css: Cow<'a, str>,
-    
-    pub attr_taint: AttrTaint,
-}
-
-fn compute_value(
+pub fn compute_value(
     css: &str,
     url_data: &UrlExtraData,
     registration: &PropertyDescriptors,
@@ -1706,344 +884,4 @@ pub(crate) fn remove_and_insert_initial_value(
         let value = ComputedRegisteredValue::universal(Arc::clone(initial_value));
         substitution_functions.insert_var(registration, name, value);
     }
-}
-
-fn do_substitute_chunk<'a>(
-    css: &'a str,
-    start: usize,
-    end: usize,
-    first_token_type: TokenSerializationType,
-    last_token_type: TokenSerializationType,
-    url_data: &UrlExtraData,
-    property_id: Option<PropertyIdRef>,
-    substitution_functions: &'a ComputedSubstitutionFunctions,
-    stylist: &Stylist,
-    computed_context: &computed::Context,
-    references: &'a [SubstitutionFunctionReference],
-    attribute_tracker: &mut AttributeTracker,
-    seen: &mut SmallVec<[&'a Name; 8]>,
-    mut attr_taint: Option<&mut AttrTaint>,
-) -> Result<Substitution<'a>, ()> {
-    if start == end {
-        
-        return Ok(Substitution::default());
-    }
-    
-    if references.is_empty() {
-        let result = &css[start..end];
-        return Ok(Substitution::new(
-            Cow::Borrowed(result),
-            first_token_type,
-            last_token_type,
-            Default::default(),
-        ));
-    }
-
-    let mut substituted = ComputedValue::empty(url_data);
-    let mut next_token_type = first_token_type;
-    let mut cur_pos = start;
-    let mut attr_tainted = false;
-    let references = references.iter();
-    for reference in references {
-        if reference.start != cur_pos {
-            substituted.push(
-                &css[cur_pos..reference.start],
-                next_token_type,
-                reference.prev_token_type,
-                 None,
-            )?;
-        }
-
-        let substitution = substitute_one_reference(
-            css,
-            url_data,
-            property_id,
-            substitution_functions,
-            reference,
-            stylist,
-            computed_context,
-            attribute_tracker,
-            seen,
-        )?;
-
-        
-        if reference.start == start && reference.end == end {
-            if let Some(taint) = attr_taint.filter(|_| substitution.attr_tainted) {
-                taint.push(start, substitution.css.len());
-            }
-            return Ok(substitution);
-        }
-
-        substituted.push(
-            &substitution.css,
-            substitution.first_token_type,
-            substitution.last_token_type,
-            attr_taint
-                .as_deref_mut()
-                .filter(|_| substitution.attr_tainted),
-        )?;
-        attr_tainted |= substitution.attr_tainted;
-        next_token_type = reference.next_token_type;
-        cur_pos = reference.end;
-    }
-    
-    if cur_pos != end {
-        substituted.push(
-            &css[cur_pos..end],
-            next_token_type,
-            last_token_type,
-             None,
-        )?;
-    }
-    Ok(Substitution::from_value(substituted, attr_tainted))
-}
-
-fn quoted_css_string(src: &str) -> String {
-    let mut dest = String::with_capacity(src.len() + 2);
-    cssparser::serialize_string(src, &mut dest).unwrap();
-    dest
-}
-
-fn substitute_one_reference<'a>(
-    css: &'a str,
-    url_data: &UrlExtraData,
-    property_id: Option<PropertyIdRef>,
-    substitution_functions: &'a ComputedSubstitutionFunctions,
-    reference: &'a SubstitutionFunctionReference,
-    stylist: &Stylist,
-    computed_context: &computed::Context,
-    attribute_tracker: &mut AttributeTracker,
-    seen: &mut SmallVec<[&'a Name; 8]>,
-) -> Result<Substitution<'a>, ()> {
-    let simple_attr_subst = |s: &str| {
-        Some(Substitution::new(
-            Cow::Owned(quoted_css_string(s)),
-            TokenSerializationType::Nothing,
-            TokenSerializationType::Nothing,
-             true,
-        ))
-    };
-    let substitution: Option<_> = match reference.substitution_kind {
-        SubstitutionFunctionKind::Var => {
-            let registration = stylist.get_custom_property_registration(&reference.name);
-            match substitution_functions.get_var(registration, &reference.name) {
-                None => None,
-                
-                
-                
-                
-                
-                Some(v) => match v.as_universal() {
-                    Some(u) if u.has_references() => {
-                        if seen.contains(&&reference.name) {
-                            
-                            
-                            None
-                        } else {
-                            seen.push(&reference.name);
-                            let result = substitute_internal(
-                                u,
-                                property_id,
-                                substitution_functions,
-                                stylist,
-                                computed_context,
-                                attribute_tracker,
-                                seen,
-                                 None,
-                            );
-                            seen.pop();
-                            match result {
-                                Ok(mut substitution) => {
-                                    substitution.attr_tainted |= v.attr_tainted;
-                                    Some(substitution)
-                                },
-                                
-                                Err(()) => None,
-                            }
-                        }
-                    },
-                    _ => Some(Substitution::from_value(
-                        v.to_variable_value(),
-                        v.attr_tainted,
-                    )),
-                },
-            }
-        },
-        SubstitutionFunctionKind::Env => {
-            let device = stylist.device();
-            device
-                .environment()
-                .get(&reference.name, device, url_data)
-                .map(|v| Substitution::from_value(v,  false))
-        },
-        
-        SubstitutionFunctionKind::Attr => {
-            let namespace = match reference.attribute_data.namespace {
-                ParsedNamespace::Known(ref ns) => Some(ns),
-                ParsedNamespace::Unknown => None,
-            };
-            namespace
-                .and_then(|namespace| {
-                    LocalName::with_name(&reference.name, |local_name| {
-                        attribute_tracker.query(local_name, namespace)
-                    })
-                })
-                .map_or_else(
-                    || {
-                        
-                        
-                        if reference.fallback.is_none()
-                            && reference.attribute_data.kind == AttributeType::None
-                        {
-                            simple_attr_subst("")
-                        } else {
-                            None
-                        }
-                    },
-                    |attr| {
-                        let attr = if let AttributeType::Type(_) = &reference.attribute_data.kind {
-                            
-                            
-                            
-                            
-                            
-                            
-                            if computed_context.in_container_query {
-                                attr
-                            } else {
-                                substitution_functions
-                                    .get_attr(&reference.name)
-                                    .map(|v| v.to_variable_value())?
-                                    .css
-                            }
-                        } else {
-                            attr
-                        };
-                        let mut parser = Parser::new(&attr);
-                        match &reference.attribute_data.kind {
-                            AttributeType::Unit(unit) => {
-                                let css = {
-                                    
-                                    parser.expect_number().ok()?;
-                                    let mut s = attr.clone();
-                                    s.push_str(unit.as_ref());
-                                    s
-                                };
-                                let serialization = match unit {
-                                    AttrUnit::Number => TokenSerializationType::Number,
-                                    AttrUnit::Percentage => TokenSerializationType::Percentage,
-                                    _ => TokenSerializationType::Dimension,
-                                };
-                                let value =
-                                    ComputedValue::new(css, url_data, serialization, serialization);
-                                Some(Substitution::from_value(
-                                    value,  true,
-                                ))
-                            },
-                            AttributeType::Type(syntax) => {
-                                let value = SpecifiedRegisteredValue::parse(
-                                    &mut parser,
-                                    syntax,
-                                    url_data,
-                                    None,
-                                    AllowComputationallyDependent::Yes,
-                                    AttrTaint::default(),
-                                    property_id,
-                                )
-                                .ok()?;
-                                let value = value.to_variable_value();
-                                Some(Substitution::from_value(
-                                    value,  true,
-                                ))
-                            },
-                            AttributeType::RawString | AttributeType::None => {
-                                simple_attr_subst(&attr)
-                            },
-                            AttributeType::Invalid => None,
-                        }
-                    },
-                )
-        },
-    };
-
-    if let Some(s) = substitution {
-        return Ok(s);
-    }
-
-    let Some(ref fallback) = reference.fallback else {
-        return Err(());
-    };
-
-    do_substitute_chunk(
-        css,
-        fallback.start.get(),
-        reference.end - 1, 
-        fallback.first_token_type,
-        fallback.last_token_type,
-        url_data,
-        property_id,
-        substitution_functions,
-        stylist,
-        computed_context,
-        &fallback.references.refs,
-        attribute_tracker,
-        seen,
-         None,
-    )
-}
-
-
-fn substitute_internal<'a>(
-    variable_value: &'a VariableValue,
-    property_id: Option<PropertyIdRef>,
-    substitution_functions: &'a ComputedSubstitutionFunctions,
-    stylist: &Stylist,
-    computed_context: &computed::Context,
-    attribute_tracker: &mut AttributeTracker,
-    seen: &mut SmallVec<[&'a Name; 8]>,
-    attr_taint: Option<&mut AttrTaint>,
-) -> Result<Substitution<'a>, ()> {
-    do_substitute_chunk(
-        &variable_value.css,
-         0,
-         variable_value.css.len(),
-        variable_value.first_token_type,
-        variable_value.last_token_type,
-        &variable_value.url_data,
-        property_id,
-        substitution_functions,
-        stylist,
-        computed_context,
-        &variable_value.references.refs,
-        attribute_tracker,
-        seen,
-        attr_taint,
-    )
-}
-
-
-pub fn substitute<'a>(
-    variable_value: &'a VariableValue,
-    property_id: Option<PropertyIdRef>,
-    substitution_functions: &'a ComputedSubstitutionFunctions,
-    stylist: &Stylist,
-    computed_context: &computed::Context,
-    attribute_tracker: &mut AttributeTracker,
-) -> Result<SubstitutionResult<'a>, ()> {
-    debug_assert!(variable_value.has_references());
-    let mut attr_taint = AttrTaint::default();
-    let v = substitute_internal(
-        variable_value,
-        property_id,
-        substitution_functions,
-        stylist,
-        computed_context,
-        attribute_tracker,
-        &mut SmallVec::new(),
-        Some(&mut attr_taint),
-    )?;
-    Ok(SubstitutionResult {
-        css: v.css,
-        attr_taint,
-    })
 }
