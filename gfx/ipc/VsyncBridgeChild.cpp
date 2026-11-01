@@ -68,7 +68,7 @@ bool VsyncBridgeChild::IsOnVsyncIOThread() const {
 void VsyncBridgeChild::NotifyVsync(const VsyncEvent& aVsync,
                                    const layers::LayersId& aLayersId) {
   
-  MOZ_ASSERT(!IsOnVsyncIOThread());
+  MOZ_RELEASE_ASSERT(!IsOnVsyncIOThread());
 
   RefPtr<NotifyVsyncTask> task = new NotifyVsyncTask(this, aVsync, aLayersId);
   mThread->Dispatch(task.forget());
@@ -77,7 +77,7 @@ void VsyncBridgeChild::NotifyVsync(const VsyncEvent& aVsync,
 void VsyncBridgeChild::NotifyVsyncImpl(const VsyncEvent& aVsync,
                                        const layers::LayersId& aLayersId) {
   
-  MOZ_ASSERT(IsOnVsyncIOThread());
+  MOZ_RELEASE_ASSERT(IsOnVsyncIOThread());
 
   if (!mProcessToken) {
     return;
