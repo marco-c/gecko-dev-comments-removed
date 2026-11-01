@@ -76,6 +76,8 @@ const EXPECTED_FILL_AMEX = {
 
 
 async function switchTo(rust) {
+  
+  await formAutofillStorage.initialize();
   Services.prefs.setBoolPref(ENABLED_PREF, rust);
   await formAutofillStorage._creditCardSwitch;
   Assert.equal(
