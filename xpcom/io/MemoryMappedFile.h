@@ -8,6 +8,7 @@
 #include <prio.h>
 #include <stdint.h>  
 
+#include "mozilla/Span.h"
 #include "mozilla/UniquePtrExtensions.h"
 
 namespace mozilla {
@@ -108,6 +109,11 @@ class MemoryMappedFile final {
 
 
   size_t Size() const { return mSize; }
+
+  Span<const uint8_t> AsSpan() const {
+    MOZ_ASSERT(IsValid());
+    return Span{static_cast<const uint8_t*>(mData), mSize};
+  }
 
   
 
