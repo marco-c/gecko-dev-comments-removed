@@ -1186,24 +1186,6 @@ ReferrerInfo::InitWithDocument(const Document* aDocument) {
   return NS_OK;
 }
 
-
-
-
-
-
-
-static ReferrerPolicy ReferrerPolicyFromAttribute(const Element& aElement) {
-  if (!aElement.IsAnyOfHTMLElements(nsGkAtoms::a, nsGkAtoms::area,
-                                    nsGkAtoms::script, nsGkAtoms::iframe,
-                                    nsGkAtoms::link, nsGkAtoms::img) &&
-      !aElement.IsSVGElement(nsGkAtoms::a) &&
-      !(aElement.IsMathMLElement(nsGkAtoms::a) &&
-        StaticPrefs::mathml_a_element_enabled())) {
-    return ReferrerPolicy::_empty;
-  }
-  return aElement.GetReferrerPolicyAsEnum();
-}
-
 NS_IMETHODIMP
 ReferrerInfo::InitWithElement(const Element* aElement) {
   MOZ_ASSERT(!mInitialized);
@@ -1213,7 +1195,7 @@ ReferrerInfo::InitWithElement(const Element* aElement) {
 
   
   
-  mPolicy = ReferrerPolicyFromAttribute(*aElement);
+  mPolicy = aElement->GetReferrerPolicyAsEnum();
   if (mPolicy == ReferrerPolicy::_empty) {
     
     

@@ -6079,15 +6079,7 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
 }
 
 ReferrerPolicy Element::GetReferrerPolicyAsEnum() const {
-  
-  
-  
-  if (IsHTMLElement() || IsSVGElement(nsGkAtoms::a) ||
-      (IsMathMLElement(nsGkAtoms::a) &&
-       StaticPrefs::mathml_a_element_enabled())) {
-    return ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy));
-  }
-  return ReferrerPolicy::_empty;
+  return ReferrerPolicyFromAttr(GetParsedAttr(nsGkAtoms::referrerpolicy));
 }
 
 ReferrerPolicy Element::ReferrerPolicyFromAttr(
