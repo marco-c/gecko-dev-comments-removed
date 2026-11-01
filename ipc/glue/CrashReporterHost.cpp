@@ -162,7 +162,7 @@ void CrashReporterHost::RecordCrash(GeckoProcessType aProcessType,
 
 
 void CrashReporterHost::RecordCrashWithTelemetry(GeckoProcessType aProcessType,
-                                                 int32_t aCrashType) {
+                                                 int32_t ) {
   nsCString key;
 
   switch (aProcessType) {

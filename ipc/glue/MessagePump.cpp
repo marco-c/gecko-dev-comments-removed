@@ -198,7 +198,7 @@ DoWorkRunnable::Run() {
 }
 
 NS_IMETHODIMP
-DoWorkRunnable::Notify(nsITimer* aTimer) {
+DoWorkRunnable::Notify(nsITimer* ) {
   MessageLoop* loop = MessageLoop::current();
   MOZ_ASSERT(loop);
 

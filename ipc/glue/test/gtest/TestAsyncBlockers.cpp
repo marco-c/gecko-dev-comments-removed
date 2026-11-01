@@ -87,7 +87,7 @@ NS_IMPL_ISUPPORTS(AsyncBlockerTimerCallback, nsITimerCallback, nsINamed)
 AsyncBlockerTimerCallback::~AsyncBlockerTimerCallback() = default;
 
 NS_IMETHODIMP
-AsyncBlockerTimerCallback::Notify(nsITimer* timer) {
+AsyncBlockerTimerCallback::Notify(nsITimer* ) {
   
   
   
