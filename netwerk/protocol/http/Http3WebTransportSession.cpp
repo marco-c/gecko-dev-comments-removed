@@ -555,11 +555,21 @@ Http3WebTransportSession::OnIncomingWebTransportStream(
 void Http3WebTransportSession::SendDatagram(nsTArray<uint8_t>&& aData,
                                             uint64_t aTrackingId,
                                             uint64_t aSendGroupId,
-                                            int64_t aSendOrder) {
+                                            int64_t aSendOrder,
+                                            TimeStamp aTimestamp) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   LOG(("Http3WebTransportSession::SendDatagram this=%p, sendGroup=%" PRIu64
        ", sendOrder=%" PRId64,
        this, aSendGroupId, aSendOrder));
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (mSendState != PROCESSING_DATAGRAM) {
     return;
   }
@@ -576,7 +586,8 @@ void Http3WebTransportSession::SendDatagram(nsTArray<uint8_t>&& aData,
   
   
   
-  mSession->SendDatagram(this, aData, aTrackingId, aSendGroupId, aSendOrder);
+  mSession->SendDatagram(this, aData, aTrackingId, aSendGroupId, aSendOrder,
+                         aTimestamp);
   mSession->StreamHasDataToWrite(this);
 }
 
@@ -614,6 +625,31 @@ nsresult Http3WebTransportSession::ExportKeyingMaterial(
   }
   return mSession->ExportWebTransportKeyingMaterial(
       mStreamId, aLabel, aContext, aOutputLength, aKeyingMaterial);
+}
+
+void Http3WebTransportSession::SetDatagramMaxBufferedDatagrams(
+    uint32_t aMaxBufferedDatagrams) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  LOG(
+      ("Http3WebTransportSession::SetDatagramMaxBufferedDatagrams this=%p "
+       "max=%" PRIu32,
+       this, aMaxBufferedDatagrams));
+  if (mRecvState != ACTIVE) {
+    return;
+  }
+
+  mSession->SetDatagramMaxBufferedDatagrams(mStreamId, aMaxBufferedDatagrams);
+}
+
+void Http3WebTransportSession::SetDatagramMaxAge(double aMaxAge) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  LOG(("Http3WebTransportSession::SetDatagramMaxAge this=%p age=%f", this,
+       aMaxAge));
+  if (mRecvState != ACTIVE) {
+    return;
+  }
+
+  mSession->SetDatagramMaxAge(mStreamId, aMaxAge);
 }
 
 void Http3WebTransportSession::GetStats() {

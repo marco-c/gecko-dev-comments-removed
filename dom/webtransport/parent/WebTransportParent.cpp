@@ -4,6 +4,8 @@
 
 #include "WebTransportParent.h"
 
+#include <cmath>
+
 #include "Http3WebTransportSession.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -675,6 +677,7 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 
   mSessionReady = true;
   mSessionId = aSessionId;
+  mSessionReadyTime = TimeStamp::Now();
 
   
   
@@ -1104,35 +1107,77 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
 }
 
 
-
-
 ::mozilla::ipc::IPCResult WebTransportParent::RecvOutgoingDatagram(
-    nsTArray<uint8_t>&& aData, const TimeStamp& aExpirationTime,
-    const uint64_t& aSendGroupId, const int64_t& aSendOrder,
-    OutgoingDatagramResolver&& aResolver) {
-  LOG(("WebTransportParent sending datagram, sendGroup=%" PRIu64
-       ", sendOrder=%" PRId64,
-       aSendGroupId, aSendOrder));
+    const uint64_t& aDatagramId, nsTArray<uint8_t>&& aData,
+    const TimeStamp& aTimestamp, const uint64_t& aSendGroupId,
+    const int64_t& aSendOrder, OutgoingDatagramResolver&& aResolver) {
+  LOG(("WebTransportParent sending datagram id=%" PRIu64 ", length=%zu",
+       aDatagramId, aData.Length()));
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
   MOZ_ASSERT(mWebTransport);
 
-  (void)aExpirationTime;
+  
+  
+  aResolver(NS_OK);
 
-  MOZ_ASSERT(!mOutgoingDatagramResolver);
-  mOutgoingDatagramResolver = std::move(aResolver);
+  double ageMs = (TimeStamp::Now() - aTimestamp).ToMilliseconds();
+  LOG(("Forwarding datagram id=%" PRIu64
+       " to neqo queue (timestamp=%f ms), sendGroup=%" PRIu64
+       ", sendOrder=%" PRId64,
+       aDatagramId, ageMs, aSendGroupId, aSendOrder));
+
+  
+  
+  if (ageMs > mDatagramMaxAge) {
+    LOG(("Dropping datagram id=%" PRIu64 ": age %f ms exceeds outgoingMaxAge "
+         "%f ms before reaching neqo",
+         aDatagramId, ageMs, mDatagramMaxAge));
+    if (CanSend()) {
+      (void)SendDatagramReady(aDatagramId);
+    }
+    return IPC_OK();
+  }
+
   
   
   
   
   
   
+  TimeStamp timestamp = aTimestamp;
+  if (!std::isfinite(mDatagramMaxAge) && timestamp < mSessionReadyTime) {
+    timestamp = mSessionReadyTime;
+  }
+
   
   
-  static uint64_t sDatagramId = 1;
-  LOG_VERBOSE(("Sending datagram %" PRIu64 ", length %zu", sDatagramId,
-               aData.Length()));
-  (void)mWebTransport->SendDatagram(aData, sDatagramId++, aSendGroupId,
-                                    aSendOrder);
+  
+  if (mLastOutgoingDatagramTimestamp.IsNull() ||
+      timestamp > mLastOutgoingDatagramTimestamp) {
+    mLastOutgoingDatagramTimestamp = timestamp;
+  }
+
+  
+  
+  (void)mWebTransport->SendDatagramAt(aData, aDatagramId, aSendGroupId,
+                                      aSendOrder,
+                                      mLastOutgoingDatagramTimestamp);
+
+  return IPC_OK();
+}
+
+::mozilla::ipc::IPCResult WebTransportParent::RecvUpdateDatagramQueueParams(
+    const uint32_t& aOutgoingMaxBufferedDatagrams,
+    const double& aOutgoingMaxAge) {
+  LOG(
+      ("WebTransportParent::RecvUpdateDatagramQueueParams: "
+       "outgoingMaxBufferedDatagrams=%" PRIu32 ", maxAge=%f",
+       aOutgoingMaxBufferedDatagrams, aOutgoingMaxAge));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(mWebTransport);
+  mWebTransport->SetDatagramMaxBufferedDatagrams(aOutgoingMaxBufferedDatagrams);
+  mWebTransport->SetDatagramMaxAge(aOutgoingMaxAge);
+  mDatagramMaxAge = aOutgoingMaxAge;
 
   return IPC_OK();
 }
@@ -1154,24 +1199,18 @@ NS_IMETHODIMP
 WebTransportParent::OnOutgoingDatagramOutCome(
     uint64_t aId, WebTransportSessionEventListener::DatagramOutcome aOutCome) {
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-  
-  nsresult result = NS_ERROR_FAILURE;
-  (void)result;
-  (void)aId;
 
   if (aOutCome == WebTransportSessionEventListener::DatagramOutcome::SENT) {
-    result = NS_OK;
     LOG(("Sent datagram id= %" PRIu64, aId));
   } else {
-    LOG(("Didn't send datagram id= %" PRIu64, aId));
+    LOG(("Dropped datagram id= %" PRIu64, aId));
   }
 
   
-  if (!mOutgoingDatagramResolver) {
-    return NS_OK;
+  
+  if (CanSend()) {
+    (void)SendDatagramReady(aId);
   }
-  mOutgoingDatagramResolver(result);
-  mOutgoingDatagramResolver = nullptr;
 
   return NS_OK;
 }

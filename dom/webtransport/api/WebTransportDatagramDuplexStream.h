@@ -85,6 +85,12 @@ class OutgoingDatagramStreamAlgorithms final
       WritableStreamDefaultController& aController,
       ErrorResult& aError) override;
 
+  
+  void OnDatagramReady(uint64_t aDatagramId);
+
+  
+  void UpdateQueueParams(uint32_t aMaxBufferedDatagrams, double aMaxAge);
+
  private:
   ~OutgoingDatagramStreamAlgorithms() override = default;
 
@@ -97,6 +103,11 @@ class OutgoingDatagramStreamAlgorithms final
   
   RefPtr<WebTransportSendGroup> mSendGroup;
   int64_t mSendOrder;
+  uint64_t mWaitConnectDatagramId = 0;
+
+  
+  nsTHashMap<nsUint64HashKey, RefPtr<Promise>> mPendingDatagramPromises;
+  uint64_t mNextDatagramId = 1;
 };
 
 class WebTransportDatagramDuplexStream final : public nsISupports,
@@ -120,6 +131,11 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
 
   void NewDatagramReceived(nsTArray<uint8_t>&& aData,
                            const mozilla::TimeStamp& aTimeStamp);
+
+  
+  void OnDatagramReady(uint64_t aDatagramId) {
+    mOutgoingAlgorithms->OnDatagramReady(aDatagramId);
+  }
 
   
   nsIGlobalObject* GetParentObject() const;

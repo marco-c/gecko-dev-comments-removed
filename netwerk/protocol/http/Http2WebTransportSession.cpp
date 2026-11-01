@@ -122,10 +122,12 @@ void Http2WebTransportSessionImpl::GetNegotiatedProtocol(
 void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
                                                 uint64_t aTrackingId,
                                                 uint64_t aSendGroupId,
-                                                int64_t aSendOrder) {
+                                                int64_t aSendOrder,
+                                                TimeStamp aTimestamp) {
   LOG(("Http2WebTransportSessionImpl::SendDatagram %p, sendGroup=%" PRIu64
        ", sendOrder=%" PRId64,
        this, aSendGroupId, aSendOrder));
+  
   
   
 
@@ -134,6 +136,19 @@ void Http2WebTransportSessionImpl::SendDatagram(nsTArray<uint8_t>&& aData,
   UniquePtr<CapsuleEncoder> encoder = MakeUnique<CapsuleEncoder>();
   encoder->EncodeCapsule(capsule);
   EnqueueOutCapsule(CapsuleTransmissionPriority::Normal, std::move(encoder));
+}
+
+void Http2WebTransportSessionImpl::SetDatagramMaxBufferedDatagrams(
+    uint32_t aMaxBufferedDatagrams) {
+  LOG(
+      ("Http2WebTransportSessionImpl::SetDatagramMaxBufferedDatagrams %p "
+       "max=%" PRIu32,
+       this, aMaxBufferedDatagrams));
+}
+
+void Http2WebTransportSessionImpl::SetDatagramMaxAge(double aMaxAge) {
+  LOG(("Http2WebTransportSessionImpl::SetDatagramMaxAge %p age=%f", this,
+       aMaxAge));
 }
 
 void Http2WebTransportSessionImpl::CreateOutgoingStreamInternal(

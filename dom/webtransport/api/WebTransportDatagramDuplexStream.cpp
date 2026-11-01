@@ -102,6 +102,10 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(double aMaxAge,
   }
   
   mOutgoingMaxAge = aMaxAge;
+
+  
+  mOutgoingAlgorithms->UpdateQueueParams(mOutgoingMaxBufferedDatagrams,
+                                         mOutgoingMaxAge);
 }
 
 void WebTransportDatagramDuplexStream::SetIncomingMaxBufferedDatagrams(
@@ -114,6 +118,10 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
     uint32_t aValue) {
   
   mOutgoingMaxBufferedDatagrams = std::max(aValue, 1u);
+
+  
+  mOutgoingAlgorithms->UpdateQueueParams(mOutgoingMaxBufferedDatagrams,
+                                         mOutgoingMaxAge);
 }
 
 already_AddRefed<WebTransportDatagramsWritable>
@@ -348,7 +356,8 @@ void IncomingDatagramStreamAlgorithms::NotifyDatagramAvailable() {
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(OutgoingDatagramStreamAlgorithms,
                                    UnderlyingSinkAlgorithmsWrapper, mDatagrams,
-                                   mSendGroup, mWaitConnectPromise)
+                                   mSendGroup, mWaitConnectPromise,
+                                   mPendingDatagramPromises)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(OutgoingDatagramStreamAlgorithms)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSinkAlgorithmsWrapper)
@@ -391,34 +400,46 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallbackImpl(
       Promise::CreateInfallible(mDatagrams->GetParentObject());
 
   
+  uint64_t datagramId = mNextDatagramId++;
+
+  
+  mPendingDatagramPromises.InsertOrUpdate(datagramId, promise);
+
+  
   if (mChild) {
     
     
     
-    LOG(("Sending Datagram, size = %zu", data.Length()));
+    LOG(("Sending Datagram id=%" PRIu64 ", size = %zu", datagramId,
+         data.Length()));
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
+    LOG(("Sending Datagram id=%" PRIu64 ", size = %zu, sendGroup = %" PRIu64
+         ", sendOrder = %" PRId64,
+         datagramId, data.Length(), sendGroupId, mSendOrder));
     mChild->SendOutgoingDatagram(
-        std::move(data), now, sendGroupId, mSendOrder,
-        [promise](nsresult&&) {
+        datagramId, std::move(data), now, sendGroupId, mSendOrder,
+        [](nsresult&&) {
           
-          LOG(("Datagram was sent"));
-          promise->MaybeResolveWithUndefined();
+          LOG(("Datagram IPC succeeded"));
         },
-        [promise](mozilla::ipc::ResponseRejectReason&&) {
-          LOG(("Datagram failed"));
+        [self = RefPtr{this},
+         datagramId](mozilla::ipc::ResponseRejectReason&&) {
+          LOG(("Datagram IPC failed for id=%" PRIu64, datagramId));
           
-          
-          
-          promise->MaybeResolveWithUndefined();
+          if (Maybe<RefPtr<Promise>> promise =
+                  self->mPendingDatagramPromises.Extract(datagramId)) {
+            (*promise)->MaybeResolveWithUndefined();
+          }
         });
   } else {
-    LOG(("Queuing datagram for connect"));
+    LOG(("Queuing datagram id=%" PRIu64 " for connect", datagramId));
     
     
     
     MOZ_ASSERT(mWaitConnect == nullptr);
     mWaitConnect = std::make_unique<DatagramEntry>(std::move(data), now);
     mWaitConnectPromise = promise;
+    mWaitConnectDatagramId = datagramId;
   }
 
   
@@ -431,22 +452,53 @@ void OutgoingDatagramStreamAlgorithms::SetChild(WebTransportChild* aChild) {
   mChild = aChild;
   if (mWaitConnect) {
     uint64_t sendGroupId = mSendGroup ? mSendGroup->GetGroupId() : 0;
-    LOG(("Sending queued datagram sendGroup = %" PRIu64
+    LOG(("Sending queued datagram id=%" PRIu64 ", sendGroup = %" PRIu64
          ", sendOrder = %" PRId64,
-         sendGroupId, mSendOrder));
+         mWaitConnectDatagramId, sendGroupId, mSendOrder));
+    
+    mPendingDatagramPromises.InsertOrUpdate(mWaitConnectDatagramId,
+                                            mWaitConnectPromise);
     mChild->SendOutgoingDatagram(
-        mWaitConnect->mBuffer, mWaitConnect->mTimeStamp, sendGroupId,
-        mSendOrder,
-        [promise = mWaitConnectPromise](nsresult&&) {
-          LOG_VERBOSE(("Early Datagram was sent"));
-          promise->MaybeResolveWithUndefined();
-        },
-        [promise = mWaitConnectPromise](mozilla::ipc::ResponseRejectReason&&) {
-          LOG(("Early Datagram failed"));
-          promise->MaybeResolveWithUndefined();
+        mWaitConnectDatagramId, mWaitConnect->mBuffer, mWaitConnect->mTimeStamp,
+        sendGroupId, mSendOrder,
+        [](nsresult&&) { LOG_VERBOSE(("Early Datagram IPC succeeded")); },
+        [self = RefPtr{this},
+         id = mWaitConnectDatagramId](mozilla::ipc::ResponseRejectReason&&) {
+          LOG(("Early Datagram IPC failed for id=%" PRIu64, id));
+          
+          if (Maybe<RefPtr<Promise>> promise =
+                  self->mPendingDatagramPromises.Extract(id)) {
+            (*promise)->MaybeResolveWithUndefined();
+          }
         });
     mWaitConnectPromise = nullptr;
     mWaitConnect.reset(nullptr);
+    mWaitConnectDatagramId = 0;
+  }
+}
+
+void OutgoingDatagramStreamAlgorithms::OnDatagramReady(uint64_t aDatagramId) {
+  LOG(("OnDatagramReady for id=%" PRIu64, aDatagramId));
+
+  if (Maybe<RefPtr<Promise>> promise =
+          mPendingDatagramPromises.Extract(aDatagramId)) {
+    LOG(("Resolving promise for datagram id=%" PRIu64, aDatagramId));
+    (*promise)->MaybeResolveWithUndefined();
+  } else {
+    LOG(("Warning: No pending promise found for datagram id=%" PRIu64,
+         aDatagramId));
+  }
+}
+
+void OutgoingDatagramStreamAlgorithms::UpdateQueueParams(
+    uint32_t aMaxBufferedDatagrams, double aMaxAge) {
+  if (mChild) {
+    LOG(("Sending UpdateDatagramQueueParams: maxBufferedDatagrams=%" PRIu32
+         ", maxAge=%f",
+         aMaxBufferedDatagrams, aMaxAge));
+    mChild->SendUpdateDatagramQueueParams(aMaxBufferedDatagrams, aMaxAge);
+  } else {
+    LOG(("UpdateQueueParams called but child not set yet"));
   }
 }
 
