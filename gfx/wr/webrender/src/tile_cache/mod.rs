@@ -862,6 +862,10 @@ pub struct TileCacheInstance {
     
     pub compositor_clip: Option<CompositorClipIndex>,
     
+    
+    
+    pub compositor_clip_shapes: Vec<CompositorClipShape>,
+    
     pub screen_rect_in_pic_space: PictureRect,
     
     surface_index: SurfaceIndex,
@@ -936,6 +940,15 @@ pub struct TileCacheInstance {
 }
 
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompositorClipShape {
+    pub rect: LayoutRect,
+    pub radius: BorderRadius,
+    pub spatial_node_index: SpatialNodeIndex,
+    pub uid: u64,
+}
+
+
 
 #[derive(Debug, Default, PartialEq)]
 pub struct BackdropCaptureKey {
@@ -951,6 +964,7 @@ struct BackdropSourceKey {
     slice_to_capture: ScaleOffset,
     
     rect: PictureRect,
+    compositor_clip_shapes: Vec<CompositorClipShape>,
     background_color: Option<ColorF>,
 }
 
@@ -1005,6 +1019,7 @@ impl TileCacheInstance {
             local_rect: PictureRect::zero(),
             local_clip_rect: PictureRect::zero(),
             compositor_clip: None,
+            compositor_clip_shapes: Vec::new(),
             screen_rect_in_pic_space: PictureRect::zero(),
             surface_index: SurfaceIndex(0),
             background_color: params.background_color,
@@ -1436,6 +1451,7 @@ impl TileCacheInstance {
             
             self.local_clip_rect = PictureRect::zero();
             self.compositor_clip = None;
+            self.compositor_clip_shapes.clear();
 
             if let Some(clip_chain) = clip_chain_instance {
                 self.local_clip_rect = clip_chain.pic_coverage_rect;
@@ -1484,17 +1500,27 @@ impl TileCacheInstance {
                                 ClipSpaceConversion::Indeterminate => unreachable!(),
                             };
 
-                            combined = Some(match combined {
-                                None => (device_rect, device_radius),
+                            
+                            
+                            let next = match combined {
+                                None => Some((device_rect, device_radius)),
                                 Some((prev_rect, prev_radius)) => {
                                     intersect_rounded_rects(
                                         prev_rect.cast_unit(), prev_radius,
                                         device_rect.cast_unit(), device_radius,
                                     )
                                     .map(|(r, rad)| (r.cast_unit(), rad))
-                                    .unwrap_or((prev_rect, prev_radius))
                                 }
-                            });
+                            };
+                            if let Some(next) = next {
+                                combined = Some(next);
+                                self.compositor_clip_shapes.push(CompositorClipShape {
+                                    rect: clip_instance.clip_rect,
+                                    radius,
+                                    spatial_node_index: clip_instance.spatial_node_index,
+                                    uid: clip_instance.handle.uid().get_uid(),
+                                });
+                            }
                         }
                     }
 
@@ -3790,6 +3816,7 @@ pub fn update_cross_slice_backdrops(
                 slice_id: slice_ids[lower],
                 slice_to_capture: pic_to_root[lower].then(&root_to_capture),
                 rect,
+                compositor_clip_shapes: tile_cache.compositor_clip_shapes.clone(),
                 background_color: tile_cache.background_color,
             });
             sources.push((lower, position, rect));

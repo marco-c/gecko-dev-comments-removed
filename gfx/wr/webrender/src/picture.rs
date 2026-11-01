@@ -95,7 +95,7 @@
 
 
 use api::RasterSpace;
-use api::{DebugFlags, ColorF, PrimitiveFlags, SnapshotInfo};
+use api::{ClipMode, DebugFlags, ColorF, PrimitiveFlags, SnapshotInfo};
 use api::units::*;
 use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
 use crate::renderer::GpuBufferBuilderF;
@@ -1716,8 +1716,20 @@ fn draw_backdrop_sources(
             .map(|so| so.map_rect(&bounds))
             .unwrap_or_else(DeviceRect::max_rect);
 
+        
+        
         let mut clips = QuadClipStack::new();
-        clips.set_bounds(bounds, coverage_rect, DeviceRect::max_rect(), false);
+        for shape in &tile_cache.compositor_clip_shapes {
+            clips.push_rounded_rect(
+                shape.rect,
+                shape.radius,
+                LayoutSideOffsets::zero(),
+                ClipMode::Clip,
+                shape.spatial_node_index,
+                shape.uid,
+            );
+        }
+        clips.set_bounds(bounds, coverage_rect, DeviceRect::max_rect(), !tile_cache.compositor_clip_shapes.is_empty());
 
         quad::prepare_quad(
             &ImagePattern {
@@ -1741,6 +1753,11 @@ fn draw_backdrop_sources(
             frame_state,
             scratch,
         );
+        
+        
+        
+        
+        frame_state.surface_builder.add_child_render_task(task_id, frame_state.rg_builder);
     }
 
     frame_state.surface_builder.select_backdrop_capture(None);
