@@ -68,7 +68,7 @@ class LibaomAv1EncoderV2 : public VideoEncoderInterface {
   std::optional<aom_svc_params_t> applied_svc_params_;
 
   std::optional<ContentHint> content_type_;
-  std::array<std::optional<int>, kMaxSpatialLayers> effort_level_by_spatial_id_;
+  std::optional<int> effort_level_;
   
   
   
