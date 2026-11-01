@@ -5,9 +5,9 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_AUDIOSESSIONMANAGER_H_
 #define DOM_MEDIA_MEDIACONTROL_AUDIOSESSIONMANAGER_H_
 
+#include "AudioFocusInterrupt.h"
 #include "AudioSessionRecord.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/DefineEnum.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 #include "nsTHashMap.h"
@@ -16,13 +16,6 @@
 namespace mozilla::dom {
 
 class MediaController;
-
-
-
-
-
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(AudioSessionInterruptKind, uint8_t,
-                                             (Transient, Permanent));
 
 
 
@@ -49,6 +42,9 @@ class AudioSessionManager final {
   void NotifyAudibilityChanged(uint64_t aBrowsingContextId);
   void NotifyBcDiscarded(uint64_t aBrowsingContextId);
 
+  
+  
+  
   
   
   

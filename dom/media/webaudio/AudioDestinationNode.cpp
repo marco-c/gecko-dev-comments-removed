@@ -386,20 +386,29 @@ class AudioDestinationNode::MediaSharedKeysListener final
     
   }
 
-  void SuspendForInterrupt() override {
+  void SuspendForInterrupt(AudioSessionInterruptKind aKind) override {
     MOZ_ASSERT(NS_IsMainThread());
     AudioContext* ctx = mDestination.Context();
     const bool willSuspend = ctx &&
                              ctx->State() == AudioContextState::Running &&
                              StaticPrefs::media_audioFocus_webaudio_enabled();
     MEDIA_CONTROL_LOG(
-        "MediaSharedKeysListener {} SuspendForInterrupt in BC {}, suspend={}",
-        fmt::ptr(this), mBrowsingContextId, willSuspend);
+        "MediaSharedKeysListener {} SuspendForInterrupt {} in BC {}, "
+        "suspend={}",
+        fmt::ptr(this), EnumValueToString(aKind), mBrowsingContextId,
+        willSuspend);
     if (willSuspend) {
       
       
       ctx->SuspendFromMediaControl();
       mSuspendedByInterrupt = true;
+    }
+    if (aKind == AudioSessionInterruptKind::Permanent) {
+      
+      if (ctx && mSuspendedByInterrupt) {
+        ctx->TransferSuspendToContent();
+      }
+      mSuspendedByInterrupt = false;
     }
   }
 

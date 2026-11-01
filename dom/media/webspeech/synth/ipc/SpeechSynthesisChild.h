@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_WEBSPEECH_SYNTH_IPC_SPEECHSYNTHESISCHILD_H_
 #define DOM_MEDIA_WEBSPEECH_SYNTH_IPC_SPEECHSYNTHESISCHILD_H_
 
+#include "mozilla/dom/AudioFocusInterrupt.h"
 #include "mozilla/dom/PSpeechSynthesisChild.h"
 #include "mozilla/dom/PSpeechSynthesisRequestChild.h"
 #include "nsSpeechTask.h"
@@ -105,7 +106,9 @@ class SpeechTaskChild : public nsSpeechTask {
   
   
   
-  void PauseFromMediaControl();
+  
+  
+  void PauseFromMediaControl(AudioSessionInterruptKind aKind);
   void ResumeFromMediaControl();
 
  protected:

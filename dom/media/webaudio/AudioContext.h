@@ -233,6 +233,9 @@ class AudioContext final : public DOMEventTargetHelper,
   
   void ResumeFromMediaControl();
   
+  
+  void TransferSuspendToContent();
+  
   void OfflineClose();
 
   already_AddRefed<AudioBufferSourceNode> CreateBufferSource();
@@ -433,6 +436,7 @@ class AudioContext final : public DOMEventTargetHelper,
   
   
   bool mWasAllowedToStart;
+  
   
   
   bool mSuspendedByContent;

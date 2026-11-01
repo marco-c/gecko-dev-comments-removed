@@ -579,19 +579,23 @@ class HTMLMediaElement::MediaControlKeyListener final
     }
   }
 
-  void SuspendForInterrupt() override {
+  void SuspendForInterrupt(AudioSessionInterruptKind aKind) override {
     MOZ_ASSERT(NS_IsMainThread());
     
     
-    if (!Owner() || Owner()->Paused() || !mIsOwnerAudible) {
-      return;
+    const bool willPause = Owner() && !Owner()->Paused() && mIsOwnerAudible;
+    MEDIACONTROL_LOG("SuspendForInterrupt {}, pause={}",
+                     dom::EnumValueToString(aKind), willPause);
+    if (willPause) {
+      
+      
+      
+      Owner()->Pause();
+      mSuspendedByInterrupt = true;
     }
-    MEDIACONTROL_LOG("SuspendForInterrupt");
-    
-    
-    
-    Owner()->Pause();
-    mSuspendedByInterrupt = true;
+    if (aKind == AudioSessionInterruptKind::Permanent) {
+      mSuspendedByInterrupt = false;
+    }
   }
 
   void ResumeFromInterrupt() override {

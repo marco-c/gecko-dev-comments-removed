@@ -5,20 +5,14 @@
 #ifndef DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 #define DOM_MEDIA_MEDIACONTROL_CONTENTMEDIACONTROLLER_H_
 
+#include "AudioFocusInterrupt.h"
 #include "MediaControlKeySource.h"
 #include "MediaStatusManager.h"
-#include "mozilla/DefineEnum.h"
 #include "mozilla/dom/AudioSessionBinding.h"
 
 namespace mozilla::dom {
 
 class BrowsingContext;
-
-
-
-
-MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(AudioFocusInterruptAction, uint8_t,
-                                             (Suspend, Resume));
 
 
 
@@ -42,7 +36,9 @@ class ContentMediaControlKeyReceiver {
   
   
   
-  virtual void SuspendForInterrupt() {}
+  
+  
+  virtual void SuspendForInterrupt(AudioSessionInterruptKind aKind) {}
   virtual void ResumeFromInterrupt() {}
 
   
