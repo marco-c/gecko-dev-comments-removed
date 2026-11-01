@@ -846,7 +846,7 @@ void ProfilerParent::RequestChunkManagerUpdate() {
         }
       },
       [self = RefPtr<ProfilerParent>(this)](
-          mozilla::ipc::ResponseRejectReason aReason) {
+          mozilla::ipc::ResponseRejectReason ) {
         
         
         ProfilerParentTracker::ForwardChildChunkManagerUpdate(
@@ -1021,7 +1021,7 @@ RefPtr<GenericPromise> ProfilerParent::WaitOnePeriodicSampling() {
   });
 }
 
-void ProfilerParent::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
+void ProfilerParent::ActorDestroy(ActorDestroyReason ) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   mDestroyed = true;
 }

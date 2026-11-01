@@ -515,7 +515,7 @@ void ProfilerChild::JoinGatherProfileThread() {
   mGatherProfileThread = nullptr;
 }
 
-void ProfilerChild::ActorDestroy(ActorDestroyReason aActorDestroyReason) {
+void ProfilerChild::ActorDestroy(ActorDestroyReason ) {
   mDestroyed = true;
   if (mAwaitNextChunkManagerUpdateResolver) {
     
