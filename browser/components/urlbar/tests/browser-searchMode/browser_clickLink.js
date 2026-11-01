@@ -17,16 +17,9 @@ const LINK_PAGE_URL =
 
 add_task(async function clickLink() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-      
-      
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
+  UrlbarTestUtils.registerZeroPrefixProvider();
   for (let test of [
     
     [LINK_PAGE_URL, LINK_PAGE_URL],

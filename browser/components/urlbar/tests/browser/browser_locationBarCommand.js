@@ -15,14 +15,9 @@ add_setup(async function () {
     set: [
       ["browser.altClickSave", true],
       ["browser.urlbar.autoFill", false],
-      
-      
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
     ],
   });
+  UrlbarTestUtils.registerZeroPrefixProvider();
 });
 
 add_task(async function alt_left_click_test() {

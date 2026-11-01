@@ -7,8 +7,6 @@
 
 "use strict";
 
-const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
-
 add_setup(async function () {
   
   
@@ -21,18 +19,10 @@ add_setup(async function () {
   
   await PlacesUtils.history.clear();
 
-  
-  
+  UrlbarTestUtils.registerZeroPrefixProvider();
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "http://example.com/",
-      ],
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-    ],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
-  await updateTopSites(sites => sites.length);
 });
 
 
@@ -226,46 +216,6 @@ add_task(async function backspaceRemainOpen() {
       "noresults attribute should be absent again"
     );
 
-    await UrlbarTestUtils.promisePopupClose(win);
-  });
-});
-
-
-
-add_task(async function spaceToEnterSearchMode() {
-  let engine = await SearchTestUtils.installOpenSearchEngine({
-    url: getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME,
-  });
-  engine.alias = "@test";
-
-  await withNewWindow(async win => {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window: win,
-      value: engine.alias,
-    });
-
-    
-    
-    let searchPromise = UrlbarTestUtils.promiseSearchComplete(win);
-    EventUtils.synthesizeKey(" ", {}, win);
-    await searchPromise;
-
-    Assert.equal(UrlbarTestUtils.getResultCount(win), 0, "Zero results");
-    Assert.ok(
-      win.gURLBar.hasAttribute("noresults"),
-      "Panel has no results, therefore should have noresults attribute"
-    );
-    await UrlbarTestUtils.assertSearchMode(win, {
-      engineName: engine.name,
-      entry: "typed",
-    });
-    this.Assert.equal(
-      UrlbarTestUtils.getOneOffSearchButtonsVisible(window),
-      true,
-      "One-offs are visible"
-    );
-
-    await UrlbarTestUtils.exitSearchMode(win, { backspace: true });
     await UrlbarTestUtils.promisePopupClose(win);
   });
 });

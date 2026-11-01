@@ -12,17 +12,8 @@ const { CustomizableUITestUtils } = ChromeUtils.importESModule(
 );
 let gCUITestUtils = new CustomizableUITestUtils(window);
 
-add_setup(async function () {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
-  });
+add_setup(function () {
+  UrlbarTestUtils.registerZeroPrefixProvider();
 });
 
 add_task(async function () {

@@ -28,16 +28,7 @@ async function checkOpensOnFocus(win = window) {
 }
 
 add_setup(async function () {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
-  });
+  UrlbarTestUtils.registerZeroPrefixProvider();
 
   
   await PlacesTestUtils.addVisits([

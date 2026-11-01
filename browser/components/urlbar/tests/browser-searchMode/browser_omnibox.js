@@ -10,16 +10,9 @@
 const ENGINE_NAME = "Example";
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-      
-      
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
+  UrlbarTestUtils.registerZeroPrefixProvider();
   await SearchTestUtils.installSearchExtension({
     name: ENGINE_NAME,
   });

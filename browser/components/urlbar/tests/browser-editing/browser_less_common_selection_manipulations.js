@@ -275,16 +275,7 @@ const tests = [
 ];
 
 add_setup(async function () {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [
-        "browser.newtabpage.activity-stream.default.sites",
-        "https://example.com/",
-      ],
-    ],
-  });
+  UrlbarTestUtils.registerZeroPrefixProvider();
 
   gURLBar.inputField.style.font = "14px monospace";
   registerCleanupFunction(() => {
