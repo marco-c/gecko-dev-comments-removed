@@ -5,57 +5,6 @@
 #ifndef mozilla_net_WebSocketConnectionBase_h
 #define mozilla_net_WebSocketConnectionBase_h
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #include "nsISupports.h"
 
 class nsITransportSecurityInfo;

@@ -15,15 +15,12 @@ using mozilla::ipc::IPCResult;
 namespace mozilla {
 namespace net {
 
-class PBackgroundDataBridgeChild;
-class BackgroundDataBridgeChild;
 class HttpChannelChild;
 
 class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   friend class BackgroundChannelCreateCallback;
   friend class PHttpBackgroundChannelChild;
   friend class HttpChannelChild;
-  friend class BackgroundDataBridgeChild;
 
  public:
   explicit HttpBackgroundChannelChild();
@@ -61,7 +58,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
                                    const nsresult& aTransportStatus,
                                    const uint64_t& aOffset,
                                    const nsACString& aData,
-                                   const bool& aDataFromSocketProcess,
                                    const TimeStamp& aOnDataAvailableStart);
 
   IPCResult RecvOnStopRequest(
@@ -69,10 +65,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
       const TimeStamp& aLastActiveTabOptHit,
       const nsHttpHeaderArray& aResponseTrailers,
       nsTArray<ConsoleReportCollected>&& aConsoleReports,
-      const bool& aFromSocketProcess, const TimeStamp& aOnStopRequestStart);
-
-  IPCResult RecvOnConsoleReport(
-      nsTArray<ConsoleReportCollected>&& aConsoleReports);
+      const TimeStamp& aOnStopRequestStart);
 
   IPCResult RecvOnAfterLastPart(const nsresult& aStatus);
 
@@ -94,8 +87,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   IPCResult RecvDetachStreamFilters();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
-
-  void CreateDataBridge(Endpoint<PBackgroundDataBridgeChild>&& aEndpoint);
 
  private:
   virtual ~HttpBackgroundChannelChild();
@@ -127,23 +118,6 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   
   
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedRunnables;
-
-  enum ODASource {
-    ODA_PENDING = 0,      
-    ODA_FROM_PARENT = 1,  
-    ODA_FROM_SOCKET = 2   
-  };
-  
-  
-  
-  ODASource mFirstODASource = ODA_PENDING;
-
-  
-  bool mOnStopRequestCalled = false;
-
-  
-  
-  std::function<void()> mConsoleReportTask;
 };
 
 }  

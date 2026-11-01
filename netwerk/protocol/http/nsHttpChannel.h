@@ -216,8 +216,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter);
   HttpChannelSecurityWarningReporter* GetWarningReporter();
 
-  bool DataSentToChildProcess() { return LoadDataSentToChildProcess(); }
-
   enum class SnifferType { Media, Image };
   void DisableIsOpaqueResponseAllowedAfterSniffCheck(SnifferType aType);
 
@@ -754,10 +752,6 @@ class nsHttpChannel final : public HttpBaseChannel,
     
     
     (uint32_t, AsyncResumePending, 1),
-
-    
-    
-    (uint32_t, DataSentToChildProcess, 1),
 
     (uint32_t, UseHTTPSSVC, 1),
     (uint32_t, WaitHTTPSSVCRecord, 1)

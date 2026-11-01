@@ -237,8 +237,6 @@ class AltSvcMappingValidator final {
 
 
 
-
-
 template <class Validator>
 class AltSvcTransaction final : public SpeculativeTransaction {
  public:

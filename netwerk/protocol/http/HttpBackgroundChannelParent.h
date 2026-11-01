@@ -65,10 +65,6 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                      TimeStamp aOnStopRequestStart);
 
   
-  
-  bool OnConsoleReport(const nsTArray<ConsoleReportCollected>& aConsoleReports);
-
-  
   bool OnAfterLastPart(const nsresult aStatus);
 
   
