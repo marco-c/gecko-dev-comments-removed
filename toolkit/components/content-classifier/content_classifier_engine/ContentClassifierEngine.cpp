@@ -137,6 +137,7 @@ ContentClassifierRequest::ContentClassifierRequest(nsIChannel* aChannel)
   mPrivateBrowsing = NS_UsePrivateBrowsing(aChannel);
 
   mIsNonRecommendedAddon = IsNonRecommendedAddonFromLoadInfo(loadInfo);
+  mAddonMayLoad = net::UrlClassifierCommon::AddonMayLoad(aChannel, uri);
 
   
   

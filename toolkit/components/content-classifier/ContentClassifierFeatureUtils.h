@@ -21,9 +21,16 @@ class ContentClassifierFeatureUtils final {
  public:
   
   
-  static bool IsThirdPartyUnlessAnnotating(
-      const ContentClassifierRequest& aRequest, ClassifyMode aMode);
-  static bool IsNonPassiveThirdPartyUnlessAnnotating(
+  
+  
+  
+  
+  
+  static bool ShouldClassifyForETP(const ContentClassifierRequest& aRequest,
+                                   ClassifyMode aMode);
+  
+  
+  static bool ShouldClassifyNonPassiveForETP(
       const ContentClassifierRequest& aRequest, ClassifyMode aMode);
   static bool IsNonRecommendedAddonRequest(
       const ContentClassifierRequest& aRequest, ClassifyMode aMode);
