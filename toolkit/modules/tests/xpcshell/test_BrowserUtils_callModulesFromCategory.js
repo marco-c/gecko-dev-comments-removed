@@ -161,20 +161,36 @@ add_task(
 
     let sandbox = sinon.createSandbox();
 
+    let fakeWindow = closed => ({
+      closed,
+      requestIdleCallback: sandbox.spy(cb => ChromeUtils.idleDispatch(cb)),
+      FakeObj: { doThing: sandbox.spy() },
+    });
+
     
-    let closedWindow = { closed: true, FakeObj: { doThing: sandbox.spy() } };
+    let closedWindow = fakeWindow(true);
     await BrowserUtils.callModulesFromCategory(
-      { categoryName: CATEGORY, idleDispatch: true, jsGlobal: closedWindow },
+      {
+        categoryName: CATEGORY,
+        idleDispatch: closedWindow,
+        jsGlobal: closedWindow,
+      },
       "win"
     );
+    sinon.assert.calledOnce(closedWindow.requestIdleCallback);
     sinon.assert.notCalled(closedWindow.FakeObj.doThing);
 
     
-    let openWindow = { closed: false, FakeObj: { doThing: sandbox.spy() } };
+    let openWindow = fakeWindow(false);
     await BrowserUtils.callModulesFromCategory(
-      { categoryName: CATEGORY, idleDispatch: true, jsGlobal: openWindow },
+      {
+        categoryName: CATEGORY,
+        idleDispatch: openWindow,
+        jsGlobal: openWindow,
+      },
       "win"
     );
+    sinon.assert.calledOnce(openWindow.requestIdleCallback);
     sinon.assert.calledOnce(openWindow.FakeObj.doThing);
     sinon.assert.calledWithExactly(openWindow.FakeObj.doThing, "win");
 
