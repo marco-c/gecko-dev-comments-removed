@@ -1766,13 +1766,6 @@ pref("browser.bookmarks.editDialog.maxRecentFolders", 7);
   pref("security.sandbox.content.write_path_whitelist", "");
   pref("security.sandbox.content.read_path_whitelist", "");
   pref("security.sandbox.content.syscall_whitelist", "");
-  
-  
-  
-  
-  
-  
-  pref("security.sandbox.socket.process.level", 2);
 #endif
 
 #if defined(XP_OPENBSD) && defined(MOZ_SANDBOX)

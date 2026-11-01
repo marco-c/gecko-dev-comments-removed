@@ -23,7 +23,8 @@ namespace mozilla {
 
 
 int GetEffectiveContentSandboxLevel();
-int GetEffectiveSocketProcessSandboxLevel();
+
+
 int GetEffectiveGpuSandboxLevel();
 
 #if defined(MOZ_PROFILE_GENERATE)

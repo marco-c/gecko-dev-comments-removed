@@ -55,23 +55,6 @@ struct ContentProcessSandboxParams {
 
 
 
-struct SocketProcessSandboxParams {
-  
-  
-  
-  int mLevel = 0;
-
-  
-  
-  mozilla::UniqueFileHandle mBroker;
-
-  static SocketProcessSandboxParams ForThisProcess(
-      const Maybe<ipc::FileDescriptor>& aBroker);
-};
-
-
-
-
 MOZ_EXPORT bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams);
 
 
@@ -80,8 +63,6 @@ MOZ_EXPORT bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams);
 MOZ_EXPORT void SetMediaPluginSandbox(const char* aFilePath);
 
 MOZ_EXPORT void SetRemoteDataDecoderSandbox(int aBroker);
-
-MOZ_EXPORT void SetSocketProcessSandbox(SocketProcessSandboxParams&& aParams);
 
 MOZ_EXPORT void SetUtilitySandbox(int aBroker, ipc::SandboxingKind aKind);
 
