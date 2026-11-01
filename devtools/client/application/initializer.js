@@ -145,6 +145,19 @@ window.Application = {
     for (const resource of resources) {
       if (
         resource.resourceType === resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource.targetFront.isTopLevel
+      ) {
+        if (resource.name === "will-navigate") {
+          this.actions.updatePrefetchStatus(null);
+        } else if (resource.name === "dom-loading") {
+          this.actions.updatePrefetchStatus(
+            resource.activatedFromNavigationalPrefetch
+          );
+        }
+      }
+
+      if (
+        resource.resourceType === resourceCommand.TYPES.DOCUMENT_EVENT &&
         resource.name === "dom-complete" &&
         
         resource.targetFront.isTopLevel

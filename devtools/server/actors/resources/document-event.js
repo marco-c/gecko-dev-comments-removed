@@ -86,6 +86,11 @@ class DocumentEventWatcher {
           
           hasNativeConsoleAPI:
             name == "dom-complete" ? hasNativeConsoleAPI : null,
+          activatedFromNavigationalPrefetch:
+            name === "dom-loading"
+              ? !!targetActor.docShell?.currentDocumentChannel?.loadInfo
+                  ?.activatedFromNavigationalPrefetch
+              : undefined,
           
           isErrorPage: isErrorPage || undefined,
         },
