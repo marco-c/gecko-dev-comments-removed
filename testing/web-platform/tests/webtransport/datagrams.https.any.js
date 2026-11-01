@@ -121,7 +121,9 @@ promise_test(async t => {
 
 promise_test(async t => {
   
-  const wt = new WebTransport(webtransport_url('echo.py'), { 'datagramsReadableType' : 'bytes' });
+  
+  const wt = new WebTransport(webtransport_url('echo.py'),
+                              { datagramsReadableType: 'bytes' });
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;
@@ -149,14 +151,21 @@ promise_test(async t => {
 }, 'Successfully reading datagrams with BYOB reader.');
 
 promise_test(async t => {
+  
+  
+  
   const wt = new WebTransport(webtransport_url('echo.py'));
+  wt.closed.catch(() => {});
+  t.add_cleanup(() => wt.close());
   await wt.ready;
   assert_throws_js(TypeError, () => { wt.datagrams.readable.getReader({ mode: 'byob' }) });
 }, 'Reading datagrams with BYOB reader without datagramsReadableType should fail.');
 
 promise_test(async t => {
   
-  const wt = new WebTransport(webtransport_url('echo.py'), { 'datagramsReadableType' : 'bytes' });
+  
+  const wt = new WebTransport(webtransport_url('echo.py'),
+                              { datagramsReadableType: 'bytes' });
   wt.closed.catch(() => {});
   t.add_cleanup(() => wt.close());
   await wt.ready;

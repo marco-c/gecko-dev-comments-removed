@@ -2,6 +2,9 @@
 
 
 
+#include <algorithm>
+#include <cstring>
+
 #include "ReadIntoRequest.h"
 #include "ReadableByteStreamControllerAbstract.h"
 #include "ReadableStreamAbstract.h"
@@ -19,6 +22,7 @@
 #include "js/PropertyAndElement.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
+#include "js/experimental/TypedData.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -36,6 +40,7 @@
 #include "mozilla/dom/ReadableStreamControllerBase.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/WritableStreamDefaultWriter.h"
@@ -1533,6 +1538,82 @@ void ReadableStream::GetCurrentBYOBRequestView(
 
   
   byobRequest->GetView(aCx, aView);
+}
+
+
+uint64_t ReadableStream::PullFromBytes(JSContext* aCx,
+                                       Span<const uint8_t> aBytes,
+                                       ErrorResult& aRv) {
+  
+  
+  MOZ_ASSERT(mController->IsByte());
+  RefPtr<ReadableByteStreamController> controller = mController->AsByte();
+
+  
+  uint64_t available = aBytes.Length();
+
+  
+  uint64_t desiredSize = available;
+
+  
+  
+  JS::Rooted<JSObject*> byobViewObj(aCx);
+  GetCurrentBYOBRequestView(aCx, &byobViewObj, aRv);
+  if (aRv.Failed()) {
+    return 0;
+  }
+  if (byobViewObj) {
+    desiredSize = JS_GetArrayBufferViewByteLength(byobViewObj);
+  }
+
+  
+  uint64_t pullSize = std::min(available, desiredSize);
+
+  
+  
+  
+  
+  
+  
+  Span<const uint8_t> pulled = aBytes.First(static_cast<size_t>(pullSize));
+
+  
+  if (byobViewObj) {
+    
+    
+    
+    
+    if (pullSize == 0) {
+      return 0;
+    }
+
+    
+    ArrayBufferView byobView;
+    MOZ_ALWAYS_TRUE(byobView.Init(byobViewObj));
+    byobView.ProcessData(
+        [&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&&) {
+          MOZ_ASSERT(pulled.Length() <= aData.Length());
+          memcpy(aData.Elements(), pulled.Elements(), pulled.Length());
+        });
+
+    
+    
+    ReadableByteStreamControllerRespond(aCx, controller, pullSize, aRv);
+    return pullSize;
+  }
+
+  
+  
+  JSObject* outView = Uint8Array::Create(aCx, pulled, aRv);
+  if (aRv.Failed()) {
+    return 0;
+  }
+  JS::Rooted<JSObject*> view(aCx, outView);
+
+  
+  
+  ReadableByteStreamControllerEnqueue(aCx, controller, view, aRv);
+  return pullSize;
 }
 
 

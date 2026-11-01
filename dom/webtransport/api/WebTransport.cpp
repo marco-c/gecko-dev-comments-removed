@@ -16,6 +16,7 @@
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
+#include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStream.h"
@@ -221,9 +222,7 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   }
   
   
-  
   bool dedicated = !aOptions.mAllowPooling;
-  
   
   
   
@@ -262,6 +261,8 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
       WebTransportCongestionControl::Default;  
   
 
+  
+  
   
   
   nsTArray<nsString> protocols;
@@ -362,8 +363,11 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
+  bool useByteStream =
+      aOptions.mDatagramsReadableType.WasPassed() &&
+      aOptions.mDatagramsReadableType.Value() == ReadableStreamType::Bytes;
   mDatagrams = new WebTransportDatagramDuplexStream(mGlobal, this);
-  mDatagrams->Init(aError);
+  mDatagrams->Init(useByteStream, aError);
   if (aError.Failed()) {
     return;
   }
@@ -374,9 +378,6 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                                workerPrivate->IsServiceWorker())
                  ? nullptr
                  : net::WebTransportEventService::GetOrCreate();
-  
-  
-  
   
   mReady = Promise::CreateInfallible(mGlobal);
 
@@ -430,10 +431,6 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
   
   
   
-  
-  
-  
-  
 
   
 
@@ -476,11 +473,18 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
 
   
   
+  
   LOG(("Connecting WebTransport to parent for %s",
        NS_ConvertUTF16toUTF8(aURL).get()));
 
   
   mChild = child;
+
+  
+  
+  
+  
+
   backgroundChild
       ->SendCreateWebTransportParent(
           aURL, principal, mBrowsingContextID, ipcClientInfo, dedicated,
@@ -505,7 +509,6 @@ void WebTransport::Init(const GlobalObject& aGlobal, const nsAString& aURL,
                } else {
                  
                  
-
                  self->ResolveWaitingConnection(
                      static_cast<WebTransportReliabilityMode>(
                          std::get<1>(aResult.ResolveValue())));
@@ -1137,6 +1140,8 @@ void WebTransport::Close(const WebTransportCloseInfo& aOptions,
           self->mCachedStats = Some(*aStats);
           self->mCachedDroppedIncoming =
               self->mDatagrams ? self->mDatagrams->GetDroppedIncoming() : 0;
+          
+          self->mCachedExpiredIncoming = 0;
         } else {
           LOG(("No stats returned from close"));
           self->mCachedStats = Nothing();

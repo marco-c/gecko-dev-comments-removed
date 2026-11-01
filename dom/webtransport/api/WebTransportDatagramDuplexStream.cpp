@@ -6,9 +6,12 @@
 
 #include <memory>
 
+#include "js/experimental/TypedData.h"
+#include "mozilla/DebugOnly.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebTransport.h"
 #include "mozilla/dom/WebTransportDatagramsWritable.h"
 #include "mozilla/dom/WebTransportLog.h"
@@ -31,7 +34,8 @@ WebTransportDatagramDuplexStream::WebTransportDatagramDuplexStream(
     nsIGlobalObject* aGlobal, WebTransport* aWebTransport)
     : mGlobal(aGlobal), mWebTransport(aWebTransport) {}
 
-void WebTransportDatagramDuplexStream::Init(ErrorResult& aError) {
+void WebTransportDatagramDuplexStream::Init(bool aUseByteStream,
+                                            ErrorResult& aError) {
   
   
   AutoEntryScript aes(mGlobal, "WebTransportDatagrams");
@@ -43,8 +47,13 @@ void WebTransportDatagramDuplexStream::Init(ErrorResult& aError) {
       mIncomingAlgorithms;
   
   
-  mReadable = ReadableStream::CreateNative(cx, global, *incomingAlgorithms,
-                                           Some(0.0), nullptr, aError);
+  if (aUseByteStream) {
+    mReadable = ReadableStream::CreateByteNative(
+        cx, global, *incomingAlgorithms, Some(0.0), aError);
+  } else {
+    mReadable = ReadableStream::CreateNative(cx, global, *incomingAlgorithms,
+                                             Some(0.0), nullptr, aError);
+  }
   if (aError.Failed()) {
     return;
   }
@@ -286,23 +295,67 @@ void IncomingDatagramStreamAlgorithms::ReturnDatagram(JSContext* aCx,
   LOG(("Returning a Datagram"));
 
   MOZ_ASSERT(!mDatagrams->mIncomingDatagramsQueue.IsEmpty());
+
   
   UniquePtr<DatagramEntry> entry = mDatagrams->mIncomingDatagramsQueue.Pop();
+  
+  size_t datagramSize = entry->mBuffer.Length();
 
-  
-  JSObject* outView = Uint8Array::Create(aCx, entry->mBuffer, aRv);
-  if (aRv.Failed()) {
-    return;
-  }
-  JS::Rooted<JSObject*> chunk(aCx, outView);
-
-  
-  JS::Rooted<JS::Value> jsDatagram(aCx, JS::ObjectValue(*chunk));
-  
   RefPtr<ReadableStream> stream = mDatagrams->mReadable;
-  stream->EnqueueNative(aCx, jsDatagram, aRv);
-  if (MOZ_UNLIKELY(aRv.Failed())) {
-    return;
+  
+  if (stream->Controller()->IsByte()) {
+    
+    
+    JS::Rooted<JSObject*> byobView(aCx);
+    stream->GetCurrentBYOBRequestView(aCx, &byobView, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+
+    if (byobView) {
+      
+      
+      
+      
+      if (datagramSize > JS_GetArrayBufferViewByteLength(byobView)) {
+        LOG(("BYOB buffer too small: datagram=%zu", datagramSize));
+        aRv.ThrowRangeError("Buffer too small for datagram");
+        return;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(JS_IsTypedArrayObject(byobView) &&
+                 JS_GetArrayBufferViewType(byobView) == JS::Scalar::Uint8);
+    }
+
+    
+    
+    
+    
+    
+    DebugOnly<uint64_t> pulled =
+        stream->PullFromBytes(aCx, entry->mBuffer, aRv);
+    MOZ_ASSERT(aRv.Failed() || pulled == datagramSize);
+  } else {
+    
+    
+    JSObject* outView = Uint8Array::Create(aCx, entry->mBuffer, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+    JS::Rooted<JSObject*> chunk(aCx, outView);
+
+    
+    JS::Rooted<JS::Value> jsDatagram(aCx, JS::ObjectValue(*chunk));
+    stream->EnqueueNative(aCx, jsDatagram, aRv);
   }
   
 }

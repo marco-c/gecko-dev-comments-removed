@@ -20,6 +20,7 @@ dictionary WebTransportOptions {
   // The spec says "= {}", but the WebIDL parser cannot coerce {} to a union
   // containing a record.  See bug 2081884.
   HeadersInit headers;
+  ReadableStreamType datagramsReadableType;
 };
 
 enum WebTransportCongestionControl {

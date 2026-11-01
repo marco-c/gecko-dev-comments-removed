@@ -9,6 +9,7 @@
 #include "js/Value.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Span.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IterableIterator.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
@@ -117,6 +118,14 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
     return nullptr;
   }
 
+  void SetInputStreamIfUnread(nsIInputStream* aInput) {
+    MOZ_ASSERT(!Disturbed());
+    if (UnderlyingSourceAlgorithmsBase* algorithms =
+            Controller()->GetAlgorithms()) {
+      algorithms->SetInputStreamIfUnread(aInput);
+    }
+  }
+
   
   
   MOZ_CAN_RUN_SCRIPT bool Transfer(JSContext* aCx,
@@ -176,6 +185,15 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
   void GetCurrentBYOBRequestView(JSContext* aCx,
                                  JS::MutableHandle<JSObject*> aView,
                                  ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT uint64_t PullFromBytes(JSContext* aCx,
+                                            mozilla::Span<const uint8_t> aBytes,
+                                            ErrorResult& aRv);
 
   
   

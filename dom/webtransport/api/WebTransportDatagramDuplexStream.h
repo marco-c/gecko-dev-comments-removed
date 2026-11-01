@@ -109,7 +109,7 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   WebTransportDatagramDuplexStream(nsIGlobalObject* aGlobal,
                                    WebTransport* aWebTransport);
 
-  void Init(ErrorResult& aError);
+  void Init(bool aUseByteStream, ErrorResult& aError);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WebTransportDatagramDuplexStream)
