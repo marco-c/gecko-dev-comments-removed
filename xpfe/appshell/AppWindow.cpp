@@ -1695,45 +1695,24 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
 
   nsCOMPtr<dom::Element> windowElement = GetWindowDOMElement();
   Document* doc = windowElement->GetComposedDoc();
-  Element* urlbarEl = doc->GetElementById(u"urlbar"_ns);
+  
+  
+  
+  Element* urlbarContainerEl = doc->GetElementById(u"urlbar-container"_ns);
 
   nsCOMPtr<nsPIDOMWindowOuter> window = mDocShell->GetWindow();
   nsCOMPtr<nsIDOMWindowUtils> utils =
       nsGlobalWindowOuter::Cast(window)->WindowUtils();
   RefPtr<dom::DOMRect> urlbarRect;
-  rv = utils->GetBoundsWithoutFlushing(urlbarEl, getter_AddRefs(urlbarRect));
+  rv = utils->GetBoundsWithoutFlushing(urlbarContainerEl,
+                                       getter_AddRefs(urlbarRect));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  double urlbarX = urlbarRect->X();
-  double urlbarWidth = urlbarRect->Width();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsAutoString attributeValue;
-  urlbarEl->GetAttribute(u"breakout-extend"_ns, attributeValue);
-  
-  if (attributeValue.EqualsLiteral("true")) {
-    
-    int urlbarBreakoutExtend = 2;
-    
-    int urlbarMarginInline = 5;
-
-    
-    urlbarX += (double)(urlbarBreakoutExtend + urlbarMarginInline);
-    urlbarWidth -= (double)(2 * (urlbarBreakoutExtend + urlbarMarginInline));
-  }
   CSSPixelSpan urlbar;
-  urlbar.start = urlbarX;
-  urlbar.end = urlbar.start + urlbarWidth;
+  urlbar.start = urlbarRect->X();
+  urlbar.end = urlbar.start + urlbarRect->Width();
   settings.urlbarSpan = urlbar;
 
   Element* navbar = doc->GetElementById(u"nav-bar"_ns);
@@ -1764,8 +1743,7 @@ nsresult AppWindow::MaybeSaveEarlyWindowPersistentValues(
       bookmarksVisibility.EqualsLiteral("newtab");
 
   Element* menubar = doc->GetElementById(u"toolbar-menubar"_ns);
-  menubar->GetAttribute(u"autohide"_ns, attributeValue);
-  settings.menubarShown = attributeValue.EqualsLiteral("false");
+  settings.menubarShown = !menubar->HasAttribute(u"autohide"_ns);
 
   ErrorResult err;
   RefPtr<dom::HTMLCollection> toolbarSprings = navbar->GetElementsByTagNameNS(
