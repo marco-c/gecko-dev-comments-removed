@@ -217,7 +217,11 @@ export let ContentSearch = {
       "healthReportKey",
     ]);
     let engine = lazy.SearchService.getEngineByName(data.engineName);
-    let submission = engine.getSubmission(data.searchString, "");
+    let submission = engine.getSubmission(
+      data.searchString,
+      "",
+      data.healthReportKey
+    );
     let win = browser.documentGlobal;
     if (!win) {
       // The browser may have been closed between the time its content sent the
@@ -254,12 +258,14 @@ export let ContentSearch = {
       };
       win.openTrustedLinkIn(submission.uri.spec, where, params);
     }
+
     lazy.BrowserSearchTelemetry.recordSearch(
       browser,
       engine,
       data.healthReportKey,
       {
         selection: data.selection,
+        submission,
       }
     );
   },
@@ -512,23 +518,10 @@ export let ContentSearch = {
       : lazy.SearchService.defaultEngine;
     let isFirstChange = true;
 
-    // It's possible that this is a handoff from about:home / about:newtab,
-    // in which case we want to include the newtab_session_id in our call to
-    // urlBar.handoff. We have to jump through some unfortunate hoops to get
-    // that.
-    let newtabSessionId = null;
-    let newtabActor =
-      browser.browsingContext?.currentWindowGlobal?.getExistingActor(
-        "AboutNewTab"
-      );
-    if (newtabActor) {
-      const portID = newtabActor.getTabDetails()?.portID;
-      if (portID) {
-        newtabSessionId = lazy.AboutNewTab.activityStream.store.feeds
-          .get("feeds.telemetry")
-          ?.sessions.get(portID)?.session_id;
-      }
-    }
+    // It's possible that this is a handoff from about:home / about:newtab, in
+    // which case we want to include the newtab_session_id in our call to
+    // urlBar.handoff.
+    let newtabSessionId = lazy.AboutNewTab.getVisitId(browser);
 
     if (!text) {
       urlBar.setHiddenFocus();
