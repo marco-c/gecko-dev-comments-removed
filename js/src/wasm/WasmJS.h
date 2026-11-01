@@ -599,6 +599,10 @@ class WasmComponentInstanceObject : public NativeObject {
 };
 #endif  
 
+#ifdef NIGHTLY_BUILD
+bool WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record);
+#endif
+
 }  
 
 #endif  
