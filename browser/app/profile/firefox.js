@@ -3842,7 +3842,7 @@ pref("browser.ipProtection.l10nGateVersion", 0);
 
 pref("browser.ipProtection.features.siteExceptions", true);
 
-pref("browser.ipProtection.features.siteInclusions", false);
+pref("browser.ipProtection.features.siteInclusions", true);
 
 pref("browser.ipProtection.siteInclusionPromptShown", false);
 pref("browser.ipProtection.log", false);
