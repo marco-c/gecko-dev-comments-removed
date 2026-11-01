@@ -68,7 +68,7 @@ add_task(
 
     SelectTranslationsTestUtils.clickTranslationsSettingsPageMenuItem();
     await waitForCondition(
-      () => gBrowser.currentURI.spec === "about:preferences#general",
+      () => gBrowser.currentURI.spec === "about:preferences#languages",
       "Waiting for about:preferences to be opened."
     );
     info("Remove the about:preferences tab");

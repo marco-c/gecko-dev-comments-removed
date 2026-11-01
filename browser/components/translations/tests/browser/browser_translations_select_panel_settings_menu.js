@@ -28,7 +28,7 @@ add_task(async function test_select_translations_panel_open_settings_page() {
   SelectTranslationsTestUtils.clickTranslationsSettingsPageMenuItem();
 
   await waitForCondition(
-    () => gBrowser.currentURI.spec === "about:preferences#general",
+    () => gBrowser.currentURI.spec === "about:preferences#languages",
     "Waiting for about:preferences to be opened."
   );
 
