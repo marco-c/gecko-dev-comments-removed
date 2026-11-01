@@ -2860,13 +2860,7 @@ XML_GetCurrentByteIndex(XML_Parser parser) {
     return (XML_Index)(parser->m_parseEndByteIndex
                        - (parser->m_parseEndPtr - parser->m_eventPtr));
   }
-
-#if 0
   return -1;
-#else
-  return (XML_Index)parser->m_parseEndByteIndex;
-#endif
-
 }
 
 
