@@ -580,7 +580,10 @@ class nsPresContext : public nsISupports,
   
   
   
-  Maybe<mozilla::ColorScheme> GetOverriddenOrEmbedderColorScheme() const;
+  mozilla::dom::PrefersColorSchemeOverride GetOverriddenOrEmbedderColorScheme()
+      const {
+    return mOverriddenOrEmbedderColorScheme;
+  }
 
   
 
