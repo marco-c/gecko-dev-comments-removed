@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-  "isolated_process", # Bug 1709948
-]
 subsuite = "media"
 tags = "media-engine-compatible media-gpu"
 prefs = ["media.hevc.enabled=1"] # for test_MediaSource_hevc_mp4
@@ -310,10 +307,6 @@ skip-if = [
 ["test_OnEvents.html"]
 
 ["test_PlayEventsAutoPlaying.html"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov",
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && ccov",
-]
 
 ["test_PlayEventsAutoPlaying2.html"]
 
