@@ -539,7 +539,7 @@ add_task(async function test_openai_fxaccount_token() {
     },
   });
 
-  const fxAccountToken = "test_fxa_token_12345";
+  const token = "test_fxa_token_12345";
   const apiKey = "test-api-key";
   const chatId = "test-chat-id-12345";
 
@@ -557,12 +557,12 @@ add_task(async function test_openai_fxaccount_token() {
         content: "Test request with FxA token",
       },
     ],
-    fxAccountToken,
+    token,
     chatId,
   };
 
   try {
-    info("Run the inference with fxAccountToken");
+    info("Run the inference with token");
     const result = await engineInstance.run(request);
 
     Assert.equal(
@@ -598,7 +598,7 @@ add_task(async function test_openai_fxaccount_token() {
       "User-Agent header should be the browser's user agent"
     );
 
-    info("Test without fxAccountToken - should not include header");
+    info("Test without token - should not include header");
 
     
     const engineWithoutToken = await createEngine({

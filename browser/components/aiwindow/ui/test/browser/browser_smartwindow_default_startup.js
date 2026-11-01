@@ -66,9 +66,7 @@ add_task(
     });
 
     
-    const authStub = sinon
-      .stub(AIWindowAccountAuth, "ensureAIWindowAccess")
-      .resolves(false);
+    const authStub = sinon.stub(AuthProvider, "maybeSignIn").resolves(false);
     const win = await BrowserTestUtils.openNewBrowserWindow();
 
     try {

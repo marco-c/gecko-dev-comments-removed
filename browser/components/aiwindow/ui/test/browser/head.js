@@ -12,9 +12,9 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
-  AIWindowAccountAuth:
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs",
   AIWindowTestUtils: "resource://testing-common/AIWindowTestUtils.sys.mjs",
+  AuthProvider:
+    "moz-src:///browser/components/aiwindow/models/AuthProvider.sys.mjs",
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
@@ -541,7 +541,7 @@ async function getConversationId(browser) {
 
 async function _stubResumeActivityGenerationCore(
   sb,
-  { memories, cards, urls, fxAccountToken = null }
+  { memories, cards, urls, token = null }
 ) {
   for (const [index, page] of urls.entries()) {
     await PlacesUtils.history.insert({
@@ -577,7 +577,7 @@ async function _stubResumeActivityGenerationCore(
     },
     run: sb.stub().resolves({ finalOutput: JSON.stringify(cards) }),
   }));
-  sb.stub(openAIEngine, "getFxAccountToken").resolves(fxAccountToken);
+  sb.stub(AuthProvider, "getToken").resolves(token);
 
   const originalAvailableLocales = Services.locale.availableLocales;
   const originalRequestedLocales = Services.locale.requestedLocales;
@@ -609,7 +609,7 @@ async function _stubResumeActivityGenerationCore(
 
 
 
-async function stubResumeActivityGeneration(sb, { fxAccountToken } = {}) {
+async function stubResumeActivityGeneration(sb, { token } = {}) {
   const urls = [1, 2, 3, 4, 5].map(id => ({
     url: `https://example.com/${id}`,
     title: `Example ${id}`,
@@ -643,7 +643,7 @@ async function stubResumeActivityGeneration(sb, { fxAccountToken } = {}) {
     memories,
     cards,
     urls,
-    fxAccountToken,
+    token,
   });
 }
 
@@ -687,7 +687,7 @@ async function stubResumeActivityGenerationPool(sb, memoryCount) {
 
 
 
-async function testResumeActivityClick(sb, run, { fxAccountToken } = {}) {
+async function testResumeActivityClick(sb, run, { token } = {}) {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.smartwindow.memories.generateFromConversation", true],
@@ -695,7 +695,7 @@ async function testResumeActivityClick(sb, run, { fxAccountToken } = {}) {
     ],
   });
   const resumeActivityStubs = await stubResumeActivityGeneration(sb, {
-    fxAccountToken,
+    token,
   });
   let win;
   try {
@@ -775,7 +775,7 @@ async function testResumeActivityClick(sb, run, { fxAccountToken } = {}) {
 
 async function stubEngineNetworkBoundaries({
   passthroughFeatures = new Set(["chat"]),
-  fxAccountToken = "mock-fxa-token",
+  token = "mock-fxa-token",
   engineRunResponse = { finalOutput: "Mock" },
   serverOptions = {},
 } = {}) {
@@ -808,9 +808,7 @@ async function stubEngineNetworkBoundaries({
       };
     });
 
-  const tokenStub = sinon
-    .stub(openAIEngine, "getFxAccountToken")
-    .resolves(fxAccountToken);
+  const tokenStub = sinon.stub(AuthProvider, "getToken").resolves(token);
 
   const capturedRequests = [];
   let server = null;
@@ -848,9 +846,7 @@ async function stubEngineNetworkBoundaries({
 
 
 function skipSignIn() {
-  const stub = sinon
-    .stub(AIWindowAccountAuth, "ensureAIWindowAccess")
-    .resolves(true);
+  const stub = sinon.stub(AuthProvider, "maybeSignIn").resolves(true);
   return () => stub.restore();
 }
 
