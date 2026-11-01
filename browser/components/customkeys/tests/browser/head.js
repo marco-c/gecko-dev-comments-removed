@@ -47,7 +47,7 @@ const consts = {
       keyCode: KeyEvent.DOM_VK_M,
     },
   ],
-  remappedDisplay: isMac ? "⇧⌥⌘M" : "Ctrl+Shift+Alt+M",
+  remappedDisplay: isMac ? "⌥⇧⌘M" : "Ctrl+Shift+Alt+M",
 
   
   
@@ -64,7 +64,7 @@ const consts = {
       keyCode: KeyEvent.DOM_VK_2,
     },
   ],
-  remappedDigitDisplay: isMac ? "⇧⌥⌘€" : "Ctrl+Shift+Alt+€",
+  remappedDigitDisplay: isMac ? "⌥⇧⌘€" : "Ctrl+Shift+Alt+€",
 
   
   
