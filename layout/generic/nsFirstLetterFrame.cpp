@@ -158,26 +158,36 @@ bool nsFirstLetterFrame::UseTightBounds() const {
   
   
   
+  
+  
+  const auto wm = GetWritingMode();
+  const auto* styleMargin = StyleMargin();
+  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
+  const auto bStart =
+      styleMargin->GetMargin(LogicalSide::BStart, wm, anchorResolutionParams);
+  const auto bEnd =
+      styleMargin->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams);
+  const bool negativeBStart =
+      bStart->ConvertsToLength() && bStart->ToLength() < 0;
+  const bool negativeBEnd = bEnd->ConvertsToLength() && bEnd->ToLength() < 0;
+  
+  
+  if (negativeBEnd && bStart->ConvertsToLength() &&
+      bStart->ToLength() == -bEnd->ToLength()) {
+    return true;
+  }
+
+  if (negativeBStart || negativeBEnd) {
+    return false;
+  }
+
   if (nsTextFrame* textFrame = do_QueryFrame(mFrames.FirstChild())) {
     RefPtr<nsFontMetrics> fm = textFrame->InflatedFontMetrics();
     if (textFrame->ComputeLineHeight() < fm->EmHeight()) {
       return false;
     }
   }
-
-  const auto wm = GetWritingMode();
-  const auto* styleMargin = StyleMargin();
-  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-  const auto bStart =
-      styleMargin->GetMargin(LogicalSide::BStart, wm, anchorResolutionParams);
-  
-  
-  if (bStart->ConvertsToLength() && bStart->ToLength() < 0) {
-    return false;
-  }
-  const auto bEnd =
-      styleMargin->GetMargin(LogicalSide::BEnd, wm, anchorResolutionParams);
-  return !(bEnd->ConvertsToLength() && bEnd->ToLength() < 0);
+  return true;
 }
 
 void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
