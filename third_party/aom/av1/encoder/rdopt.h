@@ -158,6 +158,32 @@ void av1_nonrd_pick_inter_mode_sb(struct AV1_COMP *cpi,
                                   struct RD_STATS *rd_cost, BLOCK_SIZE bsize,
                                   PICK_MODE_CONTEXT *ctx);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void av1_nonrd_pick_inter_mode_sb_seg_skip(const struct AV1_COMP *cpi,
+                                           struct macroblock *x,
+                                           struct RD_STATS *rd_cost,
+                                           BLOCK_SIZE bsize,
+                                           PICK_MODE_CONTEXT *ctx);
+
 void av1_rd_pick_inter_mode_sb_seg_skip(
     const struct AV1_COMP *cpi, struct TileDataEnc *tile_data,
     struct macroblock *x, int mi_row, int mi_col, struct RD_STATS *rd_cost,
@@ -291,11 +317,18 @@ static inline int prune_ref_by_selective_ref_frame(
     int closest_ref_frames = has_closest_ref_frames(
         ref_frame, cpi->ref_frame_dist_info.nearest_past_ref,
         cpi->ref_frame_dist_info.nearest_future_ref);
-    if (closest_ref_frames == 0) {
+    const int ref_idx0 = ref_frame[0] - LAST_FRAME;
+    const int ref_idx1 = ref_frame[1] - LAST_FRAME;
+    const int keep_comp_ref_pair_mask =
+        (cpi->keep_comp_ref_frame_mask & (1 << ref_idx0)) &&
+        (cpi->keep_comp_ref_frame_mask & (1 << ref_idx1));
+
+    
+    if (!(keep_comp_ref_pair_mask || closest_ref_frames)) {
       
-      if (sf->inter_sf.prune_comp_ref_frames >= 2) {
+      if (sf->inter_sf.prune_comp_ref_frames >= 3) {
         return 1;
-      } else if (sf->inter_sf.prune_comp_ref_frames == 1) {
+      } else if (sf->inter_sf.prune_comp_ref_frames >= 1) {
         
         if (has_best_pred_mv_sad(ref_frame, x) == 0) return 1;
       }

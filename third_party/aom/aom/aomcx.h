@@ -1039,6 +1039,10 @@ enum aome_enc_control_id {
 
 
 
+
+
+
+
   AV1E_SET_ENABLE_GLOBAL_MOTION = 95,
 
   
@@ -1887,6 +1891,13 @@ typedef struct aom_svc_params {
 
 
 typedef struct aom_svc_ref_frame_config {
+  
+  
+  
+  
+  
+  
+  
   
   
   

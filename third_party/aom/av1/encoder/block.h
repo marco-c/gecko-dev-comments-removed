@@ -1360,6 +1360,10 @@ typedef struct macroblock {
   
   unsigned int source_variance;
   
+  int sub_block_energy_diff;
+  
+  BLOCK_SIZE sub_block_energy_bsize;
+  
   int block_is_zero_sad;
   
   
@@ -1378,6 +1382,9 @@ typedef struct macroblock {
   
   
   int sb_force_fixed_part;
+  
+  
+  MV_REFERENCE_FRAME sb_copied_ref;
   
   unsigned int pred_sse[REF_FRAMES];
   

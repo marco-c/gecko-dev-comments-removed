@@ -442,6 +442,8 @@ aom_image_t *aom_img_alloc_with_border(aom_image_t *img, aom_img_fmt_t fmt,
 
 
 
+
+
 int aom_img_set_rect(aom_image_t *img, unsigned int x, unsigned int y,
                      unsigned int w, unsigned int h, unsigned int border);
 

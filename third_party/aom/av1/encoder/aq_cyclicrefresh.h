@@ -193,6 +193,7 @@ int av1_cyclic_refresh_rc_bits_per_mb(const struct AV1_COMP *cpi, int i,
 
 
 
+
 void av1_cyclic_reset_segment_skip(const struct AV1_COMP *cpi,
                                    MACROBLOCK *const x, int mi_row, int mi_col,
                                    BLOCK_SIZE bsize, RUN_TYPE dry_run);
@@ -307,7 +308,7 @@ void av1_cyclic_refresh_setup(struct AV1_COMP *const cpi);
 
 int av1_cyclic_refresh_get_rdmult(const CYCLIC_REFRESH *cr);
 
-int av1_cyclic_refresh_disable_lf_cdef(struct AV1_COMP *const cpi);
+int av1_cyclic_refresh_disable_lf(struct AV1_COMP *const cpi);
 
 static inline int cyclic_refresh_segment_id_boosted(int segment_id) {
   return segment_id == CR_SEGMENT_ID_BOOST1 ||

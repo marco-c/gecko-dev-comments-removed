@@ -817,7 +817,11 @@ void av1_pick_cdef_from_qp(AV1_COMMON *const cm, int skip_cdef,
   if (skip_cdef) {
     cdef_info->cdef_strengths[1] = 0;
     cdef_info->cdef_uv_strengths[1] = 0;
-    return;
+    if (cdef_info->cdef_strengths[0] || cdef_info->cdef_uv_strengths[0]) return;
+    
+    
+    cdef_info->cdef_bits = 0;
+    cdef_info->nb_cdef_strengths = 1;
   }
 
   const CommonModeInfoParams *const mi_params = &cm->mi_params;

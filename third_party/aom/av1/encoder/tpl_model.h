@@ -488,7 +488,8 @@ static inline bool tpl_alloc_temp_buffers(TplBuffers *tpl_tmp_buffers,
 
 
 
-int av1_tpl_setup_stats(struct AV1_COMP *cpi, int gop_eval,
+
+int av1_tpl_setup_stats(struct AV1_COMP *cpi, int approx_gop_eval,
                         const struct EncodeFrameParams *const frame_params);
 
 

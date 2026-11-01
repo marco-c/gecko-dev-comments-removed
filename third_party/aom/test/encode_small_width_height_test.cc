@@ -15,6 +15,7 @@
 
 
 
+#include <cstring>
 #include <memory>
 
 #include "aom/aomcx.h"

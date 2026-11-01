@@ -228,19 +228,12 @@ TEST_P(AV1ResolutionChange, RandomInput) {
         
         
         
-        
-        const bool scales_references = usage_ == AOM_USAGE_REALTIME;
         if (usage_ == AOM_USAGE_ALL_INTRA || frame_count == 0) {
           EXPECT_NE(pkt->data.frame.flags & AOM_FRAME_IS_KEY, 0u)
               << "frame " << frame_count;
-        } else if (i == 0) {
-          if (scales_references) {
-            EXPECT_EQ(pkt->data.frame.flags & AOM_FRAME_IS_KEY, 0u)
-                << "frame " << frame_count;
-          } else {
-            EXPECT_NE(pkt->data.frame.flags & AOM_FRAME_IS_KEY, 0u)
-                << "frame " << frame_count;
-          }
+        } else {
+          EXPECT_EQ(pkt->data.frame.flags & AOM_FRAME_IS_KEY, 0u)
+              << "frame " << frame_count;
         }
         frame_count++;
       }

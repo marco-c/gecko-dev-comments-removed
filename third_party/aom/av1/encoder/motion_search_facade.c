@@ -10,7 +10,7 @@
 
 
 #include "av1/common/reconinter.h"
-
+#include "av1/common/scale.h"
 #include "av1/encoder/encodemv.h"
 #include "av1/encoder/encoder.h"
 #include "av1/encoder/interp_search.h"
@@ -692,9 +692,19 @@ int av1_joint_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     }
 
     
+    const struct scale_factors *orig_sf = NULL;
     if (id) {
       orig_yv12 = xd->plane[plane].pre[0];
       xd->plane[plane].pre[0] = xd->plane[plane].pre[id];
+      
+      
+      
+      
+      
+      
+      
+      orig_sf = xd->block_ref_scale_factors[0];
+      xd->block_ref_scale_factors[0] = xd->block_ref_scale_factors[id];
     }
 
     if (cpi->common.features.cur_frame_force_integer_mv) {
@@ -734,7 +744,10 @@ int av1_joint_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     }
 
     
-    if (id) xd->plane[plane].pre[0] = orig_yv12;
+    if (id) {
+      xd->plane[plane].pre[0] = orig_yv12;
+      xd->block_ref_scale_factors[0] = orig_sf;
+    }
     if (bestsme < last_besterr[id]) {
       cur_mv[id] = best_mv;
       last_besterr[id] = bestsme;
@@ -790,15 +803,15 @@ int av1_compound_single_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     
     
     
+    
+    
+    
+    
     for (int i = 0; i < num_planes; i++) {
-      backup_yv12[i] = xd->plane[i].pre[ref_idx];
+      backup_yv12[i] = xd->plane[i].pre[0];
     }
     const int mi_row = xd->mi_row;
     const int mi_col = xd->mi_col;
-    
-    
-    
-    
     av1_setup_pre_planes(xd, 0, scaled_ref_frame, mi_row, mi_col, NULL,
                          num_planes);
   }
@@ -834,6 +847,12 @@ int av1_compound_single_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
     }
   }
 
+  const struct scale_factors *orig_sf = NULL;
+  if (ref_idx) {
+    orig_sf = xd->block_ref_scale_factors[0];
+    xd->block_ref_scale_factors[0] = xd->block_ref_scale_factors[ref_idx];
+  }
+
   if (cpi->common.features.cur_frame_force_integer_mv) {
     convert_fullmv_to_mv(&best_mv);
   }
@@ -856,7 +875,10 @@ int av1_compound_single_motion_search(const AV1_COMP *cpi, MACROBLOCK *x,
   }
 
   
-  if (ref_idx) pd->pre[0] = orig_yv12;
+  if (ref_idx) {
+    pd->pre[0] = orig_yv12;
+    xd->block_ref_scale_factors[0] = orig_sf;
+  }
 
   if (bestsme < INT_MAX) *this_mv = best_mv.as_mv;
 

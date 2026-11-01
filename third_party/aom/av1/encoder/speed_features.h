@@ -549,7 +549,6 @@ typedef struct TPL_SPEED_FEATURES {
   
   
   
-  
   int gop_length_decision_method;
   
   

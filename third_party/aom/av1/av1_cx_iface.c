@@ -1688,8 +1688,7 @@ static aom_codec_err_t encoder_set_config(aom_codec_alg_priv_t *ctx,
     
     const bool allow_ref_scaled_upscale =
         cfg->g_forced_max_frame_width && cfg->g_forced_max_frame_height &&
-        ctx->oxcf.mode == REALTIME && cfg->g_pass == AOM_RC_ONE_PASS &&
-        cfg->g_lag_in_frames == 0;
+        cfg->g_pass == AOM_RC_ONE_PASS && cfg->g_lag_in_frames == 0;
     if (ctx->ppi->cpi->svc.number_spatial_layers == 1 &&
         ctx->ppi->cpi->last_coded_width && ctx->ppi->cpi->last_coded_height &&
         (!valid_ref_frame_size(ctx->ppi->cpi->last_coded_width,
