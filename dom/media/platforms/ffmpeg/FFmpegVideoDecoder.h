@@ -137,6 +137,11 @@ class FFmpegVideoDecoder<LIBAV_VER>
   static bool MediaCodecSupportsColorDepth(AVCodecID aCodec,
                                            const nsACString& aMimeType,
                                            gfx::ColorDepth aColorDepth);
+
+  
+  
+  
+  static bool ShouldDecodeInGPUProcess();
 #endif
 
 #ifdef CUSTOMIZED_BUFFER_ALLOCATION

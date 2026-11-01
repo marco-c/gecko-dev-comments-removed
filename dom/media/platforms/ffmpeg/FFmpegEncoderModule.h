@@ -20,6 +20,13 @@ class FFmpegEncoderModule final : public PlatformEncoderModule {
 
   static void Init(const FFmpegLibWrapper* aLib);
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  static bool ShouldEncodeInGPUProcess();
+#endif
+
   static already_AddRefed<PlatformEncoderModule> Create(
       const FFmpegLibWrapper* aLib) {
     RefPtr<PlatformEncoderModule> pem = new FFmpegEncoderModule(aLib);

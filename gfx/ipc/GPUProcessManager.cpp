@@ -1046,6 +1046,7 @@ void GPUProcessManager::OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {
     }
   } else if (
       
+      
       !kIsAndroid &&
       mUnstableProcessAttempts >
           uint32_t(
