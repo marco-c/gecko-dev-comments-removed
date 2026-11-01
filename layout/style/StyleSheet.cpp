@@ -1083,7 +1083,12 @@ dom::MediaList* StyleSheet::Media() {
 
 JSObject* StyleSheet::WrapObject(JSContext* aCx,
                                  JS::Handle<JSObject*> aGivenProto) {
-  return dom::CSSStyleSheet_Binding::Wrap(aCx, this, aGivenProto);
+  
+  
+  JS::Rooted<JSObject*> result(aCx);
+  RefPtr kungFuDeathGrip{this};
+  result = dom::CSSStyleSheet_Binding::Wrap(aCx, this, aGivenProto);
+  return result;
 }
 
 void StyleSheet::FixUpRuleListAfterContentsChangeIfNeeded(bool aFromClone) {
