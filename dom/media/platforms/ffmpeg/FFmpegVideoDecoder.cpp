@@ -3114,6 +3114,16 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::AllocateHEVCExtraData() {
 }
 #  endif
 
+static void MediaCodecNativeWindowReleaseCallback(
+    struct AVHWDeviceContext* hwctx) {
+  auto* mediacodecctx = static_cast<AVMediaCodecDeviceContext*>(hwctx->hwctx);
+  if (mediacodecctx->native_window) {
+    ANativeWindow_release(
+        static_cast<ANativeWindow*>(mediacodecctx->native_window));
+    mediacodecctx->native_window = nullptr;
+  }
+}
+
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   FFMPEG_LOG("Initialising MediaCodec FFmpeg decoder");
   StaticMutexAutoLock mon(sMutex);
@@ -3170,6 +3180,9 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
   AVHWDeviceContext* hwctx = (AVHWDeviceContext*)mMediaCodecDeviceContext->data;
   AVMediaCodecDeviceContext* mediacodecctx =
       (AVMediaCodecDeviceContext*)hwctx->hwctx;
+  
+  
+  hwctx->free = MediaCodecNativeWindowReleaseCallback;
 
   if (XRE_IsGPUProcess() && gfx::gfxVars::ForceAImageReaderAndroid()) {
     MOZ_ASSERT(!mAndroidImageReader);
