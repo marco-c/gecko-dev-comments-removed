@@ -29,6 +29,9 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 public class TranslationsController {
+  
+  public TranslationsController() {}
+
   private static final boolean DEBUG = false;
   private static final String LOGTAG = "TranslationsController";
 
@@ -40,6 +43,8 @@ public class TranslationsController {
 
 
   public static class RuntimeTranslation {
+    
+    public RuntimeTranslation() {}
 
     
     private static final String ENGINE_SUPPORTED_EVENT =
@@ -452,6 +457,9 @@ public class TranslationsController {
       
       @AnyThread
       public static class Builder {
+        
+        public Builder() {}
+
          String mLanguage = null;
          @ModelOperation String mOperation;
          @OperationLevel String mOperationLevel = ALL;
@@ -828,8 +836,12 @@ public class TranslationsController {
           .queryVoid(TRANSLATE_EVENT, bundle)
           .map(
               result -> result,
-              exception ->
-                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE));
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE);
+              });
     }
 
     
@@ -848,8 +860,12 @@ public class TranslationsController {
           .queryVoid(RESTORE_PAGE_EVENT)
           .map(
               result -> result,
-              exception ->
-                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_RESTORE));
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_COULD_NOT_RESTORE);
+              });
     }
 
     
@@ -863,7 +879,17 @@ public class TranslationsController {
       if (DEBUG) {
         Log.d(LOGTAG, "Retrieving never translate site setting.");
       }
-      return mSession.getEventDispatcher().queryBoolean(GET_NEVER_TRANSLATE_SITE);
+      return mSession
+          .getEventDispatcher()
+          .queryBoolean(GET_NEVER_TRANSLATE_SITE)
+          .map(
+              result -> result,
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_UNKNOWN);
+              });
     }
 
     
@@ -883,7 +909,17 @@ public class TranslationsController {
       }
       final GeckoBundle bundle = new GeckoBundle(2);
       bundle.putBoolean("neverTranslate", neverTranslate);
-      return mSession.getEventDispatcher().queryVoid(SET_NEVER_TRANSLATE_SITE, bundle);
+      return mSession
+          .getEventDispatcher()
+          .queryVoid(SET_NEVER_TRANSLATE_SITE, bundle)
+          .map(
+              result -> result,
+              exception -> {
+                if (TranslationsException.isEngineDeactivated(exception)) {
+                  return new TranslationsException(TranslationsException.ERROR_ENGINE_DEACTIVATED);
+                }
+                return new TranslationsException(TranslationsException.ERROR_UNKNOWN);
+              });
     }
 
     
@@ -910,6 +946,9 @@ public class TranslationsController {
       
       @AnyThread
       public static class Builder {
+        
+        public Builder() {}
+
          boolean mDownloadModel = true;
 
         
@@ -1369,6 +1408,12 @@ public class TranslationsController {
     public static final int ERROR_MODEL_DOWNLOAD_REQUIRED = -11;
 
     
+
+
+
+    public static final int ERROR_ENGINE_DEACTIVATED = -12;
+
+    
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
         value = {
@@ -1382,7 +1427,8 @@ public class TranslationsController {
           ERROR_MODEL_COULD_NOT_DELETE,
           ERROR_MODEL_COULD_NOT_DOWNLOAD,
           ERROR_MODEL_LANGUAGE_REQUIRED,
-          ERROR_MODEL_DOWNLOAD_REQUIRED
+          ERROR_MODEL_DOWNLOAD_REQUIRED,
+          ERROR_ENGINE_DEACTIVATED
         })
     public @interface Code {}
 
@@ -1392,6 +1438,23 @@ public class TranslationsController {
     @Override
     public String toString() {
       return "TranslationsException: " + code;
+    }
+
+    
+
+
+
+
+
+
+
+
+    static boolean isEngineDeactivated(@NonNull final Throwable exception) {
+      return exception instanceof EventDispatcher.QueryException
+          && ((EventDispatcher.QueryException) exception)
+              .data
+              .toString()
+              .contains("No such JSWindowActor 'Translations'");
     }
   }
 }

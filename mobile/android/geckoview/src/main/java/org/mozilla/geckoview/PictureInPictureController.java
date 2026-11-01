@@ -16,6 +16,8 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 @ExperimentalGeckoViewApi
 public class PictureInPictureController {
+  
+  public PictureInPictureController() {}
 
   
 

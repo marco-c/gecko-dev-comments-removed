@@ -33,6 +33,9 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 public class Autofill {
+  
+  public Autofill() {}
+
   private static final boolean DEBUG = false;
 
   

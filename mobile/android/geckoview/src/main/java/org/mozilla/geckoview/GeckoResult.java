@@ -263,8 +263,6 @@ public class GeckoResult<T> {
   }
 
   
-
-
   @AnyThread
   @NonNull
   public static GeckoResult<AllowOrDeny> deny() {
@@ -272,8 +270,6 @@ public class GeckoResult<T> {
   }
 
   
-
-
   @AnyThread
   @NonNull
   public static GeckoResult<AllowOrDeny> allow() {

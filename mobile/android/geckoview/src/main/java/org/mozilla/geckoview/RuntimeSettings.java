@@ -28,6 +28,8 @@ public abstract class RuntimeSettings implements Parcelable {
 
 
 
+
+
   public abstract static class Builder<Settings extends RuntimeSettings> {
     private final Settings mSettings;
 

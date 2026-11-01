@@ -259,8 +259,6 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
   }
 
   
-
-
   @AnyThread
   @Nullable
   public Context getAppContext() {

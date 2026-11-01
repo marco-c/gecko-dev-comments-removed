@@ -11,6 +11,8 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 @ExperimentalGeckoViewApi
 public class PageExtractionController {
+  
+  public PageExtractionController() {}
 
   
   public static class PageMetadata {

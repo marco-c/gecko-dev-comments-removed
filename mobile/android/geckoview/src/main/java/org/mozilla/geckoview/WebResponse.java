@@ -169,12 +169,16 @@ public class WebResponse extends WebMessage {
 
 
 
+
+
     public @NonNull Builder isSecure(final boolean isSecure) {
       mIsSecure = isSecure;
       return this;
     }
 
     
+
+
 
 
 
@@ -221,8 +225,6 @@ public class WebResponse extends WebMessage {
     }
 
     
-
-
     public @NonNull WebResponse build() {
       return new WebResponse(this);
     }

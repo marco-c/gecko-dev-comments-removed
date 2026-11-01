@@ -450,6 +450,7 @@ public class WebExtensionController {
 
 
 
+
   @UiThread
   @Nullable
   public PromptDelegate getPromptDelegate() {
@@ -916,6 +917,9 @@ public class WebExtensionController {
 
 
   public static class EnableSource {
+    
+    public EnableSource() {}
+
     
     public static final int USER = 1;
 

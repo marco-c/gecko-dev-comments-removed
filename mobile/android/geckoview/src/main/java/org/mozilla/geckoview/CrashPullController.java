@@ -23,6 +23,9 @@ import org.mozilla.gecko.util.GeckoBundle;
 
 
 public class CrashPullController {
+  
+  public CrashPullController() {}
+
   private static final String LOGTAG = "CrashPull";
 
   

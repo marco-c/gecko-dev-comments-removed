@@ -1117,8 +1117,6 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
   }
 
   
-
-
   public boolean getAutofillEnabled() {
     return mAutofillEnabled;
   }

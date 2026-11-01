@@ -1199,6 +1199,8 @@ public class Autocomplete {
 
 
 
+
+
   public abstract static class Option<T> {
      static final String VALUE_KEY = "value";
      static final String HINT_KEY = "hint";
@@ -1230,6 +1232,10 @@ public class Autocomplete {
   }
 
   
+
+
+
+
   public abstract static class SaveOption<T> extends Option<T> {
     
     @Retention(RetentionPolicy.SOURCE)
@@ -1269,6 +1275,10 @@ public class Autocomplete {
   }
 
   
+
+
+
+
   public abstract static class SelectOption<T> extends Option<T> {
     
     @Retention(RetentionPolicy.SOURCE)
@@ -1287,6 +1297,9 @@ public class Autocomplete {
 
     
     public static class Hint {
+      
+      public Hint() {}
+
       
       public static final int NONE = 0;
 
@@ -1510,6 +1523,9 @@ public class Autocomplete {
     
     public static class Hint {
       
+      public Hint() {}
+
+      
       public static final int NONE = 0;
 
       
@@ -1577,6 +1593,9 @@ public class Autocomplete {
 
     
     public static class Hint {
+      
+      public Hint() {}
+
       
       public static final int NONE = 0;
 

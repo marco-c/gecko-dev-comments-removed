@@ -236,8 +236,6 @@ public class WebRequest extends WebMessage {
     }
 
     
-
-
     public @NonNull WebRequest build() {
       if (mUri == null) {
         throw new IllegalStateException("Must set URI");

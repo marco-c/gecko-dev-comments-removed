@@ -24,6 +24,9 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 @AnyThread
 public class ContentBlockingController {
+  
+  public ContentBlockingController() {}
+
   private static final String LOGTAG = "GeckoContentBlocking";
 
   
@@ -351,6 +354,18 @@ public class ContentBlockingController {
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:TrackingDB:GetEarliestRecordedDate")
         .map(bundle -> bundle.getLong("date", 0L));
+  }
+
+  
+
+
+
+
+  @HandlerThread
+  public @NonNull GeckoResult<Void> clearTrackingDb() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance().queryVoid("GeckoView:TrackingDB:ClearAll");
   }
 
   private List<TrackingDbEvent> eventsFromBundle(final GeckoBundle value) {

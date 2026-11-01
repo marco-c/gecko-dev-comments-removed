@@ -26,6 +26,9 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 @ExperimentalGeckoViewApi
 public class AIFeaturesController {
+  
+  public AIFeaturesController() {}
+
   private static final boolean DEBUG = false;
   private static final String LOGTAG = "AIFeaturesController";
 
@@ -34,6 +37,8 @@ public class AIFeaturesController {
 
 
   public static class RuntimeAIFeatures {
+    
+    public RuntimeAIFeatures() {}
 
     private static final String LIST_FEATURES_EVENT = "GeckoView:AIFeature:ListFeatures";
     private static final String SET_FEATURE_ENABLED_EVENT = "GeckoView:AIFeature:SetEnabled";

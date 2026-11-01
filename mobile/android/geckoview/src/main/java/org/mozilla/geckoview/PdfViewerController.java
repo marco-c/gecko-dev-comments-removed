@@ -18,6 +18,8 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 @ExperimentalGeckoViewApi
 public class PdfViewerController {
+  
+  public PdfViewerController() {}
 
   
   @ExperimentalGeckoViewApi

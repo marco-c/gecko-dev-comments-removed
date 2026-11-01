@@ -113,6 +113,9 @@ public class ContentBlocking {
     
     @AnyThread
     public static class Builder extends RuntimeSettings.Builder<Settings> {
+      
+      public Builder() {}
+
       @Override
       protected @NonNull Settings newSettings(final @Nullable Settings settings) {
         return new Settings(settings);
@@ -281,40 +284,6 @@ public class ContentBlocking {
 
 
 
-      public @NonNull Builder cookieBannerHandlingMode(final @CBCookieBannerMode int mode) {
-        getSettings().setCookieBannerMode(mode);
-        return this;
-      }
-
-      
-
-
-
-
-
-      public @NonNull Builder cookieBannerGlobalRulesEnabled(final boolean enabled) {
-        getSettings().setCookieBannerGlobalRulesEnabled(enabled);
-        return this;
-      }
-
-      
-
-
-
-
-
-
-      public @NonNull Builder cookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
-        getSettings().setCookieBannerGlobalRulesSubFramesEnabled(enabled);
-        return this;
-      }
-
-      
-
-
-
-
-
 
       public @NonNull Builder queryParameterStrippingEnabled(final boolean enabled) {
         getSettings().setQueryParameterStrippingEnabled(enabled);
@@ -353,30 +322,6 @@ public class ContentBlocking {
 
       public @NonNull Builder queryParameterStrippingStripList(final @NonNull String... list) {
         getSettings().setQueryParameterStrippingStripList(list);
-        return this;
-      }
-
-      
-
-
-
-
-
-      public @NonNull Builder cookieBannerHandlingModePrivateBrowsing(
-          final @CBCookieBannerMode int mode) {
-        getSettings().setCookieBannerModePrivateBrowsing(mode);
-        return this;
-      }
-
-      
-
-
-
-
-
-
-      public @NonNull Builder cookieBannerHandlingDetectOnlyMode(final boolean enabled) {
-        getSettings().setCookieBannerDetectOnlyMode(enabled);
         return this;
       }
 
@@ -586,23 +531,6 @@ public class ContentBlocking {
 
      final Pref<Boolean> mAllowListConvenienceTrackingProtection =
         new Pref<Boolean>("privacy.trackingprotection.allow_list.convenience.enabled", true);
-
-     final Pref<Integer> mCbhMode =
-        new Pref<Integer>(
-            "cookiebanners.service.mode", CookieBannerMode.COOKIE_BANNER_MODE_DISABLED);
-     final Pref<Integer> mCbhModePrivateBrowsing =
-        new Pref<Integer>(
-            "cookiebanners.service.mode.privateBrowsing",
-            CookieBannerMode.COOKIE_BANNER_MODE_REJECT);
-
-     final Pref<Boolean> mChbDetectOnlyMode =
-        new Pref<Boolean>("cookiebanners.service.detectOnly", false);
-    
-    final Pref<Boolean> mCbhGlobalRulesEnabled =
-        new Pref<Boolean>("cookiebanners.service.enableGlobalRules", false);
-
-    final Pref<Boolean> mCbhGlobalRulesSubFramesEnabled =
-        new Pref<Boolean>("cookiebanners.service.enableGlobalRules.subFrames", false);
 
      final Pref<Boolean> mQueryParameterStrippingEnabled =
         new Pref<Boolean>("privacy.query_stripping.enabled", false);
@@ -1236,63 +1164,6 @@ public class ContentBlocking {
 
 
 
-
-    public @NonNull Settings setCookieBannerMode(final @CBCookieBannerMode int mode) {
-      mCbhMode.commit(mode);
-      return this;
-    }
-
-    
-
-
-
-
-
-
-
-    public @NonNull Settings setCookieBannerDetectOnlyMode(final boolean enabled) {
-      mChbDetectOnlyMode.commit(enabled);
-      return this;
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull Settings setCookieBannerGlobalRulesEnabled(final boolean enabled) {
-      mCbhGlobalRulesEnabled.commit(enabled);
-      return this;
-    }
-
-    
-
-
-
-
-    public boolean getCookieBannerGlobalRulesEnabled() {
-      return mCbhGlobalRulesEnabled.get();
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull Settings setCookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
-      mCbhGlobalRulesSubFramesEnabled.commit(enabled);
-      return this;
-    }
-
-    
-
-
-
-
     public @NonNull Boolean getEmailTrackerBlockingPrivateBrowsingEnabled() {
       return mEtbPrivateBrowsing.get();
     }
@@ -1347,57 +1218,6 @@ public class ContentBlocking {
 
     public boolean getQueryParameterStrippingPrivateBrowsingEnabled() {
       return mQueryParameterStrippingPrivateBrowsingEnabled.get();
-    }
-
-    
-
-
-
-
-    public boolean getCookieBannerGlobalRulesSubFramesEnabled() {
-      return mCbhGlobalRulesSubFramesEnabled.get();
-    }
-
-    
-
-
-
-
-    public boolean getCookieBannerDetectOnlyMode() {
-      return mChbDetectOnlyMode.get();
-    }
-
-    
-
-
-
-
-    @SuppressLint("WrongConstant")
-    public @CBCookieBannerMode int getCookieBannerMode() {
-      return mCbhMode.get();
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull Settings setCookieBannerModePrivateBrowsing(
-        final @CBCookieBannerMode int mode) {
-      mCbhModePrivateBrowsing.commit(mode);
-      return this;
-    }
-
-    
-
-
-
-
-    @SuppressLint("WrongConstant")
-    public @CBCookieBannerMode int getCookieBannerModePrivateBrowsing() {
-      return mCbhModePrivateBrowsing.get();
     }
 
     
@@ -2171,6 +1991,9 @@ public class ContentBlocking {
   
   public static class EtpLevel {
     
+    public EtpLevel() {}
+
+    
     public static final int NONE = 0;
 
     
@@ -2189,6 +2012,9 @@ public class ContentBlocking {
 
   
   public static class EtpCategory {
+    
+    public EtpCategory() {}
+
     
     public static final int STANDARD = 0;
 
@@ -2567,32 +2393,6 @@ public class ContentBlocking {
     
     return CookieBehavior.ACCEPT_ALL;
   }
-
-  
-
-  
-  public static class CookieBannerMode {
-    
-    public static final int COOKIE_BANNER_MODE_DISABLED = 0;
-
-    
-    public static final int COOKIE_BANNER_MODE_REJECT = 1;
-
-    
-    public static final int COOKIE_BANNER_MODE_REJECT_OR_ACCEPT = 2;
-
-    
-    protected CookieBannerMode() {}
-  }
-
-  
-  @Retention(RetentionPolicy.SOURCE)
-  @IntDef({
-    CookieBannerMode.COOKIE_BANNER_MODE_DISABLED,
-    CookieBannerMode.COOKIE_BANNER_MODE_REJECT,
-    CookieBannerMode.COOKIE_BANNER_MODE_REJECT_OR_ACCEPT,
-  })
-  public @interface CBCookieBannerMode {}
 
   
   public static class BounceTrackingProtectionMode {

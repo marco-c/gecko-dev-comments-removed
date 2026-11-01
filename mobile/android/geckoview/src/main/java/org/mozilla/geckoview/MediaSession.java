@@ -570,6 +570,9 @@ public class MediaSession {
   
   public static class Feature {
     
+    public Feature() {}
+
+    
     public static final long NONE = 0;
 
     

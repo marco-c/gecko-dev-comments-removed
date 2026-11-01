@@ -1820,6 +1820,9 @@ public class WebExtension {
 
   public static class SignedStateFlags {
     
+    public SignedStateFlags() {}
+
+    
     
 
 
@@ -1863,6 +1866,9 @@ public class WebExtension {
 
   public static class BlocklistStateFlags {
     
+    public BlocklistStateFlags() {}
+
+    
     
     public static final int NOT_BLOCKED = 0;
 
@@ -1899,6 +1905,9 @@ public class WebExtension {
 
   
   public static class DisabledFlags {
+    
+    public DisabledFlags() {}
+
     
     public static final int USER = 1 << 1;
 
@@ -2859,16 +2868,12 @@ public class WebExtension {
       }
 
       
-
-
       @UiThread
       default boolean fileExists() {
         return false;
       }
 
       
-
-
       @NonNull
       @UiThread
       default String filename() {
@@ -2885,8 +2890,6 @@ public class WebExtension {
       }
 
       
-
-
       @NonNull
       @UiThread
       default String mime() {
@@ -2903,8 +2906,6 @@ public class WebExtension {
       }
 
       
-
-
       @NonNull
       @UiThread
       default String referrer() {
