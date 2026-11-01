@@ -722,8 +722,11 @@ class SourceMediaTrack : public MediaTrack {
 
 
 
-  TrackTime AppendData(MediaSegment* aSegment,
-                       MediaSegment* aRawSegment = nullptr);
+#ifdef ENABLE_TESTS
+  virtual
+#endif
+      TrackTime AppendData(MediaSegment* aSegment,
+                           MediaSegment* aRawSegment = nullptr);
 
   
 
