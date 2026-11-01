@@ -2501,7 +2501,12 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   
   
   
+  
+  
+  
   const nsACString* sourceText = nullptr;
+  
+  
   
   
   

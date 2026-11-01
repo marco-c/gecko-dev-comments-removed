@@ -38,6 +38,24 @@ addSourceTextTest("testNonBmpLigature", `<p>&#x1D400;&#x1D401;</p>`, [
   "\u{1D400}\u{1D401}",
 ]);
 
+
+
+
+
+
+
+
+
+
+
+addSourceTextTest(
+  "testLigatureAcrossTextNodes",
+  `<p>xxf<!---->ix</p>`,
+  texts => {
+    is(texts.join(""), "xxffx", "PDF text correct");
+  }
+);
+
 addSourceTextTest(
   "testFontFeatureSettings",
   `<p style='font-feature-settings: "ssty" 1;'>2</p>`,
