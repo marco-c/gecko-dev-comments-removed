@@ -101,7 +101,7 @@ void WaylandVsyncSource::Init() {
         
         
         
-        SetHiddenWindowVSync();
+        WatchHiddenWindowVSync();
       },
        true);
 
@@ -129,10 +129,10 @@ WaylandVsyncSource::~WaylandVsyncSource() {
   gWaylandVsyncSources.RemoveElement(this);
 }
 
-void WaylandVsyncSource::SetHiddenWindowVSync() {
+void WaylandVsyncSource::WatchHiddenWindowVSync() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
   if (!mHiddenWindowTimerID) {
-    LOG("WaylandVsyncSource::SetHiddenWindowVSync()");
+    LOG("WaylandVsyncSource::WatchHiddenWindowVSync()");
     mHiddenWindowTimerID = g_timeout_add(
         mHiddenWindowTimeout,
         [](void* data) -> gint {

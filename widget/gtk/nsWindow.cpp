@@ -2203,6 +2203,11 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   
   
+  
+  WatchHiddenVSyncSource();
+
+  
+  
   MaybeRecomputeBounds();
   if (mIsDestroyed) {
     LOG("destroyed after MaybeRecomputeBounds()");
