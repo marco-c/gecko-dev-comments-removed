@@ -189,8 +189,8 @@ class SavedStacks {
 
   
   
-  static JSObject* buildAllocationMetadata(JSContext* cx, HandleObject obj,
-                                           AutoEnterOOMUnsafeRegion& oomUnsafe);
+  static SavedFrame* buildAllocationMetadata(
+      JSContext* cx, HandleObject obj, AutoEnterOOMUnsafeRegion& oomUnsafe);
 
  private:
   SavedFrame::Set frames;

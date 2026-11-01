@@ -207,6 +207,7 @@ class MOZ_NON_TEMPORARY_CLASS PlainObjectCopyPropsCache {
 
 
 class PropertyIteratorObject;
+class SavedFrame;
 
 struct IteratorHashPolicy {
   struct Lookup {
@@ -259,7 +260,7 @@ class ObjectRealm {
 
   
   
-  using ObjectMetadataTable = WeakMap<JSObject*, JSObject*, ZoneAllocPolicy>;
+  using ObjectMetadataTable = WeakMap<JSObject*, SavedFrame*, ZoneAllocPolicy>;
   js::UniquePtr<ObjectMetadataTable> objectMetadataTable;
 
   using IteratorCache =
@@ -1048,7 +1049,7 @@ class MOZ_RAII AutoSetNewObjectMetadata {
 };
 
 
-JSObject* GetAllocationMetadata(JSObject* obj);
+SavedFrame* GetAllocationMetadata(JSObject* obj);
 
 } 
 
