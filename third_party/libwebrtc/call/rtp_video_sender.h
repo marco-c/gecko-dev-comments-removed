@@ -46,6 +46,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/video_fec_generator.h"
+#include "rtc_base/containers/flat_map.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/no_unique_address.h"
 #include "rtc_base/thread_annotations.h"
@@ -225,9 +226,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   FrameCountObserver* const frame_count_observer_;
 
   
-  
-  
-  std::map<uint32_t, RtpRtcpInterface*> ssrc_to_rtp_module_;
+  const flat_map<uint32_t, RtpRtcpInterface*> ssrc_to_rtp_module_;
 
   ScopedTaskSafety safety_;
 };
