@@ -11097,6 +11097,56 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
     }
   }
 
+  if (memberInitializers.hasInlinedZeroFields) {
+    MOZ_ASSERT(!isDerivedClassConstructor);
+    for (const InlinedZeroField& field :
+         sc->asFunctionBox()->inlinedZeroFields()) {
+      if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
+        
+        return false;
+      }
+      if (field.isPrivate) {
+        if (!emitGetPrivateName(field.name)) {
+          
+          return false;
+        }
+        
+        
+        if (!emitCheckPrivateField(ThrowCondition::ThrowHas,
+                                   ThrowMsgKind::PrivateDoubleInit)) {
+          
+          return false;
+        }
+        if (!emit1(JSOp::Pop)) {
+          
+          return false;
+        }
+        if (!emit1(JSOp::Zero)) {
+          
+          return false;
+        }
+        if (!emit1(JSOp::InitHiddenElem)) {
+          
+          return false;
+        }
+      } else {
+        if (!emit1(JSOp::Zero)) {
+          
+          return false;
+        }
+        if (!emitAtomOp(JSOp::InitProp, field.name)) {
+          
+          return false;
+        }
+      }
+      if (!emit1(JSOp::Pop)) {
+        
+        return false;
+      }
+    }
+    return true;
+  }
+
   size_t numInitializers = memberInitializers.numMemberInitializers;
   if (numInitializers > 0) {
     if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_initializers_())) {
@@ -12431,6 +12481,8 @@ bool BytecodeEmitter::emitClass(
                TaggedParserAtomIndex::WellKnown::dot_initializers_());
 #endif
 
+    ctor = &constructorScope->scopeBody()->as<ClassMethod>().method();
+
     auto needsInitializer = [](ParseNode* propdef) {
       return NeedsFieldInitializer(propdef, false) ||
              NeedsAccessorInitializer(propdef, false);
@@ -12450,7 +12502,8 @@ bool BytecodeEmitter::emitClass(
       }
 #endif
       
-      if (!emitCreateMemberInitializers(ce, classMembers,
+      if (!ctor->funbox()->memberInitializers().hasInlinedZeroFields &&
+          !emitCreateMemberInitializers(ce, classMembers,
                                         FieldPlacement::Instance
 #ifdef ENABLE_DECORATORS
                                         ,
@@ -12461,7 +12514,6 @@ bool BytecodeEmitter::emitClass(
       }
     }
 
-    ctor = &constructorScope->scopeBody()->as<ClassMethod>().method();
   } else {
     
     MOZ_ASSERT(emitterMode == BytecodeEmitter::SelfHosting);

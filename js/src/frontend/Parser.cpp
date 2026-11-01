@@ -48,6 +48,7 @@
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"
+#include "js/Prefs.h"        
 #include "js/RegExpFlags.h"  
 #include "js/Stack.h"        
 #include "util/DifferentialTesting.h"
@@ -8026,12 +8027,36 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
   bool hasPrivateBrand = classInitializedMembers.hasPrivateBrand();
   if (hasPrivateBrand || numMemberInitializers > 0) {
     
+    bool hasInstanceDecorators = false;
+#ifdef ENABLE_DECORATORS
+    hasInstanceDecorators = classInitializedMembers.hasInstanceDecorators;
+#endif
+    
+    
+    mozilla::Span<const InlinedZeroField> inlinedFields;
+    if (!hasPrivateBrand && !hasInstanceDecorators &&
+        hasHeritage == HasHeritage::No && ctorbox->emitBytecode &&
+        classInitializedMembers.hasOnlyInlinableZeroFields &&
+        !classInitializedMembers.inlinableZeroFields.empty()) {
+      const auto& fields = classInitializedMembers.inlinableZeroFields;
+      MOZ_ASSERT(fields.length() == classInitializedMembers.instanceFields);
+      InlinedZeroField* copy =
+          this->alloc_.template newArrayUninitialized<InlinedZeroField>(
+              fields.length());
+      if (!copy) {
+        js::ReportOutOfMemory(fc_);
+        return false;
+      }
+      std::copy(fields.begin(), fields.end(), copy);
+      inlinedFields = mozilla::Span(copy, fields.length());
+    }
     MemberInitializers initializers(
         hasPrivateBrand,
 #ifdef ENABLE_DECORATORS
         classInitializedMembers.hasInstanceDecorators,
 #endif
-        numMemberInitializers);
+        numMemberInitializers, !inlinedFields.IsEmpty());
+    ctorbox->setInlinedZeroFields(inlinedFields);
     ctorbox->setMemberInitializers(initializers);
 
     
@@ -8734,6 +8759,34 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
     handler_.checkAndSetIsDirectRHSAnonFunction(initializerExpr);
   } else {
     initializerExpr = MOZ_TRY(handler_.newRawUndefinedLiteral(propNamePos));
+  }
+
+  if constexpr (!std::is_same_v<ParseHandler, SyntaxParseHandler>) {
+    if (!isStatic && classInitializedMembers.hasOnlyInlinableZeroFields &&
+        JS::Prefs::experimental_inline_simple_field_initializers()) {
+      
+      
+      uint32_t index;
+      bool isPrivate = propAtom && handler_.isPrivateName(propName);
+      bool isPlainName = propAtom && (isPrivate || !this->parserAtoms().isIndex(
+                                                       propAtom, &index));
+      bool isZeroLiteral =
+          initializerExpr->isKind(ParseNodeKind::NumberExpr) &&
+          initializerExpr->template as<NumericLiteral>().value() == 0;
+      bool hasMaxInlinedZeroFields =
+          classInitializedMembers.inlinableZeroFields.length() >=
+          MemberInitializers::MaxInlinedZeroFields;
+      if (isPlainName && isZeroLiteral && !hasMaxInlinedZeroFields) {
+        if (!classInitializedMembers.inlinableZeroFields.append(
+                InlinedZeroField{propAtom, isPrivate})) {
+          js::ReportOutOfMemory(fc_);
+          return errorResult();
+        }
+      } else {
+        classInitializedMembers.hasOnlyInlinableZeroFields = false;
+        classInitializedMembers.inlinableZeroFields.clearAndFree();
+      }
+    }
   }
 
   TokenPos wholeInitializerPos(propNamePos.begin, pos().end);
