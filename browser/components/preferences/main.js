@@ -693,12 +693,17 @@ var gMainPane = {
       return false;
     }
     if (subcategory == "migrate") {
-      this.showMigrationWizardDialog();
+      this.showMigrationWizardDialog({
+        entrypoint: this.getMigrationEntrypoint(),
+      });
       return true;
     }
 
     if (subcategory == "migrate-autoclose") {
-      this.showMigrationWizardDialog({ closeTabWhenDone: true });
+      this.showMigrationWizardDialog({
+        closeTabWhenDone: true,
+        entrypoint: this.getMigrationEntrypoint(),
+      });
     }
 
     return false;
@@ -1495,7 +1500,30 @@ var gMainPane = {
   
 
 
-  async showMigrationWizardDialog({ closeTabWhenDone = false } = {}) {
+
+
+
+  getMigrationEntrypoint() {
+    return (
+      MigrationUtils.consumePendingPreferencesEntrypoint() ??
+      MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES
+    );
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  async showMigrationWizardDialog({
+    closeTabWhenDone = false,
+    entrypoint = MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES,
+  } = {}) {
     let migrationWizardDialog = document.getElementById(
       "migrationWizardDialog"
     );
@@ -1518,6 +1546,10 @@ var gMainPane = {
         }
       );
     }
+    migrationWizardDialog.firstElementChild.setAttribute(
+      "entrypoint",
+      entrypoint
+    );
     migrationWizardDialog.firstElementChild.requestState();
 
     migrationWizardDialog.addEventListener(
