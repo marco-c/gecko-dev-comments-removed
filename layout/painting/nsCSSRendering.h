@@ -333,6 +333,17 @@ struct nsCSSRendering {
       const nsRect& aBorderArea, const nsStyleImageLayers::Layer& aLayer,
       nsIFrame** aAttachedToFrame, bool* aOutTransformedFixed);
 
+  struct BackgroundImageInfo {
+    nsSize mSize{};
+    nsPoint mAnchor{};
+    nsPoint mTopLeft{};
+
+    bool IsEmpty() const { return mSize.IsEmpty(); }
+  };
+  static BackgroundImageInfo ComputeBackgroundImageInfo(
+      const mozilla::CSSSizeOrRatio& aIntrinsicSize,
+      const nsSize& aPositionAreaSize, const nsStyleImageLayers::Layer& aLayer);
+
   
   
   
