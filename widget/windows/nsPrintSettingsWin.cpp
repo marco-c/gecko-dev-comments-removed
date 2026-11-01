@@ -350,16 +350,15 @@ void nsPrintSettingsWin::CopyFromNative(HDC aHdc, DEVMODEW* aDevMode) {
 
   
   
-  double paperHeightInch = mOrientation == kPortraitOrientation
-                               ? physicalHeightInch
-                               : physicalWidthInch;
+  const bool isSheetPortrait = GetSheetOrientation() == kPortraitOrientation;
+  double paperHeightInch =
+      isSheetPortrait ? physicalHeightInch : physicalWidthInch;
   mPaperHeight = mPaperSizeUnit == kPaperSizeInches
                      ? paperHeightInch
                      : paperHeightInch * MM_PER_INCH_FLOAT;
 
-  double paperWidthInch = mOrientation == kPortraitOrientation
-                              ? physicalWidthInch
-                              : physicalHeightInch;
+  double paperWidthInch =
+      isSheetPortrait ? physicalWidthInch : physicalHeightInch;
   mPaperWidth = mPaperSizeUnit == kPaperSizeInches
                     ? paperWidthInch
                     : paperWidthInch * MM_PER_INCH_FLOAT;
