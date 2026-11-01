@@ -2082,7 +2082,10 @@ function removeUpdateInProgressLockFile(aDir) {
   Assert.ok(!file.exists(), MSG_SHOULD_NOT_EXIST + getMsgPath(file.path));
 }
 
-function stripQuarantineBitFromPath(aPath) {
+
+
+
+function _stripQuarantineBitFromPath(aPath) {
   if (AppConstants.platform != "macosx") {
     do_throw("macOS-only function called by a different platform!");
   }
@@ -2095,9 +2098,17 @@ function stripQuarantineBitFromPath(aPath) {
   xattrBin.initWithPath("/usr/bin/xattr");
   stripQuarantineBitProcess.init(xattrBin);
   stripQuarantineBitProcess.run(true, args, args.length);
+  Assert.equal(
+    stripQuarantineBitProcess.exitValue,
+    0,
+    "xattr should succeed for " + aPath
+  );
 }
 
-function selfSignAppBundle(aPath) {
+
+
+
+function _selfSignAppBundle(aPath) {
   if (AppConstants.platform != "macosx") {
     do_throw("macOS-only function called by a different platform!");
   }
@@ -2110,6 +2121,11 @@ function selfSignAppBundle(aPath) {
   codesignBin.initWithPath("/usr/bin/codesign");
   codesignProcess.init(codesignBin);
   codesignProcess.run(true, args, args.length);
+  Assert.equal(
+    codesignProcess.exitValue,
+    0,
+    "codesign should succeed for " + aPath
+  );
 }
 
 
@@ -2118,7 +2134,55 @@ function selfSignAppBundle(aPath) {
 
 
 
-function copyTestUpdaterToBinDir() {
+function _signTestAppBundle() {
+  if (AppConstants.platform != "macosx") {
+    do_throw("macOS-only function called by a different platform!");
+  }
+
+  let infoPlist = getApplyDirFile(DIR_CONTENTS + FILE_INFO_PLIST);
+  if (!infoPlist.exists()) {
+    writeFile(infoPlist, DIR_APP_INFO_PLIST_FILE_CONTENTS);
+  }
+  let bundlePath = getApplyDirFile().path;
+  _stripQuarantineBitFromPath(bundlePath);
+  _selfSignAppBundle(bundlePath);
+}
+
+
+
+
+
+
+
+
+
+
+
+async function setupTestAppBundle({ requiresOmnijar = false } = {}) {
+  await TestUtils.waitForCondition(() => {
+    try {
+      _setupAppFiles({ requiresOmnijar });
+      return true;
+    } catch (e) {
+      logTestInfo("exception when calling _setupAppFiles, Exception: " + e);
+    }
+    return false;
+  }, "Waiting to setup app files");
+
+  if (AppConstants.platform == "macosx") {
+    _signTestAppBundle();
+  }
+}
+
+
+
+
+
+
+
+
+
+function _copyTestUpdaterToBinDir() {
   let testUpdater = getTestDirFile(FILE_UPDATER_BIN);
   let updater = getGREBinDir();
   updater.append(FILE_UPDATER_BIN);
@@ -2127,7 +2191,7 @@ function copyTestUpdaterToBinDir() {
   }
 
   if (AppConstants.platform == "macosx") {
-    stripQuarantineBitFromPath(updater.path);
+    _stripQuarantineBitFromPath(updater.path);
     updater.append("Contents");
     updater.append("MacOS");
     updater.append("org.mozilla.updater");
@@ -2268,7 +2332,7 @@ function runUpdate(
   }
 
   if (!gUpdateBin) {
-    gUpdateBin = copyTestUpdaterToBinDir();
+    gUpdateBin = _copyTestUpdaterToBinDir();
   }
 
   Assert.ok(
@@ -2751,7 +2815,9 @@ function isBinarySigned(aBinPath) {
 
 
 
-function setupAppFiles({ requiresOmnijar = false } = {}) {
+
+
+function _setupAppFiles({ requiresOmnijar = false } = {}) {
   debugDump(
     "start - copying or creating symlinks to application files " +
       "for the test"
@@ -2824,7 +2890,7 @@ function setupAppFiles({ requiresOmnijar = false } = {}) {
     copyFileToTestAppDir(aAppFile.relPath, aAppFile.inDir);
   });
 
-  copyTestUpdaterToBinDir();
+  _copyTestUpdaterToBinDir();
 
   debugDump(
     "finish - copying or creating symlinks to application files " +
@@ -3458,7 +3524,7 @@ async function setupUpdaterTest(
   
   
   if (!gUpdateBin) {
-    gUpdateBin = copyTestUpdaterToBinDir();
+    gUpdateBin = _copyTestUpdaterToBinDir();
   }
 
   let filesWithCompareContents = [];
@@ -3600,20 +3666,9 @@ async function setupUpdaterTest(
     });
   }
 
-  await TestUtils.waitForCondition(() => {
-    try {
-      setupAppFiles({ requiresOmnijar });
-      return true;
-    } catch (e) {
-      logTestInfo("exception when calling setupAppFiles, Exception: " + e);
-    }
-    return false;
-  }, "Waiting to setup app files");
+  await setupTestAppBundle({ requiresOmnijar });
 
   if (AppConstants.platform == "macosx") {
-    let bundlePath = afterApplyBinDir.parent.parent.path;
-    stripQuarantineBitFromPath(bundlePath);
-    selfSignAppBundle(bundlePath);
     filesWithCompareContents.forEach(elem => {
       elem.memFile.originalContents = readFileBytes(elem.diskFile);
       elem.memFile.compareContents = elem.memFile.originalContents;

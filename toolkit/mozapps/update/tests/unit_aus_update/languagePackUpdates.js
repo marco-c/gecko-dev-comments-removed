@@ -148,7 +148,7 @@ add_task(async function testLangpackStaged() {
   let stagingCall = mockLangpackUpdate();
 
   Services.prefs.setBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, true);
-  copyTestUpdaterToBinDir();
+  await setupTestAppBundle();
 
   let greDir = getGREDir();
 
@@ -162,7 +162,20 @@ add_task(async function testLangpackStaged() {
 
   
   
-  await TestUtils.waitForCondition(() => readStatusFile() == "applied");
+  
+  
+  try {
+    await TestUtils.waitForCondition(
+      () => readStatusFile() == "applied",
+      "Waiting for the update to be staged",
+       500,
+       60
+    );
+  } catch (e) {
+    logTestInfo(`the update status is "${readStatusFile()}"`);
+    logUpdateLog(FILE_UPDATE_LOG);
+    throw e;
+  }
 
   Assert.ok(
     !updateStagedNotified,
