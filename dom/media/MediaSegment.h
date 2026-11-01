@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_MEDIASEGMENT_H_
 #define MOZILLA_MEDIASEGMENT_H_
 
@@ -120,7 +119,7 @@ class MediaSegment {
 
 
   void SetLastPrincipalHandle(PrincipalHandle aLastPrincipalHandle) {
-    mLastPrincipalHandle = std::forward<PrincipalHandle>(aLastPrincipalHandle);
+    mLastPrincipalHandle = std::move(aLastPrincipalHandle);
   }
 
   

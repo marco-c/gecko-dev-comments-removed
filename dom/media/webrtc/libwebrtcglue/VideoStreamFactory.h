@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef VideoStreamFactory_h
 #define VideoStreamFactory_h
 
@@ -38,7 +36,7 @@ class VideoStreamFactory
                      int aStartBitrate, int aPrefMaxBitrate,
                      int aNegotiatedMaxBitrate)
       : mMaxFramerateForAllStreams(std::numeric_limits<unsigned int>::max()),
-        mCodecConfig(std::forward<VideoCodecConfig>(aConfig)),
+        mCodecConfig(std::move(aConfig)),
         mMinBitrate(aMinBitrate),
         mStartBitrate(aStartBitrate),
         mPrefMaxBitrate(aPrefMaxBitrate),
