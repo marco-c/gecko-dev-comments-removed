@@ -607,30 +607,6 @@ pref("browser.urlbar.quicksuggest.online.available", false);
 pref("browser.urlbar.quicksuggest.online.enabled", true, sticky);
 
 
-pref("browser.urlbar.quicksuggest.contextualOptIn", false);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.dismissedCount", 0);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.firstReshowAfterPeriodDays", 7);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.secondReshowAfterPeriodDays", 14);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.thirdReshowAfterPeriodDays", 60);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.impressionCount", 0);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.impressionLimit", 20);
-
-
-pref("browser.urlbar.quicksuggest.contextualOptIn.impressionDaysLimit", 5);
-
-
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
