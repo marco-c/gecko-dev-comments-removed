@@ -23,7 +23,8 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
                               public LinkStyle,
                               public SupportsDNSPrefetch {
  public:
-  explicit HTMLLinkElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
+  HTMLLinkElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                  FromParser aFromParser);
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -206,6 +207,8 @@ class HTMLLinkElement final : public nsGenericHTMLElement,
 
   
   nsCOMPtr<nsIURI> mCachedURI;
+
+  FromParser mCreatedByParser;
 
   
   

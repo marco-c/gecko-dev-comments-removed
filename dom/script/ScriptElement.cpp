@@ -29,6 +29,12 @@ NS_IMETHODIMP
 ScriptElement::ScriptAvailable(nsresult aResult, nsIScriptElement* aElement,
                                bool aIsInlineClassicScript, nsIURI* aURI,
                                uint32_t aLineNo) {
+  
+  
+  
+  Element* element = GetAsContent()->AsElement();
+  element->OwnerDoc()->UnblockRendering(*element);
+
   if (!aIsInlineClassicScript && NS_FAILED(aResult)) {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     if (parser) {

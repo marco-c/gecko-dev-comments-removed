@@ -1769,6 +1769,25 @@ class Document : public nsINode,
   
   HTMLSharedElement* GetHead() const;
 
+  
+  
+  bool AllowsAddingRenderBlockingElements() const;
+  bool IsRenderBlocked() const;
+  void BlockRendering(Element& aElement);
+  void UnblockRendering(Element& aElement);
+  
+  void MaybeBlockRendering(Element& aElement);
+  
+  
+  void StopRenderBlocking();
+
+ private:
+  void StartLayoutAfterUnblocking();
+  
+  
+  void EnsureRenderBlockingTimeoutTimer();
+
+ public:
   ServoStyleSet* StyleSetForPresShell() const {
     MOZ_ASSERT(!!mStyleSet.get());
     return mStyleSet.get();
@@ -6027,6 +6046,13 @@ class Document : public nsINode,
 
   
   RefPtr<class SpeculationRules> mSpeculationRules;
+
+  
+  
+  
+  nsTHashSet<RefPtr<Element>> mRenderBlockingElementSet;
+  nsCOMPtr<nsITimer> mRenderBlockingTimer;
+  bool mRenderBlockingStopped = false;
 
  public:
   

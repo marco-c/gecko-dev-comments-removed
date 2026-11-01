@@ -18,6 +18,14 @@ enum FromParser {
   FROM_PARSER_XSLT = 1 << 3
 };
 
+
+
+inline bool IsFromDocumentParser(FromParser aFromParser) {
+  return aFromParser == FROM_PARSER_NETWORK ||
+         aFromParser == FROM_PARSER_DOCUMENT_WRITE ||
+         aFromParser == FROM_PARSER_XSLT;
+}
+
 }  
 
 #endif  

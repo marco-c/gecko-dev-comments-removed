@@ -297,6 +297,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     }
   }
 
+  const bool droppedSheet = !!mStyleSheet;
   if (mStyleSheet) {
     if (mStyleSheet->IsComplete()) {
       if (thisContent.IsInShadowTree()) {
@@ -313,12 +314,22 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     SetStyleSheet(nullptr);
   }
 
+  
+  
+  auto unblockDroppedSheet = [&] {
+    if (droppedSheet && thisContent.IsElement()) {
+      doc->UnblockRendering(*thisContent.AsElement());
+    }
+  };
+
   if (!info) {
+    unblockDroppedSheet();
     return Update{};
   }
 
   if (!info->mURI && !info->mIsInline) {
     
+    unblockDroppedSheet();
     return Update{};
   }
 
@@ -341,7 +352,20 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     }
 
     
-    return doc->EnsureCSSLoader().LoadInlineStyle(*info, text, aObserver);
+    auto result =
+        doc->EnsureCSSLoader().LoadInlineStyle(*info, text, aObserver);
+
+    
+    
+    
+    if (thisContent.IsElement() && result.isOk() &&
+        result.inspect().ShouldBlock()) {
+      
+      
+      doc->MaybeBlockRendering(*thisContent.AsElement());
+    }
+
+    return result;
   }
   if (thisContent.IsElement()) {
     nsAutoString integrity;
@@ -357,8 +381,18 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     
     
     
+    unblockDroppedSheet();
     return Update{};
   }
+
+  
+  
+  
+  if (thisContent.IsElement() && resultOrError.inspect().ShouldBlock()) {
+    
+    doc->MaybeBlockRendering(*thisContent.AsElement());
+  }
+
   return resultOrError;
 }
 

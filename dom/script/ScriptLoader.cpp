@@ -1574,6 +1574,11 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     return false;
   }
 
+  
+  
+  
+  mDocument->MaybeBlockRendering(*aScriptContent->AsElement());
+
   nsString nonce = nsContentSecurityUtils::GetIsElementNonceableNonce(
       *aScriptContent->AsElement());
   SRIMetadata sriMetadata;
@@ -1608,6 +1613,8 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
       
       
       request->Cancel();
+      
+      mDocument->UnblockRendering(*aScriptContent->AsElement());
       return false;
     }
 
@@ -1672,6 +1679,8 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     nsresult rv = StartLoad(request);
     if (NS_FAILED(rv)) {
       ReportErrorToConsole(request, rv);
+      
+      mDocument->UnblockRendering(*aScriptContent->AsElement());
 
       
       
@@ -1873,6 +1882,13 @@ bool ScriptLoader::ProcessInlineScript(nsIScriptElement* aElement,
                             &nsIScriptElement::FireErrorEvent));
       return false;
     }
+  }
+
+  
+  
+  
+  if (aScriptKind == ScriptKind::eModule) {
+    mDocument->MaybeBlockRendering(*element);
   }
 
   

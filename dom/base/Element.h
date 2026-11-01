@@ -1734,6 +1734,15 @@ class Element : public FragmentOrElement {
   bool BlockingContainsRender() const;
 
   
+  
+  void UnblockRenderingIfNotPotentiallyRenderBlocking();
+
+  
+  
+  
+  void RenderBlockingElementUnbindFromTree(UnbindContext&);
+
+  
   enum class ShadowRootDeclarative : bool { No, Yes };
 
   

@@ -2554,6 +2554,12 @@ Document::~Document() {
   mInDestructor = true;
   mInUnlinkOrDeletion = true;
 
+  
+  if (mRenderBlockingTimer) {
+    mRenderBlockingTimer->Cancel();
+    mRenderBlockingTimer = nullptr;
+  }
+
   mozilla::DropJSObjects(this);
 
   
@@ -2767,6 +2773,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElementsObservedForLastRememberedSize)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRenderBlockingElementSet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMImplementation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mImageMaps)
@@ -2893,6 +2900,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRenderBlockingElementSet);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mActiveEditContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPreviouslyFocusedContent)
@@ -7880,6 +7888,10 @@ bool Document::IsRenderingSuppressed() const {
     return true;
   }
   
+  if (IsRenderBlocked()) {
+    return true;
+  }
+  
   
   if (!IsEventHandlingEnabled() && !IsBeingUsedAsImage() && !mDisplayDocument &&
       !mPausedByDevTools) {
@@ -8173,6 +8185,14 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
   MOZ_ASSERT(mCachedRootElement != aKid,
              "Stale pointer in mCachedRootElement, after we tried to clear it "
              "(maybe somebody called GetRootElement() too early?)");
+
+  
+  
+  
+  
+  if (removingRoot && StaticPrefs::dom_element_blocking_enabled()) {
+    StopRenderBlocking();
+  }
 }
 
 void Document::AddStyleSheetToStyleSets(StyleSheet& aSheet) {
@@ -13421,8 +13441,20 @@ void Document::SetReadyStateInternal(ReadyState aReadyState,
   if (aUpdateTimingInformation && READYSTATE_LOADING == aReadyState) {
     SetLoadingOrRestoredFromBFCacheTimeStampToNow();
   }
+
+  if (aReadyState == READYSTATE_LOADING &&
+      AllowsAddingRenderBlockingElements()) {
+    EnsureRenderBlockingTimeoutTimer();
+  }
+
   NotifyLoading(mAncestorIsLoading, mReadyState, aReadyState);
+  const bool wasLoading = mReadyState == READYSTATE_LOADING;
   mReadyState = aReadyState;
+  
+  
+  if (wasLoading && StaticPrefs::dom_element_blocking_enabled()) {
+    MaybeScheduleRendering();
+  }
   if (aUpdateTimingInformation && mTiming) {
     switch (aReadyState) {
       case READYSTATE_LOADING:
@@ -20012,6 +20044,126 @@ Document::ResolveInboundCrossDocumentViewTransition() {
 void Document::SetInboundViewTransitionParams(
     UniquePtr<ViewTransitionParams> aParams) {
   mInboundViewTransitionParams = std::move(aParams);
+}
+
+
+bool Document::AllowsAddingRenderBlockingElements() const {
+  if (!StaticPrefs::dom_element_blocking_enabled()) {
+    return false;
+  }
+
+  
+  
+  
+  if (!GetContentTypeInternal().EqualsLiteral("text/html")) {
+    return false;
+  }
+
+  return !GetBody();
+}
+
+
+bool Document::IsRenderBlocked() const {
+  
+  
+  if (!StaticPrefs::dom_element_blocking_enabled() || mRenderBlockingStopped) {
+    return false;
+  }
+
+  
+  
+  
+  
+  return !mRenderBlockingElementSet.IsEmpty() ||
+         (AllowsAddingRenderBlockingElements() &&
+          mReadyState == READYSTATE_LOADING);
+}
+
+static void RenderBlockingTimeoutCallback(nsITimer* aTimer, void* aClosure) {
+  RefPtr<Document> doc = static_cast<Document*>(aClosure);
+  doc->StopRenderBlocking();
+}
+
+void Document::EnsureRenderBlockingTimeoutTimer() {
+  if (mRenderBlockingTimer || mRenderBlockingStopped) {
+    return;
+  }
+  NS_NewTimerWithFuncCallback(
+      getter_AddRefs(mRenderBlockingTimer), RenderBlockingTimeoutCallback, this,
+      StaticPrefs::dom_element_blocking_timeout_ms(), nsITimer::TYPE_ONE_SHOT,
+      "Document::RenderBlockingTimeout"_ns);
+}
+
+
+void Document::BlockRendering(Element& aElement) {
+  if (!StaticPrefs::dom_element_blocking_enabled()) {
+    return;
+  }
+
+  if (AllowsAddingRenderBlockingElements()) {
+    mRenderBlockingElementSet.Insert(&aElement);
+    EnsureRenderBlockingTimeoutTimer();
+  }
+}
+
+void Document::MaybeBlockRendering(Element& aElement) {
+  if (AllowsAddingRenderBlockingElements() &&
+      aElement.IsPotentiallyRenderBlocking()) {
+    BlockRendering(aElement);
+  }
+}
+
+
+void Document::UnblockRendering(Element& aElement) {
+  if (!StaticPrefs::dom_element_blocking_enabled()) {
+    return;
+  }
+
+  if (!mRenderBlockingElementSet.EnsureRemoved(&aElement)) {
+    return;
+  }
+
+  if (mRenderBlockingElementSet.IsEmpty()) {
+    StartLayoutAfterUnblocking();
+  }
+}
+
+void Document::StopRenderBlocking() {
+  if (mRenderBlockingStopped) {
+    return;
+  }
+  const bool wasRenderBlocked = IsRenderBlocked();
+  mRenderBlockingStopped = true;
+  mRenderBlockingElementSet.Clear();
+  if (mRenderBlockingTimer) {
+    mRenderBlockingTimer->Cancel();
+    mRenderBlockingTimer = nullptr;
+  }
+  if (wasRenderBlocked) {
+    
+    
+    StartLayoutAfterUnblocking();
+  }
+}
+
+void Document::StartLayoutAfterUnblocking() {
+  
+  
+  MaybeScheduleRendering();
+
+  
+  
+  nsCOMPtr<nsIContentSink> sink;
+  if (mParser) {
+    sink = mParser->GetContentSink();
+  } else {
+    sink = do_QueryReferent(mWeakSink);
+  }
+  if (nsCOMPtr<nsContentSink> contentSink = do_QueryInterface(sink)) {
+    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
+        "Document::StartLayoutAfterUnblocking",
+        [contentSink] { contentSink->StartLayout(false); }));
+  }
 }
 
 Selection* Document::GetSelection(ErrorResult& aRv) {

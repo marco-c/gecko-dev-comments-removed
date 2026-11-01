@@ -24,6 +24,7 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StoragePrincipalHelper.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
@@ -75,6 +76,7 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(nsContentSink)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsContentSink)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsContentSink)
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(nsContentSink)
   NS_INTERFACE_MAP_ENTRY(nsICSSLoaderObserver)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsICSSLoaderObserver)
@@ -166,6 +168,8 @@ nsContentSink::StyleSheetLoaded(StyleSheet* aSheet, bool aWasDeferred,
 
   const bool loadedAllSheets = !mPendingSheetCount;
   if (loadedAllSheets && mDeferredLayoutStart) {
+    
+    
     
     
     
@@ -554,7 +558,9 @@ void nsContentSink::StartLayout(bool aIgnorePendingSheets) {
   mDeferredLayoutStart = true;
 
   if (!aIgnorePendingSheets &&
-      (WaitForPendingSheets() || mDocument->HasPendingInitialTranslation())) {
+      (WaitForPendingSheets() || mDocument->HasPendingInitialTranslation() ||
+       mDocument->IsRenderBlocked())) {
+    
     
     return;
   }
