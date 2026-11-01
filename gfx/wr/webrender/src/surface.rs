@@ -552,10 +552,20 @@ pub struct SurfaceTileDescriptor {
 }
 
 
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct SurfaceExtraTarget {
+    
+    pub rect: PictureRect,
+    pub task_id: RenderTaskId,
+}
+
+
 pub enum SurfaceDescriptorKind {
     
     Tiled {
         tiles: FastHashMap<TileKey, SurfaceTileDescriptor>,
+        extra_targets: Vec<SurfaceExtraTarget>,
     },
     
     Simple {
@@ -588,10 +598,12 @@ impl SurfaceDescriptor {
     
     pub fn new_tiled(
         tiles: FastHashMap<TileKey, SurfaceTileDescriptor>,
+        extra_targets: Vec<SurfaceExtraTarget>,
     ) -> Self {
         SurfaceDescriptor {
             kind: SurfaceDescriptorKind::Tiled {
                 tiles,
+                extra_targets,
             },
         }
     }
@@ -649,13 +661,23 @@ impl CommandBufferTargets {
         }
 
         match cb.kind {
-            CommandBufferBuilderKind::Tiled { ref tiles, .. } => {
+            CommandBufferBuilderKind::Tiled { ref tiles, ref extra_targets } => {
                 for (key, desc) in tiles {
                     let task = rg_builder.get_task(desc.current_task_id);
                     match task.kind {
                         RenderTaskKind::Picture(ref info) => {
                             let available_cmd_buffers = &mut self.available_cmd_buffers[key.sub_slice_index.as_usize()];
                             available_cmd_buffers.push((desc.dirty_rect, info.cmd_buffer_index));
+                        }
+                        _ => unreachable!("bug: not a picture"),
+                    }
+                }
+                for target in extra_targets {
+                    match rg_builder.get_task(target.task_id).kind {
+                        RenderTaskKind::Picture(ref info) => {
+                            for available_cmd_buffers in &mut self.available_cmd_buffers {
+                                available_cmd_buffers.push((target.rect, info.cmd_buffer_index));
+                            }
                         }
                         _ => unreachable!("bug: not a picture"),
                     }
@@ -751,9 +773,10 @@ impl SurfaceBuilder {
 
         let builder = if let Some(descriptor) = descriptor {
             match descriptor.kind {
-                SurfaceDescriptorKind::Tiled { tiles } => {
+                SurfaceDescriptorKind::Tiled { tiles, extra_targets } => {
                     CommandBufferBuilder::new_tiled(
                         tiles,
+                        extra_targets,
                     )
                 }
                 SurfaceDescriptorKind::Simple { render_task_id, dirty_rect, .. } => {
@@ -788,25 +811,9 @@ impl SurfaceBuilder {
     ) {
         self.add_backdrop_capture_dependency(child_task_id);
 
-        let builder = self.builder_stack.last().unwrap();
-
-        match builder.kind {
-            CommandBufferBuilderKind::Tiled { ref tiles } => {
-                for (_, descriptor) in tiles {
-                    rg_builder.add_dependency(
-                        descriptor.current_task_id,
-                        child_task_id,
-                    );
-                }
-            }
-            CommandBufferBuilderKind::Simple { render_task_id, .. } => {
-                rg_builder.add_dependency(
-                    render_task_id,
-                    child_task_id,
-                );
-            }
-            CommandBufferBuilderKind::Invalid { .. } => {}
-        }
+        self.builder_stack.last().unwrap().kind.for_each_task(|task_id| {
+            rg_builder.add_dependency(task_id, child_task_id);
+        });
     }
 
     
@@ -880,58 +887,21 @@ impl SurfaceBuilder {
     ) {
         let builder = self.builder_stack.pop().unwrap();
 
-        match builder.kind {
-            CommandBufferBuilderKind::Tiled { .. } => {}
-            CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
-                self.add_backdrop_capture_dependency(child_root_task_id.unwrap_or(child_task_id));
-
-                match self.builder_stack.last().unwrap().kind {
-                    CommandBufferBuilderKind::Tiled { ref tiles } => {
-                        
-                        for (_, descriptor) in tiles {
-                            rg_builder.add_dependency(
-                                descriptor.current_task_id,
-                                child_root_task_id.unwrap_or(child_task_id),
-                            );
-                        }
-                    }
-                    CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
-                        rg_builder.add_dependency(
-                            parent_task_id,
-                            child_root_task_id.unwrap_or(child_task_id),
-                        );
-                    }
-                    CommandBufferBuilderKind::Invalid => {
-                    }
-                }
-            }
-            CommandBufferBuilderKind::Invalid => {
-            }
+        if let CommandBufferBuilderKind::Simple { render_task_id, root_task_id, .. } = builder.kind {
+            let child_task_id = root_task_id.unwrap_or(render_task_id);
+            self.add_backdrop_capture_dependency(child_task_id);
+            self.builder_stack.last().unwrap().kind.for_each_task(|parent_task_id| {
+                rg_builder.add_dependency(parent_task_id, child_task_id);
+            });
         }
 
         
         
-        match builder.kind {
-            CommandBufferBuilderKind::Tiled { ref tiles } => {
-                for (_, descriptor) in tiles {
-                    for task_id in &builder.extra_dependencies {
-                        rg_builder.add_dependency(
-                            descriptor.current_task_id,
-                            *task_id,
-                        );
-                    }
-                }
+        builder.kind.for_each_task(|surface_task_id| {
+            for task_id in &builder.extra_dependencies {
+                rg_builder.add_dependency(surface_task_id, *task_id);
             }
-            CommandBufferBuilderKind::Simple { render_task_id, .. } => {
-                for task_id in &builder.extra_dependencies {
-                    rg_builder.add_dependency(
-                        render_task_id,
-                        *task_id,
-                    );
-                }
-            }
-            CommandBufferBuilderKind::Invalid { .. } => {}
-        }
+        });
 
         
         self.current_cmd_buffers.init(
