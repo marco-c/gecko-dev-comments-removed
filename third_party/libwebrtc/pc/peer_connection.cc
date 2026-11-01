@@ -300,6 +300,7 @@ RTCError ValidateIceCandidatePoolSize(
 
 
 
+
 RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     const PeerConnectionInterface::RTCConfiguration& existing_configuration) {
@@ -307,6 +308,8 @@ RTCErrorOr<PeerConnectionInterface::RTCConfiguration> ApplyConfiguration(
       existing_configuration;
   modified_config.type = configuration.type;
   modified_config.crypto_options = configuration.crypto_options;
+  modified_config.crypto_options.srtp.cryptex_policy =
+      existing_configuration.crypto_options.srtp.cryptex_policy;
 
   
   modified_config.servers = configuration.servers;
