@@ -96,7 +96,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   
-  NS_IMETHOD GetIsSSL(bool* aIsSSL) override;
   NS_IMETHOD GetProxyMethodIsConnect(bool* aProxyMethodIsConnect) override;
   NS_IMETHOD GetServerResponseHeader(
       nsACString& aServerResponseHeader) override;

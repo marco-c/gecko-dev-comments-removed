@@ -763,9 +763,8 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   
   
-  if (StaticPrefs::network_http_windows_sso_enabled() &&
-      mURI->SchemeIs("https") && !(mLoadFlags & LOAD_ANONYMOUS) &&
-      !mPrivateBrowsing) {
+  if (StaticPrefs::network_http_windows_sso_enabled() && IsHTTPS() &&
+      !(mLoadFlags & LOAD_ANONYMOUS) && !mPrivateBrowsing) {
     ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
     if ((type == ExtContentPolicy::TYPE_DOCUMENT ||
          type == ExtContentPolicy::TYPE_SUBDOCUMENT) &&
@@ -791,9 +790,8 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   
   
-  if (StaticPrefs::network_http_microsoft_entra_sso_enabled() &&
-      mURI->SchemeIs("https") && !(mLoadFlags & LOAD_ANONYMOUS) &&
-      !mPrivateBrowsing) {
+  if (StaticPrefs::network_http_microsoft_entra_sso_enabled() && IsHTTPS() &&
+      !(mLoadFlags & LOAD_ANONYMOUS) && !mPrivateBrowsing) {
     ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
     if ((type == ExtContentPolicy::TYPE_DOCUMENT ||
          type == ExtContentPolicy::TYPE_SUBDOCUMENT) &&
@@ -930,7 +928,7 @@ nsresult nsHttpChannel::OnBeforeConnect() {
   }
 
   nsCOMPtr<nsIPrincipal> resultPrincipal;
-  if (!mURI->SchemeIs("https")) {
+  if (!IsHTTPS()) {
     nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
         this, getter_AddRefs(resultPrincipal));
   }
@@ -1075,8 +1073,7 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
 
   bool forceOffline = IsForcedOffline();
 
-  if (mURI->SchemeIs("https") || aShouldUpgrade || !LoadUseHTTPSSVC() ||
-      forceOffline) {
+  if (IsHTTPS() || aShouldUpgrade || !LoadUseHTTPSSVC() || forceOffline) {
     return ContinueOnBeforeConnect(aShouldUpgrade, aStatus);
   }
 
@@ -1179,7 +1176,7 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     return aStatus;
   }
 
-  if (aShouldUpgrade && !mURI->SchemeIs("https")) {
+  if (aShouldUpgrade && !IsHTTPS()) {
     
     
     
@@ -1501,7 +1498,7 @@ nsresult nsHttpChannel::ConnectOnTailUnblock() {
   SpeculativeConnect();
 
   
-  rv = OpenCacheEntry(mURI->SchemeIs("https"));
+  rv = OpenCacheEntry(IsHTTPS());
 
   
   if (AwaitingCacheCallbacks()) {
@@ -2878,7 +2875,7 @@ nsresult nsHttpChannel::ProcessWAICTHeader() {
   
   
   OriginAttributes originAttributes;
-  if (mURI->SchemeIs("https")) {
+  if (IsHTTPS()) {
     if (NS_WARN_IF(!StoragePrincipalHelper::GetOriginAttributesForHTTPSRR(
             this, originAttributes))) {
       return NS_ERROR_FAILURE;
@@ -2935,7 +2932,7 @@ nsresult nsHttpChannel::ProcessSecurityHeaders() {
   
   
   
-  if (!mURI->SchemeIs("https")) {
+  if (!IsHTTPS()) {
     return NS_OK;
   }
 
@@ -5470,7 +5467,7 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
     }
   }
 
-  bool isHttps = mURI->SchemeIs("https");
+  bool isHttps = IsHTTPS();
 
   bool doValidation = false;
   bool doBackgroundValidation = false;
@@ -5893,7 +5890,7 @@ nsresult nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry,
                                              bool startBuffering) {
   nsresult rv;
 
-  if (mURI->SchemeIs("https")) {
+  if (IsHTTPS()) {
     rv = cacheEntry->GetSecurityInfo(getter_AddRefs(mCachedSecurityInfo));
     if (NS_FAILED(rv)) {
       LOG(("failed to parse security-info [channel=%p, entry=%p]", this,
@@ -6354,8 +6351,7 @@ void nsHttpChannel::UpdateInhibitPersistentCachingFlag() {
   }
 
   
-  if (!gHttpHandler->IsPersistentHttpsCachingEnabled() &&
-      mURI->SchemeIs("https")) {
+  if (!gHttpHandler->IsPersistentHttpsCachingEnabled() && IsHTTPS()) {
     mLoadFlags |= INHIBIT_PERSISTENT_CACHING;
   }
 }
@@ -8135,7 +8131,7 @@ nsresult nsHttpChannel::BeginConnect() {
   nsAutoCString host;
   nsAutoCString scheme;
   int32_t port = -1;
-  bool isHttps = mURI->SchemeIs("https");
+  bool isHttps = IsHTTPS();
 
   rv = mURI->GetScheme(scheme);
   if (NS_SUCCEEDED(rv)) rv = mURI->GetAsciiHost(host);
@@ -9052,14 +9048,6 @@ nsHttpChannel::GetTransactionPending(TimeStamp* _retval) {
 
 
 
-
-NS_IMETHODIMP
-nsHttpChannel::GetIsSSL(bool* aIsSSL) {
-  
-  
-  
-  return mURI->SchemeIs("https", aIsSSL);
-}
 
 NS_IMETHODIMP
 nsHttpChannel::GetProxyMethodIsConnect(bool* aProxyMethodIsConnect) {
