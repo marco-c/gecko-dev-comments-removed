@@ -45,8 +45,8 @@ class MenuActivateEvent final : public Runnable {
     nsAutoString domEventToFire;
     if (mIsActivate) {
       
-      mMenu->SetAttr(kNameSpaceID_None, nsGkAtoms::menuactive, u"true"_ns,
-                     true);
+      mMenu->SetAttr(kNameSpaceID_None, nsGkAtoms::menuactive, u"true"_ns, true,
+                     IsKnownNewAttr::No);
       
       
       domEventToFire.AssignLiteral("DOMMenuItemActive");

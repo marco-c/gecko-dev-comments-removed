@@ -67,7 +67,8 @@ void XULButtonElement::PopupOpened() {
     return;
   }
   gMenuJustOpenedOrClosedTime = TimeStamp::Now();
-  SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true);
+  SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true,
+          IsKnownNewAttr::No);
 }
 
 void XULButtonElement::PopupClosed(bool aDeselectMenu) {
@@ -300,7 +301,7 @@ void XULButtonElement::StartBlinking() {
           if (parent->GetActiveMenuChild() == self) {
             
             self->SetAttr(kNameSpaceID_None, nsGkAtoms::menuactive, u"true"_ns,
-                          true);
+                          true, IsKnownNewAttr::No);
           }
         }
         

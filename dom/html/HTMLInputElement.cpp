@@ -2998,7 +2998,8 @@ nsresult HTMLInputElement::SetValueInternal(
 
       
       return nsGenericHTMLFormControlElementWithState::SetAttr(
-          kNameSpaceID_None, nsGkAtoms::value, aValue, true);
+          kNameSpaceID_None, nsGkAtoms::value, aValue, true,
+          IsKnownNewAttr::No);
 
     case VALUE_MODE_FILENAME:
       return NS_ERROR_UNEXPECTED;
@@ -4812,7 +4813,8 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
       
       
       if (oldValueMode == VALUE_MODE_VALUE && !oldValue.IsEmpty()) {
-        SetAttr(kNameSpaceID_None, nsGkAtoms::value, oldValue, true);
+        SetAttr(kNameSpaceID_None, nsGkAtoms::value, oldValue, true,
+                IsKnownNewAttr::No);
       }
       break;
     case VALUE_MODE_VALUE: {

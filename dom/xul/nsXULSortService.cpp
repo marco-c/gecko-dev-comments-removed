@@ -6,7 +6,6 @@
 
 
 
-
 #include "nsXULSortService.h"
 
 #include "mozilla/dom/Element.h"
@@ -15,6 +14,7 @@
 #include "nsXULContentUtils.h"
 
 using mozilla::dom::Element;
+using mozilla::dom::IsKnownNewAttr;
 const unsigned long SORT_COMPARECASE = 0x0001;
 const unsigned long SORT_INTEGER = 0x0100;
 
@@ -69,10 +69,10 @@ static void SetSortColumnHints(nsIContent* content,
       child->AsElement()->GetAttr(nsGkAtoms::sort, value);
       if (value == sortResource) {
         child->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::sortActive,
-                                    u"true"_ns, true);
+                                    u"true"_ns, true, IsKnownNewAttr::No);
 
         child->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::sortDirection,
-                                    sortDirection, true);
+                                    sortDirection, true, IsKnownNewAttr::No);
         
         
       } else if (!value.IsEmpty()) {
@@ -90,7 +90,8 @@ static void SetSortColumnHints(nsIContent* content,
 
 static void SetSortHints(Element* aElement, nsSortState* aSortState) {
   
-  aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::sort, aSortState->sort, true);
+  aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::sort, aSortState->sort, true,
+                    IsKnownNewAttr::No);
 
   nsAutoString direction;
   if (aSortState->direction == nsSortState_descending)
@@ -98,7 +99,7 @@ static void SetSortHints(Element* aElement, nsSortState* aSortState) {
   else if (aSortState->direction == nsSortState_ascending)
     direction.AssignLiteral("ascending");
   aElement->SetAttr(kNameSpaceID_None, nsGkAtoms::sortDirection, direction,
-                    true);
+                    true, IsKnownNewAttr::No);
 
   
   if (aElement->IsXULElement(nsGkAtoms::tree)) {

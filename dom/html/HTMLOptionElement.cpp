@@ -361,7 +361,7 @@ already_AddRefed<HTMLOptionElement> HTMLOptionElement::Option(
     
     
     aError = option->SetAttr(kNameSpaceID_None, nsGkAtoms::value,
-                             aValue.Value(), false);
+                             aValue.Value(), false, IsKnownNewAttr::Yes);
     if (aError.Failed()) {
       return nullptr;
     }
@@ -370,8 +370,8 @@ already_AddRefed<HTMLOptionElement> HTMLOptionElement::Option(
   if (aDefaultSelected) {
     
     
-    aError =
-        option->SetAttr(kNameSpaceID_None, nsGkAtoms::selected, u""_ns, false);
+    aError = option->SetAttr(kNameSpaceID_None, nsGkAtoms::selected, u""_ns,
+                             false, IsKnownNewAttr::Yes);
     if (aError.Failed()) {
       return nullptr;
     }

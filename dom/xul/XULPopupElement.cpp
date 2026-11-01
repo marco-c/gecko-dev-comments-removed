@@ -85,7 +85,8 @@ void XULPopupElement::OpenPopupAtScreen(int32_t aXPos, int32_t aYPos,
   if (NodeInfo()->NameAtom() == nsGkAtoms::panel) {
     
     
-    SetAttr(kNameSpaceID_None, nsGkAtoms::nonnative, u"true"_ns, true);
+    SetAttr(kNameSpaceID_None, nsGkAtoms::nonnative, u"true"_ns, true,
+            IsKnownNewAttr::No);
   }
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
@@ -103,7 +104,8 @@ void XULPopupElement::OpenPopupAtScreenRect(const nsAString& aPosition,
   if (NodeInfo()->NameAtom() == nsGkAtoms::panel) {
     
     
-    SetAttr(kNameSpaceID_None, nsGkAtoms::nonnative, u"true"_ns, true);
+    SetAttr(kNameSpaceID_None, nsGkAtoms::nonnative, u"true"_ns, true,
+            IsKnownNewAttr::No);
   }
   if (pm) {
     pm->ShowPopupAtScreenRect(

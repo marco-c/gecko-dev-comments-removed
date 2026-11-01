@@ -1111,19 +1111,21 @@ class Element : public FragmentOrElement {
 
 
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
-                   bool aNotify) {
+                   bool aNotify, IsKnownNewAttr aIsKnownNew) {
     return SetAttr(aNameSpaceID, aName, nullptr, aValue, nullptr, aNotify,
-                   IsKnownNewAttr::No);
+                   aIsKnownNew);
   }
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
-                   const nsAString& aValue, bool aNotify) {
+                   const nsAString& aValue, bool aNotify,
+                   IsKnownNewAttr aIsKnownNew) {
     return SetAttr(aNameSpaceID, aName, aPrefix, aValue, nullptr, aNotify,
-                   IsKnownNewAttr::No);
+                   aIsKnownNew);
   }
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, const nsAString& aValue,
-                   nsIPrincipal* aTriggeringPrincipal, bool aNotify) {
+                   nsIPrincipal* aTriggeringPrincipal, bool aNotify,
+                   IsKnownNewAttr aIsKnownNew) {
     return SetAttr(aNameSpaceID, aName, nullptr, aValue, aTriggeringPrincipal,
-                   aNotify, IsKnownNewAttr::No);
+                   aNotify, aIsKnownNew);
   }
 
   
@@ -1149,11 +1151,11 @@ class Element : public FragmentOrElement {
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    const nsAString& aValue,
                    nsIPrincipal* aMaybeScriptedPrincipal, bool aNotify,
-                   IsKnownNewAttr aIsKnownNew);
+                   IsKnownNewAttr);
 
   nsresult SetAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                    nsAtom* aValue, nsIPrincipal* aMaybeScriptedPrincipal,
-                   bool aNotify);
+                   bool aNotify, IsKnownNewAttr);
 
   
 
@@ -1176,7 +1178,7 @@ class Element : public FragmentOrElement {
 
 
   nsresult SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
-                          bool* aHadValue, IsKnownNewAttr aIsKnownNew);
+                          bool* aHadValue, IsKnownNewAttr);
 
   
 
@@ -1189,7 +1191,7 @@ class Element : public FragmentOrElement {
 
 
   nsresult SetAndSwapAttr(mozilla::dom::NodeInfo* aName, nsAttrValue& aValue,
-                          bool* aHadValue, IsKnownNewAttr aIsKnownNew);
+                          bool* aHadValue, IsKnownNewAttr);
 
   
 
@@ -1379,7 +1381,9 @@ class Element : public FragmentOrElement {
   void GetId(nsAString& aId) const { GetAttr(nsGkAtoms::id, aId); }
   void GetId(DOMString& aId) const { GetAttr(nsGkAtoms::id, aId); }
   void SetId(const nsAString& aId) {
-    SetAttr(kNameSpaceID_None, nsGkAtoms::id, aId, true);
+    
+    
+    SetAttr(kNameSpaceID_None, nsGkAtoms::id, aId, true, IsKnownNewAttr::No);
   }
   void GetClassName(nsAString& aClassName) {
     GetAttr(nsGkAtoms::_class, aClassName);
@@ -1388,7 +1392,11 @@ class Element : public FragmentOrElement {
     GetAttr(nsGkAtoms::_class, aClassName);
   }
   void SetClassName(const nsAString& aClassName) {
-    SetAttr(kNameSpaceID_None, nsGkAtoms::_class, aClassName, true);
+    
+    
+    
+    SetAttr(kNameSpaceID_None, nsGkAtoms::_class, aClassName, true,
+            IsKnownNewAttr::No);
   }
 
   nsDOMTokenList* ClassList();
@@ -2276,13 +2284,14 @@ class Element : public FragmentOrElement {
 
 
   void SetAttr(nsAtom* aAttr, const nsAString& aValue, ErrorResult& aError) {
-    aError = SetAttr(kNameSpaceID_None, aAttr, aValue, true);
+    aError =
+        SetAttr(kNameSpaceID_None, aAttr, aValue, true, IsKnownNewAttr::No);
   }
 
   void SetAttr(nsAtom* aAttr, const nsAString& aValue,
                nsIPrincipal* aTriggeringPrincipal, ErrorResult& aError) {
-    aError =
-        SetAttr(kNameSpaceID_None, aAttr, aValue, aTriggeringPrincipal, true);
+    aError = SetAttr(kNameSpaceID_None, aAttr, aValue, aTriggeringPrincipal,
+                     true, IsKnownNewAttr::No);
   }
 
   

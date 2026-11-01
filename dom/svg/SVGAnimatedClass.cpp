@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "SVGAnimatedClass.h"
 
 #include <utility>
@@ -21,7 +19,8 @@ void SVGAnimatedClass::SetBaseValue(const nsAString& aValue,
 
   aSVGElement->SetMayHaveClass();
   if (aDoSetAttr) {
-    aSVGElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, aValue, true);
+    aSVGElement->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, aValue, true,
+                         dom::IsKnownNewAttr::No);
   }
   if (!mAnimVal.IsVoid()) {
     aSVGElement->AnimationNeedsResample();
@@ -48,6 +47,7 @@ void SVGAnimatedClass::SetAnimValue(const nsAString& aValue,
   if (!mAnimVal.IsVoid() && mAnimVal.Equals(aValue)) {
     return;
   }
+  aSVGElement->WillAnimateClass();
   mAnimVal = aValue;
   aSVGElement->SetMayHaveClass();
   aSVGElement->DidAnimateClass();
@@ -77,6 +77,7 @@ SMILValue SVGAnimatedClass::SMILString::GetBaseValue() const {
 
 void SVGAnimatedClass::SMILString::ClearAnimValue() {
   if (!mVal->mAnimVal.IsVoid()) {
+    mSVGElement->WillAnimateClass();
     mVal->mAnimVal = VoidString();
     mSVGElement->DidAnimateClass();
   }

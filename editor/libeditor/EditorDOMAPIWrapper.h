@@ -429,8 +429,8 @@ class MOZ_STACK_CLASS AutoElementAttrAPIWrapper : public AutoDOMAPIWrapperBase {
     mAttr = aAttr;
     mNewValuePtr = &aNewValue;
     AutoNotifyEditorOfAPICall notifier(*this, DOMAPI::Element_SetAttr);
-    nsresult rv =
-        mElement.SetAttr(kNameSpaceID_None, aAttr, aNewValue, aNotify);
+    nsresult rv = mElement.SetAttr(kNameSpaceID_None, aAttr, aNewValue, aNotify,
+                                   dom::IsKnownNewAttr::No);
     
     mNewValuePtr = nullptr;
     NS_WARNING_ASSERTION(

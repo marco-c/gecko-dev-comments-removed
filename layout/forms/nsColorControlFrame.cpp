@@ -88,7 +88,7 @@ void nsColorControlFrame::UpdateColor() {
   
   mColorContent->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
                          u"color:"_ns + color,
-                          true);
+                          true, dom::IsKnownNewAttr::No);
 }
 
 nsresult nsColorControlFrame::AttributeChanged(int32_t aNameSpaceID,

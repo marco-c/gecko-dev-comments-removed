@@ -566,14 +566,15 @@ nsresult nsHtml5TreeOperation::AddAttributes(nsIContent* aNode,
       nsAtom* valAtom = val.MaybeAsAtom();
       if (valAtom) {
         node->SetAttr(kNameSpaceID_None, localName, nullptr, valAtom, nullptr,
-                      true);
+                      true, IsKnownNewAttr::Yes);
       } else {
         nsString value;  
         
         
         
         val.MoveToString(value);
-        node->SetAttr(kNameSpaceID_None, localName, nullptr, value, true);
+        node->SetAttr(kNameSpaceID_None, localName, nullptr, value, true,
+                      IsKnownNewAttr::Yes);
       }
       
     }
@@ -591,6 +592,8 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
   if (aAttributes->getDuplicateAttributeError()) {
     aElement->SetParserHadDuplicateAttributeError();
   }
+  
+  const bool hadAttrs = aElement->HasAttrs();
   for (nsHtml5AttributeEntry& entry : *aAttributes) {
     nsHtml5String& val = entry.ValueRef();
     nsAtom* localName = entry.NameHTML();
@@ -606,14 +609,15 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
     nsAtom* valAtom = val.MaybeAsAtom();
     if (valAtom) {
       aElement->SetAttr(kNameSpaceID_None, localName, nullptr, valAtom, nullptr,
-                        aNotify);
+                        aNotify, IsKnownNewAttr(!hadAttrs));
     } else {
       nsString value;  
       
       
       
       val.MoveToString(value);
-      aElement->SetAttr(kNameSpaceID_None, localName, nullptr, value, aNotify);
+      aElement->SetAttr(kNameSpaceID_None, localName, nullptr, value, aNotify,
+                        IsKnownNewAttr(!hadAttrs));
     }
   }
 #ifdef DEBUG
@@ -873,6 +877,8 @@ nsIContent* nsHtml5TreeOperation::CreateSVGElement(
     newContent->SetParserHadDuplicateAttributeError();
   }
 
+  
+  
   for (nsHtml5AttributeEntry& entry : *aAttributes) {
     nsHtml5String& val = entry.ValueRef();
     auto triple = entry.NameSVG();
@@ -888,7 +894,7 @@ nsIContent* nsHtml5TreeOperation::CreateSVGElement(
     nsAtom* valAtom = val.MaybeAsAtom();
     if (valAtom) {
       newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
-                          valAtom, nullptr, false);
+                          valAtom, nullptr, false, IsKnownNewAttr::Yes);
     } else {
       nsString value;  
       
@@ -896,7 +902,7 @@ nsIContent* nsHtml5TreeOperation::CreateSVGElement(
       
       val.MoveToString(value);
       newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
-                          value, false);
+                          value, nullptr, false, IsKnownNewAttr::Yes);
     }
   }
 #ifdef DEBUG
@@ -944,6 +950,8 @@ nsIContent* nsHtml5TreeOperation::CreateMathMLElement(
     newContent->SetParserHadDuplicateAttributeError();
   }
 
+  
+  
   for (nsHtml5AttributeEntry& entry : *aAttributes) {
     nsHtml5String& val = entry.ValueRef();
     auto triple = entry.NameMathML();
@@ -959,7 +967,7 @@ nsIContent* nsHtml5TreeOperation::CreateMathMLElement(
     nsAtom* valAtom = val.MaybeAsAtom();
     if (valAtom) {
       newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
-                          valAtom, nullptr, false);
+                          valAtom, nullptr, false, IsKnownNewAttr::Yes);
     } else {
       nsString value;  
       
@@ -967,7 +975,7 @@ nsIContent* nsHtml5TreeOperation::CreateMathMLElement(
       
       val.MoveToString(value);
       newContent->SetAttr(triple.mNamespace, triple.mLocal, triple.mPrefix,
-                          value, false);
+                          value, nullptr, false, IsKnownNewAttr::Yes);
     }
   }
 #ifdef DEBUG
@@ -1474,13 +1482,15 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       nsDependentString depStr(str);
       
       nsAutoString klass;
-      element->GetAttr(nsGkAtoms::_class, klass);
+      bool hasAttr = element->GetAttr(nsGkAtoms::_class, klass);
       if (!klass.IsEmpty()) {
         klass.Append(' ');
         klass.Append(depStr);
-        element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, klass, true);
+        element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, klass, true,
+                         IsKnownNewAttr::No);
       } else {
-        element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, depStr, true);
+        element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, depStr, true,
+                         IsKnownNewAttr(!hasAttr));
       }
       return NS_OK;
     }
@@ -1527,10 +1537,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
 
       viewSourceUrl.Append(spec);
 
-      nsAutoString utf16;
-      CopyUTF8toUTF16(viewSourceUrl, utf16);
-
-      element->SetAttr(kNameSpaceID_None, nsGkAtoms::href, utf16, true);
+      element->SetAttr(kNameSpaceID_None, nsGkAtoms::href,
+                       NS_ConvertUTF8toUTF16(viewSourceUrl), true,
+                       IsKnownNewAttr::No);
       return NS_OK;
     }
 
@@ -1546,14 +1555,17 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       nsAtom* atom = aOperation.mName;
       nsAtom* otherAtom = aOperation.mOther;
       
-      nsAutoString klass;
-      element->GetAttr(nsGkAtoms::_class, klass);
-      if (!klass.IsEmpty()) {
-        klass.AppendLiteral(" error");
-        element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, klass, true);
-      } else {
-        element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, u"error"_ns,
-                         true);
+      {
+        nsAutoString klass;
+        const bool hasAttr = element->GetAttr(nsGkAtoms::_class, klass);
+        if (!klass.IsEmpty()) {
+          klass.AppendLiteral(" error");
+          element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, klass, true,
+                           IsKnownNewAttr::No);
+        } else {
+          element->SetAttr(kNameSpaceID_None, nsGkAtoms::_class, u"error"_ns,
+                           true, IsKnownNewAttr(!hasAttr));
+        }
       }
 
       nsresult rv;
@@ -1575,13 +1587,15 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       }
 
       nsAutoString title;
-      element->GetAttr(nsGkAtoms::title, title);
+      const bool hasAttr = element->GetAttr(nsGkAtoms::title, title);
       if (!title.IsEmpty()) {
         title.Append('\n');
         title.Append(message);
-        element->SetAttr(kNameSpaceID_None, nsGkAtoms::title, title, true);
+        element->SetAttr(kNameSpaceID_None, nsGkAtoms::title, title, true,
+                         IsKnownNewAttr::No);
       } else {
-        element->SetAttr(kNameSpaceID_None, nsGkAtoms::title, message, true);
+        element->SetAttr(kNameSpaceID_None, nsGkAtoms::title, message, true,
+                         IsKnownNewAttr(!hasAttr));
       }
       return rv;
     }
@@ -1591,7 +1605,9 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       int32_t lineNumber = aOperation.mLineNumber;
       nsAutoString val(u"line"_ns);
       val.AppendInt(lineNumber);
-      element->SetAttr(kNameSpaceID_None, nsGkAtoms::id, val, true);
+      
+      element->SetAttr(kNameSpaceID_None, nsGkAtoms::id, val, true,
+                       IsKnownNewAttr::No);
       return NS_OK;
     }
 
