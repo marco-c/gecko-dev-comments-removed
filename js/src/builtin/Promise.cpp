@@ -22,6 +22,7 @@
 #include "vm/ArrayObject.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
+#include "vm/BoundFunctionObject.h"
 #include "vm/CompletionKind.h"
 #include "vm/ErrorObject.h"
 #include "vm/ErrorReporting.h"
@@ -775,6 +776,7 @@ class PromiseJobObject : public NativeObject {
 
 
 
+
 class PromiseReactionObjectStorage : public PromiseJobObject {
  public:
   enum Slots {
@@ -991,6 +993,13 @@ class PromiseReaction : public Base {
   
   static constexpr uint32_t REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR = 0x80;
 
+  static constexpr uint32_t REACTION_FLAGS_ALL =
+      REACTION_FLAG_RESOLVED | REACTION_FLAG_FULFILLED |
+      REACTION_FLAG_DEFAULT_RESOLVING_HANDLER | REACTION_FLAG_ASYNC_FUNCTION |
+      REACTION_FLAG_ASYNC_GENERATOR | REACTION_FLAG_DEBUGGER_DUMMY |
+      REACTION_FLAG_IGNORE_UNHANDLED_REJECTION |
+      REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR;
+
  public:
   using Base::Base;
 
@@ -1151,6 +1160,258 @@ const JSClass PromiseReactionRecord::class_ = {
     "PromiseReactionRecord",
     JSCLASS_HAS_RESERVED_SLOTS(Slots::SlotCount),
 };
+
+
+
+
+class MOZ_STACK_CLASS PromiseReactionStackStorage {
+  enum Slot {
+    Promise,
+    Flags,
+    OnFulfilled,
+    OnRejected,
+    Resolve,
+    Reject,
+    ReactionTarget,
+    IncumbentGlobalRepresentative,
+    OptionalHostDefinedData,
+    SlotCount,
+
+    
+    
+    OnFulfilledArg = OnRejected,
+    OnRejectedArg = OnFulfilled,
+  };
+
+  JS::RootedValueArray<SlotCount> slots_;
+
+  
+  
+  
+  JS::Rooted<Realm*> realm_;
+
+ public:
+  explicit PromiseReactionStackStorage(JSContext* cx)
+      : slots_(cx), realm_(cx, cx->realm()) {}
+
+  Realm* realm() const { return realm_; }
+
+  JSObject* promise() const { return slots_[Promise].get().toObjectOrNull(); }
+
+  int32_t flags() const { return slots_[Flags].get().toInt32(); }
+  void setFlags(int32_t flags) { slots_[Flags].set(Int32Value(flags)); }
+
+  Value onFulfilled() const { return slots_[OnFulfilled]; }
+  Value onRejected() const { return slots_[OnRejected]; }
+  void setOnFulfilled(const Value& handler) {
+    slots_[OnFulfilled].set(handler);
+  }
+  void setOnRejected(const Value& handler) { slots_[OnRejected].set(handler); }
+  Value onFulfilledArg() const { return slots_[OnFulfilledArg]; }
+  Value onRejectedArg() const { return slots_[OnRejectedArg]; }
+  void setOnFulfilledArg(const Value& arg) { slots_[OnFulfilledArg].set(arg); }
+  void setOnRejectedArg(const Value& arg) { slots_[OnRejectedArg].set(arg); }
+
+  JSObject* resolve() const { return slots_[Resolve].get().toObjectOrNull(); }
+  JSObject* reject() const { return slots_[Reject].get().toObjectOrNull(); }
+
+  Value reactionTarget() const { return slots_[ReactionTarget]; }
+  void setReactionTarget(const Value& target) {
+    slots_[ReactionTarget].set(target);
+  }
+
+  Value getIncumbentGlobalRepresentative() const {
+    return slots_[IncumbentGlobalRepresentative];
+  }
+  Value getOptionalHostDefinedData() const {
+    return slots_[OptionalHostDefinedData];
+  }
+
+  void initReaction(JSObject* promise, const Value& onFulfilled,
+                    const Value& onRejected, JSObject* resolve,
+                    JSObject* reject,
+                    const Value& incumbentGlobalRepresentative,
+                    const Value& optionalHostDefinedData) {
+    slots_[Promise].set(ObjectOrNullValue(promise));
+    slots_[Flags].set(Int32Value(0));
+    slots_[OnFulfilled].set(onFulfilled);
+    slots_[OnRejected].set(onRejected);
+    slots_[Resolve].set(ObjectOrNullValue(resolve));
+    slots_[Reject].set(ObjectOrNullValue(reject));
+    slots_[IncumbentGlobalRepresentative].set(incumbentGlobalRepresentative);
+    slots_[OptionalHostDefinedData].set(optionalHostDefinedData);
+  }
+};
+
+
+
+
+
+static Realm* GetFunctionRealmIfSimple(JSObject* obj) {
+  while (obj->is<BoundFunctionObject>()) {
+    obj = obj->as<BoundFunctionObject>().getTarget();
+  }
+  if (!obj->is<JSFunction>()) {
+    return nullptr;
+  }
+  return obj->as<JSFunction>().realm();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS StackPromiseReaction
+    : public PromiseReaction<PromiseReactionStackStorage> {
+  static constexpr uint32_t InlineFlagsMask = 0xff;
+
+ public:
+  static constexpr uint32_t InlineHasPromise = 1 << 8;
+
+  
+  enum Extra : size_t {
+    ExtraHandler = 0,
+    ExtraHandlerArg,
+    ExtraGeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+    ExtraIncumbentGlobalRepresentative,
+    ExtraCount,
+  };
+
+ private:
+  
+  static_assert((REACTION_FLAGS_ALL & ~InlineFlagsMask) == 0);
+  static_assert((InlineHasPromise & InlineFlagsMask) == 0);
+  static_assert(ExtraCount == MicroTaskQueueElement::ExtraCount);
+
+ public:
+  explicit StackPromiseReaction(JSContext* cx) : PromiseReaction(cx) {}
+
+  
+  
+  StackPromiseReaction(JSContext* cx, const JS::MicroTask& task)
+      : PromiseReaction(cx) {
+    MOZ_ASSERT(MicroTaskQueueElement::Kind(MicroTaskQueueElement::kind(task)) ==
+               MicroTaskQueueElement::Kind::InlinePromiseReaction);
+
+    uint32_t bits = MicroTaskQueueElement::jsBits(task);
+    JSObject* value = &MicroTaskQueueElement::value(task).toObject();
+    MOZ_RELEASE_ASSERT(value->nonCCWRealm() == cx->realm());
+
+    initReaction(
+        (bits & InlineHasPromise) ? value : nullptr, NullValue(), NullValue(),
+        nullptr, nullptr,
+        MicroTaskQueueElement::extra(task, ExtraIncumbentGlobalRepresentative),
+        NullValue());
+    setFlags(int32_t(bits & InlineFlagsMask));
+    MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
+
+    Value handler = MicroTaskQueueElement::extra(task, ExtraHandler);
+    Value handlerArg = MicroTaskQueueElement::extra(task, ExtraHandlerArg);
+    if (targetState() == JS::PromiseState::Fulfilled) {
+      setOnFulfilled(handler);
+      setOnFulfilledArg(handlerArg);
+    } else {
+      setOnRejected(handler);
+      setOnRejectedArg(handlerArg);
+    }
+    setReactionTarget(MicroTaskQueueElement::extra(
+        task, ExtraGeneratorOrPromiseToResolveOrAsyncFromSyncIterator));
+  }
+
+  
+  
+  
+  bool fitsInline(Realm* currentRealm, JS::PromiseState targetState) {
+    MOZ_ASSERT(this->targetState() == JS::PromiseState::Pending);
+    MOZ_ASSERT(realm() == currentRealm);
+
+    
+    if (resolve() || reject()) {
+      return false;
+    }
+
+    
+    if (!getOptionalHostDefinedData().isNull()) {
+      return false;
+    }
+
+    if (JSObject* promise = this->promise()) {
+      
+      if (!promise->is<PromiseObject>()) {
+        return false;
+      }
+
+      
+      if (promise->as<PromiseObject>().allocationSite()) {
+        return false;
+      }
+
+      if (promise->nonCCWRealm() != currentRealm) {
+        return false;
+      }
+    }
+
+    
+    
+    
+    Value targetHandler = targetStateHandler(targetState);
+    if (targetHandler.isObject() &&
+        GetFunctionRealmIfSimple(&targetHandler.toObject()) != currentRealm) {
+      return false;
+    }
+    return true;
+  }
+
+  
+  
+  JS::MicroTask toInlineMicroTask(JSContext* cx, uint64_t flowId) {
+    MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
+
+    uint32_t bits = uint32_t(flags());
+    MOZ_ASSERT((bits & ~InlineFlagsMask) == 0);
+
+    JSObject* promise = this->promise();
+    if (promise) {
+      bits |= InlineHasPromise;
+    }
+    return MicroTaskQueueElement::MakeMicroTask(
+        MicroTaskQueueElement::Kind::InlinePromiseReaction, bits,
+        ObjectValue(promise ? *promise : cx->global()->getObjectPrototype()),
+        handler(), handlerArg(), reactionTarget(),
+        getIncumbentGlobalRepresentative(), flowId);
+  }
+};
+
+static PromiseReactionRecord* NewReactionRecordFromStack(
+    JSContext* cx, const StackPromiseReaction& data) {
+  PromiseReactionRecord* reaction =
+      NewBuiltinClassInstance<PromiseReactionRecord>(cx);
+  if (!reaction) {
+    return nullptr;
+  }
+  reaction->initReaction(data.promise(), data.onFulfilled(), data.onRejected(),
+                         data.resolve(), data.reject(),
+                         data.getIncumbentGlobalRepresentative(),
+                         data.getOptionalHostDefinedData());
+  reaction->setFlags(data.flags());
+  reaction->setReactionTarget(data.reactionTarget());
+  return reaction;
+}
 
 
 
@@ -1703,6 +1964,18 @@ static bool GetFlowIdFromJob(JSObject* job, uint64_t* uid) {
   return true;
 }
 
+
+
+static uint64_t MarkEnqueueJobFlow(JSContext* cx) {
+  GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
+  if (MOZ_LIKELY(!profiler.enabled())) {
+    return 0;
+  }
+  uint64_t flowId = js::gc::NextCellUniqueId(cx->runtime());
+  profiler.markFlow("JS::EnqueueJob", flowId, JS::ProfilingCategoryPair::OTHER);
+  return flowId;
+}
+
 static bool EnqueueJob(JSContext* cx, MicroTaskQueueElement::Kind kind,
                        JSObject* job) {
   MOZ_ASSERT(cx->realm());
@@ -2057,6 +2330,29 @@ static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
   
   return EnqueueJob(cx, MicroTaskQueueElement::Kind::PromiseReactionObject,
                     reaction.get());
+}
+
+[[nodiscard]] static bool EnqueuePromiseReactionJob(
+    JSContext* cx, StackPromiseReaction* reaction, HandleValue handlerArg,
+    JS::PromiseState targetState) {
+  MOZ_ASSERT(cx->realm() == reaction->realm());
+  cx->check(handlerArg);
+  reaction->setTargetStateAndHandlerArg(targetState, handlerArg);
+
+  uint64_t flowId = MarkEnqueueJobFlow(cx);
+
+  
+  
+  bool useDebugQueue = !cx->runtime()->isMainRuntime() &&
+                       cx->jobQueue->useDebugQueue(cx->global());
+
+  JS::MicroTask task = reaction->toInlineMicroTask(cx, flowId);
+
+  
+  if (MOZ_UNLIKELY(useDebugQueue)) {
+    return cx->microTaskQueues->enqueueDebugMicroTask(cx, task);
+  }
+  return cx->microTaskQueues->enqueueRegularMicroTask(cx, task);
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
@@ -2532,8 +2828,9 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 
 
 
+template <typename InlineOrObjectReaction>
 [[nodiscard]] static bool DefaultResolvingPromiseReactionJob(
-    JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
+    JSContext* cx, const InlineOrObjectReaction& reaction) {
   MOZ_ASSERT(reaction->targetState() != JS::PromiseState::Pending);
 
   RootedTuple<PromiseObject*, Value, SavedFrame*, Value, JSObject*, JSObject*>
@@ -2596,8 +2893,9 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 
 
 
+template <typename InlineOrObjectReaction>
 [[nodiscard]] static bool AsyncFunctionPromiseReactionJob(
-    JSContext* cx, Handle<PromiseReactionRecord*> reaction) {
+    JSContext* cx, const InlineOrObjectReaction& reaction) {
   MOZ_ASSERT(reaction->isAsyncFunction());
 
   auto handler = static_cast<PromiseHandler>(reaction->handler().toInt32());
@@ -2634,10 +2932,12 @@ static bool ForEachReaction(JSContext* cx, HandleValue reactionsVal, F f) {
 
 
 
+template <typename InlineOrObjectReaction>
+static bool RunPromiseReactionJob(JSContext* cx,
+                                  const InlineOrObjectReaction& reaction);
+
 static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
-  RootedTuple<JSObject*, PromiseReactionRecord*, Value, AsyncGeneratorObject*,
-              Value, Value, SavedFrame*, JSObject*, JSObject*>
-      roots(cx);
+  RootedTuple<JSObject*, PromiseReactionRecord*> roots(cx);
   RootedField<JSObject*, 0> reactionObj(roots, reactionObjIn);
   
   
@@ -2666,6 +2966,15 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   
   RootedField<PromiseReactionRecord*, 1> reaction(
       roots, &reactionObj.get()->as<PromiseReactionRecord>());
+  return RunPromiseReactionJob(cx, reaction);
+}
+
+template <typename InlineOrObjectReaction>
+static bool RunPromiseReactionJob(JSContext* cx,
+                                  const InlineOrObjectReaction& reaction) {
+  RootedTuple<Value, AsyncGeneratorObject*, Value, Value, SavedFrame*,
+              JSObject*, JSObject*>
+      roots(cx);
   if (reaction->isDefaultResolvingHandler()) {
     return DefaultResolvingPromiseReactionJob(cx, reaction);
   }
@@ -2675,8 +2984,8 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
     return AsyncFunctionPromiseReactionJob(cx, reaction);
   }
   if (reaction->isAsyncGenerator()) {
-    RootedField<Value, 2> argument(roots, reaction->handlerArg());
-    RootedField<AsyncGeneratorObject*, 3> generator(roots,
+    RootedField<Value, 0> argument(roots, reaction->handlerArg());
+    RootedField<AsyncGeneratorObject*, 1> generator(roots,
                                                     reaction->asyncGenerator());
     auto handler = static_cast<PromiseHandler>(reaction->handler().toInt32());
     return AsyncGeneratorPromiseReactionJob(cx, handler, generator, argument);
@@ -2689,14 +2998,14 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   
 
   
-  RootedField<Value, 2> handlerVal(roots, reaction->handler());
+  RootedField<Value, 0> handlerVal(roots, reaction->handler());
 
-  RootedField<Value, 4> argument(roots, reaction->handlerArg());
+  RootedField<Value, 2> argument(roots, reaction->handlerArg());
 
-  RootedField<Value, 5> handlerResult(roots);
+  RootedField<Value, 3> handlerResult(roots);
   ResolutionMode resolutionMode = ResolveMode;
 
-  RootedField<SavedFrame*, 6> unwrappedRejectionStack(roots);
+  RootedField<SavedFrame*, 4> unwrappedRejectionStack(roots);
 
   
   if (handlerVal.isInt32()) {
@@ -2731,7 +3040,7 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
       
       
       
-      RootedField<JSObject*, 8> iter(
+      RootedField<JSObject*, 6> iter(
           roots, reaction->asyncFromSyncIterator()->iterator());
       MOZ_ALWAYS_TRUE(CloseIterOperation(cx, iter, CompletionKind::Throw));
 
@@ -2777,8 +3086,8 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
   }
 
   
-  RootedField<JSObject*, 8> promiseObj(roots, reaction->promise());
-  RootedField<JSObject*, 7> callee(roots);
+  RootedField<JSObject*, 6> promiseObj(roots, reaction->promise());
+  RootedField<JSObject*, 5> callee(roots);
   if (resolutionMode == ResolveMode) {
     callee = reaction->resolve();
 
@@ -6506,9 +6815,12 @@ bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
 
 
 
-static PromiseReactionRecord* NewReactionRecord(
-    JSContext* cx, Handle<PromiseCapability> resultCapability,
-    HandleValue onFulfilled, HandleValue onRejected) {
+template <typename InlineOrObjectReaction>
+static bool InitPromiseReaction(JSContext* cx,
+                                const InlineOrObjectReaction& reaction,
+                                Handle<PromiseCapability> resultCapability,
+                                HandleValue onFulfilled,
+                                HandleValue onRejected) {
 #ifdef DEBUG
   if (!resultCapability.promise()) {
     MOZ_ASSERT(!resultCapability.resolve());
@@ -6553,13 +6865,7 @@ static PromiseReactionRecord* NewReactionRecord(
 
   if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
                                     &optionalHostDefinedData)) {
-    return nullptr;
-  }
-
-  PromiseReactionRecord* reaction =
-      NewBuiltinClassInstance<PromiseReactionRecord>(cx);
-  if (!reaction) {
-    return nullptr;
+    return false;
   }
   cx->check(resultCapability.promise(), onFulfilled, onRejected,
             resultCapability.resolve(), resultCapability.reject(),
@@ -6579,6 +6885,18 @@ static PromiseReactionRecord* NewReactionRecord(
                          ObjectOrNullValue(incumbentGlobalRepresentative),
                          ObjectOrNullValue(optionalHostDefinedData));
 
+  return true;
+}
+
+static PromiseReactionRecord* NewReactionRecord(
+    JSContext* cx, Handle<PromiseCapability> resultCapability,
+    HandleValue onFulfilled, HandleValue onRejected) {
+  Rooted<PromiseReactionRecord*> reaction(
+      cx, NewBuiltinClassInstance<PromiseReactionRecord>(cx));
+  if (!reaction || !InitPromiseReaction(cx, reaction, resultCapability,
+                                        onFulfilled, onRejected)) {
+    return nullptr;
+  }
   return reaction;
 }
 
@@ -6724,11 +7042,37 @@ static bool PromiseThenNewPromiseCapability(
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<PromiseReactionRecord*> reaction);
 
+template <typename InlineOrObjectReaction>
+[[nodiscard]] static bool PerformPromiseThenWithSettledReaction(
+    JSContext* cx, Handle<PromiseObject*> promise,
+    const InlineOrObjectReaction& reaction);
+
 template <typename ExtraStep>
 [[nodiscard]] static bool PerformPromiseThenWithNewReaction(
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<PromiseCapability> resultCapability, HandleValue onFulfilled,
     HandleValue onRejected, ExtraStep extraStep) {
+  JS::PromiseState state = promise->state();
+  
+  if (state != JS::PromiseState::Pending) {
+    StackPromiseReaction data(cx);
+    if (!InitPromiseReaction(cx, &data, resultCapability, onFulfilled,
+                             onRejected)) {
+      return false;
+    }
+    extraStep(&data);
+    if (MOZ_LIKELY(data.fitsInline(cx->realm(), state))) {
+      return PerformPromiseThenWithSettledReaction(cx, promise, &data);
+    }
+
+    Rooted<PromiseReactionRecord*> reaction(
+        cx, NewReactionRecordFromStack(cx, data));
+    if (!reaction) {
+      return false;
+    }
+    return PerformPromiseThenWithReaction(cx, promise, reaction);
+  }
+
   
   Rooted<PromiseReactionRecord*> reaction(
       cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected));
@@ -7637,7 +7981,6 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
     Handle<PromiseReactionRecord*> reaction) {
   
   JS::PromiseState state = unwrappedPromise->state();
-  int32_t flags = unwrappedPromise->flags();
   if (state == JS::PromiseState::Pending) {
     
     
@@ -7654,38 +7997,51 @@ bool js::Promise_then(JSContext* cx, unsigned argc, Value* vp) {
 
   
   else {
-    
-    MOZ_ASSERT_IF(state != JS::PromiseState::Fulfilled,
-                  state == JS::PromiseState::Rejected);
+    return PerformPromiseThenWithSettledReaction(cx, unwrappedPromise,
+                                                 reaction);
+  }
 
-    
-    
-    RootedValue valueOrReason(cx, unwrappedPromise->valueOrReason());
+  
+  unwrappedPromise->setHandled();
+  return true;
+}
 
-    
-    
-    if (!cx->compartment()->wrap(cx, &valueOrReason)) {
-      return false;
-    }
+template <typename InlineOrObjectReaction>
+[[nodiscard]] static bool PerformPromiseThenWithSettledReaction(
+    JSContext* cx, Handle<PromiseObject*> unwrappedPromise,
+    const InlineOrObjectReaction& reaction) {
+  JS::PromiseState state = unwrappedPromise->state();
+  int32_t flags = unwrappedPromise->flags();
+  
+  MOZ_ASSERT_IF(state != JS::PromiseState::Fulfilled,
+                state == JS::PromiseState::Rejected);
 
-    
-    
-    if (state == JS::PromiseState::Rejected &&
-        !(flags & PROMISE_FLAG_HANDLED)) {
-      cx->runtime()->removeUnhandledRejectedPromise(cx, unwrappedPromise);
-    }
+  
+  
+  RootedValue valueOrReason(cx, unwrappedPromise->valueOrReason());
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!EnqueuePromiseReactionJob(cx, reaction, valueOrReason, state)) {
-      return false;
-    }
+  
+  
+  if (!cx->compartment()->wrap(cx, &valueOrReason)) {
+    return false;
+  }
+
+  
+  
+  if (state == JS::PromiseState::Rejected && !(flags & PROMISE_FLAG_HANDLED)) {
+    cx->runtime()->removeUnhandledRejectedPromise(cx, unwrappedPromise);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!EnqueuePromiseReactionJob(cx, reaction, valueOrReason, state)) {
+    return false;
   }
 
   
@@ -8513,6 +8869,12 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
   MOZ_ASSERT_IF(global, global == cx->global());
 #endif
 
+  auto kind = MicroTaskQueueElement::Kind(task_.kind());
+  if (kind == MicroTaskQueueElement::Kind::InlinePromiseReaction) {
+    StackPromiseReaction reaction(cx, task_);
+    return RunPromiseReactionJob(cx, &reaction);
+  }
+
   RootedTuple<JSObject*, JSObject*, JSObject*, PromiseObject*, Value, JSObject*>
       roots(cx);
   RootedField<JSObject*, 0> task(roots, maybeWrappedObject());
@@ -8522,7 +8884,7 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
     return false;
   }
 
-  switch (MicroTaskQueueElement::Kind(task_.kind())) {
+  switch (kind) {
     case MicroTaskQueueElement::Kind::PromiseReactionObject:
       MOZ_ASSERT(unwrappedTask->is<PromiseReactionRecord>());
       
@@ -8559,6 +8921,7 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
     }
 
     case MicroTaskQueueElement::Kind::Embedder:
+    case MicroTaskQueueElement::Kind::InlinePromiseReaction:
     case MicroTaskQueueElement::Kind::LastQueueElementKind:
       break;
   }
@@ -8567,6 +8930,13 @@ bool JS::JSMicroTaskRef::run(JSContext* cx) && {
 
 JS_PUBLIC_API bool JS::JSMicroTaskRef::maybeGetAllocationSite(
     MutableHandleObject out) && {
+  if (MicroTaskQueueElement::Kind(task_.kind()) ==
+      MicroTaskQueueElement::Kind::InlinePromiseReaction) {
+    
+    out.set(nullptr);
+    return true;
+  }
+
   JSObject* task = UncheckedUnwrapToLive(maybeWrappedObject());
   if (!task) {
     return false;
@@ -8595,19 +8965,30 @@ JS_PUBLIC_API bool JS::JSMicroTaskRef::maybeGetHostDefinedData(
     MutableHandleObject optionalHostDefinedData) && {
   incumbentGlobal.set(nullptr);
   optionalHostDefinedData.set(nullptr);
-  JSObject* task = UncheckedUnwrap(maybeWrappedObject());
-  if (JS_IsDeadWrapper(task)) {
-    return false;
-  }
 
-  MOZ_ASSERT(task->is<PromiseJobObject>());
-  JSObject* maybeIncumbentGlobalRepresentative =
-      task->as<PromiseJobObject>()
-          .getIncumbentGlobalRepresentative()
-          .toObjectOrNull();
-  JSObject* maybeOptionalHostDefinedData = task->as<PromiseJobObject>()
-                                               .getOptionalHostDefinedData()
-                                               .toObjectOrNull();
+  JSObject* maybeIncumbentGlobalRepresentative;
+  JSObject* maybeOptionalHostDefinedData;
+  if (MicroTaskQueueElement::Kind(task_.kind()) ==
+      MicroTaskQueueElement::Kind::InlinePromiseReaction) {
+    maybeIncumbentGlobalRepresentative =
+        task_.extra_[StackPromiseReaction::ExtraIncumbentGlobalRepresentative]
+            .toObjectOrNull();
+    
+    maybeOptionalHostDefinedData = nullptr;
+  } else {
+    JSObject* task = UncheckedUnwrap(maybeWrappedObject());
+    if (JS_IsDeadWrapper(task)) {
+      return false;
+    }
+
+    MOZ_ASSERT(task->is<PromiseJobObject>());
+    maybeIncumbentGlobalRepresentative = task->as<PromiseJobObject>()
+                                             .getIncumbentGlobalRepresentative()
+                                             .toObjectOrNull();
+    maybeOptionalHostDefinedData = task->as<PromiseJobObject>()
+                                       .getOptionalHostDefinedData()
+                                       .toObjectOrNull();
+  }
 
   if (!maybeIncumbentGlobalRepresentative) {
     
@@ -8648,6 +9029,9 @@ JS_PUBLIC_API JSObject* JS::JSMicroTaskRef::executionGlobal() && {
       return &unwrappedRepresentative->nonCCWGlobal();
     }
 
+    case MicroTaskQueueElement::Kind::InlinePromiseReaction:
+      return &unwrapped->nonCCWGlobal();
+
     case MicroTaskQueueElement::Kind::ResolveThenable:
     case MicroTaskQueueElement::Kind::ResolveBuiltinThenable:
     case MicroTaskQueueElement::Kind::DeferredResolve:
@@ -8664,6 +9048,12 @@ JS_PUBLIC_API JSObject* JS::JSMicroTaskRef::executionGlobal() && {
 }
 
 JS_PUBLIC_API JSObject* JS::JSMicroTaskRef::maybeGetPromise() && {
+  if (MicroTaskQueueElement::Kind(task_.kind()) ==
+      MicroTaskQueueElement::Kind::InlinePromiseReaction) {
+    return (task_.jsBits_ & StackPromiseReaction::InlineHasPromise)
+               ? maybeWrappedObject()
+               : nullptr;
+  }
   JSObject* unwrapped = UncheckedUnwrapToLive(maybeWrappedObject());
   if (!unwrapped) {
     return nullptr;
@@ -8674,6 +9064,11 @@ JS_PUBLIC_API JSObject* JS::JSMicroTaskRef::maybeGetPromise() && {
 }
 
 JS_PUBLIC_API bool JS::JSMicroTaskRef::getFlowId(uint64_t* uid) && {
+  if (MicroTaskQueueElement::Kind(task_.kind()) ==
+      MicroTaskQueueElement::Kind::InlinePromiseReaction) {
+    *uid = task_.flowId_;
+    return task_.flowId_ != 0;
+  }
   return GetFlowIdFromJob(maybeWrappedObject(), uid);
 }
 

@@ -83,6 +83,7 @@ class JSMicroTaskRef;
 
 
 
+
 class MicroTask {
  public:
   MicroTask() = delete;
@@ -167,8 +168,27 @@ class MicroTask {
     MOZ_ASSERT(kind_ < Kind::EndJSKind);
   }
 
+  MicroTask(Kind kind, uint32_t jsBits, const JS::Value& value,
+            const JS::Value& extra0, const JS::Value& extra1,
+            const JS::Value& extra2, const JS::Value& extra3, uint64_t flowId)
+      : kind_(kind),
+        jsBits_(jsBits),
+        value_(value),
+        extra_{extra0, extra1, extra2, extra3},
+        flowId_(flowId) {
+    MOZ_ASSERT(kind_ >= Kind::FirstJSKind && kind_ < Kind::EndJSKind);
+  }
+
+  
+  
   Kind kind_;
+  uint32_t jsBits_ = 0;
   JS::Value value_;
+  
+  
+  JS::Value extra_[4];
+  
+  uint64_t flowId_ = 0;
 };
 
 }  
@@ -225,6 +245,7 @@ class MOZ_TEMPORARY_CLASS JSMicroTaskRef {
   
   JS_PUBLIC_API JSObject* maybeGetPromise() &&;
 
+  
   
   
   

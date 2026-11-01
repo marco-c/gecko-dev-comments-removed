@@ -12,6 +12,8 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 
+#include <type_traits>
+
 #include "jstypes.h"  
 
 #include "builtin/AtomicsObject.h"
@@ -155,6 +157,9 @@ class MicroTaskQueueElement {
 
     
     PromiseReactionObject = JS::MicroTask::Kind::FirstJSKind,
+    
+    
+    InlinePromiseReaction,
 
     
     ResolveThenable,
@@ -184,6 +189,27 @@ class MicroTaskQueueElement {
 
   explicit MicroTaskQueueElement(const JS::MicroTask& microTask)
       : microTask_(microTask) {}
+
+  
+  
+  template <typename... Args>
+  static JS::MicroTask MakeMicroTask(Kind kind, Args&&... args) {
+    return JS::MicroTask(static_cast<JS::MicroTask::Kind>(kind),
+                         std::forward<Args>(args)...);
+  }
+
+  
+  static constexpr size_t ExtraCount =
+      std::extent_v<decltype(JS::MicroTask::extra_)>;
+  static uint8_t kind(const JS::MicroTask& task) { return task.kind_; }
+  static uint32_t jsBits(const JS::MicroTask& task) { return task.jsBits_; }
+  static const JS::Value& value(const JS::MicroTask& task) {
+    return task.value_;
+  }
+  static const JS::Value& extra(const JS::MicroTask& task, size_t index) {
+    MOZ_ASSERT(index < ExtraCount);
+    return task.extra_[index];
+  }
 
   const JS::MicroTask& toMicroTask() const { return microTask_; }
 
