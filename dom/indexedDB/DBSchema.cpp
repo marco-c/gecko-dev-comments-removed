@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DBSchema.h"
 
 
@@ -29,7 +27,7 @@ using quota::AssertIsOnIOThread;
 
 
 
-static_assert(JS_STRUCTURED_CLONE_VERSION == 8,
+static_assert(JS_STRUCTURED_CLONE_VERSION == 9,
               "Need to update the major schema version.");
 
 nsresult CreateFileTables(mozIStorageConnection& aConnection) {

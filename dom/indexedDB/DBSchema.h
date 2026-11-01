@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef dom_indexeddb_dbschema_h_
 #define dom_indexeddb_dbschema_h_
 
@@ -16,7 +14,7 @@ class mozIStorageConnection;
 namespace mozilla::dom::indexedDB {
 
 
-const uint32_t kMajorSchemaVersion = 26;
+const uint32_t kMajorSchemaVersion = 27;
 
 
 
