@@ -353,6 +353,8 @@ pub enum PollError {
     Timeout,
     
     WrongSubmissionIndex(u64, u64),
+    
+    CantWait,
 }
 
 
@@ -369,6 +371,9 @@ impl fmt::Display for PollError {
                 that has not been returned by a successful submission \
                 (last successful submission: {successful}"
             ),
+            PollError::CantWait => {
+                f.write_str("The backend doesn't support synchronously waiting.")
+            }
         }
     }
 }

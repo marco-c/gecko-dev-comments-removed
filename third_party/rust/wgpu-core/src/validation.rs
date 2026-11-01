@@ -7,7 +7,7 @@ use alloc::{
 use core::fmt;
 
 use arrayvec::ArrayVec;
-use hashbrown::{hash_map::Entry, HashSet};
+use hashbrown::hash_map::Entry;
 use shader_io_deductions::{display_deductions_as_optional_list, MaxVertexShaderOutputDeduction};
 use thiserror::Error;
 use wgt::{
@@ -399,29 +399,6 @@ pub struct Interface {
     
     
     entry_points: FastHashMap<EntryPointKey, EntryPoint>,
-}
-
-#[derive(Debug)]
-pub struct PassthroughInterface {
-    pub entry_point_names: HashSet<String>,
-}
-
-
-
-
-#[expect(clippy::large_enum_variant)]
-#[derive(Debug)]
-pub enum ShaderMetaData {
-    Interface(Interface),
-    Passthrough(PassthroughInterface),
-}
-impl ShaderMetaData {
-    pub fn interface(&self) -> Option<&Interface> {
-        match self {
-            Self::Interface(i) => Some(i),
-            Self::Passthrough(_) => None,
-        }
-    }
 }
 
 #[derive(Clone, Debug, Error)]
@@ -1188,6 +1165,23 @@ impl BindingLayoutSource {
 }
 
 
+pub struct PipelineResources {
+    pub layout: BindingLayoutSource,
+    pub minimum_binding_sizes: FastHashMap<naga::ResourceBinding, wgt::BufferSize>,
+    pub immediates: naga::valid::ImmediateUsage,
+}
+
+impl PipelineResources {
+    pub fn new(layout: BindingLayoutSource) -> Self {
+        Self {
+            layout,
+            minimum_binding_sizes: FastHashMap::default(),
+            immediates: Default::default(),
+        }
+    }
+}
+
+
 
 
 
@@ -1209,9 +1203,6 @@ pub struct StageIo {
     
     
     pub primitive_index: Option<bool>,
-
-    
-    pub immediates: naga::valid::ImmediateUsage,
 }
 
 impl Interface {
@@ -1528,47 +1519,6 @@ impl Interface {
     
     
     
-    pub fn finalize_entry_point_name(
-        &self,
-        stage: naga::ShaderStage,
-        entry_point_name: Option<&str>,
-    ) -> Result<String, StageError> {
-        match entry_point_name {
-            Some(name) => {
-                
-                
-                let key = EntryPointKey(stage, name.to_string());
-                if !self.entry_points.contains_key(&key) {
-                    return Err(StageError::NoEntryPointWithNameForStage {
-                        stage,
-                        name: name.to_string(),
-                    });
-                }
-                Ok(key.1)
-            }
-            None => {
-                
-                
-                let mut entry_points = self
-                    .entry_points
-                    .keys()
-                    .filter(|&&EntryPointKey(key_stage, _)| key_stage == stage);
-                let Some(EntryPointKey(_, first_name)) = entry_points.next() else {
-                    return Err(StageError::NoEntryPointForStage(stage));
-                };
-                if entry_points.next().is_some() {
-                    return Err(StageError::AmbiguousEntryPointForStage(stage));
-                }
-                Ok(first_name.clone())
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
     
     
     
@@ -1587,8 +1537,7 @@ impl Interface {
     
     pub fn check_stage(
         &self,
-        layouts: &mut BindingLayoutSource,
-        minimum_binding_sizes: &mut FastHashMap<naga::ResourceBinding, wgt::BufferSize>,
+        resources: &mut PipelineResources,
         entry_point_name: &str,
         shader_stage: ShaderStageForValidation,
         inputs: StageIo,
@@ -1609,12 +1558,17 @@ impl Interface {
         let EntryPointKeyRef(_, entry_point_name) = pair;
 
         let stage_bit = shader_stage.to_wgt_bit();
+        let PipelineResources {
+            ref mut layout,
+            ref mut minimum_binding_sizes,
+            ref mut immediates,
+        } = *resources;
 
         
         for &handle in entry_point.resources.iter() {
             let res = &self.resources[handle];
             let result = 'err: {
-                match layouts {
+                match layout {
                     BindingLayoutSource::Provided(pipeline_layout) => {
                         
                         if let ResourceType::Buffer {
@@ -1687,7 +1641,7 @@ impl Interface {
         
         
         
-        if let BindingLayoutSource::Provided(pipeline_layout) = layouts {
+        if let BindingLayoutSource::Provided(pipeline_layout) = layout {
             for &(texture_handle, sampler_handle) in entry_point.sampling_pairs.iter() {
                 let texture_bind = &self.resources[texture_handle].bind;
                 let sampler_bind = &self.resources[sampler_handle].bind;
@@ -2109,10 +2063,10 @@ impl Interface {
 
         let immediate_usage = self
             .immediate_usage(shader_stage.to_naga(), entry_point_name)
-            .merge(&inputs.immediates);
+            .merge(immediates);
 
         
-        if let BindingLayoutSource::Provided(pipeline_layout) = layouts {
+        if let BindingLayoutSource::Provided(pipeline_layout) = layout {
             if pipeline_layout.immediate_size < immediate_usage.size() {
                 return Err(StageError::LayoutImmediateSize {
                     layout: pipeline_layout.immediate_size,
@@ -2120,6 +2074,8 @@ impl Interface {
                 });
             }
         }
+
+        *immediates = immediate_usage;
 
         Ok(StageIo {
             task_payload_size: entry_point.task_payload_size,
@@ -2129,7 +2085,6 @@ impl Interface {
             } else {
                 None
             },
-            immediates: immediate_usage,
         })
     }
 }

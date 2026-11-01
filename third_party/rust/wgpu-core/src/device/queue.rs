@@ -2,7 +2,6 @@
 use alloc::string::ToString as _;
 use alloc::{boxed::Box, string::String, sync::Arc, vec, vec::Vec};
 use core::{
-    iter,
     mem::{self, ManuallyDrop},
     num::NonZeroU64,
     ptr::NonNull,
@@ -129,9 +128,7 @@ impl Queue {
         texture: &Arc<Texture>,
     ) -> Result<(), DeviceError> {
         let snatch_guard = self.device.snatchable_lock.read();
-        let submission = self
-            .allocate_submission(snatch_guard)
-            .map_err(|(_index, e)| e)?;
+        let submission = self.allocate_submission(snatch_guard)?;
         let device = &self.device;
 
         
@@ -397,6 +394,39 @@ pub(crate) struct PendingWrites {
     dst_textures: FastHashMap<TrackerIndex, Arc<Texture>>,
     copied_blas_s: FastHashMap<TrackerIndex, Arc<Blas>>,
     instance_flags: wgt::InstanceFlags,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    hoisted_staging_buffers: Vec<FlushedStagingBuffer>,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    hoisted_buffer_barriers: Vec<(Arc<Buffer>, hal::StateTransition<wgt::BufferUses>)>,
 }
 
 impl PendingWrites {
@@ -412,6 +442,8 @@ impl PendingWrites {
             dst_textures: FastHashMap::default(),
             copied_blas_s: FastHashMap::default(),
             instance_flags,
+            hoisted_staging_buffers: Vec::new(),
+            hoisted_buffer_barriers: Vec::new(),
         }
     }
 
@@ -442,9 +474,45 @@ impl PendingWrites {
         self.temp_resources.push(resource);
     }
 
+    
+    
+    
+    
+    
     pub fn consume(&mut self, buffer: FlushedStagingBuffer) {
-        self.temp_resources
-            .push(TempResource::StagingBuffer(buffer));
+        self.hoisted_staging_buffers.push(buffer);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
+    fn hoist_buffer_barrier(
+        &mut self,
+        buffer: &Arc<Buffer>,
+        transition: Option<track::PendingTransition<wgt::BufferUses>>,
+    ) -> Option<track::PendingTransition<wgt::BufferUses>> {
+        let transition = transition?;
+
+        
+        
+        if self.dst_buffers.contains_key(&buffer.tracker_index()) {
+            return Some(transition);
+        }
+
+        self.hoisted_buffer_barriers
+            .push((buffer.clone(), transition.usage));
+        None
     }
 
     pub fn clear_buffer(
@@ -454,19 +522,21 @@ impl PendingWrites {
         range: core::ops::Range<wgt::BufferAddress>,
         snatch_guard: &SnatchGuard,
     ) -> Result<(), QueueWriteError> {
-        let barriers = {
+        let transition = {
             let mut trackers = device.trackers.lock();
             trackers
                 .buffers
                 .set_single(buffer, wgt::BufferUses::COPY_DST)
-                .map(|pending| pending.into_hal(buffer, snatch_guard))
         };
+        let inline_transition = self.hoist_buffer_barrier(buffer, transition);
 
         let dst_raw = buffer.try_raw(snatch_guard)?;
 
         let encoder = self.activate();
         unsafe {
-            encoder.transition_buffers(barriers.as_slice());
+            if let Some(transition) = inline_transition {
+                encoder.transition_buffers(&[transition.into_hal(buffer, snatch_guard)]);
+            }
             encoder.clear_buffer(dst_raw, range.clone());
         }
 
@@ -479,11 +549,56 @@ impl PendingWrites {
         Ok(())
     }
 
+    
+    
+    
+    
+    
+    
+    fn record_hoisted_barriers(
+        &mut self,
+        encoder: &mut EncoderInFlight,
+        snatch_guard: &SnatchGuard,
+    ) -> Result<Vec<FlushedStagingBuffer>, DeviceError> {
+        let staging_buffers = mem::take(&mut self.hoisted_staging_buffers);
+        let buffer_barriers = mem::take(&mut self.hoisted_buffer_barriers);
+
+        let barriers = staging_buffers
+            .iter()
+            .map(|staging_buffer| hal::BufferBarrier {
+                buffer: staging_buffer.raw(),
+                usage: hal::StateTransition {
+                    from: wgt::BufferUses::MAP_WRITE,
+                    to: wgt::BufferUses::COPY_SRC,
+                },
+            })
+            .chain(buffer_barriers.iter().filter_map(|(buffer, usage)| {
+                
+                
+                Some(hal::BufferBarrier {
+                    buffer: buffer.raw(snatch_guard)?,
+                    usage: usage.clone(),
+                })
+            }))
+            .collect::<Vec<_>>();
+
+        if !barriers.is_empty() {
+            encoder
+                .inner
+                .open_pass(Some("(wgpu internal) PendingWrites Transit"))?;
+            unsafe { encoder.inner.raw.transition_buffers(&barriers) };
+            encoder.inner.close_and_push_front()?;
+        }
+
+        Ok(staging_buffers)
+    }
+
     fn pre_submit(
         &mut self,
         command_allocator: &CommandAllocator,
         device: &Arc<Device>,
         queue: &Queue,
+        snatch_guard: &SnatchGuard,
     ) -> Result<Option<EncoderInFlight>, DeviceError> {
         if self.is_recording {
             let pending_buffers = mem::take(&mut self.dst_buffers);
@@ -498,7 +613,7 @@ impl PendingWrites {
                 .acquire_encoder(device.raw(), queue.raw())
                 .map_err(|e| device.handle_hal_error(e))?;
 
-            let encoder = EncoderInFlight {
+            let mut encoder = EncoderInFlight {
                 inner: crate::command::InnerCommandEncoder {
                     raw: ManuallyDrop::new(mem::replace(&mut self.command_encoder, new_encoder)),
                     list: vec![cmd_buf],
@@ -516,6 +631,12 @@ impl PendingWrites {
                 pending_textures,
                 pending_blas_s,
             };
+
+            let staging_buffers = self.record_hoisted_barriers(&mut encoder, snatch_guard)?;
+            encoder
+                .temp_resources
+                .extend(staging_buffers.into_iter().map(TempResource::StagingBuffer));
+
             Ok(Some(encoder))
         } else {
             self.dst_buffers.clear();
@@ -934,18 +1055,14 @@ impl Queue {
             dst_offset: buffer_offset,
             size: staging_buffer.size,
         };
-        let barriers = iter::once(hal::BufferBarrier {
-            buffer: staging_buffer.raw(),
-            usage: hal::StateTransition {
-                from: wgt::BufferUses::MAP_WRITE,
-                to: wgt::BufferUses::COPY_SRC,
-            },
-        })
-        .chain(transition.map(|pending| pending.into_hal(&buffer, snatch_guard)))
-        .collect::<Vec<_>>();
+        
+        
+        let inline_transition = pending_writes.hoist_buffer_barrier(&buffer, transition);
         let encoder = pending_writes.activate();
         unsafe {
-            encoder.transition_buffers(&barriers);
+            if let Some(transition) = inline_transition {
+                encoder.transition_buffers(&[transition.into_hal(&buffer, snatch_guard)]);
+            }
             encoder.copy_buffer_to_buffer(staging_buffer.raw(), dst_raw, &[region]);
         }
 
@@ -1186,14 +1303,6 @@ impl Queue {
             .collect::<Vec<_>>();
 
         {
-            let buffer_barrier = hal::BufferBarrier {
-                buffer: staging_buffer.raw(),
-                usage: hal::StateTransition {
-                    from: wgt::BufferUses::MAP_WRITE,
-                    to: wgt::BufferUses::COPY_SRC,
-                },
-            };
-
             let mut trackers = self.device.trackers.lock();
             let transition =
                 trackers
@@ -1203,9 +1312,11 @@ impl Queue {
                 .map(|pending| pending.into_hal(dst_raw))
                 .collect::<Vec<_>>();
 
+            
+            
+            
             unsafe {
                 encoder.transition_textures(&texture_barriers);
-                encoder.transition_buffers(&[buffer_barrier]);
                 encoder.copy_buffer_to_texture(staging_buffer.raw(), dst_raw, &regions);
             }
         }
@@ -1437,7 +1548,7 @@ impl Queue {
                 source,
                 dst_raw_webgl,
                 premultiplied_alpha,
-                iter::once(regions),
+                core::iter::once(regions),
             );
         }
 
@@ -1452,9 +1563,7 @@ impl Queue {
         buffer: &Arc<Buffer>,
         snatch_guard: SnatchGuard,
     ) -> Result<(), BufferAccessError> {
-        let submission = self
-            .allocate_submission(snatch_guard)
-            .map_err(|(_index, e)| e)?;
+        let submission = self.allocate_submission(snatch_guard)?;
 
         let pending_writes = self.pending_writes.lock();
         if !pending_writes.contains_buffer(buffer) {
@@ -1468,9 +1577,7 @@ impl Queue {
 
     fn flush_pending_writes(&self) -> Result<Option<SubmissionIndex>, DeviceError> {
         let snatch_guard = self.device.snatchable_lock.read();
-        let submission = self
-            .allocate_submission(snatch_guard)
-            .map_err(|(_index, e)| e)?;
+        let submission = self.allocate_submission(snatch_guard)?;
         let submit_index = submission.index;
         let pending_writes = self.pending_writes.lock();
         if pending_writes.is_recording {
@@ -1511,20 +1618,21 @@ impl Queue {
     fn submit_inner(
         &self,
         command_buffers: &[Arc<CommandBuffer>],
-    ) -> Result<SubmissionIndex, (SubmissionIndex, QueueSubmitError)> {
+    ) -> Result<SubmissionIndex, Box<(Option<SubmissionIndex>, QueueSubmitError)>> {
         profiling::scope!("Queue::submit");
         api_log!("Queue::submit");
 
         let snatch_guard = self.device.snatchable_lock.read();
         let mut submission = self
             .allocate_submission(snatch_guard)
-            .map_err(|(index, e)| (index, e.into()))?;
+            .map_err(|e| (None, e.into()))?;
         let submit_index = submission.index;
 
         
         
         
         let mut lose_device_on_error = false;
+        let mut successfully_submitted = false;
 
         let res = 'error: {
             let mut used_surface_textures = track::TextureUsageScope::default();
@@ -1731,6 +1839,7 @@ impl Queue {
                 Ok(result) => result,
                 Err(e) => break 'error Err(e.into()),
             };
+            successfully_submitted = true;
 
             profiling::scope!("cleanup");
 
@@ -1766,7 +1875,10 @@ impl Queue {
                 if lose_device_on_error {
                     self.device.lose("submission failed");
                 }
-                return Err((submit_index, e));
+                return Err(Box::new((
+                    successfully_submitted.then_some(submit_index),
+                    e,
+                )));
             }
         };
 
@@ -1780,10 +1892,11 @@ impl Queue {
         Ok(submit_index)
     }
 
-    pub fn submit(&self, command_buffers: &[Arc<CommandBuffer>]) -> SubmissionIndex {
+    pub fn submit(&self, command_buffers: &[Arc<CommandBuffer>]) -> Option<SubmissionIndex> {
         match self.submit_inner(command_buffers) {
-            Ok(submit_index) => submit_index,
-            Err((submit_index, e)) => {
+            Ok(submit_index) => Some(submit_index),
+            Err(e) => {
+                let (submit_index, e) = *e;
                 self.device
                     .handle_error(e, Some(self.label()), "Queue::submit");
                 submit_index
@@ -1816,14 +1929,12 @@ impl Queue {
     fn allocate_submission<'a>(
         &'a self,
         snatch_guard: SnatchGuard<'a>,
-    ) -> Result<PendingSubmission<'a>, (SubmissionIndex, DeviceError)> {
+    ) -> Result<PendingSubmission<'a>, DeviceError> {
         let mut command_index_guard = self.device.command_indices.write();
         command_index_guard.active_submission_index += 1;
         let index = command_index_guard.active_submission_index;
 
-        if let Err(e) = self.device.check_is_valid() {
-            return Err((index, e));
-        }
+        self.device.check_is_valid()?;
 
         let submission = PendingSubmission {
             queue: self,
@@ -1906,7 +2017,12 @@ impl Queue {
             };
         }
 
-        match pending_writes.pre_submit(&self.device.command_allocator, &self.device, self) {
+        match pending_writes.pre_submit(
+            &self.device.command_allocator,
+            &self.device,
+            self,
+            &snatch_guard,
+        ) {
             Ok(Some(pending_execution)) => {
                 executions.insert(0, pending_execution);
             }

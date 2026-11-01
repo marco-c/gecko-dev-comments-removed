@@ -55,6 +55,11 @@ pub enum ClearError {
         texture_format: wgt::TextureFormat,
         subresource_range_aspects: TextureAspect,
     },
+    #[error("Unable to selectively clear aspect {aspect:?} of format {format:?}. All aspects must be cleared.")]
+    InvalidClearAspect {
+        format: wgt::TextureFormat,
+        aspect: TextureAspect,
+    },
     #[error("Image subresource level range is outside of the texture's level range. texture range is {texture_level_range:?},  \
 whereas subesource range specified start {subresource_base_mip_level} and count {subresource_mip_level_count:?}")]
     InvalidTextureLevelRange {
@@ -101,6 +106,7 @@ impl WebGpuError for ClearError {
             | Self::OffsetPlusSizeExceeds64BitBounds { .. }
             | Self::BufferOverrun { .. }
             | Self::MissingTextureAspect { .. }
+            | Self::InvalidClearAspect { .. }
             | Self::InvalidTextureLevelRange { .. }
             | Self::InvalidTextureLayerRange { .. } => ErrorType::Validation,
         }
@@ -253,12 +259,19 @@ pub(super) fn clear_texture_cmd(
 
     
     let clear_aspects = hal::FormatAspects::new(dst_texture.desc.format, subresource_range.aspect);
+    let all_aspects = hal::FormatAspects::new(dst_texture.desc.format, TextureAspect::All);
     if clear_aspects.is_empty() {
         return Err(ClearError::MissingTextureAspect {
             texture_format: dst_texture.desc.format,
             subresource_range_aspects: subresource_range.aspect,
         });
-    };
+    }
+    if clear_aspects != all_aspects {
+        return Err(ClearError::InvalidClearAspect {
+            format: dst_texture.desc.format,
+            aspect: subresource_range.aspect,
+        });
+    }
 
     
     let subresource_mip_range = subresource_range.mip_range(dst_texture.full_range.mips.end);

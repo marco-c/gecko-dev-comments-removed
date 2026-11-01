@@ -6,6 +6,8 @@ pub struct BindingInfo {
     pub binding: u32,
     
     pub binding_array_size: Option<u32>,
+    #[cfg_attr(feature = "deserialize", serde(default))]
+    pub external_texture: bool,
 }
 
 

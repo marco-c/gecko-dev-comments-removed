@@ -7,17 +7,41 @@ use crate::compact::handle_set_map::HandleMap;
 
 impl FunctionTracer<'_> {
     pub fn trace_block(&mut self, block: &[crate::Statement]) {
+        self.trace_block_impl(block, false)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(msl_out)]
+    pub fn trace_block_including_emits(&mut self, block: &[crate::Statement]) {
+        self.trace_block_impl(block, true)
+    }
+
+    fn trace_block_impl(&mut self, block: &[crate::Statement], emits_are_used: bool) {
         let mut worklist: Vec<&[crate::Statement]> = vec![block];
         while let Some(last) = worklist.pop() {
             for stmt in last {
                 use crate::Statement as St;
                 match *stmt {
-                    St::Emit(ref _range) => {
+                    St::Emit(ref range) => {
                         
                         
                         
                         
                         
+                        if emits_are_used {
+                            self.expressions_used.insert_iter(range.clone());
+                        }
                     }
                     St::Block(ref block) => worklist.push(block),
                     St::If {
