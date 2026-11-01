@@ -52,7 +52,7 @@ class ClockAligner {
       RTC_RUN_ON(&sequence_checker_);
 
   const Environment env_;
-  const bool fix_non_monotonic_clock_;
+  const bool disable_non_monotonic_clock_fix_;
 
   RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
       SequenceChecker::kDetached};
