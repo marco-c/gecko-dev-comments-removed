@@ -601,6 +601,14 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
       "BTP: committed document OriginAttributes (userContextId/PBM) diverged "
       "from the cached BounceTrackingState OriginAttributes (Bug 2054941).");
 
+  
+  
+  
+  
+  if (aStateFlags & nsIWebProgressListener::STATE_RESTORING) {
+    return NS_OK;
+  }
+
   return OnDocumentLoaded(documentPrincipal);
 }
 
