@@ -375,9 +375,6 @@ WebRenderBridgeParent::WebRenderBridgeParent(
       wr::AsUint64(mPipelineId), wr::AsUint64(mLateInit->mApi->GetId()),
       IsRootWebRenderBridgeParent());
 
-  SharedSurfacesParent::AddIdNamespace(
-      mLateInit->mIdNamespace,
-      aCompositorBridge->GetCompositorManager()->GetNamespace());
   mLateInit->mAsyncImageManager->AddPipeline(mPipelineId, this);
   mRemoteTextureTxnScheduler =
       RemoteTextureTxnScheduler::Create(aCompositorBridge);
@@ -440,9 +437,6 @@ void WebRenderBridgeParent::FinishInitialization(
       .mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget),
       .mIdNamespace = aApi->GetNamespace(),
   });
-  SharedSurfacesParent::AddIdNamespace(
-      mLateInit->mIdNamespace,
-      mCompositorBridge->GetCompositorManager()->GetNamespace());
   mLateInit->mAsyncImageManager->AddPipeline(mPipelineId, this);
 
   UpdateDebugFlags();
@@ -564,37 +558,6 @@ void WebRenderBridgeParent::Destroy() {
     entry.second->OnReleased();
   }
   mCompositables.clear();
-
-  if (mLateInit->mApi) {
-    
-    
-    
-    
-    
-    
-    
-    class RemoveIdNamespaceNotification final : public wr::NotificationHandler {
-     public:
-      explicit RemoveIdNamespaceNotification(
-          const wr::IdNamespace& aIdNamespace)
-          : mIdNamespace(aIdNamespace) {}
-
-      void Notify(wr::Checkpoint) override {
-        SharedSurfacesParent::RemoveIdNamespace(mIdNamespace);
-      }
-
-     private:
-      wr::IdNamespace mIdNamespace;
-    };
-
-    wr::TransactionBuilder txn(mLateInit->mApi);
-    txn.SetLowPriority(true);
-    txn.Notify(
-        wr::Checkpoint::SceneBuilt,
-        MakeUnique<RemoveIdNamespaceNotification>(mLateInit->mIdNamespace));
-    mLateInit->mApi->SendTransaction(txn);
-  }
-
   ClearResources();
 #ifdef MOZ_WIDGET_ANDROID
   if (mScreenPixelsRequest) {
@@ -2441,9 +2404,6 @@ wr::Epoch WebRenderBridgeParent::UpdateWebRender(
   
   
   mLateInit->mIdNamespace = aApi->GetNamespace();
-  SharedSurfacesParent::AddIdNamespace(
-      mLateInit->mIdNamespace,
-      mCompositorBridge->GetCompositorManager()->GetNamespace());
   
   
   
