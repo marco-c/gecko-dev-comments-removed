@@ -14,10 +14,14 @@
 
 
 template <typename T>
-class NSID_TrimBrackets : public nsTAutoString<T> {
+
+
+class NSID_TrimBrackets : public nsTAutoStringN<T, NSID_LENGTH - 2> {
  public:
   explicit NSID_TrimBrackets(const nsID& aID) {
     nsIDToCString toCString(aID);
+    
+    
     
     
     this->AssignASCII(toCString.get() + 1, NSID_LENGTH - 3);
