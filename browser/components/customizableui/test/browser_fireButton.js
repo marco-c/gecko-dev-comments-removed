@@ -242,6 +242,10 @@ add_task(async function test_confirmClearsWholeSession() {
     "non-private",
     "The replacement window is a normal window."
   );
+  Assert.ok(
+    options.keepPinnedTabs,
+    "The replacement window keeps the pinned tabs."
+  );
 
   
   
