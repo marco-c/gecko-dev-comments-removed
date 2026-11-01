@@ -26,10 +26,33 @@ static inline nscoord ComputeBEndOffset(WritingMode aWM,
 
 enum class BoxType { Margin, Border, Padding, Content };
 
+StyleAlignmentBaseline Baseline::DefaultAlignmentBaselineForWritingMode(
+    WritingMode aWM) {
+  return aWM.IsCentralBaseline() ? StyleAlignmentBaseline::Central
+                                 : StyleAlignmentBaseline::Alphabetic;
+}
+
+static StyleAlignmentBaseline AlignmentBaselineForFrame(const nsIFrame* aFrame,
+                                                        WritingMode aWM) {
+  
+  
+  
+  
+  if (!aFrame->IsAtomicInline()) {
+    return Baseline::DefaultAlignmentBaselineForWritingMode(aWM);
+  }
+  StyleAlignmentBaseline baseline = aFrame->AlignmentBaseline();
+  if (baseline == StyleAlignmentBaseline::Baseline) {
+    return Baseline::DefaultAlignmentBaselineForWritingMode(aWM);
+  }
+  return baseline;
+}
+
 template <BoxType aType>
 static nscoord SynthesizeBOffsetFromInnerBox(const nsIFrame* aFrame,
                                              WritingMode aWM,
-                                             BaselineSharingGroup aGroup) {
+                                             BaselineSharingGroup aGroup,
+                                             StyleAlignmentBaseline aBaseline) {
   WritingMode wm = aFrame->GetWritingMode();
   MOZ_ASSERT_IF(aType != BoxType::Border, !aWM.IsOrthogonalTo(wm));
 
@@ -62,18 +85,7 @@ static nscoord SynthesizeBOffsetFromInnerBox(const nsIFrame* aFrame,
   }
 
   
-  
-  
-  
-  StyleAlignmentBaseline baseline = aFrame->AlignmentBaseline();
-  if (!aFrame->IsAtomicInline() ||
-      baseline == StyleAlignmentBaseline::Baseline) {
-    baseline = aWM.IsCentralBaseline() ? StyleAlignmentBaseline::Central
-                                       : StyleAlignmentBaseline::Alphabetic;
-  }
-
-  
-  switch (baseline) {
+  switch (aBaseline) {
     case StyleAlignmentBaseline::Baseline:
       MOZ_ASSERT_UNREACHABLE("Baseline is already handled");
       [[fallthrough]];
@@ -102,25 +114,36 @@ static nscoord SynthesizeBOffsetFromInnerBox(const nsIFrame* aFrame,
 nscoord Baseline::SynthesizeBOffsetFromContentBox(const nsIFrame* aFrame,
                                                   WritingMode aWM,
                                                   BaselineSharingGroup aGroup) {
-  return SynthesizeBOffsetFromInnerBox<BoxType::Content>(aFrame, aWM, aGroup);
+  return SynthesizeBOffsetFromInnerBox<BoxType::Content>(
+      aFrame, aWM, aGroup, AlignmentBaselineForFrame(aFrame, aWM));
 }
 
 nscoord Baseline::SynthesizeBOffsetFromPaddingBox(const nsIFrame* aFrame,
                                                   WritingMode aWM,
                                                   BaselineSharingGroup aGroup) {
-  return SynthesizeBOffsetFromInnerBox<BoxType::Padding>(aFrame, aWM, aGroup);
+  return SynthesizeBOffsetFromInnerBox<BoxType::Padding>(
+      aFrame, aWM, aGroup, AlignmentBaselineForFrame(aFrame, aWM));
 }
 
 nscoord Baseline::SynthesizeBOffsetFromBorderBox(const nsIFrame* aFrame,
                                                  WritingMode aWM,
                                                  BaselineSharingGroup aGroup) {
-  return SynthesizeBOffsetFromInnerBox<BoxType::Border>(aFrame, aWM, aGroup);
+  return SynthesizeBOffsetFromInnerBox<BoxType::Border>(
+      aFrame, aWM, aGroup, AlignmentBaselineForFrame(aFrame, aWM));
 }
 
 nscoord Baseline::SynthesizeBOffsetFromMarginBox(const nsIFrame* aFrame,
                                                  WritingMode aWM,
                                                  BaselineSharingGroup aGroup) {
-  return SynthesizeBOffsetFromInnerBox<BoxType::Margin>(aFrame, aWM, aGroup);
+  return SynthesizeBOffsetFromInnerBox<BoxType::Margin>(
+      aFrame, aWM, aGroup, AlignmentBaselineForFrame(aFrame, aWM));
+}
+
+nscoord Baseline::SynthesizeBOffsetFromMarginBox(
+    const nsIFrame* aFrame, WritingMode aWM, BaselineSharingGroup aGroup,
+    StyleAlignmentBaseline aBaseline) {
+  return SynthesizeBOffsetFromInnerBox<BoxType::Margin>(aFrame, aWM, aGroup,
+                                                        aBaseline);
 }
 
 }  

@@ -38,6 +38,13 @@ class Baseline {
 
 
 
+  static StyleAlignmentBaseline DefaultAlignmentBaselineForWritingMode(
+      WritingMode aWM);
+
+  
+
+
+
 
 
 
@@ -51,6 +58,14 @@ class Baseline {
   static nscoord SynthesizeBOffsetFromMarginBox(const nsIFrame* aFrame,
                                                 WritingMode aWM,
                                                 BaselineSharingGroup);
+
+  
+
+
+
+  static nscoord SynthesizeBOffsetFromMarginBox(
+      const nsIFrame* aFrame, WritingMode aWM, BaselineSharingGroup,
+      StyleAlignmentBaseline aBaseline);
 
   
 

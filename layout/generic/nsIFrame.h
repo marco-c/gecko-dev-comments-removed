@@ -1841,9 +1841,7 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  virtual nscoord GetCaretBaseline() const {
-    return GetLogicalBaseline(GetWritingMode());
-  }
+  virtual nscoord GetCaretBaseline() const;
 
   
   nscoord GetFontMetricsDerivedCaretBaseline() const;
