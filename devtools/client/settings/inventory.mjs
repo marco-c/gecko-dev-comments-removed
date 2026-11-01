@@ -2,23 +2,101 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** @import { Setting, SettingChangeHandler } from "./types/inventory.d.ts" */
+/** @import { SettingSection, SettingChangeHandler } from "./types/inventory.d.ts" */
 
-/** @type {ReadonlyArray<Setting>} */
+/** @type {ReadonlyArray<SettingSection>} */
 export const inventory = [
   {
-    id: "rulers-setting",
-    type: "boolean",
-    pref: "devtools.command-button-rulers.enabled",
-    l10nId: "devtools-settings-toolbox-rulers",
-    changeAction: "updateToolboxButtons",
+    id: "settings-default-tools",
+    l10nId: "devtools-settings-default-tools",
+    settings: [
+      {
+        id: "settings-tool-netmonitor",
+        l10nId: "devtools-settings-tool-netmonitor",
+        type: "boolean",
+        pref: "devtools.netmonitor.enabled",
+      },
+      {
+        id: "settings-tool-styleeditor",
+        l10nId: "devtools-settings-tool-styleeditor",
+        type: "boolean",
+        pref: "devtools.styleeditor.enabled",
+      },
+      {
+        id: "settings-tool-performance",
+        l10nId: "devtools-settings-tool-performance",
+        type: "boolean",
+        pref: "devtools.performance.enabled",
+      },
+      {
+        id: "settings-tool-memory",
+        l10nId: "devtools-settings-tool-memory",
+        type: "boolean",
+        pref: "devtools.memory.enabled",
+      },
+      {
+        id: "settings-tool-storage",
+        l10nId: "devtools-settings-tool-storage",
+        type: "boolean",
+        pref: "devtools.storage.enabled",
+      },
+      {
+        id: "settings-tool-accessibility",
+        l10nId: "devtools-settings-tool-accessibility",
+        type: "boolean",
+        pref: "devtools.accessibility.enabled",
+      },
+      {
+        id: "settings-tool-application",
+        l10nId: "devtools-settings-tool-application",
+        type: "boolean",
+        pref: "devtools.application.enabled",
+      },
+      {
+        id: "settings-tool-dom",
+        l10nId: "devtools-settings-tool-dom",
+        type: "boolean",
+        pref: "devtools.dom.enabled",
+      },
+      {
+        id: "settings-tool-antitracking",
+        l10nId: "devtools-settings-tool-antitracking",
+        type: "boolean",
+        pref: "devtools.anti-tracking.enabled",
+      },
+    ],
   },
   {
-    id: "screenshot-setting",
-    type: "boolean",
-    pref: "devtools.command-button-screenshot.enabled",
-    l10nId: "devtools-settings-toolbox-screenshot",
-    changeAction: "updateToolboxButtons",
+    id: "settings-toolbox-buttons",
+    l10nId: "devtools-settings-toolbox-buttons",
+    settings: [
+      {
+        id: "settings-toolbox-rulers",
+        l10nId: "devtools-settings-toolbox-rulers",
+        type: "boolean",
+        pref: "devtools.command-button-rulers.enabled",
+        changeAction: "updateToolboxButtons",
+      },
+      {
+        id: "settings-toolbox-screenshot",
+        l10nId: "devtools-settings-toolbox-screenshot",
+        type: "boolean",
+        pref: "devtools.command-button-screenshot.enabled",
+        changeAction: "updateToolboxButtons",
+      },
+    ],
+  },
+  {
+    id: "settings-styleeditor",
+    l10nId: "devtools-settings-styleeditor",
+    settings: [
+      {
+        id: "settings-styleeditor-autocompletion",
+        l10nId: "devtools-settings-styleeditor-autocompletion",
+        type: "boolean",
+        pref: "devtools.styleeditor.autocompletion-enabled",
+      },
+    ],
   },
 ];
 

@@ -4,12 +4,55 @@
 
 devtools-settings-title = DevTools Settings
 
-# Label for a checkbox that shows or hides a button in the DevTools toolbox
-# toolbar. That button toggles rulers along the edges of the page.
-devtools-settings-toolbox-rulers =
-    .label = Show rulers button (in toolbox)
+## Default Developer Tools section. Each checkbox enables or disables a tool.
 
-# Label for a checkbox that shows or hides a button in the DevTools toolbox
-# toolbar. That button takes a screenshot of the page.
+devtools-settings-default-tools =
+    .label = Default Developer Tools
+
+devtools-settings-tool-netmonitor =
+    .label = Network
+
+devtools-settings-tool-styleeditor =
+    .label = Style Editor
+
+devtools-settings-tool-performance =
+    .label = Performance
+
+devtools-settings-tool-memory =
+    .label = Memory
+
+devtools-settings-tool-storage =
+    .label = Storage
+
+devtools-settings-tool-accessibility =
+    .label = Accessibility
+
+devtools-settings-tool-application =
+    .label = Application
+
+devtools-settings-tool-dom =
+    .label = DOM
+
+devtools-settings-tool-antitracking =
+    .label = Anti tracking
+
+## Toolbox Buttons section. Each checkbox shows or hides a button in the
+## DevTools toolbox toolbar.
+
+devtools-settings-toolbox-buttons =
+    .label = Available Toolbox Buttons
+
+# The button toggles rulers along the edges of the page.
+devtools-settings-toolbox-rulers =
+    .label = Show rulers button
+
 devtools-settings-toolbox-screenshot =
-    .label = Show screenshot button (in toolbox)
+    .label = Show screenshot button
+
+## Style Editor section, configuring the CSS Style Editor.
+
+devtools-settings-styleeditor =
+    .label = Style Editor
+
+devtools-settings-styleeditor-autocompletion =
+    .label = Autocomplete CSS
