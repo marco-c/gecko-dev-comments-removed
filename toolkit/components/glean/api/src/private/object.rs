@@ -58,7 +58,27 @@ impl ObjectSerialize for RuntimeObject {
         Ok(RuntimeObject(serde_json::Value::from_str(obj)?))
     }
 
-    fn into_serialized_object(self) -> Result<serde_json::Value, glean::traits::ObjectError> {
+    fn into_serialized_object(mut self) -> Result<serde_json::Value, glean::traits::ObjectError> {
+        use serde_json::Value;
+
+        fn omit_empty_members(value: &mut Value) {
+            match value {
+                Value::Object(members) => members.retain(|_, member| {
+                    
+                    if member.is_null()
+                        || matches!(member, Value::Array(elements) if elements.is_empty())
+                    {
+                        return false;
+                    }
+                    omit_empty_members(member);
+                    true
+                }),
+                Value::Array(elements) => elements.iter_mut().for_each(omit_empty_members),
+                _ => {}
+            }
+        }
+
+        omit_empty_members(&mut self.0);
         Ok(self.0)
     }
 }
