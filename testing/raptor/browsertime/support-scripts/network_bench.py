@@ -529,6 +529,11 @@ class NetworkBench(BasePythonSupport):
 
         self.start_iperf3(tcp_port)
 
+    def modify_env(self, env, test):
+        
+        
+        env.pop("MOZ_REMOTE_SETTINGS_DISABLED", None)
+
     def modify_command(self, cmd, test):
         if not self._is_chrome:
             cmd += [
