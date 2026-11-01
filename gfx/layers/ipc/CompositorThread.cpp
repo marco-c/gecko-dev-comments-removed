@@ -40,7 +40,7 @@ CompositorThreadHolder* CompositorThreadHolder::GetSingleton() {
 
 CompositorThreadHolder::CompositorThreadHolder()
     : mCompositorThread(CreateCompositorThread()) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 }
 
 CompositorThreadHolder::~CompositorThreadHolder() {
@@ -49,10 +49,10 @@ CompositorThreadHolder::~CompositorThreadHolder() {
 
  already_AddRefed<nsIThread>
 CompositorThreadHolder::CreateCompositorThread() {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(!sCompositorThreadHolder,
-             "The compositor thread has already been started!");
+  MOZ_RELEASE_ASSERT(!sCompositorThreadHolder,
+                     "The compositor thread has already been started!");
 
   
   
@@ -113,9 +113,9 @@ CompositorThreadHolder::CreateCompositorThread() {
 }
 
 void CompositorThreadHolder::Start() {
-  MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
-  MOZ_ASSERT(!sCompositorThreadHolder,
-             "The compositor thread has already been started!");
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
+  MOZ_RELEASE_ASSERT(!sCompositorThreadHolder,
+                     "The compositor thread has already been started!");
 
   
   
@@ -132,7 +132,7 @@ void CompositorThreadHolder::Start() {
 }
 
 void CompositorThreadHolder::Shutdown() {
-  MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
   if (!sCompositorThreadHolder) {
     
     return;
