@@ -11,7 +11,6 @@ use crate::command_buffer::{CommandBufferBuilderKind, CommandBufferBuilder, Comm
 use crate::internal_types::FastHashMap;
 use crate::picture_composite_mode::PictureCompositeMode;
 use crate::tile_cache::{TileKey, SubSliceIndex, MAX_COMPOSITOR_SURFACES};
-use crate::prim_store::PictureIndex;
 use crate::render_task_graph::{RenderTaskId, RenderTaskGraphBuilder};
 use crate::render_task::RenderTaskKind;
 use crate::space::SpaceMapper;
@@ -696,15 +695,11 @@ impl CommandBufferTargets {
 }
 
 
-
 pub struct SurfaceBuilder {
     
     current_cmd_buffers: CommandBufferTargets,
     
     builder_stack: Vec<CommandBufferBuilder>,
-    
-    
-    pub sub_graph_output_map: FastHashMap<PictureIndex, RenderTaskId>,
 }
 
 impl SurfaceBuilder {
@@ -712,7 +707,6 @@ impl SurfaceBuilder {
         SurfaceBuilder {
             current_cmd_buffers: CommandBufferTargets::new(),
             builder_stack: Vec::new(),
-            sub_graph_output_map: FastHashMap::default(),
         }
     }
 
@@ -744,24 +738,9 @@ impl SurfaceBuilder {
         }
     }
 
-    
-    
-    
-    pub fn register_collected_backdrop(&mut self) {
-        for builder in self.builder_stack.iter_mut().rev() {
-            if builder.establishes_sub_graph {
-                builder.collected_backdrop = true;
-                return;
-            }
-        }
-
-        unreachable!("bug: collected backdrop with no sub-graph");
-    }
-
     pub fn push_surface(
         &mut self,
         surface_index: SurfaceIndex,
-        is_sub_graph: bool,
         clipping_rect: DeviceRect,
         descriptor: Option<SurfaceDescriptor>,
         surfaces: &mut [SurfaceInfo],
@@ -780,7 +759,6 @@ impl SurfaceBuilder {
                 SurfaceDescriptorKind::Simple { render_task_id, dirty_rect, .. } => {
                     CommandBufferBuilder::new_simple(
                         render_task_id,
-                        is_sub_graph,
                         None,
                         dirty_rect,
                     )
@@ -788,7 +766,6 @@ impl SurfaceBuilder {
                 SurfaceDescriptorKind::Chained { render_task_id, root_task_id, dirty_rect, .. } => {
                     CommandBufferBuilder::new_simple(
                         render_task_id,
-                        is_sub_graph,
                         Some(root_task_id),
                         dirty_rect,
                     )
@@ -893,89 +870,42 @@ impl SurfaceBuilder {
     }
 
     pub fn pop_empty_surface(&mut self) {
-        let builder = self.builder_stack.pop().unwrap();
-        assert!(!builder.establishes_sub_graph);
+        self.builder_stack.pop().unwrap();
     }
 
     
     pub fn pop_surface(
         &mut self,
-        pic_index: PictureIndex,
         rg_builder: &mut RenderTaskGraphBuilder,
     ) {
         let builder = self.builder_stack.pop().unwrap();
 
-        if builder.establishes_sub_graph {
-            match builder.kind {
-                CommandBufferBuilderKind::Tiled { .. } | CommandBufferBuilderKind::Invalid => {
-                    unreachable!("bug: sub-graphs can only be simple surfaces");
-                }
-                CommandBufferBuilderKind::Simple { render_task_id: child_render_task_id, root_task_id: child_root_task_id, .. } => {
-                    
-                    
-                    
-                    if builder.collected_backdrop {
-                        let _old = self.sub_graph_output_map.insert(
-                            pic_index,
-                            child_root_task_id.unwrap_or(child_render_task_id),
-                        );
-                        debug_assert!(_old.is_none());
-                    }
+        match builder.kind {
+            CommandBufferBuilderKind::Tiled { .. } => {}
+            CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
+                self.add_backdrop_capture_dependency(child_root_task_id.unwrap_or(child_task_id));
 
-                    
-                    
-                    
-                    
-                    match self.builder_stack.last().unwrap().kind {
-                        CommandBufferBuilderKind::Tiled { ref tiles } => {
-                            
-                            for (_, descriptor) in tiles {
-                                rg_builder.add_dependency(
-                                    descriptor.current_task_id,
-                                    child_root_task_id.unwrap_or(child_render_task_id),
-                                );
-                            }
-                        }
-                        CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
+                match self.builder_stack.last().unwrap().kind {
+                    CommandBufferBuilderKind::Tiled { ref tiles } => {
+                        
+                        for (_, descriptor) in tiles {
                             rg_builder.add_dependency(
-                                parent_task_id,
-                                child_root_task_id.unwrap_or(child_render_task_id),
-                            );
-                        }
-                        CommandBufferBuilderKind::Invalid => {
-                            unreachable!();
-                        }
-                    }
-                }
-            }
-        } else {
-            match builder.kind {
-                CommandBufferBuilderKind::Tiled { .. } => {}
-                CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
-                    self.add_backdrop_capture_dependency(child_root_task_id.unwrap_or(child_task_id));
-
-                    match self.builder_stack.last().unwrap().kind {
-                        CommandBufferBuilderKind::Tiled { ref tiles } => {
-                            
-                            for (_, descriptor) in tiles {
-                                rg_builder.add_dependency(
-                                    descriptor.current_task_id,
-                                    child_root_task_id.unwrap_or(child_task_id),
-                                );
-                            }
-                        }
-                        CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
-                            rg_builder.add_dependency(
-                                parent_task_id,
+                                descriptor.current_task_id,
                                 child_root_task_id.unwrap_or(child_task_id),
                             );
                         }
-                        CommandBufferBuilderKind::Invalid => {
-                        }
+                    }
+                    CommandBufferBuilderKind::Simple { render_task_id: parent_task_id, .. } => {
+                        rg_builder.add_dependency(
+                            parent_task_id,
+                            child_root_task_id.unwrap_or(child_task_id),
+                        );
+                    }
+                    CommandBufferBuilderKind::Invalid => {
                     }
                 }
-                CommandBufferBuilderKind::Invalid => {
-                }
+            }
+            CommandBufferBuilderKind::Invalid => {
             }
         }
 

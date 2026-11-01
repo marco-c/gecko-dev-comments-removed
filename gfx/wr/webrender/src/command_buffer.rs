@@ -522,20 +522,6 @@ pub struct CommandBufferBuilder {
     pub kind: CommandBufferBuilderKind,
 
     
-    
-    
-    
-    pub establishes_sub_graph: bool,
-
-    
-    
-    
-    
-    
-    
-    pub collected_backdrop: bool,
-
-    
     pub extra_dependencies: Vec<RenderTaskId>,
 
     
@@ -546,8 +532,6 @@ impl CommandBufferBuilder {
     pub fn empty() -> Self {
         CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Invalid,
-            establishes_sub_graph: false,
-            collected_backdrop: false,
             extra_dependencies: Vec::new(),
             backdrop_captures: Vec::new(),
         }
@@ -561,8 +545,6 @@ impl CommandBufferBuilder {
             kind: CommandBufferBuilderKind::Tiled {
                 tiles,
             },
-            establishes_sub_graph: false,
-            collected_backdrop: false,
             extra_dependencies: Vec::new(),
             backdrop_captures: Vec::new(),
         }
@@ -571,7 +553,6 @@ impl CommandBufferBuilder {
     
     pub fn new_simple(
         render_task_id: RenderTaskId,
-        establishes_sub_graph: bool,
         root_task_id: Option<RenderTaskId>,
         dirty_rect: PictureRect,
     ) -> Self {
@@ -581,8 +562,6 @@ impl CommandBufferBuilder {
                 root_task_id,
                 dirty_rect,
             },
-            establishes_sub_graph,
-            collected_backdrop: false,
             extra_dependencies: Vec::new(),
             backdrop_captures: Vec::new(),
         }
