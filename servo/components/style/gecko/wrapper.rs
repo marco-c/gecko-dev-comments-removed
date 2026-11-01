@@ -1436,6 +1436,8 @@ impl<'le> TElement for GeckoElement<'le> {
         }
         let ptr = self.0.mServoData.get();
         unsafe {
+            
+            
             self.unset_flags(
                 ELEMENT_HAS_SNAPSHOT
                     | ELEMENT_HANDLED_SNAPSHOT

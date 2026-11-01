@@ -6180,7 +6180,9 @@ void Element::ClearServoData(Document* aDoc) {
   if (HasServoData()) {
     Servo_Element_ClearData(this);
   } else {
-    UnsetFlags(kAllServoDescendantBits | NODE_NEEDS_FRAME);
+    
+    UnsetFlags(ELEMENT_HAS_SNAPSHOT | ELEMENT_HANDLED_SNAPSHOT |
+               kAllServoDescendantBits | NODE_NEEDS_FRAME);
   }
   
   
