@@ -76,6 +76,11 @@ enum vp8_dec_control_id {
   VP8D_GET_LAST_REF_UPDATES = VP8_DECODER_CTRL_ID_START,
 
   
+
+
+
+
+
   VP8D_GET_FRAME_CORRUPTED,
 
   

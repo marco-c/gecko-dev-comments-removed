@@ -685,12 +685,12 @@ static int independent_coef_context_savings(VP8_COMP *cpi) {
       int k = 0;
       unsigned int prev_coef_count_sum[MAX_ENTROPY_TOKENS] = { 0 };
       int prev_coef_savings[MAX_ENTROPY_TOKENS] = { 0 };
-      const unsigned int(*probs)[MAX_ENTROPY_TOKENS];
+      const unsigned int (*probs)[MAX_ENTROPY_TOKENS];
       
 
 
 
-      probs = (const unsigned int(*)[MAX_ENTROPY_TOKENS])x->coef_counts[i][j];
+      probs = (const unsigned int (*)[MAX_ENTROPY_TOKENS])x->coef_counts[i][j];
 
       
       if (cpi->common.frame_type == KEY_FRAME) {
