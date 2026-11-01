@@ -963,7 +963,15 @@ class MarkupView extends EventEmitter {
 
   update() {
     const updateChildren = node => {
-      this.getContainer(node).update();
+      const container = this.getContainer(node);
+      
+      
+      
+      
+      if (!container) {
+        return;
+      }
+      container.update();
       for (const child of node.treeChildren()) {
         updateChildren(child);
       }
