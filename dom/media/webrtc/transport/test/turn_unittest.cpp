@@ -46,8 +46,6 @@
 #include "gtest/gtest.h"
 #include "gtest_utils.h"
 
-#define USE_TURN
-
 
 
 #include "nr_api.h"
