@@ -439,7 +439,7 @@ if (!isDevtools) {
   
   
   if (!AppConstants.ENABLE_WEBDRIVER) {
-    allowlist.add("resource://gre/modules/jsdebugger.sys.mjs");
+    allowlist.add("moz-src:///devtools/platform/jsdebugger.sys.mjs");
   }
 }
 

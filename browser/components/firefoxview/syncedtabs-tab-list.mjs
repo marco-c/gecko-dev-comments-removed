@@ -11,7 +11,7 @@ import {
   FxviewTabListBase,
   FxviewTabRowBase,
 } from "chrome://browser/content/firefoxview/fxview-tab-list.mjs";
-// eslint-disable-next-line import/no-unassigned-import
+// eslint-disable-next-line import-x/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
 /**
@@ -60,7 +60,7 @@ export class SyncedTabsTabList extends FxviewTabListBase {
         .time=${ifDefined(tabItem.time)}
         .timeMsPref=${ifDefined(this.timeMsPref)}
         .dateTimeFormat=${ifDefined(this.dateTimeFormat)}
-      ></fxview-tab-row>
+      ></syncedtabs-tab-row>
     `;
   };
 

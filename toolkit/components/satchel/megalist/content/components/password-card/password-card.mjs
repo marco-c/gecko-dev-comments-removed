@@ -4,7 +4,7 @@
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
-/* eslint-disable-next-line import/no-unassigned-import */
+/* eslint-disable-next-line import-x/no-unassigned-import */
 import "chrome://global/content/megalist/components/login-line/login-line.mjs";
 
 const DIRECTIONS = {
@@ -18,8 +18,8 @@ export class PasswordCard extends MozLitElement {
   /**
    * Hardcoded heights of the password card component.
    */
-  static DEFAULT_PASSWORD_CARD_HEIGHT = 210 + 16; // 16px for top and bottom margin
-  static WITH_ALERT_PASSWORD_CARD_HEIGHT = 262 + 16; // alert adds 52px
+  static DEFAULT_PASSWORD_CARD_HEIGHT = 215 + 13; // 13px top + bottom margin
+  static WITH_ALERT_PASSWORD_CARD_HEIGHT = 266 + 13; // alert adds 51px
 
   static properties = {
     origin: { type: Object },

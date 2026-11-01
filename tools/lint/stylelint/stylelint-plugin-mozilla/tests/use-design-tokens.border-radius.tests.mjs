@@ -6,7 +6,7 @@
 
 // Bug 1948378: remove this exception when the eslint import plugin fully
 // supports exports in package.json files
-// eslint-disable-next-line import/no-unresolved
+// eslint-disable-next-line import-x/no-unresolved
 import { testRule } from "stylelint-test-rule-node";
 import stylelint from "stylelint";
 import useDesignTokens from "../rules/use-design-tokens.mjs";
@@ -143,11 +143,11 @@ testRule({
       description: "Using a custom variable should use a design token.",
     },
     {
-      code: ".a { border-radius: calc(var(--tab-border-radius) + 4px); }",
+      code: ".a { border-radius: calc(var(--custom-border-radius) + 4px); }",
       message: messages.rejected(
-        "calc(var(--tab-border-radius) + 4px)",
+        "calc(var(--custom-border-radius) + 4px)",
         ["border-radius"],
-        "calc(var(--tab-border-radius) + var(--border-radius-small))"
+        "calc(var(--custom-border-radius) + var(--border-radius-small))"
       ),
       description:
         "Using calc() with custom variables should use design tokens.",
