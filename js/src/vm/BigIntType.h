@@ -426,8 +426,8 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
 
   
   
-  static void multiplyAccumulateDigits(ConstDigits multiplicand,
-                                       Digit multiplier, Digits acc);
+  static void multiplyDigits(ConstDigits multiplicand, Digit multiplier,
+                             Digits product);
   
   static Digit inplaceSubDigits(Digits x, ConstDigits y);
   
