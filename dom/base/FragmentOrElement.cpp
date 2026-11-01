@@ -592,8 +592,13 @@ class ContentUnbinder : public Runnable {
   static void Append(nsIContent* aSubtreeRoot) {
     if (!sContentUnbinder) {
       sContentUnbinder = new ContentUnbinder();
-      nsCOMPtr<nsIRunnable> e = sContentUnbinder;
-      NS_DispatchToCurrentThreadQueue(e.forget(), EventQueuePriority::Idle);
+      
+      
+      
+      if (nsCCUncollectableMarker::sGeneration) {
+        nsCOMPtr<nsIRunnable> e = sContentUnbinder;
+        NS_DispatchToCurrentThreadQueue(e.forget(), EventQueuePriority::Idle);
+      }
     }
 
     if (sContentUnbinder->mLast->mSubtreeRoots.Length() >=
@@ -625,7 +630,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
   nsIContent::Unlink(tmp);
 
   
-  if (tmp->UnoptimizableCCNode() || !nsCCUncollectableMarker::sGeneration) {
+  if (tmp->UnoptimizableCCNode()) {
     
     nsAutoScriptBlocker scriptBlocker;
     BatchRemovalState state{};
