@@ -38,6 +38,7 @@
 #include "vm/List.h"               
 #include "vm/Runtime.h"            
 #include "wasm/WasmCompile.h"
+#include "wasm/WasmJS.h"
 
 #include "builtin/HandlerFunction-inl.h"  
 #include "vm/JSAtomUtils-inl.h"           
@@ -441,6 +442,48 @@ JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
     return nullptr;
   }
   moduleObject->initScriptSourceObject(sso);
+
+  JS::RootedVector<std::pair<JSString*, JSString*>> wasmImports(cx);
+  if (!wasm::GetModuleImports(cx, wasmModuleObject, &wasmImports)) {
+    return nullptr;
+  }
+
+  Rooted<RequestedModuleVector> requestedModuleRecords(cx);
+  if (!requestedModuleRecords.reserve(wasmImports.length())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  Rooted<JSAtom*> specifier(cx);
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  for (const auto& wasmImport : wasmImports.get()) {
+    specifier = &wasmImport.first->asAtom();
+    moduleRequest = nullptr;
+    for (const RequestedModule& request : requestedModuleRecords.get()) {
+      if (request.moduleRequest()->specifier() == specifier) {
+        moduleRequest = request.moduleRequest();
+        break;
+      }
+    }
+
+    if (!moduleRequest) {
+      moduleRequest = ModuleRequestObject::create(
+          cx, specifier, JS::ModuleType::JavaScriptOrWasm,
+          ImportPhase::Evaluation);
+      if (!moduleRequest) {
+        return nullptr;
+      }
+
+      requestedModuleRecords.infallibleEmplaceBack(
+          moduleRequest, RequestedModule::WasmDefaultLineNumber,
+          JS::ColumnNumberOneOrigin());
+    }
+  }
+
+  Rooted<ImportEntryVector> importEntries(cx);
+  Rooted<ExportEntryVector> exportEntries(cx);
+  moduleObject->initImportExportData(&requestedModuleRecords, &importEntries,
+                                     &exportEntries, 0, 0, 0);
 
   if (!ModuleObject::createWasmEnvironment(cx, moduleObject)) {
     return nullptr;
