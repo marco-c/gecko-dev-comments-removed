@@ -167,8 +167,6 @@ class WindowsError final {
 
   constexpr bool operator==(const WindowsError& aOther) const = default;
 
-  constexpr bool operator!=(const WindowsError& aOther) const = default;
-
   static DWORD NtStatusToWin32Error(NTSTATUS aNtStatus) {
     static const StaticDynamicallyLinkedFunctionPtr<
         decltype(&RtlNtStatusToDosError)>
@@ -580,7 +578,7 @@ inline UniquePtr<wchar_t[]> GetFullModulePath(HMODULE aModule) {
   DWORD retLen;
 
   while (true) {
-    buf = mozilla::MakeUnique<wchar_t[]>(bufLen);
+    buf = std::make_unique<wchar_t[]>(bufLen);
     retLen = ::GetModuleFileNameW(aModule, buf.get(), bufLen);
     if (!retLen) {
       return nullptr;
@@ -599,7 +597,7 @@ inline UniquePtr<wchar_t[]> GetFullModulePath(HMODULE aModule) {
 
   
   
-  auto result = mozilla::MakeUnique<wchar_t[]>(retLen);
+  auto result = std::make_unique<wchar_t[]>(retLen);
   if (wcscpy_s(result.get(), retLen, buf.get())) {
     return nullptr;
   }
@@ -672,7 +670,7 @@ inline LauncherResult<ModuleVersion> GetModuleVersion(
     return LAUNCHER_ERROR_FROM_LAST();
   }
 
-  auto verInfoBuf = MakeUnique<BYTE[]>(verInfoLen);
+  auto verInfoBuf = std::make_unique<BYTE[]>(verInfoLen);
   if (!::GetFileVersionInfoW(aModuleFullPath, 0, verInfoLen,
                              verInfoBuf.get())) {
     return LAUNCHER_ERROR_FROM_LAST();
@@ -771,7 +769,8 @@ inline UniquePtr<wchar_t[]> GetPackageFamilyName() {
     return nullptr;
   }
 
-  UniquePtr<wchar_t[]> packageIdentity = MakeUnique<wchar_t[]>(packageNameSize);
+  UniquePtr<wchar_t[]> packageIdentity =
+      std::make_unique<wchar_t[]>(packageNameSize);
   if (pGetCurrentPackageFamilyName(&packageNameSize, packageIdentity.get()) !=
       ERROR_SUCCESS) {
     return nullptr;

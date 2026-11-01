@@ -90,14 +90,14 @@
 #ifndef mozilla_JSONWriter_h
 #define mozilla_JSONWriter_h
 
+#include <utility>
+
 #include "double-conversion/double-conversion.h"  
 #include "mozilla/Assertions.h"
 #include "mozilla/Span.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
-
-#include <utility>
 
 namespace mozilla {
 
@@ -211,7 +211,7 @@ class JSONWriter {
       }
 
       
-      mOwnedStr = MakeUnique<char[]>(mStringSpan.Length() + nExtra);
+      mOwnedStr = std::make_unique<char[]>(mStringSpan.Length() + nExtra);
 
       size_t i = 0;
       for (const char c : mStringSpan) {

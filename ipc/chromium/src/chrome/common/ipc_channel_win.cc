@@ -21,6 +21,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/LateWriteChecks.h"
 #include "mozilla/RandomNum.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;
@@ -98,7 +99,7 @@ void ChannelWin::Init(Mode mode) {
   waiting_connect_ = true;
   processing_incoming_ = false;
   input_buf_offset_ = 0;
-  input_buf_ = mozilla::MakeUnique<char[]>(Channel::kReadBufferSize);
+  input_buf_ = std::make_unique<char[]>(Channel::kReadBufferSize);
   other_process_ = INVALID_HANDLE_VALUE;
 }
 
@@ -194,7 +195,7 @@ bool ChannelWin::Send(mozilla::UniquePtr<Message> message) {
 bool ChannelWin::EnqueueHelloMessage() {
   chan_cap_.NoteExclusiveAccess();
 
-  auto m = mozilla::MakeUnique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
+  auto m = std::make_unique<Message>(MSG_ROUTING_NONE, HELLO_MESSAGE_TYPE);
 
   
   if (!m->WriteInt(GetCurrentProcessId())) {
@@ -358,7 +359,7 @@ bool ChannelWin::ProcessIncomingMessages(MessageLoopForIO::IOContext* context,
         
         uint32_t in_buf = std::min(message_length, uint32_t(end - p));
 
-        incoming_message_ = mozilla::MakeUnique<Message>(p, in_buf);
+        incoming_message_ = std::make_unique<Message>(p, in_buf);
         p += in_buf;
 
         
@@ -572,6 +573,44 @@ static HANDLE Uint32ToHandle(uint32_t h) {
       static_cast<uintptr_t>(static_cast<int32_t>(h)));
 }
 
+bool ChannelWin::IsAllowedHandleType(HANDLE handle) {
+  MOZ_ASSERT(XRE_IsParentProcess(),
+             "IPC can only reliably access prefs in the parent process");
+  if (!mozilla::StaticPrefs::dom_ipc_handle_type_restrictions_enabled()) {
+    return true;
+  }
+
+  
+  
+  struct {
+    PUBLIC_OBJECT_TYPE_INFORMATION type_info;
+    wchar_t extra_space[32];
+  } buffer;
+
+  DWORD status = ::NtQueryObject(handle, ObjectTypeInformation,
+                                 &buffer.type_info, sizeof(buffer), nullptr);
+  if (NS_WARN_IF(status != STATUS_SUCCESS)) {
+    CHROMIUM_LOG(ERROR) << "Failed to query ObjectTypeInformation";
+    return false;
+  }
+
+  
+  nsDependentString type_name(
+      buffer.type_info.TypeName.Buffer,
+      buffer.type_info.TypeName.Length / sizeof(wchar_t));
+  if (type_name == u"Event"_ns || type_name == u"File"_ns ||
+      type_name == u"Directory"_ns || type_name == u"Section"_ns ||
+      type_name == u"Semaphore"_ns || type_name == u"Mutant"_ns ||
+      type_name == u"DxgkCompositionObject"_ns ||
+      type_name == u"DxgkSharedResource"_ns) {
+    return true;
+  }
+
+  CHROMIUM_LOG(ERROR) << "Cannot transfer disallowed handle type: "
+                      << NS_ConvertUTF16toUTF8(type_name).get();
+  return false;
+}
+
 bool ChannelWin::AcceptHandles(Message& msg) {
   chan_cap_.NoteOnTarget();
 
@@ -628,6 +667,11 @@ bool ChannelWin::AcceptHandles(Message& msg) {
                 << " from process " << other_pid_ << " for message "
                 << msg.name() << " in AcceptHandles with error: " << err;
           }
+          return false;
+        }
+        if (!IsAllowedHandleType(local_handle.get())) {
+          CHROMIUM_LOG(ERROR)
+              << "Cannot accept disallowed handle type from child process";
           return false;
         }
         break;
@@ -690,6 +734,11 @@ bool ChannelWin::TransferHandles(Message& msg) {
         MOZ_ASSERT(other_process_, "other_process_ cannot be null");
         if (other_process_ == INVALID_HANDLE_VALUE) {
           CHROMIUM_LOG(ERROR) << "other_process_ is invalid in TransferHandles";
+          return false;
+        }
+        if (!IsAllowedHandleType(local_handle.get())) {
+          CHROMIUM_LOG(ERROR)
+              << "Cannot transfer disallowed handle type into child process";
           return false;
         }
         if (!DuplicateRealHandle(GetCurrentProcess(), local_handle.get(),

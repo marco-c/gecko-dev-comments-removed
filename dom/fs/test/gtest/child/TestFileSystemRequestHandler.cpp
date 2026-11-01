@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "FileSystemBackgroundRequestHandler.h"
 #include "FileSystemEntryMetadataArray.h"
 #include "FileSystemMocks.h"
@@ -86,7 +84,7 @@ class TestFileSystemRequestHandler : public ::testing::Test {
   }
 
   UniquePtr<FileSystemRequestHandler> GetFileSystemRequestHandler() {
-    return MakeUnique<FileSystemRequestHandler>();
+    return std::make_unique<FileSystemRequestHandler>();
   }
 
   void ShutdownFileSystemManager() {

@@ -2,7 +2,6 @@
 
 
 
-
 #include "Common.h"
 
 #include "Classifier.h"
@@ -114,7 +113,7 @@ nsresult PrefixArrayToPrefixStringMap(const _PrefixArray& aPrefixArray,
     uint32_t size = entry.GetKey();
     uint32_t count = entry.GetData()->Length();
 
-    auto str = MakeUnique<_Prefix>();
+    auto str = std::make_unique<_Prefix>();
     str->SetLength(size * count);
 
     char* dst = str->BeginWriting();

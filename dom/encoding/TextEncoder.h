@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_textencoder_h_
 #define mozilla_dom_textencoder_h_
 
@@ -22,7 +20,7 @@ class TextEncoder final : public NonRefcountedDOMObject {
   
 
   static UniquePtr<TextEncoder> Constructor(const GlobalObject& aGlobal) {
-    return MakeUnique<TextEncoder>();
+    return std::make_unique<TextEncoder>();
   }
 
   TextEncoder() = default;

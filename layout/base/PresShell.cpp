@@ -742,7 +742,7 @@ PresShell::PresShell(Document* aDocument)
   MOZ_ASSERT(aDocument);
 
 #ifdef MOZ_REFLOW_PERF
-  mReflowCountMgr = MakeUnique<ReflowCountMgr>();
+  mReflowCountMgr = std::make_unique<ReflowCountMgr>();
   mReflowCountMgr->SetPresContext(mPresContext);
   mReflowCountMgr->SetPresShell(this);
 #endif
@@ -806,7 +806,7 @@ void PresShell::Init(nsPresContext* aPresContext) {
   MOZ_ASSERT(aPresContext);
   MOZ_ASSERT(!mWidgetListener, "Already initialized");
 
-  mWidgetListener = MakeUnique<PresShellWidgetListener>(this);
+  mWidgetListener = std::make_unique<PresShellWidgetListener>(this);
 
   
   
@@ -816,7 +816,7 @@ void PresShell::Init(nsPresContext* aPresContext) {
   SetNeedStyleFlush();
 
   
-  mFrameConstructor = MakeUnique<nsCSSFrameConstructor>(mDocument, this);
+  mFrameConstructor = std::make_unique<nsCSSFrameConstructor>(mDocument, this);
 
   
   
@@ -5266,7 +5266,7 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
   }
 
   
-  auto info = MakeUnique<RangePaintInfo>(ancestorFrame);
+  auto info = std::make_unique<RangePaintInfo>(ancestorFrame);
   info->mBuilder.SetIncludeAllOutOfFlows();
   if (aForPrimarySelection) {
     info->mBuilder.SetSelectedFramesOnly();
@@ -8709,7 +8709,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayKeyboardEvent(
     mPresShell->mNoDelayedKeyEvents = true;
   } else if (!mPresShell->mNoDelayedKeyEvents) {
     UniquePtr<DelayedKeyEvent> delayedKeyEvent =
-        MakeUnique<DelayedKeyEvent>(aGUIEvent->AsKeyboardEvent());
+        std::make_unique<DelayedKeyEvent>(aGUIEvent->AsKeyboardEvent());
     mPresShell->mDelayedEvents.AppendElement(std::move(delayedKeyEvent));
   }
   aGUIEvent->mFlags.mIsSuppressedOrDelayed = true;
@@ -8782,7 +8782,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
         break;
       }
       UniquePtr<DelayedMouseEvent> delayedMouseEvent =
-          MakeUnique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
+          std::make_unique<DelayedMouseEvent>(aGUIEvent->AsMouseEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedMouseEvent));
       break;
     }
@@ -8793,7 +8793,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
       
       
       UniquePtr<DelayedPointerEvent> delayedPointerEvent =
-          MakeUnique<DelayedPointerEvent>(aGUIEvent->AsPointerEvent());
+          std::make_unique<DelayedPointerEvent>(aGUIEvent->AsPointerEvent());
       ps->mDelayedEvents.AppendElement(std::move(delayedPointerEvent));
       break;
     }
@@ -11379,7 +11379,7 @@ void ReflowCountMgr::Add(const char* aName, nsIFrame* aFrame) {
             .LookupOrInsertWith(key,
                                 [&aName, &aFrame, this]() {
                                   auto counter =
-                                      MakeUnique<IndiReflowCounter>(this);
+                                      std::make_unique<IndiReflowCounter>(this);
                                   counter->mFrame = aFrame;
                                   counter->mName.AssignASCII(aName);
                                   return counter;
@@ -11468,7 +11468,7 @@ void ReflowCountMgr::PaintCount(const char* aName,
 void ReflowCountMgr::DoGrandTotals() {
   mCounts.WithEntryHandle(kGrandTotalsStr, [this](auto&& entry) {
     if (!entry) {
-      entry.Insert(MakeUnique<ReflowCounter>(this));
+      entry.Insert(std::make_unique<ReflowCounter>(this));
     } else {
       entry.Data()->ClearTotals();
     }
@@ -11539,7 +11539,7 @@ void ReflowCountMgr::DoIndiTotalsTree() {
 void ReflowCountMgr::DoGrandHTMLTotals() {
   mCounts.WithEntryHandle(kGrandTotalsStr, [this](auto&& entry) {
     if (!entry) {
-      entry.Insert(MakeUnique<ReflowCounter>(this));
+      entry.Insert(std::make_unique<ReflowCounter>(this));
     } else {
       entry.Data()->ClearTotals();
     }
@@ -11609,7 +11609,7 @@ void ReflowCountMgr::ClearTotals() {
 void ReflowCountMgr::ClearGrandTotals() {
   mCounts.WithEntryHandle(kGrandTotalsStr, [&](auto&& entry) {
     if (!entry) {
-      entry.Insert(MakeUnique<ReflowCounter>(this));
+      entry.Insert(std::make_unique<ReflowCounter>(this));
     } else {
       entry.Data()->ClearTotals();
       entry.Data()->SetTotalsCache();

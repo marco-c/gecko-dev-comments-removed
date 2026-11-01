@@ -182,11 +182,11 @@ void nsTableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   if (!aPrevInFlow) {
     
     
-    mCellMap = MakeUnique<nsTableCellMap>(*this, borderCollapse);
+    mCellMap = std::make_unique<nsTableCellMap>(*this, borderCollapse);
     if (IsAutoLayout()) {
-      mTableLayoutStrategy = MakeUnique<BasicTableLayoutStrategy>(this);
+      mTableLayoutStrategy = std::make_unique<BasicTableLayoutStrategy>(this);
     } else {
-      mTableLayoutStrategy = MakeUnique<FixedTableLayoutStrategy>(this);
+      mTableLayoutStrategy = std::make_unique<FixedTableLayoutStrategy>(this);
     }
   } else {
     
@@ -1963,9 +1963,9 @@ void nsTableFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   bool isAuto = IsAutoLayout();
   if (isAuto != (LayoutStrategy()->GetType() == nsITableLayoutStrategy::Auto)) {
     if (isAuto) {
-      mTableLayoutStrategy = MakeUnique<BasicTableLayoutStrategy>(this);
+      mTableLayoutStrategy = std::make_unique<BasicTableLayoutStrategy>(this);
     } else {
-      mTableLayoutStrategy = MakeUnique<FixedTableLayoutStrategy>(this);
+      mTableLayoutStrategy = std::make_unique<FixedTableLayoutStrategy>(this);
     }
   }
 }
@@ -4436,7 +4436,7 @@ BCCorners::BCCorners(int32_t aNumCorners, int32_t aStartIndex) {
   NS_ASSERTION((aNumCorners > 0) && (aStartIndex >= 0), "program error");
   startIndex = aStartIndex;
   endIndex = aStartIndex + aNumCorners - 1;
-  corners = MakeUnique<BCCornerInfo[]>(aNumCorners);
+  corners = std::make_unique<BCCornerInfo[]>(aNumCorners);
 }
 
 struct BCCellBorders {
@@ -4456,7 +4456,7 @@ BCCellBorders::BCCellBorders(int32_t aNumBorders, int32_t aStartIndex) {
   NS_ASSERTION((aNumBorders > 0) && (aStartIndex >= 0), "program error");
   startIndex = aStartIndex;
   endIndex = aStartIndex + aNumBorders - 1;
-  borders = MakeUnique<BCCellBorder[]>(aNumBorders);
+  borders = std::make_unique<BCCellBorder[]>(aNumBorders);
 }
 
 
@@ -4497,10 +4497,11 @@ void nsTableFrame::ExpandBCDamageArea(TableArea& aArea) const {
   int32_t numRows = GetRowCount();
   int32_t numCols = GetColCount();
 
-  int32_t firstColIdx = aArea.StartCol();
-  int32_t lastColIdx = aArea.EndCol() - 1;
-  int32_t startRowIdx = aArea.StartRow();
-  int32_t endRowIdx = aArea.EndRow() - 1;
+  
+  int32_t firstColIdx = std::min(aArea.StartCol(), numCols - 1);
+  int32_t lastColIdx = std::min(aArea.EndCol(), numCols) - 1;
+  int32_t startRowIdx = std::min(aArea.StartRow(), numRows - 1);
+  int32_t endRowIdx = std::min(aArea.EndRow(), numRows) - 1;
 
   
   if (firstColIdx > 0) {
@@ -5872,7 +5873,7 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
                 1 + endRowIndex - startRowIndex);
 
   Reset();
-  mBlockDirInfo = MakeUnique<BCBlockDirSeg[]>(mDamageArea.ColCount() + 1);
+  mBlockDirInfo = std::make_unique<BCBlockDirSeg[]>(mDamageArea.ColCount() + 1);
   return true;
 }
 

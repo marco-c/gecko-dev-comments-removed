@@ -198,7 +198,7 @@ bool MessagePumpLibevent::WatchFileDescriptor(int fd, bool persistent,
   if (evt.get() == nullptr) {
     should_delete_event = false;
     
-    evt = mozilla::MakeUnique<event>();
+    evt = std::make_unique<event>();
   } else {
     
     

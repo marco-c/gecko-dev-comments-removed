@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_interceptor_RangeMap_h
 #define mozilla_interceptor_RangeMap_h
 
@@ -73,7 +71,7 @@ class RangeMap final {
    public:
     explicit PolicyInfo(const Range& aRange)
         : Range(aRange),
-          mPolicy(MakeUnique<VMSharingPolicyUnique<MMPolicyT>>()) {}
+          mPolicy(std::make_unique<VMSharingPolicyUnique<MMPolicyT>>()) {}
 
     PolicyInfo(const PolicyInfo&) = delete;
     PolicyInfo& operator=(const PolicyInfo&) = delete;

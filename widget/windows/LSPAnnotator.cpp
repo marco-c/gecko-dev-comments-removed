@@ -22,7 +22,7 @@ namespace mozilla {
 namespace crashreporter {
 
 class LSPAnnotationGatherer : public Runnable {
-  ~LSPAnnotationGatherer() {}
+  ~LSPAnnotationGatherer() = default;
 
  public:
   LSPAnnotationGatherer() : Runnable("crashreporter::LSPAnnotationGatherer") {}
@@ -51,7 +51,7 @@ LSPAnnotationGatherer::Run() {
     return NS_ERROR_FAILURE;
   }
 
-  auto byteArray = MakeUnique<char[]>(size);
+  auto byteArray = std::make_unique<char[]>(size);
   WSAPROTOCOL_INFOW* providers =
       reinterpret_cast<WSAPROTOCOL_INFOW*>(byteArray.get());
 

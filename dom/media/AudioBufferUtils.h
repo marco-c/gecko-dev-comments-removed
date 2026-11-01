@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef MOZILLA_SCRATCHBUFFER_H_
 #define MOZILLA_SCRATCHBUFFER_H_
 
@@ -153,7 +152,7 @@ class SpillBuffer {
   explicit SpillBuffer(uint32_t aChannels)
       : mPosition(0), mChannels(aChannels) {
     MOZ_ASSERT(aChannels);
-    mBuffer = MakeUnique<T[]>(BLOCK_SIZE * mChannels);
+    mBuffer = std::make_unique<T[]>(BLOCK_SIZE * mChannels);
     PodZero(mBuffer.get(), BLOCK_SIZE * mChannels);
   }
 

@@ -240,7 +240,7 @@ bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
 
     
     
-    UniquePtr<char[]> line = MakeUnique<char[]>(aLongLineSize + 1);
+    UniquePtr<char[]> line = std::make_unique<char[]>(aLongLineSize + 1);
     while (fgets(line.get(), aLongLineSize + 1, file.get())) {
       if (numBytesDropped >= minBytesToDrop) {
         if (fputs(line.get(), temp.get()) < 0) {
@@ -663,7 +663,7 @@ class LogModuleManager {
 
     
     if (charsWritten >= kBuffSize) {
-      allocatedBuff = MakeUnique<char[]>(charsWritten + 1);  
+      allocatedBuff = std::make_unique<char[]>(charsWritten + 1);  
       auto [out, size] =
           fmt::vformat_to_n(allocatedBuff.get(), charsWritten, aFmt, aArgs);
       MOZ_ASSERT(size == charsWritten);

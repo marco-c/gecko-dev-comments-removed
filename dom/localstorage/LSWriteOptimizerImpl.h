@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_localstorage_LSWriteOptimizerImpl_h
 #define mozilla_dom_localstorage_LSWriteOptimizerImpl_h
 
@@ -27,11 +25,12 @@ void LSWriteOptimizer<T, U>::InsertItem(const nsAString& aKey, const T& aValue,
       
       
 
-      entry.Update(MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
-                                               true));
+      entry.Update(
+          std::make_unique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
+                                            true));
     } else {
       entry.InsertOrUpdate(
-          MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
+          std::make_unique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
     }
   });
 
@@ -46,11 +45,11 @@ void LSWriteOptimizer<T, U>::UpdateItem(const nsAString& aKey, const T& aValue,
   mWriteInfos.WithEntryHandle(aKey, [&](auto&& entry) {
     if (entry && entry.Data()->GetType() == WriteInfo::InsertItem) {
       entry.Update(
-          MakeUnique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
+          std::make_unique<InsertItemInfo>(NextSerialNumber(), aKey, aValue));
     } else {
       entry.InsertOrUpdate(
-          MakeUnique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
-                                      false));
+          std::make_unique<UpdateItemInfo>(NextSerialNumber(), aKey, aValue,
+                                            false));
     }
   });
 

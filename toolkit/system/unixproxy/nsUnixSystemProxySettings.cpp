@@ -2,7 +2,6 @@
 
 
 
-
 #include "nsISystemProxySettings.h"
 #include "mozilla/Components.h"
 #include "nsIURI.h"
@@ -83,7 +82,7 @@ static void SetProxyResultDirect(nsACString& aResult) {
 nsresult nsUnixSystemProxySettings::SetProxyResultFromGSettings(
     const nsCString& aSchema, const char* aType, nsACString& aResult) {
   auto& settings = mSchemeProxySettings.LookupOrInsertWith(aSchema, [&] {
-    return MakeUnique<widget::GSettings::Collection>(aSchema);
+    return std::make_unique<widget::GSettings::Collection>(aSchema);
   });
 
   nsAutoCString host;

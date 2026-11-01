@@ -401,13 +401,13 @@ class RAPL {
 PowerCounters::PowerCounters() {
   
   if (XRE_IsParentProcess()) {
-    mRapl = mozilla::MakeUnique<RAPL>(mCounters);
+    mRapl = std::make_unique<RAPL>(mCounters);
   }
 }
 
 
 
-PowerCounters::~PowerCounters() {}
+PowerCounters::~PowerCounters() = default;
 
 void PowerCounters::Sample() {
   if (mRapl) {

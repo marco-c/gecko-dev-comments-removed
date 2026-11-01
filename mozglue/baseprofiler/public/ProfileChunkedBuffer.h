@@ -1448,7 +1448,8 @@ struct ProfileBufferEntryReader::Deserializer<ProfileChunkedBuffer> {
     } else {
       
       
-      aBuffer.SetChunkManager(MakeUnique<ProfileBufferChunkManagerSingle>(len));
+      aBuffer.SetChunkManager(
+          std::make_unique<ProfileBufferChunkManagerSingle>(len));
       MOZ_ASSERT(aBuffer.BufferLength().value() >= len);
     }
 
@@ -1549,7 +1550,7 @@ struct ProfileBufferEntryReader::Deserializer<UniquePtr<ProfileChunkedBuffer>> {
     }
     
     
-    bufferUPtr = MakeUnique<ProfileChunkedBuffer>(
+    bufferUPtr = std::make_unique<ProfileChunkedBuffer>(
         ProfileChunkedBuffer::ThreadSafety::WithoutMutex);
     
     

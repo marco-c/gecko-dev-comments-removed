@@ -165,7 +165,7 @@ void Sanitizer::SetDefaultConfig() {
       
       
       if (name == aElementWithAttributes[i]) {
-        attributes = MakeUnique<StaticAtomSet>();
+        attributes = std::make_unique<StaticAtomSet>();
         while (aElementWithAttributes[++i]) {
           attributes->Insert(aElementWithAttributes[i]);
         }

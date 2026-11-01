@@ -1113,25 +1113,25 @@ nsFloatManager::RoundedBoxShapeInfo::RoundedBoxShapeInfo(
   
   
   
-  mLogicalTopLeftCorner = MakeUnique<EllipseShapeInfo>(
+  mLogicalTopLeftCorner = std::make_unique<EllipseShapeInfo>(
       nsPoint(mRect.X() + mRadii[eCornerTopLeftX],
               mRect.Y() + mRadii[eCornerTopLeftY]),
       nsSize(mRadii[eCornerTopLeftX], mRadii[eCornerTopLeftY]), mShapeMargin,
       aAppUnitsPerDevPixel);
 
-  mLogicalTopRightCorner = MakeUnique<EllipseShapeInfo>(
+  mLogicalTopRightCorner = std::make_unique<EllipseShapeInfo>(
       nsPoint(mRect.XMost() - mRadii[eCornerTopRightX],
               mRect.Y() + mRadii[eCornerTopRightY]),
       nsSize(mRadii[eCornerTopRightX], mRadii[eCornerTopRightY]), mShapeMargin,
       aAppUnitsPerDevPixel);
 
-  mLogicalBottomLeftCorner = MakeUnique<EllipseShapeInfo>(
+  mLogicalBottomLeftCorner = std::make_unique<EllipseShapeInfo>(
       nsPoint(mRect.X() + mRadii[eCornerBottomLeftX],
               mRect.YMost() - mRadii[eCornerBottomLeftY]),
       nsSize(mRadii[eCornerBottomLeftX], mRadii[eCornerBottomLeftY]),
       mShapeMargin, aAppUnitsPerDevPixel);
 
-  mLogicalBottomRightCorner = MakeUnique<EllipseShapeInfo>(
+  mLogicalBottomRightCorner = std::make_unique<EllipseShapeInfo>(
       nsPoint(mRect.XMost() - mRadii[eCornerBottomRightX],
               mRect.YMost() - mRadii[eCornerBottomRightY]),
       nsSize(mRadii[eCornerBottomRightX], mRadii[eCornerBottomRightY]),
@@ -2484,8 +2484,8 @@ nsFloatManager::ShapeInfo::CreateShapeBox(nsIFrame* const aFrame,
   nsRectCornerRadii physicalRadii;
   bool hasRadii = aFrame->GetShapeBoxBorderRadii(physicalRadii);
   if (!hasRadii) {
-    return MakeUnique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
-                                           std::move(physicalRadii));
+    return std::make_unique<RoundedBoxShapeInfo>(logicalShapeBoxRect,
+                                                 std::move(physicalRadii));
   }
 
   
@@ -2493,7 +2493,7 @@ nsFloatManager::ShapeInfo::CreateShapeBox(nsIFrame* const aFrame,
     physicalRadii[corner] += nsSize(aShapeMargin, aShapeMargin);
   }
 
-  return MakeUnique<RoundedBoxShapeInfo>(
+  return std::make_unique<RoundedBoxShapeInfo>(
       logicalShapeBoxRect, ConvertToFloatLogical(physicalRadii, aWM));
 }
 
@@ -2546,10 +2546,10 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   
   if (aShapeMargin == 0) {
     if (!hasRadii) {
-      return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                             std::move(physicalRadii));
+      return std::make_unique<RoundedBoxShapeInfo>(logicalInsetRect,
+                                                   std::move(physicalRadii));
     }
-    return MakeUnique<RoundedBoxShapeInfo>(
+    return std::make_unique<RoundedBoxShapeInfo>(
         logicalInsetRect, ConvertToFloatLogical(physicalRadii, aWM));
   }
 
@@ -2559,8 +2559,8 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   
   if (!hasRadii) {
     logicalInsetRect.Inflate(aShapeMargin);
-    return MakeUnique<RoundedBoxShapeInfo>(logicalInsetRect,
-                                           nsRectCornerRadii(aShapeMargin));
+    return std::make_unique<RoundedBoxShapeInfo>(
+        logicalInsetRect, nsRectCornerRadii(aShapeMargin));
   }
 
   
@@ -2570,7 +2570,7 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
     for (auto corner : AllPhysicalCorners()) {
       physicalRadii[corner] += nsSize(aShapeMargin, aShapeMargin);
     }
-    return MakeUnique<RoundedBoxShapeInfo>(
+    return std::make_unique<RoundedBoxShapeInfo>(
         logicalInsetRect, ConvertToFloatLogical(physicalRadii, aWM));
   }
 
@@ -2578,7 +2578,7 @@ nsFloatManager::ShapeInfo::CreateInset(const StyleBasicShape& aBasicShape,
   
   nsDeviceContext* dc = aFrame->PresContext()->DeviceContext();
   int32_t appUnitsPerDevPixel = dc->AppUnitsPerDevPixel();
-  return MakeUnique<RoundedBoxShapeInfo>(
+  return std::make_unique<RoundedBoxShapeInfo>(
       logicalInsetRect, ConvertToFloatLogical(physicalRadii, aWM), aShapeMargin,
       appUnitsPerDevPixel);
 }
@@ -2606,7 +2606,8 @@ nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
     
     
     radii = nsSize(radius, radius);
-    return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin);
+    return std::make_unique<EllipseShapeInfo>(logicalCenter, radii,
+                                              aShapeMargin);
   }
 
   MOZ_ASSERT(aBasicShape.IsEllipse());
@@ -2621,15 +2622,16 @@ nsFloatManager::ShapeInfo::CreateCircleOrEllipse(
   
   if (EllipseShapeInfo::ShapeMarginIsNegligible(aShapeMargin) ||
       EllipseShapeInfo::RadiiAreRoughlyEqual(radii)) {
-    return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin);
+    return std::make_unique<EllipseShapeInfo>(logicalCenter, radii,
+                                              aShapeMargin);
   }
 
   
   
   nsDeviceContext* dc = aFrame->PresContext()->DeviceContext();
   int32_t appUnitsPerDevPixel = dc->AppUnitsPerDevPixel();
-  return MakeUnique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin,
-                                      appUnitsPerDevPixel);
+  return std::make_unique<EllipseShapeInfo>(logicalCenter, radii, aShapeMargin,
+                                            appUnitsPerDevPixel);
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
@@ -2656,7 +2658,7 @@ nsFloatManager::ShapeInfo::CreatePolygon(const StyleBasicShape& aBasicShape,
   }
 
   if (aShapeMargin == 0) {
-    return MakeUnique<PolygonShapeInfo>(std::move(vertices));
+    return std::make_unique<PolygonShapeInfo>(std::move(vertices));
   }
 
   nsRect marginRect = ConvertToFloatLogical(aMarginRect, aWM, aContainerSize);
@@ -2664,8 +2666,8 @@ nsFloatManager::ShapeInfo::CreatePolygon(const StyleBasicShape& aBasicShape,
   
   
   int32_t appUnitsPerDevPixel = aFrame->PresContext()->AppUnitsPerDevPixel();
-  return MakeUnique<PolygonShapeInfo>(std::move(vertices), aShapeMargin,
-                                      appUnitsPerDevPixel, marginRect);
+  return std::make_unique<PolygonShapeInfo>(std::move(vertices), aShapeMargin,
+                                            appUnitsPerDevPixel, marginRect);
 }
 
  UniquePtr<nsFloatManager::ShapeInfo>
@@ -2739,10 +2741,10 @@ nsFloatManager::ShapeInfo::CreateImageShape(const StyleImage& aShapeImage,
 
   
   
-  return MakeUnique<ImageShapeInfo>(alphaPixels, stride, contentSizeInDevPixels,
-                                    appUnitsPerDevPixel, aShapeImageThreshold,
-                                    aShapeMargin, contentRect, marginRect, aWM,
-                                    aContainerSize);
+  return std::make_unique<ImageShapeInfo>(
+      alphaPixels, stride, contentSizeInDevPixels, appUnitsPerDevPixel,
+      aShapeImageThreshold, aShapeMargin, contentRect, marginRect, aWM,
+      aContainerSize);
 }
 
 
@@ -2998,8 +3000,8 @@ void nsAutoFloatManager::CreateFloatManager(nsPresContext* aPresContext) {
   
   
   
-  mNew = MakeUnique<nsFloatManager>(aPresContext->PresShell(),
-                                    mReflowInput.GetWritingMode());
+  mNew = std::make_unique<nsFloatManager>(aPresContext->PresShell(),
+                                          mReflowInput.GetWritingMode());
 
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyFloatManager) {

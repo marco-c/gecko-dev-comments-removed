@@ -448,7 +448,7 @@ void InitPoisonIOInterposer() {
   sIOPoisoned = true;
 
   MOZ_RELEASE_ASSERT(!sHandleToFilenameCache);
-  sHandleToFilenameCache = mozilla::MakeUnique<HandleToFilenameCache>();
+  sHandleToFilenameCache = std::make_unique<HandleToFilenameCache>();
   mozilla::RunOnShutdown([]() {
     
     

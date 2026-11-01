@@ -218,9 +218,6 @@ nsUrlClassifierUtils* nsUrlClassifierUtils::GetInstance() {
   return gUrlClassifierUtils;
 }
 
-nsUrlClassifierUtils::nsUrlClassifierUtils()
-    : mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock") {}
-
 nsUrlClassifierUtils::~nsUrlClassifierUtils() {
   if (gUrlClassifierUtils) {
     MOZ_ASSERT(gUrlClassifierUtils == this);
@@ -1102,7 +1099,8 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
       if (!isGoogle5Enabled && providerToUse.EqualsLiteral("google5")) {
         providerToUse.AssignLiteral("google4");
       }
-      aDict.InsertOrUpdate(tableName, MakeUnique<nsCString>(providerToUse));
+      aDict.InsertOrUpdate(tableName,
+                           std::make_unique<nsCString>(providerToUse));
     }
   }
 

@@ -53,65 +53,6 @@ struct UniqueSelector<T[N]> {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, typename... Args>
-auto MakeUnique(Args&&... aArgs) {
-  return std::make_unique<T>(std::forward<Args>(aArgs)...);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename T>
 typename detail::UniqueSelector<T>::SingleObject WrapUnique(T* aPtr) {
   return UniquePtr<T>(aPtr);

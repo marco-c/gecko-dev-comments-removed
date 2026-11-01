@@ -228,7 +228,7 @@ Result<UniquePtr<wchar_t[]>, PreXULSkeletonUIError> GetBinaryPath() {
   DWORD bufLen = MAX_PATH;
   UniquePtr<wchar_t[]> buf;
   while (true) {
-    buf = MakeUnique<wchar_t[]>(bufLen);
+    buf = std::make_unique<wchar_t[]>(bufLen);
     DWORD retLen = ::GetModuleFileNameW(nullptr, buf.get(), bufLen);
     if (!retLen) {
       return Err(PreXULSkeletonUIError::FilesystemFailure);
@@ -296,7 +296,7 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
 
   
   uint32_t hexHashSize = sizeof(uint32_t) * 2 + 1;
-  UniquePtr<wchar_t[]> installHash = MakeUnique<wchar_t[]>(hexHashSize);
+  UniquePtr<wchar_t[]> installHash = std::make_unique<wchar_t[]>(hexHashSize);
   
   
   
@@ -1171,7 +1171,7 @@ DWORD WINAPI AnimateSkeletonUI(void* aUnused) {
   
   int animationWidth = CSSToDevPixels(80, sCSSToDevPixelScaling);
   UniquePtr<uint32_t[]> animationLookup =
-      MakeUnique<uint32_t[]>(animationWidth);
+      std::make_unique<uint32_t[]>(animationWidth);
   uint32_t animationColor = sAnimationColor;
   NormalizedRGB rgbBlend = UintToRGB(animationColor);
 
@@ -1744,7 +1744,7 @@ static Result<Ok, PreXULSkeletonUIError> WriteRegCSSPixelSpans(
     int spansLength) {
   
   
-  auto doubles = MakeUnique<double[]>(spansLength * 2);
+  auto doubles = std::make_unique<double[]>(spansLength * 2);
   for (int i = 0; i < spansLength; ++i) {
     doubles[i * 2] = spans[i].start;
     doubles[i * 2 + 1] = spans[i].end;

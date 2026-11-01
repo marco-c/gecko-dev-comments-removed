@@ -1578,7 +1578,7 @@ void BrowserChild::FlushAllCoalescedMouseData() {
       continue;
     }
     UniquePtr<CoalescedMouseData> dispatchData =
-        MakeUnique<CoalescedMouseData>();
+        std::make_unique<CoalescedMouseData>();
 
     dispatchData->RetrieveDataFrom(*data);
     mToBeDispatchedMouseData.Push(dispatchData.release());
@@ -1620,7 +1620,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     
     
     UniquePtr<CoalescedMouseData> dispatchData =
-        MakeUnique<CoalescedMouseData>();
+        std::make_unique<CoalescedMouseData>();
 
     dispatchData->RetrieveDataFrom(*data);
     mToBeDispatchedMouseData.Push(dispatchData.release());
@@ -1629,7 +1629,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     CoalescedMouseData* newData =
         mCoalescedMouseData
             .InsertOrUpdate(aMouseEvent.pointerId,
-                            MakeUnique<CoalescedMouseData>())
+                            std::make_unique<CoalescedMouseData>())
             .get();
     
     
@@ -1736,7 +1736,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseButtonEvent(
     FlushAllCoalescedMouseData();
 
     UniquePtr<CoalescedMouseData> dispatchData =
-        MakeUnique<CoalescedMouseData>();
+        std::make_unique<CoalescedMouseData>();
 
     
     

@@ -68,7 +68,7 @@ class MouseScrollHandler::SynthesizingEvent {
         mLParam(0),
         mStatus(NOT_SYNTHESIZING) {}
 
-  ~SynthesizingEvent() {}
+  ~SynthesizingEvent() = default;
 
   static SynthesizingEvent* GetActiveInstance();
 
@@ -361,7 +361,7 @@ nsresult MouseScrollHandler::SynthesizeNativeMouseScrollEvent(
   }
 
   if (!sInstance->mSynthesizingEvent) {
-    sInstance->mSynthesizingEvent = MakeUnique<SynthesizingEvent>();
+    sInstance->mSynthesizingEvent = std::make_unique<SynthesizingEvent>();
   }
 
   POINTS pts;

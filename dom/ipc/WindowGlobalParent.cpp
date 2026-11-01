@@ -1416,7 +1416,7 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvExpectPageUseCounters(
   
   mPageUseCountersWindow = page;
   if (!page->mPageUseCounters) {
-    page->mPageUseCounters = MakeUnique<PageUseCounters>();
+    page->mPageUseCounters = std::make_unique<PageUseCounters>();
   }
   ++page->mPageUseCounters->mWaiting;
 

@@ -2,14 +2,13 @@
 
 
 
-#include "mozilla/UniquePtr.h"
-
 #include "gtest/gtest.h"
 #include "LulMain.h"
 #include "GeckoProfiler.h"       
 #include "platform-linux-lul.h"  
 
 #include <cstring>
+#include <memory>
 
 
 
@@ -109,7 +108,7 @@ TEST(LulIntegration, frame_chasing_spidermonkey_layout)
   constexpr uintptr_t nativePC = 0x4440;
   constexpr uintptr_t olderNativePC = 0x5550;
 
-  auto stackImg = mozilla::MakeUnique<lul::StackImage>();
+  auto stackImg = std::make_unique<lul::StackImage>();
   stackImg->mStartAvma = stackBase;
   stackImg->mLen = 0x200;
 

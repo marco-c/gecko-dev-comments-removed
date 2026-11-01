@@ -3316,7 +3316,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   UniquePtr<nsTHashSet<void*>> mAllocatedPointers{
-      MakeUnique<nsTHashSet<void*>>()};
+      std::make_unique<nsTHashSet<void*>>()};
 #endif
 
   

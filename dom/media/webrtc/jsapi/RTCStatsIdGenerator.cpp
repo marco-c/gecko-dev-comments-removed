@@ -44,7 +44,7 @@ void RTCStatsIdGenerator::RewriteIds(
 
   
   
-  auto stats = MakeUnique<dom::RTCStatsCollection>();
+  auto stats = std::make_unique<dom::RTCStatsCollection>();
   dom::FlattenStats(std::move(aFromStats), stats.get());
 
   using S = dom::RTCStats;

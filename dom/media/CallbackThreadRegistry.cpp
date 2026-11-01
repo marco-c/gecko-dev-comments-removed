@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "CallbackThreadRegistry.h"
 
 #include "mozilla/ClearOnShutdown.h"
@@ -12,7 +10,7 @@
 namespace mozilla {
 struct CallbackThreadRegistrySingleton {
   CallbackThreadRegistrySingleton()
-      : mRegistry(MakeUnique<CallbackThreadRegistry>()) {
+      : mRegistry(std::make_unique<CallbackThreadRegistry>()) {
     NS_DispatchToMainThread(
         NS_NewRunnableFunction(__func__, [registry = &mRegistry] {
           const auto phase = ShutdownPhase::XPCOMShutdownFinal;
@@ -23,9 +21,6 @@ struct CallbackThreadRegistrySingleton {
 
   UniquePtr<CallbackThreadRegistry> mRegistry;
 };
-
-CallbackThreadRegistry::CallbackThreadRegistry()
-    : mThreadIds("CallbackThreadRegistry::mThreadIds") {}
 
 
 CallbackThreadRegistry* CallbackThreadRegistry::Get() {

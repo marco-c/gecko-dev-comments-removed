@@ -388,7 +388,7 @@ void nsPrinterCUPS::TryEnsurePrinterInfo(PrinterInfoLock& aLock,
       
       
       const size_t hostnameMemLength = serverName.Length() + 2;
-      auto hostnameMem = MakeUnique<char[]>(hostnameMemLength);
+      auto hostnameMem = std::make_unique<char[]>(hostnameMemLength);
 
       
       

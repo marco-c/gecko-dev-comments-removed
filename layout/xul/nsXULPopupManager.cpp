@@ -1188,8 +1188,8 @@ void nsXULPopupManager::ShowPopupCallback(Element* aPopup,
   bool isNoAutoHide =
       aPopupFrame->IsNoAutoHide() || popupType == PopupType::Tooltip;
 
-  auto item = MakeUnique<nsMenuChainItem>(aPopupFrame, isNoAutoHide,
-                                          aIsContextMenu, popupType);
+  auto item = std::make_unique<nsMenuChainItem>(aPopupFrame, isNoAutoHide,
+                                                aIsContextMenu, popupType);
 
   
   

@@ -102,8 +102,9 @@ class FullscreenRequest : public FullscreenChange {
   
   
   void Reject(const char* aReason) {
-    Document()->AddPendingFullscreenEvent(MakeUnique<PendingFullscreenEvent>(
-        FullscreenEventType::Error, mElement));
+    Document()->AddPendingFullscreenEvent(
+        std::make_unique<PendingFullscreenEvent>(FullscreenEventType::Error,
+                                                 mElement));
     MayRejectPromise("Fullscreen request denied");
     nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
                                     Document(), PropertiesFile::DOM_PROPERTIES,

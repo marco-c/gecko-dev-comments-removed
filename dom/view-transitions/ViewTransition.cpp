@@ -395,7 +395,7 @@ ViewTransition::CaptureOldStateForCrossDocument() {
   
   
   
-  auto params = MakeUnique<ViewTransitionParams>();
+  auto params = std::make_unique<ViewTransitionParams>();
   params->namedElements = std::move(mNamedElements);
   params->names = std::move(mNames);
   params->initialSnapshotContainingBlockSize =
@@ -1579,7 +1579,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
     MOZ_ASSERT(f->GetContent()->IsElement());
     
     
-    auto capture = MakeUnique<CapturedElement>(
+    auto capture = std::make_unique<CapturedElement>(
         f, mInitialSnapshotContainingBlockSize, DocumentScopedClassListFor(f));
     mNamedElements.InsertOrUpdate(name, std::move(capture));
     mNames.AppendElement(name);
@@ -1646,7 +1646,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureNewState() {
     bool wasPresent = true;
     auto& capturedElement = mNamedElements.LookupOrInsertWith(name, [&] {
       wasPresent = false;
-      return MakeUnique<CapturedElement>();
+      return std::make_unique<CapturedElement>();
     });
     if (!wasPresent) {
       mNames.AppendElement(name);

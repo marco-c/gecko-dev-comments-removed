@@ -45,8 +45,8 @@ NetworkLoadHandler::NetworkLoadHandler(WorkerScriptLoader* aLoader,
   MOZ_ASSERT(mLoader);
 
   
-  mDecoder = MakeUnique<ScriptDecoder>(UTF_8_ENCODING,
-                                       ScriptDecoder::BOMHandling::Remove);
+  mDecoder = std::make_unique<ScriptDecoder>(
+      UTF_8_ENCODING, ScriptDecoder::BOMHandling::Remove);
 }
 
 NS_IMETHODIMP

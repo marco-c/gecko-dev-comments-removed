@@ -309,8 +309,8 @@ SafeRefPtr<Request> Request::Constructor(
     if (worker) {
       worker->AssertIsOnWorkerThread();
       request->SetEnvironmentReferrerPolicy(worker->GetReferrerPolicy());
-      principalInfo =
-          MakeUnique<mozilla::ipc::PrincipalInfo>(worker->GetPrincipalInfo());
+      principalInfo = std::make_unique<mozilla::ipc::PrincipalInfo>(
+          worker->GetPrincipalInfo());
       coep = worker->GetEmbedderPolicy();
       
       if (coep == nsILoadInfo::EMBEDDER_POLICY_NULL &&

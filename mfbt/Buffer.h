@@ -5,15 +5,15 @@
 #ifndef mozilla_Buffer_h
 #define mozilla_Buffer_h
 
+#include <cstddef>
+#include <iterator>
+#include <utility>
+
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
-
-#include <cstddef>
-#include <iterator>
-#include <utility>
 
 namespace mozilla {
 
@@ -111,7 +111,7 @@ class Buffer final {
 
 
   explicit Buffer(size_t aLength)
-      : mData(mozilla::MakeUnique<T[]>(aLength)), mLength(aLength) {}
+      : mData(std::make_unique<T[]>(aLength)), mLength(aLength) {}
 
   
 

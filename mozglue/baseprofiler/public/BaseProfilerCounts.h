@@ -64,6 +64,7 @@ typedef Atomic<uint64_t, MemoryOrdering::Relaxed> ProfilerAtomicUnsigned;
 
 
 
+
 class BaseProfilerCount {
  public:
   BaseProfilerCount(const char* aLabel, ProfilerAtomicSigned* aCounter,

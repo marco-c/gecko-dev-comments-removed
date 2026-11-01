@@ -17,7 +17,8 @@ LSWriteOptimizerBase::LSWriteOptimizerBase()
 
 LSWriteOptimizerBase::LSWriteOptimizerBase(
     LSWriteOptimizerBase&& aWriteOptimizer)
-    : mTruncateInfo(std::move(aWriteOptimizer.mTruncateInfo)) {
+    : mTruncateInfo(std::move(aWriteOptimizer.mTruncateInfo)),
+      mLastSerialNumber(aWriteOptimizer.mLastSerialNumber) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(&aWriteOptimizer != this);
 
@@ -47,7 +48,7 @@ void LSWriteOptimizerBase::DeleteItem(const nsAString& aKey, int64_t aDelta) {
       entry.Remove();
     } else {
       entry.InsertOrUpdate(
-          MakeUnique<DeleteItemInfo>(NextSerialNumber(), aKey));
+          std::make_unique<DeleteItemInfo>(NextSerialNumber(), aKey));
     }
   });
 
@@ -60,7 +61,7 @@ void LSWriteOptimizerBase::Truncate(int64_t aDelta) {
   mWriteInfos.Clear();
 
   if (!mTruncateInfo) {
-    mTruncateInfo = MakeUnique<TruncateInfo>(NextSerialNumber());
+    mTruncateInfo = std::make_unique<TruncateInfo>(NextSerialNumber());
   }
 
   mTotalDelta += aDelta;
@@ -77,17 +78,30 @@ void LSWriteOptimizerBase::GetSortedWriteInfos(
     nsTArray<NotNull<WriteInfo*>>& aWriteInfos) {
   AssertIsOnOwningThread();
 
+  
+  
+  
+
+  aWriteInfos.SetCapacity(mWriteInfos.Count() + (mTruncateInfo ? 1 : 0));
+
   if (mTruncateInfo) {
-    aWriteInfos.InsertElementSorted(WrapNotNullUnchecked(mTruncateInfo.get()),
-                                    WriteInfoComparator());
+    aWriteInfos.AppendElement(WrapNotNullUnchecked(mTruncateInfo.get()));
   }
 
   for (const auto& entry : mWriteInfos) {
-    WriteInfo* writeInfo = entry.GetWeak();
-
-    aWriteInfos.InsertElementSorted(WrapNotNull(writeInfo),
-                                    WriteInfoComparator());
+    aWriteInfos.AppendElement(WrapNotNull(entry.GetWeak()));
   }
+
+  
+  
+  aWriteInfos.Sort(WriteInfoComparator());
+
+#ifdef DEBUG
+  for (uint32_t index = 1; index < aWriteInfos.Length(); index++) {
+    MOZ_ASSERT(aWriteInfos[index - 1]->SerialNumber() <
+               aWriteInfos[index]->SerialNumber());
+  }
+#endif
 }
 
 }  

@@ -50,7 +50,7 @@ UntypedManagedEndpoint::~UntypedManagedEndpoint() {
             
             
             actor->ToplevelProtocol()->ClearReservation(id);
-            actor->GetIPCChannel()->Send(MakeUnique<IPC::Message>(
+            actor->GetIPCChannel()->Send(std::make_unique<IPC::Message>(
                 id, MANAGED_ENDPOINT_DROPPED_MESSAGE_TYPE));
           }
         }));
@@ -119,7 +119,7 @@ bool UntypedManagedEndpoint::BindCommon(IProtocol* aActor,
   MOZ_ALWAYS_TRUE(aActor->SetManagerAndRegister(aManager, id));
 
   aManager->GetIPCChannel()->Send(
-      MakeUnique<IPC::Message>(id, MANAGED_ENDPOINT_BOUND_MESSAGE_TYPE));
+      std::make_unique<IPC::Message>(id, MANAGED_ENDPOINT_BOUND_MESSAGE_TYPE));
   return true;
 }
 
@@ -193,6 +193,14 @@ bool ParamTraits<mozilla::ipc::UntypedManagedEndpoint>::Read(
 
 void ParamTraits<mozilla::ipc::UntypedEndpoint>::Write(MessageWriter* aWriter,
                                                        paramType&& aParam) {
+  if (aParam.mOtherProcInfo != mozilla::ipc::EndpointProcInfo::Invalid()) {
+    MOZ_RELEASE_ASSERT(
+        XRE_IsParentProcess() ||
+            aParam.mOtherProcInfo == mozilla::ipc::EndpointProcInfo::Current(),
+        "If specified, OtherProcInfo must be in the current process for "
+        "Endpoints sent from child processes.");
+  }
+
   IPC::WriteParam(aWriter, std::move(aParam.mPort));
   IPC::WriteParam(aWriter, aParam.mMessageChannelId);
   IPC::WriteParam(aWriter, aParam.mMyProcInfo);
@@ -201,10 +209,36 @@ void ParamTraits<mozilla::ipc::UntypedEndpoint>::Write(MessageWriter* aWriter,
 
 bool ParamTraits<mozilla::ipc::UntypedEndpoint>::Read(MessageReader* aReader,
                                                       paramType* aResult) {
-  return IPC::ReadParam(aReader, &aResult->mPort) &&
-         IPC::ReadParam(aReader, &aResult->mMessageChannelId) &&
-         IPC::ReadParam(aReader, &aResult->mMyProcInfo) &&
-         IPC::ReadParam(aReader, &aResult->mOtherProcInfo);
+  if (!IPC::ReadParam(aReader, &aResult->mPort) ||
+      !IPC::ReadParam(aReader, &aResult->mMessageChannelId) ||
+      !IPC::ReadParam(aReader, &aResult->mMyProcInfo) ||
+      !IPC::ReadParam(aReader, &aResult->mOtherProcInfo)) {
+    return false;
+  }
+
+  
+  
+  if (aResult->mOtherProcInfo != mozilla::ipc::EndpointProcInfo::Invalid()) {
+    mozilla::ipc::IProtocol* actor = aReader->GetActor();
+    if (!actor) {
+      aReader->FatalError("Must send UntypedEndpoint over an actor");
+      return false;
+    }
+
+    
+    
+    
+    mozilla::ipc::EndpointProcInfo peer{
+        .mPid = actor->ToplevelProtocol()->OtherPidMaybeInvalid(),
+        .mChildID = actor->ToplevelProtocol()->OtherChildIDMaybeInvalid()};
+    if (peer != aResult->mOtherProcInfo && peer.mChildID != 0) {
+      aReader->FatalError(
+          "Other end of UntypedEndpoint must be bound in sending process, if "
+          "OtherProcInfo is specified");
+      return false;
+    }
+  }
+  return true;
 }
 
 }  

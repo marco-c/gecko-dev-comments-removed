@@ -2,14 +2,12 @@
 
 
 
+#include <tuple>
 #include <type_traits>
 
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 
-#include <tuple>
-
-using mozilla::MakeUnique;
 using mozilla::UniquePtr;
 using mozilla::Variant;
 
@@ -340,7 +338,7 @@ static void testEmplaceWithType() {
   MOZ_RELEASE_ASSERT(!v2.as<UniquePtr<int>>().get());
 
   Variant<UniquePtr<int>, char> v3('a');
-  v3.emplace<UniquePtr<int>>(MakeUnique<int>(4));
+  v3.emplace<UniquePtr<int>>(std::make_unique<int>(4));
   MOZ_RELEASE_ASSERT(v3.is<UniquePtr<int>>());
   MOZ_RELEASE_ASSERT(*v3.as<UniquePtr<int>>().get() == 4);
 }
@@ -365,7 +363,7 @@ static void testEmplaceWithIndex() {
   MOZ_RELEASE_ASSERT(!v2.extract<0>().get());
 
   Variant<UniquePtr<int>, char> v3('a');
-  v3.emplace<0>(MakeUnique<int>(4));
+  v3.emplace<0>(std::make_unique<int>(4));
   MOZ_RELEASE_ASSERT(v3.is<UniquePtr<int>>());
   MOZ_RELEASE_ASSERT(!v3.is<1>());
   MOZ_RELEASE_ASSERT(v3.is<0>());
@@ -389,7 +387,7 @@ static void testCopy() {
 
 static void testMove() {
   printf("testMove\n");
-  Variant<UniquePtr<int>, char> v1(MakeUnique<int>(5));
+  Variant<UniquePtr<int>, char> v1(std::make_unique<int>(5));
   Variant<UniquePtr<int>, char> v2(std::move(v1));
 
   MOZ_RELEASE_ASSERT(v2.is<UniquePtr<int>>());
@@ -400,7 +398,7 @@ static void testMove() {
 
   Destroyer::destroyedCount = 0;
   {
-    Variant<char, UniquePtr<Destroyer>> v3(MakeUnique<Destroyer>());
+    Variant<char, UniquePtr<Destroyer>> v3(std::make_unique<Destroyer>());
     Variant<char, UniquePtr<Destroyer>> v4(std::move(v3));
 
     Variant<char, UniquePtr<Destroyer>> v5('a');

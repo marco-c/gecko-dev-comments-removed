@@ -2,27 +2,29 @@
 
 
 
-#include "WaiveXrayWrapper.h"
-#include "FilteringWrapper.h"
-#include "XrayWrapper.h"
-#include "AccessCheck.h"
-#include "XPCWrapper.h"
-#include "ChromeObjectWrapper.h"
 #include "WrapperFactory.h"
 
-#include "xpcprivate.h"
-#include "XPCMaps.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "jsfriendapi.h"
-#include "js/friend/WindowProxy.h"  
-#include "js/friend/Wrapper.h"      
-#include "js/Object.h"              
-#include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/MaybeCrossOriginObject.h"
+#include "mozilla/dom/ScriptSettings.h"
+
+#include "AccessCheck.h"
+#include "ChromeObjectWrapper.h"
+#include "FilteringWrapper.h"
+#include "jsfriendapi.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindowInlines.h"
 #include "nsXULAppAPI.h"
+#include "WaiveXrayWrapper.h"
+#include "XPCMaps.h"
+#include "xpcprivate.h"
+#include "XPCWrapper.h"
+#include "XrayWrapper.h"
+
+#include "js/friend/WindowProxy.h"  
+#include "js/friend/Wrapper.h"      
+#include "js/Object.h"              
 
 using namespace JS;
 using namespace js;
@@ -93,7 +95,7 @@ JSObject* WrapperFactory::CreateXrayWaiver(JSContext* cx, HandleObject obj,
   
   
   if (!scope->mWaiverWrapperMap) {
-    scope->mWaiverWrapperMap = mozilla::MakeUnique<JSObject2JSObjectMap>();
+    scope->mWaiverWrapperMap = std::make_unique<JSObject2JSObjectMap>();
   }
   if (!scope->mWaiverWrapperMap->Add(cx, obj, waiver)) {
     return nullptr;

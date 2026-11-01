@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/NavigationHistoryEntry.h"
 
 #include "mozilla/dom/Document.h"
@@ -32,7 +30,7 @@ NavigationHistoryEntry::NavigationHistoryEntry(
     nsIGlobalObject* aGlobal, const class SessionHistoryInfo* aSHInfo,
     int64_t aIndex)
     : DOMEventTargetHelper(aGlobal),
-      mSHInfo(MakeUnique<class SessionHistoryInfo>(*aSHInfo)),
+      mSHInfo(std::make_unique<class SessionHistoryInfo>(*aSHInfo)),
       mIndex(aIndex) {}
 
 NavigationHistoryEntry::~NavigationHistoryEntry() = default;

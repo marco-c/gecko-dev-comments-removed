@@ -1294,6 +1294,44 @@ static bool ShouldBlockAddress(const NetAddr& aAddr, const nsCString& aHost) {
   return true;
 }
 
+static bool IsBlockedLocalPort(const NetAddr& aAddr) {
+  uint16_t port;
+  if (NS_FAILED(aAddr.GetPort(&port))) {
+    return false;
+  }
+  return gIOService->IsLocalPortBlocked(port);
+}
+
+
+
+
+bool nsSocketTransport::IsConnectedToBlockedLocalPort(PRFileDesc* aFd) {
+  if (!IsBlockedLocalPort(mNetAddr)) {
+    return false;
+  }
+
+  PRNetAddr prAddr;
+  memset(&prAddr, 0, sizeof(prAddr));
+  if (PR_GetSockName(aFd, &prAddr) != PR_SUCCESS) {
+    return true;
+  }
+  
+  NetAddr selfAddr(&prAddr);
+  if (selfAddr.raw.family == AF_INET && mNetAddr.raw.family == AF_INET) {
+    selfAddr.inet.port = mNetAddr.inet.port;
+  } else if (selfAddr.raw.family == AF_INET6 &&
+             mNetAddr.raw.family == AF_INET6) {
+    selfAddr.inet6.port = mNetAddr.inet6.port;
+  }
+  if (!(selfAddr == mNetAddr)) {
+    return false;
+  }
+
+  SOCKET_LOG(("nsSocketTransport::IsConnectedToBlockedLocalPort [this=%p] %s\n",
+              this, mNetAddr.ToString().get()));
+  return true;
+}
+
 nsresult nsSocketTransport::InitiateSocket() {
   SOCKET_LOG(("nsSocketTransport::InitiateSocket [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -1304,6 +1342,13 @@ nsresult nsSocketTransport::InitiateSocket() {
 
   if (gIOService->IsNetTearingDown()) {
     return NS_ERROR_ABORT;
+  }
+
+  if ((mNetAddr.IsLoopbackAddr() || mNetAddr.IsIPAddrAny()) &&
+      IsBlockedLocalPort(mNetAddr)) {
+    SOCKET_LOG(("nsSocketTransport::InitiateSocket blocked local port %s\n",
+                mNetAddr.ToString().get()));
+    return NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
   }
 
   
@@ -1639,6 +1684,9 @@ nsresult nsSocketTransport::InitiateSocket() {
   }
 
   if (status == PR_SUCCESS) {
+    if (IsConnectedToBlockedLocalPort(fd)) {
+      return NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
+    }
     
     
     
@@ -1656,6 +1704,9 @@ nsresult nsSocketTransport::InitiateSocket() {
       
       
     } else if (PR_IS_CONNECTED_ERROR == code) {
+      if (IsConnectedToBlockedLocalPort(fd)) {
+        return NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
+      }
       
       
       
@@ -2243,7 +2294,9 @@ void nsSocketTransport::OnSocketReady(PRFileDesc* fd, int16_t outFlags) {
 
     PRStatus status = PR_ConnectContinue(fd, outFlags);
 
-    if (status == PR_SUCCESS) {
+    if (status == PR_SUCCESS && IsConnectedToBlockedLocalPort(fd)) {
+      mCondition = NS_ERROR_PORT_ACCESS_NOT_ALLOWED;
+    } else if (status == PR_SUCCESS) {
       
       
       
@@ -2716,7 +2769,7 @@ nsSocketTransport::Bind(NetAddr* aLocalAddr) {
     return NS_ERROR_FAILURE;
   }
 
-  mBindAddr = MakeUnique<NetAddr>(*aLocalAddr);
+  mBindAddr = std::make_unique<NetAddr>(*aLocalAddr);
 
   return NS_OK;
 }

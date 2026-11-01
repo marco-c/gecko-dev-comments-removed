@@ -43,7 +43,7 @@ ClipboardTargets nsDragSessionGtk::DragTaskGtk::GetTargets() {
 }
 
 nsDragSessionGtk::nsDragSessionGtk() {
-  mRecentTask = MakeUnique<DragTaskGtk>();
+  mRecentTask = std::make_unique<DragTaskGtk>();
 }
 
 NS_IMETHODIMP
@@ -205,7 +205,7 @@ gboolean nsDragSessionGtk::ScheduleMotionEvent(
 
   
   
-  UniquePtr<DragTaskGtk> task = MakeUnique<DragTaskGtk>(
+  UniquePtr<DragTaskGtk> task = std::make_unique<DragTaskGtk>(
       eDragTaskMotion, aDragContext, aWindow, aWindowPoint, aTime);
   return Schedule(std::move(task));
 }
@@ -214,7 +214,7 @@ gboolean nsDragSessionGtk::ScheduleDropEvent(nsWindow* aWindow,
                                              GdkDragContext* aDragContext,
                                              LayoutDeviceIntPoint aWindowPoint,
                                              guint aTime) {
-  UniquePtr<DragTaskGtk> task = MakeUnique<DragTaskGtk>(
+  UniquePtr<DragTaskGtk> task = std::make_unique<DragTaskGtk>(
       eDragTaskDrop, aDragContext, aWindow, aWindowPoint, aTime);
   if (!Schedule(std::move(task))) {
     NS_WARNING("Additional drag drop ignored");
@@ -231,7 +231,7 @@ void nsDragSessionGtk::ScheduleLeaveEvent() {
   
   
   
-  UniquePtr<DragTaskGtk> task = MakeUnique<DragTaskGtk>(eDragTaskLeave);
+  UniquePtr<DragTaskGtk> task = std::make_unique<DragTaskGtk>(eDragTaskLeave);
   if (!Schedule(std::move(task))) {
     NS_WARNING("Drag leave after drop");
   }

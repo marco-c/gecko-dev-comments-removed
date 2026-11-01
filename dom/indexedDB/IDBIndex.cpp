@@ -7,7 +7,7 @@
 #include "IDBCursorType.h"
 #include "IDBDatabase.h"
 #include "IDBEvents.h"
-#include "IDBGetAllHelper.h"
+#include "IDBGetAllOptions.h"
 #include "IDBKeyRange.h"
 #include "IDBObjectStore.h"
 #include "IDBRequest.h"
@@ -179,7 +179,7 @@ void IDBIndex::NoteDeletion() {
     return;
   }
 
-  mDeletedMetadata = MakeUnique<IndexMetadata>(*mMetadata);
+  mDeletedMetadata = std::make_unique<IndexMetadata>(*mMetadata);
 
   mMetadata = mDeletedMetadata.get();
 }

@@ -2,8 +2,8 @@
 
 
 
-#include <type_traits>
 #include <cstdint>
+#include <type_traits>
 
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
@@ -356,7 +356,7 @@ void TestMakeNotNull() {
 }
 
 mozilla::MovingNotNull<UniquePtr<int>> CreateNotNullUniquePtr() {
-  return mozilla::WrapMovingNotNull(mozilla::MakeUnique<int>(42));
+  return mozilla::WrapMovingNotNull(std::make_unique<int>(42));
 }
 
 void TestMovingNotNull() {
@@ -368,7 +368,7 @@ void TestMovingNotNull() {
   CHECK(42 == *x2);
 
   NotNull<UniquePtr<Base>> x3 =
-      mozilla::WrapMovingNotNull(mozilla::MakeUnique<Derived>());
+      mozilla::WrapMovingNotNull(std::make_unique<Derived>());
 
   
   

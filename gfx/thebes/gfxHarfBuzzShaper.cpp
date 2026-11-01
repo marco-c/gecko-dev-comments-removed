@@ -1216,10 +1216,10 @@ bool gfxHarfBuzzShaper::Initialize() {
     mNumGlyphs = uint16_t(maxp->numGlyphs);
   }
 
-  mCmapCache = MakeUnique<CmapCache>();
+  mCmapCache = std::make_unique<CmapCache>();
 
   if (mUseFontGlyphWidths) {
-    mWidthCache = MakeUnique<WidthCache>();
+    mWidthCache = std::make_unique<WidthCache>();
   } else {
     
     

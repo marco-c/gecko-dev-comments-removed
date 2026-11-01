@@ -4,21 +4,22 @@
 
 
 
+#include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/BindingUtils.h"
+#include "mozilla/Preferences.h"
+
 #include "AccessCheck.h"
-#include "xpcprivate.h"
-#include "XPCWrapper.h"
+#include "ExpandedPrincipal.h"
+#include "mozJSModuleLoader.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionNoteRootCallback.h"
-#include "ExpandedPrincipal.h"
-#include "mozilla/BasePrincipal.h"
-#include "mozilla/Preferences.h"
 #include "XPCMaps.h"
+#include "xpcprivate.h"
+#include "XPCWrapper.h"
+
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
 #include "js/RealmIterators.h"
-#include "mozJSModuleLoader.h"
-
-#include "mozilla/dom/BindingUtils.h"
 
 using namespace mozilla;
 using namespace xpc;
@@ -64,9 +65,9 @@ static bool RemoteXULForbidsXBLScope(HandleObject aFirstGlobal) {
 
 XPCWrappedNativeScope::XPCWrappedNativeScope(JS::Compartment* aCompartment,
                                              JS::HandleObject aFirstGlobal)
-    : mWrappedNativeMap(mozilla::MakeUnique<Native2WrappedNativeMap>()),
+    : mWrappedNativeMap(std::make_unique<Native2WrappedNativeMap>()),
       mWrappedNativeProtoMap(
-          mozilla::MakeUnique<ClassInfo2WrappedNativeProtoMap>()),
+          std::make_unique<ClassInfo2WrappedNativeProtoMap>()),
       mComponents(nullptr),
       mCompartment(aCompartment) {
 #ifdef DEBUG

@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "ClientState.h"
 
 #include "mozilla/dom/ClientIPCTypes.h"
@@ -14,11 +12,11 @@ ClientWindowState::ClientWindowState(
     mozilla::dom::VisibilityState aVisibilityState,
     const TimeStamp& aLastFocusTime, StorageAccess aStorageAccess,
     bool aFocused)
-    : mData(MakeUnique<IPCClientWindowState>(aVisibilityState, aLastFocusTime,
-                                             aStorageAccess, aFocused)) {}
+    : mData(std::make_unique<IPCClientWindowState>(
+          aVisibilityState, aLastFocusTime, aStorageAccess, aFocused)) {}
 
 ClientWindowState::ClientWindowState(const IPCClientWindowState& aData)
-    : mData(MakeUnique<IPCClientWindowState>(aData)) {}
+    : mData(std::make_unique<IPCClientWindowState>(aData)) {}
 
 ClientWindowState::ClientWindowState(const ClientWindowState& aRight) {
   operator=(aRight);
@@ -30,7 +28,7 @@ ClientWindowState::ClientWindowState(ClientWindowState&& aRight)
 ClientWindowState& ClientWindowState::operator=(
     const ClientWindowState& aRight) {
   mData.reset();
-  mData = MakeUnique<IPCClientWindowState>(*aRight.mData);
+  mData = std::make_unique<IPCClientWindowState>(*aRight.mData);
   return *this;
 }
 
@@ -39,8 +37,6 @@ ClientWindowState& ClientWindowState::operator=(ClientWindowState&& aRight) {
   mData = std::move(aRight.mData);
   return *this;
 }
-
-ClientWindowState::~ClientWindowState() = default;
 
 mozilla::dom::VisibilityState ClientWindowState::VisibilityState() const {
   return mData->visibilityState();
@@ -59,10 +55,10 @@ StorageAccess ClientWindowState::GetStorageAccess() const {
 const IPCClientWindowState& ClientWindowState::ToIPC() const { return *mData; }
 
 ClientWorkerState::ClientWorkerState(StorageAccess aStorageAccess)
-    : mData(MakeUnique<IPCClientWorkerState>(aStorageAccess)) {}
+    : mData(std::make_unique<IPCClientWorkerState>(aStorageAccess)) {}
 
 ClientWorkerState::ClientWorkerState(const IPCClientWorkerState& aData)
-    : mData(MakeUnique<IPCClientWorkerState>(aData)) {}
+    : mData(std::make_unique<IPCClientWorkerState>(aData)) {}
 
 ClientWorkerState::ClientWorkerState(ClientWorkerState&& aRight)
     : mData(std::move(aRight.mData)) {}
@@ -74,7 +70,7 @@ ClientWorkerState::ClientWorkerState(const ClientWorkerState& aRight) {
 ClientWorkerState& ClientWorkerState::operator=(
     const ClientWorkerState& aRight) {
   mData.reset();
-  mData = MakeUnique<IPCClientWorkerState>(*aRight.mData);
+  mData = std::make_unique<IPCClientWorkerState>(*aRight.mData);
   return *this;
 }
 
@@ -83,8 +79,6 @@ ClientWorkerState& ClientWorkerState::operator=(ClientWorkerState&& aRight) {
   mData = std::move(aRight.mData);
   return *this;
 }
-
-ClientWorkerState::~ClientWorkerState() = default;
 
 StorageAccess ClientWorkerState::GetStorageAccess() const {
   return mData->storageAccess();

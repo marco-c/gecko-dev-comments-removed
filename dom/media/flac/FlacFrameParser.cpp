@@ -2,14 +2,13 @@
 
 
 
-
-
 #include "FlacFrameParser.h"
 
 #include "BufferReader.h"
 #include "OggCodecState.h"
 #include "OpusParser.h"
 #include "VideoUtils.h"
+#include "mozilla/EndianUtils.h"
 #include "mozilla/Try.h"
 #include "nsTArray.h"
 
@@ -144,7 +143,7 @@ Result<Ok, nsresult> FlacFrameParser::DecodeHeaderBlock(const uint8_t* aPacket,
           AudioCodecSpecificVariant{std::move(flacCodecSpecificData)};
       auto duration = media::TimeUnit(mNumFrames, sampleRate);
       mInfo.mDuration = duration.IsValid() ? duration : media::TimeUnit::Zero();
-      mParser = MakeUnique<OpusParser>();
+      mParser = std::make_unique<OpusParser>();
       break;
     }
     case FLAC_METADATA_TYPE_VORBIS_COMMENT: {
@@ -227,7 +226,7 @@ UniquePtr<MetadataTags> FlacFrameParser::GetTags() const {
     return nullptr;
   }
 
-  auto tags = MakeUnique<MetadataTags>();
+  auto tags = std::make_unique<MetadataTags>();
   for (uint32_t i = 0; i < mParser->mTags.Length(); i++) {
     OggCodecState::AddVorbisComment(tags, mParser->mTags[i].Data(),
                                     mParser->mTags[i].Length());

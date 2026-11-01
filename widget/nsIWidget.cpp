@@ -1437,7 +1437,7 @@ void nsIWidget::CreateCompositorVsyncDispatcher() {
   if (XRE_IsParentProcess()) {
     if (!mCompositorVsyncDispatcherLock) {
       mCompositorVsyncDispatcherLock =
-          MakeUnique<Mutex>("mCompositorVsyncDispatcherLock");
+          std::make_unique<Mutex>("mCompositorVsyncDispatcherLock");
     }
     MutexAutoLock lock(*mCompositorVsyncDispatcherLock.get());
     if (!mCompositorVsyncDispatcher) {
@@ -2175,7 +2175,7 @@ nsresult nsIWidget::SynthesizeNativeTouchTap(
                                mLongTapTouchPoint->mPosition, 0, 0, nullptr);
   }
 
-  mLongTapTouchPoint = MakeUnique<LongTapInfo>(
+  mLongTapTouchPoint = std::make_unique<LongTapInfo>(
       pointerId, aPoint, TimeDuration::FromMilliseconds(elapse), aCallback);
   notifier.SkipNotification();  
   return NS_OK;
@@ -2367,7 +2367,7 @@ WidgetWheelEvent nsIWidget::MayStartSwipe(const PanGestureInput& aPanInput,
         
         
         
-        mSwipeEventQueue = MakeUnique<SwipeEventQueue>(
+        mSwipeEventQueue = std::make_unique<SwipeEventQueue>(
             swipeInfo.allowedDirections, aApzResult.mInputBlockId);
       }
     } else {

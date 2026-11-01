@@ -330,7 +330,7 @@ nsresult nsThreadManager::Init() {
 
   
   
-  UniquePtr<EventQueue> queue = MakeUnique<EventQueue>(true);
+  UniquePtr<EventQueue> queue = std::make_unique<EventQueue>(true);
 
   RefPtr synchronizedQueue =
       MakeRefPtr<ThreadEventQueue>(std::move(queue), true);
@@ -447,12 +447,12 @@ void nsThreadManager::ShutdownMainThread() {
   
   
   
-  while (true) {
-    if (mMainThread->mEvents->ShutdownIfNoPendingEvents()) {
-      break;
-    }
+  
+  
+  
+  do {
     NS_ProcessPendingEvents(mMainThread);
-  }
+  } while (!mMainThread->mEvents->ShutdownIfNoPendingEvents());
 
   
   
@@ -608,7 +608,7 @@ nsThreadManager::NewNamedThread(
 
   TimeStamp startTime = TimeStamp::Now();
 
-  RefPtr queue = MakeRefPtr<ThreadEventQueue>(MakeUnique<EventQueue>());
+  RefPtr queue = MakeRefPtr<ThreadEventQueue>(std::make_unique<EventQueue>());
   RefPtr thr = MakeRefPtr<nsThread>(WrapNotNull(queue),
                                     nsThread::NOT_MAIN_THREAD, aOptions);
 

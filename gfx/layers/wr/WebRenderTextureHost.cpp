@@ -94,6 +94,10 @@ gfx::ColorRange WebRenderTextureHost::GetColorRange() const {
   return mWrappedTextureHost->GetColorRange();
 }
 
+gfx::TransferFunction WebRenderTextureHost::GetTransferFunction() const {
+  return mWrappedTextureHost->GetTransferFunction();
+}
+
 gfx::IntSize WebRenderTextureHost::GetSize() const {
   return mWrappedTextureHost->GetSize();
 }
@@ -131,7 +135,7 @@ void WebRenderTextureHost::MaybeNotifyForUse(wr::TransactionBuilder& aTxn) {
       !mWrappedTextureHost->AsRemoteTextureHostWrapper()) {
     wr::RenderThread::Get()->NotifyForUse(GetExternalImageKey());
     aTxn.Notify(wr::Checkpoint::FrameTexturesUpdated,
-                MakeUnique<ScheduleHandleRenderTextureOps>());
+                std::make_unique<ScheduleHandleRenderTextureOps>());
   }
 #endif
 }

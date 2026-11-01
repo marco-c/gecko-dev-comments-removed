@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "DynamicsCompressorNode.h"
 
 #include "AudioDestinationNode.h"
@@ -83,7 +81,7 @@ class DynamicsCompressorNodeEngine final : public AudioNodeEngine {
     const uint32_t channelCount = aInput.ChannelCount();
     if (mCompressor->numberOfChannels() != channelCount) {
       
-      mCompressor = MakeUnique<WebCore::DynamicsCompressor>(
+      mCompressor = std::make_unique<WebCore::DynamicsCompressor>(
           aTrack->mSampleRate, aInput.ChannelCount());
     }
 

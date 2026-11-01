@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "VRService.h"
 
 #include <cstring>  
@@ -102,7 +100,7 @@ void VRService::Start() {
         "VRService", getter_AddRefs(thread),
         NS_NewRunnableFunction("VRService::ServiceThreadStartup", [self]() {
           self->mBackgroundHangMonitor =
-              MakeUnique<mozilla::BackgroundHangMonitor>(
+              std::make_unique<mozilla::BackgroundHangMonitor>(
                   "VRService",
                   
 
@@ -183,7 +181,7 @@ void VRService::ServiceInitialize() {
   if (StaticPrefs::dom_vr_puppet_enabled()) {
     
     
-    session = MakeUnique<PuppetSession>();
+    session = std::make_unique<PuppetSession>();
     if (!session->Initialize(mSystemState, mBrowserState.detectRuntimesOnly)) {
       session = nullptr;
     }
@@ -194,7 +192,7 @@ void VRService::ServiceInitialize() {
 #if defined(XP_WIN)
     
     if (!session) {
-      session = MakeUnique<OculusSession>();
+      session = std::make_unique<OculusSession>();
       if (!session->Initialize(mSystemState,
                                mBrowserState.detectRuntimesOnly)) {
         session = nullptr;
@@ -206,7 +204,7 @@ void VRService::ServiceInitialize() {
     (defined(XP_LINUX) && !defined(MOZ_WIDGET_ANDROID))
     
     if (!session) {
-      session = MakeUnique<OpenVRSession>();
+      session = std::make_unique<OpenVRSession>();
       if (!session->Initialize(mSystemState,
                                mBrowserState.detectRuntimesOnly)) {
         session = nullptr;
@@ -216,7 +214,7 @@ void VRService::ServiceInitialize() {
 #if !defined(MOZ_WIDGET_ANDROID)
     
     if (!session) {
-      session = MakeUnique<OSVRSession>();
+      session = std::make_unique<OSVRSession>();
       if (!session->Initialize(mSystemState,
                                mBrowserState.detectRuntimesOnly)) {
         session = nullptr;
