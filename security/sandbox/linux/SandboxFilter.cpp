@@ -825,7 +825,6 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
     
     
     
-    
     static constexpr int kHarmless = MSG_PEEK | MSG_WAITALL | MSG_TRUNC;
 
     static constexpr int kAllowed = kNeeded | kHarmless;

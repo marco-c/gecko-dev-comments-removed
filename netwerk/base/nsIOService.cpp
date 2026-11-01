@@ -2038,7 +2038,6 @@ nsIOService::SetSimpleURIUnknownRemoteSchemes(
     
     
     
-    
     for (auto* cp : mozilla::dom::ContentParent::AllProcesses(
              mozilla::dom::ContentParent::eLive)) {
       (void)cp->SendSimpleURIUnknownRemoteSchemes(aRemoteSchemes);

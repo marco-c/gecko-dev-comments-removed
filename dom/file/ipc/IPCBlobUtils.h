@@ -2,32 +2,11 @@
 
 
 
-
-
 #ifndef mozilla_dom_IPCBlobUtils_h
 #define mozilla_dom_IPCBlobUtils_h
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/File.h"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
