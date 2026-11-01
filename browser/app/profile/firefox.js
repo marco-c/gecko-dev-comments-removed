@@ -3177,6 +3177,10 @@ pref("browser.toolbars.share-button.enabled", true);
 
 pref("browser.urlbar.share-button.enabled", false);
 
+
+
+pref("browser.toolbars.tab-groups.enabled", false);
+
 pref("security.certerrors.felt-privacy-v1", true);
 
 
