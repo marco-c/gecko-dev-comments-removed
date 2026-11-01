@@ -2,11 +2,7 @@
 
 
 
-
-
-var tagssvc = Cc["@mozilla.org/browser/tagging-service;1"]
-  .createInstance()
-  .QueryInterface(Ci.nsITaggingService);
+var tagssvc = PlacesUtils.tagging;
 
 function run_test() {
   var options = PlacesUtils.history.getNewQueryOptions();
@@ -99,10 +95,7 @@ function run_test() {
   
   var uri4 = uri("http://testuri/4");
   tagssvc.tagURI(uri4, [tagId, "tag 3", "456"]);
-  tagssvc = null;
-  tagssvc = Cc["@mozilla.org/browser/tagging-service;1"].getService(
-    Ci.nsITaggingService
-  );
+  PlacesObservers.notifyListeners([new PlacesPurgeCaches()]);
   var uri4Tags = tagssvc.getTagsForURI(uri4);
   Assert.equal(uri4Tags.length, 3);
   Assert.ok(uri4Tags.includes(tagTitle));
