@@ -488,19 +488,6 @@ void SSLTokensCache::DeserializeFromIPC(
 }
 
 
-void SSLTokensCache::DeserializeFromIPCAsync(
-    nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored) {
-  if (aRecords.IsEmpty()) {
-    return;
-  }
-  NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-      "SSLTokensCache::DeserializeFromIPCAsync",
-      [records = std::move(aRecords), aRestored]() mutable {
-        DeserializeFromIPC(std::move(records), aRestored);
-      }));
-}
-
-
 nsDependentCSubstring SSLTokensCache::BasePartFromKey(const nsACString& aKey) {
   int32_t caretPos = aKey.FindChar('^');
   return nsDependentCSubstring(
@@ -1213,28 +1200,6 @@ void SSLTokensCache::ClearPrivateBrowsing() {
   });
 }
 
-template <typename SendFn>
-static void ForwardToSocketProcess(SendFn aSend) {
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-  if (nsIOService::UseSocketProcess() && gIOService) {
-    gIOService->CallOrWaitForSocketProcess([send = std::move(aSend)]() {
-      RefPtr<SocketProcessParent> socketParent =
-          SocketProcessParent::GetSingleton();
-      if (socketParent) {
-        send(socketParent);
-      }
-    });
-  }
-}
-
-
-void SSLTokensCache::ForwardClearToSocketProcess() {
-  ForwardToSocketProcess(
-      [](SocketProcessParent* p) { (void)p->SendClearSessionCache(); });
-}
-
 static void MaybeClearNSSSessionCache() {
   if (NSS_IsInitialized()) {
     SSL_ClearSessionCache();
@@ -1245,21 +1210,6 @@ static void MaybeClearNSSSessionCache() {
 void SSLTokensCache::ClearSessionCacheAndTokens() {
   MaybeClearNSSSessionCache();
   Clear();
-  ForwardClearToSocketProcess();
-}
-
-
-void SSLTokensCache::ForwardClearPrivateBrowsingToSocketProcess() {
-  ForwardToSocketProcess([](SocketProcessParent* p) {
-    (void)p->SendClearPrivateBrowsingSessionCache();
-  });
-}
-
-
-void SSLTokensCache::ClearSessionCacheAndPBMTokens() {
-  MOZ_ASSERT(!XRE_IsParentProcess());
-  MaybeClearNSSSessionCache();
-  ClearPrivateBrowsing();
 }
 
 
@@ -1394,41 +1344,6 @@ void SSLTokensCache::OnLoadCompleteNotify(uint32_t aCount) {
       elapsed);
   LOG(("SSLTokensCache::OnLoadCompleteNotify [records=%u, time=%.1fms]", aCount,
        elapsed.ToMilliseconds()));
-
-  
-  
-  
-  if (StaticPrefs::network_ssl_tokens_cache_persistence()) {
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction("SSLTokensCache::ForwardToSocketProcess", []() {
-          if (!gIOService || !nsIOService::UseSocketProcess()) {
-            return;
-          }
-          
-          
-          
-          gIOService->CallOrWaitForSocketProcess([]() {
-            NS_DispatchBackgroundTask(NS_NewRunnableFunction(
-                "SSLTokensCache::SerializeForSocket", []() {
-                  nsTArray<SSLTokensCacheRecordInfo> records =
-                      SSLTokensCache::SerializeForIPC();
-                  if (records.IsEmpty()) {
-                    return;
-                  }
-                  NS_DispatchToMainThread(NS_NewRunnableFunction(
-                      "SSLTokensCache::SendToSocket",
-                      [records = std::move(records)]() mutable {
-                        RefPtr<SocketProcessParent> parent =
-                            SocketProcessParent::GetSingleton();
-                        if (parent && parent->CanSend()) {
-                          (void)parent->SendLoadSSLTokensCache(
-                              std::move(records));
-                        }
-                      }));
-                }));
-          });
-        }));
-  }
 }
 
 
@@ -1696,7 +1611,6 @@ void SSLTokensCache::ClearSessionCacheAndTokensForHost(
   LOG(("SSLTokensCache::ClearSessionCacheAndTokensForHost"));
   MaybeClearNSSSessionCache();
   RemoveByHostAndOAPattern(aHost, aPattern);
-  ForwardClearToSocketProcess();
 }
 
 
@@ -1933,8 +1847,6 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
     LOG(("SSLTokensCache::Observe [topic=last-pb-context-exited]"));
     
     ClearPrivateBrowsing();
-    
-    ForwardClearPrivateBrowsingToSocketProcess();
   }
   return NS_OK;
 }
@@ -2110,18 +2022,7 @@ SSLTokensCacheService::AsyncClearSSLExternalAndInternalSessionCache(
     return result.StealNSResult();
   }
 
-  if (nsIOService::UseSocketProcess() && gIOService) {
-    gIOService->CallOrWaitForSocketProcess([p = RefPtr{promise}]() {
-      RefPtr<SocketProcessParent> socketParent =
-          SocketProcessParent::GetSingleton();
-      (void)socketParent->SendClearSessionCache()->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [promise = RefPtr{p}] { promise->MaybeResolveWithUndefined(); },
-          [promise = RefPtr{p}] { promise->MaybeReject(NS_ERROR_UNEXPECTED); });
-    });
-  } else {
-    promise->MaybeResolveWithUndefined();
-  }
+  promise->MaybeResolveWithUndefined();
   SSLTokensCache::ClearSessionCacheAndTokens();
   promise.forget(aPromise);
   return NS_OK;

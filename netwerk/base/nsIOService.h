@@ -132,8 +132,6 @@ class nsIOService final : public nsIIOService,
 
   nsresult LaunchSocketProcess();
 
-  static bool TooManySocketProcessCrash();
-  static void IncreaseSocketProcessCrashCount();
 #ifdef MOZ_WIDGET_ANDROID
   static bool ShouldAddAdditionalSearchHeaders(nsIURI* aURI, bool* val);
 #endif
@@ -248,8 +246,6 @@ class nsIOService final : public nsIIOService,
   nsTHashMap<nsCString, RuntimeProtocolHandler> mRuntimeProtocolHandlers
       MOZ_GUARDED_BY(mLock);
 
-  static uint32_t sSocketProcessCrashedCount;
-
   
   
   
@@ -267,14 +263,6 @@ class nsIOService final : public nsIIOService,
   
   
   nsTArray<std::function<void()>> mPendingEvents;
-
-  
-  nsTHashSet<nsCString> mObserverTopicForSocketProcess;
-  
-  
-  nsTHashSet<nsCString> mSocketProcessTopicBlockedList;
-  
-  nsTHashSet<nsCString> mIOServiceTopicList;
 
   nsCOMPtr<nsIObserverService> mObserverService;
 

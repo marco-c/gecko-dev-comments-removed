@@ -80,21 +80,9 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   
   
-  
   static void ClearSessionCacheAndTokens();
   
-  
-  static void ForwardClearToSocketProcess();
-  
-  
-  
-  static void ForwardClearPrivateBrowsingToSocketProcess();
-  
   static void ClearPrivateBrowsing();
-  
-  
-  
-  static void ClearSessionCacheAndPBMTokens();
   static void RemoveByHostAndOAPattern(
       const nsACString& aHost, const mozilla::OriginAttributesPattern& aPattern)
       MOZ_EXCLUDES(sLock);
@@ -113,9 +101,6 @@ class SSLTokensCache : public nsIMemoryReporter,
   
   static void DeserializeFromIPC(nsTArray<SSLTokensCacheRecordInfo>&& aRecords,
                                  bool aRestored);
-  
-  static void DeserializeFromIPCAsync(
-      nsTArray<SSLTokensCacheRecordInfo>&& aRecords, bool aRestored);
 
   
   static void GetAllRecords(nsTArray<SSLTokensCacheRecordInfo>& aOut);

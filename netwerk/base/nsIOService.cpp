@@ -211,8 +211,6 @@ static const char kProfileDoChange[] = "profile-do-change";
 uint32_t nsIOService::gDefaultSegmentSize = 4096;
 uint32_t nsIOService::gDefaultSegmentCount = 24;
 
-uint32_t nsIOService::sSocketProcessCrashedCount = 0;
-
 
 
 nsIOService::nsIOService()
@@ -302,14 +300,6 @@ nsresult nsIOService::Init() {
                                        gCallbackPrefs, this);
   PrefsChanged();
 
-  mSocketProcessTopicBlockedList.Insert(
-      nsLiteralCString(NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlockedList.Insert(
-      nsLiteralCString(NS_XPCOM_SHUTDOWN_OBSERVER_ID));
-  mSocketProcessTopicBlockedList.Insert("xpcom-shutdown-threads"_ns);
-  mSocketProcessTopicBlockedList.Insert("profile-do-change"_ns);
-  mSocketProcessTopicBlockedList.Insert("network:socket-process-crashed"_ns);
-
   
   mObserverService = services::GetObserverService();
   MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileChangeNetTeardownTopic, true));
@@ -352,45 +342,7 @@ nsIOService::AddObserver(nsIObserver* aObserver, const char* aTopic,
     return NS_ERROR_FAILURE;
   }
 
-  
-  nsresult rv = mObserverService->AddObserver(aObserver, aTopic, aOwnsWeak);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if (!XRE_IsParentProcess()) {
-    return NS_OK;
-  }
-
-  nsAutoCString topic(aTopic);
-  
-  
-  if (SameCOMIdentity(aObserver, static_cast<nsIObserver*>(this))) {
-    mIOServiceTopicList.Insert(topic);
-    return NS_OK;
-  }
-
-  if (!UseSocketProcess()) {
-    return NS_OK;
-  }
-
-  if (mSocketProcessTopicBlockedList.Contains(topic)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (mObserverTopicForSocketProcess.Contains(topic)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mObserverTopicForSocketProcess.Insert(topic);
-
-  
-  if (mIOServiceTopicList.Contains(topic)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return mObserverService->AddObserver(this, aTopic, true);
+  return mObserverService->AddObserver(aObserver, aTopic, aOwnsWeak);
 }
 
 NS_IMETHODIMP
@@ -582,18 +534,6 @@ class SocketProcessListenerProxy : public SocketProcessHost::Listener {
   }
 };
 
-
-bool nsIOService::TooManySocketProcessCrash() {
-  return sSocketProcessCrashedCount >=
-         StaticPrefs::network_max_socket_process_failed_count();
-}
-
-
-void nsIOService::IncreaseSocketProcessCrashCount() {
-  MOZ_ASSERT(IsNeckoChild());
-  sSocketProcessCrashedCount++;
-}
-
 nsresult nsIOService::LaunchSocketProcess() {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -742,30 +682,6 @@ void nsIOService::OnProcessUnexpectedShutdown(SocketProcessHost* aHost) {
   LOG(("nsIOService::OnProcessUnexpectedShutdown\n"));
   DestroySocketProcess();
   mPendingEvents.Clear();
-
-  
-  if (!UseSocketProcess()) {
-    return;
-  }
-
-  sSocketProcessCrashedCount++;
-  if (TooManySocketProcessCrash()) {
-    DNSServiceWrapper::SwitchToBackupDNSService();
-  }
-
-  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
-  if (observerService) {
-    (void)observerService->NotifyObservers(
-        nullptr, "network:socket-process-crashed", nullptr);
-  }
-
-  
-  
-  if (UseSocketProcess()) {
-    MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
-        NewRunnableMethod("nsIOService::LaunchSocketProcess", this,
-                          &nsIOService::LaunchSocketProcess)));
-  }
 }
 
 RefPtr<MemoryReportingProcess> nsIOService::GetSocketProcessMemoryReporter() {
@@ -1850,13 +1766,6 @@ void nsIOService::SetHttpHandlerAlreadyShutingDown() {
 NS_IMETHODIMP
 nsIOService::Observe(nsISupports* subject, const char* topic,
                      const char16_t* data) {
-  if (UseSocketProcess() && SocketProcessReady() &&
-      mObserverTopicForSocketProcess.Contains(nsDependentCString(topic))) {
-    nsCString topicStr(topic);
-    nsString dataStr(data);
-    (void)mSocketProcess->GetActor()->SendNotifyObserver(topicStr, dataStr);
-  }
-
   if (!strcmp(topic, kProfileChangeNetTeardownTopic)) {
     if (!mHttpHandlerAlreadyShutingDown) {
       mNetTearingDownStarted = PR_IntervalNow();
