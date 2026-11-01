@@ -533,6 +533,37 @@ add_task(function test_computeMultipleVectors() {
   );
 });
 
+add_task(function test_computeMultipleVectorsPostProcessing() {
+  
+  
+  const model = FeatureModel.fromJSON({
+    ...jsonModelData,
+    rescale: true,
+    interest_vector: {
+      ...jsonModelData.interest_vector,
+      parenting: {
+        ...jsonModelData.interest_vector.parenting,
+        thresholds: [1.2, 2],
+      },
+    },
+  });
+  const result = model.computeInterestVectors({
+    dataForIntervals: SQL_RESULT_DATA,
+    indexSchema: SCHEMA,
+    applyPostProcessing: true,
+  });
+  Assert.equal(
+    result.inferredInterests.parenting,
+    1.0,
+    "Inferred interests are rescaled"
+  );
+  Assert.equal(
+    result.coarseInferredInterests.parenting,
+    0,
+    "Coarse interests are thresholded after rescaling"
+  );
+});
+
 add_task(function test_computeMultipleVectorsCondensed() {
   const modelData = { ...jsonModelData, rescale: true };
   const model = FeatureModel.fromJSON(modelData);
