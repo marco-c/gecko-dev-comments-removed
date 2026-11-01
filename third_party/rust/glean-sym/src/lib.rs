@@ -129,14 +129,12 @@ pub struct UniFfiTag;
 
 
 #[allow(clippy::large_const_arrays)] 
-#[cfg(feature = "active")]
 const UNIFFI_META_CONST_NAMESPACE_GLEAN_SYM: ::uniffi::MetadataBuffer =
     ::uniffi::MetadataBuffer::from_code(::uniffi::metadata::codes::NAMESPACE)
         .concat_str("glean_sym")
         .concat_str("glean_sym");
 #[doc(hidden)]
 #[unsafe(no_mangle)]
-#[cfg(feature = "active")]
 pub static UNIFFI_META_NAMESPACE_GLEAN_SYM: [::std::primitive::u8;
     UNIFFI_META_CONST_NAMESPACE_GLEAN_SYM.size] =
     UNIFFI_META_CONST_NAMESPACE_GLEAN_SYM.into_array();

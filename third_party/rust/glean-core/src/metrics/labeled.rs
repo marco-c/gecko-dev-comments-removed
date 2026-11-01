@@ -1,6 +1,6 @@
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+
+
 
 use std::any::Any;
 use std::borrow::Cow;
@@ -20,6 +20,7 @@ use crate::common_metric_data::{CommonMetricData, MetricLabel};
 use crate::database::EMPTY_LABEL;
 use crate::error_recording::{test_get_num_recorded_errors, ErrorType};
 use crate::histogram::HistogramType;
+use crate::metrics::dual_labeled_counter::RECORD_SEPARATOR;
 use crate::metrics::{
     BooleanMetric, CounterMetric, CustomDistributionMetric, MemoryDistributionMetric, MemoryUnit,
     MetricType, QuantityMetric, StringMetric, TestGetValue, TimeUnit, TimingDistributionMetric,
@@ -35,36 +36,36 @@ const MAX_LABELS: usize = 16;
 const OTHER_LABEL: &str = "__other__";
 const MAX_LABEL_LENGTH: usize = 111;
 
-/// A labeled counter.
+
 pub type LabeledCounter = LabeledMetric<CounterMetric>;
 
-/// A labeled boolean.
+
 pub type LabeledBoolean = LabeledMetric<BooleanMetric>;
 
-/// A labeled string.
+
 pub type LabeledString = LabeledMetric<StringMetric>;
 
-/// A labeled custom_distribution.
+
 pub type LabeledCustomDistribution = LabeledMetric<CustomDistributionMetric>;
 
-/// A labeled memory_distribution.
+
 pub type LabeledMemoryDistribution = LabeledMetric<MemoryDistributionMetric>;
 
-/// A labeled timing_distribution.
+
 pub type LabeledTimingDistribution = LabeledMetric<TimingDistributionMetric>;
 
-/// A labeled quantity
+
 pub type LabeledQuantity = LabeledMetric<QuantityMetric>;
 
-/// The metric data needed to construct inner submetrics.
-///
-/// Different Labeled metrics require different amounts and kinds of information to
-/// be constructed.
+
+
+
+
 pub enum LabeledMetricData {
-    /// The common case: just a CMD.
+    
     #[allow(missing_docs)]
     Common { cmd: CommonMetricData },
-    /// The custom_distribution-specific case.
+    
     #[allow(missing_docs)]
     CustomDistribution {
         cmd: CommonMetricData,
@@ -73,13 +74,13 @@ pub enum LabeledMetricData {
         bucket_count: i64,
         histogram_type: HistogramType,
     },
-    /// The memory_distribution-specific case.
+    
     #[allow(missing_docs)]
     MemoryDistribution {
         cmd: CommonMetricData,
         unit: MemoryUnit,
     },
-    /// The timing_distribution-specific case.
+    
     #[allow(missing_docs)]
     TimingDistribution {
         cmd: CommonMetricData,
@@ -87,18 +88,18 @@ pub enum LabeledMetricData {
     },
 }
 
-/// A labeled metric.
-///
-/// Labeled metrics allow to record multiple sub-metrics of the same type under different string labels.
+
+
+
 #[derive(Debug)]
 pub struct LabeledMetric<T> {
     labels: Option<Vec<Cow<'static, str>>>,
-    /// Type of the underlying metric
-    /// We hold on to an instance of it, which is cloned to create new modified instances.
+    
+    
     submetric: T,
 
-    /// A map from a unique ID for the labeled submetric to a handle of an instantiated
-    /// metric type.
+    
+    
     label_map: Mutex<HashMap<String, Arc<T>>>,
 }
 
@@ -106,9 +107,9 @@ impl<T: MallocSizeOf> ::malloc_size_of::MallocSizeOf for LabeledMetric<T> {
     fn size_of(&self, ops: &mut malloc_size_of::MallocSizeOfOps) -> usize {
         let map = self.label_map.lock().unwrap();
 
-        // Copy of `MallocShallowSizeOf` implementation for `HashMap<K, V>` in `wr_malloc_size_of`.
-        // Note: An instantiated submetric is behind an `Arc`.
-        // `size_of` should only be called from a single thread to avoid double-counting.
+        
+        
+        
         let shallow_size = if ops.has_malloc_enclosing_size_of() {
             map.values()
                 .next()
@@ -128,9 +129,9 @@ impl<T: MallocSizeOf> ::malloc_size_of::MallocSizeOf for LabeledMetric<T> {
     }
 }
 
-/// Sealed traits protect against downstream implementations.
-///
-/// We wrap it in a private module that is inaccessible outside of this module.
+
+
+
 mod private {
     use super::LabeledMetricData;
     use crate::metrics::{
@@ -138,13 +139,13 @@ mod private {
         QuantityMetric, StringMetric, TimingDistributionMetric,
     };
 
-    /// The sealed labeled trait.
-    ///
-    /// This also allows us to hide methods, that are only used internally
-    /// and should not be visible to users of the object implementing the
-    /// `Labeled<T>` trait.
+    
+    
+    
+    
+    
     pub trait Sealed {
-        /// Create a new `glean_core` metric from the metadata.
+        
         fn new_inner(meta: LabeledMetricData) -> Self;
     }
 
@@ -218,13 +219,13 @@ mod private {
     }
 }
 
-/// Trait for metrics that can be nested inside a labeled metric.
+
 pub trait AllowLabeled: MetricType {
-    /// Create a new labeled metric.
+    
     fn new_labeled(meta: LabeledMetricData) -> Self;
 }
 
-// Implement the trait for everything we marked as allowed.
+
 impl<T> AllowLabeled for T
 where
     T: MetricType,
@@ -239,9 +240,9 @@ impl<T> LabeledMetric<T>
 where
     T: AllowLabeled + Clone,
 {
-    /// Creates a new labeled metric from the given metric instance and optional list of labels.
-    ///
-    /// See [`get`](LabeledMetric::get) for information on how static or dynamic labels are handled.
+    
+    
+    
     pub fn new(
         meta: LabeledMetricData,
         labels: Option<Vec<Cow<'static, str>>>,
@@ -259,37 +260,37 @@ where
         }
     }
 
-    /// Creates a new metric with a specific label.
-    ///
-    /// This is used for static labels where we can just set the name to be `name/label`.
+    
+    
+    
     fn new_metric_with_label(&self, label: MetricLabel) -> T {
         self.submetric.with_label(label)
     }
 
-    /// Creates a new metric with a specific label.
-    ///
-    /// This is used for dynamic labels where we have to actually validate and correct the
-    /// label later when we have a Glean object.
-    ///
-    /// TODO: Consolidate with `new_metric_with_label` above.
+    
+    
+    
+    
+    
+    
     fn new_metric_with_dynamic_label(&self, label: MetricLabel) -> T {
         self.submetric.with_label(label)
     }
 
-    /// Creates a static label.
-    ///
-    /// # Safety
-    ///
-    /// Should only be called when static labels are available on this metric.
-    ///
-    /// # Arguments
-    ///
-    /// * `label` - The requested label
-    ///
-    /// # Returns
-    ///
-    /// The requested label if it is in the list of allowed labels.
-    /// Otherwise `OTHER_LABEL` is returned.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn static_label<'a>(&self, label: &'a str) -> &'a str {
         debug_assert!(self.labels.is_some());
         let labels = self.labels.as_ref().unwrap();
@@ -300,34 +301,34 @@ where
         }
     }
 
-    /// Gets a specific metric for a given label.
-    ///
-    /// If a set of acceptable labels were specified in the `metrics.yaml` file,
-    /// and the given label is not in the set, it will be recorded under the special `OTHER_LABEL` label.
-    ///
-    /// If a set of acceptable labels was not specified in the `metrics.yaml` file,
-    /// only the first 16 unique labels will be used.
-    /// After that, any additional labels will be recorded under the special `OTHER_LABEL` label.
-    ///
-    /// Labels must have a maximum of 111 characters, and may comprise any printable ASCII characters.
-    /// If an invalid label is used, the metric will be recorded in the special `OTHER_LABEL` label.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn get<S: AsRef<str>>(&self, label: S) -> Arc<T> {
         let label = label.as_ref();
 
-        // The handle is a unique number per metric.
-        // The label identifies the submetric.
+        
+        
         let id = format!("{}/{}", self.submetric.meta().base_identifier(), label);
 
         let mut map = self.label_map.lock().unwrap();
         match map.entry(id) {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                // We have 2 scenarios to consider:
-                // * Static labels. No database access needed. We just look at what is in memory.
-                // * Dynamic labels. We look up in the database all previously stored
-                //   labels in order to keep a maximum of allowed labels. This is done later
-                //   when the specific metric is actually recorded, when we are guaranteed to have
-                //   an initialized Glean object.
+                
+                
+                
+                
+                
+                
                 let metric = match self.labels {
                     Some(_) => {
                         let label = self.static_label(label);
@@ -344,17 +345,17 @@ where
         }
     }
 
-    /// **Exported for test purposes.**
-    ///
-    /// Gets the number of recorded errors for the given metric and error type.
-    ///
-    /// # Arguments
-    ///
-    /// * `error` - The type of error
-    ///
-    /// # Returns
-    ///
-    /// The number of errors reported.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         crate::block_on_dispatcher();
         crate::core::with_glean(|glean| {
@@ -371,7 +372,7 @@ where
     type Output = HashMap<String, S>;
 
     fn test_get_value(&self, ping_name: Option<String>) -> Option<HashMap<String, S>> {
-        // We get the labels from the db because our in-memory cache is not guaranteed to be complete.
+        
         crate::block_on_dispatcher();
         let labels = crate::core::with_glean(|glean| {
             let queried_ping_name = ping_name
@@ -406,12 +407,12 @@ pub fn validate_dynamic_label_sqlite(
     let mut label_count = 0;
     {
         let Ok(mut stmt) = tx.prepare(existing_labels_sql) else {
-            // If we can't fetch from the database, assume the label is ok to use
+            
             return LabelCheck::Label(label.to_string());
         };
 
         let Ok(mut rows) = stmt.query(params![base_identifier]) else {
-            // If we can't fetch from the database, assume the label is ok to use
+            
             return LabelCheck::Label(label.to_string());
         };
 
@@ -436,6 +437,12 @@ pub fn validate_dynamic_label_sqlite(
             MAX_LABEL_LENGTH
         );
         LabelCheck::Error(String::from(OTHER_LABEL), 1)
+    } else if label.contains(RECORD_SEPARATOR) {
+        log::warn!(
+            "Metric {:?}: Label cannot contain the ASCII record separator character (0x1E)",
+            base_identifier
+        );
+        LabelCheck::Error(String::from(OTHER_LABEL), 1)
     } else if label.contains(EMPTY_LABEL) {
         log::warn!(
             "Metric {:?}: label can't contain DEL (`\\x7F`)",
@@ -447,15 +454,15 @@ pub fn validate_dynamic_label_sqlite(
     }
 }
 
-/// Validates a dynamic label, changing it to `OTHER_LABEL` if it's invalid.
-///
-/// Checks the requested label against limitations, such as the label length and allowed
-/// characters.
-///
-/// # Returns
-///
-/// Returns the corrected label.
-/// The errors are logged.
+
+
+
+
+
+
+
+
+
 #[cfg(not(feature = "sqlite"))]
 pub fn validate_dynamic_label_rkv(
     glean: &Glean,
@@ -499,6 +506,13 @@ pub fn validate_dynamic_label_rkv(
             record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
         }
         true
+    } else if label.contains(RECORD_SEPARATOR) {
+        if record {
+            let msg =
+                String::from("Label cannot contain the ASCII record separator character (0x1E)");
+            record_error(glean, meta, ErrorType::InvalidLabel, msg, None);
+        }
+        true
     } else if label.contains(EMPTY_LABEL) {
         if record {
             let msg = String::from("label can't contain DEL (`\\x7F`)");
@@ -516,7 +530,7 @@ pub fn validate_dynamic_label_rkv(
     }
 }
 
-/// Combines a metric's base identifier and label
+
 #[cfg(not(feature = "sqlite"))]
 pub fn combine_base_identifier_and_label(base_identifier: &str, label: &str) -> String {
     format!("{}/{}", base_identifier, label)
