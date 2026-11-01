@@ -204,6 +204,8 @@ class WebTransport final : public nsISupports, public nsWrapperCache {
   WebTransportReliabilityMode mReliability;
   nsString mProtocol;
   RefPtr<Headers> mResponseHeaders;
+  Nullable<uint16_t> mAnticipatedConcurrentIncomingUnidirectionalStreams;
+  Nullable<uint16_t> mAnticipatedConcurrentIncomingBidirectionalStreams;
   
   
   

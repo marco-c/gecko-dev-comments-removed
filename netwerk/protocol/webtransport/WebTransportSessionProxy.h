@@ -195,6 +195,10 @@ class WebTransportSessionProxy final
       uint32_t aMaxBufferedDatagrams);
   void SetDatagramMaxAgeInternal(
       const RefPtr<WebTransportSessionBase>& aSession, double aMaxAge);
+  void SetAnticipatedConcurrentIncomingUnidirectionalStreamsInternal(
+      const RefPtr<WebTransportSessionBase>& aSession, uint16_t aValue);
+  void SetAnticipatedConcurrentIncomingBidirectionalStreamsInternal(
+      const RefPtr<WebTransportSessionBase>& aSession, uint16_t aValue);
 
   nsCOMPtr<nsIChannel> mChannel;
   uint64_t mHttpChannelID = 0;
@@ -221,6 +225,12 @@ class WebTransportSessionProxy final
       MOZ_GUARDED_BY(mMutex);
   bool mDedicatedConnection = false;  
   nsIWebTransport::HTTPVersion mHTTPVersion = nsIWebTransport::HTTPVersion::h3;
+  
+  
+  uint16_t mAnticipatedConcurrentIncomingUnidirectionalStreams
+      MOZ_GUARDED_BY(mMutex) = 0;
+  uint16_t mAnticipatedConcurrentIncomingBidirectionalStreams
+      MOZ_GUARDED_BY(mMutex) = 0;
 
   
   bool mHasCachedStats MOZ_GUARDED_BY(mMutex) = false;
