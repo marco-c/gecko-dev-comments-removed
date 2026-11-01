@@ -99,8 +99,9 @@ pub(super) fn common_change_guid(
             ":new_guid": new_guid,
         },
     )?;
-    
-    assert_eq!(nrows, 1);
+    if nrows == 0 {
+        return Err(Error::NoSuchRecord(old_guid.to_string()));
+    }
 
     
     conn.execute(

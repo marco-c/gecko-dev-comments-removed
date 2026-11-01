@@ -112,7 +112,7 @@ pub struct JSONEngineUrl {
 
 #[derive(Debug, uniffi::Record, PartialEq, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct JSONEngineUrls {
+pub struct JSONEngineUrls {
     
     pub search: Option<JSONEngineUrl>,
 

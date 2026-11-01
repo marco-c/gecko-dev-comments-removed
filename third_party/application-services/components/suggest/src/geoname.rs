@@ -91,27 +91,27 @@ pub struct Geoname {
 #[derive(Clone, Debug, Eq, PartialEq, uniffi::Record)]
 pub struct GeonameAlternates {
     
-    geoname: AlternateNames,
+    pub geoname: AlternateNames,
     
     
-    country: Option<AlternateNames>,
+    pub country: Option<AlternateNames>,
     
     
     
-    admin_divisions: HashMap<u8, AlternateNames>,
+    pub admin_divisions: HashMap<u8, AlternateNames>,
 }
 
 
 #[derive(Clone, Debug, Eq, PartialEq, uniffi::Record)]
 pub struct AlternateNames {
     
-    primary: String,
+    pub primary: String,
     
     
     
-    localized: Option<String>,
+    pub localized: Option<String>,
     
-    abbreviation: Option<String>,
+    pub abbreviation: Option<String>,
 }
 
 impl Geoname {

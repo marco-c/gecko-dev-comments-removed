@@ -14,7 +14,7 @@ use sql_support::ConnExt;
 
 use super::db::{Pragma, PragmaGuard};
 
-pub const VERSION: u32 = 20;
+pub const VERSION: u32 = 21;
 
 
 const CREATE_SHARED_SCHEMA_SQL: &str = include_str!("../../sql/create_shared_schema.sql");
@@ -37,6 +37,11 @@ lazy_static::lazy_static! {
         )
     };
 }
+
+
+
+const CREATE_SHARED_SCHEMA_V20_SQL: &str =
+    include_str!("../../sql/legacy/create_shared_schema_v20.sql");
 
 
 pub(crate) static MOZ_META_KEY_ORIGIN_FRECENCY_COUNT: &str = "origin_frecency_count";
@@ -145,7 +150,7 @@ pub fn upgrade_from(db: &Connection, from: u32) -> rusqlite::Result<()> {
 
     
 
-    migration(db, from, 2, &[CREATE_SHARED_SCHEMA_SQL], || Ok(()))?;
+    migration(db, from, 2, &[CREATE_SHARED_SCHEMA_V20_SQL], || Ok(()))?;
     migration(
         db,
         from,
@@ -153,13 +158,13 @@ pub fn upgrade_from(db: &Connection, from: u32) -> rusqlite::Result<()> {
         &[
             
             "DROP TABLE moz_bookmarks",
-            CREATE_SHARED_SCHEMA_SQL,
+            CREATE_SHARED_SCHEMA_V20_SQL,
         ],
         || create_bookmark_roots(db.conn()),
     )?;
-    migration(db, from, 4, &[CREATE_SHARED_SCHEMA_SQL], || Ok(()))?;
-    migration(db, from, 5, &[CREATE_SHARED_SCHEMA_SQL], || Ok(()))?; 
-    migration(db, from, 6, &[CREATE_SHARED_SCHEMA_SQL], || Ok(()))?; 
+    migration(db, from, 4, &[CREATE_SHARED_SCHEMA_V20_SQL], || Ok(()))?;
+    migration(db, from, 5, &[CREATE_SHARED_SCHEMA_V20_SQL], || Ok(()))?; 
+    migration(db, from, 6, &[CREATE_SHARED_SCHEMA_V20_SQL], || Ok(()))?; 
     migration(
         db,
         from,
@@ -170,7 +175,7 @@ pub fn upgrade_from(db: &Connection, from: u32) -> rusqlite::Result<()> {
             &format!("DELETE FROM moz_meta WHERE key = '{}'", LAST_SYNC_META_KEY),
             "DROP TABLE moz_bookmarks_synced",
             "DROP TABLE moz_bookmarks_synced_structure",
-            CREATE_SHARED_SCHEMA_SQL,
+            CREATE_SHARED_SCHEMA_V20_SQL,
         ],
         || Ok(()),
     )?;
@@ -252,7 +257,7 @@ pub fn upgrade_from(db: &Connection, from: u32) -> rusqlite::Result<()> {
         ],
         || Ok(()),
     )?;
-    migration(db, from, 13, &[CREATE_SHARED_SCHEMA_SQL], || Ok(()))?; 
+    migration(db, from, 13, &[CREATE_SHARED_SCHEMA_V20_SQL], || Ok(()))?; 
     migration(
         db,
         from,
@@ -260,7 +265,7 @@ pub fn upgrade_from(db: &Connection, from: u32) -> rusqlite::Result<()> {
         &[
             
             "DROP TABLE moz_places_metadata",
-            CREATE_SHARED_SCHEMA_SQL,
+            CREATE_SHARED_SCHEMA_V20_SQL,
         ],
         || Ok(()),
     )?;
@@ -329,17 +334,61 @@ pub fn upgrade_from(db: &Connection, from: u32) -> rusqlite::Result<()> {
         18 => {
             
             
-            db.execute_batch(CREATE_SHARED_SCHEMA_SQL)?;
+            db.execute_batch(CREATE_SHARED_SCHEMA_V20_SQL)?;
             
             db.execute("ANALYZE moz_places", [])?;
         }
         19 => {
             
             
-            db.execute_batch(CREATE_SHARED_SCHEMA_SQL)?;
+            db.execute_batch(CREATE_SHARED_SCHEMA_V20_SQL)?;
             
             db.execute("ANALYZE moz_places", [])?;
             db.execute("ANALYZE moz_historyvisits", [])?;
+        }
+        20 => {
+            
+            
+            
+
+            
+            
+            
+            
+            
+            const NEW_SQL: &str = "CREATE TABLE moz_origins ( \
+                id INTEGER PRIMARY KEY, \
+                prefix TEXT NOT NULL, \
+                host TEXT NOT NULL, \
+                rev_host TEXT NOT NULL, \
+                frecency INTEGER NOT NULL, \
+                UNIQUE (host, prefix))";
+
+            let schema_version: i64 =
+                db.query_row("PRAGMA schema_version", [], |row| row.get(0))?;
+
+            {
+                let _w = PragmaGuard::new(db, Pragma::WritableSchema, true)?;
+                db.execute(
+                    "UPDATE sqlite_schema SET
+                       sql = ?
+                     WHERE type = 'table' AND name = 'moz_origins'",
+                    
+                    
+                    rusqlite::params![NEW_SQL],
+                )?;
+            }
+
+            
+            db.execute_one("PRAGMA writable_schema = RESET")?;
+            db.execute("REINDEX moz_origins", [])?;
+
+            
+            
+            db.execute_one(&format!("PRAGMA schema_version = {}", schema_version + 1))?;
+
+            
+            db.execute("ANALYZE moz_origins", [])?;
         }
         
 
@@ -1174,6 +1223,218 @@ mod tests {
     }
 
     #[test]
+    fn test_upgrade_schema_20_21() {
+        use std::sync::Arc;
+        let db_file = MigratedDatabaseFile::new(PlacesInitializer::new_for_test(), CREATE_V17_DB);
+        db_file.upgrade_to(20);
+
+        
+        
+        let conn = db_file.open();
+        conn.execute_batch(
+            "INSERT INTO moz_origins(id, prefix, host, rev_host, frecency)
+             VALUES (1, 'https://', 'example.com', 'moc.elpmaxe.', 100),
+                    (2, 'http://', 'example.com', 'moc.elpmaxe.', 50),
+                    (3, 'https://', 'mozilla.org', 'gro.allizom.', 75);
+
+             UPDATE moz_places SET origin_id = 1 WHERE id = 1;
+
+             INSERT INTO moz_places(id, guid, url, origin_id, frecency)
+             VALUES (2, 'page_guid__2', 'http://example.com/', 2, -1),
+                    (3, 'page_guid__3', 'https://mozilla.org/', 3, -1),
+                    (4, 'page_guid__4', 'https://unvisited.com/', NULL, -1);",
+        )
+        .expect("should seed origins and places");
+
+        fn unique_index_columns(conn: &Connection) -> Vec<String> {
+            let indexes = conn
+                .query_rows_and_then(
+                    "SELECT name FROM pragma_index_list('moz_origins') WHERE origin = 'u'",
+                    [],
+                    |row| row.get::<_, String>(0),
+                )
+                .expect("should query the unique indexes");
+            assert_eq!(
+                indexes.len(),
+                1,
+                "moz_origins should have a single unique index"
+            );
+            conn.query_rows_and_then(
+                "SELECT name FROM pragma_index_info(?) ORDER BY seqno",
+                (indexes[0].as_str(),),
+                |row| row.get::<_, String>(0),
+            )
+            .expect("should query the unique index columns")
+        }
+
+        
+        
+        
+        assert_eq!(unique_index_columns(&conn), &["prefix", "host"]);
+        drop(conn);
+
+        
+        
+        let db = PlacesDb::open(
+            &db_file.path,
+            ConnectionType::ReadWrite,
+            0,
+            Arc::new(parking_lot::Mutex::new(())),
+        )
+        .expect("should upgrade");
+
+        
+        assert_eq!(unique_index_columns(&db), &["host", "prefix"]);
+
+        
+        
+        #[derive(Eq, PartialEq, Debug)]
+        struct OriginRow {
+            id: i64,
+            prefix: String,
+            host: String,
+            rev_host: String,
+            frecency: i64,
+        }
+        let origins = db
+            .query_rows_and_then(
+                "SELECT id, prefix, host, rev_host, frecency FROM moz_origins ORDER BY id",
+                [],
+                |row| -> rusqlite::Result<_> {
+                    Ok(OriginRow {
+                        id: row.get("id")?,
+                        prefix: row.get("prefix")?,
+                        host: row.get("host")?,
+                        rev_host: row.get("rev_host")?,
+                        frecency: row.get("frecency")?,
+                    })
+                },
+            )
+            .expect("should query all origins");
+        assert_eq!(
+            origins,
+            &[
+                OriginRow {
+                    id: 1,
+                    prefix: "https://".into(),
+                    host: "example.com".into(),
+                    rev_host: "moc.elpmaxe.".into(),
+                    frecency: 100,
+                },
+                OriginRow {
+                    id: 2,
+                    prefix: "http://".into(),
+                    host: "example.com".into(),
+                    rev_host: "moc.elpmaxe.".into(),
+                    frecency: 50,
+                },
+                OriginRow {
+                    id: 3,
+                    prefix: "https://".into(),
+                    host: "mozilla.org".into(),
+                    rev_host: "gro.allizom.".into(),
+                    frecency: 75,
+                },
+            ]
+        );
+
+        
+        let pages = db
+            .query_rows_and_then(
+                "SELECT id, origin_id FROM moz_places ORDER BY id",
+                [],
+                |row| -> rusqlite::Result<_> {
+                    Ok((row.get::<_, i64>(0)?, row.get::<_, Option<i64>>(1)?))
+                },
+            )
+            .expect("should query all places");
+        assert_eq!(
+            pages,
+            &[(1, Some(1)), (2, Some(2)), (3, Some(3)), (4, None)]
+        );
+
+        
+        assert!(db
+            .exists(
+                "SELECT 1 FROM sqlite_schema WHERE type = 'index' AND name = 'hostindex'",
+                []
+            )
+            .expect("should look for hostindex"));
+
+        
+        assert!(!db
+            .exists(
+                "SELECT 1 FROM sqlite_schema WHERE name = 'moz_origins_new'",
+                []
+            )
+            .expect("should look for moz_origins_new"));
+
+        
+        let foreign_key = db
+            .query_row(
+                r#"SELECT "table", "from", "to" FROM pragma_foreign_key_list('moz_places')"#,
+                [],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                    ))
+                },
+            )
+            .expect("should query the foreign key");
+        assert_eq!(
+            foreign_key,
+            ("moz_origins".into(), "origin_id".into(), "id".into())
+        );
+
+        let integrity_ok = db
+            .query_row("PRAGMA integrity_check", [], |row| {
+                Ok(row.get::<_, String>(0)? == "ok")
+            })
+            .expect("should perform integrity check");
+        assert!(integrity_ok);
+
+        let foreign_keys_ok = db
+            .prepare("PRAGMA foreign_key_check")
+            .and_then(|mut statement| Ok(statement.query([])?.next()?.is_none()))
+            .expect("should perform foreign key check");
+        assert!(foreign_keys_ok);
+
+        
+        
+        db.execute(
+            "INSERT INTO moz_places(guid, url, url_hash)
+             VALUES ('page_guid__5', 'https://example.com/new-page',
+                     hash('https://example.com/new-page')),
+                    ('page_guid__6', 'https://example.org/',
+                     hash('https://example.org/'))",
+            [],
+        )
+        .expect("should insert pages");
+        
+        crate::storage::delete_pending_temp_tables(&db).expect("should update origins");
+
+        
+        assert_eq!(
+            db.conn_ext_query_one::<i64>(
+                "SELECT origin_id FROM moz_places WHERE guid = 'page_guid__5'"
+            )
+            .expect("should query the known origin"),
+            1
+        );
+        
+        assert_eq!(
+            db.conn_ext_query_one::<i64>(
+                "SELECT COUNT(*) FROM moz_origins
+                 WHERE prefix = 'https://' AND host = 'example.org'"
+            )
+            .expect("should query the new origin"),
+            1
+        );
+    }
+
+    #[test]
     fn test_all_upgrades() {
         
         
@@ -1181,6 +1442,7 @@ mod tests {
 
         let db_file = MigratedDatabaseFile::new(PlacesInitializer::new_for_test(), CREATE_V15_DB);
         db_file.run_all_upgrades();
+        db_file.assert_schema_matches_new_database();
         let upgraded_db = db_file.open();
 
         assert_eq!(
