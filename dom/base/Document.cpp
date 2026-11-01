@@ -22046,7 +22046,8 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   aError = nsContentUtils::ParseDocumentHTML(
       *compliantString, doc,
        false,
-      sanitizeWhileParsing ? sanitizer.get() : nullptr,  false);
+      sanitizeWhileParsing ? sanitizer.get() : nullptr,
+      nsContentUtils::SanitizerMode::Unsafe);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -22096,7 +22097,8 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
   
   aError = nsContentUtils::ParseDocumentHTML(
       aHTML, doc,  false,
-      sanitizeWhileParsing ? sanitizer.get() : nullptr,  true);
+      sanitizeWhileParsing ? sanitizer.get() : nullptr,
+      nsContentUtils::SanitizerMode::Safe);
   if (aError.Failed()) {
     return nullptr;
   }

@@ -2009,6 +2009,8 @@ class nsContentUtils {
   
   static const int32_t kParseFragmentNoSanitization = -2;
 
+  enum class SanitizerMode { Safe, Unsafe };
+
   
 
 
@@ -2049,7 +2051,7 @@ class nsContentUtils {
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
           aCustomElementRegistry,
       mozilla::dom::Sanitizer* aSanitizer = nullptr,
-      bool aSanitizerSafe = false);
+      SanitizerMode aSanitizerMode = SanitizerMode::Unsafe);
 
   
 
@@ -2100,7 +2102,7 @@ class nsContentUtils {
       const nsAString& aSourceBuffer, Document* aTargetDocument,
       bool aScriptingEnabledForNoscriptParsing,
       mozilla::dom::Sanitizer* aSanitizer = nullptr,
-      bool aSanitizerSafe = false);
+      SanitizerMode aSanitizerMode = SanitizerMode::Unsafe);
 
   
 

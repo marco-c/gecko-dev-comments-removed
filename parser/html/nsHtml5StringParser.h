@@ -6,6 +6,7 @@
 #define nsHtml5StringParser_h
 
 #include "mozilla/UniquePtr.h"
+#include "nsContentUtils.h"
 #include "nsHtml5AtomTable.h"
 #include "nsParserBase.h"
 
@@ -61,7 +62,8 @@ class nsHtml5StringParser : public nsParserBase {
       mozilla::Maybe<RefPtr<mozilla::dom::CustomElementRegistry>>
           aCustomElementRegistry,
       mozilla::dom::Sanitizer* aSanitizer = nullptr,
-      bool aSanitizerSafe = false);
+      nsContentUtils::SanitizerMode aSanitizerMode =
+          nsContentUtils::SanitizerMode::Unsafe);
 
   
 
@@ -72,7 +74,7 @@ class nsHtml5StringParser : public nsParserBase {
                          mozilla::dom::Document* aTargetDoc,
                          bool aScriptingEnabledForNoscriptParsing,
                          mozilla::dom::Sanitizer* aSanitizer,
-                         bool aSanitizerSafe);
+                         nsContentUtils::SanitizerMode aSanitizerMode);
 
  private:
   virtual ~nsHtml5StringParser();
