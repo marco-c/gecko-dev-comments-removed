@@ -44,7 +44,9 @@ uint32_t PageloadEventData::sPageLoadEventCounter = 0;
 
 
 
-#ifdef EARLY_BETA_OR_EARLIER
+
+
+#if defined(NIGHTLY_BUILD) || defined(MOZ_DEV_EDITION)
 static constexpr uint64_t kNormalSamplingInterval = 1;  
 #else
 static constexpr uint64_t kNormalSamplingInterval = 3;  
