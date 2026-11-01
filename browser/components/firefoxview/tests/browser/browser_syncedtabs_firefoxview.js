@@ -68,16 +68,8 @@ add_task(async function test_unconfigured_initial_state() {
 });
 
 add_task(async function test_loading_state() {
-  const isNovaEnabled = Services.prefs.getBoolPref(
-    "browser.nova.enabled",
-    false
-  );
-  const loadingHeaderL10nId = isNovaEnabled
-    ? "firefoxview-syncedtabs-loading-header-2"
-    : "firefoxview-syncedtabs-loading-header";
-  const loadingImageUrl = isNovaEnabled
-    ? "chrome://browser/skin/sidebar/kit-tabs-devices.svg"
-    : "chrome://browser/content/firefoxview/synced-tabs-empty.svg";
+  const loadingHeaderL10nId = "firefoxview-syncedtabs-loading-header-2";
+  const loadingImageUrl = "chrome://browser/skin/sidebar/kit-tabs-devices.svg";
 
   const { SyncedTabsErrorHandler } = ChromeUtils.importESModule(
     "resource:///modules/firefox-view-synced-tabs-error-handler.sys.mjs"
@@ -187,24 +179,10 @@ add_task(async function test_signed_in() {
       "Navigated to mock support link"
     );
 
-    await openFirefoxViewTab(window);
-    
-    Services.fog.testResetFOG();
     
     
-    if (!Services.prefs.getBoolPref("browser.nova.enabled", false)) {
-      EventUtils.synthesizeMouseAtCenter(
-        emptyState.querySelector(`moz-button[data-action="add-device"]`)
-          .buttonEl,
-        {},
-        browser.contentWindow
-      );
-      Assert.equal(
-        1,
-        Glean.firefoxviewNext.fxaMobileSync.testGetValue().length,
-        "Expected one fxa_continue event."
-      );
-    }
+    
+
     
     while (gBrowser.tabs.length > 1) {
       await BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
