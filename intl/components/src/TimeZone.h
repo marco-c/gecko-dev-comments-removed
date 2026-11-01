@@ -77,6 +77,29 @@ class TimeZone final {
   
 
 
+
+
+
+
+
+
+
+
+
+
+  static Span<const char> ResolveLegacyPOSIXTimeZone(
+      Span<const char> aTimeZone);
+  static Span<const char16_t> ResolveLegacyPOSIXTimeZone(
+      Span<const char16_t> aTimeZone);
+
+  
+  
+  static Result<Maybe<Span<const char16_t>>, ICUError>
+  ResolveLegacyPOSIXTimeZone(Maybe<Span<const char16_t>> aTimeZoneOverride);
+
+  
+
+
   Result<int32_t, ICUError> GetRawOffsetMs();
 
   
