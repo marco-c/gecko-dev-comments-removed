@@ -940,9 +940,13 @@ void CompositorBridgeParent::DisconnectApzcTreeManager(
     return;
   }
 
+  
+  
+  
   CompositorBridgeParent::LayerTreeState& state = iter->second;
-  MOZ_RELEASE_ASSERT(state.mApzcTreeManagerParent == aTreeManager);
-  state.mApzcTreeManagerParent = nullptr;
+  if (state.mApzcTreeManagerParent == aTreeManager) {
+    state.mApzcTreeManagerParent = nullptr;
+  }
 }
 
 mozilla::ipc::IPCResult CompositorBridgeParent::RecvNotifyChildCreated(
