@@ -795,7 +795,6 @@ struct MemberInitializers {
   static constexpr uint32_t MaxInitializers = BitMask(NumBits);
 
   
-  
   static constexpr size_t MaxInlinedFields = 8;
 
 #ifdef DEBUG

@@ -11120,7 +11120,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
           
           return false;
         }
-        if (!emit1(JSOp::Zero)) {
+        if (!emitNumberOp(field.initialValue)) {
           
           return false;
         }
@@ -11129,7 +11129,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
           return false;
         }
       } else {
-        if (!emit1(JSOp::Zero)) {
+        if (!emitNumberOp(field.initialValue)) {
           
           return false;
         }
