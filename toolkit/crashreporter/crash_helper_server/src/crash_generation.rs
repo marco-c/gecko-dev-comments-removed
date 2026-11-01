@@ -150,6 +150,11 @@ impl CrashGenerator {
         }
     }
 
+    
+    
+    
+    
+    
     fn finalize_crash_report(
         &self,
         process: RawProcessHandle,
@@ -206,26 +211,32 @@ impl CrashGenerator {
     }
 
     fn crash_time_annotations(&self) -> Vec<CAnnotation> {
-        
-        let crash_event_id = uuid::Uuid::new_v4()
-            .as_hyphenated()
-            .encode_lower(&mut uuid::Uuid::encode_buffer())
-            .to_string();
-
-        
-        
-        
-        let crash_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or(Duration::from_secs(0u64))
-            .as_secs()
-            .to_string();
+        let crash_event_id = new_unique_crash_event_id();
+        let crash_time = crash_time();
 
         vec![
             make_annotation(CrashAnnotation::CrashEventID, &crash_event_id),
             make_annotation(CrashAnnotation::CrashTime, &crash_time),
         ]
     }
+}
+
+fn new_unique_crash_event_id() -> String {
+    uuid::Uuid::new_v4()
+        .as_hyphenated()
+        .encode_lower(&mut uuid::Uuid::encode_buffer())
+        .to_string()
+}
+
+fn crash_time() -> String {
+    
+    
+    
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or(Duration::from_secs(0u64))
+        .as_secs()
+        .to_string()
 }
 
 
