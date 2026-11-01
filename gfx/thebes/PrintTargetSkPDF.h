@@ -7,21 +7,16 @@
 
 #include "PrintTarget.h"
 #include "mozilla/UniquePtr.h"
-#include "nsCOMPtr.h"
-#include "skia/include/core/SkCanvas.h"
-#include "skia/include/core/SkStream.h"
-#include "skia/include/docs/SkPDFDocument.h"
 
-namespace mozilla {
-namespace gfx {
+namespace mozilla::gfx {
+
+class GkSkWStream;
 
 
 
 
 class PrintTargetSkPDF final : public PrintTarget {
  public:
-  static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
-      UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints);
   static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
       nsIOutputStream* aStream, const IntSize& aSizeInPoints);
 
@@ -30,7 +25,7 @@ class PrintTargetSkPDF final : public PrintTarget {
                          uint64_t aInnerWindowId, int32_t aStartPage,
                          int32_t aEndPage) override;
   nsresult EndPrinting() override;
-  void Finish() override;
+  nsresult AbortPrinting() override;
 
   nsresult BeginPage(const IntSize& aSizeInPoints) override;
   nsresult EndPage() override;
@@ -41,29 +36,18 @@ class PrintTargetSkPDF final : public PrintTarget {
   already_AddRefed<DrawTarget> GetReferenceDrawTarget() final;
 
  private:
-  PrintTargetSkPDF(const IntSize& aSize, UniquePtr<SkWStream> aStream);
+  PrintTargetSkPDF(const IntSize& aSize, UniquePtr<GkSkWStream> aStream);
   virtual ~PrintTargetSkPDF();
 
+  struct SkPDFDocState;
+  UniquePtr<SkPDFDocState> mState;
   
-  
-  sk_sp<SkDocument> mPDFDoc;
+  UniquePtr<SkPDFDocState> mRefState;
 
   
-  UniquePtr<SkWStream> mOStream;
-
-  
-  
-  SkCanvas* mPageCanvas;
   RefPtr<DrawTarget> mPageDT;
-
-  
-  sk_sp<SkDocument> mRefPDFDoc;
-  
-  SkCanvas* mRefCanvas;
-  SkDynamicMemoryWStream mRefOStream;
 };
 
-}  
 }  
 
 #endif 
