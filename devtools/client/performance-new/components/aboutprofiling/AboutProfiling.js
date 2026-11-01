@@ -15,7 +15,6 @@ const {
   createFactory,
   createElement: h,
   Fragment,
-  createRef,
 } = require("resource://devtools/client/shared/vendor/react.mjs");
 const {
   connect,
@@ -43,6 +42,8 @@ const {
 
 const ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF =
   "devtools.performance.aboutprofiling.has-developer-options";
+
+const MORE_ACTIONS_MENU_ID = "perf-more-actions-menu";
 
 
 
@@ -86,8 +87,6 @@ class MoreActionsButtonImpl extends PureComponent {
     ),
   };
 
-  _menuRef = createRef();
-
   componentDidMount() {
     Services.prefs.addObserver(
       ABOUTPROFILING_HAS_DEVELOPER_OPTIONS_PREF,
@@ -109,22 +108,6 @@ class MoreActionsButtonImpl extends PureComponent {
         false
       ),
     });
-  };
-
-  
-
-
-
-
-
-
-
-  handleClickOrMousedown = e => {
-    
-    
-    if (this._menuRef.current && (e.type == "mousedown" || e.detail === 0)) {
-      this._menuRef.current.toggle(e.nativeEvent, e.currentTarget);
-    }
   };
 
   
@@ -181,15 +164,12 @@ class MoreActionsButtonImpl extends PureComponent {
         },
         h("moz-button", {
           iconsrc: "chrome://global/skin/icons/more.svg",
-          "aria-expanded": "false",
-          "aria-haspopup": "menu",
-          onClick: this.handleClickOrMousedown,
-          onMouseDown: this.handleClickOrMousedown,
+          menuid: MORE_ACTIONS_MENU_ID,
         })
       ),
       h(
         "panel-list",
-        { ref: this._menuRef },
+        { id: MORE_ACTIONS_MENU_ID },
         Localized(
           { id: "perftools-menu-more-actions-restart-with-profiling" },
           h(
