@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -142,4 +141,31 @@ namespace FuzzingFunctions {
    * Spin the event loop for aMilliseconds.
    */
   undefined spinEventLoopFor(unsigned long aMilliseconds);
+
+  /**
+   * Write aMessage to stderr, prefixed with the pid, the Gecko process type
+   * and, in a content process, the remote type of the calling process, e.g.
+   *
+   *   FuzzingFunctions.dump [pid=12345 process=tab remoteType=privilegedabout] msg
+   *
+   * When the "FuzzingFunctions" MOZ_LOG module is enabled the line goes
+   * through MOZ_LOG instead, so MOZ_LOG_FILE routing applies.
+   *
+   * window.dump() writes to stdout and console.log() only reaches the log
+   * when the "console" module is enabled; neither says which process the
+   * line came from. This lets a harness attribute output to a process
+   * without joining pids against the ChildProcessLifecycle log.
+   */
+  undefined dump(DOMString aMessage);
+
+  /**
+   * The OS process id of the calling process, as logged by dump().
+   */
+  readonly attribute long procId;
+
+  /**
+   * The remote type of the calling process, as logged by dump(), or null
+   * when called outside a content process.
+   */
+  readonly attribute DOMString? remoteType;
 };
