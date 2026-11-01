@@ -251,7 +251,7 @@ add_task(async function makeResult_searchMode_default() {
     isPrivate: false,
     searchMode: { engineName: gEngine.name },
   });
-  Assert.ok(await makeResultForContext(context), "Returns a result");
+  Assert.equal(await makeResultForContext(context), null);
 });
 
 

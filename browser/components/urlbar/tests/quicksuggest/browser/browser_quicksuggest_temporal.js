@@ -289,23 +289,44 @@ add_task(async function privateWindow() {
 });
 
 
+
 add_task(async function searchMode() {
-  gFeature._reset();
-  await openZeroPrefix();
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  await UrlbarTestUtils.activateSearchModeSwitcherItem(
-    window,
-    `panel-item[data-engine-name="${OTHER_ENGINE_NAME}"]`
-  );
-  await searchPromise;
-  Assert.equal(
-    gURLBar.searchMode?.engineName,
-    OTHER_ENGINE_NAME,
-    "In search mode"
-  );
-  Assert.deepEqual(await getTemporalQueries(), [], "No rows in search mode");
-  await UrlbarTestUtils.exitSearchMode(window);
-  await closeView();
+  for (let historyInSearchMode of [false, true]) {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        [
+          "browser.urlbar.unifiedSearchButton.historyInSearchMode",
+          historyInSearchMode,
+        ],
+      ],
+    });
+    for (let engineName of [gEngine.name, OTHER_ENGINE_NAME]) {
+      info(`historyInSearchMode=${historyInSearchMode} engine=${engineName}`);
+      gFeature._reset();
+      await openZeroPrefix();
+      let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+      await UrlbarTestUtils.activateSearchModeSwitcherItem(
+        window,
+        `panel-item[data-engine-name="${engineName}"]`
+      );
+      await searchPromise;
+      Assert.equal(
+        gURLBar.searchMode?.engineName,
+        engineName,
+        "In search mode"
+      );
+
+      await openZeroPrefix();
+      Assert.deepEqual(
+        await getTemporalQueries(),
+        [],
+        "No rows in search mode"
+      );
+      await UrlbarTestUtils.exitSearchMode(window);
+      await closeView();
+    }
+    await SpecialPowers.popPrefEnv();
+  }
 });
 
 
