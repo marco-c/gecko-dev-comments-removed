@@ -142,6 +142,37 @@ nsWindow::TaskbarConcealer::GetWindowState(HWND aWnd) {
                   pWin->mFrameState->GetSizeMode() == nsSizeMode_Fullscreen});
 }
 
+nsTArray<HWND> nsWindow::TaskbarConcealer::GetWindowsHidingTaskbar(
+    const nsTArray<WindowInfo>& aWindows) {
+  nsTArray<HWND> hidingWindows;
+  nsTHashSet<HMONITOR> decidedMonitors;
+
+  for (const auto& window : aWindows) {
+    if (decidedMonitors.Contains(window.monitor)) {
+      continue;
+    }
+
+    
+    
+    if (window.isAlwaysOnTop && !window.isGkFullscreen) {
+      MOZ_LOG(sTaskbarConcealerLog, LogLevel::Debug,
+              ("on monitor %p, skipping always-on-top HWND %p", window.monitor,
+               window.hwnd));
+      continue;
+    }
+
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
+            ("on monitor %p, uppermost relevant HWND is %p", window.monitor,
+             window.hwnd));
+    decidedMonitors.Insert(window.monitor);
+    if (window.isGkFullscreen) {
+      hidingWindows.AppendElement(window.hwnd);
+    }
+  }
+
+  return hidingWindows;
+}
+
 
 
 
@@ -178,14 +209,8 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
 
   
   
-  struct Item {
-    HWND hwnd;
-    HMONITOR monitor;
-    bool isGkFullscreen;
-    bool isAlwaysOnTop;
-  };
-  const nsTArray<Item> windows = [&] {
-    nsTArray<Item> windows;
+  const nsTArray<WindowInfo> windows = [&] {
+    nsTArray<WindowInfo> windows;
 
     
     
@@ -213,76 +238,32 @@ void nsWindow::TaskbarConcealer::UpdateAllState(
       }
       const WindowState& state = *maybeState;
 
-      windows.AppendElement(
-          Item{.hwnd = hwnd,
-               .monitor = state.monitor,
-               .isGkFullscreen = state.isGkFullscreen,
-               .isAlwaysOnTop =
-                   !!(::GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST)});
+      windows.AppendElement(WindowInfo{
+          .hwnd = hwnd,
+          .monitor = state.monitor,
+          .isGkFullscreen = state.isGkFullscreen,
+          .isAlwaysOnTop =
+              !!(::GetWindowLongPtrW(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST)});
     });
 
     return windows;
   }();
 
   
-  const nsTHashSet<HMONITOR> relevantMonitors = [&]() {
-    nsTHashSet<HMONITOR> relevantMonitors;
-    for (const Item& item : windows) {
-      relevantMonitors.Insert(item.monitor);
-    }
-    return relevantMonitors;
-  }();
-
-  
   
   sKnownWindows.Clear();
-  for (const Item& item : windows) {
-    MOZ_LOG(
-        sTaskbarConcealerLog, LogLevel::Debug,
-        ("Found relevant window %p on monitor %p", item.hwnd, item.monitor));
-    sKnownWindows.InsertOrUpdate(item.hwnd, item.monitor);
+  for (const auto& window : windows) {
+    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Debug,
+            ("Found relevant window %p on monitor %p", window.hwnd,
+             window.monitor));
+    sKnownWindows.InsertOrUpdate(window.hwnd, window.monitor);
   }
 
-  
-  
-  
-  const auto FindUppermostWindowOn = [&windows](HMONITOR aMonitor) -> HWND {
-    for (const Item& item : windows) {
-      if (item.monitor != aMonitor) {
-        continue;
-      }
-      if (item.isAlwaysOnTop && !item.isGkFullscreen) {
-        MOZ_LOG(sTaskbarConcealerLog, LogLevel::Debug,
-                ("on monitor %p, skipping always-on-top HWND %p", aMonitor,
-                 item.hwnd));
-        continue;
-      }
-      MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
-              ("on monitor %p, uppermost relevant HWND is %p", aMonitor,
-               item.hwnd));
-      return item.hwnd;
-    }
-
-    
-    
-    
-    MOZ_LOG(sTaskbarConcealerLog, LogLevel::Info,
-            ("on monitor %p, no relevant windows were found", aMonitor));
-    return nullptr;
-  };
+  const nsTArray<HWND> hidingWindows = GetWindowsHidingTaskbar(windows);
 
   TaskbarConcealerImpl impl;
-
-  
-  
-  for (HMONITOR monitor : relevantMonitors) {
-    const HWND topmost = FindUppermostWindowOn(monitor);
-
-    for (const Item& item : windows) {
-      if (item.monitor != monitor) continue;
-      impl.MarkAsHidingTaskbar(item.hwnd,
-                               item.isGkFullscreen && item.hwnd == topmost);
-    }
+  for (const auto& window : windows) {
+    impl.MarkAsHidingTaskbar(window.hwnd, hidingWindows.Contains(window.hwnd));
   }
 }  
 

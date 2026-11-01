@@ -507,6 +507,7 @@ class nsWindow final : public nsIWidget {
 
   
   class TaskbarConcealer;
+  friend class TaskbarConcealerTest;
 
   
   
