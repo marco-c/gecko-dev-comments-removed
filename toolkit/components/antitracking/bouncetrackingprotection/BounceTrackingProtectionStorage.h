@@ -6,7 +6,8 @@
 
 #include "mozIStorageFunction.h"
 #include "mozilla/Logging.h"
-#include "mozilla/Monitor.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/ThreadSafety.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/FlippedOnce.h"
@@ -98,6 +99,11 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   
   [[nodiscard]] nsresult Clear();
 
+  
+  
+  
+  RefPtr<GenericPromise> TestFlush();
+
  private:
   [[nodiscard]] nsresult InitInternal();
 
@@ -113,7 +119,8 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
 
   
   
-  [[nodiscard]] nsresult WaitForInitialization();
+  
+  [[nodiscard]] nsresult CheckDBAvailable();
 
   
   
@@ -190,14 +197,11 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
       const nsTArray<PendingUpdate>& aUpdates);
 
   
-  
-  
-  Monitor mMonitor;
+  Mutex mMutex;
 
-  FlippedOnce<false> mInitialized MOZ_GUARDED_BY(mMonitor);
-  FlippedOnce<false> mErrored MOZ_GUARDED_BY(mMonitor);
-  FlippedOnce<false> mShuttingDown MOZ_GUARDED_BY(mMonitor);
-  uint32_t mPendingWrites MOZ_GUARDED_BY(mMonitor);
+  FlippedOnce<false> mErrored MOZ_GUARDED_BY(mMutex);
+  FlippedOnce<false> mShuttingDown MOZ_GUARDED_BY(mMutex);
+  uint32_t mPendingWrites MOZ_GUARDED_BY(mMutex);
 
   
   
