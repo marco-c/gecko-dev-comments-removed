@@ -206,10 +206,6 @@ this.browserAction = class extends ExtensionAPIPersistent {
 
       
       
-      localized: false,
-
-      
-      
       onBuild: document => {
         let button = document.createXULElement("toolbarbutton");
         button.setAttribute("id", this.buttonViewId);
