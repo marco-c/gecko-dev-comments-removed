@@ -1503,14 +1503,12 @@ void WorkerPrivate::StorePolicyContainerArgsOnClient() {
 
   mozilla::ipc::PolicyContainerArgs policyContainerArgs;
 
-  if (mLoadInfo.mCSPContext) {
-    policyContainerArgs.csp() = Some(mLoadInfo.mCSPContext->CSPInfo());
+  if (mLoadInfo.mPolicyContainerArgs) {
+    policyContainerArgs = *mLoadInfo.mPolicyContainerArgs;
   }
 
   policyContainerArgs.ipAddressSpace() =
       static_cast<nsILoadInfo::IPAddressSpace>(mLoadInfo.mIPAddressSpace);
-  
-  
 
   clientSource.SetPolicyContainerArgs(policyContainerArgs);
 }
