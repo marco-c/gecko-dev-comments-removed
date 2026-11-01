@@ -237,13 +237,13 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         ABORT(r);
 
       
-      if ((r=nr_ice_component_create_stun_server_ctx(component,isock,&addrs[i].addr,lufrag,pwd)))
-        ABORT(r);
-
-      
 
 
       STAILQ_INSERT_TAIL(&component->sockets,isock,entry);
+
+      
+      if ((r=nr_ice_component_create_stun_server_ctx(component,isock,&addrs[i].addr,lufrag,pwd)))
+        ABORT(r);
 
       if (!(component->stream->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY)) {
         
@@ -602,15 +602,14 @@ static int nr_ice_component_initialize_tcp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         if((r=nr_ice_socket_create(ctx, component, buffered_sock, NR_ICE_SOCKET_TYPE_STREAM_TURN, &turn_isock)))
           ABORT(r);
 
-
-        
-        if ((r=nr_ice_component_create_stun_server_ctx(component,turn_isock,&addr,lufrag,pwd)))
-          ABORT(r);
-
         
 
 
         STAILQ_INSERT_TAIL(&component->sockets,turn_isock,entry);
+
+        
+        if ((r=nr_ice_component_create_stun_server_ctx(component,turn_isock,&addr,lufrag,pwd)))
+          ABORT(r);
 
         
         if(r=nr_ice_candidate_create(ctx,component,
