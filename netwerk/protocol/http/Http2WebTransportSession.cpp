@@ -74,7 +74,18 @@ void Http2WebTransportSessionImpl::CloseSession(uint32_t aStatus,
 
 uint64_t Http2WebTransportSessionImpl::GetStreamId() const { return mStreamId; }
 
-void Http2WebTransportSessionImpl::GetMaxDatagramSize() {}
+void Http2WebTransportSessionImpl::GetMaxDatagramSize() {
+  
+  
+  
+  
+  
+  
+  
+  if (RefPtr<WebTransportSessionEventListener> listener = GetListener()) {
+    listener->OnMaxDatagramSize(1024);
+  }
+}
 
 nsresult Http2WebTransportSessionImpl::ExportKeyingMaterial(
     const nsTArray<uint8_t>& aLabel, const nsTArray<uint8_t>& aContext,
