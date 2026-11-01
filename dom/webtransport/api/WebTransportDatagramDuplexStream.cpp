@@ -140,21 +140,19 @@ WebTransportDatagramDuplexStream::CreateWritable(
 
   
   
-  auto state = mWebTransport->mState;
-  if (state == WebTransport::WebTransportState::CLOSED ||
-      state == WebTransport::WebTransportState::FAILED) {
-    aRv.ThrowInvalidStateError("WebTransport closed or failed");
+  
+  if (aOptions.mSendGroup &&
+      aOptions.mSendGroup->GetTransport() != mWebTransport) {
+    aRv.ThrowTypeError("sendGroup does not belong to the same WebTransport");
     return nullptr;
   }
 
   
-
   
-  
-  if (aOptions.mSendGroup &&
-      aOptions.mSendGroup->GetTransport() != mWebTransport) {
-    aRv.ThrowInvalidStateError(
-        "sendGroup does not belong to the same WebTransport");
+  auto state = mWebTransport->mState;
+  if (state == WebTransport::WebTransportState::CLOSED ||
+      state == WebTransport::WebTransportState::FAILED) {
+    aRv.ThrowInvalidStateError("WebTransport closed or failed");
     return nullptr;
   }
 
