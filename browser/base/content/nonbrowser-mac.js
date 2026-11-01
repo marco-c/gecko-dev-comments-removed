@@ -114,6 +114,13 @@ var NonBrowserWindow = {
       }
     }
 
+    
+    
+    
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
+    ).CustomKeys.initWindow(window);
+
     this.delayedStartupTimeoutId = setTimeout(() => this.delayedStartup(), 0);
   },
 
@@ -135,6 +142,10 @@ var NonBrowserWindow = {
     if (window.location.href == this.MAC_HIDDEN_WINDOW) {
       this.dockSupport.dockMenu = null;
     }
+
+    ChromeUtils.importESModule(
+      "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
+    ).CustomKeys.uninitWindow(window);
 
     
     
