@@ -8352,6 +8352,23 @@ static NSMutableSet* gSwizzledFrameViewClasses = nil;
 
 
 
+- (void)sendEvent:(NSEvent*)anEvent {
+  if (anEvent.type == NSEventTypeLeftMouseDown &&
+      (self.styleMask & NSWindowStyleMaskNonactivatingPanel) &&
+      NSWorkspace.sharedWorkspace.frontmostApplication.processIdentifier !=
+          getpid()) {
+    
+    
+    [self makeKeyWindow];
+    [NSApp activateIgnoringOtherApps:YES];
+  }
+  [super sendEvent:anEvent];
+}
+
+
+
+
+
 
 
 + (Class)frameViewClassForStyleMask:(NSUInteger)styleMask {
