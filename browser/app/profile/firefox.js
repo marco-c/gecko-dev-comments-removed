@@ -516,10 +516,15 @@ pref("browser.urlbar.trustPanel.featureGate", true);
 pref("browser.urlbar.trustPanel.breachAlerts.featureGate", true);
 pref("browser.urlbar.trustPanel.breachAlerts", true);
 
-
-pref("browser.urlbar.unifiedSearchButton.always", false);
-
-pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", false);
+#ifdef NIGHTLY_BUILD
+  
+  pref("browser.urlbar.unifiedSearchButton.always", true);
+  
+  pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", true);
+#else
+  pref("browser.urlbar.unifiedSearchButton.always", false);
+  pref("browser.urlbar.unifiedSearchButton.historyInSearchMode", false);
+#endif
 
 
 pref("browser.urlbar.trending.featureGate", true);
