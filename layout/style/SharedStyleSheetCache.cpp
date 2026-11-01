@@ -36,9 +36,9 @@ SharedStyleSheetCache::~SharedStyleSheetCache() {
   UnregisterWeakMemoryReporter(this);
 }
 
-void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
-                                          StyleSheetLoadData& aData,
-                                          nsresult aStatus) {
+void SharedStyleSheetCache::LoadCompleted(
+    SharedStyleSheetCache* aCache, StyleSheetLoadData& aData, nsresult aStatus,
+    css::Loader::TriggeringPendingLoad aPendingLoad) {
   
   
   
@@ -63,6 +63,9 @@ void SharedStyleSheetCache::LoadCompleted(SharedStyleSheetCache* aCache,
   
   
   const bool canFireEvents = [&] {
+    if (aPendingLoad == css::Loader::TriggeringPendingLoad::Yes) {
+      return false;
+    }
     for (auto* data = &aData; data; data = data->mParentData) {
       if (!data->mMustNotify) {
         return false;

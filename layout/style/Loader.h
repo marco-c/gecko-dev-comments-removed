@@ -458,7 +458,7 @@ class Loader final {
   
   void InsertSheetInTree(StyleSheet& aSheet);
 
-  enum class PendingLoad { No, Yes };
+  enum class TriggeringPendingLoad : bool { No, Yes };
 
  private:
   friend class mozilla::SharedStyleSheetCache;
@@ -476,7 +476,7 @@ class Loader final {
   
   [[nodiscard]] bool MaybeDeferLoad(SheetLoadData& aLoadData,
                                     SheetState aSheetState,
-                                    PendingLoad aPendingLoad,
+                                    TriggeringPendingLoad aPendingLoad,
                                     const SheetLoadDataHashKey& aKey);
 
   
@@ -494,7 +494,7 @@ class Loader final {
   
   [[nodiscard]] nsresult LoadSheetAsyncInternal(
       SheetLoadData& aLoadData, uint64_t aEarlyHintPreloaderId,
-      const SheetLoadDataHashKey& aKey);
+      const SheetLoadDataHashKey& aKey, TriggeringPendingLoad);
 
   
   void IncrementOngoingLoadCountAndMaybeBlockOnload() {
@@ -571,7 +571,7 @@ class Loader final {
   
   
   nsresult LoadSheet(SheetLoadData&, SheetState, uint64_t aEarlyHintPreloaderId,
-                     PendingLoad = PendingLoad::No);
+                     TriggeringPendingLoad = TriggeringPendingLoad::No);
 
   enum class AllowAsyncParse {
     Yes,
@@ -590,7 +590,7 @@ class Loader final {
 
   
   
-  void SheetComplete(SheetLoadData&, nsresult);
+  void SheetComplete(SheetLoadData&, nsresult, TriggeringPendingLoad);
 
   
   

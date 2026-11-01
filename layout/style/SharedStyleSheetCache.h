@@ -51,7 +51,7 @@ class SharedStyleSheetCache final
   
   
   static void LoadCompleted(SharedStyleSheetCache*, css::SheetLoadData&,
-                            nsresult);
+                            nsresult, css::Loader::TriggeringPendingLoad);
   using Base::LoadCompleted;
   static void LoadCompletedInternal(SharedStyleSheetCache*, css::SheetLoadData&,
                                     nsTArray<RefPtr<css::SheetLoadData>>&);
