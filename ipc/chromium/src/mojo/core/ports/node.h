@@ -189,6 +189,10 @@ class Node {
   
   int LostConnectionToNode(const NodeName& node_name);
 
+  
+  
+  int CleanupDeadProxy(const NodeName& node_name, const PortName& port_name);
+
  private:
   
   

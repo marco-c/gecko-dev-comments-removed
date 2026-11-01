@@ -57,8 +57,9 @@ class NodeChannel final : public IPC::Channel::Listener {
 
     virtual void OnEventMessage(const NodeName& aFromNode,
                                 UniquePtr<IPC::Message> aMessage) = 0;
-    virtual void OnBroadcast(const NodeName& aFromNode,
-                             UniquePtr<IPC::Message> aMessage) = 0;
+    virtual void OnDeadProxy(const NodeName& aFromNode,
+                             const NodeName& aProxyNode,
+                             const PortName& aProxyPort) = 0;
     virtual void OnIntroduce(const NodeName& aFromNode,
                              Introduction aIntroduction) = 0;
     virtual void OnRequestIntroduction(const NodeName& aFromNode,
@@ -80,7 +81,7 @@ class NodeChannel final : public IPC::Channel::Listener {
 
   
   
-  void Broadcast(UniquePtr<IPC::Message> aMessage);
+  void DeadProxy(const NodeName& aProxyNode, const PortName& aProxyPort);
 
   
   

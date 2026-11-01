@@ -436,8 +436,7 @@ bool Node::IsEventFromPreviousPeer(const Event& event) {
       
       return false;
     case Event::Type::kObserveProxy:
-      
-      return event.port_name() != kInvalidPortName;
+      return true;
     case Event::Type::kObserveProxyAck:
       return true;
     case Event::Type::kObserveClosure:
@@ -632,6 +631,15 @@ int Node::LostConnectionToNode(const NodeName& node_name) {
   return OK;
 }
 
+int Node::CleanupDeadProxy(const NodeName& node_name,
+                           const PortName& port_name) {
+  DVLOG(1) << "Observing dead proxy in node " << name_ << " of peer "
+           << port_name << "@" << node_name;
+
+  DestroyAllPortsWithPeer(node_name, port_name);
+  return OK;
+}
+
 int Node::OnUserMessage(const PortRef& port_ref, const NodeName& from_node,
                         mozilla::UniquePtr<UserMessageEvent> message) {
 #ifdef DEBUG
@@ -731,20 +739,6 @@ int Node::OnPortAccepted(const PortRef& port_ref,
 
 int Node::OnObserveProxy(const PortRef& port_ref,
                          mozilla::UniquePtr<ObserveProxyEvent> event) {
-  if (event->port_name() == kInvalidPortName) {
-    
-    
-    
-    
-    
-    
-    
-    DCHECK_EQ(event->proxy_target_node_name(), kInvalidNodeName);
-    DCHECK_EQ(event->proxy_target_port_name(), kInvalidPortName);
-    DestroyAllPortsWithPeer(event->proxy_node_name(), event->proxy_port_name());
-    return OK;
-  }
-
   
   
   
@@ -1960,15 +1954,13 @@ void Node::DestroyAllPortsWithPeer(const NodeName& node_name,
 
   for (const auto& proxy_name : dead_proxies_to_broadcast) {
     
-    delegate_->BroadcastEvent(std::make_unique<ObserveProxyEvent>(
-        kInvalidPortName, kInvalidPortName, kInvalidSequenceNum, name_,
-        proxy_name, kInvalidNodeName, kInvalidPortName));
+    delegate_->BroadcastDeadProxy(proxy_name);
 
     
     
     
     
-    DestroyAllPortsWithPeer(name_, proxy_name);
+    CleanupDeadProxy(name_, proxy_name);
   }
 
   

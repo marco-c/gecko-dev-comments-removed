@@ -5,8 +5,6 @@
 #ifndef MOJO_CORE_PORTS_NODE_DELEGATE_H_
 #define MOJO_CORE_PORTS_NODE_DELEGATE_H_
 
-#include <stddef.h>
-
 #include "mojo/core/ports/event.h"
 #include "mojo/core/ports/name.h"
 #include "mojo/core/ports/port_ref.h"
@@ -23,7 +21,8 @@ class NodeDelegate {
   virtual void ForwardEvent(const NodeName& node, ScopedEvent event) = 0;
 
   
-  virtual void BroadcastEvent(ScopedEvent event) = 0;
+  
+  virtual void BroadcastDeadProxy(const PortName& port_name) = 0;
 
   
   
