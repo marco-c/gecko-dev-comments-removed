@@ -55,6 +55,8 @@ struct LayersId final {
   
   explicit operator uint64_t() const { return mId; }
 
+  friend uint64_t format_as(const LayersId& aId) { return aId.mId; }
+
   
   
   auto operator<=>(const LayersId& aOther) const = default;

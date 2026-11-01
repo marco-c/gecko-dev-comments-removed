@@ -379,7 +379,9 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   void ForceIsFirstPaint();
 
   
-  LayersId NotifyChildCreated(LayersId aChild, LayersId aEmbedderId);
+  
+  LayersId NotifyChildCreated(LayersId aChild, LayersId aEmbedderId,
+                              const char* aMessage);
 
   
   
