@@ -2,6 +2,12 @@
 
 
 
+
+
+var PROXIED_HOST = "bad-port.wpt";
+
+
+
 var BLOCKED_PORTS_LIST = [
     0,
     1,    
@@ -88,9 +94,16 @@ var BLOCKED_PORTS_LIST = [
     10080, 
 ];
 
+promise_test(function(t){
+    let url = new URL(`http://${PROXIED_HOST}:30303/common/blank.html`);
+    return fetch(url, {mode: "no-cors"}).then(function(response){
+        assert_equals(response.type, "opaque");
+    });
+}, 'Request on a port that is not bad should succeed through the proxy.');
+
 BLOCKED_PORTS_LIST.map(function(a){
     promise_test(function(t){
-        let url = new URL(`${location.protocol}//${location.hostname}:${a}`);
-        return promise_rejects_js(t, TypeError, fetch(url))
+        let url = new URL(`http://${PROXIED_HOST}:${a}/common/blank.html`);
+        return promise_rejects_js(t, TypeError, fetch(url, {mode: "no-cors"}))
     }, 'Request on bad port ' + a + ' should throw TypeError.');
 });
