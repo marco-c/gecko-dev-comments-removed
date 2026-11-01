@@ -17,7 +17,7 @@
 
 
 
-const { FormAutofillStorage } = ChromeUtils.importESModule(
+const { FormAutofillStorage, formAutofillStorage } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofillStorage.sys.mjs"
 );
 const { RustAutofillAddressesAdapter } = ChromeUtils.importESModule(
@@ -31,6 +31,22 @@ const { FormAutofill } = ChromeUtils.importESModule(
 
 
 const UNSUPPORTED_COUNTRY = "XK";
+
+
+
+add_setup(async function () {
+  try {
+    await formAutofillStorage._finalize();
+  } catch (_) {}
+  formAutofillStorage.initialize = () => Promise.resolve();
+  const noFieldNames = { getSavedFieldNames: async () => new Set() };
+  for (const collection of ["addresses", "creditCards"]) {
+    Object.defineProperty(formAutofillStorage, collection, {
+      configurable: true,
+      get: () => noFieldNames,
+    });
+  }
+});
 
 const ENABLED_PREF = "extensions.formautofill.addresses.storage.rust.enabled";
 const ACTIVE_PREF = "extensions.formautofill.addresses.storage.rust.active";
