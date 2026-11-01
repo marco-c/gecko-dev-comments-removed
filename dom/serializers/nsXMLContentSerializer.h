@@ -8,8 +8,6 @@
 
 
 
-
-
 #ifndef nsXMLContentSerializer_h_
 #define nsXMLContentSerializer_h_
 
@@ -79,6 +77,12 @@ class nsXMLContentSerializer : public nsIContentSerializer {
       mozilla::dom::Element* aElement) override {
     return NS_OK;
   }
+
+  
+
+
+  [[nodiscard]] static bool AppendAndTranslateEntitiesInXMLAttributeValue(
+      const nsAString& aStr, nsAString& aOutputStr);
 
  protected:
   virtual ~nsXMLContentSerializer();
@@ -182,7 +186,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
 
 
   template <uint16_t LargestIndex, uint16_t TableLength>
-  [[nodiscard]] bool AppendAndTranslateEntities(
+  [[nodiscard]] static bool AppendAndTranslateEntities(
       const nsAString& aStr, nsAString& aOutputStr,
       const uint8_t (&aEntityTable)[TableLength],
       const char* const aStringTable[]) {
