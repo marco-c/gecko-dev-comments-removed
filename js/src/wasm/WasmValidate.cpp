@@ -3526,6 +3526,13 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
         }
 
         
+        
+        
+        if (*builtinModule == BuiltinModuleId::JSStringConstants) {
+          return d.fail("type mismatch");
+        }
+
+        
         const BuiltinModuleFunc* builtinFunc = nullptr;
         BuiltinModuleFuncId builtinFuncId;
         if (!ImportFieldMatchesBuiltinModuleDefinition(
