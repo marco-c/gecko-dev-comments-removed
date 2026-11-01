@@ -191,22 +191,20 @@
     arctanptr = ft_trig_arctan_table;
 
     
+    
+    
+    
+    
     for ( i = 1, b = 1; i < FT_TRIG_MAX_ITERS; b <<= 1, i++ )
     {
-      if ( theta < 0 )
-      {
-        xtemp  = x + ( ( y + b ) >> i );
-        y      = y - ( ( x + b ) >> i );
-        x      = xtemp;
-        theta += *arctanptr++;
-      }
-      else
-      {
-        xtemp  = x - ( ( y + b ) >> i );
-        y      = y + ( ( x + b ) >> i );
-        x      = xtemp;
-        theta -= *arctanptr++;
-      }
+      FT_Fixed  m = -(FT_Fixed)( theta < 0 );
+      FT_Fixed  a = *arctanptr++;
+
+
+      xtemp = x - ( ( ( y ^ m ) + b ) >> i );
+      y     = y + ( ( ( x ^ m ) + b ) >> i );
+      x     = xtemp;
+      theta = theta - ( ( a ^ m ) - m );
     }
 
     vec->x = x;
@@ -261,30 +259,24 @@
     arctanptr = ft_trig_arctan_table;
 
     
+    
+    
+    
     for ( i = 1, b = 1; i < FT_TRIG_MAX_ITERS; b <<= 1, i++ )
     {
-      if ( y > 0 )
-      {
-        xtemp  = x + ( ( y + b ) >> i );
-        y      = y - ( ( x + b ) >> i );
-        x      = xtemp;
-        theta += *arctanptr++;
-      }
-      else
-      {
-        xtemp  = x - ( ( y + b ) >> i );
-        y      = y + ( ( x + b ) >> i );
-        x      = xtemp;
-        theta -= *arctanptr++;
-      }
+      FT_Fixed  m = -(FT_Fixed)( y < 0 );
+      FT_Fixed  a = *arctanptr++;
+
+
+      xtemp = x + ( ( ( y ^ m ) + b ) >> i );
+      y     = y - ( ( ( x ^ m ) + b ) >> i );
+      x     = xtemp;
+      theta = theta + ( ( a ^ m ) - m );
     }
 
     
     
-    if ( theta >= 0 )
-      theta = FT_PAD_ROUND( theta, 16 );
-    else
-      theta = -FT_PAD_ROUND( -theta, 16 );
+    theta = ( theta - ( theta < 0 ) + 8 ) & ~0xF;
 
     vec->x = x;
     vec->y = theta;
