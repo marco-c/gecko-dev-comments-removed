@@ -544,7 +544,7 @@ class ModuleObject : public NativeObject {
   ModuleNamespaceObject* maybeDeferredNamespace() const;
   void setDeferredNamespace(Handle<ModuleNamespaceObject*> ns);
   JSObject* moduleSource() const;
-  bool isSourcePhaseModule() const { return moduleSource() != nullptr; }
+  bool isWasmModule() const;
   ModuleStatus status() const;
   mozilla::Maybe<uint32_t> maybeDfsAncestorIndex() const;
   uint32_t dfsAncestorIndex() const;

@@ -633,7 +633,7 @@ JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
   auto& module = moduleRecord->as<ModuleObject>();
 
   
-  if (module.hasSyntheticModuleFields() || module.isSourcePhaseModule()) {
+  if (module.hasSyntheticModuleFields() || module.isWasmModule()) {
     return nullptr;
   }
 
