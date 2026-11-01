@@ -4,9 +4,43 @@ const BASE = "https://example.com/browser/dom/base/test/";
 const NAVIGATIONAL_PREFETCH = 1 << 1;
 const NAVIGATIONAL_PREFETCH_ELIGIBLE = 1 << 2;
 
+let gCollectPageloadEvents = true;
+let gSubmittedPageloadEvents = [];
 
+function keepSubmittedPageloadEvents() {
+  if (!gCollectPageloadEvents) {
+    return;
+  }
+  GleanPings.pageload.testBeforeNextSubmit(() => {
+    if (!gCollectPageloadEvents) {
+      return;
+    }
+    gSubmittedPageloadEvents.push(
+      ...(Glean.perf.pageLoad.testGetValue() ?? [])
+    );
+    Promise.resolve().then(keepSubmittedPageloadEvents);
+  });
+}
 
-const MAX_ATTEMPTS = 40;
+async function resetPageloadTelemetry() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+  gSubmittedPageloadEvents = [];
+  keepSubmittedPageloadEvents();
+}
+
+async function waitForPageloadEvent() {
+  let records;
+  await TestUtils.waitForCondition(() => {
+    records = [
+      ...gSubmittedPageloadEvents,
+      ...(Glean.perf.pageLoad.testGetValue() ?? []),
+    ];
+    return records.length;
+  }, "A pageload event was recorded.");
+  Assert.equal(records.length, 1, "Only the expected document was reported.");
+  return records;
+}
 
 function documentFeatures(records) {
   return records.map(r => parseInt(r.extra.document_features || "0", 10));
@@ -35,54 +69,53 @@ async function pageloadEventFor(source, target, expectPrefetch) {
       )
     : Promise.resolve();
 
+  await resetPageloadTelemetry();
+
   const tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: source,
     waitForLoad: true,
   });
-  await prefetched;
-  if (!expectPrefetch) {
-    await TestUtils.waitForTick();
+  try {
+    await prefetched;
+    if (!expectPrefetch) {
+      await TestUtils.waitForTick();
+    }
+
+    const loaded = BrowserTestUtils.browserLoaded(
+      tab.linkedBrowser,
+      false,
+      target
+    );
+    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, target);
+    await loaded;
+
+    
+    await waitForPageloadEvent();
+    await resetPageloadTelemetry();
+  } finally {
+    await BrowserTestUtils.removeTab(tab);
   }
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, target);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, target);
-
-  
-  Services.fog.testResetFOG();
-  BrowserTestUtils.removeTab(tab);
-
-  
-  let records = null;
-  await TestUtils.waitForCondition(() => {
-    records = Glean.perf.pageLoad.testGetValue();
-    return records && records.length;
-  }, "a pageload event was recorded").catch(() => {});
-  return records && records.length ? records : null;
+  return waitForPageloadEvent();
 }
 
-
 async function withPageloadEvent(name, trial, check) {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const records = await trial(`${name}${attempt}`);
-    if (!records) {
-      info(
-        `${name} attempt ${attempt}: no pageload event (sampling); retrying.`
-      );
-      continue;
-    }
-    check(records);
-    return;
-  }
-  Assert.ok(
-    false,
-    `${name}: no pageload event after ${MAX_ATTEMPTS} attempts.`
-  );
+  check(await trial(name));
 }
 
 add_setup(async function () {
+  registerCleanupFunction(() => {
+    gCollectPageloadEvents = false;
+    GleanPings.pageload.testBeforeNextSubmit(() => {});
+    gSubmittedPageloadEvents = [];
+  });
+
   await SpecialPowers.pushPrefEnv({
-    set: [["dom.speculation_rules.enabled", true]],
+    set: [
+      ["dom.speculation_rules.enabled", true],
+      ["dom.pageload_event.testing.always_send_normal", true],
+    ],
   });
 });
 
