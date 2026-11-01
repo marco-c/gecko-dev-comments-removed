@@ -9,6 +9,7 @@
 
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -363,6 +364,48 @@ class VideoEncoderFunctionalTest
             .MaxNumberOfThreads(1)
             .Build(),
         {});
+  }
+
+  bool SupportsInterLayerPrediction() const {
+    Capabilities capabilities = factory_->GetEncoderCapabilities();
+    return capabilities.prediction_constraints().max_spatial_layers() >= 2 &&
+           capabilities.prediction_constraints().buffer_space_type() !=
+               BufferSpaceType::kMultiInstance;
+  }
+
+  
+  
+  
+  
+  std::vector<EncOut> EncodeWithSpatialIds(std::span<const int> spatial_ids) {
+    TestConfig config = CreateTestConfig(factory_->GetEncoderCapabilities());
+    std::unique_ptr<VideoEncoderInterface> enc =
+        factory_->CreateEncoder(config.static_settings, {});
+    std::unique_ptr<test::FrameReader> frame_reader = CreateFrameReader();
+
+    EncOut key;
+    enc->Encode(
+        frame_reader->PullFrame(), TemporalUnitSettings(Timestamp::Millis(0)),
+        ToVec({BuildSettings(
+            std::move(Fb().Res(kDefaultResolution).Upd(0).Key().Out(key)),
+            config.rate_options)}));
+    EXPECT_THAT(key, HasBitstreamAndMetaData());
+
+    std::vector<EncOut> outs(spatial_ids.size());
+    std::vector<FrameEncodeSettings> frame_settings;
+    for (size_t i = 0; i < spatial_ids.size(); ++i) {
+      frame_settings.push_back(
+          BuildSettings(std::move(Fb().Res(kDefaultResolution)
+                                      .S(spatial_ids[i])
+                                      .Ref({0})
+                                      .Upd(static_cast<int>(i))
+                                      .Out(outs[i])),
+                        config.rate_options));
+    }
+    enc->Encode(frame_reader->PullFrame(),
+                TemporalUnitSettings(Timestamp::Millis(100)),
+                std::move(frame_settings));
+    return outs;
   }
 
   Environment env_;
@@ -929,6 +972,36 @@ TEST_P(VideoEncoderFunctionalTest, DuplicateReferenceBuffersNotAllowed) {
           config.rate_options)}));
 
   EXPECT_THAT(delta, Not(HasBitstreamAndMetaData()));
+}
+
+
+
+TEST_P(VideoEncoderFunctionalTest, DecreasingSpatialIdsNotAllowed) {
+  if (!SupportsInterLayerPrediction()) {
+    GTEST_SKIP() << "Encoder must support inter-layer prediction.";
+  }
+  
+  for (const EncOut& out : EncodeWithSpatialIds(std::array{0, 1})) {
+    EXPECT_THAT(out, HasBitstreamAndMetaData());
+  }
+  for (const EncOut& out : EncodeWithSpatialIds(std::array{1, 0})) {
+    EXPECT_THAT(out, Not(HasBitstreamAndMetaData()));
+  }
+}
+
+
+
+TEST_P(VideoEncoderFunctionalTest, DuplicateSpatialIdsNotAllowed) {
+  if (!SupportsInterLayerPrediction()) {
+    GTEST_SKIP() << "Encoder must support inter-layer prediction.";
+  }
+  
+  for (const EncOut& out : EncodeWithSpatialIds(std::array{0, 1})) {
+    EXPECT_THAT(out, HasBitstreamAndMetaData());
+  }
+  for (const EncOut& out : EncodeWithSpatialIds(std::array{0, 0})) {
+    EXPECT_THAT(out, Not(HasBitstreamAndMetaData()));
+  }
 }
 
 
