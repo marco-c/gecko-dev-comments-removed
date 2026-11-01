@@ -419,7 +419,7 @@ impl CollectionDownloader {
             std::fs::create_dir_all(dumps_path.parent().unwrap())?;
             
             
-            if name == "search-config-v2" {
+            if name == "search-config-v2" || name == "search-config-v3" {
                 data.data.sort_by(|a, b| {
                     if a["recordType"] == b["recordType"] {
                         a["identifier"].as_str().cmp(&b["identifier"].as_str())

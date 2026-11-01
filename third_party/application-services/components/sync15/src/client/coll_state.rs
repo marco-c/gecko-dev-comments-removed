@@ -174,7 +174,7 @@ mod tests {
     use crate::record_types::{MetaGlobalEngine, MetaGlobalRecord};
     use crate::{CollectionName, telemetry};
     use anyhow::Result;
-    use nss::ensure_initialized;
+    use nss_as::ensure_initialized;
     use std::cell::{Cell, RefCell};
     use std::collections::HashMap;
     use sync_guid::Guid;
@@ -203,6 +203,7 @@ mod tests {
                 declined: vec![],
             },
             global_timestamp: ServerTimestamp::default(),
+            meta_timestamp: ServerTimestamp::default(),
             keys,
             keys_timestamp: ServerTimestamp::default(),
         }

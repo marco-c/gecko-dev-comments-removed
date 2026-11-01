@@ -140,6 +140,14 @@ fn main() -> Result<()> {
         fn submit_targeting_context(&self) {
             
         }
+
+        fn record_rollouts_opt_out(&self) {
+            
+        }
+
+        fn record_studies_opt_out(&self) {
+            
+        }
     }
 
     
@@ -149,7 +157,7 @@ fn main() -> Result<()> {
     
     
     error_support::init_for_tests_with_level(error_support::Level::Info);
-    viaduct_hyper::viaduct_init_backend_hyper();
+    viaduct_backend_rust::viaduct_init_backend_rust();
 
     
     let args = Args::parse();
