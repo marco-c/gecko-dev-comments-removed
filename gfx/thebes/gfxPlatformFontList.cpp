@@ -2374,7 +2374,8 @@ void gfxPlatformFontList::AddGenericFonts(
   
   
   
-  if (aGenericType == StyleGenericFontFamily::Math) {
+  if (StaticPrefs::mathml_font_family_math_enabled() &&
+      aGenericType == StyleGenericFontFamily::Math) {
     aGenericType = StyleGenericFontFamily::Serif;
     aLanguage = nsGkAtoms::x_math;
   }
