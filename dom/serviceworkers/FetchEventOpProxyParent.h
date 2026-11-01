@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_fetcheventopproxyparent_h_
 #define mozilla_dom_fetcheventopproxyparent_h_
 
@@ -61,6 +59,7 @@ class FetchEventOpProxyParent final : public PFetchEventOpProxyParent {
 
   RefPtr<FetchEventOpParent> mReal;
   RefPtr<ServiceWorkerFetchEventOpPromise::Private> mLifetimePromise;
+  bool mRespondWithReceived = false;
 };
 
 }  
