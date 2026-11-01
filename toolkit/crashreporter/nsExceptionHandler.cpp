@@ -2626,17 +2626,6 @@ void MergeCrashAnnotations(AnnotationTable& aDst, const AnnotationTable& aSrc) {
   }
 }
 
-
-static void AddCommonAnnotations(AnnotationTable& aAnnotations) {
-  
-  
-  double uptimeTS =
-      (TimeStamp::NowLoRes() - TimeStamp::ProcessCreation()).ToSeconds();
-  nsAutoCString uptimeStr;
-  uptimeStr.AppendFloat(uptimeTS);
-  aAnnotations[Annotation::UptimeTS] = std::move(uptimeStr);
-}
-
 nsresult SetGarbageCollecting(bool collecting) {
   if (!GetEnabled()) return NS_ERROR_NOT_INITIALIZED;
 
@@ -3544,8 +3533,6 @@ bool TakeMinidumpForChild(GeckoChildID aChildId, nsIFile** dump,
     return false;
   }
 
-  AddCommonAnnotations(aAnnotations);
-
   if (error.Length() > 0) {
     aAnnotations[Annotation::DumperError] = std::move(error);
   }
@@ -3711,8 +3698,6 @@ bool CreateMinidumpsAndPair(GeckoChildID aId, ThreadId aTargetBlamedThread,
     
     return false;
   }
-
-  AddCommonAnnotations(aTargetAnnotations);
 
   if (error.Length() > 0) {
     aTargetAnnotations[Annotation::DumperError] = std::move(error);
