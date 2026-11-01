@@ -76,7 +76,9 @@ class RTCRtpSender : public nsISupports,
   static void GetCapabilities(const GlobalObject&, const nsAString& kind,
                               Nullable<dom::RTCRtpCapabilities>& result);
   already_AddRefed<Promise> SetParameters(
-      const dom::RTCRtpSendParameters& aParameters, ErrorResult& aError);
+      const dom::RTCRtpSendParameters& aParameters,
+      const dom::RTCSetParameterOptions& aSetParameterOptions,
+      ErrorResult& aError);
   
   
   void GetParameters(RTCRtpSendParameters& aParameters);

@@ -611,7 +611,9 @@ nsCString RTCRtpSender::GetEffectiveTLDPlus1() const {
 }
 
 already_AddRefed<Promise> RTCRtpSender::SetParameters(
-    const dom::RTCRtpSendParameters& aParameters, ErrorResult& aError) {
+    const dom::RTCRtpSendParameters& aParameters,
+    const dom::RTCSetParameterOptions& aSetParameterOptions,
+    ErrorResult& aError) {
   dom::RTCRtpSendParameters paramsCopy(aParameters);
   
   
@@ -910,6 +912,23 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
   
   
   
+  const auto& encodingOptions = aSetParameterOptions.mEncodingOptions;
+  const bool useEncodingOptions =
+      mTransceiver->IsVideo() && !encodingOptions.IsEmpty();
+  
+  
+  
+  
+  if (useEncodingOptions &&
+      encodingOptions.Length() != paramsCopy.mEncodings.Length()) {
+    p->MaybeRejectWithInvalidModificationError(
+        "encodingOptions must have the same length as encodings");
+    return p.forget();
+  }
+
+  
+  
+  
   if (mTransceiver->IsVideo()) {
     for (auto& encoding : paramsCopy.mEncodings) {
       if (!encoding.mScaleResolutionDownBy.WasPassed()) {
@@ -957,9 +976,37 @@ already_AddRefed<Promise> RTCRtpSender::SetParameters(
 
   
   
+  
+  
+  Maybe<std::vector<std::string>> keyFrameRids;
+  if (useEncodingOptions) {
+    for (size_t i = 0; i < encodingOptions.Length(); ++i) {
+      if (!encodingOptions[i].mKeyFrame) {
+        continue;
+      }
+      if (!keyFrameRids) {
+        keyFrameRids.emplace();
+      }
+      if (paramsCopy.mEncodings[i].mRid.WasPassed()) {
+        keyFrameRids->push_back(
+            NS_ConvertUTF16toUTF8(paramsCopy.mEncodings[i].mRid.Value()).get());
+      }
+    }
+  }
+
+  
+  
   GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
       __func__,
-      [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber] {
+      [this, self = RefPtr<RTCRtpSender>(this), p, paramsCopy, serialNumber,
+       keyFrameRids = std::move(keyFrameRids)]() mutable {
+        
+        if (keyFrameRids && mPipeline) {
+          mPipeline->mConduit->AsVideoSessionConduit().apply(
+              [&](const auto& conduit) {
+                conduit->GenerateKeyFrames(std::move(*keyFrameRids));
+              });
+        }
         
         mLastReturnedParameters = Nothing();
         
