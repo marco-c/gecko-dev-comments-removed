@@ -27,7 +27,9 @@ class EncoderSettings {
                   VideoEncoderConfig encoder_config,
                   VideoCodec video_codec);
   EncoderSettings(const EncoderSettings& other);
+  EncoderSettings(EncoderSettings&& other);
   EncoderSettings& operator=(const EncoderSettings& other);
+  EncoderSettings& operator=(EncoderSettings&& other);
 
   
   const VideoEncoder::EncoderInfo& encoder_info() const;
