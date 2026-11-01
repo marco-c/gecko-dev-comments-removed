@@ -627,6 +627,56 @@ JS_PUBLIC_API JS::SharedWasmCompileArgs JS::BuildCompileArgsForESM(
                                      featureOptions,  true);
 }
 
+using ImportPtrVector = Vector<const Import*, 0, SystemAllocPolicy>;
+
+
+static bool GetExternalImports(JSContext* cx, const Module& module,
+                               ImportPtrVector* imports) {
+  MOZ_ASSERT(imports->empty());
+
+  
+  const ModuleMetadata& moduleMeta = module.moduleMeta();
+
+  
+  const BuiltinModuleIds& builtinModules =
+      module.codeMeta().features().builtinModules;
+
+  
+  Maybe<Span<const char>> importedStringModule;
+  if (builtinModules.jsStringConstants) {
+    importedStringModule = Some(
+        MakeStringSpan(builtinModules.jsStringConstantsNamespace->chars.get()));
+  }
+
+  
+  if (!imports->reserve(moduleMeta.imports.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  for (const Import& import : moduleMeta.imports) {
+    
+    
+    if (ImportMatchesBuiltinModule(import, builtinModules)) {
+      continue;
+    }
+
+    
+    
+    if (importedStringModule &&
+        import.module.utf8Bytes() == *importedStringModule) {
+      continue;
+    }
+
+    
+    imports->infallibleAppend(&import);
+  }
+
+  
+  return true;
+}
+
 JS_PUBLIC_API JS::ESMCompileResult JS::CompileForESM(
     const WasmCompileArgs& compileArgs, const uint8_t* bytes, size_t length) {
   
@@ -704,18 +754,22 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
   
 
   const ModuleMetadata& moduleMeta = module->moduleMeta();
-  const CodeMetadata& codeMeta = module->codeMeta();
+
+  ImportPtrVector externalImports;
+  if (!GetExternalImports(cx, *module, &externalImports)) {
+    return false;
+  }
 
   
   
-  for (const Import& import : moduleMeta.imports) {
-    Span<const char> moduleName = import.module.utf8Bytes();
-    Span<const char> name = import.field.utf8Bytes();
+  for (const Import* import : externalImports) {
+    Span<const char> moduleName = import->module.utf8Bytes();
+    Span<const char> name = import->field.utf8Bytes();
 
     
     if (CharsStartsWith(moduleName, MakeStringSpan("wasm-js:"))) {
       
-      UniqueChars moduleNameQuoted = import.module.toQuotedString(cx);
+      UniqueChars moduleNameQuoted = import->module.toQuotedString(cx);
       if (!moduleNameQuoted) {
         ReportOutOfMemory(cx);
         return false;
@@ -730,7 +784,7 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
     if (CharsStartsWith(name, MakeStringSpan("wasm:")) ||
         CharsStartsWith(name, MakeStringSpan("wasm-js:"))) {
       
-      UniqueChars nameQuoted = import.field.toQuotedString(cx);
+      UniqueChars nameQuoted = import->field.toQuotedString(cx);
       if (!nameQuoted) {
         ReportOutOfMemory(cx);
         return false;
@@ -741,17 +795,6 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
       return false;
     }
 
-    
-    
-
-    
-    
-    if (ImportMatchesBuiltinModule(moduleName,
-                                   codeMeta.features().builtinModules)) {
-      continue;
-    }
-
-    
     
     
   }
@@ -1875,38 +1918,40 @@ struct MOZ_STACK_CLASS AutoPinBufferSourceLength {
 
 
 
-
-static bool GetBytecodeSource(JSContext* cx, Handle<JSObject*> obj,
-                              unsigned errorNumber, BytecodeSource* bytecode,
-                              bool* isShared) {
+static bool GetBufferSourceMemory(JSContext* cx, Handle<JSObject*> obj,
+                                  unsigned errorNumber,
+                                  SharedMem<uint8_t*>* dataPointer,
+                                  size_t* byteLength, bool* isShared) {
   JSObject* unwrapped = CheckedUnwrapStatic(obj);
-
-  SharedMem<uint8_t*> dataPointer;
-  size_t byteLength;
   if (!unwrapped || !IsBufferSource(cx, unwrapped,  true,
-                                     true, &dataPointer,
-                                    &byteLength, isShared)) {
+                                     true, dataPointer,
+                                    byteLength, isShared)) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, errorNumber);
     return false;
   }
-
-  *bytecode = BytecodeSource(dataPointer.unwrap(), byteLength);
   return true;
 }
 
 
 
-
 static bool GetBytecodeBuffer(JSContext* cx, Handle<JSObject*> obj,
                               unsigned errorNumber, BytecodeBuffer* bytecode) {
-  BytecodeSource source;
+  SharedMem<uint8_t*> dataPointer;
+  size_t byteLength;
   bool isShared;
-  if (!GetBytecodeSource(cx, obj, errorNumber, &source, &isShared)) {
+  if (!GetBufferSourceMemory(cx, obj, errorNumber, &dataPointer, &byteLength,
+                             &isShared)) {
     return false;
   }
   AutoPinBufferSourceLength pin(cx, obj);
 
-  if (!BytecodeBuffer::fromSource(source, bytecode)) {
+  bool ok =
+      isShared
+          ? BytecodeBuffer::fromSharedMemory(dataPointer, byteLength, bytecode)
+          : BytecodeBuffer::fromSource(
+                BytecodeSource(dataPointer.unwrapUnshared(), byteLength),
+                bytecode);
+  if (!ok) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -1915,17 +1960,21 @@ static bool GetBytecodeBuffer(JSContext* cx, Handle<JSObject*> obj,
 
 
 
+
 static bool GetBytecodeBufferOrSource(JSContext* cx, Handle<JSObject*> obj,
                                       unsigned errorNumber,
                                       BytecodeBufferOrSource* bytecode) {
-  BytecodeSource source;
+  SharedMem<uint8_t*> dataPointer;
+  size_t byteLength;
   bool isShared;
-  if (!GetBytecodeSource(cx, obj, errorNumber, &source, &isShared)) {
+  if (!GetBufferSourceMemory(cx, obj, errorNumber, &dataPointer, &byteLength,
+                             &isShared)) {
     return false;
   }
 
   if (!isShared) {
-    *bytecode = BytecodeBufferOrSource(source);
+    *bytecode = BytecodeBufferOrSource(
+        BytecodeSource(dataPointer.unwrapUnshared(), byteLength));
     return true;
   }
 
@@ -1933,7 +1982,7 @@ static bool GetBytecodeBufferOrSource(JSContext* cx, Handle<JSObject*> obj,
   
   AutoPinBufferSourceLength pin(cx, obj);
   BytecodeBuffer buffer;
-  if (!BytecodeBuffer::fromSource(source, &buffer)) {
+  if (!BytecodeBuffer::fromSharedMemory(dataPointer, byteLength, &buffer)) {
     ReportOutOfMemory(cx);
     return false;
   }
