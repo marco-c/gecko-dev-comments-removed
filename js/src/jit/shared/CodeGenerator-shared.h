@@ -248,9 +248,6 @@ class CodeGeneratorShared : public LElementVisitor {
   void emitTruncateDouble(FloatRegister src, Register dest, MInstruction* mir);
   void emitTruncateFloat32(FloatRegister src, Register dest, MInstruction* mir);
 
-  void emitPreBarrier(Address address);
-  void emitPreBarrier(BaseObjectElementIndex address);
-
   
   
   
