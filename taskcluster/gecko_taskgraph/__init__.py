@@ -110,14 +110,14 @@ def register(graph_config):
         dependencies,  
     )
     from gecko_taskgraph.kind import ProfiledKind
-    from gecko_taskgraph.util.verify import verifications
+    from gecko_taskgraph.util.verify import profiled_verifications
 
     register_mozilla_taskgraph(graph_config)
     register_android_taskgraph(graph_config)
 
     
     
-    generator.verifications = verifications
+    generator.verifications = profiled_verifications
 
     
     
