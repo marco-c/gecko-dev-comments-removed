@@ -29,8 +29,7 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
                                      const nsCString& dpath) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
-  mozilla::UniquePtr<rlbox_sandbox_hunspell> sandbox =
-      std::make_unique<rlbox_sandbox_hunspell>();
+  auto sandbox = std::make_unique<rlbox_sandbox_hunspell>();
 
 #if defined(MOZ_WASM_SANDBOXING_HUNSPELL) && !defined(HAVE_64BIT_BUILD)
   

@@ -490,25 +490,25 @@ struct Q {
 static int randomInt() { return 4; }
 
 static bool TestMakeUnique() {
-  UniquePtr<int> a1(std::make_unique<int>());
-  UniquePtr<long> a2(std::make_unique<long>(4));
+  auto a1 = std::make_unique<int>();
+  auto a2 = std::make_unique<long>(4);
 
   
-  UniquePtr<Q> q0(std::make_unique<Q>());
+  auto q0 = std::make_unique<Q>();
 
   
-  UniquePtr<Q> q1(std::make_unique<Q>(Q()));
+  auto q1 = std::make_unique<Q>(Q());
 
   
-  UniquePtr<Q> q2(std::make_unique<Q>(*q1, 'c'));
+  auto q2 = std::make_unique<Q>(*q1, 'c');
 
   
-  UniquePtr<Q> q3(std::make_unique<Q>(Q(), UniquePtr<int>(), randomInt()));
+  auto q3 = std::make_unique<Q>(Q(), UniquePtr<int>(), randomInt());
 
   
-  UniquePtr<Q> q4(std::make_unique<Q>('s', 66LL, 3.141592654, &q3));
+  auto q4 = std::make_unique<Q>('s', 66LL, 3.141592654, &q3);
 
-  UniquePtr<char[]> c1(std::make_unique<char[]>(5));
+  auto c1 = std::make_unique<char[]>(5);
 
   return true;
 }

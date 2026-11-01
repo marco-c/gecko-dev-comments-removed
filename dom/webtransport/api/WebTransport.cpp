@@ -130,8 +130,7 @@ void WebTransport::NewBidirectionalStream(
   
   
 
-  UniquePtr<BidirectionalPair> streams =
-      std::make_unique<BidirectionalPair>(aIncoming, aOutgoing);
+  auto streams = std::make_unique<BidirectionalPair>(aIncoming, aOutgoing);
   auto tuple = std::tuple<uint64_t, UniquePtr<BidirectionalPair>>(
       aStreamId, std::move(streams));
   mBidirectionalStreams.AppendElement(std::move(tuple));

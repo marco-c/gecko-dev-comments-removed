@@ -1192,10 +1192,9 @@ nsresult TextServicesDocument::OffsetEntryArray::DidInsertText(
     } else {
       
       
-      UniquePtr<OffsetEntry> newInsertedTextEntry =
-          std::make_unique<OffsetEntry>(entry->mTextNode,
-                                        entry->mOffsetInTextInBlock,
-                                        aInsertedString.Length());
+      auto newInsertedTextEntry = std::make_unique<OffsetEntry>(
+          entry->mTextNode, entry->mOffsetInTextInBlock,
+          aInsertedString.Length());
       newInsertedTextEntry->mIsInsertedText = true;
       newInsertedTextEntry->mOffsetInTextNode = entry->mOffsetInTextNode;
       
@@ -1228,9 +1227,8 @@ nsresult TextServicesDocument::OffsetEntryArray::DidInsertText(
     if (!insertedTextEntry) {
       
       
-      UniquePtr<OffsetEntry> newInsertedTextEntry =
-          std::make_unique<OffsetEntry>(
-              entry->mTextNode, mSelection.StartOffsetInTextInBlock(), 0);
+      auto newInsertedTextEntry = std::make_unique<OffsetEntry>(
+          entry->mTextNode, mSelection.StartOffsetInTextInBlock(), 0);
       newInsertedTextEntry->mOffsetInTextNode = entry->EndOffsetInTextNode();
       newInsertedTextEntry->mIsInsertedText = true;
       

@@ -381,8 +381,8 @@ void PendingStyles::PreserveStyle(nsStaticAtom& aHTMLProperty,
   
   
   
-  UniquePtr<PendingStyle> style = std::make_unique<PendingStyle>(
-      &aHTMLProperty, aAttribute, aAttributeValueOrCSSValue);
+  auto style = std::make_unique<PendingStyle>(&aHTMLProperty, aAttribute,
+                                              aAttributeValueOrCSSValue);
   if (&aHTMLProperty == nsGkAtoms::font && aAttribute != nsGkAtoms::bgcolor) {
     MOZ_ASSERT(aAttribute == nsGkAtoms::color ||
                aAttribute == nsGkAtoms::face || aAttribute == nsGkAtoms::size);

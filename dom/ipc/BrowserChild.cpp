@@ -1577,8 +1577,7 @@ void BrowserChild::FlushAllCoalescedMouseData() {
     if (!data || data->IsEmpty()) {
       continue;
     }
-    UniquePtr<CoalescedMouseData> dispatchData =
-        std::make_unique<CoalescedMouseData>();
+    auto dispatchData = std::make_unique<CoalescedMouseData>();
 
     dispatchData->RetrieveDataFrom(*data);
     mToBeDispatchedMouseData.Push(dispatchData.release());
@@ -1619,8 +1618,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     
     
     
-    UniquePtr<CoalescedMouseData> dispatchData =
-        std::make_unique<CoalescedMouseData>();
+    auto dispatchData = std::make_unique<CoalescedMouseData>();
 
     dispatchData->RetrieveDataFrom(*data);
     mToBeDispatchedMouseData.Push(dispatchData.release());
@@ -1735,8 +1733,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseButtonEvent(
     
     FlushAllCoalescedMouseData();
 
-    UniquePtr<CoalescedMouseData> dispatchData =
-        std::make_unique<CoalescedMouseData>();
+    auto dispatchData = std::make_unique<CoalescedMouseData>();
 
     
     

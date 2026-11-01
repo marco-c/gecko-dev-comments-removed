@@ -330,7 +330,7 @@ nsresult nsThreadManager::Init() {
 
   
   
-  UniquePtr<EventQueue> queue = std::make_unique<EventQueue>(true);
+  auto queue = std::make_unique<EventQueue>(true);
 
   RefPtr synchronizedQueue =
       MakeRefPtr<ThreadEventQueue>(std::move(queue), true);

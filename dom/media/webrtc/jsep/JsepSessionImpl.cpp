@@ -1481,7 +1481,7 @@ nsresult JsepSessionImpl::FinalizeTransport(const SdpAttributeList& remote,
 
   if (!transport->mIce || transport->mIce->mUfrag != remote.GetIceUfrag() ||
       transport->mIce->mPwd != remote.GetIcePwd()) {
-    UniquePtr<JsepIceTransport> ice = std::make_unique<JsepIceTransport>();
+    auto ice = std::make_unique<JsepIceTransport>();
     transport->mDtls = nullptr;
 
     
@@ -1508,7 +1508,7 @@ nsresult JsepSessionImpl::FinalizeTransport(const SdpAttributeList& remote,
     
     
     
-    UniquePtr<JsepDtlsTransport> dtls = std::make_unique<JsepDtlsTransport>();
+    auto dtls = std::make_unique<JsepDtlsTransport>();
     dtls->mFingerprints = remote.GetFingerprint();
     if (!answer.HasAttribute(mozilla::SdpAttribute::kSetupAttribute)) {
       dtls->mRole = *mIsPendingOfferer ? JsepDtlsTransport::kJsepDtlsServer
@@ -2530,7 +2530,7 @@ nsresult JsepSessionImpl::CreateGenericSDP(UniquePtr<Sdp>* sdpp) {
   auto origin = SdpOrigin("mozilla...THIS_IS_SDPARTA-99.0", mSessionId,
                           mSessionVersion, sdp::kIPv4, "0.0.0.0");
 
-  UniquePtr<Sdp> sdp = std::make_unique<SdpImpl>(origin);
+  auto sdp = std::make_unique<SdpImpl>(origin);
 
   if (mDtlsFingerprints.empty()) {
     JSEP_SET_ERROR("Missing DTLS fingerprint");

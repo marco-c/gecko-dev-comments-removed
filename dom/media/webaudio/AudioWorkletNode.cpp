@@ -777,11 +777,10 @@ already_AddRefed<AudioWorkletNode> AudioWorkletNode::Constructor(
 
   
   
-  UniquePtr<StructuredCloneHolder> serializedOptions =
-      std::make_unique<StructuredCloneHolder>(
-          StructuredCloneHolder::CloningSupported,
-          StructuredCloneHolder::TransferringNotSupported,
-          JS::StructuredCloneScope::SameProcess);
+  auto serializedOptions = std::make_unique<StructuredCloneHolder>(
+      StructuredCloneHolder::CloningSupported,
+      StructuredCloneHolder::TransferringNotSupported,
+      JS::StructuredCloneScope::SameProcess);
   serializedOptions->Write(cx, optionsVal, JS::UndefinedHandleValue,
                            cloneDataPolicy, aRv);
   if (NS_WARN_IF(aRv.Failed())) {

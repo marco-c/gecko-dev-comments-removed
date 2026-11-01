@@ -240,7 +240,7 @@ bool LimitFileToLessThanSize(const char* aFilename, uint32_t aSize,
 
     
     
-    UniquePtr<char[]> line = std::make_unique<char[]>(aLongLineSize + 1);
+    auto line = std::make_unique<char[]>(aLongLineSize + 1);
     while (fgets(line.get(), aLongLineSize + 1, file.get())) {
       if (numBytesDropped >= minBytesToDrop) {
         if (fputs(line.get(), temp.get()) < 0) {

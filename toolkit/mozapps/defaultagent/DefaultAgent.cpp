@@ -150,8 +150,7 @@ static void RemoveAllRegistryEntries() {
   
   maxValueNameLen += 1;
 
-  mozilla::UniquePtr<wchar_t[]> valueName =
-      std::make_unique<wchar_t[]>(maxValueNameLen);
+  auto valueName = std::make_unique<wchar_t[]>(maxValueNameLen);
 
   DWORD valueIndex = 0;
   

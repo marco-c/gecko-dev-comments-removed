@@ -297,7 +297,7 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
 
   
   uint32_t hexHashSize = sizeof(uint32_t) * 2 + 1;
-  UniquePtr<wchar_t[]> installHash = std::make_unique<wchar_t[]>(hexHashSize);
+  auto installHash = std::make_unique<wchar_t[]>(hexHashSize);
   
   
   
@@ -1168,8 +1168,7 @@ DWORD WINAPI AnimateSkeletonUI(void* aUnused) {
   
   
   int animationWidth = CSSToDevPixels(80, sCSSToDevPixelScaling);
-  UniquePtr<uint32_t[]> animationLookup =
-      std::make_unique<uint32_t[]>(animationWidth);
+  auto animationLookup = std::make_unique<uint32_t[]>(animationWidth);
   uint32_t animationColor = sAnimationColor;
   NormalizedRGB rgbBlend = UintToRGB(animationColor);
 

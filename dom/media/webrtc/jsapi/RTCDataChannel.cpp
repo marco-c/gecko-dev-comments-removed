@@ -220,7 +220,7 @@ UniquePtr<RTCDataChannel::DataHolder> RTCDataChannel::Transfer() {
   }
 
   
-  UniquePtr<DataHolder> dataHolder = std::make_unique<DataHolder>(*this);
+  auto dataHolder = std::make_unique<DataHolder>(*this);
 
   
   mIsTransferable = false;

@@ -3272,8 +3272,7 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
   
   
   
-  mozilla::UniquePtr<XPCJSSourceHook> hook =
-      std::make_unique<XPCJSSourceHook>();
+  auto hook = std::make_unique<XPCJSSourceHook>();
   js::SetSourceHook(cx, std::move(hook));
 
   
