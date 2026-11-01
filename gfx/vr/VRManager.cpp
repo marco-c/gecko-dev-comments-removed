@@ -85,7 +85,7 @@ static bool ValidVRManagerProcess() {
 
 
 VRManager* VRManager::Get() {
-  MOZ_ASSERT(sVRManagerSingleton != nullptr);
+  MOZ_RELEASE_ASSERT(sVRManagerSingleton != nullptr);
   MOZ_ASSERT(ValidVRManagerProcess());
 
   return sVRManagerSingleton;
