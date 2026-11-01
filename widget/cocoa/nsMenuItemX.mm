@@ -420,11 +420,31 @@ void nsMenuItemX::SetTitle() {
 }
 
 void nsMenuItemX::CopyUserKeyEquivalentToKeyElement() {
-  if (mType == eSeparatorMenuItemType || !mNativeMenuItem.menu) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  if (mType == eSeparatorMenuItemType) {
     return;
+  }
+  if (!mNativeMenuItem.menu) {
+    
+    
+    
+    
+    
+    NSMenu* parentMenu = mMenuParent ? mMenuParent->NativeNSMenu() : nil;
+    if (!mKeyElement || !parentMenu ||
+        !nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent)) {
+      return;
+    }
+    mNativeMenuItem.hidden = YES;
+    [parentMenu addItem:mNativeMenuItem];
+    [parentMenu removeItem:mNativeMenuItem];
+    mNativeMenuItem.hidden = NO;
   }
   nsMenuGroupOwnerX::CopyUserKeyEquivalentToKeyElement(mNativeMenuItem,
                                                        mContent->AsElement());
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 void nsMenuItemX::SetAttributedTitle() {
