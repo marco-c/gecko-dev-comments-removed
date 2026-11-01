@@ -6398,14 +6398,15 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
     
     
+    const CSSCoord lvh = ToCSSPixels(Metrics().GetCompositionBounds().height);
+    const CSSCoord svh =
+        ToCSSPixels(Metrics().GetCompositionSizeWithoutDynamicToolbar().height);
+
+    
+    
     
     
     if (aFlags & ZOOM_TO_FOCUSED_INPUT) {
-      
-      
-      const CSSCoord lvh = ToCSSPixels(Metrics().GetCompositionBounds().height);
-      const CSSCoord svh = ToCSSPixels(
-          Metrics().GetCompositionSizeWithoutDynamicToolbar().height);
       const CSSCoord scrollableRectHeight =
           Metrics().GetScrollableRect().height;
 
@@ -6452,10 +6453,16 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     
     
     
-    const CSSRect cssExpandedPageRect = Metrics().GetExpandedScrollableRect();
+    
+    
+    const ParentLayerCoord heightToFill =
+        cssPageRect.Height() < lvh
+            ? ParentLayerCoord(
+                  Metrics().GetCompositionSizeWithoutDynamicToolbar().height)
+            : ParentLayerCoord(compositionBounds.Height());
     CSSToParentLayerScale localMinZoom(
-        std::max(compositionBounds.Width() / cssExpandedPageRect.Width(),
-                 compositionBounds.Height() / cssExpandedPageRect.Height()));
+        std::max(compositionBounds.Width() / cssPageRect.Width(),
+                 heightToFill.value / cssPageRect.Height()));
 
     localMinZoom.scale =
         std::clamp(localMinZoom.scale, mZoomConstraints.mMinZoom.scale,
