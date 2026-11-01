@@ -284,19 +284,29 @@ promise_test(async t => {
   const encoder = new TextEncoder();
 
   
-  for (let i = 0; i < N - 1; i++) {
-    writer.write(encoder.encode(i.toString()));
+  
+  
+  assert_equals(writer.desiredSize, 1,
+                'outgoing datagrams writable uses the default highWaterMark (1)');
+
+  const settled = [];
+  const writes = [];
+  for (let i = 0; i < N; i++) {
+    writes.push(writer.write(encoder.encode(i.toString()))
+                    .then(() => { settled[i] = true; }));
   }
-  assert_greater_than(writer.desiredSize, 0,
-                      'desiredSize should be positive after N-1 writes');
 
   
-  writer.write(encoder.encode((N - 1).toString()));
-  assert_less_than_equal(writer.desiredSize, 0,
-                         'desiredSize should be non-positive after N writes');
-
   
-  await writer.ready;
+  for (let i = 0; i < 50; i++) {
+    await Promise.resolve();
+  }
+  assert_array_equals(settled.slice(0, N - 1), new Array(N - 1).fill(true),
+                      'writes below the limit resolve promptly');
+  assert_equals(settled[N - 1], undefined,
+                'the write that reaches the limit is withheld');
+
+  await Promise.all(writes);
 }, "Datagram's outgoingMaxBufferedDatagrams correctly regulates written datagrams");
 
 promise_test(async t => {
@@ -333,6 +343,11 @@ promise_test(async t => {
     if (result === undefined) break;
     receivedSequenceNumbers.push(parseInt(decoder.decode(result.value)));
   }
+
+  
+  
+  
+  assert_greater_than(receivedSequenceNumbers.length, 0);
 
   
   
