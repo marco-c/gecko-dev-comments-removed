@@ -6445,9 +6445,6 @@
       "resource://gre/modules/SitePolicyUtils.sys.mjs": [
         "../../../toolkit/components/enterprisepolicies/SitePolicyUtils.sys.mjs"
       ],
-      "resource://gre/modules/SpeechRecognitionFeature.sys.mjs": [
-        "../../../dom/media/webspeech/recognition/SpeechRecognitionFeature.sys.mjs"
-      ],
       "resource://gre/modules/Sqlite.sys.mjs": [
         "../../../toolkit/modules/Sqlite.sys.mjs"
       ],
