@@ -51,12 +51,28 @@ BROTLI_INTERNAL PreparedDictionary* CreatePreparedDictionary(MemoryManager* m,
 BROTLI_INTERNAL void DestroyPreparedDictionary(MemoryManager* m,
     PreparedDictionary* dictionary);
 
+
+
+
+typedef struct PreparedDictionaryView {
+  const uint32_t* slot_offsets;
+  const uint16_t* heads;
+  const uint32_t* items;
+  const uint8_t* source;
+  uint32_t source_size;
+  uint32_t hash_shift;  
+  uint32_t slot_mask;
+  uint64_t hash_mask;
+} PreparedDictionaryView;
+
 typedef struct CompoundDictionary {
   
   size_t num_chunks;
   size_t total_size;
   
   const PreparedDictionary* chunks[SHARED_BROTLI_MAX_COMPOUND_DICTS + 1];
+  
+  PreparedDictionaryView chunk_views[SHARED_BROTLI_MAX_COMPOUND_DICTS + 1];
   const uint8_t* chunk_source[SHARED_BROTLI_MAX_COMPOUND_DICTS + 1];
   size_t chunk_offsets[SHARED_BROTLI_MAX_COMPOUND_DICTS + 1];
 

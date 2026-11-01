@@ -27,6 +27,18 @@ extern "C" {
 
 
 
+
+
+
+
+#define SHARED_BROTLI_MAX_RAW_DICT_SIZE (1u << (23u + sizeof(size_t)))
+
+
+
+
+
+
+
 typedef struct BrotliSharedDictionaryStruct BrotliSharedDictionary;
 
 

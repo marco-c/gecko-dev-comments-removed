@@ -125,7 +125,9 @@ static BROTLI_INLINE void RingBufferWrite(
     rb->buffer_[rb->size_ - 1] = 0;
     
 
-    rb->buffer_[rb->size_] = 241;
+
+    memcpy(&rb->buffer_[rb->size_], rb->buffer_,
+           BROTLI_MIN(size_t, rb->pos_, rb->tail_size_));
   }
   {
     const size_t masked_pos = rb->pos_ & rb->mask_;
