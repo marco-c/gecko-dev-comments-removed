@@ -547,11 +547,7 @@ impl SurfaceInfo {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SurfaceTileDescriptor {
     
-    
     pub current_task_id: RenderTaskId,
-    
-    
-    pub composite_task_id: Option<RenderTaskId>,
     
     pub dirty_rect: PictureRect,
 }
@@ -954,24 +950,7 @@ impl SurfaceBuilder {
             }
         } else {
             match builder.kind {
-                CommandBufferBuilderKind::Tiled { ref tiles } => {
-                    for (_, descriptor) in tiles {
-                        if let Some(composite_task_id) = descriptor.composite_task_id {
-                            rg_builder.add_dependency(
-                                composite_task_id,
-                                descriptor.current_task_id,
-                            );
-
-                            let composite_task = rg_builder.get_task_mut(composite_task_id);
-                            match composite_task.kind {
-                                RenderTaskKind::TileComposite(ref mut info) => {
-                                    info.task_id = Some(descriptor.current_task_id);
-                                }
-                                _ => unreachable!("bug: not a tile composite"),
-                            }
-                        }
-                    }
-                }
+                CommandBufferBuilderKind::Tiled { .. } => {}
                 CommandBufferBuilderKind::Simple { render_task_id: child_task_id, root_task_id: child_root_task_id, .. } => {
                     self.add_backdrop_capture_dependency(child_root_task_id.unwrap_or(child_task_id));
 
