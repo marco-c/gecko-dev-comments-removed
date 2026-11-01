@@ -362,12 +362,10 @@ static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
   
   
   
+  
+  
+  
   if (scheme == "moz-extension"_ns) {
-    if (aIsSubframe) {
-      
-      
-      return IsolationBehavior::Inherit;
-    }
     return IsolationBehavior::Extension;
   }
 
@@ -742,9 +740,22 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     if (aParentWindow) {
       
       
-      MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
-              ("Loading extension subframe in same process as parent"));
-      behavior = IsolationBehavior::Inherit;
+      
+      
+      
+      
+      const RemoteType& parentRemoteType = aParentWindow->GetRemoteType();
+      if (!ExtensionPolicyService::GetSingleton().UseRemoteExtensions() ||
+          parentRemoteType.IsWeb() || parentRemoteType.IsFile() ||
+          parentRemoteType.IsPrivilegedMozilla()) {
+        MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                ("Loading extension subframe in same process as parent"));
+        behavior = IsolationBehavior::Inherit;
+      } else {
+        MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+                ("Loading extension subframe in extension content process"));
+        behavior = IsolationBehavior::Extension;
+      }
     } else {
       MOZ_LOG(
           gProcessIsolationLog, LogLevel::Verbose,
