@@ -32,7 +32,7 @@ promise_test(async t => {
 
   
   const {readable, writable} = await wt.createBidirectionalStream();
-  assert_equals(writable.sendOrder, 0);
+  assert_equals(writable.sendOrder, 0, 'sendOrder defaults to 0');
   
   writable.sendOrder = 4;
   assert_equals(writable.sendOrder, 4);
@@ -46,7 +46,7 @@ promise_test(async t => {
   const wt = new WebTransport(webtransport_url('echo.py'));
   await wt.ready;
 
-    
+  
   const {readable, writable} = await wt.createBidirectionalStream({sendOrder: 3});
   assert_equals(writable.sendOrder, 3);
   
