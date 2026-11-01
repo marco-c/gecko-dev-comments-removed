@@ -876,6 +876,15 @@ impl SurfaceBuilder {
         has_targets
     }
 
+    
+    
+    
+    pub fn select_backdrop_capture(&mut self, index: Option<BackdropCaptureIndex>) {
+        for capture in &mut self.builder_stack.last_mut().unwrap().backdrop_captures {
+            capture.drawn_into = Some(capture.index) == index;
+        }
+    }
+
     pub fn pop_empty_surface(&mut self) {
         self.builder_stack.pop().unwrap();
     }

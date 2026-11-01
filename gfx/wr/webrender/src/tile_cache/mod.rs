@@ -40,6 +40,7 @@ use crate::renderer::GpuBufferBuilderF;
 use crate::resource_cache::{ResourceCache, ImageRequest};
 use crate::scene_building::SliceFlags;
 use crate::space::{SpaceMapper, SpaceSnapper};
+use crate::render_task_graph::RenderTaskId;
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::surface::{SubpixelMode, SurfaceIndex, SurfaceInfo};
 use crate::util::{ScaleOffset, MatrixHelpers, MaxRect};
@@ -255,6 +256,16 @@ impl TileSurface {
 }
 
 
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum TileCull {
+    
+    Culled,
+    
+    Occluded,
+}
+
+
 pub struct Tile {
     
     pub tile_offset: TileOffset,
@@ -271,6 +282,8 @@ pub struct Tile {
     
     
     pub is_visible: bool,
+    
+    pub is_occluded: bool,
     
     
     pub id: TileId,
@@ -297,12 +310,63 @@ impl Tile {
             device_dirty_rect: DeviceRect::zero(),
             surface: None,
             is_visible: false,
+            is_occluded: false,
             id,
             is_opaque: false,
             z_id: ZBufferId::invalid(),
             cached_surface: CachedSurface::new(),
             local_raster_rect: RasterRect::zero(),
         }
+    }
+
+    
+    
+    
+    fn cull(
+        &self,
+        device_pic_rect: &DeviceRect,
+        check_occlusion: bool,
+        transform_index: CompositorTransformIndex,
+        composite_state: &mut CompositeState,
+    ) -> Option<TileCull> {
+        
+        
+        match device_pic_rect.intersection(&self.device_valid_rect) {
+            Some(device_draw_rect) => {
+                if check_occlusion && composite_state.occluders.is_tile_occluded(self.z_id, device_draw_rect) {
+                    return Some(TileCull::Occluded);
+                }
+            }
+            None => return Some(TileCull::Culled),
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        let local_valid_rect = &self.cached_surface.current_descriptor.local_valid_rect;
+        let local_dirty_rect = match self.cached_surface.local_dirty_rect.intersection(local_valid_rect) {
+            Some(rect) if !self.cached_surface.is_valid => rect,
+            _ => return None,
+        };
+        let valid_rect = composite_state.get_surface_rect(
+            local_valid_rect,
+            &self.cached_surface.local_rect,
+            transform_index,
+        ).to_i32();
+        let scissor_rect = composite_state.get_surface_rect(
+            &local_dirty_rect,
+            &self.cached_surface.local_rect,
+            transform_index,
+        ).to_i32().intersection(&valid_rect).unwrap_or_else(|| { Box2D::zero() });
+        if scissor_rect.is_empty() || valid_rect.is_empty() {
+            return Some(TileCull::Culled);
+        }
+
+        None
     }
 
     
@@ -533,14 +597,11 @@ impl Tile {
         
         
         
-        let (supports_dirty_rects, supports_simple_prims) = match state.composite_state.compositor_kind {
-            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
-                (frame_context.config.gpu_supports_render_target_partial_update, true)
-            }
-            CompositorKind::Native { capabilities, .. } => {
-                (capabilities.max_update_rects > 0, false)
-            }
-        };
+        let supports_dirty_rects = supports_dirty_rects(
+            &state.composite_state.compositor_kind,
+            frame_context.config.gpu_supports_render_target_partial_update,
+        );
+        let supports_simple_prims = !matches!(state.composite_state.compositor_kind, CompositorKind::Native { .. });
 
         
         
@@ -866,9 +927,31 @@ pub struct TileCacheInstance {
     corners_cache: CornersCache,
     
     
+    backdrop_capture_keys: FastHashMap<PictureIndex, BackdropCaptureKey>,
+    
+    
     
     
     pub backdrop_samples: Vec<BackdropSample>,
+}
+
+
+
+#[derive(Debug, Default, PartialEq)]
+pub struct BackdropCaptureKey {
+    region: PictureRect,
+    sources: Vec<BackdropSourceKey>,
+}
+
+
+#[derive(Debug, PartialEq)]
+struct BackdropSourceKey {
+    slice_id: SliceId,
+    
+    slice_to_capture: ScaleOffset,
+    
+    rect: PictureRect,
+    background_color: Option<ColorF>,
 }
 
 
@@ -877,6 +960,18 @@ pub struct BackdropSample {
     pub capture_index: BackdropCaptureIndex,
     
     pub rect: PictureRect,
+    
+    
+    pub source: Option<BackdropSource>,
+}
+
+
+pub struct BackdropSource {
+    
+    pub rect: PictureRect,
+    
+    
+    pub task: Option<(RenderTaskId, PictureRect)>,
 }
 
 impl TileCacheInstance {
@@ -939,7 +1034,127 @@ impl TileCacheInstance {
             yuv_images_remaining: 0,
             yuv_surface_stability: FastHashMap::default(),
             corners_cache: CornersCache::new(),
+            backdrop_capture_keys: FastHashMap::default(),
             backdrop_samples: Vec::new(),
+        }
+    }
+
+    
+    
+    
+    fn backdrop_sample_position(&self, capture_index: BackdropCaptureIndex) -> Option<usize> {
+        self.backdrop_samples
+            .binary_search_by_key(&capture_index, |sample| sample.capture_index)
+            .ok()
+    }
+
+    
+    pub fn backdrop_source(&self, capture_index: BackdropCaptureIndex) -> Option<&BackdropSource> {
+        let position = self.backdrop_sample_position(capture_index)?;
+        self.backdrop_samples[position].source.as_ref()
+    }
+
+    
+    fn device_pic_rect(
+        &self,
+        root_spatial_node_index: SpatialNodeIndex,
+        global_screen_device_rect: DeviceRect,
+        spatial_tree: &SpatialTree,
+    ) -> DeviceRect {
+        let map_pic_to_device: SpaceMapper<PicturePixel, DevicePixel> = SpaceMapper::new_with_target(
+            root_spatial_node_index,
+            self.spatial_node_index,
+            global_screen_device_rect,
+            spatial_tree,
+        );
+        map_pic_to_device
+            .map(&self.local_clip_rect)
+            .expect("bug: unable to map clip rect")
+            .round()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn cull_tiles(
+        &mut self,
+        resource_cache: &mut ResourceCache,
+        composite_state: &mut CompositeState,
+        root_spatial_node_index: SpatialNodeIndex,
+        global_screen_device_rect: DeviceRect,
+        spatial_tree: &SpatialTree,
+    ) {
+        let device_pic_rect = self.device_pic_rect(
+            root_spatial_node_index,
+            global_screen_device_rect,
+            spatial_tree,
+        );
+        let check_occluded_tiles = self.check_occluded_tiles(
+            &composite_state.compositor_kind,
+            root_spatial_node_index,
+        );
+        let transform_index = self.transform_index;
+        for sub_slice in &mut self.sub_slices {
+            for tile in sub_slice.tiles.values_mut() {
+                tile.is_occluded = false;
+                if !tile.is_visible {
+                    continue;
+                }
+                match tile.cull(&device_pic_rect, check_occluded_tiles, transform_index, composite_state) {
+                    Some(TileCull::Occluded) => {
+                        
+                        
+                        
+                        
+                        if let Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id } }) = tile.surface.as_mut() {
+                            if let Some(id) = id.take() {
+                                resource_cache.destroy_compositor_tile(id);
+                            }
+                        }
+                        tile.is_visible = false;
+                        tile.is_occluded = true;
+                        continue;
+                    }
+                    Some(TileCull::Culled) => {
+                        tile.is_visible = false;
+                        continue;
+                    }
+                    None => {}
+                }
+                let reason = match tile.surface {
+                    Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::TextureCache { ref handle } }) => {
+                        let exists = handle.as_ref().map_or(false, |handle| {
+                            resource_cache.picture_textures.entry_exists(handle)
+                        });
+                        (!exists).then_some(InvalidationReason::NoTexture)
+                    }
+                    Some(TileSurface::Texture { descriptor: SurfaceTextureDescriptor::Native { id } }) => {
+                        id.is_none().then_some(InvalidationReason::NoSurface)
+                    }
+                    Some(TileSurface::Color { .. }) | None => None,
+                };
+                if let Some(reason) = reason {
+                    tile.invalidate(None, reason);
+                }
+            }
+        }
+    }
+
+    
+    fn check_occluded_tiles(
+        &self,
+        compositor_kind: &CompositorKind,
+        root_spatial_node_index: SpatialNodeIndex,
+    ) -> bool {
+        match compositor_kind {
+            CompositorKind::Layer { .. } => true,
+            CompositorKind::Native { .. } | CompositorKind::Draw { .. } => {
+                
+                self.spatial_node_index == root_spatial_node_index
+            }
         }
     }
 
@@ -976,6 +1191,7 @@ impl TileCacheInstance {
                     self.backdrop_samples.push(BackdropSample {
                         capture_index,
                         rect: capture.region,
+                        source: None,
                     });
                 }
                 Some((top, root_region)) if *top > position &&
@@ -983,6 +1199,7 @@ impl TileCacheInstance {
                     self.backdrop_samples.push(BackdropSample {
                         capture_index,
                         rect: pic_to_root.unmap_rect(root_region),
+                        source: None,
                     });
                 }
                 _ => {}
@@ -3493,6 +3710,146 @@ fn test_max_surface_size_for_screen() {
     
     assert_eq!(for_screen(0, 0), MAX_SURFACE_SIZE);
     assert_eq!(for_screen(-1, -1), MAX_SURFACE_SIZE);
+}
+
+
+pub fn supports_dirty_rects(
+    compositor_kind: &CompositorKind,
+    gpu_supports_render_target_partial_update: bool,
+) -> bool {
+    match compositor_kind {
+        CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => gpu_supports_render_target_partial_update,
+        CompositorKind::Native { capabilities, .. } => capabilities.max_update_rects > 0,
+    }
+}
+
+
+
+
+pub fn update_cross_slice_backdrops(
+    slice_ids: &[SliceId],
+    tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
+    captures: &mut BackdropCaptures,
+    required_backdrop_chains: &FastHashSet<PictureIndex>,
+    supports_dirty_rects: bool,
+    spatial_tree: &SpatialTree,
+) {
+    let root = spatial_tree.root_reference_frame_index();
+    let mut pic_to_root = Vec::with_capacity(slice_ids.len());
+    let mut prev_keys = Vec::with_capacity(slice_ids.len());
+
+    for slice_id in slice_ids {
+        let tile_cache = tile_caches.get_mut(slice_id).expect("bug: no tile cache");
+        prev_keys.push(mem::take(&mut tile_cache.backdrop_capture_keys));
+
+        
+        pic_to_root.push(get_relative_scale_offset(tile_cache.spatial_node_index, root, spatial_tree));
+    }
+
+    for index in 0 .. captures.len() {
+        let capture_index = BackdropCaptureIndex(index as u32);
+        let capture = &captures[capture_index];
+        let Some(top) = capture.root_slice.and_then(|id| slice_ids.iter().position(|s| *s == id)) else {
+            continue;
+        };
+        
+        
+        if !required_backdrop_chains.contains(&capture.chain_pic_index) {
+            continue;
+        }
+        
+        
+        assert!(
+            slice_ids[.. top].iter().all(|slice_id| {
+                tile_caches[slice_id].backdrop_sample_position(capture_index).is_some()
+            }),
+            "bug: backdrop-filter chain found to be drawn after the slices below it",
+        );
+        let root_to_capture = pic_to_root[top].inverse();
+        let mut sources = Vec::new();
+        let mut key = BackdropCaptureKey { region: capture.region, sources: Vec::new() };
+        let mut changed = false;
+
+        for lower in 0 .. top {
+            let tile_cache = &tile_caches[&slice_ids[lower]];
+            let position = tile_cache.backdrop_sample_position(capture_index).unwrap();
+            let Some(rect) = tile_cache.backdrop_samples[position].rect
+                .intersection(&tile_cache.local_clip_rect)
+                .and_then(|rect| rect.intersection(&tile_cache.local_rect)) else {
+                continue;
+            };
+
+            changed |= tile_cache.sub_slices.iter().any(|sub_slice| {
+                sub_slice.tiles.values().any(|tile| {
+                    tile.is_visible &&
+                        !tile.cached_surface.is_valid &&
+                        tile.cached_surface.local_dirty_rect.intersects(&rect)
+                })
+            });
+            key.sources.push(BackdropSourceKey {
+                slice_id: slice_ids[lower],
+                slice_to_capture: pic_to_root[lower].then(&root_to_capture),
+                rect,
+                background_color: tile_cache.background_color,
+            });
+            sources.push((lower, position, rect));
+        }
+
+        changed |= prev_keys[top].get(&capture.chain_pic_index).map_or(true, |prev| *prev != key);
+        tile_caches.get_mut(&slice_ids[top]).unwrap()
+            .backdrop_capture_keys
+            .insert(capture.chain_pic_index, key);
+        
+        if sources.is_empty() && !changed {
+            continue;
+        }
+
+        let top_cache = tile_caches.get_mut(&slice_ids[top]).unwrap();
+        
+        
+        let Some(visible_region) = capture.region.intersection(&top_cache.local_clip_rect) else {
+            continue;
+        };
+        if changed {
+            for sub_slice in &mut top_cache.sub_slices {
+                for tile in sub_slice.tiles.values_mut() {
+                    if tile.is_visible && tile.cached_surface.local_rect.intersects(&visible_region) {
+                        
+                        
+                        
+                        let dirty_rect = supports_dirty_rects.then_some(visible_region);
+                        tile.invalidate(dirty_rect, InvalidationReason::SurfaceContentChanged);
+                    }
+                }
+            }
+        }
+
+        
+        
+        
+        
+        let drawn = top_cache.sub_slices.iter().any(|sub_slice| {
+            sub_slice.tiles.values().any(|tile| {
+                tile.is_visible &&
+                    !tile.cached_surface.is_valid &&
+                    matches!(tile.surface, Some(TileSurface::Texture { .. })) &&
+                    tile.cached_surface.local_dirty_rect
+                        .intersection(&tile.cached_surface.current_descriptor.local_valid_rect)
+                        .is_some_and(|rect| rect.intersects(&visible_region))
+            })
+        });
+        if !drawn {
+            continue;
+        }
+
+        for &(lower, position, rect) in &sources {
+            tile_caches.get_mut(&slice_ids[lower]).unwrap().backdrop_samples[position].source = Some(BackdropSource {
+                rect,
+                task: None,
+            });
+        }
+        captures[capture_index].source_slices = sources.iter().map(|(lower, _, _)| slice_ids[*lower]).collect();
+    }
 }
 
 
