@@ -82,6 +82,7 @@ class FirewallSocketServer : public SocketServer {
   void SetMessageQueue(Thread* queue) override;
   bool Wait(TimeDelta max_wait_duration, bool process_io) override;
   void WakeUp() override;
+  bool CanCreateSockets() const override { return server_->CanCreateSockets(); }
 
   Socket* WrapSocket(Socket* sock, int type);
 
@@ -127,21 +128,5 @@ class FirewallManager {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::FD_ANY;
-using ::webrtc::FD_IN;
-using ::webrtc::FD_OUT;
-using ::webrtc::FirewallDirection;
-using ::webrtc::FirewallManager;
-using ::webrtc::FirewallProtocol;
-using ::webrtc::FirewallSocketServer;
-using ::webrtc::FP_ANY;
-using ::webrtc::FP_TCP;
-using ::webrtc::FP_UDP;
-}  
-#endif  
 
 #endif  

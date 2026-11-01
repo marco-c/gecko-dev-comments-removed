@@ -55,6 +55,12 @@ class SocketServer : public SocketFactory {
 
   
   
+  
+  
+  virtual bool CanCreateSockets() const { return false; }
+
+  
+  
   void set_network_binder(NetworkBinderInterface* binder) {
     network_binder_ = binder;
   }
@@ -66,12 +72,5 @@ class SocketServer : public SocketFactory {
 
 }  
 
-
-
-#ifdef WEBRTC_ALLOW_DEPRECATED_NAMESPACES
-namespace rtc {
-using ::webrtc::SocketServer;
-}  
-#endif  
 
 #endif  
