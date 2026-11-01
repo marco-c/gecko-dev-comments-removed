@@ -78,4 +78,4 @@ pub enum NavigationType {
 
 
 
-pub use crate::values::specified::animation::ViewTransitionClass as TransitionTypes;
+pub use crate::values::specified::animation::ViewTransitionClassList as TransitionTypes;
