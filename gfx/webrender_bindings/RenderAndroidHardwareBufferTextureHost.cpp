@@ -51,15 +51,14 @@ bool RenderAndroidHardwareBufferTextureHost::EnsureLockable() {
     const auto& gle = gl::GLContextEGL::Cast(mGL);
     const auto& egl = gle->mEgl;
 
+    
+    
     const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-                              fenceFd.get(), LOCAL_EGL_NONE};
+                              fenceFd.release(), LOCAL_EGL_NONE};
 
     EGLSync sync =
         egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
     if (sync) {
-      
-      (void)fenceFd.release();
-
       if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
         egl->fWaitSync(sync, 0);
       } else {

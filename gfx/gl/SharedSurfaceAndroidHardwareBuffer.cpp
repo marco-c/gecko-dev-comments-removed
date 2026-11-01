@@ -133,8 +133,10 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
   const auto& gle = GLContextEGL::Cast(mDesc.gl);
   const auto& egl = gle->mEgl;
 
+  
+  
   const EGLint attribs[] = {LOCAL_EGL_SYNC_NATIVE_FENCE_FD_ANDROID,
-                            fenceFd.get(), LOCAL_EGL_NONE};
+                            fenceFd.release(), LOCAL_EGL_NONE};
 
   EGLSync sync =
       egl->fCreateSyncKHR(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, attribs);
@@ -142,8 +144,6 @@ void SharedSurface_AndroidHardwareBuffer::WaitForBufferOwnership() {
     gfxCriticalNote << "Failed to create EGLSync from fd";
     return;
   }
-  
-  (void)fenceFd.release();
 
   if (egl->IsExtensionSupported(gl::EGLExtension::KHR_wait_sync)) {
     egl->fWaitSync(sync, 0);
