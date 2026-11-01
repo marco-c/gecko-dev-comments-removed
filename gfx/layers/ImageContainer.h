@@ -118,6 +118,10 @@ class Image {
     return gfx::IntRect(GetOrigin().x, GetOrigin().y, GetSize().width,
                         GetSize().height);
   }
+  
+  
+  
+  virtual Maybe<gfx::IntSize> GetAddressableSize() const;
   virtual gfx::ColorDepth GetColorDepth() const {
     return gfx::ColorDepth::COLOR_8;
   }
@@ -929,6 +933,8 @@ class PlanarYCbCrImage : public Image {
 
   gfx::IntPoint GetOrigin() const override { return mOrigin; }
 
+  Maybe<gfx::IntSize> GetAddressableSize() const override;
+
   PlanarYCbCrImage();
 
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
@@ -1005,6 +1011,7 @@ class NVImage final : public Image {
   
   gfx::IntSize GetSize() const override;
   gfx::IntRect GetPictureRect() const override;
+  Maybe<gfx::IntSize> GetAddressableSize() const override;
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
   nsresult BuildSurfaceDescriptorBuffer(
       SurfaceDescriptorBuffer& aSdBuffer, BuildSdbFlags aFlags,
