@@ -1181,10 +1181,17 @@ function normalizeAddressFields(record) {
   return normalized;
 }
 
+
+
+
+
+
+
 async function verifyConfirmationHint(
   browser,
   forceClose,
-  anchorID = "identity-icon-box"
+  anchorID = "identity-icon-box",
+  expectedL10nId = null
 ) {
   let hintElem = browser.documentGlobal.ConfirmationHint._panel;
   let popupshown = BrowserTestUtils.waitForPopupEvent(hintElem, "shown");
@@ -1206,6 +1213,16 @@ async function verifyConfirmationHint(
       anchorID,
       "Hint should be anchored on the expected notification icon"
     );
+    if (expectedL10nId) {
+      const { ConfirmationHint } = browser.documentGlobal;
+      Assert.equal(
+        ConfirmationHint._message.ownerDocument.l10n.getAttributes(
+          ConfirmationHint._message
+        ).id,
+        expectedL10nId,
+        "Hint shows the expected message"
+      );
+    }
     info("verifyConfirmationHint, hint is shown and has its anchorNode");
     if (forceClose) {
       await closePopup(hintElem);
