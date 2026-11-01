@@ -543,6 +543,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
+  static qcms_profile* GetCMSDisplayP3Profile() {
+    return GetPlatform()->mCMSDisplayP3Profile;
+  }
+
+  
+
+
   static qcms_transform* GetCMSRGBTransform() {
     return GetPlatform()->mCMSRGBTransform;
   }
@@ -572,6 +579,20 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
   static qcms_transform* GetCMSOSRGBATransform();
+
+  
+
+
+  static qcms_transform* GetCMSRGBP3Transform() {
+    return GetPlatform()->mCMSRGBP3Transform;
+  }
+
+  
+
+
+  static qcms_transform* GetCMSP3RGBTransform() {
+    return GetPlatform()->mCMSP3RGBTransform;
+  }
 
   
 
@@ -985,11 +1006,14 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   qcms_profile* mCMSOutputProfile = nullptr;
   qcms_profile* mCMSsRGBProfile = nullptr;
+  qcms_profile* mCMSDisplayP3Profile = nullptr;
 
   qcms_transform* mCMSRGBTransform = nullptr;
   qcms_transform* mCMSInverseRGBTransform = nullptr;
   qcms_transform* mCMSRGBATransform = nullptr;
   qcms_transform* mCMSBGRATransform = nullptr;
+  qcms_transform* mCMSRGBP3Transform = nullptr;
+  qcms_transform* mCMSP3RGBTransform = nullptr;
   mozilla::Maybe<nsTArray<uint8_t>> mCMSOutputProfileData;
 
   
