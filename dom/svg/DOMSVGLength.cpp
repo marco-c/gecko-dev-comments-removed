@@ -81,6 +81,8 @@ void DOMSVGLength::CleanupWeakRefs() {
   
   
   if (nsCOMPtr<DOMSVGLengthList> lengthList = do_QueryInterface(mOwner)) {
+    
+    
     MOZ_RELEASE_ASSERT(lengthList->mItems[mListIndex] == this,
                        "Clearing out the wrong list index...?");
     lengthList->mItems[mListIndex] = nullptr;

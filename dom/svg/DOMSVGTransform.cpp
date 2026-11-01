@@ -113,6 +113,8 @@ void DOMSVGTransform::CleanupWeakRefs() {
   
   
   if (mList) {
+    
+    
     MOZ_RELEASE_ASSERT(mList->mItems[mListIndex] == this,
                        "Clearing out the wrong list index...?");
     mList->mItems[mListIndex] = nullptr;
