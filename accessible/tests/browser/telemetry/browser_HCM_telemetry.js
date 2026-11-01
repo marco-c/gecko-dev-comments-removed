@@ -5,7 +5,7 @@
 "use strict";
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 
@@ -14,6 +14,8 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
 );
 
 registerCleanupFunction(reset);
+
+const PREFS_PANE = "accessibility";
 
 function pushPref(name, val) {
   return SpecialPowers.pushPrefEnv({ set: [[name, val]] });
@@ -93,7 +95,7 @@ async function setBackgroundColor(color) {
 }
 
 add_task(async function testInit() {
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(PREFS_PANE, { leaveOpen: true });
   const contrastControlRadios =
     gBrowser.selectedBrowser.contentDocument.getElementById(
       "contrastControlSettings"
@@ -158,7 +160,7 @@ add_task(async function testInit() {
 });
 
 add_task(async function testSetAlways() {
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(PREFS_PANE, { leaveOpen: true });
   const contrastControlRadios =
     gBrowser.selectedBrowser.contentDocument.getElementById(
       "contrastControlSettings"
@@ -196,7 +198,7 @@ add_task(async function testSetAlways() {
 });
 
 add_task(async function testSetDefault() {
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(PREFS_PANE, { leaveOpen: true });
   const contrastControlRadios =
     gBrowser.selectedBrowser.contentDocument.getElementById(
       "contrastControlSettings"
@@ -249,7 +251,7 @@ add_task(async function testSetDefault() {
 });
 
 add_task(async function testSetNever() {
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(PREFS_PANE, { leaveOpen: true });
   const contrastControlRadios =
     gBrowser.selectedBrowser.contentDocument.getElementById(
       "contrastControlSettings"
@@ -324,7 +326,7 @@ add_task(async function testBackplate() {
 add_task(async function testAlwaysUnderlineLinks() {
   const expectedInitVal = false;
   await verifyAlwaysUnderlineLinks(expectedInitVal);
-  await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(PREFS_PANE, { leaveOpen: true });
   const checkbox = gBrowser.selectedBrowser.contentDocument.getElementById(
     "alwaysUnderlineLinks"
   );

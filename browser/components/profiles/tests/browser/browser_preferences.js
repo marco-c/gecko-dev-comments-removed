@@ -3,6 +3,9 @@
 
 "use strict";
 
+const PROFILES_PARENT_PANE = "paneSync";
+const PROFILES_PRIVACY_NOTE_PANE = "permissionsData";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
@@ -55,7 +58,7 @@ add_task(async function testHiddenWhenDisabled() {
     set: [["browser.profiles.enabled", false]],
   });
 
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -69,7 +72,7 @@ add_task(async function testHiddenWhenDisabled() {
 });
 
 add_task(async function testEnabled() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -82,10 +85,15 @@ add_task(async function testEnabled() {
   ok(BrowserTestUtils.isVisible(profilesCategory), "The category is visible");
 
   
+  
+  
   let profilesSettingGroup = doc.querySelector(
     "setting-group[groupid='profiles']"
-  ).firstElementChild;
-  let learnMore = profilesSettingGroup.shadowRoot.querySelector(
+  );
+  let profilesFieldset =
+    profilesSettingGroup.querySelector("moz-fieldset") ??
+    profilesSettingGroup.firstElementChild;
+  let learnMore = profilesFieldset.shadowRoot.querySelector(
     "a[is='moz-support-link']"
   );
   Assert.equal(
@@ -117,7 +125,7 @@ add_task(async function testEnabled() {
 });
 
 add_task(async function subpaneContentsWithOneProfile() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -172,7 +180,7 @@ add_task(async function copyProfile() {
   await initGroupDatabase();
   await SelectableProfileService.createNewProfile(false, null, "tests");
 
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PARENT_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -251,7 +259,7 @@ add_task(async function copyProfile() {
 
 add_task(async function testPrivacyInfoEnabled() {
   ok(SelectableProfileService.isEnabled, "service should be enabled");
-  await openPreferencesViaOpenPreferencesAPI("privacy", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PRIVACY_NOTE_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
@@ -293,7 +301,7 @@ add_task(async function testPrivacyInfoHiddenWhenDisabled() {
 
   ok(!SelectableProfileService.isEnabled, "service should not be enabled");
 
-  await openPreferencesViaOpenPreferencesAPI("privacy", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PRIVACY_NOTE_PANE, {
     leaveOpen: true,
   });
   let profilesNote = gBrowser.contentDocument.getElementById(
@@ -321,7 +329,7 @@ add_task(async function testReactivateProfileGroupID() {
     set: [["datareporting.healthreport.uploadEnabled", true]],
   });
 
-  await openPreferencesViaOpenPreferencesAPI("privacy", {
+  await openPreferencesViaOpenPreferencesAPI(PROFILES_PRIVACY_NOTE_PANE, {
     leaveOpen: true,
   });
   let checkbox = gBrowser.contentDocument.getElementById(
