@@ -401,6 +401,8 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_DOCUMENT:
     
     case nsIContentPolicy::TYPE_CSP_REPORT:
+    
+    case nsIContentPolicy::TYPE_INTERNAL_SPECULATION_RULES:
       return nsIContentSecurityPolicy::NO_DIRECTIVE;
 
     case nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD:

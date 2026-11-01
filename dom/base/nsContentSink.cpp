@@ -36,6 +36,7 @@
 #include "mozilla/dom/SRILogHelper.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
+#include "mozilla/dom/SpeculationRules.h"
 #include "mozilla/net/HttpBaseChannel.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsAtom.h"
@@ -213,6 +214,7 @@ nsresult nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel) {
 
   
   
+  
 
   nsAutoCString linkHeader;
 
@@ -232,6 +234,21 @@ nsresult nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel) {
     rv = NS_DispatchToCurrentThread(mProcessLinkHeaderEvent.get());
     if (NS_FAILED(rv)) {
       mProcessLinkHeaderEvent.Forget();
+    }
+  }
+
+  
+  
+  
+  
+  if (StaticPrefs::dom_speculation_rules_enabled() && mDocShell &&
+      mDocShell->GetBrowsingContext()->IsTop()) {
+    nsAutoCString speculationRulesHeader;
+    rv = httpchannel->GetResponseHeader("Speculation-Rules"_ns,
+                                        speculationRulesHeader);
+    if (NS_SUCCEEDED(rv) && !speculationRulesHeader.IsEmpty()) {
+      mDocument->SpeculationRules().ProcessSpeculationRulesHeader(
+          speculationRulesHeader);
     }
   }
 
