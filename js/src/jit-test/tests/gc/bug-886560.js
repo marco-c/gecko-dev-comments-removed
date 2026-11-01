@@ -3,7 +3,7 @@
 
 
 
-enableShellAllocationMetadataBuilder(function(obj) {
+enableTrackAllocations(function(obj) {
     var res = {};
     return res;
   });

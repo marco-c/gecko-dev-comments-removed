@@ -4,7 +4,7 @@ var g1 = newGlobal({ sameZoneAs: this });
 
 
 
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 
 
 new Error();

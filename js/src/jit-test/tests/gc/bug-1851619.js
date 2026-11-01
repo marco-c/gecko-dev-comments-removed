@@ -3,7 +3,7 @@
 
 
 
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 var registry = new FinalizationRegistry(()=>{
 });
 registry.register({}, 1, {});

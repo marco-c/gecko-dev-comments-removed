@@ -2,7 +2,7 @@ g1 = newGlobal({ sameZoneAs: this });
 
 
 
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 
 
 

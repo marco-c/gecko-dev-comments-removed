@@ -7,7 +7,7 @@
 
 
 const g = newGlobal();
-g.enableShellAllocationMetadataBuilder();
+g.enableTrackAllocations();
 function run() {
     const g_load = g.load;
     g_load.toString = run;

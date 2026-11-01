@@ -2,7 +2,7 @@
 
 
 
-enableShellAllocationMetadataBuilder();
+enableTrackAllocations();
 
 var m = new WebAssembly.Memory({
     initial: 0,
