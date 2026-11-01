@@ -341,49 +341,26 @@ auto SVGUseElement::ScanAncestorsInternal(const Element& aTarget,
 
 
 
-enum class ForbiddenUseNodeMode {
-  Strict,
-  ForeignObjectOnly,
-};
-
-enum class RootRemoved : bool { No, Yes };
-
-static bool IsForbiddenUseNode(const nsINode& aNode,
-                               ForbiddenUseNodeMode aMode) {
+static bool IsForbiddenUseNode(const nsINode& aNode) {
   if (!aNode.IsElement()) {
     return false;
   }
   const auto* svg = SVGElement::FromNode(aNode);
-  if (!svg) {
-    return true;
-  }
-  if (svg->IsAnyOfSVGElements(nsGkAtoms::foreignObject)) {
-    return true;
-  }
-  if (aMode == ForbiddenUseNodeMode::ForeignObjectOnly) {
-    return false;
-  }
-  return !svg->IsSVGGraphicsElement();
+  return !svg || !svg->IsSVGGraphicsElement();
 }
 
-[[nodiscard]]
-static RootRemoved CollectForbiddenNodes(Element& aRoot,
-                                         ForbiddenUseNodeMode aMode,
-                                         nsTArray<RefPtr<nsINode>>& aNodes) {
+static void CollectForbiddenNodes(Element& aRoot,
+                                  nsTArray<RefPtr<nsINode>>& aNodes) {
   auto iter = dom::ShadowIncludingTreeIterator(aRoot);
   while (iter) {
     nsINode* node = *iter;
-    if (IsForbiddenUseNode(*node, aMode)) {
-      if (node == &aRoot) {
-        return RootRemoved::Yes;
-      }
+    if (IsForbiddenUseNode(*node)) {
       aNodes.AppendElement(node);
       iter.SkipChildren();
       continue;
     }
     ++iter;
   }
-  return RootRemoved::No;
 }
 
 
@@ -408,30 +385,24 @@ static RootRemoved CollectForbiddenNodes(Element& aRoot,
 
 
 
-
-
-[[nodiscard]]
-static RootRemoved RemoveForbiddenNodes(Element& aRoot, bool aIsCrossDocument) {
-  ForbiddenUseNodeMode mode = ForbiddenUseNodeMode::Strict;
+static void RemoveForbiddenNodes(Element& aRoot, bool aIsCrossDocument) {
   switch (StaticPrefs::svg_use_element_graphics_element_restrictions()) {
     case 0:
-      return RootRemoved::No;
+      return;
     case 1:
-      mode = aIsCrossDocument ? ForbiddenUseNodeMode::Strict
-                              : ForbiddenUseNodeMode::ForeignObjectOnly;
+      if (!aIsCrossDocument) {
+        return;
+      }
       break;
     default:
       break;
   }
 
   AutoTArray<RefPtr<nsINode>, 10> unsafeNodes;
-  if (CollectForbiddenNodes(aRoot, mode, unsafeNodes) == RootRemoved::Yes) {
-    return RootRemoved::Yes;
-  }
+  CollectForbiddenNodes(aRoot, unsafeNodes);
   for (auto& unsafeNode : unsafeNodes) {
     unsafeNode->Remove();
   }
-  return RootRemoved::No;
 }
 
 void SVGUseElement::UpdateShadowTree() {
@@ -456,7 +427,11 @@ void SVGUseElement::UpdateShadowTree() {
   RefPtr<Element> newElement;
 
   auto UpdateShadowTree = mozilla::MakeScopeExit([&]() {
-    shadow->RemoveAllChildren( true);
+    if (nsIContent* firstChild = shadow->GetFirstChild()) {
+      MOZ_ASSERT(!firstChild->GetNextSibling());
+      shadow->RemoveChildNode(firstChild,  true);
+    }
+
     if (newElement) {
       shadow->AppendChildTo(newElement,  true, IgnoreErrors());
     }
@@ -490,11 +465,7 @@ void SVGUseElement::UpdateShadowTree() {
 
     MOZ_ASSERT(newNode->IsElement());
     newElement = newNode.forget().downcast<Element>();
-    if (RemoveForbiddenNodes(*newElement, isCrossDocument) ==
-        RootRemoved::Yes) {
-      newElement = nullptr;
-      return;
-    }
+    RemoveForbiddenNodes(*newElement, isCrossDocument);
   }
 
   if (newElement->IsAnyOfSVGElements(nsGkAtoms::svg, nsGkAtoms::symbol)) {
