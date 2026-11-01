@@ -60,6 +60,7 @@ const INVALID_CALLBACK_DIR_ERROR = 78;
 const ERR_OLDER_VERSION_OR_SAME_BUILD = 90;
 const ERR_UPDATE_STATE_NONE = 91;
 const ERR_CHANNEL_CHANGE = 92;
+const INVALID_UPDATER_STATUS_CODE = 99;
 
 const BACKGROUND_TASK_SHARING_VIOLATION = 106;
 
@@ -444,4 +445,33 @@ function readFileBytes(aFile) {
   data = data.join("");
   fis.close();
   return data.toString();
+}
+
+
+
+
+
+
+
+
+
+
+function getContinueFile(aLeafName) {
+  let file;
+  
+  
+  let xpcshellTempDir = Services.env.get("XPCSHELL_TEST_TEMP_DIR");
+  if (xpcshellTempDir) {
+    file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+    file.initWithPath(xpcshellTempDir);
+  } else {
+    file = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
+    for (let part of REL_PATH_DATA.split("/")) {
+      if (part) {
+        file.append(part);
+      }
+    }
+  }
+  file.append(aLeafName);
+  return file;
 }

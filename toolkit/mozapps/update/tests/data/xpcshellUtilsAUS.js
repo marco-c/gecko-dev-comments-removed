@@ -1019,7 +1019,8 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
   
   
   
-  if (applyDir.exists()) {
+  
+  if (usesProgramFilesApplyDir() && applyDir.exists()) {
     debugDump("attempting to remove directory. Path: " + applyDir.path);
     try {
       removeDirRecursive(applyDir);
@@ -1230,7 +1231,8 @@ function cleanupTestCommon() {
 
   
   
-  if (applyDir.exists()) {
+  
+  if (usesProgramFilesApplyDir() && applyDir.exists()) {
     debugDump("attempting to remove directory. Path: " + applyDir.path);
     try {
       removeDirRecursive(applyDir);
@@ -1638,6 +1640,11 @@ function getAppVersion() {
   return iniParser.getString("App", "Version");
 }
 
+function usesProgramFilesApplyDir() {
+  return gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED;
+}
+
+
 
 
 
@@ -1653,13 +1660,17 @@ function getAppVersion() {
 
 
 function getApplyDirPath() {
-  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
-    let dir = getMaintSvcDir();
+  let dir;
+  if (usesProgramFilesApplyDir()) {
+    dir = getMaintSvcDir();
     dir.append(gTestID);
-    dir.append("dir.app");
-    return dir.path;
+  } else {
+    dir = do_get_tempdir();
+    
+    dir.normalize();
   }
-  return gTestID + "/dir.app/";
+  dir.append("dir.app");
+  return dir.path;
 }
 
 
@@ -1679,23 +1690,18 @@ function getApplyDirPath() {
 
 
 function getApplyDirFile(aRelPath) {
-  
-  
-  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
-    let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-    file.initWithPath(getApplyDirPath());
-    if (aRelPath) {
-      if (aRelPath == "..") {
+  let file = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
+  file.initWithPath(getApplyDirPath());
+  if (aRelPath) {
+    for (let part of aRelPath.split("/")) {
+      if (part == "..") {
         file = file.parent;
-      } else {
-        aRelPath = aRelPath.replace(/\//g, "\\");
-        file.appendRelativePath(aRelPath);
+      } else if (part) {
+        file.append(part);
       }
     }
-    return file;
   }
-  let relpath = getApplyDirPath() + (aRelPath ? aRelPath : "");
-  return do_get_file(relpath, true);
+  return file;
 }
 
 
@@ -3218,7 +3224,7 @@ async function runHelperFileInUse(aRelPath, aCopyTestHelper) {
   }
   fileInUseBin.permissions = PERMS_DIRECTORY;
   let args = [
-    getApplyDirPath() + DIR_RESOURCES,
+    getApplyDirFile(DIR_RESOURCES).path,
     "input",
     "output",
     "-s",
@@ -3256,7 +3262,7 @@ async function runHelperPIDPersists(aRelPath, aCopyTestHelper) {
   }
   pidPersistsBin.permissions = PERMS_DIRECTORY;
   let args = [
-    getApplyDirPath() + DIR_RESOURCES,
+    getApplyDirFile(DIR_RESOURCES).path,
     "input",
     "output",
     "-s",
@@ -3296,7 +3302,7 @@ async function runHelperLockFile(aTestFile) {
   }
   lockFileRelPath = lockFileRelPath.join("/") + "/" + aTestFile.fileName;
   let args = [
-    getApplyDirPath() + DIR_RESOURCES,
+    getApplyDirFile(DIR_RESOURCES).path,
     "input",
     "output",
     "-s",
@@ -4849,7 +4855,7 @@ function getProcessArgs(aExtraArgs) {
   
   
   let profileDir = appBin.parent.parent;
-  if (gIsServiceTest && IS_AUTHENTICODE_CHECK_ENABLED) {
+  if (usesProgramFilesApplyDir()) {
     profileDir = do_get_tempdir();
   }
   profileDir.append("profile");
@@ -4898,7 +4904,8 @@ function getProcessArgs(aExtraArgs) {
 
 
 function getAppArgsLogPath() {
-  let appArgsLog = do_get_file("/" + gTestID + "_app_args_log", true);
+  let appArgsLog = do_get_tempdir();
+  appArgsLog.append(gTestID + "_app_args_log");
   if (appArgsLog.exists()) {
     appArgsLog.remove(false);
   }
@@ -4916,7 +4923,8 @@ function getAppArgsLogPath() {
 
 
 function getLaunchScript() {
-  let launchScript = do_get_file("/" + gTestID + "_launch.sh", true);
+  let launchScript = do_get_tempdir();
+  launchScript.append(gTestID + "_launch.sh");
   if (launchScript.exists()) {
     launchScript.remove(false);
   }
