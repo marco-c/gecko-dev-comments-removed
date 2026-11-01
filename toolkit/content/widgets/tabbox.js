@@ -319,6 +319,9 @@
         () => this.updateSplitterAriaAttributes(),
         0
       );
+      
+      
+      this.tabbox?.tabs?.updatePanelLabels?.();
     }
 
     disconnectedCallback() {
@@ -342,6 +345,31 @@
       const widthPercentage = Math.round((leftWidth / totalWidth) * 100);
 
       Glean.splitview.resize.record({ width: widthPercentage });
+    }
+
+    
+
+
+
+
+    #updateSelectedSplitViewColumn() {
+      const panel = this.selectedPanel;
+      const column =
+        this.hasAttribute("splitview") &&
+        panel?.classList.contains("split-view-panel")
+          ? panel.getAttribute("column")
+          : null;
+      const root = this.ownerDocument.documentElement;
+      if (column === null) {
+        root.removeAttribute("splitview-selected-column");
+      } else {
+        root.setAttribute("splitview-selected-column", column);
+      }
+    }
+
+    updateSelectedIndex(...args) {
+      super.updateSelectedIndex(...args);
+      this.#updateSelectedSplitViewColumn();
     }
 
     handleEvent(e) {
@@ -610,6 +638,7 @@
       
       
       this.selectedPanel = selectedPanel;
+      this.#updateSelectedSplitViewColumn();
       
       this.#splitterAriaUpdateTask.arm();
     }
@@ -800,6 +829,26 @@
 
     set linkedPanel(val) {
       this.setAttribute("linkedpanel", val);
+      
+      
+      
+      if (val && !this.#labelLinkedPanel()) {
+        queueMicrotask(() => this.#labelLinkedPanel());
+      }
+    }
+
+    
+
+
+
+
+    #labelLinkedPanel() {
+      let panel = this.ownerDocument.getElementById(this.linkedPanel);
+      if (!panel) {
+        return false;
+      }
+      panel.ariaLabelledByElements = [this];
+      return true;
     }
 
     get linkedPanel() {
@@ -1264,6 +1313,8 @@
   MozElements.TabsBase = TabsBase;
 
   class MozTabs extends TabsBase {
+    #panelLabelsObserver = new MutationObserver(() => this.updatePanelLabels());
+
     connectedCallback() {
       if (this.delayConnectedCallback()) {
         return;
@@ -1280,6 +1331,38 @@
       this.insertBefore(end, null);
 
       this.baseConnect();
+      this.updatePanelLabels();
+    }
+
+    disconnectedCallback() {
+      this.#panelLabelsObserver.disconnect();
+    }
+
+    
+
+
+
+
+
+    updatePanelLabels() {
+      if (!this.isConnectedAndReady) {
+        return;
+      }
+      
+      
+      this.#panelLabelsObserver.disconnect();
+      this.#panelLabelsObserver.observe(this, { childList: true });
+      let tabpanels = this.tabbox?.tabpanels;
+      if (!tabpanels) {
+        return;
+      }
+      this.#panelLabelsObserver.observe(tabpanels, { childList: true });
+      for (let tab of this.allTabs) {
+        let panel = this.getRelatedElement(tab);
+        if (panel && panel.ariaLabelledByElements?.[0] != tab) {
+          panel.ariaLabelledByElements = [tab];
+        }
+      }
     }
 
     

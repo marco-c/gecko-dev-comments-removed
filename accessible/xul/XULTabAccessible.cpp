@@ -13,7 +13,6 @@
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
-#include "nsIDOMXULRelatedElement.h"
 #include "nsIDOMXULSelectCntrlItemEl.h"
 #include "nsXULElement.h"
 
@@ -90,27 +89,6 @@ uint64_t XULTabAccessible::NativeInteractiveState() const {
   return (state & states::UNAVAILABLE)
              ? state
              : state | states::SELECTABLE | states::FOCUSABLE;
-}
-
-Relation XULTabAccessible::RelationByType(RelationType aType) const {
-  Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABEL_FOR) return rel;
-
-  
-  ErrorResult rv;
-  nsIContent* parent = mContent->AsElement()->Closest("tabs"_ns, rv);
-  if (!parent) return rel;
-
-  nsCOMPtr<nsIDOMXULRelatedElement> tabsElm =
-      parent->AsElement()->AsXULRelated();
-  if (!tabsElm) return rel;
-
-  RefPtr<mozilla::dom::Element> tabpanelElement;
-  tabsElm->GetRelatedElement(GetNode(), getter_AddRefs(tabpanelElement));
-  if (!tabpanelElement) return rel;
-
-  rel.AppendTarget(mDoc, tabpanelElement);
-  return rel;
 }
 
 void XULTabAccessible::ApplyARIAState(uint64_t* aState) const {
@@ -207,21 +185,11 @@ XULTabpanelAccessible::XULTabpanelAccessible(nsIContent* aContent,
 
 role XULTabpanelAccessible::NativeRole() const { return roles::PROPERTYPAGE; }
 
-Relation XULTabpanelAccessible::RelationByType(RelationType aType) const {
-  Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABELLED_BY) return rel;
-
+ENameValueFlag XULTabpanelAccessible::DirectName(nsString& aName) const {
   
-  if (!mContent->GetParent()) return rel;
-
-  nsCOMPtr<nsIDOMXULRelatedElement> tabpanelsElm =
-      mContent->GetParent()->AsElement()->AsXULRelated();
-  if (!tabpanelsElm) return rel;
-
-  RefPtr<mozilla::dom::Element> tabElement;
-  tabpanelsElm->GetRelatedElement(GetNode(), getter_AddRefs(tabElement));
-  if (!tabElement) return rel;
-
-  rel.AppendTarget(mDoc, tabElement);
-  return rel;
+  
+  
+  
+  aName.Truncate();
+  return eNameOK;
 }
