@@ -183,6 +183,20 @@ function srdSectionEnabled(section) {
   return srdSectionPrefs.all || srdSectionPrefs[section];
 }
 
+
+
+
+
+
+
+const notificationsSection = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  notificationsSection,
+  "enabled",
+  "browser.preferences.notifications-section.enabled",
+  false
+);
+
 var { SettingPaneManager, friendlyPrefCategoryNameToInternalName } =
   ChromeUtils.importESModule(
     "chrome://browser/content/preferences/config/SettingPaneManager.mjs",
@@ -393,9 +407,23 @@ const CONFIG_PANES = Object.freeze({
   permissionsData: {
     l10nId: "permissions-data-section",
     iconSrc: "chrome://browser/skin/permissions.svg",
-    groupIds: ["permissions", "dataCollection"],
+    groupIds: ["notificationsEntry", "permissions", "dataCollection"],
     module: "chrome://browser/content/preferences/config/permissions-data.mjs",
     visible: () => srdSectionEnabled("permissionsData"),
+  },
+  notifications: {
+    parent: "permissionsData",
+    l10nId: "notifications-section-header",
+    
+    
+    
+    
+    
+    groupIds:
+      notificationsSection.enabled && srdSectionEnabled("permissionsData")
+        ? ["websiteNotifications"]
+        : [],
+    module: "chrome://browser/content/preferences/config/notifications.mjs",
   },
   personalizeSmartWindow: {
     parent: "ai",

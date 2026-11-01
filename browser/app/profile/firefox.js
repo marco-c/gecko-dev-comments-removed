@@ -3884,6 +3884,11 @@ pref("browser.settings-redesign.enabled", true);
 
 
 
+pref("browser.preferences.notifications-section.enabled", false);
+
+
+
+
 #if defined(MOZ_WIDGET_GTK)
 pref("widget.support-xdg-config", true, locked);
 #endif
