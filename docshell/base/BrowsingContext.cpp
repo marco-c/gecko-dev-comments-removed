@@ -1363,10 +1363,10 @@ void BrowsingContext::DeactivateDocuments(
 }
 
 static void GetSubframeReactivationData(
-    BrowsingContext* aBrowsingContext,
-    Maybe<SessionHistoryInfo>& aReactivatedEntry,
-    nsTArray<SessionHistoryInfo>& aNewSHEs,
-    const Maybe<PreviousSessionHistoryInfo>& aPreviousEntryForActivation) {
+    BrowsingContext* ,
+    Maybe<SessionHistoryInfo>& ,
+    nsTArray<SessionHistoryInfo>& ,
+    const Maybe<PreviousSessionHistoryInfo>& ) {
   
   MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
               "We currently don't know how to reactivate subframes");
@@ -1792,9 +1792,9 @@ JSObject* BrowsingContext::WrapObject(JSContext* aCx,
   return BrowsingContext_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-bool BrowsingContext::WriteStructuredClone(JSContext* aCx,
+bool BrowsingContext::WriteStructuredClone(JSContext* ,
                                            JSStructuredCloneWriter* aWriter,
-                                           StructuredCloneHolder* aHolder) {
+                                           StructuredCloneHolder* ) {
   MOZ_DIAGNOSTIC_ASSERT(mEverAttached);
   return (JS_WriteUint32Pair(aWriter, SCTAG_DOM_BROWSING_CONTEXT, 0) &&
           JS_WriteUint32Pair(aWriter, uint32_t(Id()), uint32_t(Id() >> 32)));
@@ -2778,11 +2778,11 @@ WindowProxyHolder BrowsingContext::Window() {
   return WindowProxyHolder(Self());
 }
 
-WindowProxyHolder BrowsingContext::GetFrames(ErrorResult& aError) {
+WindowProxyHolder BrowsingContext::GetFrames(ErrorResult& ) {
   return Window();
 }
 
-void BrowsingContext::Close(CallerType aCallerType, ErrorResult& aError) {
+void BrowsingContext::Close(CallerType aCallerType, ErrorResult& ) {
   if (mIsDiscarded) {
     return;
   }
@@ -2984,7 +2984,7 @@ std::tuple<bool, bool> BrowsingContext::CanFocusCheck(CallerType aCallerType) {
   return {canFocus, isActive};
 }
 
-void BrowsingContext::Focus(CallerType aCallerType, ErrorResult& aError) {
+void BrowsingContext::Focus(CallerType aCallerType, ErrorResult& ) {
   
   
   
@@ -3017,7 +3017,7 @@ bool BrowsingContext::CanBlurCheck(CallerType aCallerType) {
          !Preferences::GetBool("dom.disable_window_flip", true);
 }
 
-void BrowsingContext::Blur(CallerType aCallerType, ErrorResult& aError) {
+void BrowsingContext::Blur(CallerType aCallerType, ErrorResult& ) {
   if (!CanBlurCheck(aCallerType)) {
     return;
   }
@@ -3036,7 +3036,7 @@ Nullable<WindowProxyHolder> BrowsingContext::GetWindow() {
   return WindowProxyHolder(this);
 }
 
-Nullable<WindowProxyHolder> BrowsingContext::GetTop(ErrorResult& aError) {
+Nullable<WindowProxyHolder> BrowsingContext::GetTop(ErrorResult& ) {
   if (mIsDiscarded) {
     return nullptr;
   }
@@ -3062,7 +3062,8 @@ void BrowsingContext::GetOpener(JSContext* aCx,
 
 
 
-Nullable<WindowProxyHolder> BrowsingContext::GetParent(ErrorResult& aError) {
+Nullable<WindowProxyHolder> BrowsingContext::GetParent(
+    ErrorResult& ) {
   if (mIsDiscarded) {
     return nullptr;
   }
@@ -3323,7 +3324,7 @@ void BrowsingContext::ActivenessChanged(bool aIsActive) {
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_SessionStoreEpoch>,
-                             uint32_t aOldValue) {
+                             uint32_t ) {
   if (!mCurrentWindowContext) {
     return;
   }
@@ -3500,7 +3501,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_PageAwakeRequestCount>,
   Group()->UpdateToplevelsSuspendedIfNeeded();
 }
 
-void BrowsingContext::DidSet(FieldIndex<IDX_AllowJavascript>, bool aOldValue) {
+void BrowsingContext::DidSet(FieldIndex<IDX_AllowJavascript>,
+                             bool ) {
   RecomputeCanExecuteScripts();
 }
 
@@ -3607,7 +3609,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_AnimationsPlayBackRateMultiplier>,
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_LanguageOverride>,
-                             nsCString&& aOldValue) {
+                             nsCString&& ) {
   MOZ_ASSERT(IsTop());
 
   const nsCString& languageOverride = GetLanguageOverride();
@@ -3771,7 +3773,7 @@ auto BrowsingContext::LegacyRevertIfNotOwningOrParentProcess(
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>,
-                             bool aOldValue) {
+                             bool ) {
   bool isActivateEvent = GetIsActiveBrowserWindowInternal();
   
   
@@ -3805,7 +3807,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>,
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_OpenerPolicy>,
                              nsILoadInfo::CrossOriginOpenerPolicy aPolicy,
-                             ContentParent* aSource) {
+                             ContentParent* ) {
   
   
   
@@ -3819,13 +3821,13 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_OpenerPolicy>,
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_AllowContentRetargeting>,
-                             const bool& aAllowContentRetargeting,
+                             const bool& ,
                              ContentParent* aSource) -> CanSetResult {
   return LegacyRevertIfNotOwningOrParentProcess(aSource);
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_AllowContentRetargetingOnChildren>,
-                             const bool& aAllowContentRetargetingOnChildren,
+                             const bool& ,
                              ContentParent* aSource) -> CanSetResult {
   return LegacyRevertIfNotOwningOrParentProcess(aSource);
 }
@@ -3909,7 +3911,7 @@ void BrowsingContext::SetGeolocationServiceOverride(
 }
 
 void BrowsingContext::DidSet(FieldIndex<IDX_TimezoneOverride>,
-                             nsString&& aOldValue) {
+                             nsString&& ) {
   MOZ_ASSERT(IsTop());
 
   const nsString& timezoneOverride = GetTimezoneOverride();
@@ -3939,7 +3941,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_TimezoneOverride>,
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_DefaultLoadFlags>,
-                             const uint32_t& aDefaultLoadFlags,
+                             const uint32_t& ,
                              ContentParent* aSource) -> CanSetResult {
   
   
@@ -3963,14 +3965,14 @@ void BrowsingContext::DidSet(FieldIndex<IDX_DefaultLoadFlags>) {
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_UserAgentOverride>,
-                             const nsCString& aUserAgent,
+                             const nsCString& ,
                              ContentParent* aSource) -> CanSetResult {
   return LegacyRevertIfNotOwningOrParentProcess(aSource);
 }
 
 auto BrowsingContext::CanSet(FieldIndex<IDX_PlatformOverride>,
-                             const nsString& aPlatform, ContentParent* aSource)
-    -> CanSetResult {
+                             const nsString& ,
+                             ContentParent* aSource) -> CanSetResult {
   return LegacyRevertIfNotOwningOrParentProcess(aSource);
 }
 
@@ -4047,7 +4049,7 @@ void BrowsingContext::DidSet(FieldIndex<IDX_CurrentInnerWindowId>) {
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_IsPopupSpam>, const bool& aValue,
-                             ContentParent* aSource) {
+                             ContentParent* ) {
   
   
   return aValue && !GetIsPopupSpam();
@@ -4281,7 +4283,7 @@ bool BrowsingContext::CanSet(FieldIndex<IDX_BrowserId>, const uint64_t& aValue,
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_PendingInitialization>,
-                             bool aNewValue, ContentParent* aSource) {
+                             bool aNewValue, ContentParent* ) {
   
   
   return GetPendingInitialization() && !aNewValue;

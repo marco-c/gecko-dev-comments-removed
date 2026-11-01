@@ -188,9 +188,8 @@ void ChildSHistory::AsyncGo(int32_t aOffset, bool aRequireUserInteraction,
           ("ChildSHistory::AsyncGo(%d), current index = %d", aOffset,
            index.value()));
 
-  RefPtr<PendingAsyncHistoryNavigation> asyncNav =
-      new PendingAsyncHistoryNavigation(this, aOffset, aRequireUserInteraction,
-                                        aUserActivation);
+  RefPtr asyncNav = MakeRefPtr<PendingAsyncHistoryNavigation>(
+      this, aOffset, aRequireUserInteraction, aUserActivation);
   mPendingNavigations.insertBack(asyncNav);
   NS_DispatchToCurrentThread(asyncNav.forget());
 }
@@ -204,17 +203,16 @@ void ChildSHistory::AsyncGo(const nsID& aKey, BrowsingContext* aNavigable,
               "ChildSHistory::AsyncGo({}), current index = {}",
               aKey.ToString().get(), index.value());
 
-  RefPtr<PendingAsyncHistoryNavigation> asyncNav =
-      new PendingAsyncHistoryNavigation(
-          this, aKey, aNavigable, aRequireUserInteraction, aUserActivation,
-          aCheckForCancelation, std::move(aResolver));
+  RefPtr asyncNav = MakeRefPtr<PendingAsyncHistoryNavigation>(
+      this, aKey, aNavigable, aRequireUserInteraction, aUserActivation,
+      aCheckForCancelation, std::move(aResolver));
   mPendingNavigations.insertBack(asyncNav);
   NS_DispatchToCurrentThread(asyncNav.forget());
 }
 
 void ChildSHistory::GotoIndex(int32_t aIndex, int32_t aOffset,
                               bool aRequireUserInteraction,
-                              bool aUserActivation, ErrorResult& aRv) {
+                              bool aUserActivation, ErrorResult& ) {
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("ChildSHistory::GotoIndex(%d, %d), epoch %" PRIu64, aIndex, aOffset,
            mHistoryEpoch));
@@ -241,10 +239,10 @@ void ChildSHistory::GotoIndex(int32_t aIndex, int32_t aOffset,
 }
 
 void ChildSHistory::GotoKey(const nsID& aKey, BrowsingContext* aNavigable,
-                            bool aRequireUserInteraction, bool aUserActivation,
-                            bool aCheckForCancelation,
+                            bool ,
+                            bool aUserActivation, bool aCheckForCancelation,
                             const std::function<void(nsresult)>& aResolver,
-                            ErrorResult& aRv) {
+                            ErrorResult& ) {
   if (!mPendingEpoch) {
     mPendingEpoch = true;
     RefPtr<ChildSHistory> self(this);

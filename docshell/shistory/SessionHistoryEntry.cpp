@@ -986,7 +986,7 @@ SessionHistoryEntry::SetScrollRestorationIsManual(
 }
 
 NS_IMETHODIMP
-SessionHistoryEntry::GetLoadedInThisProcess(bool* aLoadedInThisProcess) {
+SessionHistoryEntry::GetLoadedInThisProcess(bool* ) {
   
   
   return NS_OK;
@@ -1076,15 +1076,17 @@ SessionHistoryEntry::InitLayoutHistoryState(
 
 NS_IMETHODIMP
 SessionHistoryEntry::Create(
-    nsIURI* aURI, const nsAString& aTitle, nsIInputStream* aInputStream,
-    uint32_t aCacheKey, const nsACString& aContentType,
-    nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aPrincipalToInherit,
-    nsIPrincipal* aPartitionedPrincipalToInherit,
-    nsIPolicyContainer* aPolicyContainer, const nsID& aDocshellID,
-    bool aDynamicCreation, nsIURI* aOriginalURI, nsIURI* aResultPrincipalURI,
-    nsIURI* aUnstrippedURI, bool aLoadReplace, nsIReferrerInfo* aReferrerInfo,
-    const nsAString& aSrcdoc, bool aSrcdocEntry, nsIURI* aBaseURI,
-    bool aSaveLayoutState, bool aExpired, bool aUserActivation) {
+    nsIURI* , const nsAString& ,
+    nsIInputStream* , uint32_t ,
+    const nsACString& , nsIPrincipal* ,
+    nsIPrincipal* ,
+    nsIPrincipal* ,
+    nsIPolicyContainer* , const nsID& ,
+    bool , nsIURI* ,
+    nsIURI* , nsIURI* ,
+    bool , nsIReferrerInfo* ,
+    const nsAString& , bool , nsIURI* ,
+    bool , bool , bool ) {
   MOZ_CRASH("Might need to implement this");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -1354,7 +1356,7 @@ SessionHistoryEntry::ClearEntry() {
 }
 
 NS_IMETHODIMP
-SessionHistoryEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
+SessionHistoryEntry::CreateLoadInfo(nsDocShellLoadState** ) {
   NS_WARNING("We shouldn't be calling this!");
   return NS_OK;
 }

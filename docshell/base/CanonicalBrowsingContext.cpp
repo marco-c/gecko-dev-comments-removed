@@ -921,8 +921,9 @@ class PrintListenerAdapter final : public nsIWebProgressListener {
   NS_DECL_ISUPPORTS
 
   
-  NS_IMETHOD OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                           uint32_t aStateFlags, nsresult aStatus) override {
+  NS_IMETHOD OnStateChange(nsIWebProgress* ,
+                           nsIRequest* , uint32_t aStateFlags,
+                           nsresult ) override {
     MOZ_ASSERT(NS_IsMainThread());
     if (aStateFlags & nsIWebProgressListener::STATE_STOP &&
         aStateFlags & nsIWebProgressListener::STATE_IS_DOCUMENT && mPromise) {
@@ -934,34 +935,36 @@ class PrintListenerAdapter final : public nsIWebProgressListener {
     }
     return NS_OK;
   }
-  NS_IMETHOD OnStatusChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
-                            nsresult aStatus,
-                            const char16_t* aMessage) override {
+  NS_IMETHOD OnStatusChange(nsIWebProgress* ,
+                            nsIRequest* , nsresult aStatus,
+                            const char16_t* ) override {
     if (aStatus != NS_OK && mPromise) {
       mPromise->Reject(aStatus, __func__);
       mPromise = nullptr;
     }
     return NS_OK;
   }
-  NS_IMETHOD OnProgressChange(nsIWebProgress* aWebProgress,
-                              nsIRequest* aRequest, int32_t aCurSelfProgress,
-                              int32_t aMaxSelfProgress,
-                              int32_t aCurTotalProgress,
-                              int32_t aMaxTotalProgress) override {
+  NS_IMETHOD OnProgressChange(nsIWebProgress* ,
+                              nsIRequest* ,
+                              int32_t ,
+                              int32_t ,
+                              int32_t ,
+                              int32_t ) override {
     return NS_OK;
   }
-  NS_IMETHOD OnLocationChange(nsIWebProgress* aWebProgress,
-                              nsIRequest* aRequest, nsIURI* aLocation,
-                              uint32_t aFlags) override {
+  NS_IMETHOD OnLocationChange(nsIWebProgress* ,
+                              nsIRequest* , nsIURI* ,
+                              uint32_t ) override {
     return NS_OK;
   }
-  NS_IMETHOD OnSecurityChange(nsIWebProgress* aWebProgress,
-                              nsIRequest* aRequest, uint32_t aState) override {
+  NS_IMETHOD OnSecurityChange(nsIWebProgress* ,
+                              nsIRequest* ,
+                              uint32_t ) override {
     return NS_OK;
   }
-  NS_IMETHOD OnContentBlockingEvent(nsIWebProgress* aWebProgress,
-                                    nsIRequest* aRequest,
-                                    uint32_t aEvent) override {
+  NS_IMETHOD OnContentBlockingEvent(nsIWebProgress* ,
+                                    nsIRequest* ,
+                                    uint32_t ) override {
     return NS_OK;
   }
 
@@ -1152,7 +1155,7 @@ RefPtr<PrintPromise> CanonicalBrowsingContext::PrintWithNoContentAnalysis(
           listener->StaticCloneForPrintingCreated(
               std::move(cachedStaticDocument));
         },
-        [promise](ResponseRejectReason reason) {
+        [promise](ResponseRejectReason ) {
           NS_WARNING("SendPrint() failed");
           promise->Reject(NS_ERROR_FAILURE, __func__);
         });
@@ -2131,7 +2134,7 @@ void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
 }
 
 uint32_t CanonicalBrowsingContext::CountSiteOrigins(
-    GlobalObject& aGlobal,
+    GlobalObject& ,
     const Sequence<OwningNonNull<BrowsingContext>>& aRoots) {
   nsTHashSet<nsCString> uniqueSiteOrigins;
 
@@ -3755,7 +3758,7 @@ struct ClearSiteWalkHistoryData {
 
 nsresult CanonicalBrowsingContext::ContainsSameOriginBfcacheEntry(
     SessionHistoryEntry* aEntry, mozilla::dom::BrowsingContext* aBC,
-    int32_t aChildIndex, void* aData) {
+    int32_t , void* aData) {
   if (!aEntry) {
     return NS_OK;
   }

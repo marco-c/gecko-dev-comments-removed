@@ -127,7 +127,7 @@ LoadContext::GetUsePrivateBrowsing(bool* aUsePrivateBrowsing) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetUsePrivateBrowsing(bool aUsePrivateBrowsing) {
+LoadContext::SetUsePrivateBrowsing(bool ) {
   MOZ_ASSERT(mIsNotNull);
 
   
@@ -135,7 +135,7 @@ LoadContext::SetUsePrivateBrowsing(bool aUsePrivateBrowsing) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetPrivateBrowsing(bool aUsePrivateBrowsing) {
+LoadContext::SetPrivateBrowsing(bool ) {
   MOZ_ASSERT(mIsNotNull);
 
   
@@ -153,7 +153,7 @@ LoadContext::GetUseRemoteTabs(bool* aUseRemoteTabs) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetRemoteTabs(bool aUseRemoteTabs) {
+LoadContext::SetRemoteTabs(bool ) {
   MOZ_ASSERT(mIsNotNull);
 
   
@@ -171,7 +171,7 @@ LoadContext::GetUseRemoteSubframes(bool* aUseRemoteSubframes) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetRemoteSubframes(bool aUseRemoteSubframes) {
+LoadContext::SetRemoteSubframes(bool ) {
   MOZ_ASSERT(mIsNotNull);
 
   
@@ -202,7 +202,7 @@ LoadContext::GetUseTrackingProtection(bool* aUseTrackingProtection) {
 }
 
 NS_IMETHODIMP
-LoadContext::SetUseTrackingProtection(bool aUseTrackingProtection) {
+LoadContext::SetUseTrackingProtection(bool ) {
   MOZ_ASSERT_UNREACHABLE("Should only be set through nsDocShell");
 
   return NS_ERROR_UNEXPECTED;
