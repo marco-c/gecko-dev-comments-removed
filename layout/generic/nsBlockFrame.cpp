@@ -3524,7 +3524,7 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool foundAnyClears = aState.mTrailingClearFromPIF != UsedClear::None;
   bool willReflowAgain = false;
   bool usedOverflowWrap = false;
-  const bool trimChildBStartMargins = StyleTrimsChildBStartMargins(this);
+  const bool trimChildBStartMargins = aState.ShouldTrimChildBStartMargins();
 
 #ifdef DEBUG
   if (gNoisyReflow) {
@@ -4796,10 +4796,11 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   
   
   
-  const bool trimChildBStartMargins = StyleTrimsChildBStartMargins(this);
+  const bool trimChildBStartMargins = aState.ShouldTrimChildBStartMargins();
   const ReflowInput::InitFlags marginTrimFlags =
       BlockReflowState::ComputeChildMarginTrim(
-          this, trimChildBStartMargins, StyleTrimsChildBEndMargins(this), aLine,
+          this, trimChildBStartMargins,
+          nsBlockReflowContext::StyleTrimsChildBEndMargins(this), aLine,
           trimChildBStartMargins && IsLineAdjacentToBStart(aState));
 
   nsIFrame* clearanceFrame = nullptr;
@@ -5197,7 +5198,8 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       childReflowInput.reset();
       childReflowInput.emplace(
           aState.mPresContext, aState.mReflowInput, frame,
-          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
+          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm), Nothing(),
+          marginTrimFlags);
     } while (true);
 
     if (mayNeedRetry && clearanceFrame) {
@@ -6141,25 +6143,6 @@ bool nsBlockFrame::IsLineAdjacentToBEnd(LineIterator aLine) {
     }
   }
   return true;
-}
-
-
-bool nsBlockFrame::StyleTrimsChildBStartMargins(const nsIFrame* aFrame) {
-  
-  
-  if (aFrame->StyleColumn()->IsColumnContainerStyle()) {
-    return false;
-  }
-  return bool(aFrame->StyleMargin()->mMarginTrim &
-              StyleMarginTrim::BLOCK_START);
-}
-
-
-bool nsBlockFrame::StyleTrimsChildBEndMargins(const nsIFrame* aFrame) {
-  if (aFrame->StyleColumn()->IsColumnContainerStyle()) {
-    return false;
-  }
-  return bool(aFrame->StyleMargin()->mMarginTrim & StyleMarginTrim::BLOCK_END);
 }
 
 bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
