@@ -39,27 +39,29 @@ const CLIPBOARD_URL_FLAVORS = ["text/x-moz-url", "text/plain"];
 
 
 
+class HistoryDownloadElementShell extends DownloadsViewUI.DownloadElementShell {
+  
 
 
 
-function HistoryDownloadElementShell(download) {
-  this._download = download;
+  constructor(download) {
+    super();
+    this._download = download;
 
-  this.element = document.createXULElement("richlistitem");
-  this.element._shell = this;
+    this.element = document.createXULElement("richlistitem");
+    this.element._shell = this;
 
-  this.element.classList.add("download");
-  this.element.classList.add("download-state");
-}
+    this.element.classList.add("download");
+    this.element.classList.add("download-state");
+  }
 
-HistoryDownloadElementShell.prototype = {
   
 
 
 
   get download() {
     return this._download;
-  },
+  }
 
   onStateChanged() {
     
@@ -74,7 +76,7 @@ HistoryDownloadElementShell.prototype = {
       
       goUpdateCommand("downloadsCmd_clearDownloads");
     }
-  },
+  }
 
   onChanged() {
     
@@ -89,34 +91,33 @@ HistoryDownloadElementShell.prototype = {
     } else {
       this._updateStateInner();
     }
-  },
-  _downloadState: null,
+  }
+
+  _downloadState = null;
 
   isCommandEnabled(aCommand) {
     
     if (!this.active && aCommand != "cmd_delete") {
       return false;
     }
-    return DownloadsViewUI.DownloadElementShell.prototype.isCommandEnabled.call(
-      this,
-      aCommand
-    );
-  },
+    return super.isCommandEnabled(aCommand);
+  }
 
   downloadsCmd_unblock() {
     this.confirmUnblock(window, "unblock");
-  },
+  }
+
   downloadsCmd_unblockAndSave() {
     this.confirmUnblock(window, "unblock");
-  },
+  }
 
   downloadsCmd_chooseUnblock() {
     this.confirmUnblock(window, "chooseUnblock");
-  },
+  }
 
   downloadsCmd_chooseOpen() {
     this.confirmUnblock(window, "chooseOpen");
-  },
+  }
 
   
   
@@ -133,7 +134,7 @@ HistoryDownloadElementShell.prototype = {
         .toLowerCase()
         .includes(aTerm)
     );
-  },
+  }
 
   
   
@@ -158,7 +159,7 @@ HistoryDownloadElementShell.prototype = {
     if (command && this.isCommandEnabled(command)) {
       this.doCommand(command);
     }
-  },
+  }
 
   
 
@@ -188,12 +189,8 @@ HistoryDownloadElementShell.prototype = {
           this._targetFileChecked = true;
         });
     }
-  },
-};
-Object.setPrototypeOf(
-  HistoryDownloadElementShell.prototype,
-  DownloadsViewUI.DownloadElementShell.prototype
-);
+  }
+}
 
 
 
@@ -904,15 +901,14 @@ for (let methodName of ["load", "applyFilter", "selectNode", "selectItems"]) {
 }
 
 function goUpdateDownloadCommands() {
-  function updateCommandsForObject(object) {
-    for (let name in object) {
-      if (DownloadsViewUI.isCommandName(name)) {
-        goUpdateCommand(name);
-      }
-    }
+  const commands = [
+    ...DownloadsViewUI.getCommandNamesFrom(DownloadsPlacesView),
+    ...DownloadsViewUI.getCommandNamesFrom(HistoryDownloadElementShell),
+  ];
+
+  for (let command of commands) {
+    goUpdateCommand(command);
   }
-  updateCommandsForObject(DownloadsPlacesView.prototype);
-  updateCommandsForObject(HistoryDownloadElementShell.prototype);
 }
 
 document.addEventListener("DOMContentLoaded", function () {
