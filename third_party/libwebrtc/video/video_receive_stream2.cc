@@ -580,11 +580,12 @@ void VideoReceiveStream2::RegisterCodecsOnReceiver(
     const std::vector<Decoder>& new_decoders) {
   
   
+  
+  
+  
+  
   for (const Decoder& old_decoder : old_decoders) {
-    if (!absl::c_linear_search(new_decoders, old_decoder)) {
-      video_receiver_.RegisterExternalDecoder(nullptr,
-                                              old_decoder.payload_type);
-    }
+    video_receiver_.RegisterExternalDecoder(nullptr, old_decoder.payload_type);
   }
 
   video_receiver_.DeregisterReceiveCodecs();
