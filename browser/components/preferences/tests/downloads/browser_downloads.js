@@ -3,10 +3,6 @@
 
 "use strict";
 
-let { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 const { MockFilePicker } = SpecialPowers;
 
 
@@ -17,29 +13,18 @@ const { MockFilePicker } = SpecialPowers;
 
 
 
-
 async function assertTelemetry(id, count, message) {
-  if (SpecialPowers.getBoolPref("browser.settings-redesign.enabled", false)) {
-    await Services.fog.testFlushAllChildren();
-    Assert.equal(
-      Glean.browserUiInteraction.preferencesPaneDownloads[id].testGetValue(),
-      count,
-      message
-    );
-  } else {
-    TelemetryTestUtils.assertKeyedScalar(
-      TelemetryTestUtils.getProcessScalars("parent", true, false),
-      "browser.ui.interaction.preferences_paneGeneral",
-      id,
-      count
-    );
-  }
+  await Services.fog.testFlushAllChildren();
+  Assert.equal(
+    Glean.browserUiInteraction.preferencesPaneDownloads[id].testGetValue(),
+    count,
+    message
+  );
 }
 
 add_task(async function testSelectDownloadDir() {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
-  Services.telemetry.clearScalars();
 
   
   const tempDirPath = await IOUtils.createUniqueDirectory(
@@ -57,7 +42,7 @@ add_task(async function testSelectDownloadDir() {
       ["browser.download.dir", downloadsDirPath],
     ],
   });
-  await openDownloadsOrPreferencesPane();
+  await openPreferencesViaOpenPreferencesAPI("downloads", { leaveOpen: true });
 
   let win = gBrowser.selectedBrowser.contentWindow;
   let doc = gBrowser.contentDocument;
