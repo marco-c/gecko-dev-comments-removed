@@ -238,6 +238,10 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   void RetrySkippedComposite();
 
   TextureFactoryIdentifier GetTextureFactoryIdentifier();
+  
+  
+  
+  Maybe<TextureFactoryIdentifier> MaybeGetTextureFactoryIdentifier();
 
   void ExtractImageCompositeNotifications(
       nsTArray<ImageCompositeNotificationInfo>* aNotifications);
