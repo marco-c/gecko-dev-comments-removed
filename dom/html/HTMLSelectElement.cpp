@@ -293,6 +293,11 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(
     HTMLSelectElement, nsGenericHTMLFormControlElementWithState)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mValidity)
+  
+  
+  
+  
+  tmp->mOptions->SetDirty();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectedOptions)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListBoxSelection.mStart)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mListBoxSelection.mEnd)
