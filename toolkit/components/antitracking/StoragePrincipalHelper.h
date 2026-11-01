@@ -6,6 +6,8 @@
 #define mozilla_StoragePrincipalHelper_h
 
 #include "ErrorList.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "nsIContentPolicy.h"
 #include "nsStringFwd.h"
 
 
@@ -327,6 +329,12 @@ class StoragePrincipalHelper final {
       nsIURI* aFirstPartyURI, OriginAttributes& aAttributes);
 
   
+  
+  
+  static bool GetOriginAttributesForHttpConnection(
+      nsIChannel* aChannel, bool aHasProxy, OriginAttributes& aAttributes);
+
+  
   static bool GetOriginAttributesForHSTS(nsIChannel* aChannel,
                                          OriginAttributes& aAttributes);
 
@@ -361,6 +369,17 @@ class StoragePrincipalHelper final {
   
   static nsString PartitionKeyForExpandedPrincipal(
       nsIPrincipal* aExpandedPrincipal);
+
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<nsICookieJarSettings>
+  MaybeCreateCookieJarSettingsForContentScript(
+      nsIPrincipal* aTriggeringPrincipal, nsIPrincipal* aLoadingPrincipal,
+      nsContentPolicyType aContentPolicyType);
 };
 
 }  
