@@ -9,6 +9,8 @@
 #ifndef mozilla_image_DecodePool_h
 #define mozilla_image_DecodePool_h
 
+#include "mozilla/AwakeTimeStamp.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticPtr.h"
 #include "nsCOMArray.h"
@@ -85,6 +87,13 @@ class DecodePool final : public nsIObserver {
 
   already_AddRefed<nsISerialEventTarget> GetIOEventTarget();
 
+#ifdef XP_WIN
+  
+  
+  static void NoteShellCallStarted();
+  static void NoteShellCallFinished();
+#endif
+
  private:
   friend class DecodePoolWorker;
 
@@ -98,6 +107,11 @@ class DecodePool final : public nsIObserver {
   
   Mutex mMutex;
   nsCOMPtr<nsIThread> mIOThread MOZ_GUARDED_BY(mMutex);
+#ifdef XP_WIN
+  
+  Maybe<AwakeTimeStamp> mShellCallStart MOZ_GUARDED_BY(mMutex);
+  bool mShellCallStartedInShutdown MOZ_GUARDED_BY(mMutex) = false;
+#endif
 };
 
 }  
