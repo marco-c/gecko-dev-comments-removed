@@ -38,6 +38,8 @@ impl super::Surface {
             render_layer: Mutex::new(layer),
             swapchain_format: RwLock::new(None),
             extent: RwLock::new(wgt::Extent3d::default()),
+            #[cfg(target_os = "macos")]
+            has_been_visible: wgpu_sync::atomic::AtomicBool::new(false),
         }
     }
 
@@ -369,14 +371,23 @@ impl crate::Surface for super::Surface {
             
             
             
+            
+            
+            
+            
+            
+            
             use objc2::rc::Retained;
+            use wgpu_sync::atomic;
 
             
             
             if let Some(window) = hosting_window(Retained::into_super(render_layer.clone())) {
                 const NS_WINDOW_OCCLUSION_STATE_VISIBLE: usize = 1 << 1;
                 let occlusion_state: usize = unsafe { objc2::msg_send![&*window, occlusionState] };
-                if occlusion_state & NS_WINDOW_OCCLUSION_STATE_VISIBLE == 0 {
+                if occlusion_state & NS_WINDOW_OCCLUSION_STATE_VISIBLE != 0 {
+                    self.has_been_visible.store(true, atomic::Ordering::Relaxed);
+                } else if self.has_been_visible.load(atomic::Ordering::Relaxed) {
                     return Err(crate::SurfaceError::Occluded);
                 }
             }

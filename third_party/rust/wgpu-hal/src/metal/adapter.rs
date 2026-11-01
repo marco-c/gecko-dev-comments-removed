@@ -923,7 +923,10 @@ impl super::CapabilitiesQuery {
                 && (device.supportsFamily(MTLGPUFamily::Apple7)
                     || device.supportsFamily(MTLGPUFamily::Mac2))
             {
-                1024
+                
+                
+                
+                996
             } else if family_check && device.supportsFamily(MTLGPUFamily::Apple6) {
                 128
             } else {
