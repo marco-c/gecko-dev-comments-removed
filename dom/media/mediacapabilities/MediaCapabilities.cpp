@@ -4,6 +4,7 @@
 
 #include "MediaCapabilities.h"
 
+#include <type_traits>
 #include <utility>
 
 #include "AOMDecoder.h"
@@ -273,6 +274,63 @@ static InfoType UnsupportedInfo() {
   info.mSmooth = false;
   info.mPowerEfficient = false;
   return info;
+}
+
+
+
+
+
+struct ProbeAllocPolicy {
+  const RefPtr<TaskQueue> mQueue;  
+  const RefPtr<SingleAllocPolicy> mPolicy;
+};
+
+
+static ProbeAllocPolicy* GetProbeAllocPolicy() {
+  static UniquePtr<ProbeAllocPolicy> sPolicy = []() {
+    SchedulerGroup::Dispatch(
+        NS_NewRunnableFunction("GetProbeAllocPolicy", []() {
+          ClearOnShutdown(&sPolicy, ShutdownPhase::XPCOMShutdownThreads);
+        }));
+    RefPtr<TaskQueue> queue =
+        TaskQueue::Create(GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER),
+                          "MediaCapabilities::ProbeAllocPolicy");
+    return MakeUnique<ProbeAllocPolicy>(
+        queue, MakeRefPtr<SingleAllocPolicy>(TrackInfo::TrackType::kVideoTrack,
+                                             queue));
+  }();
+  return sPolicy.get();
+}
+
+
+
+
+
+
+template <typename Function,
+          typename PromiseType = typename std::invoke_result_t<
+              Function, AllocPolicy*>::element_type>
+static RefPtr<PromiseType> WithAllocPolicy(const nsAString& aName,
+                                           Function&& aFunction) {
+  auto ticket = media::ShutdownBlockingTicket::Create(
+      aName, NS_LITERAL_STRING_FROM_CSTRING(__FILE__), __LINE__);
+  if (!ticket) {
+    LOG("Shutting down, not probing codec support for {}",
+        NS_ConvertUTF16toUTF8(aName).get());
+    typename PromiseType::ResolveValueType unsupported;
+    return PromiseType::CreateAndResolve(unsupported, __func__);
+  }
+  ProbeAllocPolicy* policy = GetProbeAllocPolicy();
+  ticket->ShutdownPromise()->Then(
+      policy->mQueue, __func__,
+      [policy = policy->mPolicy]() { policy->Cancel(); }, []() {});
+  return aFunction(policy->mPolicy.get())
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [ticket = std::move(ticket)](
+                 typename PromiseType::ResolveOrRejectValue&& aValue) {
+               return PromiseType::CreateAndResolveOrReject(std::move(aValue),
+                                                            __func__);
+             });
 }
 
 
@@ -1378,17 +1436,11 @@ MediaCapabilities::CheckVideoDecodingInfo(
                 
                 
                 
-                static RefPtr<AllocPolicy> sVideoAllocPolicy = [&taskQueue]() {
-                  SchedulerGroup::Dispatch(NS_NewRunnableFunction(
-                      "MediaCapabilities::AllocPolicy:Video", []() {
-                        ClearOnShutdown(&sVideoAllocPolicy,
-                                        ShutdownPhase::XPCOMShutdownThreads);
-                      }));
-                  return new SingleAllocPolicy(
-                      TrackInfo::TrackType::kVideoTrack, taskQueue);
-                }();
-                return PDMFactory::StrictSupportsAsync(params,
-                                                       sVideoAllocPolicy);
+                return WithAllocPolicy(
+                    u"MediaCapabilities::CheckVideoDecodingInfo"_ns,
+                    [&params](AllocPolicy* aPolicy) {
+                      return PDMFactory::StrictSupportsAsync(params, aPolicy);
+                    });
               });
         }
 
