@@ -518,13 +518,16 @@ void RtpVideoSender::SetActiveModulesLocked(bool sending) {
 
 void RtpVideoSender::SetModuleIsActive(bool sending,
                                        RtpRtcpInterface& rtp_module) {
-  if (rtp_module.SendingMedia() == sending) {
+  rtp_module.SetSendingMediaStatus(sending);
+  
+  
+  
+  if (rtp_module.Sending() == sending) {
     return;
   }
 
   
   rtp_module.SetSendingStatus(sending);
-  rtp_module.SetSendingMediaStatus(sending);
   if (sending) {
     transport_->RegisterSendingRtpStream(rtp_module);
   } else {
@@ -583,7 +586,11 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   if (!rtp_streams_[simulcast_index].rtp_rtcp->OnSendingRtpFrame(
           encoded_image.RtpTimestamp(), encoded_image.capture_time_ms_,
           rtp_config_.GetStreamConfig(simulcast_index).payload_type,
-          encoded_image.IsKey())) {
+          encoded_image.IsKey()) &&
+      
+      
+      
+      !rtp_streams_[simulcast_index].rtp_rtcp->SendingMedia()) {
     
     return Result(Result::ERROR_SEND_FAILED);
   }
@@ -665,6 +672,15 @@ void RtpVideoSender::OnVideoLayersAllocationUpdated(
          allocation.active_spatial_layers) {
       if (layer.rtp_stream_index < static_cast<int>(sending.size())) {
         sending[layer.rtp_stream_index] = true;
+        
+        
+        
+        
+        
+        
+        
+        rtp_streams_[layer.rtp_stream_index].rtp_rtcp->SetSendingMediaStatus(
+            true);
       }
     }
     transport_queue_.PostTask(

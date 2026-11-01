@@ -811,9 +811,8 @@ TEST(RtpVideoSenderTest, SupportsDependencyDescriptor) {
 
 
 
-
 TEST(RtpVideoSenderTest,
-     DescribesDependencyOnFrameDroppedWhileRtpModuleWasInactive) {
+     DescribesDependencyOnFrameDroppedWhileLayerWasDisabled) {
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, {}, kPayloadType, {});
   test.SetSending(true);
 
@@ -887,12 +886,13 @@ TEST(RtpVideoSenderTest,
   }
 
   
+  EXPECT_NE(send_frame(1, VideoFrameType::kVideoFrameKey),
+            EncodedImageCallback::Result::OK);
+
   
   test.router()->OnVideoLayersAllocationUpdated(
       {.active_spatial_layers = {{.rtp_stream_index = 0},
                                  {.rtp_stream_index = 1}}});
-  EXPECT_NE(send_frame(1, VideoFrameType::kVideoFrameKey),
-            EncodedImageCallback::Result::OK);
   test.AdvanceTime(TimeDelta::Zero());
 
   
@@ -904,6 +904,52 @@ TEST(RtpVideoSenderTest,
   ASSERT_TRUE(layer1_packets[1].GetExtension<RtpDependencyDescriptorExtension>(
       key_frame_dd.attached_structure.get(), &delta_frame_dd));
   EXPECT_THAT(delta_frame_dd.frame_dependencies.frame_diffs, ElementsAre(1));
+}
+
+
+
+
+TEST(RtpVideoSenderTest, SendsKeyFrameOfReEnabledLayerBeforeModuleIsActivated) {
+  RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, {kRtxSsrc1, kRtxSsrc2},
+                                 kPayloadType, {});
+  test.SetSending(true);
+
+  std::vector<RtpPacket> layer1_packets;
+  ON_CALL(test.transport(), SendRtp)
+      .WillByDefault(
+          [&](std::span<const uint8_t> packet, const PacketOptions& options) {
+            RtpPacket rtp_packet;
+            EXPECT_TRUE(rtp_packet.Parse(packet));
+            if (rtp_packet.Ssrc() == kSsrc2 && rtp_packet.payload_size() > 0) {
+              layer1_packets.push_back(rtp_packet);
+            }
+            return true;
+          });
+
+  constexpr uint8_t kPayload = 'a';
+  EncodedImage encoded_image;
+  encoded_image.SetRtpTimestamp(1);
+  encoded_image.capture_time_ms_ = 2;
+  encoded_image.set_frame_type(VideoFrameType::kVideoFrameKey);
+  encoded_image.SetEncodedData(EncodedImageBuffer::Create(&kPayload, 1));
+  encoded_image.SetSimulcastIndex(1);
+  CodecSpecificInfo codec_info;
+  codec_info.codecType = kVideoCodecVP8;
+
+  
+  test.router()->OnVideoLayersAllocationUpdated(
+      {.active_spatial_layers = {{.rtp_stream_index = 0}}});
+  test.AdvanceTime(TimeDelta::Zero());
+
+  
+  
+  test.router()->OnVideoLayersAllocationUpdated(
+      {.active_spatial_layers = {{.rtp_stream_index = 0},
+                                 {.rtp_stream_index = 1}}});
+  EXPECT_EQ(test.router()->OnEncodedImage(encoded_image, &codec_info).error,
+            EncodedImageCallback::Result::OK);
+  test.AdvanceTime(TimeDelta::Millis(33));
+  EXPECT_THAT(layer1_packets, SizeIs(1));
 }
 
 TEST(RtpVideoSenderTest, SimulcastIndependentFrameIds) {
