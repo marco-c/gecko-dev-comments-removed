@@ -321,7 +321,7 @@ class LintRoller:
                     "warning: {} support-file modified, linting entire tree "
                     "(press ctrl-c to cancel)".format(linter["name"])
                 )
-            elif paths == {self.root}:
+            elif paths == {os.path.abspath(self.root)}:
                 
                 
                 
