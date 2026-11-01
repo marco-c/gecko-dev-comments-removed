@@ -28,6 +28,11 @@ user_pref("browser.sessionstore.interval.idle", 3600000);
 
 
 
+
+user_pref("javascript.options.compact_on_user_inactive_delay", 300000);
+
+
+
 user_pref("browser.tabs.hideStatusPanel", true);
 
 user_pref("dom.performance.time_to_non_blank_paint.enabled", true);
