@@ -38,7 +38,6 @@
 #include "nsIXULRuntime.h"
 #include "nsContentUtils.h"  
 #include "nsJSUtils.h"
-#include "nsStandardURL.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "nsPrintfCString.h"
 #include "nsTHashtable.h"
@@ -2118,21 +2117,21 @@ History::VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
             triggeringSponsoredURLVisitTimeMS.ToInteger64(&rv);
         NS_ENSURE_SUCCESS(rv, rv);
 
-        
-        
-        nsCOMPtr<nsIURI> currentURL;
-        rv = NS_MutateURI(new net::nsStandardURL::Mutator())
-                 .SetSpec(place.spec)
-                 .Finalize(currentURL);
-        NS_ENSURE_SUCCESS(rv, rv);
         nsCOMPtr<nsIURI> sponsoredURL;
-        rv = NS_MutateURI(new net::nsStandardURL::Mutator())
-                 .SetSpec(place.triggeringSponsoredURL)
-                 .Finalize(sponsoredURL);
-        NS_ENSURE_SUCCESS(rv, rv);
-        navHistory->DomainNameFromURI(currentURL, place.baseDomain);
-        navHistory->DomainNameFromURI(sponsoredURL,
-                                      place.triggeringSponsoredURLBaseDomain);
+        rv = NS_NewURI(getter_AddRefs(sponsoredURL),
+                       place.triggeringSponsoredURL);
+        bool sameDomain = false;
+        if (!NS_WARN_IF(NS_FAILED(rv))) {
+          
+          
+          nsCString visitedBaseDomain, sponsoredBaseDomain;
+          navHistory->DomainNameFromURI(visitedURI, visitedBaseDomain);
+          navHistory->DomainNameFromURI(sponsoredURL, sponsoredBaseDomain);
+          sameDomain = visitedBaseDomain.Equals(sponsoredBaseDomain);
+        }
+        if (!sameDomain) {
+          place.triggeringSponsoredURL.Truncate();
+        }
       }
     }
   }
