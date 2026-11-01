@@ -188,6 +188,12 @@ class EditorBase : public nsIEditor,
 
 
 
+  Selection* GetExistingSelection(SelectionType aSelectionType) const;
+
+  
+
+
+
 
   nsFrameSelection* GetEditableFrameSelection() const;
 

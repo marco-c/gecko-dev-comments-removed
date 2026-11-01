@@ -371,7 +371,6 @@ class nsFrameSelection final {
   [[nodiscard]] bool IsAvailable() const {
     
     
-    
     return !!mDomSelections[0];
   }
 
@@ -557,6 +556,13 @@ class nsFrameSelection final {
 
 
   [[nodiscard]] mozilla::dom::Selection* GetSelection(
+      mozilla::SelectionType aSelectionType) const;
+
+  
+
+
+
+  [[nodiscard]] mozilla::dom::Selection* GetExistingSelection(
       mozilla::SelectionType aSelectionType) const;
 
   
@@ -1278,8 +1284,11 @@ class nsFrameSelection final {
 
   
 
-  mozilla::Array<RefPtr<mozilla::dom::Selection>,
-                 std::size(mozilla::kPresentSelectionTypes)>
+  
+  
+  
+  mutable mozilla::Array<RefPtr<mozilla::dom::Selection>,
+                         std::size(mozilla::kPresentSelectionTypes)>
       mDomSelections;
 
   nsTArray<
