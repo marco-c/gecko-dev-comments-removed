@@ -6557,12 +6557,16 @@ bool InlinableNativeIRGenerator::hasBoundArguments() const {
   return false;
 }
 
+bool IRGenerator::calleeGuardIsIdentity(JSFunction* callee) const {
+  
+  
+  
+  
+  return isFirstStub_ || !FunctionHasStableBaseScript(callee);
+}
+
 void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
-  
-  
-  
-  
-  if (isFirstStub_ || !FunctionHasStableBaseScript(callee)) {
+  if (calleeGuardIsIdentity(callee)) {
     writer.guardSpecificFunction(calleeId, callee);
   } else {
     MOZ_ASSERT_IF(callee->isSelfHostedBuiltin(),
@@ -13934,37 +13938,66 @@ void CallIRGenerator::emitCallScriptedGuards(
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      JSOp op = JSOp(*pc_);
+      bool newTargetIsCallee =
+          isBoundFunction || op == JSOp::New || op == JSOp::SpreadNew;
+      JSFunction* newTarget = newTargetIsCallee
+                                  ? calleeFunc
+                                  : &newTarget_.toObject().as<JSFunction>();
+      MOZ_ASSERT_IF(!isBoundFunction && newTargetIsCallee,
+                    newTarget_ == ObjectValue(*calleeFunc));
 
-      JSFunction* newTarget;
-      ObjOperandId newTargetObjId;
-      if (isBoundFunction) {
-        newTarget = calleeFunc;
-        newTargetObjId = calleeObjId;
-      } else {
-        newTarget = &newTarget_.toObject().as<JSFunction>();
+      auto getNewTargetObjId = [&]() -> ObjOperandId {
+        if (newTargetIsCallee) {
+          return calleeObjId;
+        }
         ValOperandId newTargetValId = writer.loadArgumentDynamicSlot(
             ArgumentKind::NewTarget, argcId, flags);
-        newTargetObjId = writer.guardToObject(newTargetValId);
-      }
+        return writer.guardToObject(newTargetValId);
+      };
 
       Maybe<PropertyInfo> prop = newTarget->lookupPure(cx_->names().prototype);
       MOZ_ASSERT(prop.isSome());
-      uint32_t slot = prop->slot();
-      MOZ_ASSERT(slot >= newTarget->numFixedSlots(),
-                 "Stub code relies on this");
+      MOZ_ASSERT(prop->isDataProperty() && !prop->configurable());
+      if (prop->writable()) {
+        
+        ObjOperandId newTargetObjId = getNewTargetObjId();
 
-      writer.guardShape(newTargetObjId, newTarget->shape());
+        uint32_t slot = prop->slot();
+        MOZ_ASSERT(slot >= newTarget->numFixedSlots(),
+                   "Stub code relies on this");
 
-      const Value& value = newTarget->getSlot(slot);
-      if (value.isObject()) {
-        JSObject* prototypeObject = &value.toObject();
+        writer.guardShape(newTargetObjId, newTarget->shape());
 
-        ObjOperandId protoId = writer.loadObject(prototypeObject);
-        writer.guardDynamicSlotIsSpecificObject(
-            newTargetObjId, protoId, slot - newTarget->numFixedSlots());
+        const Value& value = newTarget->getSlot(slot);
+        if (value.isObject()) {
+          JSObject* prototypeObject = &value.toObject();
+
+          ObjOperandId protoId = writer.loadObject(prototypeObject);
+          writer.guardDynamicSlotIsSpecificObject(
+              newTargetObjId, protoId, slot - newTarget->numFixedSlots());
+        } else {
+          writer.guardDynamicSlotIsNotObject(newTargetObjId,
+                                             slot - newTarget->numFixedSlots());
+        }
+      } else if (newTargetIsCallee && calleeGuardIsIdentity(calleeFunc)) {
+        
       } else {
-        writer.guardDynamicSlotIsNotObject(newTargetObjId,
-                                           slot - newTarget->numFixedSlots());
+        
+        ObjOperandId newTargetObjId = getNewTargetObjId();
+        writer.guardSpecificObject(newTargetObjId, newTarget);
       }
 
       
