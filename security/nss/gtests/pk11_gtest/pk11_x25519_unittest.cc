@@ -12,6 +12,7 @@
 #include "pk11_x25519_vectors.h"
 #include "pk11_signature_test.h"
 #include "pk11_keygen.h"
+#include "pk11_import.h"
 
 namespace nss_test {
 
@@ -43,7 +44,7 @@ class Pkcs11X25519Test
                          static_cast<unsigned int>(pkcs8.len())};
 
     SECKEYPrivateKey* key = nullptr;
-    SECStatus rv = PK11_ImportDERPrivateKeyInfoAndReturnKey(
+    SECStatus rv = nss_test::ImportDERPrivateKeyInfoAndReturnKey(
         slot.get(), &pkcs8Item, nullptr, nullptr, false, false, KU_ALL, &key,
         nullptr);
 
@@ -55,7 +56,8 @@ class Pkcs11X25519Test
   }
 
   bool ExportPrivateKey(ScopedSECKEYPrivateKey* key, DataBuffer& pkcs8) {
-    ScopedSECItem pkcs8Item(PK11_ExportDERPrivateKeyInfo(key->get(), nullptr));
+    ScopedSECItem pkcs8Item(
+        nss_test::ExportDERPrivateKeyInfo(key->get(), nullptr));
     if (!pkcs8Item) {
       return false;
     }
@@ -91,7 +93,8 @@ TEST_P(Pkcs11X25519Test, ImportExportPkcs8) {
   ScopedSECKEYPrivateKey key = ImportPrivateKey(GetParam().pkcs8_);
   EXPECT_EQ(key.get()->keyType, ecMontKey);
 
-  SECKEYPrivateKeyInfo* pkInfo = PK11_ExportPrivKeyInfo(key.get(), nullptr);
+  SECKEYPrivateKeyInfo* pkInfo =
+      nss_test::ExportPrivKeyInfo(key.get(), nullptr);
   ASSERT_TRUE(pkInfo);
   
   ASSERT_EQ(pkInfo->algorithm.parameters.len, (unsigned int)0);
@@ -229,6 +232,11 @@ TEST_F(Pkcs11X25519Test, ImportPkcs8NotSupportedOID) {
 
 TEST_F(Pkcs11X25519Test, ImportPkcs8ShortLenPrivateKey) {
   
+  
+  if (PK11_IsFIPS()) {
+    GTEST_SKIP() << "softoken rejects short X25519 keys on unwrap";
+  }
+  
 
   const uint8_t x25519_shortPrivateKey[] = {
       0x30, 0x2d,  
@@ -269,7 +277,8 @@ TEST_P(Pkcs11X25519Test, KeyGeneration) {
   ASSERT_TRUE(priv);
   ASSERT_TRUE(pub);
 
-  SECKEYPrivateKeyInfo* pkInfo = PK11_ExportPrivKeyInfo(priv.get(), nullptr);
+  SECKEYPrivateKeyInfo* pkInfo =
+      nss_test::ExportPrivKeyInfo(priv.get(), nullptr);
   ASSERT_TRUE(pkInfo);
   
   ASSERT_EQ(pkInfo->privateKey.len, (unsigned int)34);

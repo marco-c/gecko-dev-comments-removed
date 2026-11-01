@@ -13,6 +13,7 @@
 
 #include "gtest_utils.h"
 #include "tls_connect.h"
+#include "pk11_import.h"
 
 namespace nss_test {
 
@@ -45,8 +46,8 @@ class Tls13PskTest : public TlsConnectTestBase,
     psk_item.data = const_cast<uint8_t*>(kPskDummyVal_);
 
     PK11SymKey* key =
-        PK11_ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN, PK11_OriginUnwrap,
-                          CKA_DERIVE, &psk_item, NULL);
+        nss_test::ImportSymKey(slot.get(), CKM_HKDF_KEY_GEN, PK11_OriginUnwrap,
+                               CKA_DERIVE, &psk_item, NULL);
     if (!key) {
       ADD_FAILURE();
     }
@@ -68,7 +69,7 @@ TEST_P(Tls13PskTest, NormalExternal) {
   AddPsk(scoped_psk_, kPskDummyLabel_, kPskHash_);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
   client_->RemovePsk(kPskDummyLabel_);
   server_->RemovePsk(kPskDummyLabel_);
 
@@ -91,7 +92,7 @@ TEST_P(Tls13PskTest, KeyTooLarge) {
   AddPsk(scoped_psk_, kPskDummyLabel_, kPskHash_);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
 }
 
 
@@ -117,7 +118,7 @@ TEST_P(Tls13PskTest, LabelMismatch) {
   client_->AddPsk(scoped_psk_, std::string("foo"), kPskHash_);
   server_->AddPsk(scoped_psk_, std::string("bar"), kPskHash_);
   Connect();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
 }
 
 SSLHelloRetryRequestAction RetryFirstHello(
@@ -148,7 +149,7 @@ TEST_P(Tls13PskTest, ResPskRetryStateless) {
   Handshake();
   CheckConnected();
   EXPECT_EQ(2U, cb_called);
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
   SendReceive();
 }
 
@@ -174,7 +175,7 @@ TEST_P(Tls13PskTest, ExtPskRetryStateless) {
   Handshake();
   CheckConnected();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
 }
 
 
@@ -182,7 +183,7 @@ TEST_P(Tls13PskTest, ExtPskRetryStateless) {
 TEST_P(Tls13PskTest, ClientOnly) {
   client_->AddPsk(scoped_psk_, kPskDummyLabel_, kPskHash_);
   Connect();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
 }
 
 
@@ -247,7 +248,7 @@ TEST_P(Tls13PskTest, PreferEpsk) {
   Handshake();
   CheckConnected();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
 }
 
 
@@ -260,7 +261,7 @@ TEST_P(Tls13PskTest, SuppressNewSessionTicket) {
   nst_capture->EnableDecryption();
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
   EXPECT_EQ(SECFailure, SSL_SendSessionTicket(server_->ssl_fd(), nullptr, 0));
   EXPECT_EQ(0U, nst_capture->buffer().len());
   if (variant_ == ssl_variant_stream) {
@@ -275,7 +276,7 @@ TEST_P(Tls13PskTest, SuppressNewSessionTicket) {
   ExpectResumption(RESUME_NONE);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
 }
 
 TEST_P(Tls13PskTest, BadConfigValues) {
@@ -314,7 +315,7 @@ TEST_P(Tls13PskTest, FallbackUnsupportedCiphersuite) {
   client_->EnableSingleCipher(TLS_AES_128_GCM_SHA256);
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign);
+  CheckKeys();
 }
 
 
@@ -342,7 +343,7 @@ TEST_P(Tls13PskTest, SuppressHandshakeCertReq) {
 
   Connect();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
   EXPECT_EQ(0U, cr_cert_capture->buffer().len());
 }
 
@@ -422,7 +423,7 @@ TEST_P(Tls13PskTestWithCiphers, 0RttCiphers) {
   ExpectEarlyDataAccepted(true);
   CheckConnected();
   SendReceive();
-  CheckKeys(ssl_kea_ecdh, ssl_grp_ec_curve25519, ssl_auth_psk, ssl_sig_none);
+  CheckKeys(ssl_auth_psk, ssl_sig_none);
 }
 
 TEST_P(Tls13PskTestWithCiphers, 0RttMaxEarlyData) {

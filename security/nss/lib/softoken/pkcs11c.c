@@ -7188,7 +7188,7 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
             lk->u.genpq.keyItem = rawKey;
             if (seed.len) {
                 dummy = SEC_ASN1EncodeItem(arena, &pki->privateKey, lk,
-                                           nsslowkey_PQBothSeedAndPrivateKeyTemplate);
+                                           nsslowkey_PQSeedTemplate);
             } else {
                 dummy = SEC_ASN1EncodeItem(arena, &pki->privateKey, lk,
                                            nsslowkey_PQPrivateKeyTemplate);
@@ -7246,7 +7246,7 @@ sftk_PackagePrivateKey(SFTKObject *key, CK_RV *crvp)
 
             if (seed.len) {
                 dummy = SEC_ASN1EncodeItem(arena, &pki->privateKey, lk,
-                                           nsslowkey_PQBothSeedAndPrivateKeyTemplate);
+                                           nsslowkey_PQSeedTemplate);
             } else {
                 dummy = SEC_ASN1EncodeItem(arena, &pki->privateKey, lk,
                                            nsslowkey_PQPrivateKeyTemplate);
@@ -7830,11 +7830,9 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
             
 
 
-            if (!sftk_hasAttribute(key, CKA_NSS_DB)) {
-                if (lpk->u.ec.publicValue.len == 0) {
-                    crv = CKR_KEY_TYPE_INCONSISTENT;
-                    goto loser;
-                }
+
+            if (!sftk_hasAttribute(key, CKA_NSS_DB) &&
+                lpk->u.ec.publicValue.len != 0) {
                 crv = sftk_AddAttributeType(key, CKA_NSS_DB,
                                             sftk_item_expand(&lpk->u.ec.publicValue));
                 if (crv != CKR_OK) {
