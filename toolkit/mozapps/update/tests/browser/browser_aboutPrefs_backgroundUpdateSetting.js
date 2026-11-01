@@ -52,7 +52,7 @@ WARNING! This test involves background update, but background tasks are
 
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:preferences"
+    "about:preferences#about"
   );
 
   const originalBackgroundUpdateVal = await UpdateUtils.readUpdateConfigSetting(

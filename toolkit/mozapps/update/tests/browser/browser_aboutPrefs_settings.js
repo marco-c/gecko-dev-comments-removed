@@ -81,7 +81,7 @@ async function changeAndVerifyUpdateWrites({
 add_task(async function testUpdateAutoPrefUI() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
-    "about:preferences"
+    "about:preferences#about"
   );
 
   
