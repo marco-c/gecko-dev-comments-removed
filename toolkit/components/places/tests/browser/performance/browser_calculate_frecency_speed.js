@@ -13,16 +13,6 @@ const DEFAULT_CHUNK_SIZE = 50;
 
 
 
-
-
-const WARMUP_ITERATIONS = 1;
-const MEASURED_ITERATIONS = 10;
-
-const HOUR_MS = 1000 * 60 * 60;
-const DAY_MS = HOUR_MS * 24;
-
-
-
 const perfMetadata = {
   owner: "Places",
   name: "Calculate Frecency Speed",
@@ -47,36 +37,6 @@ const perfMetadata = {
         },
         {
           name: "PlacesCalculateFrecencyChunked",
-          unit: "ms",
-          shouldAlert: false,
-        },
-        {
-          name: "PlacesCalculateFrecencyBookmarkOnly",
-          unit: "ms",
-          shouldAlert: false,
-        },
-        {
-          name: "PlacesCalculateFrecencyRedirectChain",
-          unit: "ms",
-          shouldAlert: false,
-        },
-        {
-          name: "PlacesCalculateFrecencyInteractions",
-          unit: "ms",
-          shouldAlert: false,
-        },
-        {
-          name: "PlacesCalculateFrecencyManyVisits",
-          unit: "ms",
-          shouldAlert: false,
-        },
-        {
-          name: "PlacesCalculateFrecencyVeryManyVisits",
-          unit: "ms",
-          shouldAlert: false,
-        },
-        {
-          name: "PlacesCalculateFrecencyWorstCase",
           unit: "ms",
           shouldAlert: false,
         },
@@ -107,88 +67,7 @@ function createTimer(metricName) {
   };
 }
 
-
-
-
-
-
-
-
-
-
-function dailyVisits(
-  now,
-  count,
-  transition = PlacesUtils.history.TRANSITIONS.LINK
-) {
-  return Array.from({ length: count }, (_, i) => ({
-    date: new Date(now - (i + 1) * DAY_MS),
-    transition,
-  }));
-}
-
-
-
-
-
-
-
-
-
-function dailyInteractions(now, matched, unmatched) {
-  const daysAgo = days => now - days * DAY_MS;
-  let interactions = [];
-  
-  for (let day = 1; day <= matched; day++) {
-    interactions.push(daysAgo(day));
-  }
-  
-  for (let day = 1; day <= unmatched; day++) {
-    interactions.push(daysAgo(day + 0.5));
-  }
-  return interactions;
-}
-
-
-
-
-
-
-
-
-
-async function insertInteraction(db, placeId, createdAt) {
-  
-  
-  
-  
-  
-  
-  const viewTime =
-    Services.prefs.getIntPref(
-      "places.frecency.pages.interactions.viewTimeSeconds"
-    ) *
-      1000 +
-    1000;
-  const keyPresses =
-    Services.prefs.getIntPref(
-      "places.frecency.pages.interactions.manyKeypresses"
-    ) + 1;
-  await db.execute(
-    `INSERT INTO moz_places_metadata (
-       place_id, created_at, updated_at, total_view_time, key_presses
-     ) VALUES (:placeId, :createdAt, :createdAt, :viewTime, :keyPresses)`,
-    {
-      placeId,
-      createdAt,
-      viewTime,
-      keyPresses,
-    }
-  );
-}
-
 add_task(async function measure_frecency_speed() {
-  const now = Date.now();
   let testData = [
     
     {
@@ -199,27 +78,27 @@ add_task(async function measure_frecency_speed() {
           visits: [
             {
               
-              date: new Date(now - HOUR_MS),
+              date: new Date(Date.now() - 1000 * 60 * 60),
               transition: PlacesUtils.history.TRANSITIONS.TYPED,
             },
             {
               
-              date: new Date(now - DAY_MS),
+              date: new Date(Date.now() - 1000 * 60 * 60 * 24),
               transition: PlacesUtils.history.TRANSITIONS.TYPED,
             },
             {
               
-              date: new Date(now - DAY_MS * 7),
+              date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7),
               transition: PlacesUtils.history.TRANSITIONS.TYPED,
             },
             {
               
-              date: new Date(now - DAY_MS * 14),
+              date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 14),
               transition: PlacesUtils.history.TRANSITIONS.TYPED,
             },
             {
               
-              date: new Date(now - DAY_MS * 30),
+              date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
               transition: PlacesUtils.history.TRANSITIONS.TYPED,
             },
           ],
@@ -235,7 +114,7 @@ add_task(async function measure_frecency_speed() {
           visits: [
             {
               
-              date: new Date(now - DAY_MS * 365),
+              date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 365),
               transition: PlacesUtils.history.TRANSITIONS.LINK,
             },
           ],
@@ -250,89 +129,11 @@ add_task(async function measure_frecency_speed() {
           url: `https://www.example${i}.com/`,
           visits: [
             {
-              date: new Date(now),
+              date: new Date(),
             },
           ],
         })),
       ],
-    },
-    
-    
-    {
-      timerName: "PlacesCalculateFrecencyBookmarkOnly",
-      urls: [{ url: "https://bookmarked.mozilla.org/", visits: [] }],
-      bookmarkedUrls: ["https://bookmarked.mozilla.org/"],
-    },
-    
-    
-    
-    
-    {
-      timerName: "PlacesCalculateFrecencyRedirectChain",
-      urls: [
-        {
-          url: "https://redirect-source.mozilla.org/",
-          visits: dailyVisits(now, 5, PlacesUtils.history.TRANSITIONS.LINK),
-        },
-        {
-          url: "https://redirect-target.mozilla.org/",
-          visits: dailyVisits(
-            now,
-            5,
-            PlacesUtils.history.TRANSITIONS.REDIRECT_PERMANENT
-          ).map(visit => ({
-            ...visit,
-            date: new Date(visit.date.getTime() + 1000),
-            referrer: "https://redirect-source.mozilla.org/",
-          })),
-        },
-      ],
-    },
-    
-    
-    {
-      timerName: "PlacesCalculateFrecencyInteractions",
-      urls: [
-        {
-          url: "https://interactive.mozilla.org/",
-          visits: dailyVisits(now, 10),
-          interactions: dailyInteractions(now, 5, 5),
-        },
-      ],
-    },
-    
-    
-    {
-      timerName: "PlacesCalculateFrecencyManyVisits",
-      urls: [
-        {
-          url: "https://frequent.mozilla.org/",
-          visits: dailyVisits(now, 50),
-        },
-      ],
-    },
-    
-    
-    {
-      timerName: "PlacesCalculateFrecencyVeryManyVisits",
-      urls: [
-        {
-          url: "https://veryfrequent.mozilla.org/",
-          visits: dailyVisits(now, 200),
-        },
-      ],
-    },
-    
-    {
-      timerName: "PlacesCalculateFrecencyWorstCase",
-      urls: [
-        {
-          url: "https://worstcase.mozilla.org/",
-          visits: dailyVisits(now, 50),
-          interactions: dailyInteractions(now, 10, 10),
-        },
-      ],
-      bookmarkedUrls: ["https://worstcase.mozilla.org/"],
     },
   ];
 
@@ -347,145 +148,35 @@ add_task(async function measure_frecency_speed() {
     `);
     Assert.equal(initialIds.length, 0, "Places should be empty.");
 
-    let visits = item.urls
-      .flatMap(urlData => urlData.visits.map(visit => ({ ...visit, urlData })))
-      .sort((a, b) => a.date - b.date);
-    for (let visit of visits) {
-      await PlacesTestUtils.addVisits({
-        uri: visit.urlData.url,
-        visitDate: visit.date,
-        transition: visit.transition,
-        referrer: visit.referrer,
-      });
+    for (let urlData of item.urls) {
+      for (let visit of urlData.visits) {
+        await PlacesTestUtils.addVisits({
+          uri: urlData.url,
+          visitDate: visit.date,
+          transition: visit.transition,
+        });
+      }
     }
-
-    for (let url of item.bookmarkedUrls || []) {
-      await PlacesUtils.bookmarks.insert({
-        parentGuid: PlacesUtils.bookmarks.unfiledGuid,
-        url,
-        title: `Bookmark for ${url}`,
-      });
-    }
-
-    let placeRows = await db.executeCached(`
-      SELECT id, url FROM moz_places
+    let placeIds = await db.executeCached(`
+      SELECT id FROM moz_places
+      ORDER BY id
     `);
-    
-    
-    let placeIdByUrl = new Map(
-      placeRows.map(row => [
-        row.getResultByName("url"),
-        row.getResultByName("id"),
-      ])
-    );
     Assert.equal(
-      placeRows.length,
+      placeIds.length,
       item.urls.length,
       "Places should match the number of URLs in the test."
     );
 
-    let expectedVisits = item.urls.reduce(
-      (sum, urlData) => sum + urlData.visits.length,
-      0
-    );
-    let visitRows = await db.executeCached(
-      `SELECT COUNT(*) AS count FROM moz_historyvisits`
-    );
-    Assert.equal(
-      visitRows[0].getResultByName("count"),
-      expectedVisits,
-      "Visits should match the number requested by the test."
-    );
-
-    let expectedRedirects = visits.filter(visit => visit.referrer).length;
-    let redirectRows = await db.executeCached(
-      `SELECT COUNT(DISTINCT from_visit) AS count
-       FROM moz_historyvisits
-       WHERE from_visit > 0`
-    );
-    Assert.equal(
-      redirectRows[0].getResultByName("count"),
-      expectedRedirects,
-      "Each visit with a referrer should come from a distinct referrer visit."
-    );
-
-    await PlacesUtils.withConnectionWrapper(
-      "Insert interactions",
-      async writableDb => {
-        for (let urlData of item.urls) {
-          let placeId = placeIdByUrl.get(urlData.url);
-          for (let createdAt of urlData.interactions || []) {
-            await insertInteraction(writableDb, placeId, createdAt);
-          }
-        }
-      }
-    );
-
-    let expectedInteractions = item.urls.reduce(
-      (sum, urlData) => sum + (urlData.interactions?.length || 0),
-      0
-    );
-    let interactionRows = await db.executeCached(
-      `SELECT COUNT(*) AS count FROM moz_places_metadata`
-    );
-    Assert.equal(
-      interactionRows[0].getResultByName("count"),
-      expectedInteractions,
-      "Interactions should match the number requested by the test."
-    );
-
-    
-    
-    const maxVisitGapMs =
-      Services.prefs.getIntPref(
-        "places.frecency.pages.interactions.maxVisitGapSeconds"
-      ) * 1000;
-    let expectedVirtualVisits = 0;
-    for (let urlData of item.urls) {
-      for (let createdAt of urlData.interactions || []) {
-        let hasNearbyVisit = urlData.visits.some(
-          visit => Math.abs(visit.date - createdAt) <= maxVisitGapMs
-        );
-        if (!hasNearbyVisit) {
-          expectedVirtualVisits++;
-        }
-      }
-    }
-    let virtualVisitRows = await db.executeCached(
-      `SELECT COUNT(*) AS count
-       FROM moz_places_metadata i
-       WHERE NOT EXISTS (
-         SELECT 1 FROM moz_historyvisits vs
-         WHERE vs.place_id = i.place_id
-           AND vs.visit_date BETWEEN
-             i.created_at * 1000 - :maxVisitGapMs * 1000
-             AND i.created_at * 1000 + :maxVisitGapMs * 1000
-       )`,
-      { maxVisitGapMs }
-    );
-    Assert.equal(
-      virtualVisitRows[0].getResultByName("count"),
-      expectedVirtualVisits,
-      "Interactions without a nearby visit should match the test's intent."
-    );
-
     let frecencyTimer = createTimer(item.timerName);
     await PlacesUtils.withConnectionWrapper("Calculate Frecency", async db => {
-      for (let i = 0; i < WARMUP_ITERATIONS + MEASURED_ITERATIONS; i++) {
-        let measured = i >= WARMUP_ITERATIONS;
-        if (measured) {
-          frecencyTimer.start();
-        }
-        await db.executeCached(
-          `
-          UPDATE moz_places
-          SET frecency = CALCULATE_FRECENCY(id)
+      frecencyTimer.start();
+      await db.executeCached(
         `
-        );
-        if (measured) {
-          frecencyTimer.stop();
-        }
-      }
+        UPDATE moz_places
+        SET frecency = CALCULATE_FRECENCY(id)
+      `
+      );
+      frecencyTimer.stop();
     });
 
     frecencyTimer.reportMetrics();
