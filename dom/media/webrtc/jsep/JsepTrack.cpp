@@ -497,7 +497,8 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
 
   bool requireRtxSsrcs = rtxEnabled && msection->IsSending();
 
-  if (mType.type != SdpMediaSection::kApplication && mDirection == sdp::kSend) {
+  
+  if (mType.IsRtp() && mDirection == sdp::kSend) {
     UpdateSsrcs(ssrcGenerator, aRids.size());
 
     if (requireRtxSsrcs) {

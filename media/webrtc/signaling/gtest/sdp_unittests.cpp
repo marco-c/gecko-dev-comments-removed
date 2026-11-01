@@ -10,6 +10,7 @@
 #include "sdp/ParsingResultComparer.h"
 #include "sdp/RsdparsaSdpParser.h"
 #include "sdp/SdpAttribute.h"
+#include "sdp/SdpHelper.h"
 #include "sdp/SdpImpl.h"
 #include "sdp/SdpMediaSection.h"
 #include "sdp/SipccSdpParser.h"
@@ -6298,6 +6299,60 @@ TEST(NewSdpTestNoFixture, CheckMediaTypeInfoComparison)
   ASSERT_FALSE(sprinkles.MatchesTypeOf(unknown("clowncar", "8 16 foo")));
   ASSERT_FALSE(sprinkles.MatchesTypeOf(audio));
   ASSERT_FALSE(audio.MatchesTypeOf(sprinkles));
+}
+
+
+
+
+
+TEST(NewSdpTestNoFixture, CheckDisableMsectionKeepsUnknownFormats)
+{
+  SdpImpl sdp(SdpOrigin("-", 4294967296, 2, sdp::kIPv4, "127.0.0.1"));
+
+  SdpMediaSection& unknown = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kUnknown,
+       .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+           .name = "sprinkles", .formatString = "8 16 foo"})},
+      SdpDirectionAttribute::kSendrecv, 9, SdpMediaSection::kUdpTlsRtpSavpf,
+      sdp::kIPv4, "0.0.0.0");
+  SdpHelper::DisableMsection(&sdp, &unknown);
+
+  ASSERT_EQ(0U, unknown.GetPort());
+  ASSERT_FALSE(
+      unknown.GetAttributeList().HasAttribute(SdpAttribute::kRtpmapAttribute));
+  std::ostringstream unknownOs;
+  unknown.Serialize(unknownOs);
+  ASSERT_NE(
+      std::string::npos,
+      unknownOs.str().find("m=sprinkles 0 UDP/TLS/RTP/SAVPF 8 16 foo" CRLF));
+
+  
+  
+  SdpMediaSection& noFormats = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kUnknown,
+       .unknown = Some(SdpMediaSection::UnknownMediaTypeData{
+           .name = "clowncar", .formatString = ""})},
+      SdpDirectionAttribute::kSendrecv, 9, SdpMediaSection::kUdpTlsRtpSavpf,
+      sdp::kIPv4, "0.0.0.0");
+  SdpHelper::DisableMsection(&sdp, &noFormats);
+
+  ASSERT_FALSE(noFormats.GetAttributeList().HasAttribute(
+      SdpAttribute::kRtpmapAttribute));
+  std::ostringstream noFormatsOs;
+  noFormats.Serialize(noFormatsOs);
+  ASSERT_NE(std::string::npos,
+            noFormatsOs.str().find("m=clowncar 0 UDP/TLS/RTP/SAVPF 19" CRLF));
+
+  
+  
+  SdpMediaSection& audio = sdp.AddMediaSection(
+      {.type = SdpMediaSection::kAudio}, SdpDirectionAttribute::kSendrecv, 9,
+      SdpMediaSection::kUdpTlsRtpSavpf, sdp::kIPv4, "0.0.0.0");
+  SdpHelper::DisableMsection(&sdp, &audio);
+
+  ASSERT_EQ(0U, audio.GetPort());
+  ASSERT_TRUE(
+      audio.GetAttributeList().HasAttribute(SdpAttribute::kRtpmapAttribute));
 }
 
 }  

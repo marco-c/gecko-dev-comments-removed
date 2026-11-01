@@ -128,10 +128,10 @@ void JsepSessionImpl::AddTransceiver(const JsepTransceiver& aTransceiver) {
   MOZ_MTLOG(ML_DEBUG,
             "[" << mName << "]: Adding transceiver " << aTransceiver.GetUuid());
 #ifdef DEBUG
-  if (aTransceiver.GetMediaType() == SdpMediaSection::kApplication) {
+  if (aTransceiver.GetMediaTypeInfo().IsDataChannel()) {
     
     for (const auto& transceiver : mTransceivers) {
-      MOZ_ASSERT(transceiver.GetMediaType() != SdpMediaSection::kApplication);
+      MOZ_ASSERT(!transceiver.GetMediaTypeInfo().IsDataChannel());
     }
   }
 #endif
@@ -142,7 +142,7 @@ void JsepSessionImpl::AddTransceiver(const JsepTransceiver& aTransceiver) {
 void JsepSessionImpl::InitTransceiver(JsepTransceiver& aTransceiver) {
   mLastError.clear();
 
-  if (aTransceiver.GetMediaType() != SdpMediaSection::kApplication) {
+  if (aTransceiver.GetMediaTypeInfo().IsRtp()) {
     
     aTransceiver.mSendTrack.EnsureSsrcs(mSsrcGenerator, 1U);
     aTransceiver.mSendTrack.SetCNAME(mCNAME);
@@ -316,7 +316,7 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
     }
   }
 
-  if (msection->GetMediaType() != SdpMediaSection::MediaType::kApplication) {
+  if (msection->GetMediaTypeInfo().IsRtp()) {
     
     
     local->GetAttributeList().SetAttribute(std::make_unique<SdpFlagAttribute>(
@@ -333,7 +333,7 @@ nsresult JsepSessionImpl::CreateOfferMsection(const JsepOfferOptions& options,
   
   
   
-  if (msection->GetMediaType() != SdpMediaSection::kApplication) {
+  if (msection->GetMediaTypeInfo().IsRtp()) {
     msection->RemoveUnlistedPayloadTypeAttributes();
   }
 
@@ -426,7 +426,7 @@ JsepSession::Result JsepSessionImpl::CreateOffer(
   if (mAlwaysNegotiateDataChannels) {
     Maybe<JsepTransceiver> dcTransceiver =
         FindTransceiver([](const JsepTransceiver& aTransceiver) {
-          return aTransceiver.GetMediaType() == SdpMediaSection::kApplication;
+          return aTransceiver.GetMediaTypeInfo().IsDataChannel();
         });
 
     if (!dcTransceiver) {
@@ -685,7 +685,10 @@ nsresult JsepSessionImpl::CreateAnswerMsection(
   nsresult rv = mSdpHelper.CopyStickyParams(remoteMsection, &msection);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (mSdpHelper.MsectionIsDisabled(remoteMsection)) {
+  if (mSdpHelper.MsectionIsDisabled(remoteMsection) ||
+      remoteMsection.GetMediaTypeInfo().IsUnknown()) {
+    
+    
     SdpHelper::DisableMsection(sdp, &msection);
     return NS_OK;
   }
@@ -1368,7 +1371,7 @@ nsresult JsepSessionImpl::MakeNegotiatedTransceiver(
   }
 
   if (transceiver.HasBundleLevel() && recvTrack.GetSsrcs().empty() &&
-      recvTrack.GetMediaType() != SdpMediaSection::kApplication) {
+      recvTrack.GetMediaTypeInfo().IsRtp()) {
     
     
     
@@ -1766,7 +1769,7 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForLocal(size_t level) {
   
   if (mAlwaysNegotiateDataChannels) {
     for (auto& transceiver : mTransceivers) {
-      if (transceiver.GetMediaType() == SdpMediaSection::kApplication &&
+      if (transceiver.GetMediaTypeInfo().IsDataChannel() &&
           transceiver.IsFreeToUse()) {
         transceiver.SetLevel(level);
         return Some(transceiver);
@@ -1777,8 +1780,7 @@ Maybe<JsepTransceiver> JsepSessionImpl::GetTransceiverForLocal(size_t level) {
   
   
   for (auto& transceiver : mTransceivers) {
-    if (transceiver.GetMediaType() != SdpMediaSection::kApplication &&
-        transceiver.IsFreeToUse()) {
+    if (transceiver.GetMediaTypeInfo().IsRtp() && transceiver.IsFreeToUse()) {
       transceiver.SetLevel(level);
       return Some(transceiver);
     }
@@ -1868,7 +1870,8 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
       return NS_ERROR_FAILURE;
     }
 
-    if (!mSdpHelper.MsectionIsDisabled(msection)) {
+    if (!mSdpHelper.MsectionIsDisabled(msection) &&
+        !msection.GetMediaTypeInfo().IsUnknown()) {
       if (msection.GetAttributeList().HasAttribute(
               SdpAttribute::kMidAttribute)) {
         transceiver->Associate(msection.GetAttributeList().GetMid());
@@ -1879,6 +1882,9 @@ nsresult JsepSessionImpl::UpdateTransceiversFromRemoteDescription(
         mUsedMids.insert(transceiver->GetMid());
       }
     } else {
+      
+      
+
       
       
       transceiver->mTransport.Close();
