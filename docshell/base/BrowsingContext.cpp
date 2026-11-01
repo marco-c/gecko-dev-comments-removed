@@ -1267,9 +1267,9 @@ void BrowsingContext::SetOpener(BrowsingContext* aOpener) {
     
     
     
-    auto openerOverride = aOpener->Top()->PrefersColorSchemeOverride();
-    if (openerOverride != PrefersColorSchemeOverride()) {
-      MOZ_ALWAYS_SUCCEEDS(SetPrefersColorSchemeOverride(openerOverride));
+    if (auto* doc = aOpener->GetExtantDocument()) {
+      MOZ_ALWAYS_SUCCEEDS(SetPrefersColorSchemeOverride(
+          doc->GetOverriddenOrEmbedderColorScheme()));
     }
   }
 }
