@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_interceptor_PatcherDetour_h
 #define mozilla_interceptor_PatcherDetour_h
 
@@ -721,6 +719,51 @@ class WindowsDllDetourPatcher final
 
     return !!aTramp;
   }
+
+  
+  static void WriteMovImm64(Trampoline<MMPolicyT>& aTramp, BYTE aReg,
+                            uintptr_t aImm) {
+    MOZ_ASSERT(aReg < 16);
+    aTramp.WriteByte(kRexOpcode | kMaskRexW | ((aReg & 8) ? kMaskRexB : 0));
+    aTramp.WriteByte(0xb8 + (aReg & kMaskRm));
+    aTramp.WritePointer(aImm);
+  }
+
+  
+  
+  
+  void WriteLoadFromAbsoluteAddress(Trampoline<MMPolicyT>& aTramp, BYTE aReg,
+                                    uintptr_t aAbsAddr) {
+    MOZ_ASSERT(aReg < 16 && aReg != kRegSp);
+
+    if (aReg == kRegAx) {
+      
+      aTramp.WriteByte(kRexOpcode | kMaskRexW);
+      aTramp.WriteByte(0xa1);
+      aTramp.WritePointer(aAbsAddr);
+      return;
+    }
+
+    
+    WriteMovImm64(aTramp, aReg, aAbsAddr);
+
+    const BYTE lowReg = aReg & kMaskRm;
+    aTramp.WriteByte(kRexOpcode | kMaskRexW |
+                     ((aReg & 8) ? (kMaskRexR | kMaskRexB) : 0));
+    aTramp.WriteByte(0x8b);
+    if (lowReg == kRegSp) {
+      
+      aTramp.WriteByte(BuildModRmByte(kModNoRegDisp, lowReg, kRmNeedSib));
+      aTramp.WriteByte(0x24);
+    } else if (lowReg == kRegBp) {
+      
+      
+      aTramp.WriteByte(BuildModRmByte(kModDisp8, lowReg, lowReg));
+      aTramp.WriteByte(0x00);
+    } else {
+      aTramp.WriteByte(BuildModRmByte(kModNoRegDisp, lowReg, lowReg));
+    }
+  }
 #  endif
 
   enum ePrefixGroupBits {
@@ -1216,6 +1259,10 @@ class WindowsDllDetourPatcher final
                  (origBytes[2] & (kMaskMod | kMaskRm)) ==
                      (kModNoRegDisp | kRmNoRegDispDisp32)) {
         int reg = origBytes[2] & kMaskReg;
+        if (reg == (kRegSp << kRegFieldShift)) {
+          
+          return;
+        }
         origBytes += 3;
 
         
@@ -1286,13 +1333,19 @@ class WindowsDllDetourPatcher final
 
         if (*origBytes == 0x33) {
           
-          COPY_CODES(2);
+          int len = CountModRmSib(origBytes + 1);
+          if (len < 0) {
+            MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+            return;
+          }
+          COPY_CODES(len + 1);
         } else {
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
       } else if ((*origBytes & 0xfa) == 0x48) {
         
+        const BYTE rexR = (*origBytes & kMaskRexR) ? 8 : 0;
         COPY_CODES(1);
 
         if (*origBytes == 0x81 && (origBytes[1] & 0xf8) == 0xe8) {
@@ -1326,6 +1379,19 @@ class WindowsDllDetourPatcher final
             if (len != kModOperand64) {
               return;
             }
+            if (*origBytes == 0x89) {
+              
+              
+              return;
+            }
+
+            reg |= rexR;
+            if (reg == kRegSp) {
+              
+              
+              return;
+            }
+
             origBytes += 2;  
 
             
@@ -1333,22 +1399,8 @@ class WindowsDllDetourPatcher final
             
             uintptr_t absAddr = origBytes.ReadDisp32AsAbsolute();
 
-            if (reg == kRegAx) {
-              
-              
-              tramp.WriteByte(0xa1);
-              tramp.WritePointer(absAddr);
-            } else {
-              
-              
-              
-              
-              tramp.WriteByte(0xb8 + reg);
-              tramp.WritePointer(absAddr);
-              tramp.WriteByte(0x48);
-              tramp.WriteByte(0x8b);
-              tramp.WriteByte(BuildModRmByte(kModNoRegDisp, reg, reg));
-            }
+            --tramp;  
+            WriteLoadFromAbsoluteAddress(tramp, reg, absAddr);
           } else {
             COPY_CODES(len + 1);
           }
@@ -1370,10 +1422,10 @@ class WindowsDllDetourPatcher final
           if ((origBytes[1] & 0xc0) == 0x0 && (origBytes[1] & 0x07) == 0x5 &&
               ((origBytes[1] & 0x38) == 0x20 ||
                (origBytes[1] & 0x38) == 0x10)) {
+            foundJmp = (origBytes[1] & 0x38) == 0x20;
             origBytes += 2;
             --tramp;  
 
-            foundJmp = (origBytes[1] & 0x38) == 0x20;
             if (!GenerateJump(tramp, origBytes.ChasePointerFromDisp(),
                               foundJmp ? JumpType::Jmp : JumpType::Call,
                               origBytes, bytesRequired)) {
@@ -1391,11 +1443,11 @@ class WindowsDllDetourPatcher final
             
             
             
-            BYTE reg = (origBytes[1] & kMaskReg) >> kRegFieldShift;
+            BYTE reg = ((origBytes[1] & kMaskReg) >> kRegFieldShift) | rexR;
             origBytes += 2;
             uintptr_t absAddr = origBytes.ReadDisp32AsAbsolute();
-            tramp.WriteByte(0xb8 + reg);  
-            tramp.WritePointer(absAddr);
+            --tramp;  
+            WriteMovImm64(tramp, reg, absAddr);
           } else {
             
             
@@ -1481,7 +1533,9 @@ class WindowsDllDetourPatcher final
         tramp.WriteByte(0x49);
         tramp.WriteByte(0x53);
 
-        uintptr_t absAddr = origBytes.ReadDisp32AsAbsolute();
+        
+        
+        uintptr_t absAddr = origBytes.ReadDisp32AsAbsolute() + 1;
 
         
         tramp.WriteByte(0x49);
@@ -1508,7 +1562,12 @@ class WindowsDllDetourPatcher final
       } else if (*origBytes == 0x31 || *origBytes == 0x33) {
         
         
-        COPY_CODES(2);
+        int len = CountModRmSib(origBytes + 1);
+        if (len < 0) {
+          MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
+          return;
+        }
+        COPY_CODES(len + 1);
       } else if (*origBytes == 0xf6) {
         
         
