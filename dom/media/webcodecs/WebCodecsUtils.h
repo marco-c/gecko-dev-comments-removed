@@ -2,12 +2,11 @@
 
 
 
-
-
 #ifndef MOZILLA_DOM_WEBCODECS_WEBCODECSUTILS_H
 #define MOZILLA_DOM_WEBCODECS_WEBCODECSUTILS_H
 
 #include "ErrorList.h"
+#include "ImagePixelFormat.h"
 #include "MediaData.h"
 #include "PlatformEncoderModule.h"
 #include "js/TypeDecls.h"
@@ -138,6 +137,10 @@ class AsyncDurationTracker {
   std::deque<Entry> mEntries;
   const nsCOMPtr<nsISerialEventTarget> mOwningThread;
 };
+
+namespace layers {
+class Image;
+}  
 
 namespace gfx {
 enum class ColorRange : uint8_t;
@@ -279,14 +282,12 @@ Maybe<VideoColorPrimaries> ToPrimaries(const gfx::ColorSpace2& aColorSpace);
 
 
 
-enum class ImageBitmapFormat : uint8_t;
 enum class VideoPixelFormat : uint8_t;
 
-Maybe<VideoPixelFormat> SurfaceFormatToVideoPixelFormat(
-    gfx::SurfaceFormat aFormat);
 
-Maybe<VideoPixelFormat> ImageBitmapFormatToVideoPixelFormat(
-    ImageBitmapFormat aFormat);
+Maybe<VideoPixelFormat> ToVideoPixelFormat(ImagePixelFormat aFormat);
+
+Maybe<VideoPixelFormat> GuessVideoPixelFormat(layers::Image* aImage);
 
 template <typename T>
 class MessageRequestHolder {
