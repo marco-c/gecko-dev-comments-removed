@@ -275,15 +275,11 @@ class gfxTextRun : public gfxShapedText {
   };
 
   struct MOZ_STACK_CLASS DrawParams {
-    DrawParams(gfxContext* aContext,
-               mozilla::gfx::FontPaletteValueSet* aPaletteValueSet)
-        : context(aContext), paletteValueSet(aPaletteValueSet) {}
-
     gfxContext* context;
+    mozilla::gfx::PaletteCache& paletteCache;
     DrawMode drawMode = DrawMode::GLYPH_FILL;
     nscolor textStrokeColor = 0;
     nsAtom* fontPalette = nullptr;
-    mozilla::gfx::FontPaletteValueSet* paletteValueSet = nullptr;
     gfxPattern* textStrokePattern = nullptr;
     const mozilla::gfx::StrokeOptions* strokeOpts = nullptr;
     const mozilla::gfx::DrawOptions* drawOpts = nullptr;
@@ -294,6 +290,8 @@ class gfxTextRun : public gfxShapedText {
     gfxTextRunDrawCallbacks* callbacks = nullptr;
     bool allowGDI = true;
     bool hasTextShadow = false;
+    DrawParams(gfxContext* aContext, mozilla::gfx::PaletteCache& aPaletteCache)
+        : context(aContext), paletteCache(aPaletteCache) {}
   };
 
   
@@ -327,7 +325,7 @@ class gfxTextRun : public gfxShapedText {
   void DrawEmphasisMarks(gfxContext* aContext, gfxTextRun* aMark,
                          gfxFloat aMarkAdvance, mozilla::gfx::Point aPt,
                          Range aRange, const PropertyProvider* aProvider,
-                         mozilla::gfx::FontPaletteValueSet* aPaletteValueSet,
+                         mozilla::gfx::PaletteCache& aPaletteCache,
                          imgDrawingParams& aImgParams) const;
 
   

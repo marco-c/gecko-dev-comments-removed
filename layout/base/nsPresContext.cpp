@@ -2867,9 +2867,20 @@ void nsPresContext::FlushFontPaletteValues() {
   mFontPaletteValueSet = styleSet->BuildFontPaletteValueSet();
   mFontPaletteValuesDirty = false;
 
+  if (mFontPaletteCache) {
+    mFontPaletteCache->SetPaletteValueSet(mFontPaletteValueSet);
+  }
+
   
   
   InvalidatePaintedLayers();
+}
+
+gfx::PaletteCache& nsPresContext::FontPaletteCache() {
+  if (!mFontPaletteCache) {
+    mFontPaletteCache = MakeUnique<gfx::PaletteCache>(mFontPaletteValueSet);
+  }
+  return *mFontPaletteCache.get();
 }
 
 void nsPresContext::SetVisibleArea(const nsRect& aRect) {
