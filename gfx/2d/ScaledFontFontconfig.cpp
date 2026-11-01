@@ -496,15 +496,14 @@ already_AddRefed<ScaledFont> UnscaledFontFontconfig::CreateScaledFont(
     return nullptr;
   }
 
-  if (aNumVariations > 0 && face->GetData()) {
-    if (RefPtr<SharedFTFace> varFace = face->GetData()->CloneFace()) {
+  if (aNumVariations > 0) {
+    if (RefPtr<SharedFTFace> varFace = face->CloneFace()) {
       face = varFace;
     }
-  }
-
-  
-  if (aNumVariations > 0 && face != GetFace()) {
-    ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
+    
+    if (face != GetFace()) {
+      ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
+    }
   }
 
   RefPtr<ScaledFontFontconfig> scaledFont =
@@ -556,19 +555,17 @@ already_AddRefed<UnscaledFont> UnscaledFontFontconfig::CreateFromFontDescriptor(
   
   
   char* file = nullptr;
-  int index = 0;
   result = FcPatternGetString(match, FC_FILE, 0, (FcChar8**)&file);
   if (result == FcResultMatch && !path.Equals(file)) {
     gfxWarning() << "Font path " << path.get() << " invalid, using " << file;
     path = file;
-  }
-  result = FcPatternGetInteger(match, FC_INDEX, 0, &index);
-  
-  
-  
-  if (result == FcResultMatch && (uint32_t)index != (aIndex & 0xffff)) {
-    gfxWarning() << "Font index " << aIndex << " invalid, using " << index;
-    aIndex = index;
+    int index = 0;
+    result = FcPatternGetInteger(match, FC_INDEX, 0, &index);
+    if (result == FcResultMatch) {
+      
+      
+      aIndex = index & 0xffff;
+    }
   }
 
   return MakeAndAddRef<UnscaledFontFontconfig>(path.BeginReading(), aIndex);

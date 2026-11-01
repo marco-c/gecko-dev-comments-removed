@@ -31,6 +31,7 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/FontData.h"
 #include "nsRegionFwd.h"
 
@@ -1229,65 +1230,6 @@ struct GlyphBuffer {
 };
 
 #ifdef MOZ_ENABLE_FREETYPE
-class SharedFTFace;
-
-
-
-
-
-class SharedFTFaceData {
- public:
-  
-  virtual already_AddRefed<SharedFTFace> CloneFace(int aFaceIndex = 0) {
-    return nullptr;
-  }
-  
-  virtual void BindData() = 0;
-  
-  virtual void ReleaseData() = 0;
-};
-
-
-
-
-template <class T>
-class SharedFTFaceRefCountedData : public SharedFTFaceData {
- public:
-  void BindData() { static_cast<T*>(this)->AddRef(); }
-  void ReleaseData() { static_cast<T*>(this)->Release(); }
-};
-
-
-
-
-
-
-
-
-
-class FTUserFontData final
-    : public mozilla::gfx::SharedFTFaceRefCountedData<FTUserFontData> {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FTUserFontData)
-
-  explicit FTUserFontData(FontData* aFontData) : mFontData(aFontData) {}
-  explicit FTUserFontData(const char* aFilename) : mFilename(aFilename) {}
-
-  const uint8_t* GetData() const {
-    return mFontData ? mFontData->Data() : nullptr;
-  }
-  uint32_t Length() const { return mFontData ? mFontData->Length() : 0; }
-
-  already_AddRefed<mozilla::gfx::SharedFTFace> CloneFace(
-      int aFaceIndex = 0) override;
-
- private:
-  ~FTUserFontData() = default;
-
-  std::string mFilename;
-  RefPtr<FontData> mFontData;
-};
-
 
 
 
@@ -1299,11 +1241,14 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SharedFTFace)
 
-  explicit SharedFTFace(FT_Face aFace, SharedFTFaceData* aData);
+  SharedFTFace(FT_Face aFace, UniquePtr<char[]>&& aFilename, int aFaceIndex);
+  SharedFTFace(FT_Face aFace, FontData* aFontData, int aFaceIndex);
   virtual ~SharedFTFace();
 
   FT_Face GetFace() const { return mFace; }
-  SharedFTFaceData* GetData() const { return mData; }
+  const char* GetFilename() const { return mFilename.get(); }
+  const RefPtr<FontData>& GetFontData() const { return mFontData; }
+  int GetFaceIndex() const { return mFaceIndex; }
 
   
 
@@ -1328,14 +1273,21 @@ class SharedFTFace : public external::AtomicRefCounted<SharedFTFace> {
     }
   }
 
+  already_AddRefed<mozilla::gfx::SharedFTFace> CloneFace();
+
  private:
-  FT_Face mFace;
-  SharedFTFaceData* mData;
-  Mutex mLock;
+  FT_Face mFace = nullptr;
+  
+  UniquePtr<char[]> mFilename;
+  
+  
+  RefPtr<FontData> mFontData;
+  int mFaceIndex = 0;
+  Mutex mLock{"SharedFTFace::mLock"};
   
   
   
-  Atomic<const void*> mLastLockOwner;
+  Atomic<const void*> mLastLockOwner{nullptr};
 };
 #endif
 
@@ -2445,14 +2397,12 @@ class GFX2D_API Factory {
 
   static FT_Face NewFTFace(FT_Library aFTLibrary, const char* aFileName,
                            int aFaceIndex);
-  static already_AddRefed<SharedFTFace> NewSharedFTFace(FT_Library aFTLibrary,
-                                                        const char* aFilename,
+  static already_AddRefed<SharedFTFace> NewSharedFTFace(const char* aFilename,
                                                         int aFaceIndex);
   static FT_Face NewFTFaceFromData(FT_Library aFTLibrary, const uint8_t* aData,
                                    uint32_t aLength, int aFaceIndex);
   static already_AddRefed<SharedFTFace> NewSharedFTFaceFromData(
-      FT_Library aFTLibrary, FontData* aFontData, int aFaceIndex,
-      SharedFTFaceData* aSharedData = nullptr);
+      FontData* aFontData, int aFaceIndex);
   static void ReleaseFTFace(FT_Face aFace);
   static FT_Error LoadFTGlyph(FT_Face aFace, uint32_t aGlyphIndex,
                               int32_t aFlags);
