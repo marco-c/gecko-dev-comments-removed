@@ -100,11 +100,13 @@
 
 #include "builtin/Number.h"
 #include "gc/GCEnum.h"
+#include "js/AllocPolicy.h"
 #include "js/BigInt.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printer.h"               
 #include "js/StableStringChars.h"
 #include "js/Utility.h"
+#include "js/Vector.h"
 #include "util/DifferentialTesting.h"
 #include "vm/JSONPrinter.h"  
 #include "vm/StaticStrings.h"
@@ -1028,7 +1030,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   const unsigned n = divisor->digitLength();
   const unsigned m = dividend->digitLength() - n;
 
-  RootedTuple<BigInt*, BigInt*, BigInt*, BigInt*> roots(cx);
+  RootedTuple<BigInt*, BigInt*, BigInt*> roots(cx);
 
   
   RootedField<BigInt*, 0> q(roots);
@@ -1041,9 +1043,9 @@ bool BigInt::absoluteDivWithBigIntDivisor(
 
   
   
-  RootedField<BigInt*, 1> qhatv(roots,
-                                createUninitialized(cx, n + 1, isNegative));
-  if (!qhatv) {
+  Vector<Digit, 16, SystemAllocPolicy> qhatv;
+  if (!qhatv.resize(n + 1)) {
+    ReportOutOfMemory(cx);
     return false;
   }
 
@@ -1055,7 +1057,7 @@ bool BigInt::absoluteDivWithBigIntDivisor(
   Digit lastDigit = divisor->individualDigit(n - 1);
   unsigned shift = std::countl_zero(lastDigit);
 
-  RootedField<BigInt*, 2> shiftedDivisor(roots);
+  RootedField<BigInt*, 1> shiftedDivisor(roots);
   if (shift > 0) {
     shiftedDivisor = absoluteLeftShiftAlwaysCopy(cx, divisor, shift,
                                                  LeftShiftMode::SameSizeResult);
@@ -1068,16 +1070,16 @@ bool BigInt::absoluteDivWithBigIntDivisor(
 
   
   
-  RootedField<BigInt*, 3> u(
+  RootedField<BigInt*, 2> u(
       roots, absoluteLeftShiftAlwaysCopy(cx, dividend, shift,
                                          LeftShiftMode::AlwaysAddOneDigit));
   if (!u) {
     return false;
   }
 
-  divideDigitsInPlace(
-      u->unguardedDigits(), shiftedDivisor->unguardedDigits().First(n),
-      quotient ? q->unguardedDigits() : Digits(), qhatv->unguardedDigits());
+  divideDigitsInPlace(u->unguardedDigits(),
+                      shiftedDivisor->unguardedDigits().First(n),
+                      quotient ? q->unguardedDigits() : Digits(), qhatv);
 
   if (quotient) {
     BigInt* bi = destructivelyTrimHighZeroDigits(cx, q);
