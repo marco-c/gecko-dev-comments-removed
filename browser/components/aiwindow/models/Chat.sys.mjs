@@ -27,6 +27,7 @@ import {
   GET_SKILL,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 import { runSearchTheWeb } from "moz-src:///browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs";
+import { UI_TYPES } from "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs";
 
 import { expandUrlTokensInToolParams } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs";
@@ -135,11 +136,84 @@ export async function executeToolByName(
  * added or removed independently of the main tool dispatch. Lookups happen
  * before the main switch so each new gated tool does not grow
  * fetchWithHistory's cyclomatic complexity.
+ *
  */
 const FEATURE_GATED_HANDLERS = new Map([
   [SEARCH_THE_WEB, runSearchTheWeb],
-  [GENERATE_AITAB, toolFns.createAITab],
+  [GENERATE_AITAB, runGenerateAiTab],
 ]);
+
+/**
+ * @typedef {object} GenerateAiTabFailure
+ * @property {false} success - If the AITab was generated successfully
+ * @property {string} toolResult - A tool result message
+ */
+
+/**
+ * @typedef {object} GenerateAiTabToolUI
+ * @property {"aitab"} uiType - The ToolUI type
+ * @property {{
+ *  state: "choose",
+ *  viewerURL: string,
+ *  title: string
+ * }} properties - The ToolUI update data for the AITab progress card
+ */
+
+/**
+ * @typedef {object} GenerateAiTabSuccess
+ * @property {true} success - If the AITab was generated successfully
+ * @property {{message: string, page: {slug: string}}} toolResult - The
+ *   model response and the stored page's slug
+ * @property {GenerateAiTabToolUI} uiData - Data to update the ToolUI
+ */
+
+/**
+ * @typedef {Omit<GenerateAiTabSuccess, "uiData"> | GenerateAiTabFailure} GenerateAiTabResult
+ */
+
+/**
+ * Tool entrypoint for generate_aitab. Manages the AITab status
+ * card updates as tool call starts generating AITab and finishes
+ * generating the AITab.
+ *
+ * @param {object} params
+ * @param {string[]} [params.url_list] - List of URLs to use to generate the AITab
+ * @param {string} [params.focus] - A focus string used to generate the AITab
+ * @param {ChatConversation} conversation - ChatConversation that initiated AITab
+ * @param {AbortSignal} [signal] - Cancels in-flight page extractions.
+ * @param {any} _mode - Operation mode, unused
+ * @param {string} [toolCallId] - The tool call's ID
+ *
+ * @returns {Promise<GenerateAiTabResult>} The tool response after attaching
+ *   its UI data to the conversation.
+ */
+async function runGenerateAiTab(
+  params,
+  conversation,
+  signal,
+  _mode,
+  toolCallId
+) {
+  if (toolCallId) {
+    conversation.addUIToolToCurrentMessage(
+      toolCallId,
+      { uiType: UI_TYPES.AITAB, properties: { state: "creating" } },
+      { emitComplete: false }
+    );
+  }
+
+  const { success, toolResult, uiData } = await toolFns.createAITab(
+    params,
+    conversation,
+    signal
+  );
+
+  if (toolCallId && uiData) {
+    conversation.addUIToolToCurrentMessage(toolCallId, uiData);
+  }
+
+  return { success, toolResult };
+}
 
 /**
  * Slow tools that surface the action log's pending row before their handler
@@ -184,15 +258,16 @@ function splitDirectAnswerStream(result) {
  * constant, and when no gate applies it is returned by identity.
  *
  * @param {object[]} tools
+ * @param {ChatConversation} conversation
  * @returns {object[]}
  */
-function filterFeatureGatedTools(tools) {
+function filterFeatureGatedTools(tools, conversation) {
   let filtered = tools;
   // The three search_the_web paths return different shapes, so the description
   // and parameters the model sees have to match the path that will run. Both
   // this and runSearchTheWeb's dispatch read the same selectSearchTheWebPath,
   // so they cannot disagree about which one that is.
-  const searchTheWebConfig = searchTheWebToolConfig();
+  const searchTheWebConfig = searchTheWebToolConfig(conversation);
   if (searchTheWebConfig) {
     filtered = filtered.map(t =>
       t.function?.name === SEARCH_THE_WEB ? searchTheWebConfig : t
@@ -317,6 +392,7 @@ function logConversationStream(turn, action, data = null, extraText = "") {
 Object.assign(Chat, {
   lastUsage: null,
 
+  /* eslint-disable complexity -- TODO Bug 2075083 - complexity 58/54 over limit */
   /**
    * Stream assistant output with tool-call support.
    * Yields assistant text chunks as they arrive. If the model issues tool calls,
@@ -363,7 +439,7 @@ Object.assign(Chat, {
      * comment above tool execution for further details.
      */
     const isVerbatimQuery = currentTurn === 0;
-    const chatToolsConfig = filterFeatureGatedTools(toolsConfig);
+    const chatToolsConfig = filterFeatureGatedTools(toolsConfig, conversation);
 
     let fullResponseText = "";
 
@@ -601,6 +677,7 @@ Object.assign(Chat, {
         // Dispatch the required arguments to different tool calls. Wrap this in a
         // try/catch so the conversation can be updated for failed calls.
         let result;
+        let aiTabSucceeded = false;
         let toolCallError = "";
         let isSearchHandoff = false;
         // Set when the tool is writing the user-facing reply itself, in which
@@ -635,8 +712,13 @@ Object.assign(Chat, {
               toolParams,
               conversation,
               signal,
-              mode
+              mode,
+              id
             );
+            if (toolName === GENERATE_AITAB) {
+              aiTabSucceeded = result.success;
+              result = result.toolResult;
+            }
             /**
              * On the first invocation of search_the_web, SearchProvider-powered
              * web search is done. On the second invocation, search handoff (previously
@@ -696,6 +778,15 @@ Object.assign(Chat, {
             content.name = toolName;
           }
           conversation.updateToolCallMessage(pendingToolMessage, content);
+        } finally {
+          if (toolName === GENERATE_AITAB && !aiTabSucceeded) {
+            const message = conversation.messages.findLast(
+              m => m.toolUIData?.toolCallId === id
+            );
+            if (message) {
+              await conversation.updateToolUI(message, {}, null);
+            }
+          }
         }
 
         // A failed search returns an error-bearing result rather than
@@ -721,8 +812,13 @@ Object.assign(Chat, {
           ?.updateConversation(conversation)
           .catch(() => {});
 
-        // MANAGE_TABS is terminal - UI handles the interaction.
-        if (toolName === MANAGE_TABS) {
+        // These successful tools finish their turns in the UI.
+        if (toolName === MANAGE_TABS || aiTabSucceeded) {
+          // These tool calls need to return early so any staged
+          // security flags that have accumulated up to this point
+          // need to be committed before returning since the commit
+          // at the end of the loop will not be reached.
+          conversation.securityProperties.commit();
           return;
         }
 
