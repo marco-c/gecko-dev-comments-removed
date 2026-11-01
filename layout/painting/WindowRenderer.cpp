@@ -4,6 +4,8 @@
 
 #include "WindowRenderer.h"
 
+#include <algorithm>
+
 #include "gfxPlatform.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/dom/Animation.h"  
@@ -46,12 +48,18 @@ namespace mozilla {
 
 
 
-uint32_t FrameRecorder::StartFrameTimeRecording(int32_t aBufferSize) {
+uint32_t FrameRecorder::StartFrameTimeRecording(uint32_t aBufferSize) {
   if (mRecording.mIsPaused) {
     mRecording.mIsPaused = false;
 
     if (!mRecording.mIntervals.Length()) {  
-      mRecording.mIntervals.SetLength(aBufferSize);
+      
+      
+      constexpr uint32_t kRecordingMinSize = 60 * 10;  
+      constexpr uint32_t kRecordingMaxSize = 60 * 60 * 60;  
+      const uint32_t bufferSize =
+          std::clamp(aBufferSize, kRecordingMinSize, kRecordingMaxSize);
+      mRecording.mIntervals.SetLength(bufferSize);
     }
 
     

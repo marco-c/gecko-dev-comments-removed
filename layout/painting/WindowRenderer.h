@@ -51,7 +51,9 @@ class FrameRecorder {
   
 
 
-  virtual uint32_t StartFrameTimeRecording(int32_t aBufferSize);
+
+
+  virtual uint32_t StartFrameTimeRecording(uint32_t aBufferSize);
 
   
 
