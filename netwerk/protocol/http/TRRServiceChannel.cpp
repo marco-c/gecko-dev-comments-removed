@@ -271,7 +271,6 @@ nsresult TRRServiceChannel::ResolveProxy() {
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  
   RefPtr<TRRServiceChannel> self = this;
   nsCOMPtr<nsICancelable> proxyRequest;
   nsresult rv = ProxyConfigLookup::Create(
@@ -406,8 +405,6 @@ nsresult TRRServiceChannel::BeginConnect() {
 
   RefPtr<nsHttpConnectionInfo> connInfo = new nsHttpConnectionInfo(
       host, port, ""_ns, mUsername, proxyInfo, OriginAttributes(), isHttps);
-  
-  StoreAllowAltSvc(XRE_IsParentProcess() && LoadAllowAltSvc());
   bool http2Allowed = !gHttpHandler->IsHttp2Excluded(connInfo);
   bool http3Allowed = Http3Allowed();
   if (!http3Allowed) {

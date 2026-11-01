@@ -29,13 +29,6 @@ class DNSRequestBase : public nsISupports {
 
   void SetIPCActor(DNSRequestActor* aActor);
 
-  virtual void OnRecvCancelDNSRequest(const nsCString& hostName,
-                                      const nsCString& trrServer,
-                                      const int32_t& port, const uint16_t& type,
-                                      const OriginAttributes& originAttributes,
-                                      const nsIDNSService::DNSFlags& flags,
-                                      const nsresult& reason) = 0;
-  virtual bool OnRecvLookupCompleted(const DNSRequestResponse& reply) = 0;
   virtual void OnIPCActorDestroy() = 0;
 
   virtual DNSRequestSender* AsDNSRequestSender() = 0;
@@ -61,13 +54,7 @@ class DNSRequestSender final : public DNSRequestBase, public nsICancelable {
                    const nsIDNSService::DNSFlags& aFlags,
                    nsIDNSListener* aListener, nsIEventTarget* target);
 
-  void OnRecvCancelDNSRequest(const nsCString& hostName,
-                              const nsCString& trrServer, const int32_t& port,
-                              const uint16_t& type,
-                              const OriginAttributes& originAttributes,
-                              const nsIDNSService::DNSFlags& flags,
-                              const nsresult& reason) override;
-  bool OnRecvLookupCompleted(const DNSRequestResponse& reply) override;
+  bool OnRecvLookupCompleted(const DNSRequestResponse& reply);
   void OnIPCActorDestroy() override;
 
   
@@ -112,8 +99,7 @@ class DNSRequestHandler final : public DNSRequestBase, public nsIDNSListener {
                               const uint16_t& type,
                               const OriginAttributes& originAttributes,
                               const nsIDNSService::DNSFlags& flags,
-                              const nsresult& reason) override;
-  bool OnRecvLookupCompleted(const DNSRequestResponse& reply) override;
+                              const nsresult& reason);
   void OnIPCActorDestroy() override;
 
   DNSRequestSender* AsDNSRequestSender() override { return nullptr; }
