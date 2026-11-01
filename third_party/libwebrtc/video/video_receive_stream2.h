@@ -258,7 +258,9 @@ class VideoReceiveStream2
   
   
   
-  void RegisterCodecsOnReceiver(const std::vector<Decoder>& old_decoders,
+  
+  
+  bool RegisterCodecsOnReceiver(const std::vector<Decoder>& old_decoders,
                                 const std::vector<Decoder>& new_decoders);
   std::vector<RtpVideoStreamReceiver2::ReceiveCodec> GetReceiveCodecConfig()
       const RTC_RUN_ON(worker_sequence_checker_);
