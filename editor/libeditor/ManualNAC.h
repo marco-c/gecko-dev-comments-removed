@@ -80,7 +80,8 @@ class ManualNACPtr final {
                   std::is_same_v<StrongNodePtr, nsCOMPtr<nsIContent>>);
     
     
-    StrongNodePtr anonymousContent = std::move(aAnonymousContent);
+    StrongNodePtr anonymousContent =
+        std::forward<StrongNodePtr>(aAnonymousContent);
     MOZ_ASSERT(!aAnonymousContent);
     nsIContent* parentContent = anonymousContent->GetParent();
     if (!parentContent) {
