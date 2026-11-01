@@ -292,10 +292,16 @@ bool BaseCompiler::addInterruptCheck() {
   masm.branch32(Assembler::Equal,
                 Address(tmp, wasm::Instance::offsetOfInterrupt()), Imm32(0),
                 &ok);
-  trap(wasm::Trap::CheckInterrupt);
+  FaultingCodeRange fcr = trap(wasm::Trap::CheckInterrupt);
   masm.bind(&ok);
+
+  if (!fcr.isValid()) {
+    return false;
+  }
+
   
-  return createStackMap(Some(wasm::Trap::CheckInterrupt));
+  return createStackMap(Some(wasm::Trap::CheckInterrupt),
+                        CodeOffset(fcr.resumeOffset()));
 }
 
 void BaseCompiler::checkDivideByZero(RegI32 rhs) {
@@ -581,28 +587,43 @@ bool BaseCompiler::beginFunction() {
   }
 
   
-
   ExitStubMapVector extras;
-  StackMap* functionEntryStackMap;
-  if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras) ||
+  if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras)) {
+    return false;
+  }
+  
+  
+  StackMap* stackOverflowStackMap = nullptr;
+  if (compilerEnv_.debugEnabled() &&
       
       !stackMapGenerator_.createStackMap(Some(Trap::StackOverflow), extras,
                                          HasDebugFrameWithLiveRefs::No, stk_,
-                                         &functionEntryStackMap)) {
+                                         &stackOverflowStackMap)) {
     return false;
   }
-
-  OutOfLineCode* oolStackOverflowTrap =
-      addOutOfLineCode(new (alloc_) OutOfLineTrap(
-          Trap::StackOverflow,
-          TrapSiteDesc(BytecodeOffset(func_.bytecodeOffset)), nullptr));
+  OutOfLineCode* oolStackOverflowTrap = addOutOfLineCode(new (
+      alloc_) OutOfLineTrap(Trap::StackOverflow,
+                            TrapSiteDesc(BytecodeOffset(func_.bytecodeOffset)),
+                            stackOverflowStackMap));
   if (!oolStackOverflowTrap) {
     return false;
   }
   fr.checkStack(ABINonArgReg0, ABINonArgReg1, oolStackOverflowTrap->entry());
 
+  
+  
+  
+  
+  
+  StackMap* checkInterruptStackMap;
+  
+  if (!stackMapGenerator_.createStackMap(Some(Trap::CheckInterrupt), extras,
+                                         HasDebugFrameWithLiveRefs::No, stk_,
+                                         &checkInterruptStackMap)) {
+    return false;
+  }
   OutOfLineCode* oolInterruptTrap = addOutOfLineCode(new (alloc_) OutOfLineTrap(
-      Trap::CheckInterrupt, trapSiteDesc(), functionEntryStackMap));
+      Trap::CheckInterrupt, trapSiteDesc(), checkInterruptStackMap));
   if (!oolInterruptTrap) {
     return false;
   }
@@ -3993,8 +4014,13 @@ void BaseCompiler::emitBranchSetup(BranchState* b) {
           break;
         }
         case ValType::I64: {
-          pop2xI64(&b->i64.lhs, &b->i64.rhs);
-          b->i64.rhsImm = false;
+          if (popConst(&b->i64.imm)) {
+            b->i64.lhs = popI64();
+            b->i64.rhsImm = true;
+          } else {
+            pop2xI64(&b->i64.lhs, &b->i64.rhs);
+            b->i64.rhsImm = false;
+          }
           break;
         }
         case ValType::F32: {
@@ -6659,10 +6685,20 @@ void BaseCompiler::emitCompareI64(Assembler::Condition compareOp,
     return;
   }
 
+  int64_t c;
+  if (popConst(&c)) {
+    RegI64 rs0 = popI64();
+    RegI32 rd(fromI64(rs0));
+    masm.cmp64Set(compareOp, rs0, Imm64(c), rd);
+    freeI64Except(rs0, rd);
+    pushI32(rd);
+    return;
+  }
+
   RegI64 rs0, rs1;
   pop2xI64(&rs0, &rs1);
   RegI32 rd(fromI64(rs0));
-  cmp64Set(compareOp, rs0, rs1, rd);
+  masm.cmp64Set(compareOp, rs0, rs1, rd);
   freeI64(rs1);
   freeI64Except(rs0, rd);
   pushI32(rd);
@@ -13143,7 +13179,7 @@ bool js::wasm::BaselineCompileFunctions(const CodeMetadata& codeMeta,
     
     auto checkThisTrapKind_debugMode = [](Trap t) -> bool {
       
-      return t != Trap::IndirectCallBadSig && t != Trap::StackOverflow;
+      return t != Trap::IndirectCallBadSig;
     };
     auto checkThisTrapKind_normalMode = [](Trap t) -> bool {
       
