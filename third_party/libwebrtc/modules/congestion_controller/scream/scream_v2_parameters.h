@@ -172,6 +172,12 @@ struct ScreamV2Parameters {
   
   
   
+  
+  FieldTrialParameter<bool> use_non_linear_backoff_scale;
+
+  
+  
+  
   FieldTrialParameter<TimeDelta>
       allow_large_pacing_bursts_after_congestion_time;
 
