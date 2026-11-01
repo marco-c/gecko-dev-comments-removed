@@ -1173,11 +1173,7 @@ pref("browser.tabs.hoverPreview.showThumbnails", true);
 
 pref("browser.tabs.groups.enabled", true);
 pref("browser.tabs.groups.hoverPreview.enabled", true);
-#ifdef NIGHTLY_BUILD
 pref("browser.tabs.groups.alternateMenu", true);
-#else
-pref("browser.tabs.groups.alternateMenu", false);
-#endif
 
 pref("browser.tabs.groups.onboardingCallouts.enabled", false);
 
