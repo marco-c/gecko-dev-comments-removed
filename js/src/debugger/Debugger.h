@@ -212,18 +212,12 @@ class Completion {
   
   
   
-  explicit Completion(Return&& variant)
-      : variant(std::forward<Return>(variant)) {}
-  explicit Completion(Throw&& variant)
-      : variant(std::forward<Throw>(variant)) {}
-  explicit Completion(Terminate&& variant)
-      : variant(std::forward<Terminate>(variant)) {}
-  explicit Completion(InitialYield&& variant)
-      : variant(std::forward<InitialYield>(variant)) {}
-  explicit Completion(Yield&& variant)
-      : variant(std::forward<Yield>(variant)) {}
-  explicit Completion(Await&& variant)
-      : variant(std::forward<Await>(variant)) {}
+  explicit Completion(Return&& variant) : variant(std::move(variant)) {}
+  explicit Completion(Throw&& variant) : variant(std::move(variant)) {}
+  explicit Completion(Terminate&& variant) : variant(std::move(variant)) {}
+  explicit Completion(InitialYield&& variant) : variant(std::move(variant)) {}
+  explicit Completion(Yield&& variant) : variant(std::move(variant)) {}
+  explicit Completion(Await&& variant) : variant(std::move(variant)) {}
 
   
   
