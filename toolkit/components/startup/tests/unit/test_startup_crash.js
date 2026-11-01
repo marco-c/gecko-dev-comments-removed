@@ -21,6 +21,7 @@ function run_test() {
   test_trackStartupCrashBegin_safeMode();
   test_trackStartupCrashEnd_safeMode();
   test_maxResumed();
+  test_trackStartupCrashBegin_profilePathEnv();
   resetTestEnv(0);
 
   prefService.clearUserPref(pref_always_use_safe_mode);
@@ -327,4 +328,32 @@ function test_maxResumed() {
   
   Assert.equal(max_resumed + 2, prefService.getIntPref(pref_recent_crashes));
   Assert.ok(!appStartup.automaticSafeModeNecessary);
+}
+
+function test_trackStartupCrashBegin_profilePathEnv() {
+  
+  let replacedLockTime = Date.now() - 60 * 1000;
+  resetTestEnv(replacedLockTime);
+  prefService.setIntPref(
+    pref_last_success,
+    ms_to_s(replacedLockTime) - 60 * 60
+  ); 
+  Services.env.set("XRE_PROFILE_PATH", PathUtils.tempDir);
+  Assert.throws(
+    () => appStartup.trackStartupCrashBegin(),
+    /NS_ERROR_NOT_AVAILABLE/
+  );
+  
+  Assert.ok(!prefService.prefHasUserValue(pref_recent_crashes));
+
+  
+  
+  resetTestEnv(replacedLockTime);
+  prefService.setIntPref(
+    pref_last_success,
+    ms_to_s(replacedLockTime) - 60 * 60
+  ); 
+  Services.env.set("XRE_PROFILE_PATH", "");
+  Assert.ok(!appStartup.trackStartupCrashBegin());
+  Assert.equal(1, prefService.getIntPref(pref_recent_crashes));
 }

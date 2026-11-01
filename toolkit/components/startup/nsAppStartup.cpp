@@ -949,8 +949,10 @@ nsAppStartup::TrackStartupCrashBegin(bool* aIsSafeModeNecessary) {
   
   
   
+  
+  
   char* xreProfilePath = PR_GetEnv("XRE_PROFILE_PATH");
-  if (xreProfilePath) {
+  if (xreProfilePath && *xreProfilePath) {
     GetAutomaticSafeModeNecessary(aIsSafeModeNecessary);
     return NS_ERROR_NOT_AVAILABLE;
   }
