@@ -3,14 +3,12 @@
 
 
 
-use std::ops::Range;
-
 use crate::error::Result;
 use crate::image::{DataTypeTag, ImageDataType};
 use crate::render::MAX_BORDER;
 use crate::util::{
-    CACHE_LINE_BYTE_SIZE, CacheLine, SmallVec, SmallVecHeapStorage, num_per_cache_line,
-    slice_from_cachelines, slice_from_cachelines_mut,
+    CACHE_LINE_BYTE_SIZE, CacheLine, num_per_cache_line, slice_from_cachelines,
+    slice_from_cachelines_mut,
 };
 
 
@@ -19,9 +17,6 @@ pub struct RowBuffer {
     buffer: Box<[CacheLine]>,
     
     row_stride: usize,
-    
-    
-    
     
     num_rows: usize,
 }
@@ -51,21 +46,6 @@ impl RowBuffer {
         })
     }
 
-    
-    
-    pub fn new_filled(data_type: DataTypeTag, row_len: usize, fill_pattern: &[u8]) -> Result<Self> {
-        let mut result = Self::new(data_type, 0, 0, 0, row_len)?;
-        let row_bytes: &mut [u8] = result.get_row_mut(0);
-
-        
-        
-        for (i, byte) in row_bytes.iter_mut().enumerate() {
-            *byte = fill_pattern[i % fill_pattern.len()];
-        }
-
-        Ok(result)
-    }
-
     #[inline]
     pub fn get_row<T: ImageDataType>(&self, row: usize) -> &[T] {
         let row_idx = row & (self.num_rows - 1);
@@ -81,32 +61,19 @@ impl RowBuffer {
         slice_from_cachelines_mut(&mut self.buffer[start..start + stride])
     }
 
-    pub fn get_rows_mut<'a, T: ImageDataType, HeapStorage: SmallVecHeapStorage<&'a mut [T]>>(
-        &'a mut self,
-        y: Range<usize>,
-        xoffset: usize,
-        out: &mut SmallVec<&'a mut [T], 8, HeapStorage>,
-    ) {
-        assert!(y.clone().count() <= self.num_rows);
-        let first_row_idx = y.start & (self.num_rows - 1);
-        let stride = self.row_stride;
-        let start = first_row_idx * stride;
-        let num_pre = (y.clone().count() + first_row_idx).saturating_sub(self.num_rows);
-        let num_post = y.clone().count() - num_pre;
-        let buf = &mut self.buffer[..];
-        let (pre, post) = buf.split_at_mut(start);
-        
-        
-        out.extend(
-            post.chunks_exact_mut(stride)
-                .take(num_post)
-                .map(|chunk| &mut slice_from_cachelines_mut(chunk)[xoffset..]),
-        );
-        out.extend(
-            pre.chunks_exact_mut(stride)
-                .take(num_pre)
-                .map(|chunk| &mut slice_from_cachelines_mut(chunk)[xoffset..]),
-        );
+    #[inline]
+    pub fn as_slice<T: ImageDataType>(&self) -> &[T] {
+        slice_from_cachelines(&self.buffer)
+    }
+
+    #[inline]
+    pub fn as_mut_slice<T: ImageDataType>(&mut self) -> &mut [T] {
+        slice_from_cachelines_mut(&mut self.buffer)
+    }
+
+    #[inline]
+    pub fn stride_elements<T: ImageDataType>(&self) -> usize {
+        self.row_stride * num_per_cache_line::<T>()
     }
 
     pub const fn x0_offset<T: ImageDataType>() -> usize {
@@ -116,5 +83,10 @@ impl RowBuffer {
 
     pub const fn x0_byte_offset() -> usize {
         CACHE_LINE_BYTE_SIZE
+    }
+
+    #[inline]
+    pub fn num_rows(&self) -> usize {
+        self.num_rows
     }
 }

@@ -84,7 +84,7 @@ pub enum SmallVec<T, const N: usize, HeapStorage: SmallVecHeapStorage<T> = Vec<T
 
 
 
-pub(crate) type ChannelVec<T> = SmallVec<T, 8>;
+pub type ChannelVec<T> = SmallVec<T, 8>;
 
 impl<T, const N: usize, HeapStorage: SmallVecHeapStorage<T>> Deref for SmallVec<T, N, HeapStorage> {
     type Target = [T];
@@ -143,14 +143,6 @@ impl<T, const N: usize, HeapStorage: SmallVecHeapStorage<T>> SmallVec<T, N, Heap
             
             len: 0,
             data: [const { MaybeUninit::uninit() }; N],
-        }
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        match self {
-            Self::Stack { len, .. } => *len == 0,
-            Self::Heap(v) => v.as_slice().is_empty(),
         }
     }
 

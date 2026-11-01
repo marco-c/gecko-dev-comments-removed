@@ -54,7 +54,8 @@ impl f16 {
                     e += 1;
                 }
                 m &= 0x3FF; 
-                let new_exp = 127 - 15 - e; 
+                
+                let new_exp = 127 - 14 - e;
                 (sign << 31) | (new_exp << 23) | (m << 13)
             }
         } else if exp == 31 {
@@ -103,9 +104,18 @@ impl f16 {
                 sign << 15
             } else if unbiased < -14 {
                 
-                let shift = (-14 - unbiased) as u32;
-                let m = ((mant | 0x0080_0000) >> (shift + 14)) as u16;
-                (sign << 15) | m
+                let full = mant | 0x0080_0000;
+                let shift = (-1 - unbiased) as u32; 
+                let m = full >> shift;
+                
+                let rem = full & ((1 << shift) - 1);
+                let half = 1 << (shift - 1);
+                let m = if rem > half || (rem == half && (m & 1) == 1) {
+                    m + 1
+                } else {
+                    m
+                };
+                (sign << 15) | m as u16
             } else if unbiased > 15 {
                 
                 (sign << 15) | (0x1F << 10)
@@ -255,6 +265,36 @@ mod tests {
         assert!(val > 0.0);
         assert!(val < 1e-6);
         assert!(tiny.is_finite());
+    }
+
+    #[test]
+    fn test_denormal_values() {
+        
+        for bits in 1u16..0x0400 {
+            let expected = bits as f32 * 2f32.powi(-24);
+            assert_eq!(f16::from_bits(bits).to_f32(), expected, "bits {bits:#06x}");
+            assert_eq!(f16::from_bits(bits | 0x8000).to_f32(), -expected);
+            assert_eq!(
+                f16::from_f32(expected).to_bits(),
+                bits,
+                "value {expected:e}"
+            );
+            assert_eq!(f16::from_f32(-expected).to_bits(), bits | 0x8000);
+        }
+        
+        assert_eq!(f16::from_bits(0x03FF).to_f32(), 1023.0 * 2f32.powi(-24));
+        assert_eq!(f16::from_bits(0x0400).to_f32(), 2f32.powi(-14));
+    }
+
+    #[test]
+    fn test_denormal_rounding() {
+        let ulp = 2f32.powi(-24);
+        
+        assert_eq!(f16::from_f32(1.5 * ulp).to_bits(), 0x0002);
+        assert_eq!(f16::from_f32(2.5 * ulp).to_bits(), 0x0002);
+        assert_eq!(f16::from_f32(2.75 * ulp).to_bits(), 0x0003);
+        
+        assert_eq!(f16::from_f32(1023.75 * ulp).to_bits(), 0x0400);
     }
 
     #[test]

@@ -5,10 +5,11 @@
 
 
 
+mod box_parser;
+mod codestream_parser;
 mod color;
 mod data_types;
 mod decoder;
-mod inner;
 mod input;
 mod options;
 mod signature;
@@ -16,44 +17,33 @@ mod xyb_constants;
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+pub(crate) use box_parser::BoxParserCheckpoint;
+pub use box_parser::{JxlAuxBox, JxlAuxBoxType};
 pub use color::*;
 pub use data_types::*;
 pub use decoder::*;
-pub use inner::*;
 pub use input::*;
 pub use options::*;
 pub use signature::*;
 
 use crate::error::Result;
-use crate::headers::image_metadata::Orientation;
+pub use crate::headers::image_metadata::Orientation;
 pub use crate::image::JxlOutputBuffer;
 
 
-
-
-
-
-
-
-#[derive(Debug, PartialEq)]
-pub enum ProcessingResult<T, U> {
-    Complete { result: T },
-    NeedsMoreInput { size_hint: usize, fallback: U },
-}
-
-impl<T> ProcessingResult<T, ()> {
-    fn new(
-        result: Result<T, crate::error::Error>,
-    ) -> Result<ProcessingResult<T, ()>, crate::error::Error> {
-        match result {
-            Ok(v) => Ok(ProcessingResult::Complete { result: v }),
-            Err(crate::error::Error::OutOfBounds(v)) => Ok(ProcessingResult::NeedsMoreInput {
-                size_hint: v,
-                fallback: (),
-            }),
-            Err(e) => Err(e),
-        }
-    }
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum Event {
+    
+    
+    NeedMoreInput { size_hint: usize },
+    
+    BasicInfo,
+    
+    FrameHeader,
+    
+    FrameComplete { has_more_frames: bool },
+    
+    Complete,
 }
 
 #[derive(Clone)]

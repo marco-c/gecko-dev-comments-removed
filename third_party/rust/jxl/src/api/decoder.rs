@@ -3,42 +3,26 @@
 
 
 
-use std::marker::PhantomData;
-
-use states::*;
-
+use super::box_parser::{BoxParser, CodestreamInput};
+use super::codestream_parser::{CodestreamParser, FrameStartInfo};
 use super::{
-    BoxParserCheckpoint, JxlAuxBox, JxlAuxBoxType, JxlBasicInfo, JxlBitstreamInput,
-    JxlColorProfile, JxlDecoderInner, JxlDecoderOptions, JxlFrameHeader, JxlOutputBuffer,
-    JxlParallelRunner, JxlPixelFormat, ProcessingResult,
+    Event, JxlAuxBox, JxlAuxBoxType, JxlBasicInfo, JxlBitstreamInput, JxlColorProfile,
+    JxlDecoderOptions, JxlFrameHeader, JxlOutputBuffer, JxlParallelRunner, JxlParallelRunnerFun,
+    JxlPixelFormat,
 };
-use crate::error::Result;
-#[cfg(test)]
-use crate::{frame::Frame, headers::FileHeader};
+use crate::error::{Error, Result};
 
-pub mod states {
-    pub trait JxlState {}
-    pub struct Initialized;
-    pub struct WithImageInfo;
-    pub struct WithFrameInfo;
-    pub struct InTrailingBox;
-    impl JxlState for Initialized {}
-    impl JxlState for WithImageInfo {}
-    impl JxlState for WithFrameInfo {}
-    impl JxlState for InTrailingBox {}
+struct SequentialRunner;
+
+impl JxlParallelRunner for SequentialRunner {
+    fn run(&mut self, _num: usize, _fun: &JxlParallelRunnerFun) -> Result<()> {
+        unreachable!("jxl-rs should only use run_ordered!")
+    }
+
+    fn num_threads(&self) -> usize {
+        1
+    }
 }
-
-
-
-
-
-pub struct JxlDecoder<State: JxlState> {
-    inner: Box<JxlDecoderInner>,
-    _state: PhantomData<State>,
-}
-
-#[cfg(test)]
-pub type FrameCallback = dyn FnMut(&FileHeader, &Frame, usize) -> Result<()>;
 
 
 #[derive(Debug, Clone)]
@@ -54,8 +38,6 @@ pub struct VisibleFrameInfo {
     
     pub is_last: bool,
     
-    
-    
     pub is_keyframe: bool,
     
     pub seek_target: VisibleFrameSeekTarget,
@@ -67,95 +49,97 @@ pub struct VisibleFrameInfo {
 #[derive(Debug, Clone, Copy)]
 pub struct VisibleFrameSeekTarget {
     
-    pub decode_start_file_offset: u64,
+    pub(crate) target: FrameStartInfo,
     
     
-    pub box_parser_checkpoint: BoxParserCheckpoint,
-    
-    
-    pub visible_frames_to_skip: usize,
+    pub(crate) slots: [Option<(usize, FrameStartInfo)>; 8],
 }
 
-impl<S: JxlState> JxlDecoder<S> {
-    fn wrap_inner(inner: Box<JxlDecoderInner>) -> Self {
-        Self {
-            inner,
-            _state: PhantomData,
-        }
-    }
 
-    
-    #[cfg(test)]
-    pub fn set_frame_callback(&mut self, callback: Box<FrameCallback>) {
-        self.inner.set_frame_callback(callback);
-    }
 
-    
-    
-    
-    
-    pub fn scanned_frames(&self) -> &[VisibleFrameInfo] {
-        self.inner.scanned_frames()
-    }
 
-    pub fn aux_boxes(&self, box_type: JxlAuxBoxType) -> &[JxlAuxBox] {
-        self.inner.aux_boxes(box_type)
-    }
 
-    fn map_inner_processing_result<SuccessState: JxlState>(
-        self,
-        inner_result: ProcessingResult<(), ()>,
-    ) -> ProcessingResult<JxlDecoder<SuccessState>, Self> {
-        match inner_result {
-            ProcessingResult::Complete { .. } => ProcessingResult::Complete {
-                result: JxlDecoder::wrap_inner(self.inner),
-            },
-            ProcessingResult::NeedsMoreInput { size_hint, .. } => {
-                ProcessingResult::NeedsMoreInput {
-                    size_hint,
-                    fallback: self,
-                }
-            }
-        }
-    }
+
+pub struct JxlDecoder {
+    options: JxlDecoderOptions,
+    box_parser: BoxParser,
+    codestream_parser: CodestreamParser,
 }
 
-impl JxlDecoder<Initialized> {
+impl JxlDecoder {
+    
     pub fn new(options: JxlDecoderOptions) -> Self {
-        Self::wrap_inner(Box::new(JxlDecoderInner::new(options)))
-    }
-
-    pub fn process(
-        mut self,
-        input: &mut impl JxlBitstreamInput,
-        parallel_runner: Option<&mut dyn JxlParallelRunner>,
-    ) -> Result<ProcessingResult<JxlDecoder<WithImageInfo>, Self>> {
-        let inner_result = self.inner.process(input, None, parallel_runner)?;
-        Ok(self.map_inner_processing_result(inner_result))
-    }
-}
-
-impl JxlDecoder<WithImageInfo> {
-    
-    pub fn basic_info(&self) -> &JxlBasicInfo {
-        self.inner.basic_info().unwrap()
+        let box_parser = BoxParser::with_aux_boxes(options.request_aux_boxes.iter().copied());
+        JxlDecoder {
+            options,
+            box_parser,
+            codestream_parser: CodestreamParser::new(),
+        }
     }
 
     
-    pub fn embedded_color_profile(&self) -> &JxlColorProfile {
-        self.inner.embedded_color_profile().unwrap()
+    
+    
+    
+    
+    pub fn reset(&mut self) {
+        self.box_parser.reset();
+        self.codestream_parser.reset();
+    }
+
+    #[cfg(test)]
+    pub(crate) fn file_header(&self) -> Option<&crate::headers::FileHeader> {
+        if self.codestream_parser.image_info.is_complete() {
+            Some(self.codestream_parser.image_info.file_header())
+        } else {
+            None
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn raw_frame_header(&self) -> Option<&crate::headers::frame_header::FrameHeader> {
+        self.codestream_parser.frame_info.current_frame_header()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn frames_decoded(&self) -> usize {
+        self.codestream_parser.frames_decoded
+    }
+
+    #[cfg(test)]
+    pub(crate) fn toc(&self) -> Option<&crate::headers::toc::Toc> {
+        self.codestream_parser.frame_info.current_toc()
     }
 
     
-    pub fn output_color_profile(&self) -> &JxlColorProfile {
-        self.inner.output_color_profile().unwrap()
+    pub fn basic_info(&self) -> Option<&JxlBasicInfo> {
+        if self.codestream_parser.image_info.is_complete() {
+            Some(self.codestream_parser.image_info.basic_info())
+        } else {
+            None
+        }
     }
 
     
-    pub fn current_pixel_format(&self) -> &JxlPixelFormat {
-        self.inner.current_pixel_format().unwrap()
+    pub fn embedded_color_profile(&self) -> Option<&JxlColorProfile> {
+        if self.codestream_parser.image_info.is_complete() {
+            Some(self.codestream_parser.image_info.embedded_color_profile())
+        } else {
+            None
+        }
     }
 
+    
+    pub fn output_color_profile(&self) -> Option<&JxlColorProfile> {
+        self.codestream_parser.output_color_profile.as_ref()
+    }
+
+    
+    pub fn current_pixel_format(&self) -> Option<&JxlPixelFormat> {
+        self.codestream_parser.pixel_format.as_ref()
+    }
+
+    
     
     
     
@@ -165,28 +149,70 @@ impl JxlDecoder<WithImageInfo> {
     
     
     pub fn set_pixel_format(&mut self, pixel_format: JxlPixelFormat) -> Result<()> {
-        self.inner.set_pixel_format(pixel_format)
+        
+        
+        if !self.codestream_parser.image_info.is_complete() {
+            return Err(Error::ApiUsageError(
+                "cannot set pixel format before BasicInfo",
+            ));
+        }
+        let frame_header_was_decoded = self
+            .codestream_parser
+            .frame_info
+            .current_frame_header()
+            .is_some()
+            || !self.codestream_parser.scanned_frames().is_empty();
+        if frame_header_was_decoded
+            && self.codestream_parser.pixel_format.as_ref() != Some(&pixel_format)
+        {
+            return Err(Error::ApiUsageError(
+                "cannot change pixel format after first frame header",
+            ));
+        }
+        self.codestream_parser.pixel_format = Some(pixel_format);
+        self.codestream_parser.update_default_output_options();
+        Ok(())
     }
 
-    pub fn process(
-        mut self,
-        input: &mut impl JxlBitstreamInput,
-        parallel_runner: Option<&mut dyn JxlParallelRunner>,
-    ) -> Result<ProcessingResult<JxlDecoder<WithFrameInfo>, Self>> {
-        let inner_result = self.inner.process(input, None, parallel_runner)?;
-        Ok(self.map_inner_processing_result(inner_result))
+    
+    
+    
+    pub fn frame_header(&self) -> Option<JxlFrameHeader> {
+        if !self.codestream_parser.has_visible_frame() {
+            return None;
+        }
+        let frame_header = self.codestream_parser.frame_info.current_frame_header()?;
+        
+        
+        
+        let size = self.codestream_parser.image_info.basic_info().size;
+        Some(JxlFrameHeader {
+            name: frame_header.name.clone(),
+            duration: self
+                .codestream_parser
+                .image_info
+                .file_header()
+                .image_metadata
+                .animation
+                .as_ref()
+                .map(|anim| frame_header.duration(anim)),
+            size,
+        })
+    }
+
+    
+    
+    
+    pub fn scanned_frames(&self) -> &[VisibleFrameInfo] {
+        self.codestream_parser.scanned_frames()
     }
 
     
     
     
     
-    pub fn process_trailing_data(
-        mut self,
-        input: &mut impl JxlBitstreamInput,
-    ) -> Result<ProcessingResult<JxlDecoder<InTrailingBox>, Self>> {
-        let inner_result = self.inner.process_trailing_data(input)?;
-        Ok(self.map_inner_processing_result(inner_result))
+    pub fn trailing_box(&self) -> Option<&JxlAuxBox> {
+        self.box_parser.trailing_box()
     }
 
     
@@ -195,23 +221,28 @@ impl JxlDecoder<WithImageInfo> {
     
     
     
-    pub fn flush_pixels(
-        &mut self,
-        buffers: &mut [JxlOutputBuffer<'_>],
-        parallel_runner: Option<&mut dyn JxlParallelRunner>,
-    ) -> Result<bool> {
-        self.inner.flush_pixels(buffers, parallel_runner)
-    }
-
-    pub fn has_more_frames(&self) -> bool {
-        self.inner.has_more_frames()
+    
+    
+    
+    pub fn start_new_frame(&mut self, seek_target: VisibleFrameSeekTarget) -> Result<u64> {
+        if !self.codestream_parser.image_info.is_complete() {
+            return Err(Error::ApiUsageError("cannot seek before BasicInfo"));
+        }
+        let checkpoint = self.codestream_parser.start_new_frame(&seek_target);
+        self.box_parser.reset_to_checkpoint(checkpoint);
+        Ok(checkpoint.file_position)
     }
 
     
     
     
     pub fn file_length(&self) -> Option<u64> {
-        self.inner.file_length()
+        self.codestream_parser.file_length
+    }
+
+    
+    pub fn aux_boxes(&self, box_type: JxlAuxBoxType) -> &[JxlAuxBox] {
+        self.box_parser.aux_boxes(box_type)
     }
 
     
@@ -222,22 +253,10 @@ impl JxlDecoder<WithImageInfo> {
     
     
     
-    pub fn start_new_frame(&mut self, seek_target: VisibleFrameSeekTarget) {
-        self.inner.start_new_frame(seek_target);
+    pub fn close_input(&mut self) {
+        self.box_parser.close_input();
     }
 
-    #[cfg(test)]
-    pub(crate) fn set_use_simple_pipeline(&mut self, u: bool) {
-        self.inner.set_use_simple_pipeline(u);
-    }
-
-    #[cfg(test)]
-    pub(crate) fn disable_16bit_modular_buffers(&mut self) {
-        self.inner.disable_16bit_modular_buffers();
-    }
-}
-
-impl JxlDecoder<WithFrameInfo> {
     
     
     
@@ -249,16 +268,27 @@ impl JxlDecoder<WithFrameInfo> {
     
     
     
-    pub fn skip_frame(
-        mut self,
-        input: &mut impl JxlBitstreamInput,
-    ) -> Result<ProcessingResult<JxlDecoder<WithImageInfo>, Self>> {
-        let inner_result = self.inner.process(input, None, None)?;
-        Ok(self.map_inner_processing_result(inner_result))
-    }
-
-    pub fn frame_header(&self) -> JxlFrameHeader {
-        self.inner.frame_header().unwrap()
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(never)]
+    pub fn process(
+        &mut self,
+        input: &mut dyn JxlBitstreamInput,
+        buffers: Option<&mut [JxlOutputBuffer]>,
+        parallel_runner: Option<&mut (dyn JxlParallelRunner + '_)>,
+    ) -> Result<Event> {
+        self.codestream_parser.process(
+            &mut CodestreamInput::new(&mut self.box_parser, input),
+            &self.options,
+            buffers,
+            parallel_runner.unwrap_or(&mut SequentialRunner),
+        )
     }
 
     
@@ -269,55 +299,25 @@ impl JxlDecoder<WithFrameInfo> {
     
     pub fn flush_pixels(
         &mut self,
-        buffers: &mut [JxlOutputBuffer<'_>],
-        parallel_runner: Option<&mut dyn JxlParallelRunner>,
+        buffers: &mut [JxlOutputBuffer],
+        parallel_runner: Option<&mut (dyn JxlParallelRunner + '_)>,
     ) -> Result<bool> {
-        self.inner.flush_pixels(buffers, parallel_runner)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub fn process<In: JxlBitstreamInput>(
-        mut self,
-        input: &mut In,
-        buffers: &mut [JxlOutputBuffer<'_>],
-        parallel_runner: Option<&mut dyn JxlParallelRunner>,
-    ) -> Result<ProcessingResult<JxlDecoder<WithImageInfo>, Self>> {
-        let inner_result = self.inner.process(input, Some(buffers), parallel_runner)?;
-        Ok(self.map_inner_processing_result(inner_result))
-    }
-}
-
-impl JxlDecoder<InTrailingBox> {
-    
-    
-    
-    
-    pub fn trailing_box(&self) -> Option<&JxlAuxBox> {
-        self.inner.trailing_box()
-    }
-
-    
-    
-    
-    
-    pub fn process_trailing_data(
-        &mut self,
-        input: &mut impl JxlBitstreamInput,
-    ) -> Result<ProcessingResult<(), ()>> {
-        self.inner.process_trailing_data(input)
-    }
-
-    pub fn start_new_frame(
-        mut self,
-        seek_target: VisibleFrameSeekTarget,
-    ) -> JxlDecoder<WithImageInfo> {
-        self.inner.start_new_frame(seek_target);
-        JxlDecoder::wrap_inner(self.inner)
+        let Some(profile) = self.codestream_parser.output_color_profile.as_ref() else {
+            return Ok(false);
+        };
+        let Some(pixel_format) = self.codestream_parser.pixel_format.as_ref() else {
+            return Ok(false);
+        };
+        match self.codestream_parser.frame_info.do_flush(
+            buffers,
+            profile,
+            pixel_format,
+            parallel_runner.unwrap_or(&mut SequentialRunner),
+        ) {
+            Ok(()) | Err(Error::OutOfBounds(_)) => {
+                Ok(self.codestream_parser.get_and_clear_pixels_dirty())
+            }
+            Err(e) => Err(e),
+        }
     }
 }

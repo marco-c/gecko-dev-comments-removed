@@ -143,10 +143,7 @@ impl InputBuffers {
         
         
         
-        if shared.group_chan_complete[group]
-            .iter()
-            .all(|x| x.load(Ordering::Relaxed))
-        {
+        if all_finalized {
             for g in [
                 gym1 * gw + gxm1,
                 gym1 * gw + gx,

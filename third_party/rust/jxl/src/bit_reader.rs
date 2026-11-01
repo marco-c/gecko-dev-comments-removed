@@ -8,7 +8,6 @@ use std::fmt::Debug;
 use byteorder::{ByteOrder, LittleEndian};
 
 use crate::error::Error;
-use crate::util::tracing_wrappers::*;
 
 
 #[derive(Clone)]
@@ -16,8 +15,8 @@ pub struct BitReader<'a> {
     data: &'a [u8],
     bit_buf: u64,
     bits_in_buf: usize,
-    total_bits_read: usize,
-    initial_bits: usize,
+    initial_bytes: usize,
+    overread_bytes: usize,
 }
 
 impl Debug for BitReader<'_> {
@@ -27,7 +26,7 @@ impl Debug for BitReader<'_> {
             "BitReader{{ data: [{} bytes], bit_buf: {:0width$b}, total_bits_read: {} }}",
             self.data.len(),
             self.bit_buf,
-            self.total_bits_read,
+            self.total_bits_read(),
             width = self.bits_in_buf
         )
     }
@@ -42,8 +41,8 @@ impl<'a> BitReader<'a> {
             data,
             bit_buf: 0,
             bits_in_buf: 0,
-            total_bits_read: 0,
-            initial_bits: data.len() * 8,
+            initial_bytes: data.len(),
+            overread_bytes: 0,
         }
     }
 
@@ -58,25 +57,24 @@ impl<'a> BitReader<'a> {
     }
 
     
+    #[inline]
     pub fn consume(&mut self, num: usize) -> Result<(), Error> {
-        if self.bits_in_buf < num {
-            return Err(Error::OutOfBounds((num - self.bits_in_buf).div_ceil(8)));
+        let overread_bits = self.overread_bytes * 8;
+        if self.bits_in_buf < num + overread_bits {
+            let real_bits = self.bits_in_buf.saturating_sub(overread_bits);
+            return Err(Error::OutOfBounds((num - real_bits).div_ceil(8)));
         }
         self.bit_buf >>= num;
         self.bits_in_buf -= num;
-        self.total_bits_read = self.total_bits_read.wrapping_add(num);
         Ok(())
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn consume_optimistic(&mut self, num: usize) {
         self.bit_buf >>= num;
-        self.bits_in_buf = self.bits_in_buf.saturating_sub(num);
-        self.total_bits_read = self.total_bits_read.wrapping_add(num);
+        self.bits_in_buf -= num;
     }
 
-    
-    
     
     
     
@@ -107,8 +105,10 @@ impl<'a> BitReader<'a> {
     }
 
     pub fn check_for_error(&self) -> Result<(), Error> {
-        if self.total_bits_read > self.initial_bits {
-            Err(Error::OutOfBounds(self.total_bits_read - self.initial_bits))
+        let total_read = self.total_bits_read();
+        let initial_bits = self.initial_bytes * 8;
+        if total_read > initial_bits {
+            Err(Error::OutOfBounds(total_read - initial_bits))
         } else {
             Ok(())
         }
@@ -116,16 +116,14 @@ impl<'a> BitReader<'a> {
 
     
     pub fn total_bits_read(&self) -> usize {
-        self.total_bits_read
+        (self.initial_bytes - self.data.len() + self.overread_bytes) * 8 - self.bits_in_buf
     }
 
     
     pub fn total_bits_available(&self) -> usize {
-        self.data.len() * 8 + self.bits_in_buf
+        (self.data.len() * 8 + self.bits_in_buf).saturating_sub(self.overread_bytes * 8)
     }
 
-    
-    
     
     
     
@@ -135,58 +133,47 @@ impl<'a> BitReader<'a> {
     
     #[inline(never)]
     pub fn skip_bits(&mut self, mut n: usize) -> Result<(), Error> {
+        let overread_bits = self.overread_bytes * 8;
+        let real_bits_in_buf = self.bits_in_buf.saturating_sub(overread_bits);
         
-        if let Some(next_remaining_bits) = self.bits_in_buf.checked_sub(n) {
-            self.total_bits_read += n;
-            self.bits_in_buf = next_remaining_bits;
+        if n <= real_bits_in_buf {
+            self.bits_in_buf -= n;
             self.bit_buf >>= n;
             return Ok(());
         }
 
         
-        n -= self.bits_in_buf;
-        self.total_bits_read += self.bits_in_buf;
+        n -= real_bits_in_buf;
         self.bit_buf = 0;
         self.bits_in_buf = 0;
+        self.overread_bytes = 0;
 
         
         let bits_available = self.data.len() * 8;
         if n > bits_available {
-            self.total_bits_read += bits_available;
+            self.data = &[];
             return Err(Error::OutOfBounds(n - bits_available));
         }
 
         
-        self.total_bits_read += n / 8 * 8;
         self.data = &self.data[n / 8..];
         n %= 8;
 
-        
-        self.refill();
-        let to_consume = self.bits_in_buf.min(n);
-        
-        
-        
-        
-        self.total_bits_read += to_consume;
-        n -= to_consume;
-        self.bit_buf >>= to_consume;
-        self.bits_in_buf -= to_consume;
         if n > 0 {
-            Err(Error::OutOfBounds(n))
-        } else {
-            Ok(())
+            self.refill();
+            self.bit_buf >>= n;
+            self.bits_in_buf -= n;
         }
+        Ok(())
     }
 
     
     pub fn bits_to_next_byte(&self) -> usize {
-        let byte_boundary = self.total_bits_read.div_ceil(8) * 8;
-        byte_boundary - self.total_bits_read
+        let total_read = self.total_bits_read();
+        let byte_boundary = total_read.div_ceil(8) * 8;
+        byte_boundary - total_read
     }
 
-    
-    
     
     
     
@@ -222,32 +209,15 @@ impl<'a> BitReader<'a> {
     fn refill_slow(&mut self) {
         while self.bits_in_buf < 56 {
             if self.data.is_empty() {
+                let extra_bytes = (63 - self.bits_in_buf) >> 3;
+                self.overread_bytes += extra_bytes;
+                self.bits_in_buf |= 56;
                 return;
             }
             self.bit_buf |= (self.data[0] as u64) << self.bits_in_buf;
             self.bits_in_buf += 8;
             self.data = &self.data[1..];
         }
-    }
-
-    
-    
-    
-    pub fn split_at(&mut self, n: usize) -> Result<BitReader<'a>, Error> {
-        self.jump_to_byte_boundary()?;
-        let mut ret = Self { ..*self };
-        self.skip_bits(n * 8)?;
-        let bytes_in_buf = ret.bits_in_buf / 8;
-        if n > bytes_in_buf {
-            
-            ret.data = &ret.data[..n - bytes_in_buf];
-        } else {
-            ret.bits_in_buf = n * 8;
-            ret.bit_buf &= (1u64 << (n * 8)) - 1;
-            ret.data = &[];
-        }
-        debug!(?n, ret=?ret);
-        Ok(ret)
     }
 }
 

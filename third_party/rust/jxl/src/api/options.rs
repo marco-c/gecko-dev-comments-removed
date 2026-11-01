@@ -5,8 +5,19 @@
 
 use crate::api::JxlAuxBoxType;
 
+#[cfg(test)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct TestOptions {
+    pub use_simple_pipeline: bool,
+    pub disable_16bit_modular_buffers: bool,
+}
+
 #[non_exhaustive]
 pub struct JxlDecoderOptions {
+    
+    
+    
+    
     pub adjust_orientation: bool,
     pub render_spot_colors: bool,
     pub coalescing: bool,
@@ -26,26 +37,57 @@ pub struct JxlDecoderOptions {
     pub high_precision: bool,
     
     
-    
-    pub premultiply_output: bool,
+    pub alpha_mode: AlphaMode,
     
     
     
     
     pub scan_frames_only: bool,
+    
+    
+    
+    
+    
     pub request_aux_boxes: Vec<JxlAuxBoxType>,
     
     
     
-    pub force_level5_splines: bool,
+    pub max_profile_level: ProfileLevel,
+    #[cfg(test)]
+    pub test_options: TestOptions,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum AlphaMode {
+    
+    #[default]
+    AsIs,
     
     
-    
-    pub force_level5_patches: bool,
-    
+    Premultiplied,
     
     
-    pub force_level5_modular: bool,
+    Unpremultiplied,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+pub enum ProfileLevel {
+    
+    #[default]
+    Main5,
+    
+    Main10,
+}
+
+impl std::fmt::Display for ProfileLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ProfileLevel::Main5 => write!(f, "Level 5"),
+            ProfileLevel::Main10 => write!(f, "Level 10"),
+        }
+    }
 }
 
 impl Default for JxlDecoderOptions {
@@ -58,12 +100,12 @@ impl Default for JxlDecoderOptions {
             desired_intensity_target: None,
             sample_limit: None,
             high_precision: false,
-            premultiply_output: false,
+            alpha_mode: AlphaMode::AsIs,
             scan_frames_only: false,
             request_aux_boxes: Vec::new(),
-            force_level5_splines: true,
-            force_level5_patches: true,
-            force_level5_modular: true,
+            max_profile_level: ProfileLevel::Main5,
+            #[cfg(test)]
+            test_options: TestOptions::default(),
         }
     }
 }
