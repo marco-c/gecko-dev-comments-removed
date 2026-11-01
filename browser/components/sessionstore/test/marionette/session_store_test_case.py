@@ -77,6 +77,9 @@ class SessionStoreTestCase(WindowManagerMixin, MarionetteTestCase):
             "toolkit.winRegisterApplicationRestart": win_register_restart,
             
             "browser.taskbarTabs.enabled": taskbartabs_enable,
+            
+            
+            "telemetry.fog.test.decelerate_early_events": True,
         })
 
         self.all_windows = self.test_windows.copy()
