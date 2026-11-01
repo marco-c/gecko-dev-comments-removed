@@ -2605,6 +2605,10 @@ const screenContentShape = {
     
     style: (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object),
     
+    
+    layout: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOf(["carousel"]),
+    
+    
     pill_nav_label: localizableThingPropTypes,
     
     data: prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().oneOfType([(prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().array), (prop_types_prop_types__WEBPACK_IMPORTED_MODULE_13___default().object)])
@@ -5194,7 +5198,8 @@ const ContentTiles = props => {
       handleAction: props.handleAction,
       activeSingleSelectSelections: props.activeSingleSelectSelections,
       setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
-      singleSelectId: `single-select-${index}`
+      singleSelectId: `single-select-${index}`,
+      messageId: props.messageId
     }), tile.type === "mobile_downloads" && tile.data && react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MobileDownloads__WEBPACK_IMPORTED_MODULE_4__.MobileDownloads, {
       data: tile.data,
       handleAction: props.handleAction
@@ -5553,21 +5558,21 @@ const SingleSelect = ({
   activeTheme,
   content,
   handleAction,
+  messageId,
   setActiveSingleSelectSelection,
   singleSelectId
 }) => {
   const category = content.tiles?.category?.type || content.tiles?.type;
   const isSingleSelect = category === "single-select";
-  const cardRefs = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(new Map());
+  const isCarousel = isSingleSelect && content.tiles?.layout === "carousel";
+  const {
+    scrollerRef,
+    registerCard,
+    isSmallLayout
+  } = (0,_CarouselNav__WEBPACK_IMPORTED_MODULE_5__.useCarouselScroll)(activeSingleSelectSelections[singleSelectId], isCarousel);
   const handlePillSelect = id => {
     setActiveSingleSelectSelection(id, singleSelectId);
-    const card = cardRefs.current.get(id);
-    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-    card?.scrollIntoView?.({
-      behavior: reduceMotion ? "auto" : "smooth",
-      inline: "center",
-      block: "nearest"
-    });
+    _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.sendActionTelemetry(messageId, `carousel-pill-${id}`, "CLICK_BUTTON");
   };
   const autoTriggerAllowed = itemAction => {
     
@@ -5610,14 +5615,18 @@ const SingleSelect = ({
 
   const CONFIGURABLE_STYLES = ["background", "border", "borderRadius", "height", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "width"];
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-    className: `tiles-single-select-container`
-  }, isSingleSelect ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CarouselNav__WEBPACK_IMPORTED_MODULE_5__.CarouselNav, {
+    className: `tiles-single-select-container ${isCarousel ? "carousel" : ""}`
+  }, isCarousel ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_CarouselNav__WEBPACK_IMPORTED_MODULE_5__.CarouselNav, {
     items: content.tiles?.data,
     activeId: activeSingleSelectSelections[singleSelectId],
     onSelect: handlePillSelect,
-    navLabel: content.tiles?.pill_nav_label
-  }) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
-    className: `tiles-single-select-section ${category}`
+    navLabel: content.tiles?.pill_nav_label,
+    compact: isSmallLayout
+  }) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "tiles-single-select-wrapper"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
+    className: `tiles-single-select-section ${category} ${isCarousel ? "carousel" : ""}`,
+    ref: scrollerRef
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: content.tiles?.subtitle || content.subtitle
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("legend", {
@@ -5650,6 +5659,9 @@ const SingleSelect = ({
       iconStyle["--single-select-icon-background-dark"] = icon.darkModeBackground;
       delete iconStyle.background;
     }
+    if (isCarousel && iconStyle) {
+      iconStyle.backgroundSize = "100% 100%";
+    }
     const handleClick = evt => {
       if (isSingleSelect) {
         setActiveSingleSelectSelection(value, singleSelectId); 
@@ -5668,13 +5680,7 @@ const SingleSelect = ({
       text: valOrObj(tooltip)
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("label", {
       className: `select-item ${type} ${selected ? " selected" : ""}`,
-      ref: el => {
-        if (el) {
-          cardRefs.current.set(value, el);
-        } else {
-          cardRefs.current.delete(value);
-        }
-      },
+      ref: el => registerCard(value, el),
       onKeyDown: e => handleKeyDown(e),
       style: {
         ..._lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_4__.MultiStageUtils.getValidStyle(style, CONFIGURABLE_STYLES),
@@ -5716,7 +5722,8 @@ const SingleSelect = ({
     })) : "", tilebutton ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_TileButton__WEBPACK_IMPORTED_MODULE_2__.TileButton, {
       content: tilebutton,
       handleAction: handleAction,
-      inputName: inputName
+      inputName: inputName,
+      inert: isCarousel && !selected
     }) : ""));
   }))));
 };
@@ -5743,7 +5750,8 @@ const TileButton = props => {
   const {
     content,
     handleAction,
-    inputName
+    inputName,
+    inert
   } = props;
   const ref = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   if (!content) {
@@ -5764,6 +5772,7 @@ const TileButton = props => {
     onClick: onClick,
     value: "tile_button",
     ref: ref,
+    inert: inert ? "" : undefined,
     className: `${content.style} tile-button slim`
   }));
 };
@@ -5827,7 +5836,8 @@ const TileList = props => {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   CarouselNav: () => ( CarouselNav)
+   CarouselNav: () => ( CarouselNav),
+   useCarouselScroll: () => ( useCarouselScroll)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -5837,11 +5847,157 @@ function _extends() { return _extends = Object.assign ? Object.assign.bind() : f
 
 
 
+
+
+
+const CAROUSEL_SCROLL_MS = 500;
+
+
+
+
+
+
+function useCarouselScroll(activeId, isCarousel) {
+  const cardRefs = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(new Map());
+  const scrollerRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
+  const glidingRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(false);
+  const [isSmallLayout, setIsSmallLayout] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
+  const registerCard = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)((id, el) => {
+    if (el) {
+      cardRefs.current.set(id, el);
+    } else {
+      cardRefs.current.delete(id);
+    }
+  }, []);
+
+  
+  
+  const centredScrollLeft = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(id => {
+    const card = cardRefs.current.get(id);
+    const scroller = scrollerRef.current;
+    if (!card || !scroller) {
+      return null;
+    }
+    const cardRect = card.getBoundingClientRect();
+    const rowRect = scroller.getBoundingClientRect();
+    const offset = cardRect.left + cardRect.width / 2 - (rowRect.left + rowRect.width / 2);
+    return {
+      scroller,
+      left: scroller.scrollLeft + offset
+    };
+  }, []);
+  const settle = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(id => {
+    const end = centredScrollLeft(id);
+    end?.scroller.scrollTo({
+      left: end.left,
+      behavior: "auto"
+    });
+  }, [centredScrollLeft]);
+
+  
+  
+  
+  
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!isCarousel || !activeId) {
+      return undefined;
+    }
+    let frame;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches || !window.performance) {
+      frame = window.requestAnimationFrame(() => settle(activeId));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    const start = window.performance.now();
+    let easedBefore = 0;
+    glidingRef.current = true;
+    const step = now => {
+      const elapsed = Math.max(0, now - start);
+      const progress = Math.min(1, elapsed / CAROUSEL_SCROLL_MS);
+      if (progress >= 1) {
+        settle(activeId);
+        glidingRef.current = false;
+        return;
+      }
+      const target = centredScrollLeft(activeId);
+      if (target) {
+        const eased = 1 - Math.pow(1 - progress, 3);
+        
+        
+        
+        const share = (eased - easedBefore) / (1 - easedBefore);
+        easedBefore = eased;
+        const current = target.scroller.scrollLeft;
+        target.scroller.scrollTo({
+          left: current + (target.left - current) * share,
+          behavior: "auto"
+        });
+      }
+      frame = window.requestAnimationFrame(step);
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => {
+      glidingRef.current = false;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [activeId, isCarousel, centredScrollLeft, settle]);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    const scroller = scrollerRef.current;
+    if (!isCarousel || !scroller || !activeId || !window.ResizeObserver) {
+      return undefined;
+    }
+    let frame = 0;
+    
+    
+    const readLayout = () => setIsSmallLayout(window.getComputedStyle(scroller).getPropertyValue("--carousel-layout").trim() === "small");
+    readLayout();
+    
+    
+    
+    let {
+      width,
+      height
+    } = scroller.getBoundingClientRect();
+    const observer = new window.ResizeObserver(() => {
+      readLayout();
+      const box = scroller.getBoundingClientRect();
+      if (glidingRef.current || box.width === width && box.height === height) {
+        return;
+      }
+      ({
+        width,
+        height
+      } = box);
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        settle(activeId);
+        
+        
+        const running = cardRefs.current.get(activeId)?.getAnimations?.() ?? [];
+        if (running.length) {
+          Promise.allSettled(running.map(anim => anim.finished)).then(() => settle(activeId));
+        }
+      });
+    });
+    observer.observe(scroller, {
+      box: "border-box"
+    });
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [activeId, isCarousel, settle]);
+  return {
+    scrollerRef,
+    registerCard,
+    isSmallLayout
+  };
+}
 const CarouselNav = ({
   items = [],
   activeId,
   onSelect,
-  navLabel
+  navLabel,
+  compact
 }) => {
   const groupRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(null);
   const onSelectRef = (0,react__WEBPACK_IMPORTED_MODULE_0__.useRef)(onSelect);
@@ -5875,9 +6031,10 @@ const CarouselNav = ({
   }) => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("moz-segmented-control-item", {
     key: id,
     value: id,
+    size: "small",
     label: pill.label?.raw,
     "data-l10n-id": pill.label?.string_id,
-    iconsrc: pill.icon
+    iconsrc: compact ? undefined : pill.icon
   }))));
 };
 

@@ -165,6 +165,10 @@ let propNameAllowlist = [
   { propName: "--card-icon-bg", isFromDevTools: false },
 
   
+  
+  { propName: "--carousel-layout", isFromDevTools: false },
+
+  
   {
     propName: "--scale-round-x",
     isFromDevTools: false,
