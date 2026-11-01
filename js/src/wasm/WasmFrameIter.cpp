@@ -156,12 +156,15 @@ WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
     
     
     
-    CallSite site;
-    if (code_->lookupCallSite(unwoundPC, &site) &&
-        site.kind() == CallSiteKind::ReturnStub) {
+    if (trapData.unwoundFrame) {
       MOZ_ASSERT(trapData.trap == Trap::IndirectCallBadSig);
       resumePCinCurrentFrame_ = (uint8_t*)unwoundPC;
     } else {
+#ifdef DEBUG
+      CallSite site;
+      MOZ_ASSERT(!(code_->lookupCallSite(unwoundPC, &site) &&
+                   site.kind() == CallSiteKind::ReturnStub));
+#endif
       resumePCinCurrentFrame_ = (uint8_t*)trapData.resumePC;
     }
 
