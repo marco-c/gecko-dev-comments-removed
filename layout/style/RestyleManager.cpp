@@ -1123,7 +1123,6 @@ static bool ContainingBlockChangeAffectsDescendants(
       continue;
     }
     for (nsIFrame* f : childList.mList) {
-      nsIFrame* frameToDiveInto = f;
       if (f->IsPlaceholderFrame()) {
         nsIFrame* outOfFlow = nsPlaceholderFrame::GetRealFrameForPlaceholder(f);
         if (!outOfFlow) {
@@ -1166,7 +1165,17 @@ static bool ContainingBlockChangeAffectsDescendants(
         
         
         
-        frameToDiveInto = outOfFlow->IsFloating() ? outOfFlow : nullptr;
+        if (outOfFlow->IsFloating()) {
+          for (nsIFrame* cont = outOfFlow; cont;
+               cont = cont->GetNextContinuation()) {
+            if (ContainingBlockChangeAffectsDescendants(
+                    aPossiblyChangingContainingBlock, cont,
+                    aIsAbsPosContainingBlock, aIsFixedPosContainingBlock)) {
+              return true;
+            }
+          }
+        }
+        continue;
       }
       
       
@@ -1176,10 +1185,9 @@ static bool ContainingBlockChangeAffectsDescendants(
       
       
       
-      if (frameToDiveInto &&
-          ContainingBlockChangeAffectsDescendants(
-              aPossiblyChangingContainingBlock, frameToDiveInto,
-              aIsAbsPosContainingBlock, aIsFixedPosContainingBlock)) {
+      if (ContainingBlockChangeAffectsDescendants(
+              aPossiblyChangingContainingBlock, f, aIsAbsPosContainingBlock,
+              aIsFixedPosContainingBlock)) {
         return true;
       }
     }
