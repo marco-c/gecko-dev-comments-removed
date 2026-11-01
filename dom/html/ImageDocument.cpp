@@ -90,10 +90,18 @@ ImageListener::OnStartRequest(nsIRequest* request) {
 
   if (!imgDoc->mObservingImageLoader) {
     NS_ENSURE_TRUE(imgDoc->mImageContent, NS_ERROR_UNEXPECTED);
-    imgDoc->mImageContent->AddNativeObserver(imgDoc);
     imgDoc->mObservingImageLoader = true;
-    imgDoc->mImageContent->LoadImageWithChannel(channel,
-                                                getter_AddRefs(mNextStream));
+    imgDoc->mImageContent->AddNativeObserver(imgDoc);
+    
+    
+    NS_ENSURE_TRUE(mDocument, NS_ERROR_FAILURE);
+    NS_ENSURE_TRUE(imgDoc->mImageContent, NS_ERROR_UNEXPECTED);
+    
+    
+    if (imgDoc->mImageContent->OwnerDoc() == imgDoc) {
+      imgDoc->mImageContent->LoadImageWithChannel(channel,
+                                                  getter_AddRefs(mNextStream));
+    }
   }
 
   return MediaDocumentStreamListener::OnStartRequest(request);
