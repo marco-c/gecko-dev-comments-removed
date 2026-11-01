@@ -126,7 +126,7 @@ class TransmissionControlBlock : public Context {
 
   bool has_cookie_echo_chunk() const { return cookie_echo_chunk_.has_value(); }
 
-  void MaybeSendFastRetransmit();
+  void MaybeSendFastRetransmit(webrtc::Timestamp now);
 
   
   

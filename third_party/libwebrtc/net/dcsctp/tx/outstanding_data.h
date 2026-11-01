@@ -90,7 +90,8 @@ class OutstandingData {
         last_cumulative_tsn_ack_(last_cumulative_tsn_ack),
         discard_from_send_queue_(std::move(discard_from_send_queue)) {}
 
-  AckInfo HandleSack(UnwrappedTSN cumulative_tsn_ack,
+  AckInfo HandleSack(webrtc::Timestamp now,
+                     UnwrappedTSN cumulative_tsn_ack,
                      std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
                      bool is_in_fast_recovery);
 
@@ -98,12 +99,17 @@ class OutstandingData {
   
   
   
+  
   std::vector<std::pair<TSN, Data>> GetChunksToBeFastRetransmitted(
+      webrtc::Timestamp now,
       size_t max_size);
 
   
   
-  std::vector<std::pair<TSN, Data>> GetChunksToBeRetransmitted(size_t max_size);
+  
+  std::vector<std::pair<TSN, Data>> GetChunksToBeRetransmitted(
+      webrtc::Timestamp now,
+      size_t max_size);
 
   
   size_t unacked_packet_bytes() const { return unacked_packet_bytes_; }
@@ -150,7 +156,7 @@ class OutstandingData {
       LifecycleId lifecycle_id = LifecycleId::NotSet());
 
   
-  void NackAll();
+  void NackAll(webrtc::Timestamp now);
 
   
   ForwardTsnChunk CreateForwardTsn() const;
@@ -230,7 +236,7 @@ class OutstandingData {
     
     
     
-    NackAction Nack(bool retransmit_now);
+    NackAction Nack(webrtc::Timestamp now, bool retransmit_now);
 
     
     
@@ -345,6 +351,7 @@ class OutstandingData {
   
   
   void NackBetweenAckBlocks(
+      webrtc::Timestamp now,
       UnwrappedTSN cumulative_tsn_ack,
       std::span<const SackChunk::GapAckBlock> gap_ack_blocks,
       bool is_in_fast_recovery,
@@ -367,14 +374,21 @@ class OutstandingData {
   
   
   
-  bool NackItem(UnwrappedTSN tsn, bool retransmit_now, bool do_fast_retransmit);
+  bool NackItem(webrtc::Timestamp now,
+                UnwrappedTSN tsn,
+                bool retransmit_now,
+                bool do_fast_retransmit);
 
   
   
   
   void AbandonAllFor(const OutstandingData::Item& item);
 
+  
+  
+  
   std::vector<std::pair<TSN, Data>> ExtractChunksThatCanFit(
+      webrtc::Timestamp now,
       std::set<UnwrappedTSN>& chunks,
       size_t max_size);
 
