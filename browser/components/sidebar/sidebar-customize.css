@@ -46,7 +46,6 @@
   color: var(--sidebar-box-color);
   border-radius: var(--border-radius-medium);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     background-color: var(--sidebar-box-background);
     border: var(--sidebar-box-border);
@@ -73,7 +72,6 @@ moz-fieldset {
   display: block;
 
   &::part(inputs) {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       background-color: var(--sidebar-box-background);
       border: var(--sidebar-box-border);
@@ -88,8 +86,9 @@ moz-fieldset {
 moz-checkbox {
   padding-block: var(--space-medium);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
+    padding-block: 8px;
+
     &:not(:last-of-type) {
       border-bottom: 0.5px solid var(--panel-separator-color);
     }
@@ -113,4 +112,14 @@ moz-checkbox {
 
 .customize-group:not(.no-end-margin) {
   margin-block-end: var(--space-xlarge);
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  .medium-top-margin {
+    margin-block-start: 0;
+  }
+
+  moz-checkbox:is(#expand-on-hover, #hide-sidebar) {
+    margin-block-start: var(--space-small);
+  }
 }
