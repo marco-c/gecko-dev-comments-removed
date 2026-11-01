@@ -382,6 +382,22 @@ class SPSIterator final {
   const HVCCConfig& mConfig;
 };
 
+
+
+
+
+struct H265CodecDetails final {
+  uint8_t general_profile_space = {};
+  bool general_tier_flag = {};
+  uint8_t general_profile_idc = {};
+  
+  
+  uint32_t general_profile_compatibility_flags = {};
+  
+  uint64_t general_constraint_indicator_flags = {};
+  uint8_t general_level_idc = {};
+};
+
 class H265 final {
  public:
   static Result<H265SPS, nsresult> DecodeSPSFromHVCCExtraData(
@@ -411,6 +427,12 @@ class H265 final {
   
   
   static already_AddRefed<mozilla::MediaByteBuffer> CreateFakeExtraData();
+
+  
+  
+  
+  static already_AddRefed<mozilla::MediaByteBuffer> CreateExtraData(
+      const H265CodecDetails& aDetails, const gfx::IntSize& aSize);
 
   
   

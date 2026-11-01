@@ -215,6 +215,13 @@ bool ExtractH264CodecDetails(const nsAString& aCodecs, uint8_t& aProfile,
                              uint8_t& aConstraint, H264_LEVEL& aLevel,
                              H264CodecStringStrictness aStrictness);
 
+
+
+
+struct H265CodecDetails;
+bool ExtractH265CodecDetails(const nsAString& aCodec,
+                             H265CodecDetails* aDetails);
+
 struct VideoColorSpace {
   
   
