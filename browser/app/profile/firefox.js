@@ -649,7 +649,9 @@ pref("browser.urlbar.quicksuggest.ampTopPickCharThreshold", 5);
 
 
 
-pref("browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize", false);
+
+
+pref("browser.urlbar.quicksuggest.ampTopPickScoreForLargeIcon", "");
 
 
 
