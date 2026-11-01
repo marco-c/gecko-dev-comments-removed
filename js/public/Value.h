@@ -151,6 +151,8 @@ class JS_PUBLIC_API Value;
 
 
 
+
+
 #define JSVAL_INT_BITS 32
 #define JSVAL_INT_MIN ((int32_t)0x80000000)
 #define JSVAL_INT_MAX ((int32_t)0x7fffffff)
@@ -167,15 +169,15 @@ class JS_PUBLIC_API Value;
 enum JSValueType : uint8_t {
   JSVAL_TYPE_DOUBLE = 0x00,
   JSVAL_TYPE_INT32 = 0x02,
-  JSVAL_TYPE_BOOLEAN = 0x03,
   JSVAL_TYPE_NULL = 0x04,
-  JSVAL_TYPE_MAGIC = 0x05,
   JSVAL_TYPE_UNDEFINED = 0x06,
-  JSVAL_TYPE_PRIVATE_GCTHING = 0x07,
-  JSVAL_TYPE_SYMBOL = 0x08,
-  JSVAL_TYPE_BIGINT = 0x09,
+  JSVAL_TYPE_BOOLEAN = 0x08,
+  JSVAL_TYPE_MAGIC = 0x0a,
+  JSVAL_TYPE_PRIVATE_GCTHING = 0x0b,
   JSVAL_TYPE_OBJECT = 0x0c,
+  JSVAL_TYPE_BIGINT = 0x0d,
   JSVAL_TYPE_STRING = 0x0e,
+  JSVAL_TYPE_SYMBOL = 0x0f,
 
   
   JSVAL_TYPE_UNKNOWN = 0x20
@@ -309,9 +311,8 @@ constexpr uint64_t ValueTypeToShiftedTag(JSValueType type) {
 constexpr JSValueTag ValueUpperInclNumberTag = JSVAL_TAG_INT32;
 constexpr JSValueTag ValueLowerInclGCThingTag = JSVAL_TAG_PRIVATE_GCTHING;
 
-constexpr uint64_t ValueUpperExclShiftedNumberTag = JSVAL_SHIFTED_TAG_BOOLEAN;
-static_assert(JSVAL_TYPE_BOOLEAN == JSVAL_TYPE_INT32 + 1,
-              "Boolean must be the tag after the number tags");
+constexpr uint64_t ValueUpperExclShiftedNumberTag =
+    uint64_t(JSVAL_TAG_INT32 + 1) << JSVAL_TAG_SHIFT;
 constexpr uint64_t ValueLowerInclShiftedGCThingTag =
     JSVAL_SHIFTED_TAG_PRIVATE_GCTHING;
 
@@ -333,6 +334,26 @@ constexpr uint64_t IsValidUserModePointer(uint64_t bits) {
 constexpr bool ValueTypeIsGCThing(JSValueType type) {
   return ValueTypeToTag(type) >= ValueLowerInclGCThingTag;
 }
+
+
+
+
+
+constexpr unsigned ValueNullOrUndefinedShift = JSVAL_TAG_SHIFT + 2;
+constexpr uint32_t ValueNullOrUndefinedBits = JSVAL_TAG_NULL >> 2;
+constexpr bool MatchWhenShifted(JSValueType type, JSValueType type2) {
+  return (ValueTypeToTag(type) >> 2) == (ValueTypeToTag(type2) >> 2);
+}
+static_assert(MatchWhenShifted(JSVAL_TYPE_UNDEFINED, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_DOUBLE, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_INT32, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_BOOLEAN, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_MAGIC, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_PRIVATE_GCTHING, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_OBJECT, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_BIGINT, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_STRING, JSVAL_TYPE_NULL));
+static_assert(!MatchWhenShifted(JSVAL_TYPE_SYMBOL, JSVAL_TYPE_NULL));
 
 }  
 }  
@@ -819,7 +840,10 @@ class Value {
 #endif
   }
 
-  bool isNullOrUndefined() const { return isNull() || isUndefined(); }
+  bool isNullOrUndefined() const {
+    return (asBits_ >> detail::ValueNullOrUndefinedShift) ==
+           detail::ValueNullOrUndefinedBits;
+  }
 
   bool isInt32() const { return toTag() == JSVAL_TAG_INT32; }
 
@@ -901,12 +925,12 @@ class Value {
                   "Value type tags must correspond with JS::TraceKinds.");
     static_assert((JSVAL_TAG_BIGINT & 0x03) == size_t(JS::TraceKind::BigInt),
                   "Value type tags must correspond with JS::TraceKinds.");
-    static_assert(JSVAL_TAG_PRIVATE_GCTHING + 1 == JSVAL_TAG_SYMBOL,
-                  "Symbol and PrivateGCThing tags should be adjacent to allow "
-                  "checking for them with a single branch");
+    static_assert((JSVAL_TAG_SYMBOL & 0x03) == 0x03 &&
+                      (JSVAL_TAG_PRIVATE_GCTHING & 0x03) == 0x03,
+                  "Symbol and PrivateGCThing tags should share their low bits "
+                  "to allow checking for them with a single branch");
     JSValueTag tag = toTag();
-    if (MOZ_UNLIKELY(tag == JSVAL_TAG_SYMBOL ||
-                     tag == JSVAL_TAG_PRIVATE_GCTHING)) {
+    if (MOZ_UNLIKELY((tag & 0x03) == 0x03)) {
       return JS::GCThingTraceKind(toGCThing());
     }
     return JS::TraceKind(tag & 0x03);
@@ -1018,7 +1042,7 @@ class Value {
     }
 
     JSValueType type = extractNonDoubleType();
-    MOZ_ASSERT(type <= JSVAL_TYPE_STRING);
+    MOZ_ASSERT(type <= JSVAL_TYPE_SYMBOL);
     return JS::ValueType(type);
   }
 
