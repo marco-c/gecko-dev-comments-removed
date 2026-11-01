@@ -629,6 +629,15 @@ uint16_t WinUtils::GetMouseInputSource() {
 
 uint16_t WinUtils::GetMousePointerID() {
   LPARAM lParamExtraInfo = ::GetMessageExtraInfo();
+
+  
+  
+  
+  
+  if ((lParamExtraInfo & TABLET_INK_SIGNATURE) != TABLET_INK_CHECK) {
+    return 0;
+  }
+
   return lParamExtraInfo & TABLET_INK_ID_MASK;
 }
 
