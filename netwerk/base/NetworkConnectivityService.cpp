@@ -478,39 +478,28 @@ already_AddRefed<nsIChannel> NetworkConnectivityService::SetupIPCheckChannel(
   NS_ENSURE_SUCCESS(rv, nullptr);
 
   nsCOMPtr<nsIChannel> channel;
-  if (XRE_IsSocketProcess()) {
-    rv = DNSUtils::CreateChannelHelper(uri, getter_AddRefs(channel));
-    if (NS_FAILED(rv)) {
-      return nullptr;
-    }
-    channel->SetLoadFlags(
-        nsIRequest::LOAD_BYPASS_CACHE |  
-        nsIRequest::INHIBIT_CACHING |    
-        nsIRequest::LOAD_ANONYMOUS);
-  } else {
-    rv = NS_NewChannel(
-        getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
-        nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-        nsIContentPolicy::TYPE_OTHER,
-        nullptr,  
-        nullptr,  
-        nullptr,  
-        nullptr,
-        nsIRequest::LOAD_BYPASS_CACHE |    
-            nsIRequest::INHIBIT_CACHING |  
-            nsIRequest::LOAD_ANONYMOUS);   
-    NS_ENSURE_SUCCESS(rv, nullptr);
+  rv = NS_NewChannel(
+      getter_AddRefs(channel), uri, nsContentUtils::GetSystemPrincipal(),
+      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+      nsIContentPolicy::TYPE_OTHER,
+      nullptr,  
+      nullptr,  
+      nullptr,  
+      nullptr,
+      nsIRequest::LOAD_BYPASS_CACHE |    
+          nsIRequest::INHIBIT_CACHING |  
+          nsIRequest::LOAD_ANONYMOUS);   
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
-    {
-      
-      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-      uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-      httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
-      loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+  {
+    
+    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+    uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT;
+    loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
 
-      
-      loadInfo->SetAllowDeprecatedSystemRequests(true);
-    }
+    
+    loadInfo->SetAllowDeprecatedSystemRequests(true);
   }
 
   rv = channel->SetTRRMode(nsIRequest::TRR_DISABLED_MODE);
