@@ -1,0 +1,708 @@
+
+
+
+
+
+
+
+
+
+
+#include "modules/video_coding/utility/cbr_layer_rate_tracker.h"
+
+#include <array>
+#include <optional>
+#include <vector>
+
+#include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
+#include "api/video_codecs/video_encoder_builders.h"
+#include "api/video_codecs/video_encoder_interface.h"
+#include "test/gtest.h"
+
+namespace webrtc {
+namespace {
+
+using FrameType = VideoEncoderInterface::FrameType;
+
+constexpr DataRate kStreamBitrate = DataRate::KilobitsPerSec(600);
+
+constexpr TimeDelta kFrameDuration = TimeDelta::Millis(33);
+
+struct Frame {
+  int spatial_id;
+  int temporal_id;
+  DataRate bitrate;
+  bool is_keyframe;
+};
+
+
+void EncodeTemporalUnit(CbrLayerRateTracker& tracker,
+                        const std::vector<Frame>& frames) {
+  std::vector<VideoEncoderInterface::FrameEncodeSettings> settings;
+  for (const Frame& frame : frames) {
+    settings.push_back(FrameEncodeSettingsBuilder()
+                           .SpatialId(frame.spatial_id)
+                           .TemporalId(frame.temporal_id)
+                           .CbrRateOptions(kFrameDuration, frame.bitrate)
+                           .FrameType(frame.is_keyframe
+                                          ? FrameType::kKeyframe
+                                          : FrameType::kDeltaFrame)
+                           .Build());
+  }
+  tracker.OnTemporalUnit(settings);
+}
+
+
+void EncodeFrame(CbrLayerRateTracker& tracker,
+                 int spatial_id,
+                 int temporal_id,
+                 DataRate bitrate,
+                 bool is_keyframe) {
+  EncodeTemporalUnit(tracker,
+                     {{spatial_id, temporal_id, bitrate, is_keyframe}});
+}
+
+
+
+
+
+
+
+
+
+
+
+DataRate GeometricLayerBitrate(int tid, int num_layers) {
+  return kStreamBitrate * ((tid == 0 ? 2.0 : 1.0) / (num_layers + 1));
+}
+
+
+
+void EncodeKeyframeAndFirstDeltaFrame(CbrLayerRateTracker& tracker,
+                                      int num_layers) {
+  EncodeFrame(tracker, 0, 0,
+              GeometricLayerBitrate(0, num_layers), true);
+  EncodeFrame(tracker, 0, num_layers - 1,
+              GeometricLayerBitrate(num_layers - 1, num_layers),
+              false);
+}
+
+
+
+
+constexpr std::array<int, 4> kL1T3Pattern = {0, 2, 1, 2};
+
+int L1T3TemporalId(int frame) {
+  return kL1T3Pattern[frame % kL1T3Pattern.size()];
+}
+
+
+
+void EncodeL1T3Frames(CbrLayerRateTracker& tracker,
+                      int first_frame,
+                      int num_frames,
+                      double scale = 1.0) {
+  for (int frame = first_frame; frame < first_frame + num_frames; ++frame) {
+    const int temporal_id = L1T3TemporalId(frame);
+    EncodeFrame(tracker, 0, temporal_id,
+                GeometricLayerBitrate(temporal_id, 3) * scale,
+                false);
+  }
+}
+
+
+constexpr std::array<int, 8> kL1T4Pattern = {0, 3, 2, 3, 1, 3, 2, 3};
+
+int L1T4TemporalId(int frame) {
+  return kL1T4Pattern[frame % kL1T4Pattern.size()];
+}
+
+
+
+
+DataRate LayerShare(DataRate stream_bitrate, int temporal_id, int num_layers) {
+  return stream_bitrate * ((temporal_id == 0 ? 2.0 : 1.0) / (num_layers + 1));
+}
+
+DataRate CumulativeShare(DataRate stream_bitrate,
+                         int temporal_id,
+                         int num_layers) {
+  return stream_bitrate *
+         (static_cast<double>(temporal_id + 2) / (num_layers + 1));
+}
+
+TEST(CbrLayerRateTrackerTest, SingleLayerReportsTheFullBitrate) {
+  CbrLayerRateTracker tracker;
+  EncodeFrame(tracker, 0, 0, kStreamBitrate,
+              true);
+  EncodeFrame(tracker, 0, 0, kStreamBitrate,
+              false);
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 1);
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 1);
+  EXPECT_EQ(tracker.allocation().bitrate[0][0], kStreamBitrate);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kStreamBitrate);
+}
+
+TEST(CbrLayerRateTrackerTest, NothingIsKnownBeforeTheFirstFrame) {
+  CbrLayerRateTracker tracker;
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 1);
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 1);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), DataRate::Zero());
+}
+
+TEST(CbrLayerRateTrackerTest, PrimesTwoLayersOnFirstFrameAfterKeyframe) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 2);
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 1);
+  
+  
+  
+  EXPECT_NEAR(tracker.allocation().bitrate[0][0].kbps(), 400, 1);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps(), 1);
+}
+
+TEST(CbrLayerRateTrackerTest, PrimesThreeLayersOnFirstFrameAfterKeyframe) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 3);
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 4);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[2], 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][0].kbps(), 300, 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][1].kbps(), 450, 1);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps(), 1);
+}
+
+TEST(CbrLayerRateTrackerTest, PrimesFourLayersOnFirstFrameAfterKeyframe) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 4);
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 4);
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 8);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 4);
+  EXPECT_EQ(tracker.allocation().framerate_factor[2], 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[3], 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][0].kbps(), 240, 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][1].kbps(), 360, 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][2].kbps(), 480, 1);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps(), 1);
+}
+
+TEST(CbrLayerRateTrackerTest, SpatialLayersShareTheTemporalStructure) {
+  CbrLayerRateTracker tracker;
+  
+  
+  for (int frame = 0; frame < 16; ++frame) {
+    const int temporal_id = frame % 2;
+    const DataRate bitrate = GeometricLayerBitrate(temporal_id, 2);
+    EncodeTemporalUnit(
+        tracker, {{0, temporal_id, bitrate / 3, frame == 0},
+                  {1, temporal_id, bitrate * 2 / 3, false}});
+  }
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 1);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps() / 3, 5);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(1).kbps(),
+              2 * kStreamBitrate.kbps() / 3, 5);
+}
+
+TEST(CbrLayerRateTrackerTest, ConvergesOnANonGeometricDistribution) {
+  CbrLayerRateTracker tracker;
+  
+  
+  
+  
+  
+  const std::array<DataRate, 3> kLayerBitrates = {
+      kStreamBitrate * 3 / 7,
+      kStreamBitrate * 2 / 7,
+      kStreamBitrate * 2 / 7,
+  };
+  constexpr std::array<int, 4> kPattern = {0, 2, 1, 2};
+
+  EncodeFrame(tracker, 0, 0, kLayerBitrates[0], true);
+  for (int frame = 1; frame < 40; ++frame) {
+    const int temporal_id = kPattern[frame % 4];
+    EncodeFrame(tracker, 0, temporal_id, kLayerBitrates[temporal_id],
+                false);
+  }
+
+  EXPECT_EQ(tracker.allocation().framerate_factor[0], 4);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[2], 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][0].kbps(),
+              kStreamBitrate.kbps() * 3 / 7, 10);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][1].kbps(),
+              kStreamBitrate.kbps() * 5 / 7, 10);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps(), 10);
+}
+
+TEST(CbrLayerRateTrackerTest, FollowsAChangeOfTheStreamBitrate) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 2);
+
+  
+  
+  
+  for (int frame = 0; frame < 4; ++frame) {
+    const int temporal_id = frame % 2;
+    EncodeFrame(tracker, 0, temporal_id,
+                GeometricLayerBitrate(temporal_id, 2) / 2,
+                false);
+  }
+
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps() / 2, 5);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][0].kbps(), 200, 5);
+}
+
+TEST(CbrLayerRateTrackerTest, SingleLayerFollowsTheBitrateImmediately) {
+  CbrLayerRateTracker tracker;
+  EncodeFrame(tracker, 0, 0, kStreamBitrate,
+              true);
+
+  
+  
+  const DataRate kLowerBitrate = kStreamBitrate / 5;
+  EncodeFrame(tracker, 0, 0, kLowerBitrate,
+              false);
+
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kLowerBitrate);
+}
+
+TEST(CbrLayerRateTrackerTest, ConvergesOnAShiftedKeyPattern) {
+  
+  
+  
+  
+  
+  
+  
+  CbrLayerRateTracker tracker;
+  const DataRate kLowerBitrate = kStreamBitrate / 3;
+  const DataRate kUpperBitrate = kStreamBitrate * 2 / 3;
+  EncodeTemporalUnit(tracker,
+                     {{0, 0, kLowerBitrate * 2 / 3, true},
+                      {1, 0, kUpperBitrate * 2 / 3, false}});
+
+  for (int temporal_unit = 1; temporal_unit <= 16; ++temporal_unit) {
+    const int lower_temporal_id = temporal_unit % 2 == 1 ? 0 : 1;
+    const int upper_temporal_id = 1 - lower_temporal_id;
+    EncodeTemporalUnit(
+        tracker, {{0, lower_temporal_id,
+                   kLowerBitrate * (lower_temporal_id == 0 ? 2.0 / 3 : 1.0 / 3),
+                   false},
+                  {1, upper_temporal_id,
+                   kUpperBitrate * (upper_temporal_id == 0 ? 2.0 / 3 : 1.0 / 3),
+                   false}});
+
+    
+    
+    if (temporal_unit >= 4) {
+      EXPECT_EQ(tracker.allocation().framerate_factor[0], 2)
+          << " at temporal unit " << temporal_unit;
+    }
+  }
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 1);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kLowerBitrate.kbps(), 5);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(1).kbps(),
+              kUpperBitrate.kbps(), 5);
+}
+
+TEST(CbrLayerRateTrackerTest, ConvergesOnANonDyadicCadence) {
+  
+  
+  
+  CbrLayerRateTracker tracker;
+  
+  
+  const DataRate kLayerBitrate = kStreamBitrate / 2;
+
+  EncodeFrame(tracker, 0, 0, kLayerBitrate,
+              true);
+  for (int frame = 1; frame <= 40; ++frame) {
+    EncodeFrame(tracker, 0,
+                frame % 3 == 0 ? 0 : 1, kLayerBitrate,
+                false);
+
+    
+    
+    
+    
+    
+    if (frame >= 20) {
+      EXPECT_EQ(tracker.allocation().framerate_factor[0], 3)
+          << " at frame " << frame;
+    }
+  }
+
+  EXPECT_EQ(tracker.allocation().num_temporal_layers, 2);
+  EXPECT_EQ(tracker.allocation().framerate_factor[1], 1);
+  EXPECT_NEAR(tracker.allocation().bitrate[0][0].kbps(), kLayerBitrate.kbps(),
+              5);
+  EXPECT_NEAR(tracker.allocation().SpatialLayerBitrate(0).kbps(),
+              kStreamBitrate.kbps(), 5);
+}
+
+
+
+
+
+TEST(CbrLayerRateTrackerTest, CarriesAChangeSeenOnTheBaseLayerOver) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  
+  
+  EncodeL1T3Frames(tracker, 2, 6);
+  ASSERT_EQ(L1T3TemporalId(8), 0);
+
+  EncodeL1T3Frames(tracker, 8, 1, 0.5);
+
+  EXPECT_EQ(tracker.allocation().bitrate[0][0],
+            GeometricLayerBitrate(0, 3) / 2);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kStreamBitrate / 2);
+}
+
+TEST(CbrLayerRateTrackerTest, CarriesAChangeSeenOnAMiddleLayerOver) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  EncodeL1T3Frames(tracker, 2, 4);
+  ASSERT_EQ(L1T3TemporalId(6), 1);
+
+  EncodeL1T3Frames(tracker, 6, 1, 0.5);
+
+  EXPECT_EQ(tracker.allocation().bitrate[0][0],
+            GeometricLayerBitrate(0, 3) / 2);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kStreamBitrate / 2);
+}
+
+TEST(CbrLayerRateTrackerTest, CarriesAChangeSeenOnTheTopLayerOver) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  EncodeL1T3Frames(tracker, 2, 5);
+  ASSERT_EQ(L1T3TemporalId(7), 2);
+
+  EncodeL1T3Frames(tracker, 7, 1, 0.5);
+
+  EXPECT_EQ(tracker.allocation().bitrate[0][0],
+            GeometricLayerBitrate(0, 3) / 2);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kStreamBitrate / 2);
+}
+
+TEST(CbrLayerRateTrackerTest, DoesNotCountACarriedOverChangeTwice) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  EncodeL1T3Frames(tracker, 2, 4);
+
+  
+  
+  
+  
+  EncodeL1T3Frames(tracker, 6, 1, 0.5);
+  EncodeL1T3Frames(tracker, 7, 1,
+                   0.25);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kStreamBitrate / 4);
+
+  EncodeL1T3Frames(tracker, 8, 4,
+                   0.25);
+  EXPECT_EQ(tracker.allocation().bitrate[0][0],
+            GeometricLayerBitrate(0, 3) / 4);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kStreamBitrate / 4);
+}
+
+TEST(CbrLayerRateTrackerTest, SettlesOnANewDistribution) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  EncodeL1T3Frames(tracker, 2, 6);
+
+  
+  
+  
+  
+  const std::array<DataRate, 3> kNewBitrates = {
+      kStreamBitrate * 3 / 7,
+      kStreamBitrate * 2 / 7,
+      kStreamBitrate * 2 / 7,
+  };
+  
+  
+  const DataRate kNewStreamBitrate =
+      kNewBitrates[0] + kNewBitrates[1] + kNewBitrates[2];
+  for (int frame = 8; frame < 16; ++frame) {
+    const int temporal_id = L1T3TemporalId(frame);
+    EncodeFrame(tracker, 0, temporal_id, kNewBitrates[temporal_id],
+                false);
+
+    
+    
+    if (frame >= 12) {
+      EXPECT_EQ(tracker.allocation().bitrate[0][0], kNewBitrates[0])
+          << " at frame " << frame;
+      EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kNewStreamBitrate)
+          << " at frame " << frame;
+    }
+  }
+
+  EXPECT_EQ(tracker.allocation().bitrate[0][1],
+            kNewBitrates[0] + kNewBitrates[1]);
+}
+
+TEST(CbrLayerRateTrackerTest, DoesNotReadARepeatedBitrateAsAChange) {
+  CbrLayerRateTracker tracker;
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  EncodeL1T3Frames(tracker, 2, 6);
+
+  
+  
+  
+  
+  const DataRate kNewBaseBitrate = GeometricLayerBitrate(0, 3) * 1.5;
+  const DataRate kNewStreamBitrate = kNewBaseBitrate +
+                                     GeometricLayerBitrate(1, 3) +
+                                     GeometricLayerBitrate(2, 3);
+  for (int frame = 8; frame < 40; ++frame) {
+    const int temporal_id = L1T3TemporalId(frame);
+    EncodeFrame(tracker, 0, temporal_id,
+                temporal_id == 0 ? kNewBaseBitrate
+                                 : GeometricLayerBitrate(temporal_id, 3),
+                false);
+
+    
+    if (frame >= 12) {
+      EXPECT_EQ(tracker.allocation().bitrate[0][0], kNewBaseBitrate)
+          << " at frame " << frame;
+      EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0), kNewStreamBitrate)
+          << " at frame " << frame;
+    }
+  }
+}
+
+TEST(CbrLayerRateTrackerTest, DoesNotReadADepartureFromAGuessAsAChange) {
+  CbrLayerRateTracker tracker;
+  
+  
+  
+  
+  EncodeKeyframeAndFirstDeltaFrame(tracker, 3);
+  const DataRate kMiddleLayerBitrate = GeometricLayerBitrate(1, 3) * 4;
+
+  EncodeFrame(tracker, 0, 1, kMiddleLayerBitrate,
+              false);
+
+  EXPECT_EQ(tracker.allocation().bitrate[0][0], GeometricLayerBitrate(0, 3));
+  EXPECT_EQ(tracker.allocation().bitrate[0][1],
+            GeometricLayerBitrate(0, 3) + kMiddleLayerBitrate);
+}
+
+TEST(CbrLayerRateTrackerTest, KeepsTheSpatialLayersApart) {
+  
+  
+  constexpr DataRate kLowerStreamBitrate = DataRate::KilobitsPerSec(300);
+  constexpr DataRate kUpperStreamBitrate = DataRate::KilobitsPerSec(600);
+  CbrLayerRateTracker tracker;
+  for (int frame = 0; frame < 4; ++frame) {
+    const double share = frame % 2 == 0 ? 2.0 / 3 : 1.0 / 3;
+    EncodeTemporalUnit(tracker, {{0, frame % 2, kLowerStreamBitrate * share,
+                                  frame == 0},
+                                 {1, frame % 2, kUpperStreamBitrate * share,
+                                  false}});
+  }
+
+  
+  
+  EncodeFrame(tracker, 0, 0,
+              kLowerStreamBitrate * (2.0 / 3) / 2, false);
+
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0),
+            kLowerStreamBitrate / 2);
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(1), kUpperStreamBitrate);
+}
+
+
+
+
+
+TEST(CbrLayerRateTrackerTest, FollowsAStagedBitrateSweep) {
+  
+  
+  constexpr int kNumLayers = 3;
+  CbrLayerRateTracker tracker;
+  int frame = 0;
+
+  auto encode = [&](DataRate stream_bitrate, int num_frames) {
+    for (int i = 0; i < num_frames; ++i, ++frame) {
+      const int temporal_id = L1T3TemporalId(frame);
+      EncodeFrame(tracker, 0, temporal_id,
+                  LayerShare(stream_bitrate, temporal_id, kNumLayers),
+                  frame == 0);
+
+      
+      
+      
+      EXPECT_EQ(tracker.allocation().bitrate[0][temporal_id],
+                CumulativeShare(stream_bitrate, temporal_id, kNumLayers))
+          << " at frame " << frame << " of T" << temporal_id;
+    }
+  };
+
+  encode(DataRate::KilobitsPerSec(500), 60);
+  encode(DataRate::KilobitsPerSec(100), 30);
+  for (int kbps = 150; kbps < 500; kbps += 50) {
+    encode(DataRate::KilobitsPerSec(kbps), 6);
+  }
+  encode(DataRate::KilobitsPerSec(500), 30);
+
+  EXPECT_EQ(tracker.allocation().SpatialLayerBitrate(0),
+            DataRate::KilobitsPerSec(500));
+}
+
+TEST(CbrLayerRateTrackerTest, RecoversOnceTheTargetHoldsStill) {
+  
+  
+  
+  
+  
+  
+  
+  constexpr int kNumLayers = 4;
+  CbrLayerRateTracker tracker;
+  auto stream_bitrate_at = [](int frame) {
+    
+    
+    return DataRate::KilobitsPerSec(300 + 30 * (frame % 21));
+  };
+
+  EncodeFrame(tracker, 0, 0,
+              LayerShare(stream_bitrate_at(0), 0, kNumLayers),
+              true);
+  EncodeFrame(tracker, 0, kNumLayers - 1,
+              LayerShare(stream_bitrate_at(1), kNumLayers - 1, kNumLayers),
+              false);
+  for (int frame = 2; frame < 40; ++frame) {
+    const int temporal_id = L1T4TemporalId(frame);
+    EncodeFrame(tracker,
+                0, temporal_id,
+                LayerShare(stream_bitrate_at(frame), temporal_id, kNumLayers),
+                false);
+  }
+
+  
+  
+  constexpr DataRate kHeldBitrate = DataRate::KilobitsPerSec(600);
+  for (int frame = 40; frame < 80; ++frame) {
+    const int temporal_id = L1T4TemporalId(frame);
+    EncodeFrame(tracker, 0, temporal_id,
+                LayerShare(kHeldBitrate, temporal_id, kNumLayers),
+                false);
+
+    if (frame >= 40 + 1 * static_cast<int>(kL1T4Pattern.size())) {
+      EXPECT_EQ(tracker.allocation().bitrate[0][temporal_id],
+                CumulativeShare(kHeldBitrate, temporal_id, kNumLayers))
+          << " at frame " << frame << " of T" << temporal_id;
+    }
+  }
+}
+
+TEST(CbrLayerRateTrackerTest, PrimesAllSpatialLayersOnFirstUnitAfterKeyframe) {
+  
+  
+  CbrLayerRateTracker tracker;
+  EncodeTemporalUnit(tracker, {{0, 0, GeometricLayerBitrate(0, 3) / 3,
+                                true},
+                               {1, 0, GeometricLayerBitrate(0, 3) * 2 / 3,
+                                false}});
+  EncodeTemporalUnit(tracker, {{0, 2, GeometricLayerBitrate(2, 3) / 3,
+                                false},
+                               {1, 2, GeometricLayerBitrate(2, 3) * 2 / 3,
+                                false}});
+
+  const CumulativeCbrAllocation& allocation = tracker.allocation();
+  EXPECT_EQ(allocation.num_temporal_layers, 3);
+  EXPECT_EQ(allocation.framerate_factor[0], 4);
+  EXPECT_EQ(allocation.framerate_factor[1], 2);
+  EXPECT_EQ(allocation.framerate_factor[2], 1);
+  EXPECT_NEAR(allocation.bitrate[0][0].kbps(), 100, 1);
+  EXPECT_NEAR(allocation.bitrate[0][1].kbps(), 150, 1);
+  EXPECT_NEAR(allocation.SpatialLayerBitrate(0).kbps(), 200, 1);
+  EXPECT_NEAR(allocation.bitrate[1][0].kbps(), 200, 1);
+  EXPECT_NEAR(allocation.bitrate[1][1].kbps(), 300, 1);
+  EXPECT_NEAR(allocation.SpatialLayerBitrate(1).kbps(), 400, 1);
+  EXPECT_NEAR(allocation.TotalBitrate().kbps(), kStreamBitrate.kbps(), 2);
+}
+
+TEST(CbrLayerRateTrackerTest, AbsentSpatialLayersKeepTheirBitrate) {
+  
+  
+  
+  
+  constexpr std::array<int, 4> kLowestLayer = {0, 2, 1, 2};
+  const std::array<DataRate, 3> kLayerBitrates = {
+      DataRate::KilobitsPerSec(50), DataRate::KilobitsPerSec(100),
+      DataRate::KilobitsPerSec(150)};
+  CbrLayerRateTracker tracker;
+
+  std::optional<CumulativeCbrAllocation> previous;
+  for (int temporal_unit = 0; temporal_unit < 16; ++temporal_unit) {
+    std::vector<Frame> frames;
+    for (int sid = kLowestLayer[temporal_unit % 4]; sid < 3; ++sid) {
+      frames.push_back({sid, 0, kLayerBitrates[sid],
+                        temporal_unit == 0 && sid == 0});
+    }
+    EncodeTemporalUnit(tracker, frames);
+
+    
+    
+    
+    if (temporal_unit >= 1) {
+      ASSERT_TRUE(previous.has_value());
+      EXPECT_EQ(tracker.allocation(), *previous)
+          << " at temporal unit " << temporal_unit;
+    }
+    previous = tracker.allocation();
+  }
+
+  const CumulativeCbrAllocation& allocation = tracker.allocation();
+  EXPECT_EQ(allocation.num_temporal_layers, 1);
+  for (int sid = 0; sid < 3; ++sid) {
+    EXPECT_EQ(allocation.SpatialLayerBitrate(sid), kLayerBitrates[sid]);
+    for (int tid = 0; tid < CumulativeCbrAllocation::kMaxTemporalLayers;
+         ++tid) {
+      EXPECT_EQ(allocation.bitrate[sid][tid], kLayerBitrates[sid]);
+    }
+  }
+  EXPECT_EQ(allocation.TotalBitrate(), DataRate::KilobitsPerSec(300));
+}
+
+TEST(CbrLayerRateTrackerTest, IgnoresFramesWithoutCbr) {
+  CbrLayerRateTracker tracker;
+  std::vector<VideoEncoderInterface::FrameEncodeSettings> settings;
+  settings.push_back(FrameEncodeSettingsBuilder()
+                         .SpatialId(0)
+                         .TemporalId(0)
+                         .CqpRateOptions(30)
+                         .FrameType(FrameType::kKeyframe)
+                         .Build());
+  tracker.OnTemporalUnit(settings);
+
+  EXPECT_EQ(tracker.allocation(), CumulativeCbrAllocation());
+}
+
+}  
+}  

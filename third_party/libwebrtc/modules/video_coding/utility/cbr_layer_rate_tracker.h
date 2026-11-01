@@ -1,0 +1,183 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_VIDEO_CODING_UTILITY_CBR_LAYER_RATE_TRACKER_H_
+#define MODULES_VIDEO_CODING_UTILITY_CBR_LAYER_RATE_TRACKER_H_
+
+#include <array>
+#include <optional>
+#include <span>
+
+#include "absl/container/inlined_vector.h"
+#include "api/units/data_rate.h"
+#include "api/video_codecs/video_encoder_interface.h"
+#include "rtc_base/numerics/exp_filter.h"
+
+namespace webrtc {
+
+
+
+
+
+
+struct CumulativeCbrAllocation {
+  static constexpr int kMaxSpatialLayers = 4;
+  static constexpr int kMaxTemporalLayers = 4;
+
+  
+  DataRate SpatialLayerBitrate(int spatial_id) const;
+
+  
+  DataRate TotalBitrate() const;
+
+  bool operator==(const CumulativeCbrAllocation& other) const = default;
+
+  
+  
+  int num_temporal_layers = 1;
+
+  
+  
+  
+  
+  
+  std::array<int, kMaxTemporalLayers> framerate_factor = {1, 1, 1, 1};
+
+  
+  
+  
+  
+  std::array<std::array<DataRate, kMaxTemporalLayers>, kMaxSpatialLayers>
+      bitrate = {};
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class CbrLayerRateTracker {
+ public:
+  static constexpr int kMaxSpatialLayers =
+      CumulativeCbrAllocation::kMaxSpatialLayers;
+  static constexpr int kMaxTemporalLayers =
+      CumulativeCbrAllocation::kMaxTemporalLayers;
+
+  CbrLayerRateTracker();
+
+  
+  
+  
+  void OnTemporalUnit(
+      std::span<const VideoEncoderInterface::FrameEncodeSettings> frames);
+
+  
+  const CumulativeCbrAllocation& allocation() const { return allocation_; }
+
+ private:
+  
+  
+  struct LayerRate {
+    
+    
+    
+    DataRate estimate = DataRate::Zero();
+    
+    
+    std::optional<DataRate> stated;
+  };
+  using SpatialLayerRates = std::array<LayerRate, kMaxTemporalLayers>;
+
+  
+  
+  using TemporalLayerFilters =
+      absl::InlinedVector<ExpFilter, kMaxTemporalLayers>;
+
+  
+  
+  
+  void UpdateLayerRates(int spatial_id,
+                        int temporal_id,
+                        DataRate layer_bitrate);
+
+  
+  
+  void PrimeStandardPattern(int num_layers);
+
+  
+  
+  
+  void PrimeLayerRates(int num_layers, int spatial_id, DataRate delta_bitrate);
+
+  
+  
+  double FrameFraction(int temporal_id) const;
+
+  int FramerateFactor(int temporal_id) const;
+  DataRate CumulativeBitrate(int spatial_id, int temporal_id) const;
+
+  
+  void UpdateAllocation();
+
+  int num_temporal_layers_ = 1;
+  bool last_unit_had_keyframe_ = false;
+  
+  
+  
+  int temporal_unit_count_ = 0;
+  std::array<std::optional<int>, kMaxTemporalLayers> last_unit_of_layer_;
+
+  
+  std::array<SpatialLayerRates, kMaxSpatialLayers> layer_rates_;
+
+  
+  
+  
+  
+  TemporalLayerFilters frame_interval_filters_;
+
+  CumulativeCbrAllocation allocation_;
+};
+
+}  
+
+#endif  
