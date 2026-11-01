@@ -912,12 +912,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::SavedFrame* getPendingExceptionStack();
 
-#ifdef DEBUG
   
 
 
   const JS::Value& getPendingExceptionUnwrapped();
-#endif
 
   bool isThrowingDebuggeeWouldRun();
 
@@ -930,6 +928,17 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     status = JS::ExceptionStatus::None;
     unwrappedException().setUndefined();
     unwrappedExceptionStack() = nullptr;
+  }
+
+  JS::ExceptionStatus exceptionStatus() const { return status; }
+
+  
+  void restorePendingExceptionState(JS::ExceptionStatus newStatus,
+                                    const JS::Value& exception,
+                                    js::SavedFrame* stack) {
+    status = newStatus;
+    unwrappedException() = exception;
+    unwrappedExceptionStack() = stack;
   }
 
   bool isThrowingOutOfMemory() const {
