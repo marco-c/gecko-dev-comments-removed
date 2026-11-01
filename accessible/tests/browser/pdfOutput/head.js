@@ -78,7 +78,13 @@ async function assertPdfUsesTestFont(pdf) {
 
 
 
-function simplifyStructTree(root, contentItems) {
+
+
+
+
+
+
+function simplifyStructTree(root, contentItems, annotations) {
   const structIds = new Map();
   const nodesWithHeaders = [];
   const walk = node => {
@@ -102,6 +108,14 @@ function simplifyStructTree(root, contentItems) {
         if (item.type == "endMarkedContent") {
           break;
         }
+      }
+      delete node.type;
+      delete node.id;
+    } else if (node.type == "annotation") {
+      const annotation = annotations.get(node.id);
+      node.annotation = annotation.subtype;
+      if (annotation.url) {
+        node.url = annotation.url;
       }
       delete node.type;
       delete node.id;
@@ -282,7 +296,10 @@ async function assertPdfStructTree(pdf, pageTrees) {
     const contentItems = (
       await page.getTextContent({ includeMarkedContent: true })
     ).items;
-    simplifyStructTree(actualTree, contentItems);
+    const annotations = new Map(
+      (await page.getAnnotations()).map(a => [`pdfjs_internal_id_${a.id}`, a])
+    );
+    simplifyStructTree(actualTree, contentItems, annotations);
     SimpleTest.isDeeply(
       actualTree,
       pageTrees[p],
