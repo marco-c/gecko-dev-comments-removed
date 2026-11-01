@@ -678,7 +678,7 @@ impl ReftestManifest {
                     
                     
                     fuzziness.retain(|fuzzy| fuzzy.max_difference > 5);
-                    fuzziness.push(RefTestFuzzy { max_difference: 5, num_differences: std::usize::MAX });
+                    fuzziness.push(RefTestFuzzy { max_difference: 5, num_differences: usize::MAX });
                 }
 
                 
