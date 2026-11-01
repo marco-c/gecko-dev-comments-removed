@@ -485,6 +485,21 @@ class LinkFlags(BaseCompileFlags):
                 context.config.substs.get("WIN32_EXE_DEFAULT_LDFLAGS"),
                 ("PROGRAM_LDFLAGS",),
             ),
+            (
+                
+                
+                
+                
+                
+                
+                "MACOS_RPATH",
+                (
+                    ["-Wl,-rpath,@executable_path"]
+                    if context.config.substs.get("OS_ARCH") == "Darwin"
+                    else []
+                ),
+                ("PROGRAM_LDFLAGS",),
+            ),
         )
         BaseCompileFlags.__init__(self, context)
 
