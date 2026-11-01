@@ -270,13 +270,18 @@ bool CanvasRenderingContextHelper::UpdateContext(
   
   nsresult rv = aOptions ? currentContext->SetContextOptions(*aOptions) : NS_OK;
   if (NS_FAILED(rv)) {
-    mCurrentContext = nullptr;
+    if (mCurrentContext == currentContext) {
+      mCurrentContext = nullptr;
+    }
     return false;
   }
 
   rv = currentContext->SetDimensions(sz.width, sz.height);
   if (NS_FAILED(rv)) {
-    mCurrentContext = nullptr;
+    
+    if (mCurrentContext == currentContext) {
+      mCurrentContext = nullptr;
+    }
     return false;
   }
 
