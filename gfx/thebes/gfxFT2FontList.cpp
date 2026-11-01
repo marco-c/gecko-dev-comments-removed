@@ -363,10 +363,6 @@ FT2FontEntry* FT2FontEntry::CreateFontEntry(const nsACString& aName,
   return fe;
 }
 
-FT2FontEntry* gfxFT2Font::GetFontEntry() {
-  return static_cast<FT2FontEntry*>(mFontEntry.get());
-}
-
 
 
 
