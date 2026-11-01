@@ -54,31 +54,20 @@ const icu::UnicodeSet& CaseFolding::IgnoreSet() {
   return set.Pointer()->set;
 }
 
-icu::UnicodeSet BuildSpecialAddSet() {
+icu::UnicodeSet BuildSupplementaryEquivalentsSet() {
   icu::UnicodeSet set;
-  set.add(0x4b);
-  set.add(0x53);
-  set.add(0x6b);
-  set.add(0x73);
-  set.add(0xc5);
-  set.add(0xe5);
-  set.add(0x398);
-  set.add(0x3a9);
-  set.add(0x3b8);
-  set.add(0x3c9);
-  set.add(0x3d1);
   set.freeze();
   return set;
 }
 
-struct SpecialAddSetData {
-  SpecialAddSetData() : set(BuildSpecialAddSet()) {}
+struct SupplementaryEquivalentsSetData {
+  SupplementaryEquivalentsSetData() : set(BuildSupplementaryEquivalentsSet()) {}
   const icu::UnicodeSet set;
 };
 
 
-const icu::UnicodeSet& CaseFolding::SpecialAddSet() {
-  static base::LazyInstance<SpecialAddSetData>::type set =
+const icu::UnicodeSet& CaseFolding::SupplementaryEquivalentsSet() {
+  static base::LazyInstance<SupplementaryEquivalentsSetData>::type set =
       LAZY_INSTANCE_INITIALIZER;
   return set.Pointer()->set;
 }
