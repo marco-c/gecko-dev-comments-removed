@@ -1016,13 +1016,6 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
       
       
       
-      nsDisplayItem* wrapperItem =
-          GetFirstDisplayItemWithChildren(currentFrame);
-      if (!wrapperItem) {
-        continue;
-      }
-
-      
       
       
       nsDisplayListBuilder::DisplayListBuildingData* data =
@@ -1041,6 +1034,15 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
 
       if (!aStopAtStackingContext) {
         
+        continue;
+      }
+
+      
+      
+      
+      nsDisplayItem* wrapperItem =
+          GetFirstDisplayItemWithChildren(currentFrame);
+      if (!wrapperItem) {
         continue;
       }
 
