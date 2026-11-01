@@ -28,6 +28,7 @@
 #include "vm/SharedStencil.h"  
 #include "vm/StringType.h"     
 #include "wasm/WasmJS.h"       
+#include "wasm/WasmModule.h"   
 
 #include "gc/GCContext-inl.h"
 #include "gc/StableCellHasher-inl.h"
@@ -1419,9 +1420,11 @@ const char* ModuleObject::filename() const {
   }
   ScriptSourceObject* sso = cyclicModuleFields()->scriptSourceObject;
   if (!sso->hasSource()) {
-    
-    
-    return "(unknown)";
+    MOZ_ASSERT(isWasmModule());
+    const wasm::Module& module =
+        moduleSource()->as<WasmModuleObject>().module();
+    const char* source = module.codeMeta().scriptedCaller().source.get();
+    return source ? source : "(unknown)";
   }
   return sso->source()->filename();
 }
