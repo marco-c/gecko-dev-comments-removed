@@ -1928,6 +1928,13 @@ export const tokensTable = {
       name: "--toolbarbutton-outline-color-selected",
     },
     {
+      value: {
+        default: "var(--toolbarbutton-outline-color)",
+        forcedColors: "var(--button-border-color-disabled)",
+      },
+      name: "--toolbarbutton-outline-color-disabled",
+    },
+    {
       value: "calc(-1 * var(--border-width))",
       name: "--toolbarbutton-outline-offset",
     },
@@ -2249,6 +2256,10 @@ export const tokensTable = {
       value: { default: "0px" },
       name: "--panel-item-button-padding-inline-start-offset",
     },
+    {
+      value: { default: "var(--panel-padding-block)" },
+      name: "--panel-list-padding-block",
+    },
     { value: "6px", name: "--tab-close-button-padding" },
     {
       value: { default: "var(--space-small)" },
@@ -2466,7 +2477,10 @@ export const tokensTable = {
       name: "--button-text-color-menu-active",
     },
     {
-      value: "var(--button-text-color-ghost-disabled)",
+      value: {
+        default: "var(--button-text-color-ghost-disabled)",
+        forcedColors: "var(--button-text-color-disabled)",
+      },
       name: "--button-text-color-menu-disabled",
     },
     {
@@ -3431,6 +3445,13 @@ export const tokensTable = {
     },
     {
       value: {
+        default: "var(--toolbarbutton-icon-fill)",
+        forcedColors: "var(--button-text-color-disabled)",
+      },
+      name: "--toolbarbutton-icon-fill-disabled",
+    },
+    {
+      value: {
         light: "var(--color-blue-60)",
         dark: "var(--color-cyan-30)",
         nativeTheme: "AccentColor",
@@ -3506,6 +3527,7 @@ export const tokensTable = {
       value: {
         default: "var(--button-opacity-disabled)",
         prefersContrast: "0.3",
+        forcedColors: "var(--button-opacity-disabled)",
       },
       name: "--toolbarbutton-opacity-disabled",
     },
@@ -4379,7 +4401,10 @@ export const variableLookupTable = {
     default: "var(--button-text-color-ghost-active)",
     forcedColors: "var(--button-text-color-menu-hover)",
   },
-  "button-text-color-menu-disabled": "var(--button-text-color-ghost-disabled)",
+  "button-text-color-menu-disabled": {
+    default: "var(--button-text-color-ghost-disabled)",
+    forcedColors: "var(--button-text-color-disabled)",
+  },
   "button-text-color-menu-hover": {
     default: "var(--button-text-color-ghost-hover)",
     forcedColors: "-moz-menuhovertext",
@@ -4914,6 +4939,10 @@ export const variableLookupTable = {
     default: "var(--toolbarbutton-icon-fill)",
     forcedColors: "var(--button-text-color-ghost-active)",
   },
+  "toolbarbutton-icon-fill-disabled": {
+    default: "var(--toolbarbutton-icon-fill)",
+    forcedColors: "var(--button-text-color-disabled)",
+  },
   "toolbarbutton-icon-fill-attention": {
     light: "var(--color-blue-60)",
     dark: "var(--color-cyan-30)",
@@ -4945,6 +4974,7 @@ export const variableLookupTable = {
   "toolbarbutton-opacity-disabled": {
     default: "var(--button-opacity-disabled)",
     prefersContrast: "0.3",
+    forcedColors: "var(--button-opacity-disabled)",
   },
   "toolbarbutton-border-radius": "var(--button-border-radius)",
   "toolbarbutton-background-color": {
@@ -4996,6 +5026,10 @@ export const variableLookupTable = {
   "toolbarbutton-outline-color-selected": {
     default: "var(--toolbarbutton-outline-color-active)",
     forcedColors: "SelectedItem",
+  },
+  "toolbarbutton-outline-color-disabled": {
+    default: "var(--toolbarbutton-outline-color)",
+    forcedColors: "var(--button-border-color-disabled)",
   },
   "toolbarbutton-outline-offset": "calc(-1 * var(--border-width))",
   "toolbarseparator-color": "var(--text-color-deemphasized)",
@@ -5367,6 +5401,7 @@ export const variableLookupTable = {
   "panel-list-border-color": { default: "var(--border-color-deemphasized)" },
   "panel-list-border-radius": "var(--panel-border-radius)",
   "panel-list-box-shadow": { default: "var(--popup-box-shadow)" },
+  "panel-list-padding-block": { default: "var(--panel-padding-block)" },
   "panel-list-text-color": "var(--text-color)",
   "tab-attention-dot-color": "var(--color-accent-attention)",
   "tab-background-color": {
