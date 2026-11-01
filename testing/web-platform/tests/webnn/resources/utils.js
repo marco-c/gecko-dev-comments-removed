@@ -247,51 +247,7 @@ const assertDescriptorsEquals = (outputOperand, expected) => {
 
 
 const toHalf = (value) => {
-  let floatView = new Float32Array(1);
-  let int32View = new Int32Array(floatView.buffer);
-
-  
-
-
-
-  floatView[0] = value;
-  let x = int32View[0];
-
-  let bits = (x >> 16) & 0x8000; 
-  let m = (x >> 12) & 0x07ff;    
-  let e = (x >> 23) & 0xff;      
-
-  
-
-  if (e < 103) {
-    return bits;
-  }
-
-  
-  if (e > 142) {
-    bits |= 0x7c00;
-    
-
-    if (e == 255 && (x & 0x007fffff)) {
-      bits |= 1;
-    }
-    return bits;
-  }
-
-  
-  if (e < 113) {
-    m |= 0x0800;
-    
-
-    bits |= (m >> (114 - e)) + ((m >> (113 - e)) & 1);
-    return bits;
-  }
-
-  bits |= ((e - 112) << 10) | (m >> 1);
-  
-
-  bits += m & 1;
-  return bits;
+  return new Uint16Array(Float16Array.of(value).buffer)[0];
 };
 
 const getTypedArrayData = (type, size, data) => {
