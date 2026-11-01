@@ -155,17 +155,6 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     env["PYTHON"] = "python3"
 
-    if test.get("docker-image", {}).get("in-tree") == "ubuntu1804-test":
-        env["NEED_PULSEAUDIO"] = "true"
-
-        
-        
-        if "wdspec" in job["run"]["test"]["suite"] or (
-            "marionette" in job["run"]["test"]["suite"]
-            and "headless" not in job["label"]
-        ):
-            env.update({"NEED_COMPIZ": "true"})
-
     if test.get("docker-image", {}).get("in-tree") == "ubuntu2404-test":
         env["NEED_PIPEWIRE"] = "true"
 
@@ -387,6 +376,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
             "NO_FAIL_ON_TEST_ERRORS": "1",
             "MOZ_HIDE_RESULTS_TABLE": "1",
             "MOZ_NODE_PATH": "/usr/local/bin/node",
+            "PYTHONUNBUFFERED": "1",
             "TASKCLUSTER_WORKER_TYPE": job["worker-type"],
         })
 
