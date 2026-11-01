@@ -13,9 +13,10 @@ mod transport;
 
 pub use environment::Environment;
 pub use report_reason::ReportReason;
+use sql_support::open_database;
 
 use self::{
-    ad_request::{AdPlacementRequest, AdRequest, AdRequestFlags},
+    ad_request::{AdPlacementRequest, AdRequest, AdRequestFlags, AdRequestRelevance},
     ad_response::{AdResponse, AdResponseValue},
     error::{
         CallbackRequestError, FetchAdsError, RecordClickError, RecordImpressionError, ReportAdError,
@@ -57,18 +58,20 @@ where
         }
     }
 
-    pub fn clear_cache(&self) -> Result<(), rusqlite::Error> {
+    pub fn clear_cache(&self) -> Result<(), open_database::Error> {
         self.transport.clear_cache()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn fetch_ads<A>(
         &self,
-        context_id: String,
+        context_id: Option<String>,
         flags: AdRequestFlags,
         placements: Vec<AdPlacementRequest>,
         cache_policy: CachePolicy,
         ohttp: bool,
         blocks: Vec<String>,
+        relevance: AdRequestRelevance,
     ) -> Result<(AdResponse<A>, RequestHash), FetchAdsError>
     where
         A: AdResponseValue,
@@ -80,6 +83,7 @@ where
             flags,
             ohttp,
             placements,
+            relevance,
         )?;
         let request_hash = RequestHash::new(&ad_request);
 
@@ -97,7 +101,7 @@ where
     #[cfg(feature = "stateful")]
     pub fn fetch_ads_mixed(
         &self,
-        context_id: String,
+        context_id: Option<String>,
         flags: AdRequestFlags,
         placements: Vec<AdPlacementRequest>,
         ohttp: bool,
@@ -110,6 +114,7 @@ where
             flags,
             ohttp,
             placements,
+            AdRequestRelevance::default(),
         )?;
 
         if ohttp {
@@ -188,7 +193,7 @@ where
     pub fn invalidate_cache_by_hash(
         &self,
         request_hash: &RequestHash,
-    ) -> Result<(), rusqlite::Error> {
+    ) -> Result<(), open_database::Error> {
         self.transport.invalidate_cache_by_hash(request_hash)
     }
 
@@ -217,8 +222,8 @@ where
     }
 
     #[allow(dead_code)]
-    pub fn shutdown_db(&mut self) -> Result<(), rusqlite::Error> {
-        self.transport.shutdown_db()
+    pub fn shutdown_db(&self) {
+        self.transport.shutdown_db();
     }
 
     fn fetch_preflight(&self) -> Result<preflight::PreflightResponse, CallbackRequestError> {
@@ -330,12 +335,13 @@ mod tests {
         let client = make_test_client(None);
 
         let result = client.fetch_ads::<AdImage>(
-            TEST_CONTEXT_ID.to_string(),
+            Some(TEST_CONTEXT_ID.to_string()),
             AdRequestFlags::default(),
             make_happy_placement_requests(),
             CachePolicy::default(),
             false,
             Default::default(),
+            AdRequestRelevance::default(),
         );
         assert!(result.is_ok());
         let (response, _request_hash) = result.unwrap();
@@ -364,12 +370,13 @@ mod tests {
         
         let (response1, _) = client
             .fetch_ads::<AdImage>(
-                TEST_CONTEXT_ID.to_string(),
+                Some(TEST_CONTEXT_ID.to_string()),
                 AdRequestFlags::default(),
                 make_happy_placement_requests(),
                 CachePolicy::default(),
                 false,
                 Default::default(),
+                AdRequestRelevance::default(),
             )
             .unwrap();
         assert_eq!(response1, expected);
@@ -377,12 +384,13 @@ mod tests {
         
         let (response2, _) = client
             .fetch_ads::<AdImage>(
-                TEST_CONTEXT_ID.to_string(),
+                Some(TEST_CONTEXT_ID.to_string()),
                 AdRequestFlags::default(),
                 make_happy_placement_requests(),
                 CachePolicy::default(),
                 false,
                 Default::default(),
+                AdRequestRelevance::default(),
             )
             .unwrap();
         assert_eq!(response2, expected);

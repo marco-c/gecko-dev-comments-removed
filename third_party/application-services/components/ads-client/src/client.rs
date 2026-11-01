@@ -8,19 +8,15 @@ use crate::ads::{AdImage, AdSpoc, AdTile};
 use crate::ads_store::AdsStore;
 use crate::bytesize::ByteSize;
 use crate::http_cache::{CachePolicy, HttpCache};
-use crate::mars::ad_request::{AdPlacementRequest, AdRequestFlags};
+use crate::mars::ad_request::{AdPlacementRequest, AdRequestFlags, AdRequestRelevance};
 use crate::mars::ad_response::{AdResponse, AdResponseValue};
 use crate::mars::error::{RecordClickError, RecordImpressionError, ReportAdError};
 use crate::mars::{MARSClient, ReportReason};
-#[cfg(feature = "stateful")]
-use crate::shutdown::AdsStoreShutdown;
-use crate::shutdown::ShutdownReferences;
 use crate::telemetry::Telemetry;
 use config::AdsClientConfig;
 use context_id::{ContextIDComponent, DefaultContextIdCallback};
 use error::RequestAdsError;
-#[cfg(feature = "stateful")]
-use parking_lot::Mutex;
+use sql_support::open_database;
 use std::collections::HashMap;
 #[cfg(feature = "stateful")]
 use std::sync::Arc;
@@ -40,7 +36,7 @@ where
     T: Clone + Telemetry,
 {
     #[cfg(feature = "stateful")]
-    ads_store: Arc<Mutex<Option<AdsStore>>>,
+    ads_store: Arc<Option<AdsStore>>,
     client: MARSClient<T>,
     context_id_component: ContextIDComponent,
     telemetry: T,
@@ -100,14 +96,14 @@ where
         telemetry.record(&ClientOperationEvent::New);
         Self {
             #[cfg(feature = "stateful")]
-            ads_store: Arc::new(Mutex::new(ads_store)),
+            ads_store: Arc::new(ads_store),
             client,
             context_id_component,
             telemetry: telemetry.clone(),
         }
     }
 
-    pub fn clear_cache(&self) -> Result<(), rusqlite::Error> {
+    pub fn clear_cache(&self) -> Result<(), open_database::Error> {
         self.client.clear_cache()
     }
 
@@ -193,6 +189,7 @@ where
             })
     }
 
+    
     pub fn request_image_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
@@ -202,7 +199,14 @@ where
         blocks: Vec<String>,
     ) -> Result<HashMap<String, AdImage>, RequestAdsError> {
         let response = self
-            .request_ads::<AdImage>(ad_placement_requests, flags, options, ohttp, blocks)
+            .request_ads::<AdImage>(
+                ad_placement_requests,
+                flags,
+                options,
+                ohttp,
+                blocks,
+                AdRequestRelevance::default(),
+            )
             .inspect_err(|e| {
                 self.telemetry.record(e);
             })?;
@@ -210,6 +214,7 @@ where
         Ok(response.take_first())
     }
 
+    
     pub fn request_spoc_ads(
         &self,
         ad_placement_requests: Vec<AdPlacementRequest>,
@@ -218,8 +223,14 @@ where
         ohttp: bool,
         blocks: Vec<String>,
     ) -> Result<HashMap<String, Vec<AdSpoc>>, RequestAdsError> {
-        let result =
-            self.request_ads::<AdSpoc>(ad_placement_requests, flags, options, ohttp, blocks);
+        let result = self.request_ads::<AdSpoc>(
+            ad_placement_requests,
+            flags,
+            options,
+            ohttp,
+            blocks,
+            AdRequestRelevance::default(),
+        );
         result
             .inspect_err(|e| {
                 self.telemetry.record(e);
@@ -237,9 +248,16 @@ where
         options: Option<CachePolicy>,
         ohttp: bool,
         blocks: Vec<String>,
+        relevance: AdRequestRelevance,
     ) -> Result<HashMap<String, AdTile>, RequestAdsError> {
-        let result =
-            self.request_ads::<AdTile>(ad_placement_requests, flags, options, ohttp, blocks);
+        let result = self.request_ads::<AdTile>(
+            ad_placement_requests,
+            flags,
+            options,
+            ohttp,
+            blocks,
+            relevance,
+        );
         result
             .inspect_err(|e| {
                 self.telemetry.record(e);
@@ -250,12 +268,16 @@ where
             })
     }
 
-    pub fn shutdown_references(&self) -> ShutdownReferences<T> {
-        ShutdownReferences::new(
-            self.telemetry.clone(),
-            #[cfg(feature = "stateful")]
-            AdsStoreShutdown::new(self.ads_store.clone()),
-        )
+    pub fn shutdown(&self) {
+        
+        self.telemetry.shutdown();
+
+        #[cfg(feature = "stateful")]
+        if let Some(ads_store) = self.ads_store.as_ref() {
+            ads_store.shutdown_db();
+        }
+
+        self.client.shutdown_db();
     }
 
     fn request_ads<A>(
@@ -265,11 +287,17 @@ where
         options: Option<CachePolicy>,
         ohttp: bool,
         blocks: Vec<String>,
+        relevance: AdRequestRelevance,
     ) -> Result<AdResponse<A>, RequestAdsError>
     where
         A: AdResponseValue,
     {
-        let context_id = self.get_context_id()?;
+        let context_id = if relevance.is_empty() {
+            Some(self.get_context_id()?)
+        } else {
+            None
+        };
+
         let cache_policy = options.unwrap_or_default();
         let (mut response, request_hash) = self.client.fetch_ads::<A>(
             context_id,
@@ -278,6 +306,7 @@ where
             cache_policy,
             ohttp,
             blocks,
+            relevance,
         )?;
         response.enrich_callbacks(&request_hash);
         Ok(response)
@@ -315,11 +344,11 @@ mod tests {
         let telemetry = client.get_telemetry();
         AdsClient {
             #[cfg(feature = "stateful")]
-            ads_store: Arc::new(Mutex::new(Some(
+            ads_store: Arc::new(Some(
                 AdsStoreBuilder::new("test_store.db")
                     .build(MozAdsTelemetryWrapper::noop())
                     .expect("Simplest AdsStoreBuilder should be constructable"),
-            ))),
+            )),
             client,
             context_id_component: ContextIDComponent::new(
                 &Uuid::new_v4().to_string(),
@@ -415,6 +444,7 @@ mod tests {
             None,
             false,
             Default::default(),
+            AdRequestRelevance::default(),
         );
         assert!(result.is_ok());
         m.assert();
@@ -454,6 +484,46 @@ mod tests {
             None,
             false,
             Default::default(),
+        );
+        assert!(result.is_ok());
+        m.assert();
+    }
+
+    #[test]
+    fn test_context_id_is_not_sent_to_mars_when_relevance_is_set() {
+        viaduct_dev::init_backend_dev();
+
+        let config = AdsClientConfig {
+            cache_config: None,
+            environment: Environment::Test,
+            #[cfg(feature = "stateful")]
+            store_config: None,
+            telemetry: MozAdsTelemetryWrapper::noop(),
+        };
+        let client: AdsClient<MozAdsTelemetryWrapper> = AdsClient::new(config);
+
+        
+        
+        
+        
+        let expected_response = get_example_happy_uatile_response();
+        let m: mockito::Mock = mockito::mock("POST", "/ads")
+            .match_body(mockito::Matcher::Json(serde_json::json!({
+                "placements": serde_json::to_value(make_happy_placement_requests()).unwrap(),
+                "relevance": {"sports": 0.8},
+            })))
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(serde_json::to_string(&expected_response.data).unwrap())
+            .create();
+
+        let result = client.request_tile_ads(
+            make_happy_placement_requests(),
+            AdRequestFlags::default(),
+            None,
+            false,
+            Default::default(),
+            HashMap::from([("sports".to_string(), 0.8)]),
         );
         assert!(result.is_ok());
         m.assert();
@@ -543,6 +613,7 @@ mod tests {
                 Some(CachePolicy::default()),
                 false,
                 Default::default(),
+                AdRequestRelevance::default(),
             )
             .unwrap();
 
