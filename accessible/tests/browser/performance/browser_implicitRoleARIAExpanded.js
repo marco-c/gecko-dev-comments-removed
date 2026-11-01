@@ -325,9 +325,9 @@ addAccessibleTask(
   async function testImplicitRoleARIAExpanded(browser) {
     await timeThis(async () => {
       info("Adding many implicit-role elements with aria-expanded");
-      await invokeContentTask(browser, [], () => {
+      await invokeContentTask(browser, [LARGE_NODE_COUNT], count => {
         const container = content.document.getElementById("container");
-        for (let c = 0; c < 10000; ++c) {
+        for (let c = 0; c < count; ++c) {
           const button = content.document.createElement("button");
           button.setAttribute("aria-expanded", "false");
           container.append(button);

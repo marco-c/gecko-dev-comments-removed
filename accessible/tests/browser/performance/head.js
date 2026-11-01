@@ -39,6 +39,12 @@ const ALL_A11Y_PERFSTATS_FEATURES = [
   "A11Y_PlatformShowHideEvent",
 ];
 
+const SMALL_NODE_COUNT = 500;
+const MEDIUM_NODE_COUNT = 2000;
+const LARGE_NODE_COUNT = 10000;
+const XLARGE_NODE_COUNT = 15000;
+const XXLARGE_NODE_COUNT = 100000;
+
 const LOG_PREFIX = "perfMetrics";
 
 function logToPerfMetrics(stat) {
