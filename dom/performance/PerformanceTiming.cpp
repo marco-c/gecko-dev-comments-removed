@@ -157,6 +157,10 @@ CacheablePerformanceTimingData::CacheablePerformanceTimingData(
   
   if (aHttpChannel) {
     SetCacheablePropertiesFromHttpChannel(aHttpChannel, aChannel);
+    
+    
+    
+    mTimingAllowed = mTimingAllowed && mAllRedirectsPassTAO;
   }
 }
 
