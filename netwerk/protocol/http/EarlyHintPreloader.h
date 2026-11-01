@@ -109,6 +109,10 @@ class EarlyHintPreloader final : public nsIStreamListener,
 
   
   
+  bool MatchesRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo) const;
+
+  
+  
   
   
   
@@ -145,6 +149,8 @@ class EarlyHintPreloader final : public nsIStreamListener,
 
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsIChannel> mRedirectChannel;
+  nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsILoadInfo> mLoadInfo;
 
   dom::ContentParentId mCpId;
   EarlyHintConnectArgs mConnectArgs;

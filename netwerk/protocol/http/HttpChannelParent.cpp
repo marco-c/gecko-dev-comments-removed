@@ -451,7 +451,23 @@ bool HttpChannelParent::DoAsyncOpen(
     const bool& aIsUserAgentHeaderModified, const nsString& aInitiatorType) {
   MOZ_ASSERT(aURI, "aURI should not be NULL");
 
-  if (aEarlyHintPreloaderId) {
+  dom::PContentParent* pcp = Manager()->Manager();
+  const dom::RemoteType& remoteType =
+      static_cast<dom::ContentParent*>(pcp)->GetRemoteType();
+
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
+                                                     getter_AddRefs(loadInfo));
+  if (NS_FAILED(rv)) {
+    return SendFailedAsyncOpen(rv);
+  }
+
+  
+  
+  RefPtr<EarlyHintRegistrar> registrar =
+      aEarlyHintPreloaderId ? EarlyHintRegistrar::GetOrCreate() : nullptr;
+  if (registrar &&
+      registrar->MatchesRequest(aEarlyHintPreloaderId, aURI, loadInfo)) {
     
     mEarlyHintPreloaderId = aEarlyHintPreloaderId;
     RefPtr<HttpChannelParent> self = this;
@@ -487,19 +503,6 @@ bool HttpChannelParent::DoAsyncOpen(
   PROFILER_MARKER("Receive AsyncOpen in Parent", NETWORK,
                   MarkerThreadId::MainThread(), ChannelMarker,
                   aURI->GetSpecOrDefault(), aChannelId);
-
-  nsresult rv;
-
-  dom::PContentParent* pcp = Manager()->Manager();
-  const dom::RemoteType& remoteType =
-      static_cast<dom::ContentParent*>(pcp)->GetRemoteType();
-
-  nsCOMPtr<nsILoadInfo> loadInfo;
-  rv = mozilla::ipc::LoadInfoArgsToLoadInfo(aLoadInfoArgs, remoteType,
-                                            getter_AddRefs(loadInfo));
-  if (NS_FAILED(rv)) {
-    return SendFailedAsyncOpen(rv);
-  }
 
   
   

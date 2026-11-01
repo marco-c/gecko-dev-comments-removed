@@ -10,7 +10,9 @@
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsRefPtrHashtable.h"
 
+class nsILoadInfo;
 class nsIParentChannel;
+class nsIURI;
 
 namespace mozilla::net {
 
@@ -52,6 +54,14 @@ class EarlyHintRegistrar final : public RefCounted<EarlyHintRegistrar> {
   bool LinkParentChannel(dom::ContentParentId aCpId,
                          uint64_t aEarlyHintPreloaderId,
                          nsIParentChannel* aParent);
+
+  
+
+
+
+
+  bool MatchesRequest(uint64_t aEarlyHintPreloaderId, nsIURI* aURI,
+                      nsILoadInfo* aLoadInfo);
 
   
 
