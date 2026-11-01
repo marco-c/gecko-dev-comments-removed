@@ -58,9 +58,10 @@ function assertFailureEvent(extra, expected) {
 
 async function getSessionEntries() {
   let children = await IOUtils.getChildren(PathUtils.profileDir);
-  return children.filter(path =>
-    PathUtils.filename(path).startsWith("sessionstore")
-  );
+  return children.filter(path => {
+    let name = PathUtils.filename(path);
+    return name.startsWith("sessionstore") && name != "sessionstore-logs";
+  });
 }
 
 
