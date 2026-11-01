@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef jit_MacroAssembler_inl_h
 #define jit_MacroAssembler_inl_h
@@ -22,7 +22,7 @@
 #include "vm/JSObject.h"
 #include "vm/ProxyObject.h"
 #include "vm/Runtime.h"
-#include "vm/Stack.h"  // js::ResumeFrameArgs
+#include "vm/Stack.h"  
 #include "vm/StringType.h"
 
 #include "jit/ABIFunctionList-inl.h"
@@ -58,7 +58,7 @@ DynFn DynamicFunction(Sig fun) {
   return DynFn{sig.address(fun)};
 }
 
-// Helper for generatePreBarrier.
+
 inline DynFn JitPreWriteBarrier(MIRType type) {
   switch (type) {
     case MIRType::Value: {
@@ -86,9 +86,9 @@ inline DynFn JitPreWriteBarrier(MIRType type) {
   }
 }
 
-//{{{ check_macroassembler_style
-// ===============================================================
-// Stack manipulation functions.
+
+
+
 
 CodeOffset MacroAssembler::PushWithPatch(ImmWord word) {
   framePushed_ += sizeof(word.value);
@@ -117,8 +117,8 @@ void MacroAssembler::PopRegs(const Regs&... regs) {
   adjustFrame(-int32_t(sizeof...(Regs) * sizeof(intptr_t)));
 }
 
-// ===============================================================
-// Simple call functions.
+
+
 
 void MacroAssembler::call(TrampolinePtr code) { call(ImmPtr(code.value)); }
 
@@ -148,8 +148,8 @@ CodeOffset MacroAssembler::call(const wasm::CallSiteDesc& desc,
   return raOffset;
 }
 
-// ===============================================================
-// ABI function calls.
+
+
 
 void MacroAssembler::passABIArg(Register reg) {
   passABIArg(MoveOperand(reg), ABIType::General);
@@ -232,21 +232,21 @@ ABIFunctionType MacroAssembler::signature() const {
     default:
       MOZ_CRASH("Unexpected type");
   }
-#  endif  // DEBUG
+#  endif  
 
   return ABIFunctionType(signature_);
 #else
-  // No simulator enabled.
+  
   MOZ_CRASH("Only available for making calls within a simulator.");
 #endif
 }
 
-// ===============================================================
-// Jit Frames.
+
+
 
 uint32_t MacroAssembler::callJitNoProfiler(Register callee) {
 #ifdef JS_USE_LINK_REGISTER
-  // The return address is pushed by the callee.
+  
   call(callee);
 #else
   callAndPushReturnAddress(callee);
@@ -342,8 +342,8 @@ template <typename KindT, typename ValueT>
 void MacroAssembler::pushGeneratorResumeArgsAndFormals(
     const Address& resumeIndex, const KindT& resumeKind, Register generator,
     const ValueT& resumeValue, Register nformals) {
-  // Push the ResumeFrameArgs first, high to low: resumeIndex, resumeKind,
-  // generator, resumeValue.
+  
+  
   static_assert(ResumeFrameArgs::NumSlots == 4);
   static_assert(ResumeFrameArgs::ResumeIndexSlot == 3);
   static_assert(ResumeFrameArgs::ResumeKindSlot == 2);
@@ -354,8 +354,8 @@ void MacroAssembler::pushGeneratorResumeArgsAndFormals(
   pushValue(JSVAL_TYPE_OBJECT, generator);
   pushValue(resumeValue);
 
-  // Push |undefined| for the formals and for |this|. Because |this| is also
-  // pushed, we count down to -1 so we always push at least one Value.
+  
+  
   Label loop;
   bind(&loop);
   {
@@ -392,14 +392,14 @@ uint32_t MacroAssembler::buildFakeExitFrame(Register scratch) {
   return retAddr;
 }
 
-// ===============================================================
-// Exit frame footer.
+
+
 
 void MacroAssembler::enterExitFrame(Register cxreg, Register scratch,
                                     VMFunctionId f) {
   linkExitFrame(cxreg, scratch);
-  // Push `ExitFrameType::VMFunction + VMFunctionId`, for marking the arguments.
-  // See ExitFooterFrame::data_.
+  
+  
   uintptr_t type = uintptr_t(ExitFrameType::VMFunction) + uintptr_t(f);
   MOZ_ASSERT(type <= INT32_MAX);
   Push(Imm32(type));
@@ -423,8 +423,8 @@ void MacroAssembler::leaveExitFrame(size_t extraFrame) {
   freeStack(ExitFooterFrame::Size() + extraFrame);
 }
 
-// ===============================================================
-// Move instructions
+
+
 
 void MacroAssembler::moveValue(const ConstantOrRegister& src,
                                const ValueOperand& dest) {
@@ -436,8 +436,8 @@ void MacroAssembler::moveValue(const ConstantOrRegister& src,
   moveValue(src.reg(), dest);
 }
 
-// ===============================================================
-// Copy instructions
+
+
 
 void MacroAssembler::copy64(const Address& src, const Address& dest,
                             Register scratch) {
@@ -454,15 +454,15 @@ void MacroAssembler::copy64(const Address& src, const Address& dest,
 #endif
 }
 
-// ===============================================================
-// Arithmetic functions
+
+
 
 void MacroAssembler::addPtr(ImmPtr imm, Register dest) {
   addPtr(ImmWord(uintptr_t(imm.value)), dest);
 }
 
-// ===============================================================
-// Branch functions
+
+
 
 void MacroAssembler::branchTest64(Condition cond, Register64 lhs,
                                   Register64 rhs, Label* success, Label* fail) {
@@ -470,23 +470,18 @@ void MacroAssembler::branchTest64(Condition cond, Register64 lhs,
 }
 
 void MacroAssembler::branchIfFalseBool(Register reg, Label* label) {
-  // Note that C++ bool is only 1 byte, so ignore the higher-order bits.
+  
   branchTest32(Assembler::Zero, reg, Imm32(0xFF), label);
 }
 
 void MacroAssembler::branchIfTrueBool(Register reg, Label* label) {
-  // Note that C++ bool is only 1 byte, so ignore the higher-order bits.
+  
   branchTest32(Assembler::NonZero, reg, Imm32(0xFF), label);
 }
 
 void MacroAssembler::branchIfNotNullOrUndefined(ValueOperand val,
                                                 Label* label) {
-  Label nullOrUndefined;
-  ScratchTagScope tag(*this, val);
-  splitTagForTest(val, tag);
-  branchTestNull(Assembler::Equal, tag, &nullOrUndefined);
-  branchTestUndefined(Assembler::NotEqual, tag, label);
-  bind(&nullOrUndefined);
+  branchTestNullOrUndefined(Assembler::NotEqual, val, label);
 }
 
 void MacroAssembler::branchIfRope(Register str, Label* label) {
@@ -540,9 +535,9 @@ void MacroAssembler::branchTestFunctionFlags(Register fun, uint32_t flags,
 void MacroAssembler::branchIfNotFunctionIsNonBuiltinCtor(Register fun,
                                                          Register scratch,
                                                          Label* label) {
-  // Guard the function has the BASESCRIPT and CONSTRUCTOR flags and does NOT
-  // have the SELF_HOSTED flag.
-  // This is equivalent to JSFunction::isNonBuiltinConstructor.
+  
+  
+  
   constexpr int32_t mask = FunctionFlags::BASESCRIPT |
                            FunctionFlags::SELF_HOSTED |
                            FunctionFlags::CONSTRUCTOR;
@@ -621,7 +616,7 @@ void MacroAssembler::branchIfObjectEmulatesUndefined(Register objReg,
   branchTest32(Assembler::NonZero, flags, Imm32(JSCLASS_EMULATES_UNDEFINED),
                label);
 
-  // Call into C++ if the object is a wrapper.
+  
   branchTestClassIsProxy(false, scratch, &done);
   branchTestProxyHandlerFamily(Assembler::Equal, objReg, scratch,
                                &Wrapper::family, slowCheck);
@@ -850,8 +845,8 @@ void MacroAssembler::branchTestNeedsMarkingBarrierAnyZone(Condition cond,
   if (maybeRealm_) {
     branchTestNeedsMarkingBarrier(cond, label);
   } else {
-    // We are compiling the interpreter or another runtime-wide trampoline, so
-    // we have to load cx->zone.
+    
+    
     loadPtr(AbsoluteAddress(runtime()->addressOfZone()), scratch);
     Address needsBarrierAddr(scratch, Zone::offsetOfNeedsMarkingBarrier());
     branchTest32(cond, needsBarrierAddr, Imm32(0x1), label);
@@ -869,7 +864,7 @@ void MacroAssembler::branchDoubleNotInInt64Range(Address src, Register temp,
                                                  Label* fail) {
   using mozilla::FloatingPoint;
 
-  // Tests if double is in [INT64_MIN; INT64_MAX] range
+  
   uint32_t EXPONENT_MASK = 0x7ff00000;
   uint32_t EXPONENT_SHIFT = FloatingPoint<double>::kExponentShift - 32;
   uint32_t TOO_BIG_EXPONENT = (FloatingPoint<double>::kExponentBias + 63)
@@ -884,9 +879,9 @@ void MacroAssembler::branchDoubleNotInUInt64Range(Address src, Register temp,
                                                   Label* fail) {
   using mozilla::FloatingPoint;
 
-  // Note: returns failure on -0.0
-  // Tests if double is in [0; UINT64_MAX] range
-  // Take the sign also in the equation. That way we can compare in one test?
+  
+  
+  
   uint32_t EXPONENT_MASK = 0xfff00000;
   uint32_t EXPONENT_SHIFT = FloatingPoint<double>::kExponentShift - 32;
   uint32_t TOO_BIG_EXPONENT = (FloatingPoint<double>::kExponentBias + 64)
@@ -901,7 +896,7 @@ void MacroAssembler::branchFloat32NotInInt64Range(Address src, Register temp,
                                                   Label* fail) {
   using mozilla::FloatingPoint;
 
-  // Tests if float is in [INT64_MIN; INT64_MAX] range
+  
   uint32_t EXPONENT_MASK = 0x7f800000;
   uint32_t EXPONENT_SHIFT = FloatingPoint<float>::kExponentShift;
   uint32_t TOO_BIG_EXPONENT = (FloatingPoint<float>::kExponentBias + 63)
@@ -916,9 +911,9 @@ void MacroAssembler::branchFloat32NotInUInt64Range(Address src, Register temp,
                                                    Label* fail) {
   using mozilla::FloatingPoint;
 
-  // Note: returns failure on -0.0
-  // Tests if float is in [0; UINT64_MAX] range
-  // Take the sign also in the equation. That way we can compare in one test?
+  
+  
+  
   uint32_t EXPONENT_MASK = 0xff800000;
   uint32_t EXPONENT_SHIFT = FloatingPoint<float>::kExponentShift;
   uint32_t TOO_BIG_EXPONENT = (FloatingPoint<float>::kExponentBias + 64)
@@ -929,8 +924,8 @@ void MacroAssembler::branchFloat32NotInUInt64Range(Address src, Register temp,
   branch32(Assembler::AboveOrEqual, temp, Imm32(TOO_BIG_EXPONENT), fail);
 }
 
-// ========================================================================
-// Canonicalization primitives.
+
+
 void MacroAssembler::canonicalizeFloatNaN(FloatRegister reg) {
   Label notNaN;
   branchFloat(DoubleOrdered, reg, reg, &notNaN);
@@ -947,44 +942,44 @@ void MacroAssembler::canonicalizeDoubleNaN(FloatRegister reg) {
 
 void MacroAssembler::canonicalizeDoubleZero(FloatRegister reg,
                                             FloatRegister scratch) {
-  // If denormals are disabled, then operations on them will flush denormal
-  // values to zero (FTZ flag). We need the cheapest operation that is the
-  // identity function.
-  //
-  // Unfortunately, just moving the float register doesn't trigger FTZ. Adding
-  // '+-0' isn't an identity function, because it can toggle the sign bit.
-  //
-  // Therefore we choose to multiply by 1.0, which won't change the result.
+  
+  
+  
+  
+  
+  
+  
+  
   loadConstantDouble(1.0, scratch);
   mulDouble(scratch, reg);
 }
 
 void MacroAssembler::canonicalizeValueZero(ValueOperand value,
                                            FloatRegister scratch) {
-  // Don't do anything if this isn't a double value.
+  
   Label notDouble;
   branchTestDouble(Assembler::NotEqual, value, &notDouble);
 
-  // Unbox the double.
+  
   unboxDouble(value, scratch);
 
   {
-    // Minimize the duration of using the scratch double to avoid
-    // conflict with unboxDouble.
+    
+    
     ScratchDoubleScope tmpD(*this);
 
-    // Canonicalize the double.
+    
     canonicalizeDoubleZero(scratch, tmpD);
 
-    // Box the double back into value.
+    
     boxDouble(scratch, value, tmpD);
   }
 
   bind(&notDouble);
 }
 
-// ========================================================================
-// Memory access primitives.
+
+
 
 template <class T>
 void MacroAssembler::boxDouble(FloatRegister src, const T& dest) {
@@ -994,7 +989,7 @@ void MacroAssembler::boxDouble(FloatRegister src, const T& dest) {
 template <typename T>
 void MacroAssembler::fallibleUnboxInt32(const T& src, Register dest,
                                         Label* fail) {
-  // Int32Value can be unboxed efficiently with unboxInt32, so use that.
+  
   branchTestInt32(Assembler::NotEqual, src, fail);
   unboxInt32(src, dest);
 }
@@ -1002,7 +997,7 @@ void MacroAssembler::fallibleUnboxInt32(const T& src, Register dest,
 template <typename T>
 void MacroAssembler::fallibleUnboxBoolean(const T& src, Register dest,
                                           Label* fail) {
-  // BooleanValue can be unboxed efficiently with unboxBoolean, so use that.
+  
   branchTestBoolean(Assembler::NotEqual, src, fail);
   unboxBoolean(src, dest);
 }
@@ -1031,8 +1026,8 @@ void MacroAssembler::fallibleUnboxBigInt(const T& src, Register dest,
   fallibleUnboxPtr(src, dest, JSVAL_TYPE_BIGINT, fail);
 }
 
-//}}} check_macroassembler_style
-// ===============================================================
+
+
 
 void MacroAssembler::ensureDouble(const ValueOperand& source,
                                   FloatRegister dest, Label* failure) {
@@ -1085,7 +1080,7 @@ void MacroAssembler::reserveStack(uint32_t amount) {
   subFromStackPtr(Imm32(amount));
   adjustFrame(amount);
 }
-#endif  // !JS_CODEGEN_ARM64
+#endif  
 
 void MacroAssembler::loadObjClassUnsafe(Register obj, Register dest) {
   loadPtr(Address(obj, JSObject::offsetOfShape()), dest);
@@ -1130,14 +1125,14 @@ void MacroAssembler::lookupMFBT(Register hashTable, Register hashCode,
                                 Register scratch3, Register scratch4,
                                 Register scratch5, Label* missing,
                                 Match match) {
-  // Inline implementation of |lookup| for mozilla::detail::HashTable
+  
 
-  // If the hashtable is empty, we won't find an entry.
+  
   branch32(Assembler::Equal, Address(hashTable, Table::offsetOfEntryCount()),
            Imm32(0), missing);
 
-  // Compute the primary hash address:
-  // HashNumber h1 = hash1(aKeyHash);
+  
+  
   Register hash1 = scratch5;
   computeHash1MFBT<Table>(hashTable, hashCode, hash1, scratch);
 
@@ -1147,7 +1142,7 @@ void MacroAssembler::lookupMFBT(Register hashTable, Register hashCode,
   match();
   bind(&primaryCollision);
 
-  // Otherwise, we've had a collision. Double-hash.
+  
   Register hash2 = scratch4;
   Register sizeMask = scratch3;
   computeHash2MFBT<Table>(hashTable, hashCode, hash2, sizeMask, scratch);
@@ -1163,18 +1158,18 @@ void MacroAssembler::lookupMFBT(Register hashTable, Register hashCode,
 }
 
 void MacroAssembler::assertStackAlignment(uint32_t alignment,
-                                          int32_t offset /* = 0 */) {
+                                          int32_t offset ) {
 #ifdef DEBUG
   Label ok, bad;
   MOZ_ASSERT(std::has_single_bit(alignment));
 
-  // Wrap around the offset to be a non-negative number.
+  
   offset %= alignment;
   if (offset < 0) {
     offset += alignment;
   }
 
-  // Test if each bit from offset is set.
+  
   uint32_t off = offset;
   while (off) {
     uint32_t lowestBit = 1 << std::countr_zero(off);
@@ -1182,7 +1177,7 @@ void MacroAssembler::assertStackAlignment(uint32_t alignment,
     off ^= lowestBit;
   }
 
-  // Check that all remaining bits are zero.
+  
   branchTestStackPtr(Assembler::Zero, Imm32((alignment - 1) ^ offset), &ok);
 
   bind(&bad);
@@ -1199,7 +1194,7 @@ void MacroAssembler::storeCallInt32Result(Register reg) {
 #if JS_BITS_PER_WORD == 32
   storeCallPointerResult(reg);
 #else
-  // Ensure the upper 32 bits are cleared.
+  
   move32(ReturnReg, reg);
 #endif
 }
@@ -1216,7 +1211,7 @@ void MacroAssembler::storeCallResultValue(TypedOrValueRegister dest) {
   }
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  
 
-#endif /* jit_MacroAssembler_inl_h */
+#endif 

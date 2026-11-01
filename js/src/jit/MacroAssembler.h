@@ -2071,6 +2071,13 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              Label* label) PER_SHARED_ARCH;
 
   
+  inline void branchTestNullOrUndefined(Condition cond, Register tag,
+                                        Label* label) PER_SHARED_ARCH;
+  inline void branchTestNullOrUndefined(Condition cond,
+                                        const ValueOperand& value,
+                                        Label* label) PER_ARCH;
+
+  
   inline void branchTestObject(Condition cond, const Address& address,
                                Label* label) PER_SHARED_ARCH;
   inline void branchTestObject(Condition cond, const BaseIndex& address,
