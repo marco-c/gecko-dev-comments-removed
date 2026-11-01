@@ -2021,6 +2021,7 @@ bool WarpCacheIRTranspiler::emitLoadFixedSlotTypedResult(ObjOperandId objId,
 
   auto* load = MLoadFixedSlot::New(alloc(), obj, slotIndex);
   load->setResultType(MIRTypeFromValueType(JSValueType(type)));
+  load->setNotMovable();
   add(load);
 
   pushResult(load);
@@ -6688,14 +6689,14 @@ bool WarpCacheIRTranspiler::emitCallClassHook(ObjOperandId calleeId,
   MOZ_ASSERT(callInfo_->argFormat() == CallInfo::ArgFormat::Standard);
   MOZ_ASSERT(flags.getArgFormat() == CallFlags::ArgFormat::Standard);
 
-  
-  
-  MOZ_ASSERT(!flags.isSameRealm());
-
   auto* call = MCallClassHook::New(alloc(), target, callInfo_->argc(),
                                    callInfo_->constructing());
   if (!call) {
     return false;
+  }
+
+  if (flags.isSameRealm()) {
+    call->setNotCrossRealm();
   }
 
   if (callInfo_->ignoresReturnValue()) {

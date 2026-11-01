@@ -7190,6 +7190,9 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
                           &BoundFunctionObject::class_, scratch, calleeReg,
                           vmCall);
 
+  
+  
+
   Address targetSlot(calleeReg, BoundFunctionObject::offsetOfTargetSlot());
   Address flagsSlot(calleeReg, BoundFunctionObject::offsetOfFlagsSlot());
   Address thisSlot(calleeReg, BoundFunctionObject::offsetOfBoundThisSlot());

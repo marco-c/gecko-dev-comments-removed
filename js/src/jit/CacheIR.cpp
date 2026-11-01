@@ -3302,10 +3302,17 @@ void IRGenerator::emitIdGuard(ValOperandId valId, const Value& idVal, jsid id) {
       writer.guardSpecificValue(valId, idVal);
       break;
     case ValueType::Int32:
-    case ValueType::Double:
+    case ValueType::Double: {
       MOZ_ASSERT(!IsNumberIndex(idVal));
-      writer.guardSpecificValue(valId, idVal);
+      int32_t int32Value;
+      if (mozilla::NumberEqualsInt32(idVal.toNumber(), &int32Value)) {
+        Int32OperandId intId = writer.guardToInt32Index(valId);
+        writer.guardSpecificInt32(intId, int32Value);
+      } else {
+        writer.guardSpecificValue(valId, idVal);
+      }
       break;
+    }
     default:
       MOZ_CRASH("Unexpected type in emitIdGuard");
   }
@@ -14189,8 +14196,14 @@ AttachDecision CallIRGenerator::tryAttachCallHook(HandleObject calleeObj) {
   
   writer.guardAnyClass(calleeObjId, calleeObj->getClass());
 
-  if (isConstructing && calleeObj->is<BoundFunctionObject>()) {
-    writer.guardBoundFunctionIsConstructor(calleeObjId);
+  if (calleeObj->is<BoundFunctionObject>()) {
+    if (isConstructing) {
+      writer.guardBoundFunctionIsConstructor(calleeObjId);
+    }
+
+    
+    
+    flags.setIsSameRealm();
   }
 
   writer.callClassHook(calleeObjId, argcId, hook, flags, ClampFixedArgc(argc_));
@@ -15905,7 +15918,8 @@ AttachDecision UnaryArithIRGenerator::tryAttachStringNumber() {
 }
 
 AttachDecision UnaryArithIRGenerator::tryAttachDateToNumber() {
-  if (!val_.isObject() || !val_.toObject().is<DateObject>()) {
+  if (!val_.isObject() || !val_.toObject().is<DateObject>() ||
+      !res_.isNumber()) {
     return AttachDecision::NoAction;
   }
 
@@ -15915,7 +15929,6 @@ AttachDecision UnaryArithIRGenerator::tryAttachDateToNumber() {
   if (!canOptimizeDateObjectToNumber(obj, &info)) {
     return AttachDecision::NoAction;
   }
-  MOZ_ASSERT(res_.isNumber());
 
   ValOperandId valId(writer.setInputOperandId(0));
   NumberOperandId numId = emitGuardDateObjectToNumber(obj, valId, info);
