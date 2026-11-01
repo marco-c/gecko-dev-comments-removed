@@ -265,9 +265,7 @@ TEST_F(SframeEncryptorDecryptorTest, GetMaxPlaintextByteSizeIsAtLeastInput) {
   EXPECT_GE(decryptor_->GetMaxPlaintextByteSize(100), 100u);
 }
 
-
-TEST_F(SframeEncryptorDecryptorTest,
-       DISABLED_DecryptReportsKeyIdErrorForUnknownKey) {
+TEST_F(SframeEncryptorDecryptorTest, DecryptReportsKeyIdErrorForUnknownKey) {
   ASSERT_TRUE(encryptor_->SetEncryptionKey(kKeyId, kKeyMaterial).ok());
 
   size_t max_ct_size = encryptor_->GetMaxCiphertextByteSize(kPlaintext.size());
@@ -286,7 +284,7 @@ TEST_F(SframeEncryptorDecryptorTest,
   auto* failure = std::get_if<SframeDecryptFailure>(&dec_result);
   ASSERT_NE(failure, nullptr);
   EXPECT_EQ(failure->type, SframeDecryptErrorType::kKeyId);
-  EXPECT_FALSE(failure->key_id.has_value());
+  EXPECT_EQ(failure->key_id, kKeyId);
 }
 
 }  
