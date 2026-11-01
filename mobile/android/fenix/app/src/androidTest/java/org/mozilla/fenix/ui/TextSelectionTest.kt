@@ -9,9 +9,9 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
+import org.mozilla.fenix.customannotations.Critical
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
-import org.mozilla.fenix.helpers.FxNimbusHelper
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
@@ -65,7 +65,6 @@ class TextSelectionTest {
     @SmokeTest
     @Test
     fun verifySelectAllTextOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}
@@ -90,7 +89,6 @@ class TextSelectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326828
     @Test
     fun verifyCopyTextOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}
@@ -163,7 +161,6 @@ class TextSelectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326834
     @Test
     fun verifySelectAllPDFTextOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(3)
 
         navigationToolbar(composeTestRule) {}
@@ -196,7 +193,6 @@ class TextSelectionTest {
     @SmokeTest
     @Test
     fun verifyCopyPDFTextOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(3)
 
         navigationToolbar(composeTestRule) {}
@@ -275,7 +271,6 @@ class TextSelectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326813
     @Test
     fun verifyUrlBarTextSelectionOptionsTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(genericURL.url) {}.openNavigationToolbar {}
@@ -287,7 +282,7 @@ class TextSelectionTest {
 
     @Test
     fun verifyUrlBarTextSelectionOptionsWithinAddressBarInFocusedModeTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(true)
+        composeTestRule.activityRule.applySettingsExceptions { it.showAddressBarInFocusMode = true }
         val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(genericURL.url) {}.openNavigationToolbar {}
@@ -301,11 +296,17 @@ class TextSelectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326814
     @Test
     fun verifyCopyUrlBarTextSelectionOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(genericURL.url) {}.openNavigationToolbar {}
         searchScreen(retryableComposeTestRule.current) {
+            // open floating toolbar
+            longClickToolbar()
+            // long click selects only the touched word, which is wherever the centre of the
+            // rendered URL falls. "Select all" widens it to the whole URL
+            clickContextMenuItem("Select all")
+            // select all also dismisses the floating toolbar, so long click again
+            // to bring the toolbar back with the selection intact.
             longClickToolbar()
             clickContextMenuItem("Copy")
             clickClearButton()
@@ -319,11 +320,13 @@ class TextSelectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326815
     @Test
     fun verifyCutUrlBarTextSelectionOptionTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val genericURL = mockWebServer.getGenericAsset(1)
 
         navigationToolbar(composeTestRule) {}.enterURLAndEnterToBrowser(genericURL.url) {}.openNavigationToolbar {}
         searchScreen(retryableComposeTestRule.current) {
+            longClickToolbar()
+            // See verifyCopyUrlBarTextSelectionOptionTest for why the selection is widened and the toolbar reopened.
+            clickContextMenuItem("Select all")
             longClickToolbar()
             clickContextMenuItem("Cut")
             verifySearchBarPlaceholder("Search or enter address")
@@ -334,9 +337,14 @@ class TextSelectionTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/414316
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.TextSelectionTest#urlBarQuickActionsTest"],
+        bug = 2087040,
+        since = "2026-10",
+    )
+    @Critical
     @Test
     fun urlBarQuickActionsTest() {
-        FxNimbusHelper.updateAddressBarFocusModeStatus(false)
         val firstWebsite = mockWebServer.getGenericAsset(1)
         val secondWebsite = mockWebServer.getGenericAsset(2)
 
