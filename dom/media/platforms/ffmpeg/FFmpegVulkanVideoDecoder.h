@@ -119,10 +119,12 @@ struct FFmpegVulkanVideoDecoder {
                         AVCodecID aCodecID = AV_CODEC_ID_NONE);
   bool SelectVulkanDecoderPhysicalDevice(
       const StaticMutexAutoLock& aProofOfLock, const nsCString& aRendererNode);
-  bool VulkanCanDecodeFormat(AVCodecID aCodecID, unsigned aAvcodecVersion,
-                             AVBufferRef* aVulkanDeviceContext,
-                             const MediaByteBuffer* aExtraData,
-                             gfx::ColorDepth aColorDepth) const;
+  void CheckDecodeCapabilities(AVCodecID aCodecID,
+                               AVBufferRef* aVulkanDeviceContext,
+                               const MediaByteBuffer* aExtraData,
+                               gfx::ColorDepth aColorDepth);
+  bool VulkanCanDecodeFormat(AVCodecID aCodecID,
+                             unsigned aAvcodecVersion) const;
   uint32_t mNegotiatedCompositorDecoderVendorID = 0;
   uint32_t mNegotiatedCompositorDecoderDeviceID = 0;
   uint32_t mVulkanDriverVersion = 0;
@@ -130,6 +132,7 @@ struct FFmpegVulkanVideoDecoder {
       '\0',
   };
   bool mDecoderMatchesCompositor = false;
+  bool mDriverDistinctDpb = false;
   
   bool mForcedNvidiaBlockLinear = false;
   ~FFmpegVulkanVideoDecoder();
