@@ -700,7 +700,7 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
     const mozilla::layers::StackingContextHelper& aSc,
     mozilla::layers::RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, DisplaySVGGeometry* aItem,
-    bool aDryRun) {
+    bool aDryRun, bool aAxisAligned) {
   MOZ_ASSERT(StyleVisibility()->IsVisible());
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
@@ -716,7 +716,7 @@ WebRenderCommandsResult SVGGeometryFrame::CreateWebRenderCommands(
   
   
   const bool axisAligned =
-      !aSc.GetInheritedTransform().HasNonAxisAlignedTransform();
+      aAxisAligned && !aSc.GetInheritedTransform().HasNonAxisAlignedTransform();
 
   if (!shape.IsRect()) {
     if (!StaticPrefs::gfx_webrender_svg_shapes_ellipses()) {
