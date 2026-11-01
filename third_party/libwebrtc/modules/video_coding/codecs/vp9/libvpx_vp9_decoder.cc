@@ -277,6 +277,15 @@ int LibvpxVp9Decoder::ReturnFrame(const vpx_image_t* img,
   
   
   
+  if (img->bit_depth != 8 && img->bit_depth != 10) {
+    RTC_LOG(LS_ERROR) << "Unsupported bit depth produced by the decoder: "
+                      << img->bit_depth;
+    return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  }
+
+  
+  
+  
   scoped_refptr<Vp9FrameBufferPool::Vp9FrameBuffer> img_buffer(
       static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv));
 
