@@ -575,7 +575,7 @@ VideoReceiveStream2::GetReceiveCodecConfig() const {
   return receive_codecs;
 }
 
-bool VideoReceiveStream2::RegisterCodecsOnReceiver(
+void VideoReceiveStream2::RegisterCodecsOnReceiver(
     const std::vector<Decoder>& old_decoders,
     const std::vector<Decoder>& new_decoders) {
   
@@ -583,24 +583,15 @@ bool VideoReceiveStream2::RegisterCodecsOnReceiver(
   
   
   
-  bool removed_decoder_instance = false;
+  
   for (const Decoder& old_decoder : old_decoders) {
-    if (absl::c_linear_search(new_decoders, old_decoder)) {
-      continue;
-    }
-    if (video_receiver_.IsExternalDecoderRegistered(old_decoder.payload_type)) {
-      video_receiver_.RegisterExternalDecoder(nullptr,
-                                              old_decoder.payload_type);
-      removed_decoder_instance = true;
-    }
-    video_receiver_.DeregisterReceiveCodec(old_decoder.payload_type);
+    video_receiver_.RegisterExternalDecoder(nullptr, old_decoder.payload_type);
   }
+
+  video_receiver_.DeregisterReceiveCodecs();
 
   
   for (const Decoder& decoder : new_decoders) {
-    if (absl::c_linear_search(old_decoders, decoder)) {
-      continue;
-    }
     VideoDecoder::Settings settings;
     settings.set_codec_type(
         PayloadStringToCodecType(decoder.video_format.name));
@@ -610,8 +601,6 @@ bool VideoReceiveStream2::RegisterCodecsOnReceiver(
 
     video_receiver_.RegisterReceiveCodec(decoder.payload_type, settings);
   }
-
-  return removed_decoder_instance;
 }
 
 void VideoReceiveStream2::ConfigureCodecs() {
@@ -641,26 +630,19 @@ void VideoReceiveStream2::SetDecoders(std::vector<Decoder> decoders) {
   
   
   decode_queue_->PostTask([this, old_decoders = std::move(old_decoders),
-                           new_decoders = config_.decoders,
-                           task_safety_flag = task_safety_.flag()]() mutable {
+                           new_decoders = config_.decoders]() mutable {
     RTC_DCHECK_RUN_ON(&decode_sequence_checker_);
-    const bool removed_decoder_instance =
-        RegisterCodecsOnReceiver(old_decoders, new_decoders);
+    RegisterCodecsOnReceiver(old_decoders, new_decoders);
     active_decoders_ = std::move(new_decoders);
-    if (!removed_decoder_instance) {
-      return;
-    }
-    
-    
-    
-    call_->worker_thread()->PostTask(
-        SafeTask(std::move(task_safety_flag), [this] {
-          RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-          RequestKeyFrame(env_.clock().CurrentTime());
-        }));
   });
 
   rtp_video_stream_receiver_.SetReceiveCodecs(GetReceiveCodecConfig());
+
+  
+  
+  
+  
+  RequestKeyFrame(env_.clock().CurrentTime());
 }
 
 void VideoReceiveStream2::SetRawPayloadTypes(std::set<int> raw_payload_types) {

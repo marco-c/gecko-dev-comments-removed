@@ -899,7 +899,6 @@ TEST_P(VideoReceiveStream2Test,
                                              .AsLast()
                                              .Build());
   time_controller_.AdvanceTime(TimeDelta::Millis(100));
-  const int pli_packets = rtcp_packet_parser_.pli()->num_packets();
 
   
   VideoReceiveStreamInterface::Decoder new_decoder;
@@ -908,9 +907,6 @@ TEST_P(VideoReceiveStream2Test,
 
   video_receive_stream_->SetDecoders({new_decoder});
   time_controller_.AdvanceTime(TimeDelta::Millis(100));
-
-  
-  EXPECT_EQ(rtcp_packet_parser_.pli()->num_packets(), pli_packets + 1);
 
   
   
@@ -935,7 +931,7 @@ TEST_P(VideoReceiveStream2Test,
 
 
 
-TEST_P(VideoReceiveStream2Test, SetDecodersKeepsUnchangedDecoder) {
+TEST_P(VideoReceiveStream2Test, SetDecodersRecreatesUnchangedDecoder) {
   video_receive_stream_->Start();
   time_controller_.AdvanceTime(TimeDelta::Zero());
 
@@ -953,14 +949,6 @@ TEST_P(VideoReceiveStream2Test, SetDecodersKeepsUnchangedDecoder) {
                                              .AsLast()
                                              .Build());
   time_controller_.AdvanceTime(TimeDelta::Millis(100));
-  const int pli_packets = rtcp_packet_parser_.pli()->num_packets();
-
-  
-  
-  EXPECT_CALL(mock_decoder_factory_, Create).Times(0);
-  EXPECT_CALL(mock_decoder_, Release).Times(0);
-  EXPECT_CALL(mock_decoder_, Configure).Times(0);
-  EXPECT_CALL(mock_decoder_, Decode(_, _));
 
   
   
@@ -973,19 +961,21 @@ TEST_P(VideoReceiveStream2Test, SetDecodersKeepsUnchangedDecoder) {
   video_receive_stream_->SetDecoders(std::move(decoders));
   time_controller_.AdvanceTime(TimeDelta::Millis(100));
 
+  
+  EXPECT_CALL(mock_decoder_factory_,
+              Create(_, Field(&SdpVideoFormat::name, Eq("AV1"))));
+  EXPECT_CALL(mock_decoder_, Configure);
+  EXPECT_CALL(mock_decoder_, RegisterDecodeCompleteCallback);
+  EXPECT_CALL(mock_decoder_, Decode(_, _));
+
   video_receive_stream_->OnCompleteFrame(test::FakeFrameBuilder()
                                              .Id(1)
                                              .PayloadType(kAv1PayloadType)
                                              .Time(12345)
                                              .AsLast()
                                              .Build());
+
   time_controller_.AdvanceTime(TimeDelta::Millis(100));
-
-  
-  EXPECT_EQ(rtcp_packet_parser_.pli()->num_packets(), pli_packets);
-
-  
-  EXPECT_TRUE(testing::Mock::VerifyAndClearExpectations(&mock_decoder_));
 }
 
 TEST_P(VideoReceiveStream2Test, SetDecodersWhileStoppedUpdatesCodecs) {
