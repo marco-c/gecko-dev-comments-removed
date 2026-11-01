@@ -527,10 +527,6 @@ add_task(async function test_search_topsite_remove_engine() {
     await SearchService.getEngineByAlias(topSiteAlias)
   );
 
-  registerCleanupFunction(() => {
-    SearchService.restoreDefaultEngines();
-  });
-
   await SpecialPowers.spawn(
     browser,
     [numTopSites],
@@ -548,6 +544,10 @@ add_task(async function test_search_topsite_remove_engine() {
       );
     }
   );
+
+  
+  
+  SearchService.restoreDefaultEngines();
 
   BrowserTestUtils.removeTab(tab);
 });
