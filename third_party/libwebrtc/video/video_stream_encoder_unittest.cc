@@ -2099,8 +2099,15 @@ TEST_F(VideoStreamEncoderTest, DropsPendingFramesOnSlowEncode) {
   source.IncomingCapturedFrame(CreateFrame(1, nullptr));
   source.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
-  video_stream_encoder_->Stop();
   EXPECT_EQ(1, dropped_count);
+
+  
+  
+  source.IncomingCapturedFrame(CreateFrame(3, nullptr));
+  source.IncomingCapturedFrame(CreateFrame(3, nullptr));
+  WaitForEncodedFrame(3);
+  video_stream_encoder_->Stop();
+  EXPECT_EQ(2, dropped_count);
 }
 
 TEST_F(VideoStreamEncoderTest, DropsFramesOnBitrateOvershoot) {

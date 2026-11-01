@@ -1628,8 +1628,6 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
     log_stats = true;
   }
 
-  last_captured_timestamp_ = incoming_frame.ntp_time_ms();
-
   encoder_stats_observer_->OnIncomingFrame(incoming_frame.width(),
                                            incoming_frame.height());
   ++captured_frame_count_;
@@ -1637,6 +1635,10 @@ void VideoStreamEncoder::OnFrame(Timestamp post_time,
       cwnd_frame_drop_interval_ &&
       (cwnd_frame_counter_++ % cwnd_frame_drop_interval_.value() == 0);
   if (!queue_overload && !cwnd_frame_drop) {
+    
+    
+    
+    last_captured_timestamp_ = incoming_frame.ntp_time_ms();
     MaybePrepareVideoFrame(incoming_frame, post_time.us());
   } else {
     if (cwnd_frame_drop) {
