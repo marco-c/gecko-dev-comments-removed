@@ -1030,11 +1030,13 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
 
 
+
   const gfx::FilterDescription& EnsureUpdatedFilter() {
     bool isWriteOnly = IsWriteOnly() ||
                        (mCanvasElement && mCanvasElement->IsWriteOnly()) ||
                        (mOffscreenCanvas && mOffscreenCanvas->IsWriteOnly());
-    if (CurrentState().filterSourceGraphicTainted != isWriteOnly) {
+    if (!CurrentState().filterDescriptionUpToDate ||
+        CurrentState().filterSourceGraphicTainted != isWriteOnly) {
       
       
       
@@ -1181,6 +1183,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
     
     
     bool filterSourceGraphicTainted = false;
+    
+    bool filterDescriptionUpToDate = false;
     bool imageSmoothingEnabled = true;
 
     
