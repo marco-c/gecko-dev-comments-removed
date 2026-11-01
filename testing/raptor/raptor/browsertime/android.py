@@ -43,6 +43,9 @@ class BrowsertimeAndroid(PerftestAndroid, Browsertime):
     """
 
     def __init__(self, app, binary, activity=None, intent=None, **kwargs):
+        
+        
+        self._test_names = None
         super().__init__(
             app,
             binary,

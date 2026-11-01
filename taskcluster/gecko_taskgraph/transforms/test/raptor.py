@@ -584,6 +584,7 @@ def select_tasks_to_lambda(config, tasks):
         "jetstream3",
         "browsertime-power",
         "browsertime-trr-performance",
+        "nav-bench-m",
     ]
 
     
