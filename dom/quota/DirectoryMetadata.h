@@ -15,14 +15,16 @@ class nsIFile;
 
 namespace mozilla {
 
+struct Ok;
+
 template <typename V, typename E>
 class Result;
 
-}
+}  
 
 namespace mozilla::dom::quota {
 
-struct OriginStateMetadata;
+struct FullOriginMetadata;
 
 namespace DirectoryMetadataFlags {
 
@@ -33,6 +35,7 @@ enum : uint32_t {
   Accessed    = 1 << 1,
   Dirty       = 1 << 2,
   Persisted   = 1 << 3,
+  Encrypted   = 1 << 4,
 };
 
 
@@ -102,12 +105,16 @@ enum : uint32_t {
 
 
 
-Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
-    nsIBinaryInputStream& aStream);
+
+
+
+
+Result<Ok, nsresult> ReadDirectoryMetadataHeader(
+    nsIBinaryInputStream& aStream, FullOriginMetadata& aFullOriginMetadata);
 
 nsresult WriteDirectoryMetadataHeader(
     nsIBinaryOutputStream& aStream,
-    const OriginStateMetadata& aOriginStateMetadata);
+    const FullOriginMetadata& aFullOriginMetadata);
 
 }  
 

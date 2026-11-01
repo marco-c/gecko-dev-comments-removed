@@ -131,11 +131,12 @@ struct OriginStateMetadata {
         mPersisted(aPersisted),
         mDirty(aDirty) {}
 
-  uint32_t ToMetadataFlags() const {
+  uint32_t ToMetadataFlags(bool aIsEncrypted) const {
     return DirectoryMetadataFlags::Initialized |
            (mAccessed ? DirectoryMetadataFlags::Accessed : 0u) |
            (mDirty ? DirectoryMetadataFlags::Dirty : 0u) |
-           (mPersisted ? DirectoryMetadataFlags::Persisted : 0u);
+           (mPersisted ? DirectoryMetadataFlags::Persisted : 0u) |
+           (aIsEncrypted ? DirectoryMetadataFlags::Encrypted : 0u);
   }
 
   void FromMetadataFlags(uint32_t aFlags) {
@@ -218,6 +219,18 @@ struct FullOriginMetadata : OriginMetadata, OriginStateMetadata {
                static_cast<const OriginStateMetadata&>(aOther)) &&
            mClientUsages == aOther.mClientUsages &&
            mOriginUsage == aOther.mOriginUsage;
+  }
+
+  
+  
+  
+  uint32_t ToMetadataFlags() const {
+    return OriginStateMetadata::ToMetadataFlags(mIsEncrypted);
+  }
+
+  void FromMetadataFlags(uint32_t aFlags) {
+    OriginStateMetadata::FromMetadataFlags(aFlags);
+    mIsEncrypted = (aFlags & DirectoryMetadataFlags::Encrypted) != 0;
   }
 
   

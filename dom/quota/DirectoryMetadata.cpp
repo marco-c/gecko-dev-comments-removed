@@ -15,13 +15,11 @@
 
 namespace mozilla::dom::quota {
 
-Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
-    nsIBinaryInputStream& aStream) {
+Result<Ok, nsresult> ReadDirectoryMetadataHeader(
+    nsIBinaryInputStream& aStream, FullOriginMetadata& aFullOriginMetadata) {
   AssertIsOnIOThread();
 
-  OriginStateMetadata originStateMetadata;
-
-  QM_TRY_UNWRAP(originStateMetadata.mLastAccessTime,
+  QM_TRY_UNWRAP(aFullOriginMetadata.mLastAccessTime,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read64));
 
   QM_TRY_INSPECT(const bool& persistedByte,
@@ -35,10 +33,10 @@ Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
   
   
   if (rawFlags == 0) {
-    originStateMetadata.mAccessed = true;
-    originStateMetadata.mDirty = true;
+    aFullOriginMetadata.mAccessed = true;
+    aFullOriginMetadata.mDirty = true;
   } else {
-    originStateMetadata.FromMetadataFlags(rawFlags);
+    aFullOriginMetadata.FromMetadataFlags(rawFlags);
   }
 
   
@@ -46,31 +44,30 @@ Result<OriginStateMetadata, nsresult> ReadDirectoryMetadataHeader(
   
   
   
-  originStateMetadata.mPersisted = persistedByte;
+  aFullOriginMetadata.mPersisted = persistedByte;
 
-  QM_TRY_UNWRAP(originStateMetadata.mLastMaintenanceDate,
+  QM_TRY_UNWRAP(aFullOriginMetadata.mLastMaintenanceDate,
                 MOZ_TO_RESULT_INVOKE_MEMBER(aStream, Read32));
 
-  return originStateMetadata;
+  return Ok{};
 }
 
 nsresult WriteDirectoryMetadataHeader(
     nsIBinaryOutputStream& aStream,
-    const OriginStateMetadata& aOriginStateMetadata) {
+    const FullOriginMetadata& aFullOriginMetadata) {
   AssertIsOnIOThread();
 
-  QM_TRY(MOZ_TO_RESULT(aStream.Write64(aOriginStateMetadata.mLastAccessTime)));
+  QM_TRY(MOZ_TO_RESULT(aStream.Write64(aFullOriginMetadata.mLastAccessTime)));
 
-  QM_TRY(MOZ_TO_RESULT(aStream.WriteBoolean(aOriginStateMetadata.mPersisted)));
+  QM_TRY(MOZ_TO_RESULT(aStream.WriteBoolean(aFullOriginMetadata.mPersisted)));
 
   
   
   
+  QM_TRY(MOZ_TO_RESULT(aStream.Write32(aFullOriginMetadata.ToMetadataFlags())));
+
   QM_TRY(
-      MOZ_TO_RESULT(aStream.Write32(aOriginStateMetadata.ToMetadataFlags())));
-
-  QM_TRY(MOZ_TO_RESULT(
-      aStream.Write32(aOriginStateMetadata.mLastMaintenanceDate)));
+      MOZ_TO_RESULT(aStream.Write32(aFullOriginMetadata.mLastMaintenanceDate)));
 
   return NS_OK;
 }
