@@ -182,9 +182,7 @@ class ParseError(Exception):
     """error parsing conditional expression"""
 
 
-
-
-@functools.lru_cache(maxsize=None)  
+@functools.cache
 def scan(text):
     if not ExpressionParser.scanner:
         ExpressionParser.scanner = re.Scanner([
@@ -192,7 +190,7 @@ def scan(text):
             (r"true|false", bool_token),
             (r"[a-zA-Z_]\w*", ident_token),
             (r"[0-9]+", int_token),
-            (r'("[^"]*")|(\'[^\']*\')', string_token),
+            (r'"[^"]*"|\'[^\']*\'', string_token),
             (r"==", eq_op_token()),
             (r"!=", neq_op_token()),
             (r"<=", le_op_token()),
@@ -317,9 +315,7 @@ class ExpressionParser:
     __call__ = parse
 
 
-
-
-@functools.lru_cache(maxsize=None)  
+@functools.cache
 def parse(text, strict=False, **values):
     """
     Parse and evaluate a boolean expression.
