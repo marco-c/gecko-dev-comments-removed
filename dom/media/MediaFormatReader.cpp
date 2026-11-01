@@ -2866,7 +2866,18 @@ nsresult MediaFormatReader::ResetDecode(const TrackSet& aTracks) {
   MOZ_ASSERT(OnTaskQueue());
   LOGV("");
 
+  
+  
+  
   mSeekPromise.RejectIfExists(NS_OK, __func__);
+  if (mVideo.mSeekRequest.Exists() && !mVideo.mTimeThreshold) {
+    mVideo.mSeekRequest.Disconnect();
+    ScheduleUpdate(TrackInfo::kVideoTrack);
+  }
+  if (mAudio.mSeekRequest.Exists() && !mAudio.mTimeThreshold) {
+    mAudio.mSeekRequest.Disconnect();
+    ScheduleUpdate(TrackInfo::kAudioTrack);
+  }
   
   
   if (aTracks.contains(TrackInfo::kVideoTrack)) {
