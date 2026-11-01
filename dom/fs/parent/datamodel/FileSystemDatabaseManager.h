@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGER_H_
 #define DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGER_H_
 
@@ -218,6 +216,14 @@ class FileSystemDatabaseManager {
 
   virtual nsresult MergeFileId(const EntryId& aEntryId, const FileId& aFileId,
                                bool aAbort) = 0;
+
+  
+
+
+
+
+
+  virtual nsresult RemoveFileIdsWithoutMainFile() = 0;
 
   
 

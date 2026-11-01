@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGERVERSION002_H_
 #define DOM_FS_PARENT_DATAMODEL_FILESYSTEMDATABASEMANAGERVERSION002_H_
 
@@ -57,6 +55,8 @@ class FileSystemDatabaseManagerVersion002
 
   nsresult MergeFileId(const EntryId& aEntryId, const FileId& aFileId,
                        bool aAbort) override;
+
+  nsresult RemoveFileIdsWithoutMainFile() override;
 
  protected:
   Result<bool, QMResult> DoesFileIdExist(const FileId& aFileId) const override;

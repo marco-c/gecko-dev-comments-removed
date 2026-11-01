@@ -2,15 +2,16 @@
 
 
 
-
-
 #ifndef DOM_FS_TEST_GTEST_PARENT_FILESYSTEMPARENTTEST_H_
 #define DOM_FS_TEST_GTEST_PARENT_FILESYSTEMPARENTTEST_H_
 
 #include "mozilla/dom/FileSystemHelpers.h"
 #include "mozilla/dom/FileSystemTypes.h"
 #include "mozilla/dom/quota/test/QuotaManagerDependencyFixture.h"
+#include "nsCOMPtr.h"
 #include "nsStringFwd.h"
+
+class nsIFile;
 
 namespace mozilla::dom {
 
@@ -64,7 +65,12 @@ class FileSystemParentTest : public quota::test::QuotaManagerDependencyFixture {
 
   void UnlockExclusive(const EntryId& aEntryId);
 
+  void LockShared(const EntryId& aEntryId, FileId& aFileId);
+
   void CreateNewEmptyFile(EntryId& aEntryId);
+
+  void GetFileObject(const EntryId& aEntryId, const FileId& aFileId,
+                     nsCOMPtr<nsIFile>& aFile);
 
   void WriteDataToFile(EntryId& aEntryId, const nsCString& aData);
 
