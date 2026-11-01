@@ -94,6 +94,32 @@ add_task(function test_provider_precedence() {
 
 
 
+add_task(function test_tab_exclusion_beats_inclusion() {
+  setUpRules();
+  const principal = makePrincipal(INCLUDED);
+  IPPTabRules.setTabRule(IPPPrincipalRules.EXCLUDED, 1);
+
+  Assert.equal(
+    IPPSiteRuleManager.getRule(principal, 1),
+    IPPPrincipalRules.EXCLUDED,
+    "the tab exclusion beats the inclusion list"
+  );
+  Assert.equal(
+    IPPSiteRuleManager.getRule(principal, 2),
+    IPPPrincipalRules.INCLUDED,
+    "other tabs still follow the inclusion list"
+  );
+
+  IPPTabRules.observe(
+    { parent: null, browserId: 1 },
+    "browsing-context-discarded",
+    "discard"
+  );
+});
+
+
+
+
 
 add_task(function test_canManage() {
   setUpRules();
