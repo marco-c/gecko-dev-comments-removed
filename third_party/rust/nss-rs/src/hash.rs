@@ -15,6 +15,7 @@ use crate::{
 
 
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum HashAlgorithm {
     SHA2_256,
     SHA2_384,

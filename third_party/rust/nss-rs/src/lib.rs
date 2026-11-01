@@ -193,12 +193,6 @@ pub fn init() -> Res<()> {
 }
 
 
-pub const TEST_FIXTURE_DB: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test-fixture/db");
-
-
-pub const TEST_FIXTURE_DB_FIPS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test-fixture/db-fips");
-
-
 
 
 
