@@ -24,6 +24,7 @@
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/experiments/retransmit_flushed_packets_settings.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -55,6 +56,9 @@ class RtpPacketHistory {
   static constexpr int kMinPacketDurationRtt = 3;
   
   static constexpr int kPacketCullingDelayFactor = 3;
+  
+  
+  static constexpr TimeDelta kDefaultRtt = TimeDelta::Millis(200);
 
   RtpPacketHistory(const Environment& env, PaddingMode padding_mode);
 
@@ -128,7 +132,8 @@ class RtpPacketHistory {
     StoredPacket() = default;
     StoredPacket(std::unique_ptr<RtpPacketToSend> packet,
                  Timestamp send_time,
-                 uint64_t insert_order);
+                 uint64_t insert_order,
+                 Timestamp earliest_allowed_retransmission);
     StoredPacket(StoredPacket&&);
     StoredPacket& operator=(StoredPacket&&);
     ~StoredPacket();
@@ -141,21 +146,27 @@ class RtpPacketHistory {
     Timestamp send_time() const { return send_time_; }
     void set_send_time(Timestamp value) { send_time_ = value; }
 
+    Timestamp earliest_allowed_retransmission() const {
+      return earliest_allowed_retransmission_;
+    }
+
     
     std::unique_ptr<RtpPacketToSend> packet_;
 
     
-    bool pending_transmission_;
+    bool pending_transmission_ = false;
 
    private:
+    
+    Timestamp earliest_allowed_retransmission_ = Timestamp::MinusInfinity();
     Timestamp send_time_ = Timestamp::Zero();
 
     
     
-    uint64_t insert_order_;
+    uint64_t insert_order_ = 0;
 
     
-    size_t times_retransmitted_;
+    size_t times_retransmitted_ = 0;
   };
 
   
@@ -174,6 +185,9 @@ class RtpPacketHistory {
 
   Clock* const clock_;
   const PaddingMode padding_mode_;
+  
+  
+  const RetransmitFlushedPacketsSettings retransmit_flushed_packets_settings_;
   mutable Mutex lock_;
   size_t number_to_store_ RTC_GUARDED_BY(lock_);
   StorageMode mode_ RTC_GUARDED_BY(lock_);
