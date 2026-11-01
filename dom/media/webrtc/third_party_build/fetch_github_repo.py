@@ -63,6 +63,10 @@ def fetch_repo(github_path, force_fetch, tar_path):
 
     
     
+    run_git("git config gc.autoDetach false", github_path)
+
+    
+    
     run_git("git fetch --all", github_path)
 
     
