@@ -210,10 +210,6 @@ impl Parse for Content {
                         "no-open-quote" => generics::ContentItem::NoOpenQuote,
                         "no-close-quote" => generics::ContentItem::NoCloseQuote,
                         #[cfg(feature = "gecko")]
-                        "-moz-alt-content" if context.in_ua_sheet() => {
-                            generics::ContentItem::MozAltContent
-                        },
-                        #[cfg(feature = "gecko")]
                         "-moz-label-content" if context.chrome_rules_enabled() => {
                             generics::ContentItem::MozLabelContent
                         },
@@ -224,7 +220,11 @@ impl Parse for Content {
                         }
                     });
                 },
-                Token::Delim('/') if alt_start.is_none() && !items.is_empty() => {
+                Token::Delim('/')
+                    if alt_start.is_none()
+                        && !items.is_empty()
+                        && crate::pref!("layout.css.content.alt-text.enabled", gecko = true) =>
+                {
                     alt_start = Some(items.len());
                 },
                 _ => return Err(ParseError::unexpected_token()),

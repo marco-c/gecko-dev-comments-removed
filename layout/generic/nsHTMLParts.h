@@ -42,11 +42,6 @@ class nsBlockFrame;
 nsBlockFrame* NS_NewBlockFrame(mozilla::PresShell* aPresShell,
                                mozilla::ComputedStyle* aStyle);
 
-
-
-nsresult NS_NewAttributeContent(nsNodeInfoManager* aNodeInfoManager,
-                                nsAtom* aAttrName, nsIContent** aResult);
-
 nsIFrame* NS_NewBRFrame(mozilla::PresShell* aPresShell,
                         mozilla::ComputedStyle* aStyle);
 

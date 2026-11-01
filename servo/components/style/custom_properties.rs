@@ -587,6 +587,10 @@ impl VariableValue {
         Self::from_token(Token::Ident(ident.into()), url_data)
     }
 
+    pub(crate) fn string(s: &str, url_data: &UrlExtraData) -> Self {
+        Self::from_token(Token::QuotedString(CowRcStr::from(s)), url_data)
+    }
+
     
     pub(crate) fn pixels(number: f32, url_data: &UrlExtraData) -> Self {
         

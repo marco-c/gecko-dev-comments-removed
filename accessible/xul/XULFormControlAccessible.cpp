@@ -152,19 +152,9 @@ bool XULButtonAccessible::AreItemsOperable() const {
 }
 
 bool XULButtonAccessible::IsAcceptableChild(nsIContent* aEl) const {
-  if (
-      
-      
-      aEl->IsXULElement(nsGkAtoms::menupopup)) {
+  
+  if (aEl->IsAnyOfXULElements(nsGkAtoms::menupopup, nsGkAtoms::label)) {
     return true;
-  }
-  if (aEl->IsXULElement(nsGkAtoms::label)) {
-    
-    
-    
-    return aEl->HasChildren() ||
-           !aEl->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::value,
-                                          nsGkAtoms::_empty, eCaseMatters);
   }
   if (!aEl->IsText()) {
     return false;

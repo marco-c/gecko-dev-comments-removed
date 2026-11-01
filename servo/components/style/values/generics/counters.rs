@@ -306,9 +306,6 @@ pub enum GenericContentItem<I> {
     
     NoCloseQuote,
     
-    #[cfg(feature = "gecko")]
-    MozAltContent,
-    
     
     
     #[cfg(feature = "gecko")]

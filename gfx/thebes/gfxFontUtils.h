@@ -683,7 +683,7 @@ class gfxFontUtils {
   
   static mozilla::ServoStyleSet* CurrentServoStyleSet();
 
-  static void AssertSafeThreadOrServoFontMetricsLocked()
+  static void AssertSafeThreadOrServoFFILocked()
 #ifdef DEBUG
       ;
 #else

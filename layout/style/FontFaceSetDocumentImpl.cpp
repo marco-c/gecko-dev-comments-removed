@@ -142,7 +142,7 @@ uint64_t FontFaceSetDocumentImpl::GetInnerWindowID() {
 
 FontVisibilityProvider* FontFaceSetDocumentImpl::GetFontVisibilityProvider()
     const {
-  mozilla::AssertIsMainThreadOrServoFontMetricsLocked();
+  mozilla::AssertIsMainThreadOrServoFFILocked();
   if (!mDocument) {
     return nullptr;
   }
@@ -195,14 +195,21 @@ TimeStamp FontFaceSetDocumentImpl::GetNavigationStartTimeStamp() {
   return navStart;
 }
 
+
+
+
+
+
 void FontFaceSetDocumentImpl::EnsureReady() {
   MOZ_ASSERT(NS_IsMainThread());
+  {
+    RecursiveMutexAutoLock lock(mMutex);
+    if (mStatus == FontFaceSetLoadStatus::Loading) {
+      return;
+    }
+  }
 
-  
-  
-  
-  
-  if (!ReadyPromiseIsPending() && mDocument) {
+  if (mDocument) {
     mDocument->FlushPendingNotifications(FlushType::Layout);
   }
 }

@@ -429,7 +429,7 @@ class ServoStyleSet {
     
     
     
-    AssertIsMainThreadOrServoFontMetricsLocked();
+    AssertIsMainThreadOrServoFFILocked();
 
     mPostTraversalTasks.AppendElement(std::move(aTask));
   }

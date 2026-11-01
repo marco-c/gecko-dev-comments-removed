@@ -33,12 +33,6 @@ let ignoreList = [
     isFromDevTools: false,
   },
   
-  {
-    sourceName: /\b(html)\.css$/i,
-    errorMessage: /Error in parsing value for ‘content:/i,
-    isFromDevTools: false,
-  },
-  
   
   {
     sourceName: /\bmegalist-agent\.css$/i,

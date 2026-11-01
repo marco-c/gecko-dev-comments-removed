@@ -85,7 +85,8 @@ pub struct Device {
     
     
     body_text_color: RwLock<AbsoluteColor>,
-
+    
+    submit_string: Box<str>,
     
     extra: ExtraDeviceData,
 }
@@ -303,5 +304,11 @@ impl Device {
     #[inline]
     pub fn unzoom_text(&self, size: Length) -> Length {
         size.scale_by(1. / self.text_zoom())
+    }
+
+    
+    #[inline]
+    pub fn submit_string(&self) -> &str {
+        &self.submit_string
     }
 }

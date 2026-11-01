@@ -59,7 +59,7 @@ already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
     const nsFont& aFont, const nsFontMetrics::Params& aParams) {
   
   
-  mozilla::AssertIsMainThreadOrServoFontMetricsLocked();
+  mozilla::AssertIsMainThreadOrServoFFILocked();
 
   nsAtom* language = aParams.language && !aParams.language->IsEmpty()
                          ? aParams.language
