@@ -156,8 +156,12 @@ const gfxFontEntry::ScriptRange gfxPlatformFontList::sComplexScriptRanges[] = {
 };
 
 static const char* kObservedPrefs[] = {
-    "font.", "font.name-list.", "intl.accept_languages",  
-    "browser.display.use_document_fonts.icon_font_allowlist", nullptr};
+    "font.",
+    "font.name-list.",
+    "intl.accept_languages",  
+    "browser.display.use_document_fonts.icon_font_allowlist",
+    "gfx.font_rendering.fontations.enabled",
+    nullptr};
 
 static const char kFontSystemWhitelistPref[] = "font.system.whitelist";
 
@@ -190,9 +194,14 @@ class gfxFontListPrefObserver final : public nsIObserver {
 static void FontListPrefChanged(const char* aPref, void* aData = nullptr) {
   
   
-  gfxPlatformFontList::PlatformFontList()->ClearLangGroupPrefFonts();
-  gfxPlatformFontList::PlatformFontList()->LoadIconFontOverrideList();
-  gfxFontCache::GetCache()->Flush();
+  auto* pfl = gfxPlatformFontList::PlatformFontList();
+  if (aPref && !strcmp(aPref, "gfx.font_rendering.fontations.enabled")) {
+    pfl->UpdateFontList(true);
+  } else {
+    pfl->ClearLangGroupPrefFonts();
+    pfl->LoadIconFontOverrideList();
+    gfxFontCache::GetCache()->Flush();
+  }
 }
 
 static gfxFontListPrefObserver* gFontListPrefObserver = nullptr;

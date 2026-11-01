@@ -829,7 +829,7 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 #if MOZ_FONTATIONS
   
   
-  if (StaticPrefs::gfx_font_rendering_fontations_enabled_AtStartup()) {
+  if (StaticPrefs::gfx_font_rendering_fontations_enabled()) {
     SkrifaFontRef* skf = skrifa_font_new(fontData->Data(), fontData->Length());
     if (skf) {
       
@@ -1315,6 +1315,11 @@ void gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry) {
     
     
     RegisterStrongMemoryReporter(MakeAndAddRef<MemoryReporter>());
+
+#if MOZ_FONTATIONS
+    Preferences::RegisterCallback(PrefChangedCallback,
+                                  "gfx.font_rendering.fontations.enabled");
+#endif
   }
 
   
@@ -1395,6 +1400,11 @@ gfxFontEntry* gfxUserFontSet::UserFontCache::GetFont(
 
 void gfxUserFontSet::UserFontCache::Shutdown() {
   if (sUserFonts) {
+#if MOZ_FONTATIONS
+    Preferences::UnregisterCallback(PrefChangedCallback,
+                                    "gfx.font_rendering.fontations.enabled");
+#endif
+
     delete sUserFonts;
     sUserFonts = nullptr;
   }

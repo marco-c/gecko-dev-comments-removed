@@ -366,6 +366,16 @@ class gfxUserFontSet {
     
     static void Shutdown();
 
+#if MOZ_FONTATIONS
+    static void PrefChangedCallback(const char* aPref, void* aClosure) {
+      if (!strcmp(aPref, "gfx.font_rendering.fontations.enabled")) {
+        if (sUserFonts) {
+          sUserFonts->Clear();
+        }
+      }
+    }
+#endif
+
     
     class MemoryReporter final : public nsIMemoryReporter {
      private:
