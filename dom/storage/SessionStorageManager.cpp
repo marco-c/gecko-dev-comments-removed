@@ -662,6 +662,11 @@ void SessionStorageManager::ClearStorages(
 nsresult SessionStorageManager::Observe(
     const char* aTopic, const nsAString& aOriginAttributesPattern,
     const nsACString& aOriginScope) {
+  
+  
+  
+  RefPtr<SessionStorageManager> kungFuDeathGrip = this;
+
   OriginAttributesPattern pattern;
   if (!pattern.Init(aOriginAttributesPattern)) {
     NS_ERROR("Cannot parse origin attributes pattern");
