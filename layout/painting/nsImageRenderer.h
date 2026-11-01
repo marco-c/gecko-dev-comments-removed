@@ -112,7 +112,17 @@ class nsImageRenderer {
 
 
 
-  bool PrepareImage();
+
+
+
+  struct PositionParams {
+    
+    const nsStyleImageLayers::Layer& mLayer;
+    const nsRect& mBorderArea;
+    const nsRect& mBackgroundClipRect;
+  };
+  bool PrepareImage(
+      const mozilla::Maybe<PositionParams>& aPositionParams = Nothing{});
 
   
 
@@ -291,6 +301,9 @@ class nsImageRenderer {
 
   already_AddRefed<gfxDrawable> DrawableForElement(const nsRect& aImageRect,
                                                    gfxContext& aContext);
+
+  bool ImageIsDefinitelyNotVisible(const PositionParams& aPositionParams,
+                                   imgRequestProxy& aRequest);
 
   nsIFrame* mForFrame;
   const mozilla::StyleImage* mImage;
