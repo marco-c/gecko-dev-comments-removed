@@ -302,6 +302,10 @@ class MouseInput : public InputData {
       PRIMARY_BUTTON,
       MIDDLE_BUTTON,
       SECONDARY_BUTTON,
+      
+      X1_BUTTON,
+      
+      X2_BUTTON,
       NONE
   ));
   
