@@ -2222,7 +2222,15 @@ pref("browser.newtabpage.activity-stream.telemetry.privatePing.enabled", true);
 
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.redactNewtabPing.enabled", true);
 
-pref("browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs", 5000);
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.minSubmissionDelayMs", 1000);
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs", 6000);
+
+
+
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.dwellTime.enabled", false);
+
+
+pref("browser.newtabpage.activity-stream.telemetry.privatePing.dwellTime.noiseScale", "0.05");
 
   
 pref("browser.newtabpage.activity-stream.telemetry.privatePing.inferredInterests.enabled", false);
