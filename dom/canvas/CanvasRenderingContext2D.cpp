@@ -1078,10 +1078,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
     ImplCycleCollectionUnlink(state.gradientStyles[Style::FILL]);
     if (auto* autoSVGFiltersObserver = state.autoSVGFiltersObserver.get()) {
       
-
-
-
-
+      
+      
       autoSVGFiltersObserver->SetIsActive(false);
     }
     ImplCycleCollectionUnlink(state.autoSVGFiltersObserver);
