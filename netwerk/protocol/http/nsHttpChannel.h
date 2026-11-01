@@ -556,6 +556,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult SetupByteRangeRequest(int64_t partialLen);
   void UntieByteRangeRequest();
   void UntieValidationRequest();
+  
+  
+  
+  void DiscardCacheEntryCheckState();
   [[nodiscard]] nsresult OpenCacheInputStream(nsICacheEntry* cacheEntry,
                                               bool startBuffering);
 
@@ -882,6 +886,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsCOMPtr<nsITimer> mCacheWaitTimer;
+  
+  
+  
+  
+  
+  Mutex mCacheWaitLock{"nsHttpChannel::mCacheWaitLock"};
+  
+  
   
   
   bool mCacheWaitTimedOut{false};

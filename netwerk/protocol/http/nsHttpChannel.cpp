@@ -3754,6 +3754,13 @@ nsresult nsHttpChannel::ContinueProcessNormal(nsresult rv) {
   
   StoreCachedContentIsPartial(false);
 
+  
+  
+  
+  mAvailableCachedAltDataType.Truncate();
+  StoreDeliveringAltData(false);
+  mAltDataLength = -1;
+
   UpdateInhibitPersistentCachingFlag();
 
   
@@ -5249,6 +5256,28 @@ void nsHttpChannel::UntieValidationRequest() {
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
+void nsHttpChannel::DiscardCacheEntryCheckState() {
+  StoreCachedContentIsValid(CachedContentValidity::Invalid);
+
+  if (mDidReval) {
+    LOG(("  Removing conditional request headers"));
+    UntieValidationRequest();
+    mDidReval = false;
+  }
+
+  if (LoadCachedContentIsPartial()) {
+    LOG(("  Removing byte range request headers"));
+    UntieByteRangeRequest();
+    StoreCachedContentIsPartial(false);
+  }
+
+  mCachedResponseHead = nullptr;
+  mCacheInputStream.CloseAndRelease();
+  mAvailableCachedAltDataType.Truncate();
+  StoreDeliveringAltData(false);
+  mAltDataLength = -1;
+}
+
 NS_IMETHODIMP
 nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
   nsresult rv = NS_OK;
@@ -5257,6 +5286,11 @@ nsHttpChannel::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* aResult) {
                             Flow::FromPointer(this));
   LOG(("nsHttpChannel::OnCacheEntryCheck enter [channel=%p entry=%p]", this,
        entry));
+
+  
+  
+  
+  MutexAutoLock lock(mCacheWaitLock);
 
   if (mCacheWaitTimedOut) {
     LOG(("  cache entry check arrived after backstop timeout, declining"));
@@ -5743,21 +5777,7 @@ nsresult nsHttpChannel::OnNormalCacheEntryAvailable(nsICacheEntry* aEntry,
   if (NS_FAILED(aEntryStatus) || aNew) {
     
     
-    StoreCachedContentIsValid(CachedContentValidity::Invalid);
-
-    
-    
-    if (mDidReval) {
-      LOG(("  Removing conditional request headers"));
-      UntieValidationRequest();
-      mDidReval = false;
-    }
-
-    if (LoadCachedContentIsPartial()) {
-      LOG(("  Removing byte range request headers"));
-      UntieByteRangeRequest();
-      StoreCachedContentIsPartial(false);
-    }
+    DiscardCacheEntryCheckState();
 
     if (mLoadFlags & LOAD_ONLY_FROM_CACHE) {
       
@@ -12345,17 +12365,21 @@ nsresult nsHttpChannel::OnCacheWaitTimeout() {
   }
 
   LOG(("  cache entry wait timed out, forcing network [this=%p]", this));
-  mCacheWaitTimedOut = true;
+  {
+    
+    MutexAutoLock lock(mCacheWaitLock);
+    mCacheWaitTimedOut = true;
+  }
 
   
   
   
   StoreWaitForCacheEntry(LoadWaitForCacheEntry() & ~WAIT_FOR_CACHE_ENTRY);
 
-  mCacheInputStream.CloseAndRelease();
-  mAvailableCachedAltDataType.Truncate();
-  StoreDeliveringAltData(false);
-  mAltDataLength = -1;
+  
+  
+  
+  DiscardCacheEntryCheckState();
 
   nsresult rv = TriggerNetwork();
   if (NS_FAILED(rv)) {
