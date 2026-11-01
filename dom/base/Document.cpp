@@ -4337,13 +4337,6 @@ static PermissionsPolicy* GetPermissionsPolicyFromElement(Element* aElement) {
 }
 
 nsresult Document::InitDocPolicy(nsIChannel* aChannel) {
-  
-  
-  
-  if (!StaticPrefs::dom_text_fragments_enabled()) {
-    return NS_OK;
-  }
-
   nsCOMPtr<nsIHttpChannel> httpChannel;
   nsresult rv = GetHttpChannelHelper(aChannel, getter_AddRefs(httpChannel));
   if (NS_WARN_IF(NS_FAILED(rv))) {

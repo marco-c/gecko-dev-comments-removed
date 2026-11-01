@@ -10,7 +10,6 @@ const PSEUDO_PREF = "devtools.inspector.show_pseudo_elements";
 
 add_task(async function () {
   await pushPref(PSEUDO_PREF, true);
-  await pushPref("dom.text_fragments.enabled", true);
   await pushPref("layout.css.modern-range-pseudos.enabled", true);
   await pushPref("dom.select.customizable_select.enabled", true);
   await pushPref("full-screen-api.transition-duration.enter", "0 0");
@@ -508,6 +507,11 @@ async function testCustomizableSelect(inspector, view) {
   await checkRuleViewContent(view, [
     {
       header: "Pseudo-elements",
+    },
+    {
+      selector: `#customizable-select::picker(select)`,
+      ancestorRulesData: null,
+      declarations: [{ name: "border", value: "1px solid purple" }],
     },
     {
       selector: `#customizable-select::picker-icon`,
