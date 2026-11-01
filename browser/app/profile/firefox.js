@@ -3819,6 +3819,8 @@ pref("browser.ipProtection.userEnableCount", 0);
 
 pref("browser.ipProtection.everOpenedPanel", false);
 
+pref("browser.ipProtection.openedPanelSince160", false);
+
 
 
 
