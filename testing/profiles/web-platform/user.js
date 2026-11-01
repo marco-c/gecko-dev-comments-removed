@@ -20,6 +20,9 @@ user_pref("browser.sessionstore.resume_from_crash", false);
 
 user_pref("browser.toolbars.bookmarks.visibility", "never");
 
+
+user_pref("dom.confirm_repost.testing.always_accept", true);
+
 user_pref("dom.testing.testutils.enabled", true);
 
 
