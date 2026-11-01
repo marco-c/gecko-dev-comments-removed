@@ -765,7 +765,7 @@ bool IDBObjectStore::DeserializeValue(
   
   
   return JS_ReadStructuredClone(
-      aCx, aCloneReadInfo.Data(), JS_STRUCTURED_CLONE_VERSION,
+      aCx, aCloneReadInfo.Data(),
       JS::StructuredCloneScope::DifferentProcessForIndexedDB, aValue,
       JS::CloneDataPolicy(), &callbacks, &aCloneReadInfo);
 }
