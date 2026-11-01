@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_windowsdllblocklist_h
 #define mozilla_windowsdllblocklist_h
 
@@ -21,7 +20,7 @@ enum DllBlocklistInitFlags {
   eDllBlocklistInitFlagIsChildProcess = 1 << 0,
   eDllBlocklistInitFlagWasBootstrapped = 1 << 1,
   eDllBlocklistInitFlagIsUtilityProcess = 1 << 2,
-  eDllBlocklistInitFlagIsSocketProcess = 1 << 3,
+  
   eDllBlocklistInitFlagIsGPUProcess = 1 << 4,
   eDllBlocklistInitFlagIsGMPluginProcess = 1 << 5,
   eDllBlocklistInitFlagIsRDDProcess = 1 << 6,
@@ -31,8 +30,6 @@ inline void SetDllBlocklistProcessTypeFlags(uint32_t& aFlags,
                                             GeckoProcessType aProcessType) {
   if (aProcessType == GeckoProcessType_Utility) {
     aFlags |= eDllBlocklistInitFlagIsUtilityProcess;
-  } else if (aProcessType == GeckoProcessType_Socket) {
-    aFlags |= eDllBlocklistInitFlagIsSocketProcess;
   } else if (aProcessType == GeckoProcessType_GPU) {
     aFlags |= eDllBlocklistInitFlagIsGPUProcess;
   } else if (aProcessType == GeckoProcessType_GMPlugin) {

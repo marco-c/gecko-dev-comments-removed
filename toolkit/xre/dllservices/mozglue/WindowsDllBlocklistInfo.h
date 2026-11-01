@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_WindowsDllBlocklistInfo_h
 #define mozilla_WindowsDllBlocklistInfo_h
 
@@ -25,7 +23,7 @@ enum DllBlockInfoFlags : uint32_t {
   BROWSER_PROCESS_ONLY = 1 << 2,
   REDIRECT_TO_NOOP_ENTRYPOINT = 1 << 3,
   UTILITY_PROCESSES_ONLY = 1 << 4,
-  SOCKET_PROCESSES_ONLY = 1 << 5,
+  
   GPU_PROCESSES_ONLY = 1 << 6,
   GMPLUGIN_PROCESSES_ONLY = 1 << 7,
   RDD_PROCESSES_ONLY = 1 << 8,

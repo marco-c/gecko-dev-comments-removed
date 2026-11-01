@@ -2,8 +2,6 @@
 
 
 
-
-
 #include <windows.h>
 #include <winternl.h>
 
@@ -174,17 +172,6 @@ TEST(TestDllBlocklist, AllowDllByVersion)
 TEST(TestDllBlocklist, GPUProcessOnly_AllowInMainProcess)
 {
   constexpr auto kLeafName = u"TestDllBlocklist_GPUProcessOnly.dll"_ns;
-  nsString dllPath = GetFullPath(kLeafName);
-
-  nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
-
-  EXPECT_TRUE(!!hDll);
-  EXPECT_TRUE(!!::GetModuleHandleW(kLeafName.get()));
-}
-
-TEST(TestDllBlocklist, SocketProcessOnly_AllowInMainProcess)
-{
-  constexpr auto kLeafName = u"TestDllBlocklist_SocketProcessOnly.dll"_ns;
   nsString dllPath = GetFullPath(kLeafName);
 
   nsModuleHandle hDll(::LoadLibraryW(dllPath.get()));
