@@ -2543,6 +2543,11 @@ nsresult nsSHistory::LoadEntry(BrowsingContext* aSourceBrowsingContext,
 
   
 
+  MOZ_ASSERT(mIndex < Length(),
+             "Previous entry index outside of entries array");
+  if (mIndex < 0 || mIndex >= Length()) {
+    return NS_ERROR_FAILURE;
+  }
   RefPtr<SessionHistoryEntry> prevEntry = mEntries[mIndex];
   RefPtr<SessionHistoryEntry> nextEntry = mEntries[aIndex];
   if (!nextEntry || !prevEntry) {
