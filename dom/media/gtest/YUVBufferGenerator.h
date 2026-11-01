@@ -9,9 +9,11 @@
 #include <cstdint>
 
 #include "ImageContainer.h"
+#include "ImagePixelFormat.h"
 #include "Point.h"  
 #include "Rect.h"   
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/gfx/Types.h"
 #include "nsTArray.h"
 
 
@@ -21,7 +23,10 @@ class YUVBufferGenerator {
     uint8_t mY;
     uint8_t mCb;
     uint8_t mCr;
+    uint8_t mA;
   };
+
+  enum class Alpha : bool { No, Yes };
 
   enum class ChannelColorIndex : std::size_t {
     Black,
@@ -31,9 +36,9 @@ class YUVBufferGenerator {
   
   
   inline static constexpr ChannelColor kChannelColors[] = {
-      {0x10, 0x80, 0x80},  
-      {0xEB, 0x80, 0x80},  
-      {0x51, 0x5A, 0xF0},  
+      {0x10, 0x80, 0x80, 0xFF},  
+      {0xEB, 0x80, 0x80, 0xFF},  
+      {0x51, 0x5A, 0xF0, 0xFF},  
   };
 
   bool Init(
@@ -46,12 +51,30 @@ class YUVBufferGenerator {
       const ChannelColor& aColor =
           kChannelColors[static_cast<std::size_t>(ChannelColorIndex::Black)]);
   mozilla::gfx::IntSize GetSize() const;
-  already_AddRefed<mozilla::layers::Image> GenerateI420Image();
-  already_AddRefed<mozilla::layers::Image> GenerateNV12Image();
-  already_AddRefed<mozilla::layers::Image> GenerateNV21Image();
+
+  already_AddRefed<mozilla::layers::Image> GenerateImage(
+      mozilla::ImagePixelFormat aFormat);
+  already_AddRefed<mozilla::layers::Image> GeneratePlanarImage(
+      mozilla::gfx::ChromaSubsampling aSubsampling,
+      mozilla::gfx::ColorDepth aDepth = mozilla::gfx::ColorDepth::COLOR_8,
+      Alpha aAlpha = Alpha::No);
+  already_AddRefed<mozilla::layers::Image> GenerateI420Image() {
+    return GenerateImage(mozilla::ImagePixelFormat::I420);
+  }
+  already_AddRefed<mozilla::layers::Image> GenerateNV12Image() {
+    return GenerateImage(mozilla::ImagePixelFormat::NV12);
+  }
+  already_AddRefed<mozilla::layers::Image> GenerateNV21Image() {
+    return GenerateImage(mozilla::ImagePixelFormat::NV21);
+  }
 
  private:
-  void FillI420SourceBuffer();
+  enum class ChromaOrder { CbCr, CrCb };
+
+  already_AddRefed<mozilla::layers::Image> GenerateInterleavedImage(
+      ChromaOrder aOrder);
+  static void FillPlane(uint8_t* aPlane, size_t aBytes, uint16_t aValue,
+                        size_t aBytesPerSample);
   void FillNVSourceBuffer(uint8_t aFirstChromaValue,
                           uint8_t aSecondChromaValue);
 
