@@ -244,6 +244,10 @@ static time_t lastCrashTime = 0;
 
 static XP_CHAR lastCrashTimeFilename[XP_PATH_MAX] = {0};
 
+
+
+static nsID mainProcessCrashEventID;
+
 #if defined(MOZ_WIDGET_ANDROID)
 
 
@@ -1450,8 +1454,11 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
   WriteSynthesizedAnnotations(writer);
   writer.Write(Annotation::CrashTime, uint64_t(crashTime));
   
+  
+  
+  
   {
-    NSID_TrimBracketsASCII uuidString(nsID::GenerateUUID());
+    NSID_TrimBracketsASCII uuidString(mainProcessCrashEventID);
     writer.Write(Annotation::CrashEventID, uuidString.Data(),
                  uuidString.Length());
   }
@@ -2046,6 +2053,9 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   dumpSafetyLock = new Mutex("dumpSafetyLock");
   MutexAutoLock lock(*dumpSafetyLock);
   isSafeToDump = true;
+
+  
+  mainProcessCrashEventID = nsID::GenerateUUID();
 
   
 #ifdef XP_LINUX

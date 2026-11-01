@@ -159,6 +159,7 @@ async function handleMinidump(callback) {
   let extra = await IOUtils.readJSON(extrafile.path);
   
   Assert.ok("CrashEventID" in extra);
+  Assert.ok(checkUUID(extra.CrashEventID));
   Assert.ok("CrashTime" in extra);
 
   if (callback) {
@@ -166,6 +167,27 @@ async function handleMinidump(callback) {
   }
 
   await cleanup();
+}
+
+function checkUUID(uuid) {
+  for (let i = 0; i < 36; i++) {
+    const c = uuid[i];
+    
+    
+    if (i == 14 && c === "0") {
+      return false;
+    }
+    
+    if ([8, 13, 18, 23].includes(i)) {
+      if (c !== "-") {
+        return false;
+      }
+      
+    } else if (!"0123456789abcdefABCDEF".includes(c)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function spinEventLoop() {
