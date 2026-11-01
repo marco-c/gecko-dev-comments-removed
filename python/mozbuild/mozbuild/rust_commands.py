@@ -497,6 +497,18 @@ def compose_env(
     substs = _cargo_config(substs)
     env = dict(environ)
 
+    library_search_path = {
+        "Linux": ("LD_LIBRARY_PATH", ":"),
+        "WINNT": ("PATH", ";"),
+    }.get(substs.get("OS_ARCH"))
+    if cmd.kind == "test" and library_search_path:
+        
+        var, separator = library_search_path
+        libpath = f"{topobjdir}/dist/bin"
+        if existing := env.get(var):
+            libpath += f"{separator}{existing}"
+        env[var] = libpath
+
     
     
     
