@@ -32,7 +32,7 @@ nsHTTPSOnlyStreamListener::nsHTTPSOnlyStreamListener(
   
   
   if (wgp) {
-    wgp->TopWindowContext()->AddSecurityState(
+    wgp->TopWindowContext()->ApplySecurityStateToTop(
         nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADED);
   }
 }
@@ -73,7 +73,7 @@ nsHTTPSOnlyStreamListener::OnStopRequest(nsIRequest* request,
               loadInfo->GetInnerWindowID());
 
       if (wgp) {
-        wgp->TopWindowContext()->AddSecurityState(
+        wgp->TopWindowContext()->ApplySecurityStateToTop(
             nsIWebProgressListener::STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED);
       }
     }
