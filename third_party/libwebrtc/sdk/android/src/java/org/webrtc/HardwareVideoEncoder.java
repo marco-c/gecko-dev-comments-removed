@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.ThreadUtils.ThreadChecker;
@@ -128,6 +129,9 @@ class HardwareVideoEncoder implements VideoEncoder {
   @Nullable private MediaCodecWrapper codec;
   
   @Nullable private Thread outputThread;
+  
+  
+  @Nullable private CountDownLatch outputThreadDeliveryStopped;
 
   
   
@@ -300,7 +304,8 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     running = true;
     outputThreadChecker.detachThread();
-    outputThread = createOutputThread();
+    outputThreadDeliveryStopped = new CountDownLatch(1);
+    outputThread = createOutputThread(codec, outputThreadDeliveryStopped);
     outputThread.start();
 
     return VideoCodecStatus.OK;
@@ -316,6 +321,13 @@ class HardwareVideoEncoder implements VideoEncoder {
     } else {
       
       running = false;
+      
+      
+      if (!ThreadUtils.awaitUninterruptibly(
+              outputThreadDeliveryStopped, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+        Logging.e(TAG, "Output thread slow to stop delivering frames", new RuntimeException());
+        ThreadUtils.awaitUninterruptibly(outputThreadDeliveryStopped);
+      }
       if (!ThreadUtils.joinUninterruptibly(outputThread, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
         Logging.e(TAG, "Media encoder release timeout");
         returnValue = VideoCodecStatus.TIMEOUT;
@@ -342,6 +354,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
     codec = null;
     outputThread = null;
+    outputThreadDeliveryStopped = null;
 
     
     encodeThreadChecker.detachThread();
@@ -561,14 +574,22 @@ class HardwareVideoEncoder implements VideoEncoder {
     lastKeyFrameNs = presentationTimestampNs;
   }
 
-  private Thread createOutputThread() {
+  
+  
+  private Thread createOutputThread(
+      final MediaCodecWrapper threadCodec, final CountDownLatch deliveryStopped) {
     return new Thread() {
       @Override
       public void run() {
-        while (running) {
-          deliverEncodedImage();
+        try {
+          while (running) {
+            deliverEncodedImage();
+          }
+        } finally {
+          
+          deliveryStopped.countDown();
         }
-        releaseCodecOnOutputThread();
+        releaseCodecOnOutputThread(threadCodec);
       }
     };
   }
@@ -670,17 +691,17 @@ class HardwareVideoEncoder implements VideoEncoder {
     }
   }
 
-  private void releaseCodecOnOutputThread() {
+  private void releaseCodecOnOutputThread(MediaCodecWrapper threadCodec) {
     outputThreadChecker.checkIsOnValidThread();
     Logging.d(TAG, "Releasing MediaCodec on output thread");
     outputBuffersBusyCount.waitForZero();
     try {
-      codec.stop();
+      threadCodec.stop();
     } catch (Exception e) {
       Logging.e(TAG, "Media encoder stop failed", e);
     }
     try {
-      codec.release();
+      threadCodec.release();
     } catch (Exception e) {
       Logging.e(TAG, "Media encoder release failed", e);
       

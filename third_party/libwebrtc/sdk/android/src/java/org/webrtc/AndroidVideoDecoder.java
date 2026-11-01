@@ -19,6 +19,7 @@ import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.ThreadUtils.ThreadChecker;
@@ -64,6 +65,10 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   
   
   @Nullable private Thread outputThread;
+
+  
+  
+  @Nullable private CountDownLatch outputThreadDeliveryStopped;
 
   
   private ThreadChecker outputThreadChecker;
@@ -186,7 +191,8 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
       return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
     running = true;
-    outputThread = createOutputThread();
+    outputThreadDeliveryStopped = new CountDownLatch(1);
+    outputThread = createOutputThread(codec, outputThreadDeliveryStopped);
     outputThread.start();
 
     Logging.d(TAG, "initDecodeInternal done");
@@ -315,6 +321,13 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     try {
       
       running = false;
+      
+      
+      if (!ThreadUtils.awaitUninterruptibly(
+              outputThreadDeliveryStopped, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
+        Logging.e(TAG, "Output thread slow to stop delivering frames", new RuntimeException());
+        ThreadUtils.awaitUninterruptibly(outputThreadDeliveryStopped);
+      }
       if (!ThreadUtils.joinUninterruptibly(outputThread, MEDIA_CODEC_RELEASE_TIMEOUT_MS)) {
         
         Logging.e(TAG, "Media decoder release timeout", new RuntimeException());
@@ -330,6 +343,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     } finally {
       codec = null;
       outputThread = null;
+      outputThreadDeliveryStopped = null;
       frameInfos.clear();
     }
     return VideoCodecStatus.OK;
@@ -344,15 +358,23 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     return initDecodeInternal(newWidth, newHeight);
   }
 
-  private Thread createOutputThread() {
+  
+  
+  private Thread createOutputThread(
+      final MediaCodecWrapper threadCodec, final CountDownLatch deliveryStopped) {
     return new Thread("AndroidVideoDecoder.outputThread") {
       @Override
       public void run() {
         outputThreadChecker = new ThreadChecker();
-        while (running) {
-          deliverDecodedFrame();
+        try {
+          while (running) {
+            deliverDecodedFrame();
+          }
+        } finally {
+          
+          deliveryStopped.countDown();
         }
-        releaseCodecOnOutputThread();
+        releaseCodecOnOutputThread(threadCodec);
       }
     };
   }
@@ -615,16 +637,16 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     }
   }
 
-  private void releaseCodecOnOutputThread() {
+  private void releaseCodecOnOutputThread(MediaCodecWrapper threadCodec) {
     outputThreadChecker.checkIsOnValidThread();
     Logging.d(TAG, "Releasing MediaCodec on output thread");
     try {
-      codec.stop();
+      threadCodec.stop();
     } catch (Exception e) {
       Logging.e(TAG, "Media decoder stop failed", e);
     }
     try {
-      codec.release();
+      threadCodec.release();
     } catch (Exception e) {
       Logging.e(TAG, "Media decoder release failed", e);
       

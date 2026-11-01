@@ -16,10 +16,35 @@ import org.webrtc.VideoDecoder;
 
 
 class VideoDecoderWrapper {
+  
+
+
+
+  static class NativeDecoderCallback implements VideoDecoder.Callback {
+    private final NativeLifecycleLock lifecycleLock;
+
+    NativeDecoderCallback(long nativeDecoder) {
+      lifecycleLock = new NativeLifecycleLock("VideoDecoderWrapper", nativeDecoder);
+    }
+
+    @Override
+    public void onDecodedFrame(VideoFrame frame, Integer decodeTimeMs, Integer qp) {
+      lifecycleLock.runIfAlive(
+          (long nativeDecoder)
+              -> nativeOnDecodedFrame(nativeDecoder, frame, decodeTimeMs, qp));
+    }
+
+    
+    
+    @CalledByNative
+    void invalidate() {
+      lifecycleLock.dispose((long nativeDecoder) -> {});
+    }
+  }
+
   @CalledByNative
-  static VideoDecoder.Callback createDecoderCallback(final long nativeDecoder) {
-    return (VideoFrame frame, Integer decodeTimeMs,
-               Integer qp) -> nativeOnDecodedFrame(nativeDecoder, frame, decodeTimeMs, qp);
+  static NativeDecoderCallback createDecoderCallback(final long nativeDecoder) {
+    return new NativeDecoderCallback(nativeDecoder);
   }
 
   private static native void nativeOnDecodedFrame(

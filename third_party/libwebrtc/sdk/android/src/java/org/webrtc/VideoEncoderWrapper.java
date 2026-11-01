@@ -35,10 +35,34 @@ class VideoEncoderWrapper {
     return scalingSettings.high;
   }
 
+  
+
+
+
+  static class NativeEncoderCallback implements VideoEncoder.Callback {
+    private final NativeLifecycleLock lifecycleLock;
+
+    NativeEncoderCallback(long nativeEncoder) {
+      lifecycleLock = new NativeLifecycleLock("VideoEncoderWrapper", nativeEncoder);
+    }
+
+    @Override
+    public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
+      lifecycleLock.runIfAlive(
+          (long nativeEncoder) -> nativeOnEncodedFrame(nativeEncoder, frame));
+    }
+
+    
+    
+    @CalledByNative
+    void invalidate() {
+      lifecycleLock.dispose((long nativeEncoder) -> {});
+    }
+  }
+
   @CalledByNative
-  static VideoEncoder.Callback createEncoderCallback(final long nativeEncoder) {
-    return (EncodedImage frame,
-               VideoEncoder.CodecSpecificInfo info) -> nativeOnEncodedFrame(nativeEncoder, frame);
+  static NativeEncoderCallback createEncoderCallback(final long nativeEncoder) {
+    return new NativeEncoderCallback(nativeEncoder);
   }
 
   private static native void nativeOnEncodedFrame(
