@@ -161,13 +161,21 @@ class MicroTaskQueueElement {
     
     
     InlinePromiseReaction,
+    
+    
+    
+    InlineThenable,
 
+    
+    
     
     ResolveThenable,
     ResolveBuiltinThenable,
     
     
     DeferredResolve,
+    
+    
 
     
 
