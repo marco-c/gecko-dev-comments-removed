@@ -148,8 +148,6 @@ def _supports_artifact_build(job, env):
         job.get("index", {}).get("job-name") in ARTIFACT_JOBS
         
         and env.get("MOZ_AUTOMATION_PACKAGE_TESTS") == "1"
-        
-        and not ("android" in job["name"] and job["attributes"].get("shippable", False))
     )
 
 
