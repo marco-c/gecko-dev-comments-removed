@@ -12380,15 +12380,69 @@ class CGMemberJITInfo(CGThing):
             return result
         raise TypeError("Illegal member type to CGPropertyJITInfo")
 
+    @staticmethod
+    def mayCreateNonPlainObjects(t):
+        """
+        Returns whether converting a value of type t to JS may create
+        objects other than plain objects and arrays.  Creating such an
+        object can lazily define an interface object or a standard
+        constructor on the global, or mark a prototype as used, which
+        are side-effects the JIT must know about. Plain objects are
+        fine because Object is resolved when the global is created,
+        and arrays are fine because Ion resolves Array before
+        compiling a call to a DOM operation.
+        """
+        if t.nullable():
+            t = t.inner
+        if t.isUndefined() or t.isPrimitive() or t.isString() or t.isEnum():
+            return False
+        if t.isUnion():
+            return any(
+                CGMemberJITInfo.mayCreateNonPlainObjects(m) for m in t.flatMemberTypes
+            )
+        
+        
+        if t.isSequence() or t.isRecord():
+            return CGMemberJITInfo.mayCreateNonPlainObjects(t.inner)
+        if t.isDictionary():
+            dictionary = t.inner
+            while dictionary:
+                if any(
+                    CGMemberJITInfo.mayCreateNonPlainObjects(m.type)
+                    for m in dictionary.members
+                ):
+                    return True
+                dictionary = dictionary.parent
+            return False
+        return True
+
+    def returnMayCreateNonPlainObjects(self):
+        """
+        Returns whether converting the return value of this attribute or method
+        to JS may create objects other than plain objects and arrays.  If so,
+        we can't promise the JIT that calling it has no side-effects.
+        """
+        if self.member.isAttr():
+            
+            
+            if self.member.getExtendedAttribute("StoreInSlot"):
+                return False
+            types = [self.member.type]
+        else:
+            types = [s[0] for s in self.member.signatures()]
+        return any(CGMemberJITInfo.mayCreateNonPlainObjects(t) for t in types)
+
     def mayBeMovable(self):
         """
-        Returns whether this attribute or method may be movable, just
-        based on Affects/DependsOn annotations.
+        Returns whether this attribute or method may be movable, based on
+        Affects/DependsOn annotations and the return type.
         """
         affects = self.member.affects
         dependsOn = self.member.dependsOn
         assert affects in IDLInterfaceMember.AffectsValues
         assert dependsOn in IDLInterfaceMember.DependsOnValues
+        if self.returnMayCreateNonPlainObjects():
+            return False
         
         
         
@@ -12399,8 +12453,8 @@ class CGMemberJITInfo(CGThing):
 
     def mayBeEliminatable(self):
         """
-        Returns whether this attribute or method may be eliminatable, just
-        based on Affects/DependsOn annotations.
+        Returns whether this attribute or method may be eliminatable, based on
+        Affects/DependsOn annotations and the return type.
         """
         
         
@@ -12416,6 +12470,8 @@ class CGMemberJITInfo(CGThing):
         dependsOn = self.member.dependsOn
         assert affects in IDLInterfaceMember.AffectsValues
         assert dependsOn in IDLInterfaceMember.DependsOnValues
+        if self.returnMayCreateNonPlainObjects():
+            return False
         return affects == "Nothing" and dependsOn != "Everything"
 
     def aliasSet(self):
@@ -12427,6 +12483,9 @@ class CGMemberJITInfo(CGThing):
         """
         dependsOn = self.member.dependsOn
         assert dependsOn in IDLInterfaceMember.DependsOnValues
+
+        if self.returnMayCreateNonPlainObjects():
+            return "AliasEverything"
 
         if dependsOn == "Nothing" or dependsOn == "DeviceState":
             assert self.member.affects == "Nothing"
