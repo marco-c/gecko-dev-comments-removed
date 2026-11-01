@@ -773,6 +773,17 @@ bool DrawTargetRecording::RemoveAllClips() {
   return true;
 }
 
+
+
+Rect DrawTargetRecording::DeviceToUserLayerBounds(
+    const IntRect& aBounds) const {
+  Matrix inverse = mTransform;
+  if (aBounds.IsEmpty() || !inverse.Invert()) {
+    return Rect();
+  }
+  return inverse.TransformBounds(Rect(aBounds));
+}
+
 void DrawTargetRecording::PushLayer(bool aOpaque, Float aOpacity,
                                     SourceSurface* aMask,
                                     const Matrix& aMaskTransform,
@@ -783,7 +794,8 @@ void DrawTargetRecording::PushLayer(bool aOpaque, Float aOpacity,
   }
 
   RecordEventSelf(RecordedPushLayer(aOpaque, aOpacity, aMask, aMaskTransform,
-                                    aBounds, aCopyBackground));
+                                    DeviceToUserLayerBounds(aBounds),
+                                    aCopyBackground));
 
   PushedLayer layer(GetPermitSubpixelAA());
   mPushedLayers.push_back(layer);
@@ -800,9 +812,9 @@ void DrawTargetRecording::PushLayerWithBlend(bool aOpaque, Float aOpacity,
     EnsureSurfaceStoredRecording(mRecorder, aMask, "PushLayer");
   }
 
-  RecordEventSelf(RecordedPushLayerWithBlend(aOpaque, aOpacity, aMask,
-                                             aMaskTransform, aBounds,
-                                             aCopyBackground, aCompositionOp));
+  RecordEventSelf(RecordedPushLayerWithBlend(
+      aOpaque, aOpacity, aMask, aMaskTransform,
+      DeviceToUserLayerBounds(aBounds), aCopyBackground, aCompositionOp));
 
   PushedLayer layer(GetPermitSubpixelAA());
   mPushedLayers.push_back(layer);
@@ -932,12 +944,25 @@ bool DrawTargetRecording::CanCreateSimilarDrawTarget(
 
 RefPtr<DrawTarget> DrawTargetRecording::CreateClippedDrawTarget(
     const Rect& aBounds, SurfaceFormat aFormat) {
+  IntRect rect = mRect;
+  if (!aBounds.IsEmpty()) {
+    rect = rect.Intersect(RoundedOut(mTransform.TransformBounds(aBounds)));
+  }
+  if (rect.IsEmpty()) {
+    rect.SizeTo(1, 1);
+  }
+  RefPtr<DrawTarget> similarDT = CreateClippedDrawTargetForRect(rect, aFormat);
+  similarDT->SetTransform(mTransform);
+  return similarDT;
+}
+
+RefPtr<DrawTarget> DrawTargetRecording::CreateClippedDrawTargetForRect(
+    const IntRect& aRect, SurfaceFormat aFormat) {
   RefPtr<DrawTargetRecording> similarDT =
-      new DrawTargetRecording(this, mRect, aFormat);
+      new DrawTargetRecording(this, aRect, aFormat);
   similarDT->SetOptimizeTransform(mOptimizeTransform);
   RecordEventSelf(
-      RecordedCreateClippedDrawTarget(similarDT.get(), aBounds, aFormat));
-  similarDT->mTransform = similarDT->mRecordedTransform = mTransform;
+      RecordedCreateClippedDrawTarget(similarDT.get(), aRect, aFormat));
   return similarDT;
 }
 
