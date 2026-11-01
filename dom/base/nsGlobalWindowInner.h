@@ -1321,7 +1321,11 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
     return mClientSource.get();
   }
 
+  void HoldOldPrincipal(nsIPrincipal* aPrincipal);
+
  private:
+  void ClearOldPrincipalsIfNotNestedEventLoop();
+
   RefPtr<mozilla::dom::ContentMediaController> mContentMediaController;
 
   RefPtr<mozilla::dom::WebTaskSchedulerMainThread> mWebTaskScheduler;
@@ -1536,6 +1540,12 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   RefPtr<mozilla::dom::DataTransfer> mCurrentPasteDataTransfer;
 
   nsTArray<nsCString> mMediaSourceURLs;
+
+  
+  
+  
+  
+  nsTArray<nsCOMPtr<nsIPrincipal>> mOldPrincipals;
 
   
   
