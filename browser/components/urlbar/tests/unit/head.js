@@ -1237,6 +1237,7 @@ async function check_results({
     bookmarkDateMs: optionalDateValidator,
     frecency: { optional: true },
     lastVisit: optionalDateValidator,
+    semanticDistance: { optional: true },
     
     
     
