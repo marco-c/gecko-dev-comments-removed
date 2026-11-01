@@ -36,7 +36,10 @@ add_setup(async function () {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.conversation.logLevel", "Debug"]],
+    set: [
+      ["browser.smartwindow.conversation.logLevel", "Debug"],
+      ["browser.smartwindow.aitab.enabled", true],
+    ],
   });
 });
 
