@@ -813,7 +813,7 @@
             gBrowser.TabMetrics.METRIC_SOURCE.DRAG_AND_DROP
           ),
         };
-        if (window.fullScreen) {
+        if (window.fullScreen && AppConstants.platform == "macosx") {
           
           
           

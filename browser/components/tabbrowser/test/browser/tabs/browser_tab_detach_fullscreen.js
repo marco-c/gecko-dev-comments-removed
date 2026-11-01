@@ -13,8 +13,6 @@
 
 
 
-
-
 async function detachTabWithoutOpeningWindow(aTab) {
   let props;
   let originalFn = gBrowser.replaceTabsWithWindow;
@@ -88,15 +86,20 @@ add_task(async function test_detach_from_fullscreen_window() {
 
   let props = await detachTabWithoutOpeningWindow(tab);
   ok(props, "The tab was detached");
-  ok(
-    !("screenX" in props) && !("screenY" in props),
-    "The new window picks its own position"
-  );
-  is(
-    props.suppressinitialfullscreen,
-    1,
-    "The new window doesn't enter fullscreen on its initial show"
-  );
+  if (AppConstants.platform == "macosx") {
+    ok(
+      !("screenX" in props) && !("screenY" in props),
+      "The new window picks its own position"
+    );
+    is(
+      props.suppressinitialfullscreen,
+      1,
+      "The new window doesn't enter fullscreen on its initial show"
+    );
+  } else {
+    ok(Number.isFinite(props.screenX), "The drop position was passed along");
+    ok(Number.isFinite(props.screenY), "The drop position was passed along");
+  }
 
   await toggleFullScreen();
   ok(!window.fullScreen, "The window left fullscreen");
