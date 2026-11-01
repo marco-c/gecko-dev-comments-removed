@@ -134,9 +134,9 @@ class MOZ_STACK_CLASS WSScanResult final {
 
   WSScanResult(WSScanResult&& aResult, EditorLineBreak&& aIgnoredLineBreak,
                const Element& aEditingHost)
-      : WSScanResult(std::forward<WSScanResult>(aResult)) {
+      : WSScanResult(std::move(aResult)) {
     MOZ_ASSERT(ReachedBlockBoundary());
-    mIgnoredLineBreak.emplace(std::forward<EditorLineBreak>(aIgnoredLineBreak));
+    mIgnoredLineBreak.emplace(std::move(aIgnoredLineBreak));
     
     
     
