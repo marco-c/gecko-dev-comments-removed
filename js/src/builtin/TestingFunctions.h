@@ -5,12 +5,31 @@
 #ifndef builtin_TestingFunctions_h
 #define builtin_TestingFunctions_h
 
+#include "mozilla/Maybe.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include "NamespaceImports.h"  
 
+#include "js/AllocPolicy.h"
+#include "js/Utility.h"
+#include "js/Vector.h"
+
 namespace js {
+
+
+
+struct RecordedAllocation {
+  UniqueTwoByteChars typeName;
+  UniqueChars className;
+  UniqueTwoByteChars descriptiveTypeName;
+  const char* coarseType;
+  uint64_t size;
+  bool inNursery;
+};
+
+using RecordedAllocations = Vector<RecordedAllocation, 0, SystemAllocPolicy>;
 
 
 
@@ -31,6 +50,10 @@ struct TestingFunctionData {
     }
   };
   SerializableActivityLog serializableActivityLog;
+
+  
+  
+  mozilla::Maybe<RecordedAllocations> recordedAllocations;
 };
 
 [[nodiscard]] bool InitTestingFunctions();
