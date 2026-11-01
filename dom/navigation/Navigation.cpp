@@ -1465,7 +1465,7 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
 }  
 
 
-bool Navigation::FireTraverseNavigateEvent(
+Navigation::FinalStatus Navigation::FireTraverseNavigateEvent(
     JSContext* aCx, nsDocShellLoadState* aLoadState,
     Maybe<UserNavigationInvolvement> aUserInvolvement) {
   
@@ -1560,11 +1560,11 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
   
   return InnerFireNavigateEvent(
-      aCx, aNavigationType, destination,
-      aUserInvolvement.valueOr(UserNavigationInvolvement::None), aSourceElement,
-      aFormDataEntryList, aClassicHistoryAPIState,
-       VoidString(),
-      aApiMethodTrackerForNavigateOrReload);
+             aCx, aNavigationType, destination,
+             aUserInvolvement.valueOr(UserNavigationInvolvement::None),
+             aSourceElement, aFormDataEntryList, aClassicHistoryAPIState,
+              VoidString(),
+             aApiMethodTrackerForNavigateOrReload) == FinalStatus::Continue;
 }
 
 
@@ -1587,10 +1587,11 @@ bool Navigation::FireDownloadRequestNavigateEvent(
                                             false);
 
   
-  return InnerFireNavigateEvent(
-      aCx, NavigationType::Push, destination, aUserInvolvement, aSourceElement,
-       nullptr,
-       nullptr, aFilename);
+  return InnerFireNavigateEvent(aCx, NavigationType::Push, destination,
+                                aUserInvolvement, aSourceElement,
+                                 nullptr,
+                                 nullptr,
+                                aFilename) == FinalStatus::Continue;
 }
 
 static bool HasHistoryActionActivation(
@@ -1695,7 +1696,7 @@ nsresult Navigation::FireErrorEvent(const nsAString& aName,
 }
 
 
-bool Navigation::InnerFireNavigateEvent(
+Navigation::FinalStatus Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
     NavigationDestination* aDestination,
     UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,
@@ -1715,7 +1716,7 @@ bool Navigation::InnerFireNavigateEvent(
     MOZ_DIAGNOSTIC_ASSERT(!aNavigationAPIMethodTracker);
 
     
-    return true;
+    return FinalStatus::Continue;
   }
 
   RootedDictionary<NavigateEventInit> init(RootingCx());
@@ -1858,7 +1859,7 @@ bool Navigation::InnerFireNavigateEvent(
     }
 
     
-    return false;
+    return FinalStatus::Prevent;
   }
 
   
@@ -1929,7 +1930,9 @@ bool Navigation::InnerFireNavigateEvent(
         scope);
   }
   
-  return event->InterceptionState() == NavigateEvent::InterceptionState::None;
+  return event->InterceptionState() == NavigateEvent::InterceptionState::None
+             ? FinalStatus::Continue
+             : FinalStatus::Intercept;
 }
 
 NavigationHistoryEntry* Navigation::FindNavigationHistoryEntry(

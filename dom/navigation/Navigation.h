@@ -165,9 +165,9 @@ class Navigation final : public DOMEventTargetHelper {
 
   
   
-  MOZ_CAN_RUN_SCRIPT bool FireTraverseNavigateEvent(
-      JSContext* aCx, nsDocShellLoadState* aLoadState,
-      Maybe<UserNavigationInvolvement> aUserInvolvement);
+  MOZ_CAN_RUN_SCRIPT FinalStatus
+  FireTraverseNavigateEvent(JSContext* aCx, nsDocShellLoadState* aLoadState,
+                            Maybe<UserNavigationInvolvement> aUserInvolvement);
 
   MOZ_CAN_RUN_SCRIPT bool FirePushReplaceReloadNavigateEvent(
       JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
@@ -236,7 +236,7 @@ class Navigation final : public DOMEventTargetHelper {
                           const ErrorEventInit& aEventInitDict);
 
   
-  MOZ_CAN_RUN_SCRIPT bool InnerFireNavigateEvent(
+  MOZ_CAN_RUN_SCRIPT FinalStatus InnerFireNavigateEvent(
       JSContext* aCx, NavigationType aNavigationType,
       NavigationDestination* aDestination,
       UserNavigationInvolvement aUserInvolvement, Element* aSourceElement,

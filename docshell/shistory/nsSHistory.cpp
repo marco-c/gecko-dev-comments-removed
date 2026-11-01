@@ -1838,10 +1838,13 @@ void nsSHistory::LoadURIs(const nsTArray<LoadEntryResult>& aLoadResults,
                   
                   
                   
-                  if (aResult == nsIDocumentViewer::eCanceledByBeforeUnload) {
+                  if (aResult == nsIDocumentViewer::eCanceledByBeforeUnload ||
+                      aResult == nsIDocumentViewer::eCanceledByNavigate) {
                     return aResolver(nsresult::NS_ERROR_DOM_ABORT_ERR);
                   }
 
+                  
+                  
                   aResolver(NS_OK);
 
                   return;
