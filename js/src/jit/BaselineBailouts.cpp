@@ -1719,13 +1719,6 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
 
   BailoutKind bailoutKind = builder.bailoutKind();
 
-  if (!builder.outermostFrameFormals().empty()) {
-    
-    Value* argv = builder.startFrame()->actualArgs();
-    mozilla::PodCopy(argv, builder.outermostFrameFormals().begin(),
-                     builder.outermostFrameFormals().length());
-  }
-
   
   bool overRecursed = false;
   BaselineBailoutInfo* info = builder.info();
@@ -1746,6 +1739,15 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
     JitSpew(JitSpew_BaselineBailouts, "  Overrecursion check failed!");
     ReportOverRecursed(cx);
     return false;
+  }
+
+  
+  
+  
+  if (!builder.outermostFrameFormals().empty()) {
+    Value* argv = builder.startFrame()->actualArgs();
+    mozilla::PodCopy(argv, builder.outermostFrameFormals().begin(),
+                     builder.outermostFrameFormals().length());
   }
 
   
