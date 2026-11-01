@@ -72,6 +72,12 @@ import org.mozilla.gecko.util.ThreadUtils;
 
 
 
+
+
+
+
+
+
 @UiThread
 public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfaceProvider {
   private static final String LOGTAG = "GeckoView";
@@ -759,6 +765,11 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
       mDisplay.acquire(mSession.acquireDisplay());
     }
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      setScrollCaptureCallback(new GeckoViewScrollCaptureCallback(() -> mSession));
+      setScrollCaptureHint(SCROLL_CAPTURE_HINT_INCLUDE);
+    }
+
     super.onAttachedToWindow();
 
     
@@ -774,6 +785,10 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     removeWindowInsetsListener(KEYBOARD_WINDOW_INSETS_LISTENER);
     if (mWindowInsetsListeners.isEmpty()) {
       detachWindowInsetsListener(getActivityFromContext(getContext()));
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      setScrollCaptureCallback(null);
+      setScrollCaptureHint(SCROLL_CAPTURE_HINT_AUTO);
     }
 
     if (mSession == null) {
