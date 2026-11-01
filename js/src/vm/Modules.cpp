@@ -389,20 +389,6 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
 JS_PUBLIC_API JSObject* JS::CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
-  
-  
-  
-  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                           JSMSG_WASM_COMPILE_ERROR,
-                           "Compilation of wasm modules not implemented.");
-
-  return nullptr;
-}
-
-
-JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
@@ -421,7 +407,7 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
     return nullptr;
   }
 
-  return CreateWasmSourcePhaseModule(cx, wasmModuleObject);
+  return CreateWasmModule(cx, wasmModuleObject);
 }
 
 static bool GetWasmExportNameAtoms(
@@ -452,7 +438,7 @@ static bool GetWasmExportNameAtoms(
   return true;
 }
 
-JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
+JS_PUBLIC_API JSObject* JS::CreateWasmModule(
     JSContext* cx, Handle<JSObject*> wasmModuleObject) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();

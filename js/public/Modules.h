@@ -234,15 +234,8 @@ extern JS_PUBLIC_API JSObject* CompileWasmModule(
 
 
 
-extern JS_PUBLIC_API JSObject* CompileWasmModuleAsSource(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf);
 
-
-
-
-
-extern JS_PUBLIC_API JSObject* CreateWasmSourcePhaseModule(
+extern JS_PUBLIC_API JSObject* CreateWasmModule(
     JSContext* cx, Handle<JSObject*> wasmModuleObject);
 
 

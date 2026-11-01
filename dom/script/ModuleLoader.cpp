@@ -274,12 +274,7 @@ nsresult ModuleLoader::CompileEmptyJavaScriptModule(
 nsresult ModuleLoader::CompileWasmModuleBytes(
     JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
     WasmBytesBuffer& aBytes, JS::MutableHandle<JSObject*> aModuleOut) {
-  JSObject* wasmModule;
-  if (aRequest->IsSourcePhaseRequest()) {
-    wasmModule = JS::CompileWasmModuleAsSource(aCx, aOptions, aBytes);
-  } else {
-    wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
-  }
+  JSObject* wasmModule = JS::CompileWasmModule(aCx, aOptions, aBytes);
   if (!wasmModule) {
     return NS_ERROR_FAILURE;
   }
@@ -331,9 +326,7 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     MOZ_ASSERT(aRequest->IsWasmBytes());
     
     
-    
     if (aRequest->GetScriptLoadContext()->mWasCompiledOMT) {
-      MOZ_ASSERT(aRequest->IsSourcePhaseRequest());
       if (!aRequest->GetScriptLoadContext()->StealOffThreadWasmResult(
               aCx, aModuleOut)) {
         return NS_ERROR_FAILURE;
