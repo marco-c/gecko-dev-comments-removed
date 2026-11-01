@@ -307,9 +307,11 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   
   
-  void UpdateFeatures(
-      const nsTArray<const ContentClassifierFeature*>& aFeatures,
-      EnginesPrefsSnapshot aPreferenceSnapshot);
+  
+  
+  void UpdateFeatures(nsTArray<const ContentClassifierFeature*> aFeatures,
+                      nsTArray<uint64_t> aFeatureVersions, uint64_t aGeneration,
+                      EnginesPrefsSnapshot aPreferenceSnapshot);
 
   
   
@@ -372,6 +374,7 @@ class ContentClassifierService final : public nsIAsyncShutdownBlocker,
   
   nsTHashMap<nsCStringHashKey, uint64_t> mFeatureVersions MOZ_GUARDED_BY(mLock);
 
+  
   
   
   
