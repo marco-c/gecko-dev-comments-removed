@@ -63,10 +63,6 @@ struct Pointer {
 
   bool IsNull() const { return mBlockAndOffset == kNullValue; }
 
-  uint32_t Block() const { return mBlockAndOffset >> kBlockShift; }
-
-  uint32_t Offset() const { return mBlockAndOffset & kOffsetMask; }
-
   
 
 

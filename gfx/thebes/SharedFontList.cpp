@@ -46,7 +46,11 @@ void* Pointer::ToPtr(FontList* aFontList,
   
   void* result = nullptr;
 
-  if (IsNull()) {
+  
+  
+  uint32_t blockAndOffset = mBlockAndOffset;
+
+  if (blockAndOffset == kNullValue) {
     return result;
   }
 
@@ -58,7 +62,8 @@ void* Pointer::ToPtr(FontList* aFontList,
     gfxPlatformFontList::PlatformFontList()->Lock();
   }
 
-  uint32_t blockIndex = Block();
+  uint32_t blockIndex = blockAndOffset >> kBlockShift;
+  uint32_t offset = blockAndOffset & kOffsetMask;
 
   
   
@@ -99,8 +104,8 @@ void* Pointer::ToPtr(FontList* aFontList,
   {
     
     const auto& block = blocks[blockIndex];
-    if (MOZ_LIKELY(Offset() + aSize <= block->Allocated())) {
-      result = static_cast<char*>(block->Memory()) + Offset();
+    if (MOZ_LIKELY(offset + aSize <= block->Allocated())) {
+      result = static_cast<char*>(block->Memory()) + offset;
     }
   }
 
