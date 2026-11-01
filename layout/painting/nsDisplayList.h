@@ -5091,33 +5091,6 @@ class nsDisplayWrapper final : public nsDisplayWrapList {
 
 
 
-
-
-
-class nsDisplayItemWrapper {
- public:
-  
-  
-
-  bool WrapBorderBackground() { return true; }
-  virtual nsDisplayItem* WrapList(nsDisplayListBuilder* aBuilder,
-                                  nsIFrame* aFrame, nsDisplayList* aList) = 0;
-  virtual nsDisplayItem* WrapItem(nsDisplayListBuilder* aBuilder,
-                                  nsDisplayItem* aItem) = 0;
-
-  nsresult WrapLists(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                     const nsDisplayListSet& aIn, const nsDisplayListSet& aOut);
-  nsresult WrapListsInPlace(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                            const nsDisplayListSet& aLists);
-
- protected:
-  nsDisplayItemWrapper() = default;
-};
-
-
-
-
-
 class nsDisplayOpacity final : public nsDisplayWrapList {
  public:
   nsDisplayOpacity(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
