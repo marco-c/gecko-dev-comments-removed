@@ -517,7 +517,7 @@ bool ModuleNamespaceObject::addBinding(JSContext* cx,
 
 constexpr char ModuleNamespaceObject::ProxyHandler::family = 0;
 
-static void ReportUninitializedModuleBinding(JSContext* cx, HandleId id) {
+void js::ReportUninitializedModuleBinding(JSContext* cx, HandleId id) {
   
   
   if (UniqueChars printable =
