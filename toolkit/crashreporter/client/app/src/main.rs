@@ -69,7 +69,7 @@ mod logging;
 mod logic;
 mod memory_test;
 mod net;
-mod prefs_parser;
+mod prefs;
 mod process;
 mod send_ping;
 mod settings;
@@ -265,11 +265,14 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         
         
         #[cfg(not(test))]
-        let _glean_handle = glean::InitOptions::from_config(&config)
+        let glean_handle = glean::InitOptions::from_config(&config)
             .init()
             .context("failed to acquire Glean store")?;
 
-        logic::ReportCrash::new(config.clone(), extra)?.run()
+        let report_crash = logic::ReportCrash::new(config.clone(), extra)?;
+        #[cfg(not(test))]
+        let report_crash = report_crash.with_glean_handle(glean_handle);
+        report_crash.run()
     }
 }
 

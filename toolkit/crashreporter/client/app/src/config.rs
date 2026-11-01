@@ -8,7 +8,7 @@ use crate::std::borrow::Cow;
 use crate::std::ffi::{OsStr, OsString};
 use crate::std::path::{Path, PathBuf};
 use crate::std::process::Command;
-use crate::{lang, logging::LogTarget, std};
+use crate::{lang, logging::LogTarget, prefs::Prefs, std};
 use anyhow::Context;
 use once_cell::sync::Lazy;
 
@@ -149,6 +149,8 @@ pub struct Config {
     pub strings: Option<lang::LangStrings>,
     
     pub log_target: Option<LogTarget>,
+    
+    pub prefs: Prefs,
 }
 
 pub struct ConfigStringBuilder<'a>(lang::LangStringBuilder<'a>);
@@ -293,6 +295,7 @@ impl Config {
     
     
     
+    
     fn load_profile_directory_from_extra(&mut self, extra: &serde_json::Value) {
         let Some(profile_dir) = extra
             .get("ProfileDirectory")
@@ -305,11 +308,13 @@ impl Config {
             return;
         }
 
+        self.prefs.update_from_profile_dir(&profile_dir);
         self.profile_dir = Some(profile_dir);
 
         
         if let Some(strings) = self.strings.as_mut() {
             if let Err(e) = strings.add_langpack(
+                &self.prefs,
                 self.profile_dir.as_deref().unwrap(),
                 extra.get("useragent_locale").and_then(|v| v.as_str()),
             ) {

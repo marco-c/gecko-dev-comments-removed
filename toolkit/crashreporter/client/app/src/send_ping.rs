@@ -5,7 +5,7 @@
 
 
 use crate::std::{env, io::stdin, path::PathBuf};
-use crate::{glean, logging, net::ping};
+use crate::{glean, logging, net::ping, prefs::Prefs};
 
 pub fn main() {
     logging::init();
@@ -22,10 +22,7 @@ pub fn main() {
         .and_then(|v| v.as_str())
         .map(PathBuf::from);
 
-    let _glean_handle = glean::InitOptions::new(data_path.into())
-        .with_profile_dir(profile_dir)
-        .init()
-        .expect("failed to acquire Glean store");
+    let _glean_handle = load_glean(data_path.into(), profile_dir);
 
     ping::CrashPing {
         extra: &extra,
@@ -45,10 +42,7 @@ pub fn cleanup_main() {
     let data_path = args.next().expect("no data path provided");
     let profile_dir = args.next();
 
-    let _glean_handle = glean::InitOptions::new(data_path.into())
-        .with_profile_dir(profile_dir)
-        .init()
-        .expect("failed to acquire Glean store");
+    let _glean_handle = load_glean(data_path.into(), profile_dir.map(|s| s.into()));
 
     
     
@@ -56,4 +50,16 @@ pub fn cleanup_main() {
 
     
     ::glean::shutdown();
+}
+
+fn load_glean(data_path: PathBuf, profile_dir: Option<PathBuf>) -> crashping::GleanHandle {
+    let mut prefs = Prefs::default();
+    if let Some(dir) = profile_dir {
+        prefs.update_from_profile_dir(dir.as_ref());
+    }
+
+    glean::InitOptions::new(data_path.into())
+        .with_prefs(&prefs)
+        .init()
+        .expect("failed to acquire Glean store")
 }
