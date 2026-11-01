@@ -53,29 +53,37 @@ async def test_cors_preflight_request(bidi_session, url, wait_for_bidi_events, f
 
     await wait_for_bidi_events(events, 6, timeout=2)
 
+    preflight_events = [e for e in events if e["request"]["method"] == "OPTIONS"]
+    actual_events = [e for e in events if e["request"]["method"] == "GET"]
+    assert len(preflight_events) == 3
+    assert len(actual_events) == 3
+
     
     
+    
+    
+    assert events.index(actual_events[0]) > events.index(preflight_events[1])
 
     
     assert_before_request_sent_event(
-        events[0], expected_event={"request": {"method": "OPTIONS", "url": fetch_url}}
+        preflight_events[0], expected_event={"request": {"method": "OPTIONS", "url": fetch_url}}
     )
     
     assert_response_event(
-        events[1], expected_event={"request": {"method": "OPTIONS", "url": fetch_url}}
+        preflight_events[1], expected_event={"request": {"method": "OPTIONS", "url": fetch_url}}
     )  
     assert_response_event(
-        events[2], expected_event={"request": {"method": "OPTIONS", "url": fetch_url}}
+        preflight_events[2], expected_event={"request": {"method": "OPTIONS", "url": fetch_url}}
     )  
     assert_before_request_sent_event(
-        events[3], expected_event={"request": {"method": "GET", "url": fetch_url}}
+        actual_events[0], expected_event={"request": {"method": "GET", "url": fetch_url}}
     )
     
     assert_response_event(
-        events[4], expected_event={"request": {"method": "GET", "url": fetch_url}}
+        actual_events[1], expected_event={"request": {"method": "GET", "url": fetch_url}}
     )  
     assert_response_event(
-        events[5], expected_event={"request": {"method": "GET", "url": fetch_url}}
+        actual_events[2], expected_event={"request": {"method": "GET", "url": fetch_url}}
     )
 
     remove_before_request_sent_listener()

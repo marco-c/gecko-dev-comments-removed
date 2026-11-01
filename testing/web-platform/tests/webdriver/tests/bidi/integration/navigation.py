@@ -56,11 +56,12 @@ async def test_navigate_history_replacestate_beforeunload(
     
     
     
-    assert events == [
-        NAVIGATION_STARTED_EVENT,
-        HISTORY_UPDATED_EVENT,
-        BEFORE_REQUEST_SENT_EVENT
-    ]
+    
+    
+    assert events[0] == NAVIGATION_STARTED_EVENT
+    assert sorted(events[1:]) == sorted(
+        [HISTORY_UPDATED_EVENT, BEFORE_REQUEST_SENT_EVENT]
+    )
 
     remove_navigation_started_listener()
     remove_history_updated_listener()

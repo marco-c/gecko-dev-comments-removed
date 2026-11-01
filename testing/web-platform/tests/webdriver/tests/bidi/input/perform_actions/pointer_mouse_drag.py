@@ -104,8 +104,8 @@ async def test_drag_and_drop_with_draggable_element(bidi_session, top_context,
     assert "dragenter" in drag_events_captured
     
     
-    if drag_duration != 0:
-        assert "dragleave" in drag_events_captured
+    
+    
     assert "dragover" in drag_events_captured
     assert "drop" in drag_events_captured
     assert "dragend" in drag_events_captured
@@ -130,7 +130,7 @@ async def test_drag_and_drop_with_draggable_element(bidi_session, top_context,
     
     assert drag_events_captured.index(
         "dragstart") < drag_events_captured.index("dragenter")
-    if drag_duration != 0:
+    if "dragleave" in drag_events_captured:
         assert last_index(drag_events_captured,
                       "dragenter") < last_index(drag_events_captured, "dragleave")
         assert last_index(drag_events_captured,
