@@ -1081,7 +1081,15 @@ def make_desktop_nightly_filter(platforms, graph_config):
         
         
         
-        filter_for_target_project = _filter_by_release_project(parameters, graph_config)
+        
+        if parameters["project"] == "try":
+            filter_for_target_project = _filter_by_release_project(
+                parameters, graph_config
+            )
+        else:
+            filter_for_target_project = functools.partial(
+                filter_for_project, parameters=parameters
+            )
 
         return all([
             filter_on_platforms(task, platforms),
