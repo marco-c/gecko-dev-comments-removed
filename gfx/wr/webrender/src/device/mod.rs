@@ -423,6 +423,7 @@ pub trait GpuBackend {
     
     
     
+    
     fn write_buffer_unsynchronized(&mut self, buffer: &Buffer, offset: usize, data: &[u8]);
 
     
