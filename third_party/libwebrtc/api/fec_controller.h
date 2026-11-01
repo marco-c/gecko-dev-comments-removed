@@ -34,10 +34,6 @@ class VCMProtectionCallback {
                                 uint32_t* sent_nack_rate_bps,
                                 uint32_t* sent_fec_rate_bps) = 0;
 
-  
-  
-  virtual void SetRetransmissionMode(int retransmission_mode) = 0;
-
  protected:
   virtual ~VCMProtectionCallback() {}
 };
