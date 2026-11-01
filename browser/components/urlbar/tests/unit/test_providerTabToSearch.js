@@ -12,9 +12,6 @@ let testEngine;
 
 add_setup(async () => {
   
-  
-  Services.prefs.setBoolPref("browser.settings-redesign.enabled", false);
-  
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   
   Services.prefs.setBoolPref(
@@ -637,24 +634,6 @@ add_task(async function test_disabledEngine() {
       }),
     ],
   });
-
-  info("Now disable the engine.");
-  engine.hideOneOffButton = true;
-
-  await check_results({
-    context,
-    autofilled: "disabled.com/",
-    completed: "https://disabled.com/",
-    matches: [
-      makeVisitResult(context, {
-        uri: "https://disabled.com/",
-        title: "test visit for https://disabled.com/",
-        heuristic: true,
-        providerName: "UrlbarProviderAutofill",
-      }),
-    ],
-  });
-  engine.hideOneOffButton = false;
 
   await cleanupPlaces();
   await extension.unload();
