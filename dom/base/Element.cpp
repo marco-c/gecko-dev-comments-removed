@@ -3693,7 +3693,10 @@ bool Element::MaybeCheckSameAttrVal(int32_t aNamespaceID, const nsAtom* aName,
   if (aNotify) {
     BorrowedAttrInfo info(GetAttrInfo(aNamespaceID, aName));
     if (info.mValue) {
-      
+      bool valueMatches = aValue.EqualsAsStrings(*info.mValue);
+      if (valueMatches && aPrefix == info.mName->GetPrefix()) {
+        return true;
+      }
       
       
       if (GetCustomElementData()) {
@@ -3705,10 +3708,6 @@ bool Element::MaybeCheckSameAttrVal(int32_t aNamespaceID, const nsAtom* aName,
         
         aOldValue.SetToSerialized(*info.mValue);
         *aOldValueSet = true;
-      }
-      bool valueMatches = aValue.EqualsAsStrings(*info.mValue);
-      if (valueMatches && aPrefix == info.mName->GetPrefix()) {
-        return true;
       }
       modification = true;
     }
@@ -4125,8 +4124,9 @@ nsresult Element::SetAttrAndNotify(
 
   
   
+  const bool callAfterSetAttr = aCallAfterSetAttr && aName->IsStatic();
   nsAttrValue valueForAfterSetAttr;
-  if (aCallAfterSetAttr || GetCustomElementData()) {
+  if (callAfterSetAttr || GetCustomElementData()) {
     valueForAfterSetAttr.SetTo(aParsedValue);
   }
 
@@ -4205,7 +4205,7 @@ nsresult Element::SetAttrAndNotify(
     }
   }
 
-  if (aCallAfterSetAttr && aName->IsStatic()) {
+  if (callAfterSetAttr) {
     AfterSetAttr(aNamespaceID, aName, &valueForAfterSetAttr, oldValue,
                  aSubjectPrincipal, aNotify);
 
