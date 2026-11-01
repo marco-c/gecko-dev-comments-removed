@@ -2,7 +2,7 @@
 
 
 Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/browser/components/preferences/tests/head.js",
+  "chrome://mochitests/content/browser/browser/components/preferences/tests/head-common.js",
   this
 );
 Services.scriptloader.loadSubScript(
@@ -32,20 +32,4 @@ async function openAiFeaturePanel(doc, win) {
   categoryButton.scrollIntoView();
   EventUtils.synthesizeMouseAtCenter(categoryButton, {}, win);
   await paneLoaded;
-}
-
-
-
-
-
-
-
-
-
-
-
-function srdAwarePane(legacyPane, srdPane) {
-  return Services.prefs.getBoolPref("browser.settings-redesign.enabled")
-    ? srdPane
-    : legacyPane;
 }
