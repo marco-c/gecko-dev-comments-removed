@@ -1732,7 +1732,9 @@ bool GLBlitHelper::Blit(DMABufSurface* surface, const gfx::IntRect& destRect,
   
   
   
-  const bool srcIsBGRA = false;
+  const auto srcFormat = surface->GetFormat();
+  const bool srcIsBGRA = srcFormat == gfx::SurfaceFormat::B8G8R8A8 ||
+                         srcFormat == gfx::SurfaceFormat::B8G8R8X8;
   const bool dstIsBGRA = aDestFormat == gfx::SurfaceFormat::B8G8R8A8 ||
                          aDestFormat == gfx::SurfaceFormat::B8G8R8X8;
   const bool swapRB = srcIsBGRA != dstIsBGRA;
