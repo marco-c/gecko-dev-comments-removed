@@ -452,6 +452,10 @@ void ScreenCastPortal::OnStartRequestResponseSignal(GDBusConnection* connection,
     }
   }
 
+  
+  
+  
+  that->restore_token_.clear();
   if (g_variant_lookup(response_data.get(), "restore_token", "s",
                        restore_token.receive())) {
     that->restore_token_ = restore_token.get();
