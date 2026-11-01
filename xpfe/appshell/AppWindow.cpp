@@ -1004,20 +1004,20 @@ NS_IMETHODIMP AppWindow::EnsureAuthPrompter() {
   return mAuthPrompter ? NS_OK : NS_ERROR_FAILURE;
 }
 
-NS_IMETHODIMP AppWindow::GetAvailScreenSize(int32_t* aAvailWidth,
-                                            int32_t* aAvailHeight) {
+Maybe<CSSIntSize> AppWindow::GetAvailScreenSize() {
   nsCOMPtr<mozIDOMWindowProxy> domWindow;
   GetWindowDOMWindow(getter_AddRefs(domWindow));
-  NS_ENSURE_STATE(domWindow);
+  if (!domWindow) {
+    return {};
+  }
 
   auto* window = nsGlobalWindowOuter::Cast(domWindow);
-
   RefPtr<nsScreen> screen = window->GetScreen();
-  NS_ENSURE_STATE(screen);
+  if (!screen) {
+    return {};
+  }
 
-  *aAvailWidth = screen->AvailWidth();
-  *aAvailHeight = screen->AvailHeight();
-  return NS_OK;
+  return Some(CSSIntSize(screen->AvailWidth(), screen->AvailHeight()));
 }
 
 
@@ -1028,13 +1028,10 @@ NS_IMETHODIMP AppWindow::ForceRoundedDimensions() {
   }
 
   CSSToLayoutDeviceScale scale = UnscaledDevicePixelsPerCSSPixel();
-
-  CSSIntSize availSizeCSS;
-  GetAvailScreenSize(&availSizeCSS.width, &availSizeCSS.height);
-
+  const CSSIntSize availSizeCSS = GetAvailScreenSize().valueOr(CSSIntSize());
   
   
-  SetSpecifiedSize(availSizeCSS.width, availSizeCSS.height);
+  SetSpecifiedSize(availSizeCSS);
 
   
   CSSIntSize windowSizeCSS = RoundedToInt(GetSize() / scale);
@@ -1242,31 +1239,20 @@ bool AppWindow::LoadSizeFromXUL(int32_t& aSpecWidth, int32_t& aSpecHeight) {
   return gotSize;
 }
 
-void AppWindow::SetSpecifiedSize(int32_t aSpecWidth, int32_t aSpecHeight) {
-  
-  
-  
-  {
-    int32_t screenWidth;
-    int32_t screenHeight;
-
-    if (NS_SUCCEEDED(GetAvailScreenSize(&screenWidth, &screenHeight))) {
-      if (aSpecWidth > screenWidth) {
-        aSpecWidth = screenWidth;
-      }
-      if (aSpecHeight > screenHeight) {
-        aSpecHeight = screenHeight;
-      }
-    }
-  }
-
+void AppWindow::SetSpecifiedSize(const CSSIntSize& aSpecifiedSize) {
   NS_ASSERTION(mWindow, "we expected to have a window already");
+
+  auto cssToDev = UnscaledDevicePixelsPerCSSPixel();
+  CSSIntSize size = aSpecifiedSize;
+  if (auto screenSize = GetAvailScreenSize()) {
+    size.width = std::min(size.width, screenSize->width);
+    size.height = std::min(size.height, screenSize->height);
+  }
 
   mIntrinsicallySized = false;
 
   
-  auto newSize = RoundedToInt(CSSIntSize(aSpecWidth, aSpecHeight) *
-                              UnscaledDevicePixelsPerCSSPixel());
+  LayoutDeviceIntSize newSize = RoundedToInt(size * cssToDev);
 
   
   
@@ -2444,7 +2430,7 @@ void AppWindow::SizeShell() {
       !mIgnoreXULPosition && LoadPositionFromXUL(specWidth, specHeight);
 
   if (gotSize) {
-    SetSpecifiedSize(specWidth, specHeight);
+    SetSpecifiedSize(CSSIntSize(specWidth, specHeight));
   }
 
   
@@ -2661,9 +2647,7 @@ void AppWindow::FullscreenWillChange(bool aInFullscreen) {
 
   CSSToLayoutDeviceScale scale = UnscaledDevicePixelsPerCSSPixel();
   CSSIntSize windowSizeCSS = RoundedToInt(GetSize() / scale);
-
-  CSSIntSize screenSizeCSS;
-  GetAvailScreenSize(&screenSizeCSS.width, &screenSizeCSS.height);
+  CSSIntSize screenSizeCSS = GetAvailScreenSize().valueOr(CSSIntSize());
 
   
   
