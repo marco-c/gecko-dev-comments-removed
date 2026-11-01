@@ -26,6 +26,12 @@ class WebTransportError final : public DOMException {
       const GlobalObject& aGlobal, const nsAString& aMessage,
       const WebTransportErrorOptions& aOptions);
 
+  static already_AddRefed<WebTransportError> ReadStructuredClone(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      JSStructuredCloneReader* aReader);
+  bool WriteStructuredClone(JSContext* aCx,
+                            JSStructuredCloneWriter* aWriter) const;
+
   WebTransportErrorSource Source() { return mSource; }
   Nullable<uint32_t> GetStreamErrorCode() const { return mStreamErrorCode; }
 

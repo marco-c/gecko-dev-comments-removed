@@ -165,6 +165,8 @@ enum StructuredCloneTags : uint32_t {
 
   SCTAG_DOM_RTCENCODEDAUDIOFRAME,
 
+  SCTAG_DOM_WEBTRANSPORTERROR,
+
   
   
 };

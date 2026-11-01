@@ -4,7 +4,8 @@
 
 /* https://w3c.github.io/webtransport/#web-transport-error-interface */
 
-[Exposed=(Window,Worker), SecureContext, Pref="network.webtransport.enabled"]
+[Exposed=(Window,Worker), Serializable, SecureContext,
+ Pref="network.webtransport.enabled"]
 interface WebTransportError : DOMException {
   constructor(optional DOMString message = "", optional WebTransportErrorOptions options = {});
 
