@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_GMPVideoEncoder_h_
 #define mozilla_GMPVideoEncoder_h_
 
@@ -74,6 +72,10 @@ class GMPVideoEncoder final : public MediaDataEncoder,
   nsCOMPtr<mozIGeckoMediaPluginService> mMPS;
   GMPVideoEncoderProxy* mGMP = nullptr;
   GMPVideoHost* mHost = nullptr;
+  
+  uint32_t mBitrateKbps = 0;
+  uint32_t mMaxBitrateKbps = 0;
+  uint32_t mFramerate = 0;
   MozPromiseHolder<InitPromise> mInitPromise;
   MozPromiseHolder<EncodePromise> mDrainPromise;
 
