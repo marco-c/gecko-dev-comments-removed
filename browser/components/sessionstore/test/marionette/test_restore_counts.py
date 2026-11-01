@@ -101,7 +101,7 @@ class TestCountsAfterRestore(RestoreCountsTestCase):
 class TestCountsWhenNothingRestored(RestoreCountsTestCase):
     def setUp(self):
         super().setUp(
-            startup_page=1,
+            startup_page=3,
             include_private=False,
             restore_on_demand=False,
             test_windows=TEST_WINDOWS,
@@ -112,11 +112,34 @@ class TestCountsWhenNothingRestored(RestoreCountsTestCase):
         
         
         
-        self.marionette.set_prefs({
-            "browser.sessionstore.persist_closed_tabs_between_sessions": False,
-        })
+        
+        
+        
+        self.marionette.execute_async_script(
+            """
+            let [resolve] = arguments;
+            const { SessionStore } = ChromeUtils.importESModule(
+                "moz-src:///browser/components/sessionstore/SessionStore.sys.mjs"
+            );
+            let state = JSON.parse(SessionStore.getBrowserState());
+            state._closedWindows = state.windows;
+            state.windows = [];
+            IOUtils.writeJSON(
+                PathUtils.join(PathUtils.profileDir, "restore-counts-fixture.jsonlz4"),
+                state,
+                { compress: true }
+            ).then(resolve);
+            """
+        )
 
-        self._quit_and_restore()
+        self.marionette.quit()
+        profile_dir = self.marionette.instance.profile.profile
+        os.replace(
+            os.path.join(profile_dir, "restore-counts-fixture.jsonlz4"),
+            os.path.join(profile_dir, "sessionstore.jsonlz4"),
+        )
+        self.marionette.start_session()
+        self.marionette.set_context("chrome")
 
         counts = self._read_counts()
         for name, value in counts.items():
