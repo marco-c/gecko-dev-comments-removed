@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef TelemetryCommon_h_
 #define TelemetryCommon_h_
 
@@ -28,7 +27,6 @@ enum class RecordedProcessType : uint16_t {
   Content = (1 << GeckoProcessType_Content),
   Gpu = (1 << GeckoProcessType_GPU),
   Rdd = (1 << GeckoProcessType_RDD),
-  Socket = (1 << GeckoProcessType_Socket),
   Utility = (1 << GeckoProcessType_Utility),
   AllChildren = 0xFFFF - 1,  
                              

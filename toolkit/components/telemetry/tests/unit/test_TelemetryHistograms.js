@@ -306,11 +306,6 @@ add_task(async function test_can_record_in_process_regression_bug_1530361() {
     {},
     "No histograms should have been recorded for the gpu process"
   );
-  Assert.deepEqual(
-    snapshot.socket,
-    {},
-    "No histograms should have been recorded for the socket process"
-  );
 });
 
 add_task(function test_knows_its_name() {

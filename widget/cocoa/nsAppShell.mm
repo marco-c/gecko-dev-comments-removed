@@ -491,8 +491,7 @@ nsresult nsAppShell::Init() {
   
   bool isNSApplicationProcessType =
       (XRE_GetProcessType() != GeckoProcessType_Content) &&
-      (XRE_GetProcessType() != GeckoProcessType_RDD) &&
-      (XRE_GetProcessType() != GeckoProcessType_Socket);
+      (XRE_GetProcessType() != GeckoProcessType_RDD);
 
   if (isNSApplicationProcessType) {
     

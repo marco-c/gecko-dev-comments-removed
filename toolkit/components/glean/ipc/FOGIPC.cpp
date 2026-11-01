@@ -342,9 +342,7 @@ void RecordPowerMetrics() {
   }
 
   uint64_t gpuTime, newGpuTime = 0;
-  
-  if (!XRE_IsSocketProcess() &&
-      NS_SUCCEEDED(GetGpuTimeSinceProcessStartInMs(&gpuTime)) &&
+  if (NS_SUCCEEDED(GetGpuTimeSinceProcessStartInMs(&gpuTime)) &&
       gpuTime > previousGpuTime) {
     newGpuTime = gpuTime - previousGpuTime;
   }

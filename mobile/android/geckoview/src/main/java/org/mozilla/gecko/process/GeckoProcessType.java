@@ -18,12 +18,12 @@ public enum GeckoProcessType {
   GPU("gpu"),
   VR("vr"),
   RDD("rdd"),
-  SOCKET("socket"),
+  OBSOLETE3("socket"),
   OBSOLETE2("sandboxbroker"),
   FORKSERVER("forkserver"),
   UTILITY("utility"),
   CONTENT_ISOLATED("isolatedTab"),
-  CONTENT_ISOLATED_WITH_ZYGOTE("isolatedTabWithZygote");
+  CONTENT_ISOLATED_WITH_ZYGOTE("zygoteTab");
 
   private final String mGeckoName;
 

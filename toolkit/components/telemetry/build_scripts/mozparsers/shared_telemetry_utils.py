@@ -20,7 +20,6 @@ KNOWN_PROCESS_FLAGS = {
     "content": "Content",
     "gpu": "Gpu",
     "rdd": "Rdd",
-    "socket": "Socket",
     "utility": "Utility",
     
     "all_childs": "AllChildren",  

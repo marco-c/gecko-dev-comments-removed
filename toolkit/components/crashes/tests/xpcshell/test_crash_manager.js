@@ -97,7 +97,6 @@ add_task(async function test_process_ping() {
   Assert.ok(m.isPingAllowed("gpu"));
   Assert.ok(m.isPingAllowed("main"));
   Assert.ok(m.isPingAllowed("rdd"));
-  Assert.ok(m.isPingAllowed("socket"));
   Assert.ok(m.isPingAllowed("utility"));
   Assert.ok(m.isPingAllowed("vr"));
 });
@@ -285,7 +284,7 @@ const productName = "Firefox";
 const productId = "{ec8030f7-c20a-464f-9b0e-13a3a9e97384}";
 const sha256Hash =
   "f8410c3ac4496cfa9191a1240f0e365101aef40c7bf34fc5bcb8ec511832ed79";
-const stackTraces = {};
+const stackTraces = "{}";
 
 add_task(async function test_main_crash_event_file() {
   let ac = new TelemetryArchiveTesting.Checker();
@@ -329,7 +328,7 @@ add_task(async function test_main_crash_event_file() {
   Assert.ok(crashes[0].metadata.TelemetryEnvironment);
   Assert.equal(Object.getOwnPropertyNames(crashes[0].metadata).length, 7);
   Assert.equal(crashes[0].metadata.TelemetrySessionId, sessionId);
-  Assert.ok(crashes[0].metadata.StackTraces);
+  Assert.equal(crashes[0].metadata.StackTraces, stackTraces);
   Assert.deepEqual(crashes[0].crashDate, DUMMY_DATE);
 
   Assert.ok(m._gleanPingPromise, "ping submitted for found crash");
@@ -556,12 +555,6 @@ add_task(async function test_addCrash() {
     "rdd-crash",
     DUMMY_DATE
   );
-  await m.addCrash(
-    m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_SOCKET],
-    m.CRASH_TYPE_CRASH,
-    "socket-crash",
-    DUMMY_DATE
-  );
 
   await m.addCrash(
     m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT],
@@ -577,7 +570,7 @@ add_task(async function test_addCrash() {
   );
 
   crashes = await m.getCrashes();
-  Assert.equal(crashes.length, 10);
+  Assert.equal(crashes.length, 9);
 
   let map = new Map(crashes.map(crash => [crash.id, crash]));
 
@@ -699,22 +692,6 @@ add_task(async function test_addCrash() {
   Assert.ok(
     crash.isOfType(
       m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_RDD],
-      m.CRASH_TYPE_CRASH
-    )
-  );
-
-  crash = map.get("socket-crash");
-  Assert.ok(!!crash);
-  Assert.equal(crash.crashDate, DUMMY_DATE);
-  Assert.equal(
-    crash.type,
-    m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_SOCKET] +
-      "-" +
-      m.CRASH_TYPE_CRASH
-  );
-  Assert.ok(
-    crash.isOfType(
-      m.processTypes[Ci.nsIXULRuntime.PROCESS_TYPE_SOCKET],
       m.CRASH_TYPE_CRASH
     )
   );

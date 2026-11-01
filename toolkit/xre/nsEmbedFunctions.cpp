@@ -469,7 +469,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
     case GeckoProcessType_IPDLUnitTest:
     case GeckoProcessType_VR:
     case GeckoProcessType_RDD:
-    case GeckoProcessType_Socket:
     case GeckoProcessType_Utility:
       
       uiLoopType = MessageLoop::TYPE_MOZILLA_CHILD;

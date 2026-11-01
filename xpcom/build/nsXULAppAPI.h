@@ -295,8 +295,6 @@ bool XRE_IsE10sParentProcess();
 #include "mozilla/GeckoProcessTypes.inc"
 #undef GECKO_PROCESS_TYPE
 
-bool XRE_IsSocketProcess();
-
 
 
 
