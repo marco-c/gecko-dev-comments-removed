@@ -19,7 +19,6 @@ const { getL10nIdForThemeProp, themeIdPrefix } = ChromeUtils.importESModule(
 
 AddonTestUtils.initMochitest(this);
 
-const PREF_NOVA_ENABLED = "browser.nova.enabled";
 const PREF_NOVA_THEMES_PICKER = "browser.aboutaddons.novaThemesPickerEnabled";
 const PREF_ACTIVE_THEME_ID = "extensions.activeThemeID";
 const PREF_SYSTEM_USES_DARK_THEME = "ui.systemUsesDarkTheme";
@@ -181,10 +180,7 @@ function setupAddonRepoServer(themeId, themeName, xpi) {
 
 add_task(async function test_picker_hidden_when_pref_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, false],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, false]],
   });
 
   const win = await loadInitialView("theme");
@@ -203,42 +199,10 @@ add_task(async function test_picker_hidden_when_pref_disabled() {
 
 
 
-add_task(async function test_picker_hidden_when_nova_disabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, false],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
-  });
-
-  const win = await loadInitialView("theme");
-  const picker = getThemesPicker(win.document);
-  Assert.ok(
-    !BrowserTestUtils.isVisible(picker),
-    "Themes grid should be hidden when browser.nova.enabled is false"
-  );
-
-  const defaultAddonCard = getAddonCard(win, DEFAULT_THEME_ID);
-  Assert.equal(
-    await getThemePreviewSrc(defaultAddonCard),
-    DEFAULT_THEME_PREVIEW_URL,
-    "default theme uses the non-Nova preview image when browser.nova.enabled is false"
-  );
-
-  await closeView(win);
-  await SpecialPowers.popPrefEnv();
-});
-
-
-
-
 
 add_task(async function test_picker_renders_all_known_themes() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   
@@ -295,40 +259,32 @@ add_task(async function test_picker_renders_all_known_themes() {
 
 
 
-
 add_task(async function test_light_dark_themes_preview() {
-  for (const novaEnabled of [true, false]) {
-    await SpecialPowers.pushPrefEnv({
-      set: [
-        [PREF_NOVA_ENABLED, novaEnabled],
-        [PREF_NOVA_THEMES_PICKER, true],
-      ],
-    });
+  await SpecialPowers.pushPrefEnv({
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
+  });
 
-    const win = await loadInitialView("theme");
+  const win = await loadInitialView("theme");
 
-    for (const [themeId, colorScheme] of [
-      [LIGHT_THEME_ID, "light"],
-      [DARK_THEME_ID, "dark"],
-    ]) {
-      const img = await getThemePreviewImage(getAddonCard(win, themeId));
-      Assert.equal(
-        img.src,
-        novaEnabled
-          ? DEFAULT_THEME_PREVIEW_NOVA_URL
-          : `resource://builtin-themes/${colorScheme}/preview.svg`,
-        `${themeId} uses the expected preview image (nova enabled: ${novaEnabled})`
-      );
-      Assert.equal(
-        img.style.colorScheme,
-        novaEnabled ? colorScheme : "",
-        `${themeId} preview image has the expected forced color scheme (nova enabled: ${novaEnabled})`
-      );
-    }
-
-    await closeView(win);
-    await SpecialPowers.popPrefEnv();
+  for (const [themeId, colorScheme] of [
+    [LIGHT_THEME_ID, "light"],
+    [DARK_THEME_ID, "dark"],
+  ]) {
+    const img = await getThemePreviewImage(getAddonCard(win, themeId));
+    Assert.equal(
+      img.src,
+      DEFAULT_THEME_PREVIEW_NOVA_URL,
+      `${themeId} uses the expected preview image`
+    );
+    Assert.equal(
+      img.style.colorScheme,
+      colorScheme,
+      `${themeId} preview image has the expected forced color scheme`
+    );
   }
+
+  await closeView(win);
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -340,10 +296,7 @@ add_task(async function test_light_dark_themes_preview() {
 
 add_task(async function test_default_and_extra_themes_preview_color_scheme() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   const win = await loadInitialView("theme");
@@ -441,7 +394,6 @@ add_task(async function test_themes_preview_rtl() {
   
   await SpecialPowers.pushPrefEnv({
     set: [
-      [PREF_NOVA_ENABLED, true],
       [PREF_NOVA_THEMES_PICKER, true],
       [PREF_LINK_PARAMETERS_ENABLED, true],
     ],
@@ -555,10 +507,7 @@ add_task(async function test_themes_preview_rtl() {
 
 add_task(async function test_picker_show_more_show_less() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   const win = await loadInitialView("theme");
@@ -620,10 +569,7 @@ add_task(async function test_picker_show_more_show_less() {
 
 add_task(async function test_picker_default_theme_button_state() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   
@@ -686,10 +632,7 @@ add_task(async function test_picker_default_theme_button_state() {
 
 add_task(async function test_picker_amo_hosted_themes_button() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   Assert.ok(
@@ -759,10 +702,7 @@ add_task(async function test_picker_amo_hosted_themes_button() {
 
 add_task(async function test_picker_button_click_updates_active_theme() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   const xpi = createNovaThemeXPI(NOVA_SUN_ID, "Nova Sun");
@@ -837,10 +777,7 @@ add_task(async function test_picker_button_click_updates_active_theme() {
 
 add_task(async function test_picker_install_button_downloads_and_activates() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   const xpi = createNovaThemeXPI(NOVA_SUN_ID, "Nova Sun");
@@ -896,10 +833,7 @@ add_task(async function test_picker_install_button_downloads_and_activates() {
 
 add_task(async function test_picker_shows_error_on_install_failure() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   
@@ -946,10 +880,7 @@ add_task(async function test_picker_shows_error_on_install_failure() {
 
 add_task(async function test_picker_reflects_external_addon_install() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   const win = await loadInitialView("theme");
@@ -1050,10 +981,7 @@ add_task(async function test_theme_preview_svgs_ignore_aspect_ratio() {
 
 add_task(async function test_picker_shown_recorded_on_each_theme_view_load() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, true],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, true]],
   });
 
   Services.fog.testResetFOG();
@@ -1108,10 +1036,7 @@ add_task(async function test_picker_shown_recorded_on_each_theme_view_load() {
 
 add_task(async function test_picker_shown_not_recorded_when_pref_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [PREF_NOVA_ENABLED, true],
-      [PREF_NOVA_THEMES_PICKER, false],
-    ],
+    set: [[PREF_NOVA_THEMES_PICKER, false]],
   });
 
   Services.fog.testResetFOG();

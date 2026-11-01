@@ -47,6 +47,9 @@ pref("extensions.getAddons.browserMappings.url", "https://services.addons.mozill
 
 pref("extensions.recommendations.privacyPolicyUrl", "https://www.mozilla.org/privacy/firefox/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=privacy-policy-link#addons");
 
+
+
+
 pref("extensions.recommendations.themeRecommendationUrl", "https://color.firefox.com/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=theme-footer-link");
 
 pref("extensions.update.autoUpdateDefault", true);

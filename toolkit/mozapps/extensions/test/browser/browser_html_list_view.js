@@ -1139,7 +1139,6 @@ add_task(async function testEmptyMessage() {
     );
 
     
-    
     is_element_hidden(
       emptyStatePromo,
       `Empty addons promo hidden on list view type ${test.type}`
@@ -1156,47 +1155,40 @@ add_task(async function testEmptyMessage() {
     }
 
     
-    if (Services.prefs.getBoolPref("browser.nova.enabled")) {
-      switch (test.type) {
-        case "extension":
-          is_element_visible(
-            emptyStatePromo,
-            `Empty addons promo visible on list view type ${test.type}`
-          );
-          break;
-        case "theme": 
+    switch (test.type) {
+      case "extension":
+        is_element_visible(
+          emptyStatePromo,
+          `Empty addons promo visible on list view type ${test.type}`
+        );
+        break;
+      case "theme": 
+      
+      
+      
+      case "plugin": 
+      case "locale": 
+      case "dictionary":
         
         
         
-        case "plugin": 
-        case "locale": 
-        case "dictionary":
-          
-          
-          
-          
-          
-          
-          
-          
-          todo(
-            false,
-            "Should we keep the old empty message or add new strings for " +
-              "per-type message and button label to set on the promo?"
-          );
-          is_element_hidden(
-            emptyStatePromo,
-            `Empty addons promo hidden on non empty list view type ${test.type}`
-          );
-          break;
-        default:
-          ok(false, `Unexpected list view type ${test.type}`);
-      }
-    } else {
-      is_element_visible(
-        message,
-        `Empty addons message visible on list view type ${test.type}`
-      );
+        
+        
+        
+        
+        
+        todo(
+          false,
+          "Should we keep the old empty message or add new strings for " +
+            "per-type message and button label to set on the promo?"
+        );
+        is_element_hidden(
+          emptyStatePromo,
+          `Empty addons promo hidden on non empty list view type ${test.type}`
+        );
+        break;
+      default:
+        ok(false, `Unexpected list view type ${test.type}`);
     }
 
     await closeView(win);
@@ -1205,10 +1197,7 @@ add_task(async function testEmptyMessage() {
 
 add_task(async function testEmptyPromoButtonUtmContent() {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.nova.enabled", true],
-      ["extensions.getAddons.link.url", AMO_TEST_URL],
-    ],
+    set: [["extensions.getAddons.link.url", AMO_TEST_URL]],
   });
 
   let win = await loadInitialView("extension");

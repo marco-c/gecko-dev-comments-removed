@@ -7,7 +7,6 @@ const { getL10nIdForThemeProp, getL10nThemeString } =
     "resource://gre/modules/addons/ThemesBundledLocalization.sys.mjs"
   );
 
-const PREF_NOVA_ENABLED = "browser.nova.enabled";
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 
 add_task(async function test_ensure_builtin_themes_are_localized() {
@@ -22,38 +21,16 @@ add_task(async function test_ensure_builtin_themes_are_localized() {
     true
   );
 
-  const getExpectedL10nString = (themeId, prop, isNovaEnabled) => {
+  const getExpectedL10nString = (themeId, prop) => {
     const id = getL10nIdForThemeProp(themeId, prop);
-    let message;
-
-    
-    
-    if (
-      themeId === DEFAULT_THEME_ID &&
-      isNovaEnabled &&
-      ["name", "description"].includes(prop)
-    ) {
-      const novaPreviewL10n = new Localization(
-        ["locales-preview/nova-aboutAddons.ftl", "branding/brand.ftl"],
-        true
-      );
-      [message] = novaPreviewL10n.formatMessagesSync([{ id }]);
-      ok(message, `Found a preview localized message for fluent id ${id}`);
-    } else {
-      [message] = l10n.formatMessagesSync([{ id }]);
-      ok(message, `Found a localized message for fluent id ${id}`);
-    }
-
+    const [message] = l10n.formatMessagesSync([{ id }]);
+    ok(message, `Found a localized message for fluent id ${id}`);
     return message.value;
   };
 
-  function testLocalizedThemeWrapperProperty(theme, isNovaEnabled) {
-    const expectedName = getExpectedL10nString(theme.id, "name", isNovaEnabled);
-    const expectedDescription = getExpectedL10nString(
-      theme.id,
-      "description",
-      isNovaEnabled
-    );
+  function testLocalizedThemeWrapperProperty(theme) {
+    const expectedName = getExpectedL10nString(theme.id, "name");
+    const expectedDescription = getExpectedL10nString(theme.id, "description");
 
     Assert.equal(
       getL10nThemeString(theme.id, "name"),
@@ -78,15 +55,8 @@ add_task(async function test_ensure_builtin_themes_are_localized() {
     );
   }
 
-  for (let novaEnabled of [true, false]) {
-    info(`Run with Nova ${novaEnabled ? "enabled" : "disabled"}`);
-    await SpecialPowers.pushPrefEnv({
-      set: [[PREF_NOVA_ENABLED, novaEnabled]],
-    });
-    for (let standardTheme of standardBuiltInThemes) {
-      testLocalizedThemeWrapperProperty(standardTheme, novaEnabled);
-    }
-    await SpecialPowers.popPrefEnv();
+  for (let standardTheme of standardBuiltInThemes) {
+    testLocalizedThemeWrapperProperty(standardTheme);
   }
 });
 
@@ -115,9 +85,7 @@ add_task(async function test_ensure_curated_theme_ids_are_localized() {
     .map(themeInfo => themeInfo.id)
     .filter(themeId => themeId !== DEFAULT_THEME_ID);
 
-  
-  
-  const l10n = new Localization(["locales-preview/nova-aboutAddons.ftl"], true);
+  const l10n = new Localization(["browser/appExtensionFields.ftl"], true);
 
   for (let themeId of THEME_IDS) {
     let fluentId = getL10nIdForThemeProp(themeId, "name");
