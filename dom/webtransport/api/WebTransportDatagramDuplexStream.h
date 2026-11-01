@@ -10,6 +10,7 @@
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebTransport.h"
 #include "mozilla/dom/WebTransportDatagramDuplexStreamBinding.h"
+#include "mozilla/dom/WebTransportDatagramsWritable.h"
 #include "mozilla/dom/WritableStream.h"
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
@@ -17,7 +18,6 @@
 
 namespace mozilla::dom {
 
-class WebTransportDatagramsWritable;
 struct WebTransportSendOptions;
 
 class IncomingDatagramStreamAlgorithms
@@ -145,14 +145,14 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   void SetIncomingMaxAge(double aMaxAge, ErrorResult& aRv);
   double GetOutgoingMaxAge(ErrorResult& aRv) const { return mOutgoingMaxAge; }
   void SetOutgoingMaxAge(double aMaxAge, ErrorResult& aRv);
-  double GetIncomingHighWaterMark(ErrorResult& aRv) const {
-    return mIncomingHighWaterMark;
+  uint32_t IncomingMaxBufferedDatagrams() const {
+    return mIncomingMaxBufferedDatagrams;
   }
-  void SetIncomingHighWaterMark(double aWaterMark, ErrorResult& aRv);
-  double GetOutgoingHighWaterMark(ErrorResult& aRv) const {
-    return mOutgoingHighWaterMark;
+  void SetIncomingMaxBufferedDatagrams(uint32_t aValue);
+  uint32_t OutgoingMaxBufferedDatagrams() const {
+    return mOutgoingMaxBufferedDatagrams;
   }
-  void SetOutgoingHighWaterMark(double aWaterMark, ErrorResult& aRv);
+  void SetOutgoingMaxBufferedDatagrams(uint32_t aValue);
 
   already_AddRefed<WebTransportDatagramsWritable> CreateWritable(
       const WebTransportSendOptions& aOptions, ErrorResult& aRv);
@@ -171,8 +171,8 @@ class WebTransportDatagramDuplexStream final : public nsISupports,
   double mIncomingMaxAge = INFINITY;
   double mOutgoingMaxAge = INFINITY;
   
-  double mIncomingHighWaterMark = 5.0;
-  double mOutgoingHighWaterMark = 5.0;
+  uint32_t mIncomingMaxBufferedDatagrams = 5;
+  uint32_t mOutgoingMaxBufferedDatagrams = 5;
   uint64_t mOutgoingMaxDataSize = 1024;  
 
   mozilla::Queue<UniquePtr<DatagramEntry>, 32> mIncomingDatagramsQueue;

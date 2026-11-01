@@ -4,6 +4,7 @@
 
 #include "WebTransportDatagramDuplexStream.h"
 
+#include <algorithm>
 #include <memory>
 
 #include "js/experimental/TypedData.h"
@@ -103,36 +104,16 @@ void WebTransportDatagramDuplexStream::SetOutgoingMaxAge(double aMaxAge,
   mOutgoingMaxAge = aMaxAge;
 }
 
-void WebTransportDatagramDuplexStream::SetIncomingHighWaterMark(
-    double aWaterMark, ErrorResult& aRv) {
+void WebTransportDatagramDuplexStream::SetIncomingMaxBufferedDatagrams(
+    uint32_t aValue) {
   
-  
-  if (isnan(aWaterMark) || aWaterMark < 0.) {
-    aRv.ThrowRangeError("Invalid IncomingHighWaterMark");
-    return;
-  }
-  
-  if (aWaterMark < 1.0) {
-    aWaterMark = 1.0;
-  }
-  
-  mIncomingHighWaterMark = aWaterMark;
+  mIncomingMaxBufferedDatagrams = std::max(aValue, 1u);
 }
 
-void WebTransportDatagramDuplexStream::SetOutgoingHighWaterMark(
-    double aWaterMark, ErrorResult& aRv) {
+void WebTransportDatagramDuplexStream::SetOutgoingMaxBufferedDatagrams(
+    uint32_t aValue) {
   
-  
-  if (isnan(aWaterMark) || aWaterMark < 0.) {
-    aRv.ThrowRangeError("Invalid OutgoingHighWaterMark");
-    return;
-  }
-  
-  if (aWaterMark < 1.0) {
-    aWaterMark = 1.0;
-  }
-  
-  mOutgoingHighWaterMark = aWaterMark;
+  mOutgoingMaxBufferedDatagrams = std::max(aValue, 1u);
 }
 
 already_AddRefed<WebTransportDatagramsWritable>
@@ -190,12 +171,11 @@ void WebTransportDatagramDuplexStream::NewDatagramReceived(
   
   
   
-  while (mIncomingDatagramsQueue.Count() >=
-         static_cast<uint32_t>(mIncomingHighWaterMark)) {
+  while (mIncomingDatagramsQueue.Count() >= mIncomingMaxBufferedDatagrams) {
     LOG(
-        ("Dropping oldest incoming datagram: queue size (%zu) >= high water "
-         "mark (%f)",
-         mIncomingDatagramsQueue.Count(), mIncomingHighWaterMark));
+        ("Dropping oldest incoming datagram: queue size (%zu) >= "
+         "incomingMaxBufferedDatagrams (%u)",
+         mIncomingDatagramsQueue.Count(), mIncomingMaxBufferedDatagrams));
     UniquePtr<DatagramEntry> entry = mIncomingDatagramsQueue.Pop();
     mDroppedIncoming++;
   }
