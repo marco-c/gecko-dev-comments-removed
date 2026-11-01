@@ -23,7 +23,8 @@ namespace test {
 
 class StdoutMetricsExporter : public MetricsExporter {
  public:
-  StdoutMetricsExporter();
+  
+  explicit StdoutMetricsExporter(FILE* output = stdout);
   ~StdoutMetricsExporter() override = default;
 
   StdoutMetricsExporter(const StdoutMetricsExporter&) = delete;
