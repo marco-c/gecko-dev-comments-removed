@@ -13,6 +13,25 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { SpecialPowersForProcess } = ChromeUtils.importESModule(
+  "resource://testing-common/SpecialPowersProcessActor.sys.mjs"
+);
+
+
+
+
+
+registerCleanupFunction(async () => {
+  for (let domProcess of ChromeUtils.getAllDOMProcesses()) {
+    if (domProcess.remoteType === "privilegedabout") {
+      await new SpecialPowersForProcess(this, domProcess).spawn([], () => {
+        Cu.forceShrinkingGC();
+        Cu.forceCC();
+      });
+    }
+  }
+});
+
 function popPrefs() {
   return SpecialPowers.popPrefEnv();
 }
