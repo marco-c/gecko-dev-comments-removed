@@ -1110,9 +1110,11 @@ enum class ItemActivity : uint8_t {
   
   Could = 1,
   
-  Should = 2,
+  ShouldForAnimation = 2,
   
-  Must = 3,
+  Should = 3,
+  
+  Must = 4,
 };
 
 ItemActivity CombineActivity(ItemActivity a, ItemActivity b) {
@@ -1224,7 +1226,7 @@ static ItemActivity IsItemProbablyActive(
                                         aDisplayListBuilder, t2d * aTransform);
 
       if (transformItem->MayBeAnimated(aDisplayListBuilder)) {
-        activity = CombineActivity(activity, ItemActivity::Should);
+        activity = CombineActivity(activity, ItemActivity::ShouldForAnimation);
       }
 
       return activity;
@@ -1297,9 +1299,6 @@ static ItemActivity IsItemProbablyActive(
                 .IsSimpleClipShape()) {
           return activity;
         }
-        
-        
-        
         
         
         if (activity < ItemActivity::Should) {
@@ -1414,7 +1413,7 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
                                          encounteredActiveItem, Matrix());
     auto threshold = isFirst || isLast || lowerMiddleThreshold
                          ? ItemActivity::Could
-                         : ItemActivity::Should;
+                         : ItemActivity::ShouldForAnimation;
 
     if (activity >= threshold) {
       encounteredActiveItem = true;
