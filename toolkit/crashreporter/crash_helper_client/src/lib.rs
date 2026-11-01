@@ -13,7 +13,7 @@ use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
 #[cfg(target_os = "android")]
 use std::os::fd::RawFd;
 #[cfg(target_os = "windows")]
-use std::os::windows::io::{BorrowedHandle, OwnedHandle, RawHandle};
+use std::os::windows::io::{AsRawHandle, BorrowedHandle, OwnedHandle, RawHandle};
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
@@ -27,7 +27,10 @@ use std::{
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::{
     Foundation::HANDLE,
-    System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD},
+    System::{
+        Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD},
+        Threading::{GetProcessId, GetThreadId},
+    },
 };
 
 extern crate num_traits;
@@ -354,15 +357,25 @@ pub unsafe extern "C" fn generate_crash_report(
 #[cfg(target_os = "windows")]
 pub unsafe fn report_external_exception(
     main_process_pid: Pid,
-    process: OwnedHandle,
-    thread: OwnedHandle,
+    process: BorrowedHandle,
+    thread: BorrowedHandle,
     exception_record_ptr: *mut EXCEPTION_RECORD,
     context_ptr: *mut CONTEXT,
 ) {
     let exception_records = collect_exception_records(exception_record_ptr);
     let context = unsafe { context_ptr.read() };
+    
+    let pid = match unsafe { GetProcessId(process.as_raw_handle() as HANDLE) } {
+        0 => return,
+        pid => pid,
+    };
+    
+    let tid = match unsafe { GetThreadId(thread.as_raw_handle() as HANDLE) } {
+        0 => return,
+        tid => tid,
+    };
     let message =
-        messages::WindowsErrorReportingMinidump::new(process, thread, exception_records, context);
+        messages::WindowsErrorReportingMinidump::new(pid, tid, exception_records, context);
 
     
     
