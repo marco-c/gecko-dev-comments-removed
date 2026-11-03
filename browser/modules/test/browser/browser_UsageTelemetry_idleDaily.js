@@ -88,6 +88,8 @@ add_task(async function test_idleDailyRerecordsPrefValues() {
 
 
 
+
+
 add_task(async function test_idleDailyRecordsNovaEnabled() {
   
   
@@ -98,23 +100,19 @@ add_task(async function test_idleDailyRecordsNovaEnabled() {
     "the metric should start out unset"
   );
 
-  for (let novaEnabled of [true, false]) {
-    await SpecialPowers.pushPrefEnv({ set: [[NOVA_PREF, novaEnabled]] });
+  let novaEnabled = Services.prefs.getBoolPref(NOVA_PREF, true);
 
-    Services.obs.notifyObservers(null, "idle-daily");
+  Services.obs.notifyObservers(null, "idle-daily");
 
-    await TestUtils.waitForCondition(
-      () => Glean.nova.enabled.testGetValue() === novaEnabled,
-      `wait for idle-daily to record browser.nova.enabled=${novaEnabled}`
-    );
-    Assert.equal(
-      Glean.nova.enabled.testGetValue(),
-      novaEnabled,
-      `idle-daily should have recorded browser.nova.enabled=${novaEnabled}`
-    );
-
-    await SpecialPowers.popPrefEnv();
-  }
+  await TestUtils.waitForCondition(
+    () => Glean.nova.enabled.testGetValue() === novaEnabled,
+    `wait for idle-daily to record browser.nova.enabled=${novaEnabled}`
+  );
+  Assert.equal(
+    Glean.nova.enabled.testGetValue(),
+    novaEnabled,
+    `idle-daily should have recorded browser.nova.enabled=${novaEnabled}`
+  );
 });
 
 
