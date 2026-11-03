@@ -1,12 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "fs/FileSystemRequestHandler.h"
 
 #include "FileSystemEntryMetadataArray.h"
 #include "fs/FileSystemConstants.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileSystemAccessHandleChild.h"
@@ -70,9 +69,9 @@ void HandleFailedStatus(nsresult aError, const RefPtr<Promise>& aPromise) {
 
 bool MakeResolution(nsIGlobalObject* aGlobal,
                     FileSystemGetEntriesResponse&& aResponse,
-                    const bool& /* aResult */,
+                    const bool& ,
                     RefPtr<FileSystemEntryMetadataArray>& aSink) {
-  // TODO: Add page size to FileSystemConstants, preallocate and handle overflow
+  
   const auto& listing = aResponse.get_FileSystemDirectoryListing();
 
   for (const auto& it : listing.files()) {
@@ -88,41 +87,41 @@ bool MakeResolution(nsIGlobalObject* aGlobal,
 
 RefPtr<FileSystemDirectoryHandle> MakeResolution(
     nsIGlobalObject* aGlobal, FileSystemGetHandleResponse&& aResponse,
-    const RefPtr<FileSystemDirectoryHandle>& /* aResult */,
+    const RefPtr<FileSystemDirectoryHandle>& ,
     RefPtr<FileSystemManager>& aManager) {
   RefPtr<FileSystemDirectoryHandle> result = new FileSystemDirectoryHandle(
       aGlobal, aManager,
       FileSystemEntryMetadata(aResponse.get_EntryId(), kRootName,
-                              /* directory */ true));
+                               true));
   return result;
 }
 
 RefPtr<FileSystemDirectoryHandle> MakeResolution(
     nsIGlobalObject* aGlobal, FileSystemGetHandleResponse&& aResponse,
-    const RefPtr<FileSystemDirectoryHandle>& /* aResult */, const Name& aName,
+    const RefPtr<FileSystemDirectoryHandle>& , const Name& aName,
     RefPtr<FileSystemManager>& aManager) {
   RefPtr<FileSystemDirectoryHandle> result = new FileSystemDirectoryHandle(
       aGlobal, aManager,
       FileSystemEntryMetadata(aResponse.get_EntryId(), aName,
-                              /* directory */ true));
+                               true));
 
   return result;
 }
 
 RefPtr<FileSystemFileHandle> MakeResolution(
     nsIGlobalObject* aGlobal, FileSystemGetHandleResponse&& aResponse,
-    const RefPtr<FileSystemFileHandle>& /* aResult */, const Name& aName,
+    const RefPtr<FileSystemFileHandle>& , const Name& aName,
     RefPtr<FileSystemManager>& aManager) {
   RefPtr<FileSystemFileHandle> result = new FileSystemFileHandle(
       aGlobal, aManager,
       FileSystemEntryMetadata(aResponse.get_EntryId(), aName,
-                              /* directory */ false));
+                               false));
   return result;
 }
 
 RefPtr<FileSystemSyncAccessHandle> MakeResolution(
     nsIGlobalObject* aGlobal, FileSystemGetAccessHandleResponse&& aResponse,
-    const RefPtr<FileSystemSyncAccessHandle>& /* aReturns */,
+    const RefPtr<FileSystemSyncAccessHandle>& ,
     const FileSystemEntryMetadata& aMetadata,
     RefPtr<FileSystemManager>& aManager) {
   auto& properties = aResponse.get_FileSystemAccessHandleProperties();
@@ -141,7 +140,7 @@ RefPtr<FileSystemSyncAccessHandle> MakeResolution(
 RefPtr<FileSystemWritableFileStream> MakeResolution(
     nsIGlobalObject* aGlobal,
     FileSystemGetWritableFileStreamResponse&& aResponse,
-    const RefPtr<FileSystemWritableFileStream>& /* aReturns */,
+    const RefPtr<FileSystemWritableFileStream>& ,
     const FileSystemEntryMetadata& aMetadata,
     RefPtr<FileSystemManager>& aManager) {
   auto& properties = aResponse.get_FileSystemWritableFileStreamProperties();
@@ -160,7 +159,7 @@ RefPtr<FileSystemWritableFileStream> MakeResolution(
 
 RefPtr<File> MakeResolution(nsIGlobalObject* aGlobal,
                             FileSystemGetFileResponse&& aResponse,
-                            const RefPtr<File>& /* aResult */,
+                            const RefPtr<File>& ,
                             const Name& aName,
                             RefPtr<FileSystemManager>& aManager) {
   auto& fileProperties = aResponse.get_FileSystemFileProperties();
@@ -174,7 +173,7 @@ RefPtr<File> MakeResolution(nsIGlobalObject* aGlobal,
 template <class TResponse, class... Args>
 void ResolveCallback(
     TResponse&& aResponse,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     Args&&... args) {
   MOZ_ASSERT(aPromise);
   QM_TRY(OkIf(Promise::PromiseState::Pending == aPromise->State()), QM_VOID);
@@ -198,7 +197,7 @@ void ResolveCallback(
 template <>
 void ResolveCallback(
     FileSystemRemoveEntryResponse&& aResponse,
-    RefPtr<Promise> aPromise) {  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise) {  
   MOZ_ASSERT(aPromise);
   QM_TRY(OkIf(Promise::PromiseState::Pending == aPromise->State()), QM_VOID);
 
@@ -213,7 +212,7 @@ void ResolveCallback(
 
 void ResolveCallback(
     FileSystemMoveEntryResponse&& aResponse,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     const RefPtr<FileSystemHandle>& aHandle, const Name& aName) {
   MOZ_ASSERT(aPromise);
   MOZ_ASSERT(aHandle);
@@ -235,7 +234,7 @@ void ResolveCallback(
 
 template <>
 void ResolveCallback(FileSystemResolveResponse&& aResponse,
-                     // NOLINTNEXTLINE(performance-unnecessary-value-param)
+                     
                      RefPtr<Promise> aPromise) {
   MOZ_ASSERT(aPromise);
   QM_TRY(OkIf(Promise::PromiseState::Pending == aPromise->State()), QM_VOID);
@@ -251,18 +250,18 @@ void ResolveCallback(FileSystemResolveResponse&& aResponse,
     return;
   }
 
-  // Spec says if there is no parent/child relationship, return null
+  
   aPromise->MaybeResolve(JS::NullHandleValue);
 }
 
 template <class TResponse, class TReturns, class... Args,
           std::enable_if_t<std::is_same_v<TReturns, void>, bool> = true>
 mozilla::ipc::ResolveCallback<TResponse> SelectResolveCallback(
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     Args&&... args) {
   using TOverload = void (*)(TResponse&&, RefPtr<Promise>, Args...);
   return static_cast<std::function<void(TResponse&&)>>(
-      // NOLINTNEXTLINE(modernize-avoid-bind)
+      
       std::bind(static_cast<TOverload>(ResolveCallback), std::placeholders::_1,
                 aPromise, std::forward<Args>(args)...));
 }
@@ -270,18 +269,18 @@ mozilla::ipc::ResolveCallback<TResponse> SelectResolveCallback(
 template <class TResponse, class TReturns, class... Args,
           std::enable_if_t<!std::is_same_v<TReturns, void>, bool> = true>
 mozilla::ipc::ResolveCallback<TResponse> SelectResolveCallback(
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     Args&&... args) {
   using TOverload =
       void (*)(TResponse&&, RefPtr<Promise>, const TReturns&, Args...);
   return static_cast<std::function<void(TResponse&&)>>(
-      // NOLINTNEXTLINE(modernize-avoid-bind)
+      
       std::bind(static_cast<TOverload>(ResolveCallback), std::placeholders::_1,
                 aPromise, TReturns(), std::forward<Args>(args)...));
 }
 
 void RejectCallback(
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     mozilla::ipc::ResponseRejectReason aReason) {
   IPCRejectReporter(aReason);
   QM_TRY(OkIf(Promise::PromiseState::Pending == aPromise->State()), QM_VOID);
@@ -289,9 +288,9 @@ void RejectCallback(
 }
 
 mozilla::ipc::RejectCallback GetRejectCallback(
-    RefPtr<Promise> aPromise) {  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise) {  
   return static_cast<mozilla::ipc::RejectCallback>(
-      // NOLINTNEXTLINE(modernize-avoid-bind)
+      
       std::bind(RejectCallback, aPromise, std::placeholders::_1));
 }
 
@@ -316,12 +315,12 @@ struct BeginRequestFailureCallback {
   RefPtr<Promise> mPromise;
 };
 
-}  // namespace
+}  
 
 void FileSystemRequestHandler::GetRootHandle(
     RefPtr<FileSystemManager>
-        aManager,              // NOLINT(performance-unnecessary-value-param)
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+        aManager,              
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(aPromise);
@@ -345,7 +344,7 @@ void FileSystemRequestHandler::GetRootHandle(
 void FileSystemRequestHandler::GetDirectoryHandle(
     RefPtr<FileSystemManager>& aManager,
     const FileSystemChildMetadata& aDirectory, bool aCreate,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aDirectory.parentId().IsEmpty());
@@ -377,7 +376,7 @@ void FileSystemRequestHandler::GetDirectoryHandle(
 void FileSystemRequestHandler::GetFileHandle(
     RefPtr<FileSystemManager>& aManager, const FileSystemChildMetadata& aFile,
     bool aCreate,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aFile.parentId().IsEmpty());
@@ -440,12 +439,6 @@ void FileSystemRequestHandler::GetWritable(RefPtr<FileSystemManager>& aManager,
   LOG(("GetWritable %s keep %d", NS_ConvertUTF16toUTF8(aFile.entryName()).get(),
        aKeepData));
 
-  // XXX This should be removed once bug 1798513 is fixed.
-  if (!StaticPrefs::dom_fs_writable_file_stream_enabled()) {
-    aError.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    return;
-  }
-
   if (aManager->IsShutdown()) {
     aError.Throw(NS_ERROR_ILLEGAL_DURING_SHUTDOWN);
     return;
@@ -468,7 +461,7 @@ void FileSystemRequestHandler::GetWritable(RefPtr<FileSystemManager>& aManager,
 
 void FileSystemRequestHandler::GetFile(
     RefPtr<FileSystemManager>& aManager, const FileSystemEntryMetadata& aFile,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aFile.entryId().IsEmpty());
@@ -494,7 +487,7 @@ void FileSystemRequestHandler::GetFile(
 void FileSystemRequestHandler::GetEntries(
     RefPtr<FileSystemManager>& aManager, const EntryId& aDirectory,
     PageNumber aPage,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     RefPtr<FileSystemEntryMetadataArray>& aSink, ErrorResult& aError) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aDirectory.IsEmpty());
@@ -520,7 +513,7 @@ void FileSystemRequestHandler::GetEntries(
 void FileSystemRequestHandler::RemoveEntry(
     RefPtr<FileSystemManager>& aManager, const FileSystemChildMetadata& aEntry,
     bool aRecursive,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(!aEntry.parentId().IsEmpty());
@@ -552,7 +545,7 @@ void FileSystemRequestHandler::MoveEntry(
     RefPtr<FileSystemManager>& aManager, RefPtr<FileSystemHandle> aHandle,
     FileSystemEntryMetadata* const aEntry,
     const FileSystemChildMetadata& aNewEntry,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aEntry);
   MOZ_ASSERT(!aEntry->entryId().IsEmpty());
@@ -564,7 +557,7 @@ void FileSystemRequestHandler::MoveEntry(
     return;
   }
 
-  // reject invalid names: empty, path separators, current & parent directories
+  
   if (!IsValidName(aNewEntry.childName())) {
     aPromise->MaybeRejectWithTypeError("Invalid name");
     return;
@@ -585,7 +578,7 @@ void FileSystemRequestHandler::MoveEntry(
 void FileSystemRequestHandler::RenameEntry(
     RefPtr<FileSystemManager>& aManager, RefPtr<FileSystemHandle> aHandle,
     FileSystemEntryMetadata* const aEntry, const Name& aName,
-    RefPtr<Promise> aPromise,  // NOLINT(performance-unnecessary-value-param)
+    RefPtr<Promise> aPromise,  
     ErrorResult& aError) {
   MOZ_ASSERT(aEntry);
   MOZ_ASSERT(!aEntry->entryId().IsEmpty());
@@ -597,7 +590,7 @@ void FileSystemRequestHandler::RenameEntry(
     return;
   }
 
-  // reject invalid names: empty, path separators, current & parent directories
+  
   if (!IsValidName(aName)) {
     aPromise->MaybeRejectWithTypeError("Invalid name");
     return;
@@ -617,7 +610,7 @@ void FileSystemRequestHandler::RenameEntry(
 
 void FileSystemRequestHandler::Resolve(
     RefPtr<FileSystemManager>& aManager,
-    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    
     const FileSystemEntryPair& aEndpoints, RefPtr<Promise> aPromise,
     ErrorResult& aError) {
   MOZ_ASSERT(aManager);
@@ -641,4 +634,4 @@ void FileSystemRequestHandler::Resolve(
       BeginRequestFailureCallback(aPromise));
 }
 
-}  // namespace mozilla::dom::fs
+}  
