@@ -1964,7 +1964,7 @@ void CodeGenerator::visitTestOAndBranch(LTestOAndBranch* lir) {
   if (intact) {
     assertObjectDoesNotEmulateUndefined(input, temp, lir->mir());
     
-    masm.jump(truthy);
+    jumpToBlock(lir->ifTruthy());
   } else {
     auto* ool = new (alloc()) OutOfLineTestObject();
     addOutOfLineCode(ool, lir->mir());
@@ -1991,7 +1991,7 @@ void CodeGenerator::visitTestVAndBranch(LTestVAndBranch* lir) {
 
   testValueTruthy(input, tempToUnbox, temp, floatTemp, observedTypes, truthy,
                   falsy, ool);
-  masm.jump(truthy);
+  jumpToBlock(lir->ifTruthy());
 }
 
 void CodeGenerator::visitBooleanToString(LBooleanToString* lir) {
@@ -13670,7 +13670,7 @@ void CodeGenerator::visitIsNullOrLikeUndefinedAndBranchT(
   if (intact) {
     
     assertObjectDoesNotEmulateUndefined(input, scratch, lir->mir());
-    masm.jump(ifFalseLabel);
+    jumpToBlock(ifFalse);
   } else {
     auto* ool = new (alloc()) OutOfLineTestObject();
     addOutOfLineCode(ool, lir->cmpMir());
