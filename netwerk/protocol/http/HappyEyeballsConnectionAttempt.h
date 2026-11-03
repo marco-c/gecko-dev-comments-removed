@@ -278,7 +278,11 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   void OnClientAuthCertificateRequested(uint64_t aEstablisherId);
   void OnClientAuthCertificateSelected(uint64_t aEstablisherId);
 
-  nsresult EstablishTCPConnection(NetAddr aAddr, uint16_t aPort,
+  nsresult FixupProxyDnsError(nsresult aStatus) const;
+
+  
+  
+  nsresult EstablishTCPConnection(const EndpointTarget& aTarget, uint16_t aPort,
                                   nsTArray<uint8_t>&& aEchConfig, uint64_t aId,
                                   bool aIsEchRetry);
   
@@ -355,6 +359,7 @@ class HappyEyeballsConnectionAttempt final : public ConnectionAttempt,
   nsresult mLastDnsError = NS_OK;
   nsTHashSet<uint32_t> mSentTransportStatuses;
 
+  
   
   
   

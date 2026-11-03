@@ -8304,25 +8304,9 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    if (mProxyInfo) {
-      if (!StaticPrefs::network_http_happy_eyeballs_proxy_enabled()) {
-        return false;
-      }
-      
-      
-      
-      
-      
-      
-      if (static_cast<nsProxyInfo*>(mProxyInfo.get())->IsSOCKS()) {
-        return false;
-      }
-      
-      
-      
-      
-      
-      
+    if (mProxyInfo &&
+        !StaticPrefs::network_http_happy_eyeballs_proxy_enabled()) {
+      return false;
     }
 
     
@@ -8331,8 +8315,6 @@ nsresult nsHttpChannel::BeginConnect() {
       return false;
     }
 
-    
-    
     
     
     if (mCaps & NS_HTTP_CONNECT_ONLY) {
