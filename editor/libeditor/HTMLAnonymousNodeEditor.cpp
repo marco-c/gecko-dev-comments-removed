@@ -129,7 +129,7 @@ void ElementDeletionObserver::ParentChainChanged(nsIContent* aContent)
   nsCOMPtr<nsIContent> nativeAnonNode = mNativeAnonNode;
   mNativeAnonNode = nullptr;
   nativeAnonNode->RemoveMutationObserver(self);
-  ManualNACPtr::RemoveContentFromNACArray(nativeAnonNode);
+  ManualNACPtr::RemoveContentFromNACArray(std::move(nativeAnonNode));
   
   
   
