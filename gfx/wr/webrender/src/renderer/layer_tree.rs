@@ -19,25 +19,26 @@ pub enum LayerMode {
     
     Framebuffer,
     
+    
     Swapchains,
 }
 
-pub fn layer_mode(config: &CompositorConfig) -> LayerMode {
-    match config {
-        CompositorConfig::Layer { .. } => LayerMode::Swapchains,
-        CompositorConfig::Draw { .. } | CompositorConfig::Native { .. } => LayerMode::Framebuffer,
+pub fn layer_mode(kind: CompositorKind) -> LayerMode {
+    if kind.uses_os_layers() {
+        LayerMode::Swapchains
+    } else {
+        LayerMode::Framebuffer
     }
 }
 
 
-pub fn allows_external_layers(config: &CompositorConfig, kind: CompositorKind) -> bool {
-    layer_mode(config) == LayerMode::Swapchains && matches!(kind, CompositorKind::Layer { .. })
-}
 
-pub fn window_properties(config: &CompositorConfig) -> WindowProperties {
+pub fn window_properties(config: &CompositorConfig, kind: CompositorKind) -> WindowProperties {
     match config {
-        CompositorConfig::Layer { ref compositor } => compositor.get_window_properties(),
-        CompositorConfig::Draw { .. } | CompositorConfig::Native { .. } => WindowProperties::default(),
+        CompositorConfig::Layer { ref compositor } if kind.uses_os_layers() => compositor.get_window_properties(),
+        CompositorConfig::Layer { .. } | CompositorConfig::Draw { .. } | CompositorConfig::Native { .. } => {
+            WindowProperties::default()
+        }
     }
 }
 

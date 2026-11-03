@@ -9,7 +9,7 @@ use crate::composite::{
     CompositeState, CompositeSurfaceFormat, CompositeTileSurface,
     CompositorInputLayer, CompositorSurfaceUsage, CompositorSurfaceTransform,
     CompositeRoundedCorner, NativeTileId, ResolvedExternalSurface,
-    ResolvedExternalSurfaceColorData, ClipRadius, CompositeFeatures, CompositorKind, TileKind,
+    ResolvedExternalSurfaceColorData, ClipRadius, CompositeFeatures, CompositorKind, SwapchainMode, TileKind,
 };
 use crate::frame_builder::Frame;
 use crate::{CompositorInputConfig, PictureCacheDebugInfo, debug_colors};
@@ -557,14 +557,11 @@ impl Renderer {
         let num_tiles = composite_state.tiles.len();
         self.profile.set(profiler::PICTURE_TILES, num_tiles);
 
-        let layer_mode = layer_tree::layer_mode(&self.compositor_config);
-        let allows_external_layers = layer_tree::allows_external_layers(
-            &self.compositor_config,
-            self.current_compositor_kind,
-        );
+        let layer_mode = layer_tree::layer_mode(self.current_compositor_kind);
+        let allows_external_layers = self.current_compositor_kind.allows_external_layers();
 
         let (window_is_opaque, enable_screenshot) = {
-            let props = layer_tree::window_properties(&self.compositor_config);
+            let props = layer_tree::window_properties(&self.compositor_config, self.current_compositor_kind);
             (props.is_opaque, props.enable_screenshot)
         };
 
@@ -640,7 +637,8 @@ impl Renderer {
         
 
         
-        if self.debug_overlay_state.is_enabled {
+        
+        if self.debug_overlay_state.is_enabled && layer_mode == LayerMode::Swapchains {
             self.debug_overlay_state.layer_index = input_layers.len();
 
             input_layers.push(CompositorInputLayer {
@@ -1446,21 +1444,16 @@ impl Renderer {
         draw_target_dimensions: DeviceIntSize,
         results: &mut RenderResults,
     ) -> Option<PartialPresentMode> {
-        if layer_tree::layer_mode(&self.compositor_config) == LayerMode::Swapchains {
-            
-            return None;
-        }
-
         let mut partial_present_mode = None;
 
-        let (max_partial_present_rects, draw_previous_partial_present_regions) =
+        let (max_partial_present_rects, draw_previous_partial_present_regions, uses_buffer_age) =
             match self.current_compositor_kind {
                 CompositorKind::Native { .. } => {
                     
                     
                     
                     
-                    (1, false)
+                    (1, false, false)
                 }
                 CompositorKind::Draw {
                     draw_previous_partial_present_regions,
@@ -1468,15 +1461,26 @@ impl Renderer {
                 } => (
                     max_partial_present_rects,
                     draw_previous_partial_present_regions,
+                    self.compositor_config.partial_present().is_some(),
                 ),
-                CompositorKind::Layer { .. } => {
-                    unreachable!();
+                CompositorKind::Layer {
+                    mode: SwapchainMode::WindowFramebuffer {
+                        draw_previous_partial_present_regions,
+                        max_partial_present_rects,
+                    },
+                } => (
+                    max_partial_present_rects,
+                    draw_previous_partial_present_regions,
+                    true,
+                ),
+                CompositorKind::Layer { mode: SwapchainMode::OsLayers } => {
+                    
+                    return None;
                 }
             };
 
         if max_partial_present_rects > 0 {
-            let prev_frames_damage_rect = if let Some(..) = self.compositor_config.partial_present()
-            {
+            let prev_frames_damage_rect = if uses_buffer_age {
                 self.buffer_damage_tracker
                     .get_damage_rect(buffer_age)
                     .or_else(|| Some(DeviceRect::from_size(draw_target_dimensions.to_f32())))

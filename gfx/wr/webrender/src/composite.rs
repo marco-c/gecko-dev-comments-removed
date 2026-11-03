@@ -401,8 +401,9 @@ pub enum CompositorKind {
         
         draw_previous_partial_present_regions: bool,
     },
+    
     Layer {
-
+        mode: SwapchainMode,
     },
     
     Native {
@@ -421,16 +422,52 @@ impl Default for CompositorKind {
     }
 }
 
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum SwapchainMode {
+    
+    
+    
+    
+    
+    WindowFramebuffer {
+        
+        max_partial_present_rects: usize,
+        
+        
+        draw_previous_partial_present_regions: bool,
+    },
+    
+    
+    
+    OsLayers,
+}
+
 impl CompositorKind {
     pub fn should_redraw_on_invalidation(&self) -> bool {
         match self {
-            CompositorKind::Draw { max_partial_present_rects, .. } => {
+            CompositorKind::Draw { max_partial_present_rects, .. } |
+            CompositorKind::Layer {
+                mode: SwapchainMode::WindowFramebuffer { max_partial_present_rects, .. },
+            } => {
                 
                 *max_partial_present_rects > 0
             }
-            CompositorKind::Layer {  } => false,    
+            CompositorKind::Layer { mode: SwapchainMode::OsLayers } => false,    
             CompositorKind::Native { capabilities, .. } => capabilities.redraw_on_invalidation,
         }
+    }
+
+    
+    pub fn uses_os_layers(&self) -> bool {
+        matches!(self, CompositorKind::Layer { mode: SwapchainMode::OsLayers })
+    }
+
+    
+    pub fn allows_external_layers(&self) -> bool {
+        self.uses_os_layers()
     }
 
     
@@ -440,12 +477,12 @@ impl CompositorKind {
 
     
     pub fn culls_all_tiles(&self) -> bool {
-        matches!(self, CompositorKind::Layer { .. })
+        self.uses_os_layers()
     }
 
     
     pub fn supports_rounded_clip_promotion(&self) -> bool {
-        matches!(self, CompositorKind::Layer { .. })
+        self.uses_os_layers()
     }
 
     pub fn supports_backdrop_surface(&self) -> bool {
@@ -1648,6 +1685,10 @@ pub trait Compositor {
 
     
     
+    
+    
+    
+    
     fn bind_swapchain(&mut self, _id: NativeSurfaceId, _dirty_rects: &[DeviceIntRect]) {
         unimplemented!("bind_swapchain");
     }
@@ -1658,6 +1699,12 @@ pub trait Compositor {
 
     fn get_window_properties(&self) -> WindowProperties {
         WindowProperties::default()
+    }
+
+    
+    
+    fn get_swapchain_mode(&self) -> SwapchainMode {
+        SwapchainMode::OsLayers
     }
 }
 
