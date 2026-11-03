@@ -1421,10 +1421,13 @@ class nsContentUtils {
 
 
 
-  static void ReportDeprecation(nsIGlobalObject* aGlobal, const Document* aDoc,
-                                nsIURI* aURI,
-                                mozilla::dom::DeprecatedOperations aOperation,
-                                const mozilla::JSCallingLocation& aLocation);
+
+
+  static void ReportDeprecation(
+      nsIGlobalObject* aGlobal, const Document* aDoc, nsIURI* aURI,
+      mozilla::dom::DeprecatedOperations aOperation,
+      const mozilla::JSCallingLocation& aLocation,
+      const nsTArray<nsString>& aParams = nsTArray<nsString>());
 
   static void ReportEmptyGetElementByIdArg(const Document* aDoc);
 
