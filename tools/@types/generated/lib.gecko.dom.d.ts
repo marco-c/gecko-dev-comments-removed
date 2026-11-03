@@ -2400,6 +2400,13 @@ interface HWInferenceDevice {
     kind: HWInferenceDeviceKind;
 }
 
+interface HWInferencePlacement {
+    
+    devices?: string[];
+    
+    kinds?: HWInferenceDeviceKind[];
+}
+
 interface HasChildrenOptions {
     
     ignoreAbsent?: boolean;
@@ -3008,10 +3015,6 @@ interface LlamaContextOptions {
     
     noPerf?: boolean;
     
-    offloadKqv?: boolean;
-    
-    opOffload?: boolean;
-    
     swaFull?: boolean;
     
     vCacheDtype?: LlamaKVCacheDtype;
@@ -3044,7 +3047,7 @@ interface LlamaModelOptions {
     
     context?: LlamaContextOptions;
     
-    nGpuLayers?: number;
+    placement?: HWInferencePlacement;
     
     useMlock?: boolean;
     
@@ -6940,6 +6943,8 @@ interface TextGeneratorCreateOptions {
     numThreads?: number;
     
     numThreadsDecoding?: number;
+    
+    placement?: HWInferencePlacement;
     
     ubatchSize?: number;
 }
@@ -34769,6 +34774,10 @@ declare var TextFormatUpdateEvent: {
 
 
 interface TextGenerator {
+    
+    readonly device: string;
+    
+    readonly deviceKind: HWInferenceDeviceKind;
     
     cancel(): void;
     

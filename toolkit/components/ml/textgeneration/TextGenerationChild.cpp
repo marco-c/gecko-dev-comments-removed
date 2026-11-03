@@ -133,9 +133,10 @@ static LlamaModelOptions ToLlamaModelOptions(
   modelOptions.mContext.mVCacheDtype =
       ToLlamaKVCacheDtype(aOptions.kvCacheDtype());
   modelOptions.mContext.mFlashAttn = aOptions.flashAttn();
-  
-  
-  modelOptions.mContext.mOpOffload = false;
+  MOZ_RELEASE_ASSERT(modelOptions.mPlacement.mDevices.AppendElements(
+      aOptions.placement().devices(), fallible));
+  MOZ_RELEASE_ASSERT(modelOptions.mPlacement.mKinds.AppendElements(
+      aOptions.placement().kinds(), fallible));
   return modelOptions;
 }
 
@@ -483,8 +484,10 @@ LoadResult TextGenerationChild::LoadOnThread() {
   mBackend = std::move(backend);
   mLoadError.Truncate();
   double loadMs = (TimeStamp::Now() - loadStart).ToMilliseconds();
-  LOGD("[{} - {}] model loaded in {}ms", fmt::ptr(this), __func__, loadMs);
-  return LoadResult(LoadSuccess(loadMs));
+  LOGD("[{} - {}] model loaded on {} in {}ms", fmt::ptr(this), __func__,
+       mBackend->DeviceId(), loadMs);
+  return LoadResult(
+      LoadSuccess(loadMs, mBackend->DeviceId(), mBackend->DeviceKind()));
 }
 
 void TextGenerationChild::DispatchToActorThread(const char* aName,

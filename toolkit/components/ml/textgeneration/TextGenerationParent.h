@@ -33,7 +33,7 @@ class TextGenerationParent final : public PTextGenerationParent {
     Cause cause;
     nsCString message;
   };
-  using ReadyPromise = MozPromise<double, LoadFailure, true>;
+  using ReadyPromise = MozPromise<LoadSuccess, LoadFailure, true>;
 
   
   
@@ -69,7 +69,7 @@ class TextGenerationParent final : public PTextGenerationParent {
   const bool mProcessReused;
   DeltaHandler mDeltaHandler;
   MozPromiseHolder<ReadyPromise> mReadyPromise;
-  Maybe<double> mLoadMs;
+  Maybe<LoadSuccess> mLoaded;
   Maybe<LoadFailure> mLoadFailure;
 };
 
