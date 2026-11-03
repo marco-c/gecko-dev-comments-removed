@@ -422,13 +422,7 @@ already_AddRefed<ImageBitmap> OffscreenCanvas::TransferToImageBitmap(
     return nullptr;
   }
 
-  if (mCurrentContextType == CanvasContextType::OffscreenCanvas2D) {
-    
-    
-    
-    static_cast<CanvasRenderingContext2D*>(mCurrentContext.get())
-        ->ResetBitmap( false);
-  } else if (mCurrentContext) {
+  if (mCurrentContext) {
     mCurrentContext->ResetBitmap();
   }
   return result.forget();
