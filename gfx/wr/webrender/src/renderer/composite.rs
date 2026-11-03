@@ -1330,7 +1330,7 @@ impl Renderer {
         }
 
         
-        for (layer_index, layer) in input_layers.iter().enumerate() {
+        for (layer_index, layer) in input_layers.iter().enumerate().rev() {
             
             
             let transform = match layer.usage {

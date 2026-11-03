@@ -1660,6 +1660,8 @@ pub struct CompositorInputLayer {
 #[derive(Debug)]
 pub struct CompositorInputConfig<'a> {
     pub enable_screenshot: bool,
+    
+    
     pub layers: &'a [CompositorInputLayer],
 }
 

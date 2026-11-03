@@ -668,7 +668,7 @@ void DCLayerTree::CompositorEndFrame() {
     const auto surface = surface_it->second.get();
     if (!same) {
       
-      mRootVisual->AddVisual(surface->GetRootVisual(), true, nullptr);
+      mRootVisual->AddVisual(surface->GetRootVisual(), false, nullptr);
     }
   }
 
