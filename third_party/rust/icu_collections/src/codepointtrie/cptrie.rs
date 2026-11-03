@@ -15,6 +15,9 @@ use core::fmt::Display;
 use core::iter::FromIterator;
 use core::num::TryFromIntError;
 use core::ops::RangeInclusive;
+use utf_types::utf8::Ascii;
+use utf_types::utf8::ThreeByteSequence;
+use utf_types::utf8::TwoByteSequence;
 use yoke::Yokeable;
 use zerofrom::ZeroFrom;
 use zerovec::ule::AsULE;
@@ -22,6 +25,137 @@ use zerovec::ule::AsULE;
 use zerovec::ule::UleError;
 use zerovec::ZeroSlice;
 use zerovec::ZeroVec;
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+pub(crate) struct BmpScalarBits {
+    
+    
+    
+    
+    high_ten: u32,
+    
+    
+    
+    low_six: u32,
+}
+
+impl BmpScalarBits {
+    
+    #[inline(always)]
+    pub const fn new(sequence: ThreeByteSequence) -> Self {
+        let (first, second, third) = sequence.to_typed_bytes();
+        Self {
+            high_ten: (first.low_four_u32() << 6) | second.low_six_u32(),
+            low_six: third.low_six_u32(),
+        }
+    }
+
+    
+    #[inline(always)]
+    pub const fn to_char(self) -> char {
+        
+        
+        unsafe { char::from_u32_unchecked((self.high_ten << 6) | self.low_six) }
+    }
+}
+
+
+
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd)]
+pub(crate) struct BmpCodePointBits {
+    
+    
+    
+    high_ten: u32,
+    
+    
+    
+    low_six: u32,
+}
+
+impl BmpCodePointBits {
+    #[inline(always)]
+    pub const fn new(bmp: u16) -> Self {
+        let code_point = bmp as u32;
+        Self {
+            high_ten: code_point >> FAST_TYPE_SHIFT,
+            low_six: code_point & FAST_TYPE_DATA_MASK,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn try_new(code_point: u32, trie_type: TrieType) -> Option<Self> {
+        let fast_max = match trie_type {
+            TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
+            TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
+        };
+        if code_point <= fast_max {
+            Some(Self {
+                high_ten: code_point >> FAST_TYPE_SHIFT,
+                low_six: code_point & FAST_TYPE_DATA_MASK,
+            })
+        } else {
+            None
+        }
+    }
+
+    
+    
+    
+    #[inline(always)]
+    pub const fn high_ten(self) -> u32 {
+        self.high_ten
+    }
+
+    
+    
+    
+    #[inline(always)]
+    pub const fn low_six(self) -> u32 {
+        self.low_six
+    }
+
+    
+    
+    
+    
+    
+    #[inline(always)]
+    pub const fn to_code_point(self) -> u32 {
+        (self.high_ten << 6) | self.low_six
+    }
+}
+
+impl From<BmpScalarBits> for BmpCodePointBits {
+    fn from(scalar_bits: BmpScalarBits) -> Self {
+        
+        
+        
+        BmpCodePointBits {
+            high_ten: scalar_bits.high_ten,
+            low_six: scalar_bits.low_six,
+        }
+    }
+}
+
+impl From<TwoByteSequence> for BmpCodePointBits {
+    fn from(sequence: TwoByteSequence) -> Self {
+        let (first, second) = sequence.to_typed_bytes();
+        BmpCodePointBits {
+            high_ten: first.low_five_u32(),
+            low_six: second.low_six_u32(),
+        }
+    }
+}
 
 
 
@@ -145,7 +279,13 @@ pub struct CodePointTrie<'trie, T: TrieValue> {
     
     
     
+    
+    
+    
+    
+    
     pub(crate) index: ZeroVec<'trie, u16>,
+    
     
     
     
@@ -394,6 +534,13 @@ impl<'trie, T: TrieValue> CodePointTrie<'trie, T> {
         
         
         
+        if index.get(0) != Some(0) || index.get(1) != Some(64) {
+            return Err(Error::IndexInconsistentWithAsciiAccess);
+        }
+
+        
+        
+        
         
 
         Ok(error_value)
@@ -549,18 +696,11 @@ impl<'trie, T: TrieValue> CodePointTrie<'trie, T> {
     
     #[inline(always)] 
     fn get32_by_fast_index(&self, code_point: u32) -> Option<T> {
-        let fast_max = match self.header.trie_type {
-            TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
-            TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
-        };
-        if code_point <= fast_max {
+        #[allow(clippy::manual_map)]
+        if let Some(bmp_bits) = BmpCodePointBits::try_new(code_point, self.header.trie_type) {
             
             
-            
-            
-            
-            
-            Some(unsafe { self.get32_assuming_fast_index(code_point) })
+            Some(unsafe { self.get_bmp_bits_assuming_fast_index(bmp_bits) })
         } else {
             
             
@@ -575,28 +715,12 @@ impl<'trie, T: TrieValue> CodePointTrie<'trie, T> {
     
     
     
+    
+    
     #[inline(always)]
-    unsafe fn get32_assuming_fast_index(&self, code_point: u32) -> T {
-        
-        debug_assert!(
-            code_point
-                <= match self.header.trie_type {
-                    TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
-                    TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
-                }
-        );
-
-        let bit_prefix = (code_point as usize) >> FAST_TYPE_SHIFT;
-        let bit_suffix = (code_point & FAST_TYPE_DATA_MASK) as usize;
-        self.get_bit_prefix_suffix_assuming_fast_index(bit_prefix, bit_suffix)
-    }
-
-    #[inline(always)]
-    unsafe fn get_bit_prefix_suffix_assuming_fast_index(
-        &self,
-        bit_prefix: usize,
-        bit_suffix: usize,
-    ) -> T {
+    unsafe fn get_bmp_bits_assuming_fast_index(&self, bmp_bits: BmpCodePointBits) -> T {
+        let bit_prefix = bmp_bits.high_ten() as usize;
+        let bit_suffix = bmp_bits.low_six() as usize;
         debug_assert!(bit_prefix < self.index.len());
         
         
@@ -717,91 +841,55 @@ impl<'trie, T: TrieValue> CodePointTrie<'trie, T> {
     
     #[inline(always)]
     pub fn get8(&self, latin1: u8) -> T {
-        let code_point = u32::from(latin1);
-        debug_assert!(code_point <= SMALL_TYPE_FAST_INDEXING_MAX);
+        let bmp_bits = BmpCodePointBits::new(u16::from(latin1));
+        debug_assert!(u32::from(latin1) <= SMALL_TYPE_FAST_INDEXING_MAX);
         
         
-        unsafe { self.get32_assuming_fast_index(code_point) }
+        unsafe { self.get_bmp_bits_assuming_fast_index(bmp_bits) }
+    }
+
+    
+    #[inline(always)]
+    pub(crate) fn get7(&self, ascii: Ascii) -> T {
+        debug_assert!((ascii.to_u8() as usize) < self.data.len());
+        
+        T::from_unaligned(*unsafe {
+            self.data
+                .as_ule_slice()
+                .get_unchecked(ascii.to_u8() as usize)
+        })
+    }
+
+    
+    #[inline(always)]
+    pub(crate) fn get_utf8_two_byte(&self, sequence: TwoByteSequence) -> T {
+        debug_assert!(sequence.to_char() as u32 <= FAST_TYPE_FAST_INDEXING_MAX);
+        debug_assert!(sequence.to_char() as u32 <= SMALL_TYPE_FAST_INDEXING_MAX);
+        
+        
+        
+        unsafe { self.get_bmp_bits_assuming_fast_index(sequence.into()) }
     }
 
     
     
     
-    
-    
     #[inline(always)]
-    pub unsafe fn get7(&self, ascii: u8) -> T {
-        debug_assert!(ascii < 128);
-        debug_assert!((ascii as usize) < self.data.len());
-        
-        T::from_unaligned(*unsafe { self.data.as_ule_slice().get_unchecked(ascii as usize) })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    pub unsafe fn get_utf8_two_byte(&self, high_five: u32, low_six: u32) -> T {
-        debug_assert!(low_six <= 0b111_111); 
-        debug_assert!(high_five <= 0b11_111); 
-        debug_assert!(high_five > 0b1); 
-                                        
-                                        
-                                        
-        self.get_bit_prefix_suffix_assuming_fast_index(high_five as usize, low_six as usize)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    #[allow(clippy::unusual_byte_groupings)]
-    pub unsafe fn get_utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T {
-        debug_assert!(low_six <= 0b111_111); 
-        debug_assert!(high_ten <= 0b1111_111_111); 
-        debug_assert!(high_ten > 0b11_111); 
-
+    pub(crate) fn get_bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T {
         let fast_max = match self.header.trie_type {
             TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
             TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
         };
         
         let max_bit_prefix = fast_max >> FAST_TYPE_SHIFT;
-        if high_ten <= max_bit_prefix {
+        if bmp_bits.high_ten() <= max_bit_prefix {
             
             
             
-            self.get_bit_prefix_suffix_assuming_fast_index(high_ten as usize, low_six as usize)
+            
+            unsafe { self.get_bmp_bits_assuming_fast_index(bmp_bits) }
         } else {
-            self.get32_by_small_index_cold((high_ten << 6) | low_six)
+            self.get32_by_small_index_cold(bmp_bits.to_code_point())
         }
     }
 
@@ -1540,20 +1628,85 @@ impl<T: TrieValue> Iterator for CodePointMapRangeIterator<'_, T> {
 
 
 
+
+
+
 trait Seal {}
 
 impl<'trie, T: TrieValue> Seal for CodePointTrie<'trie, T> {}
 
 
 
+
+
 #[allow(private_bounds)] 
-pub trait TypedCodePointTrie<'trie, T: TrieValue>: Seal {
+pub(crate) trait TypedCodePointTriePrivate<'trie, T: TrieValue>: Seal {
     
     
     
     
     
-    const TRIE_TYPE: TrieType;
+    const TRIE_TYPE_PRIVATE: TrieType;
+
+    
+    #[inline(always)]
+    fn get7(&self, ascii: Ascii) -> T {
+        self.as_untyped_ref_private().get7(ascii)
+    }
+
+    
+    #[inline(always)]
+    fn get_utf8_two_byte(&self, sequence: TwoByteSequence) -> T {
+        self.as_untyped_ref_private().get_utf8_two_byte(sequence)
+    }
+
+    
+    
+    
+    #[inline(always)]
+    fn get_bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T {
+        debug_assert_eq!(
+            Self::TRIE_TYPE_PRIVATE,
+            self.as_untyped_ref_private().header.trie_type
+        );
+        let fast_max = match Self::TRIE_TYPE_PRIVATE {
+            TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
+            TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
+        };
+
+        
+        let max_bit_prefix = fast_max >> FAST_TYPE_SHIFT;
+        if bmp_bits.high_ten() <= max_bit_prefix {
+            
+            
+            
+            unsafe {
+                self.as_untyped_ref_private()
+                    .get_bmp_bits_assuming_fast_index(bmp_bits)
+            }
+        } else {
+            self.as_untyped_ref_private()
+                .get32_by_small_index_cold(bmp_bits.to_code_point())
+        }
+    }
+
+    
+    fn as_untyped_ref_private(&self) -> &CodePointTrie<'trie, T>;
+}
+
+
+
+#[allow(private_bounds)] 
+pub trait TypedCodePointTrie<'trie, T>: TypedCodePointTriePrivate<'trie, T>
+where
+    T: TrieValue,
+{
+    
+    
+    
+    
+    
+    const TRIE_TYPE: TrieType = Self::TRIE_TYPE_PRIVATE;
 
     
     #[inline(always)]
@@ -1579,16 +1732,6 @@ pub trait TypedCodePointTrie<'trie, T: TrieValue>: Seal {
     #[inline(always)]
     fn get8(&self, latin1: u8) -> T {
         self.as_untyped_ref().get8(latin1)
-    }
-
-    
-    
-    
-    
-    
-    #[inline(always)]
-    unsafe fn get7(&self, ascii: u8) -> T {
-        self.as_untyped_ref().get7(ascii)
     }
 
     
@@ -1629,22 +1772,14 @@ pub trait TypedCodePointTrie<'trie, T: TrieValue>: Seal {
     #[inline(always)] 
     fn get32_by_fast_index(&self, code_point: u32) -> Option<T> {
         debug_assert_eq!(Self::TRIE_TYPE, self.as_untyped_ref().header.trie_type);
-        let fast_max = match Self::TRIE_TYPE {
-            TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
-            TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
-        };
-        if code_point <= fast_max {
+        #[allow(clippy::manual_map)]
+        if let Some(bmp_bits) = BmpCodePointBits::try_new(code_point, Self::TRIE_TYPE) {
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            Some(unsafe { self.as_untyped_ref().get32_assuming_fast_index(code_point) })
+            Some(unsafe {
+                self.as_untyped_ref()
+                    .get_bmp_bits_assuming_fast_index(bmp_bits)
+            })
         } else {
             
             
@@ -1653,70 +1788,9 @@ pub trait TypedCodePointTrie<'trie, T: TrieValue>: Seal {
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    unsafe fn get_utf8_two_byte(&self, high_five: u32, low_six: u32) -> T {
-        self.as_untyped_ref().get_utf8_two_byte(high_five, low_six)
+    fn as_untyped_ref(&self) -> &CodePointTrie<'trie, T> {
+        self.as_untyped_ref_private()
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    #[allow(clippy::unusual_byte_groupings)]
-    unsafe fn get_utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T {
-        debug_assert!(low_six <= 0b111_111); 
-        debug_assert!(high_ten <= 0b1111_111_111); 
-        debug_assert!(high_ten > 0b11_111); 
-
-        debug_assert_eq!(Self::TRIE_TYPE, self.as_untyped_ref().header.trie_type);
-        let fast_max = match Self::TRIE_TYPE {
-            TrieType::Fast => FAST_TYPE_FAST_INDEXING_MAX,
-            TrieType::Small => SMALL_TYPE_FAST_INDEXING_MAX,
-        };
-
-        
-        let max_bit_prefix = fast_max >> FAST_TYPE_SHIFT;
-        if high_ten <= max_bit_prefix {
-            
-            
-            
-            self.as_untyped_ref()
-                .get_bit_prefix_suffix_assuming_fast_index(high_ten as usize, low_six as usize)
-        } else {
-            self.as_untyped_ref()
-                .get32_by_small_index_cold((high_ten << 6) | low_six)
-        }
-    }
-
-    
-    fn as_untyped_ref(&self) -> &CodePointTrie<'trie, T>;
 
     
     fn to_untyped(self) -> CodePointTrie<'trie, T>;
@@ -1734,6 +1808,7 @@ pub struct FastCodePointTrie<'trie, T: TrieValue> {
 
 impl<'trie, T: TrieValue> FastCodePointTrie<'trie, T> {
     #[doc(hidden)] 
+    
     
     
     
@@ -1759,15 +1834,28 @@ impl<'trie, T: TrieValue> FastCodePointTrie<'trie, T> {
     }
 }
 
-impl<'trie, T: TrieValue> TypedCodePointTrie<'trie, T> for FastCodePointTrie<'trie, T> {
-    const TRIE_TYPE: TrieType = TrieType::Fast;
+impl<'trie, T: TrieValue> TypedCodePointTriePrivate<'trie, T> for FastCodePointTrie<'trie, T> {
+    const TRIE_TYPE_PRIVATE: TrieType = TrieType::Fast;
+
+    
+    
+    
+    #[inline(always)]
+    fn get_bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T {
+        debug_assert_eq!(Self::TRIE_TYPE, TrieType::Fast);
+        debug_assert_eq!(self.as_untyped_ref().header.trie_type, TrieType::Fast);
+        
+        unsafe { self.inner.get_bmp_bits_assuming_fast_index(bmp_bits) }
+    }
 
     
     #[inline(always)]
-    fn as_untyped_ref(&self) -> &CodePointTrie<'trie, T> {
+    fn as_untyped_ref_private(&self) -> &CodePointTrie<'trie, T> {
         &self.inner
     }
+}
 
+impl<'trie, T: TrieValue> TypedCodePointTrie<'trie, T> for FastCodePointTrie<'trie, T> {
     
     #[inline(always)]
     fn to_untyped(self) -> CodePointTrie<'trie, T> {
@@ -1780,47 +1868,16 @@ impl<'trie, T: TrieValue> TypedCodePointTrie<'trie, T> for FastCodePointTrie<'tr
         debug_assert!(u32::from(u16::MAX) <= FAST_TYPE_FAST_INDEXING_MAX);
         debug_assert_eq!(Self::TRIE_TYPE, TrieType::Fast);
         debug_assert_eq!(self.as_untyped_ref().header.trie_type, TrieType::Fast);
-        let code_point = u32::from(bmp);
+        let bmp_bits = BmpCodePointBits::new(bmp);
         
         
         
         
         
-        
-        
-        
-        unsafe { self.as_untyped_ref().get32_assuming_fast_index(code_point) }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline(always)]
-    #[allow(clippy::unusual_byte_groupings)]
-    unsafe fn get_utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T {
-        debug_assert!(low_six <= 0b111_111); 
-        debug_assert!(high_ten <= 0b1111_111_111); 
-        debug_assert!(high_ten > 0b11_111); 
-        debug_assert_eq!(Self::TRIE_TYPE, TrieType::Fast);
-        debug_assert_eq!(self.as_untyped_ref().header.trie_type, TrieType::Fast);
-        
-        
-        self.inner
-            .get_bit_prefix_suffix_assuming_fast_index(high_ten as usize, low_six as usize)
+        unsafe {
+            self.as_untyped_ref()
+                .get_bmp_bits_assuming_fast_index(bmp_bits)
+        }
     }
 }
 
@@ -1887,6 +1944,7 @@ impl<'trie, T: TrieValue> SmallCodePointTrie<'trie, T> {
     
     
     
+    
     pub const unsafe fn from_parts_unstable_unchecked_v1(
         header: CodePointTrieHeader,
         index: ZeroVec<'trie, u16>,
@@ -1907,15 +1965,17 @@ impl<'trie, T: TrieValue> SmallCodePointTrie<'trie, T> {
     }
 }
 
-impl<'trie, T: TrieValue> TypedCodePointTrie<'trie, T> for SmallCodePointTrie<'trie, T> {
-    const TRIE_TYPE: TrieType = TrieType::Small;
+impl<'trie, T: TrieValue> TypedCodePointTriePrivate<'trie, T> for SmallCodePointTrie<'trie, T> {
+    const TRIE_TYPE_PRIVATE: TrieType = TrieType::Small;
 
     
     #[inline(always)]
-    fn as_untyped_ref(&self) -> &CodePointTrie<'trie, T> {
+    fn as_untyped_ref_private(&self) -> &CodePointTrie<'trie, T> {
         &self.inner
     }
+}
 
+impl<'trie, T: TrieValue> TypedCodePointTrie<'trie, T> for SmallCodePointTrie<'trie, T> {
     
     #[inline(always)]
     fn to_untyped(self) -> CodePointTrie<'trie, T> {
@@ -1992,39 +2052,27 @@ pub enum Typed<F, S> {
 
 
 
+#[allow(private_bounds)] 
+pub(crate) trait AbstractCodePointTriePrivate<'trie, T: TrieValue>: Seal {
+    
+    fn utf8_two_byte(&self, sequence: TwoByteSequence) -> T;
+
+    
+    fn bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T;
+}
+
+
+
+
+
 
 #[allow(private_bounds)] 
-pub trait AbstractCodePointTrie<'trie, T: TrieValue>: Seal {
+pub trait AbstractCodePointTrie<'trie, T>: AbstractCodePointTriePrivate<'trie, T>
+where
+    T: TrieValue,
+{
     
-    
-    
-    
-    
-    unsafe fn ascii(&self, ascii: u8) -> T;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn utf8_two_byte(&self, high_five: u32, low_six: u32) -> T;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsafe fn utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T;
+    fn ascii(&self, ascii: Ascii) -> T;
 
     
     fn latin1(&self, latin1: u8) -> T;
@@ -2050,20 +2098,22 @@ pub trait AbstractCodePointTrie<'trie, T: TrieValue>: Seal {
     fn code_point(&self, code_point: u32) -> T;
 }
 
+impl<'trie, T: TrieValue> AbstractCodePointTriePrivate<'trie, T> for FastCodePointTrie<'trie, T> {
+    #[inline(always)]
+    fn utf8_two_byte(&self, sequence: TwoByteSequence) -> T {
+        self.get_utf8_two_byte(sequence)
+    }
+
+    #[inline(always)]
+    fn bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T {
+        self.get_bmp_bits(bmp_bits)
+    }
+}
+
 impl<'trie, T: TrieValue> AbstractCodePointTrie<'trie, T> for FastCodePointTrie<'trie, T> {
     #[inline(always)]
-    unsafe fn ascii(&self, ascii: u8) -> T {
+    fn ascii(&self, ascii: Ascii) -> T {
         self.get7(ascii)
-    }
-
-    #[inline(always)]
-    unsafe fn utf8_two_byte(&self, high_five: u32, low_six: u32) -> T {
-        self.get_utf8_two_byte(high_five, low_six)
-    }
-
-    #[inline(always)]
-    unsafe fn utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T {
-        self.get_utf8_three_byte(high_ten, low_six)
     }
 
     #[inline(always)]
@@ -2089,23 +2139,25 @@ impl<'trie, T: TrieValue> AbstractCodePointTrie<'trie, T> for FastCodePointTrie<
     #[inline(always)]
     fn code_point(&self, code_point: u32) -> T {
         self.get32(code_point)
+    }
+}
+
+impl<'trie, T: TrieValue> AbstractCodePointTriePrivate<'trie, T> for SmallCodePointTrie<'trie, T> {
+    #[inline(always)]
+    fn utf8_two_byte(&self, sequence: TwoByteSequence) -> T {
+        self.get_utf8_two_byte(sequence)
+    }
+
+    #[inline(always)]
+    fn bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T {
+        self.get_bmp_bits(bmp_bits)
     }
 }
 
 impl<'trie, T: TrieValue> AbstractCodePointTrie<'trie, T> for SmallCodePointTrie<'trie, T> {
     #[inline(always)]
-    unsafe fn ascii(&self, ascii: u8) -> T {
+    fn ascii(&self, ascii: Ascii) -> T {
         self.get7(ascii)
-    }
-
-    #[inline(always)]
-    unsafe fn utf8_two_byte(&self, high_five: u32, low_six: u32) -> T {
-        self.get_utf8_two_byte(high_five, low_six)
-    }
-
-    #[inline(always)]
-    unsafe fn utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T {
-        self.get_utf8_three_byte(high_ten, low_six)
     }
 
     #[inline(always)]
@@ -2134,20 +2186,22 @@ impl<'trie, T: TrieValue> AbstractCodePointTrie<'trie, T> for SmallCodePointTrie
     }
 }
 
+impl<'trie, T: TrieValue> AbstractCodePointTriePrivate<'trie, T> for CodePointTrie<'trie, T> {
+    #[inline(always)]
+    fn utf8_two_byte(&self, sequence: TwoByteSequence) -> T {
+        self.get_utf8_two_byte(sequence)
+    }
+
+    #[inline(always)]
+    fn bmp_bits(&self, bmp_bits: BmpCodePointBits) -> T {
+        self.get_bmp_bits(bmp_bits)
+    }
+}
+
 impl<'trie, T: TrieValue> AbstractCodePointTrie<'trie, T> for CodePointTrie<'trie, T> {
     #[inline(always)]
-    unsafe fn ascii(&self, ascii: u8) -> T {
+    fn ascii(&self, ascii: Ascii) -> T {
         self.get7(ascii)
-    }
-
-    #[inline(always)]
-    unsafe fn utf8_two_byte(&self, high_five: u32, low_six: u32) -> T {
-        self.get_utf8_two_byte(high_five, low_six)
-    }
-
-    #[inline(always)]
-    unsafe fn utf8_three_byte(&self, high_ten: u32, low_six: u32) -> T {
-        self.get_utf8_three_byte(high_ten, low_six)
     }
 
     #[inline(always)]

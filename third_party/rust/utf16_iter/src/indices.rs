@@ -17,22 +17,29 @@
 
 
 
-use super::Utf16Chars;
+use crate::Utf16CharsWithHandler;
+use crate::Utf16Handler;
 use core::iter::FusedIterator;
 
 
 #[derive(Clone, Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct Utf16CharIndices<'a> {
+pub struct Utf16CharIndicesWithHandler<'a, H>
+where
+    H: Utf16Handler,
+{
     front_offset: usize,
-    iter: Utf16Chars<'a>,
+    iter: Utf16CharsWithHandler<'a, H>,
 }
 
-impl<'a> Iterator for Utf16CharIndices<'a> {
-    type Item = (usize, char);
+impl<'a, H> Iterator for Utf16CharIndicesWithHandler<'a, H>
+where
+    H: Utf16Handler,
+{
+    type Item = (usize, H::Output);
 
-    #[inline]
-    fn next(&mut self) -> Option<(usize, char)> {
+    #[inline(always)]
+    fn next(&mut self) -> Option<(usize, H::Output)> {
         let pre_len = self.as_slice().len();
         match self.iter.next() {
             None => None,
@@ -45,26 +52,29 @@ impl<'a> Iterator for Utf16CharIndices<'a> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn count(self) -> usize {
         self.iter.count()
     }
 
-    #[inline]
+    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
 
-    #[inline]
-    fn last(mut self) -> Option<(usize, char)> {
+    #[inline(always)]
+    fn last(mut self) -> Option<(usize, H::Output)> {
         
         self.next_back()
     }
 }
 
-impl<'a> DoubleEndedIterator for Utf16CharIndices<'a> {
-    #[inline]
-    fn next_back(&mut self) -> Option<(usize, char)> {
+impl<'a, H> DoubleEndedIterator for Utf16CharIndicesWithHandler<'a, H>
+where
+    H: Utf16Handler,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<(usize, H::Output)> {
         self.iter.next_back().map(|ch| {
             let index = self.front_offset + self.as_slice().len();
             (index, ch)
@@ -72,16 +82,25 @@ impl<'a> DoubleEndedIterator for Utf16CharIndices<'a> {
     }
 }
 
-impl FusedIterator for Utf16CharIndices<'_> {}
+impl<H> FusedIterator for Utf16CharIndicesWithHandler<'_, H> where H: Utf16Handler {}
 
-impl<'a> Utf16CharIndices<'a> {
+impl<'a, H> Utf16CharIndicesWithHandler<'a, H>
+where
+    H: Utf16Handler,
+{
     #[inline(always)]
     
-    pub fn new(code_units: &'a [u16]) -> Self {
-        Utf16CharIndices::<'a> {
+    pub fn new(code_units: &'a [u16], handler: H) -> Self {
+        Utf16CharIndicesWithHandler::<'a, H> {
             front_offset: 0,
-            iter: Utf16Chars::new(code_units),
+            iter: Utf16CharsWithHandler::new(code_units, handler),
         }
+    }
+
+    
+    #[inline(always)]
+    pub fn handler(&self) -> &H {
+        self.iter.handler()
     }
 
     
@@ -89,7 +108,7 @@ impl<'a> Utf16CharIndices<'a> {
     
     
     #[must_use]
-    #[inline]
+    #[inline(always)]
     pub fn as_slice(&self) -> &'a [u16] {
         self.iter.as_slice()
     }
@@ -112,7 +131,7 @@ impl<'a> Utf16CharIndices<'a> {
     
     
     
-    #[inline]
+    #[inline(always)]
     #[must_use]
     pub fn offset(&self) -> usize {
         self.front_offset

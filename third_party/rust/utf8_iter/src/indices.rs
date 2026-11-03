@@ -17,22 +17,30 @@
 
 
 
-use super::Utf8Chars;
+use crate::CharsWithHandler;
+use crate::Utf8CharsWithHandler;
+use crate::Utf8Handler;
 use core::iter::FusedIterator;
 
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct Utf8CharIndices<'a> {
+pub struct Utf8CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
     front_offset: usize,
-    iter: Utf8Chars<'a>,
+    iter: Utf8CharsWithHandler<'a, H>,
 }
 
-impl<'a> Iterator for Utf8CharIndices<'a> {
-    type Item = (usize, char);
+impl<'a, H> Iterator for Utf8CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
+    type Item = (usize, H::Output);
 
-    #[inline]
-    fn next(&mut self) -> Option<(usize, char)> {
+    #[inline(always)]
+    fn next(&mut self) -> Option<(usize, H::Output)> {
         let pre_len = self.as_slice().len();
         match self.iter.next() {
             None => None,
@@ -45,26 +53,29 @@ impl<'a> Iterator for Utf8CharIndices<'a> {
         }
     }
 
-    #[inline]
+    #[inline(always)]
     fn count(self) -> usize {
         self.iter.count()
     }
 
-    #[inline]
+    #[inline(always)]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
     }
 
-    #[inline]
-    fn last(mut self) -> Option<(usize, char)> {
+    #[inline(always)]
+    fn last(mut self) -> Option<(usize, H::Output)> {
         
         self.next_back()
     }
 }
 
-impl<'a> DoubleEndedIterator for Utf8CharIndices<'a> {
-    #[inline]
-    fn next_back(&mut self) -> Option<(usize, char)> {
+impl<'a, H> DoubleEndedIterator for Utf8CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<(usize, H::Output)> {
         self.iter.next_back().map(|ch| {
             let index = self.front_offset + self.as_slice().len();
             (index, ch)
@@ -72,15 +83,30 @@ impl<'a> DoubleEndedIterator for Utf8CharIndices<'a> {
     }
 }
 
-impl FusedIterator for Utf8CharIndices<'_> {}
+impl<H> FusedIterator for Utf8CharIndicesWithHandler<'_, H> where H: Utf8Handler {}
 
-impl<'a> Utf8CharIndices<'a> {
+impl<'a, H> Clone for Utf8CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler + Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            front_offset: self.front_offset,
+            iter: self.iter.clone(),
+        }
+    }
+}
+
+impl<'a, H> Utf8CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
     #[inline(always)]
     
-    pub fn new(bytes: &'a [u8]) -> Self {
-        Utf8CharIndices::<'a> {
+    pub fn new(bytes: &'a [u8], handler: H) -> Self {
+        Utf8CharIndicesWithHandler::<'a> {
             front_offset: 0,
-            iter: Utf8Chars::new(bytes),
+            iter: Utf8CharsWithHandler::new(bytes, handler),
         }
     }
 
@@ -89,30 +115,135 @@ impl<'a> Utf8CharIndices<'a> {
     
     
     #[must_use]
-    #[inline]
+    #[inline(always)]
     pub fn as_slice(&self) -> &'a [u8] {
         self.iter.as_slice()
+    }
+
+    
+    #[inline(always)]
+    pub fn handler(&self) -> &H {
+        self.iter.handler()
+    }
+
+    
+    
+    #[inline(always)]
+    #[must_use]
+    pub fn offset(&self) -> usize {
+        self.front_offset
+    }
+}
+
+
+
+
+#[derive(Debug)]
+#[must_use = "iterators are lazy and do nothing unless consumed"]
+pub struct CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
+    front_offset: usize,
+    iter: CharsWithHandler<'a, H>,
+}
+
+impl<'a, H> Iterator for CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
+    type Item = (usize, H::Output);
+
+    #[inline(always)]
+    fn next(&mut self) -> Option<(usize, H::Output)> {
+        let pre_len = self.as_str().len();
+        match self.iter.next() {
+            None => None,
+            Some(ch) => {
+                let index = self.front_offset;
+                let len = self.as_str().len();
+                self.front_offset += pre_len - len;
+                Some((index, ch))
+            }
+        }
+    }
+
+    #[inline(always)]
+    fn count(self) -> usize {
+        self.iter.count()
+    }
+
+    #[inline(always)]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+
+    #[inline(always)]
+    fn last(mut self) -> Option<(usize, H::Output)> {
+        
+        self.next_back()
+    }
+}
+
+impl<'a, H> DoubleEndedIterator for CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
+    #[inline(always)]
+    fn next_back(&mut self) -> Option<(usize, H::Output)> {
+        self.iter.next_back().map(|ch| {
+            let index = self.front_offset + self.as_str().len();
+            (index, ch)
+        })
+    }
+}
+
+impl<H> FusedIterator for CharIndicesWithHandler<'_, H> where H: Utf8Handler {}
+
+impl<'a, H> Clone for CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler + Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            front_offset: self.front_offset,
+            iter: self.iter.clone(),
+        }
+    }
+}
+
+impl<'a, H> CharIndicesWithHandler<'a, H>
+where
+    H: Utf8Handler,
+{
+    #[inline(always)]
+    
+    pub fn new(s: &'a str, handler: H) -> Self {
+        CharIndicesWithHandler::<'a> {
+            front_offset: 0,
+            iter: CharsWithHandler::new(s, handler),
+        }
     }
 
     
     
     
     
+    #[must_use]
+    #[inline(always)]
+    pub fn as_str(&self) -> &'a str {
+        self.iter.as_str()
+    }
+
+    
+    #[inline(always)]
+    pub fn handler(&self) -> &H {
+        self.iter.handler()
+    }
+
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[inline]
+    #[inline(always)]
     #[must_use]
     pub fn offset(&self) -> usize {
         self.front_offset

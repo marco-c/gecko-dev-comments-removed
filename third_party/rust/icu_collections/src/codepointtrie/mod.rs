@@ -29,10 +29,13 @@
 
 
 
+
+
+
 mod cptrie;
 mod error;
 mod impl_const;
-mod iter;
+pub mod iter;
 pub mod planes;
 
 #[cfg(feature = "serde")]
@@ -53,14 +56,3 @@ pub use cptrie::TrieValue;
 pub use cptrie::Typed;
 pub use cptrie::TypedCodePointTrie;
 pub use error::Error as CodePointTrieError;
-pub use iter::CharIndicesWithTrie;
-pub use iter::CharIndicesWithTrieDefaultForAscii;
-pub use iter::CharIterWithTrie;
-pub use iter::CharsWithTrie;
-pub use iter::CharsWithTrieDefaultForAscii;
-pub use iter::CharsWithTrieDefaultForAsciiEx;
-pub use iter::CharsWithTrieEx;
-pub use iter::Latin1CharIndicesWithTrie;
-pub use iter::Latin1CharsWithTrie;
-pub use iter::Latin1CharsWithTrieEx;
-pub use iter::WithTrie;

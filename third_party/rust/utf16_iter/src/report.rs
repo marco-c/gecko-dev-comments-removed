@@ -14,22 +14,19 @@
 
 
 
-use crate::in_inclusive_range16;
 use core::fmt::Formatter;
-use core::iter::FusedIterator;
+
+use utf_types::utf16::Bmp;
+use utf_types::utf16::SurrogatePair;
+
+use crate::Utf16Handler;
 
 
 
 
 
 
-
-
-
-
-
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, Hash)]
 #[non_exhaustive]
 pub struct Utf16CharsError;
 
@@ -39,100 +36,54 @@ impl core::fmt::Display for Utf16CharsError {
     }
 }
 
-
+impl core::error::Error for Utf16CharsError {}
 
 
 #[derive(Debug, Clone)]
-pub struct ErrorReportingUtf16Chars<'a> {
-    remaining: &'a [u16],
+pub(crate) struct ErrorReportingHandler;
+
+impl ErrorReportingHandler {
+    pub(crate) fn new() -> Self {
+        Self {}
+    }
 }
 
-impl<'a> ErrorReportingUtf16Chars<'a> {
-    #[inline(always)]
-    
-    pub fn new(code_units: &'a [u16]) -> Self {
-        ErrorReportingUtf16Chars::<'a> {
-            remaining: code_units,
-        }
-    }
+impl Utf16Handler for ErrorReportingHandler {
+    type Output = Result<char, Utf16CharsError>;
 
-    
     
     #[inline(always)]
-    pub fn as_slice(&self) -> &'a [u16] {
-        self.remaining
+    fn bmp(&self, bmp: Bmp) -> Self::Output {
+        Ok(bmp.to_char())
     }
 
-    #[inline(never)]
-    fn surrogate_next(&mut self, surrogate_base: u16, first: u16) -> Result<char, Utf16CharsError> {
-        if surrogate_base <= (0xDBFF - 0xD800) {
-            if let Some((&low, tail_tail)) = self.remaining.split_first() {
-                if in_inclusive_range16(low, 0xDC00, 0xDFFF) {
-                    self.remaining = tail_tail;
-                    return Ok(unsafe {
-                        char::from_u32_unchecked(
-                            (u32::from(first) << 10) + u32::from(low)
-                                - (((0xD800u32 << 10) - 0x10000u32) + 0xDC00u32),
-                        )
-                    });
-                }
-            }
-        }
-        Err(Utf16CharsError)
+    
+    #[inline(always)]
+    fn surrogate_pair(&self, surrogate_pair: SurrogatePair) -> Self::Output {
+        Ok(surrogate_pair.to_char())
     }
 
-    #[inline(never)]
-    fn surrogate_next_back(&mut self, last: u16) -> Result<char, Utf16CharsError> {
-        if in_inclusive_range16(last, 0xDC00, 0xDFFF) {
-            if let Some((&high, head_head)) = self.remaining.split_last() {
-                if in_inclusive_range16(high, 0xD800, 0xDBFF) {
-                    self.remaining = head_head;
-                    return Ok(unsafe {
-                        char::from_u32_unchecked(
-                            (u32::from(high) << 10) + u32::from(last)
-                                - (((0xD800u32 << 10) - 0x10000u32) + 0xDC00u32),
-                        )
-                    });
-                }
-            }
-        }
+    
+    #[inline(always)]
+    fn error(&self) -> Self::Output {
         Err(Utf16CharsError)
     }
 }
 
-impl<'a> Iterator for ErrorReportingUtf16Chars<'a> {
-    type Item = Result<char, Utf16CharsError>;
-
-    #[inline(always)]
-    fn next(&mut self) -> Option<Result<char, Utf16CharsError>> {
-        
-        
-        
-        
-        
-        let (&first, tail) = self.remaining.split_first()?;
-        self.remaining = tail;
-        let surrogate_base = first.wrapping_sub(0xD800);
-        if surrogate_base > (0xDFFF - 0xD800) {
-            return Some(Ok(unsafe { char::from_u32_unchecked(u32::from(first)) }));
-        }
-        Some(self.surrogate_next(surrogate_base, first))
-    }
-}
-
-impl<'a> DoubleEndedIterator for ErrorReportingUtf16Chars<'a> {
-    #[inline(always)]
-    fn next_back(&mut self) -> Option<Result<char, Utf16CharsError>> {
-        let (&last, head) = self.remaining.split_last()?;
-        self.remaining = head;
-        if !in_inclusive_range16(last, 0xD800, 0xDFFF) {
-            return Some(Ok(unsafe { char::from_u32_unchecked(u32::from(last)) }));
-        }
-        Some(self.surrogate_next_back(last))
-    }
-}
-
-impl FusedIterator for ErrorReportingUtf16Chars<'_> {}
+crate::macros::named_iterators_from_no_argument_handler!(
+    ErrorReportingHandler,
+    Result<char, Utf16CharsError>,
+    /// Iterator by `Result<char,Utf16CharsError>` over `&[u16]` that contains
+    /// potentially-invalid UTF-16. There is exactly one `Utf16CharsError` per
+    /// each unpaired surrogate.
+    ,
+    ErrorReportingUtf16Chars,
+    /// Iterator by `Result<char,Utf16CharsError>` and their indices over `&[u16]` that contains
+    /// potentially-invalid UTF-16. There is exactly one `Utf16CharsError` per
+    /// each unpaired surrogate.
+    ,
+    ErrorReportingUtf16CharIndices,
+);
 
 #[cfg(test)]
 mod tests {
