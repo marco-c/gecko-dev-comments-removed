@@ -2051,8 +2051,9 @@ async function synthesizeNativeTouchForFastFling(aTarget, aX, aY, aType) {
   
   
   
-  if (getPlatform() != "android") {
-    
-    await new Promise(resolve => setTimeout(resolve, 50));
-  }
+  
+  
+  
+  const delayMs = getPlatform() == "android" ? 5 : 50;
+  await new Promise(resolve => setTimeout(resolve, delayMs));
 }
