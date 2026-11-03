@@ -3532,7 +3532,8 @@ void nsWindow::DispatchPanGesture(PanGestureInput& aPanInput) {
     
     
     
-    nsEventStatus status = mSwipeTracker->ProcessEvent(aPanInput);
+    nsEventStatus status =
+        mSwipeTracker->ProcessEvent(aPanInput, SwipeInputSource::Touchpad);
     if (status == nsEventStatus_eConsumeNoDefault) {
       return;
     }

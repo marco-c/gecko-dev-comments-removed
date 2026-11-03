@@ -1310,6 +1310,19 @@ void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
         aResult.mInputBlockId, BrowserGestureResponse::NotConsumed);
   };
 
+  if (mSwipeTracker && mSwipeTracker->EventsAreControllingSwipe()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    rejectSwipe();
+    return;
+  }
+
   const auto touchDelta =
       mTouchSwipeState.GetDelta(aInput.mTouches[0].mScreenPoint);
   
@@ -1341,7 +1354,7 @@ void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
   
   
   TrackScrollEventAsSwipe(swipeStart, swipeInfo.allowedDirections,
-                          aResult.mInputBlockId);
+                          aResult.mInputBlockId, SwipeInputSource::Touchscreen);
   MOZ_ASSERT(mSwipeTracker,
              "mSwipeTracker must exist when the phase turns into Tracking.");
   mTouchSwipeState.phase = TouchSwipeState::Phase::Tracking;
@@ -1371,7 +1384,7 @@ void nsIWidget::HandleTouchInputAsSwipe(const MultiTouchInput& aInput) {
                  "mSwipeTracker must exist when the phase is Tracking.");
       
       
-      mSwipeTracker->ProcessEvent(convertedPan);
+      mSwipeTracker->ProcessEvent(convertedPan, SwipeInputSource::Touchscreen);
       if (aInput.mType == MultiTouchInput::MULTITOUCH_MOVE) {
         mTouchSwipeState.previousTouchPoint =
             Some(aInput.mTouches[0].mScreenPoint);
@@ -2441,9 +2454,10 @@ void nsIWidget::ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) {
     if (aStartSwipe) {
       PanGestureInput& startEvent = mSwipeEventQueue->queuedEvents[0];
       TrackScrollEventAsSwipe(startEvent, mSwipeEventQueue->allowedDirections,
-                              aInputBlockId);
+                              aInputBlockId, SwipeInputSource::Touchpad);
       for (size_t i = 1; i < mSwipeEventQueue->queuedEvents.Length(); i++) {
-        mSwipeTracker->ProcessEvent(mSwipeEventQueue->queuedEvents[i]);
+        mSwipeTracker->ProcessEvent(mSwipeEventQueue->queuedEvents[i],
+                                    SwipeInputSource::Touchpad);
       }
     } else if (mAPZC) {
       
@@ -2456,7 +2470,8 @@ void nsIWidget::ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) {
 
 void nsIWidget::TrackScrollEventAsSwipe(
     const mozilla::PanGestureInput& aSwipeStartEvent,
-    uint32_t aAllowedDirections, uint64_t aInputBlockId) {
+    uint32_t aAllowedDirections, uint64_t aInputBlockId,
+    SwipeInputSource aInputSource) {
   
   
   if (mSwipeTracker) {
@@ -2470,8 +2485,8 @@ void nsIWidget::TrackScrollEventAsSwipe(
           ? (uint32_t)dom::SimpleGestureEvent_Binding::DIRECTION_RIGHT
           : (uint32_t)dom::SimpleGestureEvent_Binding::DIRECTION_LEFT;
 
-  mSwipeTracker =
-      new SwipeTracker(*this, aSwipeStartEvent, aAllowedDirections, direction);
+  mSwipeTracker = new SwipeTracker(*this, aSwipeStartEvent, aAllowedDirections,
+                                   direction, aInputSource);
   mSwipeTracker->StartTracking(aSwipeStartEvent);
 
   if (mAPZC) {
@@ -2529,7 +2544,8 @@ WidgetWheelEvent nsIWidget::MayStartSwipe(const PanGestureInput& aPanInput,
         
         
         TrackScrollEventAsSwipe(aPanInput, swipeInfo.allowedDirections,
-                                aApzResult.mInputBlockId);
+                                aApzResult.mInputBlockId,
+                                SwipeInputSource::Touchpad);
       } else if (!aApzResult.GetHandledResult() ||
                  !aApzResult.GetHandledResult()->IsHandledByRoot()) {
         

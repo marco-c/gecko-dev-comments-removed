@@ -37,7 +37,8 @@ static already_AddRefed<nsRefreshDriver> GetRefreshDriver(nsIWidget& aWidget) {
 SwipeTracker::SwipeTracker(nsIWidget& aWidget,
                            const PanGestureInput& aSwipeStartEvent,
                            uint32_t aAllowedDirections,
-                           uint32_t aSwipeDirection)
+                           uint32_t aSwipeDirection,
+                           SwipeInputSource aInputSource)
     : mWidget(do_GetWeakReference(&aWidget)),
       mRefreshDriver(GetRefreshDriver(aWidget)),
       mAxis(0.0, 0.0, 0.0, kSpringForce, 1.0),
@@ -46,11 +47,13 @@ SwipeTracker::SwipeTracker(nsIWidget& aWidget,
           PixelCastJustification::LayoutDeviceIsScreenForUntransformedEvent))),
       mLastEventTimeStamp(aSwipeStartEvent.mTimeStamp),
       mAllowedDirections(aAllowedDirections),
-      mSwipeDirection(aSwipeDirection) {}
+      mSwipeDirection(aSwipeDirection),
+      mInputSource(aInputSource) {}
 
 void SwipeTracker::StartTracking(const PanGestureInput& aSwipeStartEvent) {
   SendSwipeEvent(eSwipeGestureStart, 0, 0.0, aSwipeStartEvent.mTimeStamp);
-  ProcessEvent(aSwipeStartEvent,  true);
+  ProcessEvent(aSwipeStartEvent, mInputSource,
+                true);
 }
 
 void SwipeTracker::Destroy() { UnregisterFromRefreshDriver(); }
@@ -95,8 +98,14 @@ bool SwipeTracker::ComputeSwipeSuccess() const {
 }
 
 nsEventStatus SwipeTracker::ProcessEvent(
-    const PanGestureInput& aEvent, bool aProcessingFirstEvent ) {
+    const PanGestureInput& aEvent, SwipeInputSource aInputSource,
+    bool aProcessingFirstEvent ) {
   RefPtr<SwipeTracker> selfPin(this);
+
+  if (aInputSource != mInputSource) {
+    return mEventsAreControllingSwipe ? nsEventStatus_eConsumeNoDefault
+                                      : nsEventStatus_eIgnore;
+  }
 
   
   
