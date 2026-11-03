@@ -94,6 +94,11 @@ class WasmFrameIter {
   
   
   ContStack* unwoundContStack_ = nullptr;
+  
+  
+  
+  
+  Instance* contBaseInstance_ = nullptr;
 #endif
 
   
@@ -214,6 +219,9 @@ class WasmFrameIter {
   
   
   ContStack* unwoundContStack() const { return unwoundContStack_; }
+
+  
+  Instance* contBaseInstance() const { return contBaseInstance_; }
 #endif
 
   

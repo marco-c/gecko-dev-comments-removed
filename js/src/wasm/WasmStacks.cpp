@@ -756,6 +756,11 @@ void ContStack::traceSuspended(JSTracer* trc, JSObject* src) {
     }
     ++iter;
   }
+
+  
+  
+  TraceInstanceEdge(trc, baseFrame()->calleeInstance(),
+                    "cont base frame instance");
 }
 
 void ContStack::updateSuspendedForMovingGC(Nursery& nursery) {

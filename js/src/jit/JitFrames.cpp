@@ -1559,6 +1559,14 @@ void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
           
           wasmFrameIter.contStack()->traceFields(trc);
         }
+        
+        
+        
+        if (wasm::Instance* contBaseInstance =
+                wasmFrameIter.contBaseInstance()) {
+          wasm::TraceInstanceEdge(trc, contBaseInstance,
+                                  "cont base frame instance");
+        }
       }
 #endif
       wasm::Instance* instance = wasmFrameIter.instance();
