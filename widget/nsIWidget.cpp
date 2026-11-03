@@ -1270,10 +1270,27 @@ class DispatchInputOnControllerThread : public Runnable {
 
 void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
                                            const APZEventResult& aResult) {
+  const auto rejectSwipe = [&] {
+    MOZ_ASSERT(mTouchSwipeState.phase != TouchSwipeState::Phase::Rejected);
+    mTouchSwipeState.phase = TouchSwipeState::Phase::Rejected;
+    mAPZC->Bridge()->SetBrowserGestureResponse(
+        aResult.mInputBlockId, BrowserGestureResponse::NotConsumed);
+  };
+
   switch (aInput.mType) {
     case MultiTouchInput::MULTITOUCH_START:
+      MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Idle ||
+                 mTouchSwipeState.phase == TouchSwipeState::Phase::Pending ||
+                 mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected);
       
-      
+      if (mTouchSwipeState.touchCounter.GetActiveTouchCount() > 1) {
+        
+        if (mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected) {
+          return;
+        }
+        rejectSwipe();
+        return;
+      }
       mTouchSwipeState.Start(aResult.mSwipableDirectionsForTouch,
                              aInput.mTouches[0].mScreenPoint);
       return;
@@ -1285,7 +1302,13 @@ void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
       
       MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Pending ||
                  mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected);
-      mTouchSwipeState.Reset();
+      if (mTouchSwipeState.touchCounter.GetActiveTouchCount() == 0) {
+        mTouchSwipeState.Reset();
+        return;
+      }
+      MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected,
+                 "The additional finger has already changed the phase into "
+                 "Rejected when it triggered MULTITOUCH_START");
       return;
     case MultiTouchInput::MULTITOUCH_MOVE:
       
@@ -1304,11 +1327,7 @@ void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
     return;
   }
 
-  const auto rejectSwipe = [&] {
-    mTouchSwipeState.phase = TouchSwipeState::Phase::Rejected;
-    mAPZC->Bridge()->SetBrowserGestureResponse(
-        aResult.mInputBlockId, BrowserGestureResponse::NotConsumed);
-  };
+  MOZ_ASSERT(mTouchSwipeState.touchCounter.GetActiveTouchCount() == 1);
 
   if (mSwipeTracker && mSwipeTracker->EventsAreControllingSwipe()) {
     
@@ -1364,14 +1383,28 @@ void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
 void nsIWidget::HandleTouchInputAsSwipe(const MultiTouchInput& aInput) {
   MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking);
 
+  
+  
+  const auto cancelSwipe = [&] {
+    mSwipeTracker->CancelSwipe(aInput.mTimeStamp);
+    
+    
+    
+    
+    mSwipeTracker->Destroy();
+    mSwipeTracker = nullptr;
+  };
+
   switch (aInput.mType) {
     case mozilla::MultiTouchInput::MULTITOUCH_START:
-      
-      
-      MOZ_ASSERT_UNREACHABLE("MULTITOUCH_START should not come here");
+      MOZ_ASSERT(mTouchSwipeState.touchCounter.GetActiveTouchCount() > 1);
+      mTouchSwipeState.phase = TouchSwipeState::Phase::Rejected;
+      cancelSwipe();
       return;
     case MultiTouchInput::MULTITOUCH_MOVE:
     case MultiTouchInput::MULTITOUCH_END: {
+      MOZ_ASSERT_IF(aInput.mType == mozilla::MultiTouchInput::MULTITOUCH_END,
+                    mTouchSwipeState.touchCounter.GetActiveTouchCount() == 0);
       const auto delta =
           mTouchSwipeState.GetDelta(aInput.mTouches[0].mScreenPoint);
       PanGestureInput convertedPan(
@@ -1394,18 +1427,24 @@ void nsIWidget::HandleTouchInputAsSwipe(const MultiTouchInput& aInput) {
       return;
     }
     case MultiTouchInput::MULTITOUCH_CANCEL: {
+      MOZ_ASSERT(mTouchSwipeState.touchCounter.GetActiveTouchCount() == 0);
       mTouchSwipeState.Reset();
-      mSwipeTracker->CancelSwipe(aInput.mTimeStamp);
-      
-      
-      
-      
-      
-      SwipeFinished();
+      cancelSwipe();
       return;
     }
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected type.");
+  }
+}
+
+bool nsIWidget::MayTriggerSwipe(const MultiTouchInput& aInput) {
+  switch (aInput.mType) {
+    case MultiTouchInput::MULTITOUCH_START:
+      return mTouchSwipeState.phase == TouchSwipeState::Phase::Idle;
+    case MultiTouchInput::MULTITOUCH_MOVE:
+      return mTouchSwipeState.phase == TouchSwipeState::Phase::Pending;
+    default:
+      return false;
   }
 }
 
@@ -1420,17 +1459,35 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
 
     switch (aInput.mInputSource) {
       case mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH: {
+        mTouchSwipeState.AssertCountConsistency();
+
         const bool touchSwipeEnabled =
             StaticPrefs::widget_swipe_touchscreen_enabled();
-        const auto swipeCandidatePhase =
-            aInput.mType == MultiTouchInput::MULTITOUCH_START
-                ? TouchSwipeState::Phase::Idle
-                : TouchSwipeState::Phase::Pending;
-        aInput.mMayTriggerSwipe =
-            touchSwipeEnabled && mTouchSwipeState.phase == swipeCandidatePhase;
+        if (touchSwipeEnabled) {
+          
+          
+          mTouchSwipeState.touchCounter.Update(aInput);
+          aInput.mMayTriggerSwipe = MayTriggerSwipe(aInput);
+        }
 
         APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
         if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
+          if (touchSwipeEnabled) {
+            const bool wasTracking =
+                mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking;
+            mTouchSwipeState.ChangePhaseForConsumedTouchInput();
+            
+            
+            if (wasTracking &&
+                mTouchSwipeState.phase != TouchSwipeState::Phase::Tracking) {
+              MOZ_ASSERT(
+                  mSwipeTracker,
+                  "mSwipeTracker must exist when the phase is Tracking.");
+              mSwipeTracker->CancelSwipe(aInput.mTimeStamp);
+              mSwipeTracker->Destroy();
+              mSwipeTracker = nullptr;
+            }
+          }
           return;
         }
 

@@ -25,6 +25,7 @@
 #include "mozilla/image/Resolution.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
+#include "mozilla/layers/TouchCounter.h"
 #include "mozilla/layers/ZoomConstraints.h"
 #include "mozilla/widget/IMEData.h"
 #include "mozilla/widget/InitData.h"
@@ -1360,6 +1361,7 @@ class nsIWidget : public nsSupportsWeakReference {
       const mozilla::MultiTouchInput& aInput,
       const mozilla::layers::APZEventResult& aResult);
   void HandleTouchInputAsSwipe(const mozilla::MultiTouchInput& aInput);
+  bool MayTriggerSwipe(const mozilla::MultiTouchInput& aInput);
 
   
 
@@ -2445,6 +2447,13 @@ class nsIWidget : public nsSupportsWeakReference {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   struct TouchSwipeState {
     
     mozilla::Maybe<ScreenIntPoint> previousTouchPoint;
@@ -2462,6 +2471,19 @@ class nsIWidget : public nsSupportsWeakReference {
       Rejected
     };
     Phase phase = Phase::Idle;
+    
+    
+    
+    mozilla::layers::TouchCounter touchCounter;
+
+    void AssertCountConsistency() const {
+      const mozilla::DebugOnly<uint32_t> count =
+          touchCounter.GetActiveTouchCount();
+      MOZ_ASSERT((phase == TouchSwipeState::Phase::Idle && count == 0) ||
+                 (phase == TouchSwipeState::Phase::Pending && count == 1) ||
+                 (phase == TouchSwipeState::Phase::Tracking && count == 1) ||
+                 (phase == TouchSwipeState::Phase::Rejected && count > 0));
+    }
 
     void Start(mozilla::SideBits aSwipableDirections,
                const ScreenIntPoint& aTouchPoint) {
@@ -2479,6 +2501,38 @@ class nsIWidget : public nsSupportsWeakReference {
     ScreenIntPoint GetDelta(const ScreenIntPoint& point) {
       MOZ_ASSERT(previousTouchPoint.isSome());
       return point - *previousTouchPoint;
+    }
+
+    
+    
+    
+    
+    
+    
+    void ChangePhaseForConsumedTouchInput() {
+      const auto count = touchCounter.GetActiveTouchCount();
+      switch (phase) {
+        case TouchSwipeState::Phase::Idle:
+          if (count > 0) {
+            
+            
+            phase = TouchSwipeState::Phase::Rejected;
+          }
+          return;
+        case TouchSwipeState::Phase::Pending:
+        case TouchSwipeState::Phase::Tracking:
+          if (count == 0) {
+            Reset();
+          } else if (count > 1) {
+            phase = TouchSwipeState::Phase::Rejected;
+          }
+          return;
+        case TouchSwipeState::Phase::Rejected:
+          if (count == 0) {
+            Reset();
+          }
+          return;
+      }
     }
   };
   TouchSwipeState mTouchSwipeState;
