@@ -2113,35 +2113,18 @@ void CodeGenerator::visitValueToString(LValueToString* lir) {
   }
 
   
-  if (lir->mir()->mightHaveSideEffects()) {
+  if (lir->mir()->mightHaveSideEffects() && !lir->mir()->supportSideEffects()) {
     
-    if (lir->mir()->supportSideEffects()) {
-      masm.branchTestObject(Assembler::Equal, tag, ool->entry());
-    } else {
-      
-      MOZ_ASSERT(lir->mir()->needsSnapshot());
-      Label bail;
-      masm.branchTestObject(Assembler::Equal, tag, &bail);
-      bailoutFrom(&bail, lir->snapshot());
-    }
-
-    
-    if (lir->mir()->supportSideEffects()) {
-      masm.branchTestSymbol(Assembler::Equal, tag, ool->entry());
-    } else {
-      
-      MOZ_ASSERT(lir->mir()->needsSnapshot());
-      Label bail;
-      masm.branchTestSymbol(Assembler::Equal, tag, &bail);
-      bailoutFrom(&bail, lir->snapshot());
-    }
+    MOZ_ASSERT(lir->mir()->needsSnapshot());
+    Label bail;
+    masm.branchTestObject(Assembler::Equal, tag, &bail);
+    masm.branchTestSymbol(Assembler::Equal, tag, &bail);
+    bailoutFrom(&bail, lir->snapshot());
   }
 
   
-  {
-    
-    masm.branchTestBigInt(Assembler::Equal, tag, ool->entry());
-  }
+  
+  masm.branchTestGCThing(Assembler::Equal, tag, ool->entry());
 
   masm.assumeUnreachable("Unexpected type for LValueToString.");
 
