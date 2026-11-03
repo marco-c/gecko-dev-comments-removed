@@ -6,6 +6,7 @@ use super::commands::get_assertion::HmacSecretExtension;
 use crate::crypto::{COSEAlgorithm, CryptoError, PinUvAuthToken, SharedSecret};
 use crate::{errors::AuthenticatorError, AuthenticatorTransports, KeyHandle};
 use base64::Engine;
+use icu_segmenter::{GraphemeClusterSegmenter, GraphemeClusterSegmenterBorrowed};
 use serde::de::MapAccess;
 use serde::{
     de::{Error as SerdeError, Unexpected, Visitor},
@@ -71,13 +72,59 @@ impl RelyingParty {
 }
 
 
-#[derive(Debug, Serialize, Clone, Eq, PartialEq, Deserialize, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Default)]
 pub struct PublicKeyCredentialUserEntity {
     #[serde(with = "serde_bytes")]
     pub id: Vec<u8>,
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "displayName")]
     pub display_name: Option<String>,
+}
+
+
+
+fn truncate_username(username: &str) -> Option<&str> {
+    const MAX_LENGTH: usize = 64;
+    const SEGMENTER: GraphemeClusterSegmenterBorrowed<'static> = GraphemeClusterSegmenter::new();
+
+    if username.len() < MAX_LENGTH {
+        return Some(username);
+    }
+
+    let mut len = 0;
+    for segment in SEGMENTER.segment_str(username) {
+        if segment == MAX_LENGTH {
+            return Some(&username[..segment]);
+        } else if segment > MAX_LENGTH {
+            return Some(&username[..len]);
+        } else {
+            len = segment;
+        }
+    }
+
+    
+    None
+}
+
+impl Serialize for PublicKeyCredentialUserEntity {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        debug!("Serialize PublicKeyCredentialUserEntity");
+        let name = self.name.as_ref().and_then(|u| truncate_username(u));
+        let display_name = self
+            .display_name
+            .as_ref()
+            .and_then(|u| truncate_username(u));
+
+        serialize_map_optional!(
+            serializer,
+            &"id" => Some(Bytes::new(&self.id)),
+            &"name" => name,
+            &"displayName" => display_name,
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -564,8 +611,8 @@ pub enum AuthenticatorAttachment {
 #[cfg(test)]
 mod test {
     use super::{
-        COSEAlgorithm, PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
-        PublicKeyCredentialUserEntity, RelyingParty, Transport,
+        truncate_username, COSEAlgorithm, PublicKeyCredentialDescriptor,
+        PublicKeyCredentialParameters, PublicKeyCredentialUserEntity, RelyingParty, Transport,
     };
     use serde_cbor::from_slice;
 
@@ -800,5 +847,80 @@ mod test {
                       //0x75, 0x73, 0x62 // "usb"
             ]
         );
+    }
+
+    #[test]
+    fn username_truncation() {
+        for (input, expected) in [
+            ("", Some("")),
+            (
+                "A username of exactly 64 bytes in length and not one more byte!!",
+                Some("A username of exactly 64 bytes in length and not one more byte!!"),
+            ),
+            (
+                "A username of more than sixty-four bytes in length, which should be truncated.",
+                Some("A username of more than sixty-four bytes in length, which should"),
+            ),
+            
+            (
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaag\u{308}",
+                Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+            ),
+            
+            (
+                
+                "単にFirefoxと呼称されるほか、fireおよびfoxの和訳から火狐とも呼称される。",
+                Some("単にFirefoxと呼称されるほか、fireおよびfoxの和"),
+            ),
+            (
+                
+                "모질라 파이어폭스(Mozilla Firefox)는 모질라 재단과 모질라 코퍼레이션이 개발하는 자유 소프트웨어 웹 브라우저로",
+                Some("모질라 파이어폭스(Mozilla Firefox)는 모질라 재단"),
+            ),
+            
+            
+            (
+                "\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}",
+                Some("\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}"),
+            ),
+            
+            
+            (
+                "3  \u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}",
+                Some("3  \u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}"),
+            ),
+            
+            (
+                "Flags \u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}",
+                Some("Flags \u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}"),
+            ),
+            
+            (
+                "3  Flags \u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}",
+                Some("3  Flags \u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}\u{1F3F3}\u{FE0F}\u{200D}\u{26A7}\u{FE0F}"),
+            ),
+            
+            
+            (
+                "\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}",
+                Some("\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}"),
+            ),
+            
+            (
+                " \u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}",
+                Some(" \u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}"),
+            ),
+            
+            (
+                "4   \u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}",
+                Some("4   \u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}\u{1F9D1}\u{1F3FB}\u{200D}\u{1F430}\u{200D}\u{1F9D1}\u{1F3FC}"),
+            ),
+        ] {
+            assert_eq!(
+                expected,
+                truncate_username(input),
+                "for input username: {input:?}"
+            );
+        }
     }
 }
