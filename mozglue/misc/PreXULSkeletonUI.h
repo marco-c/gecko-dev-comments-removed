@@ -63,14 +63,22 @@ enum class SkeletonUIFlag : uint8_t {
   VerticalTabs
 };
 
+
+
 struct ThemeColors {
   uint32_t backgroundColor;
   uint32_t toolbarForegroundColor;
-  uint32_t titlebarColor;
+  uint32_t toolboxColor;
+  uint32_t toolboxGradientLeadingColor;
+  uint32_t toolboxGradientTrailingColor;
+  uint32_t toolbarColor;
+  double toolbarAlpha;
   uint32_t tabColor;
   uint32_t tabOutlineColor;
   uint32_t chromeContentDividerColor;
+  double chromeContentDividerAlpha;
   uint32_t urlbarColor;
+  double urlbarAlpha;
   uint32_t urlbarBorderColor;
   uint32_t animationColor;
 };
