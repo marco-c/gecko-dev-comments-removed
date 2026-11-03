@@ -251,9 +251,9 @@ APZEventResult InputQueue::ReceiveTouchInput(
         
         
         
-        if (block->IsTargetConfirmed() && block->HasAllowedTouchBehaviors()) {
+        if (block->IsTargetConfirmed() && block->HasAllowedTouchBehaviors() &&
+            block->TouchActionAllowsPanningX()) {
           MOZ_ASSERT(target, "A confirmed target should be non-null here");
-          
           result.mSwipableDirectionsForTouch =
               block->GetOverscrollHandoffChain()->GetSwipableDirections(
                   *target);
