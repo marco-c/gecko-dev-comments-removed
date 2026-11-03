@@ -39,9 +39,7 @@ class BlockReflowState {
           mShouldApplyTextBoxTrimStart(false),
           mShouldApplyTextBoxTrimAtBlockEnd(false),
           mShouldApplyTextBoxTrimAtFragmentEnd(false),
-          mShouldApplyLineClampAuto(false),
-          mIsCurrentLineAdjacentToBStart(false),
-          mShouldTrimInheritedBEndMargins(false) {}
+          mShouldApplyLineClampAuto(false) {}
 
     
     
@@ -104,16 +102,6 @@ class BlockReflowState {
     
     
     bool mShouldApplyLineClampAuto : 1;
-
-    
-    
-    
-    bool mIsCurrentLineAdjacentToBStart : 1;
-
-    
-    
-    
-    bool mShouldTrimInheritedBEndMargins : 1;
   };
 
  public:
@@ -123,27 +111,6 @@ class BlockReflowState {
                    const nscoord aConsumedBSize,
                    const nscoord aEffectiveContentBoxBSize,
                    const nscoord aInset = 0);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static ReflowInput::InitFlags ComputeChildMarginTrim(
-      nsBlockFrame* aBlock, bool aTrimChildBStartMargins,
-      bool aTrimChildBEndMargins, nsLineList::iterator aLine,
-      bool aIsAdjacentToBStart);
-
-  bool ShouldTrimChildBStartMargins() const;
-  bool ShouldTrimChildBEndMargins() const;
 
   
 

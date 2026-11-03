@@ -30,17 +30,6 @@ class nsBlockReflowContext {
                        const ReflowInput& aParentRI);
   ~nsBlockReflowContext() = default;
 
-  
-
-
-
-
-
-
-
-  static bool StyleTrimsChildBStartMargins(const nsIFrame* aFrame);
-  static bool StyleTrimsChildBEndMargins(const nsIFrame* aFrame);
-
   void ReflowBlock(const mozilla::LogicalRect& aSpace, bool aApplyBStartMargin,
                    mozilla::CollapsingMargin& aPrevMargin, nscoord aClearance,
                    nsLineBox* aLine, ReflowInput& aReflowInput,

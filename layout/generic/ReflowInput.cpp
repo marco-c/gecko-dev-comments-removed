@@ -304,9 +304,6 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
   mFlags.mStaticPosIsCBOrigin = aFlags.contains(InitFlag::StaticPosIsCBOrigin);
   mFlags.mIOffsetsNeedCSSAlign = mFlags.mBOffsetsNeedCSSAlign = false;
 
-  mFlags.mTrimBStartMargin = aFlags.contains(InitFlag::TrimBStartMargin);
-  mFlags.mTrimBEndMargin = aFlags.contains(InitFlag::TrimBEndMargin);
-
   
   
   mFlags.mOrthogonalCellFinalReflow = false;
@@ -2091,16 +2088,8 @@ void ReflowInput::InitConstraints(
     
     
     WritingMode cbwm = cbri->GetWritingMode();
-    EnumSet<LogicalSide> trimmedMarginSides;
-    if (mFlags.mTrimBStartMargin) {
-      trimmedMarginSides += LogicalSide::BStart;
-    }
-    if (mFlags.mTrimBEndMargin) {
-      trimmedMarginSides += LogicalSide::BEnd;
-    }
     InitOffsets(cbwm, cbSize.ConvertTo(cbwm, wm).ISize(cbwm), aFrameType,
-                mComputeSizeFlags, aBorder, aPadding, mStyleDisplay,
-                trimmedMarginSides);
+                mComputeSizeFlags, aBorder, aPadding, mStyleDisplay);
 
     
     const auto blockSize =
@@ -2371,11 +2360,12 @@ static void UpdateProp(nsIFrame* aFrame,
   }
 }
 
-void SizeComputationInput::InitOffsets(
-    WritingMode aCBWM, nscoord aPercentBasis, LayoutFrameType aFrameType,
-    ComputeSizeFlags aFlags, const Maybe<LogicalMargin>& aBorder,
-    const Maybe<LogicalMargin>& aPadding, const nsStyleDisplay* aDisplay,
-    EnumSet<LogicalSide> aTrimmedMarginSides) {
+void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
+                                       LayoutFrameType aFrameType,
+                                       ComputeSizeFlags aFlags,
+                                       const Maybe<LogicalMargin>& aBorder,
+                                       const Maybe<LogicalMargin>& aPadding,
+                                       const nsStyleDisplay* aDisplay) {
   nsPresContext* presContext = mFrame->PresContext();
 
   
@@ -2383,25 +2373,6 @@ void SizeComputationInput::InitOffsets(
   
   
   bool needMarginProp = ComputeMargin(aCBWM, aPercentBasis, aFrameType);
-  if (!aTrimmedMarginSides.isEmpty()) {
-    
-    
-    
-    LogicalMargin margin = ComputedLogicalMargin(aCBWM);
-    bool marginChanged = false;
-    for (const LogicalSide side : aTrimmedMarginSides) {
-      auto& value = margin.Side(side, aCBWM);
-      if (value == 0) {
-        continue;
-      }
-      value = 0;
-      marginChanged = true;
-    }
-    if (marginChanged) {
-      SetComputedLogicalMargin(aCBWM, margin);
-      needMarginProp = true;
-    }
-  }
   
   
   

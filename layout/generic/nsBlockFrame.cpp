@@ -1862,11 +1862,6 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   nsReflowStatus reflowStatus;
   nsFloatManager::SavedState floatManagerState;
-  if (aReflowInput.mFlags.mTrimBEndMargin ||
-      GetProperty(InheritedBEndMarginTrim())) {
-    MarkAllDescendantLinesDirty(this);
-  }
-  RemoveProperty(InheritedBEndMarginTrim());
   TrialReflowState trialState(consumedBSize, effectiveContentBoxBSize,
                               needFloatManager);
 
@@ -1982,25 +1977,6 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   if (aMetrics.mNeedsTextBoxTrimAtFragmentEndRetry) {
     trialState.Reset();
-    aReflowInput.mFloatManager->PopState(&floatManagerState);
-    aMetrics = ReflowOutput(aMetrics.GetWritingMode());
-    reflowStatus =
-        TrialReflow(aPresContext, aMetrics, aReflowInput, trialState);
-  }
-
-  
-  
-  
-  
-  if (aReflowInput.mFlags.mTrimBEndMargin &&
-      !aMetrics.mCarriedOutBEndMargin.IsZero() &&
-      reflowStatus.IsFullyComplete() &&
-      !aReflowInput.WillReflowAgainForClearance() &&
-      !aPresContext->HasPendingInterrupt()) {
-    trialState.Reset();
-    trialState.mShouldTrimInheritedBEndMargins = true;
-    SetProperty(InheritedBEndMarginTrim(), true);
-    MarkAllDescendantLinesDirty(this);
     aReflowInput.mFloatManager->PopState(&floatManagerState);
     aMetrics = ReflowOutput(aMetrics.GetWritingMode());
     reflowStatus =
@@ -2254,8 +2230,6 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
                          aTrialState.mConsumedBSize,
                          aTrialState.mEffectiveContentBoxBSize,
                          aTrialState.mInset);
-  state.mFlags.mShouldTrimInheritedBEndMargins =
-      aTrialState.mShouldTrimInheritedBEndMargins;
 
   
   
@@ -3566,11 +3540,6 @@ void nsBlockFrame::PropagateFloatDamage(BlockReflowState& aState,
   }
 }
 
-
-static bool LineStopsBStartMarginCollapsing(nsLineBox& aLine) {
-  return !aLine.CachedIsEmpty() || aLine.HasClearance();
-}
-
 static bool LineHasClear(nsLineBox* aLine) {
   return aLine->IsBlock()
              ? (aLine->HasFloatClearTypeBefore() ||
@@ -3630,19 +3599,6 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
   bool foundAnyClears = aState.mTrailingClearFromPIF != UsedClear::None;
   bool willReflowAgain = false;
   bool usedOverflowWrap = false;
-  const bool trimChildBStartMargins = aState.ShouldTrimChildBStartMargins();
-
-  if (aState.ShouldTrimChildBEndMargins()) {
-    for (auto& line : Lines()) {
-      if (!line.IsBlock()) {
-        continue;
-      }
-      nsBlockFrame* block = do_QueryFrame(line.mFirstChild);
-      if (block && block->GetProperty(InheritedBEndMarginTrim())) {
-        line.MarkDirty();
-      }
-    }
-  }
 
 #ifdef DEBUG
   if (gNoisyReflow) {
@@ -4098,10 +4054,6 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
       foundAnyClears = true;
     }
 
-    if (trimChildBStartMargins && LineStopsBStartMarginCollapsing(*line)) {
-      aState.mFlags.mIsCurrentLineAdjacentToBStart = false;
-    }
-
     DumpLine(aState, line, deltaBCoord, -1);
 
     if (aState.mPresContext->HasPendingInterrupt()) {
@@ -4284,11 +4236,6 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
 
           if (LineHasClear(line.get())) {
             foundAnyClears = true;
-          }
-
-          if (trimChildBStartMargins &&
-              LineStopsBStartMarginCollapsing(*line)) {
-            aState.mFlags.mIsCurrentLineAdjacentToBStart = false;
           }
 
           if (aState.mPresContext->CheckForInterrupt(this)) {
@@ -4777,7 +4724,7 @@ bool nsBlockFrame::ShouldApplyBStartMargin(BlockReflowState& aState,
     line = aState.mLineAdjacentToTop;
   }
   while (line != aLine) {
-    if (LineStopsBStartMarginCollapsing(*line)) {
+    if (!line->CachedIsEmpty() || line->HasClearance()) {
       
       
       aState.mFlags.mShouldApplyBStartMargin = true;
@@ -4911,15 +4858,6 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     applyBStartMargin = true;
   }
 
-  
-  
-  
-  const bool trimChildBStartMargins = aState.ShouldTrimChildBStartMargins();
-  const ReflowInput::InitFlags marginTrimFlags =
-      BlockReflowState::ComputeChildMarginTrim(
-          this, trimChildBStartMargins, aState.ShouldTrimChildBEndMargins(),
-          aLine, trimChildBStartMargins && IsLineAdjacentToBStart(aState));
-
   nsIFrame* clearanceFrame = nullptr;
   const nscoord startingBCoord = aState.mBCoord;
   const CollapsingMargin incomingMargin = aState.mPrevBEndMargin;
@@ -4947,7 +4885,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       WritingMode wm = frame->GetWritingMode();
       LogicalSize availSpace = aState.ContentSize(wm);
       ReflowInput reflowInput(aState.mPresContext, aState.mReflowInput, frame,
-                              availSpace, Nothing(), marginTrimFlags);
+                              availSpace);
 
       if (treatWithClearance) {
         aState.mBCoord += aState.mPrevBEndMargin.Get();
@@ -5137,7 +5075,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
 
     childReflowInput.emplace(aState.mPresContext, aState.mReflowInput, frame,
                              availSize.ConvertTo(frame->GetWritingMode(), wm),
-                             cbSize, marginTrimFlags);
+                             cbSize);
 
     childReflowInput->mFlags.mColumnSetWrapperHasNoBSizeLeft =
         columnSetWrapperHasNoBSizeLeft;
@@ -5314,8 +5252,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
       childReflowInput.reset();
       childReflowInput.emplace(
           aState.mPresContext, aState.mReflowInput, frame,
-          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm), Nothing(),
-          marginTrimFlags);
+          availSpace.Size(wm).ConvertTo(frame->GetWritingMode(), wm));
     } while (true);
 
     if (mayNeedRetry && clearanceFrame) {
@@ -6244,20 +6181,6 @@ bool nsBlockFrame::IsLastFormattedLine(LineIterator aLine) {
     }
   }
 
-  return true;
-}
-
-bool nsBlockFrame::IsLineAdjacentToBStart(BlockReflowState& aState) {
-  return aState.mFlags.mIsCurrentLineAdjacentToBStart &&
-         aState.IsAdjacentWithBStart();
-}
-
-bool nsBlockFrame::IsLineAdjacentToBEnd(LineIterator aLine) {
-  for (LineIterator line = aLine.next(); line != LinesEnd(); ++line) {
-    if (!line->IsEmpty() || line->HasClearance()) {
-      return false;
-    }
-  }
   return true;
 }
 
@@ -9366,7 +9289,7 @@ void nsBlockFrame::CheckFloats(BlockReflowState& aState) {
 }
 
 void nsBlockFrame::IsMarginRoot(bool* aBStartMarginRoot,
-                                bool* aBEndMarginRoot) const {
+                                bool* aBEndMarginRoot) {
   nsIFrame* parent = GetParent();
   if (!HasAnyStateBits(NS_BLOCK_BFC)) {
     if (!parent || parent->IsFloatContainingBlock()) {
