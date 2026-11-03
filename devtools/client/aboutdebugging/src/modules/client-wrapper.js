@@ -80,6 +80,7 @@ class ClientWrapper {
 
     
     return {
+      canDebugServiceWorkers: description.canDebugServiceWorkers,
       channel: description.channel,
       deviceName: description.deviceName,
       name: description.brandName,

@@ -116,27 +116,13 @@ class TargetCommand extends EventEmitter {
 
     this.legacyImplementation = {};
 
-    this.listenForWorkers = false;
+    
+    
+    
+    this.listenForWorkers =
+      this.rootFront.traits.workerConsoleApiMessagesDispatchedToMainThread ===
+      false;
     this.listenForServiceWorkers = false;
-
-    
-    
-    if (
-      descriptorFront.isTabDescriptor ||
-      descriptorFront.isWebExtensionDescriptor ||
-      descriptorFront.isBrowserProcessDescriptor
-    ) {
-      
-      
-      
-      this.listenForWorkers =
-        this.rootFront.traits.workerConsoleApiMessagesDispatchedToMainThread ===
-        false;
-
-      
-      this.listenForServiceWorkers = descriptorFront.isLocalTab;
-    }
-
     this.listenForContentScripts = false;
 
     
