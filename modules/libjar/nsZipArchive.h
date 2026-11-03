@@ -94,8 +94,15 @@ class nsZipArchive final {
 
 
 
-  static already_AddRefed<nsZipArchive> OpenArchive(nsZipHandle* aZipHandle,
-                                                    PRFileDesc* aFd = nullptr);
+
+
+
+
+
+
+  static already_AddRefed<nsZipArchive> OpenArchive(
+      nsZipHandle* aZipHandle, PRFileDesc* aFd = nullptr,
+      bool aAllowOptimizedLayout = false);
 
   
 
@@ -105,7 +112,9 @@ class nsZipArchive final {
 
 
 
-  static already_AddRefed<nsZipArchive> OpenArchive(nsIFile* aFile);
+
+  static already_AddRefed<nsZipArchive> OpenArchive(
+      nsIFile* aFile, bool aAllowOptimizedLayout = false);
 
   
 
@@ -183,7 +192,8 @@ class nsZipArchive final {
   NS_METHOD_(MozExternalRefCountType) Release(void);
 
  private:
-  nsZipArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd, nsresult& aRv);
+  nsZipArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd,
+               bool aAllowOptimizedLayout, nsresult& aRv);
 
   
   mozilla::ThreadSafeAutoRefCnt mRefCnt; 
@@ -209,7 +219,7 @@ class nsZipArchive final {
  private:
   
   nsZipItem* CreateZipItem() MOZ_REQUIRES(mLock);
-  nsresult BuildFileList(PRFileDesc* aFd = nullptr);
+  nsresult BuildFileList(PRFileDesc* aFd, bool aAllowOptimizedLayout);
   nsresult BuildSynthetics();
 };
 

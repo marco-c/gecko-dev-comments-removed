@@ -77,7 +77,10 @@ nsresult Omnijar::InitOne(nsIFile* aPath, Type aType) {
     return NS_OK;
   }
 
-  RefPtr<nsZipArchive> zipReader = nsZipArchive::OpenArchive(file);
+  
+  
+  RefPtr<nsZipArchive> zipReader =
+      nsZipArchive::OpenArchive(file,  true);
   if (!zipReader) {
     
     
@@ -90,7 +93,8 @@ nsresult Omnijar::InitOne(nsIFile* aPath, Type aType) {
   if (NS_SUCCEEDED(
           nsZipHandle::Init(zipReader, kOmnijarName, getter_AddRefs(handle)))) {
     outerReader = zipReader;
-    zipReader = nsZipArchive::OpenArchive(handle);
+    zipReader = nsZipArchive::OpenArchive(handle, nullptr,
+                                           true);
     if (!zipReader) {
       return NS_ERROR_FILE_CORRUPTED;
     }

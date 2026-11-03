@@ -399,9 +399,10 @@ nsZipHandle::~nsZipHandle() {
 
 
 already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(
-    nsZipHandle* aZipHandle, PRFileDesc* aFd) {
+    nsZipHandle* aZipHandle, PRFileDesc* aFd, bool aAllowOptimizedLayout) {
   nsresult rv;
-  RefPtr<nsZipArchive> self(new nsZipArchive(aZipHandle, aFd, rv));
+  RefPtr<nsZipArchive> self(
+      new nsZipArchive(aZipHandle, aFd, aAllowOptimizedLayout, rv));
   LOG(("ZipHandle::OpenArchive[%p]", self.get()));
   if (NS_FAILED(rv)) {
     self = nullptr;
@@ -410,7 +411,8 @@ already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(
 }
 
 
-already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(nsIFile* aFile) {
+already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(
+    nsIFile* aFile, bool aAllowOptimizedLayout) {
   RefPtr<nsZipHandle> handle;
 #if defined(XP_WIN)
   mozilla::AutoFDClose fd;
@@ -422,9 +424,9 @@ already_AddRefed<nsZipArchive> nsZipArchive::OpenArchive(nsIFile* aFile) {
   if (NS_FAILED(rv)) return nullptr;
 
 #if defined(XP_WIN)
-  return OpenArchive(handle, fd.get());
+  return OpenArchive(handle, fd.get(), aAllowOptimizedLayout);
 #else
-  return OpenArchive(handle);
+  return OpenArchive(handle, nullptr, aAllowOptimizedLayout);
 #endif
 }
 
@@ -655,8 +657,8 @@ nsZipItem* nsZipArchive::CreateZipItem() {
 
 
 
-nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd)
-    MOZ_NO_THREAD_SAFETY_ANALYSIS {
+nsresult nsZipArchive::BuildFileList(
+    PRFileDesc* aFd, bool aAllowOptimizedLayout) MOZ_NO_THREAD_SAFETY_ANALYSIS {
   
   
   
@@ -673,7 +675,13 @@ nsresult nsZipArchive::BuildFileList(PRFileDesc* aFd)
   
   
   
-  if (XRE_IsParentProcess() && mFd->mLen > ZIPCENTRAL_SIZE &&
+  
+  
+  
+  
+  
+  if (aAllowOptimizedLayout && XRE_IsParentProcess() &&
+      mFd->mLen > ZIPCENTRAL_SIZE &&
       xtolong(startp + centralOffset) == CENTRALSIG) {
     
     uint32_t readaheadLength = xtolong(startp);
@@ -906,14 +914,14 @@ int64_t nsZipArchive::SizeOfMapping() { return mFd ? mFd->SizeOfMapping() : 0; }
 
 
 nsZipArchive::nsZipArchive(nsZipHandle* aZipHandle, PRFileDesc* aFd,
-                           nsresult& aRv)
+                           bool aAllowOptimizedLayout, nsresult& aRv)
     : mRefCnt(0), mFd(aZipHandle), mUseZipLog(false), mBuiltSynthetics(false) {
   
   memset(mFiles, 0, sizeof(mFiles));
   MOZ_DIAGNOSTIC_ASSERT(aZipHandle);
 
   
-  aRv = BuildFileList(aFd);
+  aRv = BuildFileList(aFd, aAllowOptimizedLayout);
   if (NS_FAILED(aRv)) {
     return;  
   }
