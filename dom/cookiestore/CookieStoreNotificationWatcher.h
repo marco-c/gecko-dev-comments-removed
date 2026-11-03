@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_CookieStoreNotificationWatcher_h
 #define mozilla_dom_CookieStoreNotificationWatcher_h
 
@@ -33,8 +31,6 @@ class CookieStoreNotificationWatcher final : public nsIObserver,
  private:
   CookieStoreNotificationWatcher() = default;
   ~CookieStoreNotificationWatcher() = default;
-
-  void MaybeResolveOperations(const nsID* aOperationID);
 
   struct PendingOperation {
     MoveOnlyFunction<void()> mCallback;
