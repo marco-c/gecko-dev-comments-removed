@@ -2389,6 +2389,17 @@ interface HTMLMediaElementDebugInfo {
     decoder?: MediaDecoderDebugInfo;
 }
 
+interface HWInferenceDevice {
+    
+    backends: HWInferenceBackend[];
+    
+    description: string;
+    
+    id: string;
+    
+    kind: HWInferenceDeviceKind;
+}
+
 interface HasChildrenOptions {
     
     ignoreAbsent?: boolean;
@@ -43031,6 +43042,12 @@ declare namespace GPUTextureUsage {
 }
 
 
+declare namespace HWInference {
+    
+    function listDevices(): Promise<HWInferenceDevice[]>;
+}
+
+
 declare namespace IOUtils {
     
     var profileBeforeChange: any;
@@ -45009,6 +45026,8 @@ type GetUserMediaRequestType = "getusermedia" | "recording-device-stopped" | "se
 type GridDeclaration = "explicit" | "implicit";
 type GridTrackState = "removed" | "repeat" | "static";
 type HDCPVersion = "1.0" | "1.1" | "1.2" | "1.3" | "1.4" | "2.0" | "2.1" | "2.2" | "2.3";
+type HWInferenceBackend = "llama.cpp";
+type HWInferenceDeviceKind = "cpu" | "gpu" | "npu";
 type HardwareAcceleration = "no-preference" | "prefer-hardware" | "prefer-software";
 type HashAlgorithm = "sha256" | "sha384" | "sha512";
 type HdrMetadataType = "smpteSt2086" | "smpteSt2094-10" | "smpteSt2094-40";
