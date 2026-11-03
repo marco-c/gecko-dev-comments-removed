@@ -125,6 +125,14 @@ void AfterMaybeBlockingSyscall() {}
 
 
 
+
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wglobal-constructors"
+#endif
+
+
+
+
 #if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
 
 #include <stdio.h>
@@ -150,7 +158,13 @@ uint32_t GetXCR0EAX() {
 
 
 
-void PERFETTO_EXPORT_COMPONENT __attribute__((constructor))
+
+
+
+
+
+
+void PERFETTO_EXPORT_COMPONENT __attribute__((constructor(101)))
 CheckCpuOptimizations() {
   uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
   PERFETTO_GETCPUID(eax, ebx, ecx, edx, 1, 0);
@@ -221,6 +235,7 @@ CheckCpuOptimizations() {
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 
 
@@ -258,6 +273,7 @@ struct SystemInfo {
   std::string android_storage_model;
   std::string android_ram_model;
   std::string android_serial_console;
+  std::vector<std::string> device_tree_compatibles;
 };
 
 
@@ -272,6 +288,679 @@ SystemInfo GetSystemInfo();
 
 
 std::string GetPerfettoMachineName();
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_BASE_STATUS_H_
+#define INCLUDE_PERFETTO_BASE_STATUS_H_
+
+#include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+
+
+
+
+class PERFETTO_EXPORT_COMPONENT Status {
+ public:
+  Status() : ok_(true) {}
+  explicit Status(std::string msg) : ok_(false), message_(std::move(msg)) {
+    PERFETTO_CHECK(!message_.empty());
+  }
+
+  
+  Status(const Status&) = default;
+  Status& operator=(const Status&) = default;
+
+  
+  Status(Status&&) noexcept = default;
+  Status& operator=(Status&&) = default;
+
+  bool ok() const { return ok_; }
+
+  
+  
+  const std::string& message() const { return message_; }
+  const char* c_message() const { return message_.c_str(); }
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  std::optional<std::string_view> GetPayload(std::string_view type_url) const;
+
+  
+  
+  
+  void SetPayload(std::string_view type_url, std::string value);
+
+  
+  
+  
+  
+  bool ErasePayload(std::string_view type_url);
+
+ private:
+  struct Payload {
+    std::string type_url;
+    std::string payload;
+  };
+
+  bool ok_ = false;
+  std::string message_;
+  std::vector<Payload> payloads_;
+};
+
+
+inline Status OkStatus() {
+  return Status();
+}
+
+Status ErrStatus(const char* format, ...) PERFETTO_PRINTF_FORMAT(1, 2);
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
+#define INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
+
+
+
+#include <stdio.h>
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <dirent.h>  
+#endif
+
+#include <string>
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+namespace internal {
+
+
+template <typename T, T InvalidValue>
+struct DefaultValidityChecker {
+  static bool IsValid(T t) { return t != InvalidValue; }
+};
+}  
+
+
+
+
+template <typename T,
+          int (*CloseFunction)(T),
+          T InvalidValue,
+          bool CheckClose = true,
+          class Checker = internal::DefaultValidityChecker<T, InvalidValue>>
+class ScopedResource {
+ public:
+  using ValidityChecker = Checker;
+  static constexpr T kInvalid = InvalidValue;
+
+  explicit ScopedResource(T t = InvalidValue) : t_(t) {}
+  ScopedResource(ScopedResource&& other) noexcept : t_(other.t_) {
+    other.t_ = InvalidValue;
+  }
+  ScopedResource& operator=(ScopedResource&& other) {
+    reset(other.t_);
+    other.t_ = InvalidValue;
+    return *this;
+  }
+  T get() const { return t_; }
+  T operator*() const { return t_; }
+  explicit operator bool() const { return Checker::IsValid(t_); }
+  void reset(T r = InvalidValue) {
+    if (Checker::IsValid(t_)) {
+      int res = CloseFunction(t_);
+      if (CheckClose)
+        PERFETTO_CHECK(res == 0);
+    }
+    t_ = r;
+  }
+  T release() {
+    T t = t_;
+    t_ = InvalidValue;
+    return t;
+  }
+  ~ScopedResource() { reset(InvalidValue); }
+
+ private:
+  ScopedResource(const ScopedResource&) = delete;
+  ScopedResource& operator=(const ScopedResource&) = delete;
+  T t_;
+};
+
+
+int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
+
+
+using ScopedFile = ScopedResource<int, CloseFile, -1>;
+using ScopedFstream = ScopedResource<FILE*, fclose, nullptr>;
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+using ScopedPlatformHandle = ScopedResource<PlatformHandle,
+                                            ClosePlatformHandle,
+                                            nullptr,
+                                            true,
+                                            PlatformHandleChecker>;
+#else
+
+
+
+static_assert(std::is_same<int, PlatformHandle>::value, "");
+using ScopedPlatformHandle = ScopedFile;
+
+
+using ScopedDir = ScopedResource<DIR*, closedir, nullptr>;
+#endif
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_SYS_TYPES_H_
+#define INCLUDE_PERFETTO_EXT_BASE_SYS_TYPES_H_
+
+
+
+
+#include <sys/types.h>  
+#include <cstdint>
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+#ifdef __MINGW32__
+
+using uid_t = int;
+using gid_t = int;
+
+#else
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_COMPILER_GCC)
+
+using uid_t = int;
+using gid_t = int;
+using pid_t = int;
+#endif  
+
+using ssize_t = intptr_t;
+
+#endif  
+
+#endif  
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+#ifndef AID_ROOT
+#define AID_ROOT 0
+#endif
+#ifndef AID_STATSD
+#define AID_STATSD 1066
+#endif
+#ifndef AID_SHELL
+#define AID_SHELL 2000
+#endif
+#endif
+
+namespace perfetto {
+namespace base {
+
+
+using MachineID = uint32_t;
+
+constexpr MachineID kDefaultMachineID = 0;
+
+constexpr uid_t kInvalidUid = static_cast<uid_t>(-1);
+constexpr pid_t kInvalidPid = static_cast<pid_t>(-1);
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
+
+#include <fcntl.h>  
+#include <stddef.h>
+#include <stdint.h>
+
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+class TaskRunner;
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+using FileOpenMode = int;
+inline constexpr char kDevNull[] = "NUL";
+inline constexpr char kFopenReadFlag[] = "r";
+#else
+using FileOpenMode = mode_t;
+inline constexpr char kDevNull[] = "/dev/null";
+inline constexpr char kFopenReadFlag[] = "re";
+#endif
+
+constexpr FileOpenMode kFileModeInvalid = static_cast<FileOpenMode>(-1);
+
+
+
+bool ReadPlatformHandle(PlatformHandle, std::string* out);
+
+
+
+
+
+
+
+bool ReadFileDescriptor(int fd, std::string* out);
+
+
+bool ReadFileStream(FILE* f, std::string* out);
+
+
+
+bool ReadFile(const std::string& path, std::string* out);
+
+
+
+ssize_t Read(int fd, void* dst, size_t dst_size);
+
+
+
+
+
+
+
+
+ssize_t WriteAll(int fd, const void* buf, size_t count);
+
+
+
+
+base::Status CopyFileContents(int fd_in, int fd_out);
+
+ssize_t WriteAllHandle(PlatformHandle, const void* buf, size_t count);
+
+ScopedFile OpenFile(const std::string& path,
+                    int flags,
+                    FileOpenMode = kFileModeInvalid);
+ScopedFstream OpenFstream(const std::string& path, const std::string& mode);
+
+
+
+
+int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
+
+bool FlushFile(int fd);
+
+
+ScopedFile DupFile(int fd);
+
+
+
+bool IsRegularFile(const std::string& path);
+bool IsSameFile(const std::string& first, const std::string& second);
+
+
+
+
+bool SeekFile(int fd, uint64_t offset);
+
+
+
+
+bool TruncateFile(int fd, uint64_t size);
+
+
+
+
+bool Mkdir(const std::string& path, uint32_t mode = 0755);
+
+
+bool Rmdir(const std::string& path);
+
+
+
+bool Unlink(const char* path);
+
+
+bool FileExists(const std::string& path);
+
+
+bool DirectoryExists(const std::string& path);
+
+
+
+
+std::string GetFileExtension(const std::string& filename);
+
+
+
+
+
+
+
+
+
+
+
+std::string Basename(const std::string& path);
+
+
+
+
+
+
+
+
+
+
+
+std::string Dirname(const std::string& path);
+
+
+
+
+
+
+
+
+
+
+
+size_t PathRootPrefixLength(const std::string& path);
+
+
+
+bool IsAbsolutePath(const std::string& path);
+
+
+
+
+
+base::Status ListFilesRecursive(const std::string& dir_path,
+                                std::vector<std::string>& output);
+
+
+
+
+base::Status ListDirectories(const std::string& dir_path,
+                             std::vector<std::string>& output);
+
+
+
+base::Status SetFilePermissions(const std::string& path,
+                                const std::string& group_name,
+                                const std::string& mode_bits);
+
+
+std::optional<uint64_t> GetFileSize(const std::string& path);
+
+
+std::optional<uint64_t> GetFileSize(PlatformHandle fd);
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+
+
+std::optional<uint64_t> GetFileSize(int fd);
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class LinuxFileWatch {
+ public:
+  
+  
+  
+  
+  static std::unique_ptr<LinuxFileWatch> WatchFileCreation(
+      TaskRunner*,
+      const char* path,
+      std::function<void()> callback);
+
+  virtual ~LinuxFileWatch();
+
+ protected:
+  LinuxFileWatch() = default;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
+#define INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
+
+#include <string>
+
+namespace perfetto {
+namespace base {
+
+
+
+
+
+class StringSplitter {
+ public:
+  
+  enum class EmptyTokenMode {
+    DISALLOW_EMPTY_TOKENS,
+    ALLOW_EMPTY_TOKENS,
+
+    DEFAULT = DISALLOW_EMPTY_TOKENS,
+  };
+
+  
+  
+  StringSplitter(std::string,
+                 char delimiter,
+                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
+
+  
+  
+  StringSplitter(char* str,
+                 size_t size,
+                 char delimiter,
+                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
+
+  
+  
+  
+  
+  StringSplitter(StringSplitter*,
+                 char delimiter,
+                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
+
+  
+  
+  bool Next();
+
+  
+  
+  char* NextToken() { return Next() ? cur_token() : nullptr; }
+
+  
+  
+  
+  
+  char* cur_token() { return cur_; }
+
+  
+  size_t cur_token_size() const { return cur_size_; }
+
+  
+  
+  char* remainder() { return next_; }
+
+  
+  size_t remainder_size() { return static_cast<size_t>(end_ - next_); }
+
+ private:
+  StringSplitter(const StringSplitter&) = delete;
+  StringSplitter& operator=(const StringSplitter&) = delete;
+  void Initialize(char* str, size_t size);
+
+  std::string str_;
+  char* cur_;
+  size_t cur_size_;
+  char* next_;
+  char* end_;  
+  const char delimiter_;
+  const EmptyTokenMode empty_token_mode_;
+};
 
 }  
 }  
@@ -820,7 +1509,7 @@ bool Contains(const std::string& haystack, char needle);
 bool Contains(const std::vector<std::string>& haystack,
               const std::string& needle);
 size_t Find(const StringView& needle, const StringView& haystack);
-bool CaseInsensitiveEqual(const std::string& first, const std::string& second);
+bool CaseInsensitiveEqual(std::string_view first, std::string_view second);
 std::string Join(const std::vector<std::string>& parts,
                  const std::string& delim);
 std::vector<std::string> SplitString(const std::string& text,
@@ -941,6 +1630,9 @@ class StackString {
   }
 
   StringView string_view() const { return StringView(buf_, len_); }
+  std::string_view ToStdStringView() const {
+    return std::string_view(buf_, len_);
+  }
   std::string ToStdString() const { return std::string(buf_, len_); }
   const char* c_str() const { return buf_; }
   size_t len() const { return len_; }
@@ -955,6 +1647,8 @@ class StackString {
 }  
 
 #endif  
+
+
 
 
 
@@ -1076,7 +1770,24 @@ SystemInfo GetSystemInfo() {
     info.system_ram_bytes = static_cast<uint64_t>(pages) * (*info.page_size);
   }
 #endif
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX)
+  
+  const std::string path = "/sys/firmware/devicetree/base/compatible";
+  std::string device_compatible_data;
+  if (ReadFile(path, &device_compatible_data)) {
+    for (base::StringSplitter ss(std::move(device_compatible_data), '\0');
+         ss.Next();) {
+      info.device_tree_compatibles.emplace_back(ss.cur_token(),
+                                                ss.cur_token_size());
+      PERFETTO_DLOG("Found linux device compatible: %s", ss.cur_token());
+    }
+  } else {
+    PERFETTO_DLOG("No linux device compatible found in path: %s", path.c_str());
+  }
+#endif
 #endif  
+
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
   info.android_build_fingerprint = GetAndroidProp("ro.build.fingerprint");
   if (info.android_build_fingerprint.empty()) {
@@ -1162,73 +1873,244 @@ std::string GetPerfettoMachineName() {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_ATOMIC_FILE_H_
+#define INCLUDE_PERFETTO_EXT_BASE_ATOMIC_FILE_H_
+
+#include <string>
 
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_SYS_TYPES_H_
-#define INCLUDE_PERFETTO_EXT_BASE_SYS_TYPES_H_
+
+namespace perfetto::base {
 
 
 
 
-#include <sys/types.h>  
+
+class AtomicFile {
+ public:
+  explicit AtomicFile(const std::string& destination);
+  ~AtomicFile();
+  AtomicFile(const AtomicFile&) = delete;
+  AtomicFile& operator=(const AtomicFile&) = delete;
+
+  Status Open();
+  ScopedFile DuplicateFD() const;
+  
+  
+  Status Commit() &&;
+  const std::string& temp_path() const { return temp_path_; }
+
+ private:
+  const std::string destination_;
+  const std::string temp_path_;
+  ScopedFile fd_;
+  bool owns_temp_file_ = false;
+};
+
+}  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_UUID_H_
+#define INCLUDE_PERFETTO_EXT_BASE_UUID_H_
+
+#include <string.h>
+#include <array>
 #include <cstdint>
+#include <string>
 
 
 
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-
-#ifdef __MINGW32__
-
-using uid_t = int;
-using gid_t = int;
-
-#else
-
-#if !PERFETTO_BUILDFLAG(PERFETTO_COMPILER_GCC)
-
-using uid_t = int;
-using gid_t = int;
-using pid_t = int;
-#endif  
-
-#if defined(_WIN64)
-using ssize_t = int64_t;
-#else
-using ssize_t = long;
-#endif  
-
-#endif  
-
-#endif  
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-
-#ifndef AID_ROOT
-#define AID_ROOT 0
-#endif
-#ifndef AID_STATSD
-#define AID_STATSD 1066
-#endif
-#ifndef AID_SHELL
-#define AID_SHELL 2000
-#endif
-#endif
 
 namespace perfetto {
 namespace base {
 
+class PERFETTO_EXPORT_COMPONENT Uuid {
+ public:
+  explicit Uuid(const std::string& s);
+  explicit Uuid(int64_t lsb, int64_t msb);
+  Uuid();
 
-using MachineID = uint32_t;
+  std::array<uint8_t, 16>* data() { return &data_; }
+  const std::array<uint8_t, 16>* data() const { return &data_; }
 
-constexpr MachineID kDefaultMachineID = 0;
+  bool operator==(const Uuid& other) const { return data_ == other.data_; }
 
-constexpr uid_t kInvalidUid = static_cast<uid_t>(-1);
-constexpr pid_t kInvalidPid = static_cast<pid_t>(-1);
+  bool operator!=(const Uuid& other) const { return !(*this == other); }
+
+  explicit operator bool() const { return *this != Uuid(); }
+
+  int64_t msb() const {
+    uint64_t result;
+    memcpy(&result, data_.data() + 8, 8);
+    return static_cast<int64_t>(LE64ToHost(result));
+  }
+
+  int64_t lsb() const {
+    uint64_t result;
+    memcpy(&result, data_.data(), 8);
+    return static_cast<int64_t>(LE64ToHost(result));
+  }
+
+  void set_lsb_msb(int64_t lsb, int64_t msb) {
+    set_lsb(lsb);
+    set_msb(msb);
+  }
+  void set_msb(int64_t msb) {
+    uint64_t le = HostToLE64(static_cast<uint64_t>(msb));
+    memcpy(data_.data() + 8, &le, 8);
+  }
+  void set_lsb(int64_t lsb) {
+    uint64_t le = HostToLE64(static_cast<uint64_t>(lsb));
+    memcpy(data_.data(), &le, 8);
+  }
+
+  std::string ToString() const;
+  std::string ToPrettyString() const;
+
+ private:
+  std::array<uint8_t, 16> data_{};
+};
+
+Uuid Uuidv4();
 
 }  
 }  
 
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <io.h>
+#include <windows.h>
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
+
+namespace perfetto::base {
+
+AtomicFile::AtomicFile(const std::string& destination)
+    : destination_(destination),
+      temp_path_(destination + ".tmp." + Uuidv4().ToPrettyString()) {}
+
+AtomicFile::~AtomicFile() {
+  fd_.reset();
+  if (owns_temp_file_)
+    Unlink(temp_path_.c_str());
+}
+
+base::Status AtomicFile::Open() {
+  PERFETTO_CHECK(!fd_ && !owns_temp_file_);
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  DWORD attributes = GetFileAttributesA(destination_.c_str());
+  if (attributes != INVALID_FILE_ATTRIBUTES &&
+      (attributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_REPARSE_POINT)))
+    return base::ErrStatus(
+        "output must be a regular file, not a directory or link");
+  HANDLE handle =
+      CreateFileA(temp_path_.c_str(), GENERIC_READ | GENERIC_WRITE,
+                  FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                  nullptr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (handle == INVALID_HANDLE_VALUE)
+    return base::ErrStatus(
+        "cannot create temporary output beside '%s' (Windows error %lu)",
+        destination_.c_str(), GetLastError());
+  owns_temp_file_ = true;
+  fd_.reset(_open_osfhandle(reinterpret_cast<intptr_t>(handle), _O_BINARY));
+  if (!fd_)
+    CloseHandle(handle);
+#else
+  struct stat output{};
+  bool exists = lstat(destination_.c_str(), &output) == 0;
+  PERFETTO_MSAN_UNPOISON(&output, sizeof(output));
+  if (exists && !S_ISREG(output.st_mode))
+    return base::ErrStatus(
+        "output must be a regular file, not a directory or link: '%s'. Specify "
+        "the target path directly.",
+        destination_.c_str());
+  fd_ = base::OpenFile(temp_path_, O_CREAT | O_EXCL | O_RDWR, 0644);
+  owns_temp_file_ = static_cast<bool>(fd_);
+  if (fd_ && exists && fchmod(*fd_, output.st_mode & 0777) != 0)
+    return base::ErrStatus("cannot preserve output permissions: %s",
+                           strerror(errno));
+#endif
+  if (!fd_)
+    return base::ErrStatus(
+        "cannot create temporary output beside '%s': %s. Check that the parent "
+        "directory exists and is writable.",
+        destination_.c_str(), strerror(errno));
+  return base::OkStatus();
+}
+
+base::ScopedFile AtomicFile::DuplicateFD() const {
+  PERFETTO_CHECK(fd_);
+  return DupFile(*fd_);
+}
+
+base::Status AtomicFile::Commit() && {
+  PERFETTO_CHECK(fd_);
+  if (!base::FlushFile(*fd_))
+    return base::ErrStatus("failed to flush output: %s", strerror(errno));
+  fd_.reset();
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  if (!MoveFileExA(temp_path_.c_str(), destination_.c_str(),
+                   MOVEFILE_REPLACE_EXISTING))
+    return base::ErrStatus("failed to publish '%s' (Windows error %lu)",
+                           destination_.c_str(), GetLastError());
+#else
+  if (rename(temp_path_.c_str(), destination_.c_str()) != 0)
+    return base::ErrStatus("failed to publish '%s': %s", destination_.c_str(),
+                           strerror(errno));
+#endif
+  owns_temp_file_ = false;
+  return base::OkStatus();
+}
+}  
+
+
+
 
 
 
@@ -1253,6 +2135,7 @@ constexpr pid_t kInvalidPid = static_cast<pid_t>(-1);
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <atomic>
 #include <functional>
@@ -1302,6 +2185,74 @@ inline uint32_t GetSysPageSize() {
 template <typename T, size_t TSize>
 constexpr size_t ArraySize(const T (&)[TSize]) {
   return TSize;
+}
+
+
+
+inline bool CheckedAdd(int64_t a, int64_t b, int64_t* result) {
+#if defined(__clang__) || defined(__GNUC__)
+  return !__builtin_add_overflow(a, b, result);
+#else
+  constexpr int64_t kMax = std::numeric_limits<int64_t>::max();
+  constexpr int64_t kMin = std::numeric_limits<int64_t>::min();
+  if ((b > 0 && a > kMax - b) || (b < 0 && a < kMin - b))
+    return false;
+  *result = a + b;
+  return true;
+#endif
+}
+
+
+
+inline bool CheckedSub(int64_t a, int64_t b, int64_t* result) {
+#if defined(__clang__) || defined(__GNUC__)
+  return !__builtin_sub_overflow(a, b, result);
+#else
+  constexpr int64_t kMax = std::numeric_limits<int64_t>::max();
+  constexpr int64_t kMin = std::numeric_limits<int64_t>::min();
+  if ((b < 0 && a > kMax + b) || (b > 0 && a < kMin + b))
+    return false;
+  *result = a - b;
+  return true;
+#endif
+}
+
+
+
+inline bool IsZero(double value) {
+  uint64_t bits;
+  memcpy(&bits, &value, sizeof(bits));
+  return (bits << 1) == 0;
+}
+inline bool IsZero(int64_t value) {
+  return value == 0;
+}
+
+
+
+inline uint64_t CanonicalFloatBits(double value) {
+  uint64_t bits;
+  memcpy(&bits, &value, sizeof(bits));
+  if (PERFETTO_UNLIKELY((bits << 1) == 0)) {
+    return 0;
+  }
+  if (PERFETTO_UNLIKELY((bits << 1) > (uint64_t{0x7FF} << 53))) {
+    double nan = std::numeric_limits<double>::quiet_NaN();
+    memcpy(&bits, &nan, sizeof(bits));
+  }
+  return bits;
+}
+inline uint32_t CanonicalFloatBits(float value) {
+  uint32_t bits;
+  memcpy(&bits, &value, sizeof(bits));
+  if (PERFETTO_UNLIKELY((bits << 1) == 0)) {
+    return 0;
+  }
+  if (PERFETTO_UNLIKELY((bits << 1) > (uint32_t{0xFF} << 24))) {
+    float nan = std::numeric_limits<float>::quiet_NaN();
+    memcpy(&bits, &nan, sizeof(bits));
+  }
+  return bits;
 }
 
 
@@ -1816,593 +2767,6 @@ namespace base {
 constexpr const char* kCpuInfoFeatures[] = {
     "mte",   
     "mte3",  
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_BASE_STATUS_H_
-#define INCLUDE_PERFETTO_BASE_STATUS_H_
-
-#include <optional>
-#include <string>
-#include <string_view>
-#include <vector>
-
-
-
-
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-
-
-
-
-class PERFETTO_EXPORT_COMPONENT Status {
- public:
-  Status() : ok_(true) {}
-  explicit Status(std::string msg) : ok_(false), message_(std::move(msg)) {
-    PERFETTO_CHECK(!message_.empty());
-  }
-
-  
-  Status(const Status&) = default;
-  Status& operator=(const Status&) = default;
-
-  
-  Status(Status&&) noexcept = default;
-  Status& operator=(Status&&) = default;
-
-  bool ok() const { return ok_; }
-
-  
-  
-  const std::string& message() const { return message_; }
-  const char* c_message() const { return message_.c_str(); }
-
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  std::optional<std::string_view> GetPayload(std::string_view type_url) const;
-
-  
-  
-  
-  void SetPayload(std::string_view type_url, std::string value);
-
-  
-  
-  
-  
-  bool ErasePayload(std::string_view type_url);
-
- private:
-  struct Payload {
-    std::string type_url;
-    std::string payload;
-  };
-
-  bool ok_ = false;
-  std::string message_;
-  std::vector<Payload> payloads_;
-};
-
-
-inline Status OkStatus() {
-  return Status();
-}
-
-Status ErrStatus(const char* format, ...) PERFETTO_PRINTF_FORMAT(1, 2);
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
-#define INCLUDE_PERFETTO_EXT_BASE_SCOPED_FILE_H_
-
-
-
-#include <stdio.h>
-
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-#include <dirent.h>  
-#endif
-
-#include <string>
-
-
-
-
-
-namespace perfetto {
-namespace base {
-
-namespace internal {
-
-
-template <typename T, T InvalidValue>
-struct DefaultValidityChecker {
-  static bool IsValid(T t) { return t != InvalidValue; }
-};
-}  
-
-
-
-
-template <typename T,
-          int (*CloseFunction)(T),
-          T InvalidValue,
-          bool CheckClose = true,
-          class Checker = internal::DefaultValidityChecker<T, InvalidValue>>
-class ScopedResource {
- public:
-  using ValidityChecker = Checker;
-  static constexpr T kInvalid = InvalidValue;
-
-  explicit ScopedResource(T t = InvalidValue) : t_(t) {}
-  ScopedResource(ScopedResource&& other) noexcept : t_(other.t_) {
-    other.t_ = InvalidValue;
-  }
-  ScopedResource& operator=(ScopedResource&& other) {
-    reset(other.t_);
-    other.t_ = InvalidValue;
-    return *this;
-  }
-  T get() const { return t_; }
-  T operator*() const { return t_; }
-  explicit operator bool() const { return Checker::IsValid(t_); }
-  void reset(T r = InvalidValue) {
-    if (Checker::IsValid(t_)) {
-      int res = CloseFunction(t_);
-      if (CheckClose)
-        PERFETTO_CHECK(res == 0);
-    }
-    t_ = r;
-  }
-  T release() {
-    T t = t_;
-    t_ = InvalidValue;
-    return t;
-  }
-  ~ScopedResource() { reset(InvalidValue); }
-
- private:
-  ScopedResource(const ScopedResource&) = delete;
-  ScopedResource& operator=(const ScopedResource&) = delete;
-  T t_;
-};
-
-
-int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
-
-
-using ScopedFile = ScopedResource<int, CloseFile, -1>;
-using ScopedFstream = ScopedResource<FILE*, fclose, nullptr>;
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-using ScopedPlatformHandle = ScopedResource<PlatformHandle,
-                                            ClosePlatformHandle,
-                                            nullptr,
-                                            true,
-                                            PlatformHandleChecker>;
-#else
-
-
-
-static_assert(std::is_same<int, PlatformHandle>::value, "");
-using ScopedPlatformHandle = ScopedFile;
-
-
-using ScopedDir = ScopedResource<DIR*, closedir, nullptr>;
-#endif
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
-#define INCLUDE_PERFETTO_EXT_BASE_FILE_UTILS_H_
-
-#include <fcntl.h>  
-#include <stddef.h>
-#include <stdint.h>
-
-#include <functional>
-#include <memory>
-#include <optional>
-#include <string>
-#include <vector>
-
-
-
-
-
-
-
-namespace perfetto {
-namespace base {
-
-class TaskRunner;
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-using FileOpenMode = int;
-inline constexpr char kDevNull[] = "NUL";
-inline constexpr char kFopenReadFlag[] = "r";
-#else
-using FileOpenMode = mode_t;
-inline constexpr char kDevNull[] = "/dev/null";
-inline constexpr char kFopenReadFlag[] = "re";
-#endif
-
-constexpr FileOpenMode kFileModeInvalid = static_cast<FileOpenMode>(-1);
-
-
-
-bool ReadPlatformHandle(PlatformHandle, std::string* out);
-
-
-
-
-
-
-
-bool ReadFileDescriptor(int fd, std::string* out);
-
-
-bool ReadFileStream(FILE* f, std::string* out);
-
-
-
-bool ReadFile(const std::string& path, std::string* out);
-
-
-
-ssize_t Read(int fd, void* dst, size_t dst_size);
-
-
-
-
-
-
-
-
-ssize_t WriteAll(int fd, const void* buf, size_t count);
-
-
-
-
-base::Status CopyFileContents(int fd_in, int fd_out);
-
-ssize_t WriteAllHandle(PlatformHandle, const void* buf, size_t count);
-
-ScopedFile OpenFile(const std::string& path,
-                    int flags,
-                    FileOpenMode = kFileModeInvalid);
-ScopedFstream OpenFstream(const std::string& path, const std::string& mode);
-
-
-
-
-int PERFETTO_EXPORT_COMPONENT CloseFile(int fd);
-
-bool FlushFile(int fd);
-
-
-
-
-bool SeekFile(int fd, uint64_t offset);
-
-
-
-
-bool TruncateFile(int fd, uint64_t size);
-
-
-
-
-bool Mkdir(const std::string& path, uint32_t mode = 0755);
-
-
-bool Rmdir(const std::string& path);
-
-
-
-bool Unlink(const char* path);
-
-
-bool FileExists(const std::string& path);
-
-
-bool DirectoryExists(const std::string& path);
-
-
-
-
-std::string GetFileExtension(const std::string& filename);
-
-
-
-
-
-
-
-
-
-
-
-std::string Basename(const std::string& path);
-
-
-
-
-
-
-
-
-
-
-
-std::string Dirname(const std::string& path);
-
-
-
-
-
-
-
-
-
-
-
-size_t PathRootPrefixLength(const std::string& path);
-
-
-
-bool IsAbsolutePath(const std::string& path);
-
-
-
-
-
-base::Status ListFilesRecursive(const std::string& dir_path,
-                                std::vector<std::string>& output);
-
-
-
-
-base::Status ListDirectories(const std::string& dir_path,
-                             std::vector<std::string>& output);
-
-
-
-base::Status SetFilePermissions(const std::string& path,
-                                const std::string& group_name,
-                                const std::string& mode_bits);
-
-
-std::optional<uint64_t> GetFileSize(const std::string& path);
-
-
-std::optional<uint64_t> GetFileSize(PlatformHandle fd);
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-
-
-
-std::optional<uint64_t> GetFileSize(int fd);
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LinuxFileWatch {
- public:
-  
-  
-  
-  
-  static std::unique_ptr<LinuxFileWatch> WatchFileCreation(
-      TaskRunner*,
-      const char* path,
-      std::function<void()> callback);
-
-  virtual ~LinuxFileWatch();
-
- protected:
-  LinuxFileWatch() = default;
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
-#define INCLUDE_PERFETTO_EXT_BASE_STRING_SPLITTER_H_
-
-#include <string>
-
-namespace perfetto {
-namespace base {
-
-
-
-
-
-class StringSplitter {
- public:
-  
-  enum class EmptyTokenMode {
-    DISALLOW_EMPTY_TOKENS,
-    ALLOW_EMPTY_TOKENS,
-
-    DEFAULT = DISALLOW_EMPTY_TOKENS,
-  };
-
-  
-  
-  StringSplitter(std::string,
-                 char delimiter,
-                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
-
-  
-  
-  StringSplitter(char* str,
-                 size_t size,
-                 char delimiter,
-                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
-
-  
-  
-  
-  
-  StringSplitter(StringSplitter*,
-                 char delimiter,
-                 EmptyTokenMode empty_token_mode = EmptyTokenMode::DEFAULT);
-
-  
-  
-  bool Next();
-
-  
-  
-  char* NextToken() { return Next() ? cur_token() : nullptr; }
-
-  
-  
-  
-  
-  char* cur_token() { return cur_; }
-
-  
-  size_t cur_token_size() const { return cur_size_; }
-
-  
-  
-  char* remainder() { return next_; }
-
-  
-  size_t remainder_size() { return static_cast<size_t>(end_ - next_); }
-
- private:
-  StringSplitter(const StringSplitter&) = delete;
-  StringSplitter& operator=(const StringSplitter&) = delete;
-  void Initialize(char* str, size_t size);
-
-  std::string str_;
-  char* cur_;
-  size_t cur_size_;
-  char* next_;
-  char* end_;  
-  const char delimiter_;
-  const EmptyTokenMode empty_token_mode_;
 };
 
 }  
@@ -3991,6 +4355,51 @@ bool FlushFile(int fd) {
 #endif
 }
 
+ScopedFile DupFile(int fd) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  ScopedFile duplicate(_dup(fd));
+  if (duplicate && !SetHandleInformation(
+                       reinterpret_cast<HANDLE>(_get_osfhandle(*duplicate)),
+                       HANDLE_FLAG_INHERIT, 0))
+    return ScopedFile();
+  return duplicate;
+#else
+  return ScopedFile(fcntl(fd, F_DUPFD_CLOEXEC, 0));
+#endif
+}
+
+bool IsRegularFile(const std::string& path) {
+  struct stat st{};
+  if (stat(path.c_str(), &st) != 0)
+    return false;
+  PERFETTO_MSAN_UNPOISON(&st, sizeof(st));
+  return (st.st_mode & S_IFMT) == S_IFREG;
+}
+
+bool IsSameFile(const std::string& first, const std::string& second) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  auto identity = [](const std::string& path,
+                     BY_HANDLE_FILE_INFORMATION* info) {
+    ScopedPlatformHandle file(CreateFileA(
+        path.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
+    return file && GetFileInformationByHandle(*file, info);
+  };
+  BY_HANDLE_FILE_INFORMATION a{}, b{};
+  return identity(first, &a) && identity(second, &b) &&
+         a.dwVolumeSerialNumber == b.dwVolumeSerialNumber &&
+         a.nFileIndexHigh == b.nFileIndexHigh &&
+         a.nFileIndexLow == b.nFileIndexLow;
+#else
+  struct stat a{}, b{};
+  if (stat(first.c_str(), &a) != 0 || stat(second.c_str(), &b) != 0)
+    return false;
+  PERFETTO_MSAN_UNPOISON(&a, sizeof(a));
+  PERFETTO_MSAN_UNPOISON(&b, sizeof(b));
+  return a.st_dev == b.st_dev && a.st_ino == b.st_ino;
+#endif
+}
+
 bool SeekFile(int fd, uint64_t offset) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   if (fd < 0) {
@@ -4082,15 +4491,6 @@ ScopedFile OpenFile(const std::string& path, int flags, FileOpenMode mode) {
 
 ScopedFstream OpenFstream(const std::string& path, const std::string& mode) {
   ScopedFstream file;
-  
-  
-  
-  
-  
-  
-  
-  
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
   std::string s_mode(mode);
   
   
@@ -4100,13 +4500,22 @@ ScopedFstream OpenFstream(const std::string& path, const std::string& mode) {
   if (!is_binary_mode)
     s_mode += 'b';
 
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  
+  
+  
+  
+  
+  
+  
+  
   auto w_path = ToUtf16(path);
   auto w_mode = ToUtf16(s_mode);
   if (w_path && w_mode) {
     file.reset(_wfopen(w_path->c_str(), w_mode->c_str()));
   }
 #else
-  file.reset(fopen(path.c_str(), mode.c_str()));
+  file.reset(fopen(path.c_str(), s_mode.c_str()));
 #endif
   return file;
 }
@@ -4568,6 +4977,2071 @@ LinuxFileWatch::~LinuxFileWatch() = default;
 #endif  
 
 }  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_BITS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_BITS_H_
+
+#include <cstddef>
+#include <cstdint>
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+#include <immintrin.h>
+#endif
+
+namespace perfetto {
+namespace base {
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountLeadZeros32(uint32_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return static_cast<uint32_t>(_lzcnt_u32(value));
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_clz(value)) : 32u;
+#else
+  unsigned long out;
+  return _BitScanReverse(&out, value) ? 31 - out : 32u;
+#endif
+}
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountLeadZeros64(uint64_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return static_cast<uint32_t>(_lzcnt_u64(value));
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_clzll(value)) : 64u;
+#else
+  unsigned long out;
+  return _BitScanReverse64(&out, value) ? 63 - out : 64u;
+#endif
+}
+
+template <typename T>
+uint32_t CountLeadZeros(T value) {
+  if constexpr (sizeof(T) == 8)
+    return CountLeadZeros64(static_cast<uint64_t>(value));
+  return CountLeadZeros32(static_cast<uint32_t>(value));
+}
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros64(uint64_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return static_cast<uint32_t>(_tzcnt_u64(value));
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_ctzll(value)) : 64u;
+#else
+  unsigned long out;
+  return _BitScanForward64(&out, value) ? static_cast<uint32_t>(out) : 64u;
+#endif
+}
+
+inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros32(uint32_t value) {
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+  return _tzcnt_u32(value);
+#elif defined(__GNUC__) || defined(__clang__)
+  return value ? static_cast<uint32_t>(__builtin_ctz(value)) : 32u;
+#else
+  unsigned long out;
+  return _BitScanForward(&out, value) ? out : 32u;
+#endif
+}
+
+template <typename T>
+inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros(T value) {
+  if (sizeof(T) == 8) {
+    return CountTrailZeros64(static_cast<uint64_t>(value));
+  }
+  return CountTrailZeros32(static_cast<uint32_t>(value));
+}
+
+template <typename T>
+constexpr bool AllBitsSet(T v) {
+  return v == static_cast<T>(-1);
+}
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_HASH_H_
+#define INCLUDE_PERFETTO_EXT_BASE_HASH_H_
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <tuple>
+#include <utility>
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename H, typename T>
+H PerfettoHashValue(H h, const std::optional<T>& value) {
+  if (value.has_value()) {
+    return H::Combine(H::Combine(std::move(h), true), *value);
+  }
+  return H::Combine(std::move(h), false, 0);
+}
+
+
+template <typename H, typename T1, typename T2>
+H PerfettoHashValue(H h, const std::pair<T1, T2>& value) {
+  return H::Combine(std::move(h), value.first, value.second);
+}
+
+
+template <typename H, typename... Ts>
+H PerfettoHashValue(H h, const std::tuple<Ts...>& value) {
+  return std::apply(
+      [&h](const auto&... elements) {
+        return H::Combine(std::move(h), elements...);
+      },
+      value);
+}
+
+
+template <typename H, typename T>
+H PerfettoHashValue(H h, const std::unique_ptr<T>& ptr) {
+  return H::Combine(std::move(h), ptr.get());
+}
+template <typename H, typename T>
+H PerfettoHashValue(H h, const std::shared_ptr<T>& ptr) {
+  return H::Combine(std::move(h), ptr.get());
+}
+
+
+
+
+template <typename T>
+struct AlreadyHashed {
+  size_t operator()(const T& x) const { return static_cast<size_t>(x); }
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_MURMUR_HASH_H_
+#define INCLUDE_PERFETTO_EXT_BASE_MURMUR_HASH_H_
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::base {
+
+namespace murmur_internal {
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline uint64_t MurmurHashMix(uint64_t h) {
+  h ^= h >> 33;
+  h *= 0xff51afd7ed558ccdULL;
+  h ^= h >> 33;
+  h *= 0xc4ceb9fe1a85ec53ULL;
+  h ^= h >> 33;
+  return h;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline uint64_t MurmurHashBytes(const void* input, size_t len) {
+  
+  
+  
+  
+  static constexpr uint64_t kSeed = 0xe17a1465U;
+  static constexpr uint64_t kMulConstant = 0xc6a4a7935bd1e995;
+  static constexpr int kShift = 47;
+
+  uint64_t h = kSeed ^ (len * kMulConstant);
+  const auto* data = static_cast<const uint8_t*>(input);
+  const size_t num_blocks = len / 8;
+
+  
+  for (size_t i = 0; i < num_blocks; ++i) {
+    uint64_t k;
+    memcpy(&k, data, sizeof(k));
+    data += sizeof(k);  
+
+    k *= kMulConstant;
+    k ^= k >> kShift;
+    k *= kMulConstant;
+
+    h ^= k;
+    h *= kMulConstant;
+  }
+
+  
+  
+  switch (len & 7) {
+    case 7:
+      h ^= static_cast<uint64_t>(data[6]) << 48;
+      [[fallthrough]];
+    case 6:
+      h ^= static_cast<uint64_t>(data[5]) << 40;
+      [[fallthrough]];
+    case 5:
+      h ^= static_cast<uint64_t>(data[4]) << 32;
+      [[fallthrough]];
+    case 4:
+      h ^= static_cast<uint64_t>(data[3]) << 24;
+      [[fallthrough]];
+    case 3:
+      h ^= static_cast<uint64_t>(data[2]) << 16;
+      [[fallthrough]];
+    case 2:
+      h ^= static_cast<uint64_t>(data[1]) << 8;
+      [[fallthrough]];
+    case 1:
+      h ^= static_cast<uint64_t>(data[0]);
+      h *= kMulConstant;
+  }
+
+  
+  h ^= h >> kShift;
+  h *= kMulConstant;
+  h ^= h >> kShift;
+
+  return h;
+}
+
+
+
+
+
+
+
+
+template <typename T>
+auto MurmurHashBuiltinValue(const T& value) {
+  if constexpr (std::is_enum_v<T>) {
+    return murmur_internal::MurmurHashMix(
+        static_cast<uint64_t>(static_cast<std::underlying_type_t<T>>(value)));
+  } else if constexpr (std::is_integral_v<T>) {
+    return murmur_internal::MurmurHashMix(static_cast<uint64_t>(value));
+  } else if constexpr (std::is_same_v<T, double>) {
+    return murmur_internal::MurmurHashMix(base::CanonicalFloatBits(value));
+  } else if constexpr (std::is_same_v<T, float>) {
+    return murmur_internal::MurmurHashMix(base::CanonicalFloatBits(value));
+  } else if constexpr (std::is_same_v<T, std::string> ||
+                       std::is_same_v<T, std::string_view> ||
+                       std::is_same_v<T, base::StringView>) {
+    return murmur_internal::MurmurHashBytes(value.data(), value.size());
+  } else if constexpr (std::is_same_v<T, const char*>) {
+    std::string_view view(value);
+    return murmur_internal::MurmurHashBytes(view.data(), view.size());
+  } else if constexpr (std::is_pointer_v<T>) {
+    return murmur_internal::MurmurHashMix(
+        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(value)));
+  } else {
+    struct InvalidBuiltin {};
+    return InvalidBuiltin{};
+  }
+}
+
+
+template <typename T>
+constexpr bool HasMurmurHashBuiltinValue() {
+  return std::is_same_v<decltype(MurmurHashBuiltinValue(std::declval<T>())),
+                        uint64_t>;
+}
+
+
+
+template <typename T>
+constexpr bool IsStringLike() {
+  return std::is_same_v<T, std::string> ||
+         std::is_same_v<T, std::string_view> ||
+         std::is_same_v<T, base::StringView> || std::is_same_v<T, const char*>;
+}
+
+
+
+
+
+template <typename T, typename U>
+constexpr bool AllowsHeterogeneousLookup() {
+  return IsStringLike<T>() && IsStringLike<U>();
+}
+
+
+
+template <typename T, bool = IsStringLike<T>()>
+struct MurmurHashTransparency {};
+
+template <typename T>
+struct MurmurHashTransparency<T, true> {
+  using is_transparent = void;
+};
+
+
+
+
+template <typename... Args>
+constexpr bool HasPointerV = (std::is_pointer_v<Args> || ...);
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MurmurHashCombiner {
+ public:
+  MurmurHashCombiner() = default;
+
+  
+  
+  template <typename... Args>
+  static MurmurHashCombiner Combine(MurmurHashCombiner h, const Args&... args) {
+    h.Combine(args...);
+    return h;
+  }
+
+  
+  
+  
+  template <typename... Args>
+  void Combine(const Args&... args) {
+    static_assert(!murmur_internal::HasPointerV<Args...>,
+                  "MurmurHashCombiner::Combine() does not support pointers. "
+                  "If you want to hash the contents of a memory range, use a "
+                  "single hashable object (e.g., std::string_view). If you "
+                  "want to hash a pointer address, cast it to uintptr_t.");
+    
+    (CombineOne(args), ...);
+  }
+
+  
+  uint64_t digest() const { return hash_; }
+
+ private:
+  
+  template <typename T>
+  void CombineOne(const T& value) {
+    if constexpr (murmur_internal::HasMurmurHashBuiltinValue<T>()) {
+      Update(murmur_internal::MurmurHashBuiltinValue(value));
+    } else {
+      
+      
+      
+      hash_ = PerfettoHashValue(std::move(*this), value).digest();
+    }
+  }
+
+  
+  
+  
+  void Update(uint64_t piece_hash) {
+    hash_ ^= piece_hash + 0x9e3779b9 + (hash_ << 6) + (hash_ >> 2);
+  }
+
+  static constexpr uint64_t kSeed = 0xe17a1465U;
+  uint64_t hash_ = kSeed;
+};
+
+
+
+template <typename... Args>
+uint64_t MurmurHashCombine(const Args&... value) {
+  return MurmurHashCombiner::Combine(MurmurHashCombiner{}, value...).digest();
+}
+
+
+
+
+
+
+
+template <typename T>
+uint64_t MurmurHashValue(const T& value) {
+  if constexpr (murmur_internal::HasMurmurHashBuiltinValue<T>()) {
+    return murmur_internal::MurmurHashBuiltinValue(value);
+  } else {
+    return MurmurHashCombine(value);
+  }
+}
+
+
+
+template <typename T>
+struct MurmurHash : murmur_internal::MurmurHashTransparency<T> {
+  uint64_t operator()(const T& value) const { return MurmurHashValue(value); }
+
+  
+  template <typename U>
+  auto operator()(const U& value) const -> std::enable_if_t<
+      murmur_internal::AllowsHeterogeneousLookup<T, std::decay_t<const U>>(),
+      uint64_t> {
+    
+    
+    return MurmurHashValue<std::decay_t<const U>>(value);
+  }
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_V1_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_V1_H_
+
+
+
+
+
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <limits>
+#include <memory>
+#include <type_traits>
+#include <utility>
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct LinearProbe {
+  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
+    return (key_hash + step) & (capacity - 1);  
+  }
+};
+
+
+
+
+
+struct QuadraticProbe {
+  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
+    return (key_hash + 2 * step * step + step) & (capacity - 1);
+  }
+};
+
+
+
+
+
+struct QuadraticHalfProbe {
+  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
+    return (key_hash + (step * step + step) / 2) & (capacity - 1);
+  }
+};
+
+
+struct FlatHashMapV1Base {
+ public:
+  
+  template <typename, typename = void>
+  struct HasIsTransparent : std::false_type {};
+
+  template <typename H>
+  struct HasIsTransparent<H, std::void_t<typename H::is_transparent>>
+      : std::true_type {};
+
+  
+  
+  
+  
+  
+  template <typename K, typename Key, typename Hasher>
+  static constexpr bool IsLookupKeyAllowed() {
+    if constexpr (HasIsTransparent<Hasher>::value) {
+      return std::is_invocable_v<Hasher, const K&> &&
+             std::is_same_v<decltype(std::declval<const Key&>() ==
+                                     std::declval<const K&>()),
+                            bool>;
+    } else if constexpr (std::is_convertible_v<K, Key>) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+};
+
+template <typename Key,
+          typename Value,
+          typename Hasher = base::MurmurHash<Key>,
+          typename Probe = QuadraticProbe,
+          bool AppendOnly = false>
+class FlatHashMapV1 : protected FlatHashMapV1Base {
+ public:
+  class Iterator {
+   public:
+    explicit Iterator(const FlatHashMapV1* map) : map_(map) {
+      FindNextNonFree();
+    }
+    ~Iterator() = default;
+    Iterator(const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    Iterator(Iterator&&) noexcept = default;
+    Iterator& operator=(Iterator&&) noexcept = default;
+
+    Key& key() { return map_->keys_[idx_]; }
+    Value& value() { return map_->values_[idx_]; }
+    const Key& key() const { return map_->keys_[idx_]; }
+    const Value& value() const { return map_->values_[idx_]; }
+
+    explicit operator bool() const { return idx_ != kEnd; }
+    Iterator& operator++() {
+      PERFETTO_DCHECK(idx_ < map_->capacity_);
+      ++idx_;
+      FindNextNonFree();
+      return *this;
+    }
+
+   private:
+    static constexpr size_t kEnd = std::numeric_limits<size_t>::max();
+
+    void FindNextNonFree() {
+      const auto& tags = map_->tags_;
+      for (; idx_ < map_->capacity_; idx_++) {
+        if (tags[idx_] != kFreeSlot && (AppendOnly || tags[idx_] != kTombstone))
+          return;
+      }
+      idx_ = kEnd;
+    }
+
+    const FlatHashMapV1* map_ = nullptr;
+    size_t idx_ = 0;
+  };  
+  static constexpr int kDefaultLoadLimitPct = 75;
+  explicit FlatHashMapV1(size_t initial_capacity = 0,
+                         int load_limit_pct = kDefaultLoadLimitPct)
+      : load_limit_percent_(load_limit_pct) {
+    if (initial_capacity > 0)
+      Reset(initial_capacity, true);
+  }
+
+  
+  
+  ~FlatHashMapV1() { Clear(); }
+
+  FlatHashMapV1(FlatHashMapV1&& other) noexcept {
+    tags_ = std::move(other.tags_);
+    keys_ = std::move(other.keys_);
+    values_ = std::move(other.values_);
+    capacity_ = other.capacity_;
+    size_ = other.size_;
+    tombstones_ = other.tombstones_;
+    max_probe_length_ = other.max_probe_length_;
+    load_limit_ = other.load_limit_;
+    load_limit_percent_ = other.load_limit_percent_;
+
+    new (&other) FlatHashMapV1();
+  }
+
+  FlatHashMapV1& operator=(FlatHashMapV1&& other) noexcept {
+    this->~FlatHashMapV1();
+    new (this) FlatHashMapV1(std::move(other));
+    return *this;
+  }
+
+  FlatHashMapV1(const FlatHashMapV1&) = delete;
+  FlatHashMapV1& operator=(const FlatHashMapV1&) = delete;
+
+  std::pair<Value*, bool> Insert(Key key, Value value) {
+    const size_t key_hash = Hasher{}(key);
+    const uint8_t tag = HashToTag(key_hash);
+    static constexpr size_t kSlotNotFound = std::numeric_limits<size_t>::max();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    size_t insertion_slot;
+    size_t probe_len;
+    for (;;) {
+      PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
+      insertion_slot = kSlotNotFound;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      for (probe_len = 0; probe_len < capacity_;) {
+        const size_t idx = Probe::Calc(key_hash, probe_len, capacity_);
+        PERFETTO_DCHECK(idx < capacity_);
+        const uint8_t tag_idx = tags_[idx];
+        ++probe_len;
+        if (tag_idx == kFreeSlot) {
+          
+          
+          
+          if (AppendOnly || insertion_slot == kSlotNotFound)
+            insertion_slot = idx;
+          break;
+        }
+        
+        PERFETTO_DCHECK(!(tag_idx == kTombstone && AppendOnly));
+        if (!AppendOnly && tag_idx == kTombstone) {
+          insertion_slot = idx;
+          continue;
+        }
+        if (tag_idx == tag && keys_[idx] == key) {
+          
+          return std::make_pair(&values_[idx], false);
+        }
+      }  
+
+      
+      
+      
+      if (PERFETTO_UNLIKELY(size_ >= load_limit_)) {
+        MaybeGrowAndRehash(true);
+        continue;
+      }
+      
+      
+      
+      bool is_many_tombstones = tombstones_ > size_ && size_ > 128;
+      bool is_tombstones_plus_size_too_high = tombstones_ + size_ > load_limit_;
+      if (PERFETTO_UNLIKELY(is_many_tombstones ||
+                            is_tombstones_plus_size_too_high)) {
+        MaybeGrowAndRehash(false);
+        continue;
+      }
+      PERFETTO_DCHECK(insertion_slot != kSlotNotFound);
+      break;
+    }  
+
+    PERFETTO_CHECK(insertion_slot < capacity_);
+
+    
+    if (tags_[insertion_slot] == kTombstone) {
+      PERFETTO_DCHECK(tombstones_ > 0);
+      tombstones_--;
+    }
+    Value* value_idx = &values_[insertion_slot];
+    new (&keys_[insertion_slot]) Key(std::move(key));
+    new (value_idx) Value(std::move(value));
+    tags_[insertion_slot] = tag;
+    PERFETTO_DCHECK(probe_len > 0 && probe_len <= capacity_);
+    max_probe_length_ = std::max(max_probe_length_, probe_len);
+    size_++;
+
+    return std::make_pair(value_idx, true);
+  }
+
+  template <typename K = Key>
+  Value* Find(const K& key) const {
+    const size_t idx = FindInternal(key);
+    if (idx == kNotFound)
+      return nullptr;
+    return &values_[idx];
+  }
+
+  template <typename K = Key>
+  bool Erase(const K& key) {
+    if (AppendOnly)
+      PERFETTO_FATAL("Erase() not supported because AppendOnly=true");
+    size_t idx = FindInternal(key);
+    if (idx == kNotFound)
+      return false;
+    EraseInternal(idx);
+    return true;
+  }
+
+  void Clear() {
+    
+    if (PERFETTO_UNLIKELY(capacity_ == 0))
+      return;
+
+    for (size_t i = 0; i < capacity_; ++i) {
+      const uint8_t tag = tags_[i];
+      if (tag != kFreeSlot && (AppendOnly || tag != kTombstone)) {
+        keys_[i].~Key();
+        values_[i].~Value();
+      }
+    }
+    Reset(capacity_, false);
+  }
+
+  Value& operator[](Key key) {
+    auto it_and_inserted = Insert(std::move(key), Value{});
+    return *it_and_inserted.first;
+  }
+
+  Iterator GetIterator() { return Iterator(this); }
+  const Iterator GetIterator() const { return Iterator(this); }
+
+  size_t size() const { return size_; }
+  size_t capacity() const { return capacity_; }
+
+  
+  
+ protected:
+  enum ReservedTags : uint8_t { kFreeSlot = 0, kTombstone = 1 };
+  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max();
+
+  template <typename K = Key>
+  size_t FindInternal(const K& key) const {
+    static_assert(
+        IsLookupKeyAllowed<K, Key, Hasher>(),
+        "Heterogeneous lookup requires Hasher to define is_transparent and "
+        "support hashing the lookup key type. For same-type lookup, Key and K "
+        "must match exactly.");
+    const size_t key_hash = Hasher{}(key);
+    const uint8_t tag = HashToTag(key_hash);
+    PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
+    PERFETTO_DCHECK(max_probe_length_ <= capacity_);
+    for (size_t i = 0; i < max_probe_length_; ++i) {
+      const size_t idx = Probe::Calc(key_hash, i, capacity_);
+      const uint8_t tag_idx = tags_[idx];
+
+      if (tag_idx == kFreeSlot)
+        return kNotFound;
+      
+      
+      if (tag_idx == tag && keys_[idx] == key) {
+        PERFETTO_DCHECK(tag_idx > kTombstone);
+        return idx;
+      }
+    }  
+    return kNotFound;
+  }
+
+  void EraseInternal(size_t idx) {
+    PERFETTO_DCHECK(tags_[idx] > kTombstone);
+    PERFETTO_DCHECK(size_ > 0);
+    tags_[idx] = kTombstone;
+    keys_[idx].~Key();
+    values_[idx].~Value();
+    size_--;
+    tombstones_++;
+    PERFETTO_DCHECK(size_ + tombstones_ <= capacity_);
+  }
+
+  PERFETTO_NO_INLINE void MaybeGrowAndRehash(bool grow) {
+    PERFETTO_DCHECK(size_ <= capacity_);
+    const size_t old_capacity = capacity_;
+
+    
+    const size_t old_size_bytes = old_capacity * (sizeof(Key) + sizeof(Value));
+    const size_t grow_factor = old_size_bytes < (1024u * 1024u) ? 8 : 2;
+    const size_t new_capacity =
+        grow ? std::max(old_capacity * grow_factor, size_t(1024))
+             : old_capacity;
+
+    auto old_tags(std::move(tags_));
+    auto old_keys(std::move(keys_));
+    auto old_values(std::move(values_));
+    size_t old_size = size_;
+
+    
+    
+    PERFETTO_CHECK(new_capacity >= old_capacity);
+    Reset(new_capacity, true);
+
+    size_t new_size = 0;  
+    for (size_t i = 0; i < old_capacity; ++i) {
+      const uint8_t old_tag = old_tags[i];
+      if (old_tag != kFreeSlot && old_tag != kTombstone) {
+        Insert(std::move(old_keys[i]), std::move(old_values[i]));
+        old_keys[i].~Key();  
+        old_values[i].~Value();
+        new_size++;
+      }
+    }
+    PERFETTO_DCHECK(new_size == old_size);
+    PERFETTO_DCHECK(tombstones_ == 0);
+    size_ = new_size;
+  }
+
+  
+  PERFETTO_NO_INLINE void Reset(size_t n, bool reallocate) {
+    PERFETTO_DCHECK((n & (n - 1)) == 0);  
+
+    capacity_ = n;
+    max_probe_length_ = 0;
+    size_ = 0;
+    tombstones_ = 0;
+    load_limit_ = n * static_cast<size_t>(load_limit_percent_) / 100;
+    load_limit_ = std::min(load_limit_, n);
+
+    if (reallocate) {
+      tags_.reset(new uint8_t[n]);
+      keys_ = AlignedAllocTyped<Key[]>(n);  
+      values_ =
+          AlignedAllocTyped<Value[]>(n);  
+    }
+
+    
+    if (tags_) {
+      memset(&tags_[0], 0, n);  
+    }
+  }
+
+  static inline uint8_t HashToTag(size_t full_hash) {
+    uint8_t tag = full_hash >> (sizeof(full_hash) * 8 - 8);
+    
+    tag += (tag <= kTombstone) << 1;
+    PERFETTO_DCHECK(tag > kTombstone);
+    return tag;
+  }
+
+  size_t capacity_ = 0;
+  size_t size_ = 0;
+  size_t tombstones_ = 0;
+  size_t max_probe_length_ = 0;
+  size_t load_limit_ = 0;  
+  int load_limit_percent_ =
+      kDefaultLoadLimitPct;  
+
+  
+  
+  std::unique_ptr<uint8_t[]> tags_;
+  AlignedUniquePtr<Key[]> keys_;
+  AlignedUniquePtr<Value[]> values_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <limits>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+#include <immintrin.h>
+#endif
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace flat_hash_map_v2_internal {
+
+
+template <typename, typename = void>
+struct HasIsTransparent : std::false_type {};
+
+template <typename H>
+struct HasIsTransparent<H, std::void_t<typename H::is_transparent>>
+    : std::true_type {};
+
+
+template <typename T>
+struct HashEq : public std::equal_to<T> {};
+
+
+
+
+
+
+
+
+template <>
+struct HashEq<std::string> {
+  bool operator()(const std::string& a, const std::string& b) const {
+    return std::string_view(a) == std::string_view(b);
+  }
+  bool operator()(const std::string& a, const std::string_view& b) const {
+    return std::string_view(a) == b;
+  }
+  bool operator()(const std::string& a, base::StringView b) const {
+    return base::StringView(a) == b;
+  }
+  bool operator()(const std::string& a, const char* b) const {
+    return std::string_view(a) == std::string_view(b);
+  }
+};
+
+
+
+
+template <>
+struct HashEq<double> {
+  bool operator()(double a, double b) const { return std::equal_to<>()(a, b); }
+};
+
+
+
+
+
+template <typename K, typename Key, typename Hasher, typename Eq>
+constexpr bool IsLookupKeyAllowed() {
+  if constexpr (HasIsTransparent<Hasher>::value) {
+    return std::is_invocable_v<Hasher, const K&> &&
+           std::is_invocable_v<Eq, const Key&, const K&>;
+  } else if constexpr (std::is_convertible_v<K, Key>) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
+
+
+
+static constexpr uint8_t kFreeSlot = 0x80;   
+static constexpr uint8_t kTombstone = 0xFE;  
+
+
+static constexpr int kDefaultLoadLimitPct = 75;
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
+struct Group {
+ public:
+  
+  static constexpr size_t kSize = 16;
+
+  
+  
+  
+  struct Iterator {
+   public:
+    PERFETTO_ALWAYS_INLINE explicit Iterator(uint16_t mask) : mask_(mask) {}
+    PERFETTO_ALWAYS_INLINE explicit operator bool() const { return mask_; }
+
+    PERFETTO_ALWAYS_INLINE size_t Next() {
+      auto idx = static_cast<size_t>(CountTrailZeros(mask_));
+      mask_ &= static_cast<uint16_t>(mask_ - 1);
+      return idx;
+    }
+
+   private:
+    uint16_t mask_;
+  };
+
+  PERFETTO_ALWAYS_INLINE explicit Group(const uint8_t* pos) {
+    ctrl_ = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pos));
+  }
+
+  PERFETTO_ALWAYS_INLINE Iterator Match(uint8_t h2) const {
+    auto match = _mm_cmpeq_epi8(ctrl_, _mm_set1_epi8(static_cast<char>(h2)));
+    return Iterator(static_cast<uint16_t>(_mm_movemask_epi8(match)));
+  }
+
+  PERFETTO_ALWAYS_INLINE Iterator MatchEmpty() const {
+    return Iterator(
+        static_cast<uint16_t>(_mm_movemask_epi8(_mm_sign_epi8(ctrl_, ctrl_))));
+  }
+
+  PERFETTO_ALWAYS_INLINE Iterator MatchEmptyOrDeleted() const {
+    return Iterator(static_cast<uint16_t>(_mm_movemask_epi8(ctrl_)));
+  }
+
+ private:
+  __m128i ctrl_;
+};
+#else
+
+struct Group {
+ public:
+  
+  static constexpr size_t kSize = 8;
+
+  
+  
+  
+  struct Iterator {
+   public:
+    PERFETTO_ALWAYS_INLINE explicit Iterator(uint64_t mask) : mask_(mask) {}
+    PERFETTO_ALWAYS_INLINE explicit operator bool() const { return mask_; }
+    PERFETTO_ALWAYS_INLINE size_t Next() {
+      
+      
+      
+      size_t idx = static_cast<size_t>(CountTrailZeros(mask_) >> 3);
+      mask_ &= mask_ - 1;  
+      return idx;
+    }
+
+   private:
+    uint64_t mask_;
+  };
+
+  PERFETTO_ALWAYS_INLINE explicit Group(const uint8_t* pos) {
+    memcpy(&ctrl_, pos, sizeof(ctrl_));
+  }
+
+  PERFETTO_ALWAYS_INLINE Iterator Match(uint8_t h2) const {
+    uint64_t x = ctrl_ ^ (kLsbs * h2);
+    return Iterator((x - kLsbs) & ~x & kMsbs);
+  }
+
+  PERFETTO_ALWAYS_INLINE Iterator MatchEmpty() const {
+    
+    return Iterator((ctrl_ & ~(ctrl_ << 6)) & kMsbs);
+  }
+
+  PERFETTO_ALWAYS_INLINE Iterator MatchEmptyOrDeleted() const {
+    
+    return Iterator((ctrl_ & ~(ctrl_ << 7)) & kMsbs);
+  }
+
+ private:
+  static constexpr uint64_t kLsbs = 0x0101010101010101ULL;
+  static constexpr uint64_t kMsbs = 0x8080808080808080ULL;
+
+  uint64_t ctrl_;
+};
+#endif
+
+
+
+
+class FlatHashMapV2Base {
+ protected:
+  
+  
+  struct GrowthInfo {
+    uint64_t growth_left : 63;
+    uint64_t has_tombstones : 1;
+  };
+
+  
+  struct OldTable {
+    std::unique_ptr<uint8_t[]> storage;
+    const uint8_t* ctrl;
+    uint8_t* slots;
+    size_t capacity;
+    size_t size;
+  };
+
+  
+  static constexpr size_t kNumClones = Group::kSize - 1;
+
+  explicit FlatHashMapV2Base(int load_limit_pct)
+      : load_limit_percent_(load_limit_pct) {}
+
+  FlatHashMapV2Base(FlatHashMapV2Base&& other) noexcept
+      : storage_(std::move(other.storage_)),
+        capacity_(other.capacity_),
+        size_(other.size_),
+        growth_info_(other.growth_info_),
+        load_limit_percent_(other.load_limit_percent_),
+        ctrl_(other.ctrl_),
+        slots_(other.slots_) {
+    other.capacity_ = 0;
+    other.size_ = 0;
+    other.growth_info_ = {0, 0};
+    other.load_limit_percent_ = kDefaultLoadLimitPct;
+    other.ctrl_ = nullptr;
+    other.slots_ = nullptr;
+  }
+
+  
+  
+  
+  
+  
+  
+  static constexpr size_t H1(size_t hash) { return (hash >> 7); }
+  static constexpr uint8_t H2(size_t hash) { return hash & 0x7F; }
+
+  
+  void Reset(size_t n, bool reallocate, size_t slot_size, size_t slot_align);
+
+  
+  
+  
+  size_t FindFirstEmptyOrTombstone(size_t key_hash) const;
+
+  PERFETTO_ALWAYS_INLINE size_t
+  FindFirstEmptyOrTombstoneImpl(size_t key_hash) const {
+    const size_t cap_mask = capacity_ - 1;
+    size_t offset = H1(key_hash) & cap_mask;
+    size_t probe_size = 0;
+    while (true) {
+      Group group(ctrl_ + offset);
+      if (auto it = group.MatchEmptyOrDeleted(); PERFETTO_LIKELY(it)) {
+        return (offset + it.Next()) & cap_mask;
+      }
+      probe_size += Group::kSize;
+      offset = (offset + probe_size) & cap_mask;
+    }
+  }
+
+  
+  
+  OldTable Grow(size_t slot_size, size_t slot_align);
+
+  void FinishGrow(size_t new_size) {
+    PERFETTO_CHECK(growth_info_.growth_left >= new_size);
+    size_ = new_size;
+    growth_info_.growth_left -= new_size;
+  }
+
+  
+  PERFETTO_ALWAYS_INLINE void SetCtrl(size_t i, uint8_t h) {
+    ctrl_[i] = h;
+    
+    if (PERFETTO_UNLIKELY(i < kNumClones)) {
+      ctrl_[capacity_ + i] = h;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<uint8_t[]> storage_;
+
+  size_t capacity_ = 0;
+  size_t size_ = 0;
+
+  
+  GrowthInfo growth_info_{0, 0};
+
+  
+  int load_limit_percent_ = kDefaultLoadLimitPct;
+
+  
+  
+  uint8_t* ctrl_ = nullptr;   
+  uint8_t* slots_ = nullptr;  
+};
+
+}  
+
+
+
+
+
+
+struct CaseInsensitiveHash {
+  using is_transparent = void;
+  uint64_t operator()(std::string_view value) const {
+    MurmurHashCombiner combiner;
+    for (char c : value) {
+      combiner.Combine(Lowercase(c));
+    }
+    return combiner.digest();
+  }
+};
+
+struct CaseInsensitiveEq {
+  using is_transparent = void;
+  bool operator()(std::string_view lhs, std::string_view rhs) const {
+    return CaseInsensitiveEqual(lhs, rhs);
+  }
+};
+
+template <typename Key,
+          typename Value,
+          typename Hasher = base::MurmurHash<Key>,
+          typename Eq = flat_hash_map_v2_internal::HashEq<Key>>
+class FlatHashMapV2 : private flat_hash_map_v2_internal::FlatHashMapV2Base {
+ private:
+  
+  static constexpr uint8_t kFreeSlot = flat_hash_map_v2_internal::kFreeSlot;
+  static constexpr uint8_t kTombstone = flat_hash_map_v2_internal::kTombstone;
+  static constexpr int kDefaultLoadLimitPct =
+      flat_hash_map_v2_internal::kDefaultLoadLimitPct;
+
+  
+  struct Slot {
+    Key key;
+    Value value;
+  };
+
+  
+  
+  
+  template <typename K>
+  static constexpr bool IsHeterogeneousKey() {
+    using RawK = std::remove_cv_t<std::remove_reference_t<K>>;
+    if constexpr (std::is_same_v<RawK, Key>) {
+      return false;
+    } else {
+      return flat_hash_map_v2_internal::HasIsTransparent<Hasher>::value &&
+             flat_hash_map_v2_internal::IsLookupKeyAllowed<RawK, Key, Hasher,
+                                                           Eq>();
+    }
+  }
+
+ public:
+  class Iterator {
+   public:
+    explicit Iterator(const uint8_t* ctrl, const uint8_t* ctrl_end, Slot* slot)
+        : ctrl_(ctrl), ctrl_end_(ctrl_end), slot_(slot) {
+      FindNextNonFree();
+    }
+    ~Iterator() = default;
+    Iterator(const Iterator&) = default;
+    Iterator& operator=(const Iterator&) = default;
+    Iterator(Iterator&&) noexcept = default;
+    Iterator& operator=(Iterator&&) noexcept = default;
+
+    const Key& key() { return slot_->key; }
+    Value& value() { return slot_->value; }
+    const Key& key() const { return slot_->key; }
+    const Value& value() const { return slot_->value; }
+
+    explicit operator bool() const { return ctrl_ != ctrl_end_; }
+    Iterator& operator++() {
+      PERFETTO_DCHECK(ctrl_ != ctrl_end_);
+      ++ctrl_;
+      ++slot_;
+      FindNextNonFree();
+      return *this;
+    }
+
+   private:
+    void FindNextNonFree() {
+      for (; ctrl_ != ctrl_end_; ++ctrl_, ++slot_) {
+        const uint8_t cur_ctrl = *ctrl_;
+        if (cur_ctrl != kFreeSlot && cur_ctrl != kTombstone)
+          return;
+      }
+    }
+    const uint8_t* ctrl_ = nullptr;
+    const uint8_t* ctrl_end_ = nullptr;
+    Slot* slot_ = nullptr;
+  };  
+
+  explicit FlatHashMapV2(size_t initial_capacity = 0,
+                         int load_limit_pct = kDefaultLoadLimitPct)
+      : FlatHashMapV2Base(load_limit_pct) {
+    if (initial_capacity > 0) {
+      Reset(initial_capacity, true);
+    }
+  }
+
+  
+  
+  ~FlatHashMapV2() { Clear(); }
+
+  FlatHashMapV2(FlatHashMapV2&& other) noexcept
+      : FlatHashMapV2Base(std::move(other)) {}
+
+  FlatHashMapV2& operator=(FlatHashMapV2&& other) noexcept {
+    this->~FlatHashMapV2();
+    new (this) FlatHashMapV2(std::move(other));
+    return *this;
+  }
+
+  FlatHashMapV2(const FlatHashMapV2&) = delete;
+  FlatHashMapV2& operator=(const FlatHashMapV2&) = delete;
+
+  
+  
+  
+
+  PERFETTO_ALWAYS_INLINE Value* Find(const Key& key) const {
+    return FindImpl(key);
+  }
+  template <typename K, typename = std::enable_if_t<IsHeterogeneousKey<K>()>>
+  PERFETTO_ALWAYS_INLINE Value* Find(const K& key) const {
+    return FindImpl(key);
+  }
+
+  bool Erase(const Key& key) { return EraseImpl(key); }
+  template <typename K, typename = std::enable_if_t<IsHeterogeneousKey<K>()>>
+  bool Erase(const K& key) {
+    return EraseImpl(key);
+  }
+
+  PERFETTO_ALWAYS_INLINE std::pair<Value*, bool> Insert(const Key& key,
+                                                        Value value) {
+    return InsertImpl(key, std::move(value));
+  }
+  PERFETTO_ALWAYS_INLINE std::pair<Value*, bool> Insert(Key&& key,
+                                                        Value value) {
+    return InsertImpl(std::move(key), std::move(value));
+  }
+  
+  template <typename K, typename = std::enable_if_t<IsHeterogeneousKey<K>()>>
+  PERFETTO_ALWAYS_INLINE std::pair<Value*, bool> Insert(K&& key, Value value) {
+    return InsertImpl(std::forward<K>(key), std::move(value));
+  }
+
+  Value& operator[](const Key& key) { return *Insert(key, Value{}).first; }
+  Value& operator[](Key&& key) {
+    return *Insert(std::move(key), Value{}).first;
+  }
+  template <typename K, typename = std::enable_if_t<IsHeterogeneousKey<K>()>>
+  Value& operator[](K&& key) {
+    return *Insert(std::forward<K>(key), Value{}).first;
+  }
+
+  void Clear() {
+    
+    if (PERFETTO_UNLIKELY(capacity_ == 0)) {
+      return;
+    }
+    for (size_t i = 0; i < capacity_; ++i) {
+      const uint8_t tag = ctrl_[i];
+      if (tag == kFreeSlot || tag == kTombstone) {
+        continue;
+      }
+      slots()[i].key.~Key();
+      slots()[i].value.~Value();
+    }
+    Reset(capacity_, false);
+  }
+
+  Iterator GetIterator() { return Iterator(ctrl_, ctrl_ + capacity_, slots()); }
+  Iterator GetIterator() const {
+    return Iterator(ctrl_, ctrl_ + capacity_, slots());
+  }
+
+  size_t size() const { return size_; }
+  size_t capacity() const { return capacity_; }
+
+ private:
+  
+  struct FindResult {
+    uint64_t idx : 63;
+    uint64_t needs_insert : 1;
+  };
+
+  
+  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max() >> 1;
+
+  using Group = flat_hash_map_v2_internal::Group;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <bool ForInsert, typename K = Key>
+  PERFETTO_ALWAYS_INLINE FindResult
+  FindSlotIgnoringTombstones(const K& key, size_t key_hash, uint8_t h2) const {
+    static_assert(
+        flat_hash_map_v2_internal::IsLookupKeyAllowed<K, Key, Hasher, Eq>(),
+        "Heterogeneous lookup requires Hasher to define is_transparent and "
+        "support hashing the lookup key type, and Eq to compare Key and K. "
+        "Without a transparent Hasher, K must be convertible to Key.");
+
+    if (PERFETTO_UNLIKELY(ctrl_ == nullptr)) {
+      return {kNotFound, true};
+    }
+
+    const size_t cap_mask = capacity_ - 1;
+    size_t offset = H1(key_hash) & cap_mask;
+    size_t probe_size = 0;
+    const uint8_t* ctrl = ctrl_;
+
+    
+    
+    __builtin_prefetch(ctrl_ + offset, 0, 3);
+
+    while (true) {
+      
+      __builtin_prefetch(slots() + offset, 0, 3);
+
+      Group group(ctrl + offset);
+
+      
+      for (auto it = group.Match(h2); PERFETTO_LIKELY(it);) {
+        
+        
+        size_t idx = (offset + it.Next()) & cap_mask;
+        if (PERFETTO_LIKELY(Eq{}(slots()[idx].key, key))) {
+          return {idx, false};  
+        }
+      }
+
+      
+      
+      if (auto it = group.MatchEmpty(); PERFETTO_LIKELY(it)) {
+        if constexpr (ForInsert) {
+          size_t empty_idx = (offset + it.Next()) & cap_mask;
+          return {empty_idx, true};  
+        } else {
+          return {kNotFound, true};  
+        }
+      }
+
+      
+      probe_size += Group::kSize;
+      offset = (offset + probe_size) & cap_mask;
+
+      
+      PERFETTO_DCHECK(probe_size <= capacity_);
+    }
+  }
+
+  
+  
+  
+  template <typename K>
+  PERFETTO_ALWAYS_INLINE std::pair<Value*, bool> InsertImpl(K&& key,
+                                                            Value&& value) {
+    const std::remove_reference_t<K>& lookup_key = key;
+    FindResult res = FindOrPrepareInsert(lookup_key);
+    Slot* slot = &slots()[res.idx];
+    const bool inserted = res.needs_insert;
+    if (inserted) {
+      new (&slot->key) Key(std::forward<K>(key));
+      new (&slot->value) Value(std::move(value));
+    }
+    return {&slot->value, inserted};
+  }
+
+  
+  template <typename K>
+  PERFETTO_NO_INLINE Value* FindImpl(const K& key) const {
+    size_t key_hash = Hasher{}(key);
+    uint8_t h2 = H2(key_hash);
+    FindResult res = FindSlotIgnoringTombstones<false>(key, key_hash, h2);
+    if (PERFETTO_UNLIKELY(res.needs_insert)) {
+      return nullptr;
+    }
+    return &slots()[res.idx].value;
+  }
+
+  template <typename K>
+  PERFETTO_NO_INLINE bool EraseImpl(const K& key) {
+    size_t key_hash = Hasher{}(key);
+    uint8_t h2 = H2(key_hash);
+    FindResult res = FindSlotIgnoringTombstones<false>(key, key_hash, h2);
+    if (PERFETTO_UNLIKELY(res.needs_insert)) {
+      return false;
+    }
+    PERFETTO_DCHECK(size_ > 0);
+    SetCtrl(res.idx, kTombstone);
+    slots()[res.idx].key.~Key();
+    slots()[res.idx].value.~Value();
+    size_--;
+    growth_info_.has_tombstones = 1;
+    return true;
+  }
+
+  
+  
+  template <typename K>
+  PERFETTO_NO_INLINE FindResult FindOrPrepareInsert(const K& key) {
+    size_t key_hash = Hasher{}(key);
+    uint8_t h2 = H2(key_hash);
+    FindResult res = FindSlotIgnoringTombstones<true>(key, key_hash, h2);
+    if (PERFETTO_UNLIKELY(!res.needs_insert)) {
+      return res;
+    }
+    if (PERFETTO_UNLIKELY(growth_info_.growth_left == 0)) {
+      GrowAndRehash();
+      
+      
+      res.idx = FindFirstEmptyOrTombstone(key_hash);
+    }
+    PERFETTO_DCHECK(res.idx != kNotFound);
+    size_t insert_idx = res.idx;
+    bool is_freeslot = true;
+    if (PERFETTO_UNLIKELY(growth_info_.has_tombstones)) {
+      insert_idx = FindFirstEmptyOrTombstone(key_hash);
+      is_freeslot = ctrl_[insert_idx] != kTombstone;
+    }
+    SetCtrl(insert_idx, h2);
+    size_++;
+    if (is_freeslot) {
+      growth_info_.growth_left--;
+    }
+    return {insert_idx, true};
+  }
+
+  
+  
+  PERFETTO_NO_INLINE void GrowAndRehash() {
+    OldTable old = Grow(sizeof(Slot), alignof(Slot));
+    Slot* old_slots = reinterpret_cast<Slot*>(old.slots);
+    
+    
+    size_t new_size = 0;
+    for (size_t i = 0; i < old.capacity; ++i) {
+      if (uint8_t t = old.ctrl[i]; t == kFreeSlot || t == kTombstone) {
+        continue;
+      }
+      Slot& old_slot = old_slots[i];
+      size_t key_hash = Hasher{}(old_slot.key);
+      size_t idx = FindFirstEmptyOrTombstoneImpl(key_hash);
+      new (&slots()[idx].key) Key(std::move(old_slot.key));
+      new (&slots()[idx].value) Value(std::move(old_slot.value));
+      SetCtrl(idx, H2(key_hash));
+      old_slot.key.~Key();  
+      old_slot.value.~Value();
+      new_size++;
+    }
+    PERFETTO_DCHECK(new_size == old.size);
+    FinishGrow(new_size);
+  }
+
+  
+  void Reset(size_t n, bool reallocate) {
+    FlatHashMapV2Base::Reset(n, reallocate, sizeof(Slot), alignof(Slot));
+  }
+
+  PERFETTO_ALWAYS_INLINE Slot* slots() const {
+    return reinterpret_cast<Slot*>(slots_);
+  }
+};
+
+
+
+
+
+template <typename Key,
+          typename Value,
+          typename Hasher = MurmurHash<Key>,
+          typename Probe = QuadraticProbe,
+          bool AppendOnly = false>
+using FlatHashMap = FlatHashMapV1<Key, Value, Hasher, Probe, AppendOnly>;
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <utility>
+
+
+
+
+namespace perfetto::base::flat_hash_map_v2_internal {
+
+void FlatHashMapV2Base::Reset(size_t n,
+                              bool reallocate,
+                              size_t slot_size,
+                              size_t slot_align) {
+  
+  PERFETTO_CHECK((n & (n - 1)) == 0);
+
+  
+  capacity_ = std::max<size_t>(n, 128u);
+  size_ = 0;
+  growth_info_.growth_left =
+      (capacity_ * static_cast<size_t>(load_limit_percent_)) / 100;
+  growth_info_.has_tombstones = 0;
+
+  if (reallocate) {
+    
+    size_t slots_offset = base::AlignUp(capacity_ + kNumClones, slot_align);
+    storage_.reset(new uint8_t[slots_offset + (capacity_ * slot_size)]);
+    ctrl_ = storage_.get();
+    slots_ = storage_.get() + slots_offset;
+  }
+  if (ctrl_) {
+    
+    memset(ctrl_, kFreeSlot, capacity_ + kNumClones);
+  }
+}
+
+size_t FlatHashMapV2Base::FindFirstEmptyOrTombstone(size_t key_hash) const {
+  return FindFirstEmptyOrTombstoneImpl(key_hash);
+}
+
+FlatHashMapV2Base::OldTable FlatHashMapV2Base::Grow(size_t slot_size,
+                                                    size_t slot_align) {
+  PERFETTO_DCHECK(size_ <= capacity_);
+  OldTable old{std::move(storage_), ctrl_, slots_, capacity_, size_};
+  
+  
+  size_t new_capacity = capacity_ * 2;
+  PERFETTO_CHECK(new_capacity >= capacity_);
+  Reset(new_capacity, true, slot_size, slot_align);
+  return old;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FUTEX_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FUTEX_H_
+
+#include <stdint.h>
+
+
+
+
+
+
+#define PERFETTO_HAS_FUTEX()                            \
+  (PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX) || \
+   PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID))
+
+namespace perfetto::base {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class FutexWaitResult {
+  
+  
+  kWoken,
+  
+  kValueMismatch,
+  
+  kTimedOut,
+  
+  kInterrupted,
+  
+  
+  kError,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+FutexWaitResult FutexWait(const uint32_t* word,
+                          uint32_t expected_value,
+                          uint32_t timeout_ms);
+
+
+
+
+
+
+
+
+int FutexWake(const uint32_t* word, int max_waiters);
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_HAS_FUTEX()
+#include <errno.h>
+#include <linux/futex.h>
+#include <linux/types.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
+
+namespace perfetto::base {
+
+#if PERFETTO_HAS_FUTEX()
+
+
+
+
+FutexWaitResult FutexWait(const uint32_t* word,
+                          uint32_t expected_value,
+                          uint32_t timeout_ms) {
+  
+  
+  
+  struct KernelTimespec {
+    __kernel_long_t tv_sec;
+    __kernel_long_t tv_nsec;
+  };
+  const KernelTimespec timeout{
+      static_cast<__kernel_long_t>(timeout_ms / 1000),
+      static_cast<__kernel_long_t>((timeout_ms % 1000) * 1000000)};
+  const int ret = static_cast<int>(syscall(
+      SYS_futex, word, FUTEX_WAIT, expected_value, &timeout, nullptr, 0));
+  if (ret == 0)
+    return FutexWaitResult::kWoken;
+
+  switch (errno) {
+    case EAGAIN:
+      return FutexWaitResult::kValueMismatch;
+    case ETIMEDOUT:
+      return FutexWaitResult::kTimedOut;
+    case EINTR:
+      return FutexWaitResult::kInterrupted;
+    default:
+      PERFETTO_DPLOG("futex FUTEX_WAIT failed");
+      return FutexWaitResult::kError;
+  }
+}
+
+int FutexWake(const uint32_t* word, int max_waiters) {
+  PERFETTO_DCHECK(max_waiters > 0);
+  const int ret = static_cast<int>(
+      syscall(SYS_futex, word, FUTEX_WAKE, max_waiters, nullptr, nullptr, 0));
+  if (PERFETTO_UNLIKELY(ret < 0)) {
+    PERFETTO_DPLOG("futex FUTEX_WAKE failed");
+    return -1;
+  }
+  return ret;
+}
+
+#else
+
+FutexWaitResult FutexWait(const uint32_t* word,
+                          uint32_t expected_value,
+                          uint32_t timeout_ms) {
+  ignore_result(word);
+  ignore_result(expected_value);
+  ignore_result(timeout_ms);
+  return FutexWaitResult::kError;
+}
+
+int FutexWake(const uint32_t* word, int max_waiters) {
+  ignore_result(word);
+  ignore_result(max_waiters);
+  return -1;
+}
+
+#endif  
+
 }  
 
 
@@ -5718,6 +8192,73 @@ const RBNode* RBNext(const RBNode* node) {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_PROGRESS_REPORTER_H_
+#define INCLUDE_PERFETTO_EXT_BASE_PROGRESS_REPORTER_H_
+
+#include <cstdint>
+#include <mutex>
+#include <string_view>
+
+
+
+namespace perfetto::base {
+
+
+
+bool StderrSupportsProgress();
+
+
+
+
+bool StderrSupportsColor();
+
+
+
+
+class ProgressReporter {
+ public:
+  static ProgressReporter& GetInstance();
+
+  
+  void set_enabled(bool enabled);
+
+  
+  void Update(std::string_view message);
+  void Clear();
+
+ private:
+  ProgressReporter() = default;
+  ~ProgressReporter() = default;
+  ProgressReporter(const ProgressReporter&) = delete;
+  ProgressReporter& operator=(const ProgressReporter&) = delete;
+
+  void ClearLocked() PERFETTO_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
+  std::mutex mutex_;
+  bool enabled_ PERFETTO_GUARDED_BY(mutex_) = true;
+  int64_t last_update_ms_ PERFETTO_GUARDED_BY(mutex_) = 0;
+  size_t visible_width_ PERFETTO_GUARDED_BY(mutex_) = 0;
+};
+
+}  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef INCLUDE_PERFETTO_EXT_BASE_THREAD_ANNOTATIONS_H_
 #define INCLUDE_PERFETTO_EXT_BASE_THREAD_ANNOTATIONS_H_
@@ -5919,6 +8460,7 @@ class LogRingBuffer {
 
 
 
+
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -5938,6 +8480,13 @@ class LogRingBuffer {
 
 #if PERFETTO_ENABLE_LOG_RING_BUFFER() && PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
 #include <android/set_abort_message.h>
+#endif
+
+
+
+
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wglobal-constructors"
 #endif
 
 namespace perfetto {
@@ -6022,6 +8571,7 @@ void LogMessage(LogLev level,
     log_msg = &large_buf[0];
   }
 
+  ProgressReporter::GetInstance().Clear();
   LogMessageCallback cb = g_log_callback.load(std::memory_order_relaxed);
   if (cb) {
     cb({level, line, fname, log_msg});
@@ -6044,13 +8594,7 @@ void LogMessage(LogLev level,
       break;
   }
 
-#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) &&  \
-    !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM) && \
-    !PERFETTO_BUILDFLAG(PERFETTO_CHROMIUM_BUILD)
-  static const bool use_colors = isatty(STDERR_FILENO);
-#else
-  static const bool use_colors = false;
-#endif
+  const bool use_colors = StderrSupportsColor();
 
   
   
@@ -6219,7 +8763,9 @@ enum Tags : uint32_t {
   F(ANDROID_POWER_WRITE_ENERGY_ESTIMATION_BREAKDOWN), \
   F(ANDROID_POWER_WRITE_ENTITY_STATE_RESIDENCY), \
   F(ANDROID_POWER_WRITE_POWER_RAILS_DATA), \
-  F(LINUX_POWER_SYSFS_TICK)
+  F(LINUX_POWER_SYSFS_TICK), \
+  F(LINUX_SMAPS_ENQUEUE), \
+  F(LINUX_SMAPS_SERIALIZE)
 
 
 
@@ -6865,7 +9411,10 @@ class PagedMemory {
   
   
   
-  bool AdviseDontNeed(void* p, size_t size);
+  
+  
+  
+  void AdviseDontNeedAfter(size_t offset);
 
   
   
@@ -7023,24 +9572,25 @@ PagedMemory::~PagedMemory() {
   ANNOTATE_DELETE_BUFFER(p_, size_, committed_size_)
 }
 
-bool PagedMemory::AdviseDontNeed(void* p, size_t size) {
-  PERFETTO_DCHECK(p_);
-  PERFETTO_DCHECK(p >= p_);
-  PERFETTO_DCHECK(static_cast<char*>(p) + size <= p_ + size_);
+void PagedMemory::AdviseDontNeedAfter(size_t offset) {
+  PERFETTO_CHECK(p_ && offset <= size_);
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN) || PERFETTO_BUILDFLAG(PERFETTO_OS_NACL)
   
   
-  return false;
-#elif PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
-  int res = posix_madvise(p, size, POSIX_MADV_DISCARD_NP);
-  PERFETTO_DCHECK(res == 0);
-  return true;
-#else   
-        
+#else
+  const size_t release_begin = RoundUpToSysPageSize(offset);
+  const size_t release_end = AlignDown(size_, GetSysPageSize());
+  if (release_begin >= release_end)
+    return;
+  char* const release_ptr = p_ + release_begin;
+  const size_t release_size = release_end - release_begin;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_QNX)
+  int res = posix_madvise(release_ptr, release_size, POSIX_MADV_DISCARD_NP);
+#else
   
-  int res = madvise(p, size, MADV_DONTNEED);
+  int res = madvise(release_ptr, release_size, MADV_DONTNEED);
+#endif  
   PERFETTO_DCHECK(res == 0);
-  return true;
 #endif  
         
 }
@@ -7429,6 +9979,172 @@ Pipe Pipe::Create(Flags flags) {
 }
 
 }  
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <mutex>
+#include <string_view>
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+#include <windows.h>
+#elif !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+#include <sys/ioctl.h>
+#include <termios.h>
+#include <unistd.h>
+#endif
+
+namespace perfetto::base {
+namespace {
+
+constexpr int64_t kMinUpdateIntervalMs = 100;
+
+#if !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+bool StderrIsInteractiveTerminal() {
+#if PERFETTO_BUILDFLAG(PERFETTO_CHROMIUM_BUILD)
+  
+  return false;
+#else
+  const char* term = getenv("TERM");
+  return IsTty(stderr) && (!term || strcmp(term, "dumb") != 0);
+#endif
+}
+#endif
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+bool EnableVirtualTerminalProcessing() {
+  HANDLE handle = GetStdHandle(STD_ERROR_HANDLE);
+  DWORD mode = 0;
+  if (handle == INVALID_HANDLE_VALUE || !GetConsoleMode(handle, &mode))
+    return false;
+  return SetConsoleMode(handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
+}
+#endif
+
+size_t TerminalWidth() {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  CONSOLE_SCREEN_BUFFER_INFO info{};
+  if (GetConsoleScreenBufferInfo(GetStdHandle(STD_ERROR_HANDLE), &info))
+    return static_cast<size_t>(info.srWindow.Right - info.srWindow.Left + 1);
+#elif !PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+  struct winsize size{};
+  if (ioctl(STDERR_FILENO, TIOCGWINSZ, &size) == 0 && size.ws_col)
+    return size.ws_col;
+#endif
+  return 80;
+}
+
+}  
+
+bool StderrSupportsProgress() {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+  return true;
+#else
+  return StderrIsInteractiveTerminal();
+#endif
+}
+
+bool StderrSupportsColor() {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  
+  
+  static const bool vt_enabled = EnableVirtualTerminalProcessing();
+#endif
+  const char* force_color = getenv("FORCE_COLOR");
+  if (force_color && *force_color)
+    return true;
+  const char* no_color = getenv("NO_COLOR");
+  if (no_color && *no_color)
+    return false;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+  return false;
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  return vt_enabled && StderrIsInteractiveTerminal();
+#else
+  return StderrIsInteractiveTerminal();
+#endif
+}
+
+ProgressReporter& ProgressReporter::GetInstance() {
+  static ProgressReporter* instance = new ProgressReporter();
+  return *instance;
+}
+
+void ProgressReporter::set_enabled(bool enabled) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  enabled_ = enabled;
+}
+
+void ProgressReporter::Update(std::string_view message) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  if (!enabled_ || !StderrSupportsProgress())
+    return;
+  int64_t now = GetWallTimeMs().count();
+  if (last_update_ms_ && now - last_update_ms_ < kMinUpdateIntervalMs)
+    return;
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+  last_update_ms_ = now;
+  
+  fprintf(stderr, "%.*s\n", static_cast<int>(message.size()), message.data());
+#else
+  
+  size_t width = TerminalWidth();
+  size_t new_width = std::min(message.size(), width > 1 ? width - 1 : 0);
+  if (new_width < visible_width_)
+    ClearLocked();
+  
+  last_update_ms_ = now;
+  if (!new_width)
+    return;
+  fprintf(stderr, "\r%.*s", static_cast<int>(new_width), message.data());
+  fflush(stderr);
+  visible_width_ = new_width;
+#endif
+}
+
+void ProgressReporter::ClearLocked() {
+  if (!visible_width_)
+    return;
+  
+  size_t width = TerminalWidth();
+  size_t clear = std::min(visible_width_, width > 1 ? width - 1 : 0);
+  fprintf(stderr, "\r%*s\r", static_cast<int>(clear), "");
+  fflush(stderr);
+  visible_width_ = 0;
+  
+  last_update_ms_ = 0;
+}
+
+void ProgressReporter::Clear() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  ClearLocked();
+}
+
 }  
 
 
@@ -8032,6 +10748,7 @@ ScopedMmap ReadMmapWholeFile(const std::string& fname) {
 #define INCLUDE_PERFETTO_EXT_BASE_STATUS_OR_H_
 
 #include <optional>
+#include <utility>
 
 
 
@@ -8064,6 +10781,24 @@ class StatusOr {
 
   bool ok() const { return status_.ok(); }
   const base::Status& status() const { return status_; }
+
+  
+  
+  
+  T& ValueOrDie() & {
+    if (!ok())
+      PERFETTO_FATAL("%s", status_.c_message());
+    return *value_;
+  }
+
+  
+  
+  
+  T ValueOrDie() && {
+    if (!ok())
+      PERFETTO_FATAL("%s", status_.c_message());
+    return std::move(*value_);
+  }
 
   T& value() {
     PERFETTO_DCHECK(status_.ok());
@@ -8725,6 +11460,7 @@ bool StringSplitter::Next() {
 #endif
 
 #include <cinttypes>
+#include <string_view>
 
 
 
@@ -8786,7 +11522,7 @@ size_t Find(const StringView& needle, const StringView& haystack) {
   return std::string::npos;
 }
 
-bool CaseInsensitiveEqual(const std::string& first, const std::string& second) {
+bool CaseInsensitiveEqual(std::string_view first, std::string_view second) {
   return first.size() == second.size() &&
          std::equal(
              first.begin(), first.end(), second.begin(),
@@ -9344,6 +12080,7 @@ bool StringViewSplitter::Next() {
 
 
 
+
 namespace perfetto {
 namespace base {
 
@@ -9351,8 +12088,13 @@ std::string GetSysTempDir();
 
 class TempFile {
  public:
-  static TempFile CreateUnlinked();
-  static TempFile Create();
+  enum class LinkMode { kLinked, kUnlinked };
+
+  
+  
+  
+  
+  static StatusOr<TempFile> Create(LinkMode mode = LinkMode::kLinked);
 
   TempFile(TempFile&&) noexcept;
   TempFile& operator=(TempFile&&);
@@ -9364,14 +12106,16 @@ class TempFile {
 
   
   
-  void Unlink();
+  
+  bool Unlink();
 
+  
   
   
   ScopedFile ReleaseFD();
 
  private:
-  TempFile();
+  TempFile(ScopedFile fd, std::string path);
   TempFile(const TempFile&) = delete;
   TempFile& operator=(const TempFile&) = delete;
 
@@ -9421,9 +12165,11 @@ class TempDir {
 
 
 
-#include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <utility>
 
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 #include <windows.h>
@@ -9439,19 +12185,37 @@ class TempDir {
 
 
 
+
 namespace perfetto {
 namespace base {
 
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 namespace {
-std::string GetTempFilePathWin() {
-  std::string tmplt = GetSysTempDir() + "\\perfetto-XXXXXX";
-  StackString<255> name("%s\\perfetto-XXXXXX", GetSysTempDir().c_str());
-  PERFETTO_CHECK(_mktemp_s(name.mutable_data(), name.len() + 1) == 0);
-  return name.ToStdString();
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+StatusOr<std::string> GetTempFilePathWin() {
+  std::string path = GetSysTempDir() + "\\perfetto-XXXXXX";
+  int error = _mktemp_s(path.data(), path.size() + 1);
+  if (error != 0)
+    return ErrStatus("_mktemp_s() failed: %s", strerror(error));
+  return path;
 }
-}  
 #endif
+
+Status UnlinkTempFile(const std::string& path) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+  
+  if (!DeleteFileA(path.c_str())) {
+    return ErrStatus("DeleteFileA(%s) failed: %lu", path.c_str(),
+                     GetLastError());
+  }
+#else
+  if (unlink(path.c_str()) != 0)
+    return ErrStatus("unlink(%s) failed: %s", path.c_str(), strerror(errno));
+#endif
+  return OkStatus();
+}
+
+}  
 
 std::string GetSysTempDir() {
   const char* tmpdir = nullptr;
@@ -9473,62 +12237,68 @@ std::string GetSysTempDir() {
 }
 
 
-TempFile TempFile::Create() {
-  TempFile temp_file;
+StatusOr<TempFile> TempFile::Create(LinkMode mode) {
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-  temp_file.path_ = GetTempFilePathWin();
+  ASSIGN_OR_RETURN(std::string path, GetTempFilePathWin());
+
   
   
   
   
-  HANDLE h =
-      ::CreateFileA(temp_file.path_.c_str(), GENERIC_READ | GENERIC_WRITE,
-                    FILE_SHARE_DELETE | FILE_SHARE_READ, nullptr, CREATE_ALWAYS,
-                    FILE_ATTRIBUTE_TEMPORARY, nullptr);
-  PERFETTO_CHECK(PlatformHandleChecker::IsValid(h));
-  
-  
-  
-  temp_file.fd_.reset(_open_osfhandle(reinterpret_cast<intptr_t>(h), 0));
-#else
-  temp_file.path_ = GetSysTempDir() + "/perfetto-XXXXXXXX";
-  temp_file.fd_.reset(mkstemp(&temp_file.path_[0]));
-#endif
-  if (PERFETTO_UNLIKELY(!temp_file.fd_)) {
-    PERFETTO_FATAL("Could not create temp file %s", temp_file.path_.c_str());
+  ScopedPlatformHandle h(
+      ::CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE,
+                    FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
+                    nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, nullptr));
+  if (!h) {
+    return ErrStatus("CreateFileA(%s) failed: %lu", path.c_str(),
+                     GetLastError());
   }
-  return temp_file;
+
+  
+  
+  
+  ScopedFile fd(_open_osfhandle(reinterpret_cast<intptr_t>(h.get()), 0));
+  if (!fd) {
+    auto status = ErrStatus("_open_osfhandle() failed: %s", strerror(errno));
+    UnlinkTempFile(path);  
+    return status;
+  }
+  h.release();
+#else
+  std::string path = GetSysTempDir() + "/perfetto-XXXXXXXX";
+  ScopedFile fd(mkstemp(path.data()));
+  if (!fd)
+    return ErrStatus("mkstemp(%s) failed: %s", path.c_str(), strerror(errno));
+#endif
+
+  
+  
+  if (mode == LinkMode::kUnlinked) {
+    RETURN_IF_ERROR(UnlinkTempFile(path));
+    return TempFile(std::move(fd), std::string());
+  }
+  return TempFile(std::move(fd), std::move(path));
 }
 
-
-TempFile TempFile::CreateUnlinked() {
-  TempFile temp_file = TempFile::Create();
-  temp_file.Unlink();
-  return temp_file;
-}
-
-TempFile::TempFile() = default;
+TempFile::TempFile(ScopedFile fd, std::string path)
+    : fd_(std::move(fd)), path_(std::move(path)) {}
 
 TempFile::~TempFile() {
-  Unlink();
+  PERFETTO_CHECK(Unlink());
 }
 
 ScopedFile TempFile::ReleaseFD() {
-  Unlink();
+  PERFETTO_CHECK(Unlink());
   return std::move(fd_);
 }
 
-void TempFile::Unlink() {
+bool TempFile::Unlink() {
   if (path_.empty())
-    return;
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-  
-  
-  PERFETTO_CHECK(DeleteFileA(path_.c_str()));
-#else
-  PERFETTO_CHECK(unlink(path_.c_str()) == 0);
-#endif
+    return true;
+  if (!UnlinkTempFile(path_).ok())
+    return false;
   path_.clear();
+  return true;
 }
 
 TempFile::TempFile(TempFile&&) noexcept = default;
@@ -9538,7 +12308,7 @@ TempFile& TempFile::operator=(TempFile&&) = default;
 TempDir TempDir::Create() {
   TempDir temp_dir;
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-  temp_dir.path_ = GetTempFilePathWin();
+  temp_dir.path_ = GetTempFilePathWin().ValueOrDie();
   PERFETTO_CHECK(_mkdir(temp_dir.path_.c_str()) == 0);
 #else
   temp_dir.path_ = GetSysTempDir() + "/perfetto-XXXXXXXX";
@@ -10411,83 +13181,6 @@ std::string HexDump(const void* data_void, size_t len, size_t bytes_per_line) {
 
 
 
-#ifndef INCLUDE_PERFETTO_EXT_BASE_UUID_H_
-#define INCLUDE_PERFETTO_EXT_BASE_UUID_H_
-
-#include <string.h>
-#include <array>
-#include <cstdint>
-#include <string>
-
-
-
-namespace perfetto {
-namespace base {
-
-class PERFETTO_EXPORT_COMPONENT Uuid {
- public:
-  explicit Uuid(const std::string& s);
-  explicit Uuid(int64_t lsb, int64_t msb);
-  Uuid();
-
-  std::array<uint8_t, 16>* data() { return &data_; }
-  const std::array<uint8_t, 16>* data() const { return &data_; }
-
-  bool operator==(const Uuid& other) const { return data_ == other.data_; }
-
-  bool operator!=(const Uuid& other) const { return !(*this == other); }
-
-  explicit operator bool() const { return *this != Uuid(); }
-
-  int64_t msb() const {
-    int64_t result;
-    memcpy(&result, data_.data() + 8, 8);
-    return result;
-  }
-
-  int64_t lsb() const {
-    int64_t result;
-    memcpy(&result, data_.data(), 8);
-    return result;
-  }
-
-  void set_lsb_msb(int64_t lsb, int64_t msb) {
-    set_lsb(lsb);
-    set_msb(msb);
-  }
-  void set_msb(int64_t msb) { memcpy(data_.data() + 8, &msb, 8); }
-  void set_lsb(int64_t lsb) { memcpy(data_.data(), &lsb, 8); }
-
-  std::string ToString() const;
-  std::string ToPrettyString() const;
-
- private:
-  std::array<uint8_t, 16> data_{};
-};
-
-Uuid Uuidv4();
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #include <random>
 
@@ -10723,6 +13416,49 @@ void WaitableEvent::Notify() {
 
 
 
+#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAGS_H_
+#define INCLUDE_PERFETTO_EXT_BASE_FLAGS_H_
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD) && \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+
+#include <perfetto_flags.h>
+#else
+
+
+#define PERFETTO_FLAGS(FLAG) PERFETTO_FLAGS_##FLAG
+
+#define PERFETTO_FLAGS_TEST_READ_ONLY_FLAG false
+#define PERFETTO_FLAGS_USE_LOCKFREE_TASKRUNNER \
+  PERFETTO_BUILDFLAG(PERFETTO_ENABLE_LOCKFREE_TASKRUNNER)
+#define PERFETTO_FLAGS_BUFFER_CLONE_PRESERVE_READ_ITER true
+#define PERFETTO_FLAGS_USE_UNIX_SOCKET_INOTIFY \
+  PERFETTO_BUILDFLAG(PERFETTO_ENABLE_SOCK_INOTIFY)
+#define PERFETTO_FLAGS_TRIGGER_PERFETTO_ON_TRACED_PROBES_DISCONNECT false
+#define PERFETTO_FLAGS_USE_ANON_RSS_IN_WATCHDOG true
+
+#endif  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef INCLUDE_PERFETTO_EXT_BASE_WATCHDOG_NOOP_H_
 #define INCLUDE_PERFETTO_EXT_BASE_WATCHDOG_NOOP_H_
 
@@ -10789,6 +13525,7 @@ class Watchdog {
 
 
 
+
 #if PERFETTO_BUILDFLAG(PERFETTO_WATCHDOG)
 
 #else
@@ -10842,9 +13579,10 @@ constexpr uint32_t kWatchdogDefaultCpuWindow = 10 * 60 * 1000;
 
 
 
-
-constexpr uint64_t kWatchdogDefaultMemorySlack = 64 * 1024 * 1024;  
-constexpr uint32_t kWatchdogDefaultMemoryWindow = 30 * 1000;  
+constexpr uint64_t kWatchdogDefaultMemorySlack =
+    PERFETTO_FLAGS(USE_ANON_RSS_IN_WATCHDOG) ? 32 * 1024 * 1024   
+                                             : 64 * 1024 * 1024;  
+constexpr uint32_t kWatchdogDefaultMemoryWindow = 30 * 1000;      
 
 inline void RunTaskWithWatchdogGuard(const std::function<void()>& task) {
   
@@ -10900,7 +13638,9 @@ inline void RunTaskWithWatchdogGuard(const std::function<void()>& task) {
 #include <algorithm>
 #include <cinttypes>
 #include <fstream>
+#include <optional>
 #include <thread>
+
 
 
 
@@ -10941,29 +13681,52 @@ double MeanForArray(const uint64_t array[], size_t size) {
   return static_cast<double>(total / size);
 }
 
+bool ReadFileToString(int fd, char* buf, size_t size) {
+  size_t pos = 0;
+  while (pos < size - 1) {
+    ssize_t rd = PERFETTO_EINTR(read(fd, buf + pos, size - 1 - pos));
+    if (rd < 0)
+      return false;
+    if (rd == 0)
+      break;
+    pos += static_cast<size_t>(rd);
+  }
+  buf[pos] = '\0';
+  return true;
+}
+
 }  
 
 bool ReadProcStat(int fd, ProcStat* out) {
-  char c[512];
-  size_t c_pos = 0;
-  while (c_pos < sizeof(c) - 1) {
-    ssize_t rd = PERFETTO_EINTR(read(fd, c + c_pos, sizeof(c) - c_pos));
-    if (rd < 0) {
-      PERFETTO_ELOG("Failed to read stat file to enforce resource limits.");
-      return false;
-    }
-    if (rd == 0)
-      break;
-    c_pos += static_cast<size_t>(rd);
+  char str[512];
+  if (!ReadFileToString(fd, str, sizeof(str))) {
+    PERFETTO_ELOG("Failed to read stat file to enforce resource limits.");
+    return false;
   }
-  PERFETTO_CHECK(c_pos < sizeof(c));
-  c[c_pos] = '\0';
 
-  if (sscanf(c,
+  if (sscanf(str,
              "%*d %*s %*c %*d %*d %*d %*d %*d %*u %*u %*u %*u %*u %lu "
              "%lu %*d %*d %*d %*d %*d %*d %*u %*u %ld",
              &out->utime, &out->stime, &out->rss_pages) != 3) {
-    PERFETTO_ELOG("Invalid stat format: %s", c);
+    PERFETTO_ELOG("Invalid stat format: %s", str);
+    return false;
+  }
+  return true;
+}
+
+bool ReadProcStatm(int fd, ProcStatm* out) {
+  char str[256];
+  if (!ReadFileToString(fd, str, sizeof(str))) {
+    PERFETTO_ELOG("Failed to read statm file to enforce resource limits.");
+    return false;
+  }
+
+  if (sscanf(str,
+             "%" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
+             " %" SCNu64 " %" SCNu64,
+             &out->size, &out->resident, &out->shared, &out->text, &out->lib,
+             &out->data, &out->dt) != 7) {
+    PERFETTO_ELOG("Invalid statm format: %s", str);
     return false;
   }
   return true;
@@ -11109,6 +13872,16 @@ void Watchdog::ThreadMain() {
     return;
   }
 
+  base::ScopedFile statm_fd;
+  if constexpr (PERFETTO_FLAGS(USE_ANON_RSS_IN_WATCHDOG)) {
+    statm_fd = (base::OpenFile("/proc/self/statm", O_RDONLY));
+    if (!statm_fd) {
+      PERFETTO_DLOG(
+          "Failed to open statm file to enforce resource limits. Using RSS for "
+          "the guardrail");
+    }
+  }
+
   PERFETTO_DCHECK(timer_fd_);
 
   constexpr uint8_t kFdCount = 1;
@@ -11184,15 +13957,28 @@ void Watchdog::ThreadMain() {
     ProcStat stat;
     if (!ReadProcStat(stat_fd.get(), &stat))
       continue;
-    uint64_t cpu_time = stat.utime + stat.stime;
-    uint64_t rss_bytes =
-        static_cast<uint64_t>(stat.rss_pages) * base::GetSysPageSize();
+
+    const uint64_t cpu_time = stat.utime + stat.stime;
+    
+    const uint64_t rss_bytes =
+        stat.rss_pages > 0
+            ? static_cast<uint64_t>(stat.rss_pages) * base::GetSysPageSize()
+            : 0;
+
+    std::optional<uint64_t> rss_anon_bytes = std::nullopt;
+    if (statm_fd) {
+      lseek(statm_fd.get(), 0, SEEK_SET);
+      ProcStatm statm;
+      if (ReadProcStatm(statm_fd.get(), &statm))
+        rss_anon_bytes = statm.rss_anon_pages() * base::GetSysPageSize();
+    }
 
     bool threshold_exceeded = false;
     WatchdogCrashReason crash_reason{};
     {
       std::lock_guard<std::mutex> guard(mutex_);
-      if (CheckMemory_Locked(rss_bytes) && !IsSyncMemoryTaggingEnabled()) {
+      if (CheckMemory_Locked(rss_anon_bytes.value_or(rss_bytes)) &&
+          !IsSyncMemoryTaggingEnabled()) {
         threshold_exceeded = true;
         crash_reason = WatchdogCrashReason::kMemGuardrail;
       } else if (CheckCpu_Locked(cpu_time)) {
@@ -11264,13 +14050,13 @@ void Watchdog::SerializeLogsAndKillThread(int tid,
   abort();
 }
 
-bool Watchdog::CheckMemory_Locked(uint64_t rss_bytes) {
+bool Watchdog::CheckMemory_Locked(uint64_t rss_anon_bytes) {
   if (memory_limit_bytes_ == 0)
     return false;
 
   
   
-  if (memory_window_bytes_.Push(rss_bytes)) {
+  if (memory_window_bytes_.Push(rss_anon_bytes)) {
     if (memory_window_bytes_.Mean() >
         static_cast<double>(memory_limit_bytes_)) {
       PERFETTO_ELOG(
@@ -11492,50 +14278,6 @@ void WeakRunner::PostDelayedTask(std::function<void()> f,
 }  
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAGS_H_
-#define INCLUDE_PERFETTO_EXT_BASE_FLAGS_H_
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD) && \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-
-#include <perfetto_flags.h>
-#else
-
-
-#define PERFETTO_FLAGS(FLAG) PERFETTO_FLAGS_##FLAG
-
-#define PERFETTO_FLAGS_TEST_READ_ONLY_FLAG false
-#define PERFETTO_FLAGS_USE_LOCKFREE_TASKRUNNER \
-  PERFETTO_BUILDFLAG(PERFETTO_ENABLE_LOCKFREE_TASKRUNNER)
-#define PERFETTO_FLAGS_BUFFER_CLONE_PRESERVE_READ_ITER true
-#define PERFETTO_FLAGS_USE_UNIX_SOCKET_INOTIFY \
-  PERFETTO_BUILDFLAG(PERFETTO_ENABLE_SOCK_INOTIFY)
-#define PERFETTO_FLAGS_TRIGGER_PERFETTO_ON_TRACED_PROBES_DISCONNECT false
-#define PERFETTO_FLAGS_USE_PCRE2 PERFETTO_BUILDFLAG(PERFETTO_PCRE2)
-#define PERFETTO_FLAGS_SYS_STATS_LARGE_READ true
-
-#endif  
-
-#endif  
 
 
 
@@ -11950,107 +14692,6 @@ using MaybeLockFreeTaskRunner =
     std::conditional_t<PERFETTO_FLAGS(USE_LOCKFREE_TASKRUNNER),
                        LockFreeTaskRunner,
                        UnixTaskRunner>;
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_BITS_H_
-#define INCLUDE_PERFETTO_EXT_BASE_BITS_H_
-
-#include <cstddef>
-#include <cstdint>
-
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-#include <immintrin.h>
-#endif
-
-namespace perfetto {
-namespace base {
-
-inline PERFETTO_ALWAYS_INLINE uint32_t CountLeadZeros32(uint32_t value) {
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-  return static_cast<uint32_t>(_lzcnt_u32(value));
-#elif defined(__GNUC__) || defined(__clang__)
-  return value ? static_cast<uint32_t>(__builtin_clz(value)) : 32u;
-#else
-  unsigned long out;
-  return _BitScanReverse(&out, value) ? 31 - out : 32u;
-#endif
-}
-
-inline PERFETTO_ALWAYS_INLINE uint32_t CountLeadZeros64(uint64_t value) {
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-  return static_cast<uint32_t>(_lzcnt_u64(value));
-#elif defined(__GNUC__) || defined(__clang__)
-  return value ? static_cast<uint32_t>(__builtin_clzll(value)) : 64u;
-#else
-  unsigned long out;
-  return _BitScanReverse64(&out, value) ? 63 - out : 64u;
-#endif
-}
-
-template <typename T>
-uint32_t CountLeadZeros(T value) {
-  if constexpr (sizeof(T) == 8)
-    return CountLeadZeros64(static_cast<uint64_t>(value));
-  return CountLeadZeros32(static_cast<uint32_t>(value));
-}
-
-inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros64(uint64_t value) {
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-  return static_cast<uint32_t>(_tzcnt_u64(value));
-#elif defined(__GNUC__) || defined(__clang__)
-  return value ? static_cast<uint32_t>(__builtin_ctzll(value)) : 64u;
-#else
-  unsigned long out;
-  return _BitScanForward64(&out, value) ? static_cast<uint32_t>(out) : 64u;
-#endif
-}
-
-inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros32(uint32_t value) {
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-  return _tzcnt_u32(value);
-#elif defined(__GNUC__) || defined(__clang__)
-  return value ? static_cast<uint32_t>(__builtin_ctz(value)) : 32u;
-#else
-  unsigned long out;
-  return _BitScanForward(&out, value) ? out : 32u;
-#endif
-}
-
-template <typename T>
-inline PERFETTO_ALWAYS_INLINE uint32_t CountTrailZeros(T value) {
-  if (sizeof(T) == 8) {
-    return CountTrailZeros64(static_cast<uint64_t>(value));
-  }
-  return CountTrailZeros32(static_cast<uint32_t>(value));
-}
-
-template <typename T>
-constexpr bool AllBitsSet(T v) {
-  return v == static_cast<T>(-1);
-}
 
 }  
 }  
@@ -14348,11 +16989,6 @@ void Subprocess::KillAndWaitForTermination(int exit_code) {
 
 
 
-#if !PERFETTO_IS_LITTLE_ENDIAN()
-
-
-#error Unimplemented for big endian archs.
-#endif
 
 namespace protozero {
 
@@ -14371,14 +17007,16 @@ void Field::SerializeAndAppendToInternal(Container* dst) const {
     }
     case static_cast<int>(pu::ProtoWireType::kFixed32): {
       wptr = pu::WriteVarInt(pu::MakeTagFixed<uint32_t>(id_), wptr);
-      uint32_t value32 = static_cast<uint32_t>(int_value_);
+      uint32_t value32 =
+          perfetto::base::HostToLE(static_cast<uint32_t>(int_value_));
       memcpy(wptr, &value32, sizeof(value32));
       wptr += sizeof(uint32_t);
       break;
     }
     case static_cast<int>(pu::ProtoWireType::kFixed64): {
       wptr = pu::WriteVarInt(pu::MakeTagFixed<uint64_t>(id_), wptr);
-      memcpy(wptr, &int_value_, sizeof(int_value_));
+      uint64_t value64 = perfetto::base::HostToLE(int_value_);
+      memcpy(wptr, &value64, sizeof(value64));
       wptr += sizeof(uint64_t);
       break;
     }
@@ -14541,12 +17179,6 @@ template bool EqualsField<std::string>(const std::string&, const std::string&);
 
 
 
-#if !PERFETTO_IS_LITTLE_ENDIAN()
-
-
-#error Unimplemented for big endian archs.
-#endif
-
 namespace protozero {
 
 namespace {
@@ -14563,7 +17195,9 @@ std::atomic<uint32_t> g_generation;
 
 
 
-void Message::Reset(ScatteredStreamWriter* stream_writer, MessageArena* arena) {
+void Message::Reset(ScatteredStreamWriter* stream_writer,
+                    MessageArena* arena,
+                    Encoding encoding) {
 
 #if !defined(__GLIBCXX__) || __GLIBCXX__ >= 20170516
   static_assert(std::is_trivially_constructible<Message>::value,
@@ -14578,6 +17212,7 @@ void Message::Reset(ScatteredStreamWriter* stream_writer, MessageArena* arena) {
   size_field_ = nullptr;
   nested_message_ = nullptr;
   message_state_ = MessageState::kNotFinalized;
+  encoding_ = encoding;
 #if PERFETTO_DCHECK_IS_ON()
   handle_ = nullptr;
   generation_ = g_generation.fetch_add(1, std::memory_order_relaxed);
@@ -14647,6 +17282,7 @@ uint32_t Message::Finalize() {
   
   
   if (size_field_) {
+    PERFETTO_DCHECK(encoding_ == Encoding::kLengthDelimited);
     PERFETTO_DCHECK(!is_finalized());
     PERFETTO_DCHECK(size_ < proto_utils::kMaxMessageLength);
     
@@ -14706,19 +17342,27 @@ Message* Message::BeginNestedMessageInternal(uint32_t field_id) {
     EndNestedMessage();
 
   
+  const bool is_length_delimited = encoding_ == Encoding::kLengthDelimited;
+  const uint32_t tag = is_length_delimited
+                           ? proto_utils::MakeTagLengthDelimited(field_id)
+                           : proto_utils::MakeTagStartGroup(field_id);
   uint8_t data[proto_utils::kMaxTagEncodedSize];
-  uint8_t* data_end = proto_utils::WriteVarInt(
-      proto_utils::MakeTagLengthDelimited(field_id), data);
+  uint8_t* data_end = proto_utils::WriteVarInt(tag, data);
   WriteToStream(data, data_end);
 
   Message* message = arena_->NewMessage();
-  message->Reset(stream_writer_, arena_);
+  message->Reset(stream_writer_, arena_, encoding_);
 
   
   
-  message->set_size_field(
-      stream_writer_->ReserveBytes(proto_utils::kMessageLengthFieldSize));
-  size_ += proto_utils::kMessageLengthFieldSize;
+  if (is_length_delimited) {
+    
+    
+    
+    message->set_size_field(
+        stream_writer_->ReserveBytes(proto_utils::kMessageLengthFieldSize));
+    size_ += proto_utils::kMessageLengthFieldSize;
+  }
 
   nested_message_ = message;
   return message;
@@ -14730,6 +17374,17 @@ void Message::EndNestedMessage() {
       MessageState::kFinalizedWithCompaction) {
     size_ -= kBytesToCompact;
   }
+
+  
+  
+  
+  if (encoding_ == Encoding::kProtoGroup) {
+    
+    
+    const uint8_t* closing_byte = &proto_utils::kProtoGroupEndByte;
+    WriteToStream(closing_byte, closing_byte + 1);
+  }
+
   arena_->DeleteLastMessage(nested_message_);
   nested_message_ = nullptr;
 }
@@ -14883,10 +17538,6 @@ namespace protozero {
 
 using namespace proto_utils;
 
-#if !PERFETTO_IS_LITTLE_ENDIAN()
-#error Unimplemented for big endian archs.
-#endif
-
 const Field TypedProtoDecoderBase::kInvalidField{};
 
 namespace {
@@ -14966,11 +17617,14 @@ ParseOneField(const uint8_t* const buffer, const uint8_t* const end) {
     if (PERFETTO_UNLIKELY(new_pos > end))
       return res;
     memcpy(&int_value, pos, sizeof(uint64_t));
+    int_value = perfetto::base::LE64ToHost(int_value);
   } else if (field_type == static_cast<uint8_t>(ProtoWireType::kFixed32)) {
     new_pos = pos + sizeof(uint32_t);
     if (PERFETTO_UNLIKELY(new_pos > end))
       return res;
-    memcpy(&int_value, pos, sizeof(uint32_t));
+    uint32_t value32;
+    memcpy(&value32, pos, sizeof(uint32_t));
+    int_value = perfetto::base::LE32ToHost(value32);
   } else {
     PERFETTO_DLOG("Invalid proto field type: %u", field_type);
     return res;
@@ -15112,6 +17766,7 @@ PERFETTO_ALWAYS_INLINE void TypedProtoDecoderBase::ParseAllFieldsImpl(
       
       
       
+      has_out_of_range_fields_ = true;
       continue;
     }
 
@@ -15258,6 +17913,15 @@ const std::vector<ScatteredHeapBuffer::Slice>&
 ScatteredHeapBuffer::GetSlices() {
   AdjustUsedSizeOfCurrentSlice();
   return slices_;
+}
+
+std::vector<ScatteredHeapBuffer::Slice> ScatteredHeapBuffer::TakeSlices() {
+  AdjustUsedSizeOfCurrentSlice();
+  std::vector<Slice> slices = std::move(slices_);
+  slices_.clear();
+  if (writer_)
+    writer_->Reset(protozero::ContiguousMemoryRange{});
+  return slices;
 }
 
 std::vector<uint8_t> ScatteredHeapBuffer::StitchSlices() {
@@ -16697,7 +19361,6 @@ void CommitDataRequest_ChunksToMove::Serialize(::protozero::Message* msg) const 
 #endif
 
 
-
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -16752,7 +19415,7 @@ bool DataSourceDescriptor::ParseFromArray(const void* raw, size_t size) {
         field.get(&no_flush_);
         break;
       case 10 :
-        (*protovm_program_).ParseFromArray(field.data(), field.size());
+        ::protozero::internal::gen_helpers::DeserializeString(field, &protovm_program_);
         break;
       case 5 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &gpu_counter_descriptor_);
@@ -16816,7 +19479,7 @@ void DataSourceDescriptor::Serialize(::protozero::Message* msg) const {
 
   
   if (_has_field_[10]) {
-    (*protovm_program_).Serialize(msg->BeginNestedMessage<::protozero::Message>(10));
+    msg->AppendString(10, protovm_program_);
   }
 
   
@@ -19373,6 +22036,7 @@ bool SystemInfo::operator==(const SystemInfo& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(android_build_fingerprint_, other.android_build_fingerprint_)
    && ::protozero::internal::gen_helpers::EqualsField(android_device_manufacturer_, other.android_device_manufacturer_)
    && ::protozero::internal::gen_helpers::EqualsField(android_soc_model_, other.android_soc_model_)
+   && ::protozero::internal::gen_helpers::EqualsField(device_tree_compatibles_, other.device_tree_compatibles_)
    && ::protozero::internal::gen_helpers::EqualsField(android_guest_soc_model_, other.android_guest_soc_model_)
    && ::protozero::internal::gen_helpers::EqualsField(android_hardware_revision_, other.android_hardware_revision_)
    && ::protozero::internal::gen_helpers::EqualsField(android_storage_model_, other.android_storage_model_)
@@ -19389,6 +22053,7 @@ bool SystemInfo::operator==(const SystemInfo& other) const {
 }
 
 bool SystemInfo::ParseFromArray(const void* raw, size_t size) {
+  device_tree_compatibles_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -19409,6 +22074,10 @@ bool SystemInfo::ParseFromArray(const void* raw, size_t size) {
         break;
       case 9 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &android_soc_model_);
+        break;
+      case 18 :
+        device_tree_compatibles_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &device_tree_compatibles_.back());
         break;
       case 13 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &android_guest_soc_model_);
@@ -19488,6 +22157,11 @@ void SystemInfo::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[9]) {
     ::protozero::internal::gen_helpers::SerializeString(9, android_soc_model_, msg);
+  }
+
+  
+  for (auto& it : device_tree_compatibles_) {
+    ::protozero::internal::gen_helpers::SerializeString(18, it, msg);
   }
 
   
@@ -20246,12 +22920,15 @@ bool TraceStats_BufferStats::operator==(const TraceStats_BufferStats& other) con
    && ::protozero::internal::gen_helpers::EqualsField(chunks_read_, other.chunks_read_)
    && ::protozero::internal::gen_helpers::EqualsField(chunks_committed_out_of_order_, other.chunks_committed_out_of_order_)
    && ::protozero::internal::gen_helpers::EqualsField(write_wrap_count_, other.write_wrap_count_)
+   && ::protozero::internal::gen_helpers::EqualsField(compactions_, other.compactions_)
+   && ::protozero::internal::gen_helpers::EqualsField(compactions_skipped_, other.compactions_skipped_)
    && ::protozero::internal::gen_helpers::EqualsField(patches_succeeded_, other.patches_succeeded_)
    && ::protozero::internal::gen_helpers::EqualsField(patches_failed_, other.patches_failed_)
    && ::protozero::internal::gen_helpers::EqualsField(readaheads_succeeded_, other.readaheads_succeeded_)
    && ::protozero::internal::gen_helpers::EqualsField(readaheads_failed_, other.readaheads_failed_)
    && ::protozero::internal::gen_helpers::EqualsField(abi_violations_, other.abi_violations_)
-   && ::protozero::internal::gen_helpers::EqualsField(trace_writer_packet_loss_, other.trace_writer_packet_loss_);
+   && ::protozero::internal::gen_helpers::EqualsField(trace_writer_packet_loss_, other.trace_writer_packet_loss_)
+   && ::protozero::internal::gen_helpers::EqualsField(oversized_packets_dropped_, other.oversized_packets_dropped_);
 }
 
 bool TraceStats_BufferStats::ParseFromArray(const void* raw, size_t size) {
@@ -20306,6 +22983,12 @@ bool TraceStats_BufferStats::ParseFromArray(const void* raw, size_t size) {
       case 4 :
         field.get(&write_wrap_count_);
         break;
+      case 23 :
+        field.get(&compactions_);
+        break;
+      case 24 :
+        field.get(&compactions_skipped_);
+        break;
       case 5 :
         field.get(&patches_succeeded_);
         break;
@@ -20323,6 +23006,9 @@ bool TraceStats_BufferStats::ParseFromArray(const void* raw, size_t size) {
         break;
       case 19 :
         field.get(&trace_writer_packet_loss_);
+        break;
+      case 22 :
+        field.get(&oversized_packets_dropped_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -20416,6 +23102,16 @@ void TraceStats_BufferStats::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[23]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(23, compactions_, msg);
+  }
+
+  
+  if (_has_field_[24]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(24, compactions_skipped_, msg);
+  }
+
+  
   if (_has_field_[5]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(5, patches_succeeded_, msg);
   }
@@ -20443,6 +23139,11 @@ void TraceStats_BufferStats::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[19]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(19, trace_writer_packet_loss_, msg);
+  }
+
+  
+  if (_has_field_[22]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(22, oversized_packets_dropped_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -21764,6 +24465,83 @@ void AndroidPolledStateConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[1]) {
     ::protozero::internal::gen_helpers::SerializeVarInt(1, poll_ms_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+AndroidProcessStateConfig::AndroidProcessStateConfig() = default;
+AndroidProcessStateConfig::~AndroidProcessStateConfig() = default;
+AndroidProcessStateConfig::AndroidProcessStateConfig(const AndroidProcessStateConfig&) = default;
+AndroidProcessStateConfig& AndroidProcessStateConfig::operator=(const AndroidProcessStateConfig&) = default;
+AndroidProcessStateConfig::AndroidProcessStateConfig(AndroidProcessStateConfig&&) noexcept = default;
+AndroidProcessStateConfig& AndroidProcessStateConfig::operator=(AndroidProcessStateConfig&&) = default;
+
+bool AndroidProcessStateConfig::operator==(const AndroidProcessStateConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(dump_process_metadata_, other.dump_process_metadata_);
+}
+
+bool AndroidProcessStateConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&dump_process_metadata_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string AndroidProcessStateConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> AndroidProcessStateConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void AndroidProcessStateConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(1, dump_process_metadata_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -24448,7 +27226,8 @@ bool GpuRenderStagesConfig::operator==(const GpuRenderStagesConfig& other) const
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(full_loadstore_, other.full_loadstore_)
    && ::protozero::internal::gen_helpers::EqualsField(low_overhead_, other.low_overhead_)
-   && ::protozero::internal::gen_helpers::EqualsField(trace_metrics_, other.trace_metrics_);
+   && ::protozero::internal::gen_helpers::EqualsField(trace_metrics_, other.trace_metrics_)
+   && ::protozero::internal::gen_helpers::EqualsField(drawcall_stages_, other.drawcall_stages_);
 }
 
 bool GpuRenderStagesConfig::ParseFromArray(const void* raw, size_t size) {
@@ -24471,6 +27250,9 @@ bool GpuRenderStagesConfig::ParseFromArray(const void* raw, size_t size) {
       case 3 :
         trace_metrics_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &trace_metrics_.back());
+        break;
+      case 4 :
+        field.get(&drawcall_stages_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -24506,6 +27288,11 @@ void GpuRenderStagesConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : trace_metrics_) {
     ::protozero::internal::gen_helpers::SerializeString(3, it, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(4, drawcall_stages_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -26618,6 +29405,232 @@ void SmapsConfig::Serialize(::protozero::Message* msg) const {
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
+
+ProcessSmapsConfig::ProcessSmapsConfig() = default;
+ProcessSmapsConfig::~ProcessSmapsConfig() = default;
+ProcessSmapsConfig::ProcessSmapsConfig(const ProcessSmapsConfig&) = default;
+ProcessSmapsConfig& ProcessSmapsConfig::operator=(const ProcessSmapsConfig&) = default;
+ProcessSmapsConfig::ProcessSmapsConfig(ProcessSmapsConfig&&) noexcept = default;
+ProcessSmapsConfig& ProcessSmapsConfig::operator=(ProcessSmapsConfig&&) = default;
+
+bool ProcessSmapsConfig::operator==(const ProcessSmapsConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(smaps_config_, other.smaps_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(scope_, other.scope_)
+   && ::protozero::internal::gen_helpers::EqualsField(read_period_ms_, other.read_period_ms_)
+   && ::protozero::internal::gen_helpers::EqualsField(max_processes_per_period_, other.max_processes_per_period_);
+}
+
+bool ProcessSmapsConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        (*smaps_config_).ParseFromArray(field.data(), field.size());
+        break;
+      case 2 :
+        (*scope_).ParseFromArray(field.data(), field.size());
+        break;
+      case 3 :
+        field.get(&read_period_ms_);
+        break;
+      case 4 :
+        field.get(&max_processes_per_period_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ProcessSmapsConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ProcessSmapsConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ProcessSmapsConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    (*smaps_config_).Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  
+  if (_has_field_[2]) {
+    (*scope_).Serialize(msg->BeginNestedMessage<::protozero::Message>(2));
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, read_period_ms_, msg);
+  }
+
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(4, max_processes_per_period_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+ProcessSmapsConfig_Scope::ProcessSmapsConfig_Scope() = default;
+ProcessSmapsConfig_Scope::~ProcessSmapsConfig_Scope() = default;
+ProcessSmapsConfig_Scope::ProcessSmapsConfig_Scope(const ProcessSmapsConfig_Scope&) = default;
+ProcessSmapsConfig_Scope& ProcessSmapsConfig_Scope::operator=(const ProcessSmapsConfig_Scope&) = default;
+ProcessSmapsConfig_Scope::ProcessSmapsConfig_Scope(ProcessSmapsConfig_Scope&&) noexcept = default;
+ProcessSmapsConfig_Scope& ProcessSmapsConfig_Scope::operator=(ProcessSmapsConfig_Scope&&) = default;
+
+bool ProcessSmapsConfig_Scope::operator==(const ProcessSmapsConfig_Scope& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(target_cmdline_, other.target_cmdline_)
+   && ::protozero::internal::gen_helpers::EqualsField(target_uid_, other.target_uid_);
+}
+
+int ProcessSmapsConfig_Scope::target_uid_size() const { return static_cast<int>(target_uid_.size()); }
+void ProcessSmapsConfig_Scope::clear_target_uid() { target_uid_.clear(); }
+ProcessSmapsConfig_Scope_UidRange* ProcessSmapsConfig_Scope::add_target_uid() { target_uid_.emplace_back(); return &target_uid_.back(); }
+bool ProcessSmapsConfig_Scope::ParseFromArray(const void* raw, size_t size) {
+  target_cmdline_.clear();
+  target_uid_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        target_cmdline_.emplace_back();
+        ::protozero::internal::gen_helpers::DeserializeString(field, &target_cmdline_.back());
+        break;
+      case 2 :
+        target_uid_.emplace_back();
+        target_uid_.back().ParseFromArray(field.data(), field.size());
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ProcessSmapsConfig_Scope::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ProcessSmapsConfig_Scope::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ProcessSmapsConfig_Scope::Serialize(::protozero::Message* msg) const {
+  
+  for (auto& it : target_cmdline_) {
+    ::protozero::internal::gen_helpers::SerializeString(1, it, msg);
+  }
+
+  
+  for (auto& it : target_uid_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(2));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+ProcessSmapsConfig_Scope_UidRange::ProcessSmapsConfig_Scope_UidRange() = default;
+ProcessSmapsConfig_Scope_UidRange::~ProcessSmapsConfig_Scope_UidRange() = default;
+ProcessSmapsConfig_Scope_UidRange::ProcessSmapsConfig_Scope_UidRange(const ProcessSmapsConfig_Scope_UidRange&) = default;
+ProcessSmapsConfig_Scope_UidRange& ProcessSmapsConfig_Scope_UidRange::operator=(const ProcessSmapsConfig_Scope_UidRange&) = default;
+ProcessSmapsConfig_Scope_UidRange::ProcessSmapsConfig_Scope_UidRange(ProcessSmapsConfig_Scope_UidRange&&) noexcept = default;
+ProcessSmapsConfig_Scope_UidRange& ProcessSmapsConfig_Scope_UidRange::operator=(ProcessSmapsConfig_Scope_UidRange&&) = default;
+
+bool ProcessSmapsConfig_Scope_UidRange::operator==(const ProcessSmapsConfig_Scope_UidRange& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(min_uid_, other.min_uid_)
+   && ::protozero::internal::gen_helpers::EqualsField(max_uid_, other.max_uid_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_match_across_profiles_, other.android_match_across_profiles_);
+}
+
+bool ProcessSmapsConfig_Scope_UidRange::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&min_uid_);
+        break;
+      case 2 :
+        field.get(&max_uid_);
+        break;
+      case 3 :
+        field.get(&android_match_across_profiles_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ProcessSmapsConfig_Scope_UidRange::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ProcessSmapsConfig_Scope_UidRange::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ProcessSmapsConfig_Scope_UidRange::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, min_uid_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, max_uid_, msg);
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, android_match_across_profiles_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
 }  
 }  
 }  
@@ -27790,6 +30803,95 @@ void ChromiumHistogramSamplesConfig_HistogramSample::Serialize(::protozero::Mess
 #endif
 
 
+namespace perfetto {
+namespace protos {
+namespace gen {
+
+ChromiumSamplingHeapProfilerConfig::ChromiumSamplingHeapProfilerConfig() = default;
+ChromiumSamplingHeapProfilerConfig::~ChromiumSamplingHeapProfilerConfig() = default;
+ChromiumSamplingHeapProfilerConfig::ChromiumSamplingHeapProfilerConfig(const ChromiumSamplingHeapProfilerConfig&) = default;
+ChromiumSamplingHeapProfilerConfig& ChromiumSamplingHeapProfilerConfig::operator=(const ChromiumSamplingHeapProfilerConfig&) = default;
+ChromiumSamplingHeapProfilerConfig::ChromiumSamplingHeapProfilerConfig(ChromiumSamplingHeapProfilerConfig&&) noexcept = default;
+ChromiumSamplingHeapProfilerConfig& ChromiumSamplingHeapProfilerConfig::operator=(ChromiumSamplingHeapProfilerConfig&&) = default;
+
+bool ChromiumSamplingHeapProfilerConfig::operator==(const ChromiumSamplingHeapProfilerConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(sampling_interval_bytes_, other.sampling_interval_bytes_)
+   && ::protozero::internal::gen_helpers::EqualsField(sampling_interval_ms_, other.sampling_interval_ms_);
+}
+
+bool ChromiumSamplingHeapProfilerConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&sampling_interval_bytes_);
+        break;
+      case 2 :
+        field.get(&sampling_interval_ms_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ChromiumSamplingHeapProfilerConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ChromiumSamplingHeapProfilerConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ChromiumSamplingHeapProfilerConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, sampling_interval_bytes_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, sampling_interval_ms_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+
+
+
 
 
 
@@ -28488,6 +31590,83 @@ namespace perfetto {
 namespace protos {
 namespace gen {
 
+ChromiumStackSamplingProfilerConfig::ChromiumStackSamplingProfilerConfig() = default;
+ChromiumStackSamplingProfilerConfig::~ChromiumStackSamplingProfilerConfig() = default;
+ChromiumStackSamplingProfilerConfig::ChromiumStackSamplingProfilerConfig(const ChromiumStackSamplingProfilerConfig&) = default;
+ChromiumStackSamplingProfilerConfig& ChromiumStackSamplingProfilerConfig::operator=(const ChromiumStackSamplingProfilerConfig&) = default;
+ChromiumStackSamplingProfilerConfig::ChromiumStackSamplingProfilerConfig(ChromiumStackSamplingProfilerConfig&&) noexcept = default;
+ChromiumStackSamplingProfilerConfig& ChromiumStackSamplingProfilerConfig::operator=(ChromiumStackSamplingProfilerConfig&&) = default;
+
+bool ChromiumStackSamplingProfilerConfig::operator==(const ChromiumStackSamplingProfilerConfig& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(sampling_interval_ms_, other.sampling_interval_ms_);
+}
+
+bool ChromiumStackSamplingProfilerConfig::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&sampling_interval_ms_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string ChromiumStackSamplingProfilerConfig::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> ChromiumStackSamplingProfilerConfig::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void ChromiumStackSamplingProfilerConfig::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, sampling_interval_ms_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+}  
+}  
+}  
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
+
+
+
+
+
+
+
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+
+
+namespace perfetto {
+namespace protos {
+namespace gen {
+
 ChromiumSystemMetricsConfig::ChromiumSystemMetricsConfig() = default;
 ChromiumSystemMetricsConfig::~ChromiumSystemMetricsConfig() = default;
 ChromiumSystemMetricsConfig::ChromiumSystemMetricsConfig(const ChromiumSystemMetricsConfig&) = default;
@@ -28679,6 +31858,8 @@ bool DataSourceConfig::operator==(const DataSourceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(buffer_exhausted_policy_, other.buffer_exhausted_policy_)
    && ::protozero::internal::gen_helpers::EqualsField(priority_boost_, other.priority_boost_)
    && ::protozero::internal::gen_helpers::EqualsField(protovm_config_, other.protovm_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(supports_tracing_v2_, other.supports_tracing_v2_)
+   && ::protozero::internal::gen_helpers::EqualsField(experimental_tracing_v2_, other.experimental_tracing_v2_)
    && ::protozero::internal::gen_helpers::EqualsField(ftrace_config_, other.ftrace_config_)
    && ::protozero::internal::gen_helpers::EqualsField(inode_file_config_, other.inode_file_config_)
    && ::protozero::internal::gen_helpers::EqualsField(process_stats_config_, other.process_stats_config_)
@@ -28721,6 +31902,10 @@ bool DataSourceConfig::operator==(const DataSourceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(android_aflags_config_, other.android_aflags_config_)
    && ::protozero::internal::gen_helpers::EqualsField(journald_config_, other.journald_config_)
    && ::protozero::internal::gen_helpers::EqualsField(display_video_config_, other.display_video_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(chromium_stack_sampling_profiler_, other.chromium_stack_sampling_profiler_)
+   && ::protozero::internal::gen_helpers::EqualsField(chromium_sampling_heap_profiler_, other.chromium_sampling_heap_profiler_)
+   && ::protozero::internal::gen_helpers::EqualsField(android_process_state_config_, other.android_process_state_config_)
+   && ::protozero::internal::gen_helpers::EqualsField(process_smaps_config_, other.process_smaps_config_)
    && ::protozero::internal::gen_helpers::EqualsField(qnx_config_, other.qnx_config_)
    && ::protozero::internal::gen_helpers::EqualsField(legacy_config_, other.legacy_config_)
    && ::protozero::internal::gen_helpers::EqualsField(for_testing_, other.for_testing_);
@@ -28771,6 +31956,12 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
         break;
       case 12 :
         (*protovm_config_).ParseFromArray(field.data(), field.size());
+        break;
+      case 147 :
+        field.get(&supports_tracing_v2_);
+        break;
+      case 148 :
+        (*experimental_tracing_v2_).ParseFromArray(field.data(), field.size());
         break;
       case 100 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &ftrace_config_);
@@ -28898,6 +32089,18 @@ bool DataSourceConfig::ParseFromArray(const void* raw, size_t size) {
       case 142 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &display_video_config_);
         break;
+      case 143 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &chromium_stack_sampling_profiler_);
+        break;
+      case 144 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &chromium_sampling_heap_profiler_);
+        break;
+      case 145 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &android_process_state_config_);
+        break;
+      case 146 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &process_smaps_config_);
+        break;
       case 150 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &qnx_config_);
         break;
@@ -28986,6 +32189,16 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[12]) {
     (*protovm_config_).Serialize(msg->BeginNestedMessage<::protozero::Message>(12));
+  }
+
+  
+  if (_has_field_[147]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(147, supports_tracing_v2_, msg);
+  }
+
+  
+  if (_has_field_[148]) {
+    (*experimental_tracing_v2_).Serialize(msg->BeginNestedMessage<::protozero::Message>(148));
   }
 
   
@@ -29199,6 +32412,26 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   }
 
   
+  if (_has_field_[143]) {
+    msg->AppendString(143, chromium_stack_sampling_profiler_);
+  }
+
+  
+  if (_has_field_[144]) {
+    msg->AppendString(144, chromium_sampling_heap_profiler_);
+  }
+
+  
+  if (_has_field_[145]) {
+    msg->AppendString(145, android_process_state_config_);
+  }
+
+  
+  if (_has_field_[146]) {
+    msg->AppendString(146, process_smaps_config_);
+  }
+
+  
   if (_has_field_[150]) {
     msg->AppendString(150, qnx_config_);
   }
@@ -29211,6 +32444,148 @@ void DataSourceConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[1001]) {
     (*for_testing_).Serialize(msg->BeginNestedMessage<::protozero::Message>(1001));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+DataSourceConfig_ExperimentalTracingV2Config::DataSourceConfig_ExperimentalTracingV2Config() = default;
+DataSourceConfig_ExperimentalTracingV2Config::~DataSourceConfig_ExperimentalTracingV2Config() = default;
+DataSourceConfig_ExperimentalTracingV2Config::DataSourceConfig_ExperimentalTracingV2Config(const DataSourceConfig_ExperimentalTracingV2Config&) = default;
+DataSourceConfig_ExperimentalTracingV2Config& DataSourceConfig_ExperimentalTracingV2Config::operator=(const DataSourceConfig_ExperimentalTracingV2Config&) = default;
+DataSourceConfig_ExperimentalTracingV2Config::DataSourceConfig_ExperimentalTracingV2Config(DataSourceConfig_ExperimentalTracingV2Config&&) noexcept = default;
+DataSourceConfig_ExperimentalTracingV2Config& DataSourceConfig_ExperimentalTracingV2Config::operator=(DataSourceConfig_ExperimentalTracingV2Config&&) = default;
+
+bool DataSourceConfig_ExperimentalTracingV2Config::operator==(const DataSourceConfig_ExperimentalTracingV2Config& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(use_v2_probability_percent_, other.use_v2_probability_percent_)
+   && ::protozero::internal::gen_helpers::EqualsField(chunk_size_options_, other.chunk_size_options_)
+   && ::protozero::internal::gen_helpers::EqualsField(drain_occupancy_percent_, other.drain_occupancy_percent_);
+}
+
+int DataSourceConfig_ExperimentalTracingV2Config::chunk_size_options_size() const { return static_cast<int>(chunk_size_options_.size()); }
+void DataSourceConfig_ExperimentalTracingV2Config::clear_chunk_size_options() { chunk_size_options_.clear(); }
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption* DataSourceConfig_ExperimentalTracingV2Config::add_chunk_size_options() { chunk_size_options_.emplace_back(); return &chunk_size_options_.back(); }
+bool DataSourceConfig_ExperimentalTracingV2Config::ParseFromArray(const void* raw, size_t size) {
+  chunk_size_options_.clear();
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&use_v2_probability_percent_);
+        break;
+      case 2 :
+        chunk_size_options_.emplace_back();
+        chunk_size_options_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 3 :
+        field.get(&drain_occupancy_percent_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string DataSourceConfig_ExperimentalTracingV2Config::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> DataSourceConfig_ExperimentalTracingV2Config::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void DataSourceConfig_ExperimentalTracingV2Config::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, use_v2_probability_percent_, msg);
+  }
+
+  
+  for (auto& it : chunk_size_options_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(2));
+  }
+
+  
+  if (_has_field_[3]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(3, drain_occupancy_percent_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption() = default;
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::~DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption() = default;
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption(const DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption&) = default;
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption& DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::operator=(const DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption&) = default;
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption(DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption&&) noexcept = default;
+DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption& DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::operator=(DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption&&) = default;
+
+bool DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::operator==(const DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(size_bytes_, other.size_bytes_)
+   && ::protozero::internal::gen_helpers::EqualsField(weight_, other.weight_);
+}
+
+bool DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&size_bytes_);
+        break;
+      case 2 :
+        field.get(&weight_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void DataSourceConfig_ExperimentalTracingV2Config_ChunkSizeOption::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, size_bytes_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(2, weight_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -29254,9 +32629,13 @@ bool EtwConfig::operator==(const EtwConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(file_provider_events_, other.file_provider_events_)
    && ::protozero::internal::gen_helpers::EqualsField(stack_sampling_events_, other.stack_sampling_events_)
    && ::protozero::internal::gen_helpers::EqualsField(disk_provider_events_, other.disk_provider_events_)
-   && ::protozero::internal::gen_helpers::EqualsField(system_io_provider_events_, other.system_io_provider_events_);
+   && ::protozero::internal::gen_helpers::EqualsField(system_io_provider_events_, other.system_io_provider_events_)
+   && ::protozero::internal::gen_helpers::EqualsField(stack_sampling_debug_ids_, other.stack_sampling_debug_ids_);
 }
 
+int EtwConfig::stack_sampling_debug_ids_size() const { return static_cast<int>(stack_sampling_debug_ids_.size()); }
+void EtwConfig::clear_stack_sampling_debug_ids() { stack_sampling_debug_ids_.clear(); }
+EtwConfig_DebugId* EtwConfig::add_stack_sampling_debug_ids() { stack_sampling_debug_ids_.emplace_back(); return &stack_sampling_debug_ids_.back(); }
 bool EtwConfig::ParseFromArray(const void* raw, size_t size) {
   kernel_flags_.clear();
   scheduler_provider_events_.clear();
@@ -29265,6 +32644,7 @@ bool EtwConfig::ParseFromArray(const void* raw, size_t size) {
   stack_sampling_events_.clear();
   disk_provider_events_.clear();
   system_io_provider_events_.clear();
+  stack_sampling_debug_ids_.clear();
   unknown_fields_.clear();
   bool packed_error = false;
 
@@ -29301,6 +32681,10 @@ bool EtwConfig::ParseFromArray(const void* raw, size_t size) {
       case 7 :
         system_io_provider_events_.emplace_back();
         ::protozero::internal::gen_helpers::DeserializeString(field, &system_io_provider_events_.back());
+        break;
+      case 8 :
+        stack_sampling_debug_ids_.emplace_back();
+        stack_sampling_debug_ids_.back().ParseFromArray(field.data(), field.size());
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -29356,6 +32740,75 @@ void EtwConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : system_io_provider_events_) {
     ::protozero::internal::gen_helpers::SerializeString(7, it, msg);
+  }
+
+  
+  for (auto& it : stack_sampling_debug_ids_) {
+    it.Serialize(msg->BeginNestedMessage<::protozero::Message>(8));
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+EtwConfig_DebugId::EtwConfig_DebugId() = default;
+EtwConfig_DebugId::~EtwConfig_DebugId() = default;
+EtwConfig_DebugId::EtwConfig_DebugId(const EtwConfig_DebugId&) = default;
+EtwConfig_DebugId& EtwConfig_DebugId::operator=(const EtwConfig_DebugId&) = default;
+EtwConfig_DebugId::EtwConfig_DebugId(EtwConfig_DebugId&&) noexcept = default;
+EtwConfig_DebugId& EtwConfig_DebugId::operator=(EtwConfig_DebugId&&) = default;
+
+bool EtwConfig_DebugId::operator==(const EtwConfig_DebugId& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(path_, other.path_)
+   && ::protozero::internal::gen_helpers::EqualsField(debug_id_, other.debug_id_);
+}
+
+bool EtwConfig_DebugId::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &path_);
+        break;
+      case 2 :
+        ::protozero::internal::gen_helpers::DeserializeString(field, &debug_id_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string EtwConfig_DebugId::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> EtwConfig_DebugId::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void EtwConfig_DebugId::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeString(1, path_, msg);
+  }
+
+  
+  if (_has_field_[2]) {
+    ::protozero::internal::gen_helpers::SerializeString(2, debug_id_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -29465,6 +32918,9 @@ void InterceptorConfig::Serialize(::protozero::Message* msg) const {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
+
+
 
 
 
@@ -30132,6 +33588,9 @@ void TestConfig_DummyFields::Serialize(::protozero::Message* msg) const {
 
 
 
+
+
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -30146,6 +33605,7 @@ TraceConfig& TraceConfig::operator=(TraceConfig&&) = default;
 bool TraceConfig::operator==(const TraceConfig& other) const {
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(buffers_, other.buffers_)
+   && ::protozero::internal::gen_helpers::EqualsField(experimental_trace_buffer_v2_compaction_, other.experimental_trace_buffer_v2_compaction_)
    && ::protozero::internal::gen_helpers::EqualsField(data_sources_, other.data_sources_)
    && ::protozero::internal::gen_helpers::EqualsField(builtin_data_sources_, other.builtin_data_sources_)
    && ::protozero::internal::gen_helpers::EqualsField(duration_ms_, other.duration_ms_)
@@ -30186,7 +33646,8 @@ bool TraceConfig::operator==(const TraceConfig& other) const {
    && ::protozero::internal::gen_helpers::EqualsField(write_flush_mode_, other.write_flush_mode_)
    && ::protozero::internal::gen_helpers::EqualsField(fflush_post_write_, other.fflush_post_write_)
    && ::protozero::internal::gen_helpers::EqualsField(trace_all_machines_, other.trace_all_machines_)
-   && ::protozero::internal::gen_helpers::EqualsField(trace_attributes_, other.trace_attributes_);
+   && ::protozero::internal::gen_helpers::EqualsField(trace_attributes_, other.trace_attributes_)
+   && ::protozero::internal::gen_helpers::EqualsField(persist_trace_across_reboots_, other.persist_trace_across_reboots_);
 }
 
 int TraceConfig::buffers_size() const { return static_cast<int>(buffers_.size()); }
@@ -30219,6 +33680,9 @@ bool TraceConfig::ParseFromArray(const void* raw, size_t size) {
       case 1 :
         buffers_.emplace_back();
         buffers_.back().ParseFromArray(field.data(), field.size());
+        break;
+      case 50 :
+        field.get(&experimental_trace_buffer_v2_compaction_);
         break;
       case 2 :
         data_sources_.emplace_back();
@@ -30347,6 +33811,9 @@ bool TraceConfig::ParseFromArray(const void* raw, size_t size) {
       case 48 :
         (*trace_attributes_).ParseFromArray(field.data(), field.size());
         break;
+      case 49 :
+        field.get(&persist_trace_across_reboots_);
+        break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
         break;
@@ -30371,6 +33838,11 @@ void TraceConfig::Serialize(::protozero::Message* msg) const {
   
   for (auto& it : buffers_) {
     it.Serialize(msg->BeginNestedMessage<::protozero::Message>(1));
+  }
+
+  
+  if (_has_field_[50]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(50, experimental_trace_buffer_v2_compaction_, msg);
   }
 
   
@@ -30576,6 +34048,11 @@ void TraceConfig::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[48]) {
     (*trace_attributes_).Serialize(msg->BeginNestedMessage<::protozero::Message>(48));
+  }
+
+  
+  if (_has_field_[49]) {
+    ::protozero::internal::gen_helpers::SerializeTinyVarInt(49, persist_trace_across_reboots_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -32073,6 +35550,8 @@ void TraceConfig_BufferConfig::Serialize(::protozero::Message* msg) const {
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+
 
 
 
@@ -38613,6 +42092,14 @@ void TrackEvent_InlineCallstack_Frame::Serialize(::protozero::Message* msg) cons
 
 
 
+
+
+
+
+
+
+
+
 namespace perfetto {
 
 
@@ -40518,6 +44005,55 @@ class ClientIdentity;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum ProtocolAbiVersion : uint32_t {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  kProtocolAbiV1 = 1 << 0,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  kProtocolAbiV2 = 1 << 1,
+};
+
+
+
+
+
+
+
 class PERFETTO_EXPORT_COMPONENT ProducerEndpoint {
  public:
   virtual ~ProducerEndpoint();
@@ -40562,8 +44098,66 @@ class PERFETTO_EXPORT_COMPONENT ProducerEndpoint {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void InitializeV2RingBuffer(const DataSourceConfig& config);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void AttachV2RingBuffer(const std::shared_ptr<SharedMemory>& memory,
+                                  uint32_t chunk_size_bytes,
+                                  std::function<void(bool)> callback);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void DrainV2RingBuffer();
+
+  
+  
   virtual size_t shared_buffer_page_size_kb() const = 0;
 
+  
+  
+  
+  
+  
   
   
   
@@ -40578,6 +44172,15 @@ class PERFETTO_EXPORT_COMPONENT ProducerEndpoint {
   virtual std::unique_ptr<TraceWriter> CreateTraceWriter(
       BufferID target_buffer,
       BufferExhaustedPolicy buffer_exhausted_policy) = 0;
+
+  
+  
+  
+  
+  
+  virtual std::unique_ptr<TraceWriter> CreateTraceWriterV2(
+      BufferID,
+      BufferExhaustedPolicy);
 
   
 
@@ -40827,6 +44430,8 @@ class PERFETTO_EXPORT_COMPONENT TracingService {
   
   static constexpr size_t kDefaultShmPageSize = 4096ul;
   static constexpr size_t kDefaultShmSize = 256 * 1024ul;
+  
+  static constexpr size_t kMaxShmSize = 32 * 1024 * 1024ul;
 
   enum class ProducerSMBScrapingMode {
     
@@ -40890,6 +44495,10 @@ class PERFETTO_EXPORT_COMPONENT TracingService {
   
   
   
+  
+  
+  
+  
   virtual std::unique_ptr<ProducerEndpoint> ConnectProducer(
       Producer*,
       const ClientIdentity& client_identity,
@@ -40901,7 +44510,8 @@ class PERFETTO_EXPORT_COMPONENT TracingService {
       size_t shared_memory_page_size_hint_bytes = 0,
       std::unique_ptr<SharedMemory> shm = nullptr,
       const std::string& sdk_version = {},
-      const std::string& machine_name = {}) = 0;
+      const std::string& machine_name = {},
+      uint32_t protocol_abi_versions = kProtocolAbiV1) = 0;
 
   
   
@@ -41119,6 +44729,23 @@ class PERFETTO_EXPORT_COMPONENT SharedMemoryArbiter {
   
   
   virtual bool TryShutdown() = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual WriterID AllocateTracingV2WriterID() = 0;
+  
+  
+  virtual void ReleaseTracingV2WriterID(WriterID) = 0;
 
   
   
@@ -41409,6 +45036,8 @@ class SharedMemoryArbiterImpl : public SharedMemoryArbiter {
   void ScrapeEmulatedSharedMemoryBuffer(
       const std::map<WriterID, BufferID>& buffer_for_writers) override;
   bool TryShutdown() override;
+  WriterID AllocateTracingV2WriterID() override;
+  void ReleaseTracingV2WriterID(WriterID) override;
 
   base::TaskRunner* task_runner() const { return task_runner_; }
   size_t page_size() const { return shmem_abi_.page_size(); }
@@ -42421,6 +46050,12 @@ bool SharedMemoryArbiterImpl::TryDirectPatchLocked(
   for (auto ctm_it = chunks_to_move.rbegin(); ctm_it != chunks_to_move.rend();
        ++ctm_it) {
     uint32_t header_bitmap = shmem_abi_.GetPageHeaderBitmap(ctm_it->page());
+    
+    
+    if (ctm_it->chunk() >=
+        SharedMemoryABI::GetNumChunksFromHeaderBitmap(header_bitmap)) {
+      continue;
+    }
     auto chunk_state = shmem_abi_.GetChunkStateFromHeaderBitmap(
         header_bitmap, ctm_it->chunk());
     
@@ -42552,6 +46187,12 @@ void SharedMemoryArbiterImpl::FlushPendingCommitDataRequests(
       
       for (auto& ctm : *commit_data_req_->mutable_chunks_to_move()) {
         uint32_t header_bitmap = shmem_abi_.GetPageHeaderBitmap(ctm.page());
+        
+        
+        if (ctm.chunk() >=
+            SharedMemoryABI::GetNumChunksFromHeaderBitmap(header_bitmap)) {
+          continue;
+        }
         auto chunk_state = shmem_abi_.GetChunkStateFromHeaderBitmap(
             header_bitmap, ctm.chunk());
         
@@ -43019,6 +46660,16 @@ std::unique_ptr<TraceWriter> SharedMemoryArbiterImpl::CreateTraceWriterInternal(
 
   return std::unique_ptr<TraceWriter>(
       new TraceWriterImpl(this, id, target_buffer, buffer_exhausted_policy));
+}
+
+WriterID SharedMemoryArbiterImpl::AllocateTracingV2WriterID() {
+  std::lock_guard<base::MaybeRtMutex> lock(lock_);
+  return did_shutdown_ ? 0 : active_writer_ids_.Allocate();
+}
+
+void SharedMemoryArbiterImpl::ReleaseTracingV2WriterID(WriterID id) {
+  std::lock_guard<base::MaybeRtMutex> lock(lock_);
+  active_writer_ids_.Free(id);
 }
 
 void SharedMemoryArbiterImpl::ReleaseWriterID(WriterID id) {
@@ -43984,6 +47635,8 @@ class PERFETTO_EXPORT_COMPONENT Producer {
 
 
 
+
+
 namespace perfetto {
 
 Consumer::~Consumer() = default;
@@ -43998,6 +47651,26 @@ SharedMemoryArbiter::~SharedMemoryArbiter() = default;
 
 
 void Consumer::OnSessionCloned(const OnSessionClonedArgs&) {}
+
+
+void ProducerEndpoint::InitializeV2RingBuffer(const DataSourceConfig&) {}
+
+
+void ProducerEndpoint::AttachV2RingBuffer(const std::shared_ptr<SharedMemory>&,
+                                          uint32_t,
+                                          std::function<void(bool)> callback) {
+  callback(false);
+}
+
+
+void ProducerEndpoint::DrainV2RingBuffer() {}
+
+
+std::unique_ptr<TraceWriter> ProducerEndpoint::CreateTraceWriterV2(
+    BufferID,
+    BufferExhaustedPolicy) {
+  return std::make_unique<NullTraceWriter>();
+}
 
 }  
 
@@ -44522,6 +48195,7 @@ bool DataSourceBase::CanAdoptStartupSession(
   DataSourceConfig service_config_stripped = service_config;
 
   startup_config_stripped.set_target_buffer(0);
+  startup_config_stripped.set_supports_tracing_v2(false);
   startup_config_stripped.set_tracing_session_id(0);
   startup_config_stripped.set_session_initiator(
       DataSourceConfig::SESSION_INITIATOR_UNSPECIFIED);
@@ -44530,6 +48204,7 @@ bool DataSourceBase::CanAdoptStartupSession(
   startup_config_stripped.set_enable_extra_guardrails(false);
 
   service_config_stripped.set_target_buffer(0);
+  service_config_stripped.set_supports_tracing_v2(false);
   service_config_stripped.set_tracing_session_id(0);
   service_config_stripped.set_session_initiator(
       DataSourceConfig::SESSION_INITIATOR_UNSPECIFIED);
@@ -45968,6 +49643,7 @@ class TracingMuxerImpl : public TracingMuxer {
   void InitializeConsumer(TracingSessionGlobalID session_id);
   void OnConsumerDisconnected(ConsumerImpl* consumer);
   void OnProducerDisconnected(ProducerImpl* producer);
+  void DestroyAllTraceWritersForCurrentThread();
   
   void SweepDeadBackends();
 
@@ -46138,6 +49814,7 @@ class TracingMuxerImpl : public TracingMuxer {
 #include <mutex>
 #include <optional>
 #include <vector>
+
 
 
 
@@ -47529,6 +51206,22 @@ TracingMuxerImpl::FindDataSourceRes TracingMuxerImpl::SetupDataSourceImpl(
 
     
     
+    
+    internal_state->use_tracing_v2 =
+        !startup_session_id && !internal_state->interceptor_id &&
+        rds.params.supports_tracing_v2 && cfg.supports_tracing_v2();
+    const uint32_t probability =
+        cfg.experimental_tracing_v2().use_v2_probability_percent();
+    if (internal_state->use_tracing_v2 && probability < 100) {
+      internal_state->use_tracing_v2 =
+          static_cast<uint64_t>(base::Uuidv4().lsb()) % 100 < probability;
+    }
+    
+    if (internal_state->use_tracing_v2)
+      backend.producer->service_->InitializeV2RingBuffer(cfg);
+
+    
+    
     static_state.valid_instances.fetch_or(1 << i, std::memory_order_release);
 
     DataSourceBase::SetupArgs setup_args;
@@ -47957,6 +51650,23 @@ void TracingMuxerImpl::SyncProducersForTesting() {
     cv.wait(lock, [&done] { return done; });
   }
   PERFETTO_DCHECK(all_producers_connected);
+}
+
+void TracingMuxerImpl::DestroyAllTraceWritersForCurrentThread() {
+  
+  
+  auto* root_tls = GetOrCreateTracingTLS();
+  auto destroy_all_instances = [](DataSourceThreadLocalState& tls) {
+    for (auto& ds_tls : tls.per_instance) {
+      ds_tls.Reset();
+    }
+  };
+  for (auto& tls : root_tls->data_sources_tls)
+    destroy_all_instances(tls);
+  destroy_all_instances(root_tls->track_event_tls);
+  
+  
+  
 }
 
 void TracingMuxerImpl::DestroyStoppedTraceWritersForCurrentThread() {
@@ -48496,8 +52206,12 @@ std::unique_ptr<TraceWriterBase> TracingMuxerImpl::CreateTraceWriter(
     return service->MaybeSharedMemoryArbiter()->CreateStartupTraceWriter(
         startup_buffer_reservation);
   }
-  return service->CreateTraceWriter(data_source->buffer_id,
-                                    buffer_exhausted_policy);
+
+  return data_source->use_tracing_v2
+             ? service->CreateTraceWriterV2(data_source->buffer_id,
+                                            buffer_exhausted_policy)
+             : service->CreateTraceWriter(data_source->buffer_id,
+                                          buffer_exhausted_policy);
 }
 
 
@@ -48653,7 +52367,7 @@ TracingMuxerImpl::CreateStartupTracingSession(
               "Setting up data source %s for startup tracing with target "
               "buffer reservation %" PRIi32,
               rds.descriptor.name().c_str(),
-              backend.producer->last_startup_target_buffer_reservation_ + 1u);
+              backend.producer->last_startup_target_buffer_reservation_ + 1);
           auto ds = SetupDataSourceImpl(
               rds, backend_id,
               backend.producer->connection_id_.load(std::memory_order_relaxed),
@@ -48910,7 +52624,10 @@ void TracingMuxerImpl::Shutdown() {
 
   
   PERFETTO_CHECK(!muxer->task_runner_->RunsTasksOnCurrentThread());
-  muxer->DestroyStoppedTraceWritersForCurrentThread();
+  
+  
+  
+  muxer->DestroyAllTraceWritersForCurrentThread();
 
   std::unique_ptr<base::TaskRunner> owned_task_runner(
       muxer->task_runner_.get());
@@ -48927,8 +52644,7 @@ void TracingMuxerImpl::Shutdown() {
     }
     
     
-    
-    muxer->DestroyStoppedTraceWritersForCurrentThread();
+    muxer->DestroyAllTraceWritersForCurrentThread();
     
     
     muxer->task_runner_.release();
@@ -51411,6 +55127,10 @@ enum class PerfettoStatsdAtom {
   kOnTracingDisabled = 4,
   kFinalizeTraceAndExit = 11,
   kCmdFwReportBegin = 49,
+  kRebootTraceRecovered = 66,
+  kRebootTraceUploadTimeout = 67,
+  kRebootTraceUploadLeftover = 68,
+  kRebootTraceParseFailed = 69,
   
   kUploadIncidentBegin = 8,
   kNotUploadingEmptyTrace = 17,
@@ -52271,10 +55991,9 @@ class RegexStd {
 
 
 
-
 #if defined(PERFETTO_REGEX_FORCE_STD)
 #define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexStd
-#elif PERFETTO_BUILDFLAG(PERFETTO_PCRE2) && PERFETTO_FLAGS_USE_PCRE2
+#elif PERFETTO_BUILDFLAG(PERFETTO_PCRE2)
 #define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexPcre2
 #elif PERFETTO_BUILDFLAG(PERFETTO_RE2)
 #define PERFETTO_REGEX_BACKEND ::perfetto::base::RegexRe2
@@ -52535,8 +56254,8 @@ const char* GetVersionCode();
 #ifndef GEN_PERFETTO_VERSION_GEN_H_
 #define GEN_PERFETTO_VERSION_GEN_H_
 
-#define PERFETTO_VERSION_STRING() "v58.2-add693d8b"
-#define PERFETTO_VERSION_SCM_REVISION() "add693d8b338ba9599dbcbc3e300b1ab8c000897"
+#define PERFETTO_VERSION_STRING() "v59.1-1e9c61e98"
+#define PERFETTO_VERSION_SCM_REVISION() "1e9c61e9844affd7dccd3d42d9ea9f3a3d10cf6d"
 
 #endif  
 
@@ -53095,1613 +56814,6 @@ struct Node {
 
 #endif  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_HASH_H_
-#define INCLUDE_PERFETTO_EXT_BASE_HASH_H_
-
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <optional>
-#include <tuple>
-#include <utility>
-
-namespace perfetto::base {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename H, typename T>
-H PerfettoHashValue(H h, const std::optional<T>& value) {
-  if (value.has_value()) {
-    return H::Combine(H::Combine(std::move(h), true), *value);
-  }
-  return H::Combine(std::move(h), false, 0);
-}
-
-
-template <typename H, typename T1, typename T2>
-H PerfettoHashValue(H h, const std::pair<T1, T2>& value) {
-  return H::Combine(std::move(h), value.first, value.second);
-}
-
-
-template <typename H, typename... Ts>
-H PerfettoHashValue(H h, const std::tuple<Ts...>& value) {
-  return std::apply(
-      [&h](const auto&... elements) {
-        return H::Combine(std::move(h), elements...);
-      },
-      value);
-}
-
-
-template <typename H, typename T>
-H PerfettoHashValue(H h, const std::unique_ptr<T>& ptr) {
-  return H::Combine(std::move(h), ptr.get());
-}
-template <typename H, typename T>
-H PerfettoHashValue(H h, const std::shared_ptr<T>& ptr) {
-  return H::Combine(std::move(h), ptr.get());
-}
-
-
-
-
-template <typename T>
-struct AlreadyHashed {
-  size_t operator()(const T& x) const { return static_cast<size_t>(x); }
-};
-
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_MURMUR_HASH_H_
-#define INCLUDE_PERFETTO_EXT_BASE_MURMUR_HASH_H_
-
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
-#include <limits>
-#include <string>
-#include <string_view>
-#include <type_traits>
-#include <utility>
-
-
-
-
-
-
-
-
-
-
-
-#if PERFETTO_HAS_BUILTIN(__builtin_isnan)
-#define PERFETTO_IS_NAN(x) __builtin_isnan(x)
-#else
-#include <cmath>
-#define PERFETTO_IS_NAN(x) std::isnan(x)
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace perfetto::base {
-
-namespace murmur_internal {
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline uint64_t MurmurHashMix(uint64_t h) {
-  h ^= h >> 33;
-  h *= 0xff51afd7ed558ccdULL;
-  h ^= h >> 33;
-  h *= 0xc4ceb9fe1a85ec53ULL;
-  h ^= h >> 33;
-  return h;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-inline uint64_t MurmurHashBytes(const void* input, size_t len) {
-  
-  
-  
-  
-  static constexpr uint64_t kSeed = 0xe17a1465U;
-  static constexpr uint64_t kMulConstant = 0xc6a4a7935bd1e995;
-  static constexpr int kShift = 47;
-
-  uint64_t h = kSeed ^ (len * kMulConstant);
-  const auto* data = static_cast<const uint8_t*>(input);
-  const size_t num_blocks = len / 8;
-
-  
-  for (size_t i = 0; i < num_blocks; ++i) {
-    uint64_t k;
-    memcpy(&k, data, sizeof(k));
-    data += sizeof(k);  
-
-    k *= kMulConstant;
-    k ^= k >> kShift;
-    k *= kMulConstant;
-
-    h ^= k;
-    h *= kMulConstant;
-  }
-
-  
-  
-  switch (len & 7) {
-    case 7:
-      h ^= static_cast<uint64_t>(data[6]) << 48;
-      [[fallthrough]];
-    case 6:
-      h ^= static_cast<uint64_t>(data[5]) << 40;
-      [[fallthrough]];
-    case 5:
-      h ^= static_cast<uint64_t>(data[4]) << 32;
-      [[fallthrough]];
-    case 4:
-      h ^= static_cast<uint64_t>(data[3]) << 24;
-      [[fallthrough]];
-    case 3:
-      h ^= static_cast<uint64_t>(data[2]) << 16;
-      [[fallthrough]];
-    case 2:
-      h ^= static_cast<uint64_t>(data[1]) << 8;
-      [[fallthrough]];
-    case 1:
-      h ^= static_cast<uint64_t>(data[0]);
-      h *= kMulConstant;
-  }
-
-  
-  h ^= h >> kShift;
-  h *= kMulConstant;
-  h ^= h >> kShift;
-
-  return h;
-}
-
-template <typename Float, typename Int>
-Int NormalizeFloatToInt(Float value) {
-  static_assert(std::is_floating_point_v<Float>);
-  static_assert(std::is_integral_v<Int>);
-
-  
-  if (PERFETTO_UNLIKELY(value == 0.0)) {
-    
-    value = 0.0;
-  } else if (PERFETTO_UNLIKELY(PERFETTO_IS_NAN(value))) {
-    
-    value = std::numeric_limits<Float>::quiet_NaN();
-  }
-  Int res;
-  static_assert(sizeof(Float) == sizeof(Int));
-  memcpy(&res, &value, sizeof(Float));
-  return res;
-}
-
-
-
-
-
-
-
-
-template <typename T>
-auto MurmurHashBuiltinValue(const T& value) {
-  if constexpr (std::is_enum_v<T>) {
-    return murmur_internal::MurmurHashMix(
-        static_cast<uint64_t>(static_cast<std::underlying_type_t<T>>(value)));
-  } else if constexpr (std::is_integral_v<T>) {
-    return murmur_internal::MurmurHashMix(static_cast<uint64_t>(value));
-  } else if constexpr (std::is_same_v<T, double>) {
-    return murmur_internal::MurmurHashMix(
-        murmur_internal::NormalizeFloatToInt<double, uint64_t>(value));
-  } else if constexpr (std::is_same_v<T, float>) {
-    return murmur_internal::MurmurHashMix(
-        murmur_internal::NormalizeFloatToInt<float, uint32_t>(value));
-  } else if constexpr (std::is_same_v<T, std::string> ||
-                       std::is_same_v<T, std::string_view> ||
-                       std::is_same_v<T, base::StringView>) {
-    return murmur_internal::MurmurHashBytes(value.data(), value.size());
-  } else if constexpr (std::is_same_v<T, const char*>) {
-    std::string_view view(value);
-    return murmur_internal::MurmurHashBytes(view.data(), view.size());
-  } else if constexpr (std::is_pointer_v<T>) {
-    return murmur_internal::MurmurHashMix(
-        static_cast<uint64_t>(reinterpret_cast<uintptr_t>(value)));
-  } else {
-    struct InvalidBuiltin {};
-    return InvalidBuiltin{};
-  }
-}
-
-
-template <typename T>
-constexpr bool HasMurmurHashBuiltinValue() {
-  return std::is_same_v<decltype(MurmurHashBuiltinValue(std::declval<T>())),
-                        uint64_t>;
-}
-
-
-template <typename T, typename U>
-constexpr bool IsConvertibleIntegral() {
-  return std::is_integral_v<T> && std::is_integral_v<U> &&
-         std::is_convertible_v<U, T>;
-}
-
-
-
-template <typename T>
-constexpr bool IsStringLike() {
-  return std::is_same_v<T, std::string> ||
-         std::is_same_v<T, std::string_view> ||
-         std::is_same_v<T, base::StringView> || std::is_same_v<T, const char*>;
-}
-
-
-
-template <typename T, typename U>
-constexpr bool AllowsHeterogeneousLookup() {
-  return IsConvertibleIntegral<T, U>() ||
-         (IsStringLike<T>() && IsStringLike<U>());
-}
-
-
-
-
-template <typename... Args>
-constexpr bool HasPointerV = (std::is_pointer_v<Args> || ...);
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class MurmurHashCombiner {
- public:
-  MurmurHashCombiner() = default;
-
-  
-  
-  template <typename... Args>
-  static MurmurHashCombiner Combine(MurmurHashCombiner h, const Args&... args) {
-    h.Combine(args...);
-    return h;
-  }
-
-  
-  
-  
-  template <typename... Args>
-  void Combine(const Args&... args) {
-    static_assert(!murmur_internal::HasPointerV<Args...>,
-                  "MurmurHashCombiner::Combine() does not support pointers. "
-                  "If you want to hash the contents of a memory range, use a "
-                  "single hashable object (e.g., std::string_view). If you "
-                  "want to hash a pointer address, cast it to uintptr_t.");
-    
-    (CombineOne(args), ...);
-  }
-
-  
-  uint64_t digest() const { return hash_; }
-
- private:
-  
-  template <typename T>
-  void CombineOne(const T& value) {
-    if constexpr (murmur_internal::HasMurmurHashBuiltinValue<T>()) {
-      Update(murmur_internal::MurmurHashBuiltinValue(value));
-    } else {
-      
-      
-      
-      hash_ = PerfettoHashValue(std::move(*this), value).digest();
-    }
-  }
-
-  
-  
-  
-  void Update(uint64_t piece_hash) {
-    hash_ ^= piece_hash + 0x9e3779b9 + (hash_ << 6) + (hash_ >> 2);
-  }
-
-  static constexpr uint64_t kSeed = 0xe17a1465U;
-  uint64_t hash_ = kSeed;
-};
-
-
-
-template <typename... Args>
-uint64_t MurmurHashCombine(const Args&... value) {
-  return MurmurHashCombiner::Combine(MurmurHashCombiner{}, value...).digest();
-}
-
-
-
-
-
-
-
-template <typename T>
-uint64_t MurmurHashValue(const T& value) {
-  if constexpr (murmur_internal::HasMurmurHashBuiltinValue<T>()) {
-    return murmur_internal::MurmurHashBuiltinValue(value);
-  } else {
-    return MurmurHashCombine(value);
-  }
-}
-
-
-
-template <typename T>
-struct MurmurHash {
-  using is_transparent = void;
-
-  uint64_t operator()(const T& value) const { return MurmurHashValue(value); }
-
-  
-  
-  template <typename U>
-  auto operator()(const U& value) const
-      -> std::enable_if_t<murmur_internal::AllowsHeterogeneousLookup<T, U>(),
-                          uint64_t> {
-    return MurmurHashValue(value);
-  }
-};
-
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_V1_H_
-#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_V1_H_
-
-
-
-
-
-
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
-#include <limits>
-#include <memory>
-#include <type_traits>
-#include <utility>
-
-namespace perfetto::base {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-struct LinearProbe {
-  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
-    return (key_hash + step) & (capacity - 1);  
-  }
-};
-
-
-
-
-
-struct QuadraticProbe {
-  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
-    return (key_hash + 2 * step * step + step) & (capacity - 1);
-  }
-};
-
-
-
-
-
-struct QuadraticHalfProbe {
-  static inline size_t Calc(size_t key_hash, size_t step, size_t capacity) {
-    return (key_hash + (step * step + step) / 2) & (capacity - 1);
-  }
-};
-
-
-struct FlatHashMapV1Base {
- public:
-  
-  template <typename, typename = void>
-  struct HasIsTransparent : std::false_type {};
-
-  template <typename H>
-  struct HasIsTransparent<H, std::void_t<typename H::is_transparent>>
-      : std::true_type {};
-
-  
-  
-  
-  
-  
-  template <typename K, typename Key, typename Hasher>
-  static constexpr bool IsLookupKeyAllowed() {
-    if constexpr (HasIsTransparent<Hasher>::value) {
-      return std::is_invocable_v<Hasher, const K&> &&
-             std::is_same_v<decltype(std::declval<const Key&>() ==
-                                     std::declval<const K&>()),
-                            bool>;
-    } else if constexpr (std::is_convertible_v<K, Key>) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-};
-
-template <typename Key,
-          typename Value,
-          typename Hasher = base::MurmurHash<Key>,
-          typename Probe = QuadraticProbe,
-          bool AppendOnly = false>
-class FlatHashMapV1 : protected FlatHashMapV1Base {
- public:
-  class Iterator {
-   public:
-    explicit Iterator(const FlatHashMapV1* map) : map_(map) {
-      FindNextNonFree();
-    }
-    ~Iterator() = default;
-    Iterator(const Iterator&) = default;
-    Iterator& operator=(const Iterator&) = default;
-    Iterator(Iterator&&) noexcept = default;
-    Iterator& operator=(Iterator&&) noexcept = default;
-
-    Key& key() { return map_->keys_[idx_]; }
-    Value& value() { return map_->values_[idx_]; }
-    const Key& key() const { return map_->keys_[idx_]; }
-    const Value& value() const { return map_->values_[idx_]; }
-
-    explicit operator bool() const { return idx_ != kEnd; }
-    Iterator& operator++() {
-      PERFETTO_DCHECK(idx_ < map_->capacity_);
-      ++idx_;
-      FindNextNonFree();
-      return *this;
-    }
-
-   private:
-    static constexpr size_t kEnd = std::numeric_limits<size_t>::max();
-
-    void FindNextNonFree() {
-      const auto& tags = map_->tags_;
-      for (; idx_ < map_->capacity_; idx_++) {
-        if (tags[idx_] != kFreeSlot && (AppendOnly || tags[idx_] != kTombstone))
-          return;
-      }
-      idx_ = kEnd;
-    }
-
-    const FlatHashMapV1* map_ = nullptr;
-    size_t idx_ = 0;
-  };  
-  static constexpr int kDefaultLoadLimitPct = 75;
-  explicit FlatHashMapV1(size_t initial_capacity = 0,
-                         int load_limit_pct = kDefaultLoadLimitPct)
-      : load_limit_percent_(load_limit_pct) {
-    if (initial_capacity > 0)
-      Reset(initial_capacity, true);
-  }
-
-  
-  
-  ~FlatHashMapV1() { Clear(); }
-
-  FlatHashMapV1(FlatHashMapV1&& other) noexcept {
-    tags_ = std::move(other.tags_);
-    keys_ = std::move(other.keys_);
-    values_ = std::move(other.values_);
-    capacity_ = other.capacity_;
-    size_ = other.size_;
-    tombstones_ = other.tombstones_;
-    max_probe_length_ = other.max_probe_length_;
-    load_limit_ = other.load_limit_;
-    load_limit_percent_ = other.load_limit_percent_;
-
-    new (&other) FlatHashMapV1();
-  }
-
-  FlatHashMapV1& operator=(FlatHashMapV1&& other) noexcept {
-    this->~FlatHashMapV1();
-    new (this) FlatHashMapV1(std::move(other));
-    return *this;
-  }
-
-  FlatHashMapV1(const FlatHashMapV1&) = delete;
-  FlatHashMapV1& operator=(const FlatHashMapV1&) = delete;
-
-  std::pair<Value*, bool> Insert(Key key, Value value) {
-    const size_t key_hash = Hasher{}(key);
-    const uint8_t tag = HashToTag(key_hash);
-    static constexpr size_t kSlotNotFound = std::numeric_limits<size_t>::max();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    size_t insertion_slot;
-    size_t probe_len;
-    for (;;) {
-      PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
-      insertion_slot = kSlotNotFound;
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      for (probe_len = 0; probe_len < capacity_;) {
-        const size_t idx = Probe::Calc(key_hash, probe_len, capacity_);
-        PERFETTO_DCHECK(idx < capacity_);
-        const uint8_t tag_idx = tags_[idx];
-        ++probe_len;
-        if (tag_idx == kFreeSlot) {
-          
-          
-          
-          if (AppendOnly || insertion_slot == kSlotNotFound)
-            insertion_slot = idx;
-          break;
-        }
-        
-        PERFETTO_DCHECK(!(tag_idx == kTombstone && AppendOnly));
-        if (!AppendOnly && tag_idx == kTombstone) {
-          insertion_slot = idx;
-          continue;
-        }
-        if (tag_idx == tag && keys_[idx] == key) {
-          
-          return std::make_pair(&values_[idx], false);
-        }
-      }  
-
-      
-      
-      
-      if (PERFETTO_UNLIKELY(size_ >= load_limit_)) {
-        MaybeGrowAndRehash(true);
-        continue;
-      }
-      
-      
-      
-      bool is_many_tombstones = tombstones_ > size_ && size_ > 128;
-      bool is_tombstones_plus_size_too_high = tombstones_ + size_ > load_limit_;
-      if (PERFETTO_UNLIKELY(is_many_tombstones ||
-                            is_tombstones_plus_size_too_high)) {
-        MaybeGrowAndRehash(false);
-        continue;
-      }
-      PERFETTO_DCHECK(insertion_slot != kSlotNotFound);
-      break;
-    }  
-
-    PERFETTO_CHECK(insertion_slot < capacity_);
-
-    
-    if (tags_[insertion_slot] == kTombstone) {
-      PERFETTO_DCHECK(tombstones_ > 0);
-      tombstones_--;
-    }
-    Value* value_idx = &values_[insertion_slot];
-    new (&keys_[insertion_slot]) Key(std::move(key));
-    new (value_idx) Value(std::move(value));
-    tags_[insertion_slot] = tag;
-    PERFETTO_DCHECK(probe_len > 0 && probe_len <= capacity_);
-    max_probe_length_ = std::max(max_probe_length_, probe_len);
-    size_++;
-
-    return std::make_pair(value_idx, true);
-  }
-
-  template <typename K = Key>
-  Value* Find(const K& key) const {
-    const size_t idx = FindInternal(key);
-    if (idx == kNotFound)
-      return nullptr;
-    return &values_[idx];
-  }
-
-  template <typename K = Key>
-  bool Erase(const K& key) {
-    if (AppendOnly)
-      PERFETTO_FATAL("Erase() not supported because AppendOnly=true");
-    size_t idx = FindInternal(key);
-    if (idx == kNotFound)
-      return false;
-    EraseInternal(idx);
-    return true;
-  }
-
-  void Clear() {
-    
-    if (PERFETTO_UNLIKELY(capacity_ == 0))
-      return;
-
-    for (size_t i = 0; i < capacity_; ++i) {
-      const uint8_t tag = tags_[i];
-      if (tag != kFreeSlot && (AppendOnly || tag != kTombstone)) {
-        keys_[i].~Key();
-        values_[i].~Value();
-      }
-    }
-    Reset(capacity_, false);
-  }
-
-  Value& operator[](Key key) {
-    auto it_and_inserted = Insert(std::move(key), Value{});
-    return *it_and_inserted.first;
-  }
-
-  Iterator GetIterator() { return Iterator(this); }
-  const Iterator GetIterator() const { return Iterator(this); }
-
-  size_t size() const { return size_; }
-  size_t capacity() const { return capacity_; }
-
-  
-  
- protected:
-  enum ReservedTags : uint8_t { kFreeSlot = 0, kTombstone = 1 };
-  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max();
-
-  template <typename K = Key>
-  size_t FindInternal(const K& key) const {
-    static_assert(
-        IsLookupKeyAllowed<K, Key, Hasher>(),
-        "Heterogeneous lookup requires Hasher to define is_transparent and "
-        "support hashing the lookup key type. For same-type lookup, Key and K "
-        "must match exactly.");
-    const size_t key_hash = Hasher{}(key);
-    const uint8_t tag = HashToTag(key_hash);
-    PERFETTO_DCHECK((capacity_ & (capacity_ - 1)) == 0);  
-    PERFETTO_DCHECK(max_probe_length_ <= capacity_);
-    for (size_t i = 0; i < max_probe_length_; ++i) {
-      const size_t idx = Probe::Calc(key_hash, i, capacity_);
-      const uint8_t tag_idx = tags_[idx];
-
-      if (tag_idx == kFreeSlot)
-        return kNotFound;
-      
-      
-      if (tag_idx == tag && keys_[idx] == key) {
-        PERFETTO_DCHECK(tag_idx > kTombstone);
-        return idx;
-      }
-    }  
-    return kNotFound;
-  }
-
-  void EraseInternal(size_t idx) {
-    PERFETTO_DCHECK(tags_[idx] > kTombstone);
-    PERFETTO_DCHECK(size_ > 0);
-    tags_[idx] = kTombstone;
-    keys_[idx].~Key();
-    values_[idx].~Value();
-    size_--;
-    tombstones_++;
-    PERFETTO_DCHECK(size_ + tombstones_ <= capacity_);
-  }
-
-  PERFETTO_NO_INLINE void MaybeGrowAndRehash(bool grow) {
-    PERFETTO_DCHECK(size_ <= capacity_);
-    const size_t old_capacity = capacity_;
-
-    
-    const size_t old_size_bytes = old_capacity * (sizeof(Key) + sizeof(Value));
-    const size_t grow_factor = old_size_bytes < (1024u * 1024u) ? 8 : 2;
-    const size_t new_capacity =
-        grow ? std::max(old_capacity * grow_factor, size_t(1024))
-             : old_capacity;
-
-    auto old_tags(std::move(tags_));
-    auto old_keys(std::move(keys_));
-    auto old_values(std::move(values_));
-    size_t old_size = size_;
-
-    
-    
-    PERFETTO_CHECK(new_capacity >= old_capacity);
-    Reset(new_capacity, true);
-
-    size_t new_size = 0;  
-    for (size_t i = 0; i < old_capacity; ++i) {
-      const uint8_t old_tag = old_tags[i];
-      if (old_tag != kFreeSlot && old_tag != kTombstone) {
-        Insert(std::move(old_keys[i]), std::move(old_values[i]));
-        old_keys[i].~Key();  
-        old_values[i].~Value();
-        new_size++;
-      }
-    }
-    PERFETTO_DCHECK(new_size == old_size);
-    PERFETTO_DCHECK(tombstones_ == 0);
-    size_ = new_size;
-  }
-
-  
-  PERFETTO_NO_INLINE void Reset(size_t n, bool reallocate) {
-    PERFETTO_DCHECK((n & (n - 1)) == 0);  
-
-    capacity_ = n;
-    max_probe_length_ = 0;
-    size_ = 0;
-    tombstones_ = 0;
-    load_limit_ = n * static_cast<size_t>(load_limit_percent_) / 100;
-    load_limit_ = std::min(load_limit_, n);
-
-    if (reallocate) {
-      tags_.reset(new uint8_t[n]);
-      keys_ = AlignedAllocTyped<Key[]>(n);  
-      values_ =
-          AlignedAllocTyped<Value[]>(n);  
-    }
-
-    
-    if (tags_) {
-      memset(&tags_[0], 0, n);  
-    }
-  }
-
-  static inline uint8_t HashToTag(size_t full_hash) {
-    uint8_t tag = full_hash >> (sizeof(full_hash) * 8 - 8);
-    
-    tag += (tag <= kTombstone) << 1;
-    PERFETTO_DCHECK(tag > kTombstone);
-    return tag;
-  }
-
-  size_t capacity_ = 0;
-  size_t size_ = 0;
-  size_t tombstones_ = 0;
-  size_t max_probe_length_ = 0;
-  size_t load_limit_ = 0;  
-  int load_limit_percent_ =
-      kDefaultLoadLimitPct;  
-
-  
-  
-  std::unique_ptr<uint8_t[]> tags_;
-  AlignedUniquePtr<Key[]> keys_;
-  AlignedUniquePtr<Value[]> values_;
-};
-
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
-#define INCLUDE_PERFETTO_EXT_BASE_FLAT_HASH_MAP_H_
-
-
-
-
-
-
-
-
-
-
-#include <algorithm>
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
-#include <functional>
-#include <limits>
-#include <memory>
-#include <string>
-#include <string_view>
-#include <type_traits>
-#include <utility>
-
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-#include <immintrin.h>
-#endif
-
-namespace perfetto::base {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-namespace flat_hash_map_v2_internal {
-
-
-template <typename, typename = void>
-struct HasIsTransparent : std::false_type {};
-
-template <typename H>
-struct HasIsTransparent<H, std::void_t<typename H::is_transparent>>
-    : std::true_type {};
-
-
-template <typename T>
-struct HashEq : public std::equal_to<T> {};
-
-
-
-
-
-
-
-
-template <>
-struct HashEq<std::string> {
-  bool operator()(const std::string& a, const std::string& b) const {
-    return std::string_view(a) == std::string_view(b);
-  }
-  bool operator()(const std::string& a, const std::string_view& b) const {
-    return std::string_view(a) == b;
-  }
-  bool operator()(const std::string& a, base::StringView b) const {
-    return base::StringView(a) == b;
-  }
-};
-
-
-
-
-template <>
-struct HashEq<double> {
-  bool operator()(double a, double b) const { return std::equal_to<>()(a, b); }
-};
-
-
-
-
-
-
-template <typename K, typename Key, typename Hasher>
-static constexpr bool IsLookupKeyAllowed() {
-  if constexpr (HasIsTransparent<Hasher>::value) {
-    return std::is_invocable_v<Hasher, const K&> &&
-           std::is_invocable_v<std::equal_to<>, const Key&, const K&>;
-  } else if constexpr (std::is_convertible_v<K, Key>) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-
-
-
-
-static constexpr uint8_t kFreeSlot = 0x80;   
-static constexpr uint8_t kTombstone = 0xFE;  
-
-
-static constexpr int kDefaultLoadLimitPct = 75;
-
-}  
-
-template <typename Key,
-          typename Value,
-          typename Hasher = base::MurmurHash<Key>,
-          typename Eq = flat_hash_map_v2_internal::HashEq<Key>>
-class FlatHashMapV2 {
- private:
-  
-  static constexpr uint8_t kFreeSlot = flat_hash_map_v2_internal::kFreeSlot;
-  static constexpr uint8_t kTombstone = flat_hash_map_v2_internal::kTombstone;
-  static constexpr int kDefaultLoadLimitPct =
-      flat_hash_map_v2_internal::kDefaultLoadLimitPct;
-
-  
-  struct Slot {
-    Key key;
-    Value value;
-  };
-
- public:
-  class Iterator {
-   public:
-    explicit Iterator(const uint8_t* ctrl, const uint8_t* ctrl_end, Slot* slot)
-        : ctrl_(ctrl), ctrl_end_(ctrl_end), slot_(slot) {
-      FindNextNonFree();
-    }
-    ~Iterator() = default;
-    Iterator(const Iterator&) = default;
-    Iterator& operator=(const Iterator&) = default;
-    Iterator(Iterator&&) noexcept = default;
-    Iterator& operator=(Iterator&&) noexcept = default;
-
-    const Key& key() { return slot_->key; }
-    Value& value() { return slot_->value; }
-    const Key& key() const { return slot_->key; }
-    const Value& value() const { return slot_->value; }
-
-    explicit operator bool() const { return ctrl_ != ctrl_end_; }
-    Iterator& operator++() {
-      PERFETTO_DCHECK(ctrl_ != ctrl_end_);
-      ++ctrl_;
-      ++slot_;
-      FindNextNonFree();
-      return *this;
-    }
-
-   private:
-    void FindNextNonFree() {
-      for (; ctrl_ != ctrl_end_; ++ctrl_, ++slot_) {
-        const uint8_t cur_ctrl = *ctrl_;
-        if (cur_ctrl != kFreeSlot && cur_ctrl != kTombstone)
-          return;
-      }
-    }
-    const uint8_t* ctrl_ = nullptr;
-    const uint8_t* ctrl_end_ = nullptr;
-    Slot* slot_ = nullptr;
-  };  
-
-  explicit FlatHashMapV2(size_t initial_capacity = 0,
-                         int load_limit_pct = kDefaultLoadLimitPct)
-      : load_limit_percent_(load_limit_pct) {
-    if (initial_capacity > 0) {
-      Reset(initial_capacity, true);
-    }
-  }
-
-  
-  
-  ~FlatHashMapV2() { Clear(); }
-
-  FlatHashMapV2(FlatHashMapV2&& other) noexcept
-      : storage_(std::move(other.storage_)),
-        capacity_(other.capacity_),
-        size_(other.size_),
-        growth_info_(other.growth_info_),
-        load_limit_percent_(other.load_limit_percent_),
-        ctrl_(other.ctrl_),
-        slots_(other.slots_) {
-    new (&other) FlatHashMapV2();
-  }
-
-  FlatHashMapV2& operator=(FlatHashMapV2&& other) noexcept {
-    this->~FlatHashMapV2();
-    new (this) FlatHashMapV2(std::move(other));
-    return *this;
-  }
-
-  FlatHashMapV2(const FlatHashMapV2&) = delete;
-  FlatHashMapV2& operator=(const FlatHashMapV2&) = delete;
-
-  template <typename K = Key>
-  PERFETTO_ALWAYS_INLINE Value* Find(const K& key) const {
-    size_t key_hash = Hasher{}(key);
-    uint8_t h2 = H2(key_hash);
-    FindResult res = FindSlotIgnoringTombstones<false>(key, key_hash, h2);
-    if (PERFETTO_UNLIKELY(res.needs_insert)) {
-      return nullptr;
-    }
-    return &slots_[res.idx].value;
-  }
-
-  template <typename K = Key>
-  bool Erase(const K& key) {
-    size_t key_hash = Hasher{}(key);
-    uint8_t h2 = H2(key_hash);
-    FindResult res = FindSlotIgnoringTombstones<false>(key, key_hash, h2);
-    if (PERFETTO_UNLIKELY(res.needs_insert)) {
-      return false;
-    }
-    PERFETTO_DCHECK(size_ > 0);
-    SetCtrl(res.idx, kTombstone);
-    slots_[res.idx].key.~Key();
-    slots_[res.idx].value.~Value();
-    size_--;
-    growth_info_.has_tombstones = 1;
-    return true;
-  }
-
-  PERFETTO_ALWAYS_INLINE std::pair<Value*, bool> Insert(Key key, Value value) {
-    size_t key_hash = Hasher{}(key);
-    uint8_t h2 = H2(key_hash);
-    FindResult res = FindSlotIgnoringTombstones<true>(key, key_hash, h2);
-    if (PERFETTO_UNLIKELY(!res.needs_insert)) {
-      return {&slots_[res.idx].value, false};
-    }
-    if (PERFETTO_UNLIKELY(growth_info_.growth_left == 0)) {
-      GrowAndRehash();
-      
-      
-      res.idx = FindFirstEmptyOrTombstone(key_hash);
-    }
-    PERFETTO_DCHECK(res.idx != kNotFound);
-    size_t insert_idx = res.idx;
-    bool is_freeslot = true;
-    if (PERFETTO_UNLIKELY(growth_info_.has_tombstones)) {
-      insert_idx = FindFirstEmptyOrTombstone(key_hash);
-      is_freeslot = ctrl_[insert_idx] != kTombstone;
-    }
-    new (&slots_[insert_idx].key) Key(std::move(key));
-    new (&slots_[insert_idx].value) Value(std::move(value));
-    SetCtrl(insert_idx, h2);
-    size_++;
-    if (is_freeslot) {
-      growth_info_.growth_left--;
-    }
-    return {&slots_[insert_idx].value, true};
-  }
-
-  Value& operator[](Key key) {
-    auto it_and_inserted = Insert(std::move(key), Value{});
-    return *it_and_inserted.first;
-  }
-
-  void Clear() {
-    
-    if (PERFETTO_UNLIKELY(capacity_ == 0)) {
-      return;
-    }
-    for (size_t i = 0; i < capacity_; ++i) {
-      const uint8_t tag = ctrl_[i];
-      if (tag == kFreeSlot || tag == kTombstone) {
-        continue;
-      }
-      slots_[i].key.~Key();
-      slots_[i].value.~Value();
-    }
-    Reset(capacity_, false);
-  }
-
-  Iterator GetIterator() { return Iterator(ctrl_, ctrl_ + capacity_, slots_); }
-  Iterator GetIterator() const {
-    return Iterator(ctrl_, ctrl_ + capacity_, slots_);
-  }
-
-  size_t size() const { return size_; }
-  size_t capacity() const { return capacity_; }
-
- private:
-  
-  struct FindResult {
-    uint64_t idx : 63;
-    uint64_t needs_insert : 1;
-  };
-
-  
-  
-  struct GrowthInfo {
-    uint64_t growth_left : 63;
-    uint64_t has_tombstones : 1;
-  };
-
-  
-  static constexpr size_t kNotFound = std::numeric_limits<size_t>::max() >> 1;
-
-  
-  
-  
-  
-  
-  
-  
-#if PERFETTO_BUILDFLAG(PERFETTO_X64_CPU_OPT)
-  struct Group {
-   public:
-    
-    static constexpr size_t kSize = 16;
-
-    
-    
-    
-    struct Iterator {
-     public:
-      PERFETTO_ALWAYS_INLINE explicit Iterator(uint16_t mask) : mask_(mask) {}
-      PERFETTO_ALWAYS_INLINE explicit operator bool() const { return mask_; }
-
-      PERFETTO_ALWAYS_INLINE size_t Next() {
-        auto idx = static_cast<size_t>(CountTrailZeros(mask_));
-        mask_ &= static_cast<uint16_t>(mask_ - 1);
-        return idx;
-      }
-
-     private:
-      uint16_t mask_;
-    };
-
-    PERFETTO_ALWAYS_INLINE explicit Group(const uint8_t* pos) {
-      ctrl_ = _mm_loadu_si128(reinterpret_cast<const __m128i*>(pos));
-    }
-
-    PERFETTO_ALWAYS_INLINE Iterator Match(uint8_t h2) const {
-      auto match = _mm_cmpeq_epi8(ctrl_, _mm_set1_epi8(static_cast<char>(h2)));
-      return Iterator(static_cast<uint16_t>(_mm_movemask_epi8(match)));
-    }
-
-    PERFETTO_ALWAYS_INLINE Iterator MatchEmpty() const {
-      return Iterator(static_cast<uint16_t>(
-          _mm_movemask_epi8(_mm_sign_epi8(ctrl_, ctrl_))));
-    }
-
-    PERFETTO_ALWAYS_INLINE Iterator MatchEmptyOrDeleted() const {
-      return Iterator(static_cast<uint16_t>(_mm_movemask_epi8(ctrl_)));
-    }
-
-   private:
-    __m128i ctrl_;
-  };
-#else
-  
-  struct Group {
-   public:
-    
-    static constexpr size_t kSize = 8;
-
-    
-    
-    
-    struct Iterator {
-     public:
-      PERFETTO_ALWAYS_INLINE explicit Iterator(uint64_t mask) : mask_(mask) {}
-      PERFETTO_ALWAYS_INLINE explicit operator bool() const { return mask_; }
-      PERFETTO_ALWAYS_INLINE size_t Next() {
-        
-        
-        
-        size_t idx = static_cast<size_t>(CountTrailZeros(mask_) >> 3);
-        mask_ &= mask_ - 1;  
-        return idx;
-      }
-
-     private:
-      uint64_t mask_;
-    };
-
-    PERFETTO_ALWAYS_INLINE explicit Group(const uint8_t* pos) {
-      memcpy(&ctrl_, pos, sizeof(ctrl_));
-    }
-
-    PERFETTO_ALWAYS_INLINE Iterator Match(uint8_t h2) const {
-      uint64_t x = ctrl_ ^ (kLsbs * h2);
-      return Iterator((x - kLsbs) & ~x & kMsbs);
-    }
-
-    PERFETTO_ALWAYS_INLINE Iterator MatchEmpty() const {
-      
-      return Iterator((ctrl_ & ~(ctrl_ << 6)) & kMsbs);
-    }
-
-    PERFETTO_ALWAYS_INLINE Iterator MatchEmptyOrDeleted() const {
-      
-      return Iterator((ctrl_ & ~(ctrl_ << 7)) & kMsbs);
-    }
-
-   private:
-    static constexpr uint64_t kLsbs = 0x0101010101010101ULL;
-    static constexpr uint64_t kMsbs = 0x8080808080808080ULL;
-
-    uint64_t ctrl_;
-  };
-#endif
-
-  
-  static constexpr size_t kNumClones = Group::kSize - 1;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <bool ForInsert, typename K = Key>
-  PERFETTO_ALWAYS_INLINE FindResult
-  FindSlotIgnoringTombstones(const K& key, size_t key_hash, uint8_t h2) const {
-    static_assert(
-        flat_hash_map_v2_internal::IsLookupKeyAllowed<K, Key, Hasher>(),
-        "Heterogeneous lookup requires Hasher to define is_transparent and "
-        "support hashing the lookup key type. For same-type lookup, Key and K "
-        "must match exactly.");
-
-    if (PERFETTO_UNLIKELY(ctrl_ == nullptr)) {
-      return {kNotFound, true};
-    }
-
-    const size_t cap_mask = capacity_ - 1;
-    size_t offset = H1(key_hash) & cap_mask;
-    size_t probe_size = 0;
-    const uint8_t* ctrl = ctrl_;
-
-    
-    
-    __builtin_prefetch(ctrl_ + offset, 0, 3);
-
-    while (true) {
-      
-      __builtin_prefetch(slots_ + offset, 0, 3);
-
-      Group group(ctrl + offset);
-
-      
-      for (auto it = group.Match(h2); PERFETTO_LIKELY(it);) {
-        
-        
-        size_t idx = (offset + it.Next()) & cap_mask;
-        if (PERFETTO_LIKELY(Eq{}(slots_[idx].key, key))) {
-          return {idx, false};  
-        }
-      }
-
-      
-      
-      if (auto it = group.MatchEmpty(); PERFETTO_LIKELY(it)) {
-        if constexpr (ForInsert) {
-          size_t empty_idx = (offset + it.Next()) & cap_mask;
-          return {empty_idx, true};  
-        } else {
-          return {kNotFound, true};  
-        }
-      }
-
-      
-      probe_size += Group::kSize;
-      offset = (offset + probe_size) & cap_mask;
-
-      
-      PERFETTO_DCHECK(probe_size <= capacity_);
-    }
-  }
-
-  
-  
-  
-  size_t FindFirstEmptyOrTombstone(size_t key_hash) const {
-    const size_t cap_mask = capacity_ - 1;
-    size_t offset = H1(key_hash) & cap_mask;
-    size_t probe_size = 0;
-    while (true) {
-      Group group(ctrl_ + offset);
-      if (auto it = group.MatchEmptyOrDeleted(); PERFETTO_LIKELY(it)) {
-        return (offset + it.Next()) & cap_mask;
-      }
-      probe_size += Group::kSize;
-      offset = (offset + probe_size) & cap_mask;
-    }
-  }
-
-  PERFETTO_NO_INLINE void GrowAndRehash() {
-    
-    
-    static constexpr size_t kGrowFactor = 2;
-    static_assert((kGrowFactor & (kGrowFactor - 1)) == 0,
-                  "kGrowFactor must be a power of 2");
-
-    PERFETTO_DCHECK(size_ <= capacity_);
-
-    size_t old_capacity = capacity_;
-    size_t old_size = size_;
-    uint8_t* old_ctrl = ctrl_;
-    Slot* old_slots = slots_;
-    std::unique_ptr<uint8_t[]> old_storage(std::move(storage_));
-
-    
-    
-    size_t new_capacity = old_capacity * kGrowFactor;
-    PERFETTO_CHECK(new_capacity >= old_capacity);
-    Reset(new_capacity, true);
-
-    size_t new_size = 0;
-    for (size_t i = 0; i < old_capacity; ++i) {
-      if (uint8_t t = old_ctrl[i]; t == kFreeSlot || t == kTombstone) {
-        continue;
-      }
-      Insert(std::move(old_slots[i].key), std::move(old_slots[i].value));
-      old_slots[i].key.~Key();  
-      old_slots[i].value.~Value();
-      new_size++;
-    }
-    PERFETTO_DCHECK(new_size == old_size);
-    size_ = new_size;
-  }
-
-  
-  PERFETTO_NO_INLINE void Reset(size_t n, bool reallocate) {
-    
-    PERFETTO_CHECK((n & (n - 1)) == 0);
-
-    
-    capacity_ = std::max<size_t>(n, 128u);
-    size_ = 0;
-    growth_info_.growth_left =
-        (capacity_ * static_cast<size_t>(load_limit_percent_)) / 100;
-    growth_info_.has_tombstones = 0;
-
-    if (reallocate) {
-      
-      size_t slots_offset =
-          base::AlignUp(capacity_ + kNumClones, alignof(Slot));
-      storage_.reset(new uint8_t[slots_offset + (capacity_ * sizeof(Slot))]);
-      ctrl_ = storage_.get();
-      slots_ = reinterpret_cast<Slot*>(storage_.get() + slots_offset);
-    }
-    if (ctrl_) {
-      
-      memset(ctrl_, kFreeSlot, capacity_ + kNumClones);
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  static constexpr size_t H1(size_t hash) { return (hash >> 7); }
-  static constexpr uint8_t H2(size_t hash) { return hash & 0x7F; }
-
-  
-  PERFETTO_ALWAYS_INLINE void SetCtrl(size_t i, uint8_t h) {
-    ctrl_[i] = h;
-    
-    if (PERFETTO_UNLIKELY(i < kNumClones)) {
-      ctrl_[capacity_ + i] = h;
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  std::unique_ptr<uint8_t[]> storage_;
-
-  size_t capacity_ = 0;
-  size_t size_ = 0;
-
-  
-  GrowthInfo growth_info_{0, 0};
-
-  
-  int load_limit_percent_ = kDefaultLoadLimitPct;
-
-  
-  
-  uint8_t* ctrl_ = nullptr;  
-  Slot* slots_ = nullptr;    
-};
-
-
-
-
-
-template <typename Key,
-          typename Value,
-          typename Hasher = MurmurHash<Key>,
-          typename Probe = QuadraticProbe,
-          bool AppendOnly = false>
-using FlatHashMap = FlatHashMapV1<Key, Value, Hasher, Probe, AppendOnly>;
-
-}  
-
-#endif  
 
 
 
@@ -57755,6 +59867,7 @@ constexpr uint32_t kOpcodeShift = 3;
 
 
 
+
 namespace protozero {
 
 namespace {
@@ -57788,7 +59901,7 @@ bool ParseAndVerifyChecksum(const uint8_t* data,
       break;
     }
     words->emplace_back(word);
-    hasher.Update(word);
+    hasher.Update(perfetto::base::HostToLE(word));
   }
   if (packed_parse_err || !has_checksum) {
     words->clear();
@@ -59024,6 +61137,7 @@ class MessageFilter {
 
 
 
+
 namespace protozero {
 
 namespace {
@@ -59046,7 +61160,8 @@ template <typename INT_T >
 inline void AppendFixed(uint32_t field_id, INT_T value, uint8_t** out) {
   *out = proto_utils::WriteVarInt(proto_utils::MakeTagFixed<INT_T>(field_id),
                                   *out);
-  memcpy(*out, &value, sizeof(value));
+  INT_T le_value = perfetto::base::HostToLE(value);
+  memcpy(*out, &le_value, sizeof(value));
   *out += sizeof(value);
 }
 
@@ -59517,6 +61632,698 @@ perfetto::base::Status LoadMessageFilterConfig(const TraceFilter& filt,
 
 
 
+
+#ifndef INCLUDE_PERFETTO_EXT_BASE_SMALL_VECTOR_H_
+#define INCLUDE_PERFETTO_EXT_BASE_SMALL_VECTOR_H_
+
+#include <algorithm>
+#include <type_traits>
+#include <utility>
+
+
+
+
+
+namespace perfetto {
+namespace base {
+
+
+template <typename T, size_t kSize>
+class SmallVector {
+ public:
+  static constexpr size_t kInlineSize = kSize;
+
+  explicit SmallVector() = default;
+
+  ~SmallVector() {
+    clear();
+    if (PERFETTO_UNLIKELY(is_using_heap()))
+      AlignedFree(begin_);
+    begin_ = end_ = end_of_storage_ = nullptr;
+  }
+
+  
+  SmallVector(SmallVector&& other) noexcept(
+      std::is_nothrow_move_constructible<T>::value) {
+    if (other.is_using_heap()) {
+      
+      
+      begin_ = other.begin_;
+      end_ = other.end_;
+      end_of_storage_ = other.end_of_storage_;
+    } else {
+      const size_t other_size = other.size();
+      PERFETTO_DCHECK(other_size <= capacity());
+      for (size_t i = 0; i < other_size; i++) {
+        
+        new (&begin_[i]) T(std::move(other.begin_[i]));
+        other.begin_[i].~T();
+      }
+      end_ = begin_ + other_size;
+    }
+    auto* const other_inline_storage = other.inline_storage_begin();
+    other.end_ = other.begin_ = other_inline_storage;
+    other.end_of_storage_ = other_inline_storage + kInlineSize;
+  }
+
+  SmallVector& operator=(SmallVector&& other) noexcept(
+      std::is_nothrow_move_constructible<T>::value) {
+    this->~SmallVector();
+    new (this) SmallVector<T, kSize>(std::move(other));
+    return *this;
+  }
+
+  
+  SmallVector(const SmallVector& other) {
+    const size_t other_size = other.size();
+    if (other_size > capacity())
+      Grow(other_size);
+    
+    for (size_t i = 0; i < other_size; ++i)
+      new (&begin_[i]) T(other.begin_[i]);
+    end_ = begin_ + other_size;
+  }
+
+  SmallVector& operator=(const SmallVector& other) {
+    if (PERFETTO_UNLIKELY(this == &other))
+      return *this;
+    this->~SmallVector();
+    new (this) SmallVector<T, kSize>(other);
+    return *this;
+  }
+
+  T* data() { return begin_; }
+  const T* data() const { return begin_; }
+
+  T* begin() { return begin_; }
+  const T* begin() const { return begin_; }
+
+  T* end() { return end_; }
+  const T* end() const { return end_; }
+
+  size_t size() const { return static_cast<size_t>(end_ - begin_); }
+
+  bool empty() const { return end_ == begin_; }
+
+  size_t capacity() const {
+    return static_cast<size_t>(end_of_storage_ - begin_);
+  }
+
+  T& front() {
+    PERFETTO_DCHECK(!empty());
+    return begin_[0];
+  }
+  const T& front() const {
+    PERFETTO_DCHECK(!empty());
+    return begin_[0];
+  }
+
+  T& back() {
+    PERFETTO_DCHECK(!empty());
+    return end_[-1];
+  }
+  const T& back() const {
+    PERFETTO_DCHECK(!empty());
+    return end_[-1];
+  }
+
+  T& operator[](size_t index) {
+    PERFETTO_DCHECK(index < size());
+    return begin_[index];
+  }
+
+  const T& operator[](size_t index) const {
+    PERFETTO_DCHECK(index < size());
+    return begin_[index];
+  }
+
+  template <typename... Args>
+  void emplace_back(Args&&... args) {
+    T* end = end_;
+    if (PERFETTO_UNLIKELY(end == end_of_storage_))
+      end = Grow();
+    new (end) T(std::forward<Args>(args)...);
+    end_ = end + 1;
+  }
+
+  void pop_back() {
+    PERFETTO_DCHECK(!empty());
+    back().~T();
+    --end_;
+  }
+
+  
+  void clear() {
+    while (!empty())
+      pop_back();
+  }
+
+ private:
+  PERFETTO_NO_INLINE T* Grow(size_t desired_capacity = 0) {
+    size_t cur_size = size();
+    size_t new_capacity = desired_capacity;
+    if (desired_capacity <= cur_size)
+      new_capacity = std::max(capacity() * 2, size_t(128));
+    T* new_storage =
+        static_cast<T*>(AlignedAlloc(alignof(T), new_capacity * sizeof(T)));
+    for (size_t i = 0; i < cur_size; ++i) {
+      
+      new (&new_storage[i]) T(std::move(begin_[i]));
+      begin_[i].~T();
+    }
+    if (is_using_heap())
+      AlignedFree(begin_);
+    begin_ = new_storage;
+    end_ = new_storage + cur_size;
+    end_of_storage_ = new_storage + new_capacity;
+    return end_;
+  }
+
+  T* inline_storage_begin() { return reinterpret_cast<T*>(inline_storage_); }
+  bool is_using_heap() { return begin_ != inline_storage_begin(); }
+
+  T* begin_ = inline_storage_begin();
+  T* end_ = begin_;
+  T* end_of_storage_ = begin_ + kInlineSize;
+
+  alignas(T) char inline_storage_[sizeof(T) * kInlineSize];
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_PROTO_GROUP_REWRITER_H_
+#define SRC_TRACING_SERVICE_PROTO_GROUP_REWRITER_H_
+
+#include <stddef.h>
+
+#include <optional>
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+enum class RewriteResult {
+  
+  kRewritten,
+  
+  kUnchanged,
+  
+  
+  kMalformedInput,
+  
+  kGroupTooLarge,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ProtoGroupRewriter {
+ public:
+  
+  static constexpr size_t kMaxNestingDepth = 1024;
+
+  
+  
+  
+  
+  RewriteResult Rewrite(const Slices& input, std::optional<Slice>* output);
+
+ private:
+  
+  base::SmallVector<size_t, 128> open_group_length_offsets_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <algorithm>
+#include <memory>
+#include <utility>
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+namespace {
+
+namespace pu = ::protozero::proto_utils;
+
+
+
+class SliceCursor {
+ public:
+  explicit SliceCursor(const Slices& slices)
+      : next_slice_(slices.data()),
+        slice_list_end_(slices.data() + slices.size()) {
+    for (const Slice& slice : slices)
+      input_size_ += slice.size;
+
+    LoadNextSlice();
+  }
+
+  
+  size_t input_size() const { return input_size_; }
+  size_t offset() const { return offset_; }
+  bool at_end() const { return read_ptr_ == current_slice_end_; }
+
+  
+  uint8_t PeekByte() const { return *read_ptr_; }
+
+  
+  bool ReadVarInt(uint64_t* value) {
+    const uint8_t* next_ptr =
+        pu::ParseVarIntFast(read_ptr_, current_slice_end_, value);
+    if (PERFETTO_LIKELY(next_ptr)) {
+      AdvanceTo(next_ptr);
+      return true;
+    }
+
+    
+    
+    if (PERFETTO_UNLIKELY(slice_bytes_left() >=
+                          PERFETTO_PB_VARINT_MAX_SIZE_64)) {
+      return false;
+    }
+
+    
+    
+    uint64_t decoded_value = 0;
+    for (uint32_t shift = 0; shift < 64 && !at_end(); shift += 7) {
+      const uint8_t byte = *read_ptr_;
+      AdvanceTo(read_ptr_ + 1);
+
+      
+      decoded_value |= static_cast<uint64_t>(byte & 0b0111'1111) << shift;
+
+      
+      if ((byte & 0b1000'0000) == 0) {
+        *value = decoded_value;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  
+  
+  bool Skip(uint64_t num_bytes) {
+    if (PERFETTO_LIKELY(num_bytes <= slice_bytes_left())) {
+      AdvanceTo(read_ptr_ + num_bytes);
+      return true;
+    }
+    if (num_bytes > input_bytes_left())
+      return false;
+
+    CopyOrSkipAcrossSlices(nullptr, static_cast<size_t>(num_bytes));
+    return true;
+  }
+
+  
+  void CopyTo(uint8_t* dst, size_t num_bytes) {
+    PERFETTO_DCHECK(num_bytes <= input_bytes_left());
+    if (PERFETTO_LIKELY(num_bytes <= slice_bytes_left())) {
+      memcpy(dst, read_ptr_, num_bytes);
+      AdvanceTo(read_ptr_ + num_bytes);
+      return;
+    }
+    CopyOrSkipAcrossSlices(dst, num_bytes);
+  }
+
+ private:
+  size_t input_bytes_left() const { return input_size_ - offset(); }
+
+  size_t slice_bytes_left() const {
+    return static_cast<size_t>(current_slice_end_ - read_ptr_);
+  }
+
+  
+  
+  PERFETTO_ALWAYS_INLINE void AdvanceTo(const uint8_t* next_ptr) {
+    PERFETTO_DCHECK(next_ptr >= read_ptr_ && next_ptr <= current_slice_end_);
+    offset_ += static_cast<size_t>(next_ptr - read_ptr_);
+    read_ptr_ = next_ptr;
+
+    if (PERFETTO_UNLIKELY(read_ptr_ == current_slice_end_))
+      LoadNextSlice();
+  }
+
+  void LoadNextSlice() {
+    if (next_slice_ == slice_list_end_)
+      return;
+
+    PERFETTO_DCHECK(next_slice_->size > 0);
+    read_ptr_ = static_cast<const uint8_t*>(next_slice_->start);
+    current_slice_end_ = read_ptr_ + next_slice_->size;
+    ++next_slice_;
+  }
+
+  
+  void CopyOrSkipAcrossSlices(uint8_t* dst, size_t num_bytes) {
+    while (num_bytes > 0) {
+      const size_t chunk_size = std::min(num_bytes, slice_bytes_left());
+      if (dst) {
+        memcpy(dst, read_ptr_, chunk_size);
+        dst += chunk_size;
+      }
+      num_bytes -= chunk_size;
+      AdvanceTo(read_ptr_ + chunk_size);
+    }
+  }
+
+  
+  const Slice* next_slice_;
+  const Slice* const slice_list_end_;
+  const uint8_t* current_slice_end_ = nullptr;
+  const uint8_t* read_ptr_ = nullptr;
+  size_t offset_ = 0;
+  size_t input_size_ = 0;
+};
+
+
+
+
+
+
+
+
+
+
+class OutputWriter {
+ public:
+  using GroupLengthOffsets = base::SmallVector<size_t, 128>;
+
+  OutputWriter(const SliceCursor& input_cursor,
+               GroupLengthOffsets& group_length_offsets)
+      : copy_cursor_(input_cursor),
+        open_group_length_offsets_(group_length_offsets) {}
+
+  
+  bool BeginGroup(size_t tag_start_offset, size_t tag_size) {
+    if (PERFETTO_UNLIKELY(open_group_length_offsets_.size() >=
+                          ProtoGroupRewriter::kMaxNestingDepth)) {
+      return false;
+    }
+
+    
+    CopyInputUntil(tag_start_offset);
+
+    
+    EnsureAdditionalCapacity(tag_size + pu::kMessageLengthFieldSize);
+
+    
+    uint8_t* const tag_ptr = output_buffer_.get() + output_size_;
+    copy_cursor_.CopyTo(tag_ptr, tag_size);
+    
+    
+    PERFETTO_DCHECK(pu::GetTagFieldType(*tag_ptr) == pu::kWireTypeStartGroup);
+    *tag_ptr &= 0b1111'1110;
+    output_size_ += tag_size;
+
+    
+    open_group_length_offsets_.emplace_back(output_size_);
+    output_size_ += pu::kMessageLengthFieldSize;
+    return true;
+  }
+
+  
+  RewriteResult EndGroup(size_t end_byte_offset) {
+    if (PERFETTO_UNLIKELY(!HasOpenGroups()))
+      return RewriteResult::kMalformedInput;
+
+    
+    
+    const size_t group_length_offset = open_group_length_offsets_.back();
+    const size_t group_content_offset =
+        group_length_offset + pu::kMessageLengthFieldSize;
+    const size_t content_bytes_written = output_size_ - group_content_offset;
+    PERFETTO_DCHECK(end_byte_offset >= copy_cursor_.offset());
+    const size_t pending_input_size = end_byte_offset - copy_cursor_.offset();
+
+    
+    if (PERFETTO_UNLIKELY(content_bytes_written > pu::kMaxMessageLength))
+      return RewriteResult::kGroupTooLarge;
+    const size_t max_pending_bytes =
+        pu::kMaxMessageLength - content_bytes_written;
+    if (PERFETTO_UNLIKELY(pending_input_size > max_pending_bytes)) {
+      return RewriteResult::kGroupTooLarge;
+    }
+    const size_t content_size = content_bytes_written + pending_input_size;
+
+    
+    CopyInputUntil(end_byte_offset);
+    copy_cursor_.Skip(1);
+
+    
+    
+    uint8_t* const length_ptr = output_buffer_.get() + group_length_offset;
+
+    
+    if (content_size > pu::kMaxOneByteMessageLength) {
+      pu::WriteRedundantVarInt(static_cast<uint32_t>(content_size), length_ptr);
+    } else {
+      
+      
+      uint8_t* const content_ptr = output_buffer_.get() + group_content_offset;
+      memmove(length_ptr + 1, content_ptr, content_size);
+      *length_ptr = static_cast<uint8_t>(content_size);
+      output_size_ -= (pu::kMessageLengthFieldSize - 1);
+    }
+
+    
+    open_group_length_offsets_.pop_back();
+    return RewriteResult::kRewritten;
+  }
+
+  
+  Slice Finish() {
+    PERFETTO_DCHECK(HasRewrittenGroups() && !HasOpenGroups());
+
+    
+    CopyInputUntil(copy_cursor_.input_size());
+    return Slice::TakeOwnership(std::move(output_buffer_), output_size_);
+  }
+
+  bool HasOpenGroups() const { return !open_group_length_offsets_.empty(); }
+
+  
+  bool HasRewrittenGroups() const { return output_buffer_ != nullptr; }
+
+ private:
+  
+  
+  void CopyInputUntil(size_t input_end_offset) {
+    PERFETTO_DCHECK(input_end_offset >= copy_cursor_.offset());
+    const size_t bytes_to_copy = input_end_offset - copy_cursor_.offset();
+    if (bytes_to_copy == 0)
+      return;
+
+    
+    EnsureAdditionalCapacity(bytes_to_copy);
+
+    
+    copy_cursor_.CopyTo(output_buffer_.get() + output_size_, bytes_to_copy);
+    output_size_ += bytes_to_copy;
+  }
+
+  
+  
+  void EnsureAdditionalCapacity(size_t additional_bytes) {
+    const size_t required_capacity = output_size_ + additional_bytes;
+    if (PERFETTO_LIKELY(required_capacity <= output_capacity_))
+      return;
+
+    size_t new_capacity;
+    if (output_capacity_ == 0) {
+      
+      
+      
+      
+      const size_t input_size = copy_cursor_.input_size();
+      new_capacity = input_size + input_size / 16 + 64;
+    } else {
+      
+      new_capacity = output_capacity_ * 2;
+    }
+    new_capacity = std::max(new_capacity, required_capacity);
+
+    
+    std::unique_ptr<uint8_t[]> larger_buffer(new uint8_t[new_capacity]);
+    if (output_size_)
+      memcpy(larger_buffer.get(), output_buffer_.get(), output_size_);
+
+    
+    output_buffer_ = std::move(larger_buffer);
+    output_capacity_ = new_capacity;
+  }
+
+  
+  SliceCursor copy_cursor_;
+  GroupLengthOffsets& open_group_length_offsets_;
+  std::unique_ptr<uint8_t[]> output_buffer_;
+  
+  size_t output_size_ = 0;
+  
+  size_t output_capacity_ = 0;
+};
+
+
+RewriteResult RewriteFields(SliceCursor input_cursor, OutputWriter* writer) {
+  
+  constexpr uint64_t kMaxFieldId = UINT32_MAX >> pu::kFieldTypeNumBits;
+
+  while (!input_cursor.at_end()) {
+    
+    if (input_cursor.PeekByte() == pu::kProtoGroupEndByte) {
+      const RewriteResult result = writer->EndGroup(input_cursor.offset());
+      PERFETTO_DCHECK(result != RewriteResult::kUnchanged);
+      if (PERFETTO_UNLIKELY(result != RewriteResult::kRewritten))
+        return result;
+      input_cursor.Skip(1);
+      continue;
+    }
+
+    
+    const size_t tag_start_offset = input_cursor.offset();
+    uint64_t tag = 0;
+    if (PERFETTO_UNLIKELY(!input_cursor.ReadVarInt(&tag)))
+      return RewriteResult::kMalformedInput;
+
+    const uint64_t field_id = pu::GetTagFieldId(tag);
+    if (PERFETTO_UNLIKELY(field_id == 0 || field_id > kMaxFieldId))
+      return RewriteResult::kMalformedInput;
+
+    uint64_t value = 0;
+    bool valid = false;
+    switch (pu::GetTagFieldType(tag)) {
+      case pu::kWireTypeStartGroup:
+        valid = writer->BeginGroup(tag_start_offset,
+                                   input_cursor.offset() - tag_start_offset);
+        break;
+      case static_cast<uint32_t>(pu::ProtoWireType::kVarInt):
+        valid = input_cursor.ReadVarInt(&value);
+        break;
+      case static_cast<uint32_t>(pu::ProtoWireType::kFixed64):
+        valid = input_cursor.Skip(sizeof(uint64_t));
+        break;
+      case static_cast<uint32_t>(pu::ProtoWireType::kFixed32):
+        valid = input_cursor.Skip(sizeof(uint32_t));
+        break;
+      case static_cast<uint32_t>(pu::ProtoWireType::kLengthDelimited):
+        valid = input_cursor.ReadVarInt(&value) && input_cursor.Skip(value);
+        break;
+      default:
+        
+        
+        return RewriteResult::kMalformedInput;
+    }
+
+    if (PERFETTO_UNLIKELY(!valid))
+      return RewriteResult::kMalformedInput;
+  }
+
+  if (writer->HasOpenGroups())
+    return RewriteResult::kMalformedInput;
+
+  return writer->HasRewrittenGroups() ? RewriteResult::kRewritten
+                                      : RewriteResult::kUnchanged;
+}
+
+}  
+
+RewriteResult ProtoGroupRewriter::Rewrite(const Slices& input,
+                                          std::optional<Slice>* output) {
+  open_group_length_offsets_.clear();
+
+  
+  const SliceCursor initial_cursor(input);
+  
+  OutputWriter writer(initial_cursor, open_group_length_offsets_);
+
+  const RewriteResult result = RewriteFields(initial_cursor, &writer);
+  if (result != RewriteResult::kRewritten)
+    return result;
+
+  output->emplace(writer.Finish());
+  return RewriteResult::kRewritten;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef SRC_TRACING_SERVICE_ZLIB_COMPRESSOR_H_
 #define SRC_TRACING_SERVICE_ZLIB_COMPRESSOR_H_
 
@@ -59912,6 +62719,5147 @@ void ZstdCompressFn(std::vector<TracePacket>* packets, int level) {
 }  
 
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef INCLUDE_PERFETTO_EXT_IPC_BASIC_TYPES_H_
+#define INCLUDE_PERFETTO_EXT_IPC_BASIC_TYPES_H_
+
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
+
+
+
+
+namespace perfetto {
+namespace ipc {
+
+using ProtoMessage = ::protozero::CppMessageObj;
+using ServiceID = uint32_t;
+using MethodID = uint32_t;
+using ClientID = uint64_t;
+using RequestID = uint64_t;
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+
+
+constexpr bool kUseTCPSocket = true;
+#else
+
+constexpr bool kUseTCPSocket = false;
+#endif
+
+
+
+constexpr size_t kIPCBufferSize = 128 * 1024;
+
+constexpr uid_t kInvalidUid = static_cast<uid_t>(-1);
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdlib.h>
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
+#include <unistd.h>
+#endif
+
+namespace perfetto {
+namespace {
+
+const char* kRunPerfettoBaseDir = "/run/perfetto/";
+
+
+
+bool UseRunPerfettoBaseDir() {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX)
+  
+  
+  int res = PERFETTO_EINTR(access(kRunPerfettoBaseDir, X_OK));
+  if (!res)
+    return true;
+
+  
+  
+  if (errno != ENOENT
+#if PERFETTO_BUILDFLAG(PERFETTO_CHROMIUM_BUILD)
+      
+      
+      && errno != EPERM
+#endif
+  ) {
+    PERFETTO_PLOG("%s exists but cannot be accessed. Falling back on /tmp/ ",
+                  kRunPerfettoBaseDir);
+  }
+  return false;
+#else
+  base::ignore_result(kRunPerfettoBaseDir);
+  return false;
+#endif
+}
+
+}  
+
+const char* GetProducerSocket() {
+  const char* name = getenv("PERFETTO_PRODUCER_SOCK_NAME");
+  if (name == nullptr) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    name = "127.0.0.1:32278";
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+    name = "/dev/socket/traced_producer";
+#else
+    
+    static const char* producer_socket =
+        UseRunPerfettoBaseDir() ? "/run/perfetto/traced-producer.sock"
+                                : "/tmp/perfetto-producer";
+    name = producer_socket;
+#endif
+  }
+  base::ignore_result(UseRunPerfettoBaseDir);  
+  return name;
+}
+
+std::string GetRelaySocket() {
+  
+  
+  
+  const char* name = getenv("PERFETTO_RELAY_SOCK_NAME");
+  if (name != nullptr)
+    return std::string(name);
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+  return base::GetAndroidProp("traced_relay.relay_port");
+#else
+  return std::string();
+#endif
+}
+
+std::vector<std::string> TokenizeProducerSockets(
+    const char* producer_socket_names) {
+  return base::SplitString(producer_socket_names, ",");
+}
+
+const char* GetConsumerSocket() {
+  const char* name = getenv("PERFETTO_CONSUMER_SOCK_NAME");
+  if (name == nullptr) {
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+    name = "127.0.0.1:32279";
+#elif PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
+    name = "/dev/socket/traced_consumer";
+#else
+    
+    static const char* consumer_socket =
+        UseRunPerfettoBaseDir() ? "/run/perfetto/traced-consumer.sock"
+                                : "/tmp/perfetto-consumer";
+    name = consumer_socket;
+#endif
+  }
+  return name;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_IPC_MEMFD_H_
+#define SRC_TRACING_IPC_MEMFD_H_
+
+
+
+
+
+
+#define PERFETTO_MEMFD_ENABLED()              \
+  (PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+   PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX))
+
+
+
+
+
+#ifndef MFD_CLOEXEC
+#define MFD_CLOEXEC 0x0001U
+#define MFD_ALLOW_SEALING 0x0002U
+#endif
+
+
+#ifndef F_ADD_SEALS
+#define F_ADD_SEALS 1033
+#define F_GET_SEALS 1034
+#define F_SEAL_SEAL 0x0001
+#define F_SEAL_SHRINK 0x0002
+#define F_SEAL_GROW 0x0004
+#define F_SEAL_WRITE 0x0008
+#endif
+
+namespace perfetto {
+
+
+bool HasMemfdSupport();
+
+
+
+
+base::ScopedFile CreateMemfd(const char* name, unsigned int flags);
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <errno.h>
+
+#if PERFETTO_MEMFD_ENABLED()
+
+#include <stdio.h>
+#include <string.h>
+#include <sys/syscall.h>
+#include <sys/utsname.h>
+#include <unistd.h>
+
+
+
+#if !defined(__NR_memfd_create)
+#if defined(__x86_64__)
+#define __NR_memfd_create 319
+#elif defined(__i386__)
+#define __NR_memfd_create 356
+#elif defined(__aarch64__)
+#define __NR_memfd_create 279
+#elif defined(__arm__)
+#define __NR_memfd_create 385
+#else
+#error "unsupported sysroot without memfd support"
+#endif
+#endif  
+
+namespace perfetto {
+bool HasMemfdSupport() {
+  static bool kSupportsMemfd = [] {
+    
+    
+    static constexpr int kRequiredMajor = 3;
+    static constexpr int kRequiredMinor = 17;
+    struct utsname uts;
+    int major, minor;
+    if (uname(&uts) == 0 && strcmp(uts.sysname, "Linux") == 0 &&
+        sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
+        ((major < kRequiredMajor ||
+          (major == kRequiredMajor && minor < kRequiredMinor)))) {
+      return false;
+    }
+
+    base::ScopedFile fd;
+    fd.reset(static_cast<int>(syscall(__NR_memfd_create, "perfetto_shmem",
+                                      MFD_CLOEXEC | MFD_ALLOW_SEALING)));
+    return !!fd;
+  }();
+  return kSupportsMemfd;
+}
+
+base::ScopedFile CreateMemfd(const char* name, unsigned int flags) {
+  if (!HasMemfdSupport()) {
+    errno = ENOSYS;
+    return base::ScopedFile();
+  }
+  return base::ScopedFile(
+      static_cast<int>(syscall(__NR_memfd_create, name, flags)));
+}
+}  
+
+#else  
+
+namespace perfetto {
+bool HasMemfdSupport() {
+  return false;
+}
+base::ScopedFile CreateMemfd(const char*, unsigned int) {
+  errno = ENOSYS;
+  return base::ScopedFile();
+}
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_IPC_POSIX_SHARED_MEMORY_H_
+#define SRC_TRACING_IPC_POSIX_SHARED_MEMORY_H_
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+
+#include <stddef.h>
+
+#include <memory>
+
+
+
+
+
+namespace perfetto {
+
+
+class PosixSharedMemory : public SharedMemory {
+ public:
+  class Factory : public SharedMemory::Factory {
+   public:
+    ~Factory() override;
+    std::unique_ptr<SharedMemory> CreateSharedMemory(size_t) override;
+  };
+
+  
+  
+  
+  
+  
+  
+  static base::StatusOr<std::unique_ptr<PosixSharedMemory>> Create(size_t size);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static std::unique_ptr<PosixSharedMemory> AttachToFd(
+      base::ScopedFile,
+      bool require_seals_if_supported,
+      size_t max_size);
+
+  ~PosixSharedMemory() override;
+
+  int fd() const { return fd_.get(); }
+
+  
+  using SharedMemory::start;  
+  const void* start() const override { return start_; }
+  size_t size() const override { return size_; }
+
+ private:
+  
+  static base::StatusOr<std::unique_ptr<PosixSharedMemory>> MapFD(
+      base::ScopedFile,
+      size_t);
+
+  PosixSharedMemory(void* start, size_t size, base::ScopedFile);
+  PosixSharedMemory(const PosixSharedMemory&) = delete;
+  PosixSharedMemory& operator=(const PosixSharedMemory&) = delete;
+
+  void* const start_;
+  const size_t size_;
+  base::ScopedFile fd_;
+};
+
+}  
+
+#endif  
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
+    PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
+
+#include <errno.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cinttypes>
+#include <memory>
+#include <utility>
+
+
+
+
+
+
+namespace perfetto {
+
+namespace {
+int kFileSeals = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
+}  
+
+
+base::StatusOr<std::unique_ptr<PosixSharedMemory>> PosixSharedMemory::Create(
+    size_t size) {
+  if (size == 0)
+    return base::ErrStatus("Invalid shmem size 0");
+
+  base::ScopedFile fd =
+      CreateMemfd("perfetto_shmem", MFD_CLOEXEC | MFD_ALLOW_SEALING);
+  const bool is_memfd = !!fd;
+  if (!is_memfd) {
+#if PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD)
+    
+    
+    return base::ErrStatus("memfd_create() failed: %s", strerror(errno));
+#else
+    ASSIGN_OR_RETURN(
+        base::TempFile temp_file,
+        base::TempFile::Create(base::TempFile::LinkMode::kUnlinked));
+    fd = temp_file.ReleaseFD();
+#endif
+  }
+
+  if (ftruncate(fd.get(), static_cast<off_t>(size)) != 0)
+    return base::ErrStatus("Couldn't resize shmem FD: %s", strerror(errno));
+
+  if (is_memfd && fcntl(fd.get(), F_ADD_SEALS, kFileSeals) != 0)
+    return base::ErrStatus("Couldn't seal shmem FD: %s", strerror(errno));
+
+  return MapFD(std::move(fd), size);
+}
+
+
+std::unique_ptr<PosixSharedMemory> PosixSharedMemory::AttachToFd(
+    base::ScopedFile fd,
+    bool require_seals_if_supported,
+    size_t max_size) {
+  if (!fd)
+    return nullptr;
+  bool requires_seals = require_seals_if_supported;
+
+#if PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD)
+  
+  PERFETTO_CHECK(HasMemfdSupport());
+#else
+  
+  if (requires_seals)
+    requires_seals = HasMemfdSupport();
+#endif
+
+  if (requires_seals) {
+    
+    int res = fcntl(*fd, F_GET_SEALS);
+    if (res == -1 || (res & kFileSeals) != kFileSeals) {
+      PERFETTO_PLOG("Couldn't verify file seals on shmem FD");
+      return nullptr;
+    }
+  }
+
+  struct stat stat_buf = {};
+  if (fstat(fd.get(), &stat_buf) != 0) {
+    PERFETTO_PLOG("Couldn't stat shmem FD");
+    return nullptr;
+  }
+  if (stat_buf.st_size <= 0 ||
+      static_cast<uint64_t>(stat_buf.st_size) > max_size) {
+    PERFETTO_ELOG("Invalid shmem FD size %" PRId64 " (max %zu)",
+                  static_cast<int64_t>(stat_buf.st_size), max_size);
+    return nullptr;
+  }
+  auto memory = MapFD(std::move(fd), static_cast<size_t>(stat_buf.st_size));
+  if (!memory.ok()) {
+    PERFETTO_ELOG("%s", memory.status().c_message());
+    return nullptr;
+  }
+  return std::move(*memory);
+}
+
+
+base::StatusOr<std::unique_ptr<PosixSharedMemory>> PosixSharedMemory::MapFD(
+    base::ScopedFile fd,
+    size_t size) {
+  PERFETTO_DCHECK(fd);
+  PERFETTO_DCHECK(size > 0);
+  void* start =
+      mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd.get(), 0);
+  if (start == MAP_FAILED)
+    return base::ErrStatus("Couldn't map shmem FD: %s", strerror(errno));
+  return std::unique_ptr<PosixSharedMemory>(
+      new PosixSharedMemory(start, size, std::move(fd)));
+}
+
+PosixSharedMemory::PosixSharedMemory(void* start,
+                                     size_t size,
+                                     base::ScopedFile fd)
+    : start_(start), size_(size), fd_(std::move(fd)) {}
+
+PosixSharedMemory::~PosixSharedMemory() {
+  munmap(start(), size());
+}
+
+PosixSharedMemory::Factory::~Factory() {}
+
+std::unique_ptr<SharedMemory> PosixSharedMemory::Factory::CreateSharedMemory(
+    size_t size) {
+  return PosixSharedMemory::Create(size).ValueOrDie();
+}
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_IPC_SHARED_MEMORY_WINDOWS_H_
+#define SRC_TRACING_IPC_SHARED_MEMORY_WINDOWS_H_
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+#include <string>
+
+
+
+
+
+namespace perfetto {
+
+
+
+
+class SharedMemoryWindows : public SharedMemory {
+ public:
+  class Factory : public SharedMemory::Factory {
+   public:
+    ~Factory() override;
+    std::unique_ptr<SharedMemory> CreateSharedMemory(size_t) override;
+  };
+
+  
+  enum Flags { kNone = 0, kInheritableHandles };
+  static std::unique_ptr<SharedMemoryWindows> Create(
+      size_t size,
+      Flags flags = Flags::kNone);
+  static std::unique_ptr<SharedMemoryWindows> Attach(const std::string& key);
+  static std::unique_ptr<SharedMemoryWindows> AttachToHandleWithKey(
+      base::ScopedPlatformHandle fd,
+      const std::string& key);
+  ~SharedMemoryWindows() override;
+  const std::string& key() const { return key_; }
+  const base::ScopedPlatformHandle& handle() const { return handle_; }
+
+  
+  using SharedMemory::start;  
+  const void* start() const override { return start_; }
+  size_t size() const override { return size_; }
+
+ private:
+  SharedMemoryWindows(void* start,
+                      size_t size,
+                      std::string,
+                      base::ScopedPlatformHandle);
+  SharedMemoryWindows(const SharedMemoryWindows&) = delete;
+  SharedMemoryWindows& operator=(const SharedMemoryWindows&) = delete;
+
+  void* const start_;
+  const size_t size_;
+  std::string key_;
+  base::ScopedPlatformHandle handle_;
+};
+
+}  
+
+#endif  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
+
+#include <memory>
+#include <random>
+
+#include <windows.h>
+
+
+
+
+namespace perfetto {
+
+
+std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Create(size_t size,
+                                                                 Flags flags) {
+  base::ScopedPlatformHandle shmem_handle;
+  std::random_device rnd_dev;
+  uint64_t rnd_key = (static_cast<uint64_t>(rnd_dev()) << 32) | rnd_dev();
+  std::string key = "perfetto_shm_" + base::Uint64ToHexStringNoPrefix(rnd_key);
+
+  SECURITY_ATTRIBUTES security_attributes = {};
+  security_attributes.nLength = sizeof(SECURITY_ATTRIBUTES);
+  if (flags & Flags::kInheritableHandles)
+    security_attributes.bInheritHandle = TRUE;
+
+  shmem_handle.reset(CreateFileMappingA(
+      INVALID_HANDLE_VALUE,  
+      &security_attributes, PAGE_READWRITE,
+      static_cast<DWORD>(size >> 32),  
+      static_cast<DWORD>(size),        
+      key.c_str()));
+
+  if (!shmem_handle) {
+    PERFETTO_PLOG("CreateFileMapping() call failed");
+    return nullptr;
+  }
+  void* start =
+      MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
+                    0, size);
+  if (!start) {
+    PERFETTO_PLOG("MapViewOfFile() failed");
+    return nullptr;
+  }
+
+  return std::unique_ptr<SharedMemoryWindows>(new SharedMemoryWindows(
+      start, size, std::move(key), std::move(shmem_handle)));
+}
+
+
+std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Attach(
+    const std::string& key) {
+  base::ScopedPlatformHandle shmem_handle;
+  shmem_handle.reset(
+      OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, key.c_str()));
+  if (!shmem_handle) {
+    PERFETTO_PLOG("Failed to OpenFileMapping()");
+    return nullptr;
+  }
+
+  void* start =
+      MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
+                    0, 0);
+  if (!start) {
+    PERFETTO_PLOG("MapViewOfFile() failed");
+    return nullptr;
+  }
+
+  MEMORY_BASIC_INFORMATION info{};
+  if (!VirtualQuery(start, &info, sizeof(info))) {
+    PERFETTO_PLOG("VirtualQuery() failed");
+    return nullptr;
+  }
+  size_t size = info.RegionSize;
+  return std::unique_ptr<SharedMemoryWindows>(
+      new SharedMemoryWindows(start, size, key, std::move(shmem_handle)));
+}
+
+
+std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::AttachToHandleWithKey(
+    base::ScopedPlatformHandle shmem_handle,
+    const std::string& key) {
+  void* start =
+      MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
+                    0, 0);
+  if (!start) {
+    PERFETTO_PLOG("MapViewOfFile() failed");
+    return nullptr;
+  }
+
+  MEMORY_BASIC_INFORMATION info{};
+  if (!VirtualQuery(start, &info, sizeof(info))) {
+    PERFETTO_PLOG("VirtualQuery() failed");
+    return nullptr;
+  }
+  size_t size = info.RegionSize;
+
+  return std::unique_ptr<SharedMemoryWindows>(
+      new SharedMemoryWindows(start, size, key, std::move(shmem_handle)));
+}
+
+SharedMemoryWindows::SharedMemoryWindows(void* start,
+                                         size_t size,
+                                         std::string key,
+                                         base::ScopedPlatformHandle handle)
+    : start_(start),
+      size_(size),
+      key_(std::move(key)),
+      handle_(std::move(handle)) {}
+
+SharedMemoryWindows::~SharedMemoryWindows() {
+  if (start_)
+    UnmapViewOfFile(start_);
+}
+
+SharedMemoryWindows::Factory::~Factory() = default;
+
+std::unique_ptr<SharedMemory> SharedMemoryWindows::Factory::CreateSharedMemory(
+    size_t size) {
+  return SharedMemoryWindows::Create(size);
+}
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_V2_SHARED_RING_BUFFER_ABI_H_
+#define SRC_TRACING_V2_SHARED_RING_BUFFER_ABI_H_
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <algorithm>
+#include <atomic>
+#include <optional>
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define PERFETTO_TRACING_V2_IPC() PERFETTO_MEMFD_ENABLED()
+
+
+
+
+
+
+inline bool IpcSupportsTracingV2() {
+  return HasMemfdSupport();
+}
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kMinChunkSize = 256;
+
+
+
+
+constexpr uint32_t kMaxChunkSize = 64 * 1024;
+
+
+constexpr uint32_t kChunkAlignmentBytes = 4;
+
+
+constexpr uint32_t kMinChunksPerRing = 2;
+
+
+constexpr size_t kDefaultChunkBudgetBytes = 128 * 1024;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static_assert(sizeof(std::atomic<uint32_t>) == 4 &&
+                  alignof(std::atomic<uint32_t>) <= 4,
+              "Chunk state must fit in a 4-byte-aligned ABI word");
+static_assert(sizeof(std::atomic<uint64_t>) == 8,
+              "The packed positions must occupy 8 bytes");
+static_assert(std::atomic<uint32_t>::is_always_lock_free &&
+                  std::atomic<uint64_t>::is_always_lock_free,
+              "Shared-memory atomics must be lock-free");
+
+struct alignas(64) RingBufferHeader {
+  std::atomic<uint64_t> rw_positions;
+  std::atomic<uint32_t> num_writers_waiting;
+  uint8_t reserved[52];
+};
+
+static_assert(offsetof(RingBufferHeader, num_writers_waiting) == 8 &&
+                  offsetof(RingBufferHeader, reserved) == 12 &&
+                  sizeof(RingBufferHeader) == 64,
+              "RingBufferHeader does not match the shared-memory ABI");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kMaxChunksPerRing = 1u << 30;
+
+
+
+constexpr bool IsValidChunkSize(uint32_t chunk_size) {
+  return chunk_size >= kMinChunkSize && chunk_size <= kMaxChunkSize &&
+         chunk_size % kChunkAlignmentBytes == 0;
+}
+
+
+
+
+
+
+
+
+
+
+inline base::StatusOr<uint32_t> NumChunksForRingBufferLayout(
+    const void* start,
+    size_t size,
+    uint32_t chunk_size) {
+  if (!start ||
+      reinterpret_cast<uintptr_t>(start) % alignof(RingBufferHeader) != 0) {
+    return base::ErrStatus("ring buffer start is null or misaligned");
+  }
+  if (!IsValidChunkSize(chunk_size))
+    return base::ErrStatus("invalid chunk size %u", chunk_size);
+  
+  if (size < sizeof(RingBufferHeader))
+    return base::ErrStatus("ring buffer size %zu is below the header", size);
+  const size_t chunks_size = size - sizeof(RingBufferHeader);
+  if (chunks_size % chunk_size != 0) {
+    return base::ErrStatus("ring buffer size %zu is not header + N * %u", size,
+                           chunk_size);
+  }
+  const size_t count = chunks_size / chunk_size;
+  
+  
+  
+  
+  
+  
+  
+  if (count < kMinChunksPerRing || count > kMaxChunksPerRing ||
+      !base::IsPowerOfTwo(count)) {
+    return base::ErrStatus("invalid chunk count %zu", count);
+  }
+  return static_cast<uint32_t>(count);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline base::StatusOr<size_t> RingBufferSizeForShmSizeHint(
+    size_t shmem_size_hint_bytes,
+    size_t max_shmem_size_bytes,
+    uint32_t chunk_size) {
+  if (!IsValidChunkSize(chunk_size))
+    return base::ErrStatus("invalid chunk size %u", chunk_size);
+  if (max_shmem_size_bytes < sizeof(RingBufferHeader)) {
+    return base::ErrStatus("maximum size %zu is below the header",
+                           max_shmem_size_bytes);
+  }
+
+  const size_t available_chunk_bytes = std::min(
+      shmem_size_hint_bytes ? shmem_size_hint_bytes : kDefaultChunkBudgetBytes,
+      max_shmem_size_bytes - sizeof(RingBufferHeader));
+  const size_t max_count = available_chunk_bytes / chunk_size;
+
+  
+  
+  
+  
+  static_assert(base::IsPowerOfTwo(kMaxChunksPerRing));
+  size_t count = kMaxChunksPerRing;
+  while (count > max_count)
+    count /= 2;
+
+  if (count < kMinChunksPerRing) {
+    return base::ErrStatus("no ring buffer of %u-byte chunks fits in %zu bytes",
+                           chunk_size, available_chunk_bytes);
+  }
+  const size_t size = sizeof(RingBufferHeader) + count * chunk_size;
+  PERFETTO_CHECK(size <= max_shmem_size_bytes);
+  return size;
+}
+
+constexpr uint64_t PackRwPositions(uint32_t write_pos, uint32_t read_pos) {
+  return (static_cast<uint64_t>(write_pos) << 32) | read_pos;
+}
+
+constexpr uint32_t WritePosOf(uint64_t rw_positions) {
+  return static_cast<uint32_t>(rw_positions >> 32);
+}
+
+constexpr uint32_t ReadPosOf(uint64_t rw_positions) {
+  return static_cast<uint32_t>(rw_positions);
+}
+
+
+
+constexpr uint64_t ReplaceReadPos(uint64_t rw_positions, uint32_t read_pos) {
+  return PackRwPositions(WritePosOf(rw_positions), read_pos);
+}
+
+constexpr uint32_t NumOutstandingPositions(uint32_t write_pos,
+                                           uint32_t read_pos) {
+  return write_pos - read_pos;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+class ChunkIndex {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr ChunkIndex FromPosition(uint32_t chunk_pos,
+                                           uint32_t num_chunks) {
+    return ChunkIndex{chunk_pos & (num_chunks - 1)};
+  }
+
+  
+  
+  static constexpr ChunkIndex FromIndex(uint32_t chunk_idx) {
+    return ChunkIndex{chunk_idx};
+  }
+
+  constexpr uint32_t value() const { return chunk_idx_; }
+
+ private:
+  explicit constexpr ChunkIndex(uint32_t chunk_idx) : chunk_idx_(chunk_idx) {}
+
+  uint32_t chunk_idx_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum class ChunkState : uint32_t {
+  
+  
+  
+  
+  
+  kFree = 0,
+
+  
+  
+  
+  
+  
+  
+  
+  kBeingWritten = 1,
+
+  
+  
+  
+  
+  
+  kComplete = 2,
+
+  
+  
+  
+  
+  
+  
+  
+  kRewriteRequested = 3,
+
+  
+  
+  
+  
+  
+  
+  
+  kRewriteAcknowledged = 4,
+
+  
+  
+  kReserved5 = 5,
+  kReserved6 = 6,
+  kReserved7 = 7,
+};
+
+enum class ChunkFormat : uint32_t {
+  
+  kTargetBuffer = 0,
+
+  
+  kReservedRouting = 1,
+  kReserved2 = 2,
+  kReserved3 = 3,
+};
+
+
+
+constexpr uint32_t kPayloadFlagsBits = 3;
+constexpr uint32_t kChunkFormatBits = 2;
+constexpr uint32_t kChunkStateBits = 3;
+constexpr uint32_t kNumFragmentsBits = 8;
+constexpr uint32_t kWriterIDBits = 16;
+
+constexpr uint32_t kChunkStateShift = 0;
+constexpr uint32_t kChunkFormatShift = kChunkStateShift + kChunkStateBits;
+constexpr uint32_t kPayloadFlagsShift = kChunkFormatShift + kChunkFormatBits;
+constexpr uint32_t kNumFragmentsShift = kPayloadFlagsShift + kPayloadFlagsBits;
+constexpr uint32_t kWriterIDShift = kNumFragmentsShift + kNumFragmentsBits;
+
+constexpr uint32_t kChunkStateMask = (1u << kChunkStateBits) - 1;
+constexpr uint32_t kChunkFormatMask = ((1u << kChunkFormatBits) - 1)
+                                      << kChunkFormatShift;
+constexpr uint32_t kPayloadFlagsMask = ((1u << kPayloadFlagsBits) - 1)
+                                       << kPayloadFlagsShift;
+constexpr uint32_t kNumFragmentsMask = ((1u << kNumFragmentsBits) - 1)
+                                       << kNumFragmentsShift;
+constexpr uint32_t kWriterIDMask = ((1u << kWriterIDBits) - 1)
+                                   << kWriterIDShift;
+
+constexpr uint32_t kMaxFragmentsPerChunk = (1u << kNumFragmentsBits) - 1;
+
+
+
+constexpr uint32_t kWrapCountShift = kWriterIDShift;
+
+enum PayloadFlags : uint32_t {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  kFlagDataLoss = 1u << kPayloadFlagsShift,
+
+  
+  
+  
+  kFlagContinuesOnNextChunk = 1u << (kPayloadFlagsShift + 1),
+
+  
+  
+  kFlagContinuesFromPrevChunk = 1u << (kPayloadFlagsShift + 2),
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline uint16_t WrapCountForPosition(uint32_t chunk_pos, uint32_t num_chunks) {
+  PERFETTO_DCHECK(base::IsPowerOfTwo(num_chunks));
+  return static_cast<uint16_t>(chunk_pos >> base::CountTrailZeros(num_chunks));
+}
+
+constexpr ChunkState ChunkStateOf(uint32_t state_word) {
+  return static_cast<ChunkState>((state_word & kChunkStateMask) >>
+                                 kChunkStateShift);
+}
+
+constexpr bool HasDataFields(ChunkState state) {
+  return state == ChunkState::kBeingWritten || state == ChunkState::kComplete ||
+         state == ChunkState::kRewriteRequested;
+}
+
+constexpr uint32_t MakeFreeStateWord(uint16_t wrap_count) {
+  return static_cast<uint32_t>(wrap_count) << kWrapCountShift;
+}
+
+
+
+inline uint32_t MakeFreeStateWordForPosition(uint32_t chunk_pos,
+                                             uint32_t num_chunks) {
+  return MakeFreeStateWord(WrapCountForPosition(chunk_pos, num_chunks));
+}
+
+
+
+
+constexpr ChunkFormat ChunkFormatOf(uint32_t state_word) {
+  return static_cast<ChunkFormat>((state_word & kChunkFormatMask) >>
+                                  kChunkFormatShift);
+}
+
+constexpr uint32_t PayloadFlagsOf(uint32_t state_word) {
+  return state_word & kPayloadFlagsMask;
+}
+
+constexpr uint32_t NumFragmentsOf(uint32_t state_word) {
+  return (state_word & kNumFragmentsMask) >> kNumFragmentsShift;
+}
+
+constexpr WriterID WriterIDOf(uint32_t state_word) {
+  return static_cast<WriterID>((state_word & kWriterIDMask) >> kWriterIDShift);
+}
+
+inline uint32_t MakeDataStateWord(ChunkState state,
+                                  ChunkFormat format,
+                                  uint32_t payload_flags,
+                                  uint32_t num_fragments,
+                                  WriterID writer_id) {
+  PERFETTO_DCHECK(HasDataFields(state));
+  PERFETTO_DCHECK(static_cast<uint32_t>(format) < (1u << kChunkFormatBits));
+  PERFETTO_DCHECK((payload_flags & ~kPayloadFlagsMask) == 0);
+  PERFETTO_DCHECK(num_fragments <= kMaxFragmentsPerChunk);
+  return (static_cast<uint32_t>(state) << kChunkStateShift) |
+         (static_cast<uint32_t>(format) << kChunkFormatShift) |
+         (payload_flags & kPayloadFlagsMask) |
+         ((num_fragments << kNumFragmentsShift) & kNumFragmentsMask) |
+         (static_cast<uint32_t>(writer_id) << kWriterIDShift);
+}
+
+constexpr uint32_t kRewriteAcknowledgedStateWord =
+    static_cast<uint32_t>(ChunkState::kRewriteAcknowledged) << kChunkStateShift;
+
+
+
+
+
+constexpr uint32_t ReplaceChunkState(uint32_t state_word, ChunkState state) {
+  return (state_word & ~kChunkStateMask) |
+         (static_cast<uint32_t>(state) << kChunkStateShift);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kTargetBufferIdOffset = 4;
+constexpr uint32_t kTargetBufferPayloadOffset = 6;
+
+inline void StoreTargetBufferId(uint8_t* chunk, BufferID buffer_id) {
+  memcpy(&chunk[kTargetBufferIdOffset], &buffer_id, sizeof(buffer_id));
+}
+
+inline BufferID LoadTargetBufferId(const uint8_t* chunk) {
+  BufferID buffer_id;
+  memcpy(&buffer_id, &chunk[kTargetBufferIdOffset], sizeof(buffer_id));
+  return buffer_id;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kMaxFragmentSizeVarIntBytes = 4;
+
+
+
+
+
+
+inline uint32_t MaxFragmentSizeForAvailableBytes(uint32_t available_bytes) {
+  if (available_bytes <= 1)
+    return 0;
+
+  
+  if (available_bytes <= (1u << 7))
+    return available_bytes - 1;
+  
+  if (available_bytes <= (1u << 14) + 1)
+    return available_bytes - 2;
+  
+  if (available_bytes <= (1u << 21) + 2)
+    return available_bytes - 3;
+  return std::min(
+      available_bytes - 4,
+      static_cast<uint32_t>(protozero::proto_utils::kMaxMessageLength));
+}
+
+inline uint32_t MaxFragmentSizeForEmptyChunk(uint32_t chunk_size) {
+  
+  PERFETTO_CHECK(chunk_size >= kMinChunkSize);
+  const uint32_t available_bytes = chunk_size - kTargetBufferPayloadOffset;
+  return MaxFragmentSizeForAvailableBytes(available_bytes);
+}
+
+
+
+
+
+inline uint8_t* WriteFragmentSizeReversed(uint8_t* sizes_begin, uint32_t size) {
+  PERFETTO_DCHECK(size <= protozero::proto_utils::kMaxMessageLength);
+  
+  
+  uint8_t encoded[kMaxFragmentSizeVarIntBytes];
+  const uint8_t* const encoded_end =
+      protozero::proto_utils::WriteVarInt(size, encoded);
+  const size_t encoded_size = static_cast<size_t>(encoded_end - encoded);
+  
+  
+  for (size_t i = 0; i < encoded_size; ++i) {
+    --sizes_begin;
+    *sizes_begin = encoded[i];
+  }
+  return sizes_begin;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline std::optional<uint32_t> ReadFragmentSizeReversed(
+    const uint8_t* lower_bound,
+    const uint8_t** sizes_cursor) {
+  PERFETTO_DCHECK(lower_bound <= *sizes_cursor);
+  const uint8_t* cursor = *sizes_cursor;
+  uint32_t value = 0;
+  uint32_t num_bytes = 0;
+  
+  
+  
+  for (;;) {
+    if (cursor == lower_bound || num_bytes == kMaxFragmentSizeVarIntBytes)
+      return std::nullopt;
+    --cursor;
+    const uint8_t cur = *cursor;
+    
+    const uint32_t data_bits = cur & 0x7f;
+    const uint32_t shift = 7 * num_bytes;
+    value |= data_bits << shift;
+    ++num_bytes;
+    if ((cur & 0x80) == 0)
+      break;
+  }
+
+  *sizes_cursor = cursor;
+  return value;
+}
+
+}  
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_V2_SHARED_RING_BUFFER_H_
+#define SRC_TRACING_V2_SHARED_RING_BUFFER_H_
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <atomic>
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+namespace test {
+class SharedRingBufferInternalsForTest;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SharedRingBuffer {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SharedRingBuffer(uint8_t* start, size_t size, uint32_t chunk_size);
+  ~SharedRingBuffer() = default;
+
+  SharedRingBuffer(const SharedRingBuffer&) = delete;
+  SharedRingBuffer& operator=(const SharedRingBuffer&) = delete;
+  SharedRingBuffer(SharedRingBuffer&&) = delete;
+  SharedRingBuffer& operator=(SharedRingBuffer&&) = delete;
+
+  
+  uint32_t num_chunks() const { return num_chunks_; }
+  uint32_t chunk_size() const { return chunk_size_; }
+
+  uint8_t* chunk_at(ChunkIndex chunk_idx) {
+    PERFETTO_DCHECK(chunk_idx.value() < num_chunks_);
+    return start_ + sizeof(RingBufferHeader) +
+           static_cast<size_t>(chunk_idx.value()) * chunk_size_;
+  }
+  const uint8_t* chunk_at(ChunkIndex chunk_idx) const {
+    PERFETTO_DCHECK(chunk_idx.value() < num_chunks_);
+    return start_ + sizeof(RingBufferHeader) +
+           static_cast<size_t>(chunk_idx.value()) * chunk_size_;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  enum class ReserveResult {
+    kReserved,
+    
+    
+    kFull,
+  };
+
+  struct Reservation {
+    ReserveResult result = ReserveResult::kFull;
+    
+    
+    uint32_t chunk_pos = 0;
+    
+    
+    uint32_t read_pos_for_wait = 0;
+  };
+
+  
+  
+  
+  Reservation TryReserveWritePos();
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool TryAcquireChunkForWriting(uint32_t chunk_pos,
+                                 uint32_t being_written_word);
+
+  
+  
+  
+  
+  
+  
+  bool TryReleaseChunkAsComplete(ChunkIndex chunk_idx,
+                                 uint32_t complete_word,
+                                 uint32_t* expected);
+
+  
+  
+  
+  
+  
+  bool TryReacquireChunkForWriting(ChunkIndex chunk_idx, uint32_t observed);
+
+  
+  
+  
+  
+  
+  bool TryAcknowledgeRewrite(ChunkIndex chunk_idx, uint32_t observed);
+
+  
+
+  
+  
+  
+  uint32_t LoadChunkStateWordAcquire(ChunkIndex chunk_idx) const;
+
+  
+  
+  
+  
+  
+  
+  uint32_t LoadWritePosRelaxed() const;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t LoadNumOutstandingPositionsRelaxed() const;
+
+  
+  
+  
+  
+  
+  bool TryRequestRewrite(ChunkIndex chunk_idx, uint32_t* expected);
+
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  bool TryMoveFreeChunkToNextWrap(uint32_t chunk_pos, uint32_t* expected);
+
+  
+  
+  
+  
+  
+  
+  bool TryReleaseCompleteChunkAsFree(uint32_t chunk_pos, uint32_t* expected);
+
+  
+  
+  
+  
+  bool TryReleaseRewriteAcknowledgedChunkAsFree(uint32_t chunk_pos,
+                                                uint32_t* observed);
+
+  
+  
+  
+  
+  
+
+  enum class WriterWaitResult {
+    
+    
+    kRetry,
+    
+    
+    kUnavailable,
+  };
+
+  
+  static constexpr bool SupportsWriterWait() { return PERFETTO_HAS_FUTEX(); }
+
+  
+  
+  
+  WriterWaitResult WaitForReadPosChange(uint32_t read_pos_for_wait,
+                                        uint32_t timeout_ms);
+
+  
+  
+  
+  void PublishReadPos(uint32_t read_pos);
+
+ private:
+  friend class test::SharedRingBufferInternalsForTest;
+
+  
+  
+  
+  Reservation TryReserveWritePosFromSnapshot(uint64_t rw_positions);
+  void PublishReadPosFromSnapshot(uint64_t rw_positions, uint32_t read_pos);
+
+  
+
+  std::atomic<uint32_t>* chunk_state_word_at(ChunkIndex chunk_idx) {
+    return reinterpret_cast<std::atomic<uint32_t>*>(chunk_at(chunk_idx));
+  }
+  const std::atomic<uint32_t>* chunk_state_word_at(ChunkIndex chunk_idx) const {
+    return reinterpret_cast<const std::atomic<uint32_t>*>(chunk_at(chunk_idx));
+  }
+
+  std::atomic<uint32_t>* chunk_state_word_for_position(uint32_t chunk_pos) {
+    return chunk_state_word_at(
+        ChunkIndex::FromPosition(chunk_pos, num_chunks_));
+  }
+
+  
+  uint32_t MakeFreeWordForNextWrap(uint32_t chunk_pos) const {
+    
+    const uint32_t next_pos = chunk_pos + num_chunks_;
+    return MakeFreeStateWordForPosition(next_pos, num_chunks_);
+  }
+
+  RingBufferHeader* header() {
+    return reinterpret_cast<RingBufferHeader*>(start_);
+  }
+  const RingBufferHeader* header() const {
+    return reinterpret_cast<const RingBufferHeader*>(start_);
+  }
+
+  uint8_t* const start_;
+  const uint32_t num_chunks_;
+  const uint32_t chunk_size_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_V2_PRODUCER_RING_BUFFER_ARBITER_H_
+#define SRC_TRACING_V2_PRODUCER_RING_BUFFER_ARBITER_H_
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <atomic>
+#include <functional>
+#include <memory>
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+
+namespace base {
+class TaskRunner;
+}  
+
+class ProducerEndpoint;
+class SharedMemory;
+class SharedMemoryArbiter;
+class TraceWriter;
+
+namespace tracing_v2 {
+
+namespace test {
+class ProducerRingBufferArbiterTestPeer;
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ProducerRingBufferArbiter {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class ReaderState {
+    
+    
+    
+    
+    
+    kPending,
+
+    
+    
+    kAttached,
+
+    
+    
+    
+    
+    
+    kDetached,
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class DrainUrgency {
+    
+    
+    
+    kRoutine,
+
+    
+    
+    
+    
+    
+    
+    kUrgent,
+  };
+
+  
+  
+  using AllocateSharedMemoryFn =
+      base::StatusOr<std::shared_ptr<SharedMemory>> (*)(size_t size);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  static base::StatusOr<std::unique_ptr<ProducerRingBufferArbiter>> Create(
+      base::TaskRunner* task_runner,
+      ProducerEndpoint* endpoint,
+      const DataSourceConfig& config,
+      size_t shmem_size_hint_bytes,
+      AllocateSharedMemoryFn allocate_shared_memory);
+
+  
+  
+  ~ProducerRingBufferArbiter();
+
+  
+  ProducerRingBufferArbiter(const ProducerRingBufferArbiter&) = delete;
+  ProducerRingBufferArbiter& operator=(const ProducerRingBufferArbiter&) =
+      delete;
+
+  
+  
+  
+  const std::shared_ptr<SharedMemory>& memory() const { return memory_; }
+
+  
+
+  
+  
+  
+  void OnReaderAttachReply(bool reader_attached);
+
+  
+  
+  bool IsReaderAttached() const;
+
+  
+  
+  void Disconnect();
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<TraceWriter> CreateTraceWriter(BufferID target_buffer,
+                                                 BufferExhaustedPolicy);
+
+  
+  
+  
+  
+  void OnWriterDestroyed(WriterID);
+
+  
+  SharedRingBuffer* ring_buffer() { return &ring_buffer_; }
+
+  uint32_t drain_occupancy_threshold() const {
+    return drain_occupancy_threshold_;
+  }
+
+  
+
+  
+  void RequestDrain(DrainUrgency);
+
+  
+  
+  
+  
+  
+  void Flush(std::function<void()>);
+
+  
+  base::WeakPtr<ProducerRingBufferArbiter> GetWeakPtr() const {
+    return weak_factory_.GetWeakPtr();
+  }
+
+ private:
+  friend class test::ProducerRingBufferArbiterTestPeer;
+
+  
+  
+  
+  
+  ProducerRingBufferArbiter(base::TaskRunner* task_runner,
+                            ProducerEndpoint* endpoint,
+                            std::shared_ptr<SharedMemory> memory,
+                            uint32_t chunk_size,
+                            uint32_t drain_occupancy_threshold);
+
+  
+  void SetReaderState(ReaderState);
+
+  
+  
+  
+  
+  void PostDrainTask(bool force);
+
+  
+
+  
+  
+  base::TaskRunner* const task_runner_;
+  
+  ProducerEndpoint* const endpoint_;
+  
+  SharedMemoryArbiter* const shared_memory_arbiter_;
+
+  
+
+  
+  
+  
+  
+  
+  
+  
+  const std::shared_ptr<SharedMemory> memory_;
+  
+  SharedRingBuffer ring_buffer_;
+  
+  
+  
+  
+  
+  const uint32_t drain_occupancy_threshold_;
+
+  
+
+  
+  std::atomic<ReaderState> reader_state_{ReaderState::kPending};
+  
+  
+  
+  std::atomic<uint32_t> drain_task_pending_{0};
+
+  PERFETTO_THREAD_CHECKER(thread_checker_)
+
+  
+  
+  base::WeakPtrFactory<ProducerRingBufferArbiter> weak_factory_{this};
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_V2_SHARED_RING_BUFFER_WRITER_H_
+#define SRC_TRACING_V2_SHARED_RING_BUFFER_WRITER_H_
+
+#include <stdint.h>
+
+#include <functional>
+#include <optional>
+#include <vector>
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SharedRingBufferWriter {
+ public:
+  
+  enum class BeginFragmentResult {
+    kSuccess,
+    
+    
+    kFull,
+    
+    
+    
+    
+    
+    
+    kClaimFailed,
+    
+    
+    kTooLarge,
+  };
+
+  
+  
+  enum class EndFragmentResult {
+    kSuccess,
+    
+    
+    
+    kFull,
+    kClaimFailed,
+  };
+
+  
+  struct RetryRelocationResult {
+    EndFragmentResult result = EndFragmentResult::kFull;
+    
+    
+    
+    
+    
+    bool acquired_replacement = false;
+  };
+
+  
+  
+  struct FragmentRange {
+    BeginFragmentResult result = BeginFragmentResult::kFull;
+    uint8_t* begin = nullptr;
+    uint8_t* end = nullptr;
+  };
+
+  SharedRingBufferWriter(SharedRingBuffer* ring,
+                         WriterID writer_id,
+                         BufferID target_buffer);
+  ~SharedRingBufferWriter();
+
+  SharedRingBufferWriter(const SharedRingBufferWriter&) = delete;
+  SharedRingBufferWriter& operator=(const SharedRingBufferWriter&) = delete;
+  SharedRingBufferWriter(SharedRingBufferWriter&&) = delete;
+  SharedRingBufferWriter& operator=(SharedRingBufferWriter&&) = delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FragmentRange BeginFragment(uint32_t min_size, bool continues_from_prev);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  EndFragmentResult EndFragment(uint32_t size, bool continues_on_next);
+
+  
+  
+  RetryRelocationResult RetryRelocation();
+
+  
+  
+  void DropRelocation();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void WaitForReadPosChange(uint32_t timeout_ms);
+
+  
+  
+  
+  EndFragmentResult FinishCurrentChunk();
+
+  
+  
+  
+  
+  
+  
+  void RecordDataLoss() { data_loss_pending_ = true; }
+
+  
+  
+  
+  
+  
+  
+  bool has_pending_data_loss() const {
+    return data_loss_pending_ ||
+           (pending_relocation_ &&
+            (pending_relocation_->chunk_flags & kFlagDataLoss));
+  }
+
+  WriterID writer_id() const { return writer_id_; }
+  
+  uint32_t max_fragment_size() const { return max_fragment_size_; }
+
+  
+  
+  struct Stats {
+    uint64_t failed_claims = 0;
+    uint64_t fragments_dropped = 0;
+    uint64_t relocations = 0;
+  };
+  Stats GetStats() const { return stats_; }
+
+ private:
+  friend class test::SharedRingBufferInternalsForTest;
+
+  static constexpr uint32_t kNoFragmentOpen = UINT32_MAX;
+
+  
+  
+  struct PendingRelocation {
+    
+    
+    
+    uint32_t chunk_flags = 0;
+    
+    bool continues_on_next = false;
+  };
+
+  
+  
+  uint32_t MaxFragmentSizeInCurrentChunk() const;
+  ChunkState cur_chunk_state() const {
+    return ChunkStateOf(expected_state_word_);
+  }
+  bool has_open_fragment() const {
+    return cur_fragment_begin_ != kNoFragmentOpen;
+  }
+
+  FragmentRange BeginFragmentInCurrentChunk(uint32_t available);
+  BeginFragmentResult AcquireNewChunk(uint32_t continuation_flags);
+  
+  
+  
+  EndFragmentResult ReleaseCurrentChunkAsComplete(
+      std::optional<uint32_t> fragment_size,
+      bool continues_on_next);
+  
+  
+  void CopyRelocatedFragment(uint32_t fragment_size);
+  
+  
+  void ResetCurrentChunk();
+
+  SharedRingBuffer* const ring_;
+  const WriterID writer_id_;
+  const BufferID target_buffer_;
+  const uint32_t chunk_size_;
+  
+  const uint32_t max_fragment_size_;
+
+  
+  uint8_t* cur_chunk_ = nullptr;
+  ChunkIndex cur_chunk_idx_ = ChunkIndex::FromIndex(0);
+  
+  
+  uint32_t expected_state_word_ = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t payload_end_ = 0;
+  
+  uint32_t size_directory_bytes_ = 0;
+  
+  
+  uint32_t num_fragments_ = 0;
+  
+  uint32_t cur_fragment_begin_ = kNoFragmentOpen;
+
+  
+  
+  
+  
+  
+  
+  
+  bool data_loss_pending_ = false;
+
+  
+  
+  uint32_t read_pos_for_wait_ = 0;
+
+  
+  
+  bool use_futex_ = SharedRingBuffer::SupportsWriterWait();
+
+  
+  
+  uint32_t fallback_sleep_us_ = 0;
+
+  
+  
+  std::optional<PendingRelocation> pending_relocation_;
+
+  
+  
+  std::vector<uint8_t> relocation_payload_;
+
+  
+  
+  
+  
+  
+  std::function<void()> after_replacement_claim_for_testing_;
+
+  Stats stats_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_V2_TRACE_WRITER_V2_IMPL_H_
+#define SRC_TRACING_V2_TRACE_WRITER_V2_IMPL_H_
+
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <optional>
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+class ProducerRingBufferArbiter;
+
+namespace test {
+class TraceWriterV2ImplTestPeer;
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TraceWriterV2Impl : public TraceWriter,
+                          public protozero::MessageFinalizationListener,
+                          public protozero::ScatteredStreamWriter::Delegate {
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  TraceWriterV2Impl(ProducerRingBufferArbiter* ring_buffer_arbiter,
+                    WriterID id,
+                    BufferID target_buffer,
+                    BufferExhaustedPolicy policy);
+  ~TraceWriterV2Impl() override;
+
+  TraceWriterV2Impl(const TraceWriterV2Impl&) = delete;
+  TraceWriterV2Impl& operator=(const TraceWriterV2Impl&) = delete;
+  TraceWriterV2Impl(TraceWriterV2Impl&&) = delete;
+  TraceWriterV2Impl& operator=(TraceWriterV2Impl&&) = delete;
+
+  
+  TracePacketHandle NewTracePacket() override;
+  void FinishTracePacket() override;
+  
+  
+  void Flush(std::function<void()> callback = {}) override;
+  WriterID writer_id() const override {
+    return ring_buffer_writer_.writer_id();
+  }
+  uint64_t written() const override { return stream_writer_.written(); }
+  uint64_t drop_count() const override { return drop_count_; }
+
+ private:
+  friend class test::TraceWriterV2ImplTestPeer;
+
+  using ClockFunction = base::TimeMillis (*)();
+
+  
+  void OnMessageFinalized(protozero::Message*) override;
+
+  
+  protozero::ContiguousMemoryRange GetNewBuffer() override;
+  uint8_t* AnnotatePatch(uint8_t*) override;
+
+  
+  
+  
+  
+  
+  
+  void EnsurePacketClosed();
+
+  
+  
+  
+  
+  
+  
+  
+  protozero::ContiguousMemoryRange BeginPacketFragment(
+      bool continues_from_prev);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void EndPacketFragment(bool continues_on_next);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool TryStallForSpace(bool claim_failed,
+                        std::optional<base::TimeMillis>* stall_deadline);
+
+  
+  
+  
+  
+  
+  void EnterDropMode();
+
+  
+  
+  protozero::ContiguousMemoryRange GetDropBuffer();
+
+  
+  
+  ProducerRingBufferArbiter* const ring_buffer_arbiter_;
+
+  
+  SharedRingBufferWriter ring_buffer_writer_;
+
+  
+  const BufferExhaustedPolicy buffer_exhausted_policy_;
+
+  
+  
+  ClockFunction get_time_ms_ = &base::GetWallTimeMs;
+
+  
+  
+  const base::PlatformProcessId process_id_;
+
+  
+  
+  protozero::ScatteredStreamWriter stream_writer_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::unique_ptr<protozero::RootMessage<protos::pbzero::TracePacket>>
+      cur_packet_;
+
+  
+  
+  uint8_t* fragment_begin_ = nullptr;
+
+  
+  bool packet_open_ = false;
+
+  
+  
+  bool in_drop_mode_ = false;
+
+  
+  bool first_packet_on_sequence_ = true;
+
+  
+  
+  uint64_t drop_count_ = 0;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <utility>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+namespace {
+
+
+uint32_t ChooseChunkSize(const DataSourceConfig& config) {
+  using ChunkSizeOption =
+      DataSourceConfig::ExperimentalTracingV2Config::ChunkSizeOption;
+
+  const auto& options = config.experimental_tracing_v2().chunk_size_options();
+  auto weight_of = [](const ChunkSizeOption& option) -> uint64_t {
+    if (!IsValidChunkSize(option.size_bytes()))
+      return 0;
+    return option.has_weight() ? option.weight() : 1;
+  };
+
+  uint64_t total_weight = 0;
+  for (const ChunkSizeOption& option : options)
+    total_weight += weight_of(option);
+
+  if (total_weight == 0)
+    return kMinChunkSize;
+
+  
+  const uint64_t target =
+      static_cast<uint64_t>(base::Uuidv4().lsb()) % total_weight;
+  uint64_t cumulative_weight = 0;
+  for (const ChunkSizeOption& option : options) {
+    cumulative_weight += weight_of(option);
+    if (target < cumulative_weight)
+      return option.size_bytes();
+  }
+
+  
+  
+  PERFETTO_DFATAL("ChooseChunkSize: no option for the target");
+  return kMinChunkSize;
+}
+
+
+
+
+
+
+
+
+uint32_t ComputeDrainOccupancyThreshold(uint32_t num_chunks,
+                                        int32_t drain_occupancy_percent) {
+  constexpr uint32_t kDefaultDrainOccupancyPercent = 25;
+
+  PERFETTO_DCHECK(drain_occupancy_percent >= -1 &&
+                  drain_occupancy_percent <= 100);
+  if (drain_occupancy_percent == -1)
+    return 1;
+  const uint32_t percent = drain_occupancy_percent == 0
+                               ? kDefaultDrainOccupancyPercent
+                               : static_cast<uint32_t>(drain_occupancy_percent);
+  const uint64_t threshold = uint64_t{num_chunks} * percent / 100;
+  return std::max(1u, static_cast<uint32_t>(threshold));
+}
+
+}  
+
+
+base::StatusOr<std::unique_ptr<ProducerRingBufferArbiter>>
+ProducerRingBufferArbiter::Create(
+    base::TaskRunner* task_runner,
+    ProducerEndpoint* endpoint,
+    const DataSourceConfig& config,
+    size_t shmem_size_hint_bytes,
+    AllocateSharedMemoryFn allocate_shared_memory) {
+  const uint32_t chunk_size_bytes = ChooseChunkSize(config);
+
+  ASSIGN_OR_RETURN(const size_t shmem_size_bytes,
+                   RingBufferSizeForShmSizeHint(shmem_size_hint_bytes,
+                                                TracingService::kMaxShmSize,
+                                                chunk_size_bytes));
+
+  ASSIGN_OR_RETURN(std::shared_ptr<SharedMemory> memory,
+                   allocate_shared_memory(shmem_size_bytes));
+
+  const uint32_t num_chunks = static_cast<uint32_t>(
+      (shmem_size_bytes - sizeof(RingBufferHeader)) / chunk_size_bytes);
+  const uint32_t drain_occupancy_threshold = ComputeDrainOccupancyThreshold(
+      num_chunks, config.experimental_tracing_v2().drain_occupancy_percent());
+
+  return std::unique_ptr<ProducerRingBufferArbiter>(
+      new ProducerRingBufferArbiter(task_runner, endpoint, std::move(memory),
+                                    chunk_size_bytes,
+                                    drain_occupancy_threshold));
+}
+
+ProducerRingBufferArbiter::ProducerRingBufferArbiter(
+    base::TaskRunner* task_runner,
+    ProducerEndpoint* endpoint,
+    std::shared_ptr<SharedMemory> memory,
+    uint32_t chunk_size,
+    uint32_t drain_occupancy_threshold)
+    : task_runner_(task_runner),
+      endpoint_(endpoint),
+      shared_memory_arbiter_(endpoint->MaybeSharedMemoryArbiter()),
+      memory_(std::move(memory)),
+      ring_buffer_(static_cast<uint8_t*>(memory_->start()),
+                   memory_->size(),
+                   chunk_size),
+      drain_occupancy_threshold_(drain_occupancy_threshold) {
+  PERFETTO_CHECK(shared_memory_arbiter_);
+}
+
+ProducerRingBufferArbiter::~ProducerRingBufferArbiter() {
+  Disconnect();
+}
+
+void ProducerRingBufferArbiter::OnReaderAttachReply(bool reader_attached) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  
+  if (reader_state_.load() == ReaderState::kDetached)
+    return;
+  if (!reader_attached) {
+    PERFETTO_ELOG("tracing v2: ring buffer attachment failed");
+    Disconnect();
+    return;
+  }
+  SetReaderState(ReaderState::kAttached);
+}
+
+bool ProducerRingBufferArbiter::IsReaderAttached() const {
+  return reader_state_.load() == ReaderState::kAttached;
+}
+
+void ProducerRingBufferArbiter::Disconnect() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  SetReaderState(ReaderState::kDetached);
+}
+
+void ProducerRingBufferArbiter::SetReaderState(ReaderState next) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  const ReaderState current = reader_state_.load();
+  PERFETTO_CHECK(
+      next == ReaderState::kDetached ||
+      (current == ReaderState::kPending && next == ReaderState::kAttached));
+  reader_state_.store(next);
+}
+
+std::unique_ptr<TraceWriter> ProducerRingBufferArbiter::CreateTraceWriter(
+    BufferID target_buffer,
+    BufferExhaustedPolicy policy) {
+  if (PERFETTO_UNLIKELY(reader_state_.load() == ReaderState::kDetached))
+    return std::make_unique<NullTraceWriter>();
+
+  const WriterID writer_id =
+      shared_memory_arbiter_->AllocateTracingV2WriterID();
+  if (PERFETTO_UNLIKELY(!writer_id))
+    return std::make_unique<NullTraceWriter>();
+
+  return std::make_unique<TraceWriterV2Impl>(this, writer_id, target_buffer,
+                                             policy);
+}
+
+void ProducerRingBufferArbiter::OnWriterDestroyed(WriterID id) {
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  shared_memory_arbiter_->ReleaseTracingV2WriterID(id);
+}
+
+void ProducerRingBufferArbiter::RequestDrain(DrainUrgency urgency) {
+  
+  if (urgency == DrainUrgency::kUrgent &&
+      task_runner_->RunsTasksOnCurrentThread()) {
+    endpoint_->DrainV2RingBuffer();
+    return;
+  }
+  PostDrainTask(false);
+}
+
+void ProducerRingBufferArbiter::Flush(std::function<void()> callback) {
+  
+  
+  
+  
+  
+  
+  
+  PostDrainTask(true);
+
+  if (callback)
+    task_runner_->PostTask(std::move(callback));
+}
+
+void ProducerRingBufferArbiter::PostDrainTask(bool force) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!force && drain_task_pending_.fetch_or(1))
+    return;
+
+  task_runner_->PostTask([weak_this = weak_factory_.GetWeakPtr()] {
+    if (!weak_this)
+      return;
+    PERFETTO_DCHECK_THREAD(weak_this->thread_checker_);
+    
+    
+    weak_this->drain_task_pending_.exchange(0);
+    weak_this->endpoint_->DrainV2RingBuffer();
+  });
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <limits.h>
+#include <stdint.h>
+
+#include <atomic>
+
+
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+namespace {
+
+static_assert(kMaxFragmentSizeVarIntBytes ==
+                  protozero::proto_utils::kMessageLengthFieldSize,
+              "Ring buffer fragment sizes must use the same varint byte limit "
+              "as Protozero message lengths");
+
+
+
+
+
+
+
+const uint32_t* ReadPosFutexAddress(const std::atomic<uint64_t>* rw_positions) {
+  static_assert(PERFETTO_IS_LITTLE_ENDIAN(),
+                "The low-word futex requires read_pos to be the first four "
+                "bytes of rw_positions");
+  return reinterpret_cast<const uint32_t*>(rw_positions);
+}
+
+
+
+uint32_t CheckedNumChunks(const void* start, size_t size, uint32_t chunk_size) {
+  base::StatusOr<uint32_t> num_chunks =
+      NumChunksForRingBufferLayout(start, size, chunk_size);
+  if (!num_chunks.ok())
+    PERFETTO_FATAL("tracing v2: %s", num_chunks.status().c_message());
+  return *num_chunks;
+}
+
+}  
+
+
+
+SharedRingBuffer::SharedRingBuffer(uint8_t* start,
+                                   size_t size,
+                                   uint32_t chunk_size)
+    : start_(start),
+      num_chunks_(CheckedNumChunks(start, size, chunk_size)),
+      chunk_size_(chunk_size) {}
+
+
+
+SharedRingBuffer::Reservation SharedRingBuffer::TryReserveWritePos() {
+  
+  
+  return TryReserveWritePosFromSnapshot(
+      header()->rw_positions.load(std::memory_order_acquire));
+}
+
+SharedRingBuffer::Reservation SharedRingBuffer::TryReserveWritePosFromSnapshot(
+    uint64_t rw_positions) {
+  RingBufferHeader* ring_header = header();
+  Reservation reservation{};
+  for (;;) {
+    const uint32_t write_pos = WritePosOf(rw_positions);
+    const uint32_t read_pos = ReadPosOf(rw_positions);
+    reservation.read_pos_for_wait = read_pos;
+
+    if (NumOutstandingPositions(write_pos, read_pos) >= num_chunks_) {
+      reservation.result = ReserveResult::kFull;
+      return reservation;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (ring_header->rw_positions.compare_exchange_weak(
+            rw_positions, PackRwPositions(write_pos + 1, read_pos))) {
+      reservation.result = ReserveResult::kReserved;
+      reservation.chunk_pos = write_pos;
+      return reservation;
+    }
+  }
+}
+
+
+
+bool SharedRingBuffer::TryAcquireChunkForWriting(uint32_t chunk_pos,
+                                                 uint32_t being_written_word) {
+  PERFETTO_DCHECK(ChunkStateOf(being_written_word) ==
+                  ChunkState::kBeingWritten);
+  PERFETTO_DCHECK(NumFragmentsOf(being_written_word) == 0);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t expected = MakeFreeStateWordForPosition(chunk_pos, num_chunks_);
+  std::atomic<uint32_t>* state_word = chunk_state_word_for_position(chunk_pos);
+  return state_word->compare_exchange_strong(expected, being_written_word);
+}
+
+bool SharedRingBuffer::TryReleaseChunkAsComplete(ChunkIndex chunk_idx,
+                                                 uint32_t complete_word,
+                                                 uint32_t* expected) {
+  PERFETTO_DCHECK(ChunkStateOf(*expected) == ChunkState::kBeingWritten);
+  PERFETTO_DCHECK(ChunkStateOf(complete_word) == ChunkState::kComplete);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::atomic<uint32_t>* state_word = chunk_state_word_at(chunk_idx);
+  return state_word->compare_exchange_strong(*expected, complete_word);
+}
+
+bool SharedRingBuffer::TryReacquireChunkForWriting(ChunkIndex chunk_idx,
+                                                   uint32_t observed) {
+  PERFETTO_DCHECK(ChunkStateOf(observed) == ChunkState::kComplete);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t expected = observed;
+  std::atomic<uint32_t>* state_word = chunk_state_word_at(chunk_idx);
+  return state_word->compare_exchange_strong(
+      expected, ReplaceChunkState(observed, ChunkState::kBeingWritten));
+}
+
+bool SharedRingBuffer::TryAcknowledgeRewrite(ChunkIndex chunk_idx,
+                                             uint32_t observed) {
+  PERFETTO_DCHECK(ChunkStateOf(observed) == ChunkState::kRewriteRequested);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t expected = observed;
+  std::atomic<uint32_t>* state_word = chunk_state_word_at(chunk_idx);
+  return state_word->compare_exchange_strong(expected,
+                                             kRewriteAcknowledgedStateWord);
+}
+
+
+
+uint32_t SharedRingBuffer::LoadChunkStateWordAcquire(
+    ChunkIndex chunk_idx) const {
+  
+  
+  
+  
+  
+  
+  return chunk_state_word_at(chunk_idx)->load(std::memory_order_acquire);
+}
+
+uint32_t SharedRingBuffer::LoadWritePosRelaxed() const {
+  
+  
+  return WritePosOf(header()->rw_positions.load(std::memory_order_relaxed));
+}
+
+uint32_t SharedRingBuffer::LoadNumOutstandingPositionsRelaxed() const {
+  const uint64_t rw_positions =
+      header()->rw_positions.load(std::memory_order_relaxed);
+  return NumOutstandingPositions(WritePosOf(rw_positions),
+                                 ReadPosOf(rw_positions));
+}
+
+bool SharedRingBuffer::TryRequestRewrite(ChunkIndex chunk_idx,
+                                         uint32_t* expected) {
+  PERFETTO_DCHECK(ChunkStateOf(*expected) == ChunkState::kBeingWritten);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::atomic<uint32_t>* state_word = chunk_state_word_at(chunk_idx);
+  return state_word->compare_exchange_strong(
+      *expected, ReplaceChunkState(*expected, ChunkState::kRewriteRequested));
+}
+
+bool SharedRingBuffer::TryMoveFreeChunkToNextWrap(uint32_t chunk_pos,
+                                                  uint32_t* expected) {
+  PERFETTO_DCHECK(ChunkStateOf(*expected) == ChunkState::kFree);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::atomic<uint32_t>* state_word = chunk_state_word_for_position(chunk_pos);
+  return state_word->compare_exchange_strong(
+      *expected, MakeFreeWordForNextWrap(chunk_pos));
+}
+
+bool SharedRingBuffer::TryReleaseCompleteChunkAsFree(uint32_t chunk_pos,
+                                                     uint32_t* expected) {
+  PERFETTO_DCHECK(ChunkStateOf(*expected) == ChunkState::kComplete);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::atomic<uint32_t>* state_word = chunk_state_word_for_position(chunk_pos);
+  return state_word->compare_exchange_strong(
+      *expected, MakeFreeWordForNextWrap(chunk_pos));
+}
+
+bool SharedRingBuffer::TryReleaseRewriteAcknowledgedChunkAsFree(
+    uint32_t chunk_pos,
+    uint32_t* observed) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t expected = kRewriteAcknowledgedStateWord;
+  std::atomic<uint32_t>* state_word = chunk_state_word_for_position(chunk_pos);
+  const bool reclaimed = state_word->compare_exchange_strong(
+      expected, MakeFreeWordForNextWrap(chunk_pos));
+  if (PERFETTO_UNLIKELY(!reclaimed))
+    *observed = expected;
+  return reclaimed;
+}
+
+
+
+SharedRingBuffer::WriterWaitResult SharedRingBuffer::WaitForReadPosChange(
+    uint32_t read_pos_for_wait,
+    uint32_t timeout_ms) {
+  PERFETTO_DCHECK(timeout_ms > 0);
+  if (!SupportsWriterWait())
+    return WriterWaitResult::kUnavailable;
+
+  RingBufferHeader* ring_header = header();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ring_header->num_writers_waiting.fetch_add(1, std::memory_order_relaxed);
+  std::atomic_thread_fence(std::memory_order_seq_cst);
+
+  WriterWaitResult result = WriterWaitResult::kRetry;
+  const uint32_t read_pos =
+      ReadPosOf(ring_header->rw_positions.load(std::memory_order_relaxed));
+  if (read_pos == read_pos_for_wait) {
+    
+    
+    
+    
+    
+    const base::FutexWaitResult wait_result =
+        base::FutexWait(ReadPosFutexAddress(&ring_header->rw_positions),
+                        read_pos_for_wait, timeout_ms);
+    result = wait_result == base::FutexWaitResult::kError
+                 ? WriterWaitResult::kUnavailable
+                 : WriterWaitResult::kRetry;
+  }
+
+  ring_header->num_writers_waiting.fetch_sub(1, std::memory_order_relaxed);
+  return result;
+}
+
+void SharedRingBuffer::PublishReadPos(uint32_t read_pos) {
+  
+  PublishReadPosFromSnapshot(
+      header()->rw_positions.load(std::memory_order_relaxed), read_pos);
+}
+
+void SharedRingBuffer::PublishReadPosFromSnapshot(uint64_t rw_positions,
+                                                  uint32_t read_pos) {
+  RingBufferHeader* ring_header = header();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  while (!ring_header->rw_positions.compare_exchange_weak(
+      rw_positions, ReplaceReadPos(rw_positions, read_pos))) {
+  }
+
+  if (!SupportsWriterWait())
+    return;
+
+  
+  
+  std::atomic_thread_fence(std::memory_order_seq_cst);
+
+  if (ring_header->num_writers_waiting.load(std::memory_order_relaxed) == 0)
+    return;
+
+  
+  
+  
+  
+  
+  
+  base::FutexWake(ReadPosFutexAddress(&ring_header->rw_positions), INT_MAX);
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_V2_SHARED_RING_BUFFER_READER_H_
+#define SRC_TRACING_V2_SHARED_RING_BUFFER_READER_H_
+
+#include <stdint.h>
+
+#include <functional>
+#include <vector>
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+namespace test {
+class SharedRingBufferInternalsForTest;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class SharedRingBufferReader {
+ public:
+  
+  enum class ConsumeResult {
+    
+    
+    kNoData,
+    
+    kChunkRead,
+    
+    
+    kPositionSkipped,
+    
+    
+    
+    
+    
+    
+    kRetryImmediately,
+    
+    
+    
+    
+    kProtocolError,
+  };
+
+  struct ChunkContents {
+    WriterID writer_id = 0;
+    BufferID target_buffer = 0;
+    
+    uint32_t payload_flags = 0;
+    
+    
+    const protozero::ConstBytes* fragments = nullptr;
+    uint32_t num_fragments = 0;
+  };
+
+  struct DrainResult {
+    uint32_t positions_consumed = 0;
+    ConsumeResult last_result = ConsumeResult::kNoData;
+
+    
+    bool needs_another_drain() const {
+      return last_result != ConsumeResult::kNoData &&
+             last_result != ConsumeResult::kProtocolError;
+    }
+  };
+
+  
+  
+  
+  class Delegate {
+   public:
+    virtual ~Delegate();
+
+    
+    
+    virtual void OnChunkRead(const ChunkContents&) = 0;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    virtual void OnDataLoss(WriterID) = 0;
+  };
+
+  SharedRingBufferReader(SharedRingBuffer* ring, Delegate* delegate);
+  ~SharedRingBufferReader();
+
+  SharedRingBufferReader(const SharedRingBufferReader&) = delete;
+  SharedRingBufferReader& operator=(const SharedRingBufferReader&) = delete;
+  SharedRingBufferReader(SharedRingBufferReader&&) = delete;
+  SharedRingBufferReader& operator=(SharedRingBufferReader&&) = delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  DrainResult Drain(uint32_t max_positions);
+
+  bool has_protocol_error() const { return has_protocol_error_; }
+  uint32_t read_pos() const { return read_pos_; }
+
+  
+  
+  struct Stats {
+    uint64_t positions_skipped = 0;
+    
+    uint64_t rewrite_requests = 0;
+    uint64_t chunks_read = 0;
+    uint64_t malformed_chunks = 0;
+    uint64_t unsupported_format_chunks = 0;
+  };
+  Stats GetStats() const { return stats_; }
+
+ private:
+  friend class test::SharedRingBufferInternalsForTest;
+
+  
+  ConsumeResult ConsumeNextPosition();
+
+  enum class CopiedChunkStatus {
+    kNoFragments,
+    kReady,
+    kMalformed,
+    kUnsupportedFormat,
+    kDataLoss,
+  };
+
+  
+  
+  
+  
+  CopiedChunkStatus CopyPublishedFragments(ChunkIndex chunk_idx,
+                                           uint32_t state_word);
+
+  
+  
+  
+  ConsumeResult HandleCopiedChunk(CopiedChunkStatus);
+
+  
+  
+  ConsumeResult StopOnProtocolError(const char* reason, uint32_t state_word);
+
+  SharedRingBuffer* const ring_;
+  Delegate* const delegate_;
+  const uint32_t num_chunks_;
+  const uint32_t chunk_size_;
+
+  
+  uint32_t read_pos_ = 0;
+  bool has_protocol_error_ = false;
+
+  
+  
+  
+  
+  
+  
+  
+  std::function<void()> before_state_transition_for_testing_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  std::vector<uint8_t> copied_payload_;
+
+  
+  std::vector<protozero::ConstBytes> copied_fragments_;
+
+  
+  ChunkContents copied_chunk_;
+
+  Stats stats_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdint.h>
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+namespace {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kMaxAttemptsPerPosition = 2 * kMaxFragmentsPerChunk + 2;
+
+
+const char* ChunkStateName(ChunkState state) {
+  switch (state) {
+    case ChunkState::kFree:
+      return "Free";
+    case ChunkState::kBeingWritten:
+      return "BeingWritten";
+    case ChunkState::kComplete:
+      return "Complete";
+    case ChunkState::kRewriteRequested:
+      return "RewriteRequested";
+    case ChunkState::kRewriteAcknowledged:
+      return "RewriteAcknowledged";
+    case ChunkState::kReserved5:
+    case ChunkState::kReserved6:
+    case ChunkState::kReserved7:
+      return "reserved";
+  }
+  return "unknown";
+}
+
+}  
+
+SharedRingBufferReader::Delegate::~Delegate() = default;
+
+SharedRingBufferReader::SharedRingBufferReader(SharedRingBuffer* ring,
+                                               Delegate* delegate)
+    : ring_(ring),
+      delegate_(delegate),
+      num_chunks_(ring->num_chunks()),
+      chunk_size_(ring->chunk_size()) {
+  
+  copied_payload_.reserve(chunk_size_);
+  copied_fragments_.reserve(kMaxFragmentsPerChunk);
+}
+
+SharedRingBufferReader::~SharedRingBufferReader() = default;
+
+SharedRingBufferReader::DrainResult SharedRingBufferReader::Drain(
+    uint32_t max_positions) {
+  const uint32_t start_pos = read_pos_;
+  DrainResult result{};
+  for (uint32_t i = 0; i < max_positions; ++i) {
+    
+    
+    
+    for (uint32_t attempt = 0; attempt < kMaxAttemptsPerPosition; ++attempt) {
+      result.last_result = ConsumeNextPosition();
+      if (result.last_result != ConsumeResult::kRetryImmediately)
+        break;
+    }
+    
+    
+    if (result.last_result != ConsumeResult::kChunkRead &&
+        result.last_result != ConsumeResult::kPositionSkipped) {
+      break;
+    }
+  }
+
+  
+  
+  result.positions_consumed = read_pos_ - start_pos;
+  if (result.positions_consumed != 0) {
+    
+    
+    
+    
+    ring_->PublishReadPos(read_pos_);
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SharedRingBufferReader::ConsumeResult
+SharedRingBufferReader::ConsumeNextPosition() {
+  if (PERFETTO_UNLIKELY(has_protocol_error_))
+    return ConsumeResult::kProtocolError;
+
+  
+  
+  const uint32_t write_pos = ring_->LoadWritePosRelaxed();
+  const uint32_t outstanding = NumOutstandingPositions(write_pos, read_pos_);
+  if (outstanding == 0)
+    return ConsumeResult::kNoData;
+  if (PERFETTO_UNLIKELY(outstanding > num_chunks_)) {
+    
+    
+    has_protocol_error_ = true;
+    PERFETTO_ELOG(
+        "tracing v2: stopping ring buffer reader: write_pos %u is %u "
+        "positions ahead of read_pos %u, which is more than the %u chunks "
+        "in the ring buffer",
+        write_pos, outstanding, read_pos_, num_chunks_);
+    return ConsumeResult::kProtocolError;
+  }
+
+  
+  const uint32_t chunk_pos = read_pos_;
+  const ChunkIndex chunk_idx = ChunkIndex::FromPosition(chunk_pos, num_chunks_);
+
+  
+  uint32_t state_word = ring_->LoadChunkStateWordAcquire(chunk_idx);
+
+  switch (ChunkStateOf(state_word)) {
+    case ChunkState::kFree: {
+      
+      if (PERFETTO_UNLIKELY((state_word & ~kWriterIDMask) != 0))
+        return StopOnProtocolError("Free word has reserved bits", state_word);
+      
+      const uint32_t expected_free_word =
+          MakeFreeStateWordForPosition(chunk_pos, num_chunks_);
+      if (PERFETTO_UNLIKELY(state_word != expected_free_word)) {
+        return StopOnProtocolError(
+            "Free word carries another position's wrap count", state_word);
+      }
+      if (before_state_transition_for_testing_)
+        before_state_transition_for_testing_();
+      
+      
+      
+      if (!ring_->TryMoveFreeChunkToNextWrap(chunk_pos, &state_word))
+        return ConsumeResult::kRetryImmediately;
+      ++read_pos_;
+      ++stats_.positions_skipped;
+      return ConsumeResult::kPositionSkipped;
+    }
+
+    case ChunkState::kBeingWritten: {
+      const auto status = CopyPublishedFragments(chunk_idx, state_word);
+      if (before_state_transition_for_testing_)
+        before_state_transition_for_testing_();
+      
+      
+      
+      if (!ring_->TryRequestRewrite(chunk_idx, &state_word))
+        return ConsumeResult::kRetryImmediately;
+      ++read_pos_;
+      ++stats_.rewrite_requests;
+      return HandleCopiedChunk(status);
+    }
+
+    case ChunkState::kComplete: {
+      const auto status = CopyPublishedFragments(chunk_idx, state_word);
+      if (before_state_transition_for_testing_)
+        before_state_transition_for_testing_();
+      
+      
+      
+      
+      
+      if (!ring_->TryReleaseCompleteChunkAsFree(chunk_pos, &state_word))
+        return ConsumeResult::kRetryImmediately;
+      ++read_pos_;
+      
+      
+      
+      
+      
+      
+      if (status == CopiedChunkStatus::kNoFragments &&
+          (copied_chunk_.payload_flags & kFlagDataLoss)) {
+        delegate_->OnDataLoss(copied_chunk_.writer_id);
+      }
+      return HandleCopiedChunk(status);
+    }
+
+    case ChunkState::kRewriteRequested:
+      
+      
+      
+      ++read_pos_;
+      ++stats_.positions_skipped;
+      return ConsumeResult::kPositionSkipped;
+
+    case ChunkState::kRewriteAcknowledged:
+      
+      
+      
+      
+      
+      
+      
+      if (!ring_->TryReleaseRewriteAcknowledgedChunkAsFree(chunk_pos,
+                                                           &state_word)) {
+        return StopOnProtocolError(
+            ChunkStateOf(state_word) == ChunkState::kRewriteAcknowledged
+                ? "RewriteAcknowledged word has payload bits set"
+                : "RewriteAcknowledged word changed under the reader",
+            state_word);
+      }
+      ++read_pos_;
+      ++stats_.positions_skipped;
+      return ConsumeResult::kPositionSkipped;
+
+    case ChunkState::kReserved5:
+    case ChunkState::kReserved6:
+    case ChunkState::kReserved7:
+      
+      return StopOnProtocolError("reserved chunk state", state_word);
+  }
+  PERFETTO_FATAL("tracing v2: unhandled chunk state word 0x%08x", state_word);
+}
+
+SharedRingBufferReader::CopiedChunkStatus
+SharedRingBufferReader::CopyPublishedFragments(ChunkIndex chunk_idx,
+                                               uint32_t state_word) {
+  copied_fragments_.clear();
+  copied_chunk_ = ChunkContents{};
+  copied_chunk_.writer_id = WriterIDOf(state_word);
+  copied_chunk_.payload_flags = PayloadFlagsOf(state_word);
+
+  const uint32_t num_fragments = NumFragmentsOf(state_word);
+  if (num_fragments == 0) {
+    
+    
+    
+    return CopiedChunkStatus::kNoFragments;
+  }
+
+  
+  
+  
+  
+  
+  if (state_word & kFlagDataLoss)
+    return CopiedChunkStatus::kDataLoss;
+
+  if (ChunkFormatOf(state_word) != ChunkFormat::kTargetBuffer)
+    return CopiedChunkStatus::kUnsupportedFormat;
+
+  
+  
+  
+  const uint32_t capacity = chunk_size_ - kTargetBufferPayloadOffset;
+  const uint8_t* chunk = ring_->chunk_at(chunk_idx);
+  const uint8_t* const payload_begin = chunk + kTargetBufferPayloadOffset;
+  const uint8_t* sizes_cursor = chunk + chunk_size_;
+  uint32_t total = 0;
+  for (uint32_t i = 0; i < num_fragments; ++i) {
+    const auto fragment_size =
+        ReadFragmentSizeReversed(payload_begin, &sizes_cursor);
+    if (!fragment_size || *fragment_size > capacity - total) {
+      return CopiedChunkStatus::kMalformed;
+    }
+    total += *fragment_size;
+    copied_fragments_.push_back(protozero::ConstBytes{nullptr, *fragment_size});
+  }
+
+  
+  
+  
+  
+  
+  
+  const uint32_t sizes_bytes =
+      static_cast<uint32_t>(chunk + chunk_size_ - sizes_cursor);
+  if (total > capacity - sizes_bytes)
+    return CopiedChunkStatus::kMalformed;
+
+  
+  copied_payload_.assign(payload_begin, payload_begin + total);
+
+  
+  size_t offset = 0;
+  for (protozero::ConstBytes& fragment : copied_fragments_) {
+    fragment.data = copied_payload_.data() + offset;
+    offset += fragment.size;
+  }
+  copied_chunk_.target_buffer = LoadTargetBufferId(chunk);
+  copied_chunk_.fragments = copied_fragments_.data();
+  copied_chunk_.num_fragments = num_fragments;
+  return CopiedChunkStatus::kReady;
+}
+
+SharedRingBufferReader::ConsumeResult SharedRingBufferReader::HandleCopiedChunk(
+    CopiedChunkStatus status) {
+  switch (status) {
+    case CopiedChunkStatus::kReady:
+      ++stats_.chunks_read;
+      delegate_->OnChunkRead(copied_chunk_);
+      return ConsumeResult::kChunkRead;
+    case CopiedChunkStatus::kMalformed:
+      ++stats_.malformed_chunks;
+      delegate_->OnDataLoss(copied_chunk_.writer_id);
+      break;
+    case CopiedChunkStatus::kUnsupportedFormat:
+      ++stats_.unsupported_format_chunks;
+      delegate_->OnDataLoss(copied_chunk_.writer_id);
+      break;
+    case CopiedChunkStatus::kDataLoss:
+      delegate_->OnDataLoss(copied_chunk_.writer_id);
+      break;
+    case CopiedChunkStatus::kNoFragments:
+      break;
+  }
+
+  ++stats_.positions_skipped;
+  return ConsumeResult::kPositionSkipped;
+}
+
+SharedRingBufferReader::ConsumeResult
+SharedRingBufferReader::StopOnProtocolError(const char* reason,
+                                            uint32_t state_word) {
+  
+  has_protocol_error_ = true;
+  PERFETTO_ELOG(
+      "tracing v2: stopping ring buffer reader at position %u: %s "
+      "(chunk state word 0x%08x, %s)",
+      read_pos_, reason, state_word, ChunkStateName(ChunkStateOf(state_word)));
+  return ConsumeResult::kProtocolError;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <stdint.h>
+#include <string.h>
+
+#include <algorithm>
+#include <optional>
+
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+namespace {
+
+
+constexpr uint32_t kMaxFallbackSleepUs = 100000;
+
+}  
+
+SharedRingBufferWriter::SharedRingBufferWriter(SharedRingBuffer* ring,
+                                               WriterID writer_id,
+                                               BufferID target_buffer)
+    : ring_(ring),
+      writer_id_(writer_id),
+      target_buffer_(target_buffer),
+      chunk_size_(ring->chunk_size()),
+      max_fragment_size_(MaxFragmentSizeForEmptyChunk(chunk_size_)) {
+  
+  
+  
+  
+  
+  
+  PERFETTO_DCHECK(writer_id_ != 0 && writer_id_ <= kMaxWriterID);
+}
+
+SharedRingBufferWriter::~SharedRingBufferWriter() {
+  FinishCurrentChunk();
+}
+
+SharedRingBufferWriter::FragmentRange SharedRingBufferWriter::BeginFragment(
+    uint32_t min_size,
+    bool continues_from_prev) {
+  PERFETTO_DCHECK(!has_open_fragment());
+  
+  PERFETTO_DCHECK(!pending_relocation_);
+  
+  
+  
+  PERFETTO_DCHECK(!continues_from_prev || !cur_chunk_);
+
+  if (min_size > max_fragment_size_)
+    return FragmentRange{BeginFragmentResult::kTooLarge};
+
+  
+  if (cur_chunk_) {
+    PERFETTO_DCHECK(cur_chunk_state() == ChunkState::kComplete);
+    const uint32_t available = MaxFragmentSizeInCurrentChunk();
+    
+    
+    
+    if (available >= min_size && ring_->TryReacquireChunkForWriting(
+                                     cur_chunk_idx_, expected_state_word_)) {
+      expected_state_word_ =
+          ReplaceChunkState(expected_state_word_, ChunkState::kBeingWritten);
+      return BeginFragmentInCurrentChunk(available);
+    }
+    
+    
+    ResetCurrentChunk();
+  }
+
+  const uint32_t flags = continues_from_prev ? kFlagContinuesFromPrevChunk : 0u;
+  const BeginFragmentResult result = AcquireNewChunk(flags);
+  if (result != BeginFragmentResult::kSuccess)
+    return FragmentRange{result};
+  return BeginFragmentInCurrentChunk(max_fragment_size_);
+}
+
+SharedRingBufferWriter::FragmentRange
+SharedRingBufferWriter::BeginFragmentInCurrentChunk(uint32_t available) {
+  PERFETTO_DCHECK(cur_chunk_);
+  PERFETTO_DCHECK(cur_chunk_state() == ChunkState::kBeingWritten);
+  PERFETTO_DCHECK(available > 0);
+  cur_fragment_begin_ = payload_end_;
+  return FragmentRange{BeginFragmentResult::kSuccess,
+                       cur_chunk_ + cur_fragment_begin_,
+                       cur_chunk_ + cur_fragment_begin_ + available};
+}
+
+SharedRingBufferWriter::EndFragmentResult SharedRingBufferWriter::EndFragment(
+    uint32_t size,
+    bool continues_on_next) {
+  PERFETTO_DCHECK(has_open_fragment());
+  PERFETTO_DCHECK(cur_chunk_);
+  PERFETTO_DCHECK(cur_chunk_state() == ChunkState::kBeingWritten);
+  PERFETTO_DCHECK(size_directory_bytes_ <= chunk_size_);
+  PERFETTO_DCHECK(cur_fragment_begin_ <= chunk_size_ - size_directory_bytes_);
+  
+  PERFETTO_DCHECK(
+      size <= MaxFragmentSizeForAvailableBytes(
+                  chunk_size_ - size_directory_bytes_ - cur_fragment_begin_));
+
+  
+  
+  uint8_t* const chunk_end = cur_chunk_ + chunk_size_;
+  uint8_t* const sizes_begin =
+      WriteFragmentSizeReversed(chunk_end - size_directory_bytes_, size);
+  
+  
+  
+  size_directory_bytes_ = static_cast<uint32_t>(chunk_end - sizes_begin);
+  payload_end_ = cur_fragment_begin_ + size;
+  ++num_fragments_;
+  cur_fragment_begin_ = kNoFragmentOpen;
+
+  return ReleaseCurrentChunkAsComplete(size, continues_on_next);
+}
+
+SharedRingBufferWriter::EndFragmentResult
+SharedRingBufferWriter::FinishCurrentChunk() {
+  PERFETTO_DCHECK(!pending_relocation_);
+  
+  
+  cur_fragment_begin_ = kNoFragmentOpen;
+
+  EndFragmentResult result = EndFragmentResult::kSuccess;
+  if (cur_chunk_ && cur_chunk_state() == ChunkState::kBeingWritten) {
+    result = ReleaseCurrentChunkAsComplete(std::nullopt,
+                                           false);
+  }
+  ResetCurrentChunk();
+  return result;
+}
+
+uint32_t SharedRingBufferWriter::MaxFragmentSizeInCurrentChunk() const {
+  PERFETTO_DCHECK(cur_chunk_);
+  if (num_fragments_ >= kMaxFragmentsPerChunk)
+    return 0;
+  PERFETTO_DCHECK(payload_end_ <= chunk_size_);
+  PERFETTO_DCHECK(size_directory_bytes_ <= chunk_size_ - payload_end_);
+  const uint32_t available_bytes =
+      chunk_size_ - payload_end_ - size_directory_bytes_;
+  return MaxFragmentSizeForAvailableBytes(available_bytes);
+}
+
+SharedRingBufferWriter::BeginFragmentResult
+SharedRingBufferWriter::AcquireNewChunk(uint32_t continuation_flags) {
+  PERFETTO_DCHECK(!cur_chunk_);
+
+  
+  
+  
+  
+  const uint32_t flags =
+      continuation_flags | (data_loss_pending_ ? kFlagDataLoss : 0u);
+  const uint32_t being_written_word =
+      MakeDataStateWord(ChunkState::kBeingWritten, ChunkFormat::kTargetBuffer,
+                        flags, 0, writer_id_);
+  const uint32_t num_chunks = ring_->num_chunks();
+
+  
+  
+  
+  
+  
+  uint32_t num_failed_claims = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (;;) {
+    const auto reservation = ring_->TryReserveWritePos();
+    read_pos_for_wait_ = reservation.read_pos_for_wait;
+
+    if (reservation.result == SharedRingBuffer::ReserveResult::kReserved) {
+      
+      if (ring_->TryAcquireChunkForWriting(reservation.chunk_pos,
+                                           being_written_word)) {
+        cur_chunk_idx_ =
+            ChunkIndex::FromPosition(reservation.chunk_pos, num_chunks);
+        cur_chunk_ = ring_->chunk_at(cur_chunk_idx_);
+        expected_state_word_ = being_written_word;
+        payload_end_ = kTargetBufferPayloadOffset;
+        size_directory_bytes_ = 0;
+        num_fragments_ = 0;
+        
+        
+        data_loss_pending_ = false;
+        fallback_sleep_us_ = 0;
+        StoreTargetBufferId(cur_chunk_, target_buffer_);
+        return BeginFragmentResult::kSuccess;
+      }
+
+      ++stats_.failed_claims;
+      
+      
+      
+      
+      
+      
+      
+      
+      if (++num_failed_claims < num_chunks)
+        continue;
+    }
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    return num_failed_claims != 0 ? BeginFragmentResult::kClaimFailed
+                                  : BeginFragmentResult::kFull;
+  }
+}
+
+void SharedRingBufferWriter::WaitForReadPosChange(uint32_t timeout_ms) {
+  if (use_futex_) {
+    
+    const SharedRingBuffer::WriterWaitResult result =
+        ring_->WaitForReadPosChange(read_pos_for_wait_, timeout_ms);
+    if (result == SharedRingBuffer::WriterWaitResult::kRetry)
+      return;
+    
+    
+    use_futex_ = false;
+  }
+
+  
+  
+  const uint64_t timeout_us = uint64_t{timeout_ms} * 1000;
+  base::SleepMicroseconds(static_cast<unsigned>(
+      std::min<uint64_t>(fallback_sleep_us_, timeout_us)));
+  fallback_sleep_us_ =
+      std::min(kMaxFallbackSleepUs, (fallback_sleep_us_ + 1) * 8);
+}
+
+SharedRingBufferWriter::EndFragmentResult
+SharedRingBufferWriter::ReleaseCurrentChunkAsComplete(
+    std::optional<uint32_t> fragment_size,
+    bool continues_on_next) {
+  PERFETTO_DCHECK(cur_chunk_);
+  PERFETTO_DCHECK(cur_chunk_state() == ChunkState::kBeingWritten);
+  PERFETTO_DCHECK(!has_open_fragment());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (;;) {
+    uint32_t flags = PayloadFlagsOf(expected_state_word_);
+    
+    
+    if (data_loss_pending_)
+      flags |= kFlagDataLoss;
+    if (continues_on_next)
+      flags |= kFlagContinuesOnNextChunk;
+    const uint32_t complete_word =
+        MakeDataStateWord(ChunkState::kComplete, ChunkFormat::kTargetBuffer,
+                          flags, num_fragments_, writer_id_);
+
+    uint32_t expected = expected_state_word_;
+    if (ring_->TryReleaseChunkAsComplete(cur_chunk_idx_, complete_word,
+                                         &expected)) {
+      expected_state_word_ = complete_word;
+      data_loss_pending_ = false;
+      PERFETTO_DCHECK(payload_end_ <= chunk_size_);
+      PERFETTO_DCHECK(size_directory_bytes_ <= chunk_size_ - payload_end_);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      if (continues_on_next || num_fragments_ >= kMaxFragmentsPerChunk ||
+          chunk_size_ - payload_end_ - size_directory_bytes_ <= 1) {
+        ResetCurrentChunk();
+      }
+      return EndFragmentResult::kSuccess;
+    }
+
+    
+    
+    
+    if (PERFETTO_UNLIKELY(ChunkStateOf(expected) !=
+                              ChunkState::kRewriteRequested ||
+                          WriterIDOf(expected) != writer_id_)) {
+      PERFETTO_FATAL(
+          "tracing v2: publication of chunk %u by writer %u lost to state word "
+          "0x%08x, which is not a rewrite request for this writer",
+          cur_chunk_idx_.value(), writer_id_, expected);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    const uint32_t num_fragments_read = NumFragmentsOf(expected);
+
+    
+    PERFETTO_DCHECK(num_fragments_read == NumFragmentsOf(expected_state_word_));
+
+    
+    
+    
+    
+    PERFETTO_DCHECK(num_fragments_ ==
+                    num_fragments_read + (fragment_size.has_value() ? 1u : 0u));
+
+    
+    
+    
+    
+    if (fragment_size) {
+      
+      
+      
+      relocation_payload_.assign(cur_chunk_ + payload_end_ - *fragment_size,
+                                 cur_chunk_ + payload_end_);
+    }
+
+    
+    
+    if (PERFETTO_UNLIKELY(
+            !ring_->TryAcknowledgeRewrite(cur_chunk_idx_, expected))) {
+      PERFETTO_FATAL(
+          "tracing v2: writer %u could not acknowledge chunk %u: only its "
+          "owner may leave RewriteRequested",
+          writer_id_, cur_chunk_idx_.value());
+    }
+    ++stats_.relocations;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    const uint32_t inherited_flags =
+        PayloadFlagsOf(expected) &
+        (kFlagContinuesFromPrevChunk | kFlagDataLoss);
+    const uint32_t relocated_flags =
+        num_fragments_read == 0 ? inherited_flags : 0;
+
+    ResetCurrentChunk();
+
+    if (!fragment_size) {
+      PERFETTO_DCHECK(!continues_on_next);
+      
+      
+      if (relocated_flags & kFlagDataLoss)
+        data_loss_pending_ = true;
+      return EndFragmentResult::kSuccess;
+    }
+
+    
+    
+    const BeginFragmentResult claim = AcquireNewChunk(relocated_flags);
+    if (claim != BeginFragmentResult::kSuccess) {
+      
+      pending_relocation_ =
+          PendingRelocation{relocated_flags, continues_on_next};
+      return claim == BeginFragmentResult::kFull
+                 ? EndFragmentResult::kFull
+                 : EndFragmentResult::kClaimFailed;
+    }
+    if (PERFETTO_UNLIKELY(after_replacement_claim_for_testing_))
+      after_replacement_claim_for_testing_();
+    CopyRelocatedFragment(*fragment_size);
+  }
+}
+
+SharedRingBufferWriter::RetryRelocationResult
+SharedRingBufferWriter::RetryRelocation() {
+  PERFETTO_DCHECK(pending_relocation_);
+  PERFETTO_DCHECK(!cur_chunk_);
+
+  RetryRelocationResult retry;
+  const BeginFragmentResult claim =
+      AcquireNewChunk(pending_relocation_->chunk_flags);
+  if (claim != BeginFragmentResult::kSuccess) {
+    retry.result = claim == BeginFragmentResult::kFull
+                       ? EndFragmentResult::kFull
+                       : EndFragmentResult::kClaimFailed;
+    return retry;
+  }
+  retry.acquired_replacement = true;
+  if (PERFETTO_UNLIKELY(after_replacement_claim_for_testing_))
+    after_replacement_claim_for_testing_();
+
+  const auto fragment_size = static_cast<uint32_t>(relocation_payload_.size());
+  const bool continues_on_next = pending_relocation_->continues_on_next;
+  pending_relocation_.reset();
+  CopyRelocatedFragment(fragment_size);
+  
+  retry.result =
+      ReleaseCurrentChunkAsComplete(fragment_size, continues_on_next);
+  return retry;
+}
+
+void SharedRingBufferWriter::DropRelocation() {
+  PERFETTO_DCHECK(pending_relocation_);
+  pending_relocation_.reset();
+  ++stats_.fragments_dropped;
+  
+  data_loss_pending_ = true;
+}
+
+void SharedRingBufferWriter::CopyRelocatedFragment(uint32_t fragment_size) {
+  
+  
+  
+  if (!relocation_payload_.empty()) {
+    memcpy(cur_chunk_ + kTargetBufferPayloadOffset, relocation_payload_.data(),
+           relocation_payload_.size());
+  }
+  payload_end_ = kTargetBufferPayloadOffset + fragment_size;
+  uint8_t* const chunk_end = cur_chunk_ + chunk_size_;
+  uint8_t* const sizes_begin =
+      WriteFragmentSizeReversed(chunk_end, fragment_size);
+  size_directory_bytes_ = static_cast<uint32_t>(chunk_end - sizes_begin);
+  num_fragments_ = 1;
+}
+
+void SharedRingBufferWriter::ResetCurrentChunk() {
+  cur_chunk_ = nullptr;
+  cur_chunk_idx_ = ChunkIndex::FromIndex(0);
+  expected_state_word_ = 0;
+  payload_end_ = 0;
+  size_directory_bytes_ = 0;
+  num_fragments_ = 0;
+  cur_fragment_begin_ = kNoFragmentOpen;
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <optional>
+#include <utility>
+
+
+
+
+
+
+
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+namespace {
+
+
+constexpr uint32_t kMinFragmentPayloadSize =
+    static_cast<uint32_t>(protozero::proto_utils::kMaxSimpleFieldEncodedSize);
+
+
+
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kMaxWaitMs = 100;
+
+
+
+
+
+
+
+
+
+constexpr uint32_t kStallTimeoutMs = 30000;
+
+
+
+
+
+
+
+uint8_t g_drop_buffer[kMaxChunkSize];
+
+}  
+
+TraceWriterV2Impl::TraceWriterV2Impl(
+    ProducerRingBufferArbiter* ring_buffer_arbiter,
+    WriterID id,
+    BufferID target_buffer,
+    BufferExhaustedPolicy policy)
+    : ring_buffer_arbiter_(ring_buffer_arbiter),
+      ring_buffer_writer_(ring_buffer_arbiter->ring_buffer(),
+                          id,
+                          target_buffer),
+      buffer_exhausted_policy_(policy),
+      process_id_(base::GetProcessId()),
+      stream_writer_(this),
+      cur_packet_(std::make_unique<
+                  protozero::RootMessage<protos::pbzero::TracePacket>>()) {}
+
+TraceWriterV2Impl::~TraceWriterV2Impl() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FinishTracePacket();
+  Flush();
+  ring_buffer_arbiter_->OnWriterDestroyed(writer_id());
+}
+
+TraceWriter::TracePacketHandle TraceWriterV2Impl::NewTracePacket() {
+  PERFETTO_DCHECK(process_id_ == base::GetProcessId());
+  EnsurePacketClosed();
+
+  stream_writer_.Reset(BeginPacketFragment(false));
+  cur_packet_->Reset(&stream_writer_,
+                     protozero::Message::Encoding::kProtoGroup);
+  packet_open_ = true;
+  if (PERFETTO_UNLIKELY(first_packet_on_sequence_)) {
+    cur_packet_->set_first_packet_on_sequence(true);
+    first_packet_on_sequence_ = false;
+  }
+
+  TracePacketHandle handle(cur_packet_.get());
+  handle.set_finalization_listener(this);
+  return handle;
+}
+
+void TraceWriterV2Impl::FinishTracePacket() {
+  PERFETTO_DCHECK(process_id_ == base::GetProcessId());
+  if (!packet_open_)
+    return;
+
+  
+  
+  
+  cur_packet_->Finalize();
+  packet_open_ = false;
+  EndPacketFragment(false);
+}
+
+void TraceWriterV2Impl::Flush(std::function<void()> callback) {
+  EnsurePacketClosed();
+
+  
+  
+  
+  ring_buffer_writer_.FinishCurrentChunk();
+  stream_writer_.Reset({nullptr, nullptr});
+  ring_buffer_arbiter_->Flush(std::move(callback));
+}
+
+void TraceWriterV2Impl::OnMessageFinalized(protozero::Message*) {
+  FinishTracePacket();
+}
+
+protozero::ContiguousMemoryRange TraceWriterV2Impl::GetNewBuffer() {
+  if (!packet_open_) {
+    
+    
+    PERFETTO_DFATAL("TraceWriterV2Impl: write outside an open packet");
+    EnterDropMode();
+    return GetDropBuffer();
+  }
+
+  
+  
+  if (in_drop_mode_)
+    return GetDropBuffer();
+
+  
+  
+  EndPacketFragment(true);
+
+  
+  
+  
+  if (in_drop_mode_)
+    return GetDropBuffer();
+
+  return BeginPacketFragment(true);
+}
+
+uint8_t* TraceWriterV2Impl::AnnotatePatch(uint8_t*) {
+  PERFETTO_FATAL("TraceWriterV2Impl cannot patch previously written bytes");
+}
+
+void TraceWriterV2Impl::EnsurePacketClosed() {
+  if (packet_open_ && cur_packet_->is_finalized())
+    FinishTracePacket();
+  PERFETTO_CHECK(!packet_open_);
+}
+
+protozero::ContiguousMemoryRange TraceWriterV2Impl::BeginPacketFragment(
+    bool continues_from_prev) {
+  std::optional<base::TimeMillis> stall_deadline;
+  for (;;) {
+    const auto range = ring_buffer_writer_.BeginFragment(
+        kMinFragmentPayloadSize, continues_from_prev);
+    if (range.result == SharedRingBufferWriter::BeginFragmentResult::kSuccess) {
+      fragment_begin_ = range.begin;
+      in_drop_mode_ = false;
+      return {range.begin, range.end};
+    }
+    
+    PERFETTO_DCHECK(range.result !=
+                    SharedRingBufferWriter::BeginFragmentResult::kTooLarge);
+
+    const bool claim_failed =
+        range.result ==
+        SharedRingBufferWriter::BeginFragmentResult::kClaimFailed;
+    if (!TryStallForSpace(claim_failed, &stall_deadline)) {
+      EnterDropMode();
+      return GetDropBuffer();
+    }
+  }
+}
+
+void TraceWriterV2Impl::EndPacketFragment(bool continues_on_next) {
+  if (!fragment_begin_) {
+    
+    
+    return;
+  }
+
+  const uint32_t used =
+      static_cast<uint32_t>(stream_writer_.write_ptr() - fragment_begin_);
+  fragment_begin_ = nullptr;
+
+  
+  
+  
+  
+  
+  SharedRingBufferWriter::EndFragmentResult result =
+      ring_buffer_writer_.EndFragment(used, continues_on_next);
+  
+  
+  std::optional<base::TimeMillis> stall_deadline;
+  while (result != SharedRingBufferWriter::EndFragmentResult::kSuccess) {
+    const bool claim_failed =
+        result == SharedRingBufferWriter::EndFragmentResult::kClaimFailed;
+    if (!TryStallForSpace(claim_failed, &stall_deadline)) {
+      
+      ring_buffer_writer_.DropRelocation();
+      EnterDropMode();
+      return;
+    }
+    const auto retry = ring_buffer_writer_.RetryRelocation();
+    
+    
+    
+    if (retry.acquired_replacement)
+      stall_deadline.reset();
+    result = retry.result;
+  }
+
+  
+  
+  
+  
+  const uint32_t outstanding_positions =
+      ring_buffer_arbiter_->ring_buffer()->LoadNumOutstandingPositionsRelaxed();
+  if (outstanding_positions >=
+      ring_buffer_arbiter_->drain_occupancy_threshold()) {
+    ring_buffer_arbiter_->RequestDrain(
+        ProducerRingBufferArbiter::DrainUrgency::kRoutine);
+  }
+}
+
+bool TraceWriterV2Impl::TryStallForSpace(
+    bool claim_failed,
+    std::optional<base::TimeMillis>* stall_deadline) {
+  
+  
+  
+  
+  
+  
+  bool can_stall = buffer_exhausted_policy_ != BufferExhaustedPolicy::kDrop;
+  if (buffer_exhausted_policy_ == BufferExhaustedPolicy::kStallThenDrop &&
+      ring_buffer_writer_.has_pending_data_loss()) {
+    can_stall = false;
+  }
+
+  
+  
+  
+  uint32_t time_left_ms = 0;
+  if (can_stall && ring_buffer_arbiter_->IsReaderAttached()) {
+    const base::TimeMillis now = get_time_ms_();
+    if (!stall_deadline->has_value())
+      *stall_deadline = now + base::TimeMillis(kStallTimeoutMs);
+    const base::TimeMillis deadline = **stall_deadline;
+    if (now < deadline) {
+      time_left_ms = static_cast<uint32_t>((deadline - now).count());
+    } else if (buffer_exhausted_policy_ == BufferExhaustedPolicy::kStall) {
+      PERFETTO_FATAL(
+          "tracing v2: writer %u could not acquire a chunk for %u ms: "
+          "possible deadlock",
+          writer_id(), kStallTimeoutMs);
+    }
+  }
+
+  
+  if (time_left_ms == 0) {
+    
+    
+    
+    if (claim_failed) {
+      ring_buffer_arbiter_->RequestDrain(
+          ProducerRingBufferArbiter::DrainUrgency::kRoutine);
+    }
+    PERFETTO_DLOG(
+        "tracing v2: writer %u: %s: dropping data", writer_id(),
+        claim_failed ? "no chunk could be claimed" : "ring buffer full");
+    return false;
+  }
+
+  
+  
+  ring_buffer_arbiter_->RequestDrain(
+      ProducerRingBufferArbiter::DrainUrgency::kUrgent);
+
+  
+  
+  
+  
+  
+  
+  
+  ring_buffer_writer_.WaitForReadPosChange(std::min(kMaxWaitMs, time_left_ms));
+  return true;
+}
+
+void TraceWriterV2Impl::EnterDropMode() {
+  fragment_begin_ = nullptr;
+  
+  if (in_drop_mode_)
+    return;
+  in_drop_mode_ = true;
+  ++drop_count_;
+  ring_buffer_writer_.RecordDataLoss();
+}
+
+protozero::ContiguousMemoryRange TraceWriterV2Impl::GetDropBuffer() {
+  PERFETTO_DCHECK(in_drop_mode_);
+  PERFETTO_ANNOTATE_BENIGN_RACE_SIZED(&g_drop_buffer, sizeof(g_drop_buffer),
+                                      "nobody reads the drop buffer")
+  return {&g_drop_buffer[0], &g_drop_buffer[0] + sizeof(g_drop_buffer)};
+}
+
+}  
 
 
 
@@ -60571,6 +68519,157 @@ class ClientIdentity {
 
 
 
+#ifndef SRC_TRACING_SERVICE_SERVICE_RING_BUFFER_DRAINER_H_
+#define SRC_TRACING_SERVICE_SERVICE_RING_BUFFER_DRAINER_H_
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <functional>
+#include <memory>
+
+
+
+
+
+
+
+
+
+namespace perfetto {
+class TraceBuffer;
+namespace tracing_v2 {
+
+namespace test {
+class ServiceRingBufferDrainerTestPeer;
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ServiceRingBufferDrainer : public SharedRingBufferReader::Delegate {
+ public:
+  
+  class Delegate {
+   public:
+    virtual ~Delegate();
+
+    
+    
+    
+    virtual TraceBuffer* GetV2RingBufferDestination(BufferID) = 0;
+
+    
+    
+    
+    virtual void ForEachV2RingBufferDestination(
+        const std::function<void(TraceBuffer&)>& callback) = 0;
+
+    
+    
+    virtual void OnRingBufferChunksDiscarded(uint64_t count) = 0;
+  };
+
+  
+  
+  
+  ServiceRingBufferDrainer(std::shared_ptr<SharedMemory> memory,
+                           uint32_t chunk_size_bytes,
+                           ProducerID,
+                           ClientIdentity,
+                           Delegate* delegate,
+                           base::TaskRunner* task_runner);
+
+  
+  
+  ~ServiceRingBufferDrainer() override;
+  ServiceRingBufferDrainer(const ServiceRingBufferDrainer&) = delete;
+  ServiceRingBufferDrainer& operator=(const ServiceRingBufferDrainer&) = delete;
+  ServiceRingBufferDrainer(ServiceRingBufferDrainer&&) = delete;
+  ServiceRingBufferDrainer& operator=(ServiceRingBufferDrainer&&) = delete;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void Drain();
+
+  
+  size_t size_bytes() const { return memory_->size(); }
+
+ private:
+  friend class test::ServiceRingBufferDrainerTestPeer;
+
+  
+  
+  void OnChunkRead(const SharedRingBufferReader::ChunkContents&) override;
+  void OnDataLoss(WriterID) override;
+
+  
+  void RecordWriterLoss(WriterID writer_id);
+
+  
+  const ProducerID producer_id_;
+  const ClientIdentity client_identity_;
+
+  Delegate* const delegate_;
+
+  
+  std::shared_ptr<SharedMemory> memory_;
+
+  
+  
+  SharedRingBuffer ring_buffer_;
+  SharedRingBufferReader reader_;
+
+  bool retry_scheduled_ = false;
+
+  PERFETTO_THREAD_CHECKER(thread_checker_)
+
+  
+  base::WeakRunner weak_runner_;
+};
+
+}  
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef SRC_TRACING_SERVICE_HISTOGRAM_H_
 #define SRC_TRACING_SERVICE_HISTOGRAM_H_
@@ -60665,23 +68764,28 @@ class Histogram {
 
 
 
-
 #ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_H_
 #define SRC_TRACING_SERVICE_TRACE_BUFFER_H_
 
 #include <stdint.h>
 #include <array>
 #include <memory>
+#include <new>
 
 
 
 
 
 
+
+namespace protozero {
+struct ConstBytes;
+}  
 
 namespace perfetto {
 
 class TracePacket;
+class TraceBufferProtoVms;
 class TraceBuffer_WriterStats;
 
 
@@ -60746,6 +68850,54 @@ class TraceBuffer {
   
   
   
+  virtual bool supports_tracing_v2() const = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual bool CopyChunkV2Untrusted(const PacketSequenceProperties&,
+                                    const protozero::ConstBytes* fragments,
+                                    size_t num_fragments,
+                                    bool first_continues_from_prev,
+                                    bool last_continues_on_next) = 0;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual void RecordChunkV2DataLoss(ProducerID, WriterID) = 0;
+
+  
+  
+  
+  virtual void RecordAbiViolation() = 0;
+
+  
+  
+  
   
   
   
@@ -60765,7 +68917,20 @@ class TraceBuffer {
 
   
   
+  
+  
+  virtual void MaybeCompact() = 0;
+
+  
+  
   virtual std::unique_ptr<TraceBuffer> CloneReadOnly() const = 0;
+
+  
+  
+  
+  
+  
+  virtual TraceBufferProtoVms* protovms() = 0;
 
   virtual void set_read_only() = 0;
   virtual const TraceStats::BufferStats& stats() const = 0;
@@ -60791,6 +68956,19 @@ class TraceBuffer_WriterStats {
                                            base::QuadraticProbe,
                                            true>;
 
+  TraceBuffer_WriterStats() = default;
+  TraceBuffer_WriterStats(const TraceBuffer_WriterStats& other) {
+    for (auto it = other.map_.GetIterator(); it; ++it)
+      map_.Insert(it.key(), it.value());
+  }
+  TraceBuffer_WriterStats& operator=(const TraceBuffer_WriterStats& other) {
+    if (this != &other) {
+      this->~TraceBuffer_WriterStats();
+      new (this) TraceBuffer_WriterStats(other);
+    }
+    return *this;
+  }
+
   void Insert(ProducerAndWriterID key, HistValue val) {
     map_.Insert(key, {}).first->Add(val);
   }
@@ -60804,6 +68982,405 @@ class TraceBuffer_WriterStats {
 }  
 
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <utility>
+
+
+
+
+
+namespace perfetto::tracing_v2 {
+
+namespace {
+
+
+
+constexpr uint32_t kDrainRetryDelayMs = 1;
+
+}  
+
+ServiceRingBufferDrainer::Delegate::~Delegate() = default;
+
+ServiceRingBufferDrainer::ServiceRingBufferDrainer(
+    std::shared_ptr<SharedMemory> memory,
+    uint32_t chunk_size_bytes,
+    ProducerID producer_id,
+    ClientIdentity client_identity,
+    Delegate* delegate,
+    base::TaskRunner* task_runner)
+    : producer_id_(producer_id),
+      client_identity_(client_identity),
+      delegate_(delegate),
+      memory_(std::move(memory)),
+      ring_buffer_(static_cast<uint8_t*>(memory_->start()),
+                   memory_->size(),
+                   chunk_size_bytes),
+      reader_(&ring_buffer_, this),
+      weak_runner_(task_runner) {}
+
+ServiceRingBufferDrainer::~ServiceRingBufferDrainer() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+}
+
+void ServiceRingBufferDrainer::Drain() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+
+  if (PERFETTO_UNLIKELY(reader_.has_protocol_error()))
+    return;
+
+  
+  
+  const SharedRingBufferReader::Stats stats_before = reader_.GetStats();
+  const auto result = reader_.Drain(ring_buffer_.num_chunks());
+  const SharedRingBufferReader::Stats stats_after = reader_.GetStats();
+
+  
+  
+  const uint64_t num_rejected =
+      (stats_after.malformed_chunks - stats_before.malformed_chunks) +
+      (stats_after.unsupported_format_chunks -
+       stats_before.unsupported_format_chunks);
+  if (PERFETTO_UNLIKELY(num_rejected != 0))
+    delegate_->OnRingBufferChunksDiscarded(num_rejected);
+
+  if (PERFETTO_UNLIKELY(reader_.has_protocol_error())) {
+    
+    
+    delegate_->ForEachV2RingBufferDestination(
+        [](TraceBuffer& buffer) { buffer.RecordAbiViolation(); });
+    return;
+  }
+
+  if (result.needs_another_drain() && !retry_scheduled_) {
+    retry_scheduled_ = true;
+    weak_runner_.PostDelayedTask(
+        [this] {
+          
+          retry_scheduled_ = false;
+          Drain();
+        },
+        kDrainRetryDelayMs);
+  }
+}
+
+void ServiceRingBufferDrainer::OnChunkRead(
+    const SharedRingBufferReader::ChunkContents& chunk) {
+  if (PERFETTO_UNLIKELY(!chunk.writer_id || chunk.writer_id > kMaxWriterID)) {
+    delegate_->OnRingBufferChunksDiscarded(1);
+    return;
+  }
+
+  TraceBuffer* buffer =
+      delegate_->GetV2RingBufferDestination(chunk.target_buffer);
+  if (PERFETTO_UNLIKELY(!buffer)) {
+    delegate_->OnRingBufferChunksDiscarded(1);
+    RecordWriterLoss(chunk.writer_id);
+    return;
+  }
+
+  
+  
+  PERFETTO_DCHECK(!(chunk.payload_flags & kFlagDataLoss));
+  const TraceBuffer::PacketSequenceProperties sequence{
+      producer_id_, client_identity_, chunk.writer_id};
+  
+  
+  
+  
+  
+  
+  
+  buffer->CopyChunkV2Untrusted(
+      sequence, chunk.fragments, chunk.num_fragments,
+      chunk.payload_flags & kFlagContinuesFromPrevChunk,
+      chunk.payload_flags & kFlagContinuesOnNextChunk);
+}
+
+void ServiceRingBufferDrainer::OnDataLoss(WriterID writer_id) {
+  
+  
+  
+  
+  
+  RecordWriterLoss(writer_id);
+}
+
+void ServiceRingBufferDrainer::RecordWriterLoss(WriterID writer_id) {
+  if (!writer_id || writer_id > kMaxWriterID)
+    return;
+  
+  
+  
+  
+  delegate_->ForEachV2RingBufferDestination(
+      [this, writer_id](TraceBuffer& buffer) {
+        buffer.RecordChunkV2DataLoss(producer_id_, writer_id);
+      });
+}
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_PROTOVMS_H_
+#define SRC_TRACING_SERVICE_TRACE_BUFFER_PROTOVMS_H_
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+
+
+
+namespace perfetto {
+
+class TracePacket;
+
+namespace protovm {
+class Vm;
+}
+
+
+
+
+
+
+
+
+class TraceBufferProtoVms {
+ public:
+  
+  struct Vm {
+    Vm();
+    ~Vm();
+    Vm(Vm&&) noexcept;
+
+    Vm CloneReadOnly() const;
+
+    std::unique_ptr<protovm::Vm> instance;
+    std::string data_source_name;
+    uint64_t program_hash = 0;
+    uint32_t memory_limit_kb = 0;
+    base::FlatSet<ProducerID> producers;
+  };
+
+  TraceBufferProtoVms();
+  ~TraceBufferProtoVms();
+
+  TraceBufferProtoVms(const TraceBufferProtoVms&) = delete;
+  TraceBufferProtoVms& operator=(const TraceBufferProtoVms&) = delete;
+
+  
+  
+  void MaybeSetUp(const std::string& data_source_name,
+                  const std::string& program_bytes,
+                  uint32_t memory_limit_kb,
+                  ProducerID producer_id);
+
+  
+  
+  void MaybeProcessOverwrittenPacket(const TracePacket&, ProducerID producer);
+
+  
+  
+  void CloneReadOnlyFrom(const TraceBufferProtoVms& src);
+
+  bool HasProducer(ProducerID) const;
+  size_t GetMemoryUsageBytes() const;
+
+  bool empty() const { return vms_.empty(); }
+  const std::vector<Vm>& instances() const { return vms_; }
+
+ private:
+  std::vector<Vm> vms_;
+
+  
+  
+  
+  std::string patch_;
+};
+
+}  
+
+#endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <algorithm>
+#include <utility>
+
+
+
+
+
+
+
+
+namespace perfetto {
+
+TraceBufferProtoVms::Vm::Vm() = default;
+TraceBufferProtoVms::Vm::~Vm() = default;
+TraceBufferProtoVms::Vm::Vm(Vm&&) noexcept = default;
+
+TraceBufferProtoVms::Vm TraceBufferProtoVms::Vm::CloneReadOnly() const {
+  Vm cloned_vm;
+  cloned_vm.data_source_name = data_source_name;
+  cloned_vm.program_hash = program_hash;
+  cloned_vm.memory_limit_kb = memory_limit_kb;
+  cloned_vm.producers = producers;
+  cloned_vm.instance = instance->CloneReadOnly();
+  return cloned_vm;
+}
+
+TraceBufferProtoVms::TraceBufferProtoVms() = default;
+TraceBufferProtoVms::~TraceBufferProtoVms() = default;
+
+void TraceBufferProtoVms::MaybeSetUp(const std::string& data_source_name,
+                                     const std::string& program_bytes,
+                                     uint32_t memory_limit_kb,
+                                     ProducerID producer_id) {
+  Vm* vm = nullptr;
+  
+  uint64_t program_hash = base::MurmurHashValue(program_bytes);
+  auto vm_it = std::find_if(vms_.begin(), vms_.end(), [&](const Vm& other) {
+    return other.data_source_name == data_source_name &&
+           other.program_hash == program_hash;
+  });
+  if (vm_it != vms_.end()) {
+    vm = &(*vm_it);
+  } else {
+    
+    Vm new_vm;
+    new_vm.data_source_name = data_source_name;
+    new_vm.program_hash = program_hash;
+    new_vm.memory_limit_kb = memory_limit_kb;
+
+    protozero::ConstBytes program_bytes_view{
+        reinterpret_cast<const uint8_t*>(program_bytes.data()),
+        program_bytes.size()};
+
+    new_vm.instance = std::make_unique<protovm::Vm>(
+        program_bytes_view, new_vm.memory_limit_kb * 1024);
+    if (!new_vm.instance) {
+      PERFETTO_ELOG("Failed to allocate ProtoVM");
+      return;
+    }
+
+    vms_.push_back(std::move(new_vm));
+    vm = &vms_.back();
+  }
+  
+  vm->producers.insert(producer_id);
+}
+
+void TraceBufferProtoVms::MaybeProcessOverwrittenPacket(
+    const TracePacket& packet,
+    ProducerID producer) {
+  patch_.clear();
+
+  for (auto& vm : vms_) {
+    if (vm.producers.find(producer) == vm.producers.end()) {
+      continue;
+    }
+    
+    
+    if (patch_.empty()) {
+      packet.GetRawBytes(&patch_);
+    }
+    protozero::ConstBytes bytes{reinterpret_cast<const uint8_t*>(patch_.data()),
+                                patch_.size()};
+    auto status = vm.instance->ApplyPatch(bytes);
+    if (status.IsOk()) {
+      break;
+    }
+    if (status.IsAbort()) {
+      
+      
+      PERFETTO_ELOG("ProtoVM abort while applying patch. Stacktrace:\n%s",
+                    base::Join(status.stacktrace(), "\n").c_str());
+    }
+  }
+}
+
+void TraceBufferProtoVms::CloneReadOnlyFrom(const TraceBufferProtoVms& src) {
+  vms_.clear();
+  for (const auto& vm : src.vms_) {
+    auto vm_cloned = vm.CloneReadOnly();
+    if (!vm_cloned.instance) {
+      PERFETTO_ELOG("Failed to clone ProtoVMs");
+      vms_.clear();
+      break;
+    }
+    vms_.push_back(std::move(vm_cloned));
+  }
+}
+
+bool TraceBufferProtoVms::HasProducer(ProducerID producer) const {
+  return std::any_of(vms_.begin(), vms_.end(), [&](const Vm& vm) {
+    return vm.producers.count(producer) != 0;
+  });
+}
+
+size_t TraceBufferProtoVms::GetMemoryUsageBytes() const {
+  size_t total_bytes = 0;
+  for (const Vm& vm : vms_)
+    total_bytes += vm.instance->GetMemoryUsageBytes();
+  return total_bytes;
+}
+
+}  
+
+
 
 
 
@@ -61014,6 +69591,21 @@ class TraceBufferV1 : public TraceBuffer {
                              bool other_patches_pending) override;
 
   
+  bool supports_tracing_v2() const override;
+
+  
+  bool CopyChunkV2Untrusted(const PacketSequenceProperties&,
+                            const protozero::ConstBytes* fragments,
+                            size_t num_fragments,
+                            bool first_continues_from_prev,
+                            bool last_continues_on_next) override;
+
+  
+  void RecordChunkV2DataLoss(ProducerID, WriterID) override;
+
+  void RecordAbiViolation() override;
+
+  
   
   
   
@@ -61055,9 +69647,15 @@ class TraceBufferV1 : public TraceBuffer {
       uint32_t* previous_packet_on_sequence_dropped) override;
 
   
+  void MaybeCompact() override;
+
+  
   
   
   std::unique_ptr<TraceBuffer> CloneReadOnly() const override;
+
+  
+  TraceBufferProtoVms* protovms() override;
 
   void set_read_only() override { read_only_ = true; }
   const TraceStats::BufferStats& stats() const override { return stats_; }
@@ -61984,6 +70582,24 @@ bool TraceBufferV1::TryPatchChunkContents(ProducerID producer_id,
   return true;
 }
 
+bool TraceBufferV1::supports_tracing_v2() const {
+  return false;
+}
+
+bool TraceBufferV1::CopyChunkV2Untrusted(const PacketSequenceProperties&,
+                                         const protozero::ConstBytes*,
+                                         size_t,
+                                         bool,
+                                         bool) {
+  return false;
+}
+
+void TraceBufferV1::RecordChunkV2DataLoss(ProducerID, WriterID) {}
+
+void TraceBufferV1::RecordAbiViolation() {
+  stats_.set_abi_violations(stats_.abi_violations() + 1);
+}
+
 void TraceBufferV1::BeginRead() {
   read_iter_ = GetReadIterForSequence(index_.begin());
 #if PERFETTO_DCHECK_IS_ON()
@@ -62247,6 +70863,8 @@ bool TraceBufferV1::ReadNextTracePacket(
   }  
 }
 
+void TraceBufferV1::MaybeCompact() {}
+
 TraceBufferV1::ReadAheadResult TraceBufferV1::ReadAhead(TracePacket* packet) {
   static_assert(static_cast<ChunkID>(kMaxChunkID + 1) == 0,
                 "relying on kMaxChunkID to wrap naturally");
@@ -62431,6 +71049,10 @@ std::unique_ptr<TraceBuffer> TraceBufferV1::CloneReadOnly() const {
   if (!buf->data_.IsValid())
     return nullptr;  
   return buf;
+}
+
+TraceBufferProtoVms* TraceBufferV1::protovms() {
+  return nullptr;
 }
 
 TraceBufferV1::TraceBufferV1(CloneCtor, const TraceBufferV1& src)
@@ -62892,203 +71514,6 @@ class CircularQueue {
 
 
 
-
-#ifndef INCLUDE_PERFETTO_EXT_BASE_SMALL_VECTOR_H_
-#define INCLUDE_PERFETTO_EXT_BASE_SMALL_VECTOR_H_
-
-#include <algorithm>
-#include <type_traits>
-#include <utility>
-
-
-
-
-
-namespace perfetto {
-namespace base {
-
-
-template <typename T, size_t kSize>
-class SmallVector {
- public:
-  static constexpr size_t kInlineSize = kSize;
-
-  explicit SmallVector() = default;
-
-  ~SmallVector() {
-    clear();
-    if (PERFETTO_UNLIKELY(is_using_heap()))
-      AlignedFree(begin_);
-    begin_ = end_ = end_of_storage_ = nullptr;
-  }
-
-  
-  SmallVector(SmallVector&& other) noexcept(
-      std::is_nothrow_move_constructible<T>::value) {
-    if (other.is_using_heap()) {
-      
-      
-      begin_ = other.begin_;
-      end_ = other.end_;
-      end_of_storage_ = other.end_of_storage_;
-    } else {
-      const size_t other_size = other.size();
-      PERFETTO_DCHECK(other_size <= capacity());
-      for (size_t i = 0; i < other_size; i++) {
-        
-        new (&begin_[i]) T(std::move(other.begin_[i]));
-        other.begin_[i].~T();
-      }
-      end_ = begin_ + other_size;
-    }
-    auto* const other_inline_storage = other.inline_storage_begin();
-    other.end_ = other.begin_ = other_inline_storage;
-    other.end_of_storage_ = other_inline_storage + kInlineSize;
-  }
-
-  SmallVector& operator=(SmallVector&& other) noexcept(
-      std::is_nothrow_move_constructible<T>::value) {
-    this->~SmallVector();
-    new (this) SmallVector<T, kSize>(std::move(other));
-    return *this;
-  }
-
-  
-  SmallVector(const SmallVector& other) {
-    const size_t other_size = other.size();
-    if (other_size > capacity())
-      Grow(other_size);
-    
-    for (size_t i = 0; i < other_size; ++i)
-      new (&begin_[i]) T(other.begin_[i]);
-    end_ = begin_ + other_size;
-  }
-
-  SmallVector& operator=(const SmallVector& other) {
-    if (PERFETTO_UNLIKELY(this == &other))
-      return *this;
-    this->~SmallVector();
-    new (this) SmallVector<T, kSize>(other);
-    return *this;
-  }
-
-  T* data() { return begin_; }
-  const T* data() const { return begin_; }
-
-  T* begin() { return begin_; }
-  const T* begin() const { return begin_; }
-
-  T* end() { return end_; }
-  const T* end() const { return end_; }
-
-  size_t size() const { return static_cast<size_t>(end_ - begin_); }
-
-  bool empty() const { return end_ == begin_; }
-
-  size_t capacity() const {
-    return static_cast<size_t>(end_of_storage_ - begin_);
-  }
-
-  T& front() {
-    PERFETTO_DCHECK(!empty());
-    return begin_[0];
-  }
-  const T& front() const {
-    PERFETTO_DCHECK(!empty());
-    return begin_[0];
-  }
-
-  T& back() {
-    PERFETTO_DCHECK(!empty());
-    return end_[-1];
-  }
-  const T& back() const {
-    PERFETTO_DCHECK(!empty());
-    return end_[-1];
-  }
-
-  T& operator[](size_t index) {
-    PERFETTO_DCHECK(index < size());
-    return begin_[index];
-  }
-
-  const T& operator[](size_t index) const {
-    PERFETTO_DCHECK(index < size());
-    return begin_[index];
-  }
-
-  template <typename... Args>
-  void emplace_back(Args&&... args) {
-    T* end = end_;
-    if (PERFETTO_UNLIKELY(end == end_of_storage_))
-      end = Grow();
-    new (end) T(std::forward<Args>(args)...);
-    end_ = end + 1;
-  }
-
-  void pop_back() {
-    PERFETTO_DCHECK(!empty());
-    back().~T();
-    --end_;
-  }
-
-  
-  void clear() {
-    while (!empty())
-      pop_back();
-  }
-
- private:
-  PERFETTO_NO_INLINE T* Grow(size_t desired_capacity = 0) {
-    size_t cur_size = size();
-    size_t new_capacity = desired_capacity;
-    if (desired_capacity <= cur_size)
-      new_capacity = std::max(capacity() * 2, size_t(128));
-    T* new_storage =
-        static_cast<T*>(AlignedAlloc(alignof(T), new_capacity * sizeof(T)));
-    for (size_t i = 0; i < cur_size; ++i) {
-      
-      new (&new_storage[i]) T(std::move(begin_[i]));
-      begin_[i].~T();
-    }
-    if (is_using_heap())
-      AlignedFree(begin_);
-    begin_ = new_storage;
-    end_ = new_storage + cur_size;
-    end_of_storage_ = new_storage + new_capacity;
-    return end_;
-  }
-
-  T* inline_storage_begin() { return reinterpret_cast<T*>(inline_storage_); }
-  bool is_using_heap() { return begin_ != inline_storage_begin(); }
-
-  T* begin_ = inline_storage_begin();
-  T* end_ = begin_;
-  T* end_of_storage_ = begin_ + kInlineSize;
-
-  alignas(T) char inline_storage_[sizeof(T) * kInlineSize];
-};
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SRC_TRACING_SERVICE_TRACE_BUFFER_V2_H_
 #define SRC_TRACING_SERVICE_TRACE_BUFFER_V2_H_
 
@@ -63098,6 +71523,9 @@ class SmallVector {
 #include <limits>
 #include <optional>
 #include <unordered_map>
+#include <vector>
+
+
 
 
 
@@ -63119,10 +71547,6 @@ namespace perfetto {
 
 class TracePacket;
 class TraceBufferV2;
-
-namespace protovm {
-class Vm;
-}
 
 namespace internal {
 
@@ -63161,6 +71585,7 @@ struct TBChunk {
   }
 
   
+  
   ChunkID chunk_id = 0;
 
   
@@ -63186,6 +71611,7 @@ struct TBChunk {
   
   uint16_t payload_avail = 0;
 
+  
   
   
   
@@ -63277,6 +71703,33 @@ struct SequenceState {
   
   
   base::CircularQueue<size_t> chunks;
+
+  
+  
+  
+  bool is_smb_v2 = false;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool pending_chunk_v2_data_loss = false;
 };
 
 
@@ -63464,26 +71917,16 @@ class ChunkSeqReader {
 
 
 
+
+
+
+
 class TraceBufferV2 : public TraceBuffer {
  public:
   using TBChunk = internal::TBChunk;
   using OverwritePolicy = TraceBuffer::OverwritePolicy;
   using Patch = TraceBuffer::Patch;
   using PacketSequenceProperties = TraceBuffer::PacketSequenceProperties;
-
-  
-  struct Vm {
-    Vm();
-    ~Vm();
-    Vm(Vm&&) noexcept;
-    Vm CloneReadOnly() const;
-
-    std::unique_ptr<protovm::Vm> instance;
-    std::string data_source_name;
-    uint64_t program_hash = 0;
-    uint32_t memory_limit_kb = 0;
-    base::FlatSet<ProducerID> producers;
-  };
 
   
   static std::unique_ptr<TraceBufferV2> Create(size_t size_in_bytes,
@@ -63540,12 +71983,34 @@ class TraceBufferV2 : public TraceBuffer {
                              size_t patches_size,
                              bool other_patches_pending) override;
 
-  void MaybeSetUpProtoVm(const std::string& data_source_name,
-                         const std::string& program_bytes,
-                         uint32_t memory_limit_kb,
-                         ProducerID producer_id);
+  
+  
+  
+  bool supports_tracing_v2() const override;
 
-  const std::vector<Vm>& GetProtoVmInstances() const { return protovms_; }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool CopyChunkV2Untrusted(const PacketSequenceProperties& sequence,
+                            const protozero::ConstBytes* fragments,
+                            size_t num_fragments,
+                            bool first_continues_from_prev,
+                            bool last_continues_on_next) override;
+
+  
+  
+  
+  void RecordChunkV2DataLoss(ProducerID, WriterID) override;
+
+  void RecordAbiViolation() override;
 
   
   
@@ -63582,6 +72047,11 @@ class TraceBufferV2 : public TraceBuffer {
   
   
   
+  
+  
+  
+  
+  
   bool ReadNextTracePacket(
       TracePacket*,
       PacketSequenceProperties* sequence_properties,
@@ -63591,18 +72061,34 @@ class TraceBufferV2 : public TraceBuffer {
   
   
   
+  
+  
+  
+  
+  
+  
+  void MaybeCompact() override;
+
+  
+  
+  
+  
+  
+  
   std::unique_ptr<TraceBuffer> CloneReadOnly() const override;
 
+  TraceBufferProtoVms* protovms() override;
+
+  void set_read_only() override { read_only_ = true; }
+  const TraceStats::BufferStats& stats() const override { return stats_; }
+  const WriterStats& writer_stats() const override { return writer_stats_; }
   size_t size() const override { return size_; }
   size_t used_size() const override { return used_size_; }
   size_t GetMemoryUsageBytes() const override;
   OverwritePolicy overwrite_policy() const override {
     return overwrite_policy_;
   }
-  const TraceStats::BufferStats& stats() const override { return stats_; }
-  const WriterStats& writer_stats() const override { return writer_stats_; }
-  bool has_data() const override { return used_size_ > 0; }
-  void set_read_only() override { read_only_ = true; }
+  bool has_data() const override { return has_data_; }
   BufType buf_type() const override { return kV2; }
 
   void DumpForTesting();
@@ -63627,7 +72113,22 @@ class TraceBufferV2 : public TraceBuffer {
 
   bool Initialize(size_t size);
   TBChunk* CreateTBChunk(size_t off, size_t payload_size);
+
+  
+  
+  
+  
+  bool MakeSpaceToWrite(size_t size);
   void DeleteNextChunksFor(size_t bytes_to_clear);
+
+  
+  
+  
+  
+  
+  
+  
+  bool RewriteProtoGroupPacket(TracePacket*);
 
   void DcheckIsAlignedAndWithinBounds(size_t off) const {
     PERFETTO_DCHECK((off & (alignof(TBChunk) - 1)) == 0);
@@ -63665,7 +72166,6 @@ class TraceBufferV2 : public TraceBuffer {
 
   void DiscardWrite();
   void DeleteStaleEmptySequences();
-  void MaybeProcessOverwrittenPacketWithProtoVm(const TracePacket&, ProducerID);
 
   uint8_t* begin() const { return reinterpret_cast<uint8_t*>(data_.Get()); }
   uint8_t* end() const { return begin() + size_; }
@@ -63677,7 +72177,20 @@ class TraceBufferV2 : public TraceBuffer {
   
   
   
+  
   size_t used_size_ = 0;
+
+  
+  
+  
+  
+  
+  size_t prev_madvise_begin_ = 0;
+
+  
+  
+  
+  bool has_data_ = false;
 
   size_t wr_ = 0;  
   size_t rd_ = 0;  
@@ -63720,7 +72233,7 @@ class TraceBufferV2 : public TraceBuffer {
   bool suppress_client_dchecks_for_testing_ = false;
 
   
-  std::vector<Vm> protovms_;
+  TraceBufferProtoVms protovms_;
 
   
   
@@ -63730,11 +72243,7 @@ class TraceBufferV2 : public TraceBuffer {
   TracePacket overwritten_packet_;
 
   
-  
-  
-  
-  
-  std::string protovm_patch_;
+  tracing_v2::ProtoGroupRewriter rewriter_;
 };
 
 }  
@@ -63760,8 +72269,7 @@ class TraceBufferV2 : public TraceBuffer {
 
 #include <algorithm>
 #include <memory>
-
-
+#include <type_traits>
 
 
 
@@ -63811,6 +72319,11 @@ constexpr uint8_t kFlagsMask = SharedMemoryABI::ChunkHeader::kFlagsMask;
 
 
 
+constexpr uint8_t kChunkLossBefore = 0x40;
+static_assert((kChunkLossBefore & (kFlagsMask | kChunkIncomplete)) == 0);
+
+
+
 
 
 
@@ -63830,6 +72343,11 @@ constexpr size_t kKeepLastEmptySeq = 1024;
 
 
 constexpr size_t kEmptySequencesGcTreshold = kKeepLastEmptySeq + 128;
+
+
+
+constexpr size_t kSpareCapacityDivisor = 4;
+
 }  
 
 namespace internal {
@@ -63978,7 +72496,8 @@ TBChunk* ChunkSeqIterator::NextChunkInSequence() {
   size_t next_chunk_off = chunk_list.at(next_list_idx);      
   TBChunk* next_chunk = buf_->GetTBChunkAt(next_chunk_off);  
 
-  if (last_chunk_id.has_value() && next_chunk->chunk_id != *last_chunk_id + 1)
+  if (!seq_->is_smb_v2 && last_chunk_id.has_value() &&
+      next_chunk->chunk_id != *last_chunk_id + 1)
     sequence_gap_detected_ = true;
 
   chunk_ = next_chunk;
@@ -64043,6 +72562,9 @@ ChunkSeqReader::ChunkSeqReader(TraceBufferV2* buf,
                            : 0,
                        iter_->chunk_id, end_->chunk_id);
 
+  if (seq_->is_smb_v2)
+    return;
+
   if (seq_->last_chunk_consumed.has_value()) {
     const auto& last = *seq_->last_chunk_consumed;
     
@@ -64075,6 +72597,12 @@ bool ChunkSeqReader::ReadNextPacketInSeqOrder(TracePacket* out_packet) {
   
   
   for (;;) {
+    
+    
+    if (PERFETTO_UNLIKELY(iter_->flags & kChunkLossBefore)) {
+      AddSeqDataLoss(seq_, DataLossReason::DATA_LOSS_READ_GAP);
+      iter_->flags &= static_cast<uint8_t>(~kChunkLossBefore);
+    }
     std::optional<Frag> maybe_frag = frag_iter_.NextFragmentInChunk();
     if (!maybe_frag.has_value()) {
       
@@ -64255,7 +72783,9 @@ ChunkSeqReader::ReassembleFragmentedPacket(TracePacket* out_packet,
       outcome.result = FragReassemblyResult::kNotEnoughData;
       break;
     }
-    if (chunk_iter.sequence_gap_detected()) {
+    if (PERFETTO_UNLIKELY(chunk_iter.sequence_gap_detected() ||
+                          (next_chunk->flags & kChunkLossBefore))) {
+      
       
       outcome.result = FragReassemblyResult::kDataLoss;
       outcome.reason = DataLossReason::DATA_LOSS_REASSEMBLY_GAP;
@@ -64334,6 +72864,8 @@ std::unique_ptr<TraceBufferV2> TraceBufferV2::Create(size_t size_in_bytes,
   
   static_assert(sizeof(TBChunk) == 16);
   static_assert(alignof(TBChunk) == 4);
+  
+  static_assert(std::is_trivially_copyable_v<TBChunk>);
   std::unique_ptr<TraceBufferV2> trace_buffer(new TraceBufferV2(pol));
   if (!trace_buffer->Initialize(size_in_bytes))
     return nullptr;
@@ -64413,6 +72945,17 @@ bool TraceBufferV2::ReadNextTracePacket(
       
       if (chunk_seq_reader_->ReadNextPacketInSeqOrder(out_packet)) {
         SequenceState& s = *chunk_seq_reader_->seq();
+        if (s.is_smb_v2) {
+          if (out_packet->size() == 0)
+            continue;  
+
+          if (PERFETTO_UNLIKELY(!RewriteProtoGroupPacket(out_packet))) {
+            out_packet->Clear();
+            internal::AddSeqDataLoss(&s,
+                                     DataLossReason::DATA_LOSS_CHUNK_CORRUPTED);
+            continue;
+          }
+        }
         *sequence_properties = {s.producer_id, s.client_identity, s.writer_id};
         *previous_packet_on_sequence_dropped = s.data_loss_reasons;
         s.data_loss_reasons = 0;
@@ -64437,6 +72980,151 @@ bool TraceBufferV2::ReadNextTracePacket(
   }  
 }
 
+void TraceBufferV2::MaybeCompact() {
+  TRACE_BUFFER_V2_DLOG("MaybeCompact(), wr_=%zu", wr_);
+  chunk_seq_reader_.reset();
+  if (overwrite_policy_ != kOverwrite || read_only_) {
+    return;
+  }
+
+  
+  size_t num_chunks = 0;
+  for (const auto& seq_entry : sequences_)
+    num_chunks += seq_entry.second.chunks.size();
+
+  
+  
+  
+  
+  std::vector<size_t*> chunk_offset_ptrs;
+  chunk_offset_ptrs.reserve(num_chunks);
+  for (auto& seq_entry : sequences_) {
+    for (size_t& chunk_offset : seq_entry.second.chunks)
+      chunk_offset_ptrs.emplace_back(&chunk_offset);
+  }
+
+  
+  
+  
+  std::sort(chunk_offset_ptrs.begin(), chunk_offset_ptrs.end(),
+            [](const size_t* lhs, const size_t* rhs) { return *lhs < *rhs; });
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool chunks_on_both_sides = !chunk_offset_ptrs.empty() &&
+                                    *chunk_offset_ptrs.front() < wr_ &&
+                                    *chunk_offset_ptrs.back() >= wr_;
+  if (PERFETTO_UNLIKELY(chunks_on_both_sides)) {
+    stats_.set_compactions_skipped(stats_.compactions_skipped() + 1);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t dst = 0;
+  size_t prev_chunk_end = 0;
+  for (size_t* offset_ptr : chunk_offset_ptrs) {
+    const size_t src = *offset_ptr;
+    TBChunk* chunk = GetTBChunkAt(src);
+    PERFETTO_DCHECK(!chunk->is_padding());
+    const size_t outer_size = chunk->outer_size();
+    PERFETTO_CHECK(src >= prev_chunk_end);
+    prev_chunk_end = src + outer_size;
+    if (dst != src) {
+      memmove(begin() + dst, chunk, outer_size);
+      *offset_ptr = dst;
+      TBChunk* moved_chunk = GetTBChunkAtUnchecked(dst);
+      moved_chunk->checksum = TBChunk::Checksum(dst, moved_chunk->size);
+    }
+    dst += outer_size;
+  }
+
+  TRACE_BUFFER_V2_DLOG("Compacted %zu -> %zu bytes", used_size_, dst);
+  const size_t old_used_size = used_size_;
+  PERFETTO_CHECK(dst <= old_used_size && old_used_size <= size_);
+  wr_ = dst;
+  used_size_ = dst;
+
+  
+  
+  
+  
+  
+  
+  memset(begin() + dst, 0, old_used_size - dst);
+
+  const size_t spare_size =
+      std::min(old_used_size / kSpareCapacityDivisor, size_ - old_used_size);
+  const size_t cur_madvise_begin = old_used_size + spare_size;
+
+  
+  prev_madvise_begin_ = std::max(prev_madvise_begin_, old_used_size);
+
+  
+  
+  if (cur_madvise_begin < prev_madvise_begin_) {
+    data_.AdviseDontNeedAfter(cur_madvise_begin);
+    prev_madvise_begin_ = cur_madvise_begin;
+  }
+  stats_.set_compactions(stats_.compactions() + 1);
+}
+
+bool TraceBufferV2::RewriteProtoGroupPacket(TracePacket* packet) {
+  PERFETTO_DCHECK(packet->size() > 0);
+
+  
+  
+  
+  
+  
+  
+  
+  std::optional<Slice> rewritten;
+  switch (rewriter_.Rewrite(packet->slices(), &rewritten)) {
+    case tracing_v2::RewriteResult::kRewritten:
+      break;
+    case tracing_v2::RewriteResult::kUnchanged:
+      return true;
+    case tracing_v2::RewriteResult::kMalformedInput:
+      stats_.set_abi_violations(stats_.abi_violations() + 1);
+      return false;
+    case tracing_v2::RewriteResult::kGroupTooLarge:
+      stats_.set_oversized_packets_dropped(stats_.oversized_packets_dropped() +
+                                           1);
+      return false;
+  }
+  packet->Clear();
+  packet->AddSlice(std::move(*rewritten));
+  return true;
+}
+
 void TraceBufferV2::CopyChunkUntrusted(
     ProducerID producer_id_trusted,
     const ClientIdentity& client_identity_trusted,
@@ -64456,6 +73144,10 @@ void TraceBufferV2::CopyChunkUntrusted(
 
   if (PERFETTO_UNLIKELY(discard_writes_))
     return DiscardWrite();
+
+  
+  
+  chunk_flags &= kFlagsMask;
 
   
   
@@ -64528,6 +73220,13 @@ void TraceBufferV2::CopyChunkUntrusted(
   }
 
   SequenceState& seq = seq_it->second;
+  
+  
+  
+  if (seq.is_smb_v2) {
+    stats_.set_abi_violations(stats_.abi_violations() + 1);
+    return;
+  }
   if (trace_writer_data_drop) {
     stats_.set_trace_writer_packet_loss(stats_.trace_writer_packet_loss() + 1);
     internal::AddSeqDataLoss(&seq, DataLossReason::DATA_LOSS_WRITER_ABORT);
@@ -64620,8 +73319,9 @@ void TraceBufferV2::CopyChunkUntrusted(
     const bool copy_fully_consumed = recommit_chunk->payload_avail == 0;
 
     
+    
     const bool commit_adds_new_data =
-        chunk_complete && all_frags_size > recommit_chunk->payload_size;
+        all_frags_size > recommit_chunk->payload_size;
 
     
     
@@ -64668,27 +73368,8 @@ void TraceBufferV2::CopyChunkUntrusted(
     internal::ChunkSeqIterator(this, &seq).EraseCurrentChunk();
   }  
 
-  
-  
-  const size_t cached_size_to_end = size_to_end();
-  if (PERFETTO_UNLIKELY(tbchunk_outer_size > cached_size_to_end)) {
-    
-    
-    if (overwrite_policy_ == kDiscard)
-      return DiscardWrite();
-
-    
-    
-    if (cached_size_to_end > 0)
-      DeleteNextChunksFor(cached_size_to_end);
-
-    wr_ = 0;
-    stats_.set_write_wrap_count(stats_.write_wrap_count() + 1);
-    PERFETTO_DCHECK(size_to_end() >= tbchunk_outer_size);
-  }
-
-  
-  DeleteNextChunksFor(tbchunk_outer_size);
+  if (!MakeSpaceToWrite(tbchunk_outer_size))
+    return DiscardWrite();
 
   
   
@@ -64722,6 +73403,7 @@ void TraceBufferV2::CopyChunkUntrusted(
         stats_.chunks_committed_out_of_order() + 1);
   }
   chunk_list.InsertAfter(insert_pos, wr_);
+  has_data_ = true;
   if (chunk_list.size() == 1 && !seq_is_new) {
     PERFETTO_DCHECK(empty_sequences_ > 0);
     --empty_sequences_;
@@ -64743,6 +73425,166 @@ void TraceBufferV2::CopyChunkUntrusted(
     DeleteStaleEmptySequences();
 }
 
+bool TraceBufferV2::supports_tracing_v2() const {
+  return true;
+}
+
+bool TraceBufferV2::CopyChunkV2Untrusted(
+    const PacketSequenceProperties& sequence,
+    const protozero::ConstBytes* fragments,
+    size_t num_fragments,
+    bool first_continues_from_prev,
+    bool last_continues_on_next) {
+  PERFETTO_CHECK(!read_only_);
+
+  if (PERFETTO_UNLIKELY(num_fragments == 0))
+    return false;
+
+  
+  auto reject = [&] {
+    RecordChunkV2DataLoss(sequence.producer_id_trusted, sequence.writer_id);
+    return false;
+  };
+  auto reject_abi_violation = [&] {
+    stats_.set_abi_violations(stats_.abi_violations() + 1);
+    return reject();
+  };
+
+  if (PERFETTO_UNLIKELY(discard_writes_)) {
+    DiscardWrite();
+    return reject();
+  }
+
+  if (!fragments)
+    return reject_abi_violation();
+
+  
+  if (protovms_.HasProducer(sequence.producer_id_trusted)) {
+    stats_.set_chunks_discarded(stats_.chunks_discarded() + 1);
+    return reject();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t total_payload = 0;
+  for (size_t i = 0; i < num_fragments; i++) {
+    const size_t frag_size = fragments[i].size;
+    if ((frag_size && !fragments[i].data) || frag_size > TBChunk::kMaxSize)
+      return reject_abi_violation();
+    uint8_t varint[3];  
+    const size_t varint_size = static_cast<size_t>(
+        proto_utils::WriteVarInt(frag_size, varint) - varint);
+    total_payload += varint_size + frag_size;
+    if (total_payload > TBChunk::kMaxSize)
+      return reject_abi_violation();
+  }
+
+  
+  
+  const size_t tbchunk_outer_size = TBChunk::OuterSize(total_payload);
+  if (PERFETTO_UNLIKELY(tbchunk_outer_size > size_))
+    return reject_abi_violation();
+
+  auto seq_key =
+      MkProducerAndWriterID(sequence.producer_id_trusted, sequence.writer_id);
+  writer_stats_.Insert(seq_key, static_cast<HistValue>(total_payload));
+
+  auto [seq_it, seq_is_new] = sequences_.try_emplace(
+      seq_key, SequenceState(sequence.producer_id_trusted, sequence.writer_id,
+                             sequence.client_identity_trusted));
+  SequenceState& seq = seq_it->second;
+  if (seq_is_new) {
+    seq.is_smb_v2 = true;
+    seq.age_for_gc = ++seq_age_;
+    ++empty_sequences_;
+  } else if (!seq.is_smb_v2) {
+    
+    
+    return reject_abi_violation();
+  }
+
+  if (!MakeSpaceToWrite(tbchunk_outer_size)) {
+    DiscardWrite();
+    return reject();
+  }
+
+  TBChunk* chunk = CreateTBChunk(wr_, total_payload);
+  chunk->pri_wri_id = seq_key;
+  chunk->payload_size = static_cast<uint16_t>(total_payload);
+  chunk->payload_avail = static_cast<uint16_t>(total_payload);
+
+  uint8_t flags = 0;
+  if (PERFETTO_UNLIKELY(seq.pending_chunk_v2_data_loss)) {
+    flags |= kChunkLossBefore;
+    seq.pending_chunk_v2_data_loss = false;
+  }
+  if (first_continues_from_prev)
+    flags |= kFirstPacketContFromPrevChunk;
+  if (last_continues_on_next)
+    flags |= kLastPacketContOnNextChunk;
+  chunk->flags = flags;
+
+  
+  uint8_t* dst = chunk->fragments_begin();
+  for (size_t i = 0; i < num_fragments; i++) {
+    const size_t frag_size = fragments[i].size;
+    dst = protozero::proto_utils::WriteVarInt(frag_size, dst);
+    if (frag_size > 0) {
+      memcpy(dst, fragments[i].data, frag_size);
+      dst += frag_size;
+    }
+  }
+  PERFETTO_DCHECK(static_cast<size_t>(dst - chunk->fragments_begin()) ==
+                  total_payload);
+
+  
+  auto& chunk_list = seq.chunks;
+  bool was_empty = chunk_list.empty();
+  chunk_list.emplace_back(wr_);
+  has_data_ = true;
+  if (was_empty) {
+    PERFETTO_DCHECK(empty_sequences_ > 0);
+    --empty_sequences_;
+  }
+
+  wr_ += tbchunk_outer_size;
+  PERFETTO_DCHECK(wr_ <= size_ && wr_ <= used_size_);
+
+  stats_.set_chunks_written(stats_.chunks_written() + 1);
+  stats_.set_bytes_written(stats_.bytes_written() + tbchunk_outer_size);
+
+  if (empty_sequences_ > kEmptySequencesGcTreshold)
+    DeleteStaleEmptySequences();
+
+  return true;
+}
+
+void TraceBufferV2::RecordChunkV2DataLoss(ProducerID producer_id,
+                                          WriterID writer_id) {
+  PERFETTO_CHECK(!read_only_);
+
+  
+  
+  auto seq_it = sequences_.find(MkProducerAndWriterID(producer_id, writer_id));
+  if (seq_it != sequences_.end() && seq_it->second.is_smb_v2)
+    seq_it->second.pending_chunk_v2_data_loss = true;
+}
+
+void TraceBufferV2::RecordAbiViolation() {
+  PERFETTO_CHECK(!read_only_);
+  stats_.set_abi_violations(stats_.abi_violations() + 1);
+}
+
 TraceBufferV2::TBChunk* TraceBufferV2::CreateTBChunk(size_t off, size_t size) {
   DcheckIsAlignedAndWithinBounds(off);
   size_t end = off + TBChunk::OuterSize(size);
@@ -64752,6 +73594,26 @@ TraceBufferV2::TBChunk* TraceBufferV2::CreateTBChunk(size_t off, size_t size) {
   }
   TBChunk* chunk = GetTBChunkAtUnchecked(off);
   return new (chunk) TBChunk(off, size);
+}
+
+bool TraceBufferV2::MakeSpaceToWrite(size_t size) {
+  PERFETTO_DCHECK(size <= size_);
+
+  
+  
+  const size_t tail_size = size_to_end();
+  if (PERFETTO_UNLIKELY(size > tail_size)) {
+    if (overwrite_policy_ == kDiscard)
+      return false;
+    
+    if (tail_size > 0)
+      DeleteNextChunksFor(tail_size);
+    wr_ = 0;
+    stats_.set_write_wrap_count(stats_.write_wrap_count() + 1);
+    PERFETTO_DCHECK(size_to_end() >= size);
+  }
+  DeleteNextChunksFor(size);
+  return true;
 }
 
 
@@ -64784,6 +73646,7 @@ void TraceBufferV2::DeleteNextChunksFor(size_t bytes_to_clear) {
     if (PERFETTO_UNLIKELY(off >= used_size_)) {
       
       
+      
       break;
     }
     TBChunk* chunk = GetTBChunkAt(off);
@@ -64805,7 +73668,7 @@ void TraceBufferV2::DeleteNextChunksFor(size_t bytes_to_clear) {
       
       
       TracePacket* maybe_packet = nullptr;
-      if (!protovms_.empty()) {
+      if (!protovms_.empty() && !csr.seq()->is_smb_v2) {
         overwritten_packet_.Clear();
         maybe_packet = &overwritten_packet_;
       }
@@ -64813,8 +73676,8 @@ void TraceBufferV2::DeleteNextChunksFor(size_t bytes_to_clear) {
         break;
       }
       if (maybe_packet) {
-        MaybeProcessOverwrittenPacketWithProtoVm(*maybe_packet,
-                                                 csr.seq()->producer_id);
+        protovms_.MaybeProcessOverwrittenPacket(*maybe_packet,
+                                                csr.seq()->producer_id);
       }
       has_cleared_unconsumed_fragments = true;
     }
@@ -64858,7 +73721,7 @@ bool TraceBufferV2::TryPatchChunkContents(ProducerID producer_id,
 
   ProducerAndWriterID seq_key = MkProducerAndWriterID(producer_id, writer_id);
   auto seq_it = sequences_.find(seq_key);
-  if (seq_it == sequences_.end()) {
+  if (seq_it == sequences_.end() || seq_it->second.is_smb_v2) {
     stats_.set_patches_failed(stats_.patches_failed() + 1);
     return false;
   }
@@ -64935,6 +73798,7 @@ void TraceBufferV2::DiscardWrite() {
 
 
 
+
 void TraceBufferV2::DeleteStaleEmptySequences() {
   
   using SeqIterator = decltype(sequences_)::iterator;
@@ -64953,6 +73817,11 @@ void TraceBufferV2::DeleteStaleEmptySequences() {
               return a->second.age_for_gc < b->second.age_for_gc;
             });
 
+  
+  
+  
+  
+  
   size_t n_oldest = empty_seqs.size() - kKeepLastEmptySeq;
   for (size_t i = 0; i < n_oldest; ++i) {
     sequences_.erase(empty_seqs[i]);
@@ -64974,12 +73843,12 @@ std::unique_ptr<TraceBuffer> TraceBufferV2::CloneReadOnly() const {
   return buf;
 }
 
+TraceBufferProtoVms* TraceBufferV2::protovms() {
+  return &protovms_;
+}
+
 size_t TraceBufferV2::GetMemoryUsageBytes() const {
-  size_t total_bytes = size();
-  for (const Vm& vm : protovms_) {
-    total_bytes += vm.instance->GetMemoryUsageBytes();
-  }
-  return total_bytes;
+  return size() + protovms_.GetMemoryUsageBytes();
 }
 
 TraceBufferV2::TraceBufferV2(CloneCtor, const TraceBufferV2& src)
@@ -64995,6 +73864,7 @@ TraceBufferV2::TraceBufferV2(CloneCtor, const TraceBufferV2& src)
   data_.EnsureCommitted(src.used_size_);
   memcpy(data_.Get(), src.data_.Get(), src.used_size_);
   used_size_ = src.used_size_;
+  has_data_ = src.has_data_;
   wr_ = src.wr_;
 
   stats_ = src.stats_;
@@ -65004,27 +73874,12 @@ TraceBufferV2::TraceBufferV2(CloneCtor, const TraceBufferV2& src)
   stats_.set_readaheads_succeeded(0);
 
   
+  
+  
   sequences_ = src.sequences_;
+  writer_stats_ = src.writer_stats_;
 
-  for (const auto& vm : src.protovms_) {
-    auto vm_cloned = vm.CloneReadOnly();
-    if (!vm_cloned.instance) {
-      PERFETTO_ELOG("Failed to clone ProtoVMs");
-      protovms_.clear();
-      break;
-    }
-    protovms_.push_back(std::move(vm_cloned));
-  }
-}
-
-TraceBufferV2::Vm TraceBufferV2::Vm::CloneReadOnly() const {
-  Vm cloned_vm;
-  cloned_vm.data_source_name = data_source_name;
-  cloned_vm.program_hash = program_hash;
-  cloned_vm.memory_limit_kb = memory_limit_kb;
-  cloned_vm.producers = producers;
-  cloned_vm.instance = instance->CloneReadOnly();
-  return cloned_vm;
+  protovms_.CloneReadOnlyFrom(src.protovms_);
 }
 
 void TraceBufferV2::DumpForTesting() {
@@ -65044,8 +73899,8 @@ void TraceBufferV2::DumpForTesting() {
       PERFETTO_DLOG(
           "[%06zu-%06zu] size=%05u(%05u) id=%05u pr_wr=%08x flags=%08x", rd,
           rd + c->outer_size(), c->payload_size,
-          c->payload_size - c->payload_avail, c->chunk_id, c->pri_wri_id,
-          c->flags);
+          static_cast<unsigned>(c->payload_size - c->payload_avail),
+          c->chunk_id, c->pri_wri_id, c->flags);
       rd += c->outer_size();
       continue;
     }
@@ -65057,79 +73912,6 @@ void TraceBufferV2::DumpForTesting() {
     break;
   }
   PERFETTO_DLOG("------------------------------------------------------------");
-}
-
-TraceBufferV2::Vm::Vm() = default;
-TraceBufferV2::Vm::~Vm() = default;
-TraceBufferV2::Vm::Vm(Vm&&) noexcept = default;
-
-void TraceBufferV2::MaybeSetUpProtoVm(const std::string& data_source_name,
-                                      const std::string& program_bytes,
-                                      uint32_t memory_limit_kb,
-                                      ProducerID producer_id) {
-  Vm* vm = nullptr;
-  
-  uint64_t program_hash = base::MurmurHashValue(program_bytes);
-  auto vm_it =
-      std::find_if(protovms_.begin(), protovms_.end(), [&](const Vm& vm) {
-        return vm.data_source_name == data_source_name &&
-               vm.program_hash == program_hash;
-      });
-  if (vm_it != protovms_.end()) {
-    vm = &(*vm_it);
-  } else {
-    
-    Vm new_vm;
-    new_vm.data_source_name = data_source_name;
-    new_vm.program_hash = program_hash;
-    new_vm.memory_limit_kb = memory_limit_kb;
-
-    protozero::ConstBytes program_bytes_view{
-        reinterpret_cast<const uint8_t*>(program_bytes.data()),
-        program_bytes.size()};
-
-    new_vm.instance = std::make_unique<protovm::Vm>(
-        program_bytes_view, new_vm.memory_limit_kb * 1024);
-    if (!new_vm.instance) {
-      PERFETTO_ELOG("Failed to allocate ProtoVM");
-      return;
-    }
-
-    protovms_.push_back(std::move(new_vm));
-    vm = &protovms_.back();
-  }
-  
-  vm->producers.insert(producer_id);
-}
-
-void TraceBufferV2::MaybeProcessOverwrittenPacketWithProtoVm(
-    const TracePacket& packet,
-    ProducerID producer) {
-  protovm_patch_.clear();
-
-  for (auto& vm : protovms_) {
-    if (vm.producers.find(producer) == vm.producers.end()) {
-      continue;
-    }
-    
-    
-    if (protovm_patch_.empty()) {
-      packet.GetRawBytes(&protovm_patch_);
-    }
-    protozero::ConstBytes bytes{
-        reinterpret_cast<const uint8_t*>(protovm_patch_.data()),
-        protovm_patch_.size()};
-    auto status = vm.instance->ApplyPatch(bytes);
-    if (status.IsOk()) {
-      break;
-    }
-    if (status.IsAbort()) {
-      
-      
-      PERFETTO_ELOG("ProtoVM abort while applying patch. Stacktrace:\n%s",
-                    base::Join(status.stacktrace(), "\n").c_str());
-    }
-  }
 }
 
 }  
@@ -65180,6 +73962,8 @@ void TraceBufferV2::MaybeProcessOverwrittenPacketWithProtoVm(
 
 
 
+
+
 namespace perfetto {
 
 class SharedMemoryArbiterImpl;
@@ -65192,7 +73976,9 @@ struct TracingSession;
 struct TriggerInfo;
 
 
-class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
+class ProducerEndpointImpl
+    : public TracingService::ProducerEndpoint,
+      public tracing_v2::ServiceRingBufferDrainer::Delegate {
  public:
   ProducerEndpointImpl(ProducerID,
                        const ClientIdentity& client_identity,
@@ -65203,7 +73989,8 @@ class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
                        const std::string& machine_name,
                        const std::string& sdk_version,
                        bool in_process,
-                       bool smb_scraping_enabled);
+                       bool smb_scraping_enabled,
+                       uint32_t protocol_abi_versions);
   ~ProducerEndpointImpl() override;
 
   
@@ -65219,6 +74006,9 @@ class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
                          bool provided_by_producer,
                          SharedMemoryABI::ShmemMode shmem_mode);
   std::unique_ptr<TraceWriter> CreateTraceWriter(
+      BufferID,
+      BufferExhaustedPolicy) override;
+  std::unique_ptr<TraceWriter> CreateTraceWriterV2(
       BufferID,
       BufferExhaustedPolicy) override;
   SharedMemoryArbiter* MaybeSharedMemoryArbiter() override;
@@ -65250,6 +74040,24 @@ class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
     if (it != writers_.end())
       return it->second;
     return std::nullopt;
+  }
+
+  
+  void InitializeV2RingBuffer(const DataSourceConfig&) override;
+  void AttachV2RingBuffer(const std::shared_ptr<SharedMemory>&,
+                          uint32_t chunk_size_bytes,
+                          std::function<void(bool)>) override;
+  void DrainV2RingBuffer() override;
+
+  
+  TraceBuffer* GetV2RingBufferDestination(BufferID) override;
+  void ForEachV2RingBufferDestination(
+      const std::function<void(TraceBuffer&)>& callback) override;
+  void OnRingBufferChunksDiscarded(uint64_t count) override;
+
+  
+  size_t ring_buffer_size_bytes() const {
+    return v2_ring_buffer_drainer_ ? v2_ring_buffer_drainer_->size_bytes() : 0;
   }
 
   bool IsShmemEmulated() { return shmem_abi_.use_shmem_emulation(); }
@@ -65299,6 +74107,32 @@ class ProducerEndpointImpl : public TracingService::ProducerEndpoint {
   
   std::unique_ptr<SharedMemoryArbiterImpl> inproc_shmem_arbiter_;
 
+  
+  
+  const uint32_t protocol_abi_versions_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::optional<std::unique_ptr<tracing_v2::ProducerRingBufferArbiter>>
+      v2_ring_buffer_arbiter_;
+
+  
+  
+  
+  
+  std::unique_ptr<tracing_v2::ServiceRingBufferDrainer> v2_ring_buffer_drainer_;
   PERFETTO_THREAD_CHECKER(thread_checker_)
   base::WeakRunner weak_runner_;
 };
@@ -65988,6 +74822,7 @@ struct TracingSession {
 
 
 
+
 namespace protozero {
 class MessageFilter;
 }
@@ -66007,14 +74842,12 @@ class Consumer;
 class Producer;
 class SharedMemory;
 class SharedMemoryArbiterImpl;
-class TraceBuffer;
 class TracePacket;
 
 namespace tracing_service {
 
 class TracingServiceImpl : public TracingService {
  public:
-  static constexpr size_t kMaxShmSize = 32 * 1024 * 1024ul;
   static constexpr uint8_t kSyncMarker[] = {0x82, 0x47, 0x7a, 0x76, 0xb2, 0x8d,
                                             0x42, 0xba, 0x81, 0xdc, 0x33, 0x32,
                                             0x6d, 0x57, 0xa0, 0x79};
@@ -66118,7 +74951,12 @@ class TracingServiceImpl : public TracingService {
       size_t shared_memory_page_size_hint_bytes = 0,
       std::unique_ptr<SharedMemory> shm = nullptr,
       const std::string& sdk_version = {},
-      const std::string& machine_name = {}) override;
+      const std::string& machine_name = {},
+      uint32_t protocol_abi_versions = kProtocolAbiV1) override;
+
+  
+  
+  void OnRingBufferChunksDiscarded(uint64_t count);
 
   std::unique_ptr<TracingService::ConsumerEndpoint> ConnectConsumer(
       Consumer*,
@@ -66239,6 +75077,7 @@ class TracingServiceImpl : public TracingService {
                      bool success);
   void ScrapeSharedMemoryBuffers(TracingSession*, ProducerEndpointImpl*);
   void PeriodicClearIncrementalStateTask(TracingSessionID, bool post_next_only);
+  
   TraceBuffer* GetBufferByID(BufferID);
   void FlushDataSourceInstances(
       TracingSession*,
@@ -66287,8 +75126,11 @@ class TracingServiceImpl : public TracingService {
                           std::vector<TracePacket>* packets);
 
   
+  
+  
   void MaybeCompressPackets(TracingSession* tracing_session,
-                            std::vector<TracePacket>* packets);
+                            std::vector<TracePacket>* packets,
+                            size_t skip_compression_of_first_n_packets);
 
   
   
@@ -66297,6 +75139,12 @@ class TracingServiceImpl : public TracingService {
   
   bool WriteIntoFile(TracingSession* tracing_session,
                      std::vector<TracePacket> packets);
+
+  
+  
+  
+  void MaybeCompactBuffers(TracingSession* tracing_session);
+
   void OnStartTriggersTimeout(TracingSessionID tsid);
   void MaybeLogUploadEvent(const TraceConfig&,
                            const base::Uuid&,
@@ -66370,6 +75218,16 @@ class TracingServiceImpl : public TracingService {
 
 
 
+
+
+
+
+
+
+
+
+
+#include <cinttypes>
 
 
 
@@ -66790,7 +75648,8 @@ ProducerEndpointImpl::ProducerEndpointImpl(
     const std::string& machine_name,
     const std::string& sdk_version,
     bool in_process,
-    bool smb_scraping_enabled)
+    bool smb_scraping_enabled,
+    uint32_t protocol_abi_versions)
     : id_(id),
       client_identity_(client_identity),
       service_(service),
@@ -66800,6 +75659,7 @@ ProducerEndpointImpl::ProducerEndpointImpl(
       sdk_version_(sdk_version),
       in_process_(in_process),
       smb_scraping_enabled_(smb_scraping_enabled),
+      protocol_abi_versions_(protocol_abi_versions),
       weak_runner_(task_runner) {}
 
 ProducerEndpointImpl::~ProducerEndpointImpl() {
@@ -67000,9 +75860,28 @@ bool ProducerEndpointImpl::IsShmemProvidedByProducer() const {
 std::unique_ptr<TraceWriter> ProducerEndpointImpl::CreateTraceWriter(
     BufferID buf_id,
     BufferExhaustedPolicy buffer_exhausted_policy) {
+  if (!(protocol_abi_versions_ & kProtocolAbiV1)) {
+    PERFETTO_ELOG(
+        "Cannot create a v1 trace writer: v1 is not in the common protocol "
+        "mask (%x)",
+        protocol_abi_versions_);
+    return std::make_unique<NullTraceWriter>();
+  }
   PERFETTO_DCHECK(MaybeSharedMemoryArbiter());
   return MaybeSharedMemoryArbiter()->CreateTraceWriter(buf_id,
                                                        buffer_exhausted_policy);
+}
+
+
+std::unique_ptr<TraceWriter> ProducerEndpointImpl::CreateTraceWriterV2(
+    BufferID buf_id,
+    BufferExhaustedPolicy buffer_exhausted_policy) {
+  auto* arbiter = v2_ring_buffer_arbiter_.has_value()
+                      ? v2_ring_buffer_arbiter_->get()
+                      : nullptr;
+  if (!arbiter)
+    return std::make_unique<NullTraceWriter>();
+  return arbiter->CreateTraceWriter(buf_id, buffer_exhausted_policy);
 }
 
 void ProducerEndpointImpl::NotifyFlushComplete(FlushRequestID id) {
@@ -67114,6 +75993,100 @@ bool ProducerEndpointImpl::IsAndroidProcessFrozen() {
 
 #endif
   return false;
+}
+
+void ProducerEndpointImpl::InitializeV2RingBuffer(
+    const DataSourceConfig& config) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (v2_ring_buffer_arbiter_.has_value() || !in_process_ ||
+      !(protocol_abi_versions_ & kProtocolAbiV2)) {
+    return;
+  }
+
+  auto arbiter_or = tracing_v2::ProducerRingBufferArbiter::Create(
+      weak_runner_.task_runner(), this, config, shmem_size_hint_bytes_,
+      [](size_t size) -> base::StatusOr<std::shared_ptr<SharedMemory>> {
+        return std::shared_ptr<SharedMemory>(
+            InProcessSharedMemory::Create(size));
+      });
+  if (!arbiter_or.ok()) {
+    PERFETTO_ELOG("tracing v2: cannot create ring buffer: %s",
+                  arbiter_or.status().c_message());
+    v2_ring_buffer_arbiter_ = nullptr;
+    return;
+  }
+  v2_ring_buffer_arbiter_ = std::move(*arbiter_or);
+
+  auto* arbiter = v2_ring_buffer_arbiter_->get();
+  AttachV2RingBuffer(
+      arbiter->memory(), arbiter->ring_buffer()->chunk_size(),
+      [weak_arbiter = arbiter->GetWeakPtr()](bool reader_attached) {
+        if (weak_arbiter)
+          weak_arbiter->OnReaderAttachReply(reader_attached);
+      });
+}
+
+void ProducerEndpointImpl::AttachV2RingBuffer(
+    const std::shared_ptr<SharedMemory>& memory,
+    uint32_t chunk_size_bytes,
+    std::function<void(bool)> callback) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+
+  base::Status status;
+  if (!(protocol_abi_versions_ & kProtocolAbiV2)) {
+    status = base::ErrStatus("the connection has no tracing v2");
+  } else if (v2_ring_buffer_drainer_) {
+    status = base::ErrStatus("a ring buffer is already attached");
+  } else if (!memory || memory->size() > TracingService::kMaxShmSize) {
+    status = base::ErrStatus("no mapping, or the mapping is too large");
+  } else {
+    status = tracing_v2::NumChunksForRingBufferLayout(
+                 memory->start(), memory->size(), chunk_size_bytes)
+                 .status();
+  }
+  if (!status.ok()) {
+    PERFETTO_DLOG("Producer %" PRIu16 " \"%s\": ring buffer rejected: %s", id_,
+                  name_.c_str(), status.c_message());
+    callback(false);
+    return;
+  }
+
+  v2_ring_buffer_drainer_ =
+      std::make_unique<tracing_v2::ServiceRingBufferDrainer>(
+          memory, chunk_size_bytes, id_, client_identity_, this,
+          weak_runner_.task_runner());
+  service_->UpdateMemoryGuardrail();
+  DrainV2RingBuffer();
+  callback(true);
+}
+
+void ProducerEndpointImpl::DrainV2RingBuffer() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (v2_ring_buffer_drainer_)
+    v2_ring_buffer_drainer_->Drain();
+}
+
+TraceBuffer* ProducerEndpointImpl::GetV2RingBufferDestination(BufferID id) {
+  if (!is_allowed_target_buffer(id))
+    return nullptr;
+
+  
+  
+  TraceBuffer* buffer = service_->GetBufferByID(id);
+  return buffer && buffer->supports_tracing_v2() ? buffer : nullptr;
+}
+
+void ProducerEndpointImpl::ForEachV2RingBufferDestination(
+    const std::function<void(TraceBuffer&)>& callback) {
+  for (BufferID id : allowed_target_buffers_) {
+    TraceBuffer* buffer = service_->GetBufferByID(id);
+    if (buffer && buffer->supports_tracing_v2())
+      callback(*buffer);
+  }
+}
+
+void ProducerEndpointImpl::OnRingBufferChunksDiscarded(uint64_t count) {
+  service_->OnRingBufferChunksDiscarded(count);
 }
 
 
@@ -67313,6 +76286,8 @@ inline base::StatusOr<base::SchedPolicyAndPrio> CreateSchedPolicyFromConfig(
 
 
 
+
+
 #if PERFETTO_BUILDFLAG(PERFETTO_ZLIB)
 
 #endif
@@ -67441,7 +76416,7 @@ std::tuple<size_t , size_t > EnsureValidShmSizes(
     shm_size = TracingServiceImpl::kDefaultShmSize;
 
   page_size = std::min<size_t>(page_size, kMaxPageSize);
-  shm_size = std::min<size_t>(shm_size, TracingServiceImpl::kMaxShmSize);
+  shm_size = std::min<size_t>(shm_size, TracingService::kMaxShmSize);
 
   
   
@@ -67547,6 +76522,21 @@ void AppendOwnedSlicesToPacket(std::unique_ptr<uint8_t[]> data,
 
 
 
+std::unique_ptr<TraceBuffer> CreateTraceBuffer(
+    TraceBuffer::BufType type,
+    size_t size_in_bytes,
+    TraceBuffer::OverwritePolicy policy) {
+  switch (type) {
+    case TraceBuffer::kV1:
+      return TraceBufferV1::Create(size_in_bytes, policy);
+    case TraceBuffer::kV2:
+      return TraceBufferV2::Create(size_in_bytes, policy);
+  }
+  return nullptr;
+}
+
+
+
 
 SharedMemoryABI::ShmemMode GetShmemMode(const ClientIdentity& client_identity,
                                         bool in_process) {
@@ -67586,8 +76576,17 @@ TracingServiceImpl::ConnectProducer(Producer* producer,
                                     size_t shared_memory_page_size_hint_bytes,
                                     std::unique_ptr<SharedMemory> shm,
                                     const std::string& sdk_version,
-                                    const std::string& machine_name) {
+                                    const std::string& machine_name,
+                                    uint32_t protocol_abi_versions) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
+
+  if (!protocol_abi_versions) {
+    PERFETTO_ELOG(
+        "Failed to negotiate a valid tracing protocol version with the tracing "
+        "service: producer=\"%s\"",
+        producer_name.c_str());
+    return nullptr;
+  }
 
   auto uid = client_identity.uid();
   if (lockdown_mode_ && uid != base::GetCurrentUserId()) {
@@ -67618,7 +76617,7 @@ TracingServiceImpl::ConnectProducer(Producer* producer,
   std::unique_ptr<ProducerEndpointImpl> endpoint(new ProducerEndpointImpl(
       id, client_identity, this, weak_runner_.task_runner(), producer,
       producer_name, machine_name, sdk_version, in_process,
-      smb_scraping_enabled));
+      smb_scraping_enabled, protocol_abi_versions));
   auto it_and_inserted = producers_.emplace(id, endpoint.get());
   PERFETTO_DCHECK(it_and_inserted.second);
 
@@ -68006,8 +77005,32 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
   
   
   
+  std::vector<const std::string*> protovm_source(num_buffers);
+  std::vector<const std::string*> tracing_v2_source(num_buffers);
+
+  
+  
+  
   for (const TraceConfig::DataSource& cfg_data_source : cfg.data_sources()) {
     const auto& ds_config = cfg_data_source.config();
+    const auto& tracing_v2_config = ds_config.experimental_tracing_v2();
+    if (tracing_v2_config.use_v2_probability_percent() > 100) {
+      return PERFETTO_SVC_ERR(
+          "experimental_tracing_v2.use_v2_probability_percent must be at most "
+          "100");
+    }
+    if (tracing_v2_config.drain_occupancy_percent() < -1 ||
+        tracing_v2_config.drain_occupancy_percent() > 100) {
+      return PERFETTO_SVC_ERR(
+          "experimental_tracing_v2.drain_occupancy_percent must be -1 to 100");
+    }
+    for (const auto& option : tracing_v2_config.chunk_size_options()) {
+      if (!tracing_v2::IsValidChunkSize(option.size_bytes())) {
+        return PERFETTO_SVC_ERR(
+            "experimental_tracing_v2.chunk_size_options: invalid size %u",
+            option.size_bytes());
+      }
+    }
 
     
     size_t target_buffer = ds_config.target_buffer();
@@ -68049,6 +77072,19 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
           "Data source \"%s\" specified an out of bounds target_buffer (%zu >= "
           "%zu)",
           ds_config.name().c_str(), target_buffer, num_buffers);
+    }
+
+    if (ds_config.has_protovm_config())
+      protovm_source[target_buffer] = &ds_config.name();
+    if (tracing_v2_config.use_v2_probability_percent() > 0)
+      tracing_v2_source[target_buffer] = &ds_config.name();
+    if (protovm_source[target_buffer] && tracing_v2_source[target_buffer]) {
+      return PERFETTO_SVC_ERR(
+          "Data source \"%s\" has a ProtoVM and data source \"%s\" has "
+          "experimental_tracing_v2 on the same buffer %zu. Tracing v2 does not "
+          "support ProtoVM",
+          protovm_source[target_buffer]->c_str(),
+          tracing_v2_source[target_buffer]->c_str(), target_buffer);
     }
   }
 
@@ -68427,10 +77463,10 @@ base::Status TracingServiceImpl::EnableTracing(ConsumerEndpointImpl* consumer,
     std::unique_ptr<TraceBuffer> new_buffer;
     switch (buffer_cfg.experimental_mode()) {
       case TraceConfig::BufferConfig::TRACE_BUFFER_V2:
-        new_buffer = TraceBufferV2::Create(buf_size, policy);
+        new_buffer = CreateTraceBuffer(TraceBuffer::kV2, buf_size, policy);
         break;
       case TraceConfig::BufferConfig::MODE_UNSPECIFIED:
-        new_buffer = TraceBufferV1::Create(buf_size, policy);
+        new_buffer = CreateTraceBuffer(TraceBuffer::kV1, buf_size, policy);
         break;
     }
     auto it_and_inserted = buffers_.emplace(global_id, std::move(new_buffer));
@@ -69521,13 +78557,6 @@ void TracingServiceImpl::CompleteFlush(TracingSessionID tsid,
 void TracingServiceImpl::ScrapeSharedMemoryBuffers(
     TracingSession* tracing_session,
     ProducerEndpointImpl* producer) {
-  if (!producer->smb_scraping_enabled_ || producer->IsShmemEmulated())
-    return;
-
-  
-  if (producer->writers_.empty())
-    return;
-
   
   
   
@@ -69540,6 +78569,16 @@ void TracingServiceImpl::ScrapeSharedMemoryBuffers(
                     return producer->allowed_target_buffers_.count(buffer_id);
                   });
   if (!producer_in_session)
+    return;
+
+  
+  producer->DrainV2RingBuffer();
+
+  if (!producer->smb_scraping_enabled_ || producer->IsShmemEmulated())
+    return;
+
+  
+  if (producer->writers_.empty())
     return;
 
   PERFETTO_DLOG("Scraping SMB for producer %" PRIu16, producer->id_);
@@ -69749,6 +78788,26 @@ bool TracingServiceImpl::ReadBuffersIntoConsumer(
             return;
           ReadBuffersIntoConsumer(tsid, weak_consumer.get());
         });
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    weak_runner_.PostTask([this, tsid] {
+      TracingSession* tracing_session = GetTracingSession(tsid);
+      if (tracing_session)
+        MaybeCompactBuffers(tracing_session);
+    });
   }
 
   
@@ -69807,6 +78866,8 @@ bool TracingServiceImpl::ReadBuffersIntoFile(
             DisableTracing(tsid);
           return;
         }
+
+        MaybeCompactBuffers(tracing_session);
 
         if (tracing_session->fflush_post_write) {
           
@@ -69890,6 +78951,19 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
                       &packets);
   }
 
+  if (!tracing_session->config.builtin_data_sources().disable_trace_config()) {
+    MaybeEmitTraceConfig(tracing_session, &packets);
+  }
+  if (!tracing_session->did_emit_initial_packets) {
+    EmitUuid(tracing_session, &packets);
+  }
+
+  
+  
+  
+  
+  const size_t skip_compression_of_first_n_packets = packets.size();
+
   for (auto& snapshot : tracing_session->clock_snapshot_ring_buffer) {
     PERFETTO_DCHECK(!snapshot.empty());
     EmitClockSnapshot(tracing_session, std::move(snapshot), &packets);
@@ -69902,12 +78976,10 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
   }
 
   if (!tracing_session->config.builtin_data_sources().disable_trace_config()) {
-    MaybeEmitTraceConfig(tracing_session, &packets);
     MaybeEmitCloneTrigger(tracing_session, &packets);
     MaybeEmitReceivedTriggers(tracing_session, &packets);
   }
   if (!tracing_session->did_emit_initial_packets) {
-    EmitUuid(tracing_session, &packets);
     if (!tracing_session->config.builtin_data_sources()
              .disable_extension_descriptors()) {
       EmitExtensionDescriptors(tracing_session, &packets);
@@ -70061,7 +79133,8 @@ std::vector<TracePacket> TracingServiceImpl::ReadBuffers(
     }
   }
 
-  MaybeCompressPackets(tracing_session, &packets);
+  MaybeCompressPackets(tracing_session, &packets,
+                       skip_compression_of_first_n_packets);
 
   if (!*has_more) {
     
@@ -70136,7 +79209,28 @@ void TracingServiceImpl::MaybeFilterPackets(TracingSession* tracing_session,
 
 void TracingServiceImpl::MaybeCompressPackets(
     TracingSession* tracing_session,
-    [[maybe_unused]] std::vector<TracePacket>* packets) {
+    [[maybe_unused]] std::vector<TracePacket>* packets,
+    [[maybe_unused]] size_t skip_compression_of_first_n_packets) {
+  [[maybe_unused]] auto compress_with_fn = [&](auto compress_fn) {
+    if (skip_compression_of_first_n_packets == 0) {
+      compress_fn(packets);
+      return;
+    }
+    if (skip_compression_of_first_n_packets >= packets->size()) {
+      return;
+    }
+    const auto nskip =
+        static_cast<ssize_t>(skip_compression_of_first_n_packets);
+    std::vector<TracePacket> packets_to_compress(
+        std::make_move_iterator(packets->begin() + nskip),
+        std::make_move_iterator(packets->end()));
+    packets->erase(packets->begin() + nskip, packets->end());
+    compress_fn(&packets_to_compress);
+    packets->insert(packets->end(),
+                    std::make_move_iterator(packets_to_compress.begin()),
+                    std::make_move_iterator(packets_to_compress.end()));
+  };
+
   
   
   
@@ -70147,7 +79241,9 @@ void TracingServiceImpl::MaybeCompressPackets(
       tracing_session->config.compression();
 #if PERFETTO_BUILDFLAG(PERFETTO_ZSTD)
   if (compression.has_zstd()) {
-    ZstdCompressFn(packets, compression.zstd().level());
+    compress_with_fn([&](std::vector<TracePacket>* target) {
+      ZstdCompressFn(target, compression.zstd().level());
+    });
     return;
   }
 #endif
@@ -70156,7 +79252,8 @@ void TracingServiceImpl::MaybeCompressPackets(
   
   if (compression.has_deflate() || tracing_session->config.compression_type() ==
                                        TraceConfig::COMPRESSION_TYPE_DEFLATE) {
-    ZlibCompressFn(packets);
+    compress_with_fn(
+        [](std::vector<TracePacket>* target) { ZlibCompressFn(target); });
     return;
   }
 #endif
@@ -70233,6 +79330,18 @@ bool TracingServiceImpl::WriteIntoFile(TracingSession* tracing_session,
   return stop_writing_into_file;
 }
 
+void TracingServiceImpl::MaybeCompactBuffers(TracingSession* tracing_session) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!tracing_session->config.experimental_trace_buffer_v2_compaction())
+    return;
+
+  for (BufferID buf_id : tracing_session->buffers_index) {
+    auto tbuf_iter = buffers_.find(buf_id);
+    if (tbuf_iter != buffers_.end())
+      tbuf_iter->second->MaybeCompact();
+  }
+}
+
 void TracingServiceImpl::FreeBuffers(TracingSessionID tsid,
                                      const std::string& error) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
@@ -70307,12 +79416,12 @@ void TracingServiceImpl::MaybeSetUpProtoVm(
     const RegisteredDataSource& ds_instance,
     BufferID buffer_id) {
   if (!ds_config.has_protovm_config() &&
-      !ds_instance.descriptor.has_protovm_program()) {
+      ds_instance.descriptor.protovm_program_raw().empty()) {
     return;  
   }
   
   
-  if (!ds_instance.descriptor.has_protovm_program()) {
+  if (ds_instance.descriptor.protovm_program_raw().empty()) {
     PERFETTO_ELOG(
         "ProtoVM config for data source %s specifies a ProtoVM, but the data "
         "source instance (ProducerID: %d) doesn't specify a ProtoVM program",
@@ -70335,17 +79444,16 @@ void TracingServiceImpl::MaybeSetUpProtoVm(
   }
   auto it = buffers_.find(buffer_id);
   PERFETTO_CHECK(it != buffers_.cend());
-  if (it->second->buf_type() != TraceBuffer::BufType::kV2) {
+  TraceBufferProtoVms* protovms = it->second->protovms();
+  if (!protovms) {
     PERFETTO_ELOG(
         "Data source %s is configured to run a ProtoVM, but the corresponding "
-        "buffer is not of type V2",
+        "buffer is of type V1, which cannot run one.",
         ds_config.name().c_str());
     return;
   }
-  auto* buffer = static_cast<TraceBufferV2*>(it->second.get());
-  buffer->MaybeSetUpProtoVm(
-      ds_config.name(),
-      ds_instance.descriptor.protovm_program().SerializeAsString(),
+  protovms->MaybeSetUp(
+      ds_config.name(), ds_instance.descriptor.protovm_program_raw(),
       ds_config.protovm_config().memory_limit_kb(), ds_instance.producer_id);
 }
 
@@ -70628,6 +79736,22 @@ DataSourceInstance* TracingServiceImpl::SetupDataSource(
     return nullptr;
   }
 
+  const BufferID global_id = tracing_session->buffers_index[relative_buffer_id];
+  PERFETTO_DCHECK(global_id);
+
+  const TraceBuffer* target_buffer = GetBufferByID(global_id);
+  const bool supports_tracing_v2 =
+      (producer->protocol_abi_versions_ & kProtocolAbiV2) && target_buffer &&
+      target_buffer->supports_tracing_v2();
+  if (!(producer->protocol_abi_versions_ & kProtocolAbiV1) &&
+      !supports_tracing_v2) {
+    PERFETTO_ELOG(
+        "Cannot set up data source \"%s\" on producer \"%s\": "
+        "target_buffer %u supports no common protocol version",
+        ds_cfg.name().c_str(), producer->name_.c_str(), relative_buffer_id);
+    return nullptr;
+  }
+
   
   
   
@@ -70656,6 +79780,14 @@ DataSourceInstance* TracingServiceImpl::SetupDataSource(
   }
 
   DataSourceConfig& ds_config = ds_instance->config;
+  
+  
+  
+  
+  
+  if (supports_tracing_v2 || ds_config.has_supports_tracing_v2())
+    ds_config.set_supports_tracing_v2(supports_tracing_v2);
+
   ds_config.set_trace_duration_ms(tracing_session->config.duration_ms());
 
   
@@ -70680,8 +79812,6 @@ DataSourceInstance* TracingServiceImpl::SetupDataSource(
         DataSourceConfig::SESSION_INITIATOR_UNSPECIFIED);
   }
   ds_config.set_tracing_session_id(tracing_session->id);
-  BufferID global_id = tracing_session->buffers_index[relative_buffer_id];
-  PERFETTO_DCHECK(global_id);
   ds_config.set_target_buffer(global_id);
 
   MaybeSetUpProtoVm(ds_config, data_source, global_id);
@@ -70928,6 +80058,11 @@ ProducerID TracingServiceImpl::GetNextProducerID() {
   return last_producer_id_;
 }
 
+void TracingServiceImpl::OnRingBufferChunksDiscarded(uint64_t count) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  chunks_discarded_ += count;
+}
+
 TraceBuffer* TracingServiceImpl::GetBufferByID(BufferID buffer_id) {
   auto buf_iter = buffers_.find(buffer_id);
   if (buf_iter == buffers_.end())
@@ -70967,6 +80102,7 @@ void TracingServiceImpl::UpdateMemoryGuardrail() {
   for (const auto& id_to_producer : producers_) {
     if (id_to_producer.second->shared_memory())
       total_buffer_bytes += id_to_producer.second->shared_memory()->size();
+    total_buffer_bytes += id_to_producer.second->ring_buffer_size_bytes();
   }
 
   
@@ -71148,6 +80284,12 @@ void TracingServiceImpl::SetServiceTracePacketHeader(
     protos::pbzero::TracePacket* tp) {
   tp->set_trusted_uid(static_cast<int32_t>(uid_));
   tp->set_trusted_packet_sequence_id(kServicePacketSequenceID);
+  
+  
+  
+  
+  
+  tp->set_timestamp_clock_id(protos::pbzero::BUILTIN_CLOCK_BOOTTIME);
   
   
   
@@ -71359,6 +80501,9 @@ void TracingServiceImpl::EmitSystemInfo(std::vector<TracePacket>* packets) {
     info->set_android_storage_model(sys_info.android_storage_model);
   if (!sys_info.android_ram_model.empty())
     info->set_android_ram_model(sys_info.android_ram_model);
+  for (const auto& compatible : sys_info.device_tree_compatibles) {
+    info->add_device_tree_compatibles(compatible);
+  }
   if (!sys_info.android_serial_console.empty())
     info->set_android_serial_console(sys_info.android_serial_console);
 
@@ -71377,6 +80522,8 @@ void TracingServiceImpl::EmitTraceProvenance(
     TraceBuffer* buf = GetBufferByID(buf_id);
     if (!buf)
       continue;
+    
+    
     for (auto it = buf->writer_stats().GetIterator(); it; ++it) {
       ProducerID producer_id;
       WriterID writer_id;
@@ -71646,11 +80793,10 @@ void TracingServiceImpl::MaybeEmitProtoVmInstances(
   for (auto buffer_id : tracing_session->buffers_index) {
     auto it = buffers_.find(buffer_id);
     PERFETTO_CHECK(it != buffers_.cend());
-    if (it->second->buf_type() != TraceBuffer::BufType::kV2) {
+    const TraceBufferProtoVms* protovms = it->second->protovms();
+    if (!protovms)
       continue;
-    }
-    auto* buffer = static_cast<TraceBufferV2*>(it->second.get());
-    for (const TraceBufferV2::Vm& vm : buffer->GetProtoVmInstances()) {
+    for (const TraceBufferProtoVms::Vm& vm : protovms->instances()) {
       auto* vm_instance = get_packet_protovms()->add_instance();
       vm_instance->AppendString(
           protos::pbzero::TracePacket::ProtoVms::Instance::kProgramFieldNumber,
@@ -71874,18 +81020,9 @@ base::Status TracingServiceImpl::FlushAndCloneSession(
       continue;
 
     
-    const auto buf_policy = buf->overwrite_policy();
-    const auto buf_size = buf->size();
-    const auto buf_type = buf->buf_type();
     std::unique_ptr<TraceBuffer> old_buf = std::move(buf);
-    switch (buf_type) {
-      case TraceBuffer::kV1:
-        buf = TraceBufferV1::Create(buf_size, buf_policy);
-        break;
-      case TraceBuffer::kV2:
-        buf = TraceBufferV2::Create(buf_size, buf_policy);
-        break;
-    }
+    buf = CreateTraceBuffer(old_buf->buf_type(), old_buf->size(),
+                            old_buf->overwrite_policy());
     if (!buf) {
       
       
@@ -72054,18 +81191,9 @@ bool TracingServiceImpl::DoCloneBuffers(const TracingSession& src,
     std::unique_ptr<TraceBuffer>& src_buf = buf_iter->second;
     std::unique_ptr<TraceBuffer> new_buf;
     if (src.config.buffers()[buf_idx].transfer_on_clone()) {
-      const auto buf_policy = src_buf->overwrite_policy();
-      const auto buf_size = src_buf->size();
-      const auto buf_type = src_buf->buf_type();
       new_buf = std::move(src_buf);
-      switch (buf_type) {
-        case TraceBuffer::kV1:
-          src_buf = TraceBufferV1::Create(buf_size, buf_policy);
-          break;
-        case TraceBuffer::kV2:
-          src_buf = TraceBufferV2::Create(buf_size, buf_policy);
-          break;
-      }
+      src_buf = CreateTraceBuffer(new_buf->buf_type(), new_buf->size(),
+                                  new_buf->overwrite_policy());
       if (!src_buf) {
         
         
@@ -72395,7 +81523,9 @@ std::unique_ptr<ProducerEndpoint> InProcessTracingBackend::ConnectProducer(
                         args.producer_name, args.shmem_size_hint_bytes,
                         true,
                         TracingService::ProducerSMBScrapingMode::kEnabled,
-                        args.shmem_page_size_hint_bytes);
+                        args.shmem_page_size_hint_bytes, nullptr,
+                        {}, {},
+                        kProtocolAbiV1 | kProtocolAbiV2);
 }
 
 std::unique_ptr<ConsumerEndpoint> InProcessTracingBackend::ConnectConsumer(
@@ -72430,6 +81560,9 @@ TracingService* InProcessTracingBackend::GetOrCreateService(
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #endif
+
+
+
 
 
 
@@ -74339,6 +83472,9 @@ void EnableTracingRequest::Serialize(::protozero::Message* msg) const {
 
 
 
+
+
+
 namespace perfetto {
 namespace protos {
 namespace gen {
@@ -75834,6 +84970,199 @@ void RegisterDataSourceRequest::Serialize(::protozero::Message* msg) const {
 }
 
 
+DrainV2RingBufferResponse::DrainV2RingBufferResponse() = default;
+DrainV2RingBufferResponse::~DrainV2RingBufferResponse() = default;
+DrainV2RingBufferResponse::DrainV2RingBufferResponse(const DrainV2RingBufferResponse&) = default;
+DrainV2RingBufferResponse& DrainV2RingBufferResponse::operator=(const DrainV2RingBufferResponse&) = default;
+DrainV2RingBufferResponse::DrainV2RingBufferResponse(DrainV2RingBufferResponse&&) noexcept = default;
+DrainV2RingBufferResponse& DrainV2RingBufferResponse::operator=(DrainV2RingBufferResponse&&) = default;
+
+bool DrainV2RingBufferResponse::operator==(const DrainV2RingBufferResponse& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+}
+
+bool DrainV2RingBufferResponse::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string DrainV2RingBufferResponse::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> DrainV2RingBufferResponse::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void DrainV2RingBufferResponse::Serialize(::protozero::Message* msg) const {
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+DrainV2RingBufferRequest::DrainV2RingBufferRequest() = default;
+DrainV2RingBufferRequest::~DrainV2RingBufferRequest() = default;
+DrainV2RingBufferRequest::DrainV2RingBufferRequest(const DrainV2RingBufferRequest&) = default;
+DrainV2RingBufferRequest& DrainV2RingBufferRequest::operator=(const DrainV2RingBufferRequest&) = default;
+DrainV2RingBufferRequest::DrainV2RingBufferRequest(DrainV2RingBufferRequest&&) noexcept = default;
+DrainV2RingBufferRequest& DrainV2RingBufferRequest::operator=(DrainV2RingBufferRequest&&) = default;
+
+bool DrainV2RingBufferRequest::operator==(const DrainV2RingBufferRequest& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+}
+
+bool DrainV2RingBufferRequest::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string DrainV2RingBufferRequest::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> DrainV2RingBufferRequest::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void DrainV2RingBufferRequest::Serialize(::protozero::Message* msg) const {
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+AttachV2RingBufferResponse::AttachV2RingBufferResponse() = default;
+AttachV2RingBufferResponse::~AttachV2RingBufferResponse() = default;
+AttachV2RingBufferResponse::AttachV2RingBufferResponse(const AttachV2RingBufferResponse&) = default;
+AttachV2RingBufferResponse& AttachV2RingBufferResponse::operator=(const AttachV2RingBufferResponse&) = default;
+AttachV2RingBufferResponse::AttachV2RingBufferResponse(AttachV2RingBufferResponse&&) noexcept = default;
+AttachV2RingBufferResponse& AttachV2RingBufferResponse::operator=(AttachV2RingBufferResponse&&) = default;
+
+bool AttachV2RingBufferResponse::operator==(const AttachV2RingBufferResponse& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_);
+}
+
+bool AttachV2RingBufferResponse::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string AttachV2RingBufferResponse::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> AttachV2RingBufferResponse::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void AttachV2RingBufferResponse::Serialize(::protozero::Message* msg) const {
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
+AttachV2RingBufferRequest::AttachV2RingBufferRequest() = default;
+AttachV2RingBufferRequest::~AttachV2RingBufferRequest() = default;
+AttachV2RingBufferRequest::AttachV2RingBufferRequest(const AttachV2RingBufferRequest&) = default;
+AttachV2RingBufferRequest& AttachV2RingBufferRequest::operator=(const AttachV2RingBufferRequest&) = default;
+AttachV2RingBufferRequest::AttachV2RingBufferRequest(AttachV2RingBufferRequest&&) noexcept = default;
+AttachV2RingBufferRequest& AttachV2RingBufferRequest::operator=(AttachV2RingBufferRequest&&) = default;
+
+bool AttachV2RingBufferRequest::operator==(const AttachV2RingBufferRequest& other) const {
+  return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
+   && ::protozero::internal::gen_helpers::EqualsField(chunk_size_bytes_, other.chunk_size_bytes_);
+}
+
+bool AttachV2RingBufferRequest::ParseFromArray(const void* raw, size_t size) {
+  unknown_fields_.clear();
+  bool packed_error = false;
+
+  ::protozero::ProtoDecoder dec(raw, size);
+  for (auto field = dec.ReadField(); field.valid(); field = dec.ReadField()) {
+    if (field.id() < _has_field_.size()) {
+      _has_field_.set(field.id());
+    }
+    switch (field.id()) {
+      case 1 :
+        field.get(&chunk_size_bytes_);
+        break;
+      default:
+        field.SerializeAndAppendTo(&unknown_fields_);
+        break;
+    }
+  }
+  return !packed_error && !dec.bytes_left();
+}
+
+std::string AttachV2RingBufferRequest::SerializeAsString() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsString();
+}
+
+std::vector<uint8_t> AttachV2RingBufferRequest::SerializeAsArray() const {
+  ::protozero::internal::gen_helpers::MessageSerializer msg;
+  Serialize(msg.get());
+  return msg.SerializeAsArray();
+}
+
+void AttachV2RingBufferRequest::Serialize(::protozero::Message* msg) const {
+  
+  if (_has_field_[1]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(1, chunk_size_bytes_, msg);
+  }
+
+  protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
+}
+
+
 InitializeConnectionResponse::InitializeConnectionResponse() = default;
 InitializeConnectionResponse::~InitializeConnectionResponse() = default;
 InitializeConnectionResponse::InitializeConnectionResponse(const InitializeConnectionResponse&) = default;
@@ -75845,7 +85174,8 @@ bool InitializeConnectionResponse::operator==(const InitializeConnectionResponse
   return ::protozero::internal::gen_helpers::EqualsField(unknown_fields_, other.unknown_fields_)
    && ::protozero::internal::gen_helpers::EqualsField(using_shmem_provided_by_producer_, other.using_shmem_provided_by_producer_)
    && ::protozero::internal::gen_helpers::EqualsField(direct_smb_patching_supported_, other.direct_smb_patching_supported_)
-   && ::protozero::internal::gen_helpers::EqualsField(use_shmem_emulation_, other.use_shmem_emulation_);
+   && ::protozero::internal::gen_helpers::EqualsField(use_shmem_emulation_, other.use_shmem_emulation_)
+   && ::protozero::internal::gen_helpers::EqualsField(protocol_abi_versions_, other.protocol_abi_versions_);
 }
 
 bool InitializeConnectionResponse::ParseFromArray(const void* raw, size_t size) {
@@ -75866,6 +85196,9 @@ bool InitializeConnectionResponse::ParseFromArray(const void* raw, size_t size) 
         break;
       case 3 :
         field.get(&use_shmem_emulation_);
+        break;
+      case 4 :
+        field.get(&protocol_abi_versions_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -75903,6 +85236,11 @@ void InitializeConnectionResponse::Serialize(::protozero::Message* msg) const {
     ::protozero::internal::gen_helpers::SerializeTinyVarInt(3, use_shmem_emulation_, msg);
   }
 
+  
+  if (_has_field_[4]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(4, protocol_abi_versions_, msg);
+  }
+
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
 }
 
@@ -75922,7 +85260,8 @@ bool InitializeConnectionRequest::operator==(const InitializeConnectionRequest& 
    && ::protozero::internal::gen_helpers::EqualsField(smb_scraping_mode_, other.smb_scraping_mode_)
    && ::protozero::internal::gen_helpers::EqualsField(producer_provided_shmem_, other.producer_provided_shmem_)
    && ::protozero::internal::gen_helpers::EqualsField(sdk_version_, other.sdk_version_)
-   && ::protozero::internal::gen_helpers::EqualsField(shm_key_windows_, other.shm_key_windows_);
+   && ::protozero::internal::gen_helpers::EqualsField(shm_key_windows_, other.shm_key_windows_)
+   && ::protozero::internal::gen_helpers::EqualsField(supported_protocol_abi_versions_, other.supported_protocol_abi_versions_);
 }
 
 bool InitializeConnectionRequest::ParseFromArray(const void* raw, size_t size) {
@@ -75955,6 +85294,9 @@ bool InitializeConnectionRequest::ParseFromArray(const void* raw, size_t size) {
         break;
       case 7 :
         ::protozero::internal::gen_helpers::DeserializeString(field, &shm_key_windows_);
+        break;
+      case 9 :
+        field.get(&supported_protocol_abi_versions_);
         break;
       default:
         field.SerializeAndAppendTo(&unknown_fields_);
@@ -76010,6 +85352,11 @@ void InitializeConnectionRequest::Serialize(::protozero::Message* msg) const {
   
   if (_has_field_[7]) {
     ::protozero::internal::gen_helpers::SerializeString(7, shm_key_windows_, msg);
+  }
+
+  
+  if (_has_field_[9]) {
+    ::protozero::internal::gen_helpers::SerializeVarInt(9, supported_protocol_abi_versions_, msg);
   }
 
   protozero::internal::gen_helpers::SerializeUnknownFields(unknown_fields_, msg);
@@ -77511,7 +86858,7 @@ struct sockaddr_vm {
 #endif  
         
 
-#endif
+#endif  
 
 
 
@@ -78885,62 +88232,6 @@ std::unique_ptr<LinuxFileWatch> WatchUnixSocketCreation(
 
 
 
-
-#ifndef INCLUDE_PERFETTO_EXT_IPC_BASIC_TYPES_H_
-#define INCLUDE_PERFETTO_EXT_IPC_BASIC_TYPES_H_
-
-#include <stddef.h>
-#include <stdint.h>
-#include <sys/types.h>
-
-
-
-
-namespace perfetto {
-namespace ipc {
-
-using ProtoMessage = ::protozero::CppMessageObj;
-using ServiceID = uint32_t;
-using MethodID = uint32_t;
-using ClientID = uint64_t;
-using RequestID = uint64_t;
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-
-
-
-constexpr bool kUseTCPSocket = true;
-#else
-
-constexpr bool kUseTCPSocket = false;
-#endif
-
-
-
-constexpr size_t kIPCBufferSize = 128 * 1024;
-
-constexpr uid_t kInvalidUid = static_cast<uid_t>(-1);
-
-}  
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #ifndef SRC_IPC_BUFFERED_FRAME_DESERIALIZER_H_
 #define SRC_IPC_BUFFERED_FRAME_DESERIALIZER_H_
 
@@ -79123,8 +88414,7 @@ BufferedFrameDeserializer::BeginReceive() {
 
     
     
-    const auto page_size = base::GetSysPageSize();
-    buf_.AdviseDontNeed(buf() + page_size, capacity_ - page_size);
+    buf_.AdviseDontNeedAfter(base::GetSysPageSize());
   }
 
   PERFETTO_CHECK(capacity_ > size_);
@@ -79211,11 +88501,8 @@ bool BufferedFrameDeserializer::EndReceive(size_t recv_size) {
     if (consumed_size > page_size) {
       size_t size_rounded_up = (size_ / page_size + 1) * page_size;
       if (size_rounded_up < capacity_) {
-        char* madvise_begin = buf() + size_rounded_up;
-        const size_t madvise_size = capacity_ - size_rounded_up;
-        PERFETTO_CHECK(madvise_begin > buf() + size_);
-        PERFETTO_CHECK(madvise_begin + madvise_size <= buf() + capacity_);
-        buf_.AdviseDontNeed(madvise_begin, madvise_size);
+        PERFETTO_CHECK(size_rounded_up > size_);
+        buf_.AdviseDontNeedAfter(size_rounded_up);
       }
     }
   }
@@ -81781,6 +91068,12 @@ class ProducerPort : public ::perfetto::ipc::Service {
   using DeferredUpdateDataSourceResponse = ::perfetto::ipc::Deferred<UpdateDataSourceResponse>;
   virtual void UpdateDataSource(const UpdateDataSourceRequest&, DeferredUpdateDataSourceResponse) = 0;
 
+  using DeferredAttachV2RingBufferResponse = ::perfetto::ipc::Deferred<AttachV2RingBufferResponse>;
+  virtual void AttachV2RingBuffer(const AttachV2RingBufferRequest&, DeferredAttachV2RingBufferResponse) = 0;
+
+  using DeferredDrainV2RingBufferResponse = ::perfetto::ipc::Deferred<DrainV2RingBufferResponse>;
+  virtual void DrainV2RingBuffer(const DrainV2RingBufferRequest&, DeferredDrainV2RingBufferResponse) = 0;
+
 };
 
 
@@ -81828,6 +91121,12 @@ class ProducerPortProxy : public ::perfetto::ipc::ServiceProxy {
 
   using DeferredUpdateDataSourceResponse = ::perfetto::ipc::Deferred<UpdateDataSourceResponse>;
   void UpdateDataSource(const UpdateDataSourceRequest&, DeferredUpdateDataSourceResponse, int fd = -1);
+
+  using DeferredAttachV2RingBufferResponse = ::perfetto::ipc::Deferred<AttachV2RingBufferResponse>;
+  void AttachV2RingBuffer(const AttachV2RingBufferRequest&, DeferredAttachV2RingBufferResponse, int fd = -1);
+
+  using DeferredDrainV2RingBufferResponse = ::perfetto::ipc::Deferred<DrainV2RingBufferResponse>;
+  void DrainV2RingBuffer(const DrainV2RingBufferRequest&, DeferredDrainV2RingBufferResponse, int fd = -1);
 
 };
 
@@ -81920,6 +91219,18 @@ namespace gen {
      &_IPC_Decoder<UpdateDataSourceRequest>,
      &_IPC_Decoder<UpdateDataSourceResponse>,
      &_IPC_Invoker<ProducerPort, UpdateDataSourceRequest, UpdateDataSourceResponse, &ProducerPort::UpdateDataSource>});
+
+  desc->methods.emplace_back(::perfetto::ipc::ServiceDescriptor::Method{
+     "AttachV2RingBuffer",
+     &_IPC_Decoder<AttachV2RingBufferRequest>,
+     &_IPC_Decoder<AttachV2RingBufferResponse>,
+     &_IPC_Invoker<ProducerPort, AttachV2RingBufferRequest, AttachV2RingBufferResponse, &ProducerPort::AttachV2RingBuffer>});
+
+  desc->methods.emplace_back(::perfetto::ipc::ServiceDescriptor::Method{
+     "DrainV2RingBuffer",
+     &_IPC_Decoder<DrainV2RingBufferRequest>,
+     &_IPC_Decoder<DrainV2RingBufferResponse>,
+     &_IPC_Invoker<ProducerPort, DrainV2RingBufferRequest, DrainV2RingBufferResponse, &ProducerPort::DrainV2RingBuffer>});
   desc->methods.shrink_to_fit();
   return desc;
 }
@@ -82004,6 +91315,16 @@ void ProducerPortProxy::Sync(const SyncRequest& request, DeferredSyncResponse re
 
 void ProducerPortProxy::UpdateDataSource(const UpdateDataSourceRequest& request, DeferredUpdateDataSourceResponse reply, int fd) {
   BeginInvoke("UpdateDataSource", request, ::perfetto::ipc::DeferredBase(std::move(reply)),
+              fd);
+}
+
+void ProducerPortProxy::AttachV2RingBuffer(const AttachV2RingBufferRequest& request, DeferredAttachV2RingBufferResponse reply, int fd) {
+  BeginInvoke("AttachV2RingBuffer", request, ::perfetto::ipc::DeferredBase(std::move(reply)),
+              fd);
+}
+
+void ProducerPortProxy::DrainV2RingBuffer(const DrainV2RingBufferRequest& request, DeferredDrainV2RingBufferResponse reply, int fd) {
+  BeginInvoke("DrainV2RingBuffer", request, ::perfetto::ipc::DeferredBase(std::move(reply)),
               fd);
 }
 }  
@@ -82134,734 +91455,6 @@ void RelayPortProxy::SyncClock(const SyncClockRequest& request, DeferredSyncCloc
 }  
 }  
 }  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <stdlib.h>
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE)
-#include <unistd.h>
-#endif
-
-namespace perfetto {
-namespace {
-
-const char* kRunPerfettoBaseDir = "/run/perfetto/";
-
-
-
-bool UseRunPerfettoBaseDir() {
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX)
-  
-  
-  int res = PERFETTO_EINTR(access(kRunPerfettoBaseDir, X_OK));
-  if (!res)
-    return true;
-
-  
-  
-  if (errno != ENOENT
-#if PERFETTO_BUILDFLAG(PERFETTO_CHROMIUM_BUILD)
-      
-      
-      && errno != EPERM
-#endif
-  ) {
-    PERFETTO_PLOG("%s exists but cannot be accessed. Falling back on /tmp/ ",
-                  kRunPerfettoBaseDir);
-  }
-  return false;
-#else
-  base::ignore_result(kRunPerfettoBaseDir);
-  return false;
-#endif
-}
-
-}  
-
-const char* GetProducerSocket() {
-  const char* name = getenv("PERFETTO_PRODUCER_SOCK_NAME");
-  if (name == nullptr) {
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-    name = "127.0.0.1:32278";
-#elif PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-    name = "/dev/socket/traced_producer";
-#else
-    
-    static const char* producer_socket =
-        UseRunPerfettoBaseDir() ? "/run/perfetto/traced-producer.sock"
-                                : "/tmp/perfetto-producer";
-    name = producer_socket;
-#endif
-  }
-  base::ignore_result(UseRunPerfettoBaseDir);  
-  return name;
-}
-
-std::string GetRelaySocket() {
-  
-  
-  
-  const char* name = getenv("PERFETTO_RELAY_SOCK_NAME");
-  if (name != nullptr)
-    return std::string(name);
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-  return base::GetAndroidProp("traced_relay.relay_port");
-#else
-  return std::string();
-#endif
-}
-
-std::vector<std::string> TokenizeProducerSockets(
-    const char* producer_socket_names) {
-  return base::SplitString(producer_socket_names, ",");
-}
-
-const char* GetConsumerSocket() {
-  const char* name = getenv("PERFETTO_CONSUMER_SOCK_NAME");
-  if (name == nullptr) {
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-    name = "127.0.0.1:32279";
-#elif PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID)
-    name = "/dev/socket/traced_consumer";
-#else
-    
-    static const char* consumer_socket =
-        UseRunPerfettoBaseDir() ? "/run/perfetto/traced-consumer.sock"
-                                : "/tmp/perfetto-consumer";
-    name = consumer_socket;
-#endif
-  }
-  return name;
-}
-
-}  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef SRC_TRACING_IPC_MEMFD_H_
-#define SRC_TRACING_IPC_MEMFD_H_
-
-
-
-
-
-
-
-
-
-#ifndef MFD_CLOEXEC
-#define MFD_CLOEXEC 0x0001U
-#define MFD_ALLOW_SEALING 0x0002U
-#endif
-
-
-#ifndef F_ADD_SEALS
-#define F_ADD_SEALS 1033
-#define F_GET_SEALS 1034
-#define F_SEAL_SEAL 0x0001
-#define F_SEAL_SHRINK 0x0002
-#define F_SEAL_GROW 0x0004
-#define F_SEAL_WRITE 0x0008
-#endif
-
-namespace perfetto {
-
-
-bool HasMemfdSupport();
-
-
-
-
-base::ScopedFile CreateMemfd(const char* name, unsigned int flags);
-
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#include <errno.h>
-
-#define PERFETTO_MEMFD_ENABLED()             \
-  PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-      PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX_BUT_NOT_QNX)
-
-#if PERFETTO_MEMFD_ENABLED()
-
-#include <stdio.h>
-#include <string.h>
-#include <sys/syscall.h>
-#include <sys/utsname.h>
-#include <unistd.h>
-
-
-
-#if !defined(__NR_memfd_create)
-#if defined(__x86_64__)
-#define __NR_memfd_create 319
-#elif defined(__i386__)
-#define __NR_memfd_create 356
-#elif defined(__aarch64__)
-#define __NR_memfd_create 279
-#elif defined(__arm__)
-#define __NR_memfd_create 385
-#else
-#error "unsupported sysroot without memfd support"
-#endif
-#endif  
-
-namespace perfetto {
-bool HasMemfdSupport() {
-  static bool kSupportsMemfd = [] {
-    
-    
-    static constexpr int kRequiredMajor = 3;
-    static constexpr int kRequiredMinor = 17;
-    struct utsname uts;
-    int major, minor;
-    if (uname(&uts) == 0 && strcmp(uts.sysname, "Linux") == 0 &&
-        sscanf(uts.release, "%d.%d", &major, &minor) == 2 &&
-        ((major < kRequiredMajor ||
-          (major == kRequiredMajor && minor < kRequiredMinor)))) {
-      return false;
-    }
-
-    base::ScopedFile fd;
-    fd.reset(static_cast<int>(syscall(__NR_memfd_create, "perfetto_shmem",
-                                      MFD_CLOEXEC | MFD_ALLOW_SEALING)));
-    return !!fd;
-  }();
-  return kSupportsMemfd;
-}
-
-base::ScopedFile CreateMemfd(const char* name, unsigned int flags) {
-  if (!HasMemfdSupport()) {
-    errno = ENOSYS;
-    return base::ScopedFile();
-  }
-  return base::ScopedFile(
-      static_cast<int>(syscall(__NR_memfd_create, name, flags)));
-}
-}  
-
-#else  
-
-namespace perfetto {
-bool HasMemfdSupport() {
-  return false;
-}
-base::ScopedFile CreateMemfd(const char*, unsigned int) {
-  errno = ENOSYS;
-  return base::ScopedFile();
-}
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef SRC_TRACING_IPC_POSIX_SHARED_MEMORY_H_
-#define SRC_TRACING_IPC_POSIX_SHARED_MEMORY_H_
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
-
-#include <stddef.h>
-
-#include <memory>
-
-
-
-
-
-namespace perfetto {
-
-
-class PosixSharedMemory : public SharedMemory {
- public:
-  class Factory : public SharedMemory::Factory {
-   public:
-    ~Factory() override;
-    std::unique_ptr<SharedMemory> CreateSharedMemory(size_t) override;
-  };
-
-  
-  static std::unique_ptr<PosixSharedMemory> Create(size_t size);
-
-  
-  
-  
-  
-  
-  static std::unique_ptr<PosixSharedMemory> AttachToFd(
-      base::ScopedFile,
-      bool require_seals_if_supported = true);
-
-  ~PosixSharedMemory() override;
-
-  int fd() const { return fd_.get(); }
-
-  
-  using SharedMemory::start;  
-  const void* start() const override { return start_; }
-  size_t size() const override { return size_; }
-
- private:
-  static std::unique_ptr<PosixSharedMemory> MapFD(base::ScopedFile, size_t);
-
-  PosixSharedMemory(void* start, size_t size, base::ScopedFile);
-  PosixSharedMemory(const PosixSharedMemory&) = delete;
-  PosixSharedMemory& operator=(const PosixSharedMemory&) = delete;
-
-  void* const start_;
-  const size_t size_;
-  base::ScopedFile fd_;
-};
-
-}  
-
-#endif  
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_LINUX) ||   \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_ANDROID) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_APPLE) ||   \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_FUCHSIA) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_FREEBSD) || \
-    PERFETTO_BUILDFLAG(PERFETTO_OS_WASM)
-
-#include <fcntl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <memory>
-#include <utility>
-
-
-
-
-
-
-namespace perfetto {
-
-namespace {
-int kFileSeals = F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_SEAL;
-}  
-
-
-std::unique_ptr<PosixSharedMemory> PosixSharedMemory::Create(size_t size) {
-  base::ScopedFile fd =
-      CreateMemfd("perfetto_shmem", MFD_CLOEXEC | MFD_ALLOW_SEALING);
-  bool is_memfd = !!fd;
-
-  
-  
-  
-#if !PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD)
-  if (!fd) {
-    
-    PERFETTO_DPLOG("memfd_create() failed");
-    fd = base::TempFile::CreateUnlinked().ReleaseFD();
-  }
-#endif
-
-  PERFETTO_CHECK(fd);
-  int res = ftruncate(fd.get(), static_cast<off_t>(size));
-  PERFETTO_CHECK(res == 0);
-
-  if (is_memfd) {
-    
-    res = fcntl(*fd, F_ADD_SEALS, kFileSeals);
-    PERFETTO_DCHECK(res == 0);
-  }
-
-  return MapFD(std::move(fd), size);
-}
-
-
-std::unique_ptr<PosixSharedMemory> PosixSharedMemory::AttachToFd(
-    base::ScopedFile fd,
-    bool require_seals_if_supported) {
-  bool requires_seals = require_seals_if_supported;
-
-#if PERFETTO_BUILDFLAG(PERFETTO_ANDROID_BUILD)
-  
-  PERFETTO_CHECK(HasMemfdSupport());
-#else
-  
-  if (requires_seals)
-    requires_seals = HasMemfdSupport();
-#endif
-
-  if (requires_seals) {
-    
-    int res = fcntl(*fd, F_GET_SEALS);
-    if (res == -1 || (res & kFileSeals) != kFileSeals) {
-      PERFETTO_PLOG("Couldn't verify file seals on shmem FD");
-      return nullptr;
-    }
-  }
-
-  struct stat stat_buf = {};
-  int res = fstat(fd.get(), &stat_buf);
-  PERFETTO_CHECK(res == 0 && stat_buf.st_size > 0);
-  return MapFD(std::move(fd), static_cast<size_t>(stat_buf.st_size));
-}
-
-
-std::unique_ptr<PosixSharedMemory> PosixSharedMemory::MapFD(base::ScopedFile fd,
-                                                            size_t size) {
-  PERFETTO_DCHECK(fd);
-  PERFETTO_DCHECK(size > 0);
-  void* start =
-      mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd.get(), 0);
-  PERFETTO_CHECK(start != MAP_FAILED);
-  return std::unique_ptr<PosixSharedMemory>(
-      new PosixSharedMemory(start, size, std::move(fd)));
-}
-
-PosixSharedMemory::PosixSharedMemory(void* start,
-                                     size_t size,
-                                     base::ScopedFile fd)
-    : start_(start), size_(size), fd_(std::move(fd)) {}
-
-PosixSharedMemory::~PosixSharedMemory() {
-  munmap(start(), size());
-}
-
-PosixSharedMemory::Factory::~Factory() {}
-
-std::unique_ptr<SharedMemory> PosixSharedMemory::Factory::CreateSharedMemory(
-    size_t size) {
-  return PosixSharedMemory::Create(size);
-}
-
-}  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#ifndef SRC_TRACING_IPC_SHARED_MEMORY_WINDOWS_H_
-#define SRC_TRACING_IPC_SHARED_MEMORY_WINDOWS_H_
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-
-#include <string>
-
-
-
-
-
-namespace perfetto {
-
-
-
-
-class SharedMemoryWindows : public SharedMemory {
- public:
-  class Factory : public SharedMemory::Factory {
-   public:
-    ~Factory() override;
-    std::unique_ptr<SharedMemory> CreateSharedMemory(size_t) override;
-  };
-
-  
-  enum Flags { kNone = 0, kInheritableHandles };
-  static std::unique_ptr<SharedMemoryWindows> Create(
-      size_t size,
-      Flags flags = Flags::kNone);
-  static std::unique_ptr<SharedMemoryWindows> Attach(const std::string& key);
-  static std::unique_ptr<SharedMemoryWindows> AttachToHandleWithKey(
-      base::ScopedPlatformHandle fd,
-      const std::string& key);
-  ~SharedMemoryWindows() override;
-  const std::string& key() const { return key_; }
-  const base::ScopedPlatformHandle& handle() const { return handle_; }
-
-  
-  using SharedMemory::start;  
-  const void* start() const override { return start_; }
-  size_t size() const override { return size_; }
-
- private:
-  SharedMemoryWindows(void* start,
-                      size_t size,
-                      std::string,
-                      base::ScopedPlatformHandle);
-  SharedMemoryWindows(const SharedMemoryWindows&) = delete;
-  SharedMemoryWindows& operator=(const SharedMemoryWindows&) = delete;
-
-  void* const start_;
-  const size_t size_;
-  std::string key_;
-  base::ScopedPlatformHandle handle_;
-};
-
-}  
-
-#endif  
-
-#endif  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
-
-#include <memory>
-#include <random>
-
-#include <windows.h>
-
-
-
-
-namespace perfetto {
-
-
-std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Create(size_t size,
-                                                                 Flags flags) {
-  base::ScopedPlatformHandle shmem_handle;
-  std::random_device rnd_dev;
-  uint64_t rnd_key = (static_cast<uint64_t>(rnd_dev()) << 32) | rnd_dev();
-  std::string key = "perfetto_shm_" + base::Uint64ToHexStringNoPrefix(rnd_key);
-
-  SECURITY_ATTRIBUTES security_attributes = {};
-  security_attributes.nLength = sizeof(SECURITY_ATTRIBUTES);
-  if (flags & Flags::kInheritableHandles)
-    security_attributes.bInheritHandle = TRUE;
-
-  shmem_handle.reset(CreateFileMappingA(
-      INVALID_HANDLE_VALUE,  
-      &security_attributes, PAGE_READWRITE,
-      static_cast<DWORD>(size >> 32),  
-      static_cast<DWORD>(size),        
-      key.c_str()));
-
-  if (!shmem_handle) {
-    PERFETTO_PLOG("CreateFileMapping() call failed");
-    return nullptr;
-  }
-  void* start =
-      MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
-                    0, size);
-  if (!start) {
-    PERFETTO_PLOG("MapViewOfFile() failed");
-    return nullptr;
-  }
-
-  return std::unique_ptr<SharedMemoryWindows>(new SharedMemoryWindows(
-      start, size, std::move(key), std::move(shmem_handle)));
-}
-
-
-std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::Attach(
-    const std::string& key) {
-  base::ScopedPlatformHandle shmem_handle;
-  shmem_handle.reset(
-      OpenFileMappingA(FILE_MAP_ALL_ACCESS, false, key.c_str()));
-  if (!shmem_handle) {
-    PERFETTO_PLOG("Failed to OpenFileMapping()");
-    return nullptr;
-  }
-
-  void* start =
-      MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
-                    0, 0);
-  if (!start) {
-    PERFETTO_PLOG("MapViewOfFile() failed");
-    return nullptr;
-  }
-
-  MEMORY_BASIC_INFORMATION info{};
-  if (!VirtualQuery(start, &info, sizeof(info))) {
-    PERFETTO_PLOG("VirtualQuery() failed");
-    return nullptr;
-  }
-  size_t size = info.RegionSize;
-  return std::unique_ptr<SharedMemoryWindows>(
-      new SharedMemoryWindows(start, size, key, std::move(shmem_handle)));
-}
-
-
-std::unique_ptr<SharedMemoryWindows> SharedMemoryWindows::AttachToHandleWithKey(
-    base::ScopedPlatformHandle shmem_handle,
-    const std::string& key) {
-  void* start =
-      MapViewOfFile(*shmem_handle, FILE_MAP_ALL_ACCESS, 0,
-                    0, 0);
-  if (!start) {
-    PERFETTO_PLOG("MapViewOfFile() failed");
-    return nullptr;
-  }
-
-  MEMORY_BASIC_INFORMATION info{};
-  if (!VirtualQuery(start, &info, sizeof(info))) {
-    PERFETTO_PLOG("VirtualQuery() failed");
-    return nullptr;
-  }
-  size_t size = info.RegionSize;
-
-  return std::unique_ptr<SharedMemoryWindows>(
-      new SharedMemoryWindows(start, size, key, std::move(shmem_handle)));
-}
-
-SharedMemoryWindows::SharedMemoryWindows(void* start,
-                                         size_t size,
-                                         std::string key,
-                                         base::ScopedPlatformHandle handle)
-    : start_(start),
-      size_(size),
-      key_(std::move(key)),
-      handle_(std::move(handle)) {}
-
-SharedMemoryWindows::~SharedMemoryWindows() {
-  if (start_)
-    UnmapViewOfFile(start_);
-}
-
-SharedMemoryWindows::Factory::~Factory() = default;
-
-std::unique_ptr<SharedMemory> SharedMemoryWindows::Factory::CreateSharedMemory(
-    size_t size) {
-  return SharedMemoryWindows::Create(size);
-}
-
-}  
-
-#endif  
 
 
 
@@ -83711,8 +92304,11 @@ class PERFETTO_EXPORT_COMPONENT ProducerIPCClient {
 
 #include <stdint.h>
 
+#include <memory>
+#include <optional>
 #include <set>
 #include <vector>
+
 
 
 
@@ -83731,8 +92327,16 @@ namespace base {
 class TaskRunner;
 }  
 
+namespace test {
+class ProducerIPCClientTestPeer;
+}  
+
 class Producer;
 class SharedMemoryArbiter;
+
+
+
+
 
 
 
@@ -83769,9 +92373,17 @@ class ProducerIPCClientImpl : public TracingService::ProducerEndpoint,
   void NotifyDataSourceStopped(DataSourceInstanceID) override;
   void ActivateTriggers(const std::vector<std::string>&) override;
   void Sync(std::function<void()> callback) override;
+  void InitializeV2RingBuffer(const DataSourceConfig&) override;
+  void AttachV2RingBuffer(const std::shared_ptr<SharedMemory>&,
+                          uint32_t chunk_size_bytes,
+                          std::function<void(bool)> callback) override;
+  void DrainV2RingBuffer() override;
 
   std::unique_ptr<TraceWriter> CreateTraceWriter(
       BufferID target_buffer,
+      BufferExhaustedPolicy) override;
+  std::unique_ptr<TraceWriter> CreateTraceWriterV2(
+      BufferID,
       BufferExhaustedPolicy) override;
   SharedMemoryArbiter* MaybeSharedMemoryArbiter() override;
   bool IsShmemProvidedByProducer() const override;
@@ -83789,14 +92401,21 @@ class ProducerIPCClientImpl : public TracingService::ProducerEndpoint,
 
  private:
   
+  friend class test::ProducerIPCClientTestPeer;
+
+  
   
   void ScheduleDisconnect();
 
   
-  void OnConnectionInitialized(bool connection_succeeded,
-                               bool using_shmem_provided_by_producer,
-                               bool direct_smb_patching_supported,
-                               bool use_shmem_emulation);
+  
+  void OnConnectionInitialized(
+      uint32_t offered_versions,
+      ipc::AsyncResult<protos::gen::InitializeConnectionResponse> response);
+
+  bool HasNegotiatedV2Abi() const {
+    return !!(protocol_abi_versions_ & kProtocolAbiV2);
+  }
 
   
   
@@ -83824,6 +92443,8 @@ class ProducerIPCClientImpl : public TracingService::ProducerEndpoint,
   std::map<WriterID, BufferID> writers_for_scraping_;
 
   std::unique_ptr<SharedMemory> shared_memory_;
+  
+  uint32_t protocol_abi_versions_ = 0;
   std::unique_ptr<SharedMemoryArbiter> shared_memory_arbiter_;
   size_t shared_buffer_page_size_kb_ = 0;
   std::set<DataSourceInstanceID> data_sources_setup_;
@@ -83836,6 +92457,23 @@ class ProducerIPCClientImpl : public TracingService::ProducerEndpoint,
   bool direct_smb_patching_supported_ = false;
   bool use_shmem_emulation_ = false;
   std::vector<std::function<void()>> pending_sync_reqs_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  std::optional<std::unique_ptr<tracing_v2::ProducerRingBufferArbiter>>
+      v2_ring_buffer_arbiter_;
   base::WeakPtrFactory<ProducerIPCClientImpl> weak_factory_{this};
   PERFETTO_THREAD_CHECKER(thread_checker_)
 };
@@ -83864,6 +92502,12 @@ class ProducerIPCClientImpl : public TracingService::ProducerEndpoint,
 #include <cinttypes>
 
 #include <string.h>
+
+
+
+
+
+
 
 
 
@@ -84000,9 +92644,14 @@ ProducerIPCClientImpl::~ProducerIPCClientImpl() {
 
 void ProducerIPCClientImpl::Disconnect() {
   PERFETTO_DCHECK_THREAD(thread_checker_);
-  if (!producer_port_)
-    return;
   
+  
+  if (!producer_port_ && !ipc_channel_)
+    return;
+
+  
+  
+  connected_ = false;
   
   
   producer_port_.reset();
@@ -84016,19 +92665,22 @@ void ProducerIPCClientImpl::OnConnect() {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   connected_ = true;
 
+  uint32_t offered_versions = kProtocolAbiV1;
+  offered_versions |= tracing_v2::IpcSupportsTracingV2() ? kProtocolAbiV2 : 0u;
+  protos::gen::InitializeConnectionRequest req;
+  req.set_supported_protocol_abi_versions(offered_versions);
+
+  
   
   
   
   ipc::Deferred<protos::gen::InitializeConnectionResponse> on_init;
   on_init.Bind(
-      [this](ipc::AsyncResult<protos::gen::InitializeConnectionResponse> resp) {
-        OnConnectionInitialized(
-            resp.success(),
-            resp.success() ? resp->using_shmem_provided_by_producer() : false,
-            resp.success() ? resp->direct_smb_patching_supported() : false,
-            resp.success() ? resp->use_shmem_emulation() : false);
+      [weak_this = weak_factory_.GetWeakPtr(), offered_versions](
+          ipc::AsyncResult<protos::gen::InitializeConnectionResponse> resp) {
+        if (weak_this)
+          weak_this->OnConnectionInitialized(offered_versions, std::move(resp));
       });
-  protos::gen::InitializeConnectionRequest req;
   req.set_producer_name(name_);
   req.set_shared_memory_size_hint_bytes(
       static_cast<uint32_t>(shared_memory_size_hint_bytes_));
@@ -84085,6 +92737,11 @@ void ProducerIPCClientImpl::OnDisconnect() {
   PERFETTO_DLOG("Tracing service connection failure");
   connected_ = false;
   data_sources_setup_.clear();
+  auto* arbiter = v2_ring_buffer_arbiter_.has_value()
+                      ? v2_ring_buffer_arbiter_->get()
+                      : nullptr;
+  if (arbiter)
+    arbiter->Disconnect();
   producer_->OnDisconnect();  
 }
 
@@ -84094,6 +92751,8 @@ void ProducerIPCClientImpl::ScheduleDisconnect() {
 
   
   
+  
+  connected_ = false;
   producer_port_.reset();
 
   
@@ -84107,22 +92766,44 @@ void ProducerIPCClientImpl::ScheduleDisconnect() {
 }
 
 void ProducerIPCClientImpl::OnConnectionInitialized(
-    bool connection_succeeded,
-    bool using_shmem_provided_by_producer,
-    bool direct_smb_patching_supported,
-    bool use_shmem_emulation) {
+    uint32_t offered_versions,
+    ipc::AsyncResult<protos::gen::InitializeConnectionResponse> response) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   
   
-  if (!connection_succeeded)
+  auto reject_connection = [this] {
+    task_runner_->PostTask([weak_this = weak_factory_.GetWeakPtr()] {
+      if (weak_this && weak_this->connected_)
+        weak_this->Disconnect();
+    });
+  };
+
+  if (!response.success()) {
+    reject_connection();
     return;
-  is_shmem_provided_by_producer_ = using_shmem_provided_by_producer;
-  direct_smb_patching_supported_ = direct_smb_patching_supported;
+  }
+
+  
+  uint32_t versions = response->protocol_abi_versions();
+  if (!versions)
+    versions = kProtocolAbiV1;
+
+  
+  
+  if (versions & ~offered_versions) {
+    PERFETTO_ELOG("Unexpected protocol versions (advertised: %x, service: %x)",
+                  offered_versions, versions);
+    reject_connection();
+    return;
+  }
+  protocol_abi_versions_ = versions;
+  is_shmem_provided_by_producer_ = response->using_shmem_provided_by_producer();
+  direct_smb_patching_supported_ = response->direct_smb_patching_supported();
   
   
   
   
-  use_shmem_emulation_ = use_shmem_emulation;
+  use_shmem_emulation_ = response->use_shmem_emulation();
   producer_->OnConnect();
 
   
@@ -84179,27 +92860,17 @@ void ProducerIPCClientImpl::OnServiceRequest(
     
     PERFETTO_CHECK(receive_shmem_fd_cb_fuchsia_);
 
-    base::ScopedFile shmem_fd(receive_shmem_fd_cb_fuchsia_());
-    if (!shmem_fd) {
-      
-      
-      PERFETTO_ELOG("Could not get shared memory FD from embedder.");
-      ScheduleDisconnect();
-      return;
-    }
-
-    ipc_shared_memory =
-        PosixSharedMemory::AttachToFd(std::move(shmem_fd),
-                                      false);
+    ipc_shared_memory = PosixSharedMemory::AttachToFd(
+        base::ScopedFile(receive_shmem_fd_cb_fuchsia_()),
+        false, TracingService::kMaxShmSize);
 #else
-    base::ScopedFile shmem_fd = ipc_channel_->TakeReceivedFD();
-    if (shmem_fd) {
-      
-      ipc_shared_memory =
-          PosixSharedMemory::AttachToFd(std::move(shmem_fd),
-                                        false);
-    }
+    
+    
+    ipc_shared_memory = PosixSharedMemory::AttachToFd(
+        ipc_channel_->TakeReceivedFD(),
+        false, TracingService::kMaxShmSize);
 #endif
+
     if (use_shmem_emulation_) {
       PERFETTO_CHECK(!ipc_shared_memory);
       
@@ -84207,6 +92878,16 @@ void ProducerIPCClientImpl::OnServiceRequest(
       ipc_shared_memory = InProcessSharedMemory::Create(
           InProcessSharedMemory::kShmemEmulationSize);
     }
+
+    
+    
+    
+    if (!ipc_shared_memory && !is_shmem_provided_by_producer_) {
+      PERFETTO_ELOG("No usable shared memory from the service, disconnecting.");
+      ScheduleDisconnect();
+      return;
+    }
+
     if (ipc_shared_memory) {
       auto shmem_mode = use_shmem_emulation_
                             ? SharedMemoryABI::ShmemMode::kShmemEmulation
@@ -84268,6 +92949,7 @@ void ProducerIPCClientImpl::RegisterDataSource(
   if (!connected_) {
     PERFETTO_DLOG(
         "Cannot RegisterDataSource(), not connected to tracing service");
+    return;
   }
   protos::gen::RegisterDataSourceRequest req;
   *req.mutable_data_source_descriptor() = descriptor;
@@ -84286,6 +92968,7 @@ void ProducerIPCClientImpl::UpdateDataSource(
   if (!connected_) {
     PERFETTO_DLOG(
         "Cannot UpdateDataSource(), not connected to tracing service");
+    return;
   }
   protos::gen::UpdateDataSourceRequest req;
   *req.mutable_data_source_descriptor() = descriptor;
@@ -84371,6 +93054,87 @@ void ProducerIPCClientImpl::CommitData(const CommitDataRequest& req,
   producer_port_->CommitData(req, std::move(async_response));
 }
 
+void ProducerIPCClientImpl::InitializeV2RingBuffer(
+    const DataSourceConfig& config) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  
+  
+  
+#if PERFETTO_MEMFD_ENABLED()
+  if (v2_ring_buffer_arbiter_.has_value() || !connected_ ||
+      !HasNegotiatedV2Abi()) {
+    return;
+  }
+
+  auto arbiter_or = tracing_v2::ProducerRingBufferArbiter::Create(
+      task_runner_, this, config, shared_memory_size_hint_bytes_,
+      [](size_t size) -> base::StatusOr<std::shared_ptr<SharedMemory>> {
+        ASSIGN_OR_RETURN(auto memory, PosixSharedMemory::Create(size));
+        return std::shared_ptr<SharedMemory>(std::move(memory));
+      });
+  if (!arbiter_or.ok()) {
+    PERFETTO_ELOG("tracing v2: cannot create ring buffer: %s",
+                  arbiter_or.status().c_message());
+    v2_ring_buffer_arbiter_ = nullptr;
+    return;
+  }
+  v2_ring_buffer_arbiter_ = std::move(*arbiter_or);
+
+  auto* arbiter = v2_ring_buffer_arbiter_->get();
+  AttachV2RingBuffer(
+      arbiter->memory(), arbiter->ring_buffer()->chunk_size(),
+      [weak_arbiter = arbiter->GetWeakPtr()](bool reader_attached) {
+        if (weak_arbiter)
+          weak_arbiter->OnReaderAttachReply(reader_attached);
+      });
+#else
+  base::ignore_result(config);
+#endif  
+}
+
+void ProducerIPCClientImpl::AttachV2RingBuffer(
+    const std::shared_ptr<SharedMemory>& memory,
+    uint32_t chunk_size_bytes,
+    std::function<void(bool)> callback) {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+
+  
+  if (!connected_ || !HasNegotiatedV2Abi() || !memory) {
+    callback(false);
+    return;
+  }
+
+#if PERFETTO_TRACING_V2_IPC()
+  protos::gen::AttachV2RingBufferRequest req;
+  req.set_chunk_size_bytes(chunk_size_bytes);
+  ipc::Deferred<protos::gen::AttachV2RingBufferResponse> reply;
+  reply.Bind(
+      [callback = std::move(callback)](
+          ipc::AsyncResult<protos::gen::AttachV2RingBufferResponse> result) {
+        callback(result.success());
+      });
+  
+  
+  
+  
+  
+  const int fd = static_cast<PosixSharedMemory*>(memory.get())->fd();
+  producer_port_->AttachV2RingBuffer(req, std::move(reply), fd);
+#else
+  base::ignore_result(chunk_size_bytes);
+  callback(false);
+#endif
+}
+
+void ProducerIPCClientImpl::DrainV2RingBuffer() {
+  PERFETTO_DCHECK_THREAD(thread_checker_);
+  if (!connected_ || !HasNegotiatedV2Abi())
+    return;
+  producer_port_->DrainV2RingBuffer(
+      protos::gen::DrainV2RingBufferRequest(),
+      ipc::Deferred<protos::gen::DrainV2RingBufferResponse>());
+}
+
 void ProducerIPCClientImpl::NotifyDataSourceStarted(DataSourceInstanceID id) {
   PERFETTO_DCHECK_THREAD(thread_checker_);
   if (!connected_) {
@@ -84435,8 +93199,27 @@ std::unique_ptr<TraceWriter> ProducerIPCClientImpl::CreateTraceWriter(
     BufferExhaustedPolicy buffer_exhausted_policy) {
   
   
+  
+  if (!(protocol_abi_versions_ & kProtocolAbiV1)) {
+    PERFETTO_ELOG(
+        "Cannot create a v1 trace writer: v1 is not in the common protocol "
+        "mask (%x)",
+        protocol_abi_versions_);
+    return std::make_unique<NullTraceWriter>();
+  }
   return shared_memory_arbiter_->CreateTraceWriter(target_buffer,
                                                    buffer_exhausted_policy);
+}
+
+std::unique_ptr<TraceWriter> ProducerIPCClientImpl::CreateTraceWriterV2(
+    BufferID target_buffer,
+    BufferExhaustedPolicy policy) {
+  auto* arbiter = v2_ring_buffer_arbiter_.has_value()
+                      ? v2_ring_buffer_arbiter_->get()
+                      : nullptr;
+  if (!arbiter)
+    return std::make_unique<NullTraceWriter>();
+  return arbiter->CreateTraceWriter(target_buffer, policy);
 }
 
 SharedMemoryArbiter* ProducerIPCClientImpl::MaybeSharedMemoryArbiter() {
@@ -85253,6 +94036,10 @@ class ProducerIPCService : public protos::gen::ProducerPort {
   void GetAsyncCommand(const protos::gen::GetAsyncCommandRequest&,
                        DeferredGetAsyncCommandResponse) override;
   void Sync(const protos::gen::SyncRequest&, DeferredSyncResponse) override;
+  void AttachV2RingBuffer(const protos::gen::AttachV2RingBufferRequest&,
+                          DeferredAttachV2RingBufferResponse) override;
+  void DrainV2RingBuffer(const protos::gen::DrainV2RingBufferRequest&,
+                         DeferredDrainV2RingBufferResponse) override;
   void OnClientDisconnected() override;
 
  private:
@@ -85352,6 +94139,7 @@ class ProducerIPCService : public protos::gen::ProducerPort {
 
 
 
+
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
 
 #else
@@ -85363,6 +94151,32 @@ class ProducerIPCService : public protos::gen::ProducerPort {
 
 
 namespace perfetto {
+
+namespace {
+
+
+static_assert(static_cast<uint32_t>(protos::gen::PROTOCOL_ABI_VERSION_V1) ==
+              kProtocolAbiV1);
+static_assert(static_cast<uint32_t>(protos::gen::PROTOCOL_ABI_VERSION_V2) ==
+              kProtocolAbiV2);
+
+
+uint32_t GetCommonProtocolAbiVersions(uint32_t producer_versions,
+                                      bool use_shmem_emulation) {
+  
+  if (!producer_versions)
+    return kProtocolAbiV1;
+
+  
+  uint32_t supported = kProtocolAbiV1;
+  if (tracing_v2::IpcSupportsTracingV2() && !use_shmem_emulation)
+    supported |= kProtocolAbiV2;
+
+  
+  return producer_versions & supported;
+}
+
+}  
 
 ProducerIPCService::ProducerIPCService(TracingService* core_service)
     : core_service_(core_service), weak_ptr_factory_(this) {}
@@ -85425,8 +94239,9 @@ void ProducerIPCService::InitializeConnection(
     base::ScopedFile shmem_fd = ipc::Service::TakeReceivedFD();
 
     if (shmem_fd) {
-      shmem = PosixSharedMemory::AttachToFd(
-          std::move(shmem_fd), true);
+      shmem = PosixSharedMemory::AttachToFd(std::move(shmem_fd),
+                                            true,
+                                            TracingService::kMaxShmSize);
       if (!shmem) {
         PERFETTO_ELOG(
             "Couldn't map producer-provided SMB, falling back to "
@@ -85443,13 +94258,23 @@ void ProducerIPCService::InitializeConnection(
   
   ClientIdentity client_identity(client_info.uid(), client_info.pid(),
                                  client_info.machine_id());
+  const uint32_t protocol_abi_versions =
+      GetCommonProtocolAbiVersions(req.supported_protocol_abi_versions(),
+                                   ipc::Service::use_shmem_emulation());
+  if (!protocol_abi_versions) {
+    PERFETTO_ELOG(
+        "Producer \"%s\" supports no protocol version of this service",
+        req.producer_name().c_str());
+    return response.Reject();
+  }
+
   
   producer->service_endpoint = core_service_->ConnectProducer(
       producer.get(), client_identity, req.producer_name(),
       req.shared_memory_size_hint_bytes(),
       false, smb_scraping_mode,
       req.shared_memory_page_size_hint_bytes(), std::move(shmem),
-      req.sdk_version(), client_info.machine_name());
+      req.sdk_version(), client_info.machine_name(), protocol_abi_versions);
 
   
   if (!producer->service_endpoint) {
@@ -85470,6 +94295,7 @@ void ProducerIPCService::InitializeConnection(
   async_res->set_using_shmem_provided_by_producer(using_producer_shmem);
   async_res->set_direct_smb_patching_supported(true);
   async_res->set_use_shmem_emulation(use_shmem_emulation);
+  async_res->set_protocol_abi_versions(protocol_abi_versions);
   response.Resolve(std::move(async_res));
 }
 
@@ -85710,6 +94536,52 @@ void ProducerIPCService::GetAsyncCommand(
   
   if (producer->send_setup_tracing_on_async_commands_bound)
     producer->SendSetupTracing();
+}
+
+void ProducerIPCService::AttachV2RingBuffer(
+    const protos::gen::AttachV2RingBufferRequest& req,
+    DeferredAttachV2RingBufferResponse resp) {
+  
+  auto fd = ipc::Service::TakeReceivedFD();
+  auto* producer = GetProducerForCurrentRequest();
+  if (!producer) {
+    resp.Reject();
+    return;
+  }
+
+  std::shared_ptr<SharedMemory> memory;
+#if PERFETTO_TRACING_V2_IPC()
+  memory = PosixSharedMemory::AttachToFd(std::move(fd),
+                                         true,
+                                         TracingService::kMaxShmSize);
+#endif
+  if (!memory) {
+    PERFETTO_DLOG("AttachV2RingBuffer() rejected: could not map the memfd");
+    resp.Reject();
+    return;
+  }
+
+  
+  
+  auto pending =
+      std::make_shared<DeferredAttachV2RingBufferResponse>(std::move(resp));
+  producer->service_endpoint->AttachV2RingBuffer(
+      memory, req.chunk_size_bytes(), [pending](bool accepted) {
+        if (!accepted) {
+          pending->Reject();
+          return;
+        }
+        pending->Resolve(ipc::AsyncResult<
+                         protos::gen::AttachV2RingBufferResponse>::Create());
+      });
+}
+
+void ProducerIPCService::DrainV2RingBuffer(
+    const protos::gen::DrainV2RingBufferRequest&,
+    DeferredDrainV2RingBufferResponse) {
+  auto* producer = GetProducerForCurrentRequest();
+  if (producer)
+    producer->service_endpoint->DrainV2RingBuffer();
 }
 
 void ProducerIPCService::Sync(const protos::gen::SyncRequest&,
@@ -86499,7 +95371,7 @@ std::unique_ptr<ProducerEndpoint> SystemProducerTracingBackend::ConnectProducer(
 #if PERFETTO_BUILDFLAG(PERFETTO_OS_WIN)
     shm = SharedMemoryWindows::Create(shmem_size_hint);
 #else
-    shm = PosixSharedMemory::Create(shmem_size_hint);
+    shm = PosixSharedMemory::Create(shmem_size_hint).ValueOrDie();
 #endif
     arbiter = SharedMemoryArbiter::CreateUnboundInstance(
         shm.get(), shmem_page_size_hint, SharedMemoryABI::ShmemMode::kDefault);
