@@ -2419,13 +2419,6 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
       TRACE_FOR_TEST(aRequest, "compile:main thread");
       return NS_OK;
     }
-
-    
-    
-    if (!aRequest->AsModuleRequest()->IsSourcePhaseRequest(cx)) {
-      TRACE_FOR_TEST(aRequest, "compile:main thread");
-      return NS_OK;
-    }
   } else {
     MOZ_ASSERT(aRequest->IsRetrievedAsSerializedStencil());
 
@@ -2808,7 +2801,7 @@ bool WasmCompileTask::StealResult(JSContext* aCx,
     return false;
   }
 
-  aModuleOut.set(JS::CreateWasmSourcePhaseModule(aCx, wasmModuleObject));
+  aModuleOut.set(JS::CreateWasmModule(aCx, wasmModuleObject));
   return !!aModuleOut;
 }
 
@@ -3296,7 +3289,9 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     return;
   }
 
-  if (!net::SchemeIsHttpOrHttps(aRequest->URI())) {
+  bool isHTTPS = aRequest->URI()->SchemeIs("https");
+
+  if (!aRequest->URI()->SchemeIs("http") && !isHTTPS) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: Unsupported scheme",
          aRequest));
     
@@ -3381,6 +3376,13 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   }
 
   if (mCache) {
+    if (!isHTTPS) {
+      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: non-https",
+           aRequest));
+      aRequest->MarkNotCacheable();
+      return;
+    }
+
     if (mCache->IsLowMemory()) {
       
       
