@@ -499,18 +499,33 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
           (mVulkanDecoder.mDrmModifiers[0] == DRM_FORMAT_MOD_LINEAR) &&
           (mVulkanDecoder.mDrmModifiers.size() == 1);
     }
-    
-    
-    
-    
-    if (VulkanDirectDecodeExportEnabled() &&
-        mVulkanDecoder.mForcedNvidiaBlockLinear) {
-      FFMPEGV_LOG(
-          "[VULKAN] Direct export disabled: forced NVIDIA BL after "
-          "ImageFormatProperties2 left only LINEAR");
-    }
-    if (VulkanDirectDecodeExportEnabled() &&
-        !mVulkanDecoder.mForcedNvidiaBlockLinear && !drmModsAreLinearOrEmpty) {
+    const auto directExportBlocked = [this]() {
+      
+      
+      
+      
+      
+      if (mVulkanDecoder.mForcedNvidiaBlockLinear) {
+        FFMPEGV_LOG(
+            "[VULKAN] Direct export disabled: forced NVIDIA BL after "
+            "ImageFormatProperties2 left only LINEAR");
+        return true;
+      }
+#    ifndef FFVPX_VERSION
+      
+      
+      if (mVulkanDecoder.mNegotiatedCompositorDecoderVendorID == 0x1002 &&
+          mLib->avcodec_version() < AV_VERSION_INT(63, 20, 101)) {
+        FFMPEGV_LOG(
+            "[VULKAN] Direct export disabled: system FFmpeg older than "
+            "63.20.101 may cause video corruption on AMD GPUs. Using copy");
+        return true;
+      }
+#    endif
+      return false;
+    };
+    if (VulkanDirectDecodeExportEnabled() && !directExportBlocked() &&
+        !drmModsAreLinearOrEmpty) {
       void* const originalCreatePnext = hwfc->create_pnext;
       int formatCount = 0;
       while (formatCount < AV_NUM_DATA_POINTERS &&
