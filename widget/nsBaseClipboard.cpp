@@ -1835,7 +1835,10 @@ nsBaseClipboard::ClipboardCache* nsBaseClipboard::GetClipboardCacheIfValid(
 bool nsBaseClipboard::CanReadWebCustomFormats(
     ClipboardType aClipboardType, nsIPrincipal* aRequestingPrincipal) {
   const bool allowCrossOrigin =
-      mozilla::StaticPrefs::clipboard_readCrossOriginCustomFormats_enabled();
+      mozilla::StaticPrefs::clipboard_readCrossOriginCustomFormats_enabled() ||
+      (aRequestingPrincipal &&
+       nsContentUtils::PrincipalHasPermission(*aRequestingPrincipal,
+                                              nsGkAtoms::clipboardRead));
 
   
   const auto* clipboardCache = GetClipboardCacheIfValid(aClipboardType);
