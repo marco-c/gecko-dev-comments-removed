@@ -2,8 +2,6 @@
 
 
 
-
-
 #include "mozilla/dom/MIDIPermissionRequest.h"
 
 #include "mozilla/BasePrincipal.h"
@@ -50,19 +48,14 @@ MIDIPermissionRequest::MIDIPermissionRequest(nsPIDOMWindowInner* aWindow,
   MOZ_ASSERT(mPrincipal);
 }
 
-NS_IMETHODIMP
-MIDIPermissionRequest::GetTypes(nsIArray** aTypes) {
-  NS_ENSURE_ARG_POINTER(aTypes);
-  nsTArray<nsString> options;
-
+void MIDIPermissionRequest::GetPermissionOptions(
+    nsTArray<nsString>& options) const {
   
   
   
   if (mNeedsSysex || !StaticPrefs::dom_sitepermsaddon_provider_enabled()) {
     options.AppendElement(u"sysex"_ns);
   }
-  return nsContentPermissionUtils::CreatePermissionArray(mType, options,
-                                                         aTypes);
 }
 
 NS_IMETHODIMP

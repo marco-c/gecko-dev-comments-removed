@@ -23,10 +23,9 @@ namespace mozilla::dom {
 
 
 class SpeechModelDownloadPermissionRequest final
-    : public nsIContentPermissionRequest {
+    : public ContentPermissionRequestBaseNoWindow {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSICONTENTPERMISSIONREQUEST
 
   SpeechModelDownloadPermissionRequest(nsIPrincipal* aPrincipal,
                                        nsIPrincipal* aTopLevelPrincipal,
@@ -34,12 +33,22 @@ class SpeechModelDownloadPermissionRequest final
                                        const SpeechModelIdentifier& aModel,
                                        const nsAString& aProgressToken,
                                        std::function<void(bool)>&& aResolver)
-      : mPrincipal(aPrincipal),
-        mTopLevelPrincipal(aTopLevelPrincipal),
+      : ContentPermissionRequestBaseNoWindow(
+            aPrincipal, aTopLevelPrincipal,
+            "speech-recognition-model-download"_ns,
+            
+            
+            
+            false, false),
         mElement(aElement),
         mModel(aModel),
         mProgressToken(aProgressToken),
         mResolver(std::move(aResolver)) {}
+
+  NS_IMETHOD GetElement(mozilla::dom::Element** aElement) override;
+  void GetPermissionOptions(nsTArray<nsString>& aOptions) const override;
+  NS_IMETHOD Cancel() override;
+  NS_IMETHOD Allow(JS::Handle<JS::Value> choices) override;
 
   
   
@@ -55,8 +64,6 @@ class SpeechModelDownloadPermissionRequest final
  private:
   ~SpeechModelDownloadPermissionRequest() { Resolve(false); }
 
-  nsCOMPtr<nsIPrincipal> mPrincipal;
-  nsCOMPtr<nsIPrincipal> mTopLevelPrincipal;
   RefPtr<Element> mElement;
   SpeechModelIdentifier mModel;
   nsString mProgressToken;
@@ -66,40 +73,11 @@ class SpeechModelDownloadPermissionRequest final
 NS_IMPL_ISUPPORTS(SpeechModelDownloadPermissionRequest,
                   nsIContentPermissionRequest)
 
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetTypes(nsIArray** aTypes) {
-  nsTArray<nsString> options;
-  options.AppendElement(
+void SpeechModelDownloadPermissionRequest::GetPermissionOptions(
+    nsTArray<nsString>& aOptions) const {
+  aOptions.AppendElement(
       NS_ConvertUTF8toUTF16(nsPrintfCString("%u", mModel.mSizeMB)));
-  options.AppendElement(mProgressToken);
-  return nsContentPermissionUtils::CreatePermissionArray(
-      "speech-recognition-model-download"_ns, options, aTypes);
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetPrincipal(nsIPrincipal** aPrincipal) {
-  NS_IF_ADDREF(*aPrincipal = mPrincipal);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetTopLevelPrincipal(
-    nsIPrincipal** aTopLevelPrincipal) {
-  NS_IF_ADDREF(*aTopLevelPrincipal = mTopLevelPrincipal);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetDelegatePrincipal(
-    const nsACString& aType, nsIPrincipal** aPrincipal) {
-  return PermissionDelegateHandler::GetDelegatePrincipal(aType, this,
-                                                         aPrincipal);
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetWindow(mozIDOMWindow** aWindow) {
-  *aWindow = nullptr;
-  return NS_OK;
+  aOptions.AppendElement(mProgressToken);
 }
 
 NS_IMETHODIMP
@@ -107,33 +85,6 @@ SpeechModelDownloadPermissionRequest::GetElement(Element** aElement) {
   NS_IF_ADDREF(*aElement = mElement);
   return NS_OK;
 }
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetHasValidTransientUserGestureActivation(
-    bool* aResult) {
-  
-  
-  
-  *aResult = false;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetIsRequestDelegatedToUnsafeThirdParty(
-    bool* aResult) {
-  *aResult = false;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::GetIgnoreAllowSitePermission(
-    bool* aResult) {
-  *aResult = false;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SpeechModelDownloadPermissionRequest::NotifyShown() { return NS_OK; }
 
 NS_IMETHODIMP
 SpeechModelDownloadPermissionRequest::Cancel() {

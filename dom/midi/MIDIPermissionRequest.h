@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_MIDIPermissionRequest_h
 #define mozilla_dom_MIDIPermissionRequest_h
 
@@ -30,7 +28,7 @@ class MIDIPermissionRequest final : public ContentPermissionRequestBase,
   
   NS_IMETHOD Cancel(void) override;
   NS_IMETHOD Allow(JS::Handle<JS::Value> choices) override;
-  NS_IMETHOD GetTypes(nsIArray** aTypes) override;
+  void GetPermissionOptions(nsTArray<nsString>& aOptions) const override;
 
  private:
   ~MIDIPermissionRequest() = default;
