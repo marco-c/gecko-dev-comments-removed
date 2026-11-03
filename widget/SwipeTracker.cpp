@@ -280,7 +280,8 @@ void SwipeTracker::SendSwipeEvent(EventMessage aMsg, uint32_t aDirection,
 }
 
 
-bool SwipeTracker::CanTriggerSwipe(const PanGestureInput& aPanInput) {
+bool SwipeTracker::CanTriggerSwipe(const PanGestureInput& aPanInput,
+                                   SwipeInputSource aInputSource) {
   if (StaticPrefs::widget_disable_swipe_tracker()) {
     return false;
   }
@@ -295,8 +296,11 @@ bool SwipeTracker::CanTriggerSwipe(const PanGestureInput& aPanInput) {
   
   
   
+  
+  const double thresholdRatio =
+      aInputSource == SwipeInputSource::Touchpad ? 8.0 : 3.7;
   return std::abs(aPanInput.mPanDisplacement.x) >
-         std::abs(aPanInput.mPanDisplacement.y) * 8;
+         std::abs(aPanInput.mPanDisplacement.y) * thresholdRatio;
 }
 
 }  
