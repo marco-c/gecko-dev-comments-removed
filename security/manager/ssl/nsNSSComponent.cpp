@@ -1947,6 +1947,15 @@ bool IsGeckoSearchingForClientAuthCertificates(uint64_t uniqueSlotID) {
 }
 
 AutoSearchingForCertificates::AutoSearchingForCertificates() {
+  
+  
+  
+  
+  
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  CacheRemoteCryptokiObjects(SearchingFor::CACertificates);
+#endif  
+
   auto certificateSearchState = sCertificateSearchState.Lock();
   
   
@@ -1954,9 +1963,6 @@ AutoSearchingForCertificates::AutoSearchingForCertificates() {
     return;
   }
   certificateSearchState.ref() = Some(SearchState{PR_GetCurrentThread()});
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-  CacheRemoteCryptokiObjects(SearchingFor::CACertificates);
-#endif  
 }
 
 AutoSearchingForCertificates::~AutoSearchingForCertificates() {
@@ -1969,6 +1975,11 @@ AutoSearchingForCertificates::~AutoSearchingForCertificates() {
 
 AutoSearchingForClientAuthCertificates::
     AutoSearchingForClientAuthCertificates() {
+  
+  
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  CacheRemoteCryptokiObjects(SearchingFor::ClientCertificates);
+#endif  
   auto clientCertificateSearchState = sClientCertificateSearchState.Lock();
   
   
@@ -1976,9 +1987,6 @@ AutoSearchingForClientAuthCertificates::
     return;
   }
   clientCertificateSearchState.ref() = Some(SearchState{PR_GetCurrentThread()});
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-  CacheRemoteCryptokiObjects(SearchingFor::ClientCertificates);
-#endif  
 }
 
 AutoSearchingForClientAuthCertificates::
