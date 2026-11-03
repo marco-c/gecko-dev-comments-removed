@@ -28,6 +28,7 @@
 #include "jsfriendapi.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/Vector.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ImageData.h"
 #include "mozilla/dom/WebGLRenderingContextBinding.h"
@@ -1371,17 +1372,28 @@ void WebGLContext::UniformData(
 
   
 
-  const auto& samplerInfo = locInfo->samplerInfo;
-  if (samplerInfo) {
-    const auto idata = ReinterpretToSpan<const uint32_t>::From(data);
-    const auto maxTexUnits = GLMaxTextureUnits();
-    for (const auto& val : idata) {
-      if (val >= maxTexUnits) {
-        ErrorInvalidValue(
-            "This uniform location is a sampler, but %d"
-            " is not a valid texture unit.",
-            val);
-        return;
+  
+  Vector<webgl::UniformDataVal, 8> uniformValues;
+  {
+    
+    if (uniformValues.append(data.data(), data.size()) == false) {
+      ErrorOutOfMemory("Failed to copy sampler uniform data.");
+      return;
+    }
+  }
+
+  
+  {
+    if (locInfo->HasSampleUniformInformation()) {
+      const auto maxTexUnits = GLMaxTextureUnits();
+      for (const auto& u32UniformValue : uniformValues) {
+        if (u32UniformValue.u32 >= maxTexUnits) {
+          ErrorInvalidValue(
+              "This uniform location is a sampler, but %d"
+              " is not a valid texture unit.",
+              u32UniformValue.u32);
+          return;
+        }
       }
     }
   }
@@ -1389,23 +1401,35 @@ void WebGLContext::UniformData(
   
 
   
-  const auto ptr = static_cast<const void*>(data.data());
-  (*pfn)(*gl, static_cast<GLint>(loc), elemCount, transpose, ptr);
+  {
+    
+    const auto uniformValuesVoidPointer =
+        static_cast<const void*>(uniformValues.begin());
+    (*pfn)(*gl, static_cast<GLint>(loc), elemCount, transpose,
+           uniformValuesVoidPointer);
+  }
 
   
 
-  if (samplerInfo) {
-    auto& texUnits = samplerInfo->texUnits;
+  
+  {
+    if (!locInfo->HasSampleUniformInformation()) {
+      return;
+    }
 
-    const auto srcBegin = reinterpret_cast<const uint32_t*>(data.data());
-    auto destIndex = locInfo->indexIntoUniform;
-    if (destIndex < texUnits.length()) {
+    auto& targetTextureUnits = locInfo->GetSamplerUnformInformation()->texUnits;
+    uint32_t targetIndex = locInfo->indexIntoUniform;
+
+    
+    for (auto& uniformValue : uniformValues) {
       
-      const auto destCount = std::min(elemCount, texUnits.length() - destIndex);
-      for (const auto& val : Span<const uint32_t>(srcBegin, destCount)) {
-        texUnits[destIndex] = AssertedCast<uint8_t>(val);
-        destIndex += 1;
+      if (targetIndex >= targetTextureUnits.length()) {
+        break;
       }
+
+      
+      targetTextureUnits[targetIndex] = AssertedCast<uint8_t>(uniformValue.u32);
+      targetIndex += 1;
     }
   }
 }
