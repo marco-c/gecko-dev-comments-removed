@@ -5,18 +5,10 @@
 "use strict";
 
 const PREF_UI_DENSITY = "browser.uidensity";
-const PREF_NOVA = "browser.nova.enabled";
 const PREF_AUTO_TOUCH = "browser.touchmode.auto";
 const PREF_THRESHOLD = "browser.compactmode.auto.threshold";
 
 const gUIDensity = window.gUIDensity;
-
-
-
-
-const CustomizableUIInternal = CustomizableUI.getTestOnlyInternalProp(
-  "CustomizableUIInternal"
-);
 
 async function withTabletMode({ prefs, inTablet }, callback) {
   let original = gUIDensity._inTabletMode;
@@ -36,21 +28,12 @@ function isTouch() {
   return document.documentElement.getAttribute("uidensity") == "touch";
 }
 
-add_task(async function test_startup_default_reflects_nova() {
-  is(
-    Services.prefs.getDefaultBranch("").getBoolPref(PREF_AUTO_TOUCH),
-    !Services.prefs.getBoolPref(PREF_NOVA, false),
-    "browser.touchmode.auto default is the inverse of the nova value"
-  );
-});
-
 add_task(async function test_automatic_switches_to_touch_in_tablet_mode() {
   await withTabletMode(
     {
       
       prefs: {
         set: [
-          [PREF_NOVA, true],
           [PREF_THRESHOLD, "0"],
           [PREF_AUTO_TOUCH, false],
         ],
@@ -80,7 +63,6 @@ add_task(async function test_automatic_touch_leaves_tablet_mode() {
     {
       prefs: {
         set: [
-          [PREF_NOVA, true],
           [PREF_THRESHOLD, "0"],
           [PREF_AUTO_TOUCH, false],
         ],
@@ -111,7 +93,6 @@ add_task(async function test_standard_ignores_tablet_mode_without_optin() {
       
       prefs: {
         set: [
-          [PREF_NOVA, true],
           [PREF_THRESHOLD, "0"],
           [PREF_UI_DENSITY, 0],
           [PREF_AUTO_TOUCH, false],
@@ -141,7 +122,6 @@ add_task(async function test_standard_optin_switches_to_touch_in_tablet_mode() {
       
       prefs: {
         set: [
-          [PREF_NOVA, true],
           [PREF_THRESHOLD, "0"],
           [PREF_UI_DENSITY, 0],
           [PREF_AUTO_TOUCH, true],
@@ -173,7 +153,6 @@ add_task(async function test_auto_touch_ignored_for_explicit_compact() {
       
       prefs: {
         set: [
-          [PREF_NOVA, true],
           [PREF_THRESHOLD, "0"],
           [PREF_UI_DENSITY, 1],
           [PREF_AUTO_TOUCH, true],
@@ -194,115 +173,6 @@ add_task(async function test_auto_touch_ignored_for_explicit_compact() {
         "The density is not reported as overridden"
       );
       Assert.ok(!isTouch(), "The document is not marked touch");
-    }
-  );
-});
-
-add_task(async function test_explicit_touchmode_pref_without_nova() {
-  await withTabletMode(
-    {
-      
-      
-      prefs: {
-        set: [
-          [PREF_NOVA, false],
-          [PREF_THRESHOLD, "0"],
-          [PREF_AUTO_TOUCH, false],
-        ],
-        clear: [[PREF_UI_DENSITY]],
-      },
-      inTablet: true,
-    },
-    async () => {
-      is(
-        gUIDensity.getCurrentDensity().mode,
-        gUIDensity.MODE_NORMAL,
-        "Without nova, tablet mode does not switch to touch when " +
-          "browser.touchmode.auto is explicitly false"
-      );
-      Assert.ok(!isTouch(), "The document is not marked touch");
-
-      
-      await SpecialPowers.pushPrefEnv({ set: [[PREF_AUTO_TOUCH, true]] });
-      gUIDensity.update();
-      is(
-        gUIDensity.getCurrentDensity().mode,
-        gUIDensity.MODE_TOUCH,
-        "Without nova, enabling browser.touchmode.auto switches to touch"
-      );
-      Assert.ok(isTouch(), "The document is marked touch");
-      await SpecialPowers.popPrefEnv();
-    }
-  );
-});
-
-add_task(async function test_auto_touch_default_follows_nova() {
-  const defaultBranch = Services.prefs.getDefaultBranch("");
-  const original = defaultBranch.getBoolPref(PREF_AUTO_TOUCH);
-  registerCleanupFunction(() =>
-    defaultBranch.setBoolPref(PREF_AUTO_TOUCH, original)
-  );
-
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_NOVA, false]] });
-  CustomizableUIInternal._setAutoTouchModeDefault();
-  is(
-    defaultBranch.getBoolPref(PREF_AUTO_TOUCH),
-    true,
-    "browser.touchmode.auto defaults on when nova is disabled"
-  );
-  await SpecialPowers.popPrefEnv();
-
-  await SpecialPowers.pushPrefEnv({ set: [[PREF_NOVA, true]] });
-  CustomizableUIInternal._setAutoTouchModeDefault();
-  is(
-    defaultBranch.getBoolPref(PREF_AUTO_TOUCH),
-    false,
-    "browser.touchmode.auto defaults off when nova is enabled"
-  );
-  await SpecialPowers.popPrefEnv();
-
-  CustomizableUIInternal._setAutoTouchModeDefault();
-});
-
-add_task(async function test_non_nova_default_switches_to_touch_in_tablet() {
-  const defaultBranch = Services.prefs.getDefaultBranch("");
-  const original = defaultBranch.getBoolPref(PREF_AUTO_TOUCH);
-  registerCleanupFunction(() =>
-    defaultBranch.setBoolPref(PREF_AUTO_TOUCH, original)
-  );
-
-  await withTabletMode(
-    {
-      
-      
-      prefs: {
-        set: [
-          [PREF_NOVA, false],
-          [PREF_THRESHOLD, "0"],
-        ],
-        clear: [[PREF_UI_DENSITY], [PREF_AUTO_TOUCH]],
-      },
-      inTablet: true,
-    },
-    () => {
-      CustomizableUIInternal._setAutoTouchModeDefault();
-      is(
-        Services.prefs.getBoolPref(PREF_AUTO_TOUCH),
-        true,
-        "Pre-nova, browser.touchmode.auto is on by default"
-      );
-      gUIDensity.update();
-      let density = gUIDensity.getCurrentDensity();
-      is(
-        density.mode,
-        gUIDensity.MODE_TOUCH,
-        "Pre-nova auto-switches to touch in tablet mode with the default pref"
-      );
-      Assert.ok(
-        density.overridden,
-        "The touch density is reported as overridden"
-      );
-      Assert.ok(isTouch(), "The document is marked touch");
     }
   );
 });

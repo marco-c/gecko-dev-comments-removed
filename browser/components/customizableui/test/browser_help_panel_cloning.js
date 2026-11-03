@@ -44,6 +44,18 @@ add_task(async function test_help_panel_cloning() {
       continue;
     }
 
+    
+    
+    
+    
+    if (helpMenuPopupItem.id == "helpSwitchDevice") {
+      info(
+        "Skipping helpSwitchDevice: replaced by promo " +
+          "(covered by browser_novaHelpSwitchDevicePromo.js)"
+      );
+      continue;
+    }
+
     let appMenuHelpId = "appMenu_" + helpMenuPopupItem.id;
     info(`Checking ${appMenuHelpId}`);
 
