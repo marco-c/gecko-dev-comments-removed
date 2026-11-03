@@ -893,6 +893,12 @@ class Pref {
   nsresult SetDefaultValue(PrefType aType, PrefValue aValue, bool aIsSticky,
                            bool aIsLocked, bool* aValueChanged) {
     
+    
+    if (IsTypeNone()) {
+      SetType(aType);
+    }
+
+    
     if (!IsType(aType)) {
       return NS_ERROR_UNEXPECTED;
     }
