@@ -325,13 +325,9 @@ pub enum CompositorConfig {
         
         
         
+        
+        
         max_partial_present_rects: usize,
-        
-        
-        
-        
-        uses_buffer_age: bool,
-        
         
         buffer_damage: Option<Box<dyn BufferDamageCompositor>>,
     },
@@ -382,7 +378,6 @@ impl Default for CompositorConfig {
     fn default() -> Self {
         CompositorConfig::Draw {
             max_partial_present_rects: 0,
-            uses_buffer_age: false,
             buffer_damage: None,
         }
     }
@@ -399,8 +394,6 @@ pub enum CompositorKind {
     Draw {
         
         max_partial_present_rects: usize,
-        
-        uses_buffer_age: bool,
     },
     
     Layer {
@@ -418,7 +411,6 @@ impl Default for CompositorKind {
     fn default() -> Self {
         CompositorKind::Draw {
             max_partial_present_rects: 0,
-            uses_buffer_age: false,
         }
     }
 }
@@ -436,8 +428,6 @@ pub enum SwapchainMode {
     WindowFramebuffer {
         
         max_partial_present_rects: usize,
-        
-        uses_buffer_age: bool,
     },
     
     

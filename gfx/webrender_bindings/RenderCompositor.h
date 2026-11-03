@@ -221,8 +221,6 @@ class RenderCompositor {
   virtual bool RequestFullRender() { return false; }
   
   
-  virtual bool ShouldUseBufferAge() { return false; }
-  
   
   
   

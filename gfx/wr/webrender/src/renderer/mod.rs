@@ -844,7 +844,6 @@ pub struct Renderer {
 
     
     
-    
     buffer_damage_tracker: BufferDamageTracker,
 
     max_primitive_instance_count: usize,
@@ -1559,6 +1558,8 @@ impl Renderer {
         self.force_redraw = true;
     }
 
+    
+    
     
     
     

@@ -1452,56 +1452,36 @@ impl Renderer {
     ) -> Option<PartialPresentMode> {
         let mut partial_present_mode = None;
 
-        let (max_partial_present_rects, uses_buffer_age, buffer_age_is_available) =
-            match self.current_compositor_kind {
-                CompositorKind::Native { .. } => {
-                    
-                    
-                    
-                    
-                    (1, false, false)
-                }
-                CompositorKind::Draw {
-                    uses_buffer_age,
-                    max_partial_present_rects,
-                } => (
-                    max_partial_present_rects,
-                    uses_buffer_age,
-                    self.compositor_config.buffer_damage().is_some(),
-                ),
-                CompositorKind::Layer {
-                    mode: SwapchainMode::WindowFramebuffer {
-                        uses_buffer_age,
-                        max_partial_present_rects,
-                    },
-                } => (
-                    max_partial_present_rects,
-                    uses_buffer_age,
-                    true,
-                ),
-                CompositorKind::Layer { mode: SwapchainMode::OsLayers { .. } } => {
-                    
-                    return None;
-                }
-            };
+        let max_partial_present_rects = match self.current_compositor_kind {
+            CompositorKind::Native { .. } => {
+                
+                
+                
+                
+                1
+            }
+            CompositorKind::Draw { max_partial_present_rects } |
+            CompositorKind::Layer {
+                mode: SwapchainMode::WindowFramebuffer { max_partial_present_rects },
+            } => max_partial_present_rects,
+            CompositorKind::Layer { mode: SwapchainMode::OsLayers { .. } } => {
+                
+                return None;
+            }
+        };
 
         if max_partial_present_rects > 0 {
-            let prev_frames_damage_rect = if buffer_age_is_available {
-                self.buffer_damage_tracker
-                    .get_damage_rect(buffer_age)
-                    .or_else(|| Some(DeviceRect::from_size(draw_target_dimensions.to_f32())))
-            } else {
-                None
-            };
+            let fb_rect = DeviceRect::from_size(draw_target_dimensions.to_f32());
+            let prev_frames_damage_rect = self.buffer_damage_tracker
+                .get_damage_rect(buffer_age)
+                .unwrap_or(fb_rect);
 
             let can_use_partial_present = composite_state.dirty_rects_are_valid
                 && !self.force_redraw
-                && !(prev_frames_damage_rect.is_none() && uses_buffer_age)
                 && !self.debug_overlay_state.is_enabled;
 
             if can_use_partial_present {
                 let mut combined_dirty_rect = DeviceRect::zero();
-                let fb_rect = DeviceRect::from_size(draw_target_dimensions.to_f32());
 
                 
                 
@@ -1527,21 +1507,15 @@ impl Renderer {
                 }
 
                 
-                if uses_buffer_age {
-                    self.buffer_damage_tracker
-                        .push_dirty_rect(&combined_dirty_rect);
-                }
+                self.buffer_damage_tracker
+                    .push_dirty_rect(&combined_dirty_rect);
 
                 
                 
                 
                 
                 
-                let total_dirty_rect = if uses_buffer_age {
-                    combined_dirty_rect.union(&prev_frames_damage_rect.unwrap())
-                } else {
-                    combined_dirty_rect
-                };
+                let total_dirty_rect = combined_dirty_rect.union(&prev_frames_damage_rect);
 
                 partial_present_mode = Some(PartialPresentMode::Single {
                     dirty_rect: total_dirty_rect,
@@ -1552,10 +1526,8 @@ impl Renderer {
                 let fb_rect = DeviceIntRect::from_size(draw_target_dimensions);
                 results.dirty_rects.push(fb_rect);
 
-                if uses_buffer_age {
-                    self.buffer_damage_tracker
-                        .push_dirty_rect(&fb_rect.to_f32());
-                }
+                self.buffer_damage_tracker
+                    .push_dirty_rect(&fb_rect.to_f32());
             }
         }
 
