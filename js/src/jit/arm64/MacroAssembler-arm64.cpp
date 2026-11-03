@@ -261,7 +261,8 @@ void MacroAssemblerCompat::mov(CodeLabel* label, Register dest) {
   label->setLinkMode(CodeLabel::MoveImmediate);
 }
 
-BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmPtr ptr, Register dest) {
+BufferOffset MacroAssemblerCompat::movePatchableGCPtr(ImmPtr ptr,
+                                                      Register dest) {
   const size_t numInst = 1;           
   const unsigned numPoolEntries = 2;  
   uint8_t* literalAddr = (uint8_t*)(&ptr.value);  
@@ -282,8 +283,11 @@ BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmPtr ptr, Register dest) {
 
   
   
+  
+  
   return allocLiteralLoadEntry(numInst, numPoolEntries,
-                               (uint8_t*)&instructionScratch, literalAddr);
+                               (uint8_t*)&instructionScratch, literalAddr,
+                               PoolEntryKind::GCThing);
 }
 
 BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmWord ptr,
@@ -308,8 +312,11 @@ BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmWord ptr,
 
   
   
+  
+  
   return allocLiteralLoadEntry(numInst, numPoolEntries,
-                               (uint8_t*)&instructionScratch, literalAddr);
+                               (uint8_t*)&instructionScratch, literalAddr,
+                               PoolEntryKind::Unshared);
 }
 
 void MacroAssemblerCompat::loadPrivate(const Address& src, Register dest) {
@@ -1762,7 +1769,8 @@ void MacroAssembler::call(JitCode* c) {
   
   
   syncStackPtr();
-  BufferOffset off = immPool64(scratch64, uint64_t(c->raw()));
+  BufferOffset off =
+      immPool64(scratch64, uint64_t(c->raw()), PoolEntryKind::Constant);
   addPendingJump(off, ImmPtr(c->raw()), RelocationKind::JITCODE);
   blr(scratch64);
 }
@@ -2077,7 +2085,7 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
   }
 
   BufferOffset load =
-      movePatchablePtr(ImmPtr(src.bitsAsPunboxPointer()), dest.valueReg());
+      movePatchableGCPtr(ImmPtr(src.bitsAsPunboxPointer()), dest.valueReg());
   writeDataRelocation(src, load);
 }
 
