@@ -4777,9 +4777,7 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     case eFocus: {
       InternalFocusEvent* focusEvent = aVisitor.mEvent->AsFocusEvent();
       if (!focusEvent || !focusEvent->mIsRefocus) {
-        nsAutoString target;
-        GetLinkTarget(target);
-        nsContentUtils::TriggerLinkMouseOver(this, absURI, target);
+        nsContentUtils::TriggerLinkMouseOver(this, absURI);
         
         aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
       }

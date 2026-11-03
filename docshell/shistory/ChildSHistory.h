@@ -76,13 +76,11 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
   
   MOZ_CAN_RUN_SCRIPT
   void GotoIndex(int32_t aIndex, int32_t aOffset, bool aRequireUserInteraction,
-                 bool aUserActivation, ErrorResult& aRv);
+                 bool aUserActivation);
   MOZ_CAN_RUN_SCRIPT
   void GotoKey(const nsID& aKey, BrowsingContext* aNavigable,
-               bool aRequireUserInteraction, bool aUserActivation,
-               bool aCheckForCancelation,
-               const std::function<void(nsresult)>& aResolver,
-               ErrorResult& aRv);
+               bool aUserActivation, bool aCheckForCancelation,
+               const std::function<void(nsresult)>& aResolver);
 
   void RemovePendingHistoryNavigations();
 

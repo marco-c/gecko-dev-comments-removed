@@ -2306,9 +2306,7 @@ class nsContentUtils {
 
 
 
-
-  static void TriggerLinkMouseOver(nsIContent* aContent, nsIURI* aLinkURI,
-                                   const nsString& aTargetSpec);
+  static void TriggerLinkMouseOver(nsIContent* aContent, nsIURI* aLinkURI);
 
   
 

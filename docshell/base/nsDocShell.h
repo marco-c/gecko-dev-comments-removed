@@ -251,10 +251,7 @@ class nsDocShell final : public nsDocLoader,
 
 
 
-
-
-  nsresult OnOverLink(nsIContent* aContent, nsIURI* aURI,
-                      const nsAString& aTargetSpec);
+  nsresult OnOverLink(nsIContent* aContent, nsIURI* aURI);
   
 
 
@@ -403,7 +400,7 @@ class nsDocShell final : public nsDocLoader,
   static bool CreateAndConfigureRealChannelForLoadState(
       mozilla::dom::BrowsingContext* aBrowsingContext,
       nsDocShellLoadState* aLoadState, mozilla::net::LoadInfo* aLoadInfo,
-      nsIInterfaceRequestor* aCallbacks, nsDocShell* aDocShell,
+      nsIInterfaceRequestor* aCallbacks,
       const mozilla::OriginAttributes& aOriginAttributes,
       nsLoadFlags aLoadFlags, uint32_t aCacheKey, nsresult& rv,
       nsIChannel** aChannel);
@@ -563,7 +560,7 @@ class nsDocShell final : public nsDocLoader,
       bool aIsInitialDocument,
       const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP =
           mozilla::Nothing(),
-      bool aTryToSaveOldPresentation = true, bool aCheckPermitUnload = true,
+      bool aCheckPermitUnload = true,
       mozilla::dom::WindowGlobalChild* aActor = nullptr);
 
   MOZ_CAN_RUN_SCRIPT nsresult
@@ -703,16 +700,9 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  
-  
-  
-  
-  
   bool OnNewURI(nsIURI* aURI, nsIChannel* aChannel,
                 nsIPrincipal* aTriggeringPrincipal,
-                nsIPrincipal* aPrincipalToInherit,
-                nsIPrincipal* aPartitionedPrincipalToInherit,
-                nsIPolicyContainer* aPolicyContainer, bool aAddToGlobalHistory,
+                nsIPrincipal* aPrincipalToInherit, bool aAddToGlobalHistory,
                 bool aCloneSHChildren);
 
  public:
@@ -728,8 +718,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult EndPageLoad(nsIWebProgress* aProgress, nsIChannel* aChannel,
-                       nsresult aResult);
+  nsresult EndPageLoad(nsIChannel* aChannel, nsresult aResult);
 
   
   
@@ -1017,8 +1006,8 @@ class nsDocShell final : public nsDocLoader,
       bool aUserActivation, bool aNotifiedBeforeUnloadListeners,
       bool aIsResumingInterceptedNavigation, bool aPageSwapFired);
   MOZ_CAN_RUN_SCRIPT
-  nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState, uint32_t aLoadType,
-                            bool aLoadingCurrentEntry);
+  nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState,
+                            uint32_t aLoadType);
   nsresult GetHttpChannel(nsIChannel* aChannel, nsIHttpChannel** aReturn);
   nsresult ConfirmRepost(bool* aRepost);
   nsresult GetPromptAndStringBundle(nsIPrompt** aPrompt,
