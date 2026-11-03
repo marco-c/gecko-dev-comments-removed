@@ -3811,13 +3811,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   pref("services.sync.telemetry.submissionInterval", 43200); 
   pref("services.sync.telemetry.maxPayloadCount", 500);
 
-  #ifdef EARLY_BETA_OR_EARLIER
-    
-    
-    pref("services.sync.engine.bookmarks.validation.enabled", true);
-    pref("services.sync.engine.passwords.validation.enabled", true);
-  #endif
-
   
   
   pref("services.sync.engine.bookmarks.validation.interval", 86400); 
@@ -3956,9 +3949,6 @@ pref("devtools.debugger.prompt-connection", true, sticky);
   pref("devtools.chrome.enabled", true, sticky);
   pref("devtools.debugger.remote-enabled", true, sticky);
 #endif
-
-
-pref("devtools.debugger.features.windowless-service-workers", true);
 
 
 pref("devtools.debugger.log", false);
