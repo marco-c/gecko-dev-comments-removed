@@ -2014,6 +2014,17 @@ class nsIWidget : public nsSupportsWeakReference {
 
 
 
+  virtual nsresult GetNativeMenuItemTitle(const nsAString& aElementId,
+                                          nsAString& aResult) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  
+
+
+
+
+
 
 
 

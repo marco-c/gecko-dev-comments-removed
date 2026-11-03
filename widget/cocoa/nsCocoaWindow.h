@@ -23,6 +23,7 @@
 class nsCocoaWindow;
 class nsChildView;
 class nsMenuBarX;
+class nsMenuItemX;
 @class ChildView;
 
 namespace mozilla {
@@ -452,6 +453,8 @@ class nsCocoaWindow final : public nsIWidget {
   nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) override;
   nsresult GetNativeMenuItemKeyEquivalent(const nsAString& aElementId,
                                           nsAString& aResult) override;
+  nsresult GetNativeMenuItemTitle(const nsAString& aElementId,
+                                  nsAString& aResult) override;
   [[nodiscard]] nsresult GetSelectionAsPlaintext(nsAString& aResult) override;
   TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
   [[nodiscard]] nsresult AttachNativeKeyEvent(
@@ -712,6 +715,10 @@ class nsCocoaWindow final : public nsIWidget {
       nullptr;
 
  private:
+  
+  
+  nsMenuItemX* FindMenuBarItemByElementId(const nsAString& aElementId);
+
   
   
   static nsCocoaWindow* sWindowInNativeTransition;
