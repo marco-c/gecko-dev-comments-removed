@@ -493,6 +493,7 @@ class nsBlockFrame : public nsContainerFrame {
                     nscoord aBEndEdgeOfChildren);
   
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(AlignContentShift, nscoord)
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(InheritedBEndMarginTrim, bool)
 
   
 
@@ -593,6 +594,10 @@ class nsBlockFrame : public nsContainerFrame {
 
 
 
+
+
+
+
   struct TrialReflowState {
     
     const nscoord mConsumedBSize;
@@ -605,6 +610,7 @@ class nsBlockFrame : public nsContainerFrame {
     
     
     bool mLineClamping = false;
+    bool mShouldTrimInheritedBEndMargins = false;
     nscoord mInset = 0;
     
     
