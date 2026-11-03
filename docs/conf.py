@@ -2,6 +2,7 @@
 
 
 
+import gc
 import os
 import sys
 from pathlib import Path
@@ -264,6 +265,25 @@ def reattach_nested_rst_nodes(app, doctree):
             node.document = doctree
 
 
+def disable_gc(app, *args):
+    """Turn off the cyclic garbage collector for the rest of the build.
+
+    Automatic full collections over the growing environment and doctrees took
+    a large share of the build, and the worker processes forked afterwards
+    inherit the setting. collect_garbage() reclaims the cycles left by merging
+    the environments of the parallel readers.
+    """
+    gc.disable()
+
+
+def collect_garbage(app, env):
+    gc.collect()
+
+
+def enable_gc(app, exception):
+    gc.enable()
+
+
 def setup(app):
     
     
@@ -274,3 +294,6 @@ def setup(app):
     app.connect("html-page-context", install_sphinx_design)
     app.connect("html-page-context", add_github_source_link)
     app.connect("doctree-read", reattach_nested_rst_nodes)
+    app.connect("env-before-read-docs", disable_gc, priority=900)
+    app.connect("env-updated", collect_garbage)
+    app.connect("build-finished", enable_gc)
