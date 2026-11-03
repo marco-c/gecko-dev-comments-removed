@@ -56,6 +56,9 @@ const { _setRemoteClientForTesting, _clearRemoteClientForTesting } =
 const { JourneyManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/journeys/JourneyManager.sys.mjs"
 );
+const { JourneyStore } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/memories/journeys/JourneyStore.sys.mjs"
+);
 
 const {
   ResumeActivity,
@@ -541,9 +544,10 @@ async function getConversationId(browser) {
 
 
 
+
 async function _stubResumeActivityGenerationCore(
   sb,
-  { memories, cards, urls, token = null }
+  { memories, journeys, urls, token = null }
 ) {
   for (const [index, page] of urls.entries()) {
     await PlacesUtils.history.insert({
@@ -557,27 +561,17 @@ async function _stubResumeActivityGenerationCore(
     });
   }
 
-  const getMemoriesStub = sb
-    .stub(MemoriesManager, "getMemoriesByAttribute")
-    .resolves(memories);
-  
   sb.stub(MemoriesManager, "getAllMemories").resolves(memories);
+  await JourneyStore.clear();
+  for (const journey of journeys) {
+    await JourneyStore.addOrUpdateJourney(journey);
+  }
+  const suggestSpy = sb.spy(JourneyManager, "suggestJourneysToResume");
   
-  JourneyManager._clearResumeActivityCacheForTesting();
   _clearDismissedResumeMemoriesForTesting();
   JourneyManager._setGetConversationsByIdForTesting(async () => []);
   JourneyManager._setLoadPromptForTesting(async () => ({
     prompt: "Test prompt",
-  }));
-  JourneyManager._setBuildConversationForTesting(async () => ({
-    setSystemMessage() {},
-    addUserMessage() {},
-    securityProperties: {
-      setPrivateData() {},
-      setUntrustedInput() {},
-      commit() {},
-    },
-    run: sb.stub().resolves({ finalOutput: JSON.stringify(cards) }),
   }));
   sb.stub(AuthProvider, "getToken").resolves(token);
 
@@ -587,13 +581,12 @@ async function _stubResumeActivityGenerationCore(
   Services.locale.requestedLocales = ["en-US"];
 
   return {
-    getMemoriesStub,
+    suggestSpy,
     memories,
     async cleanup() {
       JourneyManager._setGetConversationsByIdForTesting(null);
       JourneyManager._setLoadPromptForTesting(null);
-      JourneyManager._setBuildConversationForTesting(null);
-      JourneyManager._clearResumeActivityCacheForTesting();
+      await JourneyStore.clear();
       _clearDismissedResumeMemoriesForTesting();
       for (const { url } of urls) {
         await PlacesUtils.history.remove(url);
@@ -640,12 +633,16 @@ async function stubResumeActivityGeneration(sb, { token } = {}) {
       },
     },
   ];
-  const cards = [
-    { id: 0, headline: "Pick up your research", status: "Continue reading" },
+  const journeys = [
+    {
+      memoryId: "memory-1",
+      headline: "Pick up your research",
+      status: "Continue reading",
+    },
   ];
   return _stubResumeActivityGenerationCore(sb, {
     memories,
-    cards,
+    journeys,
     urls,
     token,
   });
@@ -670,12 +667,12 @@ async function stubResumeActivityGenerationPool(sb, memoryCount) {
       history_source_ids: [PlacesUtils.history.hashURL(page.url)],
     },
   }));
-  const cards = memories.map((memory, i) => ({
-    id: i,
+  const journeys = memories.map(memory => ({
+    memoryId: memory.id,
     headline: `Pick up ${memory.memory_summary}`,
     status: "Continue",
   }));
-  return _stubResumeActivityGenerationCore(sb, { memories, cards, urls });
+  return _stubResumeActivityGenerationCore(sb, { memories, journeys, urls });
 }
 
 
