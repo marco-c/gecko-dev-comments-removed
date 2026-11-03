@@ -1354,6 +1354,11 @@ class nsIWidget : public nsSupportsWeakReference {
 
   void DispatchTouchInput(mozilla::MultiTouchInput& aInput);
 
+  void MayStartSwipeForTouchInput(
+      const mozilla::MultiTouchInput& aInput,
+      const mozilla::layers::APZEventResult& aResult);
+  void HandleTouchInputAsSwipe(const mozilla::MultiTouchInput& aInput);
+
   
 
 
@@ -2426,6 +2431,55 @@ class nsIWidget : public nsSupportsWeakReference {
   PopupType mPopupType;
   SizeConstraints mSizeConstraints;
   bool mHasRemoteContent;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct TouchSwipeState {
+    
+    mozilla::Maybe<ScreenIntPoint> previousTouchPoint;
+    mozilla::SideBits swipableDirections = mozilla::SideBits::eLeftRight;
+    enum class Phase {
+      
+      Idle,
+      
+      
+      Pending,
+      
+      Tracking,
+      
+      
+      Rejected
+    };
+    Phase phase = Phase::Idle;
+
+    void Start(mozilla::SideBits aSwipableDirections,
+               const ScreenIntPoint& aTouchPoint) {
+      MOZ_ASSERT(phase == Phase::Idle &&
+                     swipableDirections == mozilla::SideBits::eLeftRight,
+                 "This is the start point of touch swipe-to-nav. "
+                 "TouchSwipeState should have an initial state");
+      swipableDirections &= aSwipableDirections;
+      phase = Phase::Pending;
+      previousTouchPoint = mozilla::Some(aTouchPoint);
+    }
+
+    void Reset() { *this = TouchSwipeState{}; }
+
+    ScreenIntPoint GetDelta(const ScreenIntPoint& point) {
+      MOZ_ASSERT(previousTouchPoint.isSome());
+      return point - *previousTouchPoint;
+    }
+  };
+  TouchSwipeState mTouchSwipeState;
 
   struct FullscreenSavedState {
     DesktopRect windowRect;

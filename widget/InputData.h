@@ -264,6 +264,10 @@ class MultiTouchInput : public InputData {
   bool mHandledByAPZ;
   
   
+  
+  bool mMayTriggerSwipe = false;
+  
+  
   int16_t mButton = eNotPressed;
   int16_t mButtons = 0;
   uint16_t mInputSource =  5;

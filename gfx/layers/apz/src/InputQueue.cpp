@@ -238,6 +238,43 @@ APZEventResult InputQueue::ReceiveTouchInput(
       result.SetStatusForTouchEvent(*block, aFlags, consumableFlags, target);
     }
   }
+
+  if (aEvent.mMayTriggerSwipe) {
+    switch (aEvent.mType) {
+      case MultiTouchInput::MULTITOUCH_START:
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (block->IsTargetConfirmed() && block->HasAllowedTouchBehaviors()) {
+          MOZ_ASSERT(target, "A confirmed target should be non-null here");
+          
+          result.mSwipableDirectionsForTouch =
+              block->GetOverscrollHandoffChain()->GetSwipableDirections(
+                  *target);
+        }
+        break;
+      case MultiTouchInput::MULTITOUCH_MOVE:
+        
+        
+        
+        
+        
+        
+        if (result.GetStatus() != nsEventStatus_eConsumeNoDefault) {
+          block->SetNeedsToWaitForBrowserGestureResponse(true);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
   mQueuedInputs.AppendElement(std::make_unique<QueuedInput>(aEvent, *block));
   ProcessQueue();
 
@@ -1046,13 +1083,12 @@ void InputQueue::SetAllowedTouchBehavior(
 
 void InputQueue::SetBrowserGestureResponse(uint64_t aInputBlockId,
                                            BrowserGestureResponse aResponse) {
-  InputBlockState* inputBlock = FindBlockForId(aInputBlockId, nullptr);
-
-  if (inputBlock && inputBlock->AsPanGestureBlock()) {
-    PanGestureBlockState* block = inputBlock->AsPanGestureBlock();
-    block->SetBrowserGestureResponse(aResponse);
-  } else if (inputBlock) {
-    NS_WARNING("input block is not a pan gesture block");
+  if (auto* inputBlock = FindBlockForId(aInputBlockId, nullptr)) {
+    if (auto* block = inputBlock->AsBrowserGesturableBlock()) {
+      block->SetBrowserGestureResponse(aResponse);
+    } else {
+      NS_WARNING("input block should be browser gesturable here");
+    }
   }
   ProcessQueue();
 }
@@ -1100,9 +1136,11 @@ bool InputQueue::ProcessQueue() {
         if (curBlock->AsTouchBlock()) {
           
           additionalLog.AppendPrintf(
-              "waiting-long-tap-result: %d allowed-touch-behaviors: %d",
+              "waiting-long-tap-result: %d allowed-touch-behaviors: %d "
+              "waiting-browser-gesture-response: %d",
               curBlock->AsTouchBlock()->IsWaitingLongTapResult(),
-              curBlock->AsTouchBlock()->HasAllowedTouchBehaviors());
+              curBlock->AsTouchBlock()->HasAllowedTouchBehaviors(),
+              curBlock->AsTouchBlock()->IsWaitingForBrowserGestureResponse());
         } else if (curBlock->AsPanGestureBlock()) {
           
           additionalLog.AppendPrintf(

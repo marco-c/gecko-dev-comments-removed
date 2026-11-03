@@ -27,6 +27,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEventDispatcherListener.h"
 #include "mozilla/UniquePtr.h"
@@ -1265,6 +1266,136 @@ class DispatchInputOnControllerThread : public Runnable {
   const APZOnly mAPZOnly;
 };
 
+
+
+void nsIWidget::MayStartSwipeForTouchInput(const MultiTouchInput& aInput,
+                                           const APZEventResult& aResult) {
+  switch (aInput.mType) {
+    case MultiTouchInput::MULTITOUCH_START:
+      
+      
+      mTouchSwipeState.Start(aResult.mSwipableDirectionsForTouch,
+                             aInput.mTouches[0].mScreenPoint);
+      return;
+    case MultiTouchInput::MULTITOUCH_END:
+    case MultiTouchInput::MULTITOUCH_CANCEL:
+      
+      
+      
+      
+      MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Pending ||
+                 mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected);
+      mTouchSwipeState.Reset();
+      return;
+    case MultiTouchInput::MULTITOUCH_MOVE:
+      
+      
+      
+      
+      MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Pending ||
+                 mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected);
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected type.");
+      return;
+  }
+
+  if (mTouchSwipeState.phase == TouchSwipeState::Phase::Rejected) {
+    return;
+  }
+
+  const auto rejectSwipe = [&] {
+    mTouchSwipeState.phase = TouchSwipeState::Phase::Rejected;
+    mAPZC->Bridge()->SetBrowserGestureResponse(
+        aResult.mInputBlockId, BrowserGestureResponse::NotConsumed);
+  };
+
+  const auto touchDelta =
+      mTouchSwipeState.GetDelta(aInput.mTouches[0].mScreenPoint);
+  
+  if (touchDelta.X() == 0) {
+    rejectSwipe();
+    return;
+  }
+
+  const auto scrollDirection =
+      touchDelta.X() > 0 ? SideBits::eLeft : SideBits::eRight;
+  if (!(mTouchSwipeState.swipableDirections & scrollDirection)) {
+    rejectSwipe();
+    return;
+  }
+
+  const PanGestureInput swipeStart(
+      PanGestureInput::PANGESTURE_START, aInput.mTimeStamp,
+      *mTouchSwipeState.previousTouchPoint, -touchDelta, MODIFIER_NONE);
+  const SwipeInfo swipeInfo = SendMayStartSwipe(swipeStart);
+  const auto navigationDirection =
+      touchDelta.X() > 0 ? SimpleGestureEvent_Binding::DIRECTION_LEFT
+                         : SimpleGestureEvent_Binding::DIRECTION_RIGHT;
+  if (!swipeInfo.wantsSwipe ||
+      !(swipeInfo.allowedDirections & navigationDirection)) {
+    rejectSwipe();
+    return;
+  }
+
+  
+  
+  TrackScrollEventAsSwipe(swipeStart, swipeInfo.allowedDirections,
+                          aResult.mInputBlockId);
+  MOZ_ASSERT(mSwipeTracker,
+             "mSwipeTracker must exist when the phase turns into Tracking.");
+  mTouchSwipeState.phase = TouchSwipeState::Phase::Tracking;
+  mTouchSwipeState.previousTouchPoint = Some(aInput.mTouches[0].mScreenPoint);
+}
+
+void nsIWidget::HandleTouchInputAsSwipe(const MultiTouchInput& aInput) {
+  MOZ_ASSERT(mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking);
+
+  switch (aInput.mType) {
+    case mozilla::MultiTouchInput::MULTITOUCH_START:
+      
+      
+      MOZ_ASSERT_UNREACHABLE("MULTITOUCH_START should not come here");
+      return;
+    case MultiTouchInput::MULTITOUCH_MOVE:
+    case MultiTouchInput::MULTITOUCH_END: {
+      const auto delta =
+          mTouchSwipeState.GetDelta(aInput.mTouches[0].mScreenPoint);
+      PanGestureInput convertedPan(
+          aInput.mType == MultiTouchInput::MULTITOUCH_MOVE
+              ? PanGestureInput::PANGESTURE_PAN
+              : PanGestureInput::PANGESTURE_END,
+          aInput.mTimeStamp, *mTouchSwipeState.previousTouchPoint, -delta,
+          MODIFIER_NONE);
+      MOZ_ASSERT(mSwipeTracker,
+                 "mSwipeTracker must exist when the phase is Tracking.");
+      
+      
+      mSwipeTracker->ProcessEvent(convertedPan);
+      if (aInput.mType == MultiTouchInput::MULTITOUCH_MOVE) {
+        mTouchSwipeState.previousTouchPoint =
+            Some(aInput.mTouches[0].mScreenPoint);
+      } else {
+        mTouchSwipeState.Reset();
+      }
+      return;
+    }
+    case MultiTouchInput::MULTITOUCH_CANCEL: {
+      mTouchSwipeState.Reset();
+      mSwipeTracker->CancelSwipe(aInput.mTimeStamp);
+      
+      
+      
+      
+      
+      SwipeFinished();
+      return;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected type.");
+  }
+}
+
 void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aInput.mInputSource ==
@@ -1274,13 +1405,53 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
   if (mAPZC) {
     MOZ_ASSERT(APZThreadUtils::IsControllerThread());
 
-    APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
-    if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
-      return;
-    }
+    switch (aInput.mInputSource) {
+      case mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH: {
+        const bool touchSwipeEnabled =
+            StaticPrefs::widget_swipe_touchscreen_enabled();
+        const auto swipeCandidatePhase =
+            aInput.mType == MultiTouchInput::MULTITOUCH_START
+                ? TouchSwipeState::Phase::Idle
+                : TouchSwipeState::Phase::Pending;
+        aInput.mMayTriggerSwipe =
+            touchSwipeEnabled && mTouchSwipeState.phase == swipeCandidatePhase;
 
-    WidgetTouchEvent event = aInput.ToWidgetEvent(this);
-    ProcessUntransformedAPZEvent(&event, result);
+        APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
+        if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
+          return;
+        }
+
+        
+        
+        
+        
+        
+        
+        if (touchSwipeEnabled) {
+          if (mTouchSwipeState.phase == TouchSwipeState::Phase::Tracking) {
+            HandleTouchInputAsSwipe(aInput);
+          } else {
+            MayStartSwipeForTouchInput(aInput, result);
+          }
+        }
+
+        WidgetTouchEvent event = aInput.ToWidgetEvent(this);
+        ProcessUntransformedAPZEvent(&event, result);
+        return;
+      }
+      case mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_PEN: {
+        APZEventResult result = mAPZC->Bridge()->ReceiveInputEvent(aInput);
+        if (result.GetStatus() == nsEventStatus_eConsumeNoDefault) {
+          return;
+        }
+
+        WidgetTouchEvent event = aInput.ToWidgetEvent(this);
+        ProcessUntransformedAPZEvent(&event, result);
+        return;
+      }
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unexpected type.");
+    }
   } else {
     WidgetTouchEvent event = aInput.ToWidgetEvent(this);
     DispatchEvent(&event);

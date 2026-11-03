@@ -25,6 +25,7 @@ namespace layers {
 class AsyncPanZoomController;
 class OverscrollHandoffChain;
 class CancelableBlockState;
+class BrowserGesturableBlockState;
 class TouchBlockState;
 class WheelBlockState;
 class DragBlockState;
@@ -57,6 +58,9 @@ class InputBlockState : public RefCounted<InputBlockState> {
   virtual ~InputBlockState() = default;
 
   virtual CancelableBlockState* AsCancelableBlock() { return nullptr; }
+  virtual BrowserGesturableBlockState* AsBrowserGesturableBlock() {
+    return nullptr;
+  }
   virtual TouchBlockState* AsTouchBlock() { return nullptr; }
   virtual const TouchBlockState* AsTouchBlock() const { return nullptr; }
   virtual WheelBlockState* AsWheelBlock() { return nullptr; }
@@ -212,6 +216,36 @@ class CancelableBlockState : public InputBlockState {
 
 
 
+
+class BrowserGesturableBlockState : public CancelableBlockState {
+ public:
+  BrowserGesturableBlockState* AsBrowserGesturableBlock() override {
+    return this;
+  }
+
+  void SetNeedsToWaitForBrowserGestureResponse(
+      bool aWaitForBrowserGestureResponse);
+
+  bool IsWaitingForBrowserGestureResponse() const;
+
+  void SetBrowserGestureResponse(const BrowserGestureResponse aResponse);
+
+  bool ShouldDropEvents() const override;
+
+ protected:
+  
+  BrowserGesturableBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
+                              TargetConfirmationFlags aFlags);
+  
+  bool mWaitingForBrowserGestureResponse;
+  
+  
+  bool mStartedBrowserGesture;
+};
+
+
+
+
 class WheelBlockState : public CancelableBlockState {
  public:
   WheelBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
@@ -336,7 +370,7 @@ class DragBlockState : public CancelableBlockState {
 
 
 
-class PanGestureBlockState : public CancelableBlockState {
+class PanGestureBlockState : public BrowserGesturableBlockState {
  public:
   PanGestureBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                        TargetConfirmationFlags aFlags,
@@ -353,8 +387,6 @@ class PanGestureBlockState : public CancelableBlockState {
 
   PanGestureBlockState* AsPanGestureBlock() override { return this; }
 
-  bool ShouldDropEvents() const override;
-
   bool TimeoutContentResponse() override;
 
   
@@ -365,17 +397,11 @@ class PanGestureBlockState : public CancelableBlockState {
   bool WasInterrupted() const { return mInterrupted; }
 
   void SetNeedsToWaitForContentResponse(bool aWaitForContentResponse);
-  void SetNeedsToWaitForBrowserGestureResponse(
-      bool aWaitForBrowserGestureResponse);
-  void SetBrowserGestureResponse(BrowserGestureResponse aResponse);
 
   ScrollDirections GetAllowedScrollDirections() const {
     return mAllowedScrollDirections;
   }
 
-  bool IsWaitingForBrowserGestureResponse() const {
-    return mWaitingForBrowserGestureResponse;
-  }
   bool IsWaitingForContentResponse() const {
     return mWaitingForContentResponse;
   }
@@ -392,13 +418,6 @@ class PanGestureBlockState : public CancelableBlockState {
  private:
   bool mInterrupted;
   bool mWaitingForContentResponse;
-  
-  
-  
-  
-  
-  bool mWaitingForBrowserGestureResponse;
-  bool mStartedBrowserGesture;
   ScrollDirections mAllowedScrollDirections;
 };
 
@@ -453,7 +472,7 @@ class PinchGestureBlockState : public CancelableBlockState {
 
 
 
-class TouchBlockState : public CancelableBlockState {
+class TouchBlockState : public BrowserGesturableBlockState {
  public:
   explicit TouchBlockState(const RefPtr<AsyncPanZoomController>& aTargetApzc,
                            TargetConfirmationFlags aFlags,
