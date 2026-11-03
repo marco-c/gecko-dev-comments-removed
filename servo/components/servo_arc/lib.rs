@@ -783,8 +783,10 @@ impl<H, T> Arc<HeaderSlice<H, T>> {
     
     
     
+    
+    
     #[inline]
-    pub fn from_header_and_iter_alloc<F, I>(
+    pub unsafe fn from_header_and_iter_alloc<F, I>(
         alloc: F,
         header: H,
         mut items: I,
@@ -876,13 +878,15 @@ impl<H, T> Arc<HeaderSlice<H, T>> {
     where
         I: Iterator<Item = T>,
     {
-        Arc::from_header_and_iter_alloc(
-            |layout| unsafe { alloc::alloc(layout) },
-            header,
-            items,
-            num_items,
-             false,
-        )
+        unsafe {
+            Arc::from_header_and_iter_alloc(
+                |layout| alloc::alloc(layout),
+                header,
+                items,
+                num_items,
+                 false,
+            )
+        }
     }
 
     

@@ -509,13 +509,15 @@ impl<H: ToShmem, T: ToShmem> ToShmem for servo_arc::Arc<servo_arc::HeaderSlice<H
         
         
         let len = values.len();
-        let static_arc = Self::from_header_and_iter_alloc(
-            |layout| builder.alloc(layout),
-            ManuallyDrop::into_inner(header),
-            values.into_iter().map(ManuallyDrop::into_inner),
-            len,
-             true,
-        );
+        let static_arc = unsafe {
+            Self::from_header_and_iter_alloc(
+                |layout| builder.alloc(layout),
+                ManuallyDrop::into_inner(header),
+                values.into_iter().map(ManuallyDrop::into_inner),
+                len,
+                 true,
+            )
+        };
 
         #[cfg(debug_assertions)]
         builder.shared_values.insert(self.heap_ptr());
