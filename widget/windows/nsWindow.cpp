@@ -3410,6 +3410,12 @@ void nsWindow::TryDwmResizeHack() {
 
   
   
+  if (!mWindowRenderer) {
+    return;
+  }
+
+  
+  
   
   
   {
