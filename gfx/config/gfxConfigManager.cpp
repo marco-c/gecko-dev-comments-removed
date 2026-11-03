@@ -284,6 +284,7 @@ void gfxConfigManager::ConfigureWebRender() {
 
   
   
+  
   mFeatureWrPartial->SetDefault(mWrPartialPresent, FeatureStatus::Disabled,
                                 "User disabled via pref");
   if (mWrForcePartialPresent) {

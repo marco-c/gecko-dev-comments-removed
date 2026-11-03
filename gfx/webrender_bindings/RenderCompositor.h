@@ -214,6 +214,7 @@ class RenderCompositor {
   
   
   
+  
   virtual uint32_t GetMaxPartialPresentRects() { return 0; }
   
   virtual bool UseWindowPartialPresent() { return false; }
