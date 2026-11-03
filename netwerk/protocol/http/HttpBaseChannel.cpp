@@ -6766,27 +6766,13 @@ void HttpBaseChannel::MaybeFlushConsoleReports() {
 void HttpBaseChannel::DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() {}
 
 bool HttpBaseChannel::Http3Allowed() const {
-  
-  
-  
-  nsProxyInfo* proxyInfo = static_cast<nsProxyInfo*>(mProxyInfo.get());
   bool allowedProxyInfo =
-      mProxyInfo ? (proxyInfo->IsDirect() || proxyInfo->IsHttp3Proxy() ||
-                    (proxyInfo->IsHTTPS() &&
-                     StaticPrefs::network_http_happy_eyeballs_proxy_enabled()))
+      mProxyInfo ? (static_cast<nsProxyInfo*>(mProxyInfo.get())->IsDirect() ||
+                    static_cast<nsProxyInfo*>(mProxyInfo.get())->IsHttp3Proxy())
                  : true;
   
   
-  
-  
-  
-  
-  
-  bool upgradeAllowsHttp3 =
-      !mUpgradeProtocolCallback ||
-      (mProxyInfo && proxyInfo->IsHttp3Proxy() &&
-       StaticPrefs::network_http_happy_eyeballs_proxy_enabled());
-  return upgradeAllowsHttp3 && allowedProxyInfo &&
+  return !mUpgradeProtocolCallback && allowedProxyInfo &&
          !(mCaps & NS_HTTP_BE_CONSERVATIVE) && !LoadBeConservative() &&
          LoadAllowHttp3();
 }

@@ -155,10 +155,6 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
 
   
   
-  virtual bool IsHappyEyeballsTransaction() { return false; }
-
-  
-  
   
   virtual nsHttpTransaction* QueryHttpTransaction() { return nullptr; }
 
@@ -264,9 +260,6 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
 
   virtual void InvokeCallback() {}
   virtual bool IsForFallback() { return false; }
-  
-  
-  virtual bool IsAltSvcValidation() { return false; }
 };
 
 #define NS_DECL_NSAHTTPTRANSACTION                                             \

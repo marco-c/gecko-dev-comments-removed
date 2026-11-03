@@ -235,11 +235,7 @@ nsresult HttpConnectionUDP::Init(nsHttpConnectionInfo* info,
 
   mConnInfo = info;
   MOZ_ASSERT(mConnInfo);
-  
-  
-  
-  MOZ_ASSERT(mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection() ||
-             (mConnInfo->UsingHttpsProxy() && mConnInfo->UsingConnect()));
+  MOZ_ASSERT(mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection());
 
   mErrorBeforeConnect = status;
   mAlpnToken = mConnInfo->GetNPNToken();
@@ -257,15 +253,11 @@ nsresult HttpConnectionUDP::Init(nsHttpConnectionInfo* info,
   dnsAddrRecord->GetEffectiveTRRMode(&mEffectiveTRRMode);
   dnsAddrRecord->GetTrrSkipReason(&mTRRSkipReason);
   NetAddr peerAddr;
-  
-  
-  bool outerProxyConn =
-      mConnInfo->IsHttp3ProxyConnection() ||
-      (mConnInfo->UsingHttpsProxy() && mConnInfo->UsingConnect());
-  uint16_t port = outerProxyConn ? mConnInfo->ProxyPort()
-                                 : (!mConnInfo->GetRoutedHost().IsEmpty()
-                                        ? mConnInfo->RoutedPort()
-                                        : mConnInfo->OriginPort());
+  uint16_t port =
+      mConnInfo->IsHttp3ProxyConnection()
+          ? mConnInfo->ProxyPort()
+          : (!mConnInfo->GetRoutedHost().IsEmpty() ? mConnInfo->RoutedPort()
+                                                   : mConnInfo->OriginPort());
 
   nsresult rv = dnsAddrRecord->GetNextAddr(port, &peerAddr);
   if (NS_FAILED(rv)) {
@@ -472,12 +464,6 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
     return mErrorBeforeConnect;
   }
 
-  
-  
-  
-  
-  
-  
   
   
   
@@ -876,11 +862,6 @@ void HttpConnectionUDP::HandleTunnelResponse(
     mQueuedConnectUdpTransaction.Clear();
   }
 }
-
-
-
-
-
 
 void HttpConnectionUDP::ResetTransaction(nsHttpTransaction* aHttpTransaction) {
   LOG(("HttpConnectionUDP::ResetTransaction [this=%p mState=%d]\n", this,

@@ -365,13 +365,7 @@ void nsHttpConnection::StartSpdy(nsITLSSocketControl* sslControl,
   nsresult rv = NS_OK;
   bool spdyProxy = mConnInfo->UsingHttpsProxy() && mConnInfo->UsingConnect() &&
                    !mHasTLSTransportLayer;
-  
-  
-  bool isHE = mTransaction && mTransaction->IsHappyEyeballsTransaction();
-  
-  
-  
-  if (spdyProxy && !isHE) {
+  if (spdyProxy) {
     RefPtr<nsHttpConnectionInfo> wildCardProxyCi;
     rv = mConnInfo->CreateWildCard(getter_AddRefs(wildCardProxyCi));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -382,17 +376,7 @@ void nsHttpConnection::StartSpdy(nsITLSSocketControl* sslControl,
   }
 
   if (!mDid0RTTSpdy && mTransaction) {
-    if (spdyProxy && isHE) {
-      
-      
-      
-      mSpdySession->SetConnection(mTransaction->Connection());
-      mTransaction->SetConnection(nullptr);
-      mTransaction->DoNotRemoveAltSvc();
-      mTransaction->InvokeCallback();
-      mTransaction->Close(NS_OK);
-      mTransaction = nullptr;
-    } else if (spdyProxy) {
+    if (spdyProxy) {
       if (NS_FAILED(status)) {
         
         
@@ -679,16 +663,7 @@ nsresult nsHttpConnection::Activate(nsAHttpTransaction* trans, uint32_t caps,
   nsresult rv = NS_OK;
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!mExtendedCONNECTHttp2Session &&
-      !mTransaction->IsHappyEyeballsTransaction()) {
+  if (!mExtendedCONNECTHttp2Session) {
     rv = CheckTunnelIsNeeded(mTransaction);
   }
   if (NS_FAILED(rv)) goto failed_activation;
@@ -2725,16 +2700,6 @@ void nsHttpConnection::HandshakeDoneInternal() {
 }
 
 void nsHttpConnection::SetTunnelSetupDone() {
-  
-  
-  
-  
-  if (mState == HttpConnectionState::UNINITIALIZED) {
-    MOZ_ASSERT(!mProxyConnectStream);
-    ChangeState(HttpConnectionState::REQUEST);
-    return;
-  }
-
   MOZ_ASSERT(mProxyConnectStream);
   MOZ_ASSERT(mState == HttpConnectionState::SETTING_UP_TUNNEL);
 
