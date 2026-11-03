@@ -20,7 +20,14 @@ class nsMenuX;
 namespace nsMenuUtilsX {
 void DispatchCommandTo(nsIContent* aTargetContent,
                        NSEventModifierFlags aModifierFlags, int16_t aButton);
-NSString* GetTruncatedCocoaLabel(const nsString& itemLabel);
+
+
+
+NSString* GetTruncatedCocoaLabel(const nsString& aLabel, nsIContent* aContent);
+
+
+NSString* TruncateLabelToWidth(NSString* aLabel, NSFont* aFont,
+                               CGFloat aMaxWidth);
 uint8_t GeckoModifiersForNodeAttribute(const nsString& modifiersAttribute);
 unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
 already_AddRefed<nsMenuBarX> GetHiddenWindowMenuBar();
