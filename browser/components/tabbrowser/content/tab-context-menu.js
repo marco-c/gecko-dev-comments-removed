@@ -921,7 +921,8 @@ var TabContextMenu = {
     
     
     contextMoveTabOptions.disabled =
-      this.contextTab.hidden || (allTabsSelected && !this._altTabContextMenu);
+      this.contextTab.hidden ||
+      (allTabsSelected && !this._altTabContextMenu && miniWindowItem.hidden);
     let selectedTabs = gBrowser.selectedTabs;
     let contextMoveTabToEnd = document.getElementById("context_moveToEnd");
     let allSelectedTabsAdjacent = selectedTabs.every(
@@ -964,7 +965,8 @@ var TabContextMenu = {
       (isFirstTab || splitAtStart) && allSelectedTabsAdjacent;
 
     document.getElementById("context_openTabInWindow").disabled =
-      this.contextTab.hasAttribute("customizemode");
+      this.contextTab.hasAttribute("customizemode") ||
+      gBrowser.visibleTabs.length == 1;
 
     
     document.getElementById("context_duplicateTab").hidden = this.multiselected;
