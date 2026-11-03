@@ -38,31 +38,29 @@ bool nsQuoteNode::InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
   return dirty;
 }
 
-nsString nsQuoteNode::Text() {
-  NS_ASSERTION(mType == StyleContentType::OpenQuote ||
-                   mType == StyleContentType::CloseQuote,
-               "should only be called when mText should be non-null");
-  nsString result;
-  int32_t depth = Depth();
-  MOZ_ASSERT(depth >= -1);
+static nsString GetQuoteForFrame(nsIFrame* aFrame,
+                                 nsCounterNode::StyleContentType aType,
+                                 int32_t aDepth) {
+  
+  const auto& quotesProp = aFrame->StyleList()->mQuotes;
 
-  if (depth < 0) {
-    return result;
+  
+  if (quotesProp.IsMatchParent() && aFrame->GetParent()) {
+    return GetQuoteForFrame(aFrame->GetParent(), aType, aDepth);
   }
 
-  const auto& quotesProp = mPseudoFrame->StyleList()->mQuotes;
-
-  if (quotesProp.IsAuto()) {
+  
+  
+  
+  if (quotesProp.IsAuto() || quotesProp.IsMatchParent()) {
     
-    const nsIFrame* frame = mPseudoFrame->GetInFlowParent();
+    nsIFrame* frame =
+        aFrame->Style()->IsPseudoElement() ? aFrame->GetInFlowParent() : aFrame;
     
-    
-    
-    if (!frame->Style()->IsRootElementStyle()) {
-      if (const nsIFrame* parent = frame->GetInFlowParent()) {
-        frame = parent;
-      }
+    if (frame->GetParent()) {
+      frame = frame->GetParent();
     }
+    
     const intl::Quotes* quotes =
         intl::QuotesForLang(frame->StyleFont()->GetLangAtom());
     
@@ -72,10 +70,11 @@ nsString nsQuoteNode::Text() {
           {0x201c, 0x201d, 0x2018, 0x2019}};
       quotes = &sDefaultQuotes;
     }
-    size_t index = (depth == 0 ? 0 : 2);  
-    index += (mType == StyleContentType::OpenQuote ? 0 : 1);  
-    result.Append(quotes->mChars[index]);
-    return result;
+    
+    size_t index = (aDepth == 0 ? 0 : 2);
+    
+    index += (aType == nsCounterNode::StyleContentType::OpenQuote ? 0 : 1);
+    return nsString(&quotes->mChars[index], 1);
   }
 
   MOZ_ASSERT(quotesProp.IsQuoteList());
@@ -84,20 +83,34 @@ nsString nsQuoteNode::Text() {
   
   
   
-  if (depth >= static_cast<int32_t>(quotes.Length())) {
-    depth = static_cast<int32_t>(quotes.Length()) - 1;
+  if (aDepth >= static_cast<int32_t>(quotes.Length())) {
+    aDepth = static_cast<int32_t>(quotes.Length()) - 1;
   }
 
-  if (depth == -1) {
+  if (aDepth == -1) {
     
-    return result;
+    return nsString();
   }
 
-  const StyleQuotePair& pair = quotes[depth];
+  const StyleQuotePair& pair = quotes[aDepth];
   const StyleOwnedStr& quote =
-      mType == StyleContentType::OpenQuote ? pair.opening : pair.closing;
-  result.Assign(NS_ConvertUTF8toUTF16(quote.AsString()));
-  return result;
+      aType == nsCounterNode::StyleContentType::OpenQuote ? pair.opening
+                                                          : pair.closing;
+  return NS_ConvertUTF8toUTF16(quote.AsString());
+}
+
+nsString nsQuoteNode::Text() {
+  MOZ_ASSERT(mType == StyleContentType::OpenQuote ||
+                 mType == StyleContentType::CloseQuote,
+             "should only be called when mText should be non-null");
+  int32_t depth = Depth();
+  MOZ_ASSERT(depth >= -1);
+
+  if (depth < 0) {
+    return nsString();
+  }
+
+  return GetQuoteForFrame(mPseudoFrame, mType, depth);
 }
 
 static int32_t GetDepthBeforeFirstQuoteNode(ContainStyleScope* aScope) {
