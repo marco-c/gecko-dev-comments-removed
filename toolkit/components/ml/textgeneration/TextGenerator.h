@@ -44,9 +44,6 @@ class TextGenerator final : public nsISupports, public nsWrapperCache {
   void Cancel();
   void Terminate();
 
-  void GetDevice(nsACString& aDevice) const { aDevice = mDevice; }
-  dom::HWInferenceDeviceKind DeviceKind() const { return mDeviceKind; }
-
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -65,9 +62,6 @@ class TextGenerator final : public nsISupports, public nsWrapperCache {
   RefPtr<hwinference::TextGenerationParent> mActor;
   
   const nsCString mFeatureId;
-  
-  nsCString mDevice;
-  dom::HWInferenceDeviceKind mDeviceKind = dom::HWInferenceDeviceKind::Cpu;
   bool mGenerateInFlight = false;
   bool mTerminated = false;
 };

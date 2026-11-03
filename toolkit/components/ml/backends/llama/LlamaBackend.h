@@ -8,9 +8,7 @@
 #include <functional>
 #include "LlamaRuntimeLinker.h"
 #include "ggml.h"
-#include "ggml-backend.h"
 #include "ggml-cpu.h"
-#include "mozilla/dom/HWInferenceBinding.h"
 #include "mozilla/dom/LlamaRunnerBinding.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
@@ -34,19 +32,6 @@ using LlamaContextOptions = mozilla::dom::LlamaContextOptions;
 using LlamaSamplerConfig = mozilla::dom::LlamaSamplerConfig;
 
 ggml_type GgmlTypeFromKVCacheDtype(LlamaKVCacheDtype aDtype);
-
-
-
-struct Device {
-  ggml_backend_dev_t mHandle;
-  
-  const char* mId;
-  const char* mDescription;
-  dom::HWInferenceDeviceKind mKind;
-};
-
-
-const nsTArray<Device>& Devices(const LlamaLibWrapper* aLib);
 
 
 
@@ -97,10 +82,6 @@ class LlamaBackend {
       std::function<bool()> aCancelCallback);
 
   
-  const nsCString& DeviceId() const { return mDevice; }
-  dom::HWInferenceDeviceKind DeviceKind() const { return mDeviceKind; }
-
-  
   
   
   ResultStatus ReinitializeContext(const LlamaContextOptions& aOptions,
@@ -145,11 +126,6 @@ class LlamaBackend {
       const llama_vocab* vocab);
 
   
-  
-  ResultStatus LoadOnFirstDevice(const LlamaModelOptions& aOptions, FILE* aFp,
-                                 llama_model_params aParams);
-
-  
   LlamaLibWrapper* mLib = nullptr;
 
   
@@ -170,9 +146,6 @@ class LlamaBackend {
   GgmlThreadpoolUPtr mThreadpoolBatch;
 
   LlamaModelOptions mModelOptions;
-
-  nsCString mDevice;
-  dom::HWInferenceDeviceKind mDeviceKind = dom::HWInferenceDeviceKind::Cpu;
 
   
   nsCString mModelGeneralName;

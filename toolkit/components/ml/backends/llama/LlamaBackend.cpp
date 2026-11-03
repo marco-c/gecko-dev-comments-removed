@@ -6,7 +6,6 @@
 
 #include <cstdint>
 #include <cstddef>
-#include <cstdio>
 
 #include <functional>
 #include "mozilla/HashTable.h"
@@ -14,10 +13,8 @@
 #include "nsTArray.h"
 
 #include "mozilla/Logging.h"
-#include "mozilla/dom/BindingUtils.h"
 #include "nsFmtString.h"
 #include "GeckoProfiler.h"
-#include "mozilla/ml/MLProfilerMarkers.h"
 
 mozilla::LazyLogModule gLlamaBackendLog("GeckoMLLlamaBackendNative");
 
@@ -91,165 +88,35 @@ ggml_type GgmlTypeFromKVCacheDtype(LlamaKVCacheDtype aDtype) {
   return GGML_TYPE_F16;
 }
 
-static const char* NonNull(const char* aStr) { return aStr ? aStr : ""; }
-
-static const char* DeviceId(const ggml_backend_dev_props& aProps) {
-  return NonNull(aProps.device_id ? aProps.device_id : aProps.name);
-}
-
-static dom::HWInferenceDeviceKind DeviceKind(enum ggml_backend_dev_type aType) {
-  switch (aType) {
-    case GGML_BACKEND_DEVICE_TYPE_CPU:
-      return dom::HWInferenceDeviceKind::Cpu;
-    case GGML_BACKEND_DEVICE_TYPE_GPU:
-    case GGML_BACKEND_DEVICE_TYPE_IGPU:
-      return dom::HWInferenceDeviceKind::Gpu;
-    case GGML_BACKEND_DEVICE_TYPE_ACCEL:
-      return dom::HWInferenceDeviceKind::Npu;
-    case GGML_BACKEND_DEVICE_TYPE_META:
-      break;
-  }
-  MOZ_CRASH("not a device");
-}
 
 
-static bool ProbeDevice(const LlamaLibWrapper* aLib,
-                        ggml_backend_dev_t aDevice) {
-  if (aLib->ggml_backend_dev_type(aDevice) == GGML_BACKEND_DEVICE_TYPE_CPU) {
-    return true;
-  }
-  ggml_backend_t backend = aLib->ggml_backend_dev_init(aDevice, nullptr);
-  if (!backend) {
-    return false;
-  }
-  aLib->ggml_backend_free(backend);
-  return true;
-}
 
-const nsTArray<Device>& Devices(const LlamaLibWrapper* aLib) {
-  static const nsTArray<Device> sDevices = [aLib]() {
-    nsTArray<Device> devices;
-    for (size_t i = 0; i < aLib->ggml_backend_dev_count(); ++i) {
-      ggml_backend_dev_t dev = aLib->ggml_backend_dev_get(i);
-      ggml_backend_dev_props props;
-      aLib->ggml_backend_dev_get_props(dev, &props);
-      if (props.type == GGML_BACKEND_DEVICE_TYPE_META) {
-        continue;
-      }
-      const TimeStamp probeStart = TimeStamp::Now();
-      const bool usable = ProbeDevice(aLib, dev);
-      PROFILER_MARKER(
-          ML_TEXT_GENERATION_TRACK, ML_SETUP,
-          MarkerTiming::IntervalUntilNowFrom(probeStart), MLDeviceProbeMarker,
-          ProfilerString8View::WrapNullTerminatedString(props.name), usable);
-      if (!usable) {
-        LOGW("{}: {} failed to initialise, skipped", __PRETTY_FUNCTION__,
-             props.name);
-        continue;
-      }
-      Device* device = devices.AppendElement(Device{dev, DeviceId(props),
-                                                    NonNull(props.description),
-                                                    DeviceKind(props.type)});
-      LOGD("{}: {}: {} ({})", __PRETTY_FUNCTION__, device->mId,
-           device->mDescription, dom::GetEnumString(device->mKind));
+
+
+
+
+
+static bool GpuOffloadUsable(const LlamaLibWrapper* aLib) {
+  static const bool sUsable = [aLib]() {
+    ggml_backend_dev_t dev =
+        aLib->ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_GPU);
+    if (!dev) {
+      dev = aLib->ggml_backend_dev_by_type(GGML_BACKEND_DEVICE_TYPE_IGPU);
     }
-    return devices;
-  }();
-  return sDevices;
-}
-
-
-static const Device* CpuDevice(const LlamaLibWrapper* aLib) {
-  static const Maybe<Device> sCpu = [aLib]() -> Maybe<Device> {
-    for (size_t i = 0; i < aLib->ggml_backend_dev_count(); ++i) {
-      ggml_backend_dev_t dev = aLib->ggml_backend_dev_get(i);
-      ggml_backend_dev_props props;
-      aLib->ggml_backend_dev_get_props(dev, &props);
-      if (props.type == GGML_BACKEND_DEVICE_TYPE_CPU) {
-        return Some(Device{dev, DeviceId(props), NonNull(props.description),
-                           dom::HWInferenceDeviceKind::Cpu});
-      }
+    if (!dev) {
+      return false;
     }
-    return Nothing();
-  }();
-  return sCpu.ptrOr(nullptr);
-}
-
-
-
-static nsTArray<const Device*> ResolvePlacement(
-    const LlamaLibWrapper* aLib, const dom::HWInferencePlacement& aPlacement) {
-  nsTArray<const Device*> candidates;
-  if (aPlacement.mDevices.IsEmpty() && aPlacement.mKinds.IsEmpty()) {
-    if (const Device* cpu = CpuDevice(aLib)) {
-      candidates.AppendElement(cpu);
-    }
-    return candidates;
-  }
-  auto appendIf = [&](auto&& aMatches) {
-    for (const Device& device : Devices(aLib)) {
-      if (aMatches(device)) {
-        candidates.AppendElement(&device);
-      }
-    }
-  };
-  if (!aPlacement.mDevices.IsEmpty()) {
-    for (const nsCString& id : aPlacement.mDevices) {
-      appendIf([&](const Device& aDevice) { return id.Equals(aDevice.mId); });
-    }
-  } else {
-    for (dom::HWInferenceDeviceKind kind : aPlacement.mKinds) {
-      appendIf([&](const Device& aDevice) { return aDevice.mKind == kind; });
-    }
-  }
-  return candidates;
-}
-
-ResultStatus LlamaBackend::LoadOnFirstDevice(const LlamaModelOptions& aOptions,
-                                             FILE* aFp,
-                                             llama_model_params aParams) {
-  constexpr int32_t kNoGpuLayers = 0;
-  constexpr int32_t kAllGpuLayers = -1;
-  if (!aOptions.mPlacement.mDevices.IsEmpty() &&
-      !aOptions.mPlacement.mKinds.IsEmpty()) {
-    auto msg = nsFmtCString("{}: a placement takes devices or kinds, not both",
-                            __PRETTY_FUNCTION__);
-    LOGE("{}", msg);
-    return mozilla::Err(Error{std::move(msg)});
-  }
-  nsTArray<const Device*> candidates =
-      ResolvePlacement(mLib, aOptions.mPlacement);
-  if (candidates.IsEmpty()) {
-    auto msg = nsFmtCString("{}: no device matches the requested placement",
-                            __PRETTY_FUNCTION__);
-    LOGE("{}", msg);
-    return mozilla::Err(Error{std::move(msg)});
-  }
-  for (const Device* device : candidates) {
-    const bool cpu = device->mKind == dom::HWInferenceDeviceKind::Cpu;
     
-    ggml_backend_dev_t devices[2] = {cpu ? nullptr : device->mHandle, nullptr};
-    aParams.devices = devices;
-    aParams.n_gpu_layers = cpu ? kNoGpuLayers : kAllGpuLayers;
-    rewind(aFp);
-    const TimeStamp loadStart = TimeStamp::Now();
-    mModel.reset(mLib->llama_model_load_from_file_handle(aFp, aParams));
-    PROFILER_MARKER(
-        ML_TEXT_GENERATION_TRACK, ML_SETUP,
-        MarkerTiming::IntervalUntilNowFrom(loadStart), MLDeviceLoadMarker,
-        ProfilerString8View::WrapNullTerminatedString(device->mId), !!mModel);
-    if (mModel) {
-      mDevice = device->mId;
-      mDeviceKind = device->mKind;
-      return Ok();
+    
+    
+    ggml_backend_t backend = aLib->ggml_backend_dev_init(dev, nullptr);
+    if (!backend) {
+      return false;
     }
-    LOGW("{}: {} could not load the model", __PRETTY_FUNCTION__,
-         device->mDescription);
-  }
-  auto msg = nsFmtCString("{}: no device of the placement could load the model",
-                          __PRETTY_FUNCTION__);
-  LOGE("{}", msg);
-  return mozilla::Err(Error{std::move(msg)});
+    aLib->ggml_backend_free(backend);
+    return true;
+  }();
+  return sUsable;
 }
 
 LlamaBackend::~LlamaBackend() {
@@ -279,15 +146,26 @@ ResultStatus LlamaBackend::Reinitialize(const LlamaModelOptions& aOptions,
 
   
   llama_model_params modelParams = mLib->llama_model_default_params();
+  modelParams.n_gpu_layers = aOptions.mNGpuLayers;
+  if (modelParams.n_gpu_layers > 0 && !GpuOffloadUsable(mLib)) {
+    LOGW(
+        "GPU offload was requested but no usable GPU backend is available "
+        "(none "
+        "present, or it failed to initialize); falling back to CPU.");
+    modelParams.n_gpu_layers = 0;
+  }
   modelParams.use_mmap = aOptions.mUseMmap;
   modelParams.use_mlock = aOptions.mUseMlock;
   modelParams.check_tensors = aOptions.mCheckTensors;
-  mDevice.Truncate();
-  mDeviceKind = dom::HWInferenceDeviceKind::Cpu;
 
-  auto loaded = LoadOnFirstDevice(aOptions, aFp, modelParams);
-  if (loaded.isErr()) {
-    return loaded;
+  mModel.reset(mLib->llama_model_load_from_file_handle(aFp, modelParams));
+
+  if (!mModel) {
+    auto msg =
+        nsFmtCString("{}: Unable to load the model during initialization",
+                     __PRETTY_FUNCTION__);
+    LOGE("{}", msg);
+    return mozilla::Err(Error{std::move(msg)});
   }
 
   
@@ -331,15 +209,12 @@ ResultStatus LlamaBackend::ReinitializeContext(
 
   ctxParams.type_k = GgmlTypeFromKVCacheDtype(aOptions.mKCacheDtype);
   ctxParams.type_v = GgmlTypeFromKVCacheDtype(aOptions.mVCacheDtype);
-  
-  const bool onAccelerator = mDeviceKind != dom::HWInferenceDeviceKind::Cpu;
-  ctxParams.offload_kqv = onAccelerator;
+  ctxParams.offload_kqv = aOptions.mOffloadKqv;
   ctxParams.flash_attn_type = aOptions.mFlashAttn
                                   ? LLAMA_FLASH_ATTN_TYPE_ENABLED
                                   : LLAMA_FLASH_ATTN_TYPE_DISABLED;
   ctxParams.no_perf = aOptions.mNoPerf;
-  
-  ctxParams.op_offload = onAccelerator;
+  ctxParams.op_offload = aOptions.mOpOffload;
   ctxParams.swa_full = aOptions.mSwaFull;
 
   
