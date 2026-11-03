@@ -6,6 +6,9 @@ const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
 );
+const { ContentClassifierTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/ContentClassifierTestUtils.sys.mjs"
+);
 
 const TEST_DOMAIN = "https://example.net/";
 const TEST_BLOCKED_3RD_PARTY_DOMAIN = "https://example.org/";
@@ -72,28 +75,7 @@ async function assertScriptLoaded(browser, domain, msg) {
 
 
 async function makeListRecordFromContent(id, name, content) {
-  let encoder = new TextEncoder();
-  let bytes = encoder.encode(content);
-  let blob = new Blob([bytes]);
-  let buffer = await blob.arrayBuffer();
-  let hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-  let hashArray = Array.from(new Uint8Array(hashBuffer));
-  let hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-  return {
-    record: {
-      id,
-      Name: name,
-      last_modified: Date.now(),
-      attachment: {
-        hash,
-        size: bytes.length,
-        filename: name + ".txt",
-        location: "main-workspace/content-classifier-lists/" + id + ".txt",
-        mimetype: "text/plain",
-      },
-    },
-    blob,
-  };
+  return ContentClassifierTestUtils.makeListRecord(id, name, content);
 }
 
 async function makeListRecord(id, name, rules) {
@@ -103,25 +85,7 @@ async function makeListRecord(id, name, rules) {
 
 
 async function populateMultipleRS(db, lists) {
-  let records = [];
-  let attachments = [];
-  for (let entry of lists) {
-    let { id, name } = entry;
-    let made = entry.content
-      ? await makeListRecordFromContent(id, name, entry.content)
-      : await makeListRecord(id, name, entry.rules);
-    records.push(made.record);
-    attachments.push({
-      id: made.record.id,
-      record: made.record,
-      blob: made.blob,
-    });
-  }
-  await db.importChanges({}, Date.now(), records, { clear: true });
-  for (let { id, record, blob } of attachments) {
-    await db.saveAttachment(id, { record, blob });
-  }
-  return records;
+  return ContentClassifierTestUtils.publishLists(lists);
 }
 
 async function populateRS(db, id, name, rules) {
@@ -129,86 +93,10 @@ async function populateRS(db, id, name, rules) {
   return record;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function waitForListsSettled({
-  quietMs = 0,
-  minNotifies = 0,
-  timeoutMs = 30000,
-} = {}) {
-  return new Promise(resolve => {
-    let quietTimer;
-    let deadlineTimer;
-    let notifies = 0;
-
-    function finish() {
-      clearTimeout(quietTimer);
-      clearTimeout(deadlineTimer);
-      Services.obs.removeObserver(observer, LISTS_LOADED_TOPIC);
-      resolve();
-    }
-
-    
-    
-    
-    function maybeSettle() {
-      if (notifies < minNotifies) {
-        return;
-      }
-      if (!quietMs) {
-        finish();
-        return;
-      }
-      clearTimeout(quietTimer);
-      quietTimer = setTimeout(finish, quietMs);
-    }
-
-    let observer = () => {
-      notifies++;
-      maybeSettle();
-    };
-
-    Services.obs.addObserver(observer, LISTS_LOADED_TOPIC);
-
-    
-    
-    maybeSettle();
-
-    deadlineTimer = setTimeout(() => {
-      if (notifies < minNotifies) {
-        info(
-          `waitForListsSettled: timed out after ${timeoutMs}ms with ` +
-            `${notifies}/${minNotifies} notification(s); resolving anyway`
-        );
-      }
-      finish();
-    }, timeoutMs);
+async function waitForListsSettled(options = {}) {
+  return ContentClassifierTestUtils.waitForListsSettled({
+    minNotifies: 0,
+    ...options,
   });
 }
 
@@ -216,11 +104,7 @@ async function waitForListsSettled({
 
 
 async function syncAndWaitForLists(client, records) {
-  let settled = waitForListsSettled({ minNotifies: 1 });
-  await client.emit("sync", {
-    data: { created: records, updated: [], deleted: [] },
-  });
-  await settled;
+  return ContentClassifierTestUtils.syncLists(records);
 }
 
 
