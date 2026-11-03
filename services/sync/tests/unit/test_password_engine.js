@@ -46,6 +46,18 @@ add_task(async function setup() {
   await Service.engineManager.unregister("extension-storage");
 });
 
+add_task(async function test_sync_id() {
+  _("The sync ID is read from the logins store it's written to");
+  let engine = Service.engineManager.get("passwords");
+  try {
+    let syncID = await engine.resetLocalSyncID();
+    Assert.ok(syncID);
+    Assert.equal(await engine.getSyncID(), syncID);
+  } finally {
+    await cleanup(engine);
+  }
+});
+
 add_task(async function test_ignored_fields() {
   _("Only changes to syncable fields should be tracked");
 
@@ -377,7 +389,7 @@ add_task(async function test_sync_outgoing() {
     
     _("Remove the login");
     equal(collection.count(), 1);
-    equal(Services.logins.countLogins("", "", ""), 2);
+    equal(await Services.logins.countLoginsAsync("", "", ""), 2);
     equal((await Services.logins.getAllLogins()).length, 2);
     ok(await engine._store.itemExists(guid));
 
@@ -405,7 +417,7 @@ add_task(async function test_sync_outgoing() {
     equal(Object.keys(await engine.getChangedIDs()), 0);
 
     
-    equal(Services.logins.countLogins("", "", ""), 1);
+    equal(await Services.logins.countLoginsAsync("", "", ""), 1);
     equal((await Services.logins.getAllLogins()).length, 1);
     ok(!(await engine._store.itemExists(guid)));
 
