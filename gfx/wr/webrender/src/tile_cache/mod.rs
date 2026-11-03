@@ -601,7 +601,7 @@ impl Tile {
             &state.composite_state.compositor_kind,
             frame_context.config.gpu_supports_render_target_partial_update,
         );
-        let supports_simple_prims = !matches!(state.composite_state.compositor_kind, CompositorKind::Native { .. });
+        let supports_simple_prims = !state.composite_state.compositor_kind.uses_native_tiles();
 
         
         
@@ -670,21 +670,18 @@ impl Tile {
                     
                     
                     
-                    let descriptor = match state.composite_state.compositor_kind {
-                        CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
-                            
-                            
-                            SurfaceTextureDescriptor::TextureCache {
-                                handle: None,
-                            }
+                    let descriptor = if state.composite_state.compositor_kind.uses_native_tiles() {
+                        
+                        
+                        
+                        SurfaceTextureDescriptor::Native {
+                            id: None,
                         }
-                        CompositorKind::Native { .. } => {
-                            
-                            
-                            
-                            SurfaceTextureDescriptor::Native {
-                                id: None,
-                            }
+                    } else {
+                        
+                        
+                        SurfaceTextureDescriptor::TextureCache {
+                            handle: None,
                         }
                     };
 
@@ -1164,13 +1161,9 @@ impl TileCacheInstance {
         compositor_kind: &CompositorKind,
         root_spatial_node_index: SpatialNodeIndex,
     ) -> bool {
-        match compositor_kind {
-            CompositorKind::Layer { .. } => true,
-            CompositorKind::Native { .. } | CompositorKind::Draw { .. } => {
-                
-                self.spatial_node_index == root_spatial_node_index
-            }
-        }
+        compositor_kind.culls_all_tiles() ||
+            
+            self.spatial_node_index == root_spatial_node_index
     }
 
     
@@ -1714,7 +1707,7 @@ impl TileCacheInstance {
                 
                 
                 
-                if let CompositorKind::Native { .. } = frame_state.composite_state.compositor_kind {
+                if frame_state.composite_state.compositor_kind.uses_native_tiles() {
                     for tile in old_tiles.values_mut() {
                         
                         
@@ -1787,7 +1780,7 @@ impl TileCacheInstance {
                 
                 if prim_clip_chain.needs_mask {
                     let mut is_supported_rounded_rect = false;
-                    if let CompositorKind::Layer { .. } = composite_state.compositor_kind {
+                    if composite_state.compositor_kind.supports_rounded_clip_promotion() {
                         if prim_clip_chain.clips_range.count == 1 && self.compositor_clip.is_none() {
                             let clip_instance = clip_store.get_instance_from_range(&prim_clip_chain.clips_range, 0);
                             let clip_node = &data_stores.clip[clip_instance.handle];
@@ -2219,12 +2212,8 @@ impl TileCacheInstance {
         
         
         
-        let (native_surface_id, update_params) = match composite_state.compositor_kind {
-            CompositorKind::Draw { .. } | CompositorKind::Layer { .. } => {
-                (None, None)
-            }
-            CompositorKind::Native { .. } => {
-                let native_surface_size = surface_size.to_i32();
+        let (native_surface_id, update_params) = if composite_state.compositor_kind.uses_native_tiles() {
+            let native_surface_size = surface_size.to_i32();
 
                 let key = ExternalNativeSurfaceKey {
                     image_keys: *api_keys,
@@ -2306,7 +2295,8 @@ impl TileCacheInstance {
                 };
 
                 (Some(native_surface.native_surface_id), update_params)
-            }
+        } else {
+            (None, None)
         };
 
         let descriptor = ExternalSurfaceDescriptor {
