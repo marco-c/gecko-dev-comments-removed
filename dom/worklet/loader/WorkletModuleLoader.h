@@ -44,9 +44,10 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
   WorkletModuleLoader(WorkletScriptLoader* aScriptLoader,
                       nsIGlobalObject* aGlobalObject);
 
-  void InsertRequest(nsIURI* aURI, JS::loader::ModuleLoadRequest* aRequest);
-  void RemoveRequest(nsIURI* aURI);
-  JS::loader::ModuleLoadRequest* GetRequest(nsIURI* aURI) const;
+  void InsertRequest(JS::loader::ModuleLoadRequest* aRequest);
+  void RemoveRequest(nsIURI* aURI, JS::ModuleType aModuleType);
+  JS::loader::ModuleLoadRequest* GetRequest(nsIURI* aURI,
+                                            JS::ModuleType aModuleType) const;
 
   bool HasSetLocalizedStrings() const { return !mLocalizedStrs.IsEmpty(); }
   void SetLocalizedStrings(nsTArray<nsString>&& aStrings) {
@@ -105,7 +106,7 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
 
   
   
-  nsRefPtrHashtable<nsURIHashKey, JS::loader::ModuleLoadRequest>
+  nsRefPtrHashtable<JS::loader::ModuleMapKey, JS::loader::ModuleLoadRequest>
       mFetchingRequests;
 
   
