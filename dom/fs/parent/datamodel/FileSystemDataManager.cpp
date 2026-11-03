@@ -138,6 +138,9 @@ Result<ResultConnection, QMResult> GetStorageConnection(
                     OpenDatabaseWithFileURL, dbFileUrl, ""_ns,
                     mozIStorageService::CONNECTION_DEFAULT)));
 
+  QM_TRY(QM_TO_RESULT(
+      connection->ExecuteSimpleSQL("PRAGMA foreign_keys = ON;"_ns)));
+
   ResultConnection result(connection);
 
   if (aMaybeCipherKey) {
@@ -747,6 +750,13 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
 
               default:
                 break;
+            }
+
+            
+            
+            if (self->mDatabaseManager) {
+              QM_WARNONLY_TRY(QM_TO_RESULT(
+                  self->mDatabaseManager->RemoveFileIdsWithoutMainFile()));
             }
 
             return BoolPromise::CreateAndResolve(true, __func__);

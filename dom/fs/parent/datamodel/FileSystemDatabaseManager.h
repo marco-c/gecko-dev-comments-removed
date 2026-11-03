@@ -220,6 +220,14 @@ class FileSystemDatabaseManager {
   
 
 
+
+
+
+  virtual nsresult RemoveFileIdsWithoutMainFile() = 0;
+
+  
+
+
   virtual void Close() = 0;
 
   
