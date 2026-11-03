@@ -1513,6 +1513,11 @@ void ContentClassifierService::ProcessListChanges(
       uint64_t& v = mFeatureVersions.LookupOrInsert(feature->mName);
       featureVersions.AppendElement(++v);
     }
+
+    
+    
+    
+    PopulateAllActiveEnginesFromPreferenceSnapshot(snapshot);
   }
 
   UpdateFeatures(std::move(toUpdate), std::move(featureVersions), generation,
