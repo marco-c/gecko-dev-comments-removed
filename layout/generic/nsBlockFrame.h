@@ -384,17 +384,6 @@ class nsBlockFrame : public nsContainerFrame {
 
   static nsBlockFrame* GetNearestAncestorBlock(nsIFrame* aCandidate);
 
-  
-
-
-
-
-
-
-
-  static bool StyleTrimsChildBStartMargins(const nsIFrame* aFrame);
-  static bool StyleTrimsChildBEndMargins(const nsIFrame* aFrame);
-
   struct FrameLines {
     nsLineList mLines;
     nsFrameList mFrames;
