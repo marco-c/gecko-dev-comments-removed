@@ -11,10 +11,6 @@
 
 namespace mozilla::dom {
 
-class ContentParent;
-class ThreadsafeContentParentHandle;
-class WorkerDebuggerManager;
-
 class RemoteWorkerDebuggerManagerParent final
     : public PRemoteWorkerDebuggerManagerParent {
   friend class PRemoteWorkerDebuggerManagerParent;
@@ -23,13 +19,10 @@ class RemoteWorkerDebuggerManagerParent final
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteWorkerDebuggerManagerParent,
                                         final)
 
-  
   static RefPtr<RemoteWorkerDebuggerManagerParent> CreateForProcess(
-      ContentParent* aProcess,
       mozilla::ipc::Endpoint<PRemoteWorkerDebuggerManagerChild>* aChildEp);
 
-  explicit RemoteWorkerDebuggerManagerParent(
-      ThreadsafeContentParentHandle* aProcess);
+  RemoteWorkerDebuggerManagerParent();
 
   mozilla::ipc::IPCResult RecvRegister(
       const RemoteWorkerDebuggerInfo& aDebuggerInfo,
@@ -37,13 +30,6 @@ class RemoteWorkerDebuggerManagerParent final
 
  private:
   ~RemoteWorkerDebuggerManagerParent();
-
-  bool ValidateDebuggerInfo(const RemoteWorkerDebuggerInfo& aDebuggerInfo);
-  bool IsIdUsableByThisProcess(WorkerDebuggerManager* aManager,
-                               const nsString& aId);
-
-  
-  const RefPtr<ThreadsafeContentParentHandle> mProcess;
 };
 
 }  
