@@ -574,7 +574,12 @@ class TouchBlockState : public CancelableBlockState {
 
   uint32_t GetActiveTouchCount() const;
 
-  void DispatchEvent(const InputData& aEvent) const override;
+  
+
+
+
+  void UpdateTouchCounter(const MultiTouchInput& aInput) const;
+
   bool MustStayActive() override;
   const char* Type() override;
   TimeDuration GetTimeSinceBlockStart() const;
