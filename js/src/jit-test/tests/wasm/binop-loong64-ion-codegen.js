@@ -284,8 +284,7 @@ let quint32 =
 codegenTestLOONG64_adhoc(
     quint32,
     "f",
-    `slli.w          \\$t6, \\$a0, 0x2
-     add.w           \\$a0, \\$t6, \\$a0`);
+    `alsl.w          \\$a0, \\$a0, \\$a0, 0x2`);
 assertEq(wasmEvalText(quint32).exports.f(-37), -185)
 assertEq(wasmEvalText(quint32).exports.f(42), 210)
 
@@ -299,7 +298,6 @@ codegenTestLOONG64_adhoc(
     `alsl.d          \\$a0, \\$a0, \\$a0, 0x2`);
 assertEq(wasmEvalText(quint64).exports.f(-37000000000n), -185000000000n)
 assertEq(wasmEvalText(quint64).exports.f(42000000000n), 210000000000n)
-
 
 
 
@@ -323,8 +321,9 @@ let sext64 =
 codegenTestLOONG64_adhoc(
     sext64,
     "f",
-    `addi.w          \\$t6, \\$zero, 6
-     mul.d           \\$a0, \\$a0, \\$t6`);
+    `slli.d          \\$t6, \\$a0, 0x1
+     add.d           \\$a0, \\$t6, \\$a0
+     slli.d          \\$a0, \\$a0, 0x1`);
 assertEq(wasmEvalText(sext64).exports.f(-37000000000n), -222000000000n)
 assertEq(wasmEvalText(sext64).exports.f(42000000000n), 252000000000n)
 
@@ -337,9 +336,8 @@ let uint32max64 =
 codegenTestLOONG64_adhoc(
     uint32max64,
     "f",
-    `or              \\$t6, \\$a0, \\$zero
-     slli.d          \\$a0, \\$a0, 0x20
-     sub.d           \\$a0, \\$a0, \\$t6`);
+    `slli.d          \\$t6, \\$a0, 0x20
+     sub.d           \\$a0, \\$t6, \\$a0`);
 assertEq(wasmEvalText(uint32max64).exports.f(-37000000000n), BigInt.asIntN(64, -37000000000n * 0xffffffffn))
 assertEq(wasmEvalText(uint32max64).exports.f(42000000000n), BigInt.asIntN(64, 42000000000n * 0xffffffffn))
 
