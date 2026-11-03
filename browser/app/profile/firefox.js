@@ -919,7 +919,11 @@ pref("browser.urlbar.lastUrlbarSearchSeconds", 0);
 
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.resultExplanations.featureGate", true);
+#else
 pref("browser.urlbar.resultExplanations.featureGate", false);
+#endif
 
 pref("browser.altClickSave", false);
 
@@ -2526,6 +2530,14 @@ pref("browser.smartwindow.conversationHistory.logLevel", "Error");
 pref("browser.smartwindow.conversationStore.logLevel", "Error");
 pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 pref("browser.smartwindow.telemetryLogLevel", "Error");
+
+pref("browser.widgets.generated.enabled", false);
+pref("browser.widgets.generated.loglevel", "Warn");
+pref("browser.widgets.generated.endpoint", "");
+pref("browser.widgets.generated.apiKey", "");
+pref("browser.widgets.generated.model", "");
+pref("browser.widgets.generated.maxTurns", 20);
+pref("browser.widgets.generated.localPrompt", false);
 
 
 pref("security.mixed_content.block_active_content", true);

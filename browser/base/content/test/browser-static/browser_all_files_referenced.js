@@ -348,6 +348,9 @@ var allowlist = [
   {
     file: "moz-src:///browser/components/backup/resources/CookiesBackupResource.sys.mjs",
   },
+
+  
+  { file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
