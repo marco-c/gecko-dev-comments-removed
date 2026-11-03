@@ -6,7 +6,12 @@ export type GetTextOptions = Partial<{
   
   
   
+  
+  
   sufficientLength: number;
+  
+  
+  sufficientTranscriptLength: number;
   
   justViewport: boolean;
   
