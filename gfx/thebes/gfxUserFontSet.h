@@ -617,7 +617,24 @@ class gfxUserFontEntry : public gfxFontEntry {
 
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
-  gfxFontEntry* GetPlatformFontEntry() const { return mPlatformFontEntry; }
+  void SetPlatformFontEntry(RefPtr<gfxFontEntry>&& aFontEntry)
+      MOZ_EXCLUDES(mLock) {
+    mozilla::AutoWriteLock lock(mLock);
+    mPlatformFontEntry = std::move(aFontEntry);
+  }
+
+  already_AddRefed<gfxFontEntry> GetPlatformFontEntry() const
+      MOZ_EXCLUDES(mLock) {
+    mozilla::AutoReadLock lock(mLock);
+    return do_AddRef(mPlatformFontEntry);
+  }
+
+  
+  bool PlatformFontEntryEquals(const gfxFontEntry* aOther) const
+      MOZ_EXCLUDES(mLock) {
+    mozilla::AutoReadLock lock(mLock);
+    return mPlatformFontEntry == aOther;
+  }
 
   
   UserFontLoadState LoadState() const { return mUserFontLoadState; }
@@ -819,7 +836,7 @@ class gfxUserFontEntry : public gfxFontEntry {
   bool mUnsupportedFormat;
   mozilla::StyleFontDisplay mFontDisplay;  
 
-  RefPtr<gfxFontEntry> mPlatformFontEntry;
+  RefPtr<gfxFontEntry> mPlatformFontEntry MOZ_GUARDED_BY(mLock);
   nsTArray<gfxFontFaceSrc> mSrcList;
   uint32_t mCurrentSrcIndex;  
   

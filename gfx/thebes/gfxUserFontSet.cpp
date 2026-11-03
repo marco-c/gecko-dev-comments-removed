@@ -521,7 +521,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
         
         StoreUserFontData(fe, mCurrentSrcIndex, false, nsCString(), nullptr, 0,
                           gfxUserFontData::kUnknownCompression, nullptr);
-        mPlatformFontEntry = fe.forget();
+        SetPlatformFontEntry(std::move(fe));
         SetLoadState(STATUS_LOADED);
         glean::webfont::srctype.AccumulateSingleSample(currSrc.mSourceType + 1);
         return;
@@ -554,10 +554,10 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
 
         
         if (canCheckCache) {
-          gfxFontEntry* fe =
+          RefPtr<gfxFontEntry> fe =
               gfxUserFontSet::UserFontCache::GetFont(currSrc, *this);
           if (fe) {
-            mPlatformFontEntry = fe;
+            SetPlatformFontEntry(std::move(fe));
             SetLoadState(STATUS_LOADED);
             LOG(
                 ("userfonts (%p) [src %d] "
@@ -877,7 +877,7 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
     gfxUserFontSet::UserFontCache::CacheFont(fe);
   }
 
-  mPlatformFontEntry = std::move(fe);
+  SetPlatformFontEntry(std::move(fe));
   SetLoadState(STATUS_LOADED);
 
   return true;
@@ -1149,19 +1149,18 @@ void gfxUserFontSet::ForgetLocalFace(gfxUserFontFamily* aFontFamily) {
     auto ufe = static_cast<gfxUserFontEntry*>(f.get());
     
     
-    if (ufe->GetPlatformFontEntry() &&
-        ufe->GetPlatformFontEntry()->IsLocalUserFont()) {
+    RefPtr pfe = ufe->GetPlatformFontEntry();
+    if (pfe && pfe->IsLocalUserFont()) {
       
       
       
-      gfxFontEntry* pfe = ufe->GetPlatformFontEntry();
       {
         AutoWriteLock lock(pfe->mLock);
         pfe->mShmemCharacterMap = nullptr;
         pfe->mShmemFace = nullptr;
         pfe->mShmemFamily = nullptr;
       }
-      ufe->mPlatformFontEntry = nullptr;
+      ufe->SetPlatformFontEntry(nullptr);
     }
     
     
