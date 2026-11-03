@@ -14,6 +14,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
+#include "mozilla/WeakPtr.h"
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/LocationBase.h"
@@ -380,7 +381,9 @@ struct EmbedderColorSchemes {
 
 
 
-class BrowsingContext : public nsILoadContext, public nsWrapperCache {
+class BrowsingContext : public nsILoadContext,
+                        public nsWrapperCache,
+                        public SupportsWeakPtr {
   MOZ_DECL_SYNCED_CONTEXT(BrowsingContext, MOZ_EACH_BC_FIELD)
   NS_INLINE_DECL_STATIC_IID(NS_DOM_BROWSINGCONTEXT_IID)
 
@@ -1515,6 +1518,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
     }
   }
 
+  static void UnregisterBrowserId(BrowsingContext* aBrowsingContext);
+
   
   
   
@@ -1541,6 +1546,10 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
   
   const uint64_t mBrowsingContextId;
+
+  
+  
+  Maybe<uint64_t> mCurrentTopBrowserIdKey;
 
   RefPtr<BrowsingContextGroup> mGroup;
   RefPtr<WindowContext> mParentWindow;

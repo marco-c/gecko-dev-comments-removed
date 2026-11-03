@@ -174,23 +174,27 @@ static LazyLogModule gBrowsingContextLog("BrowsingContext");
 static LazyLogModule gBrowsingContextSyncLog("BrowsingContextSync");
 
 typedef nsTHashMap<nsUint64HashKey, BrowsingContext*> BrowsingContextMap;
+using CurrentTopByBrowserIdMap =
+    nsTHashMap<nsUint64HashKey, WeakPtr<BrowsingContext>>;
 
 
 static StaticAutoPtr<BrowsingContextMap> sBrowsingContexts;
 
-static StaticAutoPtr<BrowsingContextMap> sCurrentTopByBrowserId;
+static StaticAutoPtr<CurrentTopByBrowserIdMap> sCurrentTopByBrowserId;
 
 static bool gIPCEnabledAnnotation = false;
 static bool gFissionEnabledAnnotation = false;
 
-static void UnregisterBrowserId(BrowsingContext* aBrowsingContext) {
-  if (!aBrowsingContext->IsTopContent() || !sCurrentTopByBrowserId) {
+
+void BrowsingContext::UnregisterBrowserId(BrowsingContext* aBrowsingContext) {
+  const Maybe<uint64_t> key =
+      std::move(aBrowsingContext->mCurrentTopBrowserIdKey);
+  if (!key || !sCurrentTopByBrowserId) {
     return;
   }
 
   
-  auto browserIdEntry =
-      sCurrentTopByBrowserId->Lookup(aBrowsingContext->BrowserId());
+  auto browserIdEntry = sCurrentTopByBrowserId->Lookup(*key);
   if (browserIdEntry && browserIdEntry.Data() == aBrowsingContext) {
     browserIdEntry.Remove();
   }
@@ -198,10 +202,7 @@ static void UnregisterBrowserId(BrowsingContext* aBrowsingContext) {
 
 static void Register(BrowsingContext* aBrowsingContext) {
   sBrowsingContexts->InsertOrUpdate(aBrowsingContext->Id(), aBrowsingContext);
-  if (aBrowsingContext->IsTopContent()) {
-    sCurrentTopByBrowserId->InsertOrUpdate(aBrowsingContext->BrowserId(),
-                                           aBrowsingContext);
-  }
+  BrowsingContext::UpdateCurrentTopByBrowserId(aBrowsingContext);
 
   aBrowsingContext->Group()->Register(aBrowsingContext);
 }
@@ -209,10 +210,16 @@ static void Register(BrowsingContext* aBrowsingContext) {
 
 void BrowsingContext::UpdateCurrentTopByBrowserId(
     BrowsingContext* aNewBrowsingContext) {
-  if (aNewBrowsingContext->IsTopContent()) {
-    sCurrentTopByBrowserId->InsertOrUpdate(aNewBrowsingContext->BrowserId(),
-                                           aNewBrowsingContext);
+  if (!aNewBrowsingContext->IsTopContent()) {
+    return;
   }
+
+  const uint64_t browserId = aNewBrowsingContext->BrowserId();
+  if (aNewBrowsingContext->mCurrentTopBrowserIdKey != Some(browserId)) {
+    UnregisterBrowserId(aNewBrowsingContext);
+  }
+  sCurrentTopByBrowserId->InsertOrUpdate(browserId, aNewBrowsingContext);
+  aNewBrowsingContext->mCurrentTopBrowserIdKey = Some(browserId);
 }
 
 BrowsingContext* BrowsingContext::GetParent() const {
@@ -267,7 +274,7 @@ WindowContext* BrowsingContext::GetTopWindowContext() const {
 void BrowsingContext::Init() {
   if (!sBrowsingContexts) {
     sBrowsingContexts = new BrowsingContextMap();
-    sCurrentTopByBrowserId = new BrowsingContextMap();
+    sCurrentTopByBrowserId = new CurrentTopByBrowserIdMap();
     ClearOnShutdown(&sBrowsingContexts);
     ClearOnShutdown(&sCurrentTopByBrowserId);
     CrashReporter::RegisterAnnotationBool(
@@ -299,7 +306,7 @@ already_AddRefed<BrowsingContext> BrowsingContext::GetCurrentTopByBrowserId(
   
   
   if (sCurrentTopByBrowserId) {
-    return do_AddRef(sCurrentTopByBrowserId->Get(aBrowserId));
+    return do_AddRef(sCurrentTopByBrowserId->Get(aBrowserId).get());
   }
 
   return nullptr;
@@ -2109,6 +2116,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(BrowsingContext)
     sBrowsingContexts->Remove(tmp->Id());
   }
   UnregisterBrowserId(tmp);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
 
   if (tmp->GetIsPopupSpam()) {
     PopupBlocker::UnregisterOpenPopupSpam();
