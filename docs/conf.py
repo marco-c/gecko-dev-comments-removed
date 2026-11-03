@@ -72,26 +72,34 @@ myst_enable_extensions = [
 mermaid_width = "fit-content"
 mermaid_height = "auto"
 
+mermaid_version = "12.2.0"
+
 
 
 
 mermaid_init_config = {
     "startOnLoad": False,
+    
+    
+    
+    "layout": "dagre",
+    "look": "classic",
     "themeVariables": {
         "fontSize": "18px",
     },
     
     
-    "flowchart": {"useMaxWidth": False},
+    "flowchart": {"useMaxWidth": False, "wrappingWidth": 200, "minNodeWidth": 0},
     "sequence": {"useMaxWidth": False},
     "class": {"useMaxWidth": False},
-    "state": {"useMaxWidth": False},
+    "state": {"useMaxWidth": False, "wrappingWidth": 200, "minNodeWidth": 0},
     "gantt": {"useMaxWidth": False},
     "er": {"useMaxWidth": False},
 }
 
 
 mermaid_include_zenuml = True
+mermaid_zenuml_version = "1.0.1"
 
 
 
