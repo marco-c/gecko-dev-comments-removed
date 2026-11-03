@@ -14,7 +14,6 @@ const BASE_CONTENT = {
         email: {
           link_text: "Email yourself a link",
         },
-        marketplace_buttons: ["ios", "android"],
       },
     },
   },
@@ -34,42 +33,9 @@ add_task(async function test_aboutwelcome_mobile_downloads_all() {
     browser,
     "renders screen with all mobile download elements",
     
-    [
-      `img.qr-code-image[alt="${ALT_TEXT}"]`,
-      "ul.mobile-download-buttons",
-      "li.android",
-      "li.ios",
-      "button.email-link",
-    ]
+    [`img.qr-code-image[alt="${ALT_TEXT}"]`, "button.email-link"]
   );
 });
-
-
-
-
-
-add_task(
-  async function test_aboutwelcome_mobile_downloads_qr_and_marketplace() {
-    const SCREEN_CONTENT = structuredClone(BASE_CONTENT);
-    delete SCREEN_CONTENT.content.tiles.data.email;
-    const TEST_JSON = JSON.stringify([SCREEN_CONTENT]);
-    let browser = await openAboutWelcome(TEST_JSON);
-
-    await test_screen_content(
-      browser,
-      "renders screen with QR code and marketplace badges",
-      
-      [
-        `img.qr-code-image[alt="${ALT_TEXT}"]`,
-        "ul.mobile-download-buttons",
-        "li.android",
-        "li.ios",
-      ],
-      
-      [`button.email-link`]
-    );
-  }
-);
 
 
 
@@ -80,7 +46,6 @@ add_task(async function test_aboutwelcome_mobile_downloads_qr() {
   const QR_CODE_SRC = SCREEN_CONTENT.content.tiles.data.QR_code.image_url;
 
   delete SCREEN_CONTENT.content.tiles.data.email;
-  delete SCREEN_CONTENT.content.tiles.data.marketplace_buttons;
   const TEST_JSON = JSON.stringify([SCREEN_CONTENT]);
   let browser = await openAboutWelcome(TEST_JSON);
 
@@ -90,6 +55,6 @@ add_task(async function test_aboutwelcome_mobile_downloads_qr() {
     
     [`img.qr-code-image[alt="${ALT_TEXT}"][src="${QR_CODE_SRC}"]`],
     
-    ["button.email-link", "li.android", "li.ios"]
+    ["button.email-link"]
   );
 });
