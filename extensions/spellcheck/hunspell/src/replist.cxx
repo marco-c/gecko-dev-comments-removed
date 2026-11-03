@@ -87,12 +87,12 @@ RepList::~RepList() {
   }
 }
 
-int RepList::find(const char* word, size_t max_len) {
-  int p1 = 0;
-  int p2 = dat.size() - 1;
-  int ret = -1;
+ptrdiff_t RepList::find(const char* word, size_t max_len) {
+  ptrdiff_t p1 = 0;
+  ptrdiff_t p2 = dat.size() - 1;
+  ptrdiff_t ret = -1;
   while (p1 <= p2) {
-    int m = ((unsigned)p1 + (unsigned)p2) >> 1;
+    ptrdiff_t m = (p1 + p2) >> 1;
     const std::string& pattern = dat[m]->pattern;
     
     
@@ -114,7 +114,7 @@ int RepList::find(const char* word, size_t max_len) {
   return ret;
 }
 
-std::string RepList::replace(const size_t wordlen, int ind, bool atstart) {
+std::string RepList::replace(const size_t wordlen, ptrdiff_t ind, bool atstart) {
   int type = atstart ? 1 : 0;
   if (wordlen == dat[ind]->pattern.size())
     type = atstart ? 3 : 2;
@@ -155,7 +155,7 @@ int RepList::add(const std::string& in_pat1, const std::string& pat2) {
   }
 
   
-  int m = find(pat1.c_str(), pat1.size());
+  ptrdiff_t m = find(pat1.c_str(), pat1.size());
   if (m >= 0 && dat[m]->pattern == pat1) {
     
     dat[m]->outstrings[type] = pat2;
@@ -194,7 +194,7 @@ bool RepList::conv(const std::string& in_word, std::string& dest, size_t maxlen)
 
   bool change = false;
   for (size_t i = 0; i < wordlen && dest.size() <= maxlen; ++i) {
-    int n = -1;
+    ptrdiff_t n = -1;
     std::string l;
 
     
@@ -202,7 +202,7 @@ bool RepList::conv(const std::string& in_word, std::string& dest, size_t maxlen)
     
     
     for (size_t max_len = wordlen - i; max_len > 0;) {
-      int m = find(word + i, max_len);
+      ptrdiff_t m = find(word + i, max_len);
       if (m < 0)
         break;
       l = replace(wordlen - i, m, i == 0);

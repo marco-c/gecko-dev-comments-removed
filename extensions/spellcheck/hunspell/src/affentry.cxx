@@ -268,8 +268,8 @@ bool PfxEntry::applies_to(const struct hentry* he,
 
 
 struct hentry* PfxEntry::checkword(const std::string& word,
-                                   int start,
-                                   int len,
+                                   size_t start,
+                                   size_t len,
                                    char in_compound,
                                    const FLAG needflag,
                                    AffixScratch& scratch) {
@@ -285,7 +285,10 @@ struct hentry* PfxEntry::checkword(const std::string& word,
   
   
 
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return nullptr;
+
+  size_t tmpl = len - appnd.size(); 
 
   if (tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) {
     
@@ -352,15 +355,15 @@ struct hentry* PfxEntry::checkword(const std::string& word,
     }
   } else if (t) {
     trace(*t, "test length have=%d -> fail, nothing would be left of the word",
-          tmpl);
+          static_cast<int>(tmpl));
   }
   return nullptr;
 }
 
 
 struct hentry* PfxEntry::check_twosfx(const std::string& word,
-                                      int start,
-                                      int len,
+                                      size_t start,
+                                      size_t len,
                                       char in_compound,
                                       const FLAG needflag,
                                       AffixScratch& scratch) {
@@ -369,7 +372,10 @@ struct hentry* PfxEntry::check_twosfx(const std::string& word,
   
   
 
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return nullptr;
+
+  size_t tmpl = len - appnd.size(); 
 
   if ((tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) &&
       (tmpl + strip.size() >= numconds)) {
@@ -409,8 +415,8 @@ struct hentry* PfxEntry::check_twosfx(const std::string& word,
 
 
 std::string PfxEntry::check_twosfx_morph(const std::string& word,
-                                         int start,
-                                         int len,
+                                         size_t start,
+                                         size_t len,
                                          char in_compound,
                                          const FLAG needflag,
                                          AffixScratch& scratch) {
@@ -419,7 +425,10 @@ std::string PfxEntry::check_twosfx_morph(const std::string& word,
   
   
   
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return result;
+
+  size_t tmpl = len - appnd.size(); 
 
   if ((tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) &&
       (tmpl + strip.size() >= numconds)) {
@@ -457,8 +466,8 @@ std::string PfxEntry::check_twosfx_morph(const std::string& word,
 
 
 std::string PfxEntry::check_morph(const std::string& word,
-                                  int start,
-                                  int len,
+                                  size_t start,
+                                  size_t len,
                                   char in_compound,
                                   const FLAG needflag,
                                   AffixScratch& scratch) {
@@ -469,7 +478,10 @@ std::string PfxEntry::check_morph(const std::string& word,
   
   
 
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return result;
+
+  size_t tmpl = len - appnd.size(); 
 
   if ((tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) &&
       (tmpl + strip.size() >= numconds)) {
@@ -499,11 +511,7 @@ std::string PfxEntry::check_morph(const std::string& word,
               result.append(morphcode);
             } else
               result.append(getKey());
-            if (!HENTRY_FIND(he, MORPH_STEM)) {
-              result.push_back(MSEP_FLD);
-              result.append(MORPH_STEM);
-              result.append(HENTRY_WORD(he));
-            }
+            append_morph_stem(result, he, pmyMgr->get_complexprefixes());
             
             if (HENTRY_DATA(he)) {
               result.push_back(MSEP_FLD);
@@ -806,8 +814,8 @@ bool SfxEntry::applies_to(const struct hentry* he,
 
 
 struct hentry* SfxEntry::checkword(const std::string& word,
-                                   int start,
-                                   int len,
+                                   size_t start,
+                                   size_t len,
                                    int optflags,
                                    PfxEntry* ppfx,
                                    const FLAG cclass,
@@ -837,7 +845,10 @@ struct hentry* SfxEntry::checkword(const std::string& word,
   
   
 
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return nullptr;
+
+  size_t tmpl = len - appnd.size(); 
   
   
 
@@ -903,15 +914,15 @@ struct hentry* SfxEntry::checkword(const std::string& word,
     }
   } else if (t) {
     trace(*t, "test length have=%d need=%d -> fail, too little is left of the"
-              " word to test", tmpl, (int)numconds);
+              " word to test", static_cast<int>(tmpl), (int)numconds);
   }
   return nullptr;
 }
 
 
 struct hentry* SfxEntry::check_twosfx(const std::string& word,
-                                      int start,
-                                      int len,
+                                      size_t start,
+                                      size_t len,
                                       int optflags,
                                       PfxEntry* ppfx,
                                       const FLAG needflag,
@@ -929,7 +940,10 @@ struct hentry* SfxEntry::check_twosfx(const std::string& word,
   
   
 
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return nullptr;
+
+  size_t tmpl = len - appnd.size(); 
 
   if ((tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) &&
       (tmpl + strip.size() >= numconds)) {
@@ -938,7 +952,7 @@ struct hentry* SfxEntry::check_twosfx(const std::string& word,
     
 
     std::string& tmpword = scratch.sfx_check_twosfx;
-    tmpword.assign(word, start);
+    tmpword.assign(word, start, std::string::npos);
     tmpword.resize(tmpl);
     tmpword.append(strip);
     tmpl += strip.size();
@@ -974,8 +988,8 @@ struct hentry* SfxEntry::check_twosfx(const std::string& word,
 
 
 std::string SfxEntry::check_twosfx_morph(const std::string& word,
-                                         int start,
-                                         int len,
+                                         size_t start,
+                                         size_t len,
                                          int optflags,
                                          PfxEntry* ppfx,
                                          const FLAG needflag,
@@ -995,7 +1009,10 @@ std::string SfxEntry::check_twosfx_morph(const std::string& word,
   
   
 
-  int tmpl = len - appnd.size(); 
+  if (len < appnd.size())
+    return result;
+
+  size_t tmpl = len - appnd.size(); 
 
   if ((tmpl > 0 || (tmpl == 0 && pmyMgr->get_fullstrip())) &&
       (tmpl + strip.size() >= numconds)) {
@@ -1004,7 +1021,7 @@ std::string SfxEntry::check_twosfx_morph(const std::string& word,
     
 
     std::string& tmpword = scratch.sfx_check_twosfx;
-    tmpword.assign(word, start);
+    tmpword.assign(word, start, std::string::npos);
     tmpword.resize(tmpl);
     tmpword.append(strip);
     tmpl += strip.size();
@@ -1023,7 +1040,7 @@ std::string SfxEntry::check_twosfx_morph(const std::string& word,
       if (ppfx) {
         
         if ((contclass) && TESTAFF(contclass, ep->getFlag(), contclasslen)) {
-          std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, 0, nullptr, scratch, aflag, needflag);
+          std::string st = pmyMgr->second_suffix_check_morph(tmpword, 0, nullptr, scratch, aflag, needflag);
           if (!st.empty()) {
             if (ppfx->getMorph()) {
               result.append(ppfx->getMorph());
@@ -1033,15 +1050,14 @@ std::string SfxEntry::check_twosfx_morph(const std::string& word,
             mychomp(result);
           }
         } else {
-          std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, optflags, ppfx, scratch, aflag,
-                                                      needflag);
+          std::string st = pmyMgr->second_suffix_check_morph(tmpword, optflags, ppfx, scratch, aflag, needflag);
           if (!st.empty()) {
             result.append(st);
             mychomp(result);
           }
         }
       } else {
-        std::string st = pmyMgr->suffix_check_morph(tmpword, 0, tmpl, 0, nullptr, scratch, aflag, needflag);
+        std::string st = pmyMgr->second_suffix_check_morph(tmpword, 0, nullptr, scratch, aflag, needflag);
         if (!st.empty()) {
           result.append(st);
           mychomp(result);

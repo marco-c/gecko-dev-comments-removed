@@ -205,6 +205,9 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
   
 
+
+
+
   
 
   int add(const std::string& word);
