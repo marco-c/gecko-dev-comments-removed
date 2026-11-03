@@ -39,7 +39,7 @@ class RenderCompositorOGLSWGL : public RenderCompositorLayersSWGL {
   
   
   
-  bool UsePartialPresent() override { return true; }
+  bool UseWindowPartialPresent() override { return true; }
   bool RequestFullRender() override;
 
   void Pause() override;

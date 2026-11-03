@@ -329,10 +329,11 @@ pub enum CompositorConfig {
         
         
         
-        draw_previous_partial_present_regions: bool,
+        
+        uses_buffer_age: bool,
         
         
-        partial_present: Option<Box<dyn PartialPresentCompositor>>,
+        buffer_damage: Option<Box<dyn BufferDamageCompositor>>,
     },
     Layer {
         
@@ -361,13 +362,13 @@ impl CompositorConfig {
         }
     }
 
-    pub fn partial_present(&mut self) -> Option<&mut Box<dyn PartialPresentCompositor>> {
+    pub fn buffer_damage(&mut self) -> Option<&mut Box<dyn BufferDamageCompositor>> {
         match self {
             CompositorConfig::Native { .. } => {
                 None
             }
-            CompositorConfig::Draw { ref mut partial_present, .. } => {
-                partial_present.as_mut()
+            CompositorConfig::Draw { ref mut buffer_damage, .. } => {
+                buffer_damage.as_mut()
             }
             CompositorConfig::Layer { .. } => {
                 None
@@ -381,8 +382,8 @@ impl Default for CompositorConfig {
     fn default() -> Self {
         CompositorConfig::Draw {
             max_partial_present_rects: 0,
-            draw_previous_partial_present_regions: false,
-            partial_present: None,
+            uses_buffer_age: false,
+            buffer_damage: None,
         }
     }
 }
@@ -399,7 +400,7 @@ pub enum CompositorKind {
         
         max_partial_present_rects: usize,
         
-        draw_previous_partial_present_regions: bool,
+        uses_buffer_age: bool,
     },
     
     Layer {
@@ -417,7 +418,7 @@ impl Default for CompositorKind {
     fn default() -> Self {
         CompositorKind::Draw {
             max_partial_present_rects: 0,
-            draw_previous_partial_present_regions: false,
+            uses_buffer_age: false,
         }
     }
 }
@@ -436,8 +437,7 @@ pub enum SwapchainMode {
         
         max_partial_present_rects: usize,
         
-        
-        draw_previous_partial_present_regions: bool,
+        uses_buffer_age: bool,
     },
     
     
@@ -1796,7 +1796,8 @@ pub trait MappableCompositor: Compositor {
 
 
 
-pub trait PartialPresentCompositor {
+
+pub trait BufferDamageCompositor {
     
     
     

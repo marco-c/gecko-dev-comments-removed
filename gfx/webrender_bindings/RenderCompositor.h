@@ -212,10 +212,15 @@ class RenderCompositor {
   virtual void GetWindowProperties(WindowProperties* aProperties);
 
   
-  virtual bool UsePartialPresent() { return false; }
-  virtual bool RequestFullRender() { return false; }
+  
+  
   virtual uint32_t GetMaxPartialPresentRects() { return 0; }
-  virtual bool ShouldDrawPreviousPartialPresentRegions() { return false; }
+  
+  virtual bool UseWindowPartialPresent() { return false; }
+  virtual bool RequestFullRender() { return false; }
+  
+  
+  virtual bool ShouldUseBufferAge() { return false; }
   
   
   

@@ -207,7 +207,7 @@ RenderedFrameId RendererOGL::UpdateAndRender(
 
     fullRender = mCompositor->RequestFullRender();
     
-    if (mCompositor->UsePartialPresent() &&
+    if (mCompositor->UseWindowPartialPresent() &&
         (aReadbackBuffer.isSome() ||
          layers::ProfilerScreenshots::IsEnabled())) {
       fullRender = true;

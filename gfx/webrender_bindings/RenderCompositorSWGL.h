@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef MOZILLA_GFX_RENDERCOMPOSITOR_SWGL_H
 #define MOZILLA_GFX_RENDERCOMPOSITOR_SWGL_H
 
@@ -37,7 +35,7 @@ class RenderCompositorSWGL : public RenderCompositor {
                         const wr::DeviceIntRect* aOpaqueRects,
                         size_t aNumOpaqueRects) override;
 
-  bool UsePartialPresent() override { return true; }
+  bool UseWindowPartialPresent() override { return true; }
   bool RequestFullRender() override;
 
   void Pause() override;
