@@ -27,9 +27,6 @@ namespace mozilla {
 
 
 
-
-
-
 class ContentClassifierPrefMirror final {
  public:
   
