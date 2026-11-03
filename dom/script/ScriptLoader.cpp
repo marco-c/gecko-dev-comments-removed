@@ -3289,9 +3289,7 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
     return;
   }
 
-  bool isHTTPS = aRequest->URI()->SchemeIs("https");
-
-  if (!aRequest->URI()->SchemeIs("http") && !isHTTPS) {
+  if (!net::SchemeIsHttpOrHttps(aRequest->URI())) {
     LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: Unsupported scheme",
          aRequest));
     
@@ -3376,13 +3374,6 @@ void ScriptLoader::CalculateCacheFlag(ScriptLoadRequest* aRequest) {
   }
 
   if (mCache) {
-    if (!isHTTPS) {
-      LOG(("ScriptLoadRequest (%p): Bytecode-cache: Skip all: non-https",
-           aRequest));
-      aRequest->MarkNotCacheable();
-      return;
-    }
-
     if (mCache->IsLowMemory()) {
       
       
