@@ -3,6 +3,7 @@
 
 
 #include "HeadlessLookAndFeel.h"
+#include "mozilla/ServoTypes.h"
 #include "nsStyleConsts.h"
 
 namespace mozilla::widget {
@@ -153,10 +154,10 @@ nsresult HeadlessLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = 0;
       break;
     case IntID::PrimaryPointerCapabilities:
-      aResult = 0;
-      break;
     case IntID::AllPointerCapabilities:
-      aResult = 0;
+      
+      aResult = static_cast<int32_t>(PointerCapabilities::Fine |
+                                     PointerCapabilities::Hover);
       break;
     default:
       aResult = 0;
@@ -196,7 +197,7 @@ bool HeadlessLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
   
   aFontStyle.style = FontSlantStyle::NORMAL;
   aFontStyle.weight = FontWeight::NORMAL;
-  aFontStyle.stretch = FontStretch::NORMAL;
+  aFontStyle.width = FontWidth::NORMAL;
   aFontStyle.size = 14;
   aFontStyle.systemFont = true;
 
