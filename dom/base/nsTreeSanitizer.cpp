@@ -191,7 +191,7 @@ const nsStaticAtom* const kAttributesHTML[] = {
   nsGkAtoms::cols,
   nsGkAtoms::colspan,
   nsGkAtoms::content,
-  nsGkAtoms::contenteditable,
+  
   nsGkAtoms::contextmenu,
   nsGkAtoms::controls,
   nsGkAtoms::coords,
@@ -1235,7 +1235,8 @@ void nsTreeSanitizer::SanitizeAttributes(mozilla::dom::Element* aElement,
         
         continue;
       }
-      if (!mDropForms && attrLocal == nsGkAtoms::_for) {
+      if (!mDropForms && (attrLocal == nsGkAtoms::_for ||
+                          attrLocal == nsGkAtoms::contenteditable)) {
         
         
         continue;
