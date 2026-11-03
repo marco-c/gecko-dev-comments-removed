@@ -300,6 +300,7 @@ class GitFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     
     
     
+    
     ssh_key: Optional[str] = None
 
 
@@ -337,6 +338,7 @@ def create_git_fetch_task(config, name, fetch):
 
     ssh_key = fetch.get("ssh-key")
     if ssh_key:
+        ssh_key = ssh_key.format(level=config.params["level"])
         args.append("--ssh-key-secret")
         args.append(ssh_key)
 
