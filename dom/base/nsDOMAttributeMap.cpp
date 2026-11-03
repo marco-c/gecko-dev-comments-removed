@@ -101,11 +101,11 @@ void nsDOMAttributeMap::AdoptCachedAttributes(nsNodeInfoManager* aManager) {
   }
 }
 
-void nsDOMAttributeMap::DropAttribute(int32_t aNamespaceID,
-                                      nsAtom* aLocalName) {
+void nsDOMAttributeMap::DropAttribute(int32_t aNamespaceID, nsAtom* aLocalName,
+                                      const nsAttrValue* aValue) {
   nsAttrKey attr(aNamespaceID, aLocalName);
   if (auto entry = mAttributeCache.Lookup(attr)) {
-    entry.Data()->SetMap(nullptr);  
+    entry.Data()->SetMap(nullptr, aValue);  
     entry.Remove();
   }
 }
@@ -251,7 +251,10 @@ already_AddRefed<Attr> nsDOMAttributeMap::SetNamedItemNS(
       
       
       
-      DropAttribute(oldNi->NamespaceID(), oldNi->NameAtom());
+      BorrowedAttrInfo info = mContent->GetAttrInfoAt(i);
+      MOZ_ASSERT(info.mName &&
+                 info.mName->Equals(oldNi->NameAtom(), oldNi->NamespaceID()));
+      DropAttribute(oldNi->NamespaceID(), oldNi->NameAtom(), info.mValue);
     }
   }
 

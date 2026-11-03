@@ -65,7 +65,8 @@ class Attr final : public nsINode {
 
   nsDOMAttributeMap* GetMap() { return mAttrMap; }
 
-  void SetMap(nsDOMAttributeMap* aMap);
+  
+  void SetMap(nsDOMAttributeMap* aMap, const nsAttrValue* aValue = nullptr);
 
   Element* GetElement() const;
 

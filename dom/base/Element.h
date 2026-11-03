@@ -1177,7 +1177,9 @@ class Element : public FragmentOrElement {
 
 
 
-  nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify);
+
+  nsresult UnsetAttr(int32_t aNameSpaceID, nsAtom* aName, bool aNotify,
+                     bool* aHadValue = nullptr);
 
   
 

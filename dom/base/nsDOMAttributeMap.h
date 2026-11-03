@@ -16,6 +16,7 @@
 #include "nsWrapperCache.h"
 
 class nsAtom;
+class nsAttrValue;
 class nsINode;
 class nsIPrincipal;
 class nsNodeInfoManager;
@@ -113,7 +114,9 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
 
 
 
-  void DropAttribute(int32_t aNamespaceID, nsAtom* aLocalName);
+
+  void DropAttribute(int32_t aNamespaceID, nsAtom* aLocalName,
+                     const nsAttrValue* aValue = nullptr);
 
   
 
