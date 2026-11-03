@@ -546,7 +546,6 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
     }
   }
 
-  nsAutoString searchProviderId, keyword;
   RefPtr<nsIInputStream> fixupStream;
   if (fixup) {
     uint32_t fixupFlags =
@@ -571,8 +570,6 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
         rv = NS_OK;
         fixupInfo->GetPreferredURI(getter_AddRefs(uri));
         fixupInfo->SetConsumer(aBrowsingContext);
-        fixupInfo->GetKeywordProviderId(searchProviderId);
-        fixupInfo->GetKeywordAsSent(keyword);
         
         
         
@@ -587,7 +584,7 @@ nsresult nsDocShellLoadState::CreateFromLoadURIOptions(
                                   PromiseFlatString(aURI).get());
           }
         }
-        nsDocShell::MaybeNotifyKeywordSearchLoading(searchProviderId, keyword);
+        nsDocShell::MaybeNotifyKeywordSearchLoading(fixupInfo);
       }
     }
   }

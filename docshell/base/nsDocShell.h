@@ -441,8 +441,7 @@ class nsDocShell final : public nsDocLoader,
       bool* aSkippedUnknownProtocolNavigation = nullptr);
 
   
-  static void MaybeNotifyKeywordSearchLoading(const nsString& aProviderId,
-                                              const nsString& aKeyword);
+  static void MaybeNotifyKeywordSearchLoading(nsIURIFixupInfo* aInfo);
 
   nsDocShell* GetInProcessChildAt(int32_t aIndex);
 

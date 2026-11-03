@@ -6183,7 +6183,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
   
   
   
-  nsAutoString keywordProviderId, keywordAsSent;
+  nsCOMPtr<nsIURIFixupInfo> keywordInfo;
   if (aStatus == NS_ERROR_UNKNOWN_HOST && aAllowKeywordFixup) {
     
     
@@ -6239,8 +6239,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
           info->GetPreferredURI(getter_AddRefs(newURI));
           info->GetSchemelessInput(outSchemelessInput);
           if (newURI) {
-            info->GetKeywordAsSent(keywordAsSent);
-            info->GetKeywordProviderId(keywordProviderId);
+            keywordInfo = info;
             info->GetPostData(getter_AddRefs(newPostData));
           }
         }
@@ -6281,8 +6280,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
     if (doCreateAlternate) {
       newURI = nullptr;
       newPostData = nullptr;
-      keywordProviderId.Truncate();
-      keywordAsSent.Truncate();
+      keywordInfo = nullptr;
       nsCOMPtr<nsIURIFixup> uriFixup = components::URIFixup::Service();
       if (uriFixup) {
         nsCOMPtr<nsIURIFixupInfo> fixupInfo;
@@ -6336,7 +6334,7 @@ already_AddRefed<nsIURI> nsDocShell::AttemptURIFixup(
       if (aNotifyKeywordSearchLoading) {
         
         
-        MaybeNotifyKeywordSearchLoading(keywordProviderId, keywordAsSent);
+        MaybeNotifyKeywordSearchLoading(keywordInfo);
       }
       return newURI.forget();
     }
@@ -13115,24 +13113,23 @@ bool nsDocShell::IsInvisible() { return mInvisible; }
 void nsDocShell::SetInvisible(bool aInvisible) { mInvisible = aInvisible; }
 
 
-void nsDocShell::MaybeNotifyKeywordSearchLoading(const nsString& aProviderId,
-                                                 const nsString& aKeyword) {
-  if (aProviderId.IsEmpty()) {
+void nsDocShell::MaybeNotifyKeywordSearchLoading(nsIURIFixupInfo* aInfo) {
+  if (!aInfo) {
     return;
   }
-  nsresult rv;
-  nsCOMPtr<nsISupportsString> isupportsString =
-      do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID, &rv);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  rv = isupportsString->SetData(aProviderId);
-  NS_ENSURE_SUCCESS_VOID(rv);
+  nsAutoString providerId;
+  aInfo->GetKeywordProviderId(providerId);
+  if (providerId.IsEmpty()) {
+    return;
+  }
+  nsAutoString keyword;
+  aInfo->GetKeywordAsSent(keyword);
 
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
   if (obsSvc) {
     
     
-    obsSvc->NotifyObservers(isupportsString, "keyword-search", aKeyword.get());
+    obsSvc->NotifyObservers(aInfo, "keyword-search", keyword.get());
   }
 }
 
