@@ -3214,6 +3214,18 @@ void gfxPlatform::InitWebGPUConfig() {
   nsCString failureId;
 
   FeatureState& featureWebGPU = gfxConfig::GetFeature(Feature::WEBGPU);
+
+#ifndef HAVE_64BIT_BUILD
+  featureWebGPU.DisableByDefault(
+      FeatureStatus::Unavailable,
+      "WebGPU is only available on 64-bit architectures.",
+      "FEATURE_WEBGPU_NOT_64_BIT"_ns);
+#elif defined(WIN32) && !defined(MOZ_DXCOMPILER)
+  featureWebGPU.DisableByDefault(
+      FeatureStatus::Unavailable,
+      "DirectX Shader Compiler (DXC) unavailable in this build",
+      "FEATURE_WEBGPU_NO_DXC"_ns);
+#else
   featureWebGPU.EnableByDefault();
 
   if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
@@ -3232,6 +3244,12 @@ void gfxPlatform::InitWebGPUConfig() {
                             failureId);
     }
   }
+#endif
+
+  
+  
+  
+  
 
   gfxVars::SetAllowWebGPU(featureWebGPU.IsEnabled());
 
