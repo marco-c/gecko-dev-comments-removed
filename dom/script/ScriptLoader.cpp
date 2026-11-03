@@ -1379,7 +1379,7 @@ void ScriptLoader::TryUseCache(ReferrerPolicy aReferrerPolicy,
     
     
     if (aRequestType == ScriptLoadRequestType::Preload &&
-        !aRequest->mClassicScriptHintEncoding && mDocument &&
+        !aRequest->mClassicScriptHintEncoding &&
         mDocument->GetDocumentCharacterSetSource() == 0) {
       
       LOG(
