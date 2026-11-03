@@ -339,7 +339,7 @@ class nsBlockFrame : public nsContainerFrame {
   
 
 
-  void IsMarginRoot(bool* aBStartMarginRoot, bool* aBEndMarginRoot);
+  void IsMarginRoot(bool* aBStartMarginRoot, bool* aBEndMarginRoot) const;
 
   static bool BlockNeedsFloatManager(nsIFrame* aBlock);
 
@@ -383,6 +383,17 @@ class nsBlockFrame : public nsContainerFrame {
 
 
   static nsBlockFrame* GetNearestAncestorBlock(nsIFrame* aCandidate);
+
+  
+
+
+
+
+
+
+
+  static bool StyleTrimsChildBStartMargins(const nsIFrame* aFrame);
+  static bool StyleTrimsChildBEndMargins(const nsIFrame* aFrame);
 
   struct FrameLines {
     nsLineList mLines;
@@ -995,6 +1006,16 @@ class nsBlockFrame : public nsContainerFrame {
   
   
   bool IsLastFormattedLine(LineIterator aLine);
+
+  
+
+
+
+
+
+
+  bool IsLineAdjacentToBStart(BlockReflowState& aState);
+  bool IsLineAdjacentToBEnd(LineIterator aLine);
 
   void DeleteLine(BlockReflowState& aState, nsLineList::iterator aLine,
                   nsLineList::iterator aLineEnd);
