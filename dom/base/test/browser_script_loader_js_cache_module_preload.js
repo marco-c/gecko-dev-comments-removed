@@ -2,7 +2,7 @@
 
 
 
-const BASE_URL = "https://example.com/browser/dom/base/test/";
+const BASE_URL = "http://mochi.test:8888/browser/dom/base/test/";
 const MODULE_URL = BASE_URL + "file_js_cache_small.js";
 
 add_task(async function () {
