@@ -23,6 +23,7 @@
 #include "nsIInterfaceRequestor.h"
 #include "nsITLSSocketControl.h"
 #include "nsITimer.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsIWebTransport.h"
 #include "nsTHashMap.h"
 #include "nsThreadUtils.h"
@@ -620,7 +621,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mSubmittedRatePacing{false};
   bool mPassedRatePacing{false};
   bool mSynchronousRatePaceRequest{false};
-  nsCOMPtr<nsICancelable> mTokenBucketCancel;
+  
+  
+  
+  nsWeakPtr mTokenBucketCancel;
 
   void CollectTelemetryForUploads();
 

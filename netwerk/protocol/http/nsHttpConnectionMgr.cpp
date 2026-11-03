@@ -2536,7 +2536,13 @@ void nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason,
     if (trans->ConnectionInfo()) {
       ent = mCT.GetWeak(trans->ConnectionInfo()->HashKey());
     }
-    if (ent && ent->RemoveTransFromPendingQ(trans)) {
+    
+    
+    
+    nsAutoCString queuedHashKey;
+    trans->GetHashKeyOfConnectionEntry(queuedHashKey);
+    if (RemoveTransFromConnEntry(trans, queuedHashKey) ||
+        (ent && ent->RemoveTransFromPendingQ(trans))) {
       LOG(
           ("nsHttpConnectionMgr::OnMsgCancelTransaction [trans=%p]"
            " removed from pending queue\n",

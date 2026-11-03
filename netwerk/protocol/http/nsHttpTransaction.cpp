@@ -57,6 +57,7 @@
 #include "nsITLSSocketControl.h"
 #include "nsIThrottledInputChannel.h"
 #include "nsITransport.h"
+#include "nsIWeakReferenceUtils.h"
 #include "nsMultiplexInputStream.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
@@ -161,16 +162,11 @@ void nsHttpTransaction::SetClassOfService(ClassOfService cos) {
 nsHttpTransaction::~nsHttpTransaction() {
   LOG(("Destroying nsHttpTransaction @%p\n", this));
 
-  if (mTokenBucketCancel) {
-    if (OnSocketThread()) {
-      mTokenBucketCancel->Cancel(NS_ERROR_ABORT);
-    } else {
-      MOZ_DIAGNOSTIC_ASSERT(false,
-                            "Token bucket not canceled before off-thread "
-                            "destruction");
-    }
-    mTokenBucketCancel = nullptr;
-  }
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!mTokenBucketCancel);
 
   
   {
@@ -1504,10 +1500,11 @@ void nsHttpTransaction::Close(nsresult reason) {
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  if (mTokenBucketCancel) {
-    mTokenBucketCancel->Cancel(reason);
-    mTokenBucketCancel = nullptr;
+  if (nsCOMPtr<nsICancelable> tokenBucketCancel =
+          do_QueryReferent(mTokenBucketCancel)) {
+    tokenBucketCancel->Cancel(reason);
   }
+  mTokenBucketCancel = nullptr;
 
   if (reason == NS_BINDING_RETARGETED) {
     LOG(("  close %p skipped due to ERETARGETED\n", this));
@@ -3404,8 +3401,16 @@ bool nsHttpTransaction::TryToRunPacedRequest() {
 
   mSubmittedRatePacing = true;
   mSynchronousRatePaceRequest = true;
-  (void)gHttpHandler->SubmitPacedRequest(this,
-                                         getter_AddRefs(mTokenBucketCancel));
+  nsCOMPtr<nsICancelable> cancelable;
+  (void)gHttpHandler->SubmitPacedRequest(this, getter_AddRefs(cancelable));
+  
+  
+  
+  
+  
+  if (!mPassedRatePacing) {
+    mTokenBucketCancel = do_GetWeakReference(cancelable);
+  }
   mSynchronousRatePaceRequest = false;
   return mPassedRatePacing;
 }
@@ -3425,10 +3430,11 @@ void nsHttpTransaction::OnTokenBucketAdmitted() {
 }
 
 void nsHttpTransaction::CancelPacing(nsresult reason) {
-  if (mTokenBucketCancel) {
-    mTokenBucketCancel->Cancel(reason);
-    mTokenBucketCancel = nullptr;
+  if (nsCOMPtr<nsICancelable> tokenBucketCancel =
+          do_QueryReferent(mTokenBucketCancel)) {
+    tokenBucketCancel->Cancel(reason);
   }
+  mTokenBucketCancel = nullptr;
 }
 
 
