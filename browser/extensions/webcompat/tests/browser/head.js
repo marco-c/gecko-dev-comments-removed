@@ -36,6 +36,8 @@ const CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF =
   "privacy.trackingprotection.content.protection.enabled";
 const CONTENT_CLASSIFIER_PROTECTION_LIST_URLS_PREF =
   "privacy.trackingprotection.content.protection.test_list_urls";
+const CONTENT_CLASSIFIER_MIRROR_MODE_PREF =
+  "privacy.trackingprotection.content.mirror.mode";
 const CONTENT_CLASSIFIER_BLOCK_LIST_URL = `${TEST_ROOT}content_classifier_block_list.txt`;
 
 
@@ -445,6 +447,9 @@ async function enableContentClassifierBlockList(blockListUrl) {
     ? TestUtils.topicObserved(CONTENT_CLASSIFIER_LISTS_LOADED_TOPIC)
     : null;
 
+  
+  
+  Services.prefs.setIntPref(CONTENT_CLASSIFIER_MIRROR_MODE_PREF, 0);
   Services.prefs.setBoolPref(CONTENT_CLASSIFIER_TESTING_PREF, true);
   Services.prefs.setBoolPref(CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF, true);
   Services.prefs.setStringPref(
@@ -461,6 +466,7 @@ function disableContentClassifier() {
   Services.prefs.clearUserPref(CONTENT_CLASSIFIER_TESTING_PREF);
   Services.prefs.clearUserPref(CONTENT_CLASSIFIER_PROTECTION_ENABLED_PREF);
   Services.prefs.clearUserPref(CONTENT_CLASSIFIER_PROTECTION_LIST_URLS_PREF);
+  Services.prefs.clearUserPref(CONTENT_CLASSIFIER_MIRROR_MODE_PREF);
 }
 
 

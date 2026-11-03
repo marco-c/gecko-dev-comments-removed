@@ -52,8 +52,9 @@ add_setup(async function () {
   });
 
   await UrlClassifierTestUtils.addTestTrackers();
-  registerCleanupFunction(() => {
-    UrlClassifierTestUtils.cleanupTestTrackers();
+  await UrlClassifierTestUtils.addTestHostsFromPrefs();
+  registerCleanupFunction(async () => {
+    await UrlClassifierTestUtils.cleanupTestTrackers();
   });
 });
 
@@ -267,18 +268,22 @@ async function runTestMixed({ block, allow, replace }) {
 
   if (block) {
     
+    
+    
     await SpecialPowers.pushPrefEnv({
       clear: [
         ["urlclassifier.trackingSkipURLs"],
         ["urlclassifier.trackingAnnotationSkipURLs"],
       ],
     });
+    await UrlClassifierTestUtils.addTestHostsFromPrefs();
     let blockEventPromise = waitForContentBlockingEvent();
     await SpecialPowers.spawn(tab.linkedBrowser, [], function () {
       content.postMessage("tracking", "*");
     });
     await blockEventPromise;
     await SpecialPowers.popPrefEnv();
+    await UrlClassifierTestUtils.addTestHostsFromPrefs();
   }
 
   if (allow) {

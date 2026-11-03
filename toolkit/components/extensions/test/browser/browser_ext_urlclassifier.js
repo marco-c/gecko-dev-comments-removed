@@ -22,8 +22,15 @@ server.registerPathHandler("/", (req, res) => {
 add_task(async function test_extension_tab_create() {
   Services.fog.testResetFOG();
 
+  
+  
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["privacy.trackingprotection.content.mirror.mode", 0],
+      [
+        "privacy.trackingprotection.urlclassifier.disable_for_channel_classifier",
+        false,
+      ],
       [
         "urlclassifier.features.harmfuladdon.blocklistHosts",
         "expected.example.org",
