@@ -95,9 +95,9 @@ bool WorkletModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest,
 nsresult WorkletModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   InsertRequest(aRequest->URI(), aRequest);
 
-  RefPtr<StartFetchRunnable> runnable =
-      new StartFetchRunnable(aRequest->GetWorkletLoadContext()->GetHandlerRef(),
-                             aRequest->URI(), aRequest->mReferrer);
+  RefPtr<StartFetchRunnable> runnable = new StartFetchRunnable(
+      aRequest->GetWorkletLoadContext()->GetHandlerRef(), aRequest->URI(),
+      aRequest->mReferrer, aRequest->mModuleType);
   NS_DispatchToMainThread(runnable.forget());
   return NS_OK;
 }
@@ -129,13 +129,8 @@ nsresult WorkletModuleLoader::CompileJavaScriptOrWasmModule(
 #ifdef NIGHTLY_BUILD
   if (aRequest->HasWasmMimeTypeEssence()) {
     MOZ_ASSERT(aRequest->IsWasmBytes());
-    JSObject* wasmModule;
-    if (aRequest->IsSourcePhaseRequest(aCx)) {
-      wasmModule =
-          JS::CompileWasmModuleAsSource(aCx, aOptions, aRequest->WasmBytes());
-    } else {
-      wasmModule = JS::CompileWasmModule(aCx, aOptions, aRequest->WasmBytes());
-    }
+    JSObject* wasmModule =
+        JS::CompileWasmModule(aCx, aOptions, aRequest->WasmBytes());
     if (!wasmModule) {
       return NS_ERROR_FAILURE;
     }

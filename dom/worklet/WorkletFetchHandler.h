@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_WorkletFetchHandler_h
 #define mozilla_dom_WorkletFetchHandler_h
 
+#include "js/Modules.h"  
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/RequestBinding.h"  
 #include "nsIStreamLoader.h"
@@ -31,7 +32,8 @@ class WorkletFetchHandler final : public nsISupports {
                                              ErrorResult& aRv);
 
   
-  nsresult StartFetch(JSContext* aCx, nsIURI* aURI, nsIURI* aReferrer);
+  nsresult StartFetch(JSContext* aCx, nsIURI* aURI, nsIURI* aReferrer,
+                      JS::ModuleType aModuleType);
 
   void ExecutionFailed();
   void ExecutionFailed(JS::Handle<JS::Value> aError);
@@ -71,7 +73,7 @@ class StartFetchRunnable final : public Runnable {
  public:
   StartFetchRunnable(
       const nsMainThreadPtrHandle<WorkletFetchHandler>& aHandlerRef,
-      nsIURI* aURI, nsIURI* aReferrer);
+      nsIURI* aURI, nsIURI* aReferrer, JS::ModuleType aModuleType);
   ~StartFetchRunnable() = default;
 
   NS_IMETHOD
@@ -81,6 +83,7 @@ class StartFetchRunnable final : public Runnable {
   nsMainThreadPtrHandle<WorkletFetchHandler> mHandlerRef;
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIURI> mReferrer;
+  JS::ModuleType mModuleType;
 };
 
 
@@ -90,7 +93,8 @@ class WorkletScriptHandler final : public PromiseNativeHandler,
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
-  WorkletScriptHandler(Worklet* aWorklet, nsIURI* aURI);
+  WorkletScriptHandler(Worklet* aWorklet, nsIURI* aURI,
+                       JS::ModuleType aModuleType);
 
   void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                         ErrorResult& aRv) override;
@@ -112,6 +116,7 @@ class WorkletScriptHandler final : public PromiseNativeHandler,
 
   RefPtr<Worklet> mWorklet;
   nsCOMPtr<nsIURI> mURI;
+  JS::ModuleType mModuleType;
 #ifdef NIGHTLY_BUILD
   bool mHasWasmMimeTypeEssence = false;
 #endif
