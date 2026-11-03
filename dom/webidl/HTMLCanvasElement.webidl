@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,6 +10,7 @@
  */
 
 interface nsISupports;
+interface OutputStream;
 
 typedef (HTMLCanvasElement or OffscreenCanvas) CanvasSource;
 
@@ -44,6 +44,14 @@ partial interface HTMLCanvasElement {
 
   [Throws, NeedsSubjectPrincipal]
   CanvasCaptureMediaStream captureStream(optional double frameRate);
+
+  // Write one PDF page per detached canvas, using its dimensions as points.
+  // Each chrome mozPrintCallback runs synchronously with the canvas' 2D
+  // context targeting the PDF. The existing bitmap and drawing state are reset
+  // before the callback, and the bitmap is discarded afterward.
+  [ChromeOnly, Throws]
+  static undefined printToPDF(sequence<HTMLCanvasElement> canvases,
+                              OutputStream stream);
 };
 
 // For OffscreenCanvas
