@@ -442,7 +442,13 @@ pub enum SwapchainMode {
     
     
     
-    OsLayers,
+    OsLayers {
+        
+        
+        
+        
+        max_partial_present_rects: usize,
+    },
 }
 
 impl CompositorKind {
@@ -455,14 +461,14 @@ impl CompositorKind {
                 
                 *max_partial_present_rects > 0
             }
-            CompositorKind::Layer { mode: SwapchainMode::OsLayers } => false,    
+            CompositorKind::Layer { mode: SwapchainMode::OsLayers { .. } } => false,    
             CompositorKind::Native { capabilities, .. } => capabilities.redraw_on_invalidation,
         }
     }
 
     
     pub fn uses_os_layers(&self) -> bool {
-        matches!(self, CompositorKind::Layer { mode: SwapchainMode::OsLayers })
+        matches!(self, CompositorKind::Layer { mode: SwapchainMode::OsLayers { .. } })
     }
 
     
@@ -1704,7 +1710,9 @@ pub trait Compositor {
     
     
     fn get_swapchain_mode(&self) -> SwapchainMode {
-        SwapchainMode::OsLayers
+        SwapchainMode::OsLayers {
+            max_partial_present_rects: 1,
+        }
     }
 }
 

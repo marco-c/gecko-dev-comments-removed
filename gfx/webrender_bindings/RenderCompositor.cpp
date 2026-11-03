@@ -180,7 +180,11 @@ void wr_compositor_get_swapchain_mode(
     bool* aDrawPreviousPartialPresentRegions) {
   RenderCompositor* compositor = static_cast<RenderCompositor*>(aCompositor);
   *aUsesOsLayers = compositor->UseLayerCompositor();
-  *aMaxPartialPresentRects = compositor->GetMaxPartialPresentRects();
+  
+  
+  
+  *aMaxPartialPresentRects =
+      *aUsesOsLayers ? 1 : compositor->GetMaxPartialPresentRects();
   *aDrawPreviousPartialPresentRegions =
       compositor->ShouldDrawPreviousPartialPresentRegions();
 }
