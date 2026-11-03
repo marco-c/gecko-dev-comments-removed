@@ -264,7 +264,13 @@ impl FontCache {
     }
 
     fn delete_font(&mut self, cached: Arc<Mutex<CachedFont>>) {
-        self.fonts.remove(&cached.lock().unwrap().template);
+        
+        
+        
+        
+        if Arc::strong_count(&cached) <= 2 {
+            self.fonts.remove(&cached.lock().unwrap().template);
+        }
     }
 }
 
@@ -426,11 +432,7 @@ impl FontContext {
 
     pub fn delete_font(&mut self, font_key: &FontKey) {
         if let Some(cached) = self.fonts.remove(font_key) {
-            
-            
-            if Arc::strong_count(&cached) <= 2 {
-                FONT_CACHE.lock().unwrap().delete_font(cached);
-            }
+            FONT_CACHE.lock().unwrap().delete_font(cached);
         }
     }
 
