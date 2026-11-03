@@ -5,11 +5,14 @@
 #ifndef PolicyContainer_h_
 #define PolicyContainer_h_
 
+#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Result.h"
 #include "nsCOMPtr.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIIntegrityPolicy.h"
 #include "nsILoadInfo.h"
 #include "nsIPolicyContainer.h"
+#include "nsString.h"
 
 namespace mozilla::ipc {
 class PolicyContainerArgs;
@@ -25,6 +28,8 @@ class IntegrityPolicyWAICT;
 
 class nsIContentSecurityPolicy;
 class nsIIntegrityPolicy;
+class nsIPrincipal;
+class nsIURI;
 
 
 
@@ -39,6 +44,19 @@ class PolicyContainer : public nsIPolicyContainer {
   NS_DECL_NSIPOLICYCONTAINER
 
   PolicyContainer();
+
+  
+  
+  struct Headers {
+    nsCString mContentSecurityPolicy;
+    nsCString mContentSecurityPolicyReportOnly;
+  };
+
+  
+  
+  static mozilla::Result<already_AddRefed<PolicyContainer>, nsresult>
+  CreateForNonDocument(nsIPrincipal* aPrincipal, nsIURI* aSelfURI,
+                       const Headers& aHeaders);
 
   static void ToArgs(const PolicyContainer* aPolicy,
                      mozilla::ipc::PolicyContainerArgs& aArgs);

@@ -17,8 +17,8 @@
 #include "mozilla/Logging.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/ReferrerInfo.h"
-#include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "mozilla/ipc/BackgroundUtils.h"
@@ -33,7 +33,6 @@
 #include "nsHttpChannel.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
-#include "nsIContentSecurityPolicy.h"
 #include "nsICookieJarSettings.h"
 #include "nsIHttpChannel.h"
 #include "nsIInputStream.h"
@@ -333,16 +332,14 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
   }
   nsCOMPtr<nsILoadInfo> secCheckLoadInfo = maybeLoadInfo.unwrap();
 
-  if (aCSPHeader.Length() != 0) {
-    
-    
-    nsCOMPtr<nsIContentSecurityPolicy> csp = new nsCSPContext();
-    nsresult rv = csp->SetRequestContextWithPrincipal(
-        aPrincipal, aBaseURI, ""_ns, 0 );
-    NS_ENSURE_SUCCESS_VOID(rv);
-    rv = CSP_AppendCSPFromHeader(csp, NS_ConvertUTF8toUTF16(aCSPHeader),
-                                 false );
-    NS_ENSURE_SUCCESS_VOID(rv);
+  if (!aCSPHeader.IsEmpty()) {
+    auto policyContainerOrErr = PolicyContainer::CreateForNonDocument(
+        aPrincipal, aBaseURI,
+        {.mContentSecurityPolicy = nsCString(aCSPHeader)});
+    if (NS_WARN_IF(policyContainerOrErr.isErr())) {
+      return;
+    }
+    RefPtr<PolicyContainer> policyContainer = policyContainerOrErr.unwrap();
 
     
     
@@ -360,21 +357,14 @@ void EarlyHintPreloader::MaybeCreateAndInsertPreload(
     
 
     mozilla::ipc::PrincipalInfo principalInfo;
-    rv = PrincipalToPrincipalInfo(aPrincipal, &principalInfo);
+    nsresult rv = PrincipalToPrincipalInfo(aPrincipal, &principalInfo);
     NS_ENSURE_SUCCESS_VOID(rv);
     dom::ClientInfo clientInfo(nsID::GenerateUUID(), Nothing(),
                                dom::ClientType::Window, principalInfo,
                                TimeStamp::Now(), ""_ns, dom::FrameType::None);
 
-    
-    
-    ipc::CSPInfo cspInfo;
-    rv = CSPToCSPInfo(csp, &cspInfo);
-    NS_ENSURE_SUCCESS_VOID(rv);
-
     ipc::PolicyContainerArgs policyContainerArgs;
-    policyContainerArgs.csp() = Some(cspInfo);
-
+    PolicyContainer::ToArgs(policyContainer, policyContainerArgs);
     clientInfo.SetPolicyContainerArgs(policyContainerArgs);
 
     
