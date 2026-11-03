@@ -39,7 +39,7 @@ const { PlacesTestUtils } = ChromeUtils.importESModule(
 );
 
 const PREF_FIRSTRUN_HAS_COMPLETED = "browser.smartwindow.firstrun.hasCompleted";
-const PREF_TOS_CONSENT_TIME = "browser.smartwindow.tos.consentTime";
+const PREF_TOU_CONSENT_TIME = "browser.smartwindow.tos.consentTime";
 const PREF_LAST_USAGE_TIME = "browser.smartwindow.lastSmartWindowUsageTime";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -275,7 +275,7 @@ async function withScheduler(
       [PREF_GENERATE_MEMORIES_FROM_HISTORY, historyEnabled],
       [PREF_GENERATE_MEMORIES_FROM_CONVERSATION, conversationEnabled],
       [PREF_FIRSTRUN_HAS_COMPLETED, true],
-      [PREF_TOS_CONSENT_TIME, Math.floor(Date.now() / 1000)],
+      [PREF_TOU_CONSENT_TIME, Math.floor(Date.now() / 1000)],
     ],
   });
   await MemoriesManager.setLastSessionMemoryTimestamp(watermarkMs);

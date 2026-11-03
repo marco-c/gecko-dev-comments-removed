@@ -441,7 +441,7 @@ add_task(async function test_shouldEnableMemoriesFromSchedulers_firstrunGate() {
   try {
     sb.stub(AIWindow, "isAIWindowEnabled").returns(true);
     sb.stub(AIWindow, "isAIWindowActive").returns(true);
-    sb.stub(AuthProvider, "hasToSConsent").get(() => true);
+    sb.stub(AuthProvider, "hasToUConsent").get(() => true);
     sb.stub(EveryWindow, "readyWindows").get(() => [{}]);
 
     Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES_FROM_HISTORY, true);
