@@ -82,7 +82,6 @@ mermaid_init_config = {
     
     
     
-    "layout": "dagre",
     "look": "classic",
     "themeVariables": {
         "fontSize": "18px",
