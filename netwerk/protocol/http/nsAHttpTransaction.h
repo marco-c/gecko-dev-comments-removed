@@ -155,6 +155,10 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
 
   
   
+  virtual bool IsHappyEyeballsTransaction() { return false; }
+
+  
+  
   
   virtual nsHttpTransaction* QueryHttpTransaction() { return nullptr; }
 
