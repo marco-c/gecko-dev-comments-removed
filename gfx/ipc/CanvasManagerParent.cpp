@@ -146,6 +146,12 @@ already_AddRefed<dom::PWebGLParent> CanvasManagerParent::AllocPWebGLParent() {
 
 already_AddRefed<webgpu::PWebGPUParent>
 CanvasManagerParent::AllocPWebGPUParent() {
+  
+  
+  
+  
+  
+  
   if (NS_WARN_IF(!gfxVars::AllowWebGPU() ||
                  !StaticPrefs::dom_webgpu_enabled())) {
     MOZ_ASSERT_UNREACHABLE("AllocPWebGPUParent without WebGPU");
