@@ -136,6 +136,8 @@ class BlockReflowState {
       bool aTrimChildBEndMargins, nsLineList::iterator aLine,
       bool aIsAdjacentToBStart);
 
+  bool ShouldTrimChildBStartMargins() const;
+
   
 
 

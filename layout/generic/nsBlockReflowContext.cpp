@@ -30,6 +30,26 @@ nsBlockReflowContext::nsBlockReflowContext(nsPresContext* aPresContext,
       mBCoord(0),
       mMetrics(aParentRI) {}
 
+
+bool nsBlockReflowContext::StyleTrimsChildBStartMargins(
+    const nsIFrame* aFrame) {
+  
+  
+  if (aFrame->StyleColumn()->IsColumnContainerStyle()) {
+    return false;
+  }
+  return bool(aFrame->StyleMargin()->mMarginTrim &
+              StyleMarginTrim::BLOCK_START);
+}
+
+
+bool nsBlockReflowContext::StyleTrimsChildBEndMargins(const nsIFrame* aFrame) {
+  if (aFrame->StyleColumn()->IsColumnContainerStyle()) {
+    return false;
+  }
+  return bool(aFrame->StyleMargin()->mMarginTrim & StyleMarginTrim::BLOCK_END);
+}
+
 static nsIFrame* DescendIntoBlockLevelFrame(nsIFrame* aFrame) {
   LayoutFrameType type = aFrame->Type();
   if (type == LayoutFrameType::ColumnSet) {
@@ -153,8 +173,17 @@ bool nsBlockReflowContext::ComputeCollapsedBStartMargin(
           {
             LogicalSize availSpace =
                 outerReflowInput->ComputedSize(kid->GetWritingMode());
+
+            ReflowInput::InitFlags marginTrimFlags;
+            if (!block->GetPrevInFlow() &&
+                (StyleTrimsChildBStartMargins(block) ||
+                 outerReflowInput->mFlags.mTrimBStartMargin)) {
+              marginTrimFlags += ReflowInput::InitFlag::TrimBStartMargin;
+            }
             ReflowInput innerReflowInput(prescontext, *outerReflowInput, kid,
-                                         availSpace);
+                                         availSpace, Nothing(),
+                                         marginTrimFlags);
+
             
             
             if (kid->StyleDisplay()->mClear != StyleClear::None ||
