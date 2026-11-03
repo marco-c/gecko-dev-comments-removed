@@ -647,9 +647,9 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::YuvImage { data_handle, .. } => {
+        PrimitiveKind::YuvImage { handle } => {
             tracy_rs::profile_scope!("YuvImage");
-            let prim_data = &data_stores.yuv_image[*data_handle];
+            let prim_data = &dl_stores.yuv_images[*handle];
             let common_data = &prim_data.common;
             let yuv_image_data = &prim_data.kind;
 
@@ -712,10 +712,10 @@ fn prepare_prim_for_render(
 
             return;
         }
-        PrimitiveKind::Image { data_handle, .. } => {
+        PrimitiveKind::Image { handle } => {
             tracy_rs::profile_scope!("Image");
 
-            let prim_data = &data_stores.image[*data_handle];
+            let prim_data = &dl_stores.images[*handle];
             let common_data = &prim_data.common;
             let image_data = &prim_data.kind;
 
@@ -1283,6 +1283,7 @@ fn add_clip_mask_render_task(
         frame_state.rg_builder,
         &mut frame_state.frame_gpu_data.f32,
         frame_state.transforms,
+        frame_state.cmd_buffers,
     );
 
     clip_task_id

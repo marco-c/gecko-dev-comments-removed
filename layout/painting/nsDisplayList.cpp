@@ -88,6 +88,7 @@
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "nsCSSProps.h"
 #include "nsCSSRendering.h"
+#include "nsCSSRenderingBorders.h"
 #include "nsCSSRenderingGradients.h"
 #include "nsCanvasFrame.h"
 #include "nsCaret.h"
@@ -3048,6 +3049,26 @@ void nsDisplayBackgroundImage::Destroy(nsDisplayListBuilder* aBuilder) {
   nsPaintedDisplayItem::Destroy(aBuilder);
 }
 
+static bool NeedsBorderAreaMask(nsIFrame* aFrame, StyleBackgroundClip aClip) {
+  if (aClip != StyleBackgroundClip::BorderArea) {
+    return false;
+  }
+  for (auto side : AllPhysicalSides()) {
+    if (!aFrame->StyleBorder()->GetComputedBorderWidth(side)) {
+      continue;
+    }
+    switch (aFrame->StyleBorder()->GetBorderStyle(side)) {
+      case StyleBorderStyle::Dashed:
+      case StyleBorderStyle::Dotted:
+      case StyleBorderStyle::Double:
+        return true;
+      default:
+        break;
+    }
+  }
+  return false;
+}
+
 static void SetBackgroundClipRegion(
     DisplayListClipState::AutoSaveRestore& aClipState, nsIFrame* aFrame,
     const nsStyleImageLayers::Layer& aLayer, const nsRect& aBackgroundRect,
@@ -3057,13 +3078,17 @@ static void SetBackgroundClipRegion(
       aLayer, aFrame, *aFrame->StyleBorder(), aBackgroundRect, aBackgroundRect,
       aWillPaintBorder, aFrame->PresContext()->AppUnitsPerDevPixel(), &clip);
 
+  
+  
+  const auto* radii =
+      clip.mHasRoundedCorners && !NeedsBorderAreaMask(aFrame, aLayer.mClip)
+          ? &clip.mRadii
+          : nullptr;
   if (clip.mHasAdditionalBGClipArea) {
-    aClipState.ClipContentDescendants(
-        clip.mAdditionalBGClipArea, clip.mBGClipArea,
-        clip.mHasRoundedCorners ? &clip.mRadii : nullptr);
+    aClipState.ClipContentDescendants(clip.mAdditionalBGClipArea,
+                                      clip.mBGClipArea, radii);
   } else {
-    aClipState.ClipContentDescendants(
-        clip.mBGClipArea, clip.mHasRoundedCorners ? &clip.mRadii : nullptr);
+    aClipState.ClipContentDescendants(clip.mBGClipArea, radii);
   }
 }
 
@@ -3292,7 +3317,8 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
       if (clip.mHasAdditionalBGClipArea) {
         bgColorRect = bgColorRect.Intersect(clip.mAdditionalBGClipArea);
       }
-      if (clip.mHasRoundedCorners) {
+      if (clip.mHasRoundedCorners &&
+          !NeedsBorderAreaMask(aFrame, bg->BottomLayer().mClip)) {
         clipState.emplace(aBuilder);
         clipState->ClipContentDescendants(clip.mBGClipArea, &clip.mRadii);
       }
@@ -3540,6 +3566,20 @@ static void PushBorderAreaClipOut(
   nsRectCornerRadii radii;
   if (!GetBorderAreaExclusion(aFrame, aLayer, aBackgroundRect, rect, radii)) {
     return;
+  }
+
+  if (NeedsBorderAreaMask(aFrame, aLayer.mClip)) {
+    auto renderer = nsCSSRendering::CreateNullBorderRendererWithStyleBorder(
+        aFrame->PresContext(), nullptr, aFrame, aBackgroundRect,
+        aBackgroundRect, *aFrame->StyleBorder(), aFrame->Style(), nullptr,
+        aFrame->GetSkipSides());
+    if (renderer) {
+      wr::WrClipId clipId = renderer->CreateWebRenderClip(aBuilder);
+      wr::WrClipChainId chain = aBuilder.DefineClipChain(
+          {&clipId, 1}, aBuilder.CurrentClipChainIdIfNotRoot());
+      aClipHelper.emplace(aBuilder, chain);
+      return;
+    }
   }
 
   wr::ComplexClipRegion region = wr::ToComplexClipRegion(
@@ -5491,7 +5531,7 @@ WebRenderCommandsResult nsDisplayOwnLayer::CreateWebRenderCommands(
     wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder, bool aForceIsolation) {
-  Maybe<wr::WrAnimationProperty> prop;
+  uint64_t animationId = 0;
   const bool needsProp = aManager->LayerManager()->AsyncPanZoomEnabled() &&
                          (IsScrollThumbLayer() || IsZoomingLayer() ||
                           ShouldGetFixedAnimationId() ||
@@ -5505,14 +5545,10 @@ WebRenderCommandsResult nsDisplayOwnLayer::CreateWebRenderCommands(
         aManager->CommandBuilder()
             .CreateOrRecycleWebRenderUserData<WebRenderAPZAnimationData>(this);
     mWrAnimationId = animationData->GetAnimationId();
-
-    prop.emplace();
-    prop->id = mWrAnimationId;
-    prop->effect_type = wr::WrAnimationType::Transform;
+    animationId = mWrAnimationId;
   }
 
   wr::StackingContextParams params;
-  params.animation = prop.ptrOr(nullptr);
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
   const bool rootScrollbarContainer = IsRootScrollbarContainer();
@@ -5522,14 +5558,23 @@ WebRenderCommandsResult nsDisplayOwnLayer::CreateWebRenderCommands(
   if (aForceIsolation) {
     params.flags |= wr::StackingContextFlags::FORCED_ISOLATION;
   }
-  if (IsZoomingLayer() || ShouldGetFixedAnimationId() ||
-      (rootScrollbarContainer && HasDynamicToolbar())) {
-    params.is_2d_scale_translation = true;
-    params.should_snap = true;
+  const bool shouldSnap = IsZoomingLayer() || ShouldGetFixedAnimationId() ||
+                          (rootScrollbarContainer && HasDynamicToolbar());
+
+  Maybe<wr::WrSpatialId> referenceFrame;
+  if (animationId || shouldSnap) {
+    wr::ReferenceFrameParams rfParams;
+    rfParams.animation_id = animationId;
+    rfParams.is_2d_scale_translation = shouldSnap;
+    rfParams.should_snap = shouldSnap;
+    referenceFrame = Some(aManager->CommandBuilder().DefineReferenceFrame(
+        aBuilder, mFrame,
+        WebRenderCommandBuilder::FrameReferenceFrame::OwnLayer,
+        LayoutDevicePoint(), rfParams));
   }
 
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                           params);
+                           params, referenceFrame);
 
   return nsDisplayWrapList::CreateWebRenderCommands(
       aBuilder, aResources, sc, aManager, aDisplayListBuilder);
@@ -5659,17 +5704,16 @@ WebRenderCommandsResult nsDisplayViewTransitionCapture::CreateWebRenderCommands(
   
   
   
-  
-  
-  wr::WrTransformInfo info;
+  Maybe<wr::WrSpatialId> referenceFrame;
   if (mFrame->IsTransformed()) {
     
     
-    params.mTransformPtr = [&]() {
-      info.transform = wr::ToLayoutTransform(gfx::Matrix4x4());
-      return &info;
-    }();
-    params.reference_frame_kind = wr::WrReferenceFrameKind::Transform;
+    wr::ReferenceFrameParams rfParams;
+    rfParams.transform_style = params.transform_style;
+    referenceFrame = Some(aManager->CommandBuilder().DefineReferenceFrame(
+        aBuilder, mFrame,
+        WebRenderCommandBuilder::FrameReferenceFrame::ViewTransitionCapture,
+        LayoutDevicePoint(), rfParams));
   }
 
   if (key) {
@@ -5691,7 +5735,7 @@ WebRenderCommandsResult nsDisplayViewTransitionCapture::CreateWebRenderCommands(
     params.snapshot = si.ptr();
   }
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                           params);
+                           params, referenceFrame);
   return nsDisplayWrapList::CreateWebRenderCommands(
       aBuilder, aResources, sc, aManager, aDisplayListBuilder);
 }
@@ -6912,7 +6956,6 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
           : AddAnimationsForWebRender(
                 this, aManager, aDisplayListBuilder,
                 IsPartialPrerender() ? Some(position) : Nothing());
-  wr::WrAnimationProperty prop{wr::WrAnimationType::Transform, animationsId};
 
   nsDisplayTransform* deferredTransformItem = nullptr;
   if (ShouldDeferTransform()) {
@@ -6930,7 +6973,6 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
 
   wr::StackingContextParams params;
   params.mBoundTransform = &newTransformMatrix;
-  params.animation = animationsId ? &prop : nullptr;
 
   if (mWrapsBackdropFilter) {
     params.flags |= wr::StackingContextFlags::WRAPS_BACKDROP_FILTER;
@@ -6939,18 +6981,9 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
     params.flags |= wr::StackingContextFlags::FORCED_ISOLATION;
   }
 
-  wr::WrTransformInfo transform_info;
-  if (transformForSC) {
-    transform_info.transform = wr::ToLayoutTransform(newTransformMatrix);
-    params.mTransformPtr = &transform_info;
-  } else {
-    params.mTransformPtr = nullptr;
-  }
-
   params.prim_flags = !BackfaceIsHidden()
                           ? wr::PrimitiveFlags::IS_BACKFACE_VISIBLE
                           : wr::PrimitiveFlags{0};
-  params.paired_with_perspective = mHasAssociatedPerspective;
   params.mDeferredTransformItem = deferredTransformItem;
   params.mAnimated = animated;
   params.SetPreserve3D(mFrame->Extend3DContext() && !mIsTransformSeparator);
@@ -6980,25 +7013,53 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
     originParams.mBoundTransform = &identity;
     originParams.clip = params.clip;
     originParams.prim_flags = params.prim_flags;
-    originParams.should_snap = true;
+    wr::ReferenceFrameParams originRfParams;
+    originRfParams.is_2d_scale_translation = true;
+    originRfParams.should_snap = true;
+    wr::WrSpatialId originSpatialId =
+        aManager->CommandBuilder().DefineReferenceFrame(
+            aBuilder, mFrame,
+            WebRenderCommandBuilder::FrameReferenceFrame::SVGOrigin, position,
+            originRfParams);
     originSc.emplace(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                     originParams, LayoutDeviceRect(position, boundsSize));
-    Maybe<wr::WrSpatialId> originSpatialId = originSc->ReferenceFrameId();
-    MOZ_ASSERT(originSpatialId);
+                     originParams, Some(originSpatialId), boundsSize);
     
     
     
     
     
     aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(),
-                                                  *originSpatialId);
+                                                  originSpatialId);
     position = LayoutDevicePoint();
+  }
+
+  
+  
+  
+  Maybe<wr::WrSpatialId> referenceFrame;
+  if (transformForSC || animationsId || position != LayoutDevicePoint()) {
+    wr::ReferenceFrameParams rfParams;
+    rfParams.transform_style = params.transform_style;
+    if (transformForSC || animationsId) {
+      rfParams.transform = wr::ToLayoutTransform(
+          transformForSC ? *transformForSC : gfx::Matrix4x4());
+      rfParams.animation_id = animationsId;
+      rfParams.paired_with_perspective = mHasAssociatedPerspective;
+    } else {
+      rfParams.is_2d_scale_translation = true;
+    }
+    referenceFrame = Some(aManager->CommandBuilder().DefineReferenceFrame(
+        aBuilder, mFrame,
+        mIsTransformSeparator
+            ? WebRenderCommandBuilder::FrameReferenceFrame::TransformSeparator
+            : WebRenderCommandBuilder::FrameReferenceFrame::Transform,
+        position, rfParams));
   }
 
   {
     StackingContextHelper sc(originSc ? *originSc : aSc,
                              GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                             params, LayoutDeviceRect(position, boundsSize));
+                             params, referenceFrame, boundsSize);
 
     aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(
         GetChildren(), this, aDisplayListBuilder, sc, aBuilder, aResources);
@@ -7720,12 +7781,11 @@ WebRenderCommandsResult nsDisplayPerspective::CreateWebRenderCommands(
       mFrame->Extend3DContext() || perspectiveFrame->Extend3DContext();
 
   wr::StackingContextParams params;
+  wr::ReferenceFrameParams rfParams;
+  rfParams.transform = wr::ToLayoutTransform(perspectiveMatrix);
+  rfParams.kind = wr::WrReferenceFrameKind::Perspective;
+  rfParams.SetPreserve3D(preserve3D);
 
-  wr::WrTransformInfo transform_info;
-  transform_info.transform = wr::ToLayoutTransform(perspectiveMatrix);
-  params.mTransformPtr = &transform_info;
-
-  params.reference_frame_kind = wr::WrReferenceFrameKind::Perspective;
   params.prim_flags = !BackfaceIsHidden()
                           ? wr::PrimitiveFlags::IS_BACKFACE_VISIBLE
                           : wr::PrimitiveFlags{0};
@@ -7753,10 +7813,15 @@ WebRenderCommandsResult nsDisplayPerspective::CreateWebRenderCommands(
   
   
   
-  params.scrolling_relative_to = scrollingRelativeTo.ptrOr(nullptr);
+  rfParams.scrolling_relative_to = scrollingRelativeTo.ptrOr(nullptr);
 
+  wr::WrSpatialId referenceFrame =
+      aManager->CommandBuilder().DefineReferenceFrame(
+          aBuilder, mFrame,
+          WebRenderCommandBuilder::FrameReferenceFrame::Perspective,
+          LayoutDevicePoint(), rfParams);
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                           params);
+                           params, Some(referenceFrame));
 
   aManager->CommandBuilder().CreateWebRenderCommandsFromDisplayList(
       GetChildren(), this, aDisplayListBuilder, sc, aBuilder, aResources);
@@ -8806,7 +8871,7 @@ WebRenderCommandsResult nsDisplayMasksAndClipPaths::CreateWebRenderCommands(
       params.flags |= wr::StackingContextFlags::WRAPS_BACKDROP_FILTER;
     }
     layer.emplace(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder, params,
-                  bounds);
+                  Nothing(), bounds.Size());
     sc = layer.ptr();
   }
 

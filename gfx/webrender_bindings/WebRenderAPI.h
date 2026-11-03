@@ -550,6 +550,27 @@ class MOZ_RAII AutoTransactionSender {
 
 
 
+
+struct MOZ_STACK_CLASS ReferenceFrameParams : public WrReferenceFrameParams {
+  ReferenceFrameParams()
+      : WrReferenceFrameParams{wr::ToLayoutTransform(gfx::Matrix4x4()),
+                                0,
+                               wr::TransformStyle::Flat,
+                               wr::WrReferenceFrameKind::Transform,
+                                false,
+                                false,
+                                false,
+                                nullptr} {}
+
+  void SetPreserve3D(bool aPreserve) {
+    transform_style =
+        aPreserve ? wr::TransformStyle::Preserve3D : wr::TransformStyle::Flat;
+  }
+};
+
+
+
+
 struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   StackingContextParams()
       : WrStackingContextParams{
@@ -557,13 +578,7 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
             nullptr,
             nullptr,
             nullptr,
-            nullptr,
             wr::TransformStyle::Flat,
-            wr::WrReferenceFrameKind::Transform,
-            false,
-            false,
-            false,
-            nullptr,
              wr::PrimitiveFlags::IS_BACKFACE_VISIBLE,
             wr::MixBlendMode::Normal,
             wr::StackingContextFlags{0}} {}
@@ -579,7 +594,6 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   nsTArray<wr::WrFilterData> mFilterDatas;
   wr::LayoutRect mBounds = wr::ToLayoutRect(LayoutDeviceRect());
   const gfx::Matrix4x4* mBoundTransform = nullptr;
-  const wr::WrTransformInfo* mTransformPtr = nullptr;
   nsDisplayTransform* mDeferredTransformItem = nullptr;
   
   
@@ -618,10 +632,18 @@ class DisplayListBuilder final {
   void End(wr::BuiltDisplayList& aOutDisplayList);
   void End(layers::DisplayListData& aOutTransaction);
 
-  Maybe<wr::WrSpatialId> PushStackingContext(
-      const StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-      const wr::RasterSpace& aRasterSpace);
-  void PopStackingContext(bool aIsReferenceFrame);
+  
+  
+  wr::WrSpatialId DefineReferenceFrame(const wr::LayoutPoint& aOrigin,
+                                       const ReferenceFrameParams& aParams);
+  wr::WrSpatialId DefineComputedFrame(const wr::LayoutPoint& aOrigin,
+                                      const wr::WrComputedTransformData& aData);
+
+  
+  void PushStackingContext(const StackingContextParams& aParams,
+                           const wr::RasterSpace& aRasterSpace,
+                           const Maybe<wr::WrSpatialId>& aSpatialId);
+  void PopStackingContext();
 
   wr::WrClipChainId DefineClipChain(Span<const wr::WrClipId> aClips,
                                     const Maybe<wr::WrClipChainId>& aParent);
@@ -635,6 +657,10 @@ class DisplayListBuilder final {
   wr::WrClipId DefineRoundedRectClip(Maybe<wr::WrSpatialId> aSpace,
                                      const wr::ComplexClipRegion& aComplex,
                                      bool aAntiAliased = false);
+  wr::WrClipId DefineBorderClip(
+      const wr::LayoutRect& aRect, const wr::LayoutSideOffsets& aWidths,
+      const mozilla::Range<const wr::BorderSide>& aSides,
+      const wr::BorderRadius& aRadius, const wr::LayoutSideOffsets& aInset);
   wr::WrClipId DefineRectClip(Maybe<wr::WrSpatialId> aSpace,
                               wr::LayoutRect aClipRect,
                               bool aAntiAliased = false);

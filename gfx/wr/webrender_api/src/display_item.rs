@@ -10,8 +10,8 @@ use crate::{font, SnapshotImageKey};
 use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBinding};
 use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
-use crate::image::{ColorDepth, ImageKey};
-use crate::key_types::{EdgeMask, StretchSizeKey};
+use crate::image::ImageKey;
+use crate::key_types::EdgeMask;
 use crate::interning;
 use crate::path::Path;
 use crate::units::*;
@@ -163,13 +163,13 @@ pub enum DisplayItem {
     
     RectClip(RectClipDisplayItem),
     RoundedRectClip(RoundedRectClipDisplayItem),
+    BorderClip(BorderClipDisplayItem),
     ImageMaskClip(ImageMaskClipDisplayItem),
     PathClip(PathClipDisplayItem),
     ClipChain(ClipChainItem),
 
     
     Iframe(IframeDisplayItem),
-    PushReferenceFrame(ReferenceFrameDisplayListItem),
     PushStackingContext(PushStackingContextDisplayItem),
 
     
@@ -180,7 +180,6 @@ pub enum DisplayItem {
     SetPoints,
 
     
-    PopReferenceFrame,
     PopStackingContext,
 
     
@@ -209,11 +208,11 @@ pub enum DebugDisplayItem {
     ImageMaskClip(ImageMaskClipDisplayItem),
     PathClip(PathClipDisplayItem),
     RoundedRectClip(RoundedRectClipDisplayItem),
+    BorderClip(BorderClipDisplayItem),
     RectClip(RectClipDisplayItem),
     ClipChain(ClipChainItem, Vec<ClipId>),
 
     Iframe(IframeDisplayItem),
-    PushReferenceFrame(ReferenceFrameDisplayListItem),
     PushStackingContext(PushStackingContextDisplayItem),
 
     SetGradientStops(Vec<GradientStop>),
@@ -221,7 +220,6 @@ pub enum DebugDisplayItem {
     SetFilterData(FilterData),
     SetPoints(Vec<LayoutPoint>),
 
-    PopReferenceFrame,
     PopStackingContext,
 
     DebugMarker(u32)
@@ -273,6 +271,15 @@ pub struct RoundedRectClipDisplayItem {
     pub snap_outset: f32,
     
     pub anti_aliased: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub struct BorderClipDisplayItem {
+    pub id: ClipId,
+    pub spatial_id: SpatialId,
+    pub clip_rect: LayoutRect,
+    pub border: NormalBorder,
+    pub widths: LayoutSideOffsets,
 }
 
 
@@ -836,10 +843,6 @@ pub struct BackdropFilterDisplayItem {
     pub common: CommonItemProperties,
 }
 
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
-pub struct ReferenceFrameDisplayListItem {
-}
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ReferenceFrameDescriptor {
@@ -1993,22 +1996,15 @@ pub struct IframeDisplayItem {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ImageDisplayItem {
-    pub common: CommonItemProperties,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
     
-    pub bounds: LayoutRect,
     
     
     
-    pub stretch_size: StretchSizeKey,
-    
-    pub tile_spacing: LayoutSize,
-    pub image_key: ImageKey,
-    pub image_rendering: ImageRendering,
-    pub alpha_type: AlphaType,
-    
-    pub color: ColorF,
+    pub image: crate::interning::Handle<crate::interned_prims::ImagePrimKey>,
 }
 
 #[repr(u8)]
@@ -2027,13 +2023,11 @@ pub enum AlphaType {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct YuvImageDisplayItem {
-    pub common: CommonItemProperties,
-    pub bounds: LayoutRect,
-    pub yuv_data: YuvData,
-    pub color_depth: ColorDepth,
-    pub color_space: YuvColorSpace,
-    pub color_range: ColorRange,
-    pub image_rendering: ImageRendering,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
+    
+    
+    pub yuv_image: crate::interning::Handle<crate::interned_prims::YuvImagePrimKey>,
 }
 
 #[repr(u8)]
@@ -2448,6 +2442,7 @@ impl DisplayItem {
             DisplayItem::HitTest(..) => "hit_test",
             DisplayItem::RectClip(..) => "rect_clip",
             DisplayItem::RoundedRectClip(..) => "rounded_rect_clip",
+            DisplayItem::BorderClip(..) => "border_clip",
             DisplayItem::ImageMaskClip(..) => "image_mask_clip",
             DisplayItem::PathClip(..) => "path_clip",
             DisplayItem::ClipChain(..) => "clip_chain",
@@ -2456,9 +2451,7 @@ impl DisplayItem {
             DisplayItem::Iframe(..) => "iframe",
             DisplayItem::Image(..) => "image",
             DisplayItem::Line(..) => "line",
-            DisplayItem::PopReferenceFrame => "pop_reference_frame",
             DisplayItem::PopStackingContext => "pop_stacking_context",
-            DisplayItem::PushReferenceFrame(..) => "push_reference_frame",
             DisplayItem::PushStackingContext(..) => "push_stacking_context",
             DisplayItem::SetFilterOps => "set_filter_ops",
             DisplayItem::SetFilterData => "set_filter_data",

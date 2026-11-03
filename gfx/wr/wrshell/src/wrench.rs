@@ -519,19 +519,24 @@ impl YamlWriter {
                     DisplayItem::Image(info) => {
                         self.write_line("- type: image");
                         self.push_level();
-                        self.write_spatial_id(info.common.spatial_id);
-                        self.write_clip_chain_id(info.common.clip_chain_id);
-                        self.write_bounds(info.bounds);
-                        self.maybe_write_clip_rect(info.bounds, info.common.clip_rect);
-                        self.write_line(
-                            &format!("src: checkerboard(2,8,8,{},{})",
-                                ((info.bounds.width() - 2.0) / 8.0).ceil() as i32,
-                                ((info.bounds.height() - 2.0) / 8.0).ceil() as i32,
-                            ),
-                        );
+                        self.write_spatial_id(info.spatial_id);
+                        self.write_clip_chain_id(info.clip_chain_id);
+                        
+                        
+                        self.write_bounds(LayoutRect::zero());
+                        self.write_line("src: checkerboard(2,8,8,1,1)");
                         self.pop_level();
                     }
                     DisplayItem::RectClip(info) => {
+                        let clip_id = self.add_clip_id(info.id);
+                        self.write_line("- type: clip");
+                        self.push_level();
+                        self.write_line(&format!("id: {}", clip_id));
+                        self.write_spatial_id(info.spatial_id);
+                        self.write_rect("bounds", info.clip_rect);
+                        self.pop_level();
+                    }
+                    DisplayItem::BorderClip(info) => {
                         let clip_id = self.add_clip_id(info.id);
                         self.write_line("- type: clip");
                         self.push_level();
@@ -624,8 +629,6 @@ impl YamlWriter {
                     DisplayItem::ConicGradient(..) => {}
                     DisplayItem::Line(..) => {}
                     DisplayItem::HitTest(..) => {}
-                    DisplayItem::PushReferenceFrame(..) => {}
-                    DisplayItem::PopReferenceFrame => {}
                     DisplayItem::DebugMarker(..) => {}
                     DisplayItem::BoxShadow(..) => {}
                 };

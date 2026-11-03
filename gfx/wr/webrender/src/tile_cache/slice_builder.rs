@@ -580,6 +580,7 @@ fn create_tile_cache(
             match clip_node_data.key.kind {
                 ClipItemKeyKind::ImageMask(..) |
                 ClipItemKeyKind::Path(..) |
+                ClipItemKeyKind::Border(_) |
                 ClipItemKeyKind::Rectangle(ClipMode::ClipOut) |
                 ClipItemKeyKind::RoundedRectangle(_, _, ClipMode::ClipOut) => {
                     
