@@ -77,12 +77,16 @@ mermaid_version = "12.2.0"
 
 
 
+mermaid_light_theme = "redux-color"
+mermaid_dark_theme = "redux-dark-color"
+
+
+
+
 mermaid_init_config = {
     "startOnLoad": False,
     
     
-    
-    "look": "classic",
     "themeVariables": {
         "fontSize": "18px",
     },
