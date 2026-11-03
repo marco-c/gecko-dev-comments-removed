@@ -57,7 +57,11 @@ function transformMC({ types: t }) {
             
             
             if (!newValue.startsWith("devtools")) {
-              newValue = newValue.match(/.*(devtools.*)/)[1];
+              const m = newValue.match(/.*(devtools.*)/);
+              if (!m) {
+                return;
+              }
+              newValue = m[1];
             }
 
             
