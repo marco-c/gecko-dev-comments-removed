@@ -322,6 +322,18 @@ pub(super) enum WinRtPinError {
 
 impl WinRtPinError {
     
+    pub fn hresult(&self) -> windows::core::HRESULT {
+        use WinRtPinError::*;
+        match self {
+            GetAumid(e)
+            | SetAumid(e)
+            | GetTaskbarManager(e)
+            | ScheduleRequestPin(e)
+            | RequestPin(e) => e.code(),
+        }
+    }
+
+    
     pub fn to_metric_taskbar_pin_winrt(&self) -> &'static str {
         use WinRtPinError::*;
         match self {
