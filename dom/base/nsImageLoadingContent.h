@@ -361,8 +361,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   void CancelPendingEvent();
 
-  RefPtr<mozilla::AsyncEventDispatcher> mPendingEvent;
-
  protected:
   
 
@@ -498,61 +496,92 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   virtual void LoadSelectedImage(bool aAlwaysLoad, bool aStopLazyLoading) = 0;
 
-  RefPtr<ImageLoadTask> mPendingImageLoadTask;
-
-  RefPtr<imgRequestProxy> mCurrentRequest;
-  RefPtr<imgRequestProxy> mPendingRequest;
-
- private:
   
 
 
+  struct ImageLoadData {
+    RefPtr<mozilla::AsyncEventDispatcher> mPendingEvent;
+
+    RefPtr<ImageLoadTask> mPendingImageLoadTask;
+
+    RefPtr<imgRequestProxy> mCurrentRequest;
+    RefPtr<imgRequestProxy> mPendingRequest;
+
+    
 
 
 
 
 
-  ImageObserver mObserverList;
+
+
+    ImageObserver mObserverList{nullptr};
+
+    
+
+
+
+
+    nsTArray<RefPtr<ScriptedImageObserver>> mScriptedObservers;
+
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> mCurrentURI;
+
+    mozilla::TimeStamp mMostRecentRequestChange =
+        mozilla::TimeStamp::ProcessCreation();
+
+    
+
+
+
+    nsTArray<RefPtr<mozilla::dom::Promise>> mDecodePromises;
+
+    
+
+
+
+
+
+    size_t mOutstandingDecodePromises = 0;
+
+    
+
+
+
+
+
+
+    uint32_t mRequestGeneration = 0;
+
+    
+    
+    bool mCurrentRequestRegistered = false;
+    bool mPendingRequestRegistered = false;
+
+    uint8_t mCurrentRequestFlags = 0;
+    uint8_t mPendingRequestFlags = 0;
+  };
+
+  void CreateImageLoadData();
+
+  ImageLoadData& EnsureImageLoadData() {
+    if (!mImageLoadData) {
+      CreateImageLoadData();
+    }
+    return *mImageLoadData;
+  }
 
   
+  ImageLoadData& RequireImageLoadData() {
+    MOZ_DIAGNOSTIC_ASSERT(mImageLoadData);
+    return *mImageLoadData;
+  }
 
+  mozilla::UniquePtr<ImageLoadData> mImageLoadData;
 
-
-
-  nsTArray<RefPtr<ScriptedImageObserver>> mScriptedObservers;
-
-  
-  
-  
-  
-  nsCOMPtr<nsIURI> mCurrentURI;
-
-  mozilla::TimeStamp mMostRecentRequestChange;
-
-  
-
-
-
-  nsTArray<RefPtr<mozilla::dom::Promise>> mDecodePromises;
-
-  
-
-
-
-
-
-  size_t mOutstandingDecodePromises = 0;
-
-  
-
-
-
-
-
-
-  uint32_t mRequestGeneration = 0;
-
- protected:
   bool mLoadingEnabled : 1 = true;
   
 
@@ -576,11 +605,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   bool mObservingResize : 1 = false;
 
  private:
-  
-  
-  bool mCurrentRequestRegistered = false;
-  bool mPendingRequestRegistered = false;
-
   enum {
     
     REQUEST_IS_TRACKED = 1 << 0,
@@ -588,8 +612,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
     
     REQUEST_IS_IMAGESET = 1 << 1,
   };
-  uint8_t mCurrentRequestFlags = 0;
-  uint8_t mPendingRequestFlags = 0;
 };
 
 #endif  

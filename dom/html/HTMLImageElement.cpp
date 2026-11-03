@@ -138,11 +138,12 @@ bool HTMLImageElement::Complete() const {
     return true;
   }
 
-  if (mPendingRequest || HasPendingAlwaysLoadImageTask()) {
+  if ((mImageLoadData && mImageLoadData->mPendingRequest) ||
+      HasPendingAlwaysLoadImageTask()) {
     return false;
   }
 
-  if (!mCurrentRequest) {
+  if (!mImageLoadData || !mImageLoadData->mCurrentRequest) {
     
     
     
@@ -154,7 +155,7 @@ bool HTMLImageElement::Complete() const {
   }
 
   uint32_t status;
-  mCurrentRequest->GetImageStatus(&status);
+  mImageLoadData->mCurrentRequest->GetImageStatus(&status);
   return (status &
           (imgIRequest::STATUS_LOAD_COMPLETE | imgIRequest::STATUS_ERROR)) != 0;
 }
