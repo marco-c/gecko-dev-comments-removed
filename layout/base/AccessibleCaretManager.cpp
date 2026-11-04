@@ -724,9 +724,8 @@ nsresult AccessibleCaretManager::SelectWordOrShortcut(const nsPoint& aPoint) {
   
   
   
-  nsIFrame::ContentOffsets offsets = ptFrame->GetContentOffsetsFromPoint(
-      ptInFrame,
-      nsIFrame::SKIP_HIDDEN | nsIFrame::IGNORE_NATIVE_ANONYMOUS_SUBTREE);
+  nsIFrame::ContentOffsets offsets =
+      ptFrame->GetContentOffsetsFromPointForSelection(ptInFrame);
   if (offsets.content) {
     RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
     if (frameSelection) {

@@ -2526,6 +2526,8 @@ class nsIFrame : public nsQueryFrame {
     SKIP_HIDDEN = 1 << 1,
     
     
+    
+    
     IGNORE_NATIVE_ANONYMOUS_SUBTREE = 1 << 2,
     
     INCLUDE_REPLACED = 1 << 3,
@@ -2539,6 +2541,21 @@ class nsIFrame : public nsQueryFrame {
 
   ContentOffsets GetContentOffsetsFromPoint(const nsPoint& aPoint,
                                             uint32_t aFlags = 0);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  ContentOffsets GetContentOffsetsFromPointForSelection(const nsPoint& aPoint);
 
   virtual ContentOffsets GetContentOffsetsFromPointExternal(
       const nsPoint& aPoint, uint32_t aFlags = 0) {
