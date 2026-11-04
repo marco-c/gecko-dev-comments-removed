@@ -198,6 +198,9 @@ class TabAttribution {
   
   
   _cpuCount = 1;
+  
+  
+  _lastURIs = new WeakMap();
 
   async init() {
     try {
@@ -239,6 +242,15 @@ class TabAttribution {
         
         
         let uri = browser.currentURI;
+        let windowGlobal = browser.browsingContext?.currentWindowGlobal;
+        if (
+          browser.isConnected &&
+          (!windowGlobal || windowGlobal.isInitialDocument)
+        ) {
+          uri = this._lastURIs.get(tab) ?? uri;
+        } else {
+          this._lastURIs.set(tab, uri);
+        }
         if (!uri || uri.schemeIs("chrome")) {
           continue;
         }
@@ -249,7 +261,8 @@ class TabAttribution {
           uri,
           title: tab.label || browser.contentTitle || "",
           
-          discarded: !browser.outerWindowID,
+          
+          discarded: !browser.isConnected,
         });
       }
     }
@@ -2160,6 +2173,8 @@ class ProcessesTabView extends RowSet {
 
   _updateHeaderRow(row, group) {
     row.group = group;
+    row.classList.remove("departed");
+    row.inert = false;
     let tabs = this.getShownChildRows(row).map(childRow => childRow.tabData);
     let allDiscarded = tabs.every(tabData => tabData.discarded);
     this._updateUnloadButton(
@@ -2199,11 +2214,19 @@ class ProcessesTabView extends RowSet {
     fillTabCpuCell(cpuCell, slopeCpuOfTotal);
   }
 
-  // Unlike ProcessesView.discardUpdate(), appends new rows immediately so a
-  // freshly opened tab isn't invisible for the freeze window -- existing
-  // rows' DOM position stays untouched either way.
+  // Unlike ProcessesView.discardUpdate(), appends new rows immediately (no
+  // invisible freeze window). Rows that would leave stay in place, dimmed and
+  // inert, so nothing shifts under the cursor; the next reorder removes them.
   _discardOrder() {
     let tbody = document.getElementById("process-tbody");
+    let live = new Set(this._orderedRows);
+    for (let row of tbody.children) {
+      if (!live.has(row)) {
+        this.setRowSelected(row, false);
+        row.classList.add("departed");
+        row.inert = true;
+      }
+    }
     // A new tab in an existing group joins it instead of the end of the list.
     let rows = this._orderedRows;
     for (let [i, row] of rows.entries()) {
@@ -2237,10 +2260,11 @@ class ProcessesTabView extends RowSet {
 
   _updateRow(row, tabData) {
     row.tabData = tabData;
+    row.classList.remove("departed");
+    row.inert = false;
 
     if (tabData.discarded) {
       row.classList.remove("killing");
-      row.removeAttribute("aria-busy");
     }
     this._updateUnloadButton(
       row,
@@ -2406,12 +2430,7 @@ class ProcessesTabController {
     
     window.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
-        let tabCounters = this._tabAttribution.getTabCounters(
-          State.getCounters()
-        );
-        this._lastTabCounters = tabCounters;
-        this._sortTabCounters(tabCounters);
-        this._commitView(tabCounters, { force: true });
+        this._rerender({ force: true });
       }
     });
 
@@ -2471,12 +2490,9 @@ class ProcessesTabController {
       return;
     }
     let row = target.closest("tr.tab-row");
-    if (row.tabData.discarded) {
-      this._recordTabAction([row.tabData], "reload", "tab_row");
-      row.tabData.tabbrowser.reloadTab(row.tabData.tab);
-    } else {
-      this._unloadRow(row);
-    }
+    this._runRowAction(row, () =>
+      row.tabData.discarded ? this._reloadRow(row) : this._unloadRow(row)
+    );
   }
 
   _navigateToTab(row) {
@@ -2593,7 +2609,7 @@ class ProcessesTabController {
     }
     this._clearSelection();
     await this._unloadOrReloadTabs(eligible, reload);
-    await this.update(true);
+    this._rerender({ force: true });
   }
 
   async _closeSelectedTabs() {
@@ -2617,24 +2633,27 @@ class ProcessesTabController {
     }
     this._clearSelection();
     
-    await this.update(true);
+    this._rerender({ force: true });
   }
 
-  
   
   
   async _unloadRow(row) {
     this._recordTabAction([row.tabData], "unload", "tab_row");
     row.classList.add("killing");
-    row.setAttribute("aria-busy", "true");
     let { tab, tabbrowser } = row.tabData;
     await tabbrowser.explicitUnloadTabs([tab]);
     if (!tab.hasAttribute("discarded")) {
       
-      
       row.classList.remove("killing");
-      row.removeAttribute("aria-busy");
     }
+    this._rerender();
+  }
+
+  _reloadRow(row) {
+    this._recordTabAction([row.tabData], "reload", "tab_row");
+    row.tabData.tabbrowser.reloadTab(row.tabData.tab);
+    this._rerender();
   }
 
   
@@ -2668,6 +2687,7 @@ class ProcessesTabController {
       );
     }
     await this._unloadOrReloadTabs(eligible, reload);
+    this._rerender();
   }
 
   _recordTabAction(tabDataList, actionType, actionSource) {
@@ -2683,6 +2703,14 @@ class ProcessesTabController {
       total_cpu_hundredths: all.totalCpuHundredths,
       action_source: actionSource,
     });
+  }
+
+  
+  _rerender({ force = false } = {}) {
+    let tabCounters = this._tabAttribution.getTabCounters(State.getCounters());
+    this._lastTabCounters = tabCounters;
+    this._sortTabCounters(tabCounters);
+    this._commitView(tabCounters, { force });
   }
 
   
@@ -2849,7 +2877,7 @@ class ProcessesTabController {
     document.dispatchEvent(new CustomEvent("AboutProcessesUpdated"));
   }
 
-  async update(forceReorder = false) {
+  async update() {
     
     
     
@@ -2869,19 +2897,15 @@ class ProcessesTabController {
       await this._promiseCpuCount;
       this._promiseCpuCount = null;
     }
-    let counters = State.getCounters();
-    let tabCounters = this._tabAttribution.getTabCounters(counters);
-    this._lastTabCounters = tabCounters;
-    this._sortTabCounters(tabCounters);
-    this._commitView(tabCounters, { force: forceReorder });
+    this._rerender();
 
     
     if (
       !this._panelOpenedRecorded &&
-      sumTabCounters(tabCounters).slopeCpuOfTotal != null
+      sumTabCounters(this._lastTabCounters).slopeCpuOfTotal != null
     ) {
       this._panelOpenedRecorded = true;
-      let all = summarizeTabCounters(tabCounters);
+      let all = summarizeTabCounters(this._lastTabCounters);
       Glean.resourceMonitor.panelOpened.record({
         total_tab_count: all.totalTabCount,
         total_ram_mb: all.totalRamMb,
