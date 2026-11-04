@@ -2345,6 +2345,8 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
     return NS_OK;
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(aLoadState->TargetBrowsingContext().IsNull(),
+                        "Targeting occurs in InternalLoad");
   aLoadState->AssertProcessCouldTriggerLoadIfSystem();
 
   
