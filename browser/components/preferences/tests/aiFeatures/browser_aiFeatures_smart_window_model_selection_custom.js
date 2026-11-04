@@ -18,8 +18,6 @@ describe("Smart Window custom model selection", () => {
       set: [
         ["browser.preferences.aiControls", true],
         ["browser.smartwindow.enabled", true],
-        
-        ["browser.smartwindow.mistralRelease", false],
         ["browser.smartwindow.tos.consentTime", 1770830464],
       ],
     });
@@ -76,7 +74,7 @@ describe("Smart Window custom model selection", () => {
 
     
     const fastRadio = doc.querySelector(
-      'moz-radio[data-l10n-id="smart-window-model-fast"]'
+      'moz-radio[data-l10n-id="smart-window-model-fast-v2"]'
     );
     fastRadio.click();
 
@@ -88,7 +86,6 @@ describe("Smart Window custom model selection", () => {
 
     fastRadio.focus();
     
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
     EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
 
@@ -183,7 +180,7 @@ describe("Smart Window custom model selection", () => {
     ({ doc, win } = await openSmartWindowPanel());
 
     const fastRadio = doc.querySelector(
-      'moz-radio[data-l10n-id="smart-window-model-fast"]'
+      'moz-radio[data-l10n-id="smart-window-model-fast-v2"]'
     );
     fastRadio.click();
 

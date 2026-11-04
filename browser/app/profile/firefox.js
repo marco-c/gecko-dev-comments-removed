@@ -2452,8 +2452,6 @@ pref("browser.smartwindow.isDefaultWindow", false);
 pref("browser.smartwindow.firstrun.explainerURL", "https://www.firefox.com/smart-window/?v=product");
 pref("places.semanticHistory.smartwindow.featureGate", false);
 
-pref("browser.smartwindow.mistralRelease", true);
-
 
 pref("places.semanticHistory.smartwindow.distanceThreshold", "0.6");
 

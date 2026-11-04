@@ -23,13 +23,6 @@ let gChatModuleRecords;
 let gSkillNames;
 
 add_setup(async function read_real_chat_records() {
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.mistralRelease", false]],
-  });
-
   const records = await getRemoteClient().get();
   gChatParams = records.find(
     record =>
@@ -133,16 +126,11 @@ add_task(
 
 
 
-
 add_task(async function test_buildChatSystemPrompt_skips_gated_module() {
   const AITAB_PREF = "browser.smartwindow.aitab.enabled";
-  const MISTRAL_RELEASE_PREF = "browser.smartwindow.mistralRelease";
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [MISTRAL_RELEASE_PREF, true],
-      [AITAB_PREF, false],
-    ],
+    set: [[AITAB_PREF, false]],
   });
   const records = await getRemoteClient().get();
   const params = records.find(
@@ -176,10 +164,7 @@ add_task(async function test_buildChatSystemPrompt_skips_gated_module() {
   await SpecialPowers.popPrefEnv();
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      [MISTRAL_RELEASE_PREF, true],
-      [AITAB_PREF, true],
-    ],
+    set: [[AITAB_PREF, true]],
   });
   ({ prompt } = await buildChatSystemPrompt(CHAT_MODEL));
   Assert.ok(
