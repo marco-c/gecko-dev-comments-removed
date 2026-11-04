@@ -2986,6 +2986,44 @@ void NS_LogSecureUpgradeToConsole(nsIURI* aURI, nsILoadInfo* aLoadInfo,
 }
 
 
+static bool MayBeSecureUpgraded(nsIURI* aURI, nsILoadInfo* aLoadInfo,
+                                bool aRecordTelemetry) {
+  if (aURI->SchemeIs("https")) {
+    
+    if (aRecordTelemetry) {
+      aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::ALREADY_HTTPS);
+    }
+    return false;
+  }
+  
+  
+  
+  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
+    return false;
+  }
+  
+  if (!aLoadInfo) {
+    return false;
+  }
+  
+  if (aLoadInfo->GetSkipHTTPSUpgrade()) {
+    if (aRecordTelemetry) {
+      aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::SKIP_HTTPS_UPGRADE);
+    }
+    return false;
+  }
+  return true;
+}
+
+bool NS_WillUpgradeInsecureRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
+  
+  return aURI->SchemeIs("http") &&
+         MayBeSecureUpgraded(aURI, aLoadInfo,  false) &&
+         (aLoadInfo->GetUpgradeInsecureRequests() ||
+          aLoadInfo->GetBrowserUpgradeInsecureRequests());
+}
+
+
 
 
 
@@ -3133,29 +3171,7 @@ nsresult NS_ShouldSecureUpgrade(
   
   
   
-  if (aURI->SchemeIs("https")) {
-    
-    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::ALREADY_HTTPS);
-    aShouldUpgrade = false;
-    return NS_OK;
-  }
-  
-  
-  
-  if (nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(aURI)) {
-    aShouldUpgrade = false;
-    return NS_OK;
-  }
-  
-  if (!aLoadInfo) {
-    aShouldUpgrade = false;
-    return NS_OK;
-  }
-  
-  bool skipHTTPSUpgrade = false;
-  (void)aLoadInfo->GetSkipHTTPSUpgrade(&skipHTTPSUpgrade);
-  if (skipHTTPSUpgrade) {
-    aLoadInfo->SetHttpsUpgradeTelemetry(nsILoadInfo::SKIP_HTTPS_UPGRADE);
+  if (!MayBeSecureUpgraded(aURI, aLoadInfo,  true)) {
     aShouldUpgrade = false;
     return NS_OK;
   }

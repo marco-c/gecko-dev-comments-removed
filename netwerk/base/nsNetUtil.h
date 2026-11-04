@@ -1037,6 +1037,13 @@ nsresult NS_ShouldSecureUpgrade(
 
 
 
+
+
+bool NS_WillUpgradeInsecureRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo);
+
+
+
+
 nsresult NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
 
 

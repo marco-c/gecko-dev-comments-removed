@@ -184,6 +184,17 @@ bool ConnectionAllowlists::ShouldLoad(nsIURI* aURI,
 
   nsCOMPtr<nsIURI> uri = aURI;
 
+  
+  
+  
+  
+  
+  if (NS_WillUpgradeInsecureRequest(uri, aLoadInfo) &&
+      NS_WARN_IF(
+          NS_FAILED(NS_GetSecureUpgradedURI(aURI, getter_AddRefs(uri))))) {
+    return false;
+  }
+
   switch (aLoadInfo->GetExternalContentPolicyType()) {
     case ExtContentPolicyType::TYPE_DOCUMENT:
     case ExtContentPolicyType::TYPE_SUBDOCUMENT:

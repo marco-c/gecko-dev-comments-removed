@@ -54,7 +54,12 @@ nsresult ConnectionAllowlistsService::ConsultForRedirect(
   
   
   
-  if (aFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
+  
+  
+  
+  
+  if (aFlags & (nsIChannelEventSink::REDIRECT_INTERNAL |
+                nsIChannelEventSink::REDIRECT_STS_UPGRADE)) {
     return NS_OK;
   }
 
