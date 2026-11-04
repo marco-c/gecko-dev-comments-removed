@@ -2435,12 +2435,8 @@ already_AddRefed<gfxFontEntry> gfxFcPlatformFontList::MakePlatformFont(
   
   
   
-  
-  
-  
   gfxOTSExpandingMemoryStream<> output(aFontData->Length());
-  gfxOTSContext otsContext( true,
-                            true);
+  gfxOTSContext otsContext( true);
   if (!otsContext.Process(&output, aFontData->Data(), aFontData->Length())) {
     return nullptr;
   }
