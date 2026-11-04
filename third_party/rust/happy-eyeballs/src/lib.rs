@@ -49,7 +49,7 @@
 
 use std::collections::{BTreeMap, HashSet, VecDeque};
 use std::fmt::Debug;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV6};
 use std::num::NonZeroU32;
 use std::time::{Duration, Instant};
 
@@ -142,10 +142,66 @@ pub enum ConnectionResult {
     EchRetry(EchConfig),
 }
 
+
+
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct ScopedIpv6Addr {
+    pub ip: Ipv6Addr,
+    pub scope_id: Option<NonZeroU32>,
+}
+
+impl ScopedIpv6Addr {
+    #[must_use]
+    pub const fn new(ip: Ipv6Addr, scope_id: Option<NonZeroU32>) -> Self {
+        Self { ip, scope_id }
+    }
+}
+
+impl From<Ipv6Addr> for ScopedIpv6Addr {
+    fn from(ip: Ipv6Addr) -> Self {
+        Self::new(ip, None)
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ResolvedAddr {
+    V4(Ipv4Addr),
+    V6(ScopedIpv6Addr),
+}
+
+impl ResolvedAddr {
+    const fn with_port(self, port: u16) -> SocketAddr {
+        match self {
+            Self::V4(ip) => SocketAddr::new(IpAddr::V4(ip), port),
+            Self::V6(addr) => {
+                let scope_id = match addr.scope_id {
+                    Some(id) => id.get(),
+                    None => 0,
+                };
+                SocketAddr::V6(SocketAddrV6::new(addr.ip, port, 0, scope_id))
+            }
+        }
+    }
+}
+
+impl From<IpAddr> for ResolvedAddr {
+    fn from(ip: IpAddr) -> Self {
+        match ip {
+            IpAddr::V4(ip) => Self::V4(ip),
+            IpAddr::V6(ip) => Self::V6(ip.into()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DnsResult {
     Https(Result<Vec<ServiceInfo>, ()>),
-    Aaaa(Result<Vec<Ipv6Addr>, ()>),
+    Aaaa(Result<Vec<ScopedIpv6Addr>, ()>),
     A(Result<Vec<Ipv4Addr>, ()>),
 }
 
@@ -163,7 +219,7 @@ impl DnsResult {
         }
     }
 
-    fn ip_addrs(&self) -> impl Iterator<Item = IpAddr> {
+    fn addrs(&self) -> impl Iterator<Item = ResolvedAddr> {
         let v6 = match self {
             Self::Aaaa(Ok(addrs)) => addrs.as_slice(),
             _ => &[],
@@ -174,8 +230,8 @@ impl DnsResult {
         };
         v6.iter()
             .copied()
-            .map(IpAddr::V6)
-            .chain(v4.iter().copied().map(IpAddr::V4))
+            .map(ResolvedAddr::V6)
+            .chain(v4.iter().copied().map(ResolvedAddr::V4))
     }
 }
 
@@ -352,7 +408,7 @@ impl ServiceInfo {
         
         ipv4_addrs: Option<Result<&[Ipv4Addr], ()>>,
         
-        ipv6_addrs: Option<Result<&[Ipv6Addr], ()>>,
+        ipv6_addrs: Option<Result<&[ScopedIpv6Addr], ()>>,
         
         network_config: &NetworkConfig,
         
@@ -460,13 +516,13 @@ impl ServiceInfo {
         let addrs = v6
             .iter()
             .copied()
-            .map(IpAddr::V6)
-            .chain(v4.iter().copied().map(IpAddr::V4))
-            .flat_map(|ip| {
+            .map(ResolvedAddr::V6)
+            .chain(v4.iter().copied().map(ResolvedAddr::V4))
+            .flat_map(|addr| {
                 
                 let ech_config = ech_enabled.then(|| self.ech_config.clone()).flatten();
                 http_versions.iter().map(move |v| Endpoint {
-                    target: EndpointTarget::Address(SocketAddr::new(ip, port)),
+                    target: EndpointTarget::Address(addr.with_port(port)),
                     http_version: *v,
                     ech_config: ech_config.clone(),
                 })
@@ -1712,7 +1768,7 @@ impl HappyEyeballs {
                     }
                     _ => None,
                 });
-            let ipv6_addrs: Option<Result<&[Ipv6Addr], ()>> =
+            let ipv6_addrs: Option<Result<&[ScopedIpv6Addr], ()>> =
                 self.dns_queries.iter().find_map(|q| match &q.state {
                     DnsQueryState::Completed {
                         response: DnsResult::Aaaa(result),
@@ -1861,11 +1917,15 @@ impl HappyEyeballs {
                 continue;
             }
 
-            endpoints.extend(self.alt_svc_addrs(alt_svc).into_iter().map(|ip| Endpoint {
-                target: EndpointTarget::Address(SocketAddr::new(ip, port)),
-                http_version,
-                ech_config: None,
-            }));
+            endpoints.extend(
+                self.alt_svc_addrs(alt_svc)
+                    .into_iter()
+                    .map(|addr| Endpoint {
+                        target: EndpointTarget::Address(addr.with_port(port)),
+                        http_version,
+                        ech_config: None,
+                    }),
+            );
         }
         endpoints
     }
@@ -1900,9 +1960,9 @@ impl HappyEyeballs {
 
         self.origin_addrs()
             .into_iter()
-            .flat_map(|ip| {
+            .flat_map(|addr| {
                 http_versions.iter().map(move |&http_version| Endpoint {
-                    target: EndpointTarget::Address(SocketAddr::new(ip, self.port)),
+                    target: EndpointTarget::Address(addr.with_port(self.port)),
                     http_version,
                     ech_config: None,
                 })
@@ -1940,12 +2000,12 @@ impl HappyEyeballs {
 
     
     
-    fn alt_svc_addrs(&self, alt_svc: &AltSvc) -> Vec<IpAddr> {
+    fn alt_svc_addrs(&self, alt_svc: &AltSvc) -> Vec<ResolvedAddr> {
         alt_svc.host.as_ref().map_or_else(
             || self.origin_addrs(),
             
             |host| match host.parse::<IpAddr>() {
-                Ok(ip) if self.network_config.ip.allows(ip) => vec![ip],
+                Ok(ip) if self.network_config.ip.allows(ip) => vec![ip.into()],
                 
                 
                 Ok(_) => Vec::new(),
@@ -1956,9 +2016,9 @@ impl HappyEyeballs {
 
     
     
-    fn origin_addrs(&self) -> Vec<IpAddr> {
+    fn origin_addrs(&self) -> Vec<ResolvedAddr> {
         match &self.host {
-            Host::Ip(ip) => vec![*ip],
+            Host::Ip(ip) => vec![(*ip).into()],
             
             
             Host::Domain(domain) => self.dns_resolved_addrs(domain),
@@ -1966,12 +2026,12 @@ impl HappyEyeballs {
     }
 
     
-    fn dns_resolved_addrs(&self, host: &str) -> Vec<IpAddr> {
+    fn dns_resolved_addrs(&self, host: &str) -> Vec<ResolvedAddr> {
         self.dns_queries
             .iter()
             .filter(|q| q.target_name.as_str() == host)
             .filter_map(DnsQuery::response)
-            .flat_map(DnsResult::ip_addrs)
+            .flat_map(DnsResult::addrs)
             .collect()
     }
 
@@ -2113,7 +2173,7 @@ mod tests {
         ] {
             assert!(!result.has_addrs());
         }
-        assert!(DnsResult::Aaaa(Ok(vec![Ipv6Addr::LOCALHOST])).has_addrs());
+        assert!(DnsResult::Aaaa(Ok(vec![Ipv6Addr::LOCALHOST.into()])).has_addrs());
         assert!(DnsResult::A(Ok(vec![Ipv4Addr::LOCALHOST])).has_addrs());
     }
 
