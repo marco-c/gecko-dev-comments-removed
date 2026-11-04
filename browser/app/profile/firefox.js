@@ -2990,6 +2990,9 @@ pref("browser.migrate.canary.enabled", true);
 pref("browser.migrate.chrome.enabled", true);
 
 pref("browser.migrate.chrome.history.limit", 2000);
+
+
+pref("browser.migrate.chrome.history.visit.limit", 5);
 pref("browser.migrate.chrome.payment_methods.enabled", true);
 pref("browser.migrate.chrome.extensions.enabled", true);
 pref("browser.migrate.chrome.get_permissions.enabled", true);
