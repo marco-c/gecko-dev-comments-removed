@@ -2520,6 +2520,7 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
     
 
     {
+      const auto& limits = webgl::Limits();
       const auto count = fnGetProgramui(LOCAL_GL_ACTIVE_ATTRIBUTES);
       ret.activeAttribs.reserve(count);
       for (const auto i : IntegerRange(count)) {
@@ -2544,6 +2545,20 @@ webgl::LinkActiveInfo GetLinkActiveInfo(
           
           
           loc = -1;
+        }
+
+        
+        
+        if (loc > 0) {
+          const auto& maxVertexAttribs = limits.maxVertexAttribs;
+          
+          auto locConverted = static_cast<decltype(maxVertexAttribs)>(loc);
+          if (locConverted >= maxVertexAttribs) {
+            gfxCriticalNote
+                << "Driver assigned attribute location " << loc
+                << " is larger than maxVertexAttribs: " << maxVertexAttribs;
+            return;
+          }
         }
 
 #ifdef DUMP_MakeLinkResult
