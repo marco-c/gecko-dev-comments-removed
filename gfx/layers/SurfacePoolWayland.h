@@ -31,10 +31,10 @@ class SurfacePoolWayland final : public SurfacePool {
   explicit SurfacePoolWayland(size_t aPoolSizeLimit);
 
   RefPtr<widget::WaylandBuffer> ObtainBufferFromPool(
-      const widget::WaylandSurfaceLock* aWaylandSurfaceLock,
+      const widget::WaylandSurfaceLock& aWaylandSurfaceLock,
       const gfx::IntSize& aSize, gl::GLContext* aGL,
       RefPtr<widget::DRMFormat> aFormat);
-  void ReturnBufferToPool(const widget::WaylandSurfaceLock* aWaylandSurfaceLock,
+  void ReturnBufferToPool(const widget::WaylandSurfaceLock& aWaylandSurfaceLock,
                           const RefPtr<widget::WaylandBuffer>& aBuffer);
   void EnforcePoolSizeLimit();
   void CollectPendingSurfaces();
@@ -49,17 +49,16 @@ class SurfacePoolWayland final : public SurfacePool {
 
   
   
-  
   struct SurfacePoolEntry final {
     const gfx::IntSize mSize;
-    const RefPtr<widget::WaylandSurface> mWaylandSurface;
-    const RefPtr<widget::WaylandBuffer> mWaylandBuffer;  
+    const RefPtr<widget::WaylandSurface> mWaylandSurface;  
+    const RefPtr<widget::WaylandBuffer> mWaylandBuffer;    
     Maybe<GLResourcesForBuffer> mGLResources;
   };
 
   bool CanRecycleSurfaceForRequest(
       const MutexAutoLock& aProofOfLock, const SurfacePoolEntry& aEntry,
-      const widget::WaylandSurfaceLock* aWaylandSurfaceLock,
+      const widget::WaylandSurfaceLock& aWaylandSurfaceLock,
       const gfx::IntSize& aSize, gl::GLContext* aGL);
 
   RefPtr<gl::DepthAndStencilBuffer> GetDepthBufferForSharing(
@@ -109,23 +108,14 @@ class SurfacePoolHandleWayland final : public SurfacePoolHandle {
     return this;
   }
 
-  
-  
-  
   RefPtr<widget::WaylandBuffer> ObtainBufferFromPool(
-      const widget::WaylandSurfaceLock* aWaylandSurfaceLock,
+      const widget::WaylandSurfaceLock& aWaylandSurfaceLock,
       const gfx::IntSize& aSize, RefPtr<widget::DRMFormat> aFormat);
-  void ReturnBufferToPool(const widget::WaylandSurfaceLock* aWaylandSurfaceLock,
+  void ReturnBufferToPool(const widget::WaylandSurfaceLock& aWaylandSurfaceLock,
                           const RefPtr<widget::WaylandBuffer>& aBuffer);
   Maybe<GLuint> GetFramebufferForBuffer(
       const RefPtr<widget::WaylandBuffer>& aBuffer, bool aNeedsDepthBuffer);
   const auto& gl() { return mGL; }
-
-  
-  
-  static bool IsBufferInUse(
-      widget::WaylandBuffer* aBuffer,
-      const widget::WaylandSurfaceLock* aWaylandSurfaceLock);
 
   RefPtr<SurfacePool> Pool() override { return mPool; }
   void OnBeginFrame() override;
