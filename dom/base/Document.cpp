@@ -13066,6 +13066,12 @@ void Document::OnPageShow(bool aPersisted, EventTarget* aDispatchStartTarget,
             ("Document::OnPageShow [%s] persisted=%i", uri.get(), aPersisted));
   }
 
+  
+  
+  if (!aPersisted) {
+    DetectTrustedTypesLibrary();
+  }
+
   const bool inFrameLoaderSwap = !!aDispatchStartTarget;
   MOZ_DIAGNOSTIC_ASSERT(
       inFrameLoaderSwap ==
@@ -18372,6 +18378,95 @@ void Document::InitUseCounters() {
   
   wgc->SendExpectPageUseCounters(top);
   mShouldSendPageUseCounters = true;
+}
+
+
+
+
+
+
+
+static bool IsReactGlobal(JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+                          bool aLookedUpHook) {
+  JS::Rooted<Maybe<JS::PropertyDescriptor>> desc(aCx);
+  if (!JS_GetOwnPropertyDescriptor(aCx, aGlobal,
+                                   "__REACT_DEVTOOLS_GLOBAL_HOOK__", &desc)) {
+    JS_ClearPendingException(aCx);
+    return false;
+  }
+  if (desc.isNothing()) {
+    
+    return aLookedUpHook;
+  }
+  if (desc->isAccessorDescriptor()) {
+    
+    return false;
+  }
+  
+  return true;
+}
+
+static bool IsHtmxGlobal(JSContext* aCx, JS::Handle<JSObject*> aGlobal) {
+  bool found = false;
+  if (!JS_HasOwnProperty(aCx, aGlobal, "htmx", &found)) {
+    JS_ClearPendingException(aCx);
+    return false;
+  }
+  return found;
+}
+
+
+
+
+
+static bool HasAngularRoot(Document& aDocument) {
+  Element* body = aDocument.GetBodyElement();
+  if (!body) {
+    return false;
+  }
+  RefPtr<nsAtom> ngVersion = NS_AtomizeMainThread(u"ng-version"_ns);
+  if (body->HasAttr(ngVersion)) {
+    return true;
+  }
+  uint32_t remaining = 16;
+  for (Element* child = body->GetFirstElementChild(); child && remaining--;
+       child = child->GetNextElementSibling()) {
+    if (child->HasAttr(ngVersion)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+void Document::DetectTrustedTypesLibrary() {
+  if (!StaticPrefs::dom_security_trusted_types_readiness_telemetry_enabled() ||
+      HasTrustedTypesReadinessSignal(
+          TrustedTypesReadinessSignal::HasTrustedTypesLibrary)) {
+    return;
+  }
+  nsGlobalWindowInner* window = nsGlobalWindowInner::Cast(GetInnerWindow());
+  if (!window) {
+    return;
+  }
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(window)) {
+    return;
+  }
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JSObject*> global(cx, window->GetGlobalJSObject());
+  MOZ_ASSERT(global);
+  AutoRestore<bool> restore(mDetectingTrustedTypesLibrary);
+  mDetectingTrustedTypesLibrary = true;
+  if (IsReactGlobal(
+          cx, global,
+          HasTrustedTypesReadinessSignal(
+              TrustedTypesReadinessSignal::LookedUpReactDevToolsHook)) ||
+      IsHtmxGlobal(cx, global) || HasAngularRoot(*this)) {
+    SetTrustedTypesReadinessSignal(
+        TrustedTypesReadinessSignal::HasTrustedTypesLibrary);
+  }
 }
 
 

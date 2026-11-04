@@ -581,6 +581,9 @@ enum class TrustedTypesReadinessSignal : uint8_t {
   
   
   RanScript,
+  
+  
+  LookedUpReactDevToolsHook,
 };
 
 
@@ -3561,6 +3564,17 @@ class Document : public nsINode,
   
   void SetTrustedTypesReadinessSignal(TrustedTypesReadinessSignal aSignal);
 
+  bool HasTrustedTypesReadinessSignal(
+      TrustedTypesReadinessSignal aSignal) const {
+    return mTrustedTypesReadinessSignals.contains(aSignal);
+  }
+
+  
+  
+  bool IsDetectingTrustedTypesLibrary() const {
+    return mDetectingTrustedTypesLibrary;
+  }
+
   void RecordTrustedTypesHTMLSink(bool aIsTrustedHTML) {
     SetTrustedTypesReadinessSignal(
         aIsTrustedHTML
@@ -4123,6 +4137,11 @@ class Document : public nsINode,
   
   
   void ReportTrustedTypesReadiness();
+
+  
+  
+  
+  void DetectTrustedTypesLibrary();
 
   
   
@@ -6134,6 +6153,7 @@ class Document : public nsINode,
   
   
   bool mRecordTrustedTypesReadiness = false;
+  bool mDetectingTrustedTypesLibrary = false;
 
   
   

@@ -3528,6 +3528,21 @@ bool nsGlobalWindowInner::DoResolve(
 
   
   
+  
+  if (StaticPrefs::dom_security_trusted_types_readiness_telemetry_enabled() &&
+      aId == XPCJSRuntime::Get()->GetStringID(
+                 XPCJSContext::IDX_REACT_DEVTOOLS_GLOBAL_HOOK) &&
+      !xpc::IsXrayWrapper(aObj)) {
+    if (Document* doc = GetExtantDoc();
+        doc && !doc->IsDetectingTrustedTypesLibrary()) {
+      doc->SetTrustedTypesReadinessSignal(
+          TrustedTypesReadinessSignal::LookedUpReactDevToolsHook);
+    }
+    return true;
+  }
+
+  
+  
 #ifdef USE_CONTROLLERS_SHIM
   
   
@@ -3582,6 +3597,13 @@ bool nsGlobalWindowInner::MayResolve(jsid aId) {
                  XPCJSContext::IDX_CONTROLLERS_CLASS)) {
     
     
+    return true;
+  }
+
+  
+  if (StaticPrefs::dom_security_trusted_types_readiness_telemetry_enabled() &&
+      aId == XPCJSRuntime::Get()->GetStringID(
+                 XPCJSContext::IDX_REACT_DEVTOOLS_GLOBAL_HOOK)) {
     return true;
   }
 

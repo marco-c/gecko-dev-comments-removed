@@ -137,6 +137,9 @@ const char* const XPCJSRuntime::mStrings[] = {
     "locks",            
     "suppressed",       
     "error",            
+    
+    
+    "__REACT_DEVTOOLS_GLOBAL_HOOK__",
 };
 
 

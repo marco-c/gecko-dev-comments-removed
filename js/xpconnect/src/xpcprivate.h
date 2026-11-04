@@ -362,6 +362,8 @@ class XPCJSContext final : public mozilla::CycleCollectedJSContext,
     IDX_LOCKS,
     IDX_SUPPRESSED,
     IDX_ERROR,
+    
+    IDX_REACT_DEVTOOLS_GLOBAL_HOOK,
     IDX_TOTAL_COUNT  
   };
 

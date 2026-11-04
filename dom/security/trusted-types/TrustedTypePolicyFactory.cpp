@@ -171,9 +171,39 @@ auto TrustedTypePolicyFactory::ShouldTrustedTypePolicyCreationBeBlockedByCSP(
 
 constexpr nsLiteralString kDefaultPolicyName = u"default"_ns;
 
+
+
+
+constexpr nsLiteralString kLibraryPolicyNames[] = {
+    u"lit-html"_ns,
+};
+
+static bool IsLibraryPolicyName(const nsAString& aPolicyName) {
+  for (const nsLiteralString& name : kLibraryPolicyNames) {
+    if (aPolicyName.Equals(name)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 already_AddRefed<TrustedTypePolicy> TrustedTypePolicyFactory::CreatePolicy(
     JSContext* aJSContext, const nsAString& aPolicyName,
     const TrustedTypePolicyOptions& aPolicyOptions, ErrorResult& aRv) {
+  
+  
+  
+  if (auto* piDOMWindowInner = mGlobalObject->GetAsInnerWindow()) {
+    if (Document* doc = piDOMWindowInner->GetExtantDoc();
+        doc &&
+        !doc->HasTrustedTypesReadinessSignal(
+            TrustedTypesReadinessSignal::HasTrustedTypesLibrary) &&
+        IsLibraryPolicyName(aPolicyName)) {
+      doc->SetTrustedTypesReadinessSignal(
+          TrustedTypesReadinessSignal::HasTrustedTypesLibrary);
+    }
+  }
+
   if (PolicyCreation::Blocked ==
       ShouldTrustedTypePolicyCreationBeBlockedByCSP(aJSContext, aPolicyName)) {
     nsCString errorMessage =
