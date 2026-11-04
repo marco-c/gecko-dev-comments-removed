@@ -1156,6 +1156,25 @@ function findTabRow(doc, title) {
   );
 }
 
+function findSiteHeaderRow(doc, siteKey) {
+  return [...doc.querySelectorAll("tr.site-header-row")].find(
+    row => row.querySelector(".site-label").textContent == siteKey
+  );
+}
+
+
+function childRowsOf(headerRow) {
+  let rows = [];
+  for (
+    let sibling = headerRow.nextElementSibling;
+    sibling?.classList.contains("child-row");
+    sibling = sibling.nextElementSibling
+  ) {
+    rows.push(sibling);
+  }
+  return rows;
+}
+
 
 function clickRow(target, options = {}) {
   EventUtils.synthesizeMouseAtCenter(target, options, target.documentGlobal);
@@ -1163,6 +1182,17 @@ function clickRow(target, options = {}) {
 
 function clickCheckbox(doc, title) {
   clickRow(findTabRow(doc, title).querySelector(".select-checkbox"));
+}
+
+
+function startMouseFreeze(doc) {
+  EventUtils.synthesizeMouse(
+    doc.getElementById("process-tbody"),
+    5,
+    5,
+    { type: "mousemove" },
+    doc.defaultView
+  );
 }
 
 async function openTabView() {

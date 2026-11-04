@@ -163,14 +163,7 @@ add_task(async function testMouseoverFreezesExistingRowOrderOnly() {
   let rowOne = findTabRow(doc, "Freeze test 1");
   let rowOneIndex = [...tbody.children].indexOf(rowOne);
 
-  info("Moving the mouse over the tab list to start the freeze window");
-  EventUtils.synthesizeMouse(
-    tbody,
-    5,
-    5,
-    { type: "mousemove" },
-    doc.defaultView
-  );
+  startMouseFreeze(doc);
 
   let tabTwo = await setupTabWithOriginAndTitle(
     "https://example.net",
@@ -208,12 +201,14 @@ add_task(async function testMouseoverFreezesExistingRowOrderOnly() {
 });
 
 add_task(async function testFaviconAndColumnSort() {
+  
+  
   let tabZebra = await setupTabWithOriginAndTitle(
-    "https://example.org",
+    "https://example.net",
     "Zebra tab"
   );
   let tabApple = await setupTabWithOriginAndTitle(
-    "https://example.net",
+    "https://example.org",
     "Apple tab"
   );
   
