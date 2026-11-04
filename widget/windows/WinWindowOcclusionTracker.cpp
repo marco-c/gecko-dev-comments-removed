@@ -30,8 +30,9 @@
 
 namespace mozilla::widget {
 
-static StaticMonitor sShutdownMonitor;
-static bool sShutdownComplete MOZ_GUARDED_BY(sShutdownMonitor) = false;
+StaticMonitor WinWindowOcclusionTracker::sShutdownMonitor;
+bool WinWindowOcclusionTracker::sShutdownComplete MOZ_GUARDED_BY(
+    WinWindowOcclusionTracker::sShutdownMonitor) = false;
 
 
 LazyLogModule gWinOcclusionTrackerLog("WinOcclusionTracker");

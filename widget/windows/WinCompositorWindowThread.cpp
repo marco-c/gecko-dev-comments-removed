@@ -18,8 +18,9 @@ namespace widget {
 
 static StaticRefPtr<WinCompositorWindowThread> sWinCompositorWindowThread;
 
-static StaticMonitor sShutdownMonitor;
-static bool sShutdownComplete MOZ_GUARDED_BY(sShutdownMonitor) = false;
+StaticMonitor WinCompositorWindowThread::sShutdownMonitor;
+bool WinCompositorWindowThread::sShutdownComplete MOZ_GUARDED_BY(
+    WinCompositorWindowThread::sShutdownMonitor) = false;
 
 
 
