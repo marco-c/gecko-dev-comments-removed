@@ -50,37 +50,41 @@ pub enum MessageError {
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq)]
 pub enum Kind {
     
-    SetCrashReportPath = 1,
+    SetPath = 1,
+    
+    GetPath = 2,
+    
+    PathReply = 3,
     
     
-    TransferMinidump = 2,
+    TransferMinidump = 4,
     
-    GenerateMinidump = 3,
+    GenerateMinidump = 5,
     
     
-    MinidumpReply = 4,
+    MinidumpReply = 6,
     
     
     
     
     #[cfg(target_os = "windows")]
-    WindowsErrorReporting = 5,
+    WindowsErrorReporting = 7,
     #[cfg(target_os = "windows")]
-    WindowsErrorReportingReply = 6,
+    WindowsErrorReportingReply = 8,
     
     
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    RegisterAuxvInfo = 7,
+    RegisterAuxvInfo = 9,
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    UnregisterAuxvInfo = 8,
+    UnregisterAuxvInfo = 10,
     
     
     
-    RegisterChildProcess = 9,
+    RegisterChildProcess = 11,
     
     
     
-    ProcessRendezVous = 10,
+    ProcessRendezVous = 12,
 }
 
 
@@ -258,19 +262,129 @@ impl Header {
 
 
 
-pub struct SetCrashReportPath {
+#[repr(u8)]
+#[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq)]
+pub enum PathType {
+    
+    CrashReports = 1,
+}
+
+pub struct SetPath {
+    pub path_type: PathType,
     pub path: OsString,
 }
 
-impl SetCrashReportPath {
-    pub fn new(path: OsString) -> SetCrashReportPath {
-        SetCrashReportPath { path }
+impl SetPath {
+    pub fn new(path_type: PathType, path: OsString) -> Self {
+        Self { path_type, path }
     }
 }
 
-impl Message for SetCrashReportPath {
+impl Message for SetPath {
     fn kind() -> Kind {
-        Kind::SetCrashReportPath
+        Kind::SetPath
+    }
+
+    fn payload_size(&self) -> usize {
+        let path_len = self.path.bytes_len();
+        (size_of::<PathType>() + size_of::<usize>())
+            .checked_add(path_len)
+            .unwrap()
+    }
+
+    fn ancillary_data_len(&self) -> usize {
+        0
+    }
+
+    fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
+        let header = Header::encode(Self::kind(), self.payload_size());
+        let mut payload = BytesMut::with_capacity(self.payload_size());
+        let path = self.path.serialize();
+        payload.put_u8(self.path_type as u8);
+        payload.put_vec(&path);
+
+        (header, payload.freeze(), vec![])
+    }
+
+    fn decode(data: Vec<u8>, ancillary_data: Vec<AncillaryData>) -> Result<Self, MessageError> {
+        if !ancillary_data.is_empty() {
+            return Err(MessageError::UnexpectedAncillaryData);
+        }
+
+        let mut data = Bytes::from(data);
+
+        let path_type = data.try_get_u8()?;
+        let path_type = PathType::from_u8(path_type).ok_or(MessageError::InvalidData)?;
+        let path = data.try_get_vec()?;
+        let path = <OsString as BreakpadString>::deserialize(path)
+            .map_err(|_| MessageError::InvalidData)?;
+
+        Ok(Self { path_type, path })
+    }
+}
+
+
+
+pub struct GetPath {
+    pub path_type: PathType,
+}
+
+impl GetPath {
+    pub fn new(path_type: PathType) -> Self {
+        Self { path_type }
+    }
+}
+
+impl Message for GetPath {
+    fn kind() -> Kind {
+        Kind::GetPath
+    }
+
+    fn payload_size(&self) -> usize {
+        size_of::<PathType>()
+    }
+
+    fn ancillary_data_len(&self) -> usize {
+        0
+    }
+
+    fn encode(self) -> (Bytes, Bytes, Vec<AncillaryData>) {
+        let header = Header::encode(Self::kind(), self.payload_size());
+        let mut payload = BytesMut::with_capacity(self.payload_size());
+        payload.put_u8(self.path_type as u8);
+
+        (header, payload.freeze(), vec![])
+    }
+
+    fn decode(data: Vec<u8>, ancillary_data: Vec<AncillaryData>) -> Result<Self, MessageError> {
+        if !ancillary_data.is_empty() {
+            return Err(MessageError::UnexpectedAncillaryData);
+        }
+
+        let mut data = Bytes::from(data);
+
+        let path_type = data.try_get_u8()?;
+        let path_type = PathType::from_u8(path_type).ok_or(MessageError::InvalidData)?;
+
+        Ok(Self { path_type })
+    }
+}
+
+
+
+pub struct PathReply {
+    pub path: OsString,
+}
+
+impl PathReply {
+    pub fn new(path: OsString) -> Self {
+        Self { path }
+    }
+}
+
+impl Message for PathReply {
+    fn kind() -> Kind {
+        Kind::PathReply
     }
 
     fn payload_size(&self) -> usize {

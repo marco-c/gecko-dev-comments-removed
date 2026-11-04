@@ -46,10 +46,17 @@ pub struct CrashHelperClient {
 }
 
 impl CrashHelperClient {
-    fn set_crash_report_path(&mut self, path: OsString) -> Result<()> {
-        let message = messages::SetCrashReportPath::new(path);
+    fn set_path(&self, path_type: messages::PathType, path: OsString) -> Result<()> {
+        let message = messages::SetPath::new(path_type, path);
         self.connector.send_message(message)?;
         Ok(())
+    }
+
+    fn get_path(&self, path_type: messages::PathType) -> Result<OsString> {
+        let message = messages::GetPath::new(path_type);
+        self.connector.send_message(message)?;
+        let reply = self.connector.recv_reply::<messages::PathReply>()?;
+        Ok(reply.path)
     }
 
     fn register_child_process(&mut self, id: GeckoChildId) -> Result<IPCConnector> {
@@ -236,14 +243,49 @@ pub struct CrashReport {
 
 
 
+
 #[no_mangle]
 pub unsafe extern "C" fn set_crash_report_path(
-    client: *mut CrashHelperClient,
+    client: *const CrashHelperClient,
     path: *const BreakpadChar,
 ) -> bool {
-    let client = client.as_mut().unwrap();
+    let client = client.as_ref().unwrap();
     let path = <OsString as BreakpadString>::from_ptr(path);
-    client.set_crash_report_path(path).is_ok()
+    client
+        .set_path(messages::PathType::CrashReports, path)
+        .is_ok()
+}
+
+
+
+
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn get_crash_report_path(
+    client: *const CrashHelperClient,
+) -> *mut BreakpadChar {
+    let client = client.as_ref().unwrap();
+    let path = client
+        .get_path(messages::PathType::CrashReports)
+        .unwrap_or(OsString::new());
+    BreakpadString::into_raw(path)
+}
+
+
+
+
+
+
+
+#[no_mangle]
+pub unsafe extern "C" fn release_path(path: *mut BreakpadChar) {
+    let _string = <OsString as BreakpadString>::from_raw(path);
 }
 
 
