@@ -1590,10 +1590,12 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
         return;
       }
 
+      RefPtr wrapper = mDocument->CreateHTMLElement(nsGkAtoms::span);
       if (*accessKeyStart != 0) {
         RefPtr beginning = CreateGenConTextNode(
             aState, Substring(value, 0, *accessKeyStart), nullptr);
-        aAddChild(beginning);
+        wrapper->AppendChildTo(beginning,  false,
+                               IgnoreErrors());
       }
 
       {
@@ -1604,7 +1606,8 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
             mDocument->CreateHTMLElement(nsGkAtoms::u);
         underline->AppendChildTo(accessKeyText,  false,
                                  IgnoreErrors());
-        aAddChild(underline);
+        wrapper->AppendChildTo(underline,  false,
+                               IgnoreErrors());
       }
 
       size_t accessKeyEnd = *accessKeyStart + accesskey.Length();
@@ -1612,8 +1615,9 @@ void nsCSSFrameConstructor::CreateGeneratedContent(
         RefPtr valueEnd = CreateGenConTextNode(
             aState, Substring(value, *accessKeyStart + accesskey.Length()),
             nullptr);
-        aAddChild(valueEnd);
+        wrapper->AppendChildTo(valueEnd,  false, IgnoreErrors());
       }
+      aAddChild(wrapper);
       break;
     }
   }
@@ -2254,12 +2258,8 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
 static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
                                 nsContainerFrame* aParentFrame,
                                 nsIContent* aChildContent) {
-  
-  
-  MOZ_ASSERT(
-      !aChildContent->GetPrimaryFrame() || aState.mCreatingExtraFrames ||
-          aChildContent->GetPrimaryFrame()->GetContent() != aChildContent,
-      "Why did we get called?");
+  MOZ_ASSERT(!aChildContent->GetPrimaryFrame() || aState.mCreatingExtraFrames,
+             "Why did we get called?");
 
   
   
@@ -4870,11 +4870,7 @@ bool nsCSSFrameConstructor::ShouldCreateItemsForChild(
     nsFrameConstructorState& aState, nsIContent* aContent,
     nsContainerFrame* aParentFrame) {
   aContent->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES | NODE_NEEDS_FRAME);
-  
-  
-  if (aContent->GetPrimaryFrame() &&
-      aContent->GetPrimaryFrame()->GetContent() == aContent &&
-      !aState.mCreatingExtraFrames) {
+  if (aContent->GetPrimaryFrame() && !aState.mCreatingExtraFrames) {
     MOZ_ASSERT(false,
                "asked to create frame construction item for a node that "
                "already has a frame");
@@ -5048,8 +5044,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   MOZ_ASSERT(aContent->IsText() || aContent->IsElement(),
              "Shouldn't get anything else here!");
   MOZ_ASSERT(aContent->IsInComposedDoc());
-  MOZ_ASSERT(!aContent->GetPrimaryFrame() || aState.mCreatingExtraFrames ||
-             aContent->NodeInfo()->NameAtom() == nsGkAtoms::area);
+  MOZ_ASSERT(!aContent->GetPrimaryFrame() || aState.mCreatingExtraFrames);
 
   const bool withinSVGText = aFlags.contains(ItemFlag::IsWithinSVGText);
   const bool isGeneratedContent = aFlags.contains(ItemFlag::IsGeneratedContent);
@@ -5647,10 +5642,7 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
       
       
       
-      
-      
-      if (primaryFrame->GetContent() == sibling &&
-          !primaryFrame->IsRenderedLegend()) [[likely]] {
+      if (!primaryFrame->IsRenderedLegend()) [[likely]] {
         return primaryFrame;
       }
     }
@@ -5842,13 +5834,6 @@ nsContainerFrame* nsCSSFrameConstructor::GetContentInsertionFrameFor(
     }
   }
 
-  
-  
-  
-  if (frame->GetContent() != aContent) {
-    return nullptr;
-  }
-
   nsContainerFrame* insertionFrame = frame->GetContentInsertionFrame();
 
   NS_ASSERTION(!insertionFrame || insertionFrame == frame || !frame->IsLeaf(),
@@ -5970,11 +5955,7 @@ void nsCSSFrameConstructor::ConstructLazily(nsIContent* aStartChild,
   
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
-    NS_ASSERTION(!child->GetPrimaryFrame() ||
-                     child->GetPrimaryFrame()->GetContent() != child,
-                 
-                 
-                 
+    NS_ASSERTION(!child->GetPrimaryFrame(),
                  "setting NEEDS_FRAME on a node that already has a frame?");
     child->SetFlags(NODE_NEEDS_FRAME);
   }
@@ -5988,10 +5969,7 @@ void nsCSSFrameConstructor::IssueSingleInsertNofications(
     InsertionKind aInsertionKind) {
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
-    
-    
-    MOZ_ASSERT(!child->GetPrimaryFrame() ||
-               child->GetPrimaryFrame()->GetContent() != child);
+    MOZ_ASSERT(!child->GetPrimaryFrame());
 
     
     ContentRangeInserted(child, child->GetNextSibling(), aInsertionKind);
@@ -6181,11 +6159,8 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
 
   for (nsIContent* child = aStartChild; child != aEndChild;
        child = child->GetNextSibling()) {
-    
-    
     MOZ_ASSERT(
-        !child->GetPrimaryFrame() ||
-            child->GetPrimaryFrame()->GetContent() != child,
+        !child->GetPrimaryFrame(),
         "asked to construct a frame for a node that already has a frame");
   }
 #endif
@@ -6772,11 +6747,6 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
 #endif
 
   nsIFrame* childFrame = aChild->GetPrimaryFrame();
-  if (!childFrame || childFrame->GetContent() != aChild) {
-    
-    
-    childFrame = nullptr;
-  }
 
   
   
@@ -6916,9 +6886,7 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
 
     
     childFrame = aChild->GetPrimaryFrame();
-    if (!childFrame || childFrame->GetContent() != aChild) {
-      
-      
+    if (!childFrame) {
       return false;
     }
     parentFrame = childFrame->GetParent();
