@@ -2452,8 +2452,11 @@ bool nsGenericHTMLElement::IsHTMLFocusable(IsFocusableFlags aFlags,
     disallowOverridingFocusability = false;
 
     
+    
     if (!(aFlags & IsFocusableFlags::IgnoreDisabled)) {
-      disabled = IsDisabled();
+      ShadowRoot* root = GetContainingShadow();
+      disabled = IsDisabled() ||
+                 (root && root->IsUAWidget() && root->Host()->IsDisabled());
     }
     if (disabled) {
       *aTabIndex = -1;
