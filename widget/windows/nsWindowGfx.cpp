@@ -381,7 +381,6 @@ void nsWindow::CreateCompositor() {
   nsIWidget::CreateCompositor();
 
   MaybeEnableWindowOcclusion( true);
-
 }
 
 void nsWindow::DestroyCompositor() {

@@ -845,7 +845,6 @@ void gfxPlatform::Init() {
     nsAutoCString path;
     Preferences::GetCString("layers.windowrecording.path", path);
     gfxVars::SetLayersWindowRecordingPath(path);
-
   }
 
   
