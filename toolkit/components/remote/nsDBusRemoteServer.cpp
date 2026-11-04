@@ -157,28 +157,10 @@ void nsDBusRemoteServer::OnBusAcquired(GDBusConnection* aConnection) {
         error->message);
     return;
   }
-}
 
-void nsDBusRemoteServer::OnNameAcquired(GDBusConnection* aConnection) {
+  
+  
   mConnection = aConnection;
-}
-
-void nsDBusRemoteServer::OnNameLost(GDBusConnection* aConnection) {
-  mConnection = nullptr;
-  if (!mRegistrationId) {
-    return;
-  }
-
-  if (g_dbus_connection_unregister_object(aConnection, mRegistrationId)) {
-    mRegistrationId = 0;
-  } else {
-    
-    
-    
-    g_warning(
-        "nsDBusRemoteServer: Unable to unregister root object from within "
-        "onNameLost!");
-  }
 }
 
 nsresult nsDBusRemoteServer::Startup(const char* ,
@@ -222,15 +204,8 @@ nsresult nsDBusRemoteServer::Startup(const char* ,
          gpointer aUserData) -> void {
         static_cast<nsDBusRemoteServer*>(aUserData)->OnBusAcquired(aConnection);
       },
-      [](GDBusConnection* aConnection, const gchar*,
-         gpointer aUserData) -> void {
-        static_cast<nsDBusRemoteServer*>(aUserData)->OnNameAcquired(
-            aConnection);
-      },
-      [](GDBusConnection* aConnection, const gchar*,
-         gpointer aUserData) -> void {
-        static_cast<nsDBusRemoteServer*>(aUserData)->OnNameLost(aConnection);
-      },
+      nullptr, 
+      nullptr, 
       this, nullptr);
   if (!mDBusID) {
     g_warning("nsDBusRemoteServer: g_bus_own_name() failed!");
@@ -241,7 +216,16 @@ nsresult nsDBusRemoteServer::Startup(const char* ,
 }
 
 void nsDBusRemoteServer::Shutdown() {
-  OnNameLost(mConnection);
+  if (mRegistrationId) {
+    if (g_dbus_connection_unregister_object(mConnection, mRegistrationId)) {
+      mRegistrationId = 0;
+    } else {
+      
+      
+      g_warning("nsDBusRemoteServer: Unable to unregister root object!");
+    }
+  }
+  mConnection = nullptr;
   if (mDBusID) {
     g_bus_unown_name(mDBusID);
   }
