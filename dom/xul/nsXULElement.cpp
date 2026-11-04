@@ -350,7 +350,7 @@ nsXULElement::XULFocusability nsXULElement::GetXULFocusability(
     
     bool disabled;
     xulControl->GetDisabled(&disabled);
-    if (disabled) {
+    if (disabled && !(aFlags & IsFocusableFlags::IgnoreDisabled)) {
       return XULFocusability::NeverFocusable();
     }
     result.mDefaultFocusable = true;

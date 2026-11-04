@@ -7,6 +7,7 @@
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/FocusModel.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresState.h"
@@ -148,7 +149,7 @@ bool HTMLTextAreaElement::IsHTMLFocusable(IsFocusableFlags aFlags,
   }
 
   
-  *aIsFocusable = !IsDisabled();
+  *aIsFocusable = (aFlags & IsFocusableFlags::IgnoreDisabled) || !IsDisabled();
   return false;
 }
 
@@ -355,8 +356,8 @@ nsChangeHint HTMLTextAreaElement::GetAttributeChangeHint(
   return retval;
 }
 
-NS_IMETHODIMP_(bool)
-HTMLTextAreaElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+bool HTMLTextAreaElement::IsNoNamespaceAttrMapped(
+    const nsAtom* aAttribute) const {
   static const MappedAttributeEntry attributes[] = {{nsGkAtoms::wrap},
                                                     {nullptr}};
 

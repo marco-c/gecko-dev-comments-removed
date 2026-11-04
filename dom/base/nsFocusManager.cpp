@@ -25,6 +25,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_accessibility.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -3459,7 +3460,7 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
   if (aContent) {
     NS_ASSERTION(aContent->GetComposedDoc() == aPresShell->GetDocument(),
                  "Wrong document?");
-    nsIFrame* focusFrame = aContent->GetPrimaryFrame();
+    nsIFrame* focusFrame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(aContent);
     if (focusFrame) {
       frameSelection = focusFrame->GetFrameSelection();
     }
@@ -3742,10 +3743,16 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
   nsCOMPtr<nsIContent> focusedContent = startContent;
   bool startingFromDescendantOfFocusedContent = false;
   if (startContent) {
+    
+    
     nsIFrame* frame = startContent->GetPrimaryFrame();
-    tabIndex = (frame && !startContent->IsHTMLElement(nsGkAtoms::area))
-                   ? frame->IsFocusable().mTabIndex
-                   : startContent->IsFocusableWithoutStyle().mTabIndex;
+    auto startFlags = IsFocusableFlags(0);
+    if (StaticPrefs::dom_forms_retain_focus_on_disabled_enabled()) {
+      startFlags |= IsFocusableFlags::IgnoreDisabled;
+    }
+    tabIndex =
+        frame ? frame->IsFocusable(startFlags).mTabIndex
+              : startContent->IsFocusableWithoutStyle(startFlags).mTabIndex;
 
     if (!aStartContent &&
         (aType == MOVEFOCUS_FORWARD || aType == MOVEFOCUS_BACKWARD)) {
@@ -4461,7 +4468,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
       if (IsScopeOwner(iterContent)) {
         tabIndex = ScopeOwnerTabIndexValue(iterContent);
       } else {
-        nsIFrame* frame = iterContent->GetPrimaryFrame();
+        nsIFrame* frame =
+            nsLayoutUtils::GetPrimaryOrAreaImageFrame(iterContent);
         if (!frame) {
           continue;
         }
@@ -4567,7 +4575,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
     int32_t tabIndex = 0;
     if (IsScopeOwner(startContent)) {
       tabIndex = ScopeOwnerTabIndexValue(startContent);
-    } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
+    } else if (nsIFrame* frame =
+                   nsLayoutUtils::GetPrimaryOrAreaImageFrame(startContent)) {
       tabIndex = frame->IsFocusable().mTabIndex;
     } else {
       tabIndex = startContent->IsFocusableWithoutStyle().mTabIndex;
@@ -4589,7 +4598,8 @@ nsIContent* nsFocusManager::GetNextTabbableContentInAncestorScopes(
   aStartContent = startContent;
   if (IsScopeOwner(startContent)) {
     *aCurrentTabIndex = ScopeOwnerTabIndexValue(startContent);
-  } else if (nsIFrame* frame = startContent->GetPrimaryFrame()) {
+  } else if (nsIFrame* frame =
+                 nsLayoutUtils::GetPrimaryOrAreaImageFrame(startContent)) {
     *aCurrentTabIndex = frame->IsFocusable().mTabIndex;
   } else {
     *aCurrentTabIndex = startContent->IsFocusableWithoutStyle().mTabIndex;
@@ -4710,7 +4720,8 @@ nsresult nsFocusManager::GetNextTabbableContent(
   nsIContent* topLevelScopeStartContent = startContent;
   
   while (true) {
-    nsIFrame* frame = iterStartContent->GetPrimaryFrame();
+    nsIFrame* frame =
+        nsLayoutUtils::GetPrimaryOrAreaImageFrame(iterStartContent);
     
     while (!frame) {
       
@@ -4725,7 +4736,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
         break;
       }
 
-      frame = iterStartContent->GetPrimaryFrame();
+      frame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(iterStartContent);
       
       if (!frame && IsScopeOwner(iterStartContent)) {
         int32_t tabIndex = ScopeOwnerTabIndexValue(iterStartContent);
@@ -5946,6 +5957,13 @@ static IsFocusableFlags FocusManagerFlagsToIsFocusableFlags(uint32_t aFlags) {
 Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
                                              uint32_t aFlags) {
   MOZ_ASSERT(aTarget);
+
+  
+  
+  if (auto* area = HTMLAreaElement::FromNode(aTarget)) {
+    return IsAreaElementFocusable(*area) ? area : nullptr;
+  }
+
   nsIFrame* frame = aTarget->GetPrimaryFrame();
   if (!frame) {
     return nullptr;
@@ -5956,12 +5974,6 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
     
     
     return aTarget;
-  }
-
-  
-  
-  if (auto* area = HTMLAreaElement::FromNode(aTarget)) {
-    return IsAreaElementFocusable(*area) ? area : nullptr;
   }
 
   
@@ -6002,7 +6014,7 @@ Element* nsFocusManager::GetTheFocusableArea(Element* aTarget,
 
 
 bool nsFocusManager::IsAreaElementFocusable(HTMLAreaElement& aArea) {
-  nsIFrame* frame = aArea.GetPrimaryFrame();
+  nsIFrame* frame = aArea.GetImageFrame();
   if (!frame) {
     return false;
   }
