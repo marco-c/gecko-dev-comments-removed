@@ -714,8 +714,26 @@ pub fn convert_utf16_to_utf8_partial_inner(src: &[u16], dst: &mut [u8]) -> (usiz
     let mut written = 0;
     'outer: loop {
         let mut unit = {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let capped_dst_len = dst.len().saturating_sub(3);
+            if written >= capped_dst_len {
+                return (read, written);
+            }
             let src_remaining = &src[read..];
-            let dst_remaining = &mut dst[written..];
+            let dst_remaining = &mut dst[written..capped_dst_len];
             let length = if dst_remaining.len() < src_remaining.len() {
                 dst_remaining.len()
             } else {

@@ -3542,10 +3542,16 @@ impl<'de> Visitor<'de> for EncodingVisitor {
         if let Some(enc) = Encoding::for_label(value.as_bytes()) {
             Ok(enc)
         } else {
-            Err(E::custom(alloc::format!(
-                "invalid encoding label: {}",
-                value
-            )))
+            cfg_if! {
+                if #[cfg(feature = "alloc")] {
+                    Err(E::custom(alloc::format!(
+                        "invalid encoding label: {}",
+                        value
+                    )))
+                } else {
+                    Err(E::custom("invalid encoding label"))
+                }
+            }
         }
     }
 }
@@ -3656,7 +3662,6 @@ pub enum DecoderResult {
     
     Malformed(u8, u8), 
 }
-
 
 
 
@@ -4593,6 +4598,7 @@ impl EncoderResult {
 
 
 
+
 pub struct Encoder {
     encoding: &'static Encoding,
     variant: VariantEncoder,
@@ -5084,7 +5090,11 @@ fn checked_div(opt: Option<usize>, num: usize) -> Option<usize> {
 #[cfg(feature = "alloc")]
 #[inline(always)]
 fn checked_next_power_of_two(opt: Option<usize>) -> Option<usize> {
-    opt.map(|n| n.next_power_of_two())
+    if let Some(n) = opt {
+        n.checked_next_power_of_two()
+    } else {
+        None
+    }
 }
 
 #[cfg(feature = "alloc")]
@@ -5861,6 +5871,41 @@ mod tests {
             let needed = decoder.max_utf16_buffer_length(1).unwrap();
             let (result, _, _, _) = decoder.decode_to_utf16(b"\xFF", &mut dst[..needed], true);
             assert_eq!(result, CoderResult::InputEmpty);
+        }
+    }
+
+    #[test]
+    fn test_short_buffer_after_non_bom_bytes() {
+        
+        
+        
+        
+        for (encoding, bytes, expect) in [
+            (IBM866, &b"\xEF\xBBab"[..], "\u{044F}\u{2557}ab"),
+            (X_USER_DEFINED, &b"\xEF\xBBab"[..], "\u{F7EF}\u{F7BB}ab"),
+            (X_USER_DEFINED, &b"\xFE\x80"[..], "\u{F7FE}\u{F780}"),
+            (ISO_2022_JP, &b"\xEF\xBBab"[..], "\u{FFFD}\u{FFFD}ab"),
+        ] {
+            for split in 1..bytes.len() {
+                for size in 4..8 {
+                    let mut decoder = encoding.new_decoder();
+                    let mut out = String::new();
+                    for (src, last) in [(&bytes[..split], false), (&bytes[split..], true)] {
+                        let mut src = src;
+                        loop {
+                            let mut dst = [0u8; 8];
+                            let (result, read, written, _) =
+                                decoder.decode_to_utf8(src, &mut dst[..size], last);
+                            out.push_str(core::str::from_utf8(&dst[..written]).unwrap());
+                            src = &src[read..];
+                            if result == CoderResult::InputEmpty {
+                                break;
+                            }
+                        }
+                    }
+                    assert_eq!(out, expect);
+                }
+            }
         }
     }
 

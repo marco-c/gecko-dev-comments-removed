@@ -440,7 +440,10 @@ impl SingleByteEncoder {
                                 let high_bits = non_ascii & 0xFC00u16;
                                 if high_bits == 0xD800u16 {
                                     
-                                    if converted + 1 == length {
+                                    
+                                    
+                                    
+                                    if converted + 1 == src.len() {
                                         
                                         return (
                                             EncoderResult::Unmappable('\u{FFFD}'),
@@ -618,6 +621,37 @@ mod tests {
             &[0x0391u16, 0x03C5u16, 0x03C4u16, 0x03CCu16, 0xD83Du16],
             b"\xC1\xF5\xF4\xFC&#65533;",
         );
+    }
+
+    #[test]
+    fn test_encode_surrogate_pair_at_output_end() {
+        
+        
+        let src = [0x0391u16, 0xD83Du16, 0xDCA9u16, 0x03C4u16];
+        let mut encoder = WINDOWS_1253.new_encoder();
+        let mut dst = [0u8; 2];
+        let (result, read, written) =
+            encoder.encode_from_utf16_without_replacement(&src, &mut dst, true);
+        assert_eq!(result, EncoderResult::Unmappable('\u{1F4A9}'));
+        assert_eq!(read, 3);
+        assert_eq!(written, 1);
+        assert_eq!(dst[0], 0xC1);
+
+        
+        
+        let mut encoder = WINDOWS_1253.new_encoder();
+        let mut out = Vec::new();
+        let mut src = &src[..];
+        loop {
+            let mut dst = [0u8; 11];
+            let (result, read, written, _) = encoder.encode_from_utf16(src, &mut dst, true);
+            out.extend_from_slice(&dst[..written]);
+            src = &src[read..];
+            if result == CoderResult::InputEmpty {
+                break;
+            }
+        }
+        assert_eq!(out, b"\xC1&#128169;\xF4");
     }
 
     pub const HIGH_BYTES: &'static [u8; 128] = &[

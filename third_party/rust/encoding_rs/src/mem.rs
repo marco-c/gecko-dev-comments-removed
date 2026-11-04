@@ -1341,8 +1341,6 @@ pub fn convert_utf8_to_utf16_without_replacement(src: &[u8], dst: &mut [u16]) ->
 
 
 
-
-
 #[inline(always)]
 pub fn convert_utf16_to_utf8_partial(src: &[u16], dst: &mut [u8]) -> (usize, usize) {
     
@@ -1484,31 +1482,46 @@ pub fn convert_latin1_to_utf16(src: &[u8], dst: &mut [u16]) {
 pub fn convert_latin1_to_utf8_partial(src: &[u8], dst: &mut [u8]) -> (usize, usize) {
     let src_len = src.len();
     let dst_len = dst.len();
+    
+    
+    let dst_len_capped = dst_len.saturating_sub(1);
     let mut total_read = 0usize;
     let mut total_written = 0usize;
     loop {
-        
-        let src_left = src_len - total_read;
-        let dst_left = dst_len - total_written;
-        let min_left = ::core::cmp::min(src_left, dst_left);
-        if let Some((non_ascii, consumed)) =
-            { ascii_to_ascii(&src[total_read..], &mut dst[total_written..]) }
-        {
-            total_read += consumed;
-            total_written += consumed;
-            if total_written.checked_add(2).unwrap() > dst_len {
-                return (total_read, total_written);
+        if total_written < dst_len_capped {
+            
+            let src_left = src_len - total_read;
+            let dst_left = dst_len_capped - total_written;
+            let min_left = ::core::cmp::min(src_left, dst_left);
+            if let Some((non_ascii, consumed)) =
+                { ascii_to_ascii(&src[total_read..], &mut dst[total_written..dst_len_capped]) }
+            {
+                total_read += consumed;
+                total_written += consumed;
+                if total_written.checked_add(2).unwrap() > dst_len {
+                    return (total_read, total_written);
+                }
+
+                total_read += 1; 
+
+                dst[total_written] = (non_ascii >> 6) | 0xC0;
+                total_written += 1;
+                dst[total_written] = (non_ascii & 0x3F) | 0x80;
+                total_written += 1;
+                continue;
             }
-
-            total_read += 1; 
-
-            dst[total_written] = (non_ascii >> 6) | 0xC0;
-            total_written += 1;
-            dst[total_written] = (non_ascii & 0x3F) | 0x80;
-            total_written += 1;
-            continue;
+            total_read += min_left;
+            total_written += min_left;
         }
-        return (total_read + min_left, total_written + min_left);
+        if total_read < src.len() && total_written < dst.len() {
+            let b = src[total_read];
+            if b.is_ascii() {
+                dst[total_written] = b;
+                total_read += 1;
+                total_written += 1;
+            }
+        }
+        return (total_read, total_written);
     }
 }
 
@@ -1551,8 +1564,15 @@ pub fn convert_latin1_to_utf8(src: &[u8], dst: &mut [u8]) -> usize {
 
 #[inline]
 pub fn convert_latin1_to_str_partial(src: &[u8], dst: &mut str) -> (usize, usize) {
-    let bytes: &mut [u8] = unsafe { dst.as_bytes_mut() };
-    let (read, written) = convert_latin1_to_utf8_partial(src, bytes);
+    
+    
+    
+    
+    
+    let mut bytes = scopeguard::guard(unsafe { dst.as_bytes_mut() }, |bytes| {
+        bytes.iter_mut().for_each(|b| *b = 0)
+    });
+    let (read, written) = convert_latin1_to_utf8_partial(src, &mut bytes);
     let len = bytes.len();
     let mut trail = written;
     let max = ::core::cmp::min(len, trail + MAX_STRIDE_SIZE);
@@ -1564,6 +1584,8 @@ pub fn convert_latin1_to_str_partial(src: &[u8], dst: &mut str) -> (usize, usize
         bytes[trail] = 0;
         trail += 1;
     }
+    
+    let _ = scopeguard::ScopeGuard::<&mut [u8], _>::into_inner(bytes);
     (read, written)
 }
 
@@ -2238,6 +2260,52 @@ mod tests {
         let len = written + convert_utf16_to_utf8(&src[read..], &mut dst[written..]);
         dst.truncate(len);
         assert_eq!(dst, reference.as_bytes());
+    }
+
+    #[test]
+    fn test_convert_utf16_to_utf8_partial_leaves_tail_unmodified() {
+        
+        
+        
+        for &non_ascii in &[0x00CAu16, 0x00E4, 0x4E00, 0xD83D, 0xDCA9] {
+            for prefix_len in 0..70 {
+                let mut src = vec![u16::from(b'a'); prefix_len];
+                src.push(non_ascii);
+                src.extend_from_slice(&[u16::from(b'b'); 40]);
+                for dst_len in 0..=(src.len() * 3) {
+                    let mut dst = vec![b'q'; dst_len];
+                    let (_, written) = convert_utf16_to_utf8_partial(&src[..], &mut dst[..]);
+                    assert!(dst[written..].iter().all(|&b| b == b'q'));
+
+                    let mut string = "q".repeat(dst_len);
+                    convert_utf16_to_str_partial(&src[..], &mut string[..]);
+                    assert!(core::str::from_utf8(string.as_bytes()).is_ok());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_convert_latin1_to_utf8_partial_leaves_tail_unmodified() {
+        
+        
+        
+        for &non_ascii in &[0x80u8, 0xA0, 0xCA, 0xE4, 0xFF] {
+            for prefix_len in 0..70 {
+                let mut src = vec![b'a'; prefix_len];
+                src.push(non_ascii);
+                src.extend_from_slice(&[b'b'; 40]);
+                for dst_len in 0..=(src.len() * 2) {
+                    let mut dst = vec![b'q'; dst_len];
+                    let (_, written) = convert_latin1_to_utf8_partial(&src[..], &mut dst[..]);
+                    assert!(dst[written..].iter().all(|&b| b == b'q'));
+
+                    let mut string = "q".repeat(dst_len);
+                    convert_latin1_to_str_partial(&src[..], &mut string[..]);
+                    assert!(core::str::from_utf8(string.as_bytes()).is_ok());
+                }
+            }
+        }
     }
 
     #[test]
