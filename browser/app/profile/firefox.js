@@ -1678,6 +1678,8 @@ pref("browser.places.speculativeConnect.enabled", true);
 
 
 pref("browser.places.nativeMenu.maxResults", 100);
+
+pref("browser.places.nativeMenu.maxFolderResults", 500);
 #endif
 
 
