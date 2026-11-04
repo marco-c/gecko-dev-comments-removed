@@ -256,6 +256,7 @@ class TabAttribution {
 
   
   
+  
   getTabCounters(counters) {
     let tabs = this._getTopLevelTabs();
     let { tabWeights, weightsByPid } = this._computeFrameWeights(tabs);
@@ -264,7 +265,7 @@ class TabAttribution {
     let cpuByPid = new Map();
     for (let process of counters) {
       ramByPid.set(process.pid, process.totalRamSize);
-      cpuByPid.set(process.pid, process.slopeCpu ?? 0);
+      cpuByPid.set(process.pid, process.slopeCpu);
     }
 
     return tabs.map(tab => {
@@ -281,7 +282,11 @@ class TabAttribution {
           hasUsageData = true;
           let share = weight / totalWeight;
           totalRamSize += (ramByPid.get(pid) ?? 0) * share;
-          slopeCpuOneCore += (cpuByPid.get(pid) ?? 0) * share;
+          let slopeCpu = cpuByPid.get(pid);
+          slopeCpuOneCore =
+            slopeCpu == null || slopeCpuOneCore == null
+              ? null
+              : slopeCpuOneCore + slopeCpu * share;
         }
       }
       return {
@@ -294,7 +299,8 @@ class TabAttribution {
         
         hasUsageData,
         totalRamSize,
-        slopeCpuOfTotal: slopeCpuOneCore / this._cpuCount,
+        slopeCpuOfTotal:
+          slopeCpuOneCore == null ? null : slopeCpuOneCore / this._cpuCount,
       };
     });
   }
@@ -1872,23 +1878,28 @@ class ProcessesController {
 const TAB_CPU_NEGLIGIBLE_THRESHOLD = 0.001;
 
 
+
 function sumTabCounters(tabCounters) {
   let totalRamSize = 0;
   let slopeCpuOfTotal = 0;
   for (let tabData of tabCounters) {
     totalRamSize += tabData.totalRamSize;
-    slopeCpuOfTotal += tabData.slopeCpuOfTotal;
+    slopeCpuOfTotal =
+      tabData.slopeCpuOfTotal == null || slopeCpuOfTotal == null
+        ? null
+        : slopeCpuOfTotal + tabData.slopeCpuOfTotal;
   }
   return { totalRamSize, slopeCpuOfTotal };
 }
 
 
 
-function fillNoDataCell(cell, className) {
+
+function fillNoDataCell(cell, className, text = "—") {
   cell.className = className;
   cell.removeAttribute("data-l10n-id");
   cell.removeAttribute("data-l10n-args");
-  cell.textContent = "—";
+  cell.textContent = text;
 }
 
 function fillTabMemoryCell(cell, totalRamSize, hasUsageData = true) {
@@ -1910,6 +1921,10 @@ function fillTabMemoryCell(cell, totalRamSize, hasUsageData = true) {
 function fillTabCpuCell(cell, slopeCpuOfTotal, hasUsageData = true) {
   if (!hasUsageData) {
     fillNoDataCell(cell, "cpu");
+    return;
+  }
+  if (slopeCpuOfTotal == null) {
+    fillNoDataCell(cell, "cpu", "…");
     return;
   }
   let fluentName = "about-processes-tab-cpu";
