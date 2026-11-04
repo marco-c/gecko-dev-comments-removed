@@ -241,9 +241,6 @@ static MOZ_GLIBCXX_CONSTINIT xpstring eventsDirectory;
 static bool doReport = true;
 
 
-static bool showOSCrashReporter = false;
-
-
 static time_t lastCrashTime = 0;
 
 static XP_CHAR lastCrashTimeFilename[XP_PATH_MAX] = {0};
@@ -1580,8 +1577,6 @@ bool MinidumpCallback(
     EXCEPTION_POINTERS* exinfo, MDRawAssertionInfo* assertion,
 #endif
     const phc::AddrInfo* addrInfo, bool succeeded) {
-  bool returnValue = showOSCrashReporter ? false : succeeded;
-
   static XP_CHAR minidumpPath[XP_PATH_MAX];
   size_t size = XP_PATH_MAX;
   XP_CHAR* p;
@@ -1645,6 +1640,7 @@ bool MinidumpCallback(
 
   SetUpMemtestEnv();
 
+  bool returnValue = succeeded;
   bool isBackgroundTaskMode = false;
 #ifdef MOZ_BACKGROUNDTASKS
   isBackgroundTaskMode = BackgroundTasks::IsBackgroundTaskMode();
@@ -2140,17 +2136,6 @@ nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force ) {
   
   RecordAnnotationU64(Annotation::StartupTime,
                       static_cast<uint64_t>(time(nullptr)));
-
-#if defined(XP_MACOSX)
-  
-  
-  
-  Boolean keyExistsAndHasValidFormat = false;
-  Boolean prefValue = ::CFPreferencesGetAppBooleanValue(
-      CFSTR("OSCrashReporter"), kCFPreferencesCurrentApplication,
-      &keyExistsAndHasValidFormat);
-  if (keyExistsAndHasValidFormat) showOSCrashReporter = prefValue;
-#endif
 
   oldTerminateHandler = std::set_terminate(&TerminateHandler);
 
