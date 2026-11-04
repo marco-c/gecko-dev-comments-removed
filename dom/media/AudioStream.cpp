@@ -207,6 +207,8 @@ nsresult AudioStream::EnsureTimeStretcherInitialized() {
       return NS_ERROR_FAILURE;
     }
     mTimeStretcher = timestretcher.release();
+    mStretcherSourceFrames = 0;
+    mStretcherMediaFrames = 0;
 
     mTimeStretcher->setSampleRate(mAudioClock.GetInputRate());
     mTimeStretcher->setChannels(mOutChannels);
@@ -623,11 +625,12 @@ bool AudioStream::IsValidAudioFormat(Chunk* aChunk) {
   return aChunk->Channels() <= 8;
 }
 
-void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
+uint32_t AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
   TRACE("AudioStream::GetUnprocessed");
   AssertIsOnAudioThread();
   
   
+  uint32_t fromStretcher = 0;
   if (mTimeStretcher) {
     
     
@@ -637,7 +640,7 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
         "silence.");
     if (numSamples) {
       RLBoxSoundTouch* timeStretcher = mTimeStretcher;
-      aWriter.Write(
+      fromStretcher = aWriter.Write(
           [timeStretcher](AudioDataValue* aPtr, uint32_t aFrames) {
             return timeStretcher->receiveSamples(aPtr, aFrames);
           },
@@ -647,6 +650,8 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
       
       if (mTimeStretcher->numSamples().unverified_safe_because(
               "Only used to decide whether to reset the stretcher.") == 0) {
+        
+        
         mTimeStretcher->clear();
         PrimeTimeStretcher();
       }
@@ -661,20 +666,21 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
     }
     aWriter.Advance(count);
   }
+  return fromStretcher;
 }
 
-void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
+uint32_t AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
   TRACE("AudioStream::GetTimeStretched");
   AssertIsOnAudioThread();
   if (EnsureTimeStretcherInitialized() != NS_OK) {
-    return;
+    return 0;
   }
 
   uint32_t toPopFrames =
       ceil(aWriter.Available() * mAudioClock.GetPlaybackRate());
 
   if (!mTimeStretcher) {
-    return;
+    return 0;
   }
 
   
@@ -692,7 +698,7 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
       
       LOGW("Invalid member data: {} channels, {} frames", mOutChannels,
            toPopFrames);
-      return;
+      return 0;
     }
     buf.SetLength(size.value());
     
@@ -702,10 +708,11 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
       break;
     }
     mTimeStretcher->putSamples(buf.Elements(), count);
+    mStretcherSourceFrames += count;
   }
 
   auto* timeStretcher = mTimeStretcher;
-  aWriter.Write(
+  return aWriter.Write(
       [timeStretcher](AudioDataValue* aPtr, uint32_t aFrames) {
         return timeStretcher->receiveSamples(aPtr, aFrames);
       },
@@ -785,10 +792,11 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
                            mOutChannels * aFrames),
       mOutChannels, aFrames);
 
+  uint32_t fromStretcher = 0;
   if (mAudioClock.GetInputRate() == mAudioClock.GetOutputRate()) {
-    GetUnprocessed(writer);
+    fromStretcher = GetUnprocessed(writer);
   } else {
-    GetTimeStretched(writer);
+    fromStretcher = GetTimeStretched(writer);
   }
 
   
@@ -797,8 +805,8 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
 #ifndef XP_MACOSX
     MonitorAutoLock mon(mMonitor);
 #endif
-    mAudioClock.UpdateFrameHistory(aFrames - writer.Available(),
-                                   writer.Available(), mAudioThreadChanged);
+    UpdateClock(aFrames - writer.Available(), writer.Available(),
+                fromStretcher);
     if (writer.Available() > 0) {
       if (!mDataSource.IsIntentionallySilent()) {
         TRACE_COMMENT("AudioStream::DataCallback",
@@ -817,8 +825,7 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
 #ifndef XP_MACOSX
     MonitorAutoLock mon(mMonitor);
 #endif
-    mAudioClock.UpdateFrameHistory(aFrames - writer.Available(), 0,
-                                   mAudioThreadChanged);
+    UpdateClock(aFrames - writer.Available(), 0, fromStretcher);
   }
 
   mDumpFile.Write(static_cast<const AudioDataValue*>(aBuffer),
@@ -828,6 +835,32 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
     CallbackThreadRegistry::Get()->Unregister(mAudioThreadId);
   }
   return aFrames - writer.Available();
+}
+
+void AudioStream::UpdateClock(uint32_t aServiced, uint32_t aUnderrun,
+                              uint32_t aFromStretcher) {
+  AssertIsOnAudioThread();
+  MOZ_ASSERT(aFromStretcher <= aServiced);
+  
+  
+  
+  
+  
+  uint32_t held = 0;
+  if (aFromStretcher) {
+    const double mediaPerFrame =
+        static_cast<double>(mAudioClock.GetInputRate()) /
+        mAudioClock.GetOutputRate();
+    const double owed =
+        std::max(0.0, static_cast<double>(mStretcherSourceFrames) -
+                          mStretcherMediaFrames);
+    const uint32_t counted = static_cast<uint32_t>(std::min(
+        static_cast<double>(aFromStretcher), std::floor(owed / mediaPerFrame)));
+    mStretcherMediaFrames += counted * mediaPerFrame;
+    held = aFromStretcher - counted;
+  }
+  mAudioClock.UpdateFrameHistory(aServiced - held, aUnderrun + held,
+                                 mAudioThreadChanged);
 }
 
 void AudioStream::StateCallback(cubeb_state aState) {

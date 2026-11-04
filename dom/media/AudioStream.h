@@ -424,9 +424,14 @@ class AudioStream final {
   
   
   void PrimeTimeStretcher();
-  void GetUnprocessed(AudioBufferWriter& aWriter);
-  void GetTimeStretched(AudioBufferWriter& aWriter);
+  
+  uint32_t GetUnprocessed(AudioBufferWriter& aWriter);
+  uint32_t GetTimeStretched(AudioBufferWriter& aWriter);
   void UpdatePlaybackRateIfNeeded();
+  
+  
+  void UpdateClock(uint32_t aServiced, uint32_t aUnderrun,
+                   uint32_t aFromStretcher);
 
   
   
@@ -486,6 +491,11 @@ class AudioStream final {
   std::atomic<bool> mPreservesPitch;
   
   bool mAudioThreadChanged = false;
+  
+  
+  
+  uint64_t mStretcherSourceFrames = 0;
+  double mStretcherMediaFrames = 0;
   Atomic<bool> mCallbacksStarted;
 
   
