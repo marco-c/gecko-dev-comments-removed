@@ -324,8 +324,17 @@ add_task(async function test_tabGroupOverflowCounterScrollable() {
   await TabGroupTestUtils.toggleCollapsed(group);
   
   await TabGroupTestUtils.toggleCollapsed(group);
-  Assert.ok(
-    !win.gBrowser.tabContainer.arrowScrollbox.hasAttribute("scrolledtoend"),
+  
+  
+  let { arrowScrollbox } = win.gBrowser.tabContainer;
+  let end = arrowScrollbox.startEndProps[1];
+  arrowScrollbox.scrollByPixels(
+    win.gBrowser.selectedTab.getBoundingClientRect()[end] -
+      arrowScrollbox.scrollbox.getBoundingClientRect()[end],
+    true
+  );
+  await TestUtils.waitForCondition(
+    () => !arrowScrollbox.hasAttribute("scrolledtoend"),
     "Scrollbox correctly overflows at end"
   );
   await TabGroupTestUtils.removeTabGroup(group);
