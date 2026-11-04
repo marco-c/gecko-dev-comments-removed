@@ -97,7 +97,9 @@ mermaid_init_config = {
     "sequence": {"useMaxWidth": False},
     "class": {"useMaxWidth": False},
     "state": {"useMaxWidth": False, "wrappingWidth": 200, "minNodeWidth": 0},
-    "gantt": {"useMaxWidth": False},
+    
+    
+    "gantt": {"useMaxWidth": False, "useWidth": 800},
     "er": {"useMaxWidth": False},
 }
 
