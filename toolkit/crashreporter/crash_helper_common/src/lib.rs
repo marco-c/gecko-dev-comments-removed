@@ -19,7 +19,6 @@ pub mod crash_annotations {
     include!(concat!(env!("OUT_DIR"), "/crash_annotations.rs"));
 }
 
-use bytes::Bytes;
 use messages::MessageError;
 use mozannotation_server::CAnnotation;
 
@@ -54,11 +53,16 @@ pub use crate::platform::{
 
 pub trait BreakpadString {
     
-    fn serialize(self) -> Bytes;
+    fn serialize(self) -> Vec<u8>;
 
     
     
     fn deserialize(bytes: Vec<u8>) -> Result<OsString, MessageError>;
+
+    
+    
+    
+    fn bytes_len(&self) -> usize;
 
     
     
