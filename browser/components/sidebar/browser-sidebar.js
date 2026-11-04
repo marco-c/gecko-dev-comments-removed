@@ -253,6 +253,7 @@ var SidebarController = {
         menuL10nId: "menu-view-resource-monitor",
         revampL10nId: "sidebar-menu-resource-monitor-label",
         iconUrl: "chrome://browser/skin/lightning-bolt.svg",
+        appendOpenType: true,
       }
     );
 
@@ -1190,7 +1191,7 @@ var SidebarController = {
       let commandID = this._state.command;
 
       if (wasOpen && commandID && this.sidebars.has(commandID)) {
-        this.showInitially(commandID);
+        this.showInitially(commandID, "restored");
       } else {
         this._box.removeAttribute("checked");
         
@@ -2088,7 +2089,8 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
-    return this._show(commandID).then(() => {
+    
+    return this._show(commandID, "sidebar_launch").then(() => {
       this._loadSidebarExtension(commandID);
 
       if (triggerNode) {
@@ -2111,7 +2113,9 @@ var SidebarController = {
 
 
 
-  async showInitially(commandID) {
+
+
+  async showInitially(commandID, openType = "other") {
     if (this.inSingleTabWindow) {
       return false;
     }
@@ -2120,7 +2124,7 @@ var SidebarController = {
     if (!this._canShow(commandID)) {
       return false;
     }
-    return this._show(commandID).then(() => {
+    return this._show(commandID, openType).then(() => {
       this._loadSidebarExtension(commandID);
       return true;
     });
@@ -2133,7 +2137,9 @@ var SidebarController = {
 
 
 
-  _show(commandID) {
+
+
+  _show(commandID, openType) {
     return new Promise(resolve => {
       const willShowEvent = new CustomEvent("SidebarWillShow");
       this.browser.contentWindow?.dispatchEvent(willShowEvent);
@@ -2154,8 +2160,11 @@ var SidebarController = {
       this._box.setAttribute("checked", "true");
       this._state.command = commandID;
 
-      let { iconUrl, url, title, sourceL10nEl, contextMenuId } =
+      let { iconUrl, url, title, sourceL10nEl, contextMenuId, appendOpenType } =
         this.sidebars.get(commandID);
+      if (appendOpenType && openType) {
+        url += `${url.includes("?") ? "&" : "?"}openType=${openType}`;
+      }
       if (iconUrl) {
         this._switcherTarget.style.setProperty(
           "--webextension-menuitem-image",
