@@ -105,6 +105,13 @@ export default function mapExpressionBindings(expression, ast, bindings = []) {
       return;
     }
 
+    
+    
+    
+    if (node.kind !== "var") {
+      return;
+    }
+
     if (!t.isForStatement(parent.node)) {
       const newNodes = globalizeDeclaration(node, bindings);
       isMapped = true;

@@ -40614,6 +40614,13 @@ Please specify the "importAttributesKeyword" generator option, whose value can b
           return;
         }
 
+        
+        
+        
+        if (node.kind !== "var") {
+          return;
+        }
+
         if (!libExports$2.isForStatement(parent.node)) {
           const newNodes = globalizeDeclaration(node, bindings);
           isMapped = true;
