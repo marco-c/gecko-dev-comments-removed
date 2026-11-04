@@ -7400,8 +7400,10 @@ nsresult nsContentUtils::SetNodeTextContent(
     
     if (aContent->HasChildren()) {
       nsIContent* child = aContent->GetFirstChild();
-      nsresult rv = child->AsText()->SetText(aValue, true);
-      NS_ENSURE_SUCCESS(rv, rv);
+      ErrorResult rv;
+      child->AsText()->SetNodeValueInternal(aValue, rv,
+                                            aMutationEffectOnScript);
+      NS_ENSURE_TRUE(!rv.Failed(), rv.StealNSResult());
 
       
       while (nsIContent* lastChild = aContent->GetLastChild()) {
