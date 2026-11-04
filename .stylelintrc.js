@@ -424,8 +424,6 @@ module.exports = {
         
         "devtools/**",
         
-        "browser/fxr/**",
-        
         "mobile/android/**",
         "toolkit/themes/mobile/global/aboutLicense.css",
         

@@ -616,38 +616,6 @@ void VRShMem::PullSystemState(
 }
 #endif    
 
-void VRShMem::PushWindowState(VRWindowState& aState) {
-#if defined(XP_WIN)
-  if (!mExternalShmem) {
-    return;
-  }
-
-  bool status = true;
-  WaitForMutex lock(mMutex);
-  status = lock.GetStatus();
-  if (status) {
-    memcpy((void*)&(mExternalShmem->windowState), (void*)&aState,
-           sizeof(VRWindowState));
-  }
-#endif  
-}
-
-void VRShMem::PullWindowState(VRWindowState& aState) {
-#if defined(XP_WIN)
-  if (!mExternalShmem) {
-    return;
-  }
-
-  bool status = true;
-  WaitForMutex lock(mMutex);
-  status = lock.GetStatus();
-  if (status) {
-    memcpy((void*)&aState, (void*)&(mExternalShmem->windowState),
-           sizeof(VRWindowState));
-  }
-#endif  
-}
-
 void VRShMem::PushTelemetryState(VRTelemetryState& aState) {
 #if defined(XP_WIN)
   if (!mExternalShmem) {
@@ -676,63 +644,5 @@ void VRShMem::PullTelemetryState(VRTelemetryState& aState) {
     memcpy((void*)&aState, (void*)&(mExternalShmem->telemetryState),
            sizeof(VRTelemetryState));
   }
-#endif  
-}
-
-void VRShMem::SendEvent(uint64_t aWindowID,
-                        mozilla::gfx::VRFxEventType aEventType,
-                        mozilla::gfx::VRFxEventState aEventState) {
-  MOZ_ASSERT(!HasExternalShmem());
-  if (JoinShMem()) {
-    mozilla::gfx::VRWindowState windowState = {0};
-    PullWindowState(windowState);
-    windowState.windowID = aWindowID;
-    windowState.eventType = aEventType;
-    windowState.eventState = aEventState;
-    PushWindowState(windowState);
-    LeaveShMem();
-
-#if defined(XP_WIN)
-    
-    HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
-                                  FALSE,                  
-                                  windowState.signalName  
-    );
-    ::SetEvent(hSignal);
-    ::CloseHandle(hSignal);
-#endif  
-  }
-}
-
-void VRShMem::SendIMEState(uint64_t aWindowID,
-                           mozilla::gfx::VRFxEventState aEventState) {
-  SendEvent(aWindowID, mozilla::gfx::VRFxEventType::IME, aEventState);
-}
-
-void VRShMem::SendFullscreenState(uint64_t aWindowID, bool aFullscreen) {
-  SendEvent(aWindowID, mozilla::gfx::VRFxEventType::FULLSCREEN,
-            aFullscreen ? mozilla::gfx::VRFxEventState::FULLSCREEN_ENTER
-                        : mozilla::gfx::VRFxEventState::FULLSCREEN_EXIT);
-}
-
-
-
-void VRShMem::SendShutdowmState(uint64_t aWindowID) {
-  MOZ_ASSERT(HasExternalShmem());
-
-  mozilla::gfx::VRWindowState windowState = {0};
-  PullWindowState(windowState);
-  windowState.windowID = aWindowID;
-  windowState.eventType = mozilla::gfx::VRFxEventType::SHUTDOWN;
-  PushWindowState(windowState);
-
-#if defined(XP_WIN)
-  
-  HANDLE hSignal = ::OpenEventA(EVENT_ALL_ACCESS,       
-                                FALSE,                  
-                                windowState.signalName  
-  );
-  ::SetEvent(hSignal);
-  ::CloseHandle(hSignal);
 #endif  
 }

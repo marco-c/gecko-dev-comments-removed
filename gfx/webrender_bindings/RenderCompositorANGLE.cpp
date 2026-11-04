@@ -8,7 +8,6 @@
 #include <dcomp.h>
 #include <dxgi1_2.h>
 
-#include "FxROutputHandler.h"
 #include "GLContext.h"
 #include "GLContextEGL.h"
 #include "GLContextProvider.h"
@@ -451,14 +450,6 @@ RenderedFrameId RenderCompositorANGLE::EndFrame(
 
   if (!UseLayerCompositor()) {
     auto start = TimeStamp::Now();
-    if (auto* fxrHandler = mWidget->AsWindows()->GetFxrOutputHandler()) {
-      
-      
-      if (fxrHandler->TryInitialize(mSwapChain, mDevice)) {
-        fxrHandler->UpdateOutput(mCtx);
-      }
-    }
-
     const UINT interval =
         mFirstPresent ||
                 StaticPrefs::
@@ -946,7 +937,7 @@ void RenderCompositorANGLE::InitializeUseWindowPartialPresent() {
   
   
   mUseWindowPartialPresent =
-      !UseLayerCompositor() && !mWidget->AsWindows()->HasFxrOutputHandler() &&
+      !UseLayerCompositor() &&
       gfx::gfxVars::WebRenderMaxPartialPresentRects() > 0;
 }
 

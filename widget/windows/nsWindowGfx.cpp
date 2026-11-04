@@ -377,33 +377,17 @@ void nsWindow::MaybeEnableWindowOcclusion(bool aEnable) {
   }
 }
 
-
-
-
 void nsWindow::CreateCompositor() {
   nsIWidget::CreateCompositor();
 
   MaybeEnableWindowOcclusion( true);
 
-  if (mRequestFxrOutputPending) {
-    GetRemoteRenderer()->SendRequestFxrOutput();
-  }
 }
 
 void nsWindow::DestroyCompositor() {
   MaybeEnableWindowOcclusion( false);
 
   nsIWidget::DestroyCompositor();
-}
-
-void nsWindow::RequestFxrOutput() {
-  if (GetRemoteRenderer() != nullptr) {
-    MOZ_CRASH("RequestFxrOutput should happen before Compositor is created.");
-  } else {
-    
-    
-    mRequestFxrOutputPending = true;
-  }
 }
 
 LayoutDeviceIntSize nsWindowGfx::GetIconMetrics(IconSizeType aSizeType) {

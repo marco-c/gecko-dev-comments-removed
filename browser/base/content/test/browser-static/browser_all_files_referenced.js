@@ -378,14 +378,6 @@ if (AppConstants.platform != "win") {
   allowlist.push({
     file: "resource://app/localization/en-US/browser/backgroundtasks/defaultagent.ftl",
   });
-
-  if (AppConstants.NIGHTLY_BUILD) {
-    
-    
-    
-    
-    allowlist.push({ file: "chrome://fxr/content/fxrui.html" });
-  }
 }
 
 if (AppConstants.platform == "android") {

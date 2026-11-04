@@ -93,13 +93,5 @@ void WinCompositorWidget::UpdateCompositorWndSizeIfNecessary() {
   mLastCompositorWndSize = size;
 }
 
-
-
-void WinCompositorWidget::RequestFxrOutput() {
-  MOZ_ASSERT(mFxrHandler == nullptr);
-
-  mFxrHandler.reset(new FxROutputHandler());
-}
-
 }  
 }  

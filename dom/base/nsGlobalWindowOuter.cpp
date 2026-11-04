@@ -126,9 +126,6 @@
 
 #include "AccessCheck.h"
 #include "Crypto.h"
-#include "FxRWindowManager.h"
-#include "VRShMem.h"
-#include "gfxVR.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventDispatcher.h"
@@ -1330,7 +1327,6 @@ static JSObject* NewOuterWindowProxy(JSContext* cx,
 nsGlobalWindowOuter::nsGlobalWindowOuter(uint64_t aWindowID)
     : nsPIDOMWindowOuter(aWindowID),
       mFullscreenHasChangedDuringProcessing(false),
-      mForceFullScreenInWidget(false),
       mIsClosed(false),
       mInClose(false),
       mHavePendingClose(false),
@@ -4234,11 +4230,7 @@ nsresult nsGlobalWindowOuter::ProcessWidgetFullscreenRequest(
   
   
   
-  
-  
-  
-  if (!StaticPrefs::full_screen_api_ignore_widgets() &&
-      !mForceFullScreenInWidget) {
+  if (!StaticPrefs::full_screen_api_ignore_widgets()) {
     if (MakeWidgetFullscreen(this, aReason, aFullscreen)) {
       
       
@@ -4248,12 +4240,6 @@ nsresult nsGlobalWindowOuter::ProcessWidgetFullscreenRequest(
     }
   }
 
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
-  if (FxRWindowManager::GetInstance()->IsFxRWindow(mWindowID)) {
-    mozilla::gfx::VRShMem shmem(nullptr, true );
-    shmem.SendFullscreenState(mWindowID, aFullscreen);
-  }
-#endif  
   FinishFullscreenChange(aFullscreen);
   return NS_OK;
 }
@@ -4380,14 +4366,6 @@ nsresult nsGlobalWindowOuter::SetFullscreenInternal(FullscreenReason aReason,
   return ProcessWidgetFullscreenRequest(aReason, aFullscreen);
 }
 
-
-
-void nsGlobalWindowOuter::ForceFullScreenInWidget() {
-  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-
-  mForceFullScreenInWidget = true;
-}
-
 bool nsGlobalWindowOuter::TryMakeWidgetFullscreen(FullscreenReason aReason,
                                                   bool aIsFullscreen,
                                                   nsIWidget* aWidget) {
@@ -4449,8 +4427,7 @@ void nsGlobalWindowOuter::FullscreenWillChange(bool aIsFullscreen) {
       
       
       
-      MOZ_ASSERT(StaticPrefs::full_screen_api_ignore_widgets() ||
-                     mForceFullScreenInWidget,
+      MOZ_ASSERT(StaticPrefs::full_screen_api_ignore_widgets(),
                  "This should only happen when widget fullscreen is prevented");
     }
   }

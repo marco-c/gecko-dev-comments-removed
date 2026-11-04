@@ -8,7 +8,6 @@
 #include "KeyboardLayout.h"
 #include "OSKInputPaneManager.h"
 #include "OSKTabTipManager.h"
-#include "OSKVRManager.h"
 #include "TSFTextStore.h"
 #include "TSFUtils.h"
 #include "WinTextEventDispatcherListener.h"
@@ -22,9 +21,7 @@
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #endif  
-#include "FxRWindowManager.h"
 #include "cfgmgr32.h"
-#include "moz_external_vr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsIWindowsRegKey.h"
 #include "nsWindow.h"
@@ -701,11 +698,6 @@ bool IMEHandler::NeedsSearchInputScope() {
 
 
 bool IMEHandler::IsOnScreenKeyboardSupported() {
-#ifdef NIGHTLY_BUILD
-  if (FxRWindowManager::GetInstance()->IsFxRWindow(sFocusedWindow)) {
-    return true;
-  }
-#endif  
   if (!Preferences::GetBool(kOskEnabled, true) ||
       !IMEHandler::NeedOnScreenKeyboard()) {
     return false;
@@ -739,11 +731,6 @@ void IMEHandler::MaybeShowOnScreenKeyboard(nsWindow* aWindow,
 
 
 void IMEHandler::MaybeDismissOnScreenKeyboard(nsWindow* aWindow, Sync aSync) {
-#ifdef NIGHTLY_BUILD
-  if (FxRWindowManager::GetInstance()->IsFxRWindow(aWindow)) {
-    OSKVRManager::DismissOnScreenKeyboard();
-  }
-#endif  
   if (aSync == Sync::Yes) {
     DismissOnScreenKeyboard(aWindow);
     return;
@@ -970,13 +957,6 @@ bool IMEHandler::AutoInvokeOnScreenKeyboardInDesktopMode() {
 
 
 void IMEHandler::ShowOnScreenKeyboard(nsWindow* aWindow) {
-#ifdef NIGHTLY_BUILD
-  if (FxRWindowManager::GetInstance()->IsFxRWindow(sFocusedWindow)) {
-    OSKVRManager::ShowOnScreenKeyboard();
-    return;
-  }
-#endif  
-
   if (IsWin10AnniversaryUpdateOrLater()) {
     OSKInputPaneManager::ShowOnScreenKeyboard(aWindow->GetWindowHandle());
     return;

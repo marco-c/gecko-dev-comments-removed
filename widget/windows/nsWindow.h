@@ -673,7 +673,6 @@ class nsWindow final : public nsIWidget {
 
   void CreateCompositor() override;
   void DestroyCompositor() override;
-  void RequestFxrOutput() override;
 
   void RecreateDirectManipulationIfNeeded();
   void ResizeDirectManipulationViewport();
@@ -923,10 +922,6 @@ class nsWindow final : public nsIWidget {
   WinPointerEvents mPointerEvents;
 
   ScreenPoint mLastPanGestureFocus;
-
-  
-  
-  bool mRequestFxrOutputPending = false;
 
   
   
