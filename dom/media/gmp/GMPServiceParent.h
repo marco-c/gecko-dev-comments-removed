@@ -217,7 +217,8 @@ class GeckoMediaPluginServiceParent final
 
   nsTArray<nsString> mPluginsWaitingForDeletion;
 
-  nsCOMPtr<nsIFile> mStorageBaseDir;
+  
+  nsCOMPtr<nsIFile> mStorageBaseDir MOZ_GUARDED_BY(mMutex);
 
   
   
