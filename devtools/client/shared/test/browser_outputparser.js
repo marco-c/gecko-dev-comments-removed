@@ -8,9 +8,9 @@ add_task(async function () {
     set: [
       ["dom.security.html_serialization_escape_lt_gt", true],
       ["layout.css.alpha-color-function.enabled", true],
-      ["layout.css.attr.enabled", true],
       ["layout.css.backdrop-filter.enabled", true],
       ["layout.css.color-mix-multi-color.enabled", true],
+      ["layout.css.random.enabled", true],
       ["security.allow_unsafe_parent_loads", true],
     ],
   });
@@ -3182,6 +3182,35 @@ function testParseAttr(doc, parser) {
         `<span class="inspector-attr-fallback unmatched-class">match-parent</span>` +
         `)`,
     },
+    {
+      message: "Modern attr() with known attribute using random() and type()",
+      propertyName: "rotate",
+      propertyValue: "attr(data-x type(<angle>))",
+      attributes: { "data-x": "random(90deg, 0.75turn)" },
+      
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;random(90deg, 0.75turn)&quot;">data-x</span>` +
+          ` type(&lt;angle&gt;)` +
+        `</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with known attribute using random() not matching specified type()",
+      propertyName: "rotate",
+      propertyValue: "attr(data-x type(<angle>))",
+      attributes: { "data-x": "random(10px, 20px)" },
+      
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;random(10px, 20px)&quot;) does not match expected &quot;&lt;angle&gt;&quot; syntax">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` type(&lt;angle&gt;)` +
+        `</span>` +
+        `)`,
+    },
   ];
 
   for (const test of TESTS) {
@@ -3364,6 +3393,24 @@ function testParseForCssExplainers(doc, parser) {
         `20px ` +
         `<span data-length-expression="30em">30em</span> ` +
         `<span data-length-expression="40lh">40lh</span>`,
+    },
+    {
+      message: "attr() with type()",
+      propertyName: "width",
+      propertyValue: "attr(data-x type(<length>))",
+      cssExplainersEnabled: true,
+      attributes: { "data-x": "42em" },
+      
+      expected:
+        `<span data-function-expression="attr(data-x type(&lt;length&gt;))">` +
+          `<span class="css-explainers-function-name">attr</span>` +
+          `(` +
+          `<span class="inspector-attr-param">` +
+            `<span class="inspector-attr-name" data-attribute="&quot;42em&quot;">data-x</span>` +
+            ` type(&lt;length&gt;)` +
+          `</span>` +
+          `)` +
+        `</span>`,
     },
   ];
 
