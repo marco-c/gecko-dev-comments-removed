@@ -12,6 +12,8 @@
 
 
 
+use regex::Regex;
+
 const PREF_FUNCTION_NAMES: &[&str] = &["user_pref", "pref", "sticky_pref", "lockPref"];
 
 
@@ -23,49 +25,97 @@ const PREF_FUNCTION_NAMES: &[&str] = &["user_pref", "pref", "sticky_pref", "lock
 
 
 
+pub struct PrefPattern {
+    regex: Regex,
+}
 
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PrefValue<'a> {
+    
+    Bool(bool),
+    
+    Int(i64),
+    
+    
+    
+    
+    String(&'a str),
+}
 
-
-pub fn find_pref<'a>(prefs_content: &'a str, pref: &str) -> Option<&'a str> {
-    let mut search_content = prefs_content;
-    loop {
-        let (before, s) = search_content.split_once(&format!("\"{pref}\""))?;
-        if !is_pref_prefix(before) {
-            search_content = s;
-            continue;
+impl<'a> PrefValue<'a> {
+    
+    pub fn into_bool(self) -> Option<bool> {
+        if let Self::Bool(b) = self {
+            Some(b)
+        } else {
+            None
         }
-        let s = s.trim_start_matches(|c: char| c.is_whitespace() || c == ',');
-        
-        
-        let (content, _) = s.split_once(");")?;
-        return Some(content.trim());
+    }
+
+    
+    #[allow(unused)]
+    pub fn into_int(self) -> Option<i64> {
+        if let Self::Int(i) = self {
+            Some(i)
+        } else {
+            None
+        }
+    }
+
+    
+    pub fn into_str(self) -> Option<&'a str> {
+        if let Self::String(s) = self {
+            Some(s)
+        } else {
+            None
+        }
     }
 }
 
-fn is_pref_prefix(mut s: &str) -> bool {
-    s = s.trim();
-    let Some(s) = s.strip_suffix('(') else {
-        return false;
-    };
+impl PrefPattern {
     
-    let s = s
-        .rsplit_once(|c: char| !c.is_ascii_alphabetic())
-        .map(|parts| parts.1)
-        .unwrap_or(s);
-    PREF_FUNCTION_NAMES.contains(&s)
-}
+    pub fn new(key: &str) -> Result<Self, regex::Error> {
+        
+        let escaped = regex::escape(&format!("{key:?}"));
+        
+        
+        let func = PREF_FUNCTION_NAMES.join("|");
+        let regex = Regex::new(&format!(
+            r"(?x)
+            # function name with optional whitespace and open paren
+            \b(?:{func})\s*\(
+            # Pref name string (optional whitespace) and comma
+            \s*{escaped}\s*,
+            # Pref value (optional whitespace). This breaks if a string contains a ')'.
+            \s*([^)]+)\s*
+            # Match a closing paren and semicolon (requiring some valid syntax).
+            \)\s*;
+        "
+        ))?;
+        Ok(Self { regex })
+    }
 
-
-
-
-pub fn find_string_pref<'a>(prefs_content: &'a str, pref: &str) -> Option<&'a str> {
-    find_pref(prefs_content, pref).and_then(|s| s.strip_prefix('"')?.strip_suffix('"'))
-}
-
-
-pub fn find_bool_pref(prefs_content: &str, pref: &str) -> Option<bool> {
-    find_pref(prefs_content, pref).and_then(|s| s.parse().ok())
+    
+    pub fn find<'a>(&self, prefs_content: &'a str) -> Option<PrefValue<'a>> {
+        let value_string = self
+            .regex
+            .captures(prefs_content)
+            .and_then(|captures| captures.get(1))
+            .map(|m| m.as_str().trim())?;
+        if value_string == "false" {
+            Some(PrefValue::Bool(false))
+        } else if value_string == "true" {
+            Some(PrefValue::Bool(true))
+        } else if "+-0123456789".contains(value_string.chars().next().unwrap()) {
+            value_string.parse().ok().map(PrefValue::Int)
+        } else {
+            value_string
+                .strip_prefix('"')?
+                .strip_suffix('"')
+                .map(PrefValue::String)
+        }
+    }
 }
 
 
@@ -74,49 +124,96 @@ mod test {
     use super::*;
 
     #[test]
-    fn find_pref_read_value() {
-        let input = r#"user_pref("FOOBAR", "baz");"#;
-        assert_eq!(find_pref(input, "FOOBAR"), Some(r#""baz""#));
-    }
-
-    #[test]
-    fn find_pref_continues_search() {
-        let input = r#"
-            user_pref("rawr", "FOOBAR");
-            user_pref("FOOBAR", "baz");
-        "#;
-        assert_eq!(find_pref(input, "FOOBAR"), Some(r#""baz""#));
-    }
-
-    #[test]
-    fn find_pref_missing() {
+    fn missing() {
+        let pat = PrefPattern::new("hello").unwrap();
         let input = r#"
             user_pref("rawr", "FOOBAR");
             user_pref("FOOBAR", "hello");
         "#;
-        assert_eq!(find_pref(input, "hello"), None);
+        assert_eq!(pat.find(input), None);
     }
 
     #[test]
-    fn test_find_string_pref() {
+    fn malformed() {
+        let pat = PrefPattern::new("FOOBAR").unwrap();
+        let input = r#"
+            user_pref("FOOBAR", "hi")
+        "#;
+        assert_eq!(pat.find(input), None);
+    }
+
+    #[test]
+    fn string_pref() {
+        let pat = PrefPattern::new("FOOBAR").unwrap();
         let input = r#"user_pref("FOOBAR", "baz");"#;
-        assert_eq!(find_string_pref(input, "FOOBAR"), Some("baz"));
+        assert_eq!(pat.find(input), Some(PrefValue::String("baz")));
+    }
+
+    #[test]
+    fn precise_search() {
+        let pat = PrefPattern::new("FOOBAR").unwrap();
+        let input = r#"
+            user_pref("rawr", "FOOBAR");
+            user_pref("FOOBAR", "baz");
+        "#;
+        assert_eq!(pat.find(input), Some(PrefValue::String("baz")));
+    }
+
+    #[test]
+    fn bool_pref() {
+        let pat = PrefPattern::new("FOOBAR").unwrap();
+        assert_eq!(
+            pat.find(r#"user_pref("FOOBAR", true);"#),
+            Some(PrefValue::Bool(true))
+        );
+        assert_eq!(
+            pat.find(r#"user_pref("FOOBAR", false);"#),
+            Some(PrefValue::Bool(false))
+        );
+    }
+
+    #[test]
+    fn int_pref() {
+        let pat = PrefPattern::new("FOOBAR").unwrap();
+        assert_eq!(
+            pat.find(r#"user_pref("FOOBAR", 42);"#),
+            Some(PrefValue::Int(42))
+        );
+        assert_eq!(
+            pat.find(r#"user_pref("FOOBAR", -10);"#),
+            Some(PrefValue::Int(-10))
+        );
+        assert_eq!(
+            pat.find(r#"user_pref("FOOBAR", +123);"#),
+            Some(PrefValue::Int(123))
+        );
     }
 
     #[test]
     fn pref_functions() {
-        assert_eq!(find_pref(r#"user_pref("A", true);"#, "A"), Some("true"));
-        assert_eq!(find_pref(r#"pref("A", true);"#, "A"), Some("true"));
-        assert_eq!(find_pref(r#"sticky_pref("A", true);"#, "A"), Some("true"));
-        assert_eq!(find_pref(r#"lockPref("A", true);"#, "A"), Some("true"));
-        assert_eq!(find_pref(r#"somepref("A", true);"#, "A"), None);
+        let pat = PrefPattern::new("A").unwrap();
+        assert_eq!(
+            pat.find(r#"user_pref("A", true);"#),
+            Some(PrefValue::Bool(true))
+        );
+        assert_eq!(pat.find(r#"pref("A", true);"#), Some(PrefValue::Bool(true)));
+        assert_eq!(
+            pat.find(r#"sticky_pref("A", true);"#),
+            Some(PrefValue::Bool(true))
+        );
+        assert_eq!(
+            pat.find(r#"lockPref("A", true);"#),
+            Some(PrefValue::Bool(true))
+        );
+        assert_eq!(pat.find(r#"somepref("A", true);"#), None);
     }
 
     #[test]
-    fn test_find_bool_pref() {
-        let input = r#"user_pref("FOOBAR", true);"#;
-        assert_eq!(find_bool_pref(input, "FOOBAR"), Some(true));
-        let input = r#"user_pref("FOOBAR", false);"#;
-        assert_eq!(find_bool_pref(input, "FOOBAR"), Some(false));
+    fn whitespace() {
+        let pat = PrefPattern::new("A").unwrap();
+        assert_eq!(
+            pat.find(r#" user_pref ( "A" , true ) ; "#),
+            Some(PrefValue::Bool(true))
+        );
     }
 }
