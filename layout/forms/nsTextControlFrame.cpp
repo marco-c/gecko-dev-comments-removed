@@ -296,6 +296,15 @@ void nsTextControlFrame::ElementStateChanged(dom::ElementState aStates) {
                                     dom::ElementState::DISABLED)) {
     HandleReadonlyOrDisabledChange();
   }
+  
+  
+  
+  if (aStates.HasState(dom::ElementState::FOCUS) &&
+      !ControlElement()->State().HasState(dom::ElementState::FOCUS)) {
+    if (nsFrameSelection* frameSelection = GetOwnedFrameSelection()) {
+      frameSelection->NormalSelection().LimitPendingScrollToFirstAncestor();
+    }
+  }
   return ScrollContainerFrame::ElementStateChanged(aStates);
 }
 

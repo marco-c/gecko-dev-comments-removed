@@ -503,7 +503,8 @@ class AutoScroller final : public nsITimerCallback, public nsINamed {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Notify(nsITimer* timer) override {
     if (mPresContext) {
       AutoWeakFrame frame =
-          mContent ? mPresContext->GetPrimaryFrameFor(mContent) : nullptr;
+          mContent ? mPresContext->GetPrimaryOrAreaImageFrameFor(mContent)
+                   : nullptr;
       if (!frame) {
         return NS_OK;
       }
@@ -3996,6 +3997,12 @@ nsresult Selection::PostScrollSelectionIntoViewEvent(
                                                   aHorizontal, aFlags);
   refreshDriver->AddEarlyRunner(mScrollEvent.get());
   return NS_OK;
+}
+
+void Selection::LimitPendingScrollToFirstAncestor() {
+  if (mScrollEvent.IsPending()) {
+    mScrollEvent.get()->LimitScrollTargetToFirstAncestor();
+  }
 }
 
 nsresult Selection::ScrollIntoView(SelectionRegion aRegion,
