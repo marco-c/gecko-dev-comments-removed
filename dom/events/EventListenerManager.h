@@ -561,6 +561,7 @@ class EventListenerManager final
 
   uint32_t ListenerCount() const;
 
+  bool HasOwnerInCCGenerationDocument() const;
   void MarkForCC();
 
   void TraceListeners(JSTracer* aTrc);

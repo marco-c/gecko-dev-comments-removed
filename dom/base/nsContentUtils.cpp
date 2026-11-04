@@ -58,6 +58,7 @@
 #include "mozAutoDocUpdate.h"
 #include "mozIDOMWindow.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AtomArray.h"
@@ -202,6 +203,7 @@
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/NodeBinding.h"
 #include "mozilla/dom/NodeInfo.h"
+#include "mozilla/dom/NodeOwnedObjectList.h"
 #include "mozilla/dom/PBrowser.h"
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/PrototypeList.h"
@@ -244,7 +246,6 @@
 #include "mozilla/dom/ContentList.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/widget/IMEData.h"
 #include "nsAboutProtocolUtils.h"
 #include "nsArrayUtils.h"
@@ -300,7 +301,6 @@
 #include "nsICategoryManager.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
-#include "nsIClassifiedChannel.h"
 #include "nsIConsoleService.h"
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
@@ -680,11 +680,6 @@ static constexpr nsAttrValue::EnumTableEntry
 };
 
 namespace {
-
-
-
-
-constinit DoublyLinkedList<EventListenerManager> sNodeEventListenerManagers;
 
 
 
@@ -2417,7 +2412,7 @@ void nsContentUtils::Shutdown() {
 
   
   
-  NS_ASSERTION(sNodeEventListenerManagers.isEmpty(),
+  NS_ASSERTION(NodeOwnedObjectList<EventListenerManager>::IsEmpty(),
                "Node event listener manager list not empty at shutdown!");
 
   MOZ_ASSERT_IF(sDOMArenaHashtable, sDOMArenaHashtable->Count() == 0);
@@ -6681,32 +6676,6 @@ void nsContentUtils::NotifyDevToolsOfNodeRemoval(nsINode& aRemovingNode) {
   }
 }
 
-void nsContentUtils::UnmarkGrayJSListenersInCCGenerationDocuments() {
-  for (EventListenerManager& mgr : sNodeEventListenerManagers) {
-    nsINode* n = static_cast<nsINode*>(mgr.GetTarget());
-    if (n && n->IsInComposedDoc() &&
-        nsCCUncollectableMarker::InGeneration(
-            n->OwnerDoc()->GetMarkedCCGeneration())) {
-      mgr.MarkForCC();
-    }
-  }
-}
-
-
-void nsContentUtils::AddNodeListenerManager(EventListenerManager* aManager) {
-  MOZ_ASSERT(NS_IsMainThread());
-  sNodeEventListenerManagers.pushBack(aManager);
-}
-
-
-void nsContentUtils::RemoveNodeListenerManager(EventListenerManager* aManager) {
-  MOZ_ASSERT(NS_IsMainThread());
-  
-  if (sNodeEventListenerManagers.ElementProbablyInList(aManager)) {
-    sNodeEventListenerManagers.remove(aManager);
-  }
-}
-
 void nsContentUtils::AddEntryToDOMArenaTable(nsINode* aNode,
                                              DOMArena* aDOMArena) {
   MOZ_ASSERT_IF(sDOMArenaHashtable, !sDOMArenaHashtable->Contains(aNode));
@@ -10928,13 +10897,7 @@ bool nsContentUtils::IsThirdPartyTrackingResourceWindow(
     return false;
   }
 
-  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
-      do_QueryInterface(document->GetChannel());
-  if (!classifiedChannel) {
-    return false;
-  }
-
-  return classifiedChannel->IsThirdPartyTrackingResource();
+  return AntiTrackingUtils::IsThirdPartyTrackingChannel(document->GetChannel());
 }
 
 
@@ -10947,17 +10910,7 @@ bool nsContentUtils::IsFirstPartyTrackingResourceWindow(
     return false;
   }
 
-  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
-      do_QueryInterface(document->GetChannel());
-  if (!classifiedChannel) {
-    return false;
-  }
-
-  uint32_t classificationFlags =
-      classifiedChannel->GetFirstPartyClassificationFlags();
-
-  return mozilla::net::ChannelClassifierUtils::IsTrackingClassificationFlag(
-      classificationFlags, NS_UsePrivateBrowsing(document->GetChannel()));
+  return AntiTrackingUtils::IsFirstPartyTrackingChannel(document->GetChannel());
 }
 
 namespace {
