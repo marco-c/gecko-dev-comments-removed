@@ -181,10 +181,12 @@ async def test_params_actions_origin_no_such_element(
         wait="complete",
     )
 
+    
     node = await bidi_session.script.evaluate(
         expression=expression,
         target=ContextTarget(top_context["context"]),
         await_promise=False,
+        result_ownership="root",
     )
 
     actions = Actions()
