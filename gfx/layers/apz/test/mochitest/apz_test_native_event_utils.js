@@ -1818,8 +1818,9 @@ function getPanHandler() {
 
 
 
-if (!window.hasOwnProperty("NativePanHandler")) {
-  Object.defineProperty(window, "NativePanHandler", {
+
+if (!this.hasOwnProperty("NativePanHandler")) {
+  Object.defineProperty(this, "NativePanHandler", {
     get() {
       return getPanHandler();
     },
