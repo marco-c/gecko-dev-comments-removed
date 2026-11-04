@@ -421,6 +421,9 @@ class AudioStream final {
 
   
   nsresult EnsureTimeStretcherInitialized();
+  
+  
+  void PrimeTimeStretcher();
   void GetUnprocessed(AudioBufferWriter& aWriter);
   void GetTimeStretched(AudioBufferWriter& aWriter);
   void UpdatePlaybackRateIfNeeded();
