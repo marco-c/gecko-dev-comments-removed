@@ -33,7 +33,7 @@ add_task(async function () {
   is(requests.length, 2, "There should be two requests");
 
   
-  const wait = waitForDOM(
+  const onDomUpdated = waitForDOM(
     document,
     "#messages-view .message-list-table .message-list-item",
     6
@@ -44,7 +44,7 @@ add_task(async function () {
 
   
   clickOnSidebarTab(document, "response");
-  await wait;
+  await onDomUpdated;
 
   
   const frames = document.querySelectorAll(

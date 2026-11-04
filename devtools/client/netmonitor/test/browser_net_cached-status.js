@@ -9,8 +9,6 @@
 
 add_task(async function () {
   
-  await pushPref("network.http.rcwn.enabled", false);
-  
   
   await pushPref("dom.security.https_first", false);
 
@@ -125,7 +123,7 @@ add_task(async function () {
     const requestsListStatus = requestItem.querySelector(".status-code");
     EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
     await waitUntil(() => requestsListStatus.title);
-    await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+    await waitForDOM(requestItem, ".requests-list-timings-total");
 
     info("Verifying request #" + index);
     await verifyRequestItemTarget(
@@ -143,10 +141,10 @@ add_task(async function () {
   await teardown(monitor);
 
   async function performRequestsAndWait() {
-    const wait = waitForNetworkEvents(monitor, 3);
+    const onNetworkEvents = waitForNetworkEvents(monitor, 3);
     await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
       content.wrappedJSObject.performCachedRequests();
     });
-    await wait;
+    await onNetworkEvents;
   }
 });

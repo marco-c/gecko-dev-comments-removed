@@ -27,7 +27,7 @@ add_task(async function () {
     ["mpeg-dash", /^<\?xml/],
   ];
 
-  let wait = waitForNetworkEvents(monitor, REQUESTS.length);
+  const onNetworkEvents = waitForNetworkEvents(monitor, REQUESTS.length);
   for (const [fmt] of REQUESTS) {
     const url = CONTENT_TYPE_SJS + "?fmt=" + fmt;
     await SpecialPowers.spawn(
@@ -38,7 +38,7 @@ add_task(async function () {
       }
     );
   }
-  await wait;
+  await onNetworkEvents;
 
   const requestItems = document.querySelectorAll(".request-list-item");
   for (const requestItem of requestItems) {
@@ -46,7 +46,7 @@ add_task(async function () {
     const requestsListStatus = requestItem.querySelector(".status-code");
     EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
     await waitUntil(() => requestsListStatus.title);
-    await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+    await waitForDOM(requestItem, ".requests-list-timings-total");
   }
 
   for (const [i, [fmt]] of REQUESTS.entries()) {
@@ -63,10 +63,10 @@ add_task(async function () {
     );
   }
 
-  wait = waitForDOM(document, "#response-panel");
+  const onDomUpdated = waitForDOM(document, "#response-panel");
   store.dispatch(Actions.toggleNetworkDetails());
   clickOnSidebarTab(document, "response");
-  await wait;
+  await onDomUpdated;
 
   store.dispatch(Actions.selectRequest(null));
 

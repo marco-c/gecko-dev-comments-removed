@@ -46,9 +46,9 @@ add_task(async function () {
     "No 2d context should be created when the frontend is opened."
   );
 
-  const wait = waitForNetworkEvents(monitor, 1);
+  const onNetworkEvents = waitForNetworkEvents(monitor, 1);
   await reloadSelectedTab();
-  await wait;
+  await onNetworkEvents;
 
   
   

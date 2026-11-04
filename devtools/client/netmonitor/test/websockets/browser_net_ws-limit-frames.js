@@ -32,14 +32,17 @@ add_task(async function () {
   is(requests.length, 1, "There should be one request");
 
   
-  const wait = waitForDOM(document, "#messages-view .truncated-message");
+  const onDomUpdated = waitForDOM(
+    document,
+    "#messages-view .truncated-message"
+  );
 
   
   clickOnRequestRow(requests[0]);
 
   
   clickOnSidebarTab(document, "response");
-  await wait;
+  await onDomUpdated;
 
   
   const frames = document.querySelectorAll(

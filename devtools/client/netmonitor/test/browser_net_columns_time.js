@@ -19,9 +19,9 @@ add_task(async function () {
 
   const visibleColumns = store.getState().ui.columns;
 
-  const wait = waitForNetworkEvents(monitor, 1);
+  let onNetworkEvents = waitForNetworkEvents(monitor, 1);
   await reloadSelectedTab();
-  await wait;
+  await onNetworkEvents;
 
   
   
@@ -38,7 +38,7 @@ add_task(async function () {
     }
   });
 
-  const onNetworkEvents = waitForNetworkEvents(monitor, 1);
+  onNetworkEvents = waitForNetworkEvents(monitor, 1);
   await reloadSelectedTab();
   await onNetworkEvents;
 

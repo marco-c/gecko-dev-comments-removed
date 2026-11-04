@@ -22,17 +22,17 @@ add_task(async function () {
   
   await performRequests(monitor, tab, 12);
 
-  let wait = waitForDOM(document, "#headers-panel .url-preview", 1);
+  let onDomUpdated = waitForDOM(document, "#headers-panel .url-preview", 1);
   clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
-  await wait;
+  await onDomUpdated;
 
   
   await toggleUrlPreview(true, monitor);
 
   
-  wait = waitForDOM(document, "#headers-panel .url-preview", 1);
+  onDomUpdated = waitForDOM(document, "#headers-panel .url-preview", 1);
   clickOnRequestRow(document.querySelectorAll(".request-list-item")[1]);
-  await wait;
+  await onDomUpdated;
 
   
   const noOfVisibleRowsAfterExpand = document.querySelectorAll(
@@ -48,9 +48,9 @@ add_task(async function () {
   await toggleUrlPreview(false, monitor);
 
   
-  wait = waitForDOM(document, "#headers-panel .url-preview", 1);
+  onDomUpdated = waitForDOM(document, "#headers-panel .url-preview", 1);
   clickOnRequestRow(document.querySelectorAll(".request-list-item")[2]);
-  await wait;
+  await onDomUpdated;
 
   
   const noOfVisibleRowsAfterCollapse = document.querySelectorAll(

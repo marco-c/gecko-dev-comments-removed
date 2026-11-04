@@ -38,9 +38,9 @@ async function testForGivenDir(dir) {
   store.dispatch(Actions.batchEnable(false));
 
   
-  const wait = waitForNetworkEvents(monitor, 1);
+  const onNetworkEvents = waitForNetworkEvents(monitor, 1);
   await reloadSelectedTab();
-  await wait;
+  await onNetworkEvents;
 
   const headers = document.querySelector(".requests-list-headers");
   const parentWidth = headers.getBoundingClientRect().width;

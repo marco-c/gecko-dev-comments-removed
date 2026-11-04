@@ -69,8 +69,8 @@ add_task(async function () {
 
 
   async function reloadAndWait() {
-    const wait = waitForNetworkEvents(monitor, 2);
+    const onNetworkEvents = waitForNetworkEvents(monitor, 2);
     await reloadSelectedTab();
-    return wait;
+    return onNetworkEvents;
   }
 });

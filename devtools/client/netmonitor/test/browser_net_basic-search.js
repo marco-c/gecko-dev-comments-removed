@@ -22,12 +22,12 @@ add_task(async function () {
 
   
   const URL = HTTPS_SEARCH_SJS + "?value=test";
-  const wait = waitForNetworkEvents(monitor, 2);
+  const onNetworkEvents = waitForNetworkEvents(monitor, 2);
 
   await SpecialPowers.spawn(tab.linkedBrowser, [URL], async function (url) {
     content.wrappedJSObject.performRequests(2, url);
   });
-  await wait;
+  await onNetworkEvents;
 
   const searchButton = document.querySelector(".devtools-search-icon");
   is(
@@ -40,7 +40,7 @@ add_task(async function () {
   searchButton.click();
 
   
-  await waitForDOMIfNeeded(document, ".search-panel");
+  await waitForDOM(document, ".search-panel");
 
   is(
     searchButton.getAttribute("aria-pressed"),
@@ -68,11 +68,7 @@ add_task(async function () {
   EventUtils.synthesizeKey("KEY_Enter");
 
   
-  await waitForDOMIfNeeded(
-    document,
-    ".search-panel-content .treeRow.resourceRow",
-    2
-  );
+  await waitForDOM(document, ".search-panel-content .treeRow.resourceRow", 2);
 
   
   AccessibilityUtils.setEnv({

@@ -41,9 +41,9 @@ add_task(async function () {
   await onNetMonitor;
 
   
-  const wait = waitForNetworkEvents(monitor, 1);
+  const onNetworkEvents = waitForNetworkEvents(monitor, 1);
   await reloadSelectedTab();
-  await wait;
+  await onNetworkEvents;
 
   
   await performRequests(monitor, tab, 1, { expectedEventTimings: 1 });
@@ -60,7 +60,7 @@ add_task(async function () {
       const requestsListStatus = requestItem.querySelector(".status-code");
       EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
       await waitUntil(() => requestsListStatus.title);
-      await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+      await waitForDOM(requestItem, ".requests-list-timings-total");
     }
     await verifyRequestItemTarget(
       document,

@@ -36,7 +36,7 @@ add_task(async function () {
   const requestsListStatus = requestItem.querySelector(".status-code");
   EventUtils.sendMouseEvent({ type: "mouseover" }, requestsListStatus);
   await waitUntil(() => requestsListStatus.title);
-  await waitForDOMIfNeeded(requestItem, ".requests-list-timings-total");
+  await waitForDOM(requestItem, ".requests-list-timings-total");
 
   await verifyRequestItemTarget(
     document,
@@ -57,18 +57,16 @@ add_task(async function () {
     }
   );
 
-  let wait = waitForDOM(document, "#response-panel .data-header");
-  const waitForPropsView = waitForDOM(
-    document,
-    "#response-panel .properties-view",
-    1
-  );
+  let onDomUpdated = Promise.all([
+    waitForDOM(document, "#response-panel .data-header"),
+    waitForDOM(document, "#response-panel .properties-view"),
+  ]);
 
   store.dispatch(Actions.toggleNetworkDetails());
 
   clickOnSidebarTab(document, "response");
 
-  await Promise.all([wait, waitForPropsView]);
+  await onDomUpdated;
 
   
   const lastItem = document.querySelector(
@@ -78,12 +76,12 @@ add_task(async function () {
 
   testJsonInResposeTab();
 
-  wait = waitForDOM(document, "#response-panel .cm-content");
+  onDomUpdated = waitForDOM(document, "#response-panel .cm-content");
   const rawResponseToggle = document.querySelector(
     "#response-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
   clickElement(rawResponseToggle, monitor);
-  await wait;
+  await onDomUpdated;
 
   testResponseTab();
 

@@ -20,11 +20,11 @@ add_task(async function () {
   await performRequests(monitor, tab, 1);
 
   
-  const wait = waitUntil(
+  const onSummaryLabel = waitUntil(
     () => document.querySelectorAll(".tabpanel-summary-label")[0]
   );
   clickOnRequestRow(document.querySelectorAll(".request-list-item")[0]);
-  await wait;
+  await onSummaryLabel;
 
   const referrerPolicyIndex = 3;
   const referrerPolicyHeader = document.querySelectorAll(
