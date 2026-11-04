@@ -41,6 +41,11 @@ macro_rules! enumerate_dl_stores {
             path: api::Path => api::Path, INTERNED_PATHS, path,
             box_shadows: api::interned_prims::BoxShadowKey => crate::box_shadow::BoxShadowTemplate, INTERNED_BOX_SHADOWS, box_shadow,
             line_decorations: api::interned_prims::LineDecorationKey => crate::prim_store::line_dec::LineDecorationTemplate, INTERNED_LINE_DECORATIONS, line_decoration,
+            images: api::interned_prims::ImagePrimKey => crate::prim_store::image::ImageTemplate, INTERNED_IMAGES, image,
+            yuv_images: api::interned_prims::YuvImagePrimKey => crate::prim_store::image::YuvImageTemplate, INTERNED_YUV_IMAGES, yuv_image,
+            linear_gradients: api::interned_prims::LinearGradientKey => crate::prim_store::gradient::LinearGradientTemplate, INTERNED_LINEAR_GRADIENTS, linear_grad,
+            radial_gradients: api::interned_prims::RadialGradientKey => crate::prim_store::gradient::RadialGradientTemplate, INTERNED_RADIAL_GRADIENTS, radial_grad,
+            conic_gradients: api::interned_prims::ConicGradientKey => crate::prim_store::gradient::ConicGradientTemplate, INTERNED_CONIC_GRADIENTS, conic_grad,
         }
     }
 }
@@ -58,6 +63,11 @@ macro_rules! enumerate_scene_dl_stores {
             path: api::Path => api::Path, path,
             box_shadows: api::interned_prims::BoxShadowKey => crate::prim_store::PrimPlacement, box_shadow,
             line_decorations: api::interned_prims::LineDecorationKey => crate::prim_store::PrimPlacement, line_decoration,
+            images: api::interned_prims::ImagePrimKey => crate::prim_store::PrimPlacement, image,
+            yuv_images: api::interned_prims::YuvImagePrimKey => crate::prim_store::PrimPlacement, yuv_image,
+            linear_gradients: api::interned_prims::LinearGradientKey => crate::prim_store::PrimPlacement, linear_grad,
+            radial_gradients: api::interned_prims::RadialGradientKey => crate::prim_store::PrimPlacement, radial_grad,
+            conic_gradients: api::interned_prims::ConicGradientKey => crate::prim_store::PrimPlacement, conic_grad,
         }
     }
 }
@@ -549,6 +559,29 @@ pub fn count_dl_ops<T>(ops: &[DlOp<T>]) -> (usize, usize) {
 
 
 
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+#[derive(Clone, Default)]
+pub struct DlUids {
+    next: u64,
+}
+
+impl DlUids {
+    
+    
+    
+    const TAG: u64 = 1 << 63;
+
+    fn mint(&mut self) -> ItemUid {
+        let uid = ItemUid::from_counter(Self::TAG | self.next);
+        self.next += 1;
+        uid
+    }
+}
+
+
+
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(
@@ -565,9 +598,6 @@ pub struct DlStore<K, T> {
     
     #[cfg(debug_assertions)]
     generations: Vec<u32>,
-    
-    
-    next_uid: u64,
     _marker: PhantomData<K>,
 }
 
@@ -589,7 +619,6 @@ impl<K, T: Clone> Clone for DlStore<K, T> {
             namespaces: self.namespaces.clone(),
             #[cfg(debug_assertions)]
             generations: self.generations.clone(),
-            next_uid: self.next_uid,
             _marker: PhantomData,
         }
     }
@@ -601,7 +630,6 @@ impl<K, T> Default for DlStore<K, T> {
             namespaces: Vec::new(),
             #[cfg(debug_assertions)]
             generations: Vec::new(),
-            next_uid: 0,
             _marker: PhantomData,
         }
     }
@@ -627,12 +655,12 @@ impl<K, T> DlStore<K, T> {
 
     
     
-    pub fn apply(&mut self, ops: Vec<DlOp<T>>) {
+    pub fn apply(&mut self, ops: Vec<DlOp<T>>, uids: &mut DlUids) {
         for op in ops {
             match op {
                 DlOp::Open(namespace) => self.open(namespace),
                 DlOp::Insert { namespace, slot, value } => {
-                    self.insert(namespace, slot, value)
+                    self.insert(namespace, slot, value, uids)
                 }
                 DlOp::Remove { namespace, slot } => self.remove(namespace, slot),
                 DlOp::Close(namespace) => self.close(namespace),
@@ -707,9 +735,8 @@ impl<K, T> DlStore<K, T> {
         }
     }
 
-    pub fn insert(&mut self, namespace: DlNamespace, slot: u32, value: T) {
-        let uid = ItemUid::from_counter(self.next_uid);
-        self.next_uid += 1;
+    pub fn insert(&mut self, namespace: DlNamespace, slot: u32, value: T, uids: &mut DlUids) {
+        let uid = uids.mint();
 
         let slots = self.slots_mut(namespace);
         let slot = slot as usize;
@@ -742,6 +769,12 @@ impl<K, T> DlStore<K, T> {
         self.entry(handle).map(|entry| &entry.value)
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -848,8 +881,9 @@ mod tests {
     #[should_panic(expected = "stale handle")]
     fn a_handle_into_a_recycled_namespace_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         let stale = h(&store, DlNamespace(0), 0);
 
         
@@ -857,7 +891,7 @@ mod tests {
         
         store.close(DlNamespace(0));
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 200);
+        store.insert(DlNamespace(0), 0, 200, &mut uids);
 
         store.get(stale);
     }
@@ -871,9 +905,10 @@ mod tests {
         let kept = alloc.get_or_alloc(doc(1), pipeline(2)).0;
 
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(stale);
         store.open(kept);
-        store.insert(kept, 0, 100);
+        store.insert(kept, 0, 100, &mut uids);
         let handle = h(&store, kept, 0);
 
         alloc.remove_pipeline(doc(1), pipeline(1));
@@ -886,8 +921,8 @@ mod tests {
 
         assert_eq!(store.get(handle), Some(&100), "a surviving entry was lost");
         assert_eq!(store.len(), 1);
-        store.insert(late, 0, 200);
-        store.insert(fresh, 0, 300);
+        store.insert(late, 0, 200, &mut uids);
+        store.insert(fresh, 0, 300, &mut uids);
         store.close(late);
         store.close(fresh);
         store.close(kept);
@@ -1123,6 +1158,7 @@ mod tests {
     #[test]
     fn applying_a_delta_replays_it_in_order() {
         let mut store = store();
+        let mut uids = DlUids::default();
 
         
         
@@ -1130,7 +1166,7 @@ mod tests {
             DlOp::Open(DlNamespace(0)),
             DlOp::Insert { namespace: DlNamespace(0), slot: 0, value: 100 },
             DlOp::Insert { namespace: DlNamespace(0), slot: 1, value: 200 },
-        ]);
+        ], &mut uids);
         assert_eq!(store[h(&store, DlNamespace(0), 1)], 200);
 
         store.apply(vec![
@@ -1138,7 +1174,7 @@ mod tests {
             DlOp::Close(DlNamespace(0)),
             DlOp::Open(DlNamespace(0)),
             DlOp::Insert { namespace: DlNamespace(0), slot: 1, value: 300 },
-        ]);
+        ], &mut uids);
         assert_eq!(store.get(h(&store, DlNamespace(0), 0)), None, "close kept a slot");
         assert_eq!(store[h(&store, DlNamespace(0), 1)], 300);
     }
@@ -1146,12 +1182,13 @@ mod tests {
     #[test]
     fn slots_are_addressed_per_namespace() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
         store.open(DlNamespace(1));
 
         
-        store.insert(DlNamespace(0), 3, 100);
-        store.insert(DlNamespace(1), 3, 200);
+        store.insert(DlNamespace(0), 3, 100, &mut uids);
+        store.insert(DlNamespace(1), 3, 200, &mut uids);
 
         assert_eq!(store[h(&store, DlNamespace(0), 3)], 100);
         assert_eq!(store[h(&store, DlNamespace(1), 3)], 200);
@@ -1160,9 +1197,10 @@ mod tests {
     #[test]
     fn closing_drops_every_slot_in_the_namespace() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
-        store.insert(DlNamespace(0), 7, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+        store.insert(DlNamespace(0), 7, 100, &mut uids);
 
         store.close(DlNamespace(0));
         assert_eq!(store.get(h(&store, DlNamespace(0), 0)), None);
@@ -1178,11 +1216,12 @@ mod tests {
     fn recycle_across_pipelines() -> (DlBuilderMap, DlStore<Key, u32>, DlNamespace) {
         let mut map = DlBuilderMap::default();
         let mut store = store();
+        let mut uids = DlUids::default();
 
         let (ns_a, allocated) = map.get_or_alloc(doc(1), pipeline(1));
         assert!(allocated);
         store.open(ns_a);
-        store.insert(ns_a, 0, 100);
+        store.insert(ns_a, 0, 100, &mut uids);
 
         
         map.remove_pipeline(doc(1), pipeline(1));
@@ -1194,7 +1233,7 @@ mod tests {
         assert_eq!(ns_b, ns_a, "the index was not recycled");
         assert!(allocated, "a recycled namespace must still be opened");
         store.open(ns_b);
-        store.insert(ns_b, 0, 200);
+        store.insert(ns_b, 0, 200, &mut uids);
 
         (map, store, ns_b)
     }
@@ -1214,11 +1253,12 @@ mod tests {
     fn a_handle_from_the_previous_occupant_panics() {
         let mut map = DlBuilderMap::default();
         let mut store = store();
+        let mut uids = DlUids::default();
 
         let (ns_a, _) = map.get_or_alloc(doc(1), pipeline(1));
         let stale = DlHandle::new(ns_a, map.document(doc(1)).expect(pipeline(1)).1, 0);
         store.open(ns_a);
-        store.insert(ns_a, 0, 100);
+        store.insert(ns_a, 0, 100, &mut uids);
 
         map.remove_pipeline(doc(1), pipeline(1));
         for namespace in map.take_removals(doc(1)) {
@@ -1227,7 +1267,7 @@ mod tests {
 
         let (ns_b, _) = map.get_or_alloc(doc(1), pipeline(2));
         store.open(ns_b);
-        store.insert(ns_b, 0, 200);
+        store.insert(ns_b, 0, 200, &mut uids);
 
         
         
@@ -1237,36 +1277,71 @@ mod tests {
     #[test]
     fn a_uid_is_fixed_for_an_entry_and_never_reused() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
         store.open(DlNamespace(1));
 
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         let first = store.uid(h(&store, DlNamespace(0), 0));
 
         
         
-        store.insert(DlNamespace(0), 1, 200);
+        store.insert(DlNamespace(0), 1, 200, &mut uids);
         assert_eq!(store.uid(h(&store, DlNamespace(0), 0)), first);
 
         
         
         
         store.remove(DlNamespace(0), 0);
-        store.insert(DlNamespace(0), 0, 300);
+        store.insert(DlNamespace(0), 0, 300, &mut uids);
         assert_ne!(store.uid(h(&store, DlNamespace(0), 0)), first);
 
         store.close(DlNamespace(0));
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         assert_ne!(store.uid(h(&store, DlNamespace(0), 0)), first);
 
         
         
-        store.insert(DlNamespace(1), 0, 100);
+        store.insert(DlNamespace(1), 0, 100, &mut uids);
         assert_ne!(
             store.uid(h(&store, DlNamespace(1), 0)),
             store.uid(h(&store, DlNamespace(0), 0)),
         );
+    }
+
+    #[test]
+    fn a_uid_is_not_shared_across_stores() {
+        struct OtherKey;
+        let mut rects: DlStore<Key, u32> = DlStore::default();
+        let mut gradients: DlStore<OtherKey, u32> = DlStore::default();
+        let mut uids = DlUids::default();
+        rects.open(DlNamespace(0));
+        gradients.open(DlNamespace(0));
+
+        
+        
+        
+        gradients.insert(DlNamespace(0), 0, 100, &mut uids);
+        rects.insert(DlNamespace(0), 0, 200, &mut uids);
+
+        assert_ne!(
+            gradients.uid(DlHandle::new(DlNamespace(0), gradients.generation(DlNamespace(0)), 0)),
+            rects.uid(h(&rects, DlNamespace(0), 0)),
+        );
+    }
+
+    #[test]
+    fn a_uid_is_apart_from_interner_handle_uids() {
+        let mut store = store();
+        let mut uids = DlUids::default();
+        store.open(DlNamespace(0));
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+
+        
+        
+        let uid = store.uid(h(&store, DlNamespace(0), 0)).get_uid();
+        assert_ne!(uid & DlUids::TAG, 0, "{:#x} can collide with an interner uid", uid);
     }
 
     #[test]
@@ -1280,12 +1355,13 @@ mod tests {
         }
 
         let mut store = store();
+        let mut uids = DlUids::default();
         let mut ops = MallocSizeOfOps::new(block_size, None);
         assert_eq!(store.len(), 0);
 
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
-        store.insert(DlNamespace(0), 4, 200);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+        store.insert(DlNamespace(0), 4, 200, &mut uids);
         assert_eq!(store.len(), 2, "gaps between slots are not entries");
 
         
@@ -1302,12 +1378,13 @@ mod tests {
     #[test]
     fn a_removed_slot_is_reusable_but_not_readable() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 2, 100);
+        store.insert(DlNamespace(0), 2, 100, &mut uids);
         store.remove(DlNamespace(0), 2);
 
         assert_eq!(store.get(h(&store, DlNamespace(0), 2)), None);
-        store.insert(DlNamespace(0), 2, 200);
+        store.insert(DlNamespace(0), 2, 200, &mut uids);
         assert_eq!(store[h(&store, DlNamespace(0), 2)], 200);
     }
 
@@ -1315,17 +1392,19 @@ mod tests {
     #[should_panic(expected = "add for an occupied slot")]
     fn a_duplicate_add_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
-        store.insert(DlNamespace(0), 0, 200);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
+        store.insert(DlNamespace(0), 0, 200, &mut uids);
     }
 
     #[test]
     #[should_panic(expected = "remove for an empty slot")]
     fn a_duplicate_remove_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
         store.remove(DlNamespace(0), 0);
         store.remove(DlNamespace(0), 0);
     }
@@ -1334,8 +1413,9 @@ mod tests {
     #[should_panic(expected = "is not open")]
     fn adding_to_a_closed_namespace_panics() {
         let mut store = store();
+        let mut uids = DlUids::default();
         store.open(DlNamespace(0));
         store.close(DlNamespace(0));
-        store.insert(DlNamespace(0), 0, 100);
+        store.insert(DlNamespace(0), 0, 100, &mut uids);
     }
 }

@@ -11,7 +11,6 @@ use crate::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, PropertyBind
 use crate::serde::{Serialize, Deserialize};
 use crate::color::ColorF;
 use crate::image::ImageKey;
-use crate::key_types::EdgeMask;
 use crate::interning;
 use crate::path::Path;
 use crate::units::*;
@@ -580,10 +579,24 @@ pub struct NinePatchBorder {
     pub repeat_vertical: RepeatMode,
 }
 
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub enum BorderDetails {
     Normal(NormalBorder),
     NinePatch(NinePatchBorder),
+}
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
+pub enum BorderKind {
+    Normal(NormalBorder),
+    NinePatchImage(NinePatchBorder),
+    NinePatchLinearGradient(crate::interning::Handle<crate::interned_prims::LinearGradientKey>),
+    NinePatchRadialGradient(crate::interning::Handle<crate::interned_prims::RadialGradientKey>),
+    NinePatchConicGradient(crate::interning::Handle<crate::interned_prims::ConicGradientKey>),
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -591,7 +604,7 @@ pub struct BorderDisplayItem {
     pub common: CommonItemProperties,
     pub bounds: LayoutRect,
     pub widths: LayoutSideOffsets,
-    pub details: BorderDetails,
+    pub details: BorderKind,
 }
 
 #[repr(C)]
@@ -741,17 +754,15 @@ impl Gradient {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct GradientDisplayItem {
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
-    pub common: CommonItemProperties,
     
     
     
-    pub bounds: LayoutRect,
     
-    pub tile_size: LayoutSize,
     
-    pub tile_spacing: LayoutSize,
-    pub gradient: Gradient,
+    pub gradient: crate::interning::Handle<crate::interned_prims::LinearGradientKey>,
 }
 
 #[repr(C)]
@@ -811,30 +822,22 @@ pub struct ClipChainItem {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct RadialGradientDisplayItem {
-    pub common: CommonItemProperties,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
     
-    pub bounds: LayoutRect,
-    pub gradient: RadialGradient,
-    pub tile_size: LayoutSize,
-    pub tile_spacing: LayoutSize,
     
-    
-    
-    pub transformed_aa_edges: EdgeMask,
+    pub gradient: crate::interning::Handle<crate::interned_prims::RadialGradientKey>,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ConicGradientDisplayItem {
-    pub common: CommonItemProperties,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
     
     
-    
-    pub bounds: LayoutRect,
-    pub gradient: ConicGradient,
-    pub tile_size: LayoutSize,
-    pub tile_spacing: LayoutSize,
+    pub gradient: crate::interning::Handle<crate::interned_prims::ConicGradientKey>,
 }
 
 
@@ -2486,6 +2489,7 @@ impl_default_for_enums! {
     RepeatMode => Stretch,
     NinePatchBorderSource => Image(ImageKey::default(), ImageRendering::Auto),
     BorderDetails => Normal(NormalBorder::default()),
+    BorderKind => Normal(NormalBorder::default()),
     BorderRadiusKind => Uniform,
     BorderStyle => None,
     BoxShadowClipMode => Outset,
