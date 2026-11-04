@@ -8,7 +8,9 @@
 #include <functional>
 #include "LlamaRuntimeLinker.h"
 #include "ggml.h"
+#include "ggml-backend.h"
 #include "ggml-cpu.h"
+#include "mozilla/dom/HWInferenceBinding.h"
 #include "mozilla/dom/LlamaRunnerBinding.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
@@ -32,6 +34,19 @@ using LlamaContextOptions = mozilla::dom::LlamaContextOptions;
 using LlamaSamplerConfig = mozilla::dom::LlamaSamplerConfig;
 
 ggml_type GgmlTypeFromKVCacheDtype(LlamaKVCacheDtype aDtype);
+
+
+
+struct Device {
+  ggml_backend_dev_t mHandle;
+  
+  const char* mId;
+  const char* mDescription;
+  dom::HWInferenceDeviceKind mKind;
+};
+
+
+const nsTArray<Device>& Devices(const LlamaLibWrapper* aLib);
 
 
 
