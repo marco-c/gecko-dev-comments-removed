@@ -12,8 +12,21 @@ var { setTimeout } = ChromeUtils.importESModule(
 
 add_setup(async function () {
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
-
+  Services.prefs.setIntPref("logging.nsHttp", 5);
+  
+  
+  Services.prefs.setIntPref(
+    "network.http.happy_eyeballs_connection_attempt_delay",
+    500
+  );
   await setup_http3_proxy();
+
+  registerCleanupFunction(async () => {
+    Services.prefs.clearUserPref("logging.nsHttp");
+    Services.prefs.clearUserPref(
+      "network.http.happy_eyeballs_connection_attempt_delay"
+    );
+  });
 });
 
 add_task(test_http_connect);

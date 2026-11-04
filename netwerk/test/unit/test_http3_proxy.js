@@ -11,9 +11,25 @@ var { setTimeout } = ChromeUtils.importESModule(
 );
 
 add_setup(async function () {
+  
+  
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_enabled", true);
+  Services.prefs.setBoolPref("network.http.happy_eyeballs_proxy_enabled", true);
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 20);
+  
+  
+  Services.prefs.setIntPref(
+    "network.http.happy_eyeballs_connection_attempt_delay",
+    500
+  );
 
   await setup_http3_proxy();
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(
+      "network.http.happy_eyeballs_connection_attempt_delay"
+    );
+  });
 });
 
 add_task(test_http_connect);
@@ -36,7 +52,11 @@ async function closeAllConnections() {
   await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
-add_task(async function test_http_connect_fallback() {
+
+
+
+
+add_task(async function test_inner_connection_fallback_all() {
   for (const ServerClass of [
     NodeHTTPServer,
     NodeHTTPSServer,

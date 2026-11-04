@@ -85,6 +85,13 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual nsAHttpTransaction* Transaction() = 0;
   nsHttpConnectionInfo* ConnectionInfo() { return mConnInfo; }
 
+  
+  
+  void SetWildCardConnInfo(nsHttpConnectionInfo* aConnInfo) {
+    MOZ_ASSERT(aConnInfo && aConnInfo->IsWildCard());
+    mConnInfo = aConnInfo;
+  }
+
   virtual void CloseTransaction(nsAHttpTransaction*, nsresult,
                                 bool aIsShutdown = false) = 0;
 
