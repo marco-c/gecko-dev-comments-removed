@@ -24,6 +24,7 @@
 #include "mozilla/CORSMode.h"
 #include "mozilla/CallState.h"
 #include "mozilla/ContentBlockingNotifier.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/FunctionRef.h"
 #include "mozilla/LinkedList.h"
@@ -564,6 +565,22 @@ enum class LoadedAsData : uint8_t {
   
   
   AsData,
+};
+
+
+
+enum class TrustedTypesReadinessSignal : uint8_t {
+  UsedHTMLSinkWithTrustedHTML,
+  UsedHTMLSinkWithString,
+  UsedWriteSinkWithTrustedHTML,
+  UsedWriteSinkWithString,
+  CreatedPolicy,
+  UsedPolicy,
+  
+  HasTrustedTypesLibrary,
+  
+  
+  RanScript,
 };
 
 
@@ -3541,6 +3558,23 @@ class Document : public nsINode,
     mPageloadEventData.SetDocumentFeature(aFeature);
   }
 
+  
+  void SetTrustedTypesReadinessSignal(TrustedTypesReadinessSignal aSignal);
+
+  void RecordTrustedTypesHTMLSink(bool aIsTrustedHTML) {
+    SetTrustedTypesReadinessSignal(
+        aIsTrustedHTML
+            ? TrustedTypesReadinessSignal::UsedHTMLSinkWithTrustedHTML
+            : TrustedTypesReadinessSignal::UsedHTMLSinkWithString);
+  }
+
+  void RecordTrustedTypesWriteSink(bool aIsTrustedHTML) {
+    SetTrustedTypesReadinessSignal(
+        aIsTrustedHTML
+            ? TrustedTypesReadinessSignal::UsedWriteSinkWithTrustedHTML
+            : TrustedTypesReadinessSignal::UsedWriteSinkWithString);
+  }
+
   ContentList* ImageMapList();
 
   
@@ -4083,6 +4117,12 @@ class Document : public nsINode,
   
   
   void ReportDocumentUseCounters();
+
+  
+  
+  
+  
+  void ReportTrustedTypesReadiness();
 
   
   
@@ -6088,6 +6128,12 @@ class Document : public nsINode,
 
   
   PageloadEventData mPageloadEventData;
+
+  
+  EnumSet<TrustedTypesReadinessSignal, uint16_t> mTrustedTypesReadinessSignals;
+  
+  
+  bool mRecordTrustedTypesReadiness = false;
 
   
   

@@ -3017,6 +3017,8 @@ already_AddRefed<DocumentFragment> Range::CreateContextualFragment(
   constexpr nsLiteralString sink = u"Range createContextualFragment"_ns;
   Maybe<nsAutoString> compliantStringHolder;
   nsCOMPtr<nsINode> node = mStart.GetContainer();
+  
+  node->OwnerDoc()->RecordTrustedTypesHTMLSink(aFragment.IsTrustedHTML());
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(
           aFragment, sink, kTrustedTypesOnlySinkGroup, *node, aSubjectPrincipal,

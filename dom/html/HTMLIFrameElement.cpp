@@ -402,6 +402,8 @@ void HTMLIFrameElement::SetSrcdoc(const TrustedHTMLOrString& aSrcdoc,
                                   nsIPrincipal* aSubjectPrincipal,
                                   ErrorResult& aError) {
   constexpr nsLiteralString sink = u"HTMLIFrameElement srcdoc"_ns;
+  
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aSrcdoc.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =

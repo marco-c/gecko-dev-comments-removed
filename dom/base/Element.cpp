@@ -5707,6 +5707,8 @@ void Element::SetInnerHTML(const TrustedHTMLOrNullIsEmptyString& aInnerHTML,
                            nsIPrincipal* aSubjectPrincipal,
                            ErrorResult& aError) {
   constexpr nsLiteralString sink = u"Element innerHTML"_ns;
+  
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aInnerHTML.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
@@ -5735,6 +5737,8 @@ void Element::SetOuterHTML(const TrustedHTMLOrNullIsEmptyString& aOuterHTML,
                            nsIPrincipal* aSubjectPrincipal,
                            ErrorResult& aError) {
   constexpr nsLiteralString sink = u"Element outerHTML"_ns;
+  
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aOuterHTML.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
@@ -5808,6 +5812,8 @@ void Element::InsertAdjacentHTML(
   
   
   constexpr nsLiteralString kSink = u"Element insertAdjacentHTML"_ns;
+  
+  OwnerDoc()->RecordTrustedTypesHTMLSink(aTrustedHTMLOrString.IsTrustedHTML());
 
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =

@@ -1873,6 +1873,23 @@ bool nsCSPPolicy::allows(CSPDirective aDirective, enum CSPKeyword aKeyword,
   return true;
 }
 
+
+bool nsCSPPolicy::isStrict() const {
+  nsCSPDirective* scriptDir = matchingOrDefaultDirective(
+      nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE);
+  if (!scriptDir || !scriptDir->allows(CSP_STRICT_DYNAMIC, u""_ns)) {
+    return false;
+  }
+  for (nsCSPDirective* directive : mDirectives) {
+    if (directive->equals(nsIContentSecurityPolicy::BASE_URI_DIRECTIVE)) {
+      
+      
+      return directive->allows(CSP_NONE, u""_ns);
+    }
+  }
+  return false;
+}
+
 nsCSPDirective* nsCSPPolicy::matchingOrDefaultDirective(
     CSPDirective aDirective) const {
   nsCSPDirective* defaultDir = nullptr;

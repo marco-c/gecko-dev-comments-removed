@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef nsCSPUtils_h_
 #define nsCSPUtils_h_
 
@@ -764,6 +762,11 @@ class nsCSPPolicy {
   bool visitDirectiveSrcs(CSPDirective aDir, nsCSPSrcVisitor* aVisitor) const;
 
   bool allowsAllInlineBehavior(CSPDirective aDir) const;
+
+  
+  
+  
+  bool isStrict() const;
 
   
 

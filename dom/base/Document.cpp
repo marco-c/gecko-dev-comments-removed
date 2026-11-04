@@ -300,6 +300,7 @@
 #include "mozilla/gfx/Point.h"
 #include "mozilla/gfx/ScaleFactor.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "mozilla/glean/DomSecurityMetrics.h"
 #include "mozilla/glean/DomUseCounterMetrics.h"
 #include "mozilla/intl/EncodingToLang.h"
 #include "mozilla/intl/LocaleService.h"
@@ -1663,6 +1664,10 @@ Document::Document(const char* aContentType,
 
   mPreloadReferrerInfo = new dom::ReferrerInfo(nullptr);
   mReferrerInfo = new dom::ReferrerInfo(nullptr);
+
+  
+  mRecordTrustedTypesReadiness =
+      StaticPrefs::dom_security_trusted_types_readiness_telemetry_enabled();
 }
 
 #ifndef ANDROID
@@ -3813,14 +3818,7 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
     WarnIfSandboxIneffective(docShell, mSandboxFlags, GetChannel());
   }
 
-  nsCOMPtr<nsIClassifiedChannel> classifiedChannel =
-      do_QueryInterface(aChannel);
-
-  if (classifiedChannel) {
-    mClassificationFlags = {
-        classifiedChannel->GetFirstPartyClassificationFlags(),
-        classifiedChannel->GetThirdPartyClassificationFlags()};
-  }
+  mClassificationFlags = AntiTrackingUtils::GetClassificationFlags(aChannel);
 
   
   nsCOMPtr<nsIHttpChannelInternal> httpChan = do_QueryInterface(mChannel);
@@ -11024,6 +11022,14 @@ void Document::WriteCommon(const Sequence<OwningTrustedHTMLOrString>& aText,
                            bool aNewlineTerminate,
                            nsIPrincipal* aSubjectPrincipal,
                            mozilla::ErrorResult& rv) {
+  
+  if (!aText.IsEmpty()) {
+    RecordTrustedTypesWriteSink(std::all_of(
+        aText.begin(), aText.end(), [](const OwningTrustedHTMLOrString& aPart) {
+          return aPart.IsTrustedHTML();
+        }));
+  }
+
   bool isTrusted = true;
   auto getAsString =
       [&isTrusted](const OwningTrustedHTMLOrString& aTrustedHTMLOrString) {
@@ -18369,6 +18375,81 @@ void Document::InitUseCounters() {
 }
 
 
+void Document::SetTrustedTypesReadinessSignal(
+    TrustedTypesReadinessSignal aSignal) {
+  if (MOZ_UNLIKELY(IsLoadedAsData())) {
+    nsIGlobalObject* scope = GetScopeObject();
+    nsPIDOMWindowInner* window = scope ? scope->GetAsInnerWindow() : nullptr;
+    if (Document* doc = window ? window->GetExtantDoc() : nullptr) {
+      doc->SetTrustedTypesReadinessSignal(aSignal);
+    }
+    return;
+  }
+  mTrustedTypesReadinessSignals += aSignal;
+}
+
+
+void Document::ReportTrustedTypesReadiness() {
+  
+  
+  if (!mRecordTrustedTypesReadiness ||
+      !StaticPrefs::dom_security_trusted_types_readiness_telemetry_enabled()) {
+    return;
+  }
+
+  const char* ttcsp = "none";
+  const char* strict = "none";
+  if (nsIContentSecurityPolicy* policy =
+          PolicyContainer::GetCSP(GetPolicyContainer())) {
+    if (Maybe<nsCSPPolicy::Disposition> disposition =
+            nsCSPContext::Cast(policy)->GetStrictPolicyDisposition()) {
+      strict = *disposition == nsCSPPolicy::Disposition::Enforce ? "enforce"
+                                                                 : "report";
+    }
+    switch (policy->GetRequireTrustedTypesForDirectiveState()) {
+      case RequireTrustedTypesForDirectiveState::ENFORCE:
+        ttcsp = "enforce";
+        break;
+      case RequireTrustedTypesForDirectiveState::REPORT_ONLY:
+        ttcsp = "report";
+        break;
+      case RequireTrustedTypesForDirectiveState::NONE:
+        break;
+    }
+  }
+
+  
+  
+  
+  
+  
+  const bool js = mTrustedTypesReadinessSignals.contains(
+      TrustedTypesReadinessSignal::RanScript);
+  const auto Has = [&](TrustedTypesReadinessSignal aSignal) -> uint32_t {
+    return js && mTrustedTypesReadinessSignals.contains(aSignal) ? 1 : 0;
+  };
+  const auto Sink = [&](TrustedTypesReadinessSignal aString,
+                        TrustedTypesReadinessSignal aTrustedHTML) {
+    return Has(aString) ? "string" : Has(aTrustedHTML) ? "trusted" : "none";
+  };
+  const uint32_t used = Has(TrustedTypesReadinessSignal::UsedPolicy);
+  const uint32_t created =
+      used || Has(TrustedTypesReadinessSignal::CreatedPolicy);
+  glean::security::trusted_types_readiness
+      .Get(nsPrintfCString(
+          "htmlsink-%s_writesink-%s_ttcsp-%s_strictcsp-%s_created-%u_used-%u_"
+          "lib-%u_js-%u",
+          Sink(TrustedTypesReadinessSignal::UsedHTMLSinkWithString,
+               TrustedTypesReadinessSignal::UsedHTMLSinkWithTrustedHTML),
+          Sink(TrustedTypesReadinessSignal::UsedWriteSinkWithString,
+               TrustedTypesReadinessSignal::UsedWriteSinkWithTrustedHTML),
+          ttcsp, strict, created, used,
+          Has(TrustedTypesReadinessSignal::HasTrustedTypesLibrary),
+          js ? 1u : 0u))
+      .Add();
+}
+
+
 
 
 
@@ -18401,6 +18482,8 @@ void Document::ReportDocumentUseCounters() {
   
   
   glean::use_counter::content_documents_destroyed.Add();
+  
+  ReportTrustedTypesReadiness();
 
   
   
@@ -22101,6 +22184,12 @@ already_AddRefed<Document> Document::ParseHTMLUnsafe(
   
   
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
+  
+  if (nsPIDOMWindowInner* window = global->GetAsInnerWindow()) {
+    if (Document* doc = window->GetExtantDoc()) {
+      doc->RecordTrustedTypesHTMLSink(aHTML.IsTrustedHTML());
+    }
+  }
   constexpr nsLiteralString sink = u"Document parseHTMLUnsafe"_ns;
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =

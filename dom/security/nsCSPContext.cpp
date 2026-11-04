@@ -488,6 +488,22 @@ nsCSPContext::AppendPolicy(const nsAString& aPolicyString, bool aReportOnly,
   return NS_OK;
 }
 
+
+Maybe<nsCSPPolicy::Disposition> nsCSPContext::GetStrictPolicyDisposition() {
+  EnsureIPCPoliciesRead();
+  Maybe<nsCSPPolicy::Disposition> result;
+  for (const nsCSPPolicy* policy : mPolicies) {
+    if (!policy->isStrict()) {
+      continue;
+    }
+    if (policy->getDisposition() == nsCSPPolicy::Disposition::Enforce) {
+      return Some(nsCSPPolicy::Disposition::Enforce);
+    }
+    result = Some(nsCSPPolicy::Disposition::Report);
+  }
+  return result;
+}
+
 NS_IMETHODIMP
 nsCSPContext::GetRequireTrustedTypesForDirectiveState(
     RequireTrustedTypesForDirectiveState*

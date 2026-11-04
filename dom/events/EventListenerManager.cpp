@@ -1148,6 +1148,8 @@ nsresult EventListenerManager::CompileEventHandlerInternal(Listener* aListener,
       GetScriptGlobalAndDocument(getter_AddRefs(doc));
   NS_ENSURE_STATE(global);
   NS_ENSURE_STATE(doc);
+  
+  doc->SetTrustedTypesReadinessSignal(TrustedTypesReadinessSignal::RanScript);
 
   
   

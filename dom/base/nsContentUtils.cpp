@@ -6989,6 +6989,8 @@ void nsContentUtils::SetHTMLUnsafe(
   
   constexpr nsLiteralString elementSink = u"Element setHTMLUnsafe"_ns;
   constexpr nsLiteralString shadowRootSink = u"ShadowRoot setHTMLUnsafe"_ns;
+  
+  aTarget->OwnerDoc()->RecordTrustedTypesHTMLSink(aSource.IsTrustedHTML());
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(

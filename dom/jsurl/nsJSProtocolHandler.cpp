@@ -375,6 +375,11 @@ nsresult JSURLInputStream::EvaluateScript(
   
   mozilla::nsAutoMicroTask mt;
   AutoEntryScript aes(innerGlobal, "javascript: URI", true);
+  
+  if (mozilla::dom::Document* doc = innerWin->GetExtantDoc()) {
+    doc->SetTrustedTypesReadinessSignal(
+        mozilla::dom::TrustedTypesReadinessSignal::RanScript);
+  }
   JSContext* cx = aes.cx();
   JS::Rooted<JSObject*> globalJSObject(cx, innerGlobal->GetGlobalJSObject());
   NS_ENSURE_TRUE(globalJSObject, NS_ERROR_UNEXPECTED);

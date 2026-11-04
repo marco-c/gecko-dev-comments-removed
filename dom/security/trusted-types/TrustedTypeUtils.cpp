@@ -211,6 +211,14 @@ void ProcessValueWithADefaultPolicy(nsIGlobalObject& aGlobalObject,
     return;
   }
 
+  
+  if (nsPIDOMWindowInner* piDOMWindowInner = aGlobalObject.GetAsInnerWindow()) {
+    if (Document* doc = piDOMWindowInner->GetExtantDoc()) {
+      doc->SetTrustedTypesReadinessSignal(
+          TrustedTypesReadinessSignal::UsedPolicy);
+    }
+  }
+
   JS::Rooted<JS::Value> trustedTypeName{cx};
   using ExpectedTypeArg =
       std::remove_const_t<std::remove_reference_t<decltype(**aResult)>>;
@@ -404,6 +412,13 @@ template <typename TrustedTypeOrStringArg>
 static inline const nsAString* GetContent(
     const TrustedTypeOrStringArg& aInput) {
   return IsString(aInput) ? GetAsString(aInput) : GetAsTrustedType(aInput);
+}
+
+
+static inline bool IsTrustedHTML(const nsAString*) { return false; }
+static inline bool IsTrustedHTML(
+    const TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString& aInput) {
+  return aInput.IsTrustedHTML();
 }
 
 template <typename NodeOrGlobalObject>
@@ -732,6 +747,14 @@ MOZ_CAN_RUN_SCRIPT const nsAString* GetTrustedTypesCompliantAttributeValue(
     int32_t aAttributeNamespaceID, const TrustedTypeOrStringArg& aNewValue,
     nsIPrincipal* aPrincipalOrNull, Maybe<nsAutoString>& aResultHolder,
     ErrorResult& aError) {
+  
+  
+  if (aAttributeNamespaceID == kNameSpaceID_None &&
+      aAttributeName == nsGkAtoms::srcdoc &&
+      aElement.IsHTMLElement(nsGkAtoms::iframe)) {
+    aElement.OwnerDoc()->RecordTrustedTypesHTMLSink(IsTrustedHTML(aNewValue));
+  }
+
   if (!StaticPrefs::dom_security_trusted_types_enabled()) {
     
     
