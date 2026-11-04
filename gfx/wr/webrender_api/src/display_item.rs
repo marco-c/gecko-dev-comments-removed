@@ -590,10 +590,11 @@ pub enum BorderDetails {
 
 
 
+
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub enum BorderKind {
-    Normal(NormalBorder),
-    NinePatchImage(NinePatchBorder),
+    Normal(crate::interning::Handle<crate::interned_prims::NormalBorderKey>),
+    NinePatchImage(crate::interning::Handle<crate::interned_prims::ImageBorderKey>),
     NinePatchLinearGradient(crate::interning::Handle<crate::interned_prims::LinearGradientKey>),
     NinePatchRadialGradient(crate::interning::Handle<crate::interned_prims::RadialGradientKey>),
     NinePatchConicGradient(crate::interning::Handle<crate::interned_prims::ConicGradientKey>),
@@ -601,9 +602,9 @@ pub enum BorderKind {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct BorderDisplayItem {
-    pub common: CommonItemProperties,
-    pub bounds: LayoutRect,
-    pub widths: LayoutSideOffsets,
+    pub spatial_id: SpatialId,
+    pub clip_chain_id: ClipChainId,
+    
     pub details: BorderKind,
 }
 
@@ -2489,7 +2490,7 @@ impl_default_for_enums! {
     RepeatMode => Stretch,
     NinePatchBorderSource => Image(ImageKey::default(), ImageRendering::Auto),
     BorderDetails => Normal(NormalBorder::default()),
-    BorderKind => Normal(NormalBorder::default()),
+    BorderKind => Normal(crate::interning::Handle::INVALID),
     BorderRadiusKind => Uniform,
     BorderStyle => None,
     BoxShadowClipMode => Outset,
