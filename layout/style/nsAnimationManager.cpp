@@ -173,119 +173,6 @@ static void RemoveCorrespondingAnimation(
 #endif
 }
 
-static void UpdateOldAnimationPropertiesWithNew(
-    CSSAnimation& aOld, TimingParams&& aNewTiming,
-    nsTArray<Keyframe>&& aNewKeyframes, bool aNewIsStylePaused,
-    CSSAnimationProperties aOverriddenProperties,
-    ServoCSSAnimationBuilder& aBuilder, const NonOwningAnimationTarget& aTarget,
-    dom::AnimationTimeline* aTimeline,
-    const dom::ScopedTimelineName& aTimelineName,
-    const StyleComputedTimingFunction& aNewTimingFunction,
-    dom::CompositeOperation aNewComposite, dom::AnimationRange&& aTimelineRange,
-    nsAnimationManager::TimelineNamesToAnimationMap&
-        aTimelineNamesToAnimationMap) {
-  const auto oldTimelineName = aOld.GetTimelineName();
-  const bool timelineReferenceChanged =
-      aOld.GetTimeline() != aTimeline ||
-      oldTimelineName.mName != aTimelineName.mName;
-  if (timelineReferenceChanged && oldTimelineName.mName) {
-    RemoveCorrespondingAnimation(oldTimelineName.mName, &aOld,
-                                 aTimelineNamesToAnimationMap);
-  }
-  bool animationChanged = false;
-
-  
-  
-  if (dom::AnimationEffect* oldEffect = aOld.GetEffect()) {
-    
-    TimingParams updatedTiming = oldEffect->SpecifiedTiming();
-    if (~aOverriddenProperties & CSSAnimationProperties::Duration) {
-      updatedTiming.SetDuration(aNewTiming.Duration());
-    }
-    if (~aOverriddenProperties & CSSAnimationProperties::IterationCount) {
-      updatedTiming.SetIterations(aNewTiming.Iterations());
-    }
-    if (~aOverriddenProperties & CSSAnimationProperties::Direction) {
-      updatedTiming.SetDirection(aNewTiming.Direction());
-    }
-    if (~aOverriddenProperties & CSSAnimationProperties::Delay) {
-      updatedTiming.SetDelay(aNewTiming.Delay());
-    }
-    if (~aOverriddenProperties & CSSAnimationProperties::FillMode) {
-      updatedTiming.SetFill(aNewTiming.Fill());
-    }
-
-    animationChanged = oldEffect->SpecifiedTiming() != updatedTiming;
-    oldEffect->SetSpecifiedTiming(std::move(updatedTiming));
-
-    if (KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect()) {
-      if (~aOverriddenProperties & CSSAnimationProperties::Keyframes) {
-        
-        
-        auto* style = oldKeyframeEffect->GetAnimationTarget() == aTarget
-                          ? aBuilder.Style()
-                          : nullptr;
-        oldKeyframeEffect->SetKeyframes(std::move(aNewKeyframes), style,
-                                        aTimeline, &aTimelineRange);
-
-        
-        
-        if (auto* cssEffect =
-                oldKeyframeEffect->AsCSSAnimationKeyframeEffect()) {
-          cssEffect->SetDefaultTimingFunction(aNewTimingFunction);
-          cssEffect->SetDefaultComposite(aNewComposite);
-        }
-      }
-
-      if (~aOverriddenProperties & CSSAnimationProperties::Composition) {
-        animationChanged = oldKeyframeEffect->Composite() != aNewComposite;
-        oldKeyframeEffect->SetCompositeFromStyle(aNewComposite);
-      }
-    }
-  }
-
-  
-  
-  if (aOld.GetTimeline() != aTimeline) {
-    
-    const bool timelineDidChange = aOld.SetTimelineNoUpdate(
-        aTimeline, aTimelineName, Animation::FromJS::No);
-    animationChanged = animationChanged || timelineDidChange;
-  }
-
-  if (aOld.GetTimelineRange() != aTimelineRange) {
-    aOld.SetTimelineRange(std::move(aTimelineRange), Animation::FromJS::No);
-    animationChanged = true;
-  }
-
-  
-  
-  if (aOld.PlayState() != AnimationPlayState::Idle &&
-      ~aOverriddenProperties & CSSAnimationProperties::PlayState) {
-    bool wasPaused = aOld.PlayState() == AnimationPlayState::Paused;
-    if (!wasPaused && aNewIsStylePaused) {
-      aOld.PauseFromStyle();
-      animationChanged = true;
-    } else if (wasPaused && !aNewIsStylePaused) {
-      aOld.PlayFromStyle();
-      animationChanged = true;
-    }
-  }
-
-  
-  
-  
-  if (animationChanged && aOld.IsRelevant()) {
-    MutationObservers::NotifyAnimationChanged(&aOld);
-  }
-
-  if (timelineReferenceChanged && aTimelineName.mName) {
-    auto& entries = aTimelineNamesToAnimationMap.LookupOrInsert(
-        aTimelineName.mName, nsTArray<RefPtr<CSSAnimation>>{});
-    entries.AppendElement(&aOld);
-  }
-}
-
 
 static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
@@ -406,7 +293,8 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
       aStyle.GetAnimationDirection(animIdx),
       aStyle.GetAnimationFillMode(animIdx));
 
-  bool isStylePaused =
+  const auto composition = StyleToDom(aStyle.GetAnimationComposition(animIdx));
+  const bool isStylePaused =
       aStyle.GetAnimationPlayState(animIdx) == StyleAnimationPlayState::Paused;
 
   
@@ -417,7 +305,7 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   RefPtr<dom::AnimationTimeline> timeline =
       GetTimeline(styleTimeline, aPresContext, aTarget,
                   oldAnim ? oldAnim->GetTimeline() : nullptr);
-  auto timelineName = [&]() -> dom::ScopedTimelineName {
+  const auto timelineName = [&]() -> dom::ScopedTimelineName {
     if (!styleTimeline.IsTimeline()) {
       return {};
     }
@@ -432,27 +320,39 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
   auto range = dom::AnimationRange{aStyle.GetAnimationRangeStart(animIdx),
                                    aStyle.GetAnimationRangeEnd(animIdx)};
 
-  const auto composition = StyleToDom(aStyle.GetAnimationComposition(animIdx));
+  
+  
   if (oldAnim) {
+    const nsAtom* oldTimelineName = oldAnim->GetTimelineName().mName;
+    const bool timelineReferenceChanged =
+        oldAnim->GetTimeline() != timeline.get() ||
+        oldTimelineName != timelineName.mName;
+    
+    if (timelineReferenceChanged && oldTimelineName) {
+      RemoveCorrespondingAnimation(oldTimelineName, oldAnim,
+                                   aTimelineNamesToAnimationMap);
+    }
+
     
     
-    
-    
-    
-    
-    
-    
-    UpdateOldAnimationPropertiesWithNew(
-        *oldAnim, std::move(timing), std::move(keyframes), isStylePaused,
-        oldAnim->PropertiesOverridenByJS(), aBuilder, aTarget, timeline.get(),
-        timelineName, timingFunction, composition, std::move(range),
-        aTimelineNamesToAnimationMap);
+    oldAnim->UpdatePropertiesWithNew(
+        aTarget, aBuilder.Style(), std::move(timing), std::move(keyframes),
+        timingFunction, composition, timeline.get(), timelineName,
+        std::move(range), isStylePaused);
+
+    if (timelineReferenceChanged && timelineName.mName) {
+      auto& entries = aTimelineNamesToAnimationMap.LookupOrInsert(
+          timelineName.mName, nsTArray<RefPtr<CSSAnimation>>{});
+      entries.AppendElement(oldAnim);
+    }
+
     
     
     MOZ_ASSERT_IF(timelineName.mName && !timeline, styleTimeline.IsTimeline());
     return oldAnim.forget();
   }
 
+  
   KeyframeEffectParams effectOptions(composition);
   auto effect = MakeRefPtr<dom::CSSAnimationKeyframeEffect>(
       aPresContext->Document(),

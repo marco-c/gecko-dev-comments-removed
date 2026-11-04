@@ -129,6 +129,17 @@ class CSSAnimation final : public Animation {
     return mOverriddenProperties;
   }
 
+  
+  
+  void UpdatePropertiesWithNew(
+      const NonOwningAnimationTarget& aTarget,
+      const ComputedStyle* aComputedStyle, TimingParams&& aNewTiming,
+      nsTArray<Keyframe>&& aNewKeyframes,
+      const StyleComputedTimingFunction& aNewTimingFunction,
+      CompositeOperation aNewComposite, AnimationTimeline* aNewTimeline,
+      const dom::ScopedTimelineName& aNewTimelineName,
+      dom::AnimationRange&& aNewRange, bool aNewIsStylePaused);
+
  protected:
   virtual ~CSSAnimation() {
     MOZ_ASSERT(!mOwningElement.IsSet(),
@@ -198,6 +209,10 @@ class CSSAnimationKeyframeEffect : public KeyframeEffect {
       : KeyframeEffect(aDocument, std::move(aTarget), std::move(aTiming),
                        aOptions) {}
 
+  CSSAnimationKeyframeEffect* AsCSSAnimationKeyframeEffect() override {
+    return this;
+  }
+
   void GetTiming(EffectTiming& aRetVal) const override;
   void GetComputedTimingAsDict(ComputedEffectTiming& aRetVal) const override;
   void UpdateTiming(const OptionalEffectTiming& aTiming,
@@ -205,6 +220,14 @@ class CSSAnimationKeyframeEffect : public KeyframeEffect {
   void SetKeyframes(JSContext* aContext, JS::Handle<JSObject*> aKeyframes,
                     ErrorResult& aRv) override;
   void SetComposite(const CompositeOperation& aComposite) override;
+  void SetDefaultTimingFunction(
+      const StyleComputedTimingFunction& aTimingFunction) {
+    mDefaultTimingFunction = aTimingFunction;
+  }
+  void SetDefaultComposite(const CompositeOperation& aComposite) {
+    mDefaultComposite = aComposite;
+  }
+  bool GetComputedKeyframes(nsTArray<Keyframe>& aKeyframes) const override;
 
  private:
   CSSAnimation* GetOwningCSSAnimation() {
@@ -216,6 +239,26 @@ class CSSAnimationKeyframeEffect : public KeyframeEffect {
 
   
   void MaybeFlushUnanimatedStyle() const;
+
+  
+  
+  
+  
+  
+  
+  StyleComputedTimingFunction mDefaultTimingFunction =
+      StyleComputedTimingFunction::Keyword(StyleTimingKeyword::Ease);
+  
+  
+  
+  
+  CompositeOperation mDefaultComposite = CompositeOperation::Replace;
+
+  
+  
+  
+  
+  bool mIgnoreKeyframesGeneration = false;
 };
 
 }  
