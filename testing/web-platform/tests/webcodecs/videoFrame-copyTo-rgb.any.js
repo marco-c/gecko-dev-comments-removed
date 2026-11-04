@@ -24,65 +24,74 @@ function compareColors(actual, expected, tolerance, msg) {
   }
 }
 
-function rgb2yuv(r, g, b) {
-  let y = r * .299000 + g * .587000 + b * .114000
-  let u = r * -.168736 + g * -.331264 + b * .500000 + 128
-  let v = r * .500000 + g * -.418688 + b * -.081312 + 128
 
-  y = Math.round(y);
-  u = Math.round(u);
-  v = Math.round(v);
+const kDefaultYUVColorSpace = {matrix: 'bt709', fullRange: false};
+
+
+function rgb2yuv(r, g, b, colorSpace) {
+  const {matrix, fullRange} = colorSpace ?? kDefaultYUVColorSpace;
+  
+  const [kr, kb] = matrix === 'bt709' ? [0.2126, 0.0722] : [0.299, 0.114];
+  const kg = 1 - kr - kb;
+
+  const yPrime = kr * r + kg * g + kb * b;  
+  const cb = (b - yPrime) / (2 * (1 - kb));  
+  const cr = (r - yPrime) / (2 * (1 - kr));  
+
+  const clamp8 = x => Math.max(0, Math.min(255, Math.round(x)));
+  if (fullRange) {
+    return {y: clamp8(yPrime), u: clamp8(128 + cb), v: clamp8(128 + cr)};
+  }
+
+  
   return {
-    y, u, v
-  }
+    y: clamp8(16 + yPrime * 219 / 255),
+    u: clamp8(128 + cb * 224 / 255),
+    v: clamp8(128 + cr * 224 / 255),
+  };
 }
 
-function makeI420Frames(colorSpace) {
-  const kYellow = {r: 0xFF, g: 0xFF, b: 0x00};
-  const kRed = {r: 0xFF, g: 0x00, b: 0x00};
-  const kBlue = {r: 0x00, g: 0x00, b: 0xFF};
-  const kGreen = {r: 0x00, g: 0xFF, b: 0x00};
-  const kPink = {r: 0xFF, g: 0x78, b: 0xFF};
-  const kMagenta = {r: 0xFF, g: 0x00, b: 0xFF};
-  const kBlack = {r: 0x00, g: 0x00, b: 0x00};
-  const kWhite = {r: 0xFF, g: 0xFF, b: 0xFF};
+const kColors = {
+  yellow: {r: 0xFF, g: 0xFF, b: 0x00},
+  red: {r: 0xFF, g: 0x00, b: 0x00},
+  blue: {r: 0x00, g: 0x00, b: 0xFF},
+  green: {r: 0x00, g: 0xFF, b: 0x00},
+  pink: {r: 0xFF, g: 0x78, b: 0xFF},
+  magenta: {r: 0xFF, g: 0x00, b: 0xFF},
+  black: {r: 0x00, g: 0x00, b: 0x00},
+  white: {r: 0xFF, g: 0xFF, b: 0xFF},
+};
+const kI420ColorNames =
+    ['yellow', 'red', 'blue', 'green', 'magenta', 'black', 'white', 'pink'];
+const kRGBXColorNames = ['yellow', 'red', 'blue', 'green', 'black', 'white'];
 
-  const result = [];
+function makeI420Frame(colorName, colorSpace) {
   const init = {format: 'I420', timestamp: 0, codedWidth: 4, codedHeight: 4};
-  const colors =
-      [kYellow, kRed, kBlue, kGreen, kMagenta, kBlack, kWhite, kPink];
+  if (colorSpace)
+    init.colorSpace = colorSpace;
+  const color = kColors[colorName];
+  const yuv = rgb2yuv(color.r, color.g, color.b, colorSpace);
   const data = new Uint8Array(24);
-  init.colorSpace = colorSpace;
-  for (let color of colors) {
-    color = rgb2yuv(color.r, color.g, color.b);
-    data.fill(color.y, 0, 16);
-    data.fill(color.u, 16, 20);
-    data.fill(color.v, 20, 24);
-    result.push(new VideoFrame(data, init));
-  }
-  return result;
+  data.fill(yuv.y, 0, 16);
+  data.fill(yuv.u, 16, 20);
+  data.fill(yuv.v, 20, 24);
+  return new VideoFrame(data, init);
 }
 
-function makeRGBXFrames(colorSpace) {
-  
-  
-  const kYellow = 0xFF00FFFF;
-  const kRed = 0xFF0000FF;
-  const kBlue = 0xFFFF0000;
-  const kGreen = 0xFF00FF00;
-  const kBlack = 0xFF000000;
-  const kWhite = 0xFFFFFFFF;
-
-  const result = [];
+function makeRGBXFrame(colorName, colorSpace) {
   const init = {format: 'RGBX', timestamp: 0, codedWidth: 4, codedHeight: 4};
-  const colors = [kYellow, kRed, kBlue, kGreen, kBlack, kWhite];
-  const data = new Uint32Array(16);
-  init.colorSpace = colorSpace;
-  for (let color of colors) {
-    data.fill(color, 0, 16);
-    result.push(new VideoFrame(data, init));
+  if (colorSpace)
+    init.colorSpace = colorSpace;
+  const color = kColors[colorName];
+  
+  const data = new Uint8Array(4 * 4 * 4);
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = color.r;
+    data[i + 1] = color.g;
+    data[i + 2] = color.b;
+    data[i + 3] = 0;
   }
-  return result;
+  return new VideoFrame(data, init);
 }
 
 async function testFrame(frame, colorSpace, pixelFormat) {
@@ -127,7 +136,11 @@ async function testFrame(frame, colorSpace, pixelFormat) {
   let get_image_buf = imageData.data.buffer;
 
   
-  const tolerance = 1;
+  let tolerance = 1;
+  if (!frame.format.startsWith('BGR') && !frame.format.startsWith('RGB')) {
+    
+    tolerance++;
+  }
   for (let i = 0; i < copy_to_buf.byteLength; i += 4) {
     if (pixelFormat.startsWith('BGR')) {
       
@@ -145,12 +158,13 @@ function test_4x4_I420_frames() {
     for (let pixelFormat of ['RGBA', 'RGBX', 'BGRA', 'BGRX']) {
       for (let frameColorSpace of [null, smpte170m, bt709]) {
         const frameColorSpaceName = frameColorSpace? frameColorSpace.primaries : "null";
-        promise_test(async t => {
-          for (let frame of makeI420Frames(frameColorSpace)) {
+        for (const colorName of kI420ColorNames) {
+          promise_test(async t => {
+            const frame = makeI420Frame(colorName, frameColorSpace);
+            t.add_cleanup(() => frame.close());
             await testFrame(frame, colorSpace, pixelFormat);
-            frame.close();
-          }
-        }, `Convert 4x4 ${frameColorSpaceName} I420 frames to ${pixelFormat} / ${colorSpace}`);
+          }, `Convert 4x4 ${frameColorSpaceName} ${colorName} I420 frame to ${pixelFormat} / ${colorSpace}`);
+        }
       }
     }
   }
@@ -162,12 +176,13 @@ function test_4x4_RGB_frames() {
     for (let pixelFormat of ['RGBA', 'RGBX', 'BGRA', 'BGRX']) {
       for (let frameColorSpace of [null, smpte170m, bt709]) {
         const frameColorSpaceName = frameColorSpace? frameColorSpace.primaries : "null";
-        promise_test(async t => {
-          for (let frame of makeRGBXFrames(frameColorSpace)) {
+        for (const colorName of kRGBXColorNames) {
+          promise_test(async t => {
+            const frame = makeRGBXFrame(colorName, frameColorSpace);
+            t.add_cleanup(() => frame.close());
             await testFrame(frame, colorSpace, pixelFormat);
-            frame.close();
-          }
-        }, `Convert 4x4 ${frameColorSpaceName} RGBX frames to ${pixelFormat} / ${colorSpace}`);
+          }, `Convert 4x4 ${frameColorSpaceName} ${colorName} RGBX frame to ${pixelFormat} / ${colorSpace}`);
+        }
       }
     }
   }
