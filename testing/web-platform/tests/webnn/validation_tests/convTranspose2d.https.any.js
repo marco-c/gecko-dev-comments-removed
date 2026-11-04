@@ -614,3 +614,12 @@ tests.forEach(
             regrexp);
       }
     }, test.name));
+
+validateOperandRank('convTranspose2d', 'input', (builder, input) => {
+  
+  
+  
+  const filter = builder.input(
+      'filter', {dataType: input.dataType, shape: [kExampleDimSize, 1, 1, 1]});
+  return builder.convTranspose2d(input, filter);
+});

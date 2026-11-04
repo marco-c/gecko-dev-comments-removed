@@ -406,3 +406,25 @@ multi_builder_test(async (t, builder, otherBuilder) => {
       () => builder.gru(
           input, weight, recurrentWeight, steps, hiddenSize, options));
 }, '[gru] throw if initialHiddenState option is from another builder');
+
+validateOperandRank('gru', 'input', (builder, input) => {
+  
+  
+  
+  
+  const derivedSteps = kExampleDimSize;
+  const derivedInputSize = kExampleDimSize;
+  const derivedHiddenSize = kExampleDimSize;
+  const weight = builder.input('weight', {
+    dataType: input.dataType,
+    shape: [oneDirection, 3 * derivedHiddenSize, derivedInputSize]
+  });
+  const recurrentWeight = builder.input('recurrentWeight', {
+    dataType: input.dataType,
+    shape: [oneDirection, 3 * derivedHiddenSize, derivedHiddenSize]
+  });
+  
+  
+  return builder.gru(input, weight, recurrentWeight, derivedSteps,
+                     derivedHiddenSize)[0];
+});

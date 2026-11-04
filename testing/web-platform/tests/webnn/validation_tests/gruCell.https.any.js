@@ -407,3 +407,26 @@ multi_builder_test(async (t, builder, otherBuilder) => {
       () => builder.gruCell(
           input, weight, recurrentWeight, hiddenState, hiddenSize, options));
 }, '[gruCell] throw if recurrentBias option is from another builder');
+
+validateOperandRank('gruCell', 'input', (builder, input) => {
+  
+  
+  
+  
+  const derivedBatchSize = kExampleDimSize;
+  const derivedInputSize = kExampleDimSize;
+  const derivedHiddenSize = kExampleDimSize;
+  const weight = builder.input('weight', {
+    dataType: input.dataType,
+    shape: [3 * derivedHiddenSize, derivedInputSize]
+  });
+  const recurrentWeight = builder.input('recurrentWeight', {
+    dataType: input.dataType,
+    shape: [3 * derivedHiddenSize, derivedHiddenSize]
+  });
+  const hiddenState = builder.input(
+      'hiddenState',
+      {dataType: input.dataType, shape: [derivedBatchSize, derivedHiddenSize]});
+  return builder.gruCell(input, weight, recurrentWeight, hiddenState,
+                         derivedHiddenSize);
+});

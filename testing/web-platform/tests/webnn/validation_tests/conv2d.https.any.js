@@ -634,3 +634,12 @@ tests.forEach(
             () => builder.conv2d(input, filter, test.options), regrexp);
       }
     }, test.name));
+
+validateOperandRank('conv2d', 'input', (builder, input) => {
+  
+  
+  
+  const filter = builder.input(
+      'filter', {dataType: input.dataType, shape: [1, kExampleDimSize, 1, 1]});
+  return builder.conv2d(input, filter);
+});
