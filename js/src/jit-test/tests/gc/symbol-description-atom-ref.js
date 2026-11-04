@@ -12,24 +12,24 @@ let other = newGlobal({newCompartment: true});
 function makeSymbol() {
   other.eval(`
     var sym = Symbol("description-" + Math.random());
-    var descIndex = getAtomMarkIndex(sym.description);
+    var descIndex = getAtomRefIndex(sym.description);
   `);
   return other.eval('descIndex');
 }
 
 let index = makeSymbol();
-assertEq(getAtomMarkColor(other, index), 'black');
-assertEq(getAtomMarkColor(this, index), 'white');
+assertEq(getAtomRefColor(other, index), 'black');
+assertEq(getAtomRefColor(this, index), 'white');
 
 let sym = other.eval('sym');
 assertEq(typeof sym, 'symbol');
 
 
-assertEq(getAtomMarkColor(this, index), 'white');
+assertEq(getAtomRefColor(this, index), 'white');
 
 let desc = sym.description;
 assertEq(typeof desc, 'string');
-assertEq(getAtomMarkColor(this, index), 'black');
+assertEq(getAtomRefColor(this, index), 'black');
 
 
 
@@ -37,21 +37,21 @@ other.eval('sym = undefined;');
 sym = undefined;
 gc();
 
-assertEq(getAtomMarkColor(this, index), 'black');
+assertEq(getAtomRefColor(this, index), 'black');
 assertEq(desc.startsWith("description-"), true);
 
 
 index = makeSymbol();
-assertEq(getAtomMarkColor(this, index), 'white');
+assertEq(getAtomRefColor(this, index), 'white');
 sym = other.eval('sym');
-assertEq(getAtomMarkColor(this, index), 'white');
+assertEq(getAtomRefColor(this, index), 'white');
 desc = sym.description;
-assertEq(getAtomMarkColor(this, index), 'black');
+assertEq(getAtomRefColor(this, index), 'black');
 
 other.eval('sym = undefined;');
 sym = undefined;
 schedulezone(this);
 schedulezone('atoms');
 gc('zone');
-assertEq(getAtomMarkColor(this, index), 'black');
+assertEq(getAtomRefColor(this, index), 'black');
 assertEq(desc.startsWith("description-"), true);

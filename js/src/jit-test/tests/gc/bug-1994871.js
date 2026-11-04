@@ -12,14 +12,14 @@ let other = newGlobal({newCompartment: true});
 
 
 gc();
-let index = getAtomMarkIndex(s);
-assertEq(getAtomMarkColor(this, index), 'black');
-assertEq(getAtomMarkColor(other, index), 'white');
+let index = getAtomRefIndex(s);
+assertEq(getAtomRefColor(this, index), 'black');
+assertEq(getAtomRefColor(other, index), 'white');
 assertEq(getMarks()[0], 'black');
 
 
 other.s = s;
-assertEq(getAtomMarkColor(other, index), 'black');
+assertEq(getAtomRefColor(other, index), 'black');
 
 
 
@@ -28,13 +28,13 @@ grayRoot().push(s);
 other.s = undefined;
 s = undefined;
 gc();
-assertEq(getAtomMarkColor(this, index), 'black');
-assertEq(getAtomMarkColor(other, index), 'black'); 
+assertEq(getAtomRefColor(this, index), 'black');
+assertEq(getAtomRefColor(other, index), 'black'); 
 assertEq(getMarks()[0], 'gray');
 
 
 grayRoot().length = 0;
 gc();
-assertEq(getAtomMarkColor(this, index), 'white');
-assertEq(getAtomMarkColor(other, index), 'white');
+assertEq(getAtomRefColor(this, index), 'white');
+assertEq(getAtomRefColor(other, index), 'white');
 assertEq(getMarks()[0], 'dead');

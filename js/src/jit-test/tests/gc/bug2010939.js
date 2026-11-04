@@ -1,3 +1,3 @@
 
 
-evalInWorker("try { getAtomMarkIndex('') } catch {}");
+evalInWorker("try { getAtomRefIndex('') } catch {}");

@@ -5,7 +5,7 @@ gczeal(0);
 
 let holder = {["poc_" + "atom_998877"]: 1};
 let s = Object.keys(holder)[0];
-let idx = getAtomMarkIndex(s);
+let idx = getAtomRefIndex(s);
 
 
 let a = newGlobal({newCompartment: true});
@@ -47,4 +47,4 @@ readJit(wm, key);
 
 
 finishgc();
-assertEq(getAtomMarkColor(a, idx), "black");
+assertEq(getAtomRefColor(a, idx), "black");
