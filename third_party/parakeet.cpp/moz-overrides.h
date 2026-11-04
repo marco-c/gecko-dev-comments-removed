@@ -20,7 +20,7 @@
   std::abort();
 }
 
-#define throw abort_with_suppression(); if (false)
+#define throw if (true) abort_with_suppression(); else
 
 
 #define try if (true)
