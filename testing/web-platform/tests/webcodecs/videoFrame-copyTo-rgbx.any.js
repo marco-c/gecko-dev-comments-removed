@@ -41,8 +41,7 @@ function validateArrays(original, copy)
   assert_equals(original.byteLength, copy.byteLength, "array length");
   for (let i = 0;i < original.byteLength;i++) {
     
-    if ((i % 4) !== 3)
-       assert_equals(original[i], copy[i]);
+    assert_equals(copy[i],  (i % 4) !== 3 ? original[i] : 255);
   }
 }
 
