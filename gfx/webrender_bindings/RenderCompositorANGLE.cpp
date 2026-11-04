@@ -180,7 +180,7 @@ HWND RenderCompositorANGLE::GetCompositorHwnd() {
     return mWidget->AsWindows()->GetCompositorHwnd();
   }
 
-  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   
   return mWidget->AsWindows()->GetHwnd();
 }
