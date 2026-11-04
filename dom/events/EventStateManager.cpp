@@ -81,6 +81,7 @@
 #include "nsCOMPtr.h"
 #include "nsComboboxControlFrame.h"
 #include "nsCommandParams.h"
+#include "nsComputedDOMStyle.h"
 #include "nsContentAreaDragDrop.h"
 #include "nsContentUtils.h"
 #include "nsCopySupport.h"
@@ -1835,7 +1836,8 @@ static bool IsAccessKeyTarget(Element* aElement, nsAString& aKey) {
     return false;
   }
 
-  if (!aElement->IsXULElement()) {
+  if (!aElement->IsXULElement() &&
+      !nsContentUtils::IsChromeDoc(aElement->OwnerDoc())) {
     return true;
   }
 
@@ -1861,7 +1863,8 @@ static bool IsAccessKeyTarget(Element* aElement, nsAString& aKey) {
 
   
   
-  if (aElement->IsXULElement(nsGkAtoms::label)) {
+  if (aElement->IsXULElement(nsGkAtoms::label) ||
+      aElement->IsHTMLElement(nsGkAtoms::label)) {
     return true;
   }
 
@@ -2535,7 +2538,8 @@ void EventStateManager::FireContextClick() {
   
   
   
-  mCurrentTarget = mPresContext->GetPrimaryFrameFor(mGestureDownContent);
+  mCurrentTarget =
+      mPresContext->GetPrimaryOrAreaImageFrameFor(mGestureDownContent);
   
   nsCOMPtr<nsIWidget> targetWidget;
   if (mCurrentTarget && (targetWidget = mCurrentTarget->GetNearestWidget())) {
@@ -2833,7 +2837,7 @@ void EventStateManager::GenerateDragGesture(
   
   for (auto* content :
        mGestureDownFrameOwner->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
-    if (nsIFrame* target = content->GetPrimaryFrame()) {
+    if (nsIFrame* target = nsLayoutUtils::GetPrimaryOrAreaImageFrame(content)) {
       mCurrentTarget = target;
 
       if (content != mGestureDownFrameOwner) {
@@ -4230,7 +4234,7 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         
         
         for (; newFocus; newFocus = newFocus->GetFlattenedTreeParentElement()) {
-          nsIFrame* frame = newFocus->GetPrimaryFrame();
+          nsIFrame* frame = nsLayoutUtils::GetPrimaryOrAreaImageFrame(newFocus);
           if (!frame) {
             continue;
           }
@@ -5298,7 +5302,8 @@ class MOZ_STACK_CLASS ESMEventCB : public EventDispatchingCallback {
   MOZ_CAN_RUN_SCRIPT
   void HandleEvent(EventChainPostVisitor& aVisitor) override {
     if (aVisitor.mPresContext) {
-      nsIFrame* frame = aVisitor.mPresContext->GetPrimaryFrameFor(mTarget);
+      nsIFrame* frame =
+          aVisitor.mPresContext->GetPrimaryOrAreaImageFrameFor(mTarget);
       if (frame) {
         frame->HandleEvent(aVisitor.mPresContext, aVisitor.mEvent->AsGUIEvent(),
                            &aVisitor.mEventStatus);
@@ -5425,7 +5430,7 @@ EventStateManager::DispatchMouseOrPointerBoundaryEvent(
       return nullptr;
     }
     nsIFrame* const pointerLockedFrame =
-        mPresContext->GetPrimaryFrameFor(pointerLockedElement);
+        mPresContext->GetPrimaryOrAreaImageFrameFor(pointerLockedElement);
     if (NS_WARN_IF(!pointerLockedFrame)) {
       return nullptr;
     }
@@ -5443,7 +5448,7 @@ EventStateManager::DispatchMouseOrPointerBoundaryEvent(
   
   nsCOMPtr<nsIWidget> targetWidget;
   if (nsIFrame* const targetFrame =
-          mPresContext->GetPrimaryFrameFor(aTargetContent)) {
+          mPresContext->GetPrimaryOrAreaImageFrameFor(aTargetContent)) {
     targetWidget = targetFrame->GetNearestWidget();
   }
 
@@ -5477,7 +5482,8 @@ EventStateManager::DispatchMouseOrPointerBoundaryEvent(
         
         
         
-        mCurrentTarget = mPresContext->GetPrimaryFrameFor(targetContent);
+        mCurrentTarget =
+            mPresContext->GetPrimaryOrAreaImageFrameFor(targetContent);
         HandleCrossProcessEvent(remoteEvent.get(), &status);
       } else if (aMessage == eMouseOver) {
         UniquePtr<WidgetMouseEvent> remoteEvent =
@@ -6438,7 +6444,8 @@ nsresult EventStateManager::InitAndDispatchClickEvent(
   nsIFrame* targetFrame = aCurrentTarget;
   if (aOverrideClickTarget) {
     target = aOverrideClickTarget;
-    targetFrame = aOverrideClickTarget->GetPrimaryFrame();
+    targetFrame =
+        nsLayoutUtils::GetPrimaryOrAreaImageFrame(aOverrideClickTarget);
   }
 
   if (!target->IsInComposedDoc()) {
@@ -6550,7 +6557,8 @@ nsresult EventStateManager::DispatchClickEvents(
 
   bool fireAuxClick = notDispatchToContents;
 
-  AutoWeakFrame currentTarget = aClickTarget->GetPrimaryFrame();
+  AutoWeakFrame currentTarget =
+      nsLayoutUtils::GetPrimaryOrAreaImageFrame(aClickTarget);
   nsresult rv = InitAndDispatchClickEvent(
       aMouseUpEvent, aStatus, ePointerClick, aPresShell, aClickTarget,
       currentTarget, notDispatchToContents, aOverrideClickTarget);
@@ -6741,7 +6749,8 @@ nsIFrame* EventStateManager::GetEventTarget() {
   }
 
   if (mCurrentTargetContent) {
-    mCurrentTarget = mPresContext->GetPrimaryFrameFor(mCurrentTargetContent);
+    mCurrentTarget =
+        mPresContext->GetPrimaryOrAreaImageFrameFor(mCurrentTargetContent);
     if (mCurrentTarget) {
       return mCurrentTarget;
     }
@@ -6894,7 +6903,9 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
         NS_ASSERTION(!aContent || aContent->GetComposedDoc() ==
                                       mPresContext->PresShell()->GetDocument(),
                      "Unexpected document");
-        nsIFrame* frame = aContent ? aContent->GetPrimaryFrame() : nullptr;
+        nsIFrame* frame =
+            aContent ? nsLayoutUtils::GetPrimaryOrAreaImageFrame(aContent)
+                     : nullptr;
         if (frame && nsLayoutUtils::IsViewportScrollbarFrame(frame)) {
           
           
