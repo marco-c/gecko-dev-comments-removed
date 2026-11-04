@@ -7,16 +7,21 @@
 
 #include "nsCOMPtr.h"
 #include "nsCategoryCache.h"
+#include "nsIChannelEventSink.h"
 #include "nsIContentPolicy.h"
 
 
 
 
 
-class nsContentPolicy : public nsIContentPolicy {
+
+
+
+class nsContentPolicy : public nsIContentPolicy, public nsIChannelEventSink {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTPOLICY
+  NS_DECL_NSICHANNELEVENTSINK
 
   nsContentPolicy();
 

@@ -14,22 +14,30 @@
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
+#include "mozilla/net/DocumentChannel.h"
+#include "mozilla/net/DocumentLoadListener.h"
+#include "nsAsyncRedirectVerifyHelper.h"
 #include "nsCOMArray.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
+#include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIBrowserChild.h"
+#include "nsIChannel.h"
 #include "nsIContent.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIImageLoadingContent.h"
+#include "nsIParentChannel.h"
 #include "nsISupports.h"
 #include "nsIURI.h"
+#include "nsNetUtil.h"
+#include "nsQueryObject.h"
 #include "nsXPCOM.h"
 
 class nsIDOMWindow;
 
 using mozilla::LogLevel;
 
-NS_IMPL_ISUPPORTS(nsContentPolicy, nsIContentPolicy)
+NS_IMPL_ISUPPORTS(nsContentPolicy, nsIContentPolicy, nsIChannelEventSink)
 
 static mozilla::LazyLogModule gConPolLog("nsContentPolicy");
 
@@ -163,6 +171,74 @@ nsContentPolicy::ShouldProcess(nsIURI* contentLocation, nsILoadInfo* loadInfo,
   nsresult rv = CheckPolicy(&nsIContentPolicy::ShouldProcess, contentLocation,
                             loadInfo, decision);
   LOG_CHECK("ShouldProcess");
+
+  return rv;
+}
+
+
+NS_IMETHODIMP
+nsContentPolicy::AsyncOnChannelRedirect(
+    nsIChannel* aOldChannel, nsIChannel* aNewChannel, uint32_t aFlags,
+    nsIAsyncVerifyRedirectCallback* aCallback) {
+  mozilla::net::nsAsyncRedirectAutoCallback autoCallback(aCallback);
+
+  if (XRE_IsE10sParentProcess()) {
+    nsCOMPtr<nsIParentChannel> parentChannel;
+    NS_QueryNotificationCallbacks(aOldChannel, parentChannel);
+    RefPtr<mozilla::net::DocumentLoadListener> docListener =
+        do_QueryObject(parentChannel);
+    
+    
+    
+    
+    
+    
+    
+    if (parentChannel && !docListener) {
+      return NS_OK;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  if (RefPtr<mozilla::net::DocumentChannel> docChannel =
+          do_QueryObject(aOldChannel)) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIURI> newUri;
+  MOZ_TRY(aNewChannel->GetURI(getter_AddRefs(newUri)));
+
+  nsCOMPtr<nsILoadInfo> loadInfo = aOldChannel->LoadInfo();
+
+  
+
+
+
+
+
+
+  nsCOMPtr<nsIURI> originalUri;
+  nsresult rv = aOldChannel->GetOriginalURI(getter_AddRefs(originalUri));
+  if (NS_FAILED(rv)) {
+    autoCallback.DontCallback();
+    aOldChannel->Cancel(NS_ERROR_DOM_BAD_URI);
+    return rv;
+  }
+
+  mozilla::Maybe<nsresult> cancelCode;
+  rv = CSPService::ConsultCSPForRedirect(originalUri, newUri, loadInfo, aFlags,
+                                         cancelCode);
+  if (cancelCode) {
+    aOldChannel->Cancel(*cancelCode);
+  }
+  if (NS_FAILED(rv)) {
+    autoCallback.DontCallback();
+  }
 
   return rv;
 }
