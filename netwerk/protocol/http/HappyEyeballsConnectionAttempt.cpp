@@ -958,8 +958,11 @@ void HappyEyeballsConnectionAttempt::DNSLookup(
           if (httpsRRPort != NS_HTTPS_DEFAULT_PORT) {
             dns->NewAdditionalInfo(""_ns, httpsRRPort, getter_AddRefs(info));
           }
+          
+          
+          
           rv = dns->AsyncResolveNative(
-              aHostname, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
+              mHost, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
               flags | nsIDNSService::RESOLVE_WANT_RECORD_ON_ERROR, info, this,
               gSocketTransportService, mConnInfo->GetOriginAttributes(),
               getter_AddRefs(request));

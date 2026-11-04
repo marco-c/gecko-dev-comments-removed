@@ -7,6 +7,8 @@
 
 
 
+#![allow(clippy::disallowed_methods, reason = "tests may use Instant::now")]
+
 mod common;
 use common::*;
 
@@ -19,14 +21,14 @@ use happy_eyeballs::{
 
 fn by_name_config() -> NetworkConfig {
     NetworkConfig {
-        resolution: ResolutionMode::ByName,
+        resolution: ResolutionMode::Name,
         ..NetworkConfig::default()
     }
 }
 
 fn by_name_https_rr_config() -> NetworkConfig {
     NetworkConfig {
-        resolution: ResolutionMode::ByNameWithHttpsRr,
+        resolution: ResolutionMode::NameWithHttpsRr,
         ..NetworkConfig::default()
     }
 }
@@ -105,7 +107,7 @@ fn by_name_failure() {
 fn by_name_respects_http_versions() {
     let now = Instant::now();
     let config = NetworkConfig {
-        resolution: ResolutionMode::ByName,
+        resolution: ResolutionMode::Name,
         http_versions: HttpVersions {
             h1: true,
             h2: false,
@@ -142,7 +144,7 @@ fn by_name_attempts_alt_svc_by_name_over_h3() {
 
     let mut now = Instant::now();
     let config = NetworkConfig {
-        resolution: ResolutionMode::ByName,
+        resolution: ResolutionMode::Name,
         alt_svc: vec![AltSvc {
             host: Some("alt.example.com".to_string()),
             port: None,
@@ -341,7 +343,7 @@ fn https_rr_by_name_host_is_a_connect_name() {
 fn by_name_failure_is_never_dns_resolution() {
     let now = Instant::now();
     let config = NetworkConfig {
-        resolution: ResolutionMode::ByName,
+        resolution: ResolutionMode::Name,
         http_versions: HttpVersions {
             h1: false,
             h2: false,
@@ -377,7 +379,7 @@ fn by_name_origin_drops_trailing_root_label() {
 
     
     let config = NetworkConfig {
-        resolution: ResolutionMode::ByName,
+        resolution: ResolutionMode::Name,
         alt_svc: vec![AltSvc {
             host: None,
             port: None,

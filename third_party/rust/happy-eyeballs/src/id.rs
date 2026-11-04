@@ -6,12 +6,12 @@ pub struct Id(u64);
 
 impl From<u64> for Id {
     fn from(value: u64) -> Self {
-        Id(value)
+        Self(value)
     }
 }
 
 impl From<Id> for u64 {
-    fn from(id: Id) -> u64 {
+    fn from(id: Id) -> Self {
         id.0
     }
 }
@@ -19,20 +19,20 @@ impl From<Id> for u64 {
 
 
 
-pub(crate) struct IdGenerator {
+pub struct IdGenerator {
     next: u64,
 }
 
 impl IdGenerator {
     
-    pub(crate) fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self { next: 0 }
     }
 
     
     
     
-    pub(crate) fn next_id(&mut self) -> Id {
+    pub(crate) const fn next_id(&mut self) -> Id {
         let id = self.next;
         self.next = self.next.wrapping_add(1);
         Id(id)

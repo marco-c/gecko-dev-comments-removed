@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_methods, reason = "tests may use Instant::now")]
+
 
 
 mod common;
@@ -8,12 +10,12 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use happy_eyeballs::{
     AltSvc, CONNECTION_ATTEMPT_DELAY, ConnectionAttemptHttpVersions, ConnectionResult,
     DnsRecordType, DnsResult, EchConfig, Endpoint, EndpointTarget, FailureReason, HttpVersion, Id,
-    Input, IpPreference, NetworkConfig, Output, RESOLUTION_DELAY,
+    Input, IpPreference, NetworkConfig, Output,
 };
 
 #[test]
 fn ech_config_propagated_to_endpoint() {
-    let (mut now, mut he) = setup();
+    let (now, mut he) = setup();
 
     
     
@@ -31,9 +33,6 @@ fn ech_config_propagated_to_endpoint() {
         },
         now,
     );
-    he.expect(out_resolution_delay(), now);
-
-    now += RESOLUTION_DELAY;
     he.expect(
         Output::AttemptConnection {
             id: Id::from(3),
@@ -142,11 +141,14 @@ fn hints_kept_as_fallback_on_negative_answer() {
 
 
 
+
 #[test]
 fn hints_kept_as_fallback_after_address_records() {
     let (mut now, mut he) = setup();
 
     expect_initial_dns_queries(&mut he, now);
+    he.input(in_dns_aaaa_positive(Id::from(1)), now);
+    he.expect(out_resolution_delay(), now);
     he.input(
         Input::DnsResult {
             id: Id::from(0),
@@ -157,10 +159,6 @@ fn hints_kept_as_fallback_after_address_records() {
         },
         now,
     );
-    he.expect(out_resolution_delay(), now);
-
-    
-    he.input(in_dns_aaaa_positive(Id::from(1)), now);
 
     
     he.expect(
@@ -195,11 +193,14 @@ fn hints_kept_as_fallback_after_address_records() {
 
 
 
+
 #[test]
 fn hint_equal_to_resolved_address_is_not_attempted_twice() {
     let (mut now, mut he) = setup();
 
     expect_initial_dns_queries(&mut he, now);
+    he.input(in_dns_aaaa_positive(Id::from(1)), now);
+    he.expect(out_resolution_delay(), now);
     he.input(
         Input::DnsResult {
             id: Id::from(0),
@@ -210,10 +211,6 @@ fn hint_equal_to_resolved_address_is_not_attempted_twice() {
         },
         now,
     );
-    he.expect(out_resolution_delay(), now);
-
-    
-    he.input(in_dns_aaaa_positive(Id::from(1)), now);
 
     
     
@@ -341,14 +338,11 @@ fn multiple_target_names() {
 
     expect_initial_dns_queries(&mut he, now);
     
+    
     he.input(in_dns_https_positive_svc1(Id::from(0)), now);
-    he.expect(out_send_dns_svc1(Id::from(3)), now);
-    
-    
-    he.input(in_dns_aaaa_positive(Id::from(1)), now);
     he.expect(
         Output::AttemptConnection {
-            id: Id::from(4),
+            id: Id::from(3),
             endpoint: Endpoint {
                 target: EndpointTarget::Address(SocketAddr::new(V6_ADDR_2.into(), PORT)),
                 http_version: ConnectionAttemptHttpVersions::H3,
@@ -358,6 +352,7 @@ fn multiple_target_names() {
         },
         now,
     );
+    he.expect(out_send_dns_svc1(Id::from(4)), now);
 }
 
 
@@ -820,7 +815,7 @@ mod https_port_svcparam_overrides_port_for {
     use super::*;
 
     fn check(ipv4_hints: Vec<Ipv4Addr>) {
-        let (mut now, mut he) = setup(); 
+        let (now, mut he) = setup(); 
 
         
         
@@ -839,9 +834,6 @@ mod https_port_svcparam_overrides_port_for {
             },
             now,
         );
-        he.expect(out_resolution_delay(), now);
-
-        now += RESOLUTION_DELAY;
         he.expect(out_attempt_v6_h3_custom_port(Id::from(3)), now);
     }
 
@@ -1407,7 +1399,7 @@ fn ech_retry_same_endpoint() {
             endpoint: Endpoint {
                 target: EndpointTarget::Address(SocketAddr::new(V6_ADDR.into(), PORT)),
                 http_version: ConnectionAttemptHttpVersions::H2,
-                ech_config: Some(new_ech_config.clone()),
+                ech_config: Some(new_ech_config),
             },
             is_ech_retry: true,
         },
@@ -1464,7 +1456,7 @@ fn ech_retry_without_ech_sets_flag() {
             endpoint: Endpoint {
                 target: EndpointTarget::Address(SocketAddr::new(V6_ADDR.into(), PORT)),
                 http_version: ConnectionAttemptHttpVersions::H2,
-                ech_config: Some(empty_ech_config.clone()),
+                ech_config: Some(empty_ech_config),
             },
             is_ech_retry: true,
         },
@@ -1526,7 +1518,7 @@ fn ech_retry_no_infinite_loop() {
             endpoint: Endpoint {
                 target: EndpointTarget::Address(SocketAddr::new(V6_ADDR.into(), PORT)),
                 http_version: ConnectionAttemptHttpVersions::H2,
-                ech_config: Some(retry_ech_config.clone()),
+                ech_config: Some(retry_ech_config),
             },
             is_ech_retry: true,
         },
@@ -1583,6 +1575,7 @@ fn ech_retry_no_infinite_loop() {
 
 
 #[test]
+#[expect(clippy::too_many_lines, reason = "one end-to-end scenario")]
 fn rfc_multi_cdn_target_names_resolved_and_attempted() {
     const H3POOL: &str = "h3pool.svc1.example.";
     const CDN1: &str = "cdn1.svc1.example.";

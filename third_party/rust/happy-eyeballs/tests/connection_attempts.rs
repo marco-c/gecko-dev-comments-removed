@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_methods, reason = "tests may use Instant::now")]
+
 
 
 
@@ -257,7 +259,7 @@ fn connection_attempt_delay_partial_elapsed() {
     let elapsed = Duration::from_millis(40);
     he.expect(
         Output::Timer {
-            duration: custom_delay - elapsed,
+            duration: custom_delay.checked_sub(elapsed).unwrap(),
         },
         now + elapsed,
     );

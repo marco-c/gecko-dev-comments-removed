@@ -1,3 +1,5 @@
+#![allow(clippy::disallowed_methods, reason = "tests may use Instant::now")]
+
 mod common;
 use common::*;
 
@@ -219,6 +221,7 @@ fn alt_svc_with_host() {
         Input::DnsResult {
             id: Id::from(3),
             result: DnsResult::Aaaa(Ok(vec![V6_ADDR_2])),
+            stale: false,
         },
         now,
     );
@@ -227,6 +230,7 @@ fn alt_svc_with_host() {
         Input::DnsResult {
             id: Id::from(4),
             result: DnsResult::A(Ok(vec![V4_ADDR_2])),
+            stale: false,
         },
         now,
     );
@@ -329,6 +333,34 @@ fn alt_svc_host_ip_literal() {
 
 
 
+#[test]
+fn alt_svc_host_ip_literal_of_disabled_family() {
+    let config = NetworkConfig {
+        ip: IpPreference::Ipv4Only,
+        alt_svc: vec![AltSvc {
+            host: Some(V6_ADDR_2.to_string()),
+            port: Some(CUSTOM_PORT),
+            http_version: HttpVersion::H3,
+        }],
+        ..NetworkConfig::default()
+    };
+    let (mut now, mut he) = setup_with_config(config);
+
+    he.expect(out_send_dns_https(Id::from(0)), now);
+    he.expect(out_send_dns_a(Id::from(1)), now);
+    he.expect_idle(now);
+
+    he.input(in_dns_a_positive(Id::from(1)), now);
+    he.expect(out_resolution_delay(), now);
+    he.input(in_dns_https_negative(Id::from(0)), now);
+
+    he.expect(out_attempt_v4_h1_h2(Id::from(2)), now);
+    he.expect(out_connection_attempt_delay(), now);
+    he.expect_connection_attempts([], &mut now);
+}
+
+
+
 
 #[test]
 fn ip_host_alt_svc_with_host() {
@@ -367,6 +399,7 @@ fn ip_host_alt_svc_with_host() {
         Input::DnsResult {
             id: Id::from(1),
             result: DnsResult::Aaaa(Ok(vec![V6_ADDR_2])),
+            stale: false,
         },
         now,
     );
@@ -374,6 +407,7 @@ fn ip_host_alt_svc_with_host() {
         Input::DnsResult {
             id: Id::from(2),
             result: DnsResult::A(Ok(vec![V4_ADDR_2])),
+            stale: false,
         },
         now,
     );
@@ -431,6 +465,7 @@ fn alt_svc_host_resolution_fails() {
         Input::DnsResult {
             id: Id::from(3),
             result: DnsResult::Aaaa(Err(())),
+            stale: false,
         },
         now,
     );
@@ -439,6 +474,7 @@ fn alt_svc_host_resolution_fails() {
         Input::DnsResult {
             id: Id::from(4),
             result: DnsResult::A(Err(())),
+            stale: false,
         },
         now,
     );
@@ -607,7 +643,7 @@ fn assert_alt_svc_version_disabled(
         PORT,
         alt_svc_disabled_config(version),
     )
-    .unwrap();
+    .expect("valid host");
     he.expect(
         out_attempt(Id::from(0), V4_ADDR.into(), PORT, expected_fallback),
         now,
@@ -650,6 +686,7 @@ fn interleaves_protocol_variants_and_address_families() {
         Input::DnsResult {
             id: Id::from(1),
             result: DnsResult::Aaaa(Ok(vec![V6_ADDR, V6_ADDR_2, V6_ADDR_3])),
+            stale: false,
         },
         now,
     );
@@ -657,6 +694,7 @@ fn interleaves_protocol_variants_and_address_families() {
         Input::DnsResult {
             id: Id::from(2),
             result: DnsResult::A(Ok(vec![V4_ADDR])),
+            stale: false,
         },
         now,
     );
@@ -725,6 +763,7 @@ fn interleaves_with_ipv4_preferred() {
         Input::DnsResult {
             id: Id::from(1),
             result: DnsResult::Aaaa(Ok(vec![V6_ADDR])),
+            stale: false,
         },
         now,
     );
@@ -732,6 +771,7 @@ fn interleaves_with_ipv4_preferred() {
         Input::DnsResult {
             id: Id::from(2),
             result: DnsResult::A(Ok(vec![V4_ADDR, V4_ADDR_2])),
+            stale: false,
         },
         now,
     );
