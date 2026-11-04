@@ -8,7 +8,7 @@
 
 
 var { DER } = ChromeUtils.importESModule(
-  "resource://gre/modules/psm/DER.sys.mjs"
+  "moz-src:///security/manager/ssl/DER.sys.mjs"
 );
 
 function run_simple_tests() {

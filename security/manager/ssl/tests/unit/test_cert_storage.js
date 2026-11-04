@@ -12,7 +12,7 @@
 
 
 const { RemoteSecuritySettings } = ChromeUtils.importESModule(
-  "resource://gre/modules/psm/RemoteSecuritySettings.sys.mjs"
+  "moz-src:///security/manager/ssl/RemoteSecuritySettings.sys.mjs"
 );
 
 
