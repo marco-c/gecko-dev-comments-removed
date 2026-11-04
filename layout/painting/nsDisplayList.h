@@ -1472,6 +1472,10 @@ class nsDisplayListBuilder {
     void CheckASR(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
 #endif
 
+    
+    
+    
+    
     static nsRect ComputeVisibleRectForFrame(nsDisplayListBuilder* aBuilder,
                                              nsIFrame* aFrame,
                                              const nsRect& aVisibleRect,

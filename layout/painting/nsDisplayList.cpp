@@ -709,11 +709,12 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
       
       
       
-      
       DebugOnly<bool> hasDisplayPort = DisplayPortUtils::GetDisplayPort(
           rootScrollContainerFrame->GetContent(),
           &dirtyRectRelativeToDirtyFrame,
-          DisplayPortOptions().With(ContentGeometryType::Fixed));
+          DisplayPortOptions()
+              .With(DisplayportRelativeTo::ScrollFrame)
+              .With(ContentGeometryType::Fixed));
       MOZ_ASSERT(hasDisplayPort,
                  "DisplayPortUtils::IsFixedPosFrameInDisplayPort() guarantees "
                  "that the displayport exists!");
