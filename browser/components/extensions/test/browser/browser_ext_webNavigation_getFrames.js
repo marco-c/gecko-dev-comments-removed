@@ -1,5 +1,3 @@
-
-
 "use strict";
 
 add_task(async function testWebNavigationGetNonExistentTab() {
@@ -190,9 +188,7 @@ add_task(async function testWebNavigationFrames() {
       "parentFrameId"
     );
     is(getAllFramesDetail.tabId, collected.tabId, "tabId");
-
-    
-    
+    is(getAllFramesDetail.url, collected.url, "url");
   }
 
   info("frame details content checked");
