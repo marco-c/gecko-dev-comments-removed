@@ -379,10 +379,8 @@ impl ShadowCascadeOrder {
     }
 
     
-    
     #[inline]
     pub fn inc(&mut self) {
-        debug_assert_ne!(self.0, -1);
         if self.0 != Self::MAX {
             self.0 += 1;
         }
