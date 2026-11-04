@@ -3399,13 +3399,22 @@ bool HttpBaseChannel::ShouldFilterOpaqueResponse(
     OpaqueResponseFilterFetch aFilterType) const {
   MOZ_ASSERT(ShouldBlockOpaqueResponse());
 
-  if (!mLoadInfo || ConfiguredFilterFetchResponseBehaviour() != aFilterType) {
+  if (!mLoadInfo) {
+    return false;
+  }
+
+  auto contentPolicy = mLoadInfo->InternalContentPolicyType();
+  if (contentPolicy == nsIContentPolicy::TYPE_PING) {
+    return true;
+  }
+
+  if (ConfiguredFilterFetchResponseBehaviour() != aFilterType) {
     return false;
   }
 
   
   
-  return mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_FETCH;
+  return contentPolicy == nsIContentPolicy::TYPE_FETCH;
 }
 
 bool HttpBaseChannel::ShouldBlockOpaqueResponse() const {
@@ -3578,7 +3587,6 @@ HttpBaseChannel::PerformOpaqueResponseSafelistCheckBeforeSniff() {
     return OpaqueResponse::Allow;
   }
 
-  
   
   
   
