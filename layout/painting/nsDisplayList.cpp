@@ -687,9 +687,12 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
   if (MOZ_LIKELY(StaticPrefs::apz_allow_zooming()) &&
       aBuilder->IsPaintingToWindow() && !inPartialUpdate &&
       DisplayPortUtils::IsFixedPosFrameInDisplayPort(aFrame)) {
+    
+    MOZ_ASSERT(aFrame->GetParent()->IsViewportFrame());
     dirtyRectRelativeToDirtyFrame =
-        nsRect(nsPoint(0, 0), aFrame->GetParent()->GetSize());
+        aFrame->GetParent()->GetRectRelativeToSelf();
 
+    
     
     
     
@@ -697,25 +700,23 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
     
     PresShell* presShell = aFrame->PresShell();
     if (presShell->IsVisualViewportSizeSet()) {
-      dirtyRectRelativeToDirtyFrame =
-          nsRect(presShell->GetVisualViewportOffsetRelativeToLayoutViewport(),
-                 presShell->GetVisualViewportSize());
+      const ScrollContainerFrame* rootScrollContainerFrame =
+          presShell->GetRootScrollContainerFrame();
+      MOZ_ASSERT(rootScrollContainerFrame,
+                 "DisplayPortUtils::IsFixedPosFrameInDisplayPort() guarantees "
+                 "that the root scroll container frame exists!");
+
       
       
       
-      if (nsIFrame* rootScrollContainerFrame =
-              presShell->GetRootScrollContainerFrame()) {
-        nsRect displayport;
-        
-        
-        
-        
-        if (DisplayPortUtils::GetDisplayPort(
-                rootScrollContainerFrame->GetContent(), &displayport,
-                DisplayPortOptions().With(ContentGeometryType::Fixed))) {
-          dirtyRectRelativeToDirtyFrame = displayport;
-        }
-      }
+      
+      DebugOnly<bool> hasDisplayPort = DisplayPortUtils::GetDisplayPort(
+          rootScrollContainerFrame->GetContent(),
+          &dirtyRectRelativeToDirtyFrame,
+          DisplayPortOptions().With(ContentGeometryType::Fixed));
+      MOZ_ASSERT(hasDisplayPort,
+                 "DisplayPortUtils::IsFixedPosFrameInDisplayPort() guarantees "
+                 "that the displayport exists!");
     }
     visible = dirtyRectRelativeToDirtyFrame;
     if (StaticPrefs::apz_test_logging_enabled() &&
