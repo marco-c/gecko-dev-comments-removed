@@ -980,11 +980,14 @@ function readRequestBody(request) {
 
 
 
+
+
 function startMockOpenAI({
   echo = "This gets echoed.",
   onRequest = null,
   holdStreamOpenAfterFinish = false,
   errorResponse = null,
+  holdResponses = false,
 } = {}) {
   const server = new HttpServer();
 
@@ -1018,6 +1021,12 @@ function startMockOpenAI({
       } catch (_) {}
     }
     info("[openai] bodyText: " + bodyText);
+
+    if (holdResponses) {
+      response.processAsync();
+      heldResponses.push(response);
+      return;
+    }
 
     let body;
     try {
@@ -1376,10 +1385,15 @@ function startMockOpenAI({
     }
   }
 
+  function resumeResponses() {
+    holdResponses = false;
+    releaseHeldStreams();
+  }
+
   
   server.start(-1);
   const port = server.identity.primaryPort;
-  return { server, port, releaseHeldStreams };
+  return { server, port, releaseHeldStreams, resumeResponses };
 }
 
 function stopMockOpenAI(server) {
