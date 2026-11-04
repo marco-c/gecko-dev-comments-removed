@@ -846,9 +846,7 @@ class Talos(TestingMixin, MercurialScript, TooltoolMixin, CodeCoverageMixin):
         
         options = self.talos_options(args=args, **kw)
 
-        
         python = self.query_python_path()
-        self.run_command([python, "--version"])
         parser = TalosOutputParser(
             config=self.config, log_obj=self.log_obj, error_list=TalosErrorList
         )

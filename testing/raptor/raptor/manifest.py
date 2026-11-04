@@ -575,10 +575,6 @@ def get_raptor_test_list(args, oskey):
                 next_test["page_cycles"] = 2
             else:
                 next_test["page_cycles"] = 1
-            
-            
-            if "-cold" not in next_test["name"] and not args.browsertime:
-                next_test["name"] += "-cold"
         else:
             
             next_test["cold"] = False

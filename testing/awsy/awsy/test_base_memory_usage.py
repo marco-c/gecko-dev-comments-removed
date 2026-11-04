@@ -124,6 +124,5 @@ class TestMemoryUsage(AwsyTestCase):
         
         
 
-        
         self.logger.info("setting results")
         self.testvars["results"] = results
