@@ -372,10 +372,11 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   
   
-  nsTHashMap<nsCString, RefPtr<FcPattern>> mLocalNames;
+  nsTHashMap<nsCString, RefPtr<FcPattern>> mLocalNames MOZ_GUARDED_BY(mLock);
 
   
-  nsClassHashtable<nsCStringHashKey, PrefFontList> mGenericMappings;
+  nsClassHashtable<nsCStringHashKey, PrefFontList> mGenericMappings
+      MOZ_GUARDED_BY(mLock);
 
   
   
@@ -383,7 +384,8 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   
   
   
-  nsTHashMap<nsCStringHashKey, nsTArray<FamilyAndGeneric>> mFcSubstituteCache;
+  nsTHashMap<nsCStringHashKey, nsTArray<FamilyAndGeneric>> mFcSubstituteCache
+      MOZ_GUARDED_BY(mLock);
 
   nsCOMPtr<nsITimer> mCheckFontUpdatesTimer;
   RefPtr<FcConfig> mLastConfig;
@@ -414,16 +416,16 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   
   
-  RefPtr<nsAtom> mPrevLanguage;
-  nsCString mSampleLang;
-  bool mUseCustomLookups = false;
+  RefPtr<nsAtom> mPrevLanguage MOZ_GUARDED_BY(mLock);
+  nsCString mSampleLang MOZ_GUARDED_BY(mLock);
+  bool mUseCustomLookups MOZ_GUARDED_BY(mLock) = false;
 
   
   
   
   
   
-  bool mAlwaysUseFontconfigGenerics;
+  mozilla::Atomic<bool> mAlwaysUseFontconfigGenerics;
 
   static FT_Library sFTLibrary;
 };

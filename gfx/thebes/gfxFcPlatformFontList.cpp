@@ -2736,13 +2736,15 @@ void gfxFcPlatformFontList::AddGenericFonts(
       aLanguage == nsGkAtoms::x_math) {
     nsAtom* langGroup = GetLangGroup(aLanguage);
     nsAutoCString fontlistValue;
-    mFontPrefs->LookupName(PrefName(generic, langGroup), fontlistValue);
+    AutoLock lock(mLock);
+    GetFontPrefs()->LookupName(PrefName(generic, langGroup), fontlistValue);
     if (fontlistValue.IsEmpty()) {
       
       
       
       
-      mFontPrefs->LookupNameList(PrefName(generic, langGroup), fontlistValue);
+      GetFontPrefs()->LookupNameList(PrefName(generic, langGroup),
+                                     fontlistValue);
     }
     if (!fontlistValue.IsEmpty()) {
       if (!fontlistValue.EqualsLiteral("serif") &&
