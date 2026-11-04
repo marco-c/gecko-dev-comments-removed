@@ -1221,10 +1221,9 @@ nsDocShell::FirePageHideNotification() {
 
 void nsDocShell::FirePageHideNotificationInternal(
     bool aSkipCheckingDynEntries) {
-  {
-    nsAutoMicroTask mt;
-    SetOngoingNavigation(Nothing());
-  }
+  
+  
+  SetOngoingNavigation(Nothing());
 
   if (mDocumentViewer && !mFiredUnloadEvent) {
     
@@ -1524,6 +1523,8 @@ void nsDocShell::FirePageHideShowNonRecursive(
     }
 
     mFiredUnloadEvent = true;
+
+    ClearNavigationAPIOngoingNavigationForHistoryStep();
 
     MaybeFirePageSwapOnDeactivate(aPageSwapTargetInfo, aNavigationType);
 
@@ -4390,7 +4391,7 @@ nsresult nsDocShell::StopInternal(
       aUnsetOngoingNavigation == UnsetOngoingNavigation::Yes && doc &&
       !doc->ShouldIgnoreOpens() &&
       mOngoingNavigation == Some(OngoingNavigation::NavigationID)) {
-    SetOngoingNavigation(Nothing());
+    ResetOngoingNavigation(Nothing());
   }
 
   if (mLoadType == LOAD_ERROR_PAGE) {
@@ -7169,6 +7170,12 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
 
   
   
+  if (!(mLoadType & LOAD_CMD_RELOAD)) {
+    ClearNavigationAPIOngoingNavigationForHistoryStep();
+  }
+
+  
+  
   
   const bool alreadyFiredCrossDocPageSwap = mFiredCrossDocPageSwap;
   mFiredCrossDocPageSwap = false;
@@ -8958,8 +8965,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       mBrowsingContext->Focus(CallerType::System, IgnoreErrors());
     }
     if (aLoadState->LoadIsFromSessionHistory() &&
-        (mLoadType & LOAD_CMD_HISTORY) &&
-        !aLoadState->IsResumingInterceptedNavigation()) {
+        (mLoadType & LOAD_CMD_HISTORY)) {
       
       
       SetOngoingNavigation(Nothing());
@@ -8993,7 +8999,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
-  SetOngoingNavigation(Some(OngoingNavigation::NavigationID));
+  
+  
+  if (aLoadState->LoadIsFromSessionHistory()) {
+    SetOngoingNavigation(Some(OngoingNavigation::NavigationID));
+  } else {
+    ResetOngoingNavigation(Some(OngoingNavigation::NavigationID));
+  }
 
   
   if (isJavaScript) {
@@ -9007,7 +9019,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     
     
     
-    SetOngoingNavigation(Nothing());
+    ResetOngoingNavigation(Nothing());
   }
 
   
@@ -9172,6 +9184,11 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   if (aLoadState->LoadIsFromSessionHistory() &&
       (mLoadType & LOAD_CMD_HISTORY)) {
     SetOngoingNavigation(Nothing());
+  }
+
+  if (aLoadState->LoadIsFromSessionHistory() &&
+      (aLoadState->LoadType() & LOAD_CMD_HISTORY)) {
+    ClearNavigationAPIOngoingNavigationForHistoryStep();
   }
 
   
@@ -13610,7 +13627,16 @@ void nsDocShell::InformNavigationAPIAboutChildNavigableDestruction() {
 }
 
 
-void nsDocShell::SetOngoingNavigation(
+
+void nsDocShell::ClearNavigationAPIOngoingNavigationForHistoryStep() {
+  if (RefPtr<Navigation> navigation =
+          NavigationOfDocument(GetExtantDocument())) {
+    navigation->ClearOngoingNavigationForHistoryStep();
+  }
+}
+
+
+void nsDocShell::ResetOngoingNavigation(
     const Maybe<OngoingNavigation>& aOngoingNavigation) {
   
   

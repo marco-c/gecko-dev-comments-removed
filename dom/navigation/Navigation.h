@@ -192,6 +192,11 @@ class Navigation final : public DOMEventTargetHelper {
   MOZ_CAN_RUN_SCRIPT
   void InnerInformAboutAbortingNavigation(JSContext* aCx);
 
+  
+  
+  
+  void ClearOngoingNavigationForHistoryStep();
+
   MOZ_CAN_RUN_SCRIPT
   void AbortOngoingNavigation(
       JSContext* aCx, JS::Handle<JS::Value> aError = JS::UndefinedHandleValue);

@@ -752,13 +752,6 @@ struct NavigationWaitForAllScope final : public nsISupports,
                             mNavigation->mOngoingAPIMethodTracker);
       
       mAPIMethodTracker->CleanUp();
-      mNavigation->mOngoingNavigateEvent = nullptr;
-    } else {
-      
-      
-      
-      
-      mNavigation->mOngoingNavigateEvent = nullptr;
     }
 
     return;
@@ -2010,6 +2003,23 @@ void Navigation::InnerInformAboutAbortingNavigation(JSContext* aCx) {
 
   while (HasOngoingNavigateEvent()) {
     AbortOngoingNavigation(aCx);
+  }
+}
+
+
+void Navigation::ClearOngoingNavigationForHistoryStep() {
+  if (mOngoingNavigateEvent && mOngoingNavigateEvent->InterceptionState() !=
+                                   NavigateEvent::InterceptionState::None) {
+    return;
+  }
+
+  
+  mOngoingNavigateEvent = nullptr;
+
+  
+  if (mOngoingAPIMethodTracker) {
+    mOngoingAPIMethodTracker = nullptr;
+    UpdateNeedsTraverse();
   }
 }
 
