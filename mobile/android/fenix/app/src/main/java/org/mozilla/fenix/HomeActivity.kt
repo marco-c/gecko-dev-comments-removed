@@ -107,6 +107,7 @@ import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
 import org.mozilla.fenix.automation.AutomatedLaunch
 import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bindings.HomepageTabBinding
+import org.mozilla.fenix.bindings.PendingExtensionUpdateBinding
 import org.mozilla.fenix.bindings.SummarizeToolbarHighlightBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
 import org.mozilla.fenix.browser.BrowserFragment
@@ -200,7 +201,6 @@ import org.mozilla.fenix.splashscreen.SplashScreenOperation
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
-import org.mozilla.fenix.theme.TabStripStatusBarView
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.translations.TranslationsAIControllableFeatureRegistrar
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
@@ -274,6 +274,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                             FxNimbus.features.ipProtection.value().dataLimitGigabyte,
                         )
                 ),
+            repository = components.ipProtection.ipProtectionRepository,
         )
     }
 
@@ -292,6 +293,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         DefaultPinnedSitesBinding(
             browserStore = components.core.store,
             topSitesStorage = components.core.topSitesStorage,
+            pinnedSitesStorage = components.core.pinnedSiteStorage,
+            defaultTopSitesProvider = components.core.defaultTopSitesProvider,
+            blocklistHandler = components.blocklistHandler,
             settings = components.settings,
             resources = resources,
             crashReporter = components.analytics.crashReporter,
@@ -335,6 +339,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             appLinksUseCases = components.useCases.appLinksUseCases,
             browserStore = components.core.store,
             appStore = components.appStore,
+        )
+    }
+
+    private val pendingExtensionUpdateBinding by lazy {
+        PendingExtensionUpdateBinding(
+            appStore = components.appStore,
+            browserStore = components.core.store,
         )
     }
 
@@ -652,6 +663,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             downloadSnackbar,
             privateBrowsingLockFeature,
             externalAppLinkStatusBinding,
+            pendingExtensionUpdateBinding,
             summarizeToolbarHighlightBinding,
             components.core.summarizationSettingsBinding,
             translationsAIControllableFeatureRegistrar,
@@ -691,13 +703,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             StatusBarColorManager(
                 themeManager = themeManager,
                 activity = this,
-                appStore = components.appStore,
-                settings = components.settings,
-                tabStripStatusBarView =
-                    TabStripStatusBarView(
-                        rootView = window.decorView as ViewGroup,
-                        lifecycle = lifecycle,
-                    ),
             ),
             true,
         )
