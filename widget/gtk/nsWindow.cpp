@@ -8,6 +8,7 @@
 #endif
 #ifdef MOZ_WAYLAND
 #  include "nsWindowWayland.h"
+#  include "nsWindowWaylandGtk.h"
 #endif
 
 #include <algorithm>
@@ -3552,6 +3553,9 @@ void nsWindow::DispatchPanGesture(PanGestureInput& aPanInput) {
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
   if (mAPZC) {
     event = MayStartSwipe(aPanInput, result);
+    if (!aPanInput.ShouldDispatchToContentAfterAPZ()) {
+      return;
+    }
   }
 
   ProcessUntransformedAPZEvent(&event, result);
@@ -7310,9 +7314,9 @@ static already_AddRefed<nsIWidget> CreateWindow(bool aToplevel) {
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
     if (aToplevel) {
-      window = new nsWindowWaylandToplevel();
+      window = new nsWindowWaylandToplevelGtk();
     } else {
-      window = new nsWindowWaylandPopup();
+      window = new nsWindowWaylandPopupGtk();
     }
   }
 #endif

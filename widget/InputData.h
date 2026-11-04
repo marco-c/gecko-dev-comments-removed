@@ -439,6 +439,14 @@ class PanGestureInput : public InputData {
 
   bool IsMomentum() const;
 
+  
+  
+  
+  
+  
+  
+  bool ShouldDispatchToContentAfterAPZ() const;
+
   WidgetWheelEvent ToWidgetEvent(nsIWidget* aWidget) const;
 
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
