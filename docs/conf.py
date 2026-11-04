@@ -88,9 +88,9 @@ mermaid_init_config = {
     "startOnLoad": False,
     
     
-    "themeVariables": {
-        "fontSize": "18px",
-    },
+    
+    "fontFamily": "inherit",
+    
     
     
     "flowchart": {"useMaxWidth": False, "wrappingWidth": 200, "minNodeWidth": 0},
