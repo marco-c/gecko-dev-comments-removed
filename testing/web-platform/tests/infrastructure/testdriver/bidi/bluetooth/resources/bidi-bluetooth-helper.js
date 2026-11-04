@@ -31,19 +31,25 @@ function waitForDocumentReady() {
 
 async function callWithTrustedClick(callback) {
   await waitForDocumentReady();
-  return new Promise(resolve => {
-    let button = document.createElement('button');
-    button.textContent = 'click to continue test';
-    button.style.display = 'block';
-    button.style.fontSize = '20px';
-    button.style.padding = '10px';
-    button.onclick = () => {
-      document.body.removeChild(button);
-      resolve(callback());
-    };
-    document.body.appendChild(button);
-    test_driver.click(button);
+  let button = document.createElement('button');
+  button.textContent = 'click to continue test';
+  button.style.display = 'block';
+  button.style.fontSize = '20px';
+  button.style.padding = '10px';
+  const clicked = new Promise(resolve => {
+    button.onclick = resolve;
   });
+  document.body.appendChild(button);
+  
+  
+  
+  
+  
+  
+  await test_driver.click(button);
+  await clicked;
+  document.body.removeChild(button);
+  return callback();
 }
 
 
