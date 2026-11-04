@@ -455,10 +455,12 @@ def setup_browsertime(config, tasks):
             "android-(?!em-14-arm64).*": ["linux64-cft-cd-canary"],
         }
 
+        
+        
         cd_extracted_name = {
-            "windows": "{}chromedriver.exe",
-            "mac": "{}chromedriver",
-            "default": "{}chromedriver",
+            "windows": "{}cft-chromedriver-win64/chromedriver.exe",
+            "mac": "{}cft-chromedriver-mac/chromedriver",
+            "default": "{}cft-chromedriver-linux/chromedriver",
         }
 
         if "--app=chrome" in extra_options or "--app=chrome-m" in extra_options:
