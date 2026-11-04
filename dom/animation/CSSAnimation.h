@@ -17,12 +17,11 @@ namespace dom {
 
 class CSSAnimation final : public Animation {
  public:
-  explicit CSSAnimation(nsIGlobalObject* aGlobal, nsAtom* aAnimationName)
+  CSSAnimation(nsIGlobalObject* aGlobal, nsAtom* aAnimationName,
+               bool aIsStylePaused)
       : dom::Animation(aGlobal),
         mAnimationName(aAnimationName),
-        mNeedsNewAnimationIndexWhenRun(false),
-        mPreviousPhase(ComputedTiming::AnimationPhase::Idle),
-        mPreviousIteration(0) {
+        mIsStylePaused(aIsStylePaused) {
     
     
     
@@ -184,18 +183,28 @@ class CSSAnimation final : public Animation {
   
   OwningElementRef mOwningElement;
 
-  
-  
-  bool mNeedsNewAnimationIndexWhenRun;
-
-  
-  
-  ComputedTiming::AnimationPhase mPreviousPhase;
-  uint64_t mPreviousIteration;
+  uint64_t mPreviousIteration = 0;
 
   
   
   CSSAnimationProperties mOverriddenProperties = CSSAnimationProperties::None;
+
+  
+  
+  ComputedTiming::AnimationPhase mPreviousPhase =
+      ComputedTiming::AnimationPhase::Idle;
+
+  
+  
+  bool mNeedsNewAnimationIndexWhenRun = false;
+
+  
+  
+  
+  
+  
+  
+  bool mIsStylePaused = false;
 };
 
 

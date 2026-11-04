@@ -361,17 +361,21 @@ void CSSAnimation::UpdatePropertiesWithNew(
   }
 
   
-  
-  if (PlayState() != AnimationPlayState::Idle &&
-      ~mOverriddenProperties & CSSAnimationProperties::PlayState) {
-    bool wasPaused = PlayState() == AnimationPlayState::Paused;
-    if (!wasPaused && aNewIsStylePaused) {
-      PauseFromStyle();
-      animationChanged = true;
-    } else if (wasPaused && !aNewIsStylePaused) {
-      PlayFromStyle();
+  if (mIsStylePaused != aNewIsStylePaused) {
+    
+    
+    
+    
+    if (PlayState() != AnimationPlayState::Idle &&
+        ~mOverriddenProperties & CSSAnimationProperties::PlayState) {
+      if (aNewIsStylePaused) {
+        PauseFromStyle();
+      } else {
+        PlayFromStyle();
+      }
       animationChanged = true;
     }
+    mIsStylePaused = aNewIsStylePaused;
   }
 
   

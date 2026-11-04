@@ -52,7 +52,7 @@ struct ComputedTiming {
     return mFill == dom::FillMode::Both || mFill == dom::FillMode::Backwards;
   }
 
-  enum class AnimationPhase {
+  enum class AnimationPhase : uint8_t {
     Idle,    
     Before,  
     Active,  
