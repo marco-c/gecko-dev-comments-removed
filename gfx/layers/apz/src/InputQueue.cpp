@@ -616,6 +616,10 @@ APZEventResult InputQueue::ReceivePanGestureInput(
     terminator.mLocalPanDisplacement = ParentLayerPoint{};
     mQueuedInputs.AppendElement(
         std::make_unique<QueuedInput>(terminator, *block));
+    
+    
+    
+    mActivePanGestureBlock = nullptr;
   }
   ProcessQueue();
 
