@@ -43,6 +43,10 @@
 
 
 
+
+
+
+
 #include <stdio.h>
 #include <string.h>
 
@@ -629,6 +633,13 @@ SECStatus ConfigureServer(PRFileDesc* aFd) {
       SECSuccess) {
     PrintPRError("SSL_SetNextProtoNego failed");
     return SECFailure;
+  }
+
+  if (const char* maxEarlyData = PR_GetEnv("MOZ_ZERORTT_MAX_EARLY_DATA")) {
+    if (SSL_SetMaxEarlyDataSize(aFd, atoi(maxEarlyData)) != SECSuccess) {
+      PrintPRError("SSL_SetMaxEarlyDataSize failed");
+      return SECFailure;
+    }
   }
   return SECSuccess;
 }

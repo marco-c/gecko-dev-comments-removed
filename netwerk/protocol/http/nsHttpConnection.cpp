@@ -1759,6 +1759,16 @@ nsresult nsHttpConnection::OnReadSegment(const char* buf, uint32_t count,
   nsresult rv = mSocketOut->Write(buf, count, countRead);
   if (NS_FAILED(rv)) {
     mSocketOutCondition = rv;
+  } else if (*countRead == 0 && mTlsHandshaker->EarlyDataUsed() &&
+             !mTlsHandshaker->NPNComplete()) {
+    
+    
+    LOG(
+        ("nsHttpConnection::OnReadSegment [this=%p] early data limit reached, "
+         "waiting for the handshake",
+         this));
+    mTlsHandshaker->SetEarlyDataLimitReached();
+    mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
   } else if (*countRead == 0) {
     mSocketOutCondition = NS_BASE_STREAM_CLOSED;
   } else {
@@ -1829,7 +1839,8 @@ nsresult nsHttpConnection::OnSocketWritable() {
         
         if (!mTlsHandshaker->EnsureNPNComplete() &&
             (!mTlsHandshaker->EarlyDataUsed() ||
-             mTlsHandshaker->TlsHandshakeComplitionPending())) {
+             mTlsHandshaker->TlsHandshakeComplitionPending() ||
+             mTlsHandshaker->EarlyDataLimitReached())) {
           
           
           mSocketOutCondition = NS_BASE_STREAM_WOULD_BLOCK;
@@ -1886,7 +1897,11 @@ nsresult nsHttpConnection::OnSocketWritable() {
       again = false;
     } else if (NS_FAILED(mSocketOutCondition)) {
       if (mSocketOutCondition == NS_BASE_STREAM_WOULD_BLOCK) {
-        if (!mTlsHandshaker->EarlyDataCanNotBeUsed()) {
+        if (mTlsHandshaker->EarlyDataLimitReached()) {
+          
+          
+          rv = ResumeRecv();
+        } else if (!mTlsHandshaker->EarlyDataCanNotBeUsed()) {
           
           
           
