@@ -297,8 +297,10 @@ def setup(app):
     app.connect("write-started", freeze_gc)
     
     
-    app.extensions["sphinx_js"].parallel_read_safe = True
-    app.extensions["sphinx_js"].parallel_write_safe = True
+    
+    if sphinx_js := app.extensions.get("sphinx_js"):
+        sphinx_js.parallel_read_safe = True
+        sphinx_js.parallel_write_safe = True
     app.add_css_file("custom_theme.css")
     app.add_js_file("scrollable_regions.js")
     app.connect("html-page-context", install_sphinx_design)
