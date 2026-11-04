@@ -302,6 +302,34 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
 }
 
 
+
+bool ConnectionAllowlists::ShouldBlockRedirect(nsIURI* aOriginalURI,
+                                               nsILoadInfo* aLoadInfo) const {
+  
+  for (const Maybe<Allowlist>& allowlist :
+       {std::cref(mEnforcement), std::cref(mReportOnly)}) {
+    if (allowlist.isNothing()) {
+      continue;
+    }
+
+    
+    
+    if (allowlist->mRedirects == Redirects::Allow) {
+      continue;
+    }
+
+    
+    if (allowlist->mDisposition == Disposition::Enforce) {
+      LOG("Blocking redirect of: {}", aOriginalURI->GetSpecOrDefault());
+      return true;
+    }
+  }
+
+  
+  return false;
+}
+
+
 bool ConnectionAllowlists::ShouldBlockWebRTC(
     nsPIDOMWindowInner* aWindow) const {
   

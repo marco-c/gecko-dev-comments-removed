@@ -11,6 +11,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Try.h"
+#include "mozilla/dom/ConnectionAllowlistsService.h"
 #include "mozilla/dom/PolicyContainer.h"
 #include "mozilla/dom/nsCSPService.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
@@ -233,6 +234,10 @@ nsContentPolicy::AsyncOnChannelRedirect(
   mozilla::Maybe<nsresult> cancelCode;
   rv = CSPService::ConsultCSPForRedirect(originalUri, newUri, loadInfo, aFlags,
                                          cancelCode);
+  if (NS_SUCCEEDED(rv)) {
+    rv = mozilla::dom::ConnectionAllowlistsService::ConsultForRedirect(
+        originalUri, newUri, loadInfo, aFlags, cancelCode);
+  }
   if (cancelCode) {
     aOldChannel->Cancel(*cancelCode);
   }
