@@ -654,12 +654,6 @@ class InputTestHelpers extends LitTestHelpers {
       renderTarget.querySelectorAll(selector);
 
     
-    await TestUtils.waitForCondition(
-      () => BrowserTestUtils.isVisible(firstInput),
-      "Waiting for button to be visible."
-    );
-
-    
     firstInput.blur();
     isnot(document.activeElement, firstInput, "First input is not focused.");
     isnot(
