@@ -598,6 +598,11 @@ def generate_artifact_registry_gcs_sources_rpm(dep):
     return gcs_sources
 
 
+def _join_destination(bucket_path, dest_path, filename):
+    
+    return "/".join(part for part in (bucket_path, dest_path, filename) if part)
+
+
 
 def generate_beetmover_artifact_map(config, job, **kwargs):
     """Generate the beetmover artifact map.
@@ -706,14 +711,12 @@ def generate_beetmover_artifact_map(config, job, **kwargs):
                     file_config, field, job["label"], locale=locale, platform=platform
                 )
 
-            
-            
             destinations = [
-                "{bucket_path}/{dest_path}/{locale_prefix}{filename}".format(
-                    bucket_path=bucket_path,
-                    dest_path=dest_path,
-                    locale_prefix=file_config["locale_prefix"],
-                    filename=file_config.get("pretty_name", filename),
+                _join_destination(
+                    bucket_path,
+                    dest_path,
+                    file_config["locale_prefix"]
+                    + file_config.get("pretty_name", filename),
                 )
                 for dest_path, bucket_path in itertools.product(
                     file_config["destinations"], map_config["bucket_paths"]
@@ -858,14 +861,12 @@ def generate_beetmover_partials_artifact_map(config, job, partials_info, **kwarg
                     file_config, field, field, locale=locale, platform=platform
                 )
 
-            
-            
             destinations = [
-                "{bucket_path}/{dest_path}/{locale_prefix}{filename}".format(
-                    bucket_path=bucket_path,
-                    dest_path=dest_path,
-                    locale_prefix=file_config["locale_prefix"],
-                    filename=file_config.get("pretty_name", filename),
+                _join_destination(
+                    bucket_path,
+                    dest_path,
+                    file_config["locale_prefix"]
+                    + file_config.get("pretty_name", filename),
                 )
                 for dest_path, bucket_path in itertools.product(
                     file_config["destinations"], map_config["bucket_paths"]
