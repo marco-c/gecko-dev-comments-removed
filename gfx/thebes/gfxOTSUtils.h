@@ -92,8 +92,10 @@ class gfxOTSExpandingMemoryStream : public ots::OTSStream {
 
 class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
  public:
-  explicit gfxOTSContext(bool aDropShapingTables = false)
-      : mDropShapingTables(aDropShapingTables) {
+  explicit gfxOTSContext(bool aDropShapingTables = false,
+                         bool aDisableValidation = false)
+      : mDropShapingTables(aDropShapingTables),
+        mDisableValidation(aDisableValidation) {
     using namespace mozilla;
 
     
@@ -138,6 +140,9 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
     };
     if (mDropShapingTables && isShapingTable(aTag)) {
       return ots::TABLE_ACTION_DROP;
+    }
+    if (mDisableValidation) {
+      return ots::TABLE_ACTION_PASSTHRU;
     }
     
     if (aTag == TRUETYPE_TAG('G', 'D', 'E', 'F') ||
@@ -219,6 +224,9 @@ class MOZ_STACK_CLASS gfxOTSContext : public ots::OTSContext {
   
   
   const bool mDropShapingTables;
+  
+  
+  const bool mDisableValidation;
 };
 
 #endif 
