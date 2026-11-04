@@ -343,8 +343,6 @@ def setup_browsertime(
     
     
     
-    
-    
     node_dir = os.path.dirname(node_path(command_context))
     if IS_APPLE_SILICON and node_dir not in os.environ["PATH"]:
         os.environ["PATH"] += os.pathsep + node_dir
