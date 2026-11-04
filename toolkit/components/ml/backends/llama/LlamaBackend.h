@@ -97,6 +97,10 @@ class LlamaBackend {
       std::function<bool()> aCancelCallback);
 
   
+  const nsCString& DeviceId() const { return mDevice; }
+  dom::HWInferenceDeviceKind DeviceKind() const { return mDeviceKind; }
+
+  
   
   
   ResultStatus ReinitializeContext(const LlamaContextOptions& aOptions,
@@ -141,6 +145,11 @@ class LlamaBackend {
       const llama_vocab* vocab);
 
   
+  
+  ResultStatus LoadOnFirstDevice(const LlamaModelOptions& aOptions, FILE* aFp,
+                                 llama_model_params aParams);
+
+  
   LlamaLibWrapper* mLib = nullptr;
 
   
@@ -161,6 +170,9 @@ class LlamaBackend {
   GgmlThreadpoolUPtr mThreadpoolBatch;
 
   LlamaModelOptions mModelOptions;
+
+  nsCString mDevice;
+  dom::HWInferenceDeviceKind mDeviceKind = dom::HWInferenceDeviceKind::Cpu;
 
   
   nsCString mModelGeneralName;
