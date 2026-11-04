@@ -275,20 +275,8 @@ bool ConnectionAllowlists::ShouldBlockURL(nsIURI* aURI,
     }
 
     
-    Resource resource{aURI};
-    if (!nsContentUtils::IsPreloadType(
-            aLoadInfo->InternalContentPolicyType())) {
-      ReportToConsole(resource, aLoadInfo->GetInnerWindowID(), *allowlist);
-    }
-
     
-    
-    
-    
-    nsCOMPtr<nsPIDOMWindowInner> window =
-        nsGlobalWindowInner::GetInnerWindowWithId(
-            aLoadInfo->GetInnerWindowID());
-    ReportViolation(resource, window, *allowlist);
+    ReportBlockedRequest(aURI, aLoadInfo, *allowlist,  false);
 
     
     if (allowlist->mDisposition == Disposition::Enforce) {
@@ -317,6 +305,11 @@ bool ConnectionAllowlists::ShouldBlockRedirect(nsIURI* aOriginalURI,
     if (allowlist->mRedirects == Redirects::Allow) {
       continue;
     }
+
+    
+    
+    ReportBlockedRequest(aOriginalURI, aLoadInfo, *allowlist,
+                          true);
 
     
     if (allowlist->mDisposition == Disposition::Enforce) {
@@ -363,6 +356,25 @@ bool ConnectionAllowlists::ShouldBlockWebRTC(
 
   
   return false;
+}
+
+
+void ConnectionAllowlists::ReportBlockedRequest(nsIURI* aURI,
+                                                nsILoadInfo* aLoadInfo,
+                                                const Allowlist& aAllowlist,
+                                                bool aIsRedirect) {
+  
+  Resource resource{aURI};
+  if (!nsContentUtils::IsPreloadType(aLoadInfo->InternalContentPolicyType())) {
+    ReportToConsole(resource, aLoadInfo->GetInnerWindowID(), aAllowlist,
+                    aIsRedirect);
+  }
+
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> window =
+      nsGlobalWindowInner::GetInnerWindowWithId(aLoadInfo->GetInnerWindowID());
+  ReportViolation(resource, window, aAllowlist);
 }
 
 
@@ -429,10 +441,17 @@ void ConnectionAllowlists::ReportViolation(const Resource& aResource,
 
 void ConnectionAllowlists::ReportToConsole(const Resource& aResource,
                                            uint64_t aInnerWindowID,
-                                           const Allowlist& aAllowlist) {
+                                           const Allowlist& aAllowlist,
+                                           bool aIsRedirect) {
   const bool enforce = aAllowlist.mDisposition == Disposition::Enforce;
-  const char* messageKey = enforce ? "ConnectionAllowlistBlocked"
-                                   : "ConnectionAllowlistReportOnlyBlocked";
+  const char* messageKey;
+  if (aIsRedirect) {
+    messageKey = enforce ? "ConnectionAllowlistRedirectBlocked"
+                         : "ConnectionAllowlistReportOnlyRedirectBlocked";
+  } else {
+    messageKey = enforce ? "ConnectionAllowlistBlocked"
+                         : "ConnectionAllowlistReportOnlyBlocked";
+  }
   AutoTArray<nsString, 1> params;
   nsString* param = params.AppendElement();
   if (aResource.is<nsIURI*>()) {

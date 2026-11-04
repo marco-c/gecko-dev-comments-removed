@@ -111,13 +111,21 @@ class ConnectionAllowlists final {
 
   using Resource = Variant<nsIURI*, nsCString>;
 
+  
+  
+  
+  static void ReportBlockedRequest(nsIURI* aURI, nsILoadInfo* aLoadInfo,
+                                   const Allowlist& aAllowlist,
+                                   bool aIsRedirect);
+
   static void ReportViolation(const Resource& aResource,
                               nsPIDOMWindowInner* aWindow,
                               const Allowlist& aAllowlist);
 
   static void ReportToConsole(const Resource& aResource,
                               uint64_t aInnerWindowID,
-                              const Allowlist& aAllowlist);
+                              const Allowlist& aAllowlist,
+                              bool aIsRedirect = false);
 
   static Maybe<Allowlist> ParseConnectionAllowlistHeader(
       const nsACString& aHeader, Disposition aDisposition);
