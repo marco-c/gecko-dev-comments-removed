@@ -8235,29 +8235,37 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     destinationNavigationAPIState = navigationAPIState;
   }
 
-  if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow();
-      window && !aState.mHistoryNavBetweenSameDoc) {
-    
-    
-    if (RefPtr<Navigation> navigation = window->Navigation()) {
-      AutoJSAPI jsapi;
-      if (jsapi.Init(window)) {
-        RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
-        
-        RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
-        bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
-            jsapi.cx(), aLoadState->GetNavigationType(), newURI,
-             true,
-            Some(aLoadState->UserNavigationInvolvement()), sourceElement,
-             nullptr,
-             destinationNavigationAPIState,
-             nullptr, apiMethodTracker);
+  if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow(); window) {
+    if (!aState.mHistoryNavBetweenSameDoc) {
+      
+      
+      if (RefPtr<Navigation> navigation = window->Navigation()) {
+        AutoJSAPI jsapi;
+        if (jsapi.Init(window)) {
+          RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
+          
+          RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
+          bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
+              jsapi.cx(), aLoadState->GetNavigationType(), newURI,
+               true,
+              Some(aLoadState->UserNavigationInvolvement()), sourceElement,
+               nullptr,
+               destinationNavigationAPIState,
+               nullptr, apiMethodTracker);
 
-        
-        if (!shouldContinue) {
-          return NS_OK;
+          
+          if (!shouldContinue) {
+            return NS_OK;
+          }
         }
       }
+    } else if (aLoadState->LoadType() == LOAD_HISTORY) {
+      MaybeFireTraverseHistory(aLoadState);
+    }
+
+    if (mIsBeingDestroyed) {
+      
+      return NS_ERROR_NOT_AVAILABLE;
     }
   }
 
@@ -9112,6 +9120,15 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   if (mTiming && !isDownload) {
     mTiming->NotifyUnloadAccepted(mCurrentURI);
+  }
+
+  if (aLoadState->LoadType() == LOAD_HISTORY) {
+    MaybeFireTraverseHistory(aLoadState);
+
+    if (mIsBeingDestroyed) {
+      
+      return NS_ERROR_NOT_AVAILABLE;
+    }
   }
 
   
@@ -11702,8 +11719,6 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
   if (!aLoadState->TriggeringPrincipal()) {
     return NS_ERROR_FAILURE;
   }
-
-  MaybeFireTraverseHistory(aLoadState);
 
   return InternalLoad(aLoadState);  
 }
