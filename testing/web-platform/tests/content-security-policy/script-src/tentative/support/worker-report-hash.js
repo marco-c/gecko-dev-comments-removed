@@ -26,12 +26,22 @@ self.addEventListener('securitypolicyviolation', e => {
   }
 });
 
+
+
+
+
+function importBlockedScript() {
+  try {
+    importScripts('externalScript.js');
+  } catch {}
+}
+
 if (typeof SharedWorkerGlobalScope !== 'undefined' && self instanceof SharedWorkerGlobalScope) {
   self.sharedPorts = [];
   self.addEventListener('connect', e => {
     self.sharedPorts.push(e.ports[0]);
-    importScripts('externalScript.js');
+    importBlockedScript();
   });
 } else {
-  importScripts('externalScript.js');
+  importBlockedScript();
 }
