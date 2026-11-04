@@ -704,17 +704,6 @@ features:
         value:
           enabled: true
 
-  universal-edge-to-edge-wallpapers:
-    description: >
-      Extends non-default homepage wallpapers edge-to-edge and adapts the toolbar, navigation bar
-      and system bars to them.
-    variables:
-      enabled:
-        description: >
-          Whether or not to enable the universal edge-to-edge wallpaper treatment.
-        type: Boolean
-        default: true
-
   homepage-hide-frecent-top-sites:
     description: Hides frecent top sites on the homepage.
     variables:
@@ -1169,6 +1158,14 @@ features:
     variables:
       enabled:
         description: If true, show the expand/collapse buttons on the homepage.
+        type: Boolean
+        default: true
+
+  regional-default-shortcuts:
+    description: Feature to enable the regional default shortcuts on the homepage for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, the regional default shortcuts are shown in their regions.
         type: Boolean
         default: true
 
