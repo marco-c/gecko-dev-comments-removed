@@ -214,6 +214,15 @@ sslBuffer_Clear(sslBuffer *b)
     b->len = 0;
 }
 
+void
+sslBuffer_ZeroClear(sslBuffer *b)
+{
+    if (b->buf) {
+        PORT_SafeZero(b->buf, b->space);
+    }
+    sslBuffer_Clear(b);
+}
+
 SECStatus
 sslRead_Read(sslReader *reader, unsigned int count, sslReadBuffer *out)
 {
@@ -294,7 +303,21 @@ ssl3_AppendHandshakeInternal(sslSocket *ss, const void *void_src, unsigned int b
 
     if (!bytes)
         return SECSuccess;
-    if (ss->sec.ci.sendBuf.space < MAX_SEND_BUF_LENGTH && room < bytes) {
+    if (IS_DTLS(ss)) {
+        
+
+
+
+
+
+        if (room < bytes) {
+            rv = sslBuffer_Grow(&ss->sec.ci.sendBuf,
+                                ss->sec.ci.sendBuf.len + bytes);
+            if (rv != SECSuccess)
+                return SECFailure; 
+            room = ss->sec.ci.sendBuf.space - ss->sec.ci.sendBuf.len;
+        }
+    } else if (ss->sec.ci.sendBuf.space < MAX_SEND_BUF_LENGTH && room < bytes) {
         rv = sslBuffer_Grow(&ss->sec.ci.sendBuf, PR_MAX(MIN_SEND_BUF_LENGTH,
                                                         PR_MIN(MAX_SEND_BUF_LENGTH, ss->sec.ci.sendBuf.len + bytes)));
         if (rv != SECSuccess)

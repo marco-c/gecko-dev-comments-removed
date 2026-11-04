@@ -683,13 +683,21 @@ dtls_FragmentHandshake(sslSocket *ss, DTLSQueuedMessage *msg)
     PRUint8 *fragment;
     PRUint32 fragmentOffset = 0;
     PRUint32 fragmentLen;
-    const PRUint8 *content = msg->data + DTLS_HS_HDR_LEN;
-    PRUint32 contentLen = msg->len - DTLS_HS_HDR_LEN;
+    const PRUint8 *content;
+    PRUint32 contentLen;
     SECStatus rv;
 
     
 
-    PORT_Assert(msg->len >= DTLS_HS_HDR_LEN);
+
+    if (msg->len < DTLS_HS_HDR_LEN) {
+        PORT_Assert(0);
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+
+    content = msg->data + DTLS_HS_HDR_LEN;
+    contentLen = msg->len - DTLS_HS_HDR_LEN;
 
     
     PORT_Assert(msg->type == ssl_ct_handshake);

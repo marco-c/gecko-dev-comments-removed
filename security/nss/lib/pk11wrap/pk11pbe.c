@@ -1131,111 +1131,13 @@ PBE_PK11ParamToAlgid(SECOidTag algTag, SECItem *param, PLArenaPool *arena,
 
 
 
-
-
-
 PBEBitGenContext *
 PBE_CreateContext(SECOidTag hashAlgorithm, PBEBitGenID bitGenPurpose,
                   SECItem *pwitem, SECItem *salt, unsigned int bitsNeeded,
                   unsigned int iterations)
 {
-    SECItem *context = NULL;
-    SECItem mechItem;
-    CK_PBE_PARAMS pbe_params;
-    CK_MECHANISM_TYPE mechanism = CKM_INVALID_MECHANISM;
-    PK11SlotInfo *slot;
-    PK11SymKey *symKey = NULL;
-    unsigned char ivData[8];
-
-    
-    switch (bitGenPurpose) {
-        case pbeBitGenIntegrityKey:
-            switch (hashAlgorithm) {
-                case SEC_OID_SHA1:
-                    mechanism = CKM_PBA_SHA1_WITH_SHA1_HMAC;
-                    break;
-                case SEC_OID_MD2:
-                    mechanism = CKM_NSS_PBE_MD2_HMAC_KEY_GEN;
-                    break;
-                case SEC_OID_MD5:
-                    mechanism = CKM_NSS_PBE_MD5_HMAC_KEY_GEN;
-                    break;
-                default:
-                    break;
-            }
-            break;
-        case pbeBitGenCipherIV:
-            if (bitsNeeded > 64) {
-                break;
-            }
-            if (hashAlgorithm != SEC_OID_SHA1) {
-                break;
-            }
-            mechanism = CKM_PBE_SHA1_DES3_EDE_CBC;
-            break;
-        case pbeBitGenCipherKey:
-            if (hashAlgorithm != SEC_OID_SHA1) {
-                break;
-            }
-            switch (bitsNeeded) {
-                case 40:
-                    mechanism = CKM_PBE_SHA1_RC4_40;
-                    break;
-                case 128:
-                    mechanism = CKM_PBE_SHA1_RC4_128;
-                    break;
-                default:
-                    break;
-            }
-        case pbeBitGenIDNull:
-            break;
-    }
-
-    if (mechanism == CKM_INVALID_MECHANISM) {
-        
-
-        return NULL;
-    }
-
-    pbe_params.pInitVector = ivData;
-    pbe_params.pPassword = pwitem->data;
-    pbe_params.ulPasswordLen = pwitem->len;
-    pbe_params.pSalt = salt->data;
-    pbe_params.ulSaltLen = salt->len;
-    pbe_params.ulIteration = iterations;
-    mechItem.data = (unsigned char *)&pbe_params;
-    mechItem.len = sizeof(pbe_params);
-
-    slot = PK11_GetInternalSlot();
-    symKey = PK11_RawPBEKeyGen(slot, mechanism,
-                               &mechItem, pwitem, PR_FALSE, NULL);
-    PK11_FreeSlot(slot);
-    if (symKey != NULL) {
-        if (bitGenPurpose == pbeBitGenCipherIV) {
-            
-            SECItem ivItem;
-
-            ivItem.data = ivData;
-            ivItem.len = bitsNeeded / 8;
-            context = SECITEM_DupItem(&ivItem);
-        } else {
-            SECItem *keyData;
-            PK11_ExtractKeyValue(symKey);
-            keyData = PK11_GetKeyData(symKey);
-
-            
-            if (keyData) {
-                context = SECITEM_DupItem(keyData);
-            }
-        }
-        PK11_FreeSymKey(symKey);
-    }
-
-    return (PBEBitGenContext *)context;
+    return NULL;
 }
-
-
-
 
 
 
@@ -1244,11 +1146,8 @@ PBE_CreateContext(SECOidTag hashAlgorithm, PBEBitGenID bitGenPurpose,
 SECItem *
 PBE_GenerateBits(PBEBitGenContext *context)
 {
-    return (SECItem *)context;
+    return NULL;
 }
-
-
-
 
 
 
@@ -1257,7 +1156,6 @@ PBE_GenerateBits(PBEBitGenContext *context)
 void
 PBE_DestroyContext(PBEBitGenContext *context)
 {
-    SECITEM_FreeItem((SECItem *)context, PR_TRUE);
 }
 
 
@@ -1478,17 +1376,81 @@ PK11_CreatePBEV2AlgorithmID(SECOidTag pbeAlgTag, SECOidTag cipherAlgTag,
 
 
 
+static PRBool
+pk11_UseLegacyPBKD2Params(PK11SlotInfo *slot)
+{
+    CK_INFO info;
+
+    if (slot->module->internal) {
+        if (PK11_GetModInfo(slot->module, &info) != SECSuccess) {
+            return PR_FALSE;
+        }
+        return info.libraryVersion.major < 3 ||
+               (info.libraryVersion.major == 3 &&
+                info.libraryVersion.minor < 114);
+    }
+#ifdef NSS_USE_PKCS5_PBKD2_PARAMS2_ONLY
+    return PR_FALSE;
+#else
+    return PK11_CheckPKCS11Version(slot, 2, 40, PR_FALSE) < 0;
+#endif
+}
+
+static HASH_HashType
+pk11_PBKD2PRFHashType(CK_PKCS5_PBKD2_PSEUDO_RANDOM_FUNCTION_TYPE prf)
+{
+    switch (prf) {
+        case CKP_PKCS5_PBKD2_HMAC_SHA1:
+            return HASH_AlgSHA1;
+        case CKP_PKCS5_PBKD2_HMAC_SHA224:
+            return HASH_AlgSHA224;
+        case CKP_PKCS5_PBKD2_HMAC_SHA256:
+            return HASH_AlgSHA256;
+        case CKP_PKCS5_PBKD2_HMAC_SHA384:
+            return HASH_AlgSHA384;
+        case CKP_PKCS5_PBKD2_HMAC_SHA512:
+            return HASH_AlgSHA512;
+        default:
+            return HASH_AlgNULL;
+    }
+}
+
+
+
+
+static SECStatus
+pk11_PBKD2PrehashPassword(CK_PKCS5_PBKD2_PSEUDO_RANDOM_FUNCTION_TYPE prf,
+                          const SECItem *pwitem, SECItem *hashed)
+{
+    HASH_HashType hashType = pk11_PBKD2PRFHashType(prf);
+    const SECHashObject *hashObj;
+
+    if (hashType == HASH_AlgNULL) {
+        return SECSuccess;
+    }
+    hashObj = HASH_GetHashObject(hashType);
+    if (pwitem->len <= hashObj->blocklength) {
+        return SECSuccess;
+    }
+    if (HASH_HashBuf(hashType, hashed->data, pwitem->data, pwitem->len) !=
+        SECSuccess) {
+        return SECFailure;
+    }
+    hashed->len = hashObj->length;
+    return SECSuccess;
+}
+
+
+
 
 PK11SymKey *
 pk11_RawPBEKeyGenWithKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
                              SECItem *params, CK_KEY_TYPE keyType, int keyLen,
                              SECItem *pwitem, void *wincx)
 {
-#ifndef NSS_USE_PKCS5_PBKD2_PARAMS2_ONLY
     SECItem _params = { 0, NULL, 0 };
     CK_PKCS5_PBKD2_PARAMS pbev2_1_params;
     CK_ULONG pwLen;
-#endif
 #ifdef UNSAFE_FUZZER_MODE
     PK11SymKey *zeroKey = NULL;
     unsigned char zeroBuff[32] = { 0 };
@@ -1500,7 +1462,10 @@ pk11_RawPBEKeyGenWithKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
                                              CKF_UNWRAP | CKF_WRAP,
                                          PR_FALSE, wincx);
     return zeroKey;
-#else 
+#else  
+    unsigned char pwHash[HASH_LENGTH_MAX];
+    SECItem hashedPw = { siBuffer, pwHash, 0 };
+    PK11SymKey *symKey;
 
     
     if ((params == NULL) || (params->data == NULL)) {
@@ -1522,12 +1487,18 @@ pk11_RawPBEKeyGenWithKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
             return NULL;
         }
         pbev2_params = (CK_PKCS5_PBKD2_PARAMS2 *)params->data;
+        if (pk11_PBKD2PrehashPassword(pbev2_params->prf, pwitem, &hashedPw) !=
+            SECSuccess) {
+            return NULL;
+        }
+        if (hashedPw.len) {
+            pwitem = &hashedPw;
+        }
         pbev2_params->pPassword = pwitem->data;
         pbev2_params->ulPasswordLen = pwitem->len;
         params->len = sizeof(CK_PKCS5_PBKD2_PARAMS2);
 
-#ifndef NSS_USE_PKCS5_PBKD2_PARAMS2_ONLY
-        if (PK11_CheckPKCS11Version(slot, 2, 40, PR_FALSE) < 0) {
+        if (pk11_UseLegacyPBKD2Params(slot)) {
             
             _params.type = params->type;
             _params.data = (CK_CHAR_PTR)&pbev2_1_params;
@@ -1540,7 +1511,6 @@ pk11_RawPBEKeyGenWithKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
             pbev2_1_params.ulPasswordLen = &pwLen;
             params = &_params;
         }
-#endif
 
     } else {
         CK_PBE_PARAMS *pbe_params;
@@ -1554,9 +1524,11 @@ pk11_RawPBEKeyGenWithKeyType(PK11SlotInfo *slot, CK_MECHANISM_TYPE type,
     }
 
     
-    return pk11_TokenKeyGenWithFlagsAndKeyType(slot, type, params, keyType, keyLen, NULL,
-                                               CKF_SIGN | CKF_ENCRYPT | CKF_DECRYPT | CKF_UNWRAP | CKF_WRAP,
-                                               0, wincx);
+    symKey = pk11_TokenKeyGenWithFlagsAndKeyType(slot, type, params, keyType, keyLen, NULL,
+                                                 CKF_SIGN | CKF_ENCRYPT | CKF_DECRYPT | CKF_UNWRAP | CKF_WRAP,
+                                                 0, wincx);
+    PORT_SafeZero(pwHash, sizeof(pwHash));
+    return symKey;
 #endif 
 }
 

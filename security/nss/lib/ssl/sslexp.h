@@ -498,6 +498,22 @@ typedef SECStatus(PR_CALLBACK *SSLResumptionTokenCallback)(
 
 
 
+
+
+
+
+
+
+
+
+
+#define SSL_EnablePlaintextResumptionExport(fd, enabled)        \
+    SSL_EXPERIMENTAL_API("SSL_EnablePlaintextResumptionExport", \
+                         (PRFileDesc * _fd, PRBool _enabled), (fd, enabled))
+
+
+
+
 #define SSL_SetMaxEarlyDataSize(fd, size)                    \
     SSL_EXPERIMENTAL_API("SSL_SetMaxEarlyDataSize",          \
                          (PRFileDesc * _fd, PRUint32 _size), \

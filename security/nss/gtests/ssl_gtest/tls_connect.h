@@ -9,6 +9,8 @@
 
 #include <tuple>
 
+#include "ssl.h"
+#include "sslexp.h"
 #include "sslproto.h"
 #include "sslt.h"
 #include "nss.h"
@@ -286,17 +288,29 @@ class TlsConnectGenericResumption
   bool use_external_cache() const { return external_cache_; }
 };
 
+
+enum class TokenShape { kWrapped, kPlaintext };
+
+
+void SetTokenShape(PRFileDesc* fd, TokenShape shape);
+
 class TlsConnectTls13ResumptionToken
     : public TlsConnectTestBase,
-      public ::testing::WithParamInterface<SSLProtocolVariant> {
+      public ::testing::WithParamInterface<
+          std::tuple<SSLProtocolVariant, TokenShape>> {
  public:
   TlsConnectTls13ResumptionToken();
 
   virtual void EnsureTlsSetup() {
     TlsConnectTestBase::EnsureTlsSetup();
     client_->SetResumptionTokenCallback();
+    SetTokenShape(client_->ssl_fd(), shape_);
   }
+
+ protected:
+  TokenShape shape_;
 };
+
 
 class TlsConnectGenericResumptionToken
     : public TlsConnectTestBase,
@@ -309,6 +323,44 @@ class TlsConnectGenericResumptionToken
     TlsConnectTestBase::EnsureTlsSetup();
     client_->SetResumptionTokenCallback();
   }
+};
+
+
+
+class TlsConnectResumptionTokenShape
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<
+          std::tuple<SSLProtocolVariant, uint16_t, TokenShape>> {
+ public:
+  TlsConnectResumptionTokenShape();
+
+  virtual void EnsureTlsSetup() {
+    TlsConnectTestBase::EnsureTlsSetup();
+    client_->SetResumptionTokenCallback();
+    SetTokenShape(client_->ssl_fd(), shape_);
+  }
+  TokenShape shape() const { return shape_; }
+
+ protected:
+  TokenShape shape_;
+};
+
+class TlsConnectStreamTls13TokenHeader
+    : public TlsConnectTestBase,
+      public ::testing::WithParamInterface<TokenShape> {
+ public:
+  TlsConnectStreamTls13TokenHeader()
+      : TlsConnectTestBase(ssl_variant_stream, SSL_LIBRARY_VERSION_TLS_1_3),
+        shape_(GetParam()) {}
+
+  virtual void EnsureTlsSetup() {
+    TlsConnectTestBase::EnsureTlsSetup();
+    client_->SetResumptionTokenCallback();
+    SetTokenShape(client_->ssl_fd(), shape_);
+  }
+
+ protected:
+  TokenShape shape_;
 };
 
 
