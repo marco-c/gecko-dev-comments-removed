@@ -355,7 +355,6 @@ bool ConnectionAllowlists::ShouldBlockWebRTC(
     ReportToConsole(resource, aWindow->WindowID(), *allowlist);
 
     
-    
     ReportViolation(resource, aWindow, *allowlist);
 
     
