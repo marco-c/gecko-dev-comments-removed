@@ -300,6 +300,11 @@ class GitFetchSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     
     
     
+    fetch_mode: Optional[Literal["clone", "fetch"]] = None
+    
+    
+    
+    
     
     ssh_key: Optional[str] = None
 
@@ -346,6 +351,10 @@ def create_git_fetch_task(config, name, fetch):
     if fetch.get("include-dot-git", False):
         args.append("--include-dot-git")
         digest_data.append(".git")
+
+    fetch_mode = fetch.get("fetch-mode")
+    if fetch_mode:
+        args.extend(["--fetch-mode", fetch_mode])
 
     return {
         "command": args,
