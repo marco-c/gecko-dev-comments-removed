@@ -3073,6 +3073,11 @@ pref("network.tcp.keepalive.idle_time", 600);
   pref("geo.provider.network.timeout", 60000);
 #endif
 
+
+
+
+pref("geo.provider.network.requestCache.maxAgeDays", 30);
+
 #ifdef XP_MACOSX
   pref("geo.provider.use_corelocation", true);
 #endif
