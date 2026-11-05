@@ -14,7 +14,6 @@
 
 #include "js/AllocPolicy.h"  
 #include "js/ErrorReport.h"  
-#include "js/experimental/CompileScript.h"  
 #include "js/Stack.h"  
 #include "js/Vector.h"          
 #include "vm/ErrorReporting.h"  
@@ -126,21 +125,6 @@ class FrontendContext {
         nameCollectionPool_(nullptr),
         ownNameCollectionPool_(false),
         scriptDataTableHolder_(&js::globalSharedScriptDataTableHolder) {}
-
-  explicit FrontendContext(const JS::FrontendContextCreationOptions* options)
-      : alloc_(this),
-        nameCollectionPool_(nullptr),
-        ownNameCollectionPool_(false),
-        scriptDataTableHolder_(options && options->shareScriptData
-                                   ? &js::globalSharedScriptDataTableHolder
-                                   : nullptr) {
-#ifdef DEBUG
-    if (options->allowCancellingCompilation) {
-      setAllowCancellingCompilation();
-    }
-#endif
-  }
-
   ~FrontendContext();
 
   void setStackQuota(JS::NativeStackSize stackSize);
@@ -159,8 +143,6 @@ class FrontendContext {
         "Either allocateOwnedPool or setCurrentJSContext must be called");
     return *nameCollectionPool_;
   }
-
-  bool hasScriptDataTableHolder() const { return !!scriptDataTableHolder_; }
 
   js::SharedScriptDataTableHolder* scriptDataTableHolder() {
     MOZ_ASSERT(scriptDataTableHolder_);
@@ -326,8 +308,7 @@ class ManualReportFrontendContext : public FrontendContext {
 
 
 
-extern FrontendContext* NewFrontendContext(
-    const JS::FrontendContextCreationOptions* options = nullptr);
+extern FrontendContext* NewFrontendContext();
 
 
 

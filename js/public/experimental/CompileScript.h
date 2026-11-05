@@ -27,22 +27,12 @@ struct CompilationInput;
 namespace JS {
 using FrontendContext = js::FrontendContext;
 
-struct FrontendContextCreationOptions {
-  
-  
-  
-  
-  
-  
-  bool shareScriptData = true;
-
-  
-  bool allowCancellingCompilation = false;
-};
+enum class AllowCancellingCompilation : bool { No, Yes };
 
 
 JS_PUBLIC_API JS::FrontendContext* NewFrontendContext(
-    const FrontendContextCreationOptions* options = nullptr);
+    AllowCancellingCompilation allowCancellingCompilation =
+        AllowCancellingCompilation::No);
 
 
 JS_PUBLIC_API void DestroyFrontendContext(JS::FrontendContext* fc);
