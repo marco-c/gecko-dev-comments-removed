@@ -147,6 +147,10 @@ CARGO_SPEC_FILES = {
 }
 
 
+
+RUST_EXCLUDED_FLAG_CATEGORIES = ("LTO",)
+
+
 @dataclass
 class CargoCommand:
     """Declarative metadata for one Cargo build edge.
