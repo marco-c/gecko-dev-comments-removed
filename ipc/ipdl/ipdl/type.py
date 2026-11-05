@@ -1506,7 +1506,9 @@ class GatherDecls(TcheckVisitor):
                     
                     
                     
-                    "NoTaint": ("passback", "allvalid")
+                    
+                    
+                    "NoTaint": ("passback", "allvalid", StringLiteral)
                 },
             )
 

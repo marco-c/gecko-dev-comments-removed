@@ -1,8 +1,6 @@
-
-
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 include "mozilla/GfxMessageUtils.h";
 include "mozilla/dom/PermissionMessageUtils.h";
@@ -12,7 +10,7 @@ include IPCBlob;
 include NeckoChannelParams;
 
 using mozilla::gfx::SurfaceFormat from "mozilla/gfx/Types.h";
-[RefCounted] using class nsIPrincipal from "nsIPrincipal.h";
+[RefCounted, Tainted] using class nsIPrincipal from "nsIPrincipal.h";
 [RefCounted] using class nsIReferrerInfo from "nsIReferrerInfo.h";
 [MoveOnly] using class mozilla::ipc::BigBuffer from "mozilla/ipc/BigBuffer.h";
 
@@ -31,13 +29,13 @@ struct IPCTransferableDataCString
 
 struct IPCTransferableDataInputStream
 {
-  
-  
-  
-  
-  
-  
-  
+  // NOTE: Editor currently relies on these input streams being synchronous, so
+  // we can't safely serialize them using IPCStream (see bug 1778565). Instead,
+  // they're serialized as a `BigBuffer`, and converted to a nsStringInputStream
+  // on the receiving side. If we are able to use async streams reliably in the
+  // future, we could consider switching the code which adds `nsIInputStream`s
+  // to the transferable to use `BlobImpl` instead, for more consistency between
+  // image formats.
   BigBuffer data;
 };
 
@@ -86,5 +84,5 @@ struct IPCTransferable
   nullable nsIReferrerInfo referrerInfo;
 };
 
-} 
-} 
+} // namespace dom
+} // namespace mozilla
