@@ -11,6 +11,7 @@
 
 
 #include "mozilla/Atomics.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/SHA1.h"
 #include "mozilla/TimeStamp.h"
@@ -71,6 +72,9 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
 
   mozilla::Mutex mMutex{"nsNotifyAddrListener::mMutex"};
   nsCString mNetworkId MOZ_GUARDED_BY(mMutex);
+  
+  
+  mozilla::Maybe<mozilla::SHA1Sum> mUnseededNetworkId MOZ_GUARDED_BY(mMutex);
   nsTArray<nsCString> mDnsSuffixList MOZ_GUARDED_BY(mMutex);
   nsTArray<mozilla::net::NetAddr> mDNSResolvers MOZ_GUARDED_BY(mMutex);
 
