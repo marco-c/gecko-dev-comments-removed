@@ -349,7 +349,7 @@ let interfaceNamesInGlobalScope = [
   
   { name: "CSSVariableReferenceValue", insecureContext: true, nightly: true },
   
-  { name: "CSSViewTransitionRule", insecureContext: true, nightly: true },
+  { name: "CSSViewTransitionRule", insecureContext: true },
   
   "Cache",
   
@@ -1138,9 +1138,9 @@ let interfaceNamesInGlobalScope = [
   
   { name: "OscillatorNode", insecureContext: true },
   
-  { name: "PageRevealEvent", insecureContext: true, nightly: true },
+  { name: "PageRevealEvent", insecureContext: true },
   
-  { name: "PageSwapEvent", insecureContext: true, nightly: true },
+  { name: "PageSwapEvent", insecureContext: true },
   
   { name: "PageTransitionEvent", insecureContext: true },
   
@@ -2130,11 +2130,11 @@ let interfaceNamesInGlobalScope = [
   
   { name: "onpagehide", insecureContext: true },
   
-  { name: "onpagereveal", insecureContext: true, nightly: true },
+  { name: "onpagereveal", insecureContext: true },
   
   { name: "onpageshow", insecureContext: true },
   
-  { name: "onpageswap", insecureContext: true, nightly: true },
+  { name: "onpageswap", insecureContext: true },
   
   { name: "onpaste", insecureContext: true },
   
