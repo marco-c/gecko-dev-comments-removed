@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef mozilla_dom_ChromeObserver_h
 #define mozilla_dom_ChromeObserver_h
 
@@ -13,6 +11,7 @@ class nsIWidget;
 
 namespace mozilla::dom {
 class Document;
+class Element;
 
 class ChromeObserver final : public nsStubMutationObserver {
  public:
@@ -30,6 +29,7 @@ class ChromeObserver final : public nsStubMutationObserver {
   void HideWindowChrome(bool aShouldHide);
   void SetCustomTitlebar(bool);
   void SetMica(bool);
+  void RecomputeIcon(Element&);
   ~ChromeObserver() = default;
   
   Document* MOZ_NON_OWNING_REF mDocument;
