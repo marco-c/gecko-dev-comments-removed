@@ -59,6 +59,7 @@ class nsLocalFile final : public nsILocalFileWin {
 
 
 
+
   static bool ChildAclMatchesAclInheritedFromParent(
       const mozilla::NotNull<ACL*> aChildDacl, bool aIsChildDir,
       const AutoFreeSecurityDescriptor& aChildSecDesc, nsIFile* aParentDir);
@@ -82,7 +83,7 @@ class nsLocalFile final : public nsILocalFileWin {
   };
 
   nsLocalFile(const nsLocalFile& aOther);
-  ~nsLocalFile() {}
+  ~nsLocalFile() = default;
 
   bool mDirty;  
   bool mResolveDirty;

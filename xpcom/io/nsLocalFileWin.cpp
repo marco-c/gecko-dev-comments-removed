@@ -195,16 +195,16 @@ bool nsLocalFile::CheckForReservedFileName(const nsAString& aFileName) {
 bool nsLocalFile::ChildAclMatchesAclInheritedFromParent(
     const NotNull<ACL*> aChildDacl, bool aIsChildDir,
     const AutoFreeSecurityDescriptor& aChildSecDesc, nsIFile* aParentDir) {
-  
-  auto getInheritedAceCount = [](const ACL* aAcl) {
-    AclAceRange aclAceRange(WrapNotNull(aAcl));
-    return std::count_if(
-        aclAceRange.begin(), aclAceRange.end(),
-        [](const auto& hdr) { return hdr.AceFlags & INHERITED_ACE; });
+  auto nextInherited = [](const auto& aFromIt, AclAceRange& aAceRange) {
+    return std::find_if(aFromIt, aAceRange.end(), [](const ACE_HEADER& aHdr) {
+      return aHdr.AceFlags & INHERITED_ACE;
+    });
   };
 
-  auto childInheritedCount = getInheritedAceCount(aChildDacl);
-  if (childInheritedCount == 0) {
+  
+  AclAceRange childRange(aChildDacl);
+  auto childIt = nextInherited(childRange.begin(), childRange);
+  if (childIt == childRange.end()) {
     
     
     
@@ -263,7 +263,21 @@ bool nsLocalFile::ChildAclMatchesAclInheritedFromParent(
     return false;
   }
 
-  return childInheritedCount == getInheritedAceCount(newDacl);
+  
+  
+  AclAceRange newRange(WrapNotNull(newDacl));
+  auto newIt = nextInherited(newRange.begin(), newRange);
+  while (childIt != childRange.end() && newIt != newRange.end()) {
+    if (childIt->AceSize != newIt->AceSize ||
+        memcmp(&*childIt, &*newIt, childIt->AceSize) != 0) {
+      return false;
+    }
+
+    childIt = nextInherited(std::next(childIt), childRange);
+    newIt = nextInherited(std::next(newIt), newRange);
+  }
+
+  return childIt == childRange.end() && newIt == newRange.end();
 }
 
 class nsDriveEnumerator : public nsSimpleEnumerator,
