@@ -28,13 +28,6 @@ sinon.stub(ShellService, "shellService").value({
 sinon.stub(ShellService, "requestCreateAndPinSecondaryTile").resolves();
 sinon.stub(ShellService, "requestDeleteSecondaryTile").resolves();
 
-sinon.stub(TaskbarTabsPin, "_getLocalization").returns({
-  formatValue(msg) {
-    
-    return `[formatValue/${msg}]`;
-  },
-});
-
 registerCleanupFunction(() => {
   sinon.restore();
 });

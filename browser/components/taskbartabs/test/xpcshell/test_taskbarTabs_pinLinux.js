@@ -29,13 +29,6 @@ sinon.stub(ShellService, "shellService").value({
   },
 });
 
-sinon.stub(TaskbarTabsPin, "_getLocalization").returns({
-  formatValue(msg) {
-    
-    return `[formatValue/${msg}]`;
-  },
-});
-
 registerCleanupFunction(() => {
   sinon.restore();
 });
