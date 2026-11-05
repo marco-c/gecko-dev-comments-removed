@@ -15,7 +15,6 @@
 #include "mozilla/net/NoVarySearchUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
-#include "nsICacheEntry.h"
 #include "nsICachingChannel.h"
 #include "nsIHttpChannel.h"
 #include "nsILoadInfo.h"
@@ -88,13 +87,14 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
   
   
   
-  bool isCrossSite = true;
-  docPrincipal->IsThirdPartyURI(mURL, &isCrossSite);
+  bool isCrossOrigin = false;
+  docPrincipal->IsSameOrigin(mURL, &isCrossOrigin);
+  isCrossOrigin = !isCrossOrigin;
 
-  if (StaticPrefs::dom_speculation_rules_same_site_only() && isCrossSite) {
+  if (StaticPrefs::dom_speculation_rules_same_origin_only() && isCrossOrigin) {
     LOG_SPECRULES_WARN(
-        ("PrefetchRecordParent::Init: this=%p cross-site rejected "
-         "(same_site_only=true)",
+        ("PrefetchRecordParent::Init: this=%p cross-origin rejected "
+         "(same_origin_only=true)",
          this));
     mState = PrefetchState::Canceled;
     return;
@@ -113,7 +113,7 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
   
   
   OriginAttributes isolatedAttrs = sourceAttrs;
-  if (isCrossSite) {
+  if (isCrossOrigin) {
     PopulateIsolatedPartitionKey(isolatedAttrs);
   }
   mIsolatedPartitionKey = isolatedAttrs.mPartitionKey;
@@ -249,23 +249,6 @@ void PrefetchRecordParent::FillResponseOnLastEntry(nsIChannel* aChannel) {
   if (NS_SUCCEEDED(http->GetResponseHeader("No-Vary-Search"_ns, nvsHeader))) {
     last.mNoVarySearchHeader = nvsHeader;
   }
-}
-
-already_AddRefed<nsIURI> PrefetchRecordParent::CacheEntryURI() const {
-  if (mRedirectChain.Length() != 1) {
-    return nullptr;
-  }
-  nsCOMPtr<nsICacheEntry> entry = do_QueryInterface(mCacheToken);
-  if (!entry) {
-    return nullptr;
-  }
-  nsAutoCString key;
-  nsCOMPtr<nsIURI> uri;
-  if (NS_FAILED(entry->GetKey(key)) ||
-      NS_FAILED(NS_NewURI(getter_AddRefs(uri), key))) {
-    return nullptr;
-  }
-  return uri.forget();
 }
 
 bool PrefetchRecordParent::MatchesURL(nsIURI* aURL) const {
@@ -525,39 +508,6 @@ PrefetchRecordParent::AsyncOnChannelRedirect(
     aCb->OnRedirectVerifyCallback(NS_BINDING_ABORTED);
     return NS_OK;
   }
-
-  
-  
-  if (!nsMixedContentBlocker::IsPotentiallyTrustworthyOrigin(newURI)) {
-    LOG_SPECRULES_WARN(
-        ("PrefetchRecordParent::AsyncOnChannelRedirect: this=%p redirect to "
-         "a non-trustworthy URL rejected",
-         this));
-    aCb->OnRedirectVerifyCallback(NS_BINDING_ABORTED);
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (StaticPrefs::dom_speculation_rules_same_site_only()) {
-    auto* wgp = static_cast<WindowGlobalParent*>(Manager());
-    nsCOMPtr<nsIPrincipal> docPrincipal =
-        wgp ? wgp->DocumentPrincipal() : nullptr;
-    bool isCrossSite = true;
-    if (docPrincipal) {
-      docPrincipal->IsThirdPartyURI(newURI, &isCrossSite);
-    }
-    if (isCrossSite) {
-      LOG_SPECRULES_WARN(
-          ("PrefetchRecordParent::AsyncOnChannelRedirect: this=%p cross-site "
-           "redirect rejected (same_site_only=true)",
-           this));
-      aCb->OnRedirectVerifyCallback(NS_BINDING_ABORTED);
-      return NS_OK;
-    }
-  }
-
   AppendRedirectChainEntry(newURI);
   ConfigureSecPurpose(aNewChannel);
   aCb->OnRedirectVerifyCallback(NS_OK);

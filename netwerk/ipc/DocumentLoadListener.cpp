@@ -644,14 +644,6 @@ void DocumentLoadListener::ActivateFromPrefetch(
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
   loadInfo->SetActivatedFromNavigationalPrefetch(true);
 
-  
-  
-  if (nsCOMPtr<nsIURI> cacheURI = aRec->CacheEntryURI()) {
-    if (RefPtr<net::nsHttpChannel> httpChannel = do_QueryObject(mChannel)) {
-      (void)httpChannel->SetNavigationalPrefetchCacheURI(cacheURI);
-    }
-  }
-
   LOG_SPECRULES(
       ("DocumentLoadListener::ActivateFromPrefetch: [%p] activated from "
        "prefetch cache for rec=%p",

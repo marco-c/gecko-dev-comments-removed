@@ -69,12 +69,6 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   const nsString& SourcePartitionKey() const { return mSourcePartitionKey; }
   const nsString& IsolatedPartitionKey() const { return mIsolatedPartitionKey; }
   bool HadConflictingCredentials() const { return mHadConflictingCredentials; }
-  
-  
-  
-  
-  
-  already_AddRefed<nsIURI> CacheEntryURI() const;
   const nsTArray<Maybe<nsString>>& Tags() const { return mTags; }
   const nsString& NoVarySearchHint() const { return mNoVarySearchHint; }
   bool IsEligibleForPrefetch() const { return mIsEligibleForPrefetch; }
