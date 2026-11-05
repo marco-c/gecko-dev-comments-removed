@@ -315,13 +315,10 @@ void WebrtcAudioConduit::OnControlConfigChange() {
 
   if (mControl.mSyncGroup.Ref() != mRecvStreamConfig.sync_group) {
     mRecvStreamConfig.sync_group = mControl.mSyncGroup.Ref();
-    
-    recvStreamRecreationNeeded = true;
-    
-    
-    
-    
-    
+    if (mRecvStream) {
+      mCall->Call()->OnUpdateSyncGroup(*mRecvStream,
+                                       mRecvStreamConfig.sync_group);
+    }
   }
 
   if (auto filteredExtensions = FilterExtensions(
