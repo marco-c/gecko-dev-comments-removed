@@ -13,10 +13,6 @@ type SavedTabGroupStateData =
   import("../../sessionstore/TabGroupState.sys.mjs").SavedTabGroupStateData;
 
 
-
-type TaskbarTab = any;
-
-
 type TabStateData = any;
 
 
