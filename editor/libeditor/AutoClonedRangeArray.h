@@ -632,6 +632,9 @@ class MOZ_STACK_CLASS AutoClonedSelectionRangeArray final
 
 
 
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<nsIEditor::EDirection, nsresult>
   ExtendAnchorFocusRangeFor(const EditorBase& aEditorBase,
                             nsIEditor::EDirection aDirectionAndAmount);

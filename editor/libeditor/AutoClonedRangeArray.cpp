@@ -1486,7 +1486,26 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
 
   Result<RefPtr<dom::Range>, nsresult> result(NS_ERROR_UNEXPECTED);
   const OwningNonNull<dom::Range> anchorFocusRange = *mAnchorFocusRange;
-  const LimitersAndCaretData limitersAndCaretData = mLimitersAndCaretData;
+  const LimitersAndCaretData limitersAndCaretData =
+      [&]() -> LimitersAndCaretData {
+    if (aEditorBase.IsHTMLEditor()) {
+      nsIContent* const commonAncestorContent = nsIContent::FromNodeOrNull(
+          anchorFocusRange->GetClosestCommonInclusiveAncestor());
+      if (commonAncestorContent) {
+        Element* const anyTableElement =
+            HTMLEditUtils::GetInclusiveAncestorAnyTableElement(
+                *commonAncestorContent, mLimitersAndCaretData.mAncestorLimiter);
+        if (anyTableElement) {
+          
+          
+          LimitersAndCaretData limitInTableElement = mLimitersAndCaretData;
+          limitInTableElement.mAncestorLimiter = anyTableElement;
+          return limitInTableElement;
+        }
+      }
+    }
+    return mLimitersAndCaretData;
+  }();
   const nsDirection rangeDirection =
       mDirection == eDirNext ? eDirNext : eDirPrevious;
   nsIEditor::EDirection directionAndAmountResult = aDirectionAndAmount;
@@ -1499,9 +1518,12 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(
-          result.isOk(),
-          "nsFrameSelection::CreateRangeExtendedToNextWordBoundary() failed");
+      if (result.isErr()) [[unlikely]] {
+        
+        
+        
+        return result.propagateErr();
+      }
       
       
       directionAndAmountResult = nsIEditor::eNone;
@@ -1513,10 +1535,12 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(
-          result.isOk(),
-          "nsFrameSelection::CreateRangeExtendedToPreviousWordBoundary() "
-          "failed");
+      if (result.isErr()) [[unlikely]] {
+        
+        
+        
+        return result.propagateErr();
+      }
       
       
       directionAndAmountResult = nsIEditor::eNone;
@@ -1529,10 +1553,12 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(result.isOk(),
-                           "nsFrameSelection::"
-                           "CreateRangeExtendedToNextGraphemeClusterBoundary() "
-                           "failed");
+      if (result.isErr()) [[unlikely]] {
+        
+        
+        
+        return result.propagateErr();
+      }
       
       break;
     case nsIEditor::ePrevious: {
@@ -1583,10 +1609,12 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(
-          result.isOk(),
-          "nsFrameSelection::"
-          "CreateRangeExtendedToPreviousGraphemeClusterBoundary() failed");
+      if (result.isErr()) [[unlikely]] {
+        
+        
+        
+        return result.propagateErr();
+      }
       break;
     }
     case nsIEditor::eToBeginningOfLine:
@@ -1596,10 +1624,12 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(
-          result.isOk(),
-          "nsFrameSelection::CreateRangeExtendedToPreviousHardLineBreak() "
-          "failed");
+      if (result.isErr()) [[unlikely]] {
+        
+        
+        
+        return result.propagateErr();
+      }
       directionAndAmountResult = nsIEditor::eNone;
       break;
     case nsIEditor::eToEndOfLine:
@@ -1610,9 +1640,12 @@ AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor(
       if (NS_WARN_IF(aEditorBase.Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
-      NS_WARNING_ASSERTION(
-          result.isOk(),
-          "nsFrameSelection::CreateRangeExtendedToNextHardLineBreak() failed");
+      if (result.isErr()) [[unlikely]] {
+        
+        
+        
+        return result.propagateErr();
+      }
       directionAndAmountResult = nsIEditor::eNext;
       break;
     default:

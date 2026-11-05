@@ -956,10 +956,11 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     Result<nsIEditor::EDirection, nsresult> extendResult =
         aRangesToDelete.ExtendAnchorFocusRangeFor(aHTMLEditor,
                                                   aDirectionAndAmount);
-    if (extendResult.isErr()) {
-      NS_WARNING(
-          "AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() failed");
-      return extendResult.unwrapErr();
+    if (extendResult.isErr()) [[unlikely]] {
+      
+      
+      
+      return NS_OK;
     }
 
     
@@ -1222,10 +1223,11 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
     Result<nsIEditor::EDirection, nsresult> extendResult =
         aRangesToDelete.ExtendAnchorFocusRangeFor(aHTMLEditor,
                                                   aDirectionAndAmount);
-    if (MOZ_UNLIKELY(extendResult.isErr())) {
-      NS_WARNING(
-          "AutoClonedSelectionRangeArray::ExtendAnchorFocusRangeFor() failed");
-      return extendResult.propagateErr();
+    if (extendResult.isErr()) [[unlikely]] {
+      
+      
+      
+      return EditActionResult::HandledResult();
     }
     if (caretPoint.isSome() &&
         MOZ_UNLIKELY(!caretPoint.ref().IsSetAndValid())) {
