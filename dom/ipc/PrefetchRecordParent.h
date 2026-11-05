@@ -69,6 +69,12 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   const nsString& SourcePartitionKey() const { return mSourcePartitionKey; }
   const nsString& IsolatedPartitionKey() const { return mIsolatedPartitionKey; }
   bool HadConflictingCredentials() const { return mHadConflictingCredentials; }
+  
+  
+  
+  
+  
+  already_AddRefed<nsIURI> CacheEntryURI() const;
   const nsTArray<Maybe<nsString>>& Tags() const { return mTags; }
   const nsString& NoVarySearchHint() const { return mNoVarySearchHint; }
   bool IsEligibleForPrefetch() const { return mIsEligibleForPrefetch; }
@@ -84,6 +90,9 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   
   
   void MarkCanceled();
+
+  
+  void MarkActivated() { mOutcome = Outcome::Used; }
 
   
   
@@ -116,6 +125,8 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   bool IsReferrerPolicySufficientlyStrict() const;
   void ReleaseCacheToken();
   bool MatchesNoVarySearchHint(nsIURI* aURL) const;
+  void AccumulateTransferSize(nsIRequest* aRequest);
+  void RecordDataUsage();
 
   
   
@@ -141,7 +152,14 @@ class PrefetchRecordParent final : public PPrefetchRecordParent,
   bool mIsEligibleForPrefetch = false;
 
   
+  enum class Outcome : uint8_t { NotStarted, Incomplete, Unused, Used };
+  Outcome mOutcome = Outcome::NotStarted;
+
+  
   uint64_t mBytesReceived = 0;
+
+  
+  uint64_t mTransferSize = 0;
 
  protected:
   ~PrefetchRecordParent() = default;

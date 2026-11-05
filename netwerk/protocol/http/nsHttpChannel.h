@@ -227,6 +227,13 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void AsyncOpenFinal(TimeStamp aTimeStamp);
 
+  
+  
+  
+  
+  
+  nsresult SetNavigationalPrefetchCacheURI(nsIURI* aURI);
+
   [[nodiscard]] nsresult OpenCacheEntry(bool isHttps);
   [[nodiscard]] nsresult OpenCacheEntryInternal(bool isHttps);
   
@@ -649,6 +656,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   nsCOMPtr<nsICacheEntry> mORBValidationCacheEntry;
 
   nsCOMPtr<nsIURI> mCacheEntryURI;
+  nsCOMPtr<nsIURI> mNavigationalPrefetchCacheURI;
   nsCString mCacheIdExtension;
 
   
