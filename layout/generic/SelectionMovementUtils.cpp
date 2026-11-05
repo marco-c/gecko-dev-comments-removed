@@ -283,12 +283,32 @@ bool SelectionMovementUtils::AdjustFrameForLineStart(nsIFrame*& aFrame,
     return false;
   }
 
-  nsIFrame* nextSibling = aFrame->GetNextSibling();
-  if (!nextSibling) {
+  
+  
+  nsIFrame* const nextSiblingOrFirstFrameInNextLine = [&]() -> nsIFrame* {
+    nsIFrame* f = aFrame;
+    nsIFrame* next = f->GetNextSibling();
+    while (!next) {
+      f = f->GetParent();
+      if (!f || !f->IsLineParticipant()) {
+        return nullptr;  
+      }
+      next = f->GetNextSibling();
+    }
+    while (next->IsLineParticipant()) {
+      nsIFrame* firstChild = next->PrincipalChildList().FirstChild();
+      if (!firstChild) {
+        break;  
+      }
+      next = firstChild;
+    }
+    return next;
+  }();
+  if (!nextSiblingOrFirstFrameInNextLine) {
     return false;
   }
 
-  aFrame = nextSibling;
+  aFrame = nextSiblingOrFirstFrameInNextLine;
   std::tie(start, end) = aFrame->GetOffsets();
   aFrameOffset = start;
   return true;
