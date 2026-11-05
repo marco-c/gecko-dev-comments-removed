@@ -7,6 +7,7 @@
 
 pub mod attr;
 pub mod env;
+pub mod ident;
 pub mod var;
 
 use crate::custom_properties::{
@@ -35,10 +36,11 @@ use style_traits::{ParseError, ParsingMode, StyleParseErrorKind};
 
 pub use self::attr::AttrFunction;
 pub use self::env::EnvFunction;
+pub use self::ident::IdentFunction;
 pub use self::var::VarFunction;
 
 
-#[derive(Copy, Clone, Debug, MallocSizeOf, Hash, Eq, PartialEq, ToShmem, Parse, VariantNames)]
+#[derive(Copy, Clone, Debug, MallocSizeOf, Hash, Eq, PartialEq, ToShmem, VariantNames)]
 #[strum(serialize_all = "kebab-case")]
 pub enum SubstitutionFunctionKind {
     
@@ -47,6 +49,25 @@ pub enum SubstitutionFunctionKind {
     Env,
     
     Attr,
+    
+    Ident,
+}
+
+impl SubstitutionFunctionKind {
+    
+    #[inline]
+    pub fn from_ident(ident: &str) -> Result<Self, ()> {
+        Ok(cssparser::match_ignore_ascii_case! {
+            ident,
+            "var" => Self::Var,
+            "env" => Self::Env,
+            "attr" => Self::Attr,
+            "ident" if static_prefs::pref!("layout.css.ident-function.enabled") => {
+                Self::Ident
+            },
+            _ => return Err(()),
+        })
+    }
 }
 
 
@@ -445,6 +466,8 @@ pub enum SubstitutionFunction {
     Env(EnvFunction),
     
     Attr(AttrFunction),
+    
+    Ident(IdentFunction),
 }
 
 impl SubstitutionFunction {
@@ -459,6 +482,7 @@ impl SubstitutionFunction {
             SubstitutionFunctionKind::Var => Self::Var(VarFunction::parse(input, context)?),
             SubstitutionFunctionKind::Env => Self::Env(EnvFunction::parse(input, context)?),
             SubstitutionFunctionKind::Attr => Self::Attr(AttrFunction::parse(input, context)?),
+            SubstitutionFunctionKind::Ident => Self::Ident(IdentFunction::parse(input, context)?),
         })
     }
 
@@ -469,6 +493,7 @@ impl SubstitutionFunction {
             Self::Var(..) => ReferenceFlags::VAR,
             Self::Env(..) => ReferenceFlags::ENV,
             Self::Attr(..) => ReferenceFlags::ATTR,
+            Self::Ident(..) => ReferenceFlags::empty(),
         }
     }
 
@@ -481,6 +506,7 @@ impl SubstitutionFunction {
             Self::Var(function) => function.replace(source, context),
             Self::Env(function) => function.replace(source, context),
             Self::Attr(function) => function.replace(source, context),
+            Self::Ident(function) => function.replace(source, context),
         }
     }
 
@@ -494,6 +520,7 @@ impl SubstitutionFunction {
             Self::Var(function) => function.for_each_unparsed_value(f),
             Self::Env(function) => function.for_each_unparsed_value(f),
             Self::Attr(function) => function.for_each_unparsed_value(f),
+            Self::Ident(function) => function.for_each_unparsed_value(f),
         }
     }
 }

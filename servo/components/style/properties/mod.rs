@@ -787,6 +787,7 @@ impl ShorthandId {
 }
 
 
+
 pub const ARBITRARY_SUBSTITUTION_FUNCTIONS: &[&str] = SubstitutionFunctionKind::VARIANTS;
 
 fn parse_non_custom_property_declaration_value_into(
@@ -858,6 +859,11 @@ fn parse_non_custom_property_declaration_value_into(
     }
     input.reset(start);
     let value = custom_properties::VariableValue::parse(context, input)?;
+    
+    
+    if !value.has_references() {
+        return Err(err);
+    }
     parsed_custom(declarations, value);
     Ok(())
 }
