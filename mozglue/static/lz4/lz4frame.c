@@ -66,6 +66,25 @@
 
 
 
+
+
+
+#ifndef LZ4F_MULTITHREAD
+#  define LZ4F_MULTITHREAD 0
+#endif
+#if defined(LZ4_FREESTANDING) && (LZ4_FREESTANDING == 1)
+#  undef  LZ4F_MULTITHREAD
+#  define LZ4F_MULTITHREAD 0
+#endif
+#if defined(__MINGW32__) && !defined(__MINGW64_VERSION_MAJOR)   
+#  undef  LZ4F_MULTITHREAD
+#  define LZ4F_MULTITHREAD 0
+#endif
+
+
+
+
+
 #define LZ4F_STATIC_LINKING_ONLY
 #include "lz4frame.h"
 #define LZ4_STATIC_LINKING_ONLY
@@ -85,17 +104,25 @@
 
 
 
-
 #include <string.h>   
 #ifndef LZ4_SRC_INCLUDED  
 #  define MEM_INIT(p,v,s)   memset((p),(v),(s))
 #endif
 
 #ifndef LZ4_SRC_INCLUDED   
-#  include <stdlib.h>   
-#  define ALLOC(s)          malloc(s)
-#  define ALLOC_AND_ZERO(s) calloc(1,(s))
-#  define FREEMEM(p)        free(p)
+#  if defined(LZ4_USER_MEMORY_FUNCTIONS)
+     void* LZ4_malloc(size_t s);
+     void* LZ4_calloc(size_t n, size_t s);
+     void  LZ4_free(void* p);
+#    define ALLOC(s)          LZ4_malloc(s)
+#    define ALLOC_AND_ZERO(s) LZ4_calloc(1,(s))
+#    define FREEMEM(p)        LZ4_free(p)
+#  else
+#    include <stdlib.h>   
+#    define ALLOC(s)          malloc(s)
+#    define ALLOC_AND_ZERO(s) calloc(1,(s))
+#    define FREEMEM(p)        free(p)
+#  endif
 #endif
 
 static void* LZ4F_calloc(size_t s, LZ4F_CustomMem cmem)
@@ -155,11 +182,12 @@ static void LZ4F_free(void* p, LZ4F_CustomMem cmem)
 static int g_debuglog_enable = 1;
 #  define DEBUGLOG(l, ...) {                                  \
                 if ((g_debuglog_enable) && (l<=LZ4_DEBUG)) {  \
-                    fprintf(stderr, __FILE__ " (%i): ", __LINE__ );  \
+                    fprintf(stderr, __FILE__ " %i: ", __LINE__ );  \
                     fprintf(stderr, __VA_ARGS__);             \
                     fprintf(stderr, " \n");                   \
             }   }
-#else
+#endif
+#ifndef DEBUGLOG   
 #  define DEBUGLOG(l, ...)      {}    /* disabled */
 #endif
 
@@ -167,19 +195,21 @@ static int g_debuglog_enable = 1;
 
 
 
-#if !defined (__VMS) && (defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) ) )
-# include <stdint.h>
-  typedef  uint8_t BYTE;
-  typedef uint16_t U16;
-  typedef uint32_t U32;
-  typedef  int32_t S32;
-  typedef uint64_t U64;
-#else
-  typedef unsigned char       BYTE;
-  typedef unsigned short      U16;
-  typedef unsigned int        U32;
-  typedef   signed int        S32;
-  typedef unsigned long long  U64;
+#ifndef LZ4_SRC_INCLUDED
+# if !defined (__VMS) && (defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) ) )
+#   include <stdint.h>
+    typedef  uint8_t BYTE;
+    typedef uint16_t U16;
+    typedef uint32_t U32;
+    typedef  int32_t S32;
+    typedef uint64_t U64;
+# else
+    typedef unsigned char      BYTE;
+    typedef unsigned short     U16;
+    typedef unsigned int       U32;
+    typedef   signed int       S32;
+    typedef unsigned long long U64;
+# endif
 #endif
 
 
@@ -262,6 +292,13 @@ static const size_t BFSize = LZ4F_BLOCK_CHECKSUM_SIZE;
 typedef enum { LZ4B_COMPRESSED, LZ4B_UNCOMPRESSED} LZ4F_BlockCompressMode_e;
 typedef enum { ctxNone, ctxFast, ctxHC } LZ4F_CtxType_e;
 
+struct LZ4F_CDict_s {
+    LZ4F_CustomMem cmem;
+    void* dictContent;
+    LZ4_stream_t* fastCtx;
+    LZ4_streamHC_t* HCCtx;
+}; 
+
 typedef struct LZ4F_cctx_s
 {
     LZ4F_CustomMem cmem;
@@ -270,7 +307,7 @@ typedef struct LZ4F_cctx_s
     U32    cStage;     
     const LZ4F_CDict* cdict;
     size_t maxBlockSize;
-    size_t maxBufferSize;
+    size_t tmpBuffCapacity;
     BYTE*  tmpBuff;    
     BYTE*  tmpIn;      
     size_t tmpInSize;  
@@ -280,7 +317,27 @@ typedef struct LZ4F_cctx_s
     U16    lz4CtxAlloc; 
     U16    lz4CtxType;  
     LZ4F_BlockCompressMode_e  blockCompressMode;
+    struct LZ4F_mtCtx_s* mt;   
+    U32    mtActive;   
+    
+    U32    flushStage; 
+    const BYTE* pending;   
+    size_t pendingSize;
+    BYTE*  stageBuff;  
+    size_t stageCapacity;
+    BYTE   footer[8];  
+    
+    struct LZ4F_CDict_s rawDict;   
+    LZ4_stream_t*   rawDictFast;   
+    LZ4_streamHC_t* rawDictHC;     
 } LZ4F_cctx_t;
+
+
+typedef struct LZ4F_mtCtx_s LZ4F_mtCtx_t;
+static void   LZ4F_mt_abort(LZ4F_mtCtx_t* mt);
+static size_t LZ4F_mt_begin(LZ4F_cctx_t* cctx);
+static void   LZ4F_mt_free(LZ4F_mtCtx_t* mt, LZ4F_CustomMem cmem);
+static size_t LZ4F_mt_sizeof(const LZ4F_mtCtx_t* mt);
 
 
 
@@ -324,7 +381,28 @@ static LZ4F_errorCode_t LZ4F_returnErrorCode(LZ4F_errorCodes code)
         }                          \
     } while (0)
 
-#define FORWARD_IF_ERROR(r) do { if (LZ4F_isError(r)) return (r); } while (0)
+
+#define FORWARD_IF_ERROR(r) do {                     \
+        size_t const err_code = (r);                 \
+        if (LZ4F_isError(err_code)) return err_code; \
+    } while (0)
+
+
+
+
+static void LZ4F_invalidateFrame(LZ4F_cctx_t* cctx)
+{
+    if (cctx->mtActive) LZ4F_mt_abort(cctx->mt);
+    cctx->cStage = 0;
+}
+
+#define FORWARD_IF_ERROR_INVALIDATE(r, cctx) do { \
+        size_t const err_code = (r);               \
+        if (LZ4F_isError(err_code)) {              \
+            LZ4F_invalidateFrame(cctx);            \
+            return err_code;                       \
+        }                                          \
+    } while (0)
 
 unsigned LZ4F_getVersion(void) { return LZ4F_VERSION; }
 
@@ -344,6 +422,7 @@ size_t LZ4F_getBlockSize(LZ4F_blockSizeID_t blockSizeID)
 
 
 
+#undef MIN
 #define MIN(a,b)   ( (a) < (b) ? (a) : (b) )
 
 static BYTE LZ4F_headerChecksum (const void* header, size_t length)
@@ -375,32 +454,17 @@ static LZ4F_blockSizeID_t LZ4F_optimalBSID(const LZ4F_blockSizeID_t requestedBSI
 
 
 
-
-static size_t LZ4F_compressBound_internal(size_t srcSize,
-                                    const LZ4F_preferences_t* preferencesPtr,
-                                          size_t alreadyBuffered)
+static size_t LZ4F_compressBound_autoFlush(size_t srcSize, const LZ4F_preferences_t* prefsPtr)
 {
-    LZ4F_preferences_t prefsNull = LZ4F_INIT_PREFERENCES;
-    prefsNull.frameInfo.contentChecksumFlag = LZ4F_contentChecksumEnabled;   
-    prefsNull.frameInfo.blockChecksumFlag = LZ4F_blockChecksumEnabled;   
-    {   const LZ4F_preferences_t* const prefsPtr = (preferencesPtr==NULL) ? &prefsNull : preferencesPtr;
-        U32 const flush = prefsPtr->autoFlush | (srcSize==0);
-        LZ4F_blockSizeID_t const blockID = prefsPtr->frameInfo.blockSizeID;
-        size_t const blockSize = LZ4F_getBlockSize(blockID);
-        size_t const maxBuffered = blockSize - 1;
-        size_t const bufferedSize = MIN(alreadyBuffered, maxBuffered);
-        size_t const maxSrcSize = srcSize + bufferedSize;
-        unsigned const nbFullBlocks = (unsigned)(maxSrcSize / blockSize);
-        size_t const partialBlockSize = maxSrcSize & (blockSize-1);
-        size_t const lastBlockSize = flush ? partialBlockSize : 0;
-        unsigned const nbBlocks = nbFullBlocks + (lastBlockSize>0);
-
-        size_t const blockCRCSize = BFSize * prefsPtr->frameInfo.blockChecksumFlag;
-        size_t const frameEnd = BHSize + (prefsPtr->frameInfo.contentChecksumFlag*BFSize);
-
-        return ((BHSize + blockCRCSize) * nbBlocks) +
-               (blockSize * nbFullBlocks) + lastBlockSize + frameEnd;
-    }
+    size_t const blockSize = LZ4F_getBlockSize(prefsPtr->frameInfo.blockSizeID);
+    size_t const nbFullBlocks = srcSize / blockSize;
+    size_t const lastBlockSize = srcSize & (blockSize-1);
+    size_t const nbBlocks = nbFullBlocks + (lastBlockSize>0);
+    size_t const blockCRCSize = BFSize * prefsPtr->frameInfo.blockChecksumFlag;
+    size_t const frameEnd = BHSize + (prefsPtr->frameInfo.contentChecksumFlag*BFSize);
+    assert(prefsPtr->autoFlush);
+    return ((BHSize + blockCRCSize) * nbBlocks) +
+           (blockSize * nbFullBlocks) + lastBlockSize + frameEnd;
 }
 
 size_t LZ4F_compressFrameBound(size_t srcSize, const LZ4F_preferences_t* preferencesPtr)
@@ -412,7 +476,95 @@ size_t LZ4F_compressFrameBound(size_t srcSize, const LZ4F_preferences_t* prefere
     else MEM_INIT(&prefs, 0, sizeof(prefs));
     prefs.autoFlush = 1;
 
-    return headerSize + LZ4F_compressBound_internal(srcSize, &prefs, 0);;
+    return headerSize + LZ4F_compressBound_autoFlush(srcSize, &prefs);
+}
+
+
+
+
+
+
+
+#ifndef LZ4F_NBWORKERS_MAX
+#  define LZ4F_NBWORKERS_MAX ((sizeof(size_t) >= 8) ? 1024u : 128u)
+#endif
+#define LZ4F_MT_PREFIX_SIZE (64 KB)   /* history employed by linked blocks */
+
+
+
+
+
+
+
+
+#ifndef LZ4F_MT_JOBSIZE   
+#  define LZ4F_MT_JOBSIZE (1 MB)
+#endif
+
+static size_t LZ4F_mtJobSize(size_t blockSize)
+{
+    if (blockSize >= LZ4F_MT_JOBSIZE) return blockSize;
+    return (LZ4F_MT_JOBSIZE / blockSize) * blockSize;   
+}
+
+unsigned LZ4F_getMaxNbWorkers(void)
+{
+#if LZ4F_MULTITHREAD
+    return LZ4F_NBWORKERS_MAX;
+#else
+    return 0;
+#endif
+}
+
+
+static int LZ4F_mtEligible(const LZ4F_preferences_t* prefs)
+{
+    if (prefs->nbWorkers == 0) return 0;
+    
+    if (prefs->frameInfo.blockMode == LZ4F_blockLinked) return 1;
+#if LZ4F_MULTITHREAD
+    return (prefs->frameInfo.blockMode == LZ4F_blockIndependent);
+#else
+    
+    return 0;
+#endif
+}
+
+
+
+
+#ifndef LZ4F_MT_SLOTS_PER_THREAD
+#  define LZ4F_MT_SLOTS_PER_THREAD 2
+#endif
+#define LZ4F_MT_NBSLOTS(nbThreads) ((size_t)(nbThreads) * LZ4F_MT_SLOTS_PER_THREAD + 1)
+#ifndef LZ4F_MT_EXTRA_INBUFFS
+#  define LZ4F_MT_EXTRA_INBUFFS 1
+#endif
+
+
+
+
+static size_t LZ4F_blocksBound(size_t srcSize, size_t blockSize, LZ4F_blockChecksum_t crcFlag)
+{
+    size_t const nbBlocks = (srcSize + blockSize - 1) / blockSize;
+    return srcSize + nbBlocks * (BHSize + (size_t)crcFlag * BFSize);
+}
+
+
+
+
+
+
+
+
+static size_t LZ4F_mtCompressBound(size_t srcSize, const LZ4F_preferences_t* prefs)
+{
+    size_t const bs = LZ4F_getBlockSize(prefs->frameInfo.blockSizeID);
+    size_t const blockSize = LZ4F_isError(bs) ? 4 MB : bs;
+    size_t const jobSize = LZ4F_mtJobSize(blockSize);
+    size_t const nbJobs = srcSize ? (srcSize / jobSize) + ((srcSize % jobSize) != 0) : 1;
+    size_t const frameEnd = BHSize + (prefs->frameInfo.contentChecksumFlag*BFSize);
+    return nbJobs * LZ4F_blocksBound(jobSize, blockSize, prefs->frameInfo.blockChecksumFlag) + frameEnd;
 }
 
 
@@ -450,10 +602,15 @@ size_t LZ4F_compressFrame_usingCDict(LZ4F_cctx* cctx,
     if (srcSize <= LZ4F_getBlockSize(prefs.frameInfo.blockSizeID))
         prefs.frameInfo.blockMode = LZ4F_blockIndependent;   
 
-    MEM_INIT(&options, 0, sizeof(options));
-    options.stableSrc = 1;
+    if (LZ4F_mtEligible(&prefs)) {
+        
+        size_t const blockSize = LZ4F_getBlockSize(prefs.frameInfo.blockSizeID);
+        if (LZ4F_isError(blockSize) || srcSize <= LZ4F_mtJobSize(blockSize))
+            prefs.nbWorkers = 0;
+    }
 
-    RETURN_ERROR_IF(dstCapacity < LZ4F_compressFrameBound(srcSize, &prefs), dstMaxSize_tooSmall);
+    MEM_INIT(&options, 0, sizeof(options));
+    options.stableSrc = LZ4F_srcStableUntilFlush;   
 
     { size_t const headerSize = LZ4F_compressBegin_usingCDict(cctx, dstBuffer, dstCapacity, cdict, &prefs);  
       FORWARD_IF_ERROR(headerSize);
@@ -466,12 +623,20 @@ size_t LZ4F_compressFrame_usingCDict(LZ4F_cctx* cctx,
 
     assert(dstEnd >= dstPtr);
     { size_t const tailSize = LZ4F_compressEnd(cctx, dstPtr, (size_t)(dstEnd-dstPtr), &options);   
-      FORWARD_IF_ERROR(tailSize);
+      int const completed = !LZ4F_isError(tailSize) && ((cctx->cStage == 0) || (cctx->flushStage == 3));
+      if (!completed) {
+          
+          LZ4F_invalidateFrame(cctx);
+          return LZ4F_isError(tailSize) ? tailSize : LZ4F_returnErrorCode(LZ4F_ERROR_dstCapacity_tooSmall);
+      }
+      cctx->cStage = 0;
+      cctx->flushStage = 0;
       dstPtr += tailSize; }
 
     assert(dstEnd >= dstStart);
     return (size_t)(dstPtr - dstStart);
 }
+
 
 
 
@@ -497,12 +662,12 @@ size_t LZ4F_compressFrame(void* dstBuffer, size_t dstCapacity,
 
     MEM_INIT(&cctx, 0, sizeof(cctx));
     cctx.version = LZ4F_VERSION;
-    cctx.maxBufferSize = 5 MB;   
+    cctx.tmpBuffCapacity = 5 MB;   
     if ( preferencesPtr == NULL
       || preferencesPtr->compressionLevel < LZ4HC_CLEVEL_MIN ) {
         LZ4_initStream(&lz4ctx, sizeof(lz4ctx));
         cctxPtr->lz4CtxPtr = &lz4ctx;
-        cctxPtr->lz4CtxAlloc = 1;
+        cctxPtr->lz4CtxAlloc = ctxFast;
         cctxPtr->lz4CtxType = ctxFast;
     }
 #endif
@@ -519,6 +684,8 @@ size_t LZ4F_compressFrame(void* dstBuffer, size_t dstCapacity,
       && preferencesPtr->compressionLevel >= LZ4HC_CLEVEL_MIN ) {
         LZ4F_free(cctxPtr->lz4CtxPtr, cctxPtr->cmem);
     }
+    LZ4F_mt_free(cctxPtr->mt, cctxPtr->cmem);
+    LZ4F_free(cctxPtr->stageBuff, cctxPtr->cmem);
 #endif
     return result;
 }
@@ -528,20 +695,20 @@ size_t LZ4F_compressFrame(void* dstBuffer, size_t dstCapacity,
 
 
 
-struct LZ4F_CDict_s {
-    LZ4F_CustomMem cmem;
-    void* dictContent;
-    LZ4_stream_t* fastCtx;
-    LZ4_streamHC_t* HCCtx;
-}; 
-
 LZ4F_CDict*
 LZ4F_createCDict_advanced(LZ4F_CustomMem cmem, const void* dictBuffer, size_t dictSize)
 {
     const char* dictStart = (const char*)dictBuffer;
-    LZ4F_CDict* const cdict = (LZ4F_CDict*)LZ4F_malloc(sizeof(*cdict), cmem);
+    LZ4F_CDict* cdict = NULL;
+
     DEBUGLOG(4, "LZ4F_createCDict_advanced");
-    if (!cdict) return NULL;
+
+    if (!dictStart)
+        return NULL;
+    cdict = (LZ4F_CDict*)LZ4F_malloc(sizeof(*cdict), cmem);
+    if (!cdict)
+        return NULL;
+
     cdict->cmem = cmem;
     if (dictSize > 64 KB) {
         dictStart += dictSize - 64 KB;
@@ -629,8 +796,12 @@ LZ4F_createCompressionContext(LZ4F_cctx** LZ4F_compressionContextPtr, unsigned v
 LZ4F_errorCode_t LZ4F_freeCompressionContext(LZ4F_cctx* cctxPtr)
 {
     if (cctxPtr != NULL) {  
+       LZ4F_mt_free(cctxPtr->mt, cctxPtr->cmem);   
        LZ4F_free(cctxPtr->lz4CtxPtr, cctxPtr->cmem);  
        LZ4F_free(cctxPtr->tmpBuff, cctxPtr->cmem);
+       LZ4F_free(cctxPtr->stageBuff, cctxPtr->cmem);
+       LZ4F_free(cctxPtr->rawDictFast, cctxPtr->cmem);
+       LZ4F_free(cctxPtr->rawDictHC, cctxPtr->cmem);
        LZ4F_free(cctxPtr, cctxPtr->cmem);
     }
     return LZ4F_OK_NoError;
@@ -650,16 +821,20 @@ static void LZ4F_initStream(void* ctx,
                             int level,
                             LZ4F_blockMode_t blockMode) {
     if (level < LZ4HC_CLEVEL_MIN) {
-        if (cdict || blockMode == LZ4F_blockLinked) {
+        
+
+
+
+
+
+        if (cdict) {
+            LZ4_resetStream_fast((LZ4_stream_t*)ctx);
+            LZ4_attach_dictionary((LZ4_stream_t*)ctx, cdict->fastCtx);
+        } else if (blockMode == LZ4F_blockLinked) {
             
 
 
-
-
-
-            LZ4_resetStream_fast((LZ4_stream_t*)ctx);
-            if (cdict)
-                LZ4_attach_dictionary((LZ4_stream_t*)ctx, cdict->fastCtx);
+            LZ4_initStream(ctx, sizeof(LZ4_stream_t));
         }
         
 
@@ -673,21 +848,108 @@ static void LZ4F_initStream(void* ctx,
     }
 }
 
-static int ctxTypeID_to_size(int ctxTypeID) {
-    switch(ctxTypeID) {
-    case 1:
-        return LZ4_sizeofState();
-    case 2:
-        return LZ4_sizeofStateHC();
-    default:
-        return 0;
+
+
+
+
+static void LZ4F_startStream(void* ctx, const LZ4F_preferences_t* prefs,
+                             const LZ4F_CDict* cdict, const void* dict, size_t dictSize)
+{
+    int const level = prefs->compressionLevel;
+    if (prefs->frameInfo.blockMode == LZ4F_blockLinked)
+        LZ4F_initStream(ctx, cdict, level, LZ4F_blockLinked);
+    if (level >= LZ4HC_CLEVEL_MIN)
+        LZ4_favorDecompressionSpeed((LZ4_streamHC_t*)ctx, (int)prefs->favorDecSpeed);
+    if (dict) {
+        assert(cdict == NULL);
+        assert(prefs->frameInfo.blockMode == LZ4F_blockLinked);
+        assert(dictSize <= INT_MAX);
+        if (level < LZ4HC_CLEVEL_MIN) {
+            LZ4_loadDict((LZ4_stream_t*)ctx, (const char*)dict, (int)dictSize);
+        } else {
+            LZ4_loadDictHC((LZ4_streamHC_t*)ctx, (const char*)dict, (int)dictSize);
+        }
     }
 }
 
 
 
 
-size_t LZ4F_compressBegin_internal(LZ4F_cctx* cctx,
+
+
+
+static size_t LZ4F_sizeofLZ4State(LZ4F_CtxType_e ctxType)
+{
+    switch (ctxType) {
+    case ctxNone: return 0;
+    case ctxFast: return sizeof(LZ4_stream_t);
+    case ctxHC:   return LZ4_STREAMHC_EXTSIZE;   
+    }
+    assert(0);   
+    return 0;
+}
+
+
+
+static void LZ4F_initLZ4State(void* state, LZ4F_CtxType_e ctxType, int level)
+{
+    if (ctxType == ctxFast) {
+        LZ4_initStream(state, sizeof(LZ4_stream_t));
+    } else {
+        assert(ctxType == ctxHC);
+        LZ4_initStreamHC(state, LZ4_STREAMHC_EXTSIZE);
+        LZ4_setCompressionLevel((LZ4_streamHC_t*)state, level);
+    }
+}
+
+size_t LZ4F_cctx_size(const LZ4F_cctx* cctx) {
+    if (cctx == NULL) {
+        return 0;
+    }
+    return sizeof(*cctx) + cctx->tmpBuffCapacity + cctx->stageCapacity + LZ4F_sizeofLZ4State((LZ4F_CtxType_e)cctx->lz4CtxAlloc)
+         + (cctx->rawDictFast ? sizeof(LZ4_stream_t) : 0) + (cctx->rawDictHC ? sizeof(LZ4_streamHC_t) : 0)
+         + LZ4F_mt_sizeof(cctx->mt);
+}
+
+
+
+
+
+
+
+
+static const LZ4F_CDict* LZ4F_digestRawDict(LZ4F_cctx_t* cctx, const void* dictBuffer, size_t dictSize)
+{
+    const char* dictStart = (const char*)dictBuffer;
+    if (dictSize > 64 KB) {
+        dictStart += dictSize - 64 KB;
+        dictSize = 64 KB;
+    }
+    cctx->rawDict.cmem = cctx->cmem;
+    cctx->rawDict.dictContent = NULL;
+    cctx->rawDict.fastCtx = NULL;
+    cctx->rawDict.HCCtx = NULL;
+    if (cctx->prefs.compressionLevel < LZ4HC_CLEVEL_MIN) {
+        if (cctx->rawDictFast == NULL) cctx->rawDictFast = (LZ4_stream_t*)LZ4F_malloc(sizeof(LZ4_stream_t), cctx->cmem);
+        if (cctx->rawDictFast == NULL) return NULL;
+        LZ4_initStream(cctx->rawDictFast, sizeof(LZ4_stream_t));
+        LZ4_loadDict(cctx->rawDictFast, dictStart, (int)dictSize);
+        cctx->rawDict.fastCtx = cctx->rawDictFast;
+    } else {
+        if (cctx->rawDictHC == NULL) cctx->rawDictHC = (LZ4_streamHC_t*)LZ4F_malloc(sizeof(LZ4_streamHC_t), cctx->cmem);
+        if (cctx->rawDictHC == NULL) return NULL;
+        LZ4_initStreamHC(cctx->rawDictHC, sizeof(LZ4_streamHC_t));
+        LZ4_setCompressionLevel(cctx->rawDictHC, cctx->prefs.compressionLevel);
+        LZ4_loadDictHC(cctx->rawDictHC, dictStart, (int)dictSize);
+        cctx->rawDict.HCCtx = cctx->rawDictHC;
+    }
+    return &cctx->rawDict;
+}
+
+
+
+
+static size_t LZ4F_compressBegin_internal(LZ4F_cctx* cctx,
                           void* dstBuffer, size_t dstCapacity,
                           const void* dictBuffer, size_t dictSize,
                           const LZ4F_CDict* cdict,
@@ -696,85 +958,96 @@ size_t LZ4F_compressBegin_internal(LZ4F_cctx* cctx,
     LZ4F_preferences_t const prefNull = LZ4F_INIT_PREFERENCES;
     BYTE* const dstStart = (BYTE*)dstBuffer;
     BYTE* dstPtr = dstStart;
+    int mtFrame;   
 
-    RETURN_ERROR_IF(dstCapacity < maxFHSize, dstMaxSize_tooSmall);
     if (preferencesPtr == NULL) preferencesPtr = &prefNull;
+    
+    {   size_t const headerSize = minFHSize
+                                + (preferencesPtr->frameInfo.contentSize ? 8 : 0)
+                                + (preferencesPtr->frameInfo.dictID ? 4 : 0);
+        RETURN_ERROR_IF(dstCapacity < headerSize, dstCapacity_tooSmall);
+    }
+    FORWARD_IF_ERROR( LZ4F_getBlockSize(preferencesPtr->frameInfo.blockSizeID) );
+    RETURN_ERROR_IF(dictSize > INT_MAX, parameter_invalid);
+    
+    LZ4F_invalidateFrame(cctx);   
+    cctx->mtActive = 0;
+    cctx->flushStage = 0;
+    cctx->pendingSize = 0;
     cctx->prefs = *preferencesPtr;
+    mtFrame = LZ4F_mtEligible(&cctx->prefs);
+    DEBUGLOG(5, "LZ4F_compressBegin_internal: Independent_blocks=%u", cctx->prefs.frameInfo.blockMode);
 
     
-    {   U16 const ctxTypeID = (cctx->prefs.compressionLevel < LZ4HC_CLEVEL_MIN) ? 1 : 2;
-        int requiredSize = ctxTypeID_to_size(ctxTypeID);
-        int allocatedSize = ctxTypeID_to_size(cctx->lz4CtxAlloc);
+    {   LZ4F_CtxType_e const ctxType = (cctx->prefs.compressionLevel < LZ4HC_CLEVEL_MIN) ? ctxFast : ctxHC;
+        size_t const requiredSize = LZ4F_sizeofLZ4State(ctxType);
+        size_t const allocatedSize = LZ4F_sizeofLZ4State((LZ4F_CtxType_e)cctx->lz4CtxAlloc);
         if (allocatedSize < requiredSize) {
             
+
             LZ4F_free(cctx->lz4CtxPtr, cctx->cmem);
-            if (cctx->prefs.compressionLevel < LZ4HC_CLEVEL_MIN) {
-                
-
-                cctx->lz4CtxPtr = LZ4F_malloc(sizeof(LZ4_stream_t), cctx->cmem);
-                if (cctx->lz4CtxPtr)
-                    LZ4_initStream(cctx->lz4CtxPtr, sizeof(LZ4_stream_t));
-            } else {
-                cctx->lz4CtxPtr = LZ4F_malloc(sizeof(LZ4_streamHC_t), cctx->cmem);
-                if (cctx->lz4CtxPtr)
-                    LZ4_initStreamHC(cctx->lz4CtxPtr, sizeof(LZ4_streamHC_t));
-            }
+            cctx->lz4CtxAlloc = (U16)ctxNone;   
+            cctx->lz4CtxPtr = LZ4F_malloc(requiredSize, cctx->cmem);
             RETURN_ERROR_IF(cctx->lz4CtxPtr == NULL, allocation_failed);
-            cctx->lz4CtxAlloc = ctxTypeID;
-            cctx->lz4CtxType = ctxTypeID;
-        } else if (cctx->lz4CtxType != ctxTypeID) {
+            cctx->lz4CtxAlloc = (U16)ctxType;
+            cctx->lz4CtxType = (U16)ctxNone;    
+        }
+        if (cctx->lz4CtxType != ctxType) {
             
-
-            if (cctx->prefs.compressionLevel < LZ4HC_CLEVEL_MIN) {
-                LZ4_initStream((LZ4_stream_t*)cctx->lz4CtxPtr, sizeof(LZ4_stream_t));
-            } else {
-                LZ4_initStreamHC((LZ4_streamHC_t*)cctx->lz4CtxPtr, sizeof(LZ4_streamHC_t));
-                LZ4_setCompressionLevel((LZ4_streamHC_t*)cctx->lz4CtxPtr, cctx->prefs.compressionLevel);
-            }
-            cctx->lz4CtxType = ctxTypeID;
+            LZ4F_initLZ4State(cctx->lz4CtxPtr, ctxType, cctx->prefs.compressionLevel);
+            cctx->lz4CtxType = (U16)ctxType;
     }   }
+
+    
+
+
+    if ( dictBuffer
+      && ((cctx->prefs.frameInfo.blockMode == LZ4F_blockIndependent) || mtFrame) ) {
+        assert(cdict == NULL);
+        cdict = LZ4F_digestRawDict(cctx, dictBuffer, dictSize);
+        RETURN_ERROR_IF(cdict == NULL, allocation_failed);
+        dictBuffer = NULL;
+        dictSize = 0;
+    }
 
     
     if (cctx->prefs.frameInfo.blockSizeID == 0)
         cctx->prefs.frameInfo.blockSizeID = LZ4F_BLOCKSIZEID_DEFAULT;
     cctx->maxBlockSize = LZ4F_getBlockSize(cctx->prefs.frameInfo.blockSizeID);
 
-    {   size_t const requiredBuffSize = preferencesPtr->autoFlush ?
-                ((cctx->prefs.frameInfo.blockMode == LZ4F_blockLinked) ? 64 KB : 0) :  
+    {   size_t const requiredBuffSize = mtFrame ? 0 :   
+                preferencesPtr->autoFlush ?
+                ((cctx->prefs.frameInfo.blockMode == LZ4F_blockLinked) ? 128 KB : 0) :  
                 cctx->maxBlockSize + ((cctx->prefs.frameInfo.blockMode == LZ4F_blockLinked) ? 128 KB : 0);
 
-        if (cctx->maxBufferSize < requiredBuffSize) {
-            cctx->maxBufferSize = 0;
+        if (cctx->tmpBuffCapacity < requiredBuffSize) {
+            cctx->tmpBuffCapacity = 0;
             LZ4F_free(cctx->tmpBuff, cctx->cmem);
             cctx->tmpBuff = (BYTE*)LZ4F_malloc(requiredBuffSize, cctx->cmem);
             RETURN_ERROR_IF(cctx->tmpBuff == NULL, allocation_failed);
-            cctx->maxBufferSize = requiredBuffSize;
+            cctx->tmpBuffCapacity = requiredBuffSize;
     }   }
     cctx->tmpIn = cctx->tmpBuff;
     cctx->tmpInSize = 0;
+    if (dictBuffer) {
+        
+
+
+        if (dictSize > 64 KB) {
+            dictBuffer = (const BYTE*)dictBuffer + dictSize - 64 KB;
+            dictSize = 64 KB;
+        }
+        assert(cctx->tmpBuffCapacity >= 128 KB);
+        memcpy(cctx->tmpBuff, dictBuffer, dictSize);
+        dictBuffer = cctx->tmpBuff;
+        cctx->tmpIn = cctx->tmpBuff + dictSize;
+    }
     (void)XXH32_reset(&(cctx->xxh), 0);
 
     
     cctx->cdict = cdict;
-    if (cctx->prefs.frameInfo.blockMode == LZ4F_blockLinked) {
-        
-        LZ4F_initStream(cctx->lz4CtxPtr, cdict, cctx->prefs.compressionLevel, LZ4F_blockLinked);
-    }
-    if (preferencesPtr->compressionLevel >= LZ4HC_CLEVEL_MIN) {
-        LZ4_favorDecompressionSpeed((LZ4_streamHC_t*)cctx->lz4CtxPtr, (int)preferencesPtr->favorDecSpeed);
-    }
-    if (dictBuffer) {
-        assert(cdict == NULL);
-        RETURN_ERROR_IF(dictSize > INT_MAX, parameter_invalid);
-        if (cctx->lz4CtxType == ctxFast) {
-            
-            LZ4_loadDict((LZ4_stream_t*)cctx->lz4CtxPtr, (const char*)dictBuffer, (int)dictSize);
-        } else {
-            
-            assert(cctx->lz4CtxType == ctxHC);
-            LZ4_loadDictHC((LZ4_streamHC_t*)cctx->lz4CtxPtr, (const char*)dictBuffer, (int)dictSize);
-        }
-    }
+    cctx->blockCompressMode = LZ4B_COMPRESSED;   
+    LZ4F_startStream(cctx->lz4CtxPtr, &cctx->prefs, cdict, dictBuffer, dictSize);
 
     
 
@@ -808,6 +1081,11 @@ size_t LZ4F_compressBegin_internal(LZ4F_cctx* cctx,
         dstPtr++;
     }
 
+    if (mtFrame) {
+        assert(dictBuffer == NULL);
+        FORWARD_IF_ERROR( LZ4F_mt_begin(cctx) );
+    }
+
     cctx->cStage = 1;   
     return (size_t)(dstPtr - dstStart);
 }
@@ -821,11 +1099,7 @@ size_t LZ4F_compressBegin(LZ4F_cctx* cctx,
                                         NULL, preferencesPtr);
 }
 
-
-
-
-
-size_t LZ4F_compressBegin_usingDictOnce(LZ4F_cctx* cctx,
+size_t LZ4F_compressBegin_usingDict(LZ4F_cctx* cctx,
                           void* dstBuffer, size_t dstCapacity,
                           const void* dict, size_t dictSize,
                           const LZ4F_preferences_t* preferencesPtr)
@@ -833,19 +1107,6 @@ size_t LZ4F_compressBegin_usingDictOnce(LZ4F_cctx* cctx,
     return LZ4F_compressBegin_internal(cctx, dstBuffer, dstCapacity,
                                         dict, dictSize,
                                         NULL, preferencesPtr);
-}
-
-size_t LZ4F_compressBegin_usingDict(LZ4F_cctx* cctx,
-                          void* dstBuffer, size_t dstCapacity,
-                          const void* dict, size_t dictSize,
-                          const LZ4F_preferences_t* preferencesPtr)
-{
-    
-
-
-    return LZ4F_compressBegin_usingDictOnce(cctx, dstBuffer, dstCapacity,
-                                        dict, dictSize,
-                                        preferencesPtr);
 }
 
 size_t LZ4F_compressBegin_usingCDict(LZ4F_cctx* cctx,
@@ -866,10 +1127,35 @@ size_t LZ4F_compressBegin_usingCDict(LZ4F_cctx* cctx,
 
 size_t LZ4F_compressBound(size_t srcSize, const LZ4F_preferences_t* preferencesPtr)
 {
-    if (preferencesPtr && preferencesPtr->autoFlush) {
-        return LZ4F_compressBound_internal(srcSize, preferencesPtr, 0);
+    size_t bound;
+    size_t const blockCRCSize = preferencesPtr
+                             ? BFSize * preferencesPtr->frameInfo.blockChecksumFlag
+                             : BFSize;
+    if (preferencesPtr && !preferencesPtr->autoFlush && LZ4F_mtEligible(preferencesPtr)) {
+        
+        return LZ4F_mtCompressBound(srcSize, preferencesPtr);
     }
-    return LZ4F_compressBound_internal(srcSize, preferencesPtr, (size_t)-1);
+    if (preferencesPtr && preferencesPtr->autoFlush) {
+        
+
+        return LZ4F_compressBound_autoFlush(srcSize, preferencesPtr) + (srcSize == 0);
+    }
+    
+
+
+
+
+
+
+    {   size_t const bs = LZ4F_getBlockSize(preferencesPtr ? preferencesPtr->frameInfo.blockSizeID : LZ4F_default);
+        size_t const blockSize = LZ4F_isError(bs) ? 4 MB : bs;
+        size_t const contentCRCSize = preferencesPtr
+                                    ? BFSize * preferencesPtr->frameInfo.contentChecksumFlag
+                                    : BFSize;
+        size_t const nbBlocks = srcSize / blockSize + 1;
+        bound = nbBlocks * (blockSize + BHSize + blockCRCSize) + BHSize + contentCRCSize;
+    }
+    return bound;
 }
 
 
@@ -880,20 +1166,30 @@ typedef int (*compressFunc_t)(void* ctx, const char* src, char* dst, int srcSize
 
 
 
-static size_t LZ4F_makeBlock(void* dst,
+
+
+
+static size_t LZ4F_makeBlock(void* dst, size_t dstCapacity,
                        const void* src, size_t srcSize,
                              compressFunc_t compress, void* lz4ctx, int level,
                        const LZ4F_CDict* cdict,
                              LZ4F_blockChecksum_t crcFlag)
 {
     BYTE* const cSizePtr = (BYTE*)dst;
+    size_t const overhead = BHSize + (size_t)crcFlag * BFSize;
+    int cCapacity = (srcSize > 1) ? (int)srcSize - 1 : 1;
     U32 cSize;
     assert(compress != NULL);
+    assert(srcSize > 0);
+    RETURN_ERROR_IF(dstCapacity <= overhead, dstCapacity_tooSmall);
+    if (dstCapacity - overhead < (size_t)cCapacity)
+        cCapacity = (int)(dstCapacity - overhead);
     cSize = (U32)compress(lz4ctx, (const char*)src, (char*)(cSizePtr+BHSize),
-                          (int)(srcSize), (int)(srcSize-1),
+                          (int)srcSize, cCapacity,
                           level, cdict);
 
     if (cSize == 0 || cSize >= srcSize) {
+        RETURN_ERROR_IF(dstCapacity - overhead < srcSize, dstCapacity_tooSmall);
         cSize = (U32)srcSize;
         LZ4F_writeLE32(cSizePtr, cSize | LZ4F_BLOCKUNCOMPRESSED_FLAG);
         memcpy(cSizePtr+BHSize, src, srcSize);
@@ -908,9 +1204,53 @@ static size_t LZ4F_makeBlock(void* dst,
 }
 
 
+
+
+
+
+
+
+
+
+static size_t LZ4F_compressBlocks_internal(void* dst, size_t dstCapacity,
+                                     const void* src, size_t srcSize, size_t blockSize,
+                                           compressFunc_t compress, void* lz4ctx, int level,
+                                     const LZ4F_CDict* cdict,
+                                           LZ4F_blockChecksum_t crcFlag)
+{
+    const BYTE* ip = (const BYTE*)src;
+    const BYTE* const iend = srcSize ? ip + srcSize : ip;
+    BYTE* const ostart = (BYTE*)dst;
+    BYTE* op = ostart;
+    BYTE* const oend = dstCapacity ? ostart + dstCapacity : ostart;
+
+    while (ip < iend) {
+        size_t const bSize = MIN(blockSize, (size_t)(iend - ip));
+        size_t const cSize = LZ4F_makeBlock(op, (size_t)(oend - op),
+                                            ip, bSize,
+                                            compress, lz4ctx, level,
+                                            cdict, crcFlag);
+        FORWARD_IF_ERROR(cSize);
+        ip += bSize;
+        op += cSize;
+    }
+    return (size_t)(op - ostart);
+}
+
+
+
+
+
+static int LZ4F_levelToAcceleration(int level)
+{
+    if (level >= 0) return 1;
+    if (level < 1 - LZ4_ACCELERATION_MAX) return LZ4_ACCELERATION_MAX;
+    return -level + 1;
+}
+
 static int LZ4F_compressBlock(void* ctx, const char* src, char* dst, int srcSize, int dstCapacity, int level, const LZ4F_CDict* cdict)
 {
-    int const acceleration = (level < 0) ? -level + 1 : 1;
+    int const acceleration = LZ4F_levelToAcceleration(level);
     DEBUGLOG(5, "LZ4F_compressBlock (srcSize=%i)", srcSize);
     LZ4F_initStream(ctx, cdict, level, LZ4F_blockIndependent);
     if (cdict) {
@@ -922,7 +1262,7 @@ static int LZ4F_compressBlock(void* ctx, const char* src, char* dst, int srcSize
 
 static int LZ4F_compressBlock_continue(void* ctx, const char* src, char* dst, int srcSize, int dstCapacity, int level, const LZ4F_CDict* cdict)
 {
-    int const acceleration = (level < 0) ? -level + 1 : 1;
+    int const acceleration = LZ4F_levelToAcceleration(level);
     (void)cdict; 
     DEBUGLOG(5, "LZ4F_compressBlock_continue (srcSize=%i)", srcSize);
     return LZ4_compress_fast_continue((LZ4_stream_t*)ctx, src, dst, srcSize, dstCapacity, acceleration);
@@ -962,19 +1302,17 @@ static compressFunc_t LZ4F_selectCompression(LZ4F_blockMode_t blockMode, int lev
 }
 
 
-static int LZ4F_localSaveDict(LZ4F_cctx_t* cctxPtr)
+static void LZ4F_localSaveDict(LZ4F_cctx_t* cctxPtr)
 {
-    if (cctxPtr->prefs.compressionLevel < LZ4HC_CLEVEL_MIN)
-        return LZ4_saveDict ((LZ4_stream_t*)(cctxPtr->lz4CtxPtr), (char*)(cctxPtr->tmpBuff), 64 KB);
-    return LZ4_saveDictHC ((LZ4_streamHC_t*)(cctxPtr->lz4CtxPtr), (char*)(cctxPtr->tmpBuff), 64 KB);
+    int const dictSize = (cctxPtr->prefs.compressionLevel < LZ4HC_CLEVEL_MIN) ?
+                    LZ4_saveDict ((LZ4_stream_t*)(cctxPtr->lz4CtxPtr), (char*)(cctxPtr->tmpBuff), 64 KB) :
+                    LZ4_saveDictHC ((LZ4_streamHC_t*)(cctxPtr->lz4CtxPtr), (char*)(cctxPtr->tmpBuff), 64 KB);
+    cctxPtr->tmpIn = cctxPtr->tmpBuff + dictSize;
 }
 
 typedef enum { notDone, fromTmpBuffer, fromSrcBuffer } LZ4F_lastBlockStatus;
 
-static const LZ4F_compressOptions_t k_cOptionsNull = { 0, { 0, 0, 0 } };
-
-
- 
+static const LZ4F_compressOptions_t k_cOptionsNull = { 0, 0, 0, 0 };
 
 
 
@@ -982,11 +1320,1071 @@ static const LZ4F_compressOptions_t k_cOptionsNull = { 0, { 0, 0, 0 } };
 
 
 
+static size_t LZ4F_reserveStage(LZ4F_cctx_t* cctx)
+{
+    size_t const needed = cctx->maxBlockSize + BHSize + BFSize;
+    if (cctx->stageCapacity >= needed) return 0;
+    LZ4F_free(cctx->stageBuff, cctx->cmem);
+    cctx->stageCapacity = 0;
+    cctx->stageBuff = (BYTE*)LZ4F_malloc(needed, cctx->cmem);
+    RETURN_ERROR_IF(cctx->stageBuff == NULL, allocation_failed);
+    cctx->stageCapacity = needed;
+    return 0;
+}
+
+
+
+static size_t LZ4F_copyPending(LZ4F_cctx_t* cctx, BYTE* dst, size_t dstCapacity, size_t pos)
+{
+    size_t const n = MIN(cctx->pendingSize, dstCapacity - pos);
+    assert(pos <= dstCapacity);
+    if (n) {
+        memcpy(dst + pos, cctx->pending, n);
+        cctx->pending += n;
+    }
+    cctx->pendingSize -= n;
+    return n;
+}
 
 
 
 
-static size_t LZ4F_compressUpdateImpl(LZ4F_cctx* cctxPtr,
+static size_t LZ4F_emitPendingWhole(LZ4F_cctx_t* cctx, BYTE* dst, size_t dstCapacity)
+{
+    cctx->flushStage = 0;
+    RETURN_ERROR_IF(cctx->pendingSize > dstCapacity, dstCapacity_tooSmall);
+    return LZ4F_copyPending(cctx, dst, dstCapacity, 0);
+}
+
+
+
+
+static size_t LZ4F_flushBlock(LZ4F_cctx_t* cctxPtr, void* dstBuffer, size_t dstCapacity)
+{
+    compressFunc_t compress;
+    size_t cSize;
+
+    DEBUGLOG(5, "LZ4F_flushBlock: %zu buffered bytes (saved dict size = %i) (dstCapacity=%u)",
+            cctxPtr->tmpInSize, (int)(cctxPtr->tmpIn - cctxPtr->tmpBuff), (unsigned)dstCapacity);
+    if (cctxPtr->tmpInSize == 0) return 0;   
+
+    
+    compress = LZ4F_selectCompression(cctxPtr->prefs.frameInfo.blockMode, cctxPtr->prefs.compressionLevel, cctxPtr->blockCompressMode);
+
+    
+    cSize = LZ4F_makeBlock(dstBuffer, dstCapacity,
+                           cctxPtr->tmpIn, cctxPtr->tmpInSize,
+                           compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
+                           cctxPtr->cdict,
+                           cctxPtr->prefs.frameInfo.blockChecksumFlag);
+    FORWARD_IF_ERROR_INVALIDATE(cSize, cctxPtr);
+    assert(((void)"flush overflows dstBuffer!", cSize <= dstCapacity));
+
+    if (cctxPtr->prefs.frameInfo.blockMode == LZ4F_blockLinked)
+        cctxPtr->tmpIn += cctxPtr->tmpInSize;
+    cctxPtr->tmpInSize = 0;
+
+    
+    if ((cctxPtr->tmpIn + cctxPtr->maxBlockSize) > (cctxPtr->tmpBuff + cctxPtr->tmpBuffCapacity)) {
+        assert(cctxPtr->prefs.frameInfo.blockMode == LZ4F_blockLinked);
+        LZ4F_localSaveDict(cctxPtr);
+    }
+
+    return cSize;
+}
+
+
+
+
+static size_t LZ4F_flushBlockPartial(LZ4F_cctx_t* cctx, BYTE* dst, size_t dstCapacity)
+{
+    size_t const worstCase = cctx->tmpInSize + BHSize + (size_t)cctx->prefs.frameInfo.blockChecksumFlag * BFSize;
+    size_t cSize;
+    if ((cctx->tmpInSize == 0) || (dstCapacity >= worstCase))
+        return LZ4F_flushBlock(cctx, dst, dstCapacity);
+    FORWARD_IF_ERROR_INVALIDATE(LZ4F_reserveStage(cctx), cctx);
+    cSize = LZ4F_flushBlock(cctx, cctx->stageBuff, cctx->stageCapacity);
+    FORWARD_IF_ERROR(cSize);   
+    cctx->pending = cctx->stageBuff;
+    cctx->pendingSize = cSize;
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static size_t LZ4F_compressJob(void* lz4ctx, const LZ4F_preferences_t* prefs,
+                         const LZ4F_CDict* cdict, size_t blockSize,
+                               void* dst, size_t dstCapacity,
+                         const BYTE* src, size_t srcSize, size_t prefixSize,
+                               LZ4F_BlockCompressMode_e mode)
+{
+    int const level = prefs->compressionLevel;
+    LZ4F_blockMode_t const blockMode = prefs->frameInfo.blockMode;
+
+    if (mode == LZ4B_UNCOMPRESSED) {   
+        return LZ4F_compressBlocks_internal(dst, dstCapacity, src, srcSize, blockSize,
+                                            LZ4F_doNotCompressBlock, NULL, 0, NULL,
+                                            prefs->frameInfo.blockChecksumFlag);
+    }
+
+    assert(prefixSize <= LZ4F_MT_PREFIX_SIZE);
+    if (prefixSize) {
+        LZ4F_startStream(lz4ctx, prefs, NULL, src - prefixSize, prefixSize);
+    } else {
+        LZ4F_startStream(lz4ctx, prefs, cdict, NULL, 0);
+    }
+
+    return LZ4F_compressBlocks_internal(dst, dstCapacity,
+                                        src, srcSize, blockSize,
+                                        LZ4F_selectCompression(blockMode, level, LZ4B_COMPRESSED),
+                                        lz4ctx, level, cdict,
+                                        prefs->frameInfo.blockChecksumFlag);
+}
+
+typedef void (*LZ4F_job_f)(void* arg, unsigned workerID);
+typedef struct LZ4F_pool_s LZ4F_pool_t;
+
+#if LZ4F_MULTITHREAD
+
+#if defined(_WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+   
+
+#  if !defined(_WIN32_WINNT) || (_WIN32_WINNT < 0x0600)
+#    if defined(_WINDOWS_)   
+#      error "LZ4F_MULTITHREAD requires Windows Vista API : define _WIN32_WINNT >= 0x0600 before including <windows.h>, or disable LZ4F_MULTITHREAD"
+#    endif
+#    undef  _WIN32_WINNT
+#    define _WIN32_WINNT 0x0600
+#  endif
+#  include <windows.h>
+   typedef HANDLE             LZ4F_thread_t;
+   typedef CRITICAL_SECTION   LZ4F_mutex_t;
+   typedef CONDITION_VARIABLE LZ4F_cond_t;
+#  define LZ4F_mutex_init(m)     (InitializeCriticalSection(m), 0)
+#  define LZ4F_mutex_destroy(m)  DeleteCriticalSection(m)
+#  define LZ4F_mutex_lock(m)     EnterCriticalSection(m)
+#  define LZ4F_mutex_unlock(m)   LeaveCriticalSection(m)
+#  define LZ4F_cond_init(c)      (InitializeConditionVariable(c), 0)
+#  define LZ4F_cond_destroy(c)   ((void)(c))
+#  define LZ4F_cond_wait(c, m)   SleepConditionVariableCS((c), (m), INFINITE)
+#  define LZ4F_cond_signal(c)    WakeConditionVariable(c)
+#  define LZ4F_cond_broadcast(c) WakeAllConditionVariable(c)
+#else
+#  include <pthread.h>
+#  include <signal.h>
+   typedef pthread_t       LZ4F_thread_t;
+   typedef pthread_mutex_t LZ4F_mutex_t;
+   typedef pthread_cond_t  LZ4F_cond_t;
+#  define LZ4F_mutex_init(m)     pthread_mutex_init((m), NULL)
+#  define LZ4F_mutex_destroy(m)  pthread_mutex_destroy(m)
+#  define LZ4F_mutex_lock(m)     pthread_mutex_lock(m)
+#  define LZ4F_mutex_unlock(m)   pthread_mutex_unlock(m)
+#  define LZ4F_cond_init(c)      pthread_cond_init((c), NULL)
+#  define LZ4F_cond_destroy(c)   pthread_cond_destroy(c)
+#  define LZ4F_cond_wait(c, m)   pthread_cond_wait((c), (m))
+#  define LZ4F_cond_signal(c)    pthread_cond_signal(c)
+#  define LZ4F_cond_broadcast(c) pthread_cond_broadcast(c)
+   
+
+
+#  if defined(SIG_SETMASK) && (!defined(_POSIX_C_SOURCE) || (_POSIX_C_SOURCE >= 199506L))
+#    define LZ4F_MT_BLOCK_SIGNALS 1
+#  else
+#    define LZ4F_MT_BLOCK_SIGNALS 0
+#  endif
+#endif
+
+
+
+#define LZ4F_MT_STACKSIZE_MIN (1 MB)
+
+
+
+
+
+
+
+typedef struct { LZ4F_job_f fn; void* arg; } LZ4F_poolJob_t;
+typedef struct { LZ4F_pool_t* pool; unsigned workerID; } LZ4F_poolWorker_t;
+
+struct LZ4F_pool_s {
+    LZ4F_mutex_t lock;
+    LZ4F_cond_t  jobQueued;    
+    LZ4F_cond_t  jobDone;      
+    LZ4F_poolJob_t* queue;     
+    unsigned queueCapacity;
+    unsigned queueHead;
+    unsigned queueSize;
+    int shutdown;
+    int cancel;                
+    unsigned nbDone;           
+    unsigned nbBusy;           
+    LZ4F_thread_t* threads;
+    LZ4F_poolWorker_t* workers;
+    unsigned nbThreads;        
+    unsigned maxThreads;
+};
+
+
+static LZ4F_poolJob_t LZ4F_pool_pop(LZ4F_pool_t* pool)
+{
+    LZ4F_poolJob_t const job = pool->queue[pool->queueHead];
+    assert(pool->queueSize > 0);
+    pool->queueHead = (pool->queueHead + 1) % pool->queueCapacity;
+    pool->queueSize--;
+    return job;
+}
+
+static void LZ4F_pool_work(LZ4F_poolWorker_t* worker)
+{
+    LZ4F_pool_t* const pool = worker->pool;
+    int busy = 0;
+    for (;;) {
+        LZ4F_poolJob_t job;
+        LZ4F_mutex_lock(&pool->lock);
+        if (busy) pool->nbBusy--;
+        while ((pool->queueSize == 0) && !pool->shutdown)
+            LZ4F_cond_wait(&pool->jobQueued, &pool->lock);
+        if (pool->queueSize == 0) {   
+            LZ4F_mutex_unlock(&pool->lock);
+            return;
+        }
+        job = LZ4F_pool_pop(pool);
+        pool->nbBusy++;
+        busy = 1;
+        LZ4F_mutex_unlock(&pool->lock);
+        job.fn(job.arg, worker->workerID);
+    }
+}
+
+#if defined(_WIN32)
+static DWORD WINAPI LZ4F_pool_thread(LPVOID arg)
+{
+    LZ4F_pool_work((LZ4F_poolWorker_t*)arg);
+    return 0;
+}
+#else
+static void* LZ4F_pool_thread(void* arg)
+{
+    LZ4F_pool_work((LZ4F_poolWorker_t*)arg);
+    return NULL;
+}
+#endif
+
+
+
+static unsigned LZ4F_pool_startThreads(LZ4F_pool_t* pool, unsigned nbThreads)
+{
+    unsigned n;
+#if defined(_WIN32)
+    assert(nbThreads <= pool->maxThreads);
+    for (n = pool->nbThreads; n < nbThreads; n++) {
+        
+        pool->threads[n] = CreateThread(NULL, LZ4F_MT_STACKSIZE_MIN, LZ4F_pool_thread, &pool->workers[n],
+                                        STACK_SIZE_PARAM_IS_A_RESERVATION, NULL);
+        if (pool->threads[n] == NULL) break;
+    }
+#else
+    pthread_attr_t attr;
+    int const attrOK = !pthread_attr_init(&attr);
+#  if LZ4F_MT_BLOCK_SIGNALS
+    sigset_t allSignals, previousMask;
+    sigfillset(&allSignals);
+    sigdelset(&allSignals, SIGBUS);
+    sigdelset(&allSignals, SIGSEGV);
+    sigdelset(&allSignals, SIGFPE);
+    sigdelset(&allSignals, SIGILL);
+    pthread_sigmask(SIG_SETMASK, &allSignals, &previousMask);   
+#  endif
+    if (attrOK) {
+        size_t stackSize;
+        if (!pthread_attr_getstacksize(&attr, &stackSize) && (stackSize < LZ4F_MT_STACKSIZE_MIN))
+            (void)pthread_attr_setstacksize(&attr, LZ4F_MT_STACKSIZE_MIN);
+    }
+    assert(nbThreads <= pool->maxThreads);
+    for (n = pool->nbThreads; n < nbThreads; n++) {
+        if (pthread_create(&pool->threads[n], attrOK ? &attr : NULL, LZ4F_pool_thread, &pool->workers[n])) break;
+    }
+#  if LZ4F_MT_BLOCK_SIGNALS
+    pthread_sigmask(SIG_SETMASK, &previousMask, NULL);
+#  endif
+    if (attrOK) pthread_attr_destroy(&attr);
+#endif
+    pool->nbThreads = n;
+    return n;
+}
+
+static void LZ4F_pool_freeMem(LZ4F_pool_t* pool, LZ4F_CustomMem cmem)
+{
+    LZ4F_free(pool->queue, cmem);
+    LZ4F_free(pool->threads, cmem);
+    LZ4F_free(pool->workers, cmem);
+    LZ4F_free(pool, cmem);
+}
+
+static void LZ4F_pool_free(LZ4F_pool_t* pool, LZ4F_CustomMem cmem)
+{
+    unsigned n;
+    if (pool == NULL) return;
+    LZ4F_mutex_lock(&pool->lock);
+    pool->shutdown = 1;
+    LZ4F_cond_broadcast(&pool->jobQueued);
+    LZ4F_mutex_unlock(&pool->lock);
+    for (n = 0; n < pool->nbThreads; n++) {
+#if defined(_WIN32)
+        WaitForSingleObject(pool->threads[n], INFINITE);   
+        CloseHandle(pool->threads[n]);
+#else
+        pthread_join(pool->threads[n], NULL);
+#endif
+    }
+    LZ4F_cond_destroy(&pool->jobDone);
+    LZ4F_cond_destroy(&pool->jobQueued);
+    LZ4F_mutex_destroy(&pool->lock);
+    LZ4F_pool_freeMem(pool, cmem);
+}
+
+
+
+
+static LZ4F_pool_t* LZ4F_pool_create(unsigned maxThreads, unsigned queueCapacity, LZ4F_CustomMem cmem)
+{
+    LZ4F_pool_t* const pool = (LZ4F_pool_t*)LZ4F_calloc(sizeof(*pool), cmem);
+    if (pool == NULL) return NULL;
+    pool->queue = (LZ4F_poolJob_t*)LZ4F_malloc(queueCapacity * sizeof(*pool->queue), cmem);
+    pool->threads = (LZ4F_thread_t*)LZ4F_malloc(maxThreads * sizeof(*pool->threads), cmem);
+    pool->workers = (LZ4F_poolWorker_t*)LZ4F_malloc(maxThreads * sizeof(*pool->workers), cmem);
+    if (pool->queue == NULL || pool->threads == NULL || pool->workers == NULL) {
+        LZ4F_pool_freeMem(pool, cmem);
+        return NULL;
+    }
+    if (LZ4F_mutex_init(&pool->lock)) {
+        LZ4F_pool_freeMem(pool, cmem);
+        return NULL;
+    }
+    if (LZ4F_cond_init(&pool->jobQueued)) {
+        LZ4F_mutex_destroy(&pool->lock);
+        LZ4F_pool_freeMem(pool, cmem);
+        return NULL;
+    }
+    if (LZ4F_cond_init(&pool->jobDone)) {
+        LZ4F_cond_destroy(&pool->jobQueued);
+        LZ4F_mutex_destroy(&pool->lock);
+        LZ4F_pool_freeMem(pool, cmem);
+        return NULL;
+    }
+    pool->queueCapacity = queueCapacity;
+    pool->maxThreads = maxThreads;
+    {   unsigned n;
+        for (n = 0; n < maxThreads; n++) {
+            pool->workers[n].pool = pool;
+            pool->workers[n].workerID = n+1;
+    }   }
+    if (LZ4F_pool_startThreads(pool, 1) == 0) {
+        LZ4F_pool_free(pool, cmem);
+        return NULL;
+    }
+    return pool;
+}
+
+
+
+
+static unsigned LZ4F_pool_nbThreads(const LZ4F_pool_t* pool)
+{
+    assert(pool != NULL);
+    return pool->nbThreads;
+}
+
+
+static size_t LZ4F_pool_sizeof(const LZ4F_pool_t* pool)
+{
+    assert(pool != NULL);
+    return sizeof(*pool) + pool->queueCapacity * sizeof(*pool->queue)
+         + pool->maxThreads * (sizeof(*pool->threads) + sizeof(*pool->workers));
+}
+
+
+static int LZ4F_pool_submit(LZ4F_pool_t* pool, LZ4F_job_f fn, void* arg)
+{
+    int moreThreads;
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    assert(pool->queueSize < pool->queueCapacity);
+    {   LZ4F_poolJob_t* const job = pool->queue + (pool->queueHead + pool->queueSize) % pool->queueCapacity;
+        job->fn = fn;
+        job->arg = arg;
+    }
+    pool->queueSize++;
+    moreThreads = (pool->queueSize > pool->nbThreads - pool->nbBusy) && (pool->nbThreads < pool->maxThreads);
+    LZ4F_cond_signal(&pool->jobQueued);
+    LZ4F_mutex_unlock(&pool->lock);
+    return moreThreads;
+}
+
+static void LZ4F_pool_setDone(LZ4F_pool_t* pool, int* doneFlag)
+{
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    *doneFlag = 1;
+    pool->nbDone++;
+    LZ4F_cond_broadcast(&pool->jobDone);
+    LZ4F_mutex_unlock(&pool->lock);
+}
+
+static void LZ4F_pool_setCancel(LZ4F_pool_t* pool, int cancel)
+{
+    if (pool == NULL) return;
+    LZ4F_mutex_lock(&pool->lock);
+    pool->cancel = cancel;
+    LZ4F_mutex_unlock(&pool->lock);
+}
+
+static int LZ4F_pool_isCancelled(LZ4F_pool_t* pool)
+{
+    int cancel;
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    cancel = pool->cancel;
+    LZ4F_mutex_unlock(&pool->lock);
+    return cancel;
+}
+
+static int LZ4F_pool_isDone(LZ4F_pool_t* pool, const int* doneFlag)
+{
+    int done;
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    done = *doneFlag;
+    LZ4F_mutex_unlock(&pool->lock);
+    return done;
+}
+
+
+static void LZ4F_pool_waitDone(LZ4F_pool_t* pool, const int* doneFlag)
+{
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    while (!*doneFlag) LZ4F_cond_wait(&pool->jobDone, &pool->lock);
+    LZ4F_mutex_unlock(&pool->lock);
+}
+
+static unsigned LZ4F_pool_nbDone(LZ4F_pool_t* pool)
+{
+    unsigned nbDone;
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    nbDone = pool->nbDone;
+    LZ4F_mutex_unlock(&pool->lock);
+    return nbDone;
+}
+
+
+static void LZ4F_pool_waitAny(LZ4F_pool_t* pool, unsigned nbDone)
+{
+    assert(pool != NULL);
+    LZ4F_mutex_lock(&pool->lock);
+    while (pool->nbDone == nbDone) LZ4F_cond_wait(&pool->jobDone, &pool->lock);
+    LZ4F_mutex_unlock(&pool->lock);
+}
+
+#else  
+
+static unsigned LZ4F_pool_nbThreads(const LZ4F_pool_t* pool) { (void)pool; return 0; }
+static size_t LZ4F_pool_sizeof(const LZ4F_pool_t* pool) { (void)pool; return 0; }
+static void LZ4F_pool_free(LZ4F_pool_t* pool, LZ4F_CustomMem cmem) { (void)pool; (void)cmem; }
+static int  LZ4F_pool_submit(LZ4F_pool_t* pool, LZ4F_job_f fn, void* arg) { (void)pool; fn(arg, 0); return 0; }
+static unsigned LZ4F_pool_startThreads(LZ4F_pool_t* pool, unsigned nbThreads) { (void)pool; (void)nbThreads; return 0; }
+static void LZ4F_pool_setDone(LZ4F_pool_t* pool, int* doneFlag) { (void)pool; *doneFlag = 1; }
+static void LZ4F_pool_setCancel(LZ4F_pool_t* pool, int cancel) { (void)pool; (void)cancel; }
+static int  LZ4F_pool_isCancelled(LZ4F_pool_t* pool) { (void)pool; return 0; }
+static int  LZ4F_pool_isDone(LZ4F_pool_t* pool, const int* doneFlag) { (void)pool; return *doneFlag; }
+static void LZ4F_pool_waitDone(LZ4F_pool_t* pool, const int* doneFlag) { (void)pool; (void)doneFlag; assert(*doneFlag); }
+static unsigned LZ4F_pool_nbDone(LZ4F_pool_t* pool) { (void)pool; return 0; }
+static void LZ4F_pool_waitAny(LZ4F_pool_t* pool, unsigned nbDone) { (void)pool; (void)nbDone; assert(0); }
+
+#endif  
+
+typedef struct {
+    LZ4F_mtCtx_t* mt;
+    const BYTE* src;     
+    size_t srcSize;
+    size_t prefixSize;
+    BYTE* inBuff;        
+    BYTE* outBuff;       
+    LZ4F_BlockCompressMode_e mode;   
+    size_t cSize;        
+    int done;            
+} LZ4F_mtJob_t;
+
+struct LZ4F_mtCtx_s {
+    LZ4F_CustomMem cmem;
+    LZ4F_pool_t* pool;       
+    unsigned poolRequested;  
+    void** states;           
+    unsigned nbStates;       
+    LZ4F_CtxType_e statesType;
+    LZ4F_mtJob_t* jobs;      
+    unsigned nbJobSlots;
+    size_t inCapacity;       
+    size_t outCapacity;      
+    
+    BYTE** inBuffs;          
+    BYTE** inFree;           
+    unsigned nbInBuffs;
+    unsigned nbInFree;
+    unsigned maxInBuffs;     
+    unsigned oldest;         
+    size_t emitted;          
+    unsigned nbSubmitted;
+    int filling;             
+    BYTE* history;           
+    size_t historySize;
+    const BYTE* stableEnd;   
+    size_t stableRun;        
+    
+    const LZ4F_preferences_t* prefs;
+    const LZ4F_CDict* cdict;
+    size_t blockSize;
+    size_t jobSize;
+};
+
+static void LZ4F_mt_runJob(void* arg, unsigned workerID)
+{
+    LZ4F_mtJob_t* const job = (LZ4F_mtJob_t*)arg;
+    LZ4F_mtCtx_t* const mt = job->mt;
+    assert(mt->states[workerID] != NULL);
+    if (LZ4F_pool_isCancelled(mt->pool)) {
+        job->cSize = 0;   
+    } else {
+        job->cSize = LZ4F_compressJob(mt->states[workerID], mt->prefs, mt->cdict, mt->blockSize,
+                                      job->outBuff, mt->outCapacity,
+                                      job->src, job->srcSize, job->prefixSize, job->mode);
+    }
+    LZ4F_pool_setDone(mt->pool, &job->done);
+}
+
+
+static unsigned LZ4F_mt_nbUsableSlots(const LZ4F_mtCtx_t* mt)
+{
+    unsigned const nbThreads = LZ4F_pool_nbThreads(mt->pool);
+    return nbThreads ? (unsigned)LZ4F_MT_NBSLOTS(nbThreads) : 1;
+}
+
+
+
+static int LZ4F_mt_allocState(LZ4F_mtCtx_t* mt, unsigned workerID, int level)
+{
+    if (mt->states[workerID] == NULL) {
+        void* const state = LZ4F_malloc(LZ4F_sizeofLZ4State(mt->statesType), mt->cmem);
+        if (state == NULL) return 0;
+        LZ4F_initLZ4State(state, mt->statesType, level);
+        mt->states[workerID] = state;
+    }
+    return 1;
+}
+
+
+
+static void LZ4F_mt_addWorker(LZ4F_mtCtx_t* mt)
+{
+    unsigned const workerID = LZ4F_pool_nbThreads(mt->pool) + 1;
+    assert(workerID < mt->nbStates);
+    if (LZ4F_mt_allocState(mt, workerID, mt->prefs->compressionLevel))
+        (void)LZ4F_pool_startThreads(mt->pool, workerID);
+}
+
+
+static LZ4F_mtJob_t* LZ4F_mt_job(LZ4F_mtCtx_t* mt, unsigned n)
+{
+    return mt->jobs + (mt->oldest + n) % mt->nbJobSlots;
+}
+
+static LZ4F_mtJob_t* LZ4F_mt_fillingSlot(LZ4F_mtCtx_t* mt)
+{
+    return LZ4F_mt_job(mt, mt->nbSubmitted);
+}
+
+
+static void LZ4F_mt_addHistory(LZ4F_mtCtx_t* mt, const BYTE* content, size_t size)
+{
+    if (size >= LZ4F_MT_PREFIX_SIZE) {
+        memcpy(mt->history, content + size - LZ4F_MT_PREFIX_SIZE, LZ4F_MT_PREFIX_SIZE);
+        mt->historySize = LZ4F_MT_PREFIX_SIZE;
+    } else {
+        size_t const kept = MIN(mt->historySize, LZ4F_MT_PREFIX_SIZE - size);
+        memmove(mt->history, mt->history + mt->historySize - kept, kept);
+        memcpy(mt->history + kept, content, size);
+        mt->historySize = kept + size;
+    }
+}
+
+
+
+static void LZ4F_mt_submit_internal(LZ4F_mtCtx_t* mt, int inCallingThread)
+{
+    LZ4F_mtJob_t* const job = LZ4F_mt_fillingSlot(mt);
+    assert(mt->filling);
+    assert(job->srcSize > 0);
+    job->done = 0;
+    mt->filling = 0;
+    mt->nbSubmitted++;
+    if (inCallingThread)
+        LZ4F_mt_runJob(job, 0);
+    else if (LZ4F_pool_submit(mt->pool, LZ4F_mt_runJob, job))
+        LZ4F_mt_addWorker(mt);   
+    if (mt->prefs->frameInfo.blockMode == LZ4F_blockLinked)
+        LZ4F_mt_addHistory(mt, job->src, job->srcSize);   
+}
+
+static void LZ4F_mt_submit(LZ4F_mtCtx_t* mt) { LZ4F_mt_submit_internal(mt, 0); }
+
+
+
+static void LZ4F_mt_submitLast(LZ4F_mtCtx_t* mt) { LZ4F_mt_submit_internal(mt, mt->nbSubmitted == 0); }
+
+
+static void LZ4F_mt_releaseInBuff(LZ4F_mtCtx_t* mt, LZ4F_mtJob_t* job)
+{
+    if (job->inBuff == NULL) return;
+    assert(mt->nbInFree < mt->nbInBuffs);
+    mt->inFree[mt->nbInFree++] = job->inBuff;
+    job->inBuff = NULL;
+}
+
+
+static void LZ4F_mt_retireOldest(LZ4F_mtCtx_t* mt)
+{
+    LZ4F_mt_releaseInBuff(mt, mt->jobs + mt->oldest);
+    mt->oldest = (mt->oldest + 1) % mt->nbJobSlots;
+    mt->nbSubmitted--;
+    mt->emitted = 0;
+}
+
+
+
+
+
+static BYTE* LZ4F_mt_acquireInBuff(LZ4F_mtCtx_t* mt, LZ4F_CustomMem cmem)
+{
+    if (mt->nbInFree) return mt->inFree[--mt->nbInFree];
+    if (mt->nbInBuffs < LZ4F_pool_nbThreads(mt->pool) + LZ4F_MT_EXTRA_INBUFFS) {
+        BYTE* const buff = (BYTE*)LZ4F_malloc(mt->inCapacity, cmem);
+        assert(mt->nbInBuffs < mt->maxInBuffs);
+        if (buff != NULL) mt->inBuffs[mt->nbInBuffs++] = buff;
+        return buff;
+    }
+    for (;;) {
+        unsigned const nbDone = LZ4F_pool_nbDone(mt->pool);
+        unsigned n;
+        for (n = 0; n < mt->nbSubmitted; n++) {
+            LZ4F_mtJob_t* const job = LZ4F_mt_job(mt, n);
+            if ((job->inBuff != NULL) && LZ4F_pool_isDone(mt->pool, &job->done)) {
+                BYTE* const buff = job->inBuff;
+                job->inBuff = NULL;
+                return buff;
+        }   }
+        
+        LZ4F_pool_waitAny(mt->pool, nbDone);
+    }
+}
+
+
+
+static size_t LZ4F_mt_emitOldest(LZ4F_mtCtx_t* mt, BYTE* dst, size_t dstCapacity, size_t pos)
+{
+    LZ4F_mtJob_t* const job = mt->jobs + mt->oldest;
+    size_t toEmit;
+    assert(mt->nbSubmitted > 0);
+    assert(pos <= dstCapacity);
+    LZ4F_pool_waitDone(mt->pool, &job->done);
+    FORWARD_IF_ERROR(job->cSize);
+    toEmit = job->cSize - mt->emitted;   
+    RETURN_ERROR_IF(toEmit > dstCapacity - pos, dstCapacity_tooSmall);
+    memcpy(dst + pos, job->outBuff + mt->emitted, toEmit);
+    LZ4F_mt_retireOldest(mt);
+    return toEmit;
+}
+
+
+
+
+static size_t LZ4F_mt_emit(LZ4F_mtCtx_t* mt, BYTE* dst, size_t dstCapacity, size_t pos, int all)
+{
+    size_t written = 0;
+    while (mt->nbSubmitted > 0) {
+        const LZ4F_mtJob_t* const job = mt->jobs + mt->oldest;
+        if (!all) {
+            if (!LZ4F_pool_isDone(mt->pool, &job->done)) break;
+            if (job->cSize - mt->emitted > dstCapacity - (pos + written)) break;   
+        }
+        {   size_t const r = LZ4F_mt_emitOldest(mt, dst, dstCapacity, pos + written);
+            FORWARD_IF_ERROR(r);
+            written += r;
+    }   }
+    return written;
+}
+
+
+static void LZ4F_mt_abort(LZ4F_mtCtx_t* mt)
+{
+    LZ4F_pool_setCancel(mt->pool, 1);
+    while (mt->nbSubmitted > 0) {
+        LZ4F_pool_waitDone(mt->pool, &mt->jobs[mt->oldest].done);
+        LZ4F_mt_retireOldest(mt);
+    }
+    LZ4F_pool_setCancel(mt->pool, 0);
+    if (mt->filling) LZ4F_mt_releaseInBuff(mt, LZ4F_mt_fillingSlot(mt));
+    mt->filling = 0;
+    mt->emitted = 0;
+    mt->stableEnd = NULL;
+}
+
+static void LZ4F_mt_freeStates(LZ4F_mtCtx_t* mt, LZ4F_CustomMem cmem)
+{
+    unsigned n;
+    for (n = 1; n < mt->nbStates; n++) LZ4F_free(mt->states[n], cmem);   
+    LZ4F_free(mt->states, cmem);
+    mt->states = NULL;
+    mt->nbStates = 0;
+}
+
+static void LZ4F_mt_freeInBuffs(LZ4F_mtCtx_t* mt, LZ4F_CustomMem cmem)
+{
+    unsigned n;
+    assert(mt->nbInFree == mt->nbInBuffs);   
+    for (n = 0; n < mt->nbInBuffs; n++) LZ4F_free(mt->inBuffs[n], cmem);
+    LZ4F_free(mt->inBuffs, cmem);
+    LZ4F_free(mt->inFree, cmem);
+    mt->inBuffs = mt->inFree = NULL;
+    mt->nbInBuffs = mt->nbInFree = mt->maxInBuffs = 0;
+}
+
+static void LZ4F_mt_freeJobs(LZ4F_mtCtx_t* mt, LZ4F_CustomMem cmem)
+{
+    unsigned n;
+    for (n = 0; n < mt->nbJobSlots; n++) {
+        assert(mt->jobs[n].inBuff == NULL);
+        LZ4F_free(mt->jobs[n].outBuff, cmem);
+    }
+    LZ4F_free(mt->jobs, cmem);
+    mt->jobs = NULL;
+    mt->nbJobSlots = 0;
+}
+
+static void LZ4F_mt_free(LZ4F_mtCtx_t* mt, LZ4F_CustomMem cmem)
+{
+    if (mt == NULL) return;
+    LZ4F_mt_abort(mt);
+    LZ4F_pool_free(mt->pool, cmem);
+    LZ4F_mt_freeStates(mt, cmem);
+    LZ4F_mt_freeJobs(mt, cmem);
+    LZ4F_mt_freeInBuffs(mt, cmem);
+    LZ4F_free(mt->history, cmem);
+    LZ4F_free(mt, cmem);
+}
+
+static size_t LZ4F_mt_sizeof(const LZ4F_mtCtx_t* mt)
+{
+    size_t size;
+    unsigned n;
+    if (mt == NULL) return 0;
+    size = sizeof(*mt) + LZ4F_MT_PREFIX_SIZE
+         + mt->nbStates * sizeof(void*)
+         + mt->nbJobSlots * sizeof(LZ4F_mtJob_t)
+         + mt->maxInBuffs * 2 * sizeof(BYTE*) + mt->nbInBuffs * mt->inCapacity
+         + (mt->pool ? LZ4F_pool_sizeof(mt->pool) : 0);
+    for (n = 1; n < mt->nbStates; n++) if (mt->states[n] != NULL) size += LZ4F_sizeofLZ4State(mt->statesType);
+    for (n = 0; n < mt->nbJobSlots; n++) if (mt->jobs[n].outBuff != NULL) size += mt->outCapacity;
+    return size;
+}
+
+
+
+
+
+
+static size_t LZ4F_mt_begin(LZ4F_cctx_t* cctx)
+{
+    LZ4F_CustomMem const cmem = cctx->cmem;
+    unsigned const nbWorkers = MIN(cctx->prefs.nbWorkers, LZ4F_NBWORKERS_MAX);
+    LZ4F_CtxType_e const ctxType = (LZ4F_CtxType_e)cctx->lz4CtxType;
+    size_t const blockSize = cctx->maxBlockSize;
+    size_t const jobSize = LZ4F_mtJobSize(blockSize);
+    size_t const inCapacity = LZ4F_MT_PREFIX_SIZE + jobSize;
+    size_t const outCapacity = LZ4F_blocksBound(jobSize, blockSize, LZ4F_blockChecksumEnabled);
+    LZ4F_mtCtx_t* mt = cctx->mt;
+    unsigned nbThreads, maxThreads, nbJobSlots;
+
+    assert(nbWorkers >= 1);
+    (void)nbWorkers;   
+    if (mt == NULL) {
+        mt = (LZ4F_mtCtx_t*)LZ4F_calloc(sizeof(*mt), cmem);
+        RETURN_ERROR_IF(mt == NULL, allocation_failed);
+        mt->history = (BYTE*)LZ4F_malloc(LZ4F_MT_PREFIX_SIZE, cmem);
+        if (mt->history == NULL) {
+            LZ4F_free(mt, cmem);
+            RETURN_ERROR(allocation_failed);
+        }
+        mt->cmem = cmem;
+        cctx->mt = mt;
+    }
+    assert(mt->nbSubmitted == 0 && !mt->filling);
+
+    
+#if LZ4F_MULTITHREAD
+    
+
+    if ((mt->pool == NULL) || (mt->poolRequested != nbWorkers)) {
+        LZ4F_pool_free(mt->pool, cmem);
+        mt->pool = LZ4F_pool_create(nbWorkers, (unsigned)LZ4F_MT_NBSLOTS(nbWorkers), cmem);   
+        mt->poolRequested = nbWorkers;
+        RETURN_ERROR_IF(mt->pool == NULL, allocation_failed);
+    }
+#endif
+    
+
+    nbThreads = LZ4F_pool_nbThreads(mt->pool);   
+    maxThreads = mt->pool ? mt->poolRequested : 0;
+    nbJobSlots = maxThreads ? (unsigned)LZ4F_MT_NBSLOTS(maxThreads) : 1;
+
+    
+    if ((mt->nbStates != maxThreads + 1) || (mt->statesType != ctxType)) {
+        LZ4F_mt_freeStates(mt, cmem);
+        mt->states = (void**)LZ4F_calloc((maxThreads + 1) * sizeof(void*), cmem);
+        RETURN_ERROR_IF(mt->states == NULL, allocation_failed);
+        mt->nbStates = maxThreads + 1;
+        mt->statesType = ctxType;
+    }
+    {   unsigned n;
+        for (n = 1; n <= nbThreads; n++)   
+            RETURN_ERROR_IF(!LZ4F_mt_allocState(mt, n, cctx->prefs.compressionLevel), allocation_failed);
+    }
+    mt->states[0] = cctx->lz4CtxPtr;
+
+    
+    if (mt->nbJobSlots != nbJobSlots) {
+        LZ4F_mt_freeJobs(mt, cmem);
+        mt->jobs = (LZ4F_mtJob_t*)LZ4F_calloc(nbJobSlots * sizeof(LZ4F_mtJob_t), cmem);
+        RETURN_ERROR_IF(mt->jobs == NULL, allocation_failed);
+        mt->nbJobSlots = nbJobSlots;
+    }
+    if (mt->outCapacity < outCapacity) {
+        unsigned n;
+        for (n = 0; n < mt->nbJobSlots; n++) {
+            LZ4F_free(mt->jobs[n].outBuff, cmem);
+            mt->jobs[n].outBuff = NULL;
+        }
+        mt->outCapacity = outCapacity;
+    }
+
+    
+    if ((mt->maxInBuffs != maxThreads + LZ4F_MT_EXTRA_INBUFFS) || (mt->inCapacity < inCapacity)) {
+        LZ4F_mt_freeInBuffs(mt, cmem);
+        mt->inBuffs = (BYTE**)LZ4F_malloc((maxThreads + LZ4F_MT_EXTRA_INBUFFS) * sizeof(BYTE*), cmem);
+        mt->inFree = (BYTE**)LZ4F_malloc((maxThreads + LZ4F_MT_EXTRA_INBUFFS) * sizeof(BYTE*), cmem);
+        if ((mt->inBuffs == NULL) || (mt->inFree == NULL)) {
+            LZ4F_mt_freeInBuffs(mt, cmem);
+            RETURN_ERROR(allocation_failed);
+        }
+        mt->maxInBuffs = maxThreads + LZ4F_MT_EXTRA_INBUFFS;
+        mt->inCapacity = inCapacity;
+    }
+
+    
+    {   unsigned n;
+        for (n = 0; n < nbJobSlots; n++) mt->jobs[n].mt = mt;
+    }
+    mt->prefs = &cctx->prefs;
+    mt->cdict = cctx->cdict;
+    mt->blockSize = blockSize;
+    mt->jobSize = jobSize;
+    mt->oldest = 0;
+    mt->emitted = 0;
+    mt->nbSubmitted = 0;
+    mt->filling = 0;
+    mt->historySize = 0;
+    mt->stableEnd = NULL;
+    mt->stableRun = 0;
+    cctx->mtActive = 1;
+    return 0;
+}
+
+
+
+
+static void LZ4F_mt_flushPoint(LZ4F_mtCtx_t* mt)
+{
+    unsigned n;
+    if (mt->filling) LZ4F_mt_submitLast(mt);
+    for (n = 0; n < mt->nbSubmitted; n++)
+        LZ4F_pool_waitDone(mt->pool, &LZ4F_mt_job(mt, n)->done);
+}
+
+
+
+
+
+static size_t LZ4F_mt_emitPartial(LZ4F_mtCtx_t* mt, BYTE* dst, size_t dstCapacity, size_t pos)
+{
+    size_t const start = pos;
+    while (mt->nbSubmitted > 0) {
+        LZ4F_mtJob_t* const job = mt->jobs + mt->oldest;
+        size_t n;
+        assert(LZ4F_pool_isDone(mt->pool, &job->done));
+        FORWARD_IF_ERROR(job->cSize);
+        n = MIN(job->cSize - mt->emitted, dstCapacity - pos);
+        if (n) memcpy(dst + pos, job->outBuff + mt->emitted, n);
+        pos += n;
+        mt->emitted += n;
+        if (mt->emitted < job->cSize) break;   
+        LZ4F_mt_retireOldest(mt);
+    }
+    return pos - start;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+static size_t LZ4F_mt_update(LZ4F_cctx_t* cctx,
+                             void* dstBuffer, size_t dstCapacity,
+                       const void* srcBuffer, size_t srcSize,
+                       const LZ4F_compressOptions_t* cOptPtr,
+                             LZ4F_BlockCompressMode_e mode)
+{
+    LZ4F_mtCtx_t* const mt = cctx->mt;
+    const BYTE* const istart = (const BYTE*)srcBuffer;
+    const BYTE* ip = istart;
+    const BYTE* const iend = srcSize ? istart + srcSize : istart;
+    BYTE* const dst = (BYTE*)dstBuffer;
+    size_t pos = 0;
+    int const checksum = (cctx->prefs.frameInfo.contentChecksumFlag == LZ4F_contentChecksumEnabled);
+    int const linked = (cctx->prefs.frameInfo.blockMode == LZ4F_blockLinked);
+    int const stableUntilFlush = (cOptPtr->stableSrc == LZ4F_srcStableUntilFlush);
+    int const inPlace = cctx->prefs.autoFlush || stableUntilFlush;
+    
+    size_t const prevRun = (stableUntilFlush && srcSize && (istart == mt->stableEnd)) ? mt->stableRun : 0;
+
+    DEBUGLOG(4, "LZ4F_mt_update (srcSize=%u, mode=%u)", (unsigned)srcSize, (unsigned)mode);
+    RETURN_ERROR_IF(cctx->cStage != 1, compressionState_uninitialized);
+    assert(cctx->pendingSize == 0);   
+    cctx->flushStage = 0;   
+    if (mt->filling && (LZ4F_mt_fillingSlot(mt)->mode != mode))
+        LZ4F_mt_submit(mt);   
+
+    while (ip < iend) {
+        LZ4F_mtJob_t* const job = LZ4F_mt_fillingSlot(mt);
+        if (!mt->filling) {
+            
+            size_t const remaining = (size_t)(iend - ip);
+            size_t const prefixSize = linked ? mt->historySize : 0;
+            if (mt->nbSubmitted >= LZ4F_mt_nbUsableSlots(mt)) {
+                
+                size_t const r = LZ4F_mt_emitOldest(mt, dst, dstCapacity, pos);
+                FORWARD_IF_ERROR_INVALIDATE(r, cctx);
+                pos += r;
+                assert(job == LZ4F_mt_fillingSlot(mt));
+            }
+            if (job->outBuff == NULL) {   
+                job->outBuff = (BYTE*)LZ4F_malloc(mt->outCapacity, cctx->cmem);
+                if (job->outBuff == NULL) {
+                    LZ4F_invalidateFrame(cctx);
+                    RETURN_ERROR(allocation_failed);
+                }
+            }
+            mt->filling = 1;
+            job->mode = mode;
+            job->prefixSize = prefixSize;
+            if ( inPlace
+              && ((remaining >= mt->jobSize) || cctx->prefs.autoFlush)
+              && (prevRun + (size_t)(ip - istart) >= prefixSize) ) {
+                
+                size_t const jobSize = MIN(remaining, mt->jobSize);
+                job->src = ip;
+                job->srcSize = jobSize;
+                if (cctx->prefs.autoFlush && (jobSize == remaining))
+                    LZ4F_mt_submitLast(mt);   
+                else
+                    LZ4F_mt_submit(mt);
+                if (checksum) (void)XXH32_update(&(cctx->xxh), ip, jobSize);
+                ip += jobSize;
+                continue;
+            }
+            
+            assert(job->inBuff == NULL);
+            job->inBuff = LZ4F_mt_acquireInBuff(mt, cctx->cmem);
+            if (job->inBuff == NULL) {
+                mt->filling = 0;
+                LZ4F_invalidateFrame(cctx);
+                RETURN_ERROR(allocation_failed);
+            }
+            job->src = job->inBuff + LZ4F_MT_PREFIX_SIZE;
+            job->srcSize = 0;
+            memcpy(job->inBuff + LZ4F_MT_PREFIX_SIZE - prefixSize, mt->history + mt->historySize - prefixSize, prefixSize);
+        }
+        {   size_t const toCopy = MIN(mt->jobSize - job->srcSize, (size_t)(iend - ip));
+            assert(job->src == job->inBuff + LZ4F_MT_PREFIX_SIZE);
+            memcpy(job->inBuff + LZ4F_MT_PREFIX_SIZE + job->srcSize, ip, toCopy);
+            job->srcSize += toCopy;
+            if (job->srcSize == mt->jobSize) LZ4F_mt_submit(mt);   
+            if (checksum) (void)XXH32_update(&(cctx->xxh), ip, toCopy);
+            ip += toCopy;
+        }
+    }
+    cctx->totalInSize += srcSize;
+    if (srcSize) {
+        mt->stableEnd = stableUntilFlush ? iend : NULL;
+        mt->stableRun = MIN(prevRun + srcSize, LZ4F_MT_PREFIX_SIZE);
+    }
+
+    
+    if (cctx->prefs.autoFlush && mt->filling) LZ4F_mt_submitLast(mt);
+    {   size_t const r = LZ4F_mt_emit(mt, dst, dstCapacity, pos, cctx->prefs.autoFlush != 0);
+        FORWARD_IF_ERROR_INVALIDATE(r, cctx);
+        return pos + r;
+    }
+}
+
+
+
+
+
+
+
+
+static size_t LZ4F_st_update(LZ4F_cctx* cctxPtr,
                      void* dstBuffer, size_t dstCapacity,
                      const void* srcBuffer, size_t srcSize,
                      const LZ4F_compressOptions_t* compressOptionsPtr,
@@ -994,8 +2392,9 @@ static size_t LZ4F_compressUpdateImpl(LZ4F_cctx* cctxPtr,
   {
     size_t const blockSize = cctxPtr->maxBlockSize;
     const BYTE* srcPtr = (const BYTE*)srcBuffer;
-    const BYTE* const srcEnd = srcPtr + srcSize;
+    const BYTE* const srcEnd = srcSize ? (assert(srcPtr!=NULL), srcPtr + srcSize) : srcPtr;
     BYTE* const dstStart = (BYTE*)dstBuffer;
+    BYTE* const dstEnd = dstStart + dstCapacity;
     BYTE* dstPtr = dstStart;
     LZ4F_lastBlockStatus lastBlockCompressed = notDone;
     compressFunc_t const compress = LZ4F_selectCompression(cctxPtr->prefs.frameInfo.blockMode, cctxPtr->prefs.compressionLevel, blockCompression);
@@ -1003,20 +2402,24 @@ static size_t LZ4F_compressUpdateImpl(LZ4F_cctx* cctxPtr,
     DEBUGLOG(4, "LZ4F_compressUpdate (srcSize=%zu)", srcSize);
 
     RETURN_ERROR_IF(cctxPtr->cStage != 1, compressionState_uninitialized);   
-    if (dstCapacity < LZ4F_compressBound_internal(srcSize, &(cctxPtr->prefs), cctxPtr->tmpInSize))
-        RETURN_ERROR(dstMaxSize_tooSmall);
 
-    if (blockCompression == LZ4B_UNCOMPRESSED && dstCapacity < srcSize)
-        RETURN_ERROR(dstMaxSize_tooSmall);
+    
+    bytesWritten = LZ4F_emitPendingWhole(cctxPtr, dstPtr, dstCapacity);
+    FORWARD_IF_ERROR_INVALIDATE(bytesWritten, cctxPtr);
+    dstPtr += bytesWritten;
 
     
     if (cctxPtr->blockCompressMode != blockCompression) {
-        bytesWritten = LZ4F_flush(cctxPtr, dstBuffer, dstCapacity, compressOptionsPtr);
+        bytesWritten = LZ4F_flushBlock(cctxPtr, dstPtr, (size_t)(dstEnd - dstPtr));
+        FORWARD_IF_ERROR(bytesWritten);   
         dstPtr += bytesWritten;
         cctxPtr->blockCompressMode = blockCompression;
-    }
+        if ((blockCompression == LZ4B_UNCOMPRESSED) && (cctxPtr->prefs.frameInfo.blockMode == LZ4F_blockLinked)) {
+            
 
-    if (compressOptionsPtr == NULL) compressOptionsPtr = &k_cOptionsNull;
+            LZ4F_startStream(cctxPtr->lz4CtxPtr, &cctxPtr->prefs, NULL, NULL, 0);
+        }
+    }
 
     
     if (cctxPtr->tmpInSize > 0) {   
@@ -1034,59 +2437,72 @@ static size_t LZ4F_compressUpdateImpl(LZ4F_cctx* cctxPtr,
             memcpy(cctxPtr->tmpIn + cctxPtr->tmpInSize, srcBuffer, sizeToCopy);
             srcPtr += sizeToCopy;
 
-            dstPtr += LZ4F_makeBlock(dstPtr,
-                                     cctxPtr->tmpIn, blockSize,
-                                     compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
-                                     cctxPtr->cdict,
-                                     cctxPtr->prefs.frameInfo.blockChecksumFlag);
+            bytesWritten = LZ4F_makeBlock(dstPtr, (size_t)(dstEnd - dstPtr),
+                                          cctxPtr->tmpIn, blockSize,
+                                          compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
+                                          cctxPtr->cdict,
+                                          cctxPtr->prefs.frameInfo.blockChecksumFlag);
+            FORWARD_IF_ERROR_INVALIDATE(bytesWritten, cctxPtr);
+            dstPtr += bytesWritten;
             if (cctxPtr->prefs.frameInfo.blockMode==LZ4F_blockLinked) cctxPtr->tmpIn += blockSize;
             cctxPtr->tmpInSize = 0;
     }   }
 
-    while ((size_t)(srcEnd - srcPtr) >= blockSize) {
+    
+    {   size_t const remaining = (size_t)(srcEnd - srcPtr);
+        size_t const toCompress = cctxPtr->prefs.autoFlush ? remaining : remaining - (remaining % blockSize);
         
-        lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LZ4F_makeBlock(dstPtr,
-                                 srcPtr, blockSize,
-                                 compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
-                                 cctxPtr->cdict,
-                                 cctxPtr->prefs.frameInfo.blockChecksumFlag);
-        srcPtr += blockSize;
-    }
 
-    if ((cctxPtr->prefs.autoFlush) && (srcPtr < srcEnd)) {
-        
-        lastBlockCompressed = fromSrcBuffer;
-        dstPtr += LZ4F_makeBlock(dstPtr,
-                                 srcPtr, (size_t)(srcEnd - srcPtr),
-                                 compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
-                                 cctxPtr->cdict,
-                                 cctxPtr->prefs.frameInfo.blockChecksumFlag);
-        srcPtr = srcEnd;
-    }
+
+        int const viaTmp = cctxPtr->prefs.autoFlush
+                        && (cctxPtr->prefs.frameInfo.blockMode == LZ4F_blockLinked)
+                        && !compressOptionsPtr->stableSrc
+                        && (blockCompression == LZ4B_COMPRESSED)
+                        && (toCompress > 0) && (toCompress < 64 KB);
+        if (viaTmp) {
+            if (cctxPtr->tmpIn + toCompress > cctxPtr->tmpBuff + cctxPtr->tmpBuffCapacity)
+                LZ4F_localSaveDict(cctxPtr);   
+            memcpy(cctxPtr->tmpIn, srcPtr, toCompress);
+            lastBlockCompressed = fromTmpBuffer;
+            bytesWritten = LZ4F_makeBlock(dstPtr, (size_t)(dstEnd - dstPtr),
+                                          cctxPtr->tmpIn, toCompress,
+                                          compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
+                                          cctxPtr->cdict,
+                                          cctxPtr->prefs.frameInfo.blockChecksumFlag);
+            FORWARD_IF_ERROR_INVALIDATE(bytesWritten, cctxPtr);
+            dstPtr += bytesWritten;
+            srcPtr += toCompress;
+            cctxPtr->tmpIn += toCompress;
+        } else if (toCompress) {
+            lastBlockCompressed = fromSrcBuffer;
+            bytesWritten = LZ4F_compressBlocks_internal(dstPtr, (size_t)(dstEnd - dstPtr),
+                                          srcPtr, toCompress, blockSize,
+                                          compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
+                                          cctxPtr->cdict,
+                                          cctxPtr->prefs.frameInfo.blockChecksumFlag);
+            FORWARD_IF_ERROR_INVALIDATE(bytesWritten, cctxPtr);
+            dstPtr += bytesWritten;
+            srcPtr += toCompress;
+    }   }
 
     
     if ((cctxPtr->prefs.frameInfo.blockMode==LZ4F_blockLinked) && (lastBlockCompressed==fromSrcBuffer)) {
         
-        assert(blockCompression == LZ4B_COMPRESSED);
         if (compressOptionsPtr->stableSrc) {
             cctxPtr->tmpIn = cctxPtr->tmpBuff;  
         } else {
-            int const realDictSize = LZ4F_localSaveDict(cctxPtr);
-            assert(0 <= realDictSize && realDictSize <= 64 KB);
-            cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
+            LZ4F_localSaveDict(cctxPtr);
         }
     }
 
     
     if (!(cctxPtr->prefs.autoFlush)  
-      && (cctxPtr->tmpIn + blockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize) )  
+      && (cctxPtr->tmpIn + blockSize) > (cctxPtr->tmpBuff + cctxPtr->tmpBuffCapacity) )  
     {
         
 
-        int const realDictSize = LZ4F_localSaveDict(cctxPtr);
-        cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
-        assert((cctxPtr->tmpIn + blockSize) <= (cctxPtr->tmpBuff + cctxPtr->maxBufferSize));
+        LZ4F_localSaveDict(cctxPtr);
+        assert((cctxPtr->tmpIn + blockSize) <= (cctxPtr->tmpBuff + cctxPtr->tmpBuffCapacity));
     }
 
     
@@ -1116,22 +2532,21 @@ static size_t LZ4F_compressUpdateImpl(LZ4F_cctx* cctxPtr,
 
 
 
+
+
+
 size_t LZ4F_compressUpdate(LZ4F_cctx* cctxPtr,
                            void* dstBuffer, size_t dstCapacity,
                      const void* srcBuffer, size_t srcSize,
                      const LZ4F_compressOptions_t* compressOptionsPtr)
 {
-     return LZ4F_compressUpdateImpl(cctxPtr,
-                                   dstBuffer, dstCapacity,
-                                   srcBuffer, srcSize,
-                                   compressOptionsPtr, LZ4B_COMPRESSED);
+    LZ4F_BlockCompressMode_e mode;
+    if (compressOptionsPtr == NULL) compressOptionsPtr = &k_cOptionsNull;
+    mode = (compressOptionsPtr->uncompressed == 1) ? LZ4B_UNCOMPRESSED : LZ4B_COMPRESSED;
+    if (cctxPtr->mtActive)
+        return LZ4F_mt_update(cctxPtr, dstBuffer, dstCapacity, srcBuffer, srcSize, compressOptionsPtr, mode);
+    return LZ4F_st_update(cctxPtr, dstBuffer, dstCapacity, srcBuffer, srcSize, compressOptionsPtr, mode);
 }
-
-
-
-
-
-
 
 
 
@@ -1141,11 +2556,56 @@ size_t LZ4F_uncompressedUpdate(LZ4F_cctx* cctxPtr,
                          const void* srcBuffer, size_t srcSize,
                          const LZ4F_compressOptions_t* compressOptionsPtr)
 {
-    return LZ4F_compressUpdateImpl(cctxPtr,
-                                   dstBuffer, dstCapacity,
-                                   srcBuffer, srcSize,
-                                   compressOptionsPtr, LZ4B_UNCOMPRESSED);
+    LZ4F_compressOptions_t cOpts = k_cOptionsNull;
+    if (compressOptionsPtr != NULL) cOpts = *compressOptionsPtr;
+    cOpts.uncompressed = 1;
+    return LZ4F_compressUpdate(cctxPtr, dstBuffer, dstCapacity, srcBuffer, srcSize, &cOpts);
 }
+
+
+
+
+static size_t LZ4F_emitPending(LZ4F_cctx_t* cctx, BYTE* dst, size_t dstCapacity, size_t pos)
+{
+    pos += LZ4F_copyPending(cctx, dst, dstCapacity, pos);
+    if (cctx->mtActive && (cctx->pendingSize == 0)) {
+        size_t const r = LZ4F_mt_emitPartial(cctx->mt, dst, dstCapacity, pos);
+        FORWARD_IF_ERROR_INVALIDATE(r, cctx);
+        pos += r;
+    }
+    return pos;
+}
+
+static int LZ4F_outputPending(const LZ4F_cctx_t* cctx)
+{
+    return (cctx->pendingSize > 0) || (cctx->mtActive && (cctx->mt->nbSubmitted > 0));
+}
+
+
+static int LZ4F_somethingToFlush(const LZ4F_cctx_t* cctx)
+{
+    if (LZ4F_outputPending(cctx)) return 1;
+    if (cctx->mtActive) return cctx->mt->filling;
+    return cctx->tmpInSize > 0;
+}
+
+
+
+static size_t LZ4F_flushPoint(LZ4F_cctx_t* cctx, BYTE* dst, size_t dstCapacity)
+{
+    size_t r = 0;
+    if (cctx->mtActive) {
+        LZ4F_mt_flushPoint(cctx->mt);
+    } else {
+        r = LZ4F_flushBlockPartial(cctx, dst, dstCapacity);
+    }
+    if (!LZ4F_isError(r)) cctx->flushStage = 1;
+    return r;
+}
+
+
+
+
 
 
 
@@ -1160,38 +2620,28 @@ size_t LZ4F_flush(LZ4F_cctx* cctxPtr,
                   void* dstBuffer, size_t dstCapacity,
             const LZ4F_compressOptions_t* compressOptionsPtr)
 {
-    BYTE* const dstStart = (BYTE*)dstBuffer;
-    BYTE* dstPtr = dstStart;
-    compressFunc_t compress;
-
-    if (cctxPtr->tmpInSize == 0) return 0;   
-    RETURN_ERROR_IF(cctxPtr->cStage != 1, compressionState_uninitialized);
-    RETURN_ERROR_IF(dstCapacity < (cctxPtr->tmpInSize + BHSize + BFSize), dstMaxSize_tooSmall);
+    BYTE* const dst = (BYTE*)dstBuffer;
+    size_t pos = 0;
+    DEBUGLOG(5, "LZ4F_flush (dstCapacity=%u)", (unsigned)dstCapacity);
     (void)compressOptionsPtr;   
-
-    
-    compress = LZ4F_selectCompression(cctxPtr->prefs.frameInfo.blockMode, cctxPtr->prefs.compressionLevel, cctxPtr->blockCompressMode);
-
-    
-    dstPtr += LZ4F_makeBlock(dstPtr,
-                             cctxPtr->tmpIn, cctxPtr->tmpInSize,
-                             compress, cctxPtr->lz4CtxPtr, cctxPtr->prefs.compressionLevel,
-                             cctxPtr->cdict,
-                             cctxPtr->prefs.frameInfo.blockChecksumFlag);
-    assert(((void)"flush overflows dstBuffer!", (size_t)(dstPtr - dstStart) <= dstCapacity));
-
-    if (cctxPtr->prefs.frameInfo.blockMode == LZ4F_blockLinked)
-        cctxPtr->tmpIn += cctxPtr->tmpInSize;
-    cctxPtr->tmpInSize = 0;
-
-    
-    if ((cctxPtr->tmpIn + cctxPtr->maxBlockSize) > (cctxPtr->tmpBuff + cctxPtr->maxBufferSize)) {  
-        int const realDictSize = LZ4F_localSaveDict(cctxPtr);
-        cctxPtr->tmpIn = cctxPtr->tmpBuff + realDictSize;
+    RETURN_ERROR_IF(cctxPtr->cStage != 1, compressionState_uninitialized);
+    if (dstCapacity == 0) {
+        
+        RETURN_ERROR_IF(LZ4F_somethingToFlush(cctxPtr), dstCapacity_tooSmall);
+        cctxPtr->flushStage = 0;
+        return 0;
     }
-
-    return (size_t)(dstPtr - dstStart);
+    if (cctxPtr->flushStage == 0) {
+        pos = LZ4F_flushPoint(cctxPtr, dst, dstCapacity);
+        FORWARD_IF_ERROR(pos);   
+    }
+    pos = LZ4F_emitPending(cctxPtr, dst, dstCapacity, pos);
+    FORWARD_IF_ERROR(pos);   
+    if (pos < dstCapacity) cctxPtr->flushStage = 0;   
+    return pos;
 }
+
+
 
 
 
@@ -1207,37 +2657,55 @@ size_t LZ4F_compressEnd(LZ4F_cctx* cctxPtr,
                         void* dstBuffer, size_t dstCapacity,
                   const LZ4F_compressOptions_t* compressOptionsPtr)
 {
-    BYTE* const dstStart = (BYTE*)dstBuffer;
-    BYTE* dstPtr = dstStart;
-
-    size_t const flushSize = LZ4F_flush(cctxPtr, dstBuffer, dstCapacity, compressOptionsPtr);
+    BYTE* const dst = (BYTE*)dstBuffer;
+    size_t pos = 0;
     DEBUGLOG(5,"LZ4F_compressEnd: dstCapacity=%u", (unsigned)dstCapacity);
-    FORWARD_IF_ERROR(flushSize);
-    dstPtr += flushSize;
+    (void)compressOptionsPtr;   
+    RETURN_ERROR_IF((cctxPtr->cStage != 1) && (cctxPtr->cStage != 2), compressionState_uninitialized);
+    RETURN_ERROR_IF(dstCapacity == 0, dstCapacity_tooSmall);   
 
-    assert(flushSize <= dstCapacity);
-    dstCapacity -= flushSize;
-
-    RETURN_ERROR_IF(dstCapacity < 4, dstMaxSize_tooSmall);
-    LZ4F_writeLE32(dstPtr, 0);
-    dstPtr += 4;   
-
-    if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LZ4F_contentChecksumEnabled) {
-        U32 const xxh = XXH32_digest(&(cctxPtr->xxh));
-        RETURN_ERROR_IF(dstCapacity < 8, dstMaxSize_tooSmall);
-        DEBUGLOG(5,"Writing 32-bit content checksum (0x%0X)", xxh);
-        LZ4F_writeLE32(dstPtr, xxh);
-        dstPtr+=4;   
-    }
-
-    cctxPtr->cStage = 0;   
-
-    if (cctxPtr->prefs.frameInfo.contentSize) {
-        if (cctxPtr->prefs.frameInfo.contentSize != cctxPtr->totalInSize)
+    if (cctxPtr->cStage == 1) {
+        
+        if (cctxPtr->prefs.frameInfo.contentSize && (cctxPtr->prefs.frameInfo.contentSize != cctxPtr->totalInSize)) {
+            LZ4F_invalidateFrame(cctxPtr);
             RETURN_ERROR(frameSize_wrong);
+        }
+        cctxPtr->cStage = 2;
+        if (cctxPtr->flushStage == 0) {
+            pos = LZ4F_flushPoint(cctxPtr, dst, dstCapacity);
+            FORWARD_IF_ERROR(pos);   
+    }   }
+
+    if (cctxPtr->flushStage == 1) {
+        pos = LZ4F_emitPending(cctxPtr, dst, dstCapacity, pos);
+        FORWARD_IF_ERROR(pos);   
+        if (LZ4F_outputPending(cctxPtr)) return pos;   
+        
+        LZ4F_writeLE32(cctxPtr->footer, 0);
+        cctxPtr->pendingSize = 4;
+        if (cctxPtr->prefs.frameInfo.contentChecksumFlag == LZ4F_contentChecksumEnabled) {
+            U32 const xxh = XXH32_digest(&(cctxPtr->xxh));
+            DEBUGLOG(5,"Writing 32-bit content checksum (0x%0X)", xxh);
+            LZ4F_writeLE32(cctxPtr->footer + 4, xxh);
+            cctxPtr->pendingSize = 8;
+        }
+        cctxPtr->pending = cctxPtr->footer;
+        cctxPtr->flushStage = 2;
     }
 
-    return (size_t)(dstPtr - dstStart);
+    if (cctxPtr->flushStage == 2) {
+        pos += LZ4F_copyPending(cctxPtr, dst, dstCapacity, pos);
+        if (cctxPtr->pendingSize) return pos;   
+        cctxPtr->flushStage = 3;
+    }
+
+    assert(cctxPtr->flushStage == 3);
+    if (pos < dstCapacity) {
+        
+        cctxPtr->cStage = 0;
+        cctxPtr->flushStage = 0;
+    }   
+    return pos;
 }
 
 
@@ -1248,12 +2716,12 @@ size_t LZ4F_compressEnd(LZ4F_cctx* cctxPtr,
 typedef enum {
     dstage_getFrameHeader=0, dstage_storeFrameHeader,
     dstage_init,
-    dstage_getBlockHeader, dstage_storeBlockHeader,
+    dstage_getBlockHeader,
     dstage_copyDirect, dstage_getBlockChecksum,
-    dstage_getCBlock, dstage_storeCBlock,
+    dstage_getCBlock,
     dstage_flushOut,
-    dstage_getSuffix, dstage_storeSuffix,
-    dstage_getSFrameSize, dstage_storeSFrameSize,
+    dstage_getSuffix,
+    dstage_getSFrameSize,
     dstage_skipSkippable
 } dStage_t;
 
@@ -1264,8 +2732,9 @@ struct LZ4F_dctx_s {
     dStage_t dStage;
     U64    frameRemainingSize;
     size_t maxBlockSize;
-    size_t maxBufferSize;
+    size_t tmpOutBufferCapacity;
     BYTE*  tmpIn;
+    size_t tmpInCapacity;
     size_t tmpInSize;
     size_t tmpInTarget;
     BYTE*  tmpOutBuffer;
@@ -1276,7 +2745,8 @@ struct LZ4F_dctx_s {
     size_t tmpOutStart;
     XXH32_state_t xxh;
     XXH32_state_t blockChecksum;
-    int    skipChecksum;
+    int    skipBlockChecksum;
+    int    skipContentChecksum;
     BYTE   header[LZ4F_HEADER_SIZE_MAX];
 };  
 
@@ -1322,6 +2792,13 @@ LZ4F_errorCode_t LZ4F_freeDecompressionContext(LZ4F_dctx* dctx)
     return result;
 }
 
+size_t LZ4F_dctx_size(const LZ4F_dctx* dctx) {
+    if (dctx == NULL) {
+        return 0;
+    }
+    return sizeof(*dctx) + dctx->tmpInCapacity + dctx->tmpOutBufferCapacity;
+}
+
 
 
 void LZ4F_resetDecompressionContext(LZ4F_dctx* dctx)
@@ -1330,10 +2807,10 @@ void LZ4F_resetDecompressionContext(LZ4F_dctx* dctx)
     dctx->dStage = dstage_getFrameHeader;
     dctx->dict = NULL;
     dctx->dictSize = 0;
-    dctx->skipChecksum = 0;
+    dctx->skipBlockChecksum = 0;
+    dctx->skipContentChecksum = 0;
     dctx->frameRemainingSize = 0;
 }
-
 
 
 
@@ -1350,20 +2827,20 @@ static size_t LZ4F_decodeHeader(LZ4F_dctx* dctx, const void* src, size_t srcSize
     const BYTE* srcPtr = (const BYTE*)src;
 
     DEBUGLOG(5, "LZ4F_decodeHeader");
-    
-    RETURN_ERROR_IF(srcSize < minFHSize, frameHeader_incomplete);   
+    assert(srcSize >= minFHSize);   
     MEM_INIT(&(dctx->frameInfo), 0, sizeof(dctx->frameInfo));
 
     
     if ((LZ4F_readLE32(srcPtr) & 0xFFFFFFF0U) == LZ4F_MAGIC_SKIPPABLE_START) {
         dctx->frameInfo.frameType = LZ4F_skippableFrame;
+        dctx->dStage = dstage_getSFrameSize;
         if (src == (void*)(dctx->header)) {
-            dctx->tmpInSize = srcSize;
-            dctx->tmpInTarget = 8;
-            dctx->dStage = dstage_storeSFrameSize;
+            
+            assert(srcSize <= 8);
+            dctx->tmpInSize = srcSize - 4;
             return srcSize;
         } else {
-            dctx->dStage = dstage_getSFrameSize;
+            dctx->tmpInSize = 0;
             return 4;
     }   }
 
@@ -1395,11 +2872,10 @@ static size_t LZ4F_decodeHeader(LZ4F_dctx* dctx, const void* src, size_t srcSize
 
     if (srcSize < frameHeaderSize) {
         
-        if (srcPtr != dctx->header)
-            memcpy(dctx->header, srcPtr, srcSize);
-        dctx->tmpInSize = srcSize;
+        assert(srcPtr == dctx->header);
+        assert(dctx->dStage == dstage_storeFrameHeader);
+        assert(dctx->tmpInSize == srcSize);
         dctx->tmpInTarget = frameHeaderSize;
-        dctx->dStage = dstage_storeFrameHeader;
         return srcSize;
     }
 
@@ -1486,6 +2962,10 @@ LZ4F_errorCode_t LZ4F_getFrameInfo(LZ4F_dctx* dctx,
                                    LZ4F_frameInfo_t* frameInfoPtr,
                              const void* srcBuffer, size_t* srcSizePtr)
 {
+    assert(dctx != NULL);
+    RETURN_ERROR_IF(frameInfoPtr == NULL, parameter_null);
+    RETURN_ERROR_IF(srcSizePtr == NULL, parameter_null);
+
     LZ4F_STATIC_ASSERT(dstage_getFrameHeader < dstage_storeFrameHeader);
     if (dctx->dStage > dstage_storeFrameHeader) {
         
@@ -1524,6 +3004,27 @@ LZ4F_errorCode_t LZ4F_getFrameInfo(LZ4F_dctx* dctx,
 
 
 
+
+
+static void LZ4F_moveDictBeforeTmpOut(LZ4F_dctx* dctx, size_t flushSize)
+{
+    size_t const preserveSize = (size_t)(dctx->tmpOut - dctx->tmpOutBuffer);
+    size_t copySize = 64 KB - dctx->tmpOutSize;
+    const BYTE* const oldDictEnd = dctx->dict + dctx->dictSize - dctx->tmpOutStart;
+    if (dctx->tmpOutSize > 64 KB) copySize = 0;
+    if (copySize > preserveSize) copySize = preserveSize;
+    assert(dctx->tmpOutBuffer != NULL);
+
+    memcpy(dctx->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
+
+    dctx->dict = dctx->tmpOutBuffer;
+    dctx->dictSize = preserveSize + dctx->tmpOutStart + flushSize;
+}
+
+
+
+
+
 static void LZ4F_updateDict(LZ4F_dctx* dctx,
                       const BYTE* dstPtr, size_t dstSize, const BYTE* dstBufferStart,
                       unsigned withinTmp)
@@ -1557,21 +3058,12 @@ static void LZ4F_updateDict(LZ4F_dctx* dctx,
     }
 
     if (withinTmp) { 
-        size_t const preserveSize = (size_t)(dctx->tmpOut - dctx->tmpOutBuffer);
-        size_t copySize = 64 KB - dctx->tmpOutSize;
-        const BYTE* const oldDictEnd = dctx->dict + dctx->dictSize - dctx->tmpOutStart;
-        if (dctx->tmpOutSize > 64 KB) copySize = 0;
-        if (copySize > preserveSize) copySize = preserveSize;
-
-        memcpy(dctx->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
-
-        dctx->dict = dctx->tmpOutBuffer;
-        dctx->dictSize = preserveSize + dctx->tmpOutStart + dstSize;
+        LZ4F_moveDictBeforeTmpOut(dctx, dstSize);
         return;
     }
 
     if (dctx->dict == dctx->tmpOutBuffer) {    
-        if (dctx->dictSize + dstSize > dctx->maxBufferSize) {  
+        if (dctx->dictSize + dstSize > dctx->tmpOutBufferCapacity) {  
             size_t const preserveSize = 64 KB - dstSize;
             memcpy(dctx->tmpOutBuffer, dctx->dict + dctx->dictSize - preserveSize, preserveSize);
             dctx->dictSize = preserveSize;
@@ -1589,6 +3081,71 @@ static void LZ4F_updateDict(LZ4F_dctx* dctx,
         dctx->dict = dctx->tmpOutBuffer;
         dctx->dictSize = preserveSize + dstSize;
     }
+}
+
+
+
+
+
+
+static int LZ4F_endMarkFollows(const BYTE* srcPtr, const BYTE* srcEnd, size_t skip)
+{
+    return ((size_t)(srcEnd - srcPtr) >= skip + BHSize) && (LZ4F_readLE32(srcPtr + skip) == 0);
+}
+
+
+
+
+
+
+static size_t LZ4F_decodeBlock(LZ4F_dctx* dctx, const BYTE* src, size_t srcSize, BYTE* dst)
+{
+    const char* dict = (const char*)dctx->dict;
+    size_t dictSize = dctx->dictSize;
+    int decodedSize;
+    assert(dst != NULL);
+    if (dict && dictSize > 1 GB) {
+        
+        dict += dictSize - 64 KB;
+        dictSize = 64 KB;
+    }
+    decodedSize = LZ4_decompress_safe_usingDict(
+            (const char*)src, (char*)dst,
+            (int)srcSize, (int)dctx->maxBlockSize,
+            dict, (int)dictSize);
+    RETURN_ERROR_IF(decodedSize < 0, decompressionFailed);
+    if (dctx->frameInfo.contentChecksumFlag && !dctx->skipContentChecksum)
+        XXH32_update(&(dctx->xxh), dst, (size_t)decodedSize);
+    if (dctx->frameInfo.contentSize)
+        dctx->frameRemainingSize -= (size_t)decodedSize;
+    return (size_t)decodedSize;
+}
+
+
+
+
+
+
+
+
+static const BYTE*
+LZ4F_gatherInput(LZ4F_dctx* dctx, BYTE* buffer, size_t wanted,
+                 const BYTE** srcPtrPtr, const BYTE* srcEnd)
+{
+    const BYTE* const srcPtr = *srcPtrPtr;
+    size_t const available = (size_t)(srcEnd - srcPtr);
+    if ((dctx->tmpInSize == 0) && (available >= wanted)) {
+        *srcPtrPtr = srcPtr + wanted;
+        return srcPtr;
+    }
+    {   size_t const sizeToCopy = MIN(wanted - dctx->tmpInSize, available);
+        memcpy(buffer + dctx->tmpInSize, srcPtr, sizeToCopy);
+        dctx->tmpInSize += sizeToCopy;
+        *srcPtrPtr = srcPtr + sizeToCopy;
+    }
+    if (dctx->tmpInSize < wanted) return NULL;
+    dctx->tmpInSize = 0;   
+    return buffer;
 }
 
 
@@ -1615,9 +3172,11 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
                        const void* srcBuffer, size_t* srcSizePtr,
                        const LZ4F_decompressOptions_t* decompressOptionsPtr)
 {
+    static const BYTE emptySrc = 0;   
+
     LZ4F_decompressOptions_t optionsNull;
-    const BYTE* const srcStart = (const BYTE*)srcBuffer;
-    const BYTE* const srcEnd = srcStart + *srcSizePtr;
+    const BYTE* const srcStart = srcBuffer ? (const BYTE*)srcBuffer : &emptySrc;
+    const BYTE* const srcEnd = srcBuffer ? srcStart + *srcSizePtr : srcStart;
     const BYTE* srcPtr = srcStart;
     BYTE* const dstStart = (BYTE*)dstBuffer;
     BYTE* const dstEnd = dstStart ? dstStart + *dstSizePtr : NULL;
@@ -1630,12 +3189,16 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
     DEBUGLOG(5, "LZ4F_decompress: src[%p](%u) => dst[%p](%u)",
             srcBuffer, (unsigned)*srcSizePtr, dstBuffer, (unsigned)*dstSizePtr);
     if (dstBuffer == NULL) assert(*dstSizePtr == 0);
+    if (srcBuffer == NULL) assert(*srcSizePtr == 0);
     MEM_INIT(&optionsNull, 0, sizeof(optionsNull));
     if (decompressOptionsPtr==NULL) decompressOptionsPtr = &optionsNull;
     *srcSizePtr = 0;
     *dstSizePtr = 0;
     assert(dctx != NULL);
-    dctx->skipChecksum |= (decompressOptionsPtr->skipChecksums != 0); 
+    if (decompressOptionsPtr->skipChecksums) {   
+        dctx->skipBlockChecksum = 1;
+        dctx->skipContentChecksum = 1;
+    }
 
     
 
@@ -1677,17 +3240,23 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
             DEBUGLOG(6, "dstage_init");
             if (dctx->frameInfo.contentChecksumFlag) (void)XXH32_reset(&(dctx->xxh), 0);
             
-            {   size_t const bufferNeeded = dctx->maxBlockSize
+            {   size_t const tmpInNeeded = dctx->maxBlockSize + BFSize ;
+                size_t const tmpOutNeeded = dctx->maxBlockSize
                     + ((dctx->frameInfo.blockMode==LZ4F_blockLinked) ? 128 KB : 0);
-                if (bufferNeeded > dctx->maxBufferSize) {   
-                    dctx->maxBufferSize = 0;   
+                if ( (tmpInNeeded > dctx->tmpInCapacity)
+                  || (tmpOutNeeded > dctx->tmpOutBufferCapacity) ) {   
+                    
+
                     LZ4F_free(dctx->tmpIn, dctx->cmem);
-                    dctx->tmpIn = (BYTE*)LZ4F_malloc(dctx->maxBlockSize + BFSize , dctx->cmem);
+                    dctx->tmpInCapacity = 0;
+                    dctx->tmpIn = (BYTE*)LZ4F_malloc(tmpInNeeded, dctx->cmem);
                     RETURN_ERROR_IF(dctx->tmpIn == NULL, allocation_failed);
+                    dctx->tmpInCapacity = tmpInNeeded;
                     LZ4F_free(dctx->tmpOutBuffer, dctx->cmem);
-                    dctx->tmpOutBuffer= (BYTE*)LZ4F_malloc(bufferNeeded, dctx->cmem);
+                    dctx->tmpOutBufferCapacity = 0;
+                    dctx->tmpOutBuffer= (BYTE*)LZ4F_malloc(tmpOutNeeded, dctx->cmem);
                     RETURN_ERROR_IF(dctx->tmpOutBuffer== NULL, allocation_failed);
-                    dctx->maxBufferSize = bufferNeeded;
+                    dctx->tmpOutBufferCapacity = tmpOutNeeded;
             }   }
             dctx->tmpInSize = 0;
             dctx->tmpInTarget = 0;
@@ -1699,33 +3268,14 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
             
 
         case dstage_getBlockHeader:
-            if ((size_t)(srcEnd - srcPtr) >= BHSize) {
-                selectedIn = srcPtr;
-                srcPtr += BHSize;
-            } else {
-                
-                dctx->tmpInSize = 0;
-                dctx->dStage = dstage_storeBlockHeader;
+            selectedIn = LZ4F_gatherInput(dctx, dctx->tmpIn, BHSize, &srcPtr, srcEnd);
+            if (selectedIn == NULL) {   
+                nextSrcSizeHint = BHSize - dctx->tmpInSize;
+                doAnotherStage = 0;
+                break;
             }
 
-            if (dctx->dStage == dstage_storeBlockHeader)   
-        case dstage_storeBlockHeader:
-            {   size_t const remainingInput = (size_t)(srcEnd - srcPtr);
-                size_t const wantedData = BHSize - dctx->tmpInSize;
-                size_t const sizeToCopy = MIN(wantedData, remainingInput);
-                memcpy(dctx->tmpIn + dctx->tmpInSize, srcPtr, sizeToCopy);
-                srcPtr += sizeToCopy;
-                dctx->tmpInSize += sizeToCopy;
-
-                if (dctx->tmpInSize < BHSize) {   
-                    nextSrcSizeHint = BHSize - dctx->tmpInSize;
-                    doAnotherStage  = 0;
-                    break;
-                }
-                selectedIn = dctx->tmpIn;
-            }   
-
-        
+            
             {   U32 const blockHeader = LZ4F_readLE32(selectedIn);
                 size_t const nextCBlockSize = blockHeader & 0x7FFFFFFFU;
                 size_t const crcSize = dctx->frameInfo.blockChecksumFlag * BFSize;
@@ -1766,35 +3316,33 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
                     size_t const minBuffSize = MIN((size_t)(srcEnd-srcPtr), (size_t)(dstEnd-dstPtr));
                     sizeToCopy = MIN(dctx->tmpInTarget, minBuffSize);
                     memcpy(dstPtr, srcPtr, sizeToCopy);
-                    if (!dctx->skipChecksum) {
-                        if (dctx->frameInfo.blockChecksumFlag) {
-                            (void)XXH32_update(&dctx->blockChecksum, srcPtr, sizeToCopy);
-                        }
-                        if (dctx->frameInfo.contentChecksumFlag)
-                            (void)XXH32_update(&dctx->xxh, srcPtr, sizeToCopy);
-                    }
+                    if (dctx->frameInfo.blockChecksumFlag && !dctx->skipBlockChecksum)
+                        (void)XXH32_update(&dctx->blockChecksum, srcPtr, sizeToCopy);
+                    if (dctx->frameInfo.contentChecksumFlag && !dctx->skipContentChecksum)
+                        (void)XXH32_update(&dctx->xxh, srcPtr, sizeToCopy);
                     if (dctx->frameInfo.contentSize)
                         dctx->frameRemainingSize -= sizeToCopy;
 
                     
-                    if (dctx->frameInfo.blockMode == LZ4F_blockLinked) {
+                    if ( (dctx->frameInfo.blockMode == LZ4F_blockLinked)
+                      && !( (sizeToCopy == dctx->tmpInTarget)
+                         && LZ4F_endMarkFollows(srcPtr + sizeToCopy, srcEnd, dctx->frameInfo.blockChecksumFlag * BFSize) ) ) {
                         LZ4F_updateDict(dctx, dstPtr, sizeToCopy, dstStart, 0);
                     }
                     srcPtr += sizeToCopy;
                     dstPtr += sizeToCopy;
                 }
                 if (sizeToCopy == dctx->tmpInTarget) {   
-                    if (dctx->frameInfo.blockChecksumFlag) {
-                        dctx->tmpInSize = 0;
+                    if (dctx->frameInfo.blockChecksumFlag)
                         dctx->dStage = dstage_getBlockChecksum;
-                    } else
+                    else
                         dctx->dStage = dstage_getBlockHeader;  
                     break;
                 }
                 dctx->tmpInTarget -= sizeToCopy;  
             }
-            nextSrcSizeHint = dctx->tmpInTarget +
-                            +(dctx->frameInfo.blockChecksumFlag ? BFSize : 0)
+            nextSrcSizeHint = dctx->tmpInTarget
+                            + (dctx->frameInfo.blockChecksumFlag ? BFSize : 0)
                             + BHSize ;
             doAnotherStage = 0;
             break;
@@ -1802,67 +3350,38 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
         
         case dstage_getBlockChecksum:
             DEBUGLOG(6, "dstage_getBlockChecksum");
-            {   const void* crcSrc;
-                if ((srcEnd-srcPtr >= 4) && (dctx->tmpInSize==0)) {
-                    crcSrc = srcPtr;
-                    srcPtr += 4;
-                } else {
-                    size_t const stillToCopy = 4 - dctx->tmpInSize;
-                    size_t const sizeToCopy = MIN(stillToCopy, (size_t)(srcEnd-srcPtr));
-                    memcpy(dctx->header + dctx->tmpInSize, srcPtr, sizeToCopy);
-                    dctx->tmpInSize += sizeToCopy;
-                    srcPtr += sizeToCopy;
-                    if (dctx->tmpInSize < 4) {  
-                        doAnotherStage = 0;
-                        break;
-                    }
-                    crcSrc = dctx->header;
-                }
-                if (!dctx->skipChecksum) {
-                    U32 const readCRC = LZ4F_readLE32(crcSrc);
-                    U32 const calcCRC = XXH32_digest(&dctx->blockChecksum);
+            selectedIn = LZ4F_gatherInput(dctx, dctx->tmpIn, BFSize, &srcPtr, srcEnd);
+            if (selectedIn == NULL) {   
+                nextSrcSizeHint = (BFSize - dctx->tmpInSize) + BHSize ;
+                doAnotherStage = 0;
+                break;
+            }
+            if (!dctx->skipBlockChecksum) {
+                U32 const readCRC = LZ4F_readLE32(selectedIn);
+                U32 const calcCRC = XXH32_digest(&dctx->blockChecksum);
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-                    DEBUGLOG(6, "compare block checksum");
-                    if (readCRC != calcCRC) {
-                        DEBUGLOG(4, "incorrect block checksum: %08X != %08X",
-                                readCRC, calcCRC);
-                        RETURN_ERROR(blockChecksum_invalid);
-                    }
+                DEBUGLOG(6, "compare block checksum");
+                if (readCRC != calcCRC) {
+                    DEBUGLOG(4, "incorrect block checksum: %08X != %08X",
+                            readCRC, calcCRC);
+                    RETURN_ERROR(blockChecksum_invalid);
+                }
 #else
-                    (void)readCRC;
-                    (void)calcCRC;
+                (void)readCRC;
+                (void)calcCRC;
 #endif
-            }   }
+            }
             dctx->dStage = dstage_getBlockHeader;  
             break;
 
         case dstage_getCBlock:
             DEBUGLOG(6, "dstage_getCBlock");
-            if ((size_t)(srcEnd-srcPtr) < dctx->tmpInTarget) {
-                dctx->tmpInSize = 0;
-                dctx->dStage = dstage_storeCBlock;
+            selectedIn = LZ4F_gatherInput(dctx, dctx->tmpIn, dctx->tmpInTarget, &srcPtr, srcEnd);
+            if (selectedIn == NULL) {   
+                nextSrcSizeHint = (dctx->tmpInTarget - dctx->tmpInSize)   
+                                + BHSize ;
+                doAnotherStage = 0;
                 break;
-            }
-            
-            selectedIn = srcPtr;
-            srcPtr += dctx->tmpInTarget;
-
-            if (0)  
-        case dstage_storeCBlock:
-            {   size_t const wantedData = dctx->tmpInTarget - dctx->tmpInSize;
-                size_t const inputLeft = (size_t)(srcEnd-srcPtr);
-                size_t const sizeToCopy = MIN(wantedData, inputLeft);
-                memcpy(dctx->tmpIn + dctx->tmpInSize, srcPtr, sizeToCopy);
-                dctx->tmpInSize += sizeToCopy;
-                srcPtr += sizeToCopy;
-                if (dctx->tmpInSize < dctx->tmpInTarget) { 
-                    nextSrcSizeHint = (dctx->tmpInTarget - dctx->tmpInSize)
-                                    + (dctx->frameInfo.blockChecksumFlag ? BFSize : 0)
-                                    + BHSize ;
-                    doAnotherStage = 0;
-                    break;
-                }
-                selectedIn = dctx->tmpIn;
             }
 
             
@@ -1871,8 +3390,8 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
             if (dctx->frameInfo.blockChecksumFlag) {
                 assert(dctx->tmpInTarget >= 4);
                 dctx->tmpInTarget -= 4;
-                assert(selectedIn != NULL);  
-                {   U32 const readBlockCrc = LZ4F_readLE32(selectedIn + dctx->tmpInTarget);
+                if (!dctx->skipBlockChecksum) {
+                    U32 const readBlockCrc = LZ4F_readLE32(selectedIn + dctx->tmpInTarget);
                     U32 const calcBlockCrc = XXH32(selectedIn, dctx->tmpInTarget, 0);
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
                     RETURN_ERROR_IF(readBlockCrc != calcBlockCrc, blockChecksum_invalid);
@@ -1888,29 +3407,13 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
 
 
               && !(dctx->dict!= NULL && (const BYTE*)dctx->dict + dctx->dictSize == dctx->tmpOut) )
-            {
-                const char* dict = (const char*)dctx->dict;
-                size_t dictSize = dctx->dictSize;
-                int decodedSize;
-                assert(dstPtr != NULL);
-                if (dict && dictSize > 1 GB) {
-                    
-                    dict += dictSize - 64 KB;
-                    dictSize = 64 KB;
-                }
-                decodedSize = LZ4_decompress_safe_usingDict(
-                        (const char*)selectedIn, (char*)dstPtr,
-                        (int)dctx->tmpInTarget, (int)dctx->maxBlockSize,
-                        dict, (int)dictSize);
-                RETURN_ERROR_IF(decodedSize < 0, decompressionFailed);
-                if ((dctx->frameInfo.contentChecksumFlag) && (!dctx->skipChecksum))
-                    XXH32_update(&(dctx->xxh), dstPtr, (size_t)decodedSize);
-                if (dctx->frameInfo.contentSize)
-                    dctx->frameRemainingSize -= (size_t)decodedSize;
+            {   size_t const decodedSize = LZ4F_decodeBlock(dctx, selectedIn, dctx->tmpInTarget, dstPtr);
+                FORWARD_IF_ERROR(decodedSize);
 
                 
-                if (dctx->frameInfo.blockMode==LZ4F_blockLinked) {
-                    LZ4F_updateDict(dctx, dstPtr, (size_t)decodedSize, dstStart, 0);
+                if ( (dctx->frameInfo.blockMode==LZ4F_blockLinked)
+                  && !LZ4F_endMarkFollows(srcPtr, srcEnd, 0) ) {
+                    LZ4F_updateDict(dctx, dstPtr, decodedSize, dstStart, 0);
                 }
 
                 dstPtr += decodedSize;
@@ -1935,24 +3438,9 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
             }   }
 
             
-            {   const char* dict = (const char*)dctx->dict;
-                size_t dictSize = dctx->dictSize;
-                int decodedSize;
-                if (dict && dictSize > 1 GB) {
-                    
-                    dict += dictSize - 64 KB;
-                    dictSize = 64 KB;
-                }
-                decodedSize = LZ4_decompress_safe_usingDict(
-                        (const char*)selectedIn, (char*)dctx->tmpOut,
-                        (int)dctx->tmpInTarget, (int)dctx->maxBlockSize,
-                        dict, (int)dictSize);
-                RETURN_ERROR_IF(decodedSize < 0, decompressionFailed);
-                if (dctx->frameInfo.contentChecksumFlag && !dctx->skipChecksum)
-                    XXH32_update(&(dctx->xxh), dctx->tmpOut, (size_t)decodedSize);
-                if (dctx->frameInfo.contentSize)
-                    dctx->frameRemainingSize -= (size_t)decodedSize;
-                dctx->tmpOutSize = (size_t)decodedSize;
+            {   size_t const decodedSize = LZ4F_decodeBlock(dctx, selectedIn, dctx->tmpInTarget, dctx->tmpOut);
+                FORWARD_IF_ERROR(decodedSize);
+                dctx->tmpOutSize = decodedSize;
                 dctx->tmpOutStart = 0;
                 dctx->dStage = dstage_flushOut;
             }
@@ -1965,7 +3453,9 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
                 memcpy(dstPtr, dctx->tmpOut + dctx->tmpOutStart, sizeToCopy);
 
                 
-                if (dctx->frameInfo.blockMode == LZ4F_blockLinked)
+                if ( (dctx->frameInfo.blockMode == LZ4F_blockLinked)
+                  && !( (dctx->tmpOutStart + sizeToCopy == dctx->tmpOutSize)
+                     && LZ4F_endMarkFollows(srcPtr, srcEnd, 0) ) )
                     LZ4F_updateDict(dctx, dstPtr, sizeToCopy, dstStart, 1 );
 
                 dctx->tmpOutStart += sizeToCopy;
@@ -1988,32 +3478,13 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
                 doAnotherStage = 0;
                 break;
             }
-            if ((srcEnd - srcPtr) < 4) {  
-                dctx->tmpInSize = 0;
-                dctx->dStage = dstage_storeSuffix;
-            } else {
-                selectedIn = srcPtr;
-                srcPtr += 4;
+            selectedIn = LZ4F_gatherInput(dctx, dctx->tmpIn, 4, &srcPtr, srcEnd);
+            if (selectedIn == NULL) {   
+                nextSrcSizeHint = 4 - dctx->tmpInSize;
+                doAnotherStage = 0;
+                break;
             }
-
-            if (dctx->dStage == dstage_storeSuffix)   
-        case dstage_storeSuffix:
-            {   size_t const remainingInput = (size_t)(srcEnd - srcPtr);
-                size_t const wantedData = 4 - dctx->tmpInSize;
-                size_t const sizeToCopy = MIN(wantedData, remainingInput);
-                memcpy(dctx->tmpIn + dctx->tmpInSize, srcPtr, sizeToCopy);
-                srcPtr += sizeToCopy;
-                dctx->tmpInSize += sizeToCopy;
-                if (dctx->tmpInSize < 4) { 
-                    nextSrcSizeHint = 4 - dctx->tmpInSize;
-                    doAnotherStage=0;
-                    break;
-                }
-                selectedIn = dctx->tmpIn;
-            }   
-
-           
-            if (!dctx->skipChecksum) {
+            if (!dctx->skipContentChecksum) {
                 U32 const readCRC = LZ4F_readLE32(selectedIn);
                 U32 const resultCRC = XXH32_digest(&(dctx->xxh));
                 DEBUGLOG(4, "frame checksum: stored 0x%0X vs 0x%0X processed", readCRC, resultCRC);
@@ -2030,33 +3501,12 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
             break;
 
         case dstage_getSFrameSize:
-            if ((srcEnd - srcPtr) >= 4) {
-                selectedIn = srcPtr;
-                srcPtr += 4;
-            } else {
-                
-                dctx->tmpInSize = 4;
-                dctx->tmpInTarget = 8;
-                dctx->dStage = dstage_storeSFrameSize;
+            selectedIn = LZ4F_gatherInput(dctx, dctx->header + 4, 4, &srcPtr, srcEnd);
+            if (selectedIn == NULL) {   
+                nextSrcSizeHint = 4 - dctx->tmpInSize;
+                doAnotherStage = 0;
+                break;
             }
-
-            if (dctx->dStage == dstage_storeSFrameSize)
-        case dstage_storeSFrameSize:
-            {   size_t const sizeToCopy = MIN(dctx->tmpInTarget - dctx->tmpInSize,
-                                             (size_t)(srcEnd - srcPtr) );
-                memcpy(dctx->header + dctx->tmpInSize, srcPtr, sizeToCopy);
-                srcPtr += sizeToCopy;
-                dctx->tmpInSize += sizeToCopy;
-                if (dctx->tmpInSize < dctx->tmpInTarget) {
-                    
-                    nextSrcSizeHint = dctx->tmpInTarget - dctx->tmpInSize;
-                    doAnotherStage = 0;
-                    break;
-                }
-                selectedIn = dctx->header + 4;
-            }   
-
-           
             {   size_t const SFrameSize = LZ4F_readLE32(selectedIn);
                 dctx->frameInfo.contentSize = SFrameSize;
                 dctx->tmpInTarget = SFrameSize;
@@ -2087,17 +3537,7 @@ size_t LZ4F_decompress(LZ4F_dctx* dctx,
       && ((unsigned)(dctx->dStage)-2 < (unsigned)(dstage_getSuffix)-2) )  
     {
         if (dctx->dStage == dstage_flushOut) {
-            size_t const preserveSize = (size_t)(dctx->tmpOut - dctx->tmpOutBuffer);
-            size_t copySize = 64 KB - dctx->tmpOutSize;
-            const BYTE* oldDictEnd = dctx->dict + dctx->dictSize - dctx->tmpOutStart;
-            if (dctx->tmpOutSize > 64 KB) copySize = 0;
-            if (copySize > preserveSize) copySize = preserveSize;
-            assert(dctx->tmpOutBuffer != NULL);
-
-            memcpy(dctx->tmpOutBuffer + preserveSize - copySize, oldDictEnd - copySize, copySize);
-
-            dctx->dict = dctx->tmpOutBuffer;
-            dctx->dictSize = preserveSize + dctx->tmpOutStart;
+            LZ4F_moveDictBeforeTmpOut(dctx, 0);
         } else {
             const BYTE* const oldDictEnd = dctx->dict + dctx->dictSize;
             size_t const newDictSize = MIN(dctx->dictSize, 64 KB);
@@ -2133,4 +3573,32 @@ size_t LZ4F_decompress_usingDict(LZ4F_dctx* dctx,
     return LZ4F_decompress(dctx, dstBuffer, dstSizePtr,
                            srcBuffer, srcSizePtr,
                            decompressOptionsPtr);
+}
+
+
+
+size_t LZ4F_resumeFrame(LZ4F_dctx* dctx, const LZ4F_frameInfo_t* frameInfo,
+                        unsigned long long decodedPos,
+                        const void* dict, size_t dictSize)
+{
+    assert(dctx != NULL);
+    RETURN_ERROR_IF(frameInfo == NULL, parameter_null);
+    RETURN_ERROR_IF(dict == NULL && dictSize > 0, parameter_null);
+    RETURN_ERROR_IF(frameInfo->frameType != LZ4F_frame, frameType_unknown);
+    RETURN_ERROR_IF(frameInfo->blockSizeID < LZ4F_max64KB || frameInfo->blockSizeID > LZ4F_max4MB, maxBlockSize_invalid);
+    RETURN_ERROR_IF((unsigned)frameInfo->blockMode > 1, blockMode_invalid);
+    RETURN_ERROR_IF((unsigned)frameInfo->blockChecksumFlag > 1, parameter_invalid);
+    RETURN_ERROR_IF((unsigned)frameInfo->contentChecksumFlag > 1, parameter_invalid);
+    RETURN_ERROR_IF(frameInfo->contentSize && decodedPos > frameInfo->contentSize, frameSize_wrong);
+
+    LZ4F_resetDecompressionContext(dctx);
+    dctx->frameInfo = *frameInfo;
+    dctx->maxBlockSize = LZ4F_getBlockSize(frameInfo->blockSizeID);
+    if (frameInfo->contentSize)
+        dctx->frameRemainingSize = frameInfo->contentSize - decodedPos;
+    dctx->dict = (const BYTE*)dict;
+    dctx->dictSize = dictSize;
+    dctx->skipContentChecksum = 1;   
+    dctx->dStage = dstage_init;
+    return 0;
 }

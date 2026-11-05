@@ -31,15 +31,16 @@
 
 
 
-#if defined (__cplusplus)
-extern "C" {
-#endif
 
 #ifndef LZ4FILE_H
 #define LZ4FILE_H
 
 #include <stdio.h>  
 #include "lz4frame_static.h"
+
+#if defined (__cplusplus)
+extern "C" {
+#endif
 
 typedef struct LZ4_readFile_s LZ4_readFile_t;
 typedef struct LZ4_writeFile_s LZ4_writeFile_t;
@@ -49,7 +50,28 @@ typedef struct LZ4_writeFile_s LZ4_writeFile_t;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_readOpen(LZ4_readFile_t** lz4fRead, FILE* fp);
+
+
+
+
+
+LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_readOpen_advanced(LZ4_readFile_t** lz4fRead, FILE* fp, LZ4F_CustomMem customMem);
+
+
+
 
 
 
@@ -63,6 +85,25 @@ LZ4FLIB_STATIC_API size_t LZ4F_read(LZ4_readFile_t* lz4fRead, void* buf, size_t 
 
 
 
+
+
+
+
+
+
+
+
+LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_seek(LZ4_readFile_t* lz4fRead, long long offset, int origin);
+
+
+
+
+LZ4FLIB_STATIC_API unsigned long long LZ4F_tell(const LZ4_readFile_t* lz4fRead);
+
+
+
+
+
 LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_readClose(LZ4_readFile_t* lz4fRead);
 
 
@@ -70,7 +111,26 @@ LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_readClose(LZ4_readFile_t* lz4fRead);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_writeOpen(LZ4_writeFile_t** lz4fWrite, FILE* fp, const LZ4F_preferences_t* prefsPtr);
+
+
+
+
+
+LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_writeOpen_advanced(LZ4_writeFile_t** lz4fWrite, FILE* fp, const LZ4F_preferences_t* prefsPtr,
+                                                            LZ4F_CustomMem customMem);
 
 
 
@@ -84,10 +144,13 @@ LZ4FLIB_STATIC_API size_t LZ4F_write(LZ4_writeFile_t* lz4fWrite, const void* buf
 
 
 
-LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_writeClose(LZ4_writeFile_t* lz4fWrite);
 
-#endif 
+
+
+LZ4FLIB_STATIC_API LZ4F_errorCode_t LZ4F_writeClose(LZ4_writeFile_t* lz4fWrite);
 
 #if defined (__cplusplus)
 }
 #endif
+
+#endif 

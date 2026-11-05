@@ -42,16 +42,16 @@
 
 
 
+
 #ifndef LZ4F_H_09782039843
 #define LZ4F_H_09782039843
-
-#if defined (__cplusplus)
-extern "C" {
-#endif
 
 
 #include <stddef.h>   
 
+#if defined (__cplusplus)
+extern "C" {
+#endif
 
 
 
@@ -84,15 +84,20 @@ extern "C" {
 #  define LZ4FLIB_API LZ4FLIB_VISIBILITY
 #endif
 
+
 #ifdef LZ4F_DISABLE_DEPRECATE_WARNINGS
-#  define LZ4F_DEPRECATE(x) x
+#  define LZ4F_DEPRECATED(message)
 #else
-#  if defined(_MSC_VER)
-#    define LZ4F_DEPRECATE(x) x   /* __declspec(deprecated) x - only works with C++ */
-#  elif defined(__clang__) || (defined(__GNUC__) && (__GNUC__ >= 6))
-#    define LZ4F_DEPRECATE(x) x __attribute__((deprecated))
+#  if defined (__cplusplus) && (__cplusplus >= 201402) 
+#    define LZ4F_DEPRECATED(message) [[deprecated(message)]]
+#  elif defined(_MSC_VER)
+#    define LZ4F_DEPRECATED(message) __declspec(deprecated(message))
+#  elif defined(__clang__) || (defined(__GNUC__) && (__GNUC__ * 10 + __GNUC_MINOR__ >= 45))
+#    define LZ4F_DEPRECATED(message) __attribute__((deprecated(message)))
+#  elif defined(__GNUC__) && (__GNUC__ * 10 + __GNUC_MINOR__ >= 31)
+#    define LZ4F_DEPRECATED(message) __attribute__((deprecated))
 #  else
-#    define LZ4F_DEPRECATE(x) x   /* no deprecation warning for this compiler */
+#    define LZ4F_DEPRECATED(message)
 #  endif
 #endif
 
@@ -110,13 +115,6 @@ LZ4FLIB_API const char* LZ4F_getErrorName(LZ4F_errorCode_t code);
 
 
 
-#ifdef LZ4F_ENABLE_OBSOLETE_ENUMS
-#  define LZ4F_OBSOLETE_ENUM(x) , LZ4F_DEPRECATE(x) = LZ4F_##x
-#else
-#  define LZ4F_OBSOLETE_ENUM(x)
-#endif
-
-
 
 
 
@@ -126,10 +124,6 @@ typedef enum {
     LZ4F_max256KB=5,
     LZ4F_max1MB=6,
     LZ4F_max4MB=7
-    LZ4F_OBSOLETE_ENUM(max64KB)
-    LZ4F_OBSOLETE_ENUM(max256KB)
-    LZ4F_OBSOLETE_ENUM(max1MB)
-    LZ4F_OBSOLETE_ENUM(max4MB)
 } LZ4F_blockSizeID_t;
 
 
@@ -138,15 +132,11 @@ typedef enum {
 typedef enum {
     LZ4F_blockLinked=0,
     LZ4F_blockIndependent
-    LZ4F_OBSOLETE_ENUM(blockLinked)
-    LZ4F_OBSOLETE_ENUM(blockIndependent)
 } LZ4F_blockMode_t;
 
 typedef enum {
     LZ4F_noContentChecksum=0,
     LZ4F_contentChecksumEnabled
-    LZ4F_OBSOLETE_ENUM(noContentChecksum)
-    LZ4F_OBSOLETE_ENUM(contentChecksumEnabled)
 } LZ4F_contentChecksum_t;
 
 typedef enum {
@@ -157,15 +147,7 @@ typedef enum {
 typedef enum {
     LZ4F_frame=0,
     LZ4F_skippableFrame
-    LZ4F_OBSOLETE_ENUM(skippableFrame)
 } LZ4F_frameType_t;
-
-#ifdef LZ4F_ENABLE_OBSOLETE_ENUMS
-typedef LZ4F_blockSizeID_t blockSizeID_t;
-typedef LZ4F_blockMode_t blockMode_t;
-typedef LZ4F_frameType_t frameType_t;
-typedef LZ4F_contentChecksum_t contentChecksum_t;
-#endif
 
 
 
@@ -189,15 +171,61 @@ typedef struct {
 
 
 
+
+
 typedef struct {
   LZ4F_frameInfo_t frameInfo;
   int      compressionLevel;    
   unsigned autoFlush;           
   unsigned favorDecSpeed;         
-  unsigned reserved[3];         
+  unsigned nbWorkers;             
+  unsigned reserved1;           
+  unsigned reserved0;           
 } LZ4F_preferences_t;
 
-#define LZ4F_INIT_PREFERENCES   { LZ4F_INIT_FRAMEINFO, 0, 0u, 0u, { 0u, 0u, 0u } }    /* v1.8.3+ */
+#define LZ4F_INIT_PREFERENCES   { LZ4F_INIT_FRAMEINFO, 0, 0u, 0u, 0u, 0u, 0u }    /* v1.8.3+ */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -246,9 +274,29 @@ LZ4FLIB_API int LZ4F_compressionLevel_max(void);
 typedef struct LZ4F_cctx_s LZ4F_cctx;   
 typedef LZ4F_cctx* LZ4F_compressionContext_t;  
 
+
+typedef enum {
+    LZ4F_srcUnstable = 0,         
+    LZ4F_srcStable = 1,           
+
+    LZ4F_srcStableUntilFlush = 2  
+
+
+
+
+  
+} LZ4F_stableSrc_t;
+
+
+
+
+
+
 typedef struct {
   unsigned stableSrc;    
-  unsigned reserved[3];
+  unsigned uncompressed;   
+  unsigned reserved1;    
+  unsigned reserved0;    
 } LZ4F_compressOptions_t;
 
 
@@ -290,6 +338,13 @@ LZ4FLIB_API LZ4F_errorCode_t LZ4F_freeCompressionContext(LZ4F_cctx* cctx);
 #define LZ4F_CONTENT_CHECKSUM_SIZE 4
 
 
+#define LZ4F_ENDMARK_SIZE 4
+
+
+
+
+
+
 
 
 
@@ -299,6 +354,13 @@ LZ4FLIB_API LZ4F_errorCode_t LZ4F_freeCompressionContext(LZ4F_cctx* cctx);
 LZ4FLIB_API size_t LZ4F_compressBegin(LZ4F_cctx* cctx,
                                       void* dstBuffer, size_t dstCapacity,
                                       const LZ4F_preferences_t* prefsPtr);
+
+
+
+
+
+
+
 
 
 
@@ -329,6 +391,9 @@ LZ4FLIB_API size_t LZ4F_compressBound(size_t srcSize, const LZ4F_preferences_t* 
 
 
 
+
+
+
 LZ4FLIB_API size_t LZ4F_compressUpdate(LZ4F_cctx* cctx,
                                        void* dstBuffer, size_t dstCapacity,
                                  const void* srcBuffer, size_t srcSize,
@@ -343,9 +408,18 @@ LZ4FLIB_API size_t LZ4F_compressUpdate(LZ4F_cctx* cctx,
 
 
 
+
+
+
+
+
 LZ4FLIB_API size_t LZ4F_flush(LZ4F_cctx* cctx,
                               void* dstBuffer, size_t dstCapacity,
                         const LZ4F_compressOptions_t* cOptPtr);
+
+
+
+
 
 
 
@@ -498,6 +572,21 @@ LZ4F_getFrameInfo(LZ4F_dctx* dctx,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 LZ4FLIB_API size_t
 LZ4F_decompress(LZ4F_dctx* dctx,
                 void* dstBuffer, size_t* dstSizePtr,
@@ -511,6 +600,8 @@ LZ4F_decompress(LZ4F_dctx* dctx,
 
 
 LZ4FLIB_API void LZ4F_resetDecompressionContext(LZ4F_dctx* dctx);   
+
+
 
 
 
@@ -595,6 +686,7 @@ LZ4FLIB_API void        LZ4F_freeCDict(LZ4F_CDict* CDict);
 
 
 
+
 LZ4FLIB_API size_t
 LZ4F_compressFrame_usingCDict(LZ4F_cctx* cctx,
                               void* dst, size_t dstCapacity,
@@ -621,7 +713,7 @@ LZ4F_compressBegin_usingCDict(LZ4F_cctx* cctx,
 }
 #endif
 
-#endif  
+#endif
 
 #if defined(LZ4F_STATIC_LINKING_ONLY) && !defined(LZ4F_H_STATIC_09782039843)
 #define LZ4F_H_STATIC_09782039843
@@ -662,7 +754,7 @@ extern "C" {
         ITEM(ERROR_reservedFlag_set) \
         ITEM(ERROR_allocation_failed) \
         ITEM(ERROR_srcSize_tooLarge) \
-        ITEM(ERROR_dstMaxSize_tooSmall) \
+        ITEM(ERROR_dstCapacity_tooSmall) \
         ITEM(ERROR_frameHeader_incomplete) \
         ITEM(ERROR_frameType_unknown) \
         ITEM(ERROR_frameSize_wrong) \
@@ -683,6 +775,9 @@ extern "C" {
 typedef enum { LZ4F_LIST_ERRORS(LZ4F_GENERATE_ENUM)
               _LZ4F_dummy_error_enum_for_c89_never_used } LZ4F_errorCodes;
 
+
+#define LZ4F_ERROR_dstMaxSize_tooSmall LZ4F_ERROR_dstCapacity_tooSmall
+
 LZ4FLIB_STATIC_API LZ4F_errorCodes LZ4F_getErrorCode(size_t functionResult);
 
 
@@ -701,6 +796,34 @@ LZ4FLIB_STATIC_API size_t LZ4F_getBlockSize(LZ4F_blockSizeID_t blockSizeID);
 
 
 
+LZ4FLIB_STATIC_API unsigned LZ4F_getMaxNbWorkers(void);
+
+
+
+
+
+LZ4F_DEPRECATED("use LZ4F_compressUpdate() with LZ4F_compressOptions_t.uncompressed instead")
+LZ4FLIB_STATIC_API size_t
+LZ4F_uncompressedUpdate(LZ4F_cctx* cctx,
+                        void* dstBuffer, size_t dstCapacity,
+                  const void* srcBuffer, size_t srcSize,
+                  const LZ4F_compressOptions_t* cOptPtr);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -710,10 +833,9 @@ LZ4FLIB_STATIC_API size_t LZ4F_getBlockSize(LZ4F_blockSizeID_t blockSizeID);
 
 
 LZ4FLIB_STATIC_API size_t
-LZ4F_uncompressedUpdate(LZ4F_cctx* cctx,
-                        void* dstBuffer, size_t dstCapacity,
-                  const void* srcBuffer, size_t srcSize,
-                  const LZ4F_compressOptions_t* cOptPtr);
+LZ4F_resumeFrame(LZ4F_dctx* dctx, const LZ4F_frameInfo_t* frameInfo,
+                 unsigned long long decodedPos,
+                 const void* dict, size_t dictSize);
 
 
 
@@ -743,6 +865,11 @@ LZ4FLIB_STATIC_API LZ4F_cctx* LZ4F_createCompressionContext_advanced(LZ4F_Custom
 LZ4FLIB_STATIC_API LZ4F_dctx* LZ4F_createDecompressionContext_advanced(LZ4F_CustomMem customMem, unsigned version);
 LZ4FLIB_STATIC_API LZ4F_CDict* LZ4F_createCDict_advanced(LZ4F_CustomMem customMem, const void* dictBuffer, size_t dictSize);
 
+
+
+
+LZ4FLIB_STATIC_API size_t LZ4F_cctx_size(const LZ4F_cctx* cctx);
+LZ4FLIB_STATIC_API size_t LZ4F_dctx_size(const LZ4F_dctx* dctx);
 
 #if defined (__cplusplus)
 }
