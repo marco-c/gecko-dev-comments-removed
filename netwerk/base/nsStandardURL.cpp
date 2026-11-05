@@ -254,7 +254,7 @@ bool nsStandardURL::IsValid(uint32_t* aFailReason) {
   };
 
   auto checkSegment = [&](const nsStandardURL::URLSegment& aSeg) {
-#ifdef EARLY_BETA_OR_EARLIER
+#ifdef NIGHTLY_BUILD
     
     
     if ((aSeg.mPos.Parity() != aSeg.mPos.CalculateParity()) ||
