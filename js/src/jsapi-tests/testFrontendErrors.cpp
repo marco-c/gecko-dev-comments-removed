@@ -349,8 +349,9 @@ END_TEST(testFrontendErrors_allocationOverflow)
     cls_testFrontendErrors_allocationOverflow::warningReporterCalled = false;
 
 BEGIN_TEST(testFrontendErrors_cancelled) {
-  JS::FrontendContext* fc =
-      JS::NewFrontendContext(JS::AllowCancellingCompilation::Yes);
+  JS::FrontendContextCreationOptions fcOptions;
+  fcOptions.allowCancellingCompilation = true;
+  JS::FrontendContext* fc = JS::NewFrontendContext(&fcOptions);
   CHECK(fc);
 
   static constexpr JS::NativeStackSize stackSize = 128 * sizeof(size_t) * 1024;
