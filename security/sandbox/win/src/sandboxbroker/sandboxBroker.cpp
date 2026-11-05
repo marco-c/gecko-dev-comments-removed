@@ -1217,10 +1217,12 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
                        "With these static arguments AddRule should never fail, "
                        "what happened?");
   } else {
-    
-    AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
-                            FOLDERID_LocalAppData,
-                            u"\\Microsoft\\Windows\\Fonts\\*"_ns);
+    if (!sFontFileRuleEnabled) {
+      
+      AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
+                              FOLDERID_LocalAppData,
+                              u"\\Microsoft\\Windows\\Fonts\\*"_ns);
+    }
 
     
     AddCachedDirRule(config, sandbox::FileSemantics::kAllowReadonly, sBinDir,
@@ -1252,8 +1254,10 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     
     AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
                             FOLDERID_Fonts);
-    AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
-                            FOLDERID_Fonts, u"\\*"_ns);
+    if (!sFontFileRuleEnabled) {
+      AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
+                              FOLDERID_Fonts, u"\\*"_ns);
+    }
 
     
     
@@ -1364,6 +1368,16 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       LOG_E("Failed (ResultCode %d) to add rule for International Geo.",
             result);
     }
+  }
+
+  
+  
+  
+  
+  if (sFontFileRuleEnabled && aSandboxLevel != 1 && !aIsFileProcess) {
+    result = config->AllowFontFileAccess();
+    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                       "Failed to add font file rules.");
   }
 }
 
