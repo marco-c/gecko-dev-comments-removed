@@ -29,6 +29,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 topsrcdir = os.path.abspath(os.path.dirname(os.path.dirname(here)))
 DOC_ROOT = os.path.join(topsrcdir, "docs")
 BASE_LINK = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/"
+PUBLISHED_LINK = "https://firefox-source-docs.mozilla.org/"
 
 
 
@@ -214,7 +215,10 @@ def build_docs(
     
     
     if write_url is not None:
-        unique_link = BASE_LINK + unique_id + "/index.html"
+        if _publishes(project()):
+            unique_link = PUBLISHED_LINK + "index.html"
+        else:
+            unique_link = BASE_LINK + unique_id + "/index.html"
         with open(write_url, "w") as fp:
             fp.write(unique_link)
             fp.flush()
@@ -413,6 +417,10 @@ def _find_doc_dir(path):
         return path
 
 
+def _publishes(project):
+    return project == "main" and os.environ.get("MOZ_SCM_LEVEL") == "3"
+
+
 def _s3_upload(root, project, unique_id, version=None):
     
     
@@ -427,51 +435,33 @@ def _s3_upload(root, project, unique_id, version=None):
     
     
     
-    
-    
-    
-    
 
     files = list(distribution_files(root))
-    key_prefixes = []
+
+    
+    
+    publish = _publishes(project)
+    dest = "" if publish else unique_id
+    s3_upload(files, dest)
     if version:
-        key_prefixes.append(f"{project}/{version}")
+        s3_upload(files, f"{project}/{version}")
 
-    
-    
-    if project == "main":
-        key_prefixes.append("")
-
-    key_prefixes.append(unique_id)
-
-    with open(os.path.join(DOC_ROOT, "config.yml")) as fh:
-        redirects = yaml.safe_load(fh)["redirects"]
-
-    redirects = {k.strip("/"): v.strip("/") for k, v in redirects.items()}
-
-    all_redirects = {}
-
-    for prefix in key_prefixes:
-        s3_upload(files, prefix)
-
+    if publish:
         
         
         
-        if (version and prefix.endswith(version)) or prefix == unique_id:
-            continue
+        with open(os.path.join(DOC_ROOT, "config.yml")) as fh:
+            redirects = yaml.safe_load(fh)["redirects"]
 
-        redirect_prefix = prefix + "/" if prefix else ""
-        all_redirects.update({
-            redirect_prefix + k: redirect_prefix + v for k, v in redirects.items()
-        })
+        redirects = {k.strip("/"): v.strip("/") for k, v in redirects.items()}
 
-    print("Redirects currently staged")
-    pprint(all_redirects, indent=1)
+        print("Redirects currently staged")
+        pprint(redirects, indent=1)
 
-    s3_set_redirects(all_redirects)
-
-    unique_link = BASE_LINK + unique_id + "/index.html"
-    print("Uploaded documentation can be accessed here " + unique_link)
+        s3_set_redirects(redirects)
+    else:
+        unique_link = BASE_LINK + dest + "/index.html"
+        print("Uploaded documentation can be accessed here " + unique_link)
 
 
 @SubCommand(
