@@ -3935,8 +3935,6 @@ void ScriptLoader::InstantiateClassicScriptFromCachedStencil(
 
   CalculateCacheFlag(aRequest);
 
-  MOZ_ASSERT(aRequest->PassedConditionForMemoryCache());
-
   
   
   
