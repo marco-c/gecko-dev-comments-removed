@@ -13,6 +13,7 @@ from mozbuild.backend.common import CommonBackend
 from mozbuild.frontend.data import (
     ComputedFlags,
     DirectoryTraversal,
+    Headers,
     PerSourceFlag,
     Sources,
 )
@@ -32,6 +33,8 @@ class CompileDBBackend(CommonBackend):
         self._envs = {}
         self._local_flags = defaultdict(dict)
         self._per_source_flags = defaultdict(list)
+        self._headers = []
+        self._source_suffixes = defaultdict(set)
 
     def _build_cmd(self, cmd, filename, unified):
         cmd = list(cmd)
@@ -67,6 +70,9 @@ class CompileDBBackend(CommonBackend):
                     obj.objdir, obj.relsrcdir, obj.config, f, obj.canonical_suffix
                 )
 
+        elif isinstance(obj, Headers):
+            self._headers.append(obj)
+
         elif isinstance(obj, PerSourceFlag):
             self._per_source_flags[obj.file_name].extend(obj.flags)
 
@@ -78,6 +84,22 @@ class CompileDBBackend(CommonBackend):
 
     def consume_finished(self):
         CommonBackend.consume_finished(self)
+
+        
+        header_suffixes = {
+            objdir: next(
+                (s for s in (".cpp", ".mm", ".m", ".c") if s in suffixes), ".h"
+            )
+            for objdir, suffixes in self._source_suffixes.items()
+        }
+        for obj in self._headers:
+            suffix = header_suffixes.get(obj.objdir, ".h")
+            
+            for f in obj.static_files:
+                db_line = self._build_db_line(
+                    obj.objdir, obj.relsrcdir, obj.config, f, suffix
+                )
+                db_line.append(f"-x{self.HEADER_LANGUAGES[suffix]}")
 
         db = []
 
@@ -212,6 +234,14 @@ class CompileDBBackend(CommonBackend):
         ".mm": "CXXFLAGS",
     }
 
+    HEADER_LANGUAGES = {
+        ".c": "c",
+        ".h": "c++",
+        ".cpp": "c++",
+        ".m": "objective-c",
+        ".mm": "objective-c++",
+    }
+
     def _get_compiler_args(self, cenv, canonical_suffix):
         if canonical_suffix not in self.COMPILERS:
             return None
@@ -223,6 +253,7 @@ class CompileDBBackend(CommonBackend):
         compiler_args = self._get_compiler_args(cenv, canonical_suffix)
         if compiler_args is None:
             return
+        self._source_suffixes[objdir].add(canonical_suffix)
         db = self._db.setdefault(
             (objdir, filename, unified),
             compiler_args + ["-o", "/dev/null", "-c"],
