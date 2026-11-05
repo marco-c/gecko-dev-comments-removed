@@ -17,6 +17,9 @@
 #endif
 #ifdef XP_WIN
 #  include "mozilla/ipc/WindowsMessageLoop.h"
+#  if defined(MOZ_SANDBOX)
+#    include "sandboxBroker.h"
+#  endif
 #endif
 
 using ::testing::EmptyTestEventListener;
@@ -202,6 +205,10 @@ int RunGTestFunc(int* argc, char** argv) {
 
   ScopedXPCOM xpcom("GTest");
 
+#if defined(MOZ_SANDBOX) && defined(XP_WIN)
+  SandboxBroker::GeckoDependentInitialize();
+#endif
+
 #ifdef XP_WIN
   mozilla::ipc::windows::InitUIThread();
 #endif
@@ -256,7 +263,7 @@ int RunGTestFunc(int* argc, char** argv) {
   Preferences::SetInt("telemetry.fog.test.activity_limit", -1);
   Preferences::SetInt("telemetry.fog.test.inactivity_limit", -1);
   
-  Preferences::SetInt("telemetry.fog.test.decelerate_early_events", true);
+  Preferences::SetBool("telemetry.fog.test.decelerate_early_events", true);
   
   Preferences::SetInt("idle.lastDailyNotification",
                       int32_t(PR_Now() / PR_USEC_PER_SEC));

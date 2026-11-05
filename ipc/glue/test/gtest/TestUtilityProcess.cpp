@@ -39,15 +39,6 @@ using namespace mozilla::ipc;
 
 
  void TestUtilityProcess::SetUpTestSuite() {
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  
-  static bool sOnce = false;
-  if (!sOnce) {
-    mozilla::SandboxBroker::GeckoDependentInitialize();
-    sOnce = true;
-  }
-#endif  
-
 #if defined(MOZ_WIDGET_ANDROID) || defined(XP_MACOSX)
   
   nsCOMPtr<nsIAppShellService> appShell =
