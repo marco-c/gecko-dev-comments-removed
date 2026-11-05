@@ -1440,23 +1440,35 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   AddShaderCachesToPolicy(&trackingConfig, aSandboxLevel);
 
   if (aSandboxLevel >= 2) {
-    
-    
-    EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
-                           "Failed to get Windows Profile folder");
-    EnsureWindowsDirCached(FOLDERID_LocalAppData, sLocalAppDataDir,
-                           "Failed to get Windows LocalAppData folder");
-    EnsureWindowsDirCached(FOLDERID_RoamingAppData, sRoamingAppDataDir,
-                           "Failed to get Windows RoamingAppData folder");
-    if (sWindowsProfileDir && sLocalAppDataDir && sRoamingAppDataDir) {
-      sandboxing::UserFontConfigHelper configHelper(
-          LR"(Software\Microsoft\Windows NT\CurrentVersion\Fonts)",
-          *sWindowsProfileDir, *sLocalAppDataDir, *sRoamingAppDataDir);
-      if (!configHelper.AddRules(trackingConfig)) {
+    if (sFontFileRuleEnabled) {
+      
+      
+      
+      if (trackingConfig.AllowFontFileAccess() != sandbox::SBOX_ALL_OK) {
         
-        
-        SANDBOX_SUCCEED_OR_CRASH(config->SetTokenLevel(
-            initialTokenLevel, sandbox::USER_INTERACTIVE));
+        AddCachedWindowsDirRule(
+            &trackingConfig, sandbox::FileSemantics::kAllowReadonly,
+            FOLDERID_LocalAppData, u"\\Microsoft\\Windows\\Fonts\\*"_ns);
+      }
+    } else {
+      
+      
+      EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
+                             "Failed to get Windows Profile folder");
+      EnsureWindowsDirCached(FOLDERID_LocalAppData, sLocalAppDataDir,
+                             "Failed to get Windows LocalAppData folder");
+      EnsureWindowsDirCached(FOLDERID_RoamingAppData, sRoamingAppDataDir,
+                             "Failed to get Windows RoamingAppData folder");
+      if (sWindowsProfileDir && sLocalAppDataDir && sRoamingAppDataDir) {
+        sandboxing::UserFontConfigHelper configHelper(
+            LR"(Software\Microsoft\Windows NT\CurrentVersion\Fonts)",
+            *sWindowsProfileDir, *sLocalAppDataDir, *sRoamingAppDataDir);
+        if (!configHelper.AddRules(trackingConfig)) {
+          
+          
+          SANDBOX_SUCCEED_OR_CRASH(config->SetTokenLevel(
+              initialTokenLevel, sandbox::USER_INTERACTIVE));
+        }
       }
     }
   }
