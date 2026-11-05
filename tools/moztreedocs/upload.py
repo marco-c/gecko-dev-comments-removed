@@ -21,6 +21,10 @@ if TYPE_CHECKING:
     from mozpack.files import BaseFile
 
 
+
+UPLOAD_THREADS = 128
+
+
 @functools.cache
 def create_aws_session():
     """
@@ -54,7 +58,10 @@ def create_aws_session():
         print("Trying to use your AWS credentials..")
         session = boto3.session.Session(region_name=region)
 
-    s3 = session.client("s3", config=botocore.client.Config(max_pool_connections=25))
+    
+    s3 = session.client(
+        "s3", config=botocore.client.Config(max_pool_connections=UPLOAD_THREADS + 1)
+    )
 
     return s3, bucket
 
@@ -166,7 +173,7 @@ def s3_upload(files: list[tuple[str, BaseFile]], key_prefix: str | None = None) 
 
     fs = []
     
-    with futures.ThreadPoolExecutor(21) as e:
+    with futures.ThreadPoolExecutor(UPLOAD_THREADS + 1) as e:
         
         
         delete_future = e.submit(s3_delete_missing, files, key_prefix)
