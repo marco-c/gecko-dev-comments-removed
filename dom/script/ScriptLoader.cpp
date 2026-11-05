@@ -2578,8 +2578,9 @@ void StencilCompileOrDecodeTask::CancelTask() {
 }
 
 nsresult StencilCompileOrDecodeTask::InitFrontendContext() {
-  mFrontendContext =
-      JS::NewFrontendContext(JS::AllowCancellingCompilation::Yes);
+  JS::FrontendContextCreationOptions options;
+  options.allowCancellingCompilation = true;
+  mFrontendContext = JS::NewFrontendContext(&options);
   if (!mFrontendContext) {
     mIsCancelled = true;
     return NS_ERROR_OUT_OF_MEMORY;

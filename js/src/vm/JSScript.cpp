@@ -2436,6 +2436,12 @@ bool SharedImmutableScriptData::shareScriptData(
   MOZ_ASSERT(sisd);
   MOZ_ASSERT(sisd->refCount() == 1);
 
+  if (!fc->hasScriptDataTableHolder()) {
+    
+    
+    return true;
+  }
+
   SharedImmutableScriptData* data = sisd.get();
 
   SharedImmutableScriptData::Hasher::Lookup lookup(data);
