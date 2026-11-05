@@ -66,7 +66,6 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        val fetchHandled = GeckoResult<Void>()
         sessionRule.delegateDuringNextWait(
             object : StorageDelegate {
                 override fun onAddressFetch(): GeckoResult<Array<Address>>? {
@@ -74,21 +73,13 @@ class AutocompleteTest : BaseSessionTest() {
                 }
 
                 override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                fetchHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return null
                 }
             }
         )
 
         mainSession.evaluateJS("document.querySelector('#name').focus()")
-        sessionRule.waitForResult(fetchHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onCreditCardFetch")
     }
 
     @Test
@@ -138,21 +129,11 @@ class AutocompleteTest : BaseSessionTest() {
             )
         )
 
-        val fetchHandled = GeckoResult<Void>()
-
-        sessionRule.delegateDuringNextWait(
+        sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
                 @AssertCalled(count = 1)
                 override fun onLoginFetch(domain: String): GeckoResult<Array<LoginEntry>>? {
                     assertThat("Domain should match", domain, equalTo("localhost"))
-
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                fetchHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
 
                     return null
                 }
@@ -160,35 +141,25 @@ class AutocompleteTest : BaseSessionTest() {
         )
 
         mainSession.loadTestPath(FORMS3_HTML_PATH)
-        sessionRule.waitForResult(fetchHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onLoginFetch")
     }
 
     @Test
     fun fetchCreditCards() {
-        val fetchHandled = GeckoResult<Void>()
-
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        sessionRule.delegateDuringNextWait(
+        sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
                 @AssertCalled(count = 1)
                 override fun onCreditCardFetch(): GeckoResult<Array<CreditCard>>? {
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                fetchHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return null
                 }
             }
         )
 
         mainSession.evaluateJS("document.querySelector('#name').focus()")
-        sessionRule.waitForResult(fetchHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onCreditCardFetch")
     }
 
     @Test
@@ -219,6 +190,22 @@ class AutocompleteTest : BaseSessionTest() {
             "Expiration year should match",
             creditCard.expirationYear,
             equalTo(""),
+        )
+        assertThat(
+            "Security code should match",
+            creditCard.securityCode,
+            equalTo(""),
+        )
+    }
+
+    @Test
+    fun creditCardBuilderSecurityCode() {
+        val creditCard = CreditCard.Builder().securityCode("123").build()
+
+        assertThat(
+            "Security code should match",
+            creditCard.securityCode,
+            equalTo("123"),
         )
     }
 
@@ -258,8 +245,6 @@ class AutocompleteTest : BaseSessionTest() {
                     .expirationYear(expYear[1])
                     .build(),
             )
-
-        val selectHandled = GeckoResult<Void>()
 
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
@@ -315,13 +300,6 @@ class AutocompleteTest : BaseSessionTest() {
                             equalTo(expYear[i]),
                         )
                     }
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                selectHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
 
                     return GeckoResult.fromValue(prompt.confirm(prompt.options[0]))
                 }
@@ -330,7 +308,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Focus on the name input field.
         mainSession.evaluateJS("document.querySelector('#name').focus()")
-        sessionRule.waitForResult(selectHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onCreditCardSelect")
         waitForFill(mainSession, "#name")
 
         assertThat(
@@ -476,7 +454,6 @@ class AutocompleteTest : BaseSessionTest() {
                 }
             }
 
-        val promptHandled = GeckoResult<Void>()
         mainSession.delegateUntilTestEnd(
             object : PromptDelegate {
                 @AssertCalled
@@ -490,13 +467,6 @@ class AutocompleteTest : BaseSessionTest() {
                         equalTo(3),
                     )
                     prompt.setDelegate(promptInstanceDelegate)
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                promptHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
 
                     return pendingResponse
                 }
@@ -504,7 +474,7 @@ class AutocompleteTest : BaseSessionTest() {
         )
 
         mainSession.evaluateJS("document.querySelector('#name').focus()")
-        sessionRule.waitForResult(promptHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onCreditCardSelect")
         mainSession.evaluateJS("document.querySelector('#name').blur()")
         sessionRule.waitForResult(result)
     }
@@ -557,7 +527,6 @@ class AutocompleteTest : BaseSessionTest() {
                 }
             }
 
-        val promptOpened = GeckoResult<Void>()
         mainSession.delegateUntilTestEnd(
             object : PromptDelegate {
                 // Coalescing means focusing the second field must not open a second
@@ -568,13 +537,6 @@ class AutocompleteTest : BaseSessionTest() {
                     prompt: AutocompleteRequest<CreditCardSelectOption>,
                 ): GeckoResult<PromptDelegate.PromptResponse>? {
                     prompt.setDelegate(promptInstanceDelegate)
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                promptOpened.complete(null)
-                            },
-                            acceptDelay,
-                        )
                     // Leave the prompt open; do not confirm.
                     return pendingResponse
                 }
@@ -583,7 +545,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Open the prompt on the first credit card field.
         mainSession.evaluateJS("document.querySelector('#name').focus()")
-        sessionRule.waitForResult(promptOpened)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onCreditCardSelect")
 
         // Move focus to a second credit card field and let its autocomplete
         // cycle run. With coalescing, no second prompt opens and the existing
@@ -662,7 +624,6 @@ class AutocompleteTest : BaseSessionTest() {
                 }
             }
 
-        val promptOpened = GeckoResult<Void>()
         mainSession.delegateUntilTestEnd(
             object : PromptDelegate {
                 // Coalescing means focusing the second field must not open a second
@@ -673,13 +634,6 @@ class AutocompleteTest : BaseSessionTest() {
                     prompt: AutocompleteRequest<AddressSelectOption>,
                 ): GeckoResult<PromptDelegate.PromptResponse>? {
                     prompt.setDelegate(promptInstanceDelegate)
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                promptOpened.complete(null)
-                            },
-                            acceptDelay,
-                        )
                     // Leave the prompt open; do not confirm.
                     return pendingResponse
                 }
@@ -688,7 +642,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Open the prompt on the first address field.
         mainSession.evaluateJS("document.querySelector('#givenName').focus()")
-        sessionRule.waitForResult(promptOpened)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onAddressSelect")
 
         // Move focus to a second address field and let its autocomplete cycle
         // run. With coalescing, no second prompt opens and the existing one is
@@ -720,20 +674,10 @@ class AutocompleteTest : BaseSessionTest() {
 
     @Test
     fun fetchAddresses() {
-        val fetchHandled = GeckoResult<Void>()
-
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
                 @AssertCalled(count = 1)
                 override fun onAddressFetch(): GeckoResult<Array<Address>>? {
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                fetchHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return null
                 }
             }
@@ -742,7 +686,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(ADDRESS_FORM_HTML_PATH)
         mainSession.waitForPageStop()
         mainSession.evaluateJS("document.querySelector('#name').focus()")
-        sessionRule.waitForResult(fetchHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onAddressFetch")
     }
 
     fun checkAddressesForCorrectness(savedAddresses: Array<Address>, selectedAddress: Address) {
@@ -754,8 +698,6 @@ class AutocompleteTest : BaseSessionTest() {
         //    c. Ensure onAddressSelect is called.
         //    d. Select and return one of the options.
         //    e. Ensure the form is filled accordingly.
-
-        val selectHandled = GeckoResult<Void>()
 
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
@@ -848,14 +790,6 @@ class AutocompleteTest : BaseSessionTest() {
                         equalTo(selectedAddress.email),
                     )
 
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                selectHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return GeckoResult.fromValue(prompt.confirm(addressOption!!))
                 }
             }
@@ -866,7 +800,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Focus on the given name input field.
         mainSession.evaluateJS("document.querySelector('#givenName').focus()")
-        sessionRule.waitForResult(selectHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onAddressSelect")
         waitForFill(mainSession, "#streetAddress")
 
         assertThat(
@@ -1060,7 +994,6 @@ class AutocompleteTest : BaseSessionTest() {
                 }
             }
 
-        val promptHandled = GeckoResult<Void>()
         mainSession.delegateUntilTestEnd(
             object : PromptDelegate {
                 @AssertCalled
@@ -1074,13 +1007,6 @@ class AutocompleteTest : BaseSessionTest() {
                         equalTo(1),
                     )
                     prompt.setDelegate(promptInstanceDelegate)
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                promptHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
 
                     return pendingResponse
                 }
@@ -1091,7 +1017,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         mainSession.evaluateJS("document.querySelector('#givenName').focus()")
-        sessionRule.waitForResult(promptHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onAddressSelect")
         mainSession.evaluateJS("document.querySelector('#givenName').blur()")
         sessionRule.waitForResult(result)
     }
@@ -1180,8 +1106,6 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
 
-        val saveHandled = GeckoResult<Void>()
-
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
                 @AssertCalled
@@ -1197,8 +1121,6 @@ class AutocompleteTest : BaseSessionTest() {
                         login.password,
                         equalTo("pass1x"),
                     )
-
-                    saveHandled.complete(null)
                 }
             }
         )
@@ -1241,7 +1163,7 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
-        sessionRule.waitForResult(saveHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onLoginSave")
     }
 
     @Test
@@ -1259,8 +1181,6 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(FORMS3_HTML_PATH)
         mainSession.waitForPageStop()
 
-        val saveHandled = GeckoResult<Void>()
-
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
                 @AssertCalled
@@ -1276,8 +1196,6 @@ class AutocompleteTest : BaseSessionTest() {
                         login.password,
                         equalTo("pass1xmod"),
                     )
-
-                    saveHandled.complete(null)
                 }
             }
         )
@@ -1329,7 +1247,7 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form.
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
-        sessionRule.waitForResult(saveHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onLoginSave")
     }
 
     @Test
@@ -1446,6 +1364,7 @@ class AutocompleteTest : BaseSessionTest() {
         val session2 = sessionRule.createOpenSession()
         session2.loadTestPath(FORMS3_HTML_PATH)
         session2.waitForPageStop()
+        waitForFill(session2, "#user1")
         session2.evaluateJS("document.querySelector('#pass1').value = '$pass2'")
         session2.evaluateJS("document.querySelector('#form1').submit()")
 
@@ -1461,8 +1380,6 @@ class AutocompleteTest : BaseSessionTest() {
 
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
-
-        val saveHandled = GeckoResult<Void>()
 
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
@@ -1480,7 +1397,6 @@ class AutocompleteTest : BaseSessionTest() {
                         creditCard.expirationYear,
                         equalTo(ccExpYear),
                     )
-                    saveHandled.complete(null)
                 }
             }
         )
@@ -1538,7 +1454,7 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
-        sessionRule.waitForResult(saveHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onCreditCardSave")
     }
 
     @Test
@@ -1552,8 +1468,6 @@ class AutocompleteTest : BaseSessionTest() {
 
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
-
-        val saveHandled = GeckoResult<Void>()
 
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
@@ -1571,7 +1485,6 @@ class AutocompleteTest : BaseSessionTest() {
                         creditCard.expirationYear,
                         equalTo(ccExpYear),
                     )
-                    saveHandled.complete(null)
                 }
             }
         )
@@ -1627,7 +1540,7 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form
         mainSession.evaluateJS("document.querySelector('#form2').requestSubmit()")
 
-        sessionRule.waitForResult(saveHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onCreditCardSave")
     }
 
     @Test
@@ -1720,8 +1633,6 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.loadTestPath(CC_FORM_HTML_PATH)
         mainSession.waitForPageStop()
 
-        val saveHandled = GeckoResult<Void>()
-
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
                 @AssertCalled
@@ -1738,7 +1649,6 @@ class AutocompleteTest : BaseSessionTest() {
                         creditCard.expirationYear,
                         equalTo(ccExpYearNew),
                     )
-                    saveHandled.complete(null)
                 }
             }
         )
@@ -1804,7 +1714,7 @@ class AutocompleteTest : BaseSessionTest() {
         // Submit the form
         mainSession.evaluateJS("document.querySelector('form').requestSubmit()")
 
-        sessionRule.waitForResult(saveHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onCreditCardSave")
     }
 
     @Test
@@ -2017,8 +1927,6 @@ class AutocompleteTest : BaseSessionTest() {
             )
         )
 
-        val usedHandled = GeckoResult<Void>()
-
         val user1 = "user1x"
         val pass1 = "pass1x"
         val guid = "test-guid"
@@ -2068,8 +1976,6 @@ class AutocompleteTest : BaseSessionTest() {
                             login.guid,
                             equalTo(guid),
                         )
-
-                        usedHandled.complete(null)
                     }
                 }
             )
@@ -2108,7 +2014,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
         if (autofillEnabled) {
-            sessionRule.waitForResult(usedHandled)
+            sessionRule.waitUntilCalled(StorageDelegate::class, "onLoginUsed")
         } else {
             mainSession.waitForPageStop()
         }
@@ -2252,8 +2158,6 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled1 = GeckoResult<Void>()
         val saveHandled2 = GeckoResult<Void>()
-        val selectHandled = GeckoResult<Void>()
-        val usedHandled = GeckoResult<Void>()
 
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
@@ -2337,8 +2241,6 @@ class AutocompleteTest : BaseSessionTest() {
                         login.guid,
                         equalTo(user1),
                     )
-
-                    usedHandled.complete(null)
                 }
             }
         )
@@ -2466,14 +2368,6 @@ class AutocompleteTest : BaseSessionTest() {
                         )
                     }
 
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                selectHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return GeckoResult.fromValue(prompt.confirm(prompt.options[0]))
                 }
             }
@@ -2484,7 +2378,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Focus on the username input field.
         session3.evaluateJS("document.querySelector('#user1').focus()")
-        sessionRule.waitForResult(selectHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onLoginSelect")
         waitForFill(session3, "#user1")
 
         assertThat(
@@ -2501,7 +2395,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Submit the selection.
         session3.evaluateJS("document.querySelector('#form1').submit()")
-        sessionRule.waitForResult(usedHandled)
+        sessionRule.waitUntilCalled(StorageDelegate::class, "onLoginUsed")
     }
 
     @Test
@@ -2547,7 +2441,6 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled1 = GeckoResult<Void>()
         val saveHandled2 = GeckoResult<Void>()
-        val selectHandled = GeckoResult<Void>()
 
         sessionRule.delegateUntilTestEnd(
             object : StorageDelegate {
@@ -2744,14 +2637,6 @@ class AutocompleteTest : BaseSessionTest() {
                                 .build()
                         )
 
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                selectHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return GeckoResult.fromValue(prompt.confirm(modOption))
                 }
             }
@@ -2762,7 +2647,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // Focus on the username input field.
         session3.evaluateJS("document.querySelector('#user1').focus()")
-        sessionRule.waitForResult(selectHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onLoginSelect")
         waitForFill(session3, "#user1")
 
         assertThat(
@@ -2811,7 +2696,6 @@ class AutocompleteTest : BaseSessionTest() {
 
         val saveHandled1 = GeckoResult<Void>()
         val saveHandled2 = GeckoResult<Void>()
-        val selectHandled = GeckoResult<Void>()
         var numSelects = 0
 
         var onLoginSaveCount = 0
@@ -2892,15 +2776,6 @@ class AutocompleteTest : BaseSessionTest() {
 
                     genPass = login.password
 
-                    if (numSelects == 0) {
-                        Handler(Looper.getMainLooper())
-                            .postDelayed(
-                                {
-                                    selectHandled.complete(null)
-                                },
-                                acceptDelay,
-                            )
-                    }
                     ++numSelects
 
                     return GeckoResult.fromValue(prompt.confirm(option))
@@ -2952,7 +2827,7 @@ class AutocompleteTest : BaseSessionTest() {
         // Assign username and focus on password.
         mainSession.evaluateJS("document.querySelector('#user1').value = '$user1'")
         mainSession.evaluateJS("document.querySelector('#pass1').focus()")
-        sessionRule.waitForResult(selectHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onLoginSelect")
         waitForFill(mainSession, "#passConfirm")
 
         assertThat(
@@ -3043,7 +2918,6 @@ class AutocompleteTest : BaseSessionTest() {
                 }
             }
 
-        val promptHandled = GeckoResult<Void>()
         mainSession.delegateUntilTestEnd(
             object : PromptDelegate {
                 @AssertCalled
@@ -3057,13 +2931,6 @@ class AutocompleteTest : BaseSessionTest() {
                         equalTo(2),
                     )
                     prompt.setDelegate(promptInstanceDelegate)
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                promptHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
 
                     return pendingResponse
                 }
@@ -3074,7 +2941,7 @@ class AutocompleteTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         mainSession.evaluateJS("document.querySelector('#user1').focus()")
-        sessionRule.waitForResult(promptHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onLoginSelect")
         mainSession.evaluateJS("document.querySelector('#user1').blur()")
         sessionRule.waitForResult(result)
     }
@@ -3173,8 +3040,6 @@ class AutocompleteTest : BaseSessionTest() {
 
         val genRelayUsername = "userRelay"
 
-        val selectHandled = GeckoResult<Void>()
-
         mainSession.loadTestPath(FORMS4_HTML_PATH)
         mainSession.waitForPageStop()
 
@@ -3211,14 +3076,6 @@ class AutocompleteTest : BaseSessionTest() {
                     val relayUsername =
                         LoginEntry.Builder().origin(origin).formActionOrigin(origin).username(genRelayUsername).build()
 
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                selectHandled.complete(null)
-                            },
-                            acceptDelay,
-                        )
-
                     return GeckoResult.fromValue(prompt.confirm(LoginSelectOption(relayUsername, hint)))
                 }
             }
@@ -3226,7 +3083,7 @@ class AutocompleteTest : BaseSessionTest() {
 
         // focus on username.
         mainSession.evaluateJS("document.querySelector('#user1').focus()")
-        sessionRule.waitForResult(selectHandled)
+        sessionRule.waitUntilCalled(PromptDelegate::class, "onLoginSelect")
         waitForFill(mainSession, "#user1")
 
         assertThat(
