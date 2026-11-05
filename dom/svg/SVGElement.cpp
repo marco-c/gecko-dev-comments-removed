@@ -1465,7 +1465,7 @@ void SVGElement::DidChangeValue(nsAtom* aName, nsAttrValue& aNewValue,
   
   
   const AttrModType modType =
-      aName ? AttrModType::Modification : AttrModType::Addition;
+      HasAttr(aName) ? AttrModType::Modification : AttrModType::Addition;
   const nsAttrValue emptyValue;
   SetAttrAndNotify(kNameSpaceID_None, aName, nullptr, &emptyValue, aNewValue,
                    nullptr, modType, kNotifyDocumentObservers,
