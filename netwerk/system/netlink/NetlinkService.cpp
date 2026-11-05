@@ -1863,6 +1863,7 @@ void NetlinkService::CalculateNetworkID() {
   
   
   
+  
   static bool initialIDCalculation = true;
 
   RefPtr<NetlinkServiceListener> listener;
@@ -1871,9 +1872,11 @@ void NetlinkService::CalculateNetworkID() {
     listener = mListener;
   }
 
-  if (!initialIDCalculation && idChanged && listener) {
+  if (idChanged && listener) {
     listener->OnNetworkIDChanged();
-    mSendNetworkChangeEvent = true;
+    if (!initialIDCalculation) {
+      mSendNetworkChangeEvent = true;
+    }
   }
 
   if (mSendNetworkChangeEvent && listener) {

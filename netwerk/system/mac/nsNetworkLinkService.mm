@@ -685,17 +685,13 @@ void nsNetworkLinkService::calculateNetworkIdInternal(void) {
     }
   }
 
-  
-  static bool initialIDCalculation = true;
-  if (idChanged && !initialIDCalculation) {
+  if (idChanged) {
     RefPtr<nsNetworkLinkService> self = this;
 
     NS_DispatchToMainThread(NS_NewRunnableFunction(
         "nsNetworkLinkService::calculateNetworkIdInternal",
         [self]() { self->OnNetworkIdChanged(); }));
   }
-
-  initialIDCalculation = false;
 }
 
 NS_IMETHODIMP
