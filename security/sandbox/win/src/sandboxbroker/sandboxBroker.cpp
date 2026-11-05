@@ -13,7 +13,6 @@
 #include <string>
 
 #include "ConfigHelpers.h"
-#include "FontFileValidator.h"
 #include "GfxDriverInfo.h"
 #include "WinUtils.h"
 #include "base/win/sid.h"
@@ -34,11 +33,9 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinDllServices.h"
 #include "mozilla/WindowsVersion.h"
-#include "mozilla/gfx/FontPathSet.h"
 #include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
-#include "mozilla/sandboxing/BrokerGeckoServices.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
@@ -65,8 +62,6 @@ namespace mozilla {
 constexpr wchar_t kLpacFirefoxInstallFiles[] = L"lpacFirefoxInstallFiles";
 
 sandbox::BrokerServices* sBrokerService = nullptr;
-
-static bool sGeckoDependentInitialized = false;
 
 
 
@@ -97,10 +92,6 @@ LazyLogModule sSandboxBrokerLog("SandboxBroker");
 
 
 static StaticAutoPtr<nsTHashtable<nsCStringHashKey>> sLaunchErrors;
-
-
-
-static bool sFontFileRuleEnabled = false;
 
 
 
@@ -295,26 +286,6 @@ void SandboxBroker::GeckoDependentInitialize() {
 
   
   
-  auto setBrokerGeckoServices =
-      reinterpret_cast<sandboxing::SetBrokerGeckoServicesFn>(
-          ::GetProcAddress(::GetModuleHandleW(nullptr),
-                           sandboxing::kSetBrokerGeckoServicesName));
-
-  sFontFileRuleEnabled =
-      sBrokerService && setBrokerGeckoServices &&
-      Preferences::GetBool("security.sandbox.font-file-rule.enabled") &&
-      gfx::FontPathSet::Enable();
-
-  if (setBrokerGeckoServices) {
-    sandboxing::BrokerGeckoServices services;
-    if (sFontFileRuleEnabled) {
-      services.validateFontFile = sandboxing::ValidateFontFile;
-    }
-    setBrokerGeckoServices(&services);
-  }
-
-  
-  
   nsresult rv;
   nsCOMPtr<nsIProperties> dirSvc =
       do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
@@ -333,15 +304,9 @@ void SandboxBroker::GeckoDependentInitialize() {
   CacheDirectoryServiceDir(dirSvc, XRE_USER_SYS_EXTENSION_DIR,
                            sUserExtensionsDir);
 #endif
-
-  sGeckoDependentInitialized = true;
 }
 
 SandboxBroker::SandboxBroker() {
-  MOZ_ASSERT(sGeckoDependentInitialized,
-             "GeckoDependentInitialize must be called before creating a "
-             "SandboxBroker.");
-
   if (sBrokerService) {
     mPolicy = sBrokerService->CreatePolicy();
     if (sRunningFromNetworkDrive) {
@@ -1217,12 +1182,10 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
                        "With these static arguments AddRule should never fail, "
                        "what happened?");
   } else {
-    if (!sFontFileRuleEnabled) {
-      
-      AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
-                              FOLDERID_LocalAppData,
-                              u"\\Microsoft\\Windows\\Fonts\\*"_ns);
-    }
+    
+    AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
+                            FOLDERID_LocalAppData,
+                            u"\\Microsoft\\Windows\\Fonts\\*"_ns);
 
     
     AddCachedDirRule(config, sandbox::FileSemantics::kAllowReadonly, sBinDir,
@@ -1254,10 +1217,8 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     
     AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
                             FOLDERID_Fonts);
-    if (!sFontFileRuleEnabled) {
-      AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
-                              FOLDERID_Fonts, u"\\*"_ns);
-    }
+    AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
+                            FOLDERID_Fonts, u"\\*"_ns);
 
     
     
@@ -1369,16 +1330,6 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
             result);
     }
   }
-
-  
-  
-  
-  
-  if (sFontFileRuleEnabled && aSandboxLevel != 1 && !aIsFileProcess) {
-    result = config->AllowFontFileAccess();
-    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                       "Failed to add font file rules.");
-  }
 }
 
 void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
@@ -1454,35 +1405,23 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   AddShaderCachesToPolicy(&trackingConfig, aSandboxLevel);
 
   if (aSandboxLevel >= 2) {
-    if (sFontFileRuleEnabled) {
-      
-      
-      
-      if (trackingConfig.AllowFontFileAccess() != sandbox::SBOX_ALL_OK) {
+    
+    
+    EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
+                           "Failed to get Windows Profile folder");
+    EnsureWindowsDirCached(FOLDERID_LocalAppData, sLocalAppDataDir,
+                           "Failed to get Windows LocalAppData folder");
+    EnsureWindowsDirCached(FOLDERID_RoamingAppData, sRoamingAppDataDir,
+                           "Failed to get Windows RoamingAppData folder");
+    if (sWindowsProfileDir && sLocalAppDataDir && sRoamingAppDataDir) {
+      sandboxing::UserFontConfigHelper configHelper(
+          LR"(Software\Microsoft\Windows NT\CurrentVersion\Fonts)",
+          *sWindowsProfileDir, *sLocalAppDataDir, *sRoamingAppDataDir);
+      if (!configHelper.AddRules(trackingConfig)) {
         
-        AddCachedWindowsDirRule(
-            &trackingConfig, sandbox::FileSemantics::kAllowReadonly,
-            FOLDERID_LocalAppData, u"\\Microsoft\\Windows\\Fonts\\*"_ns);
-      }
-    } else {
-      
-      
-      EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
-                             "Failed to get Windows Profile folder");
-      EnsureWindowsDirCached(FOLDERID_LocalAppData, sLocalAppDataDir,
-                             "Failed to get Windows LocalAppData folder");
-      EnsureWindowsDirCached(FOLDERID_RoamingAppData, sRoamingAppDataDir,
-                             "Failed to get Windows RoamingAppData folder");
-      if (sWindowsProfileDir && sLocalAppDataDir && sRoamingAppDataDir) {
-        sandboxing::UserFontConfigHelper configHelper(
-            LR"(Software\Microsoft\Windows NT\CurrentVersion\Fonts)",
-            *sWindowsProfileDir, *sLocalAppDataDir, *sRoamingAppDataDir);
-        if (!configHelper.AddRules(trackingConfig)) {
-          
-          
-          SANDBOX_SUCCEED_OR_CRASH(config->SetTokenLevel(
-              initialTokenLevel, sandbox::USER_INTERACTIVE));
-        }
+        
+        SANDBOX_SUCCEED_OR_CRASH(config->SetTokenLevel(
+            initialTokenLevel, sandbox::USER_INTERACTIVE));
       }
     }
   }

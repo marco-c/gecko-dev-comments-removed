@@ -184,11 +184,6 @@ class [[clang::lto_visibility_public]] TargetConfig {
   
   
   
-  [[nodiscard]] virtual ResultCode AllowFontFileAccess() = 0;
-
-  
-  
-  
   [[nodiscard]] virtual ResultCode AllowExtraDll(const wchar_t* path) = 0;
 
   

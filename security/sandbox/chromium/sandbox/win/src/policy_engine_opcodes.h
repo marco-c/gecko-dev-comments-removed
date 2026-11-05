@@ -76,7 +76,6 @@ enum OpcodeID : uint16_t {
   OP_NUMBER_MATCH,        
   OP_NUMBER_AND_MATCH,    
   OP_WSTRING_MATCH,       
-  OP_FONT_FILE_MATCH,     
   OP_ACTION               
 };
 
@@ -333,12 +332,6 @@ class OpcodeFactory {
   PolicyOpcode* MakeOpNumberAndMatch(uint8_t selected_param,
                                      uint32_t match,
                                      uint32_t options);
-
-  
-  
-  
-  
-  PolicyOpcode* MakeOpFontFileMatch(uint8_t selected_param, uint32_t options);
 
  private:
   
