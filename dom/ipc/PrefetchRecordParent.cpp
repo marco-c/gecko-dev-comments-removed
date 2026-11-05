@@ -11,6 +11,7 @@
 #include "mozilla/dom/PrefetchLog.h"
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/glean/DomMetrics.h"
 #include "mozilla/net/NoVarySearchUtils.h"
 #include "nsContentPolicyUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
@@ -86,14 +87,13 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
   
   
   
-  bool isCrossOrigin = false;
-  docPrincipal->IsSameOrigin(mURL, &isCrossOrigin);
-  isCrossOrigin = !isCrossOrigin;
+  bool isCrossSite = true;
+  docPrincipal->IsThirdPartyURI(mURL, &isCrossSite);
 
-  if (StaticPrefs::dom_speculation_rules_same_origin_only() && isCrossOrigin) {
+  if (StaticPrefs::dom_speculation_rules_same_site_only() && isCrossSite) {
     LOG_SPECRULES_WARN(
-        ("PrefetchRecordParent::Init: this=%p cross-origin rejected "
-         "(same_origin_only=true)",
+        ("PrefetchRecordParent::Init: this=%p cross-site rejected "
+         "(same_site_only=true)",
          this));
     mState = PrefetchState::Canceled;
     return;
@@ -112,7 +112,7 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
   
   
   OriginAttributes isolatedAttrs = sourceAttrs;
-  if (isCrossOrigin) {
+  if (isCrossSite) {
     PopulateIsolatedPartitionKey(isolatedAttrs);
   }
   mIsolatedPartitionKey = isolatedAttrs.mPartitionKey;
@@ -170,7 +170,10 @@ void PrefetchRecordParent::Init(WindowGlobalParent* aWGP,
          this, static_cast<uint32_t>(rv)));
     mState = PrefetchState::Canceled;
     mChannel = nullptr;
+    return;
   }
+
+  mOutcome = Outcome::Incomplete;
 }
 
 bool PrefetchRecordParent::IsCrossOriginToDocument(nsIURI* aURI) const {
@@ -392,6 +395,8 @@ PrefetchRecordParent::OnDataAvailable(nsIRequest* aRequest,
 
 NS_IMETHODIMP
 PrefetchRecordParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
+  
+  AccumulateTransferSize(aRequest);
   mChannel = nullptr;
 
   if (NS_FAILED(aStatus)) {
@@ -442,6 +447,7 @@ PrefetchRecordParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   wgp->DedupePrefetchRecords(this);
   
   mState = PrefetchState::Completed;
+  mOutcome = Outcome::Unused;
   
   FirePrefetchStatusUpdated(true);
   wgp->NotifyPrefetchStateChanged(this);
@@ -473,6 +479,7 @@ PrefetchRecordParent::AsyncOnChannelRedirect(
       ("PrefetchRecordParent::AsyncOnChannelRedirect: this=%p flags=%u", this,
        aFlags));
   FillResponseOnLastEntry(aOldChannel);
+  AccumulateTransferSize(aOldChannel);
 
   
   
@@ -572,6 +579,40 @@ void PrefetchRecordParent::ActorDestroy(ActorDestroyReason aReason) {
     mChannel = nullptr;
   }
   ReleaseCacheToken();
+
+  RecordDataUsage();
+}
+
+void PrefetchRecordParent::AccumulateTransferSize(nsIRequest* aRequest) {
+  nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aRequest);
+  if (!http) {
+    return;
+  }
+  uint64_t size = 0;
+  if (NS_SUCCEEDED(http->GetTransferSize(&size))) {
+    mTransferSize += size;
+  }
+}
+
+void PrefetchRecordParent::RecordDataUsage() {
+  nsAutoCString label;
+  switch (mOutcome) {
+    
+    case Outcome::NotStarted:
+      return;
+    case Outcome::Incomplete:
+      label.AssignLiteral("incomplete");
+      break;
+    case Outcome::Unused:
+      label.AssignLiteral("unused");
+      break;
+    case Outcome::Used:
+      label.AssignLiteral("used");
+      break;
+  }
+
+  glean::speculation_rules::prefetch_transfer_size.Get(label).Accumulate(
+      mTransferSize);
 }
 
 }  
