@@ -22,7 +22,8 @@ add_task(async function test_console_to_mozlog() {
       lines.push(line);
     },
     extraEnv: {
-      MOZ_LOG: "console:5,my-prefix:2,PageMessages:5,error-only:1",
+      MOZ_LOG:
+        "console:5,my-prefix:2,PageMessages:5,error-only:1,log-module:5,prefix-only:5",
     },
   });
   const exitCode = await promise;
@@ -59,6 +60,16 @@ add_task(async function test_console_to_mozlog() {
     
     `I/PageMessages String message`,
     `E/PageMessages [JavaScript Error: "Error: Async exception" {file: "resource://testing-common/backgroundtasks/BackgroundTask_console.sys.mjs" line: 50}]`,
+
+    
+    
+    `I/log-module log: "log-module-only"`,
+    `I/log-module log: Some prefix: "log-module-and-prefix"`,
+    `I/log-module log: "log-module-as-prefix"`,
+
+    
+    
+    `I/prefix-only log: "prefix-only"`,
   ];
 
   info(lines);

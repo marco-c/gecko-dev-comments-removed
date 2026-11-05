@@ -145,7 +145,8 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
 
  private:
   Console(JSContext* aCx, nsIGlobalObject* aGlobal, uint64_t aOuterWindowID,
-          uint64_t aInnerWIndowID, const nsAString& aPrefix = u""_ns);
+          uint64_t aInnerWIndowID, const nsAString& aLogModule = u""_ns,
+          const nsAString& aPrefix = u""_ns);
   ~Console();
 
   void Initialize(ErrorResult& aRv);
@@ -440,7 +441,10 @@ class Console final : public nsIObserver, public nsSupportsWeakReference {
   RefPtr<ConsoleInstanceDumpCallback> mDumpFunction;
   bool mDumpToStdout;
   LogModule* mLogModule;
-  nsString mPrefix;
+  
+  nsString mMozLogPrefix;
+  
+  nsString mConsolePrefix;
   bool mChromeInstance;
   uint32_t mCurrentLogLevel;
 

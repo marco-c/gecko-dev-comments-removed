@@ -867,6 +867,8 @@ interface ConsoleInstanceOptions {
     
     innerID?: string;
     
+    logModule?: string;
+    
     maxLogLevel?: ConsoleLogLevel;
     
     maxLogLevelPref?: string;
