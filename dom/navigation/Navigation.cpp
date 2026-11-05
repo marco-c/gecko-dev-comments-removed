@@ -643,6 +643,10 @@ struct NavigationWaitForAllScope final : public nsISupports,
         [browsingContext = RefPtr{GetBrowsingContext()},
          loadState = RefPtr{mLoadState}]() MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
           if (browsingContext && loadState) {
+            
+            
+            
+            loadState->SetTargetBrowsingContext(nullptr);
             browsingContext->LoadURI(loadState,  false);
           }
         });
