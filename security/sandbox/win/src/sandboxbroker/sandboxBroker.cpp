@@ -13,6 +13,7 @@
 #include <string>
 
 #include "ConfigHelpers.h"
+#include "FontFileValidator.h"
 #include "GfxDriverInfo.h"
 #include "WinUtils.h"
 #include "base/win/sid.h"
@@ -33,6 +34,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WinDllServices.h"
 #include "mozilla/WindowsVersion.h"
+#include "mozilla/gfx/FontPathSet.h"
 #include "mozilla/glean/SecuritySandboxMetrics.h"
 #include "mozilla/ipc/LaunchError.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
@@ -95,6 +97,10 @@ LazyLogModule sSandboxBrokerLog("SandboxBroker");
 
 
 static StaticAutoPtr<nsTHashtable<nsCStringHashKey>> sLaunchErrors;
+
+
+
+static bool sFontFileRuleEnabled = false;
 
 
 
@@ -293,8 +299,17 @@ void SandboxBroker::GeckoDependentInitialize() {
       reinterpret_cast<sandboxing::SetBrokerGeckoServicesFn>(
           ::GetProcAddress(::GetModuleHandleW(nullptr),
                            sandboxing::kSetBrokerGeckoServicesName));
+
+  sFontFileRuleEnabled =
+      sBrokerService && setBrokerGeckoServices &&
+      Preferences::GetBool("security.sandbox.font-file-rule.enabled") &&
+      gfx::FontPathSet::Enable();
+
   if (setBrokerGeckoServices) {
     sandboxing::BrokerGeckoServices services;
+    if (sFontFileRuleEnabled) {
+      services.validateFontFile = sandboxing::ValidateFontFile;
+    }
     setBrokerGeckoServices(&services);
   }
 
