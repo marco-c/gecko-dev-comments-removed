@@ -1424,6 +1424,14 @@ pub fn credential_management<Dev: FidoDevice>(
                         if remaining_cred_ids > 0 {
                             cred_management.subcommand =
                                 CredManagementCommand::EnumerateCredentialsGetNextCredential;
+                            
+                            
+                            unwrap_result!(
+                                cred_management.set_pin_uv_auth_param(
+                                    pin_uv_auth_result.get_pin_uv_auth_token()
+                                ),
+                                callback
+                            );
                         } else {
                             current_rp += 1;
                             
