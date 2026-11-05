@@ -2448,6 +2448,7 @@ pref("browser.smartwindow.resumeActivity.enabled", true);
 pref("browser.smartwindow.resumeCards.enabled", true);
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);
+pref("browser.smartwindow.firstrun.singlePageWithAutoModel", false);
 pref("browser.smartwindow.showThemesNotice", true);
 pref("browser.smartwindow.sidebar.openByDefault", true);
 pref("browser.smartwindow.isDefaultWindow", false);
@@ -2486,6 +2487,9 @@ pref("browser.smartwindow.aitab.menus", true);
 #else
 pref("browser.smartwindow.aitab.menus", false);
 #endif
+
+
+pref("browser.smartwindow.manageTabs.includeChatTab", false);
 
 
 pref("browser.smartwindow.agent.enabled", true);
@@ -2532,6 +2536,10 @@ pref("browser.smartwindow.smartbarMentions.loglevel", "Error");
 pref("browser.smartwindow.telemetryLogLevel", "Error");
 
 pref("browser.widgets.generated.enabled", false);
+pref(
+  "sidebar.newTool.migration.widgets",
+  '{"visibilityPref":"browser.widgets.generated.enabled"}'
+);
 pref("browser.widgets.generated.loglevel", "Warn");
 pref("browser.widgets.generated.endpoint", "");
 pref("browser.widgets.generated.apiKey", "");
