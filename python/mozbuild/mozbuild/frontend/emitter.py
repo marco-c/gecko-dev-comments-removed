@@ -1391,6 +1391,17 @@ class TreeMetadataEmitter(LoggingMixin):
             if v in context and context[v]:
                 computed_flags.resolve_flags("MOZBUILD_%s" % v, context[v])
 
+        
+        
+        
+        if (
+            context.get("NO_PGO")
+            or context.get("SIMPLE_PROGRAMS")
+            or context.get("CPP_UNIT_TESTS")
+        ):
+            computed_flags.resolve_flags("PGO", [])
+            computed_flags.resolve_flags("PGO_DEFINES", [])
+
         for v in ["WASM_CFLAGS", "WASM_CXXFLAGS"]:
             if v in context and context[v]:
                 computed_wasm_flags.resolve_flags("MOZBUILD_%s" % v, context[v])
