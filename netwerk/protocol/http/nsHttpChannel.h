@@ -50,8 +50,6 @@ namespace net {
 class nsChannelClassifier;
 class HttpChannelSecurityWarningReporter;
 
-using DNSPromise = MozPromise<nsCOMPtr<nsIDNSRecord>, nsresult, false>;
-
 
 
 
@@ -472,8 +470,6 @@ class nsHttpChannel final : public HttpBaseChannel,
           aContinueOnStopRequestFunc);
   [[nodiscard]] MOZ_NEVER_INLINE nsresult
   DoConnect(HttpTransactionShell* aTransWithStickyConn = nullptr);
-  [[nodiscard]] nsresult DoConnectActual(
-      HttpTransactionShell* aTransWithStickyConn);
   [[nodiscard]] nsresult ContinueOnStopRequestAfterAuthRetry(
       nsresult aStatus, bool aAuthRetry, bool aIsFromNet, bool aContentComplete,
       HttpTransactionShell* aTransWithStickyConn);
@@ -916,14 +912,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mBypassCacheWriterSet{false};
 
   TimeStamp mNavigationStartTimeStamp;
-
-  
-  
-  
-  MozPromiseHolder<DNSPromise> mDNSBlockingPromise;
-  
-  
-  RefPtr<DNSPromise> mDNSBlockingThenable;
 
   
   
