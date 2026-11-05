@@ -69,7 +69,9 @@ wasm_rt_funcref_table_t* w2c_env_0x5F_indirect_function_table(
 #  define WASM_HEAP_DEFAULT_MAX_PAGES 65536
 #elif UINTPTR_MAX == 0xffffffff
 
-#  define WASM_HEAP_GUARD_PAGE_SIZE 0
+
+
+#  define WASM_HEAP_GUARD_PAGE_SIZE 4096
 
 #  define WASM_HEAP_ALIGNMENT 0
 
@@ -317,9 +319,9 @@ static int os_mmap_commit(void* curr_heap_end_pointer,
 
 #  include <sys/mman.h>
 #  include <unistd.h>
-#if defined(linux)
-#  include <sys/prctl.h>
-#endif
+#  if defined(linux)
+#    include <sys/prctl.h>
+#  endif
 
 
 
@@ -433,14 +435,16 @@ static void* os_mmap_aligned(void* addr,
     }
   }
 
-#if defined(linux)
+#  if defined(linux)
   if (name) {
     
-    prctl(PR_SET_VMA, PR_SET_VMA_ANON_NAME,
-      (unsigned long)aligned, requested_length,
-      (unsigned long)name);
+    prctl(PR_SET_VMA,
+          PR_SET_VMA_ANON_NAME,
+          (unsigned long)aligned,
+          requested_length,
+          (unsigned long)name);
   }
-#endif
+#  endif
 
   return (void*)aligned;
 }
