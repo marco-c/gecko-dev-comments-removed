@@ -241,8 +241,7 @@ class GeckoMediaPluginServiceParent final
 
   
   
-  
-  nsTArray<GMPServiceParent*> mServiceParents;
+  nsTArray<GMPServiceParent*> mServiceParents MOZ_GUARDED_BY(mMutex);
 
   uint32_t mDirectoriesAdded = 0;
   uint32_t mDirectoriesInProgress = 0;
