@@ -952,6 +952,22 @@ const MESSAGES = () => [
     targeting: "true",
   },
   {
+    id: "TEST_URLBAR_ACTION",
+    groups: [],
+    template: "urlbar_action",
+    content: {
+      key: "test",
+      keywords: ["fxmstest", "fxms test"],
+      label: "Open about:robots",
+      icon: "chrome://global/skin/icons/info.svg",
+      action: {
+        type: "OPEN_ABOUT_PAGE",
+        data: { args: "robots", where: "tab" },
+      },
+    },
+    targeting: "true",
+  },
+  {
     id: "MULTISTAGE_SPOTLIGHT_MESSAGE",
     groups: ["panel-test-provider"],
     template: "spotlight",
@@ -3049,7 +3065,7 @@ const MESSAGES = () => [
             subtitle: { raw: "Say hello to a better web." },
             center_image: {
               imageURL:
-                "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20261021221502--hnt-fox-animation-no-loop-gif--e0d0e7af-c729-4f1b-909e-e99a86fa1287.gif",
+                "chrome://browser/content/asrouter/assets/hnt-center-animated-no-loop.svg",
               alt: "",
               marginBlock: "40px 0",
             },
