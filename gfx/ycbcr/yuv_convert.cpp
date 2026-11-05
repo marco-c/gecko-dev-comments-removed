@@ -115,7 +115,8 @@ ConvertYCbCrToRGB32(const uint8_t* y_buf,
                          color_range == ColorRange::LIMITED);
   
   
-  if (yuv_color_space != YUVColorSpace::BT601) {
+  
+  if (yuv_color_space != YUVColorSpace::BT601 || yuv_type == Y8) {
     use_deprecated = false;
   }
   if (use_deprecated) {
@@ -447,7 +448,8 @@ ScaleYCbCrToRGB32(const uint8_t* y_buf,
 #endif
   
   
-  if (yuv_color_space != YUVColorSpace::BT601) {
+  
+  if (yuv_color_space != YUVColorSpace::BT601 || yuv_type == Y8) {
     use_deprecated = false;
   }
   if (use_deprecated) {
