@@ -5039,6 +5039,16 @@ Maybe<mozilla::StyleUserSelect> nsIFrame::UsedUserSelectRecurse(
   
   
   
+  if (aFrame->IsTableColFrame()) {
+    return Some(StyleUserSelect::None);
+  }
+
+  
+  
+  
+  
+  
+  
   
   
   
