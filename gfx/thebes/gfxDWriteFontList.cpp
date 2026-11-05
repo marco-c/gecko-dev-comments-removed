@@ -21,6 +21,7 @@
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/Utf16.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/gfx/FontPathSet.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/intl/OSPreferences.h"
@@ -1667,6 +1668,10 @@ void gfxDWriteFontList::InitSharedFontListForPlatform() {
     return;
   }
 
+  
+  
+  FontPathSet::RebuildFrom(mSystemFonts);
+
 #ifdef MOZ_BUNDLED_FONTS
   
   
@@ -1741,6 +1746,10 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
         uint32_t(errSystemFontCollection));
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  FontPathSet::RebuildFrom(mSystemFonts);
 
 #ifdef MOZ_BUNDLED_FONTS
   
