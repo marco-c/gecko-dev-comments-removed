@@ -144,7 +144,9 @@ void GeckoMediaPluginService::RunMainThreadInit() {
   }
 
   if (NS_WARN_IF(NS_FAILED(InitMainThread()))) {
+    
     Shutdown();
+    UninitMainThread();
     return;
   }
 
@@ -269,6 +271,17 @@ nsresult GeckoMediaPluginService::InitMainThread() {
   
   nsCOMPtr<nsIThread> thread;
   return GetThread(getter_AddRefs(thread));
+}
+
+void GeckoMediaPluginService::UninitMainThread() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIObserverService> obsService =
+      mozilla::services::GetObserverService();
+  if (obsService) {
+    (void)obsService->RemoveObserver(this,
+                                     NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID);
+  }
 }
 
 RefPtr<GetCDMParentPromise> GeckoMediaPluginService::GetCDM(

@@ -106,6 +106,10 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
   virtual nsresult InitMainThread();
 
   
+  
+  virtual void UninitMainThread();
+
+  
   virtual void OnShutdown() {}
 
   void AssertOnGMPThread() {
