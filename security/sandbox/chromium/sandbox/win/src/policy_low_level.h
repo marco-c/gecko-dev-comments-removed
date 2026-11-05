@@ -155,6 +155,11 @@ class PolicyRule {
                       RuleOp comparison_op);
 
   
+  
+  
+  bool AddFontFileMatch(uint8_t parameter);
+
+  
   size_t GetOpcodeCount() const { return buffer_->opcode_count; }
 
   

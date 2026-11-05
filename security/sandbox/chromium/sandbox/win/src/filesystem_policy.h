@@ -21,6 +21,13 @@ class FileSystemPolicy {
  public:
   
   
+  static constexpr DWORD kReadonlyAllowedFlags =
+      FILE_READ_DATA | FILE_READ_ATTRIBUTES | FILE_READ_EA | SYNCHRONIZE |
+      FILE_EXECUTE | GENERIC_READ | GENERIC_EXECUTE | READ_CONTROL;
+  static constexpr DWORD kReadonlyRestrictedFlags = ~kReadonlyAllowedFlags;
+
+  
+  
   
   
   
