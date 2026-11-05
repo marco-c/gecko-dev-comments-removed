@@ -48,8 +48,6 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
  public:
   static already_AddRefed<GeckoMediaPluginService> GetGeckoMediaPluginService();
 
-  virtual nsresult Init();
-
   NS_DECL_THREADSAFE_ISUPPORTS
 
   RefPtr<GetCDMParentPromise> GetCDM(const NodeIdParts& aNodeIdParts,
@@ -87,6 +85,27 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
   GeckoMediaPluginService();
   virtual ~GeckoMediaPluginService();
 
+  
+  enum class MainInit {
+    
+    Pending,
+    Running,
+    Done,
+    
+    
+    
+    Shutdown,
+  };
+
+  
+  
+  
+  
+  virtual nsresult InitMainThread();
+
+  
+  virtual void OnShutdown() {}
+
   void AssertOnGMPThread() {
 #ifdef DEBUG
     MutexAutoLock lock(mMutex);
@@ -95,6 +114,11 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
   }
 
   virtual void InitializePlugins(nsISerialEventTarget* aGMPThread) = 0;
+
+  
+  
+  
+  void MaybeInitializePluginsLocked() MOZ_REQUIRES(mMutex);
 
   virtual RefPtr<GetGMPContentParentPromise> GetContentParent(
       GMPCrashHelper* aHelper, const NodeIdVariant& aNodeIdVariant,
@@ -109,6 +133,16 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
 
   static nsCOMPtr<nsIAsyncShutdownClient> GetShutdownBarrier();
 
+  
+  
+  
+  void RunMainThreadInit();
+  
+  
+  void Shutdown();
+
+  Atomic<MainInit> mMainInit;
+
   Mutex mMutex;  
                  
                  
@@ -117,6 +151,7 @@ class GeckoMediaPluginService : public mozIGeckoMediaPluginService,
 
   nsCOMPtr<nsIThread> mGMPThread MOZ_GUARDED_BY(mMutex);
   bool mGMPThreadShutdown MOZ_GUARDED_BY(mMutex);
+  bool mPluginsInitialized MOZ_GUARDED_BY(mMutex) = false;
   bool mShuttingDownOnGMPThread;
   Atomic<bool> mXPCOMWillShutdown;
 

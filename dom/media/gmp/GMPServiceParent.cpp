@@ -91,20 +91,14 @@ GeckoMediaPluginServiceParent::GeckoMediaPluginServiceParent()
       mWaitingForPluginsSyncShutdown(false),
       mInitPromiseMonitor("GeckoMediaPluginServiceParent::mInitPromiseMonitor"),
       mInitPromise(&mInitPromiseMonitor),
-      mLoadPluginsFromDiskComplete(false) {
-  MOZ_ASSERT(NS_IsMainThread());
-}
+      mLoadPluginsFromDiskComplete(false) {}
 
 GeckoMediaPluginServiceParent::~GeckoMediaPluginServiceParent() {
   MOZ_ASSERT(mPlugins.IsEmpty());
 }
 
-nsresult GeckoMediaPluginServiceParent::Init() {
+nsresult GeckoMediaPluginServiceParent::InitMainThread() {
   MOZ_ASSERT(NS_IsMainThread());
-
-  if (AppShutdown::GetCurrentShutdownPhase() != ShutdownPhase::NotInShutdown) {
-    return NS_OK;
-  }
 
   nsCOMPtr<nsIObserverService> obsService =
       mozilla::services::GetObserverService();
@@ -136,8 +130,7 @@ nsresult GeckoMediaPluginServiceParent::Init() {
   }
 
   
-  nsCOMPtr<nsIThread> thread;
-  rv = GetThread(getter_AddRefs(thread));
+  rv = GeckoMediaPluginService::InitMainThread();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -235,12 +228,9 @@ nsresult GeckoMediaPluginServiceParent::InitStorage() {
     return rv;
   }
 
-  {
-    MutexAutoLock lock(mMutex);
-    mStorageBaseDir = std::move(storageBaseDir);
-  }
-
-  return GeckoMediaPluginService::Init();
+  MutexAutoLock lock(mMutex);
+  mStorageBaseDir = std::move(storageBaseDir);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -392,6 +382,8 @@ void GeckoMediaPluginServiceParent::RejectPendingInitPromise() {
   }
 }
 
+void GeckoMediaPluginServiceParent::OnShutdown() { RejectPendingInitPromise(); }
+
 void GeckoMediaPluginServiceParent::OnPreferenceChanged(
     mozilla::dom::Pref&& aPref) {
   AssertOnGMPThread();
@@ -405,11 +397,18 @@ void GeckoMediaPluginServiceParent::OnPreferenceChanged(
 RefPtr<GenericNonExclusivePromise>
 GeckoMediaPluginServiceParent::EnsureInitialized() {
   MonitorAutoLock lock(mInitPromiseMonitor);
+  if (mMainInit == MainInit::Shutdown) {
+    
+    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_ABORT,
+                                                       __func__);
+  }
   if (mLoadPluginsFromDiskComplete) {
     return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
   }
   
-  MOZ_ASSERT(!mInitPromise.IsEmpty());
+  
+  
+  
   return mInitPromise.Ensure(__func__);
 }
 
@@ -484,12 +483,12 @@ void GeckoMediaPluginServiceParent::InitializePlugins(
           [self]() -> void {
             MonitorAutoLock lock(self->mInitPromiseMonitor);
             self->mLoadPluginsFromDiskComplete = true;
-            self->mInitPromise.Resolve(true, __func__);
+            self->mInitPromise.ResolveIfExists(true, __func__);
           },
           [self]() -> void {
             MonitorAutoLock lock(self->mInitPromiseMonitor);
             self->mLoadPluginsFromDiskComplete = true;
-            self->mInitPromise.Reject(NS_ERROR_FAILURE, __func__);
+            self->mInitPromise.RejectIfExists(NS_ERROR_FAILURE, __func__);
           });
 }
 
@@ -1337,6 +1336,8 @@ void GeckoMediaPluginServiceParent::ReAddOnGMPThread(
 
 NS_IMETHODIMP
 GeckoMediaPluginServiceParent::GetStorageDir(nsIFile** aOutFile) {
+  
+  
   nsCOMPtr<nsIFile> storageBaseDir;
   {
     MutexAutoLock lock(mMutex);

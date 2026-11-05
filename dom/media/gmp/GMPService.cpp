@@ -23,7 +23,8 @@
 #endif
 #include "VideoUtils.h"
 #include "mozilla/Services.h"
-#include "mozilla/SyncRunnable.h"
+#include "mozilla/StaticMutex.h"
+#include "mozilla/StaticPtr.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsComponentManagerUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -74,110 +75,123 @@ GMPLogLevel GetGMPLibraryLogLevel() {
 
 namespace gmp {
 
-static StaticRefPtr<GeckoMediaPluginService> sSingletonService;
+static StaticMutex sSingletonMutex;
+static StaticRefPtr<GeckoMediaPluginService> sSingletonService
+    MOZ_GUARDED_BY(sSingletonMutex);
 
-class GMPServiceCreateHelper final : public mozilla::Runnable {
-  RefPtr<GeckoMediaPluginService> mService;
 
- public:
-  static already_AddRefed<GeckoMediaPluginService> GetOrCreate() {
-    RefPtr<GeckoMediaPluginService> service;
-
-    if (NS_IsMainThread()) {
-      service = GetOrCreateOnMainThread();
-    } else {
-      RefPtr<GMPServiceCreateHelper> createHelper =
-          new GMPServiceCreateHelper();
-
-      mozilla::SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(),
-                                              createHelper, true);
-
-      service = std::move(createHelper->mService);
-    }
-
-    return service.forget();
+static void UnpublishSingleton(const GeckoMediaPluginService* aOnlyIf) {
+  RefPtr<GeckoMediaPluginService> service;
+  StaticMutexAutoLock lock(sSingletonMutex);
+  if (sSingletonService.get() == aOnlyIf) {
+    service = sSingletonService.forget();
   }
+}
 
- private:
-  GMPServiceCreateHelper() : Runnable("GMPServiceCreateHelper") {}
-
-  ~GMPServiceCreateHelper() { MOZ_ASSERT(!mService); }
-
-  static already_AddRefed<GeckoMediaPluginService> GetOrCreateOnMainThread() {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    if (!sSingletonService) {
-      
+already_AddRefed<GeckoMediaPluginService>
+GeckoMediaPluginService::GetGeckoMediaPluginService() {
+  RefPtr<GeckoMediaPluginService> service;
+  bool created = false;
+  {
+    StaticMutexAutoLock lock(sSingletonMutex);
+    service = sSingletonService.get();
+    if (!service) {
       
       
       if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
         return nullptr;
       }
+      
+      
       if (XRE_IsParentProcess()) {
-        RefPtr<GeckoMediaPluginServiceParent> service =
-            new GeckoMediaPluginServiceParent();
-        if (NS_WARN_IF(NS_FAILED(service->Init()))) {
-          return nullptr;
-        }
-        sSingletonService = service;
-#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-        
-        
-        GMPProcessParent::InitStaticMainThread();
-#endif
+        service = new GeckoMediaPluginServiceParent();
       } else {
-        RefPtr<GeckoMediaPluginServiceChild> service =
-            new GeckoMediaPluginServiceChild();
-        if (NS_WARN_IF(NS_FAILED(service->Init()))) {
-          return nullptr;
-        }
-        sSingletonService = service;
+        service = new GeckoMediaPluginServiceChild();
       }
-      ClearOnShutdown(&sSingletonService);
+      
+      nsCOMPtr<nsIThread> gmpThread;
+      if (NS_WARN_IF(
+              NS_FAILED(service->GetThread(getter_AddRefs(gmpThread))))) {
+        return nullptr;
+      }
+      sSingletonService = service;
+      created = true;
     }
-
-    RefPtr<GeckoMediaPluginService> service = sSingletonService.get();
-    return service.forget();
   }
 
-  NS_IMETHOD
-  Run() override {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    mService = GetOrCreateOnMainThread();
-    return NS_OK;
+  if (NS_IsMainThread()) {
+    
+    service->RunMainThreadInit();
+  } else if (created) {
+    
+    
+    nsresult rv = NS_DispatchToMainThread(
+        NS_NewRunnableFunction("GeckoMediaPluginService::RunMainThreadInit",
+                               [service] { service->RunMainThreadInit(); }));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      service->Shutdown();
+    }
   }
-};
+  return service.forget();
+}
 
-already_AddRefed<GeckoMediaPluginService>
-GeckoMediaPluginService::GetGeckoMediaPluginService() {
-  return GMPServiceCreateHelper::GetOrCreate();
+void GeckoMediaPluginService::RunMainThreadInit() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  constexpr MainInit expected = MainInit::Pending;
+  if (!mMainInit.compareExchange(expected, MainInit::Running)) {
+    return;
+  }
+
+  
+  
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    GMP_LOG_DEBUG("{}::{} shutdown already started", __CLASS__, __FUNCTION__);
+    Shutdown();
+    return;
+  }
+
+  if (NS_WARN_IF(NS_FAILED(InitMainThread()))) {
+    Shutdown();
+    return;
+  }
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  if (XRE_IsParentProcess()) {
+    
+    
+    GMPProcessParent::InitStaticMainThread();
+  }
+#endif
+
+  RunOnShutdown([] {
+    RefPtr<GeckoMediaPluginService> service;
+    StaticMutexAutoLock lock(sSingletonMutex);
+    service = sSingletonService.forget();
+  });
+}
+
+void GeckoMediaPluginService::Shutdown() {
+  GMP_LOG_DEBUG("{}::{}", __CLASS__, __FUNCTION__);
+  mMainInit = MainInit::Shutdown;
+  mXPCOMWillShutdown = true;
+  OnShutdown();
+  
+  ShutdownGMPThread();
+  UnpublishSingleton(this);
 }
 
 NS_IMPL_ISUPPORTS(GeckoMediaPluginService, mozIGeckoMediaPluginService,
                   nsIObserver)
 
 GeckoMediaPluginService::GeckoMediaPluginService()
-    : mMutex("GeckoMediaPluginService::mMutex"),
+    : mMainInit(MainInit::Pending),
+      mMutex("GeckoMediaPluginService::mMutex"),
       mMainThread(GetMainThreadSerialEventTarget()),
       mGMPThreadShutdown(false),
       mShuttingDownOnGMPThread(false),
-      mXPCOMWillShutdown(false) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  nsCOMPtr<nsIXULAppInfo> appInfo =
-      do_GetService("@mozilla.org/xre/app-info;1");
-  if (appInfo) {
-    nsAutoCString version;
-    nsAutoCString buildID;
-    if (NS_SUCCEEDED(appInfo->GetVersion(version)) &&
-        NS_SUCCEEDED(appInfo->GetAppBuildID(buildID))) {
-      GMP_LOG_DEBUG(
-          "GeckoMediaPluginService created; Gecko version={} buildID={}",
-          version.get(), buildID.get());
-    }
-  }
-}
+      mXPCOMWillShutdown(false) {}
 
 GeckoMediaPluginService::~GeckoMediaPluginService() = default;
 
@@ -230,8 +244,21 @@ GeckoMediaPluginService::RunPluginCrashCallbacks(
   return NS_OK;
 }
 
-nsresult GeckoMediaPluginService::Init() {
+nsresult GeckoMediaPluginService::InitMainThread() {
   MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIXULAppInfo> appInfo =
+      do_GetService("@mozilla.org/xre/app-info;1");
+  if (appInfo) {
+    nsAutoCString version;
+    nsAutoCString buildID;
+    if (NS_SUCCEEDED(appInfo->GetVersion(version)) &&
+        NS_SUCCEEDED(appInfo->GetAppBuildID(buildID))) {
+      GMP_LOG_DEBUG(
+          "GeckoMediaPluginService created; Gecko version={} buildID={}",
+          version.get(), buildID.get());
+    }
+  }
 
   nsCOMPtr<nsIObserverService> obsService =
       mozilla::services::GetObserverService();
@@ -239,6 +266,9 @@ nsresult GeckoMediaPluginService::Init() {
   MOZ_ALWAYS_SUCCEEDS(obsService->AddObserver(
       this, NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID, false));
 
+  mMainInit = MainInit::Done;
+
+  
   
   nsCOMPtr<nsIThread> thread;
   return GetThread(getter_AddRefs(thread));
@@ -404,6 +434,22 @@ GeckoMediaPluginService::GetThread(nsIThread** aThread) {
   return GetThreadLocked(aThread);
 }
 
+void GeckoMediaPluginService::MaybeInitializePluginsLocked() {
+  mMutex.AssertCurrentThreadOwns();
+  MOZ_ASSERT(mGMPThread);
+  
+  
+  
+  
+  
+  if (mPluginsInitialized || mMainInit != MainInit::Done) {
+    return;
+  }
+  mPluginsInitialized = true;
+  
+  InitializePlugins(mGMPThread);
+}
+
 
 nsresult GeckoMediaPluginService::GetThreadLocked(nsIThread** aThread) {
   MOZ_ASSERT(aThread);
@@ -420,10 +466,9 @@ nsresult GeckoMediaPluginService::GetThreadLocked(nsIThread** aThread) {
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
-
-    
-    InitializePlugins(mGMPThread);
   }
+
+  MaybeInitializePluginsLocked();
 
   nsCOMPtr<nsIThread> copy = mGMPThread;
   copy.forget(aThread);
