@@ -23,6 +23,7 @@ use minidump_writer::minidump_writer::DirectAuxvDumpInfo;
 use std::os::fd::{FromRawFd, OwnedFd};
 use std::{
     ffi::{c_void, OsString},
+    marker::{PhantomData, PhantomPinned},
     path::PathBuf,
     ptr::NonNull,
     sync::Mutex,
@@ -67,19 +68,21 @@ impl BreakpadProcessId {
 }
 
 
-
-
-
+#[repr(C)]
+pub struct OpaqueCrashGenerator {
+    _private: [u8; 0],
+    _marker: PhantomData<(*mut u8, PhantomPinned)>,
+}
 
 #[repr(C)]
 pub struct BreakpadContext {
     callback: unsafe extern "C" fn(
-        *const c_void,
+        *const OpaqueCrashGenerator,
         BreakpadProcessId,
         Option<&ExtraCrashData>,
         *const BreakpadChar,
     ),
-    generator: *const Mutex<CrashGenerator>,
+    generator: *const OpaqueCrashGenerator,
 }
 
 extern "C" {
@@ -142,7 +145,7 @@ impl BreakpadCrashGenerator {
         path: OsString,
         generator: &'static Mutex<CrashGenerator>,
         finalize_callback: unsafe extern "C" fn(
-            *const c_void,
+            *const OpaqueCrashGenerator,
             BreakpadProcessId,
             Option<&ExtraCrashData>,
             *const BreakpadChar,
@@ -152,7 +155,7 @@ impl BreakpadCrashGenerator {
         let path_ptr = path.into_raw();
         let mut context = Box::new(BreakpadContext {
             callback: finalize_callback,
-            generator: generator as *const Mutex<CrashGenerator>,
+            generator: (generator as *const Mutex<CrashGenerator>).cast(),
         });
 
         
