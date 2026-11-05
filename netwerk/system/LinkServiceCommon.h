@@ -5,11 +5,27 @@
 #ifndef LINK_SERVICE_COMMON_H_
 #define LINK_SERVICE_COMMON_H_
 
+#include "mozilla/Maybe.h"
+#include "nsStringFwd.h"
+
 namespace mozilla {
 class SHA1Sum;
 }
 
 
 void SeedNetworkId(mozilla::SHA1Sum& aSha1);
+
+
+nsCString GetNetworkIdSeed();
+
+
+
+
+
+
+bool MatchNetworkId(
+    const nsACString& aNetworkId, const nsACString& aSeed,
+    const mozilla::Maybe<mozilla::SHA1Sum>& aCurrentUnseededNetworkId,
+    const nsACString& aCurrentNetworkId, nsACString& aMatchingNetworkId);
 
 #endif  
