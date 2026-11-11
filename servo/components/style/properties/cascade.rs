@@ -1812,6 +1812,7 @@ impl<'a> Cascade<'a> {
                     substitute_references_if_needed_and_apply(
                         name,
                         SubstitutionFunctionKind::Var,
+                        PropertyIdRef::from(name),
                         unparsed_value,
                         self.stylist,
                         context,
@@ -2410,6 +2411,7 @@ fn substitute_all(
                 visit_link(
                     next_var.clone(),
                     index,
+                    property_id,
                     references_from_non_custom_properties,
                     context,
                     lowlink,
@@ -2453,12 +2455,13 @@ fn substitute_all(
     fn visit_link<'a, 'b, 'c, 'd, 'e>(
         var: VarType,
         index: usize,
+        property_id: PropertyIdRef,
         non_custom_references: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
         context: &mut Context<'a, 'b, 'c, 'd, 'e>,
         lowlink: &mut usize,
         self_ref: &mut bool,
     ) {
-        let next_index = match traverse(var, non_custom_references, context) {
+        let next_index = match traverse(var, property_id, non_custom_references, context) {
             Some(index) => index,
             
             
@@ -2499,9 +2502,17 @@ fn substitute_all(
     
     fn traverse<'a, 'b, 'c, 'd, 'e>(
         var: VarType,
+        property_id: PropertyIdRef,
         references_from_non_custom_properties: &NonCustomReferenceMap<Vec<Arc<UnparsedValue>>>,
         context: &mut Context<'a, 'b, 'c, 'd, 'e>,
     ) -> Option<usize> {
+        
+        
+        
+        let property_id = match var {
+            VarType::Custom(ref name) => PropertyIdRef::from(name),
+            VarType::Attr(..) | VarType::NonCustom(..) => property_id,
+        };
         
         
         
@@ -2548,6 +2559,7 @@ fn substitute_all(
                         substitute_references_if_needed_and_apply(
                             name,
                             kind,
+                            property_id,
                             &value,
                             context.stylist,
                             context.computed_context,
@@ -2597,14 +2609,14 @@ fn substitute_all(
 
         let mut self_ref = false;
         let mut lowlink = index;
-        if let Some((name, v)) = value.as_ref() {
+        if let Some((_, v)) = value.as_ref() {
             
             visit_value_references(
                 Some(&var),
                 &v.references,
                 v,
                 index,
-                PropertyIdRef::from(*name),
+                property_id,
                 references_from_non_custom_properties,
                 context,
                 &mut lowlink,
@@ -2620,6 +2632,7 @@ fn substitute_all(
                     visit_link(
                         VarType::NonCustom(r),
                         index,
+                        property_id,
                         references_from_non_custom_properties,
                         context,
                         &mut lowlink,
@@ -2641,6 +2654,7 @@ fn substitute_all(
                 visit_link(
                     VarType::NonCustom(SingleNonCustomReference::FontUnits),
                     index,
+                    property_id,
                     references_from_non_custom_properties,
                     context,
                     &mut lowlink,
@@ -2734,6 +2748,7 @@ fn substitute_all(
                     substitute_references_if_needed_and_apply(
                         name,
                         kind,
+                        property_id,
                         v,
                         context.stylist,
                         context.computed_context,
@@ -2779,6 +2794,7 @@ fn substitute_all(
         reset(&mut context);
         traverse(
             VarType::Custom((*var).clone()),
+            PropertyIdRef::from(*var),
             references_from_non_custom_properties,
             &mut context,
         );
