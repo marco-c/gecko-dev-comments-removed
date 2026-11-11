@@ -39,10 +39,10 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
   mSinPhi = sin(angle * kRadPerDegree);
   mCosPhi = cos(angle * kRadPerDegree);
 
-  double x1dash =
-      mCosPhi * (from.x - to.x) / 2.0 + mSinPhi * (from.y - to.y) / 2.0;
-  double y1dash =
-      -mSinPhi * (from.x - to.x) / 2.0 + mCosPhi * (from.y - to.y) / 2.0;
+  double dx = double(from.x) - double(to.x);
+  double dy = double(from.y) - double(to.y);
+  double x1dash = mCosPhi * dx / 2.0 + mSinPhi * dy / 2.0;
+  double y1dash = -mSinPhi * dx / 2.0 + mCosPhi * dy / 2.0;
 
   double root;
   double numerator = mRx * mRx * mRy * mRy - mRx * mRx * y1dash * y1dash -
@@ -83,14 +83,11 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
   else if (sweepFlag && dtheta < 0)
     dtheta += 2.0 * M_PI;
 
-  
-  mNumSegs = static_cast<int>(ceil(std::abs(dtheta / (M_PI / 2.0))));
-  mDelta = dtheta / mNumSegs;
-  mT = 8.0 / 3.0 * sin(mDelta / 4.0) * sin(mDelta / 4.0) / sin(mDelta / 2.0);
-
   mFrom = from;
 
-  if (std::abs(dtheta) < 1e-8) {
+  if (!std::isfinite(dtheta) || std::abs(dtheta) < 1e-8) {
+    
+    
     
     
     
@@ -101,7 +98,13 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
     
     mFallBackToSingleLine = true;
     mNumSegs = 1;
+    return;
   }
+
+  
+  mNumSegs = static_cast<int>(ceil(std::abs(dtheta / (M_PI / 2.0))));
+  mDelta = dtheta / mNumSegs;
+  mT = 8.0 / 3.0 * sin(mDelta / 4.0) * sin(mDelta / 4.0) / sin(mDelta / 2.0);
 }
 
 bool SVGArcConverter::GetNextSegment(Point* cp1, Point* cp2, Point* to) {
