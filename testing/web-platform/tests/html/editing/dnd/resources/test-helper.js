@@ -205,6 +205,30 @@ function dragDropTestNoDropEvent(dragElement, dropElement, testDescription,
 
 
 
+
+
+
+function dragAndDropWithLayoutShift(dragElement, dropElement) {
+  const actions =
+      movePointerToCenter(dragElement, null, new test_driver.Actions())
+          .pointerDown()
+          .pointerMove(20, 20, {origin: dragElement})
+          
+          
+          .pause(50, 'pointer');
+  return movePointerToCenter(dropElement, null, actions)
+      
+      
+      .pointerMove(1, 1, {origin: dropElement})
+      .pointerUp()
+      .send();
+}
+
+
+
+
+
+
 function dragDropTestWithLayoutShift(dragElement, dropElement, onDropCallBack,
                                      testDescription) {
   promise_test((t) => new Promise(async (resolve, reject) => {
@@ -216,17 +240,7 @@ function dragDropTestWithLayoutShift(dragElement, dropElement, onDropCallBack,
                    }
                  }));
                  try {
-                   var actions =
-                       movePointerToCenter(dragElement, null,
-                                           new test_driver.Actions())
-                           .pointerDown()
-                           .pointerMove(20, 20, {origin: dragElement})
-                           
-                           
-                           .pause(50, 'pointer');
-                   await movePointerToCenter(dropElement, null, actions)
-                       .pointerUp()
-                       .send();
+                   await dragAndDropWithLayoutShift(dragElement, dropElement);
                  } catch (e) {
                    reject(e);
                  }
