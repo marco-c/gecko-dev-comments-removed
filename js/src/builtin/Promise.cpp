@@ -992,6 +992,11 @@ class PromiseReaction : public Base {
       REACTION_FLAG_IGNORE_UNHANDLED_REJECTION |
       REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR;
 
+  
+  static constexpr uint32_t REACTION_FLAGS_WITH_SPECIALIZED_STATE =
+      REACTION_FLAG_DEFAULT_RESOLVING_HANDLER | REACTION_FLAG_ASYNC_FUNCTION |
+      REACTION_FLAG_ASYNC_GENERATOR | REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR;
+
  public:
   using Base::Base;
 
@@ -1111,6 +1116,15 @@ class PromiseReaction : public Base {
   bool isDebuggerDummy() const {
     int32_t flags = this->flags();
     return flags & REACTION_FLAG_DEBUGGER_DUMMY;
+  }
+
+  
+  
+  
+  
+  bool hasSpecializedReactionState() const {
+    int32_t flags = this->flags();
+    return flags & REACTION_FLAGS_WITH_SPECIALIZED_STATE;
   }
 
   Value handler() {
@@ -1274,6 +1288,7 @@ static Realm* GetFunctionRealmIfSimple(JSObject* obj) {
 
 
 
+
 class MOZ_STACK_CLASS StackPromiseReaction
     : public PromiseReaction<PromiseReactionStackStorage> {
   static constexpr uint32_t InlineFlagsMask = 0xff;
@@ -1292,6 +1307,12 @@ class MOZ_STACK_CLASS StackPromiseReaction
   static_assert((REACTION_FLAGS_ALL & ~InlineFlagsMask) == 0);
   static_assert((InlineHasPromise & InlineFlagsMask) == 0);
   static_assert(ExtraCount == MicroTaskQueueElement::ExtraCount);
+
+  
+  
+  static_assert(PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_MASK ==
+                (InlineFlagsMask
+                 << PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_SHIFT));
 
  public:
   explicit StackPromiseReaction(JSContext* cx) : PromiseReaction(cx) {}
@@ -1339,6 +1360,108 @@ class MOZ_STACK_CLASS StackPromiseReaction
     }
     setSpecializedReactionState(
         MicroTaskQueueElement::extra(task, ExtraSpecializedReactionState));
+  }
+
+  
+  
+  StackPromiseReaction(JSContext* cx, PromiseObject* promise)
+      : PromiseReaction(cx) {
+    MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+    MOZ_ASSERT(promise->hasEmbeddedReaction());
+    MOZ_RELEASE_ASSERT(promise->realm() == cx->realm());
+
+    int32_t flags = promise->embeddedReactionFlags();
+    bool hasSpecializedState = flags & REACTION_FLAGS_WITH_SPECIALIZED_STATE;
+    Value promiseOrSpecializedState = promise->getFixedSlot(
+        PromiseObject::EMBEDDED_REACTION_PROMISE_OR_SPECIALIZED_STATE_SLOT);
+    JSObject* resultPromise = hasSpecializedState
+                                  ? nullptr
+                                  : promiseOrSpecializedState.toObjectOrNull();
+    Value incumbentGlobalRepresentative =
+        promise->embeddedReactionHasIncumbentGlobal()
+            ? ObjectValue(cx->global()->getObjectPrototype())
+            : NullValue();
+
+    initReaction(resultPromise,
+                 
+                 promise->getFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT),
+                 
+                 promise->getFixedSlot(
+                     PromiseObject::EMBEDDED_REACTION_ON_REJECTED_SLOT),
+                  nullptr,  nullptr,
+                 incumbentGlobalRepresentative,
+                  NullValue());
+    setFlags(flags);
+    if (hasSpecializedState) {
+      setSpecializedReactionState(promiseOrSpecializedState);
+    }
+  }
+
+  
+  
+  
+  
+  
+  bool canEmbedInPromise(JSContext* cx, PromiseObject* promise) {
+    MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+    MOZ_ASSERT(realm() == cx->realm());
+
+    
+    if (promise->realm() != cx->realm()) {
+      return false;
+    }
+
+    if (promise->hasExistingReaction()) {
+      return false;
+    }
+
+    
+    
+    
+    if (hasSpecializedReactionState() && this->promise()) {
+      return false;
+    }
+
+    
+    Value incumbent = getIncumbentGlobalRepresentative();
+    if (!incumbent.isNull() &&
+        &incumbent.toObject() != &cx->global()->getObjectPrototype()) {
+      return false;
+    }
+
+    
+    if (resolve() || reject()) {
+      return false;
+    }
+    if (!getOptionalHostDefinedData().isNull()) {
+      return false;
+    }
+
+    
+    return true;
+  }
+
+  
+  void embedInPromise(PromiseObject* promise) {
+    uint32_t flags = uint32_t(this->flags());
+    MOZ_ASSERT((flags & ~InlineFlagsMask) == 0);
+
+    uint32_t promiseFlags =
+        uint32_t(promise->flags()) | PROMISE_FLAG_EMBEDDED_REACTION |
+        (flags << PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_SHIFT);
+    if (!getIncumbentGlobalRepresentative().isNull()) {
+      promiseFlags |= PROMISE_FLAG_EMBEDDED_REACTION_REALM_INCUMBENT;
+    }
+    promise->setFixedSlotTyped(PromiseObject::FLAGS_SLOT,
+                               Int32Value(int32_t(promiseFlags)));
+    promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT,
+                          onFulfilled());
+    promise->setFixedSlot(PromiseObject::EMBEDDED_REACTION_ON_REJECTED_SLOT,
+                          onRejected());
+    promise->setFixedSlot(
+        PromiseObject::EMBEDDED_REACTION_PROMISE_OR_SPECIALIZED_STATE_SLOT,
+        hasSpecializedReactionState() ? specializedReactionState()
+                                      : ObjectOrNullValue(this->promise()));
   }
 
   
@@ -1419,6 +1542,26 @@ static PromiseReactionRecord* NewReactionRecordFromStack(
   reaction->setFlags(data.flags());
   reaction->setSpecializedReactionState(data.specializedReactionState());
   return reaction;
+}
+
+
+
+
+[[nodiscard]] static bool MaterializeEmbeddedReaction(
+    JSContext* cx, Handle<PromiseObject*> promise) {
+  MOZ_ASSERT(promise->hasEmbeddedReaction());
+
+  AutoRealm ar(cx, promise);
+  StackPromiseReaction data(cx, promise);
+  PromiseReactionRecord* reaction = NewReactionRecordFromStack(cx, data);
+  if (!reaction) {
+    return false;
+  }
+
+  promise->clearEmbeddedReaction();
+  promise->setFixedSlot(PromiseObject::REACTIONS_OR_RESULT_SLOT,
+                        ObjectValue(*reaction));
+  return true;
 }
 
 
@@ -2521,6 +2664,7 @@ static void SettlePromise(JSContext* cx, Handle<PromiseObject*> promise,
                           Handle<SavedFrame*> unwrappedRejectionStack) {
   MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
   MOZ_ASSERT(state != JS::PromiseState::Pending);
+  MOZ_ASSERT(!promise->hasEmbeddedReaction());
 
   
   
@@ -2559,6 +2703,57 @@ static void SettlePromise(JSContext* cx, Handle<PromiseObject*> promise,
 
 
 
+[[nodiscard]] static bool ResolvePromiseWithEmbeddedReaction(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue valueOrReason,
+    JS::PromiseState state, Handle<SavedFrame*> unwrappedRejectionStack) {
+  bool isCrossRealm = cx->realm() != promise->realm();
+
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<AutoRealm> reactionRealm;
+  if (isCrossRealm) {
+    reactionRealm.emplace(cx, promise);
+  }
+  StackPromiseReaction reaction(cx, promise);
+  promise->clearEmbeddedReaction();
+  reactionRealm.reset();
+
+  
+  
+  
+  
+  SettlePromise(cx, promise, valueOrReason, state, unwrappedRejectionStack);
+
+  
+  
+  
+  
+  
+  
+
+  
+  if (isCrossRealm) {
+    reactionRealm.emplace(cx, promise);
+  }
+  if (MOZ_LIKELY(reaction.fitsInline(cx->realm(), state))) {
+    return EnqueuePromiseReactionJob(cx, &reaction, valueOrReason, state);
+  }
+
+  Rooted<PromiseReactionRecord*> reactionObj(
+      cx, NewReactionRecordFromStack(cx, reaction));
+  if (!reactionObj) {
+    return false;
+  }
+  return EnqueuePromiseReactionJob(cx, reactionObj, valueOrReason, state);
+}
+
+
+
 
 
 
@@ -2579,6 +2774,11 @@ static void SettlePromise(JSContext* cx, Handle<PromiseObject*> promise,
   MOZ_ASSERT(state == JS::PromiseState::Fulfilled ||
              state == JS::PromiseState::Rejected);
   MOZ_ASSERT_IF(unwrappedRejectionStack, state == JS::PromiseState::Rejected);
+
+  if (promise->hasEmbeddedReaction()) {
+    return ResolvePromiseWithEmbeddedReaction(cx, promise, valueOrReason,
+                                              state, unwrappedRejectionStack);
+  }
 
   
   
@@ -7223,6 +7423,16 @@ template <typename ExtraStep>
     if (MOZ_LIKELY(data.fitsInline(cx->realm(), state))) {
       return PerformPromiseThenWithSettledReaction(cx, promise, &data);
     }
+  } else if (MOZ_LIKELY(data.canEmbedInPromise(cx, promise))) {
+    
+    
+    
+    
+    data.embedInPromise(promise);
+
+    
+    promise->setHandled();
+    return true;
   }
 
   Rooted<PromiseReactionRecord*> reaction(cx,
@@ -8230,6 +8440,13 @@ template <typename InlineOrObjectReaction>
 
   
   
+  if (promise->hasEmbeddedReaction() &&
+      !MaterializeEmbeddedReaction(cx, promise)) {
+    return false;
+  }
+
+  
+  
   
   
   RootedValue reactionsVal(cx, promise->reactions());
@@ -8338,8 +8555,15 @@ bool PromiseObject::dependentPromises(JSContext* cx,
     return true;
   }
 
+  Rooted<PromiseObject*> self(cx, this);
+  
+  
+  if (self->hasEmbeddedReaction() && !MaterializeEmbeddedReaction(cx, self)) {
+    return false;
+  }
+
   uint32_t valuesIndex = 0;
-  RootedValue reactionsVal(cx, reactions());
+  RootedValue reactionsVal(cx, self->reactions());
 
   return ForEachReaction(cx, reactionsVal, [&](MutableHandleObject obj) {
     if (IsProxy(obj)) {
@@ -8375,11 +8599,18 @@ bool PromiseObject::forEachReactionRecord(
     return true;
   }
 
+  Rooted<PromiseObject*> self(cx, this);
+  
+  
+  if (self->hasEmbeddedReaction() && !MaterializeEmbeddedReaction(cx, self)) {
+    return false;
+  }
+
   RootedTuple<Value, PromiseReactionRecord*, AsyncFunctionGeneratorObject*,
               AsyncGeneratorObject*, PromiseObject*, JSObject*, JSObject*,
               JSObject*>
       roots(cx);
-  RootedField<Value, 0> reactionsVal(roots, reactions());
+  RootedField<Value, 0> reactionsVal(roots, self->reactions());
   if (reactionsVal.isNullOrUndefined()) {
     
     return true;
@@ -8823,6 +9054,12 @@ void ForEachPromiseFlag(uint32_t flags, KnownF known, UnknownF unknown) {
       case PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION:
         known("HAD_USER_INTERACTION_UPON_CREATION");
         break;
+      case PROMISE_FLAG_EMBEDDED_REACTION:
+        known("EMBEDDED_REACTION");
+        break;
+      case PROMISE_FLAG_EMBEDDED_REACTION_REALM_INCUMBENT:
+        known("EMBEDDED_REACTION_REALM_INCUMBENT");
+        break;
       default:
         unknown(i);
         break;
@@ -8833,7 +9070,8 @@ void ForEachPromiseFlag(uint32_t flags, KnownF known, UnknownF unknown) {
 void PromiseObject::dumpOwnFields(js::JSONPrinter& json) const {
   json.beginInlineListProperty("flags");
   ForEachPromiseFlag(
-      flags(), [&](const char* name) { json.value("%s", name); },
+      flags() & ~PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_MASK,
+      [&](const char* name) { json.value("%s", name); },
       [&](uint32_t value) { json.value("Unknown(%08x)", value); });
   json.endInlineList();
 
@@ -8841,7 +9079,26 @@ void PromiseObject::dumpOwnFields(js::JSONPrinter& json) const {
     json.property("state", "pending");
 
     json.beginListProperty("reactions");
-    DumpReactions(json, reactions());
+    if (hasEmbeddedReaction()) {
+      json.beginObject();
+      json.formatProperty(
+          "embeddedReactionFlags", "0x%x",
+          (flags() & PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_MASK) >>
+              PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_SHIFT);
+      json.beginObjectProperty("onFulfilled");
+      getFixedSlot(REACTIONS_OR_RESULT_SLOT).dumpFields(json);
+      json.endObject();
+      json.beginObjectProperty("onRejected");
+      getFixedSlot(EMBEDDED_REACTION_ON_REJECTED_SLOT).dumpFields(json);
+      json.endObject();
+      json.beginObjectProperty("promiseOrSpecializedState");
+      getFixedSlot(EMBEDDED_REACTION_PROMISE_OR_SPECIALIZED_STATE_SLOT)
+          .dumpFields(json);
+      json.endObject();
+      json.endObject();
+    } else {
+      DumpReactions(json, reactions());
+    }
     json.endList();
   } else if (state() == JS::PromiseState::Fulfilled) {
     json.property("state", "fulfilled");

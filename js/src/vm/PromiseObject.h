@@ -69,6 +69,20 @@ class SavedFrame;
 
 #define PROMISE_FLAG_HAD_USER_INTERACTION_UPON_CREATION 0x80
 
+
+
+
+#define PROMISE_FLAG_EMBEDDED_REACTION 0x100
+
+
+
+#define PROMISE_FLAG_EMBEDDED_REACTION_REALM_INCUMBENT 0x200
+
+
+#define PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_SHIFT 16
+#define PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_MASK \
+  (0xff << PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_SHIFT)
+
 struct PromiseReactionRecordBuilder;
 
 class PromiseObject : public NativeObject {
@@ -76,6 +90,8 @@ class PromiseObject : public NativeObject {
   
   JS_DEFINE_TYPED_SLOT(0, FLAGS_SLOT, Int32);
 
+  
+  
   
   
   
@@ -97,7 +113,22 @@ class PromiseObject : public NativeObject {
   
   JS_DEFINE_TYPED_SLOT(3, DEBUG_INFO_SLOT, Object, Double, Undefined);
 
-  static const unsigned RESERVED_SLOTS = 4;
+  
+  
+  
+  JS_DEFINE_UNTYPED_SLOT(4, EMBEDDED_REACTION_ON_REJECTED_SLOT);
+
+  
+  
+  
+  
+  
+  
+  
+  JS_DEFINE_UNTYPED_SLOT(5,
+                         EMBEDDED_REACTION_PROMISE_OR_SPECIALIZED_STATE_SLOT);
+
+  static const unsigned RESERVED_SLOTS = 6;
   static const JSClass class_;
   static const JSClass protoClass_;
   static PromiseObject* create(JSContext* cx, JS::Handle<JSObject*> executor,
@@ -153,7 +184,43 @@ class PromiseObject : public NativeObject {
 
   JS::Value reactions() const {
     MOZ_ASSERT(state() == JS::PromiseState::Pending);
+    MOZ_ASSERT(!hasEmbeddedReaction());
     return getFixedSlot(REACTIONS_OR_RESULT_SLOT);
+  }
+
+  bool hasExistingReaction() const {
+    MOZ_ASSERT(state() == JS::PromiseState::Pending);
+    return !getFixedSlot(REACTIONS_OR_RESULT_SLOT).isUndefined();
+  }
+
+  bool hasEmbeddedReaction() const {
+    return flags() & PROMISE_FLAG_EMBEDDED_REACTION;
+  }
+
+  int32_t embeddedReactionFlags() const {
+    MOZ_ASSERT(hasEmbeddedReaction());
+    return (flags() & PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_MASK) >>
+           PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_SHIFT;
+  }
+
+  bool embeddedReactionHasIncumbentGlobal() const {
+    MOZ_ASSERT(hasEmbeddedReaction());
+    return flags() & PROMISE_FLAG_EMBEDDED_REACTION_REALM_INCUMBENT;
+  }
+
+  
+  void clearEmbeddedReaction() {
+    MOZ_ASSERT(hasEmbeddedReaction());
+    setFixedSlotTyped(
+        FLAGS_SLOT,
+        JS::Int32Value(flags() &
+                       ~(PROMISE_FLAG_EMBEDDED_REACTION |
+                         PROMISE_FLAG_EMBEDDED_REACTION_REALM_INCUMBENT |
+                         PROMISE_FLAG_EMBEDDED_REACTION_FLAGS_MASK)));
+    setFixedSlot(REACTIONS_OR_RESULT_SLOT, JS::UndefinedValue());
+    setFixedSlot(EMBEDDED_REACTION_ON_REJECTED_SLOT, JS::UndefinedValue());
+    setFixedSlot(EMBEDDED_REACTION_PROMISE_OR_SPECIALIZED_STATE_SLOT,
+                 JS::UndefinedValue());
   }
 
   JS::Value value() const {
