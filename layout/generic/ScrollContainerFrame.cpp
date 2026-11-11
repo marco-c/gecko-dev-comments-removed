@@ -3771,7 +3771,8 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
     if (aCapturedByViewTransition) {
       SerializeList();
       rootResultList.AppendNewToTop<nsDisplayViewTransitionCapture>(
-          aBuilder, this, &rootResultList, nullptr,  true);
+          aBuilder, this, &rootResultList, nullptr,
+          nsDisplayViewTransitionCapture::Kind::Root);
     }
   }
 
@@ -7653,7 +7654,7 @@ ScrollContainerFrame::GetAvailableScrollingDirectionsForUserInputEvents()
 
 Sides ScrollContainerFrame::SidesToScrollForUserInputEvents() const {
   nsRect scrollRange = GetScrollRangeForUserInputEvents();
-  nsPoint scrollPos = GetScrollPosition();
+  nsPoint scrollPos = GetVisualViewportOffset();
 
   
   
