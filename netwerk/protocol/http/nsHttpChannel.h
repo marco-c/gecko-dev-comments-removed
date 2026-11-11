@@ -214,6 +214,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter);
   HttpChannelSecurityWarningReporter* GetWarningReporter();
 
+  
+  
+  
+  
+  void SetCacheReadStart(TimeStamp aTime) { mCacheReadStart = aTime; }
+
   enum class SnifferType { Media, Image };
   void DisableIsOpaqueResponseAllowedAfterSniffCheck(SnifferType aType);
 

@@ -1628,6 +1628,9 @@ nsresult nsHttpChannel::ContinueConnect() {
   }
 
   
+  mCacheReadStart = TimeStamp();
+
+  
   nsresult rv = DoConnect(mTransactionSticky);
   mTransactionSticky = nullptr;
   return rv;
@@ -6125,6 +6128,12 @@ nsresult nsHttpChannel::ReadFromCache(void) {
   rv = mCachePump->AsyncRead(this);
   if (NS_FAILED(rv)) return rv;
 
+  
+  
+  if (mCacheReadStart.IsNull()) {
+    mCacheReadStart = TimeStamp::Now();
+  }
+
   uint32_t suspendCount = mSuspendCount;
   if (LoadAsyncResumePending()) {
     LOG(
@@ -7973,6 +7982,12 @@ void nsHttpChannel::AsyncOpenFinal(TimeStamp aTimeStamp) {
   
   if (!LoadAsyncOpenTimeOverriden()) {
     mAsyncOpenTime = aTimeStamp;
+  }
+
+  
+  if (mLoadInfo->GetActivatedFromNavigationalPrefetch() &&
+      mCacheReadStart.IsNull()) {
+    mCacheReadStart = mAsyncOpenTime;
   }
 
   
