@@ -4777,7 +4777,12 @@ class Toolbox extends EventEmitter {
     }
 
     
-    if (Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER)) {
+    
+    
+    if (
+      Services.prefs.getBoolPref(DEVTOOLS_STYLESHEETS_IN_DEBUGGER) &&
+      stylesheetResource.href
+    ) {
       Glean.devtoolsDebuggerStylesheets.linksOpenedInDebuggerCount.add(1);
       return viewSource.viewSourceInDebugger(
         this,
