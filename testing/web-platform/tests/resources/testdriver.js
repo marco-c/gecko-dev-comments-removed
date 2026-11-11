@@ -1019,6 +1019,36 @@
 
 
 
+                set_scrollbar_type_override: function (params) {
+                    assertBidiIsEnabled();
+                    return window.test_driver_internal.bidi.emulation.set_scrollbar_type_override(
+                        params);
+                },
+                
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 set_touch_override: function (params) {
                     assertBidiIsEnabled();
                     return window.test_driver_internal.bidi.emulation.set_touch_override(
@@ -2647,6 +2677,10 @@
                 set_screen_orientation_override: function (params) {
                     throw new Error(
                         "bidi.emulation.set_screen_orientation_override is not implemented by testdriver-vendor.js");
+                },
+                set_scrollbar_type_override: function (params) {
+                    throw new Error(
+                        "bidi.emulation.set_scrollbar_type_override is not implemented by testdriver-vendor.js");
                 },
                 set_touch_override: function (params) {
                     throw new Error(
