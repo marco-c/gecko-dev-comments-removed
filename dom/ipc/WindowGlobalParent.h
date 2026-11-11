@@ -470,6 +470,8 @@ class WindowGlobalParent final : public WindowContext,
   void NotifyPrefetchStateChanged(dom::PrefetchRecordParent* aRec);
   void DedupePrefetchRecords(dom::PrefetchRecordParent* aJustCompleted);
 
+  static void ClearPrefetchCache(nsIPrincipal* aPartitionedPrincipal);
+
   
   
   
