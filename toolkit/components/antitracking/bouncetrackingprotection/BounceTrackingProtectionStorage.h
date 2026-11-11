@@ -27,7 +27,6 @@ class mozIStorageConnection;
 namespace mozilla {
 
 class BounceTrackingStateGlobal;
-class BounceTrackingState;
 class OriginAttributes;
 
 extern LazyLogModule gBounceTrackingProtectionLog;
@@ -48,6 +47,11 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   [[nodiscard]] nsresult Init();
 
   
+  
+  static OriginAttributes NormalizeOriginAttributes(
+      const OriginAttributes& aOriginAttributes);
+
+  
   RefPtr<BounceTrackingStateGlobal> GetStateGlobal(
       const OriginAttributes& aOriginAttributes);
 
@@ -58,9 +62,6 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
 
   RefPtr<BounceTrackingStateGlobal> GetOrCreateStateGlobal(
       nsIPrincipal* aPrincipal);
-
-  RefPtr<BounceTrackingStateGlobal> GetOrCreateStateGlobal(
-      BounceTrackingState* aBounceTrackingState);
 
   using StateGlobalMap =
       nsTHashMap<OriginAttributesHashKey, RefPtr<BounceTrackingStateGlobal>>;

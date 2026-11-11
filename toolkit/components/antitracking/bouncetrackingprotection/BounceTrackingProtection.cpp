@@ -292,6 +292,8 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
               "{}: aBounceTrackingState: {}", __FUNCTION__,
               *aBounceTrackingState);
 
+  aBounceTrackingState->DropRetargetedLoadBounces();
+
   
   BounceTrackingRecord* record =
       aBounceTrackingState->GetBounceTrackingRecord();
@@ -302,10 +304,6 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   }
 
   
-  RefPtr<BounceTrackingStateGlobal> globalState =
-      mStorage->GetOrCreateStateGlobal(aBounceTrackingState);
-  MOZ_ASSERT(globalState);
-
   
   
   
@@ -326,56 +324,81 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   nsTArray<nsCString> classifiedHosts;
 
   
-  for (const nsACString& host : record->GetBounceHosts()) {
-    
-    if (host.EqualsLiteral("null")) {
-      continue;
-    }
-
-    
-    
-    if (host == record->GetInitialHost()) {
-      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                  "{}: Skip host == initialHost: {}", __FUNCTION__, host);
-      continue;
+  
+  for (const auto& bounceHostsEntry : record->GetBounceHosts()) {
+    const OriginAttributes& originAttributes = bounceHostsEntry.GetKey();
+    nsAutoCString oaSuffix;
+    if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Info)) {
+      originAttributes.CreateSuffix(oaSuffix);
     }
     
-    if (host == record->GetFinalHost()) {
-      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                  "{}: Skip host == finalHost: {}", __FUNCTION__, host);
-      continue;
-    }
+    
+    RefPtr<BounceTrackingStateGlobal> globalState;
 
     
-    if (globalState->HasUserActivation(host)) {
-      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                  "{}: Skip host with recent user activation: {}", __FUNCTION__,
-                  host);
-      continue;
+    for (const nsACString& host : bounceHostsEntry.GetData()) {
+      
+      if (host.EqualsLiteral("null")) {
+        continue;
+      }
+
+      
+      
+      if (record->IsInitialSite(host, originAttributes)) {
+        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                    "{}: Skip host == initialHost: {}{}", __FUNCTION__, host,
+                    oaSuffix);
+        continue;
+      }
+      
+      
+      if (record->IsFinalSite(host, originAttributes)) {
+        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                    "{}: Skip host == finalHost: {}{}", __FUNCTION__, host,
+                    oaSuffix);
+        continue;
+      }
+
+      if (!globalState) {
+        globalState = mStorage->GetOrCreateStateGlobal(originAttributes);
+        MOZ_ASSERT(globalState);
+      }
+
+      
+      if (globalState->HasUserActivation(host)) {
+        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                    "{}: Skip host with recent user activation: {}{}",
+                    __FUNCTION__, host, oaSuffix);
+        continue;
+      }
+
+      
+      if (globalState->HasBounceTracker(host)) {
+        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                    "{}: Skip already existing host: {}{}", __FUNCTION__, host,
+                    oaSuffix);
+        continue;
+      }
+
+      
+      
+      PRTime now = PR_Now();
+      MOZ_ASSERT(!globalState->HasBounceTracker(host));
+      nsresult rv = globalState->RecordBounceTracker(host, now, false, record);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        continue;
+      }
+
+      
+      if (!classifiedHosts.Contains(host)) {
+        classifiedHosts.AppendElement(host);
+      }
+
+      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Info,
+                  "{}: Added bounce tracker candidate. siteHost: {}{}, "
+                  "aBounceTrackingState: {}",
+                  __FUNCTION__, host, oaSuffix, *aBounceTrackingState);
     }
-
-    
-    if (globalState->HasBounceTracker(host)) {
-      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                  "{}: Skip already existing host: {}", __FUNCTION__, host);
-      continue;
-    }
-
-    
-    
-    PRTime now = PR_Now();
-    MOZ_ASSERT(!globalState->HasBounceTracker(host));
-    nsresult rv = globalState->RecordBounceTracker(host, now, false, record);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      continue;
-    }
-
-    classifiedHosts.AppendElement(host);
-
-    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Info,
-                "{}: Added bounce tracker candidate. siteHost: {}, "
-                "aBounceTrackingState: {}",
-                __FUNCTION__, host, *aBounceTrackingState);
   }
 
   
@@ -722,7 +745,7 @@ BounceTrackingProtection::GetRecentPurgedChainEntriesForSite(
           if (record) {
             matches = record->GetInitialHost().Equals(aSiteHost) ||
                       record->GetFinalHost().Equals(aSiteHost) ||
-                      record->GetBounceHosts().Contains(aSiteHost);
+                      record->HasBounceHost(aSiteHost);
           }
         }
         if (matches) {

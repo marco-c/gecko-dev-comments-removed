@@ -95,6 +95,14 @@ class BounceTrackingState : public nsIWebProgressListener,
   [[nodiscard]] nsresult OnBFCacheRestored();
 
   
+  
+  
+  
+  static void OnLoadRetargeted(dom::CanonicalBrowsingContext* aSource,
+                               dom::CanonicalBrowsingContext* aTarget,
+                               uint64_t aLoadId);
+
+  
   static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
 
   
@@ -118,6 +126,12 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   [[nodiscard]] nsresult OnUserActivation(const nsACString& aSiteHost);
+
+  
+  
+  
+  
+  void DropRetargetedLoadBounces();
 
  private:
   explicit BounceTrackingState();
@@ -144,6 +158,13 @@ class BounceTrackingState : public nsIWebProgressListener,
   Maybe<uint64_t> mLastStartedLoadId;
 
   
+  
+  
+  
+  
+  Maybe<OriginAttributes> mRetargetedOriginAttributes;
+
+  
   RefPtr<nsITimer> mClientBounceDetectionTimeout;
 
   
@@ -160,10 +181,20 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   [[nodiscard]] nsresult Init(dom::BrowsingContextWebProgress* aWebProgress);
 
+  struct SiteListEntry {
+    nsCString mSiteHost;
+    
+    OriginAttributes mOriginAttributes;
+  };
+
   
   
   [[nodiscard]] nsresult OnResponseReceived(
-      const nsTArray<nsCString>& aSiteList);
+      const nsTArray<SiteListEntry>& aSiteList);
+
+  [[nodiscard]] nsresult StartClientBounceDetectionTimeout();
+
+  void CancelClientBounceDetectionTimeout();
 
   
   

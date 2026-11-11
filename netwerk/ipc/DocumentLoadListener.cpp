@@ -126,16 +126,18 @@ static void SetNeedToAddURIVisit(nsIChannel* aChannel,
                            aNeedToAddURIVisit);
 }
 
-static auto SecurityFlagsForLoadInfo(nsDocShellLoadState* aLoadState)
-    -> nsSecurityFlags {
-  
+nsSecurityFlags DocumentLoadListener::SecurityFlagsForLoadInfo(
+    nsDocShellLoadState* aLoadState) {
   nsSecurityFlags securityFlags =
       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL;
 
   if (aLoadState->LoadType() == LOAD_ERROR_PAGE) {
     securityFlags |= nsILoadInfo::SEC_LOAD_ERROR_PAGE;
   }
-
+  
+  
+  
+  
   if (aLoadState->PrincipalToInherit()) {
     nsIURI* uri = aLoadState->URI();
     bool isSrcdoc = aLoadState->HasInternalLoadFlags(
@@ -153,16 +155,26 @@ static auto SecurityFlagsForLoadInfo(nsDocShellLoadState* aLoadState)
   return securityFlags;
 }
 
+uint32_t DocumentLoadListener::EffectiveSandboxFlags(
+    uint32_t aBaseSandboxFlags, nsSecurityFlags aSecurityFlags) {
+  if (aSecurityFlags & nsILoadInfo::SEC_LOAD_ERROR_PAGE) {
+    
+    
+    return 0;
+  }
+  return aBaseSandboxFlags;
+}
+
 
 
 static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
                                    nsDocShellLoadState* aLoadState)
     -> already_AddRefed<LoadInfo> {
-  uint32_t sandboxFlags = aBrowsingContext->GetSandboxFlags();
+  const auto securityFlags =
+      DocumentLoadListener::SecurityFlagsForLoadInfo(aLoadState);
+  const auto sandboxFlags = DocumentLoadListener::EffectiveSandboxFlags(
+      aBrowsingContext->GetSandboxFlags(), securityFlags);
   RefPtr<LoadInfo> loadInfo;
-
-  auto securityFlags = SecurityFlagsForLoadInfo(aLoadState);
-
   if (aBrowsingContext->GetParent()) {
     loadInfo = LoadInfo::CreateForFrame(
         aBrowsingContext, aLoadState->TriggeringPrincipal(),
@@ -223,11 +235,14 @@ static auto CreateObjectLoadInfo(nsDocShellLoadState* aLoadState,
       WindowGlobalParent::GetByInnerWindowId(aInnerWindowId);
   MOZ_RELEASE_ASSERT(wgp);
 
-  auto securityFlags = SecurityFlagsForLoadInfo(aLoadState);
+  const auto securityFlags =
+      DocumentLoadListener::SecurityFlagsForLoadInfo(aLoadState);
+  const auto sandboxFlags =
+      DocumentLoadListener::EffectiveSandboxFlags(aSandboxFlags, securityFlags);
 
   RefPtr<LoadInfo> loadInfo = LoadInfo::CreateForNonDocument(
       wgp, wgp->DocumentPrincipal(), aContentPolicyType, securityFlags,
-      aSandboxFlags);
+      sandboxFlags);
 
   loadInfo->SetHasValidUserGestureActivation(
       aLoadState->HasValidUserGestureActivation());
@@ -643,6 +658,14 @@ void DocumentLoadListener::ActivateFromPrefetch(
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
   loadInfo->SetActivatedFromNavigationalPrefetch(true);
+
+  
+  
+  if (nsCOMPtr<nsIURI> cacheURI = aRec->CacheEntryURI()) {
+    if (RefPtr<net::nsHttpChannel> httpChannel = do_QueryObject(mChannel)) {
+      (void)httpChannel->SetNavigationalPrefetchCacheURI(cacheURI);
+    }
+  }
 
   LOG_SPECRULES(
       ("DocumentLoadListener::ActivateFromPrefetch: [%p] activated from "
@@ -2371,13 +2394,15 @@ bool DocumentLoadListener::MaybeTriggerProcessSwitch(
 
                   MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
                           ("Process Switch: Redirected load to new tab"));
+                  if (switchedContainer) {
+                    BounceTrackingState::OnLoadRetargeted(
+                        startedIn, aBrowsingContext->Canonical(),
+                        self->mLoadIdentifier);
+                    NotifyLoadRetargeted(startedIn);
+                  }
                   self->TriggerProcessSwitch(
                       MOZ_KnownLive(aBrowsingContext->Canonical()), options,
                        true);
-
-                  if (switchedContainer) {
-                    NotifyLoadRetargeted(startedIn);
-                  }
                 },
             [self = RefPtr{this}](const CopyableErrorResult&) {
               MOZ_LOG(gProcessIsolationLog, LogLevel::Error,
