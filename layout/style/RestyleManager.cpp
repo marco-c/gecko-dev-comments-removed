@@ -480,20 +480,29 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   }
 }
 
-void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
+void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild,
+                                          const ContentRemoveInfo& aInfo) {
   auto* container = aOldChild->GetParentNode();
   MOZ_ASSERT(container);
 
   
   
+  
   if (auto* element = Element::FromNode(aOldChild)) {
-    RestyleManager::ClearServoDataFromSubtree(element);
+    const bool preserveRootData =
+        aInfo.mNewParent && aInfo.mNewParent->IsElement() &&
+        aInfo.mNewParent->AsElement()->HasServoData() &&
+        !Servo_Element_IsDisplayNone(aInfo.mNewParent->AsElement());
+    ClearServoDataFromSubtree(element, IncludeRoot(!preserveRootData));
     
     
     
     
     
     IncrementUndisplayedRestyleGeneration();
+    if (preserveRootData) {
+      PostRestyleEvent(element, RestyleHint::RestyleSubtree(), nsChangeHint(0));
+    }
   }
 
   
@@ -1730,15 +1739,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       continue;
     }
 
-    if (frame && frame->GetContent() != content) {
-      
-      
-      frame = nullptr;
-      if (!(hint & nsChangeHint_ReconstructFrame)) {
-        continue;
-      }
-    }
-
     TryToDealWithScrollbarChange(hint, content, frame, presContext);
     TryToHandleContainingBlockChange(hint, frame);
 
@@ -2901,13 +2901,6 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
 
   RefPtr<ComputedStyle> upToDateStyleIfRestyled =
       wasRestyled ? ServoStyleSet::ResolveServoStyle(*aElement) : nullptr;
-
-  
-  
-  if (styleFrame && styleFrame->GetContent() != aElement) {
-    MOZ_ASSERT(styleFrame->IsImageFrameOrSubclass());
-    styleFrame = nullptr;
-  }
 
   
   

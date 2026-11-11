@@ -226,11 +226,6 @@ class RestyleManager {
 
 #ifdef DEBUG
   static nsCString ChangeHintToString(nsChangeHint aHint);
-
-  
-
-
-  void DebugVerifyStyleTree(nsIFrame* aFrame);
 #endif
 
   void FlushOverflowChangedTracker() { mOverflowChangedTracker.Flush(); }
@@ -273,9 +268,6 @@ class RestyleManager {
     void StopAnimationsForElementsWithoutFrames();
 
    private:
-    void StopAnimationsWithoutFrame(nsTArray<RefPtr<Element>>& aArray,
-                                    const PseudoStyleRequest& aPseudoRequest);
-
     RestyleManager* mRestyleManager;
     AutoRestore<AnimationsWithDestroyedFrame*> mRestorePointer;
 
@@ -300,7 +292,7 @@ class RestyleManager {
   void ContentAppended(nsIContent* aFirstNewContent);
 
   
-  void ContentWillBeRemoved(nsIContent* aOldChild);
+  void ContentWillBeRemoved(nsIContent* aOldChild, const ContentRemoveInfo&);
 
   
   
@@ -445,10 +437,7 @@ class RestyleManager {
 
 
 
-  enum class IncludeRoot {
-    Yes,
-    No,
-  };
+  enum class IncludeRoot : bool { No, Yes };
 
   
 
