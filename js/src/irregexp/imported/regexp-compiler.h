@@ -552,6 +552,11 @@ class FrequencyCollator {
 
   
   
+  
+  void UseStaticFrequencies();
+
+  
+  
   int Frequency(int in_character) {
     DCHECK((in_character & RegExpMacroAssembler::kTableMask) == in_character);
     if (total_samples_ < 1) return 1;  
@@ -568,6 +573,7 @@ class FrequencyCollator {
         : counter_(0), character_(character) {}
 
     void Increment() { counter_++; }
+    void Add(int n) { counter_ += n; }
     int counter() { return counter_; }
     int character() { return character_; }
 
