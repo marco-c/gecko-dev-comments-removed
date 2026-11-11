@@ -61,6 +61,7 @@ var gExceptionPaths = [
   
   "resource://pdf.js/web/wasm/openjpeg_nowasm_fallback.js",
   "resource://pdf.js/web/wasm/jbig2_nowasm_fallback.js",
+  "resource://pdf.js/web/wasm/hellbox_nowasm_fallback.js",
 
   
   
@@ -69,7 +70,7 @@ var gExceptionPaths = [
   "resource://gre/localization/en-US/toolkit/formautofill",
 
   
-  "resource://gre/modules/services-automation/",
+  "moz-src:///services/automation/",
 
   
   
@@ -266,18 +267,6 @@ var allowlist = [
   
   
   
-  {
-    file: "chrome://devtools/skin/images/aboutdebugging-firefox-aurora.svg",
-    isFromDevTools: true,
-  },
-  {
-    file: "chrome://devtools/skin/images/aboutdebugging-firefox-beta.svg",
-    isFromDevTools: true,
-  },
-  {
-    file: "chrome://devtools/skin/images/aboutdebugging-firefox-release.svg",
-    isFromDevTools: true,
-  },
   { file: "chrome://devtools/skin/images/next.svg", isFromDevTools: true },
 
   
@@ -351,6 +340,16 @@ var allowlist = [
 
   
   { file: "moz-src:///browser/components/widgets/WidgetGenerator.sys.mjs" },
+
+  
+  
+  {
+    file: "chrome://browser/content/aiwindow/components/smartwindow-option-select.mjs",
+  },
+  {
+    file: "chrome://browser/content/aiwindow/components/smartwindow-option-select.css",
+  },
+  { file: "chrome://browser/content/aiwindow/assets/model-choice-auto.svg" },
 ];
 
 if (AppConstants.NIGHTLY_BUILD) {
