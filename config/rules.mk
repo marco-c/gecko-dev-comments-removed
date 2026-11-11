@@ -102,19 +102,6 @@ LINK_PDBFILE = $(basename $@).pdb
 endif
 endif
 
-ifeq ($(CC_TYPE),clang-cl)
-
-ifdef SIMPLE_PROGRAMS
-COMPILE_PDB_FLAG ?= -Fd$(basename $(@F)).pdb
-COMPILE_CFLAGS += $(COMPILE_PDB_FLAG)
-COMPILE_CXXFLAGS += $(COMPILE_PDB_FLAG)
-endif
-
-ifdef MOZ_DEBUG
-CODFILE=$(basename $(@F)).cod
-endif
-
-endif # CC_TYPE == clang-cl
 endif # WINNT
 
 ifeq ($(OS_ARCH),WINNT)
@@ -539,10 +526,6 @@ endef
 # main symbols archive, so that other tasks don't have to download them.
 ifneq (,$(filter $(DIST)/bin/gtest%,$(FINAL_TARGET)))
 DUMP_SYMBOLS_FLAGS += --symbols-dir=crashreporter-symbols-gtest
-endif
-
-ifneq (,$(filter $(DIST)/bin%,$(FINAL_TARGET)))
-DUMP_SYMS_TARGETS := $(filter-out $(MOZBUILD_NON_DEFAULT_TARGETS),$(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS) $(RUST_PROGRAMS))
 endif
 
 ifdef MOZ_AUTOMATION
