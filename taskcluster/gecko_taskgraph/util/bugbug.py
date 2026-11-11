@@ -28,13 +28,19 @@ RETRY_TIMEOUT = 9 * 60
 RETRY_INTERVAL = 10  
 
 
+CT_VERY_LOW = 0.3
 CT_LOW = 0.7
 CT_MEDIUM = 0.8
 CT_HIGH = 0.9
 
 
 
-CT_LEVELS = {CT_LOW: "low", CT_MEDIUM: "medium", CT_HIGH: "high"}
+CT_LEVELS = {
+    CT_VERY_LOW: "very_low",
+    CT_LOW: "low",
+    CT_MEDIUM: "medium",
+    CT_HIGH: "high",
+}
 
 GROUP_TRANSLATIONS = {
     "testing/web-platform/tests": "",
