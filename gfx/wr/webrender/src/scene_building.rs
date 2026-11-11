@@ -1638,7 +1638,6 @@ impl<'a> SceneBuilder<'a> {
             }
 
             
-            DisplayItem::SetGradientStops |
             DisplayItem::SetFilterOps |
             DisplayItem::SetFilterData => {}
 

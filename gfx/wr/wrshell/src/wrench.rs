@@ -454,7 +454,6 @@ impl YamlWriter {
 
                     
                     
-                    DisplayItem::SetGradientStops => {}
                     DisplayItem::SetFilterOps => {}
                     DisplayItem::SetFilterData => {}
                     DisplayItem::YuvImage(..) => {}
