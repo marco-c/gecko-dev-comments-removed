@@ -10,20 +10,25 @@ function load_cert(name, trust) {
   addCertFromFile(certdb, filename, trust);
 }
 
-function test_cert_for_usages(certChainNicks, expected_usages) {
+function test_cert_for_usages(certNick, certChainNicks, expected_usages) {
   let certs = [];
-  for (let i in certChainNicks) {
-    let certNick = certChainNicks[i];
+  for (let certNick of certChainNicks) {
     let certPEM = readFile(
       do_get_file(
         "test_intermediate_basic_usage_constraints/" + certNick + ".pem"
       ),
       false
     );
-    certs.push(certdb.constructX509FromBase64(pemToBase64(certPEM)));
+    certs.push(certdb.addCertFromBase64(pemToBase64(certPEM), ",,"));
   }
 
-  let cert = certs[0];
+  let certPEM = readFile(
+    do_get_file(
+      "test_intermediate_basic_usage_constraints/" + certNick + ".pem"
+    ),
+    false
+  );
+  let cert = certdb.constructX509FromBase64(pemToBase64(certPEM));
   return asyncTestCertificateUsages(certdb, cert, expected_usages);
 }
 
@@ -43,36 +48,38 @@ add_task(async function () {
   
   let ca_name = "ca";
   load_cert(ca_name, "CTu,CTu,CTu");
-  await test_cert_for_usages([ca_name], ca_usages);
+  await test_cert_for_usages(ca_name, [], ca_usages);
 
   
-  await test_cert_for_usages(["int-no-extensions"], ee_usages);
-
-  
-  
-  await test_cert_for_usages(["ee-int-no-extensions", "int-no-extensions"], []);
-
-  
-  await test_cert_for_usages(["int-not-a-ca"], ee_usages);
-
-  
-  await test_cert_for_usages(["ee-int-not-a-ca", "int-not-a-ca"], []);
+  await test_cert_for_usages("int-no-extensions", [], ee_usages);
 
   
   
-  await test_cert_for_usages(["int-cA-FALSE-asserts-keyCertSign"], ee_usages);
+  await test_cert_for_usages("ee-int-no-extensions", ["int-no-extensions"], []);
+
+  
+  await test_cert_for_usages("int-not-a-ca", [], ee_usages);
+
+  
+  await test_cert_for_usages("ee-int-not-a-ca", ["int-not-a-ca"], []);
+
+  
+  
+  await test_cert_for_usages("int-cA-FALSE-asserts-keyCertSign", [], ee_usages);
   await test_cert_for_usages(
-    ["ee-int-cA-FALSE-asserts-keyCertSign", "int-cA-FALSE-asserts-keyCertSign"],
+    "ee-int-cA-FALSE-asserts-keyCertSign",
+    ["int-cA-FALSE-asserts-keyCertSign"],
     []
   );
 
   
-  await test_cert_for_usages(["int-limited-depth"], ca_usages);
+  await test_cert_for_usages("int-limited-depth", [], ca_usages);
 
   
   
   await test_cert_for_usages(
-    ["ee-int-limited-depth", "int-limited-depth"],
+    "ee-int-limited-depth",
+    ["int-limited-depth"],
     ee_usages
   );
 
@@ -81,22 +88,21 @@ add_task(async function () {
   
   
   await test_cert_for_usages(
+    "int-limited-depth-invalid",
+    ["int-limited-depth"],
+    []
+  );
+  await test_cert_for_usages(
+    "ee-int-limited-depth-invalid",
     ["int-limited-depth-invalid", "int-limited-depth"],
     []
   );
-  await test_cert_for_usages(
-    [
-      "ee-int-limited-depth-invalid",
-      "int-limited-depth-invalid",
-      "int-limited-depth",
-    ],
-    []
-  );
 
   
-  await test_cert_for_usages(["int-valid-ku-no-eku"], ca_usages);
+  await test_cert_for_usages("int-valid-ku-no-eku", [], ca_usages);
   await test_cert_for_usages(
-    ["ee-int-valid-ku-no-eku", "int-valid-ku-no-eku"],
+    "ee-int-valid-ku-no-eku",
+    ["int-valid-ku-no-eku"],
     ee_usages
   );
 
@@ -104,38 +110,42 @@ add_task(async function () {
   
   
   
-  await test_cert_for_usages(["int-bad-ku-no-eku"], []);
-  await test_cert_for_usages(["ee-int-bad-ku-no-eku", "int-bad-ku-no-eku"], []);
+  await test_cert_for_usages("int-bad-ku-no-eku", [], []);
+  await test_cert_for_usages("ee-int-bad-ku-no-eku", ["int-bad-ku-no-eku"], []);
 
   
   
-  await test_cert_for_usages(["int-no-ku-no-eku"], ca_usages);
+  await test_cert_for_usages("int-no-ku-no-eku", [], ca_usages);
   await test_cert_for_usages(
-    ["ee-int-no-ku-no-eku", "int-no-ku-no-eku"],
+    "ee-int-no-ku-no-eku",
+    ["int-no-ku-no-eku"],
     ee_usages
   );
 
   
   
-  await test_cert_for_usages(["int-valid-ku-server-eku"], ca_usages);
+  await test_cert_for_usages("int-valid-ku-server-eku", [], ca_usages);
   await test_cert_for_usages(
-    ["ee-int-valid-ku-server-eku", "int-valid-ku-server-eku"],
+    "ee-int-valid-ku-server-eku",
+    ["int-valid-ku-server-eku"],
     eku_usages
   );
 
   
   
-  await test_cert_for_usages(["int-bad-ku-server-eku"], []);
+  await test_cert_for_usages("int-bad-ku-server-eku", [], []);
   await test_cert_for_usages(
-    ["ee-int-bad-ku-server-eku", "int-bad-ku-server-eku"],
+    "ee-int-bad-ku-server-eku",
+    ["int-bad-ku-server-eku"],
     []
   );
 
   
   
-  await test_cert_for_usages(["int-no-ku-server-eku"], ca_usages);
+  await test_cert_for_usages("int-no-ku-server-eku", [], ca_usages);
   await test_cert_for_usages(
-    ["ee-int-no-ku-server-eku", "int-no-ku-server-eku"],
+    "ee-int-no-ku-server-eku",
+    ["int-no-ku-server-eku"],
     eku_usages
   );
 });

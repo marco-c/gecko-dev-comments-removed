@@ -84,6 +84,7 @@ enum class IssuerSource {
   ThirdPartyCertificates,  
   NSSCertDB,  
   BuiltInRootsModule,  
+  PKCS11Module,        
 };
 
 using IssuerSources = EnumSet<IssuerSource>;
