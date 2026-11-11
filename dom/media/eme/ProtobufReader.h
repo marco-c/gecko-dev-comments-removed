@@ -11,6 +11,7 @@
 #include <cstdint>
 
 #include "mozilla/Span.h"
+#include "nsTArray.h"
 
 namespace mozilla {
 
@@ -119,7 +120,21 @@ constexpr uint32_t kSignedMessageTypeField = 1;
 
 enum class SignedMessageType : uint8_t {
   ServiceCertificateRequest = 4,
+  ServiceCertificate = 5,
 };
+
+
+
+constexpr uint32_t kSignedMessageMsgField = 2;
+constexpr uint32_t kLicenseKeyField = 3;
+constexpr uint32_t kKeyContainerIdField = 1;
+constexpr uint32_t kKeyContainerTypeField = 4;
+
+
+constexpr uint64_t kKeyTypeContent = 2;
+
+constexpr size_t kKeyIdSize = 16;
+constexpr size_t kMaxLicenseKeyIds = 256;
 
 
 
@@ -135,6 +150,14 @@ constexpr size_t kSignedMessageTypeOnlySize = 2;
 Span<const uint8_t> TrimKeyRequest(Span<const uint8_t> aRequest);
 
 bool IsServiceCertificateRequest(Span<const uint8_t> aRequest);
+
+bool IsServiceCertificateResponse(Span<const uint8_t> aResponse);
+
+
+
+
+
+nsTArray<nsTArray<uint8_t>> ParseLicenseKeyIds(Span<const uint8_t> aResponse);
 
 }  
 
