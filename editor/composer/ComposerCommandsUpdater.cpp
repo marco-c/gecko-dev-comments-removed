@@ -72,7 +72,7 @@ void ComposerCommandsUpdater::DidUndoTransaction(
 }
 
 void ComposerCommandsUpdater::DidRedoTransaction(
-    TransactionManager& aTransactionManager) {
+    TransactionManager& ) {
   UpdateCommandGroup(CommandGroup::Undo);
 }
 

@@ -80,7 +80,7 @@ class MOZ_STACK_CLASS AutoSelectionSetterAfterTableEdit final {
 
 
 void HTMLEditor::CellIndexes::Update(HTMLEditor& aHTMLEditor,
-                                     Selection& aSelection) {
+                                     Selection& ) {
   
   
   RefPtr<Element> cellElement =
@@ -134,7 +134,7 @@ void HTMLEditor::CellIndexes::Update(Element& aCellElement,
 
 
 HTMLEditor::CellData HTMLEditor::CellData::AtIndexInTableElement(
-    const HTMLEditor& aHTMLEditor, const Element& aTableElement,
+    const HTMLEditor& , const Element& aTableElement,
     int32_t aRowIndex, int32_t aColumnIndex) {
   nsTableWrapperFrame* tableFrame = HTMLEditor::GetTableFrame(&aTableElement);
   if (!tableFrame) {

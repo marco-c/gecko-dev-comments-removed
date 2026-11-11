@@ -350,8 +350,8 @@ class EditorCommand : public ControllerCommand {
 
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult DoCommandParam(
-      Command aCommand, EditorBase& aEditorBase,
-      nsIPrincipal* aPrincipal) const {
+      Command , EditorBase& ,
+      nsIPrincipal* ) const {
     MOZ_ASSERT_UNREACHABLE("Wrong overload is called");
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -362,8 +362,8 @@ class EditorCommand : public ControllerCommand {
 
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult DoCommandParam(
-      Command aCommand, const Maybe<bool>& aBoolParam, EditorBase& aEditorBase,
-      nsIPrincipal* aPrincipal) const {
+      Command , const Maybe<bool>& ,
+      EditorBase& , nsIPrincipal* ) const {
     MOZ_ASSERT_UNREACHABLE("Wrong overload is called");
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -374,8 +374,8 @@ class EditorCommand : public ControllerCommand {
 
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult DoCommandParam(
-      Command aCommand, const nsACString& aCStringParam,
-      EditorBase& aEditorBase, nsIPrincipal* aPrincipal) const {
+      Command , const nsACString& ,
+      EditorBase& , nsIPrincipal* ) const {
     MOZ_ASSERT_UNREACHABLE("Wrong overload is called");
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -386,8 +386,8 @@ class EditorCommand : public ControllerCommand {
 
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult DoCommandParam(
-      Command aCommand, const nsAString& aStringParam, EditorBase& aEditorBase,
-      nsIPrincipal* aPrincipal) const {
+      Command , const nsAString& ,
+      EditorBase& , nsIPrincipal* ) const {
     MOZ_ASSERT_UNREACHABLE("Wrong overload is called");
     return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -398,8 +398,8 @@ class EditorCommand : public ControllerCommand {
 
 
   MOZ_CAN_RUN_SCRIPT virtual nsresult DoCommandParam(
-      Command aCommand, nsITransferable* aTransferableParam,
-      EditorBase& aEditorBase, nsIPrincipal* aPrincipal) const {
+      Command , nsITransferable* ,
+      EditorBase& , nsIPrincipal* ) const {
     MOZ_ASSERT_UNREACHABLE("Wrong overload is called");
     return NS_ERROR_NOT_IMPLEMENTED;
   }

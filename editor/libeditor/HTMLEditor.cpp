@@ -214,7 +214,7 @@ MOZ_RUNINIT HTMLEditor::AttributeFilter
               (&aAttrName == nsGkAtoms::id || &aAttrName == nsGkAtoms::dir));
         };
 
-HTMLEditor::HTMLEditor(const Document& aDocument)
+HTMLEditor::HTMLEditor(const Document& )
     : EditorBase(EditorBase::EditorType::HTML),
       mCRInParagraphCreatesParagraph(false),
       mIsObjectResizingEnabled(

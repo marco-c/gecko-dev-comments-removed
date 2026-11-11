@@ -1287,7 +1287,7 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
           aContent, MOZ_KnownLive(HTMLPropertyRef()),
           !mAttribute ? HTMLEditor::DoNothingForNewElement
                       
-                      : [&](HTMLEditor& aHTMLEditor, Element& aNewElement,
+                      : [&](HTMLEditor& , Element& aNewElement,
                             const EditorDOMPoint&) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
                           nsresult rv = aNewElement.SetAttr(
                               kNameSpaceID_None, mAttribute, attributeValue,
@@ -3412,7 +3412,7 @@ void HTMLEditor::AppendInlineStyleAndRelatedStyle(
 
 nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
     const nsTArray<EditorInlineStyle>& aStylesToRemove,
-    const Element& aEditingHost) {
+    const Element& ) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(!aStylesToRemove.IsEmpty());
 

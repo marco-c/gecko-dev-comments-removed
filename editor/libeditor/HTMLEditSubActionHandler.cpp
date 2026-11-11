@@ -3462,7 +3462,7 @@ HTMLEditor::AutoListElementCreator::ReplaceContentNodesWithEmptyNewList(
 
 Result<RefPtr<Element>, nsresult>
 HTMLEditor::AutoListElementCreator::WrapContentNodesIntoNewListElements(
-    HTMLEditor& aHTMLEditor, AutoClonedRangeArray& aRanges,
+    HTMLEditor& aHTMLEditor, AutoClonedRangeArray& ,
     AutoContentNodeArray& aArrayOfContents, const Element& aEditingHost) const {
   
   
@@ -6225,7 +6225,7 @@ HTMLEditor::HandleOutdentAtSelectionInternal(const Element& aEditingHost) {
 Result<SplitRangeOffFromNodeResult, nsresult>
 HTMLEditor::RemoveBlockContainerElementWithTransactionBetween(
     Element& aBlockContainerElement, nsIContent& aStartOfRange,
-    nsIContent& aEndOfRange, BlockInlineCheck aBlockInlineCheck) {
+    nsIContent& aEndOfRange, BlockInlineCheck ) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   EditorDOMPoint pointToPutCaret;

@@ -920,7 +920,7 @@ nsresult TextEditor::OnBlur(const EventTarget* aEventTarget) {
 nsresult TextEditor::SetAttributeOrEquivalent(Element* aElement,
                                               nsAtom* aAttribute,
                                               const nsAString& aValue,
-                                              bool aSuppressTransaction) {
+                                              bool ) {
   if (NS_WARN_IF(!aElement) || NS_WARN_IF(!aAttribute)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -939,9 +939,8 @@ nsresult TextEditor::SetAttributeOrEquivalent(Element* aElement,
   return EditorBase::ToGenericNSResult(rv);
 }
 
-nsresult TextEditor::RemoveAttributeOrEquivalent(Element* aElement,
-                                                 nsAtom* aAttribute,
-                                                 bool aSuppressTransaction) {
+nsresult TextEditor::RemoveAttributeOrEquivalent(
+    Element* aElement, nsAtom* aAttribute, bool ) {
   if (NS_WARN_IF(!aElement) || NS_WARN_IF(!aAttribute)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1196,7 +1195,8 @@ char16_t TextEditor::PasswordMask() {
   return ret;
 }
 
-MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP TextEditor::Notify(nsITimer* aTimer) {
+MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP
+TextEditor::Notify(nsITimer* ) {
   
   
   if (!IsPasswordEditor() || NS_WARN_IF(!mPasswordMaskData)) {
@@ -1235,7 +1235,7 @@ NS_IMETHODIMP TextEditor::GetName(nsACString& aName) {
   return NS_OK;
 }
 
-void TextEditor::WillDeleteText(uint32_t aCurrentLength,
+void TextEditor::WillDeleteText(uint32_t ,
                                 uint32_t aRemoveStartOffset,
                                 uint32_t aRemoveLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
@@ -1307,7 +1307,7 @@ void TextEditor::WillDeleteText(uint32_t aCurrentLength,
   
 }
 
-nsresult TextEditor::DidInsertText(uint32_t aNewLength,
+nsresult TextEditor::DidInsertText(uint32_t ,
                                    uint32_t aInsertedOffset,
                                    uint32_t aInsertedLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
