@@ -12,6 +12,66 @@ registerCleanupFunction(async () => {
   await UrlbarTestUtils.promisePopupClose(window);
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function assertSearchStringIsInUrlbar(
+  searchString,
+  {
+    win = window,
+    pageProxyState = "invalid",
+    userTypedValue = searchString,
+    persistSearchTerms = true,
+  } = {}
+) {
+  Assert.equal(
+    win.gURLBar.value,
+    searchString,
+    `Search string should be the urlbar value.`
+  );
+  let state = win.gURLBar.getBrowserState(win.gBrowser.selectedBrowser);
+  Assert.equal(
+    state.persist?.searchTerms,
+    searchString,
+    `Search terms should match.`
+  );
+  Assert.equal(
+    win.gBrowser.userTypedValue,
+    userTypedValue,
+    "userTypedValue should match."
+  );
+  Assert.equal(
+    win.gURLBar.getAttribute("pageproxystate"),
+    pageProxyState,
+    "Pageproxystate should match."
+  );
+  if (persistSearchTerms) {
+    Assert.ok(
+      win.gURLBar.hasAttribute("persistsearchterms"),
+      "Urlbar has persistsearchterms attribute."
+    );
+  } else {
+    Assert.ok(
+      !win.gURLBar.hasAttribute("persistsearchterms"),
+      "Urlbar does not have persistsearchterms attribute."
+    );
+  }
+}
+
 async function searchWithTab(
   searchString,
   tab = null,
@@ -43,7 +103,7 @@ async function searchWithTab(
 
   if (expectedPersistedSearchTerms) {
     info("Load a tab with search terms persisting in the urlbar.");
-    UrlbarTestUtils.assertSearchStringIsInUrlbar(window, searchString);
+    assertSearchStringIsInUrlbar(searchString);
   }
 
   return { tab, expectedSearchUrl };
