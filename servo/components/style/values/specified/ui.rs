@@ -337,6 +337,31 @@ pub enum Inert {
     ToTyped,
 )]
 #[repr(u8)]
+pub enum Interactivity {
+    Auto,
+    Inert,
+}
+
+
+
+#[allow(missing_docs)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+    ToTyped,
+)]
+#[repr(u8)]
 pub enum UserFocus {
     Normal,
     None,
