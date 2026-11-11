@@ -4478,7 +4478,12 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
                          "to delete unnecessary <br>");
     return rv;
   }
-  MOZ_ASSERT(isNewLinePreformatted);
+
+  
+  
+  
+  
+
   if (aPreservePreformattedLineBreak == PreservePreformattedLineBreak::Yes) {
     
     
