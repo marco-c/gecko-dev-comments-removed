@@ -1257,6 +1257,9 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
         mSuppressedMicroTaskList
             ? MaybeUnwrapTaskToRunnable(job) == mSuppressedMicroTaskList
             : false;
+    if (isSuppressionJob) {
+      mSuppressedMicroTaskList->mIsQueued = false;
+    }
 
     
     
@@ -1311,8 +1314,12 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
     
     
     
-    if (!EnqueueMicroTask(cx, do_AddRef(mSuppressedMicroTaskList))) {
-      MOZ_CRASH("Failed to re-enqueue suppressed microtask list");
+    
+    if (!mSuppressedMicroTaskList->mIsQueued) {
+      if (!EnqueueMicroTask(cx, do_AddRef(mSuppressedMicroTaskList))) {
+        MOZ_CRASH("Failed to re-enqueue suppressed microtask list");
+      }
+      mSuppressedMicroTaskList->mIsQueued = true;
     }
   }
 
