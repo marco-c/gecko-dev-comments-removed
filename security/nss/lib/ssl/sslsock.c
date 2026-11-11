@@ -3096,12 +3096,11 @@ ssl_Accept(PRFileDesc *fd, PRNetAddr *sockaddr, PRIntervalTime timeout)
 
 
     if (ns->opt.useSecurity) {
+        ns->sec.isServer = !ns->opt.handshakeAsClient;
         if (ns->opt.handshakeAsClient) {
             ns->handshake = ssl_BeginClientHandshake;
-            ss->handshaking = sslHandshakingAsClient;
         } else {
             ns->handshake = ssl_BeginServerHandshake;
-            ss->handshaking = sslHandshakingAsServer;
         }
     }
     ns->TCPconnected = 1;
@@ -3412,7 +3411,7 @@ ssl_Poll(PRFileDesc *fd, PRInt16 how_flags, PRInt16 *p_out_flags)
     }
 
     if (ss->opt.useSecurity &&
-        ss->handshaking != sslHandshakingUndetermined &&
+        (ss->handshake || ss->handshakeBegun) &&
         !ss->firstHsDone &&
         (how_flags & PR_POLL_RW)) {
         if (!ss->TCPconnected) {
@@ -3428,7 +3427,7 @@ ssl_Poll(PRFileDesc *fd, PRInt16 how_flags, PRInt16 *p_out_flags)
 
 
                 new_flags &= ~PR_POLL_RW;
-                if (ss->handshaking == sslHandshakingAsClient) {
+                if (!ss->sec.isServer) {
                     new_flags |= PR_POLL_WRITE;
                 } else { 
                     new_flags |= PR_POLL_READ;
@@ -4442,6 +4441,7 @@ struct {
     EXP(GetEchRetryConfigs),
     EXP(GetExtensionSupport),
     EXP(GetResumptionTokenInfo),
+    EXP(GetResumptionTokenInfoWithFlags),
     EXP(HelloRetryRequestCallback),
     EXP(InstallExtensionHooks),
     EXP(HkdfExtract),
@@ -4719,13 +4719,24 @@ SECStatus
 SSLExp_GetResumptionTokenInfo(const PRUint8 *tokenData, unsigned int tokenLen,
                               SSLResumptionTokenInfo *tokenOut, PRUintn len)
 {
+    return SSLExp_GetResumptionTokenInfoWithFlags(tokenData, tokenLen, tokenOut,
+                                                  len, 0);
+}
+
+SECStatus
+SSLExp_GetResumptionTokenInfoWithFlags(const PRUint8 *tokenData,
+                                       unsigned int tokenLen,
+                                       SSLResumptionTokenInfo *tokenOut,
+                                       PRUintn len, PRUint32 flags)
+{
     if (!tokenData || !tokenOut || !tokenLen ||
-        len > sizeof(SSLResumptionTokenInfo)) {
+        len > sizeof(SSLResumptionTokenInfo) ||
+        (flags & ~SSL_RESUMPTION_TOKEN_INFO_NO_PEER_CERT)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
     sslSessionID sid = { 0 };
-    SSLResumptionTokenInfo token;
+    SSLResumptionTokenInfo token = { 0 };
 
     
     if (ssl_DecodeResumptionToken(NULL, &sid, tokenData, tokenLen) != SECSuccess) {
@@ -4737,7 +4748,9 @@ SSLExp_GetResumptionTokenInfo(const PRUint8 *tokenData, unsigned int tokenLen,
 
     
 
-    if (sid.peerCertDER.data) {
+
+    if (sid.peerCertDER.data &&
+        !(flags & SSL_RESUMPTION_TOKEN_INFO_NO_PEER_CERT)) {
         token.peerCert = CERT_NewTempCertificate(NULL, 
                                                  &sid.peerCertDER,
                                                  NULL, PR_FALSE, PR_TRUE);
@@ -4745,13 +4758,13 @@ SSLExp_GetResumptionTokenInfo(const PRUint8 *tokenData, unsigned int tokenLen,
             ssl_DestroySID(&sid, PR_FALSE);
             return SECFailure;
         }
-    } else {
-        token.peerCert = NULL;
     }
 
     token.alpnSelectionLen = sid.u.ssl3.alpnSelection.len;
     token.alpnSelection = PORT_ZAlloc(token.alpnSelectionLen);
     if (!token.alpnSelection) {
+        CERT_DestroyCertificate(token.peerCert);
+        ssl_DestroySID(&sid, PR_FALSE);
         return SECFailure;
     }
     if (token.alpnSelectionLen > 0) {
@@ -4767,6 +4780,9 @@ SSLExp_GetResumptionTokenInfo(const PRUint8 *tokenData, unsigned int tokenLen,
         token.maxEarlyDataSize = 0;
     }
     token.expirationTime = sid.expirationTime;
+    
+    token.plaintextSecret =
+        (tokenData[1] & SSLResumptionTokenFeatureRawMS) ? PR_TRUE : PR_FALSE;
 
     token.length = PR_MIN(sizeof(SSLResumptionTokenInfo), len);
     PORT_Memcpy(tokenOut, &token, token.length);

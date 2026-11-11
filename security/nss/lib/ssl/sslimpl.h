@@ -318,11 +318,6 @@ typedef struct sslOptionsStr {
     unsigned int enablePlaintextResumptionExport : 1;
 } sslOptions;
 
-typedef enum { sslHandshakingUndetermined = 0,
-               sslHandshakingAsClient,
-               sslHandshakingAsServer
-} sslHandshakingType;
-
 #define SSL_LOCK_RANK_SPEC 255
 
 
@@ -1184,8 +1179,6 @@ struct sslSocketStr {
 
     PRUint16 shutdownHow; 
 
-    sslHandshakingType handshaking;
-
     
     sslGather gs; 
 
@@ -1668,7 +1661,6 @@ extern SECStatus ssl_CheckSignatureSchemeConsistency(
 
 
 
-
 extern CERTSubjectPublicKeyInfo *ssl_ExtractSPKIFromDER(const SECItem *derCert);
 
 
@@ -1940,6 +1932,11 @@ SECStatus SSLExp_EnablePlaintextResumptionExport(PRFileDesc *fd, PRBool enabled)
 
 SECStatus SSLExp_GetResumptionTokenInfo(const PRUint8 *tokenData, unsigned int tokenLen,
                                         SSLResumptionTokenInfo *token, unsigned int version);
+SECStatus SSLExp_GetResumptionTokenInfoWithFlags(const PRUint8 *tokenData,
+                                                 unsigned int tokenLen,
+                                                 SSLResumptionTokenInfo *token,
+                                                 unsigned int version,
+                                                 PRUint32 flags);
 
 SECStatus SSLExp_DestroyResumptionTokenInfo(SSLResumptionTokenInfo *token);
 

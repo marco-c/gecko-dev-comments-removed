@@ -16,12 +16,14 @@
 #include "gtest/gtest.h"
 
 #include "der_encode.h"
+#include "nss_scoped_ptrs.h"
 #include "nss.h"
 #include "p12.h"
 #include "plarena.h"
 #include "scoped_ptrs_smime.h"
 #include "secasn1.h"
 #include "secerr.h"
+#include "secitem.h"
 #include "secoid.h"
 #include "secpkcs7.h"
 #include "smime.h"
@@ -455,18 +457,19 @@ static const SEC_ASN1Template SMIMECapabilitiesTemplate[] = {
     {SEC_ASN1_SEQUENCE_OF, 0, SMIMECapabilityTemplate}};
 
 TEST_F(SMimeTest, SMIMECapabilitiesIncludeGCM) {
-  PLArenaPool* arena = PORT_NewArena(1024);
+  ScopedPLArenaPool arena(PORT_NewArena(1024));
   ASSERT_NE(nullptr, arena);
 
   SECItem encoded = {siBuffer, nullptr, 0};
-  ASSERT_EQ(SECSuccess, NSS_SMIMEUtil_CreateSMIMECapabilities(arena, &encoded));
+  ASSERT_EQ(SECSuccess,
+            NSS_SMIMEUtil_CreateSMIMECapabilities(arena.get(), &encoded));
 
   
   SMIMECapability** caps = nullptr;
   ASSERT_EQ(
       SECSuccess,
       SEC_QuickDERDecodeItem(
-          arena,
+          arena.get(),
           static_cast<void*>(
               &caps),  
           SMIMECapabilitiesTemplate, &encoded));
@@ -503,8 +506,6 @@ TEST_F(SMimeTest, SMIMECapabilitiesIncludeGCM) {
   if (idx128gcm >= 0 && idx128cbc >= 0) {
     EXPECT_LT(idx128gcm, idx128cbc) << "AES-128-GCM should precede AES-128-CBC";
   }
-
-  PORT_FreeArena(arena, PR_FALSE);
 }
 
 
@@ -873,6 +874,60 @@ TEST_F(SMimeTest, CmsDecoderUpdateAfterFailureIsInert) {
                   sizeof(kValidSignature)));
   }
   EXPECT_EQ(nullptr, NSS_CMSDecoder_Finish(dcx));
+}
+
+
+
+
+TEST_F(SMimeTest, DigestValueAlignsWithDigestAlgorithms) {
+  ScopedNSSCMSMessage msg(NSS_CMSMessage_Create(nullptr));
+  ASSERT_TRUE(msg);
+  NSSCMSSignedData* sigd = NSS_CMSSignedData_Create(msg.get());
+  ASSERT_NE(nullptr, sigd);
+
+  for (SECOidTag alg : {SEC_OID_SHA256, SEC_OID_SHA384, SEC_OID_SHA512}) {
+    ASSERT_EQ(SECSuccess, NSS_CMSSignedData_SetDigestValue(sigd, alg, nullptr));
+  }
+
+  uint8_t hash[64] = {0xab};
+  SECItem digest = {siBuffer, hash, sizeof(hash)};
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA512, &digest));
+
+  EXPECT_EQ(nullptr, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA256));
+  EXPECT_EQ(nullptr, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA384));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(
+      &digest, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA512)));
+}
+
+
+
+
+TEST_F(SMimeTest, DigestsFollowDigestAlgorithmsWhenSorted) {
+  ScopedNSSCMSMessage msg(NSS_CMSMessage_Create(nullptr));
+  ASSERT_TRUE(msg);
+  NSSCMSSignedData* sigd = NSS_CMSSignedData_Create(msg.get());
+  ASSERT_NE(nullptr, sigd);
+
+  uint8_t hash512[64] = {0x51};
+  uint8_t hash384[48] = {0x38};
+  SECItem digest512 = {siBuffer, hash512, sizeof(hash512)};
+  SECItem digest384 = {siBuffer, hash384, sizeof(hash384)};
+
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA512, &digest512));
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA256, nullptr));
+  ASSERT_EQ(SECSuccess,
+            NSS_CMSSignedData_SetDigestValue(sigd, SEC_OID_SHA384, &digest384));
+
+  ASSERT_EQ(SECSuccess, NSS_CMSSignedData_Encode_BeforeStart(sigd));
+
+  EXPECT_EQ(nullptr, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA256));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(
+      &digest384, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA384)));
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(
+      &digest512, NSS_CMSSignedData_GetDigestValue(sigd, SEC_OID_SHA512)));
 }
 
 }  

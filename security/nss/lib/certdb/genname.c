@@ -1282,6 +1282,76 @@ compareRFC822N2C(const SECItem *name, const SECItem *constraint)
 
 
 
+
+
+static SECStatus
+comparePermittedDirectoryNameN2C(const CERTName *name,
+                                 const CERTName *constraint)
+{
+    CERTRDN **nRDNs = name->rdns;
+    CERTRDN **cRDNs = constraint->rdns;
+
+    if (!nRDNs || !*nRDNs) {
+        return SECSuccess;
+    }
+    while (cRDNs && *cRDNs) {
+        if (!nRDNs || !*nRDNs) {
+            return SECFailure; 
+        }
+        if (CERT_CompareRDN(*cRDNs++, *nRDNs++) != SECEqual) {
+            return SECFailure;
+        }
+    }
+    return SECSuccess;
+}
+
+
+
+
+
+
+
+
+static SECStatus
+compareExcludedDirectoryNameN2C(const CERTName *name,
+                                const CERTName *constraint)
+{
+    
+
+
+    SECComparison status = SECEqual;
+    const CERTRDN **cRDNs = (const CERTRDN **)constraint->rdns;
+    const CERTRDN **nRDNs = (const CERTRDN **)name->rdns;
+    while (cRDNs && *cRDNs && nRDNs && *nRDNs) {
+        
+
+        const CERTRDN *cRDN = *cRDNs++;
+        const CERTRDN *nRDN = *nRDNs++;
+        CERTAVA **cAVAs = cRDN->avas;
+        while (cAVAs && *cAVAs) { 
+            CERTAVA *cAVA = *cAVAs++;
+            CERTAVA **nAVAs = nRDN->avas;
+            while (nAVAs && *nAVAs) { 
+                CERTAVA *nAVA = *nAVAs++;
+                status = CERT_CompareAVA(cAVA, nAVA);
+                if (status == SECEqual)
+                    break;
+            } 
+            if (status != SECEqual)
+                break;
+        } 
+        if (status != SECEqual)
+            break;
+    } 
+    return (status == SECEqual) ? SECSuccess : SECFailure;
+}
+
+
+
+
+
+
+
 static SECStatus
 compareIPaddrN2C(const SECItem *name, const SECItem *constraint)
 {
@@ -1405,43 +1475,13 @@ cert_CompareNameWithConstraints(const CERTGeneralName *name,
             } break;
 
             case certDirectoryName:
-                
-
-
-                {
-                    
-
-
-                    SECComparison status = SECEqual;
-                    const CERTRDN **cRDNs =
-                        (const CERTRDN **)current->name.name.directoryName.rdns;
-                    const CERTRDN **nRDNs =
-                        (const CERTRDN **)name->name.directoryName.rdns;
-                    while (cRDNs && *cRDNs && nRDNs && *nRDNs) {
-                        
-
-                        const CERTRDN *cRDN = *cRDNs++;
-                        const CERTRDN *nRDN = *nRDNs++;
-                        CERTAVA **cAVAs = cRDN->avas;
-                        while (cAVAs &&
-                               *cAVAs) { 
-                            CERTAVA *cAVA = *cAVAs++;
-                            CERTAVA **nAVAs = nRDN->avas;
-                            while (nAVAs && *nAVAs) { 
-                                CERTAVA *nAVA = *nAVAs++;
-                                status = CERT_CompareAVA(cAVA, nAVA);
-                                if (status == SECEqual)
-                                    break;
-                            } 
-                            if (status != SECEqual)
-                                break;
-                        } 
-                        if (status != SECEqual)
-                            break;
-                    } 
-                    matched = (status == SECEqual) ? SECSuccess : SECFailure;
-                    break;
-                }
+                matched = excluded ? compareExcludedDirectoryNameN2C(
+                                         &name->name.directoryName,
+                                         &current->name.name.directoryName)
+                                   : comparePermittedDirectoryNameN2C(
+                                         &name->name.directoryName,
+                                         &current->name.name.directoryName);
+                break;
 
             case certIPAddress: 
                 matched = compareIPaddrN2C(&name->name.other,
