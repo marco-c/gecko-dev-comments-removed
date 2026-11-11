@@ -20,12 +20,14 @@ use selectors::parser::PseudoElement as PseudoElementTrait;
 use selectors::{Element, OpaqueElement};
 use servo_arc::{Arc, ArcBorrow};
 use smallvec::SmallVec;
+use std::cell::UnsafeCell;
 use std::collections::{BTreeSet, HashSet};
 use std::fmt::Write;
 use std::iter;
 use std::os::raw::c_void;
 use std::ptr;
 use std::sync::LazyLock;
+use std::sync::atomic::Ordering;
 use style::color::mix::ColorInterpolationMethod;
 use style::color::{AbsoluteColor, ColorComponents, ColorSpace};
 use style::computed_value_flags::ComputedValueFlags;
@@ -229,6 +231,7 @@ pub unsafe extern "C" fn Servo_Initialize(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn Servo_Shutdown() {
+    drop_deferred_data();
     unsafe {
         DUMMY_URL_DATA = ptr::null_mut();
         DUMMY_CHROME_URL_DATA = ptr::null_mut();
@@ -412,8 +415,11 @@ pub extern "C" fn Servo_TraverseSubtree(
 
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_MaybeGCRuleTree(raw_data: &PerDocumentStyleData) {
+    debug_assert!(is_main_thread());
     let per_doc_data = raw_data.borrow_mut();
-    per_doc_data.stylist.rule_tree().maybe_gc();
+    unsafe {
+        per_doc_data.stylist.rule_tree().root().maybe_gc();
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -1478,9 +1484,65 @@ pub extern "C" fn Servo_Property_IsDiscreteAnimatable(property: NonCustomCSSProp
     }
 }
 
+static mut DEFERRED_ELEMENT_DATA: UnsafeCell<Vec<Box<data::ElementDataWrapper>>> =
+    UnsafeCell::new(Vec::new());
+
+
+
+const MAX_DEFERRED_ELEMENT_DATA: usize = 20000;
+
+#[inline]
+fn schedule_deferred_data_drop() -> bool {
+    unsafe {
+        bindings::Gecko_ScheduleIdle(Some(drop_deferred_data), 1000 )
+    }
+}
+
+
 #[unsafe(no_mangle)]
 pub extern "C" fn Servo_Element_ClearData(element: &RawGeckoElement) {
-    unsafe { GeckoElement(element).clear_data() };
+    debug_assert!(is_main_thread());
+    let Some(data) = (unsafe { GeckoElement(element).take_data() }) else {
+        return;
+    };
+
+    
+    
+    
+    
+    #[allow(static_mut_refs)]
+    {
+        let deferred = unsafe { DEFERRED_ELEMENT_DATA.get_mut() };
+        if deferred.is_empty() && !schedule_deferred_data_drop() {
+            return;
+        }
+        if deferred.len() < MAX_DEFERRED_ELEMENT_DATA {
+            deferred.push(data);
+            return;
+        }
+    }
+
+    drop_deferred_data();
+}
+
+
+extern "C" fn drop_deferred_data() {
+    debug_assert!(is_main_thread());
+    
+    #[allow(static_mut_refs)]
+    let old = unsafe { std::mem::take(DEFERRED_ELEMENT_DATA.get_mut()) };
+
+    let mut roots_to_gc = HashSet::new();
+    for data in old {
+        let root = data.borrow().styles.primary().rules().root();
+        roots_to_gc.insert(root);
+        drop(data);
+    }
+    for root in roots_to_gc {
+        unsafe {
+            root.maybe_gc();
+        }
+    }
 }
 
 #[unsafe(no_mangle)]
@@ -2673,7 +2735,6 @@ pub extern "C" fn Servo_NestedDeclarationsRule_SetStyle(
 pub extern "C" fn Servo_DeclarationBlock_IsImmutable(
     declarations: &LockedDeclarationBlock,
 ) -> bool {
-    use std::sync::atomic::Ordering;
     
     
     unsafe {
@@ -4856,7 +4917,7 @@ pub unsafe extern "C" fn Servo_ComputedValues_Inherit(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn Servo_ComputedValues_SpecifiesAnimationsOrTransitions(
+pub extern "C" fn Servo_ComputedValues_NeedsAnimationTraversal(
     values: &ComputedValues,
 ) -> bool {
     let ui = values.get_ui();
@@ -4864,6 +4925,7 @@ pub extern "C" fn Servo_ComputedValues_SpecifiesAnimationsOrTransitions(
         || ui.specifies_transitions()
         || ui.specifies_scroll_timelines()
         || ui.specifies_view_timelines()
+        || ui.specifies_timeline_scope()
 }
 
 #[repr(u8)]
@@ -7039,6 +7101,7 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_SetBackgroundImage(
     declarations: &LockedDeclarationBlock,
     value: &nsACString,
     raw_extra_data: *mut URLExtraData,
+    initiator: url::UrlInitiator,
 ) {
     use style::properties::PropertyDeclaration;
     use style::properties::longhands::background_image::SpecifiedValue as BackgroundImage;
@@ -7059,7 +7122,8 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_SetBackgroundImage(
         None,
          Default::default(),
     );
-    let url = SpecifiedUrl::new_from_untainted_string(string.into(), &context, CorsMode::None);
+    let url =
+        SpecifiedUrl::new_from_untainted_string(string.into(), &context, CorsMode::None, initiator);
     let decl = PropertyDeclaration::BackgroundImage(BackgroundImage(vec![Image::Url(url)].into()));
     write_locked_arc(declarations, |decls: &mut PropertyDeclarationBlock| {
         decls.push(decl, Importance::Normal);

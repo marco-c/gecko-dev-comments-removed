@@ -14,15 +14,6 @@ namespace mozilla {
 void MappedDeclarationsBuilder::SetIdentAtomValue(NonCustomCSSPropertyId aId,
                                                   nsAtom* aValue) {
   Servo_DeclarationBlock_SetIdentStringValue(&EnsureDecls(), aId, aValue);
-  if (aId == eCSSProperty__x_lang) {
-    
-    
-    
-    
-    
-    
-    mDocument.ForceCacheLang(aValue);
-  }
 }
 
 void MappedDeclarationsBuilder::SetBackgroundImage(const nsAttrValue& aValue) {
@@ -43,7 +34,11 @@ void MappedDeclarationsBuilder::SetBackgroundImage(const nsAttrValue& aValue) {
     CopyUTF16toUTF8(str, utf8);
   }
   Servo_DeclarationBlock_SetBackgroundImage(
-      &EnsureDecls(), &utf8, mDocument.DefaultStyleAttrURLData());
+      &EnsureDecls(), &utf8, mDocument.DefaultStyleAttrURLData(),
+      
+      
+      mElement.IsHTMLElement(nsGkAtoms::body) ? StyleUrlInitiator::Body
+                                              : StyleUrlInitiator::Css);
 }
 
 }  
