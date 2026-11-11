@@ -85,6 +85,35 @@ def test_sink_task_depends():
                 if task_name not in {"sink-task", "wpt-chrome-dev-stability"}))
 
 
+@pytest.mark.parametrize("event_path,files_changed,expected", [
+    ("master_push_event.json", None, {
+        "lint": "lowest",
+    }),
+    ("epochs_daily_push_event.json", None, {
+        "download-firefox-beta": "very-high",
+        "wpt-firefox-beta-testharness-1": "lowest",
+    }),
+    ("pr_event_tests_affected.json",
+     {"layout-instability/clip-negative-bottom-margin.html"}, {
+         "lint": "lowest",
+         "download-firefox-nightly": "very-high",
+         "wpt-firefox-nightly-stability": "lowest",
+         "sink-task": "highest",
+     }),
+])
+def test_schedule_priorities(event_path, files_changed, expected):
+    """Verify that tasks get the priorities set in the task definitions, or lowest by default"""
+    with open(data_path(event_path), encoding="utf8") as f:
+        event = json.load(f)
+    with mock.patch("tools.ci.tc.decision.get_fetch_rev", return_value=(None, None, None)):
+        with mock.patch("tools.wpt.testfiles.repo_files_changed",
+                        return_value=files_changed):
+            scheduled = decision.decide(event)
+    assert {name: task_data["priority"]
+            for name, (_, task_data) in scheduled.items()
+            if name in expected} == expected
+
+
 def test_verify_payload():
     """Verify that the decision task produces tasks with a valid payload"""
     from tools.ci.tc.decision import decide
@@ -145,7 +174,7 @@ def update_event_commit_args(event):
 ~/start.sh   https://github.com/web-platform-tests/wpt.git   fetch_ref;
 
 cd web-platform-tests;
-./wpt tc-run --ref=fetch_ref --no-hosts -- test ;
+/usr/bin/tini ./wpt -- tc-run --ref=fetch_ref --no-hosts -- test ;
 """),
     ("pr_event.json",
      update_event_commit_args,
@@ -153,7 +182,7 @@ cd web-platform-tests;
 ~/start.sh   https://github.com/web-platform-tests/wpt.git   fetch_ref;
 
 cd web-platform-tests;
-./wpt tc-run --ref=fetch_ref --no-hosts -- test --test1 --test2=value;
+/usr/bin/tini ./wpt -- tc-run --ref=fetch_ref --no-hosts -- test --test1 --test2=value;
 """)
 ])
 def test_command(event_path, event_update, task, expected):
