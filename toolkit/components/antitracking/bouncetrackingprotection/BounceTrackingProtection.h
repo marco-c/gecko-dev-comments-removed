@@ -163,11 +163,10 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
 
   
   
-  
-  [[nodiscard]] nsresult PurgeStateForHostAndOriginAttributes(
-      const nsACString& aHost, PRTime bounceTime,
-      const OriginAttributes& aOriginAttributes,
-      BounceTrackingRecord* aChainRecord, ClearDataMozPromise** aClearPromise);
+  [[nodiscard]] nsresult PurgeStateForSite(const BounceTrackingSite& aSite,
+                                           PRTime bounceTime,
+                                           BounceTrackingRecord* aChainRecord,
+                                           ClearDataMozPromise** aClearPromise);
 
   
   

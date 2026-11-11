@@ -18,6 +18,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Try.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/Promise-inl.h"
@@ -322,83 +323,75 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
 #endif
 
   nsTArray<nsCString> classifiedHosts;
+  RefPtr<BounceTrackingStateGlobal> globalState;
 
   
   
-  for (const auto& bounceHostsEntry : record->GetBounceHosts()) {
-    const OriginAttributes& originAttributes = bounceHostsEntry.GetKey();
-    nsAutoCString oaSuffix;
-    if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Info)) {
-      originAttributes.CreateSuffix(oaSuffix);
+  
+  for (const BounceTrackingSite& site : record->BounceSites()) {
+    
+    if (site.IsNull()) {
+      continue;
+    }
+
+    
+    
+    if (site == record->InitialSite()) {
+      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                  "{}: Skip site == initialSite: {}", __FUNCTION__, site);
+      continue;
     }
     
     
-    RefPtr<BounceTrackingStateGlobal> globalState;
+    if (site == record->FinalSite()) {
+      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                  "{}: Skip site == finalSite: {}", __FUNCTION__, site);
+      continue;
+    }
 
     
-    for (const nsACString& host : bounceHostsEntry.GetData()) {
-      
-      if (host.EqualsLiteral("null")) {
-        continue;
-      }
-
-      
-      
-      if (record->IsInitialSite(host, originAttributes)) {
-        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                    "{}: Skip host == initialHost: {}{}", __FUNCTION__, host,
-                    oaSuffix);
-        continue;
-      }
-      
-      
-      if (record->IsFinalSite(host, originAttributes)) {
-        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                    "{}: Skip host == finalHost: {}{}", __FUNCTION__, host,
-                    oaSuffix);
-        continue;
-      }
-
-      if (!globalState) {
-        globalState = mStorage->GetOrCreateStateGlobal(originAttributes);
-        MOZ_ASSERT(globalState);
-      }
-
-      
-      if (globalState->HasUserActivation(host)) {
-        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                    "{}: Skip host with recent user activation: {}{}",
-                    __FUNCTION__, host, oaSuffix);
-        continue;
-      }
-
-      
-      if (globalState->HasBounceTracker(host)) {
-        MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                    "{}: Skip already existing host: {}{}", __FUNCTION__, host,
-                    oaSuffix);
-        continue;
-      }
-
-      
-      
-      PRTime now = PR_Now();
-      MOZ_ASSERT(!globalState->HasBounceTracker(host));
-      nsresult rv = globalState->RecordBounceTracker(host, now, false, record);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        continue;
-      }
-
-      
-      if (!classifiedHosts.Contains(host)) {
-        classifiedHosts.AppendElement(host);
-      }
-
-      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Info,
-                  "{}: Added bounce tracker candidate. siteHost: {}{}, "
-                  "aBounceTrackingState: {}",
-                  __FUNCTION__, host, oaSuffix, *aBounceTrackingState);
+    
+    
+    if (!globalState ||
+        globalState->OriginAttributesRef() != site.OriginAttributesRef()) {
+      globalState =
+          mStorage->GetOrCreateStateGlobal(site.OriginAttributesRef());
+      MOZ_ASSERT(globalState);
     }
+
+    
+    if (globalState->HasUserActivation(site)) {
+      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                  "{}: Skip site with recent user activation: {}", __FUNCTION__,
+                  site);
+      continue;
+    }
+
+    
+    if (globalState->HasBounceTracker(site)) {
+      MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+                  "{}: Skip already existing site: {}", __FUNCTION__, site);
+      continue;
+    }
+
+    
+    
+    PRTime now = PR_Now();
+    MOZ_ASSERT(!globalState->HasBounceTracker(site));
+    nsresult rv = globalState->RecordBounceTracker(site, now, false, record);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      continue;
+    }
+
+    
+    if (!classifiedHosts.Contains(site.SiteHost())) {
+      classifiedHosts.AppendElement(site.SiteHost());
+    }
+
+    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Info,
+                "{}: Added bounce tracker candidate. site: {}, "
+                "aBounceTrackingState: {}",
+                __FUNCTION__, site, *aBounceTrackingState);
   }
 
   
@@ -458,26 +451,19 @@ nsresult BounceTrackingProtection::RecordUserActivation(
     return NS_OK;
   }
 
-  nsAutoCString siteHost;
-  nsresult rv = aPrincipal->GetBaseDomain(siteHost);
-  NS_ENSURE_SUCCESS(rv, rv);
+  BounceTrackingSite site =
+      MOZ_TRY(BounceTrackingSite::FromPrincipal(aPrincipal));
 
-  if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Debug)) {
-    nsAutoCString oaStr;
-    aPrincipal->OriginAttributesRef().CreateSuffix(oaStr);
-
-    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                "{}: originAttributes: {}, siteHost: {}", __FUNCTION__, oaStr,
-                siteHost.get());
-  }
+  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug, "{}: site: {}",
+              __FUNCTION__, site);
 
   RefPtr<BounceTrackingStateGlobal> globalState =
       btp->mStorage->GetOrCreateStateGlobal(aPrincipal);
   MOZ_ASSERT(globalState);
 
   
-  rv = globalState->RecordUserActivation(siteHost,
-                                         aActivationTime.valueOr(PR_Now()));
+  nsresult rv = globalState->RecordUserActivation(
+      site, aActivationTime.valueOr(PR_Now()));
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (aTopBrowsingContext) {
@@ -493,7 +479,7 @@ nsresult BounceTrackingProtection::RecordUserActivation(
     
     NS_ENSURE_TRUE(bounceTrackingState, NS_OK);
 
-    return bounceTrackingState->OnUserActivation(siteHost);
+    return bounceTrackingState->OnUserActivation(site);
   }
   return NS_OK;
 }
@@ -549,9 +535,8 @@ BounceTrackingProtection::TestGetBounceTrackerCandidateHosts(
 
   for (auto iter = globalState->BounceTrackersMapRef().ConstIter();
        !iter.Done(); iter.Next()) {
-    RefPtr<nsIBounceTrackingMapEntry> candidate =
-        new BounceTrackingMapEntry(globalState->OriginAttributesRef(),
-                                   iter.Key(), iter.Data().mBounceTime);
+    RefPtr<nsIBounceTrackingMapEntry> candidate = new BounceTrackingMapEntry(
+        globalState->SiteFor(iter.Key()), iter.Data().mBounceTime);
     aCandidates.AppendElement(candidate);
   }
 
@@ -577,7 +562,7 @@ BounceTrackingProtection::TestGetUserActivationHosts(
   for (auto iter = globalState->UserActivationMapRef().ConstIter();
        !iter.Done(); iter.Next()) {
     RefPtr<nsIBounceTrackingMapEntry> candidate = new BounceTrackingMapEntry(
-        globalState->OriginAttributesRef(), iter.Key(), iter.Data());
+        globalState->SiteFor(iter.Key()), iter.Data());
     aHosts.AppendElement(candidate);
   }
 
@@ -648,6 +633,7 @@ BounceTrackingProtection::ClearBySiteHostAndOriginAttributesPattern(
     const nsACString& aSiteHost, JS::Handle<JS::Value> aOriginAttributesPattern,
     JSContext* aCx) {
   NS_ENSURE_ARG_POINTER(aCx);
+  NS_ENSURE_TRUE(!aSiteHost.IsEmpty(), NS_ERROR_INVALID_ARG);
 
   OriginAttributesPattern pattern;
   if (!aOriginAttributesPattern.isObject() ||
@@ -745,13 +731,13 @@ BounceTrackingProtection::GetRecentPurgedChainEntriesForSite(
     for (auto iter = stateGlobal->RecentPurgesMapRef().ConstIter();
          !iter.Done(); iter.Next()) {
       for (const auto& entry : iter.Data()) {
-        bool matches = iter.Key().Equals(aSiteHost);
+        bool matches = iter.Key() == aSiteHost;
         if (!matches) {
           BounceTrackingRecord* record = entry->GetBounceChainRecord();
           if (record) {
-            matches = record->GetInitialHost().Equals(aSiteHost) ||
-                      record->GetFinalHost().Equals(aSiteHost) ||
-                      record->HasBounceHost(aSiteHost);
+            matches = record->InitialSite().SiteHost() == aSiteHost ||
+                      record->FinalSite().SiteHost() == aSiteHost ||
+                      record->HasBounceSiteHost(aSiteHost);
           }
         }
         if (matches) {
@@ -806,7 +792,7 @@ BounceTrackingProtection::TestRunPurgeBounceTrackers(
         
         nsTArray<nsCString> purgedSitesHosts;
         for (const auto& entry : purgedEntries) {
-          purgedSitesHosts.AppendElement(entry->SiteHostRef());
+          purgedSitesHosts.AppendElement(entry->SiteRef().SiteHost());
         }
         promise->MaybeResolve(purgedSitesHosts);
       },
@@ -873,9 +859,10 @@ BounceTrackingProtection::TestAddBounceTrackerCandidate(
   ToLowerCase(host);
 
   
-  nsresult rv = stateGlobal->TestRemoveUserActivation(host);
+  BounceTrackingSite site = stateGlobal->SiteFor(host);
+  nsresult rv = stateGlobal->TestRemoveUserActivation(site);
   NS_ENSURE_SUCCESS(rv, rv);
-  return stateGlobal->RecordBounceTracker(host, aBounceTime);
+  return stateGlobal->RecordBounceTracker(site, aBounceTime);
 }
 
 NS_IMETHODIMP
@@ -897,7 +884,8 @@ BounceTrackingProtection::TestAddUserActivation(
   nsAutoCString host(aHost);
   ToLowerCase(host);
 
-  return stateGlobal->RecordUserActivation(host, aActivationTime);
+  return stateGlobal->RecordUserActivation(stateGlobal->SiteFor(host),
+                                           aActivationTime);
 }
 
 NS_IMETHODIMP
@@ -1145,7 +1133,7 @@ BounceTrackingProtection::PurgeBounceTrackers() {
                     for (const auto& entry : purgedSites) {
                       RefPtr<BounceTrackingStateGlobal> stateGlobal =
                           self->mStorage->GetOrCreateStateGlobal(
-                              entry->OriginAttributesRef());
+                              entry->SiteRef().OriginAttributesRef());
                       MOZ_ASSERT(stateGlobal);
                       DebugOnly<nsresult> rv =
                           stateGlobal->RecordPurgedTracker(entry);
@@ -1184,7 +1172,7 @@ void BounceTrackingProtection::ReportPurgedTrackersToAntiTrackingDB(
   ContentBlockingLog log;
   for (const RefPtr<BounceTrackingPurgeEntry>& entry : aPurgedSiteHosts) {
     nsAutoCString origin("https://");
-    origin.Append(entry->SiteHostRef());
+    origin.Append(entry->SiteRef().SiteHost());
 
     log.RecordLogParent(
         origin, nsIWebProgressListener::STATE_PURGED_BOUNCETRACKER, true);
@@ -1219,11 +1207,12 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
 
   
   
-  nsTArray<nsCString> bounceTrackerCandidatesToRemove;
+  nsTArray<BounceTrackingSite> bounceTrackerCandidatesToRemove;
 
   for (auto hostIter = aStateGlobal->BounceTrackersMapRef().ConstIter();
        !hostIter.Done(); hostIter.Next()) {
-    const nsACString& host = hostIter.Key();
+    BounceTrackingSite site = aStateGlobal->SiteFor(hostIter.Key());
+    const nsACString& host = site.SiteHost();
     const auto& candidate = hostIter.Data();
     const PRTime bounceTime = candidate.mBounceTime;
 
@@ -1247,8 +1236,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     
     
     bool hostIsActive;
-    rv = BounceTrackingState::HasBounceTrackingStateForSite(
-        host, aStateGlobal->OriginAttributesRef(), hostIsActive);
+    rv = BounceTrackingState::HasBounceTrackingStateForSite(site, hostIsActive);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       hostIsActive = false;
     }
@@ -1281,7 +1269,7 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
       
       
       
-      bounceTrackerCandidatesToRemove.AppendElement(host);
+      bounceTrackerCandidatesToRemove.AppendElement(site);
       continue;
     }
 
@@ -1294,12 +1282,11 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
     
     
     
-    bounceTrackerCandidatesToRemove.AppendElement(host);
+    bounceTrackerCandidatesToRemove.AppendElement(site);
 
     RefPtr<ClearDataMozPromise> clearDataPromise;
-    rv = PurgeStateForHostAndOriginAttributes(
-        host, bounceTime, aStateGlobal->OriginAttributesRef(),
-        candidate.mRecord, getter_AddRefs(clearDataPromise));
+    rv = PurgeStateForSite(site, bounceTime, candidate.mRecord,
+                           getter_AddRefs(clearDataPromise));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
@@ -1313,17 +1300,16 @@ nsresult BounceTrackingProtection::PurgeBounceTrackersForStateGlobal(
   return aStateGlobal->RemoveBounceTrackers(bounceTrackerCandidatesToRemove);
 }
 
-nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
-    const nsACString& aHost, PRTime bounceTime,
-    const OriginAttributes& aOriginAttributes,
+nsresult BounceTrackingProtection::PurgeStateForSite(
+    const BounceTrackingSite& aSite, PRTime bounceTime,
     BounceTrackingRecord* aChainRecord, ClearDataMozPromise** aClearPromise) {
-  MOZ_ASSERT(!aHost.IsEmpty());
+  MOZ_ASSERT(!aSite.IsNull());
   MOZ_ASSERT(aClearPromise);
 
   RefPtr<ClearDataMozPromise::Private> clearPromise =
       new ClearDataMozPromise::Private(__func__);
-  RefPtr<ClearDataCallback> cb = new ClearDataCallback(
-      clearPromise, aOriginAttributes, aHost, bounceTime, aChainRecord);
+  RefPtr<ClearDataCallback> cb =
+      new ClearDataCallback(clearPromise, aSite, bounceTime, aChainRecord);
 
   if (StaticPrefs::privacy_bounceTrackingProtection_mode() ==
       nsIBounceTrackingProtection::MODE_ENABLED_DRY_RUN) {
@@ -1352,10 +1338,11 @@ nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
   
   
   
-  pattern.mUserContextId.Construct(aOriginAttributes.mUserContextId);
-  pattern.mPrivateBrowsingId.Construct(aOriginAttributes.mPrivateBrowsingId);
+  const OriginAttributes& originAttributes = aSite.OriginAttributesRef();
+  pattern.mUserContextId.Construct(originAttributes.mUserContextId);
+  pattern.mPrivateBrowsingId.Construct(originAttributes.mPrivateBrowsingId);
   pattern.mGeckoViewSessionContextId.Construct(
-      aOriginAttributes.mGeckoViewSessionContextId);
+      originAttributes.mGeckoViewSessionContextId);
 
   NS_ENSURE_TRUE(pattern.ToJSON(oaPatternString), NS_ERROR_FAILURE);
 
@@ -1373,7 +1360,7 @@ nsresult BounceTrackingProtection::PurgeStateForHostAndOriginAttributes(
       "CLEAR_COOKIES_AND_SITE_DATA");
 
   rv = clearDataService->DeleteDataFromSiteAndOriginAttributesPatternString(
-      aHost, oaPatternString, false,
+      aSite.SiteHost(), oaPatternString, false,
       
       
       
@@ -1446,11 +1433,13 @@ void BounceTrackingProtection::MaybeLogPurgedWarningForSite(
     return;
   }
 
-  nsAutoCString siteHost;
-  nsresult rv = aPrincipal->GetBaseDomain(siteHost);
-  NS_ENSURE_SUCCESS_VOID(rv);
+  Result<BounceTrackingSite, nsresult> site =
+      BounceTrackingSite::FromPrincipal(aPrincipal);
+  if (NS_WARN_IF(site.isErr()) || site.inspect().IsNull()) {
+    return;
+  }
 
-  if (!stateGlobal->RecentPurgesMapRef().Contains(siteHost)) {
+  if (!stateGlobal->RecentPurgesMapRef().Contains(site.inspect().SiteHost())) {
     
     return;
   }
@@ -1467,7 +1456,8 @@ void BounceTrackingProtection::MaybeLogPurgedWarningForSite(
 
   auto siteHostArg = l10nArgs.Value().Entries().AppendElement();
   siteHostArg->mKey = "siteHost";
-  siteHostArg->mValue.SetValue().SetAsUTF8String().Assign(siteHost);
+  siteHostArg->mValue.SetValue().SetAsUTF8String().Assign(
+      site.inspect().SiteHost());
 
   
   nsAutoCString message;
@@ -1478,7 +1468,7 @@ void BounceTrackingProtection::MaybeLogPurgedWarningForSite(
     return;
   }
 
-  rv = nsContentUtils::ReportToConsoleByWindowID(
+  nsresult rv = nsContentUtils::ReportToConsoleByWindowID(
       NS_ConvertUTF8toUTF16(message), nsIScriptError::warningFlag,
       "bounceTrackingProtection"_ns,
       browsingContext->GetCurrentInnerWindowId());

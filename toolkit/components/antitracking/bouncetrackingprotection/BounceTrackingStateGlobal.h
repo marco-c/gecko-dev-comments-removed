@@ -8,6 +8,7 @@
 #include "BounceTrackingMapEntry.h"
 #include "BounceTrackingProtectionStorage.h"
 #include "BounceTrackingRecord.h"
+#include "BounceTrackingSite.h"
 #include "mozilla/FunctionRef.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WeakPtr.h"
@@ -49,26 +50,33 @@ class BounceTrackingStateGlobal final {
     return mOriginAttributes;
   };
 
-  bool HasUserActivation(const nsACString& aSiteHost) const;
+  
+  
+  BounceTrackingSite SiteFor(const nsACString& aSiteHost) const {
+    return BounceTrackingSite::FromSiteHost(aSiteHost, mOriginAttributes);
+  }
+
+  bool HasUserActivation(const BounceTrackingSite& aSite) const;
 
   
   
-  [[nodiscard]] nsresult RecordUserActivation(const nsACString& aSiteHost,
+  [[nodiscard]] nsresult RecordUserActivation(const BounceTrackingSite& aSite,
                                               PRTime aTime,
                                               bool aSkipStorage = false);
 
   
-  [[nodiscard]] nsresult TestRemoveUserActivation(const nsACString& aSiteHost);
+  [[nodiscard]] nsresult TestRemoveUserActivation(
+      const BounceTrackingSite& aSite);
 
   
   [[nodiscard]] nsresult ClearUserActivationBefore(PRTime aTime);
 
-  bool HasBounceTracker(const nsACString& aSiteHost) const;
+  bool HasBounceTracker(const BounceTrackingSite& aSite) const;
 
   
   
   [[nodiscard]] nsresult RecordBounceTracker(
-      const nsACString& aSiteHost, PRTime aTime, bool aSkipStorage = false,
+      const BounceTrackingSite& aSite, PRTime aTime, bool aSkipStorage = false,
       BounceTrackingRecord* aRecord = nullptr);
 
   
@@ -78,14 +86,14 @@ class BounceTrackingStateGlobal final {
 
   
   [[nodiscard]] nsresult RemoveBounceTrackers(
-      const nsTArray<nsCString>& aSiteHosts);
+      const nsTArray<BounceTrackingSite>& aSites);
 
   
   [[nodiscard]] nsresult ClearByType(
       BounceTrackingProtectionStorage::EntryType aType, bool aSkipStorage);
 
-  [[nodiscard]] nsresult ClearSiteHost(const nsACString& aSiteHost,
-                                       bool aSkipStorage = false);
+  [[nodiscard]] nsresult ClearSite(const BounceTrackingSite& aSite,
+                                   bool aSkipStorage = false);
 
   [[nodiscard]] nsresult ClearByTimeRange(
       PRTime aFrom, Maybe<PRTime> aTo = Nothing(),
@@ -116,6 +124,11 @@ class BounceTrackingStateGlobal final {
 
  private:
   ~BounceTrackingStateGlobal() = default;
+
+  
+  bool IsOwnSite(const BounceTrackingSite& aSite) const {
+    return !aSite.IsNull() && aSite.OriginAttributesRef() == mOriginAttributes;
+  }
 
   
   
