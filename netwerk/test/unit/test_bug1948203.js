@@ -206,7 +206,7 @@ add_task(async function testAltSVCWithHTTPSRR() {
   await doTestAltSVCWithHTTPSRR(true);
 
   
-  Services.obs.notifyObservers(null, "last-pb-context-exited");
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
   Services.obs.notifyObservers(null, "net:cancel-all-connections");
   
   await new Promise(resolve => setTimeout(resolve, 3000));

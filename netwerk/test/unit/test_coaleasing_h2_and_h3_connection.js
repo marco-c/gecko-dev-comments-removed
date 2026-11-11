@@ -98,7 +98,7 @@ add_task(async function testNotCoaleasingH2Connection() {
   await new Promise(resolve => setTimeout(resolve, 1000));
 
   
-  Services.obs.notifyObservers(null, "last-pb-context-exited");
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
 
   
   Services.prefs.setCharPref(

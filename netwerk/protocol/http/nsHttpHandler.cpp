@@ -2355,9 +2355,6 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
 #endif
   } else if (!strcmp(topic, "last-pb-context-exited")) {
     mPrivateAuthCache->ClearAll();
-    if (mAltSvcCache) {
-      mAltSvcCache->ClearAltServiceMappings();
-    }
     nsCORSListenerProxy::ClearPrivateBrowsingCache();
   } else if (!strcmp(topic, "browser:purge-session-history")) {
     if (mConnMgr) {
@@ -2389,9 +2386,11 @@ nsHttpHandler::Observe(nsISupports* subject, const char* topic,
     
     
     if (mConnMgr) {
-      rv = mConnMgr->DoShiftReloadConnectionCleanup();
+      rv = StaticPrefs::network_http_close_connections_on_background()
+               ? mConnMgr->DoShiftReloadConnectionCleanup()
+               : mConnMgr->CloseAllIdleConnections();
       if (NS_FAILED(rv)) {
-        LOG(("    DoShiftReloadConnectionCleanup failed (%08x)\n",
+        LOG(("    background connection cleanup failed (%08x)\n",
              static_cast<uint32_t>(rv)));
       }
     }
