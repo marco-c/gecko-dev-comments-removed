@@ -209,16 +209,16 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
       mActivityGeneration(aActivityGeneration),
       mIntervalMicroseconds(
           std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))),
-      mNoTimerResolutionChange(
-          ProfilerFeature::HasNoTimerResolutionChange(aFeatures)),
+      mWinSystemTickSampling(
+          ProfilerFeature::HasWinSystemTickSampling(aFeatures)),
       mHiResTimer(
-          mNoTimerResolutionChange
+          mWinSystemTickSampling
               ? nullptr
               : ::CreateWaitableTimerExA(nullptr, nullptr,
                                          CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
                                          TIMER_ALL_ACCESS)) {
   if (!mHiResTimer) {
-    if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
+    if ((!mWinSystemTickSampling) && (mIntervalMicroseconds < 10 * 1000)) {
       
       
       
@@ -290,7 +290,7 @@ void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
 
 void SamplerThread::Stop(PSLockRef aLock) {
   if (!mHiResTimer) {
-    if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
+    if ((!mWinSystemTickSampling) && (mIntervalMicroseconds < 10 * 1000)) {
       
       
       
