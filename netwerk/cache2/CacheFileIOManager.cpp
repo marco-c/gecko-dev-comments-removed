@@ -2232,6 +2232,25 @@ static nsresult TruncFile(PRFileDesc* aFD, int64_t aEOF) {
   return NS_OK;
 }
 
+
+
+
+
+
+
+static nsresult WriteInvalidTrailer(PRFileDesc* aFD, int64_t aOffset) {
+  static const uint32_t kInvalidTrailer[2] = {UINT32_MAX, UINT32_MAX};
+
+  if (PR_Seek64(aFD, aOffset, PR_SEEK_SET) == -1) {
+    return NS_ERROR_FAILURE;
+  }
+  if (PR_Write(aFD, kInvalidTrailer, sizeof(kInvalidTrailer)) !=
+      int32_t(sizeof(kInvalidTrailer))) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
+}
+
 nsresult CacheFileIOManager::WriteInternal(CacheFileHandle* aHandle,
                                            int64_t aOffset, const char* aBuf,
                                            int32_t aCount, bool aValidate,
@@ -2315,6 +2334,17 @@ nsresult CacheFileIOManager::WriteInternal(CacheFileHandle* aHandle,
   
   aHandle->mInvalid = true;
 
+  
+  if (!aValidate && !aHandle->IsSpecialFile()) {
+    MOZ_ASSERT(!aTruncate);
+    int64_t end = std::max<int64_t>(aHandle->mFileSize, aOffset + aCount);
+    if (aHandle->mInvalidTrailerOffset < end) {
+      rv = WriteInvalidTrailer(aHandle->mFD, end);
+      NS_ENSURE_SUCCESS(rv, rv);
+      aHandle->mInvalidTrailerOffset = end;
+    }
+  }
+
   int64_t offset = PR_Seek64(aHandle->mFD, aOffset, PR_SEEK_SET);
   if (offset == -1) {
     return NS_ERROR_FAILURE;
@@ -2331,6 +2361,7 @@ nsresult CacheFileIOManager::WriteInternal(CacheFileHandle* aHandle,
       NS_ENSURE_SUCCESS(rv, rv);
 
       aHandle->mFileSize = writeEnd;
+      aHandle->mInvalidTrailerOffset = -1;
     } else {
       if (aHandle->mFileSize < writeEnd) {
         aHandle->mFileSize = writeEnd;
@@ -2893,11 +2924,12 @@ nsresult CacheFileIOManager::TruncateSeekSetEOFInternal(
 
   rv = TruncFile(aHandle->mFD, aTruncatePos);
   NS_ENSURE_SUCCESS(rv, rv);
+  aHandle->mInvalidTrailerOffset = -1;
 
-  if (aTruncatePos != aEOFPos) {
-    rv = TruncFile(aHandle->mFD, aEOFPos);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  
+  rv = WriteInvalidTrailer(aHandle->mFD, aEOFPos);
+  NS_ENSURE_SUCCESS(rv, rv);
+  aHandle->mInvalidTrailerOffset = aEOFPos;
 
   uint32_t oldSizeInK = aHandle->FileSizeInK();
   aHandle->mFileSize = aEOFPos;
@@ -3985,6 +4017,7 @@ nsresult CacheFileIOManager::CreateFile(CacheFileHandle* aHandle) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   aHandle->mFileSize = 0;
+  aHandle->mInvalidTrailerOffset = -1;
   return NS_OK;
 }
 

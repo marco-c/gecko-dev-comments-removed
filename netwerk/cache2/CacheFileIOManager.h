@@ -142,6 +142,9 @@ class CacheFileHandle final : public nsISupports {
 
   nsCOMPtr<nsIFile> mFile;
   Atomic<int64_t, Relaxed> mFileSize;
+  
+  
+  int64_t mInvalidTrailerOffset{-1};
   PRFileDesc* mFD;  
   nsCString mKey;
 #if defined(MOZ_CACHE_ASYNC_IO)
