@@ -146,9 +146,9 @@ using PrintPreviewResolver = std::function<void(const PrintPreviewResultInfo&)>;
 
 #define MAX_DEPTH_CONTENT_FRAMES 10
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(
-    nsFrameLoader, mPendingBrowsingContext, mMessageManager,
-    mChildMessageManager, mRemoteBrowser, mSessionStoreChild)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsFrameLoader, mPendingBrowsingContext,
+                                      mMessageManager, mChildMessageManager,
+                                      mRemoteBrowser, mSessionStoreChild)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsFrameLoader)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsFrameLoader)
 
@@ -2720,8 +2720,6 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
-  GetBrowserParent()->SetOwnerFrameLoader(this);
-
   MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext ==
                         mRemoteBrowser->GetBrowsingContext());
 
@@ -3692,16 +3690,6 @@ void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,
   }
 
   
-  
-  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(mOwnerContent);
-  if (owner) {
-    RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
-    if (currentFrameLoader != this) {
-      return;
-    }
-  }
-
-  
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (!os) {
     return;
@@ -3709,7 +3697,15 @@ void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,
 
   os->NotifyObservers(ToSupports(this), "oop-frameloader-crashed", nullptr);
 
+  
+  
+  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(mOwnerContent);
   if (!owner) {
+    return;
+  }
+
+  RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
+  if (currentFrameLoader != this) {
     return;
   }
 
