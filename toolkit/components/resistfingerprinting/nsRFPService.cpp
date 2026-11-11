@@ -146,12 +146,7 @@ static constexpr uint32_t kVideoDroppedRatio = 1;
 #  define DESKTOP_DEFAULT(name) RFPTarget::name,
 #endif
 
-#if defined(MOZ_WIDGET_ANDROID) && !defined(NIGHTLY_BUILD)
-constinit
-#else
-MOZ_RUNINIT
-#endif
-    const RFPTargetSet kDefaultFingerprintingProtectionsBase = {
+MOZ_RUNINIT const RFPTargetSet kDefaultFingerprintingProtectionsBase = {
 #include "RFPTargetsDefaultBaseline.inc"
 };
 
@@ -434,6 +429,17 @@ void nsRFPService::PrefChanged(const char* aPref) {
   if (pref.EqualsLiteral(RESIST_FINGERPRINTINGPROTECTION_OVERRIDE_PREF) ||
       pref.EqualsLiteral(RESIST_FINGERPRINTINGPROTECTION_OVERRIDE_BASE_PREF)) {
     UpdateFPPOverrideList();
+
+    
+    
+    
+    
+    
+    if (XRE_IsParentProcess() && mWebCompatService) {
+      DebugOnly<nsresult> rv = mWebCompatService->RefreshOverrides();
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "Failed to refresh the fingerprinting overrides");
+    }
   } else if (pref.EqualsLiteral(GLEAN_DATA_SUBMISSION_PREF)) {
     if (XRE_IsParentProcess() &&
         !Preferences::GetBool(GLEAN_DATA_SUBMISSION_PREF, false)) {
@@ -2686,7 +2692,14 @@ RFPTargetSet nsRFPService::CreateOverridesFromText(
     const nsString& aOverridesText, RFPTargetSet aBaseOverrides) {
   RFPTargetSet result = aBaseOverrides;
 
-  for (const nsAString& each : aOverridesText.Split(',')) {
+  for (const nsAString& token : aOverridesText.Split(',')) {
+    
+    nsAutoString each(token);
+    each.Trim(" \t\r\n");
+    if (each.IsEmpty()) {
+      continue;
+    }
+
     Maybe<RFPTarget> mappedValue =
         nsRFPService::TextToRFPTarget(Substring(each, 1, each.Length() - 1));
     if (mappedValue.isNothing()) {
@@ -2740,33 +2753,47 @@ nsRFPService::SetFingerprintingOverrides(
   
   CleanAllOverrides();
 
-  StaticMutexAutoLock lock(sEnabledFingerprintingProtectionsMutex);
-  for (const auto& fpOverride : aOverrides) {
-    nsAutoCString domainKey;
+  
+  
+  struct ParsedOverride {
+    nsCString mDomainKey;
+    nsCString mOverridesText;
+    bool mIsBaseline = false;
+  };
+  nsTArray<ParsedOverride> parsedOverrides(aOverrides.Length());
 
-    nsresult rv = nsRFPService::CreateOverrideDomainKey(fpOverride, domainKey);
+  for (const auto& fpOverride : aOverrides) {
+    ParsedOverride parsed;
+
+    nsresult rv =
+        nsRFPService::CreateOverrideDomainKey(fpOverride, parsed.mDomainKey);
     
     if (NS_WARN_IF(NS_FAILED(rv))) {
       continue;
     }
 
-    nsAutoCString overridesText;
-    rv = fpOverride->GetOverrides(overridesText);
+    rv = fpOverride->GetOverrides(parsed.mOverridesText);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    bool isBaseline = false;
-    rv = fpOverride->GetIsBaseline(&isBaseline);
+    rv = fpOverride->GetIsBaseline(&parsed.mIsBaseline);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    RFPTargetSet baseOverrides = isBaseline
-                                     ? sEnabledFingerprintingProtectionsBase
-                                     : sEnabledFingerprintingProtections;
-    RFPTargetSet targets = nsRFPService::CreateOverridesFromText(
-        NS_ConvertUTF8toUTF16(overridesText), baseOverrides);
+    parsedOverrides.AppendElement(std::move(parsed));
+  }
 
-    
-    
-    mFingerprintingOverrides.InsertOrUpdate(domainKey, targets);
+  {
+    StaticMutexAutoLock lock(sEnabledFingerprintingProtectionsMutex);
+    for (const auto& parsed : parsedOverrides) {
+      RFPTargetSet baseOverrides = parsed.mIsBaseline
+                                       ? sEnabledFingerprintingProtectionsBase
+                                       : sEnabledFingerprintingProtections;
+      RFPTargetSet targets = nsRFPService::CreateOverridesFromText(
+          NS_ConvertUTF8toUTF16(parsed.mOverridesText), baseOverrides);
+
+      
+      
+      mFingerprintingOverrides.InsertOrUpdate(parsed.mDomainKey, targets);
+    }
   }
 
   if (Preferences::GetBool(

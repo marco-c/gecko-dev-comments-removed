@@ -5,10 +5,10 @@
 
 
 
-
-#ifdef NIGHTLY_BUILD
-DESKTOP_DEFAULT(CanvasRandomization)
 DESKTOP_DEFAULT(EfficientCanvasRandomization)
 DESKTOP_DEFAULT(ScreenAvailToResolution)
 DESKTOP_DEFAULT(MaxTouchPointsCollapse)
-#endif
+
+ANDROID_DEFAULT(EfficientCanvasRandomization)
+ANDROID_DEFAULT(ScreenAvailToResolution)
+ANDROID_DEFAULT(MaxTouchPointsCollapse)
