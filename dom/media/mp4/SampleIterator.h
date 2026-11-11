@@ -5,7 +5,10 @@
 #ifndef DOM_MEDIA_MP4_SAMPLE_ITERATOR_H_
 #define DOM_MEDIA_MP4_SAMPLE_ITERATOR_H_
 
+#include <map>
+
 #include "ByteStream.h"
+#include "DecoderDoctorLogger.h"
 #include "MP4Interval.h"
 #include "MediaData.h"
 #include "MediaResource.h"
@@ -21,22 +24,38 @@ class IndiceWrapper;
 class MP4SampleIndex;
 struct Sample;
 
-class SampleIterator {
+struct SampleLocation {
+  size_t mMoof;
+  size_t mSample;
+  constexpr auto operator<=>(const SampleLocation& aOther) const = default;
+};
+
+DDLoggedTypeDeclName(SampleIterator);
+
+class SampleIterator : public DecoderDoctorLifeLogger<SampleIterator> {
  public:
   explicit SampleIterator(MP4SampleIndex* aIndex);
   ~SampleIterator();
   bool HasNext();
   already_AddRefed<mozilla::MediaRawData> GetNextHeader();
   Result<already_AddRefed<mozilla::MediaRawData>, MediaResult> GetNext();
+  SampleLocation CurrentPosition() const;
 
   
   
   
-  enum class SyncSampleMode { Closest, First };
-  void Seek(const media::TimeUnit& aTime,
-            SyncSampleMode aMode = SyncSampleMode::Closest);
+  void Seek(const media::TimeUnit& aTime);
 
+  
+  
+  
+  void TrySkipToNextKeyframe(const media::TimeUnit& aTimeThreshold);
   media::TimeUnit GetNextKeyframeTime();
+
+  
+  
+  
+  void ConfirmCurrentIsKeyframe(bool aIsKeyframe);
 
  private:
   Result<Sample*, nsresult> Get();
@@ -61,7 +80,65 @@ class SampleIterator {
   size_t mCurrentSample;
 };
 
-class MP4SampleIndex {
+DDLoggedTypeDeclName(KeyframeMap);
+
+class KeyframeMap : public DecoderDoctorLifeLogger<KeyframeMap> {
+ public:
+  typedef media::Interval<media::TimeUnit> Interval;
+
+  
+  
+  
+  MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(KeyframeInfo,
+                                                     (Container, Codec));
+
+  struct Entry {
+    Interval mCompositionRange;
+    SampleLocation mLocation;
+    KeyframeInfo mSource;
+    bool operator==(const Entry& other) const = default;
+  };
+
+  void MarkKeyframe(const Interval& aCompositionRange, SampleLocation aLocation,
+                    KeyframeInfo aSource);
+  void MarkNotKeyframe(const Interval& aCompositionRange, KeyframeInfo aSource);
+  void Clear();
+
+  
+  Maybe<Entry> GetNearestUpTo(const media::TimeUnit& aTime) const;
+
+  
+  Maybe<Entry> GetNextAfter(const media::TimeUnit& aTime) const;
+
+  
+  
+  Maybe<Entry> GetNextAfter(const media::TimeUnit& aTime,
+                            const SampleLocation& aLocation) const;
+  Maybe<Entry> Get(const media::TimeUnit& aTime) const;
+
+  
+  bool HaveChecked(const media::TimeUnit& aTime) const {
+    return mCheckedIntervals.Contains(aTime);
+  };
+
+  
+  bool HaveChecked(const Interval& aInterval) const {
+    return mCheckedIntervals.Contains(aInterval);
+  }
+  Maybe<media::TimeUnit> MinSampleTime() const { return mMinSampleTime; };
+  Maybe<media::TimeUnit> MaxSampleTime() const { return mMaxSampleTime; };
+
+ private:
+  Maybe<media::TimeUnit> mMinSampleTime;
+  Maybe<media::TimeUnit> mMaxSampleTime;
+  std::map<media::TimeUnit, Entry> mMap;
+  
+  media::IntervalSet<media::TimeUnit> mCheckedIntervals;
+};
+
+DDLoggedTypeDeclName(MP4SampleIndex);
+
+class MP4SampleIndex : public DecoderDoctorLifeLogger<MP4SampleIndex> {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MP4SampleIndex)
 
@@ -117,12 +194,25 @@ class MP4SampleIndex {
   uint64_t GetEvictionOffset(const media::TimeUnit& aTime);
   bool IsFragmented() { return !!mMoofParser; }
 
+  
+  Maybe<bool> IsKeyframe(const media::TimeUnit& aTime) const;
+  size_t NumSamplesBetween(const SampleLocation& aStart,
+                           const SampleLocation& aEnd) const;
+  
+  
+  
+  bool HaveCheckedSurroundingKeyframes(const media::TimeUnit& aTime) const;
+
   friend class SampleIterator;
 
  private:
   ~MP4SampleIndex();
   void RegisterIterator(SampleIterator* aIterator);
   void UnregisterIterator(SampleIterator* aIterator);
+
+  
+  
+  nsresult BlockingReadNextMoof();
 
   ByteStream* mSource;
   FallibleTArray<Sample> mIndex;
@@ -134,6 +224,7 @@ class MP4SampleIndex {
   mozilla::MediaByteRangeSet mLastCachedRanges;
   mozilla::media::TimeIntervals mLastBufferedRanges;
   bool mIsAudio;
+  KeyframeMap mKeyframeMap;
 };
 }  
 
