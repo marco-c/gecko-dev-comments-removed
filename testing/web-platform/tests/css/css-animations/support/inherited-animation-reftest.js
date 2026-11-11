@@ -1,0 +1,14 @@
+
+
+
+
+
+onload = () => {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(function hold() {
+      for (const end = performance.now() + 20; performance.now() < end;) {
+      }
+      requestAnimationFrame(hold);
+    });
+  });
+};
