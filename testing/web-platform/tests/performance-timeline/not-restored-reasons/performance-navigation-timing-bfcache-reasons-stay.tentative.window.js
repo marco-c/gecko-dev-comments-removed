@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 
 
@@ -17,7 +16,7 @@ promise_test(async t => {
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
   
-  await useWebSocket(rc1);
+  await useBFCacheBlockingFeature(rc1);
   const rc1_url = await rc1.executeScript(() => {
     return location.href;
   });
@@ -30,8 +29,8 @@ promise_test(async t => {
        null,
        null,
        null,
-      [{'reason': 'websocket'}],
-       []);
+      [{'reason': BFCACHE_BLOCKING_REASON}],
+      []);
 
   
   
@@ -42,6 +41,6 @@ promise_test(async t => {
        null,
        null,
        null,
-      [{'reason': 'websocket'}],
-       []);
+      [{'reason': BFCACHE_BLOCKING_REASON}],
+      []);
 });

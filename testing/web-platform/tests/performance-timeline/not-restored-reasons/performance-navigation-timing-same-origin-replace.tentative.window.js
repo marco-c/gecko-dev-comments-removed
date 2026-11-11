@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 
 
@@ -21,7 +20,7 @@ promise_test(async t => {
   });
 
   
-  await useWebSocket(rc1);
+  await useBFCacheBlockingFeature(rc1);
   
   const newRemoteContextHelper = await rc1.navigateToNew();
   
@@ -38,6 +37,6 @@ promise_test(async t => {
        null,
        null,
        null,
-      [{'reason': 'websocket'}],
-       []);
+      [{'reason': BFCACHE_BLOCKING_REASON}],
+      []);
 });

@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 
 
@@ -30,7 +29,7 @@ promise_test(async t => {
        {id: 'test-id'},
   );
   
-  await useWebSocket(rc1_child);
+  await useBFCacheBlockingFeature(rc1_child);
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
   });
@@ -42,19 +41,18 @@ promise_test(async t => {
 
   
   await assertBFCacheEligibility(rc1,  false);
-  await assertNotRestoredReasonsEquals(
-      rc1,
-       rc1_url,
-       null,
-       null,
-       null,
-      [{'reason': "masked"}],
-      [{
-        'url': null,
-        'src': rc1_child_url,
-        'id': 'test-id',
-        'name': null,
-        'reasons': null,
-        'children': null
-      }]);
+  await assertNotRestoredReasonsEquals(rc1,
+                                        rc1_url,
+                                        null,
+                                        null,
+                                        null,
+                                       [{'reason': 'masked'}],
+                                       [{
+                                         'url': null,
+                                         'src': rc1_child_url,
+                                         'id': 'test-id',
+                                         'name': null,
+                                         'reasons': null,
+                                         'children': null
+                                       }]);
 });

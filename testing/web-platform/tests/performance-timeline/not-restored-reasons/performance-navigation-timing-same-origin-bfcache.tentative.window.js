@@ -8,7 +8,6 @@
 
 
 
-
 'use strict';
 
 
@@ -23,7 +22,7 @@ promise_test(async t => {
   
   const rc1_child = await rc1.addIframe(
        {},  {id: 'test-id'});
-  await useWebSocket(rc1_child);
+  await useBFCacheBlockingFeature(rc1_child);
 
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
@@ -48,7 +47,7 @@ promise_test(async t => {
         'src': rc1_child_url,
         'id': 'test-id',
         'name': '',
-        'reasons': [{'reason': 'websocket'}],
+        'reasons': [{'reason': BFCACHE_BLOCKING_REASON}],
         'children': [{
           'url': rc1_grand_child_url,
           'src': rc1_grand_child_url,

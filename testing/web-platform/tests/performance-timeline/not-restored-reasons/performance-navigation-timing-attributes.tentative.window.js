@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 
 
@@ -30,7 +29,7 @@ promise_test(async t => {
        {id: '', name: ''},
   );
   
-  await useWebSocket(rc1);
+  await useBFCacheBlockingFeature(rc1);
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
   });
@@ -42,7 +41,7 @@ promise_test(async t => {
        null,
        null,
        null,
-      [{'reason': 'websocket'}],
+      [{'reason': BFCACHE_BLOCKING_REASON}],
       [{
         'url': null,
         'src': rc1_child_url,

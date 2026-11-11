@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 const {ORIGIN, REMOTE_ORIGIN} = get_host_info();
 
@@ -18,18 +17,17 @@ promise_test(async t => {
   const rc1 = await rcHelper.addWindow(
        null,  {features: 'noopener'});
   
-  await useWebSocket(rc1);
+  await useBFCacheBlockingFeature(rc1);
 
   
-  let rc1_redirected =
-      await rcHelper.createContext( {
-        origin: 'HTTP_ORIGIN',
-        scripts: [],
-        headers: [],
-      });
+  let rc1_redirected = await rcHelper.createContext( {
+    origin: 'HTTP_ORIGIN',
+    scripts: [],
+    headers: [],
+  });
 
-  const redirectUrl =
-      `${ORIGIN}/common/redirect.py?location=${encodeURIComponent(rc1_redirected.url)}`;
+  const redirectUrl = `${ORIGIN}/common/redirect.py?location=${
+      encodeURIComponent(rc1_redirected.url)}`;
   
   await rc1.executeScript((url) => {
     window.history.replaceState(null, '', url);
@@ -44,10 +42,9 @@ promise_test(async t => {
   const navigation_entry = await rc1_redirected.executeScript(() => {
     return performance.getEntriesByType('navigation')[0];
   });
-  assert_equals(
-      navigation_entry.redirectCount, 1, 'Expected redirectCount is 1.');
+  assert_equals(navigation_entry.redirectCount, 1,
+                'Expected redirectCount is 1.');
   
-  assert_equals(
-      navigation_entry.notRestoredReasons, null,
-      'Expected notRestoredReasons is null.');
+  assert_equals(navigation_entry.notRestoredReasons, null,
+                'Expected notRestoredReasons is null.');
 });

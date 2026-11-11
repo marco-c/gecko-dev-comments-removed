@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 const {ORIGIN, REMOTE_ORIGIN} = get_host_info();
 
@@ -21,18 +20,18 @@ promise_test(async t => {
     return location.href;
   });
   
-  await useWebSocket(rc1);
+  await useBFCacheBlockingFeature(rc1);
 
   
   await assertBFCacheEligibility(rc1,  false);
   await assertNotRestoredReasonsEquals(
-        rc1,
-         rc1_url,
-         null,
-         null,
-         null,
-        [{'reason': 'websocket'}],
-         []);
+      rc1,
+       rc1_url,
+       null,
+       null,
+       null,
+      [{'reason': BFCACHE_BLOCKING_REASON}],
+      []);
 
   
   await rc1.navigate(() => {
@@ -44,7 +43,6 @@ promise_test(async t => {
     return performance.getEntriesByType('navigation')[0];
   });
 
-  assert_equals(
-      navigation_entry.notRestoredReasons, null,
-      'Expected notRestoredReasons is null.');
+  assert_equals(navigation_entry.notRestoredReasons, null,
+                'Expected notRestoredReasons is null.');
 });

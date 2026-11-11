@@ -7,7 +7,6 @@
 
 
 
-
 'use strict';
 
 
@@ -30,23 +29,23 @@ promise_test(async t => {
        {id: '', name: ''},
   );
   const rc2_child = await rc1.addIframe(
-     {
-      origin: 'HTTP_REMOTE_ORIGIN',
-      scripts: [],
-      headers: [],
-    },
-     {},
+       {
+        origin: 'HTTP_REMOTE_ORIGIN',
+        scripts: [],
+        headers: [],
+      },
+       {},
   );
   const rc3_child = await rc1.addIframe(
-     {},
-     {},
+       {},
+       {},
   );
   const rc4_child = await rc1.addIframe(
-     {},
-     {id: '', name: ''},
+       {},
+       {id: '', name: ''},
   );
   
-  await useWebSocket(rc1);
+  await useBFCacheBlockingFeature(rc1);
   const rc1_child_url = await rc1_child.executeScript(() => {
     return location.href;
   });
@@ -67,37 +66,42 @@ promise_test(async t => {
        null,
        null,
        null,
-      [{'reason': 'websocket'}],
-      [{
-        'url': null,
-        'src': rc1_child_url,
-        
-        'id': '',
-        'name': '',
-        'reasons': null,
-        'children': null
-      }, {
-        'url': null,
-        'src': rc2_child_url,
-        
-        'id': null,
-        'name': null,
-        'reasons': null,
-        'children': null
-      },{
-        'url': rc3_child_url,
-        'src': rc3_child_url,
-        
-        'id': null,
-        'name': null,
-        'reasons': [],
-        'children': []
-      }, {
-        'url': rc4_child_url,
-        'src': rc4_child_url,
-        'id': '',
-        'name': '',
-        'reasons': [],
-        'children': []
-      }]);
+      [{'reason': BFCACHE_BLOCKING_REASON}],
+      [
+        {
+          'url': null,
+          'src': rc1_child_url,
+          
+          'id': '',
+          'name': '',
+          'reasons': null,
+          'children': null
+        },
+        {
+          'url': null,
+          'src': rc2_child_url,
+          
+          'id': null,
+          'name': null,
+          'reasons': null,
+          'children': null
+        },
+        {
+          'url': rc3_child_url,
+          'src': rc3_child_url,
+          
+          'id': null,
+          'name': null,
+          'reasons': [],
+          'children': []
+        },
+        {
+          'url': rc4_child_url,
+          'src': rc4_child_url,
+          'id': '',
+          'name': '',
+          'reasons': [],
+          'children': []
+        }
+      ]);
 });
