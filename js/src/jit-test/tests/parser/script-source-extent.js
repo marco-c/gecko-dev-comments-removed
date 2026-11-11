@@ -208,13 +208,10 @@ testSourceExtent(`let C = class extends class { } { constructor() { } }`,
 
 
 testSourceExtent(`class C { field }`,
-                 `          ^----^ `,
                  `^----------------`);
 testSourceExtent(`class C { field; }`,
-                 `          ^----^  `,
                  `^-----------------`);
 testSourceExtent(`class C { "field" }`,
-                 `          ^------^ `,
                  `^------------------`);
 testSourceExtent(`class C { 0 }`,
                  `          ^^ `,
@@ -274,7 +271,6 @@ testSourceExtent(`class C { static set prop(v) {} }`,
 
 
 testSourceExtent(`class C { #field }`,
-                 `          ^-----^ `,
                  `^-----------------`);
 testSourceExtent(`class C { #field = 1 }`,
                  `^---------------------`);
