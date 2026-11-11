@@ -5,13 +5,11 @@
 #ifndef mozilla_BounceTrackingRecord_h
 #define mozilla_BounceTrackingRecord_h
 
+#include "BounceTrackingSite.h"
 #include "nsIBounceTrackingRecord.h"
 #include "mozilla/FunctionRef.h"
-#include "mozilla/OriginAttributes.h"
-#include "mozilla/OriginAttributesHashKey.h"
 #include "mozilla/RefPtr.h"
 #include "nsStringFwd.h"
-#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 #include "fmt/format.h"
 
@@ -30,54 +28,37 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
 
   BounceTrackingRecord() = default;
 
-  
-  void SetInitialHost(const nsACString& aHost,
-                      const OriginAttributes& aOriginAttributes);
+  void SetInitialSite(const BounceTrackingSite& aSite);
 
-  const nsACString& GetInitialHost() const;
+  const BounceTrackingSite& InitialSite() const;
 
-  void SetFinalHost(const nsACString& aHost,
-                    const OriginAttributes& aOriginAttributes);
+  void SetFinalSite(const BounceTrackingSite& aSite);
 
-  const nsACString& GetFinalHost() const;
+  const BounceTrackingSite& FinalSite() const;
 
-  
-  
-  
-  
-  bool IsInitialSite(const nsACString& aHost,
-                     const OriginAttributes& aOriginAttributes) const;
-  bool IsFinalSite(const nsACString& aHost,
-                   const OriginAttributes& aOriginAttributes) const;
+  using BounceSiteSet = nsTHashSet<BounceTrackingSiteHashKey>;
 
-  using BounceHostMap =
-      nsTHashMap<OriginAttributesHashKey, nsTHashSet<nsCStringHashKey>>;
+  void AddBounceSite(const BounceTrackingSite& aSite);
+
+  const BounceSiteSet& BounceSites() const;
 
   
-  
-  void AddBounceHost(const nsACString& aHost,
-                     const OriginAttributes& aOriginAttributes);
+  void RemoveBounceSites(const OriginAttributes& aOriginAttributes);
 
   
-  void RemoveBounceHosts(const OriginAttributes& aOriginAttributes);
+  bool HasBounceSiteHost(const nsACString& aSiteHost) const;
 
-  void AddUserActivationHost(const nsACString& aHost);
-
-  const BounceHostMap& GetBounceHosts() const;
-
-  
-  bool HasBounceHost(const nsACString& aHost) const;
+  void AddUserActivationSite(const BounceTrackingSite& aSite);
 
   using OriginAttributesPredicate = FunctionRef<bool(const OriginAttributes&)>;
 
-  
   
   
   bool HasOriginAttributesMatching(OriginAttributesPredicate aPredicate) const;
 
   
   
-  bool HasSiteHost(const nsACString& aHost,
+  bool HasSiteHost(const nsACString& aSiteHost,
                    OriginAttributesPredicate aPredicate) const;
 
   void ClearUserActivationHosts();
@@ -91,18 +72,17 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
   
   
   
-  nsAutoCString mInitialHost;
-  OriginAttributes mInitialOriginAttributes;
+  
+  BounceTrackingSite mInitialSite;
 
   
   
-  nsAutoCString mFinalHost;
-  OriginAttributes mFinalOriginAttributes;
+  BounceTrackingSite mFinalSite;
 
   
   
   
-  BounceHostMap mBounceHosts;
+  BounceSiteSet mBounceSites;
 
   
   
@@ -124,27 +104,12 @@ struct fmt::formatter<mozilla::BounceTrackingRecord>
     : fmt::formatter<std::string_view> {
   auto format(const mozilla::BounceTrackingRecord& aRec,
               fmt::format_context& aCtx) const {
-    auto out = aCtx.out();
-    auto hostOrUnset = [](const nsACString& aHost) -> std::string_view {
-      if (aHost.IsEmpty()) {
-        return "<unset>";
-      }
-      return {aHost.BeginReading(), aHost.Length()};
-    };
-    nsAutoCString initialSuffix;
-    aRec.mInitialOriginAttributes.CreateSuffix(initialSuffix);
-    nsAutoCString finalSuffix;
-    aRec.mFinalOriginAttributes.CreateSuffix(finalSuffix);
-    out = fmt::format_to(out,
-                         "{{mInitialHost:{}{}, mFinalHost:{}{}, mBounceHosts:[",
-                         hostOrUnset(aRec.mInitialHost), initialSuffix,
-                         hostOrUnset(aRec.mFinalHost), finalSuffix);
+    auto out = fmt::format_to(
+        aCtx.out(), "{{mInitialSite:{}, mFinalSite:{}, mBounceSites:[",
+        aRec.mInitialSite, aRec.mFinalSite);
     bool first = true;
-    for (const auto& entry : aRec.mBounceHosts) {
-      nsAutoCString suffix;
-      entry.GetKey().CreateSuffix(suffix);
-      out = fmt::format_to(out, "{}'{}':[{}]", first ? "" : ", ", suffix,
-                           entry.GetData());
+    for (const mozilla::BounceTrackingSite& site : aRec.mBounceSites) {
+      out = fmt::format_to(out, "{}{}", first ? "" : ",", site);
       first = false;
     }
     return fmt::format_to(out, "], mUserActivationHosts:[{}]}}",

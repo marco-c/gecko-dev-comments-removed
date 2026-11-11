@@ -10,6 +10,8 @@
 
 #include "ErrorList.h"
 #include "mozilla/OriginAttributes.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
@@ -236,7 +238,7 @@ void BounceTrackingState::DropRetargetedLoadBounces() {
     return;
   }
   if (mBounceTrackingRecord) {
-    mBounceTrackingRecord->RemoveBounceHosts(*mRetargetedOriginAttributes);
+    mBounceTrackingRecord->RemoveBounceSites(*mRetargetedOriginAttributes);
   }
   mRetargetedOriginAttributes.reset();
 }
@@ -360,10 +362,9 @@ bool BounceTrackingState::ShouldTrackPrincipal(nsIPrincipal* aPrincipal) {
 
 
 nsresult BounceTrackingState::HasBounceTrackingStateForSite(
-    const nsACString& aSiteHost, const OriginAttributes& aOriginAttributes,
-    bool& aResult) {
+    const BounceTrackingSite& aSite, bool& aResult) {
   aResult = false;
-  NS_ENSURE_TRUE(aSiteHost.Length(), NS_ERROR_FAILURE);
+  NS_ENSURE_TRUE(!aSite.IsNull(), NS_ERROR_FAILURE);
 
   if (!sBounceTrackingStates) {
     return NS_OK;
@@ -381,7 +382,7 @@ nsresult BounceTrackingState::HasBounceTrackingStateForSite(
 
     
     
-    if (state->mOriginAttributes != aOriginAttributes) {
+    if (state->mOriginAttributes != aSite.OriginAttributesRef()) {
       continue;
     }
 
@@ -423,13 +424,13 @@ nsresult BounceTrackingState::HasBounceTrackingStateForSite(
         "2054941).");
 
     
-    nsAutoCString baseDomain;
-    nsresult rv = principal->GetBaseDomain(baseDomain);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    Result<BounceTrackingSite, nsresult> site =
+        BounceTrackingSite::FromPrincipal(principal);
+    if (NS_WARN_IF(site.isErr())) {
       continue;
     }
 
-    if (aSiteHost.Equals(baseDomain)) {
+    if (site.inspect() == aSite) {
       aResult = true;
       return NS_OK;
     }
@@ -495,9 +496,7 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   
   
   
-  nsTArray<SiteListEntry> siteList;
-  const OriginAttributes channelOriginAttributes =
-      loadInfo->GetOriginAttributes();
+  nsTArray<BounceTrackingSite> siteList;
 
   for (const nsCOMPtr<nsIRedirectHistoryEntry>& redirectHistoryEntry :
        loadInfo->RedirectChain()) {
@@ -505,22 +504,10 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
     rv = redirectHistoryEntry->GetPrincipal(getter_AddRefs(principal));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (!BounceTrackingState::ShouldTrackPrincipal(principal)) {
-      siteList.AppendElement(SiteListEntry{"null"_ns, mOriginAttributes});
-      continue;
-    }
-
-    nsAutoCString baseDomain;
-    rv = principal->GetBaseDomain(baseDomain);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (NS_WARN_IF(baseDomain.IsEmpty())) {
-      siteList.AppendElement(SiteListEntry{"null"_ns, mOriginAttributes});
-    } else {
-      siteList.AppendElement(
-          SiteListEntry{baseDomain, principal->OriginAttributesRef()});
-      siteListIsEmpty = false;
-    }
+    BounceTrackingSite site =
+        MOZ_TRY(BounceTrackingSite::FromPrincipal(principal));
+    siteListIsEmpty &= site.IsNull();
+    siteList.AppendElement(std::move(site));
   }
 
   
@@ -529,24 +516,16 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mozilla::net::SchemeIsHttpOrHttps(channelURI)) {
-    nsCOMPtr<nsIEffectiveTLDService> tldService =
-        do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+    BounceTrackingSite site = MOZ_TRY(BounceTrackingSite::FromURI(
+        channelURI, loadInfo->GetOriginAttributes()));
 
-    nsAutoCString siteHost;
-    rv = tldService->GetSchemelessSite(channelURI, siteHost);
-
-    
-    if (NS_FAILED(rv)) {
+    if (site.IsNull()) {
       MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
                   "{}: Failed to get site host from channelURI: {}",
                   __FUNCTION__, channelURI->GetSpecOrDefault());
-      siteList.AppendElement(SiteListEntry{"null"_ns, channelOriginAttributes});
-    } else {
-      MOZ_ASSERT(!siteHost.IsEmpty(), "siteHost should not be empty.");
-      siteList.AppendElement(SiteListEntry{siteHost, channelOriginAttributes});
-      siteListIsEmpty = false;
     }
+    siteListIsEmpty &= site.IsNull();
+    siteList.AppendElement(std::move(site));
   }
 
   
@@ -561,7 +540,7 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
   
   OriginAttributes loadOriginAttributes =
       BounceTrackingProtectionStorage::NormalizeOriginAttributes(
-          channelOriginAttributes);
+          loadInfo->GetOriginAttributes());
   if (loadOriginAttributes != mOriginAttributes) {
     mRetargetedOriginAttributes = Some(loadOriginAttributes);
   } else {
@@ -659,16 +638,12 @@ nsresult BounceTrackingState::OnBFCacheRestored() {
   MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug, "{}: this: {}",
               __FUNCTION__, *this);
 
-  if (ShouldTrackPrincipal(documentPrincipal)) {
-    nsAutoCString siteHost;
-    nsresult rv = documentPrincipal->GetBaseDomain(siteHost);
+  BounceTrackingSite site =
+      MOZ_TRY(BounceTrackingSite::FromPrincipal(documentPrincipal));
+  if (!site.IsNull()) {
+    nsresult rv =
+        OnResponseReceived(AutoTArray<BounceTrackingSite, 1>{std::move(site)});
     NS_ENSURE_SUCCESS(rv, rv);
-
-    if (!siteHost.IsEmpty()) {
-      rv = OnResponseReceived(AutoTArray<SiteListEntry, 1>{
-          SiteListEntry{std::move(siteHost), mOriginAttributes}});
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
   }
 
   return OnDocumentLoaded(documentPrincipal);
@@ -718,28 +693,26 @@ BounceTrackingState::OnContentBlockingEvent(nsIWebProgress* aWebProgress,
 
 
 
-static bool GetTopLevelSiteHost(dom::WindowContext* aWindowContext,
-                                nsACString& aSiteHost) {
+static BounceTrackingSite GetTopLevelSite(dom::WindowContext* aWindowContext) {
   if (!aWindowContext) {
-    return false;
+    return {};
   }
   dom::WindowContext* topWindowContext = aWindowContext->TopWindowContext();
   if (!topWindowContext || !topWindowContext->IsCurrent()) {
-    return false;
+    return {};
   }
 
   nsIPrincipal* principal = topWindowContext->Canonical()->DocumentPrincipal();
-  if (!principal || !BounceTrackingState::ShouldTrackPrincipal(principal)) {
-    return false;
+  if (!principal) {
+    return {};
   }
 
-  nsAutoCString siteHost;
-  if (NS_WARN_IF(NS_FAILED(principal->GetBaseDomain(siteHost)))) {
-    return false;
+  Result<BounceTrackingSite, nsresult> site =
+      BounceTrackingSite::FromPrincipal(principal);
+  if (NS_WARN_IF(site.isErr())) {
+    return {};
   }
-
-  aSiteHost = siteHost;
-  return true;
+  return site.unwrap();
 }
 
 nsresult BounceTrackingState::OnStartNavigation(
@@ -778,44 +751,37 @@ nsresult BounceTrackingState::OnStartNavigation(
   CancelClientBounceDetectionTimeout();
 
   
-  nsAutoCString siteHost;
+  
+  
+  
+  
+  Result<BounceTrackingSite, nsresult> initiatorSite =
+      BounceTrackingSite::FromPrincipal(aTriggeringPrincipal);
+  NS_WARNING_ASSERTION(initiatorSite.isOk(), "No site for the initiator.");
+  BounceTrackingSite site = initiatorSite.unwrapOr(BounceTrackingSite());
 
   
   
-  
-  
-  if (!BounceTrackingState::ShouldTrackPrincipal(aTriggeringPrincipal)) {
-    siteHost = "";
-  } else {
-    
-    nsresult rv = aTriggeringPrincipal->GetBaseDomain(siteHost);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      siteHost = "";
-    }
-  }
-
-  
-  
-  nsAutoCString departingSiteHost;
+  BounceTrackingSite departingSite;
   
   
   
   
-  nsAutoCString initialSiteHost;
+  BounceTrackingSite initialSite;
   if (RefPtr<dom::BrowsingContext> browsingContext = CurrentBrowsingContext()) {
     if (browsingContext->GetHasLoadedNonInitialDocument()) {
-      GetTopLevelSiteHost(browsingContext->GetCurrentWindowContext(),
-                          departingSiteHost);
-      initialSiteHost = departingSiteHost;
+      departingSite =
+          GetTopLevelSite(browsingContext->GetCurrentWindowContext());
+      initialSite = departingSite;
     } else if (RefPtr<dom::BrowsingContext> opener =
                    browsingContext->GetOpener()) {
-      GetTopLevelSiteHost(opener->GetCurrentWindowContext(), initialSiteHost);
+      initialSite = GetTopLevelSite(opener->GetCurrentWindowContext());
     }
   }
 
   MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-              "{}: siteHost: {}, departingSiteHost: {}, initialSiteHost: {}",
-              __FUNCTION__, siteHost, departingSiteHost, initialSiteHost);
+              "{}: site: {}, departingSite: {}, initialSite: {}", __FUNCTION__,
+              site, departingSite, initialSite);
 
   
   
@@ -829,9 +795,9 @@ nsresult BounceTrackingState::OnStartNavigation(
   
   if (!mBounceTrackingRecord) {
     mBounceTrackingRecord = MakeRefPtr<BounceTrackingRecord>();
-    mBounceTrackingRecord->SetInitialHost(initialSiteHost, mOriginAttributes);
+    mBounceTrackingRecord->SetInitialSite(initialSite);
     if (hasUserActivation) {
-      mBounceTrackingRecord->AddUserActivationHost(siteHost);
+      mBounceTrackingRecord->AddUserActivationSite(site);
     }
 
     MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
@@ -844,7 +810,7 @@ nsresult BounceTrackingState::OnStartNavigation(
   
   
   MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-              "{}: site: {}, hasUserActivation? {}", __FUNCTION__, siteHost,
+              "{}: site: {}, hasUserActivation? {}", __FUNCTION__, site,
               hasUserActivation);
   if (hasUserActivation) {
     nsresult rv = mBounceTrackingProtection->RecordStatefulBounces(this);
@@ -852,10 +818,10 @@ nsresult BounceTrackingState::OnStartNavigation(
 
     MOZ_ASSERT(!mBounceTrackingRecord);
     mBounceTrackingRecord = MakeRefPtr<BounceTrackingRecord>();
-    mBounceTrackingRecord->SetInitialHost(initialSiteHost, mOriginAttributes);
+    mBounceTrackingRecord->SetInitialSite(initialSite);
     
     
-    mBounceTrackingRecord->AddUserActivationHost(siteHost);
+    mBounceTrackingRecord->AddUserActivationSite(site);
 
     return NS_OK;
   }
@@ -863,11 +829,7 @@ nsresult BounceTrackingState::OnStartNavigation(
   
   
   
-  if (departingSiteHost.IsEmpty()) {
-    mBounceTrackingRecord->AddBounceHost("null"_ns, mOriginAttributes);
-  } else {
-    mBounceTrackingRecord->AddBounceHost(departingSiteHost, mOriginAttributes);
-  }
+  mBounceTrackingRecord->AddBounceSite(departingSite);
 
   return NS_OK;
 }
@@ -875,31 +837,12 @@ nsresult BounceTrackingState::OnStartNavigation(
 
 
 nsresult BounceTrackingState::OnResponseReceived(
-    const nsTArray<SiteListEntry>& aSiteList) {
-#ifdef DEBUG
+    const nsTArray<BounceTrackingSite>& aSiteList) {
   MOZ_ASSERT(!aSiteList.IsEmpty(), "siteList should not be empty.");
-  for (const SiteListEntry& entry : aSiteList) {
-    MOZ_ASSERT(!entry.mSiteHost.IsEmpty(),
-               "site should not be an empty string.");
-  }
-#endif
 
-  
-  if (MOZ_LOG_TEST(gBounceTrackingProtectionLog, LogLevel::Debug)) {
-    nsAutoCString siteListStr;
-
-    for (const SiteListEntry& entry : aSiteList) {
-      nsAutoCString suffix;
-      entry.mOriginAttributes.CreateSuffix(suffix);
-      siteListStr.Append(entry.mSiteHost);
-      siteListStr.Append(suffix);
-      siteListStr.AppendLiteral(", ");
-    }
-
-    MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-                "{}: #{} siteList: {}", __FUNCTION__, siteListStr.Length(),
-                siteListStr);
-  }
+  MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
+              "{}: #{} siteList: {}", __FUNCTION__, aSiteList.Length(),
+              fmt::join(aSiteList, ", "));
 
   
   
@@ -918,9 +861,8 @@ nsresult BounceTrackingState::OnResponseReceived(
 
   
   
-  for (const SiteListEntry& entry : aSiteList) {
-    mBounceTrackingRecord->AddBounceHost(entry.mSiteHost,
-                                         entry.mOriginAttributes);
+  for (const BounceTrackingSite& site : aSiteList) {
+    mBounceTrackingRecord->AddBounceSite(site);
   }
 
   return NS_OK;
@@ -1063,29 +1005,24 @@ nsresult BounceTrackingState::OnDocumentLoaded(
     return NS_ERROR_FAILURE;
   }
 
-  nsAutoCString siteHost;
-  if (!shouldTrackPrincipal) {
-    siteHost = "";
-  } else {
-    nsresult rv = aDocumentPrincipal->GetBaseDomain(siteHost);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  BounceTrackingSite finalSite =
+      MOZ_TRY(BounceTrackingSite::FromPrincipal(aDocumentPrincipal));
 
   
   
-  mBounceTrackingRecord->SetFinalHost(
-      siteHost, aDocumentPrincipal->OriginAttributesRef());
+  mBounceTrackingRecord->SetFinalSite(finalSite);
 
   return NS_OK;
 }
 
-nsresult BounceTrackingState::OnUserActivation(const nsACString& aSiteHost) {
+nsresult BounceTrackingState::OnUserActivation(
+    const BounceTrackingSite& aSite) {
   MOZ_LOG_FMT(gBounceTrackingProtectionLog, LogLevel::Debug,
-              "{}: aSiteHost: {}, mBounceTrackingRecord: {}", __FUNCTION__,
-              aSiteHost, mBounceTrackingRecord);
+              "{}: aSite: {}, mBounceTrackingRecord: {}", __FUNCTION__, aSite,
+              mBounceTrackingRecord);
 
   if (mBounceTrackingRecord) {
-    mBounceTrackingRecord->AddUserActivationHost(aSiteHost);
+    mBounceTrackingRecord->AddUserActivationSite(aSite);
   }
 
   return NS_OK;

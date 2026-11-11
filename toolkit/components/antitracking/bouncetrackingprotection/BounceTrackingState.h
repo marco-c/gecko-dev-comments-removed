@@ -112,8 +112,7 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   [[nodiscard]] static nsresult HasBounceTrackingStateForSite(
-      const nsACString& aSiteHost, const OriginAttributes& aOriginAttributes,
-      bool& aResult);
+      const BounceTrackingSite& aSite, bool& aResult);
 
   
   
@@ -125,7 +124,7 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
-  [[nodiscard]] nsresult OnUserActivation(const nsACString& aSiteHost);
+  [[nodiscard]] nsresult OnUserActivation(const BounceTrackingSite& aSite);
 
   
   
@@ -181,16 +180,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   [[nodiscard]] nsresult Init(dom::BrowsingContextWebProgress* aWebProgress);
 
-  struct SiteListEntry {
-    nsCString mSiteHost;
-    
-    OriginAttributes mOriginAttributes;
-  };
-
   
   
   [[nodiscard]] nsresult OnResponseReceived(
-      const nsTArray<SiteListEntry>& aSiteList);
+      const nsTArray<BounceTrackingSite>& aSiteList);
 
   [[nodiscard]] nsresult StartClientBounceDetectionTimeout();
 
