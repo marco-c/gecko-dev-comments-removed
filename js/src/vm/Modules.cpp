@@ -1519,8 +1519,6 @@ static bool ComputeNamespaceBindings(JSContext* cx,
   Rooted<JSAtom*> name(cx);
   Rooted<Value> resolution(cx);
   Rooted<ResolvedBindingObject*> binding(cx);
-  Rooted<ModuleObject*> importedModule(cx);
-  Rooted<JSAtom*> bindingName(cx);
   for (JSAtom* atom : ns->exports()) {
     name = atom;
 
@@ -1530,9 +1528,7 @@ static bool ComputeNamespaceBindings(JSContext* cx,
 
     MOZ_ASSERT(IsResolvedBinding(cx, resolution));
     binding = &resolution.toObject().as<ResolvedBindingObject>();
-    importedModule = binding->module();
-    bindingName = binding->bindingName();
-    if (!ns->addBinding(cx, name, importedModule, bindingName)) {
+    if (!ns->addBinding(cx, name, binding)) {
       return false;
     }
   }
@@ -1683,7 +1679,6 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
   Rooted<JSAtom*> exportName(cx);
   Rooted<Value> resolution(cx);
   Rooted<ResolvedBindingObject*> binding(cx);
-  Rooted<JSAtom*> bindingName(cx);
   Rooted<ModuleObject*> bindingModule(cx);
   Rooted<ModuleNamespaceObject*> bindingNs(cx);
   for (const ExportEntry& e : module->indirectExportEntries()) {
@@ -1705,17 +1700,13 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
     }
 
     binding = &resolution.toObject().as<ResolvedBindingObject>();
-    bindingName = binding->bindingName();
 
     
     
-    if (bindingName == cx->names().star_namespace_star_ ||
-        bindingName == cx->names().star_deferred_namespace_star_) {
+    if (binding->isNamespace()) {
       bindingModule = binding->module();
-      ImportPhase phase = bindingName == cx->names().star_namespace_star_
-                              ? ImportPhase::Evaluation
-                              : ImportPhase::Deferred;
-      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule, phase);
+      bindingNs = GetOrCreateModuleNamespace(cx, bindingModule,
+                                             binding->namespacePhase());
       if (!bindingNs) {
         return false;
       }
@@ -1723,10 +1714,9 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
       
       
       
-      Rooted<ModuleEnvironmentObject*> env(
-          cx, &bindingModule->initialEnvironment());
-      InitNamespaceOrSourceBinding(cx, env, bindingName,
-                                   ObjectValue(*bindingNs));
+      
+      bindingModule->initialEnvironment().initNamespaceSlot(
+          binding->namespacePhase(), bindingNs);
     }
   }
 
@@ -1812,19 +1802,15 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
         return false;
       }
 
-      auto* binding = &resolution.toObject().as<ResolvedBindingObject>();
+      binding = &resolution.toObject().as<ResolvedBindingObject>();
       sourceModule = binding->module();
-      bindingName = binding->bindingName();
 
       
       
-      if (bindingName == cx->names().star_namespace_star_ ||
-          bindingName == cx->names().star_deferred_namespace_star_) {
+      if (binding->isNamespace()) {
         
         
-        ImportPhase phase = bindingName == cx->names().star_namespace_star_
-                                ? ImportPhase::Evaluation
-                                : ImportPhase::Deferred;
+        ImportPhase phase = binding->namespacePhase();
         
         
         Rooted<ModuleNamespaceObject*> ns(
@@ -1842,20 +1828,17 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
         
         
         
-        InitNamespaceOrSourceBinding(cx, &sourceModule->initialEnvironment(),
-                                     bindingName, ObjectValue(*ns));
-        if (!env->createImportBinding(cx, localName, sourceModule,
-                                      bindingName)) {
-          return false;
-        }
-      } else {
-        
-        
-        
-        if (!env->createImportBinding(cx, localName, sourceModule,
-                                      bindingName)) {
-          return false;
-        }
+        sourceModule->initialEnvironment().initNamespaceSlot(phase, ns);
+      }
+
+      
+      
+      
+      
+      
+      
+      if (!env->createImportBinding(cx, localName, binding)) {
+        return false;
       }
     }
   }

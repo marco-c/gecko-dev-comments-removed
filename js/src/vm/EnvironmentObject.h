@@ -29,7 +29,10 @@ namespace js {
 
 class AbstractGeneratorObject;
 class IndirectBindingMap;
+class ModuleNamespaceObject;
 class ModuleObject;
+class ResolvedBindingObject;
+enum class ImportPhase : uint8_t;
 
 
 
@@ -722,6 +725,13 @@ class ModuleEnvironmentObject : public DisposableEnvironmentObject {
   JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS, MODULE_SLOT,
                        Object);
 
+  
+  
+  JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS + 1,
+                       NAMESPACE_SLOT, Object, Undefined);
+  JS_DEFINE_TYPED_SLOT(DisposableEnvironmentObject::RESERVED_SLOTS + 2,
+                       DEFERRED_NAMESPACE_SLOT, Object, Undefined);
+
   static const ObjectOps objectOps_;
   static const JSClassOps classOps_;
 
@@ -730,11 +740,8 @@ class ModuleEnvironmentObject : public DisposableEnvironmentObject {
 
   static const JSClass class_;
 
-  
-  
-  
   static constexpr uint32_t RESERVED_SLOTS =
-      DisposableEnvironmentObject::RESERVED_SLOTS + 2;
+      DisposableEnvironmentObject::RESERVED_SLOTS + 3;
 
   static constexpr ObjectFlags OBJECT_FLAGS = {ObjectFlag::NotExtensible,
                                                ObjectFlag::QualifiedVarObj};
@@ -744,14 +751,21 @@ class ModuleEnvironmentObject : public DisposableEnvironmentObject {
   static ModuleEnvironmentObject* createSynthetic(JSContext* cx,
                                                   Handle<ModuleObject*> module);
   static ModuleEnvironmentObject* createForWasmModule(
-      JSContext* cx, Handle<ModuleObject*> module);
+      JSContext* cx, Handle<ModuleObject*> module,
+      Handle<ExportNameVector> exportNames);
 
   ModuleObject& module() const;
   IndirectBindingMap& importBindings() const;
 
   bool createImportBinding(JSContext* cx, Handle<JSAtom*> importName,
-                           Handle<ModuleObject*> module,
-                           Handle<JSAtom*> exportName);
+                           Handle<ResolvedBindingObject*> binding);
+
+  void initNamespaceSlot(ImportPhase phase, ModuleNamespaceObject* ns);
+  static uint32_t namespaceSlotIndex(ImportPhase phase);
+  static bool isNamespaceSlot(uint32_t slot) {
+    return slot == NAMESPACE_SLOT.index() ||
+           slot == DEFERRED_NAMESPACE_SLOT.index();
+  }
 
   bool hasImportBinding(Handle<PropertyName*> name);
 
@@ -764,7 +778,7 @@ class ModuleEnvironmentObject : public DisposableEnvironmentObject {
   
   static ModuleEnvironmentObject* find(JSObject* env);
 
-  uint32_t firstSyntheticValueSlot() { return RESERVED_SLOTS + 1; }
+  uint32_t firstSyntheticValueSlot() { return RESERVED_SLOTS; }
 
  private:
   static bool lookupProperty(JSContext* cx, HandleObject obj, HandleId id,
@@ -848,6 +862,8 @@ class LexicalEnvironmentObject : public DisposableEnvironmentObject {
  public:
   static const JSClass class_;
 
+  
+  
   
   static constexpr uint32_t RESERVED_SLOTS =
       DisposableEnvironmentObject::RESERVED_SLOTS + 2;

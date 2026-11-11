@@ -499,17 +499,11 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createSynthetic(
 
 
 ModuleEnvironmentObject* ModuleEnvironmentObject::createForWasmModule(
-    JSContext* cx, Handle<ModuleObject*> module) {
-  
-  
-  Rooted<SharedPropMap*> map(cx);
-  uint32_t mapLength = 0;
-  uint32_t numSlots = JSSLOT_FREE(&class_);
-  uint32_t numFixed = gc::GetGCKindSlots(gc::GetGCObjectKind(numSlots));
+    JSContext* cx, Handle<ModuleObject*> module,
+    Handle<ExportNameVector> exportNames) {
   Rooted<SharedShape*> shape(
-      cx, SharedShape::getInitialOrPropMapShape(cx, &class_, cx->realm(),
-                                                TaggedProto(nullptr), numFixed,
-                                                map, mapLength, OBJECT_FLAGS));
+      cx, CreateEnvironmentShapeForWasmModule(cx, &class_, JSSLOT_FREE(&class_),
+                                              exportNames));
   if (!shape) {
     return nullptr;
   }
@@ -538,14 +532,30 @@ IndirectBindingMap& ModuleEnvironmentObject::importBindings() const {
   return module().importBindings();
 }
 
-bool ModuleEnvironmentObject::createImportBinding(JSContext* cx,
-                                                  Handle<JSAtom*> importName,
-                                                  Handle<ModuleObject*> module,
-                                                  Handle<JSAtom*> localName) {
+bool ModuleEnvironmentObject::createImportBinding(
+    JSContext* cx, Handle<JSAtom*> importName,
+    Handle<ResolvedBindingObject*> binding) {
   RootedId importNameId(cx, AtomToId(importName));
-  RootedId localNameId(cx, AtomToId(localName));
-  Rooted<ModuleEnvironmentObject*> env(cx, &module->initialEnvironment());
-  return importBindings().put(cx, importNameId, env, localNameId);
+  return importBindings().put(cx, importNameId, binding);
+}
+
+
+uint32_t ModuleEnvironmentObject::namespaceSlotIndex(ImportPhase phase) {
+  MOZ_ASSERT(phase == ImportPhase::Evaluation ||
+             phase == ImportPhase::Deferred);
+  return phase == ImportPhase::Deferred ? DEFERRED_NAMESPACE_SLOT.index()
+                                        : NAMESPACE_SLOT.index();
+}
+
+void ModuleEnvironmentObject::initNamespaceSlot(ImportPhase phase,
+                                                ModuleNamespaceObject* ns) {
+  MOZ_ASSERT(phase == ImportPhase::Evaluation ||
+             phase == ImportPhase::Deferred);
+  auto slot =
+      phase == ImportPhase::Deferred ? DEFERRED_NAMESPACE_SLOT : NAMESPACE_SLOT;
+  MOZ_ASSERT(getReservedSlotTyped(slot).isUndefined() ||
+             &getReservedSlotTyped(slot).toObject() == ns);
+  setReservedSlotTyped(slot, ObjectValue(*ns));
 }
 
 bool ModuleEnvironmentObject::hasImportBinding(Handle<PropertyName*> name) {
