@@ -138,7 +138,7 @@
 
 #define ROUND16(x,a) (EXTRACT16(PSHR32((x),(a))))
 
-#define SROUND16(x,a) EXTRACT16(SATURATE(PSHR32(x,a), 32767));
+#define SROUND16(x,a) EXTRACT16(SATURATE(PSHR32(x,a), 32767))
 
 
 #define HALF16(x)  (SHR16(x,1))

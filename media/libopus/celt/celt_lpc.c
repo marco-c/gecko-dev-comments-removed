@@ -131,8 +131,7 @@ int          p
       if (iter == 10) {
          
 
-         OPUS_CLEAR(lpc, p);
-         _lpc[0] = 4096;  
+         OPUS_CLEAR(_lpc, p);
       } else {
          for (i = 0; i < p; i++) {
             _lpc[i] = EXTRACT16(PSHR32(lpc[i], 13));  
