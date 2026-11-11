@@ -869,7 +869,7 @@ nsresult DNSPacket::DecodeInternal(
               parsed.mSvcFieldPriority == 0) {
             
             
-            continue;
+            break;
           }
 
           
