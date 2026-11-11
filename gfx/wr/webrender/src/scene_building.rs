@@ -415,12 +415,6 @@ pub struct SceneBuilder<'a> {
     containing_block_stack: Vec<SpatialNodeIndex>,
 
     
-    
-    
-    
-    raster_space_stack: Vec<RasterSpace>,
-
-    
 
     
     pub spatial_tree: &'a mut SceneSpatialTree,
@@ -542,7 +536,6 @@ impl<'a> SceneBuilder<'a> {
             hit_testing_scene: recycler.hit_testing_scene.take().unwrap_or_else(|| HitTestingScene::new(&stats.hit_test_stats)),
             sc_stack: mem::take(&mut recycler.sc_stack),
             containing_block_stack: mem::take(&mut recycler.containing_block_stack),
-            raster_space_stack: mem::take(&mut recycler.raster_space_stack),
             prim_store: mem::take(&mut recycler.prim_store),
             clip_store: mem::take(&mut recycler.clip_store),
             interners,
@@ -579,9 +572,6 @@ impl<'a> SceneBuilder<'a> {
         builder.containing_block_stack.clear();
         builder.id_to_index_mapper_stack.clear();
         builder.iframe_size.clear();
-
-        builder.raster_space_stack.clear();
-        builder.raster_space_stack.push(RasterSpace::Screen);
 
         builder.clip_tree_builder.begin();
 
@@ -627,7 +617,6 @@ impl<'a> SceneBuilder<'a> {
         recycler.sc_stack = builder.sc_stack;
         recycler.id_to_index_mapper_stack = builder.id_to_index_mapper_stack;
         recycler.containing_block_stack = builder.containing_block_stack;
-        recycler.raster_space_stack = builder.raster_space_stack;
         recycler.iframe_size = builder.iframe_size;
 
         BuiltScene {
@@ -1870,8 +1859,6 @@ impl<'a> SceneBuilder<'a> {
             composite_ops.snapshot.is_some(),
         );
 
-        self.raster_space_stack.push(raster_space);
-
         
         
         
@@ -2098,9 +2085,6 @@ impl<'a> SceneBuilder<'a> {
         tracy_rs::profile_scope!("pop_stacking_context");
 
         self.clip_tree_builder.pop_clip();
-
-        
-        self.raster_space_stack.pop().unwrap();
 
         
         if info.pop_containing_block {
@@ -3653,7 +3637,6 @@ pub struct SceneRecycler {
     id_to_index_mapper_stack: Vec<NodeIdToIndexMapper>,
     sc_stack: Vec<FlattenedStackingContext>,
     containing_block_stack: Vec<SpatialNodeIndex>,
-    raster_space_stack: Vec<RasterSpace>,
     iframe_size: Vec<LayoutSize>,
 }
 
@@ -3675,7 +3658,6 @@ impl SceneRecycler {
             id_to_index_mapper_stack: Vec::new(),
             sc_stack: Vec::new(),
             containing_block_stack: Vec::new(),
-            raster_space_stack: Vec::new(),
             iframe_size: Vec::new(),
         }
     }
