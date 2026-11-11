@@ -4456,11 +4456,11 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
         return nullptr;
       }
 
-      MediaTrackGraph::GraphDriverType graphDriverType =
-          HasAudio() ? MediaTrackGraph::AUDIO_THREAD_DRIVER
-                     : MediaTrackGraph::SYSTEM_THREAD_DRIVER;
+      
+      
       graph = MediaTrackGraph::GetInstance(
-          graphDriverType, window, MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
+          MediaTrackGraph::SYSTEM_THREAD_DRIVER, window,
+          MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
           MediaTrackGraph::DEFAULT_OUTPUT_DEVICE);
     }
     mTracksCaptured = MakeRefPtr<SharedDummyTrack>(
