@@ -1237,7 +1237,9 @@ nsresult nsHttpChannel::ContinueOnBeforeConnect(bool aShouldUpgrade,
     
     
     
-    if (!(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS)) {
+    
+    if (!(mCaps & NS_HTTP_USE_HAPPY_EYEBALLS) &&
+        !StaticPrefs::network_http_upgrade_use_https_rr()) {
       DisallowHTTPSRR(mCaps);
     }
   }
