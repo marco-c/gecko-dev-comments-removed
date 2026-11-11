@@ -954,6 +954,28 @@ nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
 
 
 
+static bool IsTrustedUISource(nsIURI* aSourceURI, nsIURI* aSourceBaseURI) {
+  if (aSourceURI->SchemeIs("about")) {
+    return !NS_IsContentAccessibleAboutURI(aSourceURI);
+  }
+  nsAutoCString host;
+  if (aSourceBaseURI->SchemeIs("resource")) {
+    return NS_SUCCEEDED(aSourceBaseURI->GetHost(host)) &&
+           host.EqualsLiteral("pdf.js");
+  }
+  if (aSourceBaseURI->SchemeIs("moz-extension")) {
+    if (NS_FAILED(aSourceBaseURI->GetHost(host))) {
+      return false;
+    }
+    auto* policy = ExtensionPolicyService::GetSingleton().GetByHost(host);
+    return policy && policy->IsPrivileged();
+  }
+  return false;
+}
+
+
+
+
 
 
 
@@ -1032,7 +1054,7 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
       }
 
       if (targetScheme.EqualsLiteral("resource")) {
-        if (StaticPrefs::security_all_resource_uri_content_accessible()) {
+        if (IsTrustedUISource(aSourceURI, aSourceBaseURI)) {
           return NS_OK;
         }
 
@@ -1054,6 +1076,9 @@ nsresult nsScriptSecurityManager::CheckLoadURIFlags(
           return NS_OK;
         }
       } else if (targetScheme.EqualsLiteral("chrome")) {
+        if (IsTrustedUISource(aSourceURI, aSourceBaseURI)) {
+          return NS_OK;
+        }
         
         nsCOMPtr<nsIXULChromeRegistry> reg(
             do_GetService(NS_CHROMEREGISTRY_CONTRACTID));
