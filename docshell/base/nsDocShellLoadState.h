@@ -460,10 +460,9 @@ class nsDocShellLoadState final {
 
   
   void SetSourceElement(mozilla::dom::Element* aElement);
-  already_AddRefed<mozilla::dom::Element> GetSourceElement() const;
-  bool HasSourceElement() const {
-    return mSourceElement && mSourceElement->IsAlive();
-  }
+  
+  already_AddRefed<mozilla::dom::Element> TakeSourceElement();
+  bool HasSourceElement() const { return !!mSourceElement; }
 
   
   nsIStructuredCloneContainer* GetNavigationAPIState() const;
@@ -792,7 +791,7 @@ class nsDocShellLoadState final {
   nsILoadInfo::HTTPSUpgradeTelemetryType mHttpsUpgradeTelemetry =
       nsILoadInfo::NOT_INITIALIZED;
 
-  nsWeakPtr mSourceElement;
+  RefPtr<mozilla::dom::Element> mSourceElement;
 
   RefPtr<nsStructuredCloneContainer> mNavigationAPIState;
 

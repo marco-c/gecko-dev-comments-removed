@@ -2552,6 +2552,9 @@ nsresult BrowsingContext::InternalLoad(nsDocShellLoadState* aLoadState) {
   
   MOZ_TRY(CheckFramebusting(aLoadState));
 
+  
+  aLoadState->SetSourceElement(nullptr);
+
   if (XRE_IsParentProcess()) {
     ContentParent* cp = Canonical()->GetContentParent();
     if (!cp || !cp->CanSend()) {

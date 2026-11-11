@@ -8232,6 +8232,10 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     destinationNavigationAPIState = navigationAPIState;
   }
 
+  
+  
+  RefPtr<Element> sourceElement = aLoadState->TakeSourceElement();
+
   if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow(); window) {
     if (!aState.mHistoryNavBetweenSameDoc) {
       
@@ -8239,7 +8243,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
       if (RefPtr<Navigation> navigation = window->Navigation()) {
         AutoJSAPI jsapi;
         if (jsapi.Init(window)) {
-          RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
           
           RefPtr apiMethodTracker = aLoadState->GetNavigationAPIMethodTracker();
           bool shouldContinue = navigation->FirePushReplaceReloadNavigateEvent(
@@ -9010,6 +9013,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   
   
+  RefPtr<Element> sourceElement = aLoadState->TakeSourceElement();
+
+  
+  
   
   
   
@@ -9029,8 +9036,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       if (RefPtr<Navigation> navigation = window->Navigation()) {
         AutoJSAPI jsapi;
         if (jsapi.Init(window)) {
-          RefPtr<Element> sourceElement = aLoadState->GetSourceElement();
-
           
           
           RefPtr<FormData> formData = aLoadState->GetFormDataEntryList();
