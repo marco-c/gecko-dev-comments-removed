@@ -24,7 +24,13 @@ unsafe impl Sync for OpaqueElement {}
 impl OpaqueElement {
     
     pub fn new<T>(ptr: &T) -> Self {
-        OpaqueElement(NonNull::from_ref(ptr).cast())
+        
+        
+        unsafe {
+            OpaqueElement(NonNull::new_unchecked(
+                ptr as *const T as *const () as *mut (),
+            ))
+        }
     }
 
     
