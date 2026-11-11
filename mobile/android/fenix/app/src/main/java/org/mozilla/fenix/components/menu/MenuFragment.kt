@@ -55,8 +55,9 @@ import com.google.android.material.R as materialR
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlin.getValue
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.menu.Menu
 import mozilla.components.compose.menu.data.MenuAttribution
@@ -382,7 +383,6 @@ class MenuFragment : BottomSheetDialogFragment() {
             summarizeEligibilityChecker = components.core.summarizationEligibilityChecker,
             translationsSettings = TranslationsEnabledSettings.dataStore(context),
             isAndroidAutomotiveAvailable = context.isAndroidAutomotiveAvailable(),
-            materialAlertDialogBuilder = MaterialAlertDialogBuilder(context),
             quitApplicationDelegate = activity::finishAndRemoveTask,
             setAsDefaultBrowserDelegate = activity::openSetDefaultBrowserOption,
             menuViewScope = viewLifecycleOwner.lifecycle.coroutineScope,
@@ -390,40 +390,33 @@ class MenuFragment : BottomSheetDialogFragment() {
         )
     }
 
-    private fun buildMenuStore(initialState: MenuState): MenuStore {
-        val menuItemsRegistry = buildMenuItemsRegistry()
-
-        return MenuStore(
+    private fun buildMenuStore(initialState: MenuState) =
+        MenuStore(
             initialState = initialState,
             middleware =
                 listOf(
                     MenuMiddleware(
-                        menuBuilder = MenuBuilder(menuItemsRegistry),
-                        eventRouter =
-                            MenuItemEventRouter(
-                                registry = menuItemsRegistry,
-                                host = DefaultMenuHost(findNavController()),
-                            ),
+                        menuItemsRegistry = ::buildMenuItemsRegistry,
+                        host = DefaultMenuHost(findNavController()),
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,
                     ),
                     MenuTelemetryMiddleware(accessPoint = args.accessPoint),
                 ),
         )
-    }
 
-    private fun buildMenuItemsRegistry() =
+    private suspend fun buildMenuItemsRegistry() =
         MenuItemsRegistry(
             configuration = buildMenuConfigurationFor(args.accessPoint),
             resolver = buildMenuItemProvidersFactory()::buildProviderFor,
         )
 
-    private fun buildMenuConfigurationFor(menuAccessPoint: MenuAccessPoint) =
+    private suspend fun buildMenuConfigurationFor(menuAccessPoint: MenuAccessPoint) =
         when (menuAccessPoint) {
             MenuAccessPoint.Browser ->
                 BrowserMenuConfiguration.sections(
                     isToolbarAtBottom = requireContext().isToolbarAtBottom(),
                     isExpandedToolbarEnabled = requireComponents.settings.shouldUseExpandedToolbar,
-                    customizationInfo = requireComponents.menuCustomizationRepository.customizedMenuInfo.value,
+                    customizationInfo = readMenuCustomization(),
                 )
             MenuAccessPoint.Home -> HomeMenuConfiguration.sections()
             MenuAccessPoint.External ->
@@ -432,6 +425,16 @@ class MenuFragment : BottomSheetDialogFragment() {
                     shouldShowExtensions = requireComponents.settings.shouldShowCustomTabExtensions,
                 )
         }
+
+    /** The user's customization of the browser menu, waiting for it to be read if it can be customized. */
+    private suspend fun readMenuCustomization(): CustomizedMenuInfo? {
+        val customizedMenuInfo = requireComponents.menuCustomizationRepository.customizedMenuInfo
+        return if (requireComponents.settings.isMenuCustomizationScreenEnabled) {
+            customizedMenuInfo.filterNotNull().first()
+        } else {
+            customizedMenuInfo.value
+        }
+    }
 }
 
 @Composable
