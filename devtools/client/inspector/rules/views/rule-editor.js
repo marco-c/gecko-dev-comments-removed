@@ -613,10 +613,16 @@ class RuleEditor extends EventEmitter {
       sourceTextContent += ":" + line;
       displayLocation += ":" + line;
     }
-    const title = COMPONENT_L10N.getFormatStr(
-      "frame.viewsourceinstyleeditor",
-      displayLocation
-    );
+    
+    
+    const panelStr =
+      !Services.prefs.getBoolPref(
+        "devtools.debugger.features.stylesheets-in-debugger",
+        false
+      ) || !this.rule.sheet?.href
+        ? "frame.viewsourceinstyleeditor"
+        : "frame.viewsourceindebugger";
+    const title = COMPONENT_L10N.getFormatStr(panelStr, displayLocation);
 
     const sourceLabel = this.element.querySelector(
       ".ruleview-rule-source-label"
