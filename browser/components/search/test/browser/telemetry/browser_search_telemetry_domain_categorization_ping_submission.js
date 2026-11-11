@@ -85,25 +85,12 @@ add_setup(async function () {
   let promise = waitForDomainToCategoriesUpdate();
   await insertRecordIntoCollectionAndSync();
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.search.serpEventTelemetryCategorization.enabled", true],
-      ["telemetry.fog.test.activity_limit", 120],
-    ],
+    set: [["telemetry.fog.test.activity_limit", 120]],
   });
   await promise;
 
   registerCleanupFunction(async () => {
-    
-    
     await SpecialPowers.popPrefEnv();
-    if (
-      !Services.prefs.getBoolPref(
-        "browser.search.serpEventTelemetryCategorization.enabled"
-      )
-    ) {
-      await waitForDomainToCategoriesUninit();
-    }
-
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     Services.telemetry.canRecordExtended = oldCanRecord;
     resetTelemetry();

@@ -67,9 +67,6 @@ add_setup(async function () {
 
   let promise = waitForDomainToCategoriesUpdate();
   await insertRecordIntoCollectionAndSync();
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.serpEventTelemetryCategorization.enabled", true]],
-  });
   await promise;
 
   info("Change region to DE.");
@@ -80,17 +77,6 @@ add_setup(async function () {
   await TestUtils.waitForTick();
 
   registerCleanupFunction(async () => {
-    
-    
-    await SpecialPowers.popPrefEnv();
-    if (
-      !Services.prefs.getBoolPref(
-        "browser.search.serpEventTelemetryCategorization.enabled"
-      )
-    ) {
-      await waitForDomainToCategoriesUninit();
-    }
-
     Region._setHomeRegion(originalHomeRegion);
 
     SearchSERPTelemetry.overrideSearchTelemetryForTests();

@@ -59,22 +59,9 @@ add_setup(async function () {
 
   let promise = waitForDomainToCategoriesUpdate();
   await insertRecordIntoCollectionAndSync();
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.search.serpEventTelemetryCategorization.enabled", true]],
-  });
   await promise;
 
   registerCleanupFunction(async () => {
-    
-    
-    await SpecialPowers.popPrefEnv();
-    if (
-      !Services.prefs.getBoolPref(
-        "browser.search.serpEventTelemetryCategorization.enabled"
-      )
-    ) {
-      await waitForDomainToCategoriesUninit();
-    }
     SearchSERPTelemetry.overrideSearchTelemetryForTests();
     resetTelemetry();
   });
