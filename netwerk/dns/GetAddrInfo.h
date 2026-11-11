@@ -6,6 +6,7 @@
 #define netwerk_dns_GetAddrInfo_h
 
 #include "mozilla/Logging.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/RWLock.h"
 #include "mozilla/net/DNS.h"
 #include "nsError.h"
@@ -71,9 +72,13 @@ void DNSThreadShutdown();
 
 
 
+
+
+
 nsresult ResolveHTTPSRecord(const nsACString& aHost,
                             nsIDNSService::DNSFlags aFlags,
-                            TypeRecordResultType& aResult, uint32_t& aTTL);
+                            TypeRecordResultType& aResult, uint32_t& aTTL,
+                            const Maybe<nsCString>& aOriginHost = Nothing());
 
 
 
@@ -94,6 +99,7 @@ struct HTTPSAliasTarget {
 
 
 nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
+                                const Maybe<nsCString>& aOriginHost,
                                 nsIDNSService::DNSFlags aFlags,
                                 TypeRecordResultType& aResult, uint32_t& aTTL,
                                 HTTPSAliasTarget& aAlias);
@@ -109,6 +115,7 @@ nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
 
 nsresult ParseHTTPSRecordList(const _DnsRecordA* aRecords,
                               const nsACString& aHost,
+                              const Maybe<nsCString>& aOriginHost,
                               TypeRecordResultType& aResult, uint32_t& aTTL,
                               HTTPSAliasTarget& aAlias);
 #endif
@@ -141,6 +148,7 @@ class NativeDNSResolverOverride : public nsINativeDNSResolverOverride {
                                nsIDNSService::DNSFlags aFlags,
                                AddrInfo** aAddrInfo);
   friend bool FindHTTPSRecordOverride(const nsACString& aHost,
+                                      const Maybe<nsCString>& aOriginHost,
                                       TypeRecordResultType& aResult,
                                       HTTPSAliasTarget& aAlias);
 };
