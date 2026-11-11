@@ -26,6 +26,10 @@ struct _DnsRecordA;
 #  undef DNSQUERY_AVAILABLE
 #endif
 
+#ifdef HAVE_RES_NINIT
+struct __res_state;
+#endif
+
 namespace mozilla {
 namespace net {
 
@@ -67,6 +71,21 @@ nsresult GetAddrInfoInit();
 nsresult GetAddrInfoShutdown();
 
 void DNSThreadShutdown();
+
+
+
+
+
+void DNSNetworkChanged();
+uint32_t DNSNetworkGeneration();
+
+#ifdef HAVE_RES_NINIT
+
+
+
+
+struct __res_state* GetThreadResState();
+#endif
 
 
 
