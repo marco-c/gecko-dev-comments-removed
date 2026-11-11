@@ -5,6 +5,7 @@
 package mozilla.components.compose.menu.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
@@ -172,6 +174,7 @@ internal fun MenuListItemIcon(
  * @param onClickEvent The [MenuEvent] to dispatch when the menu item is clicked.
  * @param onLongClickEvent The [MenuEvent] to dispatch when the menu item is long-clicked.
  * @param onInteraction The callback to invoke when the menu item is interacted with.
+ * @param debounceClicks Whether to ignore a click made within a second of the previous one.
  */
 @Composable
 internal fun Modifier.menuItemClickableBehavior(
@@ -180,6 +183,7 @@ internal fun Modifier.menuItemClickableBehavior(
     onClickEvent: MenuEvent?,
     onLongClickEvent: MenuEvent?,
     onInteraction: (MenuEvent) -> Unit,
+    debounceClicks: Boolean = true,
 ): Modifier {
     val haptic = LocalHapticFeedback.current
     return if (onLongClickEvent != null) {
@@ -193,12 +197,24 @@ internal fun Modifier.menuItemClickableBehavior(
             role = role,
         )
     } else if (onClickEvent != null && state != DISABLED) {
-        this.debouncedClickable(
-            onClick = { onInteraction(onClickEvent) },
-            role = role,
-        )
+        if (debounceClicks) {
+            this.debouncedClickable(
+                onClick = { onInteraction(onClickEvent) },
+                role = role,
+            )
+        } else {
+            this.clickable(
+                onClick = { onInteraction(onClickEvent) },
+                role = role,
+            )
+        }
     } else if (state == DISABLED) {
-        this.semantics { disabled() }
+        this.semantics {
+            disabled()
+            if (onClickEvent != null) {
+                this.role = role
+            }
+        }
     } else {
         this
     }
