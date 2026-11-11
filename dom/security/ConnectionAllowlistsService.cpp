@@ -16,16 +16,28 @@ namespace mozilla::dom {
 
 NS_IMPL_ISUPPORTS(ConnectionAllowlistsService, nsIContentPolicy)
 
+static already_AddRefed<ConnectionAllowlists> GetAllowlistsForLoad(
+    nsILoadInfo* aLoadInfo) {
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aLoadInfo->GetPolicyContainer();
+  RefPtr<ConnectionAllowlists> allowlists =
+      PolicyContainer::GetConnectionAllowlists(policyContainer);
+  if (!allowlists) {
+    
+    
+    policyContainer = aLoadInfo->GetPolicyContainerToInherit();
+    allowlists = PolicyContainer::GetConnectionAllowlists(policyContainer);
+  }
+  return allowlists.forget();
+}
+
 NS_IMETHODIMP
 ConnectionAllowlistsService::ShouldLoad(nsIURI* aContentLocation,
                                         nsILoadInfo* aLoadInfo,
                                         int16_t* aDecision) {
   *aDecision = nsIContentPolicy::ACCEPT;
 
-  nsCOMPtr<nsIPolicyContainer> policyContainer =
-      aLoadInfo->GetPolicyContainer();
-  RefPtr<ConnectionAllowlists> allowlists =
-      PolicyContainer::GetConnectionAllowlists(policyContainer);
+  RefPtr<ConnectionAllowlists> allowlists = GetAllowlistsForLoad(aLoadInfo);
   if (!allowlists) {
     return NS_OK;
   }
@@ -63,10 +75,7 @@ nsresult ConnectionAllowlistsService::ConsultForRedirect(
     return NS_OK;
   }
 
-  nsCOMPtr<nsIPolicyContainer> policyContainer =
-      aLoadInfo->GetPolicyContainer();
-  RefPtr<ConnectionAllowlists> allowlists =
-      PolicyContainer::GetConnectionAllowlists(policyContainer);
+  RefPtr<ConnectionAllowlists> allowlists = GetAllowlistsForLoad(aLoadInfo);
   if (!allowlists) {
     return NS_OK;
   }
@@ -74,9 +83,7 @@ nsresult ConnectionAllowlistsService::ConsultForRedirect(
   if (allowlists->ShouldBlockRedirect(aOriginalURI, aLoadInfo)) {
     NS_SetRequestBlockingReason(
         aLoadInfo, nsILoadInfo::BLOCKING_REASON_CONNECTION_ALLOWLIST);
-    
-    
-    aCancelCode = Some(NS_ERROR_CONTENT_BLOCKED);
+    aCancelCode = Some(NS_ERROR_CONNECTION_ALLOWLIST_VIOLATION);
     return NS_BINDING_FAILED;
   }
 
