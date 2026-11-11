@@ -361,7 +361,6 @@
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
 #include "nsIBFCacheEntry.h"
-#include "nsIBaseWindow.h"
 #include "nsIBrowserChild.h"
 #include "nsIBrowserUsage.h"
 #include "nsICSSLoaderObserver.h"
@@ -2858,10 +2857,12 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   }
 
   
-  for (const auto& entry : tmp->mL10nProtoElements) {
-    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mL10nProtoElements key");
+  for (const auto& entry : tmp->mUntranslatedL10nProtoElements) {
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
+                                       "mUntranslatedL10nProtoElements key");
     cb.NoteXPCOMChild(entry.GetKey());
-    CycleCollectionNoteChild(cb, entry.GetWeak(), "mL10nProtoElements value");
+    CycleCollectionNoteChild(cb, entry.GetWeak(),
+                             "mUntranslatedL10nProtoElements value");
   }
 
   for (size_t i = 0; i < tmp->mPendingFrameStaticClones.Length(); ++i) {
@@ -3050,7 +3051,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
 
   tmp->UnregisterFromMemoryReportingForDataDocument();
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mL10nProtoElements)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mUntranslatedL10nProtoElements)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_REFERENCE
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -3802,20 +3803,16 @@ nsresult Document::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
 
   
   
-  
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aContainer);
-
-  
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  mSandboxFlags = loadInfo->GetSandboxFlags();
+  if (docShell) {
+    WarnIfSandboxIneffective(docShell, mSandboxFlags, aChannel);
+  }
 
   if (!IsTopLevelContentDocument()) {
     SetAncestorOriginsList(
         ProduceAncestorOriginsList(loadInfo->AncestorPrincipals()));
-  }
-
-  if (docShell && !loadInfo->GetLoadErrorPage()) {
-    mSandboxFlags = loadInfo->GetSandboxFlags();
-    WarnIfSandboxIneffective(docShell, mSandboxFlags, GetChannel());
   }
 
   mClassificationFlags = AntiTrackingUtils::GetClassificationFlags(aChannel);
@@ -4624,6 +4621,9 @@ void Document::SetDocumentURI(nsIURI* aURI) {
   if (!equalBases) {
     mCachedURLData = nullptr;
     RefreshLinkHrefs();
+    if (mSpeculationRules) {
+      mSpeculationRules->UpdateForBaseURLChange();
+    }
   }
 
   
@@ -5019,7 +5019,7 @@ void Document::OnParsingCompleted() {
   }
 }
 
-void Document::InitialTranslationCompleted(bool aL10nCached) {
+void Document::InitialTranslationCompleted() {
   if (mDocumentL10n && mDocumentL10n->mBlockingLayout) {
     
     
@@ -5029,12 +5029,7 @@ void Document::InitialTranslationCompleted(bool aL10nCached) {
     UnblockOnload( false);
   }
 
-  mL10nProtoElements.Clear();
-
-  nsXULPrototypeDocument* proto = GetPrototype();
-  if (proto) {
-    proto->SetIsL10nCached(aL10nCached);
-  }
+  mUntranslatedL10nProtoElements.Clear();
 }
 
 bool Document::AllowsL10n() const {
@@ -7631,6 +7626,9 @@ void Document::SetBaseURI(nsIURI* aURI) {
   mDocumentBaseURI = aURI;
   mCachedURLData = nullptr;
   RefreshLinkHrefs();
+  if (mSpeculationRules) {
+    mSpeculationRules->UpdateForBaseURLChange();
+  }
 }
 
 Result<OwningNonNull<nsIURI>, nsresult> Document::ResolveWithBaseURI(
@@ -10390,14 +10388,11 @@ void Document::DoNotifyPossibleTitleChange() {
   nsAutoString title;
   GetTitle(title);
 
-  if (RefPtr<PresShell> presShell = GetPresShell()) {
-    nsCOMPtr<nsISupports> container =
-        presShell->GetPresContext()->GetContainerWeak();
-    if (container) {
-      if (nsCOMPtr<nsIBaseWindow> docShellWin = do_QueryInterface(container)) {
-        docShellWin->SetTitle(title);
-      }
-    }
+  if (RefPtr<nsDocShell> docShell = nsDocShell::Cast(GetDocShell())) {
+    docShell->SetTitle(title);
+  }
+  if (nsCOMPtr<nsIAppWindow> appWin = GetAppWindowIfToplevelChrome()) {
+    appWin->SetTitle(title);
   }
 
   if (WindowGlobalChild* child = GetWindowGlobalChild()) {
@@ -10427,6 +10422,10 @@ already_AddRefed<MediaQueryList> Document::MatchMedia(
 void Document::SetMayStartLayout(bool aMayStartLayout) {
   mMayStartLayout = aMayStartLayout;
   if (MayStartLayout()) {
+    if (NodePrincipal()->IsSystemPrincipal() && !mChromeObserver) {
+      mChromeObserver = new ChromeObserver(this);
+      mChromeObserver->Init();
+    }
     
     
     
@@ -13527,10 +13526,6 @@ void Document::SetReadyStateInternal(ReadyState aReadyState,
     if (!mXULPersist && XRE_IsParentProcess()) {
       mXULPersist = new XULPersist(this);
       mXULPersist->Init();
-    }
-    if (!mChromeObserver) {
-      mChromeObserver = new ChromeObserver(this);
-      mChromeObserver->Init();
     }
   }
 
@@ -17368,6 +17363,26 @@ Document::ElementReadyCheckResult Document::FullscreenElementReadyCheck(
     aRequest.Reject("FullscreenDeniedNotFocusedTab");
     return ElementReadyCheckResult::eErrorPromiseRejected;
   }
+  const bool isActiveDocumentChainConsistent = ([self = this]() {
+    Document* doc = self;
+    while (doc) {
+      if (!doc->IsCurrentActiveDocument()) {
+        return false;
+      }
+      Element* embedder = doc->GetEmbedderElement();
+      Document* parent = doc->GetInProcessParentDocument();
+      if (!!embedder != !!parent ||
+          (embedder && embedder->GetComposedDoc() != parent)) {
+        return false;
+      }
+      doc = parent;
+    }
+    return true;
+  })();
+  if (!isActiveDocumentChainConsistent) {
+    aRequest.Reject("FullscreenDeniedHidden");
+    return ElementReadyCheckResult::eErrorPromiseRejected;
+  }
   return ElementReadyCheckResult::eOk;
 }
 
@@ -18532,8 +18547,9 @@ void Document::ReportTrustedTypesReadiness() {
       used || Has(TrustedTypesReadinessSignal::CreatedPolicy);
   glean::security::trusted_types_readiness
       .Get(nsPrintfCString(
-          "htmlsink-%s_writesink-%s_ttcsp-%s_strictcsp-%s_created-%u_used-%u_"
-          "lib-%u_js-%u",
+          "doc-%s_htmlsink-%s_writesink-%s_ttcsp-%s_strictcsp-%s_created-%u_"
+          "used-%u_lib-%u_js-%u",
+          IsTopLevelContentDocument() ? "top" : "sub",
           Sink(TrustedTypesReadinessSignal::UsedHTMLSinkWithString,
                TrustedTypesReadinessSignal::UsedHTMLSinkWithTrustedHTML),
           Sink(TrustedTypesReadinessSignal::UsedWriteSinkWithString,
