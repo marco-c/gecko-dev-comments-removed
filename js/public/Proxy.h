@@ -592,11 +592,7 @@ class JS_PUBLIC_API AutoEnterPolicy {
   typedef BaseProxyHandler::Action Action;
   AutoEnterPolicy(JSContext* cx, const BaseProxyHandler* handler,
                   JS::HandleObject wrapper, JS::HandleId id, Action act,
-                  bool mayThrow)
-#ifdef JS_DEBUG
-      : context(nullptr)
-#endif
-  {
+                  bool mayThrow) {
     allow = handler->hasSecurityPolicy()
                 ? handler->enter(cx, wrapper, id, act, mayThrow, &rv)
                 : true;
@@ -630,22 +626,16 @@ class JS_PUBLIC_API AutoEnterPolicy {
 
  protected:
   
-  AutoEnterPolicy()
-#ifdef JS_DEBUG
-      : context(nullptr),
-        enteredAction(BaseProxyHandler::NONE)
-#endif
-  {
-  }
+  AutoEnterPolicy() = default;
   void reportErrorIfExceptionIsNotPending(JSContext* cx, JS::HandleId id);
   bool allow;
   bool rv;
 
 #ifdef JS_DEBUG
-  JSContext* context;
+  JSContext* context = nullptr;
   mozilla::Maybe<JS::HandleObject> enteredProxy;
   mozilla::Maybe<JS::HandleId> enteredId;
-  Action enteredAction;
+  Action enteredAction = BaseProxyHandler::NONE;
 
   
   
