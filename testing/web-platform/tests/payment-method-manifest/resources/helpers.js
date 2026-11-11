@@ -12,9 +12,9 @@
 
 
 function createPaymentMethodIdentifierUrl(testId, options = {}) {
-  const host = options.host || location.host;
-  const url = new URL(`https://${
-      host}/payment-method-manifest/resources/payment-method-identifier.py`);
+  const origin = options.origin || location.origin;
+  const url = new URL(`${
+      origin}/payment-method-manifest/resources/payment-method-identifier.py`);
   url.searchParams.set('id', testId);
   if (options.link !== undefined) {
     const links = Array.isArray(options.link) ? options.link : [options.link];
@@ -45,9 +45,9 @@ function createPaymentMethodIdentifierUrl(testId, options = {}) {
 
 
 function createPaymentMethodManifestUrl(testId, options = {}) {
-  const host = options.host || location.host;
-  const url = new URL(`https://${
-      host}/payment-method-manifest/resources/payment-method-manifest.py`);
+  const origin = options.origin || location.origin;
+  const url = new URL(
+      `${origin}/payment-method-manifest/resources/payment-method-manifest.py`);
   url.searchParams.set('id', testId);
   if (options.redirect_location !== undefined) {
     url.searchParams.set('redirect_location', options.redirect_location);
