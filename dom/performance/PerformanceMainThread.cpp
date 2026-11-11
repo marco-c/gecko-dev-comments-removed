@@ -439,7 +439,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
       RefPtr<PerformanceEventTiming> entry =
           mPendingEventTimingEntries.popFirst();
       UpdateInteractionTelemetry(entry);
-      if (entry->RawDuration().valueOr(0) >= kDefaultEventTimingMinDuration) {
+      if (entry->Duration() >= kDefaultEventTimingMinDuration) {
         QueueEntry(entry);
       }
 
@@ -745,6 +745,10 @@ void PerformanceMainThread::GetEntries(
   if (mFCPTiming) {
     aRetval.AppendElement(mFCPTiming);
   }
+
+  if (mFirstInputEvent) {
+    aRetval.AppendElement(mFirstInputEvent);
+  }
   aRetval.Sort(PerformanceEntryComparator());
 }
 
@@ -805,6 +809,10 @@ void PerformanceMainThread::GetEntriesByName(
 
   if (MatchesNameAndType(mFCPTiming, aName, aEntryType)) {
     aRetval.InsertElementSorted(mFCPTiming, PerformanceEntryComparator());
+  }
+
+  if (MatchesNameAndType(mFirstInputEvent, aName, aEntryType)) {
+    aRetval.InsertElementSorted(mFirstInputEvent, PerformanceEntryComparator());
   }
 
   
