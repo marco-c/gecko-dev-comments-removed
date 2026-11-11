@@ -17,6 +17,7 @@
 #include "mozilla/layers/NativeLayer.h"
 #if defined(MOZ_WAYLAND)
 #  include "mozilla/layers/NativeLayerWayland.h"
+#  include "mozilla/webrender/RenderLinuxTextureHost.h"
 #endif
 #include "mozilla/layers/ProfilerScreenshots.h"
 #include "mozilla/layers/SurfacePool.h"
@@ -391,13 +392,9 @@ void RenderCompositorNativeOGL::AttachExternalImage(
       RenderThread::Get()->GetRenderTexture(aExternalImage);
 
   
-  
-  
-  
-  
-  
-  
-  image->Lock(0, image->AsRenderDMABUFTextureHost() ? nullptr : mGL.get());
+  bool useGL = image->AsRenderLinuxTextureHost() &&
+               image->AsRenderLinuxTextureHost()->SupportsDirectComposition();
+  image->Lock(0, useGL ? mGL.get() : nullptr);
 
   RenderCompositorNative::AttachExternalImage(aId, aExternalImage);
 }

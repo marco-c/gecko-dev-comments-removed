@@ -23,6 +23,7 @@
 
 #if defined(MOZ_WAYLAND)
 #  include "mozilla/layers/NativeLayerWayland.h"
+#  include "mozilla/webrender/RenderLinuxTextureHost.h"
 #endif
 
 namespace mozilla::wr {
@@ -353,13 +354,9 @@ void RenderCompositorLayerNativeOGL::AttachExternalImage(
       RenderThread::Get()->GetRenderTexture(aExternalImage);
 
   
-  
-  
-  
-  
-  
-  
-  image->Lock(0, image->AsRenderDMABUFTextureHost() ? nullptr : mGL.get());
+  bool useGL = image->AsRenderLinuxTextureHost() &&
+               image->AsRenderLinuxTextureHost()->SupportsDirectComposition();
+  image->Lock(0, useGL ? mGL.get() : nullptr);
 
   RenderCompositorLayerNative::AttachExternalImage(aId, aExternalImage);
 }
