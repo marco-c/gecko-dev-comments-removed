@@ -11,6 +11,7 @@
 #include "Dictionary.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
@@ -484,7 +485,14 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   
   size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const;
 
+  
+  static already_AddRefed<CacheFileIOManager> GetInstance();
+
+  
+  
+  
   static StaticRefPtr<CacheFileIOManager> gInstance;
+  static StaticMutex sInstanceLock;
 
   
   RefPtr<DictionaryCache> mDictionaryCache;
@@ -492,7 +500,7 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   TimeStamp mStartTime;
   
   
-  bool mShuttingDown{false};
+  Atomic<bool, ReleaseAcquire> mShuttingDown{false};
   RefPtr<CacheIOThread> mIOThread;
   nsCOMPtr<nsIFile> mCacheDirectory;
 #if defined(MOZ_WIDGET_ANDROID)
@@ -509,6 +517,7 @@ class CacheFileIOManager final : public nsITimerCallback, public nsINamed {
   nsTArray<CacheFileHandle*> mSpecialHandles;
   nsTArray<RefPtr<CacheFile> > mScheduledMetadataWrites;
   nsCOMPtr<nsITimer> mMetadataWritesTimer;
+  bool mMetadataWritesShutdown{false};
   bool mOverLimitEvicting{false};
   
   
