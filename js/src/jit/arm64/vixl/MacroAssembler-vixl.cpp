@@ -76,6 +76,8 @@ int MacroAssembler::MoveImmediateHelper(MacroAssembler* masm,
   
   if (OneInstrMoveImmediateHelper(masm, rd, imm)) {
     return 1;
+  } else if (!rd.IsSP() && TwoInstrMoveImmediateHelper(masm, rd, imm)) {
+    return 2;
   } else {
     int instruction_count = 0;
     unsigned reg_size = rd.size();
@@ -170,6 +172,54 @@ bool MacroAssembler::OneInstrMoveImmediateHelper(MacroAssembler* masm,
           dst, AppropriateZeroRegFor(dst), n, imm_s, imm_r, ORR);
     }
     return true;
+  }
+  return false;
+}
+
+
+bool MacroAssembler::TwoInstrMoveImmediateHelper(MacroAssembler* masm,
+                                                 const Register& dst,
+                                                 uint64_t imm) {
+  bool emit_code = masm != NULL;
+
+  
+  if (!dst.Is64Bits() || CountClearHalfWords(imm, kXRegSize) >= 2 ||
+      CountClearHalfWords(~imm, kXRegSize) >= 2) {
+    return false;
+  }
+
+  
+  
+  for (unsigned shift = kWRegSize; shift < kXRegSize; shift += 16) {
+    uint64_t halfword = imm & (UINT64_C(0xffff) << shift);
+    if ((imm & ~kWRegMask) == halfword &&
+        OneInstrMoveImmediateHelper(masm, dst.W(), imm & kWRegMask)) {
+      if (emit_code) masm->movk(dst, halfword >> shift, shift);
+      return true;
+    }
+  }
+
+  
+  
+  
+  
+  for (unsigned shift = 0; shift < kXRegSize; shift += 16) {
+    uint64_t mask = UINT64_C(0xffff) << shift;
+    uint64_t candidates[] = {
+        imm & ~mask, imm | mask,
+        (imm & ~mask) | (RotateLeft(imm, 32, kXRegSize) & mask)};
+    for (uint64_t candidate : candidates) {
+      unsigned n, imm_s, imm_r;
+      if (IsImmLogical(candidate, kXRegSize, &n, &imm_s, &imm_r)) {
+        VIXL_ASSERT(!dst.IsZero());
+        if (emit_code) {
+          masm->LogicalImmediate(dst, AppropriateZeroRegFor(dst), n, imm_s,
+                                 imm_r, ORR);
+          masm->movk(dst, (imm & mask) >> shift, shift);
+        }
+        return true;
+      }
+    }
   }
   return false;
 }

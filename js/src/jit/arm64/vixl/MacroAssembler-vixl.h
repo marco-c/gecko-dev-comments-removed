@@ -182,6 +182,9 @@ class MacroAssembler : public js::jit::Assembler {
   static bool OneInstrMoveImmediateHelper(MacroAssembler* masm,
                                           const Register& dst,
                                           int64_t imm);
+  static bool TwoInstrMoveImmediateHelper(MacroAssembler* masm,
+                                          const Register& dst,
+                                          uint64_t imm);
 
 
   
@@ -314,13 +317,13 @@ class MacroAssembler : public js::jit::Assembler {
 
   
 #define DECLARE_FUNCTION(FN, REGTYPE, REG, OP) \
-  js::wasm::FaultingCodeOffset FN(const REGTYPE REG, const MemOperand& addr);
+  js::wasm::FaultingCodeRange FN(const REGTYPE REG, const MemOperand& addr);
   LS_MACRO_LIST(DECLARE_FUNCTION)
 #undef DECLARE_FUNCTION
 
-  js::wasm::FaultingCodeOffset LoadStoreMacro(const CPURegister& rt,
-                                              const MemOperand& addr,
-                                              LoadStoreOp op);
+  js::wasm::FaultingCodeRange LoadStoreMacro(const CPURegister& rt,
+                                             const MemOperand& addr,
+                                             LoadStoreOp op);
 
 #define DECLARE_FUNCTION(FN, REGTYPE, REG, REG2, OP) \
   void FN(const REGTYPE REG, const REGTYPE REG2, const MemOperand& addr);
