@@ -1994,33 +1994,6 @@ FullParseHandler::ModuleNodeResult Parser<FullParseHandler, Unit>::moduleBody(
     p->value()->setClosedOver();
   }
 
-  
-  
-  if (!noteDeclaredName(
-          TaggedParserAtomIndex::WellKnown::star_namespace_star_(),
-          DeclarationKind::Const, pos())) {
-    return errorResult();
-  }
-  modulepc.varScope()
-      .lookupDeclaredName(
-          TaggedParserAtomIndex::WellKnown::star_namespace_star_())
-      ->value()
-      ->setClosedOver();
-
-  
-  
-  
-  if (!noteDeclaredName(
-          TaggedParserAtomIndex::WellKnown::star_deferred_namespace_star_(),
-          DeclarationKind::Const, pos())) {
-    return errorResult();
-  }
-  modulepc.varScope()
-      .lookupDeclaredName(
-          TaggedParserAtomIndex::WellKnown::star_deferred_namespace_star_())
-      ->value()
-      ->setClosedOver();
-
   if (!CheckParseTree(this->fc_, alloc_, stmtList)) {
     return errorResult();
   }
