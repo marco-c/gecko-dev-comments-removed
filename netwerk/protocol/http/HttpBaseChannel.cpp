@@ -992,6 +992,19 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
 
   
   
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIAsyncInputStream> async = do_QueryInterface(aUploadStream);
+  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(aUploadStream);
+  if (NS_InputStreamIsCloneable(aUploadStream) && seekable && !async) {
+    return NS_OK;
+  }
+
+  
+  
   if (nsCOMPtr<mozIRemoteLazyInputStream> lazyStream =
           do_QueryInterface(aUploadStream)) {
     nsCOMPtr<nsIInputStream> internal;
@@ -1050,12 +1063,16 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
       nsresult rv = NormalizeUploadStream(data, getter_AddRefs(replacement),
                                           aReadyPromise);
       NS_ENSURE_SUCCESS(rv, rv);
-      if (replacement) {
-        
-        rv = NS_NewBufferedInputStream(aReplacementStream, replacement.forget(),
-                                       8192);
-        NS_ENSURE_SUCCESS(rv, rv);
+      
+      
+      
+      if (!replacement) {
+        return NS_ERROR_INVALID_ARG;
       }
+      
+      rv = NS_NewBufferedInputStream(aReplacementStream, replacement.forget(),
+                                     8192);
+      NS_ENSURE_SUCCESS(rv, rv);
       return NS_OK;
     }
   }
@@ -1091,18 +1108,22 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
 
     
     
-    if (replace) {
-      nsresult rv;
-      nsCOMPtr<nsIMultiplexInputStream> replacement =
-          do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1", &rv);
-      NS_ENSURE_SUCCESS(rv, rv);
-      for (auto& stream : streams) {
-        rv = replacement->AppendStream(stream);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
-
-      MOZ_ALWAYS_SUCCEEDS(CallQueryInterface(replacement, aReplacementStream));
+    if (!replace) {
+      return NS_ERROR_INVALID_ARG;
     }
+
+    
+    
+    nsresult rv;
+    nsCOMPtr<nsIMultiplexInputStream> replacement =
+        do_CreateInstance("@mozilla.org/io/multiplex-input-stream;1", &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+    for (auto& stream : streams) {
+      rv = replacement->AppendStream(stream);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    MOZ_ALWAYS_SUCCEEDS(CallQueryInterface(replacement, aReplacementStream));
 
     
     if (!promises.IsEmpty()) {
@@ -1124,16 +1145,6 @@ static nsresult NormalizeUploadStream(nsIInputStream* aUploadStream,
                      });
       ready.forget(aReadyPromise);
     }
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  nsCOMPtr<nsIAsyncInputStream> async = do_QueryInterface(aUploadStream);
-  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(aUploadStream);
-  if (NS_InputStreamIsCloneable(aUploadStream) && seekable && !async) {
     return NS_OK;
   }
 
