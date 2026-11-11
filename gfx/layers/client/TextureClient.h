@@ -15,7 +15,8 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"  
 #include "mozilla/Mutex.h"
-#include "mozilla/RefPtr.h"               
+#include "mozilla/RefPtr.h"  
+#include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"  
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/2D.h"  
@@ -627,8 +628,8 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   
   
-  TextureData* GetInternalData() { return mData; }
-  const TextureData* GetInternalData() const { return mData; }
+  TextureData* GetInternalData() { return mData.get(); }
+  const TextureData* GetInternalData() const { return mData.get(); }
 
   
 
@@ -743,10 +744,15 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
   RefPtr<LayersIPCChannel> mAllocator;
   RefPtr<TextureChild> mActor;
+  
+  
+  mutable RefPtr<TextureChild> mActorForUnlock MOZ_GUARDED_BY(mMutex);
+  
+  bool mActorDestroying MOZ_GUARDED_BY(mMutex) = false;
   RefPtr<ITextureClientRecycleAllocator> mRecycleAllocator;
   RefPtr<TextureReadLock> mReadLock MOZ_GUARDED_BY(mMutex);
 
-  TextureData* mData;
+  UniquePtr<TextureData> mData;
   RefPtr<gfx::DrawTarget> mBorrowedDrawTarget;
   bool mBorrowedSnapshot = false;
 

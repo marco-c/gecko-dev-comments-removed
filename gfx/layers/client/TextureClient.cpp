@@ -111,6 +111,8 @@ class TextureChild final : public PTextureChild {
   ~TextureChild() {
     
     MOZ_RELEASE_ASSERT(!mTextureData);
+    
+    MutexAutoLock lock(mClientLock);
     MOZ_ASSERT_IF(!mOwnerCalledDestroy, !mTextureClient);
   }
 
@@ -213,7 +215,9 @@ class TextureChild final : public PTextureChild {
   RefPtr<CompositableForwarder> mCompositableForwarder;
   RefPtr<TextureForwarder> mTextureForwarder;
 
-  TextureClient* mTextureClient;
+  
+  mutable Mutex mClientLock{"TextureChild::mClientLock"};
+  TextureClient* mTextureClient MOZ_GUARDED_BY(mClientLock);
   UniquePtr<TextureData> mTextureData;
   Atomic<bool> mDestroyed;
   bool mOwnsTextureData;
@@ -358,6 +362,11 @@ static void DestroyTextureData(UniquePtr<TextureData> aTextureData,
 void TextureChild::ActorDestroy(ActorDestroyReason why) {
   AUTO_PROFILER_LABEL("TextureChild::ActorDestroy", GRAPHICS);
 
+  {
+    MutexAutoLock lock(mClientLock);
+    mTextureClient = nullptr;
+  }
+
   if (mTextureData) {
     DestroyTextureData(std::move(mTextureData), GetAllocator(),
                        mOwnsTextureData);
@@ -480,9 +489,23 @@ void TextureClient::Destroy() {
   
   
   
+  RefPtr<TextureChild> actor;
+  bool actorLockAcquired = false;
+  {
+    MutexAutoLock lock(mMutex);
+    if (mActorDestroying) {
+      return;
+    }
+    mActorDestroying = true;
+    actor = std::move(mActor);
+  }
   
-  if (mActor && (!mIsLocked || !mActor->mUsesImageBridge)) {
-    mActor->Lock();
+  
+  
+  
+  if (actor && !actor->mUsesImageBridge) {
+    actor->Lock();
+    actorLockAcquired = true;
   }
 
   if (mBorrowedDrawTarget) {
@@ -495,17 +518,25 @@ void TextureClient::Destroy() {
   }
   mBorrowedSnapshot = false;
 
-  RefPtr<TextureChild> actor = std::move(mActor);
-
   RefPtr<TextureReadLock> readLock;
   {
     MutexAutoLock lock(mMutex);
     readLock = std::move(mReadLock);
   }
 
-  if (actor && !actor->mDestroyed.compareExchange(false, true)) {
-    actor->Unlock();
-    actor = nullptr;
+  if (actor) {
+    bool alreadyDestroyed;
+    {
+      MutexAutoLock lock(actor->mClientLock);
+      alreadyDestroyed = !actor->mDestroyed.compareExchange(false, true);
+      actor->mTextureClient = nullptr;
+    }
+    if (alreadyDestroyed) {
+      if (actorLockAcquired) {
+        actor->Unlock();
+      }
+      actor = nullptr;
+    }
   }
 
   UniquePtr<TextureData> data;
@@ -529,7 +560,7 @@ void TextureClient::Destroy() {
     
     
 
-    if (params.actor) {
+    if (actorLockAcquired && params.actor) {
       params.actor->Unlock();
     }
 
@@ -538,14 +569,40 @@ void TextureClient::Destroy() {
 }
 
 void TextureClient::LockActor() const {
-  if (mActor && mActor->mUsesImageBridge) {
-    mActor->Lock();
+  RefPtr<TextureChild> actor;
+  {
+    MutexAutoLock lock(mMutex);
+    MOZ_ASSERT(!mActorForUnlock);
+    if (!mActorDestroying && mActor && mActor->mUsesImageBridge) {
+      actor = mActor;
+    }
+  }
+  if (actor) {
+    
+    actor->Lock();
+    bool detached;
+    {
+      MutexAutoLock lock(mMutex);
+      detached = mActorDestroying || mActor != actor;
+      if (!detached) {
+        MOZ_ASSERT(!mActorForUnlock);
+        mActorForUnlock = actor;
+      }
+    }
+    if (detached) {
+      actor->Unlock();
+    }
   }
 }
 
 void TextureClient::UnlockActor() const {
-  if (mActor && mActor->mUsesImageBridge) {
-    mActor->Unlock();
+  RefPtr<TextureChild> actor;
+  {
+    MutexAutoLock lock(mMutex);
+    actor = std::move(mActorForUnlock);
+  }
+  if (actor) {
+    actor->Unlock();
   }
 }
 
@@ -1060,22 +1117,12 @@ already_AddRefed<TextureClient> TextureClient::AsTextureClient(
 
   TextureChild* tc = static_cast<TextureChild*>(actor);
 
-  tc->Lock();
-
   
-  
-  
-  
-  if (tc->mDestroyed) {
-    tc->Unlock();
+  MutexAutoLock lock(tc->mClientLock);
+  if (tc->mDestroyed || !tc->mTextureClient) {
     return nullptr;
   }
-
-  RefPtr<TextureClient> texture;
-  if (tc->mTextureClient) {
-    texture = tc->mTextureClient->TryAddRef();
-  }
-  tc->Unlock();
+  RefPtr<TextureClient> texture = tc->mTextureClient->TryAddRef();
 
   return texture.forget();
 }
@@ -1241,19 +1288,42 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
     return false;
   }
 
-  mActor = actor.forget().downcast<TextureChild>();
-  mActor->mCompositableForwarder = aForwarder;
-  mActor->mTextureForwarder = textureFwd;
-  mActor->mUsesImageBridge = textureFwd->UsesImageBridge();
-  mActor->mTextureClient = this;
-
   
-  
-  if (mIsLocked) {
-    LockActor();
+  RefPtr<TextureChild> newActor = actor.forget().downcast<TextureChild>();
+  newActor->mCompositableForwarder = aForwarder;
+  newActor->mTextureForwarder = textureFwd;
+  newActor->mUsesImageBridge = textureFwd->UsesImageBridge();
+  {
+    MutexAutoLock lock(newActor->mClientLock);
+    newActor->mTextureClient = this;
   }
 
-  return mActor->CanSend();
+  
+  
+  bool destroyNewActor = false;
+  {
+    MutexAutoLock lock(mMutex);
+    if (mActorDestroying) {
+      destroyNewActor = true;
+    } else {
+      mActor = newActor;
+    }
+  }
+  if (destroyNewActor) {
+    
+    
+    {
+      MutexAutoLock lock(newActor->mClientLock);
+      newActor->mTextureClient = nullptr;
+      newActor->mDestroyed = true;
+    }
+    TextureDeallocParams params;
+    params.actor = std::move(newActor);
+    params.allocator = mAllocator;
+    DeallocateTextureClient(params);
+    return false;
+  }
+  return newActor->CanSend();
 }
 
 bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
@@ -1312,18 +1382,41 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
     return false;
   }
 
-  mActor = actor.forget().downcast<TextureChild>();
-  mActor->mTextureForwarder = textureFwd;
-  mActor->mUsesImageBridge = textureFwd->UsesImageBridge();
-  mActor->mTextureClient = this;
-
   
-  
-  if (mIsLocked) {
-    LockActor();
+  RefPtr<TextureChild> newActor = actor.forget().downcast<TextureChild>();
+  newActor->mTextureForwarder = textureFwd;
+  newActor->mUsesImageBridge = textureFwd->UsesImageBridge();
+  {
+    MutexAutoLock lock(newActor->mClientLock);
+    newActor->mTextureClient = this;
   }
 
-  return mActor->CanSend();
+  
+  
+  bool destroyNewActor = false;
+  {
+    MutexAutoLock lock(mMutex);
+    if (mActorDestroying) {
+      destroyNewActor = true;
+    } else {
+      mActor = newActor;
+    }
+  }
+  if (destroyNewActor) {
+    
+    
+    {
+      MutexAutoLock lock(newActor->mClientLock);
+      newActor->mTextureClient = nullptr;
+      newActor->mDestroyed = true;
+    }
+    TextureDeallocParams params;
+    params.actor = std::move(newActor);
+    params.allocator = mAllocator;
+    DeallocateTextureClient(params);
+    return false;
+  }
+  return newActor->CanSend();
 }
 
 PTextureChild* TextureClient::GetIPDLActor() {
