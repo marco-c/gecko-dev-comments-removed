@@ -307,13 +307,6 @@ document.addEventListener(
             SessionStore.forgetSavedTabGroup(tabGroupId, "user-deleted");
           }
           break;
-        
-        case "editBookmarkPanelDoneButton":
-          StarUI.panel.hidePopup();
-          break;
-        case "editBookmarkPanelRemoveButton":
-          StarUI.removeBookmarkButtonCommand();
-          break;
 
         
         case "sidebar-switcher-bookmarks":
