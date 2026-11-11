@@ -155,7 +155,7 @@ DefaultJitOptions::DefaultJitOptions() {
   
   bool perfEnabled = !!getenv("IONPERF");
   SET_DEFAULT(emitInterpreterEntryTrampoline, perfEnabled);
-  SET_DEFAULT(enableICFramePointers, perfEnabled);
+  SET_DEFAULT(enableStubFramePointers, perfEnabled);
 
   
   SET_DEFAULT(baselineJit, true);
