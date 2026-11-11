@@ -51,6 +51,7 @@
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSharedListElement.h"
 #include "mozilla/dom/HTMLSummaryElement.h"
+#include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/intl/LocaleService.h"
 #include "nsAtom.h"
 #include "nsAutoLayoutPhase.h"
@@ -1833,7 +1834,9 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   
   
   
-  if (!Servo_ComputedValues_SpecifiesAnimationsOrTransitions(pseudoStyle) &&
+  
+  
+  if (!Servo_ComputedValues_NeedsAnimationTraversal(pseudoStyle) &&
       !aOriginatingElement.MayHaveAnimations()) {
     Servo_SetExplicitStyle(container, pseudoStyle);
   } else {
@@ -5360,7 +5363,7 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
         continue;
       }
     }
-    if (absPosCBCandidate->IsScrollContainerFrame()) {
+    if (absPosCBCandidate->IsScrollContainerOrSubclass()) {
       ScrollContainerFrame* scrollContainerFrame =
           do_QueryFrame(absPosCBCandidate);
       absPosCBCandidate = scrollContainerFrame->GetScrolledFrame();
@@ -5964,16 +5967,25 @@ void nsCSSFrameConstructor::ConstructLazily(nsIContent* aStartChild,
   parent->NoteDescendantsNeedFramesForServo();
 }
 
-void nsCSSFrameConstructor::IssueSingleInsertNofications(
-    nsIContent* aStartChild, nsIContent* aEndChild,
+void nsCSSFrameConstructor::IssueShadowHostChildrenInsertNotifications(
+    const ShadowRoot& aShadow, nsIContent* aStartChild, nsIContent* aEndChild,
     InsertionKind aInsertionKind) {
-  for (nsIContent* child = aStartChild; child != aEndChild;
-       child = child->GetNextSibling()) {
-    MOZ_ASSERT(!child->GetPrimaryFrame());
-
-    
-    ContentRangeInserted(child, child->GetNextSibling(), aInsertionKind);
-  }
+  
+  
+  const bool namedSlots = aShadow.SlotAssignment() == SlotAssignmentMode::Named;
+  nsIContent* runStart = aStartChild;
+  do {
+    nsIContent* runEnd = runStart->GetNextSibling();
+    auto* slot = runStart->GetAssignedSlot();
+    if (!slot || namedSlots) {
+      while (runEnd != aEndChild && runEnd->GetAssignedSlot() == slot) {
+        runEnd = runEnd->GetNextSibling();
+      }
+    }
+    ContentRangeInserted(runStart, runEnd, aInsertionKind,
+                         SameInsertionPoint::Yes);
+    runStart = runEnd;
+  } while (runStart != aEndChild);
 }
 
 nsCSSFrameConstructor::InsertionPoint
@@ -5983,11 +5995,11 @@ nsCSSFrameConstructor::GetRangeInsertionPoint(nsIContent* aStartChild,
   MOZ_ASSERT(aStartChild);
   MOZ_ASSERT(aStartChild->GetParentNode());
 
-  
-  
-  
-  if (aStartChild->GetParentNode()->GetShadowRoot()) {
-    IssueSingleInsertNofications(aStartChild, aEndChild, aInsertionKind);
+  if (auto* shadow = aStartChild->GetParentNode()->GetShadowRoot()) {
+    
+    
+    IssueShadowHostChildrenInsertNotifications(*shadow, aStartChild, aEndChild,
+                                               aInsertionKind);
     return {};
   }
 
@@ -6132,9 +6144,9 @@ static nsIFrame* FindCaptionPrevSibling(nsTableWrapperFrame* aTable,
 
 
 
-void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
-                                                 nsIContent* aEndChild,
-                                                 InsertionKind aInsertionKind) {
+void nsCSSFrameConstructor::ContentRangeInserted(
+    nsIContent* aStartChild, nsIContent* aEndChild,
+    InsertionKind aInsertionKind, SameInsertionPoint aSameInsertionPoint) {
   AUTO_PROFILER_LABEL_HOT("nsCSSFrameConstructor::ContentRangeInserted",
                           LAYOUT_FrameConstruction);
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
@@ -6215,11 +6227,18 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
 
   const bool isSingleInsert = aStartChild->GetNextSibling() == aEndChild;
   InsertionPoint insertion;
-  if (isSingleInsert) {
+  if (isSingleInsert || aSameInsertionPoint == SameInsertionPoint::Yes) {
     
     
     
     insertion = GetInsertionPoint(aStartChild);
+#ifdef DEBUG
+    for (nsIContent* child = aStartChild->GetNextSibling(); child != aEndChild;
+         child = child->GetNextSibling()) {
+      MOZ_ASSERT(GetInsertionPoint(child) == insertion,
+                 "Caller lied, not the same insertion point");
+    }
+#endif
   } else {
     
     
@@ -6815,14 +6834,6 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
   InvalidateCanvasIfNeeded(mPresShell, aChild);
 
   
-  LAYOUT_PHASE_TEMP_EXIT();
-  if (MaybeRecreateContainerForFrameRemoval(childFrame)) {
-    LAYOUT_PHASE_TEMP_REENTER();
-    return true;
-  }
-  LAYOUT_PHASE_TEMP_REENTER();
-
-  
   nsIFrame* parentFrame = childFrame->GetParent();
   LayoutFrameType parentType = parentFrame->Type();
 
@@ -6847,14 +6858,6 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     LAYOUT_PHASE_TEMP_REENTER();
     return true;
   }
-
-#ifdef ACCESSIBILITY
-  if (aKind != RemovalKind::ForReconstruction) {
-    if (nsAccessibilityService* accService = GetAccService()) {
-      accService->ContentRemoved(mPresShell, aChild);
-    }
-  }
-#endif
 
   
   
@@ -6900,6 +6903,22 @@ bool nsCSSFrameConstructor::ContentWillBeRemoved(nsIContent* aChild,
     printf("\n");
 #endif
   }
+
+  
+  LAYOUT_PHASE_TEMP_EXIT();
+  if (MaybeRecreateContainerForFrameRemoval(childFrame)) {
+    LAYOUT_PHASE_TEMP_REENTER();
+    return true;
+  }
+  LAYOUT_PHASE_TEMP_REENTER();
+
+#ifdef ACCESSIBILITY
+  if (aKind != RemovalKind::ForReconstruction) {
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->ContentRemoved(mPresShell, aChild);
+    }
+  }
+#endif
 
 #ifdef DEBUG
   if (gReallyNoisyContentUpdates) {
@@ -7116,51 +7135,55 @@ void nsCSSFrameConstructor::CharacterDataChanged(
 
   
   
-  if (nsIFrame* frame = aContent->GetPrimaryFrame()) {
-#if 0
-    NS_FRAME_LOG(NS_FRAME_TRACE_CALLS,
-       ("nsCSSFrameConstructor::CharacterDataChanged: content=%p[%s] subcontent=%p frame=%p",
-        aContent, ContentTag(aContent, 0),
-        aSubContent, frame));
-#endif
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  if (!frame) {
+    return;
+  }
 
-    if (frame->HasAnyStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI)) {
-      LAYOUT_PHASE_TEMP_EXIT();
-      RecreateFramesForContent(aContent, InsertionKind::Async);
-      LAYOUT_PHASE_TEMP_REENTER();
-      return;
-    }
+  LAYOUT_PHASE_TEMP_EXIT();
+  if (ShouldRebuildFrameTreeForReplicatedFrames(frame)) {
+    
+    
+    
+    RestyleManager()->PostRestyleEvent(mDocument->GetRootElement(),
+                                       RestyleHint{0},
+                                       nsChangeHint_ReconstructFrame);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return;
+  }
+  if (frame->HasAnyStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI)) {
+    RecreateFramesForContent(aContent, InsertionKind::Async);
+    LAYOUT_PHASE_TEMP_REENTER();
+    return;
+  }
+  LAYOUT_PHASE_TEMP_REENTER();
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsContainerFrame* block = GetFloatContainingBlock(frame);
+  
+  bool haveFirstLetterStyle = block && HasFirstLetterStyle(block);
+  if (haveFirstLetterStyle) {
+    RemoveLetterFrames(mPresShell, block);
     
     
-    
-    
-    
-    
-    
-    
-    
-    nsContainerFrame* block = GetFloatContainingBlock(frame);
-    bool haveFirstLetterStyle = false;
-    if (block) {
-      
-      haveFirstLetterStyle = HasFirstLetterStyle(block);
-      if (haveFirstLetterStyle) {
-        RemoveLetterFrames(mPresShell, block);
-        
-        
-        frame = aContent->GetPrimaryFrame();
-        NS_ASSERTION(frame, "Should have frame here!");
-      }
-    }
+    frame = aContent->GetPrimaryFrame();
+    NS_ASSERTION(frame, "Should have frame here!");
+  }
 
-    
-    
-    frame->CharacterDataChanged(aInfo);
+  
+  
+  frame->CharacterDataChanged(aInfo);
 
-    if (haveFirstLetterStyle) {
-      RecoverLetterFrames(block);
-    }
+  if (haveFirstLetterStyle) {
+    RecoverLetterFrames(block);
   }
 }
 
@@ -7622,6 +7645,26 @@ static nsIFrame* CheckRubyContainers(nsIFrame* aFrame, nsIFrame* aParent) {
   return ancestor;
 }
 
+
+
+
+
+bool nsCSSFrameConstructor::ShouldRebuildFrameTreeForReplicatedFrames(
+    nsIFrame* aFrame) {
+  if (!aFrame->PresContext()->IsPaginated()) {
+    return false;
+  }
+  if (aFrame->GetContent() == mDocument->GetRootElement()) {
+    return false;
+  }
+  nsIFrame* inFlowFrame = aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)
+                              ? aFrame->GetPlaceholderFrame()
+                              : aFrame;
+  return IsInFragmentedTable(inFlowFrame) ||
+         aFrame->IsInReplicatedFixedPosTree() ||
+         aFrame->ContainsReplicatedFixedPosPlaceholders();
+}
+
 bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
     nsIFrame* aFrame) {
 #define TRACE(reason)                                                       \
@@ -7639,15 +7682,7 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
   MOZ_ASSERT(inFlowFrame == inFlowFrame->FirstContinuation(),
              "placeholder for primary frame has previous continuations?");
 
-  if (aFrame->PresContext()->IsPaginated() &&
-      aFrame->GetContent() != mDocument->GetRootElement() &&
-      (IsInFragmentedTable(inFlowFrame) ||
-       aFrame->IsInReplicatedFixedPosTree() ||
-       aFrame->ContainsReplicatedFixedPosPlaceholders())) {
-    
-    
-    
-    
+  if (ShouldRebuildFrameTreeForReplicatedFrames(aFrame)) {
     TRACE("Paginated fragmented content");
     RecreateFramesForContent(mDocument->GetRootElement(), InsertionKind::Async);
     return true;

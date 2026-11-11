@@ -88,6 +88,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     Async,
   };
 
+  
+  
+  enum class SameInsertionPoint : bool { No, Yes };
+
   mozilla::RestyleManager* RestyleManager() const;
 
   mozilla::ViewportFrame* ConstructRootFrame();
@@ -106,18 +110,22 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   
   
-  void IssueSingleInsertNofications(nsIContent* aStartChild,
-                                    nsIContent* aEndChild, InsertionKind);
+  
+  void IssueShadowHostChildrenInsertNotifications(
+      const mozilla::dom::ShadowRoot&, nsIContent* aStartChild,
+      nsIContent* aEndChild, InsertionKind);
 
   
 
 
   struct InsertionPoint {
-    InsertionPoint() : mParentFrame(nullptr), mContainer(nullptr) {}
+    InsertionPoint() = default;
 
     InsertionPoint(nsContainerFrame* aParentFrame, nsIContent* aContainer)
         : mParentFrame(aParentFrame), mContainer(aContainer) {}
 
+    bool operator==(const InsertionPoint&) const = default;
+
     
 
 
@@ -126,12 +134,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-    nsContainerFrame* mParentFrame;
+    nsContainerFrame* mParentFrame = nullptr;
     
 
 
 
-    nsIContent* mContainer;
+    nsIContent* mContainer = nullptr;
   };
 
   
@@ -213,9 +221,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   
-  
   void ContentRangeInserted(nsIContent* aStartChild, nsIContent* aEndChild,
-                            InsertionKind aInsertionKind);
+                            InsertionKind,
+                            SameInsertionPoint = SameInsertionPoint::No);
 
   
   enum class RemovalKind : uint8_t {
@@ -419,27 +427,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   void SetUpDocElementContainingBlock(nsIContent* aDocElement);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void CreateAttributeContent(const Element& aParentContent,
-                              nsIFrame* aParentFrame, int32_t aAttrNamespace,
-                              nsAtom* aAttrName, ComputedStyle* aComputedStyle,
-                              nsCOMArray<nsIContent>& aGeneratedContent,
-                              nsIContent** aNewContent, nsIFrame** aNewFrame);
 
   
 
@@ -1431,8 +1418,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                                              ComputedStyle&);
   static const FrameConstructionData* FindImgControlData(const Element&,
                                                          ComputedStyle&);
-  static const FrameConstructionData* FindSearchControlData(const Element&,
-                                                            ComputedStyle&);
   static const FrameConstructionData* FindInputData(const Element&,
                                                     ComputedStyle&);
   static const FrameConstructionData* FindObjectData(const Element&,
@@ -1693,14 +1678,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void FinishBuildingScrollContainerFrame(
       nsContainerFrame* aScrollContainerFrame, nsIFrame* aScrolledFrame);
 
-  void InitializeListboxSelect(nsFrameConstructorState& aState,
-                               nsContainerFrame* aScrollFrame,
-                               nsContainerFrame* aScrolledFrame,
-                               nsIContent* aContent,
-                               nsContainerFrame* aParentFrame,
-                               ComputedStyle* aComputedStyle,
-                               nsFrameList& aFrameList);
-
   
 
 
@@ -1718,6 +1695,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   bool MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame);
+  bool ShouldRebuildFrameTreeForReplicatedFrames(nsIFrame*);
 
   nsIFrame* CreateContinuingOuterTableFrame(nsIFrame* aFrame,
                                             nsContainerFrame* aParentFrame,
