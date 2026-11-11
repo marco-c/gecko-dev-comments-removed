@@ -157,10 +157,18 @@ class MediaDrmRemoteCDMParent final : public RemoteCDMParent {
   struct SessionEntry {
     AMediaDrmSessionId id;
     nsAutoCString mimeType;
+    
+    
+    bool awaitingCertificate = false;
   };
 
   std::map<nsString, SessionEntry> mSessions;
   MozPromiseHolder<InternalPromise> mProvisionPromise;
+
+  
+  
+  
+  nsTArray<nsString> mCertificateQueue;
 
   mutable Mutex mMutex;
   RefPtr<MediaDrmCrypto> mCrypto MOZ_GUARDED_BY(mMutex);

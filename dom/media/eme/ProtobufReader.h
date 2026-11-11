@@ -117,11 +117,24 @@ namespace widevine {
 
 constexpr uint32_t kSignedMessageTypeField = 1;
 
+enum class SignedMessageType : uint8_t {
+  ServiceCertificateRequest = 4,
+};
+
+
+
+constexpr uint8_t kSignedMessageTypeTag =
+    static_cast<uint8_t>(ProtobufReader::MakeTag(
+        kSignedMessageTypeField, ProtobufReader::WireType::Varint));
+constexpr size_t kSignedMessageTypeOnlySize = 2;
+
 
 
 
 
 Span<const uint8_t> TrimKeyRequest(Span<const uint8_t> aRequest);
+
+bool IsServiceCertificateRequest(Span<const uint8_t> aRequest);
 
 }  
 
