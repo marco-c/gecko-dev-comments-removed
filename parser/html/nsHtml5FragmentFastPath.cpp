@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <string_view>
 #include <type_traits>
 
 #include "mozilla/Array.h"
@@ -13,6 +14,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/Try.h"
+#include "mozilla/Utf16.h"
 #include "mozilla/Vector.h"
 #include "mozilla/dom/Comment.h"
 #include "mozilla/dom/Document.h"
@@ -383,6 +385,8 @@ struct Token {
   uint8_t mTagIndex;
   uint8_t mAttributeCount;
   
+  bool mDecoded;
+  
   
   uint32_t mOffset;
   uint32_t mLength;
@@ -397,6 +401,8 @@ struct AttributeToken {
   uint8_t mNameLength;
   
   bool mUseAtom;
+  
+  bool mDecoded;
   uint32_t mValueOffset;
   uint32_t mValueLength;
 };
@@ -458,7 +464,8 @@ class Parser {
     for (const Token& token : mTokens) {
       switch (token.mKind) {
         case Token::Kind::Text:
-          MOZ_TRY(AppendText(parents[depth], mStart + token.mOffset,
+          MOZ_TRY(AppendText(parents[depth],
+                             Chars(token.mDecoded, token.mOffset),
                              token.mLength));
           break;
         case Token::Kind::Comment:
@@ -500,6 +507,10 @@ class Parser {
   bool AtEnd() const { return mPos == mEnd; }
 
   uint32_t Offset(const char16_t* aPos) const { return aPos - mStart; }
+
+  const char16_t* Chars(bool aDecoded, uint32_t aOffset) const {
+    return (aDecoded ? mDecodedData.BeginReading() : mStart) + aOffset;
+  }
 
   void SkipWhitespace() {
     while (mPos != mEnd && IsAsciiWhitespace(*mPos)) {
@@ -591,9 +602,13 @@ class Parser {
     while (true) {
       const char16_t* text = mPos;
       SkipText();
-      if (mPos != text &&
-          !mTokens.append(Token{Token::Kind::Text, 0, 0, Offset(text),
-                                uint32_t(mPos - text)})) {
+      if (!AtEnd() && *mPos == '&') {
+        if (!ParseDecodedText(text)) {
+          return false;
+        }
+      } else if (mPos != text &&
+                 !mTokens.append(Token{Token::Kind::Text, 0, 0, false,
+                                       Offset(text), uint32_t(mPos - text)})) {
         return false;
       }
       if (AtEnd()) {
@@ -639,6 +654,244 @@ class Parser {
         return false;
       }
     }
+  }
+
+  
+  
+  bool ParseDecodedText(const char16_t* aStart) {
+    const uint32_t offset = mDecodedData.Length();
+    if (!mDecodedData.Append(aStart, mPos - aStart, fallible)) {
+      return false;
+    }
+    do {
+      if (!AppendCharacterReference(false)) {
+        return false;
+      }
+      const char16_t* text = mPos;
+      SkipText();
+      if (!mDecodedData.Append(text, mPos - text, fallible)) {
+        return false;
+      }
+    } while (!AtEnd() && *mPos == '&');
+    return mTokens.append(Token{Token::Kind::Text, 0, 0, true, offset,
+                                uint32_t(mDecodedData.Length() - offset)});
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool AppendCharacterReference(bool aInAttributeValue) {
+    MOZ_ASSERT(*mPos == '&');
+    const char16_t* pos = mPos + 1;
+    if (pos == mEnd || !(IsAsciiAlphanumeric(*pos) || *pos == '#')) {
+      ++mPos;
+      return mDecodedData.Append(u'&', fallible);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (*pos == '#') {
+      ++pos;
+      const bool hex = pos != mEnd && (*pos == 'x' || *pos == 'X');
+      if (hex) {
+        ++pos;
+      }
+      const char16_t* digits = pos;
+      uint32_t value = 0;
+      for (; pos != mEnd && (hex ? IsAsciiHexDigit(*pos) : IsAsciiDigit(*pos));
+           ++pos) {
+        value = value * (hex ? 16 : 10) + AsciiAlphanumericToNumber(*pos);
+        if (value > 0x10FFFF) {
+          return false;
+        }
+      }
+      
+      
+      const bool supported = value == '\t' || value == '\n' ||
+                             (value >= 0x20 && value < 0x7F) ||
+                             (value >= 0xA0 && value < 0xD800) ||
+                             (value >= 0xE000 && value < 0xFDD0) ||
+                             (value >= 0xFDF0 && (value & 0xFFFE) != 0xFFFE);
+      if (pos == digits || pos == mEnd || *pos != ';' || !supported) {
+        return false;
+      }
+      mPos = pos + 1;
+      return IsInBMP(value)
+                 ? mDecodedData.Append(char16_t(value), fallible)
+                 : mDecodedData.Append(HighSurrogate(value), fallible) &&
+                       mDecodedData.Append(LowSurrogate(value), fallible);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static constexpr struct {
+      std::u16string_view mName;
+      char16_t mValue;
+    } kNamed[] = {{u"amp;", '&'},  {u"lt;", '<'},    {u"gt;", '>'},
+                  {u"quot;", '"'}, {u"apos;", '\''}, {u"nbsp;", 0xA0}};
+    for (const auto& named : kNamed) {
+      if (size_t(mEnd - pos) >= named.mName.size() &&
+          !memcmp(pos, named.mName.data(),
+                  named.mName.size() * sizeof(char16_t))) {
+        mPos = pos + named.mName.size();
+        return mDecodedData.Append(named.mValue, fallible);
+      }
+    }
+    if (aInAttributeValue) {
+      while (pos != mEnd && IsAsciiAlphanumeric(*pos)) {
+        ++pos;
+      }
+      if (pos != mEnd && *pos == '=') {
+        ++mPos;
+        return mDecodedData.Append(u'&', fallible);
+      }
+    }
+    return false;
   }
 
   
@@ -916,7 +1169,7 @@ class Parser {
         return false;
       }
     }
-    return mTokens.append(Token{Token::Kind::Comment, 0, 0, Offset(data),
+    return mTokens.append(Token{Token::Kind::Comment, 0, 0, false, Offset(data),
                                 uint32_t(dataEnd - data)});
   }
 
@@ -981,7 +1234,7 @@ class Parser {
     }
 
     const size_t tokenIndex = mTokens.length();
-    if (!mTokens.append(Token{Token::Kind::StartTag, tagIndex, 0,
+    if (!mTokens.append(Token{Token::Kind::StartTag, tagIndex, 0, false,
                               uint32_t(mAttributes.length()), 0})) {
       return false;
     }
@@ -1177,7 +1430,7 @@ class Parser {
       return false;
     }
     ++mPos;
-    return mTokens.append(Token{Token::Kind::EndTag, 0, 0, 0, 0});
+    return mTokens.append(Token{Token::Kind::EndTag, 0, 0, false, 0, 0});
   }
 
   
@@ -1346,6 +1599,7 @@ class Parser {
                                Offset(nameStart),
                                uint8_t(length),
                                known && known->isUseAtom(),
+                               false,
                                0,
                                0};
       
@@ -1430,9 +1684,11 @@ class Parser {
       
       const char16_t* value = ++mPos;
       while (mPos != mEnd && *mPos != quote) {
+        if (*mPos == '&') {
+          return ParseDecodedAttributeValue(aAttribute, value, quote);
+        }
         
-        
-        if (*mPos == '&' || *mPos == '\r' || !*mPos) {
+        if (*mPos == '\r' || !*mPos) {
           return false;
         }
         ++mPos;
@@ -1498,6 +1754,39 @@ class Parser {
     }
     aAttribute.mValueOffset = Offset(value);
     aAttribute.mValueLength = mPos - value;
+    return true;
+  }
+
+  
+  
+  bool ParseDecodedAttributeValue(AttributeToken& aAttribute,
+                                  const char16_t* aStart, char16_t aQuote) {
+    aAttribute.mDecoded = true;
+    aAttribute.mValueOffset = mDecodedData.Length();
+    if (!mDecodedData.Append(aStart, mPos - aStart, fallible)) {
+      return false;
+    }
+    while (true) {
+      const char16_t* segment = mPos;
+      while (mPos != mEnd && *mPos != aQuote && *mPos != '&' && *mPos != '\r' &&
+             *mPos) {
+        ++mPos;
+      }
+      if (!mDecodedData.Append(segment, mPos - segment, fallible)) {
+        return false;
+      }
+      if (AtEnd() || *mPos == '\r' || !*mPos) {
+        return false;
+      }
+      if (*mPos == aQuote) {
+        break;
+      }
+      if (!AppendCharacterReference(true)) {
+        return false;
+      }
+    }
+    aAttribute.mValueLength = mDecodedData.Length() - aAttribute.mValueOffset;
+    ++mPos;
     return true;
   }
 
@@ -1605,7 +1894,8 @@ class Parser {
   
   
   nsHtml5String MakeValue(const AttributeToken& aAttribute) {
-    char16_t* value = const_cast<char16_t*>(mStart) + aAttribute.mValueOffset;
+    char16_t* value = const_cast<char16_t*>(
+        Chars(aAttribute.mDecoded, aAttribute.mValueOffset));
     const int32_t length = int32_t(aAttribute.mValueLength);
     if (nsHtml5String digit =
             nsHtml5Portability::newSingleDigitAttributeValue(value, length)) {
@@ -1642,6 +1932,8 @@ class Parser {
   Vector<AttributeToken, 32> mAttributes;
   
   RefPtr<NodeInfo> mNodeInfos[kTagCount];
+  
+  nsAutoString mDecodedData;
 };
 
 uint32_t sSuccessCount = 0;

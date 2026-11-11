@@ -26,6 +26,7 @@ class Element;
 
 
 
+
 class nsHtml5FragmentFastPath final {
  public:
   
