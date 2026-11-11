@@ -75,6 +75,10 @@ class nsMenuX final : public nsMenuParentX,
   
   static int32_t sIndexingMenuLevel;
 
+  
+  
+  static int32_t sSimulatedOpeningLevel;
+
   NS_DECL_CHANGEOBSERVER
 
   
@@ -170,6 +174,7 @@ class nsMenuX final : public nsMenuParentX,
 
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();
+  bool HasDeferredIconLoad() const { return mIcon->HasDeferredLoad(); }
 
   
   
@@ -207,6 +212,9 @@ class nsMenuX final : public nsMenuParentX,
   virtual ~nsMenuX();
 
   void RebuildMenu();
+  
+  
+  void LoadDeferredIcons();
   nsresult RemoveAll();
   void SetTitle();
   void SetAttributedTitle();

@@ -42,7 +42,11 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   
   
   
+  
+  
   void SetupIcon(nsIContent* aContent);
+
+  bool HasDeferredLoad() const { return mHasDeferredLoad; }
 
   
   
@@ -61,6 +65,7 @@ class nsMenuItemIconX final : public mozilla::widget::IconLoader::Listener {
   mozilla::WeakPtr<nsPresContext> mPresContext;
   NSImage* mIconImage = nil;  
   RefPtr<mozilla::widget::IconLoader> mIconLoader;
+  bool mHasDeferredLoad = false;
 };
 
 #endif  
