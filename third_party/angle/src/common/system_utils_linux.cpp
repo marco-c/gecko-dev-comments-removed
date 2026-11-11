@@ -16,6 +16,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#include <pthread_np.h>
+#endif
+
 #include <array>
 
 #ifndef CLOCK_MONOTONIC_RAW
@@ -72,6 +76,10 @@ void SetCurrentThreadName(const char *name)
     
     
     ASSERT(strlen(name) < 16);
+#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+    pthread_set_name_np(pthread_self(), name);
+#else
     pthread_setname_np(pthread_self(), name);
+#endif
 }
 }  
