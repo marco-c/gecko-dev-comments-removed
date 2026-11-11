@@ -1786,53 +1786,61 @@ bool BuildTextRunsScanner::IsTextRunValidForMappedFlows(
 void BuildTextRunsScanner::FlushFrames(bool aFlushLineBreaks,
                                        bool aSuppressTrailingBreak) {
   RefPtr<gfxTextRun> textRun;
-  if (!mMappedFlows.IsEmpty()) {
-    if (!mSkipIncompleteTextRuns && mCurrentFramesAllSameTextRun &&
-        !!(mCurrentFramesAllSameTextRun->GetFlags2() &
-           nsTextFrameUtils::Flags::IncomingWhitespace) ==
-            !!(mCurrentRunContextInfo &
-               nsTextFrameUtils::INCOMING_WHITESPACE) &&
-        !!(mCurrentFramesAllSameTextRun->GetFlags() &
-           gfx::ShapedTextFlags::TEXT_INCOMING_ARABICCHAR) ==
-            !!(mCurrentRunContextInfo &
-               nsTextFrameUtils::INCOMING_ARABICCHAR) &&
-        IsTextRunValidForMappedFlows(mCurrentFramesAllSameTextRun)) {
-      
-      textRun = mCurrentFramesAllSameTextRun;
 
-      if (mDoLineBreaking) {
+  
+  
+  do {
+    if (!mMappedFlows.IsEmpty()) {
+      if (!mSkipIncompleteTextRuns && mCurrentFramesAllSameTextRun &&
+          !!(mCurrentFramesAllSameTextRun->GetFlags2() &
+             nsTextFrameUtils::Flags::IncomingWhitespace) ==
+              !!(mCurrentRunContextInfo &
+                 nsTextFrameUtils::INCOMING_WHITESPACE) &&
+          !!(mCurrentFramesAllSameTextRun->GetFlags() &
+             gfx::ShapedTextFlags::TEXT_INCOMING_ARABICCHAR) ==
+              !!(mCurrentRunContextInfo &
+                 nsTextFrameUtils::INCOMING_ARABICCHAR) &&
+          IsTextRunValidForMappedFlows(mCurrentFramesAllSameTextRun)) {
         
-        if (!SetupLineBreakerContext(textRun)) {
-          return;
-        }
-      }
+        textRun = mCurrentFramesAllSameTextRun;
 
-      
-      mNextRunContextInfo = nsTextFrameUtils::INCOMING_NONE;
-      if (textRun->GetFlags2() & nsTextFrameUtils::Flags::TrailingWhitespace) {
-        mNextRunContextInfo |= nsTextFrameUtils::INCOMING_WHITESPACE;
-      }
-      if (textRun->GetFlags() &
-          gfx::ShapedTextFlags::TEXT_TRAILING_ARABICCHAR) {
-        mNextRunContextInfo |= nsTextFrameUtils::INCOMING_ARABICCHAR;
-      }
-    } else {
-      AutoTArray<uint8_t, BIG_TEXT_NODE_SIZE> buffer;
-      uint32_t bufferSize = mMaxTextLength * (mDoubleByteText ? 2 : 1);
-      if (bufferSize < mMaxTextLength || bufferSize == UINT32_MAX ||
-          !buffer.AppendElements(bufferSize, fallible)) {
-        return;
-      }
-      textRun = BuildTextRunForFrames(buffer.Elements());
-      if (textRun) {
-        if (gfxPlatform::GetPlatform()->OpenTypeSVGEnabled()) {
+        if (mDoLineBreaking) {
           
           
-          mCreatedTextRuns.AppendElement(textRun);
+          
+          if (!SetupLineBreakerContext(textRun)) {
+            break;
+          }
+        }
+
+        
+        mNextRunContextInfo = nsTextFrameUtils::INCOMING_NONE;
+        if (textRun->GetFlags2() &
+            nsTextFrameUtils::Flags::TrailingWhitespace) {
+          mNextRunContextInfo |= nsTextFrameUtils::INCOMING_WHITESPACE;
+        }
+        if (textRun->GetFlags() &
+            gfx::ShapedTextFlags::TEXT_TRAILING_ARABICCHAR) {
+          mNextRunContextInfo |= nsTextFrameUtils::INCOMING_ARABICCHAR;
+        }
+      } else {
+        AutoTArray<uint8_t, BIG_TEXT_NODE_SIZE> buffer;
+        uint32_t bufferSize = mMaxTextLength * (mDoubleByteText ? 2 : 1);
+        if (bufferSize < mMaxTextLength || bufferSize == UINT32_MAX ||
+            !buffer.AppendElements(bufferSize, fallible)) {
+          break;
+        }
+        textRun = BuildTextRunForFrames(buffer.Elements());
+        if (textRun) {
+          if (gfxPlatform::GetPlatform()->OpenTypeSVGEnabled()) {
+            
+            
+            mCreatedTextRuns.AppendElement(textRun);
+          }
         }
       }
     }
-  }
+  } while (false);
 
   if (aFlushLineBreaks) {
     FlushLineBreaks(aSuppressTrailingBreak ? nullptr : textRun.get());
