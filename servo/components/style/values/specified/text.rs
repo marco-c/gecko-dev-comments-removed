@@ -999,7 +999,7 @@ impl Parse for TextIndent {
             }
 
             
-            if cfg!(feature = "servo") {
+            if !crate::pref!("layout.css.text-indent-keywords.enabled", gecko = true) {
                 break;
             }
 
