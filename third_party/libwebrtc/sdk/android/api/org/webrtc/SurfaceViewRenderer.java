@@ -44,6 +44,7 @@ public class SurfaceViewRenderer extends SurfaceView
   
 
 
+  @SuppressWarnings("this-escape")
   public SurfaceViewRenderer(Context context) {
     super(context);
     this.resourceName = getResourceName();
@@ -55,6 +56,7 @@ public class SurfaceViewRenderer extends SurfaceView
   
 
 
+  @SuppressWarnings("this-escape")
   public SurfaceViewRenderer(Context context, AttributeSet attrs) {
     super(context, attrs);
     this.resourceName = getResourceName();
