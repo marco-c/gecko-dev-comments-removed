@@ -14,6 +14,7 @@
 #include "PresShell.h"
 #include "StickyScrollContainer.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ViewportFrame.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsBlockFrame.h"
@@ -1518,10 +1519,13 @@ void ReflowInput::CalculateHypotheticalPosition(
     
     
     
-    if (ScrollContainerFrame* sf =
-            do_QueryFrame(cbFrame->PrincipalChildList().FirstChild())) {
-      const nsMargin scrollbarSizes = sf->GetActualScrollbarSizes();
-      cbOffset.MoveBy(-scrollbarSizes.left, -scrollbarSizes.top);
+    
+    if (!ViewportFrame::ShouldCoverScrollbars(mFrame)) {
+      if (ScrollContainerFrame* sf =
+              do_QueryFrame(cbFrame->PrincipalChildList().FirstChild())) {
+        const nsMargin scrollbarSizes = sf->GetActualScrollbarSizes();
+        cbOffset.MoveBy(-scrollbarSizes.left, -scrollbarSizes.top);
+      }
     }
 
     

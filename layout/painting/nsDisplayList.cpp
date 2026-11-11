@@ -23,6 +23,7 @@
 #include "StickyScrollContainer.h"
 #include "TextDrawTarget.h"
 #include "UnitTransforms.h"
+#include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "gfxMatrix.h"
 #include "gfxUtils.h"
@@ -65,6 +66,7 @@
 #include "mozilla/dom/PerformanceMainThread.h"
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/dom/SVGElement.h"
+#include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGPathData.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
@@ -698,8 +700,11 @@ nsRect nsDisplayListBuilder::OutOfFlowDisplayData::ComputeVisibleRectForFrame(
     
     
     
+    
+    
     PresShell* presShell = aFrame->PresShell();
-    if (presShell->IsVisualViewportSizeSet()) {
+    if (presShell->IsVisualViewportSizeSet() &&
+        !ViewportFrame::ShouldCoverScrollbars(aFrame)) {
       const ScrollContainerFrame* rootScrollContainerFrame =
           presShell->GetRootScrollContainerFrame();
       MOZ_ASSERT(rootScrollContainerFrame,
@@ -5563,7 +5568,7 @@ WebRenderCommandsResult nsDisplayOwnLayer::CreateWebRenderCommands(
   const bool shouldSnap = IsZoomingLayer() || ShouldGetFixedAnimationId() ||
                           (rootScrollbarContainer && HasDynamicToolbar());
 
-  Maybe<wr::WrSpatialId> referenceFrame;
+  Maybe<DefinedReferenceFrame> referenceFrame;
   if (animationId || shouldSnap) {
     wr::ReferenceFrameParams rfParams;
     rfParams.animation_id = animationId;
@@ -5638,17 +5643,52 @@ void nsDisplayOwnLayer::WriteDebugInfo(std::stringstream& aStream) {
                  .get();
 }
 
+static ViewTransition* SubdocumentViewTransition(nsIFrame* aSubDocFrame) {
+  PresShell* ps =
+      static_cast<nsSubDocumentFrame*>(aSubDocFrame)->GetSubdocumentPresShell();
+  return ps ? ps->GetDocument()->GetActiveViewTransition() : nullptr;
+}
+
 WebRenderCommandsResult nsDisplayViewTransitionCapture::CreateWebRenderCommands(
     wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
     const StackingContextHelper& aSc, RenderRootStateManager* aManager,
     nsDisplayListBuilder* aDisplayListBuilder) {
   Maybe<wr::SnapshotInfo> si;
   nsPresContext* pc = mFrame->PresContext();
+  if (mKind == Kind::Subdocument) {
+    ViewTransition* vt = SubdocumentViewTransition(mFrame);
+    MOZ_ASSERT(vt && vt->IsCapturingSubdocumentSnapshot());
+    
+    const nsRect area =
+        vt->ClipSubdocumentSnapshotRect(GetBuildingRect() - ToReferenceFrame());
+    const wr::ImageKey* key =
+        !area.IsEmpty()
+            ? vt->GetOrCreateSubdocumentSnapshotKey(aManager, aResources)
+            : nullptr;
+    wr::StackingContextParams params;
+    params.clip =
+        wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
+    if (key) {
+      si.emplace(wr::SnapshotInfo{
+          .key = wr::SnapshotImageKey{*key},
+          .area = wr::ToLayoutRect(LayoutDeviceRect::FromAppUnits(
+              area + ToReferenceFrame(), pc->AppUnitsPerDevPixel())),
+          .detached = true,
+      });
+      params.snapshot = si.ptr();
+    }
+    StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this,
+                             aBuilder, params);
+    return nsDisplayWrapList::CreateWebRenderCommands(
+        aBuilder, aResources, sc, aManager, aDisplayListBuilder);
+  }
+
+  const bool isRoot = mKind == Kind::Root;
   nsIFrame* capturedFrame =
-      mIsRoot ? pc->FrameConstructor()->GetRootElementStyleFrame()
-              : nsLayoutUtils::FirstContinuationOrIBSplitSibling(mFrame);
+      isRoot ? pc->FrameConstructor()->GetRootElementStyleFrame()
+             : nsLayoutUtils::FirstContinuationOrIBSplitSibling(mFrame);
   auto captureRect =
-      ViewTransition::CapturedInkOverflowRectForFrame(capturedFrame, mIsRoot);
+      ViewTransition::CapturedInkOverflowRectForFrame(capturedFrame, isRoot);
   auto* vt = pc->Document()->GetActiveViewTransition();
   auto key = [&]() -> Maybe<wr::SnapshotImageKey> {
     if (NS_WARN_IF(!vt)) {
@@ -5665,67 +5705,14 @@ WebRenderCommandsResult nsDisplayViewTransitionCapture::CreateWebRenderCommands(
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Maybe<wr::WrSpatialId> referenceFrame;
-  if (mFrame->IsTransformed()) {
-    
-    
-    wr::ReferenceFrameParams rfParams;
-    rfParams.transform_style = params.transform_style;
-    referenceFrame = Some(aManager->CommandBuilder().DefineReferenceFrame(
-        aBuilder, mFrame,
-        WebRenderCommandBuilder::FrameReferenceFrame::ViewTransitionCapture,
-        LayoutDevicePoint(), rfParams));
-  }
-
   if (key) {
     vt->UpdateActiveRectForCapturedFrame(capturedFrame, aSc.GetInheritedScale(),
                                          captureRect);
     
     
     const nsPoint offsetToCapturedFrame =
-        mIsRoot || capturedFrame == mFrame ? nsPoint()
-                                           : capturedFrame->GetOffsetTo(mFrame);
+        isRoot || capturedFrame == mFrame ? nsPoint()
+                                          : capturedFrame->GetOffsetTo(mFrame);
 
     si.emplace(wr::SnapshotInfo{
         .key = *key,
@@ -5737,9 +5724,36 @@ WebRenderCommandsResult nsDisplayViewTransitionCapture::CreateWebRenderCommands(
     params.snapshot = si.ptr();
   }
   StackingContextHelper sc(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                           params, referenceFrame);
+                           params);
   return nsDisplayWrapList::CreateWebRenderCommands(
       aBuilder, aResources, sc, aManager, aDisplayListBuilder);
+}
+
+nsDisplayViewTransitionSubdocumentSnapshot::
+    nsDisplayViewTransitionSubdocumentSnapshot(nsDisplayListBuilder* aBuilder,
+                                               nsSubDocumentFrame* aFrame,
+                                               const nsRect& aRect)
+    : nsPaintedDisplayItem(aBuilder, aFrame), mRect(aRect) {
+  MOZ_COUNT_CTOR(nsDisplayViewTransitionSubdocumentSnapshot);
+}
+
+WebRenderCommandsResult
+nsDisplayViewTransitionSubdocumentSnapshot::CreateWebRenderCommands(
+    wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
+    const StackingContextHelper& aSc, RenderRootStateManager* aManager,
+    nsDisplayListBuilder* aDisplayListBuilder) {
+  ViewTransition* vt = SubdocumentViewTransition(mFrame);
+  const wr::ImageKey* key = vt ? vt->ReadSubdocumentSnapshotKey() : nullptr;
+  if (!key) {
+    return Ok();
+  }
+  const auto rect = wr::ToLayoutRect(LayoutDeviceRect::FromAppUnits(
+      mRect + ToReferenceFrame(),
+      mFrame->PresContext()->AppUnitsPerDevPixel()));
+  aBuilder.PushImage(rect, rect, !BackfaceIsHidden(),
+                      false, wr::ImageRendering::Auto,
+                     *key);
+  return Ok();
 }
 
 nsDisplaySubDocument::nsDisplaySubDocument(nsDisplayListBuilder* aBuilder,
@@ -7018,27 +7032,27 @@ WebRenderCommandsResult nsDisplayTransform::CreateWebRenderCommands(
     wr::ReferenceFrameParams originRfParams;
     originRfParams.is_2d_scale_translation = true;
     originRfParams.should_snap = true;
-    wr::WrSpatialId originSpatialId =
+    DefinedReferenceFrame originFrame =
         aManager->CommandBuilder().DefineReferenceFrame(
             aBuilder, mFrame,
             WebRenderCommandBuilder::FrameReferenceFrame::SVGOrigin, position,
             originRfParams);
     originSc.emplace(aSc, GetActiveScrolledRoot(), mFrame, this, aBuilder,
-                     originParams, Some(originSpatialId), boundsSize);
+                     originParams, Some(originFrame), boundsSize);
     
     
     
     
     
     aManager->CommandBuilder().PushOverrideForASR(GetActiveScrolledRoot(),
-                                                  originSpatialId);
+                                                  originFrame.mId);
     position = LayoutDevicePoint();
   }
 
   
   
   
-  Maybe<wr::WrSpatialId> referenceFrame;
+  Maybe<DefinedReferenceFrame> referenceFrame;
   if (transformForSC || animationsId || position != LayoutDevicePoint()) {
     wr::ReferenceFrameParams rfParams;
     rfParams.transform_style = params.transform_style;
@@ -7817,7 +7831,7 @@ WebRenderCommandsResult nsDisplayPerspective::CreateWebRenderCommands(
   
   rfParams.scrolling_relative_to = scrollingRelativeTo.ptrOr(nullptr);
 
-  wr::WrSpatialId referenceFrame =
+  DefinedReferenceFrame referenceFrame =
       aManager->CommandBuilder().DefineReferenceFrame(
           aBuilder, mFrame,
           WebRenderCommandBuilder::FrameReferenceFrame::Perspective,
@@ -8573,6 +8587,21 @@ class WrPathRecorder final : public gfx::PathBuilder {
   bool mInSubPath = false;
 };
 
+
+
+static nsPoint ClipPathToUserSpaceOffset(nsIFrame* aFrame,
+                                         const nsPoint& aToReferenceFrame) {
+  if (aFrame->IsSVGFrame()) {
+    return aToReferenceFrame;
+  }
+  const nsPoint toBoundingBox =
+      SVGIntegrationUtils::GetOffsetToBoundingBox(aFrame);
+  const nsPoint p = aToReferenceFrame - toBoundingBox;
+  return nsPoint(aFrame->PresContext()->RoundAppUnitsToNearestDevPixels(p.x),
+                 aFrame->PresContext()->RoundAppUnitsToNearestDevPixels(p.y)) +
+         toBoundingBox;
+}
+
 static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
     const nsDisplayMasksAndClipPaths& aDisplayItem,
     wr::DisplayListBuilder& aBuilder) {
@@ -8594,11 +8623,13 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
     SVGObserverUtils::GetAndObserveClipPath(
         nsLayoutUtils::FirstContinuationOrIBSplitSibling(frame),
         &clipPathFrame);
-    CSSRect rect;
-    CSSSize radii;
-    if (!clipPathFrame ||
-        !clipPathFrame->GetSimpleClipShape(frame, &rect, &radii)) {
-      return Nothing();
+    if (!clipPathFrame) {
+      return {};
+    }
+    auto shape =
+        clipPathFrame->GetSimpleClipShape(frame, SVGUtils::UseWebRenderPaths());
+    if (!shape) {
+      return {};
     }
 
     nsPoint offsetToBoundingBox =
@@ -8616,26 +8647,44 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
                                         appUnitsPerDevPixel) -
         SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset(frame) * cssToDev;
 
-    LayoutDeviceRect devRect = rect * cssToDev;
-    devRect.MoveBy(offset);
-    LayoutDeviceSize devRadii = radii * cssToDev;
-    wr::LayoutRect wrRect = wr::ToLayoutRect(devRect);
-
     wr::WrClipId clipId{};
-    if (devRadii.IsEmpty()) {
-      clipId = aBuilder.DefineRectClip(Nothing(), wrRect);
+    if (shape->is<SVGClipPathFrame::SimpleClipGeometry>()) {
+      
+      
+      const auto& geometry = shape->as<SVGClipPathFrame::SimpleClipGeometry>();
+      RefPtr<WrPathRecorder> recorder = MakeRefPtr<WrPathRecorder>();
+      RefPtr<gfx::Path> unused = geometry.mElement->BuildPath(recorder);
+      unused = recorder->Finish();
+      gfxMatrix toReferenceFrame = geometry.mTransform;
+      toReferenceFrame.PostScale(cssToDev.scale, cssToDev.scale)
+          .PostTranslate(offset.x, offset.y);
+      recorder->Transform(gfx::ToMatrix(toReferenceFrame));
+      clipId = recorder->DefineClip(aBuilder,
+                                    geometry.mClipRule == StyleFillRule::Nonzero
+                                        ? wr::FillRule::Nonzero
+                                        : wr::FillRule::Evenodd);
     } else {
-      wr::ComplexClipRegion region;
-      region.rect = wrRect;
-      region.radii = wr::EmptyBorderRadius();
-      wr::LayoutSize r{devRadii.width, devRadii.height};
-      region.radii.top_left = r;
-      region.radii.top_right = r;
-      region.radii.bottom_left = r;
-      region.radii.bottom_right = r;
-      region.inset = wr::EmptyLayoutSideOffsets();
-      region.mode = wr::ClipMode::Clip;
-      clipId = aBuilder.DefineRoundedRectClip(Nothing(), region);
+      const auto& rect = shape->as<dom::SVGGeometryElement::SimpleShape>();
+      LayoutDeviceRect devRect = rect.AsRect() * cssToDev;
+      devRect.MoveBy(offset);
+      LayoutDeviceSize devRadii = rect.Radii() * cssToDev;
+      wr::LayoutRect wrRect = wr::ToLayoutRect(devRect);
+
+      if (devRadii.IsEmpty()) {
+        clipId = aBuilder.DefineRectClip(Nothing(), wrRect);
+      } else {
+        wr::ComplexClipRegion region;
+        region.rect = wrRect;
+        region.radii = wr::EmptyBorderRadius();
+        wr::LayoutSize r{devRadii.width, devRadii.height};
+        region.radii.top_left = r;
+        region.radii.top_right = r;
+        region.radii.bottom_left = r;
+        region.radii.bottom_right = r;
+        region.inset = wr::EmptyLayoutSideOffsets();
+        region.mode = wr::ClipMode::Clip;
+        clipId = aBuilder.DefineRoundedRectClip(Nothing(), region);
+      }
     }
     wr::WrClipChainId clipChainId = aBuilder.DefineClipChain(
         {&clipId, 1}, aBuilder.CurrentClipChainIdIfNotRoot());
@@ -8705,23 +8754,27 @@ static Maybe<wr::WrClipChainId> CreateSimpleClipRegion(
 
       break;
     }
+    case StyleBasicShape::Tag::Polygon: {
+      
+      
+      RefPtr<WrPathRecorder> recorder = MakeRefPtr<WrPathRecorder>();
+      const nsPoint toUserSpace =
+          ClipPathToUserSpaceOffset(frame, toReferenceFrame);
+      RefPtr<gfx::Path> unused = ShapeUtils::BuildPolygonPath(
+          shape, refBox + toUserSpace, appUnitsPerDevPixel, recorder);
+      clipId = recorder->DefineClip(
+          aBuilder, shape.AsPolygon().fill == StyleFillRule::Nonzero
+                        ? wr::FillRule::Nonzero
+                        : wr::FillRule::Evenodd);
+      break;
+    }
     case StyleBasicShape::Tag::PathOrShape: {
       
       
       
       RefPtr<WrPathRecorder> recorder = MakeRefPtr<WrPathRecorder>();
-      nsPoint toUserSpace = toReferenceFrame;
-      if (!frame->IsSVGFrame()) {
-        
-        const nsPoint toBoundingBox =
-            SVGIntegrationUtils::GetOffsetToBoundingBox(frame);
-        const nsPoint p = toReferenceFrame - toBoundingBox;
-        toUserSpace =
-            nsPoint(
-                frame->PresContext()->RoundAppUnitsToNearestDevPixels(p.x),
-                frame->PresContext()->RoundAppUnitsToNearestDevPixels(p.y)) +
-            toBoundingBox;
-      }
+      const nsPoint toUserSpace =
+          ClipPathToUserSpaceOffset(frame, toReferenceFrame);
       const gfx::Point offset =
           LayoutDevicePoint::FromAppUnits(refBox.TopLeft() + toUserSpace,
                                           appUnitsPerDevPixel)

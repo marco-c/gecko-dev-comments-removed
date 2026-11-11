@@ -69,15 +69,15 @@ class ViewportFrame : public nsContainerFrame {
 
 
 
-
-  nsRect GetContainingBlockAdjustedForScrollbars(
-      const ReflowInput& aReflowInput) const;
+  static bool ShouldCoverScrollbars(const nsIFrame* aKidFrame);
 
   
 
 
 
-  void UpdateStyle(ServoRestyleState& aStyleSet);
+
+  nsRect GetContainingBlockAdjustedForScrollbars(
+      const ReflowInput& aReflowInput, const nsIFrame* aKidFrame) const;
 
   
 
