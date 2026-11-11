@@ -88,6 +88,8 @@ class BufferSurface {
   
   virtual already_AddRefed<mozilla::gfx::DrawTarget> Lock() { return nullptr; }
   virtual void* GetImageData() { return nullptr; }
+  
+  int32_t GetStride(int aPlane = 0) const { return mStrides[aPlane]; }
 
   virtual bool CreateTextures(mozilla::gl::GLContext* aGLContext);
   
@@ -200,6 +202,8 @@ class BufferSurface {
 
   bool CanRecycle() const { return mCanRecycle && mPID; }
   void DisableRecycle() { mCanRecycle = false; }
+
+  bool SupportsDirectComposition();
 
  protected:
   BufferSurface() = default;
