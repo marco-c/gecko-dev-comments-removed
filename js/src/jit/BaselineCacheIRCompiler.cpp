@@ -45,7 +45,7 @@ namespace jit {
 
 static uint32_t GetICStackValueOffset() {
   uint32_t offset = ICStackValueOffset;
-  if (JitOptions.enableStubFramePointers) {
+  if (JitOptions.enableICFramePointers) {
 #ifdef JS_USE_LINK_REGISTER
     
     offset += 2 * sizeof(uintptr_t);
@@ -58,7 +58,7 @@ static uint32_t GetICStackValueOffset() {
 }
 
 static void PushICFrameRegs(MacroAssembler& masm) {
-  MOZ_ASSERT(JitOptions.enableStubFramePointers);
+  MOZ_ASSERT(JitOptions.enableICFramePointers);
 #ifdef JS_USE_LINK_REGISTER
   masm.pushRegs(LinkRegister, FramePointer);
 #else
@@ -67,7 +67,7 @@ static void PushICFrameRegs(MacroAssembler& masm) {
 }
 
 static void PopICFrameRegs(MacroAssembler& masm) {
-  MOZ_ASSERT(JitOptions.enableStubFramePointers);
+  MOZ_ASSERT(JitOptions.enableICFramePointers);
 #ifdef JS_USE_LINK_REGISTER
   masm.popRegs(FramePointer, LinkRegister);
 #else
@@ -110,7 +110,7 @@ AutoStubFrame::AutoStubFrame(BaselineCacheIRCompiler& compiler)
 void AutoStubFrame::enter(MacroAssembler& masm, Register scratch) {
   MOZ_ASSERT(compiler.allocator.stackPushed() == 0);
 
-  if (JitOptions.enableStubFramePointers) {
+  if (JitOptions.enableICFramePointers) {
     
     
     PopICFrameRegs(masm);
@@ -136,7 +136,7 @@ void AutoStubFrame::leave(MacroAssembler& masm) {
 #endif
 
   EmitBaselineLeaveStubFrame(masm);
-  if (JitOptions.enableStubFramePointers) {
+  if (JitOptions.enableICFramePointers) {
     
     
     PushICFrameRegs(masm);
@@ -204,7 +204,7 @@ JitCode* BaselineCacheIRCompiler::compile() {
 #ifdef JS_CODEGEN_ARM
   AutoNonDefaultSecondScratchRegister andssr(masm, BaselineSecondScratchReg);
 #endif
-  if (JitOptions.enableStubFramePointers) {
+  if (JitOptions.enableICFramePointers) {
     
 
 
@@ -258,7 +258,7 @@ JitCode* BaselineCacheIRCompiler::compile() {
 
   MOZ_ASSERT(!enteredStubFrame_);
   allocator.discardStack(masm);
-  if (JitOptions.enableStubFramePointers) {
+  if (JitOptions.enableICFramePointers) {
     PopICFrameRegs(masm);
   }
   EmitReturnFromIC(masm);
@@ -270,7 +270,7 @@ JitCode* BaselineCacheIRCompiler::compile() {
     if (!emitFailurePath(i)) {
       return nullptr;
     }
-    if (JitOptions.enableStubFramePointers) {
+    if (JitOptions.enableICFramePointers) {
       PopICFrameRegs(masm);
     }
     EmitStubGuardFailure(masm);
@@ -2000,7 +2000,7 @@ bool BaselineCacheIRCompiler::init(CacheKind kind) {
   
   liveFloatRegs_ = LiveFloatRegisterSet(FloatRegisterSet());
 
-  if (JitOptions.enableStubFramePointers) {
+  if (JitOptions.enableICFramePointers) {
     baselineFrameReg_ = available.takeAny();
   }
 
