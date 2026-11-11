@@ -1914,6 +1914,10 @@ XMLHttpRequestMainThread::OnDataAvailable(nsIRequest* request,
   DEBUG_WORKERREFS;
   NS_ENSURE_ARG_POINTER(inStr);
 
+  if (request != mChannel) {
+    return NS_BINDING_ABORTED;
+  }
+
   mProgressSinceLastProgressEvent = true;
   XMLHttpRequest_Binding::ClearCachedResponseTextValue(this);
 
@@ -4411,11 +4415,25 @@ void RequestHeaders::ApplyToChannel(nsIHttpChannel* aChannel,
 }
 
 void RequestHeaders::GetCORSUnsafeHeaders(nsTArray<nsCString>& aArray) const {
+  
+  
+  
+  
+  AutoTArray<nsCString, 5> potentiallyUnsafeNames;
+  size_t safelistValueSize = 0;
+
   for (const RequestHeader& header : mHeaders) {
     if (!nsContentUtils::IsCORSSafelistedRequestHeader(header.mName,
                                                        header.mValue)) {
       aArray.AppendElement(header.mName);
+    } else {
+      potentiallyUnsafeNames.AppendElement(header.mName);
+      safelistValueSize += header.mValue.Length();
     }
+  }
+
+  if (safelistValueSize > 1024) {
+    aArray.AppendElements(std::move(potentiallyUnsafeNames));
   }
 }
 
