@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <ctime>
+#include <limits>
 
 #include "BorderConsts.h"
 #include "ImageContainer.h"
@@ -3943,22 +3944,39 @@ static sk_sp<const SkTextBlob> CreateTextBlob(
 static void GetTextIntercepts(const sk_sp<const SkTextBlob>& aBlob,
                               const SkScalar aBounds[],
                               nsTArray<SkScalar>& aIntercepts) {
-  
-  
-  
-  
-  int count = 0;
-  MOZ_SEH_TRY {
-    
-    count = aBlob->getIntercepts(aBounds, nullptr);
-    if (count < 2) {
+  uint32_t numGlyphs = 0;
+  SkTextBlob::Iter::Run run;
+  for (SkTextBlob::Iter iter(*aBlob); iter.next(&run);) {
+    numGlyphs += run.fGlyphCount;
+    if (numGlyphs >= std::numeric_limits<uint32_t>::max() / 2) {
+      
+      
       return;
     }
-    aBlob->getIntercepts(aBounds, aIntercepts.AppendElements(count));
+  }
+  if (!numGlyphs) {
+    return;
+  }
+
+  const auto oldLength = aIntercepts.Length();
+  auto* newElements = aIntercepts.AppendElements(numGlyphs * 2, fallible);
+  if (!newElements) {
+    return;
+  }
+
+  
+  
+  
+  
+  MOZ_SEH_TRY {
+    int count = aBlob->getIntercepts(aBounds, newElements);
+    MOZ_DIAGNOSTIC_ASSERT(uint32_t(count) <= numGlyphs * 2,
+                          "skia returned > 2 intercepts per glyph?");
+    aIntercepts.TruncateLength(oldLength + count);
   }
   MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
     gfxCriticalNote << "Exception occurred getting text intercepts";
-    aIntercepts.TruncateLength(aIntercepts.Length() - count);
+    aIntercepts.TruncateLength(oldLength);
   }
 }
 
