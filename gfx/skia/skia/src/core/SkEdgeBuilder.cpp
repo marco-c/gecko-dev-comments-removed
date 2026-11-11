@@ -39,6 +39,9 @@ SkEdgeBuilder::Combine SkBasicEdgeBuilder::combineVertical(const SkEdge* edge, S
         }
         return kNo_Combine;
     }
+    if (!fCanCullToTheRight) {
+        return kNo_Combine;
+    }
     if (edge->fFirstY == last->fFirstY) {
         if (edge->fLastY == last->fLastY) {
             return kTotal_Combine;
@@ -86,6 +89,9 @@ SkEdgeBuilder::Combine SkAnalyticEdgeBuilder::combineVertical(const SkAnalyticEd
             last->fLowerY = edge->fLowerY;
             return kPartial_Combine;
         }
+        return kNo_Combine;
+    }
+    if (!fCanCullToTheRight) {
         return kNo_Combine;
     }
     if (approximately_equal(edge->fUpperY, last->fUpperY)) {
@@ -347,6 +353,7 @@ int SkEdgeBuilder::buildEdges(const SkPathRaw& raw,
                               const SkIRect* shiftedClip) {
     
     const bool canCullToTheRight = !raw.isKnownToBeConvex();
+    fCanCullToTheRight = canCullToTheRight;
 
     
     
