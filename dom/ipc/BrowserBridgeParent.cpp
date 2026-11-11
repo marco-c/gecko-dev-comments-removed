@@ -128,6 +128,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
   
   mBrowserParent = std::move(browserParent);
   mBrowserParent->SetBrowserBridgeParent(this);
+  mBrowserParent->SetOwnerFrameLoader(aParentBrowser->mOwnerFrameLoader);
   mBrowserParent->SetOwnerElement(aParentBrowser->GetOwnerElement());
   mBrowserParent->InitRendering();
 
