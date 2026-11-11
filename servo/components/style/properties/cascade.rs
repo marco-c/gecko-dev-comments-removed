@@ -52,16 +52,28 @@ use std::borrow::Cow;
 use std::cmp;
 
 
+
 #[derive(Copy, Clone)]
 #[allow(missing_docs)]
-pub enum FirstLineReparenting<'a> {
+pub enum CascadeReparenting<'a> {
     No,
-    Yes {
+    FirstLine {
         
         
         
-        style_to_reparent: &'a ComputedValues,
+        base_style: &'a ComputedValues,
     },
+    PositionTry {
+        
+        base_style: &'a ComputedValues,
+    },
+}
+
+impl CascadeReparenting<'_> {
+    #[inline]
+    fn is_position_try(&self) -> bool {
+        matches!(self, Self::PositionTry { .. })
+    }
 }
 
 
@@ -85,7 +97,7 @@ pub fn cascade<E>(
     guards: &StylesheetGuards,
     parent_style: Option<&ComputedValues>,
     layout_parent_style: Option<&ComputedValues>,
-    first_line_reparenting: FirstLineReparenting,
+    cascade_reparenting: CascadeReparenting,
     try_tactic: &PositionTryFallbacksTryTactic,
     visited_rules: Option<&StrongRuleNode>,
     cascade_input_flags: ComputedValueFlags,
@@ -105,7 +117,7 @@ where
         guards,
         parent_style,
         layout_parent_style,
-        first_line_reparenting,
+        cascade_reparenting,
         try_tactic,
         CascadeMode::Unvisited { visited_rules },
         cascade_input_flags,
@@ -202,7 +214,7 @@ fn cascade_rules<E>(
     guards: &StylesheetGuards,
     parent_style: Option<&ComputedValues>,
     layout_parent_style: Option<&ComputedValues>,
-    first_line_reparenting: FirstLineReparenting,
+    cascade_reparenting: CascadeReparenting,
     try_tactic: &PositionTryFallbacksTryTactic,
     cascade_mode: CascadeMode,
     cascade_input_flags: ComputedValueFlags,
@@ -223,7 +235,7 @@ where
         DeclarationIterator::new(rule_node, guards, pseudo),
         parent_style,
         layout_parent_style,
-        first_line_reparenting,
+        cascade_reparenting,
         try_tactic,
         cascade_mode,
         cascade_input_flags,
@@ -282,7 +294,7 @@ pub fn apply_declarations<'decls, E, I>(
     iter: I,
     parent_style: Option<&ComputedValues>,
     layout_parent_style: Option<&ComputedValues>,
-    first_line_reparenting: FirstLineReparenting<'_>,
+    cascade_reparenting: CascadeReparenting<'_>,
     try_tactic: &PositionTryFallbacksTryTactic,
     cascade_mode: CascadeMode,
     cascade_input_flags: ComputedValueFlags,
@@ -336,9 +348,9 @@ where
         .style()
         .add_flags(stylist.get_custom_property_initial_values_flags());
 
-    let using_cached_reset_properties;
+    let using_cached_properties;
     let ignore_colors = context.builder.device.forced_colors().is_active();
-    let mut cascade = Cascade::new(first_line_reparenting, stylist, ignore_colors);
+    let mut cascade = Cascade::new(cascade_reparenting, stylist, ignore_colors);
     let mut declarations = Default::default();
     let mut shorthand_cache = ShorthandsWithPropertyReferencesCache::default();
     let mut attribute_tracker = AttributeTracker::new(element_context);
@@ -352,7 +364,7 @@ where
             
             
             
-            using_cached_reset_properties = false;
+            using_cached_properties = false;
             
             
             
@@ -380,13 +392,15 @@ where
                 &mut attribute_tracker,
             );
 
-            using_cached_reset_properties =
-                cascade.try_to_use_cached_reset_properties(&mut context, rule_cache, guards);
+            using_cached_properties =
+                cascade.try_to_use_cached_properties(&mut context, rule_cache, guards);
 
-            if using_cached_reset_properties {
-                LonghandIdSet::late_group_only_inherited()
-            } else {
+            if !using_cached_properties {
                 LonghandIdSet::late_group()
+            } else if cascade.cascade_reparenting.is_position_try() {
+                LonghandIdSet::late_group_position_try()
+            } else {
+                LonghandIdSet::late_group_only_inherited()
             }
         },
     };
@@ -427,7 +441,7 @@ where
         );
     }
 
-    if context.builder.modified_reset() || using_cached_reset_properties {
+    if context.builder.modified_reset() || using_cached_properties {
         
         
         
@@ -791,7 +805,7 @@ impl<'a> KeyframeCustomPropertiesBuilder<'a> {
 }
 
 pub(crate) struct Cascade<'a> {
-    first_line_reparenting: FirstLineReparenting<'a>,
+    cascade_reparenting: CascadeReparenting<'a>,
     stylist: &'a Stylist,
     ignore_colors: bool,
     seen: SeenSet<'a>,
@@ -806,12 +820,12 @@ pub(crate) struct Cascade<'a> {
 
 impl<'a> Cascade<'a> {
     fn new(
-        first_line_reparenting: FirstLineReparenting<'a>,
+        cascade_reparenting: CascadeReparenting<'a>,
         stylist: &'a Stylist,
         ignore_colors: bool,
     ) -> Self {
         Self {
-            first_line_reparenting,
+            cascade_reparenting,
             stylist,
             ignore_colors,
             seen: Default::default(),
@@ -828,7 +842,7 @@ impl<'a> Cascade<'a> {
     
     fn new_for_custom_properties_only(stylist: &'a Stylist) -> Self {
         Self {
-            first_line_reparenting: FirstLineReparenting::No,
+            cascade_reparenting: CascadeReparenting::No,
             stylist,
             ignore_colors: false,
             seen: Default::default(),
@@ -1211,7 +1225,7 @@ impl<'a> Cascade<'a> {
             guards,
             visited_parent!(parent_style),
             visited_parent!(layout_parent_style),
-            self.first_line_reparenting,
+            self.cascade_reparenting,
             try_tactic,
             CascadeMode::Visited {
                 unvisited_context: &*context,
@@ -1287,28 +1301,30 @@ impl<'a> Cascade<'a> {
         }
     }
 
-    fn try_to_use_cached_reset_properties(
+    fn try_to_use_cached_properties(
         &self,
         context: &mut computed::Context<'a>,
         cache: Option<&'a RuleCache>,
         guards: &StylesheetGuards,
     ) -> bool {
-        let style = match self.first_line_reparenting {
-            FirstLineReparenting::Yes { style_to_reparent } => style_to_reparent,
-            FirstLineReparenting::No => {
-                let Some(cache) = cache else { return false };
-                let Some(style) = cache.find(guards, context) else {
+        let style = match self.cascade_reparenting {
+            CascadeReparenting::No => {
+                let Some(style) = cache.and_then(|c| c.find(guards, context)) else {
                     return false;
                 };
                 style
             },
+            CascadeReparenting::PositionTry { base_style }
+            | CascadeReparenting::FirstLine { base_style } => base_style,
         };
 
-        context.builder.copy_reset_from(style);
+        context.builder.copy_reset_longhands_from(style);
 
-        
-        
-        
+        if let CascadeReparenting::PositionTry { .. } = self.cascade_reparenting {
+            context.builder.copy_inherited_longhands_from(style);
+            context.builder.reset_position_try_properties();
+        }
+
         
         
         
