@@ -52,7 +52,12 @@ namespace jit {
 bool Assembler::FLAG_riscv_debug = false;
 
 
+
 size_t Assembler::size() const { return m_buffer.size(); }
+
+
+
+size_t Assembler::readableSize() const { return m_buffer.size(); }
 
 bool Assembler::swapBuffer(wasm::Bytes& bytes) {
   
@@ -1148,12 +1153,15 @@ void Assembler::break_(uint32_t code, bool break_as_stop) {
       (break_as_stop && code <= kMaxStopCode && code > kMaxTracepointCode) ||
       (!break_as_stop && (code > kMaxStopCode || code <= kMaxTracepointCode)));
 
-  
-  
-  
   ebreak();
+#ifdef JS_SIMULATOR_RISCV64
+  
+  
+  
+  
   MOZ_ASSERT(is_uint20(code));
   lui(zero_reg, code);
+#endif
 }
 
 void Assembler::ToggleToJmp(CodeLocationLabel inst_) {
@@ -1317,11 +1325,8 @@ void Assembler::retarget(Label* label, Label* target) {
 }
 
 bool Assembler::appendRawCode(const uint8_t* code, size_t numBytes) {
-  if (m_buffer.oom()) {
-    return false;
-  }
-  m_buffer.putBytes(numBytes, code);
-  return !m_buffer.oom();
+  flush();
+  return m_buffer.appendRawCode(code, numBytes);
 }
 
 void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
