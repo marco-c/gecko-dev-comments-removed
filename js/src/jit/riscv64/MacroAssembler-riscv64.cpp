@@ -7,7 +7,10 @@
 
 #include "jit/riscv64/MacroAssembler-riscv64.h"
 
+#include "mozilla/Casting.h"
+
 #include <bit>
+#include <cstdint>
 
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
@@ -1737,6 +1740,14 @@ void MacroAssemblerRiscv64::computeScaledAddress(
   }
 }
 
+Address MacroAssemblerRiscv64::computeAbsoluteAddress(AbsoluteAddress address,
+                                                      Register scratch) {
+  int64_t value = int64_t(address.addr);
+  int64_t low12 = int64_t(uint64_t(value) << 52) >> 52;
+  ma_li(scratch, ImmWord(uint64_t(value - low12)));
+  return Address(scratch, int32_t(low12));
+}
+
 void MacroAssemblerRiscv64::computeScaledAddress32(const BaseIndex& address,
                                                    Register dest) {
   Register base = address.base;
@@ -1834,8 +1845,7 @@ FaultingCodeRange MacroAssemblerRiscv64Compat::load32(AbsoluteAddress address,
                                                       Register dest) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  movePtr(ImmPtr(address.addr), scratch);
-  return load32(Address(scratch, 0), dest);
+  return load32(computeAbsoluteAddress(address, scratch), dest);
 }
 
 FaultingCodeRange MacroAssemblerRiscv64Compat::load32(
@@ -1860,8 +1870,7 @@ FaultingCodeRange MacroAssemblerRiscv64Compat::loadPtr(AbsoluteAddress address,
                                                        Register dest) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  movePtr(ImmPtr(address.addr), scratch);
-  return loadPtr(Address(scratch, 0), dest);
+  return loadPtr(computeAbsoluteAddress(address, scratch), dest);
 }
 
 FaultingCodeRange MacroAssemblerRiscv64Compat::loadPtr(
@@ -1921,8 +1930,7 @@ FaultingCodeRange MacroAssemblerRiscv64Compat::store32(
     Register src, AbsoluteAddress address) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  movePtr(ImmPtr(address.addr), scratch);
-  return store32(src, Address(scratch, 0));
+  return store32(src, computeAbsoluteAddress(address, scratch));
 }
 
 FaultingCodeRange MacroAssemblerRiscv64Compat::store32(Register src,
@@ -2002,8 +2010,7 @@ FaultingCodeRange MacroAssemblerRiscv64Compat::storePtr(Register src,
                                                         AbsoluteAddress dest) {
   UseScratchRegisterScope temps(this);
   Register scratch = temps.Acquire();
-  movePtr(ImmPtr(dest.addr), scratch);
-  return storePtr(src, Address(scratch, 0));
+  return storePtr(src, computeAbsoluteAddress(dest, scratch));
 }
 
 void MacroAssemblerRiscv64Compat::testNullSet(Condition cond,
@@ -2247,10 +2254,10 @@ void MacroAssemblerRiscv64Compat::boxValue(JSValueType type, Register src,
     case JSVAL_TYPE_BIGINT:
     case JSVAL_TYPE_OBJECT: {
       
-      ma_li(dest, ImmShiftedTag(type));
+      ma_li(dest, ImmNegatedShiftedTag(type));
 
       
-      or_(dest, dest, src);
+      sub(dest, src, dest);
       return;
     }
     case JSVAL_TYPE_DOUBLE:
@@ -2509,10 +2516,10 @@ void MacroAssemblerRiscv64Compat::tagValue(JSValueType type, Register payload,
       case JSVAL_TYPE_BIGINT:
       case JSVAL_TYPE_OBJECT: {
         
-        ma_li(scratch, ImmShiftedTag(type));
+        ma_li(scratch, ImmNegatedShiftedTag(type));
 
         
-        or_(dest.valueReg(), payload, scratch);
+        sub(dest.valueReg(), payload, scratch);
         break;
       }
       case JSVAL_TYPE_DOUBLE:
@@ -4473,7 +4480,7 @@ void MacroAssembler::setupUnalignedABICall(Register scratch) {
   setupNativeABICall();
   dynamicAlignment_ = true;
 
-  or_(scratch, StackPointer, zero);
+  ma_mv(scratch, StackPointer);
 
   
   asMasm().subPtr(Imm32(sizeof(uintptr_t)), StackPointer);
@@ -5249,7 +5256,7 @@ BufferOffset MacroAssemblerRiscv64::ma_liPatchable(Register dest, Imm32 imm) {
 
   auto [high_20, low_12] = ToHigh20Low12(imm.value);
   lui(dest, high_20);
-  addi(dest, dest, low_12);
+  addiw(dest, dest, low_12);
 
   return offset;
 }
@@ -5259,7 +5266,7 @@ void MacroAssemblerRiscv64::patchLi32(CodeOffset offset, Imm32 imm) {
   Instruction* inst1 =
       getInstructionAt(BufferOffset(offset.offset() + kInstrSize));
   MOZ_ASSERT(inst0->IsLui());
-  MOZ_ASSERT(inst1->IsAddi());
+  MOZ_ASSERT(inst1->IsAddiw());
 
   auto [high_20, low_12] = ToHigh20Low12(imm.value);
 
@@ -5726,10 +5733,10 @@ void MacroAssemblerRiscv64::ma_sub32(Register rd, Register rs, Imm32 rt) {
 void MacroAssemblerRiscv64::ma_sub64(Register rd, Register rs, Imm64 rt) {
   if (rt.value == 0) {
     ma_mv(rd, rs);
-  } else if (is_int12(-rt.value)) {
+  } else if (is_int12(int64_t(-uint64_t(rt.value)))) {
     
     addi(rd, rs, static_cast<int32_t>(-rt.value));
-  } else if (is_two_int12(-rt.value)) {
+  } else if (is_two_int12(int64_t(-uint64_t(rt.value)))) {
     auto [first, second] = ToTwoInt12(-rt.value);
     addi(rd, rs, first);
     addi(rd, rd, second);
@@ -5776,11 +5783,11 @@ void MacroAssemblerRiscv64::ma_and(Register rd, Register rs, Imm64 rt) {
       
       slli(rd, rs, 64 - shift);
       srli(rd, rd, 64 - shift);
-    } else if (rt.value == uint64_t(0x8000'0000)) {
+    } else if (rt.value == 0x8000'0000) {
       
       srliw(rd, rs, 31);
       slli(rd, rd, 31);
-    } else if (rt.value == uint64_t(0x8000'0000'0000'0000)) {
+    } else if (rt.value == int64_t(0x8000'0000'0000'0000)) {
       
       srli(rd, rs, 63);
       slli(rd, rd, 63);
@@ -5913,62 +5920,81 @@ void MacroAssemblerRiscv64::ma_mul32(Register rd, Register rs, Imm32 rt) {
       break;
   }
 
-  if (rt.value > 0 && HasZbaExtension()) {
-    int ctz = std::countr_zero(uint32_t(rt.value));
-    if ((rt.value >> ctz) == 3) {
-      
-      sh1add(rd, rs, rs);
-      if (ctz) {
-        slliw(rd, rd, ctz);
-      } else {
-        SignExtendWord(rd, rd);
+  if (rt.value > 0) {
+    const uint32_t uvalue = static_cast<uint32_t>(rt.value);
+    if (HasZbaExtension()) {
+      int ctz = std::countr_zero(uvalue);
+      if ((uvalue >> ctz) == 3) {
+        
+        sh1add(rd, rs, rs);
+        if (ctz) {
+          slliw(rd, rd, ctz);
+        } else {
+          SignExtendWord(rd, rd);
+        }
+        return;
+      }
+      if ((uvalue >> ctz) == 5) {
+        
+        sh2add(rd, rs, rs);
+        if (ctz) {
+          slliw(rd, rd, ctz);
+        } else {
+          SignExtendWord(rd, rd);
+        }
+        return;
+      }
+      if ((uvalue >> ctz) == 9) {
+        
+        sh3add(rd, rs, rs);
+        if (ctz) {
+          slliw(rd, rd, ctz);
+        } else {
+          SignExtendWord(rd, rd);
+        }
+        return;
+      }
+    }
+
+    const uint8_t shift = mozilla::FloorLog2(uvalue);
+    
+    if (std::has_single_bit(uvalue)) {
+      slliw(rd, rs, shift);
+      return;
+    }
+
+    if (std::has_single_bit(uvalue + 1)) {
+      const int shift_plus_one = std::countr_zero(uvalue + 1);
+
+      UseScratchRegisterScope temps(this);
+      Register shifted = rd;
+      if (rd == rs) {
+        shifted = temps.Acquire();
+      }
+      slliw(shifted, rs, shift_plus_one);
+      subw(rd, shifted, rs);
+      return;
+    }
+
+    
+    
+    const uint32_t rest = uvalue - (UINT32_C(1) << shift);
+    if (std::has_single_bit(rest)) {
+      const int shift_rest = std::countr_zero(rest);
+
+      UseScratchRegisterScope temps(this);
+      Register shifted = rd;
+      if (rd == rs) {
+        shifted = temps.Acquire();
+      }
+
+      slliw(shifted, rs, (shift - shift_rest));
+      addw(rd, shifted, rs);
+      if (shift_rest != 0) {
+        slliw(rd, rd, shift_rest);
       }
       return;
     }
-    if ((rt.value >> ctz) == 5) {
-      
-      sh2add(rd, rs, rs);
-      if (ctz) {
-        slliw(rd, rd, ctz);
-      } else {
-        SignExtendWord(rd, rd);
-      }
-      return;
-    }
-    if ((rt.value >> ctz) == 9) {
-      
-      sh3add(rd, rs, rs);
-      if (ctz) {
-        slliw(rd, rd, ctz);
-      } else {
-        SignExtendWord(rd, rd);
-      }
-      return;
-    }
-  }
-
-  uint32_t shift = mozilla::FloorLog2(uint32_t(rt.value));
-
-  
-  if ((1 << shift) == rt.value) {
-    slliw(rd, rs, shift);
-    return;
-  }
-
-  
-  
-  uint32_t rest = rt.value - (1 << shift);
-  uint32_t shift_rest = mozilla::FloorLog2(rest);
-  if ((1u << shift_rest) == rest) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-
-    slliw(scratch, rs, (shift - shift_rest));
-    addw(rd, scratch, rs);
-    if (shift_rest != 0) {
-      slliw(rd, rd, shift_rest);
-    }
-    return;
   }
 
   UseScratchRegisterScope temps(this);
@@ -5986,7 +6012,7 @@ void MacroAssemblerRiscv64::ma_mulhu32(Register rd, Register rs, Imm32 rt) {
 }
 
 void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
-  switch (int64_t(rt.value)) {
+  switch (rt.value) {
     case -1:
       neg(rd, rs);
       return;
@@ -5994,9 +6020,7 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
       ma_mv(rd, zero);
       return;
     case 1:
-      if (rd != rs) {
-        ma_mv(rd, rs);
-      }
+      ma_mv(rd, rs);
       return;
     case 2:
       add(rd, rs, rs);
@@ -6005,10 +6029,11 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
       break;
   }
 
-  if (int64_t(rt.value) > 0) {
+  if (rt.value > 0) {
+    const uint64_t uvalue = static_cast<uint64_t>(rt.value);
     if (HasZbaExtension()) {
-      int ctz = std::countr_zero(uint32_t(rt.value));
-      if ((rt.value >> ctz) == 3) {
+      int ctz = std::countr_zero(uvalue);
+      if ((uvalue >> ctz) == 3) {
         
         sh1add(rd, rs, rs);
         if (ctz) {
@@ -6016,7 +6041,7 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
         }
         return;
       }
-      if ((rt.value >> ctz) == 5) {
+      if ((uvalue >> ctz) == 5) {
         
         sh2add(rd, rs, rs);
         if (ctz) {
@@ -6024,7 +6049,7 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
         }
         return;
       }
-      if ((rt.value >> ctz) == 9) {
+      if ((uvalue >> ctz) == 9) {
         
         sh3add(rd, rs, rs);
         if (ctz) {
@@ -6034,38 +6059,43 @@ void MacroAssemblerRiscv64::ma_mul64(Register rd, Register rs, Imm64 rt) {
       }
     }
 
-    if (std::has_single_bit(rt.value + 1)) {
-      int32_t shift = mozilla::FloorLog2(rt.value + 1);
-
-      UseScratchRegisterScope temps(this);
-      Register savedRs = rs;
-      if (rd == rs) {
-        savedRs = temps.Acquire();
-        ma_mv(savedRs, rs);
-      }
+    const uint8_t shift = mozilla::FloorLog2(uvalue);
+    
+    if (std::has_single_bit(uvalue)) {
       slli(rd, rs, shift);
-      sub(rd, rd, savedRs);
       return;
     }
 
-    if (std::has_single_bit(rt.value - 1)) {
-      int32_t shift = mozilla::FloorLog2(rt.value - 1);
+    if (std::has_single_bit(uvalue + 1)) {
+      const int shift_plus_one = std::countr_zero(uvalue + 1);
 
       UseScratchRegisterScope temps(this);
-      Register savedRs = rs;
+      Register shifted = rd;
       if (rd == rs) {
-        savedRs = temps.Acquire();
-        ma_mv(savedRs, rs);
+        shifted = temps.Acquire();
       }
-      slli(rd, rs, shift);
-      add(rd, rd, savedRs);
+      slli(shifted, rs, shift_plus_one);
+      sub(rd, shifted, rs);
       return;
     }
 
     
-    uint8_t shift = mozilla::FloorLog2(rt.value);
-    if (uint64_t(1) << shift == rt.value) {
-      slli(rd, rs, shift);
+    
+    const uint64_t rest = uvalue - (UINT64_C(1) << shift);
+    if (std::has_single_bit(rest)) {
+      const int shift_rest = std::countr_zero(rest);
+
+      UseScratchRegisterScope temps(this);
+      Register shifted = rd;
+      if (rd == rs) {
+        shifted = temps.Acquire();
+      }
+
+      slli(shifted, rs, (shift - shift_rest));
+      add(rd, shifted, rs);
+      if (shift_rest != 0) {
+        slli(rd, rd, shift_rest);
+      }
       return;
     }
   }
@@ -6280,12 +6310,12 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
   Register scratch2 = temps.Acquire();
 
   if (imm.value == 0) {
-    ori(rd, rj, 0);
+    ma_mv(rd, rj);
     return;
   }
 
   if (rj == rd) {
-    ori(scratch2, rj, 0);
+    ma_mv(scratch2, rj);
     rj = scratch2;
   }
 
@@ -6306,13 +6336,13 @@ void MacroAssemblerRiscv64::ma_addPtrTestOverflow(Register rd, Register rj,
   Register scratch2 = temps.Acquire();
 
   if (imm.value == 0) {
-    ori(rd, rj, 0);
+    ma_mv(rd, rj);
     return;
   }
 
   if (rj == rd) {
     MOZ_ASSERT(rj != scratch2);
-    ori(scratch2, rj, 0);
+    ma_mv(scratch2, rj);
     rj = scratch2;
   }
 
