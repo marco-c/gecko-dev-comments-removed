@@ -309,23 +309,28 @@ nsresult nsHttpTransaction::Init(
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(requestBody);
   nsCOMPtr<nsIInputStream> requestBodyClone;
-  if (mHasRequestBody) {
+  if (mHasRequestBody && (!mRequestBodyIsStreaming || seekable)) {
     rv = NS_CloneInputStream(requestBody, getter_AddRefs(requestBodyClone));
     if (NS_SUCCEEDED(rv)) {
       requestBody = requestBodyClone;
-    } else if (XRE_IsParentProcess()) {
-      nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(requestBody);
-      if (seekable) {
-        
-        
-        
-        
-        
-        
-        MOZ_DIAGNOSTIC_ASSERT(false, "Upload stream should be cloneable");
-        return rv;
-      }
+    } else if (XRE_IsParentProcess() && seekable) {
+      
+      
+      
+      
+      
+      
+      MOZ_DIAGNOSTIC_ASSERT(false, "Upload stream should be cloneable");
+      return rv;
     }
   }
 
