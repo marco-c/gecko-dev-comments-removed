@@ -88,6 +88,8 @@ BaselineCompilerHandler::BaselineCompilerHandler(MacroAssembler& masm,
       icEntryIndex_(0),
       baseWarmUpThreshold_(snapshot->baseWarmUpThreshold()),
       compileDebugInstrumentation_(snapshot->compileDebugInstrumentation()),
+      compileDebugModeOSRResumeTargets_(
+          snapshot->compileDebugModeOSRResumeTargets()),
       ionCompileable_(snapshot->isIonCompileable()) {
 }
 
@@ -207,25 +209,21 @@ void BaselineCompilerCodeGen::ensureDebugModeOSRPointSpace() {
 
   
   
-  if (masm.currentOffset() - *lastOffset <
-      Assembler::PatchWrite_NearCallSize()) {
-    int32_t paddingSize = Assembler::PatchWrite_NearCallSize();
-    paddingSize -= masm.currentOffset() - *lastOffset;
-#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
-    masm.nop(paddingSize);
-#else
-    for (int32_t i = 0; i < paddingSize; i += Assembler::NopSize()) {
-      masm.nop();
-    }
-#endif
-  }
-
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - *lastOffset >=
-                                 Assembler::PatchWrite_NearCallSize());
+  masm.ensureNearCallPatchSpace(*lastOffset);
 }
 
 template <>
 void BaselineInterpreterCodeGen::ensureDebugModeOSRPointSpace() {}
+
+template <typename Handler>
+void BaselineCodeGen<Handler>::emitDebugModeOSRResumeTarget(
+    RetAddrEntry::Kind kind, uint32_t returnOffset) {
+  if (handler.shouldEmitDebugModeOSRResumeTarget(kind)) {
+    mozilla::DebugOnly<uint32_t> targetOffset =
+        masm.indirectTarget(TargetKind::Jump).offset();
+    MOZ_ASSERT_IF(!masm.oom(), targetOffset == returnOffset);
+  }
+}
 
 bool BaselineInterpreterHandler::recordCallRetAddr(RetAddrEntry::Kind kind,
                                                    uint32_t retOffset) {
@@ -812,6 +810,7 @@ bool BaselineCompilerCodeGen::emitNextIC() {
 
   CodeOffset returnOffset;
   EmitCallIC(masm, &returnOffset);
+  emitDebugModeOSRResumeTarget(kind, returnOffset.offset());
 
   return handler.recordCallRetAddr(kind, returnOffset.offset());
 }
@@ -929,6 +928,7 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
 
   
   uint32_t callOffset = masm.callJit(code);
+  emitDebugModeOSRResumeTarget(kind, callOffset);
 
   
   masm.implicitPop(argSize);
@@ -1673,7 +1673,7 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   jsbytecode* pc = handler.pc();
   if (JSOp(*pc) == JSOp::LoopHead) {
     uint32_t pcOffset = script->pcToOffset(pc);
-    uint32_t nativeOffset = masm.currentOffset();
+    uint32_t nativeOffset = masm.indirectTarget(TargetKind::Jump).offset();
     if (!handler.osrEntries().emplaceBack(pcOffset, nativeOffset)) {
       return false;
     }
@@ -6759,6 +6759,7 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
   
   
   uint32_t callOffset = masm.callJit(code);
+  emitDebugModeOSRResumeTarget(RetAddrEntry::Kind::IC, callOffset);
 
   
   if (!handler.recordCallRetAddr(RetAddrEntry::Kind::IC, callOffset)) {
@@ -7018,6 +7019,7 @@ template <typename Handler>
 bool BaselineCodeGen<Handler>::emitPrologue() {
   AutoCreatedBy acb(masm, "BaselineCodeGen<Handler>::emitPrologue");
 
+  masm.indirectTarget(TargetKind::Call);
 #ifdef JS_USE_LINK_REGISTER
   
   masm.pushRegs(LinkRegister, FramePointer);
@@ -7088,7 +7090,7 @@ bool BaselineCodeGen<Handler>::emitPrologue() {
     return false;
   }
 
-  warmUpCheckPrologueOffset_ = CodeOffset(masm.currentOffset());
+  warmUpCheckPrologueOffset_ = masm.indirectTarget(TargetKind::Jump);
 
   return true;
 }
@@ -7164,7 +7166,7 @@ bool BaselineCompiler::emitBody() {
     if (info->hasResumeOffset) {
       frame.assertSyncedStack();
       uint32_t pcOffset = script->pcToOffset(handler.pc());
-      uint32_t nativeOffset = masm.currentOffset();
+      uint32_t nativeOffset = masm.indirectTarget(TargetKind::Jump).offset();
       if (!resumeOffsetEntries_.emplaceBack(pcOffset, nativeOffset)) {
         return false;
       }
@@ -7218,7 +7220,7 @@ bool BaselineInterpreterGenerator::emitICBailoutStub() {
 
   Label icReturn;
   icReturn.bind(handler.takeICReturnOffset());
-  uint32_t offset = masm.currentOffset();
+  uint32_t offset = masm.indirectTarget(TargetKind::Jump).offset();
   
   
   
@@ -7317,23 +7319,23 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
 
   
   Label opLabels[JSOP_LIMIT];
-#define EMIT_OP(OP, ...)                                           \
-  {                                                                \
-    AutoCreatedBy acb(masm, "op=" #OP);                            \
-    perfSpewer_.recordOffset(masm, JSOp::OP);                      \
-    masm.bind(&opLabels[uint8_t(JSOp::OP)]);                       \
-    handler.setCurrentOp(JSOp::OP);                                \
-    if (!this->emit_##OP()) {                                      \
-      return false;                                                \
-    }                                                              \
-    if (!opEpilogue(JSOp::OP, JSOpLength_##OP)) {                  \
-      return false;                                                \
-    }                                                              \
-    if (BytecodeOpHasIC(JSOp::OP) && IsIonInlinableOp(JSOp::OP) && \
-        !this->emitICBailoutStub()) {                              \
-      return false;                                                \
-    }                                                              \
-    handler.resetCurrentOp();                                      \
+#define EMIT_OP(OP, ...)                                                     \
+  {                                                                          \
+    AutoCreatedBy acb(masm, "op=" #OP);                                      \
+    perfSpewer_.recordOffset(masm, JSOp::OP);                                \
+    masm.bindIndirectTarget(&opLabels[uint8_t(JSOp::OP)], TargetKind::Jump); \
+    handler.setCurrentOp(JSOp::OP);                                          \
+    if (!this->emit_##OP()) {                                                \
+      return false;                                                          \
+    }                                                                        \
+    if (!opEpilogue(JSOp::OP, JSOpLength_##OP)) {                            \
+      return false;                                                          \
+    }                                                                        \
+    if (BytecodeOpHasIC(JSOp::OP) && IsIonInlinableOp(JSOp::OP) &&           \
+        !this->emitICBailoutStub()) {                                        \
+      return false;                                                          \
+    }                                                                        \
+    handler.resetCurrentOp();                                                \
   }
   FOR_EACH_OPCODE(EMIT_OP)
 #undef EMIT_OP
@@ -7341,24 +7343,25 @@ bool BaselineInterpreterGenerator::emitInterpreterLoop() {
   
   
   
+  interpretOpOffset_ = masm.indirectTarget(TargetKind::Jump).offset();
   masm.bind(handler.interpretOpLabel());
-  interpretOpOffset_ = masm.currentOffset();
   restoreInterpreterPCReg();
   masm.jump(handler.interpretOpWithPCRegLabel());
 
   
   
-  interpretOpNoDebugTrapOffset_ = masm.currentOffset();
+  interpretOpNoDebugTrapOffset_ =
+      masm.indirectTarget(TargetKind::Jump).offset();
   restoreInterpreterPCReg();
   masm.jump(&interpretOpAfterDebugTrap);
 
   
-  bailoutPrologueOffset_ = CodeOffset(masm.currentOffset());
+  bailoutPrologueOffset_ = masm.indirectTarget(TargetKind::Jump);
   restoreInterpreterPCReg();
   masm.jump(&bailoutPrologue_);
 
   
-  bailoutResumePrologueOffset_ = CodeOffset(masm.currentOffset());
+  bailoutResumePrologueOffset_ = masm.indirectTarget(TargetKind::Jump);
   restoreInterpreterPCReg();
   masm.moveToStackPtr(FramePointer);
   masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
@@ -7556,6 +7559,8 @@ JitCode* JitRuntime::generateDebugTrapHandler(JSContext* cx,
   TempAllocator temp(&cx->tempLifoAlloc());
   StackMacroAssembler masm(cx, temp);
   AutoCreatedBy acb(masm, "JitRuntime::generateDebugTrapHandler");
+
+  masm.indirectTarget(TargetKind::Call);
 
   AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
   MOZ_ASSERT(!regs.has(FramePointer));

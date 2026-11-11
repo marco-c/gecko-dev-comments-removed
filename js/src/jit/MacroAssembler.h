@@ -598,6 +598,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+  
+  
+  inline CodeOffset indirectTarget(TargetKind kind);
+  inline void bindIndirectTarget(Label* label, TargetKind kind);
+  inline void bindIndirectTarget(CodeLabel* label, TargetKind kind);
+
+  
+  
+
+  
+  
   CodeOffset call(Register reg) PER_SHARED_ARCH;
   CodeOffset call(Label* label) PER_SHARED_ARCH;
   CodeOffset call(const Address& addr) PER_SHARED_ARCH;
@@ -659,6 +670,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
   static void patchNopToCall(uint8_t* callsite,
                              uint8_t* target) PER_SHARED_ARCH;
   static void patchCallToNop(uint8_t* callsite) PER_SHARED_ARCH;
+
+  
+  
+  
+  void ensureNearCallPatchSpace(uint32_t offset);
 
   
   
@@ -2343,9 +2359,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
+#ifndef JS_CODEGEN_RISCV64
+  
   inline void canonicalizeDoubleNaN(FloatRegister reg);
 
   inline void canonicalizeFloatNaN(FloatRegister reg);
+#endif
 
   
   

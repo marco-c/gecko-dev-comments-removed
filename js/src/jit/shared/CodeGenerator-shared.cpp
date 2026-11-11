@@ -143,6 +143,7 @@ bool CodeGeneratorShared::generatePrologue() {
   MOZ_ASSERT(masm.framePushed() == 0);
   MOZ_ASSERT(!gen->compilingWasm());
 
+  masm.indirectTarget(TargetKind::Call);
 #ifdef JS_USE_LINK_REGISTER
   
   masm.pushRegs(LinkRegister, FramePointer);
@@ -1002,16 +1003,7 @@ void CodeGeneratorShared::ensureOsiSpace() {
   
   
   
-  if (masm.currentOffset() - lastOsiPointOffset_ <
-      Assembler::PatchWrite_NearCallSize()) {
-    int32_t paddingSize = Assembler::PatchWrite_NearCallSize();
-    paddingSize -= masm.currentOffset() - lastOsiPointOffset_;
-    for (int32_t i = 0; i < paddingSize; ++i) {
-      masm.nop();
-    }
-  }
-  MOZ_ASSERT_IF(!masm.oom(), masm.currentOffset() - lastOsiPointOffset_ >=
-                                 Assembler::PatchWrite_NearCallSize());
+  masm.ensureNearCallPatchSpace(lastOsiPointOffset_);
 }
 
 uint32_t CodeGeneratorShared::markOsiPoint(LOsiPoint* ins) {
