@@ -48,6 +48,8 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
 
   bool OnManagerThread();
 
+  bool IsMediaEngineIdAllowed() const;
+
   
   
   
@@ -73,8 +75,19 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
   
   const Maybe<uint64_t> mMediaEngineId;
 
-  bool mInitAttempted = false;
-  bool mShutdown = false;
+  
+  
+  
+  
+  enum class State : uint8_t {
+    Unconstructed,
+    Constructing,
+    Constructed,
+    Initializing,
+    Initialized,
+    ShutDown,
+  };
+  State mState = State::Unconstructed;
 
   
   
