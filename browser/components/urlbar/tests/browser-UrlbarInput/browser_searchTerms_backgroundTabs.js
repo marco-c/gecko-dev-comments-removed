@@ -46,7 +46,7 @@ add_task(async function ctrl_open() {
   
   let backgroundTab = await newTabPromise;
   await BrowserTestUtils.switchTab(gBrowser, backgroundTab);
-  assertSearchStringIsInUrlbar(SEARCH_STRING);
+  UrlbarTestUtils.assertSearchStringIsInUrlbar(window, SEARCH_STRING);
 
   BrowserTestUtils.removeTab(backgroundTab);
 });

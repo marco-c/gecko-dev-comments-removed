@@ -223,14 +223,6 @@ async function installPersistTestEngines(globalDefault = "Example") {
   };
 }
 
-async function resetApplicationProvidedEngines() {
-  let settingsWritten = SearchTestUtils.promiseSearchNotification(
-    "write-settings-to-disk-complete"
-  );
-  await SearchTestUtils.updateRemoteSettingsConfig();
-  await settingsWritten;
-}
-
 
 
 
