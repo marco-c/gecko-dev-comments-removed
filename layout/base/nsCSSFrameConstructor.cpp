@@ -7617,13 +7617,14 @@ static nsIFrame* FindPreviousNonWhitespaceSibling(nsIFrame* aFrame) {
 
 
 
-static bool IsInFragmentedTable(nsIFrame* aFrame) {
-  for (nsIFrame* f = aFrame->GetParent(); f; f = f->GetParent()) {
+
+static nsIFrame* GetNearestFragmentedTable(nsIFrame* aFrame) {
+  for (nsIFrame* f = aFrame; f; f = f->GetParent()) {
     if (f->IsTableFrame() && (f->GetPrevInFlow() || f->GetNextInFlow())) {
-      return true;
+      return f;
     }
   }
-  return false;
+  return nullptr;
 }
 
 static nsIFrame* CheckRubyContainers(nsIFrame* aFrame, nsIFrame* aParent) {
@@ -7660,7 +7661,7 @@ bool nsCSSFrameConstructor::ShouldRebuildFrameTreeForReplicatedFrames(
   nsIFrame* inFlowFrame = aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)
                               ? aFrame->GetPlaceholderFrame()
                               : aFrame;
-  return IsInFragmentedTable(inFlowFrame) ||
+  return GetNearestFragmentedTable(inFlowFrame) ||
          aFrame->IsInReplicatedFixedPosTree() ||
          aFrame->ContainsReplicatedFixedPosPlaceholders();
 }
@@ -10713,6 +10714,14 @@ bool nsCSSFrameConstructor::WipeInsertionParent(nsContainerFrame* aFrame) {
                   "Layout");
 
   const LayoutFrameType frameType = aFrame->Type();
+
+  if (aFrame->PresContext()->IsPaginated()) {
+    if (auto* table = GetNearestFragmentedTable(aFrame)) {
+      TRACE("Paginated fragmented table");
+      RecreateFramesForContent(table->GetContent(), InsertionKind::Async);
+      return true;
+    }
+  }
 
   
   
