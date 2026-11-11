@@ -714,6 +714,10 @@ def main():
         extra_cxxflags2 = []
         extra_asmflags = []
         
+        if not target.startswith("aarch64"):
+            extra_cxxflags = ["-Wno-cpp"]
+            extra_cxxflags2 = ["-Wno-cpp"]
+        
         
         
         extra_ldflags = [
