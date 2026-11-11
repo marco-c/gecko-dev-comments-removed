@@ -1683,21 +1683,27 @@ void FetchEventOp::ResolvedCallback(JSContext* aCx,
 
   autoCancel.Reset();
 
-  ChildToParentSynthesizeResponseArgs synthesizeResponseArgs;
-  synthesizeResponseArgs.closure() = mRespondWithClosure.ref();
-  synthesizeResponseArgs.timeStamps() =
+  SynthesizeResponseArgs synthesizeResponseArgs;
+  ChildToParentSynthesizeResponseArgs& ipcArgs =
+      synthesizeResponseArgs.mIPCArgs;
+  ipcArgs.closure() = mRespondWithClosure.ref();
+  ipcArgs.timeStamps() =
       FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish);
-  ir->ToChildToParentInternalResponse(
-      &synthesizeResponseArgs.internalResponse());
+  ir->ToChildToParentInternalResponse(&ipcArgs.internalResponse());
+
+  
+  
+  
+  ir->GetUnfilteredBody(getter_AddRefs(synthesizeResponseArgs.mBody),
+                        &ipcArgs.internalResponse().bodySize());
+  synthesizeResponseArgs.mAlternativeBody = ir->TakeAlternativeBody();
 
   
   
   mHandled->MaybeResolveWithUndefined();
 
   mRespondWithPromiseHolder.Resolve(
-      FetchEventRespondWithResult(
-          std::make_pair(std::move(ir), std::move(synthesizeResponseArgs))),
-      __func__);
+      FetchEventRespondWithResult(std::move(synthesizeResponseArgs)), __func__);
 }
 
 void FetchEventOp::RejectedCallback(JSContext* aCx,

@@ -9,13 +9,22 @@
 #include "mozilla/Result.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
+#include "nsCOMPtr.h"
+#include "nsIInputStream.h"
 
 namespace mozilla::dom {
 
 class InternalResponse;
 
-using SynthesizeResponseArgs = std::pair<SafeRefPtr<InternalResponse>,
-                                         ChildToParentSynthesizeResponseArgs>;
+
+
+
+
+struct SynthesizeResponseArgs {
+  ChildToParentSynthesizeResponseArgs mIPCArgs;
+  nsCOMPtr<nsIInputStream> mBody;
+  nsCOMPtr<nsIInputStream> mAlternativeBody;
+};
 
 using FetchEventRespondWithResult =
     Variant<SynthesizeResponseArgs, ResetInterceptionArgs,
