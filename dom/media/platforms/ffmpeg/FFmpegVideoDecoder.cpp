@@ -368,15 +368,8 @@ bool FFmpegVideoDecoder<LIBAV_VER>::VulkanDirectDecodeExportEnabled() {
     if (!mLib->av_hwframe_map) {
       return false;
     }
-    
-    
-#    if defined(FFVPX_VERSION) && \
-        LIBAVCODEC_VERSION_INT <= MOZ_FFMPEG_MIN_LAVC_FOR_VULKAN_DMABUF
-    return false;
-#    else
     return StaticPrefs::
         media_hardware_video_decoding_vulkan_direct_export_enabled_AtStartup();
-#    endif
   }();
   return exportEnabled;
 }
@@ -512,10 +505,20 @@ int FFmpegVideoDecoder<LIBAV_VER>::ChooseVulkanPixelFormatFromContext(
         return true;
       }
 #    ifndef FFVPX_VERSION
+      const unsigned avcodecVersion = mLib->avcodec_version();
+      
+      
+      if (avcodecVersion <= AV_VERSION_INT(62, 29, 101)) {
+        FFMPEGV_LOG(
+            "[VULKAN] Direct export disabled: system FFmpeg with libavcodec "
+            "62.29.101 or older may cause video corruption or crashes. "
+            "Using copy");
+        return true;
+      }
       
       
       if (mVulkanDecoder.mNegotiatedCompositorDecoderVendorID == 0x1002 &&
-          mLib->avcodec_version() < AV_VERSION_INT(63, 20, 101)) {
+          avcodecVersion < AV_VERSION_INT(63, 20, 101)) {
         FFMPEGV_LOG(
             "[VULKAN] Direct export disabled: system FFmpeg older than "
             "63.20.101 may cause video corruption on AMD GPUs. Using copy");
