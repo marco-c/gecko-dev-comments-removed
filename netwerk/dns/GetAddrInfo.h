@@ -20,6 +20,7 @@
 
 #if defined(XP_WIN)
 #  define DNSQUERY_AVAILABLE 1
+struct _DnsRecordA;
 #else
 #  undef DNSQUERY_AVAILABLE
 #endif
@@ -100,6 +101,17 @@ nsresult ResolveHTTPSRecordImpl(const nsACString& aHost,
 nsresult ParseHTTPSRecord(nsCString& aHost, DNSPacket& aDNSPacket,
                           TypeRecordResultType& aResult, uint32_t& aTTL,
                           HTTPSAliasTarget& aAlias);
+
+#ifdef DNSQUERY_AVAILABLE
+
+
+
+
+nsresult ParseHTTPSRecordList(const _DnsRecordA* aRecords,
+                              const nsACString& aHost,
+                              TypeRecordResultType& aResult, uint32_t& aTTL,
+                              HTTPSAliasTarget& aAlias);
+#endif
 
 
 nsresult CreateAndResolveMockHTTPSRecord(const nsACString& aHost,

@@ -218,6 +218,16 @@ nsresult DNSPacket::PassQName(unsigned int& index,
 }
 
 
+bool DNSPacket::IsSameName(const nsACString& aName, const nsACString& aOther) {
+  auto withoutRootDot = [](const nsACString& aStr) {
+    return StringEndsWith(aStr, "."_ns) ? Substring(aStr, 0, aStr.Length() - 1)
+                                        : Substring(aStr, 0);
+  };
+  return withoutRootDot(aName).Equals(withoutRootDot(aOther),
+                                      nsCaseInsensitiveCStringComparator);
+}
+
+
 
 
 nsresult DNSPacket::GetQname(nsACString& aQname, unsigned int& aIndex,
@@ -755,10 +765,7 @@ nsresult DNSPacket::DecodeInternal(
 
     
     
-    bool responseMatchesQuestion =
-        (qname.Length() == aHost.Length() ||
-         (aHost.Length() == qname.Length() + 1 && aHost.Last() == '.')) &&
-        StringBeginsWith(aHost, qname, nsCaseInsensitiveCStringComparator);
+    bool responseMatchesQuestion = IsSameName(qname, aHost);
 
     if (responseMatchesQuestion) {
       

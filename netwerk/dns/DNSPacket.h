@@ -84,6 +84,10 @@ class DNSPacket {
                              bool aAllowRFC1918 = true);
   void SetNativePacket(bool aNative) { mNativePacket = aNative; }
 
+  
+  
+  static bool IsSameName(const nsACString& aName, const nsACString& aOther);
+
   static nsresult GetQname(nsACString& aQname, unsigned int& aIndex,
                            const unsigned char* aBuffer,
                            unsigned int aBodySize);
