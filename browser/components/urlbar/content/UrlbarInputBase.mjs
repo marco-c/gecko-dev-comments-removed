@@ -230,9 +230,9 @@ ${
            popover="manual"
            role="group">
         <div class="urlbarView-background"/>
+        <panel-list class="urlbarView-result-menu" accesskey-conflicts-bug="2073892"></panel-list>
         <div class="urlbarView-results"
              role="listbox"/>
-        <panel-list class="urlbarView-result-menu" accesskey-conflicts-bug="2073892"></panel-list>
         <moz-urlbar-slot name="search-one-offs" />
    </div>`;
   }
@@ -253,9 +253,9 @@ ${
   }
 
   /**
-   * @type {DocumentFragment=}
-   *
    * The cached fragment.
+   *
+   * @type {DocumentFragment=}
    */
   static #fragment;
 
@@ -1086,11 +1086,13 @@ ${
     // the cross domain resource, although the page is not loaded yet.
     // This url will be set/unset by PromptParent. See bug 791594 for reference.
     if (value === null || (!value && dueToTabSwitch)) {
+      let pendingLoadURI = this.#isOpenedPageInBlankTargetLoading;
       uri =
         this.browserWindow.gBrowser.selectedBrowser.currentAuthPromptURI ||
         uri ||
-        this.#isOpenedPageInBlankTargetLoading ||
+        pendingLoadURI ||
         this.browserWindow.gBrowser.currentURI;
+      let showingPendingLoad = uri == pendingLoadURI;
       // Strip off usernames and passwords for the location bar
       try {
         uri = Services.io.createExposableURI(uri);
@@ -1118,11 +1120,14 @@ ${
           value = "about:blank";
         }
       }
-      // If we update the URI while restoring a session, set the proxyState to
-      // invalid, because we don't have a valid security state to show via site
-      // identity yet. See Bug 1746383.
       valid =
+        // If we update the URI while restoring a session, set the proxyState to
+        // invalid, because we don't have a valid security state to show via site
+        // identity yet. See Bug 1746383.
         !dueToSessionRestore &&
+        // If we are showing the URI of a pending load, set proxystate to
+        // invalid because the site identity refers to the currently loaded site.
+        !showingPendingLoad &&
         (!this.#canHandleAsBlankPage(uri.spec) ||
           lazy.ExtensionUtils.isExtensionUrl(uri) ||
           isInitialPageControlledByWebContent);
@@ -3053,12 +3058,12 @@ ${
    */
 
   /**
-   * @type {SearchModesObject|undefined}
-   *
    * The (lazily initialized) search mode object for the searchbar.
    * This is needed because the searchbar has one search mode per window that
    * shouldn't change when switching tabs. For the address bar, the search mode
    * is stored per browser in #browserStates and this is always undefined.
+   *
+   * @type {SearchModesObject|undefined}
    */
   #searchbarSearchModes;
 
@@ -3180,11 +3185,11 @@ ${
   }
 
   /**
-   * @type {Promise<void>}
-   *
    * Resolves once the search mode last assigned through the `searchMode`
    * setter has been applied. Applying it resolves the engine, which may have
    * to wait for the engine store.
+   *
+   * @type {Promise<void>}
    */
   #searchModeApplied = Promise.resolve();
 
@@ -3892,10 +3897,7 @@ ${
 
     let uri;
     if (this.getAttribute("pageproxystate") == "valid") {
-      uri = this.#isOpenedPageInBlankTargetLoading
-        ? this.browserWindow.gBrowser.selectedBrowser.browsingContext
-            .nonWebControlledLoadingURI
-        : this.browserWindow.gBrowser.currentURI;
+      uri = this.browserWindow.gBrowser.currentURI;
     } else {
       // The value could be:
       // 1. a trimmed url, set by selecting a result
