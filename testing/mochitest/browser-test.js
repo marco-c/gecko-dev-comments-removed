@@ -64,7 +64,11 @@ const SIMPLETEST_OVERRIDES = [
 
 
 
-const FAILING_UNCAUGHT_ERROR_NAMES = ["AccessKeyConflictError"];
+
+const FAILING_UNCAUGHT_ERROR_NAMES = [
+  "AccessKeyConflictError",
+  "SessionStateValidationError",
+];
 
 setTimeout(testInit, 0);
 
@@ -1693,6 +1697,7 @@ Tester.prototype = {
     
     this.SimpleTest.waitForFocus(() => {
       if (this.done) {
+        Services.obs.notifyObservers(null, "mochitest-leave-chaos-mode");
         if (!this._shouldCheckForLeaks) {
           this.finish();
           return;
@@ -2124,6 +2129,7 @@ Tester.prototype = {
               
               
               self.ClickChecks.forgetMouseDownState();
+              Services.obs.notifyObservers(null, "mochitest-leave-chaos-mode");
               if (self._shouldCheckForLeaks) {
                 self._releaseResourcesKeptAliveUntilShutdown();
                 await self._collectAndCheckForLeakedWindows(true);

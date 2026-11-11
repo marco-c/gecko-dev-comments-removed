@@ -4968,6 +4968,16 @@ class _SessionStore {
     this.#windows[this.#windowIds.get(aWindow)]._maybeDontRestoreTabs = true;
   }
 
+  /**
+   * Removes the mark that maybeDontRestoreTabs puts on a window.
+   *
+   * @param {BrowserWindow} aWindow
+   *        Window reference
+   */
+  clearMaybeDontRestoreTabs(aWindow) {
+    delete this.#windows[this.#windowIds.get(aWindow)]._maybeDontRestoreTabs;
+  }
+
   #isLastRestorableWindow() {
     return (
       Object.values(this.#windows).filter(
@@ -6136,8 +6146,9 @@ class _SessionStore {
    *
    * @param {ClosedTabStateData[]} tabData
    *        an array of data to be restored
-   * @param {string} windowId
-   *        The SessionStore id for the window these tabs should be associated with
+   * @param {WindowID|number} windowId
+   *        The SessionStore id for the window these tabs should be associated
+   *        with, or the `closedId` of the closed window they belong to
    * @returns {ClosedTabStateData[]}
    *          The updated tabData array
    */
@@ -9433,6 +9444,14 @@ class _SessionStore {
   }
 
   /**
+   * The parsed contents of session.schema.json, loaded by the first
+   * validateState call.
+   *
+   * @type {Promise<object>|null}
+   */
+  #stateSchemaPromise = null;
+
+  /**
    * Validates that a state object matches the schema
    * defined in browser/components/sessionstore/session.schema.json
    *
@@ -9448,19 +9467,14 @@ class _SessionStore {
       // Don't include any deferred initial state.
       delete state.deferredInitialState;
     }
-    const schema = await fetch(
+    this.#stateSchemaPromise ??= fetch(
       "moz-src:///browser/components/sessionstore/session.schema.json"
     ).then(rsp => rsp.json());
+    const schema = await this.#stateSchemaPromise;
 
     let result;
     try {
       result = lazy.JsonSchema.validate(state, schema);
-      if (!result.valid) {
-        console.warn(
-          "Session state didn't validate against the schema",
-          result.errors
-        );
-      }
     } catch (ex) {
       console.error(`Error validating session state: ${ex.message}`, ex);
     }
