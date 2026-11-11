@@ -1298,12 +1298,6 @@ class MediaTrackGraph {
 
 
 
-  virtual Watchable<GraphTime>& CurrentTime() = 0;
-
-  
-
-
-
   GraphTime ProcessedTime() const;
   
 

@@ -670,8 +670,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   already_AddRefed<MediaInputPort> ConnectToCaptureTrack(
       uint64_t aWindowId, MediaTrack* aMediaTrack);
 
-  Watchable<GraphTime>& CurrentTime() override;
-
   
 
 
@@ -1167,18 +1165,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   bool mCanRunMessagesSynchronously;
 #endif
-
-  
-
-
-
-  Watchable<GraphTime> mMainThreadGraphTime;
-
-  
-
-
-
-  GraphTime mNextMainThreadGraphTime MOZ_GUARDED_BY(mMonitor) = 0;
 
   
 
