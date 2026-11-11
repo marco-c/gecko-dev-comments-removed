@@ -36,6 +36,8 @@ add_task(async function test_no_shortcuts() {
       "No shortcuts found"
     );
   });
+
+  await SpecialPowers.popPrefEnv();
 });
 
 function visibleBox(popup) {
@@ -189,27 +191,30 @@ add_task(async function test_no_menu_when_nothing_available() {
   const spy = sinon.spy(GenAI, "handleShortcutsMessage");
   const panel = document.getElementById("selection-shortcut-action-panel");
 
-  
-  
-  SearchService.forceInitializationStatusForTests("failed");
   try {
     await BrowserTestUtils.withNewTab("data:text/plain,hi", async browser => {
-      await selectAllAndMouseUp(browser);
-      await TestUtils.waitForCondition(
-        () => spy.called,
-        "Actor offered shortcuts to the parent"
-      );
+      
+      
+      SearchService.forceInitializationStatusForTests("failed");
+      try {
+        await selectAllAndMouseUp(browser);
+        await TestUtils.waitForCondition(
+          () => spy.called,
+          "Actor offered shortcuts to the parent"
+        );
 
-      
-      
-      Assert.equal(
-        panel.state,
-        "closed",
-        "Menu stays closed with neither chatbot nor search available"
-      );
+        
+        
+        Assert.equal(
+          panel.state,
+          "closed",
+          "Menu stays closed with neither chatbot nor search available"
+        );
+      } finally {
+        SearchService.forceInitializationStatusForTests("success");
+      }
     });
   } finally {
-    SearchService.forceInitializationStatusForTests("success");
     spy.restore();
     await SpecialPowers.popPrefEnv();
   }
@@ -2196,13 +2201,14 @@ add_task(async function test_show_shortcuts() {
 
     SidebarController.hide();
   });
+
+  await SpecialPowers.popPrefEnv();
 });
 
 
 
 
 add_task(async function test_show_shortcuts_second_tab() {
-  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.ml.chat.shortcuts", true],
@@ -2232,6 +2238,8 @@ add_task(async function test_show_shortcuts_second_tab() {
       sandbox.restore();
     }
   );
+
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -2240,10 +2248,13 @@ add_task(async function test_show_shortcuts_second_tab() {
 add_task(async function test_show_warning_label() {
   Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.ml.chat.shortcuts", true]],
+    set: [
+      ["browser.ml.chat.shortcuts", true],
+      ["browser.ml.chat.provider", "http://localhost:8080"],
+    ],
   });
   await BrowserTestUtils.withNewTab(
-    "data:text/plain,hi".repeat(1000),
+    "data:text/plain,hi".repeat(4000),
     async browser => {
       await selectAllAndMouseUp(browser);
 
@@ -2314,6 +2325,8 @@ add_task(async function test_show_warning_label() {
       );
     }
   );
+
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -2421,6 +2434,7 @@ add_task(async function test_input_selection() {
   );
 
   sandbox.restore();
+  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -2573,6 +2587,9 @@ add_task(async function test_panel_actions_layout() {
       button.hidden = true;
     }
 
+    await SpecialPowers.pushPrefEnv({ set: MORE_ACTIONS_PREFS });
+    panel.updateActions(panel.selectionData.selection, browser);
+
     
     
     
@@ -2603,6 +2620,7 @@ add_task(async function test_panel_actions_layout() {
       /^Search .+ for “hi”$/,
       "Search action names the engine and the selection"
     );
+    await SpecialPowers.popPrefEnv();
   });
 
   await SpecialPowers.popPrefEnv();
@@ -2853,10 +2871,15 @@ add_task(async function test_more_actions_menu_layout() {
       aiToggle,
       manageSettings,
       manageSettings.shadowRoot.querySelector("button"),
+      manageSettings.shadowRoot.querySelector(".text"),
     ]) {
       Assert.deepEqual(
-        [getComputedStyle(el).fontSize, getComputedStyle(el).fontFamily],
-        [menuFont.fontSize, menuFont.fontFamily],
+        [
+          getComputedStyle(el).fontSize,
+          getComputedStyle(el).fontFamily,
+          getComputedStyle(el).fontWeight,
+        ],
+        [menuFont.fontSize, menuFont.fontFamily, menuFont.fontWeight],
         `${el.localName} uses the menu font`
       );
     }
@@ -2905,6 +2928,50 @@ add_task(async function test_more_actions_menu_layout() {
       Math.abs(manageRect.width - toggles[0].getBoundingClientRect().width),
       1,
       "Manage settings spans the width of the toggle rows"
+    );
+
+    for (const row of [...toggles, manageSettings]) {
+      const rowRect = row.getBoundingClientRect();
+      const iconRect = row.shadowRoot
+        .querySelector("img")
+        .getBoundingClientRect();
+      const textRect = row.shadowRoot
+        .querySelector(".text")
+        .getBoundingClientRect();
+      Assert.less(
+        Math.abs(
+          iconRect.left - rowRect.left + iconRect.width / 2 - rowRect.height / 2
+        ),
+        0.5,
+        `${row.id} icon is centred in the circle at the start of the row`
+      );
+      Assert.less(
+        Math.abs(textRect.left - rowRect.left - rowRect.height),
+        0.5,
+        `${row.id} text starts at the edge of that circle`
+      );
+    }
+    for (const toggle of toggles) {
+      const rowRect = toggle.getBoundingClientRect();
+      const switchRect = toggle.buttonEl.getBoundingClientRect();
+      Assert.less(
+        Math.abs(
+          rowRect.right - switchRect.right - (switchRect.top - rowRect.top)
+        ),
+        0.5,
+        `${toggle.id} switch is as far from the end of the row as from its top`
+      );
+    }
+    const switchSpace =
+      toggles[0].buttonEl.getBoundingClientRect().width +
+      toggles[0].getBoundingClientRect().right -
+      toggles[0].buttonEl.getBoundingClientRect().right;
+    Assert.greaterOrEqual(
+      manageRect.right -
+        manageSettings.shadowRoot.querySelector(".text").getBoundingClientRect()
+          .right,
+      switchSpace,
+      "Manage settings leaves room after its text for a switch"
     );
 
     const menuContent = contentRect(moreActionsPanel);
@@ -4274,10 +4341,23 @@ add_task(async function test_strip_sizes() {
         `${id} is a 36px circle`
       );
     }
-    Assert.deepEqual(
-      [rect("ai-action-button").width, rect("ai-action-button").height],
-      [51, 36],
-      "The AI action is a 51px pill"
+    Assert.less(
+      Math.abs(rect("ai-action-button").width - 51),
+      3.5,
+      "The AI action is about a 51px pill, depending on the font size"
+    );
+    Assert.equal(
+      rect("ai-action-button").height,
+      36,
+      "The AI action is 36px tall"
+    );
+    const aiButtonPart = document
+      .getElementById("ai-action-button")
+      .shadowRoot.querySelector("[part=button]");
+    Assert.equal(
+      getComputedStyle(aiButtonPart, "::after").width,
+      getComputedStyle(aiButtonPart, "::after").height,
+      "The arrow is not squeezed narrower than its height"
     );
 
     const confirmation = document.getElementById("copy-action-confirmation");
