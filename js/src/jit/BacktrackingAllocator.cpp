@@ -2134,11 +2134,14 @@ static bool CanMergeTypesInBundle(LDefinition::Type a, LDefinition::Type b) {
 }
 
 
-void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
-                                            LiveBundle* bundle1) {
+
+
+bool BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
+                                            LiveBundle* bundle1,
+                                            bool limitRangeComparisons) {
   
   if (bundle0 == bundle1) {
-    return;
+    return true;
   }
 
   
@@ -2155,7 +2158,7 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
     
     if (IsThisSlotDefinition(reg0.def()) || IsThisSlotDefinition(reg1.def())) {
       if (*reg0.def()->output() != *reg1.def()->output()) {
-        return;
+        return false;
       }
     }
 
@@ -2181,7 +2184,7 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
 #endif
       if (!canSpillToArgSlots) {
         if (*reg0.def()->output() != *reg1.def()->output()) {
-          return;
+          return false;
         }
       }
     }
@@ -2195,7 +2198,7 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
   
   
   if (HasStackPolicy(reg0.def()) || HasStackPolicy(reg1.def())) {
-    return;
+    return false;
   }
 
   
@@ -2207,8 +2210,8 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
                             iter1 = bundle1->rangesBegin();
   size_t count = 0;
   while (iter0 && iter1) {
-    if (++count >= MAX_RANGES) {
-      return;
+    if (limitRangeComparisons && ++count >= MAX_RANGES) {
+      return false;
     }
 
     LiveRange* range0 = *iter0;
@@ -2219,7 +2222,7 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
     } else if (range1->from() >= range0->to()) {
       iter0++;
     } else {
-      return;
+      return false;
     }
   }
 
@@ -2236,6 +2239,7 @@ void BacktrackingAllocator::tryMergeBundles(LiveBundle* bundle0,
       prevRange = range;
     }
   }
+  return true;
 }
 
 
@@ -2424,6 +2428,14 @@ bool BacktrackingAllocator::mergeAndQueueRegisters() {
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   if (MBasicBlock* osr = graph.mir().osrBlock()) {
     size_t original = 1;
     for (LInstructionIterator iter = osr->lir()->begin();
@@ -2436,8 +2448,10 @@ bool BacktrackingAllocator::mergeAndQueueRegisters() {
             VirtualRegister& originalVreg = vregs[original];
             if (*originalVreg.def()->output() == *iter->getDef(i)->output()) {
               MOZ_ASSERT(originalVreg.ins()->isParameter());
-              tryMergeBundles(originalVreg.firstBundle(),
-                              paramVreg.firstBundle());
+              bool merged = tryMergeBundles(
+                  originalVreg.firstBundle(), paramVreg.firstBundle(),
+                   false);
+              MOZ_RELEASE_ASSERT(merged);
               found = true;
               break;
             }
