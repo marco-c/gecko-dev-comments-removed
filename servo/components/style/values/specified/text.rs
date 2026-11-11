@@ -826,6 +826,10 @@ impl TextEmphasisPosition {
     }
 }
 
+fn word_break_break_word_enabled(_: &ParserContext) -> bool {
+    crate::pref!("layout.css.word-break.break-word.enabled", gecko = true)
+}
+
 
 #[repr(u8)]
 #[derive(
@@ -852,7 +856,7 @@ pub enum WordBreak {
     
     
     
-    #[cfg(feature = "gecko")]
+    #[parse(condition = "word_break_break_word_enabled")]
     BreakWord,
 }
 
@@ -1751,6 +1755,14 @@ pub enum TextWrapMode {
     Nowrap,
 }
 
+fn text_wrap_style_balance_enabled(_: &ParserContext) -> bool {
+    crate::pref!("layout.css.text-wrap-style.balance.enabled", gecko = true)
+}
+
+fn text_wrap_style_pretty_enabled(_: &ParserContext) -> bool {
+    crate::pref!("layout.css.text-wrap-style.pretty.enabled", gecko = false)
+}
+
 
 #[allow(missing_docs)]
 #[derive(
@@ -1776,7 +1788,10 @@ pub enum TextWrapMode {
 pub enum TextWrapStyle {
     Auto,
     Stable,
+    #[parse(condition = "text_wrap_style_balance_enabled")]
     Balance,
+    #[parse(condition = "text_wrap_style_pretty_enabled")]
+    Pretty,
 }
 
 
@@ -1847,6 +1862,13 @@ pub enum TextDecorationStyle {
 
 pub const MAX_LINE_STYLE: i32 = 5;
 
+fn white_space_collapse_preserve_spaces_enabled(_: &ParserContext) -> bool {
+    crate::pref!(
+        "layout.css.white-space-collapse.preserve-spaces.enabled",
+        gecko = true
+    )
+}
+
 
 #[allow(missing_docs)]
 #[derive(
@@ -1875,7 +1897,7 @@ pub enum WhiteSpaceCollapse {
     Preserve,
     PreserveBreaks,
     BreakSpaces,
-    #[cfg(feature = "gecko")]
+    #[parse(condition = "white_space_collapse_preserve_spaces_enabled")]
     #[cfg_attr(feature = "gecko", parse(aliases = "-moz-pre-space"))]
     PreserveSpaces,
 }

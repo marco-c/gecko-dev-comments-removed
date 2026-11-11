@@ -136,6 +136,7 @@ impl WritingMode {
     
     pub fn new(inheritedbox_style: &style_structs::InheritedBox) -> Self {
         use crate::properties::longhands::direction::computed_value::T as Direction;
+        use crate::properties::longhands::text_orientation::computed_value::T as TextOrientation;
 
         let mut flags = WritingMode::empty();
 
@@ -181,35 +182,30 @@ impl WritingMode {
             },
         }
 
-        #[cfg(feature = "gecko")]
-        {
-            use crate::properties::longhands::text_orientation::computed_value::T as TextOrientation;
+        
+        
+        match writing_mode {
+            WritingModeProperty::VerticalRl | WritingModeProperty::VerticalLr => {
+                match *inheritedbox_style.get_text_orientation() {
+                    TextOrientation::Mixed => {},
+                    TextOrientation::Upright => {
+                        flags.insert(WritingMode::UPRIGHT);
 
-            
-            
-            match writing_mode {
-                WritingModeProperty::VerticalRl | WritingModeProperty::VerticalLr => {
-                    match *inheritedbox_style.get_text_orientation() {
-                        TextOrientation::Mixed => {},
-                        TextOrientation::Upright => {
-                            flags.insert(WritingMode::UPRIGHT);
-
-                            
-                            
-                            
-                            
-                            
-                            
-                            flags.remove(WritingMode::RTL);
-                            flags.remove(WritingMode::INLINE_REVERSED);
-                        },
-                        TextOrientation::Sideways => {
-                            flags.insert(WritingMode::TEXT_SIDEWAYS);
-                        },
-                    }
-                },
-                _ => {},
-            }
+                        
+                        
+                        
+                        
+                        
+                        
+                        flags.remove(WritingMode::RTL);
+                        flags.remove(WritingMode::INLINE_REVERSED);
+                    },
+                    TextOrientation::Sideways => {
+                        flags.insert(WritingMode::TEXT_SIDEWAYS);
+                    },
+                }
+            },
+            _ => {},
         }
 
         flags
