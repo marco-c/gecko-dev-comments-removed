@@ -381,13 +381,7 @@ static void EmitDivMod32(MacroAssembler& masm, Register lhs, Register rhs,
 
   
   
-  
-#ifdef JS_CODEGEN_X64
-  Register rhsTemp = r11;
-#else
-  Register rhsTemp = ebx;
-#endif
-  Register regForRhs = (rhs == eax || rhs == edx) ? rhsTemp : rhs;
+  Register regForRhs = (rhs == eax || rhs == edx) ? ebx : rhs;
 
   
   

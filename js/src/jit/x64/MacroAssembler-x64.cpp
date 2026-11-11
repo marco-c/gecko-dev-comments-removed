@@ -849,7 +849,7 @@ void MacroAssemblerX64::handleFailureWithHandlerTail(
 
   
   bind(&wasmCatch);
-  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, r11, rcx);
+  wasm::GenerateJumpToCatchHandler(asMasm(), rsp, rax, rbx, rcx);
 }
 
 void MacroAssemblerX64::profilerEnterFrame(Register framePtr,
@@ -972,7 +972,7 @@ void MacroAssemblerX64::flexibleDivMod64(Register lhs, Register rhs,
 
   
   
-  Register regForRhs = (rhs == rax || rhs == rdx) ? r11 : rhs;
+  Register regForRhs = (rhs == rax || rhs == rdx) ? rbx : rhs;
 
   
   
