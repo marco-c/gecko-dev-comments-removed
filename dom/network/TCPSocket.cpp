@@ -1180,12 +1180,10 @@ void TCPSocket::HandshakeDoneOnMainThread() {
 
 NS_IMETHODIMP
 TCPSocket::OnInputStreamReady(nsIAsyncInputStream* aStream) {
-  
-
   uint64_t dummy;
   nsresult rv = aStream->Available(&dummy);
   if (NS_FAILED(rv)) {
-    MaybeReportErrorAndCloseIfOpen(NS_ERROR_CONNECTION_REFUSED);
+    MaybeReportErrorAndCloseIfOpen(rv);
   }
   return NS_OK;
 }

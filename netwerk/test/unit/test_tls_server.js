@@ -285,7 +285,7 @@ const versions = [
 ];
 
 add_task(async function () {
-  let cert = getTestServerCertificate();
+  let cert = await getTestServerCertificate();
   ok(!!cert, "Got self-signed cert");
   for (let v of versions) {
     prefs.setIntPref("security.tls.version.max", v.prefValue);
@@ -306,6 +306,25 @@ add_task(async function () {
       );
       server.close();
     }
+  }
+});
+
+add_task(async function test_tcpsocket_certificate_error() {
+  const server = startServer(
+    await getTestServerCertificate(),
+    false,
+    Ci.nsITLSServerSocket.REQUEST_NEVER
+  );
+  try {
+    const socket = new TCPSocket("127.0.0.1", server.port, {
+      useSecureTransport: true,
+    });
+    socket.onopen = () =>
+      Assert.ok(false, "An invalid certificate must not open");
+    const error = await new Promise(resolve => (socket.onerror = resolve));
+    Assert.equal(error.message, "SecurityCertificate");
+  } finally {
+    server.close();
   }
 });
 
