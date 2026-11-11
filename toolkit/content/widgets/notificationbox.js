@@ -139,9 +139,6 @@
 
 
 
-
-
-
     async appendNotification(
       aType,
       aNotification,
@@ -511,6 +508,7 @@
           if (
             e.type === "click" &&
             (e.target.localName === "button" ||
+              e.target.localName === "moz-button" ||
               e.target.classList.contains("text-link") ||
               e.target.classList.contains("notification-link"))
           ) {
@@ -522,7 +520,14 @@
           }
         }
 
-        if (e.type == "click" && e.target.localName != "label") {
+        if (
+          e.type == "click" &&
+          !["label", "moz-button"].includes(e.target.localName)
+        ) {
+          return;
+        }
+
+        if (e.type == "command" && e.target.localName == "moz-button") {
           return;
         }
 
@@ -589,18 +594,15 @@
             buttonElem.setAttribute("href", link);
             buttonElem.classList.add("notification-link", "text-link");
           } else {
-            buttonElem = document.createXULElement(
-              "button",
-              button.is ? { is: button.is } : {}
+            buttonElem = document.createElementNS(
+              "http://www.w3.org/1999/xhtml",
+              "moz-button"
             );
-            buttonElem.classList.add(
-              "notification-button",
-              "small-button",
-              "footer-button"
-            );
+            buttonElem.classList.add("notification-button");
+            buttonElem.size = "small";
 
             if (button.primary) {
-              buttonElem.classList.add("primary");
+              buttonElem.type = "primary";
             }
           }
 
