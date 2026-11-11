@@ -1,12 +1,19 @@
-function base64urlEncode(data) {
-  let result = btoa(data);
-  return result.replace(/=+$/g, '').replace(/\+/g, "-").replace(/\//g, "_");
-}
+const sha256ofURLBytes = async (url) => {
+  const buffer = new TextEncoder().encode(url.toString());
+  return new Uint8Array(await window.crypto.subtle.digest('SHA-256', buffer));
+};
+
+
 
 const sha256ofURL = async (url) => {
-  const buffer = new TextEncoder().encode(url.toString());
-  const hashBuffer = await window.crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const arr = hashArray.map(b => String.fromCharCode(b)).join('');
-  return base64urlEncode(arr);
+  return (await sha256ofURLBytes(url)).toBase64({
+    alphabet: "base64url",
+    omitPadding: true,
+  });
+};
+
+
+
+const sha256ofURLForReport = async (url) => {
+  return (await sha256ofURLBytes(url)).toBase64();
 };
