@@ -164,6 +164,8 @@ class EventSourceImpl final : public nsIChannelEventSink,
 
   bool IsTargetThread() const { return NS_GetCurrentThread() == mTargetThread; }
 
+  bool DispatchesToMainThread() const { return mIsMainThread || mIsShutDown; }
+
   uint16_t ReadyState() {
     auto lock = mSharedData.Lock();
     if (lock->mEventSource) {
@@ -485,8 +487,10 @@ void EventSourceImpl::CleanupOnMainThread() {
   AssertIsOnMainThread();
   MOZ_ASSERT(IsClosed());
 
-  
   MOZ_ASSERT(!mIsShutDown);
+  
+  
+  ResetConnection();
   mIsShutDown = true;
 
   if (mIsMainThread) {
@@ -498,7 +502,6 @@ void EventSourceImpl::CleanupOnMainThread() {
     mTimer = nullptr;
   }
 
-  ResetConnection();
   mPrincipal = nullptr;
   mSrc = nullptr;
 }
@@ -936,12 +939,14 @@ EventSourceImpl::GetInterface(const nsIID& aIID, void** aResult) {
 
 NS_IMETHODIMP
 EventSourceImpl::IsOnCurrentThread(bool* aResult) {
-  *aResult = IsTargetThread();
+  *aResult = IsOnCurrentThreadInfallible();
   return NS_OK;
 }
 
 NS_IMETHODIMP_(bool)
-EventSourceImpl::IsOnCurrentThreadInfallible() { return IsTargetThread(); }
+EventSourceImpl::IsOnCurrentThreadInfallible() {
+  return DispatchesToMainThread() ? NS_IsMainThread() : IsTargetThread();
+}
 
 nsresult EventSourceImpl::GetBaseURI(nsIURI** aBaseURI) {
   MOZ_ASSERT(!mIsShutDown);
@@ -1906,15 +1911,8 @@ EventSourceImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent,
   
   
   nsCOMPtr<nsIRunnable> event_ref(aEvent);
-  if (mIsMainThread) {
+  if (DispatchesToMainThread()) {
     return NS_DispatchToMainThread(event_ref.forget(), aFlags);
-  }
-
-  if (mIsShutDown) {
-    
-    
-    
-    return NS_OK;
   }
 
   
@@ -1922,7 +1920,7 @@ EventSourceImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent,
   auto workerRef = mWorkerRef.Lock();
   
   if (!*workerRef) {
-    return NS_OK;
+    return NS_DispatchToMainThread(event_ref.forget(), aFlags);
   }
   RefPtr<WorkerRunnableDispatcher> event = new WorkerRunnableDispatcher(
       this, (*workerRef)->Private(), event_ref.forget());
