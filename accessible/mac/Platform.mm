@@ -99,6 +99,7 @@ void PlatformEvent(Accessible* aTarget, uint32_t aEventType) {
       aEventType != nsIAccessibleEvent::EVENT_LIVE_REGION_REMOVED &&
       aEventType != nsIAccessibleEvent::EVENT_LIVE_REGION_CHANGED &&
       aEventType != nsIAccessibleEvent::EVENT_NAME_CHANGE &&
+      aEventType != nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE &&
       aEventType != nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED &&
       aEventType != nsIAccessibleEvent::EVENT_ERRORMESSAGE_CHANGED) {
     return;
@@ -402,6 +403,19 @@ void GetHumanReadableInstantiatorStr(nsAString& aResult) {
   aResult = result;
 }
 
+static void EnableA11y() {
+  sA11yShouldBeEnabled = true;
+  
+  auto [_, clientToLog] = GetClients();
+  const char* client = GetStringForClient(clientToLog);
+
+#if defined(MOZ_TELEMETRY_REPORTING)
+  mozilla::glean::a11y::instantiators.Set(nsDependentCString(client));
+#endif  
+  CrashReporter::RecordAnnotationCString(
+      CrashReporter::Annotation::AccessibilityClient, client);
+}
+
 }  
 }  
 
@@ -414,26 +428,18 @@ void GetHumanReadableInstantiatorStr(nsAString& aResult) {
 - (NSAccessibilityRole)accessibilityRole {
   
   
-  
   if (!mozilla::a11y::sA11yShouldBeEnabled) {
-    [self accessibilitySetValue:@YES forAttribute:@"AXEnhancedUserInterface"];
+    mozilla::a11y::EnableA11y();
   }
   return [super accessibilityRole];
 }
 
 - (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute {
   if ([attribute isEqualToString:@"AXEnhancedUserInterface"]) {
-    mozilla::a11y::sA11yShouldBeEnabled = ([value intValue] == 1);
-    if (sA11yShouldBeEnabled) {
-      
-      auto [_, clientToLog] = GetClients();
-      const char* client = GetStringForClient(clientToLog);
-
-#if defined(MOZ_TELEMETRY_REPORTING)
-      mozilla::glean::a11y::instantiators.Set(nsDependentCString(client));
-#endif  
-      CrashReporter::RecordAnnotationCString(
-          CrashReporter::Annotation::AccessibilityClient, client);
+    if ([value intValue] == 1) {
+      mozilla::a11y::EnableA11y();
+    } else {
+      mozilla::a11y::sA11yShouldBeEnabled = false;
     }
   }
 
