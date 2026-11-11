@@ -2715,6 +2715,8 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
     return false;
   }
 
+  GetBrowserParent()->SetOwnerFrameLoader(this);
+
   MOZ_DIAGNOSTIC_ASSERT(mPendingBrowsingContext ==
                         mRemoteBrowser->GetBrowsingContext());
 
@@ -3685,6 +3687,16 @@ void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,
   }
 
   
+  
+  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(mOwnerContent);
+  if (owner) {
+    RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
+    if (currentFrameLoader != this) {
+      return;
+    }
+  }
+
+  
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (!os) {
     return;
@@ -3692,15 +3704,7 @@ void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,
 
   os->NotifyObservers(ToSupports(this), "oop-frameloader-crashed", nullptr);
 
-  
-  
-  RefPtr<nsFrameLoaderOwner> owner = do_QueryObject(mOwnerContent);
   if (!owner) {
-    return;
-  }
-
-  RefPtr<nsFrameLoader> currentFrameLoader = owner->GetFrameLoader();
-  if (currentFrameLoader != this) {
     return;
   }
 
