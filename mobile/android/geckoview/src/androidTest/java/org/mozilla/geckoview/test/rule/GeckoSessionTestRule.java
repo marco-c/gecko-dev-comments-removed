@@ -3,8 +3,8 @@
 
 package org.mozilla.geckoview.test.rule;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import android.app.Instrumentation;
@@ -2312,6 +2312,7 @@ public class GeckoSessionTestRule implements TestRule {
     }
 
     
+    @SuppressWarnings("deprecation")
     private void addMockLocationProvider() {
       
       removeMockLocationProvider();
