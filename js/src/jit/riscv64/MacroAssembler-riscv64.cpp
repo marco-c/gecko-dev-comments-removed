@@ -2938,7 +2938,7 @@ static void AtomicShiftToOffset(MacroAssembler& masm, unsigned nbytes,
     } else {
       
       
-      (masm.sllw(std::get<1>(registers), std::get<1>(registers), offsetTemp),
+      (masm.sllw(std::get<1>(registers), std::get<0>(registers), offsetTemp),
        ...);
       (masm.and_(std::get<1>(registers), std::get<1>(registers), maskTemp),
        ...);
