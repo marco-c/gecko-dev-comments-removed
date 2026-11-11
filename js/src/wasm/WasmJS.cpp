@@ -23,6 +23,7 @@
 
 #include "jsapi.h"
 
+#include "builtin/ModuleObject.h"      
 #include "ds/IdValuePair.h"            
 #include "frontend/FrontendContext.h"  
 #include "gc/GCContext.h"
@@ -47,8 +48,10 @@
 #include "vm/GlobalObject.h"       
 #include "vm/HelperThreadState.h"  
 #include "vm/Interpreter.h"
-#include "vm/JSContext.h"  
+#include "vm/JSAtomUtils.h"  
+#include "vm/JSContext.h"    
 #include "vm/JSFunction.h"
+#include "vm/Modules.h"        
 #include "vm/PlainObject.h"    
 #include "vm/PromiseObject.h"  
 #include "vm/SharedArrayObject.h"
@@ -141,6 +144,202 @@ static bool IsWasmSuspendingWrapper(const Value& v) {
   return v.isObject() && js::IsWasmSuspendingObject(&v.toObject());
 }
 
+static bool GetBuiltinImportValue(JSContext* cx, const Import& import,
+                                  BuiltinModuleId builtinModule,
+                                  const ModuleMetadata& moduleMeta,
+                                  const CodeMetadata& codeMeta,
+                                  HandleObject importObj,
+                                  BuiltinModuleInstances& builtinInstances,
+                                  MutableHandleValue importFieldValue) {
+  if (builtinModule == BuiltinModuleId::JSStringConstants) {
+    MOZ_RELEASE_ASSERT(import.kind == DefinitionKind::Global);
+
+    RootedString stringConstant(cx, import.field.toJSString(cx));
+    if (!stringConstant) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    importFieldValue.set(StringValue(stringConstant));
+    return true;
+  }
+
+  MutableHandle<JSObject*> builtinInstance = builtinInstances[builtinModule];
+
+  
+  if (!builtinInstance) {
+    
+    
+    const Import* firstMemoryImport =
+        (codeMeta.memories.empty() ||
+         codeMeta.memories[0].importIndex.isNothing())
+            ? nullptr
+            : &moduleMeta.imports[*codeMeta.memories[0].importIndex];
+
+    
+    
+    
+    if (!wasm::InstantiateBuiltinModule(cx, builtinModule, firstMemoryImport,
+                                        importObj, builtinInstance)) {
+      return false;
+    }
+  }
+
+  RootedId fieldName(cx);
+  if (!import.field.toPropertyKey(cx, &fieldName)) {
+    return false;
+  }
+  return GetProperty(cx, builtinInstance, builtinInstance, fieldName,
+                     importFieldValue);
+}
+
+static bool AppendImportValue(JSContext* cx, const Import& import,
+                              uint32_t importTypeIndex,
+                              const CodeMetadata& codeMeta,
+                              HandleValue importFieldValue,
+                              ImportValues* imports) {
+  switch (import.kind) {
+    case DefinitionKind::Function: {
+      if (!IsCallableNonCCW(importFieldValue) &&
+          !IsWasmSuspendingWrapper(importFieldValue)) {
+        return ThrowBadImportType(cx, import.field, "Function");
+      }
+
+      if (!imports->funcs.append(&importFieldValue.toObject())) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+
+      break;
+    }
+    case DefinitionKind::Table: {
+      if (!importFieldValue.isObject() ||
+          !importFieldValue.toObject().is<WasmTableObject>()) {
+        return ThrowBadImportType(cx, import.field, "Table");
+      }
+
+      Rooted<WasmTableObject*> obj(
+          cx, &importFieldValue.toObject().as<WasmTableObject>());
+      if (obj->table().elemType() !=
+          codeMeta.tables[importTypeIndex].elemType()) {
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_WASM_BAD_TBL_TYPE_LINK);
+        return false;
+      }
+
+      if (!imports->tables.append(obj)) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+      break;
+    }
+    case DefinitionKind::Memory: {
+      if (!importFieldValue.isObject() ||
+          !importFieldValue.toObject().is<WasmMemoryObject>()) {
+        return ThrowBadImportType(cx, import.field, "Memory");
+      }
+
+      if (!imports->memories.append(
+              &importFieldValue.toObject().as<WasmMemoryObject>())) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+      break;
+    }
+    case DefinitionKind::Tag: {
+      if (!importFieldValue.isObject() ||
+          !importFieldValue.toObject().is<WasmTagObject>()) {
+        return ThrowBadImportType(cx, import.field, "Tag");
+      }
+
+      Rooted<WasmTagObject*> obj(
+          cx, &importFieldValue.toObject().as<WasmTagObject>());
+
+      
+      
+      if (!TagType::matches(*obj->tagType(),
+                            *codeMeta.tags[importTypeIndex].type)) {
+        UniqueChars fieldQuoted = import.field.toQuotedString(cx);
+        UniqueChars moduleQuoted = import.module.toQuotedString(cx);
+        if (!fieldQuoted || !moduleQuoted) {
+          ReportOutOfMemory(cx);
+          return false;
+        }
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_WASM_BAD_TAG_SIG, moduleQuoted.get(),
+                                 fieldQuoted.get());
+        return false;
+      }
+
+      if (!imports->tagObjs.append(obj)) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+      break;
+    }
+    case DefinitionKind::Global: {
+      const GlobalDesc& global = codeMeta.globals[importTypeIndex];
+      MOZ_ASSERT(global.importIndex() == importTypeIndex);
+
+      RootedVal val(cx);
+      if (importFieldValue.isObject() &&
+          importFieldValue.toObject().is<WasmGlobalObject>()) {
+        Rooted<WasmGlobalObject*> obj(
+            cx, &importFieldValue.toObject().as<WasmGlobalObject>());
+
+        if (obj->isMutable() != global.isMutable()) {
+          JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                   JSMSG_WASM_BAD_GLOB_MUT_LINK);
+          return false;
+        }
+
+        bool matches = global.isMutable()
+                           ? obj->type() == global.type()
+                           : ValType::isSubTypeOf(obj->type(), global.type());
+        if (!matches) {
+          JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                   JSMSG_WASM_BAD_GLOB_TYPE_LINK);
+          return false;
+        }
+
+        if (imports->globalObjs.length() <= importTypeIndex &&
+            !imports->globalObjs.resize(importTypeIndex + 1)) {
+          ReportOutOfMemory(cx);
+          return false;
+        }
+        imports->globalObjs[importTypeIndex] = obj;
+        val = obj->val();
+      } else {
+        if (!global.type().isRefType()) {
+          if (global.type() == ValType::I64 && !importFieldValue.isBigInt()) {
+            return ThrowBadImportType(cx, import.field, "BigInt");
+          }
+          if (global.type() != ValType::I64 && !importFieldValue.isNumber()) {
+            return ThrowBadImportType(cx, import.field, "Number");
+          }
+        }
+
+        if (global.isMutable()) {
+          JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                   JSMSG_WASM_BAD_GLOB_MUT_LINK);
+          return false;
+        }
+
+        if (!Val::fromJSValue(cx, global.type(), importFieldValue, &val)) {
+          return false;
+        }
+      }
+
+      if (!imports->globalValues.append(val)) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+
+      break;
+    }
+  }
+  return true;
+}
+
 bool js::wasm::GetImports(JSContext* cx, const Module& module,
                           HandleObject importObj, ImportValues* imports) {
   const ModuleMetadata& moduleMeta = module.moduleMeta();
@@ -154,47 +353,21 @@ bool js::wasm::GetImports(JSContext* cx, const Module& module,
   BuiltinModuleInstances builtinInstances(cx);
   RootedValue importModuleValue(cx);
   RootedObject importModuleObject(cx);
-  bool isImportedStringModule = false;
   RootedValue importFieldValue(cx);
 
-  uint32_t tagIndex = 0;
-  const TagDescVector& tags = codeMeta.tags;
-  uint32_t globalIndex = 0;
-  const GlobalDescVector& globals = codeMeta.globals;
+  uint32_t funcIndex = 0;
   uint32_t tableIndex = 0;
-  const TableDescVector& tables = codeMeta.tables;
+  uint32_t memoryIndex = 0;
+  uint32_t globalIndex = 0;
+  uint32_t tagIndex = 0;
   for (const Import& import : moduleMeta.imports) {
     Maybe<BuiltinModuleId> builtinModule =
         ImportMatchesBuiltinModule(import, builtinModules);
     if (builtinModule) {
-      if (*builtinModule == BuiltinModuleId::JSStringConstants) {
-        isImportedStringModule = true;
-        importModuleObject = nullptr;
-      } else {
-        MutableHandle<JSObject*> builtinInstance =
-            builtinInstances[*builtinModule];
-
-        
-        if (!builtinInstance) {
-          
-          
-          const Import* firstMemoryImport =
-              (codeMeta.memories.empty() ||
-               codeMeta.memories[0].importIndex.isNothing())
-                  ? nullptr
-                  : &moduleMeta.imports[*codeMeta.memories[0].importIndex];
-
-          
-          
-          
-          if (!wasm::InstantiateBuiltinModule(cx, *builtinModule,
-                                              firstMemoryImport, importObj,
-                                              builtinInstance)) {
-            return false;
-          }
-        }
-        isImportedStringModule = false;
-        importModuleObject = builtinInstance;
+      if (!GetBuiltinImportValue(cx, import, *builtinModule, moduleMeta,
+                                 codeMeta, importObj, builtinInstances,
+                                 &importFieldValue)) {
+        return false;
       }
     } else {
       RootedId moduleName(cx);
@@ -219,20 +392,8 @@ bool js::wasm::GetImports(JSContext* cx, const Module& module,
         return false;
       }
 
-      isImportedStringModule = false;
       importModuleObject = &importModuleValue.toObject();
-    }
-    MOZ_RELEASE_ASSERT(!isImportedStringModule ||
-                       import.kind == DefinitionKind::Global);
 
-    if (isImportedStringModule) {
-      RootedString stringConstant(cx, import.field.toJSString(cx));
-      if (!stringConstant) {
-        ReportOutOfMemory(cx);
-        return false;
-      }
-      importFieldValue = StringValue(stringConstant);
-    } else {
       RootedId fieldName(cx);
       if (!import.field.toPropertyKey(cx, &fieldName)) {
         return false;
@@ -243,151 +404,33 @@ bool js::wasm::GetImports(JSContext* cx, const Module& module,
       }
     }
 
+    uint32_t importTypeIndex = 0;
     switch (import.kind) {
-      case DefinitionKind::Function: {
-        if (!IsCallableNonCCW(importFieldValue) &&
-            !IsWasmSuspendingWrapper(importFieldValue)) {
-          return ThrowBadImportType(cx, import.field, "Function");
-        }
-
-        if (!imports->funcs.append(&importFieldValue.toObject())) {
-          ReportOutOfMemory(cx);
-          return false;
-        }
-
+      case DefinitionKind::Function:
+        importTypeIndex = funcIndex++;
         break;
-      }
-      case DefinitionKind::Table: {
-        const uint32_t index = tableIndex++;
-        if (!importFieldValue.isObject() ||
-            !importFieldValue.toObject().is<WasmTableObject>()) {
-          return ThrowBadImportType(cx, import.field, "Table");
-        }
-
-        Rooted<WasmTableObject*> obj(
-            cx, &importFieldValue.toObject().as<WasmTableObject>());
-        if (obj->table().elemType() != tables[index].elemType()) {
-          JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                   JSMSG_WASM_BAD_TBL_TYPE_LINK);
-          return false;
-        }
-
-        if (!imports->tables.append(obj)) {
-          ReportOutOfMemory(cx);
-          return false;
-        }
+      case DefinitionKind::Table:
+        importTypeIndex = tableIndex++;
         break;
-      }
-      case DefinitionKind::Memory: {
-        if (!importFieldValue.isObject() ||
-            !importFieldValue.toObject().is<WasmMemoryObject>()) {
-          return ThrowBadImportType(cx, import.field, "Memory");
-        }
-
-        if (!imports->memories.append(
-                &importFieldValue.toObject().as<WasmMemoryObject>())) {
-          ReportOutOfMemory(cx);
-          return false;
-        }
+      case DefinitionKind::Memory:
+        importTypeIndex = memoryIndex++;
         break;
-      }
-      case DefinitionKind::Tag: {
-        const uint32_t index = tagIndex++;
-        if (!importFieldValue.isObject() ||
-            !importFieldValue.toObject().is<WasmTagObject>()) {
-          return ThrowBadImportType(cx, import.field, "Tag");
-        }
-
-        Rooted<WasmTagObject*> obj(
-            cx, &importFieldValue.toObject().as<WasmTagObject>());
-
-        
-        
-        if (!TagType::matches(*obj->tagType(), *tags[index].type)) {
-          UniqueChars fieldQuoted = import.field.toQuotedString(cx);
-          UniqueChars moduleQuoted = import.module.toQuotedString(cx);
-          if (!fieldQuoted || !moduleQuoted) {
-            ReportOutOfMemory(cx);
-            return false;
-          }
-          JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                   JSMSG_WASM_BAD_TAG_SIG, moduleQuoted.get(),
-                                   fieldQuoted.get());
-          return false;
-        }
-
-        if (!imports->tagObjs.append(obj)) {
-          ReportOutOfMemory(cx);
-          return false;
-        }
+      case DefinitionKind::Global:
+        importTypeIndex = globalIndex++;
         break;
-      }
-      case DefinitionKind::Global: {
-        const uint32_t index = globalIndex++;
-        const GlobalDesc& global = globals[index];
-        MOZ_ASSERT(global.importIndex() == index);
-
-        RootedVal val(cx);
-        if (importFieldValue.isObject() &&
-            importFieldValue.toObject().is<WasmGlobalObject>()) {
-          Rooted<WasmGlobalObject*> obj(
-              cx, &importFieldValue.toObject().as<WasmGlobalObject>());
-
-          if (obj->isMutable() != global.isMutable()) {
-            JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                     JSMSG_WASM_BAD_GLOB_MUT_LINK);
-            return false;
-          }
-
-          bool matches = global.isMutable()
-                             ? obj->type() == global.type()
-                             : ValType::isSubTypeOf(obj->type(), global.type());
-          if (!matches) {
-            JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                     JSMSG_WASM_BAD_GLOB_TYPE_LINK);
-            return false;
-          }
-
-          if (imports->globalObjs.length() <= index &&
-              !imports->globalObjs.resize(index + 1)) {
-            ReportOutOfMemory(cx);
-            return false;
-          }
-          imports->globalObjs[index] = obj;
-          val = obj->val();
-        } else {
-          if (!global.type().isRefType()) {
-            if (global.type() == ValType::I64 && !importFieldValue.isBigInt()) {
-              return ThrowBadImportType(cx, import.field, "BigInt");
-            }
-            if (global.type() != ValType::I64 && !importFieldValue.isNumber()) {
-              return ThrowBadImportType(cx, import.field, "Number");
-            }
-          }
-
-          if (global.isMutable()) {
-            JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                                     JSMSG_WASM_BAD_GLOB_MUT_LINK);
-            return false;
-          }
-
-          if (!Val::fromJSValue(cx, global.type(), importFieldValue, &val)) {
-            return false;
-          }
-        }
-
-        if (!imports->globalValues.append(val)) {
-          ReportOutOfMemory(cx);
-          return false;
-        }
-
+      case DefinitionKind::Tag:
+        importTypeIndex = tagIndex++;
         break;
-      }
+    }
+
+    if (!AppendImportValue(cx, import, importTypeIndex, codeMeta,
+                           importFieldValue, imports)) {
+      return false;
     }
   }
 
-  MOZ_ASSERT(globalIndex == globals.length() ||
-             !globals[globalIndex].isImport());
+  MOZ_ASSERT(globalIndex == codeMeta.globals.length() ||
+             !codeMeta.globals[globalIndex].isImport());
 
   return true;
 }
@@ -627,6 +670,56 @@ JS_PUBLIC_API JS::SharedWasmCompileArgs JS::BuildCompileArgsForESM(
                                      featureOptions,  true);
 }
 
+using ImportPtrVector = Vector<const Import*, 0, SystemAllocPolicy>;
+
+
+static bool GetExternalImports(JSContext* cx, const Module& module,
+                               ImportPtrVector* imports) {
+  MOZ_ASSERT(imports->empty());
+
+  
+  const ModuleMetadata& moduleMeta = module.moduleMeta();
+
+  
+  const BuiltinModuleIds& builtinModules =
+      module.codeMeta().features().builtinModules;
+
+  
+  Maybe<Span<const char>> importedStringModule;
+  if (builtinModules.jsStringConstants) {
+    importedStringModule = Some(
+        MakeStringSpan(builtinModules.jsStringConstantsNamespace->chars.get()));
+  }
+
+  
+  if (!imports->reserve(moduleMeta.imports.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  for (const Import& import : moduleMeta.imports) {
+    
+    
+    if (ImportMatchesBuiltinModule(import, builtinModules)) {
+      continue;
+    }
+
+    
+    
+    if (importedStringModule &&
+        import.module.utf8Bytes() == *importedStringModule) {
+      continue;
+    }
+
+    
+    imports->infallibleAppend(&import);
+  }
+
+  
+  return true;
+}
+
 JS_PUBLIC_API JS::ESMCompileResult JS::CompileForESM(
     const WasmCompileArgs& compileArgs, const uint8_t* bytes, size_t length) {
   
@@ -704,18 +797,22 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
   
 
   const ModuleMetadata& moduleMeta = module->moduleMeta();
-  const CodeMetadata& codeMeta = module->codeMeta();
+
+  ImportPtrVector externalImports;
+  if (!GetExternalImports(cx, *module, &externalImports)) {
+    return false;
+  }
 
   
   
-  for (const Import& import : moduleMeta.imports) {
-    Span<const char> moduleName = import.module.utf8Bytes();
-    Span<const char> name = import.field.utf8Bytes();
+  for (const Import* import : externalImports) {
+    Span<const char> moduleName = import->module.utf8Bytes();
+    Span<const char> name = import->field.utf8Bytes();
 
     
     if (CharsStartsWith(moduleName, MakeStringSpan("wasm-js:"))) {
       
-      UniqueChars moduleNameQuoted = import.module.toQuotedString(cx);
+      UniqueChars moduleNameQuoted = import->module.toQuotedString(cx);
       if (!moduleNameQuoted) {
         ReportOutOfMemory(cx);
         return false;
@@ -730,7 +827,7 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
     if (CharsStartsWith(name, MakeStringSpan("wasm:")) ||
         CharsStartsWith(name, MakeStringSpan("wasm-js:"))) {
       
-      UniqueChars nameQuoted = import.field.toQuotedString(cx);
+      UniqueChars nameQuoted = import->field.toQuotedString(cx);
       if (!nameQuoted) {
         ReportOutOfMemory(cx);
         return false;
@@ -741,17 +838,6 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
       return false;
     }
 
-    
-    
-
-    
-    
-    if (ImportMatchesBuiltinModule(moduleName,
-                                   codeMeta.features().builtinModules)) {
-      continue;
-    }
-
-    
     
     
   }
@@ -779,6 +865,424 @@ JS_PUBLIC_API bool JS::FinishCompileForESM(
   moduleObj.set(wasmModuleObject);
   return true;
 }
+
+bool wasm::GetModuleExportNames(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<JSString*>> exportNames) {
+  MOZ_ASSERT(exportNames.empty());
+
+  const ModuleMetadata& moduleMeta =
+      wasmModuleObject->as<WasmModuleObject>().module().moduleMeta();
+
+  if (!exportNames.reserve(moduleMeta.exports.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  Rooted<JSString*> exportName(cx);
+  for (const Export& exp : moduleMeta.exports) {
+    Span<const char> name = exp.fieldName().utf8Bytes();
+    exportName = AtomizeUTF8Chars(cx, name.data(), name.size());
+    if (!exportName) {
+      return false;
+    }
+
+    exportNames.infallibleAppend(exportName);
+  }
+
+  return true;
+}
+
+bool wasm::GetModuleImports(
+    JSContext* cx, HandleObject wasmModuleObject,
+    MutableHandle<JS::StackGCVector<std::pair<JSString*, JSString*>>> imports) {
+  MOZ_ASSERT(imports.empty());
+
+  const Module& module = wasmModuleObject->as<WasmModuleObject>().module();
+
+  ImportPtrVector externalImports;
+  if (!GetExternalImports(cx, module, &externalImports)) {
+    return false;
+  }
+
+  if (!imports.reserve(externalImports.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  Rooted<JSString*> moduleSpecifier(cx);
+  Rooted<JSString*> fieldName(cx);
+  for (const Import* imp : externalImports) {
+    Span<const char> moduleName = imp->module.utf8Bytes();
+    Span<const char> field = imp->field.utf8Bytes();
+
+    moduleSpecifier =
+        AtomizeUTF8Chars(cx, moduleName.data(), moduleName.size());
+    if (!moduleSpecifier) {
+      return false;
+    }
+
+    fieldName = AtomizeUTF8Chars(cx, field.data(), field.size());
+    if (!fieldName) {
+      return false;
+    }
+
+    imports.infallibleAppend(
+        std::make_pair(moduleSpecifier.get(), fieldName.get()));
+  }
+
+  return true;
+}
+
+#ifdef NIGHTLY_BUILD
+
+bool js::WasmModuleExecute(JSContext* cx, Handle<ModuleObject*> record) {
+  
+
+  
+
+  
+  Rooted<WasmModuleObject*> module(
+      cx, &record->moduleSource()->as<WasmModuleObject>());
+
+  
+  Rooted<ImportValues> imports(cx);
+
+  BuiltinModuleInstances builtinInstances(cx);
+  const ModuleMetadata& importModuleMeta = module->module().moduleMeta();
+  const CodeMetadata& importCodeMeta = module->module().codeMeta();
+  uint32_t funcIndex = 0;
+  uint32_t tableIndex = 0;
+  uint32_t memoryIndex = 0;
+  uint32_t globalIndex = 0;
+  uint32_t tagIndex = 0;
+  size_t entryIndex = 0;
+
+  MOZ_ASSERT(wasm::HasSupport(cx));
+
+  SharedCoreModuleType moduleType;
+  if (!importModuleMeta.buildModuleType(&moduleType)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  HashMap<const ModuleMetadata*, SharedCoreModuleType,
+          DefaultHasher<const ModuleMetadata*>, SystemAllocPolicy>
+      resolvedModuleTypes;
+
+  
+  
+  size_t importIndex = 0;
+  for (const Import& imp : importModuleMeta.imports) {
+    const CoreImportType& importType = moduleType->imports()[importIndex++];
+    uint32_t importTypeIndex = 0;
+    switch (imp.kind) {
+      case DefinitionKind::Function:
+        importTypeIndex = funcIndex++;
+        break;
+      case DefinitionKind::Table:
+        importTypeIndex = tableIndex++;
+        break;
+      case DefinitionKind::Memory:
+        importTypeIndex = memoryIndex++;
+        break;
+      case DefinitionKind::Global:
+        importTypeIndex = globalIndex++;
+        break;
+      case DefinitionKind::Tag:
+        importTypeIndex = tagIndex++;
+        break;
+    }
+
+    
+    
+    Maybe<BuiltinModuleId> builtinModule = ImportMatchesBuiltinModule(
+        imp, importCodeMeta.features().builtinModules);
+    if (builtinModule) {
+      
+      
+      
+      
+
+      
+      
+      
+      RootedValue importFieldValue(cx);
+      if (!GetBuiltinImportValue(cx, imp, *builtinModule, importModuleMeta,
+                                 importCodeMeta, nullptr, builtinInstances,
+                                 &importFieldValue)) {
+        return false;
+      }
+      if (!AppendImportValue(cx, imp, importTypeIndex, importCodeMeta,
+                             importFieldValue, imports.address())) {
+        return false;
+      }
+      continue;
+    }
+
+    
+    
+    MOZ_RELEASE_ASSERT(entryIndex < record->importEntries().size());
+    const ImportEntry& import = record->importEntries()[entryIndex++];
+    Rooted<ModuleRequestObject*> moduleRequest(cx, import.moduleRequest());
+    Rooted<JSAtom*> importedModuleName(cx, moduleRequest->specifier());
+    Rooted<JSAtom*> name(cx, import.importName());
+
+    
+    
+    Rooted<ModuleObject*> importedModule(
+        cx, GetImportedModule(cx, record, moduleRequest));
+    if (!importedModule) {
+      return false;
+    }
+
+    
+    Rooted<Value> resolution(cx);
+    ModuleErrorInfo errorInfo{import.lineNumber(), import.columnNumber()};
+    if (!ModuleResolveExport(cx, importedModule, name, &resolution,
+                             &errorInfo)) {
+      return false;
+    }
+
+    
+    
+    MOZ_RELEASE_ASSERT(IsResolvedBinding(cx, resolution));
+
+    
+    Rooted<ResolvedBindingObject*> resolvedBinding(
+        cx, &resolution.toObject().as<ResolvedBindingObject>());
+    Rooted<ModuleObject*> resolvedModule(cx, resolvedBinding->module());
+
+    
+    
+    if (resolvedBinding->isNamespace()) {
+      UniqueChars moduleNameQuoted = imp.module.toQuotedString(cx);
+      UniqueChars nameQuoted = imp.field.toQuotedString(cx);
+      if (!moduleNameQuoted || !nameQuoted) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_WASM_ESM_NAMESPACE_IMPORT,
+                               moduleNameQuoted.get(), nameQuoted.get());
+      return false;
+    }
+
+    
+    RootedId resolvedName(cx, AtomToId(resolvedBinding->bindingName()));
+
+    
+    if (resolvedModule->isWasmModule()) {
+      
+      
+      Rooted<JSObject*> resolvedInstance(cx, resolvedModule->wasmInstance());
+      if (!resolvedInstance) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_WASM_ESM_NOT_INSTANTIATED);
+        return false;
+      }
+
+      
+      
+      MOZ_ASSERT(resolvedInstance->is<WasmInstanceObject>());
+
+      
+      
+      MOZ_ASSERT(resolvedModule->moduleSource()->is<WasmModuleObject>());
+
+      
+      Rooted<WasmModuleObject*> module(
+          cx, &resolvedModule->moduleSource()->as<WasmModuleObject>());
+
+      
+      
+      Rooted<JSObject*> instanceExports(
+          cx, &resolvedInstance->as<WasmInstanceObject>().exportsObj());
+
+      RootedValue externVal(cx);
+      if (!GetProperty(cx, instanceExports, instanceExports, resolvedName,
+                       &externVal)) {
+        return false;
+      }
+
+      
+      MOZ_ASSERT(!externVal.isUndefined());
+
+      
+      
+      const ModuleMetadata* resolvedModuleMeta = &module->module().moduleMeta();
+      auto resolvedModuleType =
+          resolvedModuleTypes.lookupForAdd(resolvedModuleMeta);
+      if (!resolvedModuleType) {
+        SharedCoreModuleType type;
+        if (!resolvedModuleMeta->buildModuleType(&type) ||
+            !resolvedModuleTypes.add(resolvedModuleType, resolvedModuleMeta,
+                                     std::move(type))) {
+          ReportOutOfMemory(cx);
+          return false;
+        }
+      }
+
+      UniqueChars resolvedNameChars =
+          StringToNewUTF8CharsZ(cx, *resolvedBinding->bindingName());
+      if (!resolvedNameChars) {
+        return false;
+      }
+      Maybe<const CoreExternType&> externType =
+          resolvedModuleType->value()->instanceType()->getExport(
+              CacheableName::fromUTF8Chars(std::move(resolvedNameChars)));
+      MOZ_ASSERT(externType);
+
+      
+      
+
+      
+      
+      if (!CoreExternType::matches(*externType, importType.type)) {
+        UniqueChars moduleNameQuoted = imp.module.toQuotedString(cx);
+        UniqueChars nameQuoted = imp.field.toQuotedString(cx);
+        if (!moduleNameQuoted || !nameQuoted) {
+          ReportOutOfMemory(cx);
+          return false;
+        }
+
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_WASM_ESM_IMPORT_TYPE,
+                                 moduleNameQuoted.get(), nameQuoted.get());
+        return false;
+      }
+
+      
+      if (!AppendImportValue(cx, imp, importTypeIndex, importCodeMeta,
+                             externVal, imports.address())) {
+        return false;
+      }
+    } else {
+      
+      
+      Rooted<ModuleEnvironmentObject*> env(cx, resolvedModule->environment());
+      MOZ_ASSERT(env);
+
+      
+      RootedValue v(cx);
+      if (!GetProperty(cx, env, env, resolvedName, &v)) {
+        return false;
+      }
+      if (v.isMagic(JS_UNINITIALIZED_LEXICAL)) {
+        ReportUninitializedModuleBinding(cx, resolvedName);
+        return false;
+      }
+
+      
+      if (!AppendImportValue(cx, imp, importTypeIndex, importCodeMeta, v,
+                             imports.address())) {
+        return false;
+      }
+    }
+  }
+  MOZ_ASSERT(entryIndex == record->importEntries().size());
+
+  
+  
+  RootedObject proto(
+      cx, GlobalObject::getOrCreatePrototype(cx, JSProto_WasmInstance));
+  if (!proto) {
+    return false;
+  }
+
+  Rooted<WasmInstanceObject*> instanceObject(cx);
+  if (!module->module().instantiate(cx, imports.get(), proto,
+                                    &instanceObject)) {
+    return false;
+  }
+
+  
+  record->setWasmInstance(instanceObject);
+
+  Rooted<JSObject*> exportsObject(cx, &instanceObject->exportsObj());
+
+  const ModuleMetadata& moduleMeta = module->module().moduleMeta();
+
+  RootedValueVector exportValues(cx);
+  if (!exportValues.reserve(moduleMeta.exports.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  
+  for (const Export& exp : moduleMeta.exports) {
+    Span<const char> nameBytes = exp.fieldName().utf8Bytes();
+    Rooted<JSAtom*> exportName(
+        cx, AtomizeUTF8Chars(cx, nameBytes.data(), nameBytes.size()));
+    if (!exportName) {
+      return false;
+    }
+
+    RootedId exportId(cx, AtomToId(exportName));
+    RootedValue value(cx);
+
+    
+    if (exp.kind() == DefinitionKind::Global) {
+      RootedValue externVal(cx);
+      if (!GetProperty(cx, exportsObject, exportsObject, exportId,
+                       &externVal)) {
+        return false;
+      }
+
+      
+      MOZ_ASSERT(externVal.isObject() &&
+                 externVal.toObject().is<WasmGlobalObject>());
+
+      
+      Rooted<WasmGlobalObject*> globalObject(
+          cx, &externVal.toObject().as<WasmGlobalObject>());
+
+      
+      RootedVal globalValue(cx, globalObject->val().get());
+
+      
+      if (globalObject->type().isExposable()) {
+        
+        
+        
+        if (!globalValue.get().toJSValue(cx, &value)) {
+          MOZ_ASSERT(cx->isThrowingOutOfMemory());
+          return false;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+      } else {
+        
+        
+        
+        
+        value.setMagic(JS_UNINITIALIZED_LEXICAL);
+      }
+    } else {
+      
+      
+      
+      if (!GetProperty(cx, exportsObject, exportsObject, exportId, &value)) {
+        return false;
+      }
+    }
+
+    exportValues.infallibleAppend(value);
+  }
+
+  ModuleObject::initWasmExportBindings(cx, record, exportValues);
+  ModuleObject::onTopLevelEvaluationFinished(record);
+
+  return true;
+}
+#endif
 
 
 
