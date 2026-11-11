@@ -53,5 +53,11 @@ def env_extras(**kwargs):
 
 
 class LadybirdBrowser(WebDriverBrowser):
+    def restart_on_test_type_change(self, new_test_type, old_test_type):
+        
+        
+        wdspec_types = {"wdspec", "aamtest"}
+        return old_test_type in wdspec_types or new_test_type in wdspec_types
+
     def make_command(self):
         return [self.webdriver_binary, "--port", str(self.port)] + self.webdriver_args
