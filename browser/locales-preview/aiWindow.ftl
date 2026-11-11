@@ -152,12 +152,24 @@ ai-tasks-no-monitors-message = Learn more <a data-l10n-name="smart-window-link">
 ai-tasks-blocked-title = { -smart-window-brand-name } tasks are blocked in AI controls
 ai-task-page-no-alerts = Create a task to track prices or content on pages you choose. You’ll get notified when { -smart-window-brand-name } finds a match.
 ai-task-page-no-alerts-title = Watch what matters
+# Headings for the groups of tasks on the Tasks page.
+ai-tasks-group-monitors-active = Monitors · Active
+ai-tasks-group-monitors-paused = Monitors · Paused
+# Shown next to a group heading.
 # Variables:
-#   $count (number) - The number of tasks currently active
-ai-tasks-alerts-count = { $count ->
-    [one] { $count } task
-   *[other] { $count } tasks
-}
+#   $count (number) - The number of tasks in the group
+#   $limit (number) - The maximum number of tasks the group can hold
+ai-tasks-group-count-of-limit = { $count } of { $limit }
+# Shown next to a group heading.
+# Variables:
+#   $count (number) - The number of tasks in the group
+ai-tasks-group-count = { $count }
+# Button below a group of tasks that shows the rest of the group.
+# Variables:
+#   $count (number) - The number of tasks currently hidden
+ai-tasks-group-show-more = Show { $count } more
+# Button below an expanded group of tasks that hides all but the first few again.
+ai-tasks-group-show-less = Show less
 # Variables:
 #   $count (number) - The number of webpages being watched
 ai-tasks-alert-watching-pages = { $count ->
@@ -536,6 +548,7 @@ smartwindow-aitab-open-current =
 smartwindow-aitab-open-new =
     .label = Open in new tab
 
+smartwindow-aitab-response-card-title = Your { -smart-page-brand-name } is ready
 smartwindow-aitab-created-an-aitab = Created { -smart-page-brand-name }
 smartwindow-aitab-updated-an-aitab = Updated { -smart-page-brand-name }
 smartwindow-aitab-empty-chat-message = Want to make changes to your { -smart-page-brand-name }? Ask in the chat to add or remove content.
@@ -564,7 +577,7 @@ aiwindow-resume-card-tab-count =
 aiwindow-resume-card-more = More
     .aria-label = More options for { $text }
 aiwindow-resume-card-open-tabs = Open tabs
-aiwindow-resume-card-snooze = Snooze for now
+aiwindow-resume-card-snooze = Snooze until tomorrow
 # Variables:
 #   $text (String) - The journey title
 aiwindow-resume-card-resume = Resume
