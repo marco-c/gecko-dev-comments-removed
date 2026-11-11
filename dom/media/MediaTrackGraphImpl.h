@@ -64,16 +64,6 @@ class DeviceInputTrackManager {
 
 
 
-struct TrackUpdate {
-  RefPtr<MediaTrack> mTrack;
-  TrackTime mNextMainThreadCurrentTime;
-  bool mNextMainThreadEnded;
-};
-
-
-
-
-
 
 
 class ControlMessage : public MediaTrack::ControlMessageInterface {
@@ -182,10 +172,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   void EnsureRunInStableState();
-  
-
-
-  void ApplyTrackUpdate(TrackUpdate* aUpdate) MOZ_REQUIRES(mMonitor);
   
 
 
@@ -317,6 +303,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   void EnsureStableStateEventPosted() MOZ_REQUIRES(mMonitor);
   
+
+
 
 
 
@@ -872,10 +860,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
   
 
-  
-
-
-  nsTArray<TrackUpdate> mTrackUpdates MOZ_GUARDED_BY(mMonitor);
   
 
 

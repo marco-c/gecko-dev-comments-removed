@@ -167,23 +167,6 @@ class AudioDataListener : public AudioDataListenerInterface {
 
 
 
-
-
-
-
-
-
-
-
-
-class MainThreadMediaTrackListener {
- public:
-  virtual void NotifyMainThreadTrackEnded() = 0;
-};
-
-
-
-
 struct AudioNodeSizes {
   AudioNodeSizes() : mTrack(0), mEngine(0), mNodeType() {}
   size_t mTrack;
@@ -337,17 +320,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   void SetDisabledTrackMode(DisabledTrackMode aMode);
 
   
-  
-  void AddMainThreadListener(MainThreadMediaTrackListener* aListener);
-  
-  
-  void RemoveMainThreadListener(MainThreadMediaTrackListener* aListener) {
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(aListener);
-    mMainThreadListeners.RemoveElement(aListener);
-  }
-
-  
 
 
 
@@ -390,18 +362,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   
   
   virtual void Destroy();
-
-  
-  
-  TrackTime GetCurrentTime() const {
-    NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-    return mMainThreadCurrentTime;
-  }
-  
-  bool IsEnded() const {
-    NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-    return mMainThreadEnded;
-  }
 
   
 
@@ -597,25 +557,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   void QueueMessage(UniquePtr<ControlMessageInterface> aMessage);
   void RunMessageAfterProcessing(already_AddRefed<nsIRunnable> aMessage);
 
-  void NotifyMainThreadListeners() {
-    NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-
-    for (int32_t i = mMainThreadListeners.Length() - 1; i >= 0; --i) {
-      mMainThreadListeners[i]->NotifyMainThreadTrackEnded();
-    }
-    mMainThreadListeners.Clear();
-  }
-
-  bool ShouldNotifyTrackEnded() {
-    NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
-    if (!mMainThreadEnded || mEndedNotificationSent) {
-      return false;
-    }
-
-    mEndedNotificationSent = true;
-    return true;
-  }
-
  protected:
   
   
@@ -649,7 +590,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   
   nsTArray<RefPtr<MediaTrackListener>> mTrackListeners;
-  nsTArray<MainThreadMediaTrackListener*> mMainThreadListeners;
   
   
   DisabledTrackMode mDisabledMode;
@@ -687,11 +627,6 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   
   
   Maybe<Canonicals> mCanonicals;
-
-  
-  TrackTime mMainThreadCurrentTime;
-  bool mMainThreadEnded;
-  bool mEndedNotificationSent;
 
   
   Atomic<bool> mDestroyed;
@@ -1241,6 +1176,10 @@ class MediaTrackGraph {
   void NotifyJSContext(JSContext* aCx);
 
   
+
+
+
+
 
 
 
