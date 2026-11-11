@@ -50,6 +50,7 @@ class RefCountDelegate implements RefCounted {
 
 
 
+  @SuppressWarnings("deprecation")
   boolean safeRetain() {
     int currentRefCount = refCount.get();
     while (currentRefCount != 0) {

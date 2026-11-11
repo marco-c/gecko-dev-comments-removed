@@ -461,6 +461,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
     callback.onDecodedFrame(frameWithModifiedTimeStamp, decodeTimeMs, null );
   }
 
+  @SuppressWarnings("deprecation")
   private void deliverByteFrame(
       int index, MediaCodec.BufferInfo info, int rotation, Integer decodeTimeMs) {
     
