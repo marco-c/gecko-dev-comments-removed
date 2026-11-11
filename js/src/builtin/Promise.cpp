@@ -811,7 +811,6 @@ class PromiseReactionObjectStorage : public PromiseJobObject {
     
     
     
-    
     Promise = PromiseJobObject::Slots::Promise,
 
     
@@ -868,7 +867,7 @@ class PromiseReactionObjectStorage : public PromiseJobObject {
     
     
     
-    GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+    SpecializedReactionState,
 
     SlotCount,
   };
@@ -896,13 +895,11 @@ class PromiseReactionObjectStorage : public PromiseJobObject {
     return getFixedSlot(Slots::Reject).toObjectOrNull();
   }
 
-  Value reactionTarget() const {
-    return getFixedSlot(
-        Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator);
+  Value specializedReactionState() const {
+    return getFixedSlot(Slots::SpecializedReactionState);
   }
-  void setReactionTarget(const Value& target) {
-    setFixedSlot(Slots::GeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
-                 target);
+  void setSpecializedReactionState(const Value& state) {
+    setFixedSlot(Slots::SpecializedReactionState, state);
   }
 
   JSObject* enqueueGlobalRepresentative() const {
@@ -959,7 +956,6 @@ class PromiseReaction : public Base {
   
   
   
-  
   static constexpr uint32_t REACTION_FLAG_DEFAULT_RESOLVING_HANDLER = 0x4;
 
   
@@ -984,7 +980,6 @@ class PromiseReaction : public Base {
   
   static constexpr uint32_t REACTION_FLAG_IGNORE_UNHANDLED_REJECTION = 0x40;
 
-  
   
   
   
@@ -1048,7 +1043,7 @@ class PromiseReaction : public Base {
 
   void setIsDefaultResolvingHandler(PromiseObject* promiseToResolve) {
     setFlagOnInitialState(REACTION_FLAG_DEFAULT_RESOLVING_HANDLER);
-    this->setReactionTarget(ObjectValue(*promiseToResolve));
+    this->setSpecializedReactionState(ObjectValue(*promiseToResolve));
   }
   bool isDefaultResolvingHandler() const {
     int32_t flags = this->flags();
@@ -1056,13 +1051,15 @@ class PromiseReaction : public Base {
   }
   PromiseObject* defaultResolvingPromise() {
     MOZ_ASSERT(isDefaultResolvingHandler());
-    return &this->reactionTarget().toObject().template as<PromiseObject>();
+    return &this->specializedReactionState()
+                .toObject()
+                .template as<PromiseObject>();
   }
 
   void setIsAsyncFunction(AsyncFunctionGeneratorObject* genObj) {
     MOZ_ASSERT(this->realm() == genObj->nonCCWRealm());
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FUNCTION);
-    this->setReactionTarget(ObjectValue(*genObj));
+    this->setSpecializedReactionState(ObjectValue(*genObj));
   }
   bool isAsyncFunction() const {
     int32_t flags = this->flags();
@@ -1071,7 +1068,7 @@ class PromiseReaction : public Base {
   AsyncFunctionGeneratorObject* asyncFunctionGenerator() {
     MOZ_ASSERT(isAsyncFunction());
     AsyncFunctionGeneratorObject* res =
-        &this->reactionTarget()
+        &this->specializedReactionState()
              .toObject()
              .template as<AsyncFunctionGeneratorObject>();
     MOZ_RELEASE_ASSERT(this->realm() == res->realm());
@@ -1080,7 +1077,7 @@ class PromiseReaction : public Base {
 
   void setIsAsyncGenerator(AsyncGeneratorObject* generator) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_GENERATOR);
-    this->setReactionTarget(ObjectValue(*generator));
+    this->setSpecializedReactionState(ObjectValue(*generator));
   }
   bool isAsyncGenerator() const {
     int32_t flags = this->flags();
@@ -1088,14 +1085,14 @@ class PromiseReaction : public Base {
   }
   AsyncGeneratorObject* asyncGenerator() {
     MOZ_ASSERT(isAsyncGenerator());
-    return &this->reactionTarget()
+    return &this->specializedReactionState()
                 .toObject()
                 .template as<AsyncGeneratorObject>();
   }
 
   void setIsAsyncFromSyncIterator(AsyncFromSyncIteratorObject* iterator) {
     setFlagOnInitialState(REACTION_FLAG_ASYNC_FROM_SYNC_ITERATOR);
-    this->setReactionTarget(ObjectValue(*iterator));
+    this->setSpecializedReactionState(ObjectValue(*iterator));
   }
   bool isAsyncFromSyncIterator() const {
     int32_t flags = this->flags();
@@ -1103,7 +1100,7 @@ class PromiseReaction : public Base {
   }
   AsyncFromSyncIteratorObject* asyncFromSyncIterator() {
     MOZ_ASSERT(isAsyncFromSyncIterator());
-    return &this->reactionTarget()
+    return &this->specializedReactionState()
                 .toObject()
                 .template as<AsyncFromSyncIteratorObject>();
   }
@@ -1169,7 +1166,8 @@ class MOZ_STACK_CLASS PromiseReactionStackStorage {
     OnRejected,
     Resolve,
     Reject,
-    ReactionTarget,
+    
+    SpecializedReactionState,
     IncumbentGlobalRepresentative,
     OptionalHostDefinedData,
     SlotCount,
@@ -1212,9 +1210,11 @@ class MOZ_STACK_CLASS PromiseReactionStackStorage {
   JSObject* resolve() const { return slots_[Resolve].get().toObjectOrNull(); }
   JSObject* reject() const { return slots_[Reject].get().toObjectOrNull(); }
 
-  Value reactionTarget() const { return slots_[ReactionTarget]; }
-  void setReactionTarget(const Value& target) {
-    slots_[ReactionTarget].set(target);
+  Value specializedReactionState() const {
+    return slots_[SpecializedReactionState];
+  }
+  void setSpecializedReactionState(const Value& state) {
+    slots_[SpecializedReactionState].set(state);
   }
 
   Value getIncumbentGlobalRepresentative() const {
@@ -1282,7 +1282,7 @@ class MOZ_STACK_CLASS StackPromiseReaction
   enum Extra : size_t {
     ExtraHandler = 0,
     ExtraHandlerArg,
-    ExtraGeneratorOrPromiseToResolveOrAsyncFromSyncIterator,
+    ExtraSpecializedReactionState,
     ExtraIncumbentGlobalRepresentative,
     ExtraCount,
   };
@@ -1336,8 +1336,8 @@ class MOZ_STACK_CLASS StackPromiseReaction
       setOnRejected(handler);
       setOnRejectedArg(handlerArg);
     }
-    setReactionTarget(MicroTaskQueueElement::extra(
-        task, ExtraGeneratorOrPromiseToResolveOrAsyncFromSyncIterator));
+    setSpecializedReactionState(
+        MicroTaskQueueElement::extra(task, ExtraSpecializedReactionState));
   }
 
   
@@ -1399,7 +1399,7 @@ class MOZ_STACK_CLASS StackPromiseReaction
     return MicroTaskQueueElement::MakeMicroTask(
         MicroTaskQueueElement::Kind::InlinePromiseReaction, bits,
         ObjectValue(promise ? *promise : cx->global()->getObjectPrototype()),
-        handler(), handlerArg(), reactionTarget(),
+        handler(), handlerArg(), specializedReactionState(),
         getIncumbentGlobalRepresentative(), flowId);
   }
 };
@@ -1416,7 +1416,7 @@ static PromiseReactionRecord* NewReactionRecordFromStack(
                          data.getIncumbentGlobalRepresentative(),
                          data.getOptionalHostDefinedData());
   reaction->setFlags(data.flags());
-  reaction->setReactionTarget(data.reactionTarget());
+  reaction->setSpecializedReactionState(data.specializedReactionState());
   return reaction;
 }
 
@@ -8710,22 +8710,19 @@ void PromiseReactionRecord::dumpOwnFields(js::JSONPrinter& json) const {
 
   if (isDefaultResolvingHandler()) {
     js::GenericPrinter& out = json.beginStringProperty("promiseToResolve");
-    getFixedSlot(GeneratorOrPromiseToResolveOrAsyncFromSyncIterator)
-        .dumpStringContent(out);
+    getFixedSlot(SpecializedReactionState).dumpStringContent(out);
     json.endStringProperty();
   }
 
   if (isAsyncFunction()) {
     js::GenericPrinter& out = json.beginStringProperty("generator");
-    getFixedSlot(GeneratorOrPromiseToResolveOrAsyncFromSyncIterator)
-        .dumpStringContent(out);
+    getFixedSlot(SpecializedReactionState).dumpStringContent(out);
     json.endStringProperty();
   }
 
   if (isAsyncGenerator()) {
     js::GenericPrinter& out = json.beginStringProperty("generator");
-    getFixedSlot(GeneratorOrPromiseToResolveOrAsyncFromSyncIterator)
-        .dumpStringContent(out);
+    getFixedSlot(SpecializedReactionState).dumpStringContent(out);
     json.endStringProperty();
   }
 }
