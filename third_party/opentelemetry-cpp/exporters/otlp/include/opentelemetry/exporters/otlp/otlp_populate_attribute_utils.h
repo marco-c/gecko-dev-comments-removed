@@ -3,7 +3,12 @@
 
 #pragma once
 
+#include <cstddef>
+#include <limits>
+#include <string>
+
 #include "opentelemetry/common/attribute_value.h"
+#include "opentelemetry/common/macros.h"
 #include "opentelemetry/nostd/string_view.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
 #include "opentelemetry/sdk/instrumentationscope/instrumentation_scope.h"
@@ -44,6 +49,31 @@ namespace otlp
 
 
 
+
+
+
+
+
+
+
+
+
+
+struct AttributeConverterOptions
+{
+  
+  
+  std::size_t attribute_value_length_limit{(std::numeric_limits<std::size_t>::max)()};
+
+  AttributeConverterOptions() noexcept = default;
+  explicit AttributeConverterOptions(std::size_t value_length_limit) noexcept
+      : attribute_value_length_limit(value_length_limit)
+  {}
+};
+
+
+
+
 class OtlpPopulateAttributeUtils
 {
 
@@ -55,23 +85,47 @@ public:
                                 const opentelemetry::sdk::instrumentationscope::InstrumentationScope
                                     &instrumentation_scope) noexcept;
 
-  static void PopulateAnyValue(opentelemetry::proto::common::v1::AnyValue *proto_value,
-                               const opentelemetry::common::AttributeValue &value,
-                               bool allow_bytes) noexcept;
+  static bool PopulateAnyValue(
+      opentelemetry::proto::common::v1::AnyValue *proto_value,
+      const opentelemetry::common::AttributeValue &value,
+      AttributeConverterOptions options = AttributeConverterOptions{}) noexcept;
 
-  static void PopulateAnyValue(opentelemetry::proto::common::v1::AnyValue *proto_value,
-                               const opentelemetry::sdk::common::OwnedAttributeValue &value,
-                               bool allow_bytes) noexcept;
+  static bool PopulateAnyValue(
+      opentelemetry::proto::common::v1::AnyValue *proto_value,
+      const opentelemetry::sdk::common::OwnedAttributeValue &value,
+      AttributeConverterOptions options = AttributeConverterOptions{}) noexcept;
 
-  static void PopulateAttribute(opentelemetry::proto::common::v1::KeyValue *attribute,
-                                nostd::string_view key,
-                                const opentelemetry::common::AttributeValue &value,
-                                bool allow_bytes) noexcept;
+  static void PopulateAttribute(
+      opentelemetry::proto::common::v1::KeyValue *attribute,
+      nostd::string_view key,
+      const opentelemetry::common::AttributeValue &value,
+      AttributeConverterOptions options = AttributeConverterOptions{}) noexcept;
 
-  static void PopulateAttribute(opentelemetry::proto::common::v1::KeyValue *attribute,
-                                nostd::string_view key,
-                                const opentelemetry::sdk::common::OwnedAttributeValue &value,
-                                bool allow_bytes) noexcept;
+  static void PopulateAttribute(
+      opentelemetry::proto::common::v1::KeyValue *attribute,
+      nostd::string_view key,
+      const opentelemetry::sdk::common::OwnedAttributeValue &value,
+      AttributeConverterOptions options = AttributeConverterOptions{}) noexcept;
+
+  
+
+
+
+
+
+
+
+
+
+  static std::size_t Utf8SafePrefixLength(const char *data,
+                                          std::size_t size,
+                                          std::size_t max_bytes) noexcept;
+
+  
+  static std::size_t Utf8SafePrefixLength(const std::string &value, std::size_t max_bytes) noexcept
+  {
+    return Utf8SafePrefixLength(value.data(), value.size(), max_bytes);
+  }
 };
 
 }  

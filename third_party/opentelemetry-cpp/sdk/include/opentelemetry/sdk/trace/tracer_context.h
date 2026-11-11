@@ -14,6 +14,7 @@
 #include "opentelemetry/sdk/trace/random_id_generator.h"
 #include "opentelemetry/sdk/trace/sampler.h"
 #include "opentelemetry/sdk/trace/samplers/always_on.h"
+#include "opentelemetry/sdk/trace/span_limits.h"
 #include "opentelemetry/sdk/trace/tracer_config.h"
 #include "opentelemetry/version.h"
 
@@ -50,7 +51,8 @@ public:
           std::make_unique<instrumentationscope::ScopeConfigurator<TracerConfig>>(
               instrumentationscope::ScopeConfigurator<TracerConfig>::Builder(
                   TracerConfig::Default())
-                  .Build())) noexcept;
+                  .Build()),
+      SpanLimits span_limits = SpanLimits::NoLimits());
 
   TracerContext(const TracerContext &)            = delete;
   TracerContext(TracerContext &&)                 = delete;
@@ -106,6 +108,21 @@ public:
 
 
 
+  const SpanLimits &GetSpanLimits() const noexcept;
+
+  
+
+
+
+
+
+  void SetTracerConfigurator(std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>>
+                                 tracer_configurator) noexcept;
+
+  
+
+
+
   bool ForceFlush(std::chrono::microseconds timeout = (std::chrono::microseconds::max)()) noexcept;
 
   
@@ -120,6 +137,7 @@ private:
   std::unique_ptr<IdGenerator> id_generator_;
   std::unique_ptr<SpanProcessor> processor_;
   std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>> tracer_configurator_;
+  SpanLimits span_limits_;
 };
 
 }  

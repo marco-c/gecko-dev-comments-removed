@@ -28,6 +28,7 @@ public:
 
   trace::SpanContext GetContext() const noexcept override { return span_context_; }
 
+  
   bool IsRecording() const noexcept override { return false; }
 
   void SetAttribute(nostd::string_view ,

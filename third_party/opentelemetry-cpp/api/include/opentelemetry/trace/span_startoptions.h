@@ -17,52 +17,43 @@ namespace trace
 
 
 
-
 struct StartSpanOptions
 {
   
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
   common::SystemTimestamp start_system_time;
+
+  
   common::SteadyTimestamp start_steady_time;
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nostd::variant<SpanContext, context::Context> parent = SpanContext::GetInvalid();
 
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nostd::variant<SpanContext, context::Context> parent = context::Context{};
+
   
   SpanKind kind = SpanKind::kInternal;
 };

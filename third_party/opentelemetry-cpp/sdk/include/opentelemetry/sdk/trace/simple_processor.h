@@ -9,7 +9,6 @@
 #include <mutex>
 #include <utility>
 
-#include "opentelemetry/common/spin_lock_mutex.h"
 #include "opentelemetry/nostd/span.h"
 #include "opentelemetry/sdk/common/exporter_utils.h"
 #include "opentelemetry/sdk/trace/exporter.h"
@@ -61,7 +60,7 @@ public:
   {
     std::unique_ptr<Recordable> local = std::move(span);
     nostd::span<std::unique_ptr<Recordable>> batch(&local, 1);
-    const std::lock_guard<opentelemetry::common::SpinLockMutex> locked(lock_);
+    const std::lock_guard<std::mutex> locked(lock_);
     if (exporter_->Export(batch) == sdk::common::ExportResult::kFailure)
     {
       
@@ -102,7 +101,7 @@ protected:
 
 private:
   std::unique_ptr<SpanExporter> exporter_;
-  opentelemetry::common::SpinLockMutex lock_;
+  std::mutex lock_;
 #if defined(__cpp_lib_atomic_value_initialization) && \
     __cpp_lib_atomic_value_initialization >= 201911L
   std::atomic_flag shutdown_latch_{};

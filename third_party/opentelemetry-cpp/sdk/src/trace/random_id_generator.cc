@@ -1,7 +1,7 @@
 
 
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "opentelemetry/nostd/span.h"
 #include "opentelemetry/sdk/trace/random_id_generator.h"

@@ -3,8 +3,10 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
+#include <atomic>
+#include <mutex>
 #include "opentelemetry/common/key_value_iterable.h"
 #include "opentelemetry/nostd/shared_ptr.h"
 #include "opentelemetry/nostd/string_view.h"
@@ -13,6 +15,7 @@
 #include "opentelemetry/sdk/trace/id_generator.h"
 #include "opentelemetry/sdk/trace/processor.h"
 #include "opentelemetry/sdk/trace/sampler.h"
+#include "opentelemetry/sdk/trace/span_limits.h"
 #include "opentelemetry/sdk/trace/tracer_config.h"
 #include "opentelemetry/sdk/trace/tracer_context.h"
 #include "opentelemetry/trace/noop.h"
@@ -37,7 +40,7 @@ public:
   
   explicit Tracer(std::shared_ptr<TracerContext> context,
                   std::unique_ptr<InstrumentationScope> instrumentation_scope =
-                      InstrumentationScope::Create("")) noexcept;
+                      InstrumentationScope::Create(""));
 
   nostd::shared_ptr<opentelemetry::trace::Span> StartSpan(
       nostd::string_view name,
@@ -82,6 +85,9 @@ public:
   SpanProcessor &GetProcessor() noexcept { return context_->GetProcessor(); }
 
   
+  const SpanLimits &GetSpanLimits() const noexcept { return context_->GetSpanLimits(); }
+
+  
   IdGenerator &GetIdGenerator() const noexcept { return context_->GetIdGenerator(); }
 
   
@@ -102,13 +108,38 @@ public:
   
   Sampler &GetSampler() { return context_->GetSampler(); }
 
+#if OPENTELEMETRY_ABI_VERSION_NO < 2
+  
+  bool Enabled() const noexcept { return is_enabled_.load(std::memory_order_relaxed); }
+
+protected:
+  
+  void UpdateEnabled(const bool enabled) noexcept
+  {
+    is_enabled_.store(enabled, std::memory_order_relaxed);
+  }
+#endif
+
 private:
+  
+  
+  friend class TracerProvider;
+
+  
+
+
+
+
+  void UpdateTracerConfig(TracerConfig config) noexcept;
+
   
   
   std::shared_ptr<InstrumentationScope> instrumentation_scope_;
   std::shared_ptr<TracerContext> context_;
-  TracerConfig tracer_config_;
-  static const std::shared_ptr<opentelemetry::trace::NoopTracer> kNoopTracer;
+#if OPENTELEMETRY_ABI_VERSION_NO < 2
+  std::atomic<bool> is_enabled_{false};
+#endif
+  nostd::shared_ptr<opentelemetry::trace::Span> noop_span_;
 };
 }  
 }  

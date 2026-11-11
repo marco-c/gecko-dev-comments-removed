@@ -3,10 +3,14 @@
 
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <initializer_list>
+#include <limits>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -17,6 +21,10 @@
 #include "opentelemetry/nostd/string_view.h"
 #include "opentelemetry/nostd/variant.h"
 #include "opentelemetry/version.h"
+
+#if OPENTELEMETRY_HAVE_EXCEPTIONS
+#  include <new>
+#endif
 
 OPENTELEMETRY_BEGIN_NAMESPACE
 namespace sdk
@@ -49,7 +57,7 @@ using OwnedAttributeValue = nostd::variant<bool,
                                            std::vector<uint64_t>,
                                            std::vector<uint8_t>>;
 
-enum OwnedAttributeType : std::uint8_t
+enum OwnedAttributeType : std::uint8_t  
 {
   kTypeBool,
   kTypeInt,
@@ -71,8 +79,91 @@ enum OwnedAttributeType : std::uint8_t
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+inline std::size_t Utf8SafePrefixLength(const char *data,
+                                        std::size_t size,
+                                        std::size_t max_bytes) noexcept
+{
+  
+  
+  
+  if (max_bytes >= size)
+  {
+    return size;
+  }
+  std::size_t i = 0;
+  while (i < size)
+  {
+    const auto lead = static_cast<unsigned char>(data[i]);
+    std::size_t seq = (lead < 0x80)   ? 1
+                      : (lead < 0xC0) ? 1
+                      : (lead < 0xE0) ? 2
+                      : (lead < 0xF0) ? 3
+                      : (lead < 0xF8) ? 4
+                                      : 1;
+    if (seq > 1)
+    {
+      if (i + seq > size)
+      {
+        seq = 1;
+      }
+      else
+      {
+        for (std::size_t k = 1; k < seq; ++k)
+        {
+          const auto continuation = static_cast<unsigned char>(data[i + k]);
+          if (continuation < 0x80 || continuation > 0xBF)
+          {
+            seq = 1;
+            break;
+          }
+        }
+      }
+    }
+    if (i + seq > max_bytes)
+    {
+      break;
+    }
+    i += seq;
+  }
+  return i;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 struct AttributeConverter
 {
+  AttributeConverter() = default;
+
+  
+  
+  
+  explicit AttributeConverter(std::size_t max_length) noexcept : max_length_(max_length) {}
+
   OwnedAttributeValue operator()(bool v) { return OwnedAttributeValue(v); }
   OwnedAttributeValue operator()(int32_t v) { return OwnedAttributeValue(v); }
   OwnedAttributeValue operator()(uint32_t v) { return OwnedAttributeValue(v); }
@@ -81,11 +172,31 @@ struct AttributeConverter
   OwnedAttributeValue operator()(double v) { return OwnedAttributeValue(v); }
   OwnedAttributeValue operator()(nostd::string_view v)
   {
-    return OwnedAttributeValue(std::string(v));
+    const std::size_t kept =
+        v.size() > max_length_ ? Utf8SafePrefixLength(v.data(), v.size(), max_length_) : v.size();
+    return OwnedAttributeValue(std::string(v.data(), kept));
   }
-  OwnedAttributeValue operator()(std::string v) { return OwnedAttributeValue(std::move(v)); }
-  OwnedAttributeValue operator()(const char *v) { return OwnedAttributeValue(std::string(v)); }
-  OwnedAttributeValue operator()(nostd::span<const uint8_t> v) { return convertSpan<uint8_t>(v); }
+  OwnedAttributeValue operator()(std::string v)
+  {
+    if (v.size() > max_length_)
+    {
+      v.resize(Utf8SafePrefixLength(v.data(), v.size(), max_length_));
+    }
+    return OwnedAttributeValue(std::move(v));
+  }
+  OwnedAttributeValue operator()(const char *v)
+  {
+    
+    
+    
+    return (*this)(nostd::string_view(v));
+  }
+  OwnedAttributeValue operator()(nostd::span<const uint8_t> v)
+  {
+    
+    const std::size_t kept = (std::min)(v.size(), max_length_);
+    return OwnedAttributeValue(std::vector<uint8_t>(v.data(), v.data() + kept));
+  }
   OwnedAttributeValue operator()(nostd::span<const bool> v) { return convertSpan<bool>(v); }
   OwnedAttributeValue operator()(nostd::span<const int32_t> v) { return convertSpan<int32_t>(v); }
   OwnedAttributeValue operator()(nostd::span<const uint32_t> v) { return convertSpan<uint32_t>(v); }
@@ -94,7 +205,16 @@ struct AttributeConverter
   OwnedAttributeValue operator()(nostd::span<const double> v) { return convertSpan<double>(v); }
   OwnedAttributeValue operator()(nostd::span<const nostd::string_view> v)
   {
-    return convertSpan<std::string>(v);
+    std::vector<std::string> result;
+    result.reserve(v.size());
+    for (const auto &sv : v)
+    {
+      const std::size_t kept = sv.size() > max_length_
+                                   ? Utf8SafePrefixLength(sv.data(), sv.size(), max_length_)
+                                   : sv.size();
+      result.emplace_back(sv.data(), kept);
+    }
+    return OwnedAttributeValue(std::move(result));
   }
 
   template <typename T, typename U = T>
@@ -102,6 +222,9 @@ struct AttributeConverter
   {
     return OwnedAttributeValue(std::vector<T>(vals.begin(), vals.end()));
   }
+
+private:
+  std::size_t max_length_ = (std::numeric_limits<std::size_t>::max)();
 };
 
 
@@ -161,6 +284,107 @@ struct AttributeEqualToVisitor
 
 
 
+
+
+
+
+
+template <typename Map, typename Value>
+inline std::pair<typename Map::iterator, bool>
+AttributeInsertOrAssign(Map &map, opentelemetry::nostd::string_view key, Value &&value) noexcept
+{
+#if __cplusplus >= 201703L
+  
+  return map.insert_or_assign(std::string(key), std::forward<Value>(value));
+#else
+  auto result          = map.emplace(std::string(key), typename Map::mapped_type{});
+  result.first->second = std::forward<Value>(value);
+  return result;
+#endif
+}
+
+
+
+
+
+template <typename T>
+using VisitVariantResult = std::pair<T, bool>;
+
+namespace detail
+{
+
+
+
+
+
+
+
+
+template <typename Visitor, typename Variant, typename ValueType>
+inline std::pair<ValueType, bool> VisitVariantImpl(Visitor &&visitor,
+                                                   const Variant &value,
+                                                   std::true_type)
+{
+  opentelemetry::nostd::visit(std::forward<Visitor>(visitor), value);
+  return VisitVariantResult<ValueType>{ValueType{}, true};
+}
+
+
+template <typename Visitor, typename Variant, typename ValueType>
+inline std::pair<ValueType, bool> VisitVariantImpl(Visitor &&visitor,
+                                                   const Variant &value,
+                                                   std::false_type)
+{
+  return VisitVariantResult<ValueType>{
+      opentelemetry::nostd::visit(std::forward<Visitor>(visitor), value), true};
+}
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename Visitor, typename Variant>
+inline auto VisitVariant(Visitor &&visitor, const Variant &value) noexcept
+{
+  using VisitorReturnType =
+      decltype(opentelemetry::nostd::visit(std::forward<Visitor>(visitor), value));
+  using ResultValueType =
+      typename std::conditional<std::is_void<VisitorReturnType>::value,
+                                opentelemetry::nostd::monostate, VisitorReturnType>::type;
+#if OPENTELEMETRY_HAVE_EXCEPTIONS
+  try
+  {
+#endif
+    return detail::VisitVariantImpl<Visitor, Variant, ResultValueType>(
+        std::forward<Visitor>(visitor), value, std::is_void<VisitorReturnType>{});
+#if OPENTELEMETRY_HAVE_EXCEPTIONS
+  }
+#  if defined(OPENTELEMETRY_HAVE_STD_VARIANT)
+  catch (const std::bad_variant_access &)
+#  else
+  catch (const opentelemetry::nostd::bad_variant_access &)
+#  endif
+  {
+    return VisitVariantResult<ResultValueType>{ResultValueType{}, false};
+  }
+  catch (const std::bad_alloc &)
+  {
+    return VisitVariantResult<ResultValueType>{ResultValueType{}, false};
+  }
+#endif
+}
+
+
+
+
 class AttributeMap : public std::unordered_map<std::string, OwnedAttributeValue>
 {
 public:
@@ -210,10 +434,18 @@ public:
   }
 
   
-  void SetAttribute(nostd::string_view key,
-                    const opentelemetry::common::AttributeValue &value) noexcept
+  bool SetAttribute(nostd::string_view key,
+                    const opentelemetry::common::AttributeValue &value,
+                    std::size_t max_length = (std::numeric_limits<std::size_t>::max)()) noexcept
   {
-    (*this)[std::string(key)] = nostd::visit(AttributeConverter(), value);
+    std::pair<OwnedAttributeValue, bool> result =
+        VisitVariant(AttributeConverter(max_length), value);
+    if (result.second)
+    {
+      AttributeInsertOrAssign(*this, key, std::move(result.first));
+      return true;
+    }
+    return false;
   }
 
   
@@ -285,9 +517,15 @@ public:
 
   
   void SetAttribute(nostd::string_view key,
-                    const opentelemetry::common::AttributeValue &value) noexcept
+                    const opentelemetry::common::AttributeValue &value,
+                    std::size_t max_length = (std::numeric_limits<std::size_t>::max)()) noexcept
   {
-    (*this)[std::string(key)] = nostd::visit(AttributeConverter(), value);
+    std::pair<OwnedAttributeValue, bool> result =
+        VisitVariant(AttributeConverter(max_length), value);
+    if (result.second)
+    {
+      AttributeInsertOrAssign(*this, key, std::move(result.first));
+    }
   }
 };
 

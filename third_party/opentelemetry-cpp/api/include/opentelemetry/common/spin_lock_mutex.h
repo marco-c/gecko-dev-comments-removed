@@ -41,14 +41,6 @@ constexpr int SPINLOCK_SLEEP_MS        = 1;
 
 
 
-
-
-
-
-
-
-
-
 class SpinLockMutex
 {
 public:

@@ -36,10 +36,20 @@ public:
   
 
 
+
+
+
   static void SetTracerProvider(const nostd::shared_ptr<TracerProvider> &tp) noexcept
   {
     std::lock_guard<common::SpinLockMutex> guard(GetLock());
-    GetProvider() = tp;
+    if (tp)
+    {
+      GetProvider() = tp;
+    }
+    else
+    {
+      GetProvider() = nostd::shared_ptr<TracerProvider>(new NoopTracerProvider);
+    }
   }
 
 private:

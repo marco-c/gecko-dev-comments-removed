@@ -15,6 +15,7 @@
 #include "opentelemetry/sdk/trace/random_id_generator.h"
 #include "opentelemetry/sdk/trace/sampler.h"
 #include "opentelemetry/sdk/trace/samplers/always_on.h"
+#include "opentelemetry/sdk/trace/span_limits.h"
 #include "opentelemetry/sdk/trace/tracer.h"
 #include "opentelemetry/sdk/trace/tracer_context.h"
 #include "opentelemetry/trace/tracer.h"
@@ -42,6 +43,7 @@ public:
 
 
 
+
   explicit TracerProvider(
       std::unique_ptr<SpanProcessor> processor,
       const opentelemetry::sdk::resource::Resource &resource =
@@ -53,7 +55,8 @@ public:
           std::make_unique<instrumentationscope::ScopeConfigurator<TracerConfig>>(
               instrumentationscope::ScopeConfigurator<TracerConfig>::Builder(
                   TracerConfig::Default())
-                  .Build())) noexcept;
+                  .Build()),
+      SpanLimits span_limits = SpanLimits::NoLimits());
 
   explicit TracerProvider(
       std::vector<std::unique_ptr<SpanProcessor>> &&processors,
@@ -66,13 +69,14 @@ public:
           std::make_unique<instrumentationscope::ScopeConfigurator<TracerConfig>>(
               instrumentationscope::ScopeConfigurator<TracerConfig>::Builder(
                   TracerConfig::Default())
-                  .Build())) noexcept;
+                  .Build()),
+      SpanLimits span_limits = SpanLimits::NoLimits());
 
   
 
 
 
-  explicit TracerProvider(std::unique_ptr<TracerContext> context) noexcept;
+  explicit TracerProvider(std::unique_ptr<TracerContext> context);
 
   TracerProvider(const TracerProvider &)            = delete;
   TracerProvider(TracerProvider &&)                 = delete;
@@ -113,7 +117,28 @@ public:
 
 
 
+
+
+
+
+
+
+
+  void UpdateTracerConfigurator(
+      std::unique_ptr<instrumentationscope::ScopeConfigurator<TracerConfig>>
+          tracer_configurator) noexcept;
+
+  
+
+
+
   const opentelemetry::sdk::resource::Resource &GetResource() const noexcept;
+
+  
+
+
+
+  const opentelemetry::sdk::trace::SpanLimits &GetSpanLimits() const noexcept;
 
   
 
@@ -130,6 +155,11 @@ private:
   std::vector<std::shared_ptr<Tracer>> tracers_;
   std::shared_ptr<TracerContext> context_;
   std::mutex lock_;
+  
+  nostd::shared_ptr<opentelemetry::trace::Tracer> noop_tracer_;
+  
+  
+  bool initialized_{false};
 };
 }  
 }  
