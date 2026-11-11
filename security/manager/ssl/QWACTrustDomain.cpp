@@ -113,11 +113,31 @@ pkix::Result QWACTrustDomain::IsChainValid(const DERArray& certChain, Time time,
 
 pkix::Result QWACTrustDomain::CheckSignatureDigestAlgorithm(
     DigestAlgorithm digestAlg, EndEntityOrCA, Time) {
-  return Success;
+  
+  
+  
+  switch (digestAlg) {
+    case DigestAlgorithm::sha256:  
+    case DigestAlgorithm::sha384:  
+    case DigestAlgorithm::sha512:
+      return Success;
+    case DigestAlgorithm::sha1:
+      return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
+  }
+  return Result::FATAL_ERROR_LIBRARY_FAILURE;
 }
+
+
+
+
+
+const unsigned int kETSIMinRSABits = 1900;
 
 pkix::Result QWACTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
     EndEntityOrCA , unsigned int modulusSizeInBits) {
+  if (modulusSizeInBits < kETSIMinRSABits) {
+    return Result::ERROR_INADEQUATE_KEY_SIZE;
+  }
   return Success;
 }
 
