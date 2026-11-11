@@ -590,6 +590,10 @@ const MDefinition* MDefinition::skipObjectGuards() const {
       result = result->toGuardProto()->object();
       continue;
     }
+    if (result->isGuardFunctionScript()) {
+      result = result->toGuardFunctionScript()->function();
+      continue;
+    }
 
     break;
   }
@@ -6437,6 +6441,35 @@ MDefinition* MNot::foldsTo(TempAllocator& alloc) {
   }
 
   
+  
+  
+  if (type() == MIRType::Boolean && op->type() == MIRType::Boolean &&
+      op->hasOneUse()) {
+    if (op->isCompare()) {
+      MCompare* cmp = op->toCompare();
+      switch (cmp->compareType()) {
+        case MCompare::Compare_Int32:
+        case MCompare::Compare_UInt32:
+        case MCompare::Compare_Int64:
+        case MCompare::Compare_UInt64:
+        case MCompare::Compare_IntPtr:
+        case MCompare::Compare_UIntPtr:
+          return MCompare::New(alloc, cmp->lhs(), cmp->rhs(),
+                               NegateCompareOp(cmp->jsop()),
+                               cmp->compareType());
+        default:
+          break;
+      }
+    }
+    if (op->isNot() && op->getOperand(0)->type() == MIRType::Int32) {
+      MConstant* zero = MConstant::NewInt32(alloc, 0);
+      block()->insertBefore(this, zero);
+      return MCompare::New(alloc, op->getOperand(0), zero, JSOp::Ne,
+                           MCompare::Compare_Int32);
+    }
+  }
+
+  
   if (input()->type() == MIRType::Undefined ||
       input()->type() == MIRType::Null) {
     return MConstant::NewBoolean(alloc, true);
@@ -7226,6 +7259,12 @@ MDefinition* MGuardSpecificFunction::foldsTo(TempAllocator& alloc) {
     if (funIndex == otherIndex) {
       return function();
     }
+  }
+
+  
+  
+  if (function()->skipObjectGuards() == expected()) {
+    return function();
   }
 
   return this;
