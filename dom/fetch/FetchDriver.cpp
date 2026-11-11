@@ -728,10 +728,16 @@ nsresult FetchDriver::HttpFetch(
   chan->SetNotificationCallbacks(this);
 
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(chan));
-  
-  
-  if (cos && UserActivation::IsHandlingUserInput()) {
-    cos->AddClassFlags(nsIClassOfService::UrgentStart);
+  if (cos) {
+    
+    
+    cos->AddClassFlags(nsIClassOfService::Unblocked);
+
+    
+    
+    if (UserActivation::IsHandlingUserInput()) {
+      cos->AddClassFlags(nsIClassOfService::UrgentStart);
+    }
   }
 
   
@@ -874,8 +880,10 @@ nsresult FetchDriver::HttpFetch(
   }
 
   if (mIsTrackingFetch && StaticPrefs::network_http_tailing_enabled() && cos) {
+    
     cos->AddClassFlags(nsIClassOfService::Throttleable |
-                       nsIClassOfService::Tail);
+                       nsIClassOfService::Tail |
+                       nsIClassOfService::TailAllowed);
   }
 
   const auto fetchPriority = ToFetchPriority(mRequest->GetPriorityMode());
