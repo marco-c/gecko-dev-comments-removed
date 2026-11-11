@@ -413,7 +413,9 @@ imgRequestProxy::Cancel(nsresult status) {
     return NS_ERROR_FAILURE;
   }
 
-  if (NS_WARN_IF(!mCancelable)) {
+  
+  
+  if (!mCancelable) {
     return NS_ERROR_FAILURE;
   }
 
