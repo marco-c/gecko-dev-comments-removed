@@ -5690,6 +5690,13 @@ void CodeGenerator::emitCallMegamorphicGetter(
 
   masm.checkStackAlignment();
 
+  if (JitOptions.enableStubFramePointers) {
+    
+    
+    masm.PushCalleeToken(calleeScratch,  false);
+    masm.Push(FrameDescriptor(FrameType::IonJS, 0));
+  }
+
   masm.move32(Imm32(0), argcScratch);
   ensureOsiSpace();
 
@@ -6648,6 +6655,14 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
 
   
   masm.freeStack(unusedStack);
+
+  if (JitOptions.enableStubFramePointers) {
+    
+    
+    masm.PushCalleeToken(IonGenericCallCalleeReg,
+                         call->mir()->isConstructing());
+    masm.Push(FrameDescriptor(FrameType::IonJS, call->numActualArgs()));
+  }
   ensureOsiSpace();
 
   auto kind = call->mir()->isConstructing() ? IonGenericCallKind::Construct
@@ -6687,6 +6702,40 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
   emitRestoreStackPointerFromFP();
 }
 
+
+static size_t IonGenericCallArgOffset() {
+  return JitOptions.enableStubFramePointers ? sizeof(JitFrameLayout) : 0;
+}
+
+
+static void IonGenericCallLeaveFrame(MacroAssembler& masm) {
+  if (!JitOptions.enableStubFramePointers) {
+    return;
+  }
+  masm.pop(FramePointer);
+#ifdef JS_USE_LINK_REGISTER
+  masm.popReturnAddress();
+#else
+  masm.pop(IonGenericCallReturnAddrReg);
+#endif
+  masm.addToStackPtr(Imm32(sizeof(JitFrameLayout) - 2 * sizeof(uintptr_t)));
+}
+
+
+
+
+static void IonGenericCallUpdateFrame(MacroAssembler& masm, Register callee,
+                                      Register argc, Register scratch) {
+  if (!JitOptions.enableStubFramePointers) {
+    return;
+  }
+  masm.storePtr(callee, Address(masm.getStackPointer(),
+                                JitFrameLayout::offsetOfCalleeToken()));
+  masm.makeFrameDescriptorForJitCall(FrameType::IonJS, argc, scratch);
+  masm.storePtr(scratch, Address(masm.getStackPointer(),
+                                 JitFrameLayout::offsetOfDescriptor()));
+}
+
 void JitRuntime::generateIonGenericCallArgumentsShift(
     MacroAssembler& masm, Register argc, Register curr, Register end,
     Register scratch, Label* done) {
@@ -6697,6 +6746,9 @@ void JitRuntime::generateIonGenericCallArgumentsShift(
   
   
   masm.moveStackPtrTo(curr);
+  if (size_t argOffset = IonGenericCallArgOffset()) {
+    masm.addPtr(Imm32(argOffset), curr);
+  }
   masm.computeEffectiveAddress(BaseValueIndex(curr, argc), end);
 
   Label loop;
@@ -6740,6 +6792,32 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   Register calleeReg = IonGenericCallCalleeReg;
   Register argcReg = IonGenericCallArgcReg;
@@ -6747,9 +6825,22 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   Register scratch = regs.takeAny();
   Register scratch2 = regs.takeAny();
 
-#ifndef JS_USE_LINK_REGISTER
+  bool hasFrame = JitOptions.enableStubFramePointers;
+  size_t argOffset = IonGenericCallArgOffset();
+
+#ifdef JS_USE_LINK_REGISTER
+  if (hasFrame) {
+    masm.pushRegs(LinkRegister, FramePointer);
+    masm.moveStackPtrTo(FramePointer);
+  }
+#else
   Register returnAddrReg = IonGenericCallReturnAddrReg;
-  masm.pop(returnAddrReg);
+  if (hasFrame) {
+    masm.push(FramePointer);
+    masm.moveStackPtrTo(FramePointer);
+  } else {
+    masm.pop(returnAddrReg);
+  }
 #endif
 
 #ifdef JS_CODEGEN_ARM
@@ -6779,7 +6870,7 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
 
   if (isConstructing) {
     
-    Address thisAddr(masm.getStackPointer(), 0);
+    Address thisAddr(masm.getStackPointer(), argOffset);
     masm.branchTestNull(Assembler::Equal, thisAddr, &vmCall);
   }
 
@@ -6796,11 +6887,23 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   masm.loadJitCodeRaw(calleeReg, scratch2);
 
   
-  masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcReg, scratch);
-#ifndef JS_USE_LINK_REGISTER
-  masm.push(returnAddrReg);
+  
+  
+  
+  
+  if (hasFrame) {
+    masm.pop(FramePointer);
+#ifdef JS_USE_LINK_REGISTER
+    masm.popReturnAddress();
 #endif
+  } else {
+    
+    masm.PushCalleeToken(calleeReg, isConstructing);
+    masm.PushFrameDescriptorForJitCall(FrameType::IonJS, argcReg, scratch);
+#ifndef JS_USE_LINK_REGISTER
+    masm.push(returnAddrReg);
+#endif
+  }
 
   
   masm.jump(scratch2);
@@ -6828,6 +6931,8 @@ void JitRuntime::generateIonGenericCallStub(MacroAssembler& masm,
   
   
   masm.bind(&vmCall);
+
+  IonGenericCallLeaveFrame(masm);
 
   masm.push(masm.getStackPointer());  
   masm.push(argcReg);                 
@@ -6978,6 +7083,10 @@ void JitRuntime::generateIonGenericHandleUnderflow(MacroAssembler& masm,
   
   
   
+  
+  
+  
+  static_assert(sizeof(JitFrameLayout) % JitStackAlignment == 0);
 
   
   
@@ -6997,8 +7106,30 @@ void JitRuntime::generateIonGenericHandleUnderflow(MacroAssembler& masm,
   if (mustSpill) {
     masm.pushRegs(calleeReg, numMissing);
   }
-  masm.computeEffectiveAddress(BaseValueIndex(src, argcReg), srcEnd);
+  
+  size_t argOffset = IonGenericCallArgOffset();
+  masm.computeEffectiveAddress(BaseValueIndex(src, argcReg, argOffset), srcEnd);
 
+  if (JitOptions.enableStubFramePointers) {
+    
+    
+    
+    
+    masm.loadPtr(Address(src, 0), scratch);
+    masm.storePtr(scratch, Address(dest, 0));
+    masm.loadPtr(Address(src, sizeof(uintptr_t)), scratch);
+    masm.storePtr(scratch, Address(dest, sizeof(uintptr_t)));
+    masm.movePtr(dest, FramePointer);
+    masm.addPtr(Imm32(2 * sizeof(uintptr_t)), src);
+    masm.addPtr(Imm32(2 * sizeof(uintptr_t)), dest);
+  }
+
+  
+  
+  
+  
+  
+  
   
   
   
@@ -7061,6 +7192,8 @@ void JitRuntime::generateIonGenericCallNativeFunction(MacroAssembler& masm,
 #ifndef JS_USE_LINK_REGISTER
   Register returnAddrReg = IonGenericCallReturnAddrReg;
 #endif
+
+  IonGenericCallLeaveFrame(masm);
 
   
   masm.pushValue(JSVAL_TYPE_OBJECT, calleeReg);
@@ -7159,15 +7292,18 @@ void JitRuntime::generateIonGenericCallFunCall(MacroAssembler& masm,
   
   
 
+  Address thisAddr(masm.getStackPointer(), IonGenericCallArgOffset());
+
   
-  masm.fallibleUnboxObject(Address(masm.getStackPointer(), 0), scratch, vmCall);
+  masm.fallibleUnboxObject(thisAddr, scratch, vmCall);
   masm.movePtr(scratch, calleeReg);
 
   Label hasArgs;
   masm.branch32(Assembler::NotEqual, argcReg, Imm32(0), &hasArgs);
 
   
-  masm.storeValue(UndefinedValue(), Address(masm.getStackPointer(), 0));
+  masm.storeValue(UndefinedValue(), thisAddr);
+  IonGenericCallUpdateFrame(masm, calleeReg, argcReg, scratch);
   masm.jump(entry);
 
   masm.bind(&hasArgs);
@@ -7177,6 +7313,7 @@ void JitRuntime::generateIonGenericCallFunCall(MacroAssembler& masm,
                                        scratch3, &doneSliding);
   masm.bind(&doneSliding);
   masm.sub32(Imm32(1), argcReg);
+  IonGenericCallUpdateFrame(masm, calleeReg, argcReg, scratch);
 
   masm.jump(entry);
 
@@ -7205,6 +7342,7 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
   Address thisSlot(calleeReg, BoundFunctionObject::offsetOfBoundThisSlot());
   Address firstInlineArgSlot(
       calleeReg, BoundFunctionObject::offsetOfFirstInlineBoundArg());
+  size_t argOffset = IonGenericCallArgOffset();
 
   
   masm.load32(flagsSlot, scratch);
@@ -7227,34 +7365,53 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
   
   
   
-  Label poppedThis;
+  
   if (JitStackValueAlignment > 1) {
-    Label alreadyAligned;
+    Label existingArgsAligned;
     masm.branchTest32(Assembler::Zero, flagsSlot,
                       Imm32(1 << BoundFunctionObject::NumBoundArgsShift),
-                      &alreadyAligned);
+                      &existingArgsAligned);
 
     
     
     generateIonGenericCallArgumentsShift(masm, argcReg, scratch, scratch2,
-                                         scratch3, &poppedThis);
-    masm.bind(&alreadyAligned);
+                                         scratch3, &existingArgsAligned);
+    masm.bind(&existingArgsAligned);
   }
 
   
-  masm.freeStack(sizeof(Value));
-  masm.bind(&poppedThis);
+  Register numBoundArgs = scratch;
+  masm.load32(flagsSlot, numBoundArgs);
+  masm.rshift32(Imm32(BoundFunctionObject::NumBoundArgsShift), numBoundArgs);
+  static_assert(JitStackValueAlignment <= 2);
+  masm.move32(numBoundArgs, scratch2);
+  if (JitStackValueAlignment > 1) {
+    
+    masm.add32(Imm32(1), scratch2);
+    masm.and32(Imm32(~1), scratch2);
+  }
+  masm.lshift32(Imm32(ValueShift), scratch2);
+  masm.subFromStackPtr(scratch2);
+
+  if (JitOptions.enableStubFramePointers) {
+    
+    
+    
+    
+    
+    masm.loadPtr(Address(FramePointer, 0), scratch3);
+    masm.storePtr(scratch3, Address(masm.getStackPointer(), 0));
+    masm.loadPtr(Address(FramePointer, sizeof(uintptr_t)), scratch3);
+    masm.storePtr(scratch3, Address(masm.getStackPointer(), sizeof(uintptr_t)));
+    masm.moveStackPtrTo(FramePointer);
+  }
+
+  Label doneStoringBoundArguments;
+  masm.branch32(Assembler::Equal, numBoundArgs, Imm32(0),
+                &doneStoringBoundArguments);
 
   
-  masm.load32(flagsSlot, scratch);
-  masm.rshift32(Imm32(BoundFunctionObject::NumBoundArgsShift), scratch);
-
-  Label donePushingBoundArguments;
-  masm.branch32(Assembler::Equal, scratch, Imm32(0),
-                &donePushingBoundArguments);
-
-  
-  masm.add32(scratch, argcReg);
+  masm.add32(numBoundArgs, argcReg);
 
   
   Label outOfLineBoundArguments, haveBoundArguments;
@@ -7271,23 +7428,21 @@ void JitRuntime::generateIonGenericCallBoundFunction(MacroAssembler& masm,
   masm.bind(&haveBoundArguments);
 
   
-  BaseObjectElementIndex lastBoundArg(scratch2, scratch);
-  masm.computeEffectiveAddress(lastBoundArg, scratch);
-
-  
-  
   Label boundArgumentsLoop;
   masm.bind(&boundArgumentsLoop);
-  masm.subPtr(Imm32(sizeof(Value)), scratch);
-  masm.pushValue(Address(scratch, 0));
-  masm.branchPtr(Assembler::Above, scratch, scratch2, &boundArgumentsLoop);
-  masm.bind(&donePushingBoundArguments);
+  BaseValueIndex from(scratch2, numBoundArgs, -int32_t(sizeof(Value)));
+  BaseValueIndex to(masm.getStackPointer(), numBoundArgs, argOffset);
+  masm.copy64(from, to, scratch3);
+  masm.branchSub32(Assembler::NonZero, Imm32(1), numBoundArgs,
+                   &boundArgumentsLoop);
+  masm.bind(&doneStoringBoundArguments);
 
   
-  masm.pushValue(thisSlot);
+  masm.copy64(thisSlot, Address(masm.getStackPointer(), argOffset), scratch3);
 
   
   masm.unboxObject(targetSlot, calleeReg);
+  IonGenericCallUpdateFrame(masm, calleeReg, argcReg, scratch);
 
   
   
