@@ -117,7 +117,7 @@ class CacheEntry final : public nsIRunnable,
   nsIURI* GetURI() const { return mURI; }
   
   bool IsUsingDisk() const { return mUseDisk; }
-  bool IsReferenced() const MOZ_NO_THREAD_SAFETY_ANALYSIS;
+  bool IsReferenced() const;
   bool IsFileDoomed();
   bool IsDoomed() const { return mIsDoomed; }
   bool IsPinned() const { return mPinned; }
@@ -301,10 +301,10 @@ class CacheEntry final : public nsIRunnable,
  private:
   friend class CacheEntryHandle;
   
-  void AddHandleRef() MOZ_REQUIRES(mLock) { ++mHandlesCount; }
-  void ReleaseHandleRef() MOZ_REQUIRES(mLock) { --mHandlesCount; }
+  void AddHandleRef() { ++mHandlesCount; }
+  void ReleaseHandleRef() { --mHandlesCount; }
   
-  uint32_t HandlesCount() const MOZ_REQUIRES(mLock) { return mHandlesCount; }
+  uint32_t HandlesCount() const { return mHandlesCount; }
 
  private:
   friend class CacheOutputCloseListener;
@@ -330,7 +330,9 @@ class CacheEntry final : public nsIRunnable,
   mozilla::Mutex mLock{"CacheEntry"};
 
   
-  ::mozilla::ThreadSafeAutoRefCnt mHandlesCount MOZ_GUARDED_BY(mLock);
+  
+  
+  ::mozilla::ThreadSafeAutoRefCnt mHandlesCount;
 
   nsTArray<Callback> mCallbacks MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsICacheEntryDoomCallback> mDoomCallback MOZ_GUARDED_BY(mLock);
