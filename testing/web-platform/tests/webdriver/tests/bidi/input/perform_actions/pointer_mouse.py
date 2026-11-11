@@ -17,6 +17,7 @@ from . import (
 
 pytestmark = pytest.mark.asyncio
 
+CONTEXT_DESTROYED_EVENT = "browsingContext.contextDestroyed"
 CONTEXT_LOAD_EVENT = "browsingContext.load"
 
 
@@ -29,13 +30,14 @@ async def test_down_closes_browsing_context(
     inline,
     subscribe_events,
     wait_for_event,
+    wait_for_future_safe,
     mouse_up
 ):
     url = inline("""<input onmousedown="window.close()">close</input>""")
 
     
     
-    await subscribe_events(events=[CONTEXT_LOAD_EVENT])
+    await subscribe_events(events=[CONTEXT_LOAD_EVENT, CONTEXT_DESTROYED_EVENT])
     on_load = wait_for_event(CONTEXT_LOAD_EVENT)
 
     await bidi_session.script.evaluate(
@@ -48,6 +50,10 @@ async def test_down_closes_browsing_context(
 
     element = await get_element("input", context=new_context)
     origin = get_element_origin(element)
+
+    
+    
+    on_destroyed = wait_for_event(CONTEXT_DESTROYED_EVENT)
 
     if mouse_up:
         actions = Actions()
@@ -74,6 +80,11 @@ async def test_down_closes_browsing_context(
         await bidi_session.input.perform_actions(
             actions=actions, context=new_context["context"]
         )
+
+    
+    
+    
+    await wait_for_future_safe(on_destroyed)
 
     with pytest.raises(NoSuchFrameException):
         await bidi_session.browsing_context.get_tree(root=new_context["context"], max_depth=0)
@@ -383,15 +394,19 @@ async def test_click_navigation(
         assert event["url"] == destination
 
 
-@pytest.mark.parametrize("x, y, event_count", [
-    (0, 0, 0),
-    (1, 0, 1),
-    (0, 1, 1),
+@pytest.mark.parametrize("x, y", [
+    (0, 0),
+    (1, 0),
+    (0, 1),
 ], ids=["default value", "x", "y"])
 async def test_move_to_position_in_viewport(
-    bidi_session, load_static_test_page, top_context, x, y, event_count
+    bidi_session, load_static_test_page, top_context, x, y
 ):
     await load_static_test_page(page="test_actions.html")
+
+    
+    
+    expected_count = 0 if (x, y) == (0, 0) else 1
 
     actions = Actions()
     actions.add_pointer().pointer_move(x=x, y=y)
@@ -401,7 +416,7 @@ async def test_move_to_position_in_viewport(
     )
 
     events = await get_events(bidi_session, top_context["context"])
-    assert len(events) == event_count
+    assert len(events) == expected_count
 
     
     actions = Actions()
@@ -412,7 +427,7 @@ async def test_move_to_position_in_viewport(
     )
 
     events = await get_events(bidi_session, top_context["context"])
-    assert len(events) == event_count
+    assert len(events) == expected_count
 
 
 @pytest.mark.parametrize("origin", ["viewport", "pointer", "element"])
