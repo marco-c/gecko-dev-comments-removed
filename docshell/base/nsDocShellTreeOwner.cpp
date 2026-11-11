@@ -80,7 +80,6 @@ static nsresult GetDOMEventTarget(nsWebBrowser* aInBrowser,
 
 nsDocShellTreeOwner::nsDocShellTreeOwner()
     : mWebBrowser(nullptr),
-      mTreeOwner(nullptr),
       mPrimaryContentShell(nullptr),
       mWebBrowserChrome(nullptr),
       mOwnerWin(nullptr),
@@ -304,8 +303,6 @@ void nsDocShellTreeOwner::EnsureContentTreeOwner() {
 NS_IMETHODIMP
 nsDocShellTreeOwner::ContentShellAdded(nsIDocShellTreeItem* aContentShell,
                                        bool aPrimary) {
-  if (mTreeOwner) return mTreeOwner->ContentShellAdded(aContentShell, aPrimary);
-
   EnsureContentTreeOwner();
   aContentShell->SetTreeOwner(mContentTreeOwner);
 
@@ -318,10 +315,6 @@ nsDocShellTreeOwner::ContentShellAdded(nsIDocShellTreeItem* aContentShell,
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::ContentShellRemoved(nsIDocShellTreeItem* aContentShell) {
-  if (mTreeOwner) {
-    return mTreeOwner->ContentShellRemoved(aContentShell);
-  }
-
   if (mPrimaryContentShell == aContentShell) {
     mPrimaryContentShell = nullptr;
   }
@@ -332,10 +325,6 @@ nsDocShellTreeOwner::ContentShellRemoved(nsIDocShellTreeItem* aContentShell) {
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetPrimaryContentShell(nsIDocShellTreeItem** aShell) {
   NS_ENSURE_ARG_POINTER(aShell);
-
-  if (mTreeOwner) {
-    return mTreeOwner->GetPrimaryContentShell(aShell);
-  }
 
   nsCOMPtr<nsIDocShellTreeItem> shell;
   if (!mPrimaryRemoteTab) {
@@ -349,10 +338,6 @@ nsDocShellTreeOwner::GetPrimaryContentShell(nsIDocShellTreeItem** aShell) {
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::RemoteTabAdded(nsIRemoteTab* aTab, bool aPrimary) {
-  if (mTreeOwner) {
-    return mTreeOwner->RemoteTabAdded(aTab, aPrimary);
-  }
-
   if (aPrimary) {
     mPrimaryRemoteTab = aTab;
     mPrimaryContentShell = nullptr;
@@ -365,10 +350,6 @@ nsDocShellTreeOwner::RemoteTabAdded(nsIRemoteTab* aTab, bool aPrimary) {
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::RemoteTabRemoved(nsIRemoteTab* aTab) {
-  if (mTreeOwner) {
-    return mTreeOwner->RemoteTabRemoved(aTab);
-  }
-
   if (aTab == mPrimaryRemoteTab) {
     mPrimaryRemoteTab = nullptr;
   }
@@ -378,10 +359,6 @@ nsDocShellTreeOwner::RemoteTabRemoved(nsIRemoteTab* aTab) {
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetPrimaryRemoteTab(nsIRemoteTab** aTab) {
-  if (mTreeOwner) {
-    return mTreeOwner->GetPrimaryRemoteTab(aTab);
-  }
-
   nsCOMPtr<nsIRemoteTab> tab = mPrimaryRemoteTab;
   tab.forget(aTab);
   return NS_OK;
@@ -390,9 +367,6 @@ nsDocShellTreeOwner::GetPrimaryRemoteTab(nsIRemoteTab** aTab) {
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetPrimaryContentBrowsingContext(
     mozilla::dom::BrowsingContext** aBc) {
-  if (mTreeOwner) {
-    return mTreeOwner->GetPrimaryContentBrowsingContext(aBc);
-  }
   if (mPrimaryRemoteTab) {
     return mPrimaryRemoteTab->GetBrowsingContext(aBc);
   }
@@ -403,76 +377,6 @@ nsDocShellTreeOwner::GetPrimaryContentBrowsingContext(
     return mWebBrowser->mDocShell->GetBrowsingContextXPCOM(aBc);
   }
   *aBc = nullptr;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::GetPrimaryContentSize(int32_t* ,
-                                           int32_t* ) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::SetPrimaryContentSize(int32_t ,
-                                           int32_t ) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::GetRootShellSize(int32_t* ,
-                                      int32_t* ) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::SetRootShellSize(int32_t , int32_t ) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::SizeShellTo(nsIDocShellTreeItem* aShellItem, int32_t aCX,
-                                 int32_t aCY) {
-  nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = GetWebBrowserChrome();
-
-  NS_ENSURE_STATE(mTreeOwner || webBrowserChrome);
-
-  if (nsCOMPtr<nsIDocShellTreeOwner> treeOwner = mTreeOwner) {
-    return treeOwner->SizeShellTo(aShellItem, aCX, aCY);
-  }
-
-  if (aShellItem == mWebBrowser->mDocShell) {
-    nsCOMPtr<nsIBrowserChild> browserChild =
-        do_QueryInterface(webBrowserChrome);
-    if (browserChild) {
-      
-      
-      
-      nsCOMPtr<nsIBaseWindow> shellAsWin(do_QueryInterface(aShellItem));
-      NS_ENSURE_TRUE(shellAsWin, NS_ERROR_FAILURE);
-
-      LayoutDeviceIntSize shellSize;
-      shellAsWin->GetSize(&shellSize.width, &shellSize.height);
-      LayoutDeviceIntSize deltaSize = LayoutDeviceIntSize(aCX, aCY) - shellSize;
-
-      LayoutDeviceIntSize currentSize;
-      GetSize(&currentSize.width, &currentSize.height);
-
-      LayoutDeviceIntSize newSize = currentSize + deltaSize;
-      return SetSize(newSize.width, newSize.height, true);
-    }
-    
-    
-    
-    return NS_ERROR_NOT_IMPLEMENTED;
-  }
-
-  MOZ_ASSERT_UNREACHABLE("This is unimplemented, API should be cleaned up");
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::GetHasPrimaryContent(bool* aResult) {
-  *aResult = mPrimaryRemoteTab || mPrimaryContentShell;
   return NS_OK;
 }
 
@@ -494,26 +398,19 @@ nsDocShellTreeOwner::Destroy() {
 }
 
 double nsDocShellTreeOwner::GetWidgetCSSToDeviceScale() {
-  return mWebBrowser ? mWebBrowser->GetWidgetCSSToDeviceScale() : 1.0;
+  nsIWidget* widget = mWebBrowser ? mWebBrowser->mParentWidget : nullptr;
+  return widget ? widget->GetDefaultScale().scale : 1.0;
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetDevicePixelsPerDesktopPixel(double* aScale) {
-  if (mWebBrowser) {
-    return mWebBrowser->GetDevicePixelsPerDesktopPixel(aScale);
-  }
-
-  *aScale = 1.0;
+  nsIWidget* widget = mWebBrowser ? mWebBrowser->mParentWidget : nullptr;
+  *aScale = widget ? widget->GetDesktopToDeviceScale().scale : 1.0;
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetPositionDesktopPix(int32_t aX, int32_t aY) {
-  if (mWebBrowser) {
-    nsresult rv = mWebBrowser->SetPositionDesktopPix(aX, aY);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
-
   double scale = 1.0;
   GetDevicePixelsPerDesktopPixel(&scale);
   return SetPosition(NSToIntRound(aX * scale), NSToIntRound(aY * scale));
@@ -521,37 +418,41 @@ nsDocShellTreeOwner::SetPositionDesktopPix(int32_t aX, int32_t aY) {
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetPosition(int32_t aX, int32_t aY) {
-  return SetDimensions(
-      {DimensionKind::Outer, Some(aX), Some(aY), Nothing(), Nothing()});
+  return SetDimensions({Some(aX), Some(aY), Nothing(), Nothing()});
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetPosition(int32_t* aX, int32_t* aY) {
-  return GetDimensions(DimensionKind::Outer, aX, aY, nullptr, nullptr);
+  return GetPositionAndSize(aX, aY, nullptr, nullptr);
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetSize(int32_t aCX, int32_t aCY, bool ) {
-  return SetDimensions(
-      {DimensionKind::Outer, Nothing(), Nothing(), Some(aCX), Some(aCY)});
+  return SetDimensions({Nothing(), Nothing(), Some(aCX), Some(aCY)});
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetSize(int32_t* aCX, int32_t* aCY) {
-  return GetDimensions(DimensionKind::Outer, nullptr, nullptr, aCX, aCY);
+  return GetPositionAndSize(nullptr, nullptr, aCX, aCY);
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetPositionAndSize(int32_t aX, int32_t aY, int32_t aCX,
                                         int32_t aCY, uint32_t ) {
-  return SetDimensions(
-      {DimensionKind::Outer, Some(aX), Some(aY), Some(aCX), Some(aCY)});
+  return SetDimensions({Some(aX), Some(aY), Some(aCX), Some(aCY)});
 }
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aCX,
                                         int32_t* aCY) {
-  return GetDimensions(DimensionKind::Outer, aX, aY, aCX, aCY);
+  nsCOMPtr<nsIBaseWindow> ownerWin = GetOwnerWin();
+  if (ownerWin) {
+    return ownerWin->GetPositionAndSize(aX, aY, aCX, aCY);
+  }
+
+  nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = GetWebBrowserChrome();
+  NS_ENSURE_STATE(webBrowserChrome);
+  return webBrowserChrome->GetDimensions(aX, aY, aCX, aCY);
 }
 
 NS_IMETHODIMP
@@ -564,19 +465,6 @@ nsDocShellTreeOwner::SetDimensions(DimensionRequest&& aRequest) {
   nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = GetWebBrowserChrome();
   NS_ENSURE_STATE(webBrowserChrome);
   return webBrowserChrome->SetDimensions(std::move(aRequest));
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
-                                   int32_t* aY, int32_t* aCX, int32_t* aCY) {
-  nsCOMPtr<nsIBaseWindow> ownerWin = GetOwnerWin();
-  if (ownerWin) {
-    return ownerWin->GetDimensions(aDimensionKind, aX, aY, aCX, aCY);
-  }
-
-  nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = GetWebBrowserChrome();
-  NS_ENSURE_STATE(webBrowserChrome);
-  return webBrowserChrome->GetDimensions(aDimensionKind, aX, aY, aCX, aCY);
 }
 
 NS_IMETHODIMP
@@ -628,24 +516,6 @@ nsDocShellTreeOwner::SetEnabled(bool ) {
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::GetMainWidget(nsIWidget** ) {
-  return NS_ERROR_NULL_POINTER;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::GetTitle(nsAString& aTitle) {
-  nsCOMPtr<nsIBaseWindow> ownerWin = GetOwnerWin();
-  if (ownerWin) {
-    return ownerWin->GetTitle(aTitle);
-  }
-  return NS_ERROR_NULL_POINTER;
-}
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::SetTitle(const nsAString& aTitle) {
-  nsCOMPtr<nsIBaseWindow> ownerWin = GetOwnerWin();
-  if (ownerWin) {
-    return ownerWin->SetTitle(aTitle);
-  }
   return NS_ERROR_NULL_POINTER;
 }
 
@@ -732,25 +602,6 @@ void nsDocShellTreeOwner::WebBrowser(nsWebBrowser* aWebBrowser) {
 }
 
 nsWebBrowser* nsDocShellTreeOwner::WebBrowser() { return mWebBrowser; }
-
-NS_IMETHODIMP
-nsDocShellTreeOwner::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner) {
-  if (aTreeOwner) {
-    nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome(do_GetInterface(aTreeOwner));
-    NS_ENSURE_TRUE(webBrowserChrome, NS_ERROR_INVALID_ARG);
-    NS_ENSURE_SUCCESS(SetWebBrowserChrome(webBrowserChrome),
-                      NS_ERROR_INVALID_ARG);
-    mTreeOwner = aTreeOwner;
-  } else {
-    mTreeOwner = nullptr;
-    nsCOMPtr<nsIWebBrowserChrome> webBrowserChrome = GetWebBrowserChrome();
-    if (!webBrowserChrome) {
-      NS_ENSURE_SUCCESS(SetWebBrowserChrome(nullptr), NS_ERROR_FAILURE);
-    }
-  }
-
-  return NS_OK;
-}
 
 NS_IMETHODIMP
 nsDocShellTreeOwner::SetWebBrowserChrome(

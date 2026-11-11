@@ -86,7 +86,7 @@ nsresult nsWebBrowser::Create(nsIWebBrowserChrome* aContainerWindow,
 
   
   MOZ_TRY(browser->SetContainerWindow(aContainerWindow));
-  MOZ_TRY(browser->SetParentWidget(aParentWidget));
+  browser->mParentWidget = aParentWidget;
 
   nsCOMPtr<nsIWidget> docShellParentWidget = browser->EnsureWidget();
   if (NS_WARN_IF(!docShellParentWidget)) {
@@ -147,7 +147,6 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsWebBrowser)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIWebBrowser)
   NS_INTERFACE_MAP_ENTRY(nsIWebBrowser)
   NS_INTERFACE_MAP_ENTRY(nsIWebNavigation)
-  NS_INTERFACE_MAP_ENTRY(nsIBaseWindow)
   NS_INTERFACE_MAP_ENTRY(nsIDocShellTreeItem)
   NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
@@ -345,22 +344,14 @@ nsWebBrowser::GetDomWindow(mozIDOMWindowProxy** aWindow) {
 NS_IMETHODIMP
 nsWebBrowser::GetTreeOwner(nsIDocShellTreeOwner** aTreeOwner) {
   NS_ENSURE_ARG_POINTER(aTreeOwner);
-  *aTreeOwner = nullptr;
-  if (mDocShellTreeOwner) {
-    if (mDocShellTreeOwner->mTreeOwner) {
-      *aTreeOwner = mDocShellTreeOwner->mTreeOwner;
-    } else {
-      *aTreeOwner = mDocShellTreeOwner;
-    }
-  }
-  NS_IF_ADDREF(*aTreeOwner);
+  *aTreeOwner = do_AddRef(mDocShellTreeOwner).take();
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsWebBrowser::SetTreeOwner(nsIDocShellTreeOwner* aTreeOwner) {
-  EnsureDocShellTreeOwner();
-  return mDocShellTreeOwner->SetTreeOwner(aTreeOwner);
+  MOZ_ASSERT_UNREACHABLE("nsWebBrowser is never a child docshell");
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 
@@ -539,182 +530,6 @@ nsWebBrowser::GetDocument(dom::Document** aDocument) {
 void nsWebBrowser::SetAllowDNSPrefetch(bool aAllowPrefetch) {
   MOZ_ASSERT(mDocShell);
   mDocShell->SetAllowDNSPrefetch(aAllowPrefetch);
-}
-
-
-
-
-
-NS_IMETHODIMP
-nsWebBrowser::Destroy() {
-  InternalDestroy();
-
-  return NS_OK;
-}
-
-double nsWebBrowser::GetWidgetCSSToDeviceScale() {
-  return mParentWidget ? mParentWidget->GetDefaultScale().scale : 1.0;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetDevicePixelsPerDesktopPixel(double* aScale) {
-  *aScale =
-      mParentWidget ? mParentWidget->GetDesktopToDeviceScale().scale : 1.0;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetPositionDesktopPix(int32_t aX, int32_t aY) {
-  
-  
-  
-  
-  
-  
-  
-  double scale = 1.0;
-  GetDevicePixelsPerDesktopPixel(&scale);
-  return SetPosition(NSToIntRound(aX * scale), NSToIntRound(aY * scale));
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetPosition(int32_t aX, int32_t aY) {
-  int32_t cx = 0;
-  int32_t cy = 0;
-
-  GetSize(&cx, &cy);
-
-  return SetPositionAndSize(aX, aY, cx, cy, 0);
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetPosition(int32_t* aX, int32_t* aY) {
-  return GetPositionAndSize(aX, aY, nullptr, nullptr);
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetSize(int32_t aCX, int32_t aCY, bool aRepaint) {
-  int32_t x = 0;
-  int32_t y = 0;
-
-  GetPosition(&x, &y);
-
-  return SetPositionAndSize(x, y, aCX, aCY,
-                            aRepaint ? nsIBaseWindow::eRepaint : 0);
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetSize(int32_t* aCX, int32_t* aCY) {
-  return GetPositionAndSize(nullptr, nullptr, aCX, aCY);
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetPositionAndSize(int32_t aX, int32_t aY, int32_t aCX,
-                                 int32_t aCY, uint32_t aFlags) {
-  int32_t doc_x = aX;
-  int32_t doc_y = aY;
-
-  
-  
-  NS_ENSURE_SUCCESS(
-      mDocShell->SetPositionAndSize(doc_x, doc_y, aCX, aCY, aFlags),
-      NS_ERROR_FAILURE);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetPositionAndSize(int32_t* aX, int32_t* aY, int32_t* aCX,
-                                 int32_t* aCY) {
-  
-  
-  return mDocShell->GetPositionAndSize(aX, aY, aCX, aCY);
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetDimensions(DimensionRequest&& aRequest) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetDimensions(DimensionKind aDimensionKind, int32_t* aX,
-                            int32_t* aY, int32_t* aCX, int32_t* aCY) {
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetParentWidget(nsIWidget** aParentWidget) {
-  NS_ENSURE_ARG_POINTER(aParentWidget);
-
-  *aParentWidget = mParentWidget;
-
-  NS_IF_ADDREF(*aParentWidget);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetParentWidget(nsIWidget* aParentWidget) {
-  NS_ENSURE_STATE(!mDocShell);
-  mParentWidget = aParentWidget;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetNativeHandle(nsAString& aNativeHandle) {
-  
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetVisibility(bool* aVisibility) {
-  NS_ENSURE_ARG_POINTER(aVisibility);
-
-  if (mDocShell) {
-    NS_ENSURE_SUCCESS(mDocShell->GetVisibility(aVisibility), NS_ERROR_FAILURE);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetVisibility(bool aVisibility) {
-  if (mDocShell) {
-    NS_ENSURE_SUCCESS(mDocShell->SetVisibility(aVisibility), NS_ERROR_FAILURE);
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetEnabled(bool* aEnabled) { return NS_ERROR_FAILURE; }
-
-NS_IMETHODIMP
-nsWebBrowser::SetEnabled(bool aEnabled) { return NS_ERROR_FAILURE; }
-
-NS_IMETHODIMP
-nsWebBrowser::GetMainWidget(nsIWidget** aMainWidget) {
-  NS_ENSURE_ARG_POINTER(aMainWidget);
-  NS_IF_ADDREF(*aMainWidget = mParentWidget);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::GetTitle(nsAString& aTitle) {
-  NS_ENSURE_STATE(mDocShell);
-
-  NS_ENSURE_SUCCESS(mDocShell->GetTitle(aTitle), NS_ERROR_FAILURE);
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsWebBrowser::SetTitle(const nsAString& aTitle) {
-  NS_ENSURE_STATE(mDocShell);
-
-  NS_ENSURE_SUCCESS(mDocShell->SetTitle(aTitle), NS_ERROR_FAILURE);
-
-  return NS_OK;
 }
 
 
