@@ -5,8 +5,8 @@
 add_task(async function test_deleteClosedWindow() {
   
 
-  const REMEMBER = Date.now(),
-    FORGET = Math.random();
+  const REMEMBER = String(Date.now()),
+    FORGET = String(Math.random());
   let test_state = {
     windows: [
       {
