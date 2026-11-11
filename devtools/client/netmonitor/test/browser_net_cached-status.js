@@ -12,6 +12,10 @@ add_task(async function () {
   
   await pushPref("dom.security.https_first", false);
 
+  
+  
+  registerCleanupFunction(() => Services.cache2.clear());
+
   const { tab, monitor } = await initNetMonitor(STATUS_CODES_URL, {
     enableCache: true,
     requestCount: 1,
