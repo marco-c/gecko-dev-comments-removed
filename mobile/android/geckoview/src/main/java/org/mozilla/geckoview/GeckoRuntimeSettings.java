@@ -94,6 +94,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    public @NonNull Builder proguardUuid(final @Nullable String proguardUuid) {
+      getSettings().mProguardUuid = proguardUuid;
+      return this;
+    }
+
+    
+
+
+
+
+
+
     public @NonNull Builder extensionsProcessEnabled(final boolean flag) {
       getSettings().mExtensionsProcess.set(flag);
       return this;
@@ -721,6 +733,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    String[] mArgs;
    Bundle mExtras;
    String mConfigFilePath;
+   String mProguardUuid;
 
    ContentBlocking.Settings mContentBlocking;
 
@@ -915,6 +928,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mCrashHandler = settings.mCrashHandler;
     mRequestedLocales = settings.mRequestedLocales;
     mConfigFilePath = settings.mConfigFilePath;
+    mProguardUuid = settings.mProguardUuid;
     mExperimentDelegate = settings.mExperimentDelegate;
   }
 
@@ -951,6 +965,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @Nullable String getConfigFilePath() {
     return mConfigFilePath;
+  }
+
+  
+
+
+
+
+  public @Nullable String getProguardUuid() {
+    return mProguardUuid;
   }
 
   
@@ -2578,6 +2601,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     out.writeString(mCrashHandler != null ? mCrashHandler.getName() : null);
     out.writeStringArray(mRequestedLocales);
     out.writeString(mConfigFilePath);
+    out.writeString(mProguardUuid);
   }
 
   
@@ -2600,17 +2624,14 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     final String crashHandlerName = source.readString();
     if (crashHandlerName != null) {
       try {
-        @SuppressWarnings("unchecked")
-        final Class<? extends Service> handler =
-            (Class<? extends Service>) Class.forName(crashHandlerName);
-
-        mCrashHandler = handler;
-      } catch (final ClassNotFoundException e) {
+        mCrashHandler = Class.forName(crashHandlerName).asSubclass(Service.class);
+      } catch (final ClassNotFoundException | ClassCastException e) {
       }
     }
 
     mRequestedLocales = source.createStringArray();
     mConfigFilePath = source.readString();
+    mProguardUuid = source.readString();
   }
 
   

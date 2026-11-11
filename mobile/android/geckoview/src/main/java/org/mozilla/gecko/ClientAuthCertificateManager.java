@@ -217,6 +217,8 @@ public class ClientAuthCertificateManager {
   
   
   private static class UnsuitableCertificateException extends Exception {
+    private static final long serialVersionUID = 1L;
+
     public UnsuitableCertificateException(final String message) {
       super(message);
     }

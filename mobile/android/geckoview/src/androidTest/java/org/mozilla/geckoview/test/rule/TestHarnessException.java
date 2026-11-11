@@ -5,6 +5,8 @@ package org.mozilla.geckoview.test.rule;
 
 
 public class TestHarnessException extends RuntimeException {
+  private static final long serialVersionUID = 1L;
+
   public TestHarnessException(final Throwable cause) {
     super(cause);
   }

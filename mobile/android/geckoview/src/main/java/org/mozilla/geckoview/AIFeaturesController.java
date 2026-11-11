@@ -285,6 +285,7 @@ public class AIFeaturesController {
 
   
   public static class AIFeaturesException extends Exception {
+    private static final long serialVersionUID = 1L;
 
     
 

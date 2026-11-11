@@ -62,7 +62,7 @@ public class WindowUtils {
 
 
 
-  @SuppressWarnings("DEPRECATION")
+  @SuppressWarnings("deprecation")
   public static void setupImeBehavior(Window window) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
       window.setSoftInputMode(

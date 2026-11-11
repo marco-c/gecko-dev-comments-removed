@@ -1610,6 +1610,8 @@ public class WebExtension {
 
 
   public static class InvalidMetaDataException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     
     protected InvalidMetaDataException() {
       super("InvalidMetaDataException");
@@ -1625,6 +1627,8 @@ public class WebExtension {
 
   
   public static class InstallException extends Exception {
+    private static final long serialVersionUID = 1L;
+
     
     public static class ErrorCodes {
       

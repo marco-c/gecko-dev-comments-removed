@@ -40,6 +40,9 @@ public class Image {
   
   @WrapForJNI
   public static class ImageProcessingException extends RuntimeException {
+    @WrapForJNI(skip = true)
+    private static final long serialVersionUID = 1L;
+
     
 
 

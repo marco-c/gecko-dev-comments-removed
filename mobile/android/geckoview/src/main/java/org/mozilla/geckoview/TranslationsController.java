@@ -1020,7 +1020,7 @@ public class TranslationsController {
 
 
       default void onTranslationStateChange(
-          @NonNull final GeckoSession session, @Nullable TranslationState translationState) {}
+          @NonNull final GeckoSession session, @Nullable final TranslationState translationState) {}
     }
 
     
@@ -1364,6 +1364,7 @@ public class TranslationsController {
 
 
   public static class TranslationsException extends Exception {
+    private static final long serialVersionUID = 1L;
 
     
 

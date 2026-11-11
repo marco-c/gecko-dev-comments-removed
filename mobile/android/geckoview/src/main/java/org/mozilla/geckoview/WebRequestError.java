@@ -24,6 +24,8 @@ import org.mozilla.gecko.util.XPCOMError;
 
 @AnyThread
 public class WebRequestError extends Exception {
+  private static final long serialVersionUID = 1L;
+
   
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({

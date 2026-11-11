@@ -122,16 +122,15 @@ public class GeckoServiceChildProcess extends Service {
             public void run() {
               if (crashHandlerService != null) {
                 try {
-                  @SuppressWarnings("unchecked")
                   final Class<? extends Service> crashHandler =
-                      (Class<? extends Service>) Class.forName(crashHandlerService);
+                      Class.forName(crashHandlerService).asSubclass(Service.class);
 
                   
                   
                   GeckoAppShell.setCrashHandlerService(crashHandler);
                   GeckoAppShell.ensureCrashHandling(crashHandler);
-                } catch (final ClassNotFoundException e) {
-                  Log.w(LOGTAG, "Couldn't find crash handler service " + crashHandlerService);
+                } catch (final ClassNotFoundException | ClassCastException e) {
+                  Log.w(LOGTAG, "Couldn't find crash handler service " + crashHandlerService, e);
                 }
               }
 

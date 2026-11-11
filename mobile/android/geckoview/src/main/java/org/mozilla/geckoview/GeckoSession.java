@@ -8863,6 +8863,9 @@ public class GeckoSession {
   
   @WrapForJNI
   public static class GeckoPrintException extends Exception {
+    @WrapForJNI(skip = true)
+    private static final long serialVersionUID = 1L;
+
     
     public static final int ERROR_PRINT_SETTINGS_SERVICE_NOT_AVAILABLE = -1;
 

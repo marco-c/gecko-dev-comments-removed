@@ -7,7 +7,6 @@ package org.mozilla.geckoview;
 import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -43,6 +42,7 @@ import java.util.Map;
 import org.mozilla.gecko.Clipboard;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.GeckoJavaSampler;
 import org.mozilla.gecko.GeckoNetworkManager;
 import org.mozilla.gecko.GeckoScreenChangeListener;
 import org.mozilla.gecko.GeckoScreenOrientation;
@@ -448,9 +448,7 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     try {
-      @SuppressWarnings("unchecked")
-      final Class<? extends Service> cls =
-          (Class<? extends Service>) Class.forName("org.mozilla.gecko.crashhelper.CrashHelper");
+      final Class<?> cls = Class.forName("org.mozilla.gecko.crashhelper.CrashHelper");
       final Intent i = new Intent(context, cls);
       final File minidumps = new File(context.getFilesDir(), "minidumps");
       context.bindService(
@@ -503,6 +501,7 @@ public final class GeckoRuntime implements Parcelable {
     GeckoAppShell.setDisplayDpiOverride(settings.getDisplayDpiOverride());
     GeckoAppShell.setScreenSizeOverride(settings.getScreenSizeOverride());
     GeckoAppShell.setCrashHandlerService(settings.getCrashHandler());
+    GeckoJavaSampler.setProguardUuid(settings.getProguardUuid());
     GeckoFontScaleListener.getInstance().attachToContext(context, settings);
 
     Bundle extras = settings.getExtras();

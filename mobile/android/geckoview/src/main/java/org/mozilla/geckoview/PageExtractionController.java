@@ -200,6 +200,7 @@ public class PageExtractionController {
 
   
   public static class PageExtractionException extends Exception {
+    private static final long serialVersionUID = 1L;
 
     
     public static final String ERROR_NULL_RESULT = "NULL_RESULT";

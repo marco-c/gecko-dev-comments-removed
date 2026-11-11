@@ -236,6 +236,8 @@ public class GeckoResult<T> {
 
   
   public static final class UncaughtException extends RuntimeException {
+    private static final long serialVersionUID = 1L;
+
     
 
 
