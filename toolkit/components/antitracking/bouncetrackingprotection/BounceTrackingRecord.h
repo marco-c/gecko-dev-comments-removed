@@ -6,6 +6,7 @@
 #define mozilla_BounceTrackingRecord_h
 
 #include "nsIBounceTrackingRecord.h"
+#include "mozilla/FunctionRef.h"
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/OriginAttributesHashKey.h"
 #include "mozilla/RefPtr.h"
@@ -66,6 +67,18 @@ class BounceTrackingRecord final : public nsIBounceTrackingRecord {
 
   
   bool HasBounceHost(const nsACString& aHost) const;
+
+  using OriginAttributesPredicate = FunctionRef<bool(const OriginAttributes&)>;
+
+  
+  
+  
+  bool HasOriginAttributesMatching(OriginAttributesPredicate aPredicate) const;
+
+  
+  
+  bool HasSiteHost(const nsACString& aHost,
+                   OriginAttributesPredicate aPredicate) const;
 
   void ClearUserActivationHosts();
 

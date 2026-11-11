@@ -632,6 +632,12 @@ BounceTrackingProtection::ClearBySiteHostAndOriginAttributes(
   }
 
   
+  
+  if (!originAttributes.mPartitionKey.IsEmpty()) {
+    return NS_OK;
+  }
+
+  
   BounceTrackingState::ResetAllForOriginAttributes(originAttributes);
 
   return mStorage->ClearBySiteHost(aSiteHost, &originAttributes);
