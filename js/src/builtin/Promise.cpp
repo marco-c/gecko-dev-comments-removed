@@ -812,8 +812,6 @@ class PromiseReactionObjectStorage : public PromiseJobObject {
     
     
     
-    
-    
     Promise = PromiseJobObject::Slots::Promise,
 
     
@@ -859,7 +857,6 @@ class PromiseReactionObjectStorage : public PromiseJobObject {
     
     Flags,
 
-    
     
     
     
