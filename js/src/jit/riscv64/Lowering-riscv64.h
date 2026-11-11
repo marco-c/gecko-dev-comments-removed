@@ -2,8 +2,6 @@
 
 
 
-
-
 #ifndef jit_riscv64_Lowering_riscv64_h
 #define jit_riscv64_Lowering_riscv64_h
 
@@ -90,6 +88,8 @@ class LIRGeneratorRiscv64 : public LIRGeneratorShared {
 
   void lowerAtomicLoad64(MLoadUnboxedScalar* ins);
   void lowerAtomicStore64(MStoreUnboxedScalar* ins);
+
+  bool canStoreConstantWithoutRegister(MDefinition* value);
 };
 
 typedef LIRGeneratorRiscv64 LIRGeneratorSpecific;
