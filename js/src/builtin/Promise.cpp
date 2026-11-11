@@ -1273,6 +1273,7 @@ static Realm* GetFunctionRealmIfSimple(JSObject* obj) {
 
 
 
+
 class MOZ_STACK_CLASS StackPromiseReaction
     : public PromiseReaction<PromiseReactionStackStorage> {
   static constexpr uint32_t InlineFlagsMask = 0xff;
@@ -7206,35 +7207,29 @@ template <typename ExtraStep>
     JSContext* cx, Handle<PromiseObject*> promise,
     Handle<PromiseCapability> resultCapability, HandleValue onFulfilled,
     HandleValue onRejected, ExtraStep extraStep) {
-  JS::PromiseState state = promise->state();
   
+  
+  
+  
+  StackPromiseReaction data(cx);
+  if (!InitPromiseReaction(cx, &data, resultCapability, onFulfilled,
+                           onRejected)) {
+    return false;
+  }
+  extraStep(&data);
+
+  JS::PromiseState state = promise->state();
   if (state != JS::PromiseState::Pending) {
-    StackPromiseReaction data(cx);
-    if (!InitPromiseReaction(cx, &data, resultCapability, onFulfilled,
-                             onRejected)) {
-      return false;
-    }
-    extraStep(&data);
     if (MOZ_LIKELY(data.fitsInline(cx->realm(), state))) {
       return PerformPromiseThenWithSettledReaction(cx, promise, &data);
     }
-
-    Rooted<PromiseReactionRecord*> reaction(
-        cx, NewReactionRecordFromStack(cx, data));
-    if (!reaction) {
-      return false;
-    }
-    return PerformPromiseThenWithReaction(cx, promise, reaction);
   }
 
-  
-  Rooted<PromiseReactionRecord*> reaction(
-      cx, NewReactionRecord(cx, resultCapability, onFulfilled, onRejected));
+  Rooted<PromiseReactionRecord*> reaction(cx,
+                                          NewReactionRecordFromStack(cx, data));
   if (!reaction) {
     return false;
   }
-
-  extraStep(reaction);
   return PerformPromiseThenWithReaction(cx, promise, reaction);
 }
 
