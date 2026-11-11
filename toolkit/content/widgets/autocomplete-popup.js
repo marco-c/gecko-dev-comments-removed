@@ -552,10 +552,13 @@
             
             
             
+            
+            const rowIndex = this._currentIndex;
             const activateAction = actionIndex => () =>
               lazy.AutoCompleteParent.getCurrentActor()?.selectAutoCompleteEntry(
                 true,
-                actionIndex
+                actionIndex,
+                rowIndex
               );
             if (secondaryAction.actions) {
               secondary.actions = secondaryAction.actions.map(
