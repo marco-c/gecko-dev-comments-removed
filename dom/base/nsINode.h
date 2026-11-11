@@ -1815,6 +1815,8 @@ class nsINode : public mozilla::dom::EventTarget {
     virtual void Traverse(nsCycleCollectionTraversalCallback&);
     virtual void Unlink(nsINode&);
 
+    void ClearWeakReference();
+
     
 
 
@@ -1836,6 +1838,7 @@ class nsINode : public mozilla::dom::EventTarget {
     RefPtr<nsAttrChildContentList> mChildNodes;
 
     
+
 
 
 
@@ -2640,7 +2643,7 @@ class nsINode : public mozilla::dom::EventTarget {
     ElementHasCustomElementData,
     
     
-    ElementCreatedFromPrototypeAndHasUnmodifiedL10n,
+    ElementTranslatedFromPrototype,
     
     BooleanFlagCount
   };
@@ -2797,14 +2800,14 @@ class nsINode : public mozilla::dom::EventTarget {
   
   inline bool HasScopedRegistry() const;
 
-  void SetElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
-    SetBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
+  void SetElementTranslatedFromPrototype() {
+    SetBoolFlag(ElementTranslatedFromPrototype);
   }
-  bool HasElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
-    return GetBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
+  bool IsElementTranslatedFromPrototype() {
+    return GetBoolFlag(ElementTranslatedFromPrototype);
   }
-  void ClearElementCreatedFromPrototypeAndHasUnmodifiedL10n() {
-    ClearBoolFlag(ElementCreatedFromPrototypeAndHasUnmodifiedL10n);
+  void ClearElementTranslatedFromPrototype() {
+    ClearBoolFlag(ElementTranslatedFromPrototype);
   }
 
   [[nodiscard]] inline mozilla::dom::ShadowRoot* GetShadowRoot() const;
