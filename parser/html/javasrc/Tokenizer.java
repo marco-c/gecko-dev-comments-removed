@@ -231,6 +231,16 @@ public class Tokenizer implements Locator, Locator2 {
 
     public static final int COMMENT_LESSTHAN_BANG_DASH_DASH = 79;
 
+    public static final int PROCESSING_INSTRUCTION_OPEN = 80;
+
+    public static final int PROCESSING_INSTRUCTION_TARGET = 81;
+
+    public static final int AFTER_PROCESSING_INSTRUCTION_TARGET = 82;
+
+    public static final int PROCESSING_INSTRUCTION_DATA = 83;
+
+    public static final int PROCESSING_INSTRUCTION_QUESTIONABLE = 84;
+
     
 
 
@@ -241,6 +251,9 @@ public class Tokenizer implements Locator, Locator2 {
 
 
     private static final @NoLength char[] LT_GT = { '<', '>' };
+
+    private static final @NoLength char[] XML_STYLESHEET = { 'x', 'm', 'l',
+            '-', 's', 't', 'y', 'l', 'e', 's', 'h', 'e', 'e', 't' };
 
     
 
@@ -485,6 +498,17 @@ public class Tokenizer implements Locator, Locator2 {
     
 
 
+    private String piTarget;
+
+    
+
+
+
+    private boolean processingInstructionsEnabled;
+
+    
+
+
     private HtmlAttributes attributes;
 
     
@@ -570,6 +594,8 @@ public class Tokenizer implements Locator, Locator2 {
         this.doctypeName = null;
         this.publicIdentifier = null;
         this.systemIdentifier = null;
+        this.piTarget = null;
+        this.processingInstructionsEnabled = false;
         this.attributes = null;
         this.shouldSuspend = false;
         this.keepBuffer = false;
@@ -629,6 +655,8 @@ public class Tokenizer implements Locator, Locator2 {
         this.doctypeName = null;
         this.publicIdentifier = null;
         this.systemIdentifier = null;
+        this.piTarget = null;
+        this.processingInstructionsEnabled = false;
         
         this.attributes = null;
         
@@ -645,6 +673,11 @@ public class Tokenizer implements Locator, Locator2 {
 
     public void setInterner(Interner interner) {
         this.interner = interner;
+    }
+
+    public void setProcessingInstructionsEnabled(
+            boolean processingInstructionsEnabled) {
+        this.processingInstructionsEnabled = processingInstructionsEnabled;
     }
 
     public void initLocation(String newPublicId, String newSystemId) {
@@ -1146,6 +1179,51 @@ public class Tokenizer implements Locator, Locator2 {
         }
         
         clearStrBufAfterUse();
+        cstart = pos + 1;
+        suspendIfRequestedAfterCurrentNonTextToken();
+    }
+
+    
+
+
+
+
+    private boolean isDisallowedPiTarget() {
+        int targetLength = strBufLen - 1;
+        if (targetLength != 3 && targetLength != 14) {
+            return false;
+        }
+        for (int i = 0; i < targetLength; i++) {
+            char folded = strBuf[i + 1];
+            if (folded >= 'A' && folded <= 'Z') {
+                folded += 0x20;
+            }
+            if (folded != XML_STYLESHEET[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    
+
+
+
+
+
+    private void finishPiTarget() {
+        piTarget = Portability.newStringFromBuffer(strBuf, 1, strBufLen - 1
+            
+        );
+        clearStrBufAfterUse();
+    }
+
+    private void emitProcessingInstruction(int pos) throws SAXException {
+        
+        tokenHandler.processingInstruction(piTarget, strBuf, 0, strBufLen);
+        clearStrBufAfterUse();
+        Portability.releaseString(piTarget);
+        piTarget = null;
         cstart = pos + 1;
         suspendIfRequestedAfterCurrentNonTextToken();
     }
@@ -1761,6 +1839,22 @@ public class Tokenizer implements Locator, Locator2 {
                                 
                                 
                                 
+                                if (processingInstructionsEnabled) {
+                                    
+
+
+
+
+
+
+
+
+
+                                    clearStrBufBeforeUse();
+                                    appendStrBuf(c);
+                                    state = transition(state, Tokenizer.PROCESSING_INSTRUCTION_OPEN, reconsume, pos);
+                                    continue stateloop;
+                                }
                                 
 
 
@@ -6300,6 +6394,248 @@ public class Tokenizer implements Locator, Locator2 {
                         }
                     }
                     
+                case PROCESSING_INSTRUCTION_OPEN:
+                    if (++pos == endPos) {
+                        break stateloop;
+                    }
+                    c = checkChar(buf, pos);
+                    
+
+
+                    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                            || c == '_') {
+                        
+
+
+
+                        appendStrBuf(c);
+                        state = transition(state, Tokenizer.PROCESSING_INSTRUCTION_TARGET, reconsume, pos);
+                        
+                        
+                    } else {
+                        
+
+
+
+
+
+                        errInvalidFirstCharacterOfProcessingInstructionTarget();
+                        reconsume = true;
+                        state = transition(state, Tokenizer.BOGUS_COMMENT, reconsume, pos);
+                        continue stateloop;
+                    }
+                    
+                case PROCESSING_INSTRUCTION_TARGET:
+                    pitargetloop: for (;;) {
+                        if (++pos == endPos) {
+                            break stateloop;
+                        }
+                        c = checkChar(buf, pos);
+                        
+
+
+                        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+                                || (c >= '0' && c <= '9') || c == '-'
+                                || c == '_') {
+                            
+
+
+
+
+                            appendStrBuf(c);
+                            continue;
+                        }
+                        switch (c) {
+                            case '\r':
+                            case '\n':
+                            case '\u000C':
+                            case ' ':
+                            case '\t':
+                            case '?':
+                            case '>':
+                                
+
+
+
+                                if (isDisallowedPiTarget()) {
+                                    
+
+
+
+
+
+
+
+
+                                    errDisallowedProcessingInstructionTarget();
+                                    reconsume = true;
+                                    state = transition(state, Tokenizer.BOGUS_COMMENT, reconsume, pos);
+                                    continue stateloop;
+                                }
+                                
+
+
+
+
+
+                                finishPiTarget();
+                                reconsume = true;
+                                state = transition(state, Tokenizer.AFTER_PROCESSING_INSTRUCTION_TARGET, reconsume, pos);
+                                
+                                break pitargetloop;
+                            default:
+                                
+
+
+
+
+
+
+                                errInvalidProcessingInstructionTarget();
+                                if (c == '\u0000') {
+                                    c = '\uFFFD';
+                                }
+                                reconsume = true;
+                                state = transition(state, Tokenizer.BOGUS_COMMENT, reconsume, pos);
+                                continue stateloop;
+                        }
+                    }
+                    
+                case AFTER_PROCESSING_INSTRUCTION_TARGET:
+                    afterpitargetloop: for (;;) {
+                        if (reconsume) {
+                            reconsume = false;
+                        } else {
+                            if (++pos == endPos) {
+                                break stateloop;
+                            }
+                            c = checkChar(buf, pos);
+                        }
+                        
+
+
+                        switch (c) {
+                            case '\r':
+                                silentCarriageReturn();
+                                break stateloop;
+                            case '\n':
+                                silentLineFeed();
+                                
+                            case ' ':
+                            case '\t':
+                            case '\u000C':
+                                
+
+
+
+
+                                continue;
+                            default:
+                                
+
+
+
+                                reconsume = true;
+                                state = transition(state, Tokenizer.PROCESSING_INSTRUCTION_DATA, reconsume, pos);
+                                break afterpitargetloop;
+                        }
+                    }
+                    
+                case PROCESSING_INSTRUCTION_DATA:
+                    pidataloop: for (;;) {
+                        if (reconsume) {
+                            reconsume = false;
+                        } else {
+                            if (++pos == endPos) {
+                                break stateloop;
+                            }
+                            c = checkChar(buf, pos);
+                        }
+                        
+
+
+                        switch (c) {
+                            case '?':
+                                
+
+
+
+                                state = transition(state, Tokenizer.PROCESSING_INSTRUCTION_QUESTIONABLE, reconsume, pos);
+                                break pidataloop;
+                            case '>':
+                                
+
+
+
+
+                                emitProcessingInstruction(pos);
+                                state = transition(state, Tokenizer.DATA, reconsume, pos);
+                                if (shouldSuspend) {
+                                    break stateloop;
+                                }
+                                continue stateloop;
+                            case '\r':
+                                appendStrBufCarriageReturn();
+                                break stateloop;
+                            case '\n':
+                                appendStrBufLineFeed();
+                                continue;
+                            case '\u0000':
+                                
+
+
+
+
+
+                                c = '\uFFFD';
+                                
+                            default:
+                                
+
+
+
+
+                                appendStrBuf(c);
+                                continue;
+                        }
+                    }
+                    
+                case PROCESSING_INSTRUCTION_QUESTIONABLE:
+                    for (;;) {
+                        if (++pos == endPos) {
+                            break stateloop;
+                        }
+                        c = checkChar(buf, pos);
+                        
+
+
+                        switch (c) {
+                            case '>':
+                                
+
+
+
+
+                                emitProcessingInstruction(pos);
+                                state = transition(state, Tokenizer.DATA, reconsume, pos);
+                                if (shouldSuspend) {
+                                    break stateloop;
+                                }
+                                continue stateloop;
+                            default:
+                                
+
+
+
+
+
+                                appendStrBuf('?');
+                                reconsume = true;
+                                state = transition(state, Tokenizer.PROCESSING_INSTRUCTION_DATA, reconsume, pos);
+                                continue stateloop;
+                        }
+                    }
+                    
                 case PROCESSING_INSTRUCTION:
                     processinginstructionloop: for (;;) {
                         if (++pos == endPos) {
@@ -6665,6 +7001,21 @@ public class Tokenizer implements Locator, Locator2 {
                     
 
 
+                    break eofloop;
+                case PROCESSING_INSTRUCTION_OPEN:
+                case PROCESSING_INSTRUCTION_TARGET:
+                case AFTER_PROCESSING_INSTRUCTION_TARGET:
+                case PROCESSING_INSTRUCTION_DATA:
+                case PROCESSING_INSTRUCTION_QUESTIONABLE:
+                    
+
+
+
+                    errEofInProcessingInstruction();
+                    if (piTarget != null) {
+                        Portability.releaseString(piTarget);
+                        piTarget = null;
+                    }
                     break eofloop;
                 case BOGUS_COMMENT:
                     emitComment(0, 0);
@@ -7212,6 +7563,11 @@ public class Tokenizer implements Locator, Locator2 {
             case CDATA_RSQB_RSQB:
             case PROCESSING_INSTRUCTION:
             case PROCESSING_INSTRUCTION_QUESTION_MARK:
+            case PROCESSING_INSTRUCTION_OPEN:
+            case PROCESSING_INSTRUCTION_TARGET:
+            case AFTER_PROCESSING_INSTRUCTION_TARGET:
+            case PROCESSING_INSTRUCTION_DATA:
+            case PROCESSING_INSTRUCTION_QUESTIONABLE:
                 break;
             case CONSUME_CHARACTER_REFERENCE:
             case CONSUME_NCR:
@@ -7296,6 +7652,10 @@ public class Tokenizer implements Locator, Locator2 {
             Portability.releaseString(publicIdentifier);
             publicIdentifier = null;
         }
+        if (piTarget != null) {
+            Portability.releaseString(piTarget);
+            piTarget = null;
+        }
         tagName = null;
         nonInternedTagName.setNameForNonInterned(null
                 
@@ -7360,6 +7720,10 @@ public class Tokenizer implements Locator, Locator2 {
 
     public void resetToDataState() {
         clearStrBufAfterUse();
+        if (piTarget != null) {
+            Portability.releaseString(piTarget);
+            piTarget = null;
+        }
         charRefBufLen = 0;
         stateSave = Tokenizer.DATA;
         
@@ -7435,6 +7799,14 @@ public class Tokenizer implements Locator, Locator2 {
         } else {
             publicIdentifier = Portability.newStringFromString(other.publicIdentifier);
         }
+
+        Portability.releaseString(piTarget);
+        if (other.piTarget == null) {
+            piTarget = null;
+        } else {
+            piTarget = Portability.newStringFromString(other.piTarget);
+        }
+        processingInstructionsEnabled = other.processingInstructionsEnabled;
 
         containsHyphen = other.containsHyphen;
         if (other.tagName == null) {
@@ -7557,6 +7929,21 @@ public class Tokenizer implements Locator, Locator2 {
     }
 
     protected void errProcessingInstruction() throws SAXException {
+    }
+
+    protected void errEofInProcessingInstruction() throws SAXException {
+    }
+
+    protected void errInvalidFirstCharacterOfProcessingInstructionTarget()
+            throws SAXException {
+    }
+
+    protected void errInvalidProcessingInstructionTarget()
+            throws SAXException {
+    }
+
+    protected void errDisallowedProcessingInstructionTarget()
+            throws SAXException {
     }
 
     protected void errUnescapedAmpersandInterpretedAsCharacterReference()

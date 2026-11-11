@@ -217,6 +217,37 @@ struct opAppendComment {
   };
 };
 
+
+struct opAppendProcessingInstruction {
+  nsIContent** mParent;
+  char16_t* mBuffer;
+  int32_t mTargetLength;
+  int32_t mDataLength;
+
+  explicit opAppendProcessingInstruction(nsIContentHandle* aParent,
+                                         char16_t* aBuffer,
+                                         int32_t aTargetLength,
+                                         int32_t aDataLength)
+      : mBuffer(aBuffer),
+        mTargetLength(aTargetLength),
+        mDataLength(aDataLength) {
+    mParent = static_cast<nsIContent**>(aParent);
+  };
+};
+
+struct opAppendProcessingInstructionToDocument {
+  char16_t* mBuffer;
+  int32_t mTargetLength;
+  int32_t mDataLength;
+
+  explicit opAppendProcessingInstructionToDocument(char16_t* aBuffer,
+                                                   int32_t aTargetLength,
+                                                   int32_t aDataLength)
+      : mBuffer(aBuffer),
+        mTargetLength(aTargetLength),
+        mDataLength(aDataLength) {};
+};
+
 struct opAppendCommentToDocument {
   char16_t* mBuffer;
   int32_t mLength;
@@ -560,6 +591,7 @@ typedef mozilla::Variant<
     opCreateHTMLElement, opCreateSVGElement, opCreateMathMLElement,
     opSetFormElement, opAppendText, opFosterParentText, opAppendComment,
     opAppendCommentToDocument, opAppendDoctypeToDocument,
+    opAppendProcessingInstruction, opAppendProcessingInstructionToDocument,
     opGetDocumentFragmentForTemplate, opSetDocumentFragmentForTemplate,
     opGetShadowRootFromHost, opGetFosterParent,
     
@@ -699,6 +731,19 @@ class nsHtml5TreeOperation final {
   
   
   static nsIContent* GetFosterParentForInsertBefore(nsIContent* aTable);
+
+  static nsresult AppendProcessingInstruction(nsIContent* aParent,
+                                              const nsAString& aTarget,
+                                              const nsAString& aData,
+                                              nsHtml5DocumentBuilder* aBuilder);
+
+  static nsresult InsertProcessingInstructionBefore(
+      nsIContent* aParent, const nsAString& aTarget, const nsAString& aData,
+      nsIContent* aBefore, nsHtml5DocumentBuilder* aBuilder);
+
+  static nsresult AppendProcessingInstructionToDocument(
+      const nsAString& aTarget, const nsAString& aData,
+      nsHtml5DocumentBuilder* aBuilder);
 
   static nsIContent* GetFosterParent(nsIContent* aTable,
                                      nsIContent* aStackParent);
