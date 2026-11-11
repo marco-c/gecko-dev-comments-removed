@@ -27,10 +27,6 @@
 
 
 
-
-
-
-
 "use strict";
 
 var { AppConstants } = ChromeUtils.importESModule(
@@ -94,7 +90,6 @@ if (Cc["@mozilla.org/gio-service;1"]) {
 }
 
 ChromeUtils.defineESModuleGetters(this, {
-  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   ContextualIdentityService:
     "moz-src:///toolkit/components/contextualidentity/ContextualIdentityService.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
@@ -110,7 +105,6 @@ ChromeUtils.defineESModuleGetters(this, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
-  Region: "resource://gre/modules/Region.sys.mjs",
   SelectionChangedMenulist:
     "resource:///modules/SelectionChangedMenulist.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
@@ -313,25 +307,21 @@ const CONFIG_PANES = Object.freeze({
       "browsingProtection",
       "certificates",
     ],
-    replaces: "privacy",
   },
   dnsOverHttps: {
     parent: "privacy",
     l10nId: "preferences-doh-header2",
     groupIds: ["dnsOverHttpsAdvanced"],
-    replaces: "privacy",
   },
   etp: {
     parent: "privacy",
     l10nId: "preferences-etp-header",
     groupIds: ["etpBanner", "etpAdvanced"],
-    replaces: "privacy",
   },
   etpCustomize: {
     parent: "etp",
     l10nId: "preferences-etp-customize-header",
     groupIds: ["etpCustomize", "etpReset"],
-    replaces: "privacy",
   },
   experimental: {
     l10nId: "settings-pane-labs-header",
@@ -348,7 +338,6 @@ const CONFIG_PANES = Object.freeze({
     parent: "privacy",
     l10nId: "history-header2",
     groupIds: ["historyAdvanced"],
-    replaces: "privacy",
   },
   home: {
     l10nId: "home-section",
@@ -449,14 +438,13 @@ const CONFIG_PANES = Object.freeze({
       "securityPrivacyWarnings",
       "etpStatus",
       "ipprotection",
-      "cookiesAndSiteData2",
-      "history2",
-      "nonTechnicalPrivacy2",
+      "cookiesAndSiteData",
+      "history",
+      "nonTechnicalPrivacy",
       "dnsOverHttps",
       "connectionLink",
     ],
     module: "chrome://browser/content/preferences/config/privacy.mjs",
-    replaces: "privacy",
   },
   search: {
     l10nId: "search-section",
@@ -469,7 +457,6 @@ const CONFIG_PANES = Object.freeze({
     ],
     iconSrc: "chrome://browser/skin/preferences/category-search.svg",
     module: "chrome://browser/content/preferences/config/search.mjs",
-    replaces: "search",
   },
   sync: {
     l10nId: "account-sync-section",
@@ -485,7 +472,6 @@ const CONFIG_PANES = Object.freeze({
       "referrals",
     ],
     module: "chrome://browser/content/preferences/config/account-sync.mjs",
-    replaces: "sync",
   },
   moreFromMozilla: {
     l10nId: "more-from-moz-page-header",
@@ -525,7 +511,6 @@ const CONFIG_PANES = Object.freeze({
     parent: "privacy",
     l10nId: "ip-protection-site-rules-header-1",
     groupIds: ["vpnSiteRules"],
-    replaces: "privacy",
   },
   containers: {
     parent: srdSectionEnabled("tabsBrowsing") ? "tabsBrowsing" : "general",
@@ -592,8 +577,6 @@ function init_all() {
     document.getElementById("category-general").hidden = false;
     document.getElementById("nav-separator").hidden = true;
   }
-  register_module("paneSearch", gSearchPane);
-  register_module("panePrivacy", gPrivacyPane);
 
   
   
@@ -607,21 +590,6 @@ function init_all() {
       );
   }
 
-  
-  
-  
-  let accountsEnabled = Services.prefs.getBoolPref(
-    "identity.fxaccounts.enabled"
-  );
-  let categorySync = document.getElementById("category-sync");
-  if (redesignEnabled) {
-    categorySync.setAttribute("data-l10n-id", "pane-account-sync-title2");
-    categorySync.iconSrc = "chrome://browser/skin/fxa/avatar-empty.svg";
-    categorySync.hidden = false;
-  } else if (accountsEnabled) {
-    categorySync.hidden = false;
-    register_module("paneSync", gSyncPane);
-  }
   register_module("paneSearchResults", gSearchResultsPane);
   for (let [id, config] of Object.entries(CONFIG_PANES)) {
     if (!redesignEnabled && config.replaces) {
@@ -651,14 +619,6 @@ function init_all() {
         groupIds: ["browserIconBasic", "browserIconBonus"],
         module: "chrome://browser/content/preferences/config/browser-icon.mjs",
       });
-    }
-  } else {
-    NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
-    if (NimbusFeatures.moreFromMozilla.getVariable("enabled")) {
-      document.getElementById("category-more-from-mozilla").hidden = false;
-      gMoreFromMozillaPane.option =
-        NimbusFeatures.moreFromMozilla.getVariable("template");
-      register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
     }
   }
 
