@@ -367,6 +367,8 @@ nsresult nsXMLContentSink::OnTransformDone(Document* aSourceDocument,
     
     
     mDocument = aResultDocument;
+    
+    mLayoutStarted = false;
     aResultDocument->SetDocWriteDisabled(false);
 
     
@@ -1378,7 +1380,7 @@ nsresult nsXMLContentSink::AddAttributes(const char16_t** aAtts,
 
     
     aContent->SetAttr(nameSpaceID, localName, prefix,
-                      nsDependentString(aAtts[1]), false,
+                      nsDependentString(aAtts[1]), mightHaveAttrs,
                       IsKnownNewAttr(!mightHaveAttrs));
     aAtts += 2;
   }
