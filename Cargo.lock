@@ -39,7 +39,6 @@ dependencies = [
  "chrono",
  "context_id",
  "error-support",
- "mockall",
  "mockito",
  "once_cell",
  "parking_lot",
@@ -3392,6 +3391,7 @@ dependencies = [
  "serde",
  "static_prefs",
  "thin-vec",
+ "tracing",
  "xpcom",
 ]
 
@@ -4003,6 +4003,7 @@ dependencies = [
 name = "init_rust_components"
 version = "0.1.0"
 dependencies = [
+ "error-support",
  "nss-as",
  "uniffi",
  "viaduct",
@@ -4811,11 +4812,13 @@ name = "merino"
 version = "0.1.0"
 dependencies = [
  "error-support",
+ "parking_lot",
  "serde",
  "serde_json",
  "thiserror 2.0.12",
  "uniffi",
  "url",
+ "uuid",
  "viaduct",
 ]
 
@@ -9302,10 +9305,10 @@ dependencies = [
  "bincode",
  "bitflags 2.10.0",
  "byteorder",
- "crossbeam-channel",
  "euclid",
  "malloc_size_of_derive",
  "peek-poke",
+ "rustc-hash 2.1.1",
  "serde",
  "serde_bytes",
  "serde_derive",
