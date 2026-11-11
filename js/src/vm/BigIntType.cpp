@@ -481,49 +481,6 @@ void BigInt::inplaceMultiplyAdd(Digit factor, Digit summand) {
   internalMultiplyAdd(this, factor, summand, digitLength(), this);
 }
 
-
-
-
-
-void BigInt::multiplyAccumulate(const BigInt* multiplicand, Digit multiplier,
-                                BigInt* accumulator,
-                                unsigned accumulatorIndex) {
-  MOZ_ASSERT(accumulator->digitLength() >
-             multiplicand->digitLength() + accumulatorIndex);
-  if (!multiplier) {
-    return;
-  }
-
-  auto multiplicandDigits = multiplicand->digits();
-  auto accumulatorDigits = accumulator->digits();
-
-  Digit carry = 0;
-  Digit high = 0;
-  for (unsigned i = 0; i < multiplicandDigits.size(); i++, accumulatorIndex++) {
-    
-    Digit acc =
-        digitAdd3(accumulatorDigits[accumulatorIndex], high, carry, &carry);
-
-    
-    Digit multiplicandDigit = multiplicandDigits[i];
-    Digit low = digitMul(multiplier, multiplicandDigit, &high);
-    Digit lowCarry;
-    acc = digitAdd(acc, low, &lowCarry);
-    carry += lowCarry;
-
-    
-    accumulatorDigits[accumulatorIndex] = acc;
-  }
-
-  while (carry || high) {
-    MOZ_ASSERT(accumulatorIndex < accumulatorDigits.size());
-    accumulatorDigits[accumulatorIndex] =
-        digitAdd3(accumulatorDigits[accumulatorIndex], high, carry, &carry);
-    high = 0;
-    accumulatorIndex++;
-  }
-}
-
 inline int8_t BigInt::absoluteCompare(ConstDigits x, ConstDigits y) {
   MOZ_RELEASE_ASSERT(x.size() == y.size());
   int i = x.size() - 1;
@@ -890,15 +847,40 @@ BigInt::Digit BigInt::digitDivByMultiplication(Digit high, Digit low,
   return q1;
 }
 
-void BigInt::multiplyDigits(ConstDigits multiplicand, Digit multiplier,
-                            Digits product) {
-  MOZ_RELEASE_ASSERT(product.size() == multiplicand.size() + 1);
-
+BigInt::Digit BigInt::multiplyDigits(ConstDigits src, Digit multiplier,
+                                     Digits dest) {
+  dest = dest.First(src.size());
   Digit carry = 0;
-  for (size_t i = 0; i < multiplicand.size(); i++) {
-    product[i] = digitMulAdd(multiplicand[i], multiplier, carry, 0, &carry);
+  for (size_t i = 0; i < src.size(); i++) {
+    dest[i] = digitMulAdd(src[i], multiplier, 0, carry, &carry);
   }
-  product[multiplicand.size()] = carry;
+  return carry;
+}
+
+BigInt::Digit BigInt::multiplyAccumulateDigits(ConstDigits src,
+                                               Digit multiplier, Digits acc) {
+  acc = acc.First(src.size());
+  Digit carry = 0;
+  for (size_t i = 0; i < src.size(); i++) {
+    acc[i] = digitMulAdd(src[i], multiplier, acc[i], carry, &carry);
+  }
+  return carry;
+}
+
+void BigInt::schoolbookMultiplyDigits(ConstDigits a, ConstDigits b,
+                                      Digits result) {
+  
+  
+  if (a.size() < b.size()) {
+    std::swap(b, a);
+  }
+  MOZ_RELEASE_ASSERT(!b.empty());
+  MOZ_RELEASE_ASSERT(result.size() == a.size() + b.size());
+  result[a.size()] = multiplyDigits(a, b[0], result);
+  for (size_t i = 1; i < b.size(); i++) {
+    result[i + a.size()] =
+        b[i] ? multiplyAccumulateDigits(a, b[i], result.From(i)) : 0;
+  }
 }
 
 
@@ -996,7 +978,7 @@ void BigInt::divideDigitsInPlace(Digits u, ConstDigits v, Digits q,
     
     
     
-    multiplyDigits(v, qhat, qhatv);
+    qhatv[n] = multiplyDigits(v, qhat, qhatv);
     Digit c = inplaceSubDigits(uj, qhatv);
     if (c) {
       c = inplaceAddDigits(uj, v);
@@ -2087,27 +2069,13 @@ BigInt* BigInt::mul(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     }
   }
 
-  unsigned resultLength = x->digitLength() + y->digitLength();
+  size_t resultLength = x->digitLength() + y->digitLength();
   BigInt* result = createUninitialized(cx, resultLength, resultNegative);
   if (!result) {
     return nullptr;
   }
-  result->initializeDigitsToZero();
-
-  
-  BigInt* left = x;
-  BigInt* right = y;
-  if (left->digitLength() < right->digitLength()) {
-    std::swap(left, right);
-  }
-
-  {
-    auto rightDigits = right->digits();
-    for (size_t i = 0; i < rightDigits.size(); i++) {
-      multiplyAccumulate(left, rightDigits[i], result, i);
-    }
-  }
-
+  schoolbookMultiplyDigits(x->unguardedDigits(), y->unguardedDigits(),
+                           result->unguardedDigits());
   return destructivelyTrimHighZeroDigits(cx, result);
 }
 
@@ -2195,6 +2163,28 @@ BigInt* BigInt::mod(JSContext* cx, HandleBigInt x, HandleBigInt y) {
 
     return createFromDigit(cx, remainderDigit, x->isNegative());
   } else {
+    uint32_t k;
+    Digit c;
+    if (shouldModuloByCrandallReduction(y, &k, &c)) {
+      RootedBigInt result(cx, modCrandall(cx, x, k, c));
+#ifdef DEBUG
+      if (result) {
+        RootedBigInt expected(cx);
+        if (absoluteDivWithBigIntDivisor(cx, x, y, Nothing(), Some(&expected),
+                                         x->isNegative()) &&
+            (expected = destructivelyTrimHighZeroDigits(cx, expected))) {
+          MOZ_ASSERT(equal(result, expected));
+        } else {
+          
+          
+          
+          cx->clearPendingException();
+        }
+      }
+#endif
+      return result;
+    }
+
     RootedBigInt remainder(cx);
     if (!absoluteDivWithBigIntDivisor(cx, x, y, Nothing(), Some(&remainder),
                                       x->isNegative())) {
@@ -2203,6 +2193,146 @@ BigInt* BigInt::mod(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     MOZ_ASSERT(remainder);
     return destructivelyTrimHighZeroDigits(cx, remainder);
   }
+}
+
+bool BigInt::shouldModuloByCrandallReduction(const BigInt* m, uint32_t* k,
+                                             Digit* c) {
+  
+  
+  auto mDigits = m->digits();
+  size_t n = mDigits.size();
+  if (n < 2) {
+    return false;
+  }
+
+  
+  Digit top = mDigits[n - 1];
+  if (top & (top + 1)) {
+    return false;
+  }
+
+  
+  for (size_t i = 1; i < n - 1; i++) {
+    if (mDigits[i] != Digit(-1)) {
+      return false;
+    }
+  }
+
+  
+  if (!mDigits[0]) {
+    return false;
+  }
+
+  unsigned topBits = DigitBits - std::countl_zero(top);
+  Digit cValue = -mDigits[0];
+  uint32_t kValue = (n - 1) * DigitBits + topBits;
+
+  
+  
+  unsigned cBits = DigitBits - std::countl_zero(cValue);
+  if (2 * cBits > kValue) {
+    return false;
+  }
+
+  *k = kValue;
+  *c = cValue;
+  return true;
+}
+
+
+
+
+void BigInt::modDigitsInPlaceByCrandallReduction(Digits r, uint32_t k,
+                                                 Digit c) {
+  
+  
+  
+  
+  const size_t kLowDigitCount = k / DigitBits;
+  const unsigned kHighDigitBits = k % DigitBits;
+  const Digit kHighDigitMask = (Digit(1) << kHighDigitBits) - 1;
+  MOZ_RELEASE_ASSERT(kLowDigitCount > 0);
+  
+  
+  MOZ_RELEASE_ASSERT(r.size() >= kLowDigitCount);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  for (size_t j = r.size(); j-- > kLowDigitCount;) {
+    const unsigned shift = j == kLowDigitCount ? kHighDigitBits : 0;
+    while (Digit d = r[j] >> shift) {
+      r[j] &= (Digit(1) << shift) - 1;
+      const size_t s = j * DigitBits + shift - k;
+      const unsigned sb = s % DigitBits;
+      
+      Digit high;
+      Digit low = digitMul(d, c, &high);
+      
+      Digit t0 = low << sb;
+      Digit t1 = sb ? (high << sb) | (low >> (DigitBits - sb)) : high;
+      Digit t2 = sb ? high >> (DigitBits - sb) : 0;
+      size_t i = s / DigitBits;
+      
+      Digit carry;
+      r[i] = digitAdd(r[i], t0, &carry);
+      i++;
+      r[i] = digitAdd3(r[i], t1, carry, &carry);
+      i++;
+      if (i < r.size()) {
+        r[i] = digitAdd3(r[i], t2, carry, &carry);
+        for (i++; carry; i++) {
+          r[i] = digitAdd(r[i], carry, &carry);
+        }
+      } else {
+        MOZ_ASSERT(!t2 && !carry);
+      }
+    }
+  }
+
+  
+  
+  Digit carry = c;
+  for (size_t i = 0; carry && i < kLowDigitCount; i++) {
+    r[i] = digitAdd(r[i], carry, &carry);
+  }
+  if (kLowDigitCount < r.size()) {
+    Digit top = r[kLowDigitCount] + carry;
+    r[kLowDigitCount] = top & kHighDigitMask;
+    carry = top >> kHighDigitBits;
+  }
+  if (carry) {
+    return;
+  }
+  Digit borrow = c;
+  for (size_t i = 0; borrow; i++) {
+    r[i] = digitSub(r[i], borrow, &borrow);
+  }
+}
+
+BigInt* BigInt::modCrandall(JSContext* cx, HandleBigInt x, uint32_t k,
+                            Digit c) {
+  if (x->digitLength() * DigitBits < k) {
+    return x;
+  }
+  RootedBigInt r(cx, copy(cx, x));
+  if (!r) {
+    return nullptr;
+  }
+  modDigitsInPlaceByCrandallReduction(r->unguardedDigits(), k, c);
+  return destructivelyTrimHighZeroDigits(cx, r);
 }
 
 bool BigInt::divmod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y,
