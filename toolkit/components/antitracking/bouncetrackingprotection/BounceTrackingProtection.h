@@ -101,8 +101,7 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection,
   
   
   
-  
-  void MaybeLogPurgedWarningForSite(nsIPrincipal* aPrincipal,
+  void MaybeLogPurgedWarningForSite(const BounceTrackingSite& aSite,
                                     BounceTrackingState* aBounceTrackingState);
 
  private:

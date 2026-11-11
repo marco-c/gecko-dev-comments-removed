@@ -103,9 +103,6 @@ class BounceTrackingState : public nsIWebProgressListener,
                                uint64_t aLoadId);
 
   
-  static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
-
-  
   
   
   

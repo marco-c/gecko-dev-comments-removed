@@ -218,9 +218,8 @@ nsresult BounceTrackingState::Init(
   
   
   
-  mOriginAttributes =
-      BounceTrackingProtectionStorage::NormalizeOriginAttributes(
-          browsingContext->OriginAttributesRef());
+  mOriginAttributes = BounceTrackingSite::NormalizeOriginAttributes(
+      browsingContext->OriginAttributesRef());
 
   
   
@@ -280,8 +279,7 @@ void BounceTrackingState::Reset(const OriginAttributes* aOriginAttributes,
   Maybe<OriginAttributes> originAttributes;
   if (aOriginAttributes) {
     originAttributes.emplace(
-        BounceTrackingProtectionStorage::NormalizeOriginAttributes(
-            *aOriginAttributes));
+        BounceTrackingSite::NormalizeOriginAttributes(*aOriginAttributes));
   }
   auto matches = [&](const OriginAttributes& aCandidate) {
     if (originAttributes) {
@@ -344,23 +342,6 @@ bool BounceTrackingState::ShouldCreateBounceTrackingStateForWebProgress(
 }
 
 
-bool BounceTrackingState::ShouldTrackPrincipal(nsIPrincipal* aPrincipal) {
-  MOZ_ASSERT(aPrincipal);
-
-  
-  if (!aPrincipal->GetIsContentPrincipal()) {
-    return false;
-  }
-
-  
-  if (!net::SchemeIsHttpOrHttps(aPrincipal)) {
-    return false;
-  }
-
-  return true;
-}
-
-
 nsresult BounceTrackingState::HasBounceTrackingStateForSite(
     const BounceTrackingSite& aSite, bool& aResult) {
   aResult = false;
@@ -416,7 +397,7 @@ nsresult BounceTrackingState::HasBounceTrackingStateForSite(
     
     
     MOZ_ASSERT(
-        !ShouldTrackPrincipal(principal) ||
+        !BounceTrackingSite::ShouldTrackPrincipal(principal) ||
             principal->OriginAttributesRef().EqualsIgnoringFPD(
                 state->mOriginAttributes),
         "BTP: active-site purge guard sees a live document whose container "
@@ -539,7 +520,7 @@ nsresult BounceTrackingState::OnDocumentStartRequest(nsIChannel* aChannel) {
 
   
   OriginAttributes loadOriginAttributes =
-      BounceTrackingProtectionStorage::NormalizeOriginAttributes(
+      BounceTrackingSite::NormalizeOriginAttributes(
           loadInfo->GetOriginAttributes());
   if (loadOriginAttributes != mOriginAttributes) {
     mRetargetedOriginAttributes = Some(loadOriginAttributes);
@@ -607,7 +588,8 @@ BounceTrackingState::OnStateChange(nsIWebProgress* aWebProgress,
   
   
   MOZ_ASSERT(
-      !documentPrincipal || !ShouldTrackPrincipal(documentPrincipal) ||
+      !documentPrincipal ||
+          !BounceTrackingSite::ShouldTrackPrincipal(documentPrincipal) ||
           documentPrincipal->OriginAttributesRef().EqualsIgnoringFPD(
               mOriginAttributes),
       "BTP: committed document OriginAttributes (userContextId/PBM) diverged "
@@ -987,15 +969,14 @@ nsresult BounceTrackingState::OnDocumentLoaded(
                 "{}: origin: {}, this: {}", __FUNCTION__, origin, *this);
   }
 
-  bool shouldTrackPrincipal =
-      BounceTrackingState::ShouldTrackPrincipal(aDocumentPrincipal);
+  BounceTrackingSite finalSite =
+      MOZ_TRY(BounceTrackingSite::FromPrincipal(aDocumentPrincipal));
 
   
   
   
-  if (shouldTrackPrincipal) {
-    mBounceTrackingProtection->MaybeLogPurgedWarningForSite(aDocumentPrincipal,
-                                                            this);
+  if (!finalSite.IsNull()) {
+    mBounceTrackingProtection->MaybeLogPurgedWarningForSite(finalSite, this);
   }
 
   
@@ -1004,9 +985,6 @@ nsresult BounceTrackingState::OnDocumentLoaded(
   if (NS_WARN_IF(!mBounceTrackingRecord)) {
     return NS_ERROR_FAILURE;
   }
-
-  BounceTrackingSite finalSite =
-      MOZ_TRY(BounceTrackingSite::FromPrincipal(aDocumentPrincipal));
 
   
   

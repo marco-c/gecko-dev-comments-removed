@@ -48,11 +48,6 @@ class BounceTrackingProtectionStorage final : public nsIObserver,
   [[nodiscard]] nsresult Init();
 
   
-  
-  static OriginAttributes NormalizeOriginAttributes(
-      const OriginAttributes& aOriginAttributes);
-
-  
   RefPtr<BounceTrackingStateGlobal> GetStateGlobal(
       const OriginAttributes& aOriginAttributes);
 

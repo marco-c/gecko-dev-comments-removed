@@ -43,6 +43,20 @@ class BounceTrackingSite final {
   static BounceTrackingSite FromSiteHost(
       const nsACString& aSiteHost, const OriginAttributes& aOriginAttributes);
 
+  
+  
+  static OriginAttributes NormalizeOriginAttributes(
+      const OriginAttributes& aOriginAttributes) {
+    OriginAttributes oa = aOriginAttributes;
+    oa.StripAttributes(OriginAttributes::STRIP_FIRST_PARTY_DOMAIN |
+                       OriginAttributes::STRIP_PARTITION_KEY);
+    return oa;
+  }
+
+  
+  
+  static bool ShouldTrackPrincipal(nsIPrincipal* aPrincipal);
+
   bool IsNull() const { return mSiteHost.IsEmpty(); }
 
   
