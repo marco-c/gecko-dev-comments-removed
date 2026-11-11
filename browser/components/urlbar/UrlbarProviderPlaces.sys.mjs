@@ -769,8 +769,9 @@ class Search {
   }, /** @type {Record<Values<typeof MATCH_TYPE>, number>} */ ({}));
 
   /**
+   * The default behaviour for this search. This may be a mixture of behaviors.
+   *
    * @type {number}
-   *   The default behaviour for this search. This may be a mixture of behaviors.
    */
   #behavior;
   #matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_BOUNDARY;
@@ -792,8 +793,9 @@ class Search {
   #heuristicToken;
   #inPrivateWindow;
   /**
+   * Used to interrupt running queries.
+   *
    * @type {?() => void}
-   *   Used to interrupt running queries.
    */
   #interrupt;
   #leadingRestrictionToken;
@@ -897,14 +899,14 @@ class Search {
       this.#searchTokens.map(t => t.value).join(" ")
     );
 
-    // We ignore termsParameterName when checking for a subset because we
-    // already checked that the typed query is a subset of the search history
-    // query above with this.#searchTokens.every(...).
+    // We ignore termsParameterName and partnerCodeParameterName when checking
+    // for a subset because we already checked that the typed query is a subset
+    // of the search history query above with this.#searchTokens.every(...).
     if (
       !lazy.UrlbarSearchUtils.serpsAreEquivalent(
         historyUrl,
         generatedSuggestionUrl,
-        [parseResult.termsParameterName]
+        [parseResult.termsParameterName, parseResult.partnerCodeParameterName]
       )
     ) {
       return false;
@@ -1595,6 +1597,11 @@ export class UrlbarProviderPlaces extends UrlbarProvider {
     search.notifyResult(false);
   }
 
+  /**
+   * @param {UrlbarQueryContext} queryContext
+   * @param {UrlbarParentController} controller
+   * @param {object} details
+   */
   onEngagement(queryContext, controller, details) {
     let { result } = details;
     if (details.selType == "dismiss") {
