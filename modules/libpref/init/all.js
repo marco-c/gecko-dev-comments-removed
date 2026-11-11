@@ -3631,6 +3631,7 @@ pref("browser.ai.control.linkPreviewKeyPoints", "default");
 pref("browser.ai.control.sidebarChatbot", "default");
 pref("browser.ai.control.smartWindow", "default");
 pref("browser.ai.control.speechRecognition", "default");
+pref("browser.ai.control.generatedWidgets", "default");
 
 
 pref("browser.ml.enable", true);
@@ -4157,6 +4158,9 @@ pref("extensions.formautofill.creditCards.storage.rust.migrationAttempts", 0);
 pref("extensions.formautofill.creditCards.supported", "on");
 pref("extensions.formautofill.creditCards.enabled", true);
 pref("extensions.formautofill.creditCards.ignoreAutocompleteOff", true);
+
+
+
 
 
 
