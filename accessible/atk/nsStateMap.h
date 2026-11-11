@@ -40,7 +40,6 @@
 
 
 
-
 enum EStateMapEntryType {
   kMapDirectly,
   kMapOpposite,    
@@ -66,7 +65,7 @@ static const AtkStateMap
   { ATK_STATE_PRESSED,                        kMapDirectly },   
   { ATK_STATE_CHECKED,                        kMapDirectly },   
   { ATK_STATE_INDETERMINATE,                  kMapDirectly },   
-  { kNone,                                    kMapDirectly },   
+  { ATK_STATE_READ_ONLY,                      kMapDirectly },   
   { kNone,                                    kMapDirectly },   
   { ATK_STATE_DEFAULT,                        kMapDirectly },   
   { ATK_STATE_EXPANDED,                       kMapDirectly },   

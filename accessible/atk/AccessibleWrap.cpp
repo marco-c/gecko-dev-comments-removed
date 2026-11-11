@@ -752,10 +752,18 @@ gint getIndexInParentCB(AtkObject* aAtkObj) {
 static void TranslateStates(uint64_t aState, roles::Role aRole,
                             AtkStateSet* aStateSet) {
   
-  
-  
-  if ((aState & states::READONLY) && aRole != roles::LISTITEM) {
-    aState &= ~states::EDITABLE;
+  if ((aState & states::READONLY)) {
+    
+    if (aRole != roles::LISTITEM) {
+      
+      
+      aState &= ~states::EDITABLE;
+    } else {
+      aState &= ~states::READONLY;
+    }
+
+    
+    aState &= ~states::CHECKABLE;
   }
 
   
