@@ -34,6 +34,7 @@ public abstract class RuntimeSettings implements Parcelable {
     private final Settings mSettings;
 
     
+    @SuppressWarnings("this-escape")
     public Builder() {
       mSettings = newSettings(null);
     }
@@ -242,6 +243,7 @@ public abstract class RuntimeSettings implements Parcelable {
 
 
 
+  @SuppressWarnings("this-escape")
   protected RuntimeSettings(final @Nullable RuntimeSettings parent) {
     mPrefs = new ArrayList<Pref<?>>();
     mChildren = new ArrayList<RuntimeSettings>();

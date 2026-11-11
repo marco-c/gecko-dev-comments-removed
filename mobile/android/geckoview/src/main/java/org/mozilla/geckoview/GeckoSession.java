@@ -332,6 +332,11 @@ public class GeckoSession {
     }
 
     @WrapForJNI(calledFrom = "ui")
+    private GeckoSession getSession() {
+      return GeckoSession.this;
+    }
+
+    @WrapForJNI(calledFrom = "ui")
     private void onCompositorAttached() {
       GeckoSession.this.onCompositorAttached();
     }
@@ -416,12 +421,8 @@ public class GeckoSession {
     
     
     @WrapForJNI(calledFrom = "ui")
-    private void notifyCompositorScrollUpdate(
-        final float scrollX,
-        final float scrollY,
-        final float zoom,
-        final @ScrollPositionUpdate.SourceType int source) {
-      GeckoSession.this.onCompositorScrollUpdate(scrollX, scrollY, zoom, source);
+    private void notifyCompositorScrollUpdate(final ScrollPositionUpdate update) {
+      GeckoSession.this.onCompositorScrollUpdate(update);
     }
 
     @WrapForJNI(calledFrom = "ui")
@@ -1788,6 +1789,7 @@ public class GeckoSession {
 
 
 
+  @SuppressWarnings("this-escape")
   public GeckoSession(final @Nullable GeckoSessionSettings settings) {
     mSettings = new GeckoSessionSettings(settings, this);
     mListener.registerListeners();
@@ -4737,7 +4739,7 @@ public class GeckoSession {
 
     @UiThread
     default @Nullable GeckoResult<AllowOrDeny> onShowClipboardPermissionRequest(
-        @NonNull final GeckoSession session, @NonNull ClipboardPermission permission) {
+        @NonNull final GeckoSession session, @NonNull final ClipboardPermission permission) {
       return GeckoResult.deny();
     }
 
@@ -4807,10 +4809,10 @@ public class GeckoSession {
 
     @UiThread
     default void onLocationChange(
-        @NonNull GeckoSession session,
-        @Nullable String url,
+        @NonNull final GeckoSession session,
+        @Nullable final String url,
         final @NonNull List<PermissionDelegate.ContentPermission> perms,
-        @NonNull Boolean hasUserGesture) {}
+        @NonNull final Boolean hasUserGesture) {}
 
     
 
@@ -5083,7 +5085,7 @@ public class GeckoSession {
 
 
         @AnyThread
-        default void onPromptCompleted(@NonNull BasePrompt prompt) {}
+        default void onPromptCompleted(@NonNull final BasePrompt prompt) {}
       }
 
       private void complete() {
@@ -7100,6 +7102,7 @@ public class GeckoSession {
 
 
 
+    @WrapForJNI
     public ScrollPositionUpdate(
         final float scrollX, final float scrollY, final float zoom, final @SourceType int source) {
       this.scrollX = scrollX;
@@ -7694,7 +7697,7 @@ public class GeckoSession {
 
     @UiThread
     default @Nullable GeckoResult<Integer> onContentPermissionRequest(
-        @NonNull final GeckoSession session, @NonNull ContentPermission perm) {
+        @NonNull final GeckoSession session, @NonNull final ContentPermission perm) {
       return GeckoResult.fromValue(ContentPermission.VALUE_PROMPT);
     }
 
@@ -8214,22 +8217,17 @@ public class GeckoSession {
     mOverscroll.setDistance(y, OverscrollEdgeEffect.AXIS_Y);
   }
 
-   void onCompositorScrollUpdate(
-      final float scrollX,
-      final float scrollY,
-      final float zoom,
-      final @ScrollPositionUpdate.SourceType int source) {
+   void onCompositorScrollUpdate(final ScrollPositionUpdate update) {
     if (DEBUG) {
       ThreadUtils.assertOnUiThread();
     }
 
     
     
-    mViewportLeft = scrollX * zoom;
-    mViewportTop = scrollY * zoom;
-    mViewportZoom = zoom;
+    mViewportLeft = update.scrollX * update.zoom;
+    mViewportTop = update.scrollY * update.zoom;
+    mViewportZoom = update.zoom;
 
-    final ScrollPositionUpdate update = new ScrollPositionUpdate(scrollX, scrollY, zoom, source);
     mLastScrollPositionUpdate = update;
     if (mCompositorScrollDelegate != null) {
       mCompositorScrollDelegate.onScrollChanged(this, update);

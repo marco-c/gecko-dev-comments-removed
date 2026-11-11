@@ -298,6 +298,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
 
 
+  @SuppressWarnings("this-escape")
   public GeckoView(final Context context) {
     super(context);
     init();
@@ -309,6 +310,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
 
 
 
+  @SuppressWarnings("this-escape")
   public GeckoView(final Context context, final AttributeSet attrs) {
     super(context, attrs);
     init();
