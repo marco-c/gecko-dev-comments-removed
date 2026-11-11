@@ -5,21 +5,38 @@
 
 
 async function before({ pushPrefs }) {
-  await pushPrefs([
-    "browser.newtabpage.activity-stream.discoverystream.config",
-    JSON.stringify({
-      collapsible: true,
-      enabled: true,
-    }),
-  ]);
+  await pushPrefs(
+    ["browser.newtabpage.activity-stream.feeds.discoverystreamfeed", true],
+    [
+      "browser.newtabpage.activity-stream.discoverystream.config",
+      JSON.stringify({
+        collapsible: true,
+        enabled: true,
+      }),
+    ]
+  );
+  
+  
+  
+  return {
+    novaEnabled: Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
+    ),
+  };
 }
 
 test_newtab({
   before,
-  test: async function test_render_hardcoded_topsites() {
+  test: async function test_render_hardcoded_topsites({ novaEnabled }) {
+    
+    
+    const selector = novaEnabled
+      ? "section[data-section-id='topsites']"
+      : ".ds-top-sites";
     const topSites = await ContentTaskUtils.waitForCondition(() =>
-      content.document.querySelector(".ds-top-sites")
+      content.document.querySelector(selector)
     );
-    ok(topSites, "Got the discovery stream top sites section");
+    ok(topSites, "Got the top sites section");
   },
 });

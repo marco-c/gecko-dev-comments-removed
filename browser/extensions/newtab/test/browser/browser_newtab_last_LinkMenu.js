@@ -12,6 +12,7 @@ async function setupPrefs() {
   await setDefaultTopSites();
   await SpecialPowers.pushPrefEnv({
     set: [
+      ["browser.newtabpage.activity-stream.feeds.discoverystreamfeed", true],
       [
         "browser.newtabpage.activity-stream.discoverystream.config",
         JSON.stringify({
@@ -42,24 +43,16 @@ let initialWidth;
 
 
 async function setSize(width, height) {
-  const dpr = window.devicePixelRatio;
-  const contentRect = gBrowser.selectedBrowser.getBoundingClientRect();
-  initialWidth ??= contentRect.width;
-  initialHeight ??= contentRect.height;
-  const deviceWidth = Math.round(width * dpr);
-  const deviceHeight = Math.round(height * dpr);
-  
-  
-  if (
-    Math.round(contentRect.width * dpr) === deviceWidth &&
-    Math.round(contentRect.height * dpr) === deviceHeight
-  ) {
+  initialWidth ??= window.innerWidth;
+  initialHeight ??= window.innerHeight;
+  if (window.innerWidth === width && window.innerHeight === height) {
     return;
   }
   let resizePromise = BrowserTestUtils.waitForEvent(window, "resize", false);
-  window.docShell.treeOwner
-    .QueryInterface(Ci.nsIDocShellTreeOwner)
-    .setPrimaryContentSize(deviceWidth, deviceHeight);
+  window.resizeTo(
+    width + window.outerWidth - window.innerWidth,
+    height + window.outerHeight - window.innerHeight
+  );
   await resizePromise;
 }
 

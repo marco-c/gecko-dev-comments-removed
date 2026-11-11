@@ -315,6 +315,9 @@ export const INITIAL_STATE = {
     initialized: false,
     results: [],
   },
+  // Framed widget documents from the Merino framed widgets manifest, keyed by
+  // widget id: { url, status }. See resolveWidgetFrame.
+  FramedWidgets: {},
 };
 
 function App(prevState = INITIAL_STATE.App, action) {
@@ -815,12 +818,13 @@ function DiscoveryStream(prevState = INITIAL_STATE.DiscoveryStream, action) {
       ...prevState.feeds,
       data: Object.keys(prevState.feeds.data).reduce(
         (accumulator, feed_url) => {
+          const feedData = prevState.feeds.data[feed_url].data;
           accumulator[feed_url] = {
             data: {
-              ...prevState.feeds.data[feed_url].data,
-              recommendations: handleSites(
-                prevState.feeds.data[feed_url].data.recommendations
-              ),
+              ...feedData,
+              recommendations: Array.isArray(feedData.recommendations)
+                ? handleSites(feedData.recommendations)
+                : feedData.recommendations,
             },
           };
           return accumulator;
@@ -1303,6 +1307,20 @@ function RecentSearches(prevState = INITIAL_STATE.RecentSearches, action) {
   }
 }
 
+function FramedWidgets(prevState = INITIAL_STATE.FramedWidgets, action) {
+  switch (action.type) {
+    case at.FRAMED_WIDGETS_UPDATE:
+      return action.data;
+    // Dispatched in content when a widget's document fails to load. The
+    // marker hides the widget in that tab, even with a trainhop URL override,
+    // until the next manifest update replaces the state.
+    case at.FRAMED_WIDGET_UNAVAILABLE:
+      return { ...prevState, [action.data.id]: { unavailable: true } };
+    default:
+      return prevState;
+  }
+}
+
 function Travel(prevState = INITIAL_STATE.Travel, action) {
   switch (action.type) {
     case at.WIDGETS_TRAVEL_UPDATE:
@@ -1520,4 +1538,5 @@ export const reducers = {
   PictureOfTheDay,
   RecentSearches,
   Travel,
+  FramedWidgets,
 };
