@@ -28,6 +28,7 @@
 #include "vm/SharedStencil.h"  
 #include "vm/StringType.h"     
 #include "wasm/WasmJS.h"       
+#include "wasm/WasmModule.h"   
 
 #include "gc/GCContext-inl.h"
 #include "gc/StableCellHasher-inl.h"
@@ -177,9 +178,44 @@ ModuleObject* ResolvedBindingObject::module() const {
   return &value.toObject().as<ModuleObject>();
 }
 
+BindingNameType ResolvedBindingObject::bindingNameType() const {
+  Value value = getReservedSlotTyped(BINDING_NAME_SLOT);
+  if (value.isString()) {
+    return BindingNameType::String;
+  }
+  return static_cast<BindingNameType>(value.toInt32());
+}
+
+bool ResolvedBindingObject::isNamespace() const {
+  return bindingNameType() != BindingNameType::String;
+}
+
 JSAtom* ResolvedBindingObject::bindingName() const {
   Value value = getReservedSlotTyped(BINDING_NAME_SLOT);
-  return &value.toString()->asAtom();
+  if (value.isString()) {
+    return &value.toString()->asAtom();
+  }
+
+  
+  
+  JSAtomState* names = runtimeFromMainThread()->commonNames;
+  return namespacePhase() == ImportPhase::Deferred
+             ? names->star_deferred_namespace_star_
+             : names->star_namespace_star_;
+}
+
+ImportPhase ResolvedBindingObject::namespacePhase() const {
+  MOZ_ASSERT(isNamespace());
+  return bindingNameType() == BindingNameType::DeferredNamespace
+             ? ImportPhase::Deferred
+             : ImportPhase::Evaluation;
+}
+
+bool ResolvedBindingObject::isSameBinding(
+    const ResolvedBindingObject* other) const {
+  return module() == other->module() &&
+         getReservedSlotTyped(BINDING_NAME_SLOT) ==
+             other->getReservedSlotTyped(BINDING_NAME_SLOT);
 }
 
 
@@ -198,6 +234,25 @@ ResolvedBindingObject* ResolvedBindingObject::create(
 
   self->initReservedSlotTyped(MODULE_SLOT, ObjectValue(*module));
   self->initReservedSlotTyped(BINDING_NAME_SLOT, StringValue(bindingName));
+  return self;
+}
+
+
+ResolvedBindingObject* ResolvedBindingObject::createNamespace(
+    JSContext* cx, Handle<ModuleObject*> module, ImportPhase phase) {
+  MOZ_ASSERT(phase == ImportPhase::Evaluation ||
+             phase == ImportPhase::Deferred);
+  ResolvedBindingObject* self =
+      NewObjectWithGivenProto<ResolvedBindingObject>(cx, nullptr);
+  if (!self) {
+    return nullptr;
+  }
+
+  BindingNameType type = phase == ImportPhase::Deferred
+                             ? BindingNameType::DeferredNamespace
+                             : BindingNameType::Namespace;
+  self->initReservedSlotTyped(MODULE_SLOT, ObjectValue(*module));
+  self->initReservedSlotTyped(BINDING_NAME_SLOT, Int32Value(int32_t(type)));
   return self;
 }
 
@@ -517,7 +572,7 @@ bool ModuleNamespaceObject::addBinding(JSContext* cx,
 
 constexpr char ModuleNamespaceObject::ProxyHandler::family = 0;
 
-static void ReportUninitializedModuleBinding(JSContext* cx, HandleId id) {
+void js::ReportUninitializedModuleBinding(JSContext* cx, HandleId id) {
   
   
   if (UniqueChars printable =
@@ -1308,6 +1363,25 @@ JSObject* ModuleObject::moduleSource() const {
   return &value.toObject();
 }
 
+bool ModuleObject::isWasmModule() const {
+  JSObject* source = moduleSource();
+  return source && source->is<WasmModuleObject>();
+}
+
+#ifdef NIGHTLY_BUILD
+JSObject* ModuleObject::wasmInstance() const {
+  Value value = getReservedSlotTyped(WASM_INSTANCE_SLOT);
+  if (value.isUndefined()) {
+    return nullptr;
+  }
+  return &value.toObject();
+}
+
+void ModuleObject::setWasmInstance(JSObject* instance) {
+  setReservedSlotTyped(WASM_INSTANCE_SLOT, ObjectValue(*instance));
+}
+#endif
+
 void ModuleObject::initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                                   Handle<ListObject*> asyncParentModules) {
   cyclicModuleFields()->hasTopLevelAwait = hasTopLevelAwait;
@@ -1400,9 +1474,11 @@ const char* ModuleObject::filename() const {
   }
   ScriptSourceObject* sso = cyclicModuleFields()->scriptSourceObject;
   if (!sso->hasSource()) {
-    
-    
-    return "(unknown)";
+    MOZ_ASSERT(isWasmModule());
+    const wasm::Module& module =
+        moduleSource()->as<WasmModuleObject>().module();
+    const char* source = module.codeMeta().scriptedCaller().source.get();
+    return source ? source : "(unknown)";
   }
   return sso->source()->filename();
 }
@@ -1682,6 +1758,11 @@ bool ModuleObject::execute(JSContext* cx, Handle<ModuleObject*> self) {
     return false;
   }
 #endif
+#ifdef NIGHTLY_BUILD
+  if (self->isWasmModule()) {
+    return WasmModuleExecute(cx, self);
+  }
+#endif
 
   RootedScript script(cx, self->script());
 
@@ -1787,13 +1868,37 @@ bool ModuleObject::createSyntheticEnvironment(JSContext* cx,
 }
 
 
+void ModuleObject::initWasmExportBindings(JSContext* cx,
+                                          Handle<ModuleObject*> self,
+                                          JS::HandleVector<Value> values) {
+  Rooted<ModuleEnvironmentObject*> env(cx, &self->initialEnvironment());
+
+  
+  MOZ_ASSERT(env->slotSpan() ==
+             env->firstSyntheticValueSlot() + values.length());
+
+  for (uint32_t i = 0; i < values.length(); i++) {
+    env->setAliasedBinding(env->firstSyntheticValueSlot() + i, values[i]);
+  }
+}
+
+
 bool ModuleObject::createWasmEnvironment(JSContext* cx,
-                                         Handle<ModuleObject*> self) {
+                                         Handle<ModuleObject*> self,
+                                         Handle<ExportNameVector> exportNames) {
   Rooted<ModuleEnvironmentObject*> env(
-      cx, ModuleEnvironmentObject::createForWasmModule(cx, self));
+      cx, ModuleEnvironmentObject::createForWasmModule(cx, self, exportNames));
   if (!env) {
     return false;
   }
+
+  
+  
+  for (uint32_t slot = env->firstSyntheticValueSlot(); slot < env->slotSpan();
+       slot++) {
+    env->setAliasedBinding(slot, MagicValue(JS_UNINITIALIZED_LEXICAL));
+  }
+
   self->setInitialEnvironment(env);
   return true;
 }

@@ -218,6 +218,8 @@ class RequestedModule {
   const JS::ColumnNumberOneOrigin columnNumber_;
 
  public:
+  static constexpr uint32_t WasmDefaultLineNumber = 1;
+
   RequestedModule(Handle<ModuleRequestObject*> moduleRequest,
                   uint32_t lineNumber, JS::ColumnNumberOneOrigin columnNumber);
   ModuleRequestObject* moduleRequest() const { return moduleRequest_; }
@@ -229,11 +231,17 @@ class RequestedModule {
 
 using RequestedModuleVector = GCVector<RequestedModule, 0, SystemAllocPolicy>;
 
+
+enum class BindingNameType : uint8_t { String, Namespace, DeferredNamespace };
+
+
 class ResolvedBindingObject : public NativeObject {
   enum { ModuleSlotIndex = 0, BindingNameSlotIndex, SlotCount };
 
   JS_DEFINE_TYPED_SLOT(ModuleSlotIndex, MODULE_SLOT, Object);
-  JS_DEFINE_TYPED_SLOT(BindingNameSlotIndex, BINDING_NAME_SLOT, String);
+  
+  
+  JS_DEFINE_TYPED_SLOT(BindingNameSlotIndex, BINDING_NAME_SLOT, String, Int32);
   static constexpr uint32_t SLOT_COUNT = SlotCount;
 
  public:
@@ -242,8 +250,18 @@ class ResolvedBindingObject : public NativeObject {
   static ResolvedBindingObject* create(JSContext* cx,
                                        Handle<ModuleObject*> module,
                                        Handle<JSAtom*> bindingName);
+  static ResolvedBindingObject* createNamespace(JSContext* cx,
+                                                Handle<ModuleObject*> module,
+                                                ImportPhase phase);
   ModuleObject* module() const;
+  BindingNameType bindingNameType() const;
+  bool isNamespace() const;
+  
+  
   JSAtom* bindingName() const;
+  
+  ImportPhase namespacePhase() const;
+  bool isSameBinding(const ResolvedBindingObject* other) const;
 };
 
 class IndirectBindingMap {
@@ -481,6 +499,9 @@ class ModuleObject : public NativeObject {
     PreloadSlotIndex,
 #endif
     ModuleSourceSlotIndex,
+#ifdef NIGHTLY_BUILD
+    WasmInstanceSlotIndex,
+#endif
     SlotCount
   };
 
@@ -503,6 +524,11 @@ class ModuleObject : public NativeObject {
   
   JS_DEFINE_TYPED_SLOT(ModuleSourceSlotIndex, MODULE_SOURCE_SLOT, Object,
                        Undefined);
+#ifdef NIGHTLY_BUILD
+  
+  JS_DEFINE_TYPED_SLOT(WasmInstanceSlotIndex, WASM_INSTANCE_SLOT, Object,
+                       Undefined);
+#endif
   static constexpr uint32_t SLOT_COUNT = SlotCount;
 
   static const JSClass class_;
@@ -542,7 +568,11 @@ class ModuleObject : public NativeObject {
   ModuleNamespaceObject* maybeDeferredNamespace() const;
   void setDeferredNamespace(Handle<ModuleNamespaceObject*> ns);
   JSObject* moduleSource() const;
-  bool isSourcePhaseModule() const { return moduleSource() != nullptr; }
+  bool isWasmModule() const;
+#ifdef NIGHTLY_BUILD
+  JSObject* wasmInstance() const;
+  void setWasmInstance(JSObject* instance);
+#endif
   ModuleStatus status() const;
   mozilla::Maybe<uint32_t> maybeDfsAncestorIndex() const;
   uint32_t dfsAncestorIndex() const;
@@ -613,7 +643,11 @@ class ModuleObject : public NativeObject {
   static bool createSyntheticEnvironment(JSContext* cx,
                                          Handle<ModuleObject*> self,
                                          JS::HandleVector<Value> values);
-  static bool createWasmEnvironment(JSContext* cx, Handle<ModuleObject*> self);
+  static bool createWasmEnvironment(JSContext* cx, Handle<ModuleObject*> self,
+                                    Handle<ExportNameVector> exportNames);
+
+  static void initWasmExportBindings(JSContext* cx, Handle<ModuleObject*> self,
+                                     JS::HandleVector<Value> values);
 
   void initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                       Handle<ListObject*> asyncParentModules);
@@ -705,6 +739,8 @@ JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
                                    HandleValue specifier, HandleValue options,
                                    ImportPhase phase);
+
+void ReportUninitializedModuleBinding(JSContext* cx, HandleId id);
 }  
 
 template <>

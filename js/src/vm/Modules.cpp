@@ -38,11 +38,14 @@
 #include "vm/List.h"               
 #include "vm/Runtime.h"            
 #include "wasm/WasmCompile.h"
+#include "wasm/WasmFeatures.h"
+#include "wasm/WasmJS.h"
 
 #include "builtin/HandlerFunction-inl.h"  
 #include "vm/JSAtomUtils-inl.h"           
 #include "vm/JSContext-inl.h"             
 #include "vm/JSObject-inl.h"
+#include "vm/List-inl.h"
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
@@ -175,19 +178,6 @@ JS_PUBLIC_API bool JS::FinishLoadingImportedModule(
              JS::ModuleType::Unknown);
   MOZ_ASSERT(result);
   Rooted<ModuleObject*> module(cx, &result->as<ModuleObject>());
-
-  
-  
-  
-  
-  
-  if (moduleRequest->as<ModuleRequestObject>().phase() ==
-          ImportPhase::Evaluation &&
-      module->moduleSource()) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
-    return FinishLoadingImportedModuleFailedWithPendingException(cx, payload);
-  }
 
   
   Rooted<ModuleObject*> referrerModule(cx, ReferrerModuleOrNull(referrer));
@@ -387,23 +377,16 @@ JS_PUBLIC_API JSObject* JS::CreateDefaultExportSyntheticModule(
 JS_PUBLIC_API JSObject* JS::CompileWasmModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
-  
-  
-  
-  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                           JSMSG_WASM_COMPILE_ERROR,
-                           "Compilation of wasm modules not implemented.");
-
-  return nullptr;
-}
-
-
-JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    js::Vector<uint8_t, 0, js::MallocAllocPolicy>& srcBuf) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
+
+  if (!wasm::HasSupport(cx)) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_COMPILE_ERROR,
+                             "WebAssembly is not supported");
+    return nullptr;
+  }
 
   SharedWasmCompileArgs compileArgs = BuildCompileArgsForESM(cx, options);
   if (!compileArgs) {
@@ -419,10 +402,38 @@ JS_PUBLIC_API JSObject* JS::CompileWasmModuleAsSource(
     return nullptr;
   }
 
-  return CreateWasmSourcePhaseModule(cx, wasmModuleObject);
+  return CreateWasmModule(cx, wasmModuleObject);
 }
 
-JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
+static bool GetWasmExportNameAtoms(
+    JSContext* cx, Handle<JSObject*> wasmModuleObject,
+    MutableHandle<ExportNameVector> exportNames) {
+  MOZ_ASSERT(exportNames.empty());
+
+  JS::RootedVector<JSString*> exportNameStrings(cx);
+  if (!wasm::GetModuleExportNames(cx, wasmModuleObject, &exportNameStrings)) {
+    return false;
+  }
+
+  if (!exportNames.reserve(exportNameStrings.length())) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  Rooted<JSAtom*> exportName(cx);
+  for (JSString* exportNameString : exportNameStrings) {
+    exportName = AtomizeString(cx, exportNameString);
+    if (!exportName) {
+      return false;
+    }
+
+    exportNames.infallibleAppend(exportName);
+  }
+
+  return true;
+}
+
+JS_PUBLIC_API JSObject* JS::CreateWasmModule(
     JSContext* cx, Handle<JSObject*> wasmModuleObject) {
   MOZ_ASSERT(!cx->zone()->isAtomsZone());
   AssertHeapIsIdle();
@@ -442,9 +453,84 @@ JS_PUBLIC_API JSObject* JS::CreateWasmSourcePhaseModule(
   }
   moduleObject->initScriptSourceObject(sso);
 
-  if (!ModuleObject::createWasmEnvironment(cx, moduleObject)) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!GetWasmExportNameAtoms(cx, wasmModuleObject, &exportNames)) {
     return nullptr;
   }
+
+  if (!ModuleObject::createWasmEnvironment(cx, moduleObject, exportNames)) {
+    return nullptr;
+  }
+
+  JS::RootedVector<std::pair<JSString*, JSString*>> wasmImports(cx);
+  if (!wasm::GetModuleImports(cx, wasmModuleObject, &wasmImports)) {
+    return nullptr;
+  }
+
+  Rooted<RequestedModuleVector> requestedModuleRecords(cx);
+  Rooted<ImportEntryVector> importEntries(cx);
+  if (!requestedModuleRecords.reserve(wasmImports.length()) ||
+      !importEntries.reserve(wasmImports.length())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
+  Rooted<JSAtom*> specifier(cx);
+  Rooted<JSAtom*> importName(cx);
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  for (const auto& wasmImport : wasmImports.get()) {
+    specifier = &wasmImport.first->asAtom();
+    moduleRequest = nullptr;
+    for (const RequestedModule& request : requestedModuleRecords.get()) {
+      if (request.moduleRequest()->specifier() == specifier) {
+        moduleRequest = request.moduleRequest();
+        break;
+      }
+    }
+
+    if (!moduleRequest) {
+      moduleRequest = ModuleRequestObject::create(
+          cx, specifier, JS::ModuleType::JavaScriptOrWasm,
+          ImportPhase::Evaluation);
+      if (!moduleRequest) {
+        return nullptr;
+      }
+
+      requestedModuleRecords.infallibleEmplaceBack(
+          moduleRequest, RequestedModule::WasmDefaultLineNumber,
+          JS::ColumnNumberOneOrigin());
+    }
+
+    importName = &wasmImport.second->asAtom();
+    importEntries.infallibleEmplaceBack(
+        moduleRequest, importName, importName, ImportNameValueType::String,
+        RequestedModule::WasmDefaultLineNumber, JS::ColumnNumberOneOrigin());
+  }
+
+  Rooted<ListObject*> asyncParentModulesList(cx, ListObject::create(cx));
+  if (!asyncParentModulesList) {
+    return nullptr;
+  }
+
+  moduleObject->initAsyncSlots(cx,  false,
+                               asyncParentModulesList);
+
+  Rooted<ExportEntryVector> exportEntries(cx);
+  moduleObject->initImportExportData(&requestedModuleRecords, &importEntries,
+                                     &exportEntries, 0, 0, 0);
 
   if (!ModuleObject::Freeze(cx, moduleObject)) {
     return nullptr;
@@ -569,7 +655,7 @@ JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
   auto& module = moduleRecord->as<ModuleObject>();
 
   
-  if (module.hasSyntheticModuleFields() || module.isSourcePhaseModule()) {
+  if (module.hasSyntheticModuleFields() || module.isWasmModule()) {
     return nullptr;
   }
 
@@ -643,11 +729,8 @@ JS_PUBLIC_API JS::ModuleType JS::GetModuleRequestType(
   return moduleRequestArg->as<ModuleRequestObject>().moduleType();
 }
 
-JS_PUBLIC_API bool JS::ModuleRequestIsSourcePhase(
-    JSContext* cx, Handle<JSObject*> moduleRequestArg) {
+JS_PUBLIC_API bool JS::ModuleRequestIsSourcePhase(JSObject* moduleRequestArg) {
   AssertHeapIsIdle();
-  CHECK_THREAD(cx);
-  cx->check(moduleRequestArg);
 
   return moduleRequestArg->as<ModuleRequestObject>().phase() ==
          ImportPhase::Source;
@@ -710,6 +793,12 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
                                          Handle<JSAtom*> exportName,
                                          MutableHandle<Value> result,
                                          ModuleErrorInfo* errorInfoOut);
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                    Handle<JSAtom*> exportName,
+                                    MutableHandle<Value> result,
+                                    ModuleErrorInfo* errorInfoOut);
+#endif
 static ModuleNamespaceObject* ModuleNamespaceCreate(
     JSContext* cx, Handle<ModuleObject*> module,
     MutableHandle<UniquePtr<ExportNameVector>> exports,
@@ -811,6 +900,17 @@ static bool SyntheticModuleGetExportedNames(
   return true;
 }
 
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleGetExportedNames(
+    JSContext* cx, Handle<ModuleObject*> module,
+    MutableHandle<ExportNameVector> exportedNames) {
+  MOZ_ASSERT(exportedNames.empty());
+
+  Rooted<JSObject*> wasmModuleObject(cx, module->moduleSource());
+  return GetWasmExportNameAtoms(cx, wasmModuleObject, exportedNames);
+}
+#endif
+
 
 ModuleObject* js::GetImportedModule(
     JSContext* cx, Handle<ModuleObject*> referrer,
@@ -863,6 +963,12 @@ static bool ModuleGetExportedNames(
   if (module->hasSyntheticModuleFields()) {
     return SyntheticModuleGetExportedNames(cx, module, exportedNames);
   }
+
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    return WasmModuleGetExportedNames(cx, module, exportedNames);
+  }
+#endif
 
   
   if (exportStarSet.has(module)) {
@@ -1001,6 +1107,13 @@ static bool ModuleResolveExportWithResolveSet(
                                         errorInfoOut);
   }
 
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    return WasmModuleResolveExport(cx, module, exportName, result,
+                                   errorInfoOut);
+  }
+#endif
+
   
   
   MOZ_ASSERT(module->status() != ModuleStatus::New);
@@ -1010,10 +1123,10 @@ static bool ModuleResolveExportWithResolveSet(
 
 
 
-static bool ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
-                                Handle<JSAtom*> exportName,
-                                MutableHandle<Value> result,
-                                ModuleErrorInfo* errorInfoOut = nullptr) {
+bool js::ModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                             Handle<JSAtom*> exportName,
+                             MutableHandle<Value> result,
+                             ModuleErrorInfo* errorInfoOut) {
   
   
   Rooted<ResolveSet> resolveSet(cx);
@@ -1027,6 +1140,20 @@ static bool CreateResolvedBindingObject(JSContext* cx,
                                         MutableHandle<Value> result) {
   ResolvedBindingObject* obj =
       ResolvedBindingObject::create(cx, module, bindingName);
+  if (!obj) {
+    return false;
+  }
+
+  result.setObject(*obj);
+  return true;
+}
+
+static bool CreateResolvedNamespaceBindingObject(JSContext* cx,
+                                                 Handle<ModuleObject*> module,
+                                                 ImportPhase phase,
+                                                 MutableHandle<Value> result) {
+  ResolvedBindingObject* obj =
+      ResolvedBindingObject::createNamespace(cx, module, phase);
   if (!obj) {
     return false;
   }
@@ -1127,17 +1254,14 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         
         
         
-        if (moduleRequest->phase() == ImportPhase::Deferred) {
-          name = cx->names().star_deferred_namespace_star_;
-        } else {
-          
-          
-          MOZ_ASSERT(moduleRequest->phase() == ImportPhase::Evaluation);
-          
-          
-          name = cx->names().star_namespace_star_;
-        }
-        return CreateResolvedBindingObject(cx, importedModule, name, result);
+        
+        
+        
+        
+        MOZ_ASSERT(moduleRequest->phase() == ImportPhase::Deferred ||
+                   moduleRequest->phase() == ImportPhase::Evaluation);
+        return CreateResolvedNamespaceBindingObject(
+            cx, importedModule, moduleRequest->phase(), result);
       } else {
         name = e.importName();
         
@@ -1238,15 +1362,7 @@ static bool CyclicModuleResolveExport(JSContext* cx,
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        if (binding->module() != starResolution->module() ||
-            binding->bindingName() != starResolution->bindingName()) {
+        if (!binding->isSameBinding(starResolution)) {
           result.setString(cx->names().ambiguous);
 
           if (errorInfoOut) {
@@ -1291,6 +1407,28 @@ static bool SyntheticModuleResolveExport(JSContext* cx,
   
   return CreateResolvedBindingObject(cx, module, exportName, result);
 }
+
+#ifdef NIGHTLY_BUILD
+static bool WasmModuleResolveExport(JSContext* cx, Handle<ModuleObject*> module,
+                                    Handle<JSAtom*> exportName,
+                                    MutableHandle<Value> result,
+                                    ModuleErrorInfo* errorInfoOut) {
+  Rooted<ExportNameVector> exportNames(cx);
+  if (!WasmModuleGetExportedNames(cx, module, &exportNames)) {
+    return false;
+  }
+
+  if (!ContainsElement(exportNames.get(), exportName)) {
+    result.setNull();
+    if (errorInfoOut) {
+      errorInfoOut->setImportedModule(module);
+    }
+    return true;
+  }
+
+  return CreateResolvedBindingObject(cx, module, exportName, result);
+}
+#endif
 
 
 
@@ -1359,7 +1497,7 @@ ModuleNamespaceObject* js::GetOrCreateModuleNamespace(
   return ns;
 }
 
-static bool IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
+bool js::IsResolvedBinding(JSContext* cx, Handle<Value> resolution) {
   MOZ_ASSERT(resolution.isObjectOrNull() ||
              resolution.toString() == cx->names().ambiguous);
   return resolution.isObject();
@@ -1740,6 +1878,42 @@ static bool ModuleInitializeEnvironment(JSContext* cx,
   
   return ModuleObject::instantiateFunctionDeclarations(cx, module);
 }
+
+#ifdef NIGHTLY_BUILD
+
+static bool WasmModuleInitializeEnvironment(JSContext* cx,
+                                            Handle<ModuleObject*> module) {
+  MOZ_ASSERT(module->status() == ModuleStatus::Linking);
+
+  
+  
+  Rooted<ModuleRequestObject*> moduleRequest(cx);
+  Rooted<ModuleObject*> importedModule(cx);
+  Rooted<JSAtom*> importName(cx);
+  Rooted<Value> resolution(cx);
+  for (const ImportEntry& in : module->importEntries()) {
+    moduleRequest = in.moduleRequest();
+    importedModule = GetImportedModule(cx, module, moduleRequest);
+    if (!importedModule) {
+      return false;
+    }
+
+    importName = in.importName();
+    ModuleErrorInfo errorInfo{in.lineNumber(), in.columnNumber()};
+    if (!ModuleResolveExport(cx, importedModule, importName, &resolution,
+                             &errorInfo)) {
+      return false;
+    }
+
+    if (!IsResolvedBinding(cx, resolution)) {
+      ThrowResolutionError(cx, module, resolution, importName, &errorInfo);
+      return false;
+    }
+  }
+
+  return true;
+}
+#endif
 
 
 
@@ -2160,9 +2334,21 @@ static bool InnerModuleLinking(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   
+#ifdef NIGHTLY_BUILD
+  if (module->isWasmModule()) {
+    if (!WasmModuleInitializeEnvironment(cx, module)) {
+      return false;
+    }
+  } else {
+    if (!ModuleInitializeEnvironment(cx, module)) {
+      return false;
+    }
+  }
+#else
   if (!ModuleInitializeEnvironment(cx, module)) {
     return false;
   }
+#endif
 
   
   MOZ_ASSERT(CountElements(stack, module) == 1);
