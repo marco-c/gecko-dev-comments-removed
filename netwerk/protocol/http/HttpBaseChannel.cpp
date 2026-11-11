@@ -1288,6 +1288,15 @@ nsresult HttpBaseChannel::InternalSetUploadStream(
   
   
   if (LoadUploadStreamIsStreaming()) {
+    
+    
+    
+    nsCOMPtr<nsISeekableStream> seekable = do_QueryInterface(aUploadStream);
+    if (XRE_IsParentProcess() && seekable &&
+        !NS_InputStreamIsCloneable(aUploadStream)) {
+      return NS_ERROR_INVALID_ARG;
+    }
+
     mUploadStream = aUploadStream;
     
     
